@@ -1,0 +1,26 @@
+# package install
+*.egg-info
+
+# cache
+__pycache__
+.mypy
+.db_cache
+
+# Fireworks config
+/FW_config.yaml
+
+# Atomate workflow output
+fw_logs
+block*
+launcher*
+
+# datasets
+*.json.gz
+*.json.bz2
+*.csv.bz2
+
+# data files
+*.pkl*
+
+# deploy config
+.netlify
