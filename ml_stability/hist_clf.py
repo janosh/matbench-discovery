@@ -1,46 +1,39 @@
 # %%
+from datetime import datetime
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from ml_stability import PKG_DIR, ROOT
 
-plt.rcParams.update({"font.size": 20})
 
-plt.rcParams["axes.linewidth"] = 2.5
-plt.rcParams["xtick.major.size"] = 7
-plt.rcParams["xtick.major.width"] = 2.5
-plt.rcParams["xtick.minor.size"] = 5
-plt.rcParams["xtick.minor.width"] = 2.5
-plt.rcParams["ytick.major.size"] = 7
-plt.rcParams["ytick.major.width"] = 2.5
-plt.rcParams["ytick.minor.size"] = 5
-plt.rcParams["ytick.minor.width"] = 2.5
-plt.rcParams["legend.fontsize"] = 20
+__author__ = "Rhys Goodall, Janosh Riebesell"
+__date__ = "2022-06-18"
 
+today = f"{datetime.now():%Y-%m-%d}"
+
+plt.rc("font", size=18)
+plt.rc("savefig", bbox="tight", dpi=200)
+plt.rcParams["figure.constrained_layout.use"] = True
+plt.rc("figure", dpi=150, titlesize=20)
+
+
+# %%
 fig, ax = plt.subplots(1, 1, figsize=(10, 9))
 
 
-df = pd.read_csv(
-    # f"/home/reag2/PhD/aviary/results/manuscript/vt-wbm-{i+offsets}-pre-results.csv",
-    # f"/home/reag2/PhD/aviary/results/manuscript/step_{i+offsets}_cgcnn-d_org.csv",
-    f"/home/reag2/PhD/aviary/examples/manuscript/new_figs/wren-mp-init.csv",
-    comment="#",
-    na_filter=False,
-)
+df = pd.read_csv(f"{ROOT}/data/wren-mp-initial-structures.csv")
 
-df_hull = pd.read_csv(
-    f"/home/reag2/PhD/aviary/examples/manuscript/new_figs/wbm_e_above_mp.csv",
-    comment="#",
-    na_filter=False,
-)
+df_hull = pd.read_csv(f"{ROOT}/data/wbm_e_above_mp.csv")
 
-df["E_hull"] = pd.to_numeric(
-    df["material_id"].map(dict(zip(df_hull.material_id, df_hull.E_above_hull)))
+df["e_above_hull"] = pd.to_numeric(
+    df["material_id"].map(dict(zip(df_hull.material_id, df_hull.e_above_hull)))
 )
 
 
 # %%
-df = df.dropna(axis=0, subset=["E_hull"])
+df = df.dropna(axis=0, subset=["e_above_hull"])
 
 init = len(df)
 
@@ -56,23 +49,20 @@ rare = "all"
 
 # print(1-len(df)/init)
 
-tar = df["E_hull"].to_numpy().ravel()
+tar = df.e_above_hull.to_numpy().ravel()
 
 print(len(tar))
 
-tar_cols = [col for col in df.columns if "target" in col]
-# tar = df[tar_cols].to_numpy().ravel() - e_hull
-tar_f = df[tar_cols].to_numpy().ravel()
+# tar = df.filter(like="target").to_numpy().ravel() - e_hull
+tar_f = df.filter(like="target").to_numpy().ravel()
 
-pred_cols = [col for col in df.columns if "pred" in col]
-pred = df[pred_cols].to_numpy().T
+pred = df.filter(like="pred").to_numpy().T
 # mean = np.average(pred, axis=0) - e_hull
 mean = np.average(pred, axis=0) - tar_f + tar
 
 epi = np.var(pred, axis=0, ddof=0)
 
-ale_cols = [col for col in df.columns if "ale" in col]
-ales = df[ale_cols].to_numpy().T
+ales = df.filter(like="ale").to_numpy().T
 ale = np.mean(np.square(ales), axis=0)
 
 both = np.sqrt(epi + ale)
@@ -91,7 +81,6 @@ bins = 200
 xlim = (-0.4, 0.4)
 # xlim = (-1, 1)
 
-alpha = 0.5
 # thresh = 0.02
 thresh = 0.00
 # thresh = 0.10
@@ -109,9 +98,7 @@ tp = tar[(tar <= thresh) & (test <= thresh)]
 fn = tar[(tar <= thresh) & (test > thresh)]
 fp = tar[(tar > thresh) & (test <= thresh)]
 tn = tar[(tar > thresh) & (test > thresh)]
-xlabel = (
-    r"$\Delta$" + r"$\it{E}$" + r"$_{Hull-MP}$" + " / eV per atom"
-)  # r"$\/(\frac{eV}{atom})$"
+xlabel = r"$\Delta E_{Hull-MP}$ / eV per atom"
 
 
 # e_type = "pred"
@@ -119,15 +106,13 @@ xlabel = (
 # fn = mean[(tar <= thresh) & (test > thresh)]
 # fp = mean[(tar > thresh) & (test <= thresh)]
 # tn = mean[(tar > thresh) & (test > thresh)]
-# xlabel = (
-#     r"$\Delta$" + r"$\it{E}$" + r"$_{Hull-Pred}$" + " / eV per atom"
-# )  # r"$\/(\frac{eV}{atom})$"
+# xlabel = r"$\Delta E_{Hull-Pred}$ / eV per atom"
 
 ax.hist(
     [tp, fn, fp, tn],
     bins=bins,
     range=xlim,
-    alpha=alpha,
+    alpha=0.5,
     color=["tab:green", "tab:orange", "tab:red", "tab:blue"],
     linestyle="none",
     label=[
@@ -192,10 +177,9 @@ ax.set_xlim(xlim)
 ax.set_aspect(1.0 / ax.get_data_ratio())
 
 
-fig.tight_layout()
 # NOTE this figure plots hist bars separately which causes aliasing in pdf
 # to resolve this take into inkscape and merge regions by colour
-# plt.savefig(f"examples/manuscript/new_figs/hist-{e_type}-{crit}-{rare}.pdf")
-# plt.savefig(f"examples/manuscript/pdf/hist-{e_type}-{crit}-{rare}.png")
+plt.savefig(f"{PKG_DIR}/plots/{today}-hist-{e_type}-{crit}-{rare}.pdf")
+# plt.savefig(f"{PKG_DIR}/plots/{today}-hist-{e_type}-{crit}-{rare}.png")
 
 plt.show()

@@ -1,55 +1,43 @@
 # %%
+from datetime import datetime
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
 
+from ml_stability import ROOT
 
-plt.rcParams.update({"font.size": 20})
 
-plt.rcParams["axes.linewidth"] = 2.5
-plt.rcParams["lines.linewidth"] = 3.5
-plt.rcParams["xtick.major.size"] = 7
-plt.rcParams["xtick.major.width"] = 2.5
-plt.rcParams["xtick.minor.size"] = 5
-plt.rcParams["xtick.minor.width"] = 2.5
-plt.rcParams["ytick.major.size"] = 7
-plt.rcParams["ytick.major.width"] = 2.5
-plt.rcParams["ytick.minor.size"] = 5
-plt.rcParams["ytick.minor.width"] = 2.5
-plt.rcParams["legend.fontsize"] = 20
+__author__ = "Rhys Goodall, Janosh Riebesell"
+__date__ = "2022-06-18"
 
+today = f"{datetime.now():%Y-%m-%d}"
+
+plt.rc("font", size=18)
+plt.rc("savefig", bbox="tight", dpi=200)
+plt.rcParams["figure.constrained_layout.use"] = True
+plt.rc("figure", dpi=150, titlesize=20)
+
+
+# %%
 fig, ax = plt.subplots(1, 1, figsize=(10, 9))
 
-df_hull = pd.read_csv(
-    f"/home/reag2/PhD/aviary/examples/manuscript/new_figs/wbm_e_above_mp.csv",
-    comment="#",
-    na_filter=False,
-)
+df_hull = pd.read_csv(f"{ROOT}/data/wbm_e_above_mp.csv")
 
-e_hull_dict = dict(zip(df_hull.material_id, df_hull.E_above_hull))
+e_hull_dict = dict(zip(df_hull.material_id, df_hull.e_above_hull))
 
-for name, c, a in zip(
+for model_name, color in zip(
     # ["wren", "cgcnn", "cgcnn-d"],
     # ["tab:blue", "tab:red", "tab:purple"],
-    ["wren", "voro", "cgcnn"],
+    ["wren", "voronoi", "cgcnn"],
     ["tab:blue", "tab:orange", "tab:red"],
-    [1, 0.8, 0.8],
-    # ["wren", "cgcnn"],
-    # ["tab:blue", "tab:red"],
-    # [1, 0.8],
 ):
-    df = pd.read_csv(
-        f"/home/reag2/PhD/aviary/examples/manuscript/new_figs/{name}-mp-init.csv",
-        comment="#",
-        na_filter=False,
-    )
+    df = pd.read_csv(f"{ROOT}/data/{model_name}-mp-initial-structures.csv")
 
-    df["E_hull"] = pd.to_numeric(df["material_id"].map(e_hull_dict))
+    df["e_above_hull"] = pd.to_numeric(df["material_id"].map(e_hull_dict))
 
-    df = df.dropna(axis=0, subset=["E_hull"])
-
-    init = len(df)
+    df = df.dropna(axis=0, subset=["e_above_hull"])
 
     rare = "all"
 
@@ -60,37 +48,25 @@ for name, c, a in zip(
     #     )
     # ]
 
-    # print(1-len(df)/init)
+    e_above_hull = df.e_above_hull.to_numpy().ravel()
 
-    tar = df["E_hull"].to_numpy().ravel()
-
-    print(len(tar))
-
-    tar_cols = [col for col in df.columns if "target" in col]
     # tar = df[tar_cols].to_numpy().ravel() - e_hull
-    tar_f = df[tar_cols].to_numpy().ravel()
+    tar_f = df.filter(like="target").to_numpy().ravel()
 
-    pred_cols = [col for col in df.columns if "pred" in col]
-    pred = df[pred_cols].to_numpy().T
     # mean = np.average(pred, axis=0) - e_hull
-    mean = np.average(pred, axis=0) - tar_f + tar
+    mean = df.filter(like="pred").T.mean(axis=0) - tar_f + e_above_hull
 
-    epi = np.var(pred, axis=0, ddof=0)
+    # epistemic_std = np.var(pred, axis=0, ddof=0)
 
-    ale_cols = [col for col in df.columns if "ale" in col]
-    if len(ale_cols) > 0:
-        ales = df[ale_cols].to_numpy().T
-        ale = np.mean(np.square(ales), axis=0)
-    else:
-        ale = 0
+    # aleatoric_std = np.mean(np.square(df.filter(like="ale")), axis=0)
 
-    both = np.sqrt(epi + ale)
+    # full_std = np.sqrt(epistemic_std + aleatoric_std)
 
     # crit = "std"
-    # test = mean + both
+    # test = mean + full_std
 
     # crit = "neg"
-    # test = mean - both
+    # test = mean - full_std
 
     crit = "ene"
     test = mean
@@ -100,33 +76,27 @@ for name, c, a in zip(
     xlim = (-0.4, 0.4)
     # xlim = (-1, 1)
 
-    alpha = 0.5
     # thresh = 0.02
     thresh = 0.00
     # thresh = 0.10
     xticks = (-0.4, -0.2, 0, 0.2, 0.4)
     # yticks = (0, 300, 600, 900, 1200)
 
-    tp = len(tar[(tar <= thresh) & (test <= thresh)])
-    fn = len(tar[(tar <= thresh) & (test > thresh)])
+    tp = len(e_above_hull[(e_above_hull <= thresh) & (test <= thresh)])
+    fn = len(e_above_hull[(e_above_hull <= thresh) & (test > thresh)])
 
     pos = tp + fn
-    null = pos / len(tar)
 
     sort = np.argsort(test)
-    tar = tar[sort]
+    e_above_hull = e_above_hull[sort]
     test = test[sort]
 
     e_type = "pred"
-    tp = np.asarray((tar <= thresh) & (test <= thresh))
-    fn = np.asarray((tar <= thresh) & (test > thresh))
-    fp = np.asarray((tar > thresh) & (test <= thresh))
-    tn = np.asarray((tar > thresh) & (test > thresh))
-    xlabel = (
-        r"$\Delta$" + r"$\it{E}$" + r"$_{Hull-Pred}$" + " / eV per atom"
-    )  # r"$\/(\frac{eV}{atom})$"
-
-    # %%
+    tp = np.asarray((e_above_hull <= thresh) & (test <= thresh))
+    fn = np.asarray((e_above_hull <= thresh) & (test > thresh))
+    fp = np.asarray((e_above_hull > thresh) & (test <= thresh))
+    tn = np.asarray((e_above_hull > thresh) & (test > thresh))
+    xlabel = r"$\Delta E_{Hull-Pred}$ / eV per atom"
 
     c_tp = np.cumsum(tp)
     c_fn = np.cumsum(fn)
@@ -143,29 +113,12 @@ for name, c, a in zip(
     f_ppv = interp1d(x, ppv[:end], kind="cubic")
     f_tpr = interp1d(x, tpr[:end], kind="cubic")
 
-    ax.plot(
-        x[::100],
-        f_tpr(x[::100]),
-        linestyle=":",
-        color=c,
-        alpha=a,
-        markevery=[-1],
-        marker="x",
-        markersize=14,
-        mew=2.5,
+    line_kwargs = dict(
+        linewidth=2, color=color, markevery=[-1], marker="x", markersize=14, mew=2.5
     )
+    ax.plot(x[::100], f_tpr(x[::100]), linestyle=":", **line_kwargs)
 
-    ax.plot(
-        x[::100],
-        f_ppv(x[::100]),
-        linestyle="-",
-        color=c,
-        alpha=a,
-        markevery=[-1],
-        marker="x",
-        markersize=14,
-        mew=2.5,
-    )
+    ax.plot(x[::100], f_ppv(x[::100]), linestyle="-", **line_kwargs)
 
 
 # ax.set_xticks((0, 2.5e4, 5e4, 7.5e4))
@@ -206,8 +159,7 @@ ax.add_artist(legend1)
 ax.set_aspect(1.0 / ax.get_data_ratio())
 
 
-fig.tight_layout()
-plt.savefig(f"examples/manuscript/new_figs/vary-{e_type}-{crit}-{rare}.pdf")
-# plt.savefig(f"examples/manuscript/pdf/vary-{e_type}-{crit}-{rare}.png")
+# plt.savefig(f"{PKG_DIR}/plots/{today}-vary-{e_type}-{crit}-{rare}.pdf")
+# # plt.savefig(f"{PKG_DIR}/plots/{today}-vary-{e_type}-{crit}-{rare}.png")
 
-plt.show()
+# plt.show()

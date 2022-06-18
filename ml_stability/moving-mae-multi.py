@@ -1,45 +1,33 @@
 # %%
+from datetime import datetime
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
-from scipy.stats import sem
+from scipy.stats import sem as std_err_of_mean
+
+from ml_stability import ROOT
 
 
-plt.rcParams.update({"font.size": 20})
+__author__ = "Rhys Goodall, Janosh Riebesell"
+__date__ = "2022-06-18"
 
-plt.rcParams["axes.linewidth"] = 2.5
-plt.rcParams["lines.linewidth"] = 3.5
-plt.rcParams["xtick.major.size"] = 7
-plt.rcParams["xtick.major.width"] = 2.5
-plt.rcParams["xtick.minor.size"] = 5
-plt.rcParams["xtick.minor.width"] = 2.5
-plt.rcParams["ytick.major.size"] = 7
-plt.rcParams["ytick.major.width"] = 2.5
-plt.rcParams["ytick.minor.size"] = 5
-plt.rcParams["ytick.minor.width"] = 2.5
-plt.rcParams["legend.fontsize"] = 20
+today = f"{datetime.now():%Y-%m-%d}"
+
+plt.rc("font", size=18)
+plt.rc("savefig", bbox="tight", dpi=200)
+plt.rcParams["figure.constrained_layout.use"] = True
+plt.rc("figure", dpi=150, titlesize=20)
 
 
 # %%
-fig, ax = plt.subplots(1, figsize=(10, 9))
+markers = ["o", "v", "^", "H", "D", ""]
 
-markers = [
-    "o",
-    "v",
-    "^",
-    "H",
-    "D",
-    "",
-]
-
-df = pd.read_csv(
-    f"/home/reag2/PhD/aviary/examples/manuscript/new_figs/wren-mp-init.csv",
-    comment="#",
-    na_filter=False,
-)
+df = pd.read_csv(f"{ROOT}/data/wren-mp-initial-structures.csv")
 
 
+# %%
 rare = "all"
 # rare = "nla"
 # df = df[
@@ -48,25 +36,19 @@ rare = "all"
 #     )
 # ]
 
-df_hull = pd.read_csv(
-    f"/home/reag2/PhD/aviary/examples/manuscript/new_figs/wbm_e_above_mp.csv",
-    comment="#",
-    na_filter=False,
+df_hull = pd.read_csv(f"{ROOT}/data/wbm_e_above_mp.csv")
+
+df["e_above_hull"] = pd.to_numeric(
+    df["material_id"].map(dict(zip(df_hull.material_id, df_hull.e_above_hull)))
 )
 
-df["E_hull"] = pd.to_numeric(
-    df["material_id"].map(dict(zip(df_hull.material_id, df_hull.E_above_hull)))
-)
+df = df.dropna(axis=0, subset=["e_above_hull"])
 
-df = df.dropna(axis=0, subset=["E_hull"])
+tar = df.e_above_hull.to_numpy().ravel()
 
-tar = df["E_hull"].to_numpy().ravel()
+tar_f = df.filter(like="target").to_numpy().ravel()
 
-tar_cols = [col for col in df.columns if "target" in col]
-tar_f = df[tar_cols].to_numpy().ravel()
-
-pred_cols = [col for col in df.columns if "pred" in col]
-pred = df[pred_cols].to_numpy().T
+pred = df.filter(like="pred").to_numpy().T
 mean = np.average(pred, axis=0) - tar_f + tar
 
 res = mean - tar
@@ -89,7 +71,8 @@ for j, b in enumerate(bins):
     high = b + half_window
 
     means[j] = np.mean(np.abs(res[np.argwhere((tar <= high) & (tar > low))]))
-    std[j] = sem(np.abs(res[np.argwhere((tar <= high) & (tar > low))]))
+    std[j] = std_err_of_mean(np.abs(res[np.argwhere((tar <= high) & (tar > low))]))
+fig, ax = plt.subplots(1, figsize=(10, 9))
 
 ax.plot(bins, means)
 
@@ -152,22 +135,19 @@ ax.annotate(
     horizontalalignment="left",
 )
 
-ineq = "|" + r"$\Delta$" + r"$\it{E}$" + r"$_{Hull-MP}$" + "| > MAE"
+ineq = r"|$\Delta E_{Hull-MP}$| > MAE"
 
 ax.text(0, 0.13, ineq, horizontalalignment="center")
 
 ax.set_ylabel("MAE / eV per atom")
-x_lab = r"$\Delta$" + r"$\it{E}$" + r"$_{Hull-MP}$" + " / eV per atom"
-
-ax.set_xlabel(x_lab)
+ax.set_xlabel(r"$\Delta E_{Hull-MP}$ / eV per atom")
 
 ax.set_ylim((0.0, 0.14))
 ax.set_xlim((bot, top))
 
 ax.set_aspect(1.0 / ax.get_data_ratio())
 
-plt.tight_layout()
 
-plt.savefig(f"examples/manuscript/new_figs/moving-error-wbm-{rare}.pdf")
+# plt.savefig(f"{PKG_DIR}/plots/{today}-moving-error-wbm-{rare}.pdf")
 
 plt.show()
