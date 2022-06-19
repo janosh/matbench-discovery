@@ -23,9 +23,8 @@ plt.rc("figure", dpi=150, titlesize=20)
 # %%
 fig, ax = plt.subplots(1, 1, figsize=(10, 9))
 
-df_hull = pd.read_csv(f"{ROOT}/data/wbm_e_above_mp.csv")
+df_hull = pd.read_csv(f"{ROOT}/data/wbm_e_above_mp_hull.csv").set_index("material_id")
 
-e_hull_dict = dict(zip(df_hull.material_id, df_hull.e_above_hull))
 
 for model_name, color in zip(
     # ["wren", "cgcnn", "cgcnn-d"],
@@ -33,11 +32,13 @@ for model_name, color in zip(
     ["wren", "voronoi", "cgcnn"],
     ["tab:blue", "tab:orange", "tab:red"],
 ):
-    df = pd.read_csv(f"{ROOT}/data/{model_name}-mp-initial-structures.csv")
+    df = pd.read_csv(f"{ROOT}/data/{model_name}-mp-initial-structures.csv").set_index(
+        "material_id"
+    )
 
-    df["e_above_hull"] = pd.to_numeric(df["material_id"].map(e_hull_dict))
+    df["e_above_hull"] = df_hull.e_above_hull
 
-    df = df.dropna(axis=0, subset=["e_above_hull"])
+    df = df.dropna(subset=["e_above_hull"])
 
     rare = "all"
 
