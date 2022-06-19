@@ -23,20 +23,15 @@ plt.rc("figure", dpi=150, titlesize=20)
 fig, ax = plt.subplots(1, 1, figsize=(10, 9))
 
 
-df = pd.read_csv(f"{ROOT}/data/wren-mp-initial-structures.csv")
+df = pd.read_csv(f"{ROOT}/data/wren-mp-initial-structures.csv").set_index("material_id")
 
-df_hull = pd.read_csv(f"{ROOT}/data/wbm_e_above_mp.csv")
+df_hull = pd.read_csv(f"{ROOT}/data/wbm_e_above_mp_hull.csv").set_index("material_id")
 
-df["e_above_hull"] = pd.to_numeric(
-    df["material_id"].map(dict(zip(df_hull.material_id, df_hull.e_above_hull)))
-)
+df["e_above_hull"] = df_hull.e_above_hull
 
 
 # %%
-df = df.dropna(axis=0, subset=["e_above_hull"])
-
-init = len(df)
-
+df = df.dropna(subset=["e_above_hull"])
 
 rare = "all"
 
@@ -47,11 +42,7 @@ rare = "all"
 #     )
 # ]
 
-# print(1-len(df)/init)
-
 tar = df.e_above_hull.to_numpy().ravel()
-
-print(len(tar))
 
 # tar = df.filter(like="target").to_numpy().ravel() - e_hull
 tar_f = df.filter(like="target").to_numpy().ravel()
@@ -134,11 +125,11 @@ f1 = 2 * ppv * tpr / (ppv + tpr)
 
 print(sum([tp, fp, tn, fn]))
 
-print(f"PPV: {ppv}")
-print(f"TPR: {tpr}")
-print(f"F1: {f1}")
-print(f"Enrich: {ppv/null}")
-print(f"Null: {null}")
+print(f"PPV: {ppv:.2f}")
+print(f"TPR: {tpr:.2f}")
+print(f"F1: {f1:.2f}")
+print(f"Enrich: {ppv/null:.2f}")
+print(f"Null: {null:.2f}")
 
 # print(f"MAE: {np.mean(np.abs(mean - tar))}")
 # print(f"RMSE: {np.sqrt(np.mean(np.square(mean - tar)))}")

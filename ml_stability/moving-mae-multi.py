@@ -24,7 +24,7 @@ plt.rc("figure", dpi=150, titlesize=20)
 # %%
 markers = ["o", "v", "^", "H", "D", ""]
 
-df = pd.read_csv(f"{ROOT}/data/wren-mp-initial-structures.csv")
+df = pd.read_csv(f"{ROOT}/data/wren-mp-initial-structures.csv").set_index("material_id")
 
 
 # %%
@@ -36,13 +36,11 @@ rare = "all"
 #     )
 # ]
 
-df_hull = pd.read_csv(f"{ROOT}/data/wbm_e_above_mp.csv")
+df_hull = pd.read_csv(f"{ROOT}/data/wbm_e_above_mp_hull.csv").set_index("material_id")
 
-df["e_above_hull"] = pd.to_numeric(
-    df["material_id"].map(dict(zip(df_hull.material_id, df_hull.e_above_hull)))
-)
+df["e_above_hull"] = df_hull.e_above_hull
 
-df = df.dropna(axis=0, subset=["e_above_hull"])
+df = df.dropna(subset=["e_above_hull"])
 
 tar = df.e_above_hull.to_numpy().ravel()
 

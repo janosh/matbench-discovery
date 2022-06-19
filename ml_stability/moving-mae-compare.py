@@ -22,29 +22,24 @@ plt.rc("figure", dpi=150, titlesize=20)
 
 
 # %%
-df_cgcnn_pre = pd.read_csv(
-    f"{ROOT}/data/cgcnn-mp-initial-structures.csv"
-    # index_col="material_id"
+df_cgcnn_pre = pd.read_csv(f"{ROOT}/data/cgcnn-mp-initial-structures.csv").set_index(
+    "material_id"
 )
 df_cgcnn_rel = pd.read_csv(
     f"{ROOT}/data/cgcnn-mp-cse.csv",
     # f"aviary/results/manuscript/step_{i+offsets}_cgcnn-pre_org.csv"
-    # index_col="material_id"
-)
+).set_index("material_id")
 # df_cgcnn_dis = pd.read_csv(
 #     f"aviary/results/manuscript/step_{i+offsets}_cgcnn-d_org.csv",
 #     # f"aviary/results/manuscript/step_{i+offsets}_cgcnn-pre_org.csv",
-#     # index_col="material_id",
-# )
-df_vt_pre = pd.read_csv(
-    f"{ROOT}/data/voronoi-mp-initial-structures.csv"
-    # index_col="material_id"
+# ).set_index("material_id")
+df_vt_pre = pd.read_csv(f"{ROOT}/data/voronoi-mp-initial-structures.csv").set_index(
+    "material_id"
 )
-df_vt_rel = pd.read_csv(
-    f"{ROOT}/data/voronoi-mp-cse.csv"
-    # index_col="material_id"
+df_vt_rel = pd.read_csv(f"{ROOT}/data/voronoi-mp-cse.csv").set_index("material_id")
+df_wren = pd.read_csv(f"{ROOT}/data/wren-mp-initial-structures.csv").set_index(
+    "material_id"
 )
-df_wren = pd.read_csv(f"{ROOT}/data/wren-mp-initial-structures.csv")
 
 
 # %% Find MAD Voronoi
@@ -69,13 +64,11 @@ df_wren = pd.read_csv(f"{ROOT}/data/wren-mp-initial-structures.csv")
 
 
 # %%
-df_hull = pd.read_csv(f"{ROOT}/data/wbm_e_above_mp.csv")
-
-e_hull_dict = dict(zip(df_hull.material_id, df_hull.e_above_hull))
+df_hull = pd.read_csv(f"{ROOT}/data/wbm_e_above_mp_hull.csv").set_index("material_id")
 
 fig, ax = plt.subplots(1, figsize=(10, 9))
 
-for df, model_name, linestyle, alpha in zip(
+for df, model_name, linestyle in zip(
     # (df_wren, df_vt_pre, df_vt_rel, df_cgcnn_pre, df_cgcnn_dis, df_cgcnn_rel),
     # (
     #     "Wren (This Work)",
@@ -98,7 +91,6 @@ for df, model_name, linestyle, alpha in zip(
     # (df_wren, df_cgcnn_pre, df_cgcnn_rel),
     # ("Wren (This Work)", "CGCNN Pre-relax", "CGCNN Relaxed"),
     ("-", "--", ":", "-.", ":", "--"),
-    (1.0, 0.8, 0.8, 0.8, 0.8, 0.8),
 ):
 
     rare = "all"
@@ -110,8 +102,8 @@ for df, model_name, linestyle, alpha in zip(
     #     )
     # ]
 
-    df["e_above_hull"] = pd.to_numeric(df["material_id"].map(e_hull_dict))
-    df = df.dropna(axis=0, subset=["e_above_hull"])
+    df["e_above_hull"] = df_hull.e_above_hull
+    df = df.dropna(subset=["e_above_hull"])
     tar = df.e_above_hull.to_numpy().ravel()
 
     tar_f = df.filter(like="target").to_numpy().ravel()
@@ -119,10 +111,10 @@ for df, model_name, linestyle, alpha in zip(
     pred = df.filter(like="pred").to_numpy().T
     mean = np.average(pred, axis=0) - tar_f + tar
 
-    epistemic_std = np.var(pred, axis=0, ddof=0)
-    aleatoric_std = np.mean(np.square(df.filter(like="ale")), axis=0)
+    # epistemic_std = np.var(pred, axis=0, ddof=0)
+    # aleatoric_std = np.mean(np.square(df.filter(like="ale")), axis=0)
 
-    full_std = np.sqrt(epistemic_std + aleatoric_std)
+    # full_std = np.sqrt(epistemic_std + aleatoric_std)
 
     res = mean - tar
 
@@ -146,20 +138,9 @@ for df, model_name, linestyle, alpha in zip(
     print(f"  MAE: {abs(res).mean():.4f}")
     print(f"  Min E: {means.min():.4f}")
 
-    ax.plot(
-        bins,
-        means,
-        linestyle=linestyle,
-        alpha=alpha,
-        label=model_name,
-    )
+    ax.plot(bins, means, linestyle=linestyle, label=model_name)
 
-    ax.fill_between(
-        bins,
-        means + std,
-        means - std,
-        alpha=0.3,
-    )
+    ax.fill_between(bins, means + std, means - std, alpha=0.3)
 
 scalebar = AnchoredSizeBar(
     ax.transData,

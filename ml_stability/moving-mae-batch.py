@@ -36,23 +36,23 @@ markers = [
 
 rare = "all"
 
-df_wbm = pd.read_csv(f"{ROOT}/data/wren-mp-initial-structures.csv")
-
-df_hull = pd.read_csv(f"{ROOT}/data/wbm_e_above_mp.csv")
-
-df_wbm["e_above_hull"] = pd.to_numeric(
-    df_wbm["material_id"].map(dict(zip(df_hull.material_id, df_hull.e_above_hull)))
+df_wbm = pd.read_csv(f"{ROOT}/data/wren-mp-initial-structures.csv").set_index(
+    "material_id"
 )
+
+df_hull = pd.read_csv(f"{ROOT}/data/wbm_e_above_mp_hull.csv").set_index("material_id")
+
+df_wbm["e_above_hull"] = df_hull.e_above_hull
 
 
 # %%
-df_wbm = df_wbm.dropna(axis=0, subset=["e_above_hull"])
+df_wbm = df_wbm.dropna(subset=["e_above_hull"])
 
 for i, m in enumerate(markers):
     offsets = 1
     title = f"Batch-{i+offsets}"
 
-    df = df_wbm[df_wbm.material_id.str.contains(f"step_{i+offsets}")]
+    df = df_wbm[df_wbm.index.str.contains(f"step_{i+offsets}")]
     tar = df.e_above_hull.to_numpy().ravel()
 
     tar_f = df.filter(like="target").to_numpy().ravel()
