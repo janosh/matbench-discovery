@@ -22,5 +22,5 @@ launcher*
 # data files
 *.pkl*
 
-# deploy config
-.netlify
+# checkpoint files of trained models
+pretrained
