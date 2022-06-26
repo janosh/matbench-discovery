@@ -153,17 +153,12 @@ ax.text(
 xpos, ypos = 0.90 * xlim[0], 0.96 * ylim[1]
 
 
-ax.set_xticks(xticks)
-ax.set_yticks(yticks)
-
-ax.set_xlabel(xlabel)
-
-ax.set_ylabel("Number of Compounds")
+ax.set(xticks=xticks, yticks=yticks)
+ax.set(xlabel=xlabel, ylabel="Number of Compounds")
 # else:
 # ax.get_yaxis().set_ticklabels([])
 
-ax.set_ylim(ylim)
-ax.set_xlim(xlim)
+ax.set(xlim=xlim, ylim=ylim)
 
 ax.set_aspect(1.0 / ax.get_data_ratio())
 

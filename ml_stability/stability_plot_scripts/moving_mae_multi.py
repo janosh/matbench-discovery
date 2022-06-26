@@ -137,11 +137,9 @@ ineq = r"|$\Delta E_{Hull-MP}$| > MAE"
 
 ax.text(0, 0.13, ineq, horizontalalignment="center")
 
-ax.set_ylabel("MAE / eV per atom")
-ax.set_xlabel(r"$\Delta E_{Hull-MP}$ / eV per atom")
+ax.set(xlabel=r"$\Delta E_{Hull-MP}$ / eV per atom", ylabel="MAE / eV per atom")
 
-ax.set_ylim((0.0, 0.14))
-ax.set_xlim((bot, top))
+ax.set(xlim=(bot, top), ylim=(0.0, 0.14))
 
 ax.set_aspect(1.0 / ax.get_data_ratio())
 

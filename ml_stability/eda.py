@@ -17,15 +17,11 @@ pio.templates["plotly_white"]["layout"]["margin"] = dict(l=20, r=20, t=20, b=20)
 
 
 # %%
-df = pd.read_json(f"{ROOT}/data/wbm_cleaned.json.gz", orient="split")
+df = pd.read_json(f"{ROOT}/data/2022-06-26-wbm-cses-and-initial-structures.json.gz")
 
 
 # %%
-df = decode_df_from_json(f"{ROOT}/data/mp.tar.bz2", orient="split")
-
-
-# %%
-df = decode_df_from_json(f"{ROOT}/data/wbm_cleaned.json.gz")
+df = decode_df_from_json(f"{ROOT}/data/from-rhys-2022-06-11/mp.tar.bz2", orient="split")
 
 
 # %%

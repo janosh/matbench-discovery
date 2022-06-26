@@ -32,9 +32,8 @@ for model_name, color in zip(
     ["wren", "voronoi", "cgcnn"],
     ["tab:blue", "tab:orange", "tab:red"],
 ):
-    df = pd.read_csv(f"{ROOT}/data/{model_name}-mp-initial-structures.csv").set_index(
-        "material_id"
-    )
+    df = pd.read_csv(f"{ROOT}/data/{model_name}-mp-initial-structures.csv")
+    df = df.set_index("material_id")
 
     df["e_above_hull"] = df_hull.e_above_hull
 
@@ -122,15 +121,9 @@ for model_name, color in zip(
     ax.plot(x[::100], f_ppv(x[::100]), linestyle="-", **line_kwargs)
 
 
-# ax.set_xticks((0, 2.5e4, 5e4, 7.5e4))
-ax.set_xticks((0, 2e4, 4e4, 6e4, 8e4))
+ax.set(xlabel="Number of Calculations", ylabel="Percentage")
 
-ax.set_ylabel("Percentage")
-ax.set_xlabel("Number of Calculations")
-
-ax.set_xlim((0, 8e4))
-# ax.set_xlim((0, 75000))
-ax.set_ylim((0, 100))
+ax.set(xlim=(0, 8e4), ylim=(0, 100), xticks=(0, 2e4, 4e4, 6e4, 8e4))
 
 ax.plot((-1, -1), (-1, -1), color="tab:blue")
 ax.plot((-1, -1), (-1, -1), color="tab:red")
@@ -155,7 +148,6 @@ legend2 = ax.legend(
 )
 
 ax.add_artist(legend1)
-# plt.gca().add_artist(legend1)
 
 ax.set_aspect(1.0 / ax.get_data_ratio())
 

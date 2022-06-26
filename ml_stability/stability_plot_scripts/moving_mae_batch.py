@@ -148,16 +148,11 @@ ax.plot((-0.05, 0), (0.05, 0), color="grey", linestyle="--", alpha=0.3)
 # ax.fill_between((-0.5, 0), (0.5, 0), (0, 0), color="tab:green", alpha=0.2)
 # ax.fill_between((0, 0.5), (0, 0.5), (0, 0), color="tab:green", alpha=0.2)
 
-ax.set_ylabel("MAE / eV per atom")
-ax.set_xlabel(r"$\Delta E_{Hull-MP}$ / eV per atom")
+ax.set(xlabel=r"$\Delta E_{Hull-MP}$ / eV per atom", ylabel="MAE / eV per atom")
 
-# ax.set_ylim((0.0, 2))
-# ax.set_xlim((-0.25, 2))
+# ax.set(ylim=(0.0, 2), xlim=(-0.25, 2))
 
-# ax.set_ylim((0.0, 0.25))
-ax.set_ylim((0.0, 0.14))
-ax.set_xlim((bot, top))
-# ax.set_xlim((-1.5, 1.5))
+ax.set(xlim=(bot, top), ylim=(0.0, 0.14))
 ax.legend(
     # title=r"$\bf{Wren}$",
     # frameon=False,

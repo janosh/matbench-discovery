@@ -164,11 +164,9 @@ ax.plot((-0.1, 0.1), (0.1, 0.1), color="grey", linestyle="--", alpha=0.3)
 ax.plot((0, 0.05), (0, 0.05), color="grey", linestyle="--", alpha=0.3)
 ax.plot((-0.05, 0), (0.05, 0), color="grey", linestyle="--", alpha=0.3)
 
-ax.set_ylabel("MAE / eV per atom")
-ax.set_xlabel(r"$\Delta E_{Hull-MP}$ / eV per atom")
+ax.set(xlabel=r"$\Delta E_{Hull-MP}$ / eV per atom", ylabel="MAE / eV per atom")
+ax.set(xlim=(bot, top), ylim=(0.0, 0.14))
 
-ax.set_ylim((0.0, 0.14))
-ax.set_xlim((bot, top))
 ax.legend(
     frameon=False,
     loc="lower right",
