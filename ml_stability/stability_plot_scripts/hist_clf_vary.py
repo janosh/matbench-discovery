@@ -23,7 +23,9 @@ plt.rc("figure", dpi=150, titlesize=20)
 # %%
 fig, ax = plt.subplots(1, 1, figsize=(10, 9))
 
-df_hull = pd.read_csv(f"{ROOT}/data/wbm_e_above_mp_hull.csv").set_index("material_id")
+df_hull = pd.read_csv(
+    f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
+).set_index("material_id")
 
 
 for model_name, color in zip(
@@ -32,7 +34,9 @@ for model_name, color in zip(
     ["wren", "voronoi", "cgcnn"],
     ["tab:blue", "tab:orange", "tab:red"],
 ):
-    df = pd.read_csv(f"{ROOT}/data/{model_name}-mp-initial-structures.csv")
+    df = pd.read_csv(
+        f"{ROOT}/data/2022-06-11-from-rhys/{model_name}-mp-initial-structures.csv"
+    )
     df = df.set_index("material_id")
 
     df["e_above_hull"] = df_hull.e_above_hull
