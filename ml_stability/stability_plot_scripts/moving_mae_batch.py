@@ -1,5 +1,4 @@
 # %%
-# Import Libraries
 from datetime import datetime
 
 import matplotlib.pyplot as plt
@@ -23,6 +22,20 @@ plt.rc("figure", dpi=150, titlesize=20)
 
 
 # %%
+rare = "all"
+
+df_wbm = pd.read_csv(
+    f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
+).set_index("material_id")
+
+df_hull = pd.read_csv(
+    f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
+).set_index("material_id")
+
+df_wbm["e_above_hull"] = df_hull.e_above_hull
+
+
+# %%
 fig, ax = plt.subplots(1, figsize=(10, 9))
 
 markers = [
@@ -33,26 +46,13 @@ markers = [
     "D",
     # "",
 ]
-
-rare = "all"
-
-df_wbm = pd.read_csv(f"{ROOT}/data/wren-mp-initial-structures.csv").set_index(
-    "material_id"
-)
-
-df_hull = pd.read_csv(f"{ROOT}/data/wbm_e_above_mp_hull.csv").set_index("material_id")
-
-df_wbm["e_above_hull"] = df_hull.e_above_hull
-
-
-# %%
 df_wbm = df_wbm.dropna(subset=["e_above_hull"])
 
 for i, m in enumerate(markers):
     offsets = 1
     title = f"Batch-{i+offsets}"
 
-    df = df_wbm[df_wbm.index.str.contains(f"step_{i+offsets}")]
+    df = df_wbm[df_wbm.index.str.contains(f"wbm-step-{i+offsets}")]
     tar = df.e_above_hull.to_numpy().ravel()
 
     tar_f = df.filter(like="target").to_numpy().ravel()

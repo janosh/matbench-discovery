@@ -20,12 +20,13 @@ plt.rc("figure", dpi=150, titlesize=20)
 
 
 # %%
-fig, ax = plt.subplots(1, 1, figsize=(10, 9))
+df = pd.read_csv(
+    f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
+).set_index("material_id")
 
-
-df = pd.read_csv(f"{ROOT}/data/wren-mp-initial-structures.csv").set_index("material_id")
-
-df_hull = pd.read_csv(f"{ROOT}/data/wbm_e_above_mp_hull.csv").set_index("material_id")
+df_hull = pd.read_csv(
+    f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
+).set_index("material_id")
 
 df["e_above_hull"] = df_hull.e_above_hull
 
@@ -34,29 +35,18 @@ df["e_above_hull"] = df_hull.e_above_hull
 df = df.dropna(subset=["e_above_hull"])
 
 rare = "all"
+target_col = "e_form_target"
 
-# rare = "nla"
-# df = df[
-#     ~df["composition"].apply(
-#         lambda x: any(el.is_rare_earth_metal for el in Composition(x).elements)
-#     )
-# ]
 
-tar = df.e_above_hull.to_numpy().ravel()
+pred_mean = df.filter(like="pred").mean(axis=1)
+std_epistemic = df.filter(like="pred").var(axis=1, ddof=0)
 
-# tar = df.filter(like="target").to_numpy().ravel() - e_hull
-tar_f = df.filter(like="target").to_numpy().ravel()
+mean = pred_mean - df[target_col] + df.e_above_hull
 
-pred = df.filter(like="pred").to_numpy().T
-# mean = np.average(pred, axis=0) - e_hull
-mean = np.average(pred, axis=0) - tar_f + tar
 
-epi = np.var(pred, axis=0, ddof=0)
+std_aleatoric = (df.filter(like="ale") ** 2).mean(axis=1)
 
-ales = df.filter(like="ale").to_numpy().T
-ale = np.mean(np.square(ales), axis=0)
-
-both = np.sqrt(epi + ale)
+std_total = np.sqrt(std_epistemic + std_aleatoric)
 
 # crit = "std"
 # test = mean + both
@@ -78,17 +68,17 @@ thresh = 0.00
 xticks = (-0.4, -0.2, 0, 0.2, 0.4)
 # yticks = (0, 300, 600, 900, 1200)
 
-tp = len(tar[(tar <= thresh) & (test <= thresh)])
-fn = len(tar[(tar <= thresh) & (test > thresh)])
+tp = len(df.e_above_hull[(df.e_above_hull <= thresh) & (test <= thresh)])
+fn = len(df.e_above_hull[(df.e_above_hull <= thresh) & (test > thresh)])
 
 pos = tp + fn
-null = pos / len(tar)
+null = pos / len(df.e_above_hull)
 
 e_type = "true"
-tp = tar[(tar <= thresh) & (test <= thresh)]
-fn = tar[(tar <= thresh) & (test > thresh)]
-fp = tar[(tar > thresh) & (test <= thresh)]
-tn = tar[(tar > thresh) & (test > thresh)]
+tp = df.e_above_hull[(df.e_above_hull <= thresh) & (test <= thresh)]
+fn = df.e_above_hull[(df.e_above_hull <= thresh) & (test > thresh)]
+fp = df.e_above_hull[(df.e_above_hull > thresh) & (test <= thresh)]
+tn = df.e_above_hull[(df.e_above_hull > thresh) & (test > thresh)]
 xlabel = r"$\Delta E_{Hull-MP}$ / eV per atom"
 
 
@@ -98,6 +88,7 @@ xlabel = r"$\Delta E_{Hull-MP}$ / eV per atom"
 # fp = mean[(tar > thresh) & (test <= thresh)]
 # tn = mean[(tar > thresh) & (test > thresh)]
 # xlabel = r"$\Delta E_{Hull-Pred}$ / eV per atom"
+fig, ax = plt.subplots(1, 1, figsize=(10, 9))
 
 ax.hist(
     [tp, fn, fp, tn],
@@ -131,8 +122,10 @@ print(f"F1: {f1:.2f}")
 print(f"Enrich: {ppv/null:.2f}")
 print(f"Null: {null:.2f}")
 
-# print(f"MAE: {np.mean(np.abs(mean - tar))}")
-# print(f"RMSE: {np.sqrt(np.mean(np.square(mean - tar)))}")
+RMSE = ((mean - df[target_col]) ** 2.0).mean() ** 0.5
+MAE = (mean - df[target_col]).abs().mean()
+print(f"{MAE=:.4}")
+print(f"{RMSE=:.4}")
 
 ylim = (0, 6000)
 yticks = (0, 2000, 4000, 6000)

@@ -36,7 +36,7 @@ rare = "all"
 #     )
 # ]
 
-df_hull = pd.read_csv(f"{ROOT}/data/wbm_e_above_mp_hull.csv").set_index("material_id")
+df_hull = pd.read_csv(f"{ROOT}/data/wbm-e-above-mp-hull.csv").set_index("material_id")
 
 df["e_above_hull"] = df_hull.e_above_hull
 

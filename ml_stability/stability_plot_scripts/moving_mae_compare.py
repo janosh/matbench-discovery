@@ -22,24 +22,26 @@ plt.rc("figure", dpi=150, titlesize=20)
 
 
 # %%
-df_cgcnn_pre = pd.read_csv(f"{ROOT}/data/cgcnn-mp-initial-structures.csv").set_index(
-    "material_id"
-)
+df_cgcnn_pre = pd.read_csv(
+    f"{ROOT}/data/2022-06-11-from-rhys/cgcnn-mp-initial-structures.csv"
+).set_index("material_id")
 df_cgcnn_rel = pd.read_csv(
-    f"{ROOT}/data/cgcnn-mp-cse.csv",
-    # f"aviary/results/manuscript/step_{i+offsets}_cgcnn-pre_org.csv"
+    f"{ROOT}/data/2022-06-11-from-rhys/cgcnn-mp-cse.csv",
+    # f"aviary/results/manuscript/wbm-step-{i+offsets}_cgcnn-pre_org.csv"
 ).set_index("material_id")
 # df_cgcnn_dis = pd.read_csv(
-#     f"aviary/results/manuscript/step_{i+offsets}_cgcnn-d_org.csv",
-#     # f"aviary/results/manuscript/step_{i+offsets}_cgcnn-pre_org.csv",
+#     f"aviary/results/manuscript/wbm-step-{i+offsets}_cgcnn-d_org.csv",
+#     # f"aviary/results/manuscript/wbm-step-{i+offsets}_cgcnn-pre_org.csv",
 # ).set_index("material_id")
-df_vt_pre = pd.read_csv(f"{ROOT}/data/voronoi-mp-initial-structures.csv").set_index(
-    "material_id"
-)
-df_vt_rel = pd.read_csv(f"{ROOT}/data/voronoi-mp-cse.csv").set_index("material_id")
-df_wren = pd.read_csv(f"{ROOT}/data/wren-mp-initial-structures.csv").set_index(
-    "material_id"
-)
+df_vt_pre = pd.read_csv(
+    f"{ROOT}/data/2022-06-11-from-rhys/voronoi-mp-initial-structures.csv"
+).set_index("material_id")
+df_vt_rel = pd.read_csv(
+    f"{ROOT}/data/2022-06-11-from-rhys/voronoi-mp-cse.csv"
+).set_index("material_id")
+df_wren = pd.read_csv(
+    f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
+).set_index("material_id")
 
 
 # %% Find MAD Voronoi
@@ -64,7 +66,9 @@ df_wren = pd.read_csv(f"{ROOT}/data/wren-mp-initial-structures.csv").set_index(
 
 
 # %%
-df_hull = pd.read_csv(f"{ROOT}/data/wbm_e_above_mp_hull.csv").set_index("material_id")
+df_hull = pd.read_csv(
+    f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
+).set_index("material_id")
 
 fig, ax = plt.subplots(1, figsize=(10, 9))
 
