@@ -29,12 +29,13 @@ df = pd.read_csv(f"{ROOT}/data/wren-mp-initial-structures.csv").set_index("mater
 
 # %%
 rare = "all"
-# rare = "nla"
-# df = df[
-#     ~df["composition"].apply(
-#         lambda x: any(el.is_rare_earth_metal for el in Composition(x).elements)
-#     )
-# ]
+# from pymatgen.core import Composition
+# rare = "no-lanthanides"
+# df["contains_rare_earths"] = df.composition.map(
+#     lambda x: any(el.is_rare_earth_metal for el in Composition(x))
+# )
+# df = df.query("~contains_rare_earths")
+
 
 df_hull = pd.read_csv(f"{ROOT}/data/wbm-e-above-mp-hull.csv").set_index("material_id")
 
@@ -140,8 +141,6 @@ ax.text(0, 0.13, ineq, horizontalalignment="center")
 ax.set(xlabel=r"$\Delta E_{Hull-MP}$ / eV per atom", ylabel="MAE / eV per atom")
 
 ax.set(xlim=(bot, top), ylim=(0.0, 0.14))
-
-ax.set_aspect(1.0 / ax.get_data_ratio())
 
 
 # plt.savefig(f"{PKG_DIR}/plots/{today}-moving-error-wbm-{rare}.pdf")

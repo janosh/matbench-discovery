@@ -74,9 +74,9 @@ for i, m in enumerate(markers):
     # half_window = 0.01
     half_window = 0.02
     increment = 0.002
-    bot, top = -0.2, 0.3
+    bottom, top = -0.2, 0.3
     # bot, top = -0.2, 0.6
-    bins = np.arange(bot, top, increment)
+    bins = np.arange(bottom, top, increment)
 
     means = np.zeros_like(bins)
     medians = np.zeros_like(bins)
@@ -150,9 +150,7 @@ ax.plot((-0.05, 0), (0.05, 0), color="grey", linestyle="--", alpha=0.3)
 
 ax.set(xlabel=r"$\Delta E_{Hull-MP}$ / eV per atom", ylabel="MAE / eV per atom")
 
-# ax.set(ylim=(0.0, 2), xlim=(-0.25, 2))
-
-ax.set(xlim=(bot, top), ylim=(0.0, 0.14))
+ax.set(xlim=(bottom, top), ylim=(0.0, 0.14))
 ax.legend(
     # title=r"$\bf{Wren}$",
     # frameon=False,
@@ -174,8 +172,6 @@ ax.legend(
 #     (0.05, 0.82),
 #     xycoords="axes fraction",
 # )
-
-ax.set_aspect(1.0 / ax.get_data_ratio())
 
 
 plt.savefig(f"{PKG_DIR}/plots/{today}-moving-error-wbm-{rare}-batches.pdf")

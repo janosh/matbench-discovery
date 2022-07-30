@@ -99,12 +99,12 @@ for df, model_name, linestyle in zip(
 
     rare = "all"
 
-    # rare = "nla"
-    # df = df[
-    #     ~df["composition"].apply(
-    #         lambda x: any(el.is_rare_earth_metal for el in Composition(x).elements)
-    #     )
-    # ]
+    # from pymatgen.core import Composition
+    # rare = "no-lanthanides"
+    # df["contains_rare_earths"] = df.composition.map(
+    #     lambda x: any(el.is_rare_earth_metal for el in Composition(x))
+    # )
+    # df = df.query("~contains_rare_earths")
 
     df["e_above_hull"] = df_hull.e_above_hull
     df = df.dropna(subset=["e_above_hull"])
@@ -178,8 +178,6 @@ ax.legend(
     # framealpha=1.0,
     # edgecolor="white",
 )
-
-ax.set_aspect(1.0 / ax.get_data_ratio())
 
 
 plt.savefig(f"{PKG_DIR}/plots/{today}-moving-error-wbm-{rare}-compare.pdf")

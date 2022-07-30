@@ -153,8 +153,6 @@ ax.set(xlabel=xlabel, ylabel="Number of Compounds")
 
 ax.set(xlim=xlim, ylim=ylim)
 
-ax.set_aspect(1.0 / ax.get_data_ratio())
-
 
 # NOTE this figure plots hist bars separately which causes aliasing in pdf
 # to resolve this take into inkscape and merge regions by colour
