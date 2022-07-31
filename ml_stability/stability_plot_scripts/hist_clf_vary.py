@@ -39,9 +39,9 @@ for model_name, color in zip(
     )
     df = pd.read_csv(data_path).set_index("material_id")
 
-    df["e_above_hull"] = df_hull.e_above_hull
+    df["e_above_mp_hull"] = df_hull.e_above_mp_hull
 
-    df = df.dropna(subset=["e_above_hull"])
+    df = df.dropna(subset=["e_above_mp_hull"])
 
     rare = "all"
 
@@ -52,13 +52,13 @@ for model_name, color in zip(
     # )
     # df = df.query("~contains_rare_earths")
 
-    e_above_hull = df.e_above_hull.to_numpy().ravel()
+    e_above_mp_hull = df.e_above_mp_hull.to_numpy().ravel()
 
     # tar = df[tar_cols].to_numpy().ravel() - e_hull
     tar_f = df.filter(like="target").to_numpy().ravel()
 
     # mean = np.average(pred, axis=0) - e_hull
-    mean = df.filter(like="pred").T.mean(axis=0) - tar_f + e_above_hull
+    mean = df.filter(like="pred").mean(axis=1) - tar_f + e_above_mp_hull
 
     # epistemic_std = np.var(pred, axis=0, ddof=0)
 
@@ -85,20 +85,20 @@ for model_name, color in zip(
     xticks = (-0.4, -0.2, 0, 0.2, 0.4)
     # yticks = (0, 300, 600, 900, 1200)
 
-    tp = len(e_above_hull[(e_above_hull <= thresh) & (mean <= thresh)])
-    fn = len(e_above_hull[(e_above_hull <= thresh) & (mean > thresh)])
+    tp = len(e_above_mp_hull[(e_above_mp_hull <= thresh) & (mean <= thresh)])
+    fn = len(e_above_mp_hull[(e_above_mp_hull <= thresh) & (mean > thresh)])
 
     pos = tp + fn
 
     sort = np.argsort(mean)
-    e_above_hull = e_above_hull[sort]
+    e_above_mp_hull = e_above_mp_hull[sort]
     mean = mean[sort]
 
     e_type = "pred"
-    tp = np.asarray((e_above_hull <= thresh) & (mean <= thresh))
-    fn = np.asarray((e_above_hull <= thresh) & (mean > thresh))
-    fp = np.asarray((e_above_hull > thresh) & (mean <= thresh))
-    tn = np.asarray((e_above_hull > thresh) & (mean > thresh))
+    tp = np.asarray((e_above_mp_hull <= thresh) & (mean <= thresh))
+    fn = np.asarray((e_above_mp_hull <= thresh) & (mean > thresh))
+    fp = np.asarray((e_above_mp_hull > thresh) & (mean <= thresh))
+    tn = np.asarray((e_above_mp_hull > thresh) & (mean > thresh))
     xlabel = r"$\Delta E_{Hull-Pred}$ / eV per atom"
 
     c_tp = np.cumsum(tp)

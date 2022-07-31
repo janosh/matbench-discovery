@@ -39,11 +39,11 @@ rare = "all"
 
 df_hull = pd.read_csv(f"{ROOT}/data/wbm-e-above-mp-hull.csv").set_index("material_id")
 
-df["e_above_hull"] = df_hull.e_above_hull
+df["e_above_mp_hull"] = df_hull.e_above_mp_hull
 
-df = df.dropna(subset=["e_above_hull"])
+df = df.dropna(subset=["e_above_mp_hull"])
 
-tar = df.e_above_hull.to_numpy().ravel()
+tar = df.e_above_mp_hull.to_numpy().ravel()
 
 tar_f = df.filter(like="target").to_numpy().ravel()
 

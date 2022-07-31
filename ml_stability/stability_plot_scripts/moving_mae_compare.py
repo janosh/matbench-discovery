@@ -52,15 +52,16 @@ df_wren = pd.read_csv(
 # df_vt_pre = df_vt_pre.set_index("material_id")
 # df_vt_rel = df_vt_rel.set_index("material_id")
 
-# print(np.abs(
-#         np.average(df_vt_pre.filter(like="pred").loc[mat_ids].to_numpy().T, axis=0) -
-#         np.average(df_vt_rel.filter(like="pred").loc[mat_ids].to_numpy().T, axis=0)
+# print(
+#     np.abs(
+#         df_vt_pre.filter(like="pred").loc[mat_ids].mean(axis=0)
+#         - df_vt_rel.filter(like="pred").loc[mat_ids].mean(axis=0)
 #     ).mean()
 # )
 # print(
 #     (
-#         np.average(df_vt_pre.filter(like="pred").loc[mat_ids].to_numpy().T, axis=0) -
-#         np.average(df_vt_rel.filter(like="pred").loc[mat_ids].to_numpy().T, axis=0)
+#         df_vt_pre.filter(like="pred").loc[mat_ids].mean(axis=0)
+#         - df_vt_rel.filter(like="pred").loc[mat_ids].mean(axis=0)
 #     ).mean()
 # )
 
@@ -106,16 +107,15 @@ for df, model_name, linestyle in zip(
     # )
     # df = df.query("~contains_rare_earths")
 
-    df["e_above_hull"] = df_hull.e_above_hull
-    df = df.dropna(subset=["e_above_hull"])
-    tar = df.e_above_hull.to_numpy().ravel()
+    df["e_above_mp_hull"] = df_hull.e_above_mp_hull
+    df = df.dropna(subset=["e_above_mp_hull"])
+    tar = df.e_above_mp_hull.to_numpy().ravel()
 
     tar_f = df.filter(like="target").to_numpy().ravel()
 
-    pred = df.filter(like="pred").to_numpy().T
-    mean = np.average(pred, axis=0) - tar_f + tar
+    mean = df.filter(like="pred").mean(axis=0) - tar_f + tar
 
-    # epistemic_std = np.var(pred, axis=0, ddof=0)
+    # epistemic_std = df.filter(like="pred").var(axis=0, ddof=0)
     # aleatoric_std = np.mean(np.square(df.filter(like="ale")), axis=0)
 
     # full_std = np.sqrt(epistemic_std + aleatoric_std)

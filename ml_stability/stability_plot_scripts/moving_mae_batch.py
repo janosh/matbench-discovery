@@ -32,7 +32,7 @@ df_hull = pd.read_csv(
     f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
 ).set_index("material_id")
 
-df_wbm["e_above_hull"] = df_hull.e_above_hull
+df_wbm["e_above_mp_hull"] = df_hull.e_above_mp_hull
 
 
 # %%
@@ -46,20 +46,18 @@ markers = [
     "D",
     # "",
 ]
-df_wbm = df_wbm.dropna(subset=["e_above_hull"])
+df_wbm = df_wbm.dropna(subset=["e_above_mp_hull"])
 
 for i, m in enumerate(markers):
     offsets = 1
     title = f"Batch-{i+offsets}"
 
     df = df_wbm[df_wbm.index.str.contains(f"wbm-step-{i+offsets}")]
-    tar = df.e_above_hull.to_numpy().ravel()
+    tar = df.e_above_mp_hull.to_numpy().ravel()
 
     tar_f = df.filter(like="target").to_numpy().ravel()
 
-    pred = df.filter(like="pred").to_numpy().T
-    # mean = np.average(pred, axis=0)
-    mean = np.average(pred, axis=0) - tar_f + tar
+    mean = df.filter(like="pred").mean(axis=0) - tar_f + tar
 
     res = np.abs(mean - tar)
 
