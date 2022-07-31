@@ -2,6 +2,7 @@
 from datetime import datetime
 
 import pandas as pd
+from tqdm import tqdm
 
 from ml_stability import ROOT
 
@@ -36,18 +37,18 @@ df_wbm.reset_index().to_json(
 
 
 # %% 2022-07-18 also increment material_ids in wbm-e-above-mp-hull.csv
-for filename in (
-    # "wbm-e-above-mp-hull",
-    # "wren-mp-initial-structures",
-    # "cgcnn-mp-initial-structures",
-    # "voronoi-mp-initial-structures",
+for filename in tqdm(
+    "wbm-e-above-mp-hull",
+    "wren-mp-initial-structures",
+    "cgcnn-mp-initial-structures",
+    "voronoi-mp-initial-structures",
     "wren-mp-cse",
     "cgcnn-mp-cse",
     "voronoi-mp-cse",
 ):
     file_path = f"{ROOT}/data/2022-06-11-from-rhys/{filename}.csv"
 
-    df = pd.read_csv(file_path)
+    df = pd.read_csv(file_path).round(5)
 
     df["material_id"] = df.material_id.map(increment_wbm_material_id)
 
