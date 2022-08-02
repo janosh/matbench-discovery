@@ -45,25 +45,20 @@ df_wren = pd.read_csv(
 
 
 # %% Find MAD Voronoi
-# mat_ids = list(
-#     set(df_vt_pre.material_id.to_list()).intersection(df_vt_rel.material_id.to_list())
-# )
-
-# df_vt_pre = df_vt_pre.set_index("material_id")
-# df_vt_rel = df_vt_rel.set_index("material_id")
-
-# print(
-#     np.abs(
-#         df_vt_pre.filter(like="pred").loc[mat_ids].mean(axis=0)
-#         - df_vt_rel.filter(like="pred").loc[mat_ids].mean(axis=0)
-#     ).mean()
-# )
-# print(
-#     (
-#         df_vt_pre.filter(like="pred").loc[mat_ids].mean(axis=0)
-#         - df_vt_rel.filter(like="pred").loc[mat_ids].mean(axis=0)
-#     ).mean()
-# )
+print(
+    (
+        df_vt_pre.filter(like="pred").mean(axis=0)
+        - df_vt_rel.filter(like="pred").mean(axis=0)
+    )
+    .abs()
+    .mean()
+)
+print(
+    (
+        df_vt_pre.filter(like="pred").mean(axis=0)
+        - df_vt_rel.filter(like="pred").mean(axis=0)
+    ).mean()
+)
 
 
 # %%
@@ -73,7 +68,7 @@ df_hull = pd.read_csv(
 
 fig, ax = plt.subplots(1, figsize=(10, 9))
 
-for df, model_name, linestyle in zip(
+for df, model_name, line_style in zip(
     # (df_wren, df_vt_pre, df_vt_rel, df_cgcnn_pre, df_cgcnn_dis, df_cgcnn_rel),
     # (
     #     "Wren (This Work)",
@@ -108,25 +103,25 @@ for df, model_name, linestyle in zip(
     # df = df.query("~contains_rare_earths")
 
     df["e_above_mp_hull"] = df_hull.e_above_mp_hull
-    df = df.dropna(subset=["e_above_mp_hull"])
-    tar = df.e_above_mp_hull.to_numpy().ravel()
+    assert df.e_above_mp_hull.isna().sum() == 0
+    e_above_mp_hull = df.e_above_mp_hull
 
-    tar_f = df.filter(like="target").to_numpy().ravel()
+    target_col = "e_form_target"
 
-    mean = df.filter(like="pred").mean(axis=0) - tar_f + tar
+    mean = df.filter(like="pred").mean(axis=1) - df[target_col] + e_above_mp_hull
 
-    # epistemic_std = df.filter(like="pred").var(axis=0, ddof=0)
-    # aleatoric_std = np.mean(np.square(df.filter(like="ale")), axis=0)
+    # epistemic_var = df.filter(like="pred").var(axis=1, ddof=0)
+    # aleatoric_var = (df.filter(like="ale") ** 2).mean(axis=1)
 
-    # full_std = np.sqrt(epistemic_std + aleatoric_std)
+    # full_std = (epistemic_var + aleatoric_var) ** 0.5
 
-    res = mean - tar
+    res = mean - e_above_mp_hull
 
     half_window = 0.02
     increment = 0.002
-    bot, top = -0.2, 0.38
-    # bot, top = -0.2, 0.3
-    bins = np.arange(bot, top, increment)
+    bottom, top = -0.2, 0.38
+    # bottom, top = -0.2, 0.3
+    bins = np.arange(bottom, top, increment)
 
     means = np.zeros_like(bins)
     std = np.zeros_like(bins)
@@ -135,18 +130,26 @@ for df, model_name, linestyle in zip(
         low = b - half_window
         high = b + half_window
 
-        means[j] = np.mean(np.abs(res[np.argwhere((tar <= high) & (tar > low))]))
-        std[j] = std_err_of_mean(np.abs(res[np.argwhere((tar <= high) & (tar > low))]))
+        means[j] = np.mean(
+            np.abs(
+                res[np.argwhere((e_above_mp_hull <= high) & (e_above_mp_hull > low))]
+            )
+        )
+        std[j] = std_err_of_mean(
+            np.abs(
+                res[np.argwhere((e_above_mp_hull <= high) & (e_above_mp_hull > low))]
+            )
+        )
 
     print(model_name)
-    print(f"  MAE: {abs(res).mean():.4f}")
-    print(f"  Min E: {means.min():.4f}")
+    print(f"  MAE: {abs(res).mean():.3f}")
+    print(f"  Min E: {means.min():.3f}")
 
-    ax.plot(bins, means, linestyle=linestyle, label=model_name)
+    ax.plot(bins, means, linestyle=line_style, label=model_name)
 
     ax.fill_between(bins, means + std, means - std, alpha=0.3)
 
-scalebar = AnchoredSizeBar(
+scale_bar = AnchoredSizeBar(
     ax.transData,
     2 * half_window,
     "40 meV",
@@ -158,7 +161,7 @@ scalebar = AnchoredSizeBar(
     size_vertical=0.003,
 )
 
-ax.add_artist(scalebar)
+ax.add_artist(scale_bar)
 
 ax.plot((0.05, 0.5), (0.05, 0.5), color="grey", linestyle="--", alpha=0.3)
 ax.plot((-0.5, -0.05), (0.5, 0.05), color="grey", linestyle="--", alpha=0.3)
@@ -169,7 +172,7 @@ ax.plot((0, 0.05), (0, 0.05), color="grey", linestyle="--", alpha=0.3)
 ax.plot((-0.05, 0), (0.05, 0), color="grey", linestyle="--", alpha=0.3)
 
 ax.set(xlabel=r"$\Delta E_{Hull-MP}$ / eV per atom", ylabel="MAE / eV per atom")
-ax.set(xlim=(bot, top), ylim=(0.0, 0.14))
+ax.set(xlim=(bottom, top), ylim=(0.0, 0.14))
 
 ax.legend(
     frameon=False,
@@ -179,9 +182,7 @@ ax.legend(
     # edgecolor="white",
 )
 
-
-plt.savefig(f"{PKG_DIR}/plots/{today}-moving-error-wbm-{rare}-compare.pdf")
-# plt.savefig(f"{PKG_DIR}/plots/{today}-moving-error-wbm-{rare}-compare.png")
-# plt.savefig(f"examples/plots/pdf/moving-error-wbm-{rare}-all.png")
+img_path = f"{PKG_DIR}/plots/{today}-moving-error-wbm-{rare=}-compare.pdf"
+plt.savefig(img_path)
 
 plt.show()

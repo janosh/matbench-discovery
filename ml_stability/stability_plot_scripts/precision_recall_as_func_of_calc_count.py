@@ -21,12 +21,13 @@ plt.rc("figure", dpi=150, titlesize=20)
 
 
 # %%
-fig, ax = plt.subplots(1, 1, figsize=(10, 9))
-
 df_hull = pd.read_csv(
     f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
 ).set_index("material_id")
 
+
+# %%
+fig, ax = plt.subplots(1, 1, figsize=(10, 9))
 
 for model_name, color in zip(
     # ["wren", "cgcnn", "cgcnn-d"],
@@ -41,8 +42,9 @@ for model_name, color in zip(
 
     df["e_above_mp_hull"] = df_hull.e_above_mp_hull
 
-    df = df.dropna(subset=["e_above_mp_hull"])
+    assert df.e_above_mp_hull.isna().sum() == 0
 
+    target_col = "e_form_target"
     rare = "all"
 
     # from pymatgen.core import Composition
@@ -52,19 +54,16 @@ for model_name, color in zip(
     # )
     # df = df.query("~contains_rare_earths")
 
-    e_above_mp_hull = df.e_above_mp_hull.to_numpy().ravel()
+    e_above_mp_hull = df.e_above_mp_hull
 
-    # tar = df[tar_cols].to_numpy().ravel() - e_hull
-    tar_f = df.filter(like="target").to_numpy().ravel()
+    # mean = df.filter(like="pred").mean(axis=1) - e_hull
+    mean = df.filter(like="pred").mean(axis=1) - df[target_col] + e_above_mp_hull
 
-    # mean = np.average(pred, axis=0) - e_hull
-    mean = df.filter(like="pred").mean(axis=1) - tar_f + e_above_mp_hull
+    # epistemic_var = df.filter(like="pred").var(axis=1, ddof=0)
 
-    # epistemic_std = np.var(pred, axis=0, ddof=0)
+    # aleatoric_var = (df.filter(like="ale") ** 2).mean(axis=1)
 
-    aleatoric_std = (df.filter(like="ale") ** 2).mean(axis=0) ** 0.5
-
-    # full_std = np.sqrt(epistemic_std + aleatoric_std)
+    # full_std = (epistemic_var + aleatoric_var) ** 0.5
 
     # crit = "std"
     # test = mean + full_std
@@ -85,29 +84,24 @@ for model_name, color in zip(
     xticks = (-0.4, -0.2, 0, 0.2, 0.4)
     # yticks = (0, 300, 600, 900, 1200)
 
-    tp = len(e_above_mp_hull[(e_above_mp_hull <= thresh) & (mean <= thresh)])
-    fn = len(e_above_mp_hull[(e_above_mp_hull <= thresh) & (mean > thresh)])
+    n_true_pos = len(e_above_mp_hull[(e_above_mp_hull <= thresh) & (mean <= thresh)])
+    n_false_neg = len(e_above_mp_hull[(e_above_mp_hull <= thresh) & (mean > thresh)])
 
-    pos = tp + fn
+    n_total_pos = n_true_pos + n_false_neg
 
     sort = np.argsort(mean)
     e_above_mp_hull = e_above_mp_hull[sort]
     mean = mean[sort]
 
     e_type = "pred"
-    tp = np.asarray((e_above_mp_hull <= thresh) & (mean <= thresh))
-    fn = np.asarray((e_above_mp_hull <= thresh) & (mean > thresh))
-    fp = np.asarray((e_above_mp_hull > thresh) & (mean <= thresh))
-    tn = np.asarray((e_above_mp_hull > thresh) & (mean > thresh))
+    true_pos_cumsum = ((e_above_mp_hull <= thresh) & (mean <= thresh)).cumsum()
+    false_neg_cumsum = ((e_above_mp_hull <= thresh) & (mean > thresh)).cumsum()
+    false_pos_cumsum = ((e_above_mp_hull > thresh) & (mean <= thresh)).cumsum()
+    true_neg_cumsum = ((e_above_mp_hull > thresh) & (mean > thresh)).cumsum()
     xlabel = r"$\Delta E_{Hull-Pred}$ / eV per atom"
 
-    c_tp = np.cumsum(tp)
-    c_fn = np.cumsum(fn)
-    c_fp = np.cumsum(fp)
-    c_tn = np.cumsum(tn)
-
-    ppv = c_tp / (c_tp + c_fp) * 100
-    tpr = c_tp / pos * 100
+    ppv = true_pos_cumsum / (true_pos_cumsum + false_pos_cumsum) * 100
+    tpr = true_pos_cumsum / n_total_pos * 100
 
     end = np.argmax(tpr)
 

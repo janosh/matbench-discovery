@@ -7,7 +7,7 @@ import pandas as pd
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from scipy.stats import sem as std_err_of_mean
 
-from ml_stability import ROOT
+from ml_stability import PKG_DIR, ROOT
 
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
@@ -24,7 +24,9 @@ plt.rc("figure", dpi=150, titlesize=20)
 # %%
 markers = ["o", "v", "^", "H", "D", ""]
 
-df = pd.read_csv(f"{ROOT}/data/wren-mp-initial-structures.csv").set_index("material_id")
+df = pd.read_csv(
+    f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
+).set_index("material_id")
 
 
 # %%
@@ -37,52 +39,51 @@ rare = "all"
 # df = df.query("~contains_rare_earths")
 
 
-df_hull = pd.read_csv(f"{ROOT}/data/wbm-e-above-mp-hull.csv").set_index("material_id")
+df_hull = pd.read_csv(
+    f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
+).set_index("material_id")
 
 df["e_above_mp_hull"] = df_hull.e_above_mp_hull
 
-df = df.dropna(subset=["e_above_mp_hull"])
+assert df.e_above_mp_hull.isna().sum() == 0
 
-tar = df.e_above_mp_hull.to_numpy().ravel()
+e_above_mp_hull = df.e_above_mp_hull
+target_col = "e_form_target"
 
-tar_f = df.filter(like="target").to_numpy().ravel()
 
-pred = df.filter(like="pred").to_numpy().T
-mean = np.average(pred, axis=0) - tar_f + tar
+mean = df.filter(like="pred").mean(axis=1) - df[target_col] + e_above_mp_hull
 
-res = mean - tar
+residual = mean - e_above_mp_hull
 
-sort = np.argsort(tar)
+sort = np.argsort(e_above_mp_hull)
 
-tar = tar[sort]
-res = res[sort]
+e_above_mp_hull = e_above_mp_hull[sort]
+residual = residual[sort]
 
 half_window = 0.02
 increment = 0.002
-bot, top = -0.2, 0.3
-bins = np.arange(bot, top, increment)
+bottom, top = -0.2, 0.3
+bins = np.arange(bottom, top, increment)
 
-means = np.zeros_like(bins)
-std = np.zeros_like(bins)
+rolling_means = np.zeros_like(bins)
+rolling_stds = np.zeros_like(bins)
 
 for j, b in enumerate(bins):
     low = b - half_window
     high = b + half_window
 
-    means[j] = np.mean(np.abs(res[np.argwhere((tar <= high) & (tar > low))]))
-    std[j] = std_err_of_mean(np.abs(res[np.argwhere((tar <= high) & (tar > low))]))
+    mask = (e_above_mp_hull <= high) & (e_above_mp_hull > low)
+    rolling_means[j] = residual.iloc[mask.values].abs().mean()
+    rolling_stds[j] = std_err_of_mean(np.abs(residual.iloc[mask.values]))
 fig, ax = plt.subplots(1, figsize=(10, 9))
 
-ax.plot(bins, means)
+ax.plot(bins, rolling_means)
 
 ax.fill_between(
-    bins,
-    means + std,
-    means - std,
-    alpha=0.3,
+    bins, rolling_means + rolling_stds, rolling_means - rolling_stds, alpha=0.3
 )
 
-scalebar = AnchoredSizeBar(
+scale_bar = AnchoredSizeBar(
     ax.transData,
     2 * half_window,
     "40 meV",
@@ -92,10 +93,9 @@ scalebar = AnchoredSizeBar(
     # color="white",
     frameon=False,
     size_vertical=0.003,
-    # fontproperties=fontprops,
 )
 
-ax.add_artist(scalebar)
+ax.add_artist(scale_bar)
 
 ax.plot((0.05, 0.5), (0.05, 0.5), color="grey", linestyle="--", alpha=0.3)
 ax.plot((-0.5, -0.05), (0.5, 0.05), color="grey", linestyle="--", alpha=0.3)
@@ -117,10 +117,11 @@ ax.fill_between(
     (-0.05, 0, 0.05), (0.05, 0.05, 0.05), (0.05, 0, 0.05), color="tab:orange", alpha=0.2
 )
 
+arrowprops = dict(facecolor="black", width=0.5, headwidth=5, headlength=5)
 ax.annotate(
     xy=(0.055, 0.05),
     xytext=(0.12, 0.05),
-    arrowprops=dict(facecolor="black", shrink=0.05),
+    arrowprops=arrowprops,
     text="Corrected\nGGA DFT\nAccuracy",
     verticalalignment="center",
     horizontalalignment="left",
@@ -128,21 +129,19 @@ ax.annotate(
 ax.annotate(
     xy=(0.105, 0.1),
     xytext=(0.16, 0.1),
-    arrowprops=dict(facecolor="black", shrink=0.05),
+    arrowprops=arrowprops,
     text="GGA DFT\nAccuracy",
     verticalalignment="center",
     horizontalalignment="left",
 )
 
-ineq = r"|$\Delta E_{Hull-MP}$| > MAE"
-
-ax.text(0, 0.13, ineq, horizontalalignment="center")
+ax.text(0, 0.13, r"$|\Delta E_{Hull-MP}| > $MAE", horizontalalignment="center")
 
 ax.set(xlabel=r"$\Delta E_{Hull-MP}$ / eV per atom", ylabel="MAE / eV per atom")
 
-ax.set(xlim=(bot, top), ylim=(0.0, 0.14))
+ax.set(xlim=(bottom, top), ylim=(0.0, 0.14))
 
-
-# plt.savefig(f"{PKG_DIR}/plots/{today}-moving-error-wbm-{rare}.pdf")
+img_path = f"{PKG_DIR}/plots/{today}-moving-error-wbm-{rare=}.pdf"
+# plt.savefig(img_path)
 
 plt.show()

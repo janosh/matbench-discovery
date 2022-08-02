@@ -10,6 +10,17 @@ from ml_stability import PKG_DIR, ROOT
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
 
+"""
+Histogram of the energy difference (either according to DFT ground truth [default] or
+model predicted energy) to the convex hull for materials in the WBM data set. The
+histogram is broken down into true positives, false negatives, false positives, and true
+negatives based on whether the model predicts candidates to be below the known convex
+hull. Ideally, in discovery setting a model should exhibit high recall, i.e. the
+majority of materials below the convex hull being correctly identified by the model.
+
+See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
+"""
+
 today = f"{datetime.now():%Y-%m-%d}"
 
 plt.rc("font", size=18)
@@ -20,8 +31,11 @@ plt.rc("figure", dpi=150, titlesize=20)
 
 # %%
 df = pd.read_csv(
-    # f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
-    f"{ROOT}/data/2022-07-07-m3gnet-wbm-relax-results.json.gz"
+    f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
+).set_index("material_id")
+
+df = pd.read_json(
+    f"{ROOT}/data/2022-07-17@20-27-m3gnet-wbm-relax-results.json.gz"
 ).set_index("material_id")
 
 df_hull = pd.read_csv(
@@ -31,50 +45,56 @@ df_hull = pd.read_csv(
 df["e_above_mp_hull"] = df_hull.e_above_mp_hull
 
 
+df_summary = pd.read_csv(f"{ROOT}/data/wbm-steps-summary.csv", comment="#").set_index(
+    "material_id"
+)
+
+
 # %%
-df = df.dropna(subset=["e_above_mp_hull"])
+assert df.e_above_mp_hull.isna().sum() == 0
 
 rare = "all"
 target_col = "e_form_target"
 
 
-pred_mean = df.filter(like="pred").mean(axis=1)
-std_epistemic = df.filter(like="pred").std(axis=1, ddof=0)
-
-mean = pred_mean - df[target_col] + df.e_above_mp_hull
-
-
 std_aleatoric = (df.filter(like="ale") ** 2).mean(axis=1) ** 0.5
+std_epistemic = df.filter(like="pred").std(axis=1, ddof=0)
 
 std_total = (std_epistemic**2 + std_aleatoric**2) ** 0.5
 
+crit = "ene"
+error = df.filter(like="pred").mean(axis=1) - df[target_col]
+test = error + df.e_above_mp_hull
+
 # crit = "std"
-# test = mean + both
+# test += std_total
 
 # crit = "neg"
-# test = mean - both
-
-crit = "ene"
-test = mean
+# test -= std_total
 
 xlim = (-0.4, 0.4)
 
-thresh = 0.00
-# thresh = 0.10
+# set stability threshold at on or 0.1 eV / atom above the hull
+stability_thresh = (0, 0.1)[0]
 xticks = (-0.4, -0.2, 0, 0.2, 0.4)
 # yticks = (0, 300, 600, 900, 1200)
 
-tp = len(df.e_above_mp_hull[(df.e_above_mp_hull <= thresh) & (test <= thresh)])
-fn = len(df.e_above_mp_hull[(df.e_above_mp_hull <= thresh) & (test > thresh)])
-
-pos = tp + fn
-null = pos / len(df.e_above_mp_hull)
-
 e_type = "true"
-tp = df.e_above_mp_hull[(df.e_above_mp_hull <= thresh) & (test <= thresh)]
-fn = df.e_above_mp_hull[(df.e_above_mp_hull <= thresh) & (test > thresh)]
-fp = df.e_above_mp_hull[(df.e_above_mp_hull > thresh) & (test <= thresh)]
-tn = df.e_above_mp_hull[(df.e_above_mp_hull > thresh) & (test > thresh)]
+actual_pos = df.e_above_mp_hull <= stability_thresh
+actual_neg = df.e_above_mp_hull > stability_thresh
+model_pos = test <= stability_thresh
+model_neg = test > stability_thresh
+
+n_true_pos = len(df.e_above_mp_hull[actual_pos & model_pos])
+n_false_neg = len(df.e_above_mp_hull[actual_pos & model_neg])
+
+n_total_pos = n_true_pos + n_false_neg
+null = n_total_pos / len(df.e_above_mp_hull)
+
+true_pos = df.e_above_mp_hull[actual_pos & model_pos]
+false_neg = df.e_above_mp_hull[actual_pos & model_neg]
+false_pos = df.e_above_mp_hull[actual_neg & model_pos]
+true_neg = df.e_above_mp_hull[actual_neg & model_neg]
 xlabel = r"$\Delta E_{Hull-MP}$ / eV per atom"
 
 
@@ -87,29 +107,29 @@ xlabel = r"$\Delta E_{Hull-MP}$ / eV per atom"
 fig, ax = plt.subplots(1, 1, figsize=(10, 9))
 
 ax.hist(
-    [tp, fn, fp, tn],
+    [true_pos, false_neg, false_pos, true_neg],
     bins=200,
     range=xlim,
     alpha=0.5,
     color=["tab:green", "tab:orange", "tab:red", "tab:blue"],
-    label=[
-        "True Positives",
-        "False Negatives",
-        "False Positives",
-        "True Negatives",
-    ],
+    label=["True Positives", "False Negatives", "False Positives", "True Negatives"],
     stacked=True,
 )
 
 ax.legend(frameon=False, loc="upper left")
 
-tp, fp, tn, fn = len(tp), len(fp), len(tn), len(fn)
+true_pos, false_pos, true_neg, false_neg = (
+    len(true_pos),
+    len(false_pos),
+    len(true_neg),
+    len(false_neg),
+)
 # null = (tp + fn) / (tp + tn + fp + fn)
-ppv = tp / (tp + fp)
-tpr = tp / pos
+ppv = true_pos / (true_pos + false_pos)
+tpr = true_pos / n_total_pos
 f1 = 2 * ppv * tpr / (ppv + tpr)
 
-assert sum([tp, fp, tn, fn]) == len(df)
+assert sum([true_pos, false_pos, true_neg, false_neg]) == len(df)
 
 print(f"PPV: {ppv:.2f}")
 print(f"TPR: {tpr:.2f}")
@@ -117,10 +137,10 @@ print(f"F1: {f1:.2f}")
 print(f"Enrich: {ppv/null:.2f}")
 print(f"Null: {null:.2f}")
 
-RMSE = ((mean - df[target_col]) ** 2.0).mean() ** 0.5
-MAE = (mean - df[target_col]).abs().mean()
-print(f"{MAE=:.4}")
-print(f"{RMSE=:.4}")
+RMSE = (error**2.0).mean() ** 0.5
+MAE = error.abs().mean()
+print(f"{MAE=:.3}")
+print(f"{RMSE=:.3}")
 
 ylim = (0, 6000)
 yticks = (0, 2000, 4000, 6000)
@@ -143,7 +163,6 @@ xpos, ypos = 0.90 * xlim[0], 0.96 * ylim[1]
 
 ax.set(xticks=xticks, yticks=yticks)
 ax.set(xlabel=xlabel, ylabel="Number of Compounds")
-# else:
 # ax.get_yaxis().set_ticklabels([])
 
 ax.set(xlim=xlim, ylim=ylim)

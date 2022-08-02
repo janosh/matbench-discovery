@@ -38,28 +38,22 @@ df_wbm["e_above_mp_hull"] = df_hull.e_above_mp_hull
 # %%
 fig, ax = plt.subplots(1, figsize=(10, 9))
 
-markers = [
-    "o",
-    "v",
-    "^",
-    "H",
-    "D",
-    # "",
-]
-df_wbm = df_wbm.dropna(subset=["e_above_mp_hull"])
+markers = ["o", "v", "^", "H", "D"]
+
+assert df_wbm.e_above_mp_hull.isna().sum() == 0
 
 for i, m in enumerate(markers):
     offsets = 1
     title = f"Batch-{i+offsets}"
 
     df = df_wbm[df_wbm.index.str.contains(f"wbm-step-{i+offsets}")]
-    tar = df.e_above_mp_hull.to_numpy().ravel()
+    e_above_mp_hull = df.e_above_mp_hull
 
-    tar_f = df.filter(like="target").to_numpy().ravel()
+    target_col = "e_form_target"
 
-    mean = df.filter(like="pred").mean(axis=0) - tar_f + tar
+    mean = df.filter(like="pred").mean(axis=1) - df[target_col] + e_above_mp_hull
 
-    res = np.abs(mean - tar)
+    res = np.abs(mean - e_above_mp_hull)
 
     # sort = np.argsort(tar)
 
@@ -73,7 +67,7 @@ for i, m in enumerate(markers):
     half_window = 0.02
     increment = 0.002
     bottom, top = -0.2, 0.3
-    # bot, top = -0.2, 0.6
+    # bottom, top = -0.2, 0.6
     bins = np.arange(bottom, top, increment)
 
     means = np.zeros_like(bins)
@@ -84,7 +78,9 @@ for i, m in enumerate(markers):
         low = b - half_window
         high = b + half_window
 
-        means[j] = np.mean(res[np.argwhere((tar <= high) & (tar > low))])
+        means[j] = np.mean(
+            res[np.argwhere((e_above_mp_hull <= high) & (e_above_mp_hull > low))]
+        )
         # medians[j] = np.median(res[np.argwhere((tar <= high) & (tar > low))])
         # quant[j] = np.nanquantile(res[np.argwhere((tar <= high) & (tar > low))], 0.9)
 
@@ -104,7 +100,7 @@ for i, m in enumerate(markers):
     # ax.plot(bins, quant, label=title)
 
 
-scalebar = AnchoredSizeBar(
+scale_bar = AnchoredSizeBar(
     ax.transData,
     2 * half_window,
     "40 meV",
@@ -114,10 +110,9 @@ scalebar = AnchoredSizeBar(
     # color="white",
     frameon=False,
     size_vertical=0.003,
-    # fontproperties=fontprops,
 )
 
-ax.add_artist(scalebar)
+ax.add_artist(scale_bar)
 
 ax.plot((0.05, 0.5), (0.05, 0.5), color="grey", linestyle="--", alpha=0.3)
 ax.plot((-0.5, -0.05), (0.5, 0.05), color="grey", linestyle="--", alpha=0.3)
@@ -171,9 +166,8 @@ ax.legend(
 #     xycoords="axes fraction",
 # )
 
-
-plt.savefig(f"{PKG_DIR}/plots/{today}-moving-error-wbm-{rare}-batches.pdf")
-# plt.savefig(f"{PKG_DIR}/plots/{today}-moving-error-wbm-{rare}-batches.pdf")
+img_path = f"{PKG_DIR}/plots/{today}-moving-error-wbm-{rare=}-batches.pdf"
+# plt.savefig(img_path)
 
 
 plt.show()
