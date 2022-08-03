@@ -5,7 +5,9 @@ import warnings
 from datetime import datetime
 from typing import Any
 
+import m3gnet
 import pandas as pd
+import tensorflow as tf
 from m3gnet.models import Relaxer
 from pymatgen.core import Structure
 from tqdm import tqdm
@@ -35,6 +37,9 @@ warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen"
 warnings.filterwarnings(action="ignore", category=UserWarning, module="tensorflow")
 
 timestamp = f"{datetime.now():%Y-%m-%d@%H-%M}"
+relax_results: dict[str, dict[str, Any]] = {}
+
+print(f"Using M3GNet {m3gnet.__version__} version")
 
 
 # %%
@@ -44,23 +49,30 @@ df_wbm = pd.read_json(
 
 
 # %%
-relax_results = []
+tf.config.list_physical_devices()
+
+
+# %%
 relaxer = Relaxer()  # This loads the default pre-trained M3GNet model
 
 try:
-    for row in tqdm(df_wbm.itertuples(), total=len(df_wbm)):
-        init_struct = row.initial_structure
+    for material_id, init_struct in tqdm(
+        df_wbm.initial_structure.items(), total=len(df_wbm)
+    ):
+        if material_id in relax_results:
+            continue
         pmg_struct = Structure.from_dict(init_struct)
         relax_result = relaxer.relax(pmg_struct)
         relax_dict = {
-            "material_id": row.Index,
             "final_structure": relax_result["final_structure"],
             "trajectory": relax_result["trajectory"].__dict__,
         }
+        # remove non-serializable AseAtoms from trajectory
         relax_dict["trajectory"].pop("atoms")
-        relax_results.append(relax_dict)
+        relax_results[material_id] = relax_dict
+
 except KeyboardInterrupt:
-    pass  # make long-running loop ctrl+c interruptible
+    print("Interrupted")  # make long-running loop ctrl+c interruptible
 
 
 # %%
@@ -71,15 +83,28 @@ def default_handler(obj: Any) -> dict[str, Any] | None:
         return None  # replace ASE atoms with None since they aren't JSON serializable
 
 
-df_relax_results = pd.DataFrame(relax_results)
+df_relax_results = pd.DataFrame(relax_results).T
+df_relax_results.index.name = "material_id"
 df_relax_results.to_json(
-    f"{ROOT}/data/{timestamp}-m3gnet_wbm_relax_results.json.gz",
+    f"{ROOT}/data/{timestamp}-m3gnet-wbm-relax-results.json.gz",
     default_handler=default_handler,
 )
 
 
-# df_results = pd.read_json(
-#     f"{ROOT}/data/{timestamp}-m3gnet_wbm_relax_results.json.gz"
-# ).set_index("material_id")
+# %% merge previous and new results
+df_results_old = pd.read_json(
+    f"{ROOT}/data/2022-07-17@20-27-m3gnet-wbm-relax-results.json.gz"
+).set_index("material_id")
+df_results_new = pd.read_json(
+    f"{ROOT}/data/2022-08-02@16-59-m3gnet-wbm-relax-results.json.gz"
+).set_index("material_id")
 
-# pd.json_normalize(df_results.trajectory)
+df_results_new = pd.concat([df_results_old, df_results_new])
+
+df_results_new.index.name = "material_id"
+
+
+# WARNING: overwrites original file, make sure new df is as desired
+df_results_new.reset_index().to_json(
+    f"{ROOT}/data/2022-08-02@16-59-m3gnet-wbm-relax-results.json.gz"
+)
