@@ -8,11 +8,14 @@ from typing import Any
 import m3gnet
 import pandas as pd
 import tensorflow as tf
+from diel_frontier.patched_phase_diagram import load_ppd
 from m3gnet.models import Relaxer
+from pymatgen.analysis.phase_diagram import PDEntry
 from pymatgen.core import Structure
 from tqdm import tqdm
 
 from ml_stability import ROOT
+from ml_stability.plots.plot_funcs import hist_classify_stable_as_func_of_hull_dist
 
 
 """
@@ -83,28 +86,77 @@ def default_handler(obj: Any) -> dict[str, Any] | None:
         return None  # replace ASE atoms with None since they aren't JSON serializable
 
 
-df_relax_results = pd.DataFrame(relax_results).T
-df_relax_results.index.name = "material_id"
-df_relax_results.to_json(
+df_m3gnet = pd.DataFrame(relax_results).T
+df_m3gnet.index.name = "material_id"
+df_m3gnet.to_json(
     f"{ROOT}/data/{timestamp}-m3gnet-wbm-relax-results.json.gz",
     default_handler=default_handler,
 )
 
 
-# %% merge previous and new results
+# %% 2022-08-03 --- merge previous and new results
 df_results_old = pd.read_json(
     f"{ROOT}/data/2022-07-17@20-27-m3gnet-wbm-relax-results.json.gz"
 ).set_index("material_id")
-df_results_new = pd.read_json(
+df_m3gnet = pd.read_json(
     f"{ROOT}/data/2022-08-02@16-59-m3gnet-wbm-relax-results.json.gz"
 ).set_index("material_id")
 
-df_results_new = pd.concat([df_results_old, df_results_new])
+df_m3gnet = pd.concat([df_results_old, df_m3gnet])
 
-df_results_new.index.name = "material_id"
+df_m3gnet.index.name = "material_id"
 
 
 # WARNING: overwrites original file, make sure new df is as desired
-df_results_new.reset_index().to_json(
-    f"{ROOT}/data/2022-08-02@16-59-m3gnet-wbm-relax-results.json.gz"
+out_file = "2022-08-02@16-59-m3gnet-wbm-relax-results-with-e_form-and-pd_entry.json.gz"
+df_m3gnet.reset_index().to_json(f"{ROOT}/data/{out_file}")
+
+
+# %%
+df_m3gnet["m3gnet_structure"] = df_m3gnet.final_structure.map(Structure.from_dict)
+df_m3gnet["m3gnet_energy"] = df_m3gnet.trajectory.map(lambda x: x["energies"][-1][0])
+
+
+ppd_mp_wbm = load_ppd("ppd-mp+wbm-2022-01-25.pkl.gz")
+
+
+df_m3gnet["pd_entry"] = [
+    PDEntry(row.m3gnet_structure.composition, row.m3gnet_energy)
+    for row in df_m3gnet.itertuples()
+]
+df_m3gnet["e_form_m3gnet"] = df_m3gnet.pd_entry.map(ppd_mp_wbm.get_form_energy_per_atom)
+
+
+df_m3gnet.hist(bins=80, figsize=(22, 5), layout=(1, 3))
+df_m3gnet.isna().sum()
+
+
+# %%
+df_hull = pd.read_csv(
+    f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
+).set_index("material_id")
+
+df_m3gnet["e_above_mp_hull"] = df_hull.e_above_mp_hull
+
+df_summary = pd.read_csv(f"{ROOT}/data/wbm-steps-summary.csv", comment="#").set_index(
+    "material_id"
+)
+
+df_m3gnet["e_form_wbm"] = df_summary.e_form
+
+
+# %%
+df_m3gnet.hist(bins=80, figsize=(18, 12))
+df_m3gnet.isna().sum()
+
+
+# %%
+ax_hull_dist_hist = hist_classify_stable_as_func_of_hull_dist(
+    formation_energy_targets=df_m3gnet.e_form_wbm,
+    formation_energy_preds=df_m3gnet.e_form_m3gnet,
+    e_above_hull_vals=df_m3gnet.e_above_mp_hull,
+)
+
+ax_hull_dist_hist.figure.savefig(
+    f"{ROOT}/data/2022-08-02@16-59-m3gnet-wbm-hull-dist-hist.pdf"
 )
