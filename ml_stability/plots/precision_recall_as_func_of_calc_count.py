@@ -65,13 +65,13 @@ for model_name, color in zip(
 
     # full_std = (epistemic_var + aleatoric_var) ** 0.5
 
-    # crit = "std"
+    # criterion = "std"
     # test = mean + full_std
 
-    # crit = "neg"
+    # criterion = "neg"
     # test = mean - full_std
 
-    crit = "ene"
+    criterion = "energy"
 
     bins = 200
     # xlim = (-0.2, 0.2)
@@ -132,5 +132,5 @@ ax.add_artist(legend_1)
 [recall] = ax.plot((0, 0), (0, 0), "black", linestyle=":")
 ax.legend([prec, recall], ["Precision", "Recall"], frameon=False, loc="upper right")
 
-img_path = f"{PKG_DIR}/plots/{today}-vary-{e_type=}-{crit=}-{rare=}.pdf"
+img_path = f"{PKG_DIR}/plots/{today}-vary-{e_type=}-{criterion=}-{rare=}.pdf"
 # plt.savefig(img_path)

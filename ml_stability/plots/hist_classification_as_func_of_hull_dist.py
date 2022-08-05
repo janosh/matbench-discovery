@@ -34,10 +34,6 @@ df = pd.read_csv(
     f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
 ).set_index("material_id")
 
-df = pd.read_json(
-    f"{ROOT}/data/2022-07-17@20-27-m3gnet-wbm-relax-results.json.gz"
-).set_index("material_id")
-
 df_hull = pd.read_csv(
     f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
 ).set_index("material_id")
@@ -56,20 +52,20 @@ assert df.e_above_mp_hull.isna().sum() == 0
 rare = "all"
 target_col = "e_form_target"
 
+var_aleatoric = (df.filter(like="ale") ** 2).mean(axis=1)
+var_epistemic = df.filter(like="pred").var(axis=1, ddof=0)
 
-std_aleatoric = (df.filter(like="ale") ** 2).mean(axis=1) ** 0.5
-std_epistemic = df.filter(like="pred").std(axis=1, ddof=0)
+std_total = (var_epistemic + var_aleatoric) ** 0.5
 
-std_total = (std_epistemic**2 + std_aleatoric**2) ** 0.5
-
-crit = "ene"
+criterion = "energy"
 error = df.filter(like="pred").mean(axis=1) - df[target_col]
-test = error + df.e_above_mp_hull
+mean = error + df.e_above_mp_hull
 
-# crit = "std"
+test = mean
+# criterion = "std"
 # test += std_total
 
-# crit = "neg"
+# criterion = "neg"
 # test -= std_total
 
 xlim = (-0.4, 0.4)
@@ -79,6 +75,7 @@ stability_thresh = (0, 0.1)[0]
 xticks = (-0.4, -0.2, 0, 0.2, 0.4)
 # yticks = (0, 300, 600, 900, 1200)
 
+# --- histogram by DFT-computed distance to convex hull
 e_type = "true"
 actual_pos = df.e_above_mp_hull <= stability_thresh
 actual_neg = df.e_above_mp_hull > stability_thresh
@@ -98,11 +95,12 @@ true_neg = df.e_above_mp_hull[actual_neg & model_neg]
 xlabel = r"$\Delta E_{Hull-MP}$ / eV per atom"
 
 
+# --- histogram by model-predicted distance to convex hull
 # e_type = "pred"
-# tp = mean[(tar <= thresh) & (test <= thresh)]
-# fn = mean[(tar <= thresh) & (test > thresh)]
-# fp = mean[(tar > thresh) & (test <= thresh)]
-# tn = mean[(tar > thresh) & (test > thresh)]
+# true_pos = mean[actual_pos & model_pos]
+# false_neg = mean[actual_pos & model_neg]
+# false_pos = mean[actual_neg & model_pos]
+# true_neg = mean[actual_neg & model_neg]
 # xlabel = r"$\Delta E_{Hull-Pred}$ / eV per atom"
 fig, ax = plt.subplots(1, 1, figsize=(10, 9))
 
@@ -118,18 +116,18 @@ ax.hist(
 
 ax.legend(frameon=False, loc="upper left")
 
-true_pos, false_pos, true_neg, false_neg = (
+n_true_pos, n_false_pos, n_true_neg, n_false_neg = (
     len(true_pos),
     len(false_pos),
     len(true_neg),
     len(false_neg),
 )
 # null = (tp + fn) / (tp + tn + fp + fn)
-ppv = true_pos / (true_pos + false_pos)
-tpr = true_pos / n_total_pos
+ppv = n_true_pos / (n_true_pos + n_false_pos)
+tpr = n_true_pos / n_total_pos
 f1 = 2 * ppv * tpr / (ppv + tpr)
 
-assert sum([true_pos, false_pos, true_neg, false_neg]) == len(df)
+assert n_true_pos + n_false_pos + n_true_neg + n_false_neg == len(df)
 
 print(f"PPV: {ppv:.2f}")
 print(f"TPR: {tpr:.2f}")
@@ -170,5 +168,5 @@ ax.set(xlim=xlim, ylim=ylim)
 
 # NOTE this figure plots hist bars separately which causes aliasing in pdf
 # to resolve this take into Inkscape and merge regions by color
-img_path = f"{PKG_DIR}/plots/{today}-hist-{e_type=}-{crit=}-{rare=}.pdf"
+img_path = f"{PKG_DIR}/plots/{today}-hist-{e_type=}-{criterion=}-{rare=}.pdf"
 # plt.savefig(img_path)
