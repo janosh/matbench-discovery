@@ -20,10 +20,9 @@ See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
 """
 
 
-plt.rc("font", size=18)
 plt.rc("savefig", bbox="tight", dpi=200)
 plt.rcParams["figure.constrained_layout.use"] = True
-plt.rc("figure", dpi=150, titlesize=20)
+plt.rc("figure", dpi=150)
 
 
 def hist_classify_stable_as_func_of_hull_dist(
