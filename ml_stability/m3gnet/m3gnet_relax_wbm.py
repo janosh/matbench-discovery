@@ -14,7 +14,7 @@ from pymatgen.analysis.phase_diagram import PDEntry
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from ml_stability import ROOT
+from ml_stability import ROOT, as_dict_handler
 from ml_stability.plots.plot_funcs import hist_classify_stable_as_func_of_hull_dist
 
 
@@ -36,11 +36,13 @@ pip install m3gnet
 __author__ = "Janosh Riebesell"
 __date__ = "2022-06-18"
 
+
 warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
 warnings.filterwarnings(action="ignore", category=UserWarning, module="tensorflow")
 
-timestamp = f"{datetime.now():%Y-%m-%d@%H-%M}"
-relax_results: dict[str, dict[str, Any]] = {}
+today = f"{datetime.now():%Y-%m-%d}"
+finished_ids: list[str] = []
+relax_results: dict[str, dict[str, Any] | None] = dict.fromkeys(finished_ids, None)
 
 print(f"Using M3GNet {m3gnet.__version__} version")
 
@@ -79,27 +81,27 @@ except KeyboardInterrupt:
 
 
 # %%
-def default_handler(obj: Any) -> dict[str, Any] | None:
-    try:
-        return obj.as_dict()
-    except AttributeError:
-        return None  # replace ASE atoms with None since they aren't JSON serializable
+pd.Series(list(relax_results)).to_json(f"{ROOT}/data/{today}-finished-ids.json")
+finished_ids = list(
+    pd.read_json(f"{ROOT}/data/2022-08-12-finished-ids.json", typ="series")
+)
 
 
+# %%
 df_m3gnet = pd.DataFrame(relax_results).T
 df_m3gnet.index.name = "material_id"
 df_m3gnet.to_json(
-    f"{ROOT}/data/{timestamp}-m3gnet-wbm-relax-results.json.gz",
-    default_handler=default_handler,
+    f"{ROOT}/data/{today}-m3gnet-wbm-relax-results.json.gz",
+    default_handler=as_dict_handler,
 )
 
 
 # %% 2022-08-03 --- merge previous and new results
 df_results_old = pd.read_json(
-    f"{ROOT}/data/2022-07-17@20-27-m3gnet-wbm-relax-results.json.gz"
+    f"{ROOT}/data/2022-07-17-m3gnet-wbm-relax-results.json.gz"
 ).set_index("material_id")
 df_m3gnet = pd.read_json(
-    f"{ROOT}/data/2022-08-02@16-59-m3gnet-wbm-relax-results.json.gz"
+    f"{ROOT}/data/2022-08-13-m3gnet-wbm-relax-results.json.gz"
 ).set_index("material_id")
 
 df_m3gnet = pd.concat([df_results_old, df_m3gnet])
@@ -108,7 +110,7 @@ df_m3gnet.index.name = "material_id"
 
 
 # WARNING: overwrites original file, make sure new df is as desired
-out_file = "2022-08-02@16-59-m3gnet-wbm-relax-results-with-e_form-and-pd_entry.json.gz"
+out_file = "2022-08-02-m3gnet-wbm-relax-results-with-e_form-and-pd_entry.json.gz"
 df_m3gnet.reset_index().to_json(f"{ROOT}/data/{out_file}")
 
 
@@ -125,10 +127,6 @@ df_m3gnet["pd_entry"] = [
     for row in df_m3gnet.itertuples()
 ]
 df_m3gnet["e_form_m3gnet"] = df_m3gnet.pd_entry.map(ppd_mp_wbm.get_form_energy_per_atom)
-
-
-df_m3gnet.hist(bins=80, figsize=(22, 5), layout=(1, 3))
-df_m3gnet.isna().sum()
 
 
 # %%
@@ -158,5 +156,5 @@ ax_hull_dist_hist = hist_classify_stable_as_func_of_hull_dist(
 )
 
 ax_hull_dist_hist.figure.savefig(
-    f"{ROOT}/data/2022-08-02@16-59-m3gnet-wbm-hull-dist-hist.pdf"
+    f"{ROOT}/data/2022-08-02-m3gnet-wbm-hull-dist-hist.pdf"
 )
