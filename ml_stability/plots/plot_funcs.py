@@ -3,6 +3,7 @@ from typing import Literal
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib.offsetbox import AnchoredText
 
 
 __author__ = "Janosh Riebesell"
@@ -23,6 +24,7 @@ See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
 plt.rc("savefig", bbox="tight", dpi=200)
 plt.rcParams["figure.constrained_layout.use"] = True
 plt.rc("figure", dpi=150)
+plt.rc("font", size=14)
 
 
 def hist_classify_stable_as_func_of_hull_dist(
@@ -34,6 +36,7 @@ def hist_classify_stable_as_func_of_hull_dist(
     std_vals: pd.Series = None,
     criterion: Literal["energy", "std", "neg"] = "energy",
     energy_type: Literal["true", "pred"] = "true",
+    annotate_all_stats: bool = False,
 ) -> plt.Axes:
     """
     Histogram of the energy difference (either according to DFT ground truth [default]
@@ -77,7 +80,6 @@ def hist_classify_stable_as_func_of_hull_dist(
     n_false_neg = len(e_above_hull_vals[actual_pos & model_neg])
 
     n_total_pos = n_true_pos + n_false_neg
-    null = n_total_pos / len(e_above_hull_vals)
 
     # --- histogram by DFT-computed distance to convex hull
     if energy_type == "true":
@@ -121,29 +123,35 @@ def hist_classify_stable_as_func_of_hull_dist(
         len(false_neg),
     )
     # null = (tp + fn) / (tp + tn + fp + fn)
-    ppv = n_true_pos / (n_true_pos + n_false_pos)
-    tpr = n_true_pos / n_total_pos
-    f1 = 2 * ppv * tpr / (ppv + tpr)
+    Null = n_total_pos / len(e_above_hull_vals)
+    PPV = n_true_pos / (n_true_pos + n_false_pos)
+    TPR = n_true_pos / n_total_pos
+    F1 = 2 * PPV * TPR / (PPV + TPR)
 
     assert n_true_pos + n_false_pos + n_true_neg + n_false_neg == len(
         formation_energy_targets
     )
 
-    print(f"PPV: {ppv:.2f}")
-    print(f"TPR: {tpr:.2f}")
-    print(f"F1: {f1:.2f}")
-    print(f"Enrich: {ppv/null:.2f}")
-    print(f"Null: {null:.2f}")
-
     RMSE = (error**2.0).mean() ** 0.5
     MAE = error.abs().mean()
-    print(f"{MAE=:.3}")
-    print(f"{RMSE=:.3}")
 
     # anno_text = f"Prevalence = {null:.2f}\nPrecision = {ppv:.2f}\nRecall = {tpr:.2f}",
-    anno_text = f"Enrichment\nFactor = {ppv/null:.1f}"
+    anno_text = f"Enrichment Factor = {PPV/Null:.3}"
+    if annotate_all_stats:
+        anno_text += f"\n{MAE = :.3}\n{RMSE = :.3}\n{Null = :.3}\n{TPR = :.3}"
+    else:
+        print(f"{PPV = :.3}")
+        print(f"{TPR = :.3}")
+        print(f"{F1 = :.3}")
+        print(f"Enrich: {PPV/Null:.2f}")
+        print(f"{Null = :.3}")
+        print(f"{MAE = :.3}")
+        print(f"{RMSE = :.3}")
 
-    ax.text(0.75, 0.9, anno_text, transform=ax.transAxes, fontsize=20)
+    text_box = AnchoredText(
+        anno_text, loc="upper right", frameon=False, prop=dict(fontsize=16)
+    )
+    ax.add_artist(text_box)
 
     ax.set(
         xlabel=xlabel,

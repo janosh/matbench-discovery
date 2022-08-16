@@ -9,7 +9,6 @@ from glob import glob
 from urllib.request import urlopen
 
 import pandas as pd
-from diel_frontier.patched_phase_diagram import load_ppd
 from pymatgen.analysis.phase_diagram import PDEntry
 from pymatgen.core import Structure
 from tqdm import tqdm
@@ -64,8 +63,6 @@ ppd_pickle_url = "https://figshare.com/ndownloader/files/36669624"
 zipped_file = urlopen(ppd_pickle_url)
 ppd_mp_wbm = pickle.load(io.BytesIO(gzip.decompress(zipped_file.read())))
 
-ppd_mp_wbm = load_ppd("ppd-mp+wbm-2022-01-25.pkl.gz")
-
 
 df_m3gnet["m3gnet_structure"] = df_m3gnet.m3gnet_structure.map(Structure.from_dict)
 df_m3gnet["pd_entry"] = [
@@ -102,4 +99,6 @@ ax_hull_dist_hist = hist_classify_stable_as_func_of_hull_dist(
     e_above_hull_vals=df_m3gnet.e_above_mp_hull,
 )
 
-ax_hull_dist_hist.figure.savefig(f"{ROOT}/data/{today}-m3gnet-wbm-hull-dist-hist.pdf")
+ax_hull_dist_hist.figure.savefig(
+    f"{ROOT}/ml_stability/m3gnet/plots/{today}-m3gnet-wbm-hull-dist-hist.pdf"
+)
