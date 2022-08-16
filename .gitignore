@@ -3,24 +3,17 @@
 
 # cache
 __pycache__
-.mypy
-.db_cache
-
-# Fireworks config
-/FW_config.yaml
-
-# Atomate workflow output
-fw_logs
-block*
-launcher*
 
 # datasets
 *.json.gz
 *.json.bz2
 *.csv.bz2
 
-# data files
-*.pkl*
-
 # checkpoint files of trained models
-pretrained
+pretrained/
+
+# Weights and Biases logs
+wandb/
+
+# slurm logs
+slurm-*out

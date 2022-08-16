@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from os.path import dirname
 from typing import Any, Generator, Sequence
