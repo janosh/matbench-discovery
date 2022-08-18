@@ -18,6 +18,7 @@ today = f"{datetime.now():%Y-%m-%d}"
 plt.rc("savefig", bbox="tight", dpi=200)
 plt.rcParams["figure.constrained_layout.use"] = True
 plt.rc("figure", dpi=150)
+plt.rc("font", size=16)
 
 
 # %%
@@ -46,40 +47,36 @@ df["e_above_mp_hull"] = df_hull.e_above_mp_hull
 
 assert df.e_above_mp_hull.isna().sum() == 0
 
-e_above_mp_hull = df.e_above_mp_hull
 target_col = "e_form_target"
+df["e_above_mp_hull_mean"] = (
+    df.filter(like="pred").mean(axis=1) - df[target_col] + df.e_above_mp_hull
+)
+
+df["residual"] = df.e_above_mp_hull_mean - df.e_above_mp_hull
 
 
-mean = df.filter(like="pred").mean(axis=1) - df[target_col] + e_above_mp_hull
-
-residual = mean - e_above_mp_hull
-
-sort = np.argsort(e_above_mp_hull)
-
-e_above_mp_hull = e_above_mp_hull[sort]
-residual = residual[sort]
-
+# %%
 half_window = 0.02
 increment = 0.002
 bottom, top = -0.2, 0.3
 bins = np.arange(bottom, top, increment)
 
-rolling_means = np.zeros_like(bins)
+rolling_maes = np.zeros_like(bins)
 rolling_stds = np.zeros_like(bins)
+df = df.sort_values(by="e_above_mp_hull")
+for idx, bin_center in enumerate(bins):
+    low = bin_center - half_window
+    high = bin_center + half_window
 
-for j, b in enumerate(bins):
-    low = b - half_window
-    high = b + half_window
+    mask = (df.e_above_mp_hull <= high) & (df.e_above_mp_hull > low)
+    rolling_maes[idx] = df.residual.loc[mask].abs().mean()
+    rolling_stds[idx] = std_err_of_mean(df.residual.loc[mask].abs())
 
-    mask = (e_above_mp_hull <= high) & (e_above_mp_hull > low)
-    rolling_means[j] = residual.iloc[mask.values].abs().mean()
-    rolling_stds[j] = std_err_of_mean(np.abs(residual.iloc[mask.values]))
-fig, ax = plt.subplots(1, figsize=(10, 9))
-
-ax.plot(bins, rolling_means)
+_, ax = plt.subplots(1, figsize=(10, 9))
+ax.plot(bins, rolling_maes)
 
 ax.fill_between(
-    bins, rolling_means + rolling_stds, rolling_means - rolling_stds, alpha=0.3
+    bins, rolling_maes + rolling_stds, rolling_maes - rolling_stds, alpha=0.3
 )
 
 scale_bar = AnchoredSizeBar(

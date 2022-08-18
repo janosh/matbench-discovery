@@ -103,18 +103,19 @@ for df, model_name, line_style in zip(
 
     df["e_above_mp_hull"] = df_hull.e_above_mp_hull
     assert df.e_above_mp_hull.isna().sum() == 0
-    e_above_mp_hull = df.e_above_mp_hull
 
     target_col = "e_form_target"
 
-    mean = df.filter(like="pred").mean(axis=1) - df[target_col] + e_above_mp_hull
+    df["e_above_mp_hull_mean"] = (
+        df.filter(like="pred").mean(axis=1) - df[target_col] + df.e_above_mp_hull
+    )
 
     # epistemic_var = df.filter(like="pred").var(axis=1, ddof=0)
     # aleatoric_var = (df.filter(like="ale") ** 2).mean(axis=1)
 
     # full_std = (epistemic_var + aleatoric_var) ** 0.5
 
-    res = mean - e_above_mp_hull
+    df["residual"] = df.e_above_mp_hull_mean - df.e_above_mp_hull
 
     half_window = 0.02
     increment = 0.002
@@ -122,31 +123,29 @@ for df, model_name, line_style in zip(
     # bottom, top = -0.2, 0.3
     bins = np.arange(bottom, top, increment)
 
-    means = np.zeros_like(bins)
-    std = np.zeros_like(bins)
+    rolling_maes = np.zeros_like(bins)
+    rolling_mae_stds = np.zeros_like(bins)
 
-    for j, b in enumerate(bins):
-        low = b - half_window
-        high = b + half_window
+    for idx, bin_center in enumerate(bins):
+        low = bin_center - half_window
+        high = bin_center + half_window
 
-        means[j] = np.mean(
-            np.abs(
-                res[np.argwhere((e_above_mp_hull <= high) & (e_above_mp_hull > low))]
-            )
-        )
-        std[j] = std_err_of_mean(
-            np.abs(
-                res[np.argwhere((e_above_mp_hull <= high) & (e_above_mp_hull > low))]
-            )
-        )
+        mask = (df.e_above_mp_hull <= high) & (df.e_above_mp_hull > low)
+        rolling_maes[idx] = df.residual[mask].abs().mean()
+        rolling_mae_stds[idx] = std_err_of_mean(df.residual[mask].abs())
 
     print(model_name)
-    print(f"  MAE: {abs(res).mean():.3f}")
-    print(f"  Min E: {means.min():.3f}")
+    print(f"  MAE: {abs(df.residual).mean():.3f}")
+    print(f"  Min E: {rolling_maes.min():.3f}")
 
-    ax.plot(bins, means, linestyle=line_style, label=model_name)
+    ax.plot(bins, rolling_maes, linestyle=line_style, label=model_name)
 
-    ax.fill_between(bins, means + std, means - std, alpha=0.3)
+    ax.fill_between(
+        bins,
+        rolling_maes + rolling_mae_stds,
+        rolling_maes - rolling_mae_stds,
+        alpha=0.3,
+    )
 
 scale_bar = AnchoredSizeBar(
     ax.transData,
@@ -182,6 +181,6 @@ ax.legend(
 )
 
 img_path = f"{PKG_DIR}/plots/{today}-moving-error-wbm-{rare=}-compare.pdf"
-plt.savefig(img_path)
+# plt.savefig(img_path)
 
 plt.show()

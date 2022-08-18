@@ -32,34 +32,28 @@ df_hull = pd.read_csv(
 ).set_index("material_id")
 
 df_wbm["e_above_mp_hull"] = df_hull.e_above_mp_hull
+assert df_wbm.e_above_mp_hull.isna().sum() == 0
+
+target_col = "e_form_target"
+
+df_wbm["e_above_mp_hull_mean"] = (
+    df_wbm.filter(like="pred").mean(axis=1)
+    - df_wbm[target_col]
+    + df_wbm.e_above_mp_hull
+)
+df_wbm["error"] = abs(df_wbm.e_above_mp_hull_mean - df_wbm.e_above_mp_hull)
 
 
 # %%
 fig, ax = plt.subplots(1, figsize=(10, 9))
+markers = ("o", "v", "^", "H", "D")
+assert len(markers) == 5  # number of WBM round of element substitution
 
-markers = ["o", "v", "^", "H", "D"]
-
-assert df_wbm.e_above_mp_hull.isna().sum() == 0
-
-for i, m in enumerate(markers):
+for idx, marker in enumerate(markers):
     offsets = 1
-    title = f"Batch-{i+offsets}"
+    title = f"Batch-{idx+offsets}"
 
-    df = df_wbm[df_wbm.index.str.contains(f"wbm-step-{i+offsets}")]
-    e_above_mp_hull = df.e_above_mp_hull
-
-    target_col = "e_form_target"
-
-    mean = df.filter(like="pred").mean(axis=1) - df[target_col] + e_above_mp_hull
-
-    res = np.abs(mean - e_above_mp_hull)
-
-    # sort = np.argsort(tar)
-
-    # tar = tar[sort]
-    # res = res[sort]
-
-    # tar = mean
+    df = df_wbm[df_wbm.index.str.contains(f"wbm-step-{idx+offsets}")]
 
     # half_window = 0.1
     # half_window = 0.01
@@ -73,23 +67,23 @@ for i, m in enumerate(markers):
     medians = np.zeros_like(bins)
     quant = np.zeros_like(bins)
 
-    for j, b in enumerate(bins):
-        low = b - half_window
-        high = b + half_window
+    for jdx, bin_center in enumerate(bins):
+        low = bin_center - half_window
+        high = bin_center + half_window
 
-        means[j] = np.mean(
-            res[np.argwhere((e_above_mp_hull <= high) & (e_above_mp_hull > low))]
-        )
-        # medians[j] = np.median(res[np.argwhere((tar <= high) & (tar > low))])
-        # quant[j] = np.nanquantile(res[np.argwhere((tar <= high) & (tar > low))], 0.9)
+        mask = (df.e_above_mp_hull <= high) & (df.e_above_mp_hull > low)
+
+        means[jdx] = df.error[mask].mean()
+        # medians[jdx] = df.error[mask].median()
+        # quant[jdx] = np.nanquantile(df.error[mask], 0.9)
 
     ax.plot(
         bins,
         means,
         label=title,
-        marker=m,
+        marker=marker,
         markevery=20,
-        markersize=8 if m == "D" else 10,
+        markersize=8 if marker == "D" else 10,
         # fillstyle="none",
         fillstyle="full",
         markerfacecolor="white",
@@ -104,7 +98,7 @@ scale_bar = AnchoredSizeBar(
     2 * half_window,
     "40 meV",
     "lower left",
-    pad=0,
+    pad=1,
     borderpad=0.3,
     # color="white",
     frameon=False,

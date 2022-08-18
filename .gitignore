@@ -5,6 +5,7 @@
 __pycache__
 
 # datasets
+*.p
 *.json.gz
 *.json.bz2
 *.csv.bz2
