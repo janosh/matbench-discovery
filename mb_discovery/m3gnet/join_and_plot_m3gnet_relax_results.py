@@ -24,18 +24,34 @@ today = f"{datetime.now():%Y-%m-%d}"
 
 # %%
 glob_pattern = "2022-08-16-m3gnet-wbm-relax-results/*.json.gz"
-file_paths = glob(f"{ROOT}/data/{glob_pattern}")
+file_paths = sorted(glob(f"{ROOT}/data/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
-
 dfs: dict[str, pd.DataFrame] = {}
+
+
+# %%
 # 2022-08-16 tried multiprocessing.Pool() to load files in parallel but was somehow
 # slower than serial loading
 for file_path in tqdm(file_paths):
     if file_path in dfs:
         continue
     try:
-        dfs[file_path] = pd.read_json(file_path)
+        # keep whole dataframe in memory
+        df = pd.read_json(file_path)
+        df.index = df.index.str.replace("_", "-")
+        df.index.name = "material_id"
+        col_map = dict(
+            final_structure="m3gnet_structure", trajectory="m3gnet_trajectory"
+        )
+        df = df.rename(columns=col_map)
+        df.reset_index().to_json(file_path)
+        df["m3gnet_energy"] = df.m3gnet_trajectory.map(lambda x: x["energies"][-1][0])
+        df["m3gnet_structure"] = df.m3gnet_structure.map(Structure.from_dict)
+        df["formula"] = df.m3gnet_structure.map(lambda x: x.formula)
+        df["volume"] = df.m3gnet_structure.map(lambda x: x.volume)
+        df["n_sites"] = df.m3gnet_structure.map(len)
+        dfs[file_path] = df.drop(columns=["m3gnet_trajectory"])
     except (ValueError, FileNotFoundError):
         # pandas v1.5+ correctly raises FileNotFoundError, below raises ValueError
         continue
@@ -43,15 +59,8 @@ for file_path in tqdm(file_paths):
 
 # %%
 df_m3gnet = pd.concat(dfs.values())
-df_m3gnet.index.name = "material_id"
 if any(df_m3gnet.index.str.contains("_")):
     df_m3gnet.index = df_m3gnet.index.str.replace("_", "-")
-
-df_m3gnet = df_m3gnet.rename(
-    columns=dict(final_structure="m3gnet_structure", trajectory="m3gnet_trajectory")
-)
-
-df_m3gnet["m3gnet_energy"] = df_m3gnet.trajectory.map(lambda x: x["energies"][-1][0])
 
 
 # %%
@@ -64,12 +73,13 @@ ppd_mp_wbm: PatchedPhaseDiagram = pickle.load(
 )
 
 
-df_m3gnet["m3gnet_structure"] = df_m3gnet.m3gnet_structure.map(Structure.from_dict)
-df_m3gnet["pd_entry"] = [
+pd_entries_m3gnet = [
     PDEntry(row.m3gnet_structure.composition, row.m3gnet_energy)
     for row in df_m3gnet.itertuples()
 ]
-df_m3gnet["e_form_m3gnet"] = df_m3gnet.pd_entry.map(ppd_mp_wbm.get_form_energy_per_atom)
+df_m3gnet["e_form_m3gnet"] = [
+    ppd_mp_wbm.get_form_energy_per_atom(x) for x in pd_entries_m3gnet
+]
 
 
 # %%
@@ -80,11 +90,27 @@ df_hull = pd.read_csv(
 df_m3gnet["e_above_mp_hull"] = df_hull.e_above_mp_hull
 
 
-df_summary = pd.read_csv(f"{ROOT}/data/wbm-steps-summary.csv", comment="#").set_index(
-    "material_id"
-)
+df_wbm = pd.read_csv(  # download wbm-steps-summary.csv (23.31 MB)
+    "https://figshare.com/ndownloader/files/36714216?private_link=ff0ad14505f9624f0c05"
+).set_index("material_id")
 
-df_m3gnet["e_form_wbm"] = df_summary.e_form
+df_m3gnet["e_form_wbm"] = df_wbm.e_form
+df_m3gnet["wbm_energy"] = df_wbm.energy
+
+pd_entries_wbm = [
+    PDEntry(row.m3gnet_structure.composition, row.wbm_energy)
+    for row in df_m3gnet.itertuples()
+]
+df_m3gnet["e_form_ppd_2022_01_25"] = [
+    ppd_mp_wbm.get_form_energy_per_atom(x) for x in pd_entries_wbm
+]
+
+
+df_m3gnet.filter(like="e_form").plot.scatter(x="e_form_m3gnet", y="e_form_wbm")
+df_m3gnet.filter(like="e_form").plot.scatter(
+    x="e_form_m3gnet", y="e_form_ppd_2022_01_25"
+)
+df_m3gnet.filter(like="e_form").plot.scatter(x="e_form_wbm", y="e_form_ppd_2022_01_25")
 
 
 # %%
@@ -94,14 +120,12 @@ df_m3gnet.isna().sum()
 
 # %%
 out_path = f"{ROOT}/data/{today}-m3gnet-wbm-relax-results.json.gz"
-df_m3gnet.drop(columns=["pd_entry"]).reset_index().to_json(
-    out_path, default_handler=as_dict_handler
-)
+df_m3gnet.reset_index().to_json(out_path, default_handler=as_dict_handler)
 
 
 # %%
 ax_hull_dist_hist = hist_classify_stable_as_func_of_hull_dist(
-    formation_energy_targets=df_m3gnet.e_form_wbm,
+    formation_energy_targets=df_m3gnet.e_form_ppd,
     formation_energy_preds=df_m3gnet.e_form_m3gnet,
     e_above_hull_vals=df_m3gnet.e_above_mp_hull,
 )
