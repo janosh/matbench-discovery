@@ -4,7 +4,7 @@ from datetime import datetime
 import pandas as pd
 from tqdm import tqdm
 
-from ml_stability import ROOT
+from mb_discovery import ROOT
 
 
 """

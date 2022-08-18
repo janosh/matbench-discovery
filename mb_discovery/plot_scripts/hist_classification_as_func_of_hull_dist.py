@@ -4,7 +4,7 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from ml_stability import PKG_DIR, ROOT
+from mb_discovery import ROOT
 
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
@@ -134,7 +134,7 @@ print(f"F1: {f1:.2f}")
 print(f"Enrich: {ppv/null:.2f}")
 print(f"Null: {null:.2f}")
 
-RMSE = (error**2.0).mean() ** 0.5
+RMSE = (error**2).mean() ** 0.5
 MAE = error.abs().mean()
 print(f"{MAE=:.3}")
 print(f"{RMSE=:.3}")
@@ -167,5 +167,5 @@ ax.set(xlim=xlim, ylim=ylim)
 
 # NOTE this figure plots hist bars separately which causes aliasing in pdf
 # to resolve this take into Inkscape and merge regions by color
-img_path = f"{PKG_DIR}/plots/{today}-hist-{e_type=}-{criterion=}-{rare=}.pdf"
+img_path = f"{ROOT}/figures/{today}-hist-{e_type=}-{criterion=}-{rare=}.pdf"
 # plt.savefig(img_path)

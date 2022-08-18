@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 
-from ml_stability import PKG_DIR, ROOT
+from mb_discovery import ROOT
 
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
@@ -159,7 +159,7 @@ ax.legend(
 #     xycoords="axes fraction",
 # )
 
-img_path = f"{PKG_DIR}/plots/{today}-moving-error-wbm-{rare=}-batches.pdf"
+img_path = f"{ROOT}/figures/{today}-moving-hull-dist-mae-wbm-batches-{rare=}.pdf"
 # plt.savefig(img_path)
 
 

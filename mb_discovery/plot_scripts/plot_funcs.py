@@ -132,7 +132,7 @@ def hist_classify_stable_as_func_of_hull_dist(
         formation_energy_targets
     )
 
-    RMSE = (error**2.0).mean() ** 0.5
+    RMSE = (error**2).mean() ** 0.5
     MAE = error.abs().mean()
 
     # anno_text = f"Prevalence = {null:.2f}\nPrecision = {ppv:.2f}\nRecall = {tpr:.2f}",

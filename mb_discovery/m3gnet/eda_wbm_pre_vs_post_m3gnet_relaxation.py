@@ -4,9 +4,11 @@ from datetime import datetime
 import pandas as pd
 import plotly.express as px
 import plotly.io as pio
+from pymatgen.core import Structure
+from pymatgen.util.coord import pbc_diff
 from pymatviz.utils import add_identity_line
 
-from ml_stability import ROOT
+from mb_discovery import ROOT
 
 
 __author__ = "Janosh Riebesell"
@@ -113,3 +115,62 @@ px.histogram(
     barmode="overlay",
     opacity=0.5,
 )
+
+
+# %%
+df_m3gnet["final_m3gnet_structure"] = df_m3gnet.final_structure.map(Structure.from_dict)
+df_m3gnet["initial_wbm_structure"] = df_m3gnet.initial_wbm_structure.map(
+    Structure.from_dict
+)
+df_m3gnet["final_wbm_structure"] = df_m3gnet.final_wbm_structure.map(
+    Structure.from_dict
+)
+
+
+df_m3gnet["m3gnet_pbc_diffs"] = [
+    abs(
+        pbc_diff(
+            row.initial_wbm_structure.frac_coords,
+            row.final_m3gnet_structure.frac_coords,
+        )
+    ).mean()
+    for row in df_m3gnet.itertuples()
+]
+
+
+df_m3gnet["wbm_pbc_diffs"] = [
+    abs(
+        pbc_diff(
+            row.initial_wbm_structure.frac_coords,
+            row.final_wbm_structure.frac_coords,
+        )
+    ).mean()
+    for row in df_m3gnet.itertuples()
+]
+
+df_m3gnet["m3gnet_to_final_wbm_pbc_diffs"] = [
+    abs(
+        pbc_diff(
+            row.final_m3gnet_structure.frac_coords,
+            row.final_wbm_structure.frac_coords,
+        )
+    ).mean()
+    for row in df_m3gnet.itertuples()
+]
+
+
+print(
+    "mean PBC difference of fractional coordinates before vs after relaxation with WBM "
+    "and M3GNet"
+)
+
+wbm_pbc_diffs_mean = df_m3gnet.wbm_pbc_diffs.mean()
+print(f"{wbm_pbc_diffs_mean = :.3}")
+
+m3gnet_pbc_diffs_mean = df_m3gnet.m3gnet_pbc_diffs.mean()
+print(f"{m3gnet_pbc_diffs_mean = :.3}")
+
+m3gnet_to_final_wbm_pbc_diffs_mean = df_m3gnet.m3gnet_to_final_wbm_pbc_diffs.mean()
+print(f"{m3gnet_to_final_wbm_pbc_diffs_mean = :.3}")
+
+print(f"{wbm_pbc_diffs_mean / m3gnet_pbc_diffs_mean = :.3}")

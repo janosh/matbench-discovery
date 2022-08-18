@@ -7,7 +7,7 @@ import pandas as pd
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from scipy.stats import sem as std_err_of_mean
 
-from ml_stability import PKG_DIR, ROOT
+from mb_discovery import ROOT
 
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
@@ -137,7 +137,7 @@ ax.set(xlabel=r"$\Delta E_{Hull-MP}$ / eV per atom", ylabel="MAE / eV per atom")
 
 ax.set(xlim=(bottom, top), ylim=(0.0, 0.14))
 
-img_path = f"{PKG_DIR}/plots/{today}-moving-error-wbm-{rare=}.pdf"
+img_path = f"{ROOT}/figures/{today}-moving-hull-dist-mae-{rare=}.pdf"
 # plt.savefig(img_path)
 
 plt.show()

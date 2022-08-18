@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import os
-from os.path import dirname
 from typing import Any, Generator, Sequence
 
 
-PKG_DIR = dirname(__file__)
-ROOT = dirname(PKG_DIR)
+PKG_DIR = os.path.dirname(__file__)
+ROOT = os.path.dirname(PKG_DIR)
 
 os.makedirs(f"{PKG_DIR}/plots", exist_ok=True)
 

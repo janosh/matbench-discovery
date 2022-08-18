@@ -9,12 +9,14 @@ from glob import glob
 from urllib.request import urlopen
 
 import pandas as pd
-from pymatgen.analysis.phase_diagram import PDEntry
+from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram, PDEntry
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from ml_stability import ROOT
-from ml_stability.plots.plot_funcs import hist_classify_stable_as_func_of_hull_dist
+from mb_discovery import ROOT, as_dict_handler
+from mb_discovery.plot_scripts.plot_funcs import (
+    hist_classify_stable_as_func_of_hull_dist,
+)
 
 
 today = f"{datetime.now():%Y-%m-%d}"
@@ -53,15 +55,13 @@ df_m3gnet["m3gnet_energy"] = df_m3gnet.trajectory.map(lambda x: x["energies"][-1
 
 
 # %%
-out_file = f"{today}-m3gnet-wbm-relax-results.json.gz"
-df_m3gnet.reset_index().to_json(f"{ROOT}/data/{out_file}")
-
-
-# %%
 # 2022-01-25-ppd-mp+wbm.pkl.gz (235 MB)
 ppd_pickle_url = "https://figshare.com/ndownloader/files/36669624"
 zipped_file = urlopen(ppd_pickle_url)
-ppd_mp_wbm = pickle.load(io.BytesIO(gzip.decompress(zipped_file.read())))
+
+ppd_mp_wbm: PatchedPhaseDiagram = pickle.load(
+    io.BytesIO(gzip.decompress(zipped_file.read()))
+)
 
 
 df_m3gnet["m3gnet_structure"] = df_m3gnet.m3gnet_structure.map(Structure.from_dict)
@@ -93,12 +93,17 @@ df_m3gnet.isna().sum()
 
 
 # %%
+out_path = f"{ROOT}/data/{today}-m3gnet-wbm-relax-results.json.gz"
+df_m3gnet.drop(columns=["pd_entry"]).reset_index().to_json(
+    out_path, default_handler=as_dict_handler
+)
+
+
+# %%
 ax_hull_dist_hist = hist_classify_stable_as_func_of_hull_dist(
     formation_energy_targets=df_m3gnet.e_form_wbm,
     formation_energy_preds=df_m3gnet.e_form_m3gnet,
     e_above_hull_vals=df_m3gnet.e_above_mp_hull,
 )
 
-ax_hull_dist_hist.figure.savefig(
-    f"{ROOT}/ml_stability/m3gnet/plots/{today}-m3gnet-wbm-hull-dist-hist.pdf"
-)
+# ax_hull_dist_hist.figure.savefig(f"{ROOT}/plots/{today}-m3gnet-wbm-hull-dist-hist.pdf")

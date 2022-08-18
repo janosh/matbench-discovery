@@ -9,11 +9,11 @@ from typing import Any
 import m3gnet
 import numpy as np
 import pandas as pd
+import wandb
 from m3gnet.models import Relaxer
 from pymatgen.core import Structure
 
-import wandb
-from ml_stability import ROOT, as_dict_handler
+from mb_discovery import ROOT, as_dict_handler
 
 
 """
@@ -22,8 +22,8 @@ To slurm submit this file, use
 ```sh
 sbatch --partition icelake-himem --account LEE-SL3-CPU --array 1-100 \
     --time 3:0:0 --job-name m3gnet-wbm-relax --mem 12000 \
-    --output ml_stability/m3gnet/slurm_logs/slurm-%A-%a.out \
-    --wrap "python ml_stability/m3gnet/slurm_array_m3gnet_relax_wbm.py"
+    --output mb_discovery/m3gnet/slurm_logs/slurm-%A-%a.out \
+    --wrap "python mb_discovery/m3gnet/slurm_array_m3gnet_relax_wbm.py"
 ```
 
 --time 2h is probably enough but missing indices are annoying so best be safe.
