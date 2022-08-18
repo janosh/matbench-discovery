@@ -46,16 +46,16 @@ df_wren = pd.read_csv(
 # %% Find MAD Voronoi
 print(
     (
-        df_vt_pre.filter(like="pred").mean(axis=0)
-        - df_vt_rel.filter(like="pred").mean(axis=0)
+        df_vt_pre.filter(regex=r"_pred_\d").mean(axis=0)
+        - df_vt_rel.filter(regex=r"_pred_\d").mean(axis=0)
     )
     .abs()
     .mean()
 )
 print(
     (
-        df_vt_pre.filter(like="pred").mean(axis=0)
-        - df_vt_rel.filter(like="pred").mean(axis=0)
+        df_vt_pre.filter(regex=r"_pred_\d").mean(axis=0)
+        - df_vt_rel.filter(regex=r"_pred_\d").mean(axis=0)
     ).mean()
 )
 
@@ -105,17 +105,18 @@ for df, model_name, line_style in zip(
     assert df.e_above_mp_hull.isna().sum() == 0
 
     target_col = "e_form_target"
-
-    df["e_above_mp_hull_mean"] = (
-        df.filter(like="pred").mean(axis=1) - df[target_col] + df.e_above_mp_hull
+    # make sure we average the expected number of ensemble member predictions
+    assert df.filter(regex=r"_pred_\d").shape[1] == 10
+    df["e_above_mp_hull_pred"] = (
+        df.filter(regex=r"_pred_\d").mean(axis=1) - df[target_col] + df.e_above_mp_hull
     )
 
-    # epistemic_var = df.filter(like="pred").var(axis=1, ddof=0)
-    # aleatoric_var = (df.filter(like="ale") ** 2).mean(axis=1)
+    # epistemic_var = df.filter(regex=r"_pred_\d").var(axis=1, ddof=0)
+    # aleatoric_var = (df.filter(like="_ale_") ** 2).mean(axis=1)
 
     # full_std = (epistemic_var + aleatoric_var) ** 0.5
 
-    df["residual"] = df.e_above_mp_hull_mean - df.e_above_mp_hull
+    df["residual"] = df.e_above_mp_hull_pred - df.e_above_mp_hull
 
     half_window = 0.02
     increment = 0.002

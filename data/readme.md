@@ -17,5 +17,7 @@ Columns: `material_id, formula, n_sites, volume, energy, e_form, e_hull, e_above
 Load with
 
 ```py
-df_summary = pd.read_csv(f"{ROOT}/data_others/wbm/data/steps-summary.csv", comment="#").set_index("material_id")
+df_wbm_summary = pd.read_csv(  # download wbm-steps-summary.csv (23.31 MB)
+    "https://figshare.com/ndownloader/files/36714216?private_link=ff0ad14505f9624f0c05"
+).set_index("material_id")
 ```

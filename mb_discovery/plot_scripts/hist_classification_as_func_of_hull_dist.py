@@ -39,10 +39,10 @@ df_hull = pd.read_csv(
 
 df["e_above_mp_hull"] = df_hull.e_above_mp_hull
 
-
-df_summary = pd.read_csv(f"{ROOT}/data/wbm-steps-summary.csv", comment="#").set_index(
-    "material_id"
-)
+# download wbm-steps-summary.csv (23.31 MB)
+df_summary = pd.read_csv(
+    "https://figshare.com/ndownloader/files/36714216?private_link=ff0ad14505f9624f0c05"
+).set_index("material_id")
 
 
 # %%
@@ -51,13 +51,15 @@ assert df.e_above_mp_hull.isna().sum() == 0
 rare = "all"
 target_col = "e_form_target"
 
-var_aleatoric = (df.filter(like="ale") ** 2).mean(axis=1)
-var_epistemic = df.filter(like="pred").var(axis=1, ddof=0)
+var_aleatoric = (df.filter(like="_ale_") ** 2).mean(axis=1)
+var_epistemic = df.filter(regex=r"_pred_\d").var(axis=1, ddof=0)
 
 std_total = (var_epistemic + var_aleatoric) ** 0.5
 
 criterion = "energy"
-error = df.filter(like="pred").mean(axis=1) - df[target_col]
+# make sure we average the expected number of ensemble member predictions
+assert df.filter(regex=r"_pred_\d").shape[1] == 10
+error = df.filter(regex=r"_pred_\d").mean(axis=1) - df[target_col]
 mean = error + df.e_above_mp_hull
 
 test = mean

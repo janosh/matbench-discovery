@@ -25,7 +25,8 @@ plt.rc("font", size=16)
 markers = ["o", "v", "^", "H", "D", ""]
 
 df = pd.read_csv(
-    f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
+    # f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
+    f"{ROOT}/data/2022-08-16-wrenformer-ensemble-predictions.csv.bz2"
 ).set_index("material_id")
 
 
@@ -48,11 +49,16 @@ df["e_above_mp_hull"] = df_hull.e_above_mp_hull
 assert df.e_above_mp_hull.isna().sum() == 0
 
 target_col = "e_form_target"
-df["e_above_mp_hull_mean"] = (
-    df.filter(like="pred").mean(axis=1) - df[target_col] + df.e_above_mp_hull
-)
+# target_col = "e_form_per_atom_target"
+# df["e_form_per_atom_target"] = df.e_form / df.n_sites
 
-df["residual"] = df.e_above_mp_hull_mean - df.e_above_mp_hull
+# make sure we average the expected number of ensemble member predictions
+assert df.filter(regex=r"_pred_\d").shape[1] == 10
+
+df["e_form_pres_ens"] = df.filter(regex=r"_pred_\d+").mean(axis=1)
+df["e_above_mp_hull_pred"] = df.e_form_pres_ens - df[target_col] + df.e_above_mp_hull
+
+df["residual"] = df.e_above_mp_hull_pred - df.e_above_mp_hull
 
 
 # %%

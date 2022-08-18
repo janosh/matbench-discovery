@@ -55,12 +55,12 @@ for model_name, color in zip(
 
     e_above_mp_hull = df.e_above_mp_hull
 
-    # mean = df.filter(like="pred").mean(axis=1) - e_hull
-    mean = df.filter(like="pred").mean(axis=1) - df[target_col] + e_above_mp_hull
+    # mean = df.filter(regex=r"_pred_\d").mean(axis=1) - e_hull
+    mean = df.filter(regex=r"_pred_\d").mean(axis=1) - df[target_col] + e_above_mp_hull
 
-    # epistemic_var = df.filter(like="pred").var(axis=1, ddof=0)
+    # epistemic_var = df.filter(regex=r"_pred_\d").var(axis=1, ddof=0)
 
-    # aleatoric_var = (df.filter(like="ale") ** 2).mean(axis=1)
+    # aleatoric_var = (df.filter(like="_ale_") ** 2).mean(axis=1)
 
     # full_std = (epistemic_var + aleatoric_var) ** 0.5
 

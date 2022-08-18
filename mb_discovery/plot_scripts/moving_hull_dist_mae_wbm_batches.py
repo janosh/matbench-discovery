@@ -36,12 +36,15 @@ assert df_wbm.e_above_mp_hull.isna().sum() == 0
 
 target_col = "e_form_target"
 
-df_wbm["e_above_mp_hull_mean"] = (
-    df_wbm.filter(like="pred").mean(axis=1)
+# make sure we average the expected number of ensemble member predictions
+assert df_wbm.filter(regex=r"_pred_\d").shape[1] == 10
+
+df_wbm["e_above_mp_hull_pred"] = (
+    df_wbm.filter(regex=r"_pred_\d").mean(axis=1)
     - df_wbm[target_col]
     + df_wbm.e_above_mp_hull
 )
-df_wbm["error"] = abs(df_wbm.e_above_mp_hull_mean - df_wbm.e_above_mp_hull)
+df_wbm["error"] = abs(df_wbm.e_above_mp_hull_pred - df_wbm.e_above_mp_hull)
 
 
 # %%
