@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
 
-from ml_stability import PKG_DIR, ROOT
+from mb_discovery import ROOT
 
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
@@ -131,5 +131,5 @@ ax.add_artist(legend_1)
 [recall] = ax.plot((0, 0), (0, 0), "black", linestyle=":")
 ax.legend([prec, recall], ["Precision", "Recall"], frameon=False, loc="upper right")
 
-img_path = f"{PKG_DIR}/plots/{today}-vary-{e_type=}-{criterion=}-{rare=}.pdf"
+img_path = f"{ROOT}/figures/{today}-vary-{e_type=}-{criterion=}-{rare=}.pdf"
 # plt.savefig(img_path)
