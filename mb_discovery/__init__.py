@@ -20,3 +20,4 @@ def as_dict_handler(obj: Any) -> dict[str, Any] | None:
         return obj.as_dict()  # all MSONable objects implement as_dict()
     except AttributeError:
         return None  # replace unhandled objects with None in serialized data
+        # removes e.g. non-serializable AseAtoms from M3GNet relaxation trajectories

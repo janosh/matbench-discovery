@@ -23,7 +23,8 @@ today = f"{datetime.now():%Y-%m-%d}"
 
 
 # %%
-glob_pattern = "2022-08-16-m3gnet-wbm-relax-results/*.json.gz"
+# glob_pattern = "2022-08-16-m3gnet-relax-wbm-IS3RE/*.json.gz"
+glob_pattern = "2022-08-19-m3gnet-relax-wbm-RS3RE/*.json.gz"
 file_paths = sorted(glob(f"{ROOT}/data/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
