@@ -2,9 +2,10 @@
 from datetime import datetime
 
 import pandas as pd
+from pymatgen.entries.computed_entries import ComputedStructureEntry
 from tqdm import tqdm
 
-from mb_discovery import ROOT
+from mb_discovery import ROOT, as_dict_handler
 
 
 """
@@ -19,7 +20,7 @@ today = f"{datetime.now():%Y-%m-%d}"
 
 
 def increment_wbm_material_id(wbm_id: str) -> str:
-    """Turns 'wbm_step_1_0' into 'wbm_step_1_1' etc."""
+    """Turns 'step_1-0' into 'wbm-step-1-1' etc."""
     *_, step_num, material_num = wbm_id.split("_")
 
     assert step_num.isdigit() and material_num.isdigit()
@@ -31,8 +32,20 @@ def increment_wbm_material_id(wbm_id: str) -> str:
 df_wbm = pd.read_json(f"{ROOT}/data/wbm-cleaned.json.gz", orient="split")
 df_wbm.index = df_wbm.index.map(increment_wbm_material_id)
 
+
+df_wbm.cse = df_wbm.cse.map(ComputedStructureEntry.from_dict)
+
+for wbm_id, cse in df_wbm.cse.items():
+    cse.entry_id = wbm_id
+
+df_wbm["energy"] = [cse.energy for cse in df_wbm.cse]
+df_wbm["n_sites"] = [len(cse.structure) for cse in df_wbm.cse]
+df_wbm["formula"] = [cse.structure.formula for cse in df_wbm.cse]
+
+
 df_wbm.reset_index().to_json(
-    f"{ROOT}/data/{today}-wbm-cses-and-initial-structures.json.gz"
+    f"{ROOT}/data/{today}-wbm-cses-and-initial-structures.json.gz",
+    default_handler=as_dict_handler,
 )
 
 

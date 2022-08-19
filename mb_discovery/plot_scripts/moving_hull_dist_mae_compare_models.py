@@ -70,7 +70,7 @@ fig, ax = plt.subplots(1, figsize=(10, 9))
 for df, model_name, line_style in zip(
     # (df_wren, df_vt_pre, df_vt_rel, df_cgcnn_pre, df_cgcnn_dis, df_cgcnn_rel),
     # (
-    #     "Wren (This Work)",
+    #     "Wren",
     #     "Voronoi Pre-relax",
     #     "Voronoi Relaxed",
     #     "CGCNN Pre-relax",
@@ -79,16 +79,16 @@ for df, model_name, line_style in zip(
     # ),
     (df_wren, df_vt_pre, df_vt_rel, df_cgcnn_pre, df_cgcnn_rel),
     (
-        "Wren (This Work)",
+        "Wren",
         "Voronoi Pre-relax",
         "Voronoi Relaxed",
         "CGCNN Pre-relax",
         "CGCNN Relaxed",
     ),
     # (df_wren, df_vt_pre, df_vt_rel),
-    # ("Wren (This Work)", "Voronoi Pre-relax", "Voronoi Relaxed"),
+    # ("Wren", "Voronoi Pre-relax", "Voronoi Relaxed"),
     # (df_wren, df_cgcnn_pre, df_cgcnn_rel),
-    # ("Wren (This Work)", "CGCNN Pre-relax", "CGCNN Relaxed"),
+    # ("Wren", "CGCNN Pre-relax", "CGCNN Relaxed"),
     ("-", "--", ":", "-.", ":", "--"),
 ):
 

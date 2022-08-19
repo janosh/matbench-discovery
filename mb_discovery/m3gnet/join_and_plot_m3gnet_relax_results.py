@@ -106,13 +106,6 @@ df_m3gnet["e_form_ppd_2022_01_25"] = [
 ]
 
 
-df_m3gnet.filter(like="e_form").plot.scatter(x="e_form_m3gnet", y="e_form_wbm")
-df_m3gnet.filter(like="e_form").plot.scatter(
-    x="e_form_m3gnet", y="e_form_ppd_2022_01_25"
-)
-df_m3gnet.filter(like="e_form").plot.scatter(x="e_form_wbm", y="e_form_ppd_2022_01_25")
-
-
 # %%
 df_m3gnet.hist(bins=200, figsize=(18, 12))
 df_m3gnet.isna().sum()
