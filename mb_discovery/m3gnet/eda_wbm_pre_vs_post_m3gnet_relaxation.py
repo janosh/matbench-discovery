@@ -28,7 +28,7 @@ df_wbm = pd.read_json(
 
 # %%
 df_m3gnet = pd.read_json(
-    f"{ROOT}/data/2022-07-17-m3gnet-wbm-relax-results.json.gz"
+    f"{ROOT}/data/2022-08-16-m3gnet-wbm-relax-results.json.gz"
 ).set_index("material_id")
 
 print("Number of WBM crystals for which we have M3GNet results:")
