@@ -9,10 +9,9 @@ from typing import Any
 import m3gnet
 import numpy as np
 import pandas as pd
-import wandb
 from m3gnet.models import Relaxer
-from pymatgen.core import Structure
 
+import wandb
 from mb_discovery import ROOT, as_dict_handler
 
 
@@ -20,8 +19,8 @@ from mb_discovery import ROOT, as_dict_handler
 To slurm submit this file, use
 
 ```sh
-sbatch --partition icelake-himem --account LEE-SL3-CPU --array 1-100 \
-    --time 3:0:0 --job-name m3gnet-wbm-relax --mem 12000 \
+sbatch --partition icelake-himem --account LEE-SL3-CPU --array 1-101 \
+    --time 3:0:0 --job-name m3gnet-relax-wbm-RS2RE --mem 12000 \
     --output mb_discovery/m3gnet/slurm_logs/slurm-%A-%a.out \
     --wrap "python mb_discovery/m3gnet/slurm_array_m3gnet_relax_wbm.py"
 ```
@@ -34,6 +33,8 @@ Requires M3GNet installation: pip install m3gnet
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-15"
 
+# task_type = "IS2RE"
+task_type = "RS2RE"
 
 print(f"Job started running {datetime.now():%Y-%m-%d@%H-%M}")
 job_id = os.environ.get("SLURM_JOB_ID", "debug")
@@ -47,7 +48,7 @@ job_array_size = int(os.environ.get("SLURM_ARRAY_TASK_COUNT", 10_000))
 print(f"{job_array_id=}")
 
 today = f"{datetime.now():%Y-%m-%d}"
-out_dir = f"{ROOT}/data/{today}-m3gnet-wbm-relax-results"
+out_dir = f"{ROOT}/data/{today}-m3gnet-relax-wbm-{task_type}"
 os.makedirs(out_dir, exist_ok=True)
 json_out_path = f"{out_dir}/{job_array_id}.json.gz"
 
@@ -76,7 +77,7 @@ if wandb.run is None:
     wandb.login()
 wandb.init(
     project="m3gnet",  # run will be added to this project
-    name=f"m3gnet-relax-wbm-{job_id}-{job_array_id}",
+    name=f"m3gnet-relax-wbm-{task_type}-{job_id}-{job_array_id}",
     config=run_params,
 )
 
@@ -84,17 +85,28 @@ wandb.init(
 # %%
 relaxer = Relaxer()  # This loads the default pre-trained M3GNet model
 
-for material_id, init_struct in df_to_relax.initial_structure.items():
+if task_type == "IS2RE":
+    from pymatgen.core import Structure
+
+    structures = df_to_relax.initial_structure.map(Structure.from_dict)
+elif task_type == "RS2RE":
+    from pymatgen.entries.computed_entries import ComputedStructureEntry
+
+    df_to_relax.cse = df_to_relax.cse.map(ComputedStructureEntry.from_dict)
+    structures = df_to_relax.cse.map(lambda x: x.structure)
+else:
+    raise ValueError(f"Unknown {task_type = }")
+
+
+for material_id, struct in structures.items():
     if material_id in relax_results:
         continue
-    pmg_struct = Structure.from_dict(init_struct)
-    relax_result = relaxer.relax(pmg_struct)
+    relax_result = relaxer.relax(struct)
     relax_dict = {
         "m3gnet_structure": relax_result["final_structure"],
         "m3gnet_trajectory": relax_result["trajectory"].__dict__,
     }
-    # remove non-serializable AseAtoms from trajectory
-    relax_dict["trajectory"].pop("atoms")
+
     relax_results[material_id] = relax_dict
 
 
