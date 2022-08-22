@@ -48,9 +48,9 @@ df["e_above_mp_hull"] = df_hull.e_above_mp_hull
 
 assert df.e_above_mp_hull.isna().sum() == 0
 
-target_col = "e_form_target"
-# target_col = "e_form_per_atom_target"
-# df["e_form_per_atom_target"] = df.e_form / df.n_sites
+# target_col = "e_form_target"
+target_col = "e_form_per_atom_target"
+df["e_form_per_atom_target"] = df.e_form / df.n_sites
 
 # make sure we average the expected number of ensemble member predictions
 assert df.filter(regex=r"_pred_\d").shape[1] == 10

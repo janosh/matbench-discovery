@@ -2,6 +2,8 @@
 
 ## `wbm-cses-and-initial-structures.json.gz`
 
+Source: [Predicting stable crystalline compounds using chemical similarity](https://nature.com/articles/s41524-020-00481-6) (2021)
+
 257486 rows × 3 columns:
 
 - cse: pymatgen `ComputedStructureEntries`

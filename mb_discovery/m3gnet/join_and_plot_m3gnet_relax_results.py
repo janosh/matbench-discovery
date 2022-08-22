@@ -23,8 +23,9 @@ today = f"{datetime.now():%Y-%m-%d}"
 
 
 # %%
-# glob_pattern = "2022-08-16-m3gnet-relax-wbm-IS3RE/*.json.gz"
-glob_pattern = "2022-08-19-m3gnet-relax-wbm-RS3RE/*.json.gz"
+task_type = "RS3RE"
+date = "2022-08-19"
+glob_pattern = f"{date}-m3gnet-relax-wbm-{task_type}/*.json.gz"
 file_paths = sorted(glob(f"{ROOT}/data/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
@@ -78,7 +79,7 @@ pd_entries_m3gnet = [
     PDEntry(row.m3gnet_structure.composition, row.m3gnet_energy)
     for row in df_m3gnet.itertuples()
 ]
-df_m3gnet["e_form_m3gnet"] = [
+df_m3gnet["e_form_m3gnet_from_ppd"] = [
     ppd_mp_wbm.get_form_energy_per_atom(x) for x in pd_entries_m3gnet
 ]
 
@@ -113,14 +114,14 @@ df_m3gnet.isna().sum()
 
 
 # %%
-out_path = f"{ROOT}/data/{today}-m3gnet-wbm-relax-results.json.gz"
+out_path = f"{ROOT}/data/{today}-m3gnet-relax-wbm-{task_type}.json.gz"
 df_m3gnet.reset_index().to_json(out_path, default_handler=as_dict_handler)
 
 
 # %%
 ax_hull_dist_hist = hist_classify_stable_as_func_of_hull_dist(
-    formation_energy_targets=df_m3gnet.e_form_ppd,
-    formation_energy_preds=df_m3gnet.e_form_m3gnet,
+    formation_energy_targets=df_m3gnet.e_form_ppd_2022_01_25,
+    formation_energy_preds=df_m3gnet.e_form_m3gnet_from_ppd,
     e_above_hull_vals=df_m3gnet.e_above_mp_hull,
 )
 
