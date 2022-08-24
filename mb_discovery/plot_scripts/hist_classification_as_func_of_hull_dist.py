@@ -26,6 +26,7 @@ today = f"{datetime.now():%Y-%m-%d}"
 plt.rc("savefig", bbox="tight", dpi=200)
 plt.rcParams["figure.constrained_layout.use"] = True
 plt.rc("figure", dpi=150)
+plt.rc("font", size=16)
 
 
 # %%
@@ -77,7 +78,7 @@ xticks = (-0.4, -0.2, 0, 0.2, 0.4)
 # yticks = (0, 300, 600, 900, 1200)
 
 # --- histogram by DFT-computed distance to convex hull
-e_type = "true"
+energy_type = "true"
 actual_pos = df.e_above_mp_hull <= stability_thresh
 actual_neg = df.e_above_mp_hull > stability_thresh
 model_pos = test <= stability_thresh
@@ -169,5 +170,5 @@ ax.set(xlim=xlim, ylim=ylim)
 
 # NOTE this figure plots hist bars separately which causes aliasing in pdf
 # to resolve this take into Inkscape and merge regions by color
-img_path = f"{ROOT}/figures/{today}-hist-{e_type=}-{criterion=}-{rare=}.pdf"
+img_path = f"{ROOT}/figures/{today}-hist-{energy_type=}-{criterion=}-{rare=}.pdf"
 # plt.savefig(img_path)
