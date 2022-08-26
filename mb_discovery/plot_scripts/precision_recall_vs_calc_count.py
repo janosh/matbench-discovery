@@ -16,7 +16,7 @@ today = f"{datetime.now():%Y-%m-%d}"
 
 plt.rc("savefig", bbox="tight", dpi=200)
 plt.rcParams["figure.constrained_layout.use"] = True
-plt.rc("figure", dpi=150)
+plt.rc("figure", dpi=200)
 plt.rc("font", size=16)
 
 

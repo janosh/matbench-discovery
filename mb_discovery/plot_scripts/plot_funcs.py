@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from typing import Literal, Sequence
+from typing import Any, Literal, Sequence
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
+from scipy.stats import sem as std_err_of_mean
 
 
 __author__ = "Janosh Riebesell"
@@ -12,7 +15,7 @@ __date__ = "2022-08-05"
 
 plt.rc("savefig", bbox="tight", dpi=200)
 plt.rcParams["figure.constrained_layout.use"] = True
-plt.rc("figure", dpi=150)
+plt.rc("figure", dpi=200)
 plt.rc("font", size=16)
 
 
@@ -135,5 +138,114 @@ def hist_classified_stable_as_func_of_hull_dist(
     )
 
     ax.set(xlabel=xlabel, ylabel="Number of compounds")
+
+    return ax
+
+
+def rolling_mae_vs_hull_dist(
+    df: pd.DataFrame,
+    e_above_hull_col: str,
+    residual_col: str = "residual",
+    half_window: float = 0.02,
+    increment: float = 0.002,
+    x_lim: tuple[float, float] = (-0.2, 0.3),
+    ax: plt.Axes = None,
+    **kwargs: Any,
+) -> plt.Axes:
+    """Rolling mean absolute error as the energy to the convex hull is varied. A scale
+    bar is shown for the windowing period of 40 meV per atom used when calculating
+    the rolling MAE. The standard error in the mean is shaded
+    around each curve. The highlighted V-shaped region shows the area in which the
+    average absolute error is greater than the energy to the known convex hull. This is
+    where models are most at risk of misclassifying structures.
+    """
+    if ax is None:
+        ax = plt.gca()
+
+    ax_is_fresh = len(ax.lines) == 0
+
+    bins = np.arange(*x_lim, increment)
+
+    rolling_maes = np.zeros_like(bins)
+    rolling_stds = np.zeros_like(bins)
+    df = df.sort_values(by=e_above_hull_col)
+    for idx, bin_center in enumerate(bins):
+        low = bin_center - half_window
+        high = bin_center + half_window
+
+        mask = (df[e_above_hull_col] <= high) & (df[e_above_hull_col] > low)
+        rolling_maes[idx] = df[residual_col].loc[mask].abs().mean()
+        rolling_stds[idx] = std_err_of_mean(df[residual_col].loc[mask].abs())
+
+    ax.plot(bins, rolling_maes, **kwargs)
+
+    ax.fill_between(
+        bins, rolling_maes + rolling_stds, rolling_maes - rolling_stds, alpha=0.3
+    )
+
+    if not ax_is_fresh:
+        # return earlier if all plot objects besides the line were already drawn by a
+        # previous call
+        return ax
+
+    scale_bar = AnchoredSizeBar(
+        ax.transData,
+        2 * half_window,
+        "40 meV",
+        "lower left",
+        pad=0.5,
+        frameon=False,
+        size_vertical=0.002,
+    )
+
+    ax.add_artist(scale_bar)
+
+    ax.plot((0.05, 0.5), (0.05, 0.5), color="grey", linestyle="--", alpha=0.3)
+    ax.plot((-0.5, -0.05), (0.5, 0.05), color="grey", linestyle="--", alpha=0.3)
+    ax.plot((-0.05, 0.05), (0.05, 0.05), color="grey", linestyle="--", alpha=0.3)
+    ax.plot((-0.1, 0.1), (0.1, 0.1), color="grey", linestyle="--", alpha=0.3)
+
+    ax.fill_between(
+        (-0.5, -0.05, 0.05, 0.5),
+        (0.5, 0.5, 0.5, 0.5),
+        (0.5, 0.05, 0.05, 0.5),
+        color="tab:red",
+        alpha=0.2,
+    )
+
+    ax.plot((0, 0.05), (0, 0.05), color="grey", linestyle="--", alpha=0.3)
+    ax.plot((-0.05, 0), (0.05, 0), color="grey", linestyle="--", alpha=0.3)
+
+    ax.fill_between(
+        (-0.05, 0, 0.05),
+        (0.05, 0.05, 0.05),
+        (0.05, 0, 0.05),
+        color="tab:orange",
+        alpha=0.2,
+    )
+
+    arrowprops = dict(facecolor="black", width=0.5, headwidth=5, headlength=5)
+    ax.annotate(
+        xy=(0.055, 0.05),
+        xytext=(0.12, 0.05),
+        arrowprops=arrowprops,
+        text="Corrected\nGGA DFT\nAccuracy",
+        verticalalignment="center",
+        horizontalalignment="left",
+    )
+    ax.annotate(
+        xy=(0.105, 0.1),
+        xytext=(0.16, 0.1),
+        arrowprops=arrowprops,
+        text="GGA DFT\nAccuracy",
+        verticalalignment="center",
+        horizontalalignment="left",
+    )
+
+    ax.text(0, 0.13, r"$|\Delta E_{Hull-MP}| > $MAE", horizontalalignment="center")
+
+    ax.set(xlabel=r"$\Delta E_{Hull-MP}$ / eV per atom", ylabel="MAE / eV per atom")
+
+    ax.set(xlim=x_lim, ylim=(0.0, 0.14))
 
     return ax
