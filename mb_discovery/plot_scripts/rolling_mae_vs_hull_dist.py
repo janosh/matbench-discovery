@@ -1,0 +1,73 @@
+# %%
+from datetime import datetime
+
+import matplotlib.pyplot as plt
+import pandas as pd
+
+from mb_discovery import ROOT
+from mb_discovery.plot_scripts.plot_funcs import rolling_mae_vs_hull_dist
+
+
+__author__ = "Rhys Goodall, Janosh Riebesell"
+__date__ = "2022-06-18"
+
+today = f"{datetime.now():%Y-%m-%d}"
+
+plt.rc("savefig", bbox="tight", dpi=200)
+plt.rcParams["figure.constrained_layout.use"] = True
+plt.rc("figure", dpi=200)
+plt.rc("font", size=16)
+
+
+# %%
+markers = ["o", "v", "^", "H", "D", ""]
+
+df = pd.read_csv(
+    f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
+    # f"{ROOT}/data/2022-08-16-wrenformer-ensemble-predictions.csv.bz2"
+).set_index("material_id")
+
+
+# %%
+rare = "all"
+# from pymatgen.core import Composition
+# rare = "no-lanthanides"
+# df["contains_rare_earths"] = df.composition.map(
+#     lambda x: any(el.is_rare_earth_metal for el in Composition(x))
+# )
+# df = df.query("~contains_rare_earths")
+
+
+df_hull = pd.read_csv(
+    f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
+).set_index("material_id")
+
+df["e_above_mp_hull"] = df_hull.e_above_mp_hull
+
+assert (n_nans := df.isna().sum().sum()) == 0, f"Found {n_nans} NaNs"
+
+target_col = "e_form_target"
+# --- or ---
+# target_col = "e_form_per_atom_target"
+# df["e_form_per_atom_target"] = df.e_form / df.n_sites
+
+# make sure we average the expected number of ensemble member predictions
+assert df.filter(regex=r"_pred_\d").shape[1] == 10
+
+df["e_form_pres_ens"] = df.filter(regex=r"_pred_\d+").mean(axis=1)
+df["e_above_mp_hull_pred"] = df.e_form_pres_ens - df[target_col] + df.e_above_mp_hull
+
+df["residual"] = df.e_above_mp_hull_pred - df.e_above_mp_hull
+
+
+# %%
+ax = rolling_mae_vs_hull_dist(
+    df,
+    e_above_hull_col="e_above_mp_hull",
+    residual_col="residual",
+)
+
+ax.figure.set_size_inches(10, 9)
+
+img_path = f"{ROOT}/figures/{today}-rolling-mae-vs-hull-dist-{rare=}.pdf"
+# plt.savefig(img_path)
