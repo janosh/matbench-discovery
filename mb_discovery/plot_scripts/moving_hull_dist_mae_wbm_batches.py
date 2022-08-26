@@ -54,10 +54,9 @@ markers = ("o", "v", "^", "H", "D")
 assert len(markers) == 5  # number of WBM round of element substitution
 
 for idx, marker in enumerate(markers):
-    offsets = 1
-    title = f"Batch-{idx+offsets}"
+    title = f"Batch-{idx}"
 
-    df = df_wbm[df_wbm.index.str.contains(f"wbm-step-{idx+offsets}")]
+    df = df_wbm[df_wbm.index.str.startswith(f"wbm-step-{idx}")]
 
     # half_window = 0.1
     # half_window = 0.01

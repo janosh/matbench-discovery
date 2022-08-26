@@ -5,7 +5,7 @@ The `block_{0,1}.p` files in this directory were obtained on 2022-08-05 from [fi
 ## Figshare description
 
 Dataset posted on 30.03.2022, 21:14 authored by Chi ChenChi Chen, Shyue Ping Ong
-This dataset contains the MPF.2021.2.8 data used to train the m3gnet model reported in `https://arxiv.org/abs/2202.02450`
+This dataset contains the MPF.2021.2.8 data used to train the M3GNet model reported in `https://arxiv.org/abs/2202.02450`
 
 I have split the dataset into two pickle files. To load the data, you can use example code as below.
 
