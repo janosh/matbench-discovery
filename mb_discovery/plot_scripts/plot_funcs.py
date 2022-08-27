@@ -5,8 +5,9 @@ from typing import Any, Literal, Sequence
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import scipy.interpolate
+import scipy.stats
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
-from scipy.stats import sem as std_err_of_mean
 
 
 __author__ = "Janosh Riebesell"
@@ -162,7 +163,7 @@ def rolling_mae_vs_hull_dist(
     if ax is None:
         ax = plt.gca()
 
-    ax_is_fresh = len(ax.lines) == 0
+    is_fresh_ax = len(ax.lines) == 0
 
     bins = np.arange(*x_lim, increment)
 
@@ -175,7 +176,7 @@ def rolling_mae_vs_hull_dist(
 
         mask = (df[e_above_hull_col] <= high) & (df[e_above_hull_col] > low)
         rolling_maes[idx] = df[residual_col].loc[mask].abs().mean()
-        rolling_stds[idx] = std_err_of_mean(df[residual_col].loc[mask].abs())
+        rolling_stds[idx] = scipy.stats.sem(df[residual_col].loc[mask].abs())
 
     ax.plot(bins, rolling_maes, **kwargs)
 
@@ -183,7 +184,7 @@ def rolling_mae_vs_hull_dist(
         bins, rolling_maes + rolling_stds, rolling_maes - rolling_stds, alpha=0.3
     )
 
-    if not ax_is_fresh:
+    if not is_fresh_ax:
         # return earlier if all plot objects besides the line were already drawn by a
         # previous call
         return ax
@@ -247,5 +248,101 @@ def rolling_mae_vs_hull_dist(
     ax.set(xlabel=r"$\Delta E_{Hull-MP}$ / eV per atom", ylabel="MAE / eV per atom")
 
     ax.set(xlim=x_lim, ylim=(0.0, 0.14))
+
+    return ax
+
+
+def precision_recall_vs_calc_count(
+    df: pd.DataFrame,
+    residual_col: str = "residual",
+    e_above_hull_col: str = "e_above_hull",
+    criterion: Literal["energy", "std", "neg_std"] = "energy",
+    stability_thresh: float = 0,  # set stability threshold as distance to convex hull
+    # in eV / atom, usually 0 or 0.1 eV
+    ax: plt.Axes = None,
+    label: str = None,
+    **kwargs: Any,
+) -> plt.Axes:
+    """Precision and recall as a function of the number of calculations performed."""
+    if ax is None:
+        ax = plt.gca()
+
+    is_fresh_ax = len(ax.lines) == 0
+
+    df = df.sort_values(by="residual")
+
+    if criterion == "energy":
+        test = df[residual_col]
+    elif "std" in criterion:
+        # TODO column names to compute standard deviation from are currently hardcoded
+        # needs to be updated when adding non-aviary models with uncertainty estimation
+        var_aleatoric = (df.filter(like="_ale_") ** 2).mean(axis=1)
+        var_epistemic = df.filter(regex=r"_pred_\d").var(axis=1, ddof=0)
+        std_total = (var_epistemic + var_aleatoric) ** 0.5
+
+        if criterion == "std":
+            test += std_total
+        elif criterion == "neg_std":
+            test -= std_total
+
+    # stability_thresh = 0.02
+    stability_thresh = 0
+    # stability_thresh = 0.10
+
+    true_pos_mask = (df[e_above_hull_col] <= stability_thresh) & (
+        df.residual <= stability_thresh
+    )
+    false_neg_mask = (df[e_above_hull_col] <= stability_thresh) & (
+        df.residual > stability_thresh
+    )
+    false_pos_mask = (df[e_above_hull_col] > stability_thresh) & (
+        df.residual <= stability_thresh
+    )
+
+    true_pos_cumsum = true_pos_mask.cumsum()
+
+    ppv = true_pos_cumsum / (true_pos_cumsum + false_pos_mask.cumsum()) * 100
+    n_true_pos = sum(true_pos_mask)
+    n_false_neg = sum(false_neg_mask)
+    n_total_pos = n_true_pos + n_false_neg
+    tpr = true_pos_cumsum / n_total_pos * 100
+
+    end = int(np.argmax(tpr))
+
+    xs = np.arange(end)
+
+    precision_curve = scipy.interpolate.interp1d(xs, ppv[:end], kind="cubic")
+    rolling_recall_curve = scipy.interpolate.interp1d(xs, tpr[:end], kind="cubic")
+
+    line_kwargs = dict(
+        linewidth=3,
+        markevery=[-1],
+        marker="x",
+        markersize=14,
+        markeredgewidth=2.5,
+        **kwargs,
+    )
+    ax.plot(xs, precision_curve(xs), linestyle="-", **line_kwargs)
+    ax.plot(xs, rolling_recall_curve(xs), linestyle=":", **line_kwargs)
+    ax.plot((0, 0), (0, 0), label=label, **line_kwargs)
+
+    if not is_fresh_ax:
+        # return earlier if all plot objects besides the line were already drawn by a
+        # previous call
+        return ax
+
+    ax.set(xlabel="Number of Calculations", ylabel="Percentage")
+
+    ax.set(xlim=(0, 8e4), ylim=(0, 100))
+
+    [precision] = ax.plot((0, 0), (0, 0), "black", linestyle="-")
+    [recall] = ax.plot((0, 0), (0, 0), "black", linestyle=":")
+    legend = ax.legend(
+        [precision, recall],
+        ("Precision", "Recall"),
+        frameon=False,
+        loc="upper right",
+    )
+    ax.add_artist(legend)
 
     return ax
