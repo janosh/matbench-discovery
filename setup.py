@@ -28,6 +28,6 @@ setup(
         "tqdm",
     ],
     extras_require={
-        "running-models": ["wandb", "m3gnet"],
+        "running-models": ["wandb", "m3gnet", "aviary"],
     },
 )

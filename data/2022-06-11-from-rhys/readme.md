@@ -13,7 +13,11 @@ To convert `step_1_0`, `step_1_1` into `wbm-step-1-1`, `wbm-step-1-2`, etc., see
 All WBM `ComputedStructureEntries` have no energy corrections applied.
 
 ```py
+import pandas as pd
 from pymatgen.entries.computed_entries import ComputedStructureEntry
+
+from mb_discovery import ROOT
+
 
 df_wbm = pd.read_json(
     f"{ROOT}/data/2022-06-26-wbm-cses-and-initial-structures.json.gz"

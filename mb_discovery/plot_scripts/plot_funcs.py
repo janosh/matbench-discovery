@@ -261,9 +261,30 @@ def precision_recall_vs_calc_count(
     # in eV / atom, usually 0 or 0.1 eV
     ax: plt.Axes = None,
     label: str = None,
+    intersect_lines: str | Sequence[str] = (),
     **kwargs: Any,
 ) -> plt.Axes:
-    """Precision and recall as a function of the number of calculations performed."""
+    """Precision and recall as a function of the number of calculations performed.
+
+    Args:
+        df (pd.DataFrame): Model predictions and target energy values.
+        residual_col (str, optional): Column name with residuals of model predictions,
+            i.e. residual = pred - target. Defaults to "residual".
+        e_above_hull_col (str, optional): Column name with convex hull distance values.
+            Defaults to "e_above_hull".
+        criterion (Literal['energy', 'std', 'neg_std'], optional): Whether to use
+            energy, energy+model_std, or energy-model_std as stability criterion.
+            Defaults to "energy".
+        stability_thresh (float, optional): Max distance from convex hull before
+            material is considered unstable. Defaults to 0.
+        label (str, optional): Model name used to identify its liens in the legend.
+            Defaults to None.
+        intersect_lines (Sequence[str], optional): precision_{x,y,xy} and/or
+            recall_{x,y,xy}. Defaults to (), i.e. no intersect lines.
+
+    Returns:
+        plt.Axes: The matplotlib axes object.
+    """
     if ax is None:
         ax = plt.gca()
 
@@ -315,7 +336,7 @@ def precision_recall_vs_calc_count(
     rolling_recall_curve = scipy.interpolate.interp1d(xs, tpr[:end], kind="cubic")
 
     line_kwargs = dict(
-        linewidth=3,
+        linewidth=4,
         markevery=[-1],
         marker="x",
         markersize=14,
@@ -325,6 +346,22 @@ def precision_recall_vs_calc_count(
     ax.plot(xs, precision_curve(xs), linestyle="-", **line_kwargs)
     ax.plot(xs, rolling_recall_curve(xs), linestyle=":", **line_kwargs)
     ax.plot((0, 0), (0, 0), label=label, **line_kwargs)
+
+    if intersect_lines == "all":
+        intersect_lines = ("precision_xy", "recall_xy")
+    for line_name in intersect_lines:
+        y_func = dict(
+            precision=precision_curve,
+            recall=rolling_recall_curve,
+        )[line_name.split("_")[0]]
+        intersect_kwargs = dict(
+            linestyle=":", alpha=0.4, color=kwargs.get("color", "gray")
+        )
+        # Add some visual guidelines
+        if "x" in line_name:
+            ax.plot((0, xs[-1]), (y_func(xs[-1]), y_func(xs[-1])), **intersect_kwargs)
+        if "y" in line_name:
+            ax.plot((xs[-1], xs[-1]), (0, y_func(xs[-1])), **intersect_kwargs)
 
     if not is_fresh_ax:
         # return earlier if all plot objects besides the line were already drawn by a
