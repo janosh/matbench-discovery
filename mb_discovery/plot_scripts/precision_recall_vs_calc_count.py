@@ -23,8 +23,8 @@ plt.rc("font", size=16)
 df_hull = pd.read_csv(
     f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
 ).set_index("material_id")
-dfs: dict[str, pd.DataFrame] = {}
 
+dfs: dict[str, pd.DataFrame] = {}
 for model_name in ("Wren", "CGCNN", "Voronoi"):
     dfs[model_name] = pd.read_csv(
         f"{ROOT}/data/2022-06-11-from-rhys/{model_name}-mp-initial-structures.csv"
@@ -34,17 +34,21 @@ for model_name in ("Wren", "CGCNN", "Voronoi"):
 #     f"{ROOT}/data/2022-08-16-m3gnet-wbm-relax-results-IS2RE.json.gz"
 # ).set_index("material_id")
 
-# dfs["Wrenformer"] = pd.read_csv(
-#     f"{ROOT}/data/2022-08-16-wrenformer-ensemble-predictions.csv.bz2"
-# ).set_index("material_id")
+dfs["Wrenformer"] = pd.read_csv(
+    f"{ROOT}/data/2022-08-16-wrenformer-ensemble-predictions.csv.bz2"
+).set_index("material_id")
 
-# dfs["Wrenformer"]["e_form_target"] = dfs["Wren"]["e_form_target"]
-# dfs["M3GNet"]["e_form_target"] = dfs["Wren"]["e_form_target"]
+
+# download wbm-steps-summary.csv (23.31 MB)
+df_summary = pd.read_csv(
+    "https://figshare.com/ndownloader/files/36714216?private_link=ff0ad14505f9624f0c05"
+).set_index("material_id")
 
 
 # %%
 for (model_name, df), color in zip(
-    dfs.items(), ("tab:blue", "tab:orange", "teal", "tab:pink", "black")
+    dfs.items(),
+    ("tab:blue", "tab:orange", "teal", "tab:pink", "black", "red", "turquoise"),
 ):
     df["e_above_mp_hull"] = df_hull.e_above_mp_hull
 
@@ -66,9 +70,11 @@ for (model_name, df), color in zip(
         if model_name == "M3GNet":
             model_preds = df.e_form_m3gnet
             targets = df.e_form_wbm
-        elif model_name == "Wrenformer":
-            model_preds = df.e_form_pred_ens
-            targets = df.e_form
+        elif "Wrenformer" in model_name:
+            df["e_form_per_atom_pred_ens"] = df.e_form_pred_ens / df.n_sites
+            df["e_form_per_atom"] = df.e_form / df.n_sites
+            model_preds = df.e_form_per_atom_pred_ens
+            targets = df.e_form_per_atom
         elif df.filter(regex=r"_pred_\d").shape[1] > 1:
             assert df.filter(regex=r"_pred_\d").shape[1] == 10
             model_preds = df.filter(regex=r"_pred_\d").mean(axis=1)
@@ -89,10 +95,11 @@ for (model_name, df), color in zip(
         e_above_hull_col="e_above_mp_hull",
         color=color,
         label=model_name,
+        intersect_lines="recall_xy",
+        # intersect_lines="all",
     )
 
-model_legend = ax.legend(frameon=False, loc="lower right")
-ax.add_artist(model_legend)
+ax.legend(frameon=False, loc="lower right")
 
 ax.figure.set_size_inches(10, 9)
 
