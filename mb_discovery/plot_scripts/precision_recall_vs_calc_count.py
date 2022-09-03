@@ -20,15 +20,15 @@ plt.rc("font", size=16)
 
 
 # %%
-df_hull = pd.read_csv(
-    f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
-).set_index("material_id")
+DATA_DIR = f"{ROOT}/data/2022-06-11-from-rhys"
+df_hull = pd.read_csv(f"{DATA_DIR}/wbm-e-above-mp-hull.csv").set_index("material_id")
 
 dfs: dict[str, pd.DataFrame] = {}
 for model_name in ("Wren", "CGCNN", "Voronoi"):
-    dfs[model_name] = pd.read_csv(
-        f"{ROOT}/data/2022-06-11-from-rhys/{model_name}-mp-initial-structures.csv"
+    df = pd.read_csv(
+        f"{DATA_DIR}/{model_name.lower()}-mp-initial-structures.csv"
     ).set_index("material_id")
+    dfs[model_name] = df
 
 # dfs["M3GNet"] = pd.read_json(
 #     f"{ROOT}/data/2022-08-16-m3gnet-wbm-relax-results-IS2RE.json.gz"

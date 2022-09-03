@@ -9,15 +9,14 @@ from mb_discovery import ROOT
 from mb_discovery.plot_scripts.plot_funcs import precision_recall_vs_calc_count
 
 
-df_hull = pd.read_csv(
-    f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
-).set_index("material_id")
+DATA_DIR = f"{ROOT}/data/2022-06-11-from-rhys"
+
+df_hull = pd.read_csv(f"{DATA_DIR}/wbm-e-above-mp-hull.csv").set_index("material_id")
 
 test_dfs: dict[str, pd.DataFrame] = {}
 for model_name in ("Wren", "CGCNN", "Voronoi"):
     df = pd.read_csv(
-        f"{ROOT}/data/2022-06-11-from-rhys/{model_name}-mp-initial-structures.csv",
-        nrows=100,
+        f"{DATA_DIR}/{model_name.lower()}-mp-initial-structures.csv", nrows=100
     ).set_index("material_id")
 
     df["e_above_mp_hull"] = df_hull.e_above_mp_hull

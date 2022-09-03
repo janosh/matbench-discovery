@@ -55,6 +55,10 @@ def hist_classified_stable_as_func_of_hull_dist(
     e_above_hull_vals = df[e_above_hull_col]
     residuals = error + e_above_hull_vals
 
+    if stability_crit not in get_args(StabilityCriterion):
+        raise ValueError(
+            f"Invalid {stability_crit=} must be one of {get_args(StabilityCriterion)}"
+        )
     if stability_crit == "energy":
         test = residuals
     elif "std" in stability_crit:
