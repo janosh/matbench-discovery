@@ -52,8 +52,6 @@ for (model_name, df), color in zip(
 ):
     df["e_above_mp_hull"] = df_hull.e_above_mp_hull
 
-    assert df.e_above_mp_hull.isna().sum() == 0
-
     target_col = "e_form_target"
     rare = "all"
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Literal, Sequence
+from typing import Any, Literal, Sequence, get_args
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,6 +13,7 @@ from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-05"
 
+StabilityCriterion = Literal["energy", "energy+std", "energy-std"]
 
 plt.rc("savefig", bbox="tight", dpi=200)
 plt.rcParams["figure.constrained_layout.use"] = True
@@ -27,10 +28,10 @@ def hist_classified_stable_as_func_of_hull_dist(
     e_above_hull_col: str,
     ax: plt.Axes = None,
     energy_type: Literal["true", "pred"] = "true",
-    criterion: Literal["energy", "std", "neg_std"] = "energy",
+    stability_crit: StabilityCriterion = "energy",
     show_mae: bool = False,
-    stability_thresh: float = 0,  # set stability threshold as distance to convex hull
-    # in eV / atom, usually 0 or 0.1 eV
+    stability_threshold: float = 0,  # set stability threshold as distance to convex
+    # hull in eV / atom, usually 0 or 0.1 eV
     x_lim: tuple[float, float] = (-0.4, 0.4),
 ) -> plt.Axes:
     """
@@ -52,28 +53,28 @@ def hist_classified_stable_as_func_of_hull_dist(
 
     error = df[pred_cols].mean(axis=1) - df[target_col]
     e_above_hull_vals = df[e_above_hull_col]
-    mean = error + e_above_hull_vals
+    residuals = error + e_above_hull_vals
 
-    if criterion == "energy":
-        test = mean
-    elif "std" in criterion:
+    if stability_crit == "energy":
+        test = residuals
+    elif "std" in stability_crit:
         # TODO column names to compute standard deviation from are currently hardcoded
         # needs to be updated when adding non-aviary models with uncertainty estimation
         var_aleatoric = (df.filter(like="_ale_") ** 2).mean(axis=1)
         var_epistemic = df.filter(regex=r"_pred_\d").var(axis=1, ddof=0)
         std_total = (var_epistemic + var_aleatoric) ** 0.5
 
-        if criterion == "std":
+        if stability_crit == "energy+std":
             test += std_total
-        elif criterion == "neg_std":
+        elif stability_crit == "energy-std":
             test -= std_total
 
     # --- histogram by DFT-computed distance to convex hull
     if energy_type == "true":
-        actual_pos = e_above_hull_vals <= stability_thresh
-        actual_neg = e_above_hull_vals > stability_thresh
-        model_pos = test <= stability_thresh
-        model_neg = test > stability_thresh
+        actual_pos = e_above_hull_vals <= stability_threshold
+        actual_neg = e_above_hull_vals > stability_threshold
+        model_pos = test <= stability_threshold
+        model_neg = test > stability_threshold
 
         n_true_pos = len(e_above_hull_vals[actual_pos & model_pos])
         n_false_neg = len(e_above_hull_vals[actual_pos & model_neg])
@@ -89,10 +90,10 @@ def hist_classified_stable_as_func_of_hull_dist(
 
     # --- histogram by model-predicted distance to convex hull
     if energy_type == "pred":
-        true_pos = mean[actual_pos & model_pos]
-        false_neg = mean[actual_pos & model_neg]
-        false_pos = mean[actual_neg & model_pos]
-        true_neg = mean[actual_neg & model_neg]
+        true_pos = residuals[actual_pos & model_pos]
+        false_neg = residuals[actual_pos & model_neg]
+        false_pos = residuals[actual_neg & model_pos]
+        true_neg = residuals[actual_neg & model_neg]
         xlabel = r"$\Delta E_{Hull-Pred}$ / eV per atom"
 
     ax.hist(
@@ -162,6 +163,10 @@ def rolling_mae_vs_hull_dist(
     """
     if ax is None:
         ax = plt.gca()
+
+    for col in (residual_col, e_above_hull_col):
+        n_nans = df[col].isna().sum()
+        assert n_nans == 0, f"{n_nans} NaNs in {col} column"
 
     is_fresh_ax = len(ax.lines) == 0
 
@@ -256,9 +261,9 @@ def precision_recall_vs_calc_count(
     df: pd.DataFrame,
     residual_col: str = "residual",
     e_above_hull_col: str = "e_above_hull",
-    criterion: Literal["energy", "std", "neg_std"] = "energy",
-    stability_thresh: float = 0,  # set stability threshold as distance to convex hull
-    # in eV / atom, usually 0 or 0.1 eV
+    stability_crit: StabilityCriterion = "energy",
+    stability_threshold: float = 0,  # set stability threshold as distance to convex
+    # hull in eV / atom, usually 0 or 0.1 eV
     ax: plt.Axes = None,
     label: str = None,
     intersect_lines: str | Sequence[str] = (),
@@ -272,10 +277,10 @@ def precision_recall_vs_calc_count(
             i.e. residual = pred - target. Defaults to "residual".
         e_above_hull_col (str, optional): Column name with convex hull distance values.
             Defaults to "e_above_hull".
-        criterion (Literal['energy', 'std', 'neg_std'], optional): Whether to use
-            energy, energy+model_std, or energy-model_std as stability criterion.
-            Defaults to "energy".
-        stability_thresh (float, optional): Max distance from convex hull before
+        stability_crit ('energy' | 'energy+std' | 'energy-std', optional): Whether to
+            use energy+/-std as stability stability_crit where std is the model
+            predicted uncertainty for the energy it stipulated. Defaults to "energy".
+        stability_threshold (float, optional): Max distance from convex hull before
             material is considered unstable. Defaults to 0.
         label (str, optional): Model name used to identify its liens in the legend.
             Defaults to None.
@@ -288,36 +293,43 @@ def precision_recall_vs_calc_count(
     if ax is None:
         ax = plt.gca()
 
+    for col in (residual_col, e_above_hull_col):
+        n_nans = df[col].isna().sum()
+        assert n_nans == 0, f"{n_nans} NaNs in {col} column"
+
     is_fresh_ax = len(ax.lines) == 0
 
     df = df.sort_values(by="residual")
+    residuals = df[residual_col]
 
-    if criterion == "energy":
-        test = df[residual_col]
-    elif "std" in criterion:
+    if stability_crit not in get_args(StabilityCriterion):
+        raise ValueError(
+            f"Invalid {stability_crit=} must be one of {get_args(StabilityCriterion)}"
+        )
+    if "std" in stability_crit:
         # TODO column names to compute standard deviation from are currently hardcoded
         # needs to be updated when adding non-aviary models with uncertainty estimation
         var_aleatoric = (df.filter(like="_ale_") ** 2).mean(axis=1)
         var_epistemic = df.filter(regex=r"_pred_\d").var(axis=1, ddof=0)
         std_total = (var_epistemic + var_aleatoric) ** 0.5
 
-        if criterion == "std":
-            test += std_total
-        elif criterion == "neg_std":
-            test -= std_total
+        if stability_crit == "energy+std":
+            residuals += std_total
+        elif stability_crit == "energy-std":
+            residuals -= std_total
 
-    # stability_thresh = 0.02
-    stability_thresh = 0
-    # stability_thresh = 0.10
+    # stability_threshold = 0.02
+    stability_threshold = 0
+    # stability_threshold = 0.10
 
-    true_pos_mask = (df[e_above_hull_col] <= stability_thresh) & (
-        df.residual <= stability_thresh
+    true_pos_mask = (df[e_above_hull_col] <= stability_threshold) & (
+        df.residual <= stability_threshold
     )
-    false_neg_mask = (df[e_above_hull_col] <= stability_thresh) & (
-        df.residual > stability_thresh
+    false_neg_mask = (df[e_above_hull_col] <= stability_threshold) & (
+        df.residual > stability_threshold
     )
-    false_pos_mask = (df[e_above_hull_col] > stability_thresh) & (
-        df.residual <= stability_thresh
+    false_pos_mask = (df[e_above_hull_col] > stability_threshold) & (
+        df.residual <= stability_threshold
     )
 
     true_pos_cumsum = true_pos_mask.cumsum()
@@ -349,11 +361,16 @@ def precision_recall_vs_calc_count(
 
     if intersect_lines == "all":
         intersect_lines = ("precision_xy", "recall_xy")
+    if isinstance(intersect_lines, str):
+        intersect_lines = [intersect_lines]
     for line_name in intersect_lines:
-        y_func = dict(
-            precision=precision_curve,
-            recall=rolling_recall_curve,
-        )[line_name.split("_")[0]]
+        try:
+            line_name_map = dict(precision=precision_curve, recall=rolling_recall_curve)
+            y_func = line_name_map[line_name.split("_")[0]]
+        except KeyError:
+            raise ValueError(
+                f"Invalid {intersect_lines=}, must be one of {list(line_name_map)}"
+            )
         intersect_kwargs = dict(
             linestyle=":", alpha=0.4, color=kwargs.get("color", "gray")
         )
@@ -370,7 +387,7 @@ def precision_recall_vs_calc_count(
 
     ax.set(xlabel="Number of Calculations", ylabel="Percentage")
 
-    ax.set(xlim=(0, 8e4), ylim=(0, 100))
+    ax.set(ylim=(0, 100))
 
     [precision] = ax.plot((0, 0), (0, 0), "black", linestyle="-")
     [recall] = ax.plot((0, 0), (0, 0), "black", linestyle=":")
