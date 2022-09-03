@@ -90,7 +90,7 @@ def hist_classified_stable_as_func_of_hull_dist(
         false_neg = e_above_hull_vals[actual_pos & model_neg]
         false_pos = e_above_hull_vals[actual_neg & model_pos]
         true_neg = e_above_hull_vals[actual_neg & model_neg]
-        xlabel = r"$\Delta E_{Hull-MP}$ / eV per atom"
+        xlabel = r"$\Delta E_{Hull-MP}$ (eV / atom)"
 
     # --- histogram by model-predicted distance to convex hull
     if energy_type == "pred":
@@ -98,7 +98,7 @@ def hist_classified_stable_as_func_of_hull_dist(
         false_neg = residuals[actual_pos & model_neg]
         false_pos = residuals[actual_neg & model_pos]
         true_neg = residuals[actual_neg & model_neg]
-        xlabel = r"$\Delta E_{Hull-Pred}$ / eV per atom"
+        xlabel = r"$\Delta E_{Hull-Pred}$ (eV / atom)"
 
     ax.hist(
         [true_pos, false_neg, false_pos, true_neg],
@@ -153,7 +153,7 @@ def rolling_mae_vs_hull_dist(
     e_above_hull_col: str,
     residual_col: str = "residual",
     half_window: float = 0.02,
-    increment: float = 0.002,
+    bin_width: float = 0.002,
     x_lim: tuple[float, float] = (-0.2, 0.3),
     ax: plt.Axes = None,
     **kwargs: Any,
@@ -174,7 +174,7 @@ def rolling_mae_vs_hull_dist(
 
     is_fresh_ax = len(ax.lines) == 0
 
-    bins = np.arange(*x_lim, increment)
+    bins = np.arange(*x_lim, bin_width)
 
     rolling_maes = np.zeros_like(bins)
     rolling_stds = np.zeros_like(bins)
@@ -254,7 +254,7 @@ def rolling_mae_vs_hull_dist(
 
     ax.text(0, 0.13, r"$|\Delta E_{Hull-MP}| > $MAE", horizontalalignment="center")
 
-    ax.set(xlabel=r"$\Delta E_{Hull-MP}$ / eV per atom", ylabel="MAE / eV per atom")
+    ax.set(xlabel=r"$\Delta E_{Hull-MP}$ (eV / atom)", ylabel="MAE (eV / atom)")
 
     ax.set(xlim=x_lim, ylim=(0.0, 0.14))
 
@@ -389,7 +389,7 @@ def precision_recall_vs_calc_count(
         # previous call
         return ax
 
-    ax.set(xlabel="Number of Calculations", ylabel="Percentage")
+    ax.set(xlabel="Number of Calculations", ylabel="Precision and Recall (%)")
 
     ax.set(ylim=(0, 100))
 
