@@ -50,10 +50,8 @@ df_summary = pd.read_csv(
 
 
 # %%
-assert df.e_above_mp_hull.isna().sum() == 0
-
 energy_type = "true"
-criterion = "energy"
+stability_crit = "energy"
 df["wbm_batch"] = df.index.str.split("-").str[2]
 fig, axs = plt.subplots(2, 3, figsize=(18, 9))
 
@@ -65,7 +63,7 @@ common_kwargs = dict(
     target_col="e_form_target",
     pred_cols=pred_cols,
     energy_type=energy_type,
-    criterion=criterion,
+    stability_crit=stability_crit,
     e_above_hull_col="e_above_mp_hull",
 )
 
@@ -81,5 +79,5 @@ hist_classified_stable_as_func_of_hull_dist(df, ax=axs.flat[-1], **common_kwargs
 axs.flat[-1].set(title=f"Combined {batch_idx} ({len(df):,})")
 axs.flat[0].legend(frameon=False, loc="upper left")
 
-img_name = f"{today}-wren-wbm-hull-dist-hist-{energy_type=}-{criterion=}.pdf"
+img_name = f"{today}-wren-wbm-hull-dist-hist-{energy_type=}-{stability_crit=}.pdf"
 # plt.savefig(f"{ROOT}/figures/{img_name}")

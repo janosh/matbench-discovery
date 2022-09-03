@@ -11,6 +11,7 @@ setup(
     long_description=open("readme.md").read(),
     long_description_content_type="text/markdown",
     packages=find_packages(),
+    python_requires=">=3.8",
     keywords=[
         "data-driven materials discovery",
         "finding new stable crystal structures",

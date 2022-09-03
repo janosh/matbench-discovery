@@ -55,7 +55,7 @@ nan_counts = df.isna().sum()
 assert all(nan_counts == 0), f"df should not have missing values: {nan_counts}"
 
 target_col = "e_form_target"
-criterion: Literal["energy", "std", "neg_std"] = "energy"
+stability_crit: Literal["energy", "energy+std", "energy-std"] = "energy"
 energy_type: Literal["true", "pred"] = "true"
 
 
@@ -69,14 +69,13 @@ ax = hist_classified_stable_as_func_of_hull_dist(
     pred_cols,
     e_above_hull_col="e_above_mp_hull",
     energy_type=energy_type,
-    criterion=criterion,
+    stability_crit=stability_crit,
 )
 
 ax.figure.set_size_inches(10, 9)
 
 ax.legend(loc="upper left", frameon=False)
 
-img_path = (
-    f"{ROOT}/figures/{today}-wren-wbm-hull-dist-hist-{energy_type=}-{criterion=}.pdf"
-)
+fig_name = f"wren-wbm-hull-dist-hist-{energy_type=}-{stability_crit=}"
+img_path = f"{ROOT}/figures/{today}-{fig_name}.pdf"
 # plt.savefig(img_path)
