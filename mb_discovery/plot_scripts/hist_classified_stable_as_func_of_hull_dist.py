@@ -1,12 +1,13 @@
 # %%
 from datetime import datetime
-from typing import Literal
 
 import matplotlib.pyplot as plt
 import pandas as pd
 
 from mb_discovery import ROOT
 from mb_discovery.plot_scripts.plot_funcs import (
+    StabilityCriterion,
+    WhichEnergy,
     hist_classified_stable_as_func_of_hull_dist,
 )
 
@@ -55,27 +56,34 @@ nan_counts = df.isna().sum()
 assert all(nan_counts == 0), f"df should not have missing values: {nan_counts}"
 
 target_col = "e_form_target"
-stability_crit: Literal["energy", "energy+std", "energy-std"] = "energy"
-energy_type: Literal["true", "pred"] = "true"
+stability_crit: StabilityCriterion = "energy"
+which_energy: WhichEnergy = "true"
 
+if "std" in stability_crit:
+    # TODO column names to compute standard deviation from are currently hardcoded
+    # needs to be updated when adding non-aviary models with uncertainty estimation
+    var_aleatoric = (df.filter(like="_ale_") ** 2).mean(axis=1)
+    var_epistemic = df.filter(regex=r"_pred_\d").var(axis=1, ddof=0)
+    std_total = (var_epistemic + var_aleatoric) ** 0.5
+else:
+    std_total = None
 
 # make sure we average the expected number of ensemble member predictions
 pred_cols = df.filter(regex=r"_pred_\d").columns
 assert len(pred_cols) == 10
 
 ax = hist_classified_stable_as_func_of_hull_dist(
-    df,
-    target_col,
-    pred_cols,
-    e_above_hull_col="e_above_mp_hull",
-    energy_type=energy_type,
+    e_above_hull_pred=df[pred_cols].mean(axis=1) - df[target_col],
+    e_above_hull_true=df.e_above_mp_hull,
+    which_energy=which_energy,
     stability_crit=stability_crit,
+    std_pred=std_total,
 )
 
 ax.figure.set_size_inches(10, 9)
 
 ax.legend(loc="upper left", frameon=False)
 
-fig_name = f"wren-wbm-hull-dist-hist-{energy_type=}-{stability_crit=}"
+fig_name = f"wren-wbm-hull-dist-hist-{which_energy=}-{stability_crit=}"
 img_path = f"{ROOT}/figures/{today}-{fig_name}.pdf"
 # plt.savefig(img_path)

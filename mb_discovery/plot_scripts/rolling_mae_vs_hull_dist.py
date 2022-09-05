@@ -22,10 +22,13 @@ plt.rc("font", size=16)
 # %%
 markers = ["o", "v", "^", "H", "D", ""]
 
-df = pd.read_csv(
+data_path = (
     f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
     # f"{ROOT}/data/2022-08-16-wrenformer-ensemble-predictions.csv.bz2"
-).set_index("material_id")
+)
+df = pd.read_csv(data_path).set_index("material_id")
+legend_label = "Wren"
+assert f"{legend_label.lower()}-" in data_path
 
 
 # %%
@@ -44,7 +47,7 @@ df_hull = pd.read_csv(
 
 df["e_above_mp_hull"] = df_hull.e_above_mp_hull
 
-assert (n_nans := df.isna().sum().sum()) == 0, f"Found {n_nans} NaNs"
+assert all(n_nans := df.isna().sum() == 0), f"Found {n_nans} NaNs"
 
 target_col = "e_form_target"
 # --- or ---
@@ -55,19 +58,18 @@ target_col = "e_form_target"
 assert df.filter(regex=r"_pred_\d").shape[1] == 10
 
 df["e_form_pres_ens"] = df.filter(regex=r"_pred_\d+").mean(axis=1)
-df["e_above_mp_hull_pred"] = df.e_form_pres_ens - df[target_col] + df.e_above_mp_hull
-
-df["residual"] = df.e_above_mp_hull_pred - df.e_above_mp_hull
+df["e_above_hull_pred"] = df.e_form_pres_ens - df[target_col]
 
 
 # %%
 ax = rolling_mae_vs_hull_dist(
-    df,
-    e_above_hull_col="e_above_mp_hull",
-    residual_col="residual",
+    e_above_hull_pred=df.e_above_hull_pred,
+    e_above_hull_true=df.e_above_mp_hull,
+    label=legend_label,
 )
 
 ax.figure.set_size_inches(10, 9)
+ax.legend(loc="lower right", frameon=False)
 
 img_path = f"{ROOT}/figures/{today}-rolling-mae-vs-hull-dist-{rare=}.pdf"
 # plt.savefig(img_path)
