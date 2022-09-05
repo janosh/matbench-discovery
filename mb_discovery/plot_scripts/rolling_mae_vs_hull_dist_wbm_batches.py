@@ -39,12 +39,9 @@ target_col = "e_form_target"
 # make sure we average the expected number of ensemble member predictions
 assert df_wbm.filter(regex=r"_pred_\d").shape[1] == 10
 
-df_wbm["e_above_mp_hull_pred"] = (
-    df_wbm.filter(regex=r"_pred_\d").mean(axis=1)
-    - df_wbm[target_col]
-    + df_wbm.e_above_mp_hull
+df_wbm["e_above_hull_pred"] = (
+    df_wbm.filter(regex=r"_pred_\d").mean(axis=1) - df_wbm[target_col]
 )
-df_wbm["error"] = abs(df_wbm.e_above_mp_hull_pred - df_wbm.e_above_mp_hull)
 
 
 # %%
@@ -57,9 +54,8 @@ for idx, marker in enumerate(markers, 1):
     df = df_wbm[df_wbm.index.str.startswith(f"wbm-step-{idx}")]
 
     rolling_mae_vs_hull_dist(
-        df,
-        residual_col="error",
-        e_above_hull_col="e_above_mp_hull",
+        e_above_hull_pred=df.e_above_hull_pred,
+        e_above_hull_true=df.e_above_mp_hull,
         ax=ax,
         label=title,
         marker=marker,

@@ -66,20 +66,19 @@ for model_name, df in dfs.items():
         model_preds = df.filter(like=r"_pred_").mean(axis=1)
     else:
         model_preds = df.e_form_pred
-    df["e_above_mp_hull_pred"] = model_preds - df[target_col] + df.e_above_mp_hull
-    df["residual"] = df.e_above_mp_hull_pred - df.e_above_mp_hull
+    df["e_above_mp_hull_pred"] = model_preds - df[target_col]
 
     rolling_mae_vs_hull_dist(
-        df,
-        e_above_hull_col="e_above_mp_hull",
-        residual_col="residual",
+        e_above_hull_pred=df.e_above_mp_hull_pred,
+        e_above_hull_true=df.e_above_mp_hull,
         ax=ax,
         label=model_name,
     )
 
-ax.legend(frameon=False, loc="lower right")
+# increase line width in legend
+legend = ax.legend(frameon=False, loc="lower right")
+for line in legend.get_lines():
+    line._linewidth *= 2
 
 img_path = f"{ROOT}/figures/{today}-rolling-mae-vs-hull-dist-compare-models-{rare=}.pdf"
 # plt.savefig(img_path)
-
-plt.show()

@@ -15,6 +15,7 @@ pretrained/
 
 # Weights and Biases logs
 wandb/
+job-logs/
 
 # slurm logs
 slurm-*out

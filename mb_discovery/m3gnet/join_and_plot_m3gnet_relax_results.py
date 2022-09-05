@@ -4,9 +4,9 @@ from __future__ import annotations
 import gzip
 import io
 import pickle
+import urllib.request
 from datetime import datetime
 from glob import glob
-from urllib.request import urlopen
 
 import pandas as pd
 from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram, PDEntry
@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 from mb_discovery import ROOT, as_dict_handler
 from mb_discovery.plot_scripts.plot_funcs import (
-    hist_classify_stable_as_func_of_hull_dist,
+    hist_classified_stable_as_func_of_hull_dist,
 )
 
 
@@ -25,7 +25,7 @@ today = f"{datetime.now():%Y-%m-%d}"
 # %%
 task_type = "RS3RE"
 date = "2022-08-19"
-glob_pattern = f"{date}-m3gnet-relax-wbm-{task_type}/*.json.gz"
+glob_pattern = f"{date}-m3gnet-wbm-relax-{task_type}/*.json.gz"
 file_paths = sorted(glob(f"{ROOT}/data/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
@@ -68,7 +68,7 @@ if any(df_m3gnet.index.str.contains("_")):
 # %%
 # 2022-01-25-ppd-mp+wbm.pkl.gz (235 MB)
 ppd_pickle_url = "https://figshare.com/ndownloader/files/36669624"
-zipped_file = urlopen(ppd_pickle_url)
+zipped_file = urllib.request.urlopen(ppd_pickle_url)
 
 ppd_mp_wbm: PatchedPhaseDiagram = pickle.load(
     io.BytesIO(gzip.decompress(zipped_file.read()))
@@ -114,15 +114,21 @@ df_m3gnet.isna().sum()
 
 
 # %%
-out_path = f"{ROOT}/data/{today}-m3gnet-relax-wbm-{task_type}.json.gz"
+out_path = f"{ROOT}/data/{today}-m3gnet-wbm-relax-{task_type}.json.gz"
 df_m3gnet.reset_index().to_json(out_path, default_handler=as_dict_handler)
+
+out_path = f"{ROOT}/data/2022-08-16-m3gnet-wbm-relax-results-IS2RE.json.gz"
+df_m3gnet = pd.read_json(out_path)
 
 
 # %%
-ax_hull_dist_hist = hist_classify_stable_as_func_of_hull_dist(
-    formation_energy_targets=df_m3gnet.e_form_ppd_2022_01_25,
-    formation_energy_preds=df_m3gnet.e_form_m3gnet_from_ppd,
-    e_above_hull_vals=df_m3gnet.e_above_mp_hull,
+df_m3gnet["e_above_hull_pred"] = (  # TODO fix this incorrect e_above_hull_pred
+    df_m3gnet["e_form_m3gnet_from_ppd"] - df_m3gnet["e_above_mp_hull"]
+)
+
+ax_hull_dist_hist = hist_classified_stable_as_func_of_hull_dist(
+    e_above_hull_pred=df_m3gnet.e_above_hull_pred,
+    e_above_hull_true=df_m3gnet.e_above_mp_hull,
 )
 
 # ax_hull_dist_hist.figure.savefig(f"{ROOT}/plots/{today}-m3gnet-wbm-hull-dist-hist.pdf")

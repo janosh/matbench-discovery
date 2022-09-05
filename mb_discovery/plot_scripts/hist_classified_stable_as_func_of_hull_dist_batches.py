@@ -6,6 +6,8 @@ import pandas as pd
 
 from mb_discovery import ROOT
 from mb_discovery.plot_scripts.plot_funcs import (
+    StabilityCriterion,
+    WhichEnergy,
     hist_classified_stable_as_func_of_hull_dist,
 )
 
@@ -50,8 +52,8 @@ df_summary = pd.read_csv(
 
 
 # %%
-energy_type = "true"
-stability_crit = "energy"
+which_energy: WhichEnergy = "true"
+stability_crit: StabilityCriterion = "energy"
 df["wbm_batch"] = df.index.str.split("-").str[2]
 fig, axs = plt.subplots(2, 3, figsize=(18, 9))
 
@@ -59,25 +61,30 @@ fig, axs = plt.subplots(2, 3, figsize=(18, 9))
 pred_cols = df.filter(regex=r"_pred_\d").columns
 assert len(pred_cols) == 10
 
-common_kwargs = dict(
-    target_col="e_form_target",
-    pred_cols=pred_cols,
-    energy_type=energy_type,
-    stability_crit=stability_crit,
-    e_above_hull_col="e_above_mp_hull",
-)
 
 for (batch_idx, batch_df), ax in zip(df.groupby("wbm_batch"), axs.flat):
-    hist_classified_stable_as_func_of_hull_dist(batch_df, ax=ax, **common_kwargs)
+    hist_classified_stable_as_func_of_hull_dist(
+        e_above_hull_pred=batch_df[pred_cols].mean(axis=1) - batch_df.e_form_target,
+        e_above_hull_true=batch_df.e_above_mp_hull,
+        which_energy=which_energy,
+        stability_crit=stability_crit,
+        ax=ax,
+    )
 
     title = f"Batch {batch_idx} ({len(df):,})"
     ax.set(title=title)
 
 
-hist_classified_stable_as_func_of_hull_dist(df, ax=axs.flat[-1], **common_kwargs)
+hist_classified_stable_as_func_of_hull_dist(
+    e_above_hull_pred=df[pred_cols].mean(axis=1),
+    e_above_hull_true=df.e_above_mp_hull,
+    which_energy=which_energy,
+    stability_crit=stability_crit,
+    ax=axs.flat[-1],
+)
 
 axs.flat[-1].set(title=f"Combined {batch_idx} ({len(df):,})")
 axs.flat[0].legend(frameon=False, loc="upper left")
 
-img_name = f"{today}-wren-wbm-hull-dist-hist-{energy_type=}-{stability_crit=}.pdf"
+img_name = f"{today}-wren-wbm-hull-dist-hist-{which_energy=}-{stability_crit=}.pdf"
 # plt.savefig(f"{ROOT}/figures/{img_name}")
