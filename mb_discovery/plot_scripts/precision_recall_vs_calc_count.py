@@ -42,9 +42,9 @@ dfs["Wrenformer"] = pd.read_csv(
 ).set_index("material_id")
 
 
-# download wbm-steps-summary.csv (23.31 MB)
+# %% download wbm-steps-summary.csv (23.31 MB)
 df_summary = pd.read_csv(
-    "https://figshare.com/ndownloader/files/36714216?private_link=ff0ad14505f9624f0c05"
+    "https://figshare.com/files/36714216?private_link=ff0ad14505f9624f0c05"
 ).set_index("material_id")
 
 

@@ -67,7 +67,7 @@ if any(df_m3gnet.index.str.contains("_")):
 
 # %%
 # 2022-01-25-ppd-mp+wbm.pkl.gz (235 MB)
-ppd_pickle_url = "https://figshare.com/ndownloader/files/36669624"
+ppd_pickle_url = "https://figshare.com/files/36669624"
 zipped_file = urllib.request.urlopen(ppd_pickle_url)
 
 ppd_mp_wbm: PatchedPhaseDiagram = pickle.load(
@@ -93,7 +93,7 @@ df_m3gnet["e_above_mp_hull"] = df_hull.e_above_mp_hull
 
 
 df_wbm = pd.read_csv(  # download wbm-steps-summary.csv (23.31 MB)
-    "https://figshare.com/ndownloader/files/36714216?private_link=ff0ad14505f9624f0c05"
+    "https://figshare.com/files/36714216?private_link=ff0ad14505f9624f0c05"
 ).set_index("material_id")
 
 df_m3gnet["e_form_wbm"] = df_wbm.e_form
