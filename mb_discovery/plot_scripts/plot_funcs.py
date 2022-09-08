@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from typing import Any, Literal, Sequence, get_args
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.interpolate
 import scipy.stats
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
+
+from mb_discovery.plot_scripts import plt
 
 
 __author__ = "Janosh Riebesell"
@@ -15,11 +16,6 @@ __date__ = "2022-08-05"
 
 StabilityCriterion = Literal["energy", "energy+std", "energy-std"]
 WhichEnergy = Literal["true", "pred"]
-
-plt.rc("savefig", bbox="tight", dpi=200)
-plt.rcParams["figure.constrained_layout.use"] = True
-plt.rc("figure", dpi=200)
-plt.rc("font", size=16)
 
 
 def hist_classified_stable_as_func_of_hull_dist(

@@ -1,10 +1,10 @@
 # %%
 from datetime import datetime
 
-import matplotlib.pyplot as plt
 import pandas as pd
 
 from mb_discovery import ROOT
+from mb_discovery.plot_scripts import plt
 from mb_discovery.plot_scripts.plot_funcs import rolling_mae_vs_hull_dist
 
 
@@ -12,12 +12,6 @@ __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
 
 today = f"{datetime.now():%Y-%m-%d}"
-
-
-plt.rc("savefig", bbox="tight", dpi=200)
-plt.rcParams["figure.constrained_layout.use"] = True
-plt.rc("figure", dpi=200)
-plt.rc("font", size=16)
 
 
 # %%
