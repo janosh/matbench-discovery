@@ -1,10 +1,10 @@
 # %%
 from datetime import datetime
 
-import matplotlib.pyplot as plt
 import pandas as pd
 
 from mb_discovery import ROOT
+from mb_discovery.plot_scripts import plt
 from mb_discovery.plot_scripts.plot_funcs import (
     StabilityCriterion,
     precision_recall_vs_calc_count,
@@ -15,11 +15,6 @@ __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
 
 today = f"{datetime.now():%Y-%m-%d}"
-
-plt.rc("savefig", bbox="tight", dpi=200)
-plt.rcParams["figure.constrained_layout.use"] = True
-plt.rc("figure", dpi=200)
-plt.rc("font", size=16)
 
 
 # %%
@@ -112,4 +107,4 @@ ax.legend(frameon=False, loc="lower right")
 ax.figure.set_size_inches(10, 9)
 
 img_path = f"{ROOT}/figures/{today}-precision-recall-vs-calc-count-{rare=}.pdf"
-# plt.savefig(img_path)
+plt.savefig(img_path)
