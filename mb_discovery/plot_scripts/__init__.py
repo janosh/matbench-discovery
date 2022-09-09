@@ -21,7 +21,8 @@ px.defaults.labels = {
 pio.templates.default = "plotly_white"
 
 # https://github.com/plotly/Kaleido/issues/122#issuecomment-994906924
-pio.kaleido.scope.mathjax = None
+# when seeing MathJax "loading" message in exported PDFs, try:
+# pio.kaleido.scope.mathjax = None
 
 
 plt.rc("font", size=16)

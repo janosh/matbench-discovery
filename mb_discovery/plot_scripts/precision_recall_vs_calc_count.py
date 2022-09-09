@@ -33,7 +33,7 @@ for model_name in ("Wren", "CGCNN", "Voronoi"):
 # ).set_index("material_id")
 
 dfs["Wrenformer"] = pd.read_csv(
-    f"{ROOT}/data/2022-08-16-wrenformer-ensemble-predictions.csv.bz2"
+    f"{ROOT}/data/2022-08-16-wrenformer-preds.csv.bz2"
 ).set_index("material_id")
 
 

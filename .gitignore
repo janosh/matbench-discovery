@@ -19,3 +19,4 @@ job-logs/
 
 # slurm logs
 slurm-*out
+mb_discovery/**/*.csv
