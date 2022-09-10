@@ -4,7 +4,6 @@ from glob import glob
 
 import pandas as pd
 
-
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-03"
 

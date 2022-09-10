@@ -18,7 +18,6 @@ from mb_discovery.plot_scripts.plot_funcs import (
     hist_classified_stable_as_func_of_hull_dist,
 )
 
-
 today = f"{datetime.now():%Y-%m-%d}"
 
 

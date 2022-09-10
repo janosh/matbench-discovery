@@ -10,7 +10,6 @@ from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 
 from mb_discovery.plot_scripts import plt
 
-
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-05"
 
@@ -365,7 +364,10 @@ def precision_recall_vs_calc_count(
         # previous call
         return ax
 
-    ax.set(xlabel="Number of Calculations", ylabel="Precision and Recall (%)")
+    ax.set(
+        xlabel="Number of compounds sorted by model-predicted stability",
+        ylabel="Precision and Recall (%)",
+    )
 
     ax.set(ylim=(0, 100))
 

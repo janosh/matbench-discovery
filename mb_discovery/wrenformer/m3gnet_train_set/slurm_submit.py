@@ -5,7 +5,6 @@ from datetime import datetime
 
 from aviary import ROOT
 
-
 """
 Write a Python job file and sbatch it using subprocess.run()
 """

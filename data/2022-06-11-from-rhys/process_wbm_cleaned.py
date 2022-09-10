@@ -7,7 +7,6 @@ from tqdm import tqdm
 
 from mb_discovery import ROOT, as_dict_handler
 
-
 """
 Change JSON orientation of wbm-cleaned.json.gz and WBM step IDs to match the dielectric
 Pareto frontier project.
@@ -29,7 +28,9 @@ def increment_wbm_material_id(wbm_id: str) -> str:
 
 
 # %%
-df_wbm = pd.read_json(f"{ROOT}/data/wbm-cleaned.json.gz", orient="split")
+df_wbm = pd.read_json(
+    f"{ROOT}/data/2022-06-11-from-rhys/wbm-cleaned.json.gz", orient="split"
+)
 df_wbm.index = df_wbm.index.map(increment_wbm_material_id)
 
 

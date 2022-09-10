@@ -14,7 +14,6 @@ from mb_discovery.plot_scripts.plot_funcs import (
     rolling_mae_vs_hull_dist,
 )
 
-
 DATA_DIR = f"{ROOT}/data/2022-06-11-from-rhys"
 
 df_hull = pd.read_csv(f"{DATA_DIR}/wbm-e-above-mp-hull.csv").set_index("material_id")

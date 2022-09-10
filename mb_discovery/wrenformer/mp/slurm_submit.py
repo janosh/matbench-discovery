@@ -5,7 +5,6 @@ from datetime import datetime
 
 from mb_discovery import ROOT
 
-
 """
 Write a Python job file and sbatch it using subprocess.run() to train a Wrenformer
 ensemble of size n_folds on target_col.

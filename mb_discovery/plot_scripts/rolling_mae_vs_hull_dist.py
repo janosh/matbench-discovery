@@ -7,7 +7,6 @@ from mb_discovery import ROOT
 from mb_discovery.plot_scripts import plt
 from mb_discovery.plot_scripts.plot_funcs import rolling_mae_vs_hull_dist
 
-
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
 

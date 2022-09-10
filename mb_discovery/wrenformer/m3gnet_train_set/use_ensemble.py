@@ -8,7 +8,6 @@ import pandas as pd
 import wandb
 from aviary.wrenformer.deploy import deploy_wandb_checkpoints
 
-
 __author__ = "Janosh Riebesell"
 __date__ = "2022-09-05"
 
@@ -19,15 +18,13 @@ https://figshare.com/articles/dataset/MPF_2021_2_8/19470599, then makes predicti
 WBM dataset, prints ensemble metrics and stores predictions to CSV.
 """
 
-MODULE_DIR = os.path.dirname(__file__)
+module_dir = os.path.dirname(__file__)
+today = f"{datetime.now():%Y-%m-%d}"
 
 
 # %%
-today = f"{datetime.now():%Y-%m-%d}"
-
-data_path = (  # download wbm-steps-summary.csv (23.31 MB)
-    "https://figshare.com/files/36714216?private_link=ff0ad14505f9624f0c05"
-)
+# download wbm-steps-summary.csv (23.31 MB)
+data_path = "https://figshare.com/files/36714216?private_link=ff0ad14505f9624f0c05"
 df = pd.read_csv(data_path).set_index("material_id")
 
 
@@ -36,13 +33,15 @@ df[target_col] = df.energy / df.n_sites
 
 wandb.login()
 wandb_api = wandb.Api()
+ensemble_id = "wrenformer-m3gnet-trainset-ensemble-1"
 runs = wandb_api.runs(
-    "aviary/wrenformer-on-m3gnet-trainset",
-    filters={"tags": {"$in": ["wrenformer-m3gnet-trainset-ensemble-1"]}},
+    "aviary/wrenformer-on-m3gnet-trainset", filters={"tags": {"$in": [ensemble_id]}}
 )
+
+assert len(runs) == 10, f"Expected 10 runs, got {len(runs)} for {ensemble_id=}"
 
 df, ensemble_metrics = deploy_wandb_checkpoints(
     runs, df, input_col="wyckoff", target_col=target_col
 )
 
-df.to_csv(f"{MODULE_DIR}/{today}-wrenformer-preds-{target_col}.csv")
+df.round(6).to_csv(f"{module_dir}/{today}-{ensemble_id}-preds-{target_col}.csv")
