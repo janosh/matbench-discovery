@@ -10,7 +10,6 @@ from mb_discovery.plot_scripts.plot_funcs import (
     precision_recall_vs_calc_count,
 )
 
-
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
 
@@ -28,9 +27,9 @@ for model_name in ("Wren", "CGCNN", "Voronoi"):
     ).set_index("material_id")
     dfs[model_name] = df
 
-# dfs["M3GNet"] = pd.read_json(
-#     f"{ROOT}/data/2022-08-16-m3gnet-wbm-relax-results-IS2RE.json.gz"
-# ).set_index("material_id")
+dfs["M3GNet"] = pd.read_json(
+    f"{ROOT}/data/2022-08-16-m3gnet-wbm-relax-results-IS2RE.json.gz"
+).set_index("material_id")
 
 dfs["Wrenformer"] = pd.read_csv(
     f"{ROOT}/data/2022-08-16-wrenformer-preds.csv.bz2"

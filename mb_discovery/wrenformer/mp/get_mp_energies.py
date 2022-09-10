@@ -7,10 +7,8 @@ from aviary.utils import as_dict_handler
 from aviary.wren.utils import get_aflow_label_from_spglib
 from mp_api.client import MPRester
 
-
 """
-Download all MP formation and above hull energies on 2022-08-13 for training a
-Wrenformer ensemble.
+Download all MP formation and above hull energies on 2022-08-13.
 
 Related EDA of MP formation energies:
 https://github.com/janosh/pymatviz/blob/main/examples/mp_bimodal_e_form.ipynb
@@ -33,7 +31,7 @@ fields = [
     "symmetry",
     "energy_above_hull",
 ]
-with MPRester() as mpr:
+with MPRester(use_document_model=False) as mpr:
     docs = mpr.summary.search(fields=fields)
 
 print(f"{today}: {len(docs) = :,}")
@@ -41,9 +39,8 @@ print(f"{today}: {len(docs) = :,}")
 
 
 # %%
-df = pd.DataFrame(
-    [{key: getattr(doc, key, None) for key in fields} for doc in docs]
-).set_index("material_id")
+df = pd.DataFrame(docs).set_index("material_id")
+df.pop("_id")
 
 df["spacegroup_number"] = df.pop("symmetry").map(lambda x: x.number)
 

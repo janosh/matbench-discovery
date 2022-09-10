@@ -11,7 +11,6 @@ from mb_discovery.plot_scripts.plot_funcs import (
     hist_classified_stable_as_func_of_hull_dist,
 )
 
-
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
 

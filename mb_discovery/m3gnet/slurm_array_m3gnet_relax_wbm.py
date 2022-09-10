@@ -14,7 +14,6 @@ from m3gnet.models import Relaxer
 
 from mb_discovery import ROOT, as_dict_handler
 
-
 """
 To slurm submit this file, use
 
