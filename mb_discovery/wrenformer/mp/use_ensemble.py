@@ -23,12 +23,11 @@ today = f"{datetime.now():%Y-%m-%d}"
 
 # %%
 # download wbm-steps-summary.csv (23.31 MB)
-data_path = "https://figshare.com/files/36714216?private_link=ff0ad14505f9624f0c05"
+data_path = "https://figshare.com/files/37542841?private_link=ff0ad14505f9624f0c05"
 df = pd.read_csv(data_path).set_index("material_id")
 
 
 target_col = "e_form_per_atom"
-df[target_col] = df.e_form / df.n_sites
 
 wandb.login()
 wandb_api = wandb.Api()

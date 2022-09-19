@@ -9,6 +9,7 @@ __pycache__
 *.json.gz
 *.json.bz2
 *.csv.bz2
+*.pkl.gz
 
 # checkpoint files of trained models
 pretrained/
@@ -20,3 +21,6 @@ job-logs/
 # slurm logs
 slurm-*out
 mb_discovery/**/*.csv
+
+# temporary ignore rule
+paper

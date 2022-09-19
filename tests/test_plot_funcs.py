@@ -76,7 +76,9 @@ def test_precision_recall_vs_calc_count(
     assert ax.get_ylim() == (0, 100)
     # assert ax.get_xlim() == pytest.approx((-1.4, 29.4))
 
-    assert ax.get_xlabel() == "Number of Calculations"
+    assert (
+        ax.get_xlabel() == "Number of compounds sorted by model-predicted hull distance"
+    )
     assert ax.get_ylabel() == "Precision and Recall (%)"
 
 
