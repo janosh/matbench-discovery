@@ -42,8 +42,7 @@ df["mp_energy"] = df.energy.map(lambda x: x[-1])
 df["n_sites"] = df.mp_structure.map(len)
 df["mp_energy_per_atom"] = df.mp_energy / df.n_sites
 
-tqdm.pandas()
-df["wyckoff"] = df.mp_structure.progress_map(get_aflow_label_from_spglib)
+df["wyckoff"] = [get_aflow_label_from_spglib(x) for x in tqdm(df.mp_structure)]
 
 
 df.reset_index().to_json(

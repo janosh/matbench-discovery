@@ -38,7 +38,7 @@ dfs["Wrenformer"] = pd.read_csv(
 
 # %% download wbm-steps-summary.csv (23.31 MB)
 df_summary = pd.read_csv(
-    "https://figshare.com/files/36714216?private_link=ff0ad14505f9624f0c05"
+    "https://figshare.com/files/37542841?private_link=ff0ad14505f9624f0c05"
 ).set_index("material_id")
 
 
@@ -73,8 +73,6 @@ for (model_name, df), color in zip(
             model_preds = df.e_form_m3gnet
             targets = df.e_form_wbm
         elif "Wrenformer" in model_name:
-            df["e_form_per_atom_pred_ens"] = df.e_form_pred_ens / df.n_sites
-            df["e_form_per_atom"] = df.e_form / df.n_sites
             model_preds = df.e_form_per_atom_pred_ens
             targets = df.e_form_per_atom
         elif len(pred_cols := df.filter(like="e_form_pred").columns) >= 1:
@@ -106,4 +104,5 @@ ax.legend(frameon=False, loc="lower right")
 ax.figure.set_size_inches(10, 9)
 
 img_path = f"{ROOT}/figures/{today}-precision-recall-vs-calc-count-{rare=}.pdf"
-plt.savefig(img_path)
+if False:
+    plt.savefig(img_path)

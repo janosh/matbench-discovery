@@ -1,0 +1,892 @@
+{
+  "Ne": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -0.02593678,
+    "composition": {
+      "Ne": 1.0
+    },
+    "name": "Ne",
+    "attribute": null
+  },
+  "He": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -0.00905916,
+    "composition": {
+      "He": 1.0
+    },
+    "name": "He",
+    "attribute": null
+  },
+  "Ar": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -0.06880822,
+    "composition": {
+      "Ar": 1.0
+    },
+    "name": "Ar",
+    "attribute": null
+  },
+  "F": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -7.64591587,
+    "composition": {
+      "F": 4.0
+    },
+    "name": "F2",
+    "attribute": null
+  },
+  "O": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -39.58368804,
+    "composition": {
+      "O": 8.0
+    },
+    "name": "O2",
+    "attribute": null
+  },
+  "Cl": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -7.39414664,
+    "composition": {
+      "Cl": 4.0
+    },
+    "name": "Cl2",
+    "attribute": null
+  },
+  "N": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -66.6919594,
+    "composition": {
+      "N": 8.0
+    },
+    "name": "N2",
+    "attribute": null
+  },
+  "Kr": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -0.05671467,
+    "composition": {
+      "Kr": 1.0
+    },
+    "name": "Kr",
+    "attribute": null
+  },
+  "Br": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -6.54773157,
+    "composition": {
+      "Br": 4.0
+    },
+    "name": "Br",
+    "attribute": null
+  },
+  "I": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -6.09605046,
+    "composition": {
+      "I": 4.0
+    },
+    "name": "I",
+    "attribute": null
+  },
+  "Xe": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -0.03617417,
+    "composition": {
+      "Xe": 1.0
+    },
+    "name": "Xe",
+    "attribute": null
+  },
+  "S": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -132.36639574,
+    "composition": {
+      "S": 32.0
+    },
+    "name": "S",
+    "attribute": null
+  },
+  "Se": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -223.73833457,
+    "composition": {
+      "Se": 64.0
+    },
+    "name": "Se",
+    "attribute": null
+  },
+  "C": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -36.9071228,
+    "composition": {
+      "C": 4.0
+    },
+    "name": "C",
+    "attribute": null
+  },
+  "Au": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -3.27388154,
+    "composition": {
+      "Au": 1.0
+    },
+    "name": "Au",
+    "attribute": null
+  },
+  "W": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -12.95812647,
+    "composition": {
+      "W": 1.0
+    },
+    "name": "W",
+    "attribute": null
+  },
+  "Pb": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -3.71264707,
+    "composition": {
+      "Pb": 1.0
+    },
+    "name": "Pb",
+    "attribute": null
+  },
+  "Rh": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -7.36430787,
+    "composition": {
+      "Rh": 1.0
+    },
+    "name": "Rh",
+    "attribute": null
+  },
+  "Pt": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -6.07090771,
+    "composition": {
+      "Pt": 1.0
+    },
+    "name": "Pt",
+    "attribute": null
+  },
+  "Ru": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -18.54877931,
+    "composition": {
+      "Ru": 2.0
+    },
+    "name": "Ru",
+    "attribute": null
+  },
+  "Pd": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -5.17988181,
+    "composition": {
+      "Pd": 1.0
+    },
+    "name": "Pd",
+    "attribute": null
+  },
+  "Os": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -22.45473251,
+    "composition": {
+      "Os": 2.0
+    },
+    "name": "Os",
+    "attribute": null
+  },
+  "Ir": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -8.83843042,
+    "composition": {
+      "Ir": 1.0
+    },
+    "name": "Ir",
+    "attribute": null
+  },
+  "H": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -13.57090418,
+    "composition": {
+      "H": 4.0
+    },
+    "name": "H2",
+    "attribute": null
+  },
+  "P": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -227.35870528,
+    "composition": {
+      "P": 42.0
+    },
+    "name": "P",
+    "attribute": null
+  },
+  "As": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -9.31823681,
+    "composition": {
+      "As": 2.0
+    },
+    "name": "As",
+    "attribute": null
+  },
+  "Mo": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -10.84564303,
+    "composition": {
+      "Mo": 1.0
+    },
+    "name": "Mo",
+    "attribute": null
+  },
+  "Te": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -9.42990279,
+    "composition": {
+      "Te": 3.0
+    },
+    "name": "Te",
+    "attribute": null
+  },
+  "Sb": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -8.25800248,
+    "composition": {
+      "Sb": 2.0
+    },
+    "name": "Sb",
+    "attribute": null
+  },
+  "B": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -80.15270125,
+    "composition": {
+      "B": 12.0
+    },
+    "name": "B",
+    "attribute": null
+  },
+  "Bi": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -7.78006862,
+    "composition": {
+      "Bi": 2.0
+    },
+    "name": "Bi",
+    "attribute": null
+  },
+  "Ge": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -9.24605571,
+    "composition": {
+      "Ge": 2.0
+    },
+    "name": "Ge",
+    "attribute": null
+  },
+  "Hg": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -0.60736073,
+    "composition": {
+      "Hg": 2.0
+    },
+    "name": "Hg",
+    "attribute": null
+  },
+  "Sn": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -8.01914371,
+    "composition": {
+      "Sn": 2.0
+    },
+    "name": "Sn",
+    "attribute": null
+  },
+  "Ag": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -8.49766801,
+    "composition": {
+      "Ag": 3.0
+    },
+    "name": "Ag",
+    "attribute": null
+  },
+  "Ni": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -5.78013668,
+    "composition": {
+      "Ni": 1.0
+    },
+    "name": "Ni",
+    "attribute": null
+  },
+  "Tc": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -20.72123982,
+    "composition": {
+      "Tc": 2.0
+    },
+    "name": "Tc",
+    "attribute": null
+  },
+  "Si": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -10.85062804,
+    "composition": {
+      "Si": 2.0
+    },
+    "name": "Si",
+    "attribute": null
+  },
+  "Re": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -24.88905437,
+    "composition": {
+      "Re": 2.0
+    },
+    "name": "Re",
+    "attribute": null
+  },
+  "Cu": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -4.09920667,
+    "composition": {
+      "Cu": 1.0
+    },
+    "name": "Cu",
+    "attribute": null
+  },
+  "Co": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -14.21663559,
+    "composition": {
+      "Co": 2.0
+    },
+    "name": "Co",
+    "attribute": null
+  },
+  "Fe": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -8.47000845,
+    "composition": {
+      "Fe": 1.0
+    },
+    "name": "Fe",
+    "attribute": null
+  },
+  "Ga": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -12.11238409,
+    "composition": {
+      "Ga": 4.0
+    },
+    "name": "Ga",
+    "attribute": null
+  },
+  "In": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -8.25505119,
+    "composition": {
+      "In": 3.0
+    },
+    "name": "In",
+    "attribute": null
+  },
+  "Cd": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -0.92288976,
+    "composition": {
+      "Cd": 1.0
+    },
+    "name": "Cd",
+    "attribute": null
+  },
+  "Cr": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -19.30609494,
+    "composition": {
+      "Cr": 2.0
+    },
+    "name": "Cr",
+    "attribute": null
+  },
+  "Zn": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -2.5194872200000002,
+    "composition": {
+      "Zn": 2.0
+    },
+    "name": "Zn",
+    "attribute": null
+  },
+  "V": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -9.08390607,
+    "composition": {
+      "V": 1.0
+    },
+    "name": "V",
+    "attribute": null
+  },
+  "Tl": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -7.08792944,
+    "composition": {
+      "Tl": 3.0
+    },
+    "name": "Tl",
+    "attribute": null
+  },
+  "Al": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -3.74557583,
+    "composition": {
+      "Al": 1.0
+    },
+    "name": "Al",
+    "attribute": null
+  },
+  "Nb": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -10.10130504,
+    "composition": {
+      "Nb": 1.0
+    },
+    "name": "Nb",
+    "attribute": null
+  },
+  "Be": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -7.47882573,
+    "composition": {
+      "Be": 2.0
+    },
+    "name": "Be",
+    "attribute": null
+  },
+  "Mn": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -265.69844347,
+    "composition": {
+      "Mn": 29.0
+    },
+    "name": "Mn",
+    "attribute": null
+  },
+  "Ti": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -23.68647605,
+    "composition": {
+      "Ti": 3.0
+    },
+    "name": "Ti",
+    "attribute": null
+  },
+  "Ta": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -11.85777763,
+    "composition": {
+      "Ta": 1.0
+    },
+    "name": "Ta",
+    "attribute": null
+  },
+  "Pa": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -9.51466466,
+    "composition": {
+      "Pa": 1.0
+    },
+    "name": "Pa",
+    "attribute": null
+  },
+  "U": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -22.58282002,
+    "composition": {
+      "U": 2.0
+    },
+    "name": "U",
+    "attribute": null
+  },
+  "Sc": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -12.66493821,
+    "composition": {
+      "Sc": 2.0
+    },
+    "name": "Sc",
+    "attribute": null
+  },
+  "Np": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -103.58223745,
+    "composition": {
+      "Np": 8.0
+    },
+    "name": "Np",
+    "attribute": null
+  },
+  "Zr": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -17.09540126,
+    "composition": {
+      "Zr": 2.0
+    },
+    "name": "Zr",
+    "attribute": null
+  },
+  "Mg": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -1.60028005,
+    "composition": {
+      "Mg": 1.0
+    },
+    "name": "Mg",
+    "attribute": null
+  },
+  "Th": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -7.41385825,
+    "composition": {
+      "Th": 1.0
+    },
+    "name": "Th",
+    "attribute": null
+  },
+  "Hf": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -19.9143777,
+    "composition": {
+      "Hf": 2.0
+    },
+    "name": "Hf",
+    "attribute": null
+  },
+  "Pu": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -28.53567666,
+    "composition": {
+      "Pu": 2.0
+    },
+    "name": "Pu",
+    "attribute": null
+  },
+  "Lu": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -9.04190104,
+    "composition": {
+      "Lu": 2.0
+    },
+    "name": "Lu",
+    "attribute": null
+  },
+  "Tm": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -13.42750627,
+    "composition": {
+      "Tm": 3.0
+    },
+    "name": "Tm",
+    "attribute": null
+  },
+  "Er": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -13.70315643,
+    "composition": {
+      "Er": 3.0
+    },
+    "name": "Er",
+    "attribute": null
+  },
+  "Ho": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -13.74722661,
+    "composition": {
+      "Ho": 3.0
+    },
+    "name": "Ho",
+    "attribute": null
+  },
+  "Y": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -19.39941334,
+    "composition": {
+      "Y": 3.0
+    },
+    "name": "Y",
+    "attribute": null
+  },
+  "Dy": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -13.82036052,
+    "composition": {
+      "Dy": 3.0
+    },
+    "name": "Dy",
+    "attribute": null
+  },
+  "Gd": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -28.15224448,
+    "composition": {
+      "Gd": 2.0
+    },
+    "name": "Gd",
+    "attribute": null
+  },
+  "Eu": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -20.58408695,
+    "composition": {
+      "Eu": 2.0
+    },
+    "name": "Eu",
+    "attribute": null
+  },
+  "Sm": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -18.87434454,
+    "composition": {
+      "Sm": 4.0
+    },
+    "name": "Sm",
+    "attribute": null
+  },
+  "Nd": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -19.07257284,
+    "composition": {
+      "Nd": 4.0
+    },
+    "name": "Nd",
+    "attribute": null
+  },
+  "Pr": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -19.12359658,
+    "composition": {
+      "Pr": 4.0
+    },
+    "name": "Pr",
+    "attribute": null
+  },
+  "Pm": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -19.00216929,
+    "composition": {
+      "Pm": 4.0
+    },
+    "name": "Pm",
+    "attribute": null
+  },
+  "Ce": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -11.86617831,
+    "composition": {
+      "Ce": 2.0
+    },
+    "name": "Ce",
+    "attribute": null
+  },
+  "Yb": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -4.61882484,
+    "composition": {
+      "Yb": 3.0
+    },
+    "name": "Yb",
+    "attribute": null
+  },
+  "Tb": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -13.9030983,
+    "composition": {
+      "Tb": 3.0
+    },
+    "name": "Tb",
+    "attribute": null
+  },
+  "La": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -19.74402842,
+    "composition": {
+      "La": 4.0
+    },
+    "name": "La",
+    "attribute": null
+  },
+  "Ac": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -16.48470003,
+    "composition": {
+      "Ac": 4.0
+    },
+    "name": "Ac",
+    "attribute": null
+  },
+  "Ca": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -2.00559988,
+    "composition": {
+      "Ca": 1.0
+    },
+    "name": "Ca",
+    "attribute": null
+  },
+  "Li": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -5.7267686,
+    "composition": {
+      "Li": 3.0
+    },
+    "name": "Li",
+    "attribute": null
+  },
+  "Sr": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -5.06848036,
+    "composition": {
+      "Sr": 3.0
+    },
+    "name": "Sr",
+    "attribute": null
+  },
+  "Na": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -38.35323351,
+    "composition": {
+      "Na": 29.0
+    },
+    "name": "Na",
+    "attribute": null
+  },
+  "Ba": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -1.9189708300000001,
+    "composition": {
+      "Ba": 1.0
+    },
+    "name": "Ba",
+    "attribute": null
+  },
+  "Rb": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -7.84427258,
+    "composition": {
+      "Rb": 8.0
+    },
+    "name": "Rb",
+    "attribute": null
+  },
+  "K": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -22.20797894,
+    "composition": {
+      "K": 20.0
+    },
+    "name": "K",
+    "attribute": null
+  },
+  "Cs": {
+    "@module": "pymatgen.analysis.phase_diagram",
+    "@class": "PDEntry",
+    "energy": -25.96666879,
+    "composition": {
+      "Cs": 29.0
+    },
+    "name": "Cs",
+    "attribute": null
+  }
+}

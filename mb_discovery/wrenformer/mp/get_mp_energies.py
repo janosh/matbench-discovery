@@ -6,6 +6,7 @@ from aviary import ROOT
 from aviary.utils import as_dict_handler
 from aviary.wren.utils import get_aflow_label_from_spglib
 from mp_api.client import MPRester
+from tqdm import tqdm
 
 """
 Download all MP formation and above hull energies on 2022-08-13.
@@ -44,7 +45,7 @@ df.pop("_id")
 
 df["spacegroup_number"] = df.pop("symmetry").map(lambda x: x.number)
 
-df["wyckoff"] = df.structure.map(get_aflow_label_from_spglib)
+df["wyckoff"] = [get_aflow_label_from_spglib(x) for x in tqdm(df.structure)]
 
 df.to_json(
     f"{ROOT}/datasets/{today}-mp-all-energies.json.gz", default_handler=as_dict_handler

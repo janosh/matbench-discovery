@@ -253,7 +253,10 @@ def precision_recall_vs_calc_count(
     intersect_lines: str | Sequence[str] = (),
     **kwargs: Any,
 ) -> plt.Axes:
-    """Precision and recall as a function of the number of calculations performed.
+    """Precision and recall as a function of the number of included materials sorted
+    by model-predicted distance to the convex hull, i.e. materials predicted most stable
+    enter the precision and recall calculation first. The curves end when all materials
+    predicted stable are included.
 
     Args:
         df (pd.DataFrame): Model predictions and target energy values.
@@ -365,7 +368,7 @@ def precision_recall_vs_calc_count(
         return ax
 
     ax.set(
-        xlabel="Number of compounds sorted by model-predicted stability",
+        xlabel="Number of compounds sorted by model-predicted hull distance",
         ylabel="Precision and Recall (%)",
     )
 

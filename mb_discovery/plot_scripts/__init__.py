@@ -24,7 +24,7 @@ pio.templates.default = "plotly_white"
 # pio.kaleido.scope.mathjax = None
 
 
-plt.rc("font", size=16)
+plt.rc("font", size=14)
 plt.rc("savefig", bbox="tight", dpi=200)
-plt.rc("figure", dpi=200, titlesize=18)
+plt.rc("figure", dpi=200, titlesize=16)
 plt.rcParams["figure.constrained_layout.use"] = True

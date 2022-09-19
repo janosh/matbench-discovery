@@ -20,6 +20,6 @@ Load with
 
 ```py
 df_wbm_summary = pd.read_csv(  # download wbm-steps-summary.csv (23.31 MB)
-    "https://figshare.com/files/36714216?private_link=ff0ad14505f9624f0c05"
+    "https://figshare.com/files/37542841?private_link=ff0ad14505f9624f0c05"
 ).set_index("material_id")
 ```
