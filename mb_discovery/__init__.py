@@ -6,8 +6,6 @@ from typing import Any, Generator, Sequence
 PKG_DIR = os.path.dirname(__file__)
 ROOT = os.path.dirname(PKG_DIR)
 
-os.makedirs(f"{PKG_DIR}/plots", exist_ok=True)
-
 
 def chunks(xs: Sequence[Any], n: int) -> Generator[Sequence[Any], None, None]:
     return (xs[i : i + n] for i in range(0, len(xs), n))

@@ -14,9 +14,7 @@ from pymatgen.core import Structure
 from tqdm import tqdm
 
 from mb_discovery import ROOT, as_dict_handler
-from mb_discovery.plot_scripts.plot_funcs import (
-    hist_classified_stable_as_func_of_hull_dist,
-)
+from mb_discovery.plots import hist_classified_stable_as_func_of_hull_dist
 
 today = f"{datetime.now():%Y-%m-%d}"
 

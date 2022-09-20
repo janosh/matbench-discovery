@@ -4,11 +4,7 @@ from datetime import datetime
 import pandas as pd
 
 from mb_discovery import ROOT
-from mb_discovery.plot_scripts import plt
-from mb_discovery.plot_scripts.plot_funcs import (
-    StabilityCriterion,
-    precision_recall_vs_calc_count,
-)
+from mb_discovery.plots import StabilityCriterion, plt, precision_recall_vs_calc_count
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
@@ -32,20 +28,22 @@ dfs["M3GNet"] = pd.read_json(
 ).set_index("material_id")
 
 dfs["Wrenformer"] = pd.read_csv(
-    f"{ROOT}/data/2022-08-16-wrenformer-preds.csv.bz2"
+    f"{ROOT}/models/wrenformer/mp/"
+    "2022-09-20-wrenformer-e_form-ensemble-1-preds-e_form_per_atom.csv"
 ).set_index("material_id")
+
+print(f"loaded models: {list(dfs)}")
 
 
 # %% download wbm-steps-summary.csv (23.31 MB)
-df_summary = pd.read_csv(
+df_wbm = pd.read_csv(
     "https://figshare.com/files/37542841?private_link=ff0ad14505f9624f0c05"
 ).set_index("material_id")
 
 
+# %%
 stability_crit: StabilityCriterion = "energy"
 
-
-# %%
 for (model_name, df), color in zip(
     dfs.items(),
     ("tab:blue", "tab:orange", "teal", "tab:pink", "black", "red", "turquoise"),

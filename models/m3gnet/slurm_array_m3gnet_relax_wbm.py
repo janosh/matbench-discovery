@@ -20,8 +20,8 @@ To slurm submit this file, use
 ```sh
 sbatch --partition icelake-himem --account LEE-SL3-CPU --array 1-101 \
     --time 3:0:0 --job-name m3gnet-wbm-relax-RS2RE --mem 12000 \
-    --output mb_discovery/m3gnet/slurm_logs/slurm-%A-%a.out \
-    --wrap "python mb_discovery/m3gnet/slurm_array_m3gnet_relax_wbm.py"
+    --output models/m3gnet/slurm_logs/slurm-%A-%a.out \
+    --wrap "python models/m3gnet/slurm_array_m3gnet_relax_wbm.py"
 ```
 
 --time 2h is probably enough but missing indices are annoying so best be safe.

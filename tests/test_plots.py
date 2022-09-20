@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 from mb_discovery import ROOT
-from mb_discovery.plot_scripts.plot_funcs import (
+from mb_discovery.plots import (
     StabilityCriterion,
     hist_classified_stable_as_func_of_hull_dist,
     precision_recall_vs_calc_count,

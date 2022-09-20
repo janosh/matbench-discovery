@@ -4,11 +4,11 @@ from datetime import datetime
 import pandas as pd
 
 from mb_discovery import ROOT
-from mb_discovery.plot_scripts import plt
-from mb_discovery.plot_scripts.plot_funcs import (
+from mb_discovery.plots import (
     StabilityCriterion,
     WhichEnergy,
     hist_classified_stable_as_func_of_hull_dist,
+    plt,
 )
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
