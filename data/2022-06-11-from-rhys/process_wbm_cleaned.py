@@ -64,26 +64,25 @@ df_wbm["wyckoff"] = [
 df_wren = pd.read_csv(
     f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
 ).set_index("material_id")
-df_wren.e_form_target.head(10)
+
 # load MP elemental reference entries
 with open(f"{ROOT}/data/2022-09-19-mp-elemental-reference-entries.json") as json_file:
     mp_elemental_reference_entries = json.load(json_file)
     for elem, entry in mp_elemental_reference_entries.items():
         mp_elemental_reference_entries[elem] = PDEntry.from_dict(entry)
 
-df_wbm["e_form_per_atom_wrt_mp_elemental_refs"] = [
+df_wbm["e_form_per_atom"] = [
     get_form_energy_per_atom(entry, mp_elemental_reference_entries)
     for entry in tqdm(df_wbm.cse)
 ]
 
-df_wbm.drop(columns=["initial_structure", "cse"]).to_csv(
-    f"{ROOT}/data/{today}-wbm-formation-energy+wyckoff.csv"
+# filter outliers with anomalously high formation energies
+max_e_form = 3  # eV/atom
+print(
+    f"imposing {max_e_form = }eV/atom filters "
+    f"{sum(df_wbm.e_form_per_atom > max_e_form)} materials"
 )
-
-max_e_form = 3
-# the file 2022-09-20-wbm-formation-energy+wyckoff was uploaded to figshare as
-# wbm-steps-summary.csv (23.5 MB)
-# https://figshare.com/files/37542841
+# >>> max_e_form = 3eV/atom filters 26 materials
 df_wbm.drop(columns=["initial_structure", "cse"], errors="ignore").query(
     f"e_form_per_atom < {max_e_form}"
 ).to_csv(f"{ROOT}/data/{today}-wbm-formation-energy+wyckoff.csv")
@@ -93,7 +92,13 @@ df_wbm.drop(columns=["initial_structure", "cse"], errors="ignore").query(
 # ).set_index("material_id")
 
 
-# %% 2022-07-18 also increment material_ids in wbm-e-above-mp-hull.csv
+ax = df_wbm.query("e_form_per_atom < 10").e_form_per_atom.plot.hist(bins=200, log=True)
+ax.axvline(x=max_e_form, color="red", linestyle="--", label=f"{max_e_form} eV/atom")
+ax.legend(frameon=False)
+
+
+# %% 2022-07-18 also increment material_ids in all the CSVs containing model
+# predictions and wbm-e-above-mp-hull.csv
 for filename in tqdm(
     "wbm-e-above-mp-hull",
     "wren-mp-initial-structures",

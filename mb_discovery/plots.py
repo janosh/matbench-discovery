@@ -2,19 +2,50 @@ from __future__ import annotations
 
 from typing import Any, Literal, Sequence, get_args
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import plotly.express as px
+import plotly.io as pio
 import scipy.interpolate
 import scipy.stats
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
-
-from mb_discovery.plot_scripts import plt
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-05"
 
 StabilityCriterion = Literal["energy", "energy+std", "energy-std"]
 WhichEnergy = Literal["true", "pred"]
+
+
+# --- define global plot settings
+px.defaults.labels = {
+    "n_atoms": "Atom Count",
+    "n_elems": "Element Count",
+    "crystal_sys": "Crystal system",
+    "spg_num": "Space group",
+    "n_wyckoff": "Number of Wyckoff positions",
+    "n_sites": "Lattice site count",
+    "energy_per_atom": "Energy (eV/atom)",
+    "e_form": "Formation energy (eV/atom)",
+    "e_above_hull": "Energy above convex hull (eV/atom)",
+    "e_above_hull_pred": "Predicted energy above convex hull (eV/atom)",
+    "e_above_mp_hull": "Energy above MP convex hull (eV/atom)",
+    "e_above_hull_error": "Error in energy above convex hull (eV/atom)",
+}
+
+pio.templates.default = "plotly_white"
+
+# https://github.com/plotly/Kaleido/issues/122#issuecomment-994906924
+# when seeing MathJax "loading" message in exported PDFs, try:
+# pio.kaleido.scope.mathjax = None
+
+
+plt.rc("font", size=14)
+plt.rc("savefig", bbox="tight", dpi=200)
+plt.rc("figure", dpi=200, titlesize=16)
+plt.rcParams["figure.constrained_layout.use"] = True
+# --- end global plot settings
 
 
 def hist_classified_stable_as_func_of_hull_dist(
