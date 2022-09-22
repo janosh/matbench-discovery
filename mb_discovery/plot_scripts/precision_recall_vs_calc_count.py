@@ -24,7 +24,7 @@ for model_name in ("Wren", "CGCNN", "Voronoi"):
     dfs[model_name] = df
 
 dfs["M3GNet"] = pd.read_json(
-    f"{ROOT}/data/2022-08-16-m3gnet-wbm-relax-results-IS2RE.json.gz"
+    f"{ROOT}/models/m3gnet/2022-08-16-m3gnet-wbm-relax-results-IS2RE.json.gz"
 ).set_index("material_id")
 
 dfs["Wrenformer"] = pd.read_csv(

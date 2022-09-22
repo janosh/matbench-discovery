@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import gzip
 import io
+import os
 import pickle
 import urllib.request
 from datetime import datetime
@@ -16,14 +17,18 @@ from tqdm import tqdm
 from mb_discovery import ROOT, as_dict_handler
 from mb_discovery.plots import hist_classified_stable_as_func_of_hull_dist
 
+__author__ = "Janosh Riebesell"
+__date__ = "2022-08-16"
+
 today = f"{datetime.now():%Y-%m-%d}"
 
 
 # %%
-task_type = "RS3RE"
+module_dir = os.path.dirname(__file__)
+task_type = "RS2RE"
 date = "2022-08-19"
 glob_pattern = f"{date}-m3gnet-wbm-relax-{task_type}/*.json.gz"
-file_paths = sorted(glob(f"{ROOT}/data/{glob_pattern}"))
+file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
 dfs: dict[str, pd.DataFrame] = {}
@@ -93,7 +98,7 @@ df_wbm = pd.read_csv(  # download wbm-steps-summary.csv (23.31 MB)
     "https://figshare.com/files/37542841?private_link=ff0ad14505f9624f0c05"
 ).set_index("material_id")
 
-df_m3gnet["e_form_wbm"] = df_wbm.e_form
+df_m3gnet["e_form_wbm"] = df_wbm.e_form_per_atom
 df_m3gnet["wbm_energy"] = df_wbm.energy
 
 pd_entries_wbm = [
@@ -111,11 +116,11 @@ df_m3gnet.isna().sum()
 
 
 # %%
-out_path = f"{ROOT}/data/{today}-m3gnet-wbm-relax-{task_type}.json.gz"
+out_path = f"{ROOT}/models/m3gnet/{today}-m3gnet-wbm-relax-{task_type}.json.gz"
 df_m3gnet.reset_index().to_json(out_path, default_handler=as_dict_handler)
 
-out_path = f"{ROOT}/data/2022-08-16-m3gnet-wbm-relax-results-IS2RE.json.gz"
-df_m3gnet = pd.read_json(out_path)
+out_path = f"{ROOT}/models/m3gnet/2022-08-16-m3gnet-wbm-relax-results-IS2RE.json.gz"
+df_m3gnet = pd.read_json(out_path).set_index("material_id")
 
 
 # %%
