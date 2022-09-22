@@ -136,12 +136,12 @@ for material_id, structure in tqdm(
     with open(os.devnull, "w") as devnull, contextlib.redirect_stdout(devnull):
         bayes_optimizer.optimize(**optimize_kwargs)
 
-    structure_pred, energy_pred = bayes_optimizer.get_optimized_structure_and_energy()
+    structure_bowsr, energy_bowsr = bayes_optimizer.get_optimized_structure_and_energy()
 
     results = dict(
-        e_form_per_atom_pred=model.predict_energy(structure),
-        structure_pred=structure_pred,
-        energy_pred=energy_pred,
+        e_form_per_atom_bowsr=model.predict_energy(structure),
+        structure_bowsr=structure_bowsr,
+        energy_bowsr=energy_bowsr,
     )
 
     relax_results[material_id] = results
