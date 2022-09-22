@@ -49,7 +49,7 @@ def test_precision_recall_vs_calc_count(
     stability_threshold: float,
     expected_line_count: int,
 ) -> None:
-    ax = plt.figure().gca()  # ensure test functions use different axes
+    ax = plt.figure().gca()  # new figure ensures test functions use different axes
 
     for (model_name, df), color in zip(
         test_dfs.items(), ("tab:blue", "tab:orange", "tab:pink")
@@ -106,7 +106,7 @@ def test_precision_recall_vs_calc_count_raises(
 def test_rolling_mae_vs_hull_dist(
     half_window: float, bin_width: float, x_lim: tuple[float, float]
 ) -> None:
-    ax = plt.figure().gca()  # ensure test functions use different axes
+    ax = plt.figure().gca()  # new figure ensures test functions use different axes
 
     for (model_name, df), color in zip(
         test_dfs.items(), ("tab:blue", "tab:orange", "tab:pink")
@@ -136,7 +136,7 @@ def test_hist_classified_stable_as_func_of_hull_dist(
     stability_crit: StabilityCriterion,
     x_lim: tuple[float, float],
 ) -> None:
-    ax = plt.figure().gca()  # ensure test functions use different axes
+    ax = plt.figure().gca()  # new figure ensures test functions use different axes
 
     df = test_dfs["Wren"]
 
