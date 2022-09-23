@@ -398,12 +398,9 @@ def precision_recall_vs_calc_count(
         # previous call
         return ax
 
-    ax.set(
-        xlabel="Number of compounds sorted by model-predicted hull distance",
-        ylabel="Precision and Recall (%)",
-    )
-
-    ax.set(ylim=(0, 100))
+    xlabel = "Number of compounds sorted by model-predicted hull distance"
+    ylabel = "Precision and Recall (%)"
+    ax.set(ylim=(0, 100), xlabel=xlabel, ylabel=ylabel)
 
     [precision] = ax.plot((0, 0), (0, 0), "black", linestyle="-")
     [recall] = ax.plot((0, 0), (0, 0), "black", linestyle=":")

@@ -1,26 +1,12 @@
-# %%
-import gzip
 import itertools
-import json
-import os
-import pickle
-from datetime import datetime
 
-import pandas as pd
-from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram, PDEntry
-from pymatgen.ext.matproj import MPRester
+from pymatgen.analysis.phase_diagram import Entry
 from tqdm import tqdm
 
-from mb_discovery import ROOT
 
-today = f"{datetime.now():%Y-%m-%d}"
-module_dir = os.path.dirname(__file__)
-
-
-# %%
 def get_elemental_ref_entries(
-    entries: list[PDEntry], verbose: bool = False
-) -> dict[str, PDEntry]:
+    entries: list[Entry], verbose: bool = False
+) -> dict[str, Entry]:
 
     elements = {elems for entry in entries for elems in entry.composition.elements}
     dim = len(elements)
@@ -53,7 +39,7 @@ def get_elemental_ref_entries(
 
 
 def get_form_energy_per_atom(
-    entry: PDEntry, elemental_ref_entries: dict[str, PDEntry]
+    entry: Entry, elemental_ref_entries: dict[str, Entry]
 ) -> float:
     """Get the formation energy of a composition from a list of entries and elemental
     reference energies.
@@ -65,40 +51,3 @@ def get_form_energy_per_atom(
     )
 
     return form_energy / entry.composition.num_atoms
-
-
-# %%
-if __name__ == "__main__":
-    all_mp_entries = MPRester().get_entries("")  # run on 2022-09-16
-    # mp-15590 appears twice so we drop_duplicates()
-    df_mp_entries = pd.DataFrame(all_mp_entries, columns=["entry"]).drop_duplicates()
-    df_mp_entries["material_id"] = [x.entry_id for x in df_mp_entries.entry]
-    df_mp_entries = df_mp_entries.set_index("material_id")
-
-    df_mp_entries.reset_index().to_json(
-        f"{ROOT}/data/{today}-2-all-mp-entries.json.gz",
-        default_handler=lambda x: x.as_dict(),
-    )
-
-    df_mp_entries = pd.read_json(
-        f"{ROOT}/data/2022-09-16-all-mp-entries.json.gz"
-    ).set_index("material_id")
-    all_mp_entries = [PDEntry.from_dict(x) for x in df_mp_entries.entry]
-
-    print(f"{len(df_mp_entries) = :,}")
-    # len(df_mp_entries) = 146,323
-
-    ppd_mp = PatchedPhaseDiagram(all_mp_entries)
-    # prints:
-    # PatchedPhaseDiagram
-    #   Covering 44805 Sub-Spaces
-
-    # save MP PPD to disk
-    with gzip.open(f"{module_dir}/{today}-ppd-mp.pkl.gz", "wb") as zip_file:
-        pickle.dump(ppd_mp, zip_file)
-
-    elemental_ref_entries = get_elemental_ref_entries(all_mp_entries)
-
-    # save elemental_ref_entries to disk as json
-    with open(f"{module_dir}/{today}-elemental-ref-entries.json", "w") as f:
-        json.dump(elemental_ref_entries, f, default=lambda x: x.as_dict())

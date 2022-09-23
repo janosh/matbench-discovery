@@ -1,11 +1,11 @@
 # %%
-import json
+import warnings
 from datetime import datetime
 
 import pandas as pd
 from aviary.wren.utils import get_aflow_label_from_spglib
-from pymatgen.analysis.phase_diagram import PDEntry
-from pymatgen.entries.computed_entries import ComputedStructureEntry
+from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
+from pymatgen.entries.computed_entries import ComputedEntry, ComputedStructureEntry
 from tqdm import tqdm
 
 from mb_discovery import ROOT, as_dict_handler
@@ -39,9 +39,9 @@ df_wbm.index = df_wbm.index.map(increment_wbm_material_id)
 
 df_wbm = df_wbm.rename(columns=dict(bandgap="bandgap_pbe"))
 
-df_wbm.cse = [ComputedStructureEntry.from_dict(x) for x in tqdm(df_wbm.cse)]
+df_wbm["cse"] = [ComputedStructureEntry.from_dict(x) for x in tqdm(df_wbm.cse)]
 
-for wbm_id, cse in tqdm(df_wbm.cse.items()):  # type: ignore
+for wbm_id, cse in tqdm(df_wbm.cse.items()):
     cse.entry_id = wbm_id
 
 df_wbm["energy"] = [cse.energy for cse in df_wbm.cse]
@@ -49,10 +49,15 @@ df_wbm["n_sites"] = [len(cse.structure) for cse in df_wbm.cse]
 df_wbm["formula"] = [cse.structure.formula for cse in df_wbm.cse]
 
 
+# %%
 df_wbm.reset_index().to_json(
     f"{ROOT}/data/{today}-wbm-cses-and-initial-structures.json.gz",
     default_handler=as_dict_handler,
 )
+
+# df_wbm = pd.read_json(
+#     f"{ROOT}/data/2022-06-26-wbm-cses-and-initial-structures.json.gz"
+# ).set_index("material_id")
 
 
 # %% compute WBM formation energies and Aflow-style Wyckoff labels
@@ -61,19 +66,26 @@ df_wbm["wyckoff"] = [
     get_aflow_label_from_spglib(cse.structure) for cse in tqdm(df_wbm.cse)
 ]
 
-df_wren = pd.read_csv(
-    f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
-).set_index("material_id")
+# load MP elemental reference entries to compute formation energies
+mp_elem_refs_path = f"{ROOT}/data/2022-09-19-mp-elemental-reference-entries.json"
+mp_reference_entries = (
+    pd.read_json(mp_elem_refs_path, typ="series").map(ComputedEntry.from_dict).to_dict()
+)
 
-# load MP elemental reference entries
-with open(f"{ROOT}/data/2022-09-19-mp-elemental-reference-entries.json") as json_file:
-    mp_elemental_reference_entries = json.load(json_file)
-    for elem, entry in mp_elemental_reference_entries.items():
-        mp_elemental_reference_entries[elem] = PDEntry.from_dict(entry)
+wbm_computed_struct_entries = df_wbm.cse.map(ComputedStructureEntry.from_dict)
+wbm_computed_entries = df_wbm.cse.map(ComputedEntry.from_dict)
+
+
+# without filter, process_entries() prints so many warnings it can crash Jupyter kernel
+warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
+
+wbm_processed_struct_entries = MaterialsProject2020Compatibility().process_entries(
+    wbm_computed_struct_entries, verbose=True, clean=True
+)
 
 df_wbm["e_form_per_atom"] = [
-    get_form_energy_per_atom(entry, mp_elemental_reference_entries)
-    for entry in tqdm(df_wbm.cse)
+    get_form_energy_per_atom(entry, mp_reference_entries)
+    for entry in tqdm(wbm_processed_struct_entries)
 ]
 
 # filter outliers with anomalously high formation energies
@@ -86,11 +98,6 @@ print(
 df_wbm.drop(columns=["initial_structure", "cse"], errors="ignore").query(
     f"e_form_per_atom < {max_e_form}"
 ).to_csv(f"{ROOT}/data/{today}-wbm-formation-energy+wyckoff.csv")
-
-# df_wbm = pd.read_csv(
-#     f"{ROOT}/data/2022-09-19-wbm-formation-energy+wyckoff.csv"
-# ).set_index("material_id")
-
 
 ax = df_wbm.query("e_form_per_atom < 10").e_form_per_atom.plot.hist(bins=200, log=True)
 ax.axvline(x=max_e_form, color="red", linestyle="--", label=f"{max_e_form} eV/atom")
