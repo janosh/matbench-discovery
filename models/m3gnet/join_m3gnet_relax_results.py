@@ -15,7 +15,6 @@ from pymatgen.core import Structure
 from tqdm import tqdm
 
 from mb_discovery import ROOT, as_dict_handler
-from mb_discovery.plots import hist_classified_stable_as_func_of_hull_dist
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-16"
@@ -86,7 +85,7 @@ df_m3gnet["e_form_m3gnet_from_ppd"] = [
 ]
 
 
-# %%
+# %% compare against WBM formation energy targets to make sure we got sensible results
 df_hull = pd.read_csv(
     f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
 ).set_index("material_id")
@@ -119,18 +118,5 @@ df_m3gnet.isna().sum()
 out_path = f"{ROOT}/models/m3gnet/{today}-m3gnet-wbm-relax-{task_type}.json.gz"
 df_m3gnet.reset_index().to_json(out_path, default_handler=as_dict_handler)
 
-out_path = f"{ROOT}/models/m3gnet/2022-08-16-m3gnet-wbm-relax-results-IS2RE.json.gz"
-df_m3gnet = pd.read_json(out_path).set_index("material_id")
-
-
-# %%
-df_m3gnet["e_above_hull_pred"] = (  # TODO fix this incorrect e_above_hull_pred
-    df_m3gnet["e_form_m3gnet_from_ppd"] - df_m3gnet["e_above_mp_hull"]
-)
-
-ax_hull_dist_hist = hist_classified_stable_as_func_of_hull_dist(
-    e_above_hull_pred=df_m3gnet.e_above_hull_pred,
-    e_above_hull_true=df_m3gnet.e_above_mp_hull,
-)
-
-# ax_hull_dist_hist.figure.savefig(f"{ROOT}/plots/{today}-m3gnet-wbm-hull-dist-hist.pdf")
+# out_path = f"{ROOT}/models/m3gnet/2022-08-16-m3gnet-wbm-relax-results-IS2RE.json.gz"
+# df_m3gnet = pd.read_json(out_path).set_index("material_id")

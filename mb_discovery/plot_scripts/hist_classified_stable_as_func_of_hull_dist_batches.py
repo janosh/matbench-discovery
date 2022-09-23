@@ -2,6 +2,7 @@
 from datetime import datetime
 
 import pandas as pd
+import pymatviz
 
 from mb_discovery import ROOT
 from mb_discovery.plots import (
@@ -29,48 +30,73 @@ today = f"{datetime.now():%Y-%m-%d}"
 
 
 # %%
-df = pd.read_csv(
+dfs = {}
+dfs["wren"] = pd.read_csv(
     f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
 ).set_index("material_id")
+dfs["m3gnet"] = pd.read_json(
+    f"{ROOT}/models/m3gnet/2022-08-16-m3gnet-wbm-relax-results-IS2RE.json.gz"
+).set_index("material_id")
+dfs["Wrenformer"] = pd.read_csv(
+    f"{ROOT}/models/wrenformer/mp/"
+    "2022-09-20-wrenformer-e_form-ensemble-1-preds-e_form_per_atom.csv"
+).set_index("material_id")
+
 
 df_hull = pd.read_csv(
     f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
 ).set_index("material_id")
 
-df["e_above_mp_hull"] = df_hull.e_above_mp_hull
-
 # download wbm-steps-summary.csv (23.31 MB)
-df_summary = pd.read_csv(
+df_wbm = pd.read_csv(
     "https://figshare.com/files/37570234?private_link=ff0ad14505f9624f0c05"
 ).set_index("material_id")
+
+
+dfs["m3gnet"] = dfs.pop("M3Gnet")
+
+
+# %%
+if "wren" in dfs:
+    df = dfs["wren"]
+    pred_cols = df.filter(regex=r"_pred_\d").columns
+    # make sure we average the expected number of ensemble member predictions
+    assert len(pred_cols) == 10
+    df["e_form_per_atom_pred"] = df[pred_cols].mean(axis=1)
+if "m3gnet" in dfs:
+    df = dfs["m3gnet"]
+    df["e_form_per_atom_pred"] = df.e_form_ppd_2022_01_25
 
 
 # %%
 which_energy: WhichEnergy = "true"
 stability_crit: StabilityCriterion = "energy"
-df["wbm_batch"] = df.index.str.split("-").str[2]
 fig, axs = plt.subplots(2, 3, figsize=(18, 9))
 
-# make sure we average the expected number of ensemble member predictions
-pred_cols = df.filter(regex=r"_pred_\d").columns
-assert len(pred_cols) == 10
+df = dfs[(model_name := "wren")]
+
+df["e_above_mp_hull"] = df_hull.e_above_mp_hull
+df["e_form_per_atom"] = df_wbm.e_form_per_atom
 
 
-for (batch_idx, batch_df), ax in zip(df.groupby("wbm_batch"), axs.flat):
+for batch_idx, ax in zip(range(1, 6), axs.flat):
+    batch_df = df[df.index.str.startswith(f"wbm-step-{batch_idx}-")]
+    assert 1e4 < len(batch_df) < 1e5, print(f"{len(batch_df) = :,}")
+
     hist_classified_stable_as_func_of_hull_dist(
-        e_above_hull_pred=batch_df[pred_cols].mean(axis=1) - batch_df.e_form_target,
+        e_above_hull_pred=batch_df.e_form_per_atom_pred - batch_df.e_form_per_atom,
         e_above_hull_true=batch_df.e_above_mp_hull,
         which_energy=which_energy,
         stability_crit=stability_crit,
         ax=ax,
     )
 
-    title = f"Batch {batch_idx} ({len(df):,})"
+    title = f"Batch {batch_idx} ({len(batch_df):,})"
     ax.set(title=title)
 
 
 hist_classified_stable_as_func_of_hull_dist(
-    e_above_hull_pred=df[pred_cols].mean(axis=1),
+    e_above_hull_pred=df.e_form_per_atom_pred - df.e_form_per_atom,
     e_above_hull_true=df.e_above_mp_hull,
     which_energy=which_energy,
     stability_crit=stability_crit,
@@ -80,5 +106,17 @@ hist_classified_stable_as_func_of_hull_dist(
 axs.flat[-1].set(title=f"Combined {batch_idx} ({len(df):,})")
 axs.flat[0].legend(frameon=False, loc="upper left")
 
-img_name = f"{today}-wren-wbm-hull-dist-hist-{which_energy=}-{stability_crit=}.pdf"
+img_name = (
+    f"{today}-{model_name}-wbm-hull-dist-hist-{which_energy=}-{stability_crit=}.pdf"
+)
 # plt.savefig(f"{ROOT}/figures/{img_name}")
+
+
+# %%
+pymatviz.density_scatter(
+    dfs["wren"].dropna().e_form_per_atom_pred, dfs["wren"].dropna().e_form_per_atom
+)
+
+pymatviz.density_scatter(
+    dfs["m3gnet"].dropna().e_form_per_atom_pred, dfs["m3gnet"].dropna().e_form_per_atom
+)

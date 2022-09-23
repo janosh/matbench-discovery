@@ -40,7 +40,7 @@ df_hull = pd.read_csv(
 df["e_above_mp_hull"] = df_hull.e_above_mp_hull
 
 # download wbm-steps-summary.csv (23.31 MB)
-df_summary = pd.read_csv(
+df_wbm = pd.read_csv(
     "https://figshare.com/files/37570234?private_link=ff0ad14505f9624f0c05"
 ).set_index("material_id")
 
