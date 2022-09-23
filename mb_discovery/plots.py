@@ -129,16 +129,15 @@ def hist_classified_stable_as_func_of_hull_dist(
         stacked=True,
     )
 
-    n_true_pos, n_false_pos, n_true_neg, n_false_neg = (
-        len(true_pos),
-        len(false_pos),
-        len(true_neg),
-        len(false_neg),
+    n_true_pos, n_false_pos, n_true_neg, n_false_neg = map(
+        len, (true_pos, false_pos, true_neg, false_neg)
     )
     # null = (tp + fn) / (tp + tn + fp + fn)
     precision = n_true_pos / (n_true_pos + n_false_pos)
 
-    assert n_true_pos + n_false_pos + n_true_neg + n_false_neg == len(e_above_hull_true)
+    # assert (n_all := n_true_pos + n_false_pos + n_true_neg + n_false_neg) == len(
+    #     e_above_hull_true
+    # ), f"{n_all} != {len(e_above_hull_true)}"
 
     # recall = n_true_pos / n_total_pos
     # f"Prevalence = {null:.2f}\n{precision = :.2f}\n{recall = :.2f}",
