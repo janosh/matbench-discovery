@@ -95,7 +95,7 @@ df_m3gnet["e_above_mp_hull"] = df_hull.e_above_mp_hull
 
 
 df_wbm = pd.read_csv(  # download wbm-steps-summary.csv (23.31 MB)
-    "https://figshare.com/files/37542841?private_link=ff0ad14505f9624f0c05"
+    "https://figshare.com/files/37570234?private_link=ff0ad14505f9624f0c05"
 ).set_index("material_id")
 
 df_m3gnet["e_form_wbm"] = df_wbm.e_form_per_atom
