@@ -4,7 +4,7 @@ from datetime import datetime
 import pandas as pd
 
 from mb_discovery import ROOT
-from mb_discovery.plots import StabilityCriterion, plt, precision_recall_vs_calc_count
+from mb_discovery.plots import StabilityCriterion, precision_recall_vs_calc_count
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
@@ -24,12 +24,16 @@ for model_name in ("Wren", "CGCNN", "Voronoi"):
     dfs[model_name] = df
 
 dfs["M3GNet"] = pd.read_json(
-    f"{ROOT}/models/m3gnet/2022-08-16-m3gnet-wbm-relax-results-IS2RE.json.gz"
+    f"{ROOT}/models/m3gnet/2022-08-16-m3gnet-wbm-IS2RE.json.gz"
 ).set_index("material_id")
 
 dfs["Wrenformer"] = pd.read_csv(
     f"{ROOT}/models/wrenformer/mp/"
     "2022-09-20-wrenformer-e_form-ensemble-1-preds-e_form_per_atom.csv"
+).set_index("material_id")
+
+dfs["BOWSR Megnet"] = pd.read_json(
+    f"{ROOT}/models/bowsr/2022-09-22-bowsr-wbm-megnet-IS2RE.json.gz"
 ).set_index("material_id")
 
 print(f"loaded models: {list(dfs)}")
@@ -43,11 +47,9 @@ df_wbm = pd.read_csv(
 
 # %%
 stability_crit: StabilityCriterion = "energy"
+colors = "tab:blue tab:orange teal tab:pink black red turquoise tab:purple".split()
 
-for (model_name, df), color in zip(
-    dfs.items(),
-    ("tab:blue", "tab:orange", "teal", "tab:pink", "black", "red", "turquoise"),
-):
+for (model_name, df), color in zip(dfs.items(), colors):
     rare = "all"
 
     # from pymatgen.core import Composition
@@ -76,6 +78,8 @@ for (model_name, df), color in zip(
             # other cases are unexpected
             assert len(pred_cols) in (1, 10), f"{model_name=} has {len(pred_cols)=}"
             model_preds = df[pred_cols].mean(axis=1)
+        elif "BOWSR" in model_name:
+            model_preds = df.e_form_per_atom_bowsr
         else:
             raise ValueError(f"Unhandled {model_name = }")
     except AttributeError as exc:
@@ -103,6 +107,7 @@ ax.set(xlim=(0, None))
 # keep this outside loop so all model names appear in legend
 ax.legend(frameon=False, loc="lower right")
 
+
+# %%
 img_path = f"{ROOT}/figures/{today}-precision-recall-vs-calc-count-{rare=}.pdf"
-if False:
-    plt.savefig(img_path)
+ax.figure.savefig(img_path)

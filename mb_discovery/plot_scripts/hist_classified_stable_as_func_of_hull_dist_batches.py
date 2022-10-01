@@ -35,11 +35,14 @@ dfs["wren"] = pd.read_csv(
     f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
 ).set_index("material_id")
 dfs["m3gnet"] = pd.read_json(
-    f"{ROOT}/models/m3gnet/2022-08-16-m3gnet-wbm-relax-results-IS2RE.json.gz"
+    f"{ROOT}/models/m3gnet/2022-08-16-m3gnet-wbm-IS2RE.json.gz"
 ).set_index("material_id")
 dfs["Wrenformer"] = pd.read_csv(
     f"{ROOT}/models/wrenformer/mp/"
     "2022-09-20-wrenformer-e_form-ensemble-1-preds-e_form_per_atom.csv"
+).set_index("material_id")
+dfs["bowsr_megnet"] = pd.read_json(
+    f"{ROOT}/models/bowsr/2022-09-22-bowsr-wbm-megnet-IS2RE.json.gz"
 ).set_index("material_id")
 
 
@@ -53,9 +56,6 @@ df_wbm = pd.read_csv(
 ).set_index("material_id")
 
 
-dfs["m3gnet"] = dfs.pop("M3Gnet")
-
-
 # %%
 if "wren" in dfs:
     df = dfs["wren"]
@@ -66,6 +66,9 @@ if "wren" in dfs:
 if "m3gnet" in dfs:
     df = dfs["m3gnet"]
     df["e_form_per_atom_pred"] = df.e_form_ppd_2022_01_25
+if "bowsr_megnet" in dfs:
+    df = dfs["bowsr_megnet"]
+    df["e_form_per_atom_pred"] = df.e_form_per_atom_bowsr
 
 
 # %%
@@ -73,7 +76,7 @@ which_energy: WhichEnergy = "true"
 stability_crit: StabilityCriterion = "energy"
 fig, axs = plt.subplots(2, 3, figsize=(18, 9))
 
-df = dfs[(model_name := "wren")]
+df = dfs[(model_name := "bowsr_megnet")]
 
 df["e_above_mp_hull"] = df_hull.e_above_mp_hull
 df["e_form_per_atom"] = df_wbm.e_form_per_atom
@@ -91,7 +94,7 @@ for batch_idx, ax in zip(range(1, 6), axs.flat):
         ax=ax,
     )
 
-    title = f"Batch {batch_idx} ({len(batch_df):,})"
+    title = f"Batch {batch_idx} ({len(batch_df.filter(like='e_').dropna()):,})"
     ax.set(title=title)
 
 
@@ -103,13 +106,17 @@ hist_classified_stable_as_func_of_hull_dist(
     ax=axs.flat[-1],
 )
 
-axs.flat[-1].set(title=f"Combined {batch_idx} ({len(df):,})")
+axs.flat[-1].set(title=f"Combined ({len(df.filter(like='e_').dropna()):,})")
 axs.flat[0].legend(frameon=False, loc="upper left")
 
 img_name = (
     f"{today}-{model_name}-wbm-hull-dist-hist-{which_energy=}-{stability_crit=}.pdf"
 )
-# plt.savefig(f"{ROOT}/figures/{img_name}")
+fig.suptitle(img_name.replace("-", "/", 2).replace("-", " "), y=1.07, fontsize=16)
+
+
+# %%
+ax.figure.savefig(f"{ROOT}/figures/{img_name}")
 
 
 # %%
