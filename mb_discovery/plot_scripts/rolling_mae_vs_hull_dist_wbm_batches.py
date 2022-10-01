@@ -42,8 +42,8 @@ markers = ("o", "v", "^", "H", "D")
 assert len(markers) == 5  # number of WBM rounds of element substitution
 
 for idx, marker in enumerate(markers, 1):
-    title = f"Batch {idx}"
     df = df_wbm[df_wbm.index.str.startswith(f"wbm-step-{idx}")]
+    title = f"Batch {idx} ({len(df.filter(like='e_').dropna()):,})"
     assert 1e4 < len(df) < 1e5, print(f"{len(df) = :,}")
 
     rolling_mae_vs_hull_dist(

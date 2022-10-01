@@ -39,13 +39,13 @@ from datetime import datetime
 from aviary.wrenformer.train import train_wrenformer_on_df
 
 print(f"Job started running {{datetime.now():%Y-%m-%d@%H-%M}}")
-job_id = os.environ["SLURM_JOB_ID"]
-print(f"{{job_id=}}")
+slurm_job_id = os.environ["SLURM_JOB_ID"]
+print(f"{{slurm_job_id=}}")
 print("{model_name=}")
 print("{df_or_path=}")
 
-job_array_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
-print(f"{{job_array_id=}}")
+slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
+print(f"{{slurm_array_task_id=}}")
 
 train_wrenformer_on_df(
     {model_name=},
@@ -53,7 +53,7 @@ train_wrenformer_on_df(
     {df_or_path=},
     {timestamp=},
     test_size=0.05,
-    # folds=(n_folds, job_array_id),
+    # folds=(n_folds, slurm_array_task_id),
     {epochs=},
     {n_attn_layers=},
     {checkpoint=},

@@ -118,5 +118,5 @@ df_m3gnet.isna().sum()
 out_path = f"{ROOT}/models/m3gnet/{today}-m3gnet-wbm-relax-{task_type}.json.gz"
 df_m3gnet.reset_index().to_json(out_path, default_handler=as_dict_handler)
 
-# out_path = f"{ROOT}/models/m3gnet/2022-08-16-m3gnet-wbm-relax-results-IS2RE.json.gz"
+# out_path = f"{ROOT}/models/m3gnet/2022-08-16-m3gnet-wbm-IS2RE.json.gz"
 # df_m3gnet = pd.read_json(out_path).set_index("material_id")

@@ -40,20 +40,20 @@ __date__ = "2022-08-15"
 task_type = "IS2RE"
 # task_type = "RS2RE"
 
-job_id = os.environ.get("SLURM_JOB_ID", "debug")
-job_array_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
+slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
+slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
 # set large fallback job array size for fast testing/debugging
 job_array_size = int(os.environ.get("SLURM_ARRAY_TASK_COUNT", 10_000))
 
 print(f"Job started running {datetime.now():%Y-%m-%d@%H-%M}")
-print(f"{job_id = }")
-print(f"{job_array_id = }")
+print(f"{slurm_job_id = }")
+print(f"{slurm_array_task_id = }")
 print(f"{version('m3gnet') = }")
 
 today = f"{datetime.now():%Y-%m-%d}"
 out_dir = f"{ROOT}/data/{today}-m3gnet-wbm-relax-{task_type}"
 os.makedirs(out_dir, exist_ok=True)
-json_out_path = f"{out_dir}/{job_array_id}.json.gz"
+json_out_path = f"{out_dir}/{slurm_array_task_id}.json.gz"
 
 if os.path.isfile(json_out_path):
     raise SystemExit(f"{json_out_path = } already exists, exciting early")
@@ -67,12 +67,12 @@ data_path = f"{ROOT}/data/2022-06-26-wbm-cses-and-initial-structures.json.gz"
 print(f"Loading from {data_path=}")
 df_wbm = pd.read_json(data_path).set_index("material_id")
 
-df_this_job = np.array_split(df_wbm, job_array_size)[job_array_id]
+df_this_job = np.array_split(df_wbm, job_array_size)[slurm_array_task_id]
 
 run_params = dict(
     m3gnet_version=version("m3gnet"),
-    job_id=job_id,
-    job_array_id=job_array_id,
+    slurm_job_id=slurm_job_id,
+    slurm_array_task_id=slurm_array_task_id,
     data_path=data_path,
 )
 if wandb.run is None:
@@ -80,7 +80,7 @@ if wandb.run is None:
 
 wandb.init(
     project="m3gnet",
-    name=f"m3gnet-wbm-relax-{task_type}-{job_id}-{job_array_id}",
+    name=f"m3gnet-wbm-relax-{task_type}-{slurm_job_id}-{slurm_array_task_id}",
     config=run_params,
 )
 
