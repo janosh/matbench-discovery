@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import os
-from typing import Any
 from collections.abc import Generator, Sequence
+from typing import Any
 
 PKG_DIR = os.path.dirname(__file__)
 ROOT = os.path.dirname(PKG_DIR)
