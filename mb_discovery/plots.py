@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Literal, Sequence, get_args
+from typing import Any, Literal, get_args
+from collections.abc import Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
