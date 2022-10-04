@@ -20,20 +20,30 @@ WhichEnergy = Literal["true", "pred"]
 
 
 # --- define global plot settings
-px.defaults.labels = {
-    "n_atoms": "Atom Count",
-    "n_elems": "Element Count",
-    "crystal_sys": "Crystal system",
-    "spg_num": "Space group",
-    "n_wyckoff": "Number of Wyckoff positions",
-    "n_sites": "Lattice site count",
-    "energy_per_atom": "Energy (eV/atom)",
-    "e_form": "Formation energy (eV/atom)",
-    "e_above_hull": "Energy above convex hull (eV/atom)",
-    "e_above_hull_pred": "Predicted energy above convex hull (eV/atom)",
-    "e_above_mp_hull": "Energy above MP convex hull (eV/atom)",
-    "e_above_hull_error": "Error in energy above convex hull (eV/atom)",
-}
+quantity_labels = dict(
+    n_atoms="Atom Count",
+    n_elems="Element Count",
+    crystal_sys="Crystal system",
+    spg_num="Space group",
+    n_wyckoff="Number of Wyckoff positions",
+    n_sites="Lattice site count",
+    energy_per_atom="Energy (eV/atom)",
+    e_form="Formation energy (eV/atom)",
+    e_above_hull="Energy above convex hull (eV/atom)",
+    e_above_hull_pred="Predicted energy above convex hull (eV/atom)",
+    e_above_mp_hull="Energy above MP convex hull (eV/atom)",
+    e_above_hull_error="Error in energy above convex hull (eV/atom)",
+)
+model_labels = dict(
+    wren="Wren",
+    wrenformer="Wrenformer",
+    m3gnet="M3GNet",
+    bowsr_megnet="BOWSR + MEGNet",
+    cgcnn="CGCNN",
+    voronoi="Voronoi",
+    wbm="WBM",
+)
+px.defaults.labels = quantity_labels | model_labels
 
 pio.templates.default = "plotly_white"
 

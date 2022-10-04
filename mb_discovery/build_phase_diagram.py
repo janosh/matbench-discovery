@@ -89,13 +89,6 @@ with open(f"{module_dir}/{today}-elemental-ref-entries.json", "w") as file:
     json.dump(elemental_ref_entries, file, default=lambda x: x.as_dict())
 
 
-# %% load MP elemental reference entries to compute formation energies
-mp_elem_refs_path = f"{ROOT}/data/2022-09-19-mp-elemental-reference-entries.json"
-mp_reference_entries = (
-    pd.read_json(mp_elem_refs_path, typ="series").map(ComputedEntry.from_dict).to_dict()
-)
-
-
 df_mp = pd.read_json(f"{ROOT}/data/2022-08-13-mp-all-energies.json.gz").set_index(
     "material_id"
 )
@@ -103,8 +96,7 @@ df_mp = pd.read_json(f"{ROOT}/data/2022-08-13-mp-all-energies.json.gz").set_inde
 
 # %%
 df_mp["our_mp_e_form"] = [
-    get_form_energy_per_atom(all_mp_computed_entries[mp_id], mp_reference_entries)
-    for mp_id in df_mp.index
+    get_form_energy_per_atom(all_mp_computed_entries[mp_id]) for mp_id in df_mp.index
 ]
 
 

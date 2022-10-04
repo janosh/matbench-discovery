@@ -1,20 +1,17 @@
 # %%
 from __future__ import annotations
 
-import gzip
-import io
 import os
-import pickle
-import urllib.request
 from datetime import datetime
 from glob import glob
 
 import pandas as pd
-from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram, PDEntry
+from pymatgen.analysis.phase_diagram import PDEntry
 from pymatgen.core import Structure
 from tqdm import tqdm
 
 from mb_discovery import ROOT, as_dict_handler
+from mb_discovery.compute_formation_energy import get_form_energy_per_atom
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-16"
@@ -67,21 +64,12 @@ if any(df_m3gnet.index.str.contains("_")):
 
 
 # %%
-# 2022-01-25-ppd-mp+wbm.pkl.gz (235 MB)
-ppd_pickle_url = "https://figshare.com/files/36669624"
-zipped_file = urllib.request.urlopen(ppd_pickle_url)
-
-ppd_mp_wbm: PatchedPhaseDiagram = pickle.load(
-    io.BytesIO(gzip.decompress(zipped_file.read()))
-)
-
-
 pd_entries_m3gnet = [
     PDEntry(row.m3gnet_structure.composition, row.m3gnet_energy)
     for row in df_m3gnet.itertuples()
 ]
 df_m3gnet["e_form_m3gnet_from_ppd"] = [
-    ppd_mp_wbm.get_form_energy_per_atom(x) for x in pd_entries_m3gnet
+    get_form_energy_per_atom(entry) for entry in pd_entries_m3gnet
 ]
 
 
@@ -91,22 +79,6 @@ df_hull = pd.read_csv(
 ).set_index("material_id")
 
 df_m3gnet["e_above_mp_hull"] = df_hull.e_above_mp_hull
-
-
-df_wbm = pd.read_csv(  # download wbm-steps-summary.csv (23.31 MB)
-    "https://figshare.com/files/37570234?private_link=ff0ad14505f9624f0c05"
-).set_index("material_id")
-
-df_m3gnet["e_form_wbm"] = df_wbm.e_form_per_atom
-df_m3gnet["wbm_energy"] = df_wbm.energy
-
-pd_entries_wbm = [
-    PDEntry(row.m3gnet_structure.composition, row.wbm_energy)
-    for row in df_m3gnet.itertuples()
-]
-df_m3gnet["e_form_ppd_2022_01_25"] = [
-    ppd_mp_wbm.get_form_energy_per_atom(x) for x in pd_entries_wbm
-]
 
 
 # %%

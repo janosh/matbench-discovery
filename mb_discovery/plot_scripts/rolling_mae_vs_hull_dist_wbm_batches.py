@@ -15,7 +15,7 @@ today = f"{datetime.now():%Y-%m-%d}"
 # %%
 rare = "all"
 
-df_wbm = pd.read_csv(
+df_wren = pd.read_csv(
     f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
 ).set_index("material_id")
 
@@ -23,16 +23,16 @@ df_hull = pd.read_csv(
     f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
 ).set_index("material_id")
 
-df_wbm["e_above_mp_hull"] = df_hull.e_above_mp_hull
-assert df_wbm.e_above_mp_hull.isna().sum() == 0
+df_wren["e_above_mp_hull"] = df_hull.e_above_mp_hull
+assert df_wren.e_above_mp_hull.isna().sum() == 0
 
 target_col = "e_form_target"
 
 # make sure we average the expected number of ensemble member predictions
-assert df_wbm.filter(regex=r"_pred_\d").shape[1] == 10
+assert df_wren.filter(regex=r"_pred_\d").shape[1] == 10
 
-df_wbm["e_above_hull_pred"] = (
-    df_wbm.filter(regex=r"_pred_\d").mean(axis=1) - df_wbm[target_col]
+df_wren["e_above_hull_pred"] = (
+    df_wren.filter(regex=r"_pred_\d").mean(axis=1) - df_wren[target_col]
 )
 
 
@@ -42,7 +42,7 @@ markers = ("o", "v", "^", "H", "D")
 assert len(markers) == 5  # number of WBM rounds of element substitution
 
 for idx, marker in enumerate(markers, 1):
-    df = df_wbm[df_wbm.index.str.startswith(f"wbm-step-{idx}")]
+    df = df_wren[df_wren.index.str.startswith(f"wbm-step-{idx}")]
     title = f"Batch {idx} ({len(df.filter(like='e_').dropna()):,})"
     assert 1e4 < len(df) < 1e5, print(f"{len(df) = :,}")
 
