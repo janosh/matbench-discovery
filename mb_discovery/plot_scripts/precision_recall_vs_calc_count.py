@@ -17,22 +17,21 @@ DATA_DIR = f"{ROOT}/data/2022-06-11-from-rhys"
 df_hull = pd.read_csv(f"{DATA_DIR}/wbm-e-above-mp-hull.csv").set_index("material_id")
 
 dfs: dict[str, pd.DataFrame] = {}
-for model_name in ("Wren", "CGCNN", "Voronoi"):
-    df = pd.read_csv(
-        f"{DATA_DIR}/{model_name.lower()}-mp-initial-structures.csv"
-    ).set_index("material_id")
+for model_name in ("wren", "cgcnn", "voronoi"):
+    csv_path = f"{DATA_DIR}/{model_name}-mp-initial-structures.csv"
+    df = pd.read_csv(csv_path).set_index("material_id")
     dfs[model_name] = df
 
-dfs["M3GNet"] = pd.read_json(
+dfs["m3gnet"] = pd.read_json(
     f"{ROOT}/models/m3gnet/2022-08-16-m3gnet-wbm-IS2RE.json.gz"
 ).set_index("material_id")
 
-dfs["Wrenformer"] = pd.read_csv(
+dfs["wrenformer"] = pd.read_csv(
     f"{ROOT}/models/wrenformer/mp/"
     "2022-09-20-wrenformer-e_form-ensemble-1-preds-e_form_per_atom.csv"
 ).set_index("material_id")
 
-dfs["BOWSR Megnet"] = pd.read_json(
+dfs["bowsr_megnet"] = pd.read_json(
     f"{ROOT}/models/bowsr/2022-09-22-bowsr-wbm-megnet-IS2RE.json.gz"
 ).set_index("material_id")
 
@@ -69,16 +68,16 @@ for (model_name, df), color in zip(dfs.items(), colors):
         std_total = None
 
     try:
-        if model_name == "M3GNet":
+        if model_name == "m3gnet":
             model_preds = df.e_form_m3gnet
-        elif "Wrenformer" in model_name:
+        elif "wrenformer" in model_name:
             model_preds = df.e_form_per_atom_pred_ens
         elif len(pred_cols := df.filter(like="e_form_pred").columns) >= 1:
             # Voronoi+RF has single prediction column, Wren and CGCNN each have 10
             # other cases are unexpected
             assert len(pred_cols) in (1, 10), f"{model_name=} has {len(pred_cols)=}"
             model_preds = df[pred_cols].mean(axis=1)
-        elif "BOWSR" in model_name:
+        elif "bowsr" in model_name:
             model_preds = df.e_form_per_atom_bowsr
         else:
             raise ValueError(f"Unhandled {model_name = }")
@@ -107,7 +106,9 @@ ax.set(xlim=(0, None))
 # keep this outside loop so all model names appear in legend
 ax.legend(frameon=False, loc="lower right")
 
+img_name = f"{today}-precision-recall-vs-calc-count-{rare=}"
+ax.set(title=img_name.replace("-", "/", 2).replace("-", " ").title())
+
 
 # %%
-img_path = f"{ROOT}/figures/{today}-precision-recall-vs-calc-count-{rare=}.pdf"
-ax.figure.savefig(img_path)
+ax.figure.savefig(f"{ROOT}/figures/{img_name}.pdf")

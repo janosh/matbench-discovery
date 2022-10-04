@@ -74,6 +74,7 @@ run_params = dict(
     slurm_job_id=slurm_job_id,
     slurm_array_task_id=slurm_array_task_id,
     data_path=data_path,
+    task_type=task_type,
 )
 if wandb.run is None:
     wandb.login()

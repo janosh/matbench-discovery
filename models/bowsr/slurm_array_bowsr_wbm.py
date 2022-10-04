@@ -84,6 +84,7 @@ run_params = dict(
     data_path=data_path,
     bayes_optim_kwargs=bayes_optim_kwargs,
     optimize_kwargs=optimize_kwargs,
+    task_type=task_type,
 )
 if wandb.run is None:
     wandb.login()

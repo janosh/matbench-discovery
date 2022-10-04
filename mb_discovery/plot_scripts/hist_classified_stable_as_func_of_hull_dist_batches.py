@@ -65,7 +65,7 @@ if "wren" in dfs:
     df["e_form_per_atom_pred"] = df[pred_cols].mean(axis=1)
 if "m3gnet" in dfs:
     df = dfs["m3gnet"]
-    df["e_form_per_atom_pred"] = df.e_form_ppd_2022_01_25
+    df["e_form_per_atom_pred"] = df.e_form_m3gnet
 if "bowsr_megnet" in dfs:
     df = dfs["bowsr_megnet"]
     df["e_form_per_atom_pred"] = df.e_form_per_atom_bowsr
@@ -76,7 +76,8 @@ which_energy: WhichEnergy = "true"
 stability_crit: StabilityCriterion = "energy"
 fig, axs = plt.subplots(2, 3, figsize=(18, 9))
 
-df = dfs[(model_name := "bowsr_megnet")]
+model_name = "m3gnet"
+df = dfs[model_name]
 
 df["e_above_mp_hull"] = df_hull.e_above_mp_hull
 df["e_form_per_atom"] = df_wbm.e_form_per_atom
@@ -109,14 +110,13 @@ hist_classified_stable_as_func_of_hull_dist(
 axs.flat[-1].set(title=f"Combined ({len(df.filter(like='e_').dropna()):,})")
 axs.flat[0].legend(frameon=False, loc="upper left")
 
-img_name = (
-    f"{today}-{model_name}-wbm-hull-dist-hist-{which_energy=}-{stability_crit=}.pdf"
-)
-fig.suptitle(img_name.replace("-", "/", 2).replace("-", " "), y=1.07, fontsize=16)
+img_name = f"{today}-{model_name}-wbm-hull-dist-hist-{which_energy=}-{stability_crit=}"
+suptitle = img_name.replace("-", "/", 2).replace("-", " ")
+fig.suptitle(suptitle, y=1.07, fontsize=16)
 
 
 # %%
-ax.figure.savefig(f"{ROOT}/figures/{img_name}")
+ax.figure.savefig(f"{ROOT}/figures/{img_name}.pdf")
 
 
 # %%
