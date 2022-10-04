@@ -1,8 +1,7 @@
 import itertools
 
 import pandas as pd
-from pymatgen.analysis.phase_diagram import Entry
-from pymatgen.entries.computed_entries import ComputedEntry
+from pymatgen.analysis.phase_diagram import Entry, PDEntry
 from tqdm import tqdm
 
 from mb_discovery import ROOT
@@ -47,9 +46,7 @@ def get_elemental_ref_entries(
 mp_elem_refs_path = f"{ROOT}/data/2022-09-19-mp-elemental-reference-entries.json"
 try:
     mp_elem_reference_entries = (
-        pd.read_json(mp_elem_refs_path, typ="series")
-        .map(ComputedEntry.from_dict)
-        .to_dict()
+        pd.read_json(mp_elem_refs_path, typ="series").map(PDEntry.from_dict).to_dict()
     )
 except FileNotFoundError:
     mp_elem_reference_entries = None

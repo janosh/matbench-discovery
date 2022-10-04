@@ -320,9 +320,9 @@ def precision_recall_vs_calc_count(
     """
     ax = ax or plt.gca()
 
-    for series in (e_above_hull_error, e_above_hull_true):
-        n_nans = series.isna().sum()
-        assert n_nans == 0, f"{n_nans:,} NaNs in {series.name}"
+    # for series in (e_above_hull_error, e_above_hull_true):
+    #     n_nans = series.isna().sum()
+    #     assert n_nans == 0, f"{n_nans:,} NaNs in {series.name}"
 
     is_fresh_ax = len(ax.lines) == 0
 
@@ -412,8 +412,12 @@ def precision_recall_vs_calc_count(
     ylabel = "Precision and Recall (%)"
     ax.set(ylim=(0, 100), xlabel=xlabel, ylabel=ylabel)
 
-    [precision] = ax.plot((0, 0), (0, 0), "black", linestyle="-")
-    [recall] = ax.plot((0, 0), (0, 0), "black", linestyle=":")
+    [precision] = ax.plot(
+        (0, 0), (0, 0), "black", linestyle="-", linewidth=line_kwargs["linewidth"]
+    )
+    [recall] = ax.plot(
+        (0, 0), (0, 0), "black", linestyle=":", linewidth=line_kwargs["linewidth"]
+    )
     legend = ax.legend(
         [precision, recall],
         ("Precision", "Recall"),
