@@ -2,6 +2,7 @@
 from datetime import datetime
 
 import pandas as pd
+from sklearn.metrics import f1_score
 
 from mb_discovery import ROOT
 from mb_discovery.plots import StabilityCriterion, precision_recall_vs_calc_count
@@ -15,6 +16,7 @@ today = f"{datetime.now():%Y-%m-%d}"
 # %%
 DATA_DIR = f"{ROOT}/data/2022-06-11-from-rhys"
 df_hull = pd.read_csv(f"{DATA_DIR}/wbm-e-above-mp-hull.csv").set_index("material_id")
+rare = "all"
 
 dfs: dict[str, pd.DataFrame] = {}
 for model_name in ("wren", "cgcnn", "voronoi"):
@@ -47,10 +49,9 @@ df_wbm = pd.read_csv(
 # %%
 stability_crit: StabilityCriterion = "energy"
 colors = "tab:blue tab:orange teal tab:pink black red turquoise tab:purple".split()
+F1s: dict[str, float] = {}
 
-for (model_name, df), color in zip(dfs.items(), colors):
-    rare = "all"
-
+for model_name, df in dfs.items():
     # from pymatgen.core import Composition
     # rare = "no-lanthanides"
     # df["contains_rare_earths"] = df.composition.map(
@@ -91,15 +92,36 @@ for (model_name, df), color in zip(dfs.items(), colors):
         assert n_nans < 10, f"{model_name=} has {n_nans=}"
         df = df.dropna()
 
+    F1 = f1_score(df.e_above_mp_hull < 0, df.e_above_hull_pred < 0)
+    F1s[model_name] = F1
+
+
+# %%
+for (model_name, F1), color in zip(sorted(F1s.items(), key=lambda x: x[1]), colors):
+    df = dfs[model_name]
+
     ax = precision_recall_vs_calc_count(
         e_above_hull_error=df.e_above_hull_pred + df.e_above_mp_hull,
         e_above_hull_true=df.e_above_mp_hull,
         color=color,
-        label=model_name,
+        label=f"{model_name} {F1=:.2}",
         intersect_lines="recall_xy",  # or "precision_xy", None, 'all'
         stability_crit=stability_crit,
         std_pred=std_total,
     )
+
+# optimal recall line finds all stable materials without any false positives
+# can be included to confirm all models start out of with near optimal recall
+# and to see how much each model overshoots total n_stable
+n_below_hull = sum(df_hull.e_above_mp_hull < 0)
+ax.plot(
+    [0, n_below_hull],
+    [0, 100],
+    color="green",
+    linestyle="dashed",
+    linewidth=1,
+    label="Optimal Recall",
+)
 
 ax.figure.set_size_inches(10, 9)
 ax.set(xlim=(0, None))
@@ -108,6 +130,8 @@ ax.legend(frameon=False, loc="lower right")
 
 img_name = f"{today}-precision-recall-vs-calc-count-{rare=}"
 ax.set(title=img_name.replace("-", "/", 2).replace("-", " ").title())
+# x-ticks every 10k materials
+ax.set(xticks=range(0, int(ax.get_xlim()[1]), 10_000))
 
 
 # %%

@@ -13,10 +13,7 @@ from pymatgen.entries.computed_entries import ComputedEntry
 from pymatgen.ext.matproj import MPRester
 
 from mb_discovery import ROOT
-from mb_discovery.compute_formation_energy import (
-    get_elemental_ref_entries,
-    get_form_energy_per_atom,
-)
+from mb_discovery.energy import get_elemental_ref_entries, get_form_energy_per_atom
 
 today = f"{datetime.now():%Y-%m-%d}"
 module_dir = os.path.dirname(__file__)

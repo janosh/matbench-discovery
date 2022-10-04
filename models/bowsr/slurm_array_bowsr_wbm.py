@@ -20,11 +20,13 @@ from mb_discovery import ROOT, as_dict_handler
 To slurm submit this file, use
 
 ```sh
-# slurm will not create logdir automatically and fail if missing
-mkdir -p models/bowsr/slurm_logs
+log_dir=models/bowsr/$(date +"%Y-%m-%d")-bowsr-megnet-wbm
+job_name=bowsr-megnet-wbm-IS2RE
+mkdir -p $log_dir # slurm fails if log_dir is missing
+
 sbatch --partition icelake-himem --account LEE-SL3-CPU --array 1-500 \
-    --time 12:0:0 --job-name bowsr-megnet-wbm-IS2RE --mem 12000 \
-    --output models/bowsr/slurm_logs/slurm-%A-%a.out \
+    --time 12:0:0 --job-name $job_name --mem 12000 \
+    --output $log_dir/slurm-%A-%a.out \
     --wrap "TF_CPP_MIN_LOG_LEVEL=2 python models/bowsr/slurm_array_bowsr_wbm.py"
 ```
 
@@ -50,7 +52,7 @@ module_dir = os.path.dirname(__file__)
 slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
 slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
 # set large fallback job array size for fast testing/debugging
-job_array_size = int(os.environ.get("SLURM_ARRAY_TASK_COUNT", 10_000))
+slurm_array_task_count = int(os.environ.get("SLURM_ARRAY_TASK_COUNT", 10_000))
 
 print(f"Job started running {datetime.now():%Y-%m-%d@%H-%M}")
 print(f"{slurm_job_id = }")
@@ -60,7 +62,6 @@ print(f"{version('megnet') = }")
 
 today = f"{datetime.now():%Y-%m-%d}"
 out_dir = f"{module_dir}/{today}-bowsr-megnet-wbm-{task_type}"
-os.makedirs(out_dir, exist_ok=True)
 json_out_path = f"{out_dir}/{slurm_array_task_id}.json.gz"
 
 if os.path.isfile(json_out_path):
@@ -81,6 +82,7 @@ run_params = dict(
     maml_version=version("maml"),
     slurm_job_id=slurm_job_id,
     slurm_array_task_id=slurm_array_task_id,
+    slurm_array_task_count=slurm_array_task_count,
     data_path=data_path,
     bayes_optim_kwargs=bayes_optim_kwargs,
     optimize_kwargs=optimize_kwargs,
@@ -100,10 +102,10 @@ wandb.init(
 
 
 # %%
-print(f"Loading from {data_path=}")
+print(f"Loading from {data_path = }")
 df_wbm = pd.read_json(data_path).set_index("material_id")
 
-df_this_job = np.array_split(df_wbm, job_array_size + 1)[slurm_array_task_id]
+df_this_job = np.array_split(df_wbm, slurm_array_task_count)[slurm_array_task_id - 1]
 
 
 # %%
