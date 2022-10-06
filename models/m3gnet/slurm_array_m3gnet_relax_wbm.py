@@ -11,27 +11,15 @@ import numpy as np
 import pandas as pd
 import wandb
 from m3gnet.models import Relaxer
+from tqdm import tqdm
 
 from mb_discovery import ROOT, as_dict_handler
+from mb_discovery.slurm import slurm_submit_python
 
 """
-To slurm submit this file, use
+To slurm submit this file, run:
 
-```sh
-job_name=m3gnet-wbm-relax-IS2RE
-log_dir=models/m3gnet/$(date +"%Y-%m-%d")-$job_name
-mkdir -p $log_dir # slurm fails if log_dir is missing
-
-sbatch --partition icelake-himem --account LEE-SL3-CPU --array 1-100 \
-    --time 3:0:0 --job-name $job_name --mem 12000 \
-    --output $log_dir/slurm-%A-%a.out \
-    --wrap "TF_CPP_MIN_LOG_LEVEL=2 python models/m3gnet/slurm_array_m3gnet_relax_wbm.py"
-```
-
---time 2h is probably enough but missing indices are annoying so best be safe.
-
-TF_CPP_MIN_LOG_LEVEL=2 means INFO and WARNING logs are not printed
-https://stackoverflow.com/a/40982782
+python path/to/file.py slurm-submit
 
 Requires M3GNet installation: pip install m3gnet
 """
@@ -39,9 +27,27 @@ Requires M3GNet installation: pip install m3gnet
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-15"
 
-task_type = "IS2RE"
-# task_type = "RS2RE"
+task_type = "IS2RE"  # "RS2RE"
+today = f"{datetime.now():%Y-%m-%d}"
+module_dir = os.path.dirname(__file__)
+slurm_array_task_count = 100
+slurm_mem_per_node = 12000
+job_name = f"m3gnet-wbm-relax-{task_type}"
+out_dir = f"{module_dir}/{today}-{job_name}"
 
+slurm_submit_python(
+    job_name=job_name,
+    log_dir=out_dir,
+    time=(slurm_max_job_time := "3:0:0"),
+    array=f"1-{slurm_array_task_count}",
+    slurm_flags=("--mem", str(slurm_mem_per_node)),
+    # TF_CPP_MIN_LOG_LEVEL=2 means INFO and WARNING logs are not printed
+    # https://stackoverflow.com/a/40982782
+    env_vars="TF_CPP_MIN_LOG_LEVEL=2",
+)
+
+
+# %%
 slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
 slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
 # set large fallback job array size for fast testing/debugging
@@ -52,8 +58,6 @@ print(f"{slurm_job_id = }")
 print(f"{slurm_array_task_id = }")
 print(f"{version('m3gnet') = }")
 
-today = f"{datetime.now():%Y-%m-%d}"
-out_dir = f"{ROOT}/data/{today}-m3gnet-wbm-{task_type}"
 json_out_path = f"{out_dir}/{slurm_array_task_id}.json.gz"
 
 if os.path.isfile(json_out_path):
@@ -71,11 +75,13 @@ df_wbm = pd.read_json(data_path).set_index("material_id")
 df_this_job = np.array_split(df_wbm, slurm_array_task_count)[slurm_array_task_id - 1]
 
 run_params = dict(
-    m3gnet_version=version("m3gnet"),
-    slurm_job_id=slurm_job_id,
-    slurm_array_task_id=slurm_array_task_id,
-    slurm_array_task_count=slurm_array_task_count,
     data_path=data_path,
+    m3gnet_version=version("m3gnet"),
+    slurm_array_task_count=slurm_array_task_count,
+    slurm_array_task_id=slurm_array_task_id,
+    slurm_job_id=slurm_job_id,
+    slurm_max_job_time=slurm_max_job_time,
+    slurm_mem_per_node=slurm_mem_per_node,
     task_type=task_type,
 )
 if wandb.run is None:
@@ -83,7 +89,7 @@ if wandb.run is None:
 
 wandb.init(
     project="m3gnet",
-    name=f"m3gnet-wbm-relax-{task_type}-{slurm_job_id}-{slurm_array_task_id}",
+    name=f"{job_name}-{slurm_job_id}-{slurm_array_task_id}",
     config=run_params,
 )
 
@@ -105,7 +111,7 @@ else:
     raise ValueError(f"Unknown {task_type = }")
 
 
-for material_id, structure in structures.items():
+for material_id, structure in tqdm(structures.items(), disable=None):
     if material_id in relax_results:
         continue
     relax_result = relaxer.relax(structure)

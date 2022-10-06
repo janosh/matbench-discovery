@@ -21,6 +21,9 @@ job-logs/
 # slurm logs
 slurm-*out
 models/**/*.csv
+mb_discovery/energy/**/*.csv
 
 # temporary ignore rule
 paper
+meeting-notes
+models/voronoi
