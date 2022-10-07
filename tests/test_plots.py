@@ -25,7 +25,7 @@ for model_name in ("Wren", "CGCNN", "Voronoi"):
         f"{DATA_DIR}/{model_name.lower()}-mp-initial-structures.csv", nrows=100
     ).set_index("material_id")
 
-    df["e_above_mp_hull"] = df_hull.e_above_mp_hull
+    df["e_above_hull_mp"] = df_hull.e_above_hull_mp
 
     model_preds = df.filter(like=r"_pred").mean(axis=1)
 
@@ -62,7 +62,7 @@ def test_precision_recall_vs_calc_count(
 
         ax = precision_recall_vs_calc_count(
             e_above_hull_error=df.e_above_hull_pred,
-            e_above_hull_true=df.e_above_mp_hull,
+            e_above_hull_true=df.e_above_hull_mp,
             color=color,
             label=model_name,
             intersect_lines=intersect_lines,
@@ -96,7 +96,7 @@ def test_precision_recall_vs_calc_count_raises(
     with pytest.raises(expected_exc, match=match_pat):
         precision_recall_vs_calc_count(
             e_above_hull_error=test_dfs["Wren"].e_above_hull_pred,
-            e_above_hull_true=test_dfs["Wren"].e_above_mp_hull,
+            e_above_hull_true=test_dfs["Wren"].e_above_hull_mp,
             **kwargs,
         )
 
@@ -114,7 +114,7 @@ def test_rolling_mae_vs_hull_dist(
     ):
         ax = rolling_mae_vs_hull_dist(
             e_above_hull_pred=df.e_above_hull_pred,
-            e_above_hull_true=df.e_above_mp_hull,
+            e_above_hull_true=df.e_above_hull_mp,
             color=color,
             label=model_name,
             ax=ax,
@@ -150,7 +150,7 @@ def test_hist_classified_stable_as_func_of_hull_dist(
 
     ax = hist_classified_stable_as_func_of_hull_dist(
         e_above_hull_pred=df.e_above_hull_pred,
-        e_above_hull_true=df.e_above_mp_hull,
+        e_above_hull_true=df.e_above_hull_mp,
         ax=ax,
         stability_threshold=stability_threshold,
         stability_crit=stability_crit,

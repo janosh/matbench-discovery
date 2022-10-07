@@ -36,7 +36,7 @@ df_hull = pd.read_csv(
     f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
 ).set_index("material_id")
 
-df["e_above_mp_hull"] = df_hull.e_above_mp_hull
+df["e_above_hull_mp"] = df_hull.e_above_hull_mp
 
 
 # %%
@@ -62,7 +62,7 @@ assert len(pred_cols) == 10
 
 ax = hist_classified_stable_as_func_of_hull_dist(
     e_above_hull_pred=df[pred_cols].mean(axis=1) - df[target_col],
-    e_above_hull_true=df.e_above_mp_hull,
+    e_above_hull_true=df.e_above_hull_mp,
     which_energy=which_energy,
     stability_crit=stability_crit,
     std_pred=std_total,

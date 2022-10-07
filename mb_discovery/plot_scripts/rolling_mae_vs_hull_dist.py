@@ -39,7 +39,7 @@ df_hull = pd.read_csv(
     f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
 ).set_index("material_id")
 
-df["e_above_mp_hull"] = df_hull.e_above_mp_hull
+df["e_above_hull_mp"] = df_hull.e_above_hull_mp
 
 assert all(n_nans := df.isna().sum() == 0), f"Found {n_nans} NaNs"
 
@@ -59,7 +59,7 @@ df["e_above_hull_pred"] = df.e_form_pres_ens - df[target_col]
 # %%
 ax = rolling_mae_vs_hull_dist(
     e_above_hull_pred=df.e_above_hull_pred,
-    e_above_hull_true=df.e_above_mp_hull,
+    e_above_hull_true=df.e_above_hull_mp,
     label=legend_label,
 )
 

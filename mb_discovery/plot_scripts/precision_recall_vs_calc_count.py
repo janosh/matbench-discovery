@@ -85,14 +85,14 @@ for model_name, df in dfs.items():
     except AttributeError as exc:
         raise KeyError(f"{model_name = }") from exc
 
-    df["e_above_mp_hull"] = df_hull.e_above_mp_hull
+    df["e_above_hull_mp"] = df_hull.e_above_hull_mp
     df["e_form_per_atom"] = df_wbm.e_form_per_atom
     df["e_above_hull_pred"] = model_preds - df.e_form_per_atom
     if n_nans := df.isna().values.sum() > 0:
         assert n_nans < 10, f"{model_name=} has {n_nans=}"
         df = df.dropna()
 
-    F1 = f1_score(df.e_above_mp_hull < 0, df.e_above_hull_pred < 0)
+    F1 = f1_score(df.e_above_hull_mp < 0, df.e_above_hull_pred < 0)
     F1s[model_name] = F1
 
 
@@ -101,8 +101,8 @@ for (model_name, F1), color in zip(sorted(F1s.items(), key=lambda x: x[1]), colo
     df = dfs[model_name]
 
     ax = precision_recall_vs_calc_count(
-        e_above_hull_error=df.e_above_hull_pred + df.e_above_mp_hull,
-        e_above_hull_true=df.e_above_mp_hull,
+        e_above_hull_error=df.e_above_hull_pred + df.e_above_hull_mp,
+        e_above_hull_true=df.e_above_hull_mp,
         color=color,
         label=f"{model_name} {F1=:.2}",
         intersect_lines="recall_xy",  # or "precision_xy", None, 'all'
@@ -113,7 +113,7 @@ for (model_name, F1), color in zip(sorted(F1s.items(), key=lambda x: x[1]), colo
 # optimal recall line finds all stable materials without any false positives
 # can be included to confirm all models start out of with near optimal recall
 # and to see how much each model overshoots total n_stable
-n_below_hull = sum(df_hull.e_above_mp_hull < 0)
+n_below_hull = sum(df_hull.e_above_hull_mp < 0)
 ax.plot(
     [0, n_below_hull],
     [0, 100],
