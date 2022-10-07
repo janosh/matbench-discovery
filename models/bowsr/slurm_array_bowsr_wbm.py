@@ -50,7 +50,7 @@ slurm_submit_python(
     partition="icelake-himem",
     # TF_CPP_MIN_LOG_LEVEL=2 means INFO and WARNING logs are not printed
     # https://stackoverflow.com/a/40982782
-    env_vars="TF_CPP_MIN_LOG_LEVEL=2",
+    pre_cmd="TF_CPP_MIN_LOG_LEVEL=2",
 )
 
 

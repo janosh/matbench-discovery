@@ -26,7 +26,7 @@ def slurm_submit_python(
     partition: str = "icelake",
     account: str = "LEE-SL3-CPU",
     array: str = "",
-    env_vars: str = "",
+    pre_cmd: str = "",
 ) -> None:
     """Slurm submit a python script using sbatch --wrap 'python path/to/file.py' by
     calling this function in the script and invoking the script with
@@ -44,8 +44,9 @@ def slurm_submit_python(
         account (str, optional): Account to charge for this job.
             Defaults to "LEE-SL3-CPU".
         array (str, optional): Slurm array specifier. Defaults to "".
-        env_vars (str, optional): Environment variables to set when running the python
-            script, e.g. ENV_VAR=42 python path/to/file.py. Defaults to "".
+        pre_cmd (str, optional): Things like `module load` commands and environment
+            variables to set when running the python script go here. Example:
+            pre_cmd='ENV_VAR=42' or 'module load rhel8/default-amp;'. Defaults to "".
 
     Raises:
         SystemExit: Exit code will be subprocess.run(['sbatch', ...]).returncode.
@@ -58,7 +59,7 @@ def slurm_submit_python(
         *("--job-name", job_name),
         *("--output", f"{log_dir}/slurm-%A-%a.out"),
         *slurm_flags,
-        *("--wrap", f"'{env_vars} python {py_file_path}'"),
+        *("--wrap", f"{pre_cmd} python {py_file_path}".strip()),
     ]
     if array:
         cmd += ["--array", array]
