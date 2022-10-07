@@ -14,7 +14,7 @@ def _get_calling_file_path(frame: int = 1) -> str:
         str: Calling function's file path n frames up the stack.
     """
     caller_path = sys._getframe(frame).f_code.co_filename
-    return caller_path
+    return os.path.abspath(caller_path)
 
 
 def slurm_submit_python(
@@ -50,21 +50,30 @@ def slurm_submit_python(
     Raises:
         SystemExit: Exit code will be subprocess.run(['sbatch', ...]).returncode.
     """
-    if "slurm-submit" not in sys.argv:
-        return
-    os.makedirs(log_dir, exist_ok=True)  # slurm fails if log_dir is missing
-
-    # calling file's path.
     if py_file_path is None:
         py_file_path = _get_calling_file_path(frame=2)
 
     cmd = [
-        *f"sbatch --{partition=} --{account=} --{time=} --{array=}".split(),
+        *f"sbatch --{partition=} --{account=} --{time=}".replace("'", "").split(),
         *("--job-name", job_name),
         *("--output", f"{log_dir}/slurm-%A-%a.out"),
         *slurm_flags,
         *("--wrap", f"'{env_vars} python {py_file_path}'"),
     ]
+    if array:
+        cmd += ["--array", array]
+
+    running_as_slurm_job = "SLURM_JOB_ID" in os.environ
+    if running_as_slurm_job or "slurm-submit" in sys.argv:
+        # print sbatch command at submission time and into slurm log file
+        # but not when running interactively
+        print(" ".join(cmd))
+
+    if "slurm-submit" not in sys.argv:
+        return
+
+    os.makedirs(log_dir, exist_ok=True)  # slurm fails if log_dir is missing
+
     result = subprocess.run(cmd, check=True)
 
     raise SystemExit(result.returncode)

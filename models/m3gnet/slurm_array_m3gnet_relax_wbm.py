@@ -30,6 +30,7 @@ __date__ = "2022-08-15"
 task_type = "IS2RE"  # "RS2RE"
 today = f"{datetime.now():%Y-%m-%d}"
 module_dir = os.path.dirname(__file__)
+# set large job array size for fast testing/debugging
 slurm_array_task_count = 100
 slurm_mem_per_node = 12000
 job_name = f"m3gnet-wbm-relax-{task_type}"
@@ -50,8 +51,6 @@ slurm_submit_python(
 # %%
 slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
 slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
-# set large fallback job array size for fast testing/debugging
-slurm_array_task_count = int(os.environ.get("SLURM_ARRAY_TASK_COUNT", 10_000))
 
 print(f"Job started running {datetime.now():%Y-%m-%d@%H-%M}")
 print(f"{slurm_job_id = }")
