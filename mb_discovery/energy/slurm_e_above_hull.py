@@ -1,9 +1,7 @@
 # %%
 import gzip
-import io
 import os
 import pickle
-import urllib.request
 import warnings
 from datetime import datetime
 from importlib.metadata import version
@@ -11,6 +9,7 @@ from importlib.metadata import version
 import numpy as np
 import pandas as pd
 from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
+from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from tqdm import tqdm
 
@@ -29,14 +28,16 @@ python path/to/file.py slurm-submit
 today = f"{datetime.now():%Y-%m-%d}"
 module_dir = os.path.dirname(__file__)
 slurm_array_task_count = 50
-slurm_mem_per_node = 30000
+slurm_mem_per_node = 25_000
 
 slurm_submit_python(
-    job_name := "wbm-e-above-hull",
+    job_name := "wbm-e-above-hull-mp",
     out_dir := f"{module_dir}/{today}-{job_name}",
     max_time := "3:0:0",
     array=f"1-{slurm_array_task_count}",
     slurm_flags=("--mem", str(slurm_mem_per_node)),
+    partition="icelake-himem",
+    py_file_path=__file__,
 )
 
 
@@ -52,7 +53,6 @@ out_path = f"{out_dir}/{slurm_array_task_id}.csv"
 print(f"Job started running {datetime.now():%Y-%m-%d@%H-%M}")
 print(f"{slurm_job_id = }")
 print(f"{slurm_array_task_id = }")
-print(f"{slurm_mem_per_node=}")
 print(f"{data_path = }")
 print(f"{out_path = }")
 print(f"{version('pymatgen') = }")
@@ -68,28 +68,41 @@ wbm_computed_struct_entries = [
     ComputedStructureEntry.from_dict(x) for x in tqdm(df_this_job.cse)
 ]
 
+# without filter, process_entries() prints so many warnings it can crash Jupyter kernel
+warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
 
-# %%
-# 2022-01-25-ppd-mp+wbm.pkl.gz (235 MB)
-ppd_mp_wbm_url = "https://figshare.com/files/36669624"
-zipped_file = urllib.request.urlopen(ppd_mp_wbm_url)
-
-ppd_mp_wbm: PatchedPhaseDiagram = pickle.load(
-    io.BytesIO(gzip.decompress(zipped_file.read()))
+wbm_computed_struct_entries = MaterialsProject2020Compatibility().process_entries(
+    wbm_computed_struct_entries, verbose=True, clean=True
 )
 
 
 # %%
-warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
+ppds: dict[str, PatchedPhaseDiagram] = {}
 
+# import io
+# import urllib.request
+
+# # 2022-01-25-ppd-mp+wbm.pkl.gz (235 MB)
+# ppd_mp_wbm_url = "https://figshare.com/files/36669624"
+# zipped_file = urllib.request.urlopen(ppd_mp_wbm_url)
+
+# ppds["mp_wbm"] = pickle.load(io.BytesIO(gzip.decompress(zipped_file.read())))
+
+
+# %%
+with gzip.open(f"{ROOT}/data/2022-09-18-ppd-mp.pkl.gz", "rb") as zip_file:
+    ppds["mp"] = pickle.load(zip_file)
+
+
+# %%
 for entry in tqdm(wbm_computed_struct_entries, disable=None):
 
-    df_this_job.at[entry.entry_id, "e_above_hull_mp_wbm"] = ppd_mp_wbm.get_e_above_hull(
-        entry, on_error="ignore"
-    )
+    for name, ppd in ppds.items():
+        e_above_hull = ppd.get_e_above_hull(entry, on_error="ignore")
+        df_this_job.at[entry.entry_id, f"e_above_hull_{name}"] = e_above_hull
 
 
-df_this_job.e_above_hull_mp_wbm.to_csv(out_path)
+df_this_job.filter(like="e_above_hull_").to_csv(out_path)
 
 
 # df_hull = pd.read_csv(
