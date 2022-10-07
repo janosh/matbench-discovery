@@ -31,7 +31,7 @@ quantity_labels = dict(
     e_form="Formation energy (eV/atom)",
     e_above_hull="Energy above convex hull (eV/atom)",
     e_above_hull_pred="Predicted energy above convex hull (eV/atom)",
-    e_above_mp_hull="Energy above MP convex hull (eV/atom)",
+    e_above_hull_mp="Energy above MP convex hull (eV/atom)",
     e_above_hull_error="Error in energy above convex hull (eV/atom)",
 )
 model_labels = dict(

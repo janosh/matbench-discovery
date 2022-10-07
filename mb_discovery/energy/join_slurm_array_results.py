@@ -18,7 +18,7 @@ today = f"{datetime.now():%Y-%m-%d}"
 
 # %%
 module_dir = os.path.dirname(__file__)
-glob_pattern = f"{module_dir}/2022-10-06-wbm-e-above-hull-mp-wbm/*.csv"
+glob_pattern = f"{module_dir}/2022-10-07-wbm-e-above-hull-mp/*.csv"
 file_paths = sorted(glob(glob_pattern))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
@@ -44,16 +44,17 @@ df_hull_rhys = pd.read_csv(
 
 df_hull_rhys.isna().sum()
 
-df_hull["e_above_hull_rhys"] = df_hull_rhys.e_above_mp_hull
+df_hull["e_above_hull_rhys"] = df_hull_rhys.e_above_hull_mp
 
-ax = df_hull.plot.scatter("e_above_hull_mp_wbm", "e_above_hull_rhys", loglog=False)
+ax = df_hull.plot.scatter("e_above_hull_mp", "e_above_hull_rhys", loglog=False)
 ax.axline((0, 0), (1, 1), color="red")
 ax.set(xlim=(-1, 1), ylim=(-1, 1))
 
-df_hull_rhys.e_above_mp_hull[df_hull_rhys.e_above_mp_hull.between(-1, 1)].plot.hist(
-    bins=100
+df_hull.query("-1 < e_above_hull_mp < 1").plot.scatter(
+    "e_above_hull_mp", "e_above_hull_rhys"
 )
-sum(df_hull_rhys.e_above_mp_hull < 0)
+sum(df_hull_rhys.e_above_hull_mp < 0)
+sum(df_hull.e_above_hull_mp < 0)
 
 
 # %%

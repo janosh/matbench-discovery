@@ -28,7 +28,7 @@ columns = material_id, composition, e_form_pred, e_form_target
 
 df.shape = (257489, 3)
 
-columns = material_id, composition, e_above_mp_hull
+columns = material_id, composition, e_above_hull_mp
 
 ## `wren-mp-initial-structures.csv`
 

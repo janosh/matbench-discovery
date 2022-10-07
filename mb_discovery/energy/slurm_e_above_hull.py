@@ -110,4 +110,4 @@ df_this_job.filter(like="e_above_hull_").to_csv(out_path)
 
 # df_hull["e_above_hull_mp_wbm"] = df_wbm.e_above_hull_mp_wbm
 
-# df_hull.plot.scatter("e_above_hull_mp_wbm", "e_above_mp_hull")
+# df_hull.plot.scatter("e_above_hull_mp_wbm", "e_above_hull_mp")

@@ -49,7 +49,7 @@ for model_name, df in dfs.items():
     # )
     # df = df.query("~contains_rare_earths")
 
-    df["e_above_mp_hull"] = df_hull.e_above_mp_hull
+    df["e_above_hull_mp"] = df_hull.e_above_hull_mp
     assert df.isna().sum().sum() == 0
 
     # make sure we average the expected number of ensemble member predictions
@@ -59,11 +59,11 @@ for model_name, df in dfs.items():
         model_preds = df.filter(like=r"_pred_").mean(axis=1)
     else:
         model_preds = df.e_form_pred
-    df["e_above_mp_hull_pred"] = model_preds - df[target_col]
+    df["e_above_hull_mp_pred"] = model_preds - df[target_col]
 
     rolling_mae_vs_hull_dist(
-        e_above_hull_pred=df.e_above_mp_hull_pred,
-        e_above_hull_true=df.e_above_mp_hull,
+        e_above_hull_pred=df.e_above_hull_mp_pred,
+        e_above_hull_true=df.e_above_hull_mp,
         ax=ax,
         label=model_name,
     )

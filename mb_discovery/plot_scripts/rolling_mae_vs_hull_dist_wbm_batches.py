@@ -28,8 +28,8 @@ df_hull = pd.read_csv(
     f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
 ).set_index("material_id")
 
-df_wrenformer["e_above_mp_hull"] = df_hull.e_above_mp_hull
-assert df_wrenformer.e_above_mp_hull.isna().sum() == 0
+df_wrenformer["e_above_hull_mp"] = df_hull.e_above_hull_mp
+assert df_wrenformer.e_above_hull_mp.isna().sum() == 0
 
 target_col = "e_form_per_atom"
 # target_col = "e_form_target"
@@ -54,7 +54,7 @@ for idx, marker in enumerate(markers, 1):
 
     rolling_mae_vs_hull_dist(
         e_above_hull_pred=df.e_above_hull_pred,
-        e_above_hull_true=df.e_above_mp_hull,
+        e_above_hull_true=df.e_above_hull_mp,
         ax=ax,
         label=title,
         marker=marker,

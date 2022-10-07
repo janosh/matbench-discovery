@@ -78,7 +78,7 @@ df_hull = pd.read_csv(
     f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
 ).set_index("material_id")
 
-df_m3gnet["e_above_mp_hull"] = df_hull.e_above_mp_hull
+df_m3gnet["e_above_hull_mp"] = df_hull.e_above_hull_mp
 
 
 # %%

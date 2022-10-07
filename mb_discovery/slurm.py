@@ -28,9 +28,10 @@ def slurm_submit_python(
     array: str = "",
     pre_cmd: str = "",
 ) -> None:
-    """Slurm submit a python script using sbatch --wrap 'python path/to/file.py' by
-    calling this function in the script and invoking the script with
-    `python path/to/file.py slurm-submit`.
+    """Slurm submits a python script using `sbatch --wrap 'python path/to/file.py'`.
+    Usage: Call this function at the top of the script (before doing any real work) and
+    then submit a job with `python path/to/file.py slurm-submit`. The slurm job will run
+    the whole script.
 
     Args:
         job_name (str): Slurm job name.

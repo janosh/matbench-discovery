@@ -79,7 +79,7 @@ fig, axs = plt.subplots(2, 3, figsize=(18, 9))
 model_name = "m3gnet"
 df = dfs[model_name]
 
-df["e_above_mp_hull"] = df_hull.e_above_mp_hull
+df["e_above_hull_mp"] = df_hull.e_above_hull_mp
 df["e_form_per_atom"] = df_wbm.e_form_per_atom
 
 
@@ -89,7 +89,7 @@ for batch_idx, ax in zip(range(1, 6), axs.flat):
 
     hist_classified_stable_as_func_of_hull_dist(
         e_above_hull_pred=batch_df.e_form_per_atom_pred - batch_df.e_form_per_atom,
-        e_above_hull_true=batch_df.e_above_mp_hull,
+        e_above_hull_true=batch_df.e_above_hull_mp,
         which_energy=which_energy,
         stability_crit=stability_crit,
         ax=ax,
@@ -101,7 +101,7 @@ for batch_idx, ax in zip(range(1, 6), axs.flat):
 
 hist_classified_stable_as_func_of_hull_dist(
     e_above_hull_pred=df.e_form_per_atom_pred - df.e_form_per_atom,
-    e_above_hull_true=df.e_above_mp_hull,
+    e_above_hull_true=df.e_above_hull_mp,
     which_energy=which_energy,
     stability_crit=stability_crit,
     ax=axs.flat[-1],
