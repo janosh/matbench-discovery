@@ -8,7 +8,6 @@ from mb_discovery.plots import (
     StabilityCriterion,
     WhichEnergy,
     hist_classified_stable_as_func_of_hull_dist,
-    plt,
 )
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
@@ -39,11 +38,6 @@ df_hull = pd.read_csv(
 
 df["e_above_mp_hull"] = df_hull.e_above_mp_hull
 
-# download wbm-steps-summary.csv (23.31 MB)
-df_wbm = pd.read_csv(
-    "https://figshare.com/files/37570234?private_link=ff0ad14505f9624f0c05"
-).set_index("material_id")
-
 
 # %%
 nan_counts = df.isna().sum()
@@ -72,12 +66,14 @@ ax = hist_classified_stable_as_func_of_hull_dist(
     which_energy=which_energy,
     stability_crit=stability_crit,
     std_pred=std_total,
+    # stability_threshold=-0.05,
 )
 
-ax.figure.set_size_inches(10, 9)
+fig = ax.figure
+fig.set_size_inches(10, 9)
 
-ax.legend(loc="upper left", frameon=False)
+ax.legend(loc="center left", frameon=False)
 
 fig_name = f"wren-wbm-hull-dist-hist-{which_energy=}-{stability_crit=}"
 img_path = f"{ROOT}/figures/{today}-{fig_name}.pdf"
-plt.savefig(img_path)
+# fig.savefig(img_path)

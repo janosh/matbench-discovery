@@ -32,7 +32,9 @@ target_col = "e_form_per_atom"
 wandb.login()
 wandb_api = wandb.Api()
 ensemble_id = "wrenformer-e_form-ensemble-1"
-runs = wandb_api.runs("aviary/mp", filters={"tags": {"$in": [ensemble_id]}})
+runs = wandb_api.runs(
+    "janosh/matbench-discovery", filters={"tags": {"$in": [ensemble_id]}}
+)
 
 assert len(runs) == 10, f"Expected 10 runs, got {len(runs)} for {ensemble_id=}"
 

@@ -35,7 +35,7 @@ wandb.login()
 wandb_api = wandb.Api()
 ensemble_id = "wrenformer-m3gnet-trainset-ensemble-1"
 runs = wandb_api.runs(
-    "aviary/wrenformer-on-m3gnet-trainset", filters={"tags": {"$in": [ensemble_id]}}
+    "janosh/matbench-discovery", filters={"tags": {"$in": [ensemble_id]}}
 )
 
 assert len(runs) == 10, f"Expected 10 runs, got {len(runs)} for {ensemble_id=}"

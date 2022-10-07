@@ -4,7 +4,7 @@ from datetime import datetime
 import pandas as pd
 
 from mb_discovery import ROOT
-from mb_discovery.plots import plt, rolling_mae_vs_hull_dist
+from mb_discovery.plots import rolling_mae_vs_hull_dist
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
@@ -16,9 +16,9 @@ today = f"{datetime.now():%Y-%m-%d}"
 markers = ["o", "v", "^", "H", "D", ""]
 
 data_path = (
-    # f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
-    f"{ROOT}/models/wrenformer/mp/"
-    "2022-09-20-wrenformer-e_form-ensemble-1-preds-e_form_per_atom.csv"
+    f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
+    # f"{ROOT}/models/wrenformer/mp/"
+    # "2022-09-20-wrenformer-e_form-ensemble-1-preds-e_form_per_atom.csv"
 )
 df = pd.read_csv(data_path).set_index("material_id")
 legend_label = "Wren"
@@ -44,6 +44,7 @@ df["e_above_mp_hull"] = df_hull.e_above_mp_hull
 assert all(n_nans := df.isna().sum() == 0), f"Found {n_nans} NaNs"
 
 target_col = "e_form_target"
+# target_col = "e_form_per_atom"
 # --- or ---
 # target_col = "e_form_per_atom_target"
 # df["e_form_per_atom_target"] = df.e_form / df.n_sites
@@ -62,8 +63,9 @@ ax = rolling_mae_vs_hull_dist(
     label=legend_label,
 )
 
-ax.figure.set_size_inches(10, 9)
+fig = ax.figure
+fig.set_size_inches(10, 9)
 ax.legend(loc="lower right", frameon=False)
 
 img_path = f"{ROOT}/figures/{today}-rolling-mae-vs-hull-dist-{rare=}.pdf"
-plt.savefig(img_path)
+# fig.savefig(img_path)

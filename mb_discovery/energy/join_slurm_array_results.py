@@ -18,7 +18,7 @@ today = f"{datetime.now():%Y-%m-%d}"
 
 # %%
 module_dir = os.path.dirname(__file__)
-glob_pattern = f"{module_dir}/2022-10-06-wbm-e-above-hull/*.csv"
+glob_pattern = f"{module_dir}/2022-10-06-wbm-e-above-hull-mp-wbm/*.csv"
 file_paths = sorted(glob(glob_pattern))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 

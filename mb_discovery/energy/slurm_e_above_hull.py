@@ -37,7 +37,6 @@ slurm_submit_python(
     array=f"1-{slurm_array_task_count}",
     slurm_flags=("--mem", str(slurm_mem_per_node)),
     partition="icelake-himem",
-    py_file_path=__file__,
 )
 
 
