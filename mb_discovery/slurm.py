@@ -29,6 +29,7 @@ def slurm_submit_python(
     pre_cmd: str = "",
 ) -> None:
     """Slurm submits a python script using `sbatch --wrap 'python path/to/file.py'`.
+
     Usage: Call this function at the top of the script (before doing any real work) and
     then submit a job with `python path/to/file.py slurm-submit`. The slurm job will run
     the whole script.
@@ -68,7 +69,7 @@ def slurm_submit_python(
     running_as_slurm_job = "SLURM_JOB_ID" in os.environ
     if running_as_slurm_job or "slurm-submit" in sys.argv:
         # print sbatch command at submission time and into slurm log file
-        # but not when running interactively
+        # but not when running in command line or Jupyter
         print(" ".join(cmd))
 
     if "slurm-submit" not in sys.argv:
