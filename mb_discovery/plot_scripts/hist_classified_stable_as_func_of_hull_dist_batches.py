@@ -42,7 +42,7 @@ dfs["wrenformer"] = pd.read_csv(
     "2022-09-20-wrenformer-e_form-ensemble-1-preds-e_form_per_atom.csv"
 ).set_index("material_id")
 dfs["bowsr_megnet"] = pd.read_json(
-    f"{ROOT}/models/bowsr/2022-09-22-bowsr-wbm-megnet-IS2RE.json.gz"
+    f"{ROOT}/models/bowsr/2022-09-22-bowsr-megnet-wbm-IS2RE.json.gz"
 ).set_index("material_id")
 
 
