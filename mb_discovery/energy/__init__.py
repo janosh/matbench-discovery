@@ -52,7 +52,7 @@ except FileNotFoundError:
     mp_elem_reference_entries = None
 
 
-def get_form_energy_per_atom(
+def get_e_form_per_atom(
     entry: Entry, elemental_ref_entries: dict[str, Entry] = None
 ) -> float:
     """Get the formation energy of a composition from a list of entries and elemental
@@ -80,7 +80,7 @@ def get_form_energy_per_atom(
         elemental_ref_entries = mp_elem_reference_entries
 
     comp = entry.composition
-    form_energy = entry.energy - sum(
+    form_energy = entry.uncorrected_energy - sum(
         comp[el] * elemental_ref_entries[str(el)].energy_per_atom
         for el in entry.composition.elements
     )

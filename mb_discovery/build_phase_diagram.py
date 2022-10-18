@@ -13,7 +13,7 @@ from pymatgen.entries.computed_entries import ComputedEntry
 from pymatgen.ext.matproj import MPRester
 
 from mb_discovery import ROOT
-from mb_discovery.energy import get_elemental_ref_entries, get_form_energy_per_atom
+from mb_discovery.energy import get_e_form_per_atom, get_elemental_ref_entries
 
 today = f"{datetime.now():%Y-%m-%d}"
 module_dir = os.path.dirname(__file__)
@@ -93,7 +93,7 @@ df_mp = pd.read_json(f"{ROOT}/data/2022-08-13-mp-all-energies.json.gz").set_inde
 
 # %%
 df_mp["our_mp_e_form"] = [
-    get_form_energy_per_atom(all_mp_computed_entries[mp_id]) for mp_id in df_mp.index
+    get_e_form_per_atom(all_mp_computed_entries[mp_id]) for mp_id in df_mp.index
 ]
 
 
