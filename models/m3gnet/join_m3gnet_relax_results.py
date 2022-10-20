@@ -11,7 +11,7 @@ from pymatgen.core import Structure
 from tqdm import tqdm
 
 from mb_discovery import ROOT, as_dict_handler
-from mb_discovery.energy import get_form_energy_per_atom
+from mb_discovery.energy import get_e_form_per_atom
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-16"
@@ -69,20 +69,8 @@ pd_entries_m3gnet = [
     for row in df_m3gnet.itertuples()
 ]
 df_m3gnet["e_form_m3gnet_from_ppd"] = [
-    get_form_energy_per_atom(entry) for entry in pd_entries_m3gnet
+    get_e_form_per_atom(entry) for entry in pd_entries_m3gnet
 ]
-
-
-# %% compare against WBM formation energy targets to make sure we got sensible results
-df_hull = pd.read_csv(
-    f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
-).set_index("material_id")
-
-df_m3gnet["e_above_hull_mp"] = df_hull.e_above_hull_mp
-
-
-# %%
-df_m3gnet.hist(bins=200, figsize=(18, 12))
 df_m3gnet.isna().sum()
 
 

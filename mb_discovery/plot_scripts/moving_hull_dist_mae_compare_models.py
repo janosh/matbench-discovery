@@ -4,6 +4,7 @@ from datetime import datetime
 import pandas as pd
 
 from mb_discovery import ROOT
+from mb_discovery.plot_scripts import df_wbm
 from mb_discovery.plots import plt, rolling_mae_vs_hull_dist
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
@@ -30,10 +31,6 @@ dfs["Voronoi Relaxed"] = pd.read_csv(
     f"{ROOT}/data/2022-06-11-from-rhys/voronoi-mp-cse.csv"
 ).set_index("material_id")
 
-df_hull = pd.read_csv(
-    f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
-).set_index("material_id")
-
 
 # %%
 fig, ax = plt.subplots(1, figsize=(10, 9))
@@ -49,7 +46,7 @@ for model_name, df in dfs.items():
     # )
     # df = df.query("~contains_rare_earths")
 
-    df["e_above_hull_mp"] = df_hull.e_above_hull_mp
+    df["e_above_hull_mp"] = df_wbm.e_above_hull_mp2020_corrected
     assert df.isna().sum().sum() == 0
 
     # make sure we average the expected number of ensemble member predictions

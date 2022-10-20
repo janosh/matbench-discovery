@@ -4,6 +4,7 @@ from datetime import datetime
 import pandas as pd
 
 from mb_discovery import ROOT
+from mb_discovery.plot_scripts import df_wbm
 from mb_discovery.plots import (
     StabilityCriterion,
     WhichEnergy,
@@ -32,11 +33,7 @@ df = pd.read_csv(
     f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
 ).set_index("material_id")
 
-df_hull = pd.read_csv(
-    f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
-).set_index("material_id")
-
-df["e_above_hull_mp"] = df_hull.e_above_hull_mp
+df["e_above_hull_mp"] = df_wbm.e_above_hull_mp
 
 
 # %%

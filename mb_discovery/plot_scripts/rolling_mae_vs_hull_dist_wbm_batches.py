@@ -4,6 +4,7 @@ from datetime import datetime
 import pandas as pd
 
 from mb_discovery import ROOT
+from mb_discovery.plot_scripts import df_wbm
 from mb_discovery.plots import plt, rolling_mae_vs_hull_dist
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
@@ -24,11 +25,8 @@ df_wrenformer = pd.read_csv(
     "2022-09-20-wrenformer-e_form-ensemble-1-preds-e_form_per_atom.csv"
 ).set_index("material_id")
 
-df_hull = pd.read_csv(
-    f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
-).set_index("material_id")
 
-df_wrenformer["e_above_hull_mp"] = df_hull.e_above_hull_mp
+df_wrenformer["e_above_hull_mp"] = df_wbm.e_above_hull_mp2020_corrected
 assert df_wrenformer.e_above_hull_mp.isna().sum() == 0
 
 target_col = "e_form_per_atom"
