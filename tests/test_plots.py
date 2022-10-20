@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 
 from mb_discovery import ROOT
+from mb_discovery.plot_scripts import df_wbm
 from mb_discovery.plots import (
     StabilityCriterion,
     hist_classified_stable_as_func_of_hull_dist,
@@ -17,15 +18,13 @@ from mb_discovery.plots import (
 
 DATA_DIR = f"{ROOT}/data/2022-06-11-from-rhys"
 
-df_hull = pd.read_csv(f"{DATA_DIR}/wbm-e-above-mp-hull.csv").set_index("material_id")
-
 test_dfs: dict[str, pd.DataFrame] = {}
 for model_name in ("Wren", "CGCNN", "Voronoi"):
     df = pd.read_csv(
         f"{DATA_DIR}/{model_name.lower()}-mp-initial-structures.csv", nrows=100
     ).set_index("material_id")
 
-    df["e_above_hull_mp"] = df_hull.e_above_hull_mp
+    df["e_above_hull_mp"] = df_wbm.e_above_hull_mp2020_corrected
 
     model_preds = df.filter(like=r"_pred").mean(axis=1)
 

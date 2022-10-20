@@ -5,6 +5,7 @@ import pandas as pd
 import pymatviz
 
 from mb_discovery import ROOT
+from mb_discovery.plot_scripts import df_wbm
 from mb_discovery.plots import (
     StabilityCriterion,
     WhichEnergy,
@@ -46,16 +47,6 @@ dfs["bowsr_megnet"] = pd.read_json(
 ).set_index("material_id")
 
 
-df_hull = pd.read_csv(
-    f"{ROOT}/data/2022-06-11-from-rhys/wbm-e-above-mp-hull.csv"
-).set_index("material_id")
-
-# download wbm-steps-summary.csv (23.31 MB)
-df_wbm = pd.read_csv(
-    "https://figshare.com/files/37570234?private_link=ff0ad14505f9624f0c05"
-).set_index("material_id")
-
-
 # %%
 if "wren" in dfs:
     df = dfs["wren"]
@@ -79,8 +70,8 @@ fig, axs = plt.subplots(2, 3, figsize=(18, 9))
 model_name = "m3gnet"
 df = dfs[model_name]
 
-df["e_above_hull_mp"] = df_hull.e_above_hull_mp
-df["e_form_per_atom"] = df_wbm.e_form_per_atom
+df["e_above_hull_mp"] = df_wbm.e_above_hull_mp2020_corrected
+df["e_form_per_atom"] = df_wbm.e_form_per_atom_mp2020_corrected
 
 
 for batch_idx, ax in zip(range(1, 6), axs.flat):

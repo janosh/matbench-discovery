@@ -5,22 +5,22 @@ import pandas as pd
 from sklearn.metrics import f1_score
 
 from mb_discovery import ROOT
+from mb_discovery.plot_scripts import df_wbm
 from mb_discovery.plots import StabilityCriterion, precision_recall_vs_calc_count
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
-__date__ = "2022-06-18"
 
 today = f"{datetime.now():%Y-%m-%d}"
 
 
 # %%
-DATA_DIR = f"{ROOT}/data/2022-06-11-from-rhys"
-df_hull = pd.read_csv(f"{DATA_DIR}/wbm-e-above-mp-hull.csv").set_index("material_id")
 rare = "all"
 
 dfs: dict[str, pd.DataFrame] = {}
 for model_name in ("wren", "cgcnn", "voronoi"):
-    csv_path = f"{DATA_DIR}/{model_name}-mp-initial-structures.csv"
+    csv_path = (
+        f"{ROOT}/data/2022-06-11-from-rhys/{model_name}-mp-initial-structures.csv"
+    )
     df = pd.read_csv(csv_path).set_index("material_id")
     dfs[model_name] = df
 
@@ -34,16 +34,10 @@ dfs["wrenformer"] = pd.read_csv(
 ).set_index("material_id")
 
 dfs["bowsr_megnet"] = pd.read_json(
-    f"{ROOT}/models/bowsr/2022-09-22-bowsr-wbm-megnet-IS2RE.json.gz"
+    f"{ROOT}/models/bowsr/2022-09-22-bowsr-megnet-wbm-IS2RE.json.gz"
 ).set_index("material_id")
 
 print(f"loaded models: {list(dfs)}")
-
-
-# %% download wbm-steps-summary.csv (23.31 MB)
-df_wbm = pd.read_csv(
-    "https://figshare.com/files/37570234?private_link=ff0ad14505f9624f0c05"
-).set_index("material_id")
 
 
 # %%
@@ -85,8 +79,8 @@ for model_name, df in dfs.items():
     except AttributeError as exc:
         raise KeyError(f"{model_name = }") from exc
 
-    df["e_above_hull_mp"] = df_hull.e_above_hull_mp
-    df["e_form_per_atom"] = df_wbm.e_form_per_atom
+    df["e_above_hull_mp"] = df_wbm.e_above_hull_mp2020_corrected
+    df["e_form_per_atom"] = df_wbm.e_form_per_atom_mp2020_corrected
     df["e_above_hull_pred"] = model_preds - df.e_form_per_atom
     if n_nans := df.isna().values.sum() > 0:
         assert n_nans < 10, f"{model_name=} has {n_nans=}"
@@ -113,7 +107,7 @@ for (model_name, F1), color in zip(sorted(F1s.items(), key=lambda x: x[1]), colo
 # optimal recall line finds all stable materials without any false positives
 # can be included to confirm all models start out of with near optimal recall
 # and to see how much each model overshoots total n_stable
-n_below_hull = sum(df_hull.e_above_hull_mp < 0)
+n_below_hull = sum(df_wbm.e_above_hull_mp2020_corrected < 0)
 ax.plot(
     [0, n_below_hull],
     [0, 100],
