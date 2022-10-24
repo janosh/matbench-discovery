@@ -1,19 +1,15 @@
 import os
 from typing import Any
 
-from mb_discovery import as_dict_handler, chunks
+from mb_discovery import PKG_DIR, ROOT, as_dict_handler, chunks
 
 
 def test_has_root_pkg_dir() -> None:
-
-    from mb_discovery import PKG_DIR, ROOT
-
     assert os.path.isdir(ROOT)
     assert os.path.isdir(PKG_DIR)
 
 
 def test_chunks() -> None:
-
     assert list(chunks([], 1)) == []
     assert list(chunks([1], 1)) == [[1]]
     assert list(chunks([1, 2], 1)) == [[1], [2]]
