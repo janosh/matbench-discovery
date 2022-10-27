@@ -43,11 +43,12 @@ data_path = f"{ROOT}/data/2022-06-26-wbm-cses-and-initial-structures.json.gz"
 slurm_submit_python(
     job_name=f"bowsr-megnet-wbm-{task_type}",
     log_dir=out_dir,
+    partition="icelake-himem",
+    account="LEE-SL3-CPU",
     time=(slurm_max_job_time := "3:0:0"),
     # --time 2h is probably enough but best be safe.
     array=f"1-{slurm_array_task_count}",
     slurm_flags=("--mem", str(slurm_mem_per_node)),
-    partition="icelake-himem",
     # TF_CPP_MIN_LOG_LEVEL=2 means INFO and WARNING logs are not printed
     # https://stackoverflow.com/a/40982782
     pre_cmd="TF_CPP_MIN_LOG_LEVEL=2",
