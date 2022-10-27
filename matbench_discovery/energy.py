@@ -7,7 +7,7 @@ from pymatgen.core import Composition
 from pymatgen.util.typing import EntryLike
 from tqdm import tqdm
 
-from mb_discovery import ROOT
+from matbench_discovery import ROOT
 
 
 def get_elemental_ref_entries(

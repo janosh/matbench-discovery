@@ -7,7 +7,7 @@ from aviary.wren.utils import get_aflow_label_from_spglib
 from mp_api.client import MPRester
 from tqdm import tqdm
 
-from mb_discovery import ROOT
+from matbench_discovery import ROOT
 
 """
 Download all MP formation and above hull energies on 2022-08-13.

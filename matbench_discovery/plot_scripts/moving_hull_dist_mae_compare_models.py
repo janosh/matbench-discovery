@@ -3,9 +3,9 @@ from datetime import datetime
 
 import pandas as pd
 
-from mb_discovery import ROOT
-from mb_discovery.plot_scripts import df_wbm
-from mb_discovery.plots import plt, rolling_mae_vs_hull_dist
+from matbench_discovery import ROOT
+from matbench_discovery.plot_scripts import df_wbm
+from matbench_discovery.plots import plt, rolling_mae_vs_hull_dist
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"

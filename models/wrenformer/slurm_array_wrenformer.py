@@ -4,8 +4,8 @@ from datetime import datetime
 
 from aviary.wrenformer.train import train_wrenformer_on_df
 
-from mb_discovery import ROOT
-from mb_discovery.slurm import slurm_submit_python
+from matbench_discovery import ROOT
+from matbench_discovery.slurm import slurm_submit_python
 
 """
 Train a Wrenformer

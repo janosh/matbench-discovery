@@ -10,8 +10,8 @@ from pymatgen.analysis.phase_diagram import PDEntry
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from mb_discovery import ROOT, as_dict_handler
-from mb_discovery.energy import get_e_form_per_atom
+from matbench_discovery import ROOT, as_dict_handler
+from matbench_discovery.energy import get_e_form_per_atom
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-16"

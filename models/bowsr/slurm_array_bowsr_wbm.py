@@ -14,8 +14,8 @@ from maml.apps.bowsr.model.megnet import MEGNet
 from maml.apps.bowsr.optimizer import BayesianOptimizer
 from tqdm import tqdm
 
-from mb_discovery import ROOT, as_dict_handler
-from mb_discovery.slurm import slurm_submit_python
+from matbench_discovery import ROOT, as_dict_handler
+from matbench_discovery.slurm import slurm_submit_python
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-15"

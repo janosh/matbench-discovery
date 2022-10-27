@@ -8,8 +8,7 @@ from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedEntry, ComputedStructureEntry
 from tqdm import tqdm
 
-from mb_discovery import ROOT, as_dict_handler
-from mb_discovery.compute_formation_energy import get_form_energy_per_atom
+from matbench_discovery import ROOT, as_dict_handler
 
 """
 Change JSON orientation of wbm-cleaned.json.gz and WBM step IDs to match the dielectric

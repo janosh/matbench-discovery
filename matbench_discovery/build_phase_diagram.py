@@ -12,8 +12,8 @@ from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedEntry
 from pymatgen.ext.matproj import MPRester
 
-from mb_discovery import ROOT
-from mb_discovery.energy import get_e_form_per_atom, get_elemental_ref_entries
+from matbench_discovery import ROOT
+from matbench_discovery.energy import get_e_form_per_atom, get_elemental_ref_entries
 
 today = f"{datetime.now():%Y-%m-%d}"
 module_dir = os.path.dirname(__file__)

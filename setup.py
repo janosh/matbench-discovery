@@ -1,7 +1,7 @@
 from setuptools import find_packages, setup
 
 setup(
-    name="mb-discovery",
+    name="matbench-discovery",
     version="0.1.0",
     author="Janosh Riebesell, Rhys Goodall",
     author_email="janosh.riebesell@gmail.com",
