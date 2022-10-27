@@ -39,6 +39,8 @@ out_dir = f"{module_dir}/{today}-{job_name}"
 slurm_submit_python(
     job_name=job_name,
     log_dir=out_dir,
+    partition="icelake-himem",
+    account="LEE-SL3-CPU",
     time=(slurm_max_job_time := "3:0:0"),
     array=f"1-{slurm_array_task_count}",
     slurm_flags=("--mem", str(slurm_mem_per_node)),

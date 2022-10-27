@@ -21,31 +21,32 @@ def slurm_submit_python(
     job_name: str,
     log_dir: str,
     time: str,
+    partition: str,
+    account: str,
     py_file_path: str = None,
     slurm_flags: Sequence[str] = (),
-    partition: str = "icelake",
-    account: str = "LEE-SL3-CPU",
-    array: str = "",
+    array: str = None,
     pre_cmd: str = "",
 ) -> None:
     """Slurm submits a python script using `sbatch --wrap 'python path/to/file.py'`.
 
     Usage: Call this function at the top of the script (before doing any real work) and
-    then submit a job with `python path/to/file.py slurm-submit`. The slurm job will run
-    the whole script.
+    then submit a job with `python path/to/that/script.py slurm-submit`. The slurm job
+    will run the whole script.
 
     Args:
         job_name (str): Slurm job name.
-        log_dir (str): Directory to write slurm logs. Log file will include job ID and
-            array task ID.
+        log_dir (str): Directory to write slurm logs. Log file will include slurm job
+            ID and array task ID.
         time (str): 'HH:MM:SS' time limit for the job.
-        py_file_path (str): Path to the python script to be submitted. Defaults to the
-            path of the file calling slurm_submit_python().
-        slurm_flags (Sequence[str], optional): Extra slurm CLI flags. Defaults to ().
-        partition (str, optional): Slurm partition. Defaults to "icelake".
+        py_file_path (str, optional): Path to the python script to be submitted.
+            Defaults to the path of the file calling slurm_submit_python().
+        partition (str, optional): Slurm partition.
         account (str, optional): Account to charge for this job.
-            Defaults to "LEE-SL3-CPU".
-        array (str, optional): Slurm array specifier. Defaults to "".
+        slurm_flags (Sequence[str], optional): Extra slurm CLI flags. Defaults to ().
+            Examples: ('--nodes 1', '--gpus-per-node 1') or ('--mem', '16000').
+        array (str, optional): Slurm array specifier. Defaults to None. Example:
+            '9' (for SLURM_ARRAY_TASK_ID from 0-9 inclusive), '1-10' or '1-10%2', etc.
         pre_cmd (str, optional): Things like `module load` commands and environment
             variables to set when running the python script go here. Example:
             pre_cmd='ENV_VAR=42' or 'module load rhel8/default-amp;'. Defaults to "".
