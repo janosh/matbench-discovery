@@ -13,8 +13,8 @@ import wandb
 from m3gnet.models import Relaxer
 from tqdm import tqdm
 
-from mb_discovery import ROOT, as_dict_handler
-from mb_discovery.slurm import slurm_submit_python
+from matbench_discovery import ROOT, as_dict_handler
+from matbench_discovery.slurm import slurm_submit_python
 
 """
 To slurm submit this file, run:

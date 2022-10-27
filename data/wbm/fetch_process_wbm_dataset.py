@@ -20,8 +20,8 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz import density_scatter
 from tqdm import tqdm
 
-from mb_discovery import ROOT
-from mb_discovery.energy import get_e_form_per_atom
+from matbench_discovery import ROOT
+from matbench_discovery.energy import get_e_form_per_atom
 
 try:
     import gdown

@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 from pytest import CaptureFixture
 
-from mb_discovery.slurm import _get_calling_file_path, slurm_submit_python
+from matbench_discovery.slurm import _get_calling_file_path, slurm_submit_python
 
 
 @pytest.mark.parametrize("py_file_path", [None, "path/to/file.py"])
@@ -27,7 +27,7 @@ def test_slurm_submit(capsys: CaptureFixture[str], py_file_path: str | None) -> 
 
     # check slurm_submit_python() prints cmd and calls subprocess.run() in submit mode
     with pytest.raises(SystemExit), patch("sys.argv", ["slurm-submit"]), patch(
-        "mb_discovery.slurm.subprocess.run"
+        "matbench_discovery.slurm.subprocess.run"
     ) as mock_subprocess_run:
         slurm_submit_python(**kwargs)  # type: ignore
 

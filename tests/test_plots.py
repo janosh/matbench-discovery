@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import pytest
 
-from mb_discovery import ROOT
-from mb_discovery.plot_scripts import df_wbm
-from mb_discovery.plots import (
+from matbench_discovery import ROOT
+from matbench_discovery.plot_scripts import df_wbm
+from matbench_discovery.plots import (
     StabilityCriterion,
     hist_classified_stable_as_func_of_hull_dist,
     precision_recall_vs_calc_count,

@@ -11,7 +11,7 @@ from pymatgen.entries.computed_entries import (
     Entry,
 )
 
-from mb_discovery.energy import get_e_form_per_atom, get_elemental_ref_entries
+from matbench_discovery.energy import get_e_form_per_atom, get_elemental_ref_entries
 
 dummy_struct = Structure(
     lattice=Lattice.cubic(5),

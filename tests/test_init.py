@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from mb_discovery import PKG_DIR, ROOT, as_dict_handler, chunks
+from matbench_discovery import PKG_DIR, ROOT, as_dict_handler, chunks
 
 
 def test_has_root_pkg_dir() -> None:

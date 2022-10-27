@@ -4,9 +4,9 @@ from datetime import datetime
 import pandas as pd
 from sklearn.metrics import f1_score
 
-from mb_discovery import ROOT
-from mb_discovery.plot_scripts import df_wbm
-from mb_discovery.plots import StabilityCriterion, precision_recall_vs_calc_count
+from matbench_discovery import ROOT
+from matbench_discovery.plot_scripts import df_wbm
+from matbench_discovery.plots import StabilityCriterion, precision_recall_vs_calc_count
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 

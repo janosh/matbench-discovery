@@ -9,7 +9,7 @@ from pymatgen.util.coord import pbc_diff
 from pymatviz.utils import add_identity_line
 from sklearn.metrics import r2_score
 
-from mb_discovery import ROOT
+from matbench_discovery import ROOT
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-06-18"
