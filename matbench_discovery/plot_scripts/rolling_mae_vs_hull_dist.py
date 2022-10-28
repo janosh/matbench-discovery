@@ -36,7 +36,7 @@ rare = "all"
 # df = df.query("~contains_rare_earths")
 
 
-df["e_above_hull_mp"] = df_wbm.e_above_hull_mp2020_corrected
+df["e_above_hull_mp"] = df_wbm.e_above_hull_mp2020_corrected_ppd_mp
 
 assert all(n_nans := df.isna().sum() == 0), f"Found {n_nans} NaNs"
 

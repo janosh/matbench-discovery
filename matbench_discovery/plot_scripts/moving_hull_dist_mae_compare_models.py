@@ -46,7 +46,7 @@ for model_name, df in dfs.items():
     # )
     # df = df.query("~contains_rare_earths")
 
-    df["e_above_hull_mp"] = df_wbm.e_above_hull_mp2020_corrected
+    df["e_above_hull_mp"] = df_wbm.e_above_hull_mp2020_corrected_ppd_mp
     assert df.isna().sum().sum() == 0
 
     # make sure we average the expected number of ensemble member predictions

@@ -24,7 +24,7 @@ for model_name in ("Wren", "CGCNN", "Voronoi"):
         f"{DATA_DIR}/{model_name.lower()}-mp-initial-structures.csv", nrows=100
     ).set_index("material_id")
 
-    df["e_above_hull_mp"] = df_wbm.e_above_hull_mp2020_corrected
+    df["e_above_hull_mp"] = df_wbm.e_above_hull_mp2020_corrected_ppd_mp
 
     model_preds = df.filter(like=r"_pred").mean(axis=1)
 

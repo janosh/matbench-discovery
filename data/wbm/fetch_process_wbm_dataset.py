@@ -8,8 +8,9 @@ from datetime import datetime
 from glob import glob
 
 import pandas as pd
+from aviary.wren.utils import get_aflow_label_from_spglib
 from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
-from pymatgen.core import Structure
+from pymatgen.core import Composition, Structure
 from pymatgen.entries.compatibility import (
     MaterialsProject2020Compatibility as MP2020Compat,
 )
@@ -144,8 +145,10 @@ def increment_wbm_material_id(wbm_id: str) -> str:
         print(f"bad {wbm_id=}")
         return wbm_id
 
-    assert prefix == "step"
-    assert step_num.isdigit() and material_num.isdigit()
+    msg = f"bad {wbm_id=}, {prefix=} {step_num=} {material_num=}"
+    assert prefix == "step", msg
+    assert step_num.isdigit(), msg
+    assert material_num.isdigit(), msg
 
     return f"wbm-step-{step_num}-{int(material_num) + 1}"
 
@@ -266,7 +269,9 @@ for row in tqdm(df_wbm.sample(n_samples).itertuples(), total=n_samples):
 
 
 # %%
-df_wbm["formula_from_cse"] = [x.formula for x in df_wbm.pop("composition_from_cse")]
+df_wbm["formula_from_cse"] = [
+    x.alphabetical_formula for x in df_wbm.pop("composition_from_cse")
+]
 df_wbm[["initial_structure", "computed_structure_entry", "formula_from_cse"]].to_json(
     f"{module_dir}/{today}-wbm-cses+init-structs.json.bz2"
 )
@@ -278,8 +283,8 @@ col_map = {
     "nsites": "n_sites",
     "vol": "volume",
     "e": "uncorrected_energy",
-    "e_form": "e_form_per_atom",
-    "e_hull": "e_hull",
+    "e_form": "e_form_per_atom_wbm",
+    "e_hull": "e_hull_wbm",
     "gap": "bandgap_pbe",
     "id": "material_id",
 }
@@ -313,10 +318,31 @@ df_summary = df_summary.query("volume > 0")
 df_summary.index = df_summary.index.map(increment_wbm_material_id)
 assert sum(df_summary.index != df_wbm.index) == 0
 
+# sort formulas alphabetically
+df_summary["alph_formula"] = [
+    Composition(x).alphabetical_formula for x in df_summary.formula
+]
+assert sum(df_summary.alph_formula != df_summary.formula) == 219_215
+assert df_summary.alph_formula[3] == "Ag2 Au1 Hg1"
+assert df_summary.formula[3] == "Ag2 Hg1 Au1"
+
+df_summary["formula"] = df_summary.pop("alph_formula")
+
+
+# %%
+# check summary and CSE formulas agree
+assert all(df_summary["formula"] == df_wbm.formula_from_cse)
+
+
 # fix bad energy which is 0 in df_summary but a more realistic -63.68 in CSE
 df_summary.at["wbm-step-2-18689", "uncorrected_energy"] = df_wbm.loc[
     "wbm-step-2-18689"
 ].computed_structure_entry["energy"]
+
+# NOTE careful with ComputedEntries as object vs as dicts, the meaning of keys changes:
+# cse.energy == cse.uncorrected_energy + cse.correction
+# whereas
+# cse.as_dict()["energy"] == cse.uncorrected_energy
 
 
 # %% scatter plot summary energies vs CSE energies
@@ -355,17 +381,24 @@ if isinstance(mp_compat, MP2020Compat):
     assert n_corrected == 100931, f"{n_corrected=}"
 
 corr_label = "mp2020" if isinstance(mp_compat, MP2020Compat) else "legacy"
-df_summary[f"e_correction_{corr_label}"] = [
-    cse.energy - cse.uncorrected_energy for cse in df_wbm.cse
+df_summary[f"e_correction_per_atom_{corr_label}"] = [
+    cse.correction_per_atom for cse in df_wbm.cse
 ]
 
-assert df_summary.e_correction_mp2020.mean().round(4) == -0.9979
-assert df_summary.e_correction_legacy.mean().round(4) == -0.0643
-assert (df_summary.filter(like="corrections").abs() > 1e-4).sum().to_dict() == {
-    "e_correction_mp2020": 100931,
-    "e_correction_legacy": 39595,
-}
+assert df_summary.e_correction_per_atom_mp2020.mean().round(4) == -0.1067
+assert df_summary.e_correction_per_atom_legacy.mean().round(4) == -0.0643
+assert (df_summary.filter(like="correction").abs() > 1e-4).sum().to_dict() == {
+    "e_correction_per_atom_mp2020": 100931,
+    "e_correction_per_atom_legacy": 39595,
+}, "unexpected number of materials received non-zero corrections"
 
+ax = density_scatter(
+    df_summary.e_correction_per_atom_legacy,
+    df_summary.e_correction_per_atom_mp2020,
+    xlabel="legacy corrections (eV / atom)",
+    ylabel="MP2020 corrections (eV / atom)",
+)
+# ax.figure.savefig(f"{ROOT}/tmp/{today}-legacy-vs-mp2020-corrections.png")
 
 # mp_compat.process_entry(cse) for CSE with id wbm-step-1-24459 causes Jupyter kernel to
 # crash reason unknown, still occurs even after updating deps like pymatgen, numpy,
@@ -382,65 +415,64 @@ mp_compat.process_entry(cse)
 
 
 # %%
-with gzip.open(f"{module_dir}/2022-10-13-rhys/ppd-mp.pkl.gz", "rb") as zip_file:
-    ppd_rhys: PatchedPhaseDiagram = pickle.load(zip_file)
-
-
 with gzip.open(f"{ROOT}/data/2022-09-18-ppd-mp.pkl.gz", "rb") as zip_file:
-    ppd_mp = pickle.load(zip_file)
+    ppd_mp: PatchedPhaseDiagram = pickle.load(zip_file)
 
 
-# %%
+# %% calculate e_above_hull for each material
 # this loop needs the warnings filter above to not crash Jupyter kernel with logs
 # takes ~20 min at 200 it/s for 250k entries in WBM
+e_above_hull_key = "e_above_hull_uncorrected_ppd_mp"
+assert e_above_hull_key not in df_summary
+
 for entry in tqdm(df_wbm.cse):
     assert entry.entry_id.startswith("wbm-step-")
-    corr_label = "mp2020_" if isinstance(mp_compat, MP2020Compat) else "legacy_"
-    # corr_label = "un"
-    at_idx = entry.entry_id, f"e_above_hull_{corr_label}corrected_ppd_mp"
 
-    if at_idx not in df_summary or pd.isna(df_summary.at[at_idx]):
-        # use entry.(uncorrected_)energy_per_atom
-        e_above_hull = (
-            entry.corrected_energy_per_atom
-            - ppd_mp.get_hull_energy_per_atom(entry.composition)
-        )
-        df_summary.at[at_idx] = e_above_hull
+    e_per_atom = entry.uncorrected_energy_per_atom
+    e_hull_per_atom = ppd_mp.get_hull_energy_per_atom(entry.composition)
+    e_above_hull = e_per_atom - e_hull_per_atom
+
+    df_summary.at[entry.entry_id, e_above_hull_key] = e_above_hull
 
 
-# %% compute formation energies
-# first make sure source and target dfs have matching indices
-assert sum(df_wbm.index != df_summary.index) == 0
-
-e_form_key = "e_form_per_atom_uncorrected_ppd_mp_rhys"
-for mat_id, cse in tqdm(df_wbm.cse.items(), total=len(df_wbm)):
-    assert mat_id == cse.entry_id, f"{mat_id=} {cse.entry_id=}"
-    assert mat_id in df_summary.index, f"{mat_id=} not in df_summary"
-    df_summary.at[cse.entry_id, e_form_key] = ppd_rhys.get_form_energy_per_atom(cse)
-
-assert len(df_summary) == sum(step_lens)
-
-df_summary["e_form_per_atom_legacy_corrected_ppd_mp_rhys"] = (
-    df_summary[e_form_key] + df_summary.e_correction_legacy
-)
+# add old + new MP energy corrections to above hull energies
+for corrections in ("mp2020", "legacy"):
+    df_summary[e_above_hull_key.replace("un", f"{corrections}_")] = (
+        df_summary[e_above_hull_key]
+        + df_summary[f"e_correction_per_atom_{corrections}"]
+    )
 
 
 # %% calculate formation energies from CSEs wrt MP elemental reference energies
-df_summary["e_form_per_atom_uncorrected"] = [
-    get_e_form_per_atom(dict(composition=row.formula, energy=row.uncorrected_energy))
-    for row in tqdm(df_summary.itertuples(), total=len(df_summary))
-]
+# first make sure source and target dfs have matching indices
+assert sum(df_wbm.index != df_summary.index) == 0
+
+e_form_key = "e_form_per_atom_uncorrected_mp_refs"
+assert e_form_key not in df_summary
+
+for row in tqdm(df_wbm.itertuples(), total=len(df_wbm)):
+    mat_id, cse, formula = row.Index, row.cse, row.formula_from_cse
+    assert mat_id == cse.entry_id, f"{mat_id=} != {cse.entry_id=}"
+    assert mat_id in df_summary.index, f"{mat_id=} not in df_summary"
+
+    entry_like = dict(composition=formula, energy=cse.uncorrected_energy)
+    e_form = get_e_form_per_atom(entry_like)
+    e_form_ppd = ppd_mp.get_form_energy_per_atom(cse)
+
+    # make sure the PPD and functional method of calculating formation energy agree
+    assert abs(e_form - e_form_ppd) < 1e-7, f"{e_form=} != {e_form_ppd=}"
+    df_summary.at[cse.entry_id, e_form_key] = e_form
+
+assert len(df_summary) == sum(
+    step_lens
+), f"rows were added: {len(df_summary)=} {sum(step_lens)=}"
 
 
-# %% MP2020 corrections are much larger than legacy corrections
-ax = density_scatter(
-    df_summary.e_correction_legacy / df_summary.n_sites,
-    df_summary.e_correction_mp2020 / df_summary.n_sites,
-    xlabel="legacy corrections (eV / atom)",
-    ylabel="MP2020 corrections (eV / atom)",
-)
-ax.axis("equal")
-# ax.figure.savefig(f"{ROOT}/tmp/{today}-legacy-vs-mp2020-corrections.png")
+# add old + new MP energy corrections to formation energies
+for corrections in ("mp2020", "legacy"):
+    df_summary[e_form_key.replace("un", f"{corrections}_")] = (
+        df_summary[e_form_key] + df_summary[f"e_correction_per_atom_{corrections}"]
+    )
 
 
 # %%
@@ -457,3 +489,22 @@ df_wbm = pd.read_json(f"{module_dir}/2022-10-19-wbm-cses+init-structs.json.bz2")
 df_wbm["cse"] = [
     ComputedStructureEntry.from_dict(x) for x in tqdm(df_wbm.computed_structure_entry)
 ]
+
+df_wbm["init_struct"] = df_wbm["wyckoff"] = float("nan")
+for idx, dct in tqdm(df_wbm.initial_structure.items(), total=len(df_wbm)):
+    if not df_wbm[idx, "init_struct"]:
+        df_wbm.at[idx, "init_struct"] = struct = Structure.from_dict(dct)
+    if not df_wbm[idx, "wyckoff"]:
+        df_wbm.at[idx, "wyckoff"] = get_aflow_label_from_spglib(struct)
+
+
+# %% make sure material IDs within each step are consecutive
+for step in range(1, 6):
+    df = df_summary[df_summary.index.str.startswith(f"wbm-step-{step}-")]
+    step_len = step_lens[step - 1]
+    assert len(df) == step_len, f"{step=} has {len(df)=}, expected {step_len=}"
+
+    step_counts = list(df.index.str.split("-").str[-1].astype(int))
+    assert step_counts == list(
+        range(1, step_len + 1)
+    ), f"{step=} counts not consecutive"

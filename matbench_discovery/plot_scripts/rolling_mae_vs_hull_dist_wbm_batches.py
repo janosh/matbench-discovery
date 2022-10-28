@@ -26,7 +26,7 @@ df_wrenformer = pd.read_csv(
 ).set_index("material_id")
 
 
-df_wrenformer["e_above_hull_mp"] = df_wbm.e_above_hull_mp2020_corrected
+df_wrenformer["e_above_hull_mp"] = df_wbm.e_above_hull_mp2020_corrected_ppd_mp
 assert df_wrenformer.e_above_hull_mp.isna().sum() == 0
 
 target_col = "e_form_per_atom"
