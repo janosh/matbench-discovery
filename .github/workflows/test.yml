@@ -29,4 +29,4 @@ jobs:
 
       - name: Run tests
         id: tests
-        run: pytest --durations 0 --cov matbench_discovery
+        run: pytest --durations 0 --cov .

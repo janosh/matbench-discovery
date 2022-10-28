@@ -3,6 +3,7 @@
 
 # cache
 __pycache__
+.coverage*
 
 # datasets
 *.p
@@ -12,9 +13,6 @@ __pycache__
 *.pkl.gz
 data/**/raw
 data/**/202*
-
-# checkpoint files of trained models
-pretrained/
 
 # Weights and Biases logs
 wandb/

@@ -79,7 +79,7 @@ for model_name, df in dfs.items():
     except AttributeError as exc:
         raise KeyError(f"{model_name = }") from exc
 
-    df["e_above_hull_mp"] = df_wbm.e_above_hull_mp2020_corrected
+    df["e_above_hull_mp"] = df_wbm.e_above_hull_mp2020_corrected_ppd_mp
     df["e_form_per_atom"] = df_wbm.e_form_per_atom_mp2020_corrected
     df["e_above_hull_pred"] = model_preds - df.e_form_per_atom
     if n_nans := df.isna().values.sum() > 0:
@@ -107,7 +107,7 @@ for (model_name, F1), color in zip(sorted(F1s.items(), key=lambda x: x[1]), colo
 # optimal recall line finds all stable materials without any false positives
 # can be included to confirm all models start out of with near optimal recall
 # and to see how much each model overshoots total n_stable
-n_below_hull = sum(df_wbm.e_above_hull_mp2020_corrected < 0)
+n_below_hull = sum(df_wbm.e_above_hull_mp2020_corrected_ppd_mp < 0)
 ax.plot(
     [0, n_below_hull],
     [0, 100],

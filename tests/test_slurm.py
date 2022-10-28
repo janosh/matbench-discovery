@@ -10,17 +10,23 @@ from matbench_discovery.slurm import _get_calling_file_path, slurm_submit_python
 
 @pytest.mark.parametrize("py_file_path", [None, "path/to/file.py"])
 def test_slurm_submit(capsys: CaptureFixture[str], py_file_path: str | None) -> None:
-    kwargs = dict(
-        job_name="test_job",
-        log_dir="test_log_dir",
-        partition="fake-partition",
-        account="fake-account",
+    job_name = "test_job"
+    log_dir = "tmp"
+    time = "0:0:1"
+    partition = "fake-partition"
+    account = "fake-account"
+
+    func_call = lambda: slurm_submit_python(
+        job_name=job_name,
+        log_dir=log_dir,
+        time=time,
+        partition=partition,
+        account=account,
         py_file_path=py_file_path,
-        time="0:0:1",
         slurm_flags=("--test-flag",),
     )
-    slurm_submit_python(**kwargs)  # type: ignore
 
+    func_call()
     stdout, stderr = capsys.readouterr()
     # check slurm_submit_python() did nothing in normal mode
     assert stderr == stderr == ""
@@ -29,13 +35,13 @@ def test_slurm_submit(capsys: CaptureFixture[str], py_file_path: str | None) -> 
     with pytest.raises(SystemExit), patch("sys.argv", ["slurm-submit"]), patch(
         "matbench_discovery.slurm.subprocess.run"
     ) as mock_subprocess_run:
-        slurm_submit_python(**kwargs)  # type: ignore
+        func_call()
 
     assert mock_subprocess_run.call_count == 1
 
     sbatch_cmd = (
-        "sbatch --partition=fake-partition --account=fake-account --time=0:0:1 "
-        "--job-name test_job --output test_log_dir/slurm-%A-%a.out --test-flag "
+        f"sbatch --partition={partition} --account={account} --time={time} "
+        f"--job-name {job_name} --output {log_dir}/slurm-%A-%a.out --test-flag "
         f"--wrap python {py_file_path or __file__}"
     )
     stdout, stderr = capsys.readouterr()

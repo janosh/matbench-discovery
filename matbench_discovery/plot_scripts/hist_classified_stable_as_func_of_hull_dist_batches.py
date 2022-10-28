@@ -70,7 +70,7 @@ fig, axs = plt.subplots(2, 3, figsize=(18, 9))
 model_name = "m3gnet"
 df = dfs[model_name]
 
-df["e_above_hull_mp"] = df_wbm.e_above_hull_mp2020_corrected
+df["e_above_hull_mp"] = df_wbm.e_above_hull_mp2020_corrected_ppd_mp
 df["e_form_per_atom"] = df_wbm.e_form_per_atom_mp2020_corrected
 
 
