@@ -17,7 +17,7 @@ __date__ = "2022-08-13"
 
 
 # %%
-df_or_path = f"{ROOT}/data/2022-08-13-mp-all-energies.json.gz"
+df_or_path = f"{ROOT}/data/2022-08-13-mp-energies.json.gz"
 target_col = "energy_per_atom"
 # df_or_path = f"{ROOT}/data/2022-08-25-m3gnet-trainset-mp-2021-struct-energy.json.gz"
 # target_col = "mp_energy_per_atom"
