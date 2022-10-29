@@ -26,25 +26,23 @@ all_mp_computed_structure_entries = MPRester().get_entries("")  # run on 2022-09
 pd.Series(
     {e.entry_id: e for e in all_mp_computed_structure_entries}
 ).drop_duplicates().to_json(  # mp-15590 appears twice so we drop_duplicates()
-    f"{ROOT}/data/{today}-all-mp-entries.json.gz", default_handler=lambda x: x.as_dict()
+    f"{ROOT}/data/{today}-mp-computed-structure-entries.json.gz",
+    default_handler=lambda x: x.as_dict(),
 )
 
 
 # %%
-all_mp_computed_entries = (
-    pd.read_json(f"{ROOT}/data/2022-09-16-all-mp-entries.json.gz")
-    .set_index("material_id")
-    .entry.map(ComputedEntry.from_dict)  # drop the structure, just load ComputedEntry
-    .to_dict()
-)
+data_path = f"{ROOT}/data/2022-09-16-mp-computed-structure-entries.json.gz"
+df = pd.read_json(data_path).set_index("material_id")
+# drop the structure, just load ComputedEntry
+mp_computed_entries = df.entry.map(ComputedEntry.from_dict).to_dict()
 
-
-print(f"{len(all_mp_computed_entries) = :,}")
-# len(all_mp_computed_entries) = 146,323
+print(f"{len(mp_computed_entries) = :,}")
+# len(mp_computed_entries) = 146,323
 
 
 # %% build phase diagram with MP entries only
-ppd_mp = PatchedPhaseDiagram(all_mp_computed_entries)
+ppd_mp = PatchedPhaseDiagram(mp_computed_entries)
 # prints:
 # PatchedPhaseDiagram covering 44805 sub-spaces
 
@@ -76,7 +74,7 @@ print(f"{n_skipped:,} ({n_skipped / len(df_wbm):.1%}) entries not processed")
 
 # %% merge MP and WBM entries into a single PatchedPhaseDiagram
 mp_wbm_ppd = PatchedPhaseDiagram(
-    wbm_computed_entries + all_mp_computed_entries, verbose=True
+    wbm_computed_entries + mp_computed_entries, verbose=True
 )
 
 # save MP+WBM PPD to disk (not run)
@@ -86,21 +84,21 @@ with gzip.open(f"{module_dir}/{today}-ppd-mp.pkl.gz", "wb") as zip_file:
 
 # %% compute terminal reference entries across all MP (can be used to compute MP
 # compatible formation energies quickly)
-elemental_ref_entries = get_elemental_ref_entries(all_mp_computed_entries)
+elemental_ref_entries = get_elemental_ref_entries(mp_computed_entries)
 
 # save elemental_ref_entries to disk as json
 with open(f"{module_dir}/{today}-elemental-ref-entries.json", "w") as file:
     json.dump(elemental_ref_entries, file, default=lambda x: x.as_dict())
 
 
-df_mp = pd.read_json(f"{ROOT}/data/2022-08-13-mp-all-energies.json.gz").set_index(
+df_mp = pd.read_json(f"{ROOT}/data/2022-08-13-mp-energies.json.gz").set_index(
     "material_id"
 )
 
 
 # %%
 df_mp["our_mp_e_form"] = [
-    get_e_form_per_atom(all_mp_computed_entries[mp_id]) for mp_id in df_mp.index
+    get_e_form_per_atom(mp_computed_entries[mp_id]) for mp_id in df_mp.index
 ]
 
 
