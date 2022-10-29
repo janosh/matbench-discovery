@@ -25,4 +25,5 @@ models/**/*.csv
 # temporary ignore rule
 paper
 meeting-notes
-models/voronoi
+models/voronoi/*
+!models/voronoi/*.py
