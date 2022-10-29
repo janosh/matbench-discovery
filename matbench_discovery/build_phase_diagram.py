@@ -9,7 +9,7 @@ import pandas as pd
 import pymatviz
 from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
-from pymatgen.entries.computed_entries import ComputedEntry
+from pymatgen.entries.computed_entries import ComputedEntry, ComputedStructureEntry
 from pymatgen.ext.matproj import MPRester
 
 from matbench_discovery import ROOT
@@ -46,8 +46,7 @@ print(f"{len(all_mp_computed_entries) = :,}")
 # %% build phase diagram with MP entries only
 ppd_mp = PatchedPhaseDiagram(all_mp_computed_entries)
 # prints:
-# PatchedPhaseDiagram
-#   Covering 44805 Sub-Spaces
+# PatchedPhaseDiagram covering 44805 sub-spaces
 
 # save MP PPD to disk
 with gzip.open(f"{module_dir}/{today}-ppd-mp.pkl.gz", "wb") as zip_file:
@@ -56,18 +55,22 @@ with gzip.open(f"{module_dir}/{today}-ppd-mp.pkl.gz", "wb") as zip_file:
 
 # %% build phase diagram with both MP entries + WBM entries
 df_wbm = pd.read_json(
-    f"{ROOT}/data/2022-06-26-wbm-cses-and-initial-structures.json.gz"
+    f"{ROOT}/data/wbm/2022-10-19-wbm-cses+init-structs.json.bz2"
 ).set_index("material_id")
 
-wbm_computed_entries: list[ComputedEntry] = df_wbm.query("n_elements > 1").cse.map(
-    ComputedEntry.from_dict
-)
+# using ComputedStructureEntry vs ComputedEntry here is important as CSEs receive
+# more accurate energy corrections that take into account peroxide/superoxide nature
+# of materials (and same for sulfides) based on atomic distances in the structure
+wbm_computed_entries: list[ComputedStructureEntry] = df_wbm.query(
+    "n_elements > 1"
+).cse.map(ComputedStructureEntry.from_dict)
 
 wbm_computed_entries = MaterialsProject2020Compatibility().process_entries(
     wbm_computed_entries, verbose=True, clean=True
 )
 
 n_skipped = len(df_wbm) - len(wbm_computed_entries)
+assert n_skipped == 0
 print(f"{n_skipped:,} ({n_skipped / len(df_wbm):.1%}) entries not processed")
 
 
@@ -75,6 +78,10 @@ print(f"{n_skipped:,} ({n_skipped / len(df_wbm):.1%}) entries not processed")
 mp_wbm_ppd = PatchedPhaseDiagram(
     wbm_computed_entries + all_mp_computed_entries, verbose=True
 )
+
+# save MP+WBM PPD to disk (not run)
+with gzip.open(f"{module_dir}/{today}-ppd-mp.pkl.gz", "wb") as zip_file:
+    pickle.dump(mp_wbm_ppd, zip_file)
 
 
 # %% compute terminal reference entries across all MP (can be used to compute MP
@@ -106,4 +113,4 @@ ax.set(
     xlabel="MP Formation Energy (eV/atom)",
     ylabel="Our Formation Energy (eV/atom)",
 )
-ax.figure.savefig(f"{ROOT}/tmp/{today}-mp-formation-energy-comparison.png", dpi=300)
+ax.figure.savefig(f"{ROOT}/tmp/{today}-our-vs-mp-formation-energies.png", dpi=300)
