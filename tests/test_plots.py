@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import Any
+from typing import Any, Literal
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -10,9 +9,10 @@ import pytest
 from matbench_discovery import ROOT
 from matbench_discovery.plot_scripts import df_wbm
 from matbench_discovery.plots import (
+    AxLine,
     StabilityCriterion,
+    cumulative_clf_metric,
     hist_classified_stable_as_func_of_hull_dist,
-    precision_recall_vs_calc_count,
     rolling_mae_vs_hull_dist,
 )
 
@@ -34,19 +34,20 @@ for model_name in ("Wren", "CGCNN", "Voronoi"):
 
 
 @pytest.mark.parametrize(
-    "intersect_lines, stability_crit, stability_threshold, expected_line_count",
+    "project_end_point,stability_crit,stability_threshold,metric,expected_line_count",
     [
-        ((), "energy", 0, 11),
-        ("precision_x", "energy-std", 0, 14),
-        (["recall_y"], "energy", -0.1, 14),
-        ("all", "energy-std", 0.1, 23),
+        ("", "energy", 0, "precision", 3),
+        ("x", "energy-std", 0, "precision", 6),
+        ("x", "energy", -0.05, "recall", 6),
+        ("xy", "energy-std", 0.1, "recall", 9),
         # TODO: test energy+std
     ],
 )
-def test_precision_recall_vs_calc_count(
-    intersect_lines: str | Sequence[str],
+def test_cumulative_precision(
+    project_end_point: AxLine,
     stability_crit: StabilityCriterion,
     stability_threshold: float,
+    metric: Literal["precision", "recall"],
     expected_line_count: int,
 ) -> None:
     ax = plt.figure().gca()  # new figure ensures test functions use different axes
@@ -59,12 +60,13 @@ def test_precision_recall_vs_calc_count(
         else:
             std_pred = None
 
-        ax = precision_recall_vs_calc_count(
+        ax = cumulative_clf_metric(
             e_above_hull_error=df.e_above_hull_pred,
             e_above_hull_true=df.e_above_hull_mp,
+            metric=metric,
             color=color,
             label=model_name,
-            intersect_lines=intersect_lines,
+            project_end_point=project_end_point,
             stability_crit=stability_crit,
             std_pred=std_pred,
             stability_threshold=stability_threshold,
@@ -76,26 +78,23 @@ def test_precision_recall_vs_calc_count(
     assert ax.get_ylim() == (0, 100)
     # assert ax.get_xlim() == pytest.approx((-1.4, 29.4))
 
-    assert (
-        ax.get_xlabel() == "Number of compounds sorted by model-predicted hull distance"
-    )
-    assert ax.get_ylabel() == "Precision and Recall (%)"
+    assert ax.get_ylabel() == f"{metric.title()} (%)"
 
 
 @pytest.mark.parametrize(
     "kwargs, expected_exc, match_pat",
     [
-        (dict(intersect_lines="INVALID"), ValueError, "Invalid intersect_lines="),
         (dict(stability_crit="INVALID"), ValueError, "Invalid stability_crit="),
     ],
 )
-def test_precision_recall_vs_calc_count_raises(
+def test_cumulative_precision_raises(
     kwargs: dict[str, Any], expected_exc: type[Exception], match_pat: str
 ) -> None:
     with pytest.raises(expected_exc, match=match_pat):
-        precision_recall_vs_calc_count(
+        cumulative_clf_metric(
             e_above_hull_error=test_dfs["Wren"].e_above_hull_pred,
             e_above_hull_true=test_dfs["Wren"].e_above_hull_mp,
+            metric="precision",
             **kwargs,
         )
 

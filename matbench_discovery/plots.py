@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from typing import Any, Literal, get_args
 
 import matplotlib.pyplot as plt
@@ -17,6 +16,7 @@ __date__ = "2022-08-05"
 
 StabilityCriterion = Literal["energy", "energy+std", "energy-std"]
 WhichEnergy = Literal["true", "pred"]
+AxLine = Literal["x", "y", "xy", ""]
 
 
 # --- define global plot settings
@@ -53,6 +53,7 @@ pio.templates.default = "plotly_white"
 
 
 plt.rc("font", size=14)
+plt.rc("legend", fontsize=16)
 plt.rc("savefig", bbox="tight", dpi=200)
 plt.rc("figure", dpi=200, titlesize=16)
 plt.rcParams["figure.constrained_layout.use"] = True
@@ -282,16 +283,18 @@ def rolling_mae_vs_hull_dist(
     return ax
 
 
-def precision_recall_vs_calc_count(
+def cumulative_clf_metric(
     e_above_hull_error: pd.Series,
     e_above_hull_true: pd.Series,
+    metric: Literal["precision", "recall"],
     std_pred: pd.Series = None,
     stability_crit: StabilityCriterion = "energy",
     stability_threshold: float = 0,  # set stability threshold as distance to convex
     # hull in eV / atom, usually 0 or 0.1 eV
     ax: plt.Axes = None,
     label: str = None,
-    intersect_lines: str | Sequence[str] = (),
+    project_end_point: AxLine = "xy",
+    show_optimal: bool = False,
     **kwargs: Any,
 ) -> plt.Axes:
     """Precision and recall as a function of the number of included materials sorted
@@ -305,6 +308,7 @@ def precision_recall_vs_calc_count(
             predictions, i.e. residual = pred - target. Defaults to "residual".
         e_above_hull_true (str, optional): Column name with convex hull distance values.
             Defaults to "e_above_hull".
+        metric ('precision' | 'recall', optional): Metric to plot.
         stability_crit ('energy' | 'energy+std' | 'energy-std', optional): Whether to
             use energy+/-std as stability stability_crit where std is the model
             predicted uncertainty for the energy it stipulated. Defaults to "energy".
@@ -312,19 +316,19 @@ def precision_recall_vs_calc_count(
             material is considered unstable. Defaults to 0.
         label (str, optional): Model name used to identify its liens in the legend.
             Defaults to None.
-        intersect_lines (Sequence[str], optional): precision_{x,y,xy} and/or
-            recall_{x,y,xy}. Defaults to (), i.e. no intersect lines.
+        project_end_point ('x' | 'y' | 'xy' | '', optional): Defaults to '', i.e. no
+            axis projection lines.
+        show_optimal (bool, optional): Whether to plot the optimal precision/recall
+            line. Defaults to False.
 
     Returns:
         plt.Axes: The matplotlib axes object.
     """
     ax = ax or plt.gca()
 
-    # for series in (e_above_hull_error, e_above_hull_true):
-    #     n_nans = series.isna().sum()
-    #     assert n_nans == 0, f"{n_nans:,} NaNs in {series.name}"
-
-    is_fresh_ax = len(ax.lines) == 0
+    for series in (e_above_hull_error, e_above_hull_true):
+        n_nans = series.isna().sum()
+        assert n_nans == 0, f"{n_nans:,} NaNs in {series.name}"
 
     e_above_hull_error = e_above_hull_error.sort_values()
     e_above_hull_true = e_above_hull_true.loc[e_above_hull_error.index]
@@ -337,10 +341,6 @@ def precision_recall_vs_calc_count(
         e_above_hull_error += std_pred
     elif stability_crit == "energy-std":
         e_above_hull_error -= std_pred
-
-    # stability_threshold = 0.02
-    stability_threshold = 0
-    # stability_threshold = 0.10
 
     true_pos_mask = (e_above_hull_true <= stability_threshold) & (
         e_above_hull_error <= stability_threshold
@@ -362,68 +362,56 @@ def precision_recall_vs_calc_count(
     true_pos_rate = true_pos_cumsum / n_total_pos * 100
 
     end = int(np.argmax(true_pos_rate))
-
     xs = np.arange(end)
 
-    precision_curve = scipy.interpolate.interp1d(xs, precision[:end], kind="cubic")
-    rolling_recall_curve = scipy.interpolate.interp1d(
-        xs, true_pos_rate[:end], kind="cubic"
-    )
+    ys_raw = dict(precision=precision, recall=true_pos_rate)[metric]
+    y_interp = scipy.interpolate.interp1d(xs, ys_raw[:end], kind="cubic")
+    ys = y_interp(xs)
 
     line_kwargs = dict(
-        linewidth=4,
-        markevery=[-1],
-        marker="x",
-        markersize=14,
-        markeredgewidth=2.5,
-        **kwargs,
+        linewidth=2, markevery=[-1], marker="x", markersize=14, markeredgewidth=2.5
     )
-    ax.plot(xs, precision_curve(xs), linestyle="-", **line_kwargs)
-    ax.plot(xs, rolling_recall_curve(xs), linestyle=":", **line_kwargs)
-    ax.plot((0, 0), (0, 0), label=label, **line_kwargs)
+    ax.plot(xs, ys, **line_kwargs | kwargs)
+    ax.text(
+        xs[-1],
+        ys[-1],
+        label,
+        color=kwargs.get("color"),
+        verticalalignment="bottom",
+        rotation=30,
+        bbox=dict(facecolor="white", alpha=0.5, edgecolor="none"),
+    )
 
-    if intersect_lines == "all":
-        intersect_lines = ("precision_xy", "recall_xy")
-    if isinstance(intersect_lines, str):
-        intersect_lines = [intersect_lines]
-    for line_name in intersect_lines:
-        try:
-            line_name_map = dict(precision=precision_curve, recall=rolling_recall_curve)
-            y_func = line_name_map[line_name.split("_")[0]]
-        except KeyError:
-            raise ValueError(
-                f"Invalid {intersect_lines=}, must be one of {list(line_name_map)}"
-            )
-        intersect_kwargs = dict(
-            linestyle=":", alpha=0.4, color=kwargs.get("color", "gray")
+    # add some visual guidelines
+    intersect_kwargs = dict(linestyle=":", alpha=0.4, color=kwargs.get("color"))
+    if "x" in project_end_point:
+        ax.plot((0, xs[-1]), (ys[-1], ys[-1]), **intersect_kwargs)
+    if "y" in project_end_point:
+        ax.plot((xs[-1], xs[-1]), (0, ys[-1]), **intersect_kwargs)
+
+    ax.set(ylim=(0, 100), ylabel=f"{metric.title()} (%)")
+
+    # optimal recall line finds all stable materials without any false positives
+    # can be included to confirm all models start out of with near optimal recall
+    # and to see how much each model overshoots total n_stable
+    n_below_hull = sum(e_above_hull_true < 0)
+    if show_optimal:
+        ax.plot(
+            [0, n_below_hull],
+            [0, 100],
+            color="green",
+            linestyle="dashed",
+            linewidth=1,
+            label=f"Optimal {metric.title()}",
         )
-        # Add some visual guidelines
-        if "x" in line_name:
-            ax.plot((0, xs[-1]), (y_func(xs[-1]), y_func(xs[-1])), **intersect_kwargs)
-        if "y" in line_name:
-            ax.plot((xs[-1], xs[-1]), (0, y_func(xs[-1])), **intersect_kwargs)
-
-    if not is_fresh_ax:
-        # return earlier if all plot objects besides the line were already drawn by a
-        # previous call
-        return ax
-
-    xlabel = "Number of compounds sorted by model-predicted hull distance"
-    ylabel = "Precision and Recall (%)"
-    ax.set(ylim=(0, 100), xlabel=xlabel, ylabel=ylabel)
-
-    [precision] = ax.plot(
-        (0, 0), (0, 0), "black", linestyle="-", linewidth=line_kwargs["linewidth"]
-    )
-    [recall] = ax.plot(
-        (0, 0), (0, 0), "black", linestyle=":", linewidth=line_kwargs["linewidth"]
-    )
-    legend = ax.legend(
-        [precision, recall],
-        ("Precision", "Recall"),
-        frameon=False,
-        loc="upper right",
-    )
-    ax.add_artist(legend)
+        ax.text(
+            n_below_hull,
+            100,
+            label,
+            color=kwargs.get("color"),
+            verticalalignment="top",
+            rotation=-30,
+            bbox=dict(facecolor="white", alpha=0.5, edgecolor="none"),
+        )
 
     return ax

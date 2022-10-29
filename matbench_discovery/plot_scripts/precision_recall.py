@@ -1,12 +1,13 @@
 # %%
 from datetime import datetime
 
+import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.metrics import f1_score
 
 from matbench_discovery import ROOT
 from matbench_discovery.plot_scripts import df_wbm
-from matbench_discovery.plots import StabilityCriterion, precision_recall_vs_calc_count
+from matbench_discovery.plots import StabilityCriterion, cumulative_clf_metric
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 
@@ -46,13 +47,6 @@ colors = "tab:blue tab:orange teal tab:pink black red turquoise tab:purple".spli
 F1s: dict[str, float] = {}
 
 for model_name, df in dfs.items():
-    # from pymatgen.core import Composition
-    # rare = "no-lanthanides"
-    # df["contains_rare_earths"] = df.composition.map(
-    #     lambda x: any(el.is_rare_earth_metal for el in Composition(x))
-    # )
-    # df = df.query("~contains_rare_earths")
-
     if "std" in stability_crit:
         # TODO column names to compute standard deviation from are currently hardcoded
         # needs to be updated when adding non-aviary models with uncertainty estimation
@@ -91,42 +85,47 @@ for model_name, df in dfs.items():
 
 
 # %%
+fig, (ax_prec, ax_recall) = plt.subplots(1, 2, figsize=(15, 7), sharey=True)
+
 for (model_name, F1), color in zip(sorted(F1s.items(), key=lambda x: x[1]), colors):
     df = dfs[model_name]
-
-    ax = precision_recall_vs_calc_count(
-        e_above_hull_error=df.e_above_hull_pred + df.e_above_hull_mp,
-        e_above_hull_true=df.e_above_hull_mp,
+    e_above_hull_error = df.e_above_hull_pred + df.e_above_hull_mp
+    e_above_hull_true = df.e_above_hull_mp
+    cumulative_clf_metric(
+        e_above_hull_error,
+        e_above_hull_true,
         color=color,
-        label=f"{model_name} {F1=:.2}",
-        intersect_lines="recall_xy",  # or "precision_xy", None, 'all'
+        label=f"{model_name}\n{F1=:.2}",
+        project_end_point="xy",
         stability_crit=stability_crit,
-        std_pred=std_total,
+        ax=ax_prec,
+        metric="precision",
     )
 
-# optimal recall line finds all stable materials without any false positives
-# can be included to confirm all models start out of with near optimal recall
-# and to see how much each model overshoots total n_stable
-n_below_hull = sum(df_wbm.e_above_hull_mp2020_corrected_ppd_mp < 0)
-ax.plot(
-    [0, n_below_hull],
-    [0, 100],
-    color="green",
-    linestyle="dashed",
-    linewidth=1,
-    label="Optimal Recall",
-)
+    cumulative_clf_metric(
+        e_above_hull_error,
+        e_above_hull_true,
+        color=color,
+        label=f"{model_name}\n{F1=:.2}",
+        project_end_point="xy",
+        stability_crit=stability_crit,
+        ax=ax_recall,
+        metric="recall",
+    )
 
-ax.figure.set_size_inches(10, 9)
-ax.set(xlim=(0, None))
-# keep this outside loop so all model names appear in legend
-ax.legend(frameon=False, loc="lower right")
+
+for ax in (ax_prec, ax_recall):
+    ax.set(xlim=(0, None))
+
 
 img_name = f"{today}-precision-recall-vs-calc-count-{rare=}"
-ax.set(title=img_name.replace("-", "/", 2).replace("-", " ").title())
 # x-ticks every 10k materials
-ax.set(xticks=range(0, int(ax.get_xlim()[1]), 10_000))
+# ax.set(xticks=range(0, int(ax.get_xlim()[1]), 10_000))
+
+fig.suptitle(f"{today} ")
+xlabel_cumulative = "Materials predicted stable sorted by hull distance"
+fig.text(0.5, -0.08, xlabel_cumulative, ha="center")
 
 
 # %%
-ax.figure.savefig(f"{ROOT}/figures/{img_name}.pdf")
+fig.savefig(f"{ROOT}/figures/{img_name}.pdf")
