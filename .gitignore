@@ -27,3 +27,4 @@ paper
 meeting-notes
 models/voronoi/*
 !models/voronoi/*.py
+pretrained

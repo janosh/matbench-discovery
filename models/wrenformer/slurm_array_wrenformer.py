@@ -56,7 +56,7 @@ swa_start = None
 timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
 
 print(f"Job started running {datetime.now():%Y-%m-%d@%H-%M}")
-slurm_job_id = os.environ["SLURM_JOB_ID"]
+slurm_job_id = os.environ.get("SLURM_JOB_ID")
 slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
 
 print(f"{slurm_job_id=}")

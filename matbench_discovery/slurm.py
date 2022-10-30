@@ -67,8 +67,9 @@ def slurm_submit_python(
     if array:
         cmd += ["--array", array]
 
-    running_as_slurm_job = "SLURM_JOB_ID" in os.environ
-    if running_as_slurm_job or "slurm-submit" in sys.argv:
+    is_log_file = not sys.stdout.isatty()
+    is_slurm_job = "SLURM_JOB_ID" in os.environ
+    if (is_slurm_job and is_log_file) or "slurm-submit" in sys.argv:
         # print sbatch command at submission time and into slurm log file
         # but not when running in command line or Jupyter
         print(" ".join(cmd))
