@@ -17,9 +17,7 @@ from matbench_discovery import ROOT, as_dict_handler
 from matbench_discovery.slurm import slurm_submit_python
 
 """
-To slurm submit this file, run:
-
-python path/to/file.py slurm-submit
+To slurm submit this file: python path/to/file.py slurm-submit
 
 Requires M3GNet installation: pip install m3gnet
 """
@@ -69,11 +67,13 @@ warnings.filterwarnings(action="ignore", category=UserWarning, module="tensorflo
 
 
 # %%
-data_path = f"{ROOT}/data/2022-06-26-wbm-cses-and-initial-structures.json.gz"
+data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-cses+init-structs.json.bz2"
 print(f"Loading from {data_path=}")
 df_wbm = pd.read_json(data_path).set_index("material_id")
 
-df_this_job = np.array_split(df_wbm, slurm_array_task_count)[slurm_array_task_id - 1]
+df_this_job: pd.DataFrame = np.array_split(df_wbm, slurm_array_task_count)[
+    slurm_array_task_id - 1
+]
 
 run_params = dict(
     data_path=data_path,
@@ -89,7 +89,7 @@ if wandb.run is None:
     wandb.login()
 
 wandb.init(
-    project="m3gnet",
+    project="matbench-discovery",
     name=f"{job_name}-{slurm_job_id}-{slurm_array_task_id}",
     config=run_params,
 )

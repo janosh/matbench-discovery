@@ -21,8 +21,8 @@ today = f"{datetime.now():%Y-%m-%d}"
 
 # %%
 module_dir = os.path.dirname(__file__)
-task_type = "RS2RE"
-date = "2022-08-19"
+task_type = "IS2RE"
+date = "2022-10-31"
 glob_pattern = f"{date}-m3gnet-wbm-relax-{task_type}/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
@@ -38,8 +38,7 @@ for file_path in tqdm(file_paths):
         continue
     try:
         # keep whole dataframe in memory
-        df = pd.read_json(file_path)
-        df.index = df.index.str.replace("_", "-")
+        df = pd.read_json(file_path).set_index("material_id")
         df.index.name = "material_id"
         col_map = dict(
             final_structure="m3gnet_structure", trajectory="m3gnet_trajectory"
@@ -52,24 +51,18 @@ for file_path in tqdm(file_paths):
         df["volume"] = df.m3gnet_structure.map(lambda x: x.volume)
         df["n_sites"] = df.m3gnet_structure.map(len)
         dfs[file_path] = df.drop(columns=["m3gnet_trajectory"])
-    except (ValueError, FileNotFoundError):
-        # pandas v1.5+ correctly raises FileNotFoundError, below raises ValueError
+    except FileNotFoundError:
         continue
 
 
 # %%
 df_m3gnet = pd.concat(dfs.values())
-if any(df_m3gnet.index.str.contains("_")):
-    df_m3gnet.index = df_m3gnet.index.str.replace("_", "-")
 
 
 # %%
-pd_entries_m3gnet = [
-    PDEntry(row.m3gnet_structure.composition, row.m3gnet_energy)
-    for row in df_m3gnet.itertuples()
-]
-df_m3gnet["e_form_m3gnet_from_ppd"] = [
-    get_e_form_per_atom(entry) for entry in pd_entries_m3gnet
+df_m3gnet["e_form_per_atom_m3gnet"] = [
+    get_e_form_per_atom(PDEntry(row.m3gnet_structure.composition, row.m3gnet_energy))
+    for row in tqdm(df_m3gnet.itertuples(), total=len(df_m3gnet), disable=None)
 ]
 df_m3gnet.isna().sum()
 

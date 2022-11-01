@@ -21,9 +21,7 @@ __author__ = "Janosh Riebesell"
 __date__ = "2022-08-15"
 
 """
-To slurm submit this file, run:
-
-python path/to/file.py slurm-submit
+To slurm submit this file: python path/to/file.py slurm-submit
 
 Requires MEGNet and MAML installation: pip install megnet maml
 """
@@ -112,7 +110,9 @@ wandb.init(
 print(f"Loading from {data_path = }")
 df_wbm = pd.read_json(data_path).set_index("material_id")
 
-df_this_job = np.array_split(df_wbm, slurm_array_task_count)[slurm_array_task_id - 1]
+df_this_job: pd.DataFrame = np.array_split(df_wbm, slurm_array_task_count)[
+    slurm_array_task_id - 1
+]
 
 
 # %%
