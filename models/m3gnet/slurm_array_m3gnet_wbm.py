@@ -31,7 +31,7 @@ module_dir = os.path.dirname(__file__)
 # set large job array size for fast testing/debugging
 slurm_array_task_count = 100
 slurm_mem_per_node = 12000
-job_name = f"m3gnet-wbm-relax-{task_type}"
+job_name = f"m3gnet-wbm-{task_type}"
 out_dir = f"{module_dir}/{today}-{job_name}"
 
 slurm_submit_python(
@@ -130,4 +130,4 @@ df_output.index.name = "material_id"
 
 df_output.reset_index().to_json(json_out_path, default_handler=as_dict_handler)
 
-wandb.log_artifact(json_out_path, type=f"m3gnet-relax-wbm-{task_type}")
+wandb.log_artifact(json_out_path, type=f"m3gnet-wbm-{task_type}")

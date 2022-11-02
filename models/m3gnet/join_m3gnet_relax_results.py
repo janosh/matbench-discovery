@@ -23,7 +23,7 @@ today = f"{datetime.now():%Y-%m-%d}"
 module_dir = os.path.dirname(__file__)
 task_type = "IS2RE"
 date = "2022-10-31"
-glob_pattern = f"{date}-m3gnet-wbm-relax-{task_type}/*.json.gz"
+glob_pattern = f"{date}-m3gnet-wbm-{task_type}/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
@@ -45,11 +45,14 @@ for file_path in tqdm(file_paths):
         )
         df = df.rename(columns=col_map)
         df.reset_index().to_json(file_path)
-        df["m3gnet_energy"] = df.m3gnet_trajectory.map(lambda x: x["energies"][-1][0])
+        df[f"m3gnet_energy_{task_type}"] = df.m3gnet_trajectory.map(
+            lambda x: x["energies"][-1][0]
+        )
         df["m3gnet_structure"] = df.m3gnet_structure.map(Structure.from_dict)
-        df["formula"] = df.m3gnet_structure.map(lambda x: x.formula)
-        df["volume"] = df.m3gnet_structure.map(lambda x: x.volume)
+        df["formula"] = df.m3gnet_structure.map(lambda x: x.alphabetical_formula)
+        df["m3gnet_volume"] = df.m3gnet_structure.map(lambda x: x.volume)
         df["n_sites"] = df.m3gnet_structure.map(len)
+        # drop trajectory to save memory
         dfs[file_path] = df.drop(columns=["m3gnet_trajectory"])
     except FileNotFoundError:
         continue
@@ -68,7 +71,7 @@ df_m3gnet.isna().sum()
 
 
 # %%
-out_path = f"{ROOT}/models/m3gnet/{today}-m3gnet-wbm-relax-{task_type}.json.gz"
+out_path = f"{ROOT}/models/m3gnet/{today}-m3gnet-wbm-{task_type}.json.gz"
 df_m3gnet.reset_index().to_json(out_path, default_handler=as_dict_handler)
 
 # out_path = f"{ROOT}/models/m3gnet/2022-08-16-m3gnet-wbm-IS2RE.json.gz"
