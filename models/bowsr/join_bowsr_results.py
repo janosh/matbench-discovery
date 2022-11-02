@@ -36,9 +36,9 @@ for file_path in tqdm(file_paths):
     # keep whole dataframe in memory
     df = pd.read_json(file_path).set_index("material_id")
 
-    df["structure_bowsr"] = df.structure_bowsr.map(Structure.from_dict)
-    df["formula"] = df.structure_bowsr.map(lambda x: x.formula)
-    df["volume"] = df.structure_bowsr.map(lambda x: x.volume)
+    df["bowsr_structure"] = df.structure_bowsr.map(Structure.from_dict)
+    df["formula"] = df.structure_bowsr.map(lambda x: x.alphabetical_formula)
+    df["bowsr_volume"] = df.structure_bowsr.map(lambda x: x.volume)
     df["n_sites"] = df.structure_bowsr.map(len)
     dfs[file_path] = df
 

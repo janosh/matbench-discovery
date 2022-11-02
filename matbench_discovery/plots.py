@@ -33,6 +33,7 @@ quantity_labels = dict(
     e_above_hull_pred="Predicted energy above convex hull (eV/atom)",
     e_above_hull_mp="Energy above MP convex hull (eV/atom)",
     e_above_hull_error="Error in energy above convex hull (eV/atom)",
+    vol_diff="Volume difference (A^3)",
 )
 model_labels = dict(
     wren="Wren",
@@ -42,6 +43,7 @@ model_labels = dict(
     cgcnn="CGCNN",
     voronoi="Voronoi",
     wbm="WBM",
+    dft="DFT",
 )
 px.defaults.labels = quantity_labels | model_labels
 

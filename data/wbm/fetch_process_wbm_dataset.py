@@ -272,9 +272,9 @@ for row in tqdm(df_wbm.sample(n_samples).itertuples(), total=n_samples):
 df_wbm["formula_from_cse"] = [
     x.alphabetical_formula for x in df_wbm.pop("composition_from_cse")
 ]
-df_wbm[["initial_structure", "computed_structure_entry", "formula_from_cse"]].to_json(
-    f"{module_dir}/{today}-wbm-cses+init-structs.json.bz2"
-)
+df_wbm[
+    ["initial_structure", "computed_structure_entry", "formula_from_cse"]
+].reset_index().to_json(f"{module_dir}/{today}-wbm-cses+init-structs.json.bz2")
 
 
 # %%
@@ -484,7 +484,9 @@ df_summary = pd.read_csv(f"{module_dir}/2022-10-19-wbm-summary.csv").set_index(
 
 
 # %% read WBM dataset from disk
-df_wbm = pd.read_json(f"{module_dir}/2022-10-19-wbm-cses+init-structs.json.bz2")
+df_wbm = pd.read_json(
+    f"{module_dir}/2022-10-19-wbm-cses+init-structs.json.bz2"
+).set_index("material_id")
 
 df_wbm["cse"] = [
     ComputedStructureEntry.from_dict(x) for x in tqdm(df_wbm.computed_structure_entry)
