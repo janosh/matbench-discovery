@@ -57,8 +57,9 @@ slurm_submit_python(
 slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
 slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
 out_path = f"{out_dir}/{slurm_array_task_id}.json.gz"
+timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
 
-print(f"Job started running {datetime.now():%Y-%m-%d@%H-%M}")
+print(f"Job started running {timestamp}")
 print(f"{slurm_job_id = }")
 print(f"{slurm_array_task_id = }")
 print(f"{data_path = }")

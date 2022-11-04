@@ -6,7 +6,8 @@ from datetime import datetime
 
 import pandas as pd
 import wandb
-from aviary.wrenformer.deploy import deploy_wandb_checkpoints
+from aviary.deploy import predict_from_wandb_checkpoints
+from aviary.wrenformer.model import Wrenformer
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-09-05"
@@ -40,8 +41,8 @@ runs = wandb_api.runs(
 
 assert len(runs) == 10, f"Expected 10 runs, got {len(runs)} for {ensemble_id=}"
 
-df, ensemble_metrics = deploy_wandb_checkpoints(
-    runs, df, input_col="wyckoff", target_col=target_col
+df, ensemble_metrics = predict_from_wandb_checkpoints(
+    runs, df, input_col="wyckoff", target_col=target_col, model_class=Wrenformer
 )
 
 df.round(6).to_csv(f"{module_dir}/{today}-{ensemble_id}-preds-{target_col}.csv")
