@@ -50,12 +50,19 @@ def slurm_submit_python(
         pre_cmd (str, optional): Things like `module load` commands and environment
             variables to set when running the python script go here. Example:
             pre_cmd='ENV_VAR=42' or 'module load rhel8/default-amp;'. Defaults to "".
+            If running on CPU, pre_cmd="unset OMP_NUM_THREADS" allows PyTorch to use
+            all cores https://docs.hpc.cam.ac.uk/hpc/software-packages/pytorch.html
 
     Raises:
         SystemExit: Exit code will be subprocess.run(['sbatch', ...]).returncode.
     """
     if py_file_path is None:
         py_file_path = _get_calling_file_path(frame=2)
+
+    if "GPU" in partition:
+        # on Ampere GPU partition, source module CLI and load default Ampere env
+        # before actual job command
+        pre_cmd += ". /etc/profile.d/modules.sh; module load rhel8/default-amp;"
 
     cmd = [
         *f"sbatch --{partition=} --{account=} --{time=}".replace("'", "").split(),
@@ -72,7 +79,7 @@ def slurm_submit_python(
     if (is_slurm_job and is_log_file) or "slurm-submit" in sys.argv:
         # print sbatch command at submission time and into slurm log file
         # but not when running in command line or Jupyter
-        print(" ".join(cmd))
+        print(f"\n{' '.join(cmd)}\n")
 
     if "slurm-submit" not in sys.argv:
         return

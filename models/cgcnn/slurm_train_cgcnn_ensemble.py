@@ -40,9 +40,6 @@ slurm_submit_python(
     array=f"1-{n_folds}",
     log_dir=log_dir,
     slurm_flags=("--nodes", "1", "--gpus-per-node", "1"),
-    # prepend into sbatch script to source module command and load default env
-    # for Ampere GPU partition before actual job command
-    pre_cmd=". /etc/profile.d/modules.sh; module load rhel8/default-amp;",
 )
 
 
