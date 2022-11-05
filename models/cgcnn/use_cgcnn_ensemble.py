@@ -15,6 +15,7 @@ from tqdm import tqdm
 
 from matbench_discovery import ROOT
 from matbench_discovery.plot_scripts import df_wbm
+from matbench_discovery.slurm import slurm_submit_python
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-15"
@@ -27,15 +28,30 @@ stores predictions to CSV.
 
 module_dir = os.path.dirname(__file__)
 today = f"{datetime.now():%Y-%m-%d}"
+ensemble_id = "cgcnn-e_form-ensemble-1"
+run_name = f"{today}-{ensemble_id}-IS2RE"
+
+slurm_submit_python(
+    job_name=run_name,
+    partition="ampere",
+    account="LEE-SL3-GPU",
+    time="1:0:0",
+    log_dir=module_dir,
+    slurm_flags=("--nodes", "1", "--gpus-per-node", "1"),
+)
 
 
 # %%
 data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
 df = pd.read_json(data_path).set_index("material_id", drop=False)
 old_len = len(df)
+no_init_structs = df.query("initial_structure.isnull()").index
 df = df.dropna()  # two missing initial structures
 assert len(df) == old_len - 2
 
+assert all(
+    df.index == df_wbm.drop(index=no_init_structs).index
+), "df and df_wbm must have same index"
 df["e_form_per_atom_mp2020_corrected"] = df_wbm.e_form_per_atom_mp2020_corrected
 
 target_col = "e_form_per_atom_mp2020_corrected"
@@ -43,11 +59,10 @@ input_col = "initial_structure"
 assert target_col in df, f"{target_col=} not in {list(df)}"
 assert input_col in df, f"{input_col=} not in {list(df)}"
 
-df[input_col] = [Structure.from_dict(x) for x in tqdm(df[input_col])]
+df[input_col] = [Structure.from_dict(x) for x in tqdm(df[input_col], disable=None)]
 
 wandb.login()
 wandb_api = wandb.Api()
-ensemble_id = "cgcnn-e_form-ensemble-1"
 runs = wandb_api.runs(
     "janosh/matbench-discovery", filters={"tags": {"$in": [ensemble_id]}}
 )
@@ -62,10 +77,11 @@ data_loader = DataLoader(
 )
 df, ensemble_metrics = predict_from_wandb_checkpoints(
     runs,
-    df=cg_data.df,  # dropping isolated-atom structs means len(cg_data.df) < len(df)
+    # dropping isolated-atom structs means len(cg_data.df) < len(df)
+    df=cg_data.df.reset_index(drop=True).drop(columns=input_col),
     target_col=target_col,
-    model_class=CrystalGraphConvNet,
+    model_cls=CrystalGraphConvNet,
     data_loader=data_loader,
 )
 
-df.round(6).to_csv(f"{module_dir}/{today}-{ensemble_id}-preds-{target_col}.csv")
+df.round(6).to_csv(f"{module_dir}/{today}-{run_name}-preds.csv")

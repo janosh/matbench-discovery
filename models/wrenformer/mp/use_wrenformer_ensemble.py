@@ -10,6 +10,8 @@ from aviary.deploy import predict_from_wandb_checkpoints
 from aviary.wrenformer.data import df_to_in_mem_dataloader
 from aviary.wrenformer.model import Wrenformer
 
+from matbench_discovery.slurm import slurm_submit_python
+
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-15"
 
@@ -21,6 +23,17 @@ stores predictions to CSV.
 
 module_dir = os.path.dirname(__file__)
 today = f"{datetime.now():%Y-%m-%d}"
+ensemble_id = "wrenformer-e_form-ensemble-1"
+run_name = f"{today}-{ensemble_id}-IS2RE"
+
+slurm_submit_python(
+    job_name=run_name,
+    partition="ampere",
+    account="LEE-SL3-GPU",
+    time="1:0:0",
+    log_dir=module_dir,
+    slurm_flags=("--nodes", "1", "--gpus-per-node", "1"),
+)
 
 
 # %%
@@ -35,7 +48,6 @@ assert input_col in df, f"{input_col=} not in {list(df)}"
 
 wandb.login()
 wandb_api = wandb.Api()
-ensemble_id = "wrenformer-e_form-ensemble-1"
 runs = wandb_api.runs(
     "janosh/matbench-discovery", filters={"tags": {"$in": [ensemble_id]}}
 )
@@ -52,7 +64,7 @@ data_loader = df_to_in_mem_dataloader(
 )
 
 df, ensemble_metrics = predict_from_wandb_checkpoints(
-    runs, data_loader, df=df, model_class=Wrenformer
+    runs, data_loader=data_loader, df=df, model_cls=Wrenformer
 )
 
-df.round(6).to_csv(f"{module_dir}/{today}-{ensemble_id}-preds-{target_col}.csv")
+df.round(6).to_csv(f"{module_dir}/{today}-{run_name}-preds.csv")
