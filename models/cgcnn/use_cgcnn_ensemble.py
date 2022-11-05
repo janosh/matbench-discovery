@@ -62,7 +62,7 @@ data_loader = DataLoader(
 )
 df, ensemble_metrics = predict_from_wandb_checkpoints(
     runs,
-    df=df,
+    df=cg_data.df,  # dropping isolated-atom structs means len(cg_data.df) < len(df)
     target_col=target_col,
     model_class=CrystalGraphConvNet,
     data_loader=data_loader,

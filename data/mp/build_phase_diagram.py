@@ -26,13 +26,13 @@ all_mp_computed_structure_entries = MPRester().get_entries("")  # run on 2022-09
 pd.Series(
     {e.entry_id: e for e in all_mp_computed_structure_entries}
 ).drop_duplicates().to_json(  # mp-15590 appears twice so we drop_duplicates()
-    f"{ROOT}/data/{today}-mp-computed-structure-entries.json.gz",
+    f"{module_dir}/{today}-mp-computed-structure-entries.json.gz",
     default_handler=lambda x: x.as_dict(),
 )
 
 
 # %%
-data_path = f"{ROOT}/data/2022-09-16-mp-computed-structure-entries.json.gz"
+data_path = f"{module_dir}/2022-09-16-mp-computed-structure-entries.json.gz"
 df = pd.read_json(data_path).set_index("material_id")
 # drop the structure, just load ComputedEntry
 mp_computed_entries = df.entry.map(ComputedEntry.from_dict).to_dict()
@@ -87,11 +87,11 @@ with gzip.open(f"{module_dir}/{today}-ppd-mp.pkl.gz", "wb") as zip_file:
 elemental_ref_entries = get_elemental_ref_entries(mp_computed_entries)
 
 # save elemental_ref_entries to disk as json
-with open(f"{module_dir}/{today}-elemental-ref-entries.json", "w") as file:
+with open(f"{ROOT}/data/mp/{today}-mp-elemental-reference-entries.json", "w") as file:
     json.dump(elemental_ref_entries, file, default=lambda x: x.as_dict())
 
 
-df_mp = pd.read_json(f"{ROOT}/data/2022-08-13-mp-energies.json.gz").set_index(
+df_mp = pd.read_json(f"{ROOT}/data/mp/2022-08-13-mp-energies.json.gz").set_index(
     "material_id"
 )
 

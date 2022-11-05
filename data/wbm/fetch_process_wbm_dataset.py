@@ -272,9 +272,13 @@ for row in tqdm(df_wbm.sample(n_samples).itertuples(), total=n_samples):
 df_wbm["formula_from_cse"] = [
     x.alphabetical_formula for x in df_wbm.pop("composition_from_cse")
 ]
-df_wbm[
-    ["initial_structure", "computed_structure_entry", "formula_from_cse"]
-].reset_index().to_json(f"{module_dir}/{today}-wbm-cses+init-structs.json.bz2")
+
+for key, col_name in (
+    ("cses", "computed_structure_entry"),
+    ("init-structs", "initial_structure"),
+):
+    cols = ["initial_structure", "formula_from_cse", col_name]
+    df_wbm[cols].reset_index().to_json(f"{module_dir}/{today}-wbm-{key}.json.bz2")
 
 
 # %%
