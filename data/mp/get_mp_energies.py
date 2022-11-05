@@ -1,4 +1,5 @@
 # %%
+import os
 from datetime import datetime
 
 import pandas as pd
@@ -6,8 +7,6 @@ from aviary.utils import as_dict_handler
 from aviary.wren.utils import get_aflow_label_from_spglib
 from mp_api.client import MPRester
 from tqdm import tqdm
-
-from matbench_discovery import ROOT
 
 """
 Download all MP formation and above hull energies on 2022-08-13.
@@ -20,6 +19,7 @@ __author__ = "Janosh Riebesell"
 __date__ = "2022-08-13"
 
 today = f"{datetime.now():%Y-%m-%d}"
+module_dir = os.path.dirname(__file__)
 
 
 # %% query all MP formation energies on 2022-08-13
@@ -48,6 +48,6 @@ df["spacegroup_number"] = df.pop("symmetry").map(lambda x: x.number)
 
 df["wyckoff"] = [get_aflow_label_from_spglib(x) for x in tqdm(df.structure)]
 
-df.to_json(f"{ROOT}/data/{today}-mp-energies.json.gz", default_handler=as_dict_handler)
+df.to_json(f"{module_dir}/{today}-mp-energies.json.gz", default_handler=as_dict_handler)
 
-# df = pd.read_json(f"{ROOT}/data/2022-08-13-mp-energies.json.gz")
+# df = pd.read_json(f"{module_dir}/2022-08-13-mp-energies.json.gz")

@@ -36,7 +36,7 @@ slurm_mem_per_node = 12000
 slurm_array_task_count = 500
 out_dir = f"{module_dir}/{today}-bowsr-megnet-wbm-{task_type}"
 
-data_path = f"{ROOT}/data/2022-06-26-wbm-cses-and-initial-structures.json.gz"
+data_path = f"{ROOT}/data/2022-10-19-wbm-init-structs.json.gz"
 
 slurm_submit_python(
     job_name=f"bowsr-megnet-wbm-{task_type}",

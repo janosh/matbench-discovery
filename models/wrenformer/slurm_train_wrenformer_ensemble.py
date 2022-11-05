@@ -44,7 +44,7 @@ slurm_submit_python(
 
 # %%
 learning_rate = 3e-4
-data_path = f"{ROOT}/data/2022-08-13-mp-energies.json.gz"
+data_path = f"{ROOT}/data/mp/2022-08-13-mp-energies.json.gz"
 target_col = "energy_per_atom"
 # data_path = f"{ROOT}/data/2022-08-25-m3gnet-trainset-mp-2021-struct-energy.json.gz"
 # target_col = "mp_energy_per_atom"

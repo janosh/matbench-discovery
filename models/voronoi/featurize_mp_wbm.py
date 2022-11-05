@@ -44,7 +44,7 @@ featurizer = MultipleFeaturizer(
 
 
 # %%
-data_path = f"{ROOT}/data/2022-09-16-mp-computed-structure-entries.json.gz"
+data_path = f"{ROOT}/data/mp/2022-09-16-mp-computed-structure-entries.json.gz"
 # data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-cses+init-structs.json.bz2"
 df = pd.read_json(data_path).set_index("material_id")
 
