@@ -419,7 +419,7 @@ mp_compat.process_entry(cse)
 
 
 # %%
-with gzip.open(f"{ROOT}/data/2022-09-18-ppd-mp.pkl.gz", "rb") as zip_file:
+with gzip.open(f"{ROOT}/data/mp/2022-09-18-ppd-mp.pkl.gz", "rb") as zip_file:
     ppd_mp: PatchedPhaseDiagram = pickle.load(zip_file)
 
 
