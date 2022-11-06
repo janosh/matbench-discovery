@@ -61,7 +61,7 @@ def get_elemental_ref_entries(
 
 # contains all MP elemental reference entries to compute formation energies
 # produced by get_elemental_ref_entries() in build_phase_diagram.py
-mp_elem_refs_path = f"{ROOT}/data/2022-09-19-mp-elemental-reference-entries.json"
+mp_elem_refs_path = f"{ROOT}/data/mp/2022-09-19-mp-elemental-reference-entries.json"
 try:
     mp_elem_reference_entries = (
         pd.read_json(mp_elem_refs_path, typ="series").map(PDEntry.from_dict).to_dict()
@@ -92,10 +92,8 @@ def get_e_form_per_atom(
     """
     if elemental_ref_entries is None:
         if mp_elem_reference_entries is None:
-            raise ValueError(
-                f"Couldn't load {mp_elem_refs_path=}, you must pass "
-                f"{elemental_ref_entries=} explicitly."
-            )
+            msg = f"{mp_elem_refs_path=}, pass elemental_ref_entries explicitly."
+            raise FileNotFoundError(msg)
         elemental_ref_entries = mp_elem_reference_entries
 
     if isinstance(entry, dict):

@@ -53,8 +53,8 @@ task_type: TaskType = "regression"
 
 
 # %%
-data_path = f"{ROOT}/datasets/2022-08-13-mp-energies.json.gz"
-# data_path = f"{ROOT}/datasets/2022-08-13-mp-energies-1k-samples.json.gz"
+data_path = f"{ROOT}/data/mp/2022-08-13-mp-energies.json.gz"
+# data_path = f"{ROOT}/data/mp/2022-08-13-mp-energies-1k-samples.json.gz"
 print(f"{data_path=}")
 df = pd.read_json(data_path).set_index("material_id", drop=False)
 df["structure"] = [Structure.from_dict(s) for s in tqdm(df.structure, disable=None)]
