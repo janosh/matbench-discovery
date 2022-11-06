@@ -404,15 +404,9 @@ ax = density_scatter(
 )
 # ax.figure.savefig(f"{ROOT}/tmp/{today}-legacy-vs-mp2020-corrections.png")
 
-# mp_compat.process_entry(cse) for CSE with id wbm-step-1-24459 causes Jupyter kernel to
-# crash reason unknown, still occurs even after updating deps like pymatgen, numpy,
-# ipykernel, notebook and after re-downloading all data from scratch
 
-#   9%|▉         | 23601/257489 [00:02<00:20, 11661.38it/s]
-# The Kernel crashed while executing code in the the current cell or a previous cell.
-# Please review the code in the cell(s) to identify a possible cause of the failure.
-# Click here for more info. View Jupyter log for further details.
-
+# %% Python crashes with segfault on correcting the energy of wbm-step-1-24459 due to
+# https://github.com/spglib/spglib/issues/194 when using spglib v2.0.{0,1}
 cse = df_wbm.computed_structure_entry["wbm-step-1-24459"]
 cse = ComputedStructureEntry.from_dict(cse)
 mp_compat.process_entry(cse)
@@ -492,16 +486,26 @@ df_wbm = pd.read_json(
     f"{module_dir}/2022-10-19-wbm-cses+init-structs.json.bz2"
 ).set_index("material_id")
 
+df_init_struct = pd.read_json(
+    f"{module_dir}/2022-10-19-wbm-init-structs.json.bz2"
+).set_index("material_id")
+
 df_wbm["cse"] = [
     ComputedStructureEntry.from_dict(x) for x in tqdm(df_wbm.computed_structure_entry)
 ]
 
-df_wbm["init_struct"] = df_wbm["wyckoff"] = float("nan")
-for idx, dct in tqdm(df_wbm.initial_structure.items(), total=len(df_wbm)):
-    if not df_wbm[idx, "init_struct"]:
-        df_wbm.at[idx, "init_struct"] = struct = Structure.from_dict(dct)
-    if not df_wbm[idx, "wyckoff"]:
-        df_wbm.at[idx, "wyckoff"] = get_aflow_label_from_spglib(struct)
+
+# %%
+df_wbm["init_struct"] = [
+    Structure.from_dict(x) if x else None for x in tqdm(df_wbm.initial_structure)
+]
+
+wyckoff_col = "wyckoff_spglib"
+for idx, struct in tqdm(df_wbm.init_struct.items(), total=len(df_wbm)):
+    if struct is None:
+        continue
+    if not df_wbm.at[idx, wyckoff_col]:
+        df_wbm.at[idx, wyckoff_col] = get_aflow_label_from_spglib(struct)
 
 
 # %% make sure material IDs within each step are consecutive
