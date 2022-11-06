@@ -49,12 +49,10 @@ no_init_structs = df.query("initial_structure.isnull()").index
 df = df.dropna()  # two missing initial structures
 assert len(df) == old_len - 2
 
-assert all(
-    df.index == df_wbm.drop(index=no_init_structs).index
-), "df and df_wbm must have same index"
-df["e_form_per_atom_mp2020_corrected"] = df_wbm.e_form_per_atom_mp2020_corrected
+assert all(df.index == df_wbm.drop(index=no_init_structs).index)
 
 target_col = "e_form_per_atom_mp2020_corrected"
+df[target_col] = df_wbm[target_col]
 input_col = "initial_structure"
 assert target_col in df, f"{target_col=} not in {list(df)}"
 assert input_col in df, f"{input_col=} not in {list(df)}"
@@ -84,4 +82,4 @@ df, ensemble_metrics = predict_from_wandb_checkpoints(
     data_loader=data_loader,
 )
 
-df.round(6).to_csv(f"{module_dir}/{today}-{run_name}-preds.csv")
+df.round(6).to_csv(f"{module_dir}/{today}-{run_name}-preds.csv", index=False)

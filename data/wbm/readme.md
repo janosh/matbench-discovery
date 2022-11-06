@@ -8,9 +8,7 @@ Source: [Predicting stable crystalline compounds using chemical similarity](http
 Load with
 
 ```py
-df_wbm_summary = pd.read_csv(  # download wbm-steps-summary.csv (23.31 MB)
-    "https://figshare.com/files/37570234?private_link=ff0ad14505f9624f0c05"
-).set_index("material_id")
+df_wbm_summary = pd.read_csv("data/wbm/2022-10-19-wbm-summary.csv").set_index("material_id")
 ```
 
 ## Comprehensive Link Collection for WBM dataset
