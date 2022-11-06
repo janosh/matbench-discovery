@@ -9,6 +9,7 @@ import wandb
 from aviary.deploy import predict_from_wandb_checkpoints
 from aviary.wrenformer.model import Wrenformer
 
+from matbench_discovery import ROOT
 from matbench_discovery.slurm import slurm_submit_python
 
 __author__ = "Janosh Riebesell"
@@ -37,8 +38,7 @@ slurm_submit_python(
 
 
 # %%
-# download wbm-steps-summary.csv (23.31 MB)
-data_path = "https://figshare.com/files/37570234?private_link=ff0ad14505f9624f0c05"
+data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-summary.csv"
 df = pd.read_csv(data_path).set_index("material_id")
 
 

@@ -10,7 +10,7 @@ import pymatviz
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, as_dict_handler
+from matbench_discovery import ROOT
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-09-22"
@@ -48,9 +48,8 @@ df_bowsr = pd.concat(dfs.values())
 
 
 # %% compare against WBM formation energy targets to make sure we got sensible results
-df_wbm = pd.read_csv(  # download wbm-steps-summary.csv (23.31 MB)
-    "https://figshare.com/files/37570234?private_link=ff0ad14505f9624f0c05"
-).set_index("material_id")
+data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-summary.csv"
+df_wbm = pd.read_csv(data_path).set_index("material_id")
 
 df_bowsr["e_form_wbm"] = df_wbm.e_form_per_atom
 
@@ -71,7 +70,7 @@ pymatviz.density_scatter(
 
 # %%
 out_path = f"{ROOT}/models/bowsr/{today}-bowsr-megnet-wbm-{task_type}.json.gz"
-df_bowsr.reset_index().to_json(out_path, default_handler=as_dict_handler)
+df_bowsr.reset_index().to_json(out_path, default_handler=lambda x: x.as_dict())
 
 # out_path = f"{ROOT}/models/bowsr/2022-08-16-bowsr-megnet-wbm-IS2RE.json.gz"
 # df_bowsr = pd.read_json(out_path).set_index("material_id")
