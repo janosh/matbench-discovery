@@ -79,9 +79,10 @@ if not os.path.exists(summary_path):
 # %%
 json_paths = sorted(glob(f"{module_dir}/raw/wbm-structures-step-*.json.bz2"))
 step_lens = (61848, 52800, 79205, 40328, 23308)
-# step 3 has 79,211 structures but only 79,205 ComputedStructureEntries
+# step 3 has 79,211 initial structures but only 79,205 ComputedStructureEntries
 # i.e. 6 extra structures which have missing energy, volume, etc. in the summary file
 bad_struct_ids = (70802, 70803, 70825, 70826, 70828, 70829)
+# step 5 has 2 missing initial structures: 23166, 23294
 
 
 assert len(json_paths) == len(step_lens), "Mismatch in WBM steps and JSON files"
@@ -229,6 +230,14 @@ assert pd.Series(
 ).value_counts().to_dict() == {"GGA": 248481, "GGA+U": 9008}
 
 
+# drop two materials with missing initial structures
+assert list(df_wbm.query("initial_structure.isna()").index) == [
+    "wbm-step-5-23166",
+    "wbm-step-5-23294",
+]
+df_wbm = df_wbm.dropna(subset=["initial_structure"])
+
+
 # %% get composition from CSEs
 df_wbm["composition_from_cse"] = [
     ComputedStructureEntry.from_dict(cse).composition
@@ -273,12 +282,13 @@ df_wbm["formula_from_cse"] = [
     x.alphabetical_formula for x in df_wbm.pop("composition_from_cse")
 ]
 
-for key, col_name in (
-    ("cses", "computed_structure_entry"),
-    ("init-structs", "initial_structure"),
+for fname, cols in (
+    ("cses", ["computed_structure_entry"]),
+    ("init-structs", ["initial_structure"]),
+    ("cses+init-structs", ["initial_structure", "computed_structure_entry"]),
 ):
-    cols = ["initial_structure", "formula_from_cse", col_name]
-    df_wbm[cols].reset_index().to_json(f"{module_dir}/{today}-wbm-{key}.json.bz2")
+    cols = ["formula_from_cse", *cols]
+    df_wbm[cols].reset_index().to_json(f"{module_dir}/{today}-wbm-{fname}.json.bz2")
 
 
 # %%
@@ -486,26 +496,32 @@ df_wbm = pd.read_json(
     f"{module_dir}/2022-10-19-wbm-cses+init-structs.json.bz2"
 ).set_index("material_id")
 
-df_init_struct = pd.read_json(
-    f"{module_dir}/2022-10-19-wbm-init-structs.json.bz2"
-).set_index("material_id")
-
 df_wbm["cse"] = [
     ComputedStructureEntry.from_dict(x) for x in tqdm(df_wbm.computed_structure_entry)
 ]
 
 
 # %%
-df_wbm["init_struct"] = [
-    Structure.from_dict(x) if x else None for x in tqdm(df_wbm.initial_structure)
-]
+df_init_struct = pd.read_json(
+    f"{module_dir}/2022-10-19-wbm-init-structs.json.bz2"
+).set_index("material_id")
 
 wyckoff_col = "wyckoff_spglib"
-for idx, struct in tqdm(df_wbm.init_struct.items(), total=len(df_wbm)):
-    if struct is None:
+if wyckoff_col not in df_init_struct:
+    df_init_struct[wyckoff_col] = None
+
+for idx, struct in tqdm(
+    df_init_struct.initial_structure.items(), total=len(df_init_struct)
+):
+    if not pd.isna(df_summary.at[idx, wyckoff_col]):
         continue
-    if not df_wbm.at[idx, wyckoff_col]:
-        df_wbm.at[idx, wyckoff_col] = get_aflow_label_from_spglib(struct)
+    try:
+        struct = Structure.from_dict(struct)
+        df_summary.at[idx, wyckoff_col] = get_aflow_label_from_spglib(struct)
+    except Exception as exc:
+        print(f"{idx=} {exc=}")
+
+assert df_summary[wyckoff_col].isna().sum() == 0
 
 
 # %% make sure material IDs within each step are consecutive

@@ -46,7 +46,7 @@ df.pop("_id")
 
 df["spacegroup_number"] = df.pop("symmetry").map(lambda x: x.number)
 
-df["wyckoff"] = [get_aflow_label_from_spglib(x) for x in tqdm(df.structure)]
+df["wyckoff_spglib"] = [get_aflow_label_from_spglib(x) for x in tqdm(df.structure)]
 
 df.to_json(f"{module_dir}/{today}-mp-energies.json.gz", default_handler=as_dict_handler)
 

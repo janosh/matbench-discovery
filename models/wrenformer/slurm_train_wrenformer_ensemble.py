@@ -3,9 +3,9 @@ import os
 from datetime import datetime
 
 import pandas as pd
-from aviary import ROOT
 from aviary.train import df_train_test_split, train_wrenformer
 
+from matbench_discovery import ROOT
 from matbench_discovery.slurm import slurm_submit_python
 
 """
@@ -45,13 +45,15 @@ target_col = "energy_per_atom"
 batch_size = 128
 slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
 timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
+input_col = "wyckoff_spglib"
 
 print(f"Job started running {timestamp}")
 print(f"{run_name=}")
 print(f"{data_path=}")
 
 df = pd.read_json(data_path).set_index("material_id", drop=False)
-assert target_col in df
+assert target_col in df, f"{target_col=} not in {list(df)}"
+assert input_col in df, f"{input_col=} not in {list(df)}"
 train_df, test_df = df_train_test_split(df, test_size=0.3)
 
 run_params = dict(
@@ -70,6 +72,7 @@ train_wrenformer(
     # folds=(n_folds, slurm_array_task_id),
     epochs=epochs,
     checkpoint="wandb",  # None | 'local' | 'wandb',
+    input_col=input_col,
     learning_rate=learning_rate,
     batch_size=batch_size,
     wandb_path="janosh/matbench-discovery",
