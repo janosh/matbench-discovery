@@ -15,8 +15,6 @@ today = f"{datetime.now():%Y-%m-%d}"
 
 
 # %%
-rare = "all"
-
 dfs: dict[str, pd.DataFrame] = {}
 for model_name in ("wren", "cgcnn", "voronoi"):
     csv_path = (
@@ -118,7 +116,6 @@ for ax in (ax_prec, ax_recall):
     ax.set(xlim=(0, None))
 
 
-img_name = f"{today}-precision-recall-vs-calc-count-{rare=}"
 # x-ticks every 10k materials
 # ax.set(xticks=range(0, int(ax.get_xlim()[1]), 10_000))
 
@@ -128,4 +125,4 @@ fig.text(0.5, -0.08, xlabel_cumulative, ha="center")
 
 
 # %%
-fig.savefig(f"{ROOT}/figures/{img_name}.pdf")
+# fig.savefig(f"{ROOT}/figures/{today}-precision-recall-curves.pdf")

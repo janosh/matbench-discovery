@@ -72,5 +72,4 @@ fig.set_size_inches(10, 9)
 ax.legend(loc="center left", frameon=False)
 
 fig_name = f"wren-wbm-hull-dist-hist-{which_energy=}-{stability_crit=}"
-img_path = f"{ROOT}/figures/{today}-{fig_name}.pdf"
-# fig.savefig(img_path)
+# fig.savefig(f"{ROOT}/figures/{today}-{fig_name}.pdf")

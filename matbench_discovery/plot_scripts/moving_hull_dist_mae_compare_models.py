@@ -71,4 +71,4 @@ for line in legend.get_lines():
     line._linewidth *= 2
 
 img_path = f"{ROOT}/figures/{today}-rolling-mae-vs-hull-dist-compare-models-{rare=}.pdf"
-plt.savefig(img_path)
+fig.savefig(img_path)

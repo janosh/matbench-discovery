@@ -39,10 +39,10 @@ slurm_submit_python(
 
 # %%
 data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-summary.csv"
-df = pd.read_csv(data_path).set_index("material_id")
+target_col = "e_form_per_atom_mp2020_corrected"
+input_col = "wyckoff_spglib"
+df = pd.read_csv(data_path).dropna(subset=input_col).set_index("material_id")
 
-target_col = "e_form_per_atom"
-input_col = "wyckoff"
 assert target_col in df, f"{target_col=} not in {list(df)}"
 assert input_col in df, f"{input_col=} not in {list(df)}"
 
