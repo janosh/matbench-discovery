@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 from collections.abc import Sequence
+from datetime import datetime
 
 
 def _get_calling_file_path(frame: int = 1) -> str:
@@ -64,10 +65,11 @@ def slurm_submit_python(
         # before actual job command
         pre_cmd += ". /etc/profile.d/modules.sh; module load rhel8/default-amp;"
 
+    today = f"{datetime.now():%Y-%m-%d}"
     cmd = [
         *f"sbatch --{partition=} --{account=} --{time=}".replace("'", "").split(),
         *("--job-name", job_name),
-        *("--output", f"{log_dir}/slurm-%A-%a.out"),
+        *("--output", f"{log_dir}/slurm-%A{'-%a' if array else ''}-{today}.out"),
         *slurm_flags,
         *("--wrap", f"{pre_cmd} python {py_file_path}".strip()),
     ]
@@ -79,7 +81,10 @@ def slurm_submit_python(
     if (is_slurm_job and is_log_file) or "slurm-submit" in sys.argv:
         # print sbatch command at submission time and into slurm log file
         # but not when running in command line or Jupyter
-        print(f"\n{' '.join(cmd)}\n")
+        print(f"\n{' '.join(cmd)}\n".replace(" --", "\n  --"))
+        for key in "JOB_ID ARRAY_TASK_ID MEM_PER_NODE NODELIST SUBMIT_HOST".split():
+            if val := os.environ.get(f"SLURM_{key}"):
+                print(f"SLURM_{key}={val}")
 
     if "slurm-submit" not in sys.argv:
         return

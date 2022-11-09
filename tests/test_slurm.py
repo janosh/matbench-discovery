@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from datetime import datetime
 from unittest.mock import patch
 
 import pytest
 from pytest import CaptureFixture
 
 from matbench_discovery.slurm import _get_calling_file_path, slurm_submit_python
+
+today = f"{datetime.now():%Y-%m-%d}"
 
 
 @pytest.mark.parametrize("py_file_path", [None, "path/to/file.py"])
@@ -41,9 +44,9 @@ def test_slurm_submit(capsys: CaptureFixture[str], py_file_path: str | None) -> 
 
     sbatch_cmd = (
         f"sbatch --partition={partition} --account={account} --time={time} "
-        f"--job-name {job_name} --output {log_dir}/slurm-%A-%a.out --test-flag "
+        f"--job-name {job_name} --output {log_dir}/slurm-%A-{today}.out --test-flag "
         f"--wrap python {py_file_path or __file__}"
-    )
+    ).replace(" --", "\n  --")
     stdout, stderr = capsys.readouterr()
     assert sbatch_cmd in stdout
     assert stderr == ""
