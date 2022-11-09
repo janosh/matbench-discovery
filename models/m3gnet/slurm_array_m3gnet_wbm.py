@@ -26,7 +26,8 @@ __author__ = "Janosh Riebesell"
 __date__ = "2022-08-15"
 
 task_type = "IS2RE"  # "RS2RE"
-today = f"{datetime.now():%Y-%m-%d}"
+timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
+today = timestamp.split("@")[0]
 module_dir = os.path.dirname(__file__)
 # set large job array size for fast testing/debugging
 slurm_array_task_count = 100
@@ -51,7 +52,6 @@ slurm_submit_python(
 # %%
 slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
 slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
-timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
 
 print(f"Job started running {timestamp}")
 print(f"{slurm_job_id = }")

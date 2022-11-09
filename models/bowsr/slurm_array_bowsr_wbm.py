@@ -27,19 +27,21 @@ Requires MEGNet and MAML installation: pip install megnet maml
 """
 
 task_type = "IS2RE"  # "RS2RE"
-today = f"{datetime.now():%Y-%m-%d}"
 module_dir = os.path.dirname(__file__)
 # --mem 12000 avoids slurmstepd: error: Detected 1 oom-kill event(s)
 #     Some of your processes may have been killed by the cgroup out-of-memory handler.
 slurm_mem_per_node = 12000
 # set large job array size for fast testing/debugging
 slurm_array_task_count = 500
-out_dir = f"{module_dir}/{today}-bowsr-megnet-wbm-{task_type}"
+timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
+today = timestamp.split("@")[0]
+job_name = f"bowsr-megnet-wbm-{task_type}"
+out_dir = f"{module_dir}/{today}-{job_name}"
 
 data_path = f"{ROOT}/data/2022-10-19-wbm-init-structs.json.gz"
 
 slurm_submit_python(
-    job_name=f"bowsr-megnet-wbm-{task_type}",
+    job_name=job_name,
     log_dir=out_dir,
     partition="icelake-himem",
     account="LEE-SL3-CPU",
@@ -57,7 +59,6 @@ slurm_submit_python(
 slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
 slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
 out_path = f"{out_dir}/{slurm_array_task_id}.json.gz"
-timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
 
 print(f"Job started running {timestamp}")
 print(f"{slurm_job_id = }")
@@ -164,4 +165,4 @@ df_output.index.name = "material_id"
 
 df_output.reset_index().to_json(out_path, default_handler=as_dict_handler)
 
-wandb.log_artifact(out_path, type=f"bowsr-megnet-wbm-{task_type}")
+wandb.log_artifact(out_path, type=job_name)

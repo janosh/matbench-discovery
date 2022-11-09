@@ -25,11 +25,12 @@ __date__ = "2022-06-13"
 # %%
 epochs = 300
 target_col = "formation_energy_per_atom"
-run_name = f"cgcnn-robust-{epochs=}-{target_col}"
+run_name = f"cgcnn-robust-{target_col}-{epochs=}"
 print(f"{run_name=}")
 robust = "robust" in run_name.lower()
 n_folds = 10
-today = f"{datetime.now():%Y-%m-%d}"
+timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
+today = timestamp.split("@")[0]
 log_dir = f"{os.path.dirname(__file__)}/{today}-{run_name}"
 
 slurm_submit_python(
@@ -60,7 +61,7 @@ df = pd.read_json(data_path).set_index("material_id", drop=False)
 df["structure"] = [Structure.from_dict(s) for s in tqdm(df.structure, disable=None)]
 assert target_col in df
 
-train_df, test_df = df_train_test_split(df, test_size=0.5)
+train_df, test_df = df_train_test_split(df, test_size=0.05)
 
 train_data = CrystalGraphData(train_df, task_dict={target_col: task_type})
 train_loader = DataLoader(
@@ -85,6 +86,7 @@ model_params = dict(
 model = CrystalGraphConvNet(**model_params)
 
 run_params = dict(
+    data_path=data_path,
     batch_size=batch_size,
     train_df=dict(shape=train_data.df.shape, columns=", ".join(train_df)),
     test_df=dict(shape=test_data.df.shape, columns=", ".join(test_df)),
@@ -92,7 +94,6 @@ run_params = dict(
 
 
 # %%
-timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
 print(f"Job started running {timestamp}")
 
 train_model(
