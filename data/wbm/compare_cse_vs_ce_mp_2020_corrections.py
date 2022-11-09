@@ -1,3 +1,6 @@
+# %%
+import gzip
+import json
 import warnings
 from datetime import datetime
 
@@ -12,6 +15,7 @@ from tqdm import tqdm
 from matbench_discovery import ROOT
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.plot_scripts import df_wbm
+from matbench_discovery.plots import plt
 
 """
 NOTE MaterialsProject2020Compatibility takes structural information into account when
@@ -47,8 +51,10 @@ df_wbm["e_form_per_atom_mp2020_from_cse"] = [
     get_e_form_per_atom(entry) for entry in tqdm(cses)
 ]
 
-df_wbm["mp2020_cse_correction"] = [cse.correction for cse in tqdm(cses)]
-df_wbm["mp2020_ce_correction"] = [ce.correction for ce in tqdm(ces)]
+df_wbm["mp2020_cse_correction_per_atom"] = [
+    cse.correction_per_atom for cse in tqdm(cses)
+]
+df_wbm["mp2020_ce_correction_per_atom"] = [ce.correction_per_atom for ce in tqdm(ces)]
 
 
 # %%
@@ -81,21 +87,25 @@ df_ce_ne_cse = df_wbm.query(
 
 
 # %%
+ax = plt.gca()
 for key, df_anion in df_ce_ne_cse.groupby("anion"):
     ax = df_anion.plot.scatter(
-        ax=locals().get("ax"),
-        x="mp2020_cse_correction",
-        y="mp2020_ce_correction",
+        ax=ax,
+        x="mp2020_cse_correction_per_atom",
+        y="mp2020_ce_correction_per_atom",
         label=f"{key} ({len(df_anion):,})",
         color=dict(oxide="orange", sulfide="teal").get(key, "blue"),
-        title=f"Outliers in formation energy from CSE vs CE ({len(df_ce_ne_cse):,}"
-        f" / {len(df_wbm):,} = {len(df_ce_ne_cse) / len(df_wbm):.1%})",
+        title=f"CSE vs CE corrections for ({len(df_ce_ne_cse):,} / {len(df_wbm):,} = "
+        f"{len(df_ce_ne_cse) / len(df_wbm):.1%})\n outliers of largest difference",
     )
 
 ax.axline((0, 0), slope=1, color="gray", linestyle="dashed", zorder=-1)
 
+# ax.figure.savefig(f"{ROOT}/tmp/{today}-ce-vs-cse-corrections-outliers.pdf")
+
 
 # %%
+ax = plt.gca()
 for key, df_anion in df_ce_ne_cse.groupby("anion"):
     ax = df_anion.plot.scatter(
         ax=locals().get("ax"),
@@ -113,3 +123,42 @@ ax.axline((0, 0), slope=1, color="gray", linestyle="dashed", zorder=-1)
 # different formation energies are oxides or sulfides for which MP 2020 compat takes
 # into account structural information to make more accurate corrections.
 # ax.figure.savefig(f"{ROOT}/tmp/{today}-ce-vs-cse-outliers.pdf")
+
+
+# %% below code resulted in
+# https://github.com/materialsproject/pymatgen/issues/2730
+wbm_step_2_34803 = (
+    df_ce_ne_cse.e_form_per_atom_mp2020_from_cse
+    - df_ce_ne_cse.e_form_per_atom_mp2020_from_ce
+).idxmax()
+idx = df_wbm.index.get_loc(wbm_step_2_34803)
+cse_mp2020, cse_legacy = cses[idx].copy(), cses[idx].copy()
+ce_mp2020, ce_legacy = ces[idx].copy(), ces[idx].copy()
+
+
+with gzip.open(f"{ROOT}/tmp/cse-wbm-step-2-34803.json.zip", "w") as f:
+    f.write(cse_mp2020.to_json().encode("utf-8"))
+
+with gzip.open(f"{ROOT}/tmp/cse-wbm-step-2-34803.json.zip") as f:
+    cse = ComputedStructureEntry.from_dict(json.load(f))
+
+cse_mp2020 = cse.copy()
+cse_legacy = cse.copy()
+ce_mp2020 = ComputedEntry.from_dict(cse.to_dict())
+ce_legacy = ce_mp2020.copy()
+
+
+MaterialsProject2020Compatibility().process_entry(cse_mp2020)
+MaterialsProject2020Compatibility().process_entry(ce_mp2020)
+MaterialsProjectCompatibility().process_entry(cse_legacy)
+MaterialsProjectCompatibility().process_entry(ce_legacy)
+
+print(f"{cse_mp2020.correction=:.4}")
+print(f"{ce_mp2020.correction=:.4}")
+print(f"{cse_legacy.correction=:.4}")
+print(f"{ce_legacy.correction=:.4}")
+
+print(f"{cse_mp2020.energy_adjustments=}\n")
+print(f"{ce_mp2020.energy_adjustments=}\n")
+print(f"{cse_legacy.energy_adjustments=}\n")
+print(f"{ce_legacy.energy_adjustments=}\n")

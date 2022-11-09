@@ -18,10 +18,15 @@ __date__ = "2022-08-13"
 
 # %%
 epochs = 300
-target_col = "e_form"
-run_name = f"wrenformer-robust-mp+wbm-{epochs=}-{target_col}"
+data_path = f"{ROOT}/data/mp/2022-08-13-mp-energies.json.gz"
+target_col = "formation_energy_per_atom"
+# data_path = f"{ROOT}/data/2022-08-25-m3gnet-trainset-mp-2021-struct-energy.json.gz"
+# target_col = "mp_energy_per_atom"
+data_name = "m3gnet-trainset" if "m3gnet" in data_path else "mp"
+run_name = f"wrenformer-robust-{data_name}-{target_col}-{epochs=}"
 n_folds = 10
-today = f"{datetime.now():%Y-%m-%d}"
+timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
+today = timestamp.split("@")[0]
 dataset = "mp"
 log_dir = f"{os.path.dirname(__file__)}/{dataset}/{today}-{run_name}"
 
@@ -38,13 +43,8 @@ slurm_submit_python(
 
 # %%
 learning_rate = 3e-4
-data_path = f"{ROOT}/data/mp/2022-08-13-mp-energies.json.gz"
-target_col = "energy_per_atom"
-# data_path = f"{ROOT}/data/2022-08-25-m3gnet-trainset-mp-2021-struct-energy.json.gz"
-# target_col = "mp_energy_per_atom"
 batch_size = 128
 slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
-timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
 input_col = "wyckoff_spglib"
 
 print(f"Job started running {timestamp}")
@@ -54,9 +54,10 @@ print(f"{data_path=}")
 df = pd.read_json(data_path).set_index("material_id", drop=False)
 assert target_col in df, f"{target_col=} not in {list(df)}"
 assert input_col in df, f"{input_col=} not in {list(df)}"
-train_df, test_df = df_train_test_split(df, test_size=0.3)
+train_df, test_df = df_train_test_split(df, test_size=0.05)
 
 run_params = dict(
+    data_path=data_path,
     batch_size=batch_size,
     train_df=dict(shape=train_df.shape, columns=", ".join(train_df)),
     test_df=dict(shape=test_df.shape, columns=", ".join(test_df)),
