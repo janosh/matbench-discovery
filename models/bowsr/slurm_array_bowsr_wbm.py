@@ -35,12 +35,13 @@ slurm_mem_per_node = 12000
 slurm_array_task_count = 500
 timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
 today = timestamp.split("@")[0]
-job_name = f"bowsr-megnet-wbm-{task_type}"
+slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
+job_name = f"bowsr-megnet-wbm-{task_type}-{slurm_job_id}"
 out_dir = f"{module_dir}/{today}-{job_name}"
 
 data_path = f"{ROOT}/data/2022-10-19-wbm-init-structs.json.gz"
 
-slurm_submit_python(
+slurm_vars = slurm_submit_python(
     job_name=job_name,
     log_dir=out_dir,
     partition="icelake-himem",
@@ -56,13 +57,10 @@ slurm_submit_python(
 
 
 # %%
-slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
 slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
 out_path = f"{out_dir}/{slurm_array_task_id}.json.gz"
 
 print(f"Job started running {timestamp}")
-print(f"{slurm_job_id = }")
-print(f"{slurm_array_task_id = }")
 print(f"{data_path = }")
 print(f"{out_path = }")
 print(f"{version('maml') = }")
@@ -88,12 +86,10 @@ run_params = dict(
     maml_version=version("maml"),
     megnet_version=version("megnet"),
     optimize_kwargs=optimize_kwargs,
-    slurm_array_task_count=slurm_array_task_count,
-    slurm_array_task_id=slurm_array_task_id,
-    slurm_job_id=slurm_job_id,
-    slurm_max_job_time=slurm_max_job_time,
-    slurm_mem_per_node=slurm_mem_per_node,
     task_type=task_type,
+    slurm_array_task_count=slurm_array_task_count,
+    slurm_max_job_time=slurm_max_job_time,
+    **slurm_vars,
 )
 if wandb.run is None:
     wandb.login()
@@ -103,7 +99,7 @@ if wandb.run is None:
 wandb.init(
     entity="janosh",
     project="matbench-discovery",
-    name=f"bowsr-megnet-wbm-{task_type}-{slurm_job_id}-{slurm_array_task_id}",
+    name=f"{job_name}-{slurm_array_task_id}",
     config=run_params,
 )
 

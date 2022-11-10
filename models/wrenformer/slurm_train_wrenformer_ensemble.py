@@ -19,6 +19,7 @@ __date__ = "2022-08-13"
 # %%
 epochs = 300
 data_path = f"{ROOT}/data/mp/2022-08-13-mp-energies.json.gz"
+# data_path = f"{ROOT}/data/mp/2022-08-13-mp-energies-1k-samples.json.gz"
 target_col = "formation_energy_per_atom"
 # data_path = f"{ROOT}/data/2022-08-25-m3gnet-trainset-mp-2021-struct-energy.json.gz"
 # target_col = "mp_energy_per_atom"
@@ -52,6 +53,7 @@ print(f"{run_name=}")
 print(f"{data_path=}")
 
 df = pd.read_json(data_path).set_index("material_id", drop=False)
+
 assert target_col in df, f"{target_col=} not in {list(df)}"
 assert input_col in df, f"{input_col=} not in {list(df)}"
 train_df, test_df = df_train_test_split(df, test_size=0.05)

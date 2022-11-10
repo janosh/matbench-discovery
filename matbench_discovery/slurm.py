@@ -4,6 +4,10 @@ import sys
 from collections.abc import Sequence
 from datetime import datetime
 
+SLURM_KEYS = (
+    "job_id array_task_id array_task_count mem_per_node nodelist submit_host".split()
+)
+
 
 def _get_calling_file_path(frame: int = 1) -> str:
     """Return calling file's path.
@@ -28,7 +32,7 @@ def slurm_submit_python(
     slurm_flags: Sequence[str] = (),
     array: str = None,
     pre_cmd: str = "",
-) -> None:
+) -> dict[str, str]:
     """Slurm submits a python script using `sbatch --wrap 'python path/to/file.py'`.
 
     Usage: Call this function at the top of the script (before doing any real work) and
@@ -56,6 +60,10 @@ def slurm_submit_python(
 
     Raises:
         SystemExit: Exit code will be subprocess.run(['sbatch', ...]).returncode.
+
+    Returns:
+        dict[str, str]: Slurm variables like job ID, array task ID, compute nodes IDs,
+            submission node ID and total job memory.
     """
     if py_file_path is None:
         py_file_path = _get_calling_file_path(frame=2)
@@ -78,19 +86,26 @@ def slurm_submit_python(
 
     is_log_file = not sys.stdout.isatty()
     is_slurm_job = "SLURM_JOB_ID" in os.environ
+
+    slurm_vars = {
+        f"slurm_{key}": val
+        for key in SLURM_KEYS
+        if (val := os.environ.get(f"SLURM_{key}".upper()))
+    }
+
     if (is_slurm_job and is_log_file) or "slurm-submit" in sys.argv:
         # print sbatch command at submission time and into slurm log file
         # but not when running in command line or Jupyter
         print(f"\n{' '.join(cmd)}\n".replace(" --", "\n  --"))
-        for key in "JOB_ID ARRAY_TASK_ID MEM_PER_NODE NODELIST SUBMIT_HOST".split():
-            if val := os.environ.get(f"SLURM_{key}"):
-                print(f"SLURM_{key}={val}")
+        for key, val in slurm_vars.items():
+            print(f"{key}={val}")
 
     if "slurm-submit" not in sys.argv:
-        return
+        return slurm_vars  # if not submitting slurm job, resume outside code as normal
 
     os.makedirs(log_dir, exist_ok=True)  # slurm fails if log_dir is missing
 
     result = subprocess.run(cmd, check=True)
 
+    # after sbatch submission, exit with slurm exit code
     raise SystemExit(result.returncode)
