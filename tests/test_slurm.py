@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from datetime import datetime
 from unittest.mock import patch
 
@@ -11,6 +12,7 @@ from matbench_discovery.slurm import _get_calling_file_path, slurm_submit_python
 today = f"{datetime.now():%Y-%m-%d}"
 
 
+@patch.dict(os.environ, {"SLURM_JOB_ID": "1234"}, clear=True)
 @pytest.mark.parametrize("py_file_path", [None, "path/to/file.py"])
 def test_slurm_submit(capsys: CaptureFixture[str], py_file_path: str | None) -> None:
     job_name = "test_job"
@@ -29,7 +31,9 @@ def test_slurm_submit(capsys: CaptureFixture[str], py_file_path: str | None) -> 
         slurm_flags=("--test-flag",),
     )
 
-    func_call()
+    slurm_vars = func_call()
+
+    assert slurm_vars == {"slurm_job_id": "1234"}
     stdout, stderr = capsys.readouterr()
     # check slurm_submit_python() did nothing in normal mode
     assert stderr == stderr == ""

@@ -32,10 +32,11 @@ module_dir = os.path.dirname(__file__)
 # set large job array size for fast testing/debugging
 slurm_array_task_count = 100
 slurm_mem_per_node = 12000
-job_name = f"m3gnet-wbm-{task_type}"
+slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
+job_name = f"m3gnet-wbm-{task_type}-{slurm_job_id}"
 out_dir = f"{module_dir}/{today}-{job_name}"
 
-slurm_submit_python(
+slurm_vars = slurm_submit_python(
     job_name=job_name,
     log_dir=out_dir,
     partition="icelake-himem",
@@ -50,12 +51,9 @@ slurm_submit_python(
 
 
 # %%
-slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
 slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
 
 print(f"Job started running {timestamp}")
-print(f"{slurm_job_id = }")
-print(f"{slurm_array_task_id = }")
 print(f"{version('m3gnet') = }")
 
 json_out_path = f"{out_dir}/{slurm_array_task_id}.json.gz"
@@ -80,11 +78,9 @@ run_params = dict(
     data_path=data_path,
     m3gnet_version=version("m3gnet"),
     slurm_array_task_count=slurm_array_task_count,
-    slurm_array_task_id=slurm_array_task_id,
-    slurm_job_id=slurm_job_id,
-    slurm_max_job_time=slurm_max_job_time,
-    slurm_mem_per_node=slurm_mem_per_node,
     task_type=task_type,
+    slurm_max_job_time=slurm_max_job_time,
+    **slurm_vars,
 )
 if wandb.run is None:
     wandb.login()
