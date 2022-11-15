@@ -77,7 +77,7 @@ def slurm_submit_python(
     cmd = [
         *f"sbatch --{partition=} --{account=} --{time=}".replace("'", "").split(),
         *("--job-name", job_name),
-        *("--output", f"{log_dir}/slurm-%A{'-%a' if array else ''}-{today}.out"),
+        *("--output", f"{log_dir}/{today}-slurm-%A{'-%a' if array else ''}.log"),
         *slurm_flags,
         *("--wrap", f"{pre_cmd} python {py_file_path}".strip()),
     ]

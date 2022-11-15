@@ -24,8 +24,9 @@ stores predictions to CSV.
 
 module_dir = os.path.dirname(__file__)
 today = f"{datetime.now():%Y-%m-%d}"
-ensemble_id = "wrenformer-e_form-ensemble-1"
-run_name = f"{today}-{ensemble_id}-IS2RE"
+data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-summary.csv"
+assert "wbm" in data_path
+run_name = "wrenformer-wbm-IS2RE"
 
 slurm_submit_python(
     job_name=run_name,
@@ -38,7 +39,6 @@ slurm_submit_python(
 
 
 # %%
-data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-summary.csv"
 target_col = "e_form_per_atom_mp2020_corrected"
 input_col = "wyckoff_spglib"
 df = pd.read_csv(data_path).dropna(subset=input_col).set_index("material_id")
@@ -58,21 +58,18 @@ data_loader = df_to_in_mem_dataloader(
 
 # %%
 wandb.login()
-wandb_api = wandb.Api()
-runs = wandb_api.runs(
-    "janosh/matbench-discovery",
-    filters={
-        "$and": [{"created_at": {"$gt": "2022-11-10", "$lt": "2022-11-11"}}],
-        "display_name": "wrenformer-robust-mp-formation_energy_per_atom-epochs=300",
-    },
-)
+filters = {
+    "$and": [{"created_at": {"$gt": "2022-11-10", "$lt": "2022-11-11"}}],
+    "display_name": "wrenformer-robust-mp-formation_energy_per_atom-epochs=300",
+}
+runs = wandb.Api().runs("janosh/matbench-discovery", filters=filters)
 
-assert len(runs) == 10, f"Expected 10 runs, got {len(runs)} for {ensemble_id=}"
+assert len(runs) == 10, f"Expected 10 runs, got {len(runs)} for {filters=}"
 
 
 # %%
-df, ensemble_metrics = predict_from_wandb_checkpoints(
-    runs, data_loader=data_loader, df=df, model_cls=Wrenformer
+df, _ensemble_metrics = predict_from_wandb_checkpoints(
+    runs, data_loader=data_loader, df=df, model_cls=Wrenformer, target_col=target_col
 )
 
 df.round(6).to_csv(f"{module_dir}/{today}-{run_name}-preds.csv")

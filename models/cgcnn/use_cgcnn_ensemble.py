@@ -60,8 +60,7 @@ assert input_col in df, f"{input_col=} not in {list(df)}"
 df[input_col] = [Structure.from_dict(x) for x in tqdm(df[input_col], disable=None)]
 
 wandb.login()
-wandb_api = wandb.Api()
-runs = wandb_api.runs(
+runs = wandb.Api().runs(
     "janosh/matbench-discovery", filters={"tags": {"$in": [ensemble_id]}}
 )
 

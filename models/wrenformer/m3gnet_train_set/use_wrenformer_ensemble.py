@@ -46,8 +46,7 @@ target_col = "energy_per_atom"
 df[target_col] = df.energy / df.n_sites
 
 wandb.login()
-wandb_api = wandb.Api()
-runs = wandb_api.runs(
+runs = wandb.Api().runs(
     "janosh/matbench-discovery", filters={"tags": {"$in": [ensemble_id]}}
 )
 
