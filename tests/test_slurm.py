@@ -48,7 +48,7 @@ def test_slurm_submit(capsys: CaptureFixture[str], py_file_path: str | None) -> 
 
     sbatch_cmd = (
         f"sbatch --partition={partition} --account={account} --time={time} "
-        f"--job-name {job_name} --output {log_dir}/slurm-%A-{today}.out --test-flag "
+        f"--job-name {job_name} --output {log_dir}/{today}-slurm-%A.log --test-flag "
         f"--wrap python {py_file_path or __file__}"
     ).replace(" --", "\n  --")
     stdout, stderr = capsys.readouterr()

@@ -43,7 +43,7 @@ slurm_vars = slurm_submit_python(
     account="LEE-SL3-CPU",
     time=(slurm_max_job_time := "3:0:0"),
     array=f"1-{slurm_array_task_count}",
-    log_dir=module_dir,
+    log_dir=f"{module_dir}/{job_name}",
 )
 
 
@@ -68,6 +68,7 @@ df_this_job[input_col] = [
 run_params = dict(
     data_path=data_path,
     slurm_max_job_time=slurm_max_job_time,
+    df=dict(shape=str(df_this_job.shape), columns=", ".join(df_this_job)),
     **slurm_vars,
 )
 if wandb.run is None:

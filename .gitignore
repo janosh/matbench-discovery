@@ -18,7 +18,7 @@ wandb/
 job-logs/
 
 # slurm logs
-slurm-*out
+*slurm-*.log
 models/**/*.csv
 
 # temporary ignore rule
