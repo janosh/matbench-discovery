@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 from matbench_discovery import ROOT
 from matbench_discovery.plot_scripts import df_wbm
-from matbench_discovery.slurm import slurm_submit_python
+from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-15"
@@ -31,7 +31,7 @@ today = f"{datetime.now():%Y-%m-%d}"
 ensemble_id = "cgcnn-e_form-ensemble-1"
 run_name = f"{today}-{ensemble_id}-IS2RE"
 
-slurm_submit_python(
+slurm_submit(
     job_name=run_name,
     partition="ampere",
     account="LEE-SL3-GPU",

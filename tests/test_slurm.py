@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 from pytest import CaptureFixture
 
-from matbench_discovery.slurm import _get_calling_file_path, slurm_submit_python
+from matbench_discovery.slurm import _get_calling_file_path, slurm_submit
 
 today = f"{datetime.now():%Y-%m-%d}"
 
@@ -21,7 +21,7 @@ def test_slurm_submit(capsys: CaptureFixture[str], py_file_path: str | None) -> 
     partition = "fake-partition"
     account = "fake-account"
 
-    func_call = lambda: slurm_submit_python(
+    func_call = lambda: slurm_submit(
         job_name=job_name,
         log_dir=log_dir,
         time=time,
@@ -35,10 +35,10 @@ def test_slurm_submit(capsys: CaptureFixture[str], py_file_path: str | None) -> 
 
     assert slurm_vars == {"slurm_job_id": "1234"}
     stdout, stderr = capsys.readouterr()
-    # check slurm_submit_python() did nothing in normal mode
+    # check slurm_submit() did nothing in normal mode
     assert stderr == stderr == ""
 
-    # check slurm_submit_python() prints cmd and calls subprocess.run() in submit mode
+    # check slurm_submit() prints cmd and calls subprocess.run() in submit mode
     with pytest.raises(SystemExit), patch("sys.argv", ["slurm-submit"]), patch(
         "matbench_discovery.slurm.subprocess.run"
     ) as mock_subprocess_run:

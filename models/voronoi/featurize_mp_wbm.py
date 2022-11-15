@@ -3,28 +3,17 @@ import os
 import warnings
 from datetime import datetime
 
+import matminer.featurizers.composition as feat_comp
+import matminer.featurizers.structure as feat_struct
 import numpy as np
 import pandas as pd
 import wandb
 from matminer.featurizers.base import MultipleFeaturizer
-from matminer.featurizers.composition import (
-    ElementProperty,
-    IonProperty,
-    Stoichiometry,
-    ValenceOrbital,
-)
-from matminer.featurizers.structure import (
-    ChemicalOrdering,
-    MaximumPackingEfficiency,
-    SiteStatsFingerprint,
-    StructuralHeterogeneity,
-    StructureComposition,
-)
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import ROOT
-from matbench_discovery.slurm import slurm_submit_python
+from matbench_discovery import ROOT, as_dict_handler
+from matbench_discovery.slurm import slurm_submit
 
 today = f"{datetime.now():%Y-%m-%d}"
 module_dir = os.path.dirname(__file__)
@@ -32,16 +21,16 @@ module_dir = os.path.dirname(__file__)
 
 # data_path = f"{ROOT}/data/mp/2022-09-16-mp-computed-structure-entries.json.gz"
 data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
-input_col = "structure"
+input_col = "initial_structure"
 data_name = "wbm" if "wbm" in data_path else "mp"
-slurm_array_task_count = 100
+slurm_array_task_count = 20
 job_name = f"voronoi-featurize-{data_name}"
 
-slurm_vars = slurm_submit_python(
+slurm_vars = slurm_submit(
     job_name=job_name,
     partition="icelake-himem",
     account="LEE-SL3-CPU",
-    time=(slurm_max_job_time := "3:0:0"),
+    time=(slurm_max_job_time := "5:0:0"),
     array=f"1-{slurm_array_task_count}",
     log_dir=f"{module_dir}/{job_name}",
 )
@@ -51,6 +40,8 @@ slurm_vars = slurm_submit_python(
 df = pd.read_json(data_path).set_index("material_id")
 
 slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
+run_name = f"{job_name}-{slurm_array_task_id}"
+
 df_this_job: pd.DataFrame = np.array_split(df, slurm_array_task_count)[
     slurm_array_task_id - 1
 ]
@@ -69,14 +60,15 @@ run_params = dict(
     data_path=data_path,
     slurm_max_job_time=slurm_max_job_time,
     df=dict(shape=str(df_this_job.shape), columns=", ".join(df_this_job)),
-    **slurm_vars,
+    input_col=input_col,
+    slurm_vars=slurm_vars,
 )
 if wandb.run is None:
     wandb.login()
 
 wandb.init(
     project="matbench-discovery",
-    name=f"{job_name}-{slurm_array_task_id}",
+    name=run_name,
     config=run_params,
 )
 
@@ -84,15 +76,17 @@ wandb.init(
 # %% Create the featurizer: Ward et al. use a variety of different featurizers
 # https://journals.aps.org/prb/abstract/10.1103/PhysRevB.96.024104
 featurizers = [
-    SiteStatsFingerprint.from_preset("CoordinationNumber_ward-prb-2017"),
-    StructuralHeterogeneity(),
-    ChemicalOrdering(),
-    MaximumPackingEfficiency(),
-    SiteStatsFingerprint.from_preset("LocalPropertyDifference_ward-prb-2017"),
-    StructureComposition(Stoichiometry()),
-    StructureComposition(ElementProperty.from_preset("magpie")),
-    StructureComposition(ValenceOrbital(props=["frac"])),
-    StructureComposition(IonProperty(fast=True)),
+    feat_struct.SiteStatsFingerprint.from_preset("CoordinationNumber_ward-prb-2017"),
+    feat_struct.StructuralHeterogeneity(),
+    feat_struct.ChemicalOrdering(),
+    feat_struct.MaximumPackingEfficiency(),
+    feat_struct.SiteStatsFingerprint.from_preset(
+        "LocalPropertyDifference_ward-prb-2017"
+    ),
+    feat_struct.StructureComposition(feat_comp.Stoichiometry()),
+    feat_struct.StructureComposition(feat_comp.ElementProperty.from_preset("magpie")),
+    feat_struct.StructureComposition(feat_comp.ValenceOrbital(props=["frac"])),
+    feat_struct.StructureComposition(feat_comp.IonProperty(fast=True)),
 ]
 featurizer = MultipleFeaturizer(featurizers)
 
@@ -108,5 +102,5 @@ df_features = featurizer.featurize_dataframe(
 
 # %%
 df_features.to_json(
-    f"{module_dir}/{today}-voronoi-tesselation-{data_name}-features.json.gz"
+    f"{module_dir}/{today}-{run_name}.json.gz", default_handler=as_dict_handler
 )

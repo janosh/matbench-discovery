@@ -6,7 +6,7 @@ import pandas as pd
 from aviary.train import df_train_test_split, train_wrenformer
 
 from matbench_discovery import ROOT
-from matbench_discovery.slurm import slurm_submit_python
+from matbench_discovery.slurm import slurm_submit
 
 """
 Train a Wrenformer ensemble of size n_folds on target_col of data_path.
@@ -31,7 +31,7 @@ today = timestamp.split("@")[0]
 dataset = "mp"
 log_dir = f"{os.path.dirname(__file__)}/{dataset}/{today}-{run_name}"
 
-slurm_submit_python(
+slurm_submit(
     job_name=run_name,
     partition="ampere",
     account="LEE-SL3-GPU",

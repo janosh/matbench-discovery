@@ -11,7 +11,7 @@ from aviary.wrenformer.data import df_to_in_mem_dataloader
 from aviary.wrenformer.model import Wrenformer
 
 from matbench_discovery import ROOT
-from matbench_discovery.slurm import slurm_submit_python
+from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-15"
@@ -28,7 +28,7 @@ data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-summary.csv"
 assert "wbm" in data_path
 run_name = "wrenformer-wbm-IS2RE"
 
-slurm_submit_python(
+slurm_submit(
     job_name=run_name,
     partition="ampere",
     account="LEE-SL3-GPU",

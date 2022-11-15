@@ -15,7 +15,7 @@ from maml.apps.bowsr.optimizer import BayesianOptimizer
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, as_dict_handler
-from matbench_discovery.slurm import slurm_submit_python
+from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-15"
@@ -41,7 +41,7 @@ out_dir = f"{module_dir}/{today}-{job_name}"
 
 data_path = f"{ROOT}/data/2022-10-19-wbm-init-structs.json.gz"
 
-slurm_vars = slurm_submit_python(
+slurm_vars = slurm_submit(
     job_name=job_name,
     log_dir=out_dir,
     partition="icelake-himem",
@@ -97,9 +97,8 @@ run_params = dict(
     megnet_version=version("megnet"),
     optimize_kwargs=optimize_kwargs,
     task_type=task_type,
-    slurm_array_task_count=slurm_array_task_count,
     slurm_max_job_time=slurm_max_job_time,
-    **slurm_vars,
+    slurm_vars=slurm_vars,
 )
 if wandb.run is None:
     wandb.login()
