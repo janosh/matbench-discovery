@@ -5,8 +5,9 @@ from collections.abc import Sequence
 from datetime import datetime
 
 SLURM_KEYS = (
-    "job_id array_task_id array_task_count mem_per_node nodelist submit_host".split()
-)
+    "job_id array_task_id array_task_count mem_per_node nodelist submit_host"
+    "job_partition job_user job_account tasks_per_node job_qos"
+).split()
 
 
 def _get_calling_file_path(frame: int = 1) -> str:
@@ -22,7 +23,7 @@ def _get_calling_file_path(frame: int = 1) -> str:
     return os.path.abspath(caller_path)
 
 
-def slurm_submit_python(
+def slurm_submit(
     job_name: str,
     log_dir: str,
     time: str,
@@ -45,7 +46,7 @@ def slurm_submit_python(
             ID and array task ID.
         time (str): 'HH:MM:SS' time limit for the job.
         py_file_path (str, optional): Path to the python script to be submitted.
-            Defaults to the path of the file calling slurm_submit_python().
+            Defaults to the path of the file calling slurm_submit().
         partition (str, optional): Slurm partition.
         account (str, optional): Account to charge for this job.
         slurm_flags (Sequence[str], optional): Extra slurm CLI flags. Defaults to ().

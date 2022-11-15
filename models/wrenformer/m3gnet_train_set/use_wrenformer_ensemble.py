@@ -10,7 +10,7 @@ from aviary.deploy import predict_from_wandb_checkpoints
 from aviary.wrenformer.model import Wrenformer
 
 from matbench_discovery import ROOT
-from matbench_discovery.slurm import slurm_submit_python
+from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-09-05"
@@ -27,7 +27,7 @@ today = f"{datetime.now():%Y-%m-%d}"
 ensemble_id = "wrenformer-m3gnet-trainset-ensemble-1"
 run_name = f"{today}-{ensemble_id}-IS2RE"
 
-slurm_submit_python(
+slurm_submit(
     job_name=run_name,
     partition="ampere",
     account="LEE-SL3-GPU",

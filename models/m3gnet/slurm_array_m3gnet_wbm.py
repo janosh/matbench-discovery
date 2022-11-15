@@ -14,7 +14,7 @@ from m3gnet.models import Relaxer
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, as_dict_handler
-from matbench_discovery.slurm import slurm_submit_python
+from matbench_discovery.slurm import slurm_submit
 
 """
 To slurm submit this file: python path/to/file.py slurm-submit
@@ -36,7 +36,7 @@ slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
 job_name = f"m3gnet-wbm-{task_type}-{slurm_job_id}"
 out_dir = f"{module_dir}/{today}-{job_name}"
 
-slurm_vars = slurm_submit_python(
+slurm_vars = slurm_submit(
     job_name=job_name,
     log_dir=out_dir,
     partition="icelake-himem",
@@ -77,11 +77,10 @@ df_this_job: pd.DataFrame = np.array_split(df_wbm, slurm_array_task_count)[
 run_params = dict(
     data_path=data_path,
     m3gnet_version=version("m3gnet"),
-    slurm_array_task_count=slurm_array_task_count,
     task_type=task_type,
     slurm_max_job_time=slurm_max_job_time,
     df=dict(shape=str(df_this_job.shape), columns=", ".join(df_this_job)),
-    **slurm_vars,
+    slurm_vars=slurm_vars,
 )
 if wandb.run is None:
     wandb.login()
