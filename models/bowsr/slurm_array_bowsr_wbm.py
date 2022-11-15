@@ -72,6 +72,15 @@ if os.path.isfile(out_path):
 
 
 # %%
+print(f"Loading from {data_path = }")
+df_wbm = pd.read_json(data_path).set_index("material_id")
+
+df_this_job: pd.DataFrame = np.array_split(df_wbm, slurm_array_task_count)[
+    slurm_array_task_id - 1
+]
+
+
+# %%
 bayes_optim_kwargs = dict(
     relax_coords=True,
     relax_lattice=True,
@@ -83,6 +92,7 @@ optimize_kwargs = dict(n_init=100, n_iter=100, alpha=0.026**2)
 run_params = dict(
     bayes_optim_kwargs=bayes_optim_kwargs,
     data_path=data_path,
+    df=dict(shape=str(df_this_job.shape), columns=", ".join(df_this_job)),
     maml_version=version("maml"),
     megnet_version=version("megnet"),
     optimize_kwargs=optimize_kwargs,
@@ -102,15 +112,6 @@ wandb.init(
     name=f"{job_name}-{slurm_array_task_id}",
     config=run_params,
 )
-
-
-# %%
-print(f"Loading from {data_path = }")
-df_wbm = pd.read_json(data_path).set_index("material_id")
-
-df_this_job: pd.DataFrame = np.array_split(df_wbm, slurm_array_task_count)[
-    slurm_array_task_id - 1
-]
 
 
 # %%

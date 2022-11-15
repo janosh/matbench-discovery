@@ -46,14 +46,6 @@ df = pd.read_csv(data_path).dropna(subset=input_col).set_index("material_id")
 assert target_col in df, f"{target_col=} not in {list(df)}"
 assert input_col in df, f"{input_col=} not in {list(df)}"
 
-wandb.login()
-wandb_api = wandb.Api()
-runs = wandb_api.runs(
-    "janosh/matbench-discovery", filters={"tags": {"$in": [ensemble_id]}}
-)
-
-assert len(runs) == 10, f"Expected 10 runs, got {len(runs)} for {ensemble_id=}"
-
 data_loader = df_to_in_mem_dataloader(
     df=df,
     target_col=target_col,
@@ -63,6 +55,22 @@ data_loader = df_to_in_mem_dataloader(
     shuffle=False,  # False is default but best be explicit
 )
 
+
+# %%
+wandb.login()
+wandb_api = wandb.Api()
+runs = wandb_api.runs(
+    "janosh/matbench-discovery",
+    filters={
+        "$and": [{"created_at": {"$gt": "2022-11-10", "$lt": "2022-11-11"}}],
+        "display_name": "wrenformer-robust-mp-formation_energy_per_atom-epochs=300",
+    },
+)
+
+assert len(runs) == 10, f"Expected 10 runs, got {len(runs)} for {ensemble_id=}"
+
+
+# %%
 df, ensemble_metrics = predict_from_wandb_checkpoints(
     runs, data_loader=data_loader, df=df, model_cls=Wrenformer
 )
