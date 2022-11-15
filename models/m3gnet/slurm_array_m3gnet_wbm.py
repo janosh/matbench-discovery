@@ -80,6 +80,7 @@ run_params = dict(
     slurm_array_task_count=slurm_array_task_count,
     task_type=task_type,
     slurm_max_job_time=slurm_max_job_time,
+    df=dict(shape=str(df_this_job.shape), columns=", ".join(df_this_job)),
     **slurm_vars,
 )
 if wandb.run is None:

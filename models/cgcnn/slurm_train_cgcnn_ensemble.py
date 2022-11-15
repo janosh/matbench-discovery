@@ -88,8 +88,8 @@ model = CrystalGraphConvNet(**model_params)
 run_params = dict(
     data_path=data_path,
     batch_size=batch_size,
-    train_df=dict(shape=train_data.df.shape, columns=", ".join(train_df)),
-    test_df=dict(shape=test_data.df.shape, columns=", ".join(test_df)),
+    train_df=dict(shape=str(train_data.df.shape), columns=", ".join(train_df)),
+    test_df=dict(shape=str(test_data.df.shape), columns=", ".join(test_df)),
 )
 
 
