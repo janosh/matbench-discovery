@@ -22,8 +22,8 @@ __date__ = "2022-08-15"
 
 """
 To slurm submit this file: python path/to/file.py slurm-submit
-
 Requires MEGNet and MAML installation: pip install megnet maml
+https://github.com/materialsvirtuallab/maml
 """
 
 task_type = "IS2RE"  # "RS2RE"
