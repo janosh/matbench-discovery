@@ -23,7 +23,6 @@ data_path = (
 )
 df = pd.read_csv(data_path).set_index("material_id")
 legend_label = "Wren"
-assert f"{legend_label.lower()}-" in data_path
 
 
 # %%
