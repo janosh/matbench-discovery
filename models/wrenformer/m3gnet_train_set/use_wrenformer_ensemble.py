@@ -25,7 +25,7 @@ WBM dataset, prints ensemble metrics and stores predictions to CSV.
 module_dir = os.path.dirname(__file__)
 today = f"{datetime.now():%Y-%m-%d}"
 ensemble_id = "wrenformer-m3gnet-trainset-ensemble-1"
-run_name = f"{today}-{ensemble_id}-IS2RE"
+run_name = f"{ensemble_id}-IS2RE"
 
 slurm_submit(
     job_name=run_name,

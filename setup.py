@@ -29,6 +29,6 @@ setup(
     ],
     extras_require={
         "test": ["pytest", "pytest-cov"],
-        "running-models": ["wandb", "m3gnet", "aviary"],
+        "running-models": ["wandb", "m3gnet", "aviary", "maml", "megnet", "m3gnet-dgl"],
     },
 )

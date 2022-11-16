@@ -56,10 +56,10 @@ slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
 print(f"Job started running {timestamp}")
 print(f"{version('m3gnet') = }")
 
-json_out_path = f"{out_dir}/{slurm_array_task_id}.json.gz"
+out_path = f"{out_dir}/{slurm_array_task_id}.json.gz"
 
-if os.path.isfile(json_out_path):
-    raise SystemExit(f"{json_out_path = } already exists, exciting early")
+if os.path.isfile(out_path):
+    raise SystemExit(f"{out_path = } already exists, exciting early")
 
 warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
 warnings.filterwarnings(action="ignore", category=UserWarning, module="tensorflow")
@@ -125,6 +125,6 @@ for material_id, structure in tqdm(structures.items(), disable=None):
 df_output = pd.DataFrame(relax_results).T
 df_output.index.name = "material_id"
 
-df_output.reset_index().to_json(json_out_path, default_handler=as_dict_handler)
+df_output.reset_index().to_json(out_path, default_handler=as_dict_handler)
 
-wandb.log_artifact(json_out_path, type=f"m3gnet-wbm-{task_type}")
+wandb.log_artifact(out_path, type=f"m3gnet-wbm-{task_type}")

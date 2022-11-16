@@ -10,6 +10,7 @@ from aviary.cgcnn.data import CrystalGraphData, collate_batch
 from aviary.cgcnn.model import CrystalGraphConvNet
 from aviary.deploy import predict_from_wandb_checkpoints
 from pymatgen.core import Structure
+from pymatviz import density_scatter
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -29,7 +30,7 @@ stores predictions to CSV.
 module_dir = os.path.dirname(__file__)
 today = f"{datetime.now():%Y-%m-%d}"
 ensemble_id = "cgcnn-e_form-ensemble-1"
-run_name = f"{today}-{ensemble_id}-IS2RE"
+run_name = f"{ensemble_id}-IS2RE"
 
 slurm_submit(
     job_name=run_name,
@@ -82,3 +83,13 @@ df, ensemble_metrics = predict_from_wandb_checkpoints(
 )
 
 df.round(6).to_csv(f"{module_dir}/{today}-{run_name}-preds.csv", index=False)
+
+
+# %%
+print(f"{runs[0].url=}")
+ax = density_scatter(
+    df=df.query("e_form_per_atom_mp2020_corrected < 10"),
+    x="e_form_per_atom_mp2020_corrected",
+    y="e_form_per_atom_mp2020_corrected_pred_1",
+)
+# ax.figure.savefig(f"{ROOT}/tmp/{today}-{run_name}-scatter-preds.png", dpi=300)
