@@ -9,7 +9,7 @@ from matbench_discovery.plot_scripts import df_wbm
 from matbench_discovery.plots import (
     StabilityCriterion,
     WhichEnergy,
-    hist_classified_stable_as_func_of_hull_dist,
+    hist_classified_stable_vs_hull_dist,
     plt,
 )
 
@@ -77,7 +77,7 @@ for batch_idx, ax in zip(range(1, 6), axs.flat):
     batch_df = df[df.index.str.startswith(f"wbm-step-{batch_idx}-")]
     assert 1e4 < len(batch_df) < 1e5, print(f"{len(batch_df) = :,}")
 
-    ax, metrics = hist_classified_stable_as_func_of_hull_dist(
+    ax, metrics = hist_classified_stable_vs_hull_dist(
         e_above_hull_pred=batch_df.e_form_per_atom_pred - batch_df.e_form_per_atom,
         e_above_hull_true=batch_df.e_above_hull_mp,
         which_energy=which_energy,
@@ -92,7 +92,7 @@ for batch_idx, ax in zip(range(1, 6), axs.flat):
     ax.set(title=title)
 
 
-ax, metrics = hist_classified_stable_as_func_of_hull_dist(
+ax, metrics = hist_classified_stable_vs_hull_dist(
     e_above_hull_pred=df.e_form_per_atom_pred - df.e_form_per_atom,
     e_above_hull_true=df.e_above_hull_mp,
     which_energy=which_energy,

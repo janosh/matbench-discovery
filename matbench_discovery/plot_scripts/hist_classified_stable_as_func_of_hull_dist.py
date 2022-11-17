@@ -8,7 +8,7 @@ from matbench_discovery.plot_scripts import df_wbm
 from matbench_discovery.plots import (
     StabilityCriterion,
     WhichEnergy,
-    hist_classified_stable_as_func_of_hull_dist,
+    hist_classified_stable_vs_hull_dist,
 )
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
@@ -59,7 +59,7 @@ else:
 pred_cols = df.filter(regex=r"_pred_\d").columns
 assert len(pred_cols) == 10
 
-ax, metrics = hist_classified_stable_as_func_of_hull_dist(
+ax, metrics = hist_classified_stable_vs_hull_dist(
     e_above_hull_pred=df[pred_cols].mean(axis=1) - df[target_col],
     e_above_hull_true=df.e_above_hull,
     which_energy=which_energy,

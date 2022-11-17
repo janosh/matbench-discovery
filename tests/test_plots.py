@@ -12,7 +12,7 @@ from matbench_discovery.plots import (
     AxLine,
     StabilityCriterion,
     cumulative_clf_metric,
-    hist_classified_stable_as_func_of_hull_dist,
+    hist_classified_stable_vs_hull_dist,
     rolling_mae_vs_hull_dist,
 )
 
@@ -130,7 +130,7 @@ def test_rolling_mae_vs_hull_dist(
 @pytest.mark.parametrize("stability_threshold", (0.1, 0.01))
 @pytest.mark.parametrize("stability_crit", ("energy", "energy+std", "energy-std"))
 @pytest.mark.parametrize("x_lim", ((0, 0.6), (-0.2, 0.8)))
-def test_hist_classified_stable_as_func_of_hull_dist(
+def test_hist_classified_stable_vs_hull_dist(
     stability_threshold: float,
     stability_crit: StabilityCriterion,
     x_lim: tuple[float, float],
@@ -146,7 +146,7 @@ def test_hist_classified_stable_as_func_of_hull_dist(
     else:
         std_total = None
 
-    ax, metrics = hist_classified_stable_as_func_of_hull_dist(
+    ax, metrics = hist_classified_stable_vs_hull_dist(
         e_above_hull_pred=df.e_above_hull_pred,
         e_above_hull_true=df.e_above_hull_mp,
         ax=ax,
