@@ -30,17 +30,19 @@ today = f"{datetime.now():%Y-%m-%d}"
 
 # %%
 df = pd.read_csv(
-    f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
+    # f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
+    f"{ROOT}/models/wrenformer/mp/2022-09-20-wrenformer-e_form-ensemble-1-preds.csv"
 ).set_index("material_id")
 
-df["e_above_hull_mp"] = df_wbm.e_above_hull_mp
+df["e_above_hull"] = df_wbm.e_above_hull_mp2020_corrected_ppd_mp
 
 
 # %%
 nan_counts = df.isna().sum()
 assert all(nan_counts == 0), f"df should not have missing values: {nan_counts}"
 
-target_col = "e_form_target"
+# target_col = "e_form_target"
+target_col = "e_form_per_atom"
 stability_crit: StabilityCriterion = "energy"
 which_energy: WhichEnergy = "true"
 
@@ -57,19 +59,24 @@ else:
 pred_cols = df.filter(regex=r"_pred_\d").columns
 assert len(pred_cols) == 10
 
-ax = hist_classified_stable_as_func_of_hull_dist(
+ax, metrics = hist_classified_stable_as_func_of_hull_dist(
     e_above_hull_pred=df[pred_cols].mean(axis=1) - df[target_col],
-    e_above_hull_true=df.e_above_hull_mp,
+    e_above_hull_true=df.e_above_hull,
     which_energy=which_energy,
     stability_crit=stability_crit,
     std_pred=std_total,
     # stability_threshold=-0.05,
+    # rolling_accuracy=0,
 )
 
 fig = ax.figure
 fig.set_size_inches(10, 9)
 
-ax.legend(loc="center left", frameon=False)
+ax.legend(
+    loc="center left",
+    frameon=False,
+    title=f"Enrichment Factor = {metrics['enrichment']:.3}",
+)
 
 fig_name = f"wren-wbm-hull-dist-hist-{which_energy=}-{stability_crit=}"
 # fig.savefig(f"{ROOT}/figures/{today}-{fig_name}.pdf")

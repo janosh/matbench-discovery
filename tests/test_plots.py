@@ -146,7 +146,7 @@ def test_hist_classified_stable_as_func_of_hull_dist(
     else:
         std_total = None
 
-    ax = hist_classified_stable_as_func_of_hull_dist(
+    ax, metrics = hist_classified_stable_as_func_of_hull_dist(
         e_above_hull_pred=df.e_above_hull_pred,
         e_above_hull_true=df.e_above_hull_mp,
         ax=ax,
@@ -160,3 +160,6 @@ def test_hist_classified_stable_as_func_of_hull_dist(
     # assert ax.get_ylim() == pytest.approx((0, 6.3))
     assert ax.get_ylabel() == "Number of compounds"
     assert ax.get_xlabel() == r"$\Delta E_{Hull-MP}$ (eV / atom)"
+
+    assert metrics["precision"] > 0.3
+    assert metrics["recall"] > 0.3

@@ -39,8 +39,7 @@ dfs["m3gnet"] = pd.read_json(
     f"{ROOT}/models/m3gnet/2022-08-16-m3gnet-wbm-IS2RE.json.gz"
 ).set_index("material_id")
 dfs["wrenformer"] = pd.read_csv(
-    f"{ROOT}/models/wrenformer/mp/"
-    "2022-09-20-wrenformer-e_form-ensemble-1-preds-e_form_per_atom.csv"
+    f"{ROOT}/models/wrenformer/mp/2022-09-20-wrenformer-e_form-ensemble-1-preds.csv"
 ).set_index("material_id")
 dfs["bowsr_megnet"] = pd.read_json(
     f"{ROOT}/models/bowsr/2022-09-22-bowsr-megnet-wbm-IS2RE.json.gz"
@@ -78,7 +77,7 @@ for batch_idx, ax in zip(range(1, 6), axs.flat):
     batch_df = df[df.index.str.startswith(f"wbm-step-{batch_idx}-")]
     assert 1e4 < len(batch_df) < 1e5, print(f"{len(batch_df) = :,}")
 
-    hist_classified_stable_as_func_of_hull_dist(
+    ax, metrics = hist_classified_stable_as_func_of_hull_dist(
         e_above_hull_pred=batch_df.e_form_per_atom_pred - batch_df.e_form_per_atom,
         e_above_hull_true=batch_df.e_above_hull_mp,
         which_energy=which_energy,
@@ -86,17 +85,23 @@ for batch_idx, ax in zip(range(1, 6), axs.flat):
         ax=ax,
     )
 
+    text = f"Enrichment\nFactor = {metrics['enrichment']:.3}"
+    ax.text(0.02, 0.25, text, fontsize=16, transform=ax.transAxes)
+
     title = f"Batch {batch_idx} ({len(batch_df.filter(like='e_').dropna()):,})"
     ax.set(title=title)
 
 
-hist_classified_stable_as_func_of_hull_dist(
+ax, metrics = hist_classified_stable_as_func_of_hull_dist(
     e_above_hull_pred=df.e_form_per_atom_pred - df.e_form_per_atom,
     e_above_hull_true=df.e_above_hull_mp,
     which_energy=which_energy,
     stability_crit=stability_crit,
     ax=axs.flat[-1],
 )
+
+text = f"Enrichment\nFactor = {metrics['enrichment']:.3}"
+ax.text(0.02, 0.25, text, fontsize=16, transform=ax.transAxes)
 
 axs.flat[-1].set(title=f"Combined ({len(df.filter(like='e_').dropna()):,})")
 axs.flat[0].legend(frameon=False, loc="upper left")

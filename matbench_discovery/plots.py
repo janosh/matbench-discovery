@@ -19,7 +19,7 @@ WhichEnergy = Literal["true", "pred"]
 AxLine = Literal["x", "y", "xy", ""]
 
 
-# --- define global plot settings
+# --- start global plot settings
 quantity_labels = dict(
     n_atoms="Atom Count",
     n_elems="Element Count",
@@ -55,7 +55,8 @@ pio.templates.default = "plotly_white"
 
 
 plt.rc("font", size=14)
-plt.rc("legend", fontsize=16)
+plt.rc("legend", fontsize=16, title_fontsize=16)
+plt.rc("axes", titlesize=16, labelsize=16)
 plt.rc("savefig", bbox="tight", dpi=200)
 plt.rc("figure", dpi=200, titlesize=16)
 plt.rcParams["figure.constrained_layout.use"] = True
@@ -69,11 +70,11 @@ def hist_classified_stable_as_func_of_hull_dist(
     ax: plt.Axes = None,
     which_energy: WhichEnergy = "true",
     stability_crit: StabilityCriterion = "energy",
-    show_mae: bool = False,
-    stability_threshold: float = 0,  # set stability threshold as distance to convex
-    # hull in eV / atom, usually 0 or 0.1 eV
-    x_lim: tuple[float, float] = (-0.4, 0.4),
-) -> plt.Axes:
+    stability_threshold: float = 0,
+    show_threshold: bool = True,
+    x_lim: tuple[float | None, float | None] = (-0.4, 0.4),
+    rolling_accuracy: float = 0.02,
+) -> tuple[plt.Axes, dict[str, float]]:
     """
     Histogram of the energy difference (either according to DFT ground truth [default]
     or model predicted energy) to the convex hull for materials in the WBM data set. The
@@ -85,8 +86,33 @@ def hist_classified_stable_as_func_of_hull_dist(
 
     See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
 
-    NOTE this figure plots hist bars separately which causes aliasing in pdf
-    to resolve this take into Inkscape and merge regions by color
+    Args:
+        e_above_hull_pred (pd.Series): energy difference to convex hull predicted by
+            model, i.e. difference between the model's predicted and true formation
+            energy.
+        e_above_hull_true (pd.Series): energy diff to convex hull according to DFT
+            ground truth.
+        std_pred (pd.Series, optional): standard deviation of the model's predicted
+            formation energy.
+        ax (plt.Axes, optional): matplotlib axes to plot on.
+        which_energy (WhichEnergy, optional): Whether to use the true formation energy
+            or the model's predicted formation energy for the histogram.
+        stability_crit (StabilityCriterion, optional): Whether to add/subtract the
+            model's predicted uncertainty from its energy prediction when measuring
+            predicted stability.
+        stability_threshold (float, optional): set stability threshold as distance to
+            convex hull in eV/atom, usually 0 or 0.1 eV.
+        show_threshold (bool, optional): Whether to plot stability threshold as dashed
+            vertical line.
+        x_lim (tuple[float | None, float | None]): x-axis limits.
+        rolling_accuracy (float): Rolling accuracy window size in eV / atom. Set to 0 to
+            disable. Defaults to 0.01.
+
+    Returns:
+        tuple[plt.Axes, dict[str, float]]: plot axes and classification metrics
+
+    NOTE this figure plots hist bars separately which causes aliasing in pdf. Can be
+    fixed in Inkscape or similar by merging regions by color.
     """
     ax = ax or plt.gca()
 
@@ -153,26 +179,60 @@ def hist_classified_stable_as_func_of_hull_dist(
     #     e_above_hull_true
     # ), f"{n_all} != {len(e_above_hull_true)}"
 
-    # recall = n_true_pos / n_total_pos
-    # f"Prevalence = {null:.2f}\n{precision = :.2f}\n{recall = :.2f}",
-    text = f"Enrichment\nFactor = {precision/null:.3}"
-    if show_mae:
-        MAE = e_above_hull_pred.abs().mean()
-        text += f"\n{MAE = :.3}"
+    ax.set(xlabel=xlabel, ylabel="Number of compounds", xlim=x_lim)
 
-    ax.text(
-        0.98,
-        0.98,
-        text,
-        fontsize=18,
-        verticalalignment="top",
-        horizontalalignment="right",
-        transform=ax.transAxes,
-    )
+    if rolling_accuracy:
+        # add moving average of the accuracy (computed within 20 meV/atom intervals) as
+        # a function of ΔHd,MP is shown as a blue line (right axis)
+        ax_acc = ax.twinx()
+        ax_acc.set_ylabel("Accuracy", color="darkblue")
+        ax_acc.tick_params(labelcolor="darkblue")
+        ax_acc.set(ylim=(0, 1))
 
-    ax.set(xlabel=xlabel, ylabel="Number of compounds")
+        # --- moving average of the accuracy
+        # compute accuracy within 20 meV/atom intervals
+        bins = np.arange(x_lim[0], x_lim[1], rolling_accuracy)
+        bin_counts = np.histogram(e_above_hull_true, bins)[0]
+        bin_true_pos = np.histogram(true_pos, bins)[0]
+        bin_true_neg = np.histogram(true_neg, bins)[0]
 
-    return ax
+        # compute accuracy
+        bin_accuracies = (bin_true_pos + bin_true_neg) / bin_counts
+        # plot accuracy
+        ax_acc.plot(
+            bins[:-1],
+            bin_accuracies,
+            color="tab:blue",
+            label="Accuracy",
+            linewidth=3,
+        )
+        # ax2.fill_between(
+        #     bin_centers,
+        #     bin_accuracy - bin_accuracy_std,
+        #     bin_accuracy + bin_accuracy_std,
+        #     color="tab:blue",
+        #     alpha=0.2,
+        # )
+
+    if show_threshold:
+        ax.axvline(
+            stability_threshold,
+            color="k",
+            linestyle="--",
+            label="Stability Threshold",
+        )
+
+    recall = n_true_pos / n_total_pos
+
+    return ax, {
+        "enrichment": precision / null,
+        "precision": precision,
+        "recall": recall,
+        "prevalence": null,
+        "accuracy": (n_true_pos + n_true_neg)
+        / (n_true_pos + n_true_neg + n_false_pos + n_false_neg),
+        "f1": 2 * (precision * recall) / (precision + recall),
+    }
 
 
 def rolling_mae_vs_hull_dist(
