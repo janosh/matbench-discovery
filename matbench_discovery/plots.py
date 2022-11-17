@@ -63,7 +63,7 @@ plt.rcParams["figure.constrained_layout.use"] = True
 # --- end global plot settings
 
 
-def hist_classified_stable_as_func_of_hull_dist(
+def hist_classified_stable_vs_hull_dist(
     e_above_hull_pred: pd.Series,
     e_above_hull_true: pd.Series,
     std_pred: pd.Series = None,
