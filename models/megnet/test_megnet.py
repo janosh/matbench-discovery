@@ -36,6 +36,7 @@ slurm_vars = slurm_submit(
     partition="icelake-himem",
     account="LEE-SL3-CPU",
     time=(slurm_max_job_time := "12:0:0"),
+    slurm_flags=("--mem", "30G"),
     # TF_CPP_MIN_LOG_LEVEL=2 means INFO and WARNING logs are not printed
     # https://stackoverflow.com/a/40982782
     pre_cmd="TF_CPP_MIN_LOG_LEVEL=2",
@@ -89,7 +90,9 @@ else:
     raise ValueError(f"Unknown {task_type = }")
 
 megnet_e_form_preds = {}
-for material_id, structure in tqdm(structures.items(), total=len(structures)):
+for material_id, structure in tqdm(
+    structures.items(), disable=None, total=len(structures)
+):
     if material_id in megnet_e_form_preds:
         continue
     try:
