@@ -48,7 +48,7 @@ batch_size = 128
 slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
 input_col = "wyckoff_spglib"
 
-print(f"Job started running {timestamp}")
+print(f"\nJob started running {timestamp}")
 print(f"{run_name=}")
 print(f"{data_path=}")
 

@@ -23,8 +23,9 @@ module_dir = os.path.dirname(__file__)
 data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
 input_col = "initial_structure"
 data_name = "wbm" if "wbm" in data_path else "mp"
-slurm_array_task_count = 20
-job_name = f"voronoi-featurize-{data_name}"
+slurm_array_task_count = 10
+job_name = f"voronoi-features-{data_name}"
+log_dir = f"{module_dir}/{today}-{job_name}"
 
 slurm_vars = slurm_submit(
     job_name=job_name,
@@ -32,16 +33,19 @@ slurm_vars = slurm_submit(
     account="LEE-SL3-CPU",
     time=(slurm_max_job_time := "5:0:0"),
     array=f"1-{slurm_array_task_count}",
-    log_dir=f"{module_dir}/{job_name}",
+    log_dir=log_dir,
 )
 
 
 # %%
-df = pd.read_json(data_path).set_index("material_id")
-
 slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
 run_name = f"{job_name}-{slurm_array_task_id}"
+out_path = f"{log_dir}/{run_name}.csv.bz2"
 
+if os.path.isfile(out_path):
+    raise SystemExit(f"{out_path = } already exists, exciting early")
+
+df = pd.read_json(data_path).set_index("material_id")
 df_this_job: pd.DataFrame = np.array_split(df, slurm_array_task_count)[
     slurm_array_task_id - 1
 ]
@@ -90,6 +94,9 @@ featurizers = [
     feat_struct.StructureComposition(feat_comp.IonProperty(fast=True)),
 ]
 featurizer = MultipleFeaturizer(featurizers)
+# multiprocessing seems to be the cause of OOM errors on large structures even when
+# taking only small slice of the data and launching slurm jobs with --mem 100G
+featurizer.set_n_jobs(1)
 
 
 # %% prints lots of pymatgen warnings
@@ -97,11 +104,11 @@ featurizer = MultipleFeaturizer(featurizers)
 warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
 
 df_features = featurizer.featurize_dataframe(
-    df_this_job, input_col, ignore_errors=True, pbar=True
-)
+    df_this_job, input_col, ignore_errors=True, pbar=dict(position=0, leave=True)
+).drop(columns=input_col)
 
 
 # %%
-df_features.to_json(
-    f"{module_dir}/{today}-{run_name}.json.gz", default_handler=as_dict_handler
-)
+df_features.to_csv(out_path, default_handler=as_dict_handler)
+
+wandb.log({"voronoi_features": wandb.Table(dataframe=df_features)})

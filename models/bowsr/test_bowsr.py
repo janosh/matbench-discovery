@@ -58,9 +58,9 @@ slurm_vars = slurm_submit(
 
 # %%
 slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
-out_path = f"{out_dir}/{slurm_array_task_id}.json.gz"
+out_path = f"{out_dir}/bowsr-preds-{slurm_array_task_id}.json.gz"
 
-print(f"Job started running {timestamp}")
+print(f"\nJob started running {timestamp}")
 print(f"{data_path = }")
 print(f"{out_path = }")
 print(f"{version('maml') = }")

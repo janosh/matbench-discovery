@@ -44,7 +44,7 @@ slurm_vars = slurm_submit(
 
 
 # %%
-print(f"Job started running {timestamp}")
+print(f"\nJob started running {timestamp}")
 
 out_path = f"{out_dir}/megnet-e-form-preds.csv"
 if os.path.isfile(out_path):
@@ -55,7 +55,6 @@ if os.path.isfile(out_path):
 data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
 print(f"Loading from {data_path=}")
 df_wbm_structs = pd.read_json(data_path).set_index("material_id")
-
 
 megnet_mp_e_form = load_model(model_name := "Eform_MP_2019")
 
@@ -109,7 +108,7 @@ print(f"missing: {len(structures) - len(megnet_e_form_preds):,}")
 out_col = "e_form_per_atom_megnet"
 df_wbm[out_col] = pd.Series(megnet_e_form_preds)
 
-df_wbm[out_col].reset_index().to_csv(out_path)
+df_wbm[out_col].reset_index().to_csv(out_path, index=False)
 
 
 # %%
