@@ -18,7 +18,7 @@ markers = ["o", "v", "^", "H", "D", ""]
 
 data_path = (
     f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
-    # f"{ROOT}/models/wrenformer/mp/2022-09-20-wrenformer-e_form-ensemble-1-preds.csv"
+    # f"{ROOT}/models/wrenformer/2022-11-15-wrenformer-IS2RE-preds.csv"
 )
 df = pd.read_csv(data_path).set_index("material_id")
 legend_label = "Wren"
