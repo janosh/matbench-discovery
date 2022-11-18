@@ -19,7 +19,7 @@ df_wren = pd.read_csv(
 ).set_index("material_id")
 
 df_wrenformer = pd.read_csv(
-    f"{ROOT}/models/wrenformer/mp/2022-11-15-wrenformer-IS2RE-preds.csv"
+    f"{ROOT}/models/wrenformer/2022-11-15-wrenformer-IS2RE-preds.csv"
 ).set_index("material_id")
 
 

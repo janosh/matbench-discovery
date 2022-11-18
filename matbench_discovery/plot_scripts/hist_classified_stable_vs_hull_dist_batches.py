@@ -39,7 +39,7 @@ dfs["m3gnet"] = pd.read_json(
     f"{ROOT}/models/m3gnet/2022-10-31-m3gnet-wbm-IS2RE.json.gz"
 ).set_index("material_id")
 dfs["wrenformer"] = pd.read_csv(
-    f"{ROOT}/models/wrenformer/mp/2022-09-20-wrenformer-e_form-ensemble-1-preds.csv"
+    f"{ROOT}/models/wrenformer/2022-11-15-wrenformer-IS2RE-preds.csv"
 ).set_index("material_id")
 dfs["bowsr_megnet"] = pd.read_json(
     f"{ROOT}/models/bowsr/2022-09-22-bowsr-megnet-wbm-IS2RE.json.gz"
@@ -47,18 +47,22 @@ dfs["bowsr_megnet"] = pd.read_json(
 
 
 # %%
+pred_col = "e_form_per_atom_pred"
+target_col = "e_form_per_atom"
 if "wren" in dfs:
     df = dfs["wren"]
     pred_cols = df.filter(regex=r"_pred_\d").columns
     # make sure we average the expected number of ensemble member predictions
     assert len(pred_cols) == 10
-    df["e_form_per_atom_pred"] = df[pred_cols].mean(axis=1)
+    df[pred_col] = df[pred_cols].mean(axis=1)
 if "m3gnet" in dfs:
     df = dfs["m3gnet"]
-    df["e_form_per_atom_pred"] = df.e_form_per_atom_m3gnet
+    df[pred_col] = df.e_form_per_atom_m3gnet
 if "bowsr_megnet" in dfs:
     df = dfs["bowsr_megnet"]
-    df["e_form_per_atom_pred"] = df.e_form_per_atom_bowsr
+    df[pred_col] = df.e_form_per_atom_bowsr
+if "wrenformer" in dfs:
+    pred_col = "e_form_per_atom_mp2020_corrected_pred_ens"
 
 
 # %%
@@ -66,11 +70,11 @@ which_energy: WhichEnergy = "true"
 stability_crit: StabilityCriterion = "energy"
 fig, axs = plt.subplots(2, 3, figsize=(18, 9))
 
-model_name = "m3gnet"
+model_name = "wrenformer"
 df = dfs[model_name]
 
 df["e_above_hull_mp"] = df_wbm.e_above_hull_mp2020_corrected_ppd_mp
-df["e_form_per_atom"] = df_wbm.e_form_per_atom_mp2020_corrected
+df[target_col] = df_wbm.e_form_per_atom_mp2020_corrected  # e_form targets
 
 
 for batch_idx, ax in zip(range(1, 6), axs.flat):
@@ -78,7 +82,7 @@ for batch_idx, ax in zip(range(1, 6), axs.flat):
     assert 1e4 < len(batch_df) < 1e5, print(f"{len(batch_df) = :,}")
 
     ax, metrics = hist_classified_stable_vs_hull_dist(
-        e_above_hull_pred=batch_df.e_form_per_atom_pred - batch_df.e_form_per_atom,
+        e_above_hull_pred=batch_df[pred_col] - batch_df.e_form_per_atom,
         e_above_hull_true=batch_df.e_above_hull_mp,
         which_energy=which_energy,
         stability_crit=stability_crit,
@@ -93,7 +97,7 @@ for batch_idx, ax in zip(range(1, 6), axs.flat):
 
 
 ax, metrics = hist_classified_stable_vs_hull_dist(
-    e_above_hull_pred=df.e_form_per_atom_pred - df.e_form_per_atom,
+    e_above_hull_pred=df[pred_col] - df.e_form_per_atom,
     e_above_hull_true=df.e_above_hull_mp,
     which_energy=which_energy,
     stability_crit=stability_crit,
@@ -101,23 +105,20 @@ ax, metrics = hist_classified_stable_vs_hull_dist(
 )
 
 text = f"Enrichment\nFactor = {metrics['enrichment']:.3}"
-ax.text(0.02, 0.25, text, fontsize=16, transform=ax.transAxes)
+ax.text(0.02, 0.3, text, fontsize=16, transform=ax.transAxes)
 
-axs.flat[-1].set(title=f"Combined ({len(df.filter(like='e_').dropna()):,})")
+axs.flat[-1].set(title=f"All batches ({len(df.filter(like='e_').dropna()):,})")
 axs.flat[0].legend(frameon=False, loc="upper left")
 
-img_name = f"{today}-{model_name}-wbm-hull-dist-hist-batches"
-suptitle = img_name.replace("-", "/", 2).replace("-", " ")
-fig.suptitle(suptitle, y=1.07, fontsize=16)
+fig.suptitle(f"{today} {model_name}", y=1.07, fontsize=16)
 
 
 # %%
+img_name = f"{today}-{model_name}-wbm-hull-dist-hist-batches"
 ax.figure.savefig(f"{ROOT}/figures/{img_name}.pdf")
 
 
 # %%
 pymatviz.density_scatter(
-    df=dfs["m3gnet"].query("e_form_per_atom < 5"),
-    x="e_form_per_atom",
-    y="e_form_per_atom_pred",
+    df=dfs[model_name].query(f"{target_col} < 5"), x=target_col, y=pred_col
 )
