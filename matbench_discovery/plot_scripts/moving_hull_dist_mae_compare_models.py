@@ -38,7 +38,7 @@ fig, ax = plt.subplots(1, figsize=(10, 9))
 target_col = "e_form_target"
 
 for model_name, df in dfs.items():
-    rare = "all"
+    # rare = "all"
     # from pymatgen.core import Composition
     # rare = "no-lanthanides"
     # df["contains_rare_earths"] = df.composition.map(
@@ -70,5 +70,5 @@ legend = ax.legend(frameon=False, loc="lower right")
 for line in legend.get_lines():
     line._linewidth *= 2
 
-img_path = f"{ROOT}/figures/{today}-rolling-mae-vs-hull-dist-compare-models-{rare=}.pdf"
+img_path = f"{ROOT}/figures/{today}-rolling-mae-vs-hull-dist-compare-models.pdf"
 fig.savefig(img_path)
