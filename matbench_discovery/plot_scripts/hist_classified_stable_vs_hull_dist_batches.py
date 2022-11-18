@@ -36,7 +36,7 @@ dfs["wren"] = pd.read_csv(
     f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
 ).set_index("material_id")
 dfs["m3gnet"] = pd.read_json(
-    f"{ROOT}/models/m3gnet/2022-08-16-m3gnet-wbm-IS2RE.json.gz"
+    f"{ROOT}/models/m3gnet/2022-10-31-m3gnet-wbm-IS2RE.json.gz"
 ).set_index("material_id")
 dfs["wrenformer"] = pd.read_csv(
     f"{ROOT}/models/wrenformer/mp/2022-09-20-wrenformer-e_form-ensemble-1-preds.csv"
@@ -55,7 +55,7 @@ if "wren" in dfs:
     df["e_form_per_atom_pred"] = df[pred_cols].mean(axis=1)
 if "m3gnet" in dfs:
     df = dfs["m3gnet"]
-    df["e_form_per_atom_pred"] = df.e_form_m3gnet
+    df["e_form_per_atom_pred"] = df.e_form_per_atom_m3gnet
 if "bowsr_megnet" in dfs:
     df = dfs["bowsr_megnet"]
     df["e_form_per_atom_pred"] = df.e_form_per_atom_bowsr
@@ -106,7 +106,7 @@ ax.text(0.02, 0.25, text, fontsize=16, transform=ax.transAxes)
 axs.flat[-1].set(title=f"Combined ({len(df.filter(like='e_').dropna()):,})")
 axs.flat[0].legend(frameon=False, loc="upper left")
 
-img_name = f"{today}-{model_name}-wbm-hull-dist-hist-{which_energy=}-{stability_crit=}"
+img_name = f"{today}-{model_name}-wbm-hull-dist-hist-batches"
 suptitle = img_name.replace("-", "/", 2).replace("-", " ")
 fig.suptitle(suptitle, y=1.07, fontsize=16)
 
@@ -117,9 +117,7 @@ ax.figure.savefig(f"{ROOT}/figures/{img_name}.pdf")
 
 # %%
 pymatviz.density_scatter(
-    dfs["wren"].dropna().e_form_per_atom_pred, dfs["wren"].dropna().e_form_per_atom
-)
-
-pymatviz.density_scatter(
-    dfs["m3gnet"].dropna().e_form_per_atom_pred, dfs["m3gnet"].dropna().e_form_per_atom
+    df=dfs["m3gnet"].query("e_form_per_atom < 5"),
+    x="e_form_per_atom",
+    y="e_form_per_atom_pred",
 )

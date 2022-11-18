@@ -30,7 +30,7 @@ df_summary = pd.read_csv(f"{ROOT}/data/wbm/2022-10-19-wbm-summary.csv").set_inde
 
 
 # %%
-is2re_path_old = f"{ROOT}/models/m3gnet/2022-08-16-m3gnet-wbm-IS2RE.json.gz"
+is2re_path_old = f"{ROOT}/models/m3gnet/2022-10-31-m3gnet-wbm-IS2RE.json.gz"
 df_m3gnet_is2re_old = pd.read_json(is2re_path_old).set_index("material_id")
 
 is2re_path = f"{ROOT}/models/m3gnet/2022-10-31-m3gnet-wbm-IS2RE.json.gz"
@@ -226,5 +226,5 @@ fig.write_image(
 # %% write df back to compressed JSON
 # filter out columns containing 'rs2re'
 # df_m3gnet_is2re.reset_index().filter(regex="^((?!rs2re).)*$").to_json(
-#     f"{ROOT}/models/m3gnet/2022-08-16-m3gnet-wbm-IS2RE-2.json.gz"
+#     f"{ROOT}/models/m3gnet/2022-10-31-m3gnet-wbm-IS2RE-2.json.gz"
 # ).set_index("material_id")

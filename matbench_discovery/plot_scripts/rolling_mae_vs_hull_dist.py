@@ -25,7 +25,7 @@ legend_label = "Wren"
 
 
 # %%
-rare = "all"
+# rare = "all"
 # from pymatgen.core import Composition
 # rare = "no-lanthanides"
 # df["contains_rare_earths"] = df.composition.map(
@@ -62,5 +62,5 @@ fig = ax.figure
 fig.set_size_inches(10, 9)
 ax.legend(loc="lower right", frameon=False)
 
-img_path = f"{ROOT}/figures/{today}-rolling-mae-vs-hull-dist-{rare=}.pdf"
+img_path = f"{ROOT}/figures/{today}-rolling-mae-vs-hull-dist.pdf"
 # fig.savefig(img_path)
