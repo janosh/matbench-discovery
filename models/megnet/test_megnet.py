@@ -53,7 +53,7 @@ if os.path.isfile(out_path):
 
 # %%
 data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
-print(f"Loading from {data_path=}")
+print(f"{data_path=}")
 df_wbm_structs = pd.read_json(data_path).set_index("material_id")
 
 megnet_mp_e_form = load_model(model_name := "Eform_MP_2019")

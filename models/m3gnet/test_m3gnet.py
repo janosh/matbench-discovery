@@ -67,7 +67,7 @@ warnings.filterwarnings(action="ignore", category=UserWarning, module="tensorflo
 
 # %%
 data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-cses+init-structs.json.bz2"
-print(f"Loading from {data_path=}")
+print(f"{data_path=}")
 df_wbm = pd.read_json(data_path).set_index("material_id")
 
 df_this_job: pd.DataFrame = np.array_split(df_wbm, slurm_array_task_count)[
