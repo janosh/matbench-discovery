@@ -58,9 +58,12 @@ data_loader = df_to_in_mem_dataloader(
 
 # %%
 wandb.login()
+
+# ensemble_id = "wrenformer-e_form-ensemble-1"
 filters = {
     "$and": [{"created_at": {"$gt": "2022-11-10", "$lt": "2022-11-11"}}],
     "display_name": "wrenformer-robust-mp-formation_energy_per_atom-epochs=300",
+    # "tags": {"$in": [ensemble_id]},
 }
 runs = wandb.Api().runs("janosh/matbench-discovery", filters=filters)
 
