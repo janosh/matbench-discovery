@@ -1,5 +1,7 @@
 # %%
+import os
 import pickle
+import urllib.request
 from datetime import datetime
 
 import pandas as pd
@@ -13,10 +15,28 @@ __date__ = "2022-08-25"
 
 
 today = f"{datetime.now():%Y-%m-%d}"
+module_dir = os.path.dirname(__file__)
+
+"""
+Download and process M3GNet training set.
+https://figshare.com/articles/dataset/MPF_2021_2_8/19470599
+"""
 
 
-# %% block_{0,1}.p files downloaded from
-# https://figshare.com/articles/dataset/MPF_2021_2_8/19470599
+# %% download block_{0,1}.p files
+for filename, url in {
+    "block_0.p": "https://figshare.com/ndownloader/files/37587100",  # 556.78 MB
+    "block_1.p": "https://figshare.com/ndownloader/files/37587103",  # 555.47 MB
+}.items():
+    file_path = f"{module_dir}/{filename}"
+    if os.path.exists(file_path):
+        print(f"{file_path} already exists, skipping")
+        continue
+
+    urllib.request.urlretrieve(url, file_path)
+
+
+# %% join block_{0,1}.p files into single dataframe
 with open("block_0.p", "rb") as block_0:
     data = pickle.load(block_0)
 
