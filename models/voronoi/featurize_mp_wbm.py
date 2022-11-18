@@ -19,8 +19,8 @@ today = f"{datetime.now():%Y-%m-%d}"
 module_dir = os.path.dirname(__file__)
 
 
-# data_path = f"{ROOT}/data/mp/2022-09-16-mp-computed-structure-entries.json.gz"
-data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
+data_path = f"{ROOT}/data/mp/2022-09-16-mp-computed-structure-entries.json.gz"
+# data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
 input_col = "initial_structure"
 data_name = "wbm" if "wbm" in data_path else "mp"
 slurm_array_task_count = 10
@@ -31,7 +31,7 @@ slurm_vars = slurm_submit(
     job_name=job_name,
     partition="icelake-himem",
     account="LEE-SL3-CPU",
-    time=(slurm_max_job_time := "5:0:0"),
+    time=(slurm_max_job_time := "8:0:0"),
     array=f"1-{slurm_array_task_count}",
     log_dir=log_dir,
 )
@@ -45,12 +45,13 @@ out_path = f"{log_dir}/{run_name}.csv.bz2"
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path = } already exists, exciting early")
 
+print(f"{data_path=}")
 df = pd.read_json(data_path).set_index("material_id")
 df_this_job: pd.DataFrame = np.array_split(df, slurm_array_task_count)[
     slurm_array_task_id - 1
 ]
 
-if data_name == "mp":
+if data_name == "mp":  # extract structure dicts from ComputedStructureEntry
     struct_dicts = [x["structure"] for x in df_this_job.entry]
 if data_name == "wbm":
     struct_dicts = df_this_job.initial_structure
