@@ -68,7 +68,9 @@ for model_name, df in dfs.items():
 # increase line width in legend
 legend = ax.legend(frameon=False, loc="lower right")
 for line in legend.get_lines():
-    line._linewidth *= 2
+    line._linewidth *= 3
 
+
+# %%
 img_path = f"{ROOT}/figures/{today}-rolling-mae-vs-hull-dist-compare-models.pdf"
-fig.savefig(img_path)
+# fig.savefig(img_path)
