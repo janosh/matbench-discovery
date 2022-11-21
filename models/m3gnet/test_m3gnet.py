@@ -32,8 +32,7 @@ module_dir = os.path.dirname(__file__)
 # set large job array size for fast testing/debugging
 slurm_array_task_count = 100
 slurm_mem_per_node = 12000
-slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
-job_name = f"m3gnet-wbm-{task_type}-{slurm_job_id}"
+job_name = f"m3gnet-wbm-{task_type}"
 out_dir = f"{module_dir}/{today}-{job_name}"
 
 slurm_vars = slurm_submit(
@@ -85,9 +84,10 @@ run_params = dict(
 if wandb.run is None:
     wandb.login()
 
+slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
 wandb.init(
     project="matbench-discovery",
-    name=f"{job_name}-{slurm_array_task_id}",
+    name=f"{job_name}-{slurm_job_id}-{slurm_array_task_id}",
     config=run_params,
 )
 

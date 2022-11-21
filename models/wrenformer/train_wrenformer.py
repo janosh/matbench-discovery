@@ -24,7 +24,7 @@ target_col = "formation_energy_per_atom"
 # data_path = f"{ROOT}/data/2022-08-25-m3gnet-trainset-mp-2021-struct-energy.json.gz"
 # target_col = "mp_energy_per_atom"
 data_name = "m3gnet-trainset" if "m3gnet" in data_path else "mp"
-run_name = f"train-wrenformer-robust-{data_name}-{target_col}-{epochs=}"
+run_name = f"train-wrenformer-robust-{data_name}-{target_col}"
 n_folds = 10
 timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
 today = timestamp.split("@")[0]
@@ -65,8 +65,9 @@ run_params = dict(
     test_df=dict(shape=test_df.shape, columns=", ".join(test_df)),
 )
 
+slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
 train_wrenformer(
-    run_name=run_name,
+    run_name=f"{run_name}-{slurm_job_id}",
     train_df=train_df,
     test_df=test_df,
     target_col=target_col,

@@ -15,7 +15,7 @@ from tqdm import tqdm
 from matbench_discovery.slurm import slurm_submit
 
 """
-Train a Wrenformer ensemble of size n_folds on target_col of data_path.
+Train a CGCNN ensemble of size n_folds on target_col of data_path.
 """
 
 __author__ = "Janosh Riebesell"
@@ -25,7 +25,7 @@ __date__ = "2022-06-13"
 # %%
 epochs = 300
 target_col = "formation_energy_per_atom"
-run_name = f"cgcnn-robust-{target_col}-{epochs=}"
+run_name = f"cgcnn-robust-{target_col}"
 print(f"{run_name=}")
 robust = "robust" in run_name.lower()
 n_folds = 10
