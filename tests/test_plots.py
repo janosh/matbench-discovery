@@ -124,7 +124,7 @@ def test_rolling_mae_vs_hull_dist(
     assert ax is not None
     assert ax.get_ylim() == pytest.approx((0, 0.14))
     assert ax.get_ylabel() == "MAE (eV / atom)"
-    assert ax.get_xlabel() == r"$\Delta E_{Hull-MP}$ (eV / atom)"
+    assert ax.get_xlabel() == r"$E_\mathrm{above\ hull}$ (eV / atom)"
 
 
 @pytest.mark.parametrize("stability_threshold", (0.1, 0.01))
@@ -159,7 +159,7 @@ def test_hist_classified_stable_vs_hull_dist(
     assert ax is not None
     # assert ax.get_ylim() == pytest.approx((0, 6.3))
     assert ax.get_ylabel() == "Number of compounds"
-    assert ax.get_xlabel() == r"$\Delta E_{Hull-MP}$ (eV / atom)"
+    assert ax.get_xlabel() == r"$E_\mathrm{above\ hull}$ (eV / atom)"
 
     assert metrics["precision"] > 0.3
     assert metrics["recall"] > 0.3

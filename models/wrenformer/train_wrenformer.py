@@ -67,7 +67,7 @@ run_params = dict(
 
 slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
 train_wrenformer(
-    run_name=f"{run_name}-{slurm_job_id}",
+    run_name=f"{run_name}-{slurm_job_id}-{slurm_array_task_id}",
     train_df=train_df,
     test_df=test_df,
     target_col=target_col,

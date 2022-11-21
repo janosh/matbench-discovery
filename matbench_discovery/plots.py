@@ -144,7 +144,7 @@ def hist_classified_stable_vs_hull_dist(
         false_neg = e_above_hull_true[actual_pos & model_neg]
         false_pos = e_above_hull_true[actual_neg & model_pos]
         true_neg = e_above_hull_true[actual_neg & model_neg]
-        xlabel = r"$\Delta E_{Hull-MP}$ (eV / atom)"
+        xlabel = r"$E_\mathrm{above\ hull}$ (eV / atom)"
 
     # --- histogram of model-predicted distance to convex hull
     if which_energy == "pred":
@@ -292,54 +292,51 @@ def rolling_mae_vs_hull_dist(
         frameon=False,
         size_vertical=0.002,
     )
-
+    # indicate size of MAE averaging window
     ax.add_artist(scale_bar)
 
-    ax.plot((0.05, 0.5), (0.05, 0.5), color="grey", linestyle="--", alpha=0.3)
-    ax.plot((-0.5, -0.05), (0.5, 0.05), color="grey", linestyle="--", alpha=0.3)
-    ax.plot((-0.05, 0.05), (0.05, 0.05), color="grey", linestyle="--", alpha=0.3)
-    ax.plot((-0.1, 0.1), (0.1, 0.1), color="grey", linestyle="--", alpha=0.3)
-
+    # DFT accuracy at 25 meV/atom for relative e_above_hull which is lower than
+    # formation energy error due to systematic error cancellation among
+    # similar chemistries, supporting ref:
+    # https://journals.aps.org/prb/abstract/10.1103/PhysRevB.85.155208
+    dft_acc = 0.025
+    ax.plot((dft_acc, 1), (dft_acc, 1), color="grey", linestyle="--", alpha=0.3)
+    ax.plot((-1, -dft_acc), (1, dft_acc), color="grey", linestyle="--", alpha=0.3)
+    ax.plot(
+        (-dft_acc, dft_acc), (dft_acc, dft_acc), color="grey", linestyle="--", alpha=0.3
+    )
     ax.fill_between(
-        (-0.5, -0.05, 0.05, 0.5),
-        (0.5, 0.5, 0.5, 0.5),
-        (0.5, 0.05, 0.05, 0.5),
+        (-1, -dft_acc, dft_acc, 1),
+        (1, 1, 1, 1),
+        (1, dft_acc, dft_acc, 1),
         color="tab:red",
         alpha=0.2,
     )
 
-    ax.plot((0, 0.05), (0, 0.05), color="grey", linestyle="--", alpha=0.3)
-    ax.plot((-0.05, 0), (0.05, 0), color="grey", linestyle="--", alpha=0.3)
-
+    ax.plot((0, dft_acc), (0, dft_acc), color="grey", linestyle="--", alpha=0.3)
+    ax.plot((-dft_acc, 0), (dft_acc, 0), color="grey", linestyle="--", alpha=0.3)
     ax.fill_between(
-        (-0.05, 0, 0.05),
-        (0.05, 0.05, 0.05),
-        (0.05, 0, 0.05),
+        (-dft_acc, 0, dft_acc),
+        (dft_acc, dft_acc, dft_acc),
+        (dft_acc, 0, dft_acc),
         color="tab:orange",
         alpha=0.2,
     )
-
-    # shrink=0.05 means cut off 5% length from both sides of arrow line
+    # shrink=0.1 means cut off 10% length from both sides of arrow line
     arrowprops = dict(
-        facecolor="black", width=0.5, headwidth=5, headlength=5, shrink=0.05
+        facecolor="black", width=0.5, headwidth=5, headlength=5, shrink=0.1
     )
     ax.annotate(
-        xy=(0.05, 0.05),
-        xytext=(0.2, 0.05),
+        xy=(-dft_acc, dft_acc),
+        xytext=(-2 * dft_acc, dft_acc),
         text="Corrected\nGGA DFT\nAccuracy",
         arrowprops=arrowprops,
         verticalalignment="center",
-    )
-    ax.annotate(
-        xy=(0.1, 0.1),
-        xytext=(0.2, 0.1),
-        text="GGA DFT\nAccuracy",
-        arrowprops=arrowprops,
-        verticalalignment="center",
+        horizontalalignment="right",
     )
 
-    ax.text(0, 0.13, r"$|\Delta E_{Hull-MP}| > $MAE", horizontalalignment="center")
-    ax.set(xlabel=r"$\Delta E_{Hull-MP}$ (eV / atom)", ylabel="MAE (eV / atom)")
+    ax.text(0, 0.13, r"$|E_\mathrm{above\ hull}| > $MAE", horizontalalignment="center")
+    ax.set(xlabel=r"$E_\mathrm{above\ hull}$ (eV / atom)", ylabel="MAE (eV / atom)")
     ax.set(xlim=x_lim, ylim=(0.0, 0.14))
 
     return ax

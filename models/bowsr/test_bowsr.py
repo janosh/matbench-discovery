@@ -39,7 +39,7 @@ slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
 job_name = f"bowsr-megnet-wbm-{task_type}-{slurm_job_id}"
 out_dir = f"{module_dir}/{today}-{job_name}"
 
-data_path = f"{ROOT}/data/2022-10-19-wbm-init-structs.json.gz"
+data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
 
 slurm_vars = slurm_submit(
     job_name=job_name,
