@@ -3,26 +3,28 @@ import os
 import warnings
 from datetime import datetime
 
-import matminer.featurizers.composition as feat_comp
-import matminer.featurizers.structure as feat_struct
 import numpy as np
 import pandas as pd
 import wandb
-from matminer.featurizers.base import MultipleFeaturizer
 from pymatgen.core import Structure
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, as_dict_handler
 from matbench_discovery.slurm import slurm_submit
+from models.voronoi import featurizer
 
 today = f"{datetime.now():%Y-%m-%d}"
 module_dir = os.path.dirname(__file__)
 
 
-data_path = f"{ROOT}/data/mp/2022-09-16-mp-computed-structure-entries.json.gz"
-# data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
-input_col = "initial_structure"
-data_name = "wbm" if "wbm" in data_path else "mp"
+data_name = "mp"  # "mp"
+if data_name == "wbm":
+    data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
+    input_col = "initial_structure"
+elif data_name == "mp":
+    data_path = f"{ROOT}/data/mp/2022-09-16-mp-computed-structure-entries.json.gz"
+    input_col = "structure"
+
 slurm_array_task_count = 10
 job_name = f"voronoi-features-{data_name}"
 log_dir = f"{module_dir}/{today}-{job_name}"
@@ -39,7 +41,8 @@ slurm_vars = slurm_submit(
 
 # %%
 slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
-run_name = f"{job_name}-{slurm_array_task_id}"
+slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
+run_name = f"{job_name}-{slurm_job_id}-{slurm_array_task_id}"
 out_path = f"{log_dir}/{run_name}.csv.bz2"
 
 if os.path.isfile(out_path):
@@ -57,7 +60,7 @@ if data_name == "wbm":
     struct_dicts = df_this_job.initial_structure
 
 df_this_job[input_col] = [
-    Structure.from_dict(x) for x in tqdm(df_this_job.initial_structure, disable=None)
+    Structure.from_dict(x) for x in tqdm(struct_dicts, disable=None)
 ]
 
 
@@ -77,27 +80,6 @@ wandb.init(
     name=run_name,
     config=run_params,
 )
-
-
-# %% Create the featurizer: Ward et al. use a variety of different featurizers
-# https://journals.aps.org/prb/abstract/10.1103/PhysRevB.96.024104
-featurizers = [
-    feat_struct.SiteStatsFingerprint.from_preset("CoordinationNumber_ward-prb-2017"),
-    feat_struct.StructuralHeterogeneity(),
-    feat_struct.ChemicalOrdering(),
-    feat_struct.MaximumPackingEfficiency(),
-    feat_struct.SiteStatsFingerprint.from_preset(
-        "LocalPropertyDifference_ward-prb-2017"
-    ),
-    feat_struct.StructureComposition(feat_comp.Stoichiometry()),
-    feat_struct.StructureComposition(feat_comp.ElementProperty.from_preset("magpie")),
-    feat_struct.StructureComposition(feat_comp.ValenceOrbital(props=["frac"])),
-    feat_struct.StructureComposition(feat_comp.IonProperty(fast=True)),
-]
-featurizer = MultipleFeaturizer(featurizers)
-# multiprocessing seems to be the cause of OOM errors on large structures even when
-# taking only small slice of the data and launching slurm jobs with --mem 100G
-featurizer.set_n_jobs(1)
 
 
 # %% prints lots of pymatgen warnings
