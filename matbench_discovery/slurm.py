@@ -2,7 +2,6 @@ import os
 import subprocess
 import sys
 from collections.abc import Sequence
-from datetime import datetime
 
 SLURM_KEYS = (
     "job_id array_task_id array_task_count mem_per_node nodelist submit_host"
@@ -74,11 +73,12 @@ def slurm_submit(
         # before actual job command
         pre_cmd += ". /etc/profile.d/modules.sh; module load rhel8/default-amp;"
 
-    today = f"{datetime.now():%Y-%m-%d}"
+    os.makedirs(log_dir, exist_ok=True)  # slurm fails if log_dir is missing
+
     cmd = [
         *f"sbatch --{partition=} --{account=} --{time=}".replace("'", "").split(),
         *("--job-name", job_name),
-        *("--output", f"{log_dir}/{today}-slurm-%A{'-%a' if array else ''}.log"),
+        *("--output", f"{log_dir}/slurm-%A{'-%a' if array else ''}.log"),
         *slurm_flags,
         *("--wrap", f"{pre_cmd} python {py_file_path}".strip()),
     ]
@@ -103,8 +103,6 @@ def slurm_submit(
 
     if "slurm-submit" not in sys.argv:
         return slurm_vars  # if not submitting slurm job, resume outside code as normal
-
-    os.makedirs(log_dir, exist_ok=True)  # slurm fails if log_dir is missing
 
     result = subprocess.run(cmd, check=True)
 

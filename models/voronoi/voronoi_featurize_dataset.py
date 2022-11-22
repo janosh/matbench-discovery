@@ -15,7 +15,6 @@ from models.voronoi import featurizer
 
 today = f"{datetime.now():%Y-%m-%d}"
 module_dir = os.path.dirname(__file__)
-assert featurizer._n_jobs == 1, "set n_jobs=1 to avoid OOM errors"
 
 data_name = "mp"  # "mp"
 if data_name == "wbm":
@@ -25,7 +24,7 @@ elif data_name == "mp":
     data_path = f"{ROOT}/data/mp/2022-09-16-mp-computed-structure-entries.json.gz"
     input_col = "structure"
 
-slurm_array_task_count = 10
+slurm_array_task_count = 30
 job_name = f"voronoi-features-{data_name}"
 log_dir = f"{module_dir}/{today}-{job_name}"
 
@@ -33,9 +32,9 @@ slurm_vars = slurm_submit(
     job_name=job_name,
     partition="icelake-himem",
     account="LEE-SL3-CPU",
-    time=(slurm_max_job_time := "8:0:0"),
+    time=(slurm_max_job_time := "12:0:0"),
     array=f"1-{slurm_array_task_count}",
-    slurm_flags=("--mem", "30G") if data_name == "mp" else (),
+    slurm_flags=("--mem", "20G") if data_name == "mp" else (),
     log_dir=log_dir,
 )
 
@@ -66,10 +65,9 @@ df_this_job[input_col] = [
 # %%
 run_params = dict(
     data_path=data_path,
-    slurm_max_job_time=slurm_max_job_time,
     df=dict(shape=str(df_this_job.shape), columns=", ".join(df_this_job)),
     input_col=input_col,
-    slurm_vars=slurm_vars,
+    slurm_vars=slurm_vars | dict(slurm_max_job_time=slurm_max_job_time),
 )
 if wandb.run is None:
     wandb.login()
@@ -88,10 +86,12 @@ warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen"
 
 df_features = featurizer.featurize_dataframe(
     df_this_job, input_col, ignore_errors=True, pbar=dict(position=0, leave=True)
-).drop(columns=input_col)
+)
 
 
 # %%
-df_features.to_csv(out_path, default_handler=as_dict_handler)
+df_features[featurizer.feature_labels()].to_csv(
+    out_path, default_handler=as_dict_handler
+)
 
 wandb.log({"voronoi_features": wandb.Table(dataframe=df_features)})

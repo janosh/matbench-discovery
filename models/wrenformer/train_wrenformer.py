@@ -1,6 +1,7 @@
 # %%
 import os
 from datetime import datetime
+from importlib.metadata import version
 
 import pandas as pd
 from aviary.train import df_train_test_split, train_wrenformer
@@ -31,7 +32,7 @@ today = timestamp.split("@")[0]
 dataset = "mp"
 log_dir = f"{os.path.dirname(__file__)}/{dataset}/{today}-{run_name}"
 
-slurm_submit(
+slurm_vars = slurm_submit(
     job_name=run_name,
     partition="ampere",
     account="LEE-SL3-GPU",
@@ -60,9 +61,11 @@ train_df, test_df = df_train_test_split(df, test_size=0.05)
 
 run_params = dict(
     data_path=data_path,
+    aviary_version=version("aviary"),
     batch_size=batch_size,
     train_df=dict(shape=train_df.shape, columns=", ".join(train_df)),
     test_df=dict(shape=test_df.shape, columns=", ".join(test_df)),
+    slurm_vars=slurm_vars,
 )
 
 slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")

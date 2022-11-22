@@ -8,6 +8,7 @@ from importlib.metadata import version
 import pandas as pd
 import wandb
 from megnet.utils.models import load_model
+from sklearn.metrics import r2_score
 from tqdm import tqdm
 
 from matbench_discovery import ROOT
@@ -54,8 +55,10 @@ if os.path.isfile(out_path):
 # %%
 data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
 print(f"{data_path=}")
-df_wbm_structs = pd.read_json(data_path).set_index("material_id")
+target_col = "e_form_per_atom_mp2020_corrected"
+assert target_col in df_wbm, f"{target_col=} not in {list(df_wbm)=}"
 
+df_wbm_structs = pd.read_json(data_path).set_index("material_id")
 megnet_mp_e_form = load_model(model_name := "Eform_MP_2019")
 
 
@@ -65,9 +68,9 @@ run_params = dict(
     megnet_version=version("megnet"),
     model_name=model_name,
     task_type=task_type,
-    slurm_max_job_time=slurm_max_job_time,
+    target_col=target_col,
     df=dict(shape=str(df_wbm_structs.shape), columns=", ".join(df_wbm_structs)),
-    slurm_vars=slurm_vars,
+    slurm_vars=slurm_vars | dict(slurm_max_job_time=slurm_max_job_time),
 )
 if wandb.run is None:
     wandb.login()
@@ -105,26 +108,24 @@ for material_id, structure in tqdm(
 print(f"{len(megnet_e_form_preds)=:,}")
 print(f"{len(structures)=:,}")
 print(f"missing: {len(structures) - len(megnet_e_form_preds):,}")
-out_col = "e_form_per_atom_megnet"
-df_wbm[out_col] = pd.Series(megnet_e_form_preds)
+pred_col = "e_form_per_atom_megnet"
+df_wbm[pred_col] = pd.Series(megnet_e_form_preds)
 
-df_wbm[out_col].reset_index().to_csv(out_path, index=False)
+df_wbm[pred_col].reset_index().to_csv(out_path, index=False)
 
 
 # %%
-fields = {"x": "e_form_per_atom_mp2020_corrected", "y": out_col}
-cols = list(fields.values())
-assert all(col in df_wbm for col in cols)
+table = wandb.Table(dataframe=df_wbm[[target_col, pred_col]].reset_index())
 
-table = wandb.Table(dataframe=df_wbm[cols].reset_index())
-
-MAE = (df_wbm[fields["x"]] - df_wbm[fields["y"]]).abs().mean()
+MAE = (df_wbm[target_col] - df_wbm[pred_col]).abs().mean()
+R2 = r2_score(df_wbm[target_col], df_wbm[pred_col])
+title = f"{model_name} {task_type} {MAE=:.4} {R2=:.4}"
+print(title)
 
 scatter_plot = wandb.plot_table(
     vega_spec_name="janosh/scatter-parity",
     data_table=table,
-    fields=fields,
-    string_fields={"title": f"{model_name} {task_type} {MAE=:.4}"},
+    fields=dict(x=target_col, y=pred_col, title=title),
 )
 
 wandb.log({"true_pred_scatter": scatter_plot})

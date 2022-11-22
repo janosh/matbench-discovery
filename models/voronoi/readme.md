@@ -1,4 +1,4 @@
-# Voronoi Tessellation with matminer featurezation piped into `scikit-learn` Random Forest
+# Voronoi Tessellation with `matminer` featurization piped into `scikit-learn` `RandomForestRegressor`
 
 ## OOM errors during featurization
 
@@ -14,4 +14,4 @@ Saving tip came from [Alex Dunn via Slack](https://berkeleytheory.slack.com/arch
 
 ## Archive
 
-Files in `2022-10-04-rhys-voronoi.zip` received from Rhys via [Slack](https://ml-physics.slack.com/archives/DD8GBBRLN/p1664929946687049). All originals before making any changes for this project.
+Files in `2022-10-04-rhys-voronoi.zip` received from Rhys via [Slack](https://ml-physics.slack.com/archives/DD8GBBRLN/p1664929946687049). They are unchanged originals.
