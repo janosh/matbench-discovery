@@ -33,7 +33,6 @@ dfs: dict[str, pd.DataFrame] = {}
 for file_path in tqdm(file_paths):
     if file_path in dfs:
         continue
-    # keep whole dataframe in memory
     df = pd.read_json(file_path).set_index("material_id")
 
     df["bowsr_structure"] = df.structure_bowsr.map(Structure.from_dict)
@@ -51,20 +50,14 @@ df_bowsr = pd.concat(dfs.values())
 data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-summary.csv"
 df_wbm = pd.read_csv(data_path).set_index("material_id")
 
-df_bowsr["e_form_wbm"] = df_wbm.e_form_per_atom
 
-print(f"{len(df_bowsr) - len(df_wbm) = :,} = {len(df_bowsr):,} - {len(df_wbm):,}")
-
-
-# %%
-df_bowsr.hist(bins=200, figsize=(18, 12))
-df_bowsr.isna().sum()
+print(f"{len(df_bowsr):,} - {len(df_wbm):,} = {len(df_bowsr) - len(df_wbm) = :,}")
 
 
 # %%
 pymatviz.density_scatter(
-    df_bowsr.dropna().e_form_per_atom_bowsr,
-    df_bowsr.dropna().e_form_wbm,
+    x=df_bowsr.e_form_per_atom_bowsr_megnet,
+    y=df_bowsr.e_form_wbm,
 )
 
 
