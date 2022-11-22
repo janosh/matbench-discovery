@@ -35,8 +35,8 @@ slurm_mem_per_node = 12000
 slurm_array_task_count = 500
 timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
 today = timestamp.split("@")[0]
-slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
-job_name = f"bowsr-megnet-wbm-{task_type}-{slurm_job_id}"
+energy_model = "megnet"
+job_name = f"bowsr-{energy_model}-wbm-{task_type}"
 out_dir = f"{module_dir}/{today}-{job_name}"
 
 data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
@@ -64,7 +64,7 @@ print(f"\nJob started running {timestamp}")
 print(f"{data_path = }")
 print(f"{out_path = }")
 print(f"{version('maml') = }")
-print(f"{version('megnet') = }")
+print(f"{version(energy_model) = }")
 
 
 if os.path.isfile(out_path):
@@ -94,7 +94,8 @@ run_params = dict(
     data_path=data_path,
     df=dict(shape=str(df_this_job.shape), columns=", ".join(df_this_job)),
     maml_version=version("maml"),
-    megnet_version=version("megnet"),
+    energy_model=energy_model,
+    energy_model_version=version(energy_model),
     optimize_kwargs=optimize_kwargs,
     task_type=task_type,
     slurm_max_job_time=slurm_max_job_time,
@@ -103,12 +104,11 @@ run_params = dict(
 if wandb.run is None:
     wandb.login()
 
-# getting wandb: 429 encountered ({"error":"rate limit exceeded"}), retrying request
-# https://community.wandb.ai/t/753/14
+slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
 wandb.init(
     entity="janosh",
     project="matbench-discovery",
-    name=f"{job_name}-{slurm_array_task_id}",
+    name=f"{job_name}-{slurm_job_id}-{slurm_array_task_id}",
     config=run_params,
 )
 
@@ -146,11 +146,11 @@ for material_id, structure in tqdm(
 
     structure_bowsr, energy_bowsr = bayes_optimizer.get_optimized_structure_and_energy()
 
-    results = dict(
-        e_form_per_atom_bowsr=model.predict_energy(structure),
-        structure_bowsr=structure_bowsr,
-        energy_bowsr=energy_bowsr,
-    )
+    results = {
+        f"e_form_per_atom_bowsr_{energy_model}": model.predict_energy(structure),
+        "structure_bowsr": structure_bowsr,
+        "energy_bowsr": energy_bowsr,
+    }
 
     relax_results[material_id] = results
 

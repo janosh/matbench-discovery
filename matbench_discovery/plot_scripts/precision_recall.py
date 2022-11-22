@@ -43,7 +43,7 @@ stability_crit: StabilityCriterion = "energy"
 colors = "tab:blue tab:orange teal tab:pink black red turquoise tab:purple".split()
 F1s: dict[str, float] = {}
 
-for model_name, df in dfs.items():
+for model_name, df in sorted(dfs.items()):
     if "std" in stability_crit:
         # TODO column names to compute standard deviation from are currently hardcoded
         # needs to be updated when adding non-aviary models with uncertainty estimation
@@ -63,8 +63,8 @@ for model_name, df in dfs.items():
             # other cases are unexpected
             assert len(pred_cols) in (1, 10), f"{model_name=} has {len(pred_cols)=}"
             model_preds = df[pred_cols].mean(axis=1)
-        elif "bowsr" in model_name:
-            model_preds = df.e_form_per_atom_bowsr
+        elif model_name == "bowsr_megnet":
+            model_preds = df.e_form_per_atom_bowsr_megnet
         else:
             raise ValueError(f"Unhandled {model_name = }")
     except AttributeError as exc:

@@ -60,7 +60,7 @@ if "m3gnet" in dfs:
     df[pred_col] = df.e_form_per_atom_m3gnet
 if "bowsr_megnet" in dfs:
     df = dfs["bowsr_megnet"]
-    df[pred_col] = df.e_form_per_atom_bowsr
+    df[pred_col] = df.e_form_per_atom_bowsr_megnet
 if "wrenformer" in dfs:
     pred_col = "e_form_per_atom_mp2020_corrected_pred_ens"
 
