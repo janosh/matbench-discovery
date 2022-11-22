@@ -106,7 +106,6 @@ if wandb.run is None:
 
 slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
 wandb.init(
-    entity="janosh",
     project="matbench-discovery",
     name=f"{job_name}-{slurm_job_id}-{slurm_array_task_id}",
     config=run_params,

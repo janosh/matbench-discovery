@@ -15,7 +15,7 @@ from models.voronoi import featurizer
 
 today = f"{datetime.now():%Y-%m-%d}"
 module_dir = os.path.dirname(__file__)
-
+assert featurizer._n_jobs == 1, "set n_jobs=1 to avoid OOM errors"
 
 data_name = "mp"  # "mp"
 if data_name == "wbm":
@@ -35,15 +35,14 @@ slurm_vars = slurm_submit(
     account="LEE-SL3-CPU",
     time=(slurm_max_job_time := "8:0:0"),
     array=f"1-{slurm_array_task_count}",
+    slurm_flags=("--mem", "30G") if data_name == "mp" else (),
     log_dir=log_dir,
 )
 
 
 # %%
 slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
-slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
-run_name = f"{job_name}-{slurm_job_id}-{slurm_array_task_id}"
-out_path = f"{log_dir}/{run_name}.csv.bz2"
+out_path = f"{log_dir}/{job_name}.csv.bz2"
 
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path = } already exists, exciting early")
@@ -75,9 +74,10 @@ run_params = dict(
 if wandb.run is None:
     wandb.login()
 
+slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
 wandb.init(
     project="matbench-discovery",
-    name=run_name,
+    name=f"{job_name}-{slurm_job_id}-{slurm_array_task_id}",
     config=run_params,
 )
 
