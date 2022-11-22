@@ -33,7 +33,9 @@ module_dir = os.path.dirname(__file__)
 slurm_mem_per_node = 12000
 # set large job array size for fast testing/debugging
 slurm_array_task_count = 1000
-slurm_max_parallel = 100
+# see https://stackoverflow.com/a/55431306 for how to change array throttling
+# post submission
+slurm_max_parallel = 50
 timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
 today = timestamp.split("@")[0]
 energy_model = "megnet"
@@ -89,6 +91,9 @@ bayes_optim_kwargs = dict(
     seed=42,
 )
 optimize_kwargs = dict(n_init=100, n_iter=100, alpha=0.026**2)
+slurm_dict = dict(
+    slurm_max_parallel=slurm_max_parallel, slurm_max_job_time=slurm_max_job_time
+)
 
 run_params = dict(
     bayes_optim_kwargs=bayes_optim_kwargs,
@@ -99,8 +104,7 @@ run_params = dict(
     energy_model_version=version(energy_model),
     optimize_kwargs=optimize_kwargs,
     task_type=task_type,
-    slurm_max_job_time=slurm_max_job_time,
-    slurm_vars=slurm_vars | dict(slurm_max_parallel=slurm_max_parallel),
+    slurm_vars=slurm_vars | slurm_dict,
 )
 if wandb.run is None:
     wandb.login()

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
+from importlib.metadata import version
 
 import pandas as pd
 import wandb
@@ -10,7 +11,6 @@ from aviary.cgcnn.data import CrystalGraphData, collate_batch
 from aviary.cgcnn.model import CrystalGraphConvNet
 from aviary.deploy import predict_from_wandb_checkpoints
 from pymatgen.core import Structure
-from pymatviz import density_scatter
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -29,28 +29,25 @@ stores predictions to CSV.
 
 today = f"{datetime.now():%Y-%m-%d}"
 log_dir = f"{os.path.dirname(__file__)}/{today}-test"
-ensemble_id = "cgcnn-e_form-ensemble-1"
-run_name = f"{ensemble_id}-IS2RE"
+job_name = "test-cgcnn-ensemble"
 
-slurm_submit(
-    job_name=run_name,
+slurm_vars = slurm_submit(
+    job_name=job_name,
     partition="ampere",
     account="LEE-SL3-GPU",
-    time="1:0:0",
+    time=(slurm_max_job_time := "2:0:0"),
     log_dir=log_dir,
     slurm_flags=("--nodes", "1", "--gpus-per-node", "1"),
 )
 
 
 # %%
-data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
+task_type = "IS2RE"
+if task_type == "IS2RE":
+    data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
+elif task_type == "RS2RE":
+    data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-cses.json.bz2"
 df = pd.read_json(data_path).set_index("material_id", drop=False)
-old_len = len(df)
-no_init_structs = df.query("initial_structure.isnull()").index
-df = df.dropna()  # two missing initial structures
-assert len(df) == old_len - 2
-
-assert all(df.index == df_wbm.drop(index=no_init_structs).index)
 
 target_col = "e_form_per_atom_mp2020_corrected"
 df[target_col] = df_wbm[target_col]
@@ -60,12 +57,38 @@ assert input_col in df, f"{input_col=} not in {list(df)}"
 
 df[input_col] = [Structure.from_dict(x) for x in tqdm(df[input_col], disable=None)]
 
+filters = {
+    "$and": [{"created_at": {"$gt": "2022-11-22", "$lt": "2022-11-23"}}],
+    "display_name": {"$regex": "^cgcnn-robust"},
+}
 wandb.login()
-runs = wandb.Api().runs(
-    "janosh/matbench-discovery", filters={"tags": {"$in": [ensemble_id]}}
+runs = wandb.Api().runs("janosh/matbench-discovery", filters=filters)
+
+assert len(runs) == 10, f"Expected 10 runs, got {len(runs)} for {filters=}"
+for idx, run in enumerate(runs):
+    for key, val in run.config.items():
+        if val == runs[0][key] or key.startswith(("slurm_", "timestamp")):
+            continue
+        raise ValueError(
+            f"Configs not identical: runs[{idx}][{key}]={val}, {runs[0][key]=}"
+        )
+
+run_params = dict(
+    data_path=data_path,
+    df=dict(shape=str(df.shape), columns=", ".join(df)),
+    aviary_version=version("aviary"),
+    ensemble_size=len(runs),
+    task_type=task_type,
+    target_col=target_col,
+    input_col=input_col,
+    filters=filters,
+    slurm_vars=slurm_vars | dict(slurm_max_job_time=slurm_max_job_time),
 )
 
-assert len(runs) == 10, f"Expected 10 runs, got {len(runs)} for {ensemble_id=}"
+slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
+wandb.init(
+    project="matbench-discovery", name=f"{job_name}-{slurm_job_id}", config=run_params
+)
 
 cg_data = CrystalGraphData(
     df, task_dict={target_col: "regression"}, structure_col=input_col
@@ -82,14 +105,22 @@ df, ensemble_metrics = predict_from_wandb_checkpoints(
     data_loader=data_loader,
 )
 
-df.round(6).to_csv(f"{log_dir}/{today}-{run_name}-preds.csv", index=False)
+df.to_csv(f"{log_dir}/{today}-{job_name}-preds.csv", index=False)
+table = wandb.Table(dataframe=df)
 
 
 # %%
-print(f"{runs[0].url=}")
-ax = density_scatter(
-    df=df.query("e_form_per_atom_mp2020_corrected < 10"),
-    x="e_form_per_atom_mp2020_corrected",
-    y="e_form_per_atom_mp2020_corrected_pred_1",
+pred_col = f"{target_col}_pred_ens"
+MAE = ensemble_metrics["MAE"]
+R2 = ensemble_metrics["R2"]
+
+title = rf"CGCNN {task_type} ensemble={len(runs)} {MAE=:.4} {R2=:.4}"
+print(title)
+
+scatter_plot = wandb.plot_table(
+    vega_spec_name="janosh/scatter-parity",
+    data_table=table,
+    fields=dict(x=target_col, y=pred_col, title=title),
 )
-# ax.figure.savefig(f"{ROOT}/tmp/{today}-{run_name}-scatter-preds.png", dpi=300)
+
+wandb.log({"true_pred_scatter": scatter_plot})

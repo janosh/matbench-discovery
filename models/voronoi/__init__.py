@@ -19,6 +19,11 @@ featurizers = [
 ]
 featurizer = MultipleFeaturizer(featurizers)
 
+
 # multiprocessing seems to be the cause of OOM errors on large structures even when
 # taking only small slice of the data and launching slurm jobs with --mem 100G
+# Alex Dunn has been aware of this problem for a while. presumed cause: chunk of data
+# (eg 50 structures) is sent to a single process, but sometimes one of those structures
+# might be huge causing that process to stall. Other processes in pool can't synchronize
+# at the end, effectively freezing the job
 featurizer.set_n_jobs(1)

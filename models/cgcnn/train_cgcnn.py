@@ -25,7 +25,7 @@ __date__ = "2022-06-13"
 # %%
 epochs = 300
 target_col = "formation_energy_per_atom"
-run_name = f"cgcnn-robust-{target_col}"
+run_name = f"train-cgcnn-robust-{target_col}"
 print(f"{run_name=}")
 robust = "robust" in run_name.lower()
 n_ens = 10
@@ -33,7 +33,7 @@ timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
 today = timestamp.split("@")[0]
 log_dir = f"{os.path.dirname(__file__)}/{today}-{run_name}"
 
-slurm_submit(
+slurm_vars = slurm_submit(
     job_name=run_name,
     partition="ampere",
     account="LEE-SL3-GPU",
@@ -63,11 +63,13 @@ assert target_col in df
 
 train_df, test_df = df_train_test_split(df, test_size=0.05)
 
+print(f"{train_df.shape=}")
 train_data = CrystalGraphData(train_df, task_dict={target_col: task_type})
 train_loader = DataLoader(
     train_data, batch_size=batch_size, shuffle=True, collate_fn=collate_batch
 )
 
+print(f"{test_df.shape=}")
 test_data = CrystalGraphData(test_df, task_dict={target_col: task_type})
 test_loader = DataLoader(
     test_data, batch_size=batch_size, shuffle=False, collate_fn=collate_batch
@@ -90,6 +92,7 @@ run_params = dict(
     batch_size=batch_size,
     train_df=dict(shape=str(train_data.df.shape), columns=", ".join(train_df)),
     test_df=dict(shape=str(test_data.df.shape), columns=", ".join(test_df)),
+    slurm_vars=slurm_vars,
 )
 
 
@@ -111,4 +114,5 @@ train_model(
     timestamp=timestamp,
     train_loader=train_loader,
     wandb_path="janosh/matbench-discovery",
+    run_params=run_params,
 )
