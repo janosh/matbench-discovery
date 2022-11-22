@@ -32,7 +32,8 @@ module_dir = os.path.dirname(__file__)
 #     Some of your processes may have been killed by the cgroup out-of-memory handler.
 slurm_mem_per_node = 12000
 # set large job array size for fast testing/debugging
-slurm_array_task_count = 500
+slurm_array_task_count = 1000
+slurm_max_parallel = 100
 timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
 today = timestamp.split("@")[0]
 energy_model = "megnet"
@@ -46,9 +47,9 @@ slurm_vars = slurm_submit(
     log_dir=out_dir,
     partition="icelake-himem",
     account="LEE-SL3-CPU",
-    time=(slurm_max_job_time := "3:0:0"),
+    time=(slurm_max_job_time := "12:0:0"),
     # --time 2h is probably enough but best be safe.
-    array=f"1-{slurm_array_task_count}",
+    array=f"1-{slurm_array_task_count}%{slurm_max_parallel}",
     slurm_flags=("--mem", str(slurm_mem_per_node)),
     # TF_CPP_MIN_LOG_LEVEL=2 means INFO and WARNING logs are not printed
     # https://stackoverflow.com/a/40982782
@@ -99,7 +100,7 @@ run_params = dict(
     optimize_kwargs=optimize_kwargs,
     task_type=task_type,
     slurm_max_job_time=slurm_max_job_time,
-    slurm_vars=slurm_vars,
+    slurm_vars=slurm_vars | dict(slurm_max_parallel=slurm_max_parallel),
 )
 if wandb.run is None:
     wandb.login()
@@ -135,23 +136,26 @@ for material_id, structure in tqdm(
 ):
     if material_id in relax_results:
         continue
-    bayes_optimizer = BayesianOptimizer(
-        model=model, structure=structure, **bayes_optim_kwargs
-    )
-    bayes_optimizer.set_bounds()
-    # reason for devnull here: https://github.com/materialsvirtuallab/maml/issues/469
-    with open(os.devnull, "w") as devnull, contextlib.redirect_stdout(devnull):
-        bayes_optimizer.optimize(**optimize_kwargs)
+    try:
+        optimizer = BayesianOptimizer(
+            model=model, structure=structure, **bayes_optim_kwargs
+        )
+        optimizer.set_bounds()
+        # reason for devnull: https://github.com/materialsvirtuallab/maml/issues/469
+        with open(os.devnull, "w") as devnull, contextlib.redirect_stdout(devnull):
+            optimizer.optimize(**optimize_kwargs)
 
-    structure_bowsr, energy_bowsr = bayes_optimizer.get_optimized_structure_and_energy()
+        structure_bowsr, energy_bowsr = optimizer.get_optimized_structure_and_energy()
 
-    results = {
-        f"e_form_per_atom_bowsr_{energy_model}": model.predict_energy(structure),
-        "structure_bowsr": structure_bowsr,
-        "energy_bowsr": energy_bowsr,
-    }
+        results = {
+            f"e_form_per_atom_bowsr_{energy_model}": model.predict_energy(structure),
+            "structure_bowsr": structure_bowsr,
+            "energy_bowsr": energy_bowsr,
+        }
 
-    relax_results[material_id] = results
+        relax_results[material_id] = results
+    except Exception as exc:
+        print(f"{material_id=} raised {exc=}")
 
 
 # %%
