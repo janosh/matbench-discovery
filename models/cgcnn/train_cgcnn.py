@@ -3,7 +3,6 @@ import os
 from datetime import datetime
 
 import pandas as pd
-from aviary import ROOT
 from aviary.cgcnn.data import CrystalGraphData, collate_batch
 from aviary.cgcnn.model import CrystalGraphConvNet
 from aviary.core import TaskType
@@ -12,10 +11,11 @@ from pymatgen.core import Structure
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+from matbench_discovery import ROOT
 from matbench_discovery.slurm import slurm_submit
 
 """
-Train a CGCNN ensemble of size n_folds on target_col of data_path.
+Train a CGCNN ensemble of size n_ens on target_col of data_path.
 """
 
 __author__ = "Janosh Riebesell"
@@ -28,7 +28,7 @@ target_col = "formation_energy_per_atom"
 run_name = f"cgcnn-robust-{target_col}"
 print(f"{run_name=}")
 robust = "robust" in run_name.lower()
-n_folds = 10
+n_ens = 10
 timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
 today = timestamp.split("@")[0]
 log_dir = f"{os.path.dirname(__file__)}/{today}-{run_name}"
@@ -38,7 +38,7 @@ slurm_submit(
     partition="ampere",
     account="LEE-SL3-GPU",
     time="8:0:0",
-    array=f"1-{n_folds}",
+    array=f"1-{n_ens}",
     log_dir=log_dir,
     slurm_flags=("--nodes", "1", "--gpus-per-node", "1"),
 )

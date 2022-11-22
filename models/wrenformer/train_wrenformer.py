@@ -9,7 +9,7 @@ from matbench_discovery import ROOT
 from matbench_discovery.slurm import slurm_submit
 
 """
-Train a Wrenformer ensemble of size n_folds on target_col of data_path.
+Train a Wrenformer ensemble of size n_ens on target_col of data_path.
 """
 
 __author__ = "Janosh Riebesell"
@@ -25,7 +25,7 @@ target_col = "formation_energy_per_atom"
 # target_col = "mp_energy_per_atom"
 data_name = "m3gnet-trainset" if "m3gnet" in data_path else "mp"
 run_name = f"train-wrenformer-robust-{data_name}-{target_col}"
-n_folds = 10
+n_ens = 10
 timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
 today = timestamp.split("@")[0]
 dataset = "mp"
@@ -36,7 +36,7 @@ slurm_submit(
     partition="ampere",
     account="LEE-SL3-GPU",
     time="8:0:0",
-    array=f"1-{n_folds}",
+    array=f"1-{n_ens}",
     log_dir=log_dir,
     slurm_flags=("--nodes", "1", "--gpus-per-node", "1"),
 )
@@ -73,7 +73,7 @@ train_wrenformer(
     target_col=target_col,
     task_type="regression",
     timestamp=timestamp,
-    # folds=(n_folds, slurm_array_task_id),
+    # folds=(n_ens, slurm_array_task_id),
     epochs=epochs,
     checkpoint="wandb",  # None | 'local' | 'wandb',
     input_col=input_col,

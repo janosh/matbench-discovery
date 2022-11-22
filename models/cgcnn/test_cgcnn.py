@@ -27,8 +27,8 @@ formation energies, then makes predictions on some dataset, prints ensemble metr
 stores predictions to CSV.
 """
 
-module_dir = os.path.dirname(__file__)
 today = f"{datetime.now():%Y-%m-%d}"
+log_dir = f"{os.path.dirname(__file__)}/{today}-test"
 ensemble_id = "cgcnn-e_form-ensemble-1"
 run_name = f"{ensemble_id}-IS2RE"
 
@@ -37,7 +37,7 @@ slurm_submit(
     partition="ampere",
     account="LEE-SL3-GPU",
     time="1:0:0",
-    log_dir=module_dir,
+    log_dir=log_dir,
     slurm_flags=("--nodes", "1", "--gpus-per-node", "1"),
 )
 
@@ -82,7 +82,7 @@ df, ensemble_metrics = predict_from_wandb_checkpoints(
     data_loader=data_loader,
 )
 
-df.round(6).to_csv(f"{module_dir}/{today}-{run_name}-preds.csv", index=False)
+df.round(6).to_csv(f"{log_dir}/{today}-{run_name}-preds.csv", index=False)
 
 
 # %%
