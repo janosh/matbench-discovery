@@ -9,6 +9,7 @@ import plotly.express as px
 import plotly.io as pio
 import scipy.interpolate
 import scipy.stats
+import wandb
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 
 __author__ = "Janosh Riebesell"
@@ -379,6 +380,7 @@ def cumulative_clf_metric(
             axis projection lines.
         show_optimal (bool, optional): Whether to plot the optimal precision/recall
             line. Defaults to False.
+        **kwargs: Keyword arguments passed to ax.plot().
 
     Returns:
         plt.Axes: The matplotlib axes object.
@@ -474,3 +476,30 @@ def cumulative_clf_metric(
         )
 
     return ax
+
+
+def wandb_log_scatter(
+    table: wandb.Table, fields: dict[str, str], **kwargs: Any
+) -> None:
+    """Log a parity scatter plot using custom vega spec to WandB.
+
+    Args:
+        table (wandb.Table): WandB data table.
+        fields (dict[str, str]): Map from table columns to fields defined in the custom
+            vega spec. Currently the only Vega fields are 'x' and 'y'.
+        **kwargs: Keyword arguments passed to wandb.plot_table(string_fields=kwargs).
+    """
+    assert set(fields) >= {"x", "y"}, f"{fields=} must specify x and y column names"
+
+    if all("form" in field for field in fields.values()):
+        kwargs.setdefault("x", "DFT formation energy (eV/atom)")
+        kwargs.setdefault("y", "Predicted formation energy (eV/atom)")
+
+    scatter_plot = wandb.plot_table(
+        vega_spec_name="janosh/scatter-parity",
+        data_table=table,
+        fields=fields,
+        string_fields=kwargs,
+    )
+
+    wandb.log({"true_pred_scatter": scatter_plot})

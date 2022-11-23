@@ -16,6 +16,7 @@ from tqdm import tqdm
 
 from matbench_discovery import ROOT
 from matbench_discovery.plot_scripts import df_wbm
+from matbench_discovery.plots import wandb_log_scatter
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
@@ -67,7 +68,7 @@ runs = wandb.Api().runs("janosh/matbench-discovery", filters=filters)
 assert len(runs) == 10, f"Expected 10 runs, got {len(runs)} for {filters=}"
 for idx, run in enumerate(runs):
     for key, val in run.config.items():
-        if val == runs[0][key] or key.startswith(("slurm_", "timestamp")):
+        if val == runs[0].config[key] or key.startswith(("slurm_", "timestamp")):
             continue
         raise ValueError(
             f"Configs not identical: runs[{idx}][{key}]={val}, {runs[0][key]=}"
@@ -106,21 +107,15 @@ df, ensemble_metrics = predict_from_wandb_checkpoints(
 )
 
 df.to_csv(f"{log_dir}/{today}-{job_name}-preds.csv", index=False)
-table = wandb.Table(dataframe=df)
+pred_col = f"{target_col}_pred_ens"
+table = wandb.Table(dataframe=df[[target_col, pred_col]].reset_index())
 
 
 # %%
-pred_col = f"{target_col}_pred_ens"
-MAE = ensemble_metrics["MAE"]
-R2 = ensemble_metrics["R2"]
+MAE = ensemble_metrics.MAE.mean()
+R2 = ensemble_metrics.R2.mean()
 
 title = rf"CGCNN {task_type} ensemble={len(runs)} {MAE=:.4} {R2=:.4}"
 print(title)
 
-scatter_plot = wandb.plot_table(
-    vega_spec_name="janosh/scatter-parity",
-    data_table=table,
-    fields=dict(x=target_col, y=pred_col, title=title),
-)
-
-wandb.log({"true_pred_scatter": scatter_plot})
+wandb_log_scatter(table, fields=dict(x=target_col, y=pred_col), title=title)
