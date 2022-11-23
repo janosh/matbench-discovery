@@ -26,9 +26,10 @@ setup(
         "scipy",
         "plotly",
         "tqdm",
+        "wandb",
     ],
     extras_require={
         "test": ["pytest", "pytest-cov"],
-        "running-models": ["wandb", "m3gnet", "aviary", "maml", "megnet", "m3gnet-dgl"],
+        "running-models": ["m3gnet", "aviary", "maml", "megnet", "m3gnet-dgl"],
     },
 )

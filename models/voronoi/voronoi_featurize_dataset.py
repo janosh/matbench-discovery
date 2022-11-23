@@ -9,7 +9,7 @@ import wandb
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, as_dict_handler
+from matbench_discovery import ROOT
 from matbench_discovery.slurm import slurm_submit
 from models.voronoi import featurizer
 
@@ -34,7 +34,7 @@ slurm_vars = slurm_submit(
     account="LEE-SL3-CPU",
     time=(slurm_max_job_time := "12:0:0"),
     array=f"1-{slurm_array_task_count}",
-    slurm_flags=("--mem", "20G") if data_name == "mp" else (),
+    slurm_flags=("--mem", "15G") if data_name == "mp" else (),
     log_dir=log_dir,
 )
 
@@ -90,8 +90,6 @@ df_features = featurizer.featurize_dataframe(
 
 
 # %%
-df_features[featurizer.feature_labels()].to_csv(
-    out_path, default_handler=as_dict_handler
-)
+df_features[featurizer.feature_labels()].to_csv(out_path)
 
 wandb.log({"voronoi_features": wandb.Table(dataframe=df_features)})
