@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime
+import sys
 from importlib.metadata import version
 
 import pandas as pd
@@ -11,7 +11,7 @@ from aviary.deploy import predict_from_wandb_checkpoints
 from aviary.wrenformer.data import df_to_in_mem_dataloader
 from aviary.wrenformer.model import Wrenformer
 
-from matbench_discovery import ROOT
+from matbench_discovery import DEBUG, ROOT, today
 from matbench_discovery.plots import wandb_log_scatter
 from matbench_discovery.slurm import slurm_submit
 
@@ -24,10 +24,10 @@ formation energies, then makes predictions on some dataset, prints ensemble metr
 stores predictions to CSV.
 """
 
-today = f"{datetime.now():%Y-%m-%d}"
 task_type = "IS2RE"
 data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-summary.csv"
-job_name = "test-wrenformer-wbm-IS2RE"
+debug = "slurm-submit" in sys.argv
+job_name = f"test-wrenformer-wbm-IS2RE{'-debug' if DEBUG else ''}"
 module_dir = os.path.dirname(__file__)
 out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
@@ -80,10 +80,7 @@ run_params = dict(
     slurm_vars=slurm_vars,
 )
 
-slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
-wandb.init(
-    project="matbench-discovery", name=f"{job_name}-{slurm_job_id}", config=run_params
-)
+wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 
 # %%

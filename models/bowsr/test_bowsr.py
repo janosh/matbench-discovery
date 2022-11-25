@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import contextlib
 import os
-from datetime import datetime
 from importlib.metadata import version
 from typing import Any
 
@@ -14,7 +13,7 @@ from maml.apps.bowsr.model.megnet import MEGNet
 from maml.apps.bowsr.optimizer import BayesianOptimizer
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, as_dict_handler
+from matbench_discovery import DEBUG, ROOT, as_dict_handler, timestamp, today
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
@@ -36,10 +35,8 @@ slurm_array_task_count = 1000
 # see https://stackoverflow.com/a/55431306 for how to change array throttling
 # post submission
 slurm_max_parallel = 50
-timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
-today = timestamp.split("@")[0]
 energy_model = "megnet"
-job_name = f"bowsr-{energy_model}-wbm-{task_type}"
+job_name = f"bowsr-{energy_model}-wbm-{task_type}{'-debug' if DEBUG else ''}"
 out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
@@ -109,8 +106,7 @@ run_params = dict(
 if wandb.run is None:
     wandb.login()
 
-run_name = f"{job_name}-{slurm_array_task_id}"
-wandb.init(project="matbench-discovery", name=run_name, config=run_params)
+wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 
 # %%

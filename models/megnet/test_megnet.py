@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime
 from importlib.metadata import version
 
 import pandas as pd
@@ -11,7 +10,7 @@ from megnet.utils.models import load_model
 from sklearn.metrics import r2_score
 from tqdm import tqdm
 
-from matbench_discovery import ROOT
+from matbench_discovery import DEBUG, ROOT, timestamp, today
 from matbench_discovery.plot_scripts import df_wbm
 from matbench_discovery.plots import wandb_log_scatter
 from matbench_discovery.slurm import slurm_submit
@@ -26,10 +25,8 @@ __author__ = "Janosh Riebesell"
 __date__ = "2022-11-14"
 
 task_type = "IS2RE"
-timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
-today = timestamp.split("@")[0]
 module_dir = os.path.dirname(__file__)
-job_name = f"megnet-wbm-{task_type}"
+job_name = f"megnet-wbm-{task_type}{'-debug' if DEBUG else ''}"
 out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 slurm_vars = slurm_submit(
