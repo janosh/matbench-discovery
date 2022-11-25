@@ -69,7 +69,6 @@ filters = {
     "created_at": {"$gt": "2022-11-22", "$lt": "2022-11-23"},
     "display_name": {"$regex": "^cgcnn-robust"},
 }
-wandb.login()
 runs = wandb.Api().runs("janosh/matbench-discovery", filters=filters)
 
 assert len(runs) == 10, f"Expected 10 runs, got {len(runs)} for {filters=}"

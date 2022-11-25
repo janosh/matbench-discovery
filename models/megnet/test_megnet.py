@@ -67,8 +67,6 @@ run_params = dict(
     df=dict(shape=str(df_wbm_structs.shape), columns=", ".join(df_wbm_structs)),
     slurm_vars=slurm_vars,
 )
-if wandb.run is None:
-    wandb.login()
 
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 

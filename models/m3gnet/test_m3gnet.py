@@ -75,8 +75,6 @@ run_params = dict(
     df=dict(shape=str(df_this_job.shape), columns=", ".join(df_this_job)),
     slurm_vars=slurm_vars,
 )
-if wandb.run is None:
-    wandb.login()
 
 run_name = f"{job_name}-{slurm_array_task_id}"
 wandb.init(project="matbench-discovery", name=run_name, config=run_params)

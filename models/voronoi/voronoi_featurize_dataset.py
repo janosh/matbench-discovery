@@ -13,20 +13,19 @@ from matbench_discovery import DEBUG, ROOT, today
 from matbench_discovery.slurm import slurm_submit
 from models.voronoi import featurizer
 
-module_dir = os.path.dirname(__file__)
-
 data_name = "mp"  # "mp"
 if data_name == "wbm":
     data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
     input_col = "initial_structure"
 elif data_name == "mp":
     data_path = f"{ROOT}/data/mp/2022-09-16-mp-computed-structure-entries.json.gz"
-    input_col = "structure"
+    input_col = "relaxed_structure"
 
-slurm_array_task_count = 30
 debug = "slurm-submit" in sys.argv
 job_name = f"voronoi-features-{data_name}{'-debug' if DEBUG else ''}"
+module_dir = os.path.dirname(__file__)
 out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
+slurm_array_task_count = 50
 
 
 slurm_vars = slurm_submit(
@@ -70,9 +69,8 @@ run_params = dict(
     df=dict(shape=str(df_this_job.shape), columns=", ".join(df_this_job)),
     input_col=input_col,
     slurm_vars=slurm_vars,
+    out_path=out_path,
 )
-if wandb.run is None:
-    wandb.login()
 
 wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
@@ -82,11 +80,11 @@ wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
 
 df_features = featurizer.featurize_dataframe(
-    df_this_job, input_col, ignore_errors=True, pbar=dict(position=0, leave=True)
-)
+    df_this_job, input_col, ignore_errors=True
+)[featurizer.feature_labels()].round(6)
 
 
 # %%
-df_features[featurizer.feature_labels()].to_csv(out_path)
+df_features.to_csv(out_path)
 
 wandb.log({"voronoi_features": wandb.Table(dataframe=df_features)})
