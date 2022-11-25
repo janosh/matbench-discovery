@@ -60,6 +60,9 @@ slurm_vars = slurm_submit(
 slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
 out_path = f"{out_dir}/bowsr-preds-{slurm_array_task_id}.json.gz"
 
+if os.path.isfile(out_path):
+    raise SystemExit(f"{out_path = } already exists, exciting early")
+
 print(f"\nJob started running {timestamp}")
 print(f"{data_path = }")
 print(f"{out_path = }")
@@ -67,12 +70,7 @@ print(f"{version('maml') = }")
 print(f"{version(energy_model) = }")
 
 
-if os.path.isfile(out_path):
-    raise SystemExit(f"{out_path = } already exists, exciting early")
-
-
 # %%
-print(f"Loading from {data_path = }")
 df_wbm = pd.read_json(data_path).set_index("material_id")
 
 df_this_job: pd.DataFrame = np.array_split(df_wbm, slurm_array_task_count)[

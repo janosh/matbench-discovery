@@ -1,16 +1,12 @@
 # %%
-from datetime import datetime
-
 import pandas as pd
 
-from matbench_discovery import ROOT
+from matbench_discovery import ROOT, today
 from matbench_discovery.plot_scripts import df_wbm
 from matbench_discovery.plots import plt, rolling_mae_vs_hull_dist
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
-
-today = f"{datetime.now():%Y-%m-%d}"
 
 
 # %%
@@ -19,7 +15,8 @@ dfs["Wren"] = pd.read_csv(
     f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
 ).set_index("material_id")
 dfs["CGCNN ISRE"] = pd.read_csv(
-    f"{ROOT}/data/2022-06-11-from-rhys/cgcnn-mp-initial-structures.csv"
+    # f"{ROOT}/data/2022-06-11-from-rhys/cgcnn-mp-initial-structures.csv"
+    f"{ROOT}/models/cgcnn/2022-11-23-test-cgcnn-wbm-IS2RE/cgcnn-ensemble-preds.csv"
 ).set_index("material_id")
 dfs["CGCNN RS2RE"] = pd.read_csv(
     f"{ROOT}/data/2022-06-11-from-rhys/cgcnn-mp-cse.csv"
@@ -34,11 +31,18 @@ dfs["Wrenformer"] = pd.read_csv(
     f"{ROOT}/models/wrenformer/2022-11-15-wrenformer-IS2RE-preds.csv"
 ).set_index("material_id")
 
+dfs["megnet"] = (
+    pd.read_csv(
+        f"{ROOT}/models/megnet/2022-11-18-megnet-wbm-IS2RE/megnet-e-form-preds.csv"
+    )
+    .set_index("material_id")
+    .dropna()
+)
 dfs["m3gnet"] = pd.read_json(
     f"{ROOT}/models/m3gnet/2022-10-31-m3gnet-wbm-IS2RE.json.gz"
 ).set_index("material_id")
-dfs["bowsr_megnet"].reset_index().to_json(
-    f"{ROOT}/models/bowsr/2022-09-22-bowsr-megnet-wbm-IS2RE.json.gz"
+dfs["bowsr_megnet"] = pd.read_json(
+    f"{ROOT}/models/bowsr/2022-11-22-bowsr-megnet-wbm-IS2RE.json.gz"
 ).set_index("material_id")
 
 

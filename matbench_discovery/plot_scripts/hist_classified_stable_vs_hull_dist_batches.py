@@ -38,7 +38,7 @@ dfs["wrenformer"] = pd.read_csv(
     f"{ROOT}/models/wrenformer/2022-11-15-wrenformer-IS2RE-preds.csv"
 ).set_index("material_id")
 dfs["bowsr_megnet"] = pd.read_json(
-    f"{ROOT}/models/bowsr/2022-09-22-bowsr-megnet-wbm-IS2RE.json.gz"
+    f"{ROOT}/models/bowsr/2022-11-22-bowsr-megnet-wbm-IS2RE.json.gz"
 ).set_index("material_id")
 
 
