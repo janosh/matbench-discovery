@@ -38,7 +38,7 @@ slurm_vars = slurm_submit(
     time="8:0:0",
     array=f"1-{ensemble_size}",
     out_dir=out_dir,
-    slurm_flags=("--nodes", "1", "--gpus-per-node", "1"),
+    slurm_flags="--nodes 1 --gpus-per-node 1",
 )
 
 

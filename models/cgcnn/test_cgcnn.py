@@ -38,9 +38,9 @@ slurm_vars = slurm_submit(
     job_name=job_name,
     partition="ampere",
     account="LEE-SL3-GPU",
-    time=(slurm_max_job_time := "2:0:0"),
+    time="2:0:0",
     out_dir=out_dir,
-    slurm_flags=("--nodes", "1", "--gpus-per-node", "1"),
+    slurm_flags="--nodes 1 --gpus-per-node 1",
 )
 
 
@@ -90,7 +90,7 @@ run_params = dict(
     target_col=target_col,
     input_col=input_col,
     filters=filters,
-    slurm_vars=slurm_vars | dict(slurm_max_job_time=slurm_max_job_time),
+    slurm_vars=slurm_vars,
 )
 
 

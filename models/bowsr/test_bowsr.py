@@ -46,7 +46,7 @@ slurm_vars = slurm_submit(
     out_dir=out_dir,
     partition="icelake-himem",
     account="LEE-SL3-CPU",
-    time=(slurm_max_job_time := "12:0:0"),
+    time="12:0:0",
     # --time 2h is probably enough but best be safe.
     array=f"1-{slurm_array_task_count}%{slurm_max_parallel}",
     slurm_flags=("--mem", str(slurm_mem_per_node)),
@@ -86,9 +86,6 @@ bayes_optim_kwargs = dict(
     seed=42,
 )
 optimize_kwargs = dict(n_init=100, n_iter=100, alpha=0.026**2)
-slurm_dict = dict(
-    slurm_max_parallel=slurm_max_parallel, slurm_max_job_time=slurm_max_job_time
-)
 
 run_params = dict(
     bayes_optim_kwargs=bayes_optim_kwargs,
@@ -99,7 +96,7 @@ run_params = dict(
     energy_model_version=version(energy_model),
     optimize_kwargs=optimize_kwargs,
     task_type=task_type,
-    slurm_vars=slurm_vars | slurm_dict,
+    slurm_vars=slurm_vars,
 )
 if wandb.run is None:
     wandb.login()

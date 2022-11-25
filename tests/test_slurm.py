@@ -25,12 +25,15 @@ def test_slurm_submit(capsys: CaptureFixture[str], py_file_path: str | None) -> 
         partition=partition,
         account=account,
         py_file_path=py_file_path,
-        slurm_flags=("--test-flag",),
+        slurm_flags="--foo",
     )
 
     slurm_vars = func_call()
 
-    assert slurm_vars == {"slurm_job_id": "1234"}
+    assert slurm_vars == dict(
+        slurm_job_id="1234", slurm_timelimit="0:0:1", slurm_flags="--foo"
+    )
+
     stdout, stderr = capsys.readouterr()
     # check slurm_submit() did nothing in normal mode
     assert stderr == stderr == ""
@@ -45,7 +48,7 @@ def test_slurm_submit(capsys: CaptureFixture[str], py_file_path: str | None) -> 
 
     sbatch_cmd = (
         f"sbatch --partition={partition} --account={account} --time={time} "
-        f"--job-name {job_name} --output {out_dir}/slurm-%A.log --test-flag "
+        f"--job-name {job_name} --output {out_dir}/slurm-%A.log --foo "
         f"--wrap python {py_file_path or __file__}"
     ).replace(" --", "\n  --")
     stdout, stderr = capsys.readouterr()
