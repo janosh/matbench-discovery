@@ -40,13 +40,13 @@ timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
 today = timestamp.split("@")[0]
 energy_model = "megnet"
 job_name = f"bowsr-{energy_model}-wbm-{task_type}"
-out_dir = f"{module_dir}/{today}-{job_name}"
+out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
 
 slurm_vars = slurm_submit(
     job_name=job_name,
-    log_dir=out_dir,
+    out_dir=out_dir,
     partition="icelake-himem",
     account="LEE-SL3-CPU",
     time=(slurm_max_job_time := "12:0:0"),
@@ -109,12 +109,8 @@ run_params = dict(
 if wandb.run is None:
     wandb.login()
 
-slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
-wandb.init(
-    project="matbench-discovery",
-    name=f"{job_name}-{slurm_job_id}-{slurm_array_task_id}",
-    config=run_params,
-)
+run_name = f"{job_name}-{slurm_array_task_id}"
+wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 
 # %%

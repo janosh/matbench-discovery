@@ -25,20 +25,22 @@ target_col = "formation_energy_per_atom"
 # data_path = f"{ROOT}/data/2022-08-25-m3gnet-trainset-mp-2021-struct-energy.json.gz"
 # target_col = "mp_energy_per_atom"
 data_name = "m3gnet-trainset" if "m3gnet" in data_path else "mp"
-run_name = f"train-wrenformer-robust-{data_name}"
+job_name = f"train-wrenformer-robust-{data_name}"
 n_ens = 10
 timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
 today = timestamp.split("@")[0]
 dataset = "mp"
-log_dir = f"{os.path.dirname(__file__)}/{dataset}/{today}-{run_name}"
+module_dir = os.path.dirname(__file__)
+out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
+
 
 slurm_vars = slurm_submit(
-    job_name=run_name,
+    job_name=job_name,
     partition="ampere",
     account="LEE-SL3-GPU",
     time="8:0:0",
     array=f"1-{n_ens}",
-    log_dir=log_dir,
+    out_dir=out_dir,
     slurm_flags=("--nodes", "1", "--gpus-per-node", "1"),
 )
 
@@ -50,7 +52,7 @@ slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
 input_col = "wyckoff_spglib"
 
 print(f"\nJob started running {timestamp}")
-print(f"{run_name=}")
+print(f"{job_name=}")
 print(f"{data_path=}")
 
 df = pd.read_json(data_path).set_index("material_id", drop=False)
@@ -70,7 +72,7 @@ run_params = dict(
 
 slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
 train_wrenformer(
-    run_name=f"{run_name}-{slurm_job_id}-{slurm_array_task_id}",
+    run_name=f"{job_name}-{slurm_job_id}-{slurm_array_task_id}",
     train_df=train_df,
     test_df=test_df,
     target_col=target_col,

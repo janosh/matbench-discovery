@@ -29,37 +29,44 @@ stores predictions to CSV.
 """
 
 today = f"{datetime.now():%Y-%m-%d}"
-log_dir = f"{os.path.dirname(__file__)}/{today}-test"
-job_name = "test-cgcnn-ensemble"
+task_type = "RS2RE"
+job_name = f"test-cgcnn-wbm-{task_type}"
+module_dir = os.path.dirname(__file__)
+out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 slurm_vars = slurm_submit(
     job_name=job_name,
     partition="ampere",
     account="LEE-SL3-GPU",
     time=(slurm_max_job_time := "2:0:0"),
-    log_dir=log_dir,
+    out_dir=out_dir,
     slurm_flags=("--nodes", "1", "--gpus-per-node", "1"),
 )
 
 
 # %%
-task_type = "IS2RE"
 if task_type == "IS2RE":
     data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
+    input_col = "initial_structure"
 elif task_type == "RS2RE":
     data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-cses.json.bz2"
+    input_col = "relaxed_structure"
+else:
+    raise ValueError(f"Unexpected {task_type=}")
+
 df = pd.read_json(data_path).set_index("material_id", drop=False)
 
 target_col = "e_form_per_atom_mp2020_corrected"
 df[target_col] = df_wbm[target_col]
-input_col = "initial_structure"
 assert target_col in df, f"{target_col=} not in {list(df)}"
+if task_type == "RS2RE":
+    df[input_col] = [x["structure"] for x in df.computed_structure_entry]
 assert input_col in df, f"{input_col=} not in {list(df)}"
 
 df[input_col] = [Structure.from_dict(x) for x in tqdm(df[input_col], disable=None)]
 
 filters = {
-    "$and": [{"created_at": {"$gt": "2022-11-22", "$lt": "2022-11-23"}}],
+    "created_at": {"$gt": "2022-11-22", "$lt": "2022-11-23"},
     "display_name": {"$regex": "^cgcnn-robust"},
 }
 wandb.login()
@@ -87,9 +94,8 @@ run_params = dict(
 )
 
 slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
-wandb.init(
-    project="matbench-discovery", name=f"{job_name}-{slurm_job_id}", config=run_params
-)
+run_name = f"{job_name}-{slurm_job_id}"
+wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 cg_data = CrystalGraphData(
     df, task_dict={target_col: "regression"}, structure_col=input_col
@@ -106,7 +112,7 @@ df, ensemble_metrics = predict_from_wandb_checkpoints(
     data_loader=data_loader,
 )
 
-df.to_csv(f"{log_dir}/{today}-{job_name}-preds.csv", index=False)
+df.to_csv(f"{out_dir}/{job_name}-preds.csv", index=False)
 pred_col = f"{target_col}_pred_ens"
 table = wandb.Table(dataframe=df[[target_col, pred_col]].reset_index())
 

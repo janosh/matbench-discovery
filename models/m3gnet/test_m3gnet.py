@@ -33,11 +33,11 @@ module_dir = os.path.dirname(__file__)
 slurm_array_task_count = 100
 slurm_mem_per_node = 12000
 job_name = f"m3gnet-wbm-{task_type}"
-out_dir = f"{module_dir}/{today}-{job_name}"
+out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 slurm_vars = slurm_submit(
     job_name=job_name,
-    log_dir=out_dir,
+    out_dir=out_dir,
     partition="icelake-himem",
     account="LEE-SL3-CPU",
     time=(slurm_max_job_time := "3:0:0"),

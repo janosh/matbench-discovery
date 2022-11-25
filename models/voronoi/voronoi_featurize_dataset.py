@@ -26,7 +26,8 @@ elif data_name == "mp":
 
 slurm_array_task_count = 30
 job_name = f"voronoi-features-{data_name}"
-log_dir = f"{module_dir}/{today}-{job_name}"
+out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
+
 
 slurm_vars = slurm_submit(
     job_name=job_name,
@@ -35,13 +36,13 @@ slurm_vars = slurm_submit(
     time=(slurm_max_job_time := "12:0:0"),
     array=f"1-{slurm_array_task_count}",
     slurm_flags=("--mem", "15G") if data_name == "mp" else (),
-    log_dir=log_dir,
+    out_dir=out_dir,
 )
 
 
 # %%
 slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
-out_path = f"{log_dir}/{job_name}.csv.bz2"
+out_path = f"{out_dir}/{job_name}.csv.bz2"
 
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path = } already exists, exciting early")

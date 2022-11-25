@@ -28,14 +28,15 @@ today = f"{datetime.now():%Y-%m-%d}"
 task_type = "IS2RE"
 data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-summary.csv"
 job_name = "test-wrenformer-wbm-IS2RE"
-log_dir = f"{os.path.dirname(__file__)}/{today}-{job_name}"
+module_dir = os.path.dirname(__file__)
+out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 slurm_vars = slurm_submit(
     job_name=job_name,
     partition="ampere",
     account="LEE-SL3-GPU",
     time="2:0:0",
-    log_dir=log_dir,
+    out_dir=out_dir,
     slurm_flags=("--nodes", "1", "--gpus-per-node", "1"),
 )
 
@@ -99,7 +100,7 @@ df, ensemble_metrics = predict_from_wandb_checkpoints(
     runs, data_loader=data_loader, df=df, model_cls=Wrenformer, target_col=target_col
 )
 
-df.to_csv(f"{log_dir}/{job_name}-preds.csv")
+df.to_csv(f"{out_dir}/{job_name}-preds.csv")
 
 
 # %%

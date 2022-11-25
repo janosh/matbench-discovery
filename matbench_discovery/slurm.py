@@ -24,7 +24,7 @@ def _get_calling_file_path(frame: int = 1) -> str:
 
 def slurm_submit(
     job_name: str,
-    log_dir: str,
+    out_dir: str,
     time: str,
     partition: str,
     account: str,
@@ -41,7 +41,7 @@ def slurm_submit(
 
     Args:
         job_name (str): Slurm job name.
-        log_dir (str): Directory to write slurm logs. Log file will include slurm job
+        out_dir (str): Directory to write slurm logs. Log file will include slurm job
             ID and array task ID.
         time (str): 'HH:MM:SS' time limit for the job.
         py_file_path (str, optional): Path to the python script to be submitted.
@@ -73,12 +73,12 @@ def slurm_submit(
         # before actual job command
         pre_cmd += ". /etc/profile.d/modules.sh; module load rhel8/default-amp;"
 
-    os.makedirs(log_dir, exist_ok=True)  # slurm fails if log_dir is missing
+    os.makedirs(out_dir, exist_ok=True)  # slurm fails if out_dir is missing
 
     cmd = [
         *f"sbatch --{partition=} --{account=} --{time=}".replace("'", "").split(),
         *("--job-name", job_name),
-        *("--output", f"{log_dir}/slurm-%A{'-%a' if array else ''}.log"),
+        *("--output", f"{out_dir}/slurm-%A{'-%a' if array else ''}.log"),
         *slurm_flags,
         *("--wrap", f"{pre_cmd} python {py_file_path}".strip()),
     ]
