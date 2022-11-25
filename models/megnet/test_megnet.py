@@ -43,15 +43,12 @@ slurm_vars = slurm_submit(
 
 
 # %%
-print(f"\nJob started running {timestamp}")
-
 out_path = f"{out_dir}/megnet-e-form-preds.csv"
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path = } already exists, exciting early")
 
-
-# %%
 data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
+print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
 target_col = "e_form_per_atom_mp2020_corrected"
 assert target_col in df_wbm, f"{target_col=} not in {list(df_wbm)=}"

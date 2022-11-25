@@ -27,7 +27,7 @@ dfs["wrenformer"] = pd.read_csv(
 ).set_index("material_id")
 
 dfs["bowsr_megnet"] = pd.read_json(
-    f"{ROOT}/models/bowsr/2022-09-22-bowsr-megnet-wbm-IS2RE.json.gz"
+    f"{ROOT}/models/bowsr/2022-11-22-bowsr-megnet-wbm-IS2RE.json.gz"
 ).set_index("material_id")
 
 print(f"loaded models: {list(dfs)}")

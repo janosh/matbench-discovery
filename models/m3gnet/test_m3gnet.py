@@ -48,10 +48,6 @@ slurm_vars = slurm_submit(
 
 # %%
 slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
-
-print(f"\nJob started running {timestamp}")
-print(f"{version('m3gnet') = }")
-
 out_path = f"{out_dir}/m3gnet-preds-{slurm_array_task_id}.json.gz"
 
 if os.path.isfile(out_path):
@@ -63,6 +59,8 @@ warnings.filterwarnings(action="ignore", category=UserWarning, module="tensorflo
 
 # %%
 data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-cses+init-structs.json.bz2"
+print(f"\nJob started running {timestamp}")
+print(f"{version('m3gnet') = }")
 print(f"{data_path=}")
 df_wbm = pd.read_json(data_path).set_index("material_id")
 
