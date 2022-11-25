@@ -3,7 +3,6 @@ import gzip
 import json
 import os
 import pickle
-from datetime import datetime
 
 import pandas as pd
 import pymatviz
@@ -12,10 +11,9 @@ from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedEntry, ComputedStructureEntry
 from pymatgen.ext.matproj import MPRester
 
-from matbench_discovery import ROOT
+from matbench_discovery import ROOT, today
 from matbench_discovery.energy import get_e_form_per_atom, get_elemental_ref_entries
 
-today = f"{datetime.now():%Y-%m-%d}"
 module_dir = os.path.dirname(__file__)
 
 

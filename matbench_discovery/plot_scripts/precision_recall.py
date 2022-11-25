@@ -1,17 +1,12 @@
 # %%
-from datetime import datetime
-
-import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.metrics import f1_score
 
-from matbench_discovery import ROOT
+from matbench_discovery import ROOT, today
 from matbench_discovery.plot_scripts import df_wbm
-from matbench_discovery.plots import StabilityCriterion, cumulative_clf_metric
+from matbench_discovery.plots import StabilityCriterion, cumulative_clf_metric, plt
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
-
-today = f"{datetime.now():%Y-%m-%d}"
 
 
 # %%
@@ -118,10 +113,11 @@ for ax in (ax_prec, ax_recall):
 # x-ticks every 10k materials
 # ax.set(xticks=range(0, int(ax.get_xlim()[1]), 10_000))
 
-fig.suptitle(f"{today} ")
+fig.suptitle(f"{today} {stability_crit=}")
 xlabel_cumulative = "Materials predicted stable sorted by hull distance"
 fig.text(0.5, -0.08, xlabel_cumulative, ha="center")
 
 
 # %%
-# fig.savefig(f"{ROOT}/figures/{today}-precision-recall-curves.pdf")
+img_path = f"{ROOT}/figures/{today}-precision-recall-curves.pdf"
+# fig.savefig(img_path)

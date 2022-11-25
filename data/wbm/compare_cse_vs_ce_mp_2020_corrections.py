@@ -2,7 +2,6 @@
 import gzip
 import json
 import warnings
-from datetime import datetime
 
 import pandas as pd
 from pymatgen.entries.compatibility import (
@@ -12,7 +11,7 @@ from pymatgen.entries.compatibility import (
 from pymatgen.entries.computed_entries import ComputedEntry, ComputedStructureEntry
 from tqdm import tqdm
 
-from matbench_discovery import ROOT
+from matbench_discovery import ROOT, today
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.plot_scripts import df_wbm
 from matbench_discovery.plots import plt
@@ -23,7 +22,6 @@ correcting energies (only applies to certain oxides and sulfides). Always use
 ComputedStructureEntry, not ComputedEntry when applying corrections.
 """
 
-today = f"{datetime.now():%Y-%m-%d}"
 
 cse_path = f"{ROOT}/data/wbm/2022-10-19-wbm-cses.json.bz2"
 df_cse = pd.read_json(cse_path).set_index("material_id")
@@ -101,7 +99,7 @@ for key, df_anion in df_ce_ne_cse.groupby("anion"):
 
 ax.axline((0, 0), slope=1, color="gray", linestyle="dashed", zorder=-1)
 
-# ax.figure.savefig(f"{ROOT}/tmp/{today}-ce-vs-cse-corrections-outliers.pdf")
+ax.figure.savefig(f"{ROOT}/tmp/{today}-ce-vs-cse-corrections-outliers.pdf")
 
 
 # %%
@@ -122,7 +120,7 @@ ax.axline((0, 0), slope=1, color="gray", linestyle="dashed", zorder=-1)
 # insight: all materials for which ComputedEntry and ComputedStructureEntry give
 # different formation energies are oxides or sulfides for which MP 2020 compat takes
 # into account structural information to make more accurate corrections.
-# ax.figure.savefig(f"{ROOT}/tmp/{today}-ce-vs-cse-outliers.pdf")
+ax.figure.savefig(f"{ROOT}/tmp/{today}-ce-vs-cse-e-form-outliers.pdf")
 
 
 # %% below code resulted in
