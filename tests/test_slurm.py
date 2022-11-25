@@ -13,14 +13,14 @@ from matbench_discovery.slurm import _get_calling_file_path, slurm_submit
 @pytest.mark.parametrize("py_file_path", [None, "path/to/file.py"])
 def test_slurm_submit(capsys: CaptureFixture[str], py_file_path: str | None) -> None:
     job_name = "test_job"
-    log_dir = "tmp"
+    out_dir = "tmp"
     time = "0:0:1"
     partition = "fake-partition"
     account = "fake-account"
 
     func_call = lambda: slurm_submit(
         job_name=job_name,
-        log_dir=log_dir,
+        out_dir=out_dir,
         time=time,
         partition=partition,
         account=account,
@@ -45,7 +45,7 @@ def test_slurm_submit(capsys: CaptureFixture[str], py_file_path: str | None) -> 
 
     sbatch_cmd = (
         f"sbatch --partition={partition} --account={account} --time={time} "
-        f"--job-name {job_name} --output {log_dir}/slurm-%A.log --test-flag "
+        f"--job-name {job_name} --output {out_dir}/slurm-%A.log --test-flag "
         f"--wrap python {py_file_path or __file__}"
     ).replace(" --", "\n  --")
     stdout, stderr = capsys.readouterr()
