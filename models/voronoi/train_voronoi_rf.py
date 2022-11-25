@@ -1,16 +1,15 @@
 # %%
 import os
-from datetime import datetime
 
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 
+from matbench_discovery import today
 from matbench_discovery.plot_scripts import df_wbm
 from models.voronoi import featurizer
 
-today = f"{datetime.now():%Y-%m-%d}"
 module_dir = os.path.dirname(__file__)
 
 
@@ -67,7 +66,7 @@ print(f"MAE = {(df_test[target_col] - df_test[pred_col]).abs().mean():=.3}")
 
 cols = ["material_id", target_col, pred_col]
 
-df_test[cols].to_csv(f"{module_dir}/voronoi-rf-e-form-preds-{task_type}.csv")
+df_test[cols].to_csv(f"{module_dir}/{today}-voronoi-rf-e-form-preds-{task_type}.csv")
 
 
 # %%
@@ -85,4 +84,4 @@ df_test[pred_col] = model.predict(df_test)
 
 print(f"MAE = {(df_test[target_col] - df_test[pred_col]).abs().mean():=.3}")
 
-df_test[cols].to_csv(f"{module_dir}/voronoi-rf-e-form-preds-{task_type}.csv")
+df_test[cols].to_csv(f"{module_dir}/{today}-voronoi-rf-e-form-preds-{task_type}.csv")

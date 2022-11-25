@@ -2,19 +2,17 @@
 import os
 import pickle
 import urllib.request
-from datetime import datetime
 
 import pandas as pd
 from aviary.wren.utils import get_aflow_label_from_spglib
 from tqdm import tqdm
 
-from matbench_discovery import ROOT
+from matbench_discovery import ROOT, today
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-25"
 
 
-today = f"{datetime.now():%Y-%m-%d}"
 module_dir = os.path.dirname(__file__)
 
 """

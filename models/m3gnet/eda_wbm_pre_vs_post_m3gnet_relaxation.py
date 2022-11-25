@@ -1,6 +1,4 @@
 # %%
-from datetime import datetime
-
 import pandas as pd
 import plotly.express as px
 from pymatgen.core import Structure
@@ -9,13 +7,12 @@ from pymatviz import density_scatter
 from pymatviz.utils import add_identity_line
 from sklearn.metrics import r2_score
 
-from matbench_discovery import ROOT, plots
+from matbench_discovery import ROOT, plots, today
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-06-18"
 
 
-today = f"{datetime.now():%Y-%m-%d}"
 del plots  # https://github.com/PyCQA/pyflakes/issues/366
 
 

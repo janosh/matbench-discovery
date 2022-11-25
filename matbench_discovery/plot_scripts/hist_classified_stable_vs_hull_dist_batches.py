@@ -1,10 +1,8 @@
 # %%
-from datetime import datetime
-
 import pandas as pd
 import pymatviz
 
-from matbench_discovery import ROOT
+from matbench_discovery import ROOT, today
 from matbench_discovery.plot_scripts import df_wbm
 from matbench_discovery.plots import (
     StabilityCriterion,
@@ -26,8 +24,6 @@ majority of materials below the convex hull being correctly identified by the mo
 
 See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
 """
-
-today = f"{datetime.now():%Y-%m-%d}"
 
 
 # %%

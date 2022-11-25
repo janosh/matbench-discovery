@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime
 from glob import glob
 
 import pandas as pd
@@ -10,8 +9,6 @@ from tqdm import tqdm
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-16"
-
-today = f"{datetime.now():%Y-%m-%d}"
 
 
 # %%

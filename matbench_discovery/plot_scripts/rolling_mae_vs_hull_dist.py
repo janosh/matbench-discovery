@@ -1,16 +1,12 @@
 # %%
-from datetime import datetime
-
 import pandas as pd
 
-from matbench_discovery import ROOT
+from matbench_discovery import ROOT, today
 from matbench_discovery.plot_scripts import df_wbm
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
-
-today = f"{datetime.now():%Y-%m-%d}"
 
 
 # %%

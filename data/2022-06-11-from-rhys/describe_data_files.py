@@ -1,5 +1,4 @@
 # %%
-from datetime import datetime
 from glob import glob
 
 import pandas as pd
@@ -11,8 +10,6 @@ __date__ = "2022-08-03"
 This module loads all the data files in this directory as pandas dataframes and writes
 the output of their describe() method to markdown file.
 """
-
-today = f"{datetime.now():%Y-%m-%d}"
 
 
 # %%

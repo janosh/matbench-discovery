@@ -4,7 +4,6 @@ import os
 import pickle
 import urllib.request
 import warnings
-from datetime import datetime
 from glob import glob
 
 import pandas as pd
@@ -21,7 +20,7 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz import density_scatter
 from tqdm import tqdm
 
-from matbench_discovery import ROOT
+from matbench_discovery import ROOT, today
 from matbench_discovery.energy import get_e_form_per_atom
 
 try:
@@ -40,7 +39,6 @@ https://nature.com/articles/s41524-020-00481-6
 
 
 module_dir = os.path.dirname(__file__)
-today = f"{datetime.now():%Y-%m-%d}"
 warnings.filterwarnings("ignore", category=UserWarning, module="pymatgen")
 
 

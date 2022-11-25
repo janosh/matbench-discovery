@@ -1,12 +1,13 @@
 # %%
 import os
-from datetime import datetime
 
 import pandas as pd
 from aviary.utils import as_dict_handler
 from aviary.wren.utils import get_aflow_label_from_spglib
 from mp_api.client import MPRester
 from tqdm import tqdm
+
+from matbench_discovery import today
 
 """
 Download all MP formation and above hull energies on 2022-08-13.
@@ -18,7 +19,7 @@ https://github.com/janosh/pymatviz/blob/main/examples/mp_bimodal_e_form.ipynb
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-13"
 
-today = f"{datetime.now():%Y-%m-%d}"
+
 module_dir = os.path.dirname(__file__)
 
 

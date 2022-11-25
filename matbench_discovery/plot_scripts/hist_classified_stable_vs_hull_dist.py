@@ -1,9 +1,7 @@
 # %%
-from datetime import datetime
-
 import pandas as pd
 
-from matbench_discovery import ROOT
+from matbench_discovery import ROOT, today
 from matbench_discovery.plot_scripts import df_wbm
 from matbench_discovery.plots import (
     StabilityCriterion,
@@ -24,8 +22,6 @@ majority of materials below the convex hull being correctly identified by the mo
 
 See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
 """
-
-today = f"{datetime.now():%Y-%m-%d}"
 
 
 # %%
@@ -78,5 +74,7 @@ ax.legend(
     title=f"Enrichment Factor = {metrics['enrichment']:.3}",
 )
 
-fig_name = f"wren-wbm-hull-dist-hist-{which_energy=}-{stability_crit=}"
-# fig.savefig(f"{ROOT}/figures/{today}-{fig_name}.pdf")
+
+# %%
+fig_name = f"{today}-wren-wbm-hull-dist-hist-{which_energy=}-{stability_crit=}"
+# fig.savefig(f"{ROOT}/figures/{fig_name}.pdf")
