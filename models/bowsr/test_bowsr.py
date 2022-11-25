@@ -98,8 +98,6 @@ run_params = dict(
     task_type=task_type,
     slurm_vars=slurm_vars,
 )
-if wandb.run is None:
-    wandb.login()
 
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 

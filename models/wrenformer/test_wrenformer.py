@@ -51,8 +51,6 @@ assert input_col in df, f"{input_col=} not in {list(df)}"
 
 
 # %%
-wandb.login()
-
 filters = {
     "created_at": {"$gt": "2022-11-15", "$lt": "2022-11-16"},
     "display_name": {"$regex": "wrenformer-robust"},
