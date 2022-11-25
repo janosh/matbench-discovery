@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import subprocess
 import sys
@@ -29,7 +31,7 @@ def slurm_submit(
     partition: str,
     account: str,
     py_file_path: str = None,
-    slurm_flags: Sequence[str] = (),
+    slurm_flags: str | Sequence[str] = (),
     array: str = None,
     pre_cmd: str = "",
 ) -> dict[str, str]:
@@ -48,7 +50,7 @@ def slurm_submit(
             Defaults to the path of the file calling slurm_submit().
         partition (str, optional): Slurm partition.
         account (str, optional): Account to charge for this job.
-        slurm_flags (Sequence[str], optional): Extra slurm CLI flags. Defaults to ().
+        slurm_flags (str | list[str], optional): Extra slurm CLI flags. Defaults to ().
             Examples: ('--nodes 1', '--gpus-per-node 1') or ('--mem', '16000').
         array (str, optional): Slurm array specifier. Defaults to None. Example:
             '9' (for SLURM_ARRAY_TASK_ID from 0-9 inclusive), '1-10' or '1-10%2', etc.
@@ -79,7 +81,7 @@ def slurm_submit(
         *f"sbatch --{partition=} --{account=} --{time=}".replace("'", "").split(),
         *("--job-name", job_name),
         *("--output", f"{out_dir}/slurm-%A{'-%a' if array else ''}.log"),
-        *slurm_flags,
+        *(slurm_flags.split() if isinstance(slurm_flags, str) else slurm_flags),
         *("--wrap", f"{pre_cmd} python {py_file_path}".strip()),
     ]
     if array:
@@ -93,6 +95,11 @@ def slurm_submit(
         for key in SLURM_KEYS
         if (val := os.environ.get(f"SLURM_{key}".upper()))
     }
+    slurm_vars["slurm_timelimit"] = time
+    if slurm_flags:
+        slurm_vars["slurm_flags"] = str(slurm_flags)
+    if pre_cmd:
+        slurm_vars["pre_cmd"] = pre_cmd
 
     if (is_slurm_job and is_log_file) or "slurm-submit" in sys.argv:
         # print sbatch command at submission time and into slurm log file

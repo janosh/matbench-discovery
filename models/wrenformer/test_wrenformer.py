@@ -37,7 +37,7 @@ slurm_vars = slurm_submit(
     account="LEE-SL3-GPU",
     time="2:0:0",
     out_dir=out_dir,
-    slurm_flags=("--nodes", "1", "--gpus-per-node", "1"),
+    slurm_flags="--nodes 1 --gpus-per-node 1",
 )
 
 

@@ -34,7 +34,7 @@ slurm_vars = slurm_submit(
     out_dir=out_dir,
     partition="icelake-himem",
     account="LEE-SL3-CPU",
-    time=(slurm_max_job_time := "12:0:0"),
+    time="12:0:0",
     slurm_flags=("--mem", "30G"),
     # TF_CPP_MIN_LOG_LEVEL=2 means INFO and WARNING logs are not printed
     # https://stackoverflow.com/a/40982782
@@ -65,7 +65,7 @@ run_params = dict(
     task_type=task_type,
     target_col=target_col,
     df=dict(shape=str(df_wbm_structs.shape), columns=", ".join(df_wbm_structs)),
-    slurm_vars=slurm_vars | dict(slurm_max_job_time=slurm_max_job_time),
+    slurm_vars=slurm_vars,
 )
 if wandb.run is None:
     wandb.login()

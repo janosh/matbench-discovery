@@ -37,7 +37,7 @@ slurm_vars = slurm_submit(
     out_dir=out_dir,
     partition="icelake-himem",
     account="LEE-SL3-CPU",
-    time=(slurm_max_job_time := "3:0:0"),
+    time="3:0:0",
     array=f"1-{slurm_array_task_count}",
     slurm_flags=("--mem", str(slurm_mem_per_node)),
     # TF_CPP_MIN_LOG_LEVEL=2 means INFO and WARNING logs are not printed
@@ -73,7 +73,7 @@ run_params = dict(
     m3gnet_version=version("m3gnet"),
     task_type=task_type,
     df=dict(shape=str(df_this_job.shape), columns=", ".join(df_this_job)),
-    slurm_vars=slurm_vars | dict(slurm_max_job_time=slurm_max_job_time),
+    slurm_vars=slurm_vars,
 )
 if wandb.run is None:
     wandb.login()
