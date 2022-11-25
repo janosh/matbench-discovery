@@ -3,12 +3,13 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from matbench_discovery import PKG_DIR, ROOT, as_dict_handler, chunks
+from matbench_discovery import ROOT, as_dict_handler, chunks, timestamp, today
 
 
-def test_has_root_pkg_dir() -> None:
+def test_has_globals() -> None:
     assert os.path.isdir(ROOT)
-    assert os.path.isdir(PKG_DIR)
+    assert today == timestamp.split("@")[0]
+    assert len(timestamp) == 19
 
 
 def test_chunks() -> None:

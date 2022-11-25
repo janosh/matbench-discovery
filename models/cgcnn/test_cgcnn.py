@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime
+import sys
 from importlib.metadata import version
 
 import pandas as pd
@@ -14,7 +14,7 @@ from pymatgen.core import Structure
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from matbench_discovery import ROOT
+from matbench_discovery import DEBUG, ROOT, today
 from matbench_discovery.plot_scripts import df_wbm
 from matbench_discovery.plots import wandb_log_scatter
 from matbench_discovery.slurm import slurm_submit
@@ -28,9 +28,9 @@ formation energies, then makes predictions on some dataset, prints ensemble metr
 stores predictions to CSV.
 """
 
-today = f"{datetime.now():%Y-%m-%d}"
 task_type = "RS2RE"
-job_name = f"test-cgcnn-wbm-{task_type}"
+debug = "slurm-submit" in sys.argv
+job_name = f"test-cgcnn-wbm-{task_type}{'-debug' if DEBUG else ''}"
 module_dir = os.path.dirname(__file__)
 out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
@@ -93,9 +93,8 @@ run_params = dict(
     slurm_vars=slurm_vars | dict(slurm_max_job_time=slurm_max_job_time),
 )
 
-slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
-run_name = f"{job_name}-{slurm_job_id}"
-wandb.init(project="matbench-discovery", name=run_name, config=run_params)
+
+wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 cg_data = CrystalGraphData(
     df, task_dict={target_col: "regression"}, structure_col=input_col

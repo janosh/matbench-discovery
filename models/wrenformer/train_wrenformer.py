@@ -1,16 +1,15 @@
 # %%
 import os
-from datetime import datetime
 from importlib.metadata import version
 
 import pandas as pd
 from aviary.train import df_train_test_split, train_wrenformer
 
-from matbench_discovery import ROOT
+from matbench_discovery import DEBUG, ROOT, timestamp, today
 from matbench_discovery.slurm import slurm_submit
 
 """
-Train a Wrenformer ensemble of size n_ens on target_col of data_path.
+Train a Wrenformer ensemble on target_col of data_path.
 """
 
 __author__ = "Janosh Riebesell"
@@ -25,10 +24,8 @@ target_col = "formation_energy_per_atom"
 # data_path = f"{ROOT}/data/2022-08-25-m3gnet-trainset-mp-2021-struct-energy.json.gz"
 # target_col = "mp_energy_per_atom"
 data_name = "m3gnet-trainset" if "m3gnet" in data_path else "mp"
-job_name = f"train-wrenformer-robust-{data_name}"
-n_ens = 10
-timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
-today = timestamp.split("@")[0]
+job_name = f"train-wrenformer-robust-{data_name}{'-debug' if DEBUG else ''}"
+ensemble_size = 10
 dataset = "mp"
 module_dir = os.path.dirname(__file__)
 out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
@@ -39,7 +36,7 @@ slurm_vars = slurm_submit(
     partition="ampere",
     account="LEE-SL3-GPU",
     time="8:0:0",
-    array=f"1-{n_ens}",
+    array=f"1-{ensemble_size}",
     out_dir=out_dir,
     slurm_flags=("--nodes", "1", "--gpus-per-node", "1"),
 )
@@ -70,15 +67,14 @@ run_params = dict(
     slurm_vars=slurm_vars,
 )
 
-slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
 train_wrenformer(
-    run_name=f"{job_name}-{slurm_job_id}-{slurm_array_task_id}",
+    run_name=f"{job_name}-{slurm_array_task_id}",
     train_df=train_df,
     test_df=test_df,
     target_col=target_col,
     task_type="regression",
     timestamp=timestamp,
-    # folds=(n_ens, slurm_array_task_id),
+    # folds=(ensemble_size, slurm_array_task_id),
     epochs=epochs,
     checkpoint="wandb",  # None | 'local' | 'wandb',
     input_col=input_col,

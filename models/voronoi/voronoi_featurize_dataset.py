@@ -1,7 +1,7 @@
 # %%
 import os
+import sys
 import warnings
-from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -9,11 +9,10 @@ import wandb
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import ROOT
+from matbench_discovery import DEBUG, ROOT, today
 from matbench_discovery.slurm import slurm_submit
 from models.voronoi import featurizer
 
-today = f"{datetime.now():%Y-%m-%d}"
 module_dir = os.path.dirname(__file__)
 
 data_name = "mp"  # "mp"
@@ -25,7 +24,8 @@ elif data_name == "mp":
     input_col = "structure"
 
 slurm_array_task_count = 30
-job_name = f"voronoi-features-{data_name}"
+debug = "slurm-submit" in sys.argv
+job_name = f"voronoi-features-{data_name}{'-debug' if DEBUG else ''}"
 out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 
@@ -42,7 +42,8 @@ slurm_vars = slurm_submit(
 
 # %%
 slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
-out_path = f"{out_dir}/{job_name}.csv.bz2"
+run_name = f"{job_name}-{slurm_array_task_id}"
+out_path = f"{out_dir}/{run_name}.csv.bz2"
 
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path = } already exists, exciting early")
@@ -73,12 +74,7 @@ run_params = dict(
 if wandb.run is None:
     wandb.login()
 
-slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
-wandb.init(
-    project="matbench-discovery",
-    name=f"{job_name}-{slurm_job_id}-{slurm_array_task_id}",
-    config=run_params,
-)
+wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 
 # %% prints lots of pymatgen warnings

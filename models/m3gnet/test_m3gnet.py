@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import os
 import warnings
-from datetime import datetime
 from importlib.metadata import version
 from typing import Any
 
@@ -13,7 +12,7 @@ import wandb
 from m3gnet.models import Relaxer
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, as_dict_handler
+from matbench_discovery import DEBUG, ROOT, as_dict_handler, timestamp, today
 from matbench_discovery.slurm import slurm_submit
 
 """
@@ -26,13 +25,11 @@ __author__ = "Janosh Riebesell"
 __date__ = "2022-08-15"
 
 task_type = "IS2RE"  # "RS2RE"
-timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
-today = timestamp.split("@")[0]
 module_dir = os.path.dirname(__file__)
 # set large job array size for fast testing/debugging
 slurm_array_task_count = 100
 slurm_mem_per_node = 12000
-job_name = f"m3gnet-wbm-{task_type}"
+job_name = f"m3gnet-wbm-{task_type}{'-debug' if DEBUG else ''}"
 out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 slurm_vars = slurm_submit(
@@ -83,12 +80,8 @@ run_params = dict(
 if wandb.run is None:
     wandb.login()
 
-slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
-wandb.init(
-    project="matbench-discovery",
-    name=f"{job_name}-{slurm_job_id}-{slurm_array_task_id}",
-    config=run_params,
-)
+run_name = f"{job_name}-{slurm_array_task_id}"
+wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 
 # %%

@@ -1,6 +1,5 @@
 # %%
 import os
-from datetime import datetime
 
 import pandas as pd
 from aviary.cgcnn.data import CrystalGraphData, collate_batch
@@ -11,11 +10,11 @@ from pymatgen.core import Structure
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from matbench_discovery import ROOT
+from matbench_discovery import DEBUG, ROOT, timestamp, today
 from matbench_discovery.slurm import slurm_submit
 
 """
-Train a CGCNN ensemble of size n_ens on target_col of data_path.
+Train a CGCNN ensemble on target_col of data_path.
 """
 
 __author__ = "Janosh Riebesell"
@@ -25,12 +24,10 @@ __date__ = "2022-06-13"
 # %%
 epochs = 300
 target_col = "formation_energy_per_atom"
-job_name = f"train-cgcnn-robust-{target_col}"
+job_name = f"train-cgcnn-robust-{target_col}{'-debug' if DEBUG else ''}"
 print(f"{job_name=}")
 robust = "robust" in job_name.lower()
-n_ens = 10
-timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
-today = timestamp.split("@")[0]
+ensemble_size = 10
 module_dir = os.path.dirname(__file__)
 out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
@@ -39,7 +36,7 @@ slurm_vars = slurm_submit(
     partition="ampere",
     account="LEE-SL3-GPU",
     time="8:0:0",
-    array=f"1-{n_ens}",
+    array=f"1-{ensemble_size}",
     out_dir=out_dir,
     slurm_flags=("--nodes", "1", "--gpus-per-node", "1"),
 )
@@ -107,7 +104,7 @@ train_model(
     model_params=model_params,
     model=model,
     optimizer=optimizer,
-    run_name=job_name,
+    run_name=f"{job_name}-{slurm_array_task_id}",
     swa_start=swa_start,
     target_col=target_col,
     task_type=task_type,
