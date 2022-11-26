@@ -99,8 +99,7 @@ df = df_wbm.query("m3gnet_volume < 300").filter(like="volume")
 df["m3gnet_vol_diff"] = df.m3gnet_volume - df.final_wbm_volume
 df["dft_vol_diff"] = df.initial_wbm_volume - df.final_wbm_volume
 fig = px.histogram(
-    pd.melt(
-        df,
+    df.melt(
         value_vars=["m3gnet", "dft"],
         value_name="vol_diff",
         var_name="method",

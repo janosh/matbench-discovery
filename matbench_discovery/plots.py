@@ -35,6 +35,11 @@ quantity_labels = dict(
     e_above_hull_mp="Energy above MP convex hull (eV/atom)",
     e_above_hull_error="Error in energy above convex hull (eV/atom)",
     vol_diff="Volume difference (A^3)",
+    e_form_per_atom_mp2020_corrected="Formation energy (eV/atom)",
+    e_form_per_atom_pred="Predicted formation energy (eV/atom)",
+    material_id="Material ID",
+    band_gap="Band gap (eV)",
+    formula="Formula",
 )
 model_labels = dict(
     wren="Wren",
@@ -254,10 +259,6 @@ def rolling_mae_vs_hull_dist(
     """
     ax = ax or plt.gca()
 
-    for series in (e_above_hull_pred, e_above_hull_true):
-        n_nans = series.isna().sum()
-        assert n_nans == 0, f"{n_nans:,} NaNs in {series.name}"
-
     is_fresh_ax = len(ax.lines) == 0
 
     bins = np.arange(*x_lim, bin_width)
@@ -386,10 +387,6 @@ def cumulative_clf_metric(
         plt.Axes: The matplotlib axes object.
     """
     ax = ax or plt.gca()
-
-    for series in (e_above_hull_error, e_above_hull_true):
-        n_nans = series.isna().sum()
-        assert n_nans == 0, f"{n_nans:,} NaNs in {series.name}"
 
     e_above_hull_error = e_above_hull_error.sort_values()
     e_above_hull_true = e_above_hull_true.loc[e_above_hull_error.index]
