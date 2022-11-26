@@ -10,8 +10,6 @@ __date__ = "2022-06-18"
 
 
 # %%
-markers = ["o", "v", "^", "H", "D", ""]
-
 data_path = (
     f"{ROOT}/data/2022-06-11-from-rhys/wren-mp-initial-structures.csv"
     # f"{ROOT}/models/wrenformer/2022-11-15-wrenformer-IS2RE-preds.csv"
@@ -21,15 +19,6 @@ legend_label = "Wren"
 
 
 # %%
-# rare = "all"
-# from pymatgen.core import Composition
-# rare = "no-lanthanides"
-# df["contains_rare_earths"] = df.composition.map(
-#     lambda x: any(el.is_rare_earth_metal for el in Composition(x))
-# )
-# df = df.query("~contains_rare_earths")
-
-
 df["e_above_hull_mp"] = df_wbm.e_above_hull_mp2020_corrected_ppd_mp
 
 assert all(n_nans := df.isna().sum() == 0), f"Found {n_nans} NaNs"

@@ -17,7 +17,7 @@ from matbench_discovery.slurm import slurm_submit
 
 """
 To slurm submit this file: python path/to/file.py slurm-submit
-Requires Megnet installation: pip install megnet
+Requires MEGNet installation: pip install megnet
 https://github.com/materialsvirtuallab/megnet
 """
 
