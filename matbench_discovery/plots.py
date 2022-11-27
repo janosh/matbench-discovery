@@ -488,9 +488,9 @@ def wandb_log_scatter(
     """
     assert set(fields) >= {"x", "y"}, f"{fields=} must specify x and y column names"
 
-    if all("form" in field for field in fields.values()):
-        kwargs.setdefault("x", "DFT formation energy (eV/atom)")
-        kwargs.setdefault("y", "Predicted formation energy (eV/atom)")
+    if "form" in fields["x"] and "form" in fields["y"]:
+        kwargs.setdefault("x_label", "DFT formation energy (eV/atom)")
+        kwargs.setdefault("y_label", "Predicted formation energy (eV/atom)")
 
     scatter_plot = wandb.plot_table(
         vega_spec_name="janosh/scatter-parity",

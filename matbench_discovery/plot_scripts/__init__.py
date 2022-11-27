@@ -1,5 +1,6 @@
 from collections.abc import Sequence
-from typing import Any
+from glob import glob
+from typing import Any, Callable
 
 import pandas as pd
 from tqdm import tqdm
@@ -25,10 +26,45 @@ data_paths = {
 }
 
 
+def glob_to_df(
+    pattern: str, reader: Callable[[Any], pd.DataFrame] = None
+) -> pd.DataFrame:
+    """Combine data files matching a glob pattern into a single dataframe.
+
+    Args:
+        pattern (str): Glob file pattern.
+        reader (Callable[[Any], pd.DataFrame], optional): Function that loads data from
+            disk. Defaults to pd.read_csv if ".csv" in pattern else pd.read_json.
+
+    Returns:
+        pd.DataFrame: Combined dataframe.
+    """
+    reader = reader or pd.read_csv if ".csv" in pattern else pd.read_json
+
+    sub_dfs = {}  # used to join slurm job array results into single df
+    for file in glob(f"{ROOT}/{pattern}"):
+        df = reader(file)
+        sub_dfs[file] = df
+
+    return pd.concat(sub_dfs.values())
+
+
 def load_model_preds(
     models: Sequence[str], pbar: bool = True, id_col: str = "material_id"
 ) -> dict[str, pd.DataFrame]:
+    """Load model predictions from disk into dictionary of dataframes.
 
+    Args:
+        models (Sequence[str]): Model names must be keys of data_paths dict.
+        pbar (bool, optional): Whether to show progress bar. Defaults to True.
+        id_col (str, optional): Column to set as df.index. Defaults to "material_id".
+
+    Raises:
+        ValueError: On unknown model names.
+
+    Returns:
+        dict[str, pd.DataFrame]: Dictionary of dataframes, one for each model.
+    """
     if mismatch := set(models) - set(data_paths):
         raise ValueError(f"Unknown models: {mismatch}")
 
@@ -36,9 +72,8 @@ def load_model_preds(
 
     for model_name in (bar := tqdm(models, disable=not pbar)):
         bar.set_description(model_name)
-        data_path = data_paths[model_name]
-        reader = pd.read_csv if ".csv" in data_path else pd.read_json
-        df = reader(f"{ROOT}/{data_path}").set_index(id_col)
+        pattern = data_paths[model_name]
+        df = glob_to_df(pattern).set_index(id_col)
         dfs[model_name] = df
 
     return dfs
