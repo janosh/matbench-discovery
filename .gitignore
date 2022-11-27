@@ -21,9 +21,7 @@ job-logs/
 *slurm-*.log
 models/**/*.csv
 
-# temporary ignore rule
+# temporary ignore rules
 paper
 meeting-notes
-models/voronoi/*.ipynb
 models/voronoi/*.zip
-pretrained

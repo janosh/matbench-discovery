@@ -2,6 +2,7 @@
 import os
 import sys
 import warnings
+from importlib.metadata import version
 
 import numpy as np
 import pandas as pd
@@ -13,14 +14,18 @@ from matbench_discovery import DEBUG, ROOT, today
 from matbench_discovery.slurm import slurm_submit
 from models.voronoi import featurizer
 
+__author__ = "Janosh Riebesell"
+__date__ = "2022-10-31"
+
+
 data_name = "mp"  # "mp"
 if data_name == "wbm":
     data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
-    input_col = "initial_structure"
 elif data_name == "mp":
     data_path = f"{ROOT}/data/mp/2022-09-16-mp-computed-structure-entries.json.gz"
-    input_col = "relaxed_structure"
 
+input_col = "initial_structure"
+# input_col = "relaxed_structure"
 debug = "slurm-submit" in sys.argv
 job_name = f"voronoi-features-{data_name}{'-debug' if DEBUG else ''}"
 module_dir = os.path.dirname(__file__)
@@ -55,7 +60,9 @@ df_this_job: pd.DataFrame = np.array_split(df, slurm_array_task_count)[
 
 if data_name == "mp":  # extract structure dicts from ComputedStructureEntry
     struct_dicts = [x["structure"] for x in df_this_job.entry]
-if data_name == "wbm":
+elif data_name == "wbm" and input_col == "relaxed_structure":
+    struct_dicts = [x["structure"] for x in df_this_job.computed_structure_entry]
+elif data_name == "wbm" and input_col == "initial_structure":
     struct_dicts = df_this_job.initial_structure
 
 df_this_job[input_col] = [
@@ -70,6 +77,7 @@ run_params = dict(
     input_col=input_col,
     slurm_vars=slurm_vars,
     out_path=out_path,
+    matminer_version=version("matminer"),
 )
 
 wandb.init(project="matbench-discovery", name=run_name, config=run_params)

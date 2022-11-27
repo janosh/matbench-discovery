@@ -101,10 +101,11 @@ def slurm_submit(
     if pre_cmd:
         slurm_vars["pre_cmd"] = pre_cmd
 
+    # print sbatch command into slurm log file and at job submission time
+    # but not into terminal or Jupyter
     if (is_slurm_job and is_log_file) or "slurm-submit" in sys.argv:
-        # print sbatch command at submission time and into slurm log file
-        # but not when running in command line or Jupyter
         print(f"\n{' '.join(cmd)}\n".replace(" --", "\n  --"))
+    if is_slurm_job and is_log_file:
         for key, val in slurm_vars.items():
             print(f"{key}={val}")
 
