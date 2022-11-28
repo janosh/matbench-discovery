@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 
 from matbench_discovery import ROOT
-from matbench_discovery.plot_scripts import (
+from matbench_discovery.load_preds import (
     data_paths,
     df_wbm,
     glob_to_df,
@@ -54,10 +54,9 @@ def test_data_paths() -> None:
 
 
 @pytest.mark.parametrize("pattern", ["tmp/*df.csv", "tmp/*df.json"])
-@pytest.mark.parametrize("prefix", [f"{ROOT}/", ""])
-def test_glob_to_df(pattern: str, prefix: str, dummy_df: pd.DataFrame) -> None:
+def test_glob_to_df(pattern: str, dummy_df: pd.DataFrame) -> None:
 
-    df = glob_to_df(prefix + pattern)
+    df = glob_to_df(pattern)
     assert df.shape == dummy_df.shape
     assert list(df) == list(dummy_df)
 

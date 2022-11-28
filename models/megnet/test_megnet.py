@@ -11,7 +11,7 @@ from sklearn.metrics import r2_score
 from tqdm import tqdm
 
 from matbench_discovery import DEBUG, ROOT, timestamp, today
-from matbench_discovery.plot_scripts import df_wbm
+from matbench_discovery.load_preds import df_wbm
 from matbench_discovery.plots import wandb_log_scatter
 from matbench_discovery.slurm import slurm_submit
 

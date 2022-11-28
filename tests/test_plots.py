@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 from matbench_discovery import ROOT
-from matbench_discovery.plot_scripts import df_wbm
+from matbench_discovery.load_preds import df_wbm
 from matbench_discovery.plots import (
     AxLine,
     StabilityCriterion,
