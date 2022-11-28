@@ -35,7 +35,7 @@ for file_path in tqdm(file_paths):
 
 
 # %%
-df_bowsr = pd.concat(dfs.values())
+df_bowsr = pd.concat(dfs.values()).round(6)
 
 
 # %% compare against WBM formation energy targets to make sure we got sensible results
@@ -57,5 +57,8 @@ pymatviz.density_scatter(
 out_path = f"{ROOT}/models/bowsr/{today}-bowsr-megnet-wbm-{task_type}.json.gz"
 df_bowsr.reset_index().to_json(out_path, default_handler=lambda x: x.as_dict())
 
-# out_path = f"{ROOT}/models/bowsr/2022-08-16-bowsr-megnet-wbm-IS2RE.json.gz"
-# df_bowsr = pd.read_json(out_path).set_index("material_id")
+# save energy and formation energy as CSV for fast loading
+df_bowsr.select_dtypes("number").to_csv(out_path.replace(".json.gz", ".csv"))
+
+# in_path = f"{ROOT}/models/bowsr/2022-11-22-bowsr-megnet-wbm-IS2RE.json.gz"
+# df_bowsr = pd.read_json(in_path).set_index("material_id")

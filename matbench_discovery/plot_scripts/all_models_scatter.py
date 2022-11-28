@@ -12,8 +12,8 @@ __date__ = "2022-06-18"
 # %%
 print(f"loadable models: {list(data_paths)}")
 models = (
-    "Wren, CGCNN IS2RE, CGCNN RS2RE, Voronoi IS2RE, Voronoi RS2RE, "
-    "Wrenformer, MEGNet"
+    "Wren, CGCNN IS2RE, CGCNN RS2RE, Voronoi RF, "
+    "Wrenformer, MEGNet, M3GNet, BOWSR MEGNet"
 ).split(", ")
 df_wbm = load_df_wbm_with_preds(models=models).round(3)
 

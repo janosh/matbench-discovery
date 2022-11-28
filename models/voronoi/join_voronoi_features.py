@@ -22,8 +22,6 @@ dfs: dict[str, pd.DataFrame] = {}
 
 
 # %%
-# 2022-08-16 tried multiprocessing.Pool() to load files in parallel but was somehow
-# slower than serial loading
 for file_path in tqdm(file_paths):
     if file_path in dfs:
         continue
@@ -32,7 +30,7 @@ for file_path in tqdm(file_paths):
 
 
 # %%
-df_features = pd.concat(dfs.values())
+df_features = pd.concat(dfs.values()).round(6)
 
 ax = df_features.isna().sum().value_counts().T.plot.bar()
 ax.set(xlabel="# NaNs", ylabel="# columns", title="NaNs per column")

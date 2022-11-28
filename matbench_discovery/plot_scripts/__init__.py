@@ -17,17 +17,18 @@ data_paths = {
     "cgcnn-ensemble-preds.csv",
     # "CGCNN IS2RE": "data/2022-06-11-from-rhys/cgcnn-mp-initial-structures.csv",
     "CGCNN RS2RE": "data/2022-06-11-from-rhys/cgcnn-mp-cse.csv",
-    "Voronoi IS2RE": "data/2022-06-11-from-rhys/voronoi-mp-initial-structures.csv",
-    "Voronoi RS2RE": "data/2022-06-11-from-rhys/voronoi-mp-cse.csv",
+    # "Voronoi IS2RE": "data/2022-06-11-from-rhys/voronoi-mp-initial-structures.csv",
+    "Voronoi RF": "models/voronoi/2022-11-27-train-test/e-form-preds-IS2RE.csv",
+    # "Voronoi RS2RE": "data/2022-06-11-from-rhys/voronoi-mp-cse.csv",
     "Wrenformer": "models/wrenformer/2022-11-15-wrenformer-IS2RE-preds.csv",
     "MEGNet": "models/megnet/2022-11-18-megnet-wbm-IS2RE/megnet-e-form-preds.csv",
-    "M3GNet": "models/m3gnet/2022-10-31-m3gnet-wbm-IS2RE.json.gz",
-    "Bowsr MEGNet": "models/bowsr/2022-11-22-bowsr-megnet-wbm-IS2RE.json.gz",
+    "M3GNet": "models/m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv",
+    "BOWSR MEGNet": "models/bowsr/2022-11-22-bowsr-megnet-wbm-IS2RE.csv",
 }
 
 
 def glob_to_df(
-    pattern: str, reader: Callable[[Any], pd.DataFrame] = None
+    pattern: str, reader: Callable[[Any], pd.DataFrame] = None, pbar: bool = True
 ) -> pd.DataFrame:
     """Combine data files matching a glob pattern into a single dataframe.
 
@@ -35,14 +36,20 @@ def glob_to_df(
         pattern (str): Glob file pattern.
         reader (Callable[[Any], pd.DataFrame], optional): Function that loads data from
             disk. Defaults to pd.read_csv if ".csv" in pattern else pd.read_json.
+        pbar (bool, optional): Whether to show progress bar. Defaults to True.
 
     Returns:
         pd.DataFrame: Combined dataframe.
     """
     reader = reader or pd.read_csv if ".csv" in pattern else pd.read_json
 
+    # prefix pattern with ROOT if not absolute path
+    files = glob(pattern if pattern.startswith("/") else f"{ROOT}/{pattern}")
+    if len(files) == 0:
+        raise FileNotFoundError(f"No files matching glob {pattern=}")
+
     sub_dfs = {}  # used to join slurm job array results into single df
-    for file in glob(f"{ROOT}/{pattern}"):
+    for file in tqdm(files, disable=not pbar):
         df = reader(file)
         sub_dfs[file] = df
 
@@ -73,7 +80,7 @@ def load_model_preds(
     for model_name in (bar := tqdm(models, disable=not pbar)):
         bar.set_description(model_name)
         pattern = data_paths[model_name]
-        df = glob_to_df(pattern).set_index(id_col)
+        df = glob_to_df(pattern, pbar=False).set_index(id_col)
         dfs[model_name] = df
 
     return dfs
@@ -83,8 +90,9 @@ def load_df_wbm_with_preds(**kwargs: Any) -> pd.DataFrame:
     dfs = load_model_preds(**kwargs)
     df_out = df_wbm.copy()
     for model_name, df in dfs.items():
-        if f"e_form_per_atom_{model_name.lower()}" in df:
-            df_out[model_name] = df[f"e_form_per_atom_{model_name.lower()}"]
+        model_key = model_name.lower().replace(" ", "_")
+        if f"e_form_per_atom_{model_key}" in df:
+            df_out[model_name] = df[f"e_form_per_atom_{model_key}"]
         elif len(pred_cols := df.filter(like="_pred_ens").columns) > 0:
             assert len(pred_cols) == 1
             df_out[model_name] = df[pred_cols[0]]
@@ -92,7 +100,9 @@ def load_df_wbm_with_preds(**kwargs: Any) -> pd.DataFrame:
             # make sure we average the expected number of ensemble member predictions
             assert len(pred_cols) == 10, f"{len(pred_cols) = }, expected 10"
             df_out[model_name] = df[pred_cols].mean(axis=1)
-        elif "e_form_pred" in df:  # voronoi
+        elif "e_form_per_atom_voronoi_rf" in df:  # new voronoi
+            df_out[model_name] = df.e_form_per_atom_voronoi_rf
+        elif "e_form_pred" in df:  # old voronoi
             df_out[model_name] = df.e_form_pred
         else:
             raise ValueError(
