@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from matbench_discovery import DEBUG, ROOT, today
-from matbench_discovery.plot_scripts import df_wbm
+from matbench_discovery.load_preds import df_wbm
 from matbench_discovery.plots import wandb_log_scatter
 from matbench_discovery.slurm import slurm_submit
 
