@@ -10,7 +10,7 @@ from sklearn.metrics import r2_score
 from sklearn.pipeline import Pipeline
 
 from matbench_discovery import DEBUG, ROOT, today
-from matbench_discovery.plot_scripts import df_wbm
+from matbench_discovery.plot_scripts import df_wbm, glob_to_df
 from matbench_discovery.plots import wandb_log_scatter
 from matbench_discovery.slurm import slurm_submit
 from models.voronoi import featurizer
@@ -41,24 +41,29 @@ slurm_vars = slurm_submit(
 
 
 # %%
-train_path = f"{module_dir}/2022-11-25-features-mp.csv.bz2"
-print(f"{train_path=}")
-df_train = pd.read_csv(train_path).set_index("material_id")
+train_path = f"{module_dir}/2022-11-25-features-mp/voronoi-features-mp-*.csv.bz2"
+df_train = glob_to_df(train_path).set_index("material_id")
 print(f"{df_train.shape=}")
 
 mp_energies_path = f"{ROOT}/data/mp/2022-08-13-mp-energies.json.gz"
 df_mp = pd.read_json(mp_energies_path).set_index("material_id")
 train_target_col = "formation_energy_per_atom"
-df_train[train_target_col] = df_mp[train_target_col]
-
 
 test_path = f"{module_dir}/2022-11-18-features-wbm-{task_type}.csv.bz2"
-print(f"{test_path=}")
 df_test = pd.read_csv(test_path).set_index("material_id")
 print(f"{df_test.shape=}")
 
 test_target_col = "e_form_per_atom_mp2020_corrected"
-df_test[test_target_col] = df_wbm[test_target_col]
+
+
+for df, df_tar, col in (
+    (df_train, df_mp, train_target_col),
+    (df_test, df_wbm, test_target_col),
+):
+    df[train_target_col] = df_tar[train_target_col]
+    nans = df_tar[col].isna().sum()
+    assert nans == 0, f"{nans} NaNs in {col} targets"
+
 model_name = "Voronoi RandomForestRegressor"
 
 run_params = dict(
