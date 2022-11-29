@@ -63,7 +63,7 @@ for idx, run in enumerate(runs):
         if val == runs[0].config[key] or key.startswith(("slurm_", "timestamp")):
             continue
         raise ValueError(
-            f"Configs not identical: runs[{idx}][{key}]={val}, {runs[0][key]=}"
+            f"Run configs not identical: runs[{idx}][{key}]={val}, {runs[0][key]=}"
         )
 
 run_params = dict(
@@ -109,6 +109,5 @@ MAE = ensemble_metrics.MAE.mean()
 R2 = ensemble_metrics.R2.mean()
 
 title = rf"Wrenformer {task_type} ensemble={len(runs)} {MAE=:.4} {R2=:.4}"
-print(title)
 
 wandb_log_scatter(table, fields=dict(x=target_col, y=pred_col), title=title)

@@ -9,7 +9,7 @@ __date__ = "2022-06-18"
 
 # %%
 models = (
-    "Wren, CGCNN IS2RE, CGCNN RS2RE, Voronoi RF, "
+    "Wren, CGCNN, CGCNN IS2RE, CGCNN RS2RE, Voronoi RF, "
     "Wrenformer, MEGNet, M3GNet, BOWSR MEGNet"
 ).split(", ")
 
@@ -25,12 +25,14 @@ e_above_hull_col = "e_above_hull_mp2020_corrected_ppd_mp"
 for model_name in sorted(models):
 
     # assert df_wbm[model_name].isna().sum() < 100
+    preds = df_wbm[model_name] - df_wbm[target_col]
+    MAE = (df_wbm[e_above_hull_col] - preds).abs().mean()
 
     rolling_mae_vs_hull_dist(
-        e_above_hull_pred=df_wbm[model_name] - df_wbm[target_col],
+        e_above_hull_pred=preds,
         e_above_hull_true=df_wbm[e_above_hull_col],
         ax=ax,
-        label=model_name,
+        label=f"{model_name} · {MAE=:.2f}",
     )
 
 # increase line width in legend
