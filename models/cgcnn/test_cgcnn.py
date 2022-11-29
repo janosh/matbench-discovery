@@ -77,7 +77,7 @@ for idx, run in enumerate(runs):
         if val == runs[0].config[key] or key.startswith(("slurm_", "timestamp")):
             continue
         raise ValueError(
-            f"Configs not identical: runs[{idx}][{key}]={val}, {runs[0][key]=}"
+            f"Run configs not identical: runs[{idx}][{key}]={val}, {runs[0][key]=}"
         )
 
 run_params = dict(
@@ -96,7 +96,10 @@ run_params = dict(
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 cg_data = CrystalGraphData(
-    df, task_dict={target_col: "regression"}, structure_col=input_col
+    df,
+    task_dict={target_col: "regression"},
+    structure_col=input_col,
+    identifiers=("material_id", "formula_from_cse"),
 )
 data_loader = DataLoader(
     cg_data, batch_size=1024, shuffle=False, collate_fn=collate_batch
@@ -120,6 +123,5 @@ MAE = ensemble_metrics.MAE.mean()
 R2 = ensemble_metrics.R2.mean()
 
 title = rf"CGCNN {task_type} ensemble={len(runs)} {MAE=:.4} {R2=:.4}"
-print(title)
 
 wandb_log_scatter(table, fields=dict(x=target_col, y=pred_col), title=title)
