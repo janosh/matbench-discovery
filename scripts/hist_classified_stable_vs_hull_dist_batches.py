@@ -2,7 +2,6 @@
 from matbench_discovery import ROOT, today
 from matbench_discovery.load_preds import load_df_wbm_with_preds
 from matbench_discovery.plots import (
-    StabilityCriterion,
     WhichEnergy,
     hist_classified_stable_vs_hull_dist,
     plt,
@@ -31,7 +30,6 @@ e_above_hull_col = "e_above_hull_mp2020_corrected_ppd_mp"
 
 # %%
 which_energy: WhichEnergy = "true"
-stability_crit: StabilityCriterion = "energy"
 fig, axs = plt.subplots(2, 3, figsize=(18, 9))
 
 model_name = "Wrenformer"
@@ -44,7 +42,6 @@ for batch_idx, ax in zip(range(1, 6), axs.flat):
         e_above_hull_pred=batch_df[model_name] - batch_df[target_col],
         e_above_hull_true=batch_df[e_above_hull_col],
         which_energy=which_energy,
-        stability_crit=stability_crit,
         ax=ax,
     )
 
@@ -59,7 +56,6 @@ ax, metrics = hist_classified_stable_vs_hull_dist(
     e_above_hull_pred=df_wbm[model_name] - df_wbm[target_col],
     e_above_hull_true=df_wbm[e_above_hull_col],
     which_energy=which_energy,
-    stability_crit=stability_crit,
     ax=axs.flat[-1],
 )
 

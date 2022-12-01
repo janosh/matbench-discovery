@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Literal, get_args
+from typing import Any, Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,7 +15,6 @@ from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-05"
 
-StabilityCriterion = Literal["energy", "energy+std", "energy-std"]
 WhichEnergy = Literal["true", "pred"]
 AxLine = Literal["x", "y", "xy", ""]
 
@@ -72,14 +71,12 @@ plt.rcParams["figure.constrained_layout.use"] = True
 def hist_classified_stable_vs_hull_dist(
     e_above_hull_pred: pd.Series,
     e_above_hull_true: pd.Series,
-    std_pred: pd.Series = None,
     ax: plt.Axes = None,
     which_energy: WhichEnergy = "true",
-    stability_crit: StabilityCriterion = "energy",
     stability_threshold: float = 0,
     show_threshold: bool = True,
     x_lim: tuple[float | None, float | None] = (-0.4, 0.4),
-    rolling_accuracy: float = 0.02,
+    rolling_accuracy: float | None = 0.02,
 ) -> tuple[plt.Axes, dict[str, float]]:
     """
     Histogram of the energy difference (either according to DFT ground truth [default]
@@ -98,21 +95,16 @@ def hist_classified_stable_vs_hull_dist(
             energy.
         e_above_hull_true (pd.Series): energy diff to convex hull according to DFT
             ground truth.
-        std_pred (pd.Series, optional): standard deviation of the model's predicted
-            formation energy.
         ax (plt.Axes, optional): matplotlib axes to plot on.
         which_energy (WhichEnergy, optional): Whether to use the true formation energy
             or the model's predicted formation energy for the histogram.
-        stability_crit (StabilityCriterion, optional): Whether to add/subtract the
-            model's predicted uncertainty from its energy prediction when measuring
-            predicted stability.
         stability_threshold (float, optional): set stability threshold as distance to
             convex hull in eV/atom, usually 0 or 0.1 eV.
         show_threshold (bool, optional): Whether to plot stability threshold as dashed
             vertical line.
         x_lim (tuple[float | None, float | None]): x-axis limits.
-        rolling_accuracy (float): Rolling accuracy window size in eV / atom. Set to 0 to
-            disable. Defaults to 0.01.
+        rolling_accuracy (float): Rolling accuracy window size in eV / atom. Set to None
+            or 0 to disable. Defaults to 0.01.
 
     Returns:
         tuple[plt.Axes, dict[str, float]]: plot axes and classification metrics
@@ -122,17 +114,7 @@ def hist_classified_stable_vs_hull_dist(
     """
     ax = ax or plt.gca()
 
-    if stability_crit not in get_args(StabilityCriterion):
-        raise ValueError(
-            f"Invalid {stability_crit=} must be one of {get_args(StabilityCriterion)}"
-        )
-
     test = e_above_hull_pred + e_above_hull_true
-    if stability_crit == "energy+std":
-        test += std_pred
-    elif stability_crit == "energy-std":
-        test -= std_pred
-
     # --- histogram of DFT-computed distance to convex hull
     if which_energy == "true":
         actual_pos = e_above_hull_true <= stability_threshold
@@ -348,8 +330,6 @@ def cumulative_clf_metric(
     e_above_hull_error: pd.Series,
     e_above_hull_true: pd.Series,
     metric: Literal["precision", "recall"],
-    std_pred: pd.Series = None,
-    stability_crit: StabilityCriterion = "energy",
     stability_threshold: float = 0,  # set stability threshold as distance to convex
     # hull in eV / atom, usually 0 or 0.1 eV
     ax: plt.Axes = None,
@@ -370,9 +350,6 @@ def cumulative_clf_metric(
         e_above_hull_true (str, optional): Column name with convex hull distance values.
             Defaults to "e_above_hull".
         metric ('precision' | 'recall', optional): Metric to plot.
-        stability_crit ('energy' | 'energy+std' | 'energy-std', optional): Whether to
-            use energy+/-std as stability stability_crit where std is the model
-            predicted uncertainty for the energy it stipulated. Defaults to "energy".
         stability_threshold (float, optional): Max distance from convex hull before
             material is considered unstable. Defaults to 0.
         label (str, optional): Model name used to identify its liens in the legend.
@@ -390,15 +367,6 @@ def cumulative_clf_metric(
 
     e_above_hull_error = e_above_hull_error.sort_values()
     e_above_hull_true = e_above_hull_true.loc[e_above_hull_error.index]
-
-    if stability_crit not in get_args(StabilityCriterion):
-        raise ValueError(
-            f"Invalid {stability_crit=} must be one of {get_args(StabilityCriterion)}"
-        )
-    if stability_crit == "energy+std":
-        e_above_hull_error += std_pred
-    elif stability_crit == "energy-std":
-        e_above_hull_error -= std_pred
 
     true_pos_mask = (e_above_hull_true <= stability_threshold) & (
         e_above_hull_error <= stability_threshold

@@ -3,7 +3,7 @@ from sklearn.metrics import f1_score
 
 from matbench_discovery import ROOT, today
 from matbench_discovery.load_preds import load_df_wbm_with_preds
-from matbench_discovery.plots import StabilityCriterion, cumulative_clf_metric, plt
+from matbench_discovery.plots import cumulative_clf_metric, plt
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 
@@ -18,10 +18,6 @@ df_wbm = load_df_wbm_with_preds(models=models).round(3)
 
 target_col = "e_form_per_atom_mp2020_corrected"
 e_above_hull_col = "e_above_hull_mp2020_corrected_ppd_mp"
-
-
-# %%
-stability_crit: StabilityCriterion = "energy"
 colors = "tab:blue tab:orange teal tab:pink black red turquoise tab:purple".split()
 
 
@@ -41,7 +37,6 @@ for model_name, color in zip(models, colors):
         color=color,
         label=f"{model_name}\n{F1=:.3}",
         project_end_point="xy",
-        stability_crit=stability_crit,
         ax=ax_prec,
         metric="precision",
     )
@@ -52,7 +47,6 @@ for model_name, color in zip(models, colors):
         color=color,
         label=f"{model_name}\n{F1=:.3}",
         project_end_point="xy",
-        stability_crit=stability_crit,
         ax=ax_recall,
         metric="recall",
     )
@@ -65,7 +59,7 @@ for ax in (ax_prec, ax_recall):
 # x-ticks every 10k materials
 # ax.set(xticks=range(0, int(ax.get_xlim()[1]), 10_000))
 
-fig.suptitle(f"{today} {stability_crit=}")
+fig.suptitle(f"{today} {model_name}")
 xlabel_cumulative = "Materials predicted stable sorted by hull distance"
 fig.text(0.5, -0.08, xlabel_cumulative, ha="center")
 
