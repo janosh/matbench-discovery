@@ -116,3 +116,39 @@ def get_e_form_per_atom(
     form_energy = energy - sum(comp[el] * refs[str(el)].energy_per_atom for el in comp)
 
     return form_energy / comp.num_atoms
+
+
+def classify_stable(
+    e_above_hull_true: pd.Series,
+    e_above_hull_pred: pd.Series,
+    stability_threshold: float = 0,
+) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
+    """Classify model stability predictions as true/false positive/negatives depending
+    on if material is actually stable or unstable. All energies are assumed to be in
+    eV/atom (but shouldn't really matter as long as they're consistent).
+
+    Args:
+        e_above_hull_true (pd.Series): Ground truth energy above convex hull values.
+        e_above_hull_pred (pd.Series): Model predicted energy above convex hull values.
+        stability_threshold (float, optional): Maximum energy above convex hull for a
+            material to still be considered stable. Usually 0, 0.05 or 0.1. Defaults to
+            0. 0 means a material has to be directly on the hull to be called stable.
+            Negative values mean a material has to pull the known hull down by that
+            amount to count as stable. Few materials lie below the known hull, so only
+            negative values close to 0 make sense.
+
+    Returns:
+        tuple[pd.Series, pd.Series, pd.Series, pd.Series]: Indices for true positives,
+            false negatives, false positives and true negatives (in this order).
+    """
+    actual_pos = e_above_hull_true <= stability_threshold
+    actual_neg = e_above_hull_true > stability_threshold
+    model_pos = e_above_hull_pred <= stability_threshold
+    model_neg = e_above_hull_pred > stability_threshold
+
+    true_pos = actual_pos & model_pos
+    false_neg = actual_pos & model_neg
+    false_pos = actual_neg & model_pos
+    true_neg = actual_neg & model_neg
+
+    return true_pos, false_neg, false_pos, true_neg

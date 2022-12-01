@@ -26,39 +26,26 @@ fig, (ax_prec, ax_recall) = plt.subplots(1, 2, figsize=(15, 7), sharey=True)
 
 for model_name, color in zip(models, colors):
 
-    e_above_hull_pred = df_wbm[model_name] - df_wbm[target_col]
-
+    e_above_hull_pred = df_wbm[e_above_hull_col] + (
+        df_wbm[model_name] - df_wbm[target_col]
+    )
     F1 = f1_score(df_wbm[e_above_hull_col] < 0, e_above_hull_pred < 0)
-
-    e_above_hull_error = e_above_hull_pred + df_wbm[e_above_hull_col]
-    cumulative_clf_metric(
-        e_above_hull_error,
-        df_wbm[e_above_hull_col],
+    in_common = dict(
+        e_above_hull_true=df_wbm[e_above_hull_col],
+        e_above_hull_pred=e_above_hull_pred,
         color=color,
         label=f"{model_name}\n{F1=:.3}",
         project_end_point="xy",
-        ax=ax_prec,
-        metric="precision",
     )
+    cumulative_clf_metric(**in_common, ax=ax_prec, metric="precision")
 
-    cumulative_clf_metric(
-        e_above_hull_error,
-        df_wbm[e_above_hull_col],
-        color=color,
-        label=f"{model_name}\n{F1=:.3}",
-        project_end_point="xy",
-        ax=ax_recall,
-        metric="recall",
-    )
-
+    cumulative_clf_metric(**in_common, ax=ax_recall, metric="recall")
 
 for ax in (ax_prec, ax_recall):
     ax.set(xlim=(0, None))
 
-
 # x-ticks every 10k materials
 # ax.set(xticks=range(0, int(ax.get_xlim()[1]), 10_000))
-
 fig.suptitle(f"{today} {model_name}")
 xlabel_cumulative = "Materials predicted stable sorted by hull distance"
 fig.text(0.5, -0.08, xlabel_cumulative, ha="center")

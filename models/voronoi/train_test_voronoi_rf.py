@@ -11,7 +11,7 @@ from sklearn.pipeline import Pipeline
 
 from matbench_discovery import DEBUG, ROOT, today
 from matbench_discovery.load_preds import df_wbm, glob_to_df
-from matbench_discovery.plots import wandb_log_scatter
+from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 from models.voronoi import featurizer
 
@@ -127,4 +127,4 @@ R2 = r2_score(*df_wbm[[test_target_col, pred_col]].dropna().to_numpy().T)
 title = f"{model_name} {task_type} {MAE=:.3} {R2=:.3}"
 print(title)
 
-wandb_log_scatter(table, fields=dict(x=test_target_col, y=pred_col), title=title)
+wandb_scatter(table, fields=dict(x=test_target_col, y=pred_col), title=title)
