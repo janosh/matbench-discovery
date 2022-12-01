@@ -13,10 +13,7 @@ __date__ = "2022-08-25"
 """
 Histogram of the energy difference (either according to DFT ground truth [default] or
 model predicted energy) to the convex hull for materials in the WBM data set. The
-histogram is broken down into true positives, false negatives, false positives, and true
-negatives based on whether the model predicts candidates to be below the known convex
-hull. Ideally, in discovery setting a model should exhibit high recall, i.e. the
-majority of materials below the convex hull being correctly identified by the model.
+histogram stacks true/false positives/negatives with different colors.
 
 See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
 """
