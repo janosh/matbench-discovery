@@ -135,7 +135,6 @@ df_styled = df_metrics.style.format(precision=3).background_gradient(
     cmap="viridis",
     # gmap=np.log10(df_table) # for log scaled color map
 )
-df_styled
 
 
 # %%
@@ -145,4 +144,5 @@ styles = {
 }
 df_styled.set_table_styles([dict(selector=sel, props=styles[sel]) for sel in styles])
 
-df_styled.to_html(f"{ROOT}/figures/{today}-metrics-table.html")
+html_path = f"{ROOT}/figures/{today}-metrics-table.html"
+# df_styled.to_html(html_path)
