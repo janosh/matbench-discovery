@@ -12,6 +12,8 @@ import scipy.stats
 import wandb
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 
+from matbench_discovery.energy import classify_stable
+
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-05"
 
@@ -69,8 +71,8 @@ plt.rcParams["figure.constrained_layout.use"] = True
 
 
 def hist_classified_stable_vs_hull_dist(
-    e_above_hull_pred: pd.Series,
     e_above_hull_true: pd.Series,
+    e_above_hull_pred: pd.Series,
     ax: plt.Axes = None,
     which_energy: WhichEnergy = "true",
     stability_threshold: float = 0,
@@ -90,14 +92,14 @@ def hist_classified_stable_vs_hull_dist(
     See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
 
     Args:
-        e_above_hull_pred (pd.Series): energy difference to convex hull predicted by
-            model, i.e. difference between the model's predicted and true formation
-            energy.
-        e_above_hull_true (pd.Series): energy diff to convex hull according to DFT
-            ground truth.
+        e_above_hull_true (pd.Series): Distance to convex hull according to DFT
+            ground truth (in eV / atom).
+        e_above_hull_pred (pd.Series): Distance to convex hull predicted by model
+            (in eV / atom). Same as true energy to convex hull plus predicted minus true
+            formation energy.
         ax (plt.Axes, optional): matplotlib axes to plot on.
-        which_energy (WhichEnergy, optional): Whether to use the true formation energy
-            or the model's predicted formation energy for the histogram.
+        which_energy (WhichEnergy, optional): Whether to use the true (DFT) hull
+            distance or the model's predicted hull distance for the histogram.
         stability_threshold (float, optional): set stability threshold as distance to
             convex hull in eV/atom, usually 0 or 0.1 eV.
         show_threshold (bool, optional): Whether to plot stability threshold as dashed
@@ -114,36 +116,28 @@ def hist_classified_stable_vs_hull_dist(
     """
     ax = ax or plt.gca()
 
-    test = e_above_hull_pred + e_above_hull_true
-    # --- histogram of DFT-computed distance to convex hull
-    if which_energy == "true":
-        actual_pos = e_above_hull_true <= stability_threshold
-        actual_neg = e_above_hull_true > stability_threshold
-        model_pos = test <= stability_threshold
-        model_neg = test > stability_threshold
+    true_pos, false_neg, false_pos, true_neg = classify_stable(
+        e_above_hull_true, e_above_hull_pred, stability_threshold
+    )
+    n_true_pos = sum(true_pos)
+    n_false_neg = sum(false_neg)
 
-        n_true_pos = len(e_above_hull_true[actual_pos & model_pos])
-        n_false_neg = len(e_above_hull_true[actual_pos & model_neg])
+    n_total_pos = n_true_pos + n_false_neg
+    null = n_total_pos / len(e_above_hull_true)
 
-        n_total_pos = n_true_pos + n_false_neg
-        null = n_total_pos / len(e_above_hull_true)
-
-        true_pos = e_above_hull_true[actual_pos & model_pos]
-        false_neg = e_above_hull_true[actual_pos & model_neg]
-        false_pos = e_above_hull_true[actual_neg & model_pos]
-        true_neg = e_above_hull_true[actual_neg & model_neg]
-        xlabel = r"$E_\mathrm{above\ hull}$ (eV / atom)"
-
-    # --- histogram of model-predicted distance to convex hull
-    if which_energy == "pred":
-        true_pos = e_above_hull_pred[actual_pos & model_pos]
-        false_neg = e_above_hull_pred[actual_pos & model_neg]
-        false_pos = e_above_hull_pred[actual_neg & model_pos]
-        true_neg = e_above_hull_pred[actual_neg & model_neg]
-        xlabel = r"$\Delta E_{Hull-Pred}$ (eV / atom)"
+    # toggle between histogram of DFT-computed/model-predicted distance to convex hull
+    e_above_hull = e_above_hull_true if which_energy == "true" else e_above_hull_pred
+    eah_true_pos = e_above_hull[true_pos]
+    eah_false_neg = e_above_hull[false_neg]
+    eah_false_pos = e_above_hull[false_pos]
+    eah_true_neg = e_above_hull[true_neg]
+    xlabel = dict(
+        true="$E_\\mathrm{above\\ hull}$ (eV / atom)",
+        pred="$E_\\mathrm{above\\ hull\\ pred}$ (eV / atom)",
+    )[which_energy]
 
     ax.hist(
-        [true_pos, false_neg, false_pos, true_neg],
+        [eah_true_pos, eah_false_neg, eah_false_pos, eah_true_neg],
         bins=200,
         range=x_lim,
         alpha=0.5,
@@ -158,7 +152,7 @@ def hist_classified_stable_vs_hull_dist(
     )
 
     n_true_pos, n_false_pos, n_true_neg, n_false_neg = map(
-        len, (true_pos, false_pos, true_neg, false_neg)
+        len, (eah_true_pos, eah_false_pos, eah_true_neg, eah_false_neg)
     )
     # null = (tp + fn) / (tp + tn + fp + fn)
     precision = n_true_pos / (n_true_pos + n_false_pos)
@@ -181,8 +175,8 @@ def hist_classified_stable_vs_hull_dist(
         # compute accuracy within 20 meV/atom intervals
         bins = np.arange(x_lim[0], x_lim[1], rolling_accuracy)
         bin_counts = np.histogram(e_above_hull_true, bins)[0]
-        bin_true_pos = np.histogram(true_pos, bins)[0]
-        bin_true_neg = np.histogram(true_neg, bins)[0]
+        bin_true_pos = np.histogram(eah_true_pos, bins)[0]
+        bin_true_neg = np.histogram(eah_true_neg, bins)[0]
 
         # compute accuracy
         bin_accuracies = (bin_true_pos + bin_true_neg) / bin_counts
@@ -327,8 +321,8 @@ def rolling_mae_vs_hull_dist(
 
 
 def cumulative_clf_metric(
-    e_above_hull_error: pd.Series,
     e_above_hull_true: pd.Series,
+    e_above_hull_pred: pd.Series,
     metric: Literal["precision", "recall"],
     stability_threshold: float = 0,  # set stability threshold as distance to convex
     # hull in eV / atom, usually 0 or 0.1 eV
@@ -344,11 +338,11 @@ def cumulative_clf_metric(
     predicted stable are included.
 
     Args:
-        df (pd.DataFrame): Model predictions and target energy values.
-        e_above_hull_error (str, optional): Column name with residuals of model
-            predictions, i.e. residual = pred - target. Defaults to "residual".
-        e_above_hull_true (str, optional): Column name with convex hull distance values.
-            Defaults to "e_above_hull".
+        e_above_hull_true (pd.Series): Distance to convex hull according to DFT
+            ground truth (in eV / atom).
+        e_above_hull_pred (pd.Series): Distance to convex hull predicted by model
+            (in eV / atom). Same as true energy to convex hull plus predicted minus true
+            formation energy.
         metric ('precision' | 'recall', optional): Metric to plot.
         stability_threshold (float, optional): Max distance from convex hull before
             material is considered unstable. Defaults to 0.
@@ -365,25 +359,19 @@ def cumulative_clf_metric(
     """
     ax = ax or plt.gca()
 
-    e_above_hull_error = e_above_hull_error.sort_values()
-    e_above_hull_true = e_above_hull_true.loc[e_above_hull_error.index]
+    e_above_hull_pred = e_above_hull_pred.sort_values()
+    e_above_hull_true = e_above_hull_true.loc[e_above_hull_pred.index]
 
-    true_pos_mask = (e_above_hull_true <= stability_threshold) & (
-        e_above_hull_error <= stability_threshold
-    )
-    false_neg_mask = (e_above_hull_true <= stability_threshold) & (
-        e_above_hull_error > stability_threshold
-    )
-    false_pos_mask = (e_above_hull_true > stability_threshold) & (
-        e_above_hull_error <= stability_threshold
+    true_pos, false_neg, false_pos, _true_neg = classify_stable(
+        e_above_hull_true, e_above_hull_pred, stability_threshold
     )
 
-    true_pos_cumsum = true_pos_mask.cumsum()
+    true_pos_cumsum = true_pos.cumsum()
 
     # precision aka positive predictive value (PPV)
-    precision = true_pos_cumsum / (true_pos_cumsum + false_pos_mask.cumsum()) * 100
-    n_true_pos = sum(true_pos_mask)
-    n_false_neg = sum(false_neg_mask)
+    precision = true_pos_cumsum / (true_pos_cumsum + false_pos.cumsum()) * 100
+    n_true_pos = sum(true_pos)
+    n_false_neg = sum(false_neg)
     n_total_pos = n_true_pos + n_false_neg
     true_pos_rate = true_pos_cumsum / n_total_pos * 100
 
@@ -443,9 +431,7 @@ def cumulative_clf_metric(
     return ax
 
 
-def wandb_log_scatter(
-    table: wandb.Table, fields: dict[str, str], **kwargs: Any
-) -> None:
+def wandb_scatter(table: wandb.Table, fields: dict[str, str], **kwargs: Any) -> None:
     """Log a parity scatter plot using custom vega spec to WandB.
 
     Args:

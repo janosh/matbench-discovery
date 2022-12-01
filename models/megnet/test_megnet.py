@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from matbench_discovery import DEBUG, ROOT, timestamp, today
 from matbench_discovery.load_preds import df_wbm
-from matbench_discovery.plots import wandb_log_scatter
+from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 
 """
@@ -115,4 +115,4 @@ R2 = r2_score(df_wbm[target_col], df_wbm[pred_col])
 title = f"{model_name} {task_type} {MAE=:.4} {R2=:.4}"
 print(title)
 
-wandb_log_scatter(table, fields=dict(x=target_col, y=pred_col), title=title)
+wandb_scatter(table, fields=dict(x=target_col, y=pred_col), title=title)

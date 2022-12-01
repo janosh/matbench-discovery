@@ -25,6 +25,7 @@ df_wbm = load_df_wbm_with_preds(models=[model_name]).round(3)
 
 # %%
 target_col = "e_form_per_atom_mp2020_corrected"
+e_above_hull_col = "e_above_hull_mp2020_corrected_ppd_mp"
 which_energy: WhichEnergy = "true"
 # std_factor=0,+/-1,+/-2,... changes the criterion for material stability to
 # energy+std_factor*std. energy+std means predicted energy plus the model's uncertainty
@@ -40,10 +41,15 @@ var_aleatoric = (df_wbm.filter(like="_ale_") ** 2).mean(axis=1)
 var_epistemic = df_wbm.filter(regex=r"_pred_\d").var(axis=1, ddof=0)
 std_total = (var_epistemic + var_aleatoric) ** 0.5
 std_total = df_wbm[f"{model_name}_std"]
+e_above_hull_pred = (
+    df_wbm[e_above_hull_col]
+    + (df_wbm[model_name] + std_factor * std_total)
+    - df_wbm[target_col]
+)
 
 ax, metrics = hist_classified_stable_vs_hull_dist(
-    e_above_hull_pred=df_wbm[model_name] - std_factor * std_total - df_wbm[target_col],
-    e_above_hull_true=df_wbm.e_above_hull_mp2020_corrected_ppd_mp,
+    e_above_hull_true=df_wbm[e_above_hull_col],
+    e_above_hull_pred=e_above_hull_pred,
     which_energy=which_energy,
     # stability_threshold=-0.05,
     rolling_accuracy=0,

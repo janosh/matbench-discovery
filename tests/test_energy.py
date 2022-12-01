@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
+import numpy as np
+import pandas as pd
 import pytest
 from pymatgen.analysis.phase_diagram import PDEntry
 from pymatgen.core import Lattice, Structure
@@ -11,7 +13,11 @@ from pymatgen.entries.computed_entries import (
     Entry,
 )
 
-from matbench_discovery.energy import get_e_form_per_atom, get_elemental_ref_entries
+from matbench_discovery.energy import (
+    classify_stable,
+    get_e_form_per_atom,
+    get_elemental_ref_entries,
+)
 
 dummy_struct = Structure(
     lattice=Lattice.cubic(5),
@@ -72,3 +78,28 @@ def test_get_elemental_ref_entries(
         expected = {"Fe": constructor(*entries[2]), "O": constructor(*entries[3])}
 
     assert elemental_ref_entries == expected
+
+
+@pytest.mark.parametrize(
+    "stability_threshold, expected",
+    [(-0.1, (6, 6, 11, 7)), (0, (8, 5, 10, 7)), (0.1, (10, 4, 10, 6))],
+)
+def test_classify_stable(
+    stability_threshold: float, expected: tuple[int, int, int, int]
+) -> None:
+    np.random.seed(0)  # for reproducibility, makeDataFrame() uses np.random
+    df = pd.util.testing.makeDataFrame()
+
+    true_pos, false_neg, false_pos, true_neg = classify_stable(
+        e_above_hull_true=df.A,
+        e_above_hull_pred=df.B,
+        stability_threshold=stability_threshold,
+    )
+    n_true_pos, n_false_neg, n_false_pos, n_true_neg = map(
+        sum, (true_pos, false_neg, false_pos, true_neg)
+    )
+
+    assert (n_true_pos, n_false_neg, n_false_pos, n_true_neg) == expected
+    assert n_true_pos + n_false_neg + n_false_pos + n_true_neg == len(df)
+    assert n_true_neg + n_false_pos == sum(df.A > stability_threshold)
+    assert n_true_pos + n_false_neg == sum(df.A <= stability_threshold)

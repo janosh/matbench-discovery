@@ -10,6 +10,7 @@ from matbench_discovery import ROOT
 from matbench_discovery.load_preds import df_wbm
 from matbench_discovery.plots import (
     AxLine,
+    WhichEnergy,
     cumulative_clf_metric,
     hist_classified_stable_vs_hull_dist,
     rolling_mae_vs_hull_dist,
@@ -27,7 +28,7 @@ for model_name in ("Wren", "CGCNN", "Voronoi"):
 
     model_preds = df.filter(like=r"_pred").mean(axis=1)
 
-    df["e_above_hull_pred"] = model_preds - df.e_form_target
+    df["e_above_hull_pred"] = df.e_above_hull_mp + model_preds - df.e_form_target
 
     test_dfs[model_name] = df
 
@@ -53,8 +54,8 @@ def test_cumulative_precision(
         test_dfs.items(), ("tab:blue", "tab:orange", "tab:pink")
     ):
         ax = cumulative_clf_metric(
-            e_above_hull_error=df.e_above_hull_pred,
             e_above_hull_true=df.e_above_hull_mp,
+            e_above_hull_pred=df.e_above_hull_pred,
             metric=metric,
             color=color,
             label=model_name,
@@ -101,8 +102,9 @@ def test_rolling_mae_vs_hull_dist(
 
 @pytest.mark.parametrize("stability_threshold", (0.1, 0.01))
 @pytest.mark.parametrize("x_lim", ((0, 0.6), (-0.2, 0.8)))
+@pytest.mark.parametrize("which_energy", ("true", "pred"))
 def test_hist_classified_stable_vs_hull_dist(
-    stability_threshold: float, x_lim: tuple[float, float]
+    stability_threshold: float, x_lim: tuple[float, float], which_energy: WhichEnergy
 ) -> None:
     ax = plt.figure().gca()  # new figure ensures test functions use different axes
 
@@ -114,12 +116,12 @@ def test_hist_classified_stable_vs_hull_dist(
         ax=ax,
         stability_threshold=stability_threshold,
         x_lim=x_lim,
+        which_energy=which_energy,
     )
 
     assert ax is not None
     # assert ax.get_ylim() == pytest.approx((0, 6.3))
     assert ax.get_ylabel() == "Number of compounds"
-    assert ax.get_xlabel() == r"$E_\mathrm{above\ hull}$ (eV / atom)"
 
     assert metrics["precision"] > 0.3
     assert metrics["recall"] > 0.3

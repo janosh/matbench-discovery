@@ -12,7 +12,7 @@ from aviary.wrenformer.data import df_to_in_mem_dataloader
 from aviary.wrenformer.model import Wrenformer
 
 from matbench_discovery import DEBUG, ROOT, today
-from matbench_discovery.plots import wandb_log_scatter
+from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
@@ -110,4 +110,4 @@ R2 = ensemble_metrics.R2.mean()
 
 title = rf"Wrenformer {task_type} ensemble={len(runs)} {MAE=:.4} {R2=:.4}"
 
-wandb_log_scatter(table, fields=dict(x=target_col, y=pred_col), title=title)
+wandb_scatter(table, fields=dict(x=target_col, y=pred_col), title=title)

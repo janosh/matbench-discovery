@@ -39,8 +39,9 @@ for batch_idx, ax in zip(range(1, 6), axs.flat):
     assert 1e4 < len(batch_df) < 1e5, print(f"{len(batch_df) = :,}")
 
     ax, metrics = hist_classified_stable_vs_hull_dist(
-        e_above_hull_pred=batch_df[model_name] - batch_df[target_col],
         e_above_hull_true=batch_df[e_above_hull_col],
+        e_above_hull_pred=batch_df[e_above_hull_col]
+        + (batch_df[model_name] - batch_df[target_col]),
         which_energy=which_energy,
         ax=ax,
     )
@@ -53,8 +54,9 @@ for batch_idx, ax in zip(range(1, 6), axs.flat):
 
 
 ax, metrics = hist_classified_stable_vs_hull_dist(
-    e_above_hull_pred=df_wbm[model_name] - df_wbm[target_col],
     e_above_hull_true=df_wbm[e_above_hull_col],
+    e_above_hull_pred=df_wbm[e_above_hull_col]
+    + (df_wbm[model_name] - df_wbm[target_col]),
     which_energy=which_energy,
     ax=axs.flat[-1],
 )
@@ -69,5 +71,5 @@ fig.suptitle(f"{today} {model_name}", y=1.07, fontsize=16)
 
 
 # %%
-img_name = f"{today}-{model_name}-wbm-hull-dist-hist-batches"
-ax.figure.savefig(f"{ROOT}/figures/{img_name}.pdf")
+img_path = f"{ROOT}/figures/{today}-{model_name}-wbm-hull-dist-hist-batches.pdf"
+# ax.figure.savefig(img_path)
