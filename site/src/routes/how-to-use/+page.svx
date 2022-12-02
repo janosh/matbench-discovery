@@ -1,0 +1,22 @@
+<script lang="ts">
+  // import * as d3 from 'd3'
+
+  // const promise = d3.csv('https://github.com/janosh/matbench-discovery/raw/main/data/wbm/2022-10-19-wbm-summary.csv')
+  // const promise = d3.csv('https://raw.githubusercontent.com/janosh/pymatviz/main/pymatviz/elements.csv')
+</script>
+
+The primary way to use this benchmark is through the [`pip`-installable](https://pypi.org/project/matbench-discovery) Python package:
+
+```zsh
+pip install matbench-discovery
+```
+
+You can also download the data files directly:
+
+1. [`2022-10-19-wbm-summary.csv`](https://github.com/janosh/matbench-discovery/raw/v1.0.0/data/wbm/2022-10-19-wbm-summary.csv) [[GitHub](https://github.com/janosh/matbench-discovery/blob/v1/data/wbm/2022-10-19-wbm-summary.csv)]
+1. [`2022-10-19-wbm-init-structs.json`](https://github.com/janosh/matbench-discovery/raw/v1.0.0/data/wbm/2022-10-19-wbm-init-structs.json) [[GitHub](https://github.com/janosh/matbench-discovery/blob/v1/data/wbm/2022-10-19-wbm-init-structs.json)]
+1. [`2022-10-19-wbm-cses.json`](https://github.com/janosh/matbench-discovery/raw/v1.0.0/data/wbm/2022-10-19-wbm-cses.json) [[GitHub](https://github.com/janosh/matbench-discovery/blob/v1/data/wbm/2022-10-19-wbm-cses.json)]
+
+<!-- {#await promise then data}
+  {JSON.stringify(data)}
+{/await} -->
