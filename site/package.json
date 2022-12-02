@@ -1,0 +1,55 @@
+{
+  "name": "matbench-discovery",
+  "description": "Benchmarking machine learning energy models for materials discovery.",
+  "author": "Janosh Riebesell <janosh.riebesell@gmail.com>",
+  "homepage": "https://janosh.github.io/matbench-discovery",
+  "repository": "https://github.com/janosh/matbench-discovery",
+  "license": "MIT",
+  "type": "module",
+  "bugs": "https://github.com/janosh/matbench-discovery/issues",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "serve": "vite build && vite preview",
+    "check": "svelte-check"
+  },
+  "devDependencies": {
+    "@iconify/svelte": "^3.0.0",
+    "@sveltejs/adapter-static": "1.0.0-next.48",
+    "@sveltejs/kit": "1.0.0-next.553",
+    "@sveltejs/vite-plugin-svelte": "^1.2.0",
+    "@typescript-eslint/eslint-plugin": "^5.43.0",
+    "@typescript-eslint/parser": "^5.43.0",
+    "eslint": "^8.28.0",
+    "eslint-plugin-svelte3": "^4.0.0",
+    "hastscript": "^7.1.0",
+    "highlight.js": "^11.6.0",
+    "mdsvex": "^0.10.6",
+    "prettier": "^2.7.1",
+    "prettier-plugin-svelte": "^2.8.1",
+    "rehype-autolink-headings": "^6.1.1",
+    "rehype-slug": "^5.1.0",
+    "svelte": "^3.53.1",
+    "svelte-check": "^2.9.2",
+    "svelte-github-corner": "^0.1.0",
+    "svelte-preprocess": "^4.10.7",
+    "svelte-toc": "^0.4.1",
+    "svelte2tsx": "^0.5.20",
+    "tslib": "^2.4.1",
+    "typescript": "^4.9.3",
+    "vite": "^3.2.4"
+  },
+  "prettier": {
+    "semi": false,
+    "singleQuote": true,
+    "overrides": [
+      {
+        "files": "*.svelte",
+        "options": {
+          "printWidth": 90
+        }
+      }
+    ]
+  }
+}
