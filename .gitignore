@@ -23,5 +23,5 @@ models/**/*.csv
 
 # temporary ignore rules
 paper
-meeting-notes
 models/voronoi/*.zip
+site

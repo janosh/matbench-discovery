@@ -14,7 +14,7 @@ from pymatgen.core import Structure
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from matbench_discovery import DEBUG, ROOT, today
+from matbench_discovery import CHECKPOINT_DIR, DEBUG, ROOT, today
 from matbench_discovery.load_preds import df_wbm
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
@@ -23,9 +23,9 @@ __author__ = "Janosh Riebesell"
 __date__ = "2022-08-15"
 
 """
-Script that downloads checkpoints for an ensemble of Wrenformer models trained on the MP
+Script that downloads checkpoints for an ensemble of CGCNN models trained on all MP
 formation energies, then makes predictions on some dataset, prints ensemble metrics and
-stores predictions to CSV.
+saves predictions to CSV.
 """
 
 task_type = "RS2RE"
@@ -54,7 +54,7 @@ elif task_type == "RS2RE":
 else:
     raise ValueError(f"Unexpected {task_type=}")
 
-df = pd.read_json(data_path).set_index("material_id", drop=False)
+df = pd.read_json(data_path).set_index("material_id")
 
 target_col = "e_form_per_atom_mp2020_corrected"
 df[target_col] = df_wbm[target_col]
@@ -88,7 +88,7 @@ run_params = dict(
     task_type=task_type,
     target_col=target_col,
     input_col=input_col,
-    filters=filters,
+    wandb_run_filters=filters,
     slurm_vars=slurm_vars,
 )
 
@@ -99,7 +99,7 @@ cg_data = CrystalGraphData(
     df,
     task_dict={target_col: "regression"},
     structure_col=input_col,
-    identifiers=("material_id", "formula_from_cse"),
+    identifiers=["formula_from_cse"],
 )
 data_loader = DataLoader(
     cg_data, batch_size=1024, shuffle=False, collate_fn=collate_batch
@@ -107,7 +107,8 @@ data_loader = DataLoader(
 df, ensemble_metrics = predict_from_wandb_checkpoints(
     runs,
     # dropping isolated-atom structs means len(cg_data.df) < len(df)
-    df=cg_data.df.reset_index(drop=True).drop(columns=input_col),
+    cache_dir=CHECKPOINT_DIR,
+    df=cg_data.df.drop(columns=input_col),
     target_col=target_col,
     model_cls=CrystalGraphConvNet,
     data_loader=data_loader,
@@ -122,6 +123,6 @@ table = wandb.Table(dataframe=df[[target_col, pred_col]].reset_index())
 MAE = ensemble_metrics.MAE.mean()
 R2 = ensemble_metrics.R2.mean()
 
-title = rf"CGCNN {task_type} ensemble={len(runs)} {MAE=:.4} {R2=:.4}"
+title = f"CGCNN {task_type} ensemble={len(runs)} {MAE=:.4} {R2=:.4}"
 
 wandb_scatter(table, fields=dict(x=target_col, y=pred_col), title=title)
