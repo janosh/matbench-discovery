@@ -8,6 +8,7 @@ from typing import Any
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
 DEBUG = "slurm-submit" not in sys.argv and "SLURM_JOB_ID" not in os.environ
+CHECKPOINT_DIR = f"{ROOT}/wandb/checkpoints"
 
 timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
 today = timestamp.split("@")[0]

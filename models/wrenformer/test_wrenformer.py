@@ -11,7 +11,7 @@ from aviary.deploy import predict_from_wandb_checkpoints
 from aviary.wrenformer.data import df_to_in_mem_dataloader
 from aviary.wrenformer.model import Wrenformer
 
-from matbench_discovery import DEBUG, ROOT, today
+from matbench_discovery import CHECKPOINT_DIR, DEBUG, ROOT, today
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 
@@ -19,9 +19,9 @@ __author__ = "Janosh Riebesell"
 __date__ = "2022-08-15"
 
 """
-Download WandB checkpoints for an ensemble of Wrenformer models trained on MP
+Download WandB checkpoints for an ensemble of Wrenformer models trained on all MP
 formation energies, then makes predictions on some dataset, prints ensemble metrics and
-stores predictions to CSV.
+saves predictions to CSV.
 """
 
 task_type = "IS2RE"
@@ -74,7 +74,7 @@ run_params = dict(
     task_type=task_type,
     target_col=target_col,
     input_col=input_col,
-    filters=filters,
+    wandb_run_filters=filters,
     slurm_vars=slurm_vars,
 )
 
@@ -84,6 +84,7 @@ wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 # %%
 data_loader = df_to_in_mem_dataloader(
     df=df,
+    cache_dir=CHECKPOINT_DIR,
     target_col=target_col,
     batch_size=1024,
     input_col=input_col,
@@ -108,6 +109,6 @@ table = wandb.Table(dataframe=df[[target_col, pred_col]].reset_index())
 MAE = ensemble_metrics.MAE.mean()
 R2 = ensemble_metrics.R2.mean()
 
-title = rf"Wrenformer {task_type} ensemble={len(runs)} {MAE=:.4} {R2=:.4}"
+title = f"Wrenformer {task_type} ensemble={len(runs)} {MAE=:.4} {R2=:.4}"
 
 wandb_scatter(table, fields=dict(x=target_col, y=pred_col), title=title)
