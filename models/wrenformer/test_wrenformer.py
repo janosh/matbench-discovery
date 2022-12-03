@@ -27,7 +27,7 @@ saves predictions to CSV.
 task_type = "IS2RE"
 data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-summary.csv"
 debug = "slurm-submit" in sys.argv
-job_name = f"test-wrenformer-wbm-IS2RE{'-debug' if DEBUG else ''}"
+job_name = f"test-wrenformer-wbm-{task_type}{'-debug' if DEBUG else ''}"
 module_dir = os.path.dirname(__file__)
 out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 

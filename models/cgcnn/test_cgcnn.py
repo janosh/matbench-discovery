@@ -23,12 +23,12 @@ __author__ = "Janosh Riebesell"
 __date__ = "2022-08-15"
 
 """
-Script that downloads checkpoints for an ensemble of CGCNN models trained on all MP
+Download WandB checkpoints for an ensemble of CGCNN models trained on all MP
 formation energies, then makes predictions on some dataset, prints ensemble metrics and
 saves predictions to CSV.
 """
 
-task_type = "RS2RE"
+task_type = "IS2RE"
 debug = "slurm-submit" in sys.argv
 job_name = f"test-cgcnn-wbm-{task_type}{'-debug' if DEBUG else ''}"
 module_dir = os.path.dirname(__file__)
@@ -58,7 +58,6 @@ df = pd.read_json(data_path).set_index("material_id")
 
 target_col = "e_form_per_atom_mp2020_corrected"
 df[target_col] = df_wbm[target_col]
-assert target_col in df, f"{target_col=} not in {list(df)}"
 if task_type == "RS2RE":
     df[input_col] = [x["structure"] for x in df.computed_structure_entry]
 assert input_col in df, f"{input_col=} not in {list(df)}"
@@ -66,8 +65,8 @@ assert input_col in df, f"{input_col=} not in {list(df)}"
 df[input_col] = [Structure.from_dict(x) for x in tqdm(df[input_col], disable=None)]
 
 filters = {
-    "created_at": {"$gt": "2022-11-22", "$lt": "2022-11-23"},
-    "display_name": {"$regex": "^cgcnn-robust"},
+    "created_at": {"$gt": "2022-12-03", "$lt": "2022-12-04"},
+    "display_name": {"$regex": "^train-cgcnn-robust-augment=3-"},
 }
 runs = wandb.Api().runs("janosh/matbench-discovery", filters=filters)
 
@@ -92,19 +91,15 @@ run_params = dict(
     slurm_vars=slurm_vars,
 )
 
-
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 cg_data = CrystalGraphData(
-    df,
-    task_dict={target_col: "regression"},
-    structure_col=input_col,
-    identifiers=["formula_from_cse"],
+    df, task_dict={target_col: "regression"}, structure_col=input_col
 )
 data_loader = DataLoader(
     cg_data, batch_size=1024, shuffle=False, collate_fn=collate_batch
 )
-df, ensemble_metrics = predict_from_wandb_checkpoints(
+df_preds, ensemble_metrics = predict_from_wandb_checkpoints(
     runs,
     # dropping isolated-atom structs means len(cg_data.df) < len(df)
     cache_dir=CHECKPOINT_DIR,
@@ -114,9 +109,10 @@ df, ensemble_metrics = predict_from_wandb_checkpoints(
     data_loader=data_loader,
 )
 
-df.to_csv(f"{out_dir}/{job_name}-preds.csv", index=False)
+df_preds.to_csv(f"{out_dir}/{job_name}-preds.csv", index=False)
 pred_col = f"{target_col}_pred_ens"
-table = wandb.Table(dataframe=df[[target_col, pred_col]].reset_index())
+assert pred_col in df, f"{pred_col=} not in {list(df)}"
+table = wandb.Table(dataframe=df_preds[[target_col, pred_col]].reset_index())
 
 
 # %%
