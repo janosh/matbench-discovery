@@ -1,5 +1,5 @@
 # %%
-from matbench_discovery import today
+from matbench_discovery import ROOT, today
 from matbench_discovery.load_preds import load_df_wbm_with_preds
 from matbench_discovery.plots import WhichEnergy, hist_classified_stable_vs_hull_dist
 
@@ -50,15 +50,19 @@ ax, metrics = hist_classified_stable_vs_hull_dist(
     which_energy=which_energy,
     # stability_threshold=-0.05,
     rolling_accuracy=0,
+    # backend="matplotlib",
 )
+if hasattr(ax, "legend"):
+    legend_title = f"Enrichment Factor = {metrics['enrichment']:.3}"
+    ax.legend(loc="upper left", frameon=False, title=legend_title)
 
-fig = ax.figure
-fig.set_size_inches(10, 9)
-
-legend_title = f"Enrichment Factor = {metrics['enrichment']:.3}"
-ax.legend(loc="center left", frameon=False, title=legend_title)
+ax
 
 
 # %%
-fig_name = f"{today}-wren-wbm-hull-dist-hist-{which_energy=}"
-# fig.savefig(f"{ROOT}/figures/{fig_name}.pdf")
+fig_name = f"{ROOT}/figures/{today}-wren-wbm-hull-dist-hist-{which_energy=}.pdf"
+if hasattr(ax, "write_image"):
+    # fig.write_image(fig_name)
+    ax.write_html(fig_name.replace(".pdf", ".html"))
+else:
+    ax.figure.savefig(fig_name)

@@ -1,7 +1,10 @@
 # %%
+from plotly.subplots import make_subplots
+
 from matbench_discovery import ROOT, today
 from matbench_discovery.load_preds import load_df_wbm_with_preds
 from matbench_discovery.plots import (
+    Backend,
     WhichEnergy,
     hist_classified_stable_vs_hull_dist,
     plt,
@@ -30,30 +33,49 @@ e_above_hull_col = "e_above_hull_mp2020_corrected_ppd_mp"
 
 # %%
 which_energy: WhichEnergy = "true"
-fig, axs = plt.subplots(3, 3, figsize=(18, 12))
-
 model_name = "Wrenformer"
 
-for model_name, ax in zip(models, axs.flat, strict=True):
+backend: Backend = "matplotlib"
+if backend == "matplotlib":
+    fig, axs = plt.subplots(3, 3, figsize=(18, 12))
+else:
+    fig = make_subplots(rows=3, cols=3)
 
+
+for idx, model_name in enumerate(models):
     ax, metrics = hist_classified_stable_vs_hull_dist(
         e_above_hull_true=df_wbm[e_above_hull_col],
         e_above_hull_pred=df_wbm[e_above_hull_col]
         + (df_wbm[model_name] - df_wbm[target_col]),
         which_energy=which_energy,
-        ax=ax,
+        ax=axs.flat[idx],
+        backend=backend,
+    )
+    title = f"{model_name} ({len(df_wbm[model_name].dropna()):,})"
+    text = f"Enrichment\nFactor = {metrics['enrichment']:.3}"
+
+    if backend == "matplotlib":
+        ax.text(0.02, 0.25, text, fontsize=16, transform=ax.transAxes)
+        ax.set(title=title)
+
+    else:
+        ax.add_annotation(text=text, x=0.5, y=0.5, showarrow=False)
+        ax.update_xaxes(title_text=title)
+
+        for trace in ax.data:
+            fig.append_trace(trace, row=idx % 3 + 1, col=idx // 3 + 1)
+
+if backend == "matplotlib":
+    fig.suptitle(f"{today} {which_energy=}", y=1.07, fontsize=16)
+    plt.figlegend(
+        *ax.get_legend_handles_labels(),
+        ncol=10,
+        loc="lower center",
+        bbox_to_anchor=(0.5, -0.05),
+        frameon=False,
     )
 
-    text = f"Enrichment\nFactor = {metrics['enrichment']:.3}"
-    ax.text(0.02, 0.25, text, fontsize=16, transform=ax.transAxes)
-
-    title = f"{model_name} ({len(df_wbm[model_name].dropna()):,})"
-    ax.set(title=title)
-
-
-# axs.flat[0].legend(frameon=False, loc="upper left")
-
-fig.suptitle(f"{today} {which_energy=}", y=1.07, fontsize=16)
+fig
 
 
 # %%
