@@ -4,12 +4,14 @@ from typing import Literal
 
 import matplotlib.pyplot as plt
 import pandas as pd
+import plotly.graph_objects as go
 import pytest
 
 from matbench_discovery import ROOT
 from matbench_discovery.load_preds import df_wbm
 from matbench_discovery.plots import (
     AxLine,
+    Backend,
     WhichEnergy,
     cumulative_clf_metric,
     hist_classified_stable_vs_hull_dist,
@@ -103,8 +105,12 @@ def test_rolling_mae_vs_hull_dist(
 @pytest.mark.parametrize("stability_threshold", (0.1, 0.01))
 @pytest.mark.parametrize("x_lim", ((0, 0.6), (-0.2, 0.8)))
 @pytest.mark.parametrize("which_energy", ("true", "pred"))
+@pytest.mark.parametrize("backend", ("plotly", "matplotlib"))
 def test_hist_classified_stable_vs_hull_dist(
-    stability_threshold: float, x_lim: tuple[float, float], which_energy: WhichEnergy
+    stability_threshold: float,
+    x_lim: tuple[float, float],
+    which_energy: WhichEnergy,
+    backend: Backend,
 ) -> None:
     ax = plt.figure().gca()  # new figure ensures test functions use different axes
 
@@ -117,11 +123,15 @@ def test_hist_classified_stable_vs_hull_dist(
         stability_threshold=stability_threshold,
         x_lim=x_lim,
         which_energy=which_energy,
+        backend=backend,
     )
 
-    assert ax is not None
-    # assert ax.get_ylim() == pytest.approx((0, 6.3))
-    assert ax.get_ylabel() == "Number of compounds"
+    if backend == "matplotlib":
+        assert isinstance(ax, plt.Axes)
+        assert ax.get_ylabel() == "Number of materials"
+    else:
+        assert isinstance(ax, go.Figure)
+        assert ax.layout.yaxis.title.text == "Number of materials"
 
     assert metrics["precision"] > 0.3
     assert metrics["recall"] > 0.3

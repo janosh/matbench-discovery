@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objs as go
 import plotly.io as pio
 import scipy.interpolate
 import scipy.stats
@@ -19,7 +20,7 @@ __date__ = "2022-08-05"
 
 WhichEnergy = Literal["true", "pred"]
 AxLine = Literal["x", "y", "xy", ""]
-
+Backend = Literal["matplotlib", "plotly"]
 
 # --- start global plot settings
 quantity_labels = dict(
@@ -53,8 +54,11 @@ model_labels = dict(
     dft="DFT",
 )
 px.defaults.labels = quantity_labels | model_labels
-
-pio.templates.default = "plotly_white"
+pastel_layout = dict(
+    colorway=px.colors.qualitative.Pastel, margin=dict(l=40, r=30, t=60, b=30)
+)
+pio.templates["pastel"] = dict(layout=pastel_layout)
+pio.templates.default = "plotly_white+pastel"
 
 # https://github.com/plotly/Kaleido/issues/122#issuecomment-994906924
 # when seeing MathJax "loading" message in exported PDFs, try:
@@ -79,7 +83,9 @@ def hist_classified_stable_vs_hull_dist(
     show_threshold: bool = True,
     x_lim: tuple[float | None, float | None] = (-0.4, 0.4),
     rolling_accuracy: float | None = 0.02,
-) -> tuple[plt.Axes, dict[str, float]]:
+    backend: Backend = "plotly",
+    ylabel: str = "Number of materials",
+) -> tuple[plt.Axes | go.Figure, dict[str, float]]:
     """
     Histogram of the energy difference (either according to DFT ground truth [default]
     or model predicted energy) to the convex hull for materials in the WBM data set. The
@@ -106,7 +112,9 @@ def hist_classified_stable_vs_hull_dist(
             vertical line.
         x_lim (tuple[float | None, float | None]): x-axis limits.
         rolling_accuracy (float): Rolling accuracy window size in eV / atom. Set to None
-            or 0 to disable. Defaults to 0.01.
+            or 0 to disable. Defaults to 0.02, meaning 20 meV / atom.
+        backend ('matplotlib' | 'plotly'], optional): Which plotting backend to use.
+            Changes the return type.
 
     Returns:
         tuple[plt.Axes, dict[str, float]]: plot axes and classification metrics
@@ -114,8 +122,6 @@ def hist_classified_stable_vs_hull_dist(
     NOTE this figure plots hist bars separately which causes aliasing in pdf. Can be
     fixed in Inkscape or similar by merging regions by color.
     """
-    ax = ax or plt.gca()
-
     true_pos, false_neg, false_pos, true_neg = classify_stable(
         e_above_hull_true, e_above_hull_pred, stability_threshold
     )
@@ -131,90 +137,105 @@ def hist_classified_stable_vs_hull_dist(
     eah_false_neg = e_above_hull[false_neg]
     eah_false_pos = e_above_hull[false_pos]
     eah_true_neg = e_above_hull[true_neg]
-    xlabel = dict(
-        true="$E_\\mathrm{above\\ hull}$ (eV / atom)",
-        pred="$E_\\mathrm{above\\ hull\\ pred}$ (eV / atom)",
-    )[which_energy]
-
-    ax.hist(
-        [eah_true_pos, eah_false_neg, eah_false_pos, eah_true_neg],
-        bins=200,
-        range=x_lim,
-        alpha=0.5,
-        color=["tab:green", "tab:orange", "tab:red", "tab:blue"],
-        label=[
-            "True Positives",
-            "False Negatives",
-            "False Positives",
-            "True Negatives",
-        ],
-        stacked=True,
-    )
-
     n_true_pos, n_false_pos, n_true_neg, n_false_neg = map(
-        len, (eah_true_pos, eah_false_pos, eah_true_neg, eah_false_neg)
+        sum, (true_pos, false_pos, true_neg, false_neg)
     )
     # null = (tp + fn) / (tp + tn + fp + fn)
     precision = n_true_pos / (n_true_pos + n_false_pos)
 
-    # assert (n_all := n_true_pos + n_false_pos + n_true_neg + n_false_neg) == len(
-    #     e_above_hull_true
-    # ), f"{n_all} != {len(e_above_hull_true)}"
+    xlabel = dict(
+        true=r"$E_\mathrm{above\ hull}\;\mathrm{(eV / atom)}$",
+        pred=r"$E_\mathrm{above\ hull\ pred}\;\mathrm{(eV / atom)}$",
+    )[which_energy]
+    labels = ["True Positives", "False Negatives", "False Positives", "True Negatives"]
 
-    ax.set(xlabel=xlabel, ylabel="Number of compounds", xlim=x_lim)
-
-    if rolling_accuracy:
-        # add moving average of the accuracy (computed within 20 meV/atom intervals) as
-        # a function of ΔHd,MP is shown as a blue line (right axis)
-        ax_acc = ax.twinx()
-        ax_acc.set_ylabel("Accuracy", color="darkblue")
-        ax_acc.tick_params(labelcolor="darkblue")
-        ax_acc.set(ylim=(0, 1))
-
-        # --- moving average of the accuracy
-        # compute accuracy within 20 meV/atom intervals
-        bins = np.arange(x_lim[0], x_lim[1], rolling_accuracy)
-        bin_counts = np.histogram(e_above_hull_true, bins)[0]
-        bin_true_pos = np.histogram(eah_true_pos, bins)[0]
-        bin_true_neg = np.histogram(eah_true_neg, bins)[0]
-
-        # compute accuracy
-        bin_accuracies = (bin_true_pos + bin_true_neg) / bin_counts
-        # plot accuracy
-        ax_acc.plot(
-            bins[:-1],
-            bin_accuracies,
-            color="tab:blue",
-            label="Accuracy",
-            linewidth=3,
+    if backend == "matplotlib":
+        ax = ax or plt.gca()
+        ax.hist(
+            [eah_true_pos, eah_false_neg, eah_false_pos, eah_true_neg],
+            bins=200,
+            range=x_lim,
+            alpha=0.5,
+            color=["tab:green", "tab:orange", "tab:red", "tab:blue"],
+            label=labels,
+            stacked=True,
         )
-        # ax2.fill_between(
-        #     bin_centers,
-        #     bin_accuracy - bin_accuracy_std,
-        #     bin_accuracy + bin_accuracy_std,
-        #     color="tab:blue",
-        #     alpha=0.2,
-        # )
+        ax.set(xlabel=xlabel, ylabel=ylabel, xlim=x_lim)
 
-    if show_threshold:
         ax.axvline(
             stability_threshold,
-            color="k",
+            color="black",
             linestyle="--",
             label="Stability Threshold",
         )
 
-    recall = n_true_pos / n_total_pos
+        if rolling_accuracy:
+            # add moving average of the accuracy computed within given window
+            # as a function of e_above_hull shown as blue line (right axis)
+            ax_acc = ax.twinx()
+            ax_acc.set_ylabel("Accuracy", color="darkblue")
+            ax_acc.tick_params(labelcolor="darkblue")
+            ax_acc.set(ylim=(0, 1))
 
-    return ax, {
-        "enrichment": precision / null,
-        "precision": precision,
-        "recall": recall,
-        "prevalence": null,
-        "accuracy": (n_true_pos + n_true_neg)
+            # --- moving average of the accuracy
+            # compute accuracy within 20 meV/atom intervals
+            bins = np.arange(x_lim[0], x_lim[1], rolling_accuracy)
+            bin_counts = np.histogram(e_above_hull_true, bins)[0]
+            bin_true_pos = np.histogram(eah_true_pos, bins)[0]
+            bin_true_neg = np.histogram(eah_true_neg, bins)[0]
+
+            # compute accuracy
+            bin_accuracies = (bin_true_pos + bin_true_neg) / bin_counts
+            # plot accuracy
+            ax_acc.plot(
+                bins[:-1],
+                bin_accuracies,
+                color="tab:blue",
+                label="Accuracy",
+                linewidth=3,
+            )
+            # ax2.fill_between(
+            #     bin_centers,
+            #     bin_accuracy - bin_accuracy_std,
+            #     bin_accuracy + bin_accuracy_std,
+            #     color="tab:blue",
+            #     alpha=0.2,
+            # )
+
+    if backend == "plotly":
+        clf = (true_pos * 1 + false_neg * 2 + false_pos * 3 + true_neg * 4).map(
+            dict(zip(range(1, 5), labels))
+        )
+        df = pd.DataFrame(dict(e_above_hull=e_above_hull, clf=clf))
+
+        ax = px.histogram(
+            df, x="e_above_hull", color="clf", nbins=20000, range_x=x_lim, opacity=0.9
+        )
+        ax.update_layout(
+            dict(xaxis_title=xlabel, yaxis_title=ylabel),
+            legend=dict(title=None, yanchor="top", y=1, xanchor="right", x=1),
+        )
+
+        ax.add_vline(stability_threshold, line=dict(dash="dash", width=1))
+        ax.add_annotation(
+            text="Stability threshold",
+            x=stability_threshold,
+            y=1.1,
+            yref="paper",
+            font=dict(size=14, color="gray"),
+            showarrow=False,
+        )
+
+    recall = n_true_pos / n_total_pos
+    return ax, dict(
+        enrichment=precision / null,
+        precision=precision,
+        recall=recall,
+        prevalence=null,
+        accuracy=(n_true_pos + n_true_neg)
         / (n_true_pos + n_true_neg + n_false_pos + n_false_neg),
-        "f1": 2 * (precision * recall) / (precision + recall),
-    }
+        f1=2 * (precision * recall) / (precision + recall),
+    )
 
 
 def rolling_mae_vs_hull_dist(
@@ -432,7 +453,7 @@ def cumulative_clf_metric(
 
 
 def wandb_scatter(table: wandb.Table, fields: dict[str, str], **kwargs: Any) -> None:
-    """Log a parity scatter plot using custom vega spec to WandB.
+    """Log a parity scatter plot using custom Vega spec to WandB.
 
     Args:
         table (wandb.Table): WandB data table.

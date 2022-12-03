@@ -56,6 +56,7 @@ ax, metrics = hist_classified_stable_vs_hull_dist(
     + (df_wbm[model_name] - df_wbm[target_col]),
     which_energy=which_energy,
     ax=axs.flat[-1],
+    backend="matplotlib",
 )
 
 text = f"Enrichment\nFactor = {metrics['enrichment']:.3}"
