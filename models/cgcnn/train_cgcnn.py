@@ -8,10 +8,11 @@ from aviary.core import TaskType
 from aviary.train import df_train_test_split, train_model
 from pymatgen.core import Structure
 from torch.utils.data import DataLoader
-from tqdm import tqdm
+from tqdm import tqdm, trange
 
 from matbench_discovery import DEBUG, ROOT, timestamp, today
 from matbench_discovery.slurm import slurm_submit
+from matbench_discovery.structure import perturb_structure
 
 """
 Train a CGCNN ensemble on target_col of data_path.
@@ -24,7 +25,10 @@ __date__ = "2022-06-13"
 # %%
 epochs = 300
 target_col = "formation_energy_per_atom"
-job_name = f"train-cgcnn-robust-{target_col}{'-debug' if DEBUG else ''}"
+input_col = "structure"
+id_col = "material_id"
+augment = 3
+job_name = f"train-cgcnn-robust-{augment=}{'-debug' if DEBUG else ''}"
 print(f"{job_name=}")
 robust = "robust" in job_name.lower()
 ensemble_size = 10
@@ -35,7 +39,7 @@ slurm_vars = slurm_submit(
     job_name=job_name,
     partition="ampere",
     account="LEE-SL3-GPU",
-    time="8:0:0",
+    time="12:0:0",
     array=f"1-{ensemble_size}",
     out_dir=out_dir,
     slurm_flags="--nodes 1 --gpus-per-node 1",
@@ -55,9 +59,17 @@ task_type: TaskType = "regression"
 data_path = f"{ROOT}/data/mp/2022-08-13-mp-energies.json.gz"
 # data_path = f"{ROOT}/data/mp/2022-08-13-mp-energies-1k-samples.json.gz"
 print(f"{data_path=}")
-df = pd.read_json(data_path).set_index("material_id", drop=False)
-df["structure"] = [Structure.from_dict(s) for s in tqdm(df.structure, disable=None)]
+df = pd.read_json(data_path).set_index(id_col)
+df[input_col] = [Structure.from_dict(s) for s in tqdm(df[input_col], disable=None)]
 assert target_col in df
+
+df_aug = df.copy()
+structs = df_aug.pop(input_col)
+for idx in trange(augment, desc="Augmenting"):
+    df_aug[input_col] = [perturb_structure(x) for x in structs]
+    df = pd.concat([df, df_aug.set_index(f"{x}-aug={idx+1}" for x in df_aug.index)])
+
+del df_aug
 
 train_df, test_df = df_train_test_split(df, test_size=0.05)
 
@@ -91,6 +103,8 @@ run_params = dict(
     train_df=dict(shape=str(train_data.df.shape), columns=", ".join(train_df)),
     test_df=dict(shape=str(test_data.df.shape), columns=", ".join(test_df)),
     slurm_vars=slurm_vars,
+    augment=augment,
+    input_col=input_col,
 )
 
 
@@ -108,9 +122,9 @@ train_model(
     swa_start=swa_start,
     target_col=target_col,
     task_type=task_type,
+    train_loader=train_loader,
     test_loader=test_loader,
     timestamp=timestamp,
-    train_loader=train_loader,
     wandb_path="janosh/matbench-discovery",
     run_params=run_params,
 )
