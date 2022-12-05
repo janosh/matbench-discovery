@@ -109,7 +109,8 @@ df_preds, ensemble_metrics = predict_from_wandb_checkpoints(
     data_loader=data_loader,
 )
 
-df_preds.to_csv(f"{out_dir}/{job_name}-preds.csv", index=False)
+slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
+df_preds.to_csv(f"{out_dir}/{job_name}-preds-{slurm_job_id}.csv", index=False)
 pred_col = f"{target_col}_pred_ens"
 assert pred_col in df, f"{pred_col=} not in {list(df)}"
 table = wandb.Table(dataframe=df_preds[[target_col, pred_col]].reset_index())
