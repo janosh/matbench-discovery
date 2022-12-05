@@ -5,4 +5,6 @@
 
 <Readme />
 
-<Plot />
+{#if typeof document !== 'undefined'}
+  <Plot />
+{/if}

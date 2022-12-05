@@ -7,6 +7,7 @@
   --toc-li-padding: 4pt 1ex;
   --toc-mobile-btn-color: white;
   --toc-desktop-nav-margin: 0 0 0 1em;
+  --toc-min-width: 20em;
 
   --ghc-color: var(--night);
   --ghc-bg: white;
@@ -115,4 +116,15 @@ blockquote p:last-child {
 }
 blockquote p:first-child {
   margin-top: 0;
+}
+
+/* for /api/[slug] */
+kbd {
+  padding: 0 1ex 0 0;
+}
+aside.toc.desktop {
+  position: fixed;
+  top: 3em;
+  left: calc(50vw + 50em / 2);
+  max-width: 16em;
 }

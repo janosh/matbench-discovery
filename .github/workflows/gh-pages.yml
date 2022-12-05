@@ -20,6 +20,11 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
       - name: Set up node
         uses: actions/setup-node@v3
         with:
@@ -27,6 +32,9 @@ jobs:
 
       - name: Install dependencies
         run: |
+          pip install lazydocs  # used in package.json script
+          # lazydocs needs package deps to be installed
+          pip install .
           cd site
           npm install
 

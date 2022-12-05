@@ -24,3 +24,7 @@ models/**/*.csv
 # temporary ignore rules
 paper
 models/voronoi/*.zip
+
+# generated docs
+site/src/routes/api/.*
+site/src/routes/api/*.md

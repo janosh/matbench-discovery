@@ -1,18 +1,9 @@
 import { sveltekit } from '@sveltejs/kit/vite'
 import { resolve } from 'path'
 import type { UserConfig } from 'vite'
-import type { UserConfig as VitestConfig } from 'vitest/config'
 
-const vite_config: UserConfig & { test: VitestConfig } = {
+const vite_config: UserConfig = {
   plugins: [sveltekit()],
-
-  test: {
-    environment: `jsdom`,
-    css: true,
-    coverage: {
-      reporter: [`text`, `json`, `html`],
-    },
-  },
 
   resolve: {
     alias: {
