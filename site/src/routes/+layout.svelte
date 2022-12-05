@@ -16,7 +16,11 @@
   )
 </script>
 
-<Toc headingSelector="main > :is(h2, h3, h4):not(.toc-exclude)" breakpoint={1250} />
+<Toc
+  headingSelector="main > :is(h2, h3, h4):not(.toc-exclude)"
+  breakpoint={1250}
+  warnOnEmpty={false}
+/>
 
 {#if $page.url.pathname !== `/`}
   <a href="." aria-label="Back to index page">&laquo; back</a>

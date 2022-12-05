@@ -24,4 +24,3 @@ models/**/*.csv
 # temporary ignore rules
 paper
 models/voronoi/*.zip
-site
