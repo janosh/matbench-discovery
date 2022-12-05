@@ -37,7 +37,7 @@ model_name = "Wrenformer"
 
 backend: Backend = "matplotlib"
 if backend == "matplotlib":
-    fig, axs = plt.subplots(3, 3, figsize=(18, 12))
+    fig, axs = plt.subplots(nrows=3, ncols=3, figsize=(18, 12))
 else:
     fig = make_subplots(rows=3, cols=3)
 
@@ -75,9 +75,13 @@ if backend == "matplotlib":
         frameon=False,
     )
 
-fig
+fig.show()
 
 
 # %%
-img_path = f"{ROOT}/figures/{today}-wbm-hull-dist-hist-models.pdf"
-ax.figure.savefig(img_path)
+img_path = f"{ROOT}/figures/{today}-wbm-hull-dist-hist-models"
+# if hasattr(fig, "write_image"):
+#     fig.write_image(f"{img_path}.pdf")
+#     fig.write_html(f"{img_path}.html", include_ploltyjs="cdn")
+# else:
+#     fig.savefig(f"{img_path}.pdf")

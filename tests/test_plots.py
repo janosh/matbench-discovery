@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Literal
-
 import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.graph_objects as go
@@ -13,7 +11,7 @@ from matbench_discovery.plots import (
     AxLine,
     Backend,
     WhichEnergy,
-    cumulative_clf_metric,
+    cumulative_precision_recall,
     hist_classified_stable_vs_hull_dist,
     rolling_mae_vs_hull_dist,
 )
@@ -36,42 +34,41 @@ for model_name in ("Wren", "CGCNN", "Voronoi"):
 
 
 @pytest.mark.parametrize(
-    "project_end_point,stability_threshold,metric,expected_line_count",
+    "project_end_point,stability_threshold,backend",
     [
-        ("", 0, "precision", 3),
-        ("x", 0, "precision", 6),
-        ("x", -0.05, "recall", 6),
-        ("xy", 0.1, "recall", 9),
+        ("", 0, "plotly"),
+        ("x", 0, "plotly"),
+        ("x", -0.05, "matplotlib"),
+        ("xy", 0.1, "matplotlib"),
     ],
 )
-def test_cumulative_precision(
+def test_cumulative_precision_recall(
     project_end_point: AxLine,
     stability_threshold: float,
-    metric: Literal["precision", "recall"],
-    expected_line_count: int,
+    backend: Backend,
 ) -> None:
-    ax = plt.figure().gca()  # new figure ensures test functions use different axes
+    fig, df_metrics = cumulative_precision_recall(
+        e_above_hull_true=df.e_above_hull_mp,
+        df_preds=df.filter(like="_pred"),
+        backend=backend,
+        project_end_point=project_end_point,
+        stability_threshold=stability_threshold,
+    )
 
-    for (model_name, df), color in zip(
-        test_dfs.items(), ("tab:blue", "tab:orange", "tab:pink")
-    ):
-        ax = cumulative_clf_metric(
-            e_above_hull_true=df.e_above_hull_mp,
-            e_above_hull_pred=df.e_above_hull_pred,
-            metric=metric,
-            color=color,
-            label=model_name,
-            project_end_point=project_end_point,
-            stability_threshold=stability_threshold,
-            ax=ax,
-        )
+    assert isinstance(df_metrics, pd.DataFrame)
+    assert list(df_metrics) == list(df.filter(like="_pred")) + ["metric"]
 
-    assert ax is not None
-    assert len(ax.lines) == expected_line_count
-    assert ax.get_ylim() == (0, 100)
-    # assert ax.get_xlim() == pytest.approx((-1.4, 29.4))
-
-    assert ax.get_ylabel() == f"{metric.title()} (%)"
+    if backend == "matplotlib":
+        assert isinstance(fig, plt.Figure)
+        ax1, ax2 = fig.axes
+        assert ax1.get_ylim() == ax2.get_ylim() == (0, 1)
+        assert ax1.get_ylabel() == "Recall"
+        # TODO ax2 ylabel also 'Recall', should be 'Precision'
+        # assert ax2.get_ylabel() == "Precision"
+    elif backend == "plotly":
+        assert isinstance(fig, go.Figure)
+        assert fig.layout.yaxis1.title.text == "Precision"
+        assert fig.layout.yaxis2.title.text == "Recall"
 
 
 @pytest.mark.parametrize("half_window", (0.02, 0.002))

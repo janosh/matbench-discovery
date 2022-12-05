@@ -60,9 +60,9 @@ ax
 
 
 # %%
-fig_name = f"{ROOT}/figures/{today}-wren-wbm-hull-dist-hist-{which_energy=}.pdf"
+img_path = f"{ROOT}/figures/{today}-wren-wbm-hull-dist-hist-{which_energy=}.pdf"
 if hasattr(ax, "write_image"):
-    # fig.write_image(fig_name)
-    ax.write_html(fig_name.replace(".pdf", ".html"))
+    # fig.write_image(img_path)
+    ax.write_html(img_path.replace(".pdf", ".html"))
 else:
-    ax.figure.savefig(fig_name)
+    ax.figure.savefig(img_path)
