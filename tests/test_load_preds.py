@@ -15,18 +15,6 @@ from matbench_discovery.load_preds import (
 )
 
 
-@pytest.fixture
-def dummy_df() -> pd.DataFrame:
-    os.makedirs(f"{ROOT}/tmp", exist_ok=True)
-    df = pd.util.testing.makeMixedDataFrame()
-    df.to_csv(f"{ROOT}/tmp/dummy_df.csv", index=False)
-    df.to_json(f"{ROOT}/tmp/dummy_df.json")
-    yield df
-
-    os.remove(f"{ROOT}/tmp/dummy_df.csv")
-    os.remove(f"{ROOT}/tmp/dummy_df.json")
-
-
 def test_df_wbm() -> None:
     assert len(df_wbm) == 257487
     assert df_wbm.shape >= (257487, 18)
@@ -54,11 +42,20 @@ def test_data_paths() -> None:
 
 
 @pytest.mark.parametrize("pattern", ["tmp/*df.csv", "tmp/*df.json"])
-def test_glob_to_df(pattern: str, dummy_df: pd.DataFrame) -> None:
+def test_glob_to_df(pattern: str) -> None:
+    try:
+        df = pd.util.testing.makeMixedDataFrame()
 
-    df = glob_to_df(pattern)
-    assert df.shape == dummy_df.shape
-    assert list(df) == list(dummy_df)
+        os.makedirs(f"{ROOT}/tmp", exist_ok=True)
+        df.to_csv(f"{ROOT}/tmp/dummy_df.csv", index=False)
+        df.to_json(f"{ROOT}/tmp/dummy_df.json")
 
-    with pytest.raises(FileNotFoundError):
-        glob_to_df("foo")
+        df_out = glob_to_df(pattern)
+        assert df_out.shape == df.shape
+        assert list(df_out) == list(df)
+
+        with pytest.raises(FileNotFoundError):
+            glob_to_df("foo")
+    finally:
+        os.remove(f"{ROOT}/tmp/dummy_df.csv")
+        os.remove(f"{ROOT}/tmp/dummy_df.json")

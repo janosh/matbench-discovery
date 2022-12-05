@@ -8,7 +8,8 @@ import pandas as pd
 from pymatgen.analysis.phase_diagram import PDEntry
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, as_dict_handler, today
+from matbench_discovery import ROOT, today
+from matbench_discovery.data import as_dict_handler
 from matbench_discovery.energy import get_e_form_per_atom
 
 __author__ = "Janosh Riebesell"

@@ -8,7 +8,8 @@ from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, as_dict_handler
+from matbench_discovery import ROOT
+from matbench_discovery.data import as_dict_handler
 from matbench_discovery.energy import get_e_form_per_atom
 
 """

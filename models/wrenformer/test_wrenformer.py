@@ -96,7 +96,8 @@ df, ensemble_metrics = predict_from_wandb_checkpoints(
     runs, data_loader=data_loader, df=df, model_cls=Wrenformer, target_col=target_col
 )
 
-df.to_csv(f"{out_dir}/{job_name}-preds.csv")
+slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
+df.to_csv(f"{out_dir}/{job_name}-preds-{slurm_job_id}.csv")
 
 
 # %%

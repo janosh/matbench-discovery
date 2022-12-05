@@ -12,7 +12,8 @@ import wandb
 from m3gnet.models import Relaxer
 from tqdm import tqdm
 
-from matbench_discovery import DEBUG, ROOT, as_dict_handler, timestamp, today
+from matbench_discovery import DEBUG, ROOT, timestamp, today
+from matbench_discovery.data import as_dict_handler
 from matbench_discovery.slurm import slurm_submit
 
 """
