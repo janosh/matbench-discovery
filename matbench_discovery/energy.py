@@ -138,7 +138,7 @@ def classify_stable(
             negative values close to 0 make sense.
 
     Returns:
-        tuple[pd.Series, pd.Series, pd.Series, pd.Series]: Indices for true positives,
+        tuple[TP, FN, FP, TN]: Indices as pd.Series for true positives,
             false negatives, false positives and true negatives (in this order).
     """
     actual_pos = e_above_hull_true <= stability_threshold
