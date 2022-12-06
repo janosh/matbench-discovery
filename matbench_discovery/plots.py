@@ -250,8 +250,8 @@ def hist_classified_stable_vs_hull_dist(
 
 def rolling_mae_vs_hull_dist(
     e_above_hull_true: pd.Series,
-    e_above_hull_pred: pd.Series,
-    half_window: float = 0.02,
+    e_above_hull_error: pd.Series,
+    window: float = 0.04,
     bin_width: float = 0.002,
     x_lim: tuple[float, float] = (-0.2, 0.3),
     ax: plt.Axes = None,
@@ -273,12 +273,12 @@ def rolling_mae_vs_hull_dist(
     rolling_maes = np.zeros_like(bins)
     rolling_stds = np.zeros_like(bins)
     for idx, bin_center in enumerate(bins):
-        low = bin_center - half_window
-        high = bin_center + half_window
+        low = bin_center - window
+        high = bin_center + window
 
         mask = (e_above_hull_true <= high) & (e_above_hull_true > low)
-        rolling_maes[idx] = e_above_hull_pred.loc[mask].abs().mean()
-        rolling_stds[idx] = scipy.stats.sem(e_above_hull_pred.loc[mask].abs())
+        rolling_maes[idx] = e_above_hull_error.loc[mask].abs().mean()
+        rolling_stds[idx] = scipy.stats.sem(e_above_hull_error.loc[mask].abs())
 
     kwargs = dict(linewidth=3) | kwargs
     ax.plot(bins, rolling_maes, **kwargs)
@@ -286,6 +286,12 @@ def rolling_mae_vs_hull_dist(
     ax.fill_between(
         bins, rolling_maes + rolling_stds, rolling_maes - rolling_stds, alpha=0.3
     )
+    # alternative implementation using pandas.rolling(). drawback: window size can only
+    # be set as number of observations, not fixed-size energy above hull interval.
+    # e_above_hull_error.index = e_above_hull_true  # warning: in-place change
+    # e_above_hull_error.sort_index().abs().rolling(window=8000).mean().plot(
+    #     ax=ax, **kwargs
+    # )
 
     if not is_fresh_ax:
         # return earlier if all plot objects besides the line were already drawn by a
@@ -294,7 +300,7 @@ def rolling_mae_vs_hull_dist(
 
     scale_bar = AnchoredSizeBar(
         ax.transData,
-        2 * half_window,
+        window,
         "40 meV",
         "lower left",
         pad=0.5,

@@ -29,7 +29,7 @@ for model_name in sorted(models):
     MAE = (df_wbm[e_above_hull_col] - preds).abs().mean()
 
     rolling_mae_vs_hull_dist(
-        e_above_hull_pred=preds,
+        e_above_hull_error=preds,
         e_above_hull_true=df_wbm[e_above_hull_col],
         ax=ax,
         label=f"{model_name} · {MAE=:.2f}",
