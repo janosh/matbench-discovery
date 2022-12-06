@@ -84,7 +84,7 @@ def hist_classified_stable_vs_hull_dist(
     x_lim: tuple[float | None, float | None] = (-0.4, 0.4),
     rolling_accuracy: float | None = 0.02,
     backend: Backend = "plotly",
-    ylabel: str = "Number of materials",
+    y_label: str = "Number of materials",
     **kwargs: Any,
 ) -> tuple[plt.Axes | go.Figure, dict[str, float]]:
     """
@@ -112,8 +112,9 @@ def hist_classified_stable_vs_hull_dist(
         x_lim (tuple[float | None, float | None]): x-axis limits.
         rolling_accuracy (float): Rolling accuracy window size in eV / atom. Set to None
             or 0 to disable. Defaults to 0.02, meaning 20 meV / atom.
-        backend ('matplotlib' | 'plotly'], optional): Which plotting backend to use.
-            Changes the return type.
+        backend ('matplotlib' | 'plotly'], optional): Which plotting engine to use.
+            Changes the return type. Defaults to 'plotly'.
+        y_label (str, optional): y-axis label. Defaults to "Number of materials".
         kwargs: Additional keyword arguments passed to the ax.hist() or px.histogram()
             depending on backend.
 
@@ -162,7 +163,7 @@ def hist_classified_stable_vs_hull_dist(
             stacked=True,
             **kwargs,
         )
-        ax.set(xlabel=xlabel, ylabel=ylabel, xlim=x_lim)
+        ax.set(xlabel=xlabel, ylabel=y_label, xlim=x_lim)
 
         if stability_threshold is not None:
             ax.axvline(
@@ -221,7 +222,7 @@ def hist_classified_stable_vs_hull_dist(
             **kwargs,
         )
         ax.update_layout(
-            dict(xaxis_title=xlabel, yaxis_title=ylabel),
+            dict(xaxis_title=xlabel, yaxis_title=y_label),
             legend=dict(title=None, yanchor="top", y=1, xanchor="right", x=1),
         )
 
@@ -251,27 +252,46 @@ def hist_classified_stable_vs_hull_dist(
 def rolling_mae_vs_hull_dist(
     e_above_hull_true: pd.Series,
     e_above_hull_error: pd.Series,
-    window: float = 0.04,
-    bin_width: float = 0.002,
+    window: float = 0.02,
+    bin_width: float = 0.001,
     x_lim: tuple[float, float] = (-0.2, 0.3),
+    y_lim: tuple[float, float] = (0.0, 0.14),
     ax: plt.Axes = None,
+    backend: Backend = "plotly",
+    y_label: str = "rolling MAE (eV/atom)",
     **kwargs: Any,
 ) -> plt.Axes:
     """Rolling mean absolute error as the energy to the convex hull is varied. A scale
-    bar is shown for the windowing period of 40 meV per atom used when calculating
-    the rolling MAE. The standard error in the mean is shaded
-    around each curve. The highlighted V-shaped region shows the area in which the
-    average absolute error is greater than the energy to the known convex hull. This is
-    where models are most at risk of misclassifying structures.
-    """
-    ax = ax or plt.gca()
+    bar is shown for the windowing period of 40 meV per atom used when calculating the
+    rolling MAE. The standard error in the mean is shaded around each curve. The
+    highlighted V-shaped region shows the area in which the average absolute error is
+    greater than the energy to the known convex hull. This is where models are most at
+    risk of misclassifying structures.
 
-    is_fresh_ax = len(ax.lines) == 0
+    Args:
+        e_above_hull_true (pd.Series): Distance to convex hull according to DFT
+            ground truth (in eV / atom).
+        e_above_hull_error (pd.Series): Error in model-predicted distance to convex
+            hull, i.e. actual hull distance minus predicted hull distance (in eV / atom).
+        window (float, optional): Rolling MAE averaging window. Defaults to 0.02 (20 meV/atom)
+        bin_width (float, optional): Density of line points (more points the smaller).
+            Defaults to 0.002.
+        x_lim (tuple[float, float], optional): x-axis range. Defaults to (-0.2, 0.3).
+        y_lim (tuple[float, float], optional): y-axis range. Defaults to (0.0, 0.14).
+        ax (plt.Axes, optional): matplotlib Axes object. Defaults to None.
+        backend ('matplotlib' | 'plotly'], optional): Which plotting engine to use.
+            Changes the return type. Defaults to 'plotly'.
+        y_label (str, optional): y-axis label. Defaults to "rolling MAE (eV/atom)".
+
+    Returns:
+        plt.Axes: _description_
+    """
 
     bins = np.arange(*x_lim, bin_width)
 
     rolling_maes = np.zeros_like(bins)
     rolling_stds = np.zeros_like(bins)
+
     for idx, bin_center in enumerate(bins):
         low = bin_center - window
         high = bin_center + window
@@ -280,79 +300,152 @@ def rolling_mae_vs_hull_dist(
         rolling_maes[idx] = e_above_hull_error.loc[mask].abs().mean()
         rolling_stds[idx] = scipy.stats.sem(e_above_hull_error.loc[mask].abs())
 
-    kwargs = dict(linewidth=3) | kwargs
-    ax.plot(bins, rolling_maes, **kwargs)
-
-    ax.fill_between(
-        bins, rolling_maes + rolling_stds, rolling_maes - rolling_stds, alpha=0.3
-    )
-    # alternative implementation using pandas.rolling(). drawback: window size can only
-    # be set as number of observations, not fixed-size energy above hull interval.
-    # e_above_hull_error.index = e_above_hull_true  # warning: in-place change
-    # e_above_hull_error.sort_index().abs().rolling(window=8000).mean().plot(
-    #     ax=ax, **kwargs
-    # )
-
-    if not is_fresh_ax:
-        # return earlier if all plot objects besides the line were already drawn by a
-        # previous call
-        return ax
-
-    scale_bar = AnchoredSizeBar(
-        ax.transData,
-        window,
-        "40 meV",
-        "lower left",
-        pad=0.5,
-        frameon=False,
-        size_vertical=0.002,
-    )
-    # indicate size of MAE averaging window
-    ax.add_artist(scale_bar)
-
-    # DFT accuracy at 25 meV/atom for relative e_above_hull which is lower than
-    # formation energy error due to systematic error cancellation among
-    # similar chemistries, supporting ref:
+    # DFT accuracy at 25 meV/atom for e_above_hull calculations of chemically similar
+    # systems which is lower than formation energy error due to systematic error
+    # cancellation among similar chemistries, supporting ref:
     # https://journals.aps.org/prb/abstract/10.1103/PhysRevB.85.155208
     dft_acc = 0.025
-    ax.plot((dft_acc, 1), (dft_acc, 1), color="grey", linestyle="--", alpha=0.3)
-    ax.plot((-1, -dft_acc), (1, dft_acc), color="grey", linestyle="--", alpha=0.3)
-    ax.plot(
-        (-dft_acc, dft_acc), (dft_acc, dft_acc), color="grey", linestyle="--", alpha=0.3
-    )
-    ax.fill_between(
-        (-1, -dft_acc, dft_acc, 1),
-        (1, 1, 1, 1),
-        (1, dft_acc, dft_acc, 1),
-        color="tab:red",
-        alpha=0.2,
-    )
 
-    ax.plot((0, dft_acc), (0, dft_acc), color="grey", linestyle="--", alpha=0.3)
-    ax.plot((-dft_acc, 0), (dft_acc, 0), color="grey", linestyle="--", alpha=0.3)
-    ax.fill_between(
-        (-dft_acc, 0, dft_acc),
-        (dft_acc, dft_acc, dft_acc),
-        (dft_acc, 0, dft_acc),
-        color="tab:orange",
-        alpha=0.2,
-    )
-    # shrink=0.1 means cut off 10% length from both sides of arrow line
-    arrowprops = dict(
-        facecolor="black", width=0.5, headwidth=5, headlength=5, shrink=0.1
-    )
-    ax.annotate(
-        xy=(-dft_acc, dft_acc),
-        xytext=(-2 * dft_acc, dft_acc),
-        text="Corrected\nGGA DFT\nAccuracy",
-        arrowprops=arrowprops,
-        verticalalignment="center",
-        horizontalalignment="right",
-    )
+    if backend == "matplotlib":
+        ax = ax or plt.gca()
+        is_fresh_ax = len(ax.lines) == 0
+        kwargs = dict(linewidth=3) | kwargs
+        ax.plot(bins, rolling_maes, **kwargs)
 
-    ax.text(0, 0.13, r"$|E_\mathrm{above\ hull}| > $MAE", horizontalalignment="center")
-    ax.set(xlabel=r"$E_\mathrm{above\ hull}$ (eV / atom)", ylabel="MAE (eV / atom)")
-    ax.set(xlim=x_lim, ylim=(0.0, 0.14))
+        ax.fill_between(
+            bins, rolling_maes + rolling_stds, rolling_maes - rolling_stds, alpha=0.3
+        )
+        # alternative implementation using pandas.rolling(). drawback: window size can only
+        # be set as number of observations, not fixed-size energy above hull interval.
+        # e_above_hull_error.index = e_above_hull_true  # warning: in-place change
+        # e_above_hull_error.sort_index().abs().rolling(window=8000).mean().plot(
+        #     ax=ax, **kwargs
+        # )
+        if not is_fresh_ax:
+            # return earlier if all plot objects besides the line were already drawn by a
+            # previous call
+            return ax
+
+        scale_bar = AnchoredSizeBar(
+            ax.transData,
+            window,
+            "40 meV",
+            "lower left",
+            pad=0.5,
+            frameon=False,
+            size_vertical=0.002,
+        )
+        # indicate size of MAE averaging window
+        ax.add_artist(scale_bar)
+
+        ax.fill_between(
+            (-1, -dft_acc, dft_acc, 1),
+            (1, 1, 1, 1),
+            (1, dft_acc, dft_acc, 1),
+            color="tab:red",
+            alpha=0.2,
+        )
+
+        ax.fill_between(
+            (-dft_acc, 0, dft_acc),
+            (dft_acc, dft_acc, dft_acc),
+            (dft_acc, 0, dft_acc),
+            color="tab:orange",
+            alpha=0.2,
+        )
+        # shrink=0.1 means cut off 10% length from both sides of arrow line
+        arrowprops = dict(
+            facecolor="black", width=0.5, headwidth=5, headlength=5, shrink=0.1
+        )
+        ax.annotate(
+            xy=(-dft_acc, dft_acc),
+            xytext=(-2 * dft_acc, dft_acc),
+            text="Corrected\nGGA DFT\nAccuracy",
+            arrowprops=arrowprops,
+            verticalalignment="center",
+            horizontalalignment="right",
+        )
+
+        ax.text(
+            0, 0.13, r"MAE > $|E_\mathrm{above\ hull}|$", horizontalalignment="center"
+        )
+        ax.set(xlabel=r"$E_\mathrm{above\ hull}$ (eV/atom)", ylabel=y_label)
+        ax.set(xlim=x_lim, ylim=y_lim)
+    elif backend == "plotly":
+        title = kwargs.pop("label", None)
+        ax = px.line(
+            x=bins,
+            y=rolling_maes,
+            # error_y=rolling_stds,
+            markers=False,
+            title=title,
+            **kwargs,
+        )
+        ax_std = go.Scatter(
+            x=list(bins) + list(bins)[::-1],  # bins, then bins reversed
+            y=list(rolling_maes + 2 * rolling_stds)
+            + list(rolling_maes - 2 * rolling_stds)[::-1],  # upper, then lower reversed
+            fill="toself",
+            line_color="white",
+            fillcolor=ax.data[0].line.color,
+            opacity=0.3,
+            hoverinfo="skip",
+            showlegend=False,
+        )
+        ax.add_trace(ax_std)
+
+        ax.update_layout(
+            dict(
+                xaxis_title="E<sub>above hull</sub> (eV/atom)",
+                yaxis_title="rolling MAE (eV/atom)",
+            ),
+            legend=dict(title=None, xanchor="right", x=1, yanchor="bottom", y=0),
+        )
+        ax.update_xaxes(range=x_lim)
+        ax.update_yaxes(range=y_lim)
+        scatter_kwds = dict(fill="toself", opacity=0.5)
+        err_gt_each_region = go.Scatter(
+            x=(-1, -dft_acc, dft_acc, 1),
+            y=(1, dft_acc, dft_acc, 1),
+            name="MAE > |E<sub>above hull</sub>|",
+            # fillcolor="yellow",
+            **scatter_kwds,
+        )
+        ml_err_lt_dft_err_region = go.Scatter(
+            x=(-dft_acc, dft_acc, 0, -dft_acc),
+            y=(dft_acc, dft_acc, 0, dft_acc),
+            name="MAE < |DFT error|",
+            # fillcolor="red",
+            **scatter_kwds,
+        )
+        ax.add_traces([err_gt_each_region, ml_err_lt_dft_err_region])
+        ax.add_annotation(
+            x=4 * dft_acc,
+            y=dft_acc,
+            text="Corrected GGA DFT Accuracy",
+            showarrow=True,
+            # arrowhead=1,
+            ax=-dft_acc,
+            ay=dft_acc,
+        )
+
+        ax.data = ax.data[::-1]  # bring px.line() to front
+        # show MAE window size
+        x0, y0 = x_lim[0] + 0.01, y_lim[0] + 0.01
+        ax.add_annotation(
+            x=x0 + 0.05,
+            y=y0 + 0.01,
+            text=f"rolling MAE window<br>{window} eV/atom",
+            showarrow=False,
+        )
+        ax.add_shape(
+            type="rect",
+            x0=x0,
+            y0=y0,
+            x1=x0 + window,
+            y1=y0 + window / 5,
+            fillcolor="black",
+        )
 
     return ax
 
@@ -388,8 +481,9 @@ def cumulative_precision_recall(
             axis projection lines.
         show_optimal (bool, optional): Whether to plot the optimal recall line. Defaults
             to False.
-        backend ('plotly' | 'matplotlib', optional): Defaults to 'plotly'. **kwargs:
-        Keyword arguments passed to df.plot().
+        backend ('matplotlib' | 'plotly'], optional): Which plotting engine to use.
+            Changes the return type. Defaults to 'plotly'.
+        **kwargs: Keyword arguments passed to df.plot().
 
     Returns:
         tuple[plt.Figure | go.Figure, pd.DataFrame]: The matplotlib/plotly figure and

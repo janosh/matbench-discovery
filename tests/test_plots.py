@@ -34,14 +34,10 @@ for model_name in ("Wren", "CGCNN", "Voronoi"):
 
 
 @pytest.mark.parametrize(
-    "project_end_point,stability_threshold,backend",
-    [
-        ("", 0, "plotly"),
-        ("x", 0, "plotly"),
-        ("x", -0.05, "matplotlib"),
-        ("xy", 0.1, "matplotlib"),
-    ],
+    "project_end_point,stability_threshold",
+    [("", 0), ("x", 0), ("x", -0.05), ("xy", 0.1)],
 )
+@pytest.mark.parametrize("backend", ("matplotlib", "plotly"))
 def test_cumulative_precision_recall(
     project_end_point: AxLine,
     stability_threshold: float,
@@ -74,29 +70,34 @@ def test_cumulative_precision_recall(
 @pytest.mark.parametrize("window", (0.02, 0.002))
 @pytest.mark.parametrize("bin_width", (0.1, 0.001))
 @pytest.mark.parametrize("x_lim", ((0, 0.6), (-0.2, 0.8)))
+@pytest.mark.parametrize("backend", ("matplotlib", "plotly"))
 def test_rolling_mae_vs_hull_dist(
-    window: float, bin_width: float, x_lim: tuple[float, float]
+    window: float, bin_width: float, x_lim: tuple[float, float], backend: Backend
 ) -> None:
     ax = plt.figure().gca()  # new figure ensures test functions use different axes
 
-    for (model_name, df), color in zip(
-        test_dfs.items(), ("tab:blue", "tab:orange", "tab:pink")
-    ):
+    for model_name, df in test_dfs.items():
         ax = rolling_mae_vs_hull_dist(
-            e_above_hull_error=df.e_above_hull_pred,
             e_above_hull_true=df.e_above_hull_mp,
-            color=color,
+            e_above_hull_error=df.e_above_hull_pred,
             label=model_name,
             ax=ax,
             x_lim=x_lim,
             window=window,
             bin_width=bin_width,
+            backend=backend,
         )
 
-    assert ax is not None
-    assert ax.get_ylim() == pytest.approx((0, 0.14))
-    assert ax.get_ylabel() == "MAE (eV / atom)"
-    assert ax.get_xlabel() == r"$E_\mathrm{above\ hull}$ (eV / atom)"
+    expected_ylabel = "rolling MAE (eV/atom)"
+    if backend == "matplotlib":
+        assert isinstance(ax, plt.Axes)
+        assert ax.get_ylim() == pytest.approx((0, 0.14))
+        assert ax.get_ylabel() == expected_ylabel
+        assert ax.get_xlabel() == r"$E_\mathrm{above\ hull}$ (eV/atom)"
+    elif backend == "plotly":
+        assert isinstance(ax, go.Figure)
+        assert ax.layout.yaxis.title.text == expected_ylabel
+        assert ax.layout.xaxis.title.text == "E<sub>above hull</sub> (eV/atom)"
 
 
 @pytest.mark.parametrize("stability_threshold", (0.1, 0.01))
