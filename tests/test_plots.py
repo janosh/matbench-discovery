@@ -71,11 +71,11 @@ def test_cumulative_precision_recall(
         assert fig.layout.yaxis2.title.text == "Recall"
 
 
-@pytest.mark.parametrize("half_window", (0.02, 0.002))
+@pytest.mark.parametrize("window", (0.02, 0.002))
 @pytest.mark.parametrize("bin_width", (0.1, 0.001))
 @pytest.mark.parametrize("x_lim", ((0, 0.6), (-0.2, 0.8)))
 def test_rolling_mae_vs_hull_dist(
-    half_window: float, bin_width: float, x_lim: tuple[float, float]
+    window: float, bin_width: float, x_lim: tuple[float, float]
 ) -> None:
     ax = plt.figure().gca()  # new figure ensures test functions use different axes
 
@@ -83,13 +83,13 @@ def test_rolling_mae_vs_hull_dist(
         test_dfs.items(), ("tab:blue", "tab:orange", "tab:pink")
     ):
         ax = rolling_mae_vs_hull_dist(
-            e_above_hull_pred=df.e_above_hull_pred,
+            e_above_hull_error=df.e_above_hull_pred,
             e_above_hull_true=df.e_above_hull_mp,
             color=color,
             label=model_name,
             ax=ax,
             x_lim=x_lim,
-            half_window=half_window,
+            window=window,
             bin_width=bin_width,
         )
 
