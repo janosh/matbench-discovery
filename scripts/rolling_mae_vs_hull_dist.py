@@ -20,11 +20,18 @@ ax = rolling_mae_vs_hull_dist(
     e_above_hull_true=df_wbm[e_above_hull_col],
     e_above_hull_error=df_wbm[target_col] - df_wbm[model_name],
     label=model_name,
+    backend=(backend := "plotly"),
 )
 
-fig = ax.figure
-fig.set_size_inches(10, 9)
-ax.legend(loc="lower right", frameon=False)
+title = f"{today} {model_name}"
+if backend == "matplotlib":
+    fig = ax.figure
+    fig.set_size_inches(10, 9)
+    ax.legend(loc="lower right", frameon=False)
+    ax.set(title=title)
+elif backend == "plotly":
+    ax.update_layout(title=dict(text=title, x=0.5))
+    ax.show()
 
 img_path = f"{ROOT}/figures/{today}-rolling-mae-vs-hull-dist.pdf"
 # fig.savefig(img_path)

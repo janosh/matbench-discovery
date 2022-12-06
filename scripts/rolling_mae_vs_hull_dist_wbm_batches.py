@@ -28,8 +28,8 @@ for idx, marker in enumerate(markers, 1):
     assert 1e4 < len(df_step) < 1e5, print(f"{len(df_step) = :,}")
 
     rolling_mae_vs_hull_dist(
-        e_above_hull_error=df_step[target_col] - df_step[model_name],
         e_above_hull_true=df_step[e_above_hull_col],
+        e_above_hull_error=df_step[target_col] - df_step[model_name],
         ax=ax,
         label=title,
         marker=marker,
