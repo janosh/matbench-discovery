@@ -49,7 +49,7 @@ if task_type == "IS2RE":
     data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
     input_col = "initial_structure"
 elif task_type == "RS2RE":
-    data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-cses.json.bz2"
+    data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-computed-structure-entries.json.bz2"
     input_col = "relaxed_structure"
 else:
     raise ValueError(f"Unexpected {task_type=}")

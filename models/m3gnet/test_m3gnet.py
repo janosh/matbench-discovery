@@ -59,7 +59,9 @@ warnings.filterwarnings(action="ignore", category=UserWarning, module="tensorflo
 
 
 # %%
-data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-cses+init-structs.json.bz2"
+data_path = (
+    f"{ROOT}/data/wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
+)
 print(f"\nJob started running {timestamp}")
 print(f"{version('m3gnet') = }")
 print(f"{data_path=}")

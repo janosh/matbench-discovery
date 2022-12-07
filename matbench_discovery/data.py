@@ -10,13 +10,13 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from tqdm import tqdm
 
 DATA_FILENAMES = {
-    "wbm-summary": "wbm/2022-10-19-wbm-summary.csv",
-    "wbm-initial-structures": "wbm/2022-10-19-wbm-init-structs.json.bz2",
-    "wbm-computed-structure-entries": "wbm/2022-10-19-wbm-cses.json.bz2",
-    "mp-energies": "mp/2022-08-13-mp-energies.json.gz",
     "mp-computed-structure-entries": "mp/2022-09-16-mp-computed-structure-entries.json.gz",
-    "mp-patched-phase-diagram": "mp/2022-09-18-ppd-mp.pkl.gz",
     "mp-elemental-ref-energies": "mp/2022-09-19-mp-elemental-ref-energies.json",
+    "mp-energies": "mp/2022-08-13-mp-energies.json.gz",
+    "mp-patched-phase-diagram": "mp/2022-09-18-ppd-mp.pkl.gz",
+    "wbm-computed-structure-entries": "wbm/2022-10-19-wbm-computed-structure-entries.json.bz2",
+    "wbm-initial-structures": "wbm/2022-10-19-wbm-init-structs.json.bz2",
+    "wbm-summary": "wbm/2022-10-19-wbm-summary.csv",
 }
 
 RAW_REPO_URL = "https://raw.githubusercontent.com/janosh/matbench-discovery"
@@ -45,20 +45,19 @@ def load_train_test(
     cache_dir: str | None = default_cache_dir,
     hydrate: bool = False,
 ) -> pd.DataFrame | dict[str, pd.DataFrame]:
-    """Download the MP training data and WBM test data in parts or in full as pandas
+    """Download parts of or the full MP training data and WBM test data as pandas
     DataFrames. The full training and test sets are each about ~500 MB as compressed
-    JSON will be cached locally for faster re-loading unless cache_dir is set to None.
+    JSON which will be cached locally to cache_dir for faster re-loading unless
+    cache_dir is set to None.
 
-    Hint: Import DATA_FILES from the same module as this function and
-    print(list(DATA_FILES)) to see permissible data names.
+    Recognized data keys are mp-computed-structure-entries, mp-elemental-ref-energies,
+    mp-energies, mp-patched-phase-diagram, wbm-computed-structure-entries,
+    wbm-initial-structures, wbm-summary. See
+    https://matbench-discovery.janosh.dev/how-to-use for brief data descriptions.
 
     Args:
         parts (str | list[str], optional): Which parts of the MP/WBM dataset to load.
-            Can be any subset of list(DATA_FILES). Defaults to ["summary"], a dataframe
-            with columns for material properties like VASP energy, formation energy,
-            energy above the convex hull (3 columns with old, new and no Materials
-            Project energy corrections applied for each), volume, band gap, number of
-            sites per unit cell, and more.
+            Can be any subset of the above data names. Defaults to ["summary"].
         version (int, optional): Which version of the dataset to load. Defaults to 1
             (currently the only available option).
         cache_dir (str, optional): Where to cache data files on local drive. Defaults to

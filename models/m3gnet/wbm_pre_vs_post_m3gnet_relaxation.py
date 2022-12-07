@@ -17,9 +17,9 @@ del plots  # https://github.com/PyCQA/pyflakes/issues/366
 
 
 # %%
-wbm_path = f"{ROOT}/data/wbm/2022-10-19-wbm-cses+init-structs.json.bz2"
-
-df_wbm = pd.read_json(wbm_path).set_index("material_id")
+df_wbm = pd.read_json(
+    f"{ROOT}/data/wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
+).set_index("material_id")
 
 df_summary = pd.read_csv(f"{ROOT}/data/wbm/2022-10-19-wbm-summary.csv").set_index(
     "material_id"
@@ -65,7 +65,7 @@ df_wbm_initial_lattice = pd.json_normalize(
 df_wbm["initial_wbm_volume"] = df_wbm_initial_lattice.initial_wbm_volume.to_numpy()
 
 
-# 2 materials have no initial structure: wbm-step-5-23166, wbm-step-5-23294
+# 2 materials have no initial structure: wbm-5-23166, wbm-5-23294
 print(f"{df_wbm.isna().sum()=}")
 df_wbm.query("initial_wbm_volume.isna()").index.tolist()
 

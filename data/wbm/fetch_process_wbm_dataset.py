@@ -137,7 +137,7 @@ assert len(df_wbm) == sum(step_lens)
 
 
 def increment_wbm_material_id(wbm_id: str) -> str:
-    """Maps step_1_0, step_1_1, ... onto wbm-step-1-1, wbm-step-1-2, ..."""
+    """Maps step_1_0, step_1_1, ... onto wbm-1-1, wbm-1-2, ..."""
     try:
         prefix, step_num, material_num = wbm_id.split("_")
     except ValueError:
@@ -149,13 +149,13 @@ def increment_wbm_material_id(wbm_id: str) -> str:
     assert step_num.isdigit(), msg
     assert material_num.isdigit(), msg
 
-    return f"wbm-step-{step_num}-{int(material_num) + 1}"
+    return f"wbm-{step_num}-{int(material_num) + 1}"
 
 
 df_wbm.index = df_wbm.index.map(increment_wbm_material_id)
 df_wbm.index.name = "material_id"
-assert df_wbm.index[0] == "wbm-step-1-1"
-assert df_wbm.index[-1] == "wbm-step-5-23308"
+assert df_wbm.index[0] == "wbm-1-1"
+assert df_wbm.index[-1] == "wbm-5-23308"
 
 df_wbm["initial_structure"] = df_wbm.pop("org")
 df_wbm["final_structure"] = df_wbm.pop("opt")
@@ -221,7 +221,7 @@ for mat_id, cse in df_wbm.computed_structure_entry.items():
         "GGA+U" if cse["parameters"]["is_hubbard"] else "GGA"
     )
     cse["entry_id"] = mat_id
-    assert cse["entry_id"].startswith("wbm-step-")
+    assert cse["entry_id"].startswith("wbm-")
 
 assert pd.Series(
     cse["parameters"]["run_type"] for cse in tqdm(df_wbm.computed_structure_entry)
@@ -230,8 +230,8 @@ assert pd.Series(
 
 # drop two materials with missing initial structures
 assert list(df_wbm.query("initial_structure.isna()").index) == [
-    "wbm-step-5-23166",
-    "wbm-step-5-23294",
+    "wbm-5-23166",
+    "wbm-5-23294",
 ]
 df_wbm = df_wbm.dropna(subset=["initial_structure"])
 
@@ -247,12 +247,12 @@ df_wbm["composition_from_final_struct"] = [
 ]
 
 # all but 1 composition matches between CSE and final structure
-# mismatching ID: wbm-step-1-37977 which becomes equal on reduction:
+# mismatching ID: wbm-1-37977 which becomes equal on reduction:
 # CSE Comp: Ag4 Bi4 O12
 # final structure Comp: Ag16 Bi16 O48
 df_mismatch = df_wbm.query("composition_from_cse != composition_from_final_struct")
 assert len(df_mismatch) == 1
-assert df_mismatch.index[0] == "wbm-step-1-37977"
+assert df_mismatch.index[0] == "wbm-1-37977"
 assert (
     df_mismatch.iloc[0].composition_from_cse.reduced_composition
     == df_mismatch.iloc[0].composition_from_final_struct.reduced_composition
@@ -281,9 +281,12 @@ df_wbm["formula_from_cse"] = [
 ]
 
 for fname, cols in (
-    ("cses", ["computed_structure_entry"]),
+    ("computed-structure-entries", ["computed_structure_entry"]),
     ("init-structs", ["initial_structure"]),
-    ("cses+init-structs", ["initial_structure", "computed_structure_entry"]),
+    (
+        "computed-structure-entries+init-structs",
+        ["initial_structure", "computed_structure_entry"],
+    ),
 ):
     cols = ["formula_from_cse", *cols]
     df_wbm[cols].reset_index().to_json(f"{module_dir}/{today}-wbm-{fname}.json.bz2")
@@ -310,7 +313,7 @@ df_summary_bz2 = pd.read_csv(
     f"{mat_cloud_url}&filename=summary.txt.bz2", sep="\t"
 ).rename(columns=col_map)
 
-# duplicate Ga3Ru2U3 step_3_28147 (1st one is wbm-step-2-18689) has 0 volume in
+# duplicate Ga3Ru2U3 step_3_28147 (1st one is wbm-2-18689) has 0 volume in
 # df_summary_bz2 vs 155.41 in df_summary
 query_str = "volume > 0 & formula != 'Ga3Ru2U3'"
 pd.testing.assert_frame_equal(
@@ -347,8 +350,8 @@ assert all(df_summary["formula"] == df_wbm.formula_from_cse)
 
 
 # fix bad energy which is 0 in df_summary but a more realistic -63.68 in CSE
-df_summary.at["wbm-step-2-18689", "uncorrected_energy"] = df_wbm.loc[
-    "wbm-step-2-18689"
+df_summary.at["wbm-2-18689", "uncorrected_energy"] = df_wbm.loc[
+    "wbm-2-18689"
 ].computed_structure_entry["energy"]
 
 # NOTE careful with ComputedEntries as object vs as dicts, the meaning of keys changes:
@@ -371,6 +374,47 @@ assert (
 ), df_summary.query("energy - uncorrected_energy_from_cse > 0.1")
 
 density_scatter(df_summary.uncorrected_energy, df_summary.uncorrected_energy_from_cse)
+
+
+# %% remove suspicious formation energy outliers
+e_form_cutoff = 5
+n_too_stable = sum(df_summary.e_form_per_atom_wbm < -e_form_cutoff)
+print(f"{n_too_stable = }")  # n_too_stable = 502
+n_too_unstable = sum(df_summary.e_form_per_atom_wbm > e_form_cutoff)
+print(f"{n_too_unstable = }")  # n_too_unstable = 22
+
+fig = df_summary.hist(x="e_form_per_atom_wbm", bins=100, backend="plotly", log_y=True)
+fig.add_vline(x=e_form_cutoff, line=dict(width=2, dash="dash", color="green"))
+fig.add_vline(x=-e_form_cutoff, line=dict(width=2, dash="dash", color="green"))
+fig.add_annotation(
+    **dict(x=0, y=1, yref="paper", yshift=20, font_color="green"),
+    text=f"<b>dataset cropped to within +/- {e_form_cutoff} eV/atom</b>",
+    showarrow=False,
+)
+fig.update_layout(
+    xaxis_title="WBM formation energy (eV/atom)", margin=dict(l=10, r=10, t=40, b=10)
+)
+
+fig.write_image(
+    f"{module_dir}/{today}-hist-e-form-per-atom.png", scale=5, width=800, height=300
+)
+
+
+# %%
+assert len(df_summary) == len(df_wbm) == 257_487
+
+query_str = f"{-e_form_cutoff} < e_form_per_atom_wbm < {e_form_cutoff}"
+dropped_ids = sorted(set(df_summary.index) - set(df_summary.query(query_str).index))
+assert len(dropped_ids) == 502 + 22
+assert dropped_ids[:3] == "wbm-1-12142 wbm-1-12143 wbm-1-12144".split()
+assert dropped_ids[-3:] == "wbm-5-9121 wbm-5-9211 wbm-5-934".split()
+
+df_summary = df_summary.query(query_str)
+df_wbm = df_wbm.loc[df_summary.index]
+
+
+# make sure we dropped the expected number 524 of materials
+assert len(df_summary) == len(df_wbm) == 257_487 - 502 - 22
 
 
 # %%
@@ -413,9 +457,9 @@ ax = density_scatter(
 # ax.figure.savefig(f"{ROOT}/tmp/{today}-legacy-vs-mp2020-corrections.png")
 
 
-# %% Python crashes with segfault on correcting the energy of wbm-step-1-24459 due to
+# %% Python crashes with segfault on correcting the energy of wbm-1-24459 due to
 # https://github.com/spglib/spglib/issues/194 when using spglib v2.0.{0,1}
-cse = df_wbm.computed_structure_entry["wbm-step-1-24459"]
+cse = df_wbm.computed_structure_entry["wbm-1-24459"]
 cse = ComputedStructureEntry.from_dict(cse)
 mp_compat.process_entry(cse)
 
@@ -432,7 +476,7 @@ e_above_hull_key = "e_above_hull_uncorrected_ppd_mp"
 assert e_above_hull_key not in df_summary
 
 for entry in tqdm(df_wbm.cse):
-    assert entry.entry_id.startswith("wbm-step-")
+    assert entry.entry_id.startswith("wbm-")
 
     e_per_atom = entry.uncorrected_energy_per_atom
     e_hull_per_atom = ppd_mp.get_hull_energy_per_atom(entry.composition)
@@ -491,7 +535,7 @@ df_summary = pd.read_csv(f"{module_dir}/2022-10-19-wbm-summary.csv").set_index(
 
 # %% read WBM dataset from disk
 df_wbm = pd.read_json(
-    f"{module_dir}/2022-10-19-wbm-cses+init-structs.json.bz2"
+    f"{module_dir}/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
 ).set_index("material_id")
 
 df_wbm["cse"] = [
@@ -524,7 +568,7 @@ assert df_summary[wyckoff_col].isna().sum() == 0
 
 # %% make sure material IDs within each step are consecutive
 for step in range(1, 6):
-    df = df_summary[df_summary.index.str.startswith(f"wbm-step-{step}-")]
+    df = df_summary[df_summary.index.str.startswith(f"wbm-{step}-")]
     step_len = step_lens[step - 1]
     assert len(df) == step_len, f"{step=} has {len(df)=}, expected {step_len=}"
 

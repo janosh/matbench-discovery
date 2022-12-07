@@ -32,7 +32,7 @@ fig, axs = plt.subplots(2, 3, figsize=(18, 9))
 model_name = "Wrenformer"
 
 for batch_idx, ax in zip(range(1, 6), axs.flat):
-    batch_df = df_wbm[df_wbm.index.str.startswith(f"wbm-step-{batch_idx}-")]
+    batch_df = df_wbm[df_wbm.index.str.startswith(f"wbm-{batch_idx}-")]
     assert 1e4 < len(batch_df) < 1e5, print(f"{len(batch_df) = :,}")
 
     ax, metrics = hist_classified_stable_vs_hull_dist(
