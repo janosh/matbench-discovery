@@ -51,7 +51,7 @@ with gzip.open(f"{module_dir}/{today}-ppd-mp.pkl.gz", "wb") as zip_file:
 
 # %% build phase diagram with both MP entries + WBM entries
 df_wbm = pd.read_json(
-    f"{ROOT}/data/wbm/2022-10-19-wbm-cses+init-structs.json.bz2"
+    f"{ROOT}/data/wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
 ).set_index("material_id")
 
 # using ComputedStructureEntry vs ComputedEntry here is important as CSEs receive

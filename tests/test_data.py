@@ -34,7 +34,7 @@ structure = Structure(
         (["mp-energies"], None, True),
     ],
 )
-def test_load_wbm(
+def test_load_train_test(
     parts: list[str],
     cache_dir: str | None,
     hydrate: bool,
@@ -70,7 +70,7 @@ def test_load_wbm(
         assert isinstance(out, pd.DataFrame)
 
 
-def test_load_wbm_raises() -> None:
+def test_load_train_test_raises() -> None:
     with pytest.raises(
         ValueError,
         match=f"must be subset of {set(DATA_FILENAMES)}",
@@ -81,6 +81,16 @@ def test_load_wbm_raises() -> None:
         ValueError, match="Only version 1 currently available, got version=2"
     ):
         load_train_test(version=2)
+
+
+def test_load_train_test_doc_str() -> None:
+    doc_str = load_train_test.__doc__
+    assert isinstance(doc_str, str)  # mypy type narrowing
+
+    assert all(key in doc_str for key in DATA_FILENAMES)
+
+    # TODO refactor to load site URL from site/package.json for SSoT
+    assert "https://matbench-discovery.janosh.dev" in doc_str
 
 
 def test_chunks() -> None:

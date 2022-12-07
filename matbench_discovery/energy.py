@@ -11,14 +11,14 @@ from matbench_discovery import ROOT
 
 
 def get_elemental_ref_entries(
-    entries: Sequence[EntryLike], verbose: bool = False
+    entries: Sequence[EntryLike], verbose: bool = True
 ) -> dict[str, Entry]:
-    """Get the lowest energy entry for each element in a list of entries.
+    """Get the lowest energy pymatgen Entry object for each element in a list of entries.
 
     Args:
         entries (Sequence[Entry]): pymatgen Entries (PDEntry, ComputedEntry or
-            ComputedStructureEntry) to find elemental reference entries for.
-        verbose (bool, optional): _description_. Defaults to False.
+            ComputedStructureEntry) to find elemental reference entries of.
+        verbose (bool, optional): Whether to show a progress bar. Defaults to False.
 
     Raises:
         ValueError: If some elements are missing terminal reference entries.
@@ -33,7 +33,7 @@ def get_elemental_ref_entries(
     dim = len(elements)
 
     if verbose:
-        print(f"Sorting {len(entries)} entries with {dim} dimensions...")
+        print(f"Sorting {len(entries)} entries with {dim} dimensions...", flush=True)
 
     entries = sorted(entries, key=lambda e: e.composition.reduced_composition)
 
@@ -41,6 +41,7 @@ def get_elemental_ref_entries(
     for composition, entry_group in tqdm(
         itertools.groupby(entries, key=lambda e: e.composition.reduced_composition),
         disable=not verbose,
+        desc="Finding elemental reference entries",
     ):
         min_entry = min(entry_group, key=lambda e: e.energy_per_atom)
         if composition.is_element:
@@ -74,8 +75,8 @@ def get_e_form_per_atom(
     entry: EntryLike,
     elemental_ref_entries: dict[str, EntryLike] = None,
 ) -> float:
-    """Get the formation energy of a composition from a list of entries and elemental
-    reference energies.
+    """Get the formation energy of a composition from a list of entries and a dict
+    mapping elements to reference energies.
 
     Args:
         entry: Entry | dict[str, float | str | Composition]: pymatgen Entry (PDEntry,
@@ -123,19 +124,19 @@ def classify_stable(
     e_above_hull_pred: pd.Series,
     stability_threshold: float = 0,
 ) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
-    """Classify model stability predictions as true/false positive/negatives depending
-    on if material is actually stable or unstable. All energies are assumed to be in
-    eV/atom (but shouldn't really matter as long as they're consistent).
+    """Classify model stability predictions as true/false positive/negatives (usually
+    w.r.t DFT-ground truth labels). All energies are assumed to be in eV/atom
+    (but shouldn't really matter as long as they're consistent).
 
     Args:
         e_above_hull_true (pd.Series): Ground truth energy above convex hull values.
         e_above_hull_pred (pd.Series): Model predicted energy above convex hull values.
         stability_threshold (float, optional): Maximum energy above convex hull for a
             material to still be considered stable. Usually 0, 0.05 or 0.1. Defaults to
-            0. 0 means a material has to be directly on the hull to be called stable.
+            0, meaning a material has to be directly on the hull to be called stable.
             Negative values mean a material has to pull the known hull down by that
             amount to count as stable. Few materials lie below the known hull, so only
-            negative values close to 0 make sense.
+            negative values very close to 0 make sense.
 
     Returns:
         tuple[TP, FN, FP, TN]: Indices as pd.Series for true positives,

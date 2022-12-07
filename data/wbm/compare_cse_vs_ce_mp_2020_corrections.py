@@ -23,7 +23,7 @@ ComputedStructureEntry, not ComputedEntry when applying corrections.
 """
 
 
-cse_path = f"{ROOT}/data/wbm/2022-10-19-wbm-cses.json.bz2"
+cse_path = f"{ROOT}/data/wbm/2022-10-19-wbm-computed-structure-entries.json.bz2"
 df_cse = pd.read_json(cse_path).set_index("material_id")
 
 cses = [
@@ -134,10 +134,10 @@ cse_mp2020, cse_legacy = cses[idx].copy(), cses[idx].copy()
 ce_mp2020, ce_legacy = ces[idx].copy(), ces[idx].copy()
 
 
-with gzip.open(f"{ROOT}/tmp/cse-wbm-step-2-34803.json.zip", "w") as f:
+with gzip.open(f"{ROOT}/tmp/cse-wbm-2-34803.json.zip", "w") as f:
     f.write(cse_mp2020.to_json().encode("utf-8"))
 
-with gzip.open(f"{ROOT}/tmp/cse-wbm-step-2-34803.json.zip") as f:
+with gzip.open(f"{ROOT}/tmp/cse-wbm-2-34803.json.zip") as f:
     cse = ComputedStructureEntry.from_dict(json.load(f))
 
 cse_mp2020 = cse.copy()

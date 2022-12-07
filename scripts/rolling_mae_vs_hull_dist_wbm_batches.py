@@ -22,7 +22,7 @@ assert len(markers) == 5  # number of WBM rounds of element substitution
 
 for idx, marker in enumerate(markers, 1):
     # select all rows from WBM step=idx
-    df_step = df_wbm[df_wbm.index.str.startswith(f"wbm-step-{idx}")]
+    df_step = df_wbm[df_wbm.index.str.startswith(f"wbm-{idx}")]
 
     title = f"Batch {idx} ({len(df_step.filter(like='e_').dropna()):,})"
     assert 1e4 < len(df_step) < 1e5, print(f"{len(df_step) = :,}")
