@@ -18,7 +18,7 @@
 />
 
 {#if $page.url.pathname !== `/`}
-  <a href="/" aria-label="Back to index page">&laquo; back</a>
+  <a href="/" aria-label="Back to index page">&laquo; home</a>
 {/if}
 
 <GitHubCorner href={repository} />

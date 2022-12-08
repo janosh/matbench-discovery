@@ -1,7 +1,7 @@
 :root {
-  --night: #0b0b1b;
+  --night: #102030;
   --blue: cornflowerblue;
-  --text-color: #ddd;
+  --text-color: rgb(208, 208, 208);
 
   --toc-mobile-bg: #1c0e3e;
   --toc-li-padding: 4pt 1ex;
