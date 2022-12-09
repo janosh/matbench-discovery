@@ -6,17 +6,20 @@ setup(
     author="Janosh Riebesell, Rhys Goodall",
     author_email="janosh.riebesell@gmail.com",
     url="https://github.com/janosh/matbench-discovery",
-    description="Data-driven search for novel stable materials",
+    description="A machine learning benchmark for energy models that emulates high-throughput "
+    "materials screening to test which models most accelerate the discovery of new stable "
+    "crystals.",
     long_description=open("readme.md").read(),
     long_description_content_type="text/markdown",
-    packages=find_packages(),
+    packages=find_packages(exclude=["tests", "tests.*"]),
     python_requires=">=3.9",
     keywords=[
         "data-driven materials discovery",
-        "finding new stable crystal structures",
+        "crystal stability",
         "machine learning",
-        "high-throughput",
+        "high-throughput search",
         "energy above convex hull",
+        "formation energy",
     ],
     install_requires=[
         "matplotlib",
@@ -32,4 +35,20 @@ setup(
         "test": ["pytest", "pytest-cov"],
         "running-models": ["m3gnet", "aviary", "maml", "megnet", "m3gnet-dgl"],
     },
+    project_urls={
+        "Docs": "https://matbench-discovery.janosh.dev",
+        "Package": "https://pypi.org/project/matbench-discovery",
+        "Repo": "https://github.com/janosh/matbench-discovery",
+    },
+    classifiers=[
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.8",
+        "Topic :: Scientific/Engineering :: Materials Informatics",
+        "Topic :: Scientific/Engineering :: Materials Discovery",
+        "Topic :: Scientific/Engineering :: Machine Learning",
+    ],
 )
