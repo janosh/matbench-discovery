@@ -10,7 +10,7 @@ from sklearn.metrics import f1_score, r2_score
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, WANDB_PATH, today
-from matbench_discovery.load_preds import load_df_wbm_with_preds
+from matbench_discovery.data import load_df_wbm_with_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"

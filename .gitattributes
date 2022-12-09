@@ -1,0 +1,2 @@
+# exclude Svelte files in figures/ when calculating repo language statistics on GitHub
+figures/* linguist-generated

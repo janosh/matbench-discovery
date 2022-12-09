@@ -10,7 +10,7 @@ from sklearn.metrics import r2_score
 from sklearn.pipeline import Pipeline
 
 from matbench_discovery import DEBUG, ROOT, today
-from matbench_discovery.load_preds import df_wbm, glob_to_df
+from matbench_discovery.data import df_wbm, glob_to_df
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 from models.voronoi import featurizer
