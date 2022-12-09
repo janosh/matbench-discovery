@@ -2,7 +2,7 @@
 from sklearn.metrics import f1_score
 
 from matbench_discovery import ROOT, today
-from matbench_discovery.load_preds import load_df_wbm_with_preds
+from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.plots import cumulative_precision_recall
 
 __author__ = "Janosh Riebesell, Rhys Goodall"

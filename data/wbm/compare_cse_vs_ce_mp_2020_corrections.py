@@ -12,8 +12,8 @@ from pymatgen.entries.computed_entries import ComputedEntry, ComputedStructureEn
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, today
+from matbench_discovery.data import df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
-from matbench_discovery.load_preds import df_wbm
 from matbench_discovery.plots import plt
 
 """

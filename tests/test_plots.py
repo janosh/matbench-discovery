@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import pytest
 
-from matbench_discovery.load_preds import load_df_wbm_with_preds
+from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.plots import (
     AxLine,
     Backend,
