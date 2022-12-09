@@ -40,7 +40,7 @@ for file_path in tqdm(file_paths):
 
 
 # %%
-df_m3gnet = pd.concat(dfs.values()).round(6)
+df_m3gnet = pd.concat(dfs.values()).round(4)
 
 
 # %%

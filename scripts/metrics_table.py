@@ -100,12 +100,10 @@ for model in (pbar := tqdm(models)):
 
 
 # %%
-df_wbm = load_df_wbm_with_preds(models=models).round(3)
-
-
+df_wbm: pd.DataFrame = load_df_wbm_with_preds(models=list(models))
 target_col = "e_form_per_atom_mp2020_corrected"
+df_wbm = df_wbm.round(3).query(f"{target_col} < 5")
 
-df_wbm = df_wbm.query(f"{target_col} < 5")
 e_above_hull_col = "e_above_hull_mp2020_corrected_ppd_mp"
 e_above_hull = df_wbm[e_above_hull_col]
 
