@@ -11,33 +11,35 @@ from matbench_discovery.load_preds import (
     df_wbm,
     glob_to_df,
     load_df_wbm_with_preds,
-    load_model_preds,
 )
 
 
 def test_df_wbm() -> None:
-    assert len(df_wbm) == 257487
-    assert df_wbm.shape >= (257487, 18)
+    assert len(df_wbm) == 256963
+    assert df_wbm.shape >= (256963, 18)
     assert df_wbm.index.name == "material_id"
     assert set(df_wbm) > {"bandgap_pbe", "formula", "material_id"}
 
 
-def test_load_df_wbm_with_preds() -> None:
-    df = load_df_wbm_with_preds(models=[])
-    assert df.shape == df_wbm.shape
+@pytest.mark.parametrize("models", [[], ["Wrenformer"]])
+def test_load_df_wbm_with_preds(models: list[str]) -> None:
+    df = load_df_wbm_with_preds(models=models)
+    assert len(df) == len(df_wbm)
+    assert list(df) == list(df_wbm) + models + [f"{model}_std" for model in models]
     assert df.index.name == "material_id"
 
+    for model_name in models:
+        assert model_name in df
+        assert df[model_name].isna().sum() == 0
 
-def test_load_model_preds() -> None:
-    dfs = load_model_preds(models=[])
-    assert dfs == {}
 
-    with pytest.raises(ValueError):
-        load_model_preds(models=["foo"])
+def test_load_df_wbm_with_preds_raises() -> None:
+    with pytest.raises(ValueError, match="Unknown models: foo"):
+        load_df_wbm_with_preds(models=["foo"])
 
 
 def test_data_paths() -> None:
-    assert len(DATA_PATHS) >= 8
+    assert len(DATA_PATHS) >= 6
     assert all(path.startswith(("models/", "data/")) for path in DATA_PATHS.values())
 
 

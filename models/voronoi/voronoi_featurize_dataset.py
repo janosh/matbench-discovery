@@ -89,7 +89,7 @@ warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen"
 
 df_features = featurizer.featurize_dataframe(
     df_this_job, input_col, ignore_errors=True
-)[featurizer.feature_labels()].round(6)
+)[featurizer.feature_labels()].round(4)
 
 
 # %%

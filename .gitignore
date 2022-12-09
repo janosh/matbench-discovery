@@ -20,7 +20,6 @@ job-logs/
 
 # slurm logs
 *slurm-*.log
-models/**/*.csv
 
 # temporary ignore rules
 paper

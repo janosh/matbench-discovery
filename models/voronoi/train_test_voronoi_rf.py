@@ -113,9 +113,11 @@ df_test = df_test.dropna(subset=feature_names)
 
 pred_col = "e_form_per_atom_voronoi_rf"
 df_test[pred_col] = model.predict(df_test[feature_names])
+# saving preds first to df_test, then df_wbm avoids length mismatch errors between
+# output array and df_wbm
 df_wbm[pred_col] = df_test[pred_col]
 
-df_wbm[pred_col].to_csv(out_path)
+df_wbm[pred_col].round(4).to_csv(out_path)
 
 table = wandb.Table(
     dataframe=df_wbm[["formula", test_target_col, pred_col]].reset_index()

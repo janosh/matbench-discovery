@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import pytest
 
-from matbench_discovery.load_preds import DATA_PATHS, df_wbm
+from matbench_discovery.load_preds import load_df_wbm_with_preds
 from matbench_discovery.plots import (
     AxLine,
     Backend,
@@ -15,15 +15,10 @@ from matbench_discovery.plots import (
     rolling_mae_vs_hull_dist,
 )
 
-test_dfs: dict[str, pd.DataFrame] = {}
-for model_name in ("Wren", "CGCNN", "Voronoi"):
-    df = pd.read_csv(DATA_PATHS[model_name], nrows=100).set_index("material_id")
-
-    df["e_above_hull_mp"] = df_wbm.e_above_hull_mp2020_corrected_ppd_mp
-    model_preds = df.filter(like=r"_pred").mean(axis=1)
-
-    df["e_above_hull_pred"] = df.e_above_hull_mp + model_preds - df.e_form_target
-    test_dfs[model_name] = df
+models = ["Wrenformer", "CGCNN", "Voronoi RF"]
+df_wbm = load_df_wbm_with_preds(models=models, nrows=100)
+e_above_hull_col = "e_above_hull_mp2020_corrected_ppd_mp"
+e_form_col = "e_form_per_atom_mp2020_corrected"
 
 
 @pytest.mark.parametrize(
@@ -37,15 +32,15 @@ def test_cumulative_precision_recall(
     backend: Backend,
 ) -> None:
     fig, df_metrics = cumulative_precision_recall(
-        e_above_hull_true=df.e_above_hull_mp,
-        df_preds=df.filter(like="_pred"),
+        e_above_hull_true=df_wbm[e_above_hull_col],
+        df_preds=df_wbm[models],
         backend=backend,
         project_end_point=project_end_point,
         stability_threshold=stability_threshold,
     )
 
     assert isinstance(df_metrics, pd.DataFrame)
-    assert list(df_metrics) == list(df.filter(like="_pred")) + ["metric"]
+    assert list(df_metrics) == models + ["metric"]
 
     if backend == "matplotlib":
         assert isinstance(fig, plt.Figure)
@@ -69,10 +64,10 @@ def test_rolling_mae_vs_hull_dist(
 ) -> None:
     ax = plt.figure().gca()  # new figure ensures test functions use different axes
 
-    for model_name, df in test_dfs.items():
+    for model_name in models:
         ax = rolling_mae_vs_hull_dist(
-            e_above_hull_true=df.e_above_hull_mp,
-            e_above_hull_error=df.e_above_hull_pred,
+            e_above_hull_true=df_wbm[model_name],
+            e_above_hull_error=df_wbm[e_above_hull_col],
             label=model_name,
             ax=ax,
             x_lim=x_lim,
@@ -105,11 +100,12 @@ def test_hist_classified_stable_vs_hull_dist(
 ) -> None:
     ax = plt.figure().gca()  # new figure ensures test functions use different axes
 
-    df = test_dfs["Wren"]
-
+    e_above_hull_pred = (
+        df_wbm[e_above_hull_col] - df_wbm["Wrenformer"] + df_wbm[e_form_col]
+    )
     ax, metrics = hist_classified_stable_vs_hull_dist(
-        e_above_hull_pred=df.e_above_hull_pred,
-        e_above_hull_true=df.e_above_hull_mp,
+        e_above_hull_pred=e_above_hull_pred,
+        e_above_hull_true=df_wbm[e_above_hull_col],
         ax=ax,
         stability_threshold=stability_threshold,
         x_lim=x_lim,

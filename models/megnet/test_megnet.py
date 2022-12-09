@@ -104,7 +104,7 @@ print(f"missing: {len(structures) - len(megnet_e_form_preds):,}")
 pred_col = "e_form_per_atom_megnet"
 df_wbm[pred_col] = pd.Series(megnet_e_form_preds)
 
-df_wbm[pred_col].reset_index().to_csv(out_path, index=False)
+df_wbm[pred_col].reset_index().round(4).to_csv(out_path, index=False)
 
 
 # %%
