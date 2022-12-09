@@ -5,8 +5,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import pytest
 
-from matbench_discovery import ROOT
-from matbench_discovery.load_preds import df_wbm
+from matbench_discovery.load_preds import DATA_PATHS, df_wbm
 from matbench_discovery.plots import (
     AxLine,
     Backend,
@@ -16,20 +15,14 @@ from matbench_discovery.plots import (
     rolling_mae_vs_hull_dist,
 )
 
-DATA_DIR = f"{ROOT}/data/2022-06-11-from-rhys"
-
 test_dfs: dict[str, pd.DataFrame] = {}
 for model_name in ("Wren", "CGCNN", "Voronoi"):
-    df = pd.read_csv(
-        f"{DATA_DIR}/{model_name.lower()}-mp-initial-structures.csv", nrows=100
-    ).set_index("material_id")
+    df = pd.read_csv(DATA_PATHS[model_name], nrows=100).set_index("material_id")
 
     df["e_above_hull_mp"] = df_wbm.e_above_hull_mp2020_corrected_ppd_mp
-
     model_preds = df.filter(like=r"_pred").mean(axis=1)
 
     df["e_above_hull_pred"] = df.e_above_hull_mp + model_preds - df.e_form_target
-
     test_dfs[model_name] = df
 
 

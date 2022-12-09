@@ -11,14 +11,9 @@ df_wbm = pd.read_csv(f"{ROOT}/data/wbm/2022-10-19-wbm-summary.csv")
 df_wbm.index = df_wbm.material_id
 
 
-data_paths = {
-    "Wren": "data/2022-06-11-from-rhys/wren-mp-initial-structures.csv",
+DATA_PATHS = {
     "CGCNN": "models/cgcnn/2022-11-23-test-cgcnn-wbm-IS2RE/cgcnn-ensemble-preds.csv",
-    "CGCNN IS2RE": "data/2022-06-11-from-rhys/cgcnn-mp-initial-structures.csv",
-    "CGCNN RS2RE": "data/2022-06-11-from-rhys/cgcnn-mp-cse.csv",
-    # "Voronoi IS2RE": "data/2022-06-11-from-rhys/voronoi-mp-initial-structures.csv",
     "Voronoi RF": "models/voronoi/2022-11-27-train-test/e-form-preds-IS2RE.csv",
-    # "Voronoi RS2RE": "data/2022-06-11-from-rhys/voronoi-mp-cse.csv",
     "Wrenformer": "models/wrenformer/2022-11-15-wrenformer-IS2RE-preds.csv",
     "MEGNet": "models/megnet/2022-11-18-megnet-wbm-IS2RE/megnet-e-form-preds.csv",
     "M3GNet": "models/m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv",
@@ -71,14 +66,14 @@ def load_model_preds(
     Returns:
         dict[str, pd.DataFrame]: Dictionary of dataframes, one for each model.
     """
-    if mismatch := ", ".join(set(models) - set(data_paths)):
+    if mismatch := ", ".join(set(models) - set(DATA_PATHS)):
         raise ValueError(f"Unknown models: {mismatch}")
 
     dfs: dict[str, pd.DataFrame] = {}
 
     for model_name in (bar := tqdm(models, disable=not pbar)):
         bar.set_description(model_name)
-        pattern = data_paths[model_name]
+        pattern = DATA_PATHS[model_name]
         df = glob_to_df(pattern, pbar=False).set_index(id_col)
         dfs[model_name] = df
 

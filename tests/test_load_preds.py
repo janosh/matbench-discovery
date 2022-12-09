@@ -7,7 +7,7 @@ import pytest
 
 from matbench_discovery import ROOT
 from matbench_discovery.load_preds import (
-    data_paths,
+    DATA_PATHS,
     df_wbm,
     glob_to_df,
     load_df_wbm_with_preds,
@@ -37,8 +37,8 @@ def test_load_model_preds() -> None:
 
 
 def test_data_paths() -> None:
-    assert len(data_paths) >= 8
-    assert all(path.startswith(("models/", "data/")) for path in data_paths.values())
+    assert len(DATA_PATHS) >= 8
+    assert all(path.startswith(("models/", "data/")) for path in DATA_PATHS.values())
 
 
 @pytest.mark.parametrize("pattern", ["tmp/*df.csv", "tmp/*df.json"])
