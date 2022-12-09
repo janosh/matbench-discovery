@@ -2,7 +2,7 @@
 from plotly.subplots import make_subplots
 
 from matbench_discovery import ROOT, today
-from matbench_discovery.load_preds import load_df_wbm_with_preds
+from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.plots import (
     Backend,
     WhichEnergy,
