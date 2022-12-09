@@ -1,0 +1,26 @@
+<script lang="ts">
+  // import * as d3 from 'd3'
+
+  // const promise = d3.csv('https://github.com/janosh/matbench-discovery/raw/main/data/wbm/2022-10-19-wbm-summary.csv')
+  // const promise = d3.csv('https://raw.githubusercontent.com/janosh/pymatviz/main/pymatviz/elements.csv')
+</script>
+
+The primary way to use this benchmark is through the [PyPI Python package](https://pypi.org/project/matbench-discovery):
+
+```zsh
+pip install matbench-discovery
+```
+
+You can also download the data files directly:
+
+1. [`2022-10-19-wbm-summary.csv`](https://github.com/janosh/matbench-discovery/raw/v1.0.0/data/wbm/2022-10-19-wbm-summary.csv) [[GitHub](https://github.com/janosh/matbench-discovery/blob/v1/data/wbm/2022-10-19-wbm-summary.csv)]: Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more. e_form_per_atom and e_above_hull each have 3 separate columns for old, new and no Materials
+1. [`2022-10-19-wbm-init-structs.json`](https://github.com/janosh/matbench-discovery/raw/v1.0.0/data/wbm/2022-10-19-wbm-init-structs.json) [[GitHub](https://github.com/janosh/matbench-discovery/blob/v1/data/wbm/2022-10-19-wbm-init-structs.json)]: Unrelaxed WBM structures
+1. [`2022-10-19-wbm-cses.json`](https://github.com/janosh/matbench-discovery/raw/v1.0.0/data/wbm/2022-10-19-wbm-cses.json) [[GitHub](https://github.com/janosh/matbench-discovery/blob/v1/data/wbm/2022-10-19-wbm-cses.json)]: Relaxed WBM structures along with final VASP energies
+1. [`2022-08-13-mp-energies.json.gz`](https://github.com/janosh/matbench-discovery/raw/v1.0.0/data/wbm/2022-08-13-mp-energies.json.gz) [[GitHub](https://github.com/janosh/matbench-discovery/blob/v1/data/wbm/2022-08-13-mp-energies.json.gz)]: Materials Project formation energies and energies above convex hull
+1. [`2022-09-16-mp-computed-structure-entries.json.gz`](https://github.com/janosh/matbench-discovery/raw/v1.0.0/data/wbm/2022-09-16-mp-computed-structure-entries.json.gz) [[GitHub](https://github.com/janosh/matbench-discovery/blob/v1/data/wbm/2022-09-16-mp-computed-structure-entries.json.gz)]: Materials Project computed structure entries
+1. [`2022-09-18-ppd-mp.pkl.gz`](https://github.com/janosh/matbench-discovery/raw/v1.0.0/data/wbm/2022-09-18-ppd-mp.pkl.gz) [[GitHub](https://github.com/janosh/matbench-discovery/blob/v1/data/wbm/2022-09-18-ppd-mp.pkl.gz)]: [PatchedPhaseDiagram](https://pymatgen.org/pymatgen.analysis.phase_diagram.html#pymatgen.analysis.phase_diagram.PatchedPhaseDiagram) constructed from all MP ComputedStructureEntries
+1. [`2022-09-19-mp-elemental-ref-energies.json`](https://github.com/janosh/matbench-discovery/raw/v1.0.0/data/wbm/2022-09-19-mp-elemental-ref-energies.json) [[GitHub](https://github.com/janosh/matbench-discovery/blob/v1/data/wbm/2022-09-19-mp-elemental-ref-energies.json)]: Minimum energy PDEntries for each element present in the Materials Project
+
+<!-- {#await promise then data}
+  {JSON.stringify(data)}
+{/await} -->
