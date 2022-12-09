@@ -10,7 +10,7 @@ from pymatgen.core import Structure
 from torch.utils.data import DataLoader
 from tqdm import tqdm, trange
 
-from matbench_discovery import DEBUG, ROOT, timestamp, today
+from matbench_discovery import DEBUG, ROOT, WANDB_PATH, timestamp, today
 from matbench_discovery.slurm import slurm_submit
 from matbench_discovery.structure import perturb_structure
 
@@ -125,6 +125,6 @@ train_model(
     train_loader=train_loader,
     test_loader=test_loader,
     timestamp=timestamp,
-    wandb_path="janosh/matbench-discovery",
+    wandb_path=WANDB_PATH,
     run_params=run_params,
 )

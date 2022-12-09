@@ -52,8 +52,8 @@ fig.show()
 
 # %%
 img_path = f"{ROOT}/figures/{today}-precision-recall-curves"
-if hasattr(fig, "write_image"):
-    # fig.write_image(f"{img_path}.pdf")
-    fig.write_html(f"{img_path}.svelte", include_plotlyjs=False, full_html=False)
+# if hasattr(fig, "write_image"):
+#     fig.write_image(f"{img_path}.pdf")
+#     fig.write_html(f"{img_path}.svelte", include_plotlyjs=False, full_html=False)
 # else:
 #     fig.savefig(f"{img_path}.pdf")

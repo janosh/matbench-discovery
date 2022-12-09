@@ -3,6 +3,8 @@ import pandas as pd
 import wandb
 from wandb.wandb_run import Run
 
+from matbench_discovery import WANDB_PATH
+
 """
 Update run metadata recorded on Weights and Biases
 https://wandb.ai/janosh/matbench-discovery.
@@ -14,7 +16,7 @@ __date__ = "2022-09-21"
 
 # %%
 filters = dict(display_name={"$regex": "voronoi-featurize"})
-runs = wandb.Api().runs("janosh/matbench-discovery", filters=filters)
+runs = wandb.Api().runs(WANDB_PATH, filters=filters)
 
 print(f"matching runs: {len(runs)}")
 
