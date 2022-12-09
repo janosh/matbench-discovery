@@ -38,7 +38,6 @@ setup(
     project_urls={
         "Docs": "https://matbench-discovery.janosh.dev",
         "Package": "https://pypi.org/project/matbench-discovery",
-        "Repo": "https://github.com/janosh/matbench-discovery",
     },
     classifiers=[
         "Intended Audience :: Science/Research",
@@ -47,8 +46,8 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.8",
-        "Topic :: Scientific/Engineering :: Materials Informatics",
-        "Topic :: Scientific/Engineering :: Materials Discovery",
-        "Topic :: Scientific/Engineering :: Machine Learning",
+        "Topic :: Scientific/Engineering :: Chemistry",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Topic :: Scientific/Engineering :: Physics",
     ],
 )

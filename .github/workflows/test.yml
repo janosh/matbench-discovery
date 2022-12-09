@@ -42,7 +42,7 @@ jobs:
         run: |
           pip install setuptools wheel twine
           python setup.py sdist bdist_wheel
-          twine upload --skip-existing dist/*.tar.gz
+          twine upload --skip-existing dist/*
         env:
           TWINE_USERNAME: janosh
           TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
