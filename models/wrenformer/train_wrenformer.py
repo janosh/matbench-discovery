@@ -5,7 +5,7 @@ from importlib.metadata import version
 import pandas as pd
 from aviary.train import df_train_test_split, train_wrenformer
 
-from matbench_discovery import DEBUG, ROOT, timestamp, today
+from matbench_discovery import DEBUG, ROOT, WANDB_PATH, timestamp, today
 from matbench_discovery.slurm import slurm_submit
 
 """
@@ -80,6 +80,6 @@ train_wrenformer(
     input_col=input_col,
     learning_rate=learning_rate,
     batch_size=batch_size,
-    wandb_path="janosh/matbench-discovery",
+    wandb_path=WANDB_PATH,
     run_params=run_params,
 )

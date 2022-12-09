@@ -9,7 +9,7 @@ import wandb
 from sklearn.metrics import f1_score, r2_score
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, today
+from matbench_discovery import ROOT, WANDB_PATH, today
 from matbench_discovery.load_preds import load_df_wbm_with_preds
 
 __author__ = "Janosh Riebesell"
@@ -79,7 +79,7 @@ for model in (pbar := tqdm(models)):
         continue
     pbar.set_description(model)
 
-    runs = wandb.Api().runs("janosh/matbench-discovery", filters=filters)
+    runs = wandb.Api().runs(WANDB_PATH, filters=filters)
 
     assert len(runs) == n_runs, f"found {len(runs)=} for {model}, expected {n_runs}"
 

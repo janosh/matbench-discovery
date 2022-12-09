@@ -14,7 +14,7 @@ from pymatgen.core import Structure
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from matbench_discovery import CHECKPOINT_DIR, DEBUG, ROOT, today
+from matbench_discovery import CHECKPOINT_DIR, DEBUG, ROOT, WANDB_PATH, today
 from matbench_discovery.load_preds import df_wbm
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
@@ -68,7 +68,7 @@ filters = {
     "created_at": {"$gt": "2022-12-03", "$lt": "2022-12-04"},
     "display_name": {"$regex": "^train-cgcnn-robust-augment=3-"},
 }
-runs = wandb.Api().runs("janosh/matbench-discovery", filters=filters)
+runs = wandb.Api().runs(WANDB_PATH, filters=filters)
 
 assert len(runs) == 10, f"Expected 10 runs, got {len(runs)} for {filters=}"
 for idx, run in enumerate(runs):

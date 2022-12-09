@@ -11,7 +11,7 @@ from aviary.deploy import predict_from_wandb_checkpoints
 from aviary.wrenformer.data import df_to_in_mem_dataloader
 from aviary.wrenformer.model import Wrenformer
 
-from matbench_discovery import CHECKPOINT_DIR, DEBUG, ROOT, today
+from matbench_discovery import CHECKPOINT_DIR, DEBUG, ROOT, WANDB_PATH, today
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 
@@ -55,7 +55,7 @@ filters = {
     "created_at": {"$gt": "2022-11-15", "$lt": "2022-11-16"},
     "display_name": {"$regex": "wrenformer-robust"},
 }
-runs = wandb.Api().runs("janosh/matbench-discovery", filters=filters)
+runs = wandb.Api().runs(WANDB_PATH, filters=filters)
 
 assert len(runs) == 10, f"Expected 10 runs, got {len(runs)} for {filters=}"
 for idx, run in enumerate(runs):
