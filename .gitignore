@@ -12,6 +12,7 @@ __pycache__
 *.csv.bz2
 *.pkl.gz
 data/**/raw
+data/2022-*
 
 # Weights and Biases logs
 wandb/
