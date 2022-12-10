@@ -11,7 +11,7 @@ from sklearn.metrics import r2_score
 from tqdm import tqdm
 
 from matbench_discovery import DEBUG, ROOT, timestamp, today
-from matbench_discovery.load_preds import df_wbm
+from matbench_discovery.data import df_wbm
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 
@@ -104,7 +104,7 @@ print(f"missing: {len(structures) - len(megnet_e_form_preds):,}")
 pred_col = "e_form_per_atom_megnet"
 df_wbm[pred_col] = pd.Series(megnet_e_form_preds)
 
-df_wbm[pred_col].reset_index().to_csv(out_path, index=False)
+df_wbm[pred_col].reset_index().round(4).to_csv(out_path, index=False)
 
 
 # %%

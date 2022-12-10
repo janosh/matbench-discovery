@@ -35,7 +35,7 @@ for file_path in tqdm(file_paths):
 
 
 # %%
-df_bowsr = pd.concat(dfs.values()).round(6)
+df_bowsr = pd.concat(dfs.values()).round(4)
 
 
 # %% compare against WBM formation energy targets to make sure we got sensible results

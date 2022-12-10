@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from matbench_discovery import CHECKPOINT_DIR, DEBUG, ROOT, WANDB_PATH, today
-from matbench_discovery.load_preds import df_wbm
+from matbench_discovery.data import df_wbm
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 
@@ -110,7 +110,7 @@ df_preds, ensemble_metrics = predict_from_wandb_checkpoints(
 )
 
 slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
-df_preds.to_csv(f"{out_dir}/{job_name}-preds-{slurm_job_id}.csv", index=False)
+df_preds.round(4).to_csv(f"{out_dir}/{job_name}-preds-{slurm_job_id}.csv", index=False)
 pred_col = f"{target_col}_pred_ens"
 assert pred_col in df, f"{pred_col=} not in {list(df)}"
 table = wandb.Table(dataframe=df_preds[[target_col, pred_col]].reset_index())

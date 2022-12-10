@@ -30,7 +30,7 @@ for file_path in tqdm(file_paths):
 
 
 # %%
-df_features = pd.concat(dfs.values()).round(6)
+df_features = pd.concat(dfs.values()).round(4)
 
 ax = df_features.isna().sum().value_counts().T.plot.bar()
 ax.set(xlabel="# NaNs", ylabel="# columns", title="NaNs per column")

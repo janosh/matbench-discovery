@@ -2,7 +2,7 @@
 from pymatviz.utils import add_identity_line
 
 from matbench_discovery import ROOT, today
-from matbench_discovery.load_preds import data_paths, load_df_wbm_with_preds
+from matbench_discovery.data import PRED_FILENAMES, load_df_wbm_with_preds
 from matbench_discovery.plots import px
 
 __author__ = "Janosh Riebesell"
@@ -10,7 +10,7 @@ __date__ = "2022-11-28"
 
 
 # %%
-print(f"loadable models: {list(data_paths)}")
+print(f"loadable models: {list(PRED_FILENAMES)}")
 models = (
     "Wren, CGCNN, CGCNN IS2RE, CGCNN RS2RE, Voronoi RF, "
     "Wrenformer, MEGNet, M3GNet, BOWSR MEGNet"

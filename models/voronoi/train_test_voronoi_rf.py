@@ -10,7 +10,7 @@ from sklearn.metrics import r2_score
 from sklearn.pipeline import Pipeline
 
 from matbench_discovery import DEBUG, ROOT, today
-from matbench_discovery.load_preds import df_wbm, glob_to_df
+from matbench_discovery.data import df_wbm, glob_to_df
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 from models.voronoi import featurizer
@@ -113,9 +113,11 @@ df_test = df_test.dropna(subset=feature_names)
 
 pred_col = "e_form_per_atom_voronoi_rf"
 df_test[pred_col] = model.predict(df_test[feature_names])
+# saving preds first to df_test, then df_wbm avoids length mismatch errors between
+# output array and df_wbm
 df_wbm[pred_col] = df_test[pred_col]
 
-df_wbm[pred_col].to_csv(out_path)
+df_wbm[pred_col].round(4).to_csv(out_path)
 
 table = wandb.Table(
     dataframe=df_wbm[["formula", test_target_col, pred_col]].reset_index()

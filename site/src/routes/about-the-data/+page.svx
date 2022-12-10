@@ -1,0 +1,7 @@
+<script lang="ts">
+  import DataReadme from '$root/data/wbm/readme.md'
+</script>
+
+<main>
+  <DataReadme />
+</main>

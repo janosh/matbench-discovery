@@ -2,7 +2,7 @@
 
 The **WBM dataset** was published in [Predicting stable crystalline compounds using chemical similarity][wbm paper] (Nature Computational Materials, Jan 2021, [doi:10.1038/s41524-020-00481-6](http://doi.org/10.1038/s41524-020-00481-6)). The authors generated 257,487 structures through single-element substitutions on Materials Project (MP) source structures. The replacement element was chosen based on chemical similarity determined by a matrix data-mined from the [Inorganic Crystal Structure Database (ICSD)](https://icsd.products.fiz-karlsruhe.de).
 
-The resulting novel structures were relaxed using MP-compatible VASP inputs (i.e. using `pymatgen`'s `MPRelaxSet`) and identical POTCARs in an attempt to create a database of Materials Project compatible novel crystals. Any degrade in model performance from training to test set should therefore largely be a result of extrapolation error rather thanyes,  covariate shift in the underlying data.
+The resulting novel structures were relaxed using MP-compatible VASP inputs (i.e. using `pymatgen`'s `MPRelaxSet`) and identical POTCARs in an attempt to create a database of Materials Project compatible novel crystals. Any degrade in model performance from training to test set should therefore largely be a result of extrapolation error rather than covariate shift in the underlying data.
 
 The authors performed 5 rounds of elemental substitution in total, each time relaxing all generated structures and adding those found to lie on the convex hull back to the source pool. In total, ~20k or close to 10% were found to lie on the Materials Project convex hull.
 
@@ -21,7 +21,6 @@ The full set of processing steps used to curate the WBM test set from the raw da
 - remove 6 pathological structures (with 0 volume)
 - remove formation energy outliers below -5 and above 5 eV/atom (removed 502 and 22 crystals respectively out of 257,487 total, including an anomaly of 500 structures at exactly -10 eV/atom)
   <!-- ![WBM formation energy histogram indicating outlier cutoffs](2022-12-07-hist-e-form-per-atom.png) -->
-- compute energy to the convex hull constructed from all MP `ComputedStructureEntries` queried on 2022-09-16 (2020-09-08 database release)
 - apply the [`MaterialsProject2020Compatibility`](https://pymatgen.org/pymatgen.entries.compatibility.html#pymatgen.entries.compatibility.MaterialsProject2020Compatibility) energy correction scheme to the formation energies
 - compute energy to the convex hull constructed from all MP `ComputedStructureEntries` queried on 2022-09-16 ([database release 2021.05.13](https://docs.materialsproject.org/changes/database-versions#v2021.05.13))
 

@@ -1,5 +1,7 @@
 # package install
 *.egg-info
+dist
+build
 
 # cache
 __pycache__
@@ -12,6 +14,7 @@ __pycache__
 *.csv.bz2
 *.pkl.gz
 data/**/raw
+data/2022-*
 
 # Weights and Biases logs
 wandb/
@@ -19,9 +22,11 @@ job-logs/
 
 # slurm logs
 *slurm-*.log
-models/**/*.csv
 
 # temporary ignore rules
 paper
 models/voronoi/*.zip
-site
+
+# generated docs
+site/src/routes/api/.*
+site/src/routes/api/*.md
