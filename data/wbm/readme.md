@@ -4,9 +4,13 @@ The **WBM dataset** was published in [Predicting stable crystalline compounds us
 
 The resulting novel structures were relaxed using MP-compatible VASP inputs (i.e. using `pymatgen`'s `MPRelaxSet`) and identical POTCARs in an attempt to create a database of Materials Project compatible novel crystals. Any degrade in model performance from training to test set should therefore largely be a result of extrapolation error rather than covariate shift in the underlying data.
 
-The authors performed 5 rounds of elemental substitution in total, each time relaxing generated structures and adding those found to lie on the convex hull back to the source pool. In total, ~20k or close to 10% were found to lie on the Materials Project convex hull.
+The authors performed 5 rounds of elemental substitution in total, each time relaxing all generated structures and adding those found to lie on the convex hull back to the source pool. In total, ~20k or close to 10% were found to lie on the Materials Project convex hull.
 
 Since repeated substitutions should - on average - increase chemical dissimilarity, the 5 iterations of this data-generation process are a unique and compelling feature as it allows out-of distribution testing. We can check how model performance degrades when asked to predict on structures increasingly more dissimilar from the training set (which is restricted to the MP 2022 database release (or earlier) for all models in this benchmark).
+
+## About the IDs
+
+As you may have guessed, the first integer in each material ID following the prefix `wbm-` ranges from 1 to 5 and indicates the substitution iteration count. Each iteration has varying numbers of materials counted by the 2nd integer. Note the 2nd integer is not strictly consecutive. A small number of materials (~0.2%) were removed by the data processing steps detailed below. Don't be surprised to find an ID like `wbm-3-70804` followed by
 
 ## Data processing steps
 
@@ -19,6 +23,13 @@ The full set of processing steps used to curate the WBM test set from the raw da
   <!-- ![WBM formation energy histogram indicating outlier cutoffs](2022-12-07-hist-e-form-per-atom.png) -->
 - apply the [`MaterialsProject2020Compatibility`](https://pymatgen.org/pymatgen.entries.compatibility.html#pymatgen.entries.compatibility.MaterialsProject2020Compatibility) energy correction scheme to the formation energies
 - compute energy to the convex hull constructed from all MP `ComputedStructureEntries` queried on 2022-09-16 ([database release 2021.05.13](https://docs.materialsproject.org/changes/database-versions#v2021.05.13))
+
+The number of materials in each step before and after processing are:
+
+| step | 1      | 2      | 3      | 4      | 5      | total   |
+| ---- | ------ | ------ | ------ | ------ | ------ | ------- |
+| pre  | 61,848 | 52,800 | 79,205 | 40,328 | 23,308 | 257,487 |
+| post | 61,466 | 52,755 | 79,160 | 40,314 | 23,268 | 256,963 |
 
 Invoking that script with `python fetch_process_wbm_dataset.py` will auto-download and regenerate the WBM test set files from scratch. If you find any questionable in the released test set or inconsistencies between the files on GitHub vs the output of that script, please [raise an issue](https://github.com/janosh/matbench-discovery/issues).
 
