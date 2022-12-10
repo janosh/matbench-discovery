@@ -30,3 +30,17 @@ jobs:
       - name: Run tests
         id: tests
         run: pytest --durations 0 --cov .
+
+  release:
+    runs-on: ubuntu-latest
+    needs: tests
+    if: github.event_name == 'release' && needs.tests.result == 'success'
+    steps:
+      - name: Build and upload dist
+        run: |
+          pip install setuptools wheel twine
+          python setup.py sdist bdist_wheel
+          twine upload --skip-existing dist/*
+        env:
+          TWINE_USERNAME: janosh
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
