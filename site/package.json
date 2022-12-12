@@ -13,7 +13,7 @@
     "preview": "vite preview",
     "serve": "vite build && vite preview",
     "check": "svelte-check",
-    "make-api-docs": "cd .. && lazydocs matbench_discovery --output-path site/src/routes/api --no-watermark --src-base-url https://github.com/janosh/matbench-discovery/blob/main"
+    "make-api-docs": "rm -f src/routes/api/*.md && cd .. && lazydocs matbench_discovery --output-path site/src/routes/api --no-watermark --src-base-url https://github.com/janosh/matbench-discovery/blob/main"
   },
   "devDependencies": {
     "@iconify/svelte": "^3.0.1",

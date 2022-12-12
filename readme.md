@@ -13,7 +13,7 @@ Matbench Discovery
 
 </h4>
 
-Matbench is an [interactive leaderboard](https://matbench-discovery.janosh.dev/figures) and associated [PyPI package](https://pypi.org/project/matbench-discovery) for benchmarking ML energy models on a task designed to closely emulate a real-world computational materials discovery workflow in which these models would be used for a pre-triaging step to determine how to allocate limited compute budget on DFT structure relaxations.
+Matbench Discovery is an [interactive leaderboard](https://matbench-discovery.janosh.dev/figures) and associated [PyPI package](https://pypi.org/project/matbench-discovery) for benchmarking ML energy models on a task designed to closely emulate a real-world computational materials discovery workflow in which these models would be used for a pre-triaging step to determine how to allocate limited compute budget on DFT structure relaxations.
 
 We welcome contributions that add new models to the leaderboard through [GitHub PRs](https://github.com/janosh/matbench-discovery/pulls).
 
