@@ -10,16 +10,16 @@ pip install matbench-discovery
 
 Here's an example script of how to download the training and test set files for training a new model, recording the results and submitting them via pull request to this benchmark:
 
-```py
+<!-- TODO remove notest meta key once repo is public and file can be downloaded without token -->
+```py notest
 from matbench_discovery.data import load_train_test
+from matbench_discovery.data import df_wbm
 
 df_wbm = load_train_test("wbm-summary", version="v1.0.0")
 
-print(df_wbm.shape)
->>> (256963, 17)
+assert df_wbm.shape == (256963, 17)
 
-print(list(df_wbm))
->>> ['formula', 'n_sites', 'volume', 'uncorrected_energy', 'e_form_per_atom_wbm', 'e_hull_wbm', 'bandgap_pbe', 'uncorrected_energy_from_cse', 'e_correction_per_atom_legacy', 'e_correction_per_atom_mp2020', 'e_above_hull_uncorrected_ppd_mp', 'e_above_hull_mp2020_corrected_ppd_mp', 'e_above_hull_legacy_corrected_ppd_mp', 'e_form_per_atom_uncorrected', 'e_form_per_atom_mp2020_corrected', 'e_form_per_atom_legacy_corrected', 'wyckoff_spglib']
+assert list(df_wbm) == ['formula', 'n_sites', 'volume', 'uncorrected_energy', 'e_form_per_atom_wbm', 'e_hull_wbm', 'bandgap_pbe', 'uncorrected_energy_from_cse', 'e_correction_per_atom_legacy', 'e_correction_per_atom_mp2020', 'e_above_hull_uncorrected_ppd_mp', 'e_above_hull_mp2020_corrected_ppd_mp', 'e_above_hull_legacy_corrected_ppd_mp', 'e_form_per_atom_uncorrected', 'e_form_per_atom_mp2020_corrected', 'e_form_per_atom_legacy_corrected', 'wyckoff_spglib']
 ```
 
 Column glossary
