@@ -1,15 +1,42 @@
-<script lang="ts">
-  // import * as d3 from 'd3'
+## Installation
 
-  // const promise = d3.csv('https://github.com/janosh/matbench-discovery/raw/main/data/wbm/2022-10-19-wbm-summary.csv')
-  // const promise = d3.csv('https://raw.githubusercontent.com/janosh/pymatviz/main/pymatviz/elements.csv')
-</script>
-
-The primary way to use this benchmark is through the [PyPI Python package](https://pypi.org/project/matbench-discovery):
+The recommended way to use this benchmark is through the [PyPI Python package](https://pypi.org/project/matbench-discovery):
 
 ```zsh
 pip install matbench-discovery
 ```
+
+## Usage
+
+Here's an example script of how to download the training and test set files for training a new model, recording the results and submitting them via pull request to this benchmark:
+
+```py
+from matbench_discovery.data import load_train_test
+
+df_wbm = load_train_test("wbm-summary", version="v1.0.0")
+
+print(df_wbm.shape)
+>>> (256963, 17)
+
+print(list(df_wbm))
+>>> ['formula', 'n_sites', 'volume', 'uncorrected_energy', 'e_form_per_atom_wbm', 'e_hull_wbm', 'bandgap_pbe', 'uncorrected_energy_from_cse', 'e_correction_per_atom_legacy', 'e_correction_per_atom_mp2020', 'e_above_hull_uncorrected_ppd_mp', 'e_above_hull_mp2020_corrected_ppd_mp', 'e_above_hull_legacy_corrected_ppd_mp', 'e_form_per_atom_uncorrected', 'e_form_per_atom_mp2020_corrected', 'e_form_per_atom_legacy_corrected', 'wyckoff_spglib']
+```
+
+Column glossary
+
+1. `formula`: A compound's unreduced alphabetical formula
+1. `n_sites`: Number of sites in the structure's unit cell
+1. `volume`: Relaxed structure volume in cubic Angstrom
+1. `uncorrected_energy`: Raw VASP-computed energy
+1. `e_form_per_atom_wbm`: Original formation energy per atom from [WBM paper]
+1. `e_hull_wbm`: Original energy above the convex hull in (eV/atom) from [WBM paper]
+1. `bandgap_pbe`: PBE-level DFT band gap from [WBM paper]
+1. `uncorrected_energy_from_cse`: Should be the same as `uncorrected_energy`. There are 2 cases where the absolute difference reported in the summary file and in the computed structure entries exceeds 0.1 eV (`wbm-2-3218`, `wbm-1-56320`) which we attribute to rounding errors.
+1. `e_form_per_atom_mp2020_corrected`: Matbench Discovery takes these as ground truth for the formation energy. Includes MP2020 energy corrections (latest correction scheme at time of release).
+1. `e_above_hull_mp2020_corrected_ppd_mp`: Energy above hull distances in eV/atom after applying the MP2020 correction scheme and with respect to the Materials Project convex hull. Matbench Discovery takes these as ground truth for material stability. Any value above 0 is assumed to be an unstable/metastable material.
+<!-- TODO document remaining columns, or maybe drop them from df -->
+
+## Direct Download
 
 You can also download the data files directly:
 
@@ -21,6 +48,4 @@ You can also download the data files directly:
 1. [`2022-09-18-ppd-mp.pkl.gz`](https://github.com/janosh/matbench-discovery/raw/v1.0.0/data/wbm/2022-09-18-ppd-mp.pkl.gz) [[GitHub](https://github.com/janosh/matbench-discovery/blob/v1/data/wbm/2022-09-18-ppd-mp.pkl.gz)]: [PatchedPhaseDiagram](https://pymatgen.org/pymatgen.analysis.phase_diagram.html#pymatgen.analysis.phase_diagram.PatchedPhaseDiagram) constructed from all MP ComputedStructureEntries
 1. [`2022-09-19-mp-elemental-ref-energies.json`](https://github.com/janosh/matbench-discovery/raw/v1.0.0/data/wbm/2022-09-19-mp-elemental-ref-energies.json) [[GitHub](https://github.com/janosh/matbench-discovery/blob/v1/data/wbm/2022-09-19-mp-elemental-ref-energies.json)]: Minimum energy PDEntries for each element present in the Materials Project
 
-<!-- {#await promise then data}
-  {JSON.stringify(data)}
-{/await} -->
+[wbm paper]: https://nature.com/articles/s41524-020-00481-6
