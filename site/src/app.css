@@ -44,10 +44,10 @@ a:hover {
 }
 code {
   overflow-wrap: break-word;
-  padding: 0 2pt;
+  padding: 1pt 3pt;
   border-radius: 2pt;
   font-size: 1.2em;
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(0, 255, 255, 0.1);
 }
 pre code {
   background-color: transparent;
@@ -57,8 +57,9 @@ pre {
   border-radius: 4pt;
   font-size: 9.5pt;
   background-color: rgba(255, 255, 255, 0.05);
-  padding: 1em;
   overflow-x: auto;
+  padding: 6pt 8pt;
+  margin: 1em auto;
 }
 ul {
   padding-left: 1em;
