@@ -44,11 +44,12 @@ def test_cumulative_precision_recall(
 
     if backend == "matplotlib":
         assert isinstance(fig, plt.Figure)
-        ax1, ax2 = fig.axes
-        assert ax1.get_ylim() == ax2.get_ylim() == (0, 1)
-        assert ax1.get_ylabel() == "Recall"
-        # TODO ax2 ylabel also 'Recall', should be 'Precision'
-        # assert ax2.get_ylabel() == "Precision"
+        assert all(ax.get_ylim() == (0, 1) for ax in fig.axes)
+        assert (
+            [ax.get_ylabel() for ax in fig.axes]
+            == list(df_metrics.metric.unique())
+            == ["Precision", "Recall", "F1"]
+        )
     elif backend == "plotly":
         assert isinstance(fig, go.Figure)
         assert fig.layout.yaxis1.title.text == "Precision"
