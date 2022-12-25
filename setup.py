@@ -32,7 +32,7 @@ setup(
         "wandb",
     ],
     extras_require={
-        "test": ["pytest", "pytest-cov"],
+        "test": ["pytest", "pytest-cov", "pytest-markdown-docs"],
         "running-models": ["m3gnet", "aviary", "maml", "megnet", "m3gnet-dgl"],
     },
     project_urls={
