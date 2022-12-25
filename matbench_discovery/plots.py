@@ -489,8 +489,8 @@ def cumulative_precision_recall(
         tuple[plt.Figure | go.Figure, pd.DataFrame]: The matplotlib/plotly figure and
             dataframe of cumulative metrics for each model.
     """
-    fact = lambda: pd.DataFrame(index=range(len(e_above_hull_true)))
-    dfs = dict(Precision=fact(), Recall=fact())
+    factory = lambda: pd.DataFrame(index=range(len(e_above_hull_true)))
+    dfs = dict(Precision=factory(), Recall=factory(), F1=factory())
 
     for model_name in df_preds:
         model_preds = df_preds[model_name].sort_values()
@@ -502,28 +502,36 @@ def cumulative_precision_recall(
 
         true_pos_cumsum = true_pos.cumsum()
         # precision aka positive predictive value (PPV)
-        precision = true_pos_cumsum / (true_pos_cumsum + false_pos.cumsum())
+        precision_cum = true_pos_cumsum / (true_pos_cumsum + false_pos.cumsum())
         n_total_pos = sum(true_pos) + sum(false_neg)
-        recall = true_pos_cumsum / n_total_pos  # aka true_pos_rate aka sensitivity
+        recall_cum = true_pos_cumsum / n_total_pos  # aka true_pos_rate aka sensitivity
 
-        end = int(np.argmax(recall))
+        end = int(np.argmax(recall_cum))
         xs = np.arange(end)
 
-        prec_interp = scipy.interpolate.interp1d(xs, precision[:end], kind="cubic")
-        recall_interp = scipy.interpolate.interp1d(xs, recall[:end], kind="cubic")
+        # cumulative F1 score
+        f1_cum = 2 * (precision_cum * recall_cum) / (precision_cum + recall_cum)
+
+        prec_interp = scipy.interpolate.interp1d(xs, precision_cum[:end], kind="cubic")
+        recall_interp = scipy.interpolate.interp1d(xs, recall_cum[:end], kind="cubic")
+        f1_interp = scipy.interpolate.interp1d(xs, f1_cum[:end], kind="cubic")
         dfs["Precision"][model_name] = pd.Series(prec_interp(xs))
         dfs["Recall"][model_name] = pd.Series(recall_interp(xs))
+        dfs["F1"][model_name] = pd.Series(f1_interp(xs))
 
     for key, df in dfs.items():
         # drop all-NaN rows so plotly plot x-axis only extends to largest number of
         # predicted materials by any model
         df.dropna(how="all", inplace=True)
+        # will be used as facet_col in plotly to split different metrics into subplots
         df["metric"] = key
 
     df_cum = pd.concat(dfs.values())
+    # subselect rows for speed, plot has sufficient precision with 1k rows
+    df_cum = df_cum.iloc[:: len(df_cum) // 1000 or 1]
 
     if backend == "matplotlib":
-        fig, axs = plt.subplots(1, 2, figsize=(15, 7), sharey=True)
+        fig, axs = plt.subplots(1, len(dfs), figsize=(15, 7), sharey=True)
         line_kwargs = dict(
             linewidth=3, markevery=[-1], marker="x", markersize=14, markeredgewidth=2.5
         )
@@ -531,7 +539,6 @@ def cumulative_precision_recall(
             # select every n-th row of df so that 1000 rows are left for increased
             # plotting speed and reduced file size
             # falls back on every row if df has less than 1000 rows
-
             df.iloc[:: len(df) // 1000 or 1].plot(
                 ax=ax, legend=False, backend=backend, **line_kwargs | kwargs, ylabel=key
             )
@@ -541,9 +548,12 @@ def cumulative_precision_recall(
         bbox = dict(facecolor="white", alpha=0.5, edgecolor="none")
         assert len(axs) == len(dfs), f"{len(axs)} != {len(dfs)}"
 
-        for ax, df in zip(axs, dfs.values()):
+        for ax, (key, df) in zip(axs.flat, dfs.items()):
             ax.set(ylim=(0, 1), xlim=(0, None), ylabel=key)
             for model in df_preds:
+                # TODO is this if really necessary?
+                if len(df[model].dropna()) == 0:
+                    continue
                 x_end = df[model].dropna().index[-1]
                 y_end = df[model].dropna().iloc[-1]
                 # place model name at the end of every line
@@ -556,11 +566,12 @@ def cumulative_precision_recall(
         # optimal recall line finds all stable materials without any false positives
         # can be included to confirm all models start out of with near optimal recall
         # and to see how much each model overshoots total n_stable
-        n_below_hull = sum(e_above_hull_true < 0)
         if show_optimal:
+            ax = next(filter(lambda ax: ax.get_ylabel() == "Recall", axs.flat))
+            n_below_hull = sum(e_above_hull_true < 0)
             opt_label = "Optimal Recall"
-            axs[1].plot([0, n_below_hull], [0, 1], color="green", linestyle="--")
-            axs[1].text(
+            ax.plot([0, n_below_hull], [0, 1], color="green", linestyle="--")
+            ax.text(
                 *[n_below_hull, 0.81],
                 opt_label,
                 color="green",
@@ -571,16 +582,29 @@ def cumulative_precision_recall(
             )
 
     elif backend == "plotly":
-        fig = df_cum.iloc[:: len(df_cum) // 1000 or 1].plot(
-            backend=backend, facet_col="metric", **kwargs
+        fig = df_cum.plot(
+            backend=backend,
+            facet_col="metric",
+            facet_col_wrap=3,
+            facet_col_spacing=0.03,
+            # pivot df in case we want to show all 3 metrics in each plot's hover
+            # requires fixing index mismatch due to df subsampling above
+            # customdata=dict(
+            #     df_cum.reset_index()
+            #     .pivot(index="index", columns="metric")["Voronoi RF above hull pred"]
+            #     .items()
+            # ),
+            **kwargs,
         )
         fig.update_traces(line=dict(width=4))
-        for idx in range(1, 3):
-            fig.update_xaxes(
-                title_text="Number of materials predicted stable", row=1, col=idx
+        for idx, metric in enumerate(df_cum.metric.unique(), 1):
+            x_axis_label = "Number of materials predicted stable" if idx == 2 else ""
+            fig.update_xaxes(title=x_axis_label, col=idx)
+            fig.update_yaxes(title=dict(text=metric, standoff=0), col=idx)
+            fig.update_traces(
+                hovertemplate=f"Index = %{{x:d}}<br>{metric} = %{{y:.2f}}",
+                col=idx,  # model = %{customdata[0]}<br>
             )
-        fig.update_yaxes(title="Precision", col=1)
-        fig.update_yaxes(title="Recall", col=2)
         fig.for_each_annotation(lambda a: a.update(text=""))
         fig.update_layout(legend=dict(title=""))
         fig.update_layout(showlegend=False)

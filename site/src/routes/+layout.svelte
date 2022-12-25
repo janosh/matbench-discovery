@@ -7,7 +7,7 @@
   import '../app.css'
 
   const routes = Object.keys(import.meta.glob(`./*/+page.{svx,svelte,md}`)).map(
-    (filename) => '/' + filename.split(`/`)[1]
+    (filename) => `/` + filename.split(`/`)[1]
   )
 </script>
 
