@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import os
+import urllib.error
 from collections.abc import Generator, Sequence
 from glob import glob
+from pathlib import Path
 from typing import Any, Callable
 
 import pandas as pd
@@ -46,11 +48,12 @@ def as_dict_handler(obj: Any) -> dict[str, Any] | None:
 
 
 def load_train_test(
-    parts: str | Sequence[str] = ("summary",),
-    version: int = 1,
-    cache_dir: str | None = default_cache_dir,
+    data_names: str | Sequence[str] = ("summary",),
+    version: str = "1.0.0",
+    cache_dir: str | Path | None = default_cache_dir,
     hydrate: bool = False,
-) -> pd.DataFrame | dict[str, pd.DataFrame]:
+    **kwargs: Any,
+) -> pd.DataFrame:
     """Download parts of or the full MP training data and WBM test data as pandas
     DataFrames. The full training and test sets are each about ~500 MB as compressed
     JSON which will be cached locally to cache_dir for faster re-loading unless
@@ -62,46 +65,50 @@ def load_train_test(
     https://matbench-discovery.janosh.dev/how-to-use for brief data descriptions.
 
     Args:
-        parts (str | list[str], optional): Which parts of the MP/WBM dataset to load.
-            Can be any subset of the above data names. Defaults to ["summary"].
-        version (int, optional): Which version of the dataset to load. Defaults to 1
-            (currently the only available option).
+        data_names (str | list[str], optional): Which parts of the MP/WBM dataset to load.
+            Can be any subset of the above data names or 'all'. Defaults to ["summary"].
+        version (str, optional): Which version of the dataset to load. Defaults to
+            '1.0.0'. Can be any git tag, branch or commit hash.
         cache_dir (str, optional): Where to cache data files on local drive. Defaults to
             '~/.cache/matbench-discovery'. Set to None to disable caching.
         hydrate (bool, optional): Whether to hydrate pymatgen objects. If False,
             Structures and ComputedStructureEntries are returned as dictionaries which
             can be hydrated on-demand with df.col.map(Structure.from_dict). Defaults to
             False as it noticeably increases load time.
+        **kwargs: Additional keyword arguments passed to pandas.read_json or read_csv,
+            depending on which file is loaded.
 
     Raises:
-        ValueError: On bad version number or bad part names.
+        ValueError: On bad version number or bad data names.
 
     Returns:
-        pd.DataFrame | dict[str, pd.DataFrame]: Single dataframe of dictionary of
-        multiple data parts were requested.
+        pd.DataFrame: Single dataframe or dictionary of dfs if
+        multiple data were requested.
     """
-    if parts == "all":
-        parts = list(DATA_FILENAMES)
-    elif isinstance(parts, str):
-        parts = [parts]
+    if data_names == "all":
+        data_names = list(DATA_FILENAMES)
+    elif isinstance(data_names, str):
+        data_names = [data_names]
 
-    if version != 1:
-        raise ValueError(f"Only version 1 currently available, got {version=}")
-    if missing := set(parts) - set(DATA_FILENAMES):
+    if missing := set(data_names) - set(DATA_FILENAMES):
         raise ValueError(f"{missing} must be subset of {set(DATA_FILENAMES)}")
 
     dfs = {}
-    for key in parts:
+    for key in data_names:
         file = DATA_FILENAMES[key]
         reader = pd.read_csv if file.endswith(".csv") else pd.read_json
 
-        cache_path = f"{cache_dir}/{file}"
+        cache_path = f"{cache_dir}/{version}/{file}"
         if os.path.isfile(cache_path):
-            df = reader(cache_path)
+            print(f"Loading '{key}' from cached file at '{cache_path}'")
+            df = reader(cache_path, **kwargs)
         else:
-            url = f"{RAW_REPO_URL}/{version}.0.0/data/{file}"
-            print(f"Downloading {key} from {url}")
-            df = reader(url)
+            url = f"{RAW_REPO_URL}/{version}/data/{file}"
+            print(f"Downloading '{key}' from {url}")
+            try:
+                df = reader(url)
+            except urllib.error.HTTPError as exc:
+                raise ValueError(f"Bad {url=}") from exc
             if cache_dir and not os.path.isfile(cache_path):
                 os.makedirs(os.path.dirname(cache_path), exist_ok=True)
                 if ".csv" in file:
@@ -128,8 +135,8 @@ def load_train_test(
 
         dfs[key] = df
 
-    if len(parts) == 1:
-        return dfs[parts[0]]
+    if len(data_names) == 1:
+        return dfs[data_names[0]]
     return dfs
 
 

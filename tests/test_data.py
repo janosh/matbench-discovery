@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+import urllib.request
+from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 from unittest.mock import patch
@@ -8,6 +10,7 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 from pymatgen.core import Lattice, Structure
+from pytest import CaptureFixture
 
 from matbench_discovery import ROOT
 from matbench_discovery.data import (
@@ -28,9 +31,14 @@ structure = Structure(
     coords=((0, 0, 0), (0.5, 0.5, 0.5)),
 )
 
+try:
+    website_down = urllib.request.urlopen(RAW_REPO_URL).status != 200
+except Exception:
+    website_down = True
+
 
 @pytest.mark.parametrize(
-    "parts, cache_dir, hydrate",
+    "data_names, cache_dir, hydrate",
     [
         (["wbm-summary"], None, True),
         (["wbm-initial-structures"], TemporaryDirectory().name, True),
@@ -41,62 +49,107 @@ structure = Structure(
     ],
 )
 def test_load_train_test(
-    parts: list[str],
+    data_names: list[str],
     cache_dir: str | None,
     hydrate: bool,
     dummy_df_with_structures: pd.DataFrame,
-    capsys: pytest.CaptureFixture,
+    capsys: CaptureFixture[str],
 ) -> None:
     # intercept HTTP requests to GitHub raw user content and return dummy df instead
     with patch("matbench_discovery.data.pd.read_csv") as read_csv, patch(
         "matbench_discovery.data.pd.read_json"
     ) as read_json:
         read_csv.return_value = read_json.return_value = dummy_df_with_structures
-        out = load_train_test(parts, cache_dir=cache_dir, hydrate=hydrate)
+        out = load_train_test(data_names, cache_dir=cache_dir, hydrate=hydrate)
 
     stdout, stderr = capsys.readouterr()
 
-    assert (
-        "\n".join(
-            f"Downloading {part} from {RAW_REPO_URL}/1.0.0/data/{DATA_FILENAMES[part]}"
-            for part in parts
-        )
-        in stdout
+    expected_out = "\n".join(
+        f"Downloading '{name}' from {RAW_REPO_URL}/1.0.0/data/{DATA_FILENAMES[name]}"
+        for name in data_names
     )
+    assert expected_out in stdout
     assert "" == stderr
 
-    assert read_json.call_count + read_csv.call_count == len(parts)
+    assert read_json.call_count + read_csv.call_count == len(data_names)
 
-    if len(parts) > 1:
+    if len(data_names) > 1:
         assert isinstance(out, dict)
-        assert list(out) == parts
+        assert list(out) == data_names
         for df in out.values():
             assert isinstance(df, pd.DataFrame)
     else:
         assert isinstance(out, pd.DataFrame)
 
 
-def test_load_train_test_raises() -> None:
-    with pytest.raises(
-        ValueError,
-        match=f"must be subset of {set(DATA_FILENAMES)}",
-    ):
-        load_train_test(["invalid-part"])
+def test_load_train_test_raises(tmp_path: Path) -> None:
+    # bad data name
+    with pytest.raises(ValueError, match=f"must be subset of {set(DATA_FILENAMES)}"):
+        load_train_test(["bad-data-name"])
 
-    with pytest.raises(
-        ValueError, match="Only version 1 currently available, got version=2"
-    ):
-        load_train_test(version=2)
+    # bad_version
+    version = "not-a-real-branch"
+    with pytest.raises(ValueError) as exc_info:
+        load_train_test("wbm-summary", version=version, cache_dir=tmp_path)
+
+    assert (
+        str(exc_info.value)
+        == "Bad url='https://raw.githubusercontent.com/janosh/matbench-discovery"
+        f"/{version}/data/wbm/2022-10-19-wbm-summary.csv'"
+    )
 
 
 def test_load_train_test_doc_str() -> None:
     doc_str = load_train_test.__doc__
     assert isinstance(doc_str, str)  # mypy type narrowing
 
-    assert all(key in doc_str for key in DATA_FILENAMES)
+    for name in DATA_FILENAMES:
+        assert name in doc_str, f"Missing data {name=} in load_train_test() docstring"
 
     # TODO refactor to load site URL from site/package.json for SSoT
     assert "https://matbench-discovery.janosh.dev" in doc_str
+
+
+@pytest.mark.skipif(website_down, reason=f"{RAW_REPO_URL} unreachable")
+@pytest.mark.parametrize("version", ["main"])  # , "d00d475"
+def test_load_train_test_no_mock(
+    version: str, capsys: CaptureFixture[str], tmp_path: Path
+) -> None:
+    # this function runs the download from GitHub raw user content for real
+    # hence takes some time and requires being online
+    df_wbm = load_train_test("wbm-summary", version=version, cache_dir=tmp_path)
+    assert df_wbm.shape == (256963, 17)
+    assert set(df_wbm) > {
+        "bandgap_pbe",
+        "e_form_per_atom_mp2020_corrected",
+        "e_form_per_atom_uncorrected",
+        "e_form_per_atom_wbm",
+        "e_hull_wbm",
+        "formula",
+        "n_sites",
+        "uncorrected_energy",
+        "uncorrected_energy_from_cse",
+        "volume",
+        "wyckoff_spglib",
+    }, "Loaded df missing columns"
+
+    stdout, stderr = capsys.readouterr()
+    assert stderr == ""
+    assert (
+        stdout
+        == "Downloading 'wbm-summary' from https://raw.githubusercontent.com/janosh"
+        f"/matbench-discovery/{version}/data/wbm/2022-10-19-wbm-summary.csv\n"
+    )
+
+    df_wbm = load_train_test("wbm-summary", version=version, cache_dir=tmp_path)
+
+    stdout, stderr = capsys.readouterr()
+    assert stderr == ""
+    assert (
+        stdout
+        == f"Loading 'wbm-summary' from cached file at '{tmp_path}/main/wbm/2022-10-19-"
+        "wbm-summary.csv'\n"
+    )
 
 
 def test_chunks() -> None:
