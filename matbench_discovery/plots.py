@@ -55,11 +55,14 @@ model_labels = dict(
     dft="DFT",
 )
 px.defaults.labels = quantity_labels | model_labels
-pastel_layout = dict(
-    colorway=px.colors.qualitative.Pastel, margin=dict(l=40, r=30, t=60, b=30)
+global_layout = dict(
+    # colorway=px.colors.qualitative.Pastel,
+    margin=dict(l=30, r=20, t=60, b=20),
+    paper_bgcolor="rgba(0,0,0,0)",
+    # plot_bgcolor="rgba(0,0,0,0)",
 )
-pio.templates["pastel"] = dict(layout=pastel_layout)
-pio.templates.default = "plotly_white+pastel"
+pio.templates["global"] = dict(layout=global_layout)
+pio.templates.default = "plotly_dark+global"
 
 # https://github.com/plotly/Kaleido/issues/122#issuecomment-994906924
 # when seeing MathJax "loading" message in exported PDFs, try:
@@ -607,7 +610,7 @@ def cumulative_precision_recall(
             )
         fig.for_each_annotation(lambda a: a.update(text=""))
         fig.update_layout(legend=dict(title=""))
-        fig.update_layout(showlegend=False)
+        # fig.update_layout(showlegend=False)
 
     return fig, df_cum
 

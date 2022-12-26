@@ -9,10 +9,8 @@
 
   onMount(() => {
     for (const img of document.querySelectorAll(`img`)) {
-      const src = img.getAttribute(`src`)
-      if (figs[`../data/wbm/${src}`]) {
-        img.src = figs[`../data/wbm/${src}`]
-      }
+      const src = `../data/wbm/${img.getAttribute(`src`)}`
+      if (figs[src]) img.src = figs[src]
     }
   })
 </script>
