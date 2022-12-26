@@ -1,6 +1,6 @@
 ## Installation
 
-The recommended way to use this benchmark is through the [PyPI Python package](https://pypi.org/project/matbench-discovery):
+The recommended way to use this benchmark is through its Python package [available onPyPI](https://pypi.org/project/matbench-discovery):
 
 ```zsh
 pip install matbench-discovery
@@ -11,6 +11,7 @@ pip install matbench-discovery
 Here's an example script of how to download the training and test set files for training a new model, recording the results and submitting them via pull request to this benchmark:
 
 <!-- TODO remove notest meta key once repo is public and file can be downloaded without token -->
+
 ```py notest
 from matbench_discovery.data import load_train_test
 from matbench_discovery.data import df_wbm

@@ -36,7 +36,7 @@ fig, df_metric = cumulative_precision_recall(
     show_optimal=True,
 )
 
-title = f"{today} - Cumulative Precision and Recall for Stable Materials"
+title = f"{today} - Cumulative Precision, Recall and F1 Score for Stable Materials"
 # xlabel_cumulative = "Materials predicted stable sorted by hull distance"
 if backend == "matplotlib":
     fig.suptitle(title)
@@ -51,6 +51,11 @@ fig.show()
 img_path = f"{ROOT}/figures/{today}-precision-recall-curves"
 # if hasattr(fig, "write_image"):
 #     fig.write_image(f"{img_path}.pdf")
-#     fig.write_html(f"{img_path}.svelte", include_plotlyjs=False, full_html=False)
+#     fig.write_html(
+#         f"{img_path}.svelte",
+#         include_plotlyjs=False,
+#         full_html=False,
+#         config=dict(showTips=False, displayModeBar=False, scrollZoom=True),
+#     )
 # else:
 #     fig.savefig(f"{img_path}.pdf")
