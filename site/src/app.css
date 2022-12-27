@@ -19,12 +19,6 @@ body {
   color: var(--text-color);
   line-height: 1.5;
 }
-main {
-  margin: auto;
-  margin-bottom: 3em;
-  width: 100%;
-  max-width: 50em;
-}
 button {
   color: var(--text-color);
   cursor: pointer;
@@ -67,6 +61,10 @@ ul {
 label {
   font-weight: bold;
   cursor: pointer;
+}
+img {
+  max-width: 100%;
+  margin: 1em auto;
 }
 
 table {

@@ -22,6 +22,7 @@ from tqdm import tqdm
 
 from matbench_discovery import ROOT, today
 from matbench_discovery.energy import get_e_form_per_atom
+from matbench_discovery.plots import pio
 
 try:
     import gdown
@@ -40,6 +41,8 @@ https://nature.com/articles/s41524-020-00481-6
 
 module_dir = os.path.dirname(__file__)
 warnings.filterwarnings("ignore", category=UserWarning, module="pymatgen")
+
+assert pio.templates.default == "plotly_dark+global"
 
 
 # %% links to google drive files received via email from 1st author Hai-Chen Wang
@@ -429,7 +432,7 @@ print(f"{n_too_stable = }")  # n_too_stable = 502
 n_too_unstable = sum(df_summary.e_form_per_atom_wbm > e_form_cutoff)
 print(f"{n_too_unstable = }")  # n_too_unstable = 22
 
-fig = df_summary.hist(x="e_form_per_atom_wbm", bins=100, backend="plotly", log_y=True)
+fig = df_summary.hist(x="e_form_per_atom_wbm", backend="plotly", log_y=True)
 fig.add_vline(x=e_form_cutoff, line=dict(width=2, dash="dash", color="green"))
 fig.add_vline(x=-e_form_cutoff, line=dict(width=2, dash="dash", color="green"))
 fig.add_annotation(
@@ -441,8 +444,18 @@ fig.update_layout(
     xaxis_title="WBM formation energy (eV/atom)", margin=dict(l=10, r=10, t=40, b=10)
 )
 
-fig.write_image(
-    f"{module_dir}/{today}-hist-e-form-per-atom.png", scale=5, width=800, height=300
+
+# %%
+# no need to store all 250k x values in plot, leads to 1.7 MB file, subsample every 10th
+# point is enough to see the distribution
+fig.data[0].x = fig.data[0].x[::10]
+# recommended to upload to vecta.io/nano afterwards for compression
+fig.write_image(f"{module_dir}/{today}-hist-e-form-per-atom.svg", width=800, height=300)
+fig.write_html(
+    f"{module_dir}/{today}-hist-e-form-per-atom.svelte",
+    include_plotlyjs=False,
+    full_html=False,
+    config=dict(showTips=False, displayModeBar=False, scrollZoom=True),
 )
 
 
