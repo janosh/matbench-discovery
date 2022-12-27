@@ -20,7 +20,11 @@ The full set of processing steps used to curate the WBM test set from the raw da
 - correctly aligning initial structures to DFT-relaxed [`ComputedStructureEntries`](https://pymatgen.org/pymatgen.entries.computed_entries.html#pymatgen.entries.computed_entries.ComputedStructureEntry)
 - remove 6 pathological structures (with 0 volume)
 - remove formation energy outliers below -5 and above 5 eV/atom (502 and 22 crystals respectively out of 257,487 total, including an anomaly of 500 structures at exactly -10 eV/atom)
-  ![WBM formation energy histogram indicating outlier cutoffs](2022-12-07-hist-e-form-per-atom.png)
+
+  <slot name="hist-e-form-per-atom">
+    <img src="./2022-12-07-hist-e-form-per-atom.svg" alt="WBM formation energy histogram indicating outlier cutoffs">
+  </slot>
+
 - apply the [`MaterialsProject2020Compatibility`](https://pymatgen.org/pymatgen.entries.compatibility.html#pymatgen.entries.compatibility.MaterialsProject2020Compatibility) energy correction scheme to the formation energies
 - compute energy to the Materials Project convex hull constructed from all MP `ComputedStructureEntries` queried on 2022-09-16 ([database release 2021.05.13](https://docs.materialsproject.org/changes/database-versions#v2021.05.13))
 

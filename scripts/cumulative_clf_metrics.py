@@ -48,7 +48,11 @@ fig.show()
 
 
 # %%
-img_path = f"{ROOT}/figures/{today}-precision-recall-curves"
+img_path = f"{ROOT}/figures/{today}-cumulative-clf-metrics"
+# for trace in fig.data:
+#     assert isinstance(trace.y[0], float)
+#     trace.y = [round(y, 3) for y in trace.y]
+# fig
 # if hasattr(fig, "write_image"):
 #     fig.write_image(f"{img_path}.pdf")
 #     fig.write_html(

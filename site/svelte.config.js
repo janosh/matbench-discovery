@@ -28,7 +28,10 @@ export default {
 
   preprocess: [
     preprocess(),
-    mdsvex({ rehypePlugins, extensions: [`.svx`, `.md`] }),
+    mdsvex({
+      rehypePlugins,
+      extensions: [`.svx`, `.md`],
+    }),
   ],
 
   kit: {
