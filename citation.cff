@@ -1,0 +1,38 @@
+cff-version: 1.2.0
+title: Matbench Discovery
+message: If you use this software, please cite it as below.
+authors:
+  - family-names: Riebesell
+    given-names: Janosh
+    affiliation: University of Cambridge, Lawrence Berkeley National Laboratory
+    email: janosh@lbl.gov
+    orcid: https://orcid.org/0000-0001-5233-3462
+    corresponding: true
+  - family-names: Goodall
+    given-names: Rhys
+    affiliation: University of Cambridge
+    orcid: https://orcid.org/0000-0002-6589-1700
+  - family-names: Jain
+    given-name: Anubhav
+    orcid: 0000-0001-5893-9967
+    affiliation: Lawrence Berkeley National Laboratory
+  - family-names: Persson
+    given-name: Kristin
+    orcid: 0000-0003-2495-5509
+    affiliation: Lawrence Berkeley National Laboratory
+  - family-names: King-Smith
+    given-name: Emma
+    orcid: 0000-0002-2999-0955
+    affiliation: University of Cambridge
+  - family-names: Lee
+    given-name: Alpha
+    orcid: 0000-0002-9616-3108
+    affiliation: University of Cambridge
+license: MIT
+license-url: https://github.com/janosh/matbench-discovery/blob/main/license"
+repository-code: https://github.com/janosh/matbench-discovery
+type: software
+url: https://github.com/janosh/matbench-discovery
+doi: TODO
+version: 1.0.0 # replace with whatever Matbench Discovery version you use
+date-released: TODO
