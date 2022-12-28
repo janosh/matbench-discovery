@@ -29,5 +29,4 @@ models/voronoi/*.zip
 site/static/figures
 
 # generated docs
-site/src/routes/api/.*
 site/src/routes/api/*.md
