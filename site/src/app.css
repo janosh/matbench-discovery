@@ -8,6 +8,7 @@
   --toc-mobile-btn-color: white;
   --toc-desktop-nav-margin: 0 0 0 1em;
   --toc-min-width: 20em;
+  --toc-active-bg: darkcyan;
 
   --ghc-color: var(--night);
   --ghc-bg: white;

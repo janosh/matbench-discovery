@@ -6,9 +6,9 @@ setup(
     author="Janosh Riebesell, Rhys Goodall",
     author_email="janosh.riebesell@gmail.com",
     url="https://github.com/janosh/matbench-discovery",
-    description="A machine learning benchmark for energy models that emulates high-throughput "
-    "materials screening to test which models most accelerate the discovery of new stable "
-    "crystals.",
+    description="A machine learning benchmark for energy models that simulates "
+    "high-throughput materials screening to test which models most accelerate the "
+    "discovery of new stable crystals.",
     long_description=open("readme.md").read(),
     long_description_content_type="text/markdown",
     packages=find_packages(exclude=["tests", "tests.*"]),

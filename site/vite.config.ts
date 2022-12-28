@@ -1,9 +1,10 @@
+import yaml from '@rollup/plugin-yaml'
 import { sveltekit } from '@sveltejs/kit/vite'
 import { resolve } from 'path'
 import type { UserConfig } from 'vite'
 
 const vite_config: UserConfig = {
-  plugins: [sveltekit()],
+  plugins: [sveltekit(), yaml()],
 
   resolve: {
     alias: {

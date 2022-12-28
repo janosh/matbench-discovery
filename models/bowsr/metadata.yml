@@ -1,0 +1,32 @@
+model_name: BOWSR MEGNet
+model_version: 2022.9.20
+matbench_discovery_version: 1.0
+date_added: 2022-11-17
+authors:
+  - name: Yunxing Zuo
+    affiliation: UC San Diego
+    email: y9zuo@eng.ucsd.edu
+  - name: Chi Chen
+    affiliation: UC San Diego
+    orcid: https://orcid.org/0000-0001-8008-7043
+  - name: Shyue Ping Ong
+    affiliation: UC San Diego
+    orcid: https://orcid.org/0000-0001-5726-2587
+    email: ongsp@ucsd.edu
+repo: https://github.com/materialsvirtuallab/maml
+url: https://materialsvirtuallab.github.io/maml
+doi: https://doi.org/10.1016/j.mattod.2021.08.012
+preprint: https://arxiv.org/abs/2104.10242
+requirements:
+  maml: 2022.9.20
+  pymatgen: 2022.10.22
+  megnet: 1.3.2
+  numpy: 1.24.0
+  pandas: 1.5.1
+
+# model specific keys record hyperparameter choices
+optimize_kwargs:
+  alpha: 0.000676
+  n_init: 100
+  n_iter: 100
+task_type: IS2RE
