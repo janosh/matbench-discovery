@@ -19,13 +19,13 @@
   const routes = Object.keys(import.meta.glob(`./*/+page.{svx,svelte,md}`)).map(
     (filename) => `/` + filename.split(`/`)[1]
   )
+
+  $: headingSelector = `main > :is(${
+    $page.url.pathname === `/api` ? `h1, ` : ``
+  }h2, h3, h4):not(.toc-exclude)`
 </script>
 
-<Toc
-  headingSelector="main > :is(h2, h3, h4):not(.toc-exclude)"
-  breakpoint={1250}
-  warnOnEmpty={false}
-/>
+<Toc {headingSelector} breakpoint={1250} warnOnEmpty={false} />
 
 {#if $page.url.pathname !== `/`}
   <a href="/" aria-label="Back to index page">&laquo; home</a>

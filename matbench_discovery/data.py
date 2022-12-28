@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import urllib.error
-from collections.abc import Generator, Sequence
+from collections.abc import Sequence
 from glob import glob
 from pathlib import Path
 from typing import Any, Callable
@@ -17,7 +17,9 @@ from matbench_discovery import ROOT
 df_wbm = pd.read_csv(f"{ROOT}/data/wbm/2022-10-19-wbm-summary.csv")
 df_wbm.index = df_wbm.material_id
 
+# repo URL to raw files on GitHub
 RAW_REPO_URL = "https://raw.githubusercontent.com/janosh/matbench-discovery"
+# directory to cache downloaded data files
 default_cache_dir = os.path.expanduser("~/.cache/matbench-discovery")
 
 DATA_FILENAMES = {
@@ -29,10 +31,6 @@ DATA_FILENAMES = {
     "wbm-initial-structures": "wbm/2022-10-19-wbm-init-structs.json.bz2",
     "wbm-summary": "wbm/2022-10-19-wbm-summary.csv",
 }
-
-
-def chunks(xs: Sequence[Any], n: int) -> Generator[Sequence[Any], None, None]:
-    return (xs[i : i + n] for i in range(0, len(xs), n))
 
 
 def as_dict_handler(obj: Any) -> dict[str, Any] | None:
@@ -50,7 +48,7 @@ def as_dict_handler(obj: Any) -> dict[str, Any] | None:
 def load_train_test(
     data_names: str | Sequence[str] = ("summary",),
     version: str = "1.0.0",
-    cache_dir: str | Path | None = default_cache_dir,
+    cache_dir: str | Path = default_cache_dir,
     hydrate: bool = False,
     **kwargs: Any,
 ) -> pd.DataFrame:

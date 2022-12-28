@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import urllib.request
 from pathlib import Path
+from random import random
 from tempfile import TemporaryDirectory
 from typing import Any
 from unittest.mock import patch
@@ -18,7 +19,6 @@ from matbench_discovery.data import (
     PRED_FILENAMES,
     RAW_REPO_URL,
     as_dict_handler,
-    chunks,
     df_wbm,
     glob_to_df,
     load_df_wbm_with_preds,
@@ -38,29 +38,34 @@ except Exception:
 
 
 @pytest.mark.parametrize(
-    "data_names, cache_dir, hydrate",
+    "data_names, hydrate",
     [
-        (["wbm-summary"], None, True),
-        (["wbm-initial-structures"], TemporaryDirectory().name, True),
-        (["wbm-computed-structure-entries"], None, False),
-        (["wbm-summary", "wbm-initial-structures"], TemporaryDirectory().name, True),
-        (["mp-elemental-ref-energies"], None, True),
-        (["mp-energies"], None, True),
+        (["wbm-summary"], True),
+        (["wbm-initial-structures"], True),
+        (["wbm-computed-structure-entries"], False),
+        (["wbm-summary", "wbm-initial-structures"], True),
+        (["mp-elemental-ref-energies"], True),
+        (["mp-energies"], True),
     ],
 )
 def test_load_train_test(
     data_names: list[str],
-    cache_dir: str | None,
     hydrate: bool,
     dummy_df_with_structures: pd.DataFrame,
     capsys: CaptureFixture[str],
+    tmp_path: Path,
 ) -> None:
     # intercept HTTP requests to GitHub raw user content and return dummy df instead
     with patch("matbench_discovery.data.pd.read_csv") as read_csv, patch(
         "matbench_discovery.data.pd.read_json"
     ) as read_json:
         read_csv.return_value = read_json.return_value = dummy_df_with_structures
-        out = load_train_test(data_names, cache_dir=cache_dir, hydrate=hydrate)
+        out = load_train_test(
+            data_names,
+            hydrate=hydrate,
+            # test both str and Path cache_dir
+            cache_dir=TemporaryDirectory().name if random() < 0.5 else tmp_path,
+        )
 
     stdout, stderr = capsys.readouterr()
 
@@ -150,17 +155,6 @@ def test_load_train_test_no_mock(
         == f"Loading 'wbm-summary' from cached file at '{tmp_path}/main/wbm/2022-10-19-"
         "wbm-summary.csv'\n"
     )
-
-
-def test_chunks() -> None:
-    assert list(chunks([], 1)) == []
-    assert list(chunks([1], 1)) == [[1]]
-    assert list(chunks([1, 2], 1)) == [[1], [2]]
-    assert list(chunks([1, 2, 3], 1)) == [[1], [2], [3]]
-    assert list(chunks([1, 2, 3], 2)) == [[1, 2], [3]]
-    assert list(chunks(range(1, 4), 2)) == [range(1, 3), range(3, 4)]
-    assert list(chunks(range(1, 5), 2)) == [range(1, 3), range(3, 5)]
-    assert list(chunks(range(1, 5), 3)) == [range(1, 4), range(4, 5)]
 
 
 def test_as_dict_handler() -> None:
