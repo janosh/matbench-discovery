@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@iconify/svelte": "^3.0.1",
+    "@rollup/plugin-yaml": "^4.0.1",
     "@sveltejs/adapter-static": "1.0.0",
     "@sveltejs/kit": "1.0.1",
     "@sveltejs/vite-plugin-svelte": "^2.0.2",

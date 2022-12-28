@@ -20,7 +20,7 @@
     (filename) => `/` + filename.split(`/`)[1]
   )
 
-  $: headingSelector = `main > :is(${
+  $: headingSelector = `main :is(${
     $page.url.pathname === `/api` ? `h1, ` : ``
   }h2, h3, h4):not(.toc-exclude)`
 </script>

@@ -8,11 +8,11 @@ The authors performed 5 rounds of elemental substitution in total, each time rel
 
 Since repeated substitutions should - on average - increase chemical dissimilarity, the 5 iterations of this data-generation process are a unique and compelling feature as it allows out-of distribution testing. We can check how model performance degrades when asked to predict on structures increasingly more dissimilar from the training set (which is restricted to the MP 2022 database release (or earlier) for all models in this benchmark).
 
-## About the IDs
+## 🆔 &thinsp; About the IDs
 
 The first integer in each material ID ranging from 1 to 5 and coming right after the prefix `wbm-` indicates the substitution step, i.e. in which iteration of the substitution process was this material generated. Each iteration has varying numbers of materials which are counted by the 2nd integer. Note this 2nd number is not always consecutive. A small number of materials (~0.2%) were removed by the data processing steps detailed below. Don't be surprised to find an ID like `wbm-3-70804` followed by `wbm-3-70807`.
 
-## Data processing steps
+## 🪓 &thinsp; Data processing steps
 
 The full set of processing steps used to curate the WBM test set from the raw data files (downloaded from URLs listed below) can be found in [`data/wbm/fetch_process_wbm_dataset.py`](https://github.com/janosh/matbench-discovery/blob/site/data/wbm/fetch_process_wbm_dataset.py). Processing involved
 
@@ -42,7 +42,7 @@ The number of materials in each step before and after processing are:
 | before | 61,848 | 52,800 | 79,205 | 40,328 | 23,308 | 257,487 |
 | after  | 61,466 | 52,755 | 79,160 | 40,314 | 23,268 | 256,963 |
 
-## Links to raw WBM data files
+## 🔗 &thinsp; Links to raw WBM data files
 
 Links to WBM data files have proliferated. This is an attempt to keep track of all of them.
 
