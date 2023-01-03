@@ -14,7 +14,7 @@ for (const [path, file] of Object.entries(
       .replaceAll(`</b>`, ``)
       .replaceAll(
         `src="https://img.shields.io/badge/-source-cccccc?style=flat-square"`,
-        `src="https://img.shields.io/badge/source-blue?style=flat"`
+        `src="https://img.shields.io/badge/source-blue?style=flat" alt="source link"`
       )
   )
 }
