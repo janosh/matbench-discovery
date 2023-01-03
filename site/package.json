@@ -28,7 +28,6 @@
     "hastscript": "^7.1.0",
     "highlight.js": "^11.7.0",
     "mdsvex": "^0.10.6",
-    "periodic-tables": "^0.1.4",
     "prettier": "^2.8.1",
     "prettier-plugin-svelte": "^2.9.0",
     "rehype-autolink-headings": "^6.1.1",
@@ -39,9 +38,10 @@
     "svelte-preprocess": "^5.0.0",
     "svelte-toc": "^0.5.1",
     "svelte2tsx": "^0.6.0",
+    "sveriodic-table": "^0.1.1",
     "tslib": "^2.4.1",
     "typescript": "^4.9.4",
-    "vite": "^4.0.3"
+    "vite": "^4.0.4"
   },
   "prettier": {
     "semi": false,
