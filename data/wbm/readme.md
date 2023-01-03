@@ -44,7 +44,7 @@ The number of materials in each step before and after processing are:
 
 ## 🔗 &thinsp; Links to raw WBM data files
 
-Links to WBM data files have proliferated. This is an attempt to keep track of all of them.
+Links to WBM data files have proliferated. This is an attempt to keep track of them.
 
 Initial structures (after element substitution but before DFT relaxation) were sent as Google Drive links via email by Hai-Chen Wang on 2021-09-01.
 
@@ -68,3 +68,11 @@ materialscloud:2021.68 includes a readme file with a description of the dataset,
 | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
 
 [wbm paper]: https://nature.com/articles/s41524-020-00481-6
+
+## Data Plots
+
+Heatmap of elemental prevalence in WBM dataset.
+
+<slot name="wbm-elements-log">
+  <img src="./2022-12-30-wbm-elements-log.svg" alt="Periodic table log heatmap of WBM elements">
+</slot>

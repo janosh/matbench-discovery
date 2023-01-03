@@ -74,7 +74,7 @@ table {
 }
 table :is(td, th) {
   border: 1px solid gray;
-  padding: 0.4em 0.8em;
+  padding: 5pt 9pt;
 }
 tbody tr:nth-child(odd) {
   background: black;
