@@ -1,11 +1,12 @@
 <script lang="ts">
   import FormEnergyHist from '$root/data/wbm/2022-12-07-hist-e-form-per-atom.svelte'
   import DataReadme from '$root/data/wbm/readme.md'
-  // import { PeriodicTable, Toggle } from 'periodic-tables'
-  import PeriodicTable from 'periodic-tables'
-  import Toggle from 'periodic-tables/Toggle.svelte'
+  import type { ChemicalElement } from 'sveriodic-table'
+  import { PeriodicTable, TableInset, Toggle } from 'sveriodic-table'
+  import { pretty_num } from 'sveriodic-table/labels'
   import elem_counts from './2022-12-30-wbm-element-counts.json'
 
+  let log_color_scale = false
   const heatmap_values = Object.values(elem_counts)
   const color_map = {
     200: `blue`,
@@ -13,8 +14,7 @@
     80_000: `yellow`,
     150_000: `red`,
   }
-
-  let log = true
+  let active_element: ChemicalElement
 </script>
 
 <DataReadme>
@@ -24,8 +24,16 @@
     {/if}
   </svelte:fragment>
   <svelte:fragment slot="wbm-elements-log">
-    <span>Log color scale? <Toggle bind:checked={log} /></span>
-    <PeriodicTable {heatmap_values} {color_map} {log} />
+    <span>Log color scale <Toggle bind:checked={log_color_scale} /></span>
+    <PeriodicTable {heatmap_values} {color_map} log={log_color_scale} bind:active_element>
+      <TableInset slot="inset" grid_row="3">
+        {#if active_element?.name}
+          <strong>
+            {active_element?.name}: {pretty_num(elem_counts[active_element?.symbol])}
+          </strong>
+        {/if}
+      </TableInset>
+    </PeriodicTable>
   </svelte:fragment>
 </DataReadme>
 
@@ -37,5 +45,8 @@
     left: 50%;
     transform: translateX(-50%);
     z-index: 1;
+  }
+  strong {
+    text-align: center;
   }
 </style>
