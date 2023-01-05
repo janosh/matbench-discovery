@@ -1,3 +1,5 @@
+# How to contribute
+
 ## 🔨 &thinsp; Installation
 
 The recommended way to acquire the train and test data for this benchmark is through its Python package [available onPyPI](https://pypi.org/project/matbench-discovery):
@@ -165,3 +167,7 @@ git commit -m 'add <model_name> to Matbench Discovery leaderboard'
 ```
 
 And you're done! Once tests pass and the PR is merged, your model will be added to the leaderboard! 🎉
+
+## Troubleshooting
+
+Having problems using or contributing to the project? Please [open an issue on GitHub](https://github.com/janosh/matbench-discovery/issues). We're happy to help!

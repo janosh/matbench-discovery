@@ -440,9 +440,8 @@ fig.add_annotation(
     text=f"<b>dataset cropped to within +/- {e_form_cutoff} eV/atom</b>",
     showarrow=False,
 )
-fig.update_layout(
-    xaxis_title="WBM formation energy (eV/atom)", margin=dict(l=10, r=10, t=40, b=10)
-)
+x_axis_title = "WBM uncorrected formation energy (eV/atom)"
+fig.update_layout(xaxis_title=x_axis_title, margin=dict(l=10, r=10, t=40, b=10))
 
 
 # %%

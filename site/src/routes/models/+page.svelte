@@ -6,6 +6,8 @@
   export let data: PageData
 </script>
 
+<h1>Models</h1>
+
 <ol>
   {#each data.model_metas as [key, meta], idx}
     {@const { repo, doi, preprint, url, date_added } = meta}
@@ -20,7 +22,7 @@
         {/each}
       </nav>
       <p>
-        Date added: {new Date().toISOString().split(`T`)[0]}
+        Date added: {new Date(date_added).toISOString().split(`T`)[0]}
         &nbsp;&bull;&nbsp; Benchmark version: {meta.matbench_discovery_version}
       </p>
       <strong>Authors</strong>
