@@ -15,10 +15,12 @@
 }
 body {
   background: var(--night);
-  padding: calc(1ex + 2vw);
   font-family: -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
   color: var(--text-color);
   line-height: 1.5;
+}
+main {
+  padding: calc(1ex + 2vw);
 }
 button {
   color: var(--text-color);
@@ -36,6 +38,15 @@ a {
 }
 a:hover {
   color: orange;
+}
+a.link {
+  padding: 0 4pt;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 3pt;
+  transition: 0.2s;
+}
+a.link[aria-current='page'] {
+  color: mediumseagreen;
 }
 code {
   overflow-wrap: break-word;
@@ -81,11 +92,7 @@ tbody tr:nth-child(odd) {
 }
 
 h1 {
-  display: flex;
-  font-size: clamp(2rem, 2rem + 2vw, 3rem);
-  place-items: center;
-  place-content: center;
-  margin: 1.2em 0;
+  text-align: center;
 }
 
 :where(h2, h3, h4, h5, h6) {
@@ -127,4 +134,8 @@ aside.toc.desktop {
   top: 3em;
   left: calc(50vw + 50em / 2);
   max-width: 16em;
+}
+
+caption {
+  display: block;
 }

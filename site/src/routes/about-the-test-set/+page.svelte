@@ -43,7 +43,7 @@
     gap: 1ex;
     position: absolute;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-50%) translateY(100%);
     z-index: 1;
   }
   strong {
