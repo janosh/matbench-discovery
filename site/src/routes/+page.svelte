@@ -5,6 +5,8 @@
 
 <Readme />
 
+<br />
+
 {#if typeof document !== `undefined`}
   <CumulativeMetricsPlot
     style="width: 90vw; transform: translateX(-45vw) translateX(min(25em, 45vw))"

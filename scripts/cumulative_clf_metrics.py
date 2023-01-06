@@ -42,17 +42,20 @@ if backend == "matplotlib":
     fig.suptitle(title)
     # fig.text(0.5, -0.08, xlabel_cumulative, ha="center", fontdict={"size": 16})
 elif backend == "plotly":
-    fig.update_layout(title=title)
+    fig.update_layout(title=title, matches=None)
 
 fig.show()
 
 
 # %%
 img_path = f"{ROOT}/figures/{today}-cumulative-clf-metrics"
-# for trace in fig.data:
-#     assert isinstance(trace.y[0], float)
-#     trace.y = [round(y, 3) for y in trace.y]
-# fig
+
+# file will be served by site
+# so we round y floats to reduce file size since
+for trace in fig.data:
+    assert isinstance(trace.y[0], float)
+    trace.y = [round(y, 3) for y in trace.y]
+
 # if hasattr(fig, "write_image"):
 #     fig.write_image(f"{img_path}.pdf")
 #     fig.write_html(

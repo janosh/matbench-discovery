@@ -9,7 +9,7 @@ import pandas as pd
 import wandb
 from aviary.cgcnn.data import CrystalGraphData, collate_batch
 from aviary.cgcnn.model import CrystalGraphConvNet
-from aviary.deploy import predict_from_wandb_checkpoints
+from aviary.predict import predict_from_wandb_checkpoints
 from pymatgen.core import Structure
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -24,7 +24,7 @@ __date__ = "2022-08-15"
 
 """
 Download WandB checkpoints for an ensemble of CGCNN models trained on all MP
-formation energies, then makes predictions on some dataset, prints ensemble metrics and
+formation energies, then make predictions on some dataset, prints ensemble metrics and
 saves predictions to CSV.
 """
 
@@ -99,7 +99,10 @@ cg_data = CrystalGraphData(
 data_loader = DataLoader(
     cg_data, batch_size=1024, shuffle=False, collate_fn=collate_batch
 )
-df_preds, ensemble_metrics = predict_from_wandb_checkpoints(
+
+
+# %%
+df, ensemble_metrics = predict_from_wandb_checkpoints(
     runs,
     # dropping isolated-atom structs means len(cg_data.df) < len(df)
     cache_dir=CHECKPOINT_DIR,
@@ -110,10 +113,10 @@ df_preds, ensemble_metrics = predict_from_wandb_checkpoints(
 )
 
 slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
-df_preds.round(4).to_csv(f"{out_dir}/{job_name}-preds-{slurm_job_id}.csv", index=False)
+df.round(4).to_csv(f"{out_dir}/{job_name}-preds-{slurm_job_id}.csv", index=False)
 pred_col = f"{target_col}_pred_ens"
 assert pred_col in df, f"{pred_col=} not in {list(df)}"
-table = wandb.Table(dataframe=df_preds[[target_col, pred_col]].reset_index())
+table = wandb.Table(dataframe=df[[target_col, pred_col]].reset_index())
 
 
 # %%
