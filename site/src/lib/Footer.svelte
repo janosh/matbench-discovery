@@ -1,10 +1,10 @@
-<script>
+<script lang="ts">
   import { repository } from '$site/package.json'
   import Icon from '@iconify/svelte'
 </script>
 
 <footer>
-  Maintained by <a href="https://github.com/janosh">Janosh Riebesell</a>
+  Maintained by Janosh Riebesell
   <a href="mailto:janosh@lbl.gov"><Icon icon="mdi:email" inline /></a>
   on
   <a href={repository}><Icon icon="octicon:mark-github" inline /></a>

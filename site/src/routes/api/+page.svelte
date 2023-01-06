@@ -1,4 +1,4 @@
-<h1>API</h1>
+<h1 class="toc-exclude">API</h1>
 
 {#each Object.values(import.meta.glob(`./*.md`, { eager: true })) as file}
   <svelte:component this={file?.default} />

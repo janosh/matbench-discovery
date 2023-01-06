@@ -7,7 +7,7 @@ from importlib.metadata import version
 
 import pandas as pd
 import wandb
-from aviary.deploy import predict_from_wandb_checkpoints
+from aviary.predict import predict_from_wandb_checkpoints
 from aviary.wrenformer.data import df_to_in_mem_dataloader
 from aviary.wrenformer.model import Wrenformer
 
