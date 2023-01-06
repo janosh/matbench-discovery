@@ -6,7 +6,9 @@ from datetime import datetime
 
 ROOT = os.path.dirname(os.path.dirname(__file__))  # repository root
 # whether a currently running slurm job is in debug mode
-DEBUG = "slurm-submit" not in sys.argv and "SLURM_JOB_ID" not in os.environ
+DEBUG = "DEBUG" in os.environ or (
+    "slurm-submit" not in sys.argv and "SLURM_JOB_ID" not in os.environ
+)
 # directory to store model checkpoints downloaded from wandb cloud storage
 CHECKPOINT_DIR = f"{ROOT}/wandb/checkpoints"
 # wandb <entity>/<project name> to record new runs to
