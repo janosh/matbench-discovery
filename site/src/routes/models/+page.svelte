@@ -47,11 +47,17 @@
         <ul>
           {#each Object.entries(meta.requirements) as [name, version]}
             <li>
-              {name}: {version}
+              {#if ![`aviary`].includes(name)}
+                {@const href = `https://pypi.org/project/${name}/${version}`}
+                {name}: <a {href}>{version}</a>
+              {:else}
+                {name}: {version}
+              {/if}
             </li>
           {/each}
         </ul>
       </section>
+      <!-- TODO add table with performance metrics (F1, Acc, Recall, Precision) for each model -->
     </li>
   {/each}
 </ol>
@@ -67,16 +73,15 @@
     padding: 3pt 9pt 5pt;
   }
   ol > li > h2 {
-    display: inline;
+    margin: 5pt 0 1ex;
   }
   ul {
     list-style-type: disc;
   }
   nav {
     font-weight: 250;
-    display: inline-flex;
+    display: flex;
     gap: 5pt 1em;
-    margin: 0 1em;
     flex-wrap: wrap;
   }
   nav > span {
