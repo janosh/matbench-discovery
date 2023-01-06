@@ -7,7 +7,7 @@
   import elem_counts from './2022-12-30-wbm-element-counts.json'
 
   let log_color_scale = false
-  const heatmap_values = Object.values(elem_counts)
+  const heatmap_values: number[] = Object.values(elem_counts)
   const color_map = {
     200: `blue`,
     35_000: `green`,
@@ -30,6 +30,11 @@
         {#if active_element?.name}
           <strong>
             {active_element?.name}: {pretty_num(elem_counts[active_element?.symbol])}
+            <!-- compute percent of total -->
+            {#if elem_counts[active_element?.symbol] > 0}
+              {@const total = heatmap_values.reduce((a, b) => a + b, 0)}
+              ({pretty_num((elem_counts[active_element?.symbol] / total) * 100)}%)
+            {/if}
           </strong>
         {/if}
       </TableInset>

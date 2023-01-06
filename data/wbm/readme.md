@@ -70,7 +70,7 @@ materialscloud:2021.68 includes a readme file with a description of the dataset,
 
 [wbm paper]: https://nature.com/articles/s41524-020-00481-6
 
-## Data Plots
+## 📊 &thinsp; Data Plots
 
 <caption>Heatmap of elemental prevalence in WBM dataset.</caption>
 <slot name="wbm-elements-log">
