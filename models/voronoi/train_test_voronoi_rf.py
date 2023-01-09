@@ -72,6 +72,7 @@ run_params = dict(
     mp_energies_path=mp_energies_path,
     scikit_learn_version=version("scikit-learn"),
     matminer_version=version("matminer"),
+    numpy_version=version("numpy"),
     model_name=model_name,
     train_target_col=train_target_col,
     test_target_col=test_target_col,

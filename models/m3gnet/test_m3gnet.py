@@ -63,7 +63,6 @@ data_path = (
     f"{ROOT}/data/wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
 )
 print(f"\nJob started running {timestamp}")
-print(f"{version('m3gnet') = }")
 print(f"{data_path=}")
 df_wbm = pd.read_json(data_path).set_index("material_id")
 
@@ -74,6 +73,7 @@ df_this_job: pd.DataFrame = np.array_split(df_wbm, slurm_array_task_count)[
 run_params = dict(
     data_path=data_path,
     m3gnet_version=version("m3gnet"),
+    numpy_version=version("numpy"),
     task_type=task_type,
     df=dict(shape=str(df_this_job.shape), columns=", ".join(df_this_job)),
     slurm_vars=slurm_vars,
