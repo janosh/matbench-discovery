@@ -4,17 +4,20 @@
   import type { ChemicalElement } from 'sveriodic-table'
   import { PeriodicTable, TableInset, Toggle } from 'sveriodic-table'
   import { pretty_num } from 'sveriodic-table/labels'
-  import elem_counts from './2022-12-30-wbm-element-counts.json'
+  import mp_elem_counts from './2023-01-08-mp-element-counts.json'
+  import wbm_elem_counts from './2023-01-08-wbm-element-counts.json'
 
-  let log_color_scale = false
-  const heatmap_values: number[] = Object.values(elem_counts)
+  let log = false // log color scale
+  const wbm_heat_vals: number[] = Object.values(wbm_elem_counts)
+  const mp_heat_vals: number[] = Object.values(mp_elem_counts)
   const color_map = {
     200: `blue`,
     35_000: `green`,
     80_000: `yellow`,
     150_000: `red`,
   }
-  let active_element: ChemicalElement
+  let active_mp_elem: ChemicalElement
+  let active_wbm_elem: ChemicalElement
 </script>
 
 <DataReadme>
@@ -23,17 +26,33 @@
       <FormEnergyHist />
     {/if}
   </svelte:fragment>
-  <svelte:fragment slot="wbm-elements-log">
-    <span>Log color scale <Toggle bind:checked={log_color_scale} /></span>
-    <PeriodicTable {heatmap_values} {color_map} log={log_color_scale} bind:active_element>
+  <svelte:fragment slot="wbm-elements-heatmap">
+    <span>Log color scale <Toggle bind:checked={log} /></span>
+    <PeriodicTable heatmap_values={wbm_heat_vals} {color_map} {log} bind:active_element={active_wbm_elem}>
       <TableInset slot="inset" grid_row="3">
-        {#if active_element?.name}
+        {#if active_wbm_elem?.name}
           <strong>
-            {active_element?.name}: {pretty_num(elem_counts[active_element?.symbol])}
+            {active_wbm_elem?.name}: {pretty_num(wbm_elem_counts[active_wbm_elem?.symbol])}
             <!-- compute percent of total -->
-            {#if elem_counts[active_element?.symbol] > 0}
-              {@const total = heatmap_values.reduce((a, b) => a + b, 0)}
-              ({pretty_num((elem_counts[active_element?.symbol] / total) * 100)}%)
+            {#if wbm_elem_counts[active_wbm_elem?.symbol] > 0}
+              {@const total = wbm_heat_vals.reduce((a, b) => a + b, 0)}
+              ({pretty_num((wbm_elem_counts[active_wbm_elem?.symbol] / total) * 100)}%)
+            {/if}
+          </strong>
+        {/if}
+      </TableInset>
+    </PeriodicTable>
+  </svelte:fragment>
+  <svelte:fragment slot="mp-elements-heatmap">
+    <PeriodicTable heatmap_values={mp_heat_vals} {color_map} {log} bind:active_element={active_mp_elem}>
+      <TableInset slot="inset" grid_row="3">
+        {#if active_mp_elem?.name}
+          <strong>
+            {active_mp_elem?.name}: {pretty_num(wbm_elem_counts[active_mp_elem?.symbol])}
+            <!-- compute percent of total -->
+            {#if wbm_elem_counts[active_mp_elem?.symbol] > 0}
+              {@const total = wbm_heat_vals.reduce((a, b) => a + b, 0)}
+              ({pretty_num((wbm_elem_counts[active_mp_elem?.symbol] / total) * 100)}%)
             {/if}
           </strong>
         {/if}

@@ -72,7 +72,14 @@ materialscloud:2021.68 includes a readme file with a description of the dataset,
 
 ## 📊 &thinsp; Data Plots
 
-<caption>Heatmap of elemental prevalence in WBM dataset.</caption>
-<slot name="wbm-elements-log">
-  <img src="./2022-12-30-wbm-elements-log.svg" alt="Periodic table log heatmap of WBM elements">
+<caption>Heatmap of WBM training set element counts</caption>
+<slot name="wbm-elements-heatmap">
+  <img src="./2023-01-08-wbm-elements.svg" alt="Periodic table log heatmap of WBM elements">
+</slot>
+
+which compares as follows to the training set (all 146323 MP ComputedStructureEntries)
+
+<caption>Heatmap of MP test set element counts</caption>
+<slot name="mp-elements-heatmap">
+  <img src="./2023-01-08-mp-elements.svg" alt="Periodic table log heatmap of MP elements">
 </slot>

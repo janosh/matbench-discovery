@@ -17,7 +17,7 @@ from pymatgen.entries.compatibility import (
     MaterialsProjectCompatibility as MPLegacyCompat,
 )
 from pymatgen.entries.computed_entries import ComputedStructureEntry
-from pymatviz import count_elements, density_scatter, ptable_heatmap_plotly
+from pymatviz import density_scatter
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, today
@@ -628,40 +628,3 @@ df_wbm = pd.read_json(
 df_wbm["cse"] = [
     ComputedStructureEntry.from_dict(x) for x in tqdm(df_wbm.computed_structure_entry)
 ]
-
-
-# %%
-elem_counts = count_elements(df_summary.formula).astype(int)
-
-elem_counts.to_json(
-    f"{ROOT}/site/src/routes/about-the-test-set/{today}-wbm-element-counts.json"
-)
-
-
-# %%
-fig = ptable_heatmap_plotly(
-    elem_counts,
-    log=True,
-    colorscale="YlGnBu",
-    hover_props=dict(atomic_number="atomic number"),
-    hover_data=elem_counts,
-    font_size="1vw",
-)
-
-title = "WBM Elements (log color scale)"
-fig.update_layout(
-    title=dict(text=title, x=0.35, y=0.9, font_size=20),
-    xaxis=dict(fixedrange=True),
-    yaxis=dict(fixedrange=True),
-)
-fig.show()
-
-
-# %%
-fig.write_image(f"{module_dir}/{today}-wbm-elements-log.svg", width=1000, height=500)
-fig.write_html(
-    f"{module_dir}/{today}-wbm-elements-log.svelte",
-    include_plotlyjs=False,
-    full_html=False,
-    config=dict(showTips=False, displayModeBar=False, responsive=True),
-)
