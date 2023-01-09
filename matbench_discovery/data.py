@@ -139,12 +139,12 @@ def load_train_test(
 
 
 PRED_FILENAMES = {
-    "CGCNN": "models/cgcnn/2022-11-23-test-cgcnn-wbm-IS2RE/cgcnn-ensemble-preds.csv",
-    "Voronoi RF": "models/voronoi/2022-11-27-train-test/e-form-preds-IS2RE.csv",
-    "Wrenformer": "models/wrenformer/2022-11-15-wrenformer-IS2RE-preds.csv",
-    "MEGNet": "models/megnet/2022-11-18-megnet-wbm-IS2RE/megnet-e-form-preds.csv",
-    "M3GNet": "models/m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv",
-    "BOWSR MEGNet": "models/bowsr/2022-11-22-bowsr-megnet-wbm-IS2RE.csv",
+    "CGCNN": "cgcnn/2022-11-23-test-cgcnn-wbm-IS2RE/cgcnn-ensemble-preds.csv",
+    "Voronoi RF": "voronoi/2022-11-27-train-test/e-form-preds-IS2RE.csv",
+    "Wrenformer": "wrenformer/2022-11-15-wrenformer-IS2RE-preds.csv",
+    "MEGNet": "megnet/2022-11-18-megnet-wbm-IS2RE/megnet-e-form-preds.csv",
+    "M3GNet": "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv",
+    "BOWSR MEGNet": "bowsr/2022-11-22-bowsr-megnet-wbm-IS2RE.csv",
 }
 
 
@@ -212,7 +212,7 @@ def load_df_wbm_with_preds(
 
     for model_name in (bar := tqdm(models, disable=not pbar)):
         bar.set_description(model_name)
-        pattern = PRED_FILENAMES[model_name]
+        pattern = f"models/{PRED_FILENAMES[model_name]}"
         df = glob_to_df(pattern, pbar=False, **kwargs).set_index(id_col)
         dfs[model_name] = df
 

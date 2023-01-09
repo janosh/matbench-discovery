@@ -47,6 +47,11 @@ slurm_vars = slurm_submit(
 # %%
 if task_type == "IS2RE":
     data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
+    # or for debug
+    # data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json-1k-samples.bz2"
+    # created with:
+    # df = df.sample(1000)
+    # df.reset_index().to_json(data_path.replace(".json", "-1k-samples.json"))
     input_col = "initial_structure"
 elif task_type == "RS2RE":
     data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-computed-structure-entries.json.bz2"
@@ -83,6 +88,8 @@ run_params = dict(
     data_path=data_path,
     df=dict(shape=str(df.shape), columns=", ".join(df)),
     aviary_version=version("aviary"),
+    numpy_version=version("numpy"),
+    torch_version=version("torch"),
     ensemble_size=len(runs),
     task_type=task_type,
     target_col=target_col,
@@ -113,7 +120,7 @@ df, ensemble_metrics = predict_from_wandb_checkpoints(
 )
 
 slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
-df.round(4).to_csv(f"{out_dir}/{job_name}-preds-{slurm_job_id}.csv", index=False)
+df.round(4).to_csv(f"{out_dir}/{job_name}-preds-{slurm_job_id}.csv")
 pred_col = f"{target_col}_pred_ens"
 assert pred_col in df, f"{pred_col=} not in {list(df)}"
 table = wandb.Table(dataframe=df[[target_col, pred_col]].reset_index())
