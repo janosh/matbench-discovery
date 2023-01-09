@@ -4,29 +4,6 @@ import { exec } from 'child_process'
 import { resolve } from 'path'
 import type { UserConfig } from 'vite'
 
-const vite_config: UserConfig = {
-  plugins: [sveltekit(), yaml()],
-
-  resolve: {
-    alias: {
-      $src: resolve(`./src`),
-      $site: resolve(`.`),
-      $root: resolve(`..`),
-    },
-  },
-
-  server: {
-    fs: { allow: [`../..`] }, // needed to import readme.md
-    port: 3000,
-  },
-
-  preview: {
-    port: 3000,
-  },
-}
-
-export default vite_config
-
 if (process.env.PROD) {
   // update generated API docs on production builds
   const src_url = `https://github.com/janosh/matbench-discovery/blob/main`
@@ -40,7 +17,30 @@ if (process.env.PROD) {
   await exec(`sed -i 's/<b>//g' ${route}/*.md`)
   await exec(`sed -i 's/<\\/b>//g' ${route}/*.md`)
   // tweak look of badges linking to source code
-  const old_src = `src="https://img.shields.io/badge/-source-cccccc?style=flat-square"`
-  const new_src = `src="https://img.shields.io/badge/source-blue?style=flat" alt="source link"`
-  await exec(`sed -i 's/${old_src}/${new_src}/g' ${route}/*.md`)
+  const old_badge = `src="https://img.shields.io/badge/-source-cccccc?style=flat-square"`
+  const new_badge = `src="https://img.shields.io/badge/source-blue?style=flat" alt="source link"`
+  await exec(`sed -i 's/${old_badge}/${new_badge}/g' ${route}/*.md`)
 }
+
+const vite_config: UserConfig = {
+  plugins: [sveltekit(), yaml()],
+
+  resolve: {
+    alias: {
+      $src: resolve(`./src`),
+      $site: resolve(`.`),
+      $root: resolve(`..`),
+    },
+  },
+
+  server: {
+    fs: { allow: [`../..`] }, // needed to import from $root
+    port: 3000,
+  },
+
+  preview: {
+    port: 3000,
+  },
+}
+
+export default vite_config
