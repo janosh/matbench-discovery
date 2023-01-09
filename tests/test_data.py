@@ -195,9 +195,7 @@ def test_load_df_wbm_with_preds_raises() -> None:
 
 def test_pred_filenames() -> None:
     assert len(PRED_FILENAMES) >= 6
-    assert all(
-        path.startswith(("models/", "data/")) for path in PRED_FILENAMES.values()
-    )
+    assert all(path.endswith((".csv", ".json")) for path in PRED_FILENAMES.values())
 
 
 @pytest.mark.parametrize("pattern", ["tmp/*df.csv", "tmp/*df.json"])

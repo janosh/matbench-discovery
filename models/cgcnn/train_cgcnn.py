@@ -1,5 +1,6 @@
 # %%
 import os
+from importlib.metadata import version
 
 import pandas as pd
 from aviary.cgcnn.data import CrystalGraphData, collate_batch
@@ -27,7 +28,8 @@ epochs = 300
 target_col = "formation_energy_per_atom"
 input_col = "structure"
 id_col = "material_id"
-augment = 3
+augment = 1  # 0 for no augmentation, n>1 means train on n perturbations of each crystal
+# in the training set all assigned the same original target energy
 job_name = f"train-cgcnn-robust-{augment=}{'-debug' if DEBUG else ''}"
 print(f"{job_name=}")
 robust = "robust" in job_name.lower()
@@ -100,6 +102,9 @@ model = CrystalGraphConvNet(**model_params)
 run_params = dict(
     data_path=data_path,
     batch_size=batch_size,
+    aviary_version=version("aviary"),
+    numpy_version=version("numpy"),
+    torch_version=version("torch"),
     train_df=dict(shape=str(train_data.df.shape), columns=", ".join(train_df)),
     test_df=dict(shape=str(test_data.df.shape), columns=", ".join(test_df)),
     slurm_vars=slurm_vars,

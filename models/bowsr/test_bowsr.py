@@ -67,8 +67,6 @@ if os.path.isfile(out_path):
 print(f"\nJob started running {timestamp}")
 print(f"{data_path = }")
 print(f"{out_path = }")
-print(f"{version('maml') = }")
-print(f"{version(energy_model) = }")
 
 
 # %%
@@ -92,9 +90,10 @@ run_params = dict(
     bayes_optim_kwargs=bayes_optim_kwargs,
     data_path=data_path,
     df=dict(shape=str(df_this_job.shape), columns=", ".join(df_this_job)),
-    maml_version=version("maml"),
     energy_model=energy_model,
+    maml_version=version("maml"),
     energy_model_version=version(energy_model),
+    numpy_version=version("numpy"),
     optimize_kwargs=optimize_kwargs,
     task_type=task_type,
     slurm_vars=slurm_vars,

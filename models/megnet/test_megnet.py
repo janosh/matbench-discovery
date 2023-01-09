@@ -61,6 +61,7 @@ megnet_mp_e_form = load_model(model_name := "Eform_MP_2019")
 run_params = dict(
     data_path=data_path,
     megnet_version=version("megnet"),
+    numpy_version=version("numpy"),
     model_name=model_name,
     task_type=task_type,
     target_col=target_col,
@@ -104,7 +105,7 @@ print(f"missing: {len(structures) - len(megnet_e_form_preds):,}")
 pred_col = "e_form_per_atom_megnet"
 df_wbm[pred_col] = pd.Series(megnet_e_form_preds)
 
-df_wbm[pred_col].reset_index().round(4).to_csv(out_path, index=False)
+df_wbm[pred_col].round(4).to_csv(out_path)
 
 
 # %%

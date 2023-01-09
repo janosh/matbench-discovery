@@ -42,7 +42,9 @@ if backend == "matplotlib":
     fig.suptitle(title)
     # fig.text(0.5, -0.08, xlabel_cumulative, ha="center", fontdict={"size": 16})
 elif backend == "plotly":
-    fig.update_layout(title=title, matches=None)
+    fig.update_layout(title=title)
+    fig.update_xaxes(matches=None, showticklabels=True)
+    fig.update_yaxes(matches=None, showticklabels=True)
 
 fig.show()
 

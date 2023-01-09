@@ -70,6 +70,8 @@ run_params = dict(
     data_path=data_path,
     df=dict(shape=str(df.shape), columns=", ".join(df)),
     aviary_version=version("aviary"),
+    numpy_version=version("numpy"),
+    torch_version=version("torch"),
     ensemble_size=len(runs),
     task_type=task_type,
     target_col=target_col,
