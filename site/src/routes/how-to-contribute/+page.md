@@ -2,7 +2,7 @@
 
 ## 🔨 &thinsp; Installation
 
-The recommended way to acquire the train and test data for this benchmark is through its Python package [available onPyPI](https://pypi.org/project/matbench-discovery):
+The recommended way to acquire the train and test data for this benchmark is through its Python package [available on PyPI](https://pypi.org/project/matbench-discovery):
 
 ```zsh
 pip install matbench-discovery
@@ -124,7 +124,7 @@ To deploy a new model on this benchmark and add it to our leaderboard, please cr
 
    Arbitrary other keys can be added as needed.
 
-Please see any of subdirectories in [`models/`](https://github.com/janosh/matbench-discovery/tree/main/models) for example submissions. More detailed step-by-step instructions below:
+Please see any of the subdirectories in `models`/`](<https://github.com/janosh/matbench-discovery/tree/main/models>) for example submissions. More detailed step-by-step instructions below:
 
 ### Step 1: Clone the repo
 
@@ -142,7 +142,7 @@ Create a new folder
 mkdir models/<model_name>
 ```
 
-and place the above listed files there. The file structure should look like this:
+and place the above-listed files there. The file structure should look like this:
 
 ```txt
 matbench-discovery-root
@@ -155,7 +155,7 @@ matbench-discovery-root
         └── train_<model_name>.py # optional
 ```
 
-You can include arbitrary other supporting files like metadata, model features (below 10MB to keep `git clone` time low) if they are needed to run the model or help others reproduce your results. For larger files, please upload to [Figshare](https://figshare.com) or similar and link them somewhere in your files.
+You can include arbitrary other supporting files like metadata and model features (below 10MB to keep `git clone` time low) if they are needed to run the model or help others reproduce your results. For larger files, please upload to [Figshare](https://figshare.com) or similar and link them somewhere in your files.
 
 ### Step 3: Create a PR to the [Matbench Discovery repo](https://github.com/janosh/matbench-discovery)
 
@@ -168,6 +168,6 @@ git commit -m 'add <model_name> to Matbench Discovery leaderboard'
 
 And you're done! Once tests pass and the PR is merged, your model will be added to the leaderboard! 🎉
 
-## Troubleshooting
+## 😵‍💫 &thinsp; Troubleshooting
 
 Having problems using or contributing to the project? Please [open an issue on GitHub](https://github.com/janosh/matbench-discovery/issues). We're happy to help!

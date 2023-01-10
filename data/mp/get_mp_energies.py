@@ -5,6 +5,7 @@ import pandas as pd
 from aviary.utils import as_dict_handler
 from aviary.wren.utils import get_aflow_label_from_spglib
 from mp_api.client import MPRester
+from pymatviz import density_scatter
 from tqdm import tqdm
 
 from matbench_discovery import today
@@ -19,7 +20,6 @@ https://github.com/janosh/pymatviz/blob/main/examples/mp_bimodal_e_form.ipynb
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-13"
 
-
 module_dir = os.path.dirname(__file__)
 
 
@@ -33,22 +33,52 @@ fields = [
     "structure",
     "symmetry",
     "energy_above_hull",
+    "decomposition_enthalpy",
+    "energy_type",
 ]
+
 with MPRester(use_document_model=False) as mpr:
-    docs = mpr.summary.search(fields=fields)
+    docs = mpr.thermo.search(fields=fields, thermo_types=["GGA_GGA+U"])
 
 print(f"{today}: {len(docs) = :,}")
 # 2022-08-13: len(docs) = 146,323
+# 2023-01-10: len(docs) = 154,718
 
 
 # %%
 df = pd.DataFrame(docs).set_index("material_id")
 df.pop("_id")
 
-df["spacegroup_number"] = df.pop("symmetry").map(lambda x: x.number)
+df.energy_type.value_counts().plot.pie(backend="matplotlib", autopct="%1.1f%%")
+
+
+# %%
+df["spacegroup_number"] = df.pop("symmetry").map(lambda x: x["number"])
 
 df["wyckoff_spglib"] = [get_aflow_label_from_spglib(x) for x in tqdm(df.structure)]
 
 df.to_json(f"{module_dir}/{today}-mp-energies.json.gz", default_handler=as_dict_handler)
 
 # df = pd.read_json(f"{module_dir}/2022-08-13-mp-energies.json.gz")
+
+
+# %% reproduce fig. 1b from https://arxiv.org/abs/2001.10591 (as data consistency check)
+ax = df.plot.scatter(
+    x="formation_energy_per_atom",
+    y="decomposition_enthalpy",
+    alpha=0.1,
+    backend="matplotlib",
+    xlim=[-5, 1],
+    ylim=[-1, 1],
+    color=df.decomposition_enthalpy.map(lambda x: "red" if x > 0 else "blue"),
+    title=f"{today} - {len(df):,} MP entries",
+)
+# result on 2023-01-10: plots match. no correlation between formation energy and decomposition
+# enthalpy. R^2 = -1.571, MAE = 1.604
+ax.figure.savefig(f"{module_dir}/{today}-mp-decomp-enth-vs-e-form.png", dpi=300)
+
+ax = density_scatter(
+    df.formation_energy_per_atom,
+    df.decomposition_enthalpy,
+)
+ax.set(xlim=[-5, 1], ylim=[-1, 1])
