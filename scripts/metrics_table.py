@@ -9,7 +9,7 @@ import wandb
 from sklearn.metrics import f1_score, r2_score
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, WANDB_PATH, today
+from matbench_discovery import FIGS, WANDB_PATH, today
 from matbench_discovery.data import load_df_wbm_with_preds
 
 __author__ = "Janosh Riebesell"
@@ -142,5 +142,5 @@ styles = {
 }
 df_styled.set_table_styles([dict(selector=sel, props=styles[sel]) for sel in styles])
 
-html_path = f"{ROOT}/figures/{today}-metrics-table.html"
+html_path = f"{FIGS}/{today}-metrics-table.html"
 # df_styled.to_html(html_path)

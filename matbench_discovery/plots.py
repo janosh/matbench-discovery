@@ -638,3 +638,26 @@ def wandb_scatter(table: wandb.Table, fields: dict[str, str], **kwargs: Any) -> 
     )
 
     wandb.log({"true_pred_scatter": scatter_plot})
+
+
+def write_html(fig: go.Figure, path: str, **kwargs: Any) -> None:
+    """Write a plotly figure to an HTML file. If the file is has .svelte extension,
+    insert `{...$$props}` into the figure's top-level div so it can be styled by
+    consuming Svelte code
+
+    Args:
+        fig (go.Figure): Plotly figure.
+        path (str): Path to HTML file that will be created.
+        **kwargs: Keyword arguments passed to fig.write_html().
+    """
+    config = dict(
+        showTips=False, displayModeBar=False, scrollZoom=True, responsive=True
+    )
+    fig.write_html(
+        path, include_plotlyjs=False, full_html=False, config=config, **kwargs
+    )
+    if path.lower().endswith(".svelte"):
+        # insert {...$$props} into top-level div to be able to post-process and style
+        # plotly figures from within Svelte files
+        text = open(path).read().replace("<div>", "<div {...$$props}>", 1)
+        open(path, "w").write(text)

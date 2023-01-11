@@ -1,5 +1,5 @@
 # %%
-from matbench_discovery import ROOT, today
+from matbench_discovery import FIGS, today
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.plots import plt, rolling_mae_vs_hull_dist
 
@@ -43,5 +43,5 @@ ax.legend(loc="lower right", frameon=False)
 ax.set(title=f"{today} model={model_name}")
 
 
-img_path = f"{ROOT}/figures/{today}-{model_name}-rolling-mae-vs-hull-dist-wbm-batches"
+img_path = f"{FIGS}/{today}-{model_name}-rolling-mae-vs-hull-dist-wbm-batches"
 # fig.savefig(f"{img_path}.pdf")

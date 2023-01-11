@@ -1,5 +1,5 @@
 # %%
-from matbench_discovery import ROOT, today
+from matbench_discovery import FIGS, today
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
 
@@ -41,5 +41,5 @@ for line in legend.get_lines():
 
 
 # %%
-img_path = f"{ROOT}/figures/{today}-rolling-mae-vs-hull-dist-compare-models"
+img_path = f"{FIGS}/{today}-rolling-mae-vs-hull-dist-compare-models"
 # ax.figure.savefig(f"{img_path}.pdf")

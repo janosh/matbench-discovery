@@ -1,5 +1,5 @@
 <script lang="ts">
-  const figs = import.meta.glob(`$site/figures/*.{svelte,png,svg,pdf}`, {
+  const figs = import.meta.glob(`$figs/*.{svelte,png,svg,pdf}`, {
     eager: true,
     as: `url`,
   })

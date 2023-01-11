@@ -28,11 +28,18 @@
   </svelte:fragment>
   <svelte:fragment slot="wbm-elements-heatmap">
     <span>Log color scale <Toggle bind:checked={log} /></span>
-    <PeriodicTable heatmap_values={wbm_heat_vals} {color_map} {log} bind:active_element={active_wbm_elem}>
+    <PeriodicTable
+      heatmap_values={wbm_heat_vals}
+      {color_map}
+      {log}
+      bind:active_element={active_wbm_elem}
+    >
       <TableInset slot="inset" grid_row="3">
         {#if active_wbm_elem?.name}
           <strong>
-            {active_wbm_elem?.name}: {pretty_num(wbm_elem_counts[active_wbm_elem?.symbol])}
+            {active_wbm_elem?.name}: {pretty_num(
+              wbm_elem_counts[active_wbm_elem?.symbol]
+            )}
             <!-- compute percent of total -->
             {#if wbm_elem_counts[active_wbm_elem?.symbol] > 0}
               {@const total = wbm_heat_vals.reduce((a, b) => a + b, 0)}
@@ -44,7 +51,12 @@
     </PeriodicTable>
   </svelte:fragment>
   <svelte:fragment slot="mp-elements-heatmap">
-    <PeriodicTable heatmap_values={mp_heat_vals} {color_map} {log} bind:active_element={active_mp_elem}>
+    <PeriodicTable
+      heatmap_values={mp_heat_vals}
+      {color_map}
+      {log}
+      bind:active_element={active_mp_elem}
+    >
       <TableInset slot="inset" grid_row="3">
         {#if active_mp_elem?.name}
           <strong>
