@@ -5,6 +5,7 @@ import sys
 from datetime import datetime
 
 ROOT = os.path.dirname(os.path.dirname(__file__))  # repository root
+FIGS = f"{ROOT}/site/static/figs"  # directory to store figures
 # whether a currently running slurm job is in debug mode
 DEBUG = "DEBUG" in os.environ or (
     "slurm-submit" not in sys.argv and "SLURM_JOB_ID" not in os.environ

@@ -26,7 +26,6 @@ job-logs/
 # temporary ignore rules
 paper
 models/voronoi/*.zip
-site/static/figures
 
 # generated docs
 site/src/routes/api/*.md

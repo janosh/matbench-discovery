@@ -1,9 +1,9 @@
 # %%
 import pandas as pd
 
-from matbench_discovery import ROOT, today
+from matbench_discovery import FIGS, today
 from matbench_discovery.data import load_df_wbm_with_preds
-from matbench_discovery.plots import cumulative_precision_recall
+from matbench_discovery.plots import cumulative_precision_recall, write_html
 
 __author__ = "Janosh Riebesell, Rhys Goodall"
 __date__ = "2022-12-04"
@@ -46,11 +46,11 @@ elif backend == "plotly":
     fig.update_xaxes(matches=None, showticklabels=True)
     fig.update_yaxes(matches=None, showticklabels=True)
 
-fig.show()
+fig.show(config=dict(responsive=True))
 
 
 # %%
-img_path = f"{ROOT}/figures/{today}-cumulative-clf-metrics"
+img_path = f"{FIGS}/{today}-cumulative-clf-metrics"
 
 # file will be served by site
 # so we round y floats to reduce file size since
@@ -58,13 +58,8 @@ for trace in fig.data:
     assert isinstance(trace.y[0], float)
     trace.y = [round(y, 3) for y in trace.y]
 
-# if hasattr(fig, "write_image"):
-#     fig.write_image(f"{img_path}.pdf")
-#     fig.write_html(
-#         f"{img_path}.svelte",
-#         include_plotlyjs=False,
-#         full_html=False,
-#         config=dict(showTips=False, displayModeBar=False, scrollZoom=True),
-#     )
-# else:
-#     fig.savefig(f"{img_path}.pdf")
+if hasattr(fig, "write_image"):
+    fig.write_image(f"{img_path}.pdf")
+    write_html(fig, f"{img_path}.svelte")
+else:
+    fig.savefig(f"{img_path}.pdf")
