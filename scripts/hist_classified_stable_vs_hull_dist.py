@@ -1,5 +1,5 @@
 # %%
-from matbench_discovery import ROOT, today
+from matbench_discovery import FIGS, today
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.plots import WhichEnergy, hist_classified_stable_vs_hull_dist
 
@@ -60,7 +60,7 @@ ax
 
 
 # %%
-img_path = f"{ROOT}/figures/{today}-wren-wbm-hull-dist-hist-{which_energy=}.pdf"
+img_path = f"{FIGS}/{today}-wren-wbm-hull-dist-hist-{which_energy=}.pdf"
 if hasattr(ax, "write_image"):
     # fig.write_image(img_path)
     ax.write_html(img_path.replace(".pdf", ".html"))

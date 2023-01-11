@@ -1,7 +1,7 @@
 # %%
 from plotly.subplots import make_subplots
 
-from matbench_discovery import ROOT, today
+from matbench_discovery import FIGS, today
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.plots import (
     Backend,
@@ -79,7 +79,7 @@ fig.show()
 
 
 # %%
-img_path = f"{ROOT}/figures/{today}-wbm-hull-dist-hist-models"
+img_path = f"{FIGS}/{today}-wbm-hull-dist-hist-models"
 # if hasattr(fig, "write_image"):
 #     fig.write_image(f"{img_path}.pdf")
 #     fig.write_html(f"{img_path}.html", include_ploltyjs="cdn")

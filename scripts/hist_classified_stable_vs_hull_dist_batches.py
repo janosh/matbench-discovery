@@ -1,5 +1,5 @@
 # %%
-from matbench_discovery import ROOT, today
+from matbench_discovery import FIGS, today
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.plots import (
     WhichEnergy,
@@ -69,5 +69,5 @@ fig.suptitle(f"{today} {model_name}", y=1.07, fontsize=16)
 
 
 # %%
-img_path = f"{ROOT}/figures/{today}-{model_name}-wbm-hull-dist-hist-batches.pdf"
+img_path = f"{FIGS}/{today}-{model_name}-wbm-hull-dist-hist-batches.pdf"
 # ax.figure.savefig(img_path)

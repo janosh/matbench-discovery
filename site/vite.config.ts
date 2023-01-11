@@ -30,6 +30,7 @@ const vite_config: UserConfig = {
       $src: resolve(`./src`),
       $site: resolve(`.`),
       $root: resolve(`..`),
+      $figs: resolve(`./static/figs`),
     },
   },
 

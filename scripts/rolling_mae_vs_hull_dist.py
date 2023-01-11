@@ -1,5 +1,5 @@
 # %%
-from matbench_discovery import ROOT, today
+from matbench_discovery import FIGS, today
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
 
@@ -33,5 +33,5 @@ elif backend == "plotly":
     ax.update_layout(title=dict(text=title, x=0.5))
     ax.show()
 
-img_path = f"{ROOT}/figures/{today}-rolling-mae-vs-hull-dist.pdf"
+img_path = f"{FIGS}/{today}-rolling-mae-vs-hull-dist.pdf"
 # fig.savefig(img_path)
