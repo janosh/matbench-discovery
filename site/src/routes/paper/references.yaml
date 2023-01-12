@@ -1,0 +1,555 @@
+---
+references:
+- id: bartel_critical_2020
+  abstract: >-
+    Machine learning has emerged as a novel tool for the efficient prediction of
+    material properties, and claims have been made that machine-learned models
+    for the formation energy of compounds can approach the accuracy of Density
+    Functional Theory (DFT). The models tested in this work include five
+    recently published compositional models, a baseline model using
+    stoichiometry alone, and a structural model. By testing seven machine
+    learning models for formation energy on stability predictions using the
+    Materials Project database of DFT calculations for 85,014 unique chemical
+    compositions, we show that while formation energies can indeed be predicted
+    well, all compositional models perform poorly on predicting the stability of
+    compounds, making them considerably less useful than DFT for the discovery
+    and design of new solids. Most critically, in sparse chemical spaces where
+    few stoichiometries have stable compounds, only the structural model is
+    capable of efficiently detecting which materials are stable. The
+    nonincremental improvement of structural models compared with compositional
+    models is noteworthy and encourages the use of structural models for
+    materials discovery, with the constraint that for any new composition, the
+    ground-state structure is not known a priori. This work demonstrates that
+    accurate predictions of formation energy do not imply accurate predictions
+    of stability, emphasizing the importance of assessing model performance on
+    stability predictions, for which we provide a set of publicly available
+    tests.
+  accessed:
+    - year: 2022
+      month: 3
+      day: 8
+  author:
+    - family: Bartel
+      given: Christopher J.
+    - family: Trewartha
+      given: Amalie
+    - family: Wang
+      given: Qi
+    - family: Dunn
+      given: Alexander
+    - family: Jain
+      given: Anubhav
+    - family: Ceder
+      given: Gerbrand
+  citation-key: bartel_critical_2020
+  container-title: npj Computational Materials
+  container-title-short: npj Comput Mater
+  DOI: 10.1038/s41524-020-00362-y
+  ISSN: 2057-3960
+  issue: '1'
+  issued:
+    - year: 2020
+      month: 7
+      day: 10
+  language: en
+  license: 2020 The Author(s)
+  number: '1'
+  page: 1-11
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: >-
+    A critical examination of compound stability predictions from
+    machine-learned formation energies
+  type: article-journal
+  URL: https://www.nature.com/articles/s41524-020-00362-y
+  volume: '6'
+
+- id: borg_quantifying_2022
+  abstract: >-
+    The predictive capabilities of machine learning (ML) models used in
+    materials discovery are typically measured using simple statistics such as
+    the root-mean-square error (RMSE) or the coefficient of determination
+    ($r^2$) between ML-predicted materials property values and their known
+    values. A tempting assumption is that models with low error should be
+    effective at guiding materials discovery, and conversely, models with high
+    error should give poor discovery performance. However, we observe that no
+    clear connection exists between a "static" quantity averaged across an
+    entire training set, such as RMSE, and an ML property model's ability to
+    dynamically guide the iterative (and often extrapolative) discovery of novel
+    materials with targeted properties. In this work, we simulate a sequential
+    learning (SL)-guided materials discovery process and demonstrate a
+    decoupling between traditional model error metrics and model performance in
+    guiding materials discoveries. We show that model performance in materials
+    discovery depends strongly on (1) the target range within the property
+    distribution (e.g., whether a 1st or 10th decile material is desired); (2)
+    the incorporation of uncertainty estimates in the SL acquisition function;
+    (3) whether the scientist is interested in one discovery or many targets;
+    and (4) how many SL iterations are allowed. To overcome the limitations of
+    static metrics and robustly capture SL performance, we recommend metrics
+    such as Discovery Yield ($DY$), a measure of how many high-performing
+    materials were discovered during SL, and Discovery Probability ($DP$), a
+    measure of likelihood of discovering high-performing materials at any point
+    in the SL process.
+  accessed:
+    - year: 2022
+      month: 10
+      day: 29
+  author:
+    - family: Borg
+      given: Christopher K. H.
+    - family: Muckley
+      given: Eric S.
+    - family: Nyby
+      given: Clara
+    - family: Saal
+      given: James E.
+    - family: Ward
+      given: Logan
+    - family: Mehta
+      given: Apurva
+    - family: Meredig
+      given: Bryce
+  citation-key: borg_quantifying_2022
+  DOI: 10.48550/arXiv.2210.13587
+  issued:
+    - year: 2022
+      month: 10
+      day: 24
+  number: arXiv:2210.13587
+  publisher: arXiv
+  source: arXiv.org
+  title: >-
+    Quantifying the performance of machine learning models in materials
+    discovery
+  type: article
+  URL: http://arxiv.org/abs/2210.13587
+
+- id: chen_universal_2022
+  abstract: >-
+    Interatomic potentials (IAPs), which describe the potential energy surface
+    of a collection of atoms, are a fundamental input for atomistic simulations.
+    However, existing IAPs are either fitted to narrow chemistries or too
+    inaccurate for general applications. Here, we report a universal IAP for
+    materials based on graph neural networks with three-body interactions
+    (M3GNet). The M3GNet IAP was trained on the massive database of structural
+    relaxations performed by the Materials Project over the past 10 years and
+    has broad applications in structural relaxation, dynamic simulations and
+    property prediction of materials across diverse chemical spaces. About 1.8
+    million potentially stable materials were identified from a screening of 31
+    million hypothetical crystal structures, demonstrating a machine
+    learning-accelerated pathway to the discovery of synthesizable materials
+    with exceptional properties.
+  accessed:
+    - year: 2022
+      month: 2
+      day: 9
+  author:
+    - family: Chen
+      given: Chi
+    - family: Ong
+      given: Shyue Ping
+  citation-key: chen_universal_2022
+  container-title: arXiv:2202.02450 [cond-mat, physics:physics]
+  issued:
+    - year: 2022
+      month: 2
+      day: 4
+  source: arXiv.org
+  title: A Universal Graph Deep Learning Interatomic Potential for the Periodic Table
+  type: article-journal
+  URL: http://arxiv.org/abs/2202.02450
+
+- id: deng_imagenet_2009
+  abstract: >-
+    The explosion of image data on the Internet has the potential to foster more
+    sophisticated and robust models and algorithms to index, retrieve, organize
+    and interact with images and multimedia data. But exactly how such data can
+    be harnessed and organized remains a critical problem. We introduce here a
+    new database called “ImageNet”, a large-scale ontology of images built upon
+    the backbone of the WordNet structure. ImageNet aims to populate the
+    majority of the 80,000 synsets of WordNet with an average of 500–1000 clean
+    and full resolution images. This will result in tens of millions of
+    annotated images organized by the semantic hierarchy of WordNet. This paper
+    offers a detailed analysis of ImageNet in its current state: 12 subtrees
+    with 5247 synsets and 3.2 million images in total. We show that ImageNet is
+    much larger in scale and diversity and much more accurate than the current
+    image datasets. Constructing such a large-scale database is a challenging
+    task. We describe the data collection scheme with Amazon Mechanical Turk.
+    Lastly, we illustrate the usefulness of ImageNet through three simple
+    applications in object recognition, image classification and automatic
+    object clustering. We hope that the scale, accuracy, diversity and
+    hierarchical structure of ImageNet can offer unparalleled opportunities to
+    researchers in the computer vision community and beyond.
+  author:
+    - family: Deng
+      given: Jia
+    - family: Dong
+      given: Wei
+    - family: Socher
+      given: Richard
+    - family: Li
+      given: Li-Jia
+    - family: Li
+      given: Kai
+    - family: Fei-Fei
+      given: Li
+  citation-key: deng_imagenet_2009
+  container-title: 2009 IEEE Conference on Computer Vision and Pattern Recognition
+  DOI: 10.1109/CVPR.2009.5206848
+  event-title: 2009 IEEE Conference on Computer Vision and Pattern Recognition
+  ISSN: 1063-6919
+  issued:
+    - year: 2009
+      month: 6
+  page: 248-255
+  source: IEEE Xplore
+  title: 'ImageNet: A large-scale hierarchical image database'
+  title-short: ImageNet
+  type: paper-conference
+
+- id: dunn_benchmarking_2020
+  abstract: >-
+    We present a benchmark test suite and an automated machine learning
+    procedure for evaluating supervised machine learning (ML) models for
+    predicting properties of inorganic bulk materials. The test suite, Matbench,
+    is a set of 13 ML tasks that range in size from 312 to 132k samples and
+    contain data from 10 density functional theory-derived and experimental
+    sources. Tasks include predicting optical, thermal, electronic,
+    thermodynamic, tensile, and elastic properties given a materials composition
+    and/or crystal structure. The reference algorithm, Automatminer, is a
+    highly-extensible, fully-automated ML pipeline for predicting materials
+    properties from materials primitives (such as composition and crystal
+    structure) without user intervention or hyperparameter tuning. We test
+    Automatminer on the Matbench test suite and compare its predictive power
+    with state-of-the-art crystal graph neural networks and a traditional
+    descriptor-based Random Forest model. We find Automatminer achieves the best
+    performance on 8 of 13 tasks in the benchmark. We also show our test suite
+    is capable of exposing predictive advantages of each algorithm - namely,
+    that crystal graph methods appear to outperform traditional machine learning
+    methods given ~10^4 or greater data points. The pre-processed, ready-to-use
+    Matbench tasks and the Automatminer source code are open source and
+    available online (http://hackingmaterials.lbl.gov/automatminer/). We
+    encourage evaluating new materials ML algorithms on the MatBench benchmark
+    and comparing them against the latest version of Automatminer.
+  accessed:
+    - year: 2020
+      month: 8
+      day: 26
+  author:
+    - family: Dunn
+      given: Alexander
+    - family: Wang
+      given: Qi
+    - family: Ganose
+      given: Alex
+    - family: Dopp
+      given: Daniel
+    - family: Jain
+      given: Anubhav
+  citation-key: dunn_benchmarking_2020
+  container-title: arXiv:2005.00707 [cond-mat, physics:physics]
+  issued:
+    - year: 2020
+      month: 5
+      day: 7
+  note: 'ZSCC: 0000001'
+  source: arXiv.org
+  title: >-
+    Benchmarking Materials Property Prediction Methods: The Matbench Test Set
+    and Automatminer Reference Algorithm
+  title-short: Benchmarking Materials Property Prediction Methods
+  type: article-journal
+  URL: http://arxiv.org/abs/2005.00707
+
+- id: goodall_rapid_2022
+  accessed:
+    - year: 2022
+      month: 9
+      day: 19
+  author:
+    - family: Goodall
+      given: Rhys E. A.
+    - family: Parackal
+      given: Abhijith S.
+    - family: Faber
+      given: Felix A.
+    - family: Armiento
+      given: Rickard
+    - family: Lee
+      given: Alpha A.
+  citation-key: goodall_rapid_2022
+  container-title: Science Advances
+  DOI: 10.1126/sciadv.abn4117
+  issue: '30'
+  issued:
+    - year: 2022
+      month: 7
+      day: 27
+  page: eabn4117
+  publisher: American Association for the Advancement of Science
+  source: science.org (Atypon)
+  title: Rapid discovery of stable materials by coordinate-free coarse graining
+  title-short: Wren
+  type: article-journal
+  URL: https://www.science.org/doi/10.1126/sciadv.abn4117
+  volume: '8'
+
+- id: jain_commentary_2013
+  abstract: >-
+    Accelerating the discovery of advanced materials is essential for human
+    welfare and sustainable, clean energy. In this paper, we introduce the
+    Materials Project (www.materialsproject.org), a core program of the
+    Materials Genome Initiative that uses high-throughput computing to uncover
+    the properties of all known inorganic materials. This open dataset can be
+    accessed through multiple channels for both interactive exploration and data
+    mining. The Materials Project also seeks to create open-source platforms for
+    developing robust, sophisticated materials analyses. Future efforts will
+    enable users to perform ‘‘rapid-prototyping’’ of new materials in silico,
+    and provide researchers with new avenues for cost-effective, data-driven
+    materials design.
+  accessed:
+    - year: 2022
+      month: 2
+      day: 21
+  author:
+    - family: Jain
+      given: Anubhav
+    - family: Ong
+      given: Shyue Ping
+    - family: Hautier
+      given: Geoffroy
+    - family: Chen
+      given: Wei
+    - family: Richards
+      given: William Davidson
+    - family: Dacek
+      given: Stephen
+    - family: Cholia
+      given: Shreyas
+    - family: Gunter
+      given: Dan
+    - family: Skinner
+      given: David
+    - family: Ceder
+      given: Gerbrand
+    - family: Persson
+      given: Kristin A.
+  citation-key: jain_commentary_2013
+  container-title: APL Materials
+  DOI: 10.1063/1.4812323
+  issue: '1'
+  issued:
+    - year: 2013
+      month: 7
+  page: '011002'
+  publisher: American Institute of Physics
+  source: aip.scitation.org (Atypon)
+  title: >-
+    Commentary: The Materials Project: A materials genome approach to
+    accelerating materials innovation
+  title-short: Commentary
+  type: article-journal
+  URL: https://aip.scitation.org/doi/10.1063%2F1.4812323
+  volume: '1'
+
+- id: mok_direction-based_2022
+  abstract: >-
+    To realize renewable and sustainable energy cycle, there has been a lot of
+    effort put into discovering catalysts with desired properties from a large
+    chemical space. To achieve this goal, several screening strategies have been
+    proposed, most of which require validation of thermodynamic stability and
+    synthesizability of candidate materials via computationally intensive
+    quantum chemistry or solid-state physics calculations. This problem can be
+    overcome by reducing the number of calculations through machine learning
+    methods, which predict target properties using unrelaxed crystal structures
+    as inputs. However, numerical input representations of most of the previous
+    models are based on either too specific (e.g., atomic coordinates) or too
+    ambiguous (e.g., stoichiometry) information, practically inapplicable to
+    energy prediction of unrelaxed initial structures. In this work, we develop
+    direction-based crystal graph convolutional neural network (D-CGCNN) with
+    the highest accuracy toward formation energy predictions of the relaxed
+    structures using the initial structures as inputs. By comparing with other
+    approaches, we revealed correlations between crystal graph similarities and
+    model performances, elucidating the origin of the improved accuracy of our
+    model. We applied this model to the on-going high-throughput virtual
+    screening project, where the model discovered 1,725 stable materials from
+    15,318 unrelaxed structures by performing 3,966 structure optimizations (~25
+    %).
+  accessed:
+    - year: 2022
+      month: 10
+      day: 4
+  author:
+    - family: Mok
+      given: Dong Hyeon
+    - family: Kim
+      given: Jongseung
+    - family: Back
+      given: Seoin
+  citation-key: mok_direction-based_2022
+  DOI: 10.26434/chemrxiv-2022-dp58c
+  genre: preprint
+  issued:
+    - year: 2022
+      month: 9
+      day: 30
+  language: en
+  publisher: Chemistry
+  source: DOI.org (Crossref)
+  title: >-
+    Direction-based Graph Representation to Accelerate Stable Catalysts
+    Discovery
+  type: report
+  URL: >-
+    https://chemrxiv.org/engage/chemrxiv/article-details/633660f9114b7ebf1a229015
+
+- id: wang_predicting_2021
+  abstract: >-
+    We propose an efficient high-throughput scheme for the discovery of stable
+    crystalline phases. Our approach is based on the transmutation of known
+    compounds, through the substitution of atoms in the crystal structure with
+    chemically similar ones. The concept of similarity is defined quantitatively
+    using a measure of chemical replaceability, extracted by data-mining
+    experimental databases. In this way we build 189,981 possible crystal
+    phases, including 18,479 that are on the convex hull of stability. The
+    resulting success rate of 9.72% is at least one order of magnitude better
+    than the usual success rate of systematic high-throughput calculations for a
+    specific family of materials, and comparable with speed-up factors of
+    machine learning filtering procedures. As a characterization of the set of
+    18,479 stable compounds, we calculate their electronic band gaps, magnetic
+    moments, and hardness. Our approach, that can be used as a filter on top of
+    any high-throughput scheme, enables us to efficiently extract stable
+    compounds from tremendously large initial sets, without any initial
+    assumption on their crystal structures or chemical compositions.
+  accessed:
+    - year: 2022
+      month: 2
+      day: 21
+  author:
+    - family: Wang
+      given: Hai-Chen
+    - family: Botti
+      given: Silvana
+    - family: Marques
+      given: Miguel A. L.
+  citation-key: wang_predicting_2021
+  container-title: npj Computational Materials
+  container-title-short: npj Comput Mater
+  DOI: 10.1038/s41524-020-00481-6
+  ISSN: 2057-3960
+  issue: '1'
+  issued:
+    - year: 2021
+      month: 1
+      day: 26
+  language: en
+  license: 2021 The Author(s)
+  number: '1'
+  page: 1-9
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: Predicting stable crystalline compounds using chemical similarity
+  type: article-journal
+  URL: https://www.nature.com/articles/s41524-020-00481-6
+  volume: '7'
+
+- id: xie_crystal_2018
+  abstract: >-
+    The use of machine learning methods for accelerating the design of
+    crystalline materials usually requires manually constructed feature vectors
+    or complex transformation of atom coordinates to input the crystal
+    structure, which either constrains the model to certain crystal types or
+    makes it difficult to provide chemical insights. Here, we develop a crystal
+    graph convolutional neural networks framework to directly learn material
+    properties from the connection of atoms in the crystal, providing a
+    universal and interpretable representation of crystalline materials. Our
+    method provides a highly accurate prediction of density functional theory
+    calculated properties for eight different properties of crystals with
+    various structure types and compositions after being trained with 104 data
+    points. Further, our framework is interpretable because one can extract the
+    contributions from local chemical environments to global properties. Using
+    an example of perovskites, we show how this information can be utilized to
+    discover empirical rules for materials design.
+  accessed:
+    - year: 2019
+      month: 8
+      day: 22
+  author:
+    - family: Xie
+      given: Tian
+    - family: Grossman
+      given: Jeffrey C.
+  citation-key: xie_crystal_2018
+  container-title: Physical Review Letters
+  container-title-short: Phys. Rev. Lett.
+  DOI: 10.1103/PhysRevLett.120.145301
+  issue: '14'
+  issued:
+    - year: 2018
+      month: 4
+      day: 6
+  page: '145301'
+  source: APS
+  title: >-
+    Crystal Graph Convolutional Neural Networks for an Accurate and
+    Interpretable Prediction of Material Properties
+  type: article-journal
+  URL: https://link.aps.org/doi/10.1103/PhysRevLett.120.145301
+  volume: '120'
+
+- id: zuo_accelerating_2021
+  abstract: >-
+    Machine learning (ML) models utilizing structure-based features provide an
+    efficient means for accurate property predictions across diverse chemical
+    spaces. However, obtaining equilibrium crystal structures typically requires
+    expensive density functional theory (DFT) calculations, which limits
+    ML-based exploration to either known crystals or a small number of
+    hypothetical crystals. Here, we demonstrate that the application of Bayesian
+    optimization with symmetry constraints using a graph deep learning energy
+    model can be used to perform “DFT-free” relaxations of crystal structures.
+    Using this approach to significantly improve the accuracy of ML-predicted
+    formation energies and elastic moduli of hypothetical crystals, two novel
+    ultra-incompressible hard MoWC2 (P63/mmc) and ReWB (Pca21) were identified
+    and successfully synthesized via in situ reactive spark plasma sintering
+    from screening 399,960 transition metal borides and carbides. This work
+    addresses a critical bottleneck to accurate property predictions for
+    hypothetical materials, paving the way to ML-accelerated discovery of new
+    materials with exceptional properties.
+  accessed:
+    - year: 2021
+      month: 10
+      day: 21
+  author:
+    - family: Zuo
+      given: Yunxing
+    - family: Qin
+      given: Mingde
+    - family: Chen
+      given: Chi
+    - family: Ye
+      given: Weike
+    - family: Li
+      given: Xiangguo
+    - family: Luo
+      given: Jian
+    - family: Ong
+      given: Shyue Ping
+  citation-key: zuo_accelerating_2021
+  container-title: Materials Today
+  container-title-short: Materials Today
+  DOI: 10.1016/j.mattod.2021.08.012
+  ISSN: 1369-7021
+  issued:
+    - year: 2021
+      month: 10
+      day: 1
+  language: en
+  note: 'ZSCC: 0000001'
+  source: ScienceDirect
+  title: >-
+    Accelerating materials discovery with Bayesian optimization and graph deep
+    learning
+  title-short: BOWSR
+  type: article-journal
+  URL: https://www.sciencedirect.com/science/article/pii/S1369702121002984
+...
