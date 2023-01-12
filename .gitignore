@@ -24,7 +24,7 @@ job-logs/
 *slurm-*.log
 
 # temporary ignore rules
-paper
+notes
 models/voronoi/*.zip
 
 # generated docs
