@@ -170,4 +170,4 @@ And you're done! Once tests pass and the PR is merged, your model will be added 
 
 ## 😵‍💫 &thinsp; Troubleshooting
 
-Having problems using or contributing to the project? Please [open an issue on GitHub](https://github.com/janosh/matbench-discovery/issues). We're happy to help!
+Having problems using or contributing to the project? Please [open an issue on GitHub](https://github.com/janosh/matbench-discovery/issues). Happy to help! 😊

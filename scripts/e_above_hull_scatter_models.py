@@ -63,6 +63,12 @@ add_identity_line(fig)
 fig.show()
 
 
+# %%
+img_path = f"{FIGS}/{today}-e-form-scatter-models"
+# fig.write_image(f"{img_path}.pdf")
+write_html(fig, f"{img_path}.svelte")
+
+
 # %% scatter plot of actual vs predicted e_above_hull
 fig = px.scatter(
     df_melt.iloc[::10],
@@ -86,6 +92,6 @@ fig.show()
 
 
 # %%
-img_path = f"{FIGS}/{today}-rolling-mae-vs-hull-dist-compare-models"
-fig.savefig(f"{img_path}.pdf")
+img_path = f"{FIGS}/{today}-e-above-hull-scatter-models"
+# fig.write_image(f"{img_path}.pdf")
 write_html(fig, f"{img_path}.svelte")
