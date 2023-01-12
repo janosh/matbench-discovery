@@ -124,6 +124,63 @@ references:
   type: article
   URL: http://arxiv.org/abs/2210.13587
 
+- id: chen_graph_2019
+  abstract: >-
+    Graph networks are a new machine learning (ML) paradigm that supports both
+    relational reasoning and combinatorial generalization. Here, we develop
+    universal MatErials Graph Network (MEGNet) models for accurate property
+    prediction in both molecules and crystals. We demonstrate that the MEGNet
+    models outperform prior ML models such as the SchNet in 11 out of 13
+    properties of the QM9 molecule data set. Similarly, we show that MEGNet
+    models trained on ∼60 000 crystals in the Materials Project substantially
+    outperform prior ML models in the prediction of the formation energies, band
+    gaps, and elastic moduli of crystals, achieving better than density
+    functional theory accuracy over a much larger data set. We present two new
+    strategies to address data limitations common in materials science and
+    chemistry. First, we demonstrate a physically intuitive approach to unify
+    four separate molecular MEGNet models for the internal energy at 0 K and
+    room temperature, enthalpy, and Gibbs free energy into a single free energy
+    MEGNet model by incorporating the temperature, pressure, and entropy as
+    global state inputs. Second, we show that the learned element embeddings in
+    MEGNet models encode periodic chemical trends and can be transfer-learned
+    from a property model trained on a larger data set (formation energies) to
+    improve property models with smaller amounts of data (band gaps and elastic
+    moduli).
+  accessed:
+    - year: 2023
+      month: 1
+      day: 12
+  author:
+    - family: Chen
+      given: Chi
+    - family: Ye
+      given: Weike
+    - family: Zuo
+      given: Yunxing
+    - family: Zheng
+      given: Chen
+    - family: Ong
+      given: Shyue Ping
+  citation-key: chen_graph_2019
+  container-title: Chemistry of Materials
+  container-title-short: Chem. Mater.
+  DOI: 10.1021/acs.chemmater.9b01294
+  ISSN: 0897-4756
+  issue: '9'
+  issued:
+    - year: 2019
+      month: 5
+      day: 14
+  page: 3564-3572
+  publisher: American Chemical Society
+  source: ACS Publications
+  title: >-
+    Graph Networks as a Universal Machine Learning Framework for Molecules and
+    Crystals
+  type: article-journal
+  URL: https://doi.org/10.1021/acs.chemmater.9b01294
+  volume: '31'
+
 - id: chen_universal_2022
   abstract: >-
     Interatomic potentials (IAPs), which describe the potential energy surface
@@ -452,6 +509,70 @@ references:
   type: article-journal
   URL: https://www.nature.com/articles/s41524-020-00481-6
   volume: '7'
+
+- id: ward_including_2017
+  abstract: >-
+    While high-throughput density functional theory (DFT) has become a prevalent
+    tool for materials discovery, it is limited by the relatively large
+    computational cost. In this paper, we explore using DFT data from
+    high-throughput calculations to create faster, surrogate models with machine
+    learning (ML) that can be used to guide new searches. Our method works by
+    using decision tree models to map DFT-calculated formation enthalpies to a
+    set of attributes consisting of two distinct types: (i)
+    composition-dependent attributes of elemental properties (as have been used
+    in previous ML models of DFT formation energies), combined with (ii)
+    attributes derived from the Voronoi tessellation of the compound's crystal
+    structure. The ML models created using this method have half the
+    cross-validation error and similar training and evaluation speeds to models
+    created with the Coulomb matrix and partial radial distribution function
+    methods. For a dataset of 435 000 formation energies taken from the Open
+    Quantum Materials Database (OQMD), our model achieves a mean absolute error
+    of 80 meV/atom in cross validation, which is lower than the approximate
+    error between DFT-computed and experimentally measured formation enthalpies
+    and below 15% of the mean absolute deviation of the training set. We also
+    demonstrate that our method can accurately estimate the formation energy of
+    materials outside of the training set and be used to identify materials with
+    especially large formation enthalpies. We propose that our models can be
+    used to accelerate the discovery of new materials by identifying the most
+    promising materials to study with DFT at little additional computational
+    cost.
+  accessed:
+    - year: 2023
+      month: 1
+      day: 12
+  author:
+    - family: Ward
+      given: Logan
+    - family: Liu
+      given: Ruoqian
+    - family: Krishna
+      given: Amar
+    - family: Hegde
+      given: Vinay I.
+    - family: Agrawal
+      given: Ankit
+    - family: Choudhary
+      given: Alok
+    - family: Wolverton
+      given: Chris
+  citation-key: ward_including_2017
+  container-title: Physical Review B
+  container-title-short: Phys. Rev. B
+  DOI: 10.1103/PhysRevB.96.024104
+  issue: '2'
+  issued:
+    - year: 2017
+      month: 7
+      day: 14
+  page: '024104'
+  publisher: American Physical Society
+  source: APS
+  title: >-
+    Including crystal structure attributes in machine learning models of
+    formation energies via Voronoi tessellations
+  type: article-journal
+  URL: https://link.aps.org/doi/10.1103/PhysRevB.96.024104
+  volume: '96'
 
 - id: xie_crystal_2018
   abstract: >-

@@ -1,5 +1,6 @@
 ---
-title: Matbench Discovery - Can ML energy models help find stable crystals?
+title: Matbench Discovery
+subtitle: Can ML energy models help find stable crystals?
 tags:
   - Python
   - machine learning
@@ -53,7 +54,7 @@ geometry: margin=3cm # https://stackoverflow.com/a/13516042
   import './heading-number.css' // uncomment to remove heading numbers
 </script>
 
-# {title}
+# {title}<br><small>{subtitle}</small>
 
 <address>
   <span rel="author">
@@ -78,11 +79,11 @@ In this work, we present a new machine learning benchmark for materials stabilit
 
 ### Why Materials Discovery?
 
-Many technologies rely on specific material properties such as finely tuned band gaps, hardness, melting points, polarizability, and thermal and electrical conductivity. The materials we master define the technological abilities of our time, so much so that we name eras of human development after them (stone, bronze, iron, coal/oil, silicon age). Besides entirely new technologies like superconductors, spintronics and quantum computing, discovering new materials and new ways of tuning their properties enables civilizational advancements such as waste reduction, water purification and of course energy generation and storage. Global warming puts particular urgency on such advances for solar cell, battery, turbine and other energy materials.
+Many technologies rely on specific material properties such as solar cells which need finely tuned band gaps, jet engine turbines which require good hardness and very high melting points, transistor gates which need dielectrics of exceptional polarizability to save power and allow further miniaturization, just to name a few. The materials we have mastered define the technological abilities of our time, so much so that we name eras of human development after them (stone age, bronze age, iron age, silicon age). Besides entirely new technologies like superconductors, spintronics and quantum computing, discovering new materials and new ways of tuning their properties enables civilizational advancements such as waste reduction, water purification, and energy generation and storage. Global warming puts particular urgency on advances in solar cells, batteries, turbines and other energy devices.
 
 ### Why machine learning?
 
-Decades of research have resulted in powerful tools across materials theory, simulation and experiment. The latest addition to the computational toolbox are statistical models that learn to infer material properties from existing knowledge of materials accumulated over decades. These models are powerful tools for high-throughput novel materials discovery due to their ability to handle high dimensionality, large datasets, multiple objectives, uncertainty and noise, and sparse data.
+Since its inception, science has undergone several paradigm shits. In the beginning, the empirical phase saw scientists conducting simple experiments to probe reality. It was followed by the theoretical phase that saw the rise of physical laws with incredible predictive power. The last century saw the rise of the simulation, the 3rd paradigm of science which revolves around recreating the salient feature of a physical system of interest on a computer as efficiently as possible to probe its behavior. Finally the 21st century has brought about the 4th data-driven phase of science. This latest addition to the computational toolbox is powered by statistical models that learn from existing knowledge to arrive at new insights via shortcuts that rely on correlations in the data rather than a reductive bottom-up reasoning about features of reality. This is particularly attractive in the field of materials science as running density functional theory, one of the most powerful methods of the 3rd paradigm, for decades on large supercomputers all around the world has resulted in huge databases on computed material properties which are much to large for any human expert to leverage. ML models on the other hand are powerful tools for high-throughput novel materials discovery due to their ability to handle high dimensionality, large datasets, multiple objectives, uncertainty and noise, and sparse data.
 
 1. **Vast search space**: With ~100 elements and myriad compositional, structural, doping and defect degrees of freedom, the search space for novel materials is very high-dimensional. ML algorithms being orders of magnitude faster than simulation can explore larger chunks of this space and identify candidates that might have taken much longer to find using traditional methods.
 1. **Untapped value in existing data**: ML can handle very large datasets. With recent advances in automated experimentation and simulation, the amount of data available for materials discovery has grown to much more than any one expert can hope to absorb. Yet not too much for ML models which have shown the ability to condense a large chunk of the internet's text data into billions of parameters [cite GPT2/3 and other LLMs] which when probed correctly can reveal new patterns and relationships in the data that humans have missed.
@@ -122,13 +123,18 @@ Yet despite (or perhaps because of) the many recent advances in machine learning
 
 ### Why stability over formation energies?
 
+<!-- ### Bartel's critical examination of ML stability predictions -->
+
+In 2020, [Chris Bartel et al.](https://nature.com/articles/s41524-020-00362-y) @bartel_critical_2020 benchmarked 7 ML models, showing all of them able to predict DFT formation energies with useful accuracy. However, when asked to predict stability (decomposition enthalpy to be precise), the performance of all models deteriorated significantly, especially those of composition-based models and slightly less so of CGCNN @xie_crystal_2018, the only structure-based model investigated. This insight meant that ML models are much less useful than DFT for discovering new solids. The paper identified two main reasons for the sharp decline in predictive power.
+
+1. Stability is a property not only of the material itself but also the chemical space of competing phases around it. Current ML algorithm are only given a single feature vector that describes the material it is asked to predict.
+1. Unlike DFT, ML models evidently do not benefit from systematic error cancellation compared. A first-principles theory of physics will make similar errors for similar systems which cancel when looking at the relative energy differences that determine stability. This suggests that whatever correlations these statistical models learn to map their inputs to the target variable, it does not correspond to actual physics.
+
+Hence the authors stress that to demonstrate the utility of ML for real-world materials discovery efforts, it is essential to evaluate model performance on actual stability predictions rather than formation energies. We took this as the guiding principle when designing this benchmark.
+
 ## Related Work
 
 Our work is inspired and builds upon earlier research.
-
-### Bartel's critical examination of ML stability predictions
-
-In 2020, [Chris Bartel et al.](https://nature.com/articles/s41524-020-00362-y) @bartel_critical_2020 benchmarked 7 ML models, showing all of them able to predict DFT formation energies with useful accuracy. However, when asked to predict stability (distance to the convex hull), the performance of all models but especially composition-based ones, deteriorated significantly, making them less useful than DFT for discovering new solids. This partly stems from a loss of systematic error cancellation compared to DFT (a first-principles theory of physics will make similar errors for similar systems which cancel when looking at the relative energy differences that determine stability) and partly from stability being a property of not only the material itself but also the chemical space of competing phases around it. A physical theory can generate knowledge of the whole space as it can (in principle) simulate every material in it. An ML algorithm by contrast can only go by the feature vector for the single material it is asked to predict. The authors stress the importance of evaluating model performance on actual stability predictions rather than formation energies, which guided the design of this benchmark.
 
 ### Matbench
 
@@ -136,7 +142,7 @@ As the name suggests, this work also expands on the initial release of Matbench 
 
 ### WBM test set
 
-The choice of data for the train and test sets of this benchmark fell on the latest Materials Project @jain_commentary_2013 database release (2021.05.13 at time of writing) and the **[WBM dataset](https://nature.com/articles/s41524-020-00481-6)** @wang_predicting_2021 published in npj comp. mat. in 2021. Named after the authors last name initials, WBM consists of ~250k structures generated via chemical similarity-based elemental substitution of Materials Project source structures followed by DFT relaxation and convex hull distance calculation. ~20k or 10% were found to lie on the Materials Project convex hull. They did 5 iterations of this substitution process. This is a unique and compelling feature of the dataset as it allows out-of-distribution testing by checking how much model performance degrades with substitution count. A higher number of elemental substitutions will on average carry the structure further away from the region of chemical space covered by the Materials Project training set.
+The choice of data for the train and test sets of this benchmark fell on the latest Materials Project @jain_commentary_2013 database release (2021.05.13 at time of writing) and the **[WBM dataset](https://nature.com/articles/s41524-020-00481-6)** @wang_predicting_2021 published in npj comp. mat. in 2021. Named after the authors' last name initials, WBM consists of ~250k structures generated via chemical similarity-based elemental substitution of Materials Project source structures followed by DFT relaxation and convex hull distance calculation. ~20k or 10% were found to lie on the Materials Project convex hull. They did 5 iterations of this substitution process. This is a unique and compelling feature of the dataset as it allows out-of-distribution testing by checking how much model performance degrades with substitution count. A higher number of elemental substitutions will on average carry the structure further away from the region of chemical space covered by the Materials Project training set.
 
 <!--
 rough paper outline
@@ -160,14 +166,18 @@ Were any of these questions discussed/addressed?
 
 ## Results
 
-Our benchmark is designed to make [adding future models easy](/how-to-contribute). The initial release compares the following models:
+Our benchmark is designed to make [adding future models easy](/how-to-contribute). The initial release compares the following [models](/models):
 
 1. [CGCNN](https://arxiv.org/abs/1710.10324) @xie_crystal_2018
 1. [BOWSR](https://sciencedirect.com/science/article/pii/S1369702121002984) @zuo_accelerating_2021
 1. [Wren](https://arxiv.org/abs/2106.11132) @goodall_rapid_2022
 1. [M3GNet](https://arxiv.org/abs/2202.02450) @chen_universal_2022
+1. [MEGNet](https://arxiv.org/abs/1812.05055) @chen_graph_2019
+1. [Voronoi Random Forest](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.96.024104) @goodall_rapid_2022
 
-<MetricsTable />
+<div style="overflow: scroll;">
+  <MetricsTable />
+</div>
 
 ## Analysis
 

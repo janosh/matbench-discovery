@@ -3,7 +3,9 @@
   --blue: cornflowerblue;
   --text-color: rgb(208, 208, 208);
 
-  --toc-mobile-bg: #1c0e3e;
+  --toc-mobile-bg: #0d1a1d;
+  --toc-mobile-shadow: 0 0 1em 0 black;
+  --toc-title-padding: 0 0 0 3pt;
   --toc-li-padding: 4pt 1ex;
   --toc-mobile-btn-color: white;
   --toc-desktop-nav-margin: 0 0 0 1em;
@@ -145,4 +147,5 @@ aside.toc.desktop {
 
 caption {
   display: block;
+  margin: 1em auto 2em;
 }

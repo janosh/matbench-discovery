@@ -1,23 +1,35 @@
-import matminer.featurizers.composition as feat_comp
-import matminer.featurizers.structure as feat_struct
+import matminer.featurizers.composition as fc
+import matminer.featurizers.structure as fs
 from matminer.featurizers.base import MultipleFeaturizer
 
 # Create the featurizer: Ward et al. use a variety of different featurizers
 # https://journals.aps.org/prb/abstract/10.1103/PhysRevB.96.024104
-featurizers = [
-    feat_struct.SiteStatsFingerprint.from_preset("CoordinationNumber_ward-prb-2017"),
-    feat_struct.StructuralHeterogeneity(),
-    feat_struct.ChemicalOrdering(),
-    feat_struct.MaximumPackingEfficiency(),
-    feat_struct.SiteStatsFingerprint.from_preset(
-        "LocalPropertyDifference_ward-prb-2017"
-    ),
-    feat_struct.StructureComposition(feat_comp.Stoichiometry()),
-    feat_struct.StructureComposition(feat_comp.ElementProperty.from_preset("magpie")),
-    feat_struct.StructureComposition(feat_comp.ValenceOrbital(props=["frac"])),
-    feat_struct.StructureComposition(feat_comp.IonProperty(fast=True)),
+
+composition_features = [
+    # Ward+Wolverton' Magpie https://rdcu.be/c3jug
+    fc.ElementProperty.from_preset("magpie"),
+    # Ionic property attributes. Similar to ElementProperty.
+    fc.IonProperty(fast=True),
+    # Calculate norms of stoichiometric attributes.
+    fc.Stoichiometry(),
+    # Attributes of valence orbital shells
+    fc.ValenceOrbital(props=["frac"]),
 ]
-featurizer = MultipleFeaturizer(featurizers)
+structure_features = [
+    # How much the ordering of species in the structure differs from random
+    fs.ChemicalOrdering(),
+    # Maximum possible packing efficiency of this structure
+    fs.MaximumPackingEfficiency(),
+    # Differences in elemental properties between site and its neighboring sites
+    fs.SiteStatsFingerprint.from_preset("LocalPropertyDifference_ward-prb-2017"),
+    # Number of first nearest neighbors of a site.
+    fs.SiteStatsFingerprint.from_preset("CoordinationNumber_ward-prb-2017"),
+    # Variance in the bond lengths and atomic volumes in a structure
+    fs.StructuralHeterogeneity(),
+]
+featurizer = MultipleFeaturizer(
+    structure_features + [*map(fs.StructureComposition, composition_features)]
+)
 
 
 # multiprocessing seems to be the cause of OOM errors on large structures even when
