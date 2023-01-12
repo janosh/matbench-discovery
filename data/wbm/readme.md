@@ -72,14 +72,14 @@ materialscloud:2021.68 includes a readme file with a description of the dataset,
 
 ## 📊 &thinsp; Plots
 
-<caption>Heatmap of WBM training set element counts</caption>
 <slot name="wbm-elements-heatmap">
   <img src="./2023-01-08-wbm-elements.svg" alt="Periodic table log heatmap of WBM elements">
 </slot>
+<caption>Heatmap of WBM training set element counts</caption>
 
 which compares as follows to the training set (all 146323 MP ComputedStructureEntries)
 
-<caption>Heatmap of MP test set element counts</caption>
 <slot name="mp-elements-heatmap">
   <img src="./2023-01-08-mp-elements.svg" alt="Periodic table log heatmap of MP elements">
 </slot>
+<caption>Heatmap of MP test set element counts</caption>

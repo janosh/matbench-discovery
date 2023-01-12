@@ -1,11 +1,10 @@
 <script lang="ts">
   import { page } from '$app/stores'
-  import Footer from '$lib/Footer.svelte'
-  import Nav from '$lib/Nav.svelte'
+  import { Footer, Nav } from '$lib'
   import { repository } from '$site/package.json'
   import { onMount } from 'svelte'
-  import GitHubCorner from 'svelte-github-corner'
   import Toc from 'svelte-toc'
+  import { GitHubCorner } from 'svelte-zoo'
   import '../app.css'
 
   onMount(() => {
