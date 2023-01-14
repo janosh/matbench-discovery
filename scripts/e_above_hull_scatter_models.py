@@ -1,10 +1,10 @@
 # %%
-from pymatviz.utils import add_identity_line
+from pymatviz.utils import add_identity_line, save_fig
 from sklearn.metrics import r2_score
 
 from matbench_discovery import FIGS, today
 from matbench_discovery.data import PRED_FILENAMES, load_df_wbm_with_preds
-from matbench_discovery.plots import px, write_html
+from matbench_discovery.plots import px
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
@@ -66,7 +66,7 @@ fig.show()
 # %%
 img_path = f"{FIGS}/{today}-e-form-scatter-models"
 # fig.write_image(f"{img_path}.pdf")
-write_html(fig, f"{img_path}.svelte")
+save_fig(fig, f"{img_path}.svelte")
 
 
 # %% scatter plot of actual vs predicted e_above_hull
@@ -94,4 +94,4 @@ fig.show()
 # %%
 img_path = f"{FIGS}/{today}-e-above-hull-scatter-models"
 # fig.write_image(f"{img_path}.pdf")
-write_html(fig, f"{img_path}.svelte")
+save_fig(fig, f"{img_path}.svelte")

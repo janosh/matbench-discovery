@@ -1,7 +1,4 @@
 import adapter from '@sveltejs/adapter-static'
-import { fromString } from 'hast-util-from-string'
-import { selectAll } from 'hast-util-select'
-import { toString } from 'hast-util-to-string'
 import { s } from 'hastscript'
 import katex from 'katex'
 import { mdsvex } from 'mdsvex'
@@ -11,18 +8,7 @@ import math from 'remark-math'
 import preprocess from 'svelte-preprocess'
 
 const rehypePlugins = [
-  // from https://github.com/kwshi/rehype-katex-svelte
-  (options = {}) =>
-    (tree) => {
-      for (const node of selectAll(`.math-inline,.math-display`, tree)) {
-        const displayMode = node.properties?.className?.includes(`math-display`)
-        const rendered = katex.renderToString(toString(node), {
-          ...options,
-          displayMode,
-        })
-        fromString(node, `{@html ${JSON.stringify(rendered)}}`)
-      }
-    },
+  katex,
   heading_slugs,
   [
     link_headings,

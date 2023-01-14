@@ -18,6 +18,7 @@ from pymatgen.entries.compatibility import (
 )
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz import density_scatter
+from pymatviz.utils import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, today
@@ -448,14 +449,10 @@ fig.update_layout(xaxis_title=x_axis_title, margin=dict(l=10, r=10, t=40, b=10))
 # no need to store all 250k x values in plot, leads to 1.7 MB file, subsample every 10th
 # point is enough to see the distribution
 fig.data[0].x = fig.data[0].x[::10]
-# recommended to upload to vecta.io/nano afterwards for compression
-fig.write_image(f"{module_dir}/{today}-hist-e-form-per-atom.svg", width=800, height=300)
-fig.write_html(
-    f"{module_dir}/{today}-hist-e-form-per-atom.svelte",
-    include_plotlyjs=False,
-    full_html=False,
-    config=dict(showTips=False, displayModeBar=False, scrollZoom=True),
-)
+# recommended to upload SVG to vecta.io/nano afterwards for compression
+img_path = f"{module_dir}/{today}-hist-e-form-per-atom"
+save_fig(fig, f"{img_path}.svg", width=800, height=300)
+save_fig(fig, f"{img_path}.svelte")
 
 
 # %%

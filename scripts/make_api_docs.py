@@ -3,7 +3,9 @@ import os
 from glob import glob
 from subprocess import run
 
-# update generated API docs on production builds
+# Update auto-generated API docs. Also tweak lazydocs's markdown output for
+# - prettier badges linking to source code on GitHub
+# - remove bold tags since they break inline code
 
 pkg = json.load(open("site/package.json"))
 route = "site/src/routes/api"

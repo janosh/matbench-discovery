@@ -1,9 +1,10 @@
 # %%
 import pandas as pd
+from pymatviz.utils import save_fig
 
 from matbench_discovery import FIGS, today
 from matbench_discovery.data import load_df_wbm_with_preds
-from matbench_discovery.plots import cumulative_precision_recall, write_html
+from matbench_discovery.plots import cumulative_precision_recall
 
 __author__ = "Janosh Riebesell, Rhys Goodall"
 __date__ = "2022-12-04"
@@ -12,7 +13,7 @@ __date__ = "2022-12-04"
 # %%
 models = (
     # Wren, CGCNN IS2RE, CGCNN RS2RE
-    "Voronoi RF, Wrenformer, MEGNet, M3GNet, BOWSR MEGNet"
+    "Voronoi RF, Wrenformer, MEGNet, M3GNet, BOWSR MEGNet, CGCNN, CGCNN debug"
 ).split(", ")
 
 df_wbm = load_df_wbm_with_preds(models=models).round(3)
@@ -50,16 +51,12 @@ fig.show(config=dict(responsive=True))
 
 
 # %%
-img_path = f"{FIGS}/{today}-cumulative-clf-metrics"
-
 # file will be served by site
 # so we round y floats to reduce file size since
 for trace in fig.data:
     assert isinstance(trace.y[0], float)
     trace.y = [round(y, 3) for y in trace.y]
 
-if hasattr(fig, "write_image"):
-    fig.write_image(f"{img_path}.pdf")
-    write_html(fig, f"{img_path}.svelte")
-else:
-    fig.savefig(f"{img_path}.pdf")
+img_path = f"{FIGS}/{today}-cumulative-clf-metrics"
+# save_fig(fig, f"{img_path}.pdf")
+save_fig(fig, f"{img_path}.svelte")
