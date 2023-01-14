@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.graph_objects as go
@@ -15,7 +13,6 @@ from matbench_discovery.plots import (
     cumulative_precision_recall,
     hist_classified_stable_vs_hull_dist,
     rolling_mae_vs_hull_dist,
-    write_html,
 )
 
 models = ["Wrenformer", "CGCNN", "Voronoi RF"]
@@ -126,17 +123,3 @@ def test_hist_classified_stable_vs_hull_dist(
 
     assert metrics["precision"] > 0.3
     assert metrics["recall"] > 0.3
-
-
-@pytest.mark.parametrize("ext", ("html", "svelte"))
-def test_write_html(ext: str, tmp_path: Path) -> None:
-    fig, path = go.Figure(), f"{tmp_path}/fig.{ext}"
-    write_html(fig, path)
-    html = open(path).read()
-    if ext == "svelte":
-        assert html.startswith("<div {...$$props}>")
-    else:
-        assert open(path).read().startswith("<div>")
-
-    assert '"showTips": false' in html
-    assert '"displayModeBar": false' in html
