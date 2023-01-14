@@ -13,7 +13,7 @@
     "preview": "vite preview",
     "serve": "vite build && vite preview",
     "check": "svelte-check",
-    "make-api-docs": "python ../scripts/make_api_docs.py"
+    "make-api-docs": "cd .. && python ../scripts/make_api_docs.py"
   },
   "devDependencies": {
     "@iconify/svelte": "^3.0.1",
@@ -25,16 +25,13 @@
     "@typescript-eslint/parser": "^5.48.1",
     "eslint": "^8.31.0",
     "eslint-plugin-svelte3": "^4.0.0",
-    "hast-util-from-string": "^2.0.0",
-    "hast-util-select": "^5.0.3",
-    "hast-util-to-string": "^2.0.0",
     "hastscript": "^7.2.0",
-    "highlight.js": "^11.7.0",
     "katex": "^0.16.4",
     "mdsvex": "^0.10.6",
     "prettier": "^2.8.2",
     "prettier-plugin-svelte": "^2.9.0",
     "rehype-autolink-headings": "^6.1.1",
+    "rehype-katex-svelte": "^1.1.2",
     "rehype-slug": "^5.1.0",
     "remark-math": "3.0.0",
     "svelte": "^3.55.1",

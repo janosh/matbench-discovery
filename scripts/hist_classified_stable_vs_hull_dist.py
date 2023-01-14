@@ -1,4 +1,6 @@
 # %%
+from pymatviz.utils import save_fig
+
 from matbench_discovery import FIGS, today
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.plots import WhichEnergy, hist_classified_stable_vs_hull_dist
@@ -60,9 +62,6 @@ ax
 
 
 # %%
-img_path = f"{FIGS}/{today}-wren-wbm-hull-dist-hist-{which_energy=}.pdf"
-if hasattr(ax, "write_image"):
-    # fig.write_image(img_path)
-    ax.write_html(img_path.replace(".pdf", ".html"))
-else:
-    ax.figure.savefig(img_path)
+img_path = f"{FIGS}/{today}-wren-wbm-hull-dist-hist-{which_energy=}"
+# save_fig(ax, f"{img_path}.pdf")
+save_fig(ax, f"{img_path}.html")

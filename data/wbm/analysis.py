@@ -3,9 +3,9 @@ import os
 
 import pandas as pd
 from pymatviz import count_elements, ptable_heatmap_plotly
+from pymatviz.utils import save_fig
 
 from matbench_discovery import ROOT, today
-from matbench_discovery.plots import write_html
 
 module_dir = os.path.dirname(__file__)
 
@@ -47,7 +47,7 @@ fig.show()
 
 # %%
 fig.write_image(f"{module_dir}/{today}-wbm-elements.svg", width=1000, height=500)
-write_html(fig, f"{module_dir}/{today}-wbm-elements.svelte")
+save_fig(fig, f"{module_dir}/{today}-wbm-elements.svelte")
 
 
 # %% load MP training set
@@ -82,4 +82,4 @@ fig.show()
 
 # %%
 fig.write_image(f"{module_dir}/{today}-mp-elements.svg", width=1000, height=500)
-write_html(fig, f"{module_dir}/{today}-mp-elements.svelte")
+save_fig(fig, f"{module_dir}/{today}-mp-elements.svelte")
