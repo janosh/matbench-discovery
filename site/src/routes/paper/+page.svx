@@ -51,6 +51,7 @@ geometry: margin=3cm # https://stackoverflow.com/a/13516042
 <script>
   import MetricsTable from '$figs/2022-11-28-metrics-table.svelte'
   import { references } from './references.yaml'
+  import { References } from '$lib'
   import './heading-number.css' // uncomment to remove heading numbers
 </script>
 
@@ -189,26 +190,7 @@ JR acknowledges support from the German Academic Scholarship Foundation (Studien
 
 ## References
 
-<ol>
-  {#each references as { title, id, author, DOI, URL, issued }, idx}
-    <li>
-      <strong {id}>{title}</strong>
-      <p>
-        {@html author.map((a) => `${a.given} ${a.family}`).join(`, &thinsp; `)}
-      </p>
-      <p>
-        {#if DOI}
-          DOI: <a href="https://doi.org/{DOI}">{DOI}</a>
-        {:else if URL}
-          preprint: <a href={URL}>{URL}</a>
-        {/if}
-        {#if issued}
-          - {issued[0].year}
-        {/if}
-      </p>
-    </li>
-  {/each}
-</ol>
+<References {references} />
 
 <style>
   #abstract,
@@ -221,11 +203,5 @@ JR acknowledges support from the German Academic Scholarship Foundation (Studien
   address span {
     margin: 1em;
     display: block;
-  }
-  ol > li {
-    margin: 1ex 0;
-  }
-  ol > li > p {
-    margin: 0;
   }
 </style>

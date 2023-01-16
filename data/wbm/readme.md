@@ -10,7 +10,9 @@ Since repeated substitutions should - on average - increase chemical dissimilari
 
 ## 🆔 &thinsp; About the IDs
 
-The first integer in each material ID ranging from 1 to 5 and coming right after the prefix `wbm-` indicates the substitution step, i.e. in which iteration of the substitution process was this material generated. Each iteration has varying numbers of materials which are counted by the 2nd integer. Note this 2nd number is not always consecutive. A small number of materials (~0.2%) were removed by the data processing steps detailed below. Don't be surprised to find an ID like `wbm-3-70804` followed by `wbm-3-70807`.
+The first integer in each material ID ranging from 1 to 5 and coming right after the prefix `wbm-` indicates the substitution count, i.e. how many times one element was replaced with another chemically similar one starting from an MP source structure. Intuitively, the higher this number the more chance we've had to diffuse away from the MP training set into uncharted regions of materials space. On average, we expect model performance to decrease with substitution step count as structures further from the training set require more extrapolation.
+
+Each iteration has varying numbers of materials which are counted by the 2nd integer. Note this 2nd number is not always consecutive. A small number of materials (~0.2%) were removed by the data-cleaning steps detailed below. Don't be surprised to find an ID like `wbm-3-70804` followed by `wbm-3-70807`.
 
 ## 🪓 &thinsp; Data processing steps
 
@@ -75,11 +77,11 @@ materialscloud:2021.68 includes a readme file with a description of the dataset,
 <slot name="wbm-elements-heatmap">
   <img src="./2023-01-08-wbm-elements.svg" alt="Periodic table log heatmap of WBM elements">
 </slot>
-<caption>Heatmap of WBM training set element counts</caption>
+<caption>Test set element counts consisting of 256,963 WBM <code>ComputedStructureEntries</code></caption>
 
-which compares as follows to the training set (all 146323 MP ComputedStructureEntries)
+By comparison, the training set of MP ComputedStructureEntries has this element distribution.
 
 <slot name="mp-elements-heatmap">
   <img src="./2023-01-08-mp-elements.svg" alt="Periodic table log heatmap of MP elements">
 </slot>
-<caption>Heatmap of MP test set element counts</caption>
+<caption>Training set element counts consisting of 146,323 MP <code>ComputedStructureEntries</code></caption>
