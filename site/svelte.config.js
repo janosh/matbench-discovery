@@ -30,6 +30,20 @@ export default {
   extensions: [`.svelte`, `.svx`, `.md`],
 
   preprocess: [
+    {
+      // preprocess markdown citations @auth_1stwordtitle_yyyy into superscript
+      // links to bibliography items, href must match References.svelte
+      markup: (file) => {
+        if (file.filename.endsWith(`paper/+page.svx`)) {
+          const code = file.content.replace(
+            /@((.+?)_.+?_(\d{4}))/g,
+            `<sup><a href="#$1">$2 $3</a></sup>`
+          )
+          return { code }
+        }
+      },
+    },
+
     preprocess(),
     mdsvex({
       rehypePlugins,
@@ -42,6 +56,12 @@ export default {
 
   kit: {
     adapter: adapter(),
+
+    alias: {
+      $site: `.`,
+      $root: `..`,
+      $figs: `./static/figs`,
+    },
 
     prerender: {
       handleHttpError: `warn`,

@@ -3,15 +3,17 @@ model_version: 1.1.2 # scikit learn version which implements the random forest
 matbench_discovery_version: 1.0
 date_added: 2022-11-26
 authors:
-  - name: Rhys Goodall
-    affiliation: University of Cambridge
-    orcid: https://orcid.org/0000-0002-6589-1700
-  - name: Janosh Riebesell
-    affiliation: University of Cambridge, Lawrence Berkeley National Laboratory
-    email: janosh@lbl.gov
-    orcid: https://orcid.org/0000-0001-5233-3462
+  - name: Logan Ward
+    affiliation: Argonne National Laboratory
+    email: lward@anl.gov
+    orcid: https://orcid.org/0000-0002-1323-5939
+    twitter: WardLT2
+  - name: Chris Wolverton
+    affiliation: Northwestern University
+    email: c-wolverton@northwestern.edu
+    orcid: https://orcid.org/0000-0003-2248-474X
 repo: https://github.com/janosh/matbench-discovery
-doi: https://doi.org/10.1126/sciadv.abn4117
+doi: https://doi.org/10.1103/PhysRevB.96.024104
 preprint: https://arxiv.org/abs/2106.11132
 requirements:
   matminer: 0.8.0
