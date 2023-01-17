@@ -90,8 +90,7 @@ def hist_classified_stable_vs_hull_dist(
     y_label: str = "Number of materials",
     **kwargs: Any,
 ) -> tuple[plt.Axes | go.Figure, dict[str, float]]:
-    """
-    Histogram of the energy difference (either according to DFT ground truth [default]
+    """Histogram of the energy difference (either according to DFT ground truth [default]
     or model predicted energy) to the convex hull for materials in the WBM data set. The
     histogram is broken down into true positives, false negatives, false positives, and
     true negatives based on whether the model predicts candidates to be below the known
@@ -258,13 +257,13 @@ def rolling_mae_vs_hull_dist(
     e_above_hull_error: pd.Series,
     window: float = 0.02,
     bin_width: float = 0.001,
-    x_lim: tuple[float, float] = (-0.2, 0.3),
-    y_lim: tuple[float, float] = (0.0, 0.14),
+    x_lim: tuple[float, float] = (-0.2, 0.2),
+    y_lim: tuple[float, float] = (0, 0.15),
     ax: plt.Axes = None,
     backend: Backend = "plotly",
     y_label: str = "rolling MAE (eV/atom)",
     **kwargs: Any,
-) -> plt.Axes:
+) -> plt.Axes | go.Figure:
     """Rolling mean absolute error as the energy to the convex hull is varied. A scale
     bar is shown for the windowing period of 40 meV per atom used when calculating the
     rolling MAE. The standard error in the mean is shaded around each curve. The
@@ -288,9 +287,8 @@ def rolling_mae_vs_hull_dist(
         y_label (str, optional): y-axis label. Defaults to "rolling MAE (eV/atom)".
 
     Returns:
-        plt.Axes: _description_
+        plt.Axes | go.Figure: matplotlib Axes or plotly Figure depending on backend.
     """
-
     bins = np.arange(*x_lim, bin_width)
 
     rolling_maes = np.zeros_like(bins)
@@ -309,6 +307,8 @@ def rolling_mae_vs_hull_dist(
     # cancellation among similar chemistries, supporting ref:
     # https://journals.aps.org/prb/abstract/10.1103/PhysRevB.85.155208
     dft_acc = 0.025
+    # used by plotly branch of this function, unrecognized by matplotlib
+    fig = kwargs.pop("fig", None)
 
     if backend == "matplotlib":
         ax = ax or plt.gca()
@@ -385,25 +385,33 @@ def rolling_mae_vs_hull_dist(
             title=title,
             **kwargs,
         )
+        line_color = ax.data[0].line.color
         ax_std = go.Scatter(
             x=list(bins) + list(bins)[::-1],  # bins, then bins reversed
             y=list(rolling_maes + 2 * rolling_stds)
             + list(rolling_maes - 2 * rolling_stds)[::-1],  # upper, then lower reversed
             fill="toself",
             line_color="white",
-            fillcolor=ax.data[0].line.color,
+            fillcolor=line_color,
             opacity=0.3,
             hoverinfo="skip",
             showlegend=False,
         )
         ax.add_trace(ax_std)
 
+        if isinstance(fig, go.Figure):
+            # if passed existing plotly figure, add traces to it
+            # return without changing layout and adding annotations
+            fig.add_traces(ax.data)
+            return fig
+
+        legend = dict(title=None, xanchor="right", x=1, yanchor="bottom", y=0)
         ax.update_layout(
             dict(
-                xaxis_title="E<sub>above hull</sub> (eV/atom)",
+                xaxis_title="E<sub>above MP hull</sub> (eV/atom)",
                 yaxis_title="rolling MAE (eV/atom)",
             ),
-            legend=dict(title=None, xanchor="right", x=1, yanchor="bottom", y=0),
+            legend=legend,
         )
         ax.update_xaxes(range=x_lim)
         ax.update_yaxes(range=y_lim)
@@ -424,23 +432,31 @@ def rolling_mae_vs_hull_dist(
         )
         ax.add_traces([err_gt_each_region, ml_err_lt_dft_err_region])
         ax.add_annotation(
-            x=4 * dft_acc,
+            x=dft_acc,
             y=dft_acc,
-            text="Corrected GGA DFT Accuracy",
+            text="<a href='https://doi.org/10.1103/PhysRevB.85.155208'>Corrected GGA DFT "
+            "Accuracy</a>",
             showarrow=True,
-            # arrowhead=1,
-            ax=-dft_acc,
+            xshift=10,
+            arrowhead=1,
+            ax=4 * dft_acc,
             ay=dft_acc,
+            axref="x",
+            ayref="y",
         )
 
         ax.data = ax.data[::-1]  # bring px.line() to front
-        # show MAE window size
+        # plot rectangle to indicate MAE window size
         x0, y0 = x_lim[0] + 0.01, y_lim[0] + 0.01
         ax.add_annotation(
-            x=x0 + 0.05,
-            y=y0 + 0.01,
-            text=f"rolling MAE window<br>{window} eV/atom",
+            x=x0 + window,
+            y=y0,
+            text=f"rolling {window=} eV/atom",
             showarrow=False,
+            xshift=8,
+            yshift=-4,
+            yanchor="bottom",
+            xanchor="left",
         )
         ax.add_shape(
             type="rect",
@@ -448,7 +464,7 @@ def rolling_mae_vs_hull_dist(
             y0=y0,
             x1=x0 + window,
             y1=y0 + window / 5,
-            fillcolor="black",
+            fillcolor=line_color,
         )
 
     return ax
@@ -592,7 +608,7 @@ def cumulative_precision_recall(
             facet_col_wrap=3,
             facet_col_spacing=0.03,
             # pivot df in case we want to show all 3 metrics in each plot's hover
-            # requires fixing index mismatch due to df subsampling above
+            # requires fixing index mismatch due to df sub-sampling above
             # customdata=dict(
             #     df_cum.reset_index()
             #     .pivot(index="index", columns="metric")["Voronoi RF above hull pred"]

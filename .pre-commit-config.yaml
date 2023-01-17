@@ -88,3 +88,9 @@ repos:
           - eslint-plugin-svelte3
           - "@typescript-eslint/eslint-plugin"
           - "@typescript-eslint/parser"
+
+  - repo: https://github.com/PyCQA/pydocstyle
+    rev: 6.1.1
+    hooks:
+      - id: pydocstyle
+        exclude: tests

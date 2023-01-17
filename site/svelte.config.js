@@ -25,6 +25,10 @@ const rehypePlugins = [
   ],
 ]
 
+const { default: pkg } = await import(`./package.json`, {
+  assert: { type: `json` },
+})
+
 /** @type {import('@sveltejs/kit').Config} */
 export default {
   extensions: [`.svelte`, `.svx`, `.md`],
@@ -43,8 +47,9 @@ export default {
         }
       },
     },
-
-    preprocess(),
+    // replace readme links to docs with site-internal links
+    // (which don't require browser navigation)
+    preprocess({ replace: [[pkg.homepage, ``]] }),
     mdsvex({
       rehypePlugins,
       // remark-math@3.0.0 pinned due to mdsvex, see
@@ -61,10 +66,6 @@ export default {
       $site: `.`,
       $root: `..`,
       $figs: `./static/figs`,
-    },
-
-    prerender: {
-      handleHttpError: `warn`,
     },
   },
 }
