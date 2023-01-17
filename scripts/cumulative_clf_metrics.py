@@ -19,14 +19,14 @@ models = (
 df_wbm = load_df_wbm_with_preds(models=models).round(3)
 
 # df_wbm.columns = [f"{col}_e_form" if col in models else col for col in df_wbm]
-target_col = "e_form_per_atom_mp2020_corrected"
+e_form_col = "e_form_per_atom_mp2020_corrected"
 e_above_hull_col = "e_above_hull_mp2020_corrected_ppd_mp"
 
 
 # %%
 df_e_above_hull_pred = pd.DataFrame()
 for model in models:
-    e_above_hul_pred = df_wbm[e_above_hull_col] + df_wbm[model] - df_wbm[target_col]
+    e_above_hul_pred = df_wbm[e_above_hull_col] + df_wbm[model] - df_wbm[e_form_col]
     df_e_above_hull_pred[model] = e_above_hul_pred
 
 fig, df_metric = cumulative_precision_recall(

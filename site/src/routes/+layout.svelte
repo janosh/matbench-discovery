@@ -2,19 +2,9 @@
   import { page } from '$app/stores'
   import { Footer, Nav } from '$lib'
   import { repository } from '$site/package.json'
-  import { onMount } from 'svelte'
   import Toc from 'svelte-toc'
   import { GitHubCorner } from 'svelte-zoo'
   import '../app.css'
-
-  onMount(() => {
-    // make markdown links starting with site/src/routes/ files deployment-compatible
-    for (const link of [
-      ...document.querySelectorAll(`a[href^='site/src/routes']`),
-    ] as HTMLAnchorElement[]) {
-      link.href = link.href.replace(`/site/src/routes`, ``).split(`/+page`)[0]
-    }
-  })
 
   const routes = Object.keys(import.meta.glob(`./*/+page.{svx,svelte,md}`)).map(
     (filename) => `/` + filename.split(`/`)[1]

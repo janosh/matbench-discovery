@@ -98,11 +98,11 @@ def load_train_test(
 
         cache_path = f"{cache_dir}/{version}/{file}"
         if os.path.isfile(cache_path):
-            print(f"Loading '{key}' from cached file at '{cache_path}'")
+            print(f"Loading {key!r} from cached file at {cache_path!r}")
             df = reader(cache_path, **kwargs)
         else:
             url = f"{RAW_REPO_URL}/{version}/data/{file}"
-            print(f"Downloading '{key}' from {url}")
+            print(f"Downloading {key!r} from {url}")
             try:
                 df = reader(url)
             except urllib.error.HTTPError as exc:

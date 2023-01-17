@@ -47,20 +47,20 @@ print(f"{df_train.shape=}")
 
 mp_energies_path = f"{ROOT}/data/mp/2022-08-13-mp-energies.json.gz"
 df_mp = pd.read_json(mp_energies_path).set_index("material_id")
-train_target_col = "formation_energy_per_atom"
+train_e_form_col = "formation_energy_per_atom"
 
 test_path = f"{module_dir}/2022-11-18-features-wbm-{task_type}.csv.bz2"
 df_test = pd.read_csv(test_path).set_index("material_id")
 print(f"{df_test.shape=}")
 
-test_target_col = "e_form_per_atom_mp2020_corrected"
+test_e_form_col = "e_form_per_atom_mp2020_corrected"
 
 
 for df, df_tar, col in (
-    (df_train, df_mp, train_target_col),
-    (df_test, df_wbm, test_target_col),
+    (df_train, df_mp, train_e_form_col),
+    (df_test, df_wbm, test_e_form_col),
 ):
-    df[train_target_col] = df_tar[train_target_col]
+    df[train_e_form_col] = df_tar[train_e_form_col]
     nans = df_tar[col].isna().sum()
     assert nans == 0, f"{nans} NaNs in {col} targets"
 
@@ -74,8 +74,8 @@ run_params = dict(
     matminer_version=version("matminer"),
     numpy_version=version("numpy"),
     model_name=model_name,
-    train_target_col=train_target_col,
-    test_target_col=test_target_col,
+    train_target_col=train_e_form_col,
+    test_target_col=test_e_form_col,
     df_train=dict(shape=str(df_train.shape)),
     df_test=dict(shape=str(df_test.shape)),
     slurm_vars=slurm_vars,
@@ -103,7 +103,7 @@ model = Pipeline(
 
 
 # %%
-model.fit(df_train[feature_names], df_train[train_target_col])
+model.fit(df_train[feature_names], df_train[train_e_form_col])
 
 
 # %%
@@ -121,13 +121,13 @@ df_wbm[pred_col] = df_test[pred_col]
 df_wbm[pred_col].round(4).to_csv(out_path)
 
 table = wandb.Table(
-    dataframe=df_wbm[["formula", test_target_col, pred_col]].reset_index()
+    dataframe=df_wbm[["formula", test_e_form_col, pred_col]].reset_index()
 )
 
 df_wbm[pred_col].isna().sum()
-MAE = (df_wbm[test_target_col] - df_wbm[pred_col]).abs().mean()
-R2 = r2_score(*df_wbm[[test_target_col, pred_col]].dropna().to_numpy().T)
+MAE = (df_wbm[test_e_form_col] - df_wbm[pred_col]).abs().mean()
+R2 = r2_score(*df_wbm[[test_e_form_col, pred_col]].dropna().to_numpy().T)
 title = f"{model_name} {task_type} {MAE=:.3} {R2=:.3}"
 print(title)
 
-wandb_scatter(table, fields=dict(x=test_target_col, y=pred_col), title=title)
+wandb_scatter(table, fields=dict(x=test_e_form_col, y=pred_col), title=title)

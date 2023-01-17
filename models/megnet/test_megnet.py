@@ -50,8 +50,8 @@ if os.path.isfile(out_path):
 data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
-target_col = "e_form_per_atom_mp2020_corrected"
-assert target_col in df_wbm, f"{target_col=} not in {list(df_wbm)=}"
+e_form_col = "e_form_per_atom_mp2020_corrected"
+assert e_form_col in df_wbm, f"{e_form_col=} not in {list(df_wbm)=}"
 
 df_wbm_structs = pd.read_json(data_path).set_index("material_id")
 megnet_mp_e_form = load_model(model_name := "Eform_MP_2019")
@@ -64,7 +64,7 @@ run_params = dict(
     numpy_version=version("numpy"),
     model_name=model_name,
     task_type=task_type,
-    target_col=target_col,
+    target_col=e_form_col,
     df=dict(shape=str(df_wbm_structs.shape), columns=", ".join(df_wbm_structs)),
     slurm_vars=slurm_vars,
 )
@@ -109,11 +109,11 @@ df_wbm[pred_col].round(4).to_csv(out_path)
 
 
 # %%
-table = wandb.Table(dataframe=df_wbm[[target_col, pred_col]].reset_index())
+table = wandb.Table(dataframe=df_wbm[[e_form_col, pred_col]].reset_index())
 
-MAE = (df_wbm[target_col] - df_wbm[pred_col]).abs().mean()
-R2 = r2_score(df_wbm[target_col], df_wbm[pred_col])
+MAE = (df_wbm[e_form_col] - df_wbm[pred_col]).abs().mean()
+R2 = r2_score(df_wbm[e_form_col], df_wbm[pred_col])
 title = f"{model_name} {task_type} {MAE=:.4} {R2=:.4}"
 print(title)
 
-wandb_scatter(table, fields=dict(x=target_col, y=pred_col), title=title)
+wandb_scatter(table, fields=dict(x=e_form_col, y=pred_col), title=title)

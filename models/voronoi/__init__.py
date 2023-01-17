@@ -1,9 +1,11 @@
+"""
+Recreate the featurizer used by Ward et al. in
+https://journals.aps.org/prb/abstract/10.1103/PhysRevB.96.024104
+"""
+
 import matminer.featurizers.composition as fc
 import matminer.featurizers.structure as fs
 from matminer.featurizers.base import MultipleFeaturizer
-
-# Create the featurizer: Ward et al. use a variety of different featurizers
-# https://journals.aps.org/prb/abstract/10.1103/PhysRevB.96.024104
 
 composition_features = [
     # Ward+Wolverton' Magpie https://rdcu.be/c3jug

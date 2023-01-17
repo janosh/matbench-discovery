@@ -70,7 +70,7 @@ def test_load_train_test(
     stdout, stderr = capsys.readouterr()
 
     expected_out = "\n".join(
-        f"Downloading '{name}' from {RAW_REPO_URL}/1.0.0/data/{DATA_FILENAMES[name]}"
+        f"Downloading {name!r} from {RAW_REPO_URL}/1.0.0/data/{DATA_FILENAMES[name]}"
         for name in data_names
     )
     assert expected_out in stdout

@@ -216,6 +216,42 @@ references:
   type: article-journal
   URL: http://arxiv.org/abs/2202.02450
 
+- id: davies_computational_2016
+  abstract: "Forming a four-component compound from the first 103 elements of the periodic table results in more than 1012 combinations. Such a materials space is intractable to high-throughput experiment or first-principle computation. We\_introduce a framework to address this problem and quantify how many materials can exist. We apply principles of valency and electronegativity to filter chemically implausible compositions, which reduces the inorganic quaternary space to 1010 combinations. We demonstrate that estimates of band gaps and absolute electron energies can be made simply on the basis of the chemical composition and apply this to the search for new semiconducting materials to support the photoelectrochemical splitting of water. We show the applicability to predicting crystal structure by analogy with known compounds, including exploration of the phase space for ternary combinations that form a perovskite lattice. Computer screening reproduces known perovskite materials and predicts the feasibility of thousands more. Given the simplicity of the approach, large-scale searches can be performed on a single workstation."
+  author:
+    - family: Davies
+      given: Daniel W.
+    - family: Butler
+      given: Keith T.
+    - family: Jackson
+      given: Adam J.
+    - family: Morris
+      given: Andrew
+    - family: Frost
+      given: Jarvist M.
+    - family: Skelton
+      given: Jonathan M.
+    - family: Walsh
+      given: Aron
+  citation-key: davies_computational_2016
+  container-title: Chem
+  container-title-short: Chem
+  DOI: 10.1016/j.chempr.2016.09.010
+  ISSN: 2451-9294
+  issue: '4'
+  issued:
+    - year: 2016
+      month: 10
+      day: 13
+  language: eng
+  page: 617-627
+  PMCID: PMC5074417
+  PMID: '27790643'
+  source: PubMed
+  title: Computational Screening of All Stoichiometric Inorganic Materials
+  type: article-journal
+  volume: '1'
+
 - id: deng_imagenet_2009
   abstract: >-
     The explosion of image data on the Internet has the potential to foster more
@@ -350,6 +386,62 @@ references:
   type: article-journal
   URL: https://www.science.org/doi/10.1126/sciadv.abn4117
   volume: '8'
+
+- id: hautier_accuracy_2012
+  abstract: >-
+    The evaluation of reaction energies between solids using density functional
+    theory (DFT) is of practical importance in many technological fields and
+    paramount in the study of the phase stability of known and predicted
+    compounds. In this work, we present a comparison between reaction energies
+    provided by experiments and computed by DFT in the generalized gradient
+    approximation (GGA), using a Hubbard U parameter for some transition metal
+    elements (GGA+U). We use a data set of 135 reactions involving the formation
+    of ternary oxides from binary oxides in a broad range of chemistries and
+    crystal structures. We find that the computational errors can be modeled by
+    a normal distribution with a mean close to zero and a standard deviation of
+    24 meV/atom. The significantly smaller error compared to the more commonly
+    reported errors in the formation energies from the elements is related to
+    the larger cancellation of errors in energies when reactions involve
+    chemically similar compounds. This result is of importance for phase diagram
+    computations for which the relevant reaction energies are often not from the
+    elements but from chemically close phases (e.g., ternary oxides versus
+    binary oxides). In addition, we discuss the distribution of computational
+    errors among chemistries and show that the use of a Hubbard U parameter is
+    critical to the accuracy of reaction energies involving transition metals
+    even when no major change in formal oxidation state is occurring.
+  accessed:
+    - year: 2023
+      month: 1
+      day: 17
+  author:
+    - family: Hautier
+      given: Geoffroy
+    - family: Ong
+      given: Shyue Ping
+    - family: Jain
+      given: Anubhav
+    - family: Moore
+      given: Charles J.
+    - family: Ceder
+      given: Gerbrand
+  citation-key: hautier_accuracy_2012
+  container-title: Physical Review B
+  container-title-short: Phys. Rev. B
+  DOI: 10.1103/PhysRevB.85.155208
+  issue: '15'
+  issued:
+    - year: 2012
+      month: 4
+      day: 30
+  page: '155208'
+  publisher: American Physical Society
+  source: APS
+  title: >-
+    Accuracy of density functional theory in predicting formation energies of
+    ternary oxides from binary oxides and its implication on phase stability
+  type: article-journal
+  URL: https://link.aps.org/doi/10.1103/PhysRevB.85.155208
+  volume: '85'
 
 - id: jain_commentary_2013
   abstract: >-
@@ -509,6 +601,57 @@ references:
   type: article-journal
   URL: https://www.nature.com/articles/s41524-020-00481-6
   volume: '7'
+
+- id: ward_general-purpose_2016
+  abstract: >-
+    A very active area of materials research is to devise methods that use
+    machine learning to automatically extract predictive models from existing
+    materials data. While prior examples have demonstrated successful models for
+    some applications, many more applications exist where machine learning can
+    make a strong impact. To enable faster development of machine-learning-based
+    models for such applications, we have created a framework capable of being
+    applied to a broad range of materials data. Our method works by using a
+    chemically diverse list of attributes, which we demonstrate are suitable for
+    describing a wide variety of properties, and a novel method for partitioning
+    the data set into groups of similar materials to boost the predictive
+    accuracy. In this manuscript, we demonstrate how this new method can be used
+    to predict diverse properties of crystalline and amorphous materials, such
+    as band gap energy and glass-forming ability.
+  accessed:
+    - year: 2020
+      month: 7
+      day: 29
+  author:
+    - family: Ward
+      given: Logan
+    - family: Agrawal
+      given: Ankit
+    - family: Choudhary
+      given: Alok
+    - family: Wolverton
+      given: Christopher
+  citation-key: ward_general-purpose_2016
+  container-title: npj Computational Materials
+  DOI: 10.1038/npjcompumats.2016.28
+  ISSN: 2057-3960
+  issue: '1'
+  issued:
+    - year: 2016
+      month: 8
+      day: 26
+  language: en
+  license: 2016 The Author(s)
+  note: 'ZSCC: 0000247'
+  number: '1'
+  page: 1-7
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: >-
+    A general-purpose machine learning framework for predicting properties of
+    inorganic materials
+  type: article-journal
+  URL: https://www.nature.com/articles/npjcompumats201628
+  volume: '2'
 
 - id: ward_including_2017
   abstract: >-

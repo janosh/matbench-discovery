@@ -23,7 +23,7 @@ df_wbm = load_df_wbm_with_preds(models=[model_name]).round(3)
 
 
 # %%
-target_col = "e_form_per_atom_mp2020_corrected"
+e_form_col = "e_form_per_atom_mp2020_corrected"
 e_above_hull_col = "e_above_hull_mp2020_corrected_ppd_mp"
 which_energy: WhichEnergy = "true"
 # std_factor=0,+/-1,+/-2,... changes the criterion for material stability to
@@ -43,7 +43,7 @@ std_total = df_wbm[f"{model_name}_std"]
 e_above_hull_pred = (
     df_wbm[e_above_hull_col]
     + (df_wbm[model_name] + std_factor * std_total)
-    - df_wbm[target_col]
+    - df_wbm[e_form_col]
 )
 
 ax, metrics = hist_classified_stable_vs_hull_dist(

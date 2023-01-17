@@ -101,8 +101,8 @@ for model in (pbar := tqdm(models)):
 
 # %%
 df_wbm: pd.DataFrame = load_df_wbm_with_preds(models=list(models))
-target_col = "e_form_per_atom_mp2020_corrected"
-df_wbm = df_wbm.round(3).query(f"{target_col} < 5")
+e_form_col = "e_form_per_atom_mp2020_corrected"
+df_wbm = df_wbm.round(3).query(f"{e_form_col} < 5")
 
 e_above_hull_col = "e_above_hull_mp2020_corrected_ppd_mp"
 e_above_hull = df_wbm[e_above_hull_col]
@@ -113,7 +113,7 @@ df_metrics = pd.DataFrame(run_times).T
 
 for model in models:
     dct = {}
-    e_above_hull_pred = df_wbm[model] - df_wbm[target_col]
+    e_above_hull_pred = df_wbm[model] - df_wbm[e_form_col]
 
     dct["F1"] = f1_score(e_above_hull < 0, e_above_hull_pred < 0)
     dct["Precision"] = f1_score(e_above_hull < 0, e_above_hull_pred < 0, pos_label=True)
