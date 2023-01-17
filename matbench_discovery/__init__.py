@@ -1,3 +1,5 @@
+"""Global variables used all across the matbench_discovery package."""
+
 from __future__ import annotations
 
 import os

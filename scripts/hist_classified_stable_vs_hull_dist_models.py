@@ -27,7 +27,7 @@ models = sorted(
 )
 df_wbm = load_df_wbm_with_preds(models=models).round(3)
 
-target_col = "e_form_per_atom_mp2020_corrected"
+e_form_col = "e_form_per_atom_mp2020_corrected"
 e_above_hull_col = "e_above_hull_mp2020_corrected_ppd_mp"
 
 
@@ -50,7 +50,7 @@ for idx, model_name in enumerate(models):
     ax, metrics = hist_classified_stable_vs_hull_dist(
         e_above_hull_true=df_wbm[e_above_hull_col],
         e_above_hull_pred=df_wbm[e_above_hull_col]
-        + (df_wbm[model_name] - df_wbm[target_col]),
+        + (df_wbm[model_name] - df_wbm[e_form_col]),
         which_energy=which_energy,
         ax=axs.flat[idx] if backend == "matplotlib" else None,
         backend=backend,

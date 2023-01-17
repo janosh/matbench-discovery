@@ -8,19 +8,20 @@ __date__ = "2022-06-18"
 
 
 # %%
-df_wbm = load_df_wbm_with_preds(models=["Wren", "Wrenformer"]).round(3)
+df_wbm = load_df_wbm_with_preds(models=["Wrenformer"]).round(3)
 
 e_above_hull_col = "e_above_hull_mp2020_corrected_ppd_mp"
-target_col = "e_form_per_atom_mp2020_corrected"
+e_form_col = "e_form_per_atom_mp2020_corrected"
 
 
 # %%
 model_name = "Wrenformer"
 ax = rolling_mae_vs_hull_dist(
     e_above_hull_true=df_wbm[e_above_hull_col],
-    e_above_hull_error=df_wbm[target_col] - df_wbm[model_name],
+    e_above_hull_error=df_wbm[e_form_col] - df_wbm[model_name],
     label=model_name,
     backend=(backend := "plotly"),
+    # template="plotly_white+global",
 )
 
 title = f"{today} {model_name}"

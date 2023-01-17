@@ -11,7 +11,7 @@ __date__ = "2022-06-18"
 df_wbm = load_df_wbm_with_preds(models=["Wren", "Wrenformer"]).round(3)
 
 e_above_hull_col = "e_above_hull_mp2020_corrected_ppd_mp"
-target_col = "e_form_per_atom_mp2020_corrected"
+e_form_col = "e_form_per_atom_mp2020_corrected"
 
 
 # %%
@@ -29,7 +29,7 @@ for idx, marker in enumerate(markers, 1):
 
     rolling_mae_vs_hull_dist(
         e_above_hull_true=df_step[e_above_hull_col],
-        e_above_hull_error=df_step[target_col] - df_step[model_name],
+        e_above_hull_error=df_step[e_form_col] - df_step[model_name],
         ax=ax,
         label=title,
         marker=marker,

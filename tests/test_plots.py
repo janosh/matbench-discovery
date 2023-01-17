@@ -80,13 +80,13 @@ def test_rolling_mae_vs_hull_dist(
     expected_ylabel = "rolling MAE (eV/atom)"
     if backend == "matplotlib":
         assert isinstance(ax, plt.Axes)
-        assert ax.get_ylim() == pytest.approx((0, 0.14))
+        assert ax.get_ylim() == pytest.approx((0, 0.15))
         assert ax.get_ylabel() == expected_ylabel
         assert ax.get_xlabel() == r"$E_\mathrm{above\ hull}$ (eV/atom)"
     elif backend == "plotly":
         assert isinstance(ax, go.Figure)
         assert ax.layout.yaxis.title.text == expected_ylabel
-        assert ax.layout.xaxis.title.text == "E<sub>above hull</sub> (eV/atom)"
+        assert ax.layout.xaxis.title.text == "E<sub>above MP hull</sub> (eV/atom)"
 
 
 @pytest.mark.parametrize("stability_threshold", (0.1, 0.01))
