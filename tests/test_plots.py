@@ -63,24 +63,29 @@ def test_cumulative_precision_recall(
 def test_rolling_mae_vs_hull_dist(
     window: float, bin_width: float, x_lim: tuple[float, float], backend: Backend
 ) -> None:
-    ax = plt.figure().gca()  # new figure ensures test functions use different axes
+    kwargs = dict(window=window, bin_width=bin_width, backend=backend)
+    if backend == "matplotlib":
+        ax = plt.figure().gca()  # new figure ensures test functions use different axes
+        kwargs["ax"] = ax
 
     for model_name in models:
-        ax = rolling_mae_vs_hull_dist(
+        ax, df_err, df_std = rolling_mae_vs_hull_dist(
             e_above_hull_true=df_wbm[model_name],
-            e_above_hull_error=df_wbm[e_above_hull_col],
-            label=model_name,
-            ax=ax,
+            e_above_hull_errors=df_wbm[models],
             x_lim=x_lim,
-            window=window,
-            bin_width=bin_width,
-            backend=backend,
+            **kwargs,  # type: ignore[arg-type]
         )
+
+    assert isinstance(df_err, pd.DataFrame)
+    assert isinstance(df_std, pd.DataFrame)
+    assert (
+        list(df_err) == list(df_std) == models
+    ), f"expected {list(df_err)} == {list(df_std)} == {models}"
 
     expected_ylabel = "rolling MAE (eV/atom)"
     if backend == "matplotlib":
         assert isinstance(ax, plt.Axes)
-        assert ax.get_ylim() == pytest.approx((0, 0.15))
+        assert ax.get_ylim()[0] == 0
         assert ax.get_ylabel() == expected_ylabel
         assert ax.get_xlabel() == r"$E_\mathrm{above\ hull}$ (eV/atom)"
     elif backend == "plotly":
