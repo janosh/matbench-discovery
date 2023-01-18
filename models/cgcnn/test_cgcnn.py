@@ -70,12 +70,16 @@ assert input_col in df, f"{input_col=} not in {list(df)}"
 df[input_col] = [Structure.from_dict(x) for x in tqdm(df[input_col], disable=None)]
 
 filters = {
-    "created_at": {"$gt": "2022-12-03", "$lt": "2022-12-04"},
-    "display_name": {"$regex": "^train-cgcnn-robust-augment=3-"},
+    # "display_name": {"$regex": "^train-cgcnn-robust-augment=3-"},
+    # "created_at": {"$gt": "2022-12-03", "$lt": "2022-12-04"},
+    "display_name": {"$regex": "^train-cgcnn-robust-augment=0-"},
+    "created_at": {"$gt": "2023-01-09", "$lt": "2023-01-10"},
 }
 runs = wandb.Api().runs(WANDB_PATH, filters=filters)
+assert (
+    len(runs) == 10
+), f"Expected 10 runs, got {len(runs)} filtering {WANDB_PATH=} with {filters=}"
 
-assert len(runs) == 10, f"Expected 10 runs, got {len(runs)} for {filters=}"
 for idx, run in enumerate(runs):
     for key, val in run.config.items():
         if val == runs[0].config[key] or key.startswith(("slurm_", "timestamp")):
@@ -96,6 +100,7 @@ run_params = dict(
     input_col=input_col,
     wandb_run_filters=filters,
     slurm_vars=slurm_vars,
+    training_run_ids=[run.id for run in runs],
 )
 
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)

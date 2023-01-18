@@ -28,7 +28,7 @@ epochs = 300
 target_col = "formation_energy_per_atom"
 input_col = "structure"
 id_col = "material_id"
-augment = 1  # 0 for no augmentation, n>1 means train on n perturbations of each crystal
+augment = 0  # 0 for no augmentation, n>1 means train on n perturbations of each crystal
 # in the training set all assigned the same original target energy
 job_name = f"train-cgcnn-robust-{augment=}{'-debug' if DEBUG else ''}"
 print(f"{job_name=}")
