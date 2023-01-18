@@ -254,14 +254,14 @@ def hist_classified_stable_vs_hull_dist(
 
 def rolling_mae_vs_hull_dist(
     e_above_hull_true: pd.Series,
-    e_above_hull_error: pd.Series,
+    e_above_hull_errors: pd.DataFrame | dict[str, pd.Series],
     window: float = 0.02,
     bin_width: float = 0.001,
     x_lim: tuple[float, float] = (-0.2, 0.2),
-    y_lim: tuple[float, float] = (0, 0.15),
-    ax: plt.Axes = None,
+    y_lim: tuple[float, float] = (0, 0.2),
     backend: Backend = "plotly",
     y_label: str = "rolling MAE (eV/atom)",
+    just_plot_lines: bool = False,
     **kwargs: Any,
 ) -> plt.Axes | go.Figure:
     """Rolling mean absolute error as the energy to the convex hull is varied. A scale
@@ -274,61 +274,75 @@ def rolling_mae_vs_hull_dist(
     Args:
         e_above_hull_true (pd.Series): Distance to convex hull according to DFT
             ground truth (in eV / atom).
-        e_above_hull_error (pd.Series): Error in model-predicted distance to convex
-            hull, i.e. actual hull distance minus predicted hull distance (in eV / atom).
-        window (float, optional): Rolling MAE averaging window. Defaults to 0.02 (20 meV/atom)
-        bin_width (float, optional): Density of line points (more points the smaller).
+        e_above_hull_errors (pd.DataFrame | dict[str, pd.Series]): Error in
+            model-predicted distance to convex hull, i.e. actual hull distance minus
+            predicted hull distance (in eV / atom).
+        window (float, optional): Rolling MAE averaging window. Defaults to 0.02 (20
+        meV/atom) bin_width (float, optional): Density of line points (more points the
+        smaller).
             Defaults to 0.002.
         x_lim (tuple[float, float], optional): x-axis range. Defaults to (-0.2, 0.3).
         y_lim (tuple[float, float], optional): y-axis range. Defaults to (0.0, 0.14).
-        ax (plt.Axes, optional): matplotlib Axes object. Defaults to None.
         backend ('matplotlib' | 'plotly'], optional): Which plotting engine to use.
             Changes the return type. Defaults to 'plotly'.
         y_label (str, optional): y-axis label. Defaults to "rolling MAE (eV/atom)".
+        just_plot_line (bool, optional): If True, plot only the rolling MAE, no shapes
+            and annotations. Also won't plot the standard error in the mean. Defaults
+            to False.
 
     Returns:
-        plt.Axes | go.Figure: matplotlib Axes or plotly Figure depending on backend.
+        tuple[plt.Axes | go.Figure, pd.DataFrame, pd.DataFrame]: matplotlib Axes or
+        plotly
+            Figure depending on backend, followed by two dataframes containing the
+            rolling error for each column in e_above_hull_errors and the rolling
+            standard error in the mean.
     """
     bins = np.arange(*x_lim, bin_width)
+    models = list(e_above_hull_errors)
 
-    rolling_maes = np.zeros_like(bins)
-    rolling_stds = np.zeros_like(bins)
+    df_rolling_err = pd.DataFrame(columns=models, index=bins)
+    df_err_std = df_rolling_err.copy()
 
-    for idx, bin_center in enumerate(bins):
-        low = bin_center - window
-        high = bin_center + window
+    for model in models:
+        for idx, bin_center in enumerate(bins):
+            low = bin_center - window
+            high = bin_center + window
 
-        mask = (e_above_hull_true <= high) & (e_above_hull_true > low)
-        rolling_maes[idx] = e_above_hull_error.loc[mask].abs().mean()
-        rolling_stds[idx] = scipy.stats.sem(e_above_hull_error.loc[mask].abs())
+            mask = (e_above_hull_true <= high) & (e_above_hull_true > low)
+
+            each_mae = e_above_hull_errors[model].loc[mask].abs().mean()
+            df_rolling_err[model].iloc[idx] = each_mae
+
+            # drop NaNs to avoid error, scipy doesn't ignore NaNs
+            each_std = scipy.stats.sem(
+                e_above_hull_errors[model].loc[mask].dropna().abs()
+            )
+            df_err_std[model].iloc[idx] = each_std
+
+    # increase line width
+    ax = df_rolling_err.plot(backend=backend, **kwargs)
+
+    if just_plot_lines:
+        # return earlier if all plot objects besides the line were already drawn by a
+        # previous call
+        return ax, df_rolling_err, df_err_std
 
     # DFT accuracy at 25 meV/atom for e_above_hull calculations of chemically similar
     # systems which is lower than formation energy error due to systematic error
     # cancellation among similar chemistries, supporting ref:
-    # https://journals.aps.org/prb/abstract/10.1103/PhysRevB.85.155208
+    href = "https://doi.org/10.1103/PhysRevB.85.155208"
     dft_acc = 0.025
-    # used by plotly branch of this function, unrecognized by matplotlib
-    fig = kwargs.pop("fig", None)
 
     if backend == "matplotlib":
-        ax = ax or plt.gca()
-        is_fresh_ax = len(ax.lines) == 0
-        kwargs = dict(linewidth=3) | kwargs
-        ax.plot(bins, rolling_maes, **kwargs)
-
-        ax.fill_between(
-            bins, rolling_maes + rolling_stds, rolling_maes - rolling_stds, alpha=0.3
-        )
-        # alternative implementation using pandas.rolling(). drawback: window size can only
-        # be set as number of observations, not fixed-size energy above hull interval.
-        # e_above_hull_error.index = e_above_hull_true  # warning: in-place change
-        # e_above_hull_error.sort_index().abs().rolling(window=8000).mean().plot(
-        #     ax=ax, **kwargs
-        # )
-        if not is_fresh_ax:
-            # return earlier if all plot objects besides the line were already drawn by a
-            # previous call
-            return ax
+        # assert df_rolling_err.isna().sum().sum() == 0, "NaNs in df_rolling_err"
+        # assert df_err_std.isna().sum().sum() == 0, "NaNs in df_err_std"
+        # for model in df_rolling_err:
+        #     ax.fill_between(
+        #         bins,
+        #         df_rolling_err[model] + df_err_std[model],
+        #         df_rolling_err[model] - df_err_std[model],
+        #         alpha=0.3,
+        #     )
 
         scale_bar = AnchoredSizeBar(
             ax.transData,
@@ -376,34 +390,22 @@ def rolling_mae_vs_hull_dist(
         ax.set(xlabel=r"$E_\mathrm{above\ hull}$ (eV/atom)", ylabel=y_label)
         ax.set(xlim=x_lim, ylim=y_lim)
     elif backend == "plotly":
-        title = kwargs.pop("label", None)
-        ax = px.line(
-            x=bins,
-            y=rolling_maes,
-            # error_y=rolling_stds,
-            markers=False,
-            title=title,
-            **kwargs,
-        )
-        line_color = ax.data[0].line.color
-        ax_std = go.Scatter(
-            x=list(bins) + list(bins)[::-1],  # bins, then bins reversed
-            y=list(rolling_maes + 2 * rolling_stds)
-            + list(rolling_maes - 2 * rolling_stds)[::-1],  # upper, then lower reversed
-            fill="toself",
-            line_color="white",
-            fillcolor=line_color,
-            opacity=0.3,
-            hoverinfo="skip",
-            showlegend=False,
-        )
-        ax.add_trace(ax_std)
-
-        if isinstance(fig, go.Figure):
-            # if passed existing plotly figure, add traces to it
-            # return without changing layout and adding annotations
-            fig.add_traces(ax.data)
-            return fig
+        for idx, model in enumerate(df_rolling_err):
+            ax.data[idx].legendgroup = model
+            ax.add_scatter(
+                x=list(bins) + list(bins)[::-1],  # bins, then bins reversed
+                y=list(df_rolling_err[model] + 3 * df_err_std[model])
+                + list(df_rolling_err[model] - 3 * df_err_std[model])[
+                    ::-1
+                ],  # upper, then lower reversed
+                mode="lines",
+                line=dict(color="white", width=0),
+                fill="toself",
+                legendgroup=model,
+                fillcolor=ax.data[0].line.color,
+                opacity=0.3,
+                showlegend=False,
+            )
 
         legend = dict(title=None, xanchor="right", x=1, yanchor="bottom", y=0)
         ax.update_layout(
@@ -415,32 +417,30 @@ def rolling_mae_vs_hull_dist(
         )
         ax.update_xaxes(range=x_lim)
         ax.update_yaxes(range=y_lim)
-        scatter_kwds = dict(fill="toself", opacity=0.5)
-        err_gt_each_region = go.Scatter(
+        scatter_kwds = dict(fill="toself", opacity=0.3)
+        ax.add_scatter(
             x=(-1, -dft_acc, dft_acc, 1),
             y=(1, dft_acc, dft_acc, 1),
             name="MAE > |E<sub>above hull</sub>|",
             # fillcolor="yellow",
             **scatter_kwds,
         )
-        ml_err_lt_dft_err_region = go.Scatter(
+        ax.add_scatter(
             x=(-dft_acc, dft_acc, 0, -dft_acc),
             y=(dft_acc, dft_acc, 0, dft_acc),
             name="MAE < |DFT error|",
             # fillcolor="red",
             **scatter_kwds,
         )
-        ax.add_traces([err_gt_each_region, ml_err_lt_dft_err_region])
         ax.add_annotation(
-            x=dft_acc,
+            x=-dft_acc,
             y=dft_acc,
-            text="<a href='https://doi.org/10.1103/PhysRevB.85.155208'>Corrected GGA DFT "
-            "Accuracy</a>",
+            text=f"<a {href=}>Corrected GGA Accuracy</a>",
             showarrow=True,
-            xshift=10,
-            arrowhead=1,
-            ax=4 * dft_acc,
-            ay=dft_acc,
+            xshift=-10,
+            arrowhead=2,
+            ax=-4 * dft_acc,
+            ay=2 * dft_acc,
             axref="x",
             ayref="y",
         )
@@ -464,10 +464,9 @@ def rolling_mae_vs_hull_dist(
             y0=y0,
             x1=x0 + window,
             y1=y0 + window / 5,
-            fillcolor=line_color,
         )
 
-    return ax
+    return ax, df_rolling_err, df_err_std
 
 
 def cumulative_precision_recall(
