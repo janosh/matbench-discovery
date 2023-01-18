@@ -15,7 +15,7 @@ DEBUG = "DEBUG" in os.environ or (
 # directory to store model checkpoints downloaded from wandb cloud storage
 CHECKPOINT_DIR = f"{ROOT}/wandb/checkpoints"
 # wandb <entity>/<project name> to record new runs to
-WANDB_PATH = "materialsproject/matbench-discovery"
+WANDB_PATH = "janosh/matbench-discovery"
 
 timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
 today = timestamp.split("@")[0]

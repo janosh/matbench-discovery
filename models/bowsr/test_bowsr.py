@@ -32,10 +32,10 @@ module_dir = os.path.dirname(__file__)
 #     Some of your processes may have been killed by the cgroup out-of-memory handler.
 slurm_mem_per_node = 12000
 # set large job array size for fast testing/debugging
-slurm_array_task_count = 1000
+slurm_array_task_count = 500
 # see https://stackoverflow.com/a/55431306 for how to change array throttling
 # post submission
-slurm_max_parallel = 50
+slurm_max_parallel = 100
 energy_model = "megnet"
 job_name = f"bowsr-{energy_model}-wbm-{task_type}{'-debug' if DEBUG else ''}"
 out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
@@ -137,7 +137,9 @@ for material_id, structure in tqdm(
         structure_bowsr, energy_bowsr = optimizer.get_optimized_structure_and_energy()
 
         results = {
-            f"e_form_per_atom_bowsr_{energy_model}": model.predict_energy(structure),
+            f"e_form_per_atom_bowsr_{energy_model}": model.predict_energy(
+                structure_bowsr
+            ),
             "structure_bowsr": structure_bowsr,
             "energy_bowsr": energy_bowsr,
         }

@@ -35,7 +35,7 @@ export default {
 
   preprocess: [
     {
-      // preprocess markdown citations @auth_1stwordtitle_yyyy into superscript
+      // preprocess markdown citations @auth_1st-word-title_yyyy into superscript
       // links to bibliography items, href must match References.svelte
       markup: (file) => {
         if (file.filename.endsWith(`paper/+page.svx`)) {

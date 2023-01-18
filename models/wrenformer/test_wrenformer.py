@@ -56,8 +56,10 @@ filters = {
     "display_name": {"$regex": "wrenformer-robust"},
 }
 runs = wandb.Api().runs(WANDB_PATH, filters=filters)
+assert (
+    len(runs) == 10
+), f"Expected 10 runs, got {len(runs)} filtering {WANDB_PATH=} with {filters=}"
 
-assert len(runs) == 10, f"Expected 10 runs, got {len(runs)} for {filters=}"
 for idx, run in enumerate(runs):
     for key, val in run.config.items():
         if val == runs[0].config[key] or key.startswith(("slurm_", "timestamp")):
@@ -78,6 +80,7 @@ run_params = dict(
     input_col=input_col,
     wandb_run_filters=filters,
     slurm_vars=slurm_vars,
+    training_run_ids=[run.id for run in runs],
 )
 
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)

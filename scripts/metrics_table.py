@@ -27,7 +27,7 @@ models: dict[str, dict[str, Any]] = {
         ),
     ),
     "Voronoi RF": dict(
-        n_runs=70,
+        n_runs=68,
         filters=dict(
             created_at={"$gt": "2022-11-17", "$lt": "2022-11-28"},
             display_name={"$regex": "voronoi-features"},
@@ -83,12 +83,20 @@ for model in (pbar := tqdm(models)):
 
     assert len(runs) == n_runs, f"found {len(runs)=} for {model}, expected {n_runs}"
 
-    run_time = sum(run.summary.get("_wandb", {}).get("runtime", 0) for run in runs)
+    each_run_time = [run.summary.get("_wandb", {}).get("runtime", 0) for run in runs]
+
+    run_time_total = sum(each_run_time)
     # NOTE we assume all jobs have the same metadata here
     metadata = requests.get(runs[0].file("wandb-metadata.json").url).json()
 
     n_gpu, n_cpu = metadata.get("gpu_count", 0), metadata.get("cpu_count", 0)
-    run_times[model] = {"Run time": run_time, "Hardware": f"GPU: {n_gpu}, CPU: {n_cpu}"}
+    run_times[model] = {
+        "Run time": run_time_total,
+        "Hardware": f"GPU: {n_gpu}, CPU: {n_cpu}",
+    }
+
+
+ax = (pd.Series(each_run_time) / 3600).hist(bins=100)
 
 
 # on 2022-11-28:

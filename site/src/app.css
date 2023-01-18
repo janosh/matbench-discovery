@@ -30,6 +30,7 @@ body > div {
 main {
   padding: calc(1ex + 2vw);
   flex: 1;
+  container-type: inline-size;
 }
 button {
   color: var(--text-color);
