@@ -6,6 +6,7 @@ import katex from 'rehype-katex-svelte'
 import heading_slugs from 'rehype-slug'
 import math from 'remark-math'
 import preprocess from 'svelte-preprocess'
+import assets from 'svelte-preprocess-import-assets'
 
 const rehypePlugins = [
   katex,
@@ -35,13 +36,14 @@ export default {
 
   preprocess: [
     {
-      // preprocess markdown citations @auth_1st-word-title_yyyy into superscript
-      // links to bibliography items, href must match References.svelte
       markup: (file) => {
         if (file.filename.endsWith(`paper/+page.svx`)) {
+          // preprocess markdown citations @auth_1st-word-title_yyyy into superscript
+          // links to bibliography items, href must match id format in References.svelte
           const code = file.content.replace(
             /@((.+?)_.+?_(\d{4}))/g,
-            `<sup><a href="#$1">$2 $3</a></sup>`
+            (_full_str, bib_id, author, year) =>
+              `<sup><a href="#${bib_id}">${author} ${year}</a></sup>`
           )
           return { code }
         }
@@ -57,6 +59,7 @@ export default {
       remarkPlugins: [math],
       extensions: [`.svx`, `.md`],
     }),
+    assets(),
   ],
 
   kit: {
@@ -65,6 +68,7 @@ export default {
     alias: {
       $site: `.`,
       $root: `..`,
+      $static: `./static`,
       $figs: `./static/figs`,
     },
   },

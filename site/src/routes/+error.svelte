@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/stores'
+  import { homepage, name } from '$site/package.json'
   import Icon from '@iconify/svelte'
-  import { homepage, name } from '../../package.json'
 
   let online: boolean
 </script>
@@ -29,7 +29,7 @@
 
   <p>
     Back to <a href=".">
-      <img src="/favicon.svg" alt={name} height="30" />
+      <img src="$static/favicon.svg" alt={name} height="30" />
       landing page
     </a>.
   </p>
