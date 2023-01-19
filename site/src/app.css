@@ -150,3 +150,7 @@ caption {
   display: block;
   margin: 1em auto 2em;
 }
+
+.math {
+  font-size: 10pt;
+}
