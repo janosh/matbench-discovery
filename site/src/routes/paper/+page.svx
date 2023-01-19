@@ -52,7 +52,7 @@ geometry: margin=3cm # https://stackoverflow.com/a/13516042
   import MetricsTable from '$figs/2022-11-28-metrics-table.svelte'
   import { references } from './references.yaml'
   import { References } from '$lib'
-  import './heading-number.css' // uncomment to remove heading numbers
+  import './heading-number.css' // CSS to auto-number headings
 </script>
 
 # {title}<br><small>{subtitle}</small>
@@ -180,13 +180,15 @@ Our benchmark is designed to make [adding future models easy](/how-to-contribute
   <MetricsTable />
 </div>
 
+![Scatter plots for each model's energy above hull predictions vs DFT ground truth](./figs/2023-01-18-e-form-scatter-models.png)
+
 ## Analysis
 
 ## Conclusion
 
 ## Acknowledgements
 
-JR acknowledges support from the German Academic Scholarship Foundation (Studienstiftung) and gracious hosting as a visiting affiliate in the group of KP.
+JR acknowledges support from the German Academic Scholarship Foundation (Studienstiftung) and gracious hosting as a visiting affiliate in the groups of [KP](https://perssongroup.lbl.gov/people) and [AJ](https://hackingmaterials.lbl.gov).
 
 ## References
 
