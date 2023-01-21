@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 from pymatviz.utils import add_identity_line, save_fig
 from sklearn.metrics import r2_score
 
-from matbench_discovery import FIGS, PAPER, today
+from matbench_discovery import FIGS, STATIC, today
 from matbench_discovery.data import PRED_FILENAMES, load_df_wbm_with_preds
 from matbench_discovery.energy import classify_stable
 from matbench_discovery.plots import px
@@ -46,9 +46,11 @@ df_melt[e_above_hull_preds] = (
 
 # %%
 def _metric_str(model_name: str) -> str:
-    MAE = (df_wbm[e_form_col] - df_wbm[model_name]).abs().mean()
-    R2 = r2_score(*df_wbm[[e_form_col, model_name]].dropna().to_numpy().T)
-    return f"{model_name} · {MAE=:.2} · R<sup>2</sup>={R2:.2}"
+    model_pred = df_wbm[e_above_hull_col] - (df_wbm[e_form_col] - df_wbm[model_name])
+    MAE = (df_wbm[e_above_hull_col] - model_pred).abs().mean()
+    isna = df_wbm[e_above_hull_col].isna() | model_pred.isna()
+    R2 = r2_score(df_wbm[e_above_hull_col][~isna], model_pred[~isna])
+    return f"{model_name} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
 
 
 def _add_metrics_to_legend(fig: go.Figure) -> None:
@@ -128,29 +130,27 @@ fig = px.scatter(
 
 # iterate over subplots and set new title
 for idx, model in enumerate(models, 1):
-
-    # add MAE and R2 to subplot title
-    MAE = (df_wbm[e_form_col] - df_wbm[model]).abs().mean()
-    R2 = r2_score(*df_wbm[[e_form_col, model]].dropna().to_numpy().T)
     # find index of annotation belonging to model
     anno_idx = [a.text for a in fig.layout.annotations].index(f"Model={model}")
     assert anno_idx >= 0, f"could not find annotation for {model}"
-    # set new title
+
+    # set new subplot titles (adding MAE and R2)
     fig.layout.annotations[anno_idx].text = _metric_str(model)
+
     # remove x and y axis titles if not on center row or center column
     if idx != 2:
         fig.layout[f"xaxis{idx}"].title.text = ""
     if idx > 1:
         fig.layout[f"yaxis{idx}"].title.text = ""
+
     # add vertical and horizontal lines at 0
     fig.add_vline(x=0, line=dict(width=1, dash="dash", color="gray"))
     fig.add_hline(y=0, line=dict(width=1, dash="dash", color="gray"))
 
-id_line = add_identity_line(fig, ret_shape=True)
 fig.update_layout(showlegend=False)
 fig.update_xaxes(nticks=5)
 fig.update_yaxes(nticks=5)
 
 fig.show()
-img_path = f"{PAPER}/{today}-e-form-scatter-models.png"
-save_fig(fig, img_path, scale=4, width=1000, height=500)
+img_path = f"{STATIC}/{today}-each-scatter-models.png"
+# save_fig(fig, img_path, scale=4, width=1000, height=500)

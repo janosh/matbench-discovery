@@ -29,7 +29,6 @@ task_type = "IS2RE"  # "RS2RE"
 module_dir = os.path.dirname(__file__)
 # set large job array size for fast testing/debugging
 slurm_array_task_count = 100
-slurm_mem_per_node = 12000
 job_name = f"m3gnet-wbm-{task_type}{'-debug' if DEBUG else ''}"
 out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
@@ -40,7 +39,7 @@ slurm_vars = slurm_submit(
     account="LEE-SL3-CPU",
     time="3:0:0",
     array=f"1-{slurm_array_task_count}",
-    slurm_flags=("--mem", str(slurm_mem_per_node)),
+    slurm_flags=("--mem", str(12_000)),
     # TF_CPP_MIN_LOG_LEVEL=2 means INFO and WARNING logs are not printed
     # https://stackoverflow.com/a/40982782
     pre_cmd="TF_CPP_MIN_LOG_LEVEL=2",

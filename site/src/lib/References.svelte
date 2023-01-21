@@ -5,7 +5,7 @@
 </script>
 
 <ol>
-  {#each references as { title, id, author, DOI, URL, issued }, idx}
+  {#each references as { title, id, author, DOI, URL, issued }}
     <li>
       <strong {id}>{title}</strong>
       <p>

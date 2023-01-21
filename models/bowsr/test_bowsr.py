@@ -28,9 +28,6 @@ https://github.com/materialsvirtuallab/maml
 
 task_type = "IS2RE"  # "RS2RE"
 module_dir = os.path.dirname(__file__)
-# --mem 12000 avoids slurmstepd: error: Detected 1 oom-kill event(s)
-#     Some of your processes may have been killed by the cgroup out-of-memory handler.
-slurm_mem_per_node = 12000
 # set large job array size for fast testing/debugging
 slurm_array_task_count = 500
 # see https://stackoverflow.com/a/55431306 for how to change array throttling
@@ -45,12 +42,14 @@ data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
 slurm_vars = slurm_submit(
     job_name=job_name,
     out_dir=out_dir,
-    partition="icelake-himem",
+    partition="skylake",
     account="LEE-SL3-CPU",
     time="12:0:0",
     # --time 2h is probably enough but best be safe.
     array=f"1-{slurm_array_task_count}%{slurm_max_parallel}",
-    slurm_flags=("--mem", str(slurm_mem_per_node)),
+    # --mem 12000 avoids slurmstepd: error: Detected 1 oom-kill event(s)
+    #     Some of your processes may have been killed by the cgroup out-of-memory handler.
+    slurm_flags=("--mem", str(12_000)),
     # TF_CPP_MIN_LOG_LEVEL=2 means INFO and WARNING logs are not printed
     # https://stackoverflow.com/a/40982782
     pre_cmd="TF_CPP_MIN_LOG_LEVEL=2",
@@ -141,7 +140,7 @@ for material_id, structure in tqdm(
                 structure_bowsr
             ),
             "structure_bowsr": structure_bowsr,
-            "energy_bowsr": energy_bowsr,
+            f"energy_bowsr_{energy_model}": energy_bowsr,
         }
 
         relax_results[material_id] = results

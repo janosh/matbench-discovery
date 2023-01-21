@@ -61,7 +61,7 @@ global_layout = dict(
     margin=dict(l=30, r=20, t=60, b=20),
     paper_bgcolor="rgba(0,0,0,0)",
     # plot_bgcolor="rgba(0,0,0,0)",
-    font_size=15,
+    font_size=13,
 )
 pio.templates["global"] = dict(layout=global_layout)
 pio.templates.default = "plotly_dark+global"
@@ -181,7 +181,7 @@ def hist_classified_stable_vs_hull_dist(
             # add moving average of the accuracy computed within given window
             # as a function of e_above_hull shown as blue line (right axis)
             ax_acc = ax.twinx()
-            ax_acc.set_ylabel("Accuracy", color="darkblue")
+            ax_acc.set_ylabel("Rolling Accuracy", color="darkblue")
             ax_acc.tick_params(labelcolor="darkblue")
             ax_acc.set(ylim=(0, 1))
 
