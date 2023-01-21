@@ -65,7 +65,7 @@ assert list(df_wbm) == [
 1. `bandgap_pbe`: PBE-level DFT band gap from [WBM paper]
 1. `uncorrected_energy_from_cse`: Should be the same as `uncorrected_energy`. There are 2 cases where the absolute difference reported in the summary file and in the computed structure entries exceeds 0.1 eV (`wbm-2-3218`, `wbm-1-56320`) which we attribute to rounding errors.
 1. `e_form_per_atom_mp2020_corrected`: Matbench Discovery takes these as ground truth for the formation energy. Includes MP2020 energy corrections (latest correction scheme at time of release).
-1. `e_above_hull_mp2020_corrected_ppd_mp`: Energy above hull distances in eV/atom after applying the MP2020 correction scheme and with respect to the Materials Project convex hull. Matbench Discovery takes these as ground truth for material stability. Any value above 0 is assumed to be an unstable/metastable material.
+1. `e_above_hull_mp2020_corrected_ppd_mp`: Energy above hull distances in eV/atom after applying the MP2020 correction scheme. The convex hull in question is the one spanned by all ~145k Materials Project `ComputedStructureEntries`. Matbench Discovery takes these as ground truth for material stability. Any value above 0 is assumed to be an unstable/metastable material.
 <!-- TODO document remaining columns, or maybe drop them from df -->
 
 ## 📥 &thinsp; Direct Download
@@ -86,9 +86,9 @@ You can also download the data files directly from GitHub:
 
 To deploy a new model on this benchmark and add it to our leaderboard, please create a pull request to the `main` branch of <https://github.com/janosh/matbench-discovery> that includes at least these 3 required files:
 
-1. `<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz`: Your model's energy predictions for all ~250k WBM compounds as compressed JSON or CSV. Recommended way to create this file is with `pandas.DataFrame.to_{json|csv}('<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz')`. JSON is preferred over CSV if your model not only predicts energies (floats) but also Python objects like e.g. pseudo-relaxed structures (see the M3GNet and BOWSR test scripts).
-1. `test_<model_name>.(py|ipynb)`: The Python script or Jupyter notebook used to generate the energy predictions. Ideally, this file should have comments explaining at a high level what the code is doing and how the model works so others can understand and reproduce your results. If the model deployed on this benchmark was trained specifically for this purpose (i.e. if you wrote any training/fine-tuning code while preparing your PR), please also include it as `train_<model_name>.(py|ipynb)`.
-1. `metadata.yml`: A file to record all relevant metadata your algorithm like model name and version, authors, package requirements, relevant citations/links to publications, notes, etc. Here's a template:
+1. `<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz`: Your model's energy predictions for all ~250k WBM compounds as compressed JSON or CSV. The recommended way to create this file is with `pandas.DataFrame.to_{json|csv}('<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz')`. JSON is preferred over CSV if your model not only predicts energies (floats) but also Python objects like e.g. pseudo-relaxed structures (see the M3GNet and BOWSR test scripts).
+1. `test_<model_name>.(py|ipynb)`: The Python script or Jupyter notebook that generated the energy predictions. Ideally, this file should have comments explaining at a high level what the code is doing and how the model works so others can understand and reproduce your results. If the model deployed on this benchmark was trained specifically for this purpose (i.e. if you wrote any training/fine-tuning code while preparing your PR), please also include it as `train_<model_name>.(py|ipynb)`.
+1. `metadata.yml`: A file to record all relevant metadata of your algorithm like model name and version, authors, package requirements, relevant citations/links to publications, notes, etc. Here's a template:
 
    ```yml
    # metadata.yml template
@@ -124,7 +124,7 @@ To deploy a new model on this benchmark and add it to our leaderboard, please cr
 
    Arbitrary other keys can be added as needed.
 
-Please see any of the subdirectories in `models`/`](<https://github.com/janosh/matbench-discovery/tree/main/models>) for example submissions. More detailed step-by-step instructions below:
+Please see any of the subdirectories in `models`/`](<https://github.com/janosh/matbench-discovery/tree/main/models>) for example submissions. More detailed step-by-step instructions below.
 
 ### Step 1: Clone the repo
 

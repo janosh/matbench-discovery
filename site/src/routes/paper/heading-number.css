@@ -1,4 +1,4 @@
-/*number headings*/
+/* number headings, import file to apply */
 main > h2 {
   counter-increment: h2;
   counter-reset: h3, h4;

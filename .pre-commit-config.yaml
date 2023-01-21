@@ -72,7 +72,7 @@ repos:
           - prettier
           - prettier-plugin-svelte
           - svelte
-        exclude: ^(site/static/.+\.svelte|data/wbm/20.+\..+|site/src/routes/.+\.(yml|yaml|json))$
+        exclude: ^(site/src/figs/.+\.svelte|data/wbm/20.+\..+|site/src/routes/.+\.(yml|yaml|json))$
 
   - repo: https://github.com/pre-commit/mirrors-eslint
     rev: v8.31.0

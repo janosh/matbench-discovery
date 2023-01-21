@@ -33,7 +33,7 @@ setup(
     ],
     extras_require={
         "test": ["pytest", "pytest-cov", "pytest-markdown-docs"],
-        "running-models": ["m3gnet", "aviary", "maml", "megnet", "m3gnet-dgl"],
+        "running-models": ["aviary", "m3gnet", "maml", "megnet"],
     },
     project_urls={
         "Docs": "https://matbench-discovery.janosh.dev",
