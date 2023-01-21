@@ -154,3 +154,16 @@ caption {
 .math {
   font-size: 10pt;
 }
+
+@keyframes highlight-scroll-target {
+  0% {
+    color: orange;
+  }
+  90% {
+    color: orange;
+  }
+  /* revert to initial color */
+}
+:target {
+  animation: highlight-scroll-target 3s;
+}

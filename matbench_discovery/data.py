@@ -224,19 +224,24 @@ def load_df_wbm_with_preds(
         model_key = model_name.lower().replace(" ", "_")
         if f"e_form_per_atom_{model_key}" in df:
             df_out[model_name] = df[f"e_form_per_atom_{model_key}"]
+
         elif len(pred_cols := df.filter(like="_pred_ens").columns) > 0:
             assert len(pred_cols) == 1
             df_out[model_name] = df[pred_cols[0]]
             if len(std_cols := df.filter(like="_std_ens").columns) > 0:
                 df_out[f"{model_name}_std"] = df[std_cols[0]]
+
         elif len(pred_cols := df.filter(like=r"_pred_").columns) > 1:
             # make sure we average the expected number of ensemble member predictions
             assert len(pred_cols) == 10, f"{len(pred_cols) = }, expected 10"
             df_out[model_name] = df[pred_cols].mean(axis=1)
+
         elif "e_form_per_atom_voronoi_rf" in df:  # new voronoi
             df_out[model_name] = df.e_form_per_atom_voronoi_rf
+
         elif "e_form_pred" in df:  # old voronoi
             df_out[model_name] = df.e_form_pred
+
         else:
             raise ValueError(
                 f"No pred col for {model_name=}, available cols={list(df)}"

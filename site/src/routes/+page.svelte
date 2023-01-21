@@ -1,5 +1,5 @@
 <script lang="ts">
-  import CumulativeMetricsPlot from '$figs/2022-12-26-cumulative-clf-metrics.svelte'
+  import CumulativeMetricsPlot from '$figs/2023-01-19-cumulative-clf-metrics.svelte'
   import Readme from '$root/readme.md'
 </script>
 

@@ -23,9 +23,9 @@ The full set of processing steps used to curate the WBM test set from the raw da
 - remove 6 pathological structures (with 0 volume)
 - remove formation energy outliers below -5 and above 5 eV/atom (502 and 22 crystals respectively out of 257,487 total, including an anomaly of 500 structures at exactly -10 eV/atom)
 
-  <caption>WBM Formation energy distribution. 524 materials outside green dashed lines were discarded.</caption>
+  <caption>WBM Formation energy distribution. 524 materials outside green dashed lines were discarded.<br />(zoom out on this plot to see discarded samples)</caption>
   <slot name="hist-e-form-per-atom">
-    <img src="./2022-12-07-hist-e-form-per-atom.svg" alt="WBM formation energy histogram indicating outlier cutoffs">
+    <img src="./figs/2022-12-07-hist-e-form-per-atom.svg" alt="WBM formation energy histogram indicating outlier cutoffs">
   </slot>
 
 - apply the [`MaterialsProject2020Compatibility`](https://pymatgen.org/pymatgen.entries.compatibility.html#pymatgen.entries.compatibility.MaterialsProject2020Compatibility) energy correction scheme to the formation energies
@@ -75,13 +75,13 @@ materialscloud:2021.68 includes a readme file with a description of the dataset,
 ## 📊 &thinsp; Plots
 
 <slot name="wbm-elements-heatmap">
-  <img src="./2023-01-08-wbm-elements.svg" alt="Periodic table log heatmap of WBM elements">
+  <img src="./figs/2023-01-08-wbm-elements.svg" alt="Periodic table log heatmap of WBM elements">
 </slot>
-<caption>Test set element counts consisting of 256,963 WBM <code>ComputedStructureEntries</code></caption>
+<caption>Element counts for test set consisting of 256,963 WBM <code>ComputedStructureEntries</code></caption>
 
 By comparison, the training set of MP ComputedStructureEntries has this element distribution.
 
 <slot name="mp-elements-heatmap">
-  <img src="./2023-01-08-mp-elements.svg" alt="Periodic table log heatmap of MP elements">
+  <img src="./figs/2023-01-08-mp-elements.svg" alt="Periodic table log heatmap of MP elements">
 </slot>
-<caption>Training set element counts consisting of 146,323 MP <code>ComputedStructureEntries</code></caption>
+<caption>Element counts for training set consisting of 146,323 MP <code>ComputedStructureEntries</code></caption>

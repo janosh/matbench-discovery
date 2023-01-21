@@ -2,7 +2,7 @@
 import pandas as pd
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, today
+from matbench_discovery import STATIC, today
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.plots import cumulative_precision_recall
 
@@ -12,8 +12,8 @@ __date__ = "2022-12-04"
 
 # %%
 models = (
-    # Wren, CGCNN IS2RE, CGCNN RS2RE
-    "Voronoi RF, Wrenformer, MEGNet, M3GNet, BOWSR MEGNet, CGCNN, CGCNN debug"
+    # Wren, CGCNN IS2RE, CGCNN RS2RE, CGCNN
+    "Voronoi RF, Wrenformer, MEGNet, M3GNet, BOWSR MEGNet"
 ).split(", ")
 
 df_wbm = load_df_wbm_with_preds(models=models).round(3)
@@ -37,17 +37,21 @@ fig, df_metric = cumulative_precision_recall(
     show_optimal=True,
 )
 
-title = f"{today} - Cumulative Precision, Recall and F1 Score for Stable Materials"
+title = f"{today} - Cumulative Precision, Recall, F1 scores for classifying stable materials"
 # xlabel_cumulative = "Materials predicted stable sorted by hull distance"
 if backend == "matplotlib":
     fig.suptitle(title)
     # fig.text(0.5, -0.08, xlabel_cumulative, ha="center", fontdict={"size": 16})
 elif backend == "plotly":
-    fig.update_layout(title=title)
+    # place legend in lower right corner
+    fig.update_layout(
+        title=title,
+        legend=dict(yanchor="bottom", y=0.02, xanchor="right", x=1),
+    )
     fig.update_xaxes(matches=None, showticklabels=True)
     fig.update_yaxes(matches=None, showticklabels=True)
 
-fig.show(config=dict(responsive=True))
+fig.show()
 
 
 # %%
@@ -57,6 +61,7 @@ for trace in fig.data:
     assert isinstance(trace.y[0], float)
     trace.y = [round(y, 3) for y in trace.y]
 
-img_path = f"{FIGS}/{today}-cumulative-clf-metrics"
+img_path = f"{STATIC}/{today}-cumulative-clf-metrics"
 # save_fig(fig, f"{img_path}.pdf")
 save_fig(fig, f"{img_path}.svelte")
+# save_fig(fig, f"{img_path}.png", scale=3)

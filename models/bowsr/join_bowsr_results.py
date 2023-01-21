@@ -17,8 +17,9 @@ __date__ = "2022-09-22"
 # %%
 module_dir = os.path.dirname(__file__)
 task_type = "IS2RE"
-date = "2022-11-22"
-glob_pattern = f"{date}-bowsr-megnet-wbm-{task_type}/*.json.gz"
+date = "2023-01-20"
+energy_model = "megnet"
+glob_pattern = f"{date}-bowsr-{energy_model}-wbm-{task_type}/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
@@ -43,7 +44,17 @@ data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-summary.csv"
 df_wbm = pd.read_csv(data_path).set_index("material_id")
 
 
-print(f"{len(df_bowsr):,} - {len(df_wbm):,} = {len(df_bowsr) - len(df_wbm) = :,}")
+print(
+    f"{len(df_bowsr) - len(df_wbm) = :,} missing ({len(df_bowsr):,} - {len(df_wbm):,})"
+)
+
+
+# %% sanity check: since Bowsr uses MEGNet as energy model final BOWSR energy and Megnet
+# formation energy should be the same
+pymatviz.density_scatter(
+    x=df_bowsr.e_form_per_atom_bowsr_megnet,
+    y=df_bowsr[f"energy_bowsr_{energy_model}"],
+)
 
 
 # %%

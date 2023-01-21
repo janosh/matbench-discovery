@@ -33,11 +33,6 @@ affiliations:
   - Cavendish Laboratory, University of Cambridge, UK
   - Lawrence Berkeley National Laboratory, Berkeley, USA
 date: Jan 31, 2023
-bibliography: [references.yaml]
-# taken from https://zotero.org/styles?fields=physics&format=numeric
-citation_style: https://zotero.org/styles/american-physics-society?source=1
-# citation-style: https://zotero.org/styles/american-physics-society?source=1
-geometry: margin=3cm # https://stackoverflow.com/a/13516042
 # To create a PDF from this markdown file, run:
 # ```sh
 # cd paper
@@ -53,6 +48,9 @@ geometry: margin=3cm # https://stackoverflow.com/a/13516042
   import { references } from './references.yaml'
   import { References } from '$lib'
   import './heading-number.css' // CSS to auto-number headings
+  import CumulativeClfMetrics from '$figs/2023-01-19-cumulative-clf-metrics.svelte'
+
+  const style = "margin-left: calc(0.8 * (-50vw + 50cqw));"
 </script>
 
 # {title}<br><small>{subtitle}</small>
@@ -180,7 +178,24 @@ Our benchmark is designed to make [adding future models easy](/how-to-contribute
   <MetricsTable />
 </div>
 
-![Scatter plots for each model's energy above hull predictions vs DFT ground truth](./figs/2023-01-18-e-form-scatter-models.png)
+<!-- ![Classification Histograms for all models](/figs/2023-01-12-wbm-hull-dist-hist-models.png) -->
+<caption>
+  Classification performance for all models
+</caption>
+
+![Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth](./figs/2023-01-18-each-scatter-models.png)
+
+<figcaption>@label:fig:each-scatter-models Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth</figcaption>
+
+![Histograms and rolling accuracy of using predicted formation energies for stability classification](./figs/2023-01-19-wbm-hull-dist-hist-models.png)
+
+<figcaption>@label:fig:wbm-hull-dist-hist-models Histograms and rolling accuracy of using predicted formation energies for stability classification</figcaption>
+
+<div>
+{#if typeof document !== `undefined`}
+  <CumulativeClfMetrics {style} />
+{/if}
+</div>
 
 ## Analysis
 

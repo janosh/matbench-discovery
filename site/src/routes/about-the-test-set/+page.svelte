@@ -1,5 +1,5 @@
 <script lang="ts">
-  import FormEnergyHist from '$root/data/wbm/2022-12-07-hist-e-form-per-atom.svelte'
+  import FormEnergyHist from '$figs/2022-12-07-hist-e-form-per-atom.svelte'
   import DataReadme from '$root/data/wbm/readme.md'
   import type { ChemicalElement } from 'sveriodic-table'
   import { PeriodicTable, TableInset, Toggle } from 'sveriodic-table'
