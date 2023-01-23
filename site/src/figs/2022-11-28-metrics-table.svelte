@@ -25,7 +25,7 @@
       <td id="T_c40e5_row0_col7">-24.954</td>
     </tr>
     <tr>
-      <th id="T_c40e5_level0_row1">Voronoi RF</th>
+      <th id="T_c40e5_level0_row1">Voronoi Random Forest</th>
       <td id="T_c40e5_row1_col0">739608</td>
       <td id="T_c40e5_row1_col1">GPU: 0, CPU: 32</td>
       <td id="T_c40e5_row1_col2">0.253</td>

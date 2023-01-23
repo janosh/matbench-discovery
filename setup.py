@@ -1,5 +1,7 @@
 from setuptools import find_packages, setup
 
+from matbench_discovery import URLs
+
 setup(
     name="matbench-discovery",
     version="0.1.0",
@@ -35,10 +37,7 @@ setup(
         "test": ["pytest", "pytest-cov", "pytest-markdown-docs"],
         "running-models": ["aviary", "m3gnet", "maml", "megnet"],
     },
-    project_urls={
-        "Docs": "https://matbench-discovery.janosh.dev",
-        "Package": "https://pypi.org/project/matbench-discovery",
-    },
+    project_urls=URLs,
     classifiers=[
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: MIT License",

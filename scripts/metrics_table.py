@@ -26,7 +26,7 @@ models: dict[str, dict[str, Any]] = {
             display_name={"$regex": "cgcnn-robust-formation_energy_per_atom"},
         ),
     ),
-    "Voronoi RF": dict(
+    "Voronoi Random Forest": dict(
         n_runs=68,
         filters=dict(
             created_at={"$gt": "2022-11-17", "$lt": "2022-11-28"},
@@ -100,7 +100,7 @@ ax = (pd.Series(each_run_time) / 3600).hist(bins=100)
 
 
 # on 2022-11-28:
-# run_times = {'Voronoi RF': 739608,
+# run_times = {'Voronoi Random Forest': 739608,
 #  'Wrenformer': 208399,
 #  'MEGNet': 12396,
 #  'M3GNet': 301138,

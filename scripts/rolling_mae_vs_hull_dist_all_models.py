@@ -11,7 +11,7 @@ __date__ = "2022-06-18"
 
 # %%
 models = sorted(
-    "Wrenformer, CGCNN, Voronoi RF, MEGNet, M3GNet, BOWSR MEGNet".split(", ")
+    "Wrenformer, CGCNN, Voronoi Random Forest, MEGNet, M3GNet, BOWSR MEGNet".split(", ")
 )
 e_form_col = "e_form_per_atom_mp2020_corrected"
 e_above_hull_col = "e_above_hull_mp2020_corrected_ppd_mp"

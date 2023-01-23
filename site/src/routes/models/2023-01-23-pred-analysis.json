@@ -1,0 +1,26 @@
+{
+  "CGCNN": {
+    "missing_preds": 2,
+    "test_set_size": 256963
+  },
+  "Voronoi Random Forest": {
+    "missing_preds": 17,
+    "test_set_size": 256963
+  },
+  "Wrenformer": {
+    "missing_preds": 0,
+    "test_set_size": 256963
+  },
+  "MEGNet": {
+    "missing_preds": 0,
+    "test_set_size": 256963
+  },
+  "M3GNet": {
+    "missing_preds": 2569,
+    "test_set_size": 256963
+  },
+  "BOWSR MEGNet": {
+    "missing_preds": 6184,
+    "test_set_size": 256963
+  }
+}
