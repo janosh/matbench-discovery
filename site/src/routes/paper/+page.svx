@@ -49,8 +49,6 @@ date: Jan 31, 2023
   import { References } from '$lib'
   import './heading-number.css' // CSS to auto-number headings
   import CumulativeClfMetrics from '$figs/2023-01-19-cumulative-clf-metrics.svelte'
-
-  const style = "margin-left: calc(0.8 * (-50vw + 50cqw));"
 </script>
 
 # {title}<br><small>{subtitle}</small>
@@ -193,7 +191,7 @@ Our benchmark is designed to make [adding future models easy](/how-to-contribute
 
 <div>
 {#if typeof document !== `undefined`}
-  <CumulativeClfMetrics {style} />
+  <CumulativeClfMetrics class="pull-left" />
 {/if}
 </div>
 

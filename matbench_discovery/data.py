@@ -60,7 +60,7 @@ def load_train_test(
     Recognized data keys are mp-computed-structure-entries, mp-elemental-ref-energies,
     mp-energies, mp-patched-phase-diagram, wbm-computed-structure-entries,
     wbm-initial-structures, wbm-summary. See
-    https://matbench-discovery.janosh.dev/how-to-use for brief data descriptions.
+    https://janosh.github.io/matbench-discovery/how-to-contribute for brief data descriptions.
 
     Args:
         data_names (str | list[str], optional): Which parts of the MP/WBM dataset to load.
@@ -140,11 +140,11 @@ def load_train_test(
 
 PRED_FILENAMES = {
     "CGCNN": "cgcnn/2022-11-23-test-cgcnn-wbm-IS2RE/cgcnn-ensemble-preds.csv",
-    "Voronoi RF": "voronoi/2022-11-27-train-test/e-form-preds-IS2RE.csv",
+    "Voronoi Random Forest": "voronoi/2022-11-27-train-test/e-form-preds-IS2RE.csv",
     "Wrenformer": "wrenformer/2022-11-15-wrenformer-IS2RE-preds.csv",
     "MEGNet": "megnet/2022-11-18-megnet-wbm-IS2RE/megnet-e-form-preds.csv",
     "M3GNet": "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv",
-    "BOWSR MEGNet": "bowsr/2022-11-22-bowsr-megnet-wbm-IS2RE.csv",
+    "BOWSR MEGNet": "bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv",
 }
 
 

@@ -23,7 +23,7 @@ histogram stacks true/false positives/negatives with different colors.
 
 # %%
 models = sorted(
-    "CGCNN, Voronoi RF, Wrenformer, MEGNet, M3GNet, BOWSR MEGNet".split(", ")
+    "CGCNN, Voronoi Random Forest, Wrenformer, MEGNet, M3GNet, BOWSR MEGNet".split(", ")
 )
 df_wbm = load_df_wbm_with_preds(models=models).round(3)
 

@@ -4,6 +4,7 @@
   "author": "Janosh Riebesell <janosh.riebesell@gmail.com>",
   "homepage": "https://janosh.github.io/matbench-discovery",
   "repository": "https://github.com/janosh/matbench-discovery",
+  "package": "https://pypi.org/project/matbench-discovery",
   "license": "MIT",
   "type": "module",
   "bugs": "https://github.com/janosh/matbench-discovery/issues",

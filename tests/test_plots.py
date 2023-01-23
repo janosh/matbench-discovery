@@ -15,7 +15,7 @@ from matbench_discovery.plots import (
     rolling_mae_vs_hull_dist,
 )
 
-models = ["Wrenformer", "CGCNN", "Voronoi RF"]
+models = ["Wrenformer", "CGCNN", "Voronoi Random Forest"]
 df_wbm = load_df_wbm_with_preds(models=models, nrows=100)
 e_above_hull_col = "e_above_hull_mp2020_corrected_ppd_mp"
 e_form_col = "e_form_per_atom_mp2020_corrected"

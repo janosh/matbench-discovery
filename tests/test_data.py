@@ -111,8 +111,11 @@ def test_load_train_test_doc_str() -> None:
     for name in DATA_FILENAMES:
         assert name in doc_str, f"Missing data {name=} in load_train_test() docstring"
 
-    # TODO refactor to load site URL from site/package.json for SSoT
-    assert "https://matbench-discovery.janosh.dev" in doc_str
+    route = "/how-to-contribute"
+    from matbench_discovery import URLs
+
+    assert f"{URLs['Docs']}{route}" in doc_str
+    assert os.path.isdir(f"{ROOT}/site/src/routes/{route}")
 
 
 @pytest.mark.skipif(website_down, reason=f"{RAW_REPO_URL} unreachable")
