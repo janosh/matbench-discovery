@@ -612,7 +612,7 @@ def cumulative_precision_recall(
             # requires fixing index mismatch due to df sub-sampling above
             # customdata=dict(
             #     df_cum.reset_index()
-            #     .pivot(index="index", columns="metric")["Voronoi RF above hull pred"]
+            #     .pivot(index="index", columns="metric")
             #     .items()
             # ),
             **kwargs,

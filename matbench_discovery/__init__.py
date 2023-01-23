@@ -1,5 +1,6 @@
 """Global variables used all across the matbench_discovery package."""
 
+import json
 import os
 import sys
 from datetime import datetime
@@ -18,3 +19,10 @@ WANDB_PATH = "janosh/matbench-discovery"
 
 timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
 today = timestamp.split("@")[0]
+
+# load URLs from package.json
+
+with open(f"{ROOT}/site/package.json") as file:
+    pkg = json.load(file)
+    pypi_keys_to_npm = dict(Docs="homepage", Repo="repository", Package="package")
+    URLs = {key: pkg[val] for key, val in pypi_keys_to_npm.items()}

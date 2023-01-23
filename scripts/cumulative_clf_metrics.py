@@ -13,7 +13,7 @@ __date__ = "2022-12-04"
 # %%
 models = (
     # Wren, CGCNN IS2RE, CGCNN RS2RE, CGCNN
-    "Voronoi RF, Wrenformer, MEGNet, M3GNet, BOWSR MEGNet"
+    "Voronoi Random Forest, Wrenformer, MEGNet, M3GNet, BOWSR MEGNet"
 ).split(", ")
 
 df_wbm = load_df_wbm_with_preds(models=models).round(3)

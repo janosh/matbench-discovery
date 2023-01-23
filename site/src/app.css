@@ -167,3 +167,7 @@ caption {
 :target {
   animation: highlight-scroll-target 3s;
 }
+
+.pull-left {
+  margin-left: calc(0.8 * (-50vw + 50cqw));
+}
