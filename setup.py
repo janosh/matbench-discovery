@@ -1,4 +1,4 @@
-from setuptools import find_packages, setup
+from setuptools import setup
 
 from matbench_discovery import URLs
 
@@ -6,19 +6,20 @@ setup(
     name="matbench-discovery",
     version="0.1.0",
     author="Janosh Riebesell, Rhys Goodall",
-    author_email="janosh.riebesell@gmail.com",
+    author_email="janosh@lbl.gov",
     url="https://github.com/janosh/matbench-discovery",
-    description="A machine learning benchmark for energy models that simulates "
-    "high-throughput materials screening to test which models most accelerate the "
-    "discovery of new stable crystals.",
+    description="A machine learning benchmark that simulates high-throughput screening "
+    "for new materials and ranks energy models by their ability to increase the hit "
+    "rate of stable crystals",
     long_description=open("readme.md").read(),
     long_description_content_type="text/markdown",
-    packages=find_packages(exclude=["tests", "tests.*"]),
+    packages=["matbench_discovery"],
     python_requires=">=3.9",
     keywords=[
         "data-driven materials discovery",
         "crystal stability",
         "machine learning",
+        "materials space",
         "high-throughput search",
         "energy above convex hull",
         "formation energy",

@@ -1,30 +1,103 @@
 <script lang="ts">
   import { ModelCard } from '$lib'
+  import type { ModelStats } from '$lib/types'
+  import { RadioButtons } from 'svelte-zoo'
+  import { flip } from 'svelte/animate'
+  import { fade } from 'svelte/transition'
   import type { PageData } from './$types'
 
   export let data: PageData
+
+  let sort_by: keyof ModelStats | 'date_added' | 'model_name' = `model_name`
+  let selected = `asc`
+  $: sort_factor = selected == `asc` ? -1 : 1
+
+  $: models = data.models.sort(([_k1, m1], [_k2, m2]) => {
+    if (typeof m1[sort_by] == `string`) {
+      return sort_factor * -m1[sort_by].localeCompare(m2[sort_by])
+    } else if (typeof m1[sort_by] == `number`) {
+      return sort_factor * (m2[sort_by] - m1[sort_by])
+    } else {
+      console.error(`Sorting by key ${sort_by} gives unknown type: ${typeof m1[sort_by]}`)
+    }
+  })
+  const stats: [keyof ModelStats | 'date_added', string?][] = [
+    [`MAE`],
+    [`RMSE`],
+    [`R2`, `R<sup>2</sup>`],
+    [`Precision`],
+    [`Recall`],
+    [`F1`],
+    [`date_added`, `Date added`],
+    [`run_time_h`, `Run time`],
+  ]
 </script>
 
-<h1 class="pull-left">Models</h1>
+<div class="pull-left">
+  <h1>Models</h1>
 
-<ol class="pull-left">
-  {#each data.models as [key, metadata]}
-    <li>
-      <ModelCard {key} data={metadata} />
-    </li>
-  {/each}
-</ol>
+  <span>
+    Sort <RadioButtons bind:selected options={[`asc`, `desc`]} /> by:
+  </span>
+  <ul>
+    {#each [[`model_name`, `Model Name`], ...stats] as [key, label]}
+      <li class:active={key == sort_by}>
+        <button on:click={() => (sort_by = key)}>{@html label ?? key}</button>
+      </li>
+    {/each}
+  </ul>
+
+  <ol>
+    {#each models as [key, metadata] (key)}
+      <li
+        animate:flip={{ duration: 400 }}
+        in:fade|local={{ delay: 100 }}
+        out:fade|local={{ delay: 100 }}
+      >
+        <ModelCard {key} data={metadata} {stats} {sort_by} />
+      </li>
+    {/each}
+  </ol>
+</div>
 
 <style>
+  :is(ul, ol) {
+    padding: 0;
+    list-style: none;
+  }
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9pt;
+    margin: 1em auto 2em;
+    place-content: center;
+  }
+  ul > li > button {
+    transition: all 0.2s;
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  ul > li.active > button {
+    background-color: darkcyan;
+  }
   ol {
     display: grid;
     gap: 2em;
-    list-style: none;
     grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
   }
   ol > li {
     background-color: rgba(255, 255, 255, 0.05);
     padding: 3pt 10pt 7pt;
     border-radius: 3pt;
+    display: grid;
+    align-content: space-between;
+  }
+  span {
+    display: flex;
+    gap: 5pt;
+    place-items: center;
+    place-content: center;
+  }
+  span :global(div.zoo-radio-btn span) {
+    padding: 1pt 4pt;
   }
 </style>
