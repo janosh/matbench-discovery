@@ -1,5 +1,4 @@
 import os
-from datetime import date
 from glob import glob
 
 import yaml
@@ -44,7 +43,7 @@ def test_model_dirs_have_metadata() -> None:
         assert (
             1 <= mbd_version <= 1
         ), f"Invalid matbench-discovery version: {mbd_version}"
-        assert isinstance(date_added, date), f"Invalid {date_added=} not a string"
+        assert isinstance(date_added, str), f"Invalid {date_added=} not a string"
         assert (
             isinstance(authors, list) and 1 < len(authors) < 30
         ), "authors not list or not between 1 and 30 authors"

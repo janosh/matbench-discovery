@@ -171,3 +171,8 @@ caption {
 .pull-left {
   margin-left: calc(0.8 * (-50vw + 50cqw));
 }
+
+sup {
+  /* https://stackoverflow.com/a/6594576 */
+  line-height: 0;
+}

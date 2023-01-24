@@ -95,7 +95,7 @@ To deploy a new model on this benchmark and add it to our leaderboard, please cr
    model_name: My cool foundational model # required
    model_version: 1.0.0 # required
    matbench_discovery_version: 1.0 # required
-   date_added: 2023-01-01 # required
+   date_added: "2023-01-01" # required
    authors: # required (only name, other keys are optional)
      - name: John Doe
        affiliation: Some University, Some National Lab

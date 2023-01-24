@@ -6,11 +6,12 @@ from typing import Any
 import pandas as pd
 import requests
 import wandb
+import wandb.apis.public
 from sklearn.metrics import f1_score, r2_score
 from tqdm import tqdm
 
-from matbench_discovery import FIGS, WANDB_PATH, today
-from matbench_discovery.data import load_df_wbm_with_preds
+from matbench_discovery import FIGS, MODELS, WANDB_PATH, today
+from matbench_discovery.data import PRED_FILENAMES, load_df_wbm_with_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
@@ -18,7 +19,6 @@ __date__ = "2022-11-28"
 
 # %%
 models: dict[str, dict[str, Any]] = {
-    "Wren": dict(n_runs=0),
     "CGCNN": dict(
         n_runs=10,
         filters=dict(
@@ -55,15 +55,18 @@ models: dict[str, dict[str, Any]] = {
         ),
     ),
     "BOWSR MEGNet": dict(
-        n_runs=1000,
+        n_runs=500,
         filters=dict(
-            created_at={"$gt": "2022-11-22", "$lt": "2022-11-25"},
+            created_at={"$gt": "2023-01-20", "$lt": "2023-01-22"},
             display_name={"$regex": "bowsr-megnet"},
         ),
     ),
 }
 
-run_times: dict[str, dict[str, str | int | float]] = {}
+assert set(models) == set(PRED_FILENAMES), f"{set(models)=} != {set(PRED_FILENAMES)=}"
+
+
+model_stats: dict[str, dict[str, str | int | float]] = {}
 
 
 # %% calculate total model run times from wandb logs
@@ -75,11 +78,13 @@ run_times: dict[str, dict[str, str | int | float]] = {}
 for model in (pbar := tqdm(models)):
     model_dict = models[model]
     n_runs, filters = (model_dict.get(x) for x in ("n_runs", "filters"))
-    if n_runs == 0 or model in run_times:
+    if n_runs == 0 or model in model_stats:
         continue
     pbar.set_description(model)
-
-    runs = wandb.Api().runs(WANDB_PATH, filters=filters)
+    if "runs" in models:
+        runs: wandb.apis.public.Runs = models["runs"]
+    else:
+        models["runs"] = runs = wandb.Api().runs(WANDB_PATH, filters=filters)
 
     assert len(runs) == n_runs, f"found {len(runs)=} for {model}, expected {n_runs}"
 
@@ -90,13 +95,19 @@ for model in (pbar := tqdm(models)):
     metadata = requests.get(runs[0].file("wandb-metadata.json").url).json()
 
     n_gpu, n_cpu = metadata.get("gpu_count", 0), metadata.get("cpu_count", 0)
-    run_times[model] = {
-        "Run time": run_time_total,
-        "Hardware": f"GPU: {n_gpu}, CPU: {n_cpu}",
+    model_stats[model] = {
+        "run_time": run_time_total,
+        "run_time_h": f"{run_time_total / 3600:.1f} h",
+        "GPU": n_gpu,
+        "CPU": n_cpu,
+        "slurm_jobs": n_runs,
     }
 
 
 ax = (pd.Series(each_run_time) / 3600).hist(bins=100)
+ax.set(
+    title=f"Run time distribution for {model}", xlabel="Run time [h]", ylabel="Count"
+)
 
 
 # on 2022-11-28:
@@ -108,31 +119,31 @@ ax = (pd.Series(each_run_time) / 3600).hist(bins=100)
 
 
 # %%
-df_wbm: pd.DataFrame = load_df_wbm_with_preds(models=list(models))
+df_wbm = load_df_wbm_with_preds(models=list(models))
 e_form_col = "e_form_per_atom_mp2020_corrected"
-df_wbm = df_wbm.round(3).query(f"{e_form_col} < 5")
-
-e_above_hull_col = "e_above_hull_mp2020_corrected_ppd_mp"
-e_above_hull = df_wbm[e_above_hull_col]
+each_col = "e_above_hull_mp2020_corrected_ppd_mp"
 
 
 # %%
-df_metrics = pd.DataFrame(run_times).T
+df_metrics = pd.DataFrame(model_stats).T
 
 for model in models:
     dct = {}
     e_above_hull_pred = df_wbm[model] - df_wbm[e_form_col]
+    isna = e_above_hull_pred.isna() | df_wbm[each_col].isna()
 
-    dct["F1"] = f1_score(e_above_hull < 0, e_above_hull_pred < 0)
-    dct["Precision"] = f1_score(e_above_hull < 0, e_above_hull_pred < 0, pos_label=True)
-    dct["Recall"] = f1_score(e_above_hull < 0, e_above_hull_pred < 0, pos_label=False)
-
-    dct["MAE"] = (e_above_hull_pred - e_above_hull).abs().mean()
-
-    dct["RMSE"] = ((e_above_hull_pred - e_above_hull) ** 2).mean() ** 0.5
-    dct["R2"] = r2_score(
-        e_above_hull.loc[e_above_hull_pred.dropna().index], e_above_hull_pred.dropna()
+    dct["F1"] = f1_score(df_wbm[each_col] < 0, e_above_hull_pred < 0)
+    dct["Precision"] = f1_score(
+        df_wbm[each_col] < 0, e_above_hull_pred < 0, pos_label=True
     )
+    dct["Recall"] = f1_score(
+        df_wbm[each_col] < 0, e_above_hull_pred < 0, pos_label=False
+    )
+
+    dct["MAE"] = (e_above_hull_pred - df_wbm[each_col]).abs().mean()
+
+    dct["RMSE"] = ((e_above_hull_pred - df_wbm[each_col]) ** 2).mean() ** 0.5
+    dct["R2"] = r2_score(df_wbm[each_col][~isna], e_above_hull_pred[~isna])
 
     df_metrics.loc[model, list(dct)] = dct.values()
 
@@ -152,3 +163,12 @@ df_styled.set_table_styles([dict(selector=sel, props=styles[sel]) for sel in sty
 
 html_path = f"{FIGS}/{today}-metrics-table.html"
 # df_styled.to_html(html_path)
+
+
+# %%
+df = load_df_wbm_with_preds(list(models))
+
+df_metrics["missing_preds"] = df[list(models)].isna().sum()
+df_metrics["missing_percent"] = [f"{x / len(df):.2%}" for x in df_metrics.missing_preds]
+
+df_metrics.round(2).to_json(f"{MODELS}/{today}-model-stats.json", orient="index")

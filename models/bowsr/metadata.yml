@@ -1,7 +1,7 @@
 model_name: BOWSR MEGNet
 model_version: 2022.9.20
 matbench_discovery_version: 1.0
-date_added: 2022-11-17
+date_added: "2022-11-17"
 authors:
   - name: Yunxing Zuo
     affiliation: UC San Diego
@@ -23,6 +23,7 @@ requirements:
   megnet: 1.3.2
   numpy: 1.24.0
   pandas: 1.5.1
+trained_on_benchmark: false
 
 # model specific keys record hyperparameter choices
 optimize_kwargs:
