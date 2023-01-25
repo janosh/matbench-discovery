@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import pytest
 
-from matbench_discovery.data import load_df_wbm_with_preds
+from matbench_discovery.data import load_df_wbm_preds
 from matbench_discovery.plots import (
     AxLine,
     Backend,
@@ -16,7 +16,7 @@ from matbench_discovery.plots import (
 )
 
 models = ["Wrenformer", "CGCNN", "Voronoi Random Forest"]
-df_wbm = load_df_wbm_with_preds(models=models, nrows=100)
+df_wbm = load_df_wbm_preds(models=models, nrows=100)
 e_above_hull_col = "e_above_hull_mp2020_corrected_ppd_mp"
 e_form_col = "e_form_per_atom_mp2020_corrected"
 
@@ -124,7 +124,7 @@ def test_hist_classified_stable_vs_hull_dist(
         assert ax.get_ylabel() == "Number of materials"
     else:
         assert isinstance(ax, go.Figure)
-        assert ax.layout.yaxis.title.text == "Number of materials"
+        assert ax.layout.yaxis.title.text == "count"
 
     assert metrics["precision"] > 0.3
     assert metrics["recall"] > 0.3

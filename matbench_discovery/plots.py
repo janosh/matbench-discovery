@@ -87,7 +87,7 @@ def hist_classified_stable_vs_hull_dist(
     which_energy: WhichEnergy = "true",
     stability_threshold: float = 0,
     x_lim: tuple[float | None, float | None] = (-0.4, 0.4),
-    rolling_accuracy: float | None = 0.02,
+    rolling_acc: float | None = 0.02,
     backend: Backend = "plotly",
     y_label: str = "Number of materials",
     **kwargs: Any,
@@ -114,7 +114,7 @@ def hist_classified_stable_vs_hull_dist(
         stability_threshold (float, optional): set stability threshold as distance to
             convex hull in eV/atom, usually 0 or 0.1 eV.
         x_lim (tuple[float | None, float | None]): x-axis limits.
-        rolling_accuracy (float): Rolling accuracy window size in eV / atom. Set to None
+        rolling_acc (float): Rolling accuracy window size in eV / atom. Set to None
             or 0 to disable. Defaults to 0.02, meaning 20 meV / atom.
         backend ('matplotlib' | 'plotly'], optional): Which plotting engine to use.
             Changes the return type. Defaults to 'plotly'.
@@ -135,7 +135,7 @@ def hist_classified_stable_vs_hull_dist(
     n_false_neg = sum(false_neg)
 
     n_total_pos = n_true_pos + n_false_neg
-    null = n_total_pos / len(e_above_hull_true)
+    prevalence = n_total_pos / len(e_above_hull_true)  # null rate
 
     # toggle between histogram of DFT-computed/model-predicted distance to convex hull
     e_above_hull = e_above_hull_true if which_energy == "true" else e_above_hull_pred
@@ -149,14 +149,11 @@ def hist_classified_stable_vs_hull_dist(
     # null = (tp + fn) / (tp + tn + fp + fn)
     precision = n_true_pos / (n_true_pos + n_false_pos)
 
-    xlabel = dict(
-        true=r"$E_\mathrm{above\ hull}\;\mathrm{(eV / atom)}$",
-        pred=r"$E_\mathrm{above\ hull\ pred}\;\mathrm{(eV / atom)}$",
-    )[which_energy]
     labels = ["True Positives", "False Negatives", "False Positives", "True Negatives"]
 
     if backend == "matplotlib":
         ax = ax or plt.gca()
+        assert isinstance(ax, plt.Axes)
         ax.hist(
             [eah_true_pos, eah_false_neg, eah_false_pos, eah_true_neg],
             bins=200,
@@ -167,6 +164,10 @@ def hist_classified_stable_vs_hull_dist(
             stacked=True,
             **kwargs,
         )
+        xlabel = dict(
+            true=r"$E_\mathrm{above\ hull}\;\mathrm{(eV / atom)}$",
+            pred=r"$E_\mathrm{above\ hull\ pred}\;\mathrm{(eV / atom)}$",
+        )[which_energy]
         ax.set(xlabel=xlabel, ylabel=y_label, xlim=x_lim)
 
         if stability_threshold is not None:
@@ -177,23 +178,58 @@ def hist_classified_stable_vs_hull_dist(
                 label="Stability Threshold",
             )
 
-        if rolling_accuracy:
-            # add moving average of the accuracy computed within given window
-            # as a function of e_above_hull shown as blue line (right axis)
+    if backend == "plotly":
+        clf = (true_pos + false_neg * 2 + false_pos * 3 + true_neg * 4).map(
+            dict(zip(range(1, len(labels) + 1), labels))
+        )
+        df = pd.DataFrame(dict(e_above_hull=e_above_hull, clf=clf))
+
+        ax = px.histogram(
+            df,
+            x="e_above_hull",
+            color="clf",
+            nbins=20000,
+            range_x=x_lim,
+            barmode="stack",
+            color_discrete_map=dict(zip(labels, px.colors.qualitative.Pastel)),
+            **kwargs,
+        )
+        ax.update_layout(
+            legend=dict(title=None, yanchor="top", y=1, xanchor="right", x=1),
+        )
+
+        if stability_threshold is not None:
+            ax.add_vline(stability_threshold, line=dict(dash="dash", width=1))
+            ax.add_annotation(
+                text="Stability threshold",
+                x=stability_threshold,
+                y=1.1,
+                yref="paper",
+                font=dict(size=14, color="gray"),
+                showarrow=False,
+            )
+
+    assert isinstance(ax, (go.Figure, plt.Axes))  # for mypy
+
+    if rolling_acc:
+        # add moving average of the accuracy computed within given window
+        # as a function of e_above_hull shown as blue line (right axis)
+
+        # --- moving average of the accuracy
+        # compute rolling accuracy in rolling_acc-sized intervals
+        bins = np.arange(x_lim[0], x_lim[1], rolling_acc)
+        bin_counts = np.histogram(e_above_hull_true, bins)[0]
+        bin_true_pos = np.histogram(eah_true_pos, bins)[0]
+        bin_true_neg = np.histogram(eah_true_neg, bins)[0]
+
+        # compute accuracy
+        bin_accuracies = (bin_true_pos + bin_true_neg) / bin_counts
+
+        if backend == "matplotlib":
             ax_acc = ax.twinx()
             ax_acc.set_ylabel("Rolling Accuracy", color="darkblue")
             ax_acc.tick_params(labelcolor="darkblue")
             ax_acc.set(ylim=(0, 1))
-
-            # --- moving average of the accuracy
-            # compute accuracy within 20 meV/atom intervals
-            bins = np.arange(x_lim[0], x_lim[1], rolling_accuracy)
-            bin_counts = np.histogram(e_above_hull_true, bins)[0]
-            bin_true_pos = np.histogram(eah_true_pos, bins)[0]
-            bin_true_neg = np.histogram(eah_true_neg, bins)[0]
-
-            # compute accuracy
-            bin_accuracies = (bin_true_pos + bin_true_neg) / bin_counts
             # plot accuracy
             ax_acc.plot(
                 bins[:-1],
@@ -209,48 +245,28 @@ def hist_classified_stable_vs_hull_dist(
             #     color="tab:blue",
             #     alpha=0.2,
             # )
-
-    if backend == "plotly":
-        clf = (true_pos + false_neg * 2 + false_pos * 3 + true_neg * 4).map(
-            dict(zip(range(1, 5), labels))
-        )
-        df = pd.DataFrame(dict(e_above_hull=e_above_hull, clf=clf))
-
-        ax = px.histogram(
-            df,
-            x="e_above_hull",
-            color="clf",
-            nbins=20000,
-            range_x=x_lim,
-            barmode="stack",
-            color_discrete_map=dict(zip(labels, px.colors.qualitative.Pastel)),
-            **kwargs,
-        )
-        ax.update_layout(
-            dict(xaxis_title=xlabel, yaxis_title=y_label),
-            legend=dict(title=None, yanchor="top", y=1, xanchor="right", x=1),
-        )
-
-        if stability_threshold is not None:
-            ax.add_vline(stability_threshold, line=dict(dash="dash", width=1))
-            ax.add_annotation(
-                text="Stability threshold",
-                x=stability_threshold,
-                y=1.1,
-                yref="paper",
-                font=dict(size=14, color="gray"),
-                showarrow=False,
+        else:
+            style = dict(color="orange")
+            title = "Rolling Accuracy"
+            # add accuracy line on a separate y-axis on the right side of the plot
+            ax.update_layout(
+                yaxis2=dict(overlaying="y", side="right", range=[0, 1], tickfont=style),
+                # title = dict(text=title, font=style)
             )
+            ax.add_scatter(x=bins, y=bin_accuracies, name=title, line=style, yaxis="y2")
 
     recall = n_true_pos / n_total_pos
     return ax, dict(
-        enrichment=precision / null,
+        enrichment=precision / prevalence,
         precision=precision,
         recall=recall,
-        prevalence=null,
-        accuracy=(n_true_pos + n_true_neg)
-        / (n_true_pos + n_true_neg + n_false_pos + n_false_neg),
+        prevalence=prevalence,
+        accuracy=(n_true_pos + n_true_neg) / len(e_above_hull),
         f1=2 * (precision * recall) / (precision + recall),
+        TPR=n_true_pos / (n_true_pos + n_false_neg),
+        FPR=n_false_pos / (n_true_neg + n_false_pos),
+        TNR=n_true_neg / (n_true_neg + n_false_pos),
+        FNR=n_false_neg / (n_true_pos + n_false_neg),
     )
 
 
@@ -335,6 +351,10 @@ def rolling_mae_vs_hull_dist(
     href = "https://doi.org/10.1103/PhysRevB.85.155208"
     dft_acc = 0.025
 
+    window_bar_anno = f"rolling window={2 * window * 1000:.0f} meV"
+    dummy_mae = (e_above_hull_true - e_above_hull_true.mean()).abs().mean()
+    legend_title = f"dummy MAE = {dummy_mae:.2f} eV/atom"
+
     if backend == "matplotlib":
         # assert df_rolling_err.isna().sum().sum() == 0, "NaNs in df_rolling_err"
         # assert df_err_std.isna().sum().sum() == 0, "NaNs in df_err_std"
@@ -349,7 +369,7 @@ def rolling_mae_vs_hull_dist(
         scale_bar = AnchoredSizeBar(
             ax.transData,
             window,
-            "40 meV",
+            window_bar_anno,
             "lower left",
             pad=0.5,
             frameon=False,
@@ -391,25 +411,34 @@ def rolling_mae_vs_hull_dist(
         )
         ax.set(xlabel=r"$E_\mathrm{above\ hull}$ (eV/atom)", ylabel=y_label)
         ax.set(xlim=x_lim, ylim=y_lim)
+
     elif backend == "plotly":
         for idx, model in enumerate(df_rolling_err):
+            # set legendgroup to model name so SEM shading toggles with model curve
             ax.data[idx].legendgroup = model
+            # set SEM area to same color as model curve
             ax.add_scatter(
                 x=list(bins) + list(bins)[::-1],  # bins, then bins reversed
+                # upper, then lower reversed
                 y=list(df_rolling_err[model] + 3 * df_err_std[model])
-                + list(df_rolling_err[model] - 3 * df_err_std[model])[
-                    ::-1
-                ],  # upper, then lower reversed
+                + list(df_rolling_err[model] - 3 * df_err_std[model])[::-1],
                 mode="lines",
                 line=dict(color="white", width=0),
                 fill="toself",
                 legendgroup=model,
-                fillcolor=ax.data[0].line.color,
-                opacity=0.3,
+                fillcolor=ax.data[idx].line.color,
+                opacity=0.4,
                 showlegend=False,
             )
 
-        legend = dict(title=None, xanchor="right", x=1, yanchor="bottom", y=0)
+        legend = dict(
+            title=legend_title,
+            x=1,
+            y=0,
+            xanchor="right",
+            yanchor="bottom",
+            title_font=dict(size=13),
+        )
         ax.update_layout(
             dict(
                 xaxis_title="E<sub>above MP hull</sub> (eV/atom)",
@@ -419,7 +448,7 @@ def rolling_mae_vs_hull_dist(
         )
         ax.update_xaxes(range=x_lim)
         ax.update_yaxes(range=y_lim)
-        scatter_kwds = dict(fill="toself", opacity=0.3)
+        scatter_kwds = dict(fill="toself", opacity=0.4)
         ax.add_scatter(
             x=(-1, -dft_acc, dft_acc, 1),
             y=(1, dft_acc, dft_acc, 1),
@@ -437,7 +466,8 @@ def rolling_mae_vs_hull_dist(
         ax.add_annotation(
             x=-dft_acc,
             y=dft_acc,
-            text=f"<a {href=}>Corrected GGA Accuracy</a>",
+            text=f"<a {href=}>Corrected GGA Accuracy</a> "
+            "[<a href='#hautier_accuracy_2012' target='_self'>ref</a>]",
             showarrow=True,
             xshift=-10,
             arrowhead=2,
@@ -453,7 +483,7 @@ def rolling_mae_vs_hull_dist(
         ax.add_annotation(
             x=x0 + window,
             y=y0,
-            text=f"rolling {window=} eV/atom",
+            text=window_bar_anno,
             showarrow=False,
             xshift=8,
             yshift=-4,
@@ -477,7 +507,8 @@ def cumulative_precision_recall(
     stability_threshold: float = 0,  # set stability threshold as distance to convex
     # hull in eV / atom, usually 0 or 0.1 eV
     project_end_point: AxLine = "xy",
-    show_optimal: bool = False,
+    show_optimal: bool = True,
+    show_n_stable: bool = True,
     backend: Backend = "plotly",
     **kwargs: Any,
 ) -> tuple[plt.Figure | go.Figure, pd.DataFrame]:
@@ -501,7 +532,9 @@ def cumulative_precision_recall(
         points of precision and recall curves to the x/y axis. Defaults to '', i.e. no
             axis projection lines.
         show_optimal (bool, optional): Whether to plot the optimal recall line. Defaults
-            to False.
+            to True.
+        show_n_stable (bool, optional): Whether to show a horizontal line at the true number
+            of stable materials. Defaults to True.
         backend ('matplotlib' | 'plotly'], optional): Which plotting engine to use.
             Changes the return type. Defaults to 'plotly'.
         **kwargs: Keyword arguments passed to df.plot().
@@ -550,6 +583,7 @@ def cumulative_precision_recall(
     df_cum = pd.concat(dfs.values())
     # subselect rows for speed, plot has sufficient precision with 1k rows
     df_cum = df_cum.iloc[:: len(df_cum) // 1000 or 1]
+    n_stable = sum(e_above_hull_true <= 0)
 
     if backend == "matplotlib":
         fig, axs = plt.subplots(1, len(dfs), figsize=(15, 7), sharey=True)
@@ -585,20 +619,19 @@ def cumulative_precision_recall(
                     ax.plot((0, x_end), (y_end, y_end), **intersect_kwargs)
 
         # optimal recall line finds all stable materials without any false positives
-        # can be included to confirm all models start out of with near optimal recall
-        # and to see how much each model overshoots total n_stable
+        # can be included to confirm all models achieve near optimal recall initially
+        # and to see how much they overshoot n_stable
         if show_optimal:
             ax = next(filter(lambda ax: ax.get_ylabel() == "Recall", axs.flat))
-            n_below_hull = sum(e_above_hull_true < 0)
             opt_label = "Optimal Recall"
-            ax.plot([0, n_below_hull], [0, 1], color="green", linestyle="--")
+            ax.plot([0, n_stable], [0, 1], color="green", linestyle="--")
             ax.text(
-                *[n_below_hull, 0.81],
+                *[n_stable, 0.81],
                 opt_label,
                 color="green",
                 va="bottom",
                 ha="right",
-                rotation=math.degrees(math.cos(math.atan(1 / n_below_hull))),
+                rotation=math.degrees(math.cos(math.atan(1 / n_stable))),
                 bbox=bbox,
             )
 
@@ -628,7 +661,33 @@ def cumulative_precision_recall(
             )
         fig.for_each_annotation(lambda a: a.update(text=""))
         fig.update_layout(legend=dict(title=""))
-        # fig.update_layout(showlegend=False)
+        line_kwds = dict(color="white", dash="dash", width=0.5)
+        if show_optimal:
+            fig.add_shape(
+                **dict(type="line", x0=0, y0=0, x1=n_stable, y1=1, col=2, row=1),
+                line=line_kwds,
+            )
+            # annotate optimal recall line
+            fig.add_annotation(
+                x=0.6 * n_stable,
+                y=0.8,
+                text="Optimal Recall",
+                showarrow=False,
+                col=2,
+                row=1,
+            )
+        if show_n_stable:
+            fig.add_vline(x=n_stable, line=line_kwds)
+            fig.add_annotation(
+                x=n_stable,
+                y=0.95,
+                text="Stable<br>Materials",
+                showarrow=False,
+                row=1,
+                col=1,
+                xanchor="left",
+                align="left",
+            )
 
     return fig, df_cum
 

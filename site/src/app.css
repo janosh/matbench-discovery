@@ -108,6 +108,7 @@ h1 {
 :where(h2, h3, h4, h5, h6) {
   scroll-margin-top: 50px;
   transition: 0.3s;
+  margin-top: 2em;
 }
 :where(h2, h3, h4, h5, h6).toc-clicked {
   color: orange;
@@ -175,4 +176,12 @@ caption {
 sup {
   /* https://stackoverflow.com/a/6594576 */
   line-height: 0;
+}
+
+figure {
+  display: block;
+}
+figcaption {
+  text-align: center;
+  margin: 1ex 1em;
 }
