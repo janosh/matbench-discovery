@@ -167,7 +167,7 @@ Our benchmark is designed to make [adding future models easy](/how-to-contribute
 
 1. [CGCNN](https://arxiv.org/abs/1710.10324) @xie_crystal_2018
 1. [BOWSR](https://sciencedirect.com/science/article/pii/S1369702121002984) @zuo_accelerating_2021
-1. [Wren](https://arxiv.org/abs/2106.11132) @goodall_rapid_2022
+1. [Wrenformer](https://arxiv.org/abs/2106.11132) @goodall_rapid_2022
 1. [M3GNet](https://arxiv.org/abs/2202.02450) @chen_universal_2022
 1. [MEGNet](https://arxiv.org/abs/1812.05055) @chen_graph_2019
 1. [Voronoi Random Forest](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.96.024104) @goodall_rapid_2022
@@ -181,7 +181,7 @@ Our benchmark is designed to make [adding future models easy](/how-to-contribute
   Classification performance for all models
 </caption>
 
-![Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth](./figs/2023-01-18-each-scatter-models.png)
+![Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth](./figs/2023-01-24-each-scatter-models.png)
 
 <figcaption>@label:fig:each-scatter-models Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth</figcaption>
 
@@ -190,9 +190,9 @@ Our benchmark is designed to make [adding future models easy](/how-to-contribute
 <figcaption>@label:fig:wbm-hull-dist-hist-models Histograms and rolling accuracy of using predicted formation energies for stability classification</figcaption>
 
 <div>
-{#if typeof document !== `undefined`}
-  <CumulativeClfMetrics class="pull-left" />
-{/if}
+  {#if typeof document !== `undefined`}
+    <CumulativeClfMetrics class="pull-left" />
+  {/if}
 </div>
 
 ## Analysis

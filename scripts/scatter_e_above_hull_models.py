@@ -45,26 +45,25 @@ df_melt[e_above_hull_preds] = (
 
 
 # %%
-def _metric_str(model_name: str) -> str:
-    model_pred = df_wbm[e_above_hull_col] - (df_wbm[e_form_col] - df_wbm[model_name])
-    MAE = (df_wbm[e_above_hull_col] - model_pred).abs().mean()
-    isna = df_wbm[e_above_hull_col].isna() | model_pred.isna()
-    R2 = r2_score(df_wbm[e_above_hull_col][~isna], model_pred[~isna])
-    return f"{model_name} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
+def _metric_str(xs: list[float], ys: list[float]) -> str:
+    # compute MAE and R2 for set of (x, y) pairs
+    isna = np.isnan(xs) | np.isnan(ys)
+    xs, ys = xs[~isna], ys[~isna]
+    MAE = np.abs(xs - ys).mean()
+    R2 = r2_score(xs, ys)
+    return f" · MAE={MAE:.2f} · R<sup>2</sup>={R2:.2f}"
 
 
 def _add_metrics_to_legend(fig: go.Figure) -> None:
     for trace in fig.data:
         # initially hide all traces, let users select which models to compare
         trace.visible = "legendonly"
-        # add MAE and R2 to legend
-        model = trace.name
-        trace.name = _metric_str(model)
+        trace.name = f"{trace.name}{_metric_str(trace.x, trace.y)}"
 
 
 # %% scatter plot of actual vs predicted e_form_per_atom
 fig = px.scatter(
-    df_melt.iloc[::10],
+    df_melt.iloc[::5],
     x=e_form_col,
     y=e_form_preds,
     color=var_name,
@@ -80,13 +79,12 @@ fig.show()
 
 # %%
 img_path = f"{FIGS}/{today}-e-form-scatter-models"
-# fig.write_image(f"{img_path}.pdf")
-save_fig(fig, f"{img_path}.svelte")
+# save_fig(fig, f"{img_path}.svelte")
 
 
 # %% scatter plot of actual vs predicted e_above_hull
 fig = px.scatter(
-    df_melt.iloc[::10],
+    df_melt.iloc[::5],
     x=e_above_hull_col,
     y=e_above_hull_preds,
     color=var_name,
@@ -102,8 +100,7 @@ fig.show()
 
 # %%
 img_path = f"{FIGS}/{today}-e-above-hull-scatter-models"
-# fig.write_image(f"{img_path}.pdf")
-save_fig(fig, f"{img_path}.svelte")
+# save_fig(fig, f"{img_path}.svelte")
 
 
 # %% plot all models in separate subplots
@@ -116,41 +113,75 @@ df_melt["clf"] = np.array(
 )[true_pos * 0 + false_neg * 1 + false_pos * 2 + true_neg * 3]
 
 fig = px.scatter(
-    df_melt.iloc[::10],
+    df_melt.iloc[::50],
     x=e_above_hull_col,
     y=e_above_hull_preds,
     facet_col=var_name,
     facet_col_wrap=3,
+    facet_col_spacing=0.04,
+    facet_row_spacing=0.15,
     hover_data=hover_cols,
     hover_name=id_col,
     color="clf",
     color_discrete_map=dict(zip(classes, ("green", "yellow", "red", "blue"))),
-    opacity=0.4,
+    # opacity=0.4,
+    range_x=[-2, 2],
+    range_y=[-2, 2],
 )
 
-# iterate over subplots and set new title
-for idx, model in enumerate(models, 1):
-    # find index of annotation belonging to model
-    anno_idx = [a.text for a in fig.layout.annotations].index(f"Model={model}")
-    assert anno_idx >= 0, f"could not find annotation for {model}"
+x_title = fig.layout.xaxis.title.text
+y_title = fig.layout.yaxis.title.text
 
+# iterate over subplots and set new title
+for idx, anno in enumerate(fig.layout.annotations, 1):
+    traces = [t for t in fig.data if t.xaxis == f"x{idx if idx > 1 else ''}"]
+    xs = np.concatenate([t.x for t in traces])
+    ys = np.concatenate([t.y for t in traces])
+
+    model = anno.text.split("=")[1]
     # set new subplot titles (adding MAE and R2)
-    fig.layout.annotations[anno_idx].text = _metric_str(model)
+    fig.layout.annotations[idx - 1].text = f"{model} {_metric_str(xs, ys)}"
 
     # remove x and y axis titles if not on center row or center column
-    if idx != 2:
-        fig.layout[f"xaxis{idx}"].title.text = ""
-    if idx > 1:
-        fig.layout[f"yaxis{idx}"].title.text = ""
+    fig.layout[f"xaxis{idx}"].title.text = ""
+    fig.layout[f"yaxis{idx}"].title.text = ""
 
     # add vertical and horizontal lines at 0
     fig.add_vline(x=0, line=dict(width=1, dash="dash", color="gray"))
     fig.add_hline(y=0, line=dict(width=1, dash="dash", color="gray"))
 
-fig.update_layout(showlegend=False)
+
 fig.update_xaxes(nticks=5)
 fig.update_yaxes(nticks=5)
 
+legend = dict(
+    title="",  # remove legend title
+    itemsizing="constant",  # increase legend marker size
+    orientation="h",
+    x=0.5,  # place legend centered above subplots
+    xanchor="center",
+    y=1.2,
+    yanchor="top",
+)
+fig.layout.legend.update(legend)
+
+axis_titles = dict(xref="paper", yref="paper", showarrow=False)
+fig.add_annotation(
+    x=0.5,
+    y=-0.16,
+    text=x_title,
+    **axis_titles,
+)
+# add y-axis title
+fig.add_annotation(
+    x=-0.06,
+    y=0.5,
+    text=y_title,
+    textangle=-90,
+    **axis_titles,
+)
+
+
 fig.show()
 img_path = f"{STATIC}/{today}-each-scatter-models.png"
-# save_fig(fig, img_path, scale=4, width=1000, height=500)
+save_fig(fig, img_path, scale=4, width=1000, height=500)
