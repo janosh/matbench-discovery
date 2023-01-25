@@ -11,7 +11,7 @@ from sklearn.metrics import f1_score, r2_score
 from tqdm import tqdm
 
 from matbench_discovery import FIGS, MODELS, WANDB_PATH, today
-from matbench_discovery.data import PRED_FILENAMES, load_df_wbm_with_preds
+from matbench_discovery.data import PRED_FILENAMES, load_df_wbm_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
@@ -119,7 +119,7 @@ ax.set(
 
 
 # %%
-df_wbm = load_df_wbm_with_preds(models=list(models))
+df_wbm = load_df_wbm_preds(models=list(models))
 e_form_col = "e_form_per_atom_mp2020_corrected"
 each_col = "e_above_hull_mp2020_corrected_ppd_mp"
 
@@ -166,7 +166,7 @@ html_path = f"{FIGS}/{today}-metrics-table.html"
 
 
 # %%
-df = load_df_wbm_with_preds(list(models))
+df = load_df_wbm_preds(list(models))
 
 df_metrics["missing_preds"] = df[list(models)].isna().sum()
 df_metrics["missing_percent"] = [f"{x / len(df):.2%}" for x in df_metrics.missing_preds]

@@ -2,7 +2,7 @@
 from pymatviz.utils import save_fig
 
 from matbench_discovery import FIGS, today
-from matbench_discovery.data import load_df_wbm_with_preds
+from matbench_discovery.data import load_df_wbm_preds
 from matbench_discovery.plots import (
     WhichEnergy,
     hist_classified_stable_vs_hull_dist,
@@ -22,7 +22,7 @@ See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
 
 
 # %%
-df_wbm = load_df_wbm_with_preds(models="Wren Wrenformer".split()).round(3)
+df_wbm = load_df_wbm_preds(models="Wren Wrenformer".split()).round(3)
 e_form_col = "e_form_per_atom_mp2020_corrected"
 e_above_hull_col = "e_above_hull_mp2020_corrected_ppd_mp"
 

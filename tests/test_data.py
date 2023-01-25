@@ -21,7 +21,7 @@ from matbench_discovery.data import (
     as_dict_handler,
     df_wbm,
     glob_to_df,
-    load_df_wbm_with_preds,
+    load_df_wbm_preds,
     load_train_test,
 )
 
@@ -181,7 +181,7 @@ def test_df_wbm() -> None:
 
 @pytest.mark.parametrize("models", [[], ["Wrenformer"]])
 def test_load_df_wbm_with_preds(models: list[str]) -> None:
-    df = load_df_wbm_with_preds(models=models)
+    df = load_df_wbm_preds(models=models)
     assert len(df) == len(df_wbm)
     assert list(df) == list(df_wbm) + models + [f"{model}_std" for model in models]
     assert df.index.name == "material_id"
@@ -193,7 +193,7 @@ def test_load_df_wbm_with_preds(models: list[str]) -> None:
 
 def test_load_df_wbm_with_preds_raises() -> None:
     with pytest.raises(ValueError, match="Unknown models: foo"):
-        load_df_wbm_with_preds(models=["foo"])
+        load_df_wbm_preds(models=["foo"])
 
 
 def test_pred_filenames() -> None:

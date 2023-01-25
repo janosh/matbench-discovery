@@ -526,7 +526,7 @@ ax = density_scatter(
     xlabel="legacy corrections (eV / atom)",
     ylabel="MP2020 corrections (eV / atom)",
 )
-# ax.figure.savefig(f"{ROOT}/tmp/{today}-legacy-vs-mp2020-corrections.png")
+# ax.figure.savefig(f"{ROOT}/tmp/{today}-legacy-vs-mp2020-corrections.webp")
 
 
 # %% Python crashes with segfault on correcting the energy of wbm-1-24459 due to
