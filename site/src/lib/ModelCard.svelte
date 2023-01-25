@@ -2,7 +2,7 @@
   import { repository } from '$site/package.json'
   import Icon from '@iconify/svelte'
   import { pretty_num } from 'sveriodic-table/labels'
-  import type { ModelData, ModelStat } from './types'
+  import type { ModelData, ModelStat } from '.'
 
   export let key: string
   export let data: ModelData

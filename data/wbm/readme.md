@@ -14,7 +14,7 @@ The first integer in each material ID ranging from 1 to 5 and coming right after
 
 Each iteration has varying numbers of materials which are counted by the 2nd integer. Note this 2nd number is not always consecutive. A small number of materials (~0.2%) were removed by the data-cleaning steps detailed below. Don't be surprised to find an ID like `wbm-3-70804` followed by `wbm-3-70807`.
 
-## 🪓 &thinsp; Data processing steps
+## 🪓 &thinsp; Data Processing Steps
 
 The full set of processing steps used to curate the WBM test set from the raw data files (downloaded from URLs listed below) can be found in [`data/wbm/fetch_process_wbm_dataset.py`](https://github.com/janosh/matbench-discovery/blob/site/data/wbm/fetch_process_wbm_dataset.py). Processing involved
 
@@ -45,7 +45,7 @@ The number of materials in each step before and after processing are:
 | before | 61,848 | 52,800 | 79,205 | 40,328 | 23,308 | 257,487 |
 | after  | 61,466 | 52,755 | 79,160 | 40,314 | 23,268 | 256,963 |
 
-## 🔗 &thinsp; Links to raw WBM data files
+## 🔗 &thinsp; Links to raw WBM Data Files
 
 Links to WBM data files have proliferated. This is an attempt to keep track of them.
 
@@ -72,7 +72,9 @@ materialscloud:2021.68 includes a readme file with a description of the dataset,
 
 [wbm paper]: https://nature.com/articles/s41524-020-00481-6
 
-## 📊 &thinsp; Plots
+## 📊 &thinsp; Chemical Diversity
+
+Both the WBM test set and even more so the MP training set are heavily oxide dominated. The WBM test set is about 75% larger than the MP training set and also more chemically diverse, containing a higher fraction of transition metals, post-transition metals and metalloids. Our goal in picking such a large diverse test set is future-proofing. Ideally, this data will provide a challenging materials discovery test bed even for large foundational ML models in the future.
 
 <slot name="wbm-elements-heatmap">
   <img src="./figs/2023-01-08-wbm-elements.svg" alt="Periodic table log heatmap of WBM elements">

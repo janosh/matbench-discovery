@@ -1,6 +1,6 @@
 <script lang="ts">
+  import type { ModelStats } from '$lib'
   import { ModelCard } from '$lib'
-  import type { ModelStats } from '$lib/types'
   import { RadioButtons } from 'svelte-zoo'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'

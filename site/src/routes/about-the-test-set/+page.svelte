@@ -10,11 +10,18 @@
   let log = false // log color scale
   const wbm_heat_vals: number[] = Object.values(wbm_elem_counts)
   const mp_heat_vals: number[] = Object.values(mp_elem_counts)
-  const color_map = {
+  const [mp_max, wbm_max] = [Math.max(...mp_heat_vals), Math.max(...wbm_heat_vals)]
+  const mp_color_map = {
     200: `blue`,
-    35_000: `green`,
-    80_000: `yellow`,
-    150_000: `red`,
+    [mp_max / 4]: `green`,
+    [mp_max / 2]: `yellow`,
+    mp_max: `red`,
+  }
+  const wbm_color_map = {
+    200: `blue`,
+    [wbm_max / 4]: `green`,
+    [wbm_max / 2]: `yellow`,
+    wbm_max: `red`,
   }
   let active_mp_elem: ChemicalElement
   let active_wbm_elem: ChemicalElement
@@ -30,7 +37,7 @@
     <span>Log color scale <Toggle bind:checked={log} /></span>
     <PeriodicTable
       heatmap_values={wbm_heat_vals}
-      {color_map}
+      color_map={wbm_color_map}
       {log}
       bind:active_element={active_wbm_elem}
     >
@@ -51,9 +58,10 @@
     </PeriodicTable>
   </svelte:fragment>
   <svelte:fragment slot="mp-elements-heatmap">
+    <span>Log color scale <Toggle bind:checked={log} /></span>
     <PeriodicTable
       heatmap_values={mp_heat_vals}
-      {color_map}
+      color_map={mp_color_map}
       {log}
       bind:active_element={active_mp_elem}
     >

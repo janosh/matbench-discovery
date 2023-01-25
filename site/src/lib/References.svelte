@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Reference } from './types'
+  import type { Reference } from '.'
 
   export let references: Reference[]
 </script>
