@@ -1,9 +1,9 @@
-import type { ModelData, ModelMetadata } from '$lib/types'
+import type { ModelData, ModelMetadata } from '$lib'
 import { dirname } from 'path'
 import type { PageServerLoad } from './$types'
 import model_stats from './2023-01-23-model-stats.json'
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = () => {
   const yml = import.meta.glob(`$root/models/**/metadata.yml`, {
     eager: true,
   })
