@@ -45,9 +45,9 @@ The number of materials in each step before and after processing are:
 | before | 61,848 | 52,800 | 79,205 | 40,328 | 23,308 | 257,487 |
 | after  | 61,466 | 52,755 | 79,160 | 40,314 | 23,268 | 256,963 |
 
-## 🔗 &thinsp; Links to raw WBM Data Files
+## 🔗 &thinsp; Links to WBM Files
 
-Links to WBM data files have proliferated. This is an attempt to keep track of them.
+Links to raw WBM data files have proliferated. This is an attempt to keep track of them.
 
 Initial structures (after element substitution but before DFT relaxation) were sent as Google Drive links via email by Hai-Chen Wang on 2021-09-01.
 
@@ -72,18 +72,30 @@ materialscloud:2021.68 includes a readme file with a description of the dataset,
 
 [wbm paper]: https://nature.com/articles/s41524-020-00481-6
 
-## 📊 &thinsp; Chemical Diversity
+## 🧪 &thinsp; Chemical Diversity
 
-Both the WBM test set and even more so the MP training set are heavily oxide dominated. The WBM test set is about 75% larger than the MP training set and also more chemically diverse, containing a higher fraction of transition metals, post-transition metals and metalloids. Our goal in picking such a large diverse test set is future-proofing. Ideally, this data will provide a challenging materials discovery test bed even for large foundational ML models in the future.
+The WBM test set and even more so the MP training set are heavily oxide dominated. The WBM test set is about 75% larger than the MP training set and also more chemically diverse, containing a higher fraction of transition metals, post-transition metals and metalloids. Our goal in picking such a large diverse test set is future-proofing. Ideally, this data will provide a challenging materials discovery test bed even for large foundational ML models in the future.
+
+Element counts for WBM test set consisting of 256,963 WBM `ComputedStructureEntries`
 
 <slot name="wbm-elements-heatmap">
   <img src="./figs/2023-01-08-wbm-elements.svg" alt="Periodic table log heatmap of WBM elements">
 </slot>
-<caption>Element counts for test set consisting of 256,963 WBM <code>ComputedStructureEntries</code></caption>
 
-By comparison, the training set of MP ComputedStructureEntries has this element distribution.
+Element counts for MP training set consisting of 146,323 `ComputedStructureEntries`
 
 <slot name="mp-elements-heatmap">
   <img src="./figs/2023-01-08-mp-elements.svg" alt="Periodic table log heatmap of MP elements">
 </slot>
-<caption>Element counts for training set consisting of 146,323 MP <code>ComputedStructureEntries</code></caption>
+
+## 🎯 &thinsp; Target Distribution
+
+The WBM test set has an energy above the MP convex hull distribution with mean **0.02 eV/atom** and standard deviation of **0.25 eV/atom**.
+
+The dummy MAE of always predicting the test set mean is **0.17 eV/atom**.
+
+The number of stable materials is **97k** out of 257k, resulting in a dummy stability hit rate of **37%**.
+
+<slot name="wbm-each-hist">
+  <img src="./figs/2023-01-26-wbm-each-hist.svg" alt="WBM energy above MP convex hull distribution">
+</slot>

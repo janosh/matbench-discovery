@@ -181,7 +181,7 @@ def glob_to_df(
     return pd.concat(sub_dfs.values())
 
 
-def load_df_wbm_with_preds(
+def load_df_wbm_preds(
     models: Sequence[str],
     pbar: bool = True,
     id_col: str = "material_id",

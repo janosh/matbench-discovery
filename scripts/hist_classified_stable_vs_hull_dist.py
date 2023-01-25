@@ -2,7 +2,7 @@
 from pymatviz.utils import save_fig
 
 from matbench_discovery import FIGS, today
-from matbench_discovery.data import load_df_wbm_with_preds
+from matbench_discovery.data import load_df_wbm_preds
 from matbench_discovery.plots import WhichEnergy, hist_classified_stable_vs_hull_dist
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
@@ -19,7 +19,7 @@ See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
 
 # %%
 model_name = "Wrenformer"
-df_wbm = load_df_wbm_with_preds(models=[model_name]).round(3)
+df_wbm = load_df_wbm_preds(models=[model_name]).round(3)
 
 
 # %%
@@ -46,22 +46,22 @@ e_above_hull_pred = (
     - df_wbm[e_form_col]
 )
 
-ax, metrics = hist_classified_stable_vs_hull_dist(
+fig, metrics = hist_classified_stable_vs_hull_dist(
     e_above_hull_true=df_wbm[e_above_hull_col],
     e_above_hull_pred=e_above_hull_pred,
     which_energy=which_energy,
     # stability_threshold=-0.05,
-    rolling_accuracy=0,
+    # rolling_acc=0,
     # backend="matplotlib",
 )
-if hasattr(ax, "legend"):
+if hasattr(fig, "legend"):
     legend_title = f"Enrichment Factor = {metrics['enrichment']:.3}"
-    ax.legend(loc="upper left", frameon=False, title=legend_title)
+    fig.legend(loc="upper left", frameon=False, title=legend_title)
 
-ax
+fig.show()
 
 
 # %%
 img_path = f"{FIGS}/{today}-wren-wbm-hull-dist-hist-{which_energy=}"
 # save_fig(ax, f"{img_path}.pdf")
-save_fig(ax, f"{img_path}.html")
+save_fig(fig, f"{img_path}.html")

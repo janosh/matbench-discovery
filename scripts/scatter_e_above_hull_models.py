@@ -5,7 +5,7 @@ from pymatviz.utils import add_identity_line, save_fig
 from sklearn.metrics import r2_score
 
 from matbench_discovery import FIGS, STATIC, today
-from matbench_discovery.data import PRED_FILENAMES, load_df_wbm_with_preds
+from matbench_discovery.data import PRED_FILENAMES, load_df_wbm_preds
 from matbench_discovery.energy import classify_stable
 from matbench_discovery.plots import px
 
@@ -18,7 +18,7 @@ print(f"loadable models: {list(PRED_FILENAMES)}")
 models = sorted(
     "CGCNN, Voronoi Random Forest, Wrenformer, MEGNet, M3GNet, BOWSR MEGNet".split(", ")
 )
-df_wbm = load_df_wbm_with_preds(models=models).round(3)
+df_wbm = load_df_wbm_preds(models=models).round(3)
 
 e_form_col = "e_form_per_atom_mp2020_corrected"
 e_above_hull_col = "e_above_hull_mp2020_corrected_ppd_mp"
@@ -51,7 +51,7 @@ def _metric_str(xs: list[float], ys: list[float]) -> str:
     xs, ys = xs[~isna], ys[~isna]
     MAE = np.abs(xs - ys).mean()
     R2 = r2_score(xs, ys)
-    return f" · MAE={MAE:.2f} · R<sup>2</sup>={R2:.2f}"
+    return f"· MAE={MAE:.2f} · R<sup>2</sup>={R2:.2f}"
 
 
 def _add_metrics_to_legend(fig: go.Figure) -> None:
@@ -183,5 +183,5 @@ fig.add_annotation(
 
 
 fig.show()
-img_path = f"{STATIC}/{today}-each-scatter-models.png"
+img_path = f"{STATIC}/{today}-each-scatter-models.webp"
 save_fig(fig, img_path, scale=4, width=1000, height=500)

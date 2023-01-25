@@ -5,9 +5,10 @@ import os
 import sys
 from datetime import datetime
 
-ROOT = os.path.dirname(os.path.dirname(__file__))  # repository root
+ROOT = os.path.dirname(os.path.dirname(__file__))  # repo root
 FIGS = f"{ROOT}/site/src/figs"  # directory to store interactive figures
-STATIC = f"{ROOT}/site/static/figs"  # directory to store static figures
+STATIC = f"{ROOT}/site/static/figs"  # directory to store static figures, is symlinked
+# into site/src/routes/paper/figs dir
 MODELS = f"{ROOT}/site/src/routes/models"  # directory to write model analysis
 # whether a currently running slurm job is in debug mode
 DEBUG = "DEBUG" in os.environ or (

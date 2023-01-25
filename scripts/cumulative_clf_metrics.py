@@ -2,8 +2,8 @@
 import pandas as pd
 from pymatviz.utils import save_fig
 
-from matbench_discovery import STATIC, today
-from matbench_discovery.data import load_df_wbm_with_preds
+from matbench_discovery import FIGS, today
+from matbench_discovery.data import load_df_wbm_preds
 from matbench_discovery.plots import cumulative_precision_recall
 
 __author__ = "Janosh Riebesell, Rhys Goodall"
@@ -12,11 +12,10 @@ __date__ = "2022-12-04"
 
 # %%
 models = (
-    # Wren, CGCNN IS2RE, CGCNN RS2RE, CGCNN
-    "Voronoi Random Forest, Wrenformer, MEGNet, M3GNet, BOWSR MEGNet"
+    "CGCNN, Voronoi Random Forest, Wrenformer, MEGNet, M3GNet, BOWSR MEGNet"
 ).split(", ")
 
-df_wbm = load_df_wbm_with_preds(models=models).round(3)
+df_wbm = load_df_wbm_preds(models=models).round(3)
 
 # df_wbm.columns = [f"{col}_e_form" if col in models else col for col in df_wbm]
 e_form_col = "e_form_per_atom_mp2020_corrected"
@@ -34,7 +33,6 @@ fig, df_metric = cumulative_precision_recall(
     df_preds=df_e_above_hull_pred,
     project_end_point="xy",
     backend=(backend := "plotly"),
-    show_optimal=True,
 )
 
 title = f"{today} - Cumulative Precision, Recall, F1 scores for classifying stable materials"
@@ -51,7 +49,7 @@ elif backend == "plotly":
     fig.update_xaxes(matches=None, showticklabels=True)
     fig.update_yaxes(matches=None, showticklabels=True)
 
-fig.show()
+fig.show(responsive=True)
 
 
 # %%
@@ -61,7 +59,7 @@ for trace in fig.data:
     assert isinstance(trace.y[0], float)
     trace.y = [round(y, 3) for y in trace.y]
 
-img_path = f"{STATIC}/{today}-cumulative-clf-metrics"
+img_path = f"{FIGS}/{today}-cumulative-clf-metrics"
 # save_fig(fig, f"{img_path}.pdf")
 save_fig(fig, f"{img_path}.svelte")
-# save_fig(fig, f"{img_path}.png", scale=3)
+# save_fig(fig, f"{img_path}.webp", scale=3)

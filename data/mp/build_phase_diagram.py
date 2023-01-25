@@ -109,4 +109,4 @@ ax.set(
     xlabel="MP Formation Energy (eV/atom)",
     ylabel="Our Formation Energy (eV/atom)",
 )
-ax.figure.savefig(f"{ROOT}/tmp/{today}-our-vs-mp-formation-energies.png", dpi=300)
+ax.figure.savefig(f"{ROOT}/tmp/{today}-our-vs-mp-formation-energies.webp", dpi=300)

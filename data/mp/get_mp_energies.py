@@ -80,7 +80,7 @@ ax = df.plot.scatter(
 annotate_mae_r2(df.formation_energy_per_atom, df.decomposition_enthalpy)
 # result on 2023-01-10: plots match. no correlation between formation energy and decomposition
 # enthalpy. R^2 = -1.571, MAE = 1.604
-# ax.figure.savefig(f"{module_dir}/{today}-mp-decomp-enth-vs-e-form.png", dpi=300)
+# ax.figure.savefig(f"{module_dir}/{today}-mp-decomp-enth-vs-e-form.webp", dpi=300)
 
 
 # %% scatter plot energy above convex hull vs decomposition enthalpy
@@ -99,4 +99,4 @@ ax.set(
     title=f"{n_above_line:,} / {len(df):,} = {n_above_line/len(df):.1%} "
     "MP materials with\nenergy_above_hull - decomposition_enthalpy.clip(0) > 0.1"
 )
-# ax.figure.savefig(f"{module_dir}/{today}-mp-e-above-hull-vs-decomp-enth.png", dpi=300)
+# ax.figure.savefig(f"{module_dir}/{today}-mp-e-above-hull-vs-decomp-enth.webp", dpi=300)
