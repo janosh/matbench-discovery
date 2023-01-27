@@ -1,31 +1,34 @@
-import json
 import os
 from glob import glob
-from subprocess import run
 
-# Update auto-generated API docs. Also tweak lazydocs's markdown output for
-# - prettier badges linking to source code on GitHub
-# - remove bold tags since they break inline code
+from lazydocs import generate_docs
 
-pkg = json.load(open("site/package.json"))
-route = "site/src/routes/api"
+from matbench_discovery import ROOT, URLs
 
-for path in glob(f"{route}/*.md"):
+# Update auto-generated API docs.
+
+out_path = f"{ROOT}/site/src/routes/api"
+
+for path in glob(f"{out_path}/*.md"):
     os.remove(path)
 
-run(
-    f"lazydocs matbench_discovery --output-path {route} "
-    f"--no-watermark --src-base-url {pkg['repository']}/blob/main",
-    shell=True,
+generate_docs(
+    ["matbench_discovery"],
+    output_path=out_path,
+    watermark=False,
+    src_base_url=f"{URLs['Repo']}/blob/-",
 )
 
-for path in glob(f"{route}/*.md"):
-    markdown = open(path).read()
-    # remove <b> tags from generated markdown as they break inline code
-    markdown = markdown.replace("<b>", "").replace("</b>", "")
-    # improve style of badges linking to source code on GitHub
-    markdown = markdown.replace(
+# Tweak lazydocs's markdown output:
+# - remove bold tags since they break inline code
+# - make badges linking to GitHub source code blue with flat style, add alt text
+for path in glob(f"{out_path}/*.md"):
+    text = open(path).read()
+
+    text = text.replace("<b>", "").replace("</b>", "")
+
+    text = text.replace(
         'src="https://img.shields.io/badge/-source-cccccc?style=flat-square"',
         'src="https://img.shields.io/badge/source-blue?style=flat" alt="source link"',
     )
-    open(path, "w").write(markdown)
+    open(path, "w").write(text)

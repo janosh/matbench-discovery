@@ -7,11 +7,13 @@ import pandas as pd
 import requests
 import wandb
 import wandb.apis.public
+from pymatviz.utils import save_fig
 from sklearn.metrics import f1_score, r2_score
 from tqdm import tqdm
 
 from matbench_discovery import FIGS, MODELS, WANDB_PATH, today
 from matbench_discovery.data import PRED_FILENAMES, load_df_wbm_preds
+from matbench_discovery.plots import px
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
@@ -76,15 +78,14 @@ model_stats: dict[str, dict[str, str | int | float]] = {}
 # test set.
 
 for model in (pbar := tqdm(models)):
-    model_dict = models[model]
-    n_runs, filters = (model_dict.get(x) for x in ("n_runs", "filters"))
+    n_runs, filters = (models[model].get(x) for x in ("n_runs", "filters"))
     if n_runs == 0 or model in model_stats:
         continue
     pbar.set_description(model)
-    if "runs" in models:
-        runs: wandb.apis.public.Runs = models["runs"]
+    if "runs" in models[model]:
+        runs: wandb.apis.public.Runs = models[model]["runs"]
     else:
-        models["runs"] = runs = wandb.Api().runs(WANDB_PATH, filters=filters)
+        models[model]["runs"] = runs = wandb.Api().runs(WANDB_PATH, filters=filters)
 
     assert len(runs) == n_runs, f"found {len(runs)=} for {model}, expected {n_runs}"
 
@@ -96,8 +97,7 @@ for model in (pbar := tqdm(models)):
 
     n_gpu, n_cpu = metadata.get("gpu_count", 0), metadata.get("cpu_count", 0)
     model_stats[model] = {
-        "run_time": run_time_total,
-        "run_time_h": f"{run_time_total / 3600:.1f} h",
+        "run_time_h": run_time_total / 3600,
         "GPU": n_gpu,
         "CPU": n_cpu,
         "slurm_jobs": n_runs,
@@ -109,7 +109,7 @@ ax.set(
     title=f"Run time distribution for {model}", xlabel="Run time [h]", ylabel="Count"
 )
 
-
+df_metrics = pd.DataFrame(model_stats).T
 # on 2022-11-28:
 # run_times = {'Voronoi Random Forest': 739608,
 #  'Wrenformer': 208399,
@@ -119,14 +119,12 @@ ax.set(
 
 
 # %%
-df_wbm = load_df_wbm_preds(models=list(models))
+df_wbm = load_df_wbm_preds(list(models))
 e_form_col = "e_form_per_atom_mp2020_corrected"
 each_col = "e_above_hull_mp2020_corrected_ppd_mp"
 
 
 # %%
-df_metrics = pd.DataFrame(model_stats).T
-
 for model in models:
     dct = {}
     e_above_hull_pred = df_wbm[model] - df_wbm[e_form_col]
@@ -154,7 +152,7 @@ df_styled = df_metrics.style.format(precision=3).background_gradient(
 )
 
 
-# %%
+# %% export model metrics as styled HTML table
 styles = {
     "": "font-family: sans-serif; border-collapse: collapse;",
     "td, th": "border: 1px solid #ddd; text-align: left; padding: 8px;",
@@ -165,10 +163,38 @@ html_path = f"{FIGS}/{today}-metrics-table.html"
 # df_styled.to_html(html_path)
 
 
-# %%
-df = load_df_wbm_preds(list(models))
+# %% write model metrics to json for use by the website
+df_metrics["missing_preds"] = df_wbm[list(models)].isna().sum()
+df_metrics["missing_percent"] = [
+    f"{x / len(df_wbm):.2%}" for x in df_metrics.missing_preds
+]
 
-df_metrics["missing_preds"] = df[list(models)].isna().sum()
-df_metrics["missing_percent"] = [f"{x / len(df):.2%}" for x in df_metrics.missing_preds]
+df_metrics.attrs["total_run_time"] = df_metrics.run_time.sum()
 
 df_metrics.round(2).to_json(f"{MODELS}/{today}-model-stats.json", orient="index")
+
+
+# %% plot model run times as pie chart
+fig = px.pie(
+    df_metrics, values="run_time", names=df_metrics.index, hole=0.5
+).update_traces(
+    textinfo="percent+label",
+    textfont_size=14,
+    marker=dict(line=dict(color="#000000", width=2)),
+    hoverinfo="label+percent+name",
+    texttemplate="%{label}<br>%{percent:.1%}",
+    hovertemplate="%{label} %{percent:.1%} (%{value:.1f} h)",
+    rotation=90,
+    showlegend=False,
+)
+fig.add_annotation(
+    # add title in the middle saying "Total CPU+GPU time used"
+    text=f"Total CPU+GPU<br>time used:<br>{df_metrics.run_time.sum():.1f} h",
+    font=dict(size=18),
+    x=0.5,
+    y=0.5,
+    showarrow=False,
+)
+fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
+
+save_fig(fig, f"{FIGS}/{today}-model-run-times-pie.svelte")

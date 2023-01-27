@@ -1,5 +1,6 @@
 <script lang="ts">
-  import type { ModelStats } from '$lib'
+  import RunTimePie from '$figs/2023-01-26-model-run-times-pie.svelte'
+  import type { ModelStatLabel, ModelStats } from '$lib'
   import { ModelCard } from '$lib'
   import { RadioButtons } from 'svelte-zoo'
   import { flip } from 'svelte/animate'
@@ -8,7 +9,7 @@
 
   export let data: PageData
 
-  let sort_by: keyof ModelStats | 'date_added' | 'model_name' = `model_name`
+  let sort_by: keyof ModelStats | 'model_name' = `model_name`
   let selected = `asc`
   $: sort_factor = selected == `asc` ? -1 : 1
 
@@ -21,15 +22,16 @@
       console.error(`Sorting by key ${sort_by} gives unknown type: ${typeof m1[sort_by]}`)
     }
   })
-  const stats: [keyof ModelStats | 'date_added', string?][] = [
-    [`MAE`],
-    [`RMSE`],
+  const stats: ModelStatLabel[] = [
+    // key, label, unit
+    [`MAE`, null, `eV / atom`],
+    [`RMSE`, null, `eV / atom`],
     [`R2`, `R<sup>2</sup>`],
     [`Precision`],
     [`Recall`],
     [`F1`],
     [`date_added`, `Date added`],
-    [`run_time_h`, `Run time`],
+    [`run_time_h`, `Run time`, `h`],
   ]
 </script>
 
@@ -59,6 +61,18 @@
     {/each}
   </ol>
 </div>
+
+<h2>Model Run Times</h2>
+
+<p>
+  Creating this benchmark (excluding debugging runs) used a total of 3137 hours of compute
+  time (mix of CPU and GPU, mostly CPU). Notably, the vast majority of that was used in
+  the Bayesian optimization step of the BOWSR+MEGnet model.
+</p>
+
+{#if typeof document !== `undefined`}
+  <RunTimePie />
+{/if}
 
 <style>
   :is(ul, ol) {

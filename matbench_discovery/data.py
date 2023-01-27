@@ -139,7 +139,7 @@ def load_train_test(
 
 
 PRED_FILENAMES = {
-    "CGCNN": "cgcnn/2022-11-23-test-cgcnn-wbm-IS2RE/cgcnn-ensemble-preds.csv",
+    "CGCNN": "cgcnn/2023-01-26-test-cgcnn-wbm-IS2RE/cgcnn-ensemble-preds.csv",
     "Voronoi Random Forest": "voronoi/2022-11-27-train-test/e-form-preds-IS2RE.csv",
     "Wrenformer": "wrenformer/2022-11-15-wrenformer-IS2RE-preds.csv",
     "MEGNet": "megnet/2022-11-18-megnet-wbm-IS2RE/megnet-e-form-preds.csv",
