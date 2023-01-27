@@ -45,7 +45,7 @@ for batch_idx, ax in zip(range(1, 6), axs.flat):
         ax=ax,
     )
 
-    text = f"Enrichment\nFactor = {metrics['enrichment']:.3}"
+    text = f"DAF = {metrics['DAF']:.3}"
     ax.text(0.02, 0.25, text, fontsize=16, transform=ax.transAxes)
 
     title = f"Batch {batch_idx} ({len(batch_df.filter(like='e_').dropna()):,})"
@@ -61,7 +61,7 @@ ax, metrics = hist_classified_stable_vs_hull_dist(
     backend="matplotlib",
 )
 
-text = f"Enrichment\nFactor = {metrics['enrichment']:.3}"
+text = f"DAF = {metrics['DAF']:.3}"
 ax.text(0.02, 0.3, text, fontsize=16, transform=ax.transAxes)
 
 axs.flat[-1].set(title=f"All batches ({len(df_wbm[model_name].dropna()):,})")
