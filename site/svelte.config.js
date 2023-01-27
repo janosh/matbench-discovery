@@ -86,9 +86,6 @@ export default {
       // https://github.com/kwshi/rehype-katex-svelte#usage
       remarkPlugins: [math],
       extensions: [`.svx`, `.md`],
-      layout: {
-        paper: `./src/routes/paper/Layout.svelte`,
-      },
     }),
   ],
 

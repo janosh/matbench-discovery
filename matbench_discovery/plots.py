@@ -280,6 +280,7 @@ def rolling_mae_vs_hull_dist(
     backend: Backend = "plotly",
     y_label: str = "rolling MAE (eV/atom)",
     just_plot_lines: bool = False,
+    with_sem: bool = True,
     **kwargs: Any,
 ) -> plt.Axes | go.Figure:
     """Rolling mean absolute error as the energy to the convex hull is varied. A scale
@@ -307,6 +308,8 @@ def rolling_mae_vs_hull_dist(
         just_plot_line (bool, optional): If True, plot only the rolling MAE, no shapes
             and annotations. Also won't plot the standard error in the mean. Defaults
             to False.
+        with_sem (bool, optional): If True, plot the standard error of the mean as
+            shaded area around the rolling MAE. Defaults to True.
 
     Returns:
         tuple[plt.Axes | go.Figure, pd.DataFrame, pd.DataFrame]: matplotlib Axes or
@@ -358,7 +361,7 @@ def rolling_mae_vs_hull_dist(
     if backend == "matplotlib":
         # assert df_rolling_err.isna().sum().sum() == 0, "NaNs in df_rolling_err"
         # assert df_err_std.isna().sum().sum() == 0, "NaNs in df_err_std"
-        # for model in df_rolling_err:
+        # for model in df_rolling_err if with_sem else []:
         #     ax.fill_between(
         #         bins,
         #         df_rolling_err[model] + df_err_std[model],
@@ -413,7 +416,7 @@ def rolling_mae_vs_hull_dist(
         ax.set(xlim=x_lim, ylim=y_lim)
 
     elif backend == "plotly":
-        for idx, model in enumerate(df_rolling_err):
+        for idx, model in enumerate(df_rolling_err if with_sem else []):
             # set legendgroup to model name so SEM shading toggles with model curve
             ax.data[idx].legendgroup = model
             # set SEM area to same color as model curve
@@ -466,7 +469,7 @@ def rolling_mae_vs_hull_dist(
         ax.add_annotation(
             x=-dft_acc,
             y=dft_acc,
-            text=f"<a {href=}>Corrected GGA Accuracy</a> "
+            text=f"<a {href=}>Corrected GGA Accuracy<br>for rel. Energy</a> "
             "[<a href='#hautier_accuracy_2012' target='_self'>ref</a>]",
             showarrow=True,
             xshift=-10,

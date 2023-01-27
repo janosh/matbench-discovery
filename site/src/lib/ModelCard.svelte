@@ -2,11 +2,11 @@
   import { repository } from '$site/package.json'
   import Icon from '@iconify/svelte'
   import { pretty_num } from 'sveriodic-table/labels'
-  import type { ModelData, ModelStat } from '.'
+  import type { ModelData, ModelStatLabel } from '.'
 
   export let key: string
   export let data: ModelData
-  export let stats: [ModelStat, string?][]
+  export let stats: ModelStatLabel[] // [key, label, unit][]
   export let sort_by: keyof ModelData
 
   $: ({ model_name, repo, doi, preprint, url, date_added } = data)
@@ -77,9 +77,10 @@
 <section class="metrics">
   <h3 class="toc-exclude">Metrics</h3>
   <ul>
-    {#each stats as [key, label]}
+    {#each stats as [key, label, unit]}
       <li class:active={sort_by == key}>
         {@html label ?? key} = {data[key]}
+        {unit ?? ``}
       </li>
     {/each}
   </ul>
