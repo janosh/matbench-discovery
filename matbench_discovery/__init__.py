@@ -22,7 +22,8 @@ WANDB_PATH = "janosh/matbench-discovery"
 timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
 today = timestamp.split("@")[0]
 
-# load URLs from package.json
+# load docs, repo, package URLs from package.json
+print(f"{ROOT=}")
 
 with open(f"{ROOT}/site/package.json") as file:
     pkg = json.load(file)

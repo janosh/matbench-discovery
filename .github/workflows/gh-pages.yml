@@ -24,6 +24,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
+          cache: pip
+          cache-dependency-path: setup.py
 
       - name: Set up node
         uses: actions/setup-node@v3
@@ -34,7 +36,7 @@ jobs:
         run: |
           pip install lazydocs  # used in package.json script
           # lazydocs needs package deps to be installed
-          pip install .
+          pip install -e .
           cd site
           npm install
 

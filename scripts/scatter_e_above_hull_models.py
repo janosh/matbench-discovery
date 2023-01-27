@@ -122,8 +122,8 @@ fig = px.scatter(
     facet_row_spacing=0.15,
     hover_data=hover_cols,
     hover_name=id_col,
-    color="clf",
-    color_discrete_map=dict(zip(classes, ("green", "yellow", "red", "blue"))),
+    # color="clf",
+    # color_discrete_map=dict(zip(classes, px.colors.qualitative.Pastel)),
     # opacity=0.4,
     range_x=[-2, 2],
     range_y=[-2, 2],
@@ -181,7 +181,39 @@ fig.add_annotation(
     **axis_titles,
 )
 
+# add transparent rectangle with TN, TP, FN, FP labels in each quadrant
+for idx, _model in enumerate(models, 1):
+    for s1, s2, color, label in (
+        (-1, -1, "green", "TP"),
+        (-1, 1, "yellow", "FN"),
+        (1, -1, "red", "FP"),
+        (1, 1, "blue", "TN"),
+    ):
+        fig.add_shape(
+            type="rect",
+            x0=0,
+            y0=0,
+            x1=s1 * 100,
+            y1=s2 * 100,
+            fillcolor=color,
+            opacity=0.3,
+            layer="below",
+            xref=f"x{idx if idx > 1 else ''}",
+            yref=f"y{idx if idx > 1 else ''}",
+        )
+        fig.add_annotation(
+            xref=f"x{idx if idx > 1 else ''}",
+            yref=f"y{idx if idx > 1 else ''}",
+            x=s1 * 1.7,
+            y=s2 * 1.7,
+            text=label,
+            showarrow=False,
+            font=dict(size=16),
+        )
 
 fig.show()
+
+
+# %%
 img_path = f"{STATIC}/{today}-each-scatter-models.webp"
 save_fig(fig, img_path, scale=4, width=1000, height=500)

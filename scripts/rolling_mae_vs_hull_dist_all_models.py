@@ -38,6 +38,7 @@ fig, df_err, df_std = rolling_mae_vs_hull_dist(
     e_above_hull_true=df_wbm[e_above_hull_col],
     e_above_hull_errors=df_wbm.filter(like=" MAE="),
     backend=backend,
+    with_sem=False,
     # template="plotly_white",
 )
 
@@ -51,12 +52,15 @@ if backend == "matplotlib":
     for line in fig.lines:
         line._linewidth *= 2
 else:
-    # select only every 10th point from each trace
+    # keep every 10th point from each trace to reduce plot size for website
     for trace in fig.data:
         if trace.name and trace.name.startswith("MAE") and len(trace.x) < 100:
             continue  # skip the MAE < DFT error area traces
         trace.x = trace.x[::10]
         trace.y = trace.y[::10]
+
+    # increase line width
+    fig.update_traces(line=dict(width=3))
 
     # increase legend handle size and reverse order
     fig.update_layout(legend=dict(itemsizing="constant"), legend_traceorder="reversed")
