@@ -117,19 +117,19 @@ fig = px.scatter(
     x=e_above_hull_col,
     y=e_above_hull_preds,
     facet_col=var_name,
-    facet_col_wrap=3,
+    facet_col_wrap=2,
     facet_col_spacing=0.04,
     facet_row_spacing=0.15,
     hover_data=hover_cols,
     hover_name=id_col,
-    # color="clf",
-    # color_discrete_map=dict(zip(classes, px.colors.qualitative.Pastel)),
-    # opacity=0.4,
+    color="clf",
+    color_discrete_map=dict(zip(classes, px.colors.qualitative.Pastel)),
+    opacity=0.4,
     range_x=[-2, 2],
     range_y=[-2, 2],
 )
 
-x_title = fig.layout.xaxis.title.text
+x_title = fig.layout.xaxis.title.text  # used in annotations below
 y_title = fig.layout.yaxis.title.text
 
 # iterate over subplots and set new title
@@ -142,14 +142,42 @@ for idx, anno in enumerate(fig.layout.annotations, 1):
     # set new subplot titles (adding MAE and R2)
     fig.layout.annotations[idx - 1].text = f"{model} {_metric_str(xs, ys)}"
 
-    # remove x and y axis titles if not on center row or center column
+    # remove subplot x and y axis titles
     fig.layout[f"xaxis{idx}"].title.text = ""
     fig.layout[f"yaxis{idx}"].title.text = ""
 
-    # add vertical and horizontal lines at 0
-    fig.add_vline(x=0, line=dict(width=1, dash="dash", color="gray"))
-    fig.add_hline(y=0, line=dict(width=1, dash="dash", color="gray"))
+    # add transparent rectangle with TN, TP, FN, FP labels in each quadrant
+    for sign_x, sign_y, color, label in (
+        (-1, -1, "lightseagreen", "TP"),
+        (-1, 1, "lightgoldenrodyellow", "FN"),
+        (1, -1, "lightsalmon", "FP"),
+        (1, 1, "dodgerblue", "TN"),
+    ):
+        # fig.add_shape(
+        #     type="rect",
+        #     x0=0,
+        #     y0=0,
+        #     x1=sign_x * 100,
+        #     y1=sign_y * 100,
+        #     fillcolor=color,
+        #     opacity=0.5,
+        #     layer="below",
+        #     xref=f"x{idx}",
+        #     yref=f"y{idx}",
+        # )
+        fig.add_annotation(
+            xref=f"x{idx}",
+            yref=f"y{idx}",
+            x=sign_x * 1.7,
+            y=sign_y * 1.7,
+            text=label,
+            showarrow=False,
+            font=dict(size=16, color=color),
+        )
 
+    # add dashed quadrant separators
+    fig.add_vline(x=0, line=dict(width=0.5, dash="dash"))
+    fig.add_hline(y=0, line=dict(width=0.5, dash="dash"))
 
 fig.update_xaxes(nticks=5)
 fig.update_yaxes(nticks=5)
@@ -160,20 +188,19 @@ legend = dict(
     orientation="h",
     x=0.5,  # place legend centered above subplots
     xanchor="center",
-    y=1.2,
+    y=1.1,
     yanchor="top",
 )
 fig.layout.legend.update(legend)
 
 axis_titles = dict(xref="paper", yref="paper", showarrow=False)
-fig.add_annotation(
+fig.add_annotation(  # x-axis title
     x=0.5,
     y=-0.16,
     text=x_title,
     **axis_titles,
 )
-# add y-axis title
-fig.add_annotation(
+fig.add_annotation(  # y-axis title
     x=-0.06,
     y=0.5,
     text=y_title,
@@ -181,39 +208,9 @@ fig.add_annotation(
     **axis_titles,
 )
 
-# add transparent rectangle with TN, TP, FN, FP labels in each quadrant
-for idx, _model in enumerate(models, 1):
-    for s1, s2, color, label in (
-        (-1, -1, "green", "TP"),
-        (-1, 1, "yellow", "FN"),
-        (1, -1, "red", "FP"),
-        (1, 1, "blue", "TN"),
-    ):
-        fig.add_shape(
-            type="rect",
-            x0=0,
-            y0=0,
-            x1=s1 * 100,
-            y1=s2 * 100,
-            fillcolor=color,
-            opacity=0.3,
-            layer="below",
-            xref=f"x{idx if idx > 1 else ''}",
-            yref=f"y{idx if idx > 1 else ''}",
-        )
-        fig.add_annotation(
-            xref=f"x{idx if idx > 1 else ''}",
-            yref=f"y{idx if idx > 1 else ''}",
-            x=s1 * 1.7,
-            y=s2 * 1.7,
-            text=label,
-            showarrow=False,
-            font=dict(size=16),
-        )
-
 fig.show()
 
 
 # %%
 img_path = f"{STATIC}/{today}-each-scatter-models.webp"
-save_fig(fig, img_path, scale=4, width=1000, height=500)
+save_fig(fig, img_path, scale=4, width=800, height=700)

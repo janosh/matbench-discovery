@@ -257,12 +257,12 @@ def hist_classified_stable_vs_hull_dist(
 
     recall = n_true_pos / n_total_pos
     return ax, dict(
-        enrichment=precision / prevalence,
+        DAF=precision / prevalence,
         precision=precision,
         recall=recall,
         prevalence=prevalence,
         accuracy=(n_true_pos + n_true_neg) / len(e_above_hull),
-        f1=2 * (precision * recall) / (precision + recall),
+        F1=2 * (precision * recall) / (precision + recall),
         TPR=n_true_pos / (n_true_pos + n_false_neg),
         FPR=n_false_pos / (n_true_neg + n_false_pos),
         TNR=n_true_neg / (n_true_neg + n_false_pos),
