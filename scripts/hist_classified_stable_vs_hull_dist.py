@@ -55,7 +55,7 @@ fig, metrics = hist_classified_stable_vs_hull_dist(
     # backend="matplotlib",
 )
 if hasattr(fig, "legend"):
-    legend_title = f"Enrichment Factor = {metrics['enrichment']:.3}"
+    legend_title = f"DAF = {metrics['DAF']:.3}"
     fig.legend(loc="upper left", frameon=False, title=legend_title)
 
 fig.show()
