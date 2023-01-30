@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from typing import Any, Literal
 
 import matplotlib.pyplot as plt
@@ -56,8 +57,15 @@ model_labels = dict(
     dft="DFT",
 )
 px.defaults.labels = quantity_labels | model_labels
+
+# https://plotly.com/python-api-reference/generated/plotly.graph_objects.layout
+colorway = ("lightseagreen", "orange", "lightsalmon", "dodgerblue")
+clf_labels = ("True Positive", "False Negative", "False Positive", "True Negative")
+clf_color_map = dict(zip(clf_labels, colorway))
+
 global_layout = dict(
     # colorway=px.colors.qualitative.Pastel,
+    colorway=colorway,
     margin=dict(l=30, r=20, t=60, b=20),
     paper_bgcolor="rgba(0,0,0,0)",
     # plot_bgcolor="rgba(0,0,0,0)",
@@ -81,17 +89,24 @@ plt.rcParams["figure.constrained_layout.use"] = True
 
 
 def hist_classified_stable_vs_hull_dist(
-    e_above_hull_true: pd.Series,
-    e_above_hull_pred: pd.Series,
+    df: pd.DataFrame,
+    each_true_col: str,
+    each_pred_col: str,
     ax: plt.Axes = None,
     which_energy: WhichEnergy = "true",
     stability_threshold: float = 0,
-    x_lim: tuple[float | None, float | None] = (-0.4, 0.4),
+    x_lim: tuple[float | None, float | None] = (-0.7, 0.7),
     rolling_acc: float | None = 0.02,
     backend: Backend = "plotly",
     y_label: str = "Number of materials",
+    clf_labels: Sequence[str] = (
+        "True Positive",
+        "False Negative",
+        "False Positive",
+        "True Negative",
+    ),
     **kwargs: Any,
-) -> tuple[plt.Axes | go.Figure, dict[str, float]]:
+) -> plt.Axes | go.Figure:
     """Histogram of the energy difference (either according to DFT ground truth [default]
     or model predicted energy) to the convex hull for materials in the WBM data set. The
     histogram is broken down into true positives, false negatives, false positives, and
@@ -103,9 +118,10 @@ def hist_classified_stable_vs_hull_dist(
     See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
 
     Args:
-        e_above_hull_true (pd.Series): Distance to convex hull according to DFT
+        df (pd.DataFrame): Data frame containing true and predicted hull distances.
+        each_true_col (str): Name of column with energy above convex hull according to DFT
             ground truth (in eV / atom).
-        e_above_hull_pred (pd.Series): Distance to convex hull predicted by model
+        each_pred_col (str): Name of column with energy above convex hull predicted by model
             (in eV / atom). Same as true energy to convex hull plus predicted minus true
             formation energy.
         ax (plt.Axes, optional): matplotlib axes to plot on.
@@ -119,6 +135,9 @@ def hist_classified_stable_vs_hull_dist(
         backend ('matplotlib' | 'plotly'], optional): Which plotting engine to use.
             Changes the return type. Defaults to 'plotly'.
         y_label (str, optional): y-axis label. Defaults to "Number of materials".
+        clf_labels (list[str], optional): Labels for the four classification categories.
+            Defaults to ["True Positive", "False Negative", "False Positive", "True
+            Negative"].
         kwargs: Additional keyword arguments passed to the ax.hist() or px.histogram()
             depending on backend.
 
@@ -128,79 +147,81 @@ def hist_classified_stable_vs_hull_dist(
     NOTE this figure plots hist bars separately which causes aliasing in pdf. Can be
     fixed in Inkscape or similar by merging regions by color.
     """
+    each_true = df[each_true_col]
+    each_pred = df[each_pred_col]
+    x_col = each_true_col if which_energy == "true" else each_pred_col
     true_pos, false_neg, false_pos, true_neg = classify_stable(
-        e_above_hull_true, e_above_hull_pred, stability_threshold
+        each_true, each_pred, stability_threshold
     )
-    n_true_pos = sum(true_pos)
-    n_false_neg = sum(false_neg)
 
-    n_total_pos = n_true_pos + n_false_neg
-    prevalence = n_total_pos / len(e_above_hull_true)  # null rate
-
-    # toggle between histogram of DFT-computed/model-predicted distance to convex hull
-    e_above_hull = e_above_hull_true if which_energy == "true" else e_above_hull_pred
+    # toggle between histogram of DFT-computed or model-predicted distance to convex hull
+    e_above_hull = df[x_col]
     eah_true_pos = e_above_hull[true_pos]
-    eah_false_neg = e_above_hull[false_neg]
-    eah_false_pos = e_above_hull[false_pos]
     eah_true_neg = e_above_hull[true_neg]
-    n_true_pos, n_false_pos, n_true_neg, n_false_neg = map(
-        sum, (true_pos, false_pos, true_neg, false_neg)
-    )
-    # null = (tp + fn) / (tp + tn + fp + fn)
-    precision = n_true_pos / (n_true_pos + n_false_pos)
+    # eah_false_neg = e_above_hull[false_neg]
+    # eah_false_pos = e_above_hull[false_pos]
+    # n_true_pos, n_false_pos, n_true_neg, n_false_neg = map(
+    #     sum, (true_pos, false_pos, true_neg, false_neg)
+    # )
 
-    labels = ["True Positives", "False Negatives", "False Positives", "True Negatives"]
+    clf = np.array(clf_labels)[
+        true_pos * 0 + false_neg * 1 + false_pos * 2 + true_neg * 3
+    ]
+
+    df[(clf_col := "classified")] = clf
+
+    kwds: dict[str, Any] = (
+        dict(
+            barmode="stack",
+            range_x=x_lim,
+            color_discrete_map=clf_color_map,
+            x=x_col,
+            color=clf_col,
+        )
+        if backend == "plotly"
+        else dict(
+            column=[x_col],
+            legend=False,
+            ax=ax,
+            xlim=x_lim,
+            # color=df[clf_col],
+        )
+    )
+
+    fig = df.plot.hist(backend=backend, **(kwds | kwargs))
 
     if backend == "matplotlib":
-        ax = ax or plt.gca()
-        assert isinstance(ax, plt.Axes)
-        ax.hist(
-            [eah_true_pos, eah_false_neg, eah_false_pos, eah_true_neg],
-            bins=200,
-            range=x_lim,
-            alpha=0.5,
-            color=["tab:green", "tab:orange", "tab:red", "tab:blue"],
-            label=labels,
-            stacked=True,
-            **kwargs,
-        )
+        # ax.hist(
+        #     [eah_true_pos, eah_false_neg, eah_false_pos, eah_true_neg],
+        #     bins=200,
+        #     range=x_lim,
+        #     alpha=0.5,
+        #     color=["tab:green", "tab:orange", "tab:red", "tab:blue"],
+        #     label=clf_labels,
+        #     stacked=True,
+        #     **kwargs,
+        # )
         xlabel = dict(
             true=r"$E_\mathrm{above\ hull}\;\mathrm{(eV / atom)}$",
             pred=r"$E_\mathrm{above\ hull\ pred}\;\mathrm{(eV / atom)}$",
         )[which_energy]
-        ax.set(xlabel=xlabel, ylabel=y_label, xlim=x_lim)
 
         if stability_threshold is not None:
-            ax.axvline(
-                stability_threshold,
-                color="black",
-                linestyle="--",
-                label="Stability Threshold",
-            )
+            for ax in [fig] if isinstance(fig, plt.Axes) else fig.flat:
+                ax.set(xlabel=xlabel, ylabel=y_label, xlim=x_lim)
+                ax.axvline(
+                    stability_threshold,
+                    color="black",
+                    linestyle="--",
+                    label="Stability Threshold",
+                )
 
     if backend == "plotly":
-        clf = (true_pos + false_neg * 2 + false_pos * 3 + true_neg * 4).map(
-            dict(zip(range(1, len(labels) + 1), labels))
-        )
-        df = pd.DataFrame(dict(e_above_hull=e_above_hull, clf=clf))
-
-        ax = px.histogram(
-            df,
-            x="e_above_hull",
-            color="clf",
-            nbins=20000,
-            range_x=x_lim,
-            barmode="stack",
-            color_discrete_map=dict(zip(labels, px.colors.qualitative.Pastel)),
-            **kwargs,
-        )
-        ax.update_layout(
-            legend=dict(title=None, yanchor="top", y=1, xanchor="right", x=1),
-        )
+        fig.update_layout(legend=dict(title=None, y=0.5, xanchor="right", x=1))
 
         if stability_threshold is not None:
-            ax.add_vline(stability_threshold, line=dict(dash="dash", width=1))
-            ax.add_annotation(
+            fig.add_vline(stability_threshold, line=dict(dash="dash", width=1))
+            fig.add_annotation(
                 text="Stability threshold",
                 x=stability_threshold,
                 y=1.1,
@@ -209,65 +230,59 @@ def hist_classified_stable_vs_hull_dist(
                 showarrow=False,
             )
 
-    assert isinstance(ax, (go.Figure, plt.Axes))  # for mypy
-
     if rolling_acc:
         # add moving average of the accuracy computed within given window
         # as a function of e_above_hull shown as blue line (right axis)
 
         # --- moving average of the accuracy
         # compute rolling accuracy in rolling_acc-sized intervals
-        bins = np.arange(x_lim[0], x_lim[1], rolling_acc)
-        bin_counts = np.histogram(e_above_hull_true, bins)[0]
+        bins = np.arange(each_true.min(), each_true.max(), rolling_acc)
+        bin_counts = np.histogram(each_true, bins)[0]
         bin_true_pos = np.histogram(eah_true_pos, bins)[0]
         bin_true_neg = np.histogram(eah_true_neg, bins)[0]
 
-        # compute accuracy
-        bin_accuracies = (bin_true_pos + bin_true_neg) / bin_counts
+        # compute accuracy (handling division by zero)
+        bin_accuracies = np.divide(
+            bin_true_pos + bin_true_neg,
+            bin_counts,
+            out=np.zeros_like(bin_counts, dtype=float),
+            where=bin_counts != 0,
+        )
 
         if backend == "matplotlib":
-            ax_acc = ax.twinx()
-            ax_acc.set_ylabel("Rolling Accuracy", color="darkblue")
-            ax_acc.tick_params(labelcolor="darkblue")
-            ax_acc.set(ylim=(0, 1))
-            # plot accuracy
-            ax_acc.plot(
-                bins[:-1],
-                bin_accuracies,
-                color="tab:blue",
-                label="Accuracy",
-                linewidth=3,
-            )
-            # ax2.fill_between(
-            #     bin_centers,
-            #     bin_accuracy - bin_accuracy_std,
-            #     bin_accuracy + bin_accuracy_std,
-            #     color="tab:blue",
-            #     alpha=0.2,
-            # )
+            for ax in fig.flat if isinstance(fig, np.ndarray) else [fig]:
+                ax_acc = ax.twinx()
+                ax_acc.set_ylabel("Rolling Accuracy", color="darkblue")
+                ax_acc.tick_params(labelcolor="darkblue")
+                ax_acc.set(ylim=(0, 1.1))
+                # plot accuracy
+                ax_acc.plot(
+                    bins[:-1],
+                    bin_accuracies,
+                    color="tab:blue",
+                    label="Accuracy",
+                    linewidth=3,
+                )
+                # ax_acc.fill_between(
+                #     bin_centers,
+                #     bin_accuracies - bin_accuracy_std,
+                #     bin_accuracies + bin_accuracy_std,
+                #     color="tab:blue",
+                #     alpha=0.2,
+                # )
         else:
             style = dict(color="orange")
             title = "Rolling Accuracy"
             # add accuracy line on a separate y-axis on the right side of the plot
-            ax.update_layout(
+            fig.update_layout(
                 yaxis2=dict(overlaying="y", side="right", range=[0, 1], tickfont=style),
                 # title = dict(text=title, font=style)
             )
-            ax.add_scatter(x=bins, y=bin_accuracies, name=title, line=style, yaxis="y2")
+            fig.add_scatter(
+                x=bins, y=bin_accuracies, name=title, line=style, yaxis="y2"
+            )
 
-    recall = n_true_pos / n_total_pos
-    return ax, dict(
-        DAF=precision / prevalence,
-        precision=precision,
-        recall=recall,
-        prevalence=prevalence,
-        accuracy=(n_true_pos + n_true_neg) / len(e_above_hull),
-        F1=2 * (precision * recall) / (precision + recall),
-        TPR=n_true_pos / (n_true_pos + n_false_neg),
-        FPR=n_false_pos / (n_true_neg + n_false_pos),
-        TNR=n_true_neg / (n_true_neg + n_false_pos),
-        FNR=n_false_neg / (n_true_pos + n_false_neg),
-    )
+    return fig
 
 
 def rolling_mae_vs_hull_dist(

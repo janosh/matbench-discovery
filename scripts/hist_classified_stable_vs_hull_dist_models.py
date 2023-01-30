@@ -1,15 +1,10 @@
 # %%
-from plotly.subplots import make_subplots
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, STATIC, today
+from matbench_discovery import STATIC, today
 from matbench_discovery.data import load_df_wbm_preds
-from matbench_discovery.plots import (
-    Backend,
-    WhichEnergy,
-    hist_classified_stable_vs_hull_dist,
-    plt,
-)
+from matbench_discovery.energy import stable_metrics
+from matbench_discovery.plots import Backend, hist_classified_stable_vs_hull_dist, plt
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-12-01"
@@ -28,94 +23,94 @@ models = sorted(
 df_wbm = load_df_wbm_preds(models=models).round(3)
 
 e_form_col = "e_form_per_atom_mp2020_corrected"
-e_above_hull_col = "e_above_hull_mp2020_corrected_ppd_mp"
+each_true_col = "e_above_hull_mp2020_corrected_ppd_mp"
 
 
 # %%
-which_energy: WhichEnergy = "true"
+hover_cols = (df_wbm.index.name, e_form_col, each_true_col, "formula")
+e_form_preds = "e_form_per_atom_pred"
+each_pred_col = "e_above_hull_pred"
+facet_col = "Model"
+
+df_melt = df_wbm.melt(
+    id_vars=hover_cols,
+    value_vars=models,
+    var_name=facet_col,
+    value_name=e_form_preds,
+)
+
+df_melt[each_pred_col] = df_melt[each_true_col] + (
+    df_melt[e_form_preds] - df_melt[e_form_col]
+)
+
+
+# %%
 backend: Backend = "plotly"
-rows, cols = len(models) // 3, 3
+rows, cols = len(models) // 2, 2
+kwds = (
+    dict(facet_col=facet_col, facet_col_wrap=cols, barmode="stack")
+    if backend == "plotly"
+    else dict(by=facet_col, figsize=(20, 20), layout=(rows, cols), bins=500)
+)
 
-if backend == "matplotlib":
-    fig, axs = plt.subplots(nrows=rows, ncols=cols, figsize=(7 * cols, 5 * rows))
-else:
-    x_title = "distance to convex hull (eV/atom)"
-    fig = make_subplots(
-        rows=rows, cols=cols, y_title="Count", x_title=x_title, subplot_titles=models
-    )
-
-
-for idx, model_name in enumerate(models):
-    ax, metrics = hist_classified_stable_vs_hull_dist(
-        e_above_hull_true=df_wbm[e_above_hull_col],
-        e_above_hull_pred=df_wbm[e_above_hull_col]
-        + (df_wbm[model_name] - df_wbm[e_form_col]),
-        which_energy=which_energy,
-        ax=axs.flat[idx] if backend == "matplotlib" else None,
-        backend=backend,
-    )
-    enrichment, acc, F1 = metrics["enrichment"], metrics["accuracy"], metrics["f1"]
-
-    text = f"{enrichment = :.2f}\n{acc = :.2f}\n{F1 = :.2f}"
-
-    # n_preds = len(df_wbm[model_name].dropna())
-    # n_missing = len(df_wbm) - n_preds
-    # title = f"{model_name} ({len(df_wbm[model_name].dropna()):,})"
-    title = model_name
-    if backend == "matplotlib":
-        y_anno = 0.7 if model_name == "M3GNet" else 0.25
-        ax.text(0.02, y_anno, text, fontsize=16, transform=ax.transAxes)
-        ax.set(title=title)
-
-    else:
-        for trace in ax.data:
-            # no need to store all 250k x values in plot, leads to 1.7 MB file,
-            # subsample every 10th point is enough to see the distribution
-            trace.x = trace.x[::10]
-
-        # set new subplot titles (adding MAE and R2)
-        FPR = metrics["FPR"]
-        anno = fig.layout.annotations[idx]
-        anno.text = f"{anno.text} · {F1=:.2f} · {FPR=:.2f}"
-
-        fig.add_traces(ax.data, rows=idx % rows + 1, cols=idx // rows + 1)
-        # fig.update_xaxes(title_text=title, row=row, col=col)
+fig = hist_classified_stable_vs_hull_dist(
+    df=df_melt,
+    each_true_col=each_true_col,
+    each_pred_col=each_pred_col,
+    which_energy=(which_energy := "true"),
+    backend=backend,
+    rolling_acc=None,
+    **kwds,  # type: ignore[arg-type]
+)
 
 
 if backend == "matplotlib":
-    # fig.suptitle(f"{today} {which_energy=}", y=1.07, fontsize=16)
+    fig = plt.gcf()
+    fig.suptitle(f"{today} {which_energy=}", y=1.04, fontsize=18, fontweight="bold")
     plt.figlegend(
-        *ax.get_legend_handles_labels(),
-        ncol=10,
+        *plt.gca().get_legend_handles_labels(),
+        ncol=4,
         loc="lower center",
-        bbox_to_anchor=(0.5, -0.05),
+        bbox_to_anchor=(0.5, -0.03),
         frameon=False,
     )
-else:
-    fig.update_xaxes(range=[-0.4, 0.4])
-    # horizontal legend at the top
-    legend = dict(
-        orientation="h",
-        yanchor="bottom",
-        y=1.05,
-        xanchor="center",
-        x=0.5,
-    )
-    fig.update_layout(
-        barmode="stack", legend=legend, margin=dict(t=50, b=30, l=40, r=0)
-    )
-    names = set()
-    fig.for_each_trace(
-        lambda trace: trace.update(showlegend=False)
-        if (trace.name in names)
-        else names.add(trace.name)
-    )
+    # add metrics to subplot titles
+    for ax in fig.axes:
+        model_name = ax.get_title()
+        assert model_name in models
+        df_model = df_melt[df_melt[facet_col] == model_name]
+        metrics = stable_metrics(df_model[each_true_col], df_model[each_pred_col])
 
-fig.show()
+        DAF, acc, F1 = metrics["DAF"], metrics["Accuracy"], metrics["F1"]
+        text = f" {model_name} · {DAF = :.2f} · {acc = :.2f} · {F1 = :.2f}"
+        ax.set(title=text)
+else:
+    for anno in fig.layout.annotations:
+        model_name = anno.text.split("=").pop()
+        if model_name not in models:
+            continue
+        df_model = df_melt[df_melt[facet_col] == model_name]
+        metrics = stable_metrics(df_model[each_true_col], df_model[each_pred_col])
+        F1, FPR, FNR, DAF = (metrics[x] for x in "F1 FPR FNR DAF".split())
+        anno.text = f"{model_name} · {F1=:.2f} · {FPR=:.2f} · {FNR=:.2f} · {DAF=:.2f}"
+
+    # horizontal legend at the top
+    legend = dict(yanchor="top", y=1, xanchor="right", x=1)
+    fig.update_layout(legend=legend, margin=dict(t=50, b=30, l=40, r=0))
+    fig.update_yaxes(range=[0, 3_000], title_text=None)
+
+    # for trace in fig.data:
+    #     # no need to store all 250k x values in plot, leads to 1.7 MB file,
+    #     # subsample every 10th point is enough to see the distribution
+    #     trace.x = trace.x[::10]
+
+    # increase height of figure
+    fig.layout.height = 800
+    fig.show()
 
 
 # %%
-img_path = f"{today}-hist-hull-dist-models"
-save_fig(fig, f"{FIGS}/{img_path}.svelte")
-save_fig(fig, f"{STATIC}/{img_path}.webp", scale=3, height=600, width=1200)
+img_path = f"{today}-hist-{which_energy}-energy-vs-hull-dist-models"
+# save_fig(fig, f"{FIGS}/{img_path}.svelte")
+save_fig(fig, f"{STATIC}/{img_path}.webp", scale=3, height=1000, width=1200)
 # save_fig(fig, f"{STATIC}/{img_path}.webp", dpi=300)

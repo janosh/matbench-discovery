@@ -29,6 +29,7 @@ setup(
         "pymatgen",
         "numpy",
         "pandas",
+        "scikit-learn",
         "scipy",
         "plotly",
         "tqdm",
