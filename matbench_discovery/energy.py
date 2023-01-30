@@ -1,10 +1,12 @@
 import itertools
 from collections.abc import Sequence
 
+import numpy as np
 import pandas as pd
 from pymatgen.analysis.phase_diagram import Entry, PDEntry
 from pymatgen.core import Composition
 from pymatgen.util.typing import EntryLike
+from sklearn.metrics import r2_score
 from tqdm import tqdm
 
 from matbench_discovery import ROOT
@@ -153,3 +155,57 @@ def classify_stable(
     true_neg = actual_neg & model_neg
 
     return true_pos, false_neg, false_pos, true_neg
+
+
+def stable_metrics(
+    true: Sequence[float], pred: Sequence[float], stability_threshold: float = 0
+) -> dict[str, float]:
+    """
+    Get a dictionary of stability prediction metrics. Mostly binary classification
+    metrics, but also MAE, RMSE and R2.
+
+    Args:
+        true (list[float]): true energy values
+        pred (list[float]): predicted energy values
+        stability_threshold (float): Where to place stability threshold relative to
+            convex hull in eV/atom, usually 0 or 0.1 eV. Defaults to 0.
+
+    Note: Could be replaced by sklearn.metrics.classification_report() which takes
+        binary labels. I.e. classification_report(true > 0, pred > 0, output_dict=True)
+        should give equivalent results.
+
+    Returns:
+        dict[str, float]: dictionary of classification metrics with keys DAF, Precision,
+            Recall, Prevalence, Accuracy, F1, TPR, FPR, TNR, FNR, MAE, RMSE, R2.
+    """
+    true_pos, false_neg, false_pos, true_neg = classify_stable(
+        true, pred, stability_threshold
+    )
+
+    n_true_pos, n_false_pos, n_true_neg, n_false_neg = map(
+        sum, (true_pos, false_pos, true_neg, false_neg)
+    )
+
+    n_total_pos = n_true_pos + n_false_neg
+    prevalence = n_total_pos / len(true)  # null rate
+    precision = n_true_pos / (n_true_pos + n_false_pos)
+    recall = n_true_pos / n_total_pos
+
+    is_nan = np.isnan(true) | np.isnan(pred)
+    true, pred = np.array(true)[~is_nan], np.array(pred)[~is_nan]
+
+    return dict(
+        DAF=precision / prevalence,
+        Precision=precision,
+        Recall=recall,
+        Prevalence=prevalence,
+        Accuracy=(n_true_pos + n_true_neg) / len(true),
+        F1=2 * (precision * recall) / (precision + recall),
+        TPR=n_true_pos / (n_true_pos + n_false_neg),
+        FPR=n_false_pos / (n_true_neg + n_false_pos),
+        TNR=n_true_neg / (n_true_neg + n_false_pos),
+        FNR=n_false_neg / (n_true_pos + n_false_neg),
+        MAE=np.abs(true - pred).mean(),
+        RMSE=((true - pred) ** 2).mean() ** 0.5,
+        R2=r2_score(true, pred),
+    )
