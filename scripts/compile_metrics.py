@@ -3,16 +3,17 @@ from __future__ import annotations
 
 from typing import Any
 
+import numpy as np
 import pandas as pd
 import requests
 import wandb
 import wandb.apis.public
 from pymatviz.utils import save_fig
-from sklearn.metrics import f1_score, r2_score
 from tqdm import tqdm
 
 from matbench_discovery import FIGS, MODELS, WANDB_PATH, today
 from matbench_discovery.data import PRED_FILENAMES, load_df_wbm_preds
+from matbench_discovery.energy import stable_metrics
 from matbench_discovery.plots import px
 
 __author__ = "Janosh Riebesell"
@@ -97,10 +98,10 @@ for model in (pbar := tqdm(models)):
 
     n_gpu, n_cpu = metadata.get("gpu_count", 0), metadata.get("cpu_count", 0)
     model_stats[model] = {
-        "run_time_h": run_time_total / 3600,
+        (time_col := "Run Time (h)"): run_time_total / 3600,
         "GPU": n_gpu,
         "CPU": n_cpu,
-        "slurm_jobs": n_runs,
+        "Slurm Jobs": n_runs,
     }
 
 
@@ -110,6 +111,7 @@ ax.set(
 )
 
 df_metrics = pd.DataFrame(model_stats).T
+df_metrics.index.name = "Model"
 # on 2022-11-28:
 # run_times = {'Voronoi Random Forest': 739608,
 #  'Wrenformer': 208399,
@@ -121,46 +123,50 @@ df_metrics = pd.DataFrame(model_stats).T
 # %%
 df_wbm = load_df_wbm_preds(list(models))
 e_form_col = "e_form_per_atom_mp2020_corrected"
-each_col = "e_above_hull_mp2020_corrected_ppd_mp"
+each_true_col = "e_above_hull_mp2020_corrected_ppd_mp"
 
 
 # %%
 for model in models:
-    dct = {}
-    e_above_hull_pred = df_wbm[model] - df_wbm[e_form_col]
-    isna = e_above_hull_pred.isna() | df_wbm[each_col].isna()
+    each_pred = df_wbm[each_true_col] + df_wbm[model] - df_wbm[e_form_col]
 
-    dct["F1"] = f1_score(df_wbm[each_col] < 0, e_above_hull_pred < 0)
-    dct["Precision"] = f1_score(
-        df_wbm[each_col] < 0, e_above_hull_pred < 0, pos_label=True
+    metrics = stable_metrics(df_wbm[each_true_col], each_pred)
+
+    df_metrics.loc[model, list(metrics)] = metrics.values()
+
+
+# %%
+df_styled = (
+    df_metrics.reset_index()
+    .drop(columns=["GPU", "CPU", "Slurm Jobs"])
+    .style.format(precision=2)
+    .background_gradient(
+        cmap="viridis_r",  # lower is better so reverse color map
+        subset=["MAE", "RMSE", "FNR", "FPR"],
     )
-    dct["Recall"] = f1_score(
-        df_wbm[each_col] < 0, e_above_hull_pred < 0, pos_label=False
+    .background_gradient(
+        cmap="viridis_r",
+        subset=[time_col],
+        gmap=np.log10(df_metrics[time_col].to_numpy()),  # for log scaled color map
     )
-
-    dct["MAE"] = (e_above_hull_pred - df_wbm[each_col]).abs().mean()
-
-    dct["RMSE"] = ((e_above_hull_pred - df_wbm[each_col]) ** 2).mean() ** 0.5
-    dct["R2"] = r2_score(df_wbm[each_col][~isna], e_above_hull_pred[~isna])
-
-    df_metrics.loc[model, list(dct)] = dct.values()
-
-
-df_styled = df_metrics.style.format(precision=3).background_gradient(
-    cmap="viridis",
-    # gmap=np.log10(df_table) # for log scaled color map
+    .background_gradient(
+        cmap="viridis",  # higher is better
+        subset=["DAF", "R2", "Precision", "Recall", "F1", "Accuracy", "TPR", "TNR"],
+    )
+    .hide(axis="index")
 )
+df_styled
 
 
 # %% export model metrics as styled HTML table
 styles = {
     "": "font-family: sans-serif; border-collapse: collapse;",
-    "td, th": "border: 1px solid #ddd; text-align: left; padding: 8px;",
+    "td, th": "border: 1px solid #ddd; text-align: left; padding: 8px; white-space: nowrap;",
 }
 df_styled.set_table_styles([dict(selector=sel, props=styles[sel]) for sel in styles])
 
-html_path = f"{FIGS}/{today}-metrics-table.html"
-# df_styled.to_html(html_path)
+html_path = f"{FIGS}/{today}-metrics-table.svelte"
+df_styled.to_html(html_path)
 
 
 # %% write model metrics to json for use by the website
@@ -169,14 +175,14 @@ df_metrics["missing_percent"] = [
     f"{x / len(df_wbm):.2%}" for x in df_metrics.missing_preds
 ]
 
-df_metrics.attrs["total_run_time"] = df_metrics.run_time.sum()
+df_metrics.attrs["Total Run Time"] = df_metrics[time_col].sum()
 
 df_metrics.round(2).to_json(f"{MODELS}/{today}-model-stats.json", orient="index")
 
 
 # %% plot model run times as pie chart
 fig = px.pie(
-    df_metrics, values="run_time", names=df_metrics.index, hole=0.5
+    df_metrics, values=time_col, names=df_metrics.index, hole=0.5
 ).update_traces(
     textinfo="percent+label",
     textfont_size=14,
@@ -189,7 +195,7 @@ fig = px.pie(
 )
 fig.add_annotation(
     # add title in the middle saying "Total CPU+GPU time used"
-    text=f"Total CPU+GPU<br>time used:<br>{df_metrics.run_time.sum():.1f} h",
+    text=f"Total CPU+GPU<br>time used:<br>{df_metrics[time_col].sum():.1f} h",
     font=dict(size=18),
     x=0.5,
     y=0.5,
@@ -197,4 +203,6 @@ fig.add_annotation(
 )
 fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
 
+
+# %%
 save_fig(fig, f"{FIGS}/{today}-model-run-times-pie.svelte")

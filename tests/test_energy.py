@@ -115,7 +115,6 @@ def test_stable_metrics() -> None:
         DAF=0,
         Precision=0,
         Recall=0,
-        Prevalence=0.55,
         Accuracy=0,
         TPR=0,
         FPR=1,

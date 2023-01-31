@@ -15,7 +15,7 @@ models = (
     "CGCNN, Voronoi Random Forest, Wrenformer, MEGNet, M3GNet, BOWSR MEGNet"
 ).split(", ")
 
-df_wbm = load_df_wbm_preds(models=models).round(3)
+df_wbm = load_df_wbm_preds(models).round(3)
 
 # df_wbm.columns = [f"{col}_e_form" if col in models else col for col in df_wbm]
 e_form_col = "e_form_per_atom_mp2020_corrected"

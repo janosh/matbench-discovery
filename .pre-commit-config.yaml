@@ -7,7 +7,7 @@ default_install_hook_types: [pre-commit, commit-msg]
 
 repos:
   - repo: https://github.com/PyCQA/isort
-    rev: 5.11.4
+    rev: 5.12.0
     hooks:
       - id: isort
 
@@ -59,7 +59,7 @@ repos:
         exclude: ^(.+references.yaml)$
 
   - repo: https://github.com/PyCQA/autoflake
-    rev: v2.0.0
+    rev: v2.0.1
     hooks:
       - id: autoflake
 
@@ -75,7 +75,7 @@ repos:
         exclude: ^(site/src/figs/.+\.svelte|data/wbm/20.+\..+|site/src/routes/.+\.(yml|yaml|json))$
 
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.31.0
+    rev: v8.33.0
     hooks:
       - id: eslint
         types: [file]
@@ -90,7 +90,7 @@ repos:
           - "@typescript-eslint/parser"
 
   - repo: https://github.com/PyCQA/pydocstyle
-    rev: 6.1.1
+    rev: 6.3.0
     hooks:
       - id: pydocstyle
         exclude: tests

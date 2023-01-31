@@ -16,7 +16,7 @@ print(f"loadable models: {list(PRED_FILENAMES)}")
 models = sorted(
     "CGCNN, Voronoi Random Forest, Wrenformer, MEGNet, M3GNet, BOWSR MEGNet".split(", ")
 )
-df_wbm = load_df_wbm_preds(models=models).round(3)
+df_wbm = load_df_wbm_preds(models).round(3)
 
 e_form_col = "e_form_per_atom_mp2020_corrected"
 each_true_col = "e_above_hull_mp2020_corrected_ppd_mp"
@@ -36,8 +36,8 @@ df_melt = df_wbm.melt(
     value_name=e_form_pred_col,
 )
 
-df_melt[each_pred_col] = df_melt[each_true_col] + (
-    df_melt[e_form_pred_col] - df_melt[e_form_col]
+df_melt[each_pred_col] = (
+    df_melt[each_true_col] + df_melt[e_form_pred_col] - df_melt[e_form_col]
 )
 
 

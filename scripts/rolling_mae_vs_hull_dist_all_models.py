@@ -16,7 +16,7 @@ models = sorted(
 e_form_col = "e_form_per_atom_mp2020_corrected"
 e_above_hull_col = "e_above_hull_mp2020_corrected_ppd_mp"
 
-df_wbm = load_df_wbm_preds(models=models).round(3)
+df_wbm = load_df_wbm_preds(models).round(3)
 
 
 # %%

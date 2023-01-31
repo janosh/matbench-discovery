@@ -44,10 +44,9 @@ date: Jan 31, 2023
 ---
 
 <script>
-  import MetricsTable from '$figs/2022-11-28-metrics-table.svelte'
+  import MetricsTable from '$figs/2023-01-31-metrics-table.svelte'
   import { references } from './references.yaml'
   import { References } from '$lib'
-  import './heading-number.css' // CSS to auto-number headings
   import CumulativeClfMetrics from '$figs/2023-01-26-cumulative-clf-metrics.svelte'
   import RollingMaeModels from '$figs/2023-01-30-rolling-mae-vs-hull-dist-models.svelte'
   // import HistClfStableModels from '$figs/2023-01-26-wbm-hull-dist-hist-models.svelte'
@@ -190,10 +189,10 @@ Our benchmark is designed to make [adding future models easy](/how-to-contribute
   <MetricsTable />
 </div>
 
-<!-- ![Classification Histograms for all models](/figs/2023-01-12-wbm-hull-dist-hist-models.png) -->
-<caption>
-  Classification performance for all models
-</caption>
+<figcaption>
+  @label:fig:metrics-table
+  Heatmap of model metrics. For columns MAE, RMSE, FNR, FPR and Run Time (h) lower is better. For columns DAF, R2, Precision, Recall, F1, Accuracy, TPR and TNR higher is better. In both cases cells colored yellow are better than cells colored blue.
+</figcaption>
 
 ![Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth](./figs/2023-01-30-each-scatter-models.webp)
 
@@ -238,10 +237,6 @@ JR acknowledges support from the German Academic Scholarship Foundation (Studien
 
 <References {references} />
 
-## Supplementary Information
-
-To avoid potential confusion, for people looking at the code. We often calculate the formation energy MAE and report it as the MAE for the energy above the convex hull prediction. The former is more easily calculated but the two quantities are really the same. The formation energy of a material is defined as the energy released/required to create a material from its constituent elements in their standard states. The distance to the convex hull is defined as the difference between a material's formation energy and its minimum formation energy of all possible stable materials made from the same elements. Since the formation energy of a material is used to calculate the distance to the convex hull, the error in a formation energy prediction will also be reflected in the error in the distance to the convex hull prediction.
-
 <style>
   #abstract,
   #abstract + p {
@@ -253,5 +248,26 @@ To avoid potential confusion, for people looking at the code. We often calculate
   address span {
     margin: 1em;
     display: block;
+  }
+  /*auto-number HTML headings*/
+  h2 {
+    counter-increment: h2;
+    counter-reset: h3, h4;
+  }
+  h2::before {
+    content: counter(h2);
+    margin-right: 10pt;
+  }
+  h3 {
+    counter-increment: h3;
+    counter-reset: h4;
+  }
+  h3::before {
+    content: counter(h2) '.' counter(h3);
+    margin-right: 10pt;
+  }
+  h4::before {
+    content: counter(h2) '.' counter(h3) '.' counter(h4);
+    margin-right: 10pt;
   }
 </style>

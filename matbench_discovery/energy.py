@@ -176,7 +176,7 @@ def stable_metrics(
 
     Returns:
         dict[str, float]: dictionary of classification metrics with keys DAF, Precision,
-            Recall, Prevalence, Accuracy, F1, TPR, FPR, TNR, FNR, MAE, RMSE, R2.
+            Recall, Accuracy, F1, TPR, FPR, TNR, FNR, MAE, RMSE, R2.
     """
     true_pos, false_neg, false_pos, true_neg = classify_stable(
         true, pred, stability_threshold
@@ -198,7 +198,6 @@ def stable_metrics(
         DAF=precision / prevalence,
         Precision=precision,
         Recall=recall,
-        Prevalence=prevalence,
         Accuracy=(n_true_pos + n_true_neg) / len(true),
         F1=2 * (precision * recall) / (precision + recall),
         TPR=n_true_pos / (n_true_pos + n_false_neg),

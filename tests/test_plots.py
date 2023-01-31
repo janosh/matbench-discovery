@@ -16,7 +16,7 @@ from matbench_discovery.plots import (
 )
 
 models = ["Wrenformer", "CGCNN", "Voronoi Random Forest"]
-df_wbm = load_df_wbm_preds(models=models, nrows=100)
+df_wbm = load_df_wbm_preds(models, nrows=100)
 each_true_col = "e_above_hull_mp2020_corrected_ppd_mp"
 each_pred_col = "e_above_hull_pred"
 e_form_col = "e_form_per_atom_mp2020_corrected"
@@ -107,9 +107,10 @@ def test_hist_classified_stable_vs_hull_dist(
 ) -> None:
     ax = plt.figure().gca()  # new figure ensures test functions use different axes
 
-    df_wbm[each_pred_col] = df_wbm[each_true_col] + (
-        df_wbm[models[0]] - df_wbm[e_form_col]
+    df_wbm[each_pred_col] = (
+        df_wbm[each_true_col] + df_wbm[models[0]] - df_wbm[e_form_col]
     )
+
     ax = hist_classified_stable_vs_hull_dist(
         df_wbm,
         each_true_col=each_true_col,

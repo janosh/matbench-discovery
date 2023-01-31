@@ -1,8 +1,7 @@
 <script lang="ts">
-  import RunTimePie from '$figs/2023-01-26-model-run-times-pie.svelte'
   import type { ModelStatLabel, ModelStats } from '$lib'
   import { ModelCard } from '$lib'
-  import { RadioButtons } from 'svelte-zoo'
+  import { RadioButtons, Tooltip } from 'svelte-zoo'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
   import type { PageData } from './$types'
@@ -23,15 +22,17 @@
     }
   })
   const stats: ModelStatLabel[] = [
-    // key, label, unit
-    [`MAE`, null, `eV / atom`],
-    [`RMSE`, null, `eV / atom`],
-    [`R2`, `R<sup>2</sup>`],
-    [`Precision`],
-    [`Recall`],
-    [`F1`],
-    [`date_added`, `Date added`],
-    [`run_time_h`, `Run time`, `h`],
+    { key: `MAE`, unit: `eV / atom`, tooltip: `Mean Absolute Error` },
+    { key: `RMSE`, unit: `eV / atom`, tooltip: `Root Mean Squared Error` },
+    { key: `R2`, label: `R<sup>2</sup>` },
+    { key: `Precision` },
+    { key: `Recall` },
+    { key: `F1` },
+    { key: `date_added`, label: `Date added` },
+    { key: `Run Time (h)`, label: `Run time`, unit: `h` },
+    { key: `FPR`, tooltip: `False Positive Rate` },
+    { key: `FNR`, tooltip: `False Negative Rate` },
+    { key: `DAF`, tooltip: `Discovery Acceleration Factor` },
   ]
 </script>
 
@@ -42,9 +43,11 @@
     Sort <RadioButtons bind:selected options={[`asc`, `desc`]} /> by:
   </span>
   <ul>
-    {#each [[`model_name`, `Model Name`], ...stats] as [key, label]}
+    {#each [{ key: `model_name`, label: `Model Name` }, ...stats] as { key, label, tooltip }}
       <li class:active={key == sort_by}>
-        <button on:click={() => (sort_by = key)}>{@html label ?? key}</button>
+        <Tooltip text={tooltip} tip_style="white-space: nowrap;" max_width="20em">
+          <button on:click={() => (sort_by = key)}>{@html label ?? key}</button>
+        </Tooltip>
       </li>
     {/each}
   </ul>
@@ -62,18 +65,6 @@
   </ol>
 </div>
 
-<h2>Model Run Times</h2>
-
-<p>
-  Creating this benchmark (excluding debugging runs) used a total of 3137 hours of compute
-  time (mix of CPU and GPU, mostly CPU). Notably, the vast majority of that was used in
-  the Bayesian optimization step of the BOWSR+MEGnet model.
-</p>
-
-{#if typeof document !== `undefined`}
-  <RunTimePie />
-{/if}
-
 <style>
   :is(ul, ol) {
     padding: 0;
@@ -86,11 +77,11 @@
     margin: 1em auto 2em;
     place-content: center;
   }
-  ul > li > button {
+  ul > li button {
     transition: all 0.2s;
     background-color: rgba(255, 255, 255, 0.1);
   }
-  ul > li.active > button {
+  ul > li.active button {
     background-color: darkcyan;
   }
   ol {

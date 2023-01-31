@@ -35,9 +35,7 @@ each_pred_col = "e_above_hull_pred"
 which_energy: WhichEnergy = "true"
 backend: Backend = "matplotlib"
 fig, axs = plt.subplots(2, 3, figsize=(18, 9))
-df_wbm[each_pred_col] = df_wbm[each_true_col] + (
-    df_wbm[model_name] - df_wbm[e_form_col]
-)
+df_wbm[each_pred_col] = df_wbm[each_true_col] + df_wbm[model_name] - df_wbm[e_form_col]
 
 
 for batch_idx, ax in zip(range(1, 6), axs.flat):
