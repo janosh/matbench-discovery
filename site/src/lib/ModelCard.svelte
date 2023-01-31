@@ -65,7 +65,7 @@
         <li>
           {#if ![`aviary`].includes(name)}
             {@const href = `https://pypi.org/project/${name}/${version}`}
-            {name}: <a {href}>{version}</a>
+            {name}: <a {href} {...target}>{version}</a>
           {:else}
             {name}: {version}
           {/if}
@@ -77,7 +77,7 @@
 <section class="metrics">
   <h3 class="toc-exclude">Metrics</h3>
   <ul>
-    {#each stats as [key, label, unit]}
+    {#each stats as { key, label, unit }}
       <li class:active={sort_by == key}>
         {@html label ?? key} = {data[key]}
         {unit ?? ``}
