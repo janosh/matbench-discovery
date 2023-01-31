@@ -31,7 +31,7 @@ for model in models:
     MAEs[MAE] = model
 
 # sort df columns by MAE (so that the legend is sorted too)
-for MAE, model in sorted(MAEs.items()):
+for MAE, model in sorted(MAEs.items(), reverse=True):
     df_wbm[f"{model} {MAE=:.2f}"] = df_wbm[e_form_col] - df_wbm[model]
 
 fig, df_err, df_std = rolling_mae_vs_hull_dist(
@@ -40,6 +40,7 @@ fig, df_err, df_std = rolling_mae_vs_hull_dist(
     backend=backend,
     with_sem=False,
     # template="plotly_white",
+    height=800,
 )
 
 

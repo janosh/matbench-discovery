@@ -18,7 +18,8 @@ export default {
   preprocess: [
     {
       markup: (file) => {
-        if (file.filename.endsWith(`paper/+page.svx`)) {
+        const route = file.filename.split(`/`).at(-2)
+        if ([`paper`, `si`].includes(route)) {
           let fig_index = new Set()
           let ref_index = new Set()
 
@@ -28,7 +29,8 @@ export default {
             (_match, id) => {
               fig_index.add(id)
               const idx = fig_index.size
-              return `<strong id='${id}'>Fig. ${idx}</strong> &thinsp;`
+              const label = route == `si` ? `SI Fig.` : `Fig.`
+              return `<strong id='${id}'>${label} ${idx}</strong> &thinsp;`
             }
           )
 

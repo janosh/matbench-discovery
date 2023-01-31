@@ -49,7 +49,7 @@ date: Jan 31, 2023
   import { References } from '$lib'
   import './heading-number.css' // CSS to auto-number headings
   import CumulativeClfMetrics from '$figs/2023-01-26-cumulative-clf-metrics.svelte'
-  import RollingMaeModels from '$figs/2023-01-26-rolling-mae-vs-hull-dist-models.svelte'
+  import RollingMaeModels from '$figs/2023-01-30-rolling-mae-vs-hull-dist-models.svelte'
   // import HistClfStableModels from '$figs/2023-01-26-wbm-hull-dist-hist-models.svelte'
 </script>
 
@@ -78,16 +78,24 @@ In this work, we present a new machine learning benchmark for materials stabilit
 
 ### Why Materials Discovery?
 
-Many technologies rely on specific material properties such as solar cells which need finely tuned band gaps, jet engine turbines which require good hardness and very high melting points, transistor gates which need dielectrics of exceptional polarizability to save power and allow further miniaturization, just to name a few. The materials we have mastered define the technological abilities of our time, so much so that we name eras of human development after them (stone age, bronze age, iron age, silicon age). Besides entirely new technologies like superconductors, spintronics and quantum computing, discovering new materials and new ways of tuning their properties enables civilizational advancements such as waste reduction, water purification, and energy generation and storage. Global warming puts particular urgency on advances in solar cells, batteries, turbines and other energy devices.
+- cite @davies_computational_2016 to say of the $~10^{10}$ quaternaries identified as plausible using electronegativity- and charge-based rules, only $~10^5$ are known experimentally and $~10^6$ computationally
+
+All our technologies rely on the ability to control specific material properties. Solar cells need finely tuned band gaps. Jet engines require hard materials with very high melting points. Transistor gates need dielectrics of exceptional polarizability and high band gap to save power and allow further miniaturization. Examples are as varied as our technology stack. The materials we have mastered define the technological abilities of our time, so much so that we name eras of human development after them (stone age, bronze age, iron age, silicon age). Besides entirely new technologies like superconductors, spintronics and quantum computing, discovering new materials and new ways of tuning their properties enables civilizational advancements such as waste reduction, water purification, and energy generation and storage. Global warming puts particular urgency on advances in solar cells, batteries, turbines and other energy devices.
 
 ### Why machine learning?
 
-Since its inception, science has undergone several paradigm shits. In the beginning, the empirical phase saw scientists conducting simple experiments to probe reality. It was followed by the theoretical phase that saw the rise of physical laws with incredible predictive power. The last century saw the rise of the simulation, the 3rd paradigm of science which revolves around recreating the salient feature of a physical system of interest on a computer as efficiently as possible to probe its behavior. Finally the 21st century has brought about the 4th data-driven phase of science. This latest addition to the computational toolbox is powered by statistical models that learn from existing knowledge to arrive at new insights via shortcuts that rely on correlations in the data rather than a reductive bottom-up reasoning about features of reality. This is particularly attractive in the field of materials science as running density functional theory, one of the most powerful methods of the 3rd paradigm, for decades on large supercomputers all around the world has resulted in huge databases on computed material properties which are much to large for any human expert to leverage. ML models on the other hand are powerful tools for high-throughput novel materials discovery due to their ability to handle high dimensionality, large datasets, multiple objectives, uncertainty and noise, and sparse data.
+Since its inception, science has undergone several paradigm shits. In the beginning, the empirical phase saw scientists conducting simple experiments to probe reality. It was followed by the theoretical phase that saw the rise of physical laws with incredible predictive power. The last century saw the rise of the simulation, the 3rd paradigm of science which revolves around recreating the salient feature of a physical system of interest on a computer as efficiently as possible to probe its behavior. Finally the 21st century has brought about the 4th data-driven phase of science. This latest addition to the computational toolbox is powered by statistical models that learn from existing knowledge to arrive at new insights via shortcuts that rely on pattern in the data rather than reductionist bottom-up reasoning about features of reality.
+
+Yet despite the powerful tools brought about by the traditional empirical, theoretical, and computational paradigms of science, to this day materials discovery still requires labor-intensive experimentation, complex and expensive calculations, or trial-and-error methods to discover new materials.
+
+This makes any shortcuts ML can help uncover particularly attractive in the field of materials science where density functional theory simulations, one of the most powerful methods of the 3rd paradigm, running for decades on large supercomputers all around the world, has resulted in huge databases of ab-initio material properties. This is high-quality homogeneous training data ideal for training models. While too large for any human expert to leverage, ML models are powerful modeling tools to discover signals in the data too subtle for any human to uncover.
+
+For high-throughput novel materials discovery due to their ability to handle high dimensionality, large datasets, multiple objectives, uncertainty and noise, and sparse data.
 
 1. **Vast search space**: With ~100 elements and myriad compositional, structural, doping and defect degrees of freedom, the search space for novel materials is very high-dimensional. ML algorithms being orders of magnitude faster than simulation can explore larger chunks of this space and identify candidates that might have taken much longer to find using traditional methods.
 1. **Untapped value in existing data**: ML can handle very large datasets. With recent advances in automated experimentation and simulation, the amount of data available for materials discovery has grown to much more than any one expert can hope to absorb. Yet not too much for ML models which have shown the ability to condense a large chunk of the internet's text data into billions of parameters [cite GPT2/3 and other LLMs] which when probed correctly can reveal new patterns and relationships in the data that humans have missed.
 1. **Multiple objectives**: Materials applications often require finding specific combinations of properties in a material that can be anti-correlated such as high electrical conductivity and low thermal conductivity needed for thermoelectric devices. By carefully constructing their loss function, ML algorithms are good at handling multiple objectives and constraints.
-1. **Uncertainty and noise**: Experimental measurements have some level of noise and uncertainty. They can be highly sensitive to synthesis and processing conditions and fraught with outliers, making some data irreproducible and potentially confusing to a statistical model tasked to learn a map from input to non-unique output. However, ML methods like learned-uncertainty aware loss functions [cite heteroskedastic loss from what uncertainties do we need], Gaussian Processes and Bayesian Neural Networks exist and continue to be developed to incorporate uncertainty directly into the model. This leads to more robust and more risk-aware interpretation of ML predictions.
+1. **Uncertainty and noise**: Experimental measurements have some level of noise and uncertainty. They can be highly sensitive to synthesis and processing conditions and fraught with outliers, making some data unreproducible and potentially confusing to a statistical model tasked to learn a map from input to non-unique output. However, ML methods like learned-uncertainty aware loss functions [cite heteroskedastic loss from what uncertainties do we need], Gaussian Processes and Bayesian Neural Networks exist and continue to be developed to incorporate uncertainty directly into the model. This leads to more robust and more risk-aware interpretation of ML predictions.
 1. **Sparse data**: Experimental data is scarce or even non-existent in many regions of material space. Tools like active learning and generative modeling can chart a path into or generate synthetic data from such regions, even from only small amounts of experimental data.
 
 If used right, we believe ML can improve the speed, hit rate and computational efficiency of materials discovery.
@@ -122,14 +130,18 @@ Yet despite (or perhaps because of) the many recent advances in machine learning
 
 ### Why stability over formation energies?
 
+Formation energy measures the energy difference between a compound and its component elements. Formation energies are mostly negative, meaning the material is energetically favored over its constituent elements. However, whether a material is actually stable is determined by the convex hull which measures the energy difference between a material and all competing phases that the same elements could also arrange in.
+
 <!-- ### Bartel's critical examination of ML stability predictions -->
 
 In 2020, [Chris Bartel et al.](https://nature.com/articles/s41524-020-00362-y) @bartel_critical_2020 benchmarked 7 ML models, showing all of them able to predict DFT formation energies with useful accuracy. However, when asked to predict stability (decomposition enthalpy to be precise), the performance of all models deteriorated significantly, especially those of composition-based models and slightly less so of CGCNN @xie_crystal_2018, the only structure-based model investigated. This insight meant that ML models are much less useful than DFT for discovering new solids. The paper identified two main reasons for the sharp decline in predictive power.
 
-1. Stability is a property not only of the material itself but also the chemical space of competing phases around it. Current ML algorithm are only given a single feature vector that describes the material it is asked to predict.
+1. Stability is a property not only of the material itself but also the chemical space of competing phases around it. Current ML algorithms are only given a single feature vector that describes the material it is asked to predict.
 1. Unlike DFT, ML models evidently do not benefit from systematic error cancellation compared. A first-principles theory of physics will make similar errors for similar systems which cancel when looking at the relative energy differences that determine stability. This suggests that whatever correlations these statistical models learn to map their inputs to the target variable, it does not correspond to actual physics.
 
-Hence the authors stress that to demonstrate the utility of ML for real-world materials discovery efforts, it is essential to evaluate model performance on actual stability predictions rather than formation energies. We took this as the guiding principle when designing this benchmark.
+Hence Bartel et al. stress that to demonstrate the utility of ML for real-world materials discovery efforts, it is essential to evaluate model performance on actual stability predictions rather than formation energies. Moreover, the qualitative leap in performance from the 6 compositional models which performed poorly at identifying stable compounds to the single structural model they tested (CGCNN) shows that the structure plays a crucial role in determining the stability of materials. However, this approach requires the structure of the material to be known beforehand, which is a limitation for predicting the stability of materials that have yet to be discovered.
+
+While formation energy can be accurately predicted knowing only the composition, the driving force behind stability subtly depends on more or less tight bonding types present in the structure which can often be inferred from interatomic distances. These lead to energy differences 1 to 2 orders of magnitude smaller than the formation energy itself yet these differences are what determine relative stability between competing phases. Hence the thermodynamic driving force for forming a compound from its elements (formation energy) can be learned with high accuracy from only the composition while the structure dictates stability between chemically similar compounds. This highlights the need to supply ML models with more than just the composition to obtain accurate stability predictions. However, an ML model is only useful if its input is much cheaper to obtain than the quantity of interest. The only information that is commonly available prior to expensive DFT relaxation is the unrelaxed crystal structure. These can be generated quickly and cheaply by placing elements into structure prototypes. Hence we choose this as the input for each sample in the benchmark which each model is free to extract information from it as best it can. We took both these premises as the guiding principle for designing this discovery benchmark.
 
 ## Related Work
 
@@ -185,25 +197,33 @@ Our benchmark is designed to make [adding future models easy](/how-to-contribute
 
 ![Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth](./figs/2023-01-30-each-scatter-models.webp)
 
-<figcaption>@label:fig:each-scatter-models Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth</figcaption>
+<figcaption>
+@label:fig:each-scatter-models
+Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth
+</figcaption>
 
 ![Histograms of using predicted formation energies for stability classification](./figs/2023-01-30-hist-pred-energy-vs-hull-dist-models.webp)
 
 ![Histograms of using predicted formation energies for stability classification](./figs/2023-01-30-hist-true-energy-vs-hull-dist-models.webp)
 
-<figcaption>@label:fig:wbm-hull-dist-hist-models Histograms of using predicted formation energies for stability classification</figcaption>
-
-{#if typeof document !== `undefined`}
-  <RollingMaeModels style="height: min(80vh, 700px);" />
-{/if}
-
-<figcaption>@label:fig:rolling-mae-models Rolling MAE on the WBM test set as the energy to the convex hull is varied. A scale bar is shown for the window used to calculate the rolling average. Shaded areas around each curve show 3 &times; standard error of the mean (SEM). Also highlighted is the V-shaped region inside which the MAE is greater than the energy to the known convex hull. Inside this 'cone of peril' models are most at risk of misclassifying structures. Outside this cone, even if a model overpredicts the energy to the hull by its MAE in the left half of the plot or underpredicts it by its MAE on the right half of the plot, the prediction would still correctly classify the material as stable/unstable respectively. All models achieve an MAE below 100 meV/atom in this range. M3GNet and Wrenformer in particular achieve of just 47 and 55 meV/atom, respectively. This is still about twice the DFT error of 25 meV/atom for relative energy difference on similar chemistries. This error is lower than the corrected GGA formation energy error of ~50 meV / atom due to systematic error cancellation among similar chemistries @hautier_accuracy_2012.
+<figcaption>
+@label:fig:wbm-hull-dist-hist-models
+Histograms of using predicted formation energies for stability classification
 </figcaption>
 
-M3GNet's performance appear to be particularly affected by poor performance on materials far below the MP hull. It is the only model whose rolling absolute error never exits the 'cone of peril' on the side of stable materials. We are unsure of the reason but suspect it might be remedied by re-training the model from scratch for this benchmark. For the predictions in this plot, we simply used pre-trained M3GNet released with the original paper which was trained on about half (~63k) of the DFT relaxation in MP.
+{#if typeof document !== `undefined`}
+<RollingMaeModels  />
+
+<figcaption>
+@label:fig:rolling-mae-models
+Rolling MAE on the WBM test set as the energy to the convex hull is varied. A scale bar is shown for the window used to calculate the rolling average. Shaded areas around each curve show 3 &times; standard error of the mean (SEM). Also highlighted is the V-shaped region inside which the MAE is greater than the energy to the known convex hull. Inside this 'cone of peril' models are most at risk of misclassifying structures. Outside this cone, even if a model overpredicts the energy to the hull by its MAE in the left half of the plot or underpredicts it by its MAE on the right half of the plot, the prediction would still correctly classify the material as stable/unstable. All models achieve an MAE below 100 meV/atom in this range. M3GNet and Wrenformer in particular achieve 47 and 55 meV/atom, respectively. This is still about twice the DFT error of 25 meV/atom for relative energy differences on similar chemistries. This error is lower than the corrected GGA formation energy error of ~50 meV / atom due to systematic error cancellation among similar chemistries @hautier_accuracy_2012.
+</figcaption>
+{/if}
+
+M3GNet's performance appears to be particularly affected by poor performance on materials far below the MP hull. It is the only model whose rolling absolute error never exits the 'cone of peril' on the side of stable materials. We are unsure of the reason but suspect it might be remedied by re-training the model from scratch for this benchmark. For the predictions in this plot, we simply used pre-trained M3GNet released with the original paper which was trained on about half (~63k) of the DFT relaxation in MP.
 
 {#if typeof document !== `undefined`}
-  <CumulativeClfMetrics class="pull-left" />
+<CumulativeClfMetrics class="pull-left" />
 {/if}
 
 ## Analysis
