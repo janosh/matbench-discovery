@@ -29,7 +29,10 @@ export type ModelStats = {
   missing_preds: number
   missing_percent: number
   Accuracy: number
-  run_time_h: string
+  'Run Time (h)': string
+  FPR: number
+  FNR: number
+  DAF: number
   GPUs: number
   CPUs: number
   slurm_jobs: number
@@ -37,7 +40,12 @@ export type ModelStats = {
 }
 
 // [key, label?, unit?]
-export type ModelStatLabel = [keyof ModelStats, (string | null)?, string?]
+export type ModelStatLabel = {
+  key: keyof ModelStats
+  label?: string
+  unit?: string
+  tooltip?: string
+}
 
 export type Author = {
   name: string
