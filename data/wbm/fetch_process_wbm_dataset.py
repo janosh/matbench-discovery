@@ -436,10 +436,10 @@ print(f"{n_too_unstable = }")  # n_too_unstable = 22
 fig = df_summary.hist(
     x="e_form_per_atom_wbm", backend="plotly", log_y=True, range_x=[-5.5, 5.5]
 )
-fig.add_vline(x=e_form_cutoff, line=dict(width=2, dash="dash", color="green"))
-fig.add_vline(x=-e_form_cutoff, line=dict(width=2, dash="dash", color="green"))
+fig.add_vline(x=e_form_cutoff, line=dict(dash="dash"))
+fig.add_vline(x=-e_form_cutoff, line=dict(dash="dash"))
 fig.add_annotation(
-    **dict(x=0, y=1, yref="paper", yshift=20, font_color="green"),
+    **dict(x=0, y=1, yref="paper", yshift=20),
     text=f"<b>dataset cropped to within +/- {e_form_cutoff} eV/atom</b>",
     showarrow=False,
 )

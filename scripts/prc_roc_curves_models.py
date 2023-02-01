@@ -18,6 +18,7 @@ histogram stacks true/false positives/negatives with different colors.
 """
 
 pio.templates.default
+line = dict(dash="dash", width=0.5)
 
 
 # %%
@@ -71,13 +72,35 @@ for anno in fig.layout.annotations:
     anno.text = anno.text.split("=")[1]  # remove Model= from subplot titles
 
 fig.layout.coloraxis.colorbar.update(
-    x=1,
-    y=1,
-    xanchor="right",
-    yanchor="top",
-    thickness=14,
-    len=0.27,
-    title_side="right",
+    x=1, y=1, xanchor="right", yanchor="top", thickness=14, len=0.27, title_side="right"
+)
+fig.add_annotation(text="No skill", x=0.5, y=0.5, showarrow=False, yshift=-10)
+fig.add_shape(type="line", x0=0, y0=0, x1=1, y1=1, line=line, row="all", col="all")
+fig.show()
+
+
+# %%
+fig = df_roc.plot.scatter(
+    x="Recall",
+    y="Precision",
+    facet_col=facet_col,
+    facet_col_wrap=2,
+    backend="plotly",
+    height=800,
+    color=color_col,
+    range_x=(0, 1),
+    range_y=(0, 1),
+)
+
+for anno in fig.layout.annotations:
+    anno.text = anno.text.split("=")[1]  # remove Model= from subplot titles
+
+fig.layout.coloraxis.colorbar.update(
+    x=0.5, y=1.1, thickness=14, len=0.4, orientation="h"
+)
+fig.add_hline(y=0.5, line=line)
+fig.add_annotation(
+    text="No skill", x=0, y=0.5, showarrow=False, xanchor="left", xshift=10, yshift=10
 )
 fig.show()
 
