@@ -296,6 +296,7 @@ def rolling_mae_vs_hull_dist(
     y_label: str = "rolling MAE (eV/atom)",
     just_plot_lines: bool = False,
     with_sem: bool = True,
+    show_dft_acc: bool = False,
     **kwargs: Any,
 ) -> plt.Axes | go.Figure:
     """Rolling mean absolute error as the energy to the convex hull is varied. A scale
@@ -325,6 +326,9 @@ def rolling_mae_vs_hull_dist(
             to False.
         with_sem (bool, optional): If True, plot the standard error of the mean as
             shaded area around the rolling MAE. Defaults to True.
+        show_dft_acc (bool, optional): If True, change color of the cone of peril's tip
+            and annotate it with 'Corrected GGA Accuracy' at rolling MAE of 25 meV/atom.
+            Defaults to False.
 
     Returns:
         tuple[plt.Axes | go.Figure, pd.DataFrame, pd.DataFrame]: matplotlib Axes or
@@ -363,8 +367,8 @@ def rolling_mae_vs_hull_dist(
         # previous call
         return ax, df_rolling_err, df_err_std
 
-    # DFT accuracy at 25 meV/atom for e_above_hull calculations of chemically similar
-    # systems which is lower than formation energy error due to systematic error
+    # DFT accuracy at 25 meV/atom for relative difference of e_above_hull for chemically
+    # similar systems which is lower than formation energy error due to systematic error
     # cancellation among similar chemistries, supporting ref:
     href = "https://doi.org/10.1103/PhysRevB.85.155208"
     dft_acc = 0.025
@@ -397,32 +401,33 @@ def rolling_mae_vs_hull_dist(
         ax.add_artist(scale_bar)
 
         ax.fill_between(
-            (-1, -dft_acc, dft_acc, 1),
-            (1, 1, 1, 1),
-            (1, dft_acc, dft_acc, 1),
+            (-1, -dft_acc, dft_acc, 1) if show_dft_acc else (-1, 0, 1),
+            (1, 1, 1, 1) if show_dft_acc else (1, 1, 1),
+            (1, dft_acc, dft_acc, 1) if show_dft_acc else (1, 0, 1),
             color="tab:red",
             alpha=0.2,
         )
 
-        ax.fill_between(
-            (-dft_acc, 0, dft_acc),
-            (dft_acc, dft_acc, dft_acc),
-            (dft_acc, 0, dft_acc),
-            color="tab:orange",
-            alpha=0.2,
-        )
-        # shrink=0.1 means cut off 10% length from both sides of arrow line
-        arrowprops = dict(
-            facecolor="black", width=0.5, headwidth=5, headlength=5, shrink=0.1
-        )
-        ax.annotate(
-            xy=(-dft_acc, dft_acc),
-            xytext=(-2 * dft_acc, dft_acc),
-            text="Corrected\nGGA DFT\nAccuracy",
-            arrowprops=arrowprops,
-            verticalalignment="center",
-            horizontalalignment="right",
-        )
+        if show_dft_acc:
+            ax.fill_between(
+                (-dft_acc, 0, dft_acc),
+                (dft_acc, dft_acc, dft_acc),
+                (dft_acc, 0, dft_acc),
+                color="tab:orange",
+                alpha=0.2,
+            )
+            # shrink=0.1 means cut off 10% length from both sides of arrow line
+            arrowprops = dict(
+                facecolor="black", width=0.5, headwidth=5, headlength=5, shrink=0.1
+            )
+            ax.annotate(
+                xy=(-dft_acc, dft_acc),
+                xytext=(-2 * dft_acc, dft_acc),
+                text="Corrected GGA\nAccuracy",
+                arrowprops=arrowprops,
+                verticalalignment="center",
+                horizontalalignment="right",
+            )
 
         ax.text(
             0, 0.13, r"MAE > $|E_\mathrm{above\ hull}|$", horizontalalignment="center"
@@ -457,43 +462,49 @@ def rolling_mae_vs_hull_dist(
             yanchor="bottom",
             title_font=dict(size=13),
         )
-        ax.update_layout(
-            dict(
-                xaxis_title="E<sub>above MP hull</sub> (eV/atom)",
-                yaxis_title="rolling MAE (eV/atom)",
-            ),
-            legend=legend,
-        )
+        ax.layout.legend.update(legend)
+        ax.layout.xaxis.title.text = "E<sub>above MP hull</sub> (eV/atom)"
+        ax.layout.yaxis.title.text = "rolling MAE (eV/atom)"
         ax.update_xaxes(range=x_lim)
         ax.update_yaxes(range=y_lim)
-        scatter_kwds = dict(fill="toself", opacity=0.4)
+        scatter_kwds = dict(fill="toself", opacity=0.2)
+        peril_cone_anno = "MAE > |E<sub>above hull</sub>|"
         ax.add_scatter(
-            x=(-1, -dft_acc, dft_acc, 1),
-            y=(1, dft_acc, dft_acc, 1),
-            name="MAE > |E<sub>above hull</sub>|",
-            # fillcolor="yellow",
-            **scatter_kwds,
-        )
-        ax.add_scatter(
-            x=(-dft_acc, dft_acc, 0, -dft_acc),
-            y=(dft_acc, dft_acc, 0, dft_acc),
-            name="MAE < |DFT error|",
-            # fillcolor="red",
+            x=(-1, -dft_acc, dft_acc, 1) if show_dft_acc else (-1, 0, 1),
+            y=(1, dft_acc, dft_acc, 1) if show_dft_acc else (1, 0, 1),
+            name=peril_cone_anno,
+            fillcolor="red",
+            showlegend=False,
             **scatter_kwds,
         )
         ax.add_annotation(
-            x=-dft_acc,
-            y=dft_acc,
-            text=f"<a {href=}>Corrected GGA Accuracy<br>for rel. Energy</a> "
-            "[<a href='#hautier_accuracy_2012' target='_self'>ref</a>]",
-            showarrow=True,
-            xshift=-10,
-            arrowhead=2,
-            ax=-4 * dft_acc,
-            ay=2 * dft_acc,
-            axref="x",
-            ayref="y",
+            x=0,
+            y=0.8,
+            text=peril_cone_anno,
+            showarrow=False,
+            yref="paper",
         )
+        if show_dft_acc:
+            ax.add_scatter(
+                x=(-dft_acc, dft_acc, 0, -dft_acc),
+                y=(dft_acc, dft_acc, 0, dft_acc),
+                name="MAE < |Corrected GGA error|",
+                fillcolor="red",
+                **scatter_kwds,
+            )
+            ax.add_annotation(
+                x=-dft_acc,
+                y=dft_acc,
+                text=f"<a {href=}>Corrected GGA Accuracy<br>for rel. Energy</a> "
+                "[<a href='#hautier_accuracy_2012' target='_self'>ref</a>]",
+                showarrow=True,
+                xshift=-10,
+                arrowhead=2,
+                ax=-4 * dft_acc,
+                ay=2 * dft_acc,
+                axref="x",
+                ayref="y",
+            )
 
         ax.data = ax.data[::-1]  # bring px.line() to front
         # plot rectangle to indicate MAE window size
