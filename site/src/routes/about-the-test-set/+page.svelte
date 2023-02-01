@@ -69,11 +69,11 @@
       <TableInset slot="inset" grid_row="3">
         {#if active_mp_elem?.name}
           <strong>
-            {active_mp_elem?.name}: {pretty_num(wbm_elem_counts[active_mp_elem?.symbol])}
+            {active_mp_elem?.name}: {pretty_num(mp_elem_counts[active_mp_elem?.symbol])}
             <!-- compute percent of total -->
-            {#if wbm_elem_counts[active_mp_elem?.symbol] > 0}
+            {#if mp_elem_counts[active_mp_elem?.symbol] > 0}
               {@const total = wbm_heat_vals.reduce((a, b) => a + b, 0)}
-              ({pretty_num((wbm_elem_counts[active_mp_elem?.symbol] / total) * 100)}%)
+              ({pretty_num((mp_elem_counts[active_mp_elem?.symbol] / total) * 100)}%)
             {/if}
           </strong>
         {/if}
