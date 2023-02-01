@@ -117,16 +117,9 @@ for x_pos, label in zip(
     [mean, mean + std, mean - std],
     [f"{mean = :.2f}", f"{mean + std = :.2f}", f"{mean - std = :.2f}"],
 ):
-    fig.add_vline(x=x_pos, line=dict(width=1, dash="dash"))
-    fig.add_annotation(
-        x=x_pos,
-        y=0.95,
-        text=label,
-        showarrow=False,
-        yref="paper",
-        xanchor="left",
-        xshift=5,
-    )
+    anno = dict(text=label, yshift=-10, xshift=5)
+    fig.add_vline(x=x_pos, line=dict(width=1, dash="dash"), annotation=anno)
+
 fig.show()
 
 

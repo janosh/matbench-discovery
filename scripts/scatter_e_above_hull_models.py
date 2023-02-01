@@ -184,7 +184,7 @@ for idx, anno in enumerate(fig.layout.annotations, 1):
 fig.update_xaxes(nticks=5)
 fig.update_yaxes(nticks=5)
 
-legend = dict(
+fig.layout.legend.update(
     title="",  # remove legend title
     itemsizing="constant",  # increase legend marker size
     orientation="h",
@@ -193,7 +193,6 @@ legend = dict(
     y=1.1,
     yanchor="top",
 )
-fig.layout.legend.update(legend)
 
 # fig.update_layout(yaxis=dict(scaleanchor="x", scaleratio=1))
 

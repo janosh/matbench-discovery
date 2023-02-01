@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { browser } from '$app/environment'
   import FormEnergyHist from '$figs/2022-12-07-hist-e-form-per-atom.svelte'
   import WbmEachHist from '$figs/2023-01-26-wbm-each-hist.svelte'
   import DataReadme from '$root/data/wbm/readme.md'
@@ -30,7 +31,7 @@
 
 <DataReadme>
   <svelte:fragment slot="hist-e-form-per-atom">
-    {#if typeof document !== `undefined`}
+    {#if browser}
       <FormEnergyHist />
     {/if}
   </svelte:fragment>
@@ -81,7 +82,7 @@
     </PeriodicTable>
   </svelte:fragment>
   <svelte:fragment slot="wbm-each-hist">
-    {#if typeof document !== `undefined`}
+    {#if browser}
       <WbmEachHist />
     {/if}
   </svelte:fragment>

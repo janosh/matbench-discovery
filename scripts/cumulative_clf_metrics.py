@@ -33,23 +33,35 @@ fig, df_metric = cumulative_precision_recall(
     df_preds=df_e_above_hull_pred,
     project_end_point="xy",
     backend=(backend := "plotly"),
+    metrics=("Precision", "Recall"),
 )
 
-title = f"{today} - Cumulative Precision, Recall, F1 scores for classifying stable materials"
-# xlabel_cumulative = "Materials predicted stable sorted by hull distance"
+# title = f"{today} - Cumulative Precision, Recall, F1 scores for classifying stable materials"
+xlabel = "Number of WBM materials"
 if backend == "matplotlib":
-    fig.suptitle(title)
-    # fig.text(0.5, -0.08, xlabel_cumulative, ha="center", fontdict={"size": 16})
-elif backend == "plotly":
+    # fig.suptitle(title)
+    fig.text(0.5, -0.08, xlabel, ha="center", fontdict={"size": 16})
+if backend == "plotly":
     # place legend in lower right corner
     fig.update_layout(
-        title=title,
-        legend=dict(yanchor="bottom", y=0.02, xanchor="right", x=1),
+        # title=title,
+        legend=dict(yanchor="bottom", y=0.02, xanchor="right", x=0.9),
     )
-    fig.update_xaxes(matches=None, showticklabels=True)
-    fig.update_yaxes(matches=None, showticklabels=True)
+    fig.update_xaxes(matches=None, showticklabels=True, title="")
+    fig.update_yaxes(matches=None, showticklabels=True, title="")
+    fig.layout.height = 500
+    fig.add_annotation(
+        x=0.5,
+        y=-0.15,
+        xref="paper",
+        yref="paper",
+        text=xlabel,
+        showarrow=False,
+        font=dict(size=16),
+    )
+    fig.update_traces(line=dict(width=3))
 
-fig.show(responsive=True)
+fig.show()
 
 
 # %%
