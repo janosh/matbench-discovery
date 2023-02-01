@@ -23,9 +23,6 @@ authors:
   - name: Kristin Persson
     orcid: 0000-0003-2495-5509
     affiliation: 2
-  - name: Emma King-Smith
-    orcid: 0000-0002-2999-0955
-    affiliation: 1
   - name: Alpha Lee
     orcid: 0000-0002-9616-3108
     affiliation: 1
@@ -47,9 +44,10 @@ date: Jan 31, 2023
   import MetricsTable from '$figs/2023-01-31-metrics-table.svelte'
   import { references } from './references.yaml'
   import { References } from '$lib'
-  import CumulativeClfMetrics from '$figs/2023-01-26-cumulative-clf-metrics.svelte'
+  import CumulativeClfMetrics from '$figs/2023-01-31-cumulative-clf-metrics.svelte'
   import RollingMaeModels from '$figs/2023-01-30-rolling-mae-vs-hull-dist-models.svelte'
   // import HistClfStableModels from '$figs/2023-01-26-wbm-hull-dist-hist-models.svelte'
+  import { browser } from '$app/environment'
 </script>
 
 # {title}<br><small>{subtitle}</small>
@@ -210,7 +208,7 @@ Parity plot for each model's energy above hull predictions (based on their forma
 Histograms of using predicted formation energies for stability classification
 </figcaption>
 
-{#if typeof document !== `undefined`}
+{#if browser}
 <RollingMaeModels  />
 
 <figcaption>
@@ -221,7 +219,7 @@ Rolling MAE on the WBM test set as the energy to the convex hull is varied. A sc
 
 M3GNet's performance appears to be particularly affected by poor performance on materials far below the MP hull. It is the only model whose rolling absolute error never exits the 'cone of peril' on the side of stable materials. We are unsure of the reason but suspect it might be remedied by re-training the model from scratch for this benchmark. For the predictions in this plot, we simply used pre-trained M3GNet released with the original paper which was trained on about half (~63k) of the DFT relaxation in MP.
 
-{#if typeof document !== `undefined`}
+{#if browser}
 <CumulativeClfMetrics class="pull-left" />
 {/if}
 

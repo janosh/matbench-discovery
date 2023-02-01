@@ -59,7 +59,15 @@ model_labels = dict(
 px.defaults.labels = quantity_labels | model_labels
 
 # https://plotly.com/python-api-reference/generated/plotly.graph_objects.layout
-colorway = ("lightseagreen", "orange", "lightsalmon", "dodgerblue")
+colorway = (
+    "lightseagreen",
+    "orange",
+    "lightsalmon",
+    "dodgerblue",
+    "aquamarine",
+    "purple",
+    "firebrick",
+)
 clf_labels = ("True Positive", "False Negative", "False Positive", "True Negative")
 clf_color_map = dict(zip(clf_labels, colorway))
 
@@ -220,15 +228,8 @@ def hist_classified_stable_vs_hull_dist(
         fig.update_layout(legend=dict(title=None, y=0.5, xanchor="right", x=1))
 
         if stability_threshold is not None:
-            fig.add_vline(stability_threshold, line=dict(dash="dash", width=1))
-            fig.add_annotation(
-                text="Stability threshold",
-                x=stability_threshold,
-                y=1.1,
-                yref="paper",
-                font=dict(size=14, color="gray"),
-                showarrow=False,
-            )
+            anno = dict(text="Stability threshold", xanchor="center", yanchor="bottom")
+            fig.add_vline(stability_threshold, line=dict(dash="dash"), annotation=anno)
 
     if rolling_acc:
         # add moving average of the accuracy computed within given window
@@ -454,7 +455,7 @@ def rolling_mae_vs_hull_dist(
                 showlegend=False,
             )
 
-        legend = dict(
+        ax.layout.legend.update(
             title=legend_title,
             x=1,
             y=0,
@@ -462,7 +463,6 @@ def rolling_mae_vs_hull_dist(
             yanchor="bottom",
             title_font=dict(size=13),
         )
-        ax.layout.legend.update(legend)
         ax.layout.xaxis.title.text = "E<sub>above MP hull</sub> (eV/atom)"
         ax.layout.yaxis.title.text = "rolling MAE (eV/atom)"
         ax.update_xaxes(range=x_lim)
@@ -533,10 +533,11 @@ def rolling_mae_vs_hull_dist(
 def cumulative_precision_recall(
     e_above_hull_true: pd.Series,
     df_preds: pd.DataFrame,
+    metrics: Sequence[str] = ("Precision", "Recall"),
     stability_threshold: float = 0,  # set stability threshold as distance to convex
     # hull in eV / atom, usually 0 or 0.1 eV
     project_end_point: AxLine = "xy",
-    show_optimal: bool = True,
+    optimal_recall: str | None = "Optimal Recall",
     show_n_stable: bool = True,
     backend: Backend = "plotly",
     **kwargs: Any,
@@ -555,13 +556,15 @@ def cumulative_precision_recall(
         df_preds (pd.DataFrame): Distance to convex hull predicted by models, one column
             per model (in eV / atom). Same as true energy to convex hull plus predicted
             minus true formation energy.
+        metrics (Sequence[str], optional): Which metrics to plot. Defaults to
+            ('Precision', 'Recall'). Also accepts 'F1'.
         stability_threshold (float, optional): Max distance above convex hull before
             material is considered unstable. Defaults to 0.
         project_end_point ('x' | 'y' | 'xy' | '', optional): Whether to project end
         points of precision and recall curves to the x/y axis. Defaults to '', i.e. no
             axis projection lines.
-        show_optimal (bool, optional): Whether to plot the optimal recall line. Defaults
-            to True.
+        optimal_recall (str | None, optional): Label for the optimal recall line. Defaults
+            to 'Optimal Recall'. Set to None to not plot the line.
         show_n_stable (bool, optional): Whether to show a horizontal line at the true number
             of stable materials. Defaults to True.
         backend ('matplotlib' | 'plotly'], optional): Which plotting engine to use.
@@ -573,31 +576,32 @@ def cumulative_precision_recall(
             dataframe of cumulative metrics for each model.
     """
     factory = lambda: pd.DataFrame(index=range(len(e_above_hull_true)))
-    dfs = dict(Precision=factory(), Recall=factory(), F1=factory())
+    dfs = dict(Precision=factory(), Recall=factory(), F1=factory(), Acc=factory())
 
     for model_name in df_preds:
         model_preds = df_preds[model_name].sort_values()
         e_above_hull_true = e_above_hull_true.loc[model_preds.index]
 
-        true_pos, false_neg, false_pos, _true_neg = classify_stable(
+        true_pos, false_neg, false_pos, true_neg = classify_stable(
             e_above_hull_true, model_preds, stability_threshold
         )
 
-        true_pos_cumsum = true_pos.cumsum()
+        true_pos_cs, _false_neg_cs, false_pos_cs, _true_neg_cs = map(
+            np.cumsum, (true_pos, false_neg, false_pos, true_neg)
+        )
         # precision aka positive predictive value (PPV)
-        precision_cum = true_pos_cumsum / (true_pos_cumsum + false_pos.cumsum())
+        precision_cum = true_pos_cs / (true_pos_cs + false_pos_cs)
         n_total_pos = sum(true_pos) + sum(false_neg)
-        recall_cum = true_pos_cumsum / n_total_pos  # aka true_pos_rate aka sensitivity
-
-        end = int(np.argmax(recall_cum))
-        xs = np.arange(end)
-
+        recall_cum = true_pos_cs / n_total_pos  # aka true_pos_rate aka sensitivity
         # cumulative F1 score
         f1_cum = 2 * (precision_cum * recall_cum) / (precision_cum + recall_cum)
 
+        end = int(np.argmax(recall_cum))
+        xs = np.arange(end)
         prec_interp = scipy.interpolate.interp1d(xs, precision_cum[:end], kind="cubic")
         recall_interp = scipy.interpolate.interp1d(xs, recall_cum[:end], kind="cubic")
         f1_interp = scipy.interpolate.interp1d(xs, f1_cum[:end], kind="cubic")
+
         dfs["Precision"][model_name] = pd.Series(prec_interp(xs))
         dfs["Recall"][model_name] = pd.Series(recall_interp(xs))
         dfs["F1"][model_name] = pd.Series(f1_interp(xs))
@@ -615,31 +619,41 @@ def cumulative_precision_recall(
     n_stable = sum(e_above_hull_true <= 0)
 
     if backend == "matplotlib":
-        fig, axs = plt.subplots(1, len(dfs), figsize=(15, 7), sharey=True)
+        fig, axs = plt.subplots(
+            ncols=min(len(metrics), 2),
+            nrows=math.ceil(len(metrics) / 2),
+            figsize=(15, 7),
+            sharey=True,
+        )
         line_kwargs = dict(
             linewidth=3, markevery=[-1], marker="x", markersize=14, markeredgewidth=2.5
         )
-        for (key, df), ax in zip(dfs.items(), axs):
+        # TODO breaks for len(metrics) == 1 since axs has no .flat attribute
+        # assert len(axs.flat) == len(metrics), f"{len(axs.flat)=} != {len(metrics)=}"
+
+        for metric, ax in zip(metrics, axs.flat if len(metrics) > 1 else [axs]):
             # select every n-th row of df so that 1000 rows are left for increased
             # plotting speed and reduced file size
             # falls back on every row if df has less than 1000 rows
+            df = dfs[metric]
             df.iloc[:: len(df) // 1000 or 1].plot(
-                ax=ax, legend=False, backend=backend, **line_kwargs | kwargs, ylabel=key
+                ax=ax,
+                legend=False,
+                backend=backend,
+                **line_kwargs | kwargs,
+                ylabel=metric,
             )
-
-        # add some visual guidelines
-        intersect_kwargs = dict(linestyle=":", alpha=0.4, linewidth=2)
-        bbox = dict(facecolor="white", alpha=0.5, edgecolor="none")
-        assert len(axs) == len(dfs), f"{len(axs)} != {len(dfs)}"
-
-        for ax, (key, df) in zip(axs.flat, dfs.items()):
-            ax.set(ylim=(0, 1), xlim=(0, None), ylabel=key)
+            df = dfs[metric]
+            ax.set(ylim=(0, 1), xlim=(0, None), ylabel=metric)
             for model in df_preds:
                 # TODO is this if really necessary?
                 if len(df[model].dropna()) == 0:
                     continue
                 x_end = df[model].dropna().index[-1]
                 y_end = df[model].dropna().iloc[-1]
+                # add some visual guidelines to the plot
+                intersect_kwargs = dict(linestyle=":", alpha=0.4, linewidth=2)
+                bbox = dict(facecolor="white", alpha=0.5, edgecolor="none")
                 # place model name at the end of every line
                 ax.text(x_end, y_end, model, va="bottom", rotation=30, bbox=bbox)
                 if "x" in project_end_point:
@@ -647,28 +661,26 @@ def cumulative_precision_recall(
                 if "y" in project_end_point:
                     ax.plot((0, x_end), (y_end, y_end), **intersect_kwargs)
 
-        # optimal recall line finds all stable materials without any false positives
-        # can be included to confirm all models achieve near optimal recall initially
-        # and to see how much they overshoot n_stable
-        if show_optimal:
-            ax = next(filter(lambda ax: ax.get_ylabel() == "Recall", axs.flat))
-            opt_label = "Optimal Recall"
-            ax.plot([0, n_stable], [0, 1], color="green", linestyle="--")
-            ax.text(
-                *[n_stable, 0.81],
-                opt_label,
-                color="green",
-                va="bottom",
-                ha="right",
-                rotation=math.degrees(math.cos(math.atan(1 / n_stable))),
-                bbox=bbox,
-            )
+            # optimal recall line finds all stable materials without any false positives
+            # can be included to confirm all models achieve near optimal recall initially
+            # and to see how much they overshoot n_stable
+            if optimal_recall and metric == "Recall":
+                ax.plot([0, n_stable], [0, 1], color="green", linestyle="--")
+                ax.text(
+                    *[n_stable, 0.81],
+                    optimal_recall,
+                    color="green",
+                    va="bottom",
+                    ha="right",
+                    rotation=math.degrees(math.cos(math.atan(1 / n_stable))),
+                    bbox=bbox,
+                )
 
     elif backend == "plotly":
-        fig = df_cum.plot(
+        fig = df_cum.query(f"metric in {metrics}").plot(
             backend=backend,
             facet_col="metric",
-            facet_col_wrap=3,
+            facet_col_wrap=2,
             facet_col_spacing=0.03,
             # pivot df in case we want to show all 3 metrics in each plot's hover
             # requires fixing index mismatch due to df sub-sampling above
@@ -679,32 +691,30 @@ def cumulative_precision_recall(
             # ),
             **kwargs,
         )
-        fig.update_traces(line=dict(width=4))
-        for idx, metric in enumerate(df_cum.metric.unique(), 1):
-            x_axis_label = "Number of materials predicted stable" if idx == 2 else ""
-            fig.update_xaxes(title=x_axis_label, col=idx)
-            fig.update_yaxes(title=dict(text=metric, standoff=0), col=idx)
-            fig.update_traces(
-                hovertemplate=f"Index = %{{x:d}}<br>{metric} = %{{y:.2f}}",
-                col=idx,  # model = %{customdata[0]}<br>
-            )
-        fig.for_each_annotation(lambda a: a.update(text=""))
-        fig.update_layout(legend=dict(title=""))
+
         line_kwds = dict(color="white", dash="dash", width=0.5)
-        if show_optimal:
-            fig.add_shape(
-                **dict(type="line", x0=0, y0=0, x1=n_stable, y1=1, col=2, row=1),
-                line=line_kwds,
+        for idx, anno in enumerate(fig.layout.annotations):
+            anno.text = anno.text.split("=")[1]
+            anno.font.size = 16
+            grid_pos = dict(row=idx // 2 + 1, col=idx % 2 + 1)
+            fig.update_traces(
+                hovertemplate=f"Index = %{{x:d}}<br>{anno.text} = %{{y:.2f}}",
+                **grid_pos,
             )
-            # annotate optimal recall line
-            fig.add_annotation(
-                x=0.6 * n_stable,
-                y=0.8,
-                text="Optimal Recall",
-                showarrow=False,
-                col=2,
-                row=1,
-            )
+
+            if optimal_recall and "recall" in anno.text.lower():
+                fig.add_shape(
+                    **dict(type="line", x0=0, y0=0, x1=n_stable, y1=1, **grid_pos),
+                    line=line_kwds,
+                )
+                # annotate optimal recall line
+                fig.add_annotation(
+                    x=0.6 * n_stable,
+                    y=0.8,
+                    text=optimal_recall,
+                    showarrow=False,
+                    **grid_pos,
+                )
         if show_n_stable:
             fig.add_vline(x=n_stable, line=line_kwds)
             fig.add_annotation(
@@ -712,11 +722,12 @@ def cumulative_precision_recall(
                 y=0.95,
                 text="Stable<br>Materials",
                 showarrow=False,
-                row=1,
-                col=1,
                 xanchor="left",
                 align="left",
             )
+        fig.update_layout(legend_title="")
+        fig.update_xaxes(matches=None, showticklabels=True, title="")
+        fig.update_yaxes(matches=None, showticklabels=True, title="")
 
     return fig, df_cum
 
