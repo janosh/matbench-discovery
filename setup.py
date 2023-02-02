@@ -1,6 +1,6 @@
 from setuptools import setup
 
-from matbench_discovery import URLs
+from matbench_discovery import ROOT, URLs
 
 setup(
     name="matbench-discovery",
@@ -15,6 +15,9 @@ setup(
     long_description_content_type="text/markdown",
     packages=["matbench_discovery"],
     python_requires=">=3.9",
+    package_data={
+        "matbench_discovery": [f"{ROOT}/data/mp/*.json"],
+    },
     keywords=[
         "data-driven materials discovery",
         "crystal stability",
