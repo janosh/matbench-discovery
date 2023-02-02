@@ -8,7 +8,7 @@ import pandas as pd
 from pymatgen.analysis.phase_diagram import PDEntry
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, today
+from matbench_discovery import today
 from matbench_discovery.data import as_dict_handler
 from matbench_discovery.energy import get_e_form_per_atom
 
@@ -52,10 +52,11 @@ df_m3gnet.isna().sum()
 
 
 # %%
-out_path = f"{ROOT}/models/m3gnet/{today}-m3gnet-wbm-{task_type}.json.gz"
+out_path = f"{module_dir}/{today}-m3gnet-wbm-{task_type}.json.gz"
+df_m3gnet = df_m3gnet.round(5)
 df_m3gnet.reset_index().to_json(out_path, default_handler=as_dict_handler)
 
 df_m3gnet.select_dtypes("number").to_csv(out_path.replace(".json.gz", ".csv"))
 
-# in_path = f"{ROOT}/models/m3gnet/2022-10-31-m3gnet-wbm-IS2RE.json.gz"
+# in_path = f"{module_dir}/2022-10-31-m3gnet-wbm-IS2RE.json.gz"
 # df_m3gnet = pd.read_json(in_path).set_index("material_id")

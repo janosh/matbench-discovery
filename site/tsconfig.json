@@ -11,6 +11,7 @@
     "sourceMap": true,
 
     "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true
   }
 }

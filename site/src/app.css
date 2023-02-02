@@ -104,6 +104,15 @@ tbody tr:nth-child(odd) {
 h1 {
   text-align: center;
 }
+blockquote {
+  border-left: 3pt solid var(--blue);
+  padding: 4pt 4pt 4pt 9pt;
+  margin: 1em auto;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+blockquote > :is(:first-child, :last-child) {
+  margin: 0 auto;
+}
 
 :where(h2, h3, h4, h5, h6) {
   scroll-margin-top: 50px;
@@ -114,26 +123,19 @@ h1 {
   color: orange;
 }
 /* style heading anchors added by rehype-autolink-headings, see svelte.config.js */
-:where(h2, h3, h4, h5, h6) a[aria-hidden='true'] {
+:where(h2, h3, h4, h5, h6, strong) a[aria-hidden='true'] {
   transition: 0.3s;
   margin-left: 4pt;
   opacity: 0;
 }
-:where(h2, h3, h4, h5, h6):hover a[aria-hidden='true'] {
+:where(h2, h3, h4, h5, h6, strong):hover a[aria-hidden='true'] {
   opacity: 1;
 }
-
-blockquote {
-  border-left: 3pt solid var(--blue);
-  padding: 4pt 2pt 4pt 9pt;
-  margin: 1em auto;
-  background-color: rgba(255, 255, 255, 0.1);
-}
-blockquote p:last-child {
-  margin-bottom: 0;
-}
-blockquote p:first-child {
-  margin-top: 0;
+strong a[aria-hidden='true'] {
+  vertical-align: middle;
+  line-height: 1em;
+  position: absolute;
+  left: 0;
 }
 
 /* for /api/[slug] */
@@ -176,12 +178,4 @@ caption {
 sup {
   /* https://stackoverflow.com/a/6594576 */
   line-height: 0;
-}
-
-figure {
-  display: block;
-}
-figcaption {
-  text-align: center;
-  margin: 1ex 1em;
 }

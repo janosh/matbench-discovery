@@ -47,8 +47,6 @@ if backend == "plotly":
         # title=title,
         legend=dict(yanchor="bottom", y=0.02, xanchor="right", x=0.9),
     )
-    fig.update_xaxes(matches=None, showticklabels=True, title="")
-    fig.update_yaxes(matches=None, showticklabels=True, title="")
     fig.layout.height = 500
     fig.add_annotation(
         x=0.5,
