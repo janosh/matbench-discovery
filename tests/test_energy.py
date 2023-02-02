@@ -8,11 +8,7 @@ import pandas as pd
 import pytest
 from pymatgen.analysis.phase_diagram import PDEntry
 from pymatgen.core import Lattice, Structure
-from pymatgen.entries.computed_entries import (
-    ComputedEntry,
-    ComputedStructureEntry,
-    Entry,
-)
+from pymatgen.entries.computed_entries import ComputedEntry, Entry
 from pytest import approx
 from sklearn.metrics import classification_report
 
@@ -20,6 +16,8 @@ from matbench_discovery.energy import (
     classify_stable,
     get_e_form_per_atom,
     get_elemental_ref_entries,
+    mp_elem_reference_entries,
+    mp_elemental_ref_energies,
     stable_metrics,
 )
 
@@ -30,33 +28,14 @@ dummy_struct = Structure(
 )
 
 
-@pytest.mark.parametrize(
-    "constructor", [PDEntry, ComputedEntry, ComputedStructureEntry, lambda **x: x]
-)
-def test_get_e_form_per_atom(
-    constructor: Callable[..., Entry | dict[str, Any]]
-) -> None:
+def test_get_e_form_per_atom() -> None:
     """Test that the formation energy of a composition is computed correctly."""
 
     entry = {"composition": {"Fe": 1, "O": 1}, "energy": -2.5}
-    elemental_ref_entries = {
-        "Fe": {"composition": {"Fe": 1}, "energy": -1.0},
-        "O": {"composition": {"O": 1}, "energy": -1.0},
-    }
-    if constructor == ComputedStructureEntry:
-        entry["structure"] = dummy_struct
-        entry.pop("composition")
+    # map element symbol to reference energy (eV/atom)
+    elemental_ref_energies = {"Fe": -1.0, "O": -1.0}
 
-    entry = constructor(**entry)
-
-    # don't use ComputedStructureEntry for elemental ref entries, would need many
-    # dummy structures
-    if constructor == ComputedStructureEntry:
-        constructor = ComputedEntry
-    elemental_ref_entries = {
-        k: constructor(**v) for k, v in elemental_ref_entries.items()
-    }
-    assert get_e_form_per_atom(entry, elemental_ref_entries) == -0.25
+    assert get_e_form_per_atom(entry, elemental_ref_energies) == -0.25
 
 
 @pytest.mark.parametrize("constructor", [PDEntry, ComputedEntry, lambda **x: x])
@@ -141,3 +120,10 @@ def test_stable_metrics() -> None:
 
     assert stable_metrics.__doc__  # for mypy
     assert all(key in stable_metrics.__doc__ for key in metrics)
+
+
+def test_mp_ref_energies() -> None:
+    """Test MP elemental reference energies are in sync with PDEntries saved to disk."""
+    for key, val in mp_elemental_ref_energies.items():
+        actual = mp_elem_reference_entries[key].energy_per_atom
+        assert actual == approx(val, abs=1e-3), f"{key=}"
