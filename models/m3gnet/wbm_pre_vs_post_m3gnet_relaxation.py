@@ -1,4 +1,6 @@
 # %%
+import os
+
 import pandas as pd
 import plotly.express as px
 from pymatgen.core import Structure
@@ -12,7 +14,7 @@ from matbench_discovery import FIGS, ROOT, plots, today
 __author__ = "Janosh Riebesell"
 __date__ = "2022-06-18"
 
-
+module_dir = os.path.dirname(__file__)
 del plots  # https://github.com/PyCQA/pyflakes/issues/366
 
 
@@ -220,5 +222,5 @@ fig.write_image(
 # %% write df back to compressed JSON
 # filter out columns containing 'rs2re'
 # df_m3gnet_is2re.reset_index().filter(regex="^((?!rs2re).)*$").to_json(
-#     f"{ROOT}/models/m3gnet/2022-10-31-m3gnet-wbm-IS2RE-2.json.gz"
+#     f"{module_dir}/2022-10-31-m3gnet-wbm-IS2RE-2.json.gz"
 # ).set_index("material_id")

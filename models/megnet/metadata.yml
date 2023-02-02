@@ -26,3 +26,5 @@ requirements:
   numpy: 1.24.0
   pandas: 1.5.1
 trained_on_benchmark: false
+notes:
+  training: Using pre-trained model released with paper. Was only trained on `MP-crystals-2018.6.1` dataset [available on Figshare](https://figshare.com/articles/Graphs_of_materials_project/7451351).

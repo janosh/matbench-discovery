@@ -20,3 +20,6 @@ requirements:
   numpy: 1.24.0
   pandas: 1.5.1
 trained_on_benchmark: true
+
+hyperparams:
+  Ensemble Size: 10

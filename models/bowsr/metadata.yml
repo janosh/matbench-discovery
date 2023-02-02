@@ -25,9 +25,11 @@ requirements:
   pandas: 1.5.1
 trained_on_benchmark: false
 
-# model specific keys record hyperparameter choices
-optimize_kwargs:
-  alpha: 0.000676
-  n_init: 100
-  n_iter: 100
-task_type: IS2RE
+hyperparams:
+  Optimizer Params:
+    alpha: 0.000676
+    n_init: 100
+    n_iter: 100
+
+notes:
+  training: Uses same version of MEGNet as standalone MEGNet.

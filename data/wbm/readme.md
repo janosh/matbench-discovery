@@ -96,7 +96,7 @@ The dummy MAE of always predicting the test set mean is **0.17 eV/atom**.
 
 The number of stable materials (according to the MP convex hull which is spanned by the training data the models have access to) is **97k** out of **257k**, resulting in a dummy stability hit rate of **37%**.
 
-> Incidentally, [according to the authors](https://www.nature.com/articles/s41524-020-00481-6#Sec2), a more accurate stability rate according to the combined MP+WBM convex hull of the first 3 rounds of elemental substitution is 18,479 out of 189,981 crystals ($\approx$ 9.7%).
+> Note: [According to the authors](https://www.nature.com/articles/s41524-020-00481-6#Sec2), the stability rate w.r.t. to the more complete hull constructed from the combined train and test set (MP + WBM) for the first 3 rounds of elemental substitution is 18,479 out of 189,981 crystals ($\approx$ 9.7%).
 
 <slot name="wbm-each-hist">
   <img src="./figs/2023-01-26-wbm-each-hist.svg" alt="WBM energy above MP convex hull distribution">

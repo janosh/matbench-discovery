@@ -2,6 +2,7 @@
 import numpy as np
 import pandas as pd
 from pymatviz.utils import save_fig
+from tqdm import tqdm
 
 from matbench_discovery import FIGS, today
 from matbench_discovery.data import load_df_wbm_preds
@@ -37,12 +38,12 @@ color_col = "Stability Threshold"
 # %%
 df_roc = pd.DataFrame()
 
-for model in models:
+for model in (pbar := tqdm(models)):
+    pbar.set_description(model)
     df_wbm[f"{model}_{each_pred_col}"] = df_wbm[each_true_col] + (
         df_wbm[model] - df_wbm[e_form_col]
     )
     for stab_treshold in np.arange(-0.4, 0.4, 0.01):
-
         metrics = stable_metrics(
             df_wbm[each_true_col], df_wbm[f"{model}_{each_pred_col}"], stab_treshold
         )
@@ -74,9 +75,18 @@ for anno in fig.layout.annotations:
 fig.layout.coloraxis.colorbar.update(
     x=1, y=1, xanchor="right", yanchor="top", thickness=14, len=0.27, title_side="right"
 )
-fig.add_annotation(text="No skill", x=0.5, y=0.5, showarrow=False, yshift=-10)
 fig.add_shape(type="line", x0=0, y0=0, x1=1, y1=1, line=line, row="all", col="all")
+fig.add_annotation(
+    text="No skill", x=0.5, y=0.5, showarrow=False, yshift=-10, textangle=-30
+)
+# allow scrolling and zooming each subplot individually
+fig.update_xaxes(matches=None)
+fig.update_yaxes(matches=None)
 fig.show()
+
+
+# %%
+save_fig(fig, f"{FIGS}/{today}-roc-models.svelte")
 
 
 # %%
@@ -102,8 +112,11 @@ fig.add_hline(y=0.5, line=line)
 fig.add_annotation(
     text="No skill", x=0, y=0.5, showarrow=False, xanchor="left", xshift=10, yshift=10
 )
+# allow scrolling and zooming each subplot individually
+fig.update_xaxes(matches=None)
+fig.update_yaxes(matches=None)
 fig.show()
 
 
 # %%
-save_fig(fig, f"{FIGS}/{today}-roc-models.svelte")
+save_fig(fig, f"{FIGS}/{today}-prc-models.svelte")
