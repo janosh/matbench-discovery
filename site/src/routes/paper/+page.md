@@ -187,41 +187,32 @@ Our benchmark is designed to make [adding future models easy](/how-to-contribute
   <MetricsTable />
 </div>
 
-<figcaption>
-  @label:fig:metrics-table
-  Heatmap of model metrics. For columns MAE, RMSE, FNR, FPR and Run Time (h) lower is better. For columns DAF, R2, Precision, Recall, F1, Accuracy, TPR and TNR higher is better. In both cases cells colored yellow are better than cells colored blue.
-</figcaption>
+> @label:fig:metrics-table Heatmap of model metrics. For columns MAE, RMSE, FNR, FPR and Run Time (h) lower is better. For columns DAF, R2, Precision, Recall, F1, Accuracy, TPR and TNR higher is better. In both cases cells colored yellow are better than cells colored blue.
 
 ![Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth](./figs/2023-01-30-each-scatter-models.webp)
 
-<figcaption>
-@label:fig:each-scatter-models
-Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth
-</figcaption>
+> @label:fig:each-scatter-models Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth
 
 ![Histograms of using predicted formation energies for stability classification](./figs/2023-01-30-hist-pred-energy-vs-hull-dist-models.webp)
 
 ![Histograms of using predicted formation energies for stability classification](./figs/2023-01-30-hist-true-energy-vs-hull-dist-models.webp)
 
-<figcaption>
-@label:fig:wbm-hull-dist-hist-models
-Histograms of using predicted formation energies for stability classification
-</figcaption>
+> @label:fig:wbm-hull-dist-hist-models Histograms of using predicted formation energies for stability classification
 
 {#if browser}
 <RollingMaeModels  />
-
-<figcaption>
-@label:fig:rolling-mae-models
-Rolling MAE on the WBM test set as the energy to the convex hull is varied. A scale bar is shown for the window used to calculate the rolling average. Shaded areas around each curve show 3 &times; standard error of the mean (SEM). Also highlighted is the V-shaped region inside which the MAE is greater than the energy to the known convex hull. Inside this 'cone of peril' models are most at risk of misclassifying structures. Outside this cone, even if a model overpredicts the energy to the hull by its MAE in the left half of the plot or underpredicts it by its MAE on the right half of the plot, the prediction would still correctly classify the material as stable/unstable. All models achieve an MAE below 100 meV/atom in this range. M3GNet and Wrenformer in particular achieve 47 and 55 meV/atom, respectively. This is still about twice the DFT error of 25 meV/atom for relative energy differences on similar chemistries. This error is lower than the corrected GGA formation energy error of ~50 meV / atom due to systematic error cancellation among similar chemistries @hautier_accuracy_2012.
-</figcaption>
 {/if}
+
+> @label:fig:rolling-mae-models Rolling MAE on the WBM test set as the energy to the convex hull is varied. A scale bar is shown for the window used to calculate the rolling average. Shaded areas around each curve show 3 &times; standard error of the mean (SEM). Also highlighted is the V-shaped region inside which the MAE is greater than the energy to the known convex hull. Inside this 'cone of peril' models are most at risk of misclassifying structures. Outside this cone, even if a model overpredicts the energy to the hull by its MAE in the left half of the plot or underpredicts it by its MAE on the right half of the plot, the prediction would still correctly classify the material as stable/unstable. All models achieve an MAE below 100 meV/atom in this range. M3GNet and Wrenformer in particular achieve 47 and 55 meV/atom, respectively. This is still about twice the DFT error of 25 meV/atom for relative energy differences on similar chemistries. This error is lower than the corrected GGA formation energy error of ~50 meV / atom due to systematic error cancellation among similar chemistries @hautier_accuracy_2012.
 
 M3GNet's performance appears to be particularly affected by poor performance on materials far below the MP hull. It is the only model whose rolling absolute error never exits the 'cone of peril' on the side of stable materials. We are unsure of the reason but suspect it might be remedied by re-training the model from scratch for this benchmark. For the predictions in this plot, we simply used pre-trained M3GNet released with the original paper which was trained on about half (~63k) of the DFT relaxation in MP.
 
 {#if browser}
 <CumulativeClfMetrics class="pull-left" />
 {/if}
+
+> @label:fig:cumulative-clf-metrics Variation in precision and recall on the WBM test set over the course of a discovery campaign. These curves simulate ranking materials from most to least stable according to model predictions and going down the list calculating the precision and recall of correctly identified stable materials at each step. A line terminates when a model believes there are no more materials in the WBM test set below the MP convex hull. The dashed vertical line shows the actual number of materials on or below the MP hull. Most models overestimate the number of stable materials. The dashed diagonal Optimal Recall line would be achieved if a model never made a false positive prediction and predicts everything as unstable exactly when the true number of stable materials is reached.
+> Some models like MEGNet are particularly suitable for short discovery campaigns whereas other models like Wrenformer perform better on long campaigns.
 
 ## Analysis
 
@@ -262,10 +253,6 @@ JR acknowledges support from the German Academic Scholarship Foundation (Studien
   }
   h3::before {
     content: counter(h2) '.' counter(h3);
-    margin-right: 10pt;
-  }
-  h4::before {
-    content: counter(h2) '.' counter(h3) '.' counter(h4);
     margin-right: 10pt;
   }
 </style>

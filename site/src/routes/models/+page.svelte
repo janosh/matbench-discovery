@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { ModelStatLabel, ModelStats } from '$lib'
   import { ModelCard } from '$lib'
+  import Icon from '@iconify/svelte'
   import { RadioButtons, Tooltip } from 'svelte-zoo'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
@@ -9,6 +10,7 @@
   export let data: PageData
 
   let sort_by: keyof ModelStats | 'model_name' = `model_name`
+  let show_details = false
   let selected = `asc`
   $: sort_factor = selected == `asc` ? -1 : 1
 
@@ -22,6 +24,7 @@
     }
   })
   const stats: ModelStatLabel[] = [
+    { key: `model_name`, label: `Model Name` },
     { key: `MAE`, unit: `eV / atom`, tooltip: `Mean Absolute Error` },
     { key: `RMSE`, unit: `eV / atom`, tooltip: `Root Mean Squared Error` },
     { key: `R2`, label: `R<sup>2</sup>` },
@@ -43,11 +46,20 @@
     Sort <RadioButtons bind:selected options={[`asc`, `desc`]} /> by:
   </span>
   <ul>
-    {#each [{ key: `model_name`, label: `Model Name` }, ...stats] as { key, label, tooltip }}
+    {#each stats as { key, label, tooltip }}
       <li class:active={key == sort_by}>
-        <Tooltip text={tooltip} tip_style="white-space: nowrap;" max_width="20em">
-          <button on:click={() => (sort_by = key)}>{@html label ?? key}</button>
-        </Tooltip>
+        <button on:click={() => (sort_by = key)}>{@html label ?? key}</button>
+        {#if tooltip}
+          <Tooltip
+            text={tooltip}
+            tip_style="white-space: nowrap; font-size: 9pt;"
+            max_width="20em"
+            style="position: absolute; transform: translate(-45%, -45%); color: gray;"
+            --zoo-tooltip-bg="rgba(0, 0, 0, 0.4)"
+          >
+            <Icon icon="material-symbols:info-outline" title="Info" height="9pt" />
+          </Tooltip>
+        {/if}
       </li>
     {/each}
   </ul>
@@ -59,7 +71,7 @@
         in:fade|local={{ delay: 100 }}
         out:fade|local={{ delay: 100 }}
       >
-        <ModelCard {key} data={metadata} {stats} {sort_by} />
+        <ModelCard {key} data={metadata} {stats} {sort_by} bind:show_details />
       </li>
     {/each}
   </ol>

@@ -17,6 +17,8 @@ export type ModelMetadata = {
   preprint?: string
   requirements?: Record<string, string>
   trained_on_benchmark: boolean
+  hyperparams: Record<string, string | number>
+  notes?: Record<string, string>
 }
 
 export type ModelStats = {
@@ -35,8 +37,9 @@ export type ModelStats = {
   DAF: number
   GPUs: number
   CPUs: number
-  slurm_jobs: number
+  model_name: string
   date_added: string
+  slurm_jobs: number
 }
 
 // [key, label?, unit?]

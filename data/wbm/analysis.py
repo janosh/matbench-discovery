@@ -7,6 +7,7 @@ from pymatviz.utils import save_fig
 
 from matbench_discovery import FIGS, today
 from matbench_discovery.data import df_wbm
+from matbench_discovery.energy import mp_elem_reference_entries
 from matbench_discovery.plots import pio
 
 """
@@ -129,3 +130,35 @@ for trace in fig.data:
 
 save_fig(fig, f"{FIGS}/{today}-wbm-each-hist.svelte")
 save_fig(fig, f"./figs/{today}-wbm-each-hist.svg", width=1000, height=500)
+
+
+# %%
+e_col, n_atoms_col = "Energy (eV/atom)", "Number of Atoms"
+mp_ref_data = [
+    {
+        "Element": key,
+        e_col: ref.energy_per_atom,
+        n_atoms_col: ref.composition.num_atoms,
+        "Name": ref.composition.elements[0].long_name,
+        "Number": ref.composition.elements[0].number,
+    }
+    for key, ref in mp_elem_reference_entries.items()
+]
+df_ref = pd.DataFrame(mp_ref_data).sort_values("Number")
+
+
+# %% plot MP elemental reference energies vs atomic number
+# marker size = number of atoms in reference structure
+fig = df_ref.round(2).plot.scatter(
+    x="Number", y=e_col, backend="plotly", hover_data=list(df_ref), size=n_atoms_col
+)
+fig.update_traces(mode="markers+lines")
+fig.layout.margin = dict(l=0, r=0, t=0, b=0)
+
+# add text annotations showing element symbols
+for symbol, e_per_atom, *_, num in df_ref.itertuples(index=False):
+    fig.add_annotation(x=num, y=e_per_atom, text=symbol, showarrow=False, font_size=10)
+
+fig.show()
+
+save_fig(fig, f"{FIGS}/{today}-mp-elemental-ref-energies.svelte")

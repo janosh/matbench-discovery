@@ -16,6 +16,32 @@ export default {
   extensions: [`.svelte`, `.svx`, `.md`],
 
   preprocess: [
+    // replace readme links to docs with site-internal links
+    // (which don't require browser navigation)
+    preprocess({ replace: [[pkg.homepage, ``]] }),
+    mdsvex({
+      rehypePlugins: [
+        katex,
+        heading_slugs,
+        [
+          link_headings,
+          {
+            behavior: `append`,
+            test: [`h2`, `h3`, `h4`, `h5`, `h6`], // don't auto-link <h1>
+            content: s(
+              `svg`,
+              { width: 16, height: 16, viewBox: `0 0 16 16` },
+              // symbol #octicon-link defined in app.html
+              s(`use`, { 'xlink:href': `#octicon-link` })
+            ),
+          },
+        ],
+      ],
+      // remark-math@3.0.0 pinned due to mdsvex, see
+      // https://github.com/kwshi/rehype-katex-svelte#usage
+      remarkPlugins: [math],
+      extensions: [`.svx`, `.md`],
+    }),
     {
       markup: (file) => {
         const route = file.filename.split(`/`).at(-2)
@@ -28,9 +54,9 @@ export default {
             /@label:(fig:[^\s]+)/g,
             (_match, id) => {
               fig_index.add(id)
-              const idx = fig_index.size
-              const label = route == `si` ? `SI Fig.` : `Fig.`
-              return `<strong id='${id}'>${label} ${idx}</strong> &thinsp;`
+              const idx = (route == `si` ? `S` : ``) + fig_index.size
+              const link_icon = `<a aria-hidden="true" tabindex="-1" href="#${id}"><svg width="16" height="16" viewBox="0 0 16 16"><use xlink:href="#octicon-link"></use></svg></a>`
+              return `<strong id='${id}'>${link_icon}Fig. ${idx}</strong>`
             }
           )
 
@@ -63,32 +89,6 @@ export default {
         }
       },
     },
-    // replace readme links to docs with site-internal links
-    // (which don't require browser navigation)
-    preprocess({ replace: [[pkg.homepage, ``]] }),
-    mdsvex({
-      rehypePlugins: [
-        katex,
-        heading_slugs,
-        [
-          link_headings,
-          {
-            behavior: `append`,
-            test: [`h2`, `h3`, `h4`, `h5`, `h6`], // don't auto-link <h1>
-            content: s(
-              `svg`,
-              { width: 16, height: 16, viewBox: `0 0 16 16` },
-              // symbol #octicon-link defined in app.html
-              s(`use`, { 'xlink:href': `#octicon-link` })
-            ),
-          },
-        ],
-      ],
-      // remark-math@3.0.0 pinned due to mdsvex, see
-      // https://github.com/kwshi/rehype-katex-svelte#usage
-      remarkPlugins: [math],
-      extensions: [`.svx`, `.md`],
-    }),
   ],
 
   kit: {
