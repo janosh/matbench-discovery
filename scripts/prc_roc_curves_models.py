@@ -5,8 +5,14 @@ from pymatviz.utils import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import FIGS, today
-from matbench_discovery.data import load_df_wbm_preds
-from matbench_discovery.energy import stable_metrics
+from matbench_discovery.metrics import (
+    df_wbm,
+    e_form_col,
+    each_pred_col,
+    each_true_col,
+    models,
+    stable_metrics,
+)
 from matbench_discovery.plots import pio
 
 __author__ = "Janosh Riebesell"
@@ -21,16 +27,6 @@ histogram stacks true/false positives/negatives with different colors.
 pio.templates.default
 line = dict(dash="dash", width=0.5)
 
-
-# %%
-models = sorted(
-    "CGCNN, Voronoi Random Forest, Wrenformer, MEGNet, M3GNet, BOWSR MEGNet".split(", ")
-)
-df_wbm = load_df_wbm_preds(models).round(3)
-
-e_form_col = "e_form_per_atom_mp2020_corrected"
-each_true_col = "e_above_hull_mp2020_corrected_ppd_mp"
-each_pred_col = "e_above_hull_pred"
 facet_col = "Model"
 color_col = "Stability Threshold"
 
@@ -120,3 +116,5 @@ fig.show()
 
 # %%
 save_fig(fig, f"{FIGS}/{today}-prc-models.svelte")
+fig.update_yaxes(matches=None)
+fig.show()

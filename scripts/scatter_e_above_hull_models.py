@@ -3,25 +3,21 @@ import numpy as np
 from pymatviz.utils import add_identity_line, save_fig
 
 from matbench_discovery import FIGS, STATIC, today
-from matbench_discovery.data import PRED_FILENAMES, load_df_wbm_preds
-from matbench_discovery.energy import classify_stable, stable_metrics
+from matbench_discovery.metrics import (
+    classify_stable,
+    df_wbm,
+    e_form_col,
+    each_pred_col,
+    each_true_col,
+    models,
+    stable_metrics,
+)
 from matbench_discovery.plots import clf_color_map, clf_labels, px
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
 
-
-# %%
-print(f"loadable models: {list(PRED_FILENAMES)}")
-models = sorted(
-    "CGCNN, Voronoi Random Forest, Wrenformer, MEGNet, M3GNet, BOWSR MEGNet".split(", ")
-)
-df_wbm = load_df_wbm_preds(models).round(3)
-
-e_form_col = "e_form_per_atom_mp2020_corrected"
-each_true_col = "e_above_hull_mp2020_corrected_ppd_mp"
 e_form_pred_col = "e_form_per_atom_pred"
-each_pred_col = "e_above_hull_pred"
 legend = dict(x=1, y=0, xanchor="right", yanchor="bottom", title=None)
 
 
@@ -41,7 +37,6 @@ df_melt[each_pred_col] = (
 )
 
 
-# %%
 def _metric_str(xs: list[float], ys: list[float]) -> str:
     MAE, R2 = (stable_metrics(xs, ys)[x] for x in ["MAE", "R2"])
     return f"· {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
@@ -120,6 +115,7 @@ fig = px.scatter(
     range_x=(-xy_max, xy_max),
     range_y=(-xy_max, xy_max),
     height=1000,
+    template="plotly_white",
 )
 
 
@@ -147,7 +143,7 @@ for idx, anno in enumerate(fig.layout.annotations, 1):
     # add transparent rectangle with TN, TP, FN, FP labels in each quadrant
     for sign_x, sign_y, color, label in (
         (-1, -1, "lightseagreen", "TP"),
-        (-1, 1, "lightgoldenrodyellow", "FN"),
+        (-1, 1, "orange", "FN"),
         (1, -1, "lightsalmon", "FP"),
         (1, 1, "dodgerblue", "TN"),
     ):
@@ -216,4 +212,5 @@ fig.show()
 
 # %%
 img_path = f"{STATIC}/{today}-each-scatter-models.webp"
+save_fig(fig, img_path, scale=4, width=800, height=700)
 save_fig(fig, img_path, scale=4, width=800, height=700)

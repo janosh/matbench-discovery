@@ -2,8 +2,13 @@
 from pymatviz.utils import save_fig
 
 from matbench_discovery import FIGS, today
-from matbench_discovery.data import load_df_wbm_preds
-from matbench_discovery.energy import stable_metrics
+from matbench_discovery.metrics import (
+    df_wbm,
+    e_form_col,
+    each_pred_col,
+    each_true_col,
+    stable_metrics,
+)
 from matbench_discovery.plots import WhichEnergy, hist_classified_stable_vs_hull_dist
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
@@ -20,13 +25,6 @@ See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
 
 # %%
 model_name = "Wrenformer"
-df_wbm = load_df_wbm_preds(models=[model_name]).round(3)
-
-
-# %%
-e_form_col = "e_form_per_atom_mp2020_corrected"
-each_true_col = "e_above_hull_mp2020_corrected_ppd_mp"
-each_pred_col = "e_above_hull_pred"
 which_energy: WhichEnergy = "true"
 # std_factor=0,+/-1,+/-2,... changes the criterion for material stability to
 # energy+std_factor*std. energy+std means predicted energy plus the model's uncertainty
@@ -68,5 +66,5 @@ else:  # plotly
 
 # %%
 img_path = f"{FIGS}/{today}-wren-wbm-hull-dist-hist-{which_energy=}"
-# save_fig(ax, f"{img_path}.pdf")
-save_fig(fig, f"{img_path}.html")
+# save_fig(fig, f"{img_path}.svelte")
+save_fig(fig, f"{img_path}.webp")
