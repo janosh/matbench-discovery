@@ -15,7 +15,7 @@ import scipy.stats
 import wandb
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 
-from matbench_discovery.energy import classify_stable
+from matbench_discovery.metrics import classify_stable
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-05"
@@ -102,7 +102,7 @@ def hist_classified_stable_vs_hull_dist(
     each_pred_col: str,
     ax: plt.Axes = None,
     which_energy: WhichEnergy = "true",
-    stability_threshold: float = 0,
+    stability_threshold: float | None = 0,
     x_lim: tuple[float | None, float | None] = (-0.7, 0.7),
     rolling_acc: float | None = 0.02,
     backend: Backend = "plotly",

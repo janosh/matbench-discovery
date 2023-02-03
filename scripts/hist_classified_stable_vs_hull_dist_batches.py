@@ -2,8 +2,13 @@
 from pymatviz.utils import save_fig
 
 from matbench_discovery import FIGS, today
-from matbench_discovery.data import load_df_wbm_preds
-from matbench_discovery.energy import stable_metrics
+from matbench_discovery.metrics import (
+    df_wbm,
+    e_form_col,
+    each_pred_col,
+    each_true_col,
+    stable_metrics,
+)
 from matbench_discovery.plots import (
     Backend,
     WhichEnergy,
@@ -25,13 +30,6 @@ See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
 
 # %%
 model_name = "Wrenformer"
-df_wbm = load_df_wbm_preds(models=[model_name]).round(3)
-e_form_col = "e_form_per_atom_mp2020_corrected"
-each_true_col = "e_above_hull_mp2020_corrected_ppd_mp"
-each_pred_col = "e_above_hull_pred"
-
-
-# %%
 which_energy: WhichEnergy = "true"
 backend: Backend = "matplotlib"
 fig, axs = plt.subplots(2, 3, figsize=(18, 9))
