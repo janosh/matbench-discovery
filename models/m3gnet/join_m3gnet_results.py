@@ -6,6 +6,7 @@ import warnings
 from glob import glob
 
 import pandas as pd
+from megnet.utils.models import load_model
 from pymatgen.core import Structure
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedStructureEntry
@@ -104,6 +105,35 @@ ax = density_scatter(
 )
 
 
+# %% predict formation energies on M3GNet relaxed structure with MEGNet
+megnet_mp_e_form = load_model(model_name := "Eform_MP_2019")
+megnet_e_form_preds: dict[str, float] = {}
+
+
+# %%
+for material_id, cse in tqdm(df_wbm.cse.items(), total=len(df_wbm)):
+    if material_id in megnet_e_form_preds:
+        continue
+    try:
+        struct = cse.structure
+        [e_form_per_atom] = megnet_mp_e_form.predict_structure(struct)
+        megnet_e_form_preds[material_id] = e_form_per_atom
+    except Exception as exc:
+        print(f"Failed to predict {material_id=}: {exc}")
+
+df_m3gnet["e_form_per_atom_m3gnet_megnet"] = pd.Series(megnet_e_form_preds)
+
+assert (
+    n_isna := df_m3gnet.e_form_per_atom_m3gnet_megnet.isna().sum()
+) < 10, f"{n_isna=}, expected 7 or similar"
+
+
+# %%
+ax = density_scatter(
+    df=df_m3gnet, x="e_form_per_atom_m3gnet", y="e_form_per_atom_m3gnet_megnet"
+)
+
+
 # %%
 out_path = f"{module_dir}/{today}-m3gnet-wbm-{task_type}.json.gz"
 df_m3gnet = df_m3gnet.round(4)
@@ -112,4 +142,5 @@ df_m3gnet.reset_index().to_json(out_path, default_handler=as_dict_handler)
 df_m3gnet.select_dtypes("number").to_csv(out_path.replace(".json.gz", ".csv"))
 
 # in_path = f"{module_dir}/2022-10-31-m3gnet-wbm-IS2RE.json.gz"
+# df_m3gnet_csv = pd.read_csv(in_path.replace(".json.gz", ".csv"))
 # df_m3gnet = pd.read_json(in_path).set_index("material_id")

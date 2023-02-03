@@ -255,4 +255,7 @@ JR acknowledges support from the German Academic Scholarship Foundation (Studien
     content: counter(h2) '.' counter(h3);
     margin-right: 10pt;
   }
+  sup.ref {
+    text-transform: capitalize;
+  }
 </style>
