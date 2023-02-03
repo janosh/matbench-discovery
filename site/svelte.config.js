@@ -80,8 +80,7 @@ export default {
               if (idx == -1) {
                 console.error(`Reference id ${id} not found`)
               }
-              // return `<sup><a href="#${id}">${author} ${year}</a></sup>`
-              return `<sup><a href="#${id}">${author} ${year}</a></sup>`
+              return `<sup class="ref"><a href="#${id}">${author} ${year}</a></sup>`
             }
           )
 
