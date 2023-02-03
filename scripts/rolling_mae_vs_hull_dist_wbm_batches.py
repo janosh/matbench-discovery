@@ -1,17 +1,10 @@
 # %%
 from matbench_discovery import FIGS, today
-from matbench_discovery.data import load_df_wbm_preds
+from matbench_discovery.metrics import df_wbm, e_form_col, each_true_col
 from matbench_discovery.plots import plt, rolling_mae_vs_hull_dist
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
-
-
-# %%
-df_wbm = load_df_wbm_preds(models=["Wrenformer"]).round(3)
-
-e_above_hull_col = "e_above_hull_mp2020_corrected_ppd_mp"
-e_form_col = "e_form_per_atom_mp2020_corrected"
 
 
 # %%
@@ -28,7 +21,7 @@ for idx, marker in enumerate(markers, 1):
     assert 1e4 < len(df_step) < 1e5, print(f"{len(df_step) = :,}")
 
     ax, df_err, df_std = rolling_mae_vs_hull_dist(
-        e_above_hull_true=df_step[e_above_hull_col],
+        e_above_hull_true=df_step[each_true_col],
         e_above_hull_errors={title: df_step[e_form_col] - df_step[model_name]},
         label=title,
         marker=marker,

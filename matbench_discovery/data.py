@@ -35,8 +35,8 @@ DATA_FILENAMES = {
 
 def as_dict_handler(obj: Any) -> dict[str, Any] | None:
     """Pass this to json.dump(default=) or as pandas.to_json(default_handler=) to
-    convert Python classes with a as_dict() method to dictionaries on serialization.
-    Objects without a as_dict() method are replaced with None in the serialized data.
+    serialize Python classes with as_dict(). Warning: Objects without a as_dict() method
+    are replaced with None in the serialized data.
     """
     try:
         return obj.as_dict()  # all MSONable objects implement as_dict()
@@ -144,6 +144,7 @@ PRED_FILENAMES = {
     "Wrenformer": "wrenformer/2022-11-15-wrenformer-IS2RE-preds.csv",
     "MEGNet": "megnet/2022-11-18-megnet-wbm-IS2RE/megnet-e-form-preds.csv",
     "M3GNet": "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv",
+    "M3GNet MEGNet": "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv",
     "BOWSR MEGNet": "bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv",
 }
 

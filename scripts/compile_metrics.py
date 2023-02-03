@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 from matbench_discovery import FIGS, MODELS, WANDB_PATH, today
 from matbench_discovery.data import PRED_FILENAMES, load_df_wbm_preds
-from matbench_discovery.energy import stable_metrics
+from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.plots import px
 
 __author__ = "Janosh Riebesell"

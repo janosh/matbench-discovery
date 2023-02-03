@@ -2,8 +2,13 @@
 from pymatviz.utils import save_fig
 
 from matbench_discovery import STATIC, today
-from matbench_discovery.data import load_df_wbm_preds
-from matbench_discovery.energy import stable_metrics
+from matbench_discovery.metrics import (
+    df_metrics,
+    df_wbm,
+    e_form_col,
+    each_true_col,
+    models,
+)
 from matbench_discovery.plots import Backend, hist_classified_stable_vs_hull_dist, plt
 
 __author__ = "Janosh Riebesell"
@@ -14,16 +19,6 @@ Histogram of the energy difference (either according to DFT ground truth [defaul
 model predicted energy) to the convex hull for materials in the WBM data set. The
 histogram stacks true/false positives/negatives with different colors.
 """
-
-
-# %%
-models = sorted(
-    "CGCNN, Voronoi Random Forest, Wrenformer, MEGNet, M3GNet, BOWSR MEGNet".split(", ")
-)
-df_wbm = load_df_wbm_preds(models).round(3)
-
-e_form_col = "e_form_per_atom_mp2020_corrected"
-each_true_col = "e_above_hull_mp2020_corrected_ppd_mp"
 
 
 # %%
@@ -60,6 +55,7 @@ fig = hist_classified_stable_vs_hull_dist(
     which_energy=(which_energy := "true"),
     backend=backend,
     rolling_acc=None,
+    stability_threshold=None,
     **kwds,  # type: ignore[arg-type]
 )
 
@@ -79,19 +75,20 @@ if backend == "matplotlib":
         model_name = ax.get_title()
         assert model_name in models
         df_model = df_melt[df_melt[facet_col] == model_name]
-        metrics = stable_metrics(df_model[each_true_col], df_model[each_pred_col])
 
-        DAF, acc, F1 = metrics["DAF"], metrics["Accuracy"], metrics["F1"]
-        text = f" {model_name} · {DAF = :.2f} · {acc = :.2f} · {F1 = :.2f}"
-        ax.set(title=text)
+        F1, FPR, FNR, DAF = (
+            df_metrics[model_name][x] for x in "F1 FPR FNR DAF".split()
+        )
+        ax.set(title=f"{model_name} · {F1=:.2f} · {FPR=:.2f} · {FNR=:.2f} · {DAF=:.2f}")
 else:
     for anno in fig.layout.annotations:
         model_name = anno.text.split("=").pop()
         if model_name not in models:
             continue
         df_model = df_melt[df_melt[facet_col] == model_name]
-        metrics = stable_metrics(df_model[each_true_col], df_model[each_pred_col])
-        F1, FPR, FNR, DAF = (metrics[x] for x in "F1 FPR FNR DAF".split())
+        F1, FPR, FNR, DAF = (
+            df_metrics[model_name][x] for x in "F1 FPR FNR DAF".split()
+        )
         anno.text = f"{model_name} · {F1=:.2f} · {FPR=:.2f} · {FNR=:.2f} · {DAF=:.2f}"
 
     # horizontal legend at the top
