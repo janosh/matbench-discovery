@@ -1,7 +1,7 @@
 # %%
 from matbench_discovery import FIGS, today
-from matbench_discovery.metrics import df_metrics, df_wbm, e_form_col, each_true_col
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
+from matbench_discovery.preds import df_metrics, df_wbm, e_form_col, each_true_col
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
