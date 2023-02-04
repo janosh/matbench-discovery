@@ -3,16 +3,15 @@ import numpy as np
 from pymatviz.utils import add_identity_line, save_fig
 
 from matbench_discovery import FIGS, STATIC, today
-from matbench_discovery.metrics import (
-    classify_stable,
+from matbench_discovery.metrics import classify_stable, stable_metrics
+from matbench_discovery.plots import clf_color_map, clf_labels, px
+from matbench_discovery.preds import (
     df_wbm,
     e_form_col,
     each_pred_col,
     each_true_col,
     models,
-    stable_metrics,
 )
-from matbench_discovery.plots import clf_color_map, clf_labels, px
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"

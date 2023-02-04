@@ -3,8 +3,8 @@ import pandas as pd
 from pymatviz.utils import save_fig
 
 from matbench_discovery import FIGS, STATIC, today
-from matbench_discovery.metrics import df_wbm, e_form_col, each_true_col, models
 from matbench_discovery.plots import cumulative_precision_recall
+from matbench_discovery.preds import df_wbm, e_form_col, each_true_col, models
 
 __author__ = "Janosh Riebesell, Rhys Goodall"
 __date__ = "2022-12-04"

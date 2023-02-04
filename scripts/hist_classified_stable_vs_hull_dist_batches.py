@@ -2,19 +2,14 @@
 from pymatviz.utils import save_fig
 
 from matbench_discovery import FIGS, today
-from matbench_discovery.metrics import (
-    df_wbm,
-    e_form_col,
-    each_pred_col,
-    each_true_col,
-    stable_metrics,
-)
+from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.plots import (
     Backend,
     WhichEnergy,
     hist_classified_stable_vs_hull_dist,
     plt,
 )
+from matbench_discovery.preds import df_wbm, e_form_col, each_pred_col, each_true_col
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-08-25"
