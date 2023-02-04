@@ -5,21 +5,20 @@
   import { pretty_num } from 'sveriodic-table/labels'
   import type { ModelData, ModelStatLabel } from '.'
 
-  export let key: string
   export let data: ModelData
+  export let idx: number
   export let stats: ModelStatLabel[] // [key, label, unit][]
   export let sort_by: keyof ModelData
   export let show_details: boolean = false
 
-  $: ({ model_name, repo, doi, preprint, url, date_added } = data)
-  $: ({ missing_preds, missing_percent, hyperparams, notes } = data)
+  $: ({ model_name, missing_preds, missing_percent, hyperparams, notes } = data)
 
-  const links = [
-    [repo, `Repo`, `octicon:mark-github`],
-    [doi, `DOI`, `academicons:doi`],
-    [preprint, `Preprint`, `ion:ios-paper`],
-    [url, `Website`, `ion:ios-globe`],
-    [`${repository}/blob/-/models/${key}`, `Files`, `octicon:file-directory`],
+  $: links = [
+    [data.repo, `Repo`, `octicon:mark-github`],
+    [data.doi, `DOI`, `academicons:doi`],
+    [data.preprint, `Preprint`, `ion:ios-paper`],
+    [data.url, `Website`, `ion:ios-globe`],
+    [`${repository}/blob/-/models/${data.dir}`, `Files`, `octicon:file-directory`],
   ]
   const target = { target: `_blank`, rel: `noopener` }
 </script>
@@ -34,8 +33,9 @@
     <Icon icon={show_details ? `ion:ios-arrow-up` : `ion:ios-arrow-down`} inline />
   </button>
 </h2>
+<small>{idx + 1}</small>
 <nav>
-  {#each links as [href, title, icon]}
+  {#each links.filter(([href]) => href) as [href, title, icon]}
     <span>
       <Icon {icon} inline />
       <a {href} {...target}>{title}</a>
@@ -43,10 +43,10 @@
   {/each}
 </nav>
 <p>
-  Date added: {date_added}
+  Date added: {data.date_added}
   &nbsp;&bull;&nbsp; Benchmark version: {data.matbench_discovery_version}
   &nbsp;&bull;&nbsp; Missing predictions:
-  {pretty_num(missing_preds)}
+  {pretty_num(missing_preds ?? null)}
   <small>({missing_percent})</small>
 </p>
 {#if show_details}
@@ -92,8 +92,8 @@
   <ul>
     {#each stats as { key, label, unit }}
       <li class:active={sort_by == key}>
-        {@html label ?? key} = {data[key]}
-        {unit ?? ``}
+        <label for={key}>{@html label ?? key}</label>
+        <strong>{data[key]} <small>{unit ?? ``}</small></strong>
       </li>
     {/each}
   </ul>
@@ -135,6 +135,11 @@
     margin: 8pt 0 1em;
     text-align: center;
   }
+  h2 + small {
+    font-weight: lighter;
+    font-style: normal;
+    position: absolute;
+  }
   button {
     background: none;
     padding: 0;
@@ -173,10 +178,22 @@
   section.metrics > ul {
     display: flex;
     flex-wrap: wrap;
-    gap: 0 1em;
+    gap: 3pt 1em;
     list-style: none;
+    flex-direction: column;
+    max-height: 10em;
   }
-  section.metrics > ul > li.active {
-    font-weight: 700;
+  section.metrics > ul > li {
+    font-weight: lighter;
+    display: flex;
+    justify-content: space-between;
+  }
+  section.metrics > ul > li > strong {
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 0 4pt;
+    border-radius: 3pt;
+  }
+  section.metrics > ul > li.active > strong {
+    background-color: teal;
   }
 </style>

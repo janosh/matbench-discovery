@@ -19,6 +19,7 @@ export type ModelMetadata = {
   trained_on_benchmark: boolean
   hyperparams: Record<string, string | number>
   notes?: Record<string, string>
+  dir: string // models/{dir}/metadata.yml
 }
 
 export type ModelStats = {
@@ -37,8 +38,6 @@ export type ModelStats = {
   DAF: number
   GPUs: number
   CPUs: number
-  model_name: string
-  date_added: string
   slurm_jobs: number
 }
 

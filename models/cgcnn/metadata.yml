@@ -1,25 +1,53 @@
-model_name: CGCNN
-model_version: 0.1.0 # the aviary version
-matbench_discovery_version: 1.0
-date_added: "2022-12-28"
-authors:
-  - name: Tian Xie
-    email: txie@csail.mit.edu
-    affiliation: Massachusetts Institute of Technology
-    url: https://txie.me
-  - name: Jeffrey C. Grossman
-    affiliation: Massachusetts Institute of Technology
-    url: https://dmse.mit.edu/people/jeffrey-c-grossman
-repo: https://github.com/txie-93/cgcnn
-doi: https://doi.org/10.1103/PhysRevLett.120.145301
-preprint: https://arxiv.org/abs/1710.10324
-requirements:
-  aviary: 0.1.0
-  torch: 1.11.0
-  torch-scatter: 2.0.9
-  numpy: 1.24.0
-  pandas: 1.5.1
-trained_on_benchmark: true
+- model_name: CGCNN
+  model_version: 0.1.0 # the aviary version
+  matbench_discovery_version: 1.0
+  date_added: "2022-12-28"
+  authors:
+    - name: Tian Xie
+      email: txie@csail.mit.edu
+      affiliation: Massachusetts Institute of Technology
+      url: https://txie.me
+    - name: Jeffrey C. Grossman
+      affiliation: Massachusetts Institute of Technology
+      url: https://dmse.mit.edu/people/jeffrey-c-grossman
+  repo: https://github.com/txie-93/cgcnn
+  doi: https://doi.org/10.1103/PhysRevLett.120.145301
+  preprint: https://arxiv.org/abs/1710.10324
+  requirements:
+    aviary: 0.1.0
+    torch: 1.11.0
+    torch-scatter: 2.0.9
+    numpy: 1.24.0
+    pandas: 1.5.1
+  trained_on_benchmark: true
 
-hyperparams:
-  Ensemble Size: 10
+  hyperparams:
+    Ensemble Size: 10
+
+- model_name: CGCNN+P
+  model_version: 0.1.0 # the aviary version
+  matbench_discovery_version: 1.0
+  date_added: "2023-02-03"
+  authors:
+    - name: Jason B. Gibson
+      affiliation: University of Florida
+    - name: Ajinkya C. Hire
+      affiliation: University of Florida
+    - name: Richard G. Hennig
+      affiliation: University of Florida
+      url: https://hennig.mse.ufl.edu
+      email: rhennig@ufl.edu
+  repo: https://github.com/JasonGibsonUfl/Augmented_CGCNN
+  doi: https://doi.org/10.1038/s41524-022-00891-8
+  preprint: https://arxiv.org/abs/2202.13947
+  requirements:
+    aviary: 0.1.0
+    torch: 1.11.0
+    torch-scatter: 2.0.9
+    numpy: 1.24.0
+    pandas: 1.5.1
+  trained_on_benchmark: true
+
+  hyperparams:
+    Ensemble Size: 10
+    Perturbations: 5

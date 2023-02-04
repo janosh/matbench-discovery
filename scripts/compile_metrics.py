@@ -21,6 +21,7 @@ __date__ = "2022-11-28"
 
 
 # %%
+model_stats: dict[str, dict[str, str | int | float]] = {}
 models: dict[str, dict[str, Any]] = {
     "CGCNN": dict(
         n_runs=10,
@@ -57,7 +58,7 @@ models: dict[str, dict[str, Any]] = {
             display_name={"$regex": "m3gnet-wbm-IS2RE"},
         ),
     ),
-    "BOWSR MEGNet": dict(
+    "BOWSR + MEGNet": dict(
         n_runs=500,
         filters=dict(
             created_at={"$gt": "2023-01-20", "$lt": "2023-01-22"},
@@ -66,15 +67,14 @@ models: dict[str, dict[str, Any]] = {
     ),
 }
 
-assert set(models) == set(PRED_FILENAMES), f"{set(models)=} != {set(PRED_FILENAMES)=}"
-
-
-model_stats: dict[str, dict[str, str | int | float]] = {}
+assert not (
+    unknown_models := set(models) - set(PRED_FILENAMES)
+), f"{unknown_models=} missing predictions file"
 
 
 # %% calculate total model run times from wandb logs
 # NOTE these model run times are pretty meaningless since some models were run on GPU
-# (Wrenformer and CGCNN), others on CPU. Also BOWSR MEGNet, M3GNet and MEGNet weren't
+# (Wrenformer and CGCNN), others on CPU. Also BOWSR + MEGNet, M3GNet and MEGNet weren't
 # trained from scratch. Their run times only indicate the time needed to predict the
 # test set.
 
@@ -110,24 +110,23 @@ ax.set(
     title=f"Run time distribution for {model}", xlabel="Run time [h]", ylabel="Count"
 )
 
+model_stats["M3GNet + MEGNet"] = model_stats["M3GNet"].copy()
+model_stats["M3GNet + MEGNet"][time_col] = (
+    model_stats["MEGNet"][time_col] + model_stats["M3GNet"][time_col]  # type: ignore
+)
+
 df_metrics = pd.DataFrame(model_stats).T
 df_metrics.index.name = "Model"
-# on 2022-11-28:
-# run_times = {'Voronoi Random Forest': 739608,
-#  'Wrenformer': 208399,
-#  'MEGNet': 12396,
-#  'M3GNet': 301138,
-#  'BOWSR MEGNet': 9105237}
 
 
 # %%
-df_wbm = load_df_wbm_preds(list(models))
+df_wbm = load_df_wbm_preds(list(model_stats))
 e_form_col = "e_form_per_atom_mp2020_corrected"
 each_true_col = "e_above_hull_mp2020_corrected_ppd_mp"
 
 
 # %%
-for model in models:
+for model in model_stats:
     each_pred = df_wbm[each_true_col] + df_wbm[model] - df_wbm[e_form_col]
 
     metrics = stable_metrics(df_wbm[each_true_col], each_pred)
@@ -165,12 +164,11 @@ styles = {
 }
 df_styled.set_table_styles([dict(selector=sel, props=styles[sel]) for sel in styles])
 
-html_path = f"{FIGS}/{today}-metrics-table.svelte"
-df_styled.to_html(html_path)
+# df_styled.to_html(f"{FIGS}/{today}-metrics-table.svelte")
 
 
 # %% write model metrics to json for use by the website
-df_metrics["missing_preds"] = df_wbm[list(models)].isna().sum()
+df_metrics["missing_preds"] = df_wbm[list(model_stats)].isna().sum()
 df_metrics["missing_percent"] = [
     f"{x / len(df_wbm):.2%}" for x in df_metrics.missing_preds
 ]

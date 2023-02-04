@@ -9,7 +9,7 @@ __date__ = "2022-06-18"
 
 # %%
 # model = "Wrenformer"
-model = "M3GNet MEGNet"
+model = "M3GNet + MEGNet"
 ax, df_err, df_std = rolling_mae_vs_hull_dist(
     e_above_hull_true=df_wbm[each_true_col],
     e_above_hull_errors={model: df_wbm[e_form_col] - df_wbm[model]},
