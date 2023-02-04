@@ -2,14 +2,14 @@
 from pymatviz.utils import save_fig
 
 from matbench_discovery import STATIC, today
-from matbench_discovery.metrics import (
+from matbench_discovery.plots import Backend, hist_classified_stable_vs_hull_dist, plt
+from matbench_discovery.preds import (
     df_metrics,
     df_wbm,
     e_form_col,
     each_true_col,
     models,
 )
-from matbench_discovery.plots import Backend, hist_classified_stable_vs_hull_dist, plt
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-12-01"

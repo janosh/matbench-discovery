@@ -147,17 +147,17 @@ and place the above-listed files there. The file structure should look like this
 ```txt
 matbench-discovery-root
 └── models
-    └── <model name>
+    └── <model_name>
         ├── metadata.yml
         ├── <yyyy-mm-dd>-<model_name>-preds.(json|csv).gz
         ├── test_<model_name>.py
-        ├── readme.md # optional
-        └── train_<model_name>.py # optional
+        ├── readme.md  # optional
+        └── train_<model_name>.py  # optional
 ```
 
 You can include arbitrary other supporting files like metadata and model features (below 10MB to keep `git clone` time low) if they are needed to run the model or help others reproduce your results. For larger files, please upload to [Figshare](https://figshare.com) or similar and link them somewhere in your files.
 
-### Step 3: Create a PR to the [Matbench Discovery repo](https://github.com/janosh/matbench-discovery)
+### Step 3: Open a PR to the [Matbench Discovery repo](https://github.com/janosh/matbench-discovery)
 
 Commit your files to the repo on a branch called `<model_name>` and create a pull request (PR) to the Matbench repository.
 

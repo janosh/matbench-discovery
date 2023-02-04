@@ -5,15 +5,15 @@ from pymatviz.utils import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import FIGS, today
-from matbench_discovery.metrics import (
+from matbench_discovery.metrics import stable_metrics
+from matbench_discovery.plots import pio
+from matbench_discovery.preds import (
     df_wbm,
     e_form_col,
     each_pred_col,
     each_true_col,
     models,
-    stable_metrics,
 )
-from matbench_discovery.plots import pio
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-01-30"

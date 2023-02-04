@@ -7,10 +7,6 @@ import pandas as pd
 import pytest
 from pytest import approx
 
-from matbench_discovery.energy import (
-    mp_elem_reference_entries,
-    mp_elemental_ref_energies,
-)
 from matbench_discovery.metrics import classify_stable, stable_metrics
 
 
@@ -83,11 +79,3 @@ def test_stable_metrics() -> None:
     # test stable_metrics docstring is up to date, all returned metrics should be listed
     assert stable_metrics.__doc__  # for mypy
     assert all(key in stable_metrics.__doc__ for key in metrics)
-
-
-def test_mp_ref_energies() -> None:
-    """Test MP elemental reference energies are in sync with PDEntries saved to disk."""
-    for key, val in mp_elemental_ref_energies.items():
-        actual = mp_elem_reference_entries[key].energy_per_atom
-        assert actual == approx(val, abs=1e-3), f"{key=}"
-        assert actual == approx(val, abs=1e-3), f"{key=}"
