@@ -144,8 +144,8 @@ PRED_FILENAMES = {
     "Wrenformer": "wrenformer/2022-11-15-wrenformer-IS2RE-preds.csv",
     "MEGNet": "megnet/2022-11-18-megnet-wbm-IS2RE/megnet-e-form-preds.csv",
     "M3GNet": "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv",
-    "M3GNet MEGNet": "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv",
-    "BOWSR MEGNet": "bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv",
+    "M3GNet + MEGNet": "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv",
+    "BOWSR + MEGNet": "bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv",
 }
 
 
@@ -222,7 +222,7 @@ def load_df_wbm_preds(
 
     df_out = df_wbm.copy()
     for model_name, df in dfs.items():
-        model_key = model_name.lower().replace(" ", "_")
+        model_key = model_name.lower().replace(" + ", "_").replace(" ", "_")
         if f"e_form_per_atom_{model_key}" in df:
             df_out[model_name] = df[f"e_form_per_atom_{model_key}"]
 

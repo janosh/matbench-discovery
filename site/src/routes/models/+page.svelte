@@ -14,24 +14,24 @@
   let selected = `asc`
   $: sort_factor = selected == `asc` ? -1 : 1
 
-  $: models = data.models.sort(([_k1, m1], [_k2, m2]) => {
-    if (typeof m1[sort_by] == `string`) {
-      return sort_factor * -m1[sort_by].localeCompare(m2[sort_by])
-    } else if (typeof m1[sort_by] == `number`) {
-      return sort_factor * (m2[sort_by] - m1[sort_by])
+  $: models = data.models.sort((md1, md2) => {
+    if (typeof md1[sort_by] == `string`) {
+      return sort_factor * -md1[sort_by].localeCompare(md2[sort_by])
+    } else if (typeof md1[sort_by] == `number`) {
+      return sort_factor * (md2[sort_by] - md1[sort_by])
     } else {
-      console.error(`Sorting by key ${sort_by} gives unknown type: ${typeof m1[sort_by]}`)
+      console.error(
+        `Sorting by key ${sort_by} gives unknown type: ${typeof md1[sort_by]}`
+      )
     }
   })
   const stats: ModelStatLabel[] = [
-    { key: `model_name`, label: `Model Name` },
     { key: `MAE`, unit: `eV / atom`, tooltip: `Mean Absolute Error` },
     { key: `RMSE`, unit: `eV / atom`, tooltip: `Root Mean Squared Error` },
     { key: `R2`, label: `R<sup>2</sup>` },
     { key: `Precision` },
     { key: `Recall` },
     { key: `F1` },
-    { key: `date_added`, label: `Date added` },
     { key: `Run Time (h)`, label: `Run time`, unit: `h` },
     { key: `FPR`, tooltip: `False Positive Rate` },
     { key: `FNR`, tooltip: `False Negative Rate` },
@@ -46,9 +46,9 @@
     Sort <RadioButtons bind:selected options={[`asc`, `desc`]} /> by:
   </span>
   <ul>
-    {#each stats as { key, label, tooltip }}
+    {#each [{ key: `model_name`, label: `Model Name` }, ...stats] as { key, label, tooltip }}
       <li class:active={key == sort_by}>
-        <button on:click={() => (sort_by = key)}>{@html label ?? key}</button>
+        <button id={key} on:click={() => (sort_by = key)}>{@html label ?? key}</button>
         {#if tooltip}
           <Tooltip
             text={tooltip}
@@ -65,13 +65,13 @@
   </ul>
 
   <ol>
-    {#each models as [key, metadata] (key)}
+    {#each models as data, idx (data.model_name)}
       <li
         animate:flip={{ duration: 400 }}
         in:fade|local={{ delay: 100 }}
         out:fade|local={{ delay: 100 }}
       >
-        <ModelCard {key} data={metadata} {stats} {sort_by} bind:show_details />
+        <ModelCard {idx} {data} {stats} {sort_by} bind:show_details />
       </li>
     {/each}
   </ol>

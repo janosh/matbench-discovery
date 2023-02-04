@@ -28,9 +28,9 @@ epochs = 300
 target_col = "formation_energy_per_atom"
 input_col = "structure"
 id_col = "material_id"
-augment = 0  # 0 for no augmentation, n>1 means train on n perturbations of each crystal
+perturb = 0  # 0 for no perturbation, n>1 means train on n perturbations of each crystal
 # in the training set all assigned the same original target energy
-job_name = f"train-cgcnn-robust-{augment=}{'-debug' if DEBUG else ''}"
+job_name = f"train-cgcnn-robust-{perturb=}{'-debug' if DEBUG else ''}"
 print(f"{job_name=}")
 robust = "robust" in job_name.lower()
 ensemble_size = 10
@@ -67,7 +67,7 @@ assert target_col in df
 
 df_aug = df.copy()
 structs = df_aug.pop(input_col)
-for idx in trange(augment, desc="Augmenting"):
+for idx in trange(perturb, desc="Generating perturbed structures"):
     df_aug[input_col] = [perturb_structure(x) for x in structs]
     df = pd.concat([df, df_aug.set_index(f"{x}-aug={idx+1}" for x in df_aug.index)])
 
@@ -108,7 +108,7 @@ run_params = dict(
     train_df=dict(shape=str(train_data.df.shape), columns=", ".join(train_df)),
     test_df=dict(shape=str(test_data.df.shape), columns=", ".join(test_df)),
     slurm_vars=slurm_vars,
-    augment=augment,
+    perturb=perturb,
     input_col=input_col,
 )
 

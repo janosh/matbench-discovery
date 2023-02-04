@@ -23,33 +23,38 @@ def test_model_dirs_have_metadata() -> None:
 
         # make sure all required keys are non-empty
         with open(md_file) as yml_file:
-            metadata = yaml.full_load(yml_file)
+            models = yaml.full_load(yml_file)
 
-        for key in required:
-            assert metadata.get(key), f"Empty {key=} in {md_file}"
+        # some metadata files have a single model, some have multiple
+        if not isinstance(models, list):
+            models = [models]
 
-        authors, date_added, mbd_version, model_name, model_version, repo = (
-            metadata[key] for key in required
-        )
+        for metadata in models:
+            for key in required:
+                assert metadata.get(key), f"Empty required {key=} in {md_file}"
 
-        # make sure all keys are valid
-        assert (
-            3 < len(model_name) < 50
-        ), f"Invalid {model_name=} not between 3 and 50 characters"
-        assert (
-            1 < len(model_version) < 15
-        ), f"Invalid {model_version=} not between 1 and 15 characters"
-        # TODO increase max version when releasing new versions
-        assert (
-            1 <= mbd_version <= 1
-        ), f"Invalid matbench-discovery version: {mbd_version}"
-        assert isinstance(date_added, str), f"Invalid {date_added=} not a string"
-        assert (
-            isinstance(authors, list) and 1 < len(authors) < 30
-        ), "authors not list or not between 1 and 30 authors"
-        assert repo.startswith(
-            "https://"
-        ), f"Invalid {repo=} not starting with https://"
+            authors, date_added, mbd_version, model_name, model_version, repo = (
+                metadata[key] for key in required
+            )
+
+            # make sure all keys are valid
+            assert (
+                3 < len(model_name) < 50
+            ), f"Invalid {model_name=} not between 3 and 50 characters"
+            assert (
+                1 < len(model_version) < 15
+            ), f"Invalid {model_version=} not between 1 and 15 characters"
+            # TODO increase max version when releasing new versions
+            assert (
+                1 <= mbd_version <= 1
+            ), f"Invalid matbench-discovery version: {mbd_version}"
+            assert isinstance(date_added, str), f"Invalid {date_added=} not a string"
+            assert (
+                isinstance(authors, list) and 1 < len(authors) < 30
+            ), "authors not list or not between 1 and 30 authors"
+            assert repo.startswith(
+                "https://"
+            ), f"Invalid {repo=} not starting with https://"
 
 
 def test_model_dirs_have_test_scripts() -> None:
