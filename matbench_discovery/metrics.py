@@ -1,5 +1,7 @@
 """Centralize data-loading and computing metrics for plotting scripts"""
 
+from __future__ import annotations
+
 from collections.abc import Sequence
 
 import numpy as np
@@ -99,8 +101,8 @@ def stable_metrics(
 
 
 models = sorted(
-    "Wrenformer, CGCNN, Voronoi Random Forest, MEGNet, M3GNet "
-    "MEGNet, BOWSR MEGNet".split(", ")
+    "Wrenformer, CGCNN, Voronoi Random Forest, MEGNet, M3GNet + MEGNet, "
+    "BOWSR + MEGNet".split(", ")
 )
 e_form_col = "e_form_per_atom_mp2020_corrected"
 each_true_col = "e_above_hull_mp2020_corrected_ppd_mp"

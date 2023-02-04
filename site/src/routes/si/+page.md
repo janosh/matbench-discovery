@@ -27,7 +27,7 @@
 
 To avoid potential confusion for people reading the code, we often calculate the formation energy MAE and report it as the MAE for the energy above the convex hull prediction. The former is more easily calculated but the two quantities are really the same. The formation energy of a material is the difference in energy between a material and its constituent elements in their standard states. The distance to the convex hull is defined as the difference between a material's formation energy and the minimum formation energy of all possible stable materials made from the same elements. Since the formation energy of a material is used to calculate the distance to the convex hull, the error of a formation energy prediction directly determines the error in the distance to the convex hull prediction.
 
-## WBM Formation energies
+## MP Elemental Reference Energies
 
 {#if browser}
 <MPRefEnergies />
