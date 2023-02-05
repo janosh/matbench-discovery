@@ -43,11 +43,20 @@
   {/each}
 </nav>
 <p>
-  Date added: {data.date_added}
-  &nbsp;&bull;&nbsp; Benchmark version: {data.matbench_discovery_version}
-  &nbsp;&bull;&nbsp; Missing predictions:
-  {pretty_num(missing_preds ?? null)}
-  <small>({missing_percent})</small>
+  <span
+    ><Icon icon="ion:ios-calendar" inline />
+    {data.date_added}
+  </span>
+  <span
+    ><Icon icon="carbon:version" inline />
+    Benchmark version: {data.matbench_discovery_version}
+  </span>
+  <span>
+    <Icon icon="fluent:missing-metadata-24-regular" inline />
+    Missing preds:
+    {pretty_num(missing_preds ?? null)}
+    <small>({missing_percent})</small>
+  </span>
 </p>
 {#if show_details}
   <div transition:fade|fly={{ duration: 200 }}>
@@ -58,13 +67,13 @@
           <li>
             <span title={affiliation}>{name}</span>
             {#if email}
-              [<a href="mailto:{email}">email</a>]
+              <a href="mailto:{email}"><Icon icon="ion:ios-mail" inline /></a>
             {/if}
             {#if orcid}
-              [<a href={orcid}>Orcid</a>]
+              <a href={orcid}><Icon icon="fa-brands:orcid" inline /></a>
             {/if}
             {#if url}
-              [<a href={url}>web</a>]
+              <a href={url}><Icon icon="ion:ios-globe" inline /></a>
             {/if}
           </li>
         {/each}
@@ -165,6 +174,11 @@
     display: flex;
     gap: 6pt;
     place-items: center;
+  }
+  p {
+    display: flex;
+    gap: 3pt 12pt;
+    flex-wrap: wrap;
   }
   div {
     display: grid;

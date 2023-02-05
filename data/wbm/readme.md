@@ -25,7 +25,7 @@ The full set of processing steps used to curate the WBM test set from the raw da
 
   <caption>WBM Formation energy distribution. 524 materials outside green dashed lines were discarded.<br />(zoom out on this plot to see discarded samples)</caption>
   <slot name="hist-e-form-per-atom">
-    <img src="./figs/2022-12-07-hist-e-form-per-atom.svg" alt="WBM formation energy histogram indicating outlier cutoffs">
+    <img src="./figs/2022-12-07-hist-wbm-e-form-per-atom.svg" alt="WBM formation energy histogram indicating outlier cutoffs">
   </slot>
 
 - apply the [`MaterialsProject2020Compatibility`](https://pymatgen.org/pymatgen.entries.compatibility.html#pymatgen.entries.compatibility.MaterialsProject2020Compatibility) energy correction scheme to the formation energies

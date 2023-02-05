@@ -80,6 +80,7 @@ def stable_metrics(
     )
 
     n_total_pos = n_true_pos + n_false_neg
+    n_total_neg = n_true_neg + n_false_pos
     prevalence = n_total_pos / len(true)  # null rate
     precision = n_true_pos / (n_true_pos + n_false_pos)
     recall = n_true_pos / n_total_pos
@@ -94,8 +95,8 @@ def stable_metrics(
         Accuracy=(n_true_pos + n_true_neg) / len(true),
         F1=2 * (precision * recall) / (precision + recall),
         TPR=n_true_pos / n_total_pos,
-        FPR=n_false_pos / (n_true_neg + n_false_pos),
-        TNR=n_true_neg / (n_true_neg + n_false_pos),
+        FPR=n_false_pos / n_total_neg,
+        TNR=n_true_neg / n_total_neg,
         FNR=n_false_neg / n_total_pos,
         MAE=np.abs(true - pred).mean(),
         RMSE=((true - pred) ** 2).mean() ** 0.5,

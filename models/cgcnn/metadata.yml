@@ -31,12 +31,15 @@
   authors:
     - name: Jason B. Gibson
       affiliation: University of Florida
+      orcid: https://orcid.org/0000-0001-7974-5264
     - name: Ajinkya C. Hire
       affiliation: University of Florida
+      orcid: https://orcid.org/0000-0003-3147-2521
     - name: Richard G. Hennig
       affiliation: University of Florida
       url: https://hennig.mse.ufl.edu
       email: rhennig@ufl.edu
+      orcid: https://orcid.org/0000-0003-4933-7686
   repo: https://github.com/JasonGibsonUfl/Augmented_CGCNN
   doi: https://doi.org/10.1038/s41524-022-00891-8
   preprint: https://arxiv.org/abs/2202.13947
