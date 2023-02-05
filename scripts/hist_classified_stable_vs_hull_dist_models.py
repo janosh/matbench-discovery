@@ -74,8 +74,6 @@ if backend == "matplotlib":
     for ax in fig.axes:
         model_name = ax.get_title()
         assert model_name in models
-        df_model = df_melt[df_melt[facet_col] == model_name]
-
         F1, FPR, FNR, DAF = (
             df_metrics[model_name][x] for x in "F1 FPR FNR DAF".split()
         )
@@ -85,7 +83,6 @@ else:
         model_name = anno.text.split("=").pop()
         if model_name not in models:
             continue
-        df_model = df_melt[df_melt[facet_col] == model_name]
         F1, FPR, FNR, DAF = (
             df_metrics[model_name][x] for x in "F1 FPR FNR DAF".split()
         )

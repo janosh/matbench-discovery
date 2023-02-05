@@ -464,7 +464,7 @@ if not fig.data[0].compressed:
     fig.data[0].x = [round(x, 3) for x in fig.data[0].x[::10]]
 
 # recommended to upload SVG to vecta.io/nano afterwards for compression
-img_path = f"{module_dir}/2022-12-07-hist-e-form-per-atom"
+img_path = f"{module_dir}/2022-12-07-hist-wbm-e-form-per-atom"
 # save_fig(fig, f"{img_path}.svg", width=800, height=300)
 save_fig(fig, f"{img_path}.svelte")
 

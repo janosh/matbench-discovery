@@ -61,12 +61,13 @@ export default {
           )
 
           // Replace figure references with 'Fig. {n}' and add to fig_index
-          code = code.replace(/@(fig:[^\s]+)/g, (_full_str, id) => {
-            const idx = [...fig_index].indexOf(id)
-            if (idx == -1) {
+          code = code.replace(/@(fig[^\s]+)/g, (_full_str, id) => {
+            let idx = [...fig_index].indexOf(`fig${id}`) + 1
+            if (idx == 0) {
               console.error(`Figure id ${id} not found`)
+              idx = `not found`
             }
-            return `[fig. ${idx + 1}](#${id})`
+            return `<a href="#${id}">Fig. ${idx}</a>`
           })
 
           // preprocess markdown citations @auth_1st-word-title_yyyy into superscript

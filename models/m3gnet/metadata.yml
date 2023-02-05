@@ -6,6 +6,7 @@
     - name: Chi Chen
       affiliation: UC San Diego
       role: Model
+      orcid: https://orcid.org/0000-0001-8008-7043
     - name: Shyue Ping Ong
       affiliation: UC San Diego
       orcid: https://orcid.org/0000-0001-5726-2587
@@ -31,12 +32,16 @@
     - name: Chi Chen
       affiliation: UC San Diego
       role: Model
+      orcid: https://orcid.org/0000-0001-8008-7043
     - name: Weike Ye
       affiliation: UC San Diego
+      orcid: https://orcid.org/0000-0002-9541-7006
     - name: Yunxing Zuo
       affiliation: UC San Diego
+      orcid: https://orcid.org/0000-0002-2734-7720
     - name: Chen Zheng
       affiliation: UC San Diego
+      orcid: https://orcid.org/0000-0002-2344-5892
     - name: Shyue Ping Ong
       affiliation: UC San Diego
       orcid: https://orcid.org/0000-0001-5726-2587

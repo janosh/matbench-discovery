@@ -15,6 +15,7 @@ __pycache__
 *.pkl.gz
 data/**/raw
 data/2022-*
+data/m3gnet-*
 
 # Weights and Biases logs
 wandb/
@@ -23,9 +24,10 @@ job-logs/
 # slurm logs
 *slurm-*.log
 
+# generated docs
+site/src/routes/api/*.md
+
 # temporary ignore rules
 notes
 models/voronoi/*.zip
-
-# generated docs
-site/src/routes/api/*.md
+2023-02-05-ens=10-perturb=5

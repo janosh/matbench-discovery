@@ -10,10 +10,10 @@ authors:
   - name: Rhys Goodall
     affiliation: University of Cambridge
     orcid: https://orcid.org/0000-0002-6589-1700
-  - name: Rokas
+  - name: Rokas Elijošius
     affiliation: University of Cambridge
-    url: https://hardingscholars.fund.cam.ac.uk/rokas-elijosius-2021-cohort
     email: re344@cam.ac.uk
+    orcid: https://orcid.org/0000-0001-6397-0002
 repo: https://github.com/janosh/matbench-discovery
 doi: https://doi.org/10.1126/sciadv.abn4117
 preprint: https://arxiv.org/abs/2106.11132

@@ -34,3 +34,9 @@ To avoid potential confusion for people reading the code, we often calculate the
 {/if}
 
 > @label:fig:mp-elemental-reference-energies WBM formation energies were calculated w.r.t. these Materials Project elemental reference energies ([queried on 2022-09-19](https://github.com/janosh/matbench-discovery/blob/main/data/mp/2022-09-19-mp-elemental-reference-entries.json)). Marker size indicates the number of atoms in the reference structure.
+
+## Classification Histograms using Model-Predicted Energies
+
+![Histograms of using predicted formation energies for stability classification](./figs/2023-02-05-hist-pred-energy-vs-hull-dist-models.webp)
+
+> @label:fig:hist-pred-energy-vs-hull-dist-models Similar to [this figure](/paper#fig:hist-true-energy-vs-hull-dist-models), this histogram shows model stability classification as a function of the distance to the convex hull. The difference here being the $x$ axis showing model-predicted rather than DFT ground-truth distance to the convex hull.
