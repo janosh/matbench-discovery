@@ -1,10 +1,11 @@
 <script lang="ts">
   import { browser } from '$app/environment'
-  import FormEnergyHist from '$figs/2022-12-07-hist-e-form-per-atom.svelte'
+  import FormEnergyHist from '$figs/2022-12-07-hist-wbm-e-form-per-atom.svelte'
   import WbmEachHist from '$figs/2023-01-26-wbm-each-hist.svelte'
   import DataReadme from '$root/data/wbm/readme.md'
+  import { Toggle } from 'svelte-zoo'
   import type { ChemicalElement } from 'sveriodic-table'
-  import { PeriodicTable, TableInset, Toggle } from 'sveriodic-table'
+  import { PeriodicTable, TableInset } from 'sveriodic-table'
   import { pretty_num } from 'sveriodic-table/labels'
   import mp_elem_counts from './2023-01-08-mp-element-counts.json'
   import wbm_elem_counts from './2023-01-08-wbm-element-counts.json'

@@ -114,7 +114,7 @@ fig = px.scatter(
     range_x=(-xy_max, xy_max),
     range_y=(-xy_max, xy_max),
     height=1000,
-    template="plotly_white",
+    # template="plotly_white",
 )
 
 
@@ -211,5 +211,4 @@ fig.show()
 
 # %%
 img_path = f"{STATIC}/{today}-each-scatter-models.webp"
-save_fig(fig, img_path, scale=4, width=800, height=700)
 save_fig(fig, img_path, scale=4, width=800, height=700)

@@ -21,7 +21,7 @@ fig, df_err, df_std = rolling_mae_vs_hull_dist(
     e_above_hull_errors=df_wbm.filter(like=" MAE="),
     backend=backend,
     with_sem=False,
-    template="plotly_white" if (mode := "light") == "light" else None,
+    template="plotly_white" if (mode := "dark") == "light" else None,
     width=800,
     height=800,
 )
@@ -47,7 +47,7 @@ else:
     fig.update_traces(line=dict(width=3))
 
     # increase legend handle size and reverse order
-    fig.layout.legend.update(itemsizing="constant", traceorder="reversed")
+    fig.layout.legend.update(itemsizing="constant")
     fig.show()
 
 

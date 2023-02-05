@@ -44,8 +44,8 @@ date: Jan 31, 2023
   import MetricsTable from '$figs/2023-01-31-metrics-table.svelte'
   import { references } from './references.yaml'
   import { References } from '$lib'
-  import CumulativeClfMetrics from '$figs/2023-01-31-cumulative-clf-metrics.svelte'
-  import RollingMaeModels from '$figs/2023-01-30-rolling-mae-vs-hull-dist-models.svelte'
+  import CumulativeClfMetrics from '$figs/2023-02-05-cumulative-clf-metrics.svelte'
+  import RollingMaeModels from '$figs/2023-02-05-rolling-mae-vs-hull-dist-models-dark.svelte'
   // import HistClfStableModels from '$figs/2023-01-26-wbm-hull-dist-hist-models.svelte'
   import { browser } from '$app/environment'
 </script>
@@ -189,15 +189,13 @@ Our benchmark is designed to make [adding future models easy](/how-to-contribute
 
 > @label:fig:metrics-table Heatmap of model metrics. For columns MAE, RMSE, FNR, FPR and Run Time (h) lower is better. For columns DAF, R2, Precision, Recall, F1, Accuracy, TPR and TNR higher is better. In both cases cells colored yellow are better than cells colored blue.
 
-![Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth](./figs/2023-01-30-each-scatter-models.webp)
+![Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth](./figs/2023-02-05-each-scatter-models.webp)
 
 > @label:fig:each-scatter-models Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth
 
-![Histograms of using predicted formation energies for stability classification](./figs/2023-01-30-hist-pred-energy-vs-hull-dist-models.webp)
+![Histograms of using predicted formation energies for stability classification](./figs/2023-02-05-hist-true-energy-vs-hull-dist-models.webp)
 
-![Histograms of using predicted formation energies for stability classification](./figs/2023-01-30-hist-true-energy-vs-hull-dist-models.webp)
-
-> @label:fig:wbm-hull-dist-hist-models Histograms of using predicted formation energies for stability classification
+> @label:fig:hist-true-energy-vs-hull-dist-models Histograms of using predicted formation energies for stability classification
 
 {#if browser}
 <RollingMaeModels  />

@@ -11,7 +11,7 @@ __author__ = "Janosh Riebesell"
 __date__ = "2023-02-04"
 
 models = sorted(
-    "Wrenformer, CGCNN, Voronoi Random Forest, MEGNet, M3GNet + MEGNet, "
+    "Wrenformer, CGCNN+P, Voronoi Random Forest, MEGNet, M3GNet + MEGNet, "
     "BOWSR + MEGNet".split(", ")
 )
 e_form_col = "e_form_per_atom_mp2020_corrected"
@@ -28,7 +28,7 @@ df_metrics = pd.DataFrame()
 for model in models:
     df_metrics[model] = stable_metrics(
         df_wbm[each_true_col],
-        df_wbm[each_true_col] + df_wbm[e_form_col] - df_wbm[model],
+        df_wbm[each_true_col] + df_wbm[model] - df_wbm[e_form_col],
     )
 
 assert df_metrics.T.MAE.between(0, 0.2).all(), "MAE not in range"
