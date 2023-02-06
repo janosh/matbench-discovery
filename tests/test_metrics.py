@@ -79,3 +79,14 @@ def test_stable_metrics() -> None:
     # test stable_metrics docstring is up to date, all returned metrics should be listed
     assert stable_metrics.__doc__  # for mypy
     assert all(key in stable_metrics.__doc__ for key in metrics)
+
+    # test discovery acceleration factor (DAF)
+    n_true_pos, n_false_neg, n_false_pos, n_true_neg = map(
+        sum, classify_stable(y_true, y_pred)
+    )
+
+    dummy_hit_rate = (n_true_pos + n_false_neg) / (
+        n_true_pos + n_false_pos + n_false_neg + n_true_neg
+    )
+    precision = n_true_pos / (n_true_pos + n_false_pos)
+    assert metrics["DAF"] == precision / dummy_hit_rate

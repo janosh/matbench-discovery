@@ -20,8 +20,6 @@ from matbench_discovery.metrics import classify_stable
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-05"
 
-WhichEnergy = Literal["true", "pred"]
-AxLine = Literal["x", "y", "xy", ""]
 Backend = Literal["matplotlib", "plotly"]
 
 # --- start global plot settings
@@ -58,22 +56,20 @@ model_labels = dict(
 )
 px.defaults.labels = quantity_labels | model_labels
 
-# https://plotly.com/python-api-reference/generated/plotly.graph_objects.layout
+# color list https://plotly.com/python-api-reference/generated/plotly.graph_objects.layout
 colorway = (
     "lightseagreen",
     "orange",
     "lightsalmon",
     "dodgerblue",
-    "aquamarine",
-    "purple",
-    "firebrick",
 )
 clf_labels = ("True Positive", "False Negative", "False Positive", "True Negative")
-clf_color_map = dict(zip(clf_labels, colorway))
+clf_colors = ("lightseagreen", "orange", "lightsalmon", "dodgerblue")
+clf_color_map = dict(zip(clf_labels, clf_colors))
 
 global_layout = dict(
     # colorway=px.colors.qualitative.Pastel,
-    colorway=colorway,
+    # colorway=colorway,
     margin=dict(l=30, r=20, t=60, b=20),
     paper_bgcolor="rgba(0,0,0,0)",
     # plot_bgcolor="rgba(0,0,0,0)",
@@ -101,7 +97,7 @@ def hist_classified_stable_vs_hull_dist(
     each_true_col: str,
     each_pred_col: str,
     ax: plt.Axes = None,
-    which_energy: WhichEnergy = "true",
+    which_energy: Literal["true", "pred"] = "true",
     stability_threshold: float | None = 0,
     x_lim: tuple[float | None, float | None] = (-0.7, 0.7),
     rolling_acc: float | None = 0.02,
@@ -133,7 +129,7 @@ def hist_classified_stable_vs_hull_dist(
             (in eV / atom). Same as true energy to convex hull plus predicted minus true
             formation energy.
         ax (plt.Axes, optional): matplotlib axes to plot on.
-        which_energy (WhichEnergy, optional): Whether to use the true (DFT) hull
+        which_energy ('true' | 'pred', optional): Whether to use the true (DFT) hull
             distance or the model's predicted hull distance for the histogram.
         stability_threshold (float, optional): set stability threshold as distance to
             convex hull in eV/atom, usually 0 or 0.1 eV.
@@ -376,7 +372,7 @@ def rolling_mae_vs_hull_dist(
 
     window_bar_anno = f"rolling window={2 * window * 1000:.0f} meV"
     dummy_mae = (e_above_hull_true - e_above_hull_true.mean()).abs().mean()
-    legend_title = f"dummy MAE = {dummy_mae:.2f} eV/atom"
+    dummy_mae_text = f"dummy MAE = {dummy_mae:.2f} eV/atom"
 
     if backend == "matplotlib":
         # assert df_rolling_err.isna().sum().sum() == 0, "NaNs in df_rolling_err"
@@ -430,6 +426,9 @@ def rolling_mae_vs_hull_dist(
                 horizontalalignment="right",
             )
 
+        ax.axhline(dummy_mae, color="tab:blue", linestyle="--", linewidth=0.5)
+        ax.text(dummy_mae, 0.1, dummy_mae_text)
+
         ax.text(
             0, 0.13, r"MAE > $|E_\mathrm{above\ hull}|$", horizontalalignment="center"
         )
@@ -456,7 +455,7 @@ def rolling_mae_vs_hull_dist(
             )
 
         ax.layout.legend.update(
-            title=legend_title,
+            title="",
             x=1,
             y=0,
             xanchor="right",
@@ -483,6 +482,11 @@ def rolling_mae_vs_hull_dist(
             text=peril_cone_anno,
             showarrow=False,
             yref="paper",
+        )
+        ax.add_hline(
+            y=dummy_mae,
+            line=dict(dash="dash", width=0.5),
+            annotation_text=dummy_mae_text,
         )
         if show_dft_acc:
             ax.add_scatter(
@@ -536,7 +540,7 @@ def cumulative_precision_recall(
     metrics: Sequence[str] = ("Precision", "Recall"),
     stability_threshold: float = 0,  # set stability threshold as distance to convex
     # hull in eV / atom, usually 0 or 0.1 eV
-    project_end_point: AxLine = "xy",
+    project_end_point: Literal["x", "y", "xy", ""] = "xy",
     optimal_recall: str | None = "Optimal Recall",
     show_n_stable: bool = True,
     backend: Backend = "plotly",
@@ -692,7 +696,7 @@ def cumulative_precision_recall(
             **kwargs,
         )
 
-        line_kwds = dict(color="white", dash="dash", width=0.5)
+        line_kwds = dict(dash="dash", width=0.5)
         for idx, anno in enumerate(fig.layout.annotations):
             anno.text = anno.text.split("=")[1]
             anno.font.size = 16

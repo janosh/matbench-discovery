@@ -64,6 +64,46 @@ references:
   URL: https://www.nature.com/articles/s41524-020-00362-y
   volume: '6'
 
+- id: behler_generalized_2007
+  abstract: >-
+    The accurate description of chemical processes often requires the use of
+    computationally demanding methods like density-functional theory (DFT),
+    making long simulations of large systems unfeasible. In this Letter we
+    introduce a new kind of neural-network representation of DFT
+    potential-energy surfaces, which provides the energy and forces as a
+    function of all atomic positions in systems of arbitrary size and is several
+    orders of magnitude faster than DFT. The high accuracy of the method is
+    demonstrated for bulk silicon and compared with empirical potentials and
+    DFT. The method is general and can be applied to all types of periodic and
+    nonperiodic systems.
+  accessed:
+    - year: 2023
+      month: 2
+      day: 6
+  author:
+    - family: Behler
+      given: Jörg
+    - family: Parrinello
+      given: Michele
+  citation-key: behler_generalized_2007
+  container-title: Physical Review Letters
+  container-title-short: Phys. Rev. Lett.
+  DOI: 10.1103/PhysRevLett.98.146401
+  issue: '14'
+  issued:
+    - year: 2007
+      month: 4
+      day: 2
+  page: '146401'
+  publisher: American Physical Society
+  source: APS
+  title: >-
+    Generalized Neural-Network Representation of High-Dimensional
+    Potential-Energy Surfaces
+  type: article-journal
+  URL: https://link.aps.org/doi/10.1103/PhysRevLett.98.146401
+  volume: '98'
+
 - id: borg_quantifying_2022
   abstract: >-
     The predictive capabilities of machine learning (ML) models used in
@@ -353,6 +393,97 @@ references:
   title-short: Benchmarking Materials Property Prediction Methods
   type: article-journal
   URL: http://arxiv.org/abs/2005.00707
+
+- id: gibson_data-augmentation_2022
+  abstract: >-
+    Computational materials discovery has continually grown in utility over the
+    past decade due to advances in computing power and crystal structure
+    prediction algorithms (CSPA). However, the computational cost of the
+    \textit{ab initio} calculations required by CSPA limits its utility to small
+    unit cells, reducing the compositional and structural space the algorithms
+    can explore. Past studies have bypassed many unneeded \textit{ab initio}
+    calculations by utilizing machine learning methods to predict formation
+    energy and determine the stability of a material. Specifically, graph neural
+    networks display high fidelity in predicting formation energy. Traditionally
+    graph neural networks are trained on large data sets of relaxed structures.
+    Unfortunately, the geometries of unrelaxed candidate structures produced by
+    CSPA often deviate from the relaxed state, which leads to poor predictions
+    hindering the model's ability to filter energetically unfavorable prior to
+    \textit{ab initio} evaluation. This work shows that the prediction error on
+    relaxed structures reduces as training progresses, while the prediction
+    error on unrelaxed structures increases, suggesting an inverse correlation
+    between relaxed and unrelaxed structure prediction accuracy. To remedy this
+    behavior, we propose a simple, physically motivated, computationally cheap
+    perturbation technique that augments training data to improve predictions on
+    unrelaxed structures dramatically. On our test set consisting of 623 Nb-Sr-H
+    hydride structures, we found that training a crystal graph convolutional
+    neural networks, utilizing our augmentation method, reduced the MAE of
+    formation energy prediction by 66\% compared to training with only relaxed
+    structures. We then show how this error reduction can accelerates CSPA by
+    improving the model's ability to filter out energetically unfavorable
+    structures accurately.
+  accessed:
+    - year: 2022
+      month: 4
+      day: 7
+  author:
+    - family: Gibson
+      given: Jason B.
+    - family: Hire
+      given: Ajinkya C.
+    - family: Hennig
+      given: Richard G.
+  citation-key: gibson_data-augmentation_2022
+  container-title: arXiv:2202.13947 [physics]
+  issued:
+    - year: 2022
+      month: 2
+      day: 28
+  source: arXiv.org
+  title: >-
+    Data-Augmentation for Graph Neural Network Learning of the Relaxed Energies
+    of Unrelaxed Structures
+  type: article-journal
+  URL: http://arxiv.org/abs/2202.13947
+
+- id: goodall_predicting_2020
+  abstract: >-
+    Machine learning has the potential to accelerate materials discovery by
+    accurately predicting materials properties at a low computational cost.
+    However, the model inputs remain a key stumbling block. Current methods
+    typically use descriptors constructed from knowledge of either the full
+    crystal structure -- therefore only applicable to materials with already
+    characterised structures -- or structure-agnostic fixed-length
+    representations hand-engineered from the stoichiometry. We develop a machine
+    learning approach that takes only the stoichiometry as input and
+    automatically learns appropriate and systematically improvable descriptors
+    from data. Our key insight is to treat the stoichiometric formula as a dense
+    weighted graph between elements. Compared to the state of the art for
+    structure-agnostic methods, our approach achieves lower errors with less
+    data.
+  accessed:
+    - year: 2020
+      month: 8
+      day: 1
+  author:
+    - family: Goodall
+      given: Rhys E. A.
+    - family: Lee
+      given: Alpha A.
+  citation-key: goodall_predicting_2020
+  container-title: arXiv:1910.00617 [cond-mat, physics:physics]
+  issued:
+    - year: 2020
+      month: 5
+      day: 19
+  note: 'ZSCC: NoCitationData[s0]'
+  source: arXiv.org
+  title: >-
+    Predicting materials properties without crystal structure: Deep
+    representation learning from stoichiometry
+  title-short: Predicting materials properties without crystal structure
+  type: article-journal
+  URL: http://arxiv.org/abs/1910.00617
 
 - id: goodall_rapid_2022
   accessed:

@@ -33,7 +33,7 @@
     <Icon icon={show_details ? `ion:ios-arrow-up` : `ion:ios-arrow-down`} inline />
   </button>
 </h2>
-<small>{idx + 1}</small>
+<em>{idx + 1}</em>
 <nav>
   {#each links.filter(([href]) => href) as [href, title, icon]}
     <span>
@@ -132,8 +132,8 @@
   <section>
     <h3 class="toc-exclude">Notes</h3>
     <ul>
-      {#each Object.values(notes) as note}
-        <li>{@html note}</li>
+      {#each [`description`, `training`].filter((k) => k in (notes ?? {})) as key}
+        <li>{@html notes[key]}</li>
       {/each}
     </ul>
   </section>
@@ -144,7 +144,7 @@
     margin: 8pt 0 1em;
     text-align: center;
   }
-  h2 + small {
+  em {
     font-weight: lighter;
     font-style: normal;
     position: absolute;
@@ -187,7 +187,8 @@
     justify-content: space-between;
   }
   small {
-    font-weight: lighter;
+    font-weight: 100;
+    font-size: 8pt;
   }
   section.metrics > ul {
     display: flex;
@@ -196,6 +197,9 @@
     list-style: none;
     flex-direction: column;
     max-height: 10em;
+  }
+  section.metrics > h3 {
+    margin: 0;
   }
   section.metrics > ul > li {
     font-weight: lighter;

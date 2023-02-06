@@ -112,7 +112,7 @@ if col.startswith("e_above_hull"):
     fig.update_layout(title=dict(text=title, x=0.5, y=0.95))
 
 fig.update_layout(showlegend=False, paper_bgcolor="rgba(0,0,0,0)")
-fig.update_xaxes(title_text="WBM energy above MP convex hull (eV/atom)")
+fig.update_xaxes(title="WBM energy above MP convex hull (eV/atom)")
 
 for x_pos, label in zip(
     [mean, mean + std, mean - std],

@@ -1,6 +1,6 @@
 ---
 title: Matbench Discovery
-subtitle: Can ML energy models help find stable crystals?
+subtitle: Can machine learning identify stable crystals given unrelaxed structures?
 tags:
   - Python
   - machine learning
@@ -41,12 +41,11 @@ date: Jan 31, 2023
 ---
 
 <script>
-  import MetricsTable from '$figs/2023-01-31-metrics-table.svelte'
+  import MetricsTable from '$figs/metrics-table.svelte'
   import { references } from './references.yaml'
   import { References } from '$lib'
-  import CumulativeClfMetrics from '$figs/2023-02-05-cumulative-clf-metrics.svelte'
-  import RollingMaeModels from '$figs/2023-02-05-rolling-mae-vs-hull-dist-models-dark.svelte'
-  // import HistClfStableModels from '$figs/2023-01-26-wbm-hull-dist-hist-models.svelte'
+  import CumulativeClfMetrics from '$figs/cumulative-clf-metrics.svelte'
+  import RollingMaeModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'
   import { browser } from '$app/environment'
 </script>
 
@@ -66,10 +65,7 @@ date: Jan 31, 2023
 
 ## Abstract
 
-<!-- - we propose a new machine learning benchmark for materials stability predictions
-- primary goal of Matbench Discovery is to answer the question of how useful ML energy models are at helping to accelerate inorganic crystal searching and what the optimal methodology is, specifically whether DFT emulators like M3GNet or one-shot predictors do better. -->
-
-In this work, we present a new machine learning benchmark for materials stability predictions called **Matbench Discovery**. The primary goal of this benchmark is to evaluate the effectiveness of machine learning energy models in accelerating the search for inorganic crystals and to determine the optimal methodology for this task. Specifically, we aim to answer the question of whether density functional theory emulators like M3GNet or one-shot predictors like Wrenformer perform better in this setting. We hope our results provide valuable insights that motivate researchers in the field of materials discovery and builders of high throughput databases to start using these models as triaging steps to more effectively allocate compute for DFT relaxations.
+We present a new machine learning benchmark for materials stability predictions called **Matbench Discovery**. The primary goal of this benchmark is to evaluate the effectiveness of machine learning energy models at accelerating the search for inorganic crystals and to determine the optimal methodology for this task. Specifically, we aim to answer the question of whether density functional theory emulators like M3GNet or one-shot predictors like Wrenformer perform better. To make the results easily accessible, we provide an online leaderboard with interactive plots that allow for custom model comparisons and looking at a variety of performance metrics. New models are easily added to our leaderboard, allowing this benchmark to grow into the future. We also make our results easily reproducible by releasing all training and test scripts as well as WandB logs of all our experiments. We hope our results provide valuable insights that motivate researchers in the field of materials discovery and builders of high throughput databases to start using these models as triaging steps to more effectively allocate compute for DFT relaxations.
 
 ## Introduction
 
@@ -142,8 +138,6 @@ While formation energy can be accurately predicted knowing only the composition,
 
 ## Related Work
 
-Our work is inspired and builds upon earlier research.
-
 ### Matbench
 
 As the name suggests, this work also expands on the initial release of Matbench @dunn_benchmarking_2020. Matbench aims to serve as a similar catalyst for machine learning in materials science as ImageNet @deng_imagenet_2009 was for computer vision. Matbench released a test suite of 13 supervised tasks for different material properties like thermal (e.g. formation energy, phonon frequency peak), electronic (band gap), optical (refractive index), tensile and elastic (bulk and shear moduli). They range in size from ~300 to ~132,000 samples and include both DFT and experimental data sources. 4 tasks are composition-only, 9 provide the relaxed crystal structure as input. Importantly, all tasks we're exclusively concerned with the properties of known materials. We believe a task that looks at materials stability and tries to simulate a materials discovery process to be a missing piece here.
@@ -151,26 +145,6 @@ As the name suggests, this work also expands on the initial release of Matbench 
 ### WBM test set
 
 The choice of data for the train and test sets of this benchmark fell on the latest Materials Project @jain_commentary_2013 database release (2021.05.13 at time of writing) and the **[WBM dataset](https://nature.com/articles/s41524-020-00481-6)** @wang_predicting_2021. Named after the authors' last name initials, WBM consists of ~250k structures generated via chemical similarity-based elemental substitution of Materials Project source structures followed by DFT relaxation and convex hull distance calculation. ~20k or 10% were found to lie on the Materials Project convex hull. They did 5 iterations of this substitution process. This is a unique and compelling feature of the dataset as it allows out-of-distribution testing by checking how much model performance degrades with substitution count. A higher number of elemental substitutions will on average carry the structure further away from the chemical space covered by the Materials Project training set.
-
-<!--
-rough paper outline
-1. explain why a benchmark for materials stability prediction is important
-2. conclude from the benchmark that among existing models, some are good and some are bad
-  2.1 among the best models is Wren yet it fails on 20% of the data due to being constrained to small crystal structures
-3. to overcome this shortcoming of Wren, we re-implement it from scratch as a transformer-encoder using the same physically meaningful descriptor set consisting of the Wyckoff position, a coarse-grained relaxation-invariant feature set, and show that its memory requirements now only scale quadratically with the number Wyckoff positions, making it universally applicable across materials space
--->
-
-<!-- Questions to address from Emma:
-
-What is the main hypothesis of the paper?
-What problem will Wrenformer specifically address?
-Why is Wrenformer the best solution to that problem?
-What journal will you be submitting to?
-Are there any tangents that this project went down that should be excluded from the manuscript for clarity’s sake?
-When can we expect a draft from you?
-Who are the reviewers that we want to specifically include/exclude?
-Were any of these questions discussed/addressed?
--->
 
 ## Results
 
@@ -183,22 +157,22 @@ Our benchmark is designed to make [adding future models easy](/how-to-contribute
 1. [MEGNet](https://arxiv.org/abs/1812.05055) @chen_graph_2019
 1. [Voronoi Random Forest](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.96.024104) @goodall_rapid_2022
 
-<div style="overflow: scroll;">
-  <MetricsTable />
+<div style="container-type: inline-size;">
+  <MetricsTable style="font-size: 1.65cqw;" />
 </div>
 
 > @label:fig:metrics-table Heatmap of model metrics. For columns MAE, RMSE, FNR, FPR and Run Time (h) lower is better. For columns DAF, R2, Precision, Recall, F1, Accuracy, TPR and TNR higher is better. In both cases cells colored yellow are better than cells colored blue.
 
-![Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth](./figs/2023-02-05-each-scatter-models.webp)
+![Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth](./figs/each-scatter-models.webp)
 
 > @label:fig:each-scatter-models Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth
 
-![Histograms of using predicted formation energies for stability classification](./figs/2023-02-05-hist-true-energy-vs-hull-dist-models.webp)
+![Histograms of using predicted formation energies for stability classification](./figs/hist-true-energy-vs-hull-dist-models.webp)
 
 > @label:fig:hist-true-energy-vs-hull-dist-models Histograms of using predicted formation energies for stability classification
 
 {#if browser}
-<RollingMaeModels  />
+<RollingMaeModels />
 {/if}
 
 > @label:fig:rolling-mae-models Rolling MAE on the WBM test set as the energy to the convex hull is varied. A scale bar is shown for the window used to calculate the rolling average. Shaded areas around each curve show 3 &times; standard error of the mean (SEM). Also highlighted is the V-shaped region inside which the MAE is greater than the energy to the known convex hull. Inside this 'cone of peril' models are most at risk of misclassifying structures. Outside this cone, even if a model overpredicts the energy to the hull by its MAE in the left half of the plot or underpredicts it by its MAE on the right half of the plot, the prediction would still correctly classify the material as stable/unstable. All models achieve an MAE below 100 meV/atom in this range. M3GNet and Wrenformer in particular achieve 47 and 55 meV/atom, respectively. This is still about twice the DFT error of 25 meV/atom for relative energy differences on similar chemistries. This error is lower than the corrected GGA formation energy error of ~50 meV / atom due to systematic error cancellation among similar chemistries @hautier_accuracy_2012.
@@ -213,6 +187,8 @@ M3GNet's performance appears to be particularly affected by poor performance on 
 > Some models like MEGNet are particularly suitable for short discovery campaigns whereas other models like Wrenformer perform better on long campaigns.
 
 ## Analysis
+
+<!-- TODO Screenshot 2023-02-03 at 12.07.45 consider reporting that Wrenformer has higher batch variability in its rolling MAE than MEGNet. maybe sth to say for relaxation enabling more robust extrapolation -->
 
 ## Conclusion
 

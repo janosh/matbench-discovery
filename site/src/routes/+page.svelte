@@ -1,7 +1,7 @@
 <script lang="ts">
   import { browser } from '$app/environment'
-  import CumulativeMetricsPlot from '$figs/2023-02-05-cumulative-clf-metrics.svelte'
   import Readme from '$root/readme.md'
+  import CumulativeMetricsPlot from '$site/src/figs/cumulative-clf-metrics.svelte'
 </script>
 
 <Readme />

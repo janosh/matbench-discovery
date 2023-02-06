@@ -51,15 +51,17 @@ def classify_stable(
 
 
 def stable_metrics(
-    true: Sequence[float], pred: Sequence[float], stability_threshold: float = 0
+    each_true: Sequence[float],
+    each_pred: Sequence[float],
+    stability_threshold: float = 0,
 ) -> dict[str, float]:
     """
     Get a dictionary of stability prediction metrics. Mostly binary classification
     metrics, but also MAE, RMSE and R2.
 
     Args:
-        true (list[float]): true energy values
-        pred (list[float]): predicted energy values
+        each_true (list[float]): true energy above convex hull
+        each_pred (list[float]): predicted energy above convex hull
         stability_threshold (float): Where to place stability threshold relative to
             convex hull in eV/atom, usually 0 or 0.1 eV. Defaults to 0.
 
@@ -71,34 +73,31 @@ def stable_metrics(
         dict[str, float]: dictionary of classification metrics with keys DAF, Precision,
             Recall, Accuracy, F1, TPR, FPR, TNR, FNR, MAE, RMSE, R2.
     """
-    true_pos, false_neg, false_pos, true_neg = classify_stable(
-        true, pred, stability_threshold
-    )
-
-    n_true_pos, n_false_pos, n_true_neg, n_false_neg = map(
-        sum, (true_pos, false_pos, true_neg, false_neg)
+    n_true_pos, n_false_neg, n_false_pos, n_true_neg = map(
+        sum, classify_stable(each_true, each_pred, stability_threshold)
     )
 
     n_total_pos = n_true_pos + n_false_neg
     n_total_neg = n_true_neg + n_false_pos
-    prevalence = n_total_pos / len(true)  # null rate
-    precision = n_true_pos / (n_true_pos + n_false_pos)
+    # prevalence: dummy discovery rate of selecting randomly from all materials
+    prevalence = n_total_pos / len(each_true)
+    precision = n_true_pos / (n_true_pos + n_false_pos)  # model's discovery rate
     recall = n_true_pos / n_total_pos
 
-    is_nan = np.isnan(true) | np.isnan(pred)
-    true, pred = np.array(true)[~is_nan], np.array(pred)[~is_nan]
+    is_nan = np.isnan(each_true) | np.isnan(each_pred)
+    each_true, each_pred = np.array(each_true)[~is_nan], np.array(each_pred)[~is_nan]
 
     return dict(
         DAF=precision / prevalence,
         Precision=precision,
         Recall=recall,
-        Accuracy=(n_true_pos + n_true_neg) / len(true),
+        Accuracy=(n_true_pos + n_true_neg) / len(each_true),
         F1=2 * (precision * recall) / (precision + recall),
         TPR=n_true_pos / n_total_pos,
         FPR=n_false_pos / n_total_neg,
         TNR=n_true_neg / n_total_neg,
         FNR=n_false_neg / n_total_pos,
-        MAE=np.abs(true - pred).mean(),
-        RMSE=((true - pred) ** 2).mean() ** 0.5,
-        R2=r2_score(true, pred),
+        MAE=np.abs(each_true - each_pred).mean(),
+        RMSE=((each_true - each_pred) ** 2).mean() ** 0.5,
+        R2=r2_score(each_true, each_pred),
     )

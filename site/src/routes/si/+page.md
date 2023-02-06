@@ -1,8 +1,8 @@
 <script lang="ts">
-  import RunTimePie from '$figs/2023-01-26-model-run-times-pie.svelte'
-  import RocModels from '$figs/2023-01-30-roc-models.svelte'
+  import RunTimePie from '$figs/model-run-times-pie.svelte'
+  import RocModels from '$figs/roc-models.svelte'
   import { browser } from '$app/environment'
-  import MPRefEnergies from '$figs/2023-02-02-mp-elemental-ref-energies.svelte'
+  import MPRefEnergies from '$figs/mp-elemental-ref-energies.svelte'
 </script>
 
 # Supplementary Information
@@ -37,6 +37,6 @@ To avoid potential confusion for people reading the code, we often calculate the
 
 ## Classification Histograms using Model-Predicted Energies
 
-![Histograms of using predicted formation energies for stability classification](./figs/2023-02-05-hist-pred-energy-vs-hull-dist-models.webp)
+![Histograms of using predicted formation energies for stability classification](./figs/hist-pred-energy-vs-hull-dist-models.webp)
 
 > @label:fig:hist-pred-energy-vs-hull-dist-models Similar to [this figure](/paper#fig:hist-true-energy-vs-hull-dist-models), this histogram shows model stability classification as a function of the distance to the convex hull. The difference here being the $x$ axis showing model-predicted rather than DFT ground-truth distance to the convex hull.

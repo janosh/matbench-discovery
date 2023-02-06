@@ -24,6 +24,10 @@
   hyperparams:
     Ensemble Size: 10
 
+  notes:
+    description: Published in 2017, CGCNN was the first crystal graph convolutional neural network to directly learn 8 different DFT-computed material properties from a graph representing the atoms and bonds in a crystal.
+    long: It showed that just like in other areas of ML, given large training sets, embeddings that outperform human-engineered features could be learned directly from the data.
+
 - model_name: CGCNN+P
   model_version: 0.1.0 # the aviary version
   matbench_discovery_version: 1.0
@@ -54,3 +58,7 @@
   hyperparams:
     Ensemble Size: 10
     Perturbations: 5
+
+  notes:
+    description: This work proposes simple, physically motivated structure perturbations to augment CGCNN's training data of relaxed structures with structures resembling unrelaxed ones but mapped to the same DFT final energy.
+    long: From this the model should learn to map structures to their nearest energy basin which is supported by a lowering of the energy error on unrelaxed structures.

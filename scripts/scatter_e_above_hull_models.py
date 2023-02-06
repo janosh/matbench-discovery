@@ -2,15 +2,15 @@
 import numpy as np
 from pymatviz.utils import add_identity_line, save_fig
 
-from matbench_discovery import FIGS, STATIC, today
+from matbench_discovery import FIGS, ROOT, STATIC, today
 from matbench_discovery.metrics import classify_stable, stable_metrics
-from matbench_discovery.plots import clf_color_map, clf_labels, px
+from matbench_discovery.plots import clf_color_map, clf_colors, clf_labels, px
 from matbench_discovery.preds import (
+    df_metrics,
     df_wbm,
     e_form_col,
     each_pred_col,
     each_true_col,
-    models,
 )
 
 __author__ = "Janosh Riebesell"
@@ -26,8 +26,8 @@ hover_cols = (df_wbm.index.name, e_form_col, each_true_col, "formula")
 
 df_melt = df_wbm.melt(
     id_vars=hover_cols,
-    value_vars=models,
     var_name=facet_col,
+    value_vars=list(df_metrics),
     value_name=e_form_pred_col,
 )
 
@@ -103,7 +103,7 @@ fig = px.scatter(
     x=each_true_col,
     y=each_pred_col,
     facet_col=facet_col,
-    facet_col_wrap=2,
+    facet_col_wrap=4,
     facet_col_spacing=0.02,
     facet_row_spacing=0.04,
     hover_data=hover_cols,
@@ -113,8 +113,6 @@ fig = px.scatter(
     opacity=0.4,
     range_x=(-xy_max, xy_max),
     range_y=(-xy_max, xy_max),
-    height=1000,
-    # template="plotly_white",
 )
 
 
@@ -131,7 +129,7 @@ for idx, anno in enumerate(fig.layout.annotations, 1):
     MAE, R2 = metrics["MAE"], metrics["R2"]
 
     model = anno.text.split("=")[1]
-    assert model in models, f"Unexpected {model=} not in {models=}"
+    assert model in df_wbm, f"Unexpected {model=} not in {list(df_wbm)=}"
     # set new subplot titles (adding MAE and R2)
     fig.layout.annotations[idx - 1].text = f"{model}{_metric_str(xs, ys)}"
 
@@ -140,11 +138,8 @@ for idx, anno in enumerate(fig.layout.annotations, 1):
     fig.layout[f"yaxis{idx}"].title.text = ""
 
     # add transparent rectangle with TN, TP, FN, FP labels in each quadrant
-    for sign_x, sign_y, color, label in (
-        (-1, -1, "lightseagreen", "TP"),
-        (-1, 1, "orange", "FN"),
-        (1, -1, "lightsalmon", "FP"),
-        (1, 1, "dodgerblue", "TN"),
+    for sign_x, sign_y, color, label in zip(
+        [-1, -1, 1, 1], [-1, 1, -1, 1], clf_colors, ("TP", "FN", "FP", "TN")
     ):
         # instead of coloring points in each quadrant, we can add a transparent
         # background to each quadrant (looks worse maybe than coloring points)
@@ -179,6 +174,7 @@ for idx, anno in enumerate(fig.layout.annotations, 1):
 fig.update_xaxes(nticks=5)
 fig.update_yaxes(nticks=5)
 
+fig.layout.margin = dict(l=10, r=0, t=0, b=40)
 fig.layout.legend.update(
     title="",  # remove legend title
     itemsizing="constant",  # increase legend marker size
@@ -210,5 +206,6 @@ fig.show()
 
 
 # %%
-img_path = f"{STATIC}/{today}-each-scatter-models.webp"
-save_fig(fig, img_path, scale=4, width=800, height=700)
+img_name = "each-scatter-models"
+save_fig(fig, f"{STATIC}/{img_name}.webp", scale=4, width=800, height=700)
+save_fig(fig, f"{ROOT}/tmp/figures/{img_name}.pdf", width=1200)
