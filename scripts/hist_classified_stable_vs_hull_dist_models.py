@@ -1,8 +1,10 @@
 # %%
+from typing import Final
+
 from pymatviz.utils import save_fig
 
-from matbench_discovery import STATIC, today
-from matbench_discovery.plots import Backend, hist_classified_stable_vs_hull_dist, plt
+from matbench_discovery import ROOT, STATIC, today
+from matbench_discovery.plots import hist_classified_stable_vs_hull_dist, plt
 from matbench_discovery.preds import (
     df_metrics,
     df_wbm,
@@ -40,8 +42,9 @@ df_melt[each_pred_col] = (
 
 
 # %%
-backend: Backend = "plotly"
+backend: Final = "plotly"
 rows, cols = len(models) // 2, 2
+which_energy: Final = "true"
 kwds = (
     dict(facet_col=facet_col, facet_col_wrap=cols, barmode="stack")
     if backend == "plotly"
@@ -52,7 +55,7 @@ fig = hist_classified_stable_vs_hull_dist(
     df=df_melt,
     each_true_col=each_true_col,
     each_pred_col=each_pred_col,
-    which_energy=(which_energy := "true"),
+    which_energy=which_energy,
     backend=backend,
     rolling_acc=None,
     stability_threshold=None,
@@ -60,6 +63,8 @@ fig = hist_classified_stable_vs_hull_dist(
 )
 
 
+# TODO add line showing the true histogram of the hull distance distribution on each subplot
+show_metrics = False
 if backend == "matplotlib":
     fig = plt.gcf()
     fig.suptitle(f"{today} {which_energy=}", y=1.04, fontsize=18, fontweight="bold")
@@ -74,14 +79,16 @@ if backend == "matplotlib":
     for ax in fig.axes:
         model_name = ax.get_title()
         assert model_name in models
+        if not show_metrics:
+            continue
         F1, FPR, FNR, DAF = (
             df_metrics[model_name][x] for x in "F1 FPR FNR DAF".split()
         )
         ax.set(title=f"{model_name} · {F1=:.2f} · {FPR=:.2f} · {FNR=:.2f} · {DAF=:.2f}")
 else:
     for anno in fig.layout.annotations:
-        model_name = anno.text.split("=").pop()
-        if model_name not in models:
+        model_name = anno.text = anno.text.split("=").pop()
+        if model_name not in models or not show_metrics:
             continue
         F1, FPR, FNR, DAF = (
             df_metrics[model_name][x] for x in "F1 FPR FNR DAF".split()
@@ -99,12 +106,13 @@ else:
     #     trace.x = trace.x[::10]
 
     # increase height of figure
-    fig.layout.height = 800
-    fig.show()
+    fig.show(height=800)
 
 
 # %%
-img_path = f"{today}-hist-{which_energy}-energy-vs-hull-dist-models"
-# save_fig(fig, f"{FIGS}/{img_path}.svelte")
-save_fig(fig, f"{STATIC}/{img_path}.webp", scale=3, height=1000, width=1200)
-# save_fig(fig, f"{STATIC}/{img_path}.webp", dpi=300)
+img_name = f"hist-{which_energy}-energy-vs-hull-dist-models"
+# save_fig(fig, f"{FIGS}/{img_name}.svelte")
+save_fig(fig, f"{STATIC}/{img_name}.webp", scale=3)
+fig.layout.template = "plotly_white"
+save_fig(fig, f"{ROOT}/tmp/figures/{img_name}.pdf", height=600, width=600)
+fig.layout.template = "plotly_dark"

@@ -1,9 +1,11 @@
 # %%
+from typing import Final
+
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, STATIC, today
-from matbench_discovery.plots import Backend, rolling_mae_vs_hull_dist
-from matbench_discovery.preds import df_metrics, df_wbm, e_form_col, each_true_col
+from matbench_discovery import FIGS, ROOT, STATIC
+from matbench_discovery.plots import rolling_mae_vs_hull_dist
+from matbench_discovery.preds import df_each_pred, df_metrics, df_wbm, each_true_col
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
@@ -11,21 +13,14 @@ __date__ = "2022-06-18"
 
 # %%
 # sort df columns by MAE (so that the legend is sorted too)
-backend: Backend = "plotly"
-
-for model, MAE in sorted(df_metrics.T.MAE.items(), key=lambda x: x[1]):
-    df_wbm[f"{model} {MAE=:.2f}"] = df_wbm[e_form_col] - df_wbm[model]
+backend: Final = "plotly"
 
 fig, df_err, df_std = rolling_mae_vs_hull_dist(
     e_above_hull_true=df_wbm[each_true_col],
-    e_above_hull_errors=df_wbm.filter(like=" MAE="),
+    e_above_hull_errors=df_each_pred,
     backend=backend,
     with_sem=False,
-    template="plotly_white" if (mode := "dark") == "light" else None,
-    width=800,
-    height=800,
 )
-
 
 if backend == "matplotlib":
     # increase line width in legend
@@ -43,15 +38,22 @@ else:
         trace.x = trace.x[::5]
         trace.y = trace.y[::5]
 
+        # initially show only the top 5 models
+        if trace.name.split(" MAE=")[0] not in df_metrics.T.MAE.nsmallest(5):
+            trace.visible = "legendonly"
+            # trace.visible = False
+
     # increase line width
     fig.update_traces(line=dict(width=3))
 
     # increase legend handle size and reverse order
+    fig.layout.margin = dict(l=5, r=5, t=5, b=55)
     fig.layout.legend.update(itemsizing="constant")
     fig.show()
 
 
 # %%
-img_path = f"{today}-rolling-mae-vs-hull-dist-models-{mode}"
-save_fig(fig, f"{FIGS}/{img_path}.svelte")
-save_fig(fig, f"{STATIC}/{img_path}.webp", scale=3)
+img_name = "rolling-mae-vs-hull-dist-models"
+save_fig(fig, f"{FIGS}/{img_name}.svelte")
+save_fig(fig, f"{STATIC}/{img_name}.webp", scale=3)
+save_fig(fig, f"{ROOT}/tmp/figures/{img_name}.pdf")

@@ -92,7 +92,7 @@ To deploy a new model on this benchmark and add it to our leaderboard, please cr
 
    ```yml
    # metadata.yml template
-   model_name: My cool foundational model # required
+   model_name: My fancy model # required
    model_version: 1.0.0 # required
    matbench_discovery_version: 1.0 # required
    date_added: "2023-01-01" # required
@@ -118,8 +118,10 @@ To deploy a new model on this benchmark and add it to our leaderboard, please cr
      torch: 1.13.0
      torch-geometric: 2.0.9
      ...
-   notes:
-     Optional free form multi-line notes that can help others reproduce your results.
+   notes: # notes can have any key, be multiline and support markdown.
+     description: This is how my model works...
+     steps: |
+      Optional free form multi-line notes that can help others reproduce your results.
    ```
 
    Arbitrary other keys can be added as needed.

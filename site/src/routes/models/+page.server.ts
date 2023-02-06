@@ -2,7 +2,7 @@ import type { ModelData } from '$lib'
 import { compile } from 'mdsvex'
 import { dirname } from 'path'
 import type { PageServerLoad } from './$types'
-import model_stats from './2023-02-03-model-stats.json'
+import model_stats from './model-stats.json'
 
 export const load: PageServerLoad = async () => {
   const yml = import.meta.glob(`$root/models/**/metadata.yml`, {
@@ -29,7 +29,8 @@ export const load: PageServerLoad = async () => {
       const out = await compile(note)
       if (!out?.code) {
         console.error(`Failed to compile model note ${model_name}/${key}`)
-      } else notes[key] = out.code
+        // remove outer p tags
+      } else notes[key] = out.code.replace(/^\s<p>(.*)<\/p>\s$/, `$1`)
     }
   }
 

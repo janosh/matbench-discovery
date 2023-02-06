@@ -184,11 +184,7 @@ def glob_to_df(
 
 
 def load_df_wbm_preds(
-    models: Sequence[str],
-    pbar: bool = True,
-    id_col: str = "material_id",
-    return_model_dfs: bool = False,
-    **kwargs: Any,
+    models: Sequence[str], pbar: bool = True, id_col: str = "material_id", **kwargs: Any
 ) -> pd.DataFrame:
     """Load WBM summary dataframe with model predictions from disk.
 
@@ -197,8 +193,6 @@ def load_df_wbm_preds(
             matbench_discovery.data.PRED_FILENAMES.
         pbar (bool, optional): Whether to show progress bar. Defaults to True.
         id_col (str, optional): Column to set as df.index. Defaults to "material_id".
-        return_model_dfs (bool, optional): Whether to return dict of dataframes for each
-            model dfs. Defaults to False.
         **kwargs: Keyword arguments passed to glob_to_df().
 
     Raises:
@@ -217,9 +211,6 @@ def load_df_wbm_preds(
         pattern = f"models/{PRED_FILENAMES[model_name]}"
         df = glob_to_df(pattern, pbar=False, **kwargs).set_index(id_col)
         dfs[model_name] = df
-
-    if return_model_dfs:
-        return dfs
 
     df_out = df_wbm.copy()
     for model_name, df in dfs.items():

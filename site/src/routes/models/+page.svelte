@@ -55,7 +55,6 @@
             tip_style="white-space: nowrap; font-size: 9pt;"
             max_width="20em"
             style="position: absolute; transform: translate(-45%, -45%); color: gray;"
-            --zoo-tooltip-bg="rgba(0, 0, 0, 0.4)"
           >
             <Icon icon="material-symbols:info-outline" title="Info" height="9pt" />
           </Tooltip>
@@ -99,14 +98,14 @@
   ol {
     display: grid;
     gap: 2em;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   }
   ol > li {
     background-color: rgba(255, 255, 255, 0.05);
     padding: 3pt 10pt 7pt;
     border-radius: 3pt;
     display: grid;
-    align-content: space-between;
+    align-content: start;
   }
   span {
     display: flex;

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-import numpy as np
+import dataframe_image as dfi
 import pandas as pd
 import requests
 import wandb
@@ -11,10 +11,10 @@ import wandb.apis.public
 from pymatviz.utils import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import FIGS, MODELS, WANDB_PATH, today
-from matbench_discovery.data import PRED_FILENAMES, load_df_wbm_preds
-from matbench_discovery.metrics import stable_metrics
+from matbench_discovery import FIGS, WANDB_PATH, today
+from matbench_discovery.data import PRED_FILENAMES
 from matbench_discovery.plots import px
+from matbench_discovery.preds import df_metrics, df_wbm
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
@@ -114,57 +114,47 @@ model_stats["M3GNet + MEGNet"] = model_stats["M3GNet"].copy()
 model_stats["M3GNet + MEGNet"][time_col] = (
     model_stats["MEGNet"][time_col] + model_stats["M3GNet"][time_col]  # type: ignore
 )
-
-df_metrics = pd.DataFrame(model_stats).T
-df_metrics.index.name = "Model"
+model_stats["CGCNN+P"] = {}
 
 
-# %%
-df_wbm = load_df_wbm_preds(list(model_stats))
-e_form_col = "e_form_per_atom_mp2020_corrected"
-each_true_col = "e_above_hull_mp2020_corrected_ppd_mp"
+df_stats = pd.concat([df_metrics, pd.DataFrame(model_stats)])
 
 
 # %%
-for model in model_stats:
-    each_pred = df_wbm[each_true_col] + df_wbm[model] - df_wbm[e_form_col]
-
-    metrics = stable_metrics(df_wbm[each_true_col], each_pred)
-
-    df_metrics.loc[model, list(metrics)] = metrics.values()
-
-
-# %%
-df_styled = (
-    df_metrics.reset_index()
-    .drop(columns=["GPU", "CPU", "Slurm Jobs"])
+styler = (
+    df_metrics.T.reset_index()
     .style.format(precision=2)
     .background_gradient(
         cmap="viridis_r",  # lower is better so reverse color map
         subset=["MAE", "RMSE", "FNR", "FPR"],
     )
-    .background_gradient(
-        cmap="viridis_r",
-        subset=[time_col],
-        gmap=np.log10(df_metrics[time_col].to_numpy()),  # for log scaled color map
-    )
+    # .background_gradient(
+    #     cmap="viridis_r",
+    #     subset=[time_col],
+    #     gmap=np.log10(df_stats[time_col].to_numpy()),  # for log scaled color map
+    # )
     .background_gradient(
         cmap="viridis",  # higher is better
         subset=["DAF", "R2", "Precision", "Recall", "F1", "Accuracy", "TPR", "TNR"],
     )
     .hide(axis="index")
 )
-df_styled
 
-
-# %% export model metrics as styled HTML table
 styles = {
     "": "font-family: sans-serif; border-collapse: collapse;",
     "td, th": "border: 1px solid #ddd; text-align: left; padding: 8px; white-space: nowrap;",
 }
-df_styled.set_table_styles([dict(selector=sel, props=styles[sel]) for sel in styles])
+styler.set_table_styles([dict(selector=sel, props=styles[sel]) for sel in styles])
+styler
 
-# df_styled.to_html(f"{FIGS}/{today}-metrics-table.svelte")
+
+# %% export model metrics as styled HTML table
+# insert svelte {...props} forwarding to the table element
+html = styler.to_html().replace("<table", "<table {...$$props}")
+with open(f"{FIGS}/metrics-table.svelte", "w") as file:
+    file.write(html)
+
+dfi.export(styler, "model-metrics.png", dpi=300)
 
 
 # %% write model metrics to json for use by the website
@@ -175,7 +165,7 @@ df_metrics["missing_percent"] = [
 
 df_metrics.attrs["Total Run Time"] = df_metrics[time_col].sum()
 
-df_metrics.round(2).to_json(f"{MODELS}/{today}-model-stats.json", orient="index")
+# df_metrics.round(2).to_json(f"{MODELS}/model-stats.json", orient="index")
 
 
 # %% plot model run times as pie chart
