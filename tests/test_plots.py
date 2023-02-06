@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.graph_objects as go
@@ -7,14 +9,13 @@ import pytest
 
 from matbench_discovery.data import load_df_wbm_preds
 from matbench_discovery.plots import (
-    AxLine,
     Backend,
-    WhichEnergy,
     cumulative_precision_recall,
     hist_classified_stable_vs_hull_dist,
     rolling_mae_vs_hull_dist,
 )
 
+AxLine = Literal["x", "y", "xy", ""]
 models = ["Wrenformer", "CGCNN", "Voronoi Random Forest"]
 df_wbm = load_df_wbm_preds(models, nrows=100)
 each_true_col = "e_above_hull_mp2020_corrected_ppd_mp"
@@ -110,7 +111,7 @@ def test_rolling_mae_vs_hull_dist(
 def test_hist_classified_stable_vs_hull_dist(
     stability_threshold: float,
     x_lim: tuple[float, float],
-    which_energy: WhichEnergy,
+    which_energy: Literal["true", "pred"],
     backend: Backend,
 ) -> None:
     ax = plt.figure().gca()  # new figure ensures test functions use different axes

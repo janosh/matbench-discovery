@@ -1,9 +1,11 @@
 # %%
+from typing import Final
+
 from pymatviz.utils import save_fig
 
 from matbench_discovery import FIGS, today
 from matbench_discovery.metrics import stable_metrics
-from matbench_discovery.plots import WhichEnergy, hist_classified_stable_vs_hull_dist
+from matbench_discovery.plots import hist_classified_stable_vs_hull_dist
 from matbench_discovery.preds import df_wbm, e_form_col, each_pred_col, each_true_col
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
@@ -20,7 +22,7 @@ See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
 
 # %%
 model_name = "Wrenformer"
-which_energy: WhichEnergy = "true"
+which_energy: Final = "true"
 # std_factor=0,+/-1,+/-2,... changes the criterion for material stability to
 # energy+std_factor*std. energy+std means predicted energy plus the model's uncertainty
 # in the prediction have to be on or below the convex hull to be considered stable. This

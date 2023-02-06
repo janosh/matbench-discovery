@@ -25,7 +25,7 @@ The full set of processing steps used to curate the WBM test set from the raw da
 
   <caption>WBM Formation energy distribution. 524 materials outside green dashed lines were discarded.<br />(zoom out on this plot to see discarded samples)</caption>
   <slot name="hist-e-form-per-atom">
-    <img src="./figs/2022-12-07-hist-wbm-e-form-per-atom.svg" alt="WBM formation energy histogram indicating outlier cutoffs">
+    <img src="./figs/wbm-e-form-per-atom.svg" alt="WBM formation energy histogram indicating outlier cutoffs">
   </slot>
 
 - apply the [`MaterialsProject2020Compatibility`](https://pymatgen.org/pymatgen.entries.compatibility.html#pymatgen.entries.compatibility.MaterialsProject2020Compatibility) energy correction scheme to the formation energies
@@ -99,5 +99,5 @@ The number of stable materials (according to the MP convex hull which is spanned
 > Note: [According to the authors](https://www.nature.com/articles/s41524-020-00481-6#Sec2), the stability rate w.r.t. to the more complete hull constructed from the combined train and test set (MP + WBM) for the first 3 rounds of elemental substitution is 18,479 out of 189,981 crystals ($\approx$ 9.7%).
 
 <slot name="wbm-each-hist">
-  <img src="./figs/2023-01-26-wbm-each-hist.svg" alt="WBM energy above MP convex hull distribution">
+  <img src="./figs/wbm-each-hist.svg" alt="WBM energy above MP convex hull distribution">
 </slot>

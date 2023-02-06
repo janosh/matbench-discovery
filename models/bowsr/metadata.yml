@@ -33,4 +33,6 @@ hyperparams:
     n_iter: 100
 
 notes:
+  description: BOWSR is a Bayesian optimizer with symmetry constraints using a graph deep learning energy model to perform "DFT-free" relaxations of crystal structures.
+  long: The authors show that this iterative approach improves the accuracy of ML-predicted formation energies over single-shot predictions.
   training: Uses same version of MEGNet as standalone MEGNet.

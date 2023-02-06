@@ -21,7 +21,7 @@ from pymatviz import density_scatter
 from pymatviz.utils import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, today
+from matbench_discovery import FIGS, ROOT, today
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.plots import pio
 
@@ -436,6 +436,7 @@ print(f"{n_too_unstable = }")  # n_too_unstable = 22
 fig = df_summary.hist(
     x="e_form_per_atom_wbm", backend="plotly", log_y=True, range_x=[-5.5, 5.5]
 )
+fig_compressed = False
 fig.add_vline(x=e_form_cutoff, line=dict(dash="dash"))
 fig.add_vline(x=-e_form_cutoff, line=dict(dash="dash"))
 fig.add_annotation(
@@ -458,13 +459,13 @@ fig.show(
 # %%
 # no need to store all 250k x values in plot, leads to 1.7 MB file, subsample every 10th
 # point is enough to see the distribution
-if not fig.data[0].compressed:
-    fig.data[0].compressed = True
+if not fig_compressed:
+    fig_compressed = True
     # keep only every 10th data point, round to 3 decimal places to reduce file size
     fig.data[0].x = [round(x, 3) for x in fig.data[0].x[::10]]
 
 # recommended to upload SVG to vecta.io/nano afterwards for compression
-img_path = f"{module_dir}/2022-12-07-hist-wbm-e-form-per-atom"
+img_path = f"{FIGS}/hist-wbm-e-form-per-atom"
 # save_fig(fig, f"{img_path}.svg", width=800, height=300)
 save_fig(fig, f"{img_path}.svelte")
 
