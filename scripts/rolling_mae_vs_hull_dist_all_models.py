@@ -3,7 +3,7 @@ from typing import Final
 
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, ROOT, STATIC
+from matbench_discovery import FIGS, ROOT
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
 from matbench_discovery.preds import df_each_pred, df_metrics, df_wbm, each_true_col
 
@@ -48,12 +48,12 @@ else:
 
     # increase legend handle size and reverse order
     fig.layout.margin = dict(l=5, r=5, t=5, b=55)
-    fig.layout.legend.update(itemsizing="constant")
+    fig.layout.legend.update(itemsizing="constant", bgcolor="rgba(0,0,0,0)")
     fig.show()
 
 
 # %%
 img_name = "rolling-mae-vs-hull-dist-models"
 save_fig(fig, f"{FIGS}/{img_name}.svelte")
-save_fig(fig, f"{STATIC}/{img_name}.webp", scale=3)
+# save_fig(fig, f"{STATIC}/{img_name}.webp", scale=3)
 save_fig(fig, f"{ROOT}/tmp/figures/{img_name}.pdf")

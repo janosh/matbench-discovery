@@ -126,7 +126,7 @@ def test_load_train_test_no_mock(
     # this function runs the download from GitHub raw user content for real
     # hence takes some time and requires being online
     df_wbm = load_train_test("wbm-summary", version=version, cache_dir=tmp_path)
-    assert df_wbm.shape == (256963, 17)
+    assert df_wbm.shape == (256963, 14)
     assert set(df_wbm) > {
         "bandgap_pbe",
         "e_form_per_atom_mp2020_corrected",
@@ -173,8 +173,7 @@ def test_as_dict_handler() -> None:
 
 
 def test_df_wbm() -> None:
-    assert len(df_wbm) == 256963
-    assert df_wbm.shape >= (256963, 18)
+    assert df_wbm.shape == (256963, 14)
     assert df_wbm.index.name == "material_id"
     assert set(df_wbm) > {"bandgap_pbe", "formula", "material_id"}
 

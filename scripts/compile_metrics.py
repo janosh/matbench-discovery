@@ -11,7 +11,7 @@ import wandb.apis.public
 from pymatviz.utils import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import FIGS, WANDB_PATH, today
+from matbench_discovery import FIGS, ROOT, WANDB_PATH, today
 from matbench_discovery.data import PRED_FILENAMES
 from matbench_discovery.plots import px
 from matbench_discovery.preds import df_metrics, df_wbm
@@ -154,7 +154,7 @@ html = styler.to_html().replace("<table", "<table {...$$props}")
 with open(f"{FIGS}/metrics-table.svelte", "w") as file:
     file.write(html)
 
-dfi.export(styler, "model-metrics.png", dpi=300)
+dfi.export(styler, f"{ROOT}/tmp/figures/model-metrics.png", dpi=300)
 
 
 # %% write model metrics to json for use by the website

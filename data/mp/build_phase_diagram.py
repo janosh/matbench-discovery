@@ -10,6 +10,7 @@ from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedEntry, ComputedStructureEntry
 from pymatgen.ext.matproj import MPRester
+from tqdm import tqdm
 
 from matbench_discovery import ROOT, today
 from matbench_discovery.energy import get_e_form_per_atom, get_elemental_ref_entries
@@ -17,32 +18,38 @@ from matbench_discovery.energy import get_e_form_per_atom, get_elemental_ref_ent
 module_dir = os.path.dirname(__file__)
 
 
-# %%
-all_mp_computed_structure_entries = MPRester().get_entries("")  # run on 2022-09-16
+# %% run on 2022-09-16 and again on 2023-02-07
+all_mp_computed_structure_entries = MPRester().get_entries("")
 
 # save all ComputedStructureEntries to disk
-pd.Series(
-    {e.entry_id: e for e in all_mp_computed_structure_entries}
-).drop_duplicates().to_json(  # mp-15590 appears twice so we drop_duplicates()
+# mp-15590 appears twice so we drop_duplicates()
+df = pd.DataFrame(all_mp_computed_structure_entries, columns=["entry"])
+df.index.name = "material_id"
+df.index = [e.entry_id for e in df.entry]
+df.reset_index().to_json(
     f"{module_dir}/{today}-mp-computed-structure-entries.json.gz",
     default_handler=lambda x: x.as_dict(),
 )
 
 
 # %%
-data_path = f"{module_dir}/2022-09-16-mp-computed-structure-entries.json.gz"
+data_path = f"{module_dir}/2023-02-07-mp-computed-structure-entries.json.gz"
 df = pd.read_json(data_path).set_index("material_id")
-# drop the structure, just load ComputedEntry
-mp_computed_entries = df.entry.map(ComputedEntry.from_dict).to_dict()
 
-print(f"{len(mp_computed_entries) = :,}")
-# len(mp_computed_entries) = 146,323
+# drop the structure, just load ComputedEntry, makes the PPD faster to build and load
+mp_computed_entries = [ComputedEntry.from_dict(x) for x in tqdm(df.entry)]
+
+print(f"{len(mp_computed_entries) = :,} on {today}")
+# len(mp_computed_entries) = 146,323 on 2022-09-16
+# len(mp_computed_entries) = 154,719 on 2023-02-07
 
 
 # %% build phase diagram with MP entries only
-ppd_mp = PatchedPhaseDiagram(mp_computed_entries)
+ppd_mp = PatchedPhaseDiagram(mp_computed_entries, verbose=True)
+print(f"{ppd_mp} on {today}")
 # prints:
-# PatchedPhaseDiagram covering 44805 sub-spaces
+# PatchedPhaseDiagram covering 44805 sub-spaces on 2022-09-16
+# PatchedPhaseDiagram covering 46216 sub-spaces on 2023-02-07
 
 # save MP PPD to disk
 with gzip.open(f"{module_dir}/{today}-ppd-mp.pkl.gz", "wb") as zip_file:

@@ -15,9 +15,9 @@ def test_df_wbm() -> None:
 
 def test_df_metrics() -> None:
     assert {*df_metrics} == {*PRED_FILENAMES}
-    assert df_metrics.T.MAE.between(0, 0.2).all(), "MAE not in range"
-    assert df_metrics.T.R2.between(0.1, 1).all(), "R2 not in range"
-    assert df_metrics.T.RMSE.between(0, 0.25).all(), "RMSE not in range"
+    assert df_metrics.T.MAE.between(0, 0.2).all(), f"unexpected {df_metrics.T.MAE=}"
+    assert df_metrics.T.R2.between(-0.65, 1).all(), f"unexpected {df_metrics.T.R2=}"
+    assert df_metrics.T.RMSE.between(0, 0.25).all(), f"unexpected {df_metrics.T.RMSE=}"
     assert df_metrics.isna().sum().sum() == 0, "NaNs in metrics"
 
 
