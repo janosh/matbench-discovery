@@ -64,6 +64,60 @@ references:
   URL: https://www.nature.com/articles/s41524-020-00362-y
   volume: '6'
 
+- id: bartok_machine_2018
+  abstract: >-
+    The success of first-principles electronic-structure calculation for
+    predictive modeling in chemistry, solid-state physics, and materials science
+    is constrained by the limitations on simulated length scales and timescales
+    due to the computational cost and its scaling. Techniques based on
+    machine-learning ideas for interpolating the Born-Oppenheimer potential
+    energy surface without explicitly describing electrons have recently shown
+    great promise, but accurately and efficiently fitting the physically
+    relevant space of configurations remains a challenging goal. Here, we
+    present a Gaussian approximation potential for silicon that achieves this
+    milestone, accurately reproducing density-functional-theory reference
+    results for a wide range of observable properties, including crystal,
+    liquid, and amorphous bulk phases, as well as point, line, and plane
+    defects. We demonstrate that this new potential enables calculations such as
+    finite-temperature phase-boundary lines, self-diffusivity in the liquid,
+    formation of the amorphous by slow quench, and dynamic brittle fracture, all
+    of which are very expensive with a first-principles method. We show that the
+    uncertainty quantification inherent to the Gaussian process regression
+    framework gives a qualitative estimate of the potential’s accuracy for a
+    given atomic configuration. The success of this model shows that it is
+    indeed possible to create a useful machine-learning-based interatomic
+    potential that comprehensively describes a material on the atomic scale and
+    serves as a template for the development of such models in the future.
+  accessed:
+    - year: 2023
+      month: 2
+      day: 8
+  author:
+    - family: Bartók
+      given: Albert P.
+    - family: Kermode
+      given: James
+    - family: Bernstein
+      given: Noam
+    - family: Csányi
+      given: Gábor
+  citation-key: bartok_machine_2018
+  container-title: Physical Review X
+  container-title-short: Phys. Rev. X
+  DOI: 10.1103/PhysRevX.8.041048
+  issue: '4'
+  issued:
+    - year: 2018
+      month: 12
+      day: 14
+  page: '041048'
+  publisher: American Physical Society
+  source: APS
+  title: Machine Learning a General-Purpose Interatomic Potential for Silicon
+  type: article-journal
+  URL: https://link.aps.org/doi/10.1103/PhysRevX.8.041048
+  volume: '8'
+
 - id: behler_generalized_2007
   abstract: >-
     The accurate description of chemical processes often requires the use of
@@ -164,6 +218,87 @@ references:
   type: article
   URL: http://arxiv.org/abs/2210.13587
 
+- id: chanussot_open_2021
+  abstract: >-
+    Catalyst discovery and optimization is key to solving many societal and
+    energy challenges including solar fuel synthesis, long-term energy storage,
+    and renewable fertilizer production. Despite considerable effort by the
+    catalysis community to apply machine learning models to the computational
+    catalyst discovery process, it remains an open challenge to build models
+    that can generalize across both elemental compositions of surfaces and
+    adsorbate identity/configurations, perhaps because datasets have been
+    smaller in catalysis than in related fields. To address this, we developed
+    the OC20 dataset, consisting of 1,281,040 density functional theory (DFT)
+    relaxations (∼264,890,000 single-point evaluations) across a wide swath of
+    materials, surfaces, and adsorbates (nitrogen, carbon, and oxygen
+    chemistries). We supplemented this dataset with randomly perturbed
+    structures, short timescale molecular dynamics, and electronic structure
+    analyses. The dataset comprises three central tasks indicative of day-to-day
+    catalyst modeling and comes with predefined train/validation/test splits to
+    facilitate direct comparisons with future model development efforts. We
+    applied three state-of-the-art graph neural network models (CGCNN, SchNet,
+    and DimeNet++) to each of these tasks as baseline demonstrations for the
+    community to build on. In almost every task, no upper limit on model size
+    was identified, suggesting that even larger models are likely to improve on
+    initial results. The dataset and baseline models are both provided as open
+    resources as well as a public leader board to encourage community
+    contributions to solve these important tasks.
+  accessed:
+    - year: 2023
+      month: 2
+      day: 8
+  author:
+    - family: Chanussot
+      given: Lowik
+    - family: Das
+      given: Abhishek
+    - family: Goyal
+      given: Siddharth
+    - family: Lavril
+      given: Thibaut
+    - family: Shuaibi
+      given: Muhammed
+    - family: Riviere
+      given: Morgane
+    - family: Tran
+      given: Kevin
+    - family: Heras-Domingo
+      given: Javier
+    - family: Ho
+      given: Caleb
+    - family: Hu
+      given: Weihua
+    - family: Palizhati
+      given: Aini
+    - family: Sriram
+      given: Anuroop
+    - family: Wood
+      given: Brandon
+    - family: Yoon
+      given: Junwoong
+    - family: Parikh
+      given: Devi
+    - family: Zitnick
+      given: C. Lawrence
+    - family: Ulissi
+      given: Zachary
+  citation-key: chanussot_open_2021
+  container-title: ACS Catalysis
+  container-title-short: ACS Catal.
+  DOI: 10.1021/acscatal.0c04525
+  issue: '10'
+  issued:
+    - year: 2021
+      month: 5
+      day: 21
+  page: 6059-6072
+  publisher: American Chemical Society
+  source: ACS Publications
+  title: Open Catalyst 2020 (OC20) Dataset and Community Challenges
+  type: article-journal
+  URL: https://doi.org/10.1021/acscatal.0c04525
+  volume: '11'
+
 - id: chen_graph_2019
   abstract: >-
     Graph networks are a new machine learning (ML) paradigm that supports both
@@ -224,37 +359,49 @@ references:
 - id: chen_universal_2022
   abstract: >-
     Interatomic potentials (IAPs), which describe the potential energy surface
-    of a collection of atoms, are a fundamental input for atomistic simulations.
-    However, existing IAPs are either fitted to narrow chemistries or too
-    inaccurate for general applications. Here, we report a universal IAP for
-    materials based on graph neural networks with three-body interactions
-    (M3GNet). The M3GNet IAP was trained on the massive database of structural
-    relaxations performed by the Materials Project over the past 10 years and
-    has broad applications in structural relaxation, dynamic simulations and
-    property prediction of materials across diverse chemical spaces. About 1.8
-    million potentially stable materials were identified from a screening of 31
-    million hypothetical crystal structures, demonstrating a machine
+    of atoms, are a fundamental input for atomistic simulations. However,
+    existing IAPs are either fitted to narrow chemistries or too inaccurate for
+    general applications. Here we report a universal IAP for materials based on
+    graph neural networks with three-body interactions (M3GNet). The M3GNet IAP
+    was trained on the massive database of structural relaxations performed by
+    the Materials Project over the past ten years and has broad applications in
+    structural relaxation, dynamic simulations and property prediction of
+    materials across diverse chemical spaces. About 1.8 million materials from a
+    screening of 31 million hypothetical crystal structures were identified to
+    be potentially stable against existing Materials Project crystals based on
+    M3GNet energies. Of the top 2,000 materials with the lowest energies above
+    the convex hull, 1,578 were verified to be stable using density functional
+    theory calculations. These results demonstrate a machine
     learning-accelerated pathway to the discovery of synthesizable materials
     with exceptional properties.
   accessed:
-    - year: 2022
+    - year: 2023
       month: 2
-      day: 9
+      day: 8
   author:
     - family: Chen
       given: Chi
     - family: Ong
       given: Shyue Ping
   citation-key: chen_universal_2022
-  container-title: arXiv:2202.02450 [cond-mat, physics:physics]
+  container-title: Nature Computational Science
+  container-title-short: Nat Comput Sci
+  DOI: 10.1038/s43588-022-00349-3
+  ISSN: 2662-8457
+  issue: '11'
   issued:
     - year: 2022
-      month: 2
-      day: 4
-  source: arXiv.org
-  title: A Universal Graph Deep Learning Interatomic Potential for the Periodic Table
+      month: 11
+  language: en
+  license: 2022 The Author(s), under exclusive licence to Springer Nature America, Inc.
+  number: '11'
+  page: 718-728
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: A universal graph deep learning interatomic potential for the periodic table
   type: article-journal
-  URL: http://arxiv.org/abs/2202.02450
+  URL: https://www.nature.com/articles/s43588-022-00349-3
+  volume: '2'
 
 - id: davies_computational_2016
   abstract: "Forming a four-component compound from the first 103 elements of the periodic table results in more than 1012 combinations. Such a materials space is intractable to high-throughput experiment or first-principle computation. We\_introduce a framework to address this problem and quantify how many materials can exist. We apply principles of valency and electronegativity to filter chemically implausible compositions, which reduces the inorganic quaternary space to 1010 combinations. We demonstrate that estimates of band gaps and absolute electron energies can be made simply on the basis of the chemical composition and apply this to the search for new semiconducting materials to support the photoelectrochemical splitting of water. We show the applicability to predicting crystal structure by analogy with known compounds, including exploration of the phase space for ternary combinations that form a perovskite lattice. Computer screening reproduces known perovskite materials and predicts the feasibility of thousands more. Given the simplicity of the approach, large-scale searches can be performed on a single workstation."
@@ -340,34 +487,83 @@ references:
   title-short: ImageNet
   type: paper-conference
 
+- id: deringer_general-purpose_2020
+  abstract: >-
+    Elemental phosphorus is attracting growing interest across fundamental and
+    applied fields of research. However, atomistic simulations of phosphorus
+    have remained an outstanding challenge. Here, we show that a universally
+    applicable force field for phosphorus can be created by machine learning
+    (ML) from a suitably chosen ensemble of quantum-mechanical results. Our
+    model is fitted to density-functional theory plus many-body dispersion
+    (DFT + MBD) data; its accuracy is demonstrated for the exfoliation of black
+    and violet phosphorus (yielding monolayers of “phosphorene” and
+    “hittorfene”); its transferability is shown for the transition between the
+    molecular and network liquid phases. An application to a phosphorene
+    nanoribbon on an experimentally relevant length scale exemplifies the power
+    of accurate and flexible ML-driven force fields for next-generation
+    materials modelling. The methodology promises new insights into phosphorus
+    as well as other structurally complex, e.g., layered solids that are
+    relevant in diverse areas of chemistry, physics, and materials science.
+  accessed:
+    - year: 2023
+      month: 2
+      day: 8
+  author:
+    - family: Deringer
+      given: Volker L.
+    - family: Caro
+      given: Miguel A.
+    - family: Csányi
+      given: Gábor
+  citation-key: deringer_general-purpose_2020
+  container-title: Nature Communications
+  container-title-short: Nat Commun
+  DOI: 10.1038/s41467-020-19168-z
+  ISSN: 2041-1723
+  issue: '1'
+  issued:
+    - year: 2020
+      month: 10
+      day: 29
+  language: en
+  license: 2020 The Author(s)
+  number: '1'
+  page: '5461'
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: >-
+    A general-purpose machine-learning force field for bulk and nanostructured
+    phosphorus
+  type: article-journal
+  URL: https://www.nature.com/articles/s41467-020-19168-z
+  volume: '11'
+
 - id: dunn_benchmarking_2020
   abstract: >-
     We present a benchmark test suite and an automated machine learning
     procedure for evaluating supervised machine learning (ML) models for
     predicting properties of inorganic bulk materials. The test suite, Matbench,
-    is a set of 13 ML tasks that range in size from 312 to 132k samples and
+    is a set of 13 ML tasks that range in size from 312 to 132k samples and
     contain data from 10 density functional theory-derived and experimental
     sources. Tasks include predicting optical, thermal, electronic,
-    thermodynamic, tensile, and elastic properties given a materials composition
-    and/or crystal structure. The reference algorithm, Automatminer, is a
-    highly-extensible, fully-automated ML pipeline for predicting materials
+    thermodynamic, tensile, and elastic properties given a material’s
+    composition and/or crystal structure. The reference algorithm, Automatminer,
+    is a highly-extensible, fully automated ML pipeline for predicting materials
     properties from materials primitives (such as composition and crystal
     structure) without user intervention or hyperparameter tuning. We test
     Automatminer on the Matbench test suite and compare its predictive power
     with state-of-the-art crystal graph neural networks and a traditional
     descriptor-based Random Forest model. We find Automatminer achieves the best
     performance on 8 of 13 tasks in the benchmark. We also show our test suite
-    is capable of exposing predictive advantages of each algorithm - namely,
-    that crystal graph methods appear to outperform traditional machine learning
-    methods given ~10^4 or greater data points. The pre-processed, ready-to-use
-    Matbench tasks and the Automatminer source code are open source and
-    available online (http://hackingmaterials.lbl.gov/automatminer/). We
-    encourage evaluating new materials ML algorithms on the MatBench benchmark
-    and comparing them against the latest version of Automatminer.
+    is capable of exposing predictive advantages of each algorithm—namely, that
+    crystal graph methods appear to outperform traditional machine learning
+    methods given ~104 or greater data points. We encourage evaluating materials
+    ML algorithms on the Matbench benchmark and comparing them against the
+    latest version of Automatminer.
   accessed:
-    - year: 2020
-      month: 8
-      day: 26
+    - year: 2023
+      month: 2
+      day: 8
   author:
     - family: Dunn
       given: Alexander
@@ -380,110 +576,118 @@ references:
     - family: Jain
       given: Anubhav
   citation-key: dunn_benchmarking_2020
-  container-title: arXiv:2005.00707 [cond-mat, physics:physics]
+  container-title: npj Computational Materials
+  container-title-short: npj Comput Mater
+  DOI: 10.1038/s41524-020-00406-3
+  ISSN: 2057-3960
+  issue: '1'
   issued:
     - year: 2020
-      month: 5
-      day: 7
-  note: 'ZSCC: 0000001'
-  source: arXiv.org
+      month: 9
+      day: 15
+  language: en
+  license: >-
+    2020 This is a U.S. government work and not under copyright protection in
+    the U.S.; foreign copyright protection may apply
+  number: '1'
+  page: 1-10
+  publisher: Nature Publishing Group
+  source: www.nature.com
   title: >-
-    Benchmarking Materials Property Prediction Methods: The Matbench Test Set
-    and Automatminer Reference Algorithm
-  title-short: Benchmarking Materials Property Prediction Methods
+    Benchmarking materials property prediction methods: the Matbench test set
+    and Automatminer reference algorithm
+  title-short: Benchmarking materials property prediction methods
   type: article-journal
-  URL: http://arxiv.org/abs/2005.00707
+  URL: https://www.nature.com/articles/s41524-020-00406-3
+  volume: '6'
 
 - id: gibson_data-augmentation_2022
   abstract: >-
-    Computational materials discovery has continually grown in utility over the
-    past decade due to advances in computing power and crystal structure
-    prediction algorithms (CSPA). However, the computational cost of the
-    \textit{ab initio} calculations required by CSPA limits its utility to small
-    unit cells, reducing the compositional and structural space the algorithms
-    can explore. Past studies have bypassed many unneeded \textit{ab initio}
-    calculations by utilizing machine learning methods to predict formation
-    energy and determine the stability of a material. Specifically, graph neural
-    networks display high fidelity in predicting formation energy. Traditionally
-    graph neural networks are trained on large data sets of relaxed structures.
-    Unfortunately, the geometries of unrelaxed candidate structures produced by
-    CSPA often deviate from the relaxed state, which leads to poor predictions
-    hindering the model's ability to filter energetically unfavorable prior to
-    \textit{ab initio} evaluation. This work shows that the prediction error on
-    relaxed structures reduces as training progresses, while the prediction
-    error on unrelaxed structures increases, suggesting an inverse correlation
-    between relaxed and unrelaxed structure prediction accuracy. To remedy this
-    behavior, we propose a simple, physically motivated, computationally cheap
-    perturbation technique that augments training data to improve predictions on
-    unrelaxed structures dramatically. On our test set consisting of 623 Nb-Sr-H
-    hydride structures, we found that training a crystal graph convolutional
-    neural networks, utilizing our augmentation method, reduced the MAE of
-    formation energy prediction by 66\% compared to training with only relaxed
-    structures. We then show how this error reduction can accelerates CSPA by
-    improving the model's ability to filter out energetically unfavorable
-    structures accurately.
+    Computational materials discovery has grown in utility over the past decade
+    due to advances in computing power and crystal structure prediction
+    algorithms (CSPA). However, the computational cost of the ab initio
+    calculations required by CSPA limits its utility to small unit cells,
+    reducing the compositional and structural space the algorithms can explore.
+    Past studies have bypassed unneeded ab initio calculations by utilizing
+    machine learning to predict the stability of a material. Specifically, graph
+    neural networks trained on large datasets of relaxed structures display high
+    fidelity in predicting formation energy. Unfortunately, the geometries of
+    structures produced by CSPA deviate from the relaxed state, which leads to
+    poor predictions, hindering the model’s ability to filter unstable material.
+    To remedy this behavior, we propose a simple, physically motivated,
+    computationally efficient perturbation technique that augments training
+    data, improving predictions on unrelaxed structures by 66%. Finally, we show
+    how this error reduction can accelerate CSPA.
   accessed:
-    - year: 2022
-      month: 4
-      day: 7
+    - year: 2023
+      month: 2
+      day: 10
   author:
     - family: Gibson
-      given: Jason B.
+      given: Jason
     - family: Hire
-      given: Ajinkya C.
+      given: Ajinkya
     - family: Hennig
       given: Richard G.
   citation-key: gibson_data-augmentation_2022
-  container-title: arXiv:2202.13947 [physics]
+  container-title: npj Computational Materials
+  container-title-short: npj Comput Mater
+  DOI: 10.1038/s41524-022-00891-8
+  ISSN: 2057-3960
+  issue: '1'
   issued:
     - year: 2022
-      month: 2
-      day: 28
-  source: arXiv.org
+      month: 9
+      day: 30
+  language: en
+  license: >-
+    2022 This is a U.S. Government work and not under copyright protection in
+    the US; foreign copyright protection may apply
+  number: '1'
+  page: 1-7
+  publisher: Nature Publishing Group
+  source: www.nature.com
   title: >-
-    Data-Augmentation for Graph Neural Network Learning of the Relaxed Energies
-    of Unrelaxed Structures
+    Data-augmentation for graph neural network learning of the relaxed energies
+    of unrelaxed structures
   type: article-journal
-  URL: http://arxiv.org/abs/2202.13947
+  URL: https://www.nature.com/articles/s41524-022-00891-8
+  volume: '8'
 
 - id: goodall_predicting_2020
-  abstract: >-
-    Machine learning has the potential to accelerate materials discovery by
-    accurately predicting materials properties at a low computational cost.
-    However, the model inputs remain a key stumbling block. Current methods
-    typically use descriptors constructed from knowledge of either the full
-    crystal structure -- therefore only applicable to materials with already
-    characterised structures -- or structure-agnostic fixed-length
-    representations hand-engineered from the stoichiometry. We develop a machine
-    learning approach that takes only the stoichiometry as input and
-    automatically learns appropriate and systematically improvable descriptors
-    from data. Our key insight is to treat the stoichiometric formula as a dense
-    weighted graph between elements. Compared to the state of the art for
-    structure-agnostic methods, our approach achieves lower errors with less
-    data.
+  abstract: "Machine learning has the potential to accelerate materials discovery by accurately predicting materials properties at a low computational cost. However, the model inputs remain a key stumbling block. Current methods typically use descriptors constructed from knowledge of either the full crystal structure\_—\_therefore only applicable to materials with already characterised structures\_—\_or structure-agnostic fixed-length representations hand-engineered from the stoichiometry. We develop a machine learning approach that takes only the stoichiometry as input and automatically learns appropriate and systematically improvable descriptors from data. Our key insight is to treat the stoichiometric formula as a dense weighted graph between elements. Compared to the state of the art for structure-agnostic methods, our approach achieves lower errors with less data."
   accessed:
-    - year: 2020
-      month: 8
-      day: 1
+    - year: 2023
+      month: 2
+      day: 8
   author:
     - family: Goodall
       given: Rhys E. A.
     - family: Lee
       given: Alpha A.
   citation-key: goodall_predicting_2020
-  container-title: arXiv:1910.00617 [cond-mat, physics:physics]
+  container-title: Nature Communications
+  container-title-short: Nat Commun
+  DOI: 10.1038/s41467-020-19964-7
+  ISSN: 2041-1723
+  issue: '1'
   issued:
     - year: 2020
-      month: 5
-      day: 19
-  note: 'ZSCC: NoCitationData[s0]'
-  source: arXiv.org
+      month: 12
+      day: 8
+  language: en
+  license: 2020 The Author(s)
+  number: '1'
+  page: '6280'
+  publisher: Nature Publishing Group
+  source: www.nature.com
   title: >-
-    Predicting materials properties without crystal structure: Deep
+    Predicting materials properties without crystal structure: deep
     representation learning from stoichiometry
   title-short: Predicting materials properties without crystal structure
   type: article-journal
-  URL: http://arxiv.org/abs/1910.00617
+  URL: https://www.nature.com/articles/s41467-020-19964-7
+  volume: '11'
 
 - id: goodall_rapid_2022
   accessed:
@@ -682,6 +886,140 @@ references:
   type: report
   URL: >-
     https://chemrxiv.org/engage/chemrxiv/article-details/633660f9114b7ebf1a229015
+
+- id: saal_materials_2013
+  abstract: >-
+    High-throughput density functional theory (HT DFT) is fast becoming a
+    powerful tool for accelerating materials design and discovery by the
+    amassing tens and even hundreds of thousands of DFT calculations in large
+    databases. Complex materials problems can be approached much more
+    efficiently and broadly through the sheer quantity of structures and
+    chemistries available in such databases. Our HT DFT database, the Open
+    Quantum Materials Database (OQMD), contains over 200,000 DFT calculated
+    crystal structures and will be freely available for public use at
+    http://oqmd.org. In this review, we describe the OQMD and its use in five
+    materials problems, spanning a wide range of applications and materials
+    types: (I) Li-air battery combination catalyst/electrodes, (II) Li-ion
+    battery anodes, (III) Li-ion battery cathode coatings reactive with HF, (IV)
+    Mg-alloy long-period stacking ordered (LPSO) strengthening precipitates, and
+    (V) training a machine learning model to predict new stable ternary
+    compounds.
+  accessed:
+    - year: 2023
+      month: 2
+      day: 8
+  author:
+    - family: Saal
+      given: James E.
+    - family: Kirklin
+      given: Scott
+    - family: Aykol
+      given: Muratahan
+    - family: Meredig
+      given: Bryce
+    - family: Wolverton
+      given: C.
+  citation-key: saal_materials_2013
+  container-title: JOM
+  container-title-short: JOM
+  DOI: 10.1007/s11837-013-0755-4
+  ISSN: 1543-1851
+  issue: '11'
+  issued:
+    - year: 2013
+      month: 11
+      day: 1
+  language: en
+  page: 1501-1509
+  source: Springer Link
+  title: >-
+    Materials Design and Discovery with High-Throughput Density Functional
+    Theory: The Open Quantum Materials Database (OQMD)
+  title-short: >-
+    Materials Design and Discovery with High-Throughput Density Functional
+    Theory
+  type: article-journal
+  URL: https://doi.org/10.1007/s11837-013-0755-4
+  volume: '65'
+
+- id: tran_open_2022
+  abstract: >-
+    The development of machine learning models for electrocatalysts requires a
+    broad set of training data to enable their use across a wide variety of
+    materials. One class of materials that currently lacks sufficient training
+    data is oxides, which are critical for the development of Oxygen Evolution
+    Reaction (OER) catalysts. To address this, we developed the Open Catalyst
+    2022 (OC22) dataset, consisting of 62,331 Density Functional Theory (DFT)
+    relaxations (~9,854,504 single point calculations) across a range of oxide
+    materials, coverages, and adsorbates. We define generalized total energy
+    tasks that enable property prediction beyond adsorption energies; we test
+    baseline performance of several graph neural networks; and we provide
+    pre-defined dataset splits to establish clear benchmarks for future efforts.
+    In the most general task, GemNet-OC sees a ~32% improvement in energy
+    predictions when combining the chemically dissimilar Open Catalyst 2020
+    Dataset (OC20) and OC22 datasets via fine-tuning. Similarly, we achieved a
+    ~19% improvement in total energy predictions on OC20 and a ~9% improvement
+    in force predictions in OC22 when using joint training. We demonstrate the
+    practical utility of a top performing model by capturing literature
+    adsorption energies and important OER scaling relationships. We expect OC22
+    to provide an important benchmark for models seeking to incorporate
+    intricate long-range electrostatic and magnetic interactions in oxide
+    surfaces. The dataset and baseline models are open sourced, and a public
+    leaderboard has been made available to encourage continued community
+    developments on the total energy tasks and data.
+  accessed:
+    - year: 2023
+      month: 2
+      day: 8
+  author:
+    - family: Tran
+      given: Richard
+    - family: Lan
+      given: Janice
+    - family: Shuaibi
+      given: Muhammed
+    - family: Wood
+      given: Brandon M.
+    - family: Goyal
+      given: Siddharth
+    - family: Das
+      given: Abhishek
+    - family: Heras-Domingo
+      given: Javier
+    - family: Kolluru
+      given: Adeesh
+    - family: Rizvi
+      given: Ammar
+    - family: Shoghi
+      given: Nima
+    - family: Sriram
+      given: Anuroop
+    - family: Therrien
+      given: Felix
+    - family: Abed
+      given: Jehad
+    - family: Voznyy
+      given: Oleksandr
+    - family: Sargent
+      given: Edward H.
+    - family: Ulissi
+      given: Zachary
+    - family: Zitnick
+      given: C. Lawrence
+  citation-key: tran_open_2022
+  DOI: 10.48550/arXiv.2206.08917
+  issued:
+    - year: 2022
+      month: 11
+      day: 4
+  number: arXiv:2206.08917
+  publisher: arXiv
+  source: arXiv.org
+  title: >-
+    The Open Catalyst 2022 (OC22) Dataset and Challenges for Oxide
+    Electrocatalysts
+  type: article
+  URL: http://arxiv.org/abs/2206.08917
 
 - id: wang_predicting_2021
   abstract: >-

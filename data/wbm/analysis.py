@@ -1,6 +1,7 @@
 # %%
 import os
 
+import numpy as np
 import pandas as pd
 from pymatviz import count_elements, ptable_heatmap_plotly
 from pymatviz.utils import save_fig
@@ -16,13 +17,13 @@ Compare MP and WBM elemental prevalence. Starting with WBM, MP below.
 
 module_dir = os.path.dirname(__file__)
 print(f"{pio.templates.default=}")
+about_data_page = f"{ROOT}/site/src/routes/about-the-test-set"
 
 
 # %%
 wbm_elem_counts = count_elements(df_wbm.formula).astype(int)
 
-out_elem_counts = f"{ROOT}/site/src/routes/about-the-test-set/wbm-element-counts.json"
-# wbm_elem_counts.to_json(out_elem_counts)
+# wbm_elem_counts.to_json(f"{about_data_page}/wbm-element-counts.json")
 
 
 # %%
@@ -46,17 +47,14 @@ wbm_fig.show()
 
 # %%
 wbm_fig.write_image(f"{module_dir}/figs/wbm-elements.svg", width=1000, height=500)
-save_fig(wbm_fig, f"{FIGS}/{today}-wbm-elements.svelte")
+# save_fig(wbm_fig, f"{FIGS}/wbm-elements.svelte")
 
 
 # %% load MP training set
 df = pd.read_json(f"{module_dir}/../mp/2022-08-13-mp-energies.json.gz")
 mp_elem_counts = count_elements(df.formula_pretty).astype(int)
 
-# mp_elem_counts.to_json(
-#     f"{ROOT}/site/src/routes/about-the-test-set/{today}-mp-element-counts.json"
-# )
-mp_elem_counts.describe()
+# mp_elem_counts.to_json(f"{about_data_page}/mp-element-counts.json")
 
 
 # %%
@@ -80,7 +78,7 @@ mp_fig.show()
 
 # %%
 mp_fig.write_image(f"{module_dir}/figs/{today}-mp-elements.svg", width=1000, height=500)
-# save_fig(mp_fig, f"{FIGS}/{today}-mp-elements.svelte")
+# save_fig(mp_fig, f"{FIGS}/mp-elements.svelte")
 
 
 # %% histogram of energy above MP convex hull for WBM
@@ -88,12 +86,12 @@ col = "e_above_hull_mp2020_corrected_ppd_mp"
 # col = "e_form_per_atom_mp2020_corrected"
 mean, std = df_wbm[col].mean(), df_wbm[col].std()
 
-fig = df_wbm[col].hist(
-    bins=100,
-    backend="plotly",
-    range_x=[mean - 2 * std, mean + 2 * std],
-    template="plotly_dark",
-)
+range_x = (mean - 2 * std, mean + 2 * std)
+counts, bins = np.histogram(df_wbm[col], bins=150, range=range_x)
+x_label = "WBM energy above MP convex hull (eV/atom)"
+df_hist = pd.DataFrame([counts, bins], index=["count", x_label]).T
+
+fig = df_hist.plot.area(x=x_label, y="count", backend="plotly", range_x=range_x)
 
 if col.startswith("e_above_hull"):
     n_stable = sum(df_wbm[col] <= 0)
@@ -108,25 +106,20 @@ if col.startswith("e_above_hull"):
     )
     fig.update_layout(title=dict(text=title, x=0.5, y=0.95))
 
-fig.update_layout(showlegend=False, paper_bgcolor="rgba(0,0,0,0)")
-fig.update_xaxes(title="WBM energy above MP convex hull (eV/atom)")
+fig.update_layout(showlegend=False)
 
-for x_pos, label in zip(
-    [mean, mean + std, mean - std],
-    [f"{mean = :.2f}", f"{mean + std = :.2f}", f"{mean - std = :.2f}"],
+for x_pos, label in (
+    (mean, f"{mean = :.2f}"),
+    (mean - std, f"{mean - std = :.2f}"),
+    (mean + std, f"{mean + std = :.2f}"),
 ):
-    anno = dict(text=label, yshift=-10, xshift=5)
+    anno = dict(text=label, yshift=-10, xshift=-5, xanchor="right")
     fig.add_vline(x=x_pos, line=dict(width=1, dash="dash"), annotation=anno)
 
 fig.show()
 
-
-# subsample x
-for trace in fig.data:
-    trace.x = trace.x[::8]
-
-save_fig(fig, f"{FIGS}/{today}-wbm-each-hist.svelte")
-save_fig(fig, f"./figs/{today}-wbm-each-hist.svg", width=1000, height=500)
+save_fig(fig, f"{FIGS}/wbm-each-hist.svelte")
+save_fig(fig, "./figs/wbm-each-hist.svg", width=1000, height=500)
 
 
 # %%
@@ -158,4 +151,4 @@ for symbol, e_per_atom, *_, num in df_ref.itertuples(index=False):
 
 fig.show()
 
-save_fig(fig, f"{FIGS}/{today}-mp-elemental-ref-energies.svelte")
+save_fig(fig, f"{FIGS}/mp-elemental-ref-energies.svelte")

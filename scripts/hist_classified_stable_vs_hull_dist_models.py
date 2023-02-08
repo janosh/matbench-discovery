@@ -31,7 +31,8 @@ facet_col = "Model"
 
 df_melt = df_wbm.melt(
     id_vars=hover_cols,
-    value_vars=models,
+    # value_vars=models,
+    value_vars=list(df_metrics),
     var_name=facet_col,
     value_name=e_form_preds,
 )
@@ -46,7 +47,7 @@ backend: Final = "plotly"
 rows, cols = len(models) // 2, 2
 which_energy: Final = "true"
 kwds = (
-    dict(facet_col=facet_col, facet_col_wrap=cols, barmode="stack")
+    dict(facet_col=facet_col, facet_col_wrap=cols)
     if backend == "plotly"
     else dict(by=facet_col, figsize=(20, 20), layout=(rows, cols), bins=500)
 )
@@ -106,13 +107,12 @@ else:
     #     trace.x = trace.x[::10]
 
     # increase height of figure
-    fig.show(height=800)
+    fig.show()
 
 
 # %%
 img_name = f"hist-{which_energy}-energy-vs-hull-dist-models"
 # save_fig(fig, f"{FIGS}/{img_name}.svelte")
-save_fig(fig, f"{STATIC}/{img_name}.webp", scale=3)
-fig.layout.template = "plotly_white"
+n_models = len(fig.layout.annotations)
+save_fig(fig, f"{STATIC}/{img_name}.webp", scale=3, height=100 * n_models)
 save_fig(fig, f"{ROOT}/tmp/figures/{img_name}.pdf", height=600, width=600)
-fig.layout.template = "plotly_dark"

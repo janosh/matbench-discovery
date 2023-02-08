@@ -2,7 +2,7 @@
 import numpy as np
 from pymatviz.utils import add_identity_line, save_fig
 
-from matbench_discovery import FIGS, ROOT, STATIC, today
+from matbench_discovery import FIGS, ROOT, STATIC
 from matbench_discovery.metrics import classify_stable
 from matbench_discovery.plots import clf_color_map, clf_colors, clf_labels, px
 from matbench_discovery.preds import (
@@ -60,7 +60,7 @@ fig.show()
 
 
 # %%
-img_path = f"{FIGS}/{today}-e-form-scatter-models"
+img_path = f"{FIGS}/e-form-scatter-models"
 # save_fig(fig, f"{img_path}.svelte")
 
 
@@ -87,7 +87,7 @@ fig.show()
 
 
 # %%
-img_path = f"{FIGS}/{today}-e-above-hull-scatter-models"
+img_path = f"{FIGS}/e-above-hull-scatter-models"
 # save_fig(fig, f"{img_path}.svelte")
 
 
@@ -176,14 +176,9 @@ for idx, anno in enumerate(fig.layout.annotations, 1):
 fig.update_xaxes(nticks=5)
 fig.update_yaxes(nticks=5)
 
+# remove legend title and place legend centered above subplots
 fig.layout.legend.update(
-    title="",  # remove legend title
-    itemsizing="constant",  # increase legend marker size
-    orientation="h",
-    x=0.5,  # place legend centered above subplots
-    xanchor="center",
-    y=1.1,
-    yanchor="top",
+    title="", orientation="h", x=0.5, xanchor="center", y=1.1, yanchor="top"
 )
 
 # fig.update_layout(yaxis=dict(scaleanchor="x", scaleratio=1))

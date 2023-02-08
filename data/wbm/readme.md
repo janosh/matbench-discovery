@@ -25,7 +25,7 @@ The full set of processing steps used to curate the WBM test set from the raw da
 
   <caption>WBM Formation energy distribution. 524 materials outside green dashed lines were discarded.<br />(zoom out on this plot to see discarded samples)</caption>
   <slot name="hist-e-form-per-atom">
-    <img src="./figs/wbm-e-form-per-atom.svg" alt="WBM formation energy histogram indicating outlier cutoffs">
+    <img src="./figs/hist-wbm-e-form-per-atom.svg" alt="WBM formation energy histogram indicating outlier cutoffs">
   </slot>
 
 - apply the [`MaterialsProject2020Compatibility`](https://pymatgen.org/pymatgen.entries.compatibility.html#pymatgen.entries.compatibility.MaterialsProject2020Compatibility) energy correction scheme to the formation energies
@@ -67,8 +67,8 @@ The [paper itself][wbm paper] links to a [Halle University data page](https://td
 
 materialscloud:2021.68 includes a readme file with a description of the dataset, meanings of the summary CSV columns and a Python script for loading the data.
 
-| [Materials Cloud archive](https://archive.materialscloud.org/record/2021.68) | [step 1](https://archive.materialscloud.org/record/file?record_id=840&filename=step_1.json.bz2) | [step 2](https://archive.materialscloud.org/record/file?record_id=840&filename=step_2.json.bz2) | [step 3](https://archive.materialscloud.org/record/file?record_id=840&filename=step_3.json.bz2) | [step 4](https://archive.materialscloud.org/record/file?record_id=840&filename=step_4.json.bz2) | [step 5](https://archive.materialscloud.org/record/file?record_id=840&filename=step_5.json.bz2) | [summary](https://archive.materialscloud.org/record/file?record_id=840&filename=summary.txt.bz2) | [readme](https://archive.materialscloud.org/record/file?record_id=840&filename=README.txt) |
-| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| [Materials Cloud](https://archive.materialscloud.org/record/2021.68) | [step 1](https://archive.materialscloud.org/record/file?record_id=840&filename=step_1.json.bz2) | [step 2](https://archive.materialscloud.org/record/file?record_id=840&filename=step_2.json.bz2) | [step 3](https://archive.materialscloud.org/record/file?record_id=840&filename=step_3.json.bz2) | [step 4](https://archive.materialscloud.org/record/file?record_id=840&filename=step_4.json.bz2) | [step 5](https://archive.materialscloud.org/record/file?record_id=840&filename=step_5.json.bz2) | [summary](https://archive.materialscloud.org/record/file?record_id=840&filename=summary.txt.bz2) | [readme](https://archive.materialscloud.org/record/file?record_id=840&filename=README.txt) |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
 
 [wbm paper]: https://nature.com/articles/s41524-020-00481-6
 
@@ -79,13 +79,13 @@ The WBM test set and even more so the MP training set are heavily oxide dominate
 Element counts for WBM test set consisting of 256,963 WBM `ComputedStructureEntries`
 
 <slot name="wbm-elements-heatmap">
-  <img src="./figs/2023-01-08-wbm-elements.svg" alt="Periodic table log heatmap of WBM elements">
+  <img src="./figs/wbm-elements.svg" alt="Periodic table log heatmap of WBM elements">
 </slot>
 
 Element counts for MP training set consisting of 146,323 `ComputedStructureEntries`
 
 <slot name="mp-elements-heatmap">
-  <img src="./figs/2023-01-08-mp-elements.svg" alt="Periodic table log heatmap of MP elements">
+  <img src="./figs/mp-elements.svg" alt="Periodic table log heatmap of MP elements">
 </slot>
 
 ## 🎯 &thinsp; Target Distribution

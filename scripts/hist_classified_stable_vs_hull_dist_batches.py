@@ -4,7 +4,7 @@ from typing import Final
 import pandas as pd
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, today
+from matbench_discovery import FIGS
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist
 from matbench_discovery.preds import df_wbm, e_form_col, each_pred_col, each_true_col
 
@@ -98,5 +98,5 @@ fig.show()
 
 
 # %%
-img_path = f"{FIGS}/{today}-{model_name}-wbm-hull-dist-hist-batches.pdf"
+img_path = f"{FIGS}/{model_name}-wbm-hull-dist-hist-batches.pdf"
 save_fig(fig, img_path)
