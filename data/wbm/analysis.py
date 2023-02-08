@@ -5,7 +5,7 @@ import pandas as pd
 from pymatviz import count_elements, ptable_heatmap_plotly
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, today
+from matbench_discovery import FIGS, ROOT, today
 from matbench_discovery.data import df_wbm
 from matbench_discovery.energy import mp_elem_reference_entries
 from matbench_discovery.plots import pio
@@ -21,9 +21,8 @@ print(f"{pio.templates.default=}")
 # %%
 wbm_elem_counts = count_elements(df_wbm.formula).astype(int)
 
-# wbm_elem_counts.to_json(
-#     f"{ROOT}/site/src/routes/about-the-test-set/{today}-wbm-element-counts.json"
-# )
+out_elem_counts = f"{ROOT}/site/src/routes/about-the-test-set/wbm-element-counts.json"
+# wbm_elem_counts.to_json(out_elem_counts)
 
 
 # %%
@@ -46,9 +45,7 @@ wbm_fig.show()
 
 
 # %%
-wbm_fig.write_image(
-    f"{module_dir}/figs/{today}-wbm-elements.svg", width=1000, height=500
-)
+wbm_fig.write_image(f"{module_dir}/figs/wbm-elements.svg", width=1000, height=500)
 save_fig(wbm_fig, f"{FIGS}/{today}-wbm-elements.svelte")
 
 

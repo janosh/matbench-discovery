@@ -2,7 +2,7 @@
 import pandas as pd
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, ROOT, STATIC
+from matbench_discovery import FIGS, ROOT
 from matbench_discovery.plots import cumulative_precision_recall
 from matbench_discovery.preds import df_each_pred, df_metrics, df_wbm, each_true_col
 
@@ -27,7 +27,7 @@ if backend == "matplotlib":
     fig.text(0.5, -0.08, xlabel, ha="center", fontdict={"size": 16})
 if backend == "plotly":
     fig.layout.legend.update(
-        x=0.02, y=0.02, itemsizing="constant", bgcolor="rgba(0,0,0,0)"
+        x=0.98, xanchor="right", y=0.02, itemsizing="constant", bgcolor="rgba(0,0,0,0)"
     )  # , title=title
     # fig.layout.height = 500
     fig.layout.margin = dict(l=0, r=5, t=30, b=60)
@@ -91,5 +91,5 @@ for trace in fig.data:
 
 img_name = "cumulative-clf-metrics"
 save_fig(fig, f"{FIGS}/{img_name}.svelte")
-save_fig(fig, f"{STATIC}/{img_name}.webp", scale=3)
-save_fig(fig, f"{ROOT}/tmp/figures/{img_name}.pdf", width=700, height=350)
+# save_fig(fig, f"{STATIC}/{img_name}.webp", scale=3)
+save_fig(fig, f"{ROOT}/tmp/figures/{img_name}.pdf", width=650, height=350)

@@ -31,7 +31,7 @@ assert sorted(DATA_FILENAMES) == [
 
 df_wbm = load_train_test("wbm-summary", version="v1.0.0")
 
-assert df_wbm.shape == (256963, 17)
+assert df_wbm.shape == (256963, 14)
 
 assert list(df_wbm) == [
     "formula",
@@ -39,17 +39,13 @@ assert list(df_wbm) == [
     "volume",
     "uncorrected_energy",
     "e_form_per_atom_wbm",
-    "e_hull_wbm",
+    "e_above_hull_wbm",
     "bandgap_pbe",
     "uncorrected_energy_from_cse",
-    "e_correction_per_atom_legacy",
     "e_correction_per_atom_mp2020",
-    "e_above_hull_uncorrected_ppd_mp",
     "e_above_hull_mp2020_corrected_ppd_mp",
-    "e_above_hull_legacy_corrected_ppd_mp",
     "e_form_per_atom_uncorrected",
     "e_form_per_atom_mp2020_corrected",
-    "e_form_per_atom_legacy_corrected",
     "wyckoff_spglib",
 ]
 ```
