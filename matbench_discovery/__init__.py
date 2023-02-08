@@ -25,5 +25,6 @@ today = timestamp.split("@")[0]
 # load docs, repo, package URLs from package.json
 with open(f"{ROOT}/site/package.json") as file:
     pkg = json.load(file)
-    pypi_keys_to_npm = dict(Docs="homepage", Repo="repository", Package="package")
-    URLs = {key: pkg[val] for key, val in pypi_keys_to_npm.items()}
+
+pypi_keys_to_npm = dict(Docs="homepage", Repo="repository", Package="package")
+URLs = {key: pkg[val] for key, val in pypi_keys_to_npm.items()}

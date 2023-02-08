@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from collections import defaultdict
 from collections.abc import Sequence
 from typing import Any, Literal
 
@@ -14,6 +15,7 @@ import scipy.interpolate
 import scipy.stats
 import wandb
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
+from tqdm import tqdm
 
 from matbench_discovery.metrics import classify_stable
 
@@ -74,6 +76,8 @@ global_layout = dict(
     paper_bgcolor="rgba(0,0,0,0)",
     # plot_bgcolor="rgba(0,0,0,0)",
     font_size=13,
+    # increase legend marker size and make background transparent
+    legend=dict(itemsizing="constant", bgcolor="rgba(0, 0, 0, 0)"),
 )
 pio.templates["global"] = dict(layout=global_layout)
 pio.templates.default = "plotly_dark+global"
@@ -213,11 +217,9 @@ def hist_classified_stable_vs_hull_dist(
         if stability_threshold is not None:
             for ax in [fig] if isinstance(fig, plt.Axes) else fig.flat:
                 ax.set(xlabel=xlabel, ylabel=y_label, xlim=x_lim)
+                label = "Stability Threshold"
                 ax.axvline(
-                    stability_threshold,
-                    color="black",
-                    linestyle="--",
-                    label="Stability Threshold",
+                    stability_threshold, color="black", linestyle="--", label=label
                 )
 
     if backend == "plotly":
@@ -285,8 +287,10 @@ def hist_classified_stable_vs_hull_dist(
 def rolling_mae_vs_hull_dist(
     e_above_hull_true: pd.Series,
     e_above_hull_errors: pd.DataFrame | dict[str, pd.Series],
+    df_rolling_err: pd.DataFrame = None,
+    df_err_std: pd.DataFrame = None,
     window: float = 0.02,
-    bin_width: float = 0.001,
+    bin_width: float = 0.005,
     x_lim: tuple[float, float] = (-0.2, 0.2),
     y_lim: tuple[float, float] = (0, 0.2),
     backend: Backend = "plotly",
@@ -294,6 +298,7 @@ def rolling_mae_vs_hull_dist(
     just_plot_lines: bool = False,
     with_sem: bool = True,
     show_dft_acc: bool = False,
+    show_dummy_mae: bool = False,
     **kwargs: Any,
 ) -> plt.Axes | go.Figure:
     """Rolling mean absolute error as the energy to the convex hull is varied. A scale
@@ -323,9 +328,11 @@ def rolling_mae_vs_hull_dist(
             to False.
         with_sem (bool, optional): If True, plot the standard error of the mean as
             shaded area around the rolling MAE. Defaults to True.
-        show_dft_acc (bool, optional): If True, change color of the cone of peril's tip
+        show_dft_acc (bool, optional): If True, change color of the triangle of peril's tip
             and annotate it with 'Corrected GGA Accuracy' at rolling MAE of 25 meV/atom.
             Defaults to False.
+        show_dummy_mae (bool, optional): If True, plot a line at the dummy MAE of always
+            predicting the target mean.
 
     Returns:
         tuple[plt.Axes | go.Figure, pd.DataFrame, pd.DataFrame]: matplotlib Axes or
@@ -337,26 +344,29 @@ def rolling_mae_vs_hull_dist(
     bins = np.arange(*x_lim, bin_width)
     models = list(e_above_hull_errors)
 
-    df_rolling_err = pd.DataFrame(columns=models, index=bins)
-    df_err_std = df_rolling_err.copy()
+    if df_rolling_err is None or df_err_std is None:
+        df_rolling_err = pd.DataFrame(columns=models, index=bins)
+        df_err_std = df_rolling_err.copy()
 
-    for model in models:
-        for idx, bin_center in enumerate(bins):
-            low = bin_center - window
-            high = bin_center + window
+        for model in (pbar := tqdm(models, desc="Calculating rolling MAE")):
+            pbar.set_postfix_str(model)
+            for idx, bin_center in enumerate(bins):
+                low = bin_center - window
+                high = bin_center + window
 
-            mask = (e_above_hull_true <= high) & (e_above_hull_true > low)
+                mask = (e_above_hull_true <= high) & (e_above_hull_true > low)
 
-            each_mae = e_above_hull_errors[model].loc[mask].abs().mean()
-            df_rolling_err[model].iloc[idx] = each_mae
+                bin_mae = e_above_hull_errors[model].loc[mask].abs().mean()
+                df_rolling_err[model].iloc[idx] = bin_mae
 
-            # drop NaNs to avoid error, scipy doesn't ignore NaNs
-            each_std = scipy.stats.sem(
-                e_above_hull_errors[model].loc[mask].dropna().abs()
-            )
-            df_err_std[model].iloc[idx] = each_std
+                # drop NaNs to avoid error, scipy doesn't ignore NaNs
+                each_std = scipy.stats.sem(
+                    e_above_hull_errors[model].loc[mask].dropna().abs()
+                )
+                df_err_std[model].iloc[idx] = each_std
+    else:
+        print("Using pre-calculated rolling MAE")
 
-    # increase line width
     ax = df_rolling_err.plot(backend=backend, **kwargs)
 
     if just_plot_lines:
@@ -456,24 +466,26 @@ def rolling_mae_vs_hull_dist(
 
         ax.layout.legend.update(
             title="",
-            x=1,
+            x=0,
             y=0,
-            xanchor="right",
+            # xanchor="right",
             yanchor="bottom",
-            title_font=dict(size=13),
+            title_font=dict(size=15),
         )
         ax.layout.xaxis.title.text = "E<sub>above MP hull</sub> (eV/atom)"
         ax.layout.yaxis.title.text = "rolling MAE (eV/atom)"
         ax.update_xaxes(range=x_lim)
         ax.update_yaxes(range=y_lim)
-        scatter_kwds = dict(fill="toself", opacity=0.2)
+        # exclude from hover tooltip
+        scatter_kwds = dict(
+            fill="toself", opacity=0.2, hoverinfo="skip", showlegend=False
+        )
         peril_cone_anno = "MAE > |E<sub>above hull</sub>|"
         ax.add_scatter(
             x=(-1, -dft_acc, dft_acc, 1) if show_dft_acc else (-1, 0, 1),
             y=(1, dft_acc, dft_acc, 1) if show_dft_acc else (1, 0, 1),
             name=peril_cone_anno,
             fillcolor="red",
-            showlegend=False,
             **scatter_kwds,
         )
         ax.add_annotation(
@@ -483,11 +495,14 @@ def rolling_mae_vs_hull_dist(
             showarrow=False,
             yref="paper",
         )
-        ax.add_hline(
-            y=dummy_mae,
-            line=dict(dash="dash", width=0.5),
-            annotation_text=dummy_mae_text,
-        )
+
+        if show_dummy_mae:
+            ax.add_hline(
+                y=dummy_mae,
+                line=dict(dash="dash", width=0.5),
+                annotation_text=dummy_mae_text,
+            )
+
         if show_dft_acc:
             ax.add_scatter(
                 x=(-dft_acc, dft_acc, 0, -dft_acc),
@@ -512,22 +527,22 @@ def rolling_mae_vs_hull_dist(
 
         ax.data = ax.data[::-1]  # bring px.line() to front
         # plot rectangle to indicate MAE window size
-        x0, y0 = x_lim[0] + 0.01, y_lim[0] + 0.01
+        x0, y0 = x_lim[1] - 0.01, y_lim[0] + 0.01
         ax.add_annotation(
-            x=x0 + window,
+            x=x0 - window,
             y=y0,
             text=window_bar_anno,
             showarrow=False,
-            xshift=8,
-            yshift=-4,
+            xshift=-4,
+            yshift=-6,
             yanchor="bottom",
-            xanchor="left",
+            xanchor="right",
         )
         ax.add_shape(
             type="rect",
             x0=x0,
             y0=y0,
-            x1=x0 + window,
+            x1=x0 - window,
             y1=y0 + window / 5,
         )
 
@@ -537,7 +552,7 @@ def rolling_mae_vs_hull_dist(
 def cumulative_precision_recall(
     e_above_hull_true: pd.Series,
     df_preds: pd.DataFrame,
-    metrics: Sequence[str] = ("Precision", "Recall"),
+    metrics: Sequence[str] = ("Cumulative Precision", "Cumulative Recall"),
     stability_threshold: float = 0,  # set stability threshold as distance to convex
     # hull in eV / atom, usually 0 or 0.1 eV
     project_end_point: Literal["x", "y", "xy", ""] = "xy",
@@ -580,23 +595,21 @@ def cumulative_precision_recall(
             dataframe of cumulative metrics for each model.
     """
     factory = lambda: pd.DataFrame(index=range(len(e_above_hull_true)))
-    dfs = dict(Precision=factory(), Recall=factory(), F1=factory(), Acc=factory())
+    dfs: dict[str, pd.DataFrame] = defaultdict(factory)
 
     for model_name in df_preds:
-        model_preds = df_preds[model_name].sort_values()
-        e_above_hull_true = e_above_hull_true.loc[model_preds.index]
+        each_pred = df_preds[model_name].sort_values()
+        # sort targets by model ranking
+        each_true = e_above_hull_true.loc[each_pred.index]
 
-        true_pos, false_neg, false_pos, true_neg = classify_stable(
-            e_above_hull_true, model_preds, stability_threshold
+        true_pos_cum, false_neg_cum, false_pos_cum, _true_neg_cum = map(
+            np.cumsum, classify_stable(each_true, each_pred, stability_threshold)
         )
 
-        true_pos_cs, _false_neg_cs, false_pos_cs, _true_neg_cs = map(
-            np.cumsum, (true_pos, false_neg, false_pos, true_neg)
-        )
         # precision aka positive predictive value (PPV)
-        precision_cum = true_pos_cs / (true_pos_cs + false_pos_cs)
-        n_total_pos = sum(true_pos) + sum(false_neg)
-        recall_cum = true_pos_cs / n_total_pos  # aka true_pos_rate aka sensitivity
+        precision_cum = true_pos_cum / (true_pos_cum + false_pos_cum)
+        n_total_pos = true_pos_cum[-1] + false_neg_cum[-1]
+        recall_cum = true_pos_cum / n_total_pos  # aka true_pos_rate aka sensitivity
         # cumulative F1 score
         f1_cum = 2 * (precision_cum * recall_cum) / (precision_cum + recall_cum)
 
@@ -606,9 +619,9 @@ def cumulative_precision_recall(
         recall_interp = scipy.interpolate.interp1d(xs, recall_cum[:end], kind="cubic")
         f1_interp = scipy.interpolate.interp1d(xs, f1_cum[:end], kind="cubic")
 
-        dfs["Precision"][model_name] = pd.Series(prec_interp(xs))
-        dfs["Recall"][model_name] = pd.Series(recall_interp(xs))
-        dfs["F1"][model_name] = pd.Series(f1_interp(xs))
+        dfs["Cumulative Precision"][model_name] = pd.Series(prec_interp(xs))
+        dfs["Cumulative Recall"][model_name] = pd.Series(recall_interp(xs))
+        dfs["Cumulative F1"][model_name] = pd.Series(f1_interp(xs))
 
     for key, df in dfs.items():
         # drop all-NaN rows so plotly plot x-axis only extends to largest number of
@@ -668,7 +681,7 @@ def cumulative_precision_recall(
             # optimal recall line finds all stable materials without any false positives
             # can be included to confirm all models achieve near optimal recall initially
             # and to see how much they overshoot n_stable
-            if optimal_recall and metric == "Recall":
+            if optimal_recall and "Recall" in metric:
                 ax.plot([0, n_stable], [0, 1], color="green", linestyle="--")
                 ax.text(
                     *[n_stable, 0.81],
@@ -686,7 +699,7 @@ def cumulative_precision_recall(
             facet_col="metric",
             facet_col_wrap=2,
             facet_col_spacing=0.03,
-            # pivot df in case we want to show all 3 metrics in each plot's hover
+            # pivot df in case we want to show all 3 metrics in each plot's hover tooltip
             # requires fixing index mismatch due to df sub-sampling above
             # customdata=dict(
             #     df_cum.reset_index()
@@ -713,10 +726,12 @@ def cumulative_precision_recall(
                 )
                 # annotate optimal recall line
                 fig.add_annotation(
-                    x=0.6 * n_stable,
+                    x=0.7 * n_stable,
                     y=0.8,
                     text=optimal_recall,
                     showarrow=False,
+                    # rotate text parallel to line
+                    textangle=math.degrees(math.cos(n_stable)),
                     **grid_pos,
                 )
         if show_n_stable:
@@ -729,9 +744,9 @@ def cumulative_precision_recall(
                 xanchor="left",
                 align="left",
             )
-        fig.update_layout(legend_title="")
-        fig.update_xaxes(matches=None, showticklabels=True, title="")
-        fig.update_yaxes(matches=None, showticklabels=True, title="")
+        fig.layout.legend.title = ""
+        fig.update_xaxes(showticklabels=True, title="")
+        fig.update_yaxes(showticklabels=True, title="")
 
     return fig, df_cum
 

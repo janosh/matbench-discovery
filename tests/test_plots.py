@@ -29,7 +29,12 @@ e_form_col = "e_form_per_atom_mp2020_corrected"
 )
 @pytest.mark.parametrize("backend", ("matplotlib", "plotly"))
 @pytest.mark.parametrize(
-    "metrics", (("Recall",), ("Recall", "F1"), ("Recall", "Precision", "F1"))
+    "metrics",
+    (
+        ("Cumulative Recall",),
+        ("Cumulative Recall", "Cumulative F1"),
+        ("Cumulative Recall", "Cumulative Precision", "Cumulative F1"),
+    ),
 )
 def test_cumulative_precision_recall(
     project_end_point: AxLine,

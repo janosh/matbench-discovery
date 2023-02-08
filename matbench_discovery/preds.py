@@ -23,11 +23,15 @@ drop_cols = {*PRED_FILENAMES} - {*models}
 
 
 df_metrics = pd.DataFrame()
+df_metrics.index.name = "model"
 for model in list(PRED_FILENAMES):
     df_metrics[model] = stable_metrics(
         df_wbm[each_true_col],
         df_wbm[each_true_col] + df_wbm[model] - df_wbm[e_form_col],
     )
+
+# pick F1 as primary metric to sort by
+df_metrics = df_metrics.round(3).sort_values("F1", axis=1)
 
 
 df_each_pred = pd.DataFrame()

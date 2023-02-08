@@ -105,12 +105,12 @@ ax = density_scatter(
 )
 
 
-# %% predict formation energies on M3GNet relaxed structure with MEGNet
-megnet_mp_e_form = load_model(model_name := "Eform_MP_2019")
+# %% load 2019 MEGNet formation energy model
+megnet_mp_e_form = load_model("Eform_MP_2019")
 megnet_e_form_preds: dict[str, float] = {}
 
 
-# %%
+# %% predict formation energies on M3GNet relaxed structure with MEGNet
 for material_id, cse in tqdm(df_wbm.cse.items(), total=len(df_wbm)):
     if material_id in megnet_e_form_preds:
         continue

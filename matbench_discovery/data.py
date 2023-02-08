@@ -206,8 +206,8 @@ def load_df_wbm_preds(
 
     dfs: dict[str, pd.DataFrame] = {}
 
-    for model_name in (bar := tqdm(models, disable=not pbar)):
-        bar.set_description(model_name)
+    for model_name in (bar := tqdm(models, disable=not pbar, desc="Loading preds")):
+        bar.set_postfix_str(model_name)
         pattern = f"models/{PRED_FILENAMES[model_name]}"
         df = glob_to_df(pattern, pbar=False, **kwargs).set_index(id_col)
         dfs[model_name] = df

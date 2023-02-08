@@ -3,7 +3,7 @@ from typing import Final
 
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, today
+from matbench_discovery import FIGS
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist
 from matbench_discovery.preds import df_wbm, e_form_col, each_pred_col, each_true_col
@@ -62,6 +62,6 @@ else:  # plotly
 
 
 # %%
-img_path = f"{FIGS}/{today}-wren-wbm-hull-dist-hist-{which_energy=}"
+img_path = f"{FIGS}/wren-wbm-hull-dist-hist-{which_energy=}"
 # save_fig(fig, f"{img_path}.svelte")
 save_fig(fig, f"{img_path}.webp")

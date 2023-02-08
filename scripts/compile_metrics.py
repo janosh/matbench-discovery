@@ -11,7 +11,7 @@ import wandb.apis.public
 from pymatviz.utils import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import FIGS, ROOT, WANDB_PATH, today
+from matbench_discovery import FIGS, MODELS, ROOT, WANDB_PATH
 from matbench_discovery.data import PRED_FILENAMES
 from matbench_discovery.plots import px
 from matbench_discovery.preds import df_metrics, df_wbm
@@ -117,12 +117,12 @@ model_stats["M3GNet + MEGNet"][time_col] = (
 model_stats["CGCNN+P"] = {}
 
 
-df_stats = pd.concat([df_metrics, pd.DataFrame(model_stats)])
+df_stats = pd.concat([df_metrics, pd.DataFrame(model_stats)]).T
 
 
 # %%
 styler = (
-    df_metrics.T.reset_index()
+    df_metrics.T.rename(columns={"R2": "R²"})
     .style.format(precision=2)
     .background_gradient(
         cmap="viridis_r",  # lower is better so reverse color map
@@ -135,9 +135,8 @@ styler = (
     # )
     .background_gradient(
         cmap="viridis",  # higher is better
-        subset=["DAF", "R2", "Precision", "Recall", "F1", "Accuracy", "TPR", "TNR"],
+        subset=["DAF", "R²", "Precision", "Recall", "F1", "Accuracy", "TPR", "TNR"],
     )
-    .hide(axis="index")
 )
 
 styles = {
@@ -145,7 +144,7 @@ styles = {
     "td, th": "border: 1px solid #ddd; text-align: left; padding: 8px; white-space: nowrap;",
 }
 styler.set_table_styles([dict(selector=sel, props=styles[sel]) for sel in styles])
-styler
+styler.set_uuid("")
 
 
 # %% export model metrics as styled HTML table
@@ -154,18 +153,21 @@ html = styler.to_html().replace("<table", "<table {...$$props}")
 with open(f"{FIGS}/metrics-table.svelte", "w") as file:
     file.write(html)
 
+
+# %%
+# hide_rows = list(set(df_metrics) - set(df_metrics.T.F1.nlargest(6).index))
+# styler.hide(hide_rows)  # show only the best models by F1 score
 dfi.export(styler, f"{ROOT}/tmp/figures/model-metrics.png", dpi=300)
 
 
 # %% write model metrics to json for use by the website
-df_metrics["missing_preds"] = df_wbm[list(model_stats)].isna().sum()
-df_metrics["missing_percent"] = [
-    f"{x / len(df_wbm):.2%}" for x in df_metrics.missing_preds
-]
+df_stats["missing_preds"] = df_wbm[list(df_metrics)].isna().sum()
+df_stats["missing_percent"] = [f"{x / len(df_wbm):.2%}" for x in df_stats.missing_preds]
 
-df_metrics.attrs["Total Run Time"] = df_metrics[time_col].sum()
+df_stats.attrs["Total Run Time"] = df_stats[time_col].sum()
 
-# df_metrics.round(2).to_json(f"{MODELS}/model-stats.json", orient="index")
+stats_out = f"{MODELS}/model-stats.json"
+# df_stats.round(2).to_json(stats_out, orient="index")
 
 
 # %% plot model run times as pie chart
@@ -193,4 +195,4 @@ fig.update_layout(margin=dict(l=0, r=0, t=0, b=0))
 
 
 # %%
-save_fig(fig, f"{FIGS}/{today}-model-run-times-pie.svelte")
+save_fig(fig, f"{FIGS}/model-run-times-pie.svelte")

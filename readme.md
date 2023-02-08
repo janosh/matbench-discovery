@@ -13,25 +13,14 @@ Matbench Discovery
 
 </h4>
 
-Matbench Discovery is an [interactive leaderboard](https://janosh.github.io/matbench-discovery) and associated [PyPI package](https://pypi.org/project/matbench-discovery) for benchmarking ML energy models on a task designed to closely emulate a real-world computational materials discovery workflow. In it, these models take on the role of a triaging step prior to DFT to decide how to allocate limited compute budget for structure relaxations.
+> TL;DR: We benchmark ML models on crystal stability prediction from unrelaxed structures finding interatomic potentials in particular to be a valuable addition to high-throughput discovery pipelines.
+
+Matbench Discovery is an [interactive leaderboard](https://janosh.github.io/matbench-discovery) and associated [PyPI package](https://pypi.org/project/matbench-discovery) which together make it easy to benchmark ML energy models on a task designed to closely simulate a high-throughput discovery campaign for new stable inorganic crystals.
+
+In version 1 of this benchmark, we explore 8 models covering multiple methodologies ranging from random forests to graph neural networks, from one-shot predictors to iterative Bayesian optimizers and interatomic potential-based relaxers. We find [M3GNet](https://github.com/materialsvirtuallab/m3gnet) ([paper](https://doi.org/10.1038/s43588-022-00349-3)) to achieve the highest F1 score of 0.58 and $R^2$ of 0.59 while [MEGNet](https://github.com/materialsvirtuallab/megnet) ([paper](https://doi.org/10.1021/acs.chemmater.9b01294)) wins on discovery acceleration factor (DAF) with 2.94. See the [**full results**](https://matbench-discovery.janosh.dev/paper#results) in our interactive dashboard which provides valuable insights for maintainers of large-scale materials databases. We show these models have become powerful enough to warrant deploying them as triaging steps to more effectively allocate compute in high-throughput DFT relaxations.
+
+<slot name="metrics-table" />
 
 We welcome contributions that add new models to the leaderboard through [GitHub PRs](https://github.com/janosh/matbench-discovery/pulls). See the [usage and contributing guide](https://janosh.github.io/matbench-discovery/how-to-contribute) for details.
 
-Several new energy models specifically designed to handle unrelaxed structures were published in 2021/22
-
-- [BOWSR](https://sciencedirect.com/science/article/pii/S1369702121002984)
-- [M3GNet](https://arxiv.org/abs/2202.02450)
-- [Wren](https://arxiv.org/abs/2106.11132)
-- missing one? Please open an issue.
-
-Such models are suited for a materials discovery workflow in which they pre-filter and/or pre-relax structures that are then fed into high-throughput DFT. Even for someone trying to keep up with the literature though, it's unclear which model performs best at that task. Consequently, we think a follow-up paper to the 2020 work from Chris Bartel is in order.
-
-[A critical examination of compound stability predictions from machine-learned formation energies](https://nature.com/articles/s41524-020-00362-y)
-
-This project aims to complement Matbench using the **WBM dataset** published in [Predicting stable crystalline compounds using chemical similarity](https://nature.com/articles/s41524-020-00481-6). They generated ~250k structures with chemical similarity-based elemental substitution and relaxed all of them. ~20k or 10% were found to lie on the Materials Project convex hull. They did 5 iterations of this substitution process. This is a unique and compelling feature of the dataset as it allows out-of-distribution testing. We can look at how a model performs when asked to predict on structures increasingly more different from the training set (which is restricted to MP for all models in this benchmark at the moment) since repeated substitutions should - on average - increase chemical dissimilarity.
-
-A good set of baseline models would be CGCNN, Wren and Voronoi tessellation combined with a random forest. In addition to CGCNN, Wren and Voronoi plus RF, this benchmark includes BOWSR and M3GNet to see how many of the 20k stable structures each of these models recover and how their performance changes as a function of iteration number, i.e. how well they extrapolate. Like Matbench, future model submissions to this benchmark can be added via PRs to this repo.
-
-Our goal with this site is to serve as an interactive dashboard for researchers that makes it easy to compare the performance of different energy models on metrics like precision, recall and discovery acceleration to find the model that best suits your needs. You can then make an informed decision about which model to pick by trading off compute savings from an increased hit rate to a more complete discovery in your materials space of interest from higher recall.
-
-On a more philosophical note: Another primary goal of this benchmark is to at least partly answer the question of how useful ML energy models really are at helping to accelerate inorganic crystal searching and whether DFT emulators like M3GNet or one-shot predictors like Wren do better.
+For a version 2 release of this benchmark, we plan to merge the current training and test sets into the new training set and acquire a much larger test set compared to the v1 test set of 257k structures.
