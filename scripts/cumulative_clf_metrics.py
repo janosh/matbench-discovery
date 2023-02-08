@@ -13,42 +13,38 @@ __date__ = "2022-12-04"
 # %%
 fig, df_metric = cumulative_precision_recall(
     e_above_hull_true=df_wbm[each_true_col],
-    df_preds=df_each_pred[df_metrics.T.F1.nlargest(6).index],
+    df_preds=df_each_pred,
     project_end_point="xy",
     backend=(backend := "plotly"),
-    metrics=("Precision", "Recall"),
+    range_y=(0, 1)
     # template="plotly_white",
 )
 
-# title = f"{today} - Cumulative Precision, Recall, F1 scores for classifying stable materials"
-xlabel = "Number of WBM materials"
+x_label = "Number of screened WBM materials"
 if backend == "matplotlib":
     # fig.suptitle(title)
-    fig.text(0.5, -0.08, xlabel, ha="center", fontdict={"size": 16})
+    fig.text(0.5, -0.08, x_label, ha="center", fontdict={"size": 16})
 if backend == "plotly":
-    fig.layout.legend.update(
-        x=0.98, xanchor="right", y=0.02, itemsizing="constant", bgcolor="rgba(0,0,0,0)"
-    )  # , title=title
-    # fig.layout.height = 500
-    fig.layout.margin = dict(l=0, r=5, t=30, b=60)
+    fig.layout.legend.update(x=0.01, y=0.01, bgcolor="rgba(0,0,0,0)")
+    fig.layout.margin.update(l=0, r=5, t=30, b=50)
     fig.add_annotation(
         x=0.5,
         y=-0.15,
         xref="paper",
         yref="paper",
-        text=xlabel,
+        text=x_label,
         showarrow=False,
-        font=dict(size=16),
+        font=dict(size=14),
     )
-    mode = "dark"
-    fig.layout.template = f"plotly_{'white' if mode == 'light' else 'dark'}"
     fig.update_traces(line=dict(width=3))
     for trace in fig.data:
+        if trace.name in df_metrics.T.sort_values("F1").index[6:]:
+            trace.visible = "legendonly"  # show only top models by default
         last_idx = pd.Series(trace.y).last_valid_index()
         last_x = trace.x[last_idx]
         last_y = trace.y[last_idx]
         color = dict(color=trace.line.color)
-        col = trace.xaxis[-1].strip("x") or 1
+        subplot_col = int(trace.xaxis[-1].strip("x") or 1)
 
         # PRO can be rotated so text is parallel to line, more readable
         # CON remains visible when trace is hidden via legend
@@ -58,9 +54,9 @@ if backend == "plotly":
         #     text=trace.name,
         #     font=color,
         #     row=1,
-        #     col=int(col),
+        #     col=subplot_col,
         #     standoff=30,
-        #     textangle=40 if col == 1 else -20,
+        #     textangle=40 if subplot_col == 1 else -20,
         # )
         # PRO can be toggled with the line via legendgroup
         # CON unreadable due to lines overlapping
@@ -83,13 +79,7 @@ fig.show()
 
 
 # %%
-# file will be served by site
-# so we round y floats to reduce file size since
-for trace in fig.data:
-    assert isinstance(trace.y[0], float)
-    trace.y = [round(y, 3) for y in trace.y]
-
 img_name = "cumulative-clf-metrics"
 save_fig(fig, f"{FIGS}/{img_name}.svelte")
 # save_fig(fig, f"{STATIC}/{img_name}.webp", scale=3)
-save_fig(fig, f"{ROOT}/tmp/figures/{img_name}.pdf", width=650, height=350)
+save_fig(fig, f"{ROOT}/tmp/figures/{img_name}.pdf", width=720, height=370)

@@ -10,6 +10,8 @@ from matbench_discovery.preds import df_each_pred, df_metrics, df_wbm, each_true
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
 
+df_err, df_std = None, None  # variables to cache rolling MAE and std
+
 
 # %%
 # sort df columns by MAE (so that the legend is sorted too)
@@ -20,6 +22,9 @@ fig, df_err, df_std = rolling_mae_vs_hull_dist(
     e_above_hull_errors=df_each_pred,
     backend=backend,
     with_sem=False,
+    df_rolling_err=df_err,
+    df_err_std=df_std,
+    show_dummy_mae=False,
 )
 
 if backend == "matplotlib":
@@ -31,24 +36,16 @@ if backend == "matplotlib":
     for line in fig.lines:
         line._linewidth *= 2
 else:
-    # keep only every n-th point to reduce plot size for website
     for trace in fig.data:
-        if trace.name and trace.name.startswith("MAE") and len(trace.x) < 100:
-            continue  # skip the MAE < DFT error area traces
-        trace.x = trace.x[::5]
-        trace.y = trace.y[::5]
-
-        # initially show only the top 5 models
-        if trace.name.split(" MAE=")[0] not in df_metrics.T.MAE.nsmallest(5):
-            trace.visible = "legendonly"
-            # trace.visible = False
+        model = trace.name.split(" MAE=")[0]
+        if model in df_metrics.T.sort_values("MAE").index[6:]:
+            trace.visible = "legendonly"  # initially show only top models
 
     # increase line width
     fig.update_traces(line=dict(width=3))
-
+    fig.layout.legend.update(bgcolor="rgba(0,0,0,0)")
     # increase legend handle size and reverse order
-    fig.layout.margin = dict(l=5, r=5, t=5, b=55)
-    fig.layout.legend.update(itemsizing="constant", bgcolor="rgba(0,0,0,0)")
+    fig.layout.margin.update(l=5, r=5, t=5, b=55)
     fig.show()
 
 
@@ -56,4 +53,4 @@ else:
 img_name = "rolling-mae-vs-hull-dist-models"
 save_fig(fig, f"{FIGS}/{img_name}.svelte")
 # save_fig(fig, f"{STATIC}/{img_name}.webp", scale=3)
-save_fig(fig, f"{ROOT}/tmp/figures/{img_name}.pdf")
+save_fig(fig, f"{ROOT}/tmp/figures/{img_name}.pdf", width=520, height=350)

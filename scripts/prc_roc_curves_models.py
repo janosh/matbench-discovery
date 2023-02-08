@@ -4,7 +4,7 @@ import pandas as pd
 from pymatviz.utils import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import FIGS, today
+from matbench_discovery import FIGS
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.plots import pio
 from matbench_discovery.preds import (
@@ -82,7 +82,7 @@ fig.show()
 
 
 # %%
-save_fig(fig, f"{FIGS}/{today}-roc-models.svelte")
+save_fig(fig, f"{FIGS}/roc-models.svelte")
 
 
 # %%
@@ -115,6 +115,6 @@ fig.show()
 
 
 # %%
-save_fig(fig, f"{FIGS}/{today}-prc-models.svelte")
+save_fig(fig, f"{FIGS}/prc-models.svelte")
 fig.update_yaxes(matches=None)
 fig.show()

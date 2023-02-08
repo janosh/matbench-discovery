@@ -1,6 +1,6 @@
 from setuptools import setup
 
-from matbench_discovery import ROOT, URLs
+from matbench_discovery import ROOT, URLs, pkg
 
 setup(
     name="matbench-discovery",
@@ -8,9 +8,8 @@ setup(
     author="Janosh Riebesell, Rhys Goodall",
     author_email="janosh@lbl.gov",
     url="https://github.com/janosh/matbench-discovery",
-    description="A machine learning benchmark that simulates high-throughput screening "
-    "for new materials and ranks energy models by their ability to increase the hit "
-    "rate of stable crystals",
+    description="A benchmark for machine learning energy models on inorganic crystal "
+    "stability prediction from unrelaxed structures",
     long_description=open("readme.md").read(),
     long_description_content_type="text/markdown",
     packages=["matbench_discovery"],
@@ -18,15 +17,7 @@ setup(
     package_data={
         "matbench_discovery": [f"{ROOT}/data/mp/*.json"],
     },
-    keywords=[
-        "data-driven materials discovery",
-        "crystal stability",
-        "machine learning",
-        "materials space",
-        "high-throughput search",
-        "energy above convex hull",
-        "formation energy",
-    ],
+    keywords=pkg["keywords"],
     install_requires=[
         "matplotlib",
         "pymatgen",
@@ -49,7 +40,6 @@ setup(
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.8",
         "Topic :: Scientific/Engineering :: Chemistry",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: Scientific/Engineering :: Physics",

@@ -2,7 +2,7 @@
 
 ## 🔨 &thinsp; Installation
 
-The recommended way to acquire the train and test data for this benchmark is through its Python package [available on PyPI](https://pypi.org/project/matbench-discovery):
+The recommended way to acquire the training and test sets for this benchmark is through its Python package [available on PyPI](https://pypi.org/project/matbench-discovery):
 
 ```zsh
 pip install matbench-discovery
@@ -10,7 +10,7 @@ pip install matbench-discovery
 
 ## 📙 &thinsp; Usage
 
-Here's an example script of how to download the training and test set files for training a new model, recording the results and submitting them via pull request to this benchmark:
+This example script downloads the training and test data for training a model:
 
 <!-- TODO remove notest meta key once repo is public and file can be downloaded without token -->
 
