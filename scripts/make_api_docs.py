@@ -5,7 +5,7 @@ from lazydocs import generate_docs
 
 from matbench_discovery import ROOT, URLs
 
-# Update auto-generated API docs.
+"""Update auto-generated API docs viewable on the site's /api page."""
 
 out_path = f"{ROOT}/site/src/routes/api"
 
@@ -20,13 +20,13 @@ generate_docs(
 )
 
 # Tweak lazydocs's markdown output:
-# - remove bold tags since they break inline code
-# - make badges linking to GitHub source code blue with flat style, add alt text
 for path in glob(f"{out_path}/*.md"):
     text = open(path).read()
 
+    # remove bold tags since they break inline code
     text = text.replace("<b>", "").replace("</b>", "")
 
+    # make badges linking to GitHub source code blue with flat style, add alt text
     text = text.replace(
         'src="https://img.shields.io/badge/-source-cccccc?style=flat-square"',
         'src="https://img.shields.io/badge/source-blue?style=flat" alt="source link"',

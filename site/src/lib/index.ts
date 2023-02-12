@@ -70,3 +70,16 @@ export type Reference = {
   type: string
   ISSN?: string
 }
+
+export type Frontmatter = {
+  title: string
+  subtitle?: string
+  tags: string[]
+  authors: {
+    name: string
+    affiliation: string
+    orcid: string
+  }[]
+  affiliations: string[]
+  date: string
+}
