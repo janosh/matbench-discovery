@@ -44,8 +44,10 @@ export default {
     }),
     {
       markup: (file) => {
-        const route = file.filename.split(`/`).at(-2)
-        if ([`paper`, `si`].includes(route)) {
+        const route = file.filename.split(`site/src/routes/`)[1]?.split(`/`)[0]
+        if (!route) return
+
+        if (route.startsWith(`paper`) || route.startsWith(`si`)) {
           let fig_index = new Set()
           let ref_index = new Set()
 
@@ -54,7 +56,7 @@ export default {
             /@label:(fig:[^\s]+)/g,
             (_match, id) => {
               fig_index.add(id)
-              const idx = (route == `si` ? `S` : ``) + fig_index.size
+              const idx = (route.startsWith(`si`) ? `S` : ``) + fig_index.size
               const link_icon = `<a aria-hidden="true" tabindex="-1" href="#${id}"><svg width="16" height="16" viewBox="0 0 16 16"><use xlink:href="#octicon-link"></use></svg></a>`
               return `<strong id='${id}'>${link_icon}Fig. ${idx}</strong>`
             }
@@ -97,7 +99,8 @@ export default {
     alias: {
       $site: `.`,
       $root: `..`,
-      $figs: `./src/figs`,
+      $paper: `src/routes/paper`,
+      $figs: `src/figs`,
     },
   },
 }

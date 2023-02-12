@@ -8,9 +8,20 @@ declare module '*package.json' {
   export default pkg
 }
 
+// model metadata files
 declare module '*metadata.yml' {
   const data: import('$lib').ModelMetadata
   export default data
+}
+
+// paper metadata
+declare module '*frontmatter.yml' {
+  const frontmatter: import('$lib').Frontmatter
+  export = frontmatter
+}
+
+declare module '*references.yaml' {
+  export const references: import('$lib').Reference[]
 }
 
 declare module '*element-counts.json' {
