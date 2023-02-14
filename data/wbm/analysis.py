@@ -3,6 +3,7 @@ import os
 
 import numpy as np
 import pandas as pd
+from pymatgen.core import Composition
 from pymatviz import count_elements, ptable_heatmap_plotly
 from pymatviz.utils import save_fig
 
@@ -24,6 +25,23 @@ about_data_page = f"{ROOT}/site/src/routes/about-the-test-set"
 wbm_elem_counts = count_elements(df_wbm.formula).astype(int)
 
 # wbm_elem_counts.to_json(f"{about_data_page}/wbm-element-counts.json")
+
+# export element counts by WBM step to JSON
+df_wbm["step"] = df_wbm.index.str.split("-").str[1].astype(int)
+assert df_wbm.step.between(1, 5).all()
+for batch in range(1, 6):
+    count_elements(df_wbm[df_wbm.step == batch].formula).to_json(
+        f"{about_data_page}/wbm-element-counts-{batch=}.json"
+    )
+
+# export element counts by arity (how many elements in the formula)
+comp_col = "composition"
+df_wbm[comp_col] = df_wbm.formula.map(Composition)
+
+for arity, df in df_wbm.groupby(df_wbm[comp_col].map(len)):
+    count_elements(df.formula).to_json(
+        f"{about_data_page}/wbm-element-counts-{arity=}.json"
+    )
 
 
 # %%

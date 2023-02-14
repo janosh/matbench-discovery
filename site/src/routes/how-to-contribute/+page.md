@@ -1,8 +1,12 @@
+<script>
+  import { name, repository as repo, homepage } from "$site/package.json";
+</script>
+
 # How to contribute
 
 ## 🔨 &thinsp; Installation
 
-The recommended way to acquire the training and test sets for this benchmark is through its Python package [available on PyPI](https://pypi.org/project/matbench-discovery):
+The recommended way to acquire the training and test sets for this benchmark is through its Python package [available on PyPI](https://pypi.org/project/{name}):
 
 ```zsh
 pip install matbench-discovery
@@ -68,19 +72,19 @@ assert list(df_wbm) == [
 
 You can also download the data files directly from GitHub:
 
-1. [`2022-10-19-wbm-summary.csv`](https://github.com/janosh/matbench-discovery/raw/v1.0.0/data/wbm/2022-10-19-wbm-summary.csv) [[GitHub](https://github.com/janosh/matbench-discovery/blob/v1/data/wbm/2022-10-19-wbm-summary.csv)]: Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more. e_form_per_atom and e_above_hull each have 3 separate columns for old, new and no Materials
-1. [`2022-10-19-wbm-init-structs.json`](https://github.com/janosh/matbench-discovery/raw/v1.0.0/data/wbm/2022-10-19-wbm-init-structs.json) [[GitHub](https://github.com/janosh/matbench-discovery/blob/v1/data/wbm/2022-10-19-wbm-init-structs.json)]: Unrelaxed WBM structures
-1. [`2022-10-19-wbm-cses.json`](https://github.com/janosh/matbench-discovery/raw/v1.0.0/data/wbm/2022-10-19-wbm-cses.json) [[GitHub](https://github.com/janosh/matbench-discovery/blob/v1/data/wbm/2022-10-19-wbm-cses.json)]: Relaxed WBM structures along with final VASP energies
-1. [`2022-08-13-mp-energies.json.gz`](https://github.com/janosh/matbench-discovery/raw/v1.0.0/data/wbm/2022-08-13-mp-energies.json.gz) [[GitHub](https://github.com/janosh/matbench-discovery/blob/v1/data/wbm/2022-08-13-mp-energies.json.gz)]: Materials Project formation energies and energies above convex hull
-1. [`2022-09-16-mp-computed-structure-entries.json.gz`](https://github.com/janosh/matbench-discovery/raw/v1.0.0/data/wbm/2022-09-16-mp-computed-structure-entries.json.gz) [[GitHub](https://github.com/janosh/matbench-discovery/blob/v1/data/wbm/2022-09-16-mp-computed-structure-entries.json.gz)]: Materials Project computed structure entries
-1. [`2022-09-18-ppd-mp.pkl.gz`](https://github.com/janosh/matbench-discovery/raw/v1.0.0/data/wbm/2022-09-18-ppd-mp.pkl.gz) [[GitHub](https://github.com/janosh/matbench-discovery/blob/v1/data/wbm/2022-09-18-ppd-mp.pkl.gz)]: [PatchedPhaseDiagram](https://pymatgen.org/pymatgen.analysis.phase_diagram.html#pymatgen.analysis.phase_diagram.PatchedPhaseDiagram) constructed from all MP ComputedStructureEntries
-1. [`2022-09-19-mp-elemental-ref-energies.json`](https://github.com/janosh/matbench-discovery/raw/v1.0.0/data/wbm/2022-09-19-mp-elemental-ref-energies.json) [[GitHub](https://github.com/janosh/matbench-discovery/blob/v1/data/wbm/2022-09-19-mp-elemental-ref-energies.json)]: Minimum energy PDEntries for each element present in the Materials Project
+1. [`2022-10-19-wbm-summary.csv`]({repo}/raw/v1.0.0/data/wbm/2022-10-19-wbm-summary.csv) [[GitHub]({repo}/blob/v1/data/wbm/2022-10-19-wbm-summary.csv)]: Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more. e_form_per_atom and e_above_hull each have 3 separate columns for old, new and no Materials
+1. [`2022-10-19-wbm-init-structs.json`]({repo}/raw/v1.0.0/data/wbm/2022-10-19-wbm-init-structs.json) [[GitHub]({repo}/blob/v1/data/wbm/2022-10-19-wbm-init-structs.json)]: Unrelaxed WBM structures
+1. [`2022-10-19-wbm-cses.json`]({repo}/raw/v1.0.0/data/wbm/2022-10-19-wbm-cses.json) [[GitHub]({repo}/blob/v1/data/wbm/2022-10-19-wbm-cses.json)]: Relaxed WBM structures along with final VASP energies
+1. [`2022-08-13-mp-energies.json.gz`]({repo}/raw/v1.0.0/data/wbm/2022-08-13-mp-energies.json.gz) [[GitHub]({repo}/blob/v1/data/wbm/2022-08-13-mp-energies.json.gz)]: Materials Project formation energies and energies above convex hull
+1. [`2022-09-16-mp-computed-structure-entries.json.gz`]({repo}/raw/v1.0.0/data/wbm/2022-09-16-mp-computed-structure-entries.json.gz) [[GitHub]({repo}/blob/v1/data/wbm/2022-09-16-mp-computed-structure-entries.json.gz)]: Materials Project computed structure entries
+1. [`2023-02-07-ppd-mp.pkl.gz`]({repo}/raw/v1.0.0/data/wbm/2023-02-07-ppd-mp.pkl.gz) [[GitHub]({repo}/blob/v1/data/wbm/2023-02-07-ppd-mp.pkl.gz)]: [PatchedPhaseDiagram](https://pymatgen.org/pymatgen.analysis.phase_diagram.html#pymatgen.analysis.phase_diagram.PatchedPhaseDiagram) constructed from all MP ComputedStructureEntries
+1. [`2022-09-19-mp-elemental-ref-energies.json`]({repo}/raw/v1.0.0/data/wbm/2022-09-19-mp-elemental-ref-energies.json) [[GitHub]({repo}/blob/v1/data/wbm/2022-09-19-mp-elemental-ref-energies.json)]: Minimum energy PDEntries for each element present in the Materials Project
 
 [wbm paper]: https://nature.com/articles/s41524-020-00481-6
 
 ## ✨ &thinsp; How to submit a new model
 
-To deploy a new model on this benchmark and add it to our leaderboard, please create a pull request to the `main` branch of <https://github.com/janosh/matbench-discovery> that includes at least these 3 required files:
+To deploy a new model on this benchmark and add it to our leaderboard, please create a pull request to the `main` branch of [{repo}]({repo}) that includes at least these 3 required files:
 
 1. `<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz`: Your model's energy predictions for all ~250k WBM compounds as compressed JSON or CSV. The recommended way to create this file is with `pandas.DataFrame.to_{json|csv}('<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz')`. JSON is preferred over CSV if your model not only predicts energies (floats) but also Python objects like e.g. pseudo-relaxed structures (see the M3GNet and BOWSR test scripts).
 1. `test_<model_name>.(py|ipynb)`: The Python script or Jupyter notebook that generated the energy predictions. Ideally, this file should have comments explaining at a high level what the code is doing and how the model works so others can understand and reproduce your results. If the model deployed on this benchmark was trained specifically for this purpose (i.e. if you wrote any training/fine-tuning code while preparing your PR), please also include it as `train_<model_name>.(py|ipynb)`.
@@ -122,7 +126,7 @@ To deploy a new model on this benchmark and add it to our leaderboard, please cr
 
    Arbitrary other keys can be added as needed.
 
-Please see any of the subdirectories in `models`/`](<https://github.com/janosh/matbench-discovery/tree/main/models>) for example submissions. More detailed step-by-step instructions below.
+Please see any of the subdirectories in [`models`/`]({repo}/tree/main/models) for example submissions. More detailed step-by-step instructions below.
 
 ### Step 1: Clone the repo
 
@@ -155,7 +159,7 @@ matbench-discovery-root
 
 You can include arbitrary other supporting files like metadata and model features (below 10MB to keep `git clone` time low) if they are needed to run the model or help others reproduce your results. For larger files, please upload to [Figshare](https://figshare.com) or similar and link them somewhere in your files.
 
-### Step 3: Open a PR to the [Matbench Discovery repo](https://github.com/janosh/matbench-discovery)
+### Step 3: Open a PR to the [Matbench Discovery repo]({repo})
 
 Commit your files to the repo on a branch called `<model_name>` and create a pull request (PR) to the Matbench repository.
 
@@ -166,6 +170,18 @@ git commit -m 'add <model_name> to Matbench Discovery leaderboard'
 
 And you're done! Once tests pass and the PR is merged, your model will be added to the leaderboard! 🎉
 
+### Step 4 (optional): Move WandB runs into our project
+
+[Weights and Biases](https://wandb.ai) is a great tool for logging training and test runs of ML models. It's free, (partly) [open source](https://github.com/wandb/wandb) and offers a [special plan for academics](https://wandb.ai/site/research). It auto-collects metadata like
+
+- what hardware the model is running on
+- and for how long,
+- what the CPU, GPU and network utilization was over that period,
+- the exact code in the script that launched the run, and
+- which versions of dependencies were installed in the environment your model ran in.
+
+This information can be very useful for someone looking to reproduce your results or compare their model to yours i.t.o. computational cost. We therefore strongly recommend tracking all runs that went into a model submission to Matbench Discovery with WandB so that the runs can be copied over to our WandB project at <https://wandb.ai/janosh/matbench-discovery> for everyone to inspect. This also allows us to include your model in more detailed analysis found in the [SI]({homepage}/si).
+
 ## 😵‍💫 &thinsp; Troubleshooting
 
-Having problems using or contributing to the project? Please [open an issue on GitHub](https://github.com/janosh/matbench-discovery/issues). Happy to help! 😊
+Having problems using or contributing to the project? Please [open an issue on GitHub]({repo}/issues). Happy to help! 😊
