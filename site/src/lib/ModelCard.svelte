@@ -1,8 +1,8 @@
 <script lang="ts">
   import { repository } from '$site/package.json'
   import Icon from '@iconify/svelte'
+  import { pretty_num } from 'elementari/labels'
   import { fade, slide } from 'svelte/transition'
-  import { pretty_num } from 'sveriodic-table/labels'
   import type { ModelData, ModelStatLabel } from '.'
 
   export let data: ModelData

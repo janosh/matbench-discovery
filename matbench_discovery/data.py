@@ -26,7 +26,7 @@ DATA_FILENAMES = {
     "mp-computed-structure-entries": "mp/2022-09-16-mp-computed-structure-entries.json.gz",
     "mp-elemental-ref-energies": "mp/2022-09-19-mp-elemental-ref-energies.json",
     "mp-energies": "mp/2022-08-13-mp-energies.json.gz",
-    "mp-patched-phase-diagram": "mp/2022-09-18-ppd-mp.pkl.gz",
+    "mp-patched-phase-diagram": "mp/2023-02-07-ppd-mp.pkl.gz",
     "wbm-computed-structure-entries": "wbm/2022-10-19-wbm-computed-structure-entries.json.bz2",
     "wbm-initial-structures": "wbm/2022-10-19-wbm-init-structs.json.bz2",
     "wbm-summary": "wbm/2022-10-19-wbm-summary.csv",
