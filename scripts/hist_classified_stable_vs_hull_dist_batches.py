@@ -86,7 +86,7 @@ fig = hist_classified_stable_vs_hull_dist(
 for anno in fig.layout.annotations:
     if not anno.text.startswith("batch_idx="):
         continue
-    batch_idx = int(anno.text.split("=")[-1])
+    batch_idx = int(anno.text.split("=", 1)[-1])
     len_df = sum(df_wbm[batch_col] == int(batch_idx))
     anno.text = f"Batch {batch_idx} ({len_df:,})"
 

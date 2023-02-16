@@ -88,7 +88,7 @@ if backend == "matplotlib":
         ax.set(title=f"{model_name} · {F1=:.2f} · {FPR=:.2f} · {FNR=:.2f} · {DAF=:.2f}")
 else:
     for anno in fig.layout.annotations:
-        model_name = anno.text = anno.text.split("=").pop()
+        model_name = anno.text = anno.text.split("=", 1).pop()
         if model_name not in models or not show_metrics:
             continue
         F1, FPR, FNR, DAF = (

@@ -699,13 +699,6 @@ def cumulative_precision_recall(
             facet_col="metric",
             facet_col_wrap=2,
             facet_col_spacing=0.03,
-            # pivot df in case we want to show all 3 metrics in each plot's hover tooltip
-            # requires fixing index mismatch due to df sub-sampling above
-            # customdata=dict(
-            #     df_cum.reset_index()
-            #     .pivot(index="index", columns="metric")
-            #     .items()
-            # ),
             **kwargs,
         )
 
