@@ -25,7 +25,7 @@
     Ensemble Size: 10
 
   notes:
-    description: Published in 2017, CGCNN was the first crystal graph convolutional neural network to directly learn 8 different DFT-computed material properties from a graph representing the atoms and bonds in a crystal.
+    description: Published in 2017, CGCNN was the first crystal graph convolutional neural network to directly learn 8 different DFT-computed material properties from a graph representing the atoms and bonds in a crystal. ![Illustration of the crystal graph convolutional neural networks](https://researchgate.net/profile/Tian-Xie-11/publication/320726915/figure/fig1/AS:635258345119746@1528468800829/Illustration-of-the-crystal-graph-convolutional-neural-networks-a-Construction-of-the.png)
     long: It showed that just like in other areas of ML, given large training sets, embeddings that outperform human-engineered features could be learned directly from the data.
 
 - model_name: CGCNN+P
@@ -60,5 +60,5 @@
     Perturbations: 5
 
   notes:
-    description: This work proposes simple, physically motivated structure perturbations to augment CGCNN's training data of relaxed structures with structures resembling unrelaxed ones but mapped to the same DFT final energy.
-    long: From this the model should learn to map structures to their nearest energy basin which is supported by a lowering of the energy error on unrelaxed structures.
+    description: This work proposes simple structure perturbations to augment CGCNN's training data of relaxed structures with randomly perturbed ones resembling unrelaxed structures that are mapped to the same DFT final energy during training. ![Step function PES](https://media.springernature.com/full/springer-static/image/art%3A10.1038%2Fs41524-022-00891-8/MediaObjects/41524_2022_891_Fig1_HTML.png?as=webp)
+    long: The model is essentially taught the potential energy surface (PES) is a step-function that maps each valley to its local minimum. The expectation is that during testing on unrelaxed structures, the model will predict the energy of the nearest basin in the PES. The authors confirm this by demonstrating a lowering of the energy error on unrelaxed structures.
