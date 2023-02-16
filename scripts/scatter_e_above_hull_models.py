@@ -127,7 +127,7 @@ for idx, anno in enumerate(fig.layout.annotations, 1):
     traces = [t for t in fig.data if t.xaxis == f"x{idx if idx > 1 else ''}"]
     assert len(traces) == 4, f"Expected 4 traces, got {len(traces)=}"
 
-    model = anno.text.split("=")[1]
+    model = anno.text.split("=", 1)[1]
     assert model in df_wbm, f"Unexpected {model=} not in {list(df_wbm)=}"
     # add MAE and R2 to subplot titles
     MAE, R2 = df_metrics[model][["MAE", "R2"]]
@@ -139,39 +139,39 @@ for idx, anno in enumerate(fig.layout.annotations, 1):
     fig.layout[f"xaxis{idx}"].title.text = ""
     fig.layout[f"yaxis{idx}"].title.text = ""
 
-    # add transparent rectangle with TN, TP, FN, FP labels in each quadrant
-    for sign_x, sign_y, color, label in zip(
-        [-1, -1, 1, 1], [-1, 1, -1, 1], clf_colors, ("TP", "FN", "FP", "TN")
-    ):
-        # instead of coloring points in each quadrant, we can add a transparent
-        # background to each quadrant (looks worse maybe than coloring points)
-        # fig.add_shape(
-        #     type="rect",
-        #     x0=0,
-        #     y0=0,
-        #     x1=sign_x * 100,
-        #     y1=sign_y * 100,
-        #     fillcolor=color,
-        #     opacity=0.5,
-        #     layer="below",
-        #     xref=f"x{idx}",
-        #     yref=f"y{idx}",
-        # )
-        fig.add_annotation(
-            xref=f"x{idx}",
-            yref=f"y{idx}",
-            x=sign_x * xy_max,
-            y=sign_y * xy_max,
-            xshift=-20 * sign_x,
-            yshift=-20 * sign_y,
-            text=label,
-            showarrow=False,
-            font=dict(size=16, color=color),
-        )
+# add transparent rectangle with TN, TP, FN, FP labels in each quadrant
+for sign_x, sign_y, color, label in zip(
+    [-1, -1, 1, 1], [-1, 1, -1, 1], clf_colors, ("TP", "FN", "FP", "TN")
+):
+    # instead of coloring points in each quadrant, we can add a transparent
+    # background to each quadrant (looks worse maybe than coloring points)
+    # fig.add_shape(
+    #     type="rect",
+    #     x0=0,
+    #     y0=0,
+    #     x1=sign_x * 100,
+    #     y1=sign_y * 100,
+    #     fillcolor=color,
+    #     opacity=0.2,
+    #     layer="below",
+    #     row="all",
+    #     col="all",
+    # )
+    fig.add_annotation(
+        x=sign_x * xy_max,
+        y=sign_y * xy_max,
+        xshift=-20 * sign_x,
+        yshift=-20 * sign_y,
+        text=label,
+        showarrow=False,
+        font=dict(size=16, color=color),
+        row="all",
+        col="all",
+    )
 
-    # add dashed quadrant separators
-    fig.add_vline(x=0, line=dict(width=0.5, dash="dash"))
-    fig.add_hline(y=0, line=dict(width=0.5, dash="dash"))
+# add dashed quadrant separators
+fig.add_vline(x=0, line=dict(width=0.5, dash="dash"))
+fig.add_hline(y=0, line=dict(width=0.5, dash="dash"))
 
 fig.update_xaxes(nticks=5)
 fig.update_yaxes(nticks=5)
