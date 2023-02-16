@@ -121,27 +121,26 @@ df_stats = pd.concat([df_metrics, pd.DataFrame(model_stats)]).T
 
 
 # %%
+higher_is_better = ["DAF", "R²", "Precision", "Recall", "F1", "Accuracy", "TPR", "TNR"]
+lower_is_better = ["MAE", "RMSE", "FNR", "FPR"]
 styler = (
     df_metrics.T.rename(columns={"R2": "R²"})
+    # append arrow up/down to table headers to indicate higher/lower metric is better
+    # .rename(columns=lambda x: x + " ↑" if x in higher_is_better else x + " ↓")
     .style.format(precision=2)
-    .background_gradient(
-        cmap="viridis_r",  # lower is better so reverse color map
-        subset=["MAE", "RMSE", "FNR", "FPR"],
-    )
+    # reverse color map if lower=better
+    .background_gradient(cmap="viridis_r", subset=lower_is_better)
     # .background_gradient(
     #     cmap="viridis_r",
     #     subset=[time_col],
     #     gmap=np.log10(df_stats[time_col].to_numpy()),  # for log scaled color map
     # )
-    .background_gradient(
-        cmap="viridis",  # higher is better
-        subset=["DAF", "R²", "Precision", "Recall", "F1", "Accuracy", "TPR", "TNR"],
-    )
+    .background_gradient(cmap="viridis", subset=higher_is_better)
 )
-
 styles = {
     "": "font-family: sans-serif; border-collapse: collapse;",
-    "td, th": "border: 1px solid #ddd; text-align: left; padding: 8px; white-space: nowrap;",
+    "td, th": "border: none; padding: 4px 6px; white-space: nowrap;",
+    "th": "border: 1px solid; border-width: 1px 0; text-align: left;",
 }
 styler.set_table_styles([dict(selector=sel, props=styles[sel]) for sel in styles])
 styler.set_uuid("")
@@ -149,9 +148,9 @@ styler.set_uuid("")
 
 # %% export model metrics as styled HTML table
 # insert svelte {...props} forwarding to the table element
-html = styler.to_html().replace("<table", "<table {...$$props}")
+html_table = styler.to_html().replace("<table", "<table {...$$props}")
 with open(f"{FIGS}/metrics-table.svelte", "w") as file:
-    file.write(html)
+    file.write(html_table)
 
 
 # %%

@@ -1,11 +1,7 @@
 <script lang="ts">
   import { ElemCountInset } from '$lib'
-  import {
-    ColorScaleSelect,
-    PeriodicTable,
-    TableInset,
-    type ChemicalElement,
-  } from 'elementari'
+  import type { ChemicalElement } from 'elementari'
+  import { ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
   import { RadioButtons, Toggle } from 'svelte-zoo'
   import type { Snapshot } from './$types'
 
@@ -27,7 +23,7 @@
   $: color_scale = selected[0]
   $: active_counts = elem_counts[filter]
 
-  const style = `display: flex; gap: 5pt; place-items: center; place-content: center;`
+  const style = `display: flex; place-items: center; place-content: center;`
 
   export const snapshot: Snapshot = {
     capture: () => ({ filter, log }),
@@ -42,8 +38,9 @@ Stuff that didn't make the cut into the main page describing the WBM test set.
 
 <h2>WBM Element Counts for <code>{filter}</code></h2>
 
-Filter WBM element counts by composition arity (how many elements in the formula) or batch
-index (which iteration of elemental substitution the structure was generated in).
+Filter WBM element counts by composition<strong>arity</strong> (how many elements in the
+formula) or <strong>batch index</strong> (which iteration of elemental substitution the
+structure was generated in).
 
 <ColorScaleSelect bind:selected />
 <ul>
@@ -77,11 +74,11 @@ index (which iteration of elemental substitution the structure was generated in)
     display: flex;
     gap: 1ex;
   }
-  strong {
+  ul > li strong {
     background-color: rgba(255, 255, 255, 0.1);
     padding: 3pt 4pt;
   }
-  strong.active {
+  ul > li strong.active {
     background-color: teal;
   }
 </style>
