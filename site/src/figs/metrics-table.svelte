@@ -4,16 +4,19 @@
   border-collapse: collapse;
 }
 #T_ td {
-  border: 1px solid #ddd;
-  text-align: left;
-  padding: 8px;
+  border: none;
+  padding: 4px 6px;
   white-space: nowrap;
 }
 #T_  th {
-  border: 1px solid #ddd;
-  text-align: left;
-  padding: 8px;
+  border: none;
+  padding: 4px 6px;
   white-space: nowrap;
+}
+#T_ th {
+  border: 1px solid;
+  border-width: 1px 0;
+  text-align: left;
 }
 #T__row0_col0, #T__row0_col2, #T__row0_col3, #T__row0_col5, #T__row0_col10, #T__row1_col7, #T__row1_col8, #T__row3_col4, #T__row3_col6, #T__row3_col9, #T__row5_col1, #T__row5_col11 {
   background-color: #440154;

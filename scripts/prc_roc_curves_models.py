@@ -66,7 +66,14 @@ for anno in fig.layout.annotations:
     anno.text = anno.text.split("=", 1)[1]  # remove Model= from subplot titles
 
 fig.layout.coloraxis.colorbar.update(
-    x=1, y=1, xanchor="right", yanchor="top", thickness=14, len=0.2, title_side="right"
+    x=1,
+    y=1,
+    xanchor="right",
+    yanchor="top",
+    thickness=14,
+    lenmode="pixels",
+    len=210,
+    title_side="right",
 )
 fig.add_shape(type="line", x0=0, y0=0, x1=1, y1=1, line=line, row="all", col="all")
 fig.add_annotation(text="No skill", x=0.5, y=0.5, showarrow=False, yshift=-10)
