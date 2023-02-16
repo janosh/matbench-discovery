@@ -40,13 +40,12 @@
 
 Stuff that didn't make the cut into the main page describing the WBM test set.
 
-<ColorScaleSelect bind:selected />
-
 <h2>WBM Element Counts for <code>{filter}</code></h2>
 
 Filter WBM element counts by composition arity (how many elements in the formula) or batch
 index (which iteration of elemental substitution the structure was generated in).
 
+<ColorScaleSelect bind:selected />
 <ul>
   <li>
     composition arity:

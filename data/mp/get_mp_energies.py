@@ -58,7 +58,7 @@ df["spacegroup_number"] = df.pop("symmetry").map(lambda x: x["number"])
 df["wyckoff_spglib"] = [get_aflow_label_from_spglib(x) for x in tqdm(df.structure)]
 
 df.reset_index().to_json(
-    f"{module_dir}/{today}-mp-energies.json.gz", default_handler=as_dict_handler
+    f"{module_dir}/mp-energies.json.gz", default_handler=as_dict_handler
 )
 
 # df = pd.read_json(f"{module_dir}/2022-08-13-mp-energies.json.gz")
@@ -78,9 +78,9 @@ ax = df.plot.scatter(
 )
 
 annotate_mae_r2(df.formation_energy_per_atom, df.decomposition_enthalpy)
-# result on 2023-01-10: plots match. no correlation between formation energy and decomposition
-# enthalpy. R^2 = -1.571, MAE = 1.604
-# ax.figure.savefig(f"{module_dir}/{today}-mp-decomp-enth-vs-e-form.webp", dpi=300)
+# result on 2023-01-10: plots match. no correlation between formation energy and
+# decomposition enthalpy. R^2 = -1.571, MAE = 1.604
+# ax.figure.savefig(f"{module_dir}/mp-decomp-enth-vs-e-form.webp", dpi=300)
 
 
 # %% scatter plot energy above convex hull vs decomposition enthalpy
@@ -99,4 +99,4 @@ ax.set(
     title=f"{n_above_line:,} / {len(df):,} = {n_above_line/len(df):.1%} "
     "MP materials with\nenergy_above_hull - decomposition_enthalpy.clip(0) > 0.1"
 )
-# ax.figure.savefig(f"{module_dir}/{today}-mp-e-above-hull-vs-decomp-enth.webp", dpi=300)
+# ax.figure.savefig(f"{module_dir}/mp-e-above-hull-vs-decomp-enth.webp", dpi=300)
