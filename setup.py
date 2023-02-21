@@ -10,7 +10,7 @@ setup(
     url="https://github.com/janosh/matbench-discovery",
     description="A benchmark for machine learning energy models on inorganic crystal "
     "stability prediction from unrelaxed structures",
-    long_description=open("readme.md").read(),
+    long_description=open("readme.md").read(),  # noqa: SIM115
     long_description_content_type="text/markdown",
     packages=["matbench_discovery"],
     python_requires=">=3.9",

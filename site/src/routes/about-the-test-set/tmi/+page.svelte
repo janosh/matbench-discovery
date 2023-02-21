@@ -9,7 +9,7 @@
   for (const [path, json] of Object.entries(
     import.meta.glob(`../wbm-element-counts-*=*.json`, { eager: true, as: `raw` })
   )) {
-    const split = path.split(`.json`)[0].split(`-`).at(-1) as string
+    const split = path?.split(`.json`)[0]?.split(`-`).at(-1) as string
     if (!split || !split?.includes(`=`)) console.error(`Invalid path: ${path}`)
     elem_counts[split] = Object.values(JSON.parse(json))
   }
@@ -47,16 +47,16 @@ structure was generated in).
   <li>
     composition arity:
     <RadioButtons style={radio_style} options={arity_keys} bind:selected={filter}>
-      <strong slot="option" let:value let:active class:active>
-        {value.split(`=`)[1]}</strong
+      <strong slot="option" let:option let:active class:active>
+        {option?.split(`=`)[1]}</strong
       >
     </RadioButtons>
   </li>
   <li>
     batch index
     <RadioButtons style={radio_style} options={batch_keys} bind:selected={filter}>
-      <strong slot="option" let:value let:active class:active>
-        {value.split(`=`)[1]}</strong
+      <strong slot="option" let:option let:active class:active>
+        {option?.split(`=`)[1]}</strong
       >
     </RadioButtons>
   </li>

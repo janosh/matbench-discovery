@@ -8,10 +8,11 @@ np.random.seed(0)  # ensure reproducible structure perturbations
 
 
 def perturb_structure(struct: Structure, gamma: float = 1.5) -> Structure:
-    """Perturb the atomic coordinates of a pymatgen structure
+    """Perturb the atomic coordinates of a pymatgen structure.
 
     Args:
         struct (Structure): pymatgen structure to be perturbed
+        gamma (float, optional): Weibull distribution parameter. Defaults to 1.5.
 
     Returns:
         Structure: Perturbed structure
