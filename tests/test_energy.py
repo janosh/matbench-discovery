@@ -24,7 +24,6 @@ dummy_struct = Structure(
 
 def test_get_e_form_per_atom() -> None:
     """Test that the formation energy of a composition is computed correctly."""
-
     entry = {"composition": {"Fe": 1, "O": 1}, "energy": -2.5}
     # map element symbol to reference energy (eV/atom)
     elemental_ref_energies = {"Fe": -1.0, "O": -1.0}

@@ -74,7 +74,7 @@ def test_load_train_test(
         for name in data_names
     )
     assert expected_out in stdout
-    assert "" == stderr
+    assert stderr == ""
 
     assert read_json.call_count + read_csv.call_count == len(data_names)
 

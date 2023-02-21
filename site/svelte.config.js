@@ -62,15 +62,24 @@ export default {
             }
           )
 
-          // Replace figure references with 'Fig. {n}' and add to fig_index
-          code = code.replace(/@(fig[^\s]+)/g, (_full_str, id) => {
-            let idx = [...fig_index].indexOf(`fig${id}`) + 1
-            if (idx == 0) {
-              console.error(`Figure id ${id} not found`)
-              idx = `not found`
+          // Replace figure references @fig:label with 'fig. {n}' and add to fig_index
+          code = code.replace(
+            /@((fig):([a-z0-9]+-?)+)/gi, // match case-insensitive but replace case-sensitive
+            // @(f|F)ig becomes '(f|F)ig. {n}'
+            (_full_str, id, fig_or_Fig) => {
+              const id_lower = id.toLowerCase()
+              let idx = [...fig_index].indexOf(id_lower) + 1
+              if (idx == 0) {
+                console.error(
+                  `Figure id '${id}' not found, expected one of ${[
+                    ...fig_index,
+                  ]}`
+                )
+                idx = `not found`
+              }
+              return `<a href="#${id_lower}">${fig_or_Fig}. ${idx}</a>`
             }
-            return `<a href="#${id}">Fig. ${idx}</a>`
-          })
+          )
 
           // preprocess markdown citations @auth_1st-word-title_yyyy into superscript
           // links to bibliography items, href must match id format in References.svelte

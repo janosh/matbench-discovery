@@ -52,7 +52,7 @@ def test_cumulative_precision_recall(
     )
 
     assert isinstance(df_metrics, pd.DataFrame)
-    assert list(df_metrics) == models + ["metric"]
+    assert list(df_metrics) == [*models, "metric"]
 
     if backend == "matplotlib":
         assert isinstance(fig, plt.Figure)

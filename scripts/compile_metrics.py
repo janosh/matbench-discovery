@@ -148,7 +148,14 @@ styler.set_uuid("")
 
 # %% export model metrics as styled HTML table
 # insert svelte {...props} forwarding to the table element
-html_table = styler.to_html().replace("<table", "<table {...$$props}")
+insert = """
+<script>
+  import { sortable } from 'svelte-zoo/actions'
+</script>
+
+<table use:sortable {...$$props}
+"""
+html_table = styler.to_html().replace("<table", insert)
 with open(f"{FIGS}/metrics-table.svelte", "w") as file:
     file.write(html_table)
 

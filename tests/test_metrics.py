@@ -31,8 +31,8 @@ def test_classify_stable(
 
     assert (n_true_pos, n_false_neg, n_false_pos, n_true_neg) == expected
     assert n_true_pos + n_false_neg + n_false_pos + n_true_neg == len(df)
-    assert n_true_neg + n_false_pos == sum(df.A > stability_threshold)
-    assert n_true_pos + n_false_neg == sum(df.A <= stability_threshold)
+    assert n_true_neg + n_false_pos == sum(stability_threshold < df.A)
+    assert n_true_pos + n_false_neg == sum(stability_threshold >= df.A)
 
 
 def test_stable_metrics() -> None:

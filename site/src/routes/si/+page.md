@@ -13,7 +13,7 @@
 ## ROC Curves
 
 {#if browser}
-<RocModels  />
+<RocModels />
 {/if}
 
 > @label:fig:roc-models Receiver operating characteristic (ROC) curve for each model. TPR/FPR is the true/false positive rate. FPR means the $x$-axis is the fraction of unstable structures classified as stable while TPR on the $y$-axis is the fraction of stable structures classified as stable. Points are colored by stability threshold $t$ which sweeps from $-0.4 \ \frac{\text{eV}}{\text{atom}} \leq t \leq 0.4 \ \frac{\text{eV}}{\text{atom}}$ above the hull. A material is classified as stable if the predicted E<sub>above hull</sub> is less than the stability threshold. Since all models predict E<sub>form</sub> (and M3GNet predicted energies are converted to formation energy before stability classification), they are insensitive to changes in the threshold $t$. M3GNet wins in area under curve (AUC) with 0.87, coming in 34% higher than the worst model Voronoi Random Forest. The diagonal 'No skill' line shows performance of a dummy model that randomly ranks materials stability.
