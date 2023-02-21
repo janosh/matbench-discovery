@@ -1,6 +1,5 @@
-"""
-Recreate the featurizer used by Ward et al. in
-https://journals.aps.org/prb/abstract/10.1103/PhysRevB.96.024104
+"""Recreate the featurizer used by Ward et al. in
+https://journals.aps.org/prb/abstract/10.1103/PhysRevB.96.024104.
 """
 
 import matminer.featurizers.composition as fc
@@ -30,7 +29,7 @@ structure_features = [
     fs.StructuralHeterogeneity(),
 ]
 featurizer = MultipleFeaturizer(
-    structure_features + [*map(fs.StructureComposition, composition_features)]
+    [*structure_features, *map(fs.StructureComposition, composition_features)]
 )
 
 

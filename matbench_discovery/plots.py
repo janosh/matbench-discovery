@@ -314,16 +314,23 @@ def rolling_mae_vs_hull_dist(
         e_above_hull_errors (pd.DataFrame | dict[str, pd.Series]): Error in
             model-predicted distance to convex hull, i.e. actual hull distance minus
             predicted hull distance (in eV / atom).
+        df_rolling_err (pd.DataFrame, optional): Cached rolling MAE(s) as returned by
+            previous call to this function. Defaults to None.
+        df_err_std (pd.DataFrame, optional): Cached standard error in the mean of the
+            rolling MAE(s) as returned by prev. call to this function. Defaults to None.
         window (float, optional): Rolling MAE averaging window. Defaults to 0.02 (20
-        meV/atom) bin_width (float, optional): Density of line points (more points the
-        smaller).
-            Defaults to 0.002.
+            meV/atom)
+        bin_width (float, optional): Density of line points (more points the
+            smaller). Defaults to 0.002.
         x_lim (tuple[float, float], optional): x-axis range. Defaults to (-0.2, 0.3).
         y_lim (tuple[float, float], optional): y-axis range. Defaults to (0.0, 0.14).
         backend ('matplotlib' | 'plotly'], optional): Which plotting engine to use.
             Changes the return type. Defaults to 'plotly'.
         y_label (str, optional): y-axis label. Defaults to "rolling MAE (eV/atom)".
         just_plot_line (bool, optional): If True, plot only the rolling MAE, no shapes
+            and annotations. Also won't plot the standard error in the mean. Defaults
+            to False.
+        just_plot_lines (bool, optional): If True, plot only the rolling MAE, no shapes
             and annotations. Also won't plot the standard error in the mean. Defaults
             to False.
         with_sem (bool, optional): If True, plot the standard error of the mean as
@@ -333,6 +340,7 @@ def rolling_mae_vs_hull_dist(
             Defaults to False.
         show_dummy_mae (bool, optional): If True, plot a line at the dummy MAE of always
             predicting the target mean.
+        **kwargs: Additional keyword arguments to pass to df.plot().
 
     Returns:
         tuple[plt.Axes | go.Figure, pd.DataFrame, pd.DataFrame]: matplotlib Axes or

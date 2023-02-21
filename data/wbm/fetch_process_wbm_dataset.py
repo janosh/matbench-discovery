@@ -322,7 +322,7 @@ assert all(
 
 df_summary.index = df_summary.index.map(increment_wbm_material_id)  # format IDs
 # drop materials with id='None' and missing initial structures
-df_summary = df_summary.drop(index=nan_init_structs_ids + ["None"])
+df_summary = df_summary.drop(index=[*nan_init_structs_ids, "None"])
 
 # the 8403 material IDs in step 3 with final number larger than any of the ones in
 # bad_struct_ids are now misaligned between df_summary and df_wbm

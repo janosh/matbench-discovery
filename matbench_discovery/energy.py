@@ -87,7 +87,7 @@ def get_e_form_per_atom(
         entry: Entry | dict[str, float | str | Composition]: pymatgen Entry (PDEntry,
             ComputedEntry or ComputedStructureEntry) or dict with energy and composition
             keys to compute formation energy of.
-        elemental_ref_entries (dict[str, float], optional): Must be a covering set (for
+        elemental_ref_energies (dict[str, float], optional): Must be a covering set (for
             entry) of terminal reference energies, i.e. eV/atom of the lowest energy
             elemental phase for each element. Defaults to MP elemental reference
             energies as collected on 2022-09-19 get_elemental_ref_entries(). This was

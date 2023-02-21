@@ -1,4 +1,5 @@
 <script>
+  import { repository as repo } from '$site/package.json'
   import MetricsTable from '$figs/metrics-table.svelte'
   import CumulativeClfMetrics from '$figs/cumulative-clf-metrics.svelte'
   import RollingMaeModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'
@@ -15,7 +16,7 @@ We present a new machine learning (ML) benchmark for materials stability predict
 
 ## Introduction
 
-For nearly two decades, ever since the work of Behler and Parrinello @behler_generalized_2007 who introduced a custom neural network for learning the density-functional theory (DFT) potential energy surface (PES), material scientists have devoted significant effort to developing custom model architectures for tackling the problem of learning the PES.
+For nearly two decades, ever since the work of Behler and Parrinello @behler_generalized_2007 which introduced a custom neural network for learning the density-functional theory (DFT) potential energy surface (PES), material scientists have devoted significant effort to developing custom model architectures for tackling the problem of learning the PES.
 Initially, most of these models were trained and deployed as interatomic potentials to study known materials of interest which required curating custom training data for each application @bartok_machine_2018 @deringer_general-purpose_2020.
 As larger and more diverse datasets emerged from initiatives like the Materials Project (MP) @jain_commentary_2013 or the Open Quantum Materials Database (OQMD) @saal_materials_2013, researchers have begun to train models that cover the full periodic table opening up the prospect of ML-guided materials discovery.
 
@@ -50,7 +51,7 @@ As the name suggests, this work seeks to expand upon the original Matbench suite
 and attempt to accelerate the field similar to what ImageNet did for computer vision.
 
 Matbench released a test suite of 13 supervised tasks for different material properties ranging from thermal (formation energy, phonon frequency peak), electronic (band gap), optical (refractive index) to tensile and elastic (bulk and shear moduli).
-They range in size from \~300 to \~132,000 samples and include both DFT and experimental data sources. 4 tasks are composition-only while 9 provide the relaxed crystal structure as input.
+They range in size from ~300 to ~132,000 samples and include both DFT and experimental data sources. 4 tasks are composition-only while 9 provide the relaxed crystal structure as input.
 Importantly, all tasks were exclusively concerned with the properties of known materials.
 We believe a task that simulates a materials discovery campaign by requiring materials stability predictions from unrelaxed structures to be a missing piece here.
 
@@ -75,25 +76,19 @@ For our benchmark, the training set is all data available from the 2021.05.13 MP
 
 ### WBM - Test Set
 
-The WBM data set @wang_predicting_2021 consists of \~257k structures generated via chemical similarity-based elemental substitution of MP source structures followed by DFT relaxation and convex hull distance calculation.
-Throughout this work, we define stability in terms of being on or below the convex hull of the MP training set. \~42k out of \~257k materials in WBM satisfy this criterion.
+The WBM data set @wang_predicting_2021 consists of ~257k structures generated via chemical similarity-based elemental substitution of MP source structures followed by DFT relaxation and convex hull distance calculation.
+Throughout this work, we define stability in terms of being on or below the convex hull of the MP training set. ~42k out of ~257k materials in WBM satisfy this criterion.
 As WBM explores regions of materials space not well sampled by MP, many of these materials discovered that are stable w.r.t. MP's convex hull are not stable with respect to each other.
-Only around \~20k were found to remain on the convex hull when merging the MP and WBM hulls.
+Only around ~20k were found to remain on the convex hull when merging the MP and WBM hulls.
 This observation highlights a critical aspect of this benchmark in that we purposely operate with an incomplete convex hull. Only current knowledge is accessible to a real discovery campaign. Hence our metrics are designed to reflect this.
 
 Moreover, to simulate a discovery campaign our test set inputs are unrelaxed structures obtained from chemical substitution of MP source structures but our target labels are the relaxed PBE formation energies. This opens up the opportunity to explore how different approaches (one-shot, force-based pseudo-relaxation, black-box pseudo-relaxation, etc.) compare for materials discovery.
 
 ## Models
 
-Our initial benchmark release includes 8 models. The [metrics table](#fig:model-metrics) includes all models but we focus on the 6 best performers in subsequent figures for visual clarity.
+Our initial benchmark release includes 8 models. @Fig:model-metrics includes all models but we focus on the 6 best performers in subsequent figures for visual clarity.
 
-<div style="container-type: inline-size;">
-  <MetricsTable style="font-size: 1.65cqw;" />
-</div>
-
-> @label:fig:model-metrics Regression and classification metrics for all models tested on our benchmark. The heat map ranges from yellow (best) to blue (worst) performance. DAF = discovery acceleration factor (see text), TPR = true positive rate, FNR = false negative rate, MAE = mean absolute error, RMSE = root mean squared error
-
-1. **Voronoi+RF** @ward_including_2017 - A random forest trained to map a combination of composition-based Magpie features and structure-based relaxation-invariant Voronoi tessellation features (effective coordination numbers, structural heterogeneity, local environment properties, \...) to DFT formation energies.
+1. **Voronoi+RF** @ward_including_2017 - A random forest trained to map a combination of composition-based Magpie features and structure-based relaxation-invariant Voronoi tessellation features (effective coordination numbers, structural heterogeneity, local environment properties, ...) to DFT formation energies.
 
 2. **Wrenformer** @goodall_rapid_2022 - For this benchmark, we introduce Wrenformer which is a variation on Wren @goodall_rapid_2022 constructed using standard QKV-Transformer blocks to reduce memory usage, allowing it to scale to structures with >16 Wyckoff positions.
 
@@ -111,8 +106,14 @@ Our initial benchmark release includes 8 models. The [metrics table](#fig:model-
 
 ## Results
 
-shows performance metrics for all models considered in v1 of our benchmark.
-M3GNet takes the top spot on most metrics and emerges as current SOTA for ML-guided materials discovery. The discovery acceleration factor (DAF) measures how many more stable structures a model found among the ones it predicted stable compared to the dummy discovery rate of 43k / 257k $\approx$ 16.7% achieved by randomly selecting test set crystals. The maximum possible DAF on our current test set is $\frac{1}{0.167} \approx 6$. This highlights the fact that our benchmark is made more challenging by deploying models on an already enriched space with a much higher fraction of stable structures over randomly exploring materials space. As the convex hull becomes more thoroughly sampled by future discovery, the fraction of unknown stable structures decreases, naturally leading to less enriched future test sets which will allow for higher maximum DAFs. The reason MEGNet outperforms M3GNet on DAF becomes clear from the [cumulative precision/recall curves](#fig:cumulative-clf-metrics) by noting that MEGNet's line ends closest to the total number of stable materials. The other models overpredict this number, resulting in large numbers of false positive predictions that drag down their DAFs.
+<div style="container-type: inline-size;">
+  <MetricsTable style="font-size: 1.65cqw;" />
+</div>
+
+> @label:fig:model-metrics Regression and classification metrics for all models tested on our benchmark. The heat map ranges from yellow (best) to blue (worst) performance. DAF = discovery acceleration factor (see text), TPR = true positive rate, FNR = false negative rate, MAE = mean absolute error, RMSE = root mean squared error
+
+@Fig:model-metrics shows performance metrics for all models considered in v1 of our benchmark.
+M3GNet takes the top spot on most metrics and emerges as current SOTA for ML-guided materials discovery. The discovery acceleration factor (DAF) measures how many more stable structures a model found among the ones it predicted stable compared to the dummy discovery rate of 43k / 257k $\approx$ 16.7% achieved by randomly selecting test set crystals. The maximum possible DAF on our current test set is $\frac{1}{0.167} \approx 6$. This highlights the fact that our benchmark is made more challenging by deploying models on an already enriched space with a much higher fraction of stable structures over randomly exploring materials space. As the convex hull becomes more thoroughly sampled by future discovery, the fraction of unknown stable structures decreases, naturally leading to less enriched future test sets which will allow for higher maximum DAFs. The reason MEGNet outperforms M3GNet on DAF becomes clear from @fig:cumulative-clf-metrics by noting that MEGNet's line ends closest to the total number of stable materials. The other models overpredict this number, resulting in large numbers of false positive predictions that drag down their DAFs.
 
 {#if browser}
 <RollingMaeModels />
@@ -126,15 +127,23 @@ M3GNet takes the top spot on most metrics and emerges as current SOTA for ML-gui
 
 > @label:fig:cumulative-clf-metrics Cumulative precision and recall over the course of a simulated discovery campaign. This figure highlights how different models will perform best depending on the setup of the screening campaign.
 
-The [rolling MAE curves](#fig:rolling-mae-vs-hull-dist-models) visualize a model's reliability as a function of a material's hull distance. The lower its rolling MAE exits the shaded triangle, the better. Inside this area, the model's mean error is larger than the distance to the convex hull, making misclassifications likely. Outside the triangle even if the model's error points toward the stability threshold at 0 eV from the hull (the plot's center), the mean error is too small to move a material over the stability threshold which would cause a false stability classification. M3GNet achieves the lowest overall MAE and exits the peril zone much sooner than other models on the right half of the plot. This means it rarely misclassifies unstable materials that lie more than 40 meV above the hull. On the plot's left half, CGCNN+P exits the peril zone first, albeit much further from the hull at more than 100 meV below. Essentially, all models are prone to false negative predictions even for materials far below the known hull. We note that whilst F1 score and DAF of models that make one-shot predictions directly from unrelaxed inputs (CGCNN & MEGNet) are seemingly unaffected, the $R^2$ of these models is significantly worse.
+@Fig:rolling-mae-vs-hull-dist-models visualizes a model's reliability as a function of a material's hull distance. The lower its rolling MAE exits the shaded triangle, the better. Inside this area, the model's mean error is larger than the distance to the convex hull, making misclassifications likely. Outside the triangle even if the model's error points toward the stability threshold at 0 eV from the hull (the plot's center), the mean error is too small to move a material over the stability threshold which would cause a false stability classification. M3GNet achieves the lowest overall MAE and exits the peril zone much sooner than other models on the right half of the plot. This means it rarely misclassifies unstable materials that lie more than 40 meV above the hull. On the plot's left half, CGCNN+P exits the peril zone first, albeit much further from the hull at more than 100 meV below. Essentially, all models are prone to false negative predictions even for materials far below the known hull. We note that while F1 score and DAF of models that make one-shot predictions directly from unrelaxed inputs (CGCNN & MEGNet) are seemingly unaffected, the $R^2$ of these models is significantly worse.
 
 ## Discussion
 
-From the [metrics table](#fig:model-metrics) we see there are several good choices of model that can achieve a DAF > 2 in this realistic benchmark scenario.
+From @fig:model-metrics we see several models achieve a DAF > 2 in this realistic benchmark scenario.
 Consequently, the benefits of deploying ML-based triage in high-throughput computational materials discovery applications likely warrant the time and setup required.
 However, there are many aspects on which further progress is necessary, for example, models still make large numbers of false positive predictions for materials over 50 meV above the convex hull and much less likely to be synthesizable, greatly reducing the DAF.
-The results obtained from version 1 of our benchmark show that ML universal interatomic potentials like M3GNet are the most promising methodology to pursue going forward, being both  20x cheaper to run than black box optimizers like BOWSR and having access to more training structures than coordinate-free approaches like Wrenformer.
+The results obtained from version 1 of our benchmark show that ML universal interatomic potentials like M3GNet are the most promising methodology to pursue going forward, being both ~20x cheaper to run than black box optimizers like BOWSR and having access to more training structures than coordinate-free approaches like Wrenformer.
 
 Although the task of discovery will necessarily become more challenging over time as currently undersampled regions of materials space are explored, the path to making ML a ubiquitous discovery tool appears straightforward and is one the field is already pursuing: training foundational IAPs on significantly more data may get us there even without further algorithmic or model improvements.
 We welcome further model submissions as well as data contributions for version 2 of this benchmark to the GitHub repo at
-\[hidden for blind review\].
+[{repo}]({repo}).
+
+## Acknowledgments
+
+Janosh Riebesell acknowledges support from the German Academic Scholarship Foundation (Studienstiftung) and gracious hosting as a visiting affiliate in the groups of Kristin Persson and Anubhav Jain.
+
+## Author Contributions
+
+Janosh Riebesell: Methodology, Software, Data Curation, Formal analysis. Rhys Goodall: Conceptualization, Software, Formal analysis. Anubhav Jain: Supervision. Kristin Persson: Supervision. Alpha Lee: Supervision.

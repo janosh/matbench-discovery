@@ -55,8 +55,7 @@ def stable_metrics(
     each_pred: Sequence[float],
     stability_threshold: float = 0,
 ) -> dict[str, float]:
-    """
-    Get a dictionary of stability prediction metrics. Mostly binary classification
+    """Get a dictionary of stability prediction metrics. Mostly binary classification
     metrics, but also MAE, RMSE and R2.
 
     Args:

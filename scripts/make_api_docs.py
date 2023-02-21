@@ -21,7 +21,8 @@ generate_docs(
 
 # Tweak lazydocs's markdown output:
 for path in glob(f"{out_path}/*.md"):
-    text = open(path).read()
+    with open(path) as file:
+        text = file.read()
 
     # remove bold tags since they break inline code
     text = text.replace("<b>", "").replace("</b>", "")
@@ -31,4 +32,5 @@ for path in glob(f"{out_path}/*.md"):
         'src="https://img.shields.io/badge/-source-cccccc?style=flat-square"',
         'src="https://img.shields.io/badge/source-blue?style=flat" alt="source link"',
     )
-    open(path, "w").write(text)
+    with open(path, "w") as file:
+        file.write(text)
