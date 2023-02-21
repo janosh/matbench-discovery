@@ -1,9 +1,68 @@
-[tool.black]
-line-length = 95
+[build-system]
+requires = ["setuptools>=61.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "matbench-discovery"
+version = "0.1.4"
+description = "A benchmark for machine learning energy models on inorganic crystal stability prediction from unrelaxed structures"
+authors = [{ name = "Janosh Riebesell", email = "janosh@lbl.gov" }]
+readme = "readme.md"
+license = { file = "license" }
+keywords = [
+  "materials discovery",
+  "inorganic crystal stability",
+  "machine learning",
+  "interatomic potential",
+  "Bayesian optimization",
+  "high-throughput search",
+  "convex hull",
+]
+classifiers = [
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.9",
+  "Topic :: Scientific/Engineering :: Chemistry",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Physics",
+]
+
+requires-python = ">=3.9"
+dependencies = [
+  "matplotlib",
+  "pymatgen",
+  "numpy",
+  "pandas",
+  "scikit-learn",
+  "scipy",
+  "plotly",
+  "tqdm",
+  "wandb",
+]
+
+[project.urls]
+Homepage = "https://janosh.github.io/matbench-discovery"
+Repo = "https://github.com/janosh/matbench-discovery"
+Package = "https://pypi.org/project/matbench-discovery"
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-cov", "pytest-markdown-docs"]
+running-models = ["aviary", "m3gnet", "maml", "megnet"]
+
+[tool.setuptools.packages]
+find = { include = ["matbench_discovery"] }
+
+[tool.setuptools.package-data]
+matbench_discovery = ["data/mp/*.json"]
+
+[tool.distutils.bdist_wheel]
+universal = true
 
 [tool.ruff]
 target-version = "py39"
-line-length = 95
 select = [
   "B",   # flake8-bugbear
   "C4",  # flake8-comprehensions
@@ -24,11 +83,9 @@ select = [
 ignore = [
   "C408",    # Unnecessary dict call - rewrite as a literal
   "D100",    # Missing docstring in public module
-  "D104",    # Missing docstring in public package
-  "D105",    # Missing docstring in magic method
-  "D107",    # Missing docstring in __init__
   "D205",    # 1 blank line required between summary line and description
-  "E731",   # Do not assign a lambda expression, use a def
+  "E731",    # Do not assign a lambda expression, use a def
+  "PLW2901", # Outer for loop variable overwritten by inner assignment target
 ]
 pydocstyle.convention = "google"
 isort.known-third-party = ["wandb"]

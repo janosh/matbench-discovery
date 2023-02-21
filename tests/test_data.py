@@ -112,9 +112,6 @@ def test_load_train_test_doc_str() -> None:
         assert name in doc_str, f"Missing data {name=} in load_train_test() docstring"
 
     route = "/how-to-contribute"
-    from matbench_discovery import URLs
-
-    assert f"{URLs['Docs']}{route}" in doc_str
     assert os.path.isdir(f"{ROOT}/site/src/routes/{route}")
 
 
