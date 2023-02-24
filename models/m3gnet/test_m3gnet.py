@@ -1,3 +1,10 @@
+"""Get M3GNet formation energy predictions on WBM test set.
+To slurm submit this file: python path/to/file.py slurm-submit
+Requires M3GNet installation: pip install m3gnet
+https://github.com/materialsvirtuallab/m3gnet.
+"""
+
+
 # %%
 from __future__ import annotations
 
@@ -15,12 +22,6 @@ from tqdm import tqdm
 from matbench_discovery import DEBUG, ROOT, timestamp, today
 from matbench_discovery.data import as_dict_handler
 from matbench_discovery.slurm import slurm_submit
-
-"""
-To slurm submit this file: python path/to/file.py slurm-submit
-Requires M3GNet installation: pip install m3gnet
-https://github.com/materialsvirtuallab/m3gnet
-"""
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-15"

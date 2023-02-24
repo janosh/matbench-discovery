@@ -48,7 +48,7 @@ slurm_vars = slurm_submit(
     # --time 2h is probably enough but best be safe.
     array=f"1-{slurm_array_task_count}%{slurm_max_parallel}",
     # --mem 12000 avoids slurmstepd: error: Detected 1 oom-kill event(s)
-    #     Some of your processes may have been killed by the cgroup out-of-memory handler.
+    # Some of your processes may have been killed by the cgroup out-of-memory handler.
     slurm_flags=("--mem", str(12_000)),
     # TF_CPP_MIN_LOG_LEVEL=2 means INFO and WARNING logs are not printed
     # https://stackoverflow.com/a/40982782

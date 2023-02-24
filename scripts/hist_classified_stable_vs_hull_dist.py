@@ -1,3 +1,11 @@
+"""Histogram of the energy difference (either according to DFT ground truth [default] or
+model predicted energy) to the convex hull for materials in the WBM data set. The
+histogram stacks true/false positives/negatives with different colors.
+
+See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
+"""
+
+
 # %%
 from typing import Final
 
@@ -10,14 +18,6 @@ from matbench_discovery.preds import df_wbm, e_form_col, each_pred_col, each_tru
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
-
-"""
-Histogram of the energy difference (either according to DFT ground truth [default] or
-model predicted energy) to the convex hull for materials in the WBM data set. The
-histogram stacks true/false positives/negatives with different colors.
-
-See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
-"""
 
 
 # %%

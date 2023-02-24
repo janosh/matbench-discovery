@@ -1,3 +1,6 @@
+"""Plot rolling MAE as a function of hull distance for a single model."""
+
+
 # %%
 from matbench_discovery import FIGS, today
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
