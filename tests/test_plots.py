@@ -61,7 +61,7 @@ def test_cumulative_precision_recall(
     elif backend == "plotly":
         assert isinstance(fig, go.Figure)
         # TODO fix AssertionError {'Recall', 'metric=F1'} == {'F1', 'Recall'}
-        # subplot_titles = [anno.text for anno in fig.layout.annotations][: len(metrics)]
+        # subplot_titles = [anno.text for anno in fig.layout.annotations][:len(metrics)]
         # assert set(subplot_titles) == set(metrics)
 
 

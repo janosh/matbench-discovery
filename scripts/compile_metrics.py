@@ -1,3 +1,8 @@
+"""Compile metrics and total run times for all models and export them to JSON, a
+pandas-styled HTML table and a plotly figure.
+"""
+
+
 # %%
 from __future__ import annotations
 

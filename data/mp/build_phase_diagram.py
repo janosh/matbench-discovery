@@ -1,3 +1,8 @@
+"""Build a PatchedPhaseDiagram from all MP ComputedStructureEntries for calculating
+DFT-ground truth convex hull energies.
+"""
+
+
 # %%
 import gzip
 import json

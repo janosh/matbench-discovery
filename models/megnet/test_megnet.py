@@ -1,3 +1,10 @@
+"""Get MEGNet formation energy predictions on WBM test set.
+To slurm submit this file: python path/to/file.py slurm-submit
+Requires MEGNet installation: pip install megnet
+See https://github.com/materialsvirtuallab/megnet.
+"""
+
+
 # %%
 from __future__ import annotations
 
@@ -14,12 +21,6 @@ from matbench_discovery import DEBUG, ROOT, timestamp, today
 from matbench_discovery.data import df_wbm
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
-
-"""
-To slurm submit this file: python path/to/file.py slurm-submit
-Requires MEGNet installation: pip install megnet
-https://github.com/materialsvirtuallab/megnet
-"""
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-14"

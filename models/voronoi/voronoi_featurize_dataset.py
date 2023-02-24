@@ -1,3 +1,8 @@
+"""Featurize MP training and WBM test structures with Magpie composition-based and
+Voronoi tessellation structure-based features.
+"""
+
+
 # %%
 import os
 import sys

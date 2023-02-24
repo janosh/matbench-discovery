@@ -1,3 +1,9 @@
+"""Histogram of the energy difference (either according to DFT ground truth [default] or
+model predicted energy) to the convex hull for materials in the WBM data set. The
+histogram stacks true/false positives/negatives with different colors.
+"""
+
+
 # %%
 import pandas as pd
 from pymatviz.utils import save_fig
@@ -11,11 +17,6 @@ from matbench_discovery.preds import df_each_pred, df_wbm, each_true_col
 __author__ = "Janosh Riebesell"
 __date__ = "2023-01-30"
 
-"""
-Histogram of the energy difference (either according to DFT ground truth [default] or
-model predicted energy) to the convex hull for materials in the WBM data set. The
-histogram stacks true/false positives/negatives with different colors.
-"""
 
 pio.templates.default
 line = dict(dash="dash", width=0.5)

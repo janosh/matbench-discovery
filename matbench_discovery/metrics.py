@@ -26,12 +26,12 @@ def classify_stable(
     Args:
         e_above_hull_true (pd.Series): Ground truth energy above convex hull values.
         e_above_hull_pred (pd.Series): Model predicted energy above convex hull values.
-        stability_threshold (float | None, optional): Maximum energy above convex hull for a
-            material to still be considered stable. Usually 0, 0.05 or 0.1. Defaults to
-            0, meaning a material has to be directly on the hull to be called stable.
-            Negative values mean a material has to pull the known hull down by that
-            amount to count as stable. Few materials lie below the known hull, so only
-            negative values very close to 0 make sense.
+        stability_threshold (float | None, optional): Maximum energy above convex hull
+            for a material to still be considered stable. Usually 0, 0.05 or 0.1.
+            Defaults to 0, meaning a material has to be directly on the hull to be
+            called stable. Negative values mean a material has to pull the known hull
+            down by that amount to count as stable. Few materials lie below the known
+            hull, so only negative values very close to 0 make sense.
 
     Returns:
         tuple[TP, FN, FP, TN]: Indices as pd.Series for true positives,

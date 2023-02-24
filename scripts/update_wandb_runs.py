@@ -1,14 +1,14 @@
+"""Update run metadata recorded on Weights and Biases
+https://wandb.ai/janosh/matbench-discovery.
+"""
+
+
 # %%
 import pandas as pd
 import wandb
 from wandb.wandb_run import Run
 
 from matbench_discovery import WANDB_PATH
-
-"""
-Update run metadata recorded on Weights and Biases
-https://wandb.ai/janosh/matbench-discovery.
-"""
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-09-21"

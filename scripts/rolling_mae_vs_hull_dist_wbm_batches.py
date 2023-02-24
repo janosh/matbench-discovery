@@ -1,3 +1,8 @@
+"""Plot rolling MAE as a function of hull distance for a single model but split per WBM
+batch in a single plot.
+"""
+
+
 # %%
 from pymatviz.utils import save_fig
 

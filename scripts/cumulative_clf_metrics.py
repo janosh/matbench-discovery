@@ -1,3 +1,13 @@
+"""Plot cumulative precision and/or recall and/or F1 curves for all models into facet
+plot with one subplot per metric. Cumulative here means going through the list of WBM
+materials ranked by the model's stability prediction starting from the most stable
+and updating the precision, recall and F1 score after each new material. This plot
+simulates an actual materials screening process and allows practitioners to choose
+a cutoff point for the number of DFT calculations they have budget and see which model
+will provide the best hit rate for the given budget.
+"""
+
+
 # %%
 import pandas as pd
 from pymatviz.utils import save_fig

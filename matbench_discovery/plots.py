@@ -1,3 +1,5 @@
+"""Plotting functions for analyzing model performance on materials discovery."""
+
 from __future__ import annotations
 
 import math
@@ -115,23 +117,23 @@ def hist_classified_stable_vs_hull_dist(
     ),
     **kwargs: Any,
 ) -> plt.Axes | go.Figure:
-    """Histogram of the energy difference (either according to DFT ground truth [default]
-    or model predicted energy) to the convex hull for materials in the WBM data set. The
-    histogram is broken down into true positives, false negatives, false positives, and
-    true negatives based on whether the model predicts candidates to be below the known
-    convex hull. Ideally, in discovery setting a model should exhibit high recall, i.e.
-    the majority of materials below the convex hull being correctly identified by the
-    model.
+    """Histogram of the energy difference (either according to DFT ground truth - the
+    default - or the model predicted energy) to the convex hull for materials in the
+    WBM data set. The histogram is broken down into true positives, false negatives,
+    false positives, and true negatives based on whether the model predicts candidates
+    to be below the known convex hull. Ideally, in discovery setting a model should
+    exhibit high recall, i.e. the majority of materials below the convex hull being
+    correctly identified by the model.
 
     See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
 
     Args:
         df (pd.DataFrame): Data frame containing true and predicted hull distances.
-        each_true_col (str): Name of column with energy above convex hull according to DFT
-            ground truth (in eV / atom).
-        each_pred_col (str): Name of column with energy above convex hull predicted by model
-            (in eV / atom). Same as true energy to convex hull plus predicted minus true
-            formation energy.
+        each_true_col (str): Name of column with energy above convex hull according to
+            DFT ground truth (in eV / atom).
+        each_pred_col (str): Name of column with energy above convex hull predicted by
+            model (in eV / atom). Same as true energy to convex hull plus predicted
+            minus true formation energy.
         ax (plt.Axes, optional): matplotlib axes to plot on.
         which_energy ('true' | 'pred', optional): Whether to use the true (DFT) hull
             distance or the model's predicted hull distance for the histogram.
@@ -162,7 +164,7 @@ def hist_classified_stable_vs_hull_dist(
         each_true, each_pred, stability_threshold
     )
 
-    # toggle between histogram of DFT-computed or model-predicted distance to convex hull
+    # switch between histogram of DFT-computed or model-predicted convex hull distance
     e_above_hull = df[x_col]
     eah_true_pos = e_above_hull[true_pos]
     eah_true_neg = e_above_hull[true_neg]
@@ -335,9 +337,9 @@ def rolling_mae_vs_hull_dist(
             to False.
         with_sem (bool, optional): If True, plot the standard error of the mean as
             shaded area around the rolling MAE. Defaults to True.
-        show_dft_acc (bool, optional): If True, change color of the triangle of peril's tip
-            and annotate it with 'Corrected GGA Accuracy' at rolling MAE of 25 meV/atom.
-            Defaults to False.
+        show_dft_acc (bool, optional): If True, change color of the triangle of peril's
+            tip and annotate it with 'Corrected GGA Accuracy' at rolling MAE of 25
+            meV/atom. Defaults to False.
         show_dummy_mae (bool, optional): If True, plot a line at the dummy MAE of always
             predicting the target mean.
         **kwargs: Additional keyword arguments to pass to df.plot().
@@ -590,10 +592,10 @@ def cumulative_precision_recall(
         project_end_point ('x' | 'y' | 'xy' | '', optional): Whether to project end
         points of precision and recall curves to the x/y axis. Defaults to '', i.e. no
             axis projection lines.
-        optimal_recall (str | None, optional): Label for the optimal recall line. Defaults
-            to 'Optimal Recall'. Set to None to not plot the line.
-        show_n_stable (bool, optional): Whether to show a horizontal line at the true number
-            of stable materials. Defaults to True.
+        optimal_recall (str | None, optional): Label for the optimal recall line.
+            Defaults to 'Optimal Recall'. Set to None to not plot the line.
+        show_n_stable (bool, optional): Whether to show a horizontal line at the true
+            number of stable materials. Defaults to True.
         backend ('matplotlib' | 'plotly'], optional): Which plotting engine to use.
             Changes the return type. Defaults to 'plotly'.
         **kwargs: Keyword arguments passed to df.plot().
@@ -687,8 +689,8 @@ def cumulative_precision_recall(
                     ax.plot((0, x_end), (y_end, y_end), **intersect_kwargs)
 
             # optimal recall line finds all stable materials without any false positives
-            # can be included to confirm all models achieve near optimal recall initially
-            # and to see how much they overshoot n_stable
+            # can be included to confirm all models achieve near optimal recall
+            # initially and to see how much they overshoot n_stable
             if optimal_recall and "Recall" in metric:
                 ax.plot([0, n_stable], [0, 1], color="green", linestyle="--")
                 ax.text(

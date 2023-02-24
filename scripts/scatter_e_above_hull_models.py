@@ -1,3 +1,9 @@
+"""Scatter plot of actual vs predicted e_above_hull and e_form_per_atom for all
+models. First 2 plots put all models in single figure with togglable traces.
+Last plot is split into 2x3 subplots, one for each model.
+"""
+
+
 # %%
 import numpy as np
 from pymatviz.utils import add_identity_line, save_fig
