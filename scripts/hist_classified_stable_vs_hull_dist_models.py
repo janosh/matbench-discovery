@@ -1,3 +1,9 @@
+"""Histogram of the energy difference (either according to DFT ground truth [default] or
+model predicted energy) to the convex hull for materials in the WBM data set. The
+histogram stacks true/false positives/negatives with different colors.
+"""
+
+
 # %%
 from typing import Final
 
@@ -15,12 +21,6 @@ from matbench_discovery.preds import (
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-12-01"
-
-"""
-Histogram of the energy difference (either according to DFT ground truth [default] or
-model predicted energy) to the convex hull for materials in the WBM data set. The
-histogram stacks true/false positives/negatives with different colors.
-"""
 
 
 # %%
@@ -64,7 +64,7 @@ fig = hist_classified_stable_vs_hull_dist(
 )
 
 
-# TODO add line showing the true histogram of the hull distance distribution on each subplot
+# TODO add line showing the true hull distance histogram on each subplot
 show_metrics = False
 if backend == "matplotlib":
     fig = plt.gcf()

@@ -1,3 +1,9 @@
+"""Download WandB checkpoints for an ensemble of Wrenformer models trained on all MP
+formation energies, then makes predictions on some dataset, prints ensemble metrics and
+saves predictions to CSV.
+"""
+
+
 # %%
 from __future__ import annotations
 
@@ -18,11 +24,6 @@ from matbench_discovery.slurm import slurm_submit
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-15"
 
-"""
-Download WandB checkpoints for an ensemble of Wrenformer models trained on all MP
-formation energies, then makes predictions on some dataset, prints ensemble metrics and
-saves predictions to CSV.
-"""
 
 task_type = "IS2RE"
 data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-summary.csv"

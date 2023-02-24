@@ -23,11 +23,11 @@ RAW_REPO_URL = "https://raw.githubusercontent.com/janosh/matbench-discovery"
 default_cache_dir = os.path.expanduser("~/.cache/matbench-discovery")
 
 DATA_FILENAMES = {
-    "mp-computed-structure-entries": "mp/2022-09-16-mp-computed-structure-entries.json.gz",
+    "mp-computed-structure-entries": "mp/2022-09-16-mp-computed-structure-entries.json.gz",  # noqa: E501
     "mp-elemental-ref-energies": "mp/2022-09-19-mp-elemental-ref-energies.json",
     "mp-energies": "mp/2022-08-13-mp-energies.json.gz",
     "mp-patched-phase-diagram": "mp/2023-02-07-ppd-mp.pkl.gz",
-    "wbm-computed-structure-entries": "wbm/2022-10-19-wbm-computed-structure-entries.json.bz2",
+    "wbm-computed-structure-entries": "wbm/2022-10-19-wbm-computed-structure-entries.json.bz2",  # noqa: E501
     "wbm-initial-structures": "wbm/2022-10-19-wbm-init-structs.json.bz2",
     "wbm-summary": "wbm/2022-10-19-wbm-summary.csv",
 }
@@ -60,10 +60,10 @@ def load_train_test(
     Recognized data keys are mp-computed-structure-entries, mp-elemental-ref-energies,
     mp-energies, mp-patched-phase-diagram, wbm-computed-structure-entries,
     wbm-initial-structures, wbm-summary. See
-    https://janosh.github.io/matbench-discovery/how-to-contribute for brief data descriptions.
+    https://janosh.github.io/matbench-discovery/how-to-contribute for data descriptions.
 
     Args:
-        data_names (str | list[str], optional): Which parts of the MP/WBM dataset to load.
+        data_names (str | list[str], optional): Which parts of the MP/WBM data to load.
             Can be any subset of the above data names or 'all'. Defaults to ["summary"].
         version (str, optional): Which version of the dataset to load. Defaults to
             '1.0.0'. Can be any git tag, branch or commit hash.

@@ -1,3 +1,9 @@
+"""Analyze structures and composition with largest mean error across all models.
+Maybe there's some chemistry/region of materials space that all models struggle with?
+Might point to deficiencies in the data or models architecture.
+"""
+
+
 # %%
 import matplotlib.pyplot as plt
 import pandas as pd

@@ -1,3 +1,6 @@
+"""Train a Wrenformer ensemble on target_col of data_path."""
+
+
 # %%
 import os
 from importlib.metadata import version
@@ -7,10 +10,6 @@ from aviary.train import df_train_test_split, train_wrenformer
 
 from matbench_discovery import DEBUG, ROOT, WANDB_PATH, timestamp, today
 from matbench_discovery.slurm import slurm_submit
-
-"""
-Train a Wrenformer ensemble on target_col of data_path.
-"""
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-13"

@@ -1,3 +1,5 @@
+"""Update auto-generated API docs viewable on the site's /api page."""
+
 import json
 import os
 from glob import glob
@@ -6,10 +8,8 @@ from lazydocs import generate_docs
 
 from matbench_discovery import ROOT
 
-"""Update auto-generated API docs viewable on the site's /api page."""
-
 with open(f"{ROOT}/site/package.json") as file:
-    pkg = json.load(file) # get repo URL from package.json
+    pkg = json.load(file)  # get repo URL from package.json
 
 out_path = f"{ROOT}/site/src/routes/api"
 
