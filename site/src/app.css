@@ -90,6 +90,9 @@ pre {
 ul {
   padding-left: 1em;
 }
+:is(ul, ol) > li > p {
+  margin: 1ex 0;
+}
 label {
   cursor: pointer;
 }
