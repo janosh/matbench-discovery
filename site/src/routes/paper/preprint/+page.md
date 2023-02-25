@@ -1,0 +1,176 @@
+<script>
+  import { repository as repo } from '$site/package.json'
+  import MetricsTable from '$figs/metrics-table.svelte'
+  import CumulativeClfMetrics from '$figs/cumulative-clf-metrics.svelte'
+  import RollingMaeModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'
+  import { browser } from '$app/environment'
+</script>
+
+<summary>
+
+We present a new machine learning (ML) benchmark for materials stability predictions named `Matbench Discovery`. A goal of this benchmark is to highlight the need to focus on metrics that directly measure their utility in prospective discovery campaigns as opposed to analyzing models based on predictive accuracy alone. Our benchmark consists of a task designed to closely simulate the deployment of ML energy models in a high-throughput search for stable inorganic crystals. To shed light on the question which type of ML performs best at materials discovery, we explore a wide variety of models covering multiple methodologies. Our selection ranges from random forests to GNNs, from one-shot predictors to iterative Bayesian optimizers and interatomic potential (IAP) relaxers that closely emulate DFT. We find the M3GNet IAP to achieve the highest F1 score of 0.58 and $R^2$ of 0.59 while MEGNet wins on discovery acceleration factor (DAF) with 2.94. Our results provide valuable insights for maintainers of high throughput materials databases to start using these models as triaging steps to more effectively allocate compute for DFT relaxations.
+
+</summary>
+
+## Introduction
+
+The use of neural networks for learning the density-functional theory (DFT) potential energy surface (PES) can be traced as far back as @behler_generalized_2007. Ever since, material scientists have devoted significant effort to developing ever more sophisticated model architectures for tackling this problem.
+Initially, most of these models were trained and deployed as interatomic potentials to study known materials of interest which required curating custom training data for each application @bartok_machine_2018 @deringer_general-purpose_2020.
+As larger and more diverse datasets emerged from initiatives like the Materials Project (MP) @jain_commentary_2013 or the Open Quantum Materials Database (OQMD) @saal_materials_2013, researchers have begun to train models that cover the full periodic table opening up the prospect of ML-guided materials discovery.
+
+Yet despite many advances in ML for materials discovery, it is unclear which methodology performs best at predicting material stability. Recent areas of progress include
+
+1. one-shot predictors like Wren @goodall_rapid_2022,
+1. universal force predictors such as M3GNet @chen_universal_2022 that emulate density functional theory to relax crystal structures according to Newton's laws, and
+1. Bayesian optimizers like BOWSR that, paired with any energy model, treat structure relaxation as a black-box optimization problem @zuo_accelerating_2021.
+
+Ideally, the question of which ML stability prediction algorithms perform best should be answered decisively _before_ operators of large DFT databases like MP or the OQMD commit significant resources to new efforts to expand their databases. In this work, we aim to answer which of these is the winning methodology in a future-proof benchmark that closely simulates using ML to guide a real-world discovery campaign.
+
+Disclaimer: Note that we choose distance to the DFT convex hull as the strongest still easily obtainable proxy for actual crystal stability. Our ground truth is ignorant of entropic stabilization and metastable states.
+
+## Related Work
+
+### Using Stability rather than Formation Energies
+
+In 2020, Chris Bartel et al. @bartel_critical_2020 benchmarked 7 models, finding all of them able to predict DFT formation energies with useful accuracy.
+However, when asked to predict stability (specifically decomposition enthalpy), the performance of all models deteriorated sharply.
+This insight meant that ML models are much less useful than DFT for discovering new solids than prior studies had suggested.
+The paper identified two main reasons for the sharp decline in predictive power:
+
+1. Stability is a property not only of the material itself but also the chemical space of competing phases it occupies. Current ML algorithms are given an input that only describes the single material they are asked to predict, leaving them clueless of competing phases.
+1. Unlike DFT, ML models appear to benefit less from systematic error cancellation across similar chemistries. A first-principles theory of physics makes systematic errors which tend to be similar for similar systems. When looking at the relative energy differences that determine stability, they more strongly cancel. ML errors seem to follow a more random distribution, making cancellation less likely.
+
+Bartel et al. stressed that to demonstrate the utility of ML for materials discovery, the vanity metric of formation energy accuracy must be replaced with stability predictions.
+Moreover, the qualitative leap in performance from Roost @goodall_predicting_2020, the best compositional model benchmarked, to CGCNN @xie_crystal_2018, the single structural model they tested, shows structure plays a crucial role in determining the stability of materials.
+However, using the DFT-relaxed structure as input to CGCNN renders the discovery pipeline circular as the input becomes the very thing we aim to find. A true test of prospective utility requires using unrelaxed structures as the next most information-rich input.
+
+### Matbench
+
+As the name suggests, this work seeks to expand upon the original Matbench suite of property prediction tasks @dunn_benchmarking_2020. By providing a standardized collection of datasets along with canonical cross-validation splits for model evaluation, Matbench helped focus the field of ML for materials, increase comparability across papers
+and attempt to accelerate the field similar to what ImageNet did for computer vision.
+
+Matbench released a test suite of 13 supervised tasks for different material properties ranging from thermal (formation energy, phonon frequency peak), electronic (band gap), optical (refractive index) to tensile and elastic (bulk and shear moduli).
+They range in size from ~300 to ~132,000 samples and include both DFT and experimental data sources. 4 tasks are composition-only while 9 provide the relaxed crystal structure as input.
+Importantly, all tasks were exclusively concerned with the properties of known materials.
+We believe a task that simulates a materials discovery campaign by requiring materials stability predictions from unrelaxed structures to be a missing piece here.
+
+### The Open Catalyst Project
+
+The Open Catalyst Project (OCP) is a large-scale initiative to discover substrate-adsorbate combinations that catalyze key industrial reactions processing said adsorbates into more useful products.
+The OCP has released two data sets thus far, OCP20 @chanussot_open_2021 and OCP22 @tran_open_2022, that can be used for training and benchmarking ML models.
+
+However, the ambition and scale of OCP comes with limitations for its use as a benchmark.
+OCP20 is already 10x larger than the largest crystal structure data sets available, imposing a high barrier to entry for researchers without access to cloud-scale computing. Moreover, analyzing the learning behavior of the baseline models, the OCP authors estimate that up to 10 orders of magnitude (not 10x) more data will be required before existing ML models reach the accuracy of DFT for adsorbate energies (see fig. 7 right @chanussot_open_2021).
+
+In contrast, we believe the discovery of stable materials is a problem where ML methods have matured enough to be usefully deployed at scale after training existing models for only $\mathcal{O}(10^2)$ GPU hours.
+
+## Data Sets
+
+The choice of data for the train and test sets of this benchmark fell on the latest Materials Project (MP) @jain_commentary_2013 database release (2021.05.13 at time of writing) and the WBM dataset @wang_predicting_2021.
+
+### The Materials Project - Training Set
+
+The Materials Project is a well-known effort to calculate the properties of all inorganic materials using high-throughput ab-initio methods. Seeded from a subset of the Inorganic Crystal Structure Database (ICSD), the initial release of the database consisted of ~9 k crystals.
+At time of writing, the Materials Project database has grown to ~154 k crystals, covering a diverse chemistries (see [periodic table heatmap](/about-the-test-set#--chemical-diversity)) and providing relaxed and initial structure as well as the relaxation trajectory for every entry.
+For our benchmark, the training set is all data available from the 2021.05.13 MP release. Models are free to train on relaxed and/or unrelaxed structures or the full DFT relaxation trajectory. This flexibility is intended to allow authors to experiment and exploit the large variety of data available.
+
+### WBM - Test Set
+
+The WBM data set @wang_predicting_2021 consists of ~257 k structures generated via chemical similarity-based elemental substitution of MP source structures followed by DFT relaxation and convex hull distance calculation.
+Throughout this work, we define stability in terms of being on or below the convex hull of the MP training set. ~42 k out of ~257 k materials in WBM satisfy this criterion.
+As WBM explores regions of materials space not well sampled by MP, many of these materials discovered that are stable w.r.t. MP's convex hull are not stable with respect to each other.
+Only around ~20 k were found to remain on the convex hull when merging the MP and WBM hulls.
+This observation highlights a critical aspect of this benchmark in that we purposely operate with an incomplete convex hull. Only current knowledge is accessible to a real discovery campaign. Our metrics are designed to reflect this.
+
+Moreover, to simulate a discovery campaign our test set inputs are unrelaxed structures obtained from element substitution on MP source structures but our target labels are the relaxed PBE formation energies. This opens up the opportunity to explore how different approaches (one-shot, force-based pseudo-relaxation, black-box pseudo-relaxation, etc.) compare for materials discovery.
+
+Using a chemical similarity matrix mined from the ICSD, the WBM authors performed 5 iterations (also referred to as batches) of this element substitution process. After each step, the newly generated structures found to be stable after DFT relaxation where added back to the source pool to undergo another substitution. This is a unique and compelling feature of the test set as it allows out-of-distribution (OOD) testing by checking how much model performance degrades with substitution count. A higher number of elemental substitutions on average carries the structure further away from the region of material space covered by the MP training set. See [per-batch figures in the SI](/si#wbm-batch-robustness-as-a-measure-of-extrapolation-prowess) for details.
+
+## Models
+
+Our initial benchmark release includes 8 models. @Fig:model-metrics includes all models but we focus on the 6 best performers in subsequent figures for visual clarity.
+
+1. **Voronoi+RF** @ward_including_2017 - A random forest trained to map a combination of composition-based Magpie features and structure-based relaxation-invariant Voronoi tessellation features (effective coordination numbers, structural heterogeneity, local environment properties, ...) to DFT formation energies.
+
+   This old model predates most deep learning for materials but significantly improved over Coulomb matrix and partial radial distribution function methods. It therefore serves as a good baseline model to see how much value deep learning models are able to extract from the increasingly large training data on offer in this field.
+
+1. **Wrenformer** - For this benchmark, we introduce Wrenformer which is a variation on Wren @goodall_rapid_2022 constructed using standard QKV-Transformer blocks in place of message-passing layers to reduce memory usage, allowing it to scale to structures with >16 Wyckoff positions.
+
+   Like its predecessor, Wrenformer is a fast coordinate-free model aimed at accelerating screening campaigns where even the unrelaxed structure is a priori unknown.
+
+   The key idea is that by training on the Wyckoff positions (symmetry-related positions in the crystal structure), the model learns to distinguish polymorphs while maintaining discrete and computationally enumerable inputs. During screening, we can take advantage of the fact that across the 230 crystallographic space groups in 3D, there are only 1731 different Wyckoff positions, allowing a model like Wrenformer to predict, for a given composition, the energy of all possible combinations of spacegroup and Wyckoff positions. Ranking them by energy, a useful model would put the symmetry exhibited by the actual crystal close to the top of that list. Knowing which planes, lines or even points certain atoms are confined to by symmetry then allows for a cheaper DFT relaxation with fewer degrees of freedom to obtain the relaxed structure.
+
+1. **CGCNN** @xie_crystal_2018 - The Crystal Graph Convolutional Neural Network (CGCNN) was the first neural network model to directly learn 8 different DFT-computed material properties from a graph representing the atoms and bonds in a periodic crystal.
+
+   CGCNN was among the first to show that just like in other areas of ML, given large enough training sets, neural networks can learn embeddings that reliably outperform all human-engineered structure features directly from the data.
+
+1. **CGCNN+P** @gibson_data-augmentation_2022 - This work proposes a simple, physically motivated structure perturbations to augment stock CGCNN's training data of relaxed structures with structures resembling unrelaxed ones but mapped to the same DFT final energy. Here we chose $P=5$, meaning the training set was augmented with 5 random perturbations of each relaxed MP structure mapped to the same target energy.
+
+   In contrast to all other structure-based GNNs considered in this benchmark, CGCNN+P is not attempting to learn the Born-Oppenheimer potential energy surface. The model is instead taught the PES as a step-function that maps each valley to its local minimum. The idea is that during testing on unrelaxed structures, the model will predict the energy of the nearest basin in the PES. The authors confirm this by demonstrating a lowering of the energy error on unrelaxed structures.
+
+1. **MEGNet** @chen_graph_2019 - MatErials Graph Network is another GNN similar to CGCNN for material properties of relaxed structures that also updates the edge and global features (like pressure, temperature, entropy) in its message passing operation.
+
+   This work showed that learned element embeddings encode periodic chemical trends and can be transfer-learned from large data sets (formation energies) to predictions on small data properties (band gaps, elastic moduli).
+
+1. **M3GNet** @chen_universal_2022 - M3GNet is a GNN-based universal (as in full periodic table) interatomic potential (IAP) for materials trained on up to 3-body interactions in the initial, middle and final frame of MP DFT relaxations. The model takes the unrelaxed input and emulates structure relaxation before predicting energy for the pseudo-relaxed structure.
+
+1. **M3GNet + MEGNet** @chen_universal_2022 @chen_graph_2019 - This combination of models uses M3GNet to relax initial structures and then passes it to MEGNet to predict the formation energy.
+
+1. **BOSWR + MEGNet** @zuo_accelerating_2021 - BOWSR uses a symmetry-constrained Bayesian optimizer (BO) with a surrogate energy model (here MEGNet) to perform an iterative exploration-exploitation-based search of the potential energy landscape. The high sample count needed to explore the PES with BO makes this by far the most expensive model.
+
+   The high sample count needed to explore the PES makes this type of "DFT-free" structure relaxation by far the most expensive model.
+
+## Results
+
+<div style="container-type: inline-size;">
+  <MetricsTable style="font-size: 1.65cqw;" />
+</div>
+
+> @label:fig:model-metrics Regression and classification metrics for all models tested on our benchmark. The heat map ranges from yellow (best) to blue (worst) performance. DAF = discovery acceleration factor (see text), TPR = true positive rate, FNR = false negative rate, MAE = mean absolute error, RMSE = root mean squared error
+
+@Fig:model-metrics shows performance metrics for all models considered in v1 of our benchmark.
+M3GNet takes the top spot on most metrics and emerges as current SOTA for ML-guided materials discovery. The discovery acceleration factor (DAF) measures how many more stable structures a model found among the ones it predicted stable compared to the dummy discovery rate of 43 k / 257 k $\approx$ 16.7% achieved by randomly selecting test set crystals. The dummy MAE of always predicting the mean distance to the convex hull is 0.17 eV/atom. Our baseline model Voronoi RF beats random performance in both DAF and MAE.
+
+The maximum possible DAF on our current test set is $\frac{1}{0.167} \approx 6$. This highlights the fact that our benchmark is made more challenging by deploying models on an already enriched space with a much higher fraction of stable structures compared to materials space at large. As the convex hull becomes more thoroughly sampled by future discovery, the fraction of unknown stable structures decreases, naturally leading to less enriched future test sets which will allow for higher maximum DAFs.
+
+We note that while F1 score and DAF of models that make one-shot predictions directly from unrelaxed inputs (CGCNN, MEGNet, Wrenformer) are seemingly unaffected, the $R^2$ of these models is significantly worse. The reason MEGNet outperforms M3GNet on DAF becomes clear from @fig:cumulative-clf-metrics. MEGNet's line ends at 41.6 k materials which is closest to the true number of 43 k stable materials. All other models overpredict this number by anywhere from 40% (~59 k for CGCNN) to 104% (87 k for Wrenformer), resulting in large numbers of false positive predictions that drag down their DAFs.
+
+{#if browser}
+<CumulativeClfMetrics style="margin: 0 -2em 0 -4em;" />
+{/if}
+
+> @label:fig:cumulative-clf-metrics Running precision and recall over the course of a simulated discovery campaign. This figure highlights how different models perform better or worse depending on the length of the discovery campaign. Length here is an integer measuring how many DFT relaxations you have compute budget for.
+
+@Fig:cumulative-clf-metrics simulates ranking materials from most to least stable according to model predictions and going down the list calculating the precision and recall of correctly identified stable materials at each step, i.e. exactly how these models could be used in a prospective materials discovery campaign.
+
+A line terminates when a model believes there are no more materials in the WBM test set below the MP convex hull. The dashed vertical line shows the actual number of materials on or below the MP hull. Most models overestimate the number of stable materials. The dashed diagonal Optimal Recall line would be achieved if a model never made a false negative prediction and predicts everything as unstable exactly when the true number of stable materials is reached. Zooming in on the top-left corner of the precision plot, we observe that MEGNet and the combo M3GNet + MEGNet are particularly suitable for very short discovery campaigns of less than 2000 and 3000 structure relaxations, respectively, after which M3GNet takes the lead on both precision and recall and does not relinquish for the remainder.
+
+{#if browser}
+<RollingMaeModels />
+{/if}
+
+> @label:fig:rolling-mae-vs-hull-dist-models Rolling MAE on the WBM test set as the energy to the convex hull of the MP training set is varied. The width of the box in the bottom corner indicates the rolling window within which errors were averaged (think smoothing strength). The red-highlighted 'triangle of peril' shows where the models are most likely to misclassify structures. As long as a model's rolling MAE remains inside the triangle, its mean error is larger than the distance to the convex hull. If the model's error happens to point towards the stability threshold at 0 eV from the hull (the plot's center), it's average error will change the stability classification of a material from true positive/negative to false negative/positive.
+
+@Fig:rolling-mae-vs-hull-dist-models visualizes a model's reliability as a function of a material's hull distance. The lower its rolling MAE exits the shaded triangle, the better. Inside this area, the model's mean error is larger than the distance to the convex hull, making misclassifications likely. Outside the triangle even if the model's error points toward the stability threshold at 0 eV from the hull (the plot's center), the mean error is too small to move a material over the stability threshold which would cause a false stability classification. M3GNet achieves the lowest overall MAE and exits the peril zone much sooner than other models on the right half of the plot. This means it rarely misclassifies unstable materials that lie more than 40 meV above the hull. On the plot's left half, CGCNN+P exits the peril zone first, albeit much further from the hull at more than 100 meV below. Essentially, all models are prone to false negative predictions even for materials far below the known hull which aligns with the smaller amount of training data for materials on or below the known convex hull (see the [test set's target distribution](/about-the-test-set#--target-distribution)).
+
+## Discussion
+
+From @fig:model-metrics we see several models achieve a DAF > 2 in this realistic benchmark scenario.
+Consequently, the benefits of deploying ML-based triage in high-throughput computational materials discovery applications likely warrant the time and setup required.
+However, there are many aspects on which further progress is necessary, for example, models still make large numbers of false positive predictions for materials over 50 meV above the convex hull and much less likely to be synthesizable, greatly reducing the DAF.
+The results obtained from version 1 of our benchmark show that ML universal interatomic potentials like M3GNet are the most promising methodology to pursue going forward, being both ~20x cheaper to run than black box optimizers like BOWSR and having access to more training structures than coordinate-free approaches like Wrenformer.
+
+<!-- Before obtaining the results for this benchmark, we saw grounds for debate on which is the most promising ML discovery methodology to develop further. After all, some authors of this work were involved with developing Wren/Wrenformer, a one-shot energy predictor using only coarse-grained symmetry features to predict final energy from initial structure. -->
+
+Just like minerals, oil or any other finite resource, the task of discovering new materials will necessarily become more challenging over time as currently undersampled regions of materials space are explored. Before the results of this benchmark, we saw grounds for debate on which is the most promising ML discovery methodology to develop further. We now believe the path to making ML a ubiquitous discovery tool to be straightforward and one the field is already pursuing: training foundational IAPs on significantly more data may get us there even without further algorithmic or model improvements. If we manage to double or triple the discovery acceleration factor, the benefits including ML in materials discovery workflows will significantly outweigh the setup costs.
+
+We welcome further model submissions as well as data contributions for version 2 of this benchmark to the GitHub repo at
+[{repo}]({repo}).
+
+## Acknowledgments
+
+Janosh Riebesell acknowledges support from the German Academic Scholarship Foundation (Studienstiftung) and gracious hosting as a visiting affiliate in the groups of Kristin Persson and Anubhav Jain.
+
+## Author Contributions
+
+Janosh Riebesell: Methodology, Software, Data Curation, Formal analysis. Rhys Goodall: Conceptualization, Software, Formal analysis. Anubhav Jain: Supervision. Kristin Persson: Supervision. Alpha Lee: Supervision.
