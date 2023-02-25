@@ -1,7 +1,11 @@
 <script lang="ts">
   import { References } from '$lib'
+  import { pretty_num } from 'elementari/labels'
+  import type { LayoutServerData } from './$types'
   import { affiliations, authors, date, subtitle, title } from './frontmatter.yml'
   import { references } from './references.yaml'
+
+  export let data: LayoutServerData
 </script>
 
 <h1>{title}<br /><small>{subtitle}</small></h1>
@@ -25,6 +29,12 @@
 <h2>References</h2>
 
 <References {references} />
+
+<small style="float: right;">
+  <code>{pretty_num(data.word_count)}</code> words (<code>
+    ~{Math.floor(data.word_count / 200)}</code
+  > min)
+</small>
 
 <style>
   address {
