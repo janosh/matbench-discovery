@@ -15,9 +15,9 @@ declare module '*metadata.yml' {
 }
 
 // paper metadata
-declare module '*frontmatter.yml' {
-  const frontmatter: import('$lib').Frontmatter
-  export = frontmatter
+declare module '*citation.cff' {
+  const data: import('$lib').Citation
+  export = data
 }
 
 declare module '*references.yaml' {
