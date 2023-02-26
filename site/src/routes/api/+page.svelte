@@ -14,6 +14,7 @@
     font-size: 25pt;
   }
   :global(hr) {
-    display: none;
+    border: 1px solid gray;
+    margin: 0 0 2em;
   }
 </style>

@@ -33,12 +33,13 @@ for model in list(PRED_FILENAMES):
 # pick F1 as primary metric to sort by
 df_metrics = df_metrics.round(3).sort_values("F1", axis=1)
 
-
+# dataframe of all models' energy above convex hull (EACH) predictions (eV/atom)
 df_each_pred = pd.DataFrame()
 for model in df_metrics.T.MAE.sort_values().index:
     df_each_pred[model] = df_wbm[each_true_col] + df_wbm[model] - df_wbm[e_form_col]
 
 
+# dataframe of all models' errors in their EACH predictions (eV/atom)
 df_each_err = pd.DataFrame()
 for model in df_metrics.T.MAE.sort_values().index:
     df_each_err[model] = df_wbm[model] - df_wbm[e_form_col]

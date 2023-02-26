@@ -8,25 +8,25 @@
 
 <summary>
 
-We present a new machine learning (ML) benchmark for materials stability predictions named `Matbench Discovery`. A goal of this benchmark is to highlight the need to focus on metrics that directly measure their utility in prospective discovery campaigns as opposed to analyzing models based on predictive accuracy alone. Our benchmark consists of a task designed to closely simulate the deployment of ML energy models in a high-throughput search for stable inorganic crystals. To shed light on the question which type of ML performs best at materials discovery, we explore a wide variety of models covering multiple methodologies. Our selection ranges from random forests to GNNs, from one-shot predictors to iterative Bayesian optimizers and interatomic potential (IAP) relaxers that closely emulate DFT. We find the M3GNet IAP to achieve the highest F1 score of 0.58 and $R^2$ of 0.59 while MEGNet wins on discovery acceleration factor (DAF) with 2.94. Our results provide valuable insights for maintainers of high throughput materials databases to start using these models as triaging steps to more effectively allocate compute for DFT relaxations.
+We present a new machine learning (ML) benchmark for materials stability predictions named `Matbench Discovery`. A goal of this benchmark is to highlight the need to focus on metrics that directly measure their hit rate in prospective discovery campaigns as opposed to analyzing models based on predictive accuracy alone. Our benchmark consists of a task designed to closely simulate the deployment of ML energy models in a high-throughput search for stable inorganic crystals. To shed light on the question which type of ML performs best at materials discovery, we explore a wide variety of models covering multiple methodologies. Our selection ranges from random forests to GNNs, from one-shot predictors over iterative Bayesian optimizers to interatomic potential (IAP) relaxers that closely emulate DFT. We find the M3GNet IAP to achieve the highest F1 score of 0.58 and $R^2$ of 0.59 while MEGNet wins on discovery acceleration factor (DAF) with 2.94. Our results provide valuable insights for maintainers of high throughput materials databases to start using these models as triaging steps for effectively allocating DFT relaxations.
 
 </summary>
 
 ## Introduction
 
-The use of neural networks for learning the density-functional theory (DFT) potential energy surface (PES) can be traced as far back as @behler_generalized_2007. Ever since, material scientists have devoted significant effort to developing ever more sophisticated model architectures for tackling this problem.
+The use of neural networks for learning the density-functional theory (DFT) potential energy surface (PES) can be traced as far back as @behler_generalized_2007. This work opened the flood gates for material scientists everywhere to devote significant effort into fitting ever more sophisticated models to the PES.
 Initially, most of these models were trained and deployed as interatomic potentials to study known materials of interest which required curating custom training data for each application @bartok_machine_2018 @deringer_general-purpose_2020.
-As larger and more diverse datasets emerged from initiatives like the Materials Project (MP) @jain_commentary_2013 or the Open Quantum Materials Database (OQMD) @saal_materials_2013, researchers have begun to train models that cover the full periodic table opening up the prospect of ML-guided materials discovery.
+As larger and more diverse datasets emerged from initiatives like the Materials Project (MP) @jain_commentary_2013 or the Open Quantum Materials Database (OQMD) @saal_materials_2013, researchers have begun to train models that cover the full periodic table, opening up the prospect of ML-guided materials discovery to increase hit rate and speed of DFT/expert-driven searches.
 
-Yet despite many advances in ML for materials discovery, it is unclear which methodology performs best at predicting material stability. Recent areas of progress include
+Yet despite many advances in ML for materials discovery, it is unclear which methodology performs best at predicting material stability, let alone which model. Recent areas of progress include
 
 1. one-shot predictors like Wren @goodall_rapid_2022,
 1. universal force predictors such as M3GNet @chen_universal_2022 that emulate density functional theory to relax crystal structures according to Newton's laws, and
 1. Bayesian optimizers like BOWSR that, paired with any energy model, treat structure relaxation as a black-box optimization problem @zuo_accelerating_2021.
 
-Ideally, the question of which ML stability prediction algorithms perform best should be answered decisively _before_ operators of large DFT databases like MP or the OQMD commit significant resources to new efforts to expand their databases. In this work, we aim to answer which of these is the winning methodology in a future-proof benchmark that closely simulates using ML to guide a real-world discovery campaign.
+Ideally, the question of which ML stability prediction algorithms perform best should be answered decisively _before_ large DFT databases like MP or the OQMD commit significant resources to new efforts to expand their databases. In this work, we aim to answer which of these is the winning methodology in a future-proof benchmark that closely simulates using ML to guide a real-world discovery campaign.
 
-Disclaimer: Note that we choose distance to the DFT convex hull as the strongest still easily obtainable proxy for actual crystal stability. Our ground truth is ignorant of entropic stabilization and metastable states.
+We use the distance to the PBE DFT convex hull as the best proxy of true crystal stability on available on large datasets, recognizing that our ground truth is ignorant of entropic stabilization or metastable states.
 
 ## Related Work
 
@@ -38,7 +38,7 @@ This insight meant that ML models are much less useful than DFT for discovering 
 The paper identified two main reasons for the sharp decline in predictive power:
 
 1. Stability is a property not only of the material itself but also the chemical space of competing phases it occupies. Current ML algorithms are given an input that only describes the single material they are asked to predict, leaving them clueless of competing phases.
-1. Unlike DFT, ML models appear to benefit less from systematic error cancellation across similar chemistries. A first-principles theory of physics makes systematic errors which tend to be similar for similar systems. When looking at the relative energy differences that determine stability, they more strongly cancel. ML errors seem to follow a more random distribution, making cancellation less likely.
+1. Unlike DFT, ML models appear to benefit less from systematic error cancellation across similar chemistries. A first-principles theory of physics incurs similar errors for similar systems. In particular, the error direction (over- or underestimating the energy) should tend to agree across members of a chemical space. When looking at the relative energy differences that determine stability, systematic errors more strongly cancel. ML errors appear to follow a more random distribution, making cancellations less likely.
 
 Bartel et al. stressed that to demonstrate the utility of ML for materials discovery, the vanity metric of formation energy accuracy must be replaced with stability predictions.
 Moreover, the qualitative leap in performance from Roost @goodall_predicting_2020, the best compositional model benchmarked, to CGCNN @xie_crystal_2018, the single structural model they tested, shows structure plays a crucial role in determining the stability of materials.
@@ -46,21 +46,20 @@ However, using the DFT-relaxed structure as input to CGCNN renders the discovery
 
 ### Matbench
 
-As the name suggests, this work seeks to expand upon the original Matbench suite of property prediction tasks @dunn_benchmarking_2020. By providing a standardized collection of datasets along with canonical cross-validation splits for model evaluation, Matbench helped focus the field of ML for materials, increase comparability across papers
-and attempt to accelerate the field similar to what ImageNet did for computer vision.
+As the name suggests, this work seeks to expand upon the original Matbench suite of property prediction tasks @dunn_benchmarking_2020. By providing a standardized collection of datasets along with canonical cross-validation splits for model evaluation, Matbench helped focus the field of ML for materials, increase comparability across papers and provide a quantitative measure of progress in the field. It was a similar attempt to catalyze the field of ML for materials through competition and setting goal posts as ImageNet was for computer vision.
 
 Matbench released a test suite of 13 supervised tasks for different material properties ranging from thermal (formation energy, phonon frequency peak), electronic (band gap), optical (refractive index) to tensile and elastic (bulk and shear moduli).
 They range in size from ~300 to ~132,000 samples and include both DFT and experimental data sources. 4 tasks are composition-only while 9 provide the relaxed crystal structure as input.
 Importantly, all tasks were exclusively concerned with the properties of known materials.
-We believe a task that simulates a materials discovery campaign by requiring materials stability predictions from unrelaxed structures to be a missing piece here.
+We believe a task that simulates a materials discovery campaign by requiring materials stability prediction from unrelaxed structures to be a missing piece here.
 
 ### The Open Catalyst Project
 
-The Open Catalyst Project (OCP) is a large-scale initiative to discover substrate-adsorbate combinations that catalyze key industrial reactions processing said adsorbates into more useful products.
-The OCP has released two data sets thus far, OCP20 @chanussot_open_2021 and OCP22 @tran_open_2022, that can be used for training and benchmarking ML models.
+The Open Catalyst Project (OCP) is a large-scale initiative to discover substrate-adsorbate combinations that catalyze key industrial reactions which process said adsorbates into more useful products.
+The OCP has released two data sets thus far, OCP20 @chanussot_open_2021 and OCP22 @tran_open_2022, for training and benchmarking ML models.
 
 However, the ambition and scale of OCP comes with limitations for its use as a benchmark.
-OCP20 is already 10x larger than the largest crystal structure data sets available, imposing a high barrier to entry for researchers without access to cloud-scale computing. Moreover, analyzing the learning behavior of the baseline models, the OCP authors estimate that up to 10 orders of magnitude (not 10x) more data will be required before existing ML models reach the accuracy of DFT for adsorbate energies (see fig. 7 right @chanussot_open_2021).
+OCP20 is already 10x larger than the largest crystal structure data sets available, imposing a high barrier to entry for researchers without access to cloud-scale computing. Moreover, analyzing the learning behavior of the baseline models, the OCP authors estimate that up to 10 orders of magnitude more data (not 10x mind you) will be required before existing ML models reach the accuracy of DFT for adsorbate energies and become useful (see fig. 7 right @chanussot_open_2021).
 
 In contrast, we believe the discovery of stable materials is a problem where ML methods have matured enough to be usefully deployed at scale after training existing models for only $\mathcal{O}(10^2)$ GPU hours.
 
@@ -68,23 +67,24 @@ In contrast, we believe the discovery of stable materials is a problem where ML 
 
 The choice of data for the train and test sets of this benchmark fell on the latest Materials Project (MP) @jain_commentary_2013 database release (2021.05.13 at time of writing) and the WBM dataset @wang_predicting_2021.
 
-### The Materials Project - Training Set
+### Materials Project Training Set
 
-The Materials Project is a well-known effort to calculate the properties of all inorganic materials using high-throughput ab-initio methods. Seeded from a subset of the Inorganic Crystal Structure Database (ICSD), the initial release of the database consisted of ~9 k crystals.
-At time of writing, the Materials Project database has grown to ~154 k crystals, covering a diverse chemistries (see [periodic table heatmap](/about-the-data#--chemical-diversity)) and providing relaxed and initial structure as well as the relaxation trajectory for every entry.
-For our benchmark, the training set is all data available from the 2021.05.13 MP release. Models are free to train on relaxed and/or unrelaxed structures or the full DFT relaxation trajectory. This flexibility is intended to allow authors to experiment and exploit the large variety of data available.
+The Materials Project is a well-known effort to calculate the properties of all inorganic materials using high-throughput ab-initio methods. Seeded from a subset of the Inorganic Crystal Structure Database (ICSD) @allen_crystallographic_1999, the initial release of the database consisted of ~9 k crystals.
+At time of writing, the Materials Project database has grown to [~154 k crystals](https://materialsproject.org/materials), covering diverse chemistries (see [periodic table heatmap](/about-the-data#--chemical-diversity)) and providing relaxed and initial structure as well as the relaxation trajectory for every entry.
+For our benchmark, the training set is all data available from the 2021.05.13 MP release. Models are free to train on relaxed and/or unrelaxed structures or the full DFT relaxation trajectory. This flexibility is intended to allow authors to experiment and exploit the large variety of available data. It also aligns with our expectation that future progress in ML for crystal stability is more likely to result from better leveraging training data than innovations in model architecture.
 
-### WBM - Test Set
+### WBM Test Set
 
-The WBM data set @wang_predicting_2021 consists of ~257 k structures generated via chemical similarity-based elemental substitution of MP source structures followed by DFT relaxation and convex hull distance calculation.
-Throughout this work, we define stability in terms of being on or below the convex hull of the MP training set. ~42 k out of ~257 k materials in WBM satisfy this criterion.
-As WBM explores regions of materials space not well sampled by MP, many of these materials discovered that are stable w.r.t. MP's convex hull are not stable with respect to each other.
-Only around ~20 k were found to remain on the convex hull when merging the MP and WBM hulls.
-This observation highlights a critical aspect of this benchmark in that we purposely operate with an incomplete convex hull. Only current knowledge is accessible to a real discovery campaign. Our metrics are designed to reflect this.
+The WBM data set @wang_predicting_2021 consists of ~257 k structures generated via chemical similarity-based elemental substitution of MP source structures followed by DFT relaxation and calculating each crystal's convex hull distance. Which element replaces an existing one in a given source structure was determined by randomly sampling according to the weights in a chemical similarity matrix mined from the ICSD. That is, elements are more likely to be replaced by elements that frequently co-occur in the ICSD for the given structure's prototype. But in principle an element could be replaced by any of the 89 elements present in MP (atomic numbers 1 - 84 and 89 - 94).
 
-Moreover, to simulate a discovery campaign our test set inputs are unrelaxed structures obtained from element substitution on MP source structures but our target labels are the relaxed PBE formation energies. This opens up the opportunity to explore how different approaches (one-shot, force-based pseudo-relaxation, black-box pseudo-relaxation, etc.) compare for materials discovery.
+The WBM authors performed 5 iterations of this substitution process (we also refer to these as batches). After each step, the newly generated structures found to be stable after DFT relaxation flow back into the source pool to partake in the next round of substitution. This split of the data into batches of increasing substitution count is a unique and compelling feature of the test set as it allows out-of-distribution (OOD) testing by seeing if model performance degrades with substitution count. A higher number of elemental substitutions on average carries the structure further away from the region of material space covered by the MP training set. See [per-batch figures in the SI](/si#wbm-batch-robustness-as-a-measure-of-extrapolation-prowess) for details.
 
-Using a chemical similarity matrix mined from the ICSD, the WBM authors performed 5 iterations (also referred to as batches) of this element substitution process. After each step, the newly generated structures found to be stable after DFT relaxation where added back to the source pool to undergo another substitution. This is a unique and compelling feature of the test set as it allows out-of-distribution (OOD) testing by checking how much model performance degrades with substitution count. A higher number of elemental substitutions on average carries the structure further away from the region of material space covered by the MP training set. See [per-batch figures in the SI](/si#wbm-batch-robustness-as-a-measure-of-extrapolation-prowess) for details.
+Throughout this work, we define stability as being on or below the convex hull of the MP training set. ~42 k out of ~257 k materials in WBM satisfy this criterion. The code is set up to treat the stability threshold as a parameter for future more detailed model analysis at different thresholds. For initial analysis in this area, see ROC curves in [the SI](/si#roc-curves) for details.
+
+As WBM explores regions of materials space not well sampled by MP, many of the discovered materials that are stable w.r.t. MP's convex hull are not stable w.r.t. each other. Only around ~20 k remain on the convex hull when merging the MP and WBM hulls, suggesting many WBM structures are repeated samples into the same new chemical spaces.
+This observation highlights a critical aspect of this benchmark in that we purposely operate with an incomplete convex hull. Only current knowledge is accessible to a real discovery campaign and our metrics are designed to reflect this.
+
+To simulate a real discovery campaign, our test set inputs are unrelaxed structures (obtained from element substitution on MP source structures, as mentioned above) while our target labels are the relaxed PBE formation energies. This task type was coined IS2RE (initial structure to relaxed energy) by OCP @chanussot_open_2021.
 
 ## Models
 
@@ -94,11 +94,11 @@ Our initial benchmark release includes 8 models. @Fig:model-metrics includes all
 
    This old model predates most deep learning for materials but significantly improved over Coulomb matrix and partial radial distribution function methods. It therefore serves as a good baseline model to see how much value deep learning models are able to extract from the increasingly large training data on offer in this field.
 
-1. **Wrenformer** - For this benchmark, we introduce Wrenformer which is a variation on Wren @goodall_rapid_2022 constructed using standard QKV-Transformer blocks in place of message-passing layers to reduce memory usage, allowing it to scale to structures with >16 Wyckoff positions.
+1. **Wrenformer** - For this benchmark, we introduce Wrenformer which is a variation on Wren @goodall_rapid_2022 constructed using standard QKV-Transformer blocks @vaswani_attention_2017 in place of message-passing layers to reduce memory usage, allowing it to scale to structures with >16 Wyckoff positions.
 
    Like its predecessor, Wrenformer is a fast coordinate-free model aimed at accelerating screening campaigns where even the unrelaxed structure is a priori unknown.
 
-   The key idea is that by training on the Wyckoff positions (symmetry-related positions in the crystal structure), the model learns to distinguish polymorphs while maintaining discrete and computationally enumerable inputs. During screening, we can take advantage of the fact that across the 230 crystallographic space groups in 3D, there are only 1731 different Wyckoff positions, allowing a model like Wrenformer to predict, for a given composition, the energy of all possible combinations of spacegroup and Wyckoff positions. Ranking them by energy, a useful model would put the symmetry exhibited by the actual crystal close to the top of that list. Knowing which planes, lines or even points certain atoms are confined to by symmetry then allows for a cheaper DFT relaxation with fewer degrees of freedom to obtain the relaxed structure.
+   The key idea is that by training on the Wyckoff positions (symmetry-related positions in the crystal structure), the model learns to distinguish polymorphs while maintaining discrete and computationally enumerable inputs. During screening, we can take advantage of the fact that across the 230 crystallographic space groups in 3D, there are only 1731 different Wyckoff positions. This allows a fast model like Wrenformer to predict, for a given composition, the energy of all possible combinations of spacegroup and Wyckoff positions. A useful model should rank the symmetry exhibited by the actual crystal as one of its lowest predicted energies. Knowing what symmetry are present in a structure and how they confine atoms to planes, lines or even points then allows for a cheaper DFT relaxation with fewer degrees of freedom to obtain the relaxed structure.
 
 1. **CGCNN** @xie_crystal_2018 - The Crystal Graph Convolutional Neural Network (CGCNN) was the first neural network model to directly learn 8 different DFT-computed material properties from a graph representing the atoms and bonds in a periodic crystal.
 
