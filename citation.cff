@@ -1,33 +1,38 @@
-cff-version: 1.2.0
-title: Matbench Discovery
+# cff-version: 1.2.0
 message: If you use this software, please cite it as below.
+title: Matbench Discovery
+subtitle: Can machine learning identify stable crystals?
 authors:
-  - family-names: Riebesell
-    given-names: Janosh
+  - given-names: Janosh
+    family-names: Riebesell
     affiliation: University of Cambridge, Lawrence Berkeley National Laboratory
     email: janosh@lbl.gov
     orcid: https://orcid.org/0000-0001-5233-3462
     corresponding: true
-  - family-names: Goodall
-    given-names: Rhys
+    affil_key: 1, 2
+  - given-names: Rhys
+    family-names: Goodall
     affiliation: University of Cambridge
     orcid: https://orcid.org/0000-0002-6589-1700
-  - family-names: Jain
-    given-name: Anubhav
+    affil_key: 1
+  - given-names: Anubhav
+    family-names: Jain
     orcid: 0000-0001-5893-9967
     affiliation: Lawrence Berkeley National Laboratory
-  - family-names: Persson
-    given-name: Kristin
+    affil_key: 2
+  - given-names: Kristin
+    family-names: Persson
     orcid: 0000-0003-2495-5509
     affiliation: Lawrence Berkeley National Laboratory
-  - family-names: King-Smith
-    given-name: Emma
-    orcid: 0000-0002-2999-0955
-    affiliation: University of Cambridge
-  - family-names: Lee
-    given-name: Alpha
+    affil_key: 2
+  - given-names: Alpha
+    family-names: Lee
     orcid: 0000-0002-9616-3108
     affiliation: University of Cambridge
+    affil_key: 1
+affiliations:
+  - Cavendish Laboratory, University of Cambridge, UK
+  - Lawrence Berkeley National Laboratory, Berkeley, USA
 license: MIT
 license-url: https://github.com/janosh/matbench-discovery/blob/main/license"
 repository-code: https://github.com/janosh/matbench-discovery
