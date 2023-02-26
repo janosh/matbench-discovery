@@ -21,6 +21,6 @@ In version 1 of this benchmark, we explore 8 models covering multiple methodolog
 
 <slot name="metrics-table" />
 
-We welcome contributions that add new models to the leaderboard through [GitHub PRs](https://github.com/janosh/matbench-discovery/pulls). See the [usage and contributing guide](https://janosh.github.io/matbench-discovery/how-to-contribute) for details.
+We welcome contributions that add new models to the leaderboard through [GitHub PRs](https://github.com/janosh/matbench-discovery/pulls). See the [usage and contributing guide](https://janosh.github.io/matbench-discovery/contribute) for details.
 
 For a version 2 release of this benchmark, we plan to merge the current training and test sets into the new training set and acquire a much larger test set compared to the v1 test set of 257k structures.
