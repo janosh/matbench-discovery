@@ -4,7 +4,7 @@ import os
 import sys
 from datetime import datetime
 
-ROOT = os.path.dirname(os.path.dirname(__file__))  # repo root
+ROOT = os.path.dirname(os.path.dirname(__file__))  # repo root directory
 FIGS = f"{ROOT}/site/src/figs"  # directory to store interactive figures
 STATIC = f"{ROOT}/site/static/figs"  # directory to store static figures, is symlinked
 # into site/src/routes/paper/figs dir

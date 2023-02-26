@@ -57,10 +57,10 @@
   div :global(sup.ref) {
     text-transform: capitalize;
   }
-  /*auto-number HTML headings*/
+  /* auto-number HTML headings */
   div :global(h2) {
     counter-increment: h2;
-    counter-reset: h3, h4;
+    counter-reset: h3 h4;
   }
   div :global(h2::before) {
     content: counter(h2);

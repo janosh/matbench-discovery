@@ -18,7 +18,25 @@
   // get prev/next route with wrap-around
   $: next_route = routes[(current_route_idx + 1) % routes.length]
   $: prev_route = routes[(current_route_idx - 1 + routes.length) % routes.length]
+  $: description = {
+    '/': `Benchmarking machine learning energy models for materials discovery.`,
+    '/about-the-data': `Details about provenance, chemistry and energies in the benchmark's train and test set.`,
+    '/about-the-data/tmi': `Too much information on the benchmark's data.`,
+    '/api': `API docs for the Matbench Discovery PyPI package.`,
+    '/contribute': `Steps for contributing a new model to the benchmark.`,
+    '/models': `Details on each model sortable by metrics.`,
+    '/paper': `The paper released with the Matbench Discovery benchmark.`,
+    '/paper/iclr-ml4mat': `Extended abstract submitted to the ICLR ML4Materials workshop.`,
+    '/si': `Supplementary information including interesting but non-essential plots.`,
+  }[$page.route.id ?? ``]
+  if (!description) console.warn(`No description for route ${$page.route.id}`)
+  $: title = $page.route.id == `/` ? `` : `${$page.route.id} • `
 </script>
+
+<svelte:head>
+  <title>{title}Matbench Discovery</title>
+  <meta name="description" content={description} />
+</svelte:head>
 
 <Toc {headingSelector} breakpoint={1250} warnOnEmpty={false} />
 
