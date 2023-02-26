@@ -111,7 +111,7 @@ def test_load_train_test_doc_str() -> None:
     for name in DATA_FILENAMES:
         assert name in doc_str, f"Missing data {name=} in load_train_test() docstring"
 
-    route = "/how-to-contribute"
+    route = "/contribute"
     assert os.path.isdir(f"{ROOT}/site/src/routes/{route}")
 
 

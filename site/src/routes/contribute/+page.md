@@ -184,4 +184,4 @@ This information can be very useful for someone looking to reproduce your result
 
 ## 😵‍💫 &thinsp; Troubleshooting
 
-Having problems using or contributing to the project? Please [open an issue on GitHub]({repo}/issues). Happy to help! 😊
+Having problems using or contributing to the project? Please [open an issue on GitHub]({repo}/issues) or [start a discussion]({repo}/discussions) for open-ended conversations. Happy to help! 😊

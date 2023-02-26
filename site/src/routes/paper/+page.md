@@ -92,7 +92,7 @@ The choice of data for the train and test sets of this benchmark fell on the lat
 
 ## Results
 
-Our benchmark is designed to make [adding future models easy](/how-to-contribute). The initial release compares the following [models](/models):
+Our benchmark is designed to make [adding future models easy](/contribute). The initial release compares the following [models](/models):
 
 1. [CGCNN](https://arxiv.org/abs/1710.10324) @xie_crystal_2018
 1. [BOWSR](https://sciencedirect.com/science/article/pii/S1369702121002984) @zuo_accelerating_2021
