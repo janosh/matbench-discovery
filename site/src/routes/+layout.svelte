@@ -49,14 +49,21 @@
     max-width: 50em;
   }
   a[href='/'] {
-    font-size: 15pt;
-    position: absolute;
-    top: 2em;
-    left: 2em;
+    font-size: 14pt;
     background-color: rgba(255, 255, 255, 0.1);
     padding: 1pt 5pt;
     border-radius: 3pt;
     transition: 0.2s;
+    width: max-content;
+    box-sizing: border-box;
+    margin: 1em 0 0 1em;
+  }
+  @media (min-width: 900px) {
+    a[href='/'] {
+      position: absolute;
+      top: 1em;
+      left: 1em;
+    }
   }
   a[href='/']:hover {
     background-color: rgba(255, 255, 255, 0.2);

@@ -2,24 +2,25 @@
   import { References } from '$lib'
   import { pretty_num } from 'elementari/labels'
   import type { LayoutServerData } from './$types'
-  import { affiliations, authors, date, subtitle, title } from './frontmatter.yml'
   import { references } from './references.yaml'
 
   export let data: LayoutServerData
+
+  const authors = data.authors.map(
+    (auth) => `${auth[`given-names`]} ${auth[`family-names`]}<sup>${auth.affil_key}</sup>`
+  )
 </script>
 
-<h1>{title}<br /><small>{subtitle}</small></h1>
+<h1>{data.title}<br /><small>{data.subtitle}</small></h1>
 
 <address>
   <span>
-    {@html authors
-      .map((author) => `${author.name}<sup>${author.affiliation}</sup>`)
-      .join(`, `)}
+    {@html authors.join(`, `)}
   </span>
   <span>
-    {@html affiliations.map((affil, idx) => `${idx + 1}. ${affil}`).join(`<br/>`)}
+    {@html data.affiliations.map((affil, idx) => `${idx + 1}. ${affil}`).join(`<br/>`)}
   </span>
-  <span style="font-weight: lighter;">{date}</span>
+  <span style="font-weight: lighter;">{data[`date-released`]}</span>
 </address>
 
 <div>
