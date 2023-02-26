@@ -60,7 +60,7 @@ def load_train_test(
     Recognized data keys are mp-computed-structure-entries, mp-elemental-ref-energies,
     mp-energies, mp-patched-phase-diagram, wbm-computed-structure-entries,
     wbm-initial-structures, wbm-summary. See
-    https://janosh.github.io/matbench-discovery/how-to-contribute for data descriptions.
+    https://janosh.github.io/matbench-discovery/contribute for data descriptions.
 
     Args:
         data_names (str | list[str], optional): Which parts of the MP/WBM data to load.

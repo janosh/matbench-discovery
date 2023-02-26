@@ -18,7 +18,7 @@ Compare MP and WBM elemental prevalence. Starting with WBM, MP below.
 
 module_dir = os.path.dirname(__file__)
 print(f"{pio.templates.default=}")
-about_data_page = f"{ROOT}/site/src/routes/about-the-test-set"
+about_data_page = f"{ROOT}/site/src/routes/about-the-data"
 
 
 # %%
