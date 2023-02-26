@@ -170,7 +170,7 @@ git commit -m 'add <model_name> to Matbench Discovery leaderboard'
 
 And you're done! Once tests pass and the PR is merged, your model will be added to the leaderboard! 🎉
 
-### Step 4 (optional): Move WandB runs into our project
+### Step 4 (optional): Copy WandB runs into our project
 
 [Weights and Biases](https://wandb.ai) is a great tool for logging training and test runs of ML models. It's free, (partly) [open source](https://github.com/wandb/wandb) and offers a [special plan for academics](https://wandb.ai/site/research). It auto-collects metadata like
 

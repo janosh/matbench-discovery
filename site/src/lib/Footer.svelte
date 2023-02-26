@@ -6,7 +6,9 @@
 <footer>
   Questions/feedback?
   <a href="{repository}/issues"><Icon icon="octicon:mark-github" inline /></a>
-  <a href="mailto:janosh@lbl.gov"><Icon icon="mdi:email" inline /></a>
+  <a href="mailto:janosh@lbl.gov?subject=Matbench Discovery">
+    <Icon icon="mdi:email" inline />
+  </a>
 </footer>
 
 <style>

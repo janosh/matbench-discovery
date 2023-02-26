@@ -1,5 +1,52 @@
 ---
 references:
+- id: allen_crystallographic_1999
+  abstract: >-
+    The development of strategies for the design of novel materials is
+    increasingly a knowledge-based activity and this book highlights a variety
+    of experimental and computational methods that provide structural knowledge
+    about individual compounds or groups of related compounds. However,
+    scientific research and development is an evolutionary process in which the
+    critical analysis and assessment of all existing information is an essential
+    component. In the area of chemical structure, such analyses provide
+    fundamental insights which can lead to the detection of trends and
+    probabilities, and to the formulation of hypotheses and rules. These
+    indications, in their turn, can direct the future course of structural
+    design, synthesis and experiment.
+  accessed:
+    - year: 2020
+      month: 8
+      day: 31
+  author:
+    - family: Allen
+      given: Frank H.
+    - family: Shields
+      given: Gregory P.
+  citation-key: allen_crystallographic_1999
+  collection-title: NATO Science Series
+  container-title: Implications of Molecular and Materials Structure for New Technologies
+  DOI: 10.1007/978-94-011-4653-1_21
+  editor:
+    - family: Howard
+      given: Judith A. K.
+    - family: Allen
+      given: Frank H.
+    - family: Shields
+      given: Gregory P.
+  event-place: Dordrecht
+  ISBN: 978-94-011-4653-1
+  issued:
+    - year: 1999
+  language: en
+  note: 'ZSCC: NoCitationData[s0]'
+  page: 291-302
+  publisher: Springer Netherlands
+  publisher-place: Dordrecht
+  source: Springer Link
+  title: Crystallographic Databases and Knowledge Bases in Materials Design
+  type: chapter
+  URL: https://doi.org/10.1007/978-94-011-4653-1_21
+
 - id: bartel_critical_2020
   abstract: >-
     Machine learning has emerged as a novel tool for the efficient prediction of
@@ -1020,6 +1067,57 @@ references:
     Electrocatalysts
   type: article
   URL: http://arxiv.org/abs/2206.08917
+
+- id: vaswani_attention_2017
+  abstract: >-
+    The dominant sequence transduction models are based on complex recurrent or
+    convolutional neural networks in an encoder-decoder configuration. The best
+    performing models also connect the encoder and decoder through an attention
+    mechanism. We propose a new simple network architecture, the Transformer,
+    based solely on attention mechanisms, dispensing with recurrence and
+    convolutions entirely. Experiments on two machine translation tasks show
+    these models to be superior in quality while being more parallelizable and
+    requiring significantly less time to train. Our model achieves 28.4 BLEU on
+    the WMT 2014 English-to-German translation task, improving over the existing
+    best results, including ensembles by over 2 BLEU. On the WMT 2014
+    English-to-French translation task, our model establishes a new single-model
+    state-of-the-art BLEU score of 41.8 after training for 3.5 days on eight
+    GPUs, a small fraction of the training costs of the best models from the
+    literature. We show that the Transformer generalizes well to other tasks by
+    applying it successfully to English constituency parsing both with large and
+    limited training data.
+  accessed:
+    - year: 2020
+      month: 8
+      day: 5
+  author:
+    - family: Vaswani
+      given: Ashish
+    - family: Shazeer
+      given: Noam
+    - family: Parmar
+      given: Niki
+    - family: Uszkoreit
+      given: Jakob
+    - family: Jones
+      given: Llion
+    - family: Gomez
+      given: Aidan N.
+    - family: Kaiser
+      given: Lukasz
+    - family: Polosukhin
+      given: Illia
+  citation-key: vaswani_attention_2017
+  container-title: arXiv:1706.03762 [cs]
+  issued:
+    - year: 2017
+      month: 12
+      day: 5
+  note: 'ZSCC: 0010850'
+  source: arXiv.org
+  title: Attention Is All You Need
+  type: article-journal
+  URL: http://arxiv.org/abs/1706.03762
 
 - id: wang_predicting_2021
   abstract: >-
