@@ -13,6 +13,7 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from tqdm import tqdm
 
 from matbench_discovery import ROOT
+from matbench_discovery.plots import model_labels
 
 df_wbm = pd.read_csv(f"{ROOT}/data/wbm/2022-10-19-wbm-summary.csv")
 df_wbm.index = df_wbm.material_id
@@ -22,15 +23,58 @@ RAW_REPO_URL = "https://raw.githubusercontent.com/janosh/matbench-discovery"
 # directory to cache downloaded data files
 default_cache_dir = os.path.expanduser("~/.cache/matbench-discovery")
 
-DATA_FILENAMES = {
-    "mp-computed-structure-entries": "mp/2022-09-16-mp-computed-structure-entries.json.gz",  # noqa: E501
-    "mp-elemental-ref-energies": "mp/2022-09-19-mp-elemental-ref-energies.json",
-    "mp-energies": "mp/2022-08-13-mp-energies.json.gz",
-    "mp-patched-phase-diagram": "mp/2023-02-07-ppd-mp.pkl.gz",
-    "wbm-computed-structure-entries": "wbm/2022-10-19-wbm-computed-structure-entries.json.bz2",  # noqa: E501
-    "wbm-initial-structures": "wbm/2022-10-19-wbm-init-structs.json.bz2",
-    "wbm-summary": "wbm/2022-10-19-wbm-summary.csv",
-}
+
+class Files(dict):  # type: ignore
+    """Files instance inherits from dict so that .values(), items(), etc. are supported
+    but also allows accessing attributes by dot notation. E.g. FILES.wbm_summary
+    instead of FILES["wbm_summary"]. This enables tab completion in IDEs and
+    auto-updating attribute names across the code base when changing the name of an
+    attribute.
+    Every subclass must set the _root attribute to a path that serves as the root
+    directory w.r.t. which all files will be turned into absolute paths.
+    The _key_map attribute can be used to map attribute names to different names in the
+    dict. This is useful if you want to have keys that are not valid Python identifiers.
+    """
+
+    def __init__(self) -> None:
+        """Create a Files instance."""
+        key_map = getattr(self, "_key_map", {})
+        dct = {
+            key_map.get(key, key): f"{self._root}/{file}"  # type: ignore
+            for key, file in type(self).__dict__.items()
+            if not key.startswith("_")
+        }
+        for key, file in dct.items():
+            if not os.path.isfile(file):
+                raise FileNotFoundError(f"{key=}, {file=}")
+        self.__dict__ = dct
+        super().__init__(dct)
+
+
+class DataFiles(Files):
+    """Data files provided by Matbench Discovery.
+    See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
+    """
+
+    _root = f"{ROOT}/data"
+
+    mp_computed_structure_entries = (
+        "mp/2023-02-07-mp-computed-structure-entries.json.gz"
+    )
+    mp_elemental_ref_entries = "mp/2022-09-19-mp-elemental-reference-entries.json"
+    mp_energies = "mp/2023-01-10-mp-energies.json.gz"
+    mp_patched_phase_diagram = "mp/2023-02-07-ppd-mp.pkl.gz"
+    wbm_computed_structure_entries = (
+        "wbm/2022-10-19-wbm-computed-structure-entries.json.bz2"
+    )
+    wbm_initial_structures = "wbm/2022-10-19-wbm-init-structs.json.bz2"
+    wbm_computed_structure_entries_plus_init_structs = (
+        "wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
+    )
+    wbm_summary = "wbm/2022-10-19-wbm-summary.csv"
+
+
+DATA_FILES = DataFiles()
 
 
 def as_dict_handler(obj: Any) -> dict[str, Any] | None:
@@ -57,10 +101,8 @@ def load_train_test(
     JSON which will be cached locally to cache_dir for faster re-loading unless
     cache_dir is set to None.
 
-    Recognized data keys are mp-computed-structure-entries, mp-elemental-ref-energies,
-    mp-energies, mp-patched-phase-diagram, wbm-computed-structure-entries,
-    wbm-initial-structures, wbm-summary. See
-    https://janosh.github.io/matbench-discovery/contribute for data descriptions.
+    See matbench_discovery.data.DATA_FILES for recognized data keys. See
+    https://janosh.github.io/matbench-discovery/contribute for descriptions.
 
     Args:
         data_names (str | list[str], optional): Which parts of the MP/WBM data to load.
@@ -84,16 +126,16 @@ def load_train_test(
         multiple data were requested.
     """
     if data_names == "all":
-        data_names = list(DATA_FILENAMES)
+        data_names = list(DATA_FILES)
     elif isinstance(data_names, str):
         data_names = [data_names]
 
-    if missing := set(data_names) - set(DATA_FILENAMES):
-        raise ValueError(f"{missing} must be subset of {set(DATA_FILENAMES)}")
+    if missing := set(data_names) - set(DATA_FILES):
+        raise ValueError(f"{missing} must be subset of {set(DATA_FILES)}")
 
     dfs = {}
     for key in data_names:
-        file = DATA_FILENAMES[key]
+        file = DataFiles.__dict__[key]
         reader = pd.read_csv if file.endswith(".csv") else pd.read_json
 
         cache_path = f"{cache_dir}/{version}/{file}"
@@ -138,16 +180,39 @@ def load_train_test(
     return dfs
 
 
-PRED_FILENAMES = {
-    "CGCNN": "cgcnn/2023-01-26-test-cgcnn-wbm-IS2RE/cgcnn-ensemble-preds.csv",
-    "CGCNN+P": "cgcnn/2023-02-05-cgcnn-perturb=5.csv",
-    "Voronoi Random Forest": "voronoi/2022-11-27-train-test/e-form-preds-IS2RE.csv",
-    "Wrenformer": "wrenformer/2022-11-15-wrenformer-IS2RE-preds.csv",
-    "MEGNet": "megnet/2022-11-18-megnet-wbm-IS2RE/megnet-e-form-preds.csv",
-    "M3GNet": "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv",
-    "M3GNet + MEGNet": "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv",
-    "BOWSR + MEGNet": "bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv",
-}
+class PredFiles(Files):
+    """Data files provided by Matbench Discovery.
+    See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
+    """
+
+    _root = f"{ROOT}/models"
+    _key_map = model_labels
+
+    # CGCnn 10-member ensemble
+    cgcnn = "cgcnn/2023-01-26-test-cgcnn-wbm-is2re/cgcnn-ensemble-preds.csv"
+
+    # cgcnn 10-member ensemble with 5-fold training set perturbations
+    cgcnn_p = "cgcnn/2023-02-05-cgcnn-perturb=5.csv"
+
+    # magpie composition+voronoi tessellation structure features + sklearn random forest
+    voronoi_rf = "voronoi/2022-11-27-train-test/e-form-preds-is2re.csv"
+
+    # wrenformer 10-member ensemble
+    wrenformer = "wrenformer/2022-11-15-wrenformer-is2re-preds.csv"
+
+    # original megnet straight from publication, not re-trained
+    megnet = "megnet/2022-11-18-megnet-wbm-is2re/megnet-e-form-preds.csv"
+
+    # original m3gnet straight from publication, not re-trained
+    m3gnet = "m3gnet/2022-10-31-m3gnet-wbm-is2re.csv"
+
+    # m3gnet-relaxed structures fed into megnet for formation energy prediction
+    m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-is2re.csv"
+    # bowsr optimizer coupled with original megnet
+    bowsr_megnet = "bowsr/2023-01-23-bowsr-megnet-wbm-is2re.csv"
+
+
+PRED_FILES = PredFiles()
 
 
 def glob_to_df(
@@ -190,7 +255,7 @@ def load_df_wbm_preds(
 
     Args:
         models (Sequence[str]): Model names must be keys of the dict
-            matbench_discovery.data.PRED_FILENAMES.
+            matbench_discovery.data.PRED_FILES.
         pbar (bool, optional): Whether to show progress bar. Defaults to True.
         id_col (str, optional): Column to set as df.index. Defaults to "material_id".
         **kwargs: Keyword arguments passed to glob_to_df().
@@ -201,15 +266,14 @@ def load_df_wbm_preds(
     Returns:
         pd.DataFrame: WBM summary dataframe with model predictions.
     """
-    if mismatch := ", ".join(set(models) - set(PRED_FILENAMES)):
+    if mismatch := ", ".join(set(models) - set(PRED_FILES)):
         raise ValueError(f"Unknown models: {mismatch}")
 
     dfs: dict[str, pd.DataFrame] = {}
 
     for model_name in (bar := tqdm(models, disable=not pbar, desc="Loading preds")):
         bar.set_postfix_str(model_name)
-        pattern = f"models/{PRED_FILENAMES[model_name]}"
-        df = glob_to_df(pattern, pbar=False, **kwargs).set_index(id_col)
+        df = glob_to_df(PRED_FILES[model_name], pbar=False, **kwargs).set_index(id_col)
         dfs[model_name] = df
 
     df_out = df_wbm.copy()

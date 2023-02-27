@@ -12,7 +12,7 @@ from pymatgen.entries.computed_entries import ComputedEntry, ComputedStructureEn
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, today
-from matbench_discovery.data import df_wbm
+from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.plots import plt
 
@@ -23,8 +23,9 @@ ComputedStructureEntry, not ComputedEntry when applying corrections.
 """
 
 
-cse_path = f"{ROOT}/data/wbm/2022-10-19-wbm-computed-structure-entries.json.bz2"
-df_cse = pd.read_json(cse_path).set_index("material_id")
+df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(
+    "material_id"
+)
 
 cses = [
     ComputedStructureEntry.from_dict(x) for x in tqdm(df_cse.computed_structure_entry)

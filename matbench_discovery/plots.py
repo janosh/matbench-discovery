@@ -49,14 +49,16 @@ quantity_labels = dict(
     formula="Formula",
 )
 model_labels = dict(
-    wren="Wren",
-    wrenformer="Wrenformer",
-    m3gnet="M3GNet",
     bowsr_megnet="BOWSR + MEGNet",
+    cgcnn_p="CGCNN+P",
     cgcnn="CGCNN",
-    voronoi="Voronoi",
-    wbm="WBM",
+    m3gnet_megnet="M3GNet + MEGNet",
+    m3gnet="M3GNet",
+    megnet="MEGNet",
+    voronoi_rf="Voronoi Random Forest",
+    wrenformer="Wrenformer",
     dft="DFT",
+    wbm="WBM",
 )
 px.defaults.labels = quantity_labels | model_labels
 
