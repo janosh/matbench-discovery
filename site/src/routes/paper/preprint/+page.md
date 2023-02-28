@@ -14,7 +14,7 @@ We present a new machine learning (ML) benchmark for materials stability predict
 
 ## Introduction
 
-The use of neural networks for learning the density-functional theory (DFT) potential energy surface (PES) can be traced as far back as @behler_generalized_2007. This work opened the flood gates for material scientists everywhere to devote significant effort into fitting ever more sophisticated models to the PES.
+The use of neural networks for learning the density-functional theory (DFT) potential energy surface (PES) can be traced as far back as @behler_generalized_2007. This work opened the floodgates for material scientists everywhere to devote significant effort into fitting ever more sophisticated models to the PES.
 Initially, most of these models were trained and deployed as interatomic potentials to study known materials of interest which required curating custom training data for each application @bartok_machine_2018 @deringer_general-purpose_2020.
 As larger and more diverse datasets emerged from initiatives like the Materials Project (MP) @jain_commentary_2013 or the Open Quantum Materials Database (OQMD) @saal_materials_2013, researchers have begun to train models that cover the full periodic table, opening up the prospect of ML-guided materials discovery to increase hit rate and speed of DFT/expert-driven searches.
 
