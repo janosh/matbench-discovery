@@ -10,16 +10,11 @@ from matbench_discovery.metrics import stable_metrics
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-04"
 
-models = sorted(
-    "Wrenformer, CGCNN+P, Voronoi Random Forest, MEGNet, M3GNet + MEGNet, "
-    "BOWSR + MEGNet".split(", ")
-)
 e_form_col = "e_form_per_atom_mp2020_corrected"
 each_true_col = "e_above_hull_mp2020_corrected_ppd_mp"
 each_pred_col = "e_above_hull_pred"
 
-df_wbm = load_df_wbm_preds(list(PRED_FILES)).round(3)
-drop_cols = {*PRED_FILES} - {*models}
+df_wbm = load_df_wbm_preds().round(3)
 
 
 df_metrics = pd.DataFrame()

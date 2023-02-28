@@ -43,12 +43,18 @@
   {/each}
 </nav>
 <p>
-  <span
-    ><Icon icon="ion:ios-calendar" inline />
-    {data.date_added}
+  <span title="Date added">
+    <Icon icon="ion:ios-calendar" inline />
+    Added {data.date_added}
   </span>
-  <span
-    ><Icon icon="carbon:version" inline />
+  {#if data.date_published}
+    <span title="Date published">
+      <Icon icon="ri:calendar-check-line" inline />
+      Published {data.date_published}
+    </span>
+  {/if}
+  <span>
+    <Icon icon="carbon:version" inline />
     Benchmark version: {data.matbench_discovery_version}
   </span>
   <span>
@@ -176,9 +182,9 @@
     place-items: center;
   }
   p {
-    display: flex;
-    gap: 3pt 12pt;
-    flex-wrap: wrap;
+    display: grid;
+    gap: 3pt;
+    grid-template-columns: 1fr 1fr;
   }
   div {
     display: grid;

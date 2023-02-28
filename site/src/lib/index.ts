@@ -11,6 +11,7 @@ export type ModelMetadata = {
   model_version: string
   matbench_discovery_version: string
   date_added: string
+  date_published?: string
   authors: Author[]
   repo: string
   url?: string
