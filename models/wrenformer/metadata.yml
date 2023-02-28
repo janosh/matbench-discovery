@@ -2,6 +2,7 @@ model_name: Wrenformer
 model_version: 0.1.0 # the aviary version
 matbench_discovery_version: 1.0
 date_added: "2022-11-26"
+date_published: "2021-06-21"
 authors:
   - name: Janosh Riebesell
     affiliation: University of Cambridge, Lawrence Berkeley National Laboratory

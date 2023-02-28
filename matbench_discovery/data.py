@@ -26,14 +26,13 @@ default_cache_dir = os.path.expanduser("~/.cache/matbench-discovery")
 
 class Files(dict):  # type: ignore
     """Files instance inherits from dict so that .values(), items(), etc. are supported
-    but also allows accessing attributes by dot notation. E.g. FILES.wbm_summary
-    instead of FILES["wbm_summary"]. This enables tab completion in IDEs and
-    auto-updating attribute names across the code base when changing the name of an
-    attribute.
-    Every subclass must set the _root attribute to a path that serves as the root
-    directory w.r.t. which all files will be turned into absolute paths.
-    The _key_map attribute can be used to map attribute names to different names in the
-    dict. This is useful if you want to have keys that are not valid Python identifiers.
+    but also allows accessing attributes by dot notation. E.g. FILES.wbm_summary instead
+    of FILES["wbm_summary"]. This enables tab completion in IDEs and auto-updating
+    attribute names across the code base when changing the name of an attribute. Every
+    subclass must set the _root attribute to a path that serves as the root directory
+    w.r.t. which all files will be turned into absolute paths. The _key_map attribute
+    can be used to map attribute names to different names in the dict. Useful if you
+    want to have keys like 'foo+bar' that are not valid Python identifiers.
     """
 
     def __init__(self) -> None:
@@ -246,13 +245,16 @@ def glob_to_df(
 
 
 def load_df_wbm_preds(
-    models: Sequence[str], pbar: bool = True, id_col: str = "material_id", **kwargs: Any
+    models: Sequence[str] = (*PRED_FILES,),
+    pbar: bool = True,
+    id_col: str = "material_id",
+    **kwargs: Any,
 ) -> pd.DataFrame:
     """Load WBM summary dataframe with model predictions from disk.
 
     Args:
-        models (Sequence[str]): Model names must be keys of the dict
-            matbench_discovery.data.PRED_FILES.
+        models (Sequence[str], optional): Model names must be keys of
+            matbench_discovery.data.PRED_FILES. Defaults to all models.
         pbar (bool, optional): Whether to show progress bar. Defaults to True.
         id_col (str, optional): Column to set as df.index. Defaults to "material_id".
         **kwargs: Keyword arguments passed to glob_to_df().

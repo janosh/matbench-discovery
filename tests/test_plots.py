@@ -16,7 +16,7 @@ from matbench_discovery.plots import (
 )
 
 AxLine = Literal["x", "y", "xy", ""]
-models = ["Wrenformer", "CGCNN", "Voronoi Random Forest"]
+models = ["MEGNet", "CGCNN", "Voronoi Random Forest"]
 df_wbm = load_df_wbm_preds(models, nrows=100)
 each_true_col = "e_above_hull_mp2020_corrected_ppd_mp"
 each_pred_col = "e_above_hull_pred"
