@@ -10,7 +10,7 @@ from matbench_discovery.preds import (
 
 
 def test_df_wbm() -> None:
-    for col in [e_form_col, each_true_col]:
+    for col in (e_form_col, each_true_col):
         assert col in df_wbm, f"{col=} not in {list(df_wbm)=}"
 
 

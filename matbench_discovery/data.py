@@ -233,7 +233,7 @@ def glob_to_df(
     reader = reader or pd.read_csv if ".csv" in pattern else pd.read_json
 
     # prefix pattern with ROOT if not absolute path
-    files = glob(pattern if pattern.startswith("/") else f"{ROOT}/{pattern}")
+    files = glob(pattern)
     if len(files) == 0:
         raise FileNotFoundError(f"No files matching glob {pattern=}")
 
