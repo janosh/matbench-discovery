@@ -12,8 +12,8 @@ from sklearn.impute import SimpleImputer
 from sklearn.metrics import r2_score
 from sklearn.pipeline import Pipeline
 
-from matbench_discovery import DEBUG, ROOT, today
-from matbench_discovery.data import df_wbm, glob_to_df
+from matbench_discovery import DEBUG, today
+from matbench_discovery.data import DATA_FILES, df_wbm, glob_to_df
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 from models.voronoi import featurizer
@@ -48,8 +48,7 @@ train_path = f"{module_dir}/2022-11-25-features-mp/voronoi-features-mp-*.csv.bz2
 df_train = glob_to_df(train_path).set_index("material_id")
 print(f"{df_train.shape=}")
 
-mp_energies_path = f"{ROOT}/data/mp/2022-08-13-mp-energies.json.gz"
-df_mp = pd.read_json(mp_energies_path).set_index("material_id")
+df_mp = pd.read_json(DATA_FILES.mp_energies).set_index("material_id")
 train_e_form_col = "formation_energy_per_atom"
 
 test_path = f"{module_dir}/2022-11-18-features-wbm-{task_type}.csv.bz2"
@@ -72,7 +71,7 @@ model_name = "Voronoi RandomForestRegressor"
 run_params = dict(
     train_path=train_path,
     test_path=test_path,
-    mp_energies_path=mp_energies_path,
+    mp_energies_path=DATA_FILES.mp_energies,
     scikit_learn_version=version("scikit-learn"),
     matminer_version=version("matminer"),
     numpy_version=version("numpy"),

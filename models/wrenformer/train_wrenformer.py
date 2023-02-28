@@ -8,7 +8,8 @@ from importlib.metadata import version
 import pandas as pd
 from aviary.train import df_train_test_split, train_wrenformer
 
-from matbench_discovery import DEBUG, ROOT, WANDB_PATH, timestamp, today
+from matbench_discovery import DEBUG, WANDB_PATH, timestamp, today
+from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
@@ -17,8 +18,7 @@ __date__ = "2022-08-13"
 
 # %%
 epochs = 300
-data_path = f"{ROOT}/data/mp/2022-08-13-mp-energies.json.gz"
-# data_path = f"{ROOT}/data/mp/2022-08-13-mp-energies-1k-samples.json.gz"
+data_path = DATA_FILES.mp_energies
 target_col = "formation_energy_per_atom"
 # data_path = f"{ROOT}/data/2022-08-25-m3gnet-trainset-mp-2021-struct-energy.json.gz"
 # target_col = "mp_energy_per_atom"

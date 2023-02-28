@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from matbench_discovery.data import PRED_FILENAMES, load_df_wbm_preds
+from matbench_discovery.data import PRED_FILES, load_df_wbm_preds
 from matbench_discovery.metrics import stable_metrics
 
 """Centralize data-loading and computing metrics for plotting scripts"""
@@ -18,13 +18,13 @@ e_form_col = "e_form_per_atom_mp2020_corrected"
 each_true_col = "e_above_hull_mp2020_corrected_ppd_mp"
 each_pred_col = "e_above_hull_pred"
 
-df_wbm = load_df_wbm_preds(list(PRED_FILENAMES)).round(3)
-drop_cols = {*PRED_FILENAMES} - {*models}
+df_wbm = load_df_wbm_preds(list(PRED_FILES)).round(3)
+drop_cols = {*PRED_FILES} - {*models}
 
 
 df_metrics = pd.DataFrame()
 df_metrics.index.name = "model"
-for model in list(PRED_FILENAMES):
+for model in list(PRED_FILES):
     df_metrics[model] = stable_metrics(
         df_wbm[each_true_col],
         df_wbm[each_true_col] + df_wbm[model] - df_wbm[e_form_col],

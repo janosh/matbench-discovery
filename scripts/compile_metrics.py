@@ -17,7 +17,7 @@ from pymatviz.utils import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import FIGS, MODELS, ROOT, WANDB_PATH
-from matbench_discovery.data import PRED_FILENAMES
+from matbench_discovery.data import PRED_FILES
 from matbench_discovery.plots import px
 from matbench_discovery.preds import df_metrics, df_wbm
 
@@ -73,7 +73,7 @@ models: dict[str, dict[str, Any]] = {
 }
 
 assert not (
-    unknown_models := set(models) - set(PRED_FILENAMES)
+    unknown_models := set(models) - set(PRED_FILES)
 ), f"{unknown_models=} missing predictions file"
 
 
