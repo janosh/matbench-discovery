@@ -11,7 +11,8 @@ from pymatgen.core import Structure
 from torch.utils.data import DataLoader
 from tqdm import tqdm, trange
 
-from matbench_discovery import DEBUG, ROOT, WANDB_PATH, timestamp, today
+from matbench_discovery import DEBUG, WANDB_PATH, timestamp, today
+from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 from matbench_discovery.structure import perturb_structure
 
@@ -58,8 +59,7 @@ task_type: TaskType = "regression"
 
 
 # %%
-data_path = f"{ROOT}/data/mp/2022-08-13-mp-energies.json.gz"
-# data_path = f"{ROOT}/data/mp/2022-08-13-mp-energies-1k-samples.json.gz"
+data_path = DATA_FILES.mp_energies
 print(f"{data_path=}")
 df = pd.read_json(data_path).set_index(id_col)
 df[input_col] = [Structure.from_dict(s) for s in tqdm(df[input_col], disable=None)]

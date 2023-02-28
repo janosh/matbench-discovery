@@ -44,7 +44,7 @@ def test_model_dirs_have_metadata() -> None:
             assert (
                 1 < len(model_version) < 15
             ), f"Invalid {model_version=} not between 1 and 15 characters"
-            # TODO increase max version when releasing new versions
+            # TODO increase max allowed version when updating package
             assert (
                 1 <= mbd_version <= 1
             ), f"Invalid matbench-discovery version: {mbd_version}"

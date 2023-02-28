@@ -18,6 +18,7 @@ from pymatgen.ext.matproj import MPRester
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, today
+from matbench_discovery.data import DATA_FILES
 from matbench_discovery.energy import get_e_form_per_atom, get_elemental_ref_entries
 
 module_dir = os.path.dirname(__file__)
@@ -62,9 +63,9 @@ with gzip.open(f"{module_dir}/{today}-ppd-mp.pkl.gz", "wb") as zip_file:
 
 
 # %% build phase diagram with both MP entries + WBM entries
-df_wbm = pd.read_json(
-    f"{ROOT}/data/wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
-).set_index("material_id")
+df_wbm = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(
+    "material_id"
+)
 
 # using ComputedStructureEntry vs ComputedEntry here is important as CSEs receive
 # more accurate energy corrections that take into account peroxide/superoxide nature
@@ -101,9 +102,7 @@ with open(f"{ROOT}/data/mp/{today}-mp-elemental-reference-entries.json", "w") as
     json.dump(elemental_ref_entries, file, default=lambda x: x.as_dict())
 
 
-df_mp = pd.read_json(f"{ROOT}/data/mp/2022-08-13-mp-energies.json.gz").set_index(
-    "material_id"
-)
+df_mp = pd.read_json(DATA_FILES.mp_energies).set_index("material_id")
 
 
 # %%

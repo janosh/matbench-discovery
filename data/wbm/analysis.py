@@ -8,7 +8,7 @@ from pymatviz import count_elements, ptable_heatmap_plotly
 from pymatviz.utils import save_fig
 
 from matbench_discovery import FIGS, ROOT, today
-from matbench_discovery.data import df_wbm
+from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.energy import mp_elem_reference_entries
 from matbench_discovery.plots import pio
 
@@ -69,7 +69,7 @@ wbm_fig.write_image(f"{module_dir}/figs/wbm-elements.svg", width=1000, height=50
 
 
 # %% load MP training set
-df = pd.read_json(f"{module_dir}/../mp/2022-08-13-mp-energies.json.gz")
+df = pd.read_json(DATA_FILES.mp_energies)
 mp_elem_counts = count_elements(df.formula_pretty).astype(int)
 
 # mp_elem_counts.to_json(f"{about_data_page}/mp-element-counts.json")

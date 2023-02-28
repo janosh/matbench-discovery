@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import urllib.request
 from pathlib import Path
@@ -15,9 +16,10 @@ from pytest import CaptureFixture
 
 from matbench_discovery import ROOT
 from matbench_discovery.data import (
-    DATA_FILENAMES,
-    PRED_FILENAMES,
+    DATA_FILES,
+    PRED_FILES,
     RAW_REPO_URL,
+    DataFiles,
     as_dict_handler,
     df_wbm,
     glob_to_df,
@@ -40,12 +42,12 @@ except Exception:
 @pytest.mark.parametrize(
     "data_names, hydrate",
     [
-        (["wbm-summary"], True),
-        (["wbm-initial-structures"], True),
-        (["wbm-computed-structure-entries"], False),
-        (["wbm-summary", "wbm-initial-structures"], True),
-        (["mp-elemental-ref-energies"], True),
-        (["mp-energies"], True),
+        (["wbm_summary"], True),
+        (["wbm_initial_structures"], True),
+        (["wbm_computed_structure_entries"], False),
+        (["wbm_summary", "wbm_initial_structures"], True),
+        (["mp_elemental_ref_entries"], True),
+        (["mp_energies"], True),
     ],
 )
 def test_load_train_test(
@@ -70,8 +72,8 @@ def test_load_train_test(
     stdout, stderr = capsys.readouterr()
 
     expected_out = "\n".join(
-        f"Downloading {name!r} from {RAW_REPO_URL}/1.0.0/data/{DATA_FILENAMES[name]}"
-        for name in data_names
+        f"Downloading {key!r} from {RAW_REPO_URL}/1.0.0/data/{DataFiles.__dict__[key]}"
+        for key in data_names
     )
     assert expected_out in stdout
     assert stderr == ""
@@ -89,13 +91,13 @@ def test_load_train_test(
 
 def test_load_train_test_raises(tmp_path: Path) -> None:
     # bad data name
-    with pytest.raises(ValueError, match=f"must be subset of {set(DATA_FILENAMES)}"):
+    with pytest.raises(ValueError, match=f"must be subset of {set(DATA_FILES)}"):
         load_train_test(["bad-data-name"])
 
     # bad_version
     version = "not-a-real-branch"
     with pytest.raises(ValueError) as exc_info:
-        load_train_test("wbm-summary", version=version, cache_dir=tmp_path)
+        load_train_test("wbm_summary", version=version, cache_dir=tmp_path)
 
     assert (
         str(exc_info.value)
@@ -108,10 +110,11 @@ def test_load_train_test_doc_str() -> None:
     doc_str = load_train_test.__doc__
     assert isinstance(doc_str, str)  # mypy type narrowing
 
-    for name in DATA_FILENAMES:
-        assert name in doc_str, f"Missing data {name=} in load_train_test() docstring"
-
+    # check that we link to the right data description page
+    with open(f"{ROOT}/site/package.json") as file:
+        pkg = json.load(file)  # get repo URL from package.json
     route = "/contribute"
+    assert f"{pkg['homepage']}/contribute" in doc_str
     assert os.path.isdir(f"{ROOT}/site/src/routes/{route}")
 
 
@@ -122,7 +125,7 @@ def test_load_train_test_no_mock(
 ) -> None:
     # this function runs the download from GitHub raw user content for real
     # hence takes some time and requires being online
-    df_wbm = load_train_test("wbm-summary", version=version, cache_dir=tmp_path)
+    df_wbm = load_train_test("wbm_summary", version=version, cache_dir=tmp_path)
     assert df_wbm.shape == (256963, 14)
     assert set(df_wbm) > {
         "bandgap_pbe",
@@ -146,7 +149,7 @@ def test_load_train_test_no_mock(
         f"/matbench-discovery/{version}/data/wbm/2022-10-19-wbm-summary.csv\n"
     )
 
-    df_wbm = load_train_test("wbm-summary", version=version, cache_dir=tmp_path)
+    df_wbm = load_train_test("wbm_summary", version=version, cache_dir=tmp_path)
 
     stdout, stderr = capsys.readouterr()
     assert stderr == ""
@@ -192,9 +195,12 @@ def test_load_df_wbm_with_preds_raises() -> None:
         load_df_wbm_preds(models=["foo"])
 
 
-def test_pred_filenames() -> None:
-    assert len(PRED_FILENAMES) >= 6
-    assert all(path.endswith((".csv", ".json")) for path in PRED_FILENAMES.values())
+def test_pred_files() -> None:
+    assert len(PRED_FILES) >= 6
+    assert all(path.endswith((".csv", ".json")) for path in PRED_FILES.values())
+    for model, path in PRED_FILES.items():
+        msg = f"Missing preds file for {model=}, expected at {path=}"
+        assert os.path.isfile(path), msg
 
 
 @pytest.mark.parametrize("pattern", ["tmp/*df.csv", "tmp/*df.json"])

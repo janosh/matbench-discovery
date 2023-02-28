@@ -16,7 +16,8 @@ from pymatviz import density_scatter
 from pymatviz.utils import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import FIGS, ROOT, today
+from matbench_discovery import FIGS, today
+from matbench_discovery.data import DATA_FILES
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.plots import pio
 
@@ -510,7 +511,7 @@ assert df_summary.e_correction_per_atom_mp2020.mean().round(4) == -0.1069
 
 
 # %%
-with gzip.open(f"{ROOT}/data/mp/2023-02-07-ppd-mp.pkl.gz", "rb") as zip_file:
+with gzip.open(DATA_FILES.mp_patched_phase_diagram, "rb") as zip_file:
     ppd_mp: PatchedPhaseDiagram = pickle.load(zip_file)
 
 

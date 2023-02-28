@@ -15,7 +15,8 @@ import wandb
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import DEBUG, ROOT, today
+from matbench_discovery import DEBUG, today
+from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 from models.voronoi import featurizer
 
@@ -25,9 +26,9 @@ __date__ = "2022-10-31"
 
 data_name = "mp"  # "mp"
 if data_name == "wbm":
-    data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
+    data_path = DATA_FILES.wbm_initial_structures
 elif data_name == "mp":
-    data_path = f"{ROOT}/data/mp/2022-09-16-mp-computed-structure-entries.json.gz"
+    data_path = DATA_FILES.mp_computed_structure_entries
 
 input_col = "initial_structure"
 # input_col = "relaxed_structure"
