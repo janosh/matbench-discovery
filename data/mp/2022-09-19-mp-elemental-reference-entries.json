@@ -6,8 +6,7 @@
     "composition": {
       "Ne": 1.0
     },
-    "name": "Ne",
-    "attribute": null
+    "name": "Ne"
   },
   "He": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -16,8 +15,7 @@
     "composition": {
       "He": 1.0
     },
-    "name": "He",
-    "attribute": null
+    "name": "He"
   },
   "Ar": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -26,8 +24,7 @@
     "composition": {
       "Ar": 1.0
     },
-    "name": "Ar",
-    "attribute": null
+    "name": "Ar"
   },
   "F": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -36,8 +33,7 @@
     "composition": {
       "F": 4.0
     },
-    "name": "F2",
-    "attribute": null
+    "name": "F2"
   },
   "O": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -46,8 +42,7 @@
     "composition": {
       "O": 8.0
     },
-    "name": "O2",
-    "attribute": null
+    "name": "O2"
   },
   "Cl": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -56,8 +51,7 @@
     "composition": {
       "Cl": 4.0
     },
-    "name": "Cl2",
-    "attribute": null
+    "name": "Cl2"
   },
   "N": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -66,8 +60,7 @@
     "composition": {
       "N": 8.0
     },
-    "name": "N2",
-    "attribute": null
+    "name": "N2"
   },
   "Kr": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -76,8 +69,7 @@
     "composition": {
       "Kr": 1.0
     },
-    "name": "Kr",
-    "attribute": null
+    "name": "Kr"
   },
   "Br": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -86,8 +78,7 @@
     "composition": {
       "Br": 4.0
     },
-    "name": "Br",
-    "attribute": null
+    "name": "Br"
   },
   "I": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -96,8 +87,7 @@
     "composition": {
       "I": 4.0
     },
-    "name": "I",
-    "attribute": null
+    "name": "I"
   },
   "Xe": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -106,8 +96,7 @@
     "composition": {
       "Xe": 1.0
     },
-    "name": "Xe",
-    "attribute": null
+    "name": "Xe"
   },
   "S": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -116,8 +105,7 @@
     "composition": {
       "S": 32.0
     },
-    "name": "S",
-    "attribute": null
+    "name": "S"
   },
   "Se": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -126,8 +114,7 @@
     "composition": {
       "Se": 64.0
     },
-    "name": "Se",
-    "attribute": null
+    "name": "Se"
   },
   "C": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -136,8 +123,7 @@
     "composition": {
       "C": 4.0
     },
-    "name": "C",
-    "attribute": null
+    "name": "C"
   },
   "Au": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -146,8 +132,7 @@
     "composition": {
       "Au": 1.0
     },
-    "name": "Au",
-    "attribute": null
+    "name": "Au"
   },
   "W": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -156,8 +141,7 @@
     "composition": {
       "W": 1.0
     },
-    "name": "W",
-    "attribute": null
+    "name": "W"
   },
   "Pb": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -166,8 +150,7 @@
     "composition": {
       "Pb": 1.0
     },
-    "name": "Pb",
-    "attribute": null
+    "name": "Pb"
   },
   "Rh": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -176,8 +159,7 @@
     "composition": {
       "Rh": 1.0
     },
-    "name": "Rh",
-    "attribute": null
+    "name": "Rh"
   },
   "Pt": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -186,8 +168,7 @@
     "composition": {
       "Pt": 1.0
     },
-    "name": "Pt",
-    "attribute": null
+    "name": "Pt"
   },
   "Ru": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -196,8 +177,7 @@
     "composition": {
       "Ru": 2.0
     },
-    "name": "Ru",
-    "attribute": null
+    "name": "Ru"
   },
   "Pd": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -206,8 +186,7 @@
     "composition": {
       "Pd": 1.0
     },
-    "name": "Pd",
-    "attribute": null
+    "name": "Pd"
   },
   "Os": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -216,8 +195,7 @@
     "composition": {
       "Os": 2.0
     },
-    "name": "Os",
-    "attribute": null
+    "name": "Os"
   },
   "Ir": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -226,8 +204,7 @@
     "composition": {
       "Ir": 1.0
     },
-    "name": "Ir",
-    "attribute": null
+    "name": "Ir"
   },
   "H": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -236,8 +213,7 @@
     "composition": {
       "H": 4.0
     },
-    "name": "H2",
-    "attribute": null
+    "name": "H2"
   },
   "P": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -246,8 +222,7 @@
     "composition": {
       "P": 42.0
     },
-    "name": "P",
-    "attribute": null
+    "name": "P"
   },
   "As": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -256,8 +231,7 @@
     "composition": {
       "As": 2.0
     },
-    "name": "As",
-    "attribute": null
+    "name": "As"
   },
   "Mo": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -266,8 +240,7 @@
     "composition": {
       "Mo": 1.0
     },
-    "name": "Mo",
-    "attribute": null
+    "name": "Mo"
   },
   "Te": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -276,8 +249,7 @@
     "composition": {
       "Te": 3.0
     },
-    "name": "Te",
-    "attribute": null
+    "name": "Te"
   },
   "Sb": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -286,8 +258,7 @@
     "composition": {
       "Sb": 2.0
     },
-    "name": "Sb",
-    "attribute": null
+    "name": "Sb"
   },
   "B": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -296,8 +267,7 @@
     "composition": {
       "B": 12.0
     },
-    "name": "B",
-    "attribute": null
+    "name": "B"
   },
   "Bi": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -306,8 +276,7 @@
     "composition": {
       "Bi": 2.0
     },
-    "name": "Bi",
-    "attribute": null
+    "name": "Bi"
   },
   "Ge": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -316,8 +285,7 @@
     "composition": {
       "Ge": 2.0
     },
-    "name": "Ge",
-    "attribute": null
+    "name": "Ge"
   },
   "Hg": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -326,8 +294,7 @@
     "composition": {
       "Hg": 2.0
     },
-    "name": "Hg",
-    "attribute": null
+    "name": "Hg"
   },
   "Sn": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -336,8 +303,7 @@
     "composition": {
       "Sn": 2.0
     },
-    "name": "Sn",
-    "attribute": null
+    "name": "Sn"
   },
   "Ag": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -346,8 +312,7 @@
     "composition": {
       "Ag": 3.0
     },
-    "name": "Ag",
-    "attribute": null
+    "name": "Ag"
   },
   "Ni": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -356,8 +321,7 @@
     "composition": {
       "Ni": 1.0
     },
-    "name": "Ni",
-    "attribute": null
+    "name": "Ni"
   },
   "Tc": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -366,8 +330,7 @@
     "composition": {
       "Tc": 2.0
     },
-    "name": "Tc",
-    "attribute": null
+    "name": "Tc"
   },
   "Si": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -376,8 +339,7 @@
     "composition": {
       "Si": 2.0
     },
-    "name": "Si",
-    "attribute": null
+    "name": "Si"
   },
   "Re": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -386,8 +348,7 @@
     "composition": {
       "Re": 2.0
     },
-    "name": "Re",
-    "attribute": null
+    "name": "Re"
   },
   "Cu": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -396,8 +357,7 @@
     "composition": {
       "Cu": 1.0
     },
-    "name": "Cu",
-    "attribute": null
+    "name": "Cu"
   },
   "Co": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -406,8 +366,7 @@
     "composition": {
       "Co": 2.0
     },
-    "name": "Co",
-    "attribute": null
+    "name": "Co"
   },
   "Fe": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -416,8 +375,7 @@
     "composition": {
       "Fe": 1.0
     },
-    "name": "Fe",
-    "attribute": null
+    "name": "Fe"
   },
   "Ga": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -426,8 +384,7 @@
     "composition": {
       "Ga": 4.0
     },
-    "name": "Ga",
-    "attribute": null
+    "name": "Ga"
   },
   "In": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -436,8 +393,7 @@
     "composition": {
       "In": 3.0
     },
-    "name": "In",
-    "attribute": null
+    "name": "In"
   },
   "Cd": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -446,8 +402,7 @@
     "composition": {
       "Cd": 1.0
     },
-    "name": "Cd",
-    "attribute": null
+    "name": "Cd"
   },
   "Cr": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -456,8 +411,7 @@
     "composition": {
       "Cr": 2.0
     },
-    "name": "Cr",
-    "attribute": null
+    "name": "Cr"
   },
   "Zn": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -466,8 +420,7 @@
     "composition": {
       "Zn": 2.0
     },
-    "name": "Zn",
-    "attribute": null
+    "name": "Zn"
   },
   "V": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -476,8 +429,7 @@
     "composition": {
       "V": 1.0
     },
-    "name": "V",
-    "attribute": null
+    "name": "V"
   },
   "Tl": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -486,8 +438,7 @@
     "composition": {
       "Tl": 3.0
     },
-    "name": "Tl",
-    "attribute": null
+    "name": "Tl"
   },
   "Al": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -496,8 +447,7 @@
     "composition": {
       "Al": 1.0
     },
-    "name": "Al",
-    "attribute": null
+    "name": "Al"
   },
   "Nb": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -506,8 +456,7 @@
     "composition": {
       "Nb": 1.0
     },
-    "name": "Nb",
-    "attribute": null
+    "name": "Nb"
   },
   "Be": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -516,8 +465,7 @@
     "composition": {
       "Be": 2.0
     },
-    "name": "Be",
-    "attribute": null
+    "name": "Be"
   },
   "Mn": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -526,8 +474,7 @@
     "composition": {
       "Mn": 29.0
     },
-    "name": "Mn",
-    "attribute": null
+    "name": "Mn"
   },
   "Ti": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -536,8 +483,7 @@
     "composition": {
       "Ti": 3.0
     },
-    "name": "Ti",
-    "attribute": null
+    "name": "Ti"
   },
   "Ta": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -546,8 +492,7 @@
     "composition": {
       "Ta": 1.0
     },
-    "name": "Ta",
-    "attribute": null
+    "name": "Ta"
   },
   "Pa": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -556,8 +501,7 @@
     "composition": {
       "Pa": 1.0
     },
-    "name": "Pa",
-    "attribute": null
+    "name": "Pa"
   },
   "U": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -566,8 +510,7 @@
     "composition": {
       "U": 2.0
     },
-    "name": "U",
-    "attribute": null
+    "name": "U"
   },
   "Sc": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -576,8 +519,7 @@
     "composition": {
       "Sc": 2.0
     },
-    "name": "Sc",
-    "attribute": null
+    "name": "Sc"
   },
   "Np": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -586,8 +528,7 @@
     "composition": {
       "Np": 8.0
     },
-    "name": "Np",
-    "attribute": null
+    "name": "Np"
   },
   "Zr": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -596,8 +537,7 @@
     "composition": {
       "Zr": 2.0
     },
-    "name": "Zr",
-    "attribute": null
+    "name": "Zr"
   },
   "Mg": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -606,8 +546,7 @@
     "composition": {
       "Mg": 1.0
     },
-    "name": "Mg",
-    "attribute": null
+    "name": "Mg"
   },
   "Th": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -616,8 +555,7 @@
     "composition": {
       "Th": 1.0
     },
-    "name": "Th",
-    "attribute": null
+    "name": "Th"
   },
   "Hf": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -626,8 +564,7 @@
     "composition": {
       "Hf": 2.0
     },
-    "name": "Hf",
-    "attribute": null
+    "name": "Hf"
   },
   "Pu": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -636,8 +573,7 @@
     "composition": {
       "Pu": 2.0
     },
-    "name": "Pu",
-    "attribute": null
+    "name": "Pu"
   },
   "Lu": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -646,8 +582,7 @@
     "composition": {
       "Lu": 2.0
     },
-    "name": "Lu",
-    "attribute": null
+    "name": "Lu"
   },
   "Tm": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -656,8 +591,7 @@
     "composition": {
       "Tm": 3.0
     },
-    "name": "Tm",
-    "attribute": null
+    "name": "Tm"
   },
   "Er": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -666,8 +600,7 @@
     "composition": {
       "Er": 3.0
     },
-    "name": "Er",
-    "attribute": null
+    "name": "Er"
   },
   "Ho": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -676,8 +609,7 @@
     "composition": {
       "Ho": 3.0
     },
-    "name": "Ho",
-    "attribute": null
+    "name": "Ho"
   },
   "Y": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -686,8 +618,7 @@
     "composition": {
       "Y": 3.0
     },
-    "name": "Y",
-    "attribute": null
+    "name": "Y"
   },
   "Dy": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -696,8 +627,7 @@
     "composition": {
       "Dy": 3.0
     },
-    "name": "Dy",
-    "attribute": null
+    "name": "Dy"
   },
   "Gd": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -706,8 +636,7 @@
     "composition": {
       "Gd": 2.0
     },
-    "name": "Gd",
-    "attribute": null
+    "name": "Gd"
   },
   "Eu": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -716,8 +645,7 @@
     "composition": {
       "Eu": 2.0
     },
-    "name": "Eu",
-    "attribute": null
+    "name": "Eu"
   },
   "Sm": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -726,8 +654,7 @@
     "composition": {
       "Sm": 4.0
     },
-    "name": "Sm",
-    "attribute": null
+    "name": "Sm"
   },
   "Nd": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -736,8 +663,7 @@
     "composition": {
       "Nd": 4.0
     },
-    "name": "Nd",
-    "attribute": null
+    "name": "Nd"
   },
   "Pr": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -746,8 +672,7 @@
     "composition": {
       "Pr": 4.0
     },
-    "name": "Pr",
-    "attribute": null
+    "name": "Pr"
   },
   "Pm": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -756,8 +681,7 @@
     "composition": {
       "Pm": 4.0
     },
-    "name": "Pm",
-    "attribute": null
+    "name": "Pm"
   },
   "Ce": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -766,8 +690,7 @@
     "composition": {
       "Ce": 2.0
     },
-    "name": "Ce",
-    "attribute": null
+    "name": "Ce"
   },
   "Yb": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -776,8 +699,7 @@
     "composition": {
       "Yb": 3.0
     },
-    "name": "Yb",
-    "attribute": null
+    "name": "Yb"
   },
   "Tb": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -786,8 +708,7 @@
     "composition": {
       "Tb": 3.0
     },
-    "name": "Tb",
-    "attribute": null
+    "name": "Tb"
   },
   "La": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -796,8 +717,7 @@
     "composition": {
       "La": 4.0
     },
-    "name": "La",
-    "attribute": null
+    "name": "La"
   },
   "Ac": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -806,8 +726,7 @@
     "composition": {
       "Ac": 4.0
     },
-    "name": "Ac",
-    "attribute": null
+    "name": "Ac"
   },
   "Ca": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -816,8 +735,7 @@
     "composition": {
       "Ca": 1.0
     },
-    "name": "Ca",
-    "attribute": null
+    "name": "Ca"
   },
   "Li": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -826,8 +744,7 @@
     "composition": {
       "Li": 3.0
     },
-    "name": "Li",
-    "attribute": null
+    "name": "Li"
   },
   "Sr": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -836,8 +753,7 @@
     "composition": {
       "Sr": 3.0
     },
-    "name": "Sr",
-    "attribute": null
+    "name": "Sr"
   },
   "Na": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -846,8 +762,7 @@
     "composition": {
       "Na": 29.0
     },
-    "name": "Na",
-    "attribute": null
+    "name": "Na"
   },
   "Ba": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -856,8 +771,7 @@
     "composition": {
       "Ba": 1.0
     },
-    "name": "Ba",
-    "attribute": null
+    "name": "Ba"
   },
   "Rb": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -866,8 +780,7 @@
     "composition": {
       "Rb": 8.0
     },
-    "name": "Rb",
-    "attribute": null
+    "name": "Rb"
   },
   "K": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -876,8 +789,7 @@
     "composition": {
       "K": 20.0
     },
-    "name": "K",
-    "attribute": null
+    "name": "K"
   },
   "Cs": {
     "@module": "pymatgen.analysis.phase_diagram",
@@ -886,7 +798,6 @@
     "composition": {
       "Cs": 29.0
     },
-    "name": "Cs",
-    "attribute": null
+    "name": "Cs"
   }
 }

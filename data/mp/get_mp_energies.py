@@ -9,6 +9,7 @@ from pymatviz.utils import annotate_mae_r2
 from tqdm import tqdm
 
 from matbench_discovery import today
+from matbench_discovery.data import DATA_FILES
 
 """
 Download all MP formation and above hull energies on 2022-08-13.
@@ -61,8 +62,8 @@ df.reset_index().to_json(
     f"{module_dir}/mp-energies.json.gz", default_handler=as_dict_handler
 )
 
-# df = pd.read_json(f"{module_dir}/2022-08-13-mp-energies.json.gz")
-# df = pd.read_json(f"{module_dir}/2023-01-10-mp-energies.json.gz")
+# read stored data back from disk
+df = pd.read_json(DATA_FILES.mp_energies)
 
 
 # %% reproduce fig. 1b from https://arxiv.org/abs/2001.10591 (as data consistency check)

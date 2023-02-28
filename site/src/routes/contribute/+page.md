@@ -20,10 +20,10 @@ This example script downloads the training and test data for training a model:
 
 ```py notest
 from matbench_discovery.data import load_train_test
-from matbench_discovery.data import df_wbm, DATA_FILENAMES
+from matbench_discovery.data import df_wbm, DATA_FILES
 
 # any subset of these keys can be passed to load_train_test()
-assert sorted(DATA_FILENAMES) == [
+assert sorted(DATA_FILES) == [
     "mp-computed-structure-entries",
     "mp-elemental-ref-energies",
     "mp-energies",
@@ -75,8 +75,8 @@ You can also download the data files directly from GitHub:
 1. [`2022-10-19-wbm-summary.csv`]({repo}/raw/v1.0.0/data/wbm/2022-10-19-wbm-summary.csv) [[GitHub]({repo}/blob/v1/data/wbm/2022-10-19-wbm-summary.csv)]: Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more. e_form_per_atom and e_above_hull each have 3 separate columns for old, new and no Materials
 1. [`2022-10-19-wbm-init-structs.json`]({repo}/raw/v1.0.0/data/wbm/2022-10-19-wbm-init-structs.json) [[GitHub]({repo}/blob/v1/data/wbm/2022-10-19-wbm-init-structs.json)]: Unrelaxed WBM structures
 1. [`2022-10-19-wbm-cses.json`]({repo}/raw/v1.0.0/data/wbm/2022-10-19-wbm-cses.json) [[GitHub]({repo}/blob/v1/data/wbm/2022-10-19-wbm-cses.json)]: Relaxed WBM structures along with final VASP energies
-1. [`2022-08-13-mp-energies.json.gz`]({repo}/raw/v1.0.0/data/wbm/2022-08-13-mp-energies.json.gz) [[GitHub]({repo}/blob/v1/data/wbm/2022-08-13-mp-energies.json.gz)]: Materials Project formation energies and energies above convex hull
-1. [`2022-09-16-mp-computed-structure-entries.json.gz`]({repo}/raw/v1.0.0/data/wbm/2022-09-16-mp-computed-structure-entries.json.gz) [[GitHub]({repo}/blob/v1/data/wbm/2022-09-16-mp-computed-structure-entries.json.gz)]: Materials Project computed structure entries
+1. [`2023-01-10-mp-energies.json.gz`]({repo}/raw/v1.0.0/data/wbm/2023-01-10-mp-energies.json.gz) [[GitHub]({repo}/blob/v1/data/wbm/2023-01-10-mp-energies.json.gz)]: Materials Project formation energies and energies above convex hull
+1. [`2023-02-07-mp-computed-structure-entries.json.gz`]({repo}/raw/v1.0.0/data/wbm/2023-02-07-mp-computed-structure-entries.json.gz) [[GitHub]({repo}/blob/v1/data/wbm/2023-02-07-mp-computed-structure-entries.json.gz)]: Materials Project computed structure entries
 1. [`2023-02-07-ppd-mp.pkl.gz`]({repo}/raw/v1.0.0/data/wbm/2023-02-07-ppd-mp.pkl.gz) [[GitHub]({repo}/blob/v1/data/wbm/2023-02-07-ppd-mp.pkl.gz)]: [PatchedPhaseDiagram](https://pymatgen.org/pymatgen.analysis.phase_diagram.html#pymatgen.analysis.phase_diagram.PatchedPhaseDiagram) constructed from all MP ComputedStructureEntries
 1. [`2022-09-19-mp-elemental-ref-energies.json`]({repo}/raw/v1.0.0/data/wbm/2022-09-19-mp-elemental-ref-energies.json) [[GitHub]({repo}/blob/v1/data/wbm/2022-09-19-mp-elemental-ref-energies.json)]: Minimum energy PDEntries for each element present in the Materials Project
 

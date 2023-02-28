@@ -118,7 +118,7 @@ Our initial benchmark release includes 8 models. @Fig:model-metrics includes all
 
 1. **BOSWR + MEGNet** @zuo_accelerating_2021 - BOWSR uses a symmetry-constrained Bayesian optimizer (BO) with a surrogate energy model (here MEGNet) to perform an iterative exploration-exploitation-based search of the potential energy landscape. The high sample count needed to explore the PES with BO makes this by far the most expensive model.
 
-   The high sample count needed to explore the PES makes this type of "DFT-free" structure relaxation by far the most expensive model.
+   The high sample count needed to explore the high-dimensional PES makes this type of "DFT-free" structure relaxation by far the most expensive model.
 
 ## Results
 
