@@ -44,9 +44,6 @@ class Files(dict):  # type: ignore
             for key, file in type(self).__dict__.items()
             if not key.startswith("_")
         }
-        for key, file in dct.items():
-            if not os.path.isfile(file):
-                raise FileNotFoundError(f"{key=}, {file=}")
         self.__dict__ = dct
         super().__init__(dct)
 
