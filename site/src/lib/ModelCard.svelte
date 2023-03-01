@@ -183,7 +183,7 @@
   }
   p {
     display: grid;
-    gap: 3pt;
+    gap: 5pt;
     grid-template-columns: 1fr 1fr;
   }
   div {
