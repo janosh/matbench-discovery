@@ -1,7 +1,9 @@
 <script lang="ts">
+  import { goto } from '$app/navigation'
   import { page } from '$app/stores'
   import { Footer, Nav } from '$lib'
   import { repository } from '$site/package.json'
+  import { CmdPalette } from 'svelte-multiselect'
   import Toc from 'svelte-toc'
   import { GitHubCorner } from 'svelte-zoo'
   import '../app.css'
@@ -31,7 +33,18 @@
   }[$page.route.id ?? ``]
   if (!description) console.warn(`No description for route ${$page.route.id}`)
   $: title = $page.route.id == `/` ? `` : `${$page.route.id} • `
+
+  const actions = Object.keys(import.meta.glob(`./**/+page.{svx,svelte,md}`)).map(
+    (filename) => {
+      const parts = filename.split(`/`).filter((part) => !part.startsWith(`(`)) // remove hidden route segments
+      const route = `/${parts.slice(1, -1).join(`/`)}`
+
+      return { label: route, action: () => goto(route) }
+    }
+  )
 </script>
+
+<CmdPalette {actions} />
 
 <svelte:head>
   <title>{title}Matbench Discovery</title>
