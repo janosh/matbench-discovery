@@ -14,8 +14,8 @@ from pymatgen.core import Structure
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from matbench_discovery import CHECKPOINT_DIR, DEBUG, ROOT, WANDB_PATH, today
-from matbench_discovery.data import df_wbm
+from matbench_discovery import CHECKPOINT_DIR, DEBUG, WANDB_PATH, today
+from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 
@@ -46,7 +46,7 @@ slurm_vars = slurm_submit(
 
 # %%
 if task_type == "IS2RE":
-    data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
+    data_path = DATA_FILES.wbm_initial_structures
     # or for debug
     # data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json-1k-samples.bz2"
     # created with:
@@ -54,7 +54,7 @@ if task_type == "IS2RE":
     # df.reset_index().to_json(data_path.replace(".json", "-1k-samples.json"))
     input_col = "initial_structure"
 elif task_type == "RS2RE":
-    data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-computed-structure-entries.json.bz2"
+    data_path = DATA_FILES.wbm_computed_structure_entries
     input_col = "relaxed_structure"
 else:
     raise ValueError(f"Unexpected {task_type=}")

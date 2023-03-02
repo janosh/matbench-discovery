@@ -1,0 +1,39 @@
+model_name: CHGNet
+model_version: 0.0.1
+matbench_discovery_version: 1.0
+date_added: "2023-03-03"
+date_published: "2023-03-01"
+authors:
+  - name: Bowen Deng
+    affiliation: UC Berkeley
+  - name: Peichen Zhong
+    affiliation: UC Berkeley
+    orcid: https://orcid.org/0000-0003-1921-1628
+    email: zhongpc@berkeley.edu
+  - name: KyuJung Jun
+    affiliation: UC Berkeley
+    orcid: https://orcid.org/0000-0003-1974-028X
+  - name: Kevin Han
+    affiliation: UC Berkeley
+    orcid: https://orcid.org/0000-0002-4028-2108
+  - name: Christopher J. Bartel
+    affiliation: University of Minnesota
+    orcid: https://orcid.org/0000-0002-5198-5036
+  - name: Christopher J. Bartel
+    affiliation: Gerbrand Ceder
+    orcid: https://orcid.org/0000-0001-9275-3605
+    email: gceder@berkeley.edu
+repo: https://github.com/CederGroupHub/chgnet
+doi: https://doi.org/10.48550/arXiv.2302.14231
+preprint: https://arxiv.org/abs/2302.14231
+requirements:
+  torch: 1.11.0
+  ase: 3.22.0
+  pymatgen: 2022.10.22
+  numpy: 1.24.0
+  pandas: 1.5.1
+trained_on_benchmark: false
+
+notes:
+  description: The Crystal Hamiltonian Graph Neural Network (CHGNet) is a universal GNN-based interatomic potential trained on energies, forces, stresses and magnetic moments from the MP trajectory dataset containing ∼1.5 million inorganic structures.
+  training: Using pre-trained model released with preprint. Training set unreleased until after review.

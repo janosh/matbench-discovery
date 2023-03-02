@@ -11,6 +11,7 @@ from pymatgen.core import Structure
 from pymatviz import plot_structure_2d, ptable_heatmap_plotly
 
 from matbench_discovery import ROOT
+from matbench_discovery.data import DATA_FILES
 from matbench_discovery.metrics import classify_stable
 from matbench_discovery.preds import df_each_err, df_each_pred, df_wbm, each_true_col
 
@@ -23,8 +24,9 @@ df_each_err[mean_ae_col] = df_wbm[mean_ae_col] = df_each_err.abs().mean(axis=1)
 
 
 # %%
-cse_path = f"{ROOT}/data/wbm/2022-10-19-wbm-computed-structure-entries.json.bz2"
-df_cse = pd.read_json(cse_path).set_index("material_id")
+df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(
+    "material_id"
+)
 
 
 # %%

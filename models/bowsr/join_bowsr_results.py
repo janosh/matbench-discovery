@@ -8,7 +8,8 @@ import pandas as pd
 import pymatviz
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, today
+from matbench_discovery import today
+from matbench_discovery.data import DATA_FILES
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-09-22"
@@ -40,8 +41,7 @@ df_bowsr = pd.concat(dfs.values()).round(4)
 
 
 # %% compare against WBM formation energy targets to make sure we got sensible results
-data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-summary.csv"
-df_wbm = pd.read_csv(data_path).set_index("material_id")
+df_wbm = pd.read_csv(DATA_FILES.wbm_summary).set_index("material_id")
 
 
 print(
