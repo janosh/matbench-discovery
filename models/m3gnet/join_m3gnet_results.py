@@ -18,8 +18,8 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz import density_scatter
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, today
-from matbench_discovery.data import as_dict_handler
+from matbench_discovery import today
+from matbench_discovery.data import DATA_FILES, as_dict_handler
 from matbench_discovery.energy import get_e_form_per_atom
 
 __author__ = "Janosh Riebesell"
@@ -34,6 +34,7 @@ task_type = "IS2RE"
 date = "2022-10-31"
 glob_pattern = f"{date}-m3gnet-wbm-{task_type}/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
+struct_col = "m3gnet_structure"
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
 dfs: dict[str, pd.DataFrame] = {}
@@ -56,52 +57,44 @@ df_m3gnet = pd.concat(dfs.values()).round(4)
 
 
 # %%
-df_wbm = pd.read_json(
-    f"{ROOT}/data/wbm/2022-10-19-wbm-computed-structure-entries.json.bz2"
-).set_index("material_id")
+df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(
+    "material_id"
+)
 
-df_wbm["cse"] = [
-    ComputedStructureEntry.from_dict(x) for x in tqdm(df_wbm.computed_structure_entry)
+df_cse["cse"] = [
+    ComputedStructureEntry.from_dict(x) for x in tqdm(df_cse.computed_structure_entry)
 ]
 
 
 # %% transfer M3GNet energies and relaxed structures WBM CSEs
-# make sure we're not skipping m3gnet structures, other way around is fine
-# i.e. WBM CSEs for which M3GNet structures are missing
-assert not {*df_m3gnet.index} - {*df_wbm.index}
-
 cse: ComputedStructureEntry
-for cse in tqdm(df_wbm.cse):
-    if cse.entry_id in df_m3gnet.index:
-        # cse._energy is the uncorrected energy
-        cse._energy = df_m3gnet.loc[cse.entry_id, "m3gnet_energy"]
-        m3gnet_struct = Structure.from_dict(
-            df_m3gnet.loc[cse.entry_id, "m3gnet_structure"]
-        )
-        cse._structure = m3gnet_struct
+for row in tqdm(df_m3gnet.itertuples(), total=len(df_m3gnet)):
+    mat_id, struct_dict, m3gnet_energy, *_ = row
+    m3gnet_struct = Structure.from_dict(struct_dict)
+    df_m3gnet.loc[mat_id, struct_col] = m3gnet_struct
+    cse = df_cse.loc[mat_id, "cse"]
+    cse._energy = m3gnet_energy  # cse._energy is the uncorrected energy
+    cse._structure = m3gnet_struct
+    df_m3gnet.loc[mat_id, "cse"] = cse
 
 
 # %%
-df_wbm["e_form_per_atom_m3gnet_uncorrected"] = [
-    get_e_form_per_atom(cse) for cse in tqdm(df_wbm.cse)
+df_m3gnet["e_form_per_atom_m3gnet_uncorrected"] = [
+    get_e_form_per_atom(cse) for cse in tqdm(df_m3gnet.cse)
 ]
 
 
 # %% apply energy corrections
 out = MaterialsProject2020Compatibility().process_entries(
-    df_wbm.cse, verbose=True, clean=True
+    df_m3gnet.cse, verbose=True, clean=True
 )
-assert len(out) == len(df_wbm)
+assert len(out) == len(df_m3gnet)
 
 
 # %% compute corrected formation energies
-df_wbm["e_form_per_atom_m3gnet"] = [
-    get_e_form_per_atom(cse) for cse in tqdm(df_wbm.cse)
+df_m3gnet["e_form_per_atom_m3gnet"] = [
+    get_e_form_per_atom(cse) for cse in tqdm(df_m3gnet.cse)
 ]
-
-e_form_m3gnet_cols = list(df_wbm.filter(like="m3gnet"))
-assert len(e_form_m3gnet_cols) == 2
-df_m3gnet[e_form_m3gnet_cols] = df_wbm[e_form_m3gnet_cols]
 
 
 # %%
@@ -116,11 +109,16 @@ megnet_e_form_preds: dict[str, float] = {}
 
 
 # %% predict formation energies on M3GNet relaxed structure with MEGNet
-for material_id, cse in tqdm(df_wbm.cse.items(), total=len(df_wbm)):
+for material_id, struct in tqdm(
+    df_m3gnet.m3gnet_structure.items(), total=len(df_m3gnet)
+):
     if material_id in megnet_e_form_preds:
         continue
     try:
-        struct = cse.structure
+        if isinstance(struct, dict):
+            struct = struct = Structure.from_dict(struct)
+            df_m3gnet.loc[material_id, struct_col] = struct
+
         [e_form_per_atom] = megnet_mp_e_form.predict_structure(struct)
         megnet_e_form_preds[material_id] = e_form_per_atom
     except Exception as exc:

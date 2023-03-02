@@ -13,6 +13,7 @@ from pymatviz.utils import add_identity_line
 from sklearn.metrics import r2_score
 
 from matbench_discovery import FIGS, ROOT, plots
+from matbench_discovery.data import DATA_FILES
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-06-18"
@@ -23,12 +24,10 @@ del plots  # https://github.com/PyCQA/pyflakes/issues/366
 
 # %%
 df_wbm = pd.read_json(
-    f"{ROOT}/data/wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
+    DATA_FILES.wbm_computed_structure_entries_plus_init_structs
 ).set_index("material_id")
 
-df_summary = pd.read_csv(f"{ROOT}/data/wbm/2022-10-19-wbm-summary.csv").set_index(
-    "material_id"
-)
+df_summary = pd.read_csv(DATA_FILES.wbm_summary).set_index("material_id")
 
 
 # %%

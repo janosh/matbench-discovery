@@ -11,10 +11,12 @@ import pandas as pd
 import wandb
 from maml.apps.bowsr.model.megnet import MEGNet
 from maml.apps.bowsr.optimizer import BayesianOptimizer
+from pymatgen.core import Structure
+from pymatgen.entries.computed_entries import ComputedStructureEntry
 from tqdm import tqdm
 
-from matbench_discovery import DEBUG, ROOT, timestamp, today
-from matbench_discovery.data import as_dict_handler
+from matbench_discovery import DEBUG, timestamp, today
+from matbench_discovery.data import DATA_FILES, as_dict_handler
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
@@ -37,7 +39,7 @@ energy_model = "megnet"
 job_name = f"bowsr-{energy_model}-wbm-{task_type}{'-debug' if DEBUG else ''}"
 out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
-data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
+data_path = DATA_FILES.wbm_initial_structures
 
 slurm_vars = slurm_submit(
     job_name=job_name,
@@ -106,22 +108,17 @@ model = MEGNet()
 relax_results: dict[str, dict[str, Any]] = {}
 
 if task_type == "IS2RE":
-    from pymatgen.core import Structure
-
-    structures = df_this_job.initial_structure.map(Structure.from_dict)
+    structures = df_this_job.initial_structure.map(Structure.from_dict).to_dict()
 elif task_type == "RS2RE":
-    from pymatgen.entries.computed_entries import ComputedStructureEntry
-
     structures = df_this_job.cse.map(
         lambda x: ComputedStructureEntry.from_dict(x).structure
-    )
+    ).to_dict()
 else:
     raise ValueError(f"Unknown {task_type = }")
 
 
-for material_id, structure in tqdm(
-    structures.items(), desc="Main loop", total=len(structures), disable=None
-):
+for material_id in tqdm(structures, desc="Main loop", disable=None):
+    structure = structures[material_id]
     if material_id in relax_results:
         continue
     try:
@@ -129,17 +126,18 @@ for material_id, structure in tqdm(
             model=model, structure=structure, **bayes_optim_kwargs
         )
         optimizer.set_bounds()
-        # reason for devnull: https://github.com/materialsvirtuallab/maml/issues/469
+        # reason for /dev/null: https://github.com/materialsvirtuallab/maml/issues/469
         with open(os.devnull, "w") as devnull, contextlib.redirect_stdout(devnull):
             optimizer.optimize(**optimize_kwargs)
 
-        structure_bowsr, energy_bowsr = optimizer.get_optimized_structure_and_energy()
+        try:
+            struct_bowsr, energy_bowsr = optimizer.get_optimized_structure_and_energy()
+        except Exception as error:
+            print(f"Failed to relax {material_id}: {error}")
 
         results = {
-            f"e_form_per_atom_bowsr_{energy_model}": model.predict_energy(
-                structure_bowsr
-            ),
-            "structure_bowsr": structure_bowsr,
+            f"e_form_per_atom_bowsr_{energy_model}": model.predict_energy(struct_bowsr),
+            "structure_bowsr": struct_bowsr,
             f"energy_bowsr_{energy_model}": energy_bowsr,
         }
 
@@ -149,9 +147,9 @@ for material_id, structure in tqdm(
 
 
 # %%
-df_output = pd.DataFrame(relax_results).T
-df_output.index.name = "material_id"
+df_out = pd.DataFrame(relax_results).T
+df_out.index.name = "material_id"
 
-df_output.reset_index().to_json(out_path, default_handler=as_dict_handler)
+df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
 
 wandb.log_artifact(out_path, type=job_name)
