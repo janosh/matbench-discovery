@@ -17,8 +17,8 @@ from megnet.utils.models import load_model
 from sklearn.metrics import r2_score
 from tqdm import tqdm
 
-from matbench_discovery import DEBUG, ROOT, timestamp, today
-from matbench_discovery.data import df_wbm
+from matbench_discovery import DEBUG, timestamp, today
+from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 
@@ -48,7 +48,7 @@ out_path = f"{out_dir}/megnet-e-form-preds.csv"
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path = } already exists, exciting early")
 
-data_path = f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json.bz2"
+data_path = DATA_FILES.wbm_initial_structures
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
 e_form_col = "e_form_per_atom_mp2020_corrected"
