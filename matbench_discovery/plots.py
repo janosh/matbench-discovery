@@ -55,6 +55,7 @@ model_labels = dict(
     m3gnet_megnet="M3GNet + MEGNet",
     m3gnet="M3GNet",
     megnet="MEGNet",
+    megnet_old="MEGNet Old",
     voronoi_rf="Voronoi Random Forest",
     wrenformer="Wrenformer",
     dft="DFT",

@@ -13,6 +13,8 @@ __date__ = "2022-06-18"
 # %%
 # model = "Wrenformer"
 model = "M3GNet + MEGNet"
+model = "MEGNet"
+model = "MEGNet Old"
 ax, df_err, df_std = rolling_mae_vs_hull_dist(
     e_above_hull_true=df_wbm[each_true_col],
     e_above_hull_errors={model: df_wbm[e_form_col] - df_wbm[model]},
@@ -21,8 +23,8 @@ ax, df_err, df_std = rolling_mae_vs_hull_dist(
     # template="plotly_white",
 )
 
-MAE, DAF = df_metrics[model].MAE, df_metrics[model].DAF
-title = f"{today} {model} · {MAE=:.2f} · {DAF=:.2f}"
+MAE, DAF, F1 = df_metrics[model][["MAE", "DAF", "F1"]]
+title = f"{today} {model} · {MAE=:.2f} · {DAF=:.2f} · {F1=:.2f}"
 if backend == "matplotlib":
     fig = ax.figure
     fig.set_size_inches(6, 5)
