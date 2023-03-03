@@ -14,6 +14,8 @@ from importlib.metadata import version
 import pandas as pd
 import wandb
 from megnet.utils.models import load_model
+from pymatgen.core import Structure
+from pymatgen.entries.computed_entries import ComputedStructureEntry
 from sklearn.metrics import r2_score
 from tqdm import tqdm
 
@@ -75,24 +77,19 @@ wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 # %%
 if task_type == "IS2RE":
-    from pymatgen.core import Structure
-
     structures = df_wbm_structs.initial_structure.map(Structure.from_dict)
 elif task_type == "RS2RE":
-    from pymatgen.entries.computed_entries import ComputedStructureEntry
-
     df_wbm_structs.cse = df_wbm_structs.cse.map(ComputedStructureEntry.from_dict)
     structures = df_wbm_structs.cse.map(lambda x: x.structure)
 else:
     raise ValueError(f"Unknown {task_type = }")
 
 megnet_e_form_preds = {}
-for material_id, structure in tqdm(
-    structures.items(), disable=None, total=len(structures)
-):
+for material_id in tqdm(structures, disable=None):
     if material_id in megnet_e_form_preds:
         continue
     try:
+        structure = structures[material_id]
         e_form_per_atom = megnet_mp_e_form.predict_structure(structure)[0]
         megnet_e_form_preds[material_id] = e_form_per_atom
     except Exception as exc:
@@ -104,9 +101,23 @@ print(f"{len(megnet_e_form_preds)=:,}")
 print(f"{len(structures)=:,}")
 print(f"missing: {len(structures) - len(megnet_e_form_preds):,}")
 pred_col = "e_form_per_atom_megnet"
-df_wbm[pred_col] = pd.Series(megnet_e_form_preds)
+# old columns contains direct MEGNet predictions which was trained on legacy-corrected
+# MP formation energies
+df_wbm[f"{pred_col}_old"] = pd.Series(megnet_e_form_preds)
 
-df_wbm[pred_col].round(4).to_csv(out_path)
+# remove legacy MP corrections that MEGNet was trained on and apply newer MP2020
+# corrections instead
+df_wbm[pred_col] = (
+    df_wbm[pred_col]
+    - df_wbm.e_correction_per_atom_mp_legacy
+    + df_wbm.e_correction_per_atom_mp2020
+)
+
+df_wbm.filter(like=pred_col).round(4).to_csv(
+    "2022-11-18-megnet-wbm-IS2RE/megnet-e-form-preds.csv"
+)
+
+# df_megnet = pd.read_csv(f"{ROOT}/models/{PRED_FILES.megnet}").set_index("material_id")
 
 
 # %%

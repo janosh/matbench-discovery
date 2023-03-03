@@ -10,7 +10,10 @@ import pandas as pd
 from aviary.wren.utils import get_aflow_label_from_spglib
 from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
 from pymatgen.core import Composition, Structure
-from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
+from pymatgen.entries.compatibility import (
+    MaterialsProject2020Compatibility,
+    MaterialsProjectCompatibility,
+)
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz import density_scatter
 from pymatviz.utils import save_fig
@@ -183,7 +186,6 @@ for filename in (
 # %%
 cse_step_paths = sorted(glob(f"{module_dir}/raw/wbm-cse-step-*.json.bz2"))
 assert len(cse_step_paths) == 5
-
 
 """
 There is a discrepancy of 6 entries between the files on Materials Cloud containing the
@@ -496,10 +498,25 @@ assert all(cse.uncorrected_energy == cse.energy for cse in df_wbm.cse)
 assert all(df_summary.n_sites == [len(cse.structure) for cse in df_wbm.cse])
 
 
-compat_out = MaterialsProject2020Compatibility().process_entries(
-    entries=df_wbm.cse, clean=True, verbose=True
+# entries are corrected in-place by default so we apply legacy corrections first
+# and then leave the new corrections in place below
+# having both old and new corrections allows updating predictions from older models
+# like MEGNet that were trained on MP release prior to new corrections by subtracting
+# old corrections and adding the new ones
+entries_old_corr = MaterialsProjectCompatibility().process_entries(
+    df_wbm.cse, clean=True, verbose=True
 )
-assert len(compat_out) == len(df_wbm) == len(df_summary)
+assert len(entries_old_corr) == len(df_wbm), f"{len(entries_old_corr)=} {len(df_wbm)=}"
+
+# extract legacy MP energy corrections to df_megnet
+e_correction_col = "e_correction_per_atom_mp_legacy"
+df_wbm[e_correction_col] = [cse.correction_per_atom for cse in df_wbm.cse]
+
+# clean up legacy corrections and apply new corrections
+entries_new_corr = MaterialsProject2020Compatibility().process_entries(
+    df_wbm.cse, clean=True, verbose=True
+)
+assert len(entries_new_corr) == len(df_wbm), f"{len(entries_new_corr)=} {len(df_wbm)=}"
 
 n_corrected = sum(cse.uncorrected_energy != cse.energy for cse in df_wbm.cse)
 assert n_corrected == 100_930, f"{n_corrected=} expected 100,930"
