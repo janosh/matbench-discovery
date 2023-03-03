@@ -17,9 +17,8 @@ from pymatviz.utils import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import FIGS, MODELS, ROOT, WANDB_PATH
-from matbench_discovery.data import PRED_FILES
 from matbench_discovery.plots import px
-from matbench_discovery.preds import df_metrics, df_wbm
+from matbench_discovery.preds import PRED_FILES, df_metrics, df_wbm
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
@@ -35,7 +34,7 @@ models: dict[str, dict[str, Any]] = {
             display_name={"$regex": "cgcnn-robust-formation_energy_per_atom"},
         ),
     ),
-    "Voronoi Random Forest": dict(
+    "Voronoi RF": dict(
         n_runs=68,
         filters=dict(
             created_at={"$gt": "2022-11-17", "$lt": "2022-11-28"},

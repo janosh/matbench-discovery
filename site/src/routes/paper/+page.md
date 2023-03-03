@@ -99,7 +99,7 @@ Our benchmark is designed to make [adding future models easy](/contribute). The 
 1. [Wrenformer](https://arxiv.org/abs/2106.11132) @goodall_rapid_2022
 1. [M3GNet](https://arxiv.org/abs/2202.02450) @chen_universal_2022
 1. [MEGNet](https://arxiv.org/abs/1812.05055) @chen_graph_2019
-1. [Voronoi Random Forest](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.96.024104) @goodall_rapid_2022
+1. [Voronoi RF](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.96.024104) @goodall_rapid_2022
 
 <div style="container-type: inline-size;">
   <MetricsTable style="font-size: 1.65cqw;" />

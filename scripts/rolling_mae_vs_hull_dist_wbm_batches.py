@@ -54,7 +54,7 @@ for line in ax.lines:
 
 
 # %% plotly
-model = "Wrenformer"  # ["M3GNet", "Wrenformer", "MEGNet", "Voronoi Random Forest"]
+model = "Wrenformer"  # ["M3GNet", "Wrenformer", "MEGNet", "Voronoi RF"]
 df_pivot = df_each_pred.pivot(columns=batch_col, values=model)
 
 # unstack two-level column index into new model column

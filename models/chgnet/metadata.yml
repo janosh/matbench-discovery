@@ -19,8 +19,8 @@ authors:
   - name: Christopher J. Bartel
     affiliation: University of Minnesota
     orcid: https://orcid.org/0000-0002-5198-5036
-  - name: Christopher J. Bartel
-    affiliation: Gerbrand Ceder
+  - name: Gerbrand Ceder
+    affiliation: UC Berkeley
     orcid: https://orcid.org/0000-0001-9275-3605
     email: gceder@berkeley.edu
 repo: https://github.com/CederGroupHub/chgnet
@@ -31,9 +31,10 @@ requirements:
   ase: 3.22.0
   pymatgen: 2022.10.22
   numpy: 1.24.0
-  pandas: 1.5.1
 trained_on_benchmark: false
 
 notes:
-  description: The Crystal Hamiltonian Graph Neural Network (CHGNet) is a universal GNN-based interatomic potential trained on energies, forces, stresses and magnetic moments from the MP trajectory dataset containing ∼1.5 million inorganic structures.
+  description: |
+    The Crystal Hamiltonian Graph Neural Network (CHGNet) is a universal GNN-based interatomic potential trained on energies, forces, stresses and magnetic moments from the MP trajectory dataset containing ∼1.5 million inorganic structures.
+    ![CHGNet Pipeline](https://user-images.githubusercontent.com/30958850/222842305-b6ed2468-8773-4e03-9de5-20c8e8de030e.svg)
   training: Using pre-trained model released with preprint. Training set unreleased until after review.
