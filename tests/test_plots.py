@@ -7,16 +7,16 @@ import pandas as pd
 import plotly.graph_objects as go
 import pytest
 
-from matbench_discovery.data import load_df_wbm_preds
 from matbench_discovery.plots import (
     Backend,
     cumulative_precision_recall,
     hist_classified_stable_vs_hull_dist,
     rolling_mae_vs_hull_dist,
 )
+from matbench_discovery.preds import load_df_wbm_preds
 
 AxLine = Literal["x", "y", "xy", ""]
-models = ["MEGNet", "CGCNN", "Voronoi Random Forest"]
+models = ["MEGNet", "CGCNN", "Voronoi RF"]
 df_wbm = load_df_wbm_preds(models, nrows=100)
 each_true_col = "e_above_hull_mp2020_corrected_ppd_mp"
 each_pred_col = "e_above_hull_pred"
