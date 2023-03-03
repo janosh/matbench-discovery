@@ -35,7 +35,7 @@ assert sorted(DATA_FILES) == [
 
 df_wbm = load_train_test("wbm-summary", version="v1.0.0")
 
-assert df_wbm.shape == (256963, 14)
+assert df_wbm.shape == (256963, 15)
 
 assert list(df_wbm) == [
     "formula",
@@ -47,6 +47,7 @@ assert list(df_wbm) == [
     "bandgap_pbe",
     "uncorrected_energy_from_cse",
     "e_correction_per_atom_mp2020",
+    "e_correction_per_atom_mp_legacy",
     "e_above_hull_mp2020_corrected_ppd_mp",
     "e_form_per_atom_uncorrected",
     "e_form_per_atom_mp2020_corrected",
@@ -65,6 +66,8 @@ assert list(df_wbm) == [
 1. `bandgap_pbe`: PBE-level DFT band gap from [WBM paper]
 1. `uncorrected_energy_from_cse`: Should be the same as `uncorrected_energy`. There are 2 cases where the absolute difference reported in the summary file and in the computed structure entries exceeds 0.1 eV (`wbm-2-3218`, `wbm-1-56320`) which we attribute to rounding errors.
 1. `e_form_per_atom_mp2020_corrected`: Matbench Discovery takes these as ground truth for the formation energy. Includes MP2020 energy corrections (latest correction scheme at time of release).
+1. `e_correction_per_atom_mp2020`: [`MaterialsProject2020Compatibility`](https://pymatgen.org/pymatgen.entries.compatibility.html#pymatgen.entries.compatibility.MaterialsProject2020Compatibility) energy corrections in eV/atom.
+1. `e_correction_per_atom_mp_legacy`: Legacy [`MaterialsProjectCompatibility`](https://pymatgen.org/pymatgen.entries.compatibility.html#pymatgen.entries.compatibility.MaterialsProjectCompatibility) energy corrections in eV/atom. Having both old and new corrections allows updating predictions from older models like MEGNet that were trained on MP formation energies treated with the old correction scheme.
 1. `e_above_hull_mp2020_corrected_ppd_mp`: Energy above hull distances in eV/atom after applying the MP2020 correction scheme. The convex hull in question is the one spanned by all ~145k Materials Project `ComputedStructureEntries`. Matbench Discovery takes these as ground truth for material stability. Any value above 0 is assumed to be an unstable/metastable material.
 <!-- TODO document remaining columns, or maybe drop them from df -->
 

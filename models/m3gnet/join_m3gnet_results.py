@@ -19,7 +19,7 @@ from pymatviz import density_scatter
 from tqdm import tqdm
 
 from matbench_discovery import today
-from matbench_discovery.data import DATA_FILES, as_dict_handler
+from matbench_discovery.data import DATA_FILES, as_dict_handler, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
 
 __author__ = "Janosh Riebesell"
@@ -124,7 +124,15 @@ for material_id, struct in tqdm(
     except Exception as exc:
         print(f"Failed to predict {material_id=}: {exc}")
 
-df_m3gnet["e_form_per_atom_m3gnet_megnet"] = pd.Series(megnet_e_form_preds)
+pred_col_megnet = "e_form_per_atom_m3gnet_megnet"
+df_m3gnet[f"{pred_col_megnet}_old"] = pd.Series(megnet_e_form_preds)
+# remove legacy MP corrections that MEGNet was trained on and apply newer MP2020
+# corrections instead
+df_m3gnet[pred_col_megnet] = (
+    df_m3gnet[f"{pred_col_megnet}_old"]
+    - df_wbm.e_correction_per_atom_mp_legacy
+    + df_wbm.e_correction_per_atom_mp2020
+)
 
 assert (
     n_isna := df_m3gnet.e_form_per_atom_m3gnet_megnet.isna().sum()
@@ -145,5 +153,5 @@ df_m3gnet.reset_index().to_json(out_path, default_handler=as_dict_handler)
 df_m3gnet.select_dtypes("number").to_csv(out_path.replace(".json.gz", ".csv"))
 
 # in_path = f"{module_dir}/2022-10-31-m3gnet-wbm-IS2RE.json.gz"
-# df_m3gnet_csv = pd.read_csv(in_path.replace(".json.gz", ".csv"))
+# df_m3gnet = pd.read_csv(in_path.replace(".json.gz", ".csv")).set_index("material_id")
 # df_m3gnet = pd.read_json(in_path).set_index("material_id")
