@@ -23,7 +23,7 @@
   const target = { target: `_blank`, rel: `noopener` }
 </script>
 
-<h2>
+<h2 id={model_name.toLowerCase().replaceAll(` `, `-`)}>
   {model_name}
   <button
     on:click={() => (show_details = !show_details)}
@@ -161,10 +161,7 @@
     font: inherit;
   }
   h3 {
-    margin: 1em 0 0;
-  }
-  div h3 {
-    margin: 0;
+    margin: 1ex 0 3pt;
   }
   ul {
     list-style: disc;
@@ -203,9 +200,6 @@
     list-style: none;
     flex-direction: column;
     max-height: 10em;
-  }
-  section.metrics > h3 {
-    margin: 0;
   }
   section.metrics > ul > li {
     font-weight: lighter;

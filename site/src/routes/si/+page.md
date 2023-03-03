@@ -6,13 +6,17 @@
   import WrenformerRollingMaeBatches from '$figs/wrenformer-rolling-mae-vs-hull-dist-wbm-batches.svelte'
   import M3gnetRollingMaeBatches from '$figs/m3gnet-rolling-mae-vs-hull-dist-wbm-batches.svelte'
   import MegnetRollingMaeBatches from '$figs/megnet-rolling-mae-vs-hull-dist-wbm-batches.svelte'
+  import { onMount } from 'svelte'
+
+  let mounted = false
+  onMount(() => (mounted = true))
 </script>
 
 # Supplementary Information
 
 ## ROC Curves
 
-{#if browser}
+{#if mounted}
 <RocModels />
 {/if}
 
@@ -20,7 +24,7 @@
 
 ## Model Run Times
 
-{#if browser}
+{#if mounted}
 <RunTimePie style="margin: 1em;" />
 {/if}
 

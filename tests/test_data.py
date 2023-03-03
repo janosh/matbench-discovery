@@ -17,13 +17,11 @@ from pytest import CaptureFixture
 from matbench_discovery import ROOT
 from matbench_discovery.data import (
     DATA_FILES,
-    PRED_FILES,
     RAW_REPO_URL,
     DataFiles,
     as_dict_handler,
     df_wbm,
     glob_to_df,
-    load_df_wbm_preds,
     load_train_test,
 )
 
@@ -176,31 +174,6 @@ def test_df_wbm() -> None:
     assert df_wbm.shape == (256963, 15)
     assert df_wbm.index.name == "material_id"
     assert set(df_wbm) > {"bandgap_pbe", "formula", "material_id"}
-
-
-@pytest.mark.parametrize("models", [[], ["Wrenformer"]])
-def test_load_df_wbm_with_preds(models: list[str]) -> None:
-    df = load_df_wbm_preds(models)
-    assert len(df) == len(df_wbm)
-    assert list(df) == list(df_wbm) + models + [f"{model}_std" for model in models]
-    assert df.index.name == "material_id"
-
-    for model_name in models:
-        assert model_name in df
-        assert df[model_name].isna().sum() == 0
-
-
-def test_load_df_wbm_with_preds_raises() -> None:
-    with pytest.raises(ValueError, match="Unknown models: foo"):
-        load_df_wbm_preds(models=["foo"])
-
-
-def test_pred_files() -> None:
-    assert len(PRED_FILES) >= 6
-    assert all(path.endswith((".csv", ".json")) for path in PRED_FILES.values())
-    for model, path in PRED_FILES.items():
-        msg = f"Missing preds file for {model=}, expected at {path=}"
-        assert os.path.isfile(path), msg
 
 
 @pytest.mark.parametrize("pattern", ["tmp/*df.csv", "tmp/*df.json"])
