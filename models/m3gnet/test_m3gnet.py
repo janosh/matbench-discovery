@@ -18,7 +18,6 @@ import pandas as pd
 import wandb
 from m3gnet.models import Relaxer
 from pymatgen.core import Structure
-from pymatgen.entries.computed_entries import ComputedStructureEntry
 from tqdm import tqdm
 
 from matbench_discovery import DEBUG, timestamp, today
@@ -61,12 +60,15 @@ warnings.filterwarnings(action="ignore", category=UserWarning, module="tensorflo
 
 
 # %%
-data_path = DATA_FILES.wbm_computed_structure_entries_plus_init_structs
+data_path = {
+    "IS2RE": DATA_FILES.wbm_initial_structures,
+    "RS2RE": DATA_FILES.wbm_computed_structure_entries,
+}[task_type]
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
 df_wbm = pd.read_json(data_path).set_index("material_id")
 
-df_this_job: pd.DataFrame = np.array_split(df_wbm, slurm_array_task_count)[
+df_in: pd.DataFrame = np.array_split(df_wbm, slurm_array_task_count)[
     slurm_array_task_id - 1
 ]
 
@@ -75,7 +77,7 @@ run_params = dict(
     m3gnet_version=version("m3gnet"),
     numpy_version=version("numpy"),
     task_type=task_type,
-    df=dict(shape=str(df_this_job.shape), columns=", ".join(df_this_job)),
+    df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     slurm_vars=slurm_vars,
 )
 
@@ -86,15 +88,12 @@ wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 # %%
 megnet = Relaxer()  # load default pre-trained M3GNet model
 relax_results: dict[str, dict[str, Any]] = {}
+input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
 
-if task_type == "IS2RE":
-    structures = df_this_job.initial_structure.map(Structure.from_dict).to_dict()
-elif task_type == "RS2RE":
-    df_this_job.cse = df_this_job.cse.map(ComputedStructureEntry.from_dict)
-    structures = df_this_job.cse.map(lambda x: x.structure).to_dict()
-else:
-    raise ValueError(f"Unknown {task_type = }")
+if task_type == "RS2RE":
+    df_in[input_col] = [x["structure"] for x in df_in.computed_structure_entry]
 
+structures = df_in[input_col].map(Structure.from_dict).to_dict()
 
 for material_id in tqdm(structures, disable=None):
     if material_id in relax_results:

@@ -12,7 +12,6 @@ import wandb
 from maml.apps.bowsr.model.megnet import MEGNet
 from maml.apps.bowsr.optimizer import BayesianOptimizer
 from pymatgen.core import Structure
-from pymatgen.entries.computed_entries import ComputedStructureEntry
 from tqdm import tqdm
 
 from matbench_discovery import DEBUG, timestamp, today
@@ -39,7 +38,11 @@ energy_model = "megnet"
 job_name = f"bowsr-{energy_model}-wbm-{task_type}{'-debug' if DEBUG else ''}"
 out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
-data_path = DATA_FILES.wbm_initial_structures
+data_path = {
+    "IS2RE": DATA_FILES.wbm_initial_structures,
+    "RS2RE": DATA_FILES.wbm_computed_structure_entries,
+}[task_type]
+
 
 slurm_vars = slurm_submit(
     job_name=job_name,
@@ -73,7 +76,7 @@ print(f"{out_path = }")
 # %%
 df_wbm = pd.read_json(data_path).set_index("material_id")
 
-df_this_job: pd.DataFrame = np.array_split(df_wbm, slurm_array_task_count)[
+df_in: pd.DataFrame = np.array_split(df_wbm, slurm_array_task_count)[
     slurm_array_task_id - 1
 ]
 
@@ -90,7 +93,7 @@ optimize_kwargs = dict(n_init=100, n_iter=100, alpha=0.026**2)
 run_params = dict(
     bayes_optim_kwargs=bayes_optim_kwargs,
     data_path=data_path,
-    df=dict(shape=str(df_this_job.shape), columns=", ".join(df_this_job)),
+    df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     energy_model=energy_model,
     maml_version=version("maml"),
     energy_model_version=version(energy_model),
@@ -106,16 +109,12 @@ wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 # %%
 model = MEGNet()
 relax_results: dict[str, dict[str, Any]] = {}
+input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
 
-if task_type == "IS2RE":
-    structures = df_this_job.initial_structure.map(Structure.from_dict).to_dict()
-elif task_type == "RS2RE":
-    structures = df_this_job.cse.map(
-        lambda x: ComputedStructureEntry.from_dict(x).structure
-    ).to_dict()
-else:
-    raise ValueError(f"Unknown {task_type = }")
+if task_type == "RS2RE":
+    df_in[input_col] = [x["structure"] for x in df_in.computed_structure_entry]
 
+structures = df_in[input_col].map(Structure.from_dict).to_dict()
 
 for material_id in tqdm(structures, desc="Main loop", disable=None):
     structure = structures[material_id]

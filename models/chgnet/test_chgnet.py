@@ -19,7 +19,6 @@ import pandas as pd
 import wandb
 from chgnet.model import StructOptimizer
 from pymatgen.core import Structure
-from pymatgen.entries.computed_entries import ComputedStructureEntry
 from tqdm import tqdm
 
 from matbench_discovery import DEBUG, timestamp, today
@@ -69,7 +68,7 @@ print(f"{data_path=}")
 df_in = pd.read_json(data_path).set_index("material_id")
 e_pred_col = "chgnet_energy"
 
-df_this_job: pd.DataFrame = np.array_split(df_in, slurm_array_task_count)[
+df_in: pd.DataFrame = np.array_split(df_in, slurm_array_task_count)[
     slurm_array_task_id - 1
 ]
 
@@ -79,7 +78,7 @@ run_params = dict(
     numpy_version=version("numpy"),
     torch_version=version("torch"),
     task_type=task_type,
-    df=dict(shape=str(df_this_job.shape), columns=", ".join(df_this_job)),
+    df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     slurm_vars=slurm_vars,
 )
 
@@ -90,15 +89,12 @@ wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 # %%
 chgnet = StructOptimizer()  # load default pre-trained CHGNnet model
 relax_results: dict[str, dict[str, Any]] = {}
+input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
 
-if task_type == "IS2RE":
-    structures = df_this_job.initial_structure.map(Structure.from_dict).to_dict()
-elif task_type == "RS2RE":
-    df_this_job.cse = df_this_job.cse.map(ComputedStructureEntry.from_dict)
-    structures = df_this_job.cse.map(lambda x: x.structure).to_dict()
-else:
-    raise ValueError(f"Unknown {task_type = }")
+if task_type == "RS2RE":
+    df_in[input_col] = [x["structure"] for x in df_in.computed_structure_entry]
 
+structures = df_in[input_col].map(Structure.from_dict).to_dict()
 
 for material_id in tqdm(structures, disable=None):
     if material_id in relax_results:
