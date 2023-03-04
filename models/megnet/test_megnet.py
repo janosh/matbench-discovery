@@ -15,7 +15,6 @@ import pandas as pd
 import wandb
 from megnet.utils.models import load_model
 from pymatgen.core import Structure
-from pymatgen.entries.computed_entries import ComputedStructureEntry
 from sklearn.metrics import r2_score
 from tqdm import tqdm
 
@@ -50,13 +49,16 @@ out_path = f"{out_dir}/megnet-e-form-preds.csv"
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path = } already exists, exciting early")
 
-data_path = DATA_FILES.wbm_initial_structures
+data_path = {
+    "IS2RE": DATA_FILES.wbm_initial_structures,
+    "RS2RE": DATA_FILES.wbm_computed_structure_entries,
+}[task_type]
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
 e_form_col = "e_form_per_atom_mp2020_corrected"
 assert e_form_col in df_wbm, f"{e_form_col=} not in {list(df_wbm)=}"
 
-df_wbm_structs = pd.read_json(data_path).set_index("material_id")
+df_in = pd.read_json(data_path).set_index("material_id")
 megnet_mp_e_form = load_model(model_name := "Eform_MP_2019")
 
 
@@ -68,7 +70,7 @@ run_params = dict(
     model_name=model_name,
     task_type=task_type,
     target_col=e_form_col,
-    df=dict(shape=str(df_wbm_structs.shape), columns=", ".join(df_wbm_structs)),
+    df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     slurm_vars=slurm_vars,
 )
 
@@ -76,13 +78,12 @@ wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 
 # %%
-if task_type == "IS2RE":
-    structures = df_wbm_structs.initial_structure.map(Structure.from_dict)
-elif task_type == "RS2RE":
-    df_wbm_structs.cse = df_wbm_structs.cse.map(ComputedStructureEntry.from_dict)
-    structures = df_wbm_structs.cse.map(lambda x: x.structure)
-else:
-    raise ValueError(f"Unknown {task_type = }")
+input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
+
+if task_type == "RS2RE":
+    df_in[input_col] = [x["structure"] for x in df_in.computed_structure_entry]
+
+structures = df_in[input_col].map(Structure.from_dict).to_dict()
 
 megnet_e_form_preds = {}
 for material_id in tqdm(structures, disable=None):
