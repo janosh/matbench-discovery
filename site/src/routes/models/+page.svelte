@@ -5,14 +5,16 @@
   import { RadioButtons, Tooltip } from 'svelte-zoo'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
-  import type { PageData } from './$types'
+  import type { PageData, Snapshot } from './$types'
 
   export let data: PageData
 
-  let sort_by: keyof ModelStats | 'model_name' = `model_name`
+  let sort_by: keyof ModelStats | 'model_name' = `F1`
   let show_details = false
-  let selected = `asc`
-  $: sort_factor = selected == `asc` ? -1 : 1
+  let order: 'asc' | 'desc' = `desc`
+  let n_best = 8 // show only best models
+  const min_models = 2
+  $: sort_factor = order == `asc` ? -1 : 1
 
   $: models = data.models.sort((md1, md2) => {
     if (typeof md1[sort_by] == `string`) {
@@ -37,13 +39,20 @@
     { key: `FNR`, tooltip: `False Negative Rate` },
     { key: `DAF`, tooltip: `Discovery Acceleration Factor` },
   ]
+
+  export const snapshot: Snapshot = {
+    capture: () => ({ show_details, sort_by, order }),
+    restore: (values) => ({ show_details, sort_by, order } = values),
+  }
 </script>
 
 <div class="pull-left">
   <h1>Models</h1>
 
   <span>
-    Sort <RadioButtons bind:selected options={[`asc`, `desc`]} /> by:
+    Sort <input type="number" min={min_models} max={models.length} bind:value={n_best} />
+    best models
+    <RadioButtons bind:selected={order} options={[`asc`, `desc`]} /> by:
   </span>
   <ul>
     {#each [{ key: `model_name`, label: `Model Name` }, ...stats] as { key, label, tooltip }}
@@ -64,7 +73,7 @@
   </ul>
 
   <ol>
-    {#each models as data, idx (data.model_name)}
+    {#each models.slice(0, Math.max(min_models, n_best)) as data, idx (data.model_name)}
       <li
         animate:flip={{ duration: 400 }}
         in:fade|local={{ delay: 100 }}

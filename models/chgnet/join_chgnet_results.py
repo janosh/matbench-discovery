@@ -21,8 +21,7 @@ from tqdm import tqdm
 from matbench_discovery import today
 from matbench_discovery.data import DATA_FILES, as_dict_handler
 from matbench_discovery.energy import get_e_form_per_atom
-from matbench_discovery.preds import df_wbm as df_summary
-from matbench_discovery.preds import e_form_col
+from matbench_discovery.preds import df_wbm, e_form_col
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-01"
@@ -55,33 +54,28 @@ df_chgnet = pd.concat(dfs.values()).round(4)
 
 
 # %%
-df_wbm = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(
+df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(
     "material_id"
 )
 
-df_wbm["cse"] = [
-    ComputedStructureEntry.from_dict(x) for x in tqdm(df_wbm.computed_structure_entry)
+df_cse["cse"] = [
+    ComputedStructureEntry.from_dict(x) for x in tqdm(df_cse.computed_structure_entry)
 ]
 
 
-# %% transfer chgnet energies and relaxed structures WBM CSEs
+# %% transfer CHGNet energies and relaxed structures WBM CSEs since MP2020 energy
+# corrections applied below are structure-dependent (for oxides and sulfides)
 cse: ComputedStructureEntry
 for row in tqdm(df_chgnet.itertuples(), total=len(df_chgnet)):
     mat_id, struct_dict, chgnet_energy, *_ = row
     chgnet_struct = Structure.from_dict(struct_dict)
-    cse = df_wbm.loc[mat_id, "cse"]
+    cse = df_cse.loc[mat_id, "cse"]
     cse._energy = chgnet_energy  # cse._energy is the uncorrected energy
     cse._structure = chgnet_struct
     df_chgnet.loc[mat_id, "cse"] = cse
 
 
-# %%
-df_chgnet["e_form_per_atom_chgnet_uncorrected"] = [
-    get_e_form_per_atom(cse) for cse in tqdm(df_chgnet.cse)
-]
-
-
-# %% apply energy corrections
+# %% apply energy corrections to CSEs with CHGNet
 out = MaterialsProject2020Compatibility().process_entries(
     df_chgnet.cse, verbose=True, clean=True
 )
@@ -89,18 +83,12 @@ assert len(out) == len(df_chgnet)
 
 
 # %% compute corrected formation energies
-df_chgnet["e_form_per_atom_chgnet"] = [
-    get_e_form_per_atom(cse) for cse in tqdm(df_chgnet.cse)
-]
-
-df_chgnet[e_form_col] = df_summary[e_form_col]
+e_form_chgnet_col = "e_form_per_atom_chgnet"
+df_chgnet[e_form_chgnet_col] = [get_e_form_per_atom(cse) for cse in tqdm(df_chgnet.cse)]
 
 
 # %%
-ax = density_scatter(
-    df=df_chgnet, x="e_form_per_atom_chgnet", y="e_form_per_atom_chgnet_uncorrected"
-)
-ax = density_scatter(df=df_chgnet, x="e_form_per_atom_chgnet", y=e_form_col)
+ax = density_scatter(x=df_wbm[e_form_col], y=df_chgnet[e_form_chgnet_col])
 
 
 # %% load 2019 MEGNet formation energy model
@@ -109,7 +97,7 @@ megnet_e_form_preds: dict[str, float] = {}
 
 
 # %% predict formation energies on chgnet relaxed structure with MEGNet
-for material_id, cse in tqdm(df_wbm.cse.items(), total=len(df_wbm)):
+for material_id, cse in tqdm(df_cse.cse.items(), total=len(df_cse)):
     if material_id in megnet_e_form_preds:
         continue
     try:
@@ -119,7 +107,14 @@ for material_id, cse in tqdm(df_wbm.cse.items(), total=len(df_wbm)):
     except Exception as exc:
         print(f"Failed to predict {material_id=}: {exc}")
 
-df_chgnet["e_form_per_atom_chgnet_megnet"] = pd.Series(megnet_e_form_preds)
+e_form_megnet_col = "e_form_per_atom_chgnet_megnet"
+# remove legacy MP corrections that MEGNet was trained on and apply newer MP2020
+# corrections instead
+df_chgnet[e_form_megnet_col] = (
+    pd.Series(megnet_e_form_preds)
+    - df_wbm.e_correction_per_atom_mp_legacy
+    + df_wbm.e_correction_per_atom_mp2020
+)
 
 assert (
     n_isna := df_chgnet.e_form_per_atom_chgnet_megnet.isna().sum()
@@ -127,9 +122,8 @@ assert (
 
 
 # %%
-ax = density_scatter(
-    df=df_chgnet, x="e_form_per_atom_chgnet_megnet", y="e_form_per_atom_chgnet"
-)
+ax = density_scatter(df=df_chgnet, x=e_form_chgnet_col, y=e_form_megnet_col)
+ax = density_scatter(df=df_chgnet, x=e_form_col, y=e_form_megnet_col)
 
 
 # %%

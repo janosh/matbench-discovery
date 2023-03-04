@@ -50,12 +50,13 @@ quantity_labels = dict(
 )
 model_labels = dict(
     bowsr_megnet="BOWSR + MEGNet",
+    chgnet="CHGNet",
+    chgnet_megnet="CHGNet + MEGNet",
     cgcnn_p="CGCNN+P",
     cgcnn="CGCNN",
     m3gnet_megnet="M3GNet + MEGNet",
     m3gnet="M3GNet",
     megnet="MEGNet",
-    megnet_old="MEGNet Old",
     voronoi_rf="Voronoi RF",
     wrenformer="Wrenformer",
     dft="DFT",
