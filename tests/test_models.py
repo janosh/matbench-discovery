@@ -38,9 +38,10 @@ def test_model_dirs_have_metadata() -> None:
             )
 
             # make sure all keys are valid
-            assert (
-                3 < len(model_name) < 50
-            ), f"Invalid {model_name=} not between 3 and 50 characters"
+            for name in model_name if isinstance(model_name, list) else [model_name]:
+                assert (
+                    3 < len(name) < 50
+                ), f"Invalid {name=} not between 3 and 50 characters"
             assert (
                 1 < len(model_version) < 15
             ), f"Invalid {model_version=} not between 1 and 15 characters"

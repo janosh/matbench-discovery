@@ -15,10 +15,13 @@ export const load: PageServerLoad = async () => {
 
     if (!Array.isArray(metadata)) metadata = [metadata]
 
-    return metadata.map((md) => {
-      const computed = model_stats[md.model_name]
-      if (!computed) console.error(`Missing stats for ${md.model_name}`)
-      return { ...md, ...(computed ?? {}), dir: dirname(key) }
+    return metadata.flatMap(({ model_name: name, ...rest }) => {
+      // handle model name as array
+      return (Array.isArray(name) ? name : [name]).map((model_name) => {
+        const computed = model_stats[model_name]
+        if (!computed) console.error(`Missing stats for ${name}`)
+        return { ...rest, model_name, ...(computed ?? {}), dir: dirname(key) }
+      })
     })
   })
 

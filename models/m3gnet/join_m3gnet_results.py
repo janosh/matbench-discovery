@@ -66,7 +66,8 @@ df_cse["cse"] = [
 ]
 
 
-# %% transfer M3GNet energies and relaxed structures WBM CSEs
+# %% transfer M3GNet energies and relaxed structures WBM CSEs since MP2020 energy
+# corrections applied below are structure-dependent (for oxides and sulfides)
 cse: ComputedStructureEntry
 for row in tqdm(df_m3gnet.itertuples(), total=len(df_m3gnet)):
     mat_id, struct_dict, m3gnet_energy, *_ = row
@@ -76,12 +77,6 @@ for row in tqdm(df_m3gnet.itertuples(), total=len(df_m3gnet)):
     cse._energy = m3gnet_energy  # cse._energy is the uncorrected energy
     cse._structure = m3gnet_struct
     df_m3gnet.loc[mat_id, "cse"] = cse
-
-
-# %%
-df_m3gnet["e_form_per_atom_m3gnet_uncorrected"] = [
-    get_e_form_per_atom(cse) for cse in tqdm(df_m3gnet.cse)
-]
 
 
 # %% apply energy corrections
@@ -125,11 +120,10 @@ for material_id, struct in tqdm(
         print(f"Failed to predict {material_id=}: {exc}")
 
 pred_col_megnet = "e_form_per_atom_m3gnet_megnet"
-df_m3gnet[f"{pred_col_megnet}_old"] = pd.Series(megnet_e_form_preds)
 # remove legacy MP corrections that MEGNet was trained on and apply newer MP2020
 # corrections instead
 df_m3gnet[pred_col_megnet] = (
-    df_m3gnet[f"{pred_col_megnet}_old"]
+    pd.Series(megnet_e_form_preds)
     - df_wbm.e_correction_per_atom_mp_legacy
     + df_wbm.e_correction_per_atom_mp2020
 )

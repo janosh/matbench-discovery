@@ -39,11 +39,11 @@ out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 slurm_vars = slurm_submit(
     job_name=job_name,
     out_dir=out_dir,
-    partition="icelake-himem",
-    account="LEE-SL3-CPU",
+    partition="ampere",
+    account="LEE-SL3-GPU",
     time="3:0:0",
-    array=f"1-{slurm_array_task_count}",
-    slurm_flags=("--mem", str(12_000)),
+    # array=f"1-{slurm_array_task_count}",
+    slurm_flags="--nodes 1 --gpus-per-node 1",
 )
 
 
@@ -104,13 +104,11 @@ for material_id in tqdm(structures, disable=None):
     except Exception as error:
         print(f"Failed to relax {material_id}: {error}")
         continue
-    relax_dict = {
+    relax_results[material_id] = {
         "chgnet_structure": relax_result["final_structure"],
         "chgnet_trajectory": relax_result["trajectory"].__dict__,
-        e_pred_col: relax_result["energies"][-1],
+        e_pred_col: relax_result["trajectory"].energies[-1],
     }
-
-    relax_results[material_id] = relax_dict
 
 
 # %%
@@ -123,7 +121,9 @@ df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
 # %%
 df_wbm[e_pred_col] = df_out[e_pred_col]
 table = wandb.Table(
-    dataframe=df_wbm[["uncorrected_energy", e_pred_col, "formula"]].reset_index()
+    dataframe=df_wbm.dropna()[
+        ["uncorrected_energy", e_pred_col, "formula"]
+    ].reset_index()
 )
 
 title = f"CHGNet {task_type} ({len(df_wbm):,})"

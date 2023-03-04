@@ -27,11 +27,35 @@ __date__ = "2022-11-28"
 # %%
 model_stats: dict[str, dict[str, str | int | float]] = {}
 models: dict[str, dict[str, Any]] = {
+    "BOWSR + MEGNet": dict(
+        n_runs=500,
+        filters=dict(
+            created_at={"$gt": "2023-01-20", "$lt": "2023-01-22"},
+            display_name={"$regex": "bowsr-megnet"},
+        ),
+    ),
+    "CHGNet": dict(
+        n_runs=100, filters=dict(display_name={"$regex": "chgnet-wbm-IS2RE-"})
+    ),
     "CGCNN": dict(
         n_runs=10,
         filters=dict(
             created_at={"$gt": "2022-11-21", "$lt": "2022-11-23"},
             display_name={"$regex": "cgcnn-robust-formation_energy_per_atom"},
+        ),
+    ),
+    "M3GNet": dict(
+        n_runs=99,
+        filters=dict(
+            created_at={"$gt": "2022-10-31", "$lt": "2022-11-01"},
+            display_name={"$regex": "m3gnet-wbm-IS2RE"},
+        ),
+    ),
+    "MEGNet": dict(
+        n_runs=1,
+        filters=dict(
+            created_at={"$gt": "2022-11-17", "$lt": "2022-11-19"},
+            display_name={"$regex": "megnet-wbm-IS2RE"},
         ),
     ),
     "Voronoi RF": dict(
@@ -46,27 +70,6 @@ models: dict[str, dict[str, Any]] = {
         filters=dict(
             created_at={"$gt": "2022-11-14", "$lt": "2022-11-16"},
             display_name={"$regex": "wrenformer-robust-mp-formation_energy"},
-        ),
-    ),
-    "MEGNet": dict(
-        n_runs=1,
-        filters=dict(
-            created_at={"$gt": "2022-11-17", "$lt": "2022-11-19"},
-            display_name={"$regex": "megnet-wbm-IS2RE"},
-        ),
-    ),
-    "M3GNet": dict(
-        n_runs=99,
-        filters=dict(
-            created_at={"$gt": "2022-10-31", "$lt": "2022-11-01"},
-            display_name={"$regex": "m3gnet-wbm-IS2RE"},
-        ),
-    ),
-    "BOWSR + MEGNet": dict(
-        n_runs=500,
-        filters=dict(
-            created_at={"$gt": "2023-01-20", "$lt": "2023-01-22"},
-            display_name={"$regex": "bowsr-megnet"},
         ),
     ),
 }
@@ -177,13 +180,11 @@ df_stats["missing_percent"] = [f"{x / len(df_wbm):.2%}" for x in df_stats.missin
 df_stats.attrs["Total Run Time"] = df_stats[time_col].sum()
 
 stats_out = f"{MODELS}/model-stats.json"
-# df_stats.round(2).to_json(stats_out, orient="index")
+df_stats.round(2).to_json(stats_out, orient="index")
 
 
 # %% plot model run times as pie chart
-fig = px.pie(
-    df_metrics, values=time_col, names=df_metrics.index, hole=0.5
-).update_traces(
+fig = px.pie(df_stats, values=time_col, names=df_stats.index, hole=0.5).update_traces(
     textinfo="percent+label",
     textfont_size=14,
     marker=dict(line=dict(color="#000000", width=2)),
@@ -195,7 +196,7 @@ fig = px.pie(
 )
 fig.add_annotation(
     # add title in the middle saying "Total CPU+GPU time used"
-    text=f"Total CPU+GPU<br>time used:<br>{df_metrics[time_col].sum():.1f} h",
+    text=f"Total CPU+GPU<br>time used:<br>{df_stats[time_col].sum():.1f} h",
     font=dict(size=18),
     x=0.5,
     y=0.5,

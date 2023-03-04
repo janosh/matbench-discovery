@@ -27,7 +27,7 @@
 
   export const snapshot: Snapshot = {
     capture: () => ({ filter, log }),
-    restore: (values) => ({ log, filter } = values),
+    restore: (values) => ({ filter, log } = values),
   }
   const radio_style = `display: inline-flex; margin: 2pt 8pt; border-radius: 3pt;`
 </script>

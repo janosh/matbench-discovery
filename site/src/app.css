@@ -191,3 +191,16 @@ sup {
   /* https://stackoverflow.com/a/6594576 */
   line-height: 0;
 }
+
+input {
+  border: none;
+  border-radius: 3pt;
+  padding: 2pt 4pt;
+  font-size: 12pt;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-color);
+}
+input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.15);
+}

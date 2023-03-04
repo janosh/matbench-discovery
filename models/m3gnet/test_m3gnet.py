@@ -67,6 +67,7 @@ data_path = {
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
 df_wbm = pd.read_json(data_path).set_index("material_id")
+e_pred_col = "m3gnet_energy"
 
 df_in: pd.DataFrame = np.array_split(df_wbm, slurm_array_task_count)[
     slurm_array_task_id - 1
@@ -103,12 +104,12 @@ for material_id in tqdm(structures, disable=None):
     except Exception as error:
         print(f"Failed to relax {material_id}: {error}")
         continue
-    relax_dict = {
+
+    relax_results[material_id] = {
         "m3gnet_structure": relax_result["final_structure"],
         "m3gnet_trajectory": relax_result["trajectory"].__dict__,
+        e_pred_col: relax_result["trajectory"].energies[-1],
     }
-
-    relax_results[material_id] = relax_dict
 
 
 # %%
