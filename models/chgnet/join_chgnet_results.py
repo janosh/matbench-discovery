@@ -33,7 +33,7 @@ warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen"
 # %%
 module_dir = os.path.dirname(__file__)
 task_type = "IS2RE"
-date = "2023-03-02"
+date = "2023-03-04"
 glob_pattern = f"{date}-chgnet-wbm-{task_type}*/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
@@ -128,7 +128,7 @@ assert (
 
 # %%
 ax = density_scatter(
-    df=df_chgnet, x="e_form_per_atom_chgnet", y="e_form_per_atom_chgnet_megnet"
+    df=df_chgnet, x="e_form_per_atom_chgnet_megnet", y="e_form_per_atom_chgnet"
 )
 
 

@@ -25,10 +25,10 @@ __date__ = "2022-10-31"
 
 
 data_name = "mp"  # "mp"
-if data_name == "wbm":
-    data_path = DATA_FILES.wbm_initial_structures
-elif data_name == "mp":
-    data_path = DATA_FILES.mp_computed_structure_entries
+data_path = {
+    "wbm": DATA_FILES.wbm_initial_structures,
+    "mp": DATA_FILES.mp_computed_structure_entries,
+}[data_name]
 
 input_col = "initial_structure"
 # input_col = "relaxed_structure"
@@ -60,26 +60,24 @@ if os.path.isfile(out_path):
 
 print(f"{data_path=}")
 df = pd.read_json(data_path).set_index("material_id")
-df_this_job: pd.DataFrame = np.array_split(df, slurm_array_task_count)[
+df_in: pd.DataFrame = np.array_split(df, slurm_array_task_count)[
     slurm_array_task_id - 1
 ]
 
 if data_name == "mp":  # extract structure dicts from ComputedStructureEntry
-    struct_dicts = [x["structure"] for x in df_this_job.entry]
+    struct_dicts = [x["structure"] for x in df_in.entry]
 elif data_name == "wbm" and input_col == "relaxed_structure":
-    struct_dicts = [x["structure"] for x in df_this_job.computed_structure_entry]
+    struct_dicts = [x["structure"] for x in df_in.computed_structure_entry]
 elif data_name == "wbm" and input_col == "initial_structure":
-    struct_dicts = df_this_job.initial_structure
+    struct_dicts = df_in.initial_structure
 
-df_this_job[input_col] = [
-    Structure.from_dict(x) for x in tqdm(struct_dicts, disable=None)
-]
+df_in[input_col] = [Structure.from_dict(x) for x in tqdm(struct_dicts, disable=None)]
 
 
 # %%
 run_params = dict(
     data_path=data_path,
-    df=dict(shape=str(df_this_job.shape), columns=", ".join(df_this_job)),
+    df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     input_col=input_col,
     slurm_vars=slurm_vars,
     out_path=out_path,
@@ -94,9 +92,9 @@ wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 # > No electronegativity for Ne. Setting to NaN. This has no physical meaning, ...
 warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
 
-df_features = featurizer.featurize_dataframe(
-    df_this_job, input_col, ignore_errors=True
-)[featurizer.feature_labels()].round(4)
+df_features = featurizer.featurize_dataframe(df_in, input_col, ignore_errors=True)[
+    featurizer.feature_labels()
+].round(4)
 
 
 # %%
