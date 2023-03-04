@@ -102,14 +102,10 @@ print(f"{len(megnet_e_form_preds)=:,}")
 print(f"{len(structures)=:,}")
 print(f"missing: {len(structures) - len(megnet_e_form_preds):,}")
 pred_col = "e_form_per_atom_megnet"
-# old columns contains direct MEGNet predictions which was trained on legacy-corrected
-# MP formation energies
-df_wbm[f"{pred_col}_old"] = pd.Series(megnet_e_form_preds)
-
 # remove legacy MP corrections that MEGNet was trained on and apply newer MP2020
 # corrections instead
 df_wbm[pred_col] = (
-    df_wbm[pred_col]
+    pd.Series(megnet_e_form_preds)
     - df_wbm.e_correction_per_atom_mp_legacy
     + df_wbm.e_correction_per_atom_mp2020
 )

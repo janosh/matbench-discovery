@@ -21,7 +21,7 @@
 
   export const snapshot: Snapshot = {
     capture: () => ({ color_scale, log }),
-    restore: (values) => ({ log, color_scale } = values),
+    restore: (values) => ({ color_scale, log } = values),
   }
 </script>
 

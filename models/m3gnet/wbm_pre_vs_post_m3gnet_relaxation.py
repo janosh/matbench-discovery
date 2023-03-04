@@ -31,9 +31,6 @@ df_summary = pd.read_csv(DATA_FILES.wbm_summary).set_index("material_id")
 
 
 # %%
-is2re_path_old = f"{ROOT}/models/m3gnet/2022-10-31-m3gnet-wbm-IS2RE.json.gz"
-df_m3gnet_is2re_old = pd.read_json(is2re_path_old).set_index("material_id")
-
 is2re_path = f"{ROOT}/models/m3gnet/2022-10-31-m3gnet-wbm-IS2RE.json.gz"
 df_m3gnet_is2re = pd.read_json(is2re_path).set_index("material_id")
 
