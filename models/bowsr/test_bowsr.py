@@ -29,7 +29,7 @@ https://github.com/materialsvirtuallab/maml
 
 task_type = "IS2RE"  # "RS2RE"
 module_dir = os.path.dirname(__file__)
-# set large job array size for fast testing/debugging
+# set large job array size for smaller data splits and faster testing/debugging
 slurm_array_task_count = 500
 # see https://stackoverflow.com/a/55431306 for how to change array throttling
 # post submission
@@ -95,9 +95,7 @@ run_params = dict(
     data_path=data_path,
     df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     energy_model=energy_model,
-    maml_version=version("maml"),
-    energy_model_version=version(energy_model),
-    numpy_version=version("numpy"),
+    **{f"{dep}_version": version(dep) for dep in ("maml", "numpy", energy_model)},
     optimize_kwargs=optimize_kwargs,
     task_type=task_type,
     slurm_vars=slurm_vars,

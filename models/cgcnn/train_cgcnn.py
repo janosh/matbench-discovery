@@ -102,9 +102,7 @@ model = CrystalGraphConvNet(**model_params)
 run_params = dict(
     data_path=data_path,
     batch_size=batch_size,
-    aviary_version=version("aviary"),
-    numpy_version=version("numpy"),
-    torch_version=version("torch"),
+    **{f"{dep}_version": version(dep) for dep in ("aviary", "numpy", "torch")},
     train_df=dict(shape=str(train_data.df.shape), columns=", ".join(train_df)),
     test_df=dict(shape=str(test_data.df.shape), columns=", ".join(test_df)),
     slurm_vars=slurm_vars,

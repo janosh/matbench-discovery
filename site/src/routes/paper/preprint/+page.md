@@ -14,11 +14,28 @@ We present a new machine learning (ML) benchmark for materials stability predict
 
 ## Introduction
 
-The use of neural networks for learning the density-functional theory (DFT) potential energy surface (PES) can be traced as far back as @behler_generalized_2007. This work opened the floodgates for material scientists everywhere to devote significant effort into fitting ever more sophisticated models to the PES.
+### Why Materials Discovery?
+
+@davies_computational_2016 identified $~10^{10}$ possible quaternary materials using electronegativity and charge-based allowed by electronegativity and charge-balancing rules. Of these, only $~10^5$ are known experimentally and $~10^6$ have been simulated. The space of quinternaries and higher is even less explored, leaving vast numbers of potentially useful materials to be discovered. The discovery of new materials is a key driver of technological advancement and lies on the critical path to more efficient solar cells, lighter and longer-lived batteries, and smaller more efficient transistor gates needed for further device miniaturization. The materials we have mastered define our technological abilities so much so that we name eras of human development after them, going from stone and bronze age via the iron age to our current silicon age. In the light of global warming, these advances cannot come fast enough.
+
+### Why use machine learning for discovery?
+
+Despite significant advances in empirical, theoretical and computational materials science, discovering new materials still requires labor-intensive experimentation, complex calculations, trial-and-error and often happens fortuitously rather than through rational design. ML methods can be useful for materials discovery because they efficiently extract and distill trends from very large datasets, can handle high dimensionality, multiple objectives, uncertainty, and noisy or sparse data.
+
+Statistical models are also orders of magnitude faster than ab-initio simulation. As such, they are most suitable for high-throughput searches as a pre-filter to more expensive, higher-fidelity simulation methods. The use of neural networks for learning the density-functional theory (DFT) potential energy surface (PES) can be traced as far back as @behler_generalized_2007. This work opened the floodgates for material scientists to devote significant effort into fitting ever more sophisticated models to the PES.
 Initially, most of these models were trained and deployed as interatomic potentials to study known materials of interest which required curating custom training data for each application @bartok_machine_2018 @deringer_general-purpose_2020.
 As larger and more diverse datasets emerged from initiatives like the Materials Project (MP) @jain_commentary_2013 or the Open Quantum Materials Database (OQMD) @saal_materials_2013, researchers have begun to train models that cover the full periodic table, opening up the prospect of ML-guided materials discovery to increase hit rate and speed of DFT/expert-driven searches.
 
-Yet despite many advances in ML for materials discovery, it is unclear which methodology performs best at predicting material stability, let alone which model. Recent areas of progress include
+### Limitations of current benchmarking in ML
+
+Yet despite many advances in ML for materials it is unclear which methodology performs best at predicting material stability, let alone which model. This is due to the lack of a standardized benchmark task that accurately simulates applying models in a prospective materials discovery campaign.
+
+1. **Lack of realism**: Benchmark tasks can be idealized and simulate overly simplified conditions that do not reflect the real-world challenges a model is expected to overcome when used in an actual discovery campaign. This can lead to pretty leaderboards listing seemingly SOTA models that underwhelm when used in production. Examples of how this comes about are choosing the wrong target or picking an unrepresentative train/test split.
+1. **Limited diversity**: Benchmark datasets may be too small and contain only a limited number of materials, unrepresentative of the huge diversity of materials space. This can make models look good even if they fail to generalize.
+1. **Opportunity cost**: Bad benchmarks give insufficient consideration to the cost of a failed experiment. Looking purely at global metrics like $\text{MAE}$, $\text{RMSE}$ and $R^2$ can give practitioners a false sense of security. Precision, recall F1 It has been shown that even accurate models are susceptible to unexpectedly high false-positive rates that can cause experimentalists to waste their time and resources. Many benchmark tasks do not consider the cost or practicality of synthesizing the materials, which is an important aspect in the discovery of new materials.
+1. **Scalability**: Many benchmark tasks have too small data to adequately simulate the high-throughput and large-date regimes that future discovery efforts are likely to encounter. Confining model testing to the small data regime can obfuscate poor scaling relations like Gaussian Processes whose training costs grow cubically with training sample count or random forests that achieve outstanding performance on few data points but fail to extract the full information content out of larger datasets, leading to flatter learning curves compared to neural networks and worse performance when large amounts of training data are available.
+
+Recent areas of progress include
 
 1. one-shot predictors like Wren @goodall_rapid_2022,
 1. universal force predictors such as M3GNet @chen_universal_2022 that emulate density functional theory to relax crystal structures according to Newton's laws, and
@@ -153,6 +170,8 @@ A line terminates when a model believes there are no more materials in the WBM t
 
 @Fig:rolling-mae-vs-hull-dist-models visualizes a model's reliability as a function of a material's hull distance. The lower its rolling MAE exits the shaded triangle, the better. Inside this area, the model's mean error is larger than the distance to the convex hull, making misclassifications likely. Outside the triangle even if the model's error points toward the stability threshold at 0 eV from the hull (the plot's center), the mean error is too small to move a material over the stability threshold which would cause a false stability classification. M3GNet achieves the lowest overall MAE and exits the peril zone much sooner than other models on the right half of the plot. This means it rarely misclassifies unstable materials that lie more than 40 meV above the hull. On the plot's left half, CGCNN+P exits the peril zone first, albeit much further from the hull at more than 100 meV below. Essentially, all models are prone to false negative predictions even for materials far below the known hull which aligns with the smaller amount of training data for materials on or below the known convex hull (see the [test set's target distribution](/about-the-data#--target-distribution)).
 
+TODO: mention we consistently see deducting old MP corrections and applying 2020 scheme from MEGNEt e_form predictions increases MAE, no matter if paired with BOWSR, M3GNet, CHGNet or standalone
+
 ## Discussion
 
 From @fig:model-metrics we see several models achieve a DAF > 2 in this realistic benchmark scenario.
@@ -169,7 +188,7 @@ We welcome further model submissions as well as data contributions for version 2
 
 ## Acknowledgments
 
-Janosh Riebesell acknowledges support from the German Academic Scholarship Foundation (Studienstiftung) and gracious hosting as a visiting affiliate in the groups of Kristin Persson and Anubhav Jain.
+Janosh Riebesell acknowledges support from the German Academic Scholarship Foundation ([Studienstiftung](https://wikipedia.org/wiki/Studienstiftung)) and gracious hosting as a visiting affiliate in the groups of Kristin Persson and Anubhav Jain.
 
 ## Author Contributions
 

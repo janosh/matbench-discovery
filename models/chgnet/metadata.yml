@@ -33,8 +33,12 @@ requirements:
   numpy: 1.24.0
 trained_on_benchmark: false
 
+hyperparams:
+  max_steps: 2000
+
 notes:
   description: |
     The Crystal Hamiltonian Graph Neural Network (CHGNet) is a universal GNN-based interatomic potential trained on energies, forces, stresses and magnetic moments from the MP trajectory dataset containing ∼1.5 million inorganic structures.
     ![CHGNet Pipeline](https://user-images.githubusercontent.com/30958850/222924937-1d09bbce-ee18-4b19-8061-ec689cd15887.svg)
   training: Using pre-trained model with 400,438 params released with preprint. Training set unreleased at time of writing.
+  corrections: Unlike e.g. M3GNet which predicts raw DFT energies, CHGNet targets include MP2020 corrections. Hence no need to correct again.
