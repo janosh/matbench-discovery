@@ -64,9 +64,9 @@ def stable_metrics(
         stability_threshold (float): Where to place stability threshold relative to
             convex hull in eV/atom, usually 0 or 0.1 eV. Defaults to 0.
 
-    Note: Could be replaced by sklearn.metrics.classification_report() which takes
-        binary labels. I.e. classification_report(true > 0, pred > 0, output_dict=True)
-        should give equivalent results.
+    Note: Should give equivalent classification metrics to sklearn.metrics.
+        classification_report(each_true > 0, each_pred > 0, output_dict=True) which
+        takes binary labels.
 
     Returns:
         dict[str, float]: dictionary of classification metrics with keys DAF, Precision,

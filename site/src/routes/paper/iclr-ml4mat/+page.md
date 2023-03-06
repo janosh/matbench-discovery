@@ -142,7 +142,7 @@ We welcome further model submissions as well as data contributions for version 2
 
 ## Acknowledgments
 
-Janosh Riebesell acknowledges support from the German Academic Scholarship Foundation (Studienstiftung) and gracious hosting as a visiting affiliate in the groups of Kristin Persson and Anubhav Jain.
+Janosh Riebesell acknowledges support from the German Academic Scholarship Foundation ([Studienstiftung](https://wikipedia.org/wiki/Studienstiftung)) and gracious hosting as a visiting affiliate in the groups of Kristin Persson and Anubhav Jain.
 
 ## Author Contributions
 

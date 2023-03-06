@@ -29,7 +29,7 @@ __date__ = "2022-08-15"
 
 task_type = "IS2RE"  # "RS2RE"
 module_dir = os.path.dirname(__file__)
-# set large job array size for fast testing/debugging
+# set large job array size for smaller data splits and faster testing/debugging
 slurm_array_task_count = 100
 job_name = f"m3gnet-wbm-{task_type}{'-debug' if DEBUG else ''}"
 out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
@@ -75,8 +75,7 @@ df_in: pd.DataFrame = np.array_split(df_wbm, slurm_array_task_count)[
 
 run_params = dict(
     data_path=data_path,
-    m3gnet_version=version("m3gnet"),
-    numpy_version=version("numpy"),
+    **{f"{dep}_version": version(dep) for dep in ("m3gnet", "numpy")},
     task_type=task_type,
     df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     slurm_vars=slurm_vars,

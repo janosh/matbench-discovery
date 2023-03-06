@@ -30,11 +30,8 @@ dfs: dict[str, pd.DataFrame] = {}
 for file_path in tqdm(file_paths):
     if file_path in dfs:
         continue
-    df = pd.read_csv(file_path).set_index("material_id")
-    dfs[file_path] = df
+    dfs[file_path] = pd.read_csv(file_path).set_index("material_id")
 
-
-# %%
 df_features = pd.concat(dfs.values()).round(4)
 
 ax = df_features.isna().sum().value_counts().T.plot.bar()
