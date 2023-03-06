@@ -486,6 +486,8 @@ def rolling_mae_vs_hull_dist(
             yanchor="bottom",
             title_font=dict(size=15),
         )
+        # change tooltip precision to 2 decimal places
+        ax.update_traces(hovertemplate="x = %{x:.2f} eV/atom<br>y = %{y:.2f} eV/atom")
         ax.layout.xaxis.title.text = "E<sub>above MP hull</sub> (eV/atom)"
         ax.layout.yaxis.title.text = "rolling MAE (eV/atom)"
         ax.update_xaxes(range=x_lim)

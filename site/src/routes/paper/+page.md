@@ -101,11 +101,9 @@ Our benchmark is designed to make [adding future models easy](/contribute). The 
 1. [MEGNet](https://arxiv.org/abs/1812.05055) @chen_graph_2019
 1. [Voronoi RF](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.96.024104) @goodall_rapid_2022
 
-<div style="container-type: inline-size;">
-  <MetricsTable style="font-size: 1.65cqw;" />
-</div>
+<MetricsTable />
 
-> @label:fig:metrics-table Heatmap of model metrics. For columns MAE, RMSE, FNR, FPR and Run Time (h) lower is better. For columns DAF, R2, Precision, Recall, F1, Accuracy, TPR and TNR higher is better. In both cases cells colored yellow are better than cells colored blue. Click once/twice on a table header to sort asc./desc. by that column.
+> @label:fig:metrics-table Heatmap of model metrics. For columns MAE, RMSE lower is better. For columns DAF, R2, Precision, F1, Accuracy, TPR (Recall) and TNR (Specificity) higher is better. In both cases cells colored yellow are better than cells colored blue. Click once/twice on a table header to sort asc./desc. by that column.
 
 ![Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth](./figs/each-scatter-models.webp)
 

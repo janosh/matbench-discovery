@@ -11,8 +11,6 @@ import warnings
 from glob import glob
 
 import pandas as pd
-from megnet.utils.models import load_model
-from pymatgen.core import Structure
 from pymatviz import density_scatter
 from tqdm import tqdm
 
@@ -62,53 +60,14 @@ df_wbm[e_form_chgnet_col] = df_chgnet[e_form_chgnet_col]
 
 
 # %%
-ax = density_scatter(x=df_wbm[e_form_col], y=df_wbm[e_form_chgnet_col])
-
-
-# %% load 2019 MEGNet formation energy model
-megnet_mp_e_form = load_model("Eform_MP_2019")
-megnet_e_form_preds: dict[str, float] = {}
-
-
-# %% predict formation energies on chgnet relaxed structure with MEGNet
-for material_id, struct in tqdm(
-    df_chgnet.chgnet_structure.items(), total=len(df_chgnet)
-):
-    if material_id in megnet_e_form_preds:
-        continue
-    try:
-        if isinstance(struct, dict):
-            struct = Structure.from_dict(struct)
-        [e_form_per_atom] = megnet_mp_e_form.predict_structure(struct)
-        megnet_e_form_preds[material_id] = e_form_per_atom
-    except Exception as exc:
-        print(f"Failed to predict {material_id=}: {exc}")
-
-e_form_megnet_col = "e_form_per_atom_chgnet_megnet"
-# remove legacy MP corrections that MEGNet was trained on and apply newer MP2020
-# corrections instead
-df_chgnet[e_form_megnet_col] = (
-    pd.Series(megnet_e_form_preds)
-    - df_wbm.e_correction_per_atom_mp_legacy
-    + df_wbm.e_correction_per_atom_mp2020
-)
-
-assert (
-    n_isna := df_chgnet.e_form_per_atom_chgnet_megnet.isna().sum()
-) < 10, f"too many missing MEGNet preds: {n_isna}"
-
-
-# %%
-ax = density_scatter(df=df_chgnet, x=e_form_chgnet_col, y=e_form_megnet_col)
-ax = density_scatter(df=df_chgnet, x=e_form_col, y=e_form_megnet_col)
+ax = density_scatter(df=df_wbm, x=e_form_col, y=e_form_chgnet_col)
 
 
 # %%
 out_path = f"{module_dir}/{today}-chgnet-wbm-{task_type}.json.gz"
 df_chgnet = df_chgnet.round(4)
-df_chgnet.reset_index().to_json(out_path, default_handler=as_dict_handler)
-
 df_chgnet.select_dtypes("number").to_csv(out_path.replace(".json.gz", ".csv"))
+df_chgnet.reset_index().to_json(out_path, default_handler=as_dict_handler)
 
 # in_path = f"{module_dir}/2023-03-04-chgnet-wbm-IS2RE.json.gz"
 # df_chgnet = pd.read_csv(in_path.replace(".json.gz", ".csv")).set_index("material_id")

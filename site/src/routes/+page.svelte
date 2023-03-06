@@ -6,9 +6,7 @@
 </script>
 
 <Readme>
-  <div slot="metrics-table" style="container-type: inline-size;">
-    <MetricsTable style="font-size: 1.65cqw;" />
-  </div>
+  <MetricsTable slot="metrics-table" />
 </Readme>
 
 <br />

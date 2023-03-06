@@ -11,6 +11,7 @@ from __future__ import annotations
 import os
 from importlib.metadata import version
 
+import numpy as np
 import pandas as pd
 import wandb
 from megnet.utils.models import load_model
@@ -21,15 +22,17 @@ from tqdm import tqdm
 from matbench_discovery import DEBUG, timestamp, today
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import wandb_scatter
+from matbench_discovery.preds import PRED_FILES
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-14"
 
-task_type = "IS2RE"
+task_type = "chgnet_structure"
 module_dir = os.path.dirname(__file__)
 job_name = f"megnet-wbm-{task_type}{'-debug' if DEBUG else ''}"
 out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
+slurm_array_task_count = 20
 
 slurm_vars = slurm_submit(
     job_name=job_name,
@@ -38,6 +41,7 @@ slurm_vars = slurm_submit(
     account="LEE-SL3-CPU",
     time="12:0:0",
     slurm_flags=("--mem", "30G"),
+    array=f"1-{slurm_array_task_count}",
     # TF_CPP_MIN_LOG_LEVEL=2 means INFO and WARNING logs are not printed
     # https://stackoverflow.com/a/40982782
     pre_cmd="TF_CPP_MIN_LOG_LEVEL=2",
@@ -45,6 +49,7 @@ slurm_vars = slurm_submit(
 
 
 # %%
+slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
 out_path = f"{out_dir}/megnet-e-form-preds.csv"
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path = } already exists, exciting early")
@@ -52,13 +57,17 @@ if os.path.isfile(out_path):
 data_path = {
     "IS2RE": DATA_FILES.wbm_initial_structures,
     "RS2RE": DATA_FILES.wbm_computed_structure_entries,
+    "chgnet_structure": PRED_FILES.__dict__["CHGNet"].replace(".csv", ".json.gz"),
+    "m3gnet_structure": PRED_FILES.__dict__["M3GNet"].replace(".csv", ".json.gz"),
 }[task_type]
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
 e_form_col = "e_form_per_atom_mp2020_corrected"
 assert e_form_col in df_wbm, f"{e_form_col=} not in {list(df_wbm)=}"
 
-df_in = pd.read_json(data_path).set_index("material_id")
+df_in: pd.DataFrame = np.array_split(
+    pd.read_json(data_path).set_index("material_id"), slurm_array_task_count
+)[slurm_array_task_id - 1]
 megnet_mp_e_form = load_model(model_name := "Eform_MP_2019")
 
 
@@ -77,7 +86,9 @@ wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 
 # %%
-input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
+input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}.get(
+    task_type, task_type  # input_col=task_type for CHGNet and M3GNet
+)
 
 if task_type == "RS2RE":
     df_in[input_col] = [x["structure"] for x in df_in.computed_structure_entry]
@@ -85,7 +96,7 @@ if task_type == "RS2RE":
 structures = df_in[input_col].map(Structure.from_dict).to_dict()
 
 megnet_e_form_preds = {}
-for material_id in tqdm(structures, disable=None):
+for material_id in tqdm(structures):
     if material_id in megnet_e_form_preds:
         continue
     try:
