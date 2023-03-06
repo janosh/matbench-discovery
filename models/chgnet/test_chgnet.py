@@ -61,13 +61,12 @@ data_path = {
 }[task_type]
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
-df_in = pd.read_json(data_path).set_index("material_id")
 e_pred_col = "chgnet_energy"
 max_steps = 2000
 
-df_in: pd.DataFrame = np.array_split(df_in, slurm_array_task_count)[
-    slurm_array_task_id - 1
-]
+df_in: pd.DataFrame = np.array_split(
+    pd.read_json(data_path).set_index("material_id"), slurm_array_task_count
+)[slurm_array_task_id - 1]
 
 run_params = dict(
     data_path=data_path,
@@ -124,7 +123,7 @@ table = wandb.Table(
     ].reset_index()
 )
 
-title = f"CHGNet {task_type} ({len(df_wbm):,})"
+title = f"CHGNet {task_type} ({len(df_out):,})"
 wandb_scatter(table, fields=dict(x="uncorrected_energy", y=e_pred_col), title=title)
 
 wandb.log_artifact(out_path, type=f"chgnet-wbm-{task_type}")

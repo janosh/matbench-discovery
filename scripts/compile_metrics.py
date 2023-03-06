@@ -35,10 +35,10 @@ models: dict[str, dict[str, Any]] = {
         ),
     ),
     "CHGNet": dict(
-        n_runs=100,
+        n_runs=102,
         filters=dict(
             display_name={"$regex": "chgnet-wbm-IS2RE-"},
-            created_at={"$lt": "2023-03-03"},
+            created_at={"$gt": "2023-03-05", "$lt": "2023-03-07"},
         ),
     ),
     "CGCNN": dict(
@@ -155,6 +155,8 @@ styles = {
 }
 styler.set_table_styles([dict(selector=sel, props=styles[sel]) for sel in styles])
 styler.set_uuid("")
+# hide redundant metrics (TPR = Recall, FPR = 1 - TNR, FNR = 1 - TPR)
+styler.hide(["Recall", "FPR", "FNR"], axis=1)
 
 
 # %% export model metrics as styled HTML table
@@ -183,8 +185,7 @@ df_stats["missing_percent"] = [f"{x / len(df_wbm):.2%}" for x in df_stats.missin
 
 df_stats.attrs["Total Run Time"] = df_stats[time_col].sum()
 
-stats_out = f"{MODELS}/model-stats.json"
-df_stats.round(2).to_json(stats_out, orient="index")
+df_stats.round(2).to_json(f"{MODELS}/model-stats.json", orient="index")
 
 
 # %% plot model run times as pie chart

@@ -11,7 +11,6 @@ import warnings
 from glob import glob
 
 import pandas as pd
-from megnet.utils.models import load_model
 from pymatgen.core import Structure
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedStructureEntry
@@ -19,7 +18,7 @@ from pymatviz import density_scatter
 from tqdm import tqdm
 
 from matbench_discovery import today
-from matbench_discovery.data import DATA_FILES, as_dict_handler, df_wbm
+from matbench_discovery.data import DATA_FILES, as_dict_handler
 from matbench_discovery.energy import get_e_form_per_atom
 
 __author__ = "Janosh Riebesell"
@@ -90,47 +89,6 @@ df_m3gnet["e_form_per_atom_m3gnet"] = [
 # %%
 ax = density_scatter(
     df=df_m3gnet, x="e_form_per_atom_m3gnet", y="e_form_per_atom_m3gnet_uncorrected"
-)
-
-
-# %% load 2019 MEGNet formation energy model
-megnet_mp_e_form = load_model("Eform_MP_2019")
-megnet_e_form_preds: dict[str, float] = {}
-
-
-# %% predict formation energies on M3GNet relaxed structure with MEGNet
-for material_id, struct in tqdm(
-    df_m3gnet.m3gnet_structure.items(), total=len(df_m3gnet)
-):
-    if material_id in megnet_e_form_preds:
-        continue
-    try:
-        if isinstance(struct, dict):
-            struct = struct = Structure.from_dict(struct)
-            df_m3gnet.loc[material_id, struct_col] = struct
-
-        [e_form_per_atom] = megnet_mp_e_form.predict_structure(struct)
-        megnet_e_form_preds[material_id] = e_form_per_atom
-    except Exception as exc:
-        print(f"Failed to predict {material_id=}: {exc}")
-
-pred_col_megnet = "e_form_per_atom_m3gnet_megnet"
-# remove legacy MP corrections that MEGNet was trained on and apply newer MP2020
-# corrections instead
-df_m3gnet[pred_col_megnet] = (
-    pd.Series(megnet_e_form_preds)
-    - df_wbm.e_correction_per_atom_mp_legacy
-    + df_wbm.e_correction_per_atom_mp2020
-)
-
-assert (
-    n_isna := df_m3gnet.e_form_per_atom_m3gnet_megnet.isna().sum()
-) < 10, f"too many missing MEGNet preds: {n_isna}"
-
-
-# %%
-ax = density_scatter(
-    df=df_m3gnet, x="e_form_per_atom_m3gnet", y="e_form_per_atom_m3gnet_megnet"
 )
 
 

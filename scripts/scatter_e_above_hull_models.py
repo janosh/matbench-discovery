@@ -33,8 +33,8 @@ hover_cols = (df_wbm.index.name, e_form_col, each_true_col, "formula")
 df_melt = df_wbm.melt(
     id_vars=hover_cols,
     var_name=facet_col,
-    # value_vars=df_metrics.T.MAE.nsmallest(6).index,  # top 6 models by MAE
-    value_vars=list(df_metrics),  # all models
+    value_vars=df_metrics.T.MAE.nsmallest(6).index,  # top 6 models by MAE
+    # value_vars=list(df_metrics),  # all models
     value_name=e_form_pred_col,
 )
 
@@ -106,14 +106,14 @@ true_pos, false_neg, false_pos, true_neg = classify_stable(
 df_melt[(clf_col := "classified")] = np.array(clf_labels)[
     true_pos * 0 + false_neg * 1 + false_pos * 2 + true_neg * 3
 ]
-xy_max = 1.5
+xy_max = 1.6
 
 fig = px.scatter(
     df_melt.iloc[::50],
     x=each_true_col,
     y=each_pred_col,
     facet_col=facet_col,
-    facet_col_wrap=4,
+    facet_col_wrap=2,
     facet_col_spacing=0.02,
     facet_row_spacing=0.04,
     hover_data=hover_cols,
@@ -185,7 +185,7 @@ fig.update_yaxes(nticks=5)
 
 # remove legend title and place legend centered above subplots, increase marker size
 fig.layout.legend.update(
-    title="", orientation="h", x=0.5, xanchor="center", y=1.2, itemsizing="constant"
+    title="", orientation="h", x=0.5, xanchor="center", y=1.1, itemsizing="constant"
 )
 
 # fig.update_layout(yaxis=dict(scaleanchor="x", scaleratio=1))
@@ -204,12 +204,12 @@ fig.add_annotation(  # y-axis title
     textangle=-90,
     **axis_titles,
 )
-fig.update_layout(margin=dict(l=20, r=0, t=0, b=60))
+fig.update_layout(margin=dict(l=30, r=0, t=0, b=70))
 
 fig.show()
 
 
 # %%
 img_name = "each-scatter-models"
-save_fig(fig, f"{STATIC}/{img_name}.webp", scale=4, width=600, height=800)
-save_fig(fig, f"{ROOT}/tmp/figures/{img_name}.pdf", width=1200)
+save_fig(fig, f"{STATIC}/{img_name}.webp", scale=4, width=700, height=800)
+save_fig(fig, f"{ROOT}/tmp/figures/{img_name}.pdf", width=700, height=800)

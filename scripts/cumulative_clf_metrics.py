@@ -48,7 +48,7 @@ if backend == "plotly":
     )
     fig.update_traces(line=dict(width=3))
     for trace in fig.data:
-        if trace.name in df_metrics.T.sort_values("F1").index[6:]:
+        if trace.name in df_metrics.T.sort_values("F1").index[:-6]:
             trace.visible = "legendonly"  # show only top models by default
         last_idx = pd.Series(trace.y).last_valid_index()
         last_x = trace.x[last_idx]
