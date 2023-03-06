@@ -73,9 +73,7 @@ for idx, run in enumerate(runs):
 run_params = dict(
     data_path=data_path,
     df=dict(shape=str(df.shape), columns=", ".join(df)),
-    aviary_version=version("aviary"),
-    numpy_version=version("numpy"),
-    torch_version=version("torch"),
+    **{f"{dep}_version": version(dep) for dep in ("aviary", "numpy", "torch")},
     ensemble_size=len(runs),
     task_type=task_type,
     target_col=e_form_col,

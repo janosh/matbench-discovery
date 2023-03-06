@@ -45,14 +45,9 @@ for file_path in tqdm(file_paths):
     if file_path in dfs:
         continue
     df = pd.read_json(file_path).set_index("material_id")
-    df[f"m3gnet_energy_{task_type}"] = [
-        x["energies"][-1][0] for x in df.m3gnet_trajectory
-    ]
     # drop trajectory to save memory
     dfs[file_path] = df.drop(columns="m3gnet_trajectory")
 
-
-# %%
 df_m3gnet = pd.concat(dfs.values()).round(4)
 
 
@@ -130,7 +125,7 @@ df_m3gnet[pred_col_megnet] = (
 
 assert (
     n_isna := df_m3gnet.e_form_per_atom_m3gnet_megnet.isna().sum()
-) < 10, f"{n_isna=}, expected 7 or similar"
+) < 10, f"too many missing MEGNet preds: {n_isna}"
 
 
 # %%

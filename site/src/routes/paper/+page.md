@@ -105,7 +105,7 @@ Our benchmark is designed to make [adding future models easy](/contribute). The 
   <MetricsTable style="font-size: 1.65cqw;" />
 </div>
 
-> @label:fig:metrics-table Heatmap of model metrics. For columns MAE, RMSE, FNR, FPR and Run Time (h) lower is better. For columns DAF, R2, Precision, Recall, F1, Accuracy, TPR and TNR higher is better. In both cases cells colored yellow are better than cells colored blue.
+> @label:fig:metrics-table Heatmap of model metrics. For columns MAE, RMSE, FNR, FPR and Run Time (h) lower is better. For columns DAF, R2, Precision, Recall, F1, Accuracy, TPR and TNR higher is better. In both cases cells colored yellow are better than cells colored blue. Click once/twice on a table header to sort asc./desc. by that column.
 
 ![Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth](./figs/each-scatter-models.webp)
 
@@ -138,4 +138,4 @@ M3GNet's performance appears to be particularly affected by poor performance on 
 
 ## Acknowledgements
 
-JR acknowledges support from the German Academic Scholarship Foundation (Studienstiftung) and gracious hosting as a visiting affiliate in the groups of [KP](https://perssongroup.lbl.gov/people) and [AJ](https://hackingmaterials.lbl.gov).
+JR acknowledges support from the German Academic Scholarship Foundation ([Studienstiftung](https://wikipedia.org/wiki/Studienstiftung)) and gracious hosting as a visiting affiliate in the groups of [KP](https://perssongroup.lbl.gov/people) and [AJ](https://hackingmaterials.lbl.gov).

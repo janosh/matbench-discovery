@@ -30,46 +30,50 @@ models: dict[str, dict[str, Any]] = {
     "BOWSR + MEGNet": dict(
         n_runs=500,
         filters=dict(
-            created_at={"$gt": "2023-01-20", "$lt": "2023-01-22"},
             display_name={"$regex": "bowsr-megnet"},
+            created_at={"$gt": "2023-01-20", "$lt": "2023-01-22"},
         ),
     ),
     "CHGNet": dict(
-        n_runs=100, filters=dict(display_name={"$regex": "chgnet-wbm-IS2RE-"})
+        n_runs=100,
+        filters=dict(
+            display_name={"$regex": "chgnet-wbm-IS2RE-"},
+            created_at={"$lt": "2023-03-03"},
+        ),
     ),
     "CGCNN": dict(
         n_runs=10,
         filters=dict(
-            created_at={"$gt": "2022-11-21", "$lt": "2022-11-23"},
             display_name={"$regex": "cgcnn-robust-formation_energy_per_atom"},
+            created_at={"$gt": "2022-11-21", "$lt": "2022-11-23"},
         ),
     ),
     "M3GNet": dict(
         n_runs=99,
         filters=dict(
-            created_at={"$gt": "2022-10-31", "$lt": "2022-11-01"},
             display_name={"$regex": "m3gnet-wbm-IS2RE"},
+            created_at={"$gt": "2022-10-31", "$lt": "2022-11-01"},
         ),
     ),
     "MEGNet": dict(
         n_runs=1,
         filters=dict(
-            created_at={"$gt": "2022-11-17", "$lt": "2022-11-19"},
             display_name={"$regex": "megnet-wbm-IS2RE"},
+            created_at={"$gt": "2022-11-17", "$lt": "2022-11-19"},
         ),
     ),
     "Voronoi RF": dict(
         n_runs=68,
         filters=dict(
-            created_at={"$gt": "2022-11-17", "$lt": "2022-11-28"},
             display_name={"$regex": "voronoi-features"},
+            created_at={"$gt": "2022-11-17", "$lt": "2022-11-28"},
         ),
     ),
     "Wrenformer": dict(
         n_runs=10,
         filters=dict(
-            created_at={"$gt": "2022-11-14", "$lt": "2022-11-16"},
             display_name={"$regex": "wrenformer-robust-mp-formation_energy"},
+            created_at={"$gt": "2022-11-14", "$lt": "2022-11-16"},
         ),
     ),
 }
