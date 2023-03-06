@@ -106,9 +106,7 @@ Our initial benchmark release includes 8 models. @Fig:model-metrics includes all
 
 ## Results
 
-<div style="container-type: inline-size;">
-  <MetricsTable style="font-size: 1.65cqw;" />
-</div>
+<MetricsTable />
 
 > @label:fig:model-metrics Regression and classification metrics for all models tested on our benchmark. The heat map ranges from yellow (best) to blue (worst) performance. DAF = discovery acceleration factor (see text), TPR = true positive rate, FNR = false negative rate, MAE = mean absolute error, RMSE = root mean squared error
 

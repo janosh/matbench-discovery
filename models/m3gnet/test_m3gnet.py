@@ -66,12 +66,11 @@ data_path = {
 }[task_type]
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
-df_wbm = pd.read_json(data_path).set_index("material_id")
 e_pred_col = "m3gnet_energy"
 
-df_in: pd.DataFrame = np.array_split(df_wbm, slurm_array_task_count)[
-    slurm_array_task_id - 1
-]
+df_in: pd.DataFrame = np.array_split(
+    pd.read_json(data_path).set_index("material_id"), slurm_array_task_count
+)[slurm_array_task_id - 1]
 
 run_params = dict(
     data_path=data_path,

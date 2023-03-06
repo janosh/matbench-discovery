@@ -47,6 +47,49 @@ references:
   type: chapter
   URL: https://doi.org/10.1007/978-94-011-4653-1_21
 
+- id: aykol_rational_2021
+  abstract: >-
+    The rational solid-state synthesis of inorganic compounds is formulated as
+    catalytic nucleation on crystalline reactants, where contributions of
+    reaction and interfacial energies to the nucleation barriers are
+    approximated from high-throughput thermochemical data and structural and
+    interfacial features of crystals, respectively. Favorable synthesis
+    reactions are then identified by a Pareto analysis of relative nucleation
+    barriers and phase selectivities of reactions leading to the target. We
+    demonstrate the application of this approach in reaction planning for the
+    solid-state synthesis of a range of compounds, including the widely studied
+    oxides LiCoO2, BaTiO3, and YBa2Cu3O7, as well as other metal oxide,
+    oxyfluoride, phosphate, and nitride targets. Pathways for enabling the
+    retrosynthesis of inorganics are also discussed.
+  accessed:
+    - year: 2023
+      month: 3
+      day: 6
+  author:
+    - family: Aykol
+      given: Muratahan
+    - family: Montoya
+      given: Joseph H.
+    - family: Hummelshøj
+      given: Jens
+  citation-key: aykol_rational_2021
+  container-title: Journal of the American Chemical Society
+  container-title-short: J. Am. Chem. Soc.
+  DOI: 10.1021/jacs.1c04888
+  ISSN: 0002-7863
+  issue: '24'
+  issued:
+    - year: 2021
+      month: 6
+      day: 23
+  page: 9244-9259
+  publisher: American Chemical Society
+  source: ACS Publications
+  title: Rational Solid-State Synthesis Routes for Inorganic Materials
+  type: article-journal
+  URL: https://doi.org/10.1021/jacs.1c04888
+  volume: '143'
+
 - id: bartel_critical_2020
   abstract: >-
     Machine learning has emerged as a novel tool for the efficient prediction of
@@ -883,6 +926,57 @@ references:
   URL: https://aip.scitation.org/doi/10.1063%2F1.4812323
   volume: '1'
 
+- id: mcdermott_graph-based_2021
+  abstract: >-
+    Accelerated inorganic synthesis remains a significant challenge in the
+    search for novel, functional materials. Many of the principles which enable
+    “synthesis by design” in synthetic organic chemistry do not exist in
+    solid-state chemistry, despite the availability of extensive
+    computed/experimental thermochemistry data. In this work, we present a
+    chemical reaction network model for solid-state synthesis constructed from
+    available thermochemistry data and devise a computationally tractable
+    approach for suggesting likely reaction pathways via the application of
+    pathfinding algorithms and linear combination of lowest-cost paths in the
+    network. We demonstrate initial success of the network in predicting complex
+    reaction pathways comparable to those reported in the literature for YMnO3,
+    Y2Mn2O7, Fe2SiS4, and YBa2Cu3O6.5. The reaction network presents
+    opportunities for enabling reaction pathway prediction, rapid iteration
+    between experimental/theoretical results, and ultimately, control of the
+    synthesis of solid-state materials.
+  accessed:
+    - year: 2022
+      month: 4
+      day: 23
+  author:
+    - family: McDermott
+      given: Matthew J.
+    - family: Dwaraknath
+      given: Shyam S.
+    - family: Persson
+      given: Kristin A.
+  citation-key: mcdermott_graph-based_2021
+  container-title: Nature Communications
+  container-title-short: Nat Commun
+  DOI: 10.1038/s41467-021-23339-x
+  ISSN: 2041-1723
+  issue: '1'
+  issued:
+    - year: 2021
+      month: 5
+      day: 25
+  language: en
+  license: 2021 The Author(s)
+  number: '1'
+  page: '3097'
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: >-
+    A graph-based network for predicting chemical reaction pathways in
+    solid-state materials synthesis
+  type: article-journal
+  URL: https://www.nature.com/articles/s41467-021-23339-x
+  volume: '12'
+
 - id: mok_direction-based_2022
   abstract: >-
     To realize renewable and sustainable energy cycle, there has been a lot of
@@ -1283,6 +1377,53 @@ references:
   type: article-journal
   URL: https://link.aps.org/doi/10.1103/PhysRevB.96.024104
   volume: '96'
+
+- id: wen_chemical_2023
+  abstract: >-
+    Chemical reaction networks (CRNs), defined by sets of species and possible
+    reactions between them, are widely used to interrogate chemical systems. To
+    capture increasingly complex phenomena, CRNs can be leveraged alongside
+    data-driven methods and machine learning (ML). In this Perspective, we
+    assess the diverse strategies available for CRN construction and analysis in
+    pursuit of a wide range of scientific goals, discuss ML techniques currently
+    being applied to CRNs and outline future CRN-ML approaches, presenting
+    scientific and technical challenges to overcome.
+  accessed:
+    - year: 2023
+      month: 3
+      day: 7
+  author:
+    - family: Wen
+      given: Mingjian
+    - family: Spotte-Smith
+      given: Evan Walter Clark
+    - family: Blau
+      given: Samuel M.
+    - family: McDermott
+      given: Matthew J.
+    - family: Krishnapriyan
+      given: Aditi S.
+    - family: Persson
+      given: Kristin A.
+  citation-key: wen_chemical_2023
+  container-title: Nature Computational Science
+  container-title-short: Nat Comput Sci
+  DOI: 10.1038/s43588-022-00369-z
+  ISSN: 2662-8457
+  issue: '1'
+  issued:
+    - year: 2023
+      month: 1
+  language: en
+  license: 2023 Springer Nature America, Inc.
+  number: '1'
+  page: 12-24
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: Chemical reaction networks and opportunities for machine learning
+  type: article-journal
+  URL: https://www.nature.com/articles/s43588-022-00369-z
+  volume: '3'
 
 - id: xie_crystal_2018
   abstract: >-

@@ -43,7 +43,7 @@ Recent areas of progress include
 
 Ideally, the question of which ML stability prediction algorithms perform best should be answered decisively _before_ large DFT databases like MP or the OQMD commit significant resources to new efforts to expand their databases. In this work, we aim to answer which of these is the winning methodology in a future-proof benchmark that closely simulates using ML to guide a real-world discovery campaign.
 
-We use the distance to the PBE DFT convex hull as the best proxy of true crystal stability on available on large datasets, recognizing that our ground truth is ignorant of entropic stabilization or metastable states.
+We use the distance to the PBE DFT convex hull as the best proxy of true crystal stability available on large datasets, recognizing that our ground truth is ignorant of entropic stabilization or metastable states. Dealing with this significant layer of additional complexity is the premise of recent efforts to predict synthesis reaction pathways @mcdermott_graph-based_2021 @aykol_rational_2021 @wen_chemical_2023. These algorithms stand to benefit from more efficient estimates of the reaction energy barriers. In the past, such energy estimates often required expensive ab-initio simulation. With ML stability predictions gaining in fidelity even in OOD settings while remaining much cheaper than DFT as shown in this benchmark, we believe future efforts in reaction pathway finding to be able to leverage the same ML models for similar acceleration factors.
 
 ## Related Work
 
@@ -139,9 +139,7 @@ Our initial benchmark release includes 8 models. @Fig:model-metrics includes all
 
 ## Results
 
-<div style="container-type: inline-size;">
-  <MetricsTable style="font-size: 1.65cqw;" />
-</div>
+<MetricsTable />
 
 > @label:fig:model-metrics Regression and classification metrics for all models tested on our benchmark. The heat map ranges from yellow (best) to blue (worst) performance. DAF = discovery acceleration factor (see text), TPR = true positive rate, FNR = false negative rate, MAE = mean absolute error, RMSE = root mean squared error
 
