@@ -58,9 +58,10 @@ filters = {
     "display_name": {"$regex": "wrenformer-robust"},
 }
 runs = wandb.Api().runs(WANDB_PATH, filters=filters)
+expected_runs = 10
 assert (
-    len(runs) == 10
-), f"Expected 10 runs, got {len(runs)} filtering {WANDB_PATH=} with {filters=}"
+    len(runs) == expected_runs
+), f"{expected_runs=}, got {len(runs)} filtering {WANDB_PATH=} with {filters=}"
 
 for idx, run in enumerate(runs):
     for key, val in run.config.items():

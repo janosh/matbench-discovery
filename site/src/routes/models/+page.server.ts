@@ -1,10 +1,9 @@
 import type { ModelData } from '$lib'
 import { compile } from 'mdsvex'
 import { dirname } from 'path'
-import type { PageServerLoad } from './$types'
 import model_stats from './model-stats.json'
 
-export const load: PageServerLoad = async () => {
+export const load = async () => {
   const yml = import.meta.glob(`$root/models/**/metadata.yml`, {
     eager: true,
   })
