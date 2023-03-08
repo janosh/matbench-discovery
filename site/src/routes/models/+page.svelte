@@ -5,9 +5,9 @@
   import { RadioButtons, Tooltip } from 'svelte-zoo'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
-  import type { PageData, Snapshot } from './$types'
+  import type { Snapshot } from './$types'
 
-  export let data: PageData
+  export let data
 
   let sort_by: keyof ModelStats | 'model_name' = `F1`
   let show_details = false
@@ -124,5 +124,11 @@
   }
   span :global(div.zoo-radio-btn span) {
     padding: 1pt 4pt;
+  }
+  input[type='number'] {
+    text-align: center;
+  }
+  input[type='number']::-webkit-inner-spin-button {
+    display: none;
   }
 </style>

@@ -77,7 +77,8 @@ export type Citation = {
   title: string
   subtitle?: string
   authors: {
-    name: string
+    'family-names': string
+    'given-names': string
     affiliation: string
     affil_key: string
     orcid: string

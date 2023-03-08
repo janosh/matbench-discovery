@@ -35,7 +35,7 @@ models: dict[str, dict[str, Any]] = {
         ),
     ),
     "CHGNet": dict(
-        n_runs=102,
+        n_runs=100,
         filters=dict(
             display_name={"$regex": "chgnet-wbm-IS2RE-"},
             created_at={"$gt": "2023-03-05", "$lt": "2023-03-07"},

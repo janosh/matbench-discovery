@@ -102,7 +102,7 @@ with open(f"{ROOT}/data/mp/{today}-mp-elemental-reference-entries.json", "w") as
     json.dump(elemental_ref_entries, file, default=lambda x: x.as_dict())
 
 
-df_mp = pd.read_json(DATA_FILES.mp_energies).set_index("material_id")
+df_mp = pd.read_csv(DATA_FILES.mp_energies).set_index("material_id")
 
 
 # %%

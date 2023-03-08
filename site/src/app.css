@@ -199,8 +199,9 @@ input {
   font-size: 12pt;
   background: rgba(255, 255, 255, 0.1);
   color: var(--text-color);
+  transition: background 0.2s;
 }
 input:focus {
   outline: none;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.2);
 }

@@ -1,10 +1,9 @@
 <script lang="ts">
   import { References } from '$lib'
   import { pretty_num } from 'elementari/labels'
-  import type { LayoutServerData } from './$types'
   import { references } from './references.yaml'
 
-  export let data: LayoutServerData
+  export let data
 
   const authors = data.authors.map(
     (auth) => `${auth[`given-names`]} ${auth[`family-names`]}<sup>${auth.affil_key}</sup>`

@@ -32,7 +32,7 @@ df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(
 # %%
 n_rows, n_cols = 5, 4
 for which in ("best", "worst"):
-    fig, axs = plt.subplots(n_rows, n_cols, figsize=(3 * n_rows, 4 * n_cols))
+    fig, axs = plt.subplots(n_rows, n_cols, figsize=(4 * n_cols, 3 * n_rows))
     n_axs = len(axs.flat)
 
     errs = (

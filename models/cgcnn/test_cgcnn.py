@@ -49,7 +49,7 @@ data_path = {
     "IS2RE": DATA_FILES.wbm_initial_structures,
     "RS2RE": DATA_FILES.wbm_computed_structure_entries,
     "IS2RE-debug": f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json-1k-samples.bz2",
-}[task_type + "-debug" if DEBUG else ""]
+}[task_type + ("-debug" if DEBUG else "")]
 input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
 
 df = pd.read_json(data_path).set_index("material_id")
@@ -69,9 +69,10 @@ filters = {
     "created_at": {"$gt": "2023-01-09", "$lt": "2023-01-10"},
 }
 runs = wandb.Api().runs(WANDB_PATH, filters=filters)
+expected_runs = 10
 assert (
-    len(runs) == 10
-), f"Expected 10 runs, got {len(runs)} filtering {WANDB_PATH=} with {filters=}"
+    len(runs) == expected_runs
+), f"{expected_runs=}, got {len(runs)} filtering {WANDB_PATH=} with {filters=}"
 
 for idx, run in enumerate(runs):
     for key, val in run.config.items():

@@ -90,7 +90,7 @@ Element counts for MP training set consisting of 146,323 `ComputedStructureEntri
 
 ## 🎯 &thinsp; Target Distribution
 
-The WBM test set has an energy above the MP convex hull distribution with mean **0.02 eV/atom** and standard deviation of **0.25 eV/atom**.
+The WBM test set has an energy above the MP convex hull distribution with **mean ± std = 0.02 ± 0.25 eV/atom**.
 
 The dummy MAE of always predicting the test set mean is **0.17 eV/atom**.
 

@@ -47,7 +47,6 @@ df_m3gnet_lattice = pd.json_normalize(
     df_m3gnet_is2re.initial_structure.map(lambda x: x["lattice"])
 ).add_prefix("m3gnet_")
 df_m3gnet_is2re[df_m3gnet_lattice.columns] = df_m3gnet_lattice.to_numpy()
-df_m3gnet_is2re
 
 # df_m3gnet_is2re["m3gnet_energy"] = df_m3gnet_is2re.trajectory.map(
 #     lambda x: x["energies"][-1][0]

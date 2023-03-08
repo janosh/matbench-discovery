@@ -75,13 +75,13 @@ assert list(df_wbm) == [
 
 You can also download the data files directly from GitHub:
 
-1. [`2022-10-19-wbm-summary.csv`]({repo}/raw/v1.0.0/data/wbm/2022-10-19-wbm-summary.csv) [[GitHub]({repo}/blob/v1/data/wbm/2022-10-19-wbm-summary.csv)]: Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more. e_form_per_atom and e_above_hull each have 3 separate columns for old, new and no Materials
-1. [`2022-10-19-wbm-init-structs.json`]({repo}/raw/v1.0.0/data/wbm/2022-10-19-wbm-init-structs.json) [[GitHub]({repo}/blob/v1/data/wbm/2022-10-19-wbm-init-structs.json)]: Unrelaxed WBM structures
-1. [`2022-10-19-wbm-cses.json`]({repo}/raw/v1.0.0/data/wbm/2022-10-19-wbm-cses.json) [[GitHub]({repo}/blob/v1/data/wbm/2022-10-19-wbm-cses.json)]: Relaxed WBM structures along with final VASP energies
-1. [`2023-01-10-mp-energies.json.gz`]({repo}/raw/v1.0.0/data/wbm/2023-01-10-mp-energies.json.gz) [[GitHub]({repo}/blob/v1/data/wbm/2023-01-10-mp-energies.json.gz)]: Materials Project formation energies and energies above convex hull
-1. [`2023-02-07-mp-computed-structure-entries.json.gz`]({repo}/raw/v1.0.0/data/wbm/2023-02-07-mp-computed-structure-entries.json.gz) [[GitHub]({repo}/blob/v1/data/wbm/2023-02-07-mp-computed-structure-entries.json.gz)]: Materials Project computed structure entries
-1. [`2023-02-07-ppd-mp.pkl.gz`]({repo}/raw/v1.0.0/data/wbm/2023-02-07-ppd-mp.pkl.gz) [[GitHub]({repo}/blob/v1/data/wbm/2023-02-07-ppd-mp.pkl.gz)]: [PatchedPhaseDiagram](https://pymatgen.org/pymatgen.analysis.phase_diagram.html#pymatgen.analysis.phase_diagram.PatchedPhaseDiagram) constructed from all MP ComputedStructureEntries
-1. [`2022-09-19-mp-elemental-ref-energies.json`]({repo}/raw/v1.0.0/data/wbm/2022-09-19-mp-elemental-ref-energies.json) [[GitHub]({repo}/blob/v1/data/wbm/2022-09-19-mp-elemental-ref-energies.json)]: Minimum energy PDEntries for each element present in the Materials Project
+1. [`2022-10-19-wbm-summary.csv`]({repo}/blob/-/data/wbm/2022-10-19-wbm-summary.csv): Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more. e_form_per_atom and e_above_hull each have 3 separate columns for old, new and no Materials
+1. [`2022-10-19-wbm-init-structs.json`]({repo}/blob/-/data/wbm/2022-10-19-wbm-init-structs.json): Unrelaxed WBM structures
+1. [`2022-10-19-wbm-cses.json`]({repo}/blob/-/data/wbm/2022-10-19-wbm-cses.json): Relaxed WBM structures along with final VASP energies
+1. [`2023-01-10-mp-energies.json.gz`]({repo}/blob/-/data/mp/2023-01-10-mp-energies.json.gz): Materials Project formation energies and energies above convex hull
+1. [`2023-02-07-mp-computed-structure-entries.json.gz`]({repo}/blob/-/data/mp/2023-02-07-mp-computed-structure-entries.json.gz): Materials Project computed structure entries
+1. [`2023-02-07-ppd-mp.pkl.gz`]({repo}/blob/-/data/mp/2023-02-07-ppd-mp.pkl.gz): [PatchedPhaseDiagram](https://pymatgen.org/pymatgen.analysis.phase_diagram.html#pymatgen.analysis.phase_diagram.PatchedPhaseDiagram) constructed from all MP ComputedStructureEntries
+1. [`2022-09-19-mp-elemental-reference-entries.json`]({repo}/blob/-/data/mp/2022-09-19-mp-elemental-reference-entries.json): Minimum energy PDEntries for each element present in the Materials Project
 
 [wbm paper]: https://nature.com/articles/s41524-020-00481-6
 
