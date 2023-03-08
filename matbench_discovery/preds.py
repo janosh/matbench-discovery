@@ -33,7 +33,7 @@ class PredFiles(Files):
     bowsr_megnet = "bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv"
     # default CHGNet model from publication with 400,438 params
     chgnet = "chgnet/2023-03-06-chgnet-wbm-IS2RE.csv"
-    # chgnet_megnet = "chgnet/2023-03-04-chgnet-wbm-IS2RE.csv"
+    chgnet_megnet = "chgnet/2023-03-04-chgnet-wbm-IS2RE.csv"
     # CGCnn 10-member ensemble
     cgcnn = "cgcnn/2023-01-26-test-cgcnn-wbm-IS2RE/cgcnn-ensemble-preds.csv"
     # cgcnn 10-member ensemble with 5-fold training set perturbations
@@ -41,7 +41,7 @@ class PredFiles(Files):
     # original m3gnet straight from publication, not re-trained
     m3gnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv"
     # m3gnet-relaxed structures fed into megnet for formation energy prediction
-    # m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv"
+    m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv"
     # original megnet straight from publication, not re-trained
     megnet = "megnet/2022-11-18-megnet-wbm-IS2RE/megnet-e-form-preds.csv"
     # magpie composition+voronoi tessellation structure features + sklearn random forest
@@ -123,7 +123,7 @@ for model in list(PRED_FILES):
     )
 
 # pick F1 as primary metric to sort by
-df_metrics = df_metrics.round(3).sort_values("F1", axis=1)
+df_metrics = df_metrics.round(3).sort_values("F1", axis=1, ascending=False)
 
 # dataframe of all models' energy above convex hull (EACH) predictions (eV/atom)
 df_each_pred = pd.DataFrame()

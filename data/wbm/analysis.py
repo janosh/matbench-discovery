@@ -69,7 +69,7 @@ wbm_fig.write_image(f"{module_dir}/figs/wbm-elements.svg", width=1000, height=50
 
 
 # %% load MP training set
-df = pd.read_json(DATA_FILES.mp_energies)
+df = pd.read_csv(DATA_FILES.mp_energies)
 mp_elem_counts = count_elements(df.formula_pretty).astype(int)
 
 # mp_elem_counts.to_json(f"{about_data_page}/mp-element-counts.json")
