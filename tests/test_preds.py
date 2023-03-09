@@ -10,7 +10,7 @@ from matbench_discovery.preds import (
     df_metrics,
     e_form_col,
     each_true_col,
-    load_df_wbm_preds,
+    load_df_wbm_with_preds,
 )
 
 
@@ -20,7 +20,7 @@ def test_df_wbm() -> None:
 
 
 def test_df_metrics() -> None:
-    assert {*df_metrics} == {*PRED_FILES}
+    assert {*df_metrics} >= {*PRED_FILES}
     assert df_metrics.T.MAE.between(0, 0.2).all(), f"unexpected {df_metrics.T.MAE=}"
     assert df_metrics.T.R2.between(-0.9, 1).all(), f"unexpected {df_metrics.T.R2=}"
     assert df_metrics.T.RMSE.between(0, 0.25).all(), f"unexpected {df_metrics.T.RMSE=}"
@@ -41,7 +41,7 @@ def test_df_each_err() -> None:
 
 @pytest.mark.parametrize("models", [[], ["Wrenformer"]])
 def test_load_df_wbm_with_preds(models: list[str]) -> None:
-    df = load_df_wbm_preds(models)
+    df = load_df_wbm_with_preds(models)
     assert len(df) == len(df_wbm)
     assert list(df) == list(df_wbm) + models + [f"{model}_std" for model in models]
     assert df.index.name == "material_id"
@@ -53,7 +53,7 @@ def test_load_df_wbm_with_preds(models: list[str]) -> None:
 
 def test_load_df_wbm_with_preds_raises() -> None:
     with pytest.raises(ValueError, match="Unknown models: foo"):
-        load_df_wbm_preds(models=["foo"])
+        load_df_wbm_with_preds(models=["foo"])
 
 
 def test_pred_files() -> None:

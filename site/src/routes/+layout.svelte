@@ -44,7 +44,7 @@
   )
 </script>
 
-<CmdPalette {actions} />
+<CmdPalette {actions} placeholder="Go to..." />
 
 <svelte:head>
   <title>{title}Matbench Discovery</title>

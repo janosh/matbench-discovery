@@ -14,7 +14,7 @@ from pymatviz.utils import save_fig
 from matbench_discovery import FIGS
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist
-from matbench_discovery.preds import df_wbm, e_form_col, each_pred_col, each_true_col
+from matbench_discovery.preds import df_preds, e_form_col, each_pred_col, each_true_col
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
@@ -33,16 +33,16 @@ std_factor = 0
 
 # TODO column names to compute standard deviation from are currently hardcoded
 # needs to be updated when adding non-aviary models with uncertainty estimation
-var_aleatoric = (df_wbm.filter(like="_ale_") ** 2).mean(axis=1)
-var_epistemic = df_wbm.filter(regex=r"_pred_\d").var(axis=1, ddof=0)
+var_aleatoric = (df_preds.filter(like="_ale_") ** 2).mean(axis=1)
+var_epistemic = df_preds.filter(regex=r"_pred_\d").var(axis=1, ddof=0)
 std_total = (var_epistemic + var_aleatoric) ** 0.5
-std_total = df_wbm[f"{model_name}_std"]
-df_wbm[each_pred_col] = df_wbm[each_true_col] + (
-    (df_wbm[model_name] + std_factor * std_total) - df_wbm[e_form_col]
+std_total = df_preds[f"{model_name}_std"]
+df_preds[each_pred_col] = df_preds[each_true_col] + (
+    (df_preds[model_name] + std_factor * std_total) - df_preds[e_form_col]
 )
 
 fig = hist_classified_stable_vs_hull_dist(
-    df_wbm,
+    df_preds,
     each_true_col=each_true_col,
     each_pred_col=each_pred_col,
     which_energy=which_energy,
@@ -51,7 +51,7 @@ fig = hist_classified_stable_vs_hull_dist(
     backend="plotly",
 )
 
-metrics = stable_metrics(df_wbm[each_true_col], df_wbm[each_pred_col])
+metrics = stable_metrics(df_preds[each_true_col], df_preds[each_pred_col])
 legend_title = f"DAF = {metrics['DAF']:.3}"
 
 if hasattr(fig, "legend"):  # matplotlib

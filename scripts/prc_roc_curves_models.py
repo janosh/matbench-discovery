@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from matbench_discovery import FIGS
 from matbench_discovery.plots import pio
-from matbench_discovery.preds import df_each_pred, df_wbm, each_true_col
+from matbench_discovery.preds import df_each_pred, df_preds, each_true_col
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-01-30"
@@ -30,8 +30,8 @@ df_roc = pd.DataFrame()
 
 for model in (pbar := tqdm(list(df_each_pred), desc="Calculating ROC curves")):
     pbar.set_postfix_str(model)
-    na_mask = df_wbm[each_true_col].isna() | df_each_pred[model].isna()
-    y_true = (df_wbm[~na_mask][each_true_col] <= 0).astype(int)
+    na_mask = df_preds[each_true_col].isna() | df_each_pred[model].isna()
+    y_true = (df_preds[~na_mask][each_true_col] <= 0).astype(int)
     y_pred = df_each_pred[model][~na_mask]
     fpr, tpr, thresholds = roc_curve(y_true, y_pred, pos_label=0)
     AUC = auc(fpr, tpr)
@@ -93,8 +93,8 @@ df_prc = pd.DataFrame()
 
 for model in (pbar := tqdm(list(df_each_pred), desc="Calculating ROC curves")):
     pbar.set_postfix_str(model)
-    na_mask = df_wbm[each_true_col].isna() | df_each_pred[model].isna()
-    y_true = (df_wbm[~na_mask][each_true_col] <= 0).astype(int)
+    na_mask = df_preds[each_true_col].isna() | df_each_pred[model].isna()
+    y_true = (df_preds[~na_mask][each_true_col] <= 0).astype(int)
     y_pred = df_each_pred[model][~na_mask]
     prec, recall, thresholds = precision_recall_curve(y_true, y_pred, pos_label=0)
     df_tmp = pd.DataFrame(
