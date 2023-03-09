@@ -2,7 +2,6 @@
 import os
 
 import pandas as pd
-from aviary.utils import as_dict_handler
 from aviary.wren.utils import get_aflow_label_from_spglib
 from mp_api.client import MPRester
 from pymatviz.utils import annotate_mae_r2
@@ -12,35 +11,34 @@ from matbench_discovery import today
 from matbench_discovery.data import DATA_FILES
 
 """
-Download all MP formation and above hull energies on 2022-08-13.
+Download all MP formation and above hull energies on 2023-01-10.
 
 Related EDA of MP formation energies:
 https://github.com/janosh/pymatviz/blob/main/examples/mp_bimodal_e_form.ipynb
 """
 
 __author__ = "Janosh Riebesell"
-__date__ = "2022-08-13"
+__date__ = "2023-01-10"
 
 module_dir = os.path.dirname(__file__)
 
 
-# %% query all MP formation energies on 2022-08-13
-fields = [
+# %%
+fields = {
     "material_id",
-    "task_ids",
     "formula_pretty",
     "formation_energy_per_atom",
     "energy_per_atom",
-    "structure",
     "symmetry",
     "energy_above_hull",
     "decomposition_enthalpy",
     "energy_type",
-]
+}
 
 with MPRester(use_document_model=False) as mpr:
     docs = mpr.thermo.search(fields=fields, thermo_types=["GGA_GGA+U"])
 
+assert fields == set(docs[0]), f"missing fields: {fields - set(docs[0])}"
 print(f"{today}: {len(docs) = :,}")
 # 2022-08-13: len(docs) = 146,323
 # 2023-01-10: len(docs) = 154,718
@@ -48,22 +46,18 @@ print(f"{today}: {len(docs) = :,}")
 
 # %%
 df = pd.DataFrame(docs).set_index("material_id")
-df.pop("_id")
 
-df.energy_type.value_counts().plot.pie(backend="matplotlib", autopct="%1.1f%%")
+df.energy_type.value_counts().plot.pie(backend="plotly", autopct="%1.1f%%")
+# GGA: 72.2%, GGA+U: 27.8%
 
 
 # %%
-df["spacegroup_number"] = df.pop("symmetry").map(lambda x: x["number"])
+df["spacegroup_number"] = [x["number"] for x in df.pop("symmetry")]
 
 df["wyckoff_spglib"] = [get_aflow_label_from_spglib(x) for x in tqdm(df.structure)]
 
-df.reset_index().to_json(
-    f"{module_dir}/mp-energies.json.gz", default_handler=as_dict_handler
-)
-
-# read stored data back from disk
-df = pd.read_json(DATA_FILES.mp_energies)
+df.to_csv(DATA_FILES.mp_energies)
+# df = pd.read_csv(DATA_FILES.mp_energies)
 
 
 # %% reproduce fig. 1b from https://arxiv.org/abs/2001.10591 (as data consistency check)
@@ -71,7 +65,6 @@ ax = df.plot.scatter(
     x="formation_energy_per_atom",
     y="decomposition_enthalpy",
     alpha=0.1,
-    backend="matplotlib",
     xlim=[-5, 1],
     ylim=[-1, 1],
     color=(df.decomposition_enthalpy > 0).map({True: "red", False: "blue"}),

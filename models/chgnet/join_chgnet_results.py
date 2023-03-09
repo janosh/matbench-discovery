@@ -17,7 +17,7 @@ from tqdm import tqdm
 from matbench_discovery import today
 from matbench_discovery.data import as_dict_handler
 from matbench_discovery.energy import get_e_form_per_atom
-from matbench_discovery.preds import df_wbm, e_form_col
+from matbench_discovery.preds import df_preds, e_form_col
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-01"
@@ -49,18 +49,18 @@ df_chgnet = pd.concat(dfs.values()).round(4)
 
 # %% compute corrected formation energies
 e_form_chgnet_col = "e_form_per_atom_chgnet"
-df_chgnet["formula"] = df_wbm.formula
+df_chgnet["formula"] = df_preds.formula
 df_chgnet[e_form_chgnet_col] = [
     get_e_form_per_atom(dict(energy=ene, composition=formula))
     for formula, ene in tqdm(
         df_chgnet.set_index("formula").chgnet_energy.items(), total=len(df_chgnet)
     )
 ]
-df_wbm[e_form_chgnet_col] = df_chgnet[e_form_chgnet_col]
+df_preds[e_form_chgnet_col] = df_chgnet[e_form_chgnet_col]
 
 
 # %%
-ax = density_scatter(df=df_wbm, x=e_form_col, y=e_form_chgnet_col)
+ax = density_scatter(df=df_preds, x=e_form_col, y=e_form_chgnet_col)
 
 
 # %%

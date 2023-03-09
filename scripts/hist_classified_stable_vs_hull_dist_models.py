@@ -11,21 +11,21 @@ from pymatviz.utils import save_fig
 
 from matbench_discovery import ROOT, STATIC, today
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist, plt
-from matbench_discovery.preds import df_metrics, df_wbm, e_form_col, each_true_col
+from matbench_discovery.preds import df_metrics, df_preds, e_form_col, each_true_col
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-12-01"
 
 
 # %%
-hover_cols = (df_wbm.index.name, e_form_col, each_true_col, "formula")
+hover_cols = (df_preds.index.name, e_form_col, each_true_col, "formula")
 e_form_preds = "e_form_per_atom_pred"
 each_pred_col = "e_above_hull_pred"
 facet_col = "Model"
 models = list(df_metrics)
 # models = df_metrics.T.MAE.nsmallest(6).index  # top 6 models by MAE
 
-df_melt = df_wbm.melt(
+df_melt = df_preds.melt(
     id_vars=hover_cols,
     value_vars=models,
     var_name=facet_col,
