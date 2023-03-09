@@ -8,7 +8,7 @@ from pymatviz.utils import save_fig
 
 from matbench_discovery import FIGS, today
 from matbench_discovery.plots import plt, rolling_mae_vs_hull_dist
-from matbench_discovery.preds import df_each_pred, df_wbm, e_form_col, each_true_col
+from matbench_discovery.preds import df_each_pred, df_preds, e_form_col, each_true_col
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
@@ -27,7 +27,7 @@ assert len(markers) == 5  # number of iterations of element substitution in WBM 
 
 for idx, marker in enumerate(markers, 1):
     # select all rows from WBM step=idx
-    df_step = df_wbm[df_wbm.index.str.startswith(f"wbm-{idx}-")]
+    df_step = df_preds[df_preds.index.str.startswith(f"wbm-{idx}-")]
 
     title = f"Batch {idx} ({len(df_step.filter(like='e_').dropna()):,})"
     assert 1e4 < len(df_step) < 1e5, print(f"{len(df_step) = :,}")
@@ -61,7 +61,7 @@ df_pivot = df_each_pred.pivot(columns=batch_col, values=model)
 # df_pivot.stack(level=0, dropna=False)
 
 fig, df_err, df_std = rolling_mae_vs_hull_dist(
-    e_above_hull_true=df_wbm[each_true_col],
+    e_above_hull_true=df_preds[each_true_col],
     e_above_hull_errors=df_pivot,
     # df_rolling_err=df_err,
     # df_err_std=df_std,

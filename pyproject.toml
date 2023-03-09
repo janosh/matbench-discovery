@@ -51,6 +51,7 @@ Package = "https://pypi.org/project/matbench-discovery"
 [project.optional-dependencies]
 test = ["pytest", "pytest-cov", "pytest-markdown-docs"]
 running-models = ["aviary", "m3gnet", "maml", "megnet"]
+3d-structures = ["crystaltoolkit"]
 
 [tool.setuptools.packages]
 find = { include = ["matbench_discovery"] }

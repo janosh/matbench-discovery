@@ -13,11 +13,11 @@ from matbench_discovery.plots import (
     hist_classified_stable_vs_hull_dist,
     rolling_mae_vs_hull_dist,
 )
-from matbench_discovery.preds import load_df_wbm_preds
+from matbench_discovery.preds import load_df_wbm_with_preds
 
 AxLine = Literal["x", "y", "xy", ""]
 models = ["MEGNet", "CGCNN", "Voronoi RF"]
-df_wbm = load_df_wbm_preds(models, nrows=100)
+df_wbm = load_df_wbm_with_preds(models, nrows=100)
 each_true_col = "e_above_hull_mp2020_corrected_ppd_mp"
 each_pred_col = "e_above_hull_pred"
 e_form_col = "e_form_per_atom_mp2020_corrected"

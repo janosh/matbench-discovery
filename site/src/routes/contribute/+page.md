@@ -129,7 +129,7 @@ To deploy a new model on this benchmark and add it to our leaderboard, please cr
 
    Arbitrary other keys can be added as needed.
 
-Please see any of the subdirectories in [`models`/`]({repo}/tree/main/models) for example submissions. More detailed step-by-step instructions below.
+Please see any of the subdirectories in [`models/`]({repo}/tree/main/models) for example submissions. More detailed step-by-step instructions below.
 
 ### Step 1: Clone the repo
 

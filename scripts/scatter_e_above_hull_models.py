@@ -13,7 +13,7 @@ from matbench_discovery.metrics import classify_stable
 from matbench_discovery.plots import clf_color_map, clf_colors, clf_labels, px
 from matbench_discovery.preds import (
     df_metrics,
-    df_wbm,
+    df_preds,
     e_form_col,
     each_pred_col,
     each_true_col,
@@ -28,9 +28,9 @@ legend = dict(x=1, y=0, xanchor="right", yanchor="bottom", title=None)
 
 # %%
 facet_col = "Model"
-hover_cols = (df_wbm.index.name, e_form_col, each_true_col, "formula")
+hover_cols = (df_preds.index.name, e_form_col, each_true_col, "formula")
 
-df_melt = df_wbm.melt(
+df_melt = df_preds.melt(
     id_vars=hover_cols,
     var_name=facet_col,
     value_vars=df_metrics.T.MAE.nsmallest(6).index,  # top 6 models by MAE
@@ -50,14 +50,14 @@ fig = px.scatter(
     y=e_form_pred_col,
     color=facet_col,
     hover_data=hover_cols,
-    hover_name=df_wbm.index.name,
+    hover_name=df_preds.index.name,
 )
 
 for trace in fig.data:
     # initially hide all traces, let users select which models to compare
     trace.visible = "legendonly"
     model = trace.name
-    assert model in df_wbm, f"Unexpected {model=} not in {list(df_wbm)=}"
+    assert model in df_preds, f"Unexpected {model=} not in {list(df_preds)=}"
     MAE, R2 = df_metrics[model][["MAE", "R2"]]
     trace.text = f"{model} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
 
@@ -78,13 +78,13 @@ fig = px.scatter(
     y=each_pred_col,
     color=facet_col,
     hover_data=hover_cols,
-    hover_name=df_wbm.index.name,
+    hover_name=df_preds.index.name,
 )
 
 for trace in fig.data:
     trace.visible = "legendonly"
     model = trace.name
-    assert model in df_wbm, f"Unexpected {model=} not in {list(df_wbm)=}"
+    assert model in df_preds, f"Unexpected {model=} not in {list(df_preds)=}"
     MAE, R2 = df_metrics[model][["MAE", "R2"]]
     trace.text = f"{model} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
 
@@ -117,7 +117,7 @@ fig = px.scatter(
     facet_col_spacing=0.02,
     facet_row_spacing=0.04,
     hover_data=hover_cols,
-    hover_name=df_wbm.index.name,
+    hover_name=df_preds.index.name,
     color=clf_col,
     color_discrete_map=clf_color_map,
     # opacity=0.4,
@@ -135,7 +135,7 @@ for idx, anno in enumerate(fig.layout.annotations, 1):
     assert len(traces) in (0, 4), f"Plots be empty or have 4 traces, got {len(traces)=}"
 
     model = anno.text.split("=", 1)[1]
-    assert model in df_wbm, f"Unexpected {model=} not in {list(df_wbm)=}"
+    assert model in df_preds, f"Unexpected {model=} not in {list(df_preds)=}"
     # add MAE and R2 to subplot titles
     MAE, R2 = df_metrics[model][["MAE", "R2"]]
     fig.layout.annotations[

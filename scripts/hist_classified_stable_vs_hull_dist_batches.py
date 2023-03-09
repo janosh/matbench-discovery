@@ -14,7 +14,7 @@ from pymatviz.utils import save_fig
 
 from matbench_discovery import FIGS
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist
-from matbench_discovery.preds import df_wbm, e_form_col, each_pred_col, each_true_col
+from matbench_discovery.preds import df_preds, e_form_col, each_pred_col, each_true_col
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-08-25"
@@ -24,8 +24,10 @@ __date__ = "2022-08-25"
 model_name = "M3GNet"
 which_energy: Final = "true"
 backend: Final = "matplotlib"
-df_wbm[each_pred_col] = df_wbm[each_true_col] + df_wbm[model_name] - df_wbm[e_form_col]
-df_wbm[(batch_col := "batch_idx")] = df_wbm.index.str.split("-").str[-2].astype(int)
+df_preds[each_pred_col] = (
+    df_preds[each_true_col] + df_preds[model_name] - df_preds[e_form_col]
+)
+df_preds[(batch_col := "batch_idx")] = df_preds.index.str.split("-").str[-2].astype(int)
 
 
 # %% matplotlib
@@ -73,7 +75,7 @@ df_wbm[(batch_col := "batch_idx")] = df_wbm.index.str.split("-").str[-2].astype(
 # %% plotly
 fig = hist_classified_stable_vs_hull_dist(
     # # plot whole df as last subplot
-    df=pd.concat([df_wbm, df_wbm.assign(batch_idx=6)]),
+    df=pd.concat([df_preds, df_preds.assign(batch_idx=6)]),
     each_true_col=each_true_col,
     each_pred_col=each_pred_col,
     which_energy=which_energy,
@@ -87,7 +89,7 @@ for anno in fig.layout.annotations:
     if not anno.text.startswith("batch_idx="):
         continue
     batch_idx = int(anno.text.split("=", 1)[-1])
-    len_df = sum(df_wbm[batch_col] == int(batch_idx))
+    len_df = sum(df_preds[batch_col] == int(batch_idx))
     anno.text = f"Batch {batch_idx} ({len_df:,})"
 
 # allow scrolling and zooming each subplot individually

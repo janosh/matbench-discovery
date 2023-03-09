@@ -13,14 +13,14 @@ from pymatviz import plot_structure_2d, ptable_heatmap_plotly
 from matbench_discovery import ROOT
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.metrics import classify_stable
-from matbench_discovery.preds import df_each_err, df_each_pred, df_wbm, each_true_col
+from matbench_discovery.preds import df_each_err, df_each_pred, df_preds, each_true_col
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-15"
 
-df_each_err[each_true_col] = df_wbm[each_true_col]
+df_each_err[each_true_col] = df_preds[each_true_col]
 mean_ae_col = "All models mean absolute error (eV/atom)"
-df_each_err[mean_ae_col] = df_wbm[mean_ae_col] = df_each_err.abs().mean(axis=1)
+df_each_err[mean_ae_col] = df_preds[mean_ae_col] = df_each_err.abs().mean(axis=1)
 
 
 # %%
@@ -59,7 +59,7 @@ for which in ("best", "worst"):
 
 # %% plotly scatter plot of largest model errors with points sized by mean error and
 # colored by true stability
-fig = df_wbm.nlargest(200, mean_ae_col).plot.scatter(
+fig = df_preds.nlargest(200, mean_ae_col).plot.scatter(
     x=each_true_col,
     y=mean_ae_col,
     color=each_true_col,
@@ -82,25 +82,25 @@ fig.show()
 # %% find materials that were misclassified by all models
 for model in df_each_pred:
     true_pos, false_neg, false_pos, true_neg = classify_stable(
-        df_each_pred[model], df_wbm[each_true_col]
+        df_each_pred[model], df_preds[each_true_col]
     )
-    df_wbm[f"{model}_true_pos"] = true_pos
-    df_wbm[f"{model}_false_neg"] = false_neg
-    df_wbm[f"{model}_false_pos"] = false_pos
-    df_wbm[f"{model}_true_neg"] = true_neg
+    df_preds[f"{model}_true_pos"] = true_pos
+    df_preds[f"{model}_false_neg"] = false_neg
+    df_preds[f"{model}_false_pos"] = false_pos
+    df_preds[f"{model}_true_neg"] = true_neg
 
 
-df_wbm["all_true_pos"] = df_wbm.filter(like="_true_pos").all(axis=1)
-df_wbm["all_false_neg"] = df_wbm.filter(like="_false_neg").all(axis=1)
-df_wbm["all_false_pos"] = df_wbm.filter(like="_false_pos").all(axis=1)
-df_wbm["all_true_neg"] = df_wbm.filter(like="_true_neg").all(axis=1)
+df_preds["all_true_pos"] = df_preds.filter(like="_true_pos").all(axis=1)
+df_preds["all_false_neg"] = df_preds.filter(like="_false_neg").all(axis=1)
+df_preds["all_false_pos"] = df_preds.filter(like="_false_pos").all(axis=1)
+df_preds["all_true_neg"] = df_preds.filter(like="_true_neg").all(axis=1)
 
-df_wbm.filter(like="all_").sum()
+df_preds.filter(like="all_").sum()
 
 
 # %%
-ptable_heatmap_plotly(df_wbm[df_wbm.all_false_pos].formula, colorscale="Viridis")
-ptable_heatmap_plotly(df_wbm[df_wbm.all_false_neg].formula, colorscale="Viridis")
+ptable_heatmap_plotly(df_preds[df_preds.all_false_pos].formula, colorscale="Viridis")
+ptable_heatmap_plotly(df_preds[df_preds.all_false_neg].formula, colorscale="Viridis")
 
 
 # %%
@@ -109,5 +109,5 @@ df_each_err.abs().mean(axis=1).nlargest(25)
 
 
 # %% get mean distance to convex hull for each classification
-df_wbm.query("all_true_pos").describe()
-df_wbm.query("all_false_pos").describe()
+df_preds.query("all_true_pos").describe()
+df_preds.query("all_false_pos").describe()

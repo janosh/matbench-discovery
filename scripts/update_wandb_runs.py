@@ -23,7 +23,7 @@ print(f"matching runs: {len(runs)}")
 
 # %%
 df = pd.DataFrame([run.config | dict(run.summary) for run in runs])
-df["display_name"] = [run.display_name for run in runs]
+df[["display_name", "id"]] = [(run.display_name, run.id) for run in runs]
 
 
 # %%

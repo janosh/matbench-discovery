@@ -53,7 +53,7 @@ class PredFiles(Files):
 PRED_FILES = PredFiles()
 
 
-def load_df_wbm_preds(
+def load_df_wbm_with_preds(
     models: Sequence[str] = (*PRED_FILES,),
     pbar: bool = True,
     id_col: str = "material_id",
@@ -111,15 +111,17 @@ def load_df_wbm_preds(
     return df_out
 
 
-df_wbm = load_df_wbm_preds().round(3)
+df_preds = load_df_wbm_with_preds().round(3)
+for combo in [["CHGNet", "M3GNet"]]:
+    df_preds[" + ".join(combo)] = df_preds[combo].mean(axis=1)
 
 
 df_metrics = pd.DataFrame()
 df_metrics.index.name = "model"
-for model in list(PRED_FILES):
+for model in [*PRED_FILES, "CHGNet + M3GNet"]:
     df_metrics[model] = stable_metrics(
-        df_wbm[each_true_col],
-        df_wbm[each_true_col] + df_wbm[model] - df_wbm[e_form_col],
+        df_preds[each_true_col],
+        df_preds[each_true_col] + df_preds[model] - df_preds[e_form_col],
     )
 
 # pick F1 as primary metric to sort by
@@ -128,10 +130,12 @@ df_metrics = df_metrics.round(3).sort_values("F1", axis=1, ascending=False)
 # dataframe of all models' energy above convex hull (EACH) predictions (eV/atom)
 df_each_pred = pd.DataFrame()
 for model in df_metrics.T.MAE.sort_values().index:
-    df_each_pred[model] = df_wbm[each_true_col] + df_wbm[model] - df_wbm[e_form_col]
+    df_each_pred[model] = (
+        df_preds[each_true_col] + df_preds[model] - df_preds[e_form_col]
+    )
 
 
 # dataframe of all models' errors in their EACH predictions (eV/atom)
 df_each_err = pd.DataFrame()
 for model in df_metrics.T.MAE.sort_values().index:
-    df_each_err[model] = df_wbm[model] - df_wbm[e_form_col]
+    df_each_err[model] = df_preds[model] - df_preds[e_form_col]

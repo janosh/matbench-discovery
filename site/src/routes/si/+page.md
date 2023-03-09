@@ -1,5 +1,5 @@
 <script lang="ts">
-  import RunTimePie from '$figs/model-run-times-pie.svelte'
+  import RunTimeBars from '$figs/model-run-times-bar.svelte'
   import RocModels from '$figs/roc-models.svelte'
   import { browser } from '$app/environment'
   import MPRefEnergies from '$figs/mp-elemental-ref-energies.svelte'
@@ -25,10 +25,10 @@
 ## Model Run Times
 
 {#if mounted}
-<RunTimePie style="margin: 1em;" />
+<RunTimeBars style="margin: 1em;" />
 {/if}
 
-> @label:fig:model-run-times-pie Creating this benchmark (excluding debugging runs) used a total of 3137 hours of compute time (mix of CPU and GPU, mostly CPU). Notably, the vast majority of that was used in the Bayesian optimization step of the BOWSR+MEGnet model.
+> @label:fig:model-run-times-pie Creating this benchmark (excluding debugging runs) used a total of 3297 hours of compute time (mix of CPU and GPU, mostly CPU). Notably, the vast majority of that was used in the Bayesian optimization step of the BOWSR+MEGnet model.
 
 ## Formation Energy MAE = Hull Distance MAE
 
