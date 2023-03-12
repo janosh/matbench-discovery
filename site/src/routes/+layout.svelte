@@ -5,7 +5,7 @@
   import { repository } from '$site/package.json'
   import { CmdPalette } from 'svelte-multiselect'
   import Toc from 'svelte-toc'
-  import { GitHubCorner } from 'svelte-zoo'
+  import { GitHubCorner, PrevNext } from 'svelte-zoo'
   import '../app.css'
 
   const routes = Object.keys(import.meta.glob(`./*/+page.{svx,svelte,md}`)).map(
@@ -16,10 +16,6 @@
     $page.url.pathname === `/api` ? `h1, ` : ``
   }h2, h3, h4):not(.toc-exclude)`
 
-  $: current_route_idx = routes.findIndex((route) => route === $page.url.pathname)
-  // get prev/next route with wrap-around
-  $: next_route = routes[(current_route_idx + 1) % routes.length]
-  $: prev_route = routes[(current_route_idx - 1 + routes.length) % routes.length]
   $: description = {
     '/': `Benchmarking machine learning energy models for materials discovery.`,
     '/about-the-data': `Details about provenance, chemistry and energies in the benchmark's train and test set.`,
@@ -64,10 +60,10 @@
 
   <slot />
 
-  <section>
-    <a href={prev_route} class="link">&laquo; {prev_route}</a>
-    <a href={next_route} class="link">{next_route} &raquo;</a>
-  </section>
+  <PrevNext items={routes} current={$page.url.pathname} let:item={href}>
+    <a {href} class="link" slot="next">{href} &raquo;</a>
+    <a {href} class="link" slot="prev">&laquo; {href}</a>
+  </PrevNext>
 </main>
 
 <Footer />

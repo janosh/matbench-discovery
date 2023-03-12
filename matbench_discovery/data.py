@@ -63,7 +63,7 @@ class DataFiles(Files):
         "wbm/2022-10-19-wbm-computed-structure-entries.json.bz2"
     )
     wbm_initial_structures = "wbm/2022-10-19-wbm-init-structs.json.bz2"
-    wbm_computed_structure_entries_plus_init_structs = (
+    wbm_cses_plus_init_structs = (
         "wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
     )
     wbm_summary = "wbm/2022-10-19-wbm-summary.csv"

@@ -24,6 +24,9 @@
   --sms-focus-border: 0.1px solid white;
   --sms-active-color: cornflowerblue;
 }
+html {
+  scroll-behavior: smooth;
+}
 body {
   background: var(--night);
   font-family: -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
