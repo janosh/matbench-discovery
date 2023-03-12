@@ -754,8 +754,8 @@ def cumulative_precision_recall(
                 align="left",
             )
         fig.layout.legend.title = ""
-        fig.update_xaxes(showticklabels=True, title="")
-        fig.update_yaxes(showticklabels=True, title="")
+        fig.update_xaxes(showticklabels=True, title="", matches=None)
+        fig.update_yaxes(showticklabels=True, title="", matches=None)
 
     return fig, df_cum
 
