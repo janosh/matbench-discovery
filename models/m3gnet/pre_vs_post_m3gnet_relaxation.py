@@ -23,9 +23,7 @@ del plots  # https://github.com/PyCQA/pyflakes/issues/366
 
 
 # %%
-df_wbm = pd.read_json(
-    DATA_FILES.wbm_computed_structure_entries_plus_init_structs
-).set_index("material_id")
+df_wbm = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index("material_id")
 
 df_summary = pd.read_csv(DATA_FILES.wbm_summary).set_index("material_id")
 

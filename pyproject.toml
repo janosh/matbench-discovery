@@ -54,7 +54,7 @@ running-models = ["aviary", "m3gnet", "maml", "megnet"]
 3d-structures = ["crystaltoolkit"]
 
 [tool.setuptools.packages]
-find = { include = ["matbench_discovery"] }
+find = { include = ["matbench_discovery*"], exclude = ["tests*"] }
 
 [tool.setuptools.package-data]
 matbench_discovery = ["data/mp/*.json"]
@@ -66,7 +66,7 @@ universal = true
 target-version = "py39"
 select = [
   "B",   # flake8-bugbear
-  "C4",  # flake8-comprehensions
+  "C40", # flake8-comprehensions
   "D",   # pydocstyle
   "E",   # pycodestyle
   "F",   # pyflakes
