@@ -12,8 +12,9 @@
     (filename) => `/` + filename.split(`/`)[1]
   )
 
+  $: url = $page.url.pathname
   $: headingSelector = `main :is(${
-    $page.url.pathname === `/api` ? `h1, ` : ``
+    url === `/api` ? `h1, ` : ``
   }h2, h3, h4):not(.toc-exclude)`
 
   $: description = {
@@ -26,9 +27,9 @@
     '/paper': `The paper released with the Matbench Discovery benchmark.`,
     '/paper/iclr-ml4mat': `Extended abstract submitted to the ICLR ML4Materials workshop.`,
     '/si': `Supplementary information including interesting but non-essential plots.`,
-  }[$page.route.id ?? ``]
-  if (!description) console.warn(`No description for route ${$page.route.id}`)
-  $: title = $page.route.id == `/` ? `` : `${$page.route.id} • `
+  }[url ?? ``]
+  if (!description) console.warn(`No description for route ${url}`)
+  $: title = url == `/` ? `` : `${url} • `
 
   const actions = Object.keys(import.meta.glob(`./**/+page.{svx,svelte,md}`)).map(
     (filename) => {
@@ -47,9 +48,9 @@
   <meta name="description" content={description} />
 </svelte:head>
 
-<Toc {headingSelector} breakpoint={1250} warnOnEmpty={false} />
+<Toc {headingSelector} breakpoint={1250} minItems={3} />
 
-{#if $page.url.pathname !== `/`}
+{#if url !== `/`}
   <a href="/" aria-label="Back to index page">&laquo; home</a>
 {/if}
 
@@ -60,7 +61,12 @@
 
   <slot />
 
-  <PrevNext items={routes} current={$page.url.pathname} let:item={href}>
+  <PrevNext
+    items={routes}
+    current="/{url?.split(`/`)[1]}"
+    let:item={href}
+    style="margin-top: 4em;"
+  >
     <a {href} class="link" slot="next">{href} &raquo;</a>
     <a {href} class="link" slot="prev">&laquo; {href}</a>
   </PrevNext>
@@ -94,10 +100,5 @@
   }
   a[href='/']:hover {
     background-color: rgba(255, 255, 255, 0.2);
-  }
-  section {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 4em;
   }
 </style>

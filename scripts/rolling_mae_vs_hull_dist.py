@@ -12,7 +12,6 @@ __date__ = "2022-06-18"
 
 # %%
 model = "Wrenformer"
-model = "M3GNet + MEGNet"
 model = "MEGNet"
 model = "CHGNet"
 

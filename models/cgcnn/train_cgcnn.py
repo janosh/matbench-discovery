@@ -36,7 +36,7 @@ print(f"{job_name=}")
 robust = "robust" in job_name.lower()
 ensemble_size = 10
 module_dir = os.path.dirname(__file__)
-out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
+out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 slurm_vars = slurm_submit(
     job_name=job_name,
@@ -54,7 +54,7 @@ optimizer = "AdamW"
 learning_rate = 3e-4
 batch_size = 128
 swa_start = None
-slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
+slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", 0))
 task_type: TaskType = "regression"
 
 

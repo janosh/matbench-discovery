@@ -11,23 +11,22 @@
   )) {
     const split = path?.split(`.json`)[0]?.split(`-`).at(-1) as string
     if (!split || !split?.includes(`=`)) console.error(`Invalid path: ${path}`)
-    elem_counts[split] = Object.values(JSON.parse(json))
+    elem_counts[split] = JSON.parse(json)
   }
 
   let arity_keys = Object.keys(elem_counts).filter((k) => k.startsWith(`arity=`))
   let batch_keys = Object.keys(elem_counts).filter((k) => k.startsWith(`batch=`))
   let log = false // log color scale
   let filter = arity_keys[0]
-  let selected = [`Turbo`]
+  let color_scale = [`Turbo`]
   let active_element: ChemicalElement
-  $: color_scale = selected[0]
   $: active_counts = elem_counts[filter]
 
   const style = `display: flex; place-items: center; place-content: center;`
 
   export const snapshot: Snapshot = {
-    capture: () => ({ filter, log }),
-    restore: (values) => ({ filter, log } = values),
+    capture: () => ({ filter, log, color_scale }),
+    restore: (values) => ({ filter, log, color_scale } = values),
   }
   const radio_style = `display: inline-flex; margin: 2pt 8pt; border-radius: 3pt;`
 </script>
@@ -42,7 +41,7 @@ Filter WBM element counts by composition<strong>arity</strong> (how many element
 formula) or <strong>batch index</strong> (which iteration of elemental substitution the
 structure was generated in).
 
-<ColorScaleSelect bind:selected />
+<ColorScaleSelect bind:selected={color_scale} />
 <ul>
   <li>
     composition arity:
@@ -62,7 +61,12 @@ structure was generated in).
   </li>
 </ul>
 
-<PeriodicTable heatmap_values={active_counts} {log} {color_scale} bind:active_element>
+<PeriodicTable
+  heatmap_values={active_counts}
+  {log}
+  color_scale={color_scale[0]}
+  bind:active_element
+>
   <TableInset slot="inset">
     <ElemCountInset element={active_element} elem_counts={active_counts} />
     <span {style}>Log color scale<Toggle bind:checked={log} /></span>

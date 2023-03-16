@@ -111,6 +111,7 @@ def load_df_wbm_with_preds(
     return df_out
 
 
+# load WBM summary dataframe with all models' formation energy predictions (eV/atom)
 df_preds = load_df_wbm_with_preds().round(3)
 for combo in [["CHGNet", "M3GNet"]]:
     df_preds[" + ".join(combo)] = df_preds[combo].mean(axis=1)
