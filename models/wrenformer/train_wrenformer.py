@@ -27,7 +27,7 @@ job_name = f"train-wrenformer-robust-{data_name}{'-debug' if DEBUG else ''}"
 ensemble_size = 10
 dataset = "mp"
 module_dir = os.path.dirname(__file__)
-out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
+out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 
 slurm_vars = slurm_submit(
@@ -44,7 +44,7 @@ slurm_vars = slurm_submit(
 # %%
 learning_rate = 3e-4
 batch_size = 128
-slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
+slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", 0))
 input_col = "wyckoff_spglib"
 
 print(f"\nJob started running {timestamp}")

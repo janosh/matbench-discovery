@@ -31,7 +31,7 @@ __date__ = "2022-11-14"
 task_type = "chgnet_structure"
 module_dir = os.path.dirname(__file__)
 job_name = f"megnet-wbm-{task_type}{'-debug' if DEBUG else ''}"
-out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
+out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 slurm_array_task_count = 20
 
 slurm_vars = slurm_submit(
@@ -49,7 +49,7 @@ slurm_vars = slurm_submit(
 
 
 # %%
-slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
+slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", 0))
 out_path = f"{out_dir}/megnet-e-form-preds.csv"
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path = } already exists, exciting early")

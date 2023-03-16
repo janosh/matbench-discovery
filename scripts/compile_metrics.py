@@ -92,10 +92,10 @@ for label, stats, raw_filters in (
             "Slurm Jobs": n_runs,
         }
 
-test_stats["M3GNet + MEGNet"] = test_stats["M3GNet"].copy()
-test_stats["M3GNet + MEGNet"][time_col] = (
-    test_stats["MEGNet"][time_col] + test_stats["M3GNet"][time_col]
-)
+# test_stats["M3GNet + MEGNet"] = test_stats["M3GNet"].copy()
+# test_stats["M3GNet + MEGNet"][time_col] = (
+#     test_stats["MEGNet"][time_col] + test_stats["M3GNet"][time_col]
+# )
 test_stats["CGCNN+P"] = {}
 
 

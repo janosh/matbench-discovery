@@ -2,6 +2,7 @@
   import { page } from '$app/stores'
 
   export let routes: string[]
+  export let style: string | null = null
 
   $: is_current = (path: string) => {
     if (path === $page.url.pathname) return `page`
@@ -10,7 +11,7 @@
   }
 </script>
 
-<nav>
+<nav {style}>
   {#each routes as href, idx}
     {#if idx > 0}<strong>&bull;</strong>{/if}
     <a {href} aria-current={is_current(href)} class="link">{href}</a>

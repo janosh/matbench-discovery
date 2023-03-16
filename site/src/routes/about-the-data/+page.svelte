@@ -16,9 +16,6 @@
   let active_mp_elem: ChemicalElement
   let active_wbm_elem: ChemicalElement
 
-  const wbm_heat_vals: number[] = Object.values(wbm_elem_counts)
-  const mp_heat_vals: number[] = Object.values(mp_elem_counts)
-
   export const snapshot: Snapshot = {
     capture: () => ({ color_scale, log }),
     restore: (values) => ({ color_scale, log } = values),
@@ -33,7 +30,7 @@
   </svelte:fragment>
   <svelte:fragment slot="wbm-elements-heatmap">
     <PeriodicTable
-      heatmap_values={wbm_heat_vals}
+      heatmap_values={wbm_elem_counts}
       color_scale={color_scale[0]}
       {log}
       bind:active_element={active_wbm_elem}
@@ -47,7 +44,7 @@
   </svelte:fragment>
   <svelte:fragment slot="mp-elements-heatmap">
     <PeriodicTable
-      heatmap_values={mp_heat_vals}
+      heatmap_values={mp_elem_counts}
       color_scale={color_scale[0]}
       {log}
       bind:active_element={active_mp_elem}

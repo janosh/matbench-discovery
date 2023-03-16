@@ -36,7 +36,7 @@ slurm_array_task_count = 500
 slurm_max_parallel = 100
 energy_model = "megnet"
 job_name = f"bowsr-{energy_model}-wbm-{task_type}{'-debug' if DEBUG else ''}"
-out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
+out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 data_path = {
     "IS2RE": DATA_FILES.wbm_initial_structures,
@@ -62,7 +62,7 @@ slurm_vars = slurm_submit(
 
 
 # %%
-slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
+slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", 0))
 out_path = f"{out_dir}/bowsr-preds-{slurm_array_task_id}.json.gz"
 
 if os.path.isfile(out_path):
