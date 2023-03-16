@@ -93,7 +93,7 @@ def slurm_submit(
     slurm_vars = {
         f"slurm_{key}": val
         for key in SLURM_KEYS
-        if (val := os.environ.get(f"SLURM_{key}".upper()))
+        if (val := os.getenv(f"SLURM_{key}".upper()))
     }
     slurm_vars["slurm_timelimit"] = time
     if slurm_flags:

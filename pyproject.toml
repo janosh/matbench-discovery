@@ -86,6 +86,7 @@ ignore = [
   "D100",    # Missing docstring in public module
   "D205",    # 1 blank line required between summary line and description
   "E731",    # Do not assign a lambda expression, use a def
+  "PLW1508", # Invalid type for environment variable default
   "PLW2901", # Outer for loop variable overwritten by inner assignment target
 ]
 pydocstyle.convention = "google"

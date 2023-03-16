@@ -31,7 +31,7 @@ data_path = DATA_FILES.wbm_summary
 debug = "slurm-submit" in sys.argv
 job_name = f"test-wrenformer-wbm-{task_type}{'-debug' if DEBUG else ''}"
 module_dir = os.path.dirname(__file__)
-out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
+out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 slurm_vars = slurm_submit(
     job_name=job_name,
@@ -103,7 +103,7 @@ df, ensemble_metrics = predict_from_wandb_checkpoints(
 )
 df = df.round(4)
 
-slurm_job_id = os.environ.get("SLURM_JOB_ID", "debug")
+slurm_job_id = os.getenv("SLURM_JOB_ID", "debug")
 df.to_csv(f"{out_dir}/{job_name}-preds-{slurm_job_id}.csv")
 
 

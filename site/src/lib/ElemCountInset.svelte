@@ -6,7 +6,7 @@
   export let elem_counts: number[] | Record<string, number>
   export let style: string | null = null
 
-  $: count = elem_counts[element?.symbol] ?? elem_counts[element?.number] ?? null
+  $: count = elem_counts[element?.symbol] ?? elem_counts[element?.number - 1] ?? null
   $: total = (
     Array.isArray(elem_counts) ? elem_counts : Object.values(elem_counts)
   ).reduce((a, b) => a + b, 0)
@@ -17,7 +17,7 @@
     {element?.name}: {pretty_num(count)}
     <!-- compute percent of total -->
     {#if count > 0}
-      ({pretty_num((count / total) * 100)}%)
+      ({pretty_num((100 * count) / total)}%)
     {/if}
   {/if}
 </strong>

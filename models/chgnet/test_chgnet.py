@@ -33,7 +33,7 @@ module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
 slurm_array_task_count = 100
 job_name = f"chgnet-wbm-{task_type}{'-debug' if DEBUG else ''}"
-out_dir = os.environ.get("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
+out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 slurm_vars = slurm_submit(
     job_name=job_name,
@@ -47,7 +47,7 @@ slurm_vars = slurm_submit(
 
 
 # %%
-slurm_array_task_id = int(os.environ.get("SLURM_ARRAY_TASK_ID", 0))
+slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", 0))
 out_path = f"{out_dir}/chgnet-preds-{slurm_array_task_id}.json.gz"
 
 if os.path.isfile(out_path):

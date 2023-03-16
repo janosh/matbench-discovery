@@ -136,7 +136,7 @@ Please see any of the subdirectories in [`models/`]({repo}/tree/main/models) for
 ```sh
 git clone https://github.com/janosh/matbench-discovery
 cd matbench-discovery
-git checkout -b <model-name-you-want-to-add>
+git checkout -b model-name-you-want-to-add
 ```
 
 ### Step 2: Commit model preds, script and metadata
