@@ -2,7 +2,7 @@
   import { browser } from '$app/environment'
   import FormEnergyHist from '$figs/hist-wbm-e-form-per-atom.svelte'
   import WbmEachHist from '$figs/wbm-each-hist.svelte'
-  import { ElemCountInset } from '$lib'
+  import { PtableInset } from '$lib'
   import DataReadme from '$root/data/wbm/readme.md'
   import type { ChemicalElement } from 'elementari'
   import { ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
@@ -37,7 +37,7 @@
     >
       <TableInset slot="inset">
         <label for="log">Log color scale<Toggle id="log" bind:checked={log} /></label>
-        <ElemCountInset element={active_wbm_elem} elem_counts={wbm_elem_counts} />
+        <PtableInset element={active_wbm_elem} elem_counts={wbm_elem_counts} />
       </TableInset>
     </PeriodicTable>
     <ColorScaleSelect bind:selected={color_scale} />
@@ -51,7 +51,7 @@
     >
       <TableInset slot="inset">
         <label for="log">Log color scale<Toggle id="log" bind:checked={log} /></label>
-        <ElemCountInset element={active_mp_elem} elem_counts={mp_elem_counts} />
+        <PtableInset element={active_mp_elem} elem_counts={mp_elem_counts} />
       </TableInset>
     </PeriodicTable>
   </svelte:fragment>
