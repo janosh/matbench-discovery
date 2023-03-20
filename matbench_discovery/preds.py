@@ -32,22 +32,22 @@ class PredFiles(Files):
     # bowsr optimizer coupled with original megnet
     bowsr_megnet = "bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv"
     # default CHGNet model from publication with 400,438 params
-    chgnet = "chgnet/2023-03-06-chgnet-wbm-IS2RE.csv"
+    chgnet = CHGNet = "chgnet/2023-03-06-chgnet-wbm-IS2RE.csv"
     chgnet_megnet = "chgnet/2023-03-04-chgnet-wbm-IS2RE.csv"
     # CGCnn 10-member ensemble
-    cgcnn = "cgcnn/2023-01-26-test-cgcnn-wbm-IS2RE/cgcnn-ensemble-preds.csv"
+    cgcnn = cgcnn = "cgcnn/2023-01-26-test-cgcnn-wbm-IS2RE/cgcnn-ensemble-preds.csv"
     # cgcnn 10-member ensemble with 5-fold training set perturbations
-    cgcnn_p = "cgcnn/2023-02-05-cgcnn-perturb=5.csv"
+    cgcnn_p = CGCNN_P = "cgcnn/2023-02-05-cgcnn-perturb=5.csv"
     # original m3gnet straight from publication, not re-trained
-    m3gnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv"
+    m3gnet = M3GNet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv"
     # m3gnet-relaxed structures fed into megnet for formation energy prediction
     m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv"
     # original megnet straight from publication, not re-trained
-    megnet = "megnet/2022-11-18-megnet-wbm-IS2RE/megnet-e-form-preds.csv"
+    megnet = MEGNet = "megnet/2022-11-18-megnet-wbm-IS2RE/megnet-e-form-preds.csv"
     # magpie composition+voronoi tessellation structure features + sklearn random forest
-    voronoi_rf = "voronoi/2022-11-27-train-test/e-form-preds-IS2RE.csv"
+    voronoi_rf = Voronoi_RF = "voronoi/2022-11-27-train-test/e-form-preds-IS2RE.csv"
     # wrenformer 10-member ensemble
-    wrenformer = "wrenformer/2022-11-15-wrenformer-IS2RE-preds.csv"
+    wrenformer = Wrenformer = "wrenformer/2022-11-15-wrenformer-IS2RE-preds.csv"
 
 
 PRED_FILES = PredFiles()
