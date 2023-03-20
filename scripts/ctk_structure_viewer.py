@@ -21,14 +21,14 @@ e_form_500 = "e_form_per_atom_chgnet_500"
 if df_plot is None:
     from matbench_discovery.preds import PRED_FILES
 
-    df_chgnet = pd.read_json(PRED_FILES.__dict__["CHGNet"].replace(".csv", ".json.gz"))
+    df_chgnet = pd.read_json(PRED_FILES.CHGNet.replace(".csv", ".json.gz"))
     df_chgnet = df_chgnet.set_index("material_id")
 
-    df_chgnet_2000 = pd.read_csv(PRED_FILES.__dict__["CHGNet"])
+    df_chgnet_2000 = pd.read_csv(PRED_FILES.CHGNet)
     df_chgnet_2000 = df_chgnet_2000.set_index("material_id").add_suffix("_2000")
     df_chgnet[list(df_chgnet_2000)] = df_chgnet_2000
 
-    df_chgnet_500 = pd.read_csv(PRED_FILES.__dict__["CHGNet"].replace("-06", "-04"))
+    df_chgnet_500 = pd.read_csv(PRED_FILES.CHGNet.replace("-06", "-04"))
     df_chgnet_500 = df_chgnet_500.set_index("material_id").add_suffix("_500")
     df_chgnet[list(df_chgnet_500)] = df_chgnet_500
 

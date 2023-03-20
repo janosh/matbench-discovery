@@ -5,8 +5,11 @@
   export let element: ChemicalElement
   export let elem_counts: number[] | Record<string, number>
   export let style: string | null = null
+  export let show_percent: boolean = true
+  export let precision: number = 2
+  export let unit: string = ``
 
-  $: count = elem_counts[element?.symbol] ?? elem_counts[element?.number - 1] ?? null
+  $: value = elem_counts[element?.symbol] ?? elem_counts[element?.number - 1] ?? null
   $: total = (
     Array.isArray(elem_counts) ? elem_counts : Object.values(elem_counts)
   ).reduce((a, b) => a + b, 0)
@@ -14,10 +17,11 @@
 
 <strong {style}>
   {#if element?.name}
-    {element?.name}: {pretty_num(count)}
+    {element?.name}: {pretty_num(value, precision)}
+    {@html unit}
     <!-- compute percent of total -->
-    {#if count > 0}
-      ({pretty_num((100 * count) / total)}%)
+    {#if show_percent && total > 0}
+      ({pretty_num((100 * value) / total, precision)}%)
     {/if}
   {/if}
 </strong>

@@ -16,6 +16,7 @@ import pandas as pd
 import wandb
 from megnet.utils.models import load_model
 from pymatgen.core import Structure
+from pymatviz import density_scatter
 from sklearn.metrics import r2_score
 from tqdm import tqdm
 
@@ -57,8 +58,8 @@ if os.path.isfile(out_path):
 data_path = {
     "IS2RE": DATA_FILES.wbm_initial_structures,
     "RS2RE": DATA_FILES.wbm_computed_structure_entries,
-    "chgnet_structure": PRED_FILES.__dict__["CHGNet"].replace(".csv", ".json.gz"),
-    "m3gnet_structure": PRED_FILES.__dict__["M3GNet"].replace(".csv", ".json.gz"),
+    "chgnet_structure": PRED_FILES.CHGNet.replace(".csv", ".json.gz"),
+    "m3gnet_structure": PRED_FILES.M3GNet.replace(".csv", ".json.gz"),
 }[task_type]
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
@@ -114,17 +115,27 @@ print(f"missing: {len(structures) - len(megnet_e_form_preds):,}")
 pred_col = "e_form_per_atom_megnet"
 # remove legacy MP corrections that MEGNet was trained on and apply newer MP2020
 # corrections instead
-df_wbm[pred_col] = (
+df_megnet = (
     pd.Series(megnet_e_form_preds)
     - df_wbm.e_correction_per_atom_mp_legacy
     + df_wbm.e_correction_per_atom_mp2020
-)
+).to_frame(name=pred_col)
 
-df_wbm.filter(like=pred_col).round(4).to_csv(
-    "2022-11-18-megnet-wbm-IS2RE/megnet-e-form-preds.csv"
-)
+df_megnet.round(4).to_csv("2022-11-18-megnet-wbm-IS2RE/megnet-e-form-preds.csv")
+
 
 # df_megnet = pd.read_csv(f"{ROOT}/models/{PRED_FILES.megnet}").set_index("material_id")
+
+
+# %% compare MEGNet predictions with old and new MP corrections
+df_megnet["e_form_per_atom_megnet_old_corr"] = pd.Series(megnet_e_form_preds)
+
+ax = density_scatter(
+    df=df_megnet,
+    x="e_form_per_atom_megnet",
+    y="e_form_per_atom_megnet_old_corr",
+)
+# ax.figure.savefig("megnet-e-form-preds-old-vs-new-corr.png")
 
 
 # %%

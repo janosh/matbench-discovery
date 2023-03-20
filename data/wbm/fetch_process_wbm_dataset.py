@@ -509,8 +509,9 @@ entries_old_corr = MaterialsProjectCompatibility().process_entries(
 assert len(entries_old_corr) == len(df_wbm), f"{len(entries_old_corr)=} {len(df_wbm)=}"
 
 # extract legacy MP energy corrections to df_megnet
-e_correction_col = "e_correction_per_atom_mp_legacy"
-df_wbm[e_correction_col] = [cse.correction_per_atom for cse in df_wbm.cse]
+df_wbm["e_correction_per_atom_mp_legacy"] = [
+    cse.correction_per_atom for cse in df_wbm.cse
+]
 
 # clean up legacy corrections and apply new corrections
 entries_new_corr = MaterialsProject2020Compatibility().process_entries(
@@ -521,8 +522,9 @@ assert len(entries_new_corr) == len(df_wbm), f"{len(entries_new_corr)=} {len(df_
 n_corrected = sum(cse.uncorrected_energy != cse.energy for cse in df_wbm.cse)
 assert n_corrected == 100_930, f"{n_corrected=} expected 100,930"
 
-e_correction_col = "e_correction_per_atom_mp2020"
-df_summary[e_correction_col] = [cse.correction_per_atom for cse in df_wbm.cse]
+df_summary["e_correction_per_atom_mp2020"] = [
+    cse.correction_per_atom for cse in df_wbm.cse
+]
 
 assert df_summary.e_correction_per_atom_mp2020.mean().round(4) == -0.1069
 

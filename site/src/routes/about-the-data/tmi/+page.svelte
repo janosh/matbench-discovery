@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ElemCountInset } from '$lib'
+  import { PtableInset } from '$lib'
   import type { ChemicalElement } from 'elementari'
   import { ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
   import { RadioButtons, Toggle } from 'svelte-zoo'
@@ -68,7 +68,7 @@ structure was generated in).
   bind:active_element
 >
   <TableInset slot="inset">
-    <ElemCountInset element={active_element} elem_counts={active_counts} />
+    <PtableInset element={active_element} elem_counts={active_counts} />
     <span {style}>Log color scale<Toggle bind:checked={log} /></span>
   </TableInset>
 </PeriodicTable>
