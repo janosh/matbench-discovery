@@ -35,8 +35,8 @@ export type ModelStats = {
   missing_percent: number
   Accuracy: number
   'Run Time (h)': string
-  FPR: number
-  FNR: number
+  TPR: number
+  TNR: number
   DAF: number
   GPUs: number
   CPUs: number

@@ -1,5 +1,6 @@
 <script>
   import { repository as repo } from '$site/package.json'
+  import EachScatter from '$figs/each-scatter-models.svelte'
   import MetricsTable from '$figs/metrics-table.svelte'
   import CumulativeClfMetrics from '$figs/cumulative-clf-metrics.svelte'
   import RollingMaeModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'
@@ -167,6 +168,12 @@ A line terminates when a model believes there are no more materials in the WBM t
 > @label:fig:rolling-mae-vs-hull-dist-models Rolling MAE on the WBM test set as the energy to the convex hull of the MP training set is varied. The width of the box in the bottom corner indicates the rolling window within which errors were averaged (think smoothing strength). The red-highlighted 'triangle of peril' shows where the models are most likely to misclassify structures. As long as a model's rolling MAE remains inside the triangle, its mean error is larger than the distance to the convex hull. If the model's error happens to point towards the stability threshold at 0 eV from the hull (the plot's center), it's average error will change the stability classification of a material from true positive/negative to false negative/positive.
 
 @Fig:rolling-mae-vs-hull-dist-models visualizes a model's reliability as a function of a material's hull distance. The lower its rolling MAE exits the shaded triangle, the better. Inside this area, the model's mean error is larger than the distance to the convex hull, making misclassifications likely. Outside the triangle even if the model's error points toward the stability threshold at 0 eV from the hull (the plot's center), the mean error is too small to move a material over the stability threshold which would cause a false stability classification. M3GNet achieves the lowest overall MAE and exits the peril zone much sooner than other models on the right half of the plot. This means it rarely misclassifies unstable materials that lie more than 40 meV above the hull. On the plot's left half, CGCNN+P exits the peril zone first, albeit much further from the hull at more than 100 meV below. Essentially, all models are prone to false negative predictions even for materials far below the known hull which aligns with the smaller amount of training data for materials on or below the known convex hull (see the [test set's target distribution](/about-the-data#--target-distribution)).
+
+{#if browser}
+<EachScatter />
+{/if}
+
+> @label:fig:each-scatter-models Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth
 
 TODO: mention we consistently see deducting old MP corrections and applying 2020 scheme from MEGNEt e_form predictions increases MAE, no matter if paired with BOWSR, M3GNet, CHGNet or standalone
 

@@ -1,8 +1,10 @@
 <script>
   import MetricsTable from '$figs/metrics-table.svelte'
+  import EachScatter from '$figs/each-scatter-models.svelte'
   import CumulativeClfMetrics from '$figs/cumulative-clf-metrics.svelte'
   import RollingMaeModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'
   import { browser } from '$app/environment'
+  import HistClfTrueHullDistModels from '$figs/hist-clf-true-hull-dist-models.svelte'
 </script>
 
 <summary>
@@ -21,7 +23,7 @@ All our technologies rely on the ability to control specific material properties
 
 ### Why machine learning?
 
-Since its inception, science has undergone several paradigm shits. In the beginning, the empirical phase saw scientists conducting simple experiments to probe reality. It was followed by the theoretical phase that saw the rise of physical laws with incredible predictive power. The last century saw the rise of the simulation, the 3rd paradigm of science which revolves around recreating the salient feature of a physical system of interest on a computer as efficiently as possible to probe its behavior. Finally the 21st century has brought about the 4th data-driven phase of science. This latest addition to the computational toolbox is powered by statistical models that learn from existing knowledge to arrive at new insights via shortcuts that rely on pattern in the data rather than reductionist bottom-up reasoning about features of reality.
+Since its inception, science has undergone several paradigm shifts. In the beginning, the empirical phase saw scientists conducting simple experiments to probe reality. It was followed by the theoretical phase that saw the rise of physical laws with incredible predictive power. The last century saw the rise of the simulation, the 3rd paradigm of science which revolves around recreating the salient feature of a physical system of interest on a computer as efficiently as possible to probe its behavior. Finally the 21st century has brought about the 4th data-driven phase of science. This latest addition to the computational toolbox is powered by statistical models that learn from existing knowledge to arrive at new insights via shortcuts that rely on pattern in the data rather than reductionist bottom-up reasoning about features of reality.
 
 Yet despite the powerful tools brought about by the traditional empirical, theoretical, and computational paradigms of science, to this day materials discovery still requires labor-intensive experimentation, complex and expensive calculations, or trial-and-error methods to discover new materials.
 
@@ -105,13 +107,15 @@ Our benchmark is designed to make [adding future models easy](/contribute). The 
 
 > @label:fig:metrics-table Heatmap of model metrics. For columns MAE, RMSE lower is better. For columns DAF, R2, Precision, F1, Accuracy, TPR (Recall) and TNR (Specificity) higher is better. In both cases cells colored yellow are better than cells colored blue. Click once/twice on a table header to sort asc./desc. by that column.
 
-![Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth](./figs/each-scatter-models.webp)
+{#if browser}
+<EachScatter />
+{/if}
 
 > @label:fig:each-scatter-models Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth
 
-![Histograms of using predicted formation energies for stability classification](./figs/hist-true-energy-vs-hull-dist-models.webp)
+<HistClfTrueHullDistModels />
 
-> @label:fig:hist-true-energy-vs-hull-dist-models Histograms of using predicted formation energies for stability classification
+> @label:fig:hist-clf-true-hull-dist-models Histograms of using predicted formation energies for stability classification
 
 {#if browser}
 <RollingMaeModels />
