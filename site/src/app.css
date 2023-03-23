@@ -5,11 +5,12 @@
 
   --toc-mobile-bg: #0d1a1d;
   --toc-mobile-shadow: 0 0 1em 0 black;
+  --toc-padding: 1em 0;
   --toc-title-padding: 0 0 0 3pt;
   --toc-li-padding: 4pt 1ex;
   --toc-mobile-btn-color: white;
   --toc-desktop-nav-margin: 0 0 0 1em;
-  --toc-min-width: 16em;
+  --toc-min-width: 15em;
   --toc-active-bg: darkcyan;
 
   --zoo-github-corner-color: var(--night);
@@ -40,10 +41,15 @@ body > div {
   flex-direction: column;
 }
 main {
-  padding: calc(1ex + 2vw);
+  padding: 1ex;
   flex: 1;
   container-type: inline-size;
   box-sizing: border-box;
+}
+@media (max-width: 60em) {
+  main {
+    padding: 2em;
+  }
 }
 button {
   color: var(--text-color);
