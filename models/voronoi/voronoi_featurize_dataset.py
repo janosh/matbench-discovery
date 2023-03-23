@@ -24,7 +24,7 @@ __author__ = "Janosh Riebesell"
 __date__ = "2022-10-31"
 
 
-data_name = "mp"  # "mp"
+data_name = "mp"
 data_path = {
     "wbm": DATA_FILES.wbm_initial_structures,
     "mp": DATA_FILES.mp_computed_structure_entries,

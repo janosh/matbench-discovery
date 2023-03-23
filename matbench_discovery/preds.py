@@ -29,23 +29,29 @@ class PredFiles(Files):
     _root = f"{ROOT}/models/"
     _key_map = model_labels  # remap model keys below to pretty plot labels (see Files)
 
-    # bowsr optimizer coupled with original megnet
+    # BOWSR optimizer coupled with original megnet
     bowsr_megnet = "bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv"
     # default CHGNet model from publication with 400,438 params
     chgnet = "chgnet/2023-03-06-chgnet-wbm-IS2RE.csv"
-    chgnet_megnet = "chgnet/2023-03-04-chgnet-wbm-IS2RE.csv"
+    # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
+    # chgnet_megnet = "chgnet/2023-03-04-chgnet-wbm-IS2RE.csv"
+
     # CGCnn 10-member ensemble
     cgcnn = "cgcnn/2023-01-26-test-cgcnn-wbm-IS2RE/cgcnn-ensemble-preds.csv"
-    # cgcnn 10-member ensemble with 5-fold training set perturbations
+    # CGCnn 10-member ensemble with 5-fold training set perturbations
     cgcnn_p = "cgcnn/2023-02-05-cgcnn-perturb=5.csv"
-    # original m3gnet straight from publication, not re-trained
+
+    # original M3GNet straight from publication, not re-trained
     m3gnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv"
-    # m3gnet-relaxed structures fed into megnet for formation energy prediction
-    m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv"
-    # original megnet straight from publication, not re-trained
+    # M3GNet-relaxed structures fed into MEGNet for formation energy prediction
+    # m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv"
+
+    # original MEGNet straight from publication, not re-trained
     megnet = "megnet/2022-11-18-megnet-wbm-IS2RE/megnet-e-form-preds.csv"
-    # magpie composition+voronoi tessellation structure features + sklearn random forest
+
+    # Magpie composition+Voronoi tessellation structure features + sklearn random forest
     voronoi_rf = "voronoi/2022-11-27-train-test/e-form-preds-IS2RE.csv"
+
     # wrenformer 10-member ensemble
     wrenformer = "wrenformer/2022-11-15-wrenformer-IS2RE-preds.csv"
 
@@ -113,13 +119,14 @@ def load_df_wbm_with_preds(
 
 # load WBM summary dataframe with all models' formation energy predictions (eV/atom)
 df_preds = load_df_wbm_with_preds().round(3)
-for combo in [["CHGNet", "M3GNet"]]:
-    df_preds[" + ".join(combo)] = df_preds[combo].mean(axis=1)
+# for combo in [["CHGNet", "M3GNet"]]:
+#     df_preds[" + ".join(combo)] = df_preds[combo].mean(axis=1)
+#     PRED_FILES[" + ".join(combo)] = "combo"
 
 
 df_metrics = pd.DataFrame()
 df_metrics.index.name = "model"
-for model in [*PRED_FILES, "CHGNet + M3GNet"]:
+for model in PRED_FILES:
     df_metrics[model] = stable_metrics(
         df_preds[each_true_col],
         df_preds[each_true_col] + df_preds[model] - df_preds[e_form_col],

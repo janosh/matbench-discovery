@@ -10,11 +10,11 @@
   export let data
 
   let sort_by: keyof ModelStats | 'model_name' = `F1`
-  let show_details = false
+  let show_details: boolean = false
   let order: 'asc' | 'desc' = `desc`
-  let n_best = 8 // show only best models
-  const min_models = 2
-  $: sort_factor = order == `asc` ? -1 : 1
+  let n_best: number = 8 // show only best models
+  const min_models: number = 2
+  $: sort_factor = { asc: -1, desc: 1 }[order]
 
   $: models = data.models.sort((md1, md2) => {
     if (typeof md1[sort_by] == `string`) {
@@ -28,16 +28,16 @@
     }
   })
   const stats: ModelStatLabel[] = [
-    { key: `MAE`, unit: `eV / atom`, tooltip: `Mean Absolute Error` },
-    { key: `RMSE`, unit: `eV / atom`, tooltip: `Root Mean Squared Error` },
-    { key: `R2`, label: `R<sup>2</sup>` },
-    { key: `Precision` },
-    { key: `Recall` },
-    { key: `F1` },
-    { key: `Run Time (h)`, label: `Run time`, unit: `h` },
-    { key: `FPR`, tooltip: `False Positive Rate` },
-    { key: `FNR`, tooltip: `False Negative Rate` },
+    { key: `Accuracy` },
     { key: `DAF`, tooltip: `Discovery Acceleration Factor` },
+    { key: `F1` },
+    { key: `MAE`, unit: `eV / atom`, tooltip: `Mean Absolute Error` },
+    { key: `Precision` },
+    { key: `R2`, label: `R<sup>2</sup>` },
+    { key: `RMSE`, unit: `eV / atom`, tooltip: `Root Mean Squared Error` },
+    { key: `TNR`, tooltip: `True Negative Rate` },
+    { key: `TPR`, tooltip: `True Positive Rate` },
+    { key: `Run Time (h)`, label: `Run time`, unit: `h` },
   ]
 
   export const snapshot: Snapshot = {

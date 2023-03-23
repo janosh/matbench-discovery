@@ -9,8 +9,11 @@ from typing import Final
 
 from pymatviz.utils import save_fig
 
-from matbench_discovery import ROOT, STATIC, today
-from matbench_discovery.plots import hist_classified_stable_vs_hull_dist, plt
+from matbench_discovery import FIGS, ROOT, today
+from matbench_discovery.plots import (
+    hist_classified_stable_vs_hull_dist,
+    plt,
+)
 from matbench_discovery.preds import df_metrics, df_preds, e_form_col, each_true_col
 
 __author__ = "Janosh Riebesell"
@@ -58,6 +61,18 @@ fig = hist_classified_stable_vs_hull_dist(
     **kwds,  # type: ignore[arg-type]
 )
 
+# true_pos, false_neg, false_pos, true_neg = classify_stable(
+#     df_melt[each_true_col], df_melt[each_pred_col], stability_threshold=0
+# )
+# import numpy as np
+
+# df_melt[(clf_col := "classified")] = np.array(clf_labels)[
+#     true_pos * 0 + false_neg * 1 + false_pos * 2 + true_neg * 3
+# ]
+# import pandas as pd
+
+# pd.cut(df_melt[each_pred_col], bins=10).value_counts()
+
 
 # TODO add line showing the true hull distance histogram on each subplot
 show_metrics = False
@@ -91,11 +106,12 @@ else:
         )
         anno.text = f"{model_name} · {F1=:.2f} · {FPR=:.2f} · {FNR=:.2f} · {DAF=:.2f}"
 
+    fig.layout.height = 1000
     fig.layout.margin.update(t=50, b=30, l=40, r=0)
     fig.layout.legend.update(
-        y=1.15, xanchor="center", x=0.5, bgcolor="rgba(0,0,0,0)", orientation="h"
+        y=1.1, xanchor="center", x=0.5, bgcolor="rgba(0,0,0,0)", orientation="h"
     )
-    fig.update_yaxes(range=[0, 3_000], title_text=None)
+    fig.update_yaxes(range=[0, 11_000], title_text=None)
 
     # for trace in fig.data:
     #     # no need to store all 250k x values in plot, leads to 1.7 MB file,
@@ -107,8 +123,8 @@ else:
 
 
 # %%
-img_name = f"hist-{which_energy}-energy-vs-hull-dist-models"
-# save_fig(fig, f"{FIGS}/{img_name}.svelte")
+img_name = f"hist-clf-{which_energy}-hull-dist-models"
+save_fig(fig, f"{FIGS}/{img_name}.svelte")
 n_models = len(fig.layout.annotations)
-save_fig(fig, f"{STATIC}/{img_name}.webp", scale=3, height=100 * n_models)
+# save_fig(fig, f"{STATIC}/{img_name}.webp", scale=3, height=100 * n_models)
 save_fig(fig, f"{ROOT}/tmp/figures/{img_name}.pdf", height=550, width=600)

@@ -1,14 +1,15 @@
 """Scatter plot of actual vs predicted e_above_hull and e_form_per_atom for all
-models. First 2 plots put all models in single figure with togglable traces.
+models. First 2 plots put all models in single figure with selectable traces.
 Last plot is split into 2x3 subplots, one for each model.
 """
 
 
 # %%
 import numpy as np
+import pandas as pd
 from pymatviz.utils import add_identity_line, save_fig
 
-from matbench_discovery import FIGS, ROOT, STATIC
+from matbench_discovery import FIGS, ROOT
 from matbench_discovery.metrics import classify_stable
 from matbench_discovery.plots import clf_color_map, clf_colors, clf_labels, px
 from matbench_discovery.preds import (
@@ -28,13 +29,14 @@ legend = dict(x=1, y=0, xanchor="right", yanchor="bottom", title=None)
 
 # %%
 facet_col = "Model"
-hover_cols = (df_preds.index.name, e_form_col, each_true_col, "formula")
+hover_cols = (each_true_col, "formula")
+models = list(df_metrics.T.MAE.nsmallest(6).index)  # top 6 models by MAE
+models = list(df_metrics)  # all models
 
 df_melt = df_preds.melt(
-    id_vars=hover_cols,
+    id_vars=(df_preds.index.name, e_form_col, *hover_cols),
     var_name=facet_col,
-    value_vars=df_metrics.T.MAE.nsmallest(6).index,  # top 6 models by MAE
-    # value_vars=list(df_metrics),  # all models
+    value_vars=models,
     value_name=e_form_pred_col,
 )
 
@@ -43,73 +45,80 @@ df_melt[each_pred_col] = (
 )
 
 
+x_col, y_col = each_true_col, each_pred_col
+n_bins = 200
+df_melt["x_bin"] = pd.cut(df_melt[each_true_col], bins=n_bins)
+df_melt["y_bin"] = pd.cut(df_melt[each_pred_col], bins=n_bins)
+
+df_plot = df_melt.groupby(["x_bin", "y_bin", "Model"]).first().dropna().reset_index()
+print(f"{len(df_plot)=:,} / {len(df_melt)=:,} = {len(df_plot)/len(df_melt):.1%}")
+
+
 # %% scatter plot of actual vs predicted e_form_per_atom
 fig = px.scatter(
-    df_melt.iloc[::5],
+    df_plot,
     x=e_form_col,
     y=e_form_pred_col,
     color=facet_col,
     hover_data=hover_cols,
     hover_name=df_preds.index.name,
+    opacity=0.7,
 )
 
 for trace in fig.data:
     # initially hide all traces, let users select which models to compare
     trace.visible = "legendonly"
     model = trace.name
-    assert model in df_preds, f"Unexpected {model=} not in {list(df_preds)=}"
+    assert model in df_preds, f"Unexpected {model=} not in {models}"
     MAE, R2 = df_metrics[model][["MAE", "R2"]]
-    trace.text = f"{model} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
+    trace.name = f"{model} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
 
 fig.update_layout(legend=legend)
 add_identity_line(fig)
 fig.show()
 
-
-# %%
 img_path = f"{FIGS}/e-form-scatter-models"
 # save_fig(fig, f"{img_path}.svelte")
 
 
 # %% scatter plot of actual vs predicted e_above_hull
 fig = px.scatter(
-    df_melt.iloc[::5],
+    df_plot,
     x=each_true_col,
     y=each_pred_col,
     color=facet_col,
     hover_data=hover_cols,
     hover_name=df_preds.index.name,
+    opacity=0.7,
 )
 
 for trace in fig.data:
     trace.visible = "legendonly"
     model = trace.name
-    assert model in df_preds, f"Unexpected {model=} not in {list(df_preds)=}"
+    assert model in df_preds, f"Unexpected {model=} not in {models}"
     MAE, R2 = df_metrics[model][["MAE", "R2"]]
-    trace.text = f"{model} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
+    trace.name = f"{model} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
 
 fig.update_layout(legend=legend)
 add_identity_line(fig)
 fig.show()
 
-
-# %%
 img_path = f"{FIGS}/e-above-hull-scatter-models"
 # save_fig(fig, f"{img_path}.svelte")
 
 
 # %% plot all models in separate subplots
 true_pos, false_neg, false_pos, true_neg = classify_stable(
-    df_melt[each_true_col], df_melt[each_pred_col]
+    df_plot[each_true_col], df_plot[each_pred_col]
 )
 
-df_melt[(clf_col := "classified")] = np.array(clf_labels)[
+df_plot[(clf_col := "classified")] = np.array(clf_labels)[
     true_pos * 0 + false_neg * 1 + false_pos * 2 + true_neg * 3
 ]
-xy_max = 1.6
+domain = (-4, 7)
 
 fig = px.scatter(
-    df_melt.iloc[::50],
+    df_plot,
     x=each_true_col,
     y=each_pred_col,
     facet_col=facet_col,
@@ -121,10 +130,9 @@ fig = px.scatter(
     color=clf_col,
     color_discrete_map=clf_color_map,
     # opacity=0.4,
-    range_x=(-xy_max, xy_max),
-    range_y=(-xy_max, xy_max),
+    range_x=domain,
+    range_y=domain,
 )
-
 
 x_title = fig.layout.xaxis.title.text  # used in annotations below
 y_title = fig.layout.yaxis.title.text
@@ -165,8 +173,8 @@ for sign_x, sign_y, color, label in zip(
     #     col="all",
     # )
     fig.add_annotation(
-        x=sign_x * xy_max,
-        y=sign_y * xy_max,
+        x=(domain[0] if sign_x < 0 else domain[1]),
+        y=(domain[0] if sign_y < 0 else domain[1]),
         xshift=-20 * sign_x,
         yshift=-20 * sign_y,
         text=label,
@@ -193,7 +201,7 @@ fig.layout.legend.update(
 axis_titles = dict(xref="paper", yref="paper", showarrow=False)
 fig.add_annotation(  # x-axis title
     x=0.5,
-    y=-0.1,
+    y=-0.05,
     text=x_title,
     **axis_titles,
 )
@@ -204,12 +212,14 @@ fig.add_annotation(  # y-axis title
     textangle=-90,
     **axis_titles,
 )
-fig.update_layout(margin=dict(l=30, r=0, t=0, b=70))
+fig.update_layout(margin=dict(l=40, r=10, t=10, b=50), height=1000)
+fig.update_xaxes(matches=None)
+fig.update_yaxes(matches=None)
 
 fig.show()
 
 
 # %%
-img_name = "each-scatter-models"
-save_fig(fig, f"{STATIC}/{img_name}.webp", scale=4, width=700, height=800)
-save_fig(fig, f"{ROOT}/tmp/figures/{img_name}.pdf", width=700, height=800)
+save_fig(fig, f"{FIGS}/each-scatter-models.svelte")
+save_fig(fig, f"{ROOT}/tmp/figures/each-scatter-models.pdf", width=600, height=700)
+# save_fig(fig, f"{STATIC}/each-scatter-models.webp", scale=4, width=700, height=800)

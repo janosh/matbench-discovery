@@ -26,6 +26,16 @@ __date__ = "2022-08-05"
 
 Backend = Literal["matplotlib", "plotly"]
 
+
+def unit(text: str) -> str:
+    """Wrap text in a span with decreased font size and weight to display units in
+    plotly labels.
+    """
+    return f"<span style='font-size: 0.8em; font-weight: lighter;'>({text})</span>"
+
+
+eVpa = unit("eV/atom")
+
 # --- start global plot settings
 quantity_labels = dict(
     n_atoms="Atom Count",
@@ -34,16 +44,16 @@ quantity_labels = dict(
     spg_num="Space group",
     n_wyckoff="Number of Wyckoff positions",
     n_sites="Lattice site count",
-    energy_per_atom="Energy (eV/atom)",
-    e_form="Actual E<sub>form</sub> (eV/atom)",
-    e_above_hull="E<sub>above hull</sub> (eV/atom)",
-    e_above_hull_mp2020_corrected_ppd_mp="Actual E<sub>above hull</sub> (eV/atom)",
-    e_above_hull_pred="Predicted E<sub>above hull</sub> (eV/atom)",
-    e_above_hull_mp="E<sub>above MP hull</sub> (eV/atom)",
-    e_above_hull_error="Error in E<sub>above hull</sub> (eV/atom)",
+    energy_per_atom=f"Energy {eVpa}",
+    e_form=f"DFT E<sub>form</sub> {eVpa}",
+    e_above_hull=f"E<sub>above hull</sub> {eVpa}",
+    e_above_hull_mp2020_corrected_ppd_mp=f"DFT E<sub>above hull</sub> {eVpa}",
+    e_above_hull_pred=f"Predicted E<sub>above hull</sub> {eVpa}",
+    e_above_hull_mp=f"E<sub>above MP hull</sub> {eVpa}",
+    e_above_hull_error=f"Error in E<sub>above hull</sub> {eVpa}",
     vol_diff="Volume difference (A^3)",
-    e_form_per_atom_mp2020_corrected="Actual E<sub>form</sub> (eV/atom)",
-    e_form_per_atom_pred="Predicted E<sub>form</sub> (eV/atom)",
+    e_form_per_atom_mp2020_corrected=f"DFT E<sub>form</sub> {eVpa}",
+    e_form_per_atom_pred=f"Predicted E<sub>form</sub> {eVpa}",
     material_id="Material ID",
     band_gap="Band gap (eV)",
     formula="Formula",
@@ -51,7 +61,7 @@ quantity_labels = dict(
 model_labels = dict(
     bowsr_megnet="BOWSR + MEGNet",
     chgnet="CHGNet",
-    # chgnet_megnet="CHGNet + MEGNet",
+    chgnet_megnet="CHGNet + MEGNet",
     cgcnn_p="CGCNN+P",
     cgcnn="CGCNN",
     m3gnet_megnet="M3GNet + MEGNet",
@@ -65,12 +75,7 @@ model_labels = dict(
 px.defaults.labels = quantity_labels | model_labels
 
 # color list https://plotly.com/python-api-reference/generated/plotly.graph_objects.layout
-colorway = (
-    "lightseagreen",
-    "orange",
-    "lightsalmon",
-    "dodgerblue",
-)
+colorway = ("lightseagreen", "orange", "lightsalmon", "dodgerblue")
 clf_labels = ("True Positive", "False Negative", "False Positive", "True Negative")
 clf_colors = ("lightseagreen", "orange", "lightsalmon", "dodgerblue")
 clf_color_map = dict(zip(clf_labels, clf_colors))
@@ -109,16 +114,12 @@ def hist_classified_stable_vs_hull_dist(
     ax: plt.Axes = None,
     which_energy: Literal["true", "pred"] = "true",
     stability_threshold: float | None = 0,
-    x_lim: tuple[float | None, float | None] = (-0.7, 0.7),
+    x_lim: tuple[float, float] = (-0.7, 0.7),
+    n_bins: int = 200,
     rolling_acc: float | None = 0.02,
     backend: Backend = "plotly",
     y_label: str = "Number of materials",
-    clf_labels: Sequence[str] = (
-        "True Positive",
-        "False Negative",
-        "False Positive",
-        "True Negative",
-    ),
+    clf_labels: Sequence[str] = clf_labels,
     **kwargs: Any,
 ) -> plt.Axes | go.Figure:
     """Histogram of the energy difference (either according to DFT ground truth - the
@@ -143,7 +144,8 @@ def hist_classified_stable_vs_hull_dist(
             distance or the model's predicted hull distance for the histogram.
         stability_threshold (float, optional): set stability threshold as distance to
             convex hull in eV/atom, usually 0 or 0.1 eV.
-        x_lim (tuple[float | None, float | None]): x-axis limits.
+        x_lim (tuple[float, float]): x-axis limits.
+        n_bins (int): Number of bins in histogram.
         rolling_acc (float): Rolling accuracy window size in eV / atom. Set to None
             or 0 to disable. Defaults to 0.02, meaning 20 meV / atom.
         backend ('matplotlib' | 'plotly'], optional): Which plotting engine to use.
@@ -161,48 +163,76 @@ def hist_classified_stable_vs_hull_dist(
     NOTE this figure plots hist bars separately which causes aliasing in pdf. Can be
     fixed in Inkscape or similar by merging regions by color.
     """
-    each_true = df[each_true_col]
-    each_pred = df[each_pred_col]
-    x_col = each_true_col if which_energy == "true" else each_pred_col
-    true_pos, false_neg, false_pos, true_neg = classify_stable(
-        each_true, each_pred, stability_threshold
-    )
+    x_col = dict(true=each_true_col, pred=each_pred_col)[which_energy]
 
-    # switch between histogram of DFT-computed or model-predicted convex hull distance
-    e_above_hull = df[x_col]
-    eah_true_pos = e_above_hull[true_pos]
-    eah_true_neg = e_above_hull[true_neg]
-    # eah_false_neg = e_above_hull[false_neg]
-    # eah_false_pos = e_above_hull[false_pos]
-    # n_true_pos, n_false_pos, n_true_neg, n_false_neg = map(
-    #     sum, (true_pos, false_pos, true_neg, false_neg)
-    # )
+    df_plot = pd.DataFrame()
+    for facet, df_group in (
+        df.groupby(kwargs["facet_col"]) if "facet_col" in kwargs else [(None, df)]
+    ):
+        true_pos, false_neg, false_pos, true_neg = classify_stable(
+            df_group[each_true_col], df_group[each_pred_col], stability_threshold
+        )
 
-    clf = np.array(clf_labels)[
-        true_pos * 0 + false_neg * 1 + false_pos * 2 + true_neg * 3
-    ]
+        # switch between hist of DFT-computed and model-predicted convex hull distance
+        e_above_hull = df_group[x_col]
+        each_true_pos = e_above_hull[true_pos]
+        each_true_neg = e_above_hull[true_neg]
+        each_false_neg = e_above_hull[false_neg]
+        each_false_pos = e_above_hull[false_pos]
+        # n_true_pos, n_false_pos, n_true_neg, n_false_neg = map(
+        #     sum, (true_pos, false_pos, true_neg, false_neg)
+        # )
 
-    df[(clf_col := "classified")] = clf
+        df_group[(clf_col := "classified")] = np.array(clf_labels)[
+            true_pos * 0 + false_neg * 1 + false_pos * 2 + true_neg * 3
+        ]
 
-    kwds: dict[str, Any] = (
-        dict(
+        # calculate histograms for each category
+        hist_true_pos, bin_edges = np.histogram(
+            each_true_pos - 0.001, bins=n_bins, range=x_lim
+        )
+        hist_true_neg, _ = np.histogram(each_true_neg + 0.001, bins=n_bins, range=x_lim)
+        hist_false_neg, _ = np.histogram(
+            each_false_neg - 0.001, bins=n_bins, range=x_lim
+        )
+        hist_false_pos, _ = np.histogram(
+            each_false_pos + 0.001, bins=n_bins, range=x_lim
+        )
+
+        # combine histograms into a single dataframe
+        df_hist = pd.DataFrame(
+            (hist_true_pos, hist_false_neg, hist_false_pos, hist_true_neg),
+            index=clf_labels,
+        ).T
+        df_hist[x_col] = bin_edges[:-1]
+        value_name = "count"
+        df_melt = df_hist.melt(
+            id_vars=x_col,
+            value_vars=clf_labels,
+            var_name=clf_col,
+            value_name=value_name,
+        ).assign(**{kwargs.get("facet_col", ""): facet})
+        df_plot = pd.concat([df_plot, df_melt])
+
+    if backend == "plotly":
+        kwargs.update(
             barmode="stack",
             range_x=x_lim,
             color_discrete_map=clf_color_map,
             x=x_col,
             color=clf_col,
+            y=value_name,
         )
-        if backend == "plotly"
-        else dict(
+    else:
+        kwargs.update(
             column=[x_col],
             legend=False,
             ax=ax,
             xlim=x_lim,
             # color=df[clf_col],
         )
-    )
 
-    fig = df.plot.hist(backend=backend, **(kwds | kwargs))
+    fig = df_plot.round(4).plot.bar(backend=backend, **kwargs)
 
     if backend == "matplotlib":
         # ax.hist(
@@ -229,7 +259,11 @@ def hist_classified_stable_vs_hull_dist(
                 )
 
     if backend == "plotly":
-        fig.update_layout(legend=dict(title=None, y=0.5, xanchor="right", x=1))
+        fig.layout.legend.update(title=None, y=0.5, xanchor="right", x=1)
+        fig.update_traces(marker_line=dict(color="rgba(0, 0, 0, 0)"))
+        fig.update_layout(bargap=0)
+        fig.update_xaxes(matches=None)
+        fig.update_yaxes(matches=None)
 
         if stability_threshold is not None:
             anno = dict(text="Stability threshold", xanchor="center", yanchor="bottom")
@@ -241,10 +275,10 @@ def hist_classified_stable_vs_hull_dist(
 
         # --- moving average of the accuracy
         # compute rolling accuracy in rolling_acc-sized intervals
-        bins = np.arange(each_true.min(), each_true.max(), rolling_acc)
-        bin_counts = np.histogram(each_true, bins)[0]
-        bin_true_pos = np.histogram(eah_true_pos, bins)[0]
-        bin_true_neg = np.histogram(eah_true_neg, bins)[0]
+        bins = np.arange(df[x_col].min(), df[x_col].max(), rolling_acc)
+        bin_counts = np.histogram(df[each_true_col], bins)[0]
+        bin_true_pos = np.histogram(each_true_pos, bins)[0]
+        bin_true_neg = np.histogram(each_true_neg, bins)[0]
 
         # compute accuracy (handling division by zero)
         bin_accuracies = np.divide(
@@ -381,12 +415,12 @@ def rolling_mae_vs_hull_dist(
     else:
         print("Using pre-calculated rolling MAE")
 
-    ax = df_rolling_err.plot(backend=backend, **kwargs)
+    fig = df_rolling_err.plot(backend=backend, **kwargs)
 
     if just_plot_lines:
         # return earlier if all plot objects besides the line were already drawn by a
         # previous call
-        return ax, df_rolling_err, df_err_std
+        return fig, df_rolling_err, df_err_std
 
     # DFT accuracy at 25 meV/atom for relative difference of e_above_hull for chemically
     # similar systems which is lower than formation energy error due to systematic error
@@ -410,7 +444,7 @@ def rolling_mae_vs_hull_dist(
         #     )
 
         scale_bar = AnchoredSizeBar(
-            ax.transData,
+            fig.transData,
             window,
             window_bar_anno,
             "lower left",
@@ -419,9 +453,9 @@ def rolling_mae_vs_hull_dist(
             size_vertical=0.002,
         )
         # indicate size of MAE averaging window
-        ax.add_artist(scale_bar)
+        fig.add_artist(scale_bar)
 
-        ax.fill_between(
+        fig.fill_between(
             (-1, -dft_acc, dft_acc, 1) if show_dft_acc else (-1, 0, 1),
             (1, 1, 1, 1) if show_dft_acc else (1, 1, 1),
             (1, dft_acc, dft_acc, 1) if show_dft_acc else (1, 0, 1),
@@ -430,7 +464,7 @@ def rolling_mae_vs_hull_dist(
         )
 
         if show_dft_acc:
-            ax.fill_between(
+            fig.fill_between(
                 (-dft_acc, 0, dft_acc),
                 (dft_acc, dft_acc, dft_acc),
                 (dft_acc, 0, dft_acc),
@@ -441,7 +475,7 @@ def rolling_mae_vs_hull_dist(
             arrowprops = dict(
                 facecolor="black", width=0.5, headwidth=5, headlength=5, shrink=0.1
             )
-            ax.annotate(
+            fig.annotate(
                 xy=(-dft_acc, dft_acc),
                 xytext=(-2 * dft_acc, dft_acc),
                 text="Corrected GGA\nAccuracy",
@@ -450,21 +484,21 @@ def rolling_mae_vs_hull_dist(
                 horizontalalignment="right",
             )
 
-        ax.axhline(dummy_mae, color="tab:blue", linestyle="--", linewidth=0.5)
-        ax.text(dummy_mae, 0.1, dummy_mae_text)
+        fig.axhline(dummy_mae, color="tab:blue", linestyle="--", linewidth=0.5)
+        fig.text(dummy_mae, 0.1, dummy_mae_text)
 
-        ax.text(
+        fig.text(
             0, 0.13, r"MAE > $|E_\mathrm{above\ hull}|$", horizontalalignment="center"
         )
-        ax.set(xlabel=r"$E_\mathrm{above\ hull}$ (eV/atom)", ylabel=y_label)
-        ax.set(xlim=x_lim, ylim=y_lim)
+        fig.set(xlabel=r"$E_\mathrm{above\ hull}$ (eV/atom)", ylabel=y_label)
+        fig.set(xlim=x_lim, ylim=y_lim)
 
     elif backend == "plotly":
         for idx, model in enumerate(df_rolling_err if with_sem else []):
             # set legendgroup to model name so SEM shading toggles with model curve
-            ax.data[idx].legendgroup = model
+            fig.data[idx].legendgroup = model
             # set SEM area to same color as model curve
-            ax.add_scatter(
+            fig.add_scatter(
                 x=list(bins) + list(bins)[::-1],  # bins, then bins reversed
                 # upper, then lower reversed
                 y=list(df_rolling_err[model] + 3 * df_err_std[model])
@@ -473,61 +507,50 @@ def rolling_mae_vs_hull_dist(
                 line=dict(color="white", width=0),
                 fill="toself",
                 legendgroup=model,
-                fillcolor=ax.data[idx].line.color,
+                fillcolor=fig.data[idx].line.color,
                 opacity=0.4,
                 showlegend=False,
             )
 
-        ax.layout.legend.update(
-            title="",
-            x=0,
-            y=0,
-            # xanchor="right",
-            yanchor="bottom",
-            title_font=dict(size=15),
-        )
+        fig.layout.legend.update(title="", x=0, y=0, yanchor="bottom")
         # change tooltip precision to 2 decimal places
-        ax.update_traces(hovertemplate="x = %{x:.2f} eV/atom<br>y = %{y:.2f} eV/atom")
-        ax.layout.xaxis.title.text = "E<sub>above MP hull</sub> (eV/atom)"
-        ax.layout.yaxis.title.text = "rolling MAE (eV/atom)"
-        ax.update_xaxes(range=x_lim)
-        ax.update_yaxes(range=y_lim)
+        fig.update_traces(hovertemplate="x = %{x:.2f} eV/atom<br>y = %{y:.2f} eV/atom")
+        fig.layout.xaxis.title.text = "E<sub>above MP hull</sub> (eV/atom)"
+        fig.layout.yaxis.title.text = "rolling MAE (eV/atom)"
+        fig.update_xaxes(range=x_lim)
+        fig.update_yaxes(range=y_lim)
         # exclude from hover tooltip
         scatter_kwds = dict(
             fill="toself", opacity=0.2, hoverinfo="skip", showlegend=False
         )
         peril_cone_anno = "MAE > |E<sub>above hull</sub>|"
-        ax.add_scatter(
+        fig.add_scatter(
             x=(-1, -dft_acc, dft_acc, 1) if show_dft_acc else (-1, 0, 1),
             y=(1, dft_acc, dft_acc, 1) if show_dft_acc else (1, 0, 1),
             name=peril_cone_anno,
             fillcolor="red",
             **scatter_kwds,
         )
-        ax.add_annotation(
-            x=0,
-            y=0.8,
-            text=peril_cone_anno,
-            showarrow=False,
-            yref="paper",
+        fig.add_annotation(
+            x=0, y=0.8, text=peril_cone_anno, showarrow=False, yref="paper"
         )
 
         if show_dummy_mae:
-            ax.add_hline(
+            fig.add_hline(
                 y=dummy_mae,
                 line=dict(dash="dash", width=0.5),
                 annotation_text=dummy_mae_text,
             )
 
         if show_dft_acc:
-            ax.add_scatter(
+            fig.add_scatter(
                 x=(-dft_acc, dft_acc, 0, -dft_acc),
                 y=(dft_acc, dft_acc, 0, dft_acc),
                 name="MAE < |Corrected GGA error|",
                 fillcolor="red",
                 **scatter_kwds,
             )
-            ax.add_annotation(
+            fig.add_annotation(
                 x=-dft_acc,
                 y=dft_acc,
                 text=f"<a {href=}>Corrected GGA Accuracy<br>for rel. Energy</a> "
@@ -541,10 +564,10 @@ def rolling_mae_vs_hull_dist(
                 ayref="y",
             )
 
-        ax.data = ax.data[::-1]  # bring px.line() to front
+        fig.data = fig.data[::-1]  # bring px.line() to front
         # plot rectangle to indicate MAE window size
         x0, y0 = x_lim[1] - 0.01, y_lim[0] + 0.01
-        ax.add_annotation(
+        fig.add_annotation(
             x=x0 - window,
             y=y0,
             text=window_bar_anno,
@@ -554,15 +577,9 @@ def rolling_mae_vs_hull_dist(
             yanchor="bottom",
             xanchor="right",
         )
-        ax.add_shape(
-            type="rect",
-            x0=x0,
-            y0=y0,
-            x1=x0 - window,
-            y1=y0 + window / 5,
-        )
+        fig.add_shape(type="rect", x0=x0, y0=y0, x1=x0 - window, y1=y0 + window / 5)
 
-    return ax, df_rolling_err, df_err_std
+    return fig, df_rolling_err, df_err_std
 
 
 def cumulative_precision_recall(

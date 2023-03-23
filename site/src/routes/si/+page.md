@@ -6,6 +6,7 @@
   import WrenformerRollingMaeBatches from '$figs/wrenformer-rolling-mae-vs-hull-dist-wbm-batches.svelte'
   import M3gnetRollingMaeBatches from '$figs/m3gnet-rolling-mae-vs-hull-dist-wbm-batches.svelte'
   import MegnetRollingMaeBatches from '$figs/megnet-rolling-mae-vs-hull-dist-wbm-batches.svelte'
+  import HistClfPredHullDistModels from '$figs/hist-clf-pred-hull-dist-models.svelte'
   import { onMount } from 'svelte'
 
   let mounted = false
@@ -36,7 +37,7 @@ To avoid potential confusion for people reading the code, we may in places calcu
 
 ## MP Elemental Reference Energies
 
-{#if browser}
+{#if mounted}
 <MPRefEnergies />
 {/if}
 
@@ -44,9 +45,11 @@ To avoid potential confusion for people reading the code, we may in places calcu
 
 ## Classification Histograms using Model-Predicted Energies
 
-![Histograms of using predicted formation energies for stability classification](./figs/hist-pred-energy-vs-hull-dist-models.webp)
+{#if mounted}
+<HistClfPredHullDistModels />
+{/if}
 
-> @label:fig:hist-pred-energy-vs-hull-dist-models Similar to [this figure](/paper#fig:hist-true-energy-vs-hull-dist-models), this histogram shows model stability classification as a function of the distance to the convex hull. The difference here being the $x$ axis showing model-predicted rather than DFT ground-truth distance to the convex hull.
+> @label:fig:hist-clf-pred-hull-dist-models Similar to [this figure](/paper#fig:hist-clf-true-hull-dist-models), this histogram shows model stability classification as a function of the distance to the convex hull. The difference here being the $x$ axis showing model-predicted rather than DFT ground-truth distance to the convex hull. Intuitively, it shows hof often models misclassify as a function of how far they think a material is from the convex hull.
 
 ## WBM Batch Robustness as a Measure of Extrapolation Prowess
 
