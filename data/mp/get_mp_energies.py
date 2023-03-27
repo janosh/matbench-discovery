@@ -4,7 +4,7 @@ import os
 import pandas as pd
 from aviary.wren.utils import get_aflow_label_from_spglib
 from mp_api.client import MPRester
-from pymatviz.utils import annotate_mae_r2
+from pymatviz.utils import annotate_metrics
 from tqdm import tqdm
 
 from matbench_discovery import today
@@ -71,7 +71,7 @@ ax = df.plot.scatter(
     title=f"{today} - {len(df):,} MP entries",
 )
 
-annotate_mae_r2(df.formation_energy_per_atom, df.decomposition_enthalpy)
+annotate_metrics(df.formation_energy_per_atom, df.decomposition_enthalpy)
 # result on 2023-01-10: plots match. no correlation between formation energy and
 # decomposition enthalpy. R^2 = -1.571, MAE = 1.604
 # ax.figure.savefig(f"{module_dir}/mp-decomp-enth-vs-e-form.webp", dpi=300)

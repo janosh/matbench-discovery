@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { browser } from '$app/environment'
+  import LargestEachErrorsFpDiffModels from '$figs/largest-each-errors-fp-diff-models.svelte'
+  import LargeFpDiffVsEachError from '$figs/largest-fp-diff-each-error-models.svelte'
   import { PtableInset } from '$lib'
   import type { ChemicalElement } from 'elementari'
   import { ColorBar, ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
@@ -78,6 +81,31 @@ actual energy distance to the convex hull.
     />
   </TableInset>
 </PeriodicTable>
+
+<h2>Analysis of E<sub>above hull</sub> Errors as a Function of Relaxation Change</h2>
+
+Taking structures with the largest difference in atomic environments before vs after
+relaxation as measured by<code>matminer</code>'s
+<a
+  href="https://hackingmaterials.lbl.gov/matminer/matminer.featurizers.structure.html#matminer.featurizers.structure.sites.SiteStatsFingerprint"
+>
+  <code>SiteStatsFingerprint</code>
+</a>
+(which is volume independent so changes in fingerprint require ion migration or similar) and
+plotting against that the absolute E<sub>above hull</sub> errors for each model.
+
+{#if browser}
+  <LargeFpDiffVsEachError style="margin: 2em 0;" />
+{/if}
+
+Same plot except taking the structures with largest difference in atomic environments
+(again measured by
+<code>SiteStatsFingerprint</code> before vs after relaxation) and plotting all model
+errors.
+
+{#if browser}
+  <LargestEachErrorsFpDiffModels style="margin: 2em 0;" />
+{/if}
 
 <style>
   form {
