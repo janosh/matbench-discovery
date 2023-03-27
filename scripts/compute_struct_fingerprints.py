@@ -7,6 +7,7 @@ Might point to deficiencies in the data or models architecture.
 # %%
 import os
 import warnings
+from glob import glob
 
 import numpy as np
 import pandas as pd
@@ -46,6 +47,7 @@ slurm_vars = slurm_submit(
     account="LEE-SL3-CPU",
     time="6:0:0",
     array=f"1-{slurm_array_task_count}",
+    slurm_flags=("--mem", "30G"),
 )
 
 
@@ -95,4 +97,28 @@ for struct_col, fp_col in (
         except Exception as exc:
             print(f"{fp_col} for {row.Index} failed: {exc}")
 
-df_in.filter(like="site_stats_fingerprint").to_json(out_path)
+df_in.filter(like="site_stats_fingerprint").reset_index().to_json(out_path)
+
+
+# %%
+running_as_slurm_job = os.getenv("SLURM_JOB_ID")
+if running_as_slurm_job:
+    print(f"Job wrote {out_path=} and finished at {timestamp}")
+    raise SystemExit(0)
+
+
+# %%
+out_files = glob(f"{out_dir}/site-stats-*.json.gz")
+
+found_idx = [int(name.split("-")[-1].split(".")[0]) for name in out_files]
+print(f"Found {len(out_files)=:,}")
+missing_files = sorted(set(range(1, slurm_array_task_count + 1)) - set(found_idx))
+if missing_files:
+    print(f"{len(missing_files)=}: {missing_files}")
+
+df_out = pd.concat(pd.read_json(out_file) for out_file in tqdm(out_files))
+
+
+df_out.index.name = "material_id"
+
+df_out.reset_index().to_json(f"{out_dir}/site-stats.json.gz")
