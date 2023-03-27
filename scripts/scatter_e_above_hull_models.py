@@ -53,6 +53,9 @@ df_melt["y_bin"] = pd.cut(df_melt[each_pred_col], bins=n_bins)
 df_plot = df_melt.groupby(["x_bin", "y_bin", "Model"]).first().dropna().reset_index()
 print(f"{len(df_plot)=:,} / {len(df_melt)=:,} = {len(df_plot)/len(df_melt):.1%}")
 
+# sort legend and facet plots by MAE
+legend_order = list(df_metrics.T.MAE.sort_values().index)
+
 
 # %% scatter plot of actual vs predicted e_form_per_atom
 fig = px.scatter(
@@ -63,6 +66,7 @@ fig = px.scatter(
     hover_data=hover_cols,
     hover_name=df_preds.index.name,
     opacity=0.7,
+    category_orders={facet_col: legend_order},
 )
 
 for trace in fig.data:
@@ -90,6 +94,7 @@ fig = px.scatter(
     hover_data=hover_cols,
     hover_name=df_preds.index.name,
     opacity=0.7,
+    category_orders={facet_col: legend_order},
 )
 
 for trace in fig.data:
@@ -132,6 +137,7 @@ fig = px.scatter(
     # opacity=0.4,
     range_x=domain,
     range_y=domain,
+    category_orders={facet_col: legend_order},
 )
 
 x_title = fig.layout.xaxis.title.text  # used in annotations below

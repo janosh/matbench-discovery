@@ -4,7 +4,7 @@
   import { fade } from 'svelte/transition'
 
   let show_tips: boolean
-  const tips_title = `Tips for using this site`
+  const tips_title = `Usage Tips`
   let dialog: HTMLDialogElement
   let btn: HTMLButtonElement
 
