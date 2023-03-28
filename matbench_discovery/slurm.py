@@ -51,7 +51,7 @@ def slurm_submit(
         partition (str, optional): Slurm partition.
         account (str, optional): Account to charge for this job.
         slurm_flags (str | list[str], optional): Extra slurm CLI flags. Defaults to ().
-            Examples: ('--nodes 1', '--gpus-per-node 1') or ('--mem', '16000').
+            Examples: ('--nodes 1', '--gpus-per-node 1') or ('--mem', '16G').
         array (str, optional): Slurm array specifier. Defaults to None. Example:
             '9' (for SLURM_ARRAY_TASK_ID from 0-9 inclusive), '1-10' or '1-10%2', etc.
         pre_cmd (str, optional): Things like `module load` commands and environment

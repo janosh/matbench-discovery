@@ -11,11 +11,13 @@
   --toc-mobile-btn-color: white;
   --toc-desktop-nav-margin: 0 0 0 1em;
   --toc-min-width: 15em;
-  --toc-active-bg: darkcyan;
+  --toc-active-border: solid var(--blue);
+  --toc-active-border-width: 0 0 0 1pt;
+  --toc-active-bg: none;
+  --toc-active-border-radius: 0;
 
   --zoo-github-corner-color: var(--night);
   --zoo-github-corner-bg: white;
-
   --zoo-tooltip-bg: rgb(2, 17, 30);
 
   --sms-margin: 1em auto;
@@ -23,7 +25,7 @@
   --sms-max-width: 23em;
   --sms-border: 0.1px solid gray;
   --sms-focus-border: 0.1px solid white;
-  --sms-active-color: cornflowerblue;
+  --sms-active-color: var(--blue);
 }
 html {
   scroll-behavior: smooth;

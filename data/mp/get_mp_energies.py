@@ -57,7 +57,7 @@ df["spacegroup_number"] = [x["number"] for x in df.pop("symmetry")]
 df["wyckoff_spglib"] = [get_aflow_label_from_spglib(x) for x in tqdm(df.structure)]
 
 df.to_csv(DATA_FILES.mp_energies)
-# df = pd.read_csv(DATA_FILES.mp_energies)
+# df = pd.read_csv(DATA_FILES.mp_energies, na_filter=False)
 
 
 # %% reproduce fig. 1b from https://arxiv.org/abs/2001.10591 (as data consistency check)

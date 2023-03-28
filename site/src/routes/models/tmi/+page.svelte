@@ -1,7 +1,10 @@
 <script lang="ts">
   import { browser } from '$app/environment'
-  import LargestEachErrorsFpDiffModels from '$figs/largest-each-errors-fp-diff-models.svelte'
-  import LargeFpDiffVsEachError from '$figs/largest-fp-diff-each-error-models.svelte'
+  import EachErrorVsOccuCountRarestElementInStruct from '$figs/each-error-vs-occu-count-rarest-element-in-struct.svelte'
+  import ElementPrevalenceVsErr from '$figs/element-prevalence-vs-error.svelte'
+  import HistLargestEachErrorsFpDiffModels from '$figs/hist-largest-each-errors-fp-diff-models.svelte'
+  import ScatterLargestEachErrorsFpDiffModels from '$figs/scatter-largest-each-errors-fp-diff-models.svelte'
+  import ScatterLargeFpDiffVsEachError from '$figs/scatter-largest-fp-diff-each-error-models.svelte'
   import { PtableInset } from '$lib'
   import type { ChemicalElement } from 'elementari'
   import { ColorBar, ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
@@ -59,7 +62,6 @@ actual energy distance to the convex hull.
   {heatmap_values}
   color_scale={color_scale[0]}
   bind:active_element
-  style="margin: 0 -2em;"
   color_scale_range={[0, manual_cbar_max ? cbar_max : current_data_max]}
   precision={4}
 >
@@ -82,7 +84,20 @@ actual energy distance to the convex hull.
   </TableInset>
 </PeriodicTable>
 
-<h2>Analysis of E<sub>above hull</sub> Errors as a Function of Relaxation Change</h2>
+<h2>Does error correlate with element prevalence in training set?</h2>
+
+Answer: not much. You might (or might not) expect the more examples of structures
+containing a certain element models have seen in the training set, the smaller their
+average error on test set structures containing that element. That's not what we see in
+this plot. E<sub>above hull</sub> is all over the place as a function of elemental
+training set prevalence. Could be because the error is dominated by the the least abundant
+element in composition or the model errors are more dependent on geometry than chemistry.
+
+{#if browser}
+  <ElementPrevalenceVsErr style="margin: 2em 0;" />
+{/if}
+
+<h2>Does error correlate with relaxation change?</h2>
 
 Taking structures with the largest difference in atomic environments before vs after
 relaxation as measured by<code>matminer</code>'s
@@ -95,7 +110,7 @@ relaxation as measured by<code>matminer</code>'s
 plotting against that the absolute E<sub>above hull</sub> errors for each model.
 
 {#if browser}
-  <LargeFpDiffVsEachError style="margin: 2em 0;" />
+  <ScatterLargeFpDiffVsEachError style="margin: 2em 0;" />
 {/if}
 
 Same plot except taking the structures with largest difference in atomic environments
@@ -104,7 +119,29 @@ Same plot except taking the structures with largest difference in atomic environ
 errors.
 
 {#if browser}
-  <LargestEachErrorsFpDiffModels style="margin: 2em 0;" />
+  <ScatterLargestEachErrorsFpDiffModels style="margin: 2em 0;" />
+{/if}
+
+Another way to plot this is as a histogram. This shows the difference in
+SiteStatsFingerprint before vs after relaxation for structures with the largest (err<sub
+  >max</sub
+>) and smallest (err<sub>min</sub>) absolute error in predicted E<sub>above hull</sub>
+for each model and the mean of all models.
+
+{#if browser}
+  <HistLargestEachErrorsFpDiffModels style="margin: 2em 0;" />
+{/if}
+
+<h2>
+  Does model error correlate with structure's least prevalent element in training set?
+</h2>
+
+Answer: a little. The fact that structures containing only elements with high prevalence
+in the training set consistently see low errors across all models suggests that to get a
+universally robust model, it needs to be trained on lots of examples for every element.
+
+{#if browser}
+  <EachErrorVsOccuCountRarestElementInStruct style="margin: 2em 0;" />
 {/if}
 
 <style>

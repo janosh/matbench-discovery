@@ -48,7 +48,7 @@ train_path = f"{module_dir}/2022-11-25-features-mp/voronoi-features-mp-*.csv.bz2
 df_train = glob_to_df(train_path).set_index("material_id")
 print(f"{df_train.shape=}")
 
-df_mp = pd.read_csv(DATA_FILES.mp_energies).set_index("material_id")
+df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index("material_id")
 train_e_form_col = "formation_energy_per_atom"
 
 test_path = f"{module_dir}/2022-11-18-features-wbm-{task_type}.csv.bz2"
