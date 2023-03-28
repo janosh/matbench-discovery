@@ -41,7 +41,7 @@ slurm_vars = slurm_submit(
     account="LEE-SL3-CPU",
     time="3:0:0",
     array=f"1-{slurm_array_task_count}",
-    slurm_flags=("--mem", str(12_000)),
+    slurm_flags=("--mem", "12G"),
     # TF_CPP_MIN_LOG_LEVEL=2 means INFO and WARNING logs are not printed
     # https://stackoverflow.com/a/40982782
     pre_cmd="TF_CPP_MIN_LOG_LEVEL=2",
