@@ -445,8 +445,7 @@ fig.add_annotation(
 )
 x_axis_title = "WBM uncorrected formation energy (eV/atom)"
 fig.update_layout(xaxis_title=x_axis_title, margin=dict(l=10, r=10, t=40, b=10))
-# disabling zooming y-axis
-fig.update_yaxes(fixedrange=True)
+fig.update_yaxes(fixedrange=True)  # disable zooming y-axis
 fig.show(
     config=dict(
         modeBarButtonsToRemove=["lasso2d", "select2d", "autoScale2d", "toImage"],

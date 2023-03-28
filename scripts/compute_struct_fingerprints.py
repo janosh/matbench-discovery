@@ -36,12 +36,11 @@ data_path = {
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", 0))
 slurm_array_task_count = 100
 
-job_name = f"make-{data_name}-struct-fingerprints"
 out_dir = f"{ROOT}/data/{data_name}/structure-fingerprints"
 os.makedirs(out_dir, exist_ok=True)
 
 slurm_vars = slurm_submit(
-    job_name=job_name,
+    job_name=f"{data_name}-struct-fingerprints",
     out_dir=out_dir,
     partition="icelake-himem",
     account="LEE-SL3-CPU",
@@ -117,7 +116,6 @@ if missing_files:
     print(f"{len(missing_files)=}: {missing_files}")
 
 df_out = pd.concat(pd.read_json(out_file) for out_file in tqdm(out_files))
-
 
 df_out.index.name = "material_id"
 
