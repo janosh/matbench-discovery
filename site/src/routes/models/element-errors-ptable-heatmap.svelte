@@ -13,7 +13,7 @@
   let manual_cbar_max: boolean = false
   let normalized: boolean = false
   const test_set_std = Object.values(
-    per_elem_errors['Test set standard deviation (eV/atom)']
+    per_elem_errors[`Test set standard deviation (eV/atom)`]
   ) as number[] // 1e9 to avoid div by 0
 
   $: heatmap_values = (Object.values(per_elem_errors[current_model[0]]) as number[]).map(
