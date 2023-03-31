@@ -111,7 +111,7 @@ for idx, model in enumerate((m3ae_col, *df_metrics)):
 
 title = (
     f"Norm-diff between initial/final SiteStatsFingerprint<br>"
-    f"of the {n_structs} highest-error structures for each model"
+    f"of the {n_structs} highest and lowest error structures for each model"
 )
 fig.layout.title.update(text=title, xanchor="center", x=0.5)
 fig.layout.legend.update(
@@ -232,12 +232,13 @@ fig.show()
 
 
 # %% map average model error onto elements
-df_wbm["fractional_composition"] = [
+frac_comp_col = "fractional composition"
+df_wbm[frac_comp_col] = [
     Composition(comp).fractional_composition for comp in tqdm(df_wbm.formula)
 ]
 
 df_frac_comp = pd.json_normalize(
-    [comp.as_dict() for comp in df_wbm["fractional_composition"]]
+    [comp.as_dict() for comp in df_wbm[frac_comp_col]]
 ).set_index(df_wbm.index)
 assert all(
     df_frac_comp.sum(axis=1).round(6) == 1
@@ -250,23 +251,41 @@ assert all(
 
 
 # %%
+comp_col = "composition"
+df_wbm[comp_col] = [Composition(comp) for comp in tqdm(df_wbm.formula)]
+
+test_set_std_col = "Test set standard deviation (eV/atom)"
+for elem in tqdm(df_elem_err.index):
+    mask = df_wbm[comp_col].map(lambda comp: elem in comp)  # noqa: B023
+    elem_test_set_std = df_wbm[mask][each_true_col].std()
+    df_elem_err.loc[elem, test_set_std_col] = elem_test_set_std
+
+
+# %%
+fig = ptable_heatmap_plotly(
+    df_elem_err[test_set_std_col], precision=".2f", colorscale="Inferno"
+)
+fig.show()
+
+
+# %%
+normalized = True
+# cs_range = (None, 0.5)
 for model in (*df_metrics, m3ae_col):
     df_elem_err[model] = (
         df_frac_comp * df_each_err[model].abs().values[:, None]
     ).mean()
-    fig = ptable_heatmap_plotly(
-        df_elem_err[model],
-        precision=".2f",
-        fill_value=None,
-        cscale_range=(None, 0.2),
-        colorscale="Turbo",
-    )
-    fig.layout.title.update(text=model, x=0.35, y=0.9, font_size=20)
+    per_elem_err = df_elem_err[model]
+    per_elem_err.name = f"{model} (eV/atom)"
+    if normalized:
+        per_elem_err /= df_elem_err[test_set_std_col]
+        per_elem_err.name = f"{model} (normalized by test set std)"
+    fig = ptable_heatmap_plotly(per_elem_err, precision=".2f", colorscale="Inferno")
     fig.show()
 
 
 # %%
-df_elem_err.to_json(f"{MODELS}/per-element/per-element-model-each-errors.json")
+df_elem_err.round(4).to_json(f"{MODELS}/tmi/per-element-model-each-errors.json")
 
 
 # %% check correlation and R2 of elemental prevalence in MP training data vs.
