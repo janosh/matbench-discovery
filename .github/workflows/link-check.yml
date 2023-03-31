@@ -8,10 +8,4 @@ on:
 
 jobs:
   markdown-link-check:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
-
-      - name: Run markdown link check
-        uses: gaurav-nelson/github-action-markdown-link-check@v1
+    uses: janosh/workflows/.github/workflows/markdown-link-check.yml@main

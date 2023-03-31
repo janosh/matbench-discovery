@@ -7,57 +7,14 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# set permissions of GITHUB_TOKEN to allow deployment to GitHub Pages
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 jobs:
   build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: pyproject.toml
-
-      - name: Set up node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      - name: Install dependencies
-        run: |
-          pip install lazydocs  # used in package.json script
-          # lazydocs needs package deps to be installed
-          pip install -e .
-          cd site
-          npm install
-
-      - name: Build site
-        run: |
-          python scripts/make_api_docs.py
-          cd site
-          npm run build
-
-      - name: Upload build artifact
-        uses: actions/upload-pages-artifact@v1
-        with:
-          path: site/build
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v1
+    uses: janosh/workflows/.github/workflows/nodejs-gh-pages.yml@main
+    with:
+      python-version: "3.11"
+      working-directory: site
+      pre-build: |
+        pip install lazydocs
+        # lazydocs needs package deps to be installed
+        pip install ..
+        python ../scripts/make_api_docs.py

@@ -6,6 +6,7 @@
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
   import type { Snapshot } from './$types'
+  import ElementErrorsPtableHeatmap from './element-errors-ptable-heatmap.svelte'
 
   export let data
 
@@ -83,6 +84,10 @@
       </li>
     {/each}
   </ol>
+</div>
+
+<div class="pull-left">
+  <ElementErrorsPtableHeatmap class="pull-left" />
 </div>
 
 <style>
