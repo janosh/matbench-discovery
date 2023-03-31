@@ -11,9 +11,10 @@ jobs:
   build:
     uses: janosh/workflows/.github/workflows/nodejs-gh-pages.yml@main
     with:
+      python-version: "3.11"
       working-directory: site
       pre-build: |
         pip install lazydocs
         # lazydocs needs package deps to be installed
-        pip install -e ..
+        pip install ..
         python ../scripts/make_api_docs.py
