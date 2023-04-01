@@ -11,6 +11,7 @@ __pycache__
 *.csv.bz2
 *.pkl.gz
 data/**/raw
+data/**/tsne
 data/2022-*
 data/m3gnet-*
 

@@ -3,6 +3,7 @@
 
 # %%
 import os
+from datetime import datetime
 from typing import Any, Literal
 
 import numpy as np
@@ -38,6 +39,8 @@ data_path = {"wbm": DATA_FILES.wbm_summary, "mp": DATA_FILES.mp_energies}[data_n
 print(f"{data_path=}")
 print(f"{out_dim=}")
 print(f"{projection_type=}")
+start_time = datetime.now()
+print(f"job started at {start_time:%Y-%m-%d %H:%M:%S}")
 df_in = pd.read_csv(data_path, na_filter=False).set_index("material_id")
 
 
@@ -61,13 +64,13 @@ if projection_type == "tsne":
     projector = TSNE(
         n_components=out_dim, random_state=0, n_iter=250, n_iter_without_progress=50
     )
-    out_cols = [f"t-SNE {idx}" for idx in range(out_dim)]
+    out_cols = [f"{out_dim}d t-SNE {idx + 1}" for idx in range(out_dim)]
 elif projection_type == "umap":
     from umap import UMAP
 
     # TODO this execution path is untested (was never run yet)
     projector = UMAP(n_components=out_dim, random_state=0, metric=metric)
-    out_cols = [f"t-SNE {idx+1}" for idx in range(out_dim)]
+    out_cols = [f"{out_dim}d UMAP {idx + 1}" for idx in range(out_dim)]
 
 identity = np.eye(one_hot_dim)
 
@@ -78,17 +81,20 @@ def sum_one_hot_elem(formula: str) -> np.ndarray[Any, np.int64]:
 
 
 in_col = {"wbm": "formula", "mp": "formula_pretty"}[data_name]
-df_in[f"one_hot_{one_hot_dim}"] = [
-    sum_one_hot_elem(formula) for formula in tqdm(df_in[in_col])
-]
+one_hot_encoding = np.array(
+    [sum_one_hot_elem(formula) for formula in tqdm(df_in[in_col])]
+)
 
-
-one_hot_encoding = np.array(df_in[f"one_hot_{one_hot_dim}"].to_list())
 projections = projector.fit_transform(one_hot_encoding)
 
 df_in[out_cols] = projections
 
-out_path = f"{out_dir}/one-hot-{one_hot_dim}-composition-{out_dim}d.csv"
+out_path = f"{out_dir}/one-hot-{one_hot_dim}-composition-{out_dim}d.csv.gz"
 df_in[out_cols].to_csv(out_path)
 
 print(f"Wrote projections to {out_path!r}")
+end_time = datetime.now()
+print(
+    f"Job finished at {end_time:%Y-%m-%d %H:%M:%S} and took "
+    f"{(end_time - start_time).seconds} sec"
+)
