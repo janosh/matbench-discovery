@@ -6,12 +6,12 @@ from glob import glob
 
 from lazydocs import generate_docs
 
-from matbench_discovery import ROOT
+SITE = f"{os.path.dirname(__file__)}/../site"
 
-with open(f"{ROOT}/site/package.json") as file:
+with open(f"{SITE}/package.json") as file:
     pkg = json.load(file)  # get repo URL from package.json
 
-out_path = f"{ROOT}/site/src/routes/api"
+out_path = f"{SITE}/src/routes/api"
 
 for path in glob(f"{out_path}/*.md"):
     os.remove(path)

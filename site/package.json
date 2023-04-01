@@ -13,8 +13,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "serve": "vite build && vite preview",
-    "check": "svelte-check",
-    "make-api-docs": "cd .. && python scripts/make_api_docs.py"
+    "check": "svelte-check"
   },
   "devDependencies": {
     "@iconify/svelte": "^3.1.0",
