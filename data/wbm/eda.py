@@ -3,21 +3,26 @@ import os
 
 import numpy as np
 import pandas as pd
+import plotly.express as px
 from pymatgen.core import Composition
 from pymatviz import count_elements, ptable_heatmap_plotly
 from pymatviz.utils import save_fig
 
 from matbench_discovery import FIGS, ROOT, today
+from matbench_discovery import plots as plots
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.energy import mp_elem_reference_entries
-from matbench_discovery.plots import pio
+from matbench_discovery.preds import df_each_err, each_true_col
+
+__author__ = "Janosh Riebesell"
+__date__ = "2023-03-30"
 
 """
-Compare MP and WBM elemental prevalence. Starting with WBM, MP below.
+WBM exploratory data analysis.
+Start with comparing MP and WBM elemental prevalence.
 """
 
 module_dir = os.path.dirname(__file__)
-print(f"{pio.templates.default=}")
 about_data_page = f"{ROOT}/site/src/routes/about-the-data"
 
 
@@ -170,3 +175,61 @@ for symbol, e_per_atom, *_, num in df_ref.itertuples(index=False):
 fig.show()
 
 save_fig(fig, f"{FIGS}/mp-elemental-ref-energies.svelte")
+
+
+# %% plot 2d and 3d t-SNE projections of one-hot encoded element vectors summed by
+# weight in each WBM composition. TLDR: no obvious structure in the data
+# was hoping to find certain clusters to have higher or lower errors after seeing
+# many models struggle on the halogens in per-element error periodic table heatmaps
+# https://matbench-discovery.janosh.dev/models
+df_2d_tsne = pd.read_csv(f"{module_dir}/tsne/one-hot-112-composition-2d.csv.gz")
+df_2d_tsne = df_2d_tsne.set_index("material_id")
+
+df_3d_tsne = pd.read_csv(f"{module_dir}/tsne/one-hot-112-composition-3d.csv.gz")
+model = "Wrenformer"
+df_3d_tsne = pd.read_csv(
+    f"{module_dir}/tsne/one-hot-112-composition+{model}-each-err-3d-metric=eucl.csv.gz"
+)
+df_3d_tsne = df_3d_tsne.set_index("material_id")
+
+df_wbm[list(df_2d_tsne)] = df_2d_tsne
+df_wbm[list(df_3d_tsne)] = df_3d_tsne
+df_wbm[list(df_each_err.add_suffix(" abs EACH error"))] = df_each_err.abs()
+
+
+# %%
+color_col = f"{model} abs EACH error"
+clr_range_max = df_wbm[color_col].mean() + df_wbm[color_col].std()
+
+
+# %%
+fig = px.scatter(
+    df_wbm,
+    x="2d t-SNE 1",
+    y="2d t-SNE 2",
+    color=color_col,
+    hover_name="material_id",
+    hover_data=("formula", each_true_col),
+    range_color=(0, clr_range_max),
+)
+fig.show()
+
+
+# %%
+fig = px.scatter_3d(
+    df_wbm,
+    x="3d t-SNE 1",
+    y="3d t-SNE 2",
+    z="3d t-SNE 3",
+    color=color_col,
+    custom_data=["material_id", "formula", each_true_col, color_col],
+    range_color=(0, clr_range_max),
+)
+fig.data[0].hovertemplate = (
+    "<b>material_id: %{customdata[0]}</b><br><br>"
+    "t-SNE: (%{x:.2f}, %{y:.2f}, %{z:.2f})<br>"
+    "Formula: %{customdata[1]}<br>"
+    "E<sub>above hull</sub>: %{customdata[2]:.2f}<br>"
+    f"{color_col}: %{{customdata[3]:.2f}}<br>"
+)
+fig.show()

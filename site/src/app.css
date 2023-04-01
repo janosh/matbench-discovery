@@ -15,6 +15,7 @@
   --toc-active-border-width: 0 0 0 1pt;
   --toc-active-bg: none;
   --toc-active-border-radius: 0;
+  --toc-max-height: 85vh;
 
   --zoo-github-corner-color: var(--night);
   --zoo-github-corner-bg: white;
