@@ -86,7 +86,9 @@
   </ol>
 </div>
 
-<div class="pull-left">
+<div class="pull-left" style="margin-top: 6em;">
+  <h2>Per-Element Model Error Heatmaps</h2>
+
   <ElementErrorsPtableHeatmap class="pull-left" />
 </div>
 

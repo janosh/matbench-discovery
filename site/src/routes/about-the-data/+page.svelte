@@ -5,14 +5,14 @@
   import { PtableInset } from '$lib'
   import DataReadme from '$root/data/wbm/readme.md'
   import type { ChemicalElement } from 'elementari'
-  import { ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
+  import { ColorBar, ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
   import { Toggle } from 'svelte-zoo'
   import type { Snapshot } from './$types'
   import mp_elem_counts from './mp-element-counts.json'
   import wbm_elem_counts from './wbm-element-counts.json'
 
   let log = true // log color scale
-  let color_scale = [`Turbo`]
+  let color_scale = [`Inferno`]
   let active_mp_elem: ChemicalElement
   let active_wbm_elem: ChemicalElement
 
@@ -38,6 +38,14 @@
       <TableInset slot="inset">
         <label for="log">Log color scale<Toggle id="log" bind:checked={log} /></label>
         <PtableInset element={active_wbm_elem} elem_counts={wbm_elem_counts} />
+        <ColorBar
+          text_side="top"
+          color_scale={color_scale[0]}
+          tick_labels={5}
+          precision={3}
+          range={[0, Math.max(...Object.values(wbm_elem_counts))]}
+          style="width: 85%; margin: 0 2em;"
+        />
       </TableInset>
     </PeriodicTable>
     <ColorScaleSelect bind:selected={color_scale} />
@@ -52,6 +60,14 @@
       <TableInset slot="inset">
         <label for="log">Log color scale<Toggle id="log" bind:checked={log} /></label>
         <PtableInset element={active_mp_elem} elem_counts={mp_elem_counts} />
+        <ColorBar
+          text_side="top"
+          color_scale={color_scale[0]}
+          tick_labels={5}
+          precision={3}
+          range={[0, Math.max(...Object.values(mp_elem_counts))]}
+          style="width: 85%; margin: 0 2em;"
+        />
       </TableInset>
     </PeriodicTable>
   </svelte:fragment>

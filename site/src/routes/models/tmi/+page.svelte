@@ -1,6 +1,6 @@
 <script lang="ts">
   import { browser } from '$app/environment'
-  import EachErrorVsOccuCountRarestElementInStruct from '$figs/each-error-vs-occu-count-rarest-element-in-struct.svelte'
+  import EachErrorVsLeastPrevalentElementInStruct from '$figs/each-error-vs-least-prevalent-element-in-struct.svelte'
   import ElementPrevalenceVsErr from '$figs/element-prevalence-vs-error.svelte'
   import HistLargestEachErrorsFpDiffModels from '$figs/hist-largest-each-errors-fp-diff-models.svelte'
   import ScatterLargestEachErrorsFpDiffModels from '$figs/scatter-largest-each-errors-fp-diff-models.svelte'
@@ -69,5 +69,5 @@ in the training set consistently see low errors across all models suggests that 
 universally robust model, it needs to be trained on lots of examples for every element.
 
 {#if browser}
-  <EachErrorVsOccuCountRarestElementInStruct style="margin: 2em 0;" />
+  <EachErrorVsLeastPrevalentElementInStruct style="margin: 2em 0;" />
 {/if}

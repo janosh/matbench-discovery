@@ -18,7 +18,7 @@ def test_classify_stable(
     stability_threshold: float, expected: tuple[int, int, int, int]
 ) -> None:
     np.random.seed(0)  # for reproducibility, makeDataFrame() uses np.random
-    df = pd.util.testing.makeDataFrame()
+    df = pd._testing.makeDataFrame()
 
     true_pos, false_neg, false_pos, true_neg = classify_stable(
         e_above_hull_true=df.A,

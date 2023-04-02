@@ -13,7 +13,7 @@ const { default: pkg } = await import(`./package.json`, {
 
 /** @type {import('@sveltejs/kit').Config} */
 export default {
-  extensions: [`.svelte`, `.svx`, `.md`],
+  extensions: [`.svelte`, `.svx`, `.md`, `.html`],
 
   preprocess: [
     // replace readme links to docs with site-internal links
@@ -109,6 +109,7 @@ export default {
       $site: `.`,
       $root: `..`,
       $paper: `src/routes/paper`,
+      $models: `src/routes/models`,
       $figs: `src/figs`,
     },
   },

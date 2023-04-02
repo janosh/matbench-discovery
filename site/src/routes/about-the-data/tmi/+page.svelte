@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { browser } from '$app/environment'
+  import BarElementCounts from '$figs/bar-element-counts-mp+wbm-normalized=False.svelte'
+  import BarElementCountsNormalized from '$figs/bar-element-counts-mp+wbm-normalized=True.svelte'
   import { PtableInset } from '$lib'
   import type { ChemicalElement } from 'elementari'
   import { ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
@@ -18,9 +21,10 @@
   let batch_keys = Object.keys(elem_counts).filter((k) => k.startsWith(`batch=`))
   let log = false // log color scale
   let filter = arity_keys[0]
-  let color_scale = [`Turbo`]
+  let color_scale = [`Inferno`]
   let active_element: ChemicalElement
   $: active_counts = elem_counts[filter]
+  let normalized_bar_counts: boolean = false
 
   const style = `display: flex; place-items: center; place-content: center;`
 
@@ -73,6 +77,21 @@ structure was generated in).
   </TableInset>
 </PeriodicTable>
 
+<h2>Element Counts</h2>
+
+<label>
+  Normalize by data set size
+  <input type="checkbox" bind:checked={normalized_bar_counts} />
+</label>
+
+{#if browser}
+  {#if normalized_bar_counts}
+    <BarElementCountsNormalized />
+  {:else}
+    <BarElementCounts />
+  {/if}
+{/if}
+
 <style>
   span {
     display: flex;
@@ -84,5 +103,11 @@ structure was generated in).
   }
   ul > li strong.active {
     background-color: teal;
+  }
+  label {
+    display: flex;
+    gap: 1ex;
+    place-content: center;
+    place-items: center;
   }
 </style>
