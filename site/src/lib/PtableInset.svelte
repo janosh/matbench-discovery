@@ -30,5 +30,6 @@
   strong {
     display: block;
     text-align: center;
+    min-height: 18pt;
   }
 </style>

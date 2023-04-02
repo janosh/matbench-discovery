@@ -61,19 +61,6 @@ fig = hist_classified_stable_vs_hull_dist(
     **kwds,  # type: ignore[arg-type]
 )
 
-# true_pos, false_neg, false_pos, true_neg = classify_stable(
-#     df_melt[each_true_col], df_melt[each_pred_col], stability_threshold=0
-# )
-# import numpy as np
-
-# df_melt[(clf_col := "classified")] = np.array(clf_labels)[
-#     true_pos * 0 + false_neg * 1 + false_pos * 2 + true_neg * 3
-# ]
-# import pandas as pd
-
-# pd.cut(df_melt[each_pred_col], bins=10).value_counts()
-
-
 # TODO add line showing the true hull distance histogram on each subplot
 show_metrics = False
 if backend == "matplotlib":
