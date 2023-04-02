@@ -179,7 +179,7 @@ def test_df_wbm() -> None:
 @pytest.mark.parametrize("pattern", ["tmp/*df.csv", "tmp/*df.json"])
 def test_glob_to_df(pattern: str) -> None:
     try:
-        df = pd.util.testing.makeMixedDataFrame()
+        df = pd._testing.makeMixedDataFrame()
 
         os.makedirs(f"{ROOT}/tmp", exist_ok=True)
         df.to_csv(f"{ROOT}/tmp/dummy_df.csv", index=False)

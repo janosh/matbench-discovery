@@ -6,12 +6,12 @@ Last plot is split into 2x3 subplots, one for each model.
 
 # %%
 import numpy as np
-import pandas as pd
-from pymatviz.utils import add_identity_line, save_fig
+import plotly.express as px
+from pymatviz.utils import add_identity_line, bin_df_cols, save_fig
 
 from matbench_discovery import FIGS, ROOT
 from matbench_discovery.metrics import classify_stable
-from matbench_discovery.plots import clf_color_map, clf_colors, clf_labels, px
+from matbench_discovery.plots import clf_color_map, clf_colors, clf_labels
 from matbench_discovery.preds import (
     df_metrics,
     df_preds,
@@ -43,15 +43,8 @@ df_melt = df_preds.melt(
 df_melt[each_pred_col] = (
     df_melt[each_true_col] + df_melt[e_form_pred_col] - df_melt[e_form_col]
 )
-
-
-x_col, y_col = each_true_col, each_pred_col
-n_bins = 200
-df_melt["x_bin"] = pd.cut(df_melt[each_true_col], bins=n_bins)
-df_melt["y_bin"] = pd.cut(df_melt[each_pred_col], bins=n_bins)
-
-df_plot = df_melt.groupby(["x_bin", "y_bin", "Model"]).first().dropna().reset_index()
-print(f"{len(df_plot)=:,} / {len(df_melt)=:,} = {len(df_plot)/len(df_melt):.1%}")
+df_bin = bin_df_cols(df_melt, [each_true_col, each_pred_col], [facet_col], n_bins=200)
+df_bin = df_bin.reset_index()
 
 # sort legend and facet plots by MAE
 legend_order = list(df_metrics.T.MAE.sort_values().index)
@@ -59,7 +52,7 @@ legend_order = list(df_metrics.T.MAE.sort_values().index)
 
 # %% scatter plot of actual vs predicted e_form_per_atom
 fig = px.scatter(
-    df_plot,
+    df_bin,
     x=e_form_col,
     y=e_form_pred_col,
     color=facet_col,
@@ -87,7 +80,7 @@ img_path = f"{FIGS}/e-form-scatter-models"
 
 # %% scatter plot of actual vs predicted e_above_hull
 fig = px.scatter(
-    df_plot,
+    df_bin,
     x=each_true_col,
     y=each_pred_col,
     color=facet_col,
@@ -114,16 +107,16 @@ img_path = f"{FIGS}/e-above-hull-scatter-models"
 
 # %% plot all models in separate subplots
 true_pos, false_neg, false_pos, true_neg = classify_stable(
-    df_plot[each_true_col], df_plot[each_pred_col]
+    df_bin[each_true_col], df_bin[each_pred_col]
 )
 
-df_plot[(clf_col := "classified")] = np.array(clf_labels)[
+df_bin[(clf_col := "classified")] = np.array(clf_labels)[
     true_pos * 0 + false_neg * 1 + false_pos * 2 + true_neg * 3
 ]
 domain = (-4, 7)
 
 fig = px.scatter(
-    df_plot,
+    df_bin,
     x=each_true_col,
     y=each_pred_col,
     facet_col=facet_col,

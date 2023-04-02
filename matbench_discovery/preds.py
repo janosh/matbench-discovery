@@ -19,6 +19,7 @@ __date__ = "2023-02-04"
 e_form_col = "e_form_per_atom_mp2020_corrected"
 each_true_col = "e_above_hull_mp2020_corrected_ppd_mp"
 each_pred_col = "e_above_hull_pred"
+model_mean_err_col = "Mean over models"
 
 
 class PredFiles(Files):
