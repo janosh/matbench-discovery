@@ -109,6 +109,7 @@ export default {
       $site: `.`,
       $root: `..`,
       $paper: `src/routes/paper`,
+      $models: `src/routes/models`,
       $figs: `src/figs`,
     },
   },

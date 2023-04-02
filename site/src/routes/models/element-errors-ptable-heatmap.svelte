@@ -5,22 +5,24 @@
   import { MultiSelect } from 'svelte-multiselect'
   import per_elem_errors from './per-element-model-each-errors.json'
 
-  let color_scale = [`Inferno`]
-  let active_element: ChemicalElement
+  export let color_scale = [`Inferno`]
+  export let active_element: ChemicalElement
   // $: active_counts = elem_counts[filter]
-  let models = Object.keys(per_elem_errors)
-  let current_model: string[] = [models[1]]
-  let manual_cbar_max: boolean = false
-  let normalized: boolean = false
-  const test_set_std = Object.values(
-    per_elem_errors[`Test set standard deviation (eV/atom)`]
-  ) as number[] // 1e9 to avoid div by 0
+  export let models: string[] = Object.keys(per_elem_errors)
+  export let current_model: string[] = [models[1]]
+  export let manual_cbar_max: boolean = false
+  export let normalized: boolean = false
+
+  const test_set_std_key = Object.keys(per_elem_errors).find((key) =>
+    key.includes(`Test set standard deviation`)
+  ) as string
+  const test_set_std = Object.values(per_elem_errors[test_set_std_key]) as number[] // 1e9 to avoid div by 0
 
   $: heatmap_values = (Object.values(per_elem_errors[current_model[0]]) as number[]).map(
     (val, idx) => (normalized ? val / test_set_std[idx] || null : val)
   )
   $: current_data_max = Math.max(...heatmap_values)
-  let cbar_max: number | null = 0.03
+  export let cbar_max: number | null = 0.03
 
   export const snapshot = {
     capture: () => ({
@@ -35,12 +37,10 @@
   }
 </script>
 
-<h2>Per-Element Model Error Heatmaps</h2>
-
-This periodic table is shaded by the average model error for each element. The errors for
-every structure in the test set are projected onto the fraction of each element in the
-composition and averaged. The error is the absolute difference between the predicted and
-actual energy distance to the convex hull.
+This periodic table is shaded by the MAE for the model-predicted hull distance for each
+element. The errors for every structure in the test set are projected onto the fraction of
+each element in the composition and averaged over all structures. The error is the
+absolute difference between the predicted and actual energy distance to the convex hull.
 
 <MultiSelect bind:selected={current_model} options={models} maxSelect={1} minSelect={1} />
 
@@ -95,9 +95,6 @@ actual energy distance to the convex hull.
 </PeriodicTable>
 
 <style>
-  h2 {
-    text-align: center;
-  }
   form {
     display: flex;
     flex-direction: column;

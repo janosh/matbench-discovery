@@ -4,6 +4,7 @@
   import MetricsTable from '$figs/metrics-table.svelte'
   import CumulativeClfMetrics from '$figs/cumulative-clf-metrics.svelte'
   import RollingMaeModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'
+  import ElementErrorsPtableHeatmap from '$models/element-errors-ptable-heatmap.svelte'
   import { browser } from '$app/environment'
 </script>
 
@@ -140,6 +141,8 @@ Our initial benchmark release includes 8 models. @Fig:model-metrics includes all
 
 ## Results
 
+### Summary Table
+
 <MetricsTable />
 
 > @label:fig:model-metrics Regression and classification metrics for all models tested on our benchmark. The heat map ranges from yellow (best) to blue (worst) performance. DAF = discovery acceleration factor (see text), TPR = true positive rate, FNR = false negative rate, MAE = mean absolute error, RMSE = root mean squared error
@@ -151,6 +154,8 @@ The maximum possible DAF on our current test set is $\frac{1}{0.167} \approx 6$.
 
 We note that while F1 score and DAF of models that make one-shot predictions directly from unrelaxed inputs (CGCNN, MEGNet, Wrenformer) are seemingly unaffected, the $R^2$ of these models is significantly worse. The reason MEGNet outperforms M3GNet on DAF becomes clear from @fig:cumulative-clf-metrics. MEGNet's line ends at 41.6 k materials which is closest to the true number of 43 k stable materials. All other models overpredict this number by anywhere from 40% (~59 k for CGCNN) to 104% (87 k for Wrenformer), resulting in large numbers of false positive predictions that drag down their DAFs.
 
+### Cumulative Classification Metrics
+
 {#if browser}
 <CumulativeClfMetrics style="margin: 0 -2em 0 -4em;" />
 {/if}
@@ -161,6 +166,8 @@ We note that while F1 score and DAF of models that make one-shot predictions dir
 
 A line terminates when a model believes there are no more materials in the WBM test set below the MP convex hull. The dashed vertical line shows the actual number of materials on or below the MP hull. Most models overestimate the number of stable materials. The dashed diagonal Optimal Recall line would be achieved if a model never made a false negative prediction and predicts everything as unstable exactly when the true number of stable materials is reached. Zooming in on the top-left corner of the precision plot, we observe that MEGNet and the combo M3GNet + MEGNet are particularly suitable for very short discovery campaigns of less than 2000 and 3000 structure relaxations, respectively, after which M3GNet takes the lead on both precision and recall and does not relinquish for the remainder.
 
+### Rolling MAE vs. Hull Distance
+
 {#if browser}
 <RollingMaeModels />
 {/if}
@@ -169,6 +176,8 @@ A line terminates when a model believes there are no more materials in the WBM t
 
 @Fig:rolling-mae-vs-hull-dist-models visualizes a model's reliability as a function of a material's hull distance. The lower its rolling MAE exits the shaded triangle, the better. Inside this area, the model's mean error is larger than the distance to the convex hull, making misclassifications likely. Outside the triangle even if the model's error points toward the stability threshold at 0 eV from the hull (the plot's center), the mean error is too small to move a material over the stability threshold which would cause a false stability classification. M3GNet achieves the lowest overall MAE and exits the peril zone much sooner than other models on the right half of the plot. This means it rarely misclassifies unstable materials that lie more than 40 meV above the hull. On the plot's left half, CGCNN+P exits the peril zone first, albeit much further from the hull at more than 100 meV below. Essentially, all models are prone to false negative predictions even for materials far below the known hull which aligns with the smaller amount of training data for materials on or below the known convex hull (see the [test set's target distribution](/about-the-data#--target-distribution)).
 
+### Predicted Hull Distance Parity Plots
+
 {#if browser}
 <EachScatter />
 {/if}
@@ -176,6 +185,17 @@ A line terminates when a model believes there are no more materials in the WBM t
 > @label:fig:each-scatter-models Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth
 
 TODO: mention we consistently see deducting old MP corrections and applying 2020 scheme from MEGNEt e_form predictions increases MAE, no matter if paired with BOWSR, M3GNet, CHGNet or standalone
+
+### Per-Element Model Error Heatmap
+
+<ElementErrorsPtableHeatmap current_model={["Mean over models"]} />
+
+We observe that many models - notably excluding the ML-IAPs CHGNet and M3GNet - struggle with the halogens. The fact that this increase in error is largest for fluorine, the halogen with the largest electronegativity, suggests this could be related to the high degree of ionic bonds in materials containing halogens. GNNs might face difficulties in accurately capturing the long-range interactions required to describe such ionic bonds. Yet even if accurate, this leaves Wrenformer and Voronoi RF unaccounted for which also exhibit increased halogen errors.
+
+We don't believe this is a simple case of wider energy ranges for halogens in the test set making the prediction task inherently more difficult. Normalizing for this effect by dividing each element's error by the standard deviation over target energies of all structures containing said element, the halogen errors remains elevated.
+
+Another possibility is that ionic materials may be inadequately represented within the training dataset.
+Many GNN message-passing functions incorporate a soft attention coefficient designed to evaluate the significance of one atom's contribution to another. Insufficient training support for materials with ionic bonds could result in this coefficient primarily learning covalent interactions.
 
 ## Discussion
 
@@ -194,6 +214,8 @@ We welcome further model submissions as well as data contributions for version 2
 ## Acknowledgments
 
 Janosh Riebesell acknowledges support from the German Academic Scholarship Foundation ([Studienstiftung](https://wikipedia.org/wiki/Studienstiftung)) and gracious hosting as a visiting affiliate in the groups of Kristin Persson and Anubhav Jain.
+
+We would like to thank Jason Gibson, Ekin Dogus Cubuk, Tian Xie, Chi Chen and Ryota Tomioka for helpful discussions.
 
 ## Author Contributions
 
