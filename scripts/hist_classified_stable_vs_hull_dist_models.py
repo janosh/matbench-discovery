@@ -10,10 +10,7 @@ from typing import Final
 from pymatviz.utils import save_fig
 
 from matbench_discovery import FIGS, ROOT, today
-from matbench_discovery.plots import (
-    hist_classified_stable_vs_hull_dist,
-    plt,
-)
+from matbench_discovery.plots import hist_classified_stable_vs_hull_dist, plt
 from matbench_discovery.preds import df_metrics, df_preds, e_form_col, each_true_col
 
 __author__ = "Janosh Riebesell"
@@ -25,8 +22,8 @@ hover_cols = (df_preds.index.name, e_form_col, each_true_col, "formula")
 e_form_preds = "e_form_per_atom_pred"
 each_pred_col = "e_above_hull_pred"
 facet_col = "Model"
-models = list(df_metrics)
-# models = df_metrics.T.MAE.nsmallest(6).index  # top 6 models by MAE
+# sort facet plots by model's F1 scores (optionally only show top n=6)
+models = list(df_metrics.T.F1.sort_values().index)[::-1]
 
 df_melt = df_preds.melt(
     id_vars=hover_cols,
@@ -45,7 +42,7 @@ backend: Final = "plotly"
 rows, cols = len(models) // 2, 2
 which_energy: Final = "true"
 kwds = (
-    dict(facet_col=facet_col, facet_col_wrap=cols)
+    dict(facet_col=facet_col, facet_col_wrap=cols, category_orders={facet_col: models})
     if backend == "plotly"
     else dict(by=facet_col, figsize=(20, 20), layout=(rows, cols), bins=500)
 )

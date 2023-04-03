@@ -27,7 +27,7 @@ backend: Final = "matplotlib"
 df_preds[each_pred_col] = (
     df_preds[each_true_col] + df_preds[model_name] - df_preds[e_form_col]
 )
-df_preds[(batch_col := "batch_idx")] = df_preds.index.str.split("-").str[-2].astype(int)
+df_preds[(batch_col := "batch_idx")] = df_preds.index.str.split("-").str[1].astype(int)
 
 
 # %% matplotlib
