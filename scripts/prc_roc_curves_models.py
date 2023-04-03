@@ -11,14 +11,13 @@ from sklearn.metrics import auc, precision_recall_curve, roc_curve
 from tqdm import tqdm
 
 from matbench_discovery import FIGS
-from matbench_discovery.plots import pio
+from matbench_discovery import plots as plots
 from matbench_discovery.preds import df_each_pred, df_preds, each_true_col
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-01-30"
 
 
-pio.templates.default
 line = dict(dash="dash", width=0.5)
 
 facet_col = "Model"
