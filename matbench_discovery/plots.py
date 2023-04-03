@@ -339,6 +339,7 @@ def rolling_mae_vs_hull_dist(
     with_sem: bool = True,
     show_dft_acc: bool = False,
     show_dummy_mae: bool = False,
+    pbar: bool = True,
     **kwargs: Any,
 ) -> plt.Axes | go.Figure:
     """Rolling mean absolute error as the energy to the convex hull is varied. A scale
@@ -380,6 +381,8 @@ def rolling_mae_vs_hull_dist(
             meV/atom. Defaults to False.
         show_dummy_mae (bool, optional): If True, plot a line at the dummy MAE of always
             predicting the target mean.
+        pbar (bool, optional): If True, show a progress bar during rolling MAE
+            calculation. Defaults to True.
         **kwargs: Additional keyword arguments to pass to df.plot().
 
     Returns:
@@ -396,8 +399,10 @@ def rolling_mae_vs_hull_dist(
         df_rolling_err = pd.DataFrame(columns=models, index=bins)
         df_err_std = df_rolling_err.copy()
 
-        for model in (pbar := tqdm(models, desc="Calculating rolling MAE")):
-            pbar.set_postfix_str(model)
+        for model in (
+            prog_bar := tqdm(models, desc="Calculating rolling MAE", disable=not pbar)
+        ):
+            prog_bar.set_postfix_str(model)
             for idx, bin_center in enumerate(bins):
                 low = bin_center - window
                 high = bin_center + window

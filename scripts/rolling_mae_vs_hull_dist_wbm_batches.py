@@ -13,9 +13,8 @@ from matbench_discovery.preds import df_each_pred, df_preds, e_form_col, each_tr
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
 
-df_each_pred[(batch_col := "batch_idx")] = (
-    "Batch " + df_each_pred.index.str.split("-").str[1]
-)
+batch_col = "batch_idx"
+df_each_pred[batch_col] = "Batch " + df_each_pred.index.str.split("-").str[1]
 df_err, df_std = None, None  # variables to cache rolling MAE and std
 
 
@@ -43,6 +42,7 @@ for idx, marker in enumerate(markers, 1):
         backend="matplotlib",
         ax=ax,
         just_plot_lines=idx > 1,
+        pbar=False,
     )
 
 
@@ -54,7 +54,7 @@ for line in ax.lines:
 
 
 # %% plotly
-model = "Wrenformer"  # ["M3GNet", "Wrenformer", "MEGNet", "Voronoi RF"]
+model = "CHGNet"
 df_pivot = df_each_pred.pivot(columns=batch_col, values=model)
 
 # unstack two-level column index into new model column
