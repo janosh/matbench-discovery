@@ -7,7 +7,7 @@ default_install_hook_types: [pre-commit, commit-msg]
 
 repos:
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.260
+    rev: v0.0.261
     hooks:
       - id: ruff
         args: [--fix]
@@ -57,7 +57,7 @@ repos:
           - prettier
           - prettier-plugin-svelte
           - svelte
-        exclude: ^(site/src/figs/.+\.svelte|data/wbm/20.+\..+|site/src/routes/.+\.(yml|yaml|json))$
+        exclude: ^(site/src/figs/.+\.svelte|data/wbm/20.+\..+|site/src/routes/.+\.(yaml|json))$
 
   - repo: https://github.com/pre-commit/mirrors-eslint
     rev: v8.37.0

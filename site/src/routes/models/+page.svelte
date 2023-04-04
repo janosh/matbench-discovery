@@ -74,13 +74,13 @@
   </ul>
 
   <ol>
-    {#each models.slice(0, Math.max(min_models, n_best)) as data, idx (data.model_name)}
+    {#each models.slice(0, Math.max(min_models, n_best)) as data (data.model_name)}
       <li
         animate:flip={{ duration: 400 }}
         in:fade|local={{ delay: 100 }}
         out:fade|local={{ delay: 100 }}
       >
-        <ModelCard {idx} {data} {stats} {sort_by} bind:show_details />
+        <ModelCard {data} {stats} {sort_by} bind:show_details />
       </li>
     {/each}
   </ol>

@@ -181,10 +181,8 @@ save_fig(fig, f"{ROOT}/tmp/figures/element-prevalence-vs-error.pdf")
 # %% plot EACH errors against least prevalent element in structure (by occurrence in
 # MP training set). this seems to correlate more with model error
 n_examp_for_rarest_elem_col = "Examples for rarest element in structure"
-df_wbm["composition"] = df_wbm.get("composition", df_wbm.formula.map(Composition))
-df_elem_err.loc[list(map(str, df_wbm.composition[0]))][train_count_col].min()
 df_wbm[n_examp_for_rarest_elem_col] = [
-    df_elem_err.loc[list(map(str, Composition(formula)))][train_count_col].min()
+    df_elem_err[train_count_col].loc[list(map(str, Composition(formula)))].min()
     for formula in tqdm(df_wbm.formula)
 ]
 

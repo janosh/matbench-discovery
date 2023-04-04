@@ -6,7 +6,7 @@ batch in a single plot.
 # %%
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, today
+from matbench_discovery import FIGS, ROOT, today
 from matbench_discovery.plots import plt, rolling_mae_vs_hull_dist
 from matbench_discovery.preds import df_each_pred, df_preds, e_form_col, each_true_col
 
@@ -16,10 +16,10 @@ __date__ = "2022-06-18"
 batch_col = "batch_idx"
 df_each_pred[batch_col] = "Batch " + df_each_pred.index.str.split("-").str[1]
 df_err, df_std = None, None  # variables to cache rolling MAE and std
+model = "MEGNet"
 
 
 # %% matplotlib
-model = "Wrenformer"
 fig, ax = plt.subplots(1, figsize=(10, 9))
 markers = ("o", "v", "^", "H", "D")
 assert len(markers) == 5  # number of iterations of element substitution in WBM data set
@@ -54,7 +54,6 @@ for line in ax.lines:
 
 
 # %% plotly
-model = "CHGNet"
 df_pivot = df_each_pred.pivot(columns=batch_col, values=model)
 
 # unstack two-level column index into new model column
@@ -81,4 +80,4 @@ fig.show()
 file_model = model.lower().replace(" + ", "-").replace(" ", "-")
 img_path = f"{file_model}-rolling-mae-vs-hull-dist-wbm-batches"
 save_fig(fig, f"{FIGS}/{img_path}.svelte")
-# save_fig(f"{ROOT}/tmp/figures/{img_path}.pdf")
+save_fig(fig, f"{ROOT}/tmp/figures/{img_path}.pdf")
