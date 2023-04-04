@@ -9,7 +9,7 @@ from tqdm import tqdm
 from matbench_discovery import ROOT
 from matbench_discovery.data import Files, glob_to_df
 from matbench_discovery.metrics import stable_metrics
-from matbench_discovery.plots import model_labels
+from matbench_discovery.plots import eVpa, model_labels, quantity_labels
 
 """Centralize data-loading and computing metrics for plotting scripts"""
 
@@ -19,7 +19,12 @@ __date__ = "2023-02-04"
 e_form_col = "e_form_per_atom_mp2020_corrected"
 each_true_col = "e_above_hull_mp2020_corrected_ppd_mp"
 each_pred_col = "e_above_hull_pred"
-model_mean_err_col = "Mean over models"
+model_mean_err_col = "Mean error all models"
+model_std_col = "Std. dev. over models"
+
+
+quantity_labels[model_mean_err_col] = f"{model_mean_err_col} {eVpa}"
+quantity_labels[model_std_col] = f"{model_std_col} {eVpa}"
 
 
 class PredFiles(Files):
@@ -34,8 +39,6 @@ class PredFiles(Files):
     bowsr_megnet = "bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv"
     # default CHGNet model from publication with 400,438 params
     chgnet = "chgnet/2023-03-06-chgnet-wbm-IS2RE.csv"
-    # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
-    # chgnet_megnet = "chgnet/2023-03-04-chgnet-wbm-IS2RE.csv"
 
     # CGCnn 10-member ensemble
     cgcnn = "cgcnn/2023-01-26-test-cgcnn-wbm-IS2RE/cgcnn-ensemble-preds.csv"
@@ -44,11 +47,13 @@ class PredFiles(Files):
 
     # original M3GNet straight from publication, not re-trained
     m3gnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv"
-    # M3GNet-relaxed structures fed into MEGNet for formation energy prediction
-    # m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv"
 
     # original MEGNet straight from publication, not re-trained
     megnet = "megnet/2022-11-18-megnet-wbm-IS2RE/megnet-e-form-preds.csv"
+    # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
+    # chgnet_megnet = "chgnet/2023-03-04-chgnet-wbm-IS2RE.csv"
+    # M3GNet-relaxed structures fed into MEGNet for formation energy prediction
+    # m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv"
 
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest
     voronoi_rf = "voronoi/2022-11-27-train-test/e-form-preds-IS2RE.csv"

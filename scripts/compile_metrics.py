@@ -111,13 +111,15 @@ df_stats[time_col] = df_stats.filter(like=time_col).sum(axis="columns")
 
 # %%
 time_cols = list(df_stats.filter(like=time_col))
-for col in time_cols:  # uncomment to include run times in metrics table
-    df_metrics.loc[col] = df_stats[col]
+# for col in time_cols:  # uncomment to include run times in metrics table
+#     df_metrics.loc[col] = df_stats[col]
 higher_is_better = {"DAF", "R²", "Precision", "F1", "Accuracy", "TPR", "TNR"}
-lower_is_better = {"MAE", "RMSE", "FNR", "FPR", *time_cols}
+lower_is_better = {"MAE", "RMSE", "FNR", "FPR"}
+df_metrics = df_metrics.rename(index={"R2": "R²"})
 idx_set = set(df_metrics.index)
+
 styler = (
-    df_metrics.T.rename(columns={"R2": "R²"})
+    df_metrics.T
     # append arrow up/down to table headers to indicate higher/lower metric is better
     # .rename(columns=lambda x: x + " ↑" if x in higher_is_better else x + " ↓")
     .style.format(precision=2)
@@ -141,10 +143,12 @@ styler.set_uuid("")
 styler.hide(["Recall", "FPR", "FNR"], axis=1)
 
 
-# %% export model metrics as styled HTML table
+# %% export model metrics as styled HTML table and Svelte component
+styler.to_html(f"{ROOT}/tmp/figures/model-metrics.html")
+
 # insert svelte {...props} forwarding to the table element
 insert = """
-<script>
+<script lang="ts">
   import { sortable } from 'svelte-zoo/actions'
 </script>
 

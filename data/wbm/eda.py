@@ -181,7 +181,7 @@ save_fig(fig, f"{FIGS}/mp-elemental-ref-energies.svelte")
 # weight in each WBM composition. TLDR: no obvious structure in the data
 # was hoping to find certain clusters to have higher or lower errors after seeing
 # many models struggle on the halogens in per-element error periodic table heatmaps
-# https://matbench-discovery.janosh.dev/models
+# https://janosh.github.io/matbench-discovery/models
 df_2d_tsne = pd.read_csv(f"{module_dir}/tsne/one-hot-112-composition-2d.csv.gz")
 df_2d_tsne = df_2d_tsne.set_index("material_id")
 

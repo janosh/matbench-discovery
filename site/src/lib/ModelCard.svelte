@@ -6,7 +6,6 @@
   import type { ModelData, ModelStatLabel } from '.'
 
   export let data: ModelData
-  export let idx: number
   export let stats: ModelStatLabel[] // [key, label, unit][]
   export let sort_by: keyof ModelData
   export let show_details: boolean = false
@@ -33,7 +32,6 @@
     <Icon icon={show_details ? `ion:ios-arrow-up` : `ion:ios-arrow-down`} inline />
   </button>
 </h2>
-<em>{idx + 1}</em>
 <nav>
   {#each links.filter(([href]) => href) as [href, title, icon]}
     <span>

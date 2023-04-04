@@ -28,4 +28,7 @@
     flex-wrap: wrap;
     font-size: 1.1em;
   }
+  nav > a {
+    padding: 0 5pt;
+  }
 </style>

@@ -3,7 +3,7 @@ Title: Matbench Discovery - An automated leaderboard for benchmarking ML energy 
 Website: https://mrs.org/meetings-events/spring-meetings-exhibits/2023-mrs-spring-meeting
 Submission date: 2022-10-27
 Attendance: indicated in person
-Keywords: Performance/Computing/{machine learning,informatics,data/database}
+Keywords: performance, computing, machine learning, informatics, data, database
 Symposium: MD01 Integrating ML with Materials Science
 Conference dates: April 10-14 2023
 ---
