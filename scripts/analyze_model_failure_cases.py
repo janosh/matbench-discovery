@@ -26,11 +26,14 @@ from matbench_discovery.preds import (
     df_preds,
     each_true_col,
     model_mean_err_col,
+    model_std_col,
 )
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-15"
 
+models = list(df_each_pred)
+df_preds[model_std_col] = df_preds[models].std(axis=1)
 df_each_err[model_mean_err_col] = df_preds[model_mean_err_col] = df_each_err.abs().mean(
     axis=1
 )
@@ -158,29 +161,53 @@ fig.show()
 # save_fig(fig, f"{FIGS}/scatter-largest-each-errors-fp-diff-models.svelte")
 
 
-# %% plotly scatter plot of largest model errors with points sized by mean error and
-# colored by true stability.
+# %%
+df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index("material_id")
+train_count_col = "MP Occurrences"
+df_elem_counts = count_elements(df_mp.formula_pretty, count_mode="occurrence").to_frame(
+    name=train_count_col
+)
+n_examp_for_rarest_elem_col = "Examples for rarest element in structure"
+df_wbm[n_examp_for_rarest_elem_col] = [
+    df_elem_counts[train_count_col].loc[list(map(str, Composition(formula)))].min()
+    for formula in tqdm(df_wbm.formula)
+]
+df_preds[n_examp_for_rarest_elem_col] = df_wbm[n_examp_for_rarest_elem_col]
+
+
+# %% scatter plot of largest model errors vs. DFT hull distance
 # while some points lie on a horizontal line of constant error, more follow the identity
-# line suggesting the models failed to learn the true physics in these materials
-fig = df_preds.nlargest(200, model_mean_err_col).plot.scatter(
-    x=each_true_col,
-    y=model_mean_err_col,
-    color=each_true_col,
-    size=model_mean_err_col,
-    backend="plotly",
+# line showing models are biased to predict low energies likely as a result of training
+# on MP which is highly low-energy enriched.
+# also possible models failed to learn whatever physics makes these materials highly
+# unstable
+fig = (
+    df_preds.nlargest(200, model_mean_err_col)
+    .round(2)
+    .plot.scatter(
+        x=each_true_col,
+        y=model_mean_err_col,
+        color=model_std_col,
+        size=n_examp_for_rarest_elem_col,
+        backend="plotly",
+        hover_name="material_id",
+        hover_data=["formula"],
+        color_continuous_scale="Turbo",
+    )
 )
-fig.layout.coloraxis.colorbar.update(
-    title="DFT distance to convex hull (eV/atom)",
-    title_side="top",
-    yanchor="bottom",
-    y=1,
-    xanchor="center",
-    x=0.5,
-    orientation="h",
-    thickness=12,
-)
+# yanchor="bottom", y=1, xanchor="center", x=0.5, orientation="h", thickness=12
+fig.layout.coloraxis.colorbar.update(title_side="right", thickness=14)
 add_identity_line(fig)
+fig.layout.title = (
+    "Largest model errors vs. DFT hull distance colored by model disagreement"
+)
+# tried setting error_y=model_std_col but looks bad
+# fig.update_traces(error_y=dict(color="rgba(255,255,255,0.2)", width=3, thickness=2))
 fig.show()
+# save_fig(fig, f"{FIGS}/scatter-largest-errors-models-mean-vs-each-true.svelte")
+# save_fig(
+#     fig, f"{ROOT}/tmp/figures/scatter-largest-errors-models-mean-vs-each-true.pdf"
+# )
 
 
 # %% find materials that were misclassified by all models
@@ -203,15 +230,23 @@ df_preds.filter(like="All models ").sum()
 
 
 # %%
+normalized = True
 elem_counts: dict[str, pd.Series] = {}
 for col in ("All models false neg", "All models false pos"):
     elem_counts[col] = elem_counts.get(
         col, count_elements(df_preds[df_preds[col]].formula)
     )
-    fig = ptable_heatmap_plotly(elem_counts[col], font_size=10)
-    fig.layout.title = col
-    fig.layout.margin.update(l=0, r=0, t=50, b=0)
+    fig = ptable_heatmap_plotly(
+        elem_counts[col] / df_elem_counts[train_count_col]
+        if normalized
+        else elem_counts[col],
+        color_bar=dict(title=col),
+        precision=".3f",
+        cscale_range=[0, 0.1],
+    )
     fig.show()
+
+# TODO plot these for each model individually
 
 
 # %% map abs EACH model errors onto elements in structure weighted by composition
@@ -234,8 +269,8 @@ assert all(
 # df_frac_comp = df_frac_comp.dropna(axis=1, thresh=100)  # remove Xe with only 1 entry
 
 
-# %% TODO investigate if structures with largest mean over models error can be
-# attributed to DFT gone wrong. would be cool if models can be run across large
+# %% TODO investigate if structures with largest mean error across all models error can
+# be attributed to DFT gone wrong. would be cool if models can be run across large
 # databases as correctness checkers
 df_each_err.abs().mean().sort_values()
 df_each_err.abs().mean(axis=1).nlargest(25)

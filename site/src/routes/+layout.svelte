@@ -28,7 +28,7 @@
     '/paper/iclr-ml4mat': `Extended abstract submitted to the ICLR ML4Materials workshop.`,
     '/si': `Supplementary information including interesting but non-essential plots.`,
   }[url ?? ``]
-  if (!description) console.warn(`No description for route ${url}`)
+  if (url && !description) console.warn(`No description for url=${url}`)
   $: title = url == `/` ? `` : `${url} • `
 
   const actions = Object.keys(import.meta.glob(`./**/+page.{svx,svelte,md}`)).map(

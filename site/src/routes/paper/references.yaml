@@ -1028,6 +1028,61 @@ references:
   URL: >-
     https://chemrxiv.org/engage/chemrxiv/article-details/633660f9114b7ebf1a229015
 
+- id: park_developing_2020
+  abstract: >-
+    The recently proposed crystal graph convolutional neural network (CGCNN)
+    offers a highly versatile and accurate machine learning (ML) framework by
+    learning material properties directly from graphlike representations of
+    crystal structures (“crystal graphs”). Here, we develop an improved variant
+    of the CGCNN model (iCGCNN) that outperforms the original by incorporating
+    information of the Voronoi tessellated crystal structure, explicit
+    three-body correlations of neighboring constituent atoms, and an optimized
+    chemical representation of interatomic bonds in the crystal graphs. We
+    demonstrate the accuracy of the improved framework in two distinct
+    illustrations: First, when trained/validated on 180 000/20 000 density
+    functional theory (DFT) calculated thermodynamic stability entries taken
+    from the Open Quantum Materials Database (OQMD) and evaluated on a separate
+    test set of 230 000 entries, iCGCNN achieves a predictive accuracy that is
+    significantly improved, i.e., 20% higher than that of the original CGCNN.
+    Second, when used to assist a high-throughput search for materials in the
+    ThCr2Si2 structure-type, iCGCNN exhibited a success rate of 31% which is 155
+    times higher than an undirected high-throughput search and 2.4 times higher
+    than that of the original CGCNN. Using both CGCNN and iCGCNN, we screened
+    132 600 compounds with elemental decorations of the ThCr2Si2 prototype
+    crystal structure and identified a total of 97 unique stable compounds by
+    performing 757 DFT calculations, accelerating the computational time of the
+    high-throughput search by a factor of 65. Our results suggest that the
+    iCGCNN can be used to accelerate high-throughput discoveries of new
+    materials by quickly and accurately identifying crystalline compounds with
+    properties of interest.
+  accessed:
+    - year: 2023
+      month: 4
+      day: 5
+  author:
+    - family: Park
+      given: Cheol Woo
+    - family: Wolverton
+      given: Chris
+  citation-key: park_developing_2020
+  container-title: Physical Review Materials
+  container-title-short: Phys. Rev. Mater.
+  DOI: 10.1103/PhysRevMaterials.4.063801
+  issue: '6'
+  issued:
+    - year: 2020
+      month: 6
+      day: 1
+  page: '063801'
+  publisher: American Physical Society
+  source: APS
+  title: >-
+    Developing an improved crystal graph convolutional neural network framework
+    for accelerated materials discovery
+  type: article-journal
+  URL: https://link.aps.org/doi/10.1103/PhysRevMaterials.4.063801
+  volume: '4'
+
 - id: saal_materials_2013
   abstract: >-
     High-throughput density functional theory (HT DFT) is fast becoming a

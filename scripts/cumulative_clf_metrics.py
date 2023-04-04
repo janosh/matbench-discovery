@@ -35,7 +35,7 @@ if backend == "matplotlib":
     # fig.suptitle(title)
     fig.text(0.5, -0.08, x_label, ha="center", fontdict={"size": 16})
 if backend == "plotly":
-    fig.layout.legend.update(x=0.01, y=0.01, bgcolor="rgba(0,0,0,0)")
+    fig.layout.legend.update(x=0, y=0, bgcolor="rgba(0,0,0,0)")
     fig.layout.margin.update(l=0, r=5, t=30, b=50)
     fig.add_annotation(
         x=0.5,
