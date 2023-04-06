@@ -13,19 +13,18 @@
   let sort_by: keyof ModelStats | 'model_name' = `F1`
   let show_details: boolean = false
   let order: 'asc' | 'desc' = `desc`
-  let n_best: number = 8 // show only best models
+  let show_n_best: number = 8 // show only best models
   const min_models: number = 2
   $: sort_factor = { asc: -1, desc: 1 }[order]
 
-  $: models = data.models.sort((md1, md2) => {
-    if (typeof md1[sort_by] == `string`) {
-      return sort_factor * -md1[sort_by].localeCompare(md2[sort_by])
-    } else if (typeof md1[sort_by] == `number`) {
-      return sort_factor * (md2[sort_by] - md1[sort_by])
+  $: models = data.models.sort((model_1, model_2) => {
+    const [val_1, val_2] = [model_1[sort_by], model_2[sort_by]]
+    if (typeof val_1 == `string`) {
+      return sort_factor * val_1.localeCompare(val_2)
+    } else if (typeof val_1 == `number`) {
+      return sort_factor * (val_2 - val_1)
     } else {
-      console.error(
-        `Sorting by key ${sort_by} gives unknown type: ${typeof md1[sort_by]}`
-      )
+      console.error(`Sorting by key ${sort_by} gives unknown type: ${typeof val_1}`)
     }
   })
   const stats: ModelStatLabel[] = [
@@ -42,8 +41,8 @@
   ]
 
   export const snapshot: Snapshot = {
-    capture: () => ({ show_details, sort_by, order }),
-    restore: (values) => ({ show_details, sort_by, order } = values),
+    capture: () => ({ show_details, sort_by, order, show_n_best }),
+    restore: (values) => ({ show_details, sort_by, order, show_n_best } = values),
   }
 </script>
 
@@ -51,7 +50,8 @@
   <h1>Models</h1>
 
   <span>
-    Sort <input type="number" min={min_models} max={models.length} bind:value={n_best} />
+    Sort
+    <input type="number" min={min_models} max={models.length} bind:value={show_n_best} />
     best models
     <RadioButtons bind:selected={order} options={[`asc`, `desc`]} /> by:
   </span>
@@ -74,7 +74,7 @@
   </ul>
 
   <ol>
-    {#each models.slice(0, Math.max(min_models, n_best)) as data (data.model_name)}
+    {#each models.slice(0, Math.max(min_models, show_n_best)) as data (data.model_name)}
       <li
         animate:flip={{ duration: 400 }}
         in:fade|local={{ delay: 100 }}

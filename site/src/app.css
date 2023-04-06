@@ -119,6 +119,9 @@ table {
 }
 table :is(td, th) {
   border: 1px solid gray;
+  padding: 2pt 4pt;
+}
+table.roomy :is(td, th) {
   padding: 5pt 9pt;
 }
 tbody tr:nth-child(odd) {

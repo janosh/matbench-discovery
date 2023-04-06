@@ -98,7 +98,7 @@ Our initial benchmark release includes 8 models. @Fig:model-metrics includes all
 
 5. **MEGNet** @chen_graph_2019 - MatErials Graph Network is another GNN similar to CGCNN for material properties of relaxed structures that also updates the edge and global features (like pressure, temperature, entropy) in its message passing operation.
 
-6. **M3GNet** @chen_universal_2022 - M3GNet is a GNN-based universal (as in full periodic table) interatomic potential (IAP) for materials trained on up to 3-body interactions in the initial, middle and final frame of MP DFT relaxations. The model takes the unrelaxed input and emulates structure relaxation before predicting energy for the pseudo-relaxed structure.
+6. **M3GNet** @chen_universal_2022 - M3GNet is a GNN-based universal (as in full periodic table) interatomic potential (UIP) for materials trained on up to 3-body interactions in the initial, middle and final frame of MP DFT relaxations. The model takes the unrelaxed input and emulates structure relaxation before predicting energy for the pseudo-relaxed structure.
 
 7. **M3GNet + MEGNet** @chen_universal_2022 @chen_graph_2019 - This combination of models uses M3GNet to relax initial structures and then passes it to MEGNet to predict the formation energy.
 
@@ -136,7 +136,7 @@ Consequently, the benefits of deploying ML-based triage in high-throughput compu
 However, there are many aspects on which further progress is necessary, for example, models still make large numbers of false positive predictions for materials over 50 meV above the convex hull and much less likely to be synthesizable, greatly reducing the DAF.
 The results obtained from version 1 of our benchmark show that ML universal interatomic potentials like M3GNet are the most promising methodology to pursue going forward, being both ~20x cheaper to run than black box optimizers like BOWSR and having access to more training structures than coordinate-free approaches like Wrenformer.
 
-Although the task of discovery will necessarily become more challenging over time as currently undersampled regions of materials space are explored, the path to making ML a ubiquitous discovery tool appears straightforward and is one the field is already pursuing: training foundational IAPs on significantly more data may get us there even without further algorithmic or model improvements.
+Although the task of discovery will necessarily become more challenging over time as currently undersampled regions of materials space are explored, the path to making ML a ubiquitous discovery tool appears straightforward and is one the field is already pursuing: training foundational UIPs on significantly more data may get us there even without further algorithmic or model improvements.
 We welcome further model submissions as well as data contributions for version 2 of this benchmark to the GitHub repo at
 [{repo}]({repo}).
 

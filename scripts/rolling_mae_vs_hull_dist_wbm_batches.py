@@ -68,7 +68,7 @@ fig, df_err, df_std = rolling_mae_vs_hull_dist(
     show_dummy_mae=False,
     with_sem=False,
 )
-fig.layout.legend.title = model
+fig.layout.legend.title = f"<b>{model}</b>"
 fig.update_layout(hovermode="x unified", hoverlabel_bgcolor="black")
 fig.update_traces(
     hovertemplate="y=%{y:.3f} eV", selector=lambda trace: trace.name.startswith("Batch")
@@ -77,7 +77,7 @@ fig.show()
 
 
 # %%
-file_model = model.lower().replace(" + ", "-").replace(" ", "-")
-img_path = f"{file_model}-rolling-mae-vs-hull-dist-wbm-batches"
+model_snake_case = model.lower().replace(" + ", "-").replace(" ", "-")
+img_path = f"{model_snake_case}-rolling-mae-vs-hull-dist-wbm-batches"
 save_fig(fig, f"{FIGS}/{img_path}.svelte")
 save_fig(fig, f"{ROOT}/tmp/figures/{img_path}.pdf")

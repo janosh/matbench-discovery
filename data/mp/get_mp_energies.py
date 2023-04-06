@@ -4,6 +4,7 @@ import os
 import pandas as pd
 from aviary.wren.utils import get_aflow_label_from_spglib
 from mp_api.client import MPRester
+from pymatgen.core import Structure
 from pymatviz.utils import annotate_metrics
 from tqdm import tqdm
 
@@ -33,6 +34,7 @@ fields = {
     "energy_above_hull",
     "decomposition_enthalpy",
     "energy_type",
+    "symmetry",
 }
 
 with MPRester(use_document_model=False) as mpr:
@@ -47,17 +49,34 @@ print(f"{today}: {len(docs) = :,}")
 # %%
 df = pd.DataFrame(docs).set_index("material_id")
 
+df_spg = pd.json_normalize(df.pop("symmetry"))[["number", "symbol"]]
+df["spacegroup_symbol"] = df_spg.symbol.values
+
 df.energy_type.value_counts().plot.pie(backend="plotly", autopct="%1.1f%%")
 # GGA: 72.2%, GGA+U: 27.8%
 
 
 # %%
-df["spacegroup_number"] = [x["number"] for x in df.pop("symmetry")]
+df_cse = pd.read_json(DATA_FILES.mp_computed_structure_entries).set_index("material_id")
 
-df["wyckoff_spglib"] = [get_aflow_label_from_spglib(x) for x in tqdm(df.structure)]
+df_cse["structure"] = [
+    Structure.from_dict(cse["structure"]) for cse in tqdm(df_cse.entry)
+]
+wyk_col = "wyckoff_spglib"
+df_cse[wyk_col] = [
+    get_aflow_label_from_spglib(struct, errors="ignore")
+    for struct in tqdm(df_cse.structure)
+]
+# make sure symmetry detection succeeded for all structures
+assert df_cse[wyk_col].str.startswith("invalid").sum() == 0
+df[wyk_col] = df_cse[wyk_col]
+
+spg_nums = df[wyk_col].str.split("_").str[2].astype(int)
+# make sure all our spacegroup numbers match MP's
+assert (spg_nums.sort_index() == df_spg["number"].sort_index()).all()
 
 df.to_csv(DATA_FILES.mp_energies)
-# df = pd.read_csv(DATA_FILES.mp_energies, na_filter=False)
+# df = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index("material_id")
 
 
 # %% reproduce fig. 1b from https://arxiv.org/abs/2001.10591 (as data consistency check)

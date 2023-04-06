@@ -16,15 +16,15 @@
     "check": "svelte-check"
   },
   "devDependencies": {
-    "@iconify/svelte": "^3.1.0",
+    "@iconify/svelte": "^3.1.1",
     "@rollup/plugin-yaml": "^4.0.1",
     "@sveltejs/adapter-static": "^2.0.1",
-    "@sveltejs/kit": "^1.15.1",
+    "@sveltejs/kit": "^1.15.2",
     "@sveltejs/vite-plugin-svelte": "^2.0.4",
     "@typescript-eslint/eslint-plugin": "^5.57.1",
     "@typescript-eslint/parser": "^5.57.1",
-    "elementari": "^0.1.5",
-    "eslint": "^8.37.0",
+    "elementari": "^0.1.6",
+    "eslint": "^8.38.0",
     "eslint-plugin-svelte3": "^4.0.0",
     "hastscript": "^7.2.0",
     "js-yaml": "^4.1.0",
@@ -44,7 +44,7 @@
     "svelte-zoo": "^0.4.3",
     "svelte2tsx": "^0.6.11",
     "tslib": "^2.5.0",
-    "typescript": "5.0.3",
+    "typescript": "5.0.4",
     "vite": "^4.2.1"
   },
   "prettier": {

@@ -1,6 +1,8 @@
 <script lang="ts">
   import { browser } from '$app/environment'
   import FormEnergyHist from '$figs/hist-wbm-e-form-per-atom.svelte'
+  import SpacegroupSunburstMp from '$figs/spacegroup-sunburst-mp.svelte'
+  import SpacegroupSunburstWbm from '$figs/spacegroup-sunburst-wbm.svelte'
   import WbmEachHist from '$figs/wbm-each-hist.svelte'
   import { PtableInset } from '$lib'
   import DataReadme from '$root/data/wbm/readme.md'
@@ -76,6 +78,15 @@
       <WbmEachHist />
     {/if}
   </svelte:fragment>
+  <div
+    style="display: flex; gap: 1em; justify-content: space-around;"
+    slot="spacegroup-sunbursts"
+  >
+    {#if browser}
+      <SpacegroupSunburstMp />
+      <SpacegroupSunburstWbm />
+    {/if}
+  </div>
 </DataReadme>
 
 <style>
