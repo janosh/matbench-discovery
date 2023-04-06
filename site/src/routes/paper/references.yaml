@@ -529,6 +529,66 @@ references:
   type: article-journal
   volume: '1'
 
+- id: deng_chgnet_2023
+  abstract: >-
+    The simulation of large-scale systems with complex electron interactions
+    remains one of the greatest challenges for the atomistic modeling of
+    materials. Although classical force-fields often fail to describe the
+    coupling between electronic states and ionic rearrangements, the more
+    accurate \textit{ab-initio} molecular dynamics suffers from computational
+    complexity that prevents long-time and large-scale simulations, which are
+    essential to study many technologically relevant phenomena, such as
+    reactions, ion migrations, phase transformations, and degradation. In this
+    work, we present the Crystal Hamiltonian Graph neural Network (CHGNet) as a
+    novel machine-learning interatomic potential (MLIP), using a
+    graph-neural-network-based force-field to model a universal potential energy
+    surface. CHGNet is pretrained on the energies, forces, stresses, and
+    magnetic moments from the Materials Project Trajectory Dataset, which
+    consists of over 10 years of density functional theory static and relaxation
+    trajectories of $\sim 1.5$ million inorganic structures. The explicit
+    inclusion of magnetic moments enables CHGNet to learn and accurately
+    represent the orbital occupancy of electrons, enhancing its capability to
+    describe both atomic and electronic degrees of freedom. We demonstrate
+    several applications of CHGNet in solid-state materials, including
+    charge-informed molecular dynamics in Li$_x$MnO$_2$, the finite temperature
+    phase diagram for Li$_x$FePO$_4$ and Li diffusion in garnet conductors. We
+    critically analyze the significance of including charge information for
+    capturing appropriate chemistry, and we provide new insights into ionic
+    systems with additional electronic degrees of freedom that can not be
+    observed by previous MLIPs.
+  accessed:
+    - year: 2023
+      month: 4
+      day: 7
+  author:
+    - family: Deng
+      given: Bowen
+    - family: Zhong
+      given: Peichen
+    - family: Jun
+      given: KyuJung
+    - family: Han
+      given: Kevin
+    - family: Bartel
+      given: Christopher J.
+    - family: Ceder
+      given: Gerbrand
+  citation-key: deng_chgnet_2023
+  DOI: 10.48550/arXiv.2302.14231
+  issued:
+    - year: 2023
+      month: 2
+      day: 27
+  number: arXiv:2302.14231
+  publisher: arXiv
+  source: arXiv.org
+  title: >-
+    CHGNet: Pretrained universal neural network potential for charge-informed
+    atomistic modeling
+  title-short: CHGNet
+  type: article
+  URL: http://arxiv.org/abs/2302.14231
+
 - id: deng_imagenet_2009
   abstract: >-
     The explosion of image data on the Internet has the potential to foster more
@@ -868,6 +928,44 @@ references:
   URL: https://link.aps.org/doi/10.1103/PhysRevB.85.155208
   volume: '85'
 
+- id: horton_promises_2021
+  abstract: >-
+    Over the past decade, the materials science community has fostered the
+    development of materials databases from high-performance computation. While
+    these databases have achieved great success, there are still several
+    challenges to be addressed for the community to realize the full potential
+    of the materials-by-design era.
+  accessed:
+    - year: 2023
+      month: 4
+      day: 7
+  author:
+    - family: Horton
+      given: M. K.
+    - family: Dwaraknath
+      given: S.
+    - family: Persson
+      given: K. A.
+  citation-key: horton_promises_2021
+  container-title: Nature Computational Science
+  container-title-short: Nat Comput Sci
+  DOI: 10.1038/s43588-020-00016-5
+  ISSN: 2662-8457
+  issue: '1'
+  issued:
+    - year: 2021
+      month: 1
+  language: en
+  license: 2021 Springer Nature America, Inc.
+  number: '1'
+  page: 3-5
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: Promises and perils of computational materials databases
+  type: article-journal
+  URL: https://www.nature.com/articles/s43588-020-00016-5
+  volume: '1'
+
 - id: jain_commentary_2013
   abstract: >-
     Accelerating the discovery of advanced materials is essential for human
@@ -1082,6 +1180,59 @@ references:
   type: article-journal
   URL: https://link.aps.org/doi/10.1103/PhysRevMaterials.4.063801
   volume: '4'
+
+- id: raccuglia_machine-learning-assisted_2016
+  abstract: >-
+    Failed chemical reactions are rarely reported, even though they could still
+    provide information about the bounds on the reaction conditions needed for
+    product formation; here data from such reactions are used to train a
+    machine-learning algorithm, which is subsequently able to predict reaction
+    outcomes with greater accuracy than human intuition.
+  accessed:
+    - year: 2023
+      month: 4
+      day: 7
+  author:
+    - family: Raccuglia
+      given: Paul
+    - family: Elbert
+      given: Katherine C.
+    - family: Adler
+      given: Philip D. F.
+    - family: Falk
+      given: Casey
+    - family: Wenny
+      given: Malia B.
+    - family: Mollo
+      given: Aurelio
+    - family: Zeller
+      given: Matthias
+    - family: Friedler
+      given: Sorelle A.
+    - family: Schrier
+      given: Joshua
+    - family: Norquist
+      given: Alexander J.
+  citation-key: raccuglia_machine-learning-assisted_2016
+  container-title: Nature
+  DOI: 10.1038/nature17439
+  ISSN: 1476-4687
+  issue: '7601'
+  issued:
+    - year: 2016
+      month: 5
+  language: en
+  license: >-
+    2016 Nature Publishing Group, a division of Macmillan Publishers Limited.
+    All Rights Reserved.
+  number: '7601'
+  page: 73-76
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: Machine-learning-assisted materials discovery using failed experiments
+  type: article-journal
+  URL: https://www.nature.com/articles/nature17439
+  volume: '533'
 
 - id: saal_materials_2013
   abstract: >-

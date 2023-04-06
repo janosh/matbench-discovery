@@ -133,10 +133,8 @@ df_preds = load_df_wbm_with_preds().round(3)
 df_metrics = pd.DataFrame()
 df_metrics.index.name = "model"
 for model in PRED_FILES:
-    df_metrics[model] = stable_metrics(
-        df_preds[each_true_col],
-        df_preds[each_true_col] + df_preds[model] - df_preds[e_form_col],
-    )
+    each_pred = df_preds[each_true_col] + df_preds[model] - df_preds[e_form_col]
+    df_metrics[model] = stable_metrics(df_preds[each_true_col], each_pred)
 
 # pick F1 as primary metric to sort by
 df_metrics = df_metrics.round(3).sort_values("F1", axis=1, ascending=False)

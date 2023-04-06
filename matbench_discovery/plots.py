@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from collections import defaultdict
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Any, Literal
 
 import matplotlib.pyplot as plt
@@ -17,6 +18,7 @@ import scipy.interpolate
 import scipy.stats
 import wandb
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
+from pandas.io.formats.style import Styler
 from tqdm import tqdm
 
 from matbench_discovery.metrics import classify_stable
@@ -805,3 +807,37 @@ def wandb_scatter(table: wandb.Table, fields: dict[str, str], **kwargs: Any) -> 
     )
 
     wandb.log({"true_pred_scatter": scatter_plot})
+
+
+def df_to_svelte_table(
+    styler: Styler,
+    file_path: str | Path,
+    inline_props: str = "",
+    styles: str = "",
+    **kwargs: Any,
+) -> None:
+    """Convert a pandas Styler to a svelte table.
+
+    Args:
+        styler (Styler): Styler object to convert.
+        file_path (str): Path to the file to write the svelte table to.
+        inline_props (str): Inline props to pass to the table element.
+        styles (str): CSS rules to add to the table styles.
+        **kwargs: Keyword arguments passed to Styler.to_html().
+    """
+    # insert svelte {...props} forwarding to the table element
+    script = f"""
+    <script lang="ts">
+      import {{ sortable }} from 'svelte-zoo/actions'
+    </script>
+
+    <table use:sortable {inline_props} {{...$$props}}
+    """
+
+    html_table = (
+        styler.to_html(**kwargs)
+        .replace("<table", script)
+        .replace("</style>", f"{styles}</style>")
+    )
+    with open(file_path, "w") as file:
+        file.write(html_table)

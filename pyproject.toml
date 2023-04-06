@@ -35,7 +35,9 @@ dependencies = [
   "matplotlib",
   "pymatgen",
   "numpy",
-  "pandas",
+  # output_formatting needed to for pandas Stylers
+  # see https://github.com/pandas-dev/pandas/blob/main/pyproject.toml#L78
+  "pandas[output_formatting]",
   "scikit-learn",
   "scipy",
   "plotly",

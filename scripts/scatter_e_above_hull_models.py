@@ -50,6 +50,17 @@ df_bin = df_bin.reset_index()
 legend_order = list(df_metrics.T.MAE.sort_values().index)
 
 
+# %% determine each point's classification to color them by
+true_pos, false_neg, false_pos, true_neg = classify_stable(
+    df_bin[each_true_col], df_bin[each_pred_col]
+)
+
+clf_col = "classified"
+df_bin[clf_col] = np.array(clf_labels)[
+    true_pos * 0 + false_neg * 1 + false_pos * 2 + true_neg * 3
+]
+
+
 # %% scatter plot of actual vs predicted e_form_per_atom
 fig = px.scatter(
     df_bin,
@@ -106,13 +117,6 @@ img_path = f"{FIGS}/e-above-hull-scatter-models"
 
 
 # %% plot all models in separate subplots
-true_pos, false_neg, false_pos, true_neg = classify_stable(
-    df_bin[each_true_col], df_bin[each_pred_col]
-)
-
-df_bin[(clf_col := "classified")] = np.array(clf_labels)[
-    true_pos * 0 + false_neg * 1 + false_pos * 2 + true_neg * 3
-]
 domain = (-4, 7)
 
 fig = px.scatter(
@@ -222,3 +226,31 @@ fig.show()
 save_fig(fig, f"{FIGS}/each-scatter-models.svelte")
 save_fig(fig, f"{ROOT}/tmp/figures/each-scatter-models.pdf", width=600, height=700)
 # save_fig(fig, f"{STATIC}/each-scatter-models.webp", scale=4, width=700, height=800)
+
+
+# %%
+model = "Wrenformer"
+fig = px.scatter(
+    df_bin.query(f"{facet_col} == {model!r}"),
+    x=each_true_col,
+    y=each_pred_col,
+    hover_data=hover_cols,
+    color=clf_col,
+    color_discrete_map=clf_color_map,
+    hover_name=df_preds.index.name,
+    opacity=0.7,
+)
+
+title = "Analysis of Wrenformer failure cases in the highlighted rectangle"
+fig.layout.title.update(text=title, x=0.5)
+fig.layout.legend.update(title="", x=1, y=0, xanchor="right")
+add_identity_line(fig)
+
+# add shape shaded rectangle at x < 1, y > 1
+fig.add_shape(
+    type="rect", **dict(x0=1, y0=1, x1=-1, y1=6), fillcolor="gray", opacity=0.2
+)
+fig.show()
+
+img_path = f"{FIGS}/e-above-hull-scatter-wrenformer-failures"
+save_fig(fig, f"{img_path}.svelte")

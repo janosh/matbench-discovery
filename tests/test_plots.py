@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -10,6 +11,7 @@ import pytest
 from matbench_discovery.plots import (
     Backend,
     cumulative_precision_recall,
+    df_to_svelte_table,
     hist_classified_stable_vs_hull_dist,
     rolling_mae_vs_hull_dist,
 )
@@ -142,3 +144,23 @@ def test_hist_classified_stable_vs_hull_dist(
     else:
         assert isinstance(ax, go.Figure)
         assert ax.layout.yaxis.title.text == "count"
+
+
+def test_df_to_svelte_table(tmp_path: Path) -> None:
+    df = pd._testing.makeMixedDataFrame()
+
+    file_path = tmp_path / "test_svelte_table.svelte"
+
+    df_to_svelte_table(df.style, file_path)
+
+    assert file_path.exists()
+    with open(file_path) as file:
+        content = file.read()
+
+    # check table was made sortable
+    assert '<script lang="ts">' in content
+    assert "import { sortable } from 'svelte-zoo/actions'" in content
+    assert "<table use:sortable" in content
+
+    # check file contains original dataframe value
+    assert str(df.iloc[0, 0]) in content
