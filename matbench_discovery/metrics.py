@@ -98,7 +98,6 @@ def stable_metrics(
 
     return dict(
         F1=2 * (precision * recall) / (precision + recall),
-        R2=r2_score(each_true, each_pred),
         DAF=precision / prevalence,
         Precision=precision,
         Recall=recall,
@@ -106,4 +105,5 @@ def stable_metrics(
         Accuracy=(n_true_pos + n_true_neg) / len(each_true),
         MAE=np.abs(each_true - each_pred).mean(),
         RMSE=((each_true - each_pred) ** 2).mean() ** 0.5,
+        R2=r2_score(each_true, each_pred),
     )

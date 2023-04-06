@@ -7,7 +7,7 @@ npm install
 npm run dev
 ```
 
-Both steps should only take a second after which the terminal should show something like
+Both steps should only take a few seconds after which the terminal should show something like
 
 ```text
   VITE v4.0.4  ready in 531 ms
@@ -47,3 +47,16 @@ Currently done in CSS (see `headings-number.css`) but could be done with JS usin
   })
 </script>
 ```
+
+## Convert Markdown to LaTeX
+
+Install [`pandoc`](https://pandoc.org/installing.html) and run
+
+```sh
+cd site/src/routes/paper
+pandoc -s +page.md -o paper.tex --wrap=preserve
+```
+
+## Markdown in LaTeX
+
+A better option than converting back and forth between TeX and Markdown might be to use [this Overleaf template](https://overleaf.com/latex/examples/using-markdown-in-latex-documents/whdrnpcpnwrm) which enables importing Markdown files into TeX documents.

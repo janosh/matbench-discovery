@@ -10,16 +10,21 @@ import re
 from typing import Any
 
 import dataframe_image as dfi
+import numpy as np
 import pandas as pd
+import plotly.express as px
 import requests
 import wandb
 import wandb.apis.public
 from pymatviz.utils import save_fig
+from sklearn.dummy import DummyClassifier
 from tqdm import tqdm
 
 from matbench_discovery import FIGS, ROOT, WANDB_PATH
-from matbench_discovery.plots import px
-from matbench_discovery.preds import df_metrics, df_preds
+from matbench_discovery.data import DATA_FILES, df_wbm
+from matbench_discovery.metrics import stable_metrics
+from matbench_discovery.plots import df_to_svelte_table
+from matbench_discovery.preds import df_metrics, df_preds, each_true_col
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
@@ -109,6 +114,28 @@ df_stats = pd.concat(
 df_stats[time_col] = df_stats.filter(like=time_col).sum(axis="columns")
 
 
+# %% add dummy classifier results to df_metrics
+dummy_clf = DummyClassifier(strategy="stratified", random_state=0)
+df_mp = pd.read_csv(DATA_FILES.mp_energies, index_col=0)
+dummy_clf.fit(np.zeros_like(df_mp.energy_above_hull), df_mp.energy_above_hull == 0)
+dummy_clf_preds = dummy_clf.predict(np.zeros(len(df_wbm)))
+true_clf = df_wbm[each_true_col] < 0
+each_true = df_wbm[each_true_col]
+pd.Series(dummy_clf_preds).value_counts()
+
+dummy_metrics = stable_metrics(
+    each_true, np.array([1, -1])[dummy_clf_preds.astype(int)]
+)
+
+# important: regression metrics from dummy_clf are meaningless, overwrite them with
+# correct values!
+dummy_metrics["R2"] = 0
+dummy_metrics["MAE"] = (each_true - each_true.mean()).abs().mean()
+dummy_metrics["RMSE"] = ((each_true - each_true.mean()) ** 2).mean() ** 0.5
+
+df_metrics["dummy"] = dummy_metrics
+
+
 # %%
 time_cols = list(df_stats.filter(like=time_col))
 # for col in time_cols:  # uncomment to include run times in metrics table
@@ -145,18 +172,11 @@ styler.hide(["Recall", "FPR", "FNR"], axis=1)
 
 # %% export model metrics as styled HTML table and Svelte component
 styler.to_html(f"{ROOT}/tmp/figures/model-metrics.html")
-
-# insert svelte {...props} forwarding to the table element
-insert = """
-<script lang="ts">
-  import { sortable } from 'svelte-zoo/actions'
-</script>
-
-<table use:sortable {...$$props}
-"""
-html_table = styler.to_html().replace("<table", insert)
-with open(f"{FIGS}/metrics-table.svelte", "w") as file:
-    file.write(html_table)
+# draw dotted line between classification and regression metrics
+styles = "#T_ :is(td, th):nth-last-child(3) { border-left: 1px dotted white; }"
+df_to_svelte_table(
+    styler, f"{FIGS}/metrics-table.svelte", inline_props="class='roomy'", styles=styles
+)
 
 
 # %%
@@ -242,10 +262,8 @@ fig = df_melt.dropna().plot.bar(
     text=time_col,
     color=model_col,
 )
-legend_title = "Click to toggle models"
-fig.layout.legend.update(
-    x=0.98, y=0.98, xanchor="right", yanchor="top", title=legend_title
-)
+title = f"Total: {df_stats[time_col].sum():.0f} h"
+fig.layout.legend.update(x=0.98, y=0.98, xanchor="right", yanchor="top", title=title)
 fig.layout.xaxis.title = ""
 fig.layout.margin.update(l=0, r=0, t=0, b=0)
 bar_path = f"{FIGS}/model-run-times-bar.svelte"

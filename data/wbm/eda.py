@@ -5,7 +5,11 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 from pymatgen.core import Composition
-from pymatviz import count_elements, ptable_heatmap_plotly
+from pymatviz import (
+    count_elements,
+    ptable_heatmap_plotly,
+    spacegroup_sunburst,
+)
 from pymatviz.utils import save_fig
 
 from matbench_discovery import FIGS, ROOT, today
@@ -31,7 +35,15 @@ wbm_elem_counts = count_elements(df_wbm.formula).astype(int)
 
 # wbm_elem_counts.to_json(f"{about_data_page}/wbm-element-counts.json")
 
-# export element counts by WBM step to JSON
+
+# %% load MP training set
+df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False)
+mp_elem_counts = count_elements(df_mp.formula_pretty).astype(int)
+
+# mp_elem_counts.to_json(f"{about_data_page}/mp-element-counts.json")
+
+
+# %% export element counts by WBM step to JSON
 df_wbm["step"] = df_wbm.index.str.split("-").str[1].astype(int)
 assert df_wbm.step.between(1, 5).all()
 for batch in range(1, 6):
@@ -43,8 +55,8 @@ for batch in range(1, 6):
 comp_col = "composition"
 df_wbm[comp_col] = df_wbm.formula.map(Composition)
 
-for arity, df in df_wbm.groupby(df_wbm[comp_col].map(len)):
-    count_elements(df.formula).to_json(
+for arity, df_mp in df_wbm.groupby(df_wbm[comp_col].map(len)):
+    count_elements(df_mp.formula).to_json(
         f"{about_data_page}/wbm-element-counts-{arity=}.json"
     )
 
@@ -71,13 +83,6 @@ wbm_fig.show()
 # %%
 wbm_fig.write_image(f"{module_dir}/figs/wbm-elements.svg", width=1000, height=500)
 # save_fig(wbm_fig, f"{FIGS}/wbm-elements.svelte")
-
-
-# %% load MP training set
-df = pd.read_csv(DATA_FILES.mp_energies, na_filter=False)
-mp_elem_counts = count_elements(df.formula_pretty).astype(int)
-
-# mp_elem_counts.to_json(f"{about_data_page}/mp-element-counts.json")
 
 
 # %%
@@ -233,3 +238,28 @@ fig.data[0].hovertemplate = (
     f"{color_col}: %{{customdata[3]:.2f}}<br>"
 )
 fig.show()
+
+
+# %%
+wyk_col, spg_col = "wyckoff_spglib", "spacegroup"
+df_wbm[spg_col] = df_wbm[wyk_col].str.split("_").str[2].astype(int)
+df_mp[spg_col] = df_mp[wyk_col].str.split("_").str[2].astype(int)
+
+
+# %%
+fig = spacegroup_sunburst(df_wbm[spg_col], width=350, height=350, show_counts="percent")
+fig.layout.title.update(text="WBM Spacegroup Sunburst", x=0.5, font_size=14)
+fig.show()
+save_fig(fig, f"{FIGS}/spacegroup-sunburst-wbm.svelte")
+
+
+# %%
+fig = spacegroup_sunburst(df_mp[spg_col], width=350, height=350, show_counts="percent")
+fig.layout.title.update(text="MP Spacegroup Sunburst", x=0.5, font_size=14)
+fig.show()
+save_fig(fig, f"{FIGS}/spacegroup-sunburst-mp.svelte")
+# would be good to have consistent order of crystal systems between sunbursts but not
+# controllable yet
+# https://github.com/plotly/plotly.py/issues/4115
+# https://github.com/plotly/plotly.js/issues/5341
+# https://github.com/plotly/plotly.js/issues/4728
