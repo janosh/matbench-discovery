@@ -17,7 +17,7 @@ Both steps should only take a few seconds after which the terminal should show s
   ➜  press h to show help
 ```
 
-Open the development server running on <http://localhost:3000/paper> to view the paper and see hot-reloaded changes whenever you edit and save the file.
+Open the development server running on <http://localhost:3000/preprint> to view the paper and see hot-reloaded changes whenever you edit and save the file.
 
 ## Auto-number headings
 
@@ -53,7 +53,7 @@ Currently done in CSS (see `headings-number.css`) but could be done with JS usin
 Install [`pandoc`](https://pandoc.org/installing.html) and run
 
 ```sh
-cd site/src/routes/paper
+cd site/src/routes/preprint
 pandoc -s +page.md -o paper.tex --wrap=preserve
 ```
 

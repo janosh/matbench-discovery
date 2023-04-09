@@ -47,7 +47,7 @@ export default {
         const route = file.filename.split(`site/src/routes/`)[1]?.split(`/`)[0]
         if (!route) return
 
-        if (route.startsWith(`paper`) || route.startsWith(`si`)) {
+        if (['paper', 'preprint', 'si'].some((key) => route.startsWith(key))) {
           let fig_index = new Set()
           let ref_index = new Set()
 
@@ -108,7 +108,6 @@ export default {
     alias: {
       $site: `.`,
       $root: `..`,
-      $paper: `src/routes/paper`,
       $models: `src/routes/models`,
       $figs: `src/figs`,
     },
