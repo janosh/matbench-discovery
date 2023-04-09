@@ -59,7 +59,7 @@ To avoid potential confusion for people reading the code, we may in places calcu
 <HistClfPredHullDistModels />
 {/if}
 
-> @label:fig:hist-clf-pred-hull-dist-models Similar to [this figure](/paper#fig:hist-clf-true-hull-dist-models), this histogram shows model stability classification as a function of the distance to the convex hull. The difference here being the $x$ axis showing model-predicted rather than DFT ground-truth distance to the convex hull. Intuitively, it shows hof often models misclassify as a function of how far they think a material is from the convex hull.
+> @label:fig:hist-clf-pred-hull-dist-models Similar to [this figure](/preprint#fig:hist-clf-true-hull-dist-models), this histogram shows model stability classification as a function of the distance to the convex hull. The difference here being the $x$ axis showing model-predicted rather than DFT ground-truth distance to the convex hull. Intuitively, it shows hof often models misclassify as a function of how far they think a material is from the convex hull.
 
 ## WBM Batch Robustness as a Measure of Extrapolation Prowess
 

@@ -11,7 +11,7 @@
   export let models: string[] = Object.keys(per_elem_errors)
   export let current_model: string[] = [models[1]]
   export let manual_cbar_max: boolean = false
-  export let normalized: boolean = false
+  export let normalized: boolean = true
   export let cbar_max: number | null = 0.03
 
   const test_set_std_key = Object.keys(per_elem_errors).find((key) =>
@@ -20,7 +20,11 @@
   const test_set_std = Object.values(per_elem_errors[test_set_std_key]) as number[]
 
   $: heatmap_values = (Object.values(per_elem_errors[current_model[0]]) as number[]).map(
-    (val, idx) => (normalized ? val / test_set_std[idx] || null : val)
+    (val, idx) => {
+      const denom = normalized ? test_set_std[idx] : 1
+      if (denom) return val / denom
+      return null
+    }
   )
   $: current_data_max = Math.max(...heatmap_values)
   $: cs_range = [0, manual_cbar_max ? cbar_max : current_data_max]
