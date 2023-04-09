@@ -1,9 +1,9 @@
 <script>
   import { repository as repo } from '$site/package.json'
-  import EachScatter from '$figs/each-scatter-models.svelte'
+  import EachScatterModels from '$figs/each-scatter-models.svelte'
   import MetricsTable from '$figs/metrics-table.svelte'
   import CumulativeClfMetrics from '$figs/cumulative-clf-metrics.svelte'
-  import RollingMaeModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'
+  import RollingMaeVsHullDistModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'
   import ElementErrorsPtableHeatmap from '$models/element-errors-ptable-heatmap.svelte'
   import HistClfTrueHullDistModels from '$figs/hist-clf-true-hull-dist-models.svelte'
   import { onMount } from 'svelte'
@@ -112,7 +112,7 @@ To simulate a real discovery campaign, our test set inputs are unrelaxed structu
 
 ## Models
 
-Our initial benchmark release includes 8 models. @Fig:model-metrics includes all models but we focus on the 6 best performers in subsequent figures for visual clarity.
+Our initial benchmark release includes 8 models. @Fig:metrics-table includes all models but we focus on the 6 best performers in subsequent figures for visual clarity.
 
 1. **Voronoi+RF** @ward_including_2017 - A random forest trained to map a combination of composition-based Magpie features and structure-based relaxation-invariant Voronoi tessellation features (effective coordination numbers, structural heterogeneity, local environment properties, ...) to DFT formation energies.
 
@@ -150,9 +150,9 @@ Our initial benchmark release includes 8 models. @Fig:model-metrics includes all
 
 <MetricsTable />
 
-> @label:fig:model-metrics Classification and regression metrics for all models tested on our benchmark. The heat map ranges from yellow (best) to blue (worst) performance. DAF = discovery acceleration factor (see text), TPR = true positive rate, TNR = false negative rate, MAE = mean absolute error, RMSE = root mean squared error. The dummy classifier uses the `scikit-learn` `stratified` strategy of randomly assigning stable/unstable labels according to the training set prevalence. The dummy regression metrics MAE, RMSE and R<sup>2</sup> are attained by always predicting the test set mean. Note that Voronoi RF, CGCNN and MEGNet are worse than dummy on regression metrics but better on some of the classification metrics, highlighting the importance of looking at the right metrics for the task at hand to gauge model performance.
+> @label:fig:metrics-table Classification and regression metrics for all models tested on our benchmark. The heat map ranges from yellow (best) to blue (worst) performance. DAF = discovery acceleration factor (see text), TPR = true positive rate, TNR = false negative rate, MAE = mean absolute error, RMSE = root mean squared error. The dummy classifier uses the `scikit-learn` `stratified` strategy of randomly assigning stable/unstable labels according to the training set prevalence. The dummy regression metrics MAE, RMSE and R<sup>2</sup> are attained by always predicting the test set mean. Note that Voronoi RF, CGCNN and MEGNet are worse than dummy on regression metrics but better on some of the classification metrics, highlighting the importance of looking at the right metrics for the task at hand to gauge model performance.
 
-@Fig:model-metrics shows performance metrics for all models considered in v1 of our benchmark.
+@Fig:metrics-table shows performance metrics for all models considered in v1 of our benchmark.
 CHGNet takes the top spot on all metrics expect true positive rate (TPR) and emerges as current SOTA for ML-guided materials discovery. The discovery acceleration factor (DAF) measures how many more stable structures a model found among the ones it predicted as stable compared to the dummy discovery rate of 43k / 257k $\approx$ 16.7% achieved by randomly selecting test set crystals. Consequently, the maximum possible DAF is ~6. This highlights the fact that our benchmark is made more challenging by deploying models on an already enriched space with a much higher fraction of stable structures than materials space at large. As the convex hull becomes more thoroughly sampled by future discovery, the fraction of unknown stable structures decreases, naturally leading to less enriched future test sets which will allow for higher maximum DAFs.
 
 Note that MEGNet outperforms M3GNet on DAF (2.70 vs 2.66) even though M3GNet is superior to MEGNet in all other metrics.
@@ -173,12 +173,12 @@ Note the distinction between models that make one-shot predictions directly from
 
 @Fig:cumulative-clf-metrics simulates ranking materials from most to least stable according to model predictions and going down the list calculating the precision and recall of correctly identified stable materials at each step, i.e. exactly how these models could be used in a prospective materials discovery campaign.
 
-A line terminates when a model believes there are no more materials in the WBM test set below the MP convex hull. The dashed vertical line shows the actual number of materials on or below the MP hull. Most models overestimate the number of stable materials. The dashed diagonal Optimal Recall line would be achieved if a model never made a false negative prediction and predicts everything as unstable exactly when the true number of stable materials is reached. Zooming in on the top-left corner of the precision plot, we observe that CHGNet is the only model without a sudden drop in precisions right at the start of the discovery campaign. This is likely attributable to its very low error for materials slightly above the hull between 0 and 50 meV/atom observed in @fig:rolling-mae-vs-hull-dist-models which minimizes the number of false positives that drag down the precision. It keeps a strong lead over the runner-up M3GNet until reaching ~3k screened materials. From there, the CHGNet and M3GNet lines slowly converge until they almost tie at a precision of 0.52 after ~56k screened materials at which point CHGNet's list of materials predicted as stable is exhausted while M3GNet keeps going to 76k, dropping in precision to 0.45 by that point.
+A line terminates when a model believes there are no more materials in the WBM test set below the MP convex hull. The dashed vertical line shows the actual number of materials on or below the MP hull. Most models overestimate the number of stable materials. The dashed diagonal Optimal Recall line would be achieved if a model never made a false negative prediction and predicts everything as unstable exactly when the true number of stable materials is reached. Zooming in on the top-left corner of the precision plot, we observe that CHGNet is the only model without a sudden drop in precisions right at the start of the discovery campaign. It keeps a strong lead over the runner-up M3GNet until reaching ~3k screened materials. From there, the CHGNet and M3GNet lines slowly converge until they almost tie at a precision of 0.52 after ~56k screened materials at which point CHGNet's list of materials predicted as stable is exhausted while M3GNet keeps going to 76k, dropping in precision to 0.45 by that point.
 
 ### Rolling MAE vs. Hull Distance
 
 {#if mounted}
-<RollingMaeModels />
+<RollingMaeVsHullDistModels />
 {/if}
 
 > @label:fig:rolling-mae-vs-hull-dist-models Rolling MAE on the WBM test set as the energy to the convex hull of the MP training set is varied. The width of the box in the bottom corner indicates the rolling window within which errors were averaged (think smoothing strength). The red-highlighted 'triangle of peril' shows where the models are most likely to misclassify structures. As long as a model's rolling MAE remains inside the triangle, its mean error is larger than the distance to the convex hull. If the model's error happens to point towards the stability threshold at 0 eV from the hull (the plot's center), it's average error will change the stability classification of a material from true positive/negative to false negative/positive.
@@ -187,14 +187,16 @@ A line terminates when a model believes there are no more materials in the WBM t
 
 ### Classification Histograms
 
+{#if mounted}
 <HistClfTrueHullDistModels />
+{/if}
 
-> @label:fig:hist-clf-true-hull-dist-models These histograms show the classification performance of models as a function of DFT-computed hull distance on the x axis (subplots sorted by F1 scores). While CHGNet and M3GNet perform almost equally well overall, M3GNet makes fewer false negative but more false positives predictions compared to CHGNet. This observation is also reflected in the higher TPR and lower TNR of M3GNet vs CHGNet in @fig:model-metrics.
+> @label:fig:hist-clf-true-hull-dist-models These histograms show the classification performance of models as a function of DFT-computed hull distance on the x axis (subplots sorted by F1 scores). While CHGNet and M3GNet perform almost equally well overall, M3GNet makes fewer false negative but more false positives predictions compared to CHGNet. This observation is also reflected in the higher TPR and lower TNR of M3GNet vs CHGNet in @fig:metrics-table.
 
 ### Predicted Hull Distance Parity Plots
 
 {#if mounted}
-<EachScatter />
+<EachScatterModels />
 {/if}
 
 > @label:fig:each-scatter-models Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth
@@ -215,7 +217,7 @@ Many GNN message-passing functions incorporate a soft attention coefficient desi
 
 ## Discussion
 
-From @fig:model-metrics we see several models achieve a DAF > 2.5 in this realistic benchmark scenario with the SOTA model CHGNet even reaching 3.06.
+From @fig:metrics-table we see several models achieve a DAF > 2.5 in this realistic benchmark scenario with the SOTA model CHGNet even reaching 3.06.
 Consequently, the benefits of deploying ML-based triage in high-throughput computational materials discovery applications have matured to the point where they likely warrant the time and setup required to incorporate them into future discovery efforts.
 However, there are many aspects on which further progress is necessary, for example, models still make large numbers of false positive predictions for materials over 50 meV above the convex hull and much less likely to be synthesizable, greatly reducing the DAF.
 The results obtained from version 1 of our benchmark show that ML universal interatomic potentials like M3GNet are the most promising methodology to pursue going forward, being both ~20x cheaper to run than black box optimizers like BOWSR and having access to more training structures than coordinate-free approaches like Wrenformer.

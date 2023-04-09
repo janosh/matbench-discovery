@@ -112,7 +112,7 @@ save_fig(fig, f"{FIGS}/bar-element-counts-mp+wbm-{normalized=}.svelte")
 
 
 # %%
-test_set_std_col = "Test set standard deviation (eV/atom)"
+test_set_std_col = "Test set standard deviation"
 df_elem_err[test_set_std_col] = (
     df_frac_comp.where(pd.isna, 1) * df_wbm[each_true_col].values[:, None]
 ).std()

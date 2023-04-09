@@ -204,7 +204,7 @@ fig.layout.legend.update(
 axis_titles = dict(xref="paper", yref="paper", showarrow=False)
 fig.add_annotation(  # x-axis title
     x=0.5,
-    y=-0.05,
+    y=-0.06,
     text=x_title,
     **axis_titles,
 )
@@ -224,7 +224,7 @@ fig.show()
 
 # %%
 save_fig(fig, f"{FIGS}/each-scatter-models.svelte")
-save_fig(fig, f"{ROOT}/tmp/figures/each-scatter-models.pdf", width=600, height=700)
+save_fig(fig, f"{ROOT}/paper/figures/each-scatter-models.pdf", width=600, height=700)
 # save_fig(fig, f"{STATIC}/each-scatter-models.webp", scale=4, width=700, height=800)
 
 

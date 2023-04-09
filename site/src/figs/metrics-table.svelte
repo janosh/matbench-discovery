@@ -5,7 +5,7 @@
 <table use:sortable class="roomy" {...$$props} id="T_">
   <thead>
     <tr>
-      <th class="index_name level0">model</th>
+      <th class="blank level0">&nbsp;</th>
       <th id="T__level0_col0" class="col_heading level0 col0">F1</th>
       <th id="T__level0_col1" class="col_heading level0 col1">DAF</th>
       <th id="T__level0_col2" class="col_heading level0 col2">Precision</th>
@@ -14,7 +14,8 @@
       <th id="T__level0_col8" class="col_heading level0 col8">Accuracy</th>
       <th id="T__level0_col9" class="col_heading level0 col9">MAE</th>
       <th id="T__level0_col10" class="col_heading level0 col10">RMSE</th>
-      <th id="T__level0_col11" class="col_heading level0 col11">R²</th>
+      <th id="T__level0_col11" class="col_heading level0 col11">R<sup>2</sup></th>
+      <th id="T__level0_col14" class="col_heading level0 col14">model class</th>
     </tr>
   </thead>
   <tbody>
@@ -29,6 +30,7 @@
       <td id="T__row0_col9" class="data row0 col9">0.07</td>
       <td id="T__row0_col10" class="data row0 col10">0.11</td>
       <td id="T__row0_col11" class="data row0 col11">0.61</td>
+      <td id="T__row0_col14" class="data row0 col14">UIP</td>
     </tr>
     <tr>
       <th id="T__level0_row1" class="row_heading level0 row1">M3GNet</th>
@@ -41,6 +43,7 @@
       <td id="T__row1_col9" class="data row1 col9">0.07</td>
       <td id="T__row1_col10" class="data row1 col10">0.12</td>
       <td id="T__row1_col11" class="data row1 col11">0.59</td>
+      <td id="T__row1_col14" class="data row1 col14">UIP</td>
     </tr>
     <tr>
       <th id="T__level0_row2" class="row_heading level0 row2">MEGNet</th>
@@ -53,6 +56,7 @@
       <td id="T__row2_col9" class="data row2 col9">0.13</td>
       <td id="T__row2_col10" class="data row2 col10">0.20</td>
       <td id="T__row2_col11" class="data row2 col11">-0.27</td>
+      <td id="T__row2_col14" class="data row2 col14">GNN</td>
     </tr>
     <tr>
       <th id="T__level0_row3" class="row_heading level0 row3">CGCNN</th>
@@ -65,6 +69,7 @@
       <td id="T__row3_col9" class="data row3 col9">0.14</td>
       <td id="T__row3_col10" class="data row3 col10">0.23</td>
       <td id="T__row3_col11" class="data row3 col11">-0.61</td>
+      <td id="T__row3_col14" class="data row3 col14">GNN</td>
     </tr>
     <tr>
       <th id="T__level0_row4" class="row_heading level0 row4">CGCNN+P</th>
@@ -77,6 +82,7 @@
       <td id="T__row4_col9" class="data row4 col9">0.11</td>
       <td id="T__row4_col10" class="data row4 col10">0.18</td>
       <td id="T__row4_col11" class="data row4 col11">0.02</td>
+      <td id="T__row4_col14" class="data row4 col14">GNN</td>
     </tr>
     <tr>
       <th id="T__level0_row5" class="row_heading level0 row5">Wrenformer</th>
@@ -89,6 +95,7 @@
       <td id="T__row5_col9" class="data row5 col9">0.10</td>
       <td id="T__row5_col10" class="data row5 col10">0.18</td>
       <td id="T__row5_col11" class="data row5 col11">-0.04</td>
+      <td id="T__row5_col14" class="data row5 col14">Transformer</td>
     </tr>
     <tr>
       <th id="T__level0_row6" class="row_heading level0 row6">BOWSR + MEGNet</th>
@@ -101,6 +108,7 @@
       <td id="T__row6_col9" class="data row6 col9">0.11</td>
       <td id="T__row6_col10" class="data row6 col10">0.16</td>
       <td id="T__row6_col11" class="data row6 col11">0.15</td>
+      <td id="T__row6_col14" class="data row6 col14">BO+GNN</td>
     </tr>
     <tr>
       <th id="T__level0_row7" class="row_heading level0 row7">Voronoi RF</th>
@@ -113,6 +121,7 @@
       <td id="T__row7_col9" class="data row7 col9">0.14</td>
       <td id="T__row7_col10" class="data row7 col10">0.21</td>
       <td id="T__row7_col11" class="data row7 col11">-0.32</td>
+      <td id="T__row7_col14" class="data row7 col14">Fingerprint+RF</td>
     </tr>
     <tr>
       <th id="T__level0_row8" class="row_heading level0 row8">dummy</th>
@@ -125,6 +134,7 @@
       <td id="T__row8_col9" class="data row8 col9">0.12</td>
       <td id="T__row8_col10" class="data row8 col10">0.18</td>
       <td id="T__row8_col11" class="data row8 col11">0.00</td>
+      <td id="T__row8_col14" class="data row8 col14">dummy clf</td>
     </tr>
   </tbody>
 </table>

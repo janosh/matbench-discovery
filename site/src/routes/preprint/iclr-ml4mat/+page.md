@@ -2,7 +2,7 @@
   import { repository as repo } from '$site/package.json'
   import MetricsTable from '$figs/metrics-table.svelte'
   import CumulativeClfMetrics from '$figs/cumulative-clf-metrics.svelte'
-  import RollingMaeModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'
+  import RollingMaeVsHullDistModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'
   import { browser } from '$app/environment'
 </script>
 
@@ -86,7 +86,7 @@ Moreover, to simulate a discovery campaign our test set inputs are unrelaxed str
 
 ## Models
 
-Our initial benchmark release includes 8 models. @Fig:model-metrics includes all models but we focus on the 6 best performers in subsequent figures for visual clarity.
+Our initial benchmark release includes 8 models. @Fig:metrics-table includes all models but we focus on the 6 best performers in subsequent figures for visual clarity.
 
 1. **Voronoi+RF** @ward_including_2017 - A random forest trained to map a combination of composition-based Magpie features and structure-based relaxation-invariant Voronoi tessellation features (effective coordination numbers, structural heterogeneity, local environment properties, ...) to DFT formation energies.
 
@@ -108,13 +108,13 @@ Our initial benchmark release includes 8 models. @Fig:model-metrics includes all
 
 <MetricsTable />
 
-> @label:fig:model-metrics Regression and classification metrics for all models tested on our benchmark. The heat map ranges from yellow (best) to blue (worst) performance. DAF = discovery acceleration factor (see text), TPR = true positive rate, TNR = false negative rate, MAE = mean absolute error, RMSE = root mean squared error
+> @label:fig:metrics-table Regression and classification metrics for all models tested on our benchmark. The heat map ranges from yellow (best) to blue (worst) performance. DAF = discovery acceleration factor (see text), TPR = true positive rate, TNR = false negative rate, MAE = mean absolute error, RMSE = root mean squared error
 
-@Fig:model-metrics shows performance metrics for all models considered in v1 of our benchmark.
+@Fig:metrics-table shows performance metrics for all models considered in v1 of our benchmark.
 M3GNet takes the top spot on most metrics and emerges as current SOTA for ML-guided materials discovery. The discovery acceleration factor (DAF) measures how many more stable structures a model found among the ones it predicted stable compared to the dummy discovery rate of 43k / 257k $\approx$ 16.7% achieved by randomly selecting test set crystals. Consequently, the maximum possible DAF is ~6. This highlights the fact that our benchmark is made more challenging by deploying models on an already enriched space with a much higher fraction of stable structures over randomly exploring materials space. As the convex hull becomes more thoroughly sampled by future discovery, the fraction of unknown stable structures decreases, naturally leading to less enriched future test sets which will allow for higher maximum DAFs. The reason MEGNet outperforms M3GNet on DAF becomes clear from @fig:cumulative-clf-metrics by noting that MEGNet's line ends closest to the total number of stable materials. The other models overpredict this number, resulting in large numbers of false positive predictions that drag down their DAFs.
 
 {#if browser}
-<RollingMaeModels />
+<RollingMaeVsHullDistModels />
 {/if}
 
 > @label:fig:rolling-mae-vs-hull-dist-models Rolling MAE on the WBM test set as the energy to the convex hull of the MP training set is varied. The white box in the bottom left indicates the size of the rolling window. The highlighted 'triangle of peril' shows where the models are most likely to misclassify structures.
@@ -131,7 +131,7 @@ Despite their low accuracy in one-shot predicting relaxed energies from unrelaxe
 
 ## Discussion
 
-From @fig:model-metrics we see several models achieve a DAF > 2 in this realistic benchmark scenario.
+From @fig:metrics-table we see several models achieve a DAF > 2 in this realistic benchmark scenario.
 Consequently, the benefits of deploying ML-based triage in high-throughput computational materials discovery applications likely warrant the time and setup required.
 However, there are many aspects on which further progress is necessary, for example, models still make large numbers of false positive predictions for materials over 50 meV above the convex hull and much less likely to be synthesizable, greatly reducing the DAF.
 The results obtained from version 1 of our benchmark show that ML universal interatomic potentials like M3GNet are the most promising methodology to pursue going forward, being both ~20x cheaper to run than black box optimizers like BOWSR and having access to more training structures than coordinate-free approaches like Wrenformer.

@@ -29,6 +29,13 @@ from matbench_discovery.preds import df_metrics, df_preds, each_true_col
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
 
+try:
+    # pdfkit used to export pandas Styler to PDF, requires:
+    # pip install pdfkit && brew install homebrew/cask/wkhtmltopdf
+    import pdfkit
+except ImportError:
+    pdfkit = None
+
 
 # %%
 train_run_filters: dict[str, tuple[int, str, str, str]] = {
@@ -137,16 +144,34 @@ df_metrics["dummy"] = dummy_metrics
 
 
 # %%
-time_cols = list(df_stats.filter(like=time_col))
+ontology = {
+    "CHGNet": ("S2E", "IS2RE-SR", "UIP-GNN"),
+    "M3GNet": ("S2E", "IS2RE-SR", "UIP-GNN"),
+    "MEGNet": ("RS2RE", "IS2RE", "GNN"),
+    "CGCNN": ("RS2RE", "IS2RE", "GNN"),
+    "CGCNN+P": ("S2RE", "IS2RE", "GNN"),
+    "Wrenformer": ("RP2RE", "IP2RE", "Transformer"),
+    "BOWSR + MEGNet": ("RS2RE", "IS2RE-BO", "BO+GNN"),
+    "Voronoi RF": ("RS2RE", "IS2RE", "Fingerprint+RF"),
+    "dummy": ("", "", "dummy clf"),
+}
+
+df_table = pd.concat(
+    [df_metrics, pd.DataFrame(ontology, index=["trained", "deployed", "model class"])]
+)
+
+
+# %%
+# time_cols = list(df_stats.filter(like=time_col))
 # for col in time_cols:  # uncomment to include run times in metrics table
-#     df_metrics.loc[col] = df_stats[col]
-higher_is_better = {"DAF", "R²", "Precision", "F1", "Accuracy", "TPR", "TNR"}
+#     df_ont.loc[col] = df_stats[col]
+higher_is_better = {"DAF", "R<sup>2</sup>", "Precision", "F1", "Accuracy", "TPR", "TNR"}
 lower_is_better = {"MAE", "RMSE", "FNR", "FPR"}
-df_metrics = df_metrics.rename(index={"R2": "R²"})
-idx_set = set(df_metrics.index)
+df_table = df_table.rename(index={"R2": "R<sup>2</sup>"})
+idx_set = set(df_table.index)
 
 styler = (
-    df_metrics.T
+    df_table.T
     # append arrow up/down to table headers to indicate higher/lower metric is better
     # .rename(columns=lambda x: x + " ↑" if x in higher_is_better else x + " ↓")
     .style.format(precision=2)
@@ -167,22 +192,40 @@ styles = {
 styler.set_table_styles([dict(selector=sel, props=styles[sel]) for sel in styles])
 styler.set_uuid("")
 # hide redundant metrics (TPR = Recall, FPR = 1 - TNR, FNR = 1 - TPR)
-styler.hide(["Recall", "FPR", "FNR"], axis=1)
+styler.hide(["Recall", "FPR", "FNR", "trained", "deployed"], axis=1)
 
 
 # %% export model metrics as styled HTML table and Svelte component
-styler.to_html(f"{ROOT}/tmp/figures/model-metrics.html")
 # draw dotted line between classification and regression metrics
-styles = "#T_ :is(td, th):nth-last-child(3) { border-left: 1px dotted white; }"
 df_to_svelte_table(
-    styler, f"{FIGS}/metrics-table.svelte", inline_props="class='roomy'", styles=styles
+    styler,
+    f"{FIGS}/metrics-table.svelte",
+    inline_props="class='roomy'",
+    styles="#T_ :is(td, th):nth-last-child(3) { border-left: 1px dotted white; }",
 )
+
+
+# %%
+if pdfkit is not None:
+    pdfkit.from_string(
+        styler.to_html(),
+        f"{ROOT}/paper/figures/metrics-table.pdf",
+        options={
+            "margin-top": "0",
+            "margin-right": "0",
+            "margin-bottom": "0",
+            "margin-left": "0",
+            # fit page size to content
+            "page-width": f"{(len(styler.columns) + 1) * 10}",
+            "page-height": f"{(len(styler.index) + 1) * 6}",
+        },
+    )
 
 
 # %%
 # hide_rows = list(set(df_metrics) - set(df_metrics.T.F1.nlargest(6).index))
 # styler.hide(hide_rows)  # show only the best models by F1 score
-png_metrics = f"{ROOT}/tmp/figures/model-metrics.png"
+png_metrics = f"{ROOT}/tmp/figures/metrics-table.png"
 dfi.export(styler, png_metrics, dpi=300)
 print(f"{png_metrics=}")
 
