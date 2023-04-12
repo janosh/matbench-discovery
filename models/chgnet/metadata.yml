@@ -31,7 +31,8 @@ requirements:
   ase: 3.22.0
   pymatgen: 2022.10.22
   numpy: 1.24.0
-trained_on_benchmark: false
+trained_for_benchmark: false
+# training_set: MPTraj
 
 hyperparams:
   max_steps: 2000

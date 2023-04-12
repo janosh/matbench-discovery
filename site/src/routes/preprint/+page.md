@@ -34,18 +34,13 @@ As larger and more diverse datasets emerged from initiatives like the Materials 
 
 ### Limitations of current benchmarking in ML
 
-Yet despite many advances in ML for materials it is unclear which methodology performs best at predicting material stability, let alone which model. The field lacks a standardized benchmark task that accurately simulates applying models in a prospective materials discovery campaign.
+Yet despite many advances in ML for materials, it is unclear which methodology performs best at predicting material stability, let alone which model. The field lacks a standardized benchmark task that accurately simulates applying models in a prospective materials discovery campaign.
 
 1. **Lack of realism**: Benchmark tasks can be idealized and simulate overly simplified conditions that do not reflect the real-world challenges a model faces when used in an actual discovery campaign. This can lead to pretty leaderboards listing SOTA models that underwhelm when used in production and has caused some disillusionment with ML methods in the past. Examples of how this comes about are choosing the wrong target or picking an unrepresentative train/test split.
 1. **Limited diversity**: Benchmark datasets may be too small and contain only a limited number of materials, unrepresentative of the huge diversity of materials space. This can make models look good even if they fail to generalize.
-1. **Opportunity cost**: Some benchmarks give insufficient thought to the high cost of failed experiments. Looking purely at global metrics like $\text{MAE}$, $\text{RMSE}$ and $R^2$ can give practitioners a false sense of security. It has been shown that even accurate models are susceptible to unexpectedly high false-positive rates that can cause experimentalists to waste time and resources on doomed experiments TODO who to cite here. Many benchmark tasks do not consider the cost or practicality of synthesizing the materials, which is an important aspect in the discovery of new materials.
+1. **Opportunity cost**: Some benchmarks give insufficient thought to the high cost of failed experiments. Looking purely at global metrics like $\text{MAE}$, $\text{RMSE}$ and $R^2$ can give practitioners a false sense of security. Accurate regressors are susceptible to unexpectedly high false-positive rates if those accurate predictions lie close to the decision boundary. This can cause experimentalists to waste time and resources on doomed experiments.
+<!-- TODO who to cite here -->
 1. **Scalability**: Many benchmark tasks have too small data to adequately simulate the high-throughput and large-date regimes that future discovery efforts are likely to encounter. Confining model testing to the small data regime can obfuscate poor scaling relations like Gaussian Processes whose training costs grow cubically with training sample count or random forests that achieve outstanding performance on few data points but fail to extract the full information content out of larger datasets, leading to flatter learning curves compared to neural networks and worse performance when large amounts of training data are available.
-
-Recent areas of progress include
-
-1. one-shot predictors like Wren @goodall_rapid_2022,
-1. universal force predictors such as M3GNet @chen_universal_2022 and CHGNet @deng_chgnet_2023 that emulate density functional theory to relax crystal structures according to Newton's laws, and
-1. Bayesian optimizers like BOWSR that, paired with any energy model, treat structure relaxation as a black-box optimization problem @zuo_accelerating_2021.
 
 Ideally, the question of which ML stability prediction algorithms perform best should be answered decisively _before_ large DFT databases like MP or the OQMD commit resources to ML efforts to expand their databases. In this work, we aim to answer which of these is the winning methodology in a future-proof benchmark that closely simulates using ML to guide a real-world discovery campaign.
 
@@ -146,22 +141,22 @@ Our initial benchmark release includes 8 models. @Fig:metrics-table includes all
 
 ## Results
 
-### Summary Table
+### Metrics Table
 
 <MetricsTable />
 
-> @label:fig:metrics-table Classification and regression metrics for all models tested on our benchmark. The heat map ranges from yellow (best) to blue (worst) performance. DAF = discovery acceleration factor (see text), TPR = true positive rate, TNR = false negative rate, MAE = mean absolute error, RMSE = root mean squared error. The dummy classifier uses the `scikit-learn` `stratified` strategy of randomly assigning stable/unstable labels according to the training set prevalence. The dummy regression metrics MAE, RMSE and R<sup>2</sup> are attained by always predicting the test set mean. Note that Voronoi RF, CGCNN and MEGNet are worse than dummy on regression metrics but better on some of the classification metrics, highlighting the importance of looking at the right metrics for the task at hand to gauge model performance.
+> @label:fig:metrics-table Classification and regression metrics for all models tested on our benchmark. The heat map ranges from yellow (best) to blue (worst) performance. DAF = discovery acceleration factor (see text), TPR = true positive rate, TNR = false negative rate, MAE = mean absolute error, RMSE = root mean squared error. The dummy classifier uses the `scikit-learn` `stratified` strategy of randomly assigning stable/unstable labels according to the training set prevalence. The dummy regression metrics MAE, RMSE and R<sup>2</sup> are attained by always predicting the test set mean. Voronoi RF, CGCNN and MEGNet are worse than dummy on regression metrics but better on some of the classification metrics, highlighting the importance of looking at the right metrics for the task at hand to gauge model performance.
 
 @Fig:metrics-table shows performance metrics for all models considered in v1 of our benchmark.
 CHGNet takes the top spot on all metrics expect true positive rate (TPR) and emerges as current SOTA for ML-guided materials discovery. The discovery acceleration factor (DAF) measures how many more stable structures a model found among the ones it predicted as stable compared to the dummy discovery rate of 43k / 257k $\approx$ 16.7% achieved by randomly selecting test set crystals. Consequently, the maximum possible DAF is ~6. This highlights the fact that our benchmark is made more challenging by deploying models on an already enriched space with a much higher fraction of stable structures than materials space at large. As the convex hull becomes more thoroughly sampled by future discovery, the fraction of unknown stable structures decreases, naturally leading to less enriched future test sets which will allow for higher maximum DAFs.
 
-Note that MEGNet outperforms M3GNet on DAF (2.70 vs 2.66) even though M3GNet is superior to MEGNet in all other metrics.
-
-The reason MEGNet outperforms M3GNet on DAF becomes clear from @fig:cumulative-clf-metrics. MEGNet's line ends at 55.6 k materials which is closest to the true number of 43 k stable materials in our test set. All other models overpredict the sum total of stable materials by anywhere from 40% (~59 k for CGCNN) to 104% (85 k for Wrenformer), resulting in large numbers of false positive predictions which drag down their DAFs.
+MEGNet outperforms M3GNet on DAF (2.70 vs 2.66) even though M3GNet is superior to MEGNet in all other metrics. The reason for this becomes clear from @fig:cumulative-clf-metrics. MEGNet's total number of materials predicted stable is 55.6 k materials (which causes its cumulative precision and recall lines to end first) which is closest to the true number of 43 k stable materials in our test set. All other models overpredict the number of stable materials by anywhere from 40% (~59 k for CGCNN) to 104% (85 k for Wrenformer), resulting in large numbers of false positive predictions which drag down their DAFs.
 
 However, this is only a problem in practice for exhaustive discovery campaigns that spend resources to validate _all_ stable predictions from a model. More frequently, people will likely rank model predictions most to least stable and stop after some pre-determined compute budget is spent, say, 10k DFT relaxations. In that case, most of the false positive predictions near the less stable end of the candidate list are ignored and don't harm the campaign's overall discovery count. Still, we believe it useful to have a metric that is sensitive to how well a model's overall prevalence is calibrated to the prevalence in our test set.
 
-Note the distinction between models that make one-shot predictions directly from unrelaxed inputs such as MEGNet, Wrenformer, CGCNN, CGCNN+P, Voronoi RF versus UIPs that predict forces to emulate DFT relaxation. While the F1 scores and DAFs of non-UIPs are seemingly unaffected, their $R^2$ coefficients are significantly worse. Except for CGCNN+P, all fail to achieve positive $R^2$. This means their predictions explain the observed variation in the data less than a horizontal line through the test set mean, suggesting these models are not predictive in a global sense, i.e. across the full dataset range. However, even models with negative $R^2$ can be locally good in the positive and negative tails of the test set distribution. They suffer most in the mode of the test set, i.e. near the stability threshold of 0 eV/atom above the hull. This reveals an important shortcoming of $R^2$ as a metric for classification tasks like ours.
+There's a remarkable distinction between models that make one-shot predictions directly from unrelaxed inputs such as MEGNet, Wrenformer, CGCNN, CGCNN+P, Voronoi RF versus UIPs that predict forces to emulate DFT relaxation. While the F1 scores and DAFs of non-UIPs are seemingly unaffected, their $R^2$ coefficients are significantly worse. Except for CGCNN+P, all fail to achieve positive $R^2$. Negative $R^2$ means model predictions explain the observed variation in the data less than a horizontal line through the test set mean, suggesting these models are not predictive in a global sense, i.e. when averaging explanatory power across the whole dataset. However, even models with negative $R^2$ can be locally good which is the case on our test set in the positive and negative tails of the hull distance distribution. They suffer most in the mode of the test set, i.e. near the stability threshold of 0 eV/atom above the hull. This reveals an important shortcoming of $R^2$ as a metric for classification tasks like crystal stability prediction.
+
+The reason CGCNN+P achieves better regression metrics than CGCNN but is still worse as a classifier becomes apparent from [the SI histograms](/si#fig:hist-clf-pred-hull-dist-models) by noting that the CGCNN+P histogram is more sharply peaked at the 0 hull distance stability threshold. This causes even small errors in the predicted convex hull distance to be large enough to invert a classification. Again, this is evidence to choose carefully which metrics to optimize. Regression metrics are far more prevalent when evaluating energy predictions. In our benchmark, energies are just means to an end to classify compound stability. Regression accuracy is of little use on its own unless it helps classification. The field needs to be aware that this is not a given.
 
 ### Cumulative Classification Metrics
 
@@ -191,7 +186,7 @@ A line terminates when a model believes there are no more materials in the WBM t
 <HistClfTrueHullDistModels />
 {/if}
 
-> @label:fig:hist-clf-true-hull-dist-models These histograms show the classification performance of models as a function of DFT-computed hull distance on the x axis (subplots sorted by F1 scores). While CHGNet and M3GNet perform almost equally well overall, M3GNet makes fewer false negative but more false positives predictions compared to CHGNet. This observation is also reflected in the higher TPR and lower TNR of M3GNet vs CHGNet in @fig:metrics-table.
+> @label:fig:hist-clf-true-hull-dist-models These histograms show the classification performance of models as a function of DFT-computed hull distance on the $x$ axis. Models are sorted top to bottom by F1 score. While CHGNet and M3GNet perform almost equally well overall, M3GNet makes fewer false negative but more false positives predictions compared to CHGNet. This observation is also reflected in the higher TPR and lower TNR of M3GNet vs CHGNet in @fig:metrics-table, as well as the lower error for CHGNet vs M3GNet on the stable side (left half) of @fig:rolling-mae-vs-hull-dist-models and M3GNet over CHGNet on the unstable side (right half) of @fig:rolling-mae-vs-hull-dist-models.
 
 ### Predicted Hull Distance Parity Plots
 
@@ -201,7 +196,7 @@ A line terminates when a model believes there are no more materials in the WBM t
 
 > @label:fig:each-scatter-models Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth
 
-TODO: mention we consistently see deducting old MP corrections and applying 2020 scheme from MEGNEt e_form predictions increases MAE, no matter if paired with BOWSR, M3GNet, CHGNet or standalone
+<!-- TODO maybe mention we consistently see deducting old MP corrections and applying 2020 scheme from MEGNEt e_form predictions increases MAE, no matter if paired with BOWSR, M3GNet, CHGNet or standalone -->
 
 ### Per-Element Model Error Heatmap
 
@@ -218,6 +213,9 @@ Many GNN message-passing functions incorporate a soft attention coefficient desi
 ## Discussion
 
 From @fig:metrics-table we see several models achieve a DAF > 2.5 in this realistic benchmark scenario with the SOTA model CHGNet even reaching 3.06.
+
+@Fig:metrics-table shows that several models achieve a DAF (discovery acceptance factor) greater than 2 in a realistic benchmark scenario. The CHGNet model, which is currently the best-performing model, achieves a DAF of 3.06. These results demonstrate the effectiveness of using machine learning-based triage in high-throughput computational materials discovery applications. This indicates that it is worthwhile investing time and resources in integrating these methods into future discovery efforts.
+
 Consequently, the benefits of deploying ML-based triage in high-throughput computational materials discovery applications have matured to the point where they likely warrant the time and setup required to incorporate them into future discovery efforts.
 However, there are many aspects on which further progress is necessary, for example, models still make large numbers of false positive predictions for materials over 50 meV above the convex hull and much less likely to be synthesizable, greatly reducing the DAF.
 The results obtained from version 1 of our benchmark show that ML universal interatomic potentials like M3GNet are the most promising methodology to pursue going forward, being both ~20x cheaper to run than black box optimizers like BOWSR and having access to more training structures than coordinate-free approaches like Wrenformer.
@@ -233,8 +231,8 @@ We welcome further model submissions as well as data contributions for version 2
 
 Janosh Riebesell acknowledges support from the German Academic Scholarship Foundation ([Studienstiftung](https://wikipedia.org/wiki/Studienstiftung)) and gracious hosting as a visiting affiliate in the groups of Kristin Persson and Anubhav Jain.
 
-We would like to thank Jason Blake Gibson, Shyue Ping Ong, Chi Chen, Ekin Dogus Cubuk, Bowen Deng, Tian Xie and Ryota Tomioka for helpful discussions.
+We would like to thank Jason Blake Gibson, Shyue Ping Ong, Chi Chen, Ekin Dogus Cubuk, Bowen Deng, Tian Xie and Ryota Tomioka for helpful discussions. We also thank Hai-Chen Wang and co-authors for providing the initial structures for the WBM data set @wang_predicting_2021.
 
 ## Author Contributions
 
-Janosh Riebesell: methodology, software, data curation, training and testing models, formal analysis. Rhys Goodall: conceptualization, software, formal analysis. Anubhav Jain: supervision. Kristin Persson: supervision. Alpha Lee: supervision.
+Janosh Riebesell: Methodology, Software, Data Curation, Training and Testing Models, Formal Analysis. Rhys Goodall: Conceptualization, Software, Formal Analysis. Anubhav Jain: Supervision. Kristin Persson: Supervision. Alpha Lee: Supervision.

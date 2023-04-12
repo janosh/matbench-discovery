@@ -18,7 +18,9 @@ export type ModelMetadata = {
   doi?: string
   preprint?: string
   requirements?: Record<string, string>
-  trained_on_benchmark: boolean
+  // whether this model was trained from scratch specifically for
+  // this benchmark using our canonical training set
+  trained_for_benchmark: boolean
   hyperparams: Record<string, string | number>
   notes?: Record<string, string>
   dir: string // models/{dir}/metadata.yml

@@ -1,5 +1,6 @@
 <script lang="ts">
   import MetricsTableMegnetCombos from '$figs/metrics-table-megnet-combos.svelte'
+  import MetricsTableFirst10k from '$figs/metrics-table-first-10k.svelte'
   import RunTimeBars from '$figs/model-run-times-bar.svelte'
   import RocModels from '$figs/roc-models.svelte'
   import { browser } from '$app/environment'
@@ -23,6 +24,13 @@
 </script>
 
 # Supplementary Information
+
+## Metrics for 10k materials predicted most stable
+
+<MetricsTableFirst10k />
+
+> @label:fig:metrics-table-first-10k An actual discovery campaign is unlikely to validate every single stable prediction coming from a model like we did in the [metrics table](/preprint#fig:metrics-table). Presumably it will rank model predictions from most to least stable and go down that list as far their time and compute budget permits. Assuming that increases in compute resources will allow future discovery campaigns to grow in scope, we believe 10 k model validations to be a reasonable cutoff. To simulate this scenario, we calculated classification and regression metrics for the 10 k test set materials predicted to be most stable by each model.<br>
+> We again show dummy performance in the bottom row. Note that each model is now evaluated on a different slice of the data, this is still dummy performance across the whole dataset. CHGNet and M3GNet achieve a very impressive 83% and 80% precision, respectively. In concrete terms, this means in a prospective discovery campaign that sets out to validate 10 k model predictions from a search pool of 257 k crystals that are chemically dissimilar from the training set and of which 16.7 % are stable, CHGNet and M3GNet would deliver 4 stable structures for every 5 that are validated.
 
 ## ROC Curves
 
@@ -59,7 +67,9 @@ To avoid potential confusion for people reading the code, we may in places calcu
 <HistClfPredHullDistModels />
 {/if}
 
-> @label:fig:hist-clf-pred-hull-dist-models Similar to [this figure](/preprint#fig:hist-clf-true-hull-dist-models), this histogram shows model stability classification as a function of the distance to the convex hull. The difference here being the $x$ axis showing model-predicted rather than DFT ground-truth distance to the convex hull. Intuitively, it shows hof often models misclassify as a function of how far they think a material is from the convex hull.
+> @label:fig:hist-clf-pred-hull-dist-models Similar to the [true hull distance histograms](/preprint#fig:hist-clf-true-hull-dist-models), these histograms show model stability classification as a function of the distance to the convex hull. The difference here being the $x$ axis shows model-predicted rather than DFT hull distances. Intuitively, it shows how often models misclassify as a function of how far they think a material is from the convex hull.
+
+Note the CGCNN+P histogram is more strongly peaked than CGCNN's which agrees better with the actual DFT ground truth [distribution of hull distances](/about-the-data#--target-distribution) in our test set. This explains why CGCNN+P performs better as a regressor but also reveals how it can simultaneously perform worse as a classifier. By moving predictions closer to the stability threshold at 0 eV/atom above the hull, even small errors are significant enough to tip a classification over the threshold.
 
 ## WBM Batch Robustness as a Measure of Extrapolation Prowess
 
@@ -106,7 +116,7 @@ The two types of target energies should in principle be equivalent since the dif
 
 We highlight this here to refute the suggestion that training on raw DFT energies results in poorly calibrated predictions for deriving formation energies and subsequent stability predictions from.
 
-## Spacegroup Prevalence in Wrenformer failure cases
+## Spacegroup prevalence in Wrenformer failure cases
 
 {#if mounted}
 
@@ -119,6 +129,6 @@ We highlight this here to refute the suggestion that training on raw DFT energie
 
 > @label:fig:spacegroup-prevalence-wrenformer-failures The left spacegroup sunburst shows spacegroup 71 is by far the dominant number among the 941 Wrenformer failure cases where $E_\text{above hull,DFT} < 1$ and $E_\text{above hull,Wrenformer} > 1$ (points inside the shaded rectangle). On the right side for comparison is the spacegroup sunburst for the entire WBM test set.
 
-Looking at the occurrence counts of isopointal prototypes in the shaded rectangle and comparing against the occurrence of those same prototypes in the MP training data counts, we find almost no support for failing structure prototypes. This suggests the reason Wrenformer fails so spectacularly on these structures is that it cannot deal with structure prototypes it has not seen at least several hundred examples of in its training data. Hence Wrenformer may not be useful for discovering new prototypes.
+Looking at the occurrence counts of isopointal prototypes in the shaded rectangle and comparing them with the occurrence of those same prototypes in the MP training data counts, we find almost no support for failing structure prototypes. This suggests the reason Wrenformer fails so spectacularly on these structures is that it cannot deal with structure prototypes it has not seen at least several hundred examples of in its training data. Hence Wrenformer may not be useful for discovering new prototypes.
 
 <ProtoCountsWrenformerFailures />

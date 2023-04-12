@@ -7,7 +7,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from matbench_discovery import ROOT
-from matbench_discovery.data import Files, glob_to_df
+from matbench_discovery.data import Files, df_wbm, glob_to_df
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.plots import eVpa, model_labels, quantity_labels
 
@@ -131,13 +131,24 @@ df_preds = load_df_wbm_with_preds().round(3)
 
 
 df_metrics = pd.DataFrame()
+df_metrics_10k = pd.DataFrame()  # look only at each model's 10k most stable predictions
+prevalence = (df_wbm[each_true_col] <= 0).mean()
+
 df_metrics.index.name = "model"
 for model in PRED_FILES:
     each_pred = df_preds[each_true_col] + df_preds[model] - df_preds[e_form_col]
     df_metrics[model] = stable_metrics(df_preds[each_true_col], each_pred)
+    most_stable_10k = each_pred.nsmallest(10_000)
+    df_metrics_10k[model] = stable_metrics(
+        df_preds[each_true_col].loc[most_stable_10k.index], most_stable_10k
+    )
+    df_metrics_10k[model]["DAF"] = df_metrics_10k[model]["Precision"] / prevalence
+
 
 # pick F1 as primary metric to sort by
 df_metrics = df_metrics.round(3).sort_values("F1", axis=1, ascending=False)
+df_metrics_10k = df_metrics_10k.round(3).sort_values("F1", axis=1, ascending=False)
+
 
 # dataframe of all models' energy above convex hull (EACH) predictions (eV/atom)
 df_each_pred = pd.DataFrame()
