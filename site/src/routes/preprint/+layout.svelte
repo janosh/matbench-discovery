@@ -53,7 +53,7 @@
     font-size: larger;
   }
   /* references */
-  div :global(sup.ref) {
+  div :global(.ref) {
     text-transform: capitalize;
   }
   /* auto-number HTML headings */

@@ -21,7 +21,7 @@ requirements:
   pymatgen: 2022.10.22
   numpy: 1.24.0
   pandas: 1.5.1
-trained_on_benchmark: true
+trained_for_benchmark: true
 
 notes:
   description: A random forest trained to map the combo of composition-based Magpie features and structure-based relaxation-invariant Voronoi tessellation features (bond angles, coordination numbers, ...) to DFT formation energies.

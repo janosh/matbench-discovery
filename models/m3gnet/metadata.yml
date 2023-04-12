@@ -1,66 +1,29 @@
-- model_name: M3GNet
-  model_version: 2022.9.20
-  matbench_discovery_version: 1.0
-  date_added: "2022-09-20"
-  date_published: "2022-02-05"
-  authors:
-    - name: Chi Chen
-      affiliation: UC San Diego
-      role: Model
-      orcid: https://orcid.org/0000-0001-8008-7043
-    - name: Shyue Ping Ong
-      affiliation: UC San Diego
-      orcid: https://orcid.org/0000-0001-5726-2587
-      email: ongsp@ucsd.edu
-  repo: https://github.com/materialsvirtuallab/m3gnet
-  url: https://materialsvirtuallab.github.io/m3gnet
-  doi: https://doi.org/10.1038/s43588-022-00349-3
-  preprint: https://arxiv.org/abs/2202.02450
-  requirements:
-    m3gnet: 0.1.0
-    pymatgen: 2022.10.22
-    numpy: 1.24.0
-    pandas: 1.5.1
-  trained_on_benchmark: false
-  notes:
-    description: M3GNet is a GNN-based universal (as in full periodic table) interatomic potential for materials trained on up to 3-body interactions in the initial, middle and final frame of MP DFT relaxations.
-    long: It thereby learns to emulate structure relaxation, MD simulations and property prediction of materials across diverse chemical spaces.
-    training: Using pre-trained model released with paper. Was only trained on a subset of 62,783 MP relaxation trajectories in the 2018 database release (see [related issue](https://github.com/materialsvirtuallab/m3gnet/issues/20#issuecomment-1207087219)).
-
-- model_name: M3GNet + MEGNet
-  model_version: 2022.9.20
-  matbench_discovery_version: 1.0
-  date_added: "2023-02-03"
-  date_published: "2022-02-05"
-  authors:
-    - name: Chi Chen
-      affiliation: UC San Diego
-      role: Model
-      orcid: https://orcid.org/0000-0001-8008-7043
-    - name: Weike Ye
-      affiliation: UC San Diego
-      orcid: https://orcid.org/0000-0002-9541-7006
-    - name: Yunxing Zuo
-      affiliation: UC San Diego
-      orcid: https://orcid.org/0000-0002-2734-7720
-    - name: Chen Zheng
-      affiliation: UC San Diego
-      orcid: https://orcid.org/0000-0002-2344-5892
-    - name: Shyue Ping Ong
-      affiliation: UC San Diego
-      orcid: https://orcid.org/0000-0001-5726-2587
-      email: ongsp@ucsd.edu
-  repo: https://github.com/materialsvirtuallab/m3gnet
-  url: https://materialsvirtuallab.github.io/m3gnet
-  doi: https://doi.org/10.1038/s43588-022-00349-3
-  preprint: https://arxiv.org/abs/2202.02450
-  requirements:
-    m3gnet: 0.1.0
-    megnet: 1.3.2
-    pymatgen: 2022.10.22
-    numpy: 1.24.0
-    pandas: 1.5.1
-  trained_on_benchmark: false
-  notes:
-    description: This combination of models uses M3GNet to relax initial structures and then passes it to MEGNet to predict the formation energy.
-    training: Using pre-trained model released with paper. Was only trained on a subset of 62,783 MP relaxation trajectories in the 2018 database release (see [related issue](https://github.com/materialsvirtuallab/m3gnet/issues/20#issuecomment-1207087219)).
+model_name: M3GNet
+model_version: 2022.9.20
+matbench_discovery_version: 1.0
+date_added: "2022-09-20"
+date_published: "2022-02-05"
+authors:
+  - name: Chi Chen
+    affiliation: UC San Diego
+    role: Model
+    orcid: https://orcid.org/0000-0001-8008-7043
+  - name: Shyue Ping Ong
+    affiliation: UC San Diego
+    orcid: https://orcid.org/0000-0001-5726-2587
+    email: ongsp@ucsd.edu
+repo: https://github.com/materialsvirtuallab/m3gnet
+url: https://materialsvirtuallab.github.io/m3gnet
+doi: https://doi.org/10.1038/s43588-022-00349-3
+preprint: https://arxiv.org/abs/2202.02450
+requirements:
+  m3gnet: 0.1.0
+  pymatgen: 2022.10.22
+  numpy: 1.24.0
+  pandas: 1.5.1
+trained_for_benchmark: false
+notes:
+  description: M3GNet is a GNN-based universal (as in full periodic table) interatomic potential for materials trained on up to 3-body interactions in the initial, middle and final frame of MP DFT relaxations.
+  long: It thereby learns to emulate structure relaxation, MD simulations and property prediction of materials across diverse chemical spaces.
+  training: Using pre-trained model released with paper. Was only trained on a subset of 62,783 MP relaxation trajectories in the 2018 database release (see [related issue](https://github.com/materialsvirtuallab/m3gnet/issues/20#issuecomment-1207087219)).
+  testing: We also tried combining M3GNet with MEGNet where M3GNet is used to relax initial structures which are then passed to MEGNet to predict the formation energy.

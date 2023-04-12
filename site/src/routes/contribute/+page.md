@@ -16,9 +16,7 @@ pip install matbench-discovery
 
 This example script downloads the training and test data for training a model:
 
-<!-- TODO remove notest meta key once repo is public and file can be downloaded without token -->
-
-```py notest
+```py
 from matbench_discovery.data import load_train_test
 from matbench_discovery.data import df_wbm, DATA_FILES
 
