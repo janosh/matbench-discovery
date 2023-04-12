@@ -3,9 +3,10 @@
   import { sortable } from 'svelte-zoo/actions'
 
   export let select: string[] = []
+  let table: HTMLTableElement
 
   onMount(() => {
-    const rows = document.querySelectorAll(`tr`)
+    const rows = table.querySelectorAll(`tr`)
     for (const row of rows) {
       const header = row.children[0].textContent
       if (header && !select.includes(header)) {
@@ -15,7 +16,7 @@
   })
 </script>
 
-<table use:sortable {...$$props} id="T_">
+<table use:sortable {...$$props} id="T_" bind:this={table}>
   <thead>
     <tr>
       <th class="index_name level0">model</th>

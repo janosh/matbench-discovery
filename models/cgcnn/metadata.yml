@@ -20,7 +20,7 @@
     torch-scatter: 2.0.9
     numpy: 1.24.0
     pandas: 1.5.1
-  trained_on_benchmark: true
+  trained_for_benchmark: true
 
   hyperparams:
     Ensemble Size: 10
@@ -57,7 +57,7 @@
     torch-scatter: 2.0.9
     numpy: 1.24.0
     pandas: 1.5.1
-  trained_on_benchmark: true
+  trained_for_benchmark: true
 
   hyperparams:
     Ensemble Size: 10

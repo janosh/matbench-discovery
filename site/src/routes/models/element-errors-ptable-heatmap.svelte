@@ -9,7 +9,7 @@
   export let active_element: ChemicalElement
   // $: active_counts = elem_counts[filter]
   export let models: string[] = Object.keys(per_elem_errors)
-  export let current_model: string[] = [models[1]]
+  export let current_model: string[] = [models[2]]
   export let manual_cbar_max: boolean = false
   export let normalized: boolean = true
   export let cbar_max: number | null = 0.03
@@ -42,11 +42,11 @@
   }
 </script>
 
-This periodic table is shaded by the MAE for the model-predicted hull distance for each
-element. The errors for every structure in the test set are projected onto the fraction of
-each element in the composition and averaged over all structures. The error is the
-absolute difference per atom between predicted and actual energy distance to the convex
-hull.
+This periodic table is shaded by the MAE for the model-predicted convex hull distance for
+each element. The errors for every structure in the test set are projected onto the
+fraction of each element in the composition and averaged over all structures. The error is
+the absolute difference per atom between predicted and actual energy distance to the
+convex hull.
 
 <MultiSelect bind:selected={current_model} options={models} maxSelect={1} minSelect={1} />
 
@@ -77,13 +77,11 @@ hull.
   color_scale={color_scale[0]}
   bind:active_element
   color_scale_range={cs_range}
-  precision={4}
 >
   <TableInset slot="inset" style="align-content: center;">
     <PtableInset
       element={active_element}
       elem_counts={heatmap_values}
-      precision={5}
       show_percent={false}
       unit="<small style='font-weight: lighter;'>eV / atom</small>"
     />
@@ -93,7 +91,6 @@ hull.
       color_scale={color_scale[0]}
       tick_labels={5}
       range={cs_range}
-      precision={3}
       style="width: 85%; margin: 0 2em;"
     />
   </TableInset>

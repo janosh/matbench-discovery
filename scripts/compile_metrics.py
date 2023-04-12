@@ -24,7 +24,7 @@ from matbench_discovery import FIGS, ROOT, WANDB_PATH
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.plots import df_to_svelte_table
-from matbench_discovery.preds import df_metrics, df_preds, each_true_col
+from matbench_discovery.preds import df_metrics, df_metrics_10k, df_preds, each_true_col
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
@@ -37,7 +37,7 @@ except ImportError:
     pdfkit = None
 
 
-# %%
+# %% wandb API queries for relevant model runs to compute train and test times from
 train_run_filters: dict[str, tuple[int, str, str, str]] = {
     # model: (n_runs, display_name, created_gt, created_lt)
     "CGCNN": (10, "train-cgcnn-ensemble", "2022-11-21", "2022-11-23"),
@@ -78,9 +78,10 @@ for label, stats, raw_filters in (
         assert created_gt < created_lt, f"{created_gt=} must be before {created_lt=}"
 
         if n_runs == 0 or model in stats:
-            continue
+            continue  # skip models with no runs or already processed
+
         pbar.set_postfix_str(model)
-        filters = {
+        filters = {  # construct wandb API query
             "display_name": {"$regex": name},
             "created_at": {"$gt": created_gt, "$lt": created_lt},
         }
@@ -134,92 +135,100 @@ dummy_metrics = stable_metrics(
     each_true, np.array([1, -1])[dummy_clf_preds.astype(int)]
 )
 
-# important: regression metrics from dummy_clf are meaningless, overwrite them with
-# correct values!
+# important: regression metrics from dummy_clf are meaningless, we overwrite them with
+# correct values here. don't remove!
+dummy_metrics["DAF"] = 1
 dummy_metrics["R2"] = 0
 dummy_metrics["MAE"] = (each_true - each_true.mean()).abs().mean()
 dummy_metrics["RMSE"] = ((each_true - each_true.mean()) ** 2).mean() ** 0.5
 
-df_metrics["dummy"] = dummy_metrics
+df_metrics["Dummy"] = dummy_metrics
+# add 'global' to dummy to make explicit that this is not dummy on first 10k most stable
+# predictions but on the whole dataset
+df_metrics_10k["Dummy"] = dummy_metrics
 
 
 # %%
 ontology = {
-    "CHGNet": ("S2E", "IS2RE-SR", "UIP-GNN"),
-    "M3GNet": ("S2E", "IS2RE-SR", "UIP-GNN"),
-    "MEGNet": ("RS2RE", "IS2RE", "GNN"),
-    "CGCNN": ("RS2RE", "IS2RE", "GNN"),
+    "CHGNet": ("S2EFSM", "IS2RE-SR", "UIP-GNN"),
+    "M3GNet": ("S2EFS", "IS2RE-SR", "UIP-GNN"),
+    "MEGNet": ("RS2RE", "IS2E", "GNN"),
+    "CGCNN": ("RS2RE", "IS2E", "GNN"),
     "CGCNN+P": ("S2RE", "IS2RE", "GNN"),
-    "Wrenformer": ("RP2RE", "IP2RE", "Transformer"),
+    "Wrenformer": ("RP2RE", "IP2E", "Transformer"),
     "BOWSR + MEGNet": ("RS2RE", "IS2RE-BO", "BO+GNN"),
-    "Voronoi RF": ("RS2RE", "IS2RE", "Fingerprint+RF"),
-    "dummy": ("", "", "dummy clf"),
+    "Voronoi RF": ("RS2RE", "IS2E", "Fingerprint+RF"),
+    "Dummy": ("", "", "scikit-learn"),
 }
-
-df_table = pd.concat(
-    [df_metrics, pd.DataFrame(ontology, index=["trained", "deployed", "model class"])]
-)
+ontology_cols = ["Trained", "Deployed", "Model Class"]
+df_ont = pd.DataFrame(ontology, index=ontology_cols)
 
 
 # %%
 # time_cols = list(df_stats.filter(like=time_col))
 # for col in time_cols:  # uncomment to include run times in metrics table
-#     df_ont.loc[col] = df_stats[col]
-higher_is_better = {"DAF", "R<sup>2</sup>", "Precision", "F1", "Accuracy", "TPR", "TNR"}
-lower_is_better = {"MAE", "RMSE", "FNR", "FPR"}
-df_table = df_table.rename(index={"R2": "R<sup>2</sup>"})
-idx_set = set(df_table.index)
+R2_col = "R<sup>2</sup>"
+higher_is_better = {*f"DAF {R2_col} Precision Recall F1 Accuracy TPR TNR TP TN".split()}
+lower_is_better = {"MAE", "RMSE", "FPR", "FNR", "FP", "FN"}
 
-styler = (
-    df_table.T
-    # append arrow up/down to table headers to indicate higher/lower metric is better
-    # .rename(columns=lambda x: x + " ↑" if x in higher_is_better else x + " ↓")
-    .style.format(precision=2)
-    # reverse color map if lower=better
-    .background_gradient(cmap="viridis_r", subset=list(lower_is_better & idx_set))
-    # .background_gradient(
-    #     cmap="viridis_r",
-    #     subset=[time_col],
-    #     gmap=np.log10(df_stats[time_col].to_numpy()),  # for log scaled color map
-    # )
-    .background_gradient(cmap="viridis", subset=list(higher_is_better & idx_set))
-)
-styles = {
-    "": "font-family: sans-serif; border-collapse: collapse;",
-    "td, th": "border: none; padding: 4px 6px; white-space: nowrap;",
-    "th": "border: 1px solid; border-width: 1px 0; text-align: left;",
-}
-styler.set_table_styles([dict(selector=sel, props=styles[sel]) for sel in styles])
-styler.set_uuid("")
-# hide redundant metrics (TPR = Recall, FPR = 1 - TNR, FNR = 1 - TPR)
-styler.hide(["Recall", "FPR", "FNR", "trained", "deployed"], axis=1)
+for label, df, hide_cols in (
+    # hide redundant metrics (TPR = Recall, FPR = 1 - TNR, FNR = 1 - TPR)
+    ("", df_metrics, []),
+    ("-first-10k", df_metrics_10k, "Accuracy".split()),
+):
+    hide_cols += "TP FN FP TN FNR FPR Recall Trained Deployed".split()  # type: ignore
+    df_table = pd.concat([df, df_ont]).rename(index={"R2": R2_col})
+    idx_set = {*df_table.index}
+    df_table.index.name = "Model"
 
-
-# %% export model metrics as styled HTML table and Svelte component
-# draw dotted line between classification and regression metrics
-df_to_svelte_table(
-    styler,
-    f"{FIGS}/metrics-table.svelte",
-    inline_props="class='roomy'",
-    styles="#T_ :is(td, th):nth-last-child(3) { border-left: 1px dotted white; }",
-)
-
-
-# %%
-if pdfkit is not None:
-    pdfkit.from_string(
-        styler.to_html(),
-        f"{ROOT}/paper/figures/metrics-table.pdf",
-        options={
-            "margin-top": "0",
-            "margin-right": "0",
-            "margin-bottom": "0",
-            "margin-left": "0",
-            # fit page size to content
-            "page-width": f"{(len(styler.columns) + 1) * 10}",
-            "page-height": f"{(len(styler.index) + 1) * 6}",
-        },
+    styler = (
+        df_table.T.style.format(
+            dict.fromkeys("TP FN FP TN".split(), "{:,.0f}"),
+            precision=2,
+            na_rep="",
+        )
+        # .background_gradient(
+        #     cmap="viridis_r",
+        #     subset=[time_col],
+        #     gmap=np.log10(df_stats[time_col].to_numpy()),  # for log scaled color map
+        # )
+        .background_gradient(cmap="viridis", subset=list(higher_is_better & idx_set))
+        # reverse color map if lower=better
+        .background_gradient(cmap="viridis_r", subset=list(lower_is_better & idx_set))
     )
+    styles = {
+        "": "font-family: sans-serif; border-collapse: collapse;",
+        "td, th": "border: none; padding: 4px 6px; white-space: nowrap;",
+        "th": "border: 1px solid; border-width: 1px 0; text-align: left;",
+    }
+    styler.set_table_styles([dict(selector=sel, props=styles[sel]) for sel in styles])
+    styler.set_uuid("")
+
+    styler.hide(hide_cols, axis=1)
+
+    #  export model metrics as styled HTML table and Svelte component
+    # draw dotted line between classification and regression metrics
+    df_to_svelte_table(
+        styler,
+        f"{FIGS}/metrics-table{label}.svelte",
+        inline_props="class='roomy'",
+        styles="#T_ :is(td, th):nth-last-child(4) { border-left: 1px dotted white; }",
+    )
+
+    if pdfkit is not None:
+        pdfkit.from_string(
+            styler.to_html(),
+            f"{ROOT}/paper/figures/metrics-table{label}.pdf",
+            options={
+                "margin-top": "0",
+                "margin-right": "0",
+                "margin-bottom": "0",
+                "margin-left": "0",
+                # fit page size to content
+                "page-width": f"{(len(styler.columns) + 1) * 10}",
+                "page-height": f"{(len(styler.index) + 1) * 6}",
+            },
+        )
 
 
 # %%
@@ -247,8 +256,8 @@ df_time = (
     df_stats.sort_index()
     .filter(like=time_col)
     .round(1)
-    # remove BOWSR since it used so much more compute time than the other models that
-    # it makes the plot unreadable TODO decide if we want to keep BOWSR
+    # maybe remove BOWSR since it used so much more compute time than the other models
+    # that it makes the plot unreadable
     # .drop(index="BOWSR + MEGNet")
     .reset_index(names=(model_col := "Model"))
 )

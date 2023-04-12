@@ -58,7 +58,7 @@
   <span>
     <Icon icon="fluent:missing-metadata-24-regular" inline />
     Missing preds:
-    {pretty_num(missing_preds ?? null)}
+    {pretty_num(missing_preds, `,.0f`)}
     <small>({missing_percent})</small>
   </span>
 </p>
@@ -147,11 +147,6 @@
   h2 {
     margin: 8pt 0 1em;
     text-align: center;
-  }
-  em {
-    font-weight: lighter;
-    font-style: normal;
-    position: absolute;
   }
   button {
     background: none;

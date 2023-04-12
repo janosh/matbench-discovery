@@ -47,7 +47,7 @@ export default {
         const route = file.filename.split(`site/src/routes/`)[1]?.split(`/`)[0]
         if (!route) return
 
-        if (['paper', 'preprint', 'si'].some((key) => route.startsWith(key))) {
+        if ([`paper`, `preprint`, `si`].some((key) => route.startsWith(key))) {
           let fig_index = new Set()
           let ref_index = new Set()
 
@@ -92,7 +92,7 @@ export default {
               if (idx == -1) {
                 console.error(`Reference id ${id} not found`)
               }
-              return `<sup class="ref"><a href="#${id}">${author} ${year}</a></sup>`
+              return `[<a class="ref" href="#${id}">${author} ${year}</a>]`
             }
           )
 

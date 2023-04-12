@@ -46,24 +46,25 @@ formula) or <strong>batch index</strong> (which iteration of elemental substitut
 structure was generated in).
 
 <ColorScaleSelect bind:selected={color_scale} />
-<ul>
-  <li>
-    composition arity:
+
+<form>
+  <span>
+    composition arity
     <RadioButtons style={radio_style} options={arity_keys} bind:selected={filter}>
       <strong slot="option" let:option let:active class:active>
         {option?.split(`=`)[1]}</strong
       >
     </RadioButtons>
-  </li>
-  <li>
+  </span>
+  <span>
     batch index
     <RadioButtons style={radio_style} options={batch_keys} bind:selected={filter}>
       <strong slot="option" let:option let:active class:active>
         {option?.split(`=`)[1]}</strong
       >
     </RadioButtons>
-  </li>
-</ul>
+  </span>
+</form>
 
 <PeriodicTable
   heatmap_values={active_counts}
@@ -96,12 +97,18 @@ structure was generated in).
   span {
     display: flex;
     gap: 1ex;
+    place-items: center;
   }
-  ul > li strong {
+  form {
+    display: flex;
+    gap: 5cqw;
+    place-content: center;
+  }
+  form > span strong {
     background-color: rgba(255, 255, 255, 0.1);
     padding: 3pt 4pt;
   }
-  ul > li strong.active {
+  form > span strong.active {
     background-color: teal;
   }
   label {

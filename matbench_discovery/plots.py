@@ -703,7 +703,7 @@ def cumulative_precision_recall(
             df = dfs[metric]
             ax.set(ylim=(0, 1), xlim=(0, None), ylabel=metric)
             for model in df_preds:
-                # TODO is this if really necessary?
+                # TODO is this really necessary?
                 if len(df[model].dropna()) == 0:
                     continue
                 x_end = df[model].dropna().index[-1]

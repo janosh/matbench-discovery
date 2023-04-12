@@ -81,6 +81,15 @@
         out:fade|local={{ delay: 100 }}
       >
         <ModelCard {data} {stats} {sort_by} bind:show_details />
+        {#if data.training_set}
+          <!-- maybe show this text in a tooltip: This model was not trained on the
+            canonical training set. It's results should not be seen as a one-to-one
+            comparison to the other models but rather proof of concept of what is possible. -->
+          <strong class="train-set">
+            <Icon icon="ion:ios-warning" inline />
+            Custom training set: {data.training_set}
+          </strong>
+        {/if}
       </li>
     {/each}
   </ol>
@@ -114,14 +123,15 @@
   ol {
     display: grid;
     gap: 2em;
-    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
   }
   ol > li {
     background-color: rgba(255, 255, 255, 0.05);
-    padding: 3pt 10pt 7pt;
+    padding: 6pt 10pt 14pt;
     border-radius: 3pt;
     display: grid;
     align-content: start;
+    position: relative;
   }
   span {
     display: flex;
@@ -137,5 +147,17 @@
   }
   input[type='number']::-webkit-inner-spin-button {
     display: none;
+  }
+  strong.train-set {
+    display: block;
+    background-color: rgb(174, 79, 28);
+    color: white;
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, 50%);
+    bottom: 0;
+    padding: 1pt 3pt;
+    border-radius: 1ex;
+    font-size: smaller;
   }
 </style>

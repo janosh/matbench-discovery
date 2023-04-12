@@ -144,6 +144,8 @@ We welcome further model submissions as well as data contributions for version 2
 
 Janosh Riebesell acknowledges support from the German Academic Scholarship Foundation ([Studienstiftung](https://wikipedia.org/wiki/Studienstiftung)) and gracious hosting as a visiting affiliate in the groups of Kristin Persson and Anubhav Jain.
 
+We would like to thank Jason Blake Gibson, Shyue Ping Ong, Chi Chen, Ekin Dogus Cubuk, Bowen Deng, Tian Xie and Ryota Tomioka for helpful discussions. We also thank Hai-Chen Wang and co-authors for providing the initial structures for the WBM data set.
+
 ## Author Contributions
 
-Janosh Riebesell: Methodology, Software, Data Curation, Formal analysis. Rhys Goodall: Conceptualization, Software, Formal analysis. Anubhav Jain: Supervision. Kristin Persson: Supervision. Alpha Lee: Supervision.
+Janosh Riebesell: Methodology, Software, Data Curation, Training and Testing Models, Formal Analysis. Rhys Goodall: Conceptualization, Software, Formal Analysis. Anubhav Jain: Supervision. Kristin Persson: Supervision. Alpha Lee: Supervision.
