@@ -164,7 +164,7 @@ The reason CGCNN+P achieves better regression metrics than CGCNN but is still wo
 <CumulativeClfMetrics style="margin: 0 -2em 0 -4em;" />
 {/if}
 
-> @label:fig:cumulative-clf-metrics Running precision and recall over the course of a simulated discovery campaign. This figure highlights how different models perform better or worse depending on the length of the discovery campaign. Length here is an integer measuring how many DFT relaxations you have compute budget for.
+> @label:fig:cumulative-clf-metrics Cumulative precision and recall over the course of a simulated discovery campaign. This figure highlights how different models perform better or worse depending on the length of the discovery campaign. Length here is an integer measuring how many DFT relaxations you have compute budget for.
 
 @Fig:cumulative-clf-metrics simulates ranking materials from most to least stable according to model predictions and going down the list calculating the precision and recall of correctly identified stable materials at each step, i.e. exactly how these models could be used in a prospective materials discovery campaign.
 
