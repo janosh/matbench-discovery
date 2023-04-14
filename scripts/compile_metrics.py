@@ -129,7 +129,6 @@ dummy_clf.fit(np.zeros_like(df_mp.energy_above_hull), df_mp.energy_above_hull ==
 dummy_clf_preds = dummy_clf.predict(np.zeros(len(df_wbm)))
 true_clf = df_wbm[each_true_col] < 0
 each_true = df_wbm[each_true_col]
-pd.Series(dummy_clf_preds).value_counts()
 
 dummy_metrics = stable_metrics(
     each_true, np.array([1, -1])[dummy_clf_preds.astype(int)]

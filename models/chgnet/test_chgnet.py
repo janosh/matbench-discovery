@@ -1,6 +1,6 @@
-"""Get chgnet formation energy predictions on WBM test set.
+"""Get CHGNet formation energy predictions on WBM test set.
 To slurm submit this file: python path/to/file.py slurm-submit
-Requires git cloning and then pip installing chgnet from source:
+Requires git cloning and then pip installing CHGNet from source:
 git clone https://github.com/CederGroupHub/chgnet
 pip install -e ./chgnet.
 """
