@@ -185,4 +185,4 @@ This information can be useful for others looking to reproduce your results or c
 
 ## 😵‍💫 &thinsp; Troubleshooting
 
-Having problems using or contributing to the project? Please [open an issue on GitHub]({repo}/issues) or [start a discussion]({repo}/discussions) for open-ended conversations. Happy to help! 😊
+Having problems? Please [open an issue on GitHub]({repo}/issues). We're happy to help! 😊
