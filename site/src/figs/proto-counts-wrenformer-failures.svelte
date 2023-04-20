@@ -1,8 +1,23 @@
 <script lang="ts">
+  import { onMount } from 'svelte'
   import { sortable } from 'svelte-zoo/actions'
+
+  let table: HTMLTableElement
+
+  // highlight all occurrences of _71_
+  onMount(() => {
+    const rows = table.getElementsByTagName(`tr`)
+    for (const row of rows) {
+      const cells = row.getElementsByTagName(`td`)
+      for (const cell of cells) {
+        // replace _71_ with _<em>71</em>_ to highlight
+        cell.innerHTML = cell.innerText.replace(`_71_`, `_<em>71</em>_`)
+      }
+    }
+  })
 </script>
 
-<table use:sortable {...$$props} id="T_68e58">
+<table use:sortable {...$$props} id="T_68e58" bind:this={table}>
   <thead>
     <tr>
       <th class="blank level0">&nbsp;</th>
@@ -130,5 +145,10 @@
   #T_68e58_row8_col1 {
     background-color: #440256;
     color: #f1f1f1;
+  }
+  table :global(em) {
+    font-weight: bolder;
+    color: orange;
+    font-style: normal;
   }
 </style>

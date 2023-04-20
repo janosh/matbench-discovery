@@ -16,7 +16,7 @@
   import SpacegroupSunburstWrenformerFailures from '$figs/spacegroup-sunburst-wrenformer-failures.svelte'
   import ScatterLargestErrorsModelsMeanVsEachTrue from '$figs/scatter-largest-errors-models-mean-vs-each-true.svelte'
   import EAboveHullScatterWrenformerFailures from '$figs/e-above-hull-scatter-wrenformer-failures.svelte'
-  import ProtoCountsWrenformerFailures from '$figs/proto-counts-Wrenformer-failures.svelte'
+  import ProtoCountsWrenformerFailures from '$figs/proto-counts-wrenformer-failures.svelte'
   import { onMount } from 'svelte'
 
   let mounted = false
@@ -30,7 +30,7 @@
 <MetricsTableFirst10k />
 
 > @label:fig:metrics-table-first-10k An actual discovery campaign is unlikely to validate every single stable prediction coming from a model like we did in the [metrics table](/preprint#fig:metrics-table). Presumably it will rank model predictions from most to least stable and go down that list as far their time and compute budget permits. Assuming that increases in compute resources will allow future discovery campaigns to grow in scope, we believe 10 k model validations to be a reasonable cutoff. To simulate this scenario, we calculated classification and regression metrics for the 10 k test set materials predicted to be most stable by each model.<br>
-> We again show dummy performance in the bottom row. Note that each model is now evaluated on a different slice of the data, this is still dummy performance across the whole dataset. CHGNet and M3GNet achieve a very impressive 83% and 80% precision, respectively. In concrete terms, this means in a prospective discovery campaign that sets out to validate 10 k model predictions from a search pool of 257 k crystals that are chemically dissimilar from the training set and of which 16.7 % are stable, CHGNet and M3GNet would deliver 4 stable structures for every 5 that are validated.
+> We again show dummy performance in the bottom row. Note that each model is now evaluated on a different slice of the data, but this is still dummy performance across the whole dataset. CHGNet and M3GNet achieve a very impressive 83% and 80% precision, respectively. In concrete terms, this means in a discovery campaign that validates 10 k model predictions from a search pool of 257 k crystals which are chemically dissimilar from the training set and of which 16.7 % are stable, CHGNet and M3GNet would deliver 4 stable structures for every 5 predictions validated.
 
 ## ROC Curves
 
@@ -100,7 +100,7 @@ Given its strong performance on batch 1, it is possible that given sufficiently 
 {/if}
 
 > @label:fig:scatter-largest-errors-models-mean-vs-each-true The 200 structures with largest error averaged over all models vs their DFT hull distance colored by model disagreement (as measured by standard deviation in hull distance predictions from different models) and sized by number of training structures containing the least prevalent element (e.g. if a scatter point had composition FeO, MP has 6.6k structures containing Fe and 82k containing O so its size would be set to 6.6k). Thus smaller points have less training support. This plot suggests all models are biased to predict low energy and perhaps fail to capture certain physics resulting in highly unstable structures. This is unsurprising considering MP training data mainly consists of low energy structures.<br>
-> It is also possible that some of blue points with large error yet good agreement among models are in fact accurate ML predictions for a DFT relaxation gone wrong.
+> It is also possible that some of the blue points with large error yet good agreement among models are in fact accurate ML predictions for a DFT relaxation gone wrong.
 
 ## MEGNet formation energies from UIP-relaxed structures
 
@@ -127,8 +127,8 @@ We highlight this here to refute the suggestion that training on raw DFT energie
 <EAboveHullScatterWrenformerFailures style="height: 300; width: 300;" />
 {/if}
 
-> @label:fig:spacegroup-prevalence-wrenformer-failures The left spacegroup sunburst shows spacegroup 71 is by far the dominant number among the 941 Wrenformer failure cases where $E_\text{above hull,DFT} < 1$ and $E_\text{above hull,Wrenformer} > 1$ (points inside the shaded rectangle). On the right side for comparison is the spacegroup sunburst for the entire WBM test set.
+> @label:fig:spacegroup-prevalence-wrenformer-failures The left spacegroup sunburst shows spacegroup 71 is by far the dominant lattice symmetry among the 941 Wrenformer failure cases where $E_\text{above hull,DFT} < 1$ and $E_\text{above hull,Wrenformer} > 1$ (points inside the shaded rectangle). On the right side for comparison is the spacegroup sunburst for the entire WBM test set.
 
-Looking at the occurrence counts of isopointal prototypes in the shaded rectangle and comparing them with the occurrence of those same prototypes in the MP training data counts, we find almost no support for failing structure prototypes. This suggests the reason Wrenformer fails so spectacularly on these structures is that it cannot deal with structure prototypes it has not seen at least several hundred examples of in its training data. Hence Wrenformer may not be useful for discovering new prototypes.
+Looking at the occurrence counts of isopointal prototypes in the shaded rectangle and comparing them with the occurrence of those same prototypes in the MP training data counts, we find almost no support for failing structure prototypes. This suggests the reason Wrenformer fails so spectacularly on these structures is that it cannot deal with structure prototypes it has not seen at least several hundred examples of in its training data. Hence Wrenformer may be unsuitable for discovering new prototypes.
 
 <ProtoCountsWrenformerFailures />

@@ -1,7 +1,6 @@
 <script lang="ts">
   import { repository } from '$site/package.json'
   import Icon from '@iconify/svelte'
-  import { fade } from 'svelte/transition'
 
   let show_tips: boolean
   const tips_title = `Usage Tips`
@@ -19,12 +18,13 @@
     }
   }
 
-  function close_on_escape(event: KeyboardEvent) {
-    if (event.key === `Escape`) show_tips = false
+  function toggle(event: KeyboardEvent) {
+    if (event.key == `Escape`) show_tips = false
+    if (event.key == `j` && event.metaKey) show_tips = !show_tips
   }
 </script>
 
-<svelte:window on:click={close_if_outside_click} on:keydown={close_on_escape} />
+<svelte:window on:click={close_if_outside_click} on:keydown={toggle} />
 
 <footer>
   Questions/feedback?
@@ -38,14 +38,15 @@
   </button>
 </footer>
 
-{#if show_tips}
-  <dialog bind:this={dialog} transition:fade={{ duration: 150 }}>
-    <h3>{tips_title}</h3>
-    <p title="For keyboad-only site navigation">
-      Use <kbd>cmd+k</kbd> to bring up a nav palette.
-    </p>
-  </dialog>
-{/if}
+<dialog bind:this={dialog} open={show_tips}>
+  <h3>{tips_title}</h3>
+  <p title="For keyboard-only site navigation">
+    Use <kbd>cmd+k</kbd> to bring up a nav palette.
+  </p>
+  <p title="For keyboard-only site navigation">
+    Use <kbd>cmd+j</kbd> to bring up these site options.
+  </p>
+</dialog>
 
 <style>
   footer {
@@ -61,6 +62,8 @@
     color: var(--blue);
   }
   dialog {
+    visibility: hidden;
+    opacity: 0;
     position: fixed;
     top: 40%;
     background: var(--sms-options-bg);
@@ -69,6 +72,11 @@
     border: none;
     border-radius: 3pt;
     padding: 1ex 2ex;
+    transition: 0.2s;
+  }
+  dialog[open] {
+    visibility: visible;
+    opacity: 1;
   }
   dialog > * {
     margin: 0;
