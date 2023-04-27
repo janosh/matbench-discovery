@@ -208,6 +208,69 @@ references:
   URL: https://link.aps.org/doi/10.1103/PhysRevX.8.041048
   volume: '8'
 
+- id: batzner_e3-equivariant_2022
+  abstract: >-
+    This work presents Neural Equivariant Interatomic Potentials (NequIP), an
+    E(3)-equivariant neural network approach for learning interatomic potentials
+    from ab-initio calculations for molecular dynamics simulations. While most
+    contemporary symmetry-aware models use invariant convolutions and only act
+    on scalars, NequIP employs E(3)-equivariant convolutions for interactions of
+    geometric tensors, resulting in a more information-rich and faithful
+    representation of atomic environments. The method achieves state-of-the-art
+    accuracy on a challenging and diverse set of molecules and materials while
+    exhibiting remarkable data efficiency. NequIP outperforms existing models
+    with up to three orders of magnitude fewer training data, challenging the
+    widely held belief that deep neural networks require massive training sets.
+    The high data efficiency of the method allows for the construction of
+    accurate potentials using high-order quantum chemical level of theory as
+    reference and enables high-fidelity molecular dynamics simulations over long
+    time scales.
+  accessed:
+    - year: 2023
+      month: 4
+      day: 26
+  author:
+    - family: Batzner
+      given: Simon
+    - family: Musaelian
+      given: Albert
+    - family: Sun
+      given: Lixin
+    - family: Geiger
+      given: Mario
+    - family: Mailoa
+      given: Jonathan P.
+    - family: Kornbluth
+      given: Mordechai
+    - family: Molinari
+      given: Nicola
+    - family: Smidt
+      given: Tess E.
+    - family: Kozinsky
+      given: Boris
+  citation-key: batzner_e3-equivariant_2022
+  container-title: Nature Communications
+  container-title-short: Nat Commun
+  DOI: 10.1038/s41467-022-29939-5
+  ISSN: 2041-1723
+  issue: '1'
+  issued:
+    - year: 2022
+      month: 5
+      day: 4
+  language: en
+  license: 2022 The Author(s)
+  number: '1'
+  page: '2453'
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: >-
+    E(3)-equivariant graph neural networks for data-efficient and accurate
+    interatomic potentials
+  type: article-journal
+  URL: https://www.nature.com/articles/s41467-022-29939-5
+  volume: '13'
+
 - id: behler_generalized_2007
   abstract: >-
     The accurate description of chemical processes often requires the use of
