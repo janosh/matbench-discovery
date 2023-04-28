@@ -14,9 +14,6 @@ from tqdm import tqdm
 
 from matbench_discovery import ROOT
 
-df_wbm = pd.read_csv(f"{ROOT}/data/wbm/2022-10-19-wbm-summary.csv")
-df_wbm.index = df_wbm.material_id
-
 # repo URL to raw files on GitHub
 RAW_REPO_URL = "https://raw.githubusercontent.com/janosh/matbench-discovery"
 # directory to cache downloaded data files
@@ -206,3 +203,7 @@ def glob_to_df(
         sub_dfs[file] = df
 
     return pd.concat(sub_dfs.values())
+
+
+df_wbm = load_train_test("wbm_summary")
+df_wbm.index = df_wbm.material_id
