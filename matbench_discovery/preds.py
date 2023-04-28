@@ -32,7 +32,6 @@ class PredFiles(Files):
     See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
     """
 
-    _root = f"{ROOT}/models/"
     _key_map = model_labels  # remap model keys below to pretty plot labels (see Files)
 
     # BOWSR optimizer coupled with original megnet
@@ -62,7 +61,7 @@ class PredFiles(Files):
     wrenformer = "wrenformer/2022-11-15-wrenformer-IS2RE-preds.csv"
 
 
-PRED_FILES = PredFiles()
+PRED_FILES = PredFiles(root=f"{ROOT}/models/")
 
 
 def load_df_wbm_with_preds(

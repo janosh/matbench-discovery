@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import urllib.error
 from collections.abc import Sequence
 from glob import glob
@@ -28,23 +29,35 @@ class Files(dict):  # type: ignore
     """Files instance inherits from dict so that .values(), items(), etc. are supported
     but also allows accessing attributes by dot notation. E.g. FILES.wbm_summary instead
     of FILES["wbm_summary"]. This enables tab completion in IDEs and auto-updating
-    attribute names across the code base when changing the name of an attribute. Every
-    subclass must set the _root attribute to a path that serves as the root directory
-    w.r.t. which all files will be turned into absolute paths. The _key_map attribute
+    attribute names across the code base when changing the key of a file. Every subclass
+    must set the _root attribute to a path that serves as the root directory w.r.t.
+    which all files will be turned into absolute paths. The optional _key_map attribute
     can be used to map attribute names to different names in the dict. Useful if you
     want to have keys like 'foo+bar' that are not valid Python identifiers.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, root: str = default_cache_dir) -> None:
         """Create a Files instance."""
+        self._root = root
+        self._not_found_msg: Callable[[str], str] | None = None
         key_map = getattr(self, "_key_map", {})
         dct = {
-            key_map.get(key, key): f"{self._root}{file}"  # type: ignore
+            key_map.get(key, key): f"{self._root}{file}"
             for key, file in type(self).__dict__.items()
             if not key.startswith("_")
         }
         self.__dict__ = dct
         super().__init__(dct)
+
+    def __getattribute__(self, key: str) -> str:
+        """Override __getattr__ to check if file corresponding to key exists."""
+        file_path = super().__getattribute__(key)
+        if key in self and not os.path.isfile(file_path):
+            msg = f"Warning: {file_path!r} associated with {key=} does not exist."
+            if self._not_found_msg:
+                msg += f"\n{self._not_found_msg(key)}"
+            print(msg, file=sys.stderr)
+        return file_path
 
 
 class DataFiles(Files):
@@ -52,8 +65,10 @@ class DataFiles(Files):
     See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
     """
 
-    _root = f"{ROOT}/data/"
-
+    _not_found_msg = (
+        lambda self, key: "You can download it with matbench_discovery."  # type: ignore
+        f"data.load_train_test({key!r}) which will cache the file for future use."
+    )
     mp_computed_structure_entries = (
         "mp/2023-02-07-mp-computed-structure-entries.json.gz"
     )
@@ -70,7 +85,9 @@ class DataFiles(Files):
     wbm_summary = "wbm/2022-10-19-wbm-summary.csv"
 
 
-DATA_FILES = DataFiles()
+# set root directory for data files to ~/.cache/matbench-discovery/1.x.x/ when
+# having downloaded them with matbench_discovery.data.load_train_test()
+DATA_FILES = DataFiles(root=f"{ROOT}/data/")
 
 
 def as_dict_handler(obj: Any) -> dict[str, Any] | None:
