@@ -58,9 +58,6 @@ running-models = ["aviary", "m3gnet", "maml", "megnet"]
 [tool.setuptools.packages]
 find = { include = ["matbench_discovery*"], exclude = ["tests*"] }
 
-[tool.setuptools.package-data]
-matbench_discovery = ["data/mp/*.json"]
-
 [tool.distutils.bdist_wheel]
 universal = true
 
