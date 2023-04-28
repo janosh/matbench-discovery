@@ -233,4 +233,3 @@ def glob_to_df(
 
 
 df_wbm = load_train_test("wbm_summary")
-df_wbm.index = df_wbm.material_id
