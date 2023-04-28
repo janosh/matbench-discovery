@@ -461,16 +461,15 @@ fig.show(
 
 # %%
 # no need to store all 250k x values in plot, leads to 1.7 MB file, subsample every 10th
-# point is enough to see the distribution
+# point is enough to see the distribution, round to 3 decimal places to reduce file size
 if not fig_compressed:
     fig_compressed = True
-    # keep only every 10th data point, round to 3 decimal places to reduce file size
     fig.data[0].x = [round(x, 3) for x in fig.data[0].x[::10]]
 
-# recommended to upload SVG to vecta.io/nano afterwards for compression
 img_path = f"{FIGS}/hist-wbm-e-form-per-atom"
-# save_fig(fig, f"{img_path}.svg", width=800, height=300)
 save_fig(fig, f"{img_path}.svelte")
+# recommended to upload SVG to vecta.io/nano for compression
+# save_fig(fig, f"{img_path}.svg", width=800, height=300)
 
 
 # %%
