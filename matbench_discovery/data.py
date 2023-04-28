@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import os
+import sys
 import urllib.error
 from collections.abc import Sequence
 from glob import glob
@@ -12,13 +14,13 @@ from pymatgen.core import Structure
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from tqdm import tqdm
 
-from matbench_discovery import ROOT
-
-df_wbm = pd.read_csv(f"{ROOT}/data/wbm/2022-10-19-wbm-summary.csv")
-df_wbm.index = df_wbm.material_id
+from matbench_discovery import FIGSHARE, ROOT
 
 # repo URL to raw files on GitHub
-RAW_REPO_URL = "https://raw.githubusercontent.com/janosh/matbench-discovery"
+RAW_REPO_URL = "https://github.com/janosh/matbench-discovery/raw"
+figshare_versions = sorted(
+    x.split(os.path.sep)[-1].split(".json")[0] for x in glob(f"{FIGSHARE}/*.json")
+)
 # directory to cache downloaded data files
 default_cache_dir = os.path.expanduser("~/.cache/matbench-discovery")
 
@@ -27,23 +29,36 @@ class Files(dict):  # type: ignore
     """Files instance inherits from dict so that .values(), items(), etc. are supported
     but also allows accessing attributes by dot notation. E.g. FILES.wbm_summary instead
     of FILES["wbm_summary"]. This enables tab completion in IDEs and auto-updating
-    attribute names across the code base when changing the name of an attribute. Every
-    subclass must set the _root attribute to a path that serves as the root directory
-    w.r.t. which all files will be turned into absolute paths. The _key_map attribute
+    attribute names across the code base when changing the key of a file. Every subclass
+    must set the _root attribute to a path that serves as the root directory w.r.t.
+    which all files will be turned into absolute paths. The optional _key_map attribute
     can be used to map attribute names to different names in the dict. Useful if you
     want to have keys like 'foo+bar' that are not valid Python identifiers.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self, root: str = default_cache_dir, key_map: dict[str, str] = None
+    ) -> None:
         """Create a Files instance."""
-        key_map = getattr(self, "_key_map", {})
-        dct = {
-            key_map.get(key, key): f"{self._root}{file}"  # type: ignore
+        self._not_found_msg: Callable[[str], str] | None = None
+        rel_paths = {
+            (key_map or {}).get(key, key): file
             for key, file in type(self).__dict__.items()
             if not key.startswith("_")
         }
-        self.__dict__ = dct
-        super().__init__(dct)
+        abs_paths = {key: f"{root}/{file}" for key, file in rel_paths.items()}
+        self.__dict__ = abs_paths
+        super().__init__(abs_paths)
+
+    def __getattribute__(self, key: str) -> str:
+        """Override __getattr__ to check if file corresponding to key exists."""
+        file_path = super().__getattribute__(key)
+        if key in self and not os.path.isfile(file_path):
+            msg = f"Warning: {file_path!r} associated with {key=} does not exist."
+            if self._not_found_msg:
+                msg += f"\n{self._not_found_msg(key)}"
+            print(msg, file=sys.stderr)
+        return file_path
 
 
 class DataFiles(Files):
@@ -51,8 +66,10 @@ class DataFiles(Files):
     See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
     """
 
-    _root = f"{ROOT}/data/"
-
+    _not_found_msg = (
+        lambda self, key: "You can download it with matbench_discovery."  # type: ignore
+        f"data.load_train_test({key!r}) which will cache the file for future use."
+    )
     mp_computed_structure_entries = (
         "mp/2023-02-07-mp-computed-structure-entries.json.gz"
     )
@@ -69,7 +86,9 @@ class DataFiles(Files):
     wbm_summary = "wbm/2022-10-19-wbm-summary.csv"
 
 
-DATA_FILES = DataFiles()
+# set root directory for data files to ~/.cache/matbench-discovery/1.x.x/ when
+# having downloaded them with matbench_discovery.data.load_train_test()
+DATA_FILES = DataFiles(root=f"{ROOT}/data/")
 
 
 def as_dict_handler(obj: Any) -> dict[str, Any] | None:
@@ -85,8 +104,8 @@ def as_dict_handler(obj: Any) -> dict[str, Any] | None:
 
 
 def load_train_test(
-    data_names: str | Sequence[str] = ("summary",),
-    version: str = "1.0.0",
+    data_names: str | Sequence[str],
+    version: str = figshare_versions[-1],
     cache_dir: str | Path = default_cache_dir,
     hydrate: bool = False,
     **kwargs: Any,
@@ -96,14 +115,15 @@ def load_train_test(
     JSON which will be cached locally to cache_dir for faster re-loading unless
     cache_dir is set to None.
 
-    See matbench_discovery.data.DATA_FILES for recognized data keys. See
-    https://janosh.github.io/matbench-discovery/contribute for descriptions.
+    See matbench_discovery.data.DATA_FILES for recognized data keys. For descriptions,
+    see https://janosh.github.io/matbench-discovery/contribute#--direct-download.
 
     Args:
         data_names (str | list[str], optional): Which parts of the MP/WBM data to load.
-            Can be any subset of the above data names or 'all'. Defaults to ["summary"].
+            Can be any subset of set(DATA_FILES) or 'all'.
         version (str, optional): Which version of the dataset to load. Defaults to
-            '1.0.0'. Can be any git tag, branch or commit hash.
+            latest version of data files published to Figshare. Pass any invalid version
+            to see valid options.
         cache_dir (str, optional): Where to cache data files on local drive. Defaults to
             '~/.cache/matbench-discovery'. Set to None to disable caching.
         hydrate (bool, optional): Whether to hydrate pymatgen objects. If False,
@@ -120,6 +140,8 @@ def load_train_test(
         pd.DataFrame: Single dataframe or dictionary of dfs if
         multiple data were requested.
     """
+    if version not in figshare_versions:
+        raise ValueError(f"Unexpected {version=}. Must be one of {figshare_versions}.")
     if data_names == "all":
         data_names = list(DATA_FILES)
     elif isinstance(data_names, str):
@@ -128,17 +150,21 @@ def load_train_test(
     if missing := set(data_names) - set(DATA_FILES):
         raise ValueError(f"{missing} must be subset of {set(DATA_FILES)}")
 
+    with open(f"{FIGSHARE}/{version}.json") as json_file:
+        file_urls = json.load(json_file)
+
     dfs = {}
     for key in data_names:
         file = DataFiles.__dict__[key]
-        reader = pd.read_csv if file.endswith(".csv") else pd.read_json
+        csv_ext = (".csv", ".csv.gz", ".csv.bz2")
+        reader = pd.read_csv if file.endswith(csv_ext) else pd.read_json
 
         cache_path = f"{cache_dir}/{version}/{file}"
         if os.path.isfile(cache_path):
             print(f"Loading {key!r} from cached file at {cache_path!r}")
             df = reader(cache_path, **kwargs)
         else:
-            url = f"{RAW_REPO_URL}/{version}/data/{file}"
+            url = file_urls[key]
             print(f"Downloading {key!r} from {url}")
             try:
                 df = reader(url)
@@ -147,13 +173,12 @@ def load_train_test(
             if cache_dir and not os.path.isfile(cache_path):
                 os.makedirs(os.path.dirname(cache_path), exist_ok=True)
                 if ".csv" in file:
-                    df.to_csv(cache_path)
+                    df.to_csv(cache_path, index=False)
                 elif ".json" in file:
-                    df.reset_index().to_json(
-                        cache_path, default_handler=as_dict_handler
-                    )
+                    df.to_json(cache_path, default_handler=as_dict_handler)
                 else:
                     raise ValueError(f"Unexpected file type {file}")
+                print(f"Cached {key!r} to {cache_path!r}")
 
         df = df.set_index("material_id")
         if hydrate:
@@ -206,3 +231,7 @@ def glob_to_df(
         sub_dfs[file] = df
 
     return pd.concat(sub_dfs.values())
+
+
+df_wbm = load_train_test("wbm_summary")
+df_wbm["material_id"] = df_wbm.index

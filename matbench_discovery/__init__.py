@@ -8,6 +8,7 @@ ROOT = os.path.dirname(os.path.dirname(__file__))  # repo root directory
 FIGS = f"{ROOT}/site/src/figs"  # directory to store interactive figures
 STATIC = f"{ROOT}/site/static/figs"  # directory to store static figures
 MODELS = f"{ROOT}/site/src/routes/models"  # directory to write model analysis
+FIGSHARE = f"{ROOT}/data/figshare"
 
 # whether a currently running slurm job is in debug mode
 DEBUG = "DEBUG" in os.environ or (

@@ -21,9 +21,9 @@ id_col = "material_id"
 
 
 # %%
-df_chgnet = pd.read_csv(PRED_FILES.__dict__["CHGNet"])
+df_chgnet = pd.read_csv(PRED_FILES.CHGNet)
 df_chgnet = df_chgnet.set_index(id_col).add_suffix("_2000")
-df_chgnet_500 = pd.read_csv(PRED_FILES.__dict__["CHGNet"].replace("-06", "-04"))
+df_chgnet_500 = pd.read_csv(PRED_FILES.CHGNet.replace("-06", "-04"))
 df_chgnet_500 = df_chgnet_500.set_index(id_col).add_suffix("_500")
 df_chgnet[list(df_chgnet_500)] = df_chgnet_500
 df_chgnet["formula"] = df_wbm.formula
