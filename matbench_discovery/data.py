@@ -19,7 +19,7 @@ from matbench_discovery import FIGSHARE, ROOT
 # repo URL to raw files on GitHub
 RAW_REPO_URL = "https://github.com/janosh/matbench-discovery/raw"
 figshare_versions = sorted(
-    x.split("/")[-1].split(".json")[0] for x in glob(f"{FIGSHARE}/*.json")
+    x.split(os.path.sep)[-1].split(".json")[0] for x in glob(f"{FIGSHARE}/*.json")
 )
 # directory to cache downloaded data files
 default_cache_dir = os.path.expanduser("~/.cache/matbench-discovery")
