@@ -124,6 +124,36 @@ def test_load_train_test_doc_str() -> None:
 
 
 # TODO skip this test if offline
+# @pytest.mark.skipif(online, reason="requires internet connection")
+@pytest.mark.parametrize("version", [figshare_versions[-1]])
+def test_load_train_test_no_mock_mp_refs(
+    version: str, capsys: CaptureFixture[str], tmp_path: Path
+) -> None:
+    # this function runs the download from Figshare for real hence takes some time and
+    # requires being online
+    file_key = "mp_elemental_ref_entries"
+    df = load_train_test(file_key, version=version, cache_dir=tmp_path)
+    assert df.shape == (5, 89)
+
+    stdout, stderr = capsys.readouterr()
+    assert stderr == ""
+    rel_path = getattr(type(DATA_FILES), file_key)
+    cache_path = f"{tmp_path}/{figshare_versions[-1]}/{rel_path}"
+    assert (
+        f"Downloading {file_key!r} from {figshare_urls[file_key]}\nCached "
+        f"{file_key!r} to {cache_path!r}" in stdout
+    )
+
+    # test that df loaded from cache is the same as initial df
+    pd.testing.assert_frame_equal(
+        df, load_train_test(file_key, version=version, cache_dir=tmp_path)
+    )
+    stdout, stderr = capsys.readouterr()
+    assert stderr == ""
+    assert stdout == f"Loading {file_key!r} from cached file at {cache_path!r}\n"
+
+
+# TODO skip this test if offline
 @pytest.mark.slow
 @pytest.mark.parametrize("version", [figshare_versions[-1]])
 def test_load_train_test_no_mock_wbm_summary(
