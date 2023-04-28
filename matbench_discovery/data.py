@@ -36,18 +36,19 @@ class Files(dict):  # type: ignore
     want to have keys like 'foo+bar' that are not valid Python identifiers.
     """
 
-    def __init__(self, root: str = default_cache_dir) -> None:
+    def __init__(
+        self, root: str = default_cache_dir, key_map: dict[str, str] = None
+    ) -> None:
         """Create a Files instance."""
-        self._root = root
         self._not_found_msg: Callable[[str], str] | None = None
-        key_map = getattr(self, "_key_map", {})
-        dct = {
-            key_map.get(key, key): f"{self._root}{file}"
+        rel_paths = {
+            (key_map or {}).get(key, key): file
             for key, file in type(self).__dict__.items()
             if not key.startswith("_")
         }
-        self.__dict__ = dct
-        super().__init__(dct)
+        abs_paths = {key: f"{root}/{file}" for key, file in rel_paths.items()}
+        self.__dict__ = abs_paths
+        super().__init__(abs_paths)
 
     def __getattribute__(self, key: str) -> str:
         """Override __getattr__ to check if file corresponding to key exists."""
@@ -177,7 +178,7 @@ def load_train_test(
                     df.to_json(cache_path, default_handler=as_dict_handler)
                 else:
                     raise ValueError(f"Unexpected file type {file}")
-                print(f"Cached {key!r} to {cache_path!s}")
+                print(f"Cached {key!r} to {cache_path!r}")
 
         df = df.set_index("material_id")
         if hydrate:

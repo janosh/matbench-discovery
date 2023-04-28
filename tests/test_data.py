@@ -24,6 +24,7 @@ from matbench_discovery.data import (
 
 with open(f"{FIGSHARE}/{figshare_versions[-1]}.json") as file:
     figshare_urls = json.load(file)
+
 structure = Structure(
     lattice=Lattice.cubic(5),
     species=("Fe", "O"),
@@ -122,13 +123,15 @@ def test_load_train_test_doc_str() -> None:
     assert os.path.isdir(f"{ROOT}/site/src/routes/{route}")
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("version", [figshare_versions[-1]])
 def test_load_train_test_no_mock(
     version: str, capsys: CaptureFixture[str], tmp_path: Path
 ) -> None:
-    # this function runs the download from GitHub raw user content for real
-    # hence takes some time and requires being online
-    df_wbm = load_train_test(key := "wbm_summary", version=version, cache_dir=tmp_path)
+    # this function runs the download from Figshare for real hence takes some time and
+    # requires being online
+    file_key = "wbm_summary"
+    df_wbm = load_train_test(file_key, version=version, cache_dir=tmp_path)
     assert df_wbm.shape == (256963, 15)
     expected_cols = {
         "bandgap_pbe",
@@ -145,24 +148,22 @@ def test_load_train_test_no_mock(
     }
     assert (
         set(df_wbm) >= expected_cols
-    ), f"Loaded df missing columns { expected_cols - set(df_wbm)}"
+    ), f"Loaded df missing columns {expected_cols - set(df_wbm)}"
 
     stdout, stderr = capsys.readouterr()
     assert stderr == ""
-    # assert (  # TODO: fix and uncomment
-    # f"Downloading {key!r} from {figshare_urls[key]}\nCached {key!r} to {tmp_path!r}"
-    #     in stdout
-    # )
+    rel_path = DATA_FILES.__dict__[file_key].replace(f"{ROOT}/data/", "")
+    cache_path = f"{tmp_path}/{figshare_versions[-1]}{rel_path}"
+    assert (
+        f"Downloading {file_key!r} from {figshare_urls[file_key]}\nCached "
+        f"{file_key!r} to {cache_path!r}" in stdout
+    )
 
     df_wbm = load_train_test("wbm_summary", version=version, cache_dir=tmp_path)
 
     stdout, stderr = capsys.readouterr()
     assert stderr == ""
-    assert (
-        stdout
-        == f"Loading {key!r} from cached file at '{tmp_path}/{figshare_versions[-1]}/"
-        "wbm/2022-10-19-wbm-summary.csv'\n"
-    )
+    assert stdout == f"Loading {file_key!r} from cached file at {cache_path!r}\n"
 
 
 def test_as_dict_handler() -> None:
