@@ -32,9 +32,6 @@ class PredFiles(Files):
     See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
     """
 
-    _root = f"{ROOT}/models/"
-    _key_map = model_labels  # remap model keys below to pretty plot labels (see Files)
-
     # BOWSR optimizer coupled with original megnet
     bowsr_megnet = "bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv"
     # default CHGNet model from publication with 400,438 params
@@ -62,7 +59,8 @@ class PredFiles(Files):
     wrenformer = "wrenformer/2022-11-15-wrenformer-IS2RE-preds.csv"
 
 
-PRED_FILES = PredFiles()
+# model_labels remaps model keys to pretty plot labels (see Files)
+PRED_FILES = PredFiles(root=f"{ROOT}/models/", key_map=model_labels)
 
 
 def load_df_wbm_with_preds(
@@ -87,7 +85,9 @@ def load_df_wbm_with_preds(
         pd.DataFrame: WBM summary dataframe with model predictions.
     """
     if mismatch := ", ".join(set(models) - set(PRED_FILES)):
-        raise ValueError(f"Unknown models: {mismatch}")
+        raise ValueError(
+            f"Unknown models: {mismatch}, expected subset of {set(PRED_FILES)}"
+        )
 
     dfs: dict[str, pd.DataFrame] = {}
 
