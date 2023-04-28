@@ -132,10 +132,12 @@ Please see any of the subdirectories in [`models/`]({repo}/tree/main/models) for
 ### Step 1: Clone the repo
 
 ```sh
-git clone https://github.com/janosh/matbench-discovery
+git clone https://github.com/janosh/matbench-discovery --depth 1
 cd matbench-discovery
 git checkout -b model-name-you-want-to-add
 ```
+
+Use `--depth 1` to only clone the latest commit and save bandwidth. No need to load previous versions of large data files.
 
 ### Step 2: Commit model preds, script and metadata
 

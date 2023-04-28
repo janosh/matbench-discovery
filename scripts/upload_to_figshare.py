@@ -1,0 +1,149 @@
+"""Create a new Figshare article via API.
+
+Adapted from this example notebook:
+https://colab.research.google.com/drive/13CAM8mL1u7ZsqNhfZLv7bNb1rdhMI64d?usp=sharing
+Found notebook in docs: https://help.figshare.com/article/how-to-use-the-figshare-api
+"""
+
+import hashlib
+import json
+import os
+from typing import Any
+
+import requests
+import tomllib  # needs python 3.11
+from requests.exceptions import HTTPError
+
+from matbench_discovery import ROOT
+from matbench_discovery.data import DATA_FILES
+
+__author__ = "Janosh Riebesell"
+__date__ = "2023-04-27"
+
+with open(f"{ROOT}/site/.env") as file:
+    TOKEN = file.read().split("figshare_token=")[1].split("\n")[0]
+
+BASE_URL = "https://api.figshare.com/v2"
+CHUNK_SIZE = 10_000_000  # ~10MB
+
+with open(f"{ROOT}/pyproject.toml", "rb") as file:
+    pyproject = tomllib.load(file)["project"]
+KEYWORDS = pyproject["keywords"]
+VERSION = pyproject["version"]
+DESCRIPTION = pyproject["description"]
+REFERENCES = list(pyproject["urls"].values())
+
+TITLE = f"Matbench Discovery v{VERSION}"
+# category IDs can be found at https://api.figshare.com/v2/categories
+CATEGORIES = {
+    25162: "Structure and dynamics of materials",
+    25144: "Inorganic materials (incl. nanomaterials)",
+    25186: "Cheminformatics and Quantitative Structure-Activity Relationships",
+}
+
+file_urls_out_path = f"{ROOT}/data/figshare/{VERSION}.json"
+if os.path.isfile(file_urls_out_path):
+    raise SystemExit(
+        f"{file_urls_out_path!r} already exists, exiting early. Increment the version "
+        "in pyproject.toml before publishing a new set of data files to figshare."
+    )
+
+
+def make_request(method: str, url: str, data: Any = None, binary: bool = False) -> Any:
+    """Make a token-authorized HTTP request to the Figshare API."""
+    headers = {"Authorization": "token " + TOKEN}
+    if data is not None and not binary:
+        data = json.dumps(data)
+    response = requests.request(method, url, headers=headers, data=data)
+    try:
+        response.raise_for_status()
+        try:
+            data = json.loads(response.content)
+        except ValueError:
+            data = response.content
+    except HTTPError as error:
+        print(f"Caught an HTTPError: {error}")
+        print("Body:\n", response.content)
+        raise
+
+    return data
+
+
+def create_article(metadata: dict[str, str | int | float]) -> int:
+    """Create a new Figshare article with given metadata and return the article ID."""
+    result = make_request("POST", f"{BASE_URL}/account/articles", data=metadata)
+    print("Created article:", result["location"], "\n")
+    result = make_request("GET", result["location"])
+    return result["id"]
+
+
+def get_file_hash_and_size(file_name: str) -> tuple[str, int]:
+    """Get the md5 hash and size of a file."""
+    md5 = hashlib.md5()
+    size = 0
+    with open(file_name, "rb") as file:
+        while data := file.read(CHUNK_SIZE):
+            size += len(data)
+            md5.update(data)
+    return md5.hexdigest(), size
+
+
+def upload_file_to_figshare(article_id: int, file_path: str) -> int:
+    """Upload a file to Figshare and return the file ID."""
+    # Initiate new upload
+    md5, size = get_file_hash_and_size(file_path)
+    data = dict(name=os.path.basename(file_path), md5=md5, size=size)
+    endpoint = f"{BASE_URL}/account/articles/{article_id}/files"
+    result = make_request("POST", endpoint, data=data)
+    print(f"Initiated file upload: {result['location']}\n")
+    file_info = make_request("GET", result["location"])
+
+    # Upload parts
+    url = file_info["upload_url"]
+    result = make_request("GET", url)
+    with open(file_path, "rb") as file:
+        for part in result["parts"]:
+            # Upload part
+            u_data = file_info.copy()
+            u_data.update(part)
+            url = f'{u_data["upload_url"]}/{part["partNo"]}'
+            file.seek(part["startOffset"])
+            chunk = file.read(part["endOffset"] - part["startOffset"] + 1)
+            make_request("PUT", url, data=chunk, binary=True)
+            print(f'\tUploaded part {part["partNo"]}')
+
+    # Complete upload
+    make_request("POST", f"{endpoint}/{file_info['id']}")
+    return file_info["id"]
+
+
+def main() -> int:
+    """Main function to upload all files in FILE_PATHS to the same Figshare article."""
+    metadata = {
+        "title": TITLE,
+        "description": DESCRIPTION,
+        "defined_type": "dataset",  # seems to be default anyway
+        "tags": KEYWORDS,
+        "categories": list(CATEGORIES),
+        "references": REFERENCES,
+    }
+    article_id = create_article(metadata)
+    uploaded_files: dict[str, str] = {}
+    for key, file_path in DATA_FILES.items():
+        file_id = upload_file_to_figshare(article_id, file_path)
+        file_url = f"https://figshare.com/ndownloader/files/{file_id}"
+        uploaded_files[key] = file_url
+
+    print("\nUploaded files:")
+    for file_path, file_url in uploaded_files.items():
+        print(f"{file_path}: {file_url}")
+
+    # write to JSON file
+    with open(file_urls_out_path, "w") as file:
+        json.dump(uploaded_files, file)
+
+    return 0
+
+
+if __name__ == "__main__":
+    main()  # upload all data files to figshare with current pyproject.toml version

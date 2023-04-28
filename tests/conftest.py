@@ -7,18 +7,20 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 
 
 @pytest.fixture
-def dummy_df_with_structures(dummy_struct: Structure) -> pd.DataFrame:
-    # create a dummy df with a structure column
-    df = pd.DataFrame(dict(material_id=range(10), structure=[dummy_struct] * 10))
+def dummy_df_serialized(dummy_struct: Structure) -> pd.DataFrame:
+    # create a dummy df with a structure column on which to test (de-)serialization
+    df = pd.DataFrame(dict(material_id=range(5), structure=[dummy_struct] * 5))
     df["volume"] = [x.volume for x in df.structure]
-    df["computed_structure_entry"] = [ComputedStructureEntry(dummy_struct, 0)] * 10
+    df["structure"] = [x.as_dict() for x in df.structure]
+    cse_dict = ComputedStructureEntry(dummy_struct, 0).as_dict()
+    df["computed_structure_entry"] = [cse_dict] * len(df)
     return df
 
 
 @pytest.fixture
 def dummy_struct() -> Structure:
     return Structure(
-        lattice=Lattice.cubic(5),
+        lattice=Lattice.cubic(4.2),
         species=("Fe", "O"),
         coords=((0, 0, 0), (0.5, 0.5, 0.5)),
     )

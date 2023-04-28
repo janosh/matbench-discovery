@@ -181,7 +181,12 @@ for filename in (
         print(f"{file_path} already exists, skipping")
         continue
 
-    urllib.request.urlretrieve(f"{mat_cloud_url}&{filename=}", file_path)
+    try:
+        url = f"{mat_cloud_url}&filename={filename}"
+        urllib.request.urlretrieve(url, file_path)
+    except urllib.error.HTTPError as exc:
+        print(f"failed to download {url=}: {exc}")
+        continue
 
 
 # %%
