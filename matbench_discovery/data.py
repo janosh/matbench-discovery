@@ -14,7 +14,7 @@ from pymatgen.core import Structure
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from tqdm import tqdm
 
-from matbench_discovery import FIGSHARE, ROOT
+from matbench_discovery import FIGSHARE
 
 # repo URL to raw files on GitHub
 RAW_REPO_URL = "https://github.com/janosh/matbench-discovery/raw"
@@ -22,85 +22,10 @@ figshare_versions = sorted(
     x.split(os.path.sep)[-1].split(".json")[0] for x in glob(f"{FIGSHARE}/*.json")
 )
 # directory to cache downloaded data files
-default_cache_dir = os.path.expanduser("~/.cache/matbench-discovery")
-
-
-class Files(dict):  # type: ignore
-    """Files instance inherits from dict so that .values(), items(), etc. are supported
-    but also allows accessing attributes by dot notation. E.g. FILES.wbm_summary instead
-    of FILES["wbm_summary"]. This enables tab completion in IDEs and auto-updating
-    attribute names across the code base when changing the key of a file. Every subclass
-    must set the _root attribute to a path that serves as the root directory w.r.t.
-    which all files will be turned into absolute paths. The optional _key_map attribute
-    can be used to map attribute names to different names in the dict. Useful if you
-    want to have keys like 'foo+bar' that are not valid Python identifiers.
-    """
-
-    def __init__(
-        self, root: str = default_cache_dir, key_map: dict[str, str] = None
-    ) -> None:
-        """Create a Files instance."""
-        self._not_found_msg: Callable[[str], str] | None = None
-        rel_paths = {
-            (key_map or {}).get(key, key): file
-            for key, file in type(self).__dict__.items()
-            if not key.startswith("_")
-        }
-        abs_paths = {key: f"{root}/{file}" for key, file in rel_paths.items()}
-        self.__dict__ = abs_paths
-        super().__init__(abs_paths)
-
-    def __getattribute__(self, key: str) -> str:
-        """Override __getattr__ to check if file corresponding to key exists."""
-        file_path = super().__getattribute__(key)
-        if key in self and not os.path.isfile(file_path):
-            msg = f"Warning: {file_path!r} associated with {key=} does not exist."
-            if self._not_found_msg:
-                msg += f"\n{self._not_found_msg(key)}"
-            print(msg, file=sys.stderr)
-        return file_path
-
-
-class DataFiles(Files):
-    """Data files provided by Matbench Discovery.
-    See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
-    """
-
-    _not_found_msg = (
-        lambda self, key: "You can download it with matbench_discovery."  # type: ignore
-        f"data.load_train_test({key!r}) which will cache the file for future use."
-    )
-    mp_computed_structure_entries = (
-        "mp/2023-02-07-mp-computed-structure-entries.json.gz"
-    )
-    mp_elemental_ref_entries = "mp/2022-09-19-mp-elemental-reference-entries.json"
-    mp_energies = "mp/2023-01-10-mp-energies.csv"
-    mp_patched_phase_diagram = "mp/2023-02-07-ppd-mp.pkl.gz"
-    wbm_computed_structure_entries = (
-        "wbm/2022-10-19-wbm-computed-structure-entries.json.bz2"
-    )
-    wbm_initial_structures = "wbm/2022-10-19-wbm-init-structs.json.bz2"
-    wbm_cses_plus_init_structs = (
-        "wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
-    )
-    wbm_summary = "wbm/2022-10-19-wbm-summary.csv"
-
-
-# set root directory for data files to ~/.cache/matbench-discovery/1.x.x/ when
-# having downloaded them with matbench_discovery.data.load_train_test()
-DATA_FILES = DataFiles(root=f"{ROOT}/data/")
-
-
-def as_dict_handler(obj: Any) -> dict[str, Any] | None:
-    """Pass this to json.dump(default=) or as pandas.to_json(default_handler=) to
-    serialize Python classes with as_dict(). Warning: Objects without a as_dict() method
-    are replaced with None in the serialized data.
-    """
-    try:
-        return obj.as_dict()  # all MSONable objects implement as_dict()
-    except AttributeError:
-        return None  # replace unhandled objects with None in serialized data
-        # removes e.g. non-serializable AseAtoms from M3GNet relaxation trajectories
+default_cache_dir = os.getenv(
+    "MATBENCH_DISCOVERY_CACHE_DIR",
+    f"{os.path.expanduser('~/.cache/matbench-discovery')}/{figshare_versions[-1]}",
+)
 
 
 def load_train_test(
@@ -179,8 +104,8 @@ def load_train_test(
                 else:
                     raise ValueError(f"Unexpected file type {file}")
                 print(f"Cached {key!r} to {cache_path!r}")
-
-        df = df.set_index("material_id")
+        if "material_id" in df:
+            df = df.set_index("material_id")
         if hydrate:
             for col in df:
                 if not isinstance(df[col].iloc[0], dict):
@@ -231,6 +156,99 @@ def glob_to_df(
         sub_dfs[file] = df
 
     return pd.concat(sub_dfs.values())
+
+
+class Files(dict):  # type: ignore
+    """Files instance inherits from dict so that .values(), items(), etc. are supported
+    but also allows accessing attributes by dot notation. E.g. FILES.wbm_summary instead
+    of FILES["wbm_summary"]. This enables tab completion in IDEs and auto-updating
+    attribute names across the code base when changing the key of a file.
+    """
+
+    def __init__(
+        self, root: str = default_cache_dir, key_map: dict[str, str] = None
+    ) -> None:
+        """Create a Files instance.
+
+        Args:
+            root (str, optional): Root directory used to absolufy every file path.
+            Defaults to '~/.cache/matbench-discovery/{latest_figshare_release}' where
+                latest_figshare_release is e.g. 1.0.0. Can also be set through env var
+                MATBENCH_DISCOVERY_CACHE_DIR.
+            key_map (dict[str, str], optional): Mapping from attribute names to keys in
+                the dict. Useful if you want to have keys like 'foo+bar' that are not
+                valid Python identifiers. Defaults to None.
+        """
+        self._on_not_found: Callable[[str, str], None] | None = None
+        rel_paths = {
+            (key_map or {}).get(key, key): file
+            for key, file in type(self).__dict__.items()
+            if not key.startswith("_")
+        }
+        abs_paths = {key: f"{root}/{file}" for key, file in rel_paths.items()}
+        self.__dict__ = abs_paths
+        super().__init__(abs_paths)
+
+    def __getattribute__(self, key: str) -> str:
+        """Override __getattr__ to check if file corresponding to key exists."""
+        val = super().__getattribute__(key)
+        if key in self and not os.path.isfile(val):
+            msg = f"Warning: {val!r} associated with {key=} does not exist."
+            try:
+                self._on_not_found(key, msg)  # type: ignore[misc]
+            except TypeError:
+                print(msg, file=sys.stderr)
+        return val
+
+
+class DataFiles(Files):
+    """Data files provided by Matbench Discovery.
+    See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
+    """
+
+    def _on_not_found(self, key: str, msg: str) -> None:  # type: ignore[override]
+        msg += (
+            " Would you like to download it now using matbench_discovery."
+            f"data.load_train_test({key!r}). This will cache the file for future use."
+        )
+
+        answer = ""
+        # accept escape and enter
+        while answer.lower() not in ("y", "n", "\x1b", ""):
+            answer = input(f"{msg} [y/n] ")
+        if answer.lower() == "y":
+            load_train_test(key)
+
+    mp_computed_structure_entries = (
+        "mp/2023-02-07-mp-computed-structure-entries.json.gz"
+    )
+    mp_elemental_ref_entries = "mp/2022-09-19-mp-elemental-reference-entries.json"
+    mp_energies = "mp/2023-01-10-mp-energies.csv"
+    mp_patched_phase_diagram = "mp/2023-02-07-ppd-mp.pkl.gz"
+    wbm_computed_structure_entries = (
+        "wbm/2022-10-19-wbm-computed-structure-entries.json.bz2"
+    )
+    wbm_initial_structures = "wbm/2022-10-19-wbm-init-structs.json.bz2"
+    wbm_cses_plus_init_structs = (
+        "wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
+    )
+    wbm_summary = "wbm/2022-10-19-wbm-summary.csv"
+
+
+# data files can be downloaded and cached with matbench_discovery.data.load_train_test()
+DATA_FILES = DataFiles()
+
+
+def as_dict_handler(obj: Any) -> dict[str, Any] | None:
+    """Pass this to json.dump(default=) or as pandas.to_json(default_handler=) to
+    serialize Python classes with as_dict(). Warning: Objects without a as_dict() method
+    are replaced with None in the serialized data.
+    """
+    try:
+        return obj.as_dict()  # all MSONable objects implement as_dict()
+    except AttributeError:
+        return None  # replace unhandled objects with None in serialized data
+        # removes e.g. non-serializable AseAtoms from M3GNet relaxation trajectories
 
 
 df_wbm = load_train_test("wbm_summary")
