@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import urllib.error
 from collections.abc import Sequence
@@ -12,10 +13,13 @@ from pymatgen.core import Structure
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from tqdm import tqdm
 
-from matbench_discovery import ROOT
+from matbench_discovery import FIGSHARE, ROOT
 
 # repo URL to raw files on GitHub
-RAW_REPO_URL = "https://raw.githubusercontent.com/janosh/matbench-discovery"
+RAW_REPO_URL = "https://github.com/janosh/matbench-discovery/raw"
+figshare_versions = sorted(
+    x.split("/")[-1].split(".json")[0] for x in glob(f"{FIGSHARE}/*.json")
+)
 # directory to cache downloaded data files
 default_cache_dir = os.path.expanduser("~/.cache/matbench-discovery")
 
@@ -82,8 +86,8 @@ def as_dict_handler(obj: Any) -> dict[str, Any] | None:
 
 
 def load_train_test(
-    data_names: str | Sequence[str] = ("summary",),
-    version: str = "1.0.0",
+    data_names: str | Sequence[str],
+    version: str = figshare_versions[-1],
     cache_dir: str | Path = default_cache_dir,
     hydrate: bool = False,
     **kwargs: Any,
@@ -93,14 +97,15 @@ def load_train_test(
     JSON which will be cached locally to cache_dir for faster re-loading unless
     cache_dir is set to None.
 
-    See matbench_discovery.data.DATA_FILES for recognized data keys. See
-    https://janosh.github.io/matbench-discovery/contribute for descriptions.
+    See matbench_discovery.data.DATA_FILES for recognized data keys. For descriptions,
+    see https://janosh.github.io/matbench-discovery/contribute#--direct-download.
 
     Args:
         data_names (str | list[str], optional): Which parts of the MP/WBM data to load.
-            Can be any subset of the above data names or 'all'. Defaults to ["summary"].
+            Can be any subset of set(DATA_FILES) or 'all'.
         version (str, optional): Which version of the dataset to load. Defaults to
-            '1.0.0'. Can be any git tag, branch or commit hash.
+            latest version of data files published to Figshare. Pass any invalid version
+            to see valid options.
         cache_dir (str, optional): Where to cache data files on local drive. Defaults to
             '~/.cache/matbench-discovery'. Set to None to disable caching.
         hydrate (bool, optional): Whether to hydrate pymatgen objects. If False,
@@ -117,6 +122,8 @@ def load_train_test(
         pd.DataFrame: Single dataframe or dictionary of dfs if
         multiple data were requested.
     """
+    if version not in figshare_versions:
+        raise ValueError(f"Unexpected {version=}. Must be one of {figshare_versions}.")
     if data_names == "all":
         data_names = list(DATA_FILES)
     elif isinstance(data_names, str):
@@ -125,17 +132,21 @@ def load_train_test(
     if missing := set(data_names) - set(DATA_FILES):
         raise ValueError(f"{missing} must be subset of {set(DATA_FILES)}")
 
+    with open(f"{FIGSHARE}/{version}.json") as json_file:
+        file_urls = json.load(json_file)
+
     dfs = {}
     for key in data_names:
         file = DataFiles.__dict__[key]
-        reader = pd.read_csv if file.endswith(".csv") else pd.read_json
+        csv_ext = (".csv", ".csv.gz", ".csv.bz2")
+        reader = pd.read_csv if file.endswith(csv_ext) else pd.read_json
 
         cache_path = f"{cache_dir}/{version}/{file}"
         if os.path.isfile(cache_path):
             print(f"Loading {key!r} from cached file at {cache_path!r}")
             df = reader(cache_path, **kwargs)
         else:
-            url = f"{RAW_REPO_URL}/{version}/data/{file}"
+            url = file_urls[key]
             print(f"Downloading {key!r} from {url}")
             try:
                 df = reader(url)
@@ -144,13 +155,12 @@ def load_train_test(
             if cache_dir and not os.path.isfile(cache_path):
                 os.makedirs(os.path.dirname(cache_path), exist_ok=True)
                 if ".csv" in file:
-                    df.to_csv(cache_path)
+                    df.to_csv(cache_path, index=False)
                 elif ".json" in file:
-                    df.reset_index().to_json(
-                        cache_path, default_handler=as_dict_handler
-                    )
+                    df.to_json(cache_path, default_handler=as_dict_handler)
                 else:
                     raise ValueError(f"Unexpected file type {file}")
+                print(f"Cached {key!r} to {cache_path!s}")
 
         df = df.set_index("material_id")
         if hydrate:
