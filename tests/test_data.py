@@ -2,10 +2,8 @@ from __future__ import annotations
 
 import json
 import os
-import urllib.request
 from pathlib import Path
 from random import random
-from tempfile import TemporaryDirectory
 from typing import Any
 from unittest.mock import patch
 
@@ -14,27 +12,23 @@ import pytest
 from pymatgen.core import Lattice, Structure
 from pytest import CaptureFixture
 
-from matbench_discovery import ROOT
+from matbench_discovery import FIGSHARE, ROOT
 from matbench_discovery.data import (
     DATA_FILES,
-    RAW_REPO_URL,
-    DataFiles,
     as_dict_handler,
     df_wbm,
+    figshare_versions,
     glob_to_df,
     load_train_test,
 )
 
+with open(f"{FIGSHARE}/{figshare_versions[-1]}.json") as file:
+    figshare_urls = json.load(file)
 structure = Structure(
     lattice=Lattice.cubic(5),
     species=("Fe", "O"),
     coords=((0, 0, 0), (0.5, 0.5, 0.5)),
 )
-
-try:
-    website_down = urllib.request.urlopen(RAW_REPO_URL).status != 200
-except Exception:
-    website_down = True
 
 
 @pytest.mark.parametrize(
@@ -51,7 +45,7 @@ except Exception:
 def test_load_train_test(
     data_names: list[str],
     hydrate: bool,
-    dummy_df_with_structures: pd.DataFrame,
+    dummy_df_serialized: pd.DataFrame,
     capsys: CaptureFixture[str],
     tmp_path: Path,
 ) -> None:
@@ -59,32 +53,45 @@ def test_load_train_test(
     with patch("matbench_discovery.data.pd.read_csv") as read_csv, patch(
         "matbench_discovery.data.pd.read_json"
     ) as read_json:
-        read_csv.return_value = read_json.return_value = dummy_df_with_structures
+        # dummy df with Structures and ComputedStructureEntries
+        read_json.return_value = dummy_df_serialized
+        # dummy df with random floats and material_id column
+        read_csv.return_value = pd._testing.makeDataFrame().reset_index(
+            names="material_id"
+        )
         out = load_train_test(
             data_names,
             hydrate=hydrate,
-            # test both str and Path cache_dir
-            cache_dir=TemporaryDirectory().name if random() < 0.5 else tmp_path,
+            # test both str and Path for cache_dir
+            cache_dir=str(tmp_path) if random() < 0.5 else tmp_path,
         )
 
-    stdout, stderr = capsys.readouterr()
+    stdout, _stderr = capsys.readouterr()
 
-    expected_out = "\n".join(
-        f"Downloading {key!r} from {RAW_REPO_URL}/1.0.0/data/{DataFiles.__dict__[key]}"
-        for key in data_names
-    )
-    assert expected_out in stdout
-    assert stderr == ""
+    expected_outs = [
+        f"Downloading {key!r} from {figshare_urls[key]}" for key in data_names
+    ]
+    for expected_out in expected_outs:
+        assert expected_out in stdout
 
+    # check we called read_csv/read_json once for each data_name
     assert read_json.call_count + read_csv.call_count == len(data_names)
 
     if len(data_names) > 1:
         assert isinstance(out, dict)
         assert list(out) == data_names
-        for df in out.values():
-            assert isinstance(df, pd.DataFrame)
+        for key, df in out.items():
+            assert isinstance(df, pd.DataFrame), f"{key} not a DataFrame but {type(df)}"
     else:
-        assert isinstance(out, pd.DataFrame)
+        assert isinstance(out, pd.DataFrame), f"{data_names[0]} not a DataFrame"
+
+    # test that df loaded from cache is the same as initial df
+    from_cache = load_train_test(data_names, hydrate=hydrate, cache_dir=tmp_path)
+    if len(data_names) > 1:
+        for key, df in from_cache.items():
+            pd.testing.assert_frame_equal(df, out[key])
+    else:
+        pd.testing.assert_frame_equal(out, from_cache)
 
 
 def test_load_train_test_raises(tmp_path: Path) -> None:
@@ -93,14 +100,13 @@ def test_load_train_test_raises(tmp_path: Path) -> None:
         load_train_test(["bad-data-name"])
 
     # bad_version
-    version = "not-a-real-branch"
+    version = "invalid-version"
     with pytest.raises(ValueError) as exc_info:
         load_train_test("wbm_summary", version=version, cache_dir=tmp_path)
 
     assert (
         str(exc_info.value)
-        == "Bad url='https://raw.githubusercontent.com/janosh/matbench-discovery"
-        f"/{version}/data/wbm/2022-10-19-wbm-summary.csv'"
+        == f"Unexpected version='invalid-version'. Must be one of {figshare_versions}."
     )
 
 
@@ -116,35 +122,36 @@ def test_load_train_test_doc_str() -> None:
     assert os.path.isdir(f"{ROOT}/site/src/routes/{route}")
 
 
-@pytest.mark.skipif(website_down, reason=f"{RAW_REPO_URL} unreachable")
-@pytest.mark.parametrize("version", ["main"])  # , "d00d475"
+@pytest.mark.parametrize("version", [figshare_versions[-1]])
 def test_load_train_test_no_mock(
     version: str, capsys: CaptureFixture[str], tmp_path: Path
 ) -> None:
     # this function runs the download from GitHub raw user content for real
     # hence takes some time and requires being online
-    df_wbm = load_train_test("wbm_summary", version=version, cache_dir=tmp_path)
-    assert df_wbm.shape == (256963, 14)
-    assert set(df_wbm) > {
+    df_wbm = load_train_test(key := "wbm_summary", version=version, cache_dir=tmp_path)
+    assert df_wbm.shape == (256963, 15)
+    expected_cols = {
         "bandgap_pbe",
         "e_form_per_atom_mp2020_corrected",
         "e_form_per_atom_uncorrected",
         "e_form_per_atom_wbm",
-        "e_hull_wbm",
+        "e_above_hull_wbm",
         "formula",
         "n_sites",
         "uncorrected_energy",
         "uncorrected_energy_from_cse",
         "volume",
         "wyckoff_spglib",
-    }, "Loaded df missing columns"
+    }
+    assert (
+        set(df_wbm) >= expected_cols
+    ), f"Loaded df missing columns { expected_cols - set(df_wbm)}"
 
     stdout, stderr = capsys.readouterr()
     assert stderr == ""
     assert (
-        stdout
-        == "Downloading 'wbm-summary' from https://raw.githubusercontent.com/janosh"
-        f"/matbench-discovery/{version}/data/wbm/2022-10-19-wbm-summary.csv\n"
+        f"Downloading {key!r} from {figshare_urls[key]}\nCached {key!r} to {tmp_path!s}"
+        in stdout
     )
 
     df_wbm = load_train_test("wbm_summary", version=version, cache_dir=tmp_path)
@@ -153,8 +160,8 @@ def test_load_train_test_no_mock(
     assert stderr == ""
     assert (
         stdout
-        == f"Loading 'wbm-summary' from cached file at '{tmp_path}/main/wbm/2022-10-19-"
-        "wbm-summary.csv'\n"
+        == f"Loading {key!r} from cached file at '{tmp_path}/{figshare_versions[-1]}/"
+        "wbm/2022-10-19-wbm-summary.csv'\n"
     )
 
 
