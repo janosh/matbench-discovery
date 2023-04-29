@@ -89,4 +89,4 @@ for idx, (ax, row) in enumerate(
     id = row.Index
     ax.set_title(f"{idx}. {formula} (spg={spg_num})\n{id}", fontweight="bold")
 
-# fig.savefig(f"{ROOT}/tmp/figures/chgnet-bad-relax-structures.webp", dpi=300)
+# fig.savefig(f"{ROOT}/tmp/figs/chgnet-bad-relax-structures.webp", dpi=300)

@@ -45,7 +45,7 @@ df_mp.isopointal_proto_from_aflow.value_counts().head(12)
 # %%
 ax = spacegroup_hist(df_bad[spg_col])
 ax.set_title(f"Spacegroup hist for {title}", y=1.15)
-# save_fig(ax, f"{ROOT}/tmp/figures/spacegroup-hist-{model}-failures.png", dpi=300)
+# save_fig(ax, f"{ROOT}/tmp/figs/spacegroup-hist-{model}-failures.png", dpi=300)
 
 
 # %%
@@ -69,7 +69,7 @@ df_to_svelte_table(styler, f"{FIGS}/proto-counts-{model}-failures.svelte")
 fig = spacegroup_sunburst(df_bad[spg_col], width=350, height=350)
 fig.layout.title.update(text=f"Spacegroup sunburst for {title}", x=0.5, font_size=14)
 fig.show()
-# save_fig(fig, f"{ROOT}/tmp/figures/spacegroup-sunburst-{model}-failures.png", scale=3)
+# save_fig(fig, f"{ROOT}/tmp/figs/spacegroup-sunburst-{model}-failures.png", scale=3)
 save_fig(fig, f"{FIGS}/spacegroup-sunburst-{model}-failures.svelte")
 
 
@@ -78,4 +78,4 @@ fig = ptable_heatmap_plotly(df_bad.formula)
 fig.layout.title = f"Elements in {title}"
 fig.layout.margin = dict(l=0, r=0, t=50, b=0)
 fig.show()
-save_fig(fig, f"{ROOT}/tmp/figures/elements-{model.lower()}-failures.pdf")
+save_fig(fig, f"{ROOT}/tmp/figs/elements-{model.lower()}-failures.pdf")

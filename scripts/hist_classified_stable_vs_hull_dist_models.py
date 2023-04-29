@@ -110,5 +110,5 @@ else:
 img_name = f"hist-clf-{which_energy}-hull-dist-models"
 save_fig(fig, f"{FIGS}/{img_name}.svelte")
 n_models = len(fig.layout.annotations)
-# save_fig(fig, f"{STATIC}/{img_name}.webp", scale=3, height=100 * n_models)
-save_fig(fig, f"{ROOT}/tmp/figures/{img_name}.pdf", height=550, width=600)
+# save_fig(fig, f"{ROOT}/tmp/figs/{img_name}.webp", scale=3, height=100 * n_models)
+save_fig(fig, f"{ROOT}/tmp/figs/{img_name}.pdf", height=550, width=600)
