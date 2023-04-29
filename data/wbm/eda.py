@@ -22,7 +22,7 @@ __author__ = "Janosh Riebesell"
 __date__ = "2023-03-30"
 
 """
-WBM exploratory data analysis.
+WBM exploratory data analysis (EDA).
 Start with comparing MP and WBM elemental prevalence.
 """
 

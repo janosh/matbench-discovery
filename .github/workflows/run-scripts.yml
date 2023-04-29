@@ -1,0 +1,31 @@
+name: Run Scripts
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        script:
+          - data/wbm/fetch_process_wbm_dataset.py
+          - scripts/analyze_element_errors.py
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Install package and dependencies
+        run: pip install .[fetch-data]
+
+      - name: Run script
+        run: python ${{ matrix.script }}
