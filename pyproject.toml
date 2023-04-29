@@ -52,11 +52,22 @@ Package = "https://pypi.org/project/matbench-discovery"
 
 [project.optional-dependencies]
 test = ["pytest", "pytest-cov", "pytest-markdown-docs"]
-running-models = ["aviary", "m3gnet", "maml", "megnet"]
+# how to specify git deps: https://stackoverflow.com/a/73572379
+running-models = [
+  "aviary@git+https://github.com/CompRhys/aviary",
+  "m3gnet",
+  "maml",
+  "megnet",
+]
 3d-structures = ["crystaltoolkit"]
+fetch-data = ["gdown", "aviary@git+https://github.com/CompRhys/aviary"]
 
-[tool.setuptools.packages]
-find = { include = ["matbench_discovery*"], exclude = ["tests*"] }
+[tool.setuptools.packages.find]
+include = ["matbench_discovery*"]
+exclude = ["tests", "tests.*"]
+
+[tool.setuptools.package-data]
+matbench_discovery = ["../data/figshare/*"]
 
 [tool.distutils.bdist_wheel]
 universal = true
