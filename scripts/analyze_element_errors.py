@@ -175,7 +175,7 @@ fig.layout.title.update(xanchor="center", x=0.5)
 fig.show()
 
 # save_fig(fig, f"{FIGS}/element-prevalence-vs-error.svelte")
-save_fig(fig, f"{ROOT}/tmp/figures/element-prevalence-vs-error.pdf")
+save_fig(fig, f"{ROOT}/tmp/figs/element-prevalence-vs-error.pdf")
 
 
 # %% plot EACH errors against least prevalent element in structure (by occurrence in

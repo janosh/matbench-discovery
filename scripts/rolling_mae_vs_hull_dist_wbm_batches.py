@@ -80,4 +80,4 @@ fig.show()
 model_snake_case = model.lower().replace(" + ", "-").replace(" ", "-")
 img_path = f"{model_snake_case}-rolling-mae-vs-hull-dist-wbm-batches"
 save_fig(fig, f"{FIGS}/{img_path}.svelte")
-save_fig(fig, f"{ROOT}/tmp/figures/{img_path}.pdf")
+save_fig(fig, f"{ROOT}/tmp/figs/{img_path}.pdf")

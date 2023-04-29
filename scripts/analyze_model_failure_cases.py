@@ -79,7 +79,7 @@ for good_or_bad, init_or_final in itertools.product(
             fontweight="bold",
         )
     out_path = (
-        f"{ROOT}/tmp/figures/{good_or_bad}-{len(errs)}-structures-{init_or_final}.webp"
+        f"{ROOT}/tmp/figs/{good_or_bad}-{len(errs)}-structures-{init_or_final}.webp"
     )
     # fig.savefig(out_path, dpi=300)
 
@@ -206,7 +206,7 @@ fig.layout.title = (
 fig.show()
 # save_fig(fig, f"{FIGS}/scatter-largest-errors-models-mean-vs-each-true.svelte")
 # save_fig(
-#     fig, f"{ROOT}/tmp/figures/scatter-largest-errors-models-mean-vs-each-true.pdf"
+#     fig, f"{ROOT}/tmp/figs/scatter-largest-errors-models-mean-vs-each-true.pdf"
 # )
 
 
@@ -346,7 +346,7 @@ fig.layout.yaxis.title = "|E<sub>above hull</sub> error| (eV/atom)"
 fig.show()
 
 save_fig(fig, f"{FIGS}/largest-fp-diff-each-error-models.svelte")
-# save_fig(fig, f"{ROOT}/tmp/figures/large-fp-diff-vs-each-error.webp", scale=2)
+# save_fig(fig, f"{ROOT}/tmp/figs/large-fp-diff-vs-each-error.webp", scale=2)
 
 
 # %%
@@ -369,9 +369,7 @@ fig = px.scatter(
 )
 fig.show()
 
-save_fig(
-    fig, f"{ROOT}/tmp/figures/tsne-2d-composition-by-wbm-step-bandgap.png", scale=3
-)
+save_fig(fig, f"{ROOT}/tmp/figs/tsne-2d-composition-by-wbm-step-bandgap.png", scale=3)
 
 
 # %% violin plot of EACH error for largest norm-diff FP structures for each model
