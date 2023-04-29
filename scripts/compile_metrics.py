@@ -233,7 +233,7 @@ for label, df, hide_cols in (
 # %%
 # hide_rows = list(set(df_metrics) - set(df_metrics.T.F1.nlargest(6).index))
 # styler.hide(hide_rows)  # show only the best models by F1 score
-png_metrics = f"{ROOT}/tmp/figures/metrics-table.png"
+png_metrics = f"{ROOT}/tmp/figs/metrics-table.png"
 dfi.export(styler, png_metrics, dpi=300)
 print(f"{png_metrics=}")
 
