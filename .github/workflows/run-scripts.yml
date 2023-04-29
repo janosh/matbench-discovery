@@ -11,6 +11,7 @@ jobs:
   run:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         script:
           - data/wbm/fetch_process_wbm_dataset.py
@@ -29,4 +30,3 @@ jobs:
 
       - name: Run script
         run: python ${{ matrix.script }}
-        continue-on-error: true

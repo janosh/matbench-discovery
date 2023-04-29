@@ -57,6 +57,8 @@ google_drive_ids = {
 
 
 # %%
+os.makedirs(f"{module_dir}/raw", exist_ok=True)
+
 for step, file_id in google_drive_ids.items():
     file_path = f"{module_dir}/raw/wbm-structures-step-{step}.json.bz2"
 
