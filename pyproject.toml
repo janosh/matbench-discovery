@@ -54,13 +54,15 @@ Package = "https://pypi.org/project/matbench-discovery"
 test = ["pytest", "pytest-cov", "pytest-markdown-docs"]
 # how to specify git deps: https://stackoverflow.com/a/73572379
 running-models = [
+  # torch needs to install before aviary
+  "torch",
   "aviary@git+https://github.com/CompRhys/aviary",
   "m3gnet",
   "maml",
   "megnet",
 ]
 3d-structures = ["crystaltoolkit"]
-fetch-data = ["gdown", "aviary@git+https://github.com/CompRhys/aviary"]
+fetch-data = ["gdown"]
 
 [tool.setuptools.packages.find]
 include = ["matbench_discovery*"]
