@@ -84,7 +84,7 @@ def load_train_test(
         csv_ext = (".csv", ".csv.gz", ".csv.bz2")
         reader = pd.read_csv if file.endswith(csv_ext) else pd.read_json
 
-        cache_path = f"{cache_dir}/{version}/{file}"
+        cache_path = f"{cache_dir}/{file}"
         if os.path.isfile(cache_path):
             print(f"Loading {key!r} from cached file at {cache_path!r}")
             df = reader(cache_path, **kwargs)
@@ -212,12 +212,12 @@ class DataFiles(Files):
             f"data.load_train_test({key!r}). This will cache the file for future use."
         )
 
-        answer = ""
-        # accept escape and enter
-        while answer.lower() not in ("y", "n", "\x1b", ""):
-            answer = input(f"{msg} [y/n] ")
-        if answer.lower() == "y":
-            load_train_test(key)
+        # default to 'y' if not in interactive session, and user can't answer
+        answer = "" if sys.stdin.isatty() else "y"
+        while answer not in ("y", "n", "\x1b", ""):
+            answer = input(f"{msg} [y/n] ").lower().strip()
+        if answer == "y":
+            load_train_test(key)  # download and cache data file
 
     mp_computed_structure_entries = (
         "mp/2023-02-07-mp-computed-structure-entries.json.gz"

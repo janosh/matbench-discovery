@@ -138,7 +138,7 @@ def test_load_train_test_no_mock_mp_refs(
     stdout, stderr = capsys.readouterr()
     assert stderr == ""
     rel_path = getattr(type(DATA_FILES), file_key)
-    cache_path = f"{tmp_path}/{figshare_versions[-1]}/{rel_path}"
+    cache_path = f"{tmp_path}/{rel_path}"
     assert (
         f"Downloading {file_key!r} from {figshare_urls[file_key]}\nCached "
         f"{file_key!r} to {cache_path!r}" in stdout
