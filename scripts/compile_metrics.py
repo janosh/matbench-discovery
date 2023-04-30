@@ -9,7 +9,6 @@ from __future__ import annotations
 import re
 from typing import Any
 
-import dataframe_image as dfi
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -234,8 +233,12 @@ for label, df, hide_cols in (
 # hide_rows = list(set(df_metrics) - set(df_metrics.T.F1.nlargest(6).index))
 # styler.hide(hide_rows)  # show only the best models by F1 score
 png_metrics = f"{ROOT}/tmp/figs/metrics-table.png"
-dfi.export(styler, png_metrics, dpi=300)
-print(f"{png_metrics=}")
+try:
+    import dataframe_image
+
+    dataframe_image.export(styler, png_metrics, dpi=300)
+except ImportError:
+    print("dataframe_image not installed, skipping png export")
 
 
 # %% write model metrics to json for use by the website
