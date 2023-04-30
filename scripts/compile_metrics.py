@@ -242,7 +242,8 @@ except ImportError:
 
 
 # %% write model metrics to json for use by the website
-df_stats["missing_preds"] = df_preds[list(df_metrics)].isna().sum()
+in_both = [*set(df_metrics) & set(df_preds)]
+df_stats["missing_preds"] = df_preds[in_both].isna().sum()
 df_stats["missing_percent"] = [
     f"{x / len(df_preds):.2%}" for x in df_stats.missing_preds
 ]
