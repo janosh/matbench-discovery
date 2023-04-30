@@ -30,3 +30,5 @@ jobs:
 
       - name: Run script
         run: python ${{ matrix.script }}
+        env:
+          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
