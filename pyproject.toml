@@ -39,7 +39,7 @@ dependencies = [
   "pandas[output_formatting]",
   "plotly",
   "pymatgen",
-  "pymatviz",
+  "pymatviz[export-figs]",
   "scikit-learn",
   "scipy",
   "tqdm",
