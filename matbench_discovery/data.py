@@ -172,7 +172,7 @@ class Files(dict):  # type: ignore
 
         Args:
             root (str, optional): Root directory used to absolufy every file path.
-            Defaults to '~/.cache/matbench-discovery/{latest_figshare_release}' where
+            Defaults to '~/.cache/matbench-discovery/[latest_figshare_release]' where
                 latest_figshare_release is e.g. 1.0.0. Can also be set through env var
                 MATBENCH_DISCOVERY_CACHE_DIR.
             key_map (dict[str, str], optional): Mapping from attribute names to keys in
