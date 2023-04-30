@@ -28,6 +28,18 @@ default_cache_dir = os.getenv(
 )
 
 
+def as_dict_handler(obj: Any) -> dict[str, Any] | None:
+    """Pass this to json.dump(default=) or as pandas.to_json(default_handler=) to
+    serialize Python classes with as_dict(). Warning: Objects without a as_dict() method
+    are replaced with None in the serialized data.
+    """
+    try:
+        return obj.as_dict()  # all MSONable objects implement as_dict()
+    except AttributeError:
+        return None  # replace unhandled objects with None in serialized data
+        # removes e.g. non-serializable AseAtoms from M3GNet relaxation trajectories
+
+
 def load_train_test(
     data_names: str | Sequence[str],
     version: str = figshare_versions[-1],
@@ -62,8 +74,7 @@ def load_train_test(
         ValueError: On bad version number or bad data names.
 
     Returns:
-        pd.DataFrame: Single dataframe or dictionary of dfs if
-        multiple data were requested.
+        pd.DataFrame: Single dataframe or dictionary of dfs if multiple data requested.
     """
     if version not in figshare_versions:
         raise ValueError(f"Unexpected {version=}. Must be one of {figshare_versions}.")
@@ -85,16 +96,24 @@ def load_train_test(
         reader = pd.read_csv if file.endswith(csv_ext) else pd.read_json
 
         cache_path = f"{cache_dir}/{file}"
-        if os.path.isfile(cache_path):
+        if os.path.isfile(cache_path):  # load from disk cache
             print(f"Loading {key!r} from cached file at {cache_path!r}")
             df = reader(cache_path, **kwargs)
-        else:
+        else:  # download from Figshare URL
+            # manually set compression since pandas can't infer from URL
+            if file.endswith(".gz"):
+                kwargs.setdefault("compression", "gzip")
+            elif file.endswith(".bz2"):
+                kwargs.setdefault("compression", "bz2")
             url = file_urls[key]
             print(f"Downloading {key!r} from {url}")
             try:
-                df = reader(url)
+                df = reader(url, **kwargs)
             except urllib.error.HTTPError as exc:
                 raise ValueError(f"Bad {url=}") from exc
+            except Exception:
+                print(f"\n\nvariable dump:\n{file=},\n{url=},\n{reader=},\n{kwargs=}")
+                raise
             if cache_dir and not os.path.isfile(cache_path):
                 os.makedirs(os.path.dirname(cache_path), exist_ok=True)
                 if ".csv" in file:
@@ -143,7 +162,7 @@ def glob_to_df(
     Returns:
         pd.DataFrame: Combined dataframe.
     """
-    reader = reader or pd.read_csv if ".csv" in pattern else pd.read_json
+    reader = reader or pd.read_csv if ".csv" in pattern.lower() else pd.read_json
 
     # prefix pattern with ROOT if not absolute path
     files = glob(pattern)
@@ -194,9 +213,9 @@ class Files(dict):  # type: ignore
         val = super().__getattribute__(key)
         if key in self and not os.path.isfile(val):
             msg = f"Warning: {val!r} associated with {key=} does not exist."
-            try:
-                self._on_not_found(key, msg)  # type: ignore[misc]
-            except TypeError:
+            if self._on_not_found:
+                self._on_not_found(key, msg)
+            else:
                 print(msg, file=sys.stderr)
         return val
 
@@ -214,7 +233,7 @@ class DataFiles(Files):
 
         # default to 'y' if not in interactive session, and user can't answer
         answer = "" if sys.stdin.isatty() else "y"
-        while answer not in ("y", "n", "\x1b", ""):
+        while answer not in ("y", "n"):
             answer = input(f"{msg} [y/n] ").lower().strip()
         if answer == "y":
             load_train_test(key)  # download and cache data file
@@ -237,18 +256,6 @@ class DataFiles(Files):
 
 # data files can be downloaded and cached with matbench_discovery.data.load_train_test()
 DATA_FILES = DataFiles()
-
-
-def as_dict_handler(obj: Any) -> dict[str, Any] | None:
-    """Pass this to json.dump(default=) or as pandas.to_json(default_handler=) to
-    serialize Python classes with as_dict(). Warning: Objects without a as_dict() method
-    are replaced with None in the serialized data.
-    """
-    try:
-        return obj.as_dict()  # all MSONable objects implement as_dict()
-    except AttributeError:
-        return None  # replace unhandled objects with None in serialized data
-        # removes e.g. non-serializable AseAtoms from M3GNet relaxation trajectories
 
 
 df_wbm = load_train_test("wbm_summary")
