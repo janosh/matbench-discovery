@@ -233,7 +233,7 @@ class DataFiles(Files):
 
         # default to 'y' if not in interactive session, and user can't answer
         answer = "" if sys.stdin.isatty() else "y"
-        while answer not in ("y", "n", "\x1b", ""):
+        while answer not in ("y", "n"):
             answer = input(f"{msg} [y/n] ").lower().strip()
         if answer == "y":
             load_train_test(key)  # download and cache data file
