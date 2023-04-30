@@ -8,8 +8,9 @@ ROOT = os.path.dirname(os.path.dirname(__file__))  # repo root directory
 FIGS = f"{ROOT}/site/src/figs"  # directory to store interactive figures
 MODELS = f"{ROOT}/site/src/routes/models"  # directory to write model analysis
 FIGSHARE = f"{ROOT}/data/figshare"
+TMP_FIGS = f"{ROOT}/tmp/figs"  # directory to store temporary figures
 
-for directory in [FIGS, MODELS, FIGSHARE]:
+for directory in [FIGS, MODELS, FIGSHARE, TMP_FIGS]:
     os.makedirs(directory, exist_ok=True)
 
 # whether a currently running slurm job is in debug mode

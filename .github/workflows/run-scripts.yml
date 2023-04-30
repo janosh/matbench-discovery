@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         script:
-          - data/wbm/fetch_process_wbm_dataset.py
+          - scripts/compile_metrics.py
           - scripts/analyze_element_errors.py
     steps:
       - name: Check out repository
