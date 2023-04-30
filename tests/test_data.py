@@ -107,8 +107,9 @@ def test_load_train_test_raises(tmp_path: Path) -> None:
 
     assert (
         str(exc_info.value)
-        == f"Unexpected version='invalid-version'. Must be one of {figshare_versions}."
+        == f"Unexpected {version=}. Must be one of {figshare_versions}."
     )
+    assert os.listdir(tmp_path) == [], "cache_dir should be empty"
 
 
 def test_load_train_test_doc_str() -> None:
