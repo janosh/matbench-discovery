@@ -222,7 +222,7 @@ for json_path in cse_step_paths:
 
 
 # %%
-df_wbm["computed_structure_entry"] = pd.concat(dfs_wbm_cses.values()).to_numpy()
+df_wbm["computed_structure_entry"] = np.concatenate([*dfs_wbm_cses.values()]).squeeze()
 
 for mat_id, cse in df_wbm.computed_structure_entry.items():
     # needed to ensure MaterialsProjectCompatibility can process the entries
@@ -319,9 +319,9 @@ pd.testing.assert_frame_equal(
 )
 
 
-assert sum(df_summary.index == "None") == 6
+assert sum(no_id_mask := df_summary.index.isna()) == 6, f"{sum(no_id_mask)=}"
 # the 'None' materials have 0 volume, energy, n_sites, bandgap, etc.
-assert all(df_summary[df_summary.index == "None"].drop(columns=["formula"]) == 0)
+assert all(df_summary[no_id_mask].drop(columns=["formula"]) == 0)
 assert len(df_summary.query("volume > 0")) == len(df_wbm) + len(nan_init_structs_ids)
 # make sure dropping materials with 0 volume removes exactly 6 materials, the same ones
 # listed in bad_struct_ids above
@@ -332,7 +332,7 @@ assert all(
 
 df_summary.index = df_summary.index.map(increment_wbm_material_id)  # format IDs
 # drop materials with id='None' and missing initial structures
-df_summary = df_summary.drop(index=[*nan_init_structs_ids, "None"])
+df_summary = df_summary.drop(index=[*nan_init_structs_ids, float("NaN")])
 
 # the 8403 material IDs in step 3 with final number larger than any of the ones in
 # bad_struct_ids are now misaligned between df_summary and df_wbm
@@ -340,6 +340,14 @@ df_summary = df_summary.drop(index=[*nan_init_structs_ids, "None"])
 # bad_struct_ids. we fix this with fix_bad_struct_index_mismatch() by mapping the IDs in
 # df_wbm to the ones in df_summary so that both indices become consecutive.
 assert sum(df_summary.index != df_wbm.index) == 8403
+assert {*df_summary.index} - {*df_wbm.index} == {
+    "wbm-3-70803",
+    "wbm-3-70804",
+    "wbm-3-70826",
+    "wbm-3-70827",
+    "wbm-3-70829",
+    "wbm-3-70830",
+}
 
 
 def fix_bad_struct_index_mismatch(material_id: str) -> str:
