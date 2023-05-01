@@ -52,7 +52,7 @@ Repo = "https://github.com/janosh/matbench-discovery"
 Package = "https://pypi.org/project/matbench-discovery"
 
 [project.optional-dependencies]
-test = ["pytest", "pytest-cov", "pytest-markdown-docs"]
+test = ["pytest", "pytest-cov"]
 # how to specify git deps: https://stackoverflow.com/a/73572379
 running-models = [
   # torch needs to install before aviary
