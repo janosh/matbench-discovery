@@ -158,7 +158,7 @@ wbm_summary_expected_cols = {
             figshare_versions[-1],
             (154718, 1),
             {"entry"},
-            marks=pytest.mark.slow,
+            marks=pytest.mark.very_slow,
         ),
     ],
 )
