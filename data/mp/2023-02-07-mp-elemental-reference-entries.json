@@ -1,0 +1,3121 @@
+{
+  "Ne": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -0.02593678,
+    "composition": {
+      "Ne": 1.0
+    },
+    "entry_id": "mp-111-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Ne 05Jan2001",
+          "hash": "52064eee378b9e37a295a674f1c278f0"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2021-02-11 09:15:19"
+      },
+      "task_id": "mp-1939066",
+      "material_id": "mp-111",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "He": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -0.00905951,
+    "composition": {
+      "He": 1.0
+    },
+    "entry_id": "mp-23158-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE He 05Jan2001",
+          "hash": "47f9434aa3db96c85d7c4b3e4c2df09b"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2022-06-07 22:51:00.255000"
+      },
+      "task_id": "mp-2300406",
+      "material_id": "mp-23158",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Ar": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -0.06880822,
+    "composition": {
+      "Ar": 1.0
+    },
+    "entry_id": "mp-23155-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Ar 07Sep2000",
+          "hash": "e782fc6292623b396091bf8b871c272f"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-05 03:24:57.857000"
+      },
+      "task_id": "mp-1476242",
+      "material_id": "mp-23155",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "F": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -7.64591587,
+    "composition": {
+      "F": 4.0
+    },
+    "entry_id": "mp-561203-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE F 08Apr2002",
+          "hash": "180141c33d032bfbfff30b3bea9d23dd"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-11 09:12:27.932000"
+      },
+      "task_id": "mp-1798356",
+      "material_id": "mp-561203",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "O": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -39.57350969,
+    "composition": {
+      "O": 8.0
+    },
+    "entry_id": "mp-723285-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE O 08Apr2002",
+          "hash": "7a25bc5b9a5393f46600a4939d357982"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-11 17:57:46.740000"
+      },
+      "task_id": "mp-1788458",
+      "material_id": "mp-723285",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Cl": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -7.39414664,
+    "composition": {
+      "Cl": 4.0
+    },
+    "entry_id": "mp-1008394-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Cl 17Jan2003",
+          "hash": "779b9901046c78fe51c5d80224642aeb"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2021-02-06 16:53:00.677000"
+      },
+      "task_id": "mp-1877492",
+      "material_id": "mp-1008394",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "N": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -66.6919594,
+    "composition": {
+      "N": 8.0
+    },
+    "entry_id": "mp-25-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE N 08Apr2002",
+          "hash": "b98fd027ddebc67da4063ff2cabbc04b"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2021-02-07 08:15:44.933000"
+      },
+      "task_id": "mp-1883019",
+      "material_id": "mp-25",
+      "oxidation_states": {
+        "N": 0.0
+      },
+      "run_type": "GGA"
+    }
+  },
+  "Kr": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -0.05671467,
+    "composition": {
+      "Kr": 1.0
+    },
+    "entry_id": "mp-612118-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Kr 07Sep2000",
+          "hash": "39b9b85ae3982e6c012fb549b2840ce5"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-03 21:20:18.016000"
+      },
+      "task_id": "mp-1439320",
+      "material_id": "mp-612118",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Br": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -1.55302833,
+    "composition": {
+      "Br": 1.0
+    },
+    "entry_id": "mp-998864-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Br 06Sep2000",
+          "hash": "40f9594b4506684a69158c8975cfb9d6"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-03 01:29:27.377000"
+      },
+      "task_id": "mp-1428079",
+      "material_id": "mp-998864",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "I": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -1.47336635,
+    "composition": {
+      "I": 1.0
+    },
+    "entry_id": "mp-639751-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE I 08Apr2002",
+          "hash": "f4ff16a495dd361ff5824ee61b418bb0"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2022-06-07 19:13:42.946000"
+      },
+      "task_id": "mp-2290597",
+      "material_id": "mp-639751",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Xe": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -0.03617417,
+    "composition": {
+      "Xe": 1.0
+    },
+    "entry_id": "mp-972256-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Xe 07Sep2000",
+          "hash": "338472e581f58b41d37c002a5e22353b"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-03 15:27:43.485000"
+      },
+      "task_id": "mp-1429352",
+      "material_id": "mp-972256",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "S": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -132.36639574,
+    "composition": {
+      "S": 32.0
+    },
+    "entry_id": "mp-96-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE S 17Jan2003",
+          "hash": "d368db6899d8839859bbee4811a42a88"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-04-30 23:03:31.116000"
+      },
+      "task_id": "mp-1347426",
+      "material_id": "mp-96",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Se": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -223.73833457,
+    "composition": {
+      "Se": 64.0
+    },
+    "entry_id": "mp-570481-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Se 06Sep2000",
+          "hash": "67a8804ede9f1112726e3d136978ef19"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-04-29 11:36:32.347000"
+      },
+      "task_id": "mp-1328757",
+      "material_id": "mp-570481",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "C": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -36.91466197,
+    "composition": {
+      "C": 4.0
+    },
+    "entry_id": "mp-2516584-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE C 08Apr2002",
+          "hash": "c0a8167dbb174fe492a3db7f5006c0f8"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2022-06-14 18:22:59.258000"
+      },
+      "task_id": "mp-2516584",
+      "material_id": "mp-2516584",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Au": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -3.273882,
+    "composition": {
+      "Au": 1.0
+    },
+    "entry_id": "mp-81-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Au 06Sep2000",
+          "hash": "a9182d436a13194b744640ac940ab9b0"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2022-06-08 07:32:59.011000"
+      },
+      "task_id": "mp-2297474",
+      "material_id": "mp-81",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "W": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -12.95813023,
+    "composition": {
+      "W": 1.0
+    },
+    "entry_id": "mp-91-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE W_pv 06Sep2000",
+          "hash": "2a33e0d5c700640535f60ac0a12177ab"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2022-06-08 23:45:47.417000"
+      },
+      "task_id": "mp-2290382",
+      "material_id": "mp-91",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Pb": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -3.71264707,
+    "composition": {
+      "Pb": 1.0
+    },
+    "entry_id": "mp-20483-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Pb_d 06Sep2000",
+          "hash": "8a341c983db1c1cce3afb031df25c667"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-11 22:37:52.753000"
+      },
+      "task_id": "mp-1795570",
+      "material_id": "mp-20483",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Rh": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -7.36430787,
+    "composition": {
+      "Rh": 1.0
+    },
+    "entry_id": "mp-74-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Rh_pv 06Sep2000",
+          "hash": "44bb965748be8297f7af299a360f149b"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-11 14:14:25.955000"
+      },
+      "task_id": "mp-1793896",
+      "material_id": "mp-74",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Pt": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -6.07113332,
+    "composition": {
+      "Pt": 1.0
+    },
+    "entry_id": "mp-126-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Pt 05Jan2001",
+          "hash": "a604ea3c6a9cc23c739b762f625cf449"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2022-06-08 22:26:23.408000"
+      },
+      "task_id": "mp-2294633",
+      "material_id": "mp-126",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Ru": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -18.54880508,
+    "composition": {
+      "Ru": 2.0
+    },
+    "entry_id": "mp-33-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Ru_pv 06Sep2000",
+          "hash": "7925f4d4b68076d70af7cd86eef9ba8d"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2022-06-08 07:33:00.660000"
+      },
+      "task_id": "mp-2294424",
+      "material_id": "mp-33",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Pd": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -5.17988181,
+    "composition": {
+      "Pd": 1.0
+    },
+    "entry_id": "mp-2-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Pd 05Jan2001",
+          "hash": "a395eb3aaf2fcab12fac3030a1146f61"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-10 19:06:26.551000"
+      },
+      "task_id": "mp-1793543",
+      "material_id": "mp-2",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Os": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -22.45473486,
+    "composition": {
+      "Os": 2.0
+    },
+    "entry_id": "mp-49-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Os_pv 20Jan2003",
+          "hash": "7bb96cace1809ebeb4d030d71024c5bf"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2022-06-09 01:23:01.877000"
+      },
+      "task_id": "mp-2295898",
+      "material_id": "mp-49",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Ir": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -8.83843418,
+    "composition": {
+      "Ir": 1.0
+    },
+    "entry_id": "mp-101-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Ir 06Sep2000",
+          "hash": "dbcf7dcc6f4fb40df7b3d26904f60a66"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2022-06-08 17:01:12.904000"
+      },
+      "task_id": "mp-2300653",
+      "material_id": "mp-101",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "H": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -13.57090418,
+    "composition": {
+      "H": 4.0
+    },
+    "entry_id": "mp-24504-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE H 15Jun2001",
+          "hash": "bb43c666e3d36577264afe07669e9582"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-10 21:52:06.206000"
+      },
+      "task_id": "mp-1783195",
+      "material_id": "mp-24504",
+      "oxidation_states": {
+        "H": 0.0
+      },
+      "run_type": "GGA"
+    }
+  },
+  "P": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -227.35870528,
+    "composition": {
+      "P": 42.0
+    },
+    "entry_id": "mp-1198724-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE P 17Jan2003",
+          "hash": "7dc3393307131ae67785a0cdacb61d5f"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2021-02-06 03:45:53.811000"
+      },
+      "task_id": "mp-1845882",
+      "material_id": "mp-1198724",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "As": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -9.31823681,
+    "composition": {
+      "As": 2.0
+    },
+    "entry_id": "mp-11-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE As 06Sep2000",
+          "hash": "8005364db225a254e52cba350bedd032"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-11 05:00:13.527000"
+      },
+      "task_id": "mp-1782703",
+      "material_id": "mp-11",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Mo": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -10.84565011,
+    "composition": {
+      "Mo": 1.0
+    },
+    "entry_id": "mp-129-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Mo_pv 08Apr2002",
+          "hash": "84e18fd84a98e3d7fa8f055952410df0"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2022-06-09 02:58:33.240000"
+      },
+      "task_id": "mp-2293483",
+      "material_id": "mp-129",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Te": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -9.42991768,
+    "composition": {
+      "Te": 3.0
+    },
+    "entry_id": "mp-19-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Te 08Apr2002",
+          "hash": "72719856e22fb1d3032df6f96d98a0f2"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2022-06-04 00:44:21.637000"
+      },
+      "task_id": "mp-2252848",
+      "material_id": "mp-19",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Sb": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -8.25800248,
+    "composition": {
+      "Sb": 2.0
+    },
+    "entry_id": "mp-104-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Sb 06Sep2000",
+          "hash": "d82c022b02fc5344e85bd1909f9ee3e7"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-11 17:16:32.983000"
+      },
+      "task_id": "mp-1792436",
+      "material_id": "mp-104",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "B": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -80.15270125,
+    "composition": {
+      "B": 12.0
+    },
+    "entry_id": "mp-160-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE B 06Sep2000",
+          "hash": "18ed2875dfa6305324cec3d7d59273ae"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-11 00:44:29.970000"
+      },
+      "task_id": "mp-1800479",
+      "material_id": "mp-160",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Bi": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -3.84048913,
+    "composition": {
+      "Bi": 1.0
+    },
+    "entry_id": "mp-567597-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Bi 08Apr2002",
+          "hash": "e29661c79d59abae3b3ba69eae24b1a5"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-03 11:56:05.147000"
+      },
+      "task_id": "mp-1440110",
+      "material_id": "mp-567597",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Ge": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -9.24605571,
+    "composition": {
+      "Ge": 2.0
+    },
+    "entry_id": "mp-32-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Ge_d 06Sep2000",
+          "hash": "648336e7599c2dd05b1ddacace0213eb"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-12 08:11:58.581000"
+      },
+      "task_id": "mp-1791957",
+      "material_id": "mp-32",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Hg": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -0.60736073,
+    "composition": {
+      "Hg": 2.0
+    },
+    "entry_id": "mp-1184554-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Hg 06Sep2000",
+          "hash": "c2f15dfb5fd53396c5427635e5019160"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-11 11:12:13.664000"
+      },
+      "task_id": "mp-1782821",
+      "material_id": "mp-1184554",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Sn": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -8.01914371,
+    "composition": {
+      "Sn": 2.0
+    },
+    "entry_id": "mp-117-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Sn_d 06Sep2000",
+          "hash": "849b0795e148f93113a06be8fd5f5001"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-11 20:33:15.847000"
+      },
+      "task_id": "mp-1784220",
+      "material_id": "mp-117",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Ag": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -8.49766801,
+    "composition": {
+      "Ag": 3.0
+    },
+    "entry_id": "mp-989737-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Ag 06Sep2000",
+          "hash": "e8ffa02fe3f3a51338ac1ac91ae968b9"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-12 08:32:13.866000"
+      },
+      "task_id": "mp-1792728",
+      "material_id": "mp-989737",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Ni": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -5.78013668,
+    "composition": {
+      "Ni": 1.0
+    },
+    "entry_id": "mp-23-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Ni_pv 06Sep2000",
+          "hash": "252a974c7f603c1f24e30fd36a0dba30"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-11 08:02:14.752000"
+      },
+      "task_id": "mp-1793018",
+      "material_id": "mp-23",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Tc": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -20.72127789,
+    "composition": {
+      "Tc": 2.0
+    },
+    "entry_id": "mp-113-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Tc_pv 06Sep2000",
+          "hash": "781a01d5364a97db83403d98033805b1"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2022-06-07 21:36:45.554000"
+      },
+      "task_id": "mp-2297949",
+      "material_id": "mp-113",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Si": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -10.85063606,
+    "composition": {
+      "Si": 2.0
+    },
+    "entry_id": "mp-149-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Si 05Jan2001",
+          "hash": "b2b0ea6feb62e7cde209616683b8f7f5"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2022-06-09 03:27:32.746000"
+      },
+      "task_id": "mp-2291052",
+      "material_id": "mp-149",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Re": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -24.88905437,
+    "composition": {
+      "Re": 2.0
+    },
+    "entry_id": "mp-8-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Re_pv 06Sep2000",
+          "hash": "990438821d8b6bd7ea4615f7b24e5b30"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-02 09:02:51.740000"
+      },
+      "task_id": "mp-1440583",
+      "material_id": "mp-8",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Cu": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -4.09920667,
+    "composition": {
+      "Cu": 1.0
+    },
+    "entry_id": "mp-30-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Cu_pv 06Sep2000",
+          "hash": "2d718b6be91068094207c9e861e11a89"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-02 14:07:44.219000"
+      },
+      "task_id": "mp-1440676",
+      "material_id": "mp-30",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Co": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -14.21663559,
+    "composition": {
+      "Co": 2.0
+    },
+    "entry_id": "mp-54-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Co 06Sep2000",
+          "hash": "b169bca4e137294d2ab3df8cbdd09083"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-02 14:27:54.072000"
+      },
+      "task_id": "mp-1440682",
+      "material_id": "mp-54",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Fe": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -8.47002121,
+    "composition": {
+      "Fe": 1.0
+    },
+    "entry_id": "mp-13-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Fe_pv 06Sep2000",
+          "hash": "5963411539032ec3298fa675a32c5e64"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2022-06-09 07:16:42.046000"
+      },
+      "task_id": "mp-2298433",
+      "material_id": "mp-13",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Ga": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -12.11238409,
+    "composition": {
+      "Ga": 4.0
+    },
+    "entry_id": "mp-142-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Ga_d 06Sep2000",
+          "hash": "1383ef2b7b4ce0e17391c6cdbd53f51b"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2021-02-09 15:42:00.466000"
+      },
+      "task_id": "mp-1923393",
+      "material_id": "mp-142",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "In": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -8.25505119,
+    "composition": {
+      "In": 3.0
+    },
+    "entry_id": "mp-1184502-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE In_d 06Sep2000",
+          "hash": "b87558aef4b20a3c4a008ff3e8775108"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-03 12:56:59.261000"
+      },
+      "task_id": "mp-1401814",
+      "material_id": "mp-1184502",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Cd": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -0.92288976,
+    "composition": {
+      "Cd": 1.0
+    },
+    "entry_id": "mp-1096861-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Cd 06Sep2000",
+          "hash": "0506b2d0ac28d5fe2b5ced77a701aa86"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-11 14:45:53.068000"
+      },
+      "task_id": "mp-1793146",
+      "material_id": "mp-1096861",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Cr": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -19.30609494,
+    "composition": {
+      "Cr": 2.0
+    },
+    "entry_id": "mp-90-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Cr_pv 07Sep2000",
+          "hash": "eb23364cc25164418f9f79efd8f04f7d"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-02-17 05:33:09.847000"
+      },
+      "task_id": "mp-1271227",
+      "material_id": "mp-90",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Zn": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -2.5194872200000002,
+    "composition": {
+      "Zn": 2.0
+    },
+    "entry_id": "mp-79-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Zn 06Sep2000",
+          "hash": "e35ee27f8483a63bb68dbc236a343af3"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-11 02:54:03.851000"
+      },
+      "task_id": "mp-1791402",
+      "material_id": "mp-79",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "V": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -9.08390607,
+    "composition": {
+      "V": 1.0
+    },
+    "entry_id": "mp-146-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE V_pv 07Sep2000",
+          "hash": "7f1297a2e1d963e2a4d81b61f85e4ded"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-10 22:55:11.305000"
+      },
+      "task_id": "mp-1792093",
+      "material_id": "mp-146",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Tl": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -7.08792944,
+    "composition": {
+      "Tl": 3.0
+    },
+    "entry_id": "mp-972351-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Tl_d 06Sep2000",
+          "hash": "78590fbb9adc26deddfa2c1440ce2524"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2021-02-11 05:10:53.880000"
+      },
+      "task_id": "mp-1929187",
+      "material_id": "mp-972351",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Al": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -3.74557583,
+    "composition": {
+      "Al": 1.0
+    },
+    "entry_id": "mp-134-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Al 04Jan2001",
+          "hash": "a6fd9a46aec185f4ad2acd0cbe4ae2fa"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-03 08:00:31.742000"
+      },
+      "task_id": "mp-1441016",
+      "material_id": "mp-134",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Nb": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -10.10130504,
+    "composition": {
+      "Nb": 1.0
+    },
+    "entry_id": "mp-75-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Nb_pv 08Apr2002",
+          "hash": "7bcee99a4dc3094be0f9fd7961c02966"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-03 02:37:07.385000"
+      },
+      "task_id": "mp-1440905",
+      "material_id": "mp-75",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Be": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -7.47882573,
+    "composition": {
+      "Be": 2.0
+    },
+    "entry_id": "mp-87-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Be_sv 06Sep2000",
+          "hash": "f933a35dc70f32d8c3eff76a4b66cf7d"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-02 13:31:47.583000"
+      },
+      "task_id": "mp-1440665",
+      "material_id": "mp-87",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Mn": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -265.69844347,
+    "composition": {
+      "Mn": 29.0
+    },
+    "entry_id": "mp-35-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Mn_pv 07Sep2000",
+          "hash": "fa52f891f234d49bb4cb5ea96aae8f98"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2021-02-05 11:07:18.085000"
+      },
+      "task_id": "mp-1814312",
+      "material_id": "mp-35",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Ti": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -23.68647605,
+    "composition": {
+      "Ti": 3.0
+    },
+    "entry_id": "mp-72-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Ti_pv 07Sep2000",
+          "hash": "70bc3ea8bf68f10e7e1e4721bb91972a"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-11 04:20:48.186000"
+      },
+      "task_id": "mp-1782078",
+      "material_id": "mp-72",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Ta": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -11.85777763,
+    "composition": {
+      "Ta": 1.0
+    },
+    "entry_id": "mp-50-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Ta_pv 07Sep2000",
+          "hash": "1402ea7b7aff282d1bd8d844208ab299"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-12 06:57:51.333000"
+      },
+      "task_id": "mp-1792695",
+      "material_id": "mp-50",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Pa": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -9.51466466,
+    "composition": {
+      "Pa": 1.0
+    },
+    "entry_id": "mp-10740-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Pa 07Sep2000",
+          "hash": "a1fdb1089d0727f415416ec8082246ba"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-03 22:31:42.438000"
+      },
+      "task_id": "mp-1440330",
+      "material_id": "mp-10740",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "U": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -22.58282002,
+    "composition": {
+      "U": 2.0
+    },
+    "entry_id": "mp-44-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE U 06Sep2000",
+          "hash": "72702eabbb1bc02b4167590dc848ed5d"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-02 21:53:18.845000"
+      },
+      "task_id": "mp-1440819",
+      "material_id": "mp-44",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Sc": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -12.66493821,
+    "composition": {
+      "Sc": 2.0
+    },
+    "entry_id": "mp-67-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Sc_sv 07Sep2000",
+          "hash": "dc386f505ad0c43385a7715b4111cb75"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-03 02:53:51.741000"
+      },
+      "task_id": "mp-1440910",
+      "material_id": "mp-67",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Np": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -103.58223745,
+    "composition": {
+      "Np": 8.0
+    },
+    "entry_id": "mp-11534-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Np 06Sep2000",
+          "hash": "20cb30b714200c4db870550b288ac4cd"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-03 06:55:19.855000"
+      },
+      "task_id": "mp-1428188",
+      "material_id": "mp-11534",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Zr": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -17.09540126,
+    "composition": {
+      "Zr": 2.0
+    },
+    "entry_id": "mp-131-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Zr_sv 07Sep2000",
+          "hash": "82a385450ff5e8ee48d715cb73e01170"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-04-26 03:15:43.241000"
+      },
+      "task_id": "mp-1301038",
+      "material_id": "mp-131",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Mg": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -1.60028005,
+    "composition": {
+      "Mg": 1.0
+    },
+    "entry_id": "mp-1056702-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Mg_pv 06Sep2000",
+          "hash": "bbcf6f81cc34a3090d483ad641178746"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-12 10:31:29.238000"
+      },
+      "task_id": "mp-1805667",
+      "material_id": "mp-1056702",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Th": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -7.41385825,
+    "composition": {
+      "Th": 1.0
+    },
+    "entry_id": "mp-37-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Th 07Sep2000",
+          "hash": "aea79f322180fa6f0bfa74cb2a156dcf"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-02 19:32:25.476000"
+      },
+      "task_id": "mp-1440776",
+      "material_id": "mp-37",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Hf": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -19.91437806,
+    "composition": {
+      "Hf": 2.0
+    },
+    "entry_id": "mp-103-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Hf_pv 06Sep2000",
+          "hash": "db924de35e43bb0854948d218ecbe730"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2022-06-08 21:06:36.093000"
+      },
+      "task_id": "mp-2294002",
+      "material_id": "mp-103",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Pu": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -28.53567666,
+    "composition": {
+      "Pu": 2.0
+    },
+    "entry_id": "mp-571261-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Pu 06Sep2000",
+          "hash": "f1d01e845dccc52d448679911f301a73"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-11 21:18:20.051000"
+      },
+      "task_id": "mp-1794028",
+      "material_id": "mp-571261",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Lu": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -9.04190104,
+    "composition": {
+      "Lu": 2.0
+    },
+    "entry_id": "mp-145-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Lu_3 06Sep2000",
+          "hash": "d40a90babf1224b88ffb4c3273ac3848"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-03 08:24:57.680000"
+      },
+      "task_id": "mp-1441024",
+      "material_id": "mp-145",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Tm": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -13.42750627,
+    "composition": {
+      "Tm": 3.0
+    },
+    "entry_id": "mp-1018122-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Tm_3 20Jan2003",
+          "hash": "94a07cb7949b01305cb161da0cbfb492"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-11 04:40:28.833000"
+      },
+      "task_id": "mp-1782083",
+      "material_id": "mp-1018122",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Er": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -13.70315643,
+    "composition": {
+      "Er": 3.0
+    },
+    "entry_id": "mp-1184115-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Er_3 06Sep2000",
+          "hash": "daa65a04877317f8c3c593ddeaa8a132"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-12 05:32:01.868000"
+      },
+      "task_id": "mp-1797205",
+      "material_id": "mp-1184115",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Ho": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -13.74722661,
+    "composition": {
+      "Ho": 3.0
+    },
+    "entry_id": "mp-10659-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Ho_3 06Sep2000",
+          "hash": "661891464a27e87cf7e1324dd1893b77"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-02 12:25:08.541000"
+      },
+      "task_id": "mp-1439659",
+      "material_id": "mp-10659",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Y": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -19.39941334,
+    "composition": {
+      "Y": 3.0
+    },
+    "entry_id": "mp-1187739-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Y_sv 06Sep2000",
+          "hash": "4ed187e77cd54f198bb88020278b143d"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-11 16:19:57.604000"
+      },
+      "task_id": "mp-1782916",
+      "material_id": "mp-1187739",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Dy": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -13.82036052,
+    "composition": {
+      "Dy": 3.0
+    },
+    "entry_id": "mp-10658-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Dy_3 06Sep2000",
+          "hash": "d4a05220ab0a2d4c03a76872ea724a1e"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-02 06:54:58.450000"
+      },
+      "task_id": "mp-1439558",
+      "material_id": "mp-10658",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Gd": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -28.15224448,
+    "composition": {
+      "Gd": 2.0
+    },
+    "entry_id": "mp-155-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Gd 08Apr2002",
+          "hash": "1f0d42b1e5f6769d319d3f247992aeb9"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-02 13:38:32.591000"
+      },
+      "task_id": "mp-1440667",
+      "material_id": "mp-155",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Eu": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -10.2570018,
+    "composition": {
+      "Eu": 1.0
+    },
+    "entry_id": "mp-623532-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Eu 08Apr2002",
+          "hash": "d466d046adf21f6146ee9644049ea268"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-11 20:44:08.618000"
+      },
+      "task_id": "mp-1794018",
+      "material_id": "mp-623532",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Sm": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -18.87434454,
+    "composition": {
+      "Sm": 4.0
+    },
+    "entry_id": "mp-69-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Sm_3 07Sep2000",
+          "hash": "e5e274e7cd99602ca81d146155abdf88"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-11 12:18:18.843000"
+      },
+      "task_id": "mp-1778544",
+      "material_id": "mp-69",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Nd": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -19.07258973,
+    "composition": {
+      "Nd": 4.0
+    },
+    "entry_id": "mp-123-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Nd_3 06Sep2000",
+          "hash": "9ec4dbd42a856626bed2948a602b7681"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2022-06-09 03:19:29.819000"
+      },
+      "task_id": "mp-2295928",
+      "material_id": "mp-123",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Pr": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -19.12362302,
+    "composition": {
+      "Pr": 4.0
+    },
+    "entry_id": "mp-38-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Pr_3 07Sep2000",
+          "hash": "02c8c7dc821fbf705b300fe466b8bea0"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2022-06-03 23:31:32.473000"
+      },
+      "task_id": "mp-2247264",
+      "material_id": "mp-38",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Pm": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -19.00216929,
+    "composition": {
+      "Pm": 4.0
+    },
+    "entry_id": "mp-867200-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Pm_3 07Sep2000",
+          "hash": "d56c857e8810df7d056c080e869511be"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-04 12:02:06.793000"
+      },
+      "task_id": "mp-1442755",
+      "material_id": "mp-867200",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Ce": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -11.86617831,
+    "composition": {
+      "Ce": 2.0
+    },
+    "entry_id": "mp-567332-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Ce 28Sep2000",
+          "hash": "ff3a09f2ff91798e58eb4b9854e9be4a"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-03 10:25:17.610000"
+      },
+      "task_id": "mp-1439094",
+      "material_id": "mp-567332",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Yb": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -4.61882484,
+    "composition": {
+      "Yb": 3.0
+    },
+    "entry_id": "mp-972364-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Yb_2 06Sep2000",
+          "hash": "4e60480fd0ebf7ed3d8e835c46e03939"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-11 07:32:37.586000"
+      },
+      "task_id": "mp-1805159",
+      "material_id": "mp-972364",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Tb": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -13.9030983,
+    "composition": {
+      "Tb": 3.0
+    },
+    "entry_id": "mp-11698-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Tb_3 06Sep2000",
+          "hash": "0790955c547003956c0fd4f080f7f508"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-02 23:38:22.110000"
+      },
+      "task_id": "mp-1439865",
+      "material_id": "mp-11698",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "La": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -19.74402842,
+    "composition": {
+      "La": 4.0
+    },
+    "entry_id": "mp-26-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE La 06Sep2000",
+          "hash": "9b3ce03d18f7c0b40471a817ff91b287"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-02 19:13:34.069000"
+      },
+      "task_id": "mp-1437815",
+      "material_id": "mp-26",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Ac": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -16.48470003,
+    "composition": {
+      "Ac": 4.0
+    },
+    "entry_id": "mp-862690-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Ac 06Sep2000",
+          "hash": "d6854224d20e3de6e6fd7399503791d1"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-03 11:59:11.419000"
+      },
+      "task_id": "mp-1400724",
+      "material_id": "mp-862690",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Ca": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -2.00559988,
+    "composition": {
+      "Ca": 1.0
+    },
+    "entry_id": "mp-45-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Ca_sv 06Sep2000",
+          "hash": "eb006721e214c04b3c13146e81b3a27d"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-11 20:44:09.538000"
+      },
+      "task_id": "mp-1791741",
+      "material_id": "mp-45",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Li": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -5.7267686,
+    "composition": {
+      "Li": 3.0
+    },
+    "entry_id": "mp-1018134-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Li_sv 23Jan2001",
+          "hash": "4799bab014a83a07c654d7196c8ecfa9"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-11-11 19:28:34.990000"
+      },
+      "task_id": "mp-1790957",
+      "material_id": "mp-1018134",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Sr": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -5.06848036,
+    "composition": {
+      "Sr": 3.0
+    },
+    "entry_id": "mp-1187073-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Sr_sv 07Sep2000",
+          "hash": "ca6a5429c120a0ab705824386a76fe5b"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2021-02-10 23:30:05.476000"
+      },
+      "task_id": "mp-1935013",
+      "material_id": "mp-1187073",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Na": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -38.35323351,
+    "composition": {
+      "Na": 29.0
+    },
+    "entry_id": "mp-1186081-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Na_pv 05Jan2001",
+          "hash": "c71d0ed99a871c91fccae9347860d8ba"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2021-02-06 00:35:07.504000"
+      },
+      "task_id": "mp-1847650",
+      "material_id": "mp-1186081",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Ba": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -1.91897494,
+    "composition": {
+      "Ba": 1.0
+    },
+    "entry_id": "mp-122-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Ba_sv 06Sep2000",
+          "hash": "c0477913afb63dfae3439f3534fbf0ed"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2022-06-08 21:09:34.408000"
+      },
+      "task_id": "mp-2289124",
+      "material_id": "mp-122",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Rb": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -7.84427258,
+    "composition": {
+      "Rb": 8.0
+    },
+    "entry_id": "mp-1179656-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Rb_sv 06Sep2000",
+          "hash": "aadc1665275b2ae1eed0dcf93c95f9ce"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-02 16:11:01.240000"
+      },
+      "task_id": "mp-1374399",
+      "material_id": "mp-1179656",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "K": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -22.20797894,
+    "composition": {
+      "K": 20.0
+    },
+    "entry_id": "mp-1184905-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE K_sv 06Sep2000",
+          "hash": "3e84f86d37f203a4fb01de36af57e430"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-05-01 04:40:59.997000"
+      },
+      "task_id": "mp-1348925",
+      "material_id": "mp-1184905",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  },
+  "Cs": {
+    "@module": "pymatgen.entries.computed_entries",
+    "@class": "ComputedEntry",
+    "energy": -25.96666879,
+    "composition": {
+      "Cs": 29.0
+    },
+    "entry_id": "mp-1184151-GGA",
+    "correction": 0.0,
+    "energy_adjustments": [],
+    "parameters": {
+      "potcar_spec": [
+        {
+          "titel": "PAW_PBE Cs_sv 08Apr2002",
+          "hash": "096b53a7d80cc0086976bcda50d536e5"
+        }
+      ],
+      "is_hubbard": false,
+      "hubbards": {},
+      "run_type": "GGA"
+    },
+    "data": {
+      "oxide_type": "None",
+      "aspherical": true,
+      "last_updated": {
+        "@module": "datetime",
+        "@class": "datetime",
+        "string": "2020-04-29 19:22:36.859000"
+      },
+      "task_id": "mp-1337612",
+      "material_id": "mp-1184151",
+      "oxidation_states": {},
+      "run_type": "GGA"
+    }
+  }
+}

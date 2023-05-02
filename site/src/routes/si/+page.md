@@ -61,7 +61,7 @@ A further point of clarification: whenever we say distance to the convex hull we
 <MPRefEnergies />
 {/if}
 
-> @label:fig:mp-elemental-reference-energies WBM formation energies were calculated w.r.t. these Materials Project elemental reference energies ([queried on 2022-09-19](https://github.com/janosh/matbench-discovery/blob/main/data/mp/2022-09-19-mp-elemental-reference-entries.json)). Marker size indicates the number of atoms in the reference structure. Hover points for details.
+> @label:fig:mp-elemental-reference-energies WBM formation energies were calculated w.r.t. these Materials Project elemental reference energies ([queried on 2022-09-19](https://github.com/janosh/matbench-discovery/blob/main/data/mp/2023-02-07-mp-elemental-reference-entries.json)). Marker size indicates the number of atoms in the reference structure. Hover points for details.
 
 ## Classification Histograms using Model-Predicted Energies
 
