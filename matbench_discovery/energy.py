@@ -4,6 +4,7 @@ from collections.abc import Sequence
 import pandas as pd
 from pymatgen.analysis.phase_diagram import Entry, PDEntry
 from pymatgen.core import Composition
+from pymatgen.entries.computed_entries import ComputedEntry
 from pymatgen.util.typing import EntryLike
 from tqdm import tqdm
 
@@ -64,7 +65,7 @@ def get_elemental_ref_entries(
 # produced by get_elemental_ref_entries() in build_phase_diagram.py
 mp_elem_reference_entries = (
     pd.read_json(DATA_FILES.mp_elemental_ref_entries, typ="series")
-    .map(PDEntry.from_dict)
+    .map(ComputedEntry.from_dict)
     .to_dict()
 )
 

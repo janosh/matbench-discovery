@@ -152,29 +152,31 @@ save_fig(fig, "./figs/wbm-each-hist.svg", width=1000, height=500)
 
 # %%
 e_col, n_atoms_col = "Energy (eV/atom)", "Number of Atoms"
+elem_num_col = "Atomic number"
 mp_ref_data = [
     {
         "Element": key,
-        e_col: ref.energy_per_atom,
-        n_atoms_col: ref.composition.num_atoms,
-        "Name": ref.composition.elements[0].long_name,
-        "Number": ref.composition.elements[0].number,
+        e_col: entry.energy_per_atom,
+        elem_num_col: entry.composition.elements[0].number,
+        n_atoms_col: entry.composition.num_atoms,
+        "Name": entry.composition.elements[0].long_name,
+        "Material ID": entry.entry_id.replace("-GGA", ""),
     }
-    for key, ref in mp_elem_reference_entries.items()
+    for key, entry in mp_elem_reference_entries.items()
 ]
-df_ref = pd.DataFrame(mp_ref_data).sort_values("Number")
+df_ref = pd.DataFrame(mp_ref_data).sort_values(elem_num_col)
 
 
 # %% plot MP elemental reference energies vs atomic number
 # marker size = number of atoms in reference structure
 fig = df_ref.round(2).plot.scatter(
-    x="Number", y=e_col, backend="plotly", hover_data=list(df_ref), size=n_atoms_col
+    x=elem_num_col, y=e_col, backend="plotly", hover_data=list(df_ref), size=n_atoms_col
 )
 fig.update_traces(mode="markers+lines")
 fig.layout.margin = dict(l=0, r=0, t=0, b=0)
 
 # add text annotations showing element symbols
-for symbol, e_per_atom, *_, num in df_ref.itertuples(index=False):
+for symbol, e_per_atom, num, *_ in df_ref.itertuples(index=False):
     fig.add_annotation(x=num, y=e_per_atom, text=symbol, showarrow=False, font_size=10)
 
 fig.show()
