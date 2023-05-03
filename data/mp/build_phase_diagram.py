@@ -88,8 +88,8 @@ mp_wbm_ppd = PatchedPhaseDiagram(
     wbm_computed_entries + mp_computed_entries, verbose=True
 )
 
-# save MP+WBM PPD to disk (not run)
-with gzip.open(f"{module_dir}/{today}-ppd-mp.pkl.gz", "wb") as zip_file:
+# save MP+WBM PPD to disk (was not run)
+with gzip.open(f"{module_dir}/{today}-ppd-mp-wbm.pkl.gz", "wb") as zip_file:
     pickle.dump(mp_wbm_ppd, zip_file)
 
 
@@ -98,7 +98,9 @@ with gzip.open(f"{module_dir}/{today}-ppd-mp.pkl.gz", "wb") as zip_file:
 elemental_ref_entries = get_elemental_ref_entries(mp_computed_entries)
 
 # save elemental_ref_entries to disk as json
-with open(f"{ROOT}/data/mp/{today}-mp-elemental-reference-entries.json", "w") as file:
+with gzip.open(
+    f"{ROOT}/data/mp/{today}-mp-elemental-reference-entries.json.gz", "wt"
+) as file:
     json.dump(elemental_ref_entries, file, default=lambda x: x.as_dict())
 
 

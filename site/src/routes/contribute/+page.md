@@ -17,10 +17,10 @@ pip install matbench-discovery
 This example script downloads the training and test data for training a model:
 
 ```py
-from matbench_discovery.data import load_train_test
+from matbench_discovery.data import load
 from matbench_discovery.data import df_wbm, DATA_FILES
 
-# any subset of these keys can be passed to load_train_test()
+# any subset of these keys can be passed to load()
 assert sorted(DATA_FILES) == [
     "mp-computed-structure-entries",
     "mp-elemental-ref-energies",
@@ -31,7 +31,7 @@ assert sorted(DATA_FILES) == [
     "wbm-summary",
 ]
 
-df_wbm = load_train_test("wbm-summary", version="v1.0.0")
+df_wbm = load("wbm-summary", version="v1.0.0")
 
 assert df_wbm.shape == (256963, 15)
 
@@ -79,7 +79,7 @@ You can also download the data files directly from GitHub:
 1. [`2023-01-10-mp-energies.json.gz`]({repo}/blob/-/data/mp/2023-01-10-mp-energies.json.gz): Materials Project formation energies and energies above convex hull
 1. [`2023-02-07-mp-computed-structure-entries.json.gz`]({repo}/blob/-/data/mp/2023-02-07-mp-computed-structure-entries.json.gz): Materials Project computed structure entries
 1. [`2023-02-07-ppd-mp.pkl.gz`]({repo}/blob/-/data/mp/2023-02-07-ppd-mp.pkl.gz): [PatchedPhaseDiagram](https://pymatgen.org/pymatgen.analysis.phase_diagram.html#pymatgen.analysis.phase_diagram.PatchedPhaseDiagram) constructed from all MP ComputedStructureEntries
-1. [`2022-09-19-mp-elemental-reference-entries.json`]({repo}/blob/-/data/mp/2022-09-19-mp-elemental-reference-entries.json): Minimum energy PDEntries for each element present in the Materials Project
+1. [`2023-02-07-mp-elemental-reference-entries.json.gz`]({repo}/blob/-/data/mp/2023-02-07-mp-elemental-reference-entries.json.gz): Minimum energy PDEntries for each element present in the Materials Project
 
 [wbm paper]: https://nature.com/articles/s41524-020-00481-6
 

@@ -222,7 +222,7 @@ for json_path in cse_step_paths:
 
 
 # %%
-df_wbm["computed_structure_entry"] = pd.concat(dfs_wbm_cses.values()).to_numpy()
+df_wbm["computed_structure_entry"] = np.concatenate([*dfs_wbm_cses.values()]).squeeze()
 
 for mat_id, cse in df_wbm.computed_structure_entry.items():
     # needed to ensure MaterialsProjectCompatibility can process the entries
@@ -319,9 +319,9 @@ pd.testing.assert_frame_equal(
 )
 
 
-assert sum(df_summary.index == "None") == 6
+assert sum(no_id_mask := df_summary.index.isna()) == 6, f"{sum(no_id_mask)=}"
 # the 'None' materials have 0 volume, energy, n_sites, bandgap, etc.
-assert all(df_summary[df_summary.index == "None"].drop(columns=["formula"]) == 0)
+assert all(df_summary[no_id_mask].drop(columns=["formula"]) == 0)
 assert len(df_summary.query("volume > 0")) == len(df_wbm) + len(nan_init_structs_ids)
 # make sure dropping materials with 0 volume removes exactly 6 materials, the same ones
 # listed in bad_struct_ids above
@@ -332,7 +332,7 @@ assert all(
 
 df_summary.index = df_summary.index.map(increment_wbm_material_id)  # format IDs
 # drop materials with id='None' and missing initial structures
-df_summary = df_summary.drop(index=[*nan_init_structs_ids, "None"])
+df_summary = df_summary.drop(index=[*nan_init_structs_ids, float("NaN")])
 
 # the 8403 material IDs in step 3 with final number larger than any of the ones in
 # bad_struct_ids are now misaligned between df_summary and df_wbm
@@ -340,6 +340,14 @@ df_summary = df_summary.drop(index=[*nan_init_structs_ids, "None"])
 # bad_struct_ids. we fix this with fix_bad_struct_index_mismatch() by mapping the IDs in
 # df_wbm to the ones in df_summary so that both indices become consecutive.
 assert sum(df_summary.index != df_wbm.index) == 8403
+assert {*df_summary.index} - {*df_wbm.index} == {
+    "wbm-3-70803",
+    "wbm-3-70804",
+    "wbm-3-70826",
+    "wbm-3-70827",
+    "wbm-3-70829",
+    "wbm-3-70830",
+}
 
 
 def fix_bad_struct_index_mismatch(material_id: str) -> str:
@@ -559,7 +567,6 @@ for mat_id, cse in tqdm(df_wbm.cse.items(), total=len(df_wbm)):
 assert sum(df_wbm.index != df_summary.index) == 0
 
 e_form_col = "e_form_per_atom_uncorrected"
-assert e_form_col not in df_summary
 
 for row in tqdm(df_wbm.itertuples(), total=len(df_wbm)):
     mat_id, cse, formula = row.Index, row.cse, row.formula_from_cse
@@ -568,15 +575,19 @@ for row in tqdm(df_wbm.itertuples(), total=len(df_wbm)):
 
     entry_like = dict(composition=formula, energy=cse.uncorrected_energy)
     e_form = get_e_form_per_atom(entry_like)
-    e_form_ppd = ppd_mp.get_form_energy_per_atom(cse)
+    e_form_ppd = ppd_mp.get_form_energy_per_atom(cse) - cse.correction_per_atom
 
-    correction = cse.correction_per_atom
     # make sure the PPD.get_e_form_per_atom() and standalone get_e_form_per_atom()
     # method of calculating formation energy agree
     assert (
-        abs(e_form - (e_form_ppd - correction)) < 1e-4
-    ), f"{mat_id=}: {e_form=:.5} != {e_form_ppd - correction=:.5}"
+        abs(e_form - e_form_ppd) < 1e-4
+    ), f"{mat_id}: {e_form=:.3} != {e_form_ppd=:.3} (diff={e_form - e_form_ppd:.3}))"
     df_summary.at[cse.entry_id, e_form_col] = e_form
+
+
+df_summary[e_form_col.replace("uncorrected", "mp2020_corrected")] = (
+    df_summary[e_form_col] + df_summary["e_correction_per_atom_mp2020"]
+)
 
 
 # %%
@@ -623,17 +634,16 @@ df_fp[fp_diff_col].hist(bins=100, backend="plotly")
 df_summary.round(6).to_csv(f"{module_dir}/{today}-wbm-summary.csv")
 
 
-# %% read summary data from disk
-df_summary = pd.read_csv(f"{module_dir}/2022-10-19-wbm-summary.csv").set_index(
-    "material_id"
-)
+# %% only here to load data quickly for later inspection
+if False:
+    df_summary = pd.read_csv(f"{module_dir}/2022-10-19-wbm-summary.csv").set_index(
+        "material_id"
+    )
+    df_wbm = pd.read_json(
+        f"{module_dir}/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
+    ).set_index("material_id")
 
-
-# %% read WBM initial structures and computed structure entries from disk
-df_wbm = pd.read_json(
-    f"{module_dir}/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
-).set_index("material_id")
-
-df_wbm["cse"] = [
-    ComputedStructureEntry.from_dict(x) for x in tqdm(df_wbm.computed_structure_entry)
-]
+    df_wbm["cse"] = [
+        ComputedStructureEntry.from_dict(x)
+        for x in tqdm(df_wbm.computed_structure_entry)
+    ]

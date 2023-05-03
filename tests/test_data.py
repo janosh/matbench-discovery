@@ -19,7 +19,7 @@ from matbench_discovery.data import (
     df_wbm,
     figshare_versions,
     glob_to_df,
-    load_train_test,
+    load,
 )
 
 with open(f"{FIGSHARE}/{figshare_versions[-1]}.json") as file:
@@ -33,35 +33,33 @@ structure = Structure(
 
 
 @pytest.mark.parametrize(
-    "data_names, hydrate",
+    "data_key, hydrate",
     [
-        (["wbm_summary"], True),
-        (["wbm_initial_structures"], True),
-        (["wbm_computed_structure_entries"], False),
-        (["wbm_summary", "wbm_initial_structures"], True),
-        (["mp_elemental_ref_entries"], True),
-        (["mp_energies"], True),
+        ("wbm_summary", True),
+        ("wbm_initial_structures", True),
+        ("wbm_computed_structure_entries", False),
+        ("mp_elemental_ref_entries", True),
+        ("mp_energies", True),
     ],
 )
-def test_load_train_test(
-    data_names: list[str],
+def test_load(
+    data_key: str,
     hydrate: bool,
+    # df with Structures and ComputedStructureEntries as dicts
     dummy_df_serialized: pd.DataFrame,
     capsys: CaptureFixture[str],
     tmp_path: Path,
 ) -> None:
-    # intercept HTTP requests to GitHub raw user content and return dummy df instead
-    with patch("matbench_discovery.data.pd.read_csv") as read_csv, patch(
-        "matbench_discovery.data.pd.read_json"
-    ) as read_json:
-        # dummy df with Structures and ComputedStructureEntries
-        read_json.return_value = dummy_df_serialized
+    filepath = DATA_FILES[data_key]
+    # intercept HTTP requests and write dummy df to disk instead
+    with patch("urllib.request.urlretrieve") as urlretrieve:
         # dummy df with random floats and material_id column
-        read_csv.return_value = pd._testing.makeDataFrame().reset_index(
-            names="material_id"
-        )
-        out = load_train_test(
-            data_names,
+        df_csv = pd._testing.makeDataFrame().reset_index(names="material_id")
+
+        writer = dummy_df_serialized.to_json if ".json" in filepath else df_csv.to_csv
+        urlretrieve.side_effect = lambda url, path: writer(path)
+        out = load(
+            data_key,
             hydrate=hydrate,
             # test both str and Path for cache_dir
             cache_dir=str(tmp_path) if random() < 0.5 else tmp_path,
@@ -69,41 +67,30 @@ def test_load_train_test(
 
     stdout, _stderr = capsys.readouterr()
 
-    expected_outs = [
-        f"Downloading {key!r} from {figshare_urls[key]}" for key in data_names
-    ]
-    for expected_out in expected_outs:
-        assert expected_out in stdout
+    assert f"Downloading {data_key!r} from {figshare_urls[data_key]}" in stdout
 
     # check we called read_csv/read_json once for each data_name
-    assert read_json.call_count + read_csv.call_count == len(data_names)
+    assert urlretrieve.call_count == 1
 
-    if len(data_names) > 1:
-        assert isinstance(out, dict)
-        assert list(out) == data_names
-        for key, df in out.items():
-            assert isinstance(df, pd.DataFrame), f"{key} not a DataFrame but {type(df)}"
-    else:
-        assert isinstance(out, pd.DataFrame), f"{data_names[0]} not a DataFrame"
+    assert isinstance(out, pd.DataFrame), f"{data_key} not a DataFrame"
 
     # test that df loaded from cache is the same as initial df
-    from_cache = load_train_test(data_names, hydrate=hydrate, cache_dir=tmp_path)
-    if len(data_names) > 1:
-        for key, df in from_cache.items():
-            pd.testing.assert_frame_equal(df, out[key])
-    else:
-        pd.testing.assert_frame_equal(out, from_cache)
+    from_cache = load(data_key, hydrate=hydrate, cache_dir=tmp_path)
+    pd.testing.assert_frame_equal(out, from_cache)
 
 
-def test_load_train_test_raises(tmp_path: Path) -> None:
-    # bad data name
-    with pytest.raises(ValueError, match=f"must be subset of {set(DATA_FILES)}"):
-        load_train_test(["bad-data-name"])
+def test_load_raises(tmp_path: Path) -> None:
+    data_key = "bad-key"
+    with pytest.raises(ValueError) as exc_info:
+        load(data_key)
 
-    # bad_version
+    assert f"Unknown {data_key=}, must be one of {list(DATA_FILES)}" in str(
+        exc_info.value
+    )
+
     version = "invalid-version"
     with pytest.raises(ValueError) as exc_info:
-        load_train_test("wbm_summary", version=version, cache_dir=tmp_path)
+        load("wbm_summary", version=version, cache_dir=tmp_path)
 
     assert (
         str(exc_info.value)
@@ -112,8 +99,8 @@ def test_load_train_test_raises(tmp_path: Path) -> None:
     assert os.listdir(tmp_path) == [], "cache_dir should be empty"
 
 
-def test_load_train_test_doc_str() -> None:
-    doc_str = load_train_test.__doc__
+def test_load_doc_str() -> None:
+    doc_str = load.__doc__
     assert isinstance(doc_str, str)  # mypy type narrowing
 
     # check that we link to the right data description page
@@ -144,7 +131,7 @@ wbm_summary_expected_cols = {
 @pytest.mark.parametrize(
     "file_key, version, expected_shape, expected_cols",
     [
-        ("mp_elemental_ref_entries", figshare_versions[-1], (5, 89), set()),
+        ("mp_elemental_ref_entries", figshare_versions[-1], (9, 89), set()),
         pytest.param(
             "wbm_summary",
             figshare_versions[-1],
@@ -158,11 +145,11 @@ wbm_summary_expected_cols = {
             figshare_versions[-1],
             (154718, 1),
             {"entry"},
-            marks=pytest.mark.slow,
+            marks=pytest.mark.very_slow,
         ),
     ],
 )
-def test_load_train_test_no_mock(
+def test_load_no_mock(
     file_key: str,
     version: str,
     expected_shape: tuple[int, int],
@@ -173,7 +160,7 @@ def test_load_train_test_no_mock(
     assert os.listdir(tmp_path) == [], "cache_dir should be empty"
     # This function runs the download from Figshare for real hence takes some time and
     # requires being online
-    df = load_train_test(file_key, version=version, cache_dir=tmp_path)
+    df = load(file_key, version=version, cache_dir=tmp_path)
     assert len(os.listdir(tmp_path)) == 1, "cache_dir should have one file"
     assert df.shape == expected_shape
     assert (
@@ -191,7 +178,7 @@ def test_load_train_test_no_mock(
 
     # test that df loaded from cache is the same as initial df
     pd.testing.assert_frame_equal(
-        df, load_train_test(file_key, version=version, cache_dir=tmp_path)
+        df, load(file_key, version=version, cache_dir=tmp_path)
     )
 
     stdout, stderr = capsys.readouterr()
