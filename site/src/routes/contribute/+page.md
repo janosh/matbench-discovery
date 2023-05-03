@@ -79,7 +79,7 @@ You can also download the data files directly from GitHub:
 1. [`2023-01-10-mp-energies.json.gz`]({repo}/blob/-/data/mp/2023-01-10-mp-energies.json.gz): Materials Project formation energies and energies above convex hull
 1. [`2023-02-07-mp-computed-structure-entries.json.gz`]({repo}/blob/-/data/mp/2023-02-07-mp-computed-structure-entries.json.gz): Materials Project computed structure entries
 1. [`2023-02-07-ppd-mp.pkl.gz`]({repo}/blob/-/data/mp/2023-02-07-ppd-mp.pkl.gz): [PatchedPhaseDiagram](https://pymatgen.org/pymatgen.analysis.phase_diagram.html#pymatgen.analysis.phase_diagram.PatchedPhaseDiagram) constructed from all MP ComputedStructureEntries
-1. [`2023-02-07-mp-elemental-reference-entries.json`]({repo}/blob/-/data/mp/2023-02-07-mp-elemental-reference-entries.json): Minimum energy PDEntries for each element present in the Materials Project
+1. [`2023-02-07-mp-elemental-reference-entries.json.gz`]({repo}/blob/-/data/mp/2023-02-07-mp-elemental-reference-entries.json.gz): Minimum energy PDEntries for each element present in the Materials Project
 
 [wbm paper]: https://nature.com/articles/s41524-020-00481-6
 
