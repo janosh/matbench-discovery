@@ -60,7 +60,7 @@ class PredFiles(Files):
 
 
 # model_labels remaps model keys to pretty plot labels (see Files)
-PRED_FILES = PredFiles(root=f"{ROOT}/models/", key_map=model_labels)
+PRED_FILES = PredFiles(root=f"{ROOT}/models", key_map=model_labels)
 
 
 def load_df_wbm_with_preds(

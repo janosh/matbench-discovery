@@ -14,6 +14,7 @@ data/**/raw
 data/**/tsne
 data/2022-*
 data/m3gnet-*
+!data/mp/2023-02-07-mp-elemental-reference-entries.json.gz
 
 # slurm + Weights and Biases logs
 wandb/

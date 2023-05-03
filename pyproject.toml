@@ -36,7 +36,7 @@ dependencies = [
   "numpy",
   # output_formatting needed to for pandas Stylers
   # see https://github.com/pandas-dev/pandas/blob/main/pyproject.toml#L78
-  "pandas[output_formatting]",
+  "pandas[output_formatting]>=2.0.0",
   "plotly",
   "pymatgen",
   "pymatviz[export-figs]",
@@ -52,7 +52,7 @@ Repo = "https://github.com/janosh/matbench-discovery"
 Package = "https://pypi.org/project/matbench-discovery"
 
 [project.optional-dependencies]
-test = ["pytest", "pytest-cov", "pytest-markdown-docs"]
+test = ["pytest", "pytest-cov"]
 # how to specify git deps: https://stackoverflow.com/a/73572379
 running-models = [
   # torch needs to install before aviary
@@ -121,5 +121,8 @@ no_implicit_optional = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-p no:warnings -m 'not slow'"
-markers = ["slow: deselect slow tests with -m 'not slow'"]
+addopts = "-p no:warnings -m 'not slow and not very_slow'"
+markers = [
+  "slow: deselect slow tests with -m 'not slow'",
+  "very_slow: select with -m 'very_slow'",
+]
