@@ -1,17 +1,19 @@
 from __future__ import annotations
 
+import gzip
 import json
 import os
+import pickle
 import sys
 import urllib.error
-from collections.abc import Sequence
+import urllib.request
 from glob import glob
 from pathlib import Path
 from typing import Any, Callable
 
 import pandas as pd
-from pymatgen.core import Structure
-from pymatgen.entries.computed_entries import ComputedStructureEntry
+from monty.json import MontyDecoder
+from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
 from tqdm import tqdm
 
 from matbench_discovery import FIGSHARE
@@ -41,12 +43,12 @@ def as_dict_handler(obj: Any) -> dict[str, Any] | None:
 
 
 def load_train_test(
-    data_names: str | Sequence[str],
+    data_key: str,
     version: str = figshare_versions[-1],
     cache_dir: str | Path = default_cache_dir,
     hydrate: bool = False,
     **kwargs: Any,
-) -> pd.DataFrame:
+) -> pd.DataFrame | PatchedPhaseDiagram:
     """Download parts of or the full MP training data and WBM test data as pandas
     DataFrames. The full training and test sets are each about ~500 MB as compressed
     JSON which will be cached locally to cache_dir for faster re-loading unless
@@ -56,8 +58,8 @@ def load_train_test(
     see https://janosh.github.io/matbench-discovery/contribute#--direct-download.
 
     Args:
-        data_names (str | list[str], optional): Which parts of the MP/WBM data to load.
-            Can be any subset of set(DATA_FILES) or 'all'.
+        data_key (str): Which parts of the MP/WBM data to load. Must be one of
+            list(DATA_FILES).
         version (str, optional): Which version of the dataset to load. Defaults to
             latest version of data files published to Figshare. Pass any invalid version
             to see valid options.
@@ -71,77 +73,68 @@ def load_train_test(
             depending on which file is loaded.
 
     Raises:
-        ValueError: On bad version number or bad data names.
+        ValueError: On bad version number or bad data_key.
 
     Returns:
         pd.DataFrame: Single dataframe or dictionary of dfs if multiple data requested.
     """
     if version not in figshare_versions:
         raise ValueError(f"Unexpected {version=}. Must be one of {figshare_versions}.")
-    if data_names == "all":
-        data_names = list(DATA_FILES)
-    elif isinstance(data_names, str):
-        data_names = [data_names]
 
-    if missing := set(data_names) - set(DATA_FILES):
-        raise ValueError(f"{missing} must be subset of {set(DATA_FILES)}")
+    if not isinstance(data_key, str) or data_key not in DATA_FILES:
+        raise ValueError(f"Unknown {data_key=}, must be one of {list(DATA_FILES)}.")
 
     with open(f"{FIGSHARE}/{version}.json") as json_file:
         file_urls = json.load(json_file)
 
-    dfs = {}
-    for key in data_names:
-        file = DataFiles.__dict__[key]
-        csv_ext = (".csv", ".csv.gz", ".csv.bz2")
-        reader = pd.read_csv if file.endswith(csv_ext) else pd.read_json
+    file = DataFiles.__dict__[data_key]
 
-        cache_path = f"{cache_dir}/{file}"
-        if os.path.isfile(cache_path):  # load from disk cache
-            print(f"Loading {key!r} from cached file at {cache_path!r}")
-            df = reader(cache_path, **kwargs)
-        else:  # download from Figshare URL
-            # manually set compression since pandas can't infer from URL
-            if file.endswith(".gz"):
-                kwargs.setdefault("compression", "gzip")
-            elif file.endswith(".bz2"):
-                kwargs.setdefault("compression", "bz2")
-            url = file_urls[key]
-            print(f"Downloading {key!r} from {url}")
+    cache_path = f"{cache_dir}/{file}"
+    if not os.path.isfile(cache_path):  # download from Figshare URL
+        url = file_urls[data_key]
+        print(f"Downloading {data_key!r} from {url}")
+        try:
+            # ensure directory exists
+            os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+            # download and save to disk
+            urllib.request.urlretrieve(url, cache_path)
+            print(f"Cached {data_key!r} to {cache_path!r}")
+        except urllib.error.HTTPError as exc:
+            raise ValueError(f"Bad {url=}") from exc
+        except Exception:
+            print(f"\n\nvariable dump:\n{file=},\n{url=}")
+            raise
+
+    print(f"Loading {data_key!r} from cached file at {cache_path!r}")
+    if ".pkl" in file:  # handle key='mp_patched_phase_diagram' separately
+        with gzip.open(cache_path, "rb") as zip_file:
+            return pickle.load(zip_file)
+
+    csv_ext = (".csv", ".csv.gz", ".csv.bz2")
+    reader = pd.read_csv if file.endswith(csv_ext) else pd.read_json
+    try:
+        df = reader(cache_path, **kwargs)
+    except Exception:
+        print(f"\n\nvariable dump:\n{file=},\n{reader=}\n{kwargs=}")
+        raise
+
+    if "material_id" in df:
+        df = df.set_index("material_id")
+    if hydrate:
+        for col in df:
+            if not isinstance(df[col].iloc[0], dict):
+                continue
             try:
-                df = reader(url, **kwargs)
-            except urllib.error.HTTPError as exc:
-                raise ValueError(f"Bad {url=}") from exc
+                # convert dicts to pymatgen Structures and ComputedStructureEntrys
+                df[col] = [
+                    MontyDecoder().process_decoded(dct)
+                    for dct in tqdm(df[col], desc=col)
+                ]
             except Exception:
-                print(f"\n\nvariable dump:\n{file=},\n{url=},\n{reader=},\n{kwargs=}")
+                print(f"\n\nvariable dump:\n{col=},\n{df[col]=}")
                 raise
-            if cache_dir and not os.path.isfile(cache_path):
-                os.makedirs(os.path.dirname(cache_path), exist_ok=True)
-                if ".csv" in file:
-                    df.to_csv(cache_path, index=False)
-                elif ".json" in file:
-                    df.to_json(cache_path, default_handler=as_dict_handler)
-                else:
-                    raise ValueError(f"Unexpected file type {file}")
-                print(f"Cached {key!r} to {cache_path!r}")
-        if "material_id" in df:
-            df = df.set_index("material_id")
-        if hydrate:
-            for col in df:
-                if not isinstance(df[col].iloc[0], dict):
-                    continue
-                try:
-                    df[col] = [
-                        ComputedStructureEntry.from_dict(d)
-                        for d in tqdm(df[col], desc=col)
-                    ]
-                except Exception:
-                    df[col] = [Structure.from_dict(d) for d in tqdm(df[col], desc=col)]
 
-        dfs[key] = df
-
-    if len(data_names) == 1:
-        return dfs[data_names[0]]
-    return dfs
+    return df
 
 
 def glob_to_df(

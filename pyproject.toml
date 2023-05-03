@@ -121,7 +121,7 @@ no_implicit_optional = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-p no:warnings -m 'not slow'"
+addopts = "-p no:warnings -m 'not slow and not very_slow'"
 markers = [
   "slow: deselect slow tests with -m 'not slow'",
   "very_slow: select with -m 'very_slow'",
