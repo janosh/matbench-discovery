@@ -12,7 +12,7 @@
   onMount(() => (mounted = true))
 </script>
 
-<summary>
+<summary class="abstract">
 
 We present a new machine learning (ML) evaluation framework for materials stability predictions named `Matbench Discovery`. Our task closely simulates the deployment of ML energy models in a high-throughput search for stable inorganic crystals. It is accompanied by an interactive leaderboard and a Python package for easy ingestion of our training/test sets into future model submissions. To answer the question which ML methodology performs best at materials discovery, we explore a wide variety of models. Our initial selection ranges from random forests to GNNs, from one-shot predictors to iterative Bayesian optimizers and universal interatomic potentials (UIP) that closely emulate DFT. We find UIPs to be in a class of their own, achieving the highest F1 scores and discovery acceleration factors (DAF) of more than 3, i.e. 3x more stable structures found compared to dummy selection in our already enriched search space. We also identify a sharp disconnect between commonly used regression metrics and more task-relevant classification metrics. CGCNN and MEGNet are worse than dummy regressors, but substantially better than dummy classifiers, suggesting that the field overemphasizes the wrong performance indicators. Our results highlight the need to optimize metrics that measure true stability hit rate improvements and provide valuable insights for maintainers of high throughput materials databases by demonstrating that these models have matured enough to play a vital role as pre-filtering steps to effectively allocate compute budget for DFT relaxations.
 
@@ -145,7 +145,23 @@ Our initial benchmark release includes 8 models. @Fig:metrics-table includes all
 
 <MetricsTable />
 
-> @label:fig:metrics-table Classification and regression metrics for all models tested on our benchmark. The heat map ranges from yellow (best) to blue (worst) performance. DAF = discovery acceleration factor (see text), TPR = true positive rate, TNR = false negative rate, MAE = mean absolute error, RMSE = root mean squared error. The dummy classifier uses the `scikit-learn` `stratified` strategy of randomly assigning stable/unstable labels according to the training set prevalence. The dummy regression metrics MAE, RMSE and $R^2$ are attained by always predicting the test set mean. Note that Voronoi RF, CGCNN and MEGNet are worse than dummy on regression metrics but better on some of the classification metrics, highlighting the importance of looking at the right metrics for the task at hand to gauge model performance.
+> @label:fig:metrics-table Classification and regression metrics for all models tested on our benchmark. The heat map ranges from yellow (best) to blue (worst) performance. The dummy classifier uses the `scikit-learn` `stratified` strategy of randomly assigning stable/unstable labels according to the training set prevalence. The dummy regression metrics MAE, RMSE and $R^2$ are attained by always predicting the test set mean. Note that Voronoi RF, CGCNN and MEGNet are worse than dummy on regression metrics but better on some of the classification metrics, highlighting the importance of looking at the right metrics for the task at hand to gauge model performance.
+>
+> <details>
+> <summary>Table glossary</summary>
+>
+> - DAF = discovery acceleration factor
+> - TPR = true positive rate, the fraction of stable structures correctly predicted as stable
+> - TNR = true negative rate, the fraction of unstable structures correctly predicted as unstable
+> - MAE = mean absolute error
+> - RMSE = root mean squared error
+> - GNN = graph neural network
+> - UIP = universal interatomic potential
+> - BO = Bayesian optimization
+> - RF = random forest
+> - +P = training data augmentation using random structure perturbations
+>
+> </details>
 
 @Fig:metrics-table shows performance metrics for all models considered in v1 of our benchmark.
 CHGNet takes the top spot on all metrics except true positive rate (TPR) and emerges as current SOTA for ML-guided materials discovery. The discovery acceleration factor (DAF) measures how many more stable structures a model found compared to the dummy discovery rate of 43k / 257k $\approx$ 16.7\% achieved by randomly selecting test set crystals. Consequently, the maximum possible DAF is ~6. This highlights the fact that our benchmark is made more challenging by deploying models on an already enriched space with a much higher fraction of stable structures than uncharted materials space at large. As the convex hull becomes more thoroughly sampled by future discovery, the fraction of unknown stable structures decreases, naturally leading to less enriched future test sets which will allow for higher maximum DAFs.
@@ -218,7 +234,7 @@ The results obtained from version 1 of our benchmark show that ML universal inte
 
 Just like minerals, oil or any other finite resource, the task of discovering new materials will necessarily become more challenging over time as currently undersampled regions of materials space are explored. Before the results of this benchmark, we saw grounds for debate on which is the most promising ML discovery methodology to develop further. We now believe the path to making ML a ubiquitous discovery tool is straightforward and one the field is already pursuing: training foundational UIPs on significantly more data may get us there even without further algorithmic or model improvements. If we manage to double or triple the discovery acceleration factor, the benefits of including ML in materials discovery workflows will significantly outweigh the setup costs.
 
-We welcome further model submissions to our GitHub repo
+We welcome further model submissions at
 [{repo}]({repo}).
 
 ## Acknowledgments

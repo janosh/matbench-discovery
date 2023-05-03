@@ -44,10 +44,10 @@
     margin: 1em;
     display: block;
   }
-  div :global(summary) {
+  div :global(summary.abstract) {
     font-weight: 300;
   }
-  div :global(summary)::before {
+  div :global(summary.abstract)::before {
     content: 'Abstract';
     font-weight: bold;
     font-size: larger;
