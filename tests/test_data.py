@@ -19,7 +19,7 @@ from matbench_discovery.data import (
     df_wbm,
     figshare_versions,
     glob_to_df,
-    load_train_test,
+    load,
 )
 
 with open(f"{FIGSHARE}/{figshare_versions[-1]}.json") as file:
@@ -42,7 +42,7 @@ structure = Structure(
         ("mp_energies", True),
     ],
 )
-def test_load_train_test(
+def test_load(
     data_key: str,
     hydrate: bool,
     # df with Structures and ComputedStructureEntries as dicts
@@ -58,7 +58,7 @@ def test_load_train_test(
 
         writer = dummy_df_serialized.to_json if ".json" in filepath else df_csv.to_csv
         urlretrieve.side_effect = lambda url, path: writer(path)
-        out = load_train_test(
+        out = load(
             data_key,
             hydrate=hydrate,
             # test both str and Path for cache_dir
@@ -75,14 +75,14 @@ def test_load_train_test(
     assert isinstance(out, pd.DataFrame), f"{data_key} not a DataFrame"
 
     # test that df loaded from cache is the same as initial df
-    from_cache = load_train_test(data_key, hydrate=hydrate, cache_dir=tmp_path)
+    from_cache = load(data_key, hydrate=hydrate, cache_dir=tmp_path)
     pd.testing.assert_frame_equal(out, from_cache)
 
 
-def test_load_train_test_raises(tmp_path: Path) -> None:
+def test_load_raises(tmp_path: Path) -> None:
     data_key = "bad-key"
     with pytest.raises(ValueError) as exc_info:
-        load_train_test(data_key)
+        load(data_key)
 
     assert f"Unknown {data_key=}, must be one of {list(DATA_FILES)}" in str(
         exc_info.value
@@ -90,7 +90,7 @@ def test_load_train_test_raises(tmp_path: Path) -> None:
 
     version = "invalid-version"
     with pytest.raises(ValueError) as exc_info:
-        load_train_test("wbm_summary", version=version, cache_dir=tmp_path)
+        load("wbm_summary", version=version, cache_dir=tmp_path)
 
     assert (
         str(exc_info.value)
@@ -99,8 +99,8 @@ def test_load_train_test_raises(tmp_path: Path) -> None:
     assert os.listdir(tmp_path) == [], "cache_dir should be empty"
 
 
-def test_load_train_test_doc_str() -> None:
-    doc_str = load_train_test.__doc__
+def test_load_doc_str() -> None:
+    doc_str = load.__doc__
     assert isinstance(doc_str, str)  # mypy type narrowing
 
     # check that we link to the right data description page
@@ -149,7 +149,7 @@ wbm_summary_expected_cols = {
         ),
     ],
 )
-def test_load_train_test_no_mock(
+def test_load_no_mock(
     file_key: str,
     version: str,
     expected_shape: tuple[int, int],
@@ -160,7 +160,7 @@ def test_load_train_test_no_mock(
     assert os.listdir(tmp_path) == [], "cache_dir should be empty"
     # This function runs the download from Figshare for real hence takes some time and
     # requires being online
-    df = load_train_test(file_key, version=version, cache_dir=tmp_path)
+    df = load(file_key, version=version, cache_dir=tmp_path)
     assert len(os.listdir(tmp_path)) == 1, "cache_dir should have one file"
     assert df.shape == expected_shape
     assert (
@@ -178,7 +178,7 @@ def test_load_train_test_no_mock(
 
     # test that df loaded from cache is the same as initial df
     pd.testing.assert_frame_equal(
-        df, load_train_test(file_key, version=version, cache_dir=tmp_path)
+        df, load(file_key, version=version, cache_dir=tmp_path)
     )
 
     stdout, stderr = capsys.readouterr()

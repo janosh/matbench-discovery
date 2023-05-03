@@ -17,10 +17,10 @@ pip install matbench-discovery
 This example script downloads the training and test data for training a model:
 
 ```py
-from matbench_discovery.data import load_train_test
+from matbench_discovery.data import load
 from matbench_discovery.data import df_wbm, DATA_FILES
 
-# any subset of these keys can be passed to load_train_test()
+# any subset of these keys can be passed to load()
 assert sorted(DATA_FILES) == [
     "mp-computed-structure-entries",
     "mp-elemental-ref-energies",
@@ -31,7 +31,7 @@ assert sorted(DATA_FILES) == [
     "wbm-summary",
 ]
 
-df_wbm = load_train_test("wbm-summary", version="v1.0.0")
+df_wbm = load("wbm-summary", version="v1.0.0")
 
 assert df_wbm.shape == (256963, 15)
 

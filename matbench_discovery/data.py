@@ -42,7 +42,7 @@ def as_dict_handler(obj: Any) -> dict[str, Any] | None:
         # removes e.g. non-serializable AseAtoms from M3GNet relaxation trajectories
 
 
-def load_train_test(
+def load(
     data_key: str,
     version: str = figshare_versions[-1],
     cache_dir: str | Path = default_cache_dir,
@@ -221,7 +221,7 @@ class DataFiles(Files):
     def _on_not_found(self, key: str, msg: str) -> None:  # type: ignore[override]
         msg += (
             " Would you like to download it now using matbench_discovery."
-            f"data.load_train_test({key!r}). This will cache the file for future use."
+            f"data.load({key!r}). This will cache the file for future use."
         )
 
         # default to 'y' if not in interactive session, and user can't answer
@@ -229,7 +229,7 @@ class DataFiles(Files):
         while answer not in ("y", "n"):
             answer = input(f"{msg} [y/n] ").lower().strip()
         if answer == "y":
-            load_train_test(key)  # download and cache data file
+            load(key)  # download and cache data file
 
     mp_computed_structure_entries = (
         "mp/2023-02-07-mp-computed-structure-entries.json.gz"
@@ -247,9 +247,9 @@ class DataFiles(Files):
     wbm_summary = "wbm/2022-10-19-wbm-summary.csv"
 
 
-# data files can be downloaded and cached with matbench_discovery.data.load_train_test()
+# data files can be downloaded and cached with matbench_discovery.data.load()
 DATA_FILES = DataFiles()
 
 
-df_wbm = load_train_test("wbm_summary")
+df_wbm = load("wbm_summary")
 df_wbm["material_id"] = df_wbm.index
