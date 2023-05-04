@@ -8,19 +8,28 @@
   import DataReadme from '$root/data/wbm/readme.md'
   import type { ChemicalElement } from 'elementari'
   import { ColorBar, ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
-  import { Toggle } from 'svelte-zoo'
+  import Select from 'svelte-multiselect'
+  import { Toggle, Tooltip } from 'svelte-zoo'
   import type { Snapshot } from './$types'
-  import mp_elem_counts from './mp-element-counts.json'
-  import wbm_elem_counts from './wbm-element-counts.json'
 
-  let log = true // log color scale
+  const elem_counts = import.meta.glob(`./*-element-counts-{occu,comp}*.json`, {
+    eager: true,
+    import: 'default',
+  })
+
+  let log = false // log color scale
   let color_scale = [`Inferno`]
   let active_mp_elem: ChemicalElement
   let active_wbm_elem: ChemicalElement
+  const count_mode_ops = [`occurrence`, `composition`]
+  let count_mode = [count_mode_ops[0]]
+
+  $: mp_elem_counts = elem_counts[`./mp-element-counts-${count_mode[0]}.json`]
+  $: wbm_elem_counts = elem_counts[`./wbm-element-counts-${count_mode[0]}.json`]
 
   export const snapshot: Snapshot = {
-    capture: () => ({ color_scale, log }),
-    restore: (values) => ({ color_scale, log } = values),
+    capture: () => ({ color_scale, log, count_mode }),
+    restore: (values) => ({ color_scale, log, count_mode } = values),
   }
 </script>
 
@@ -46,10 +55,23 @@
           tick_labels={5}
           precision={3}
           range={[0, Math.max(...Object.values(wbm_elem_counts))]}
-          style="width: 85%; margin: 0 2em;"
+          style="width: 85%; margin: 0 2em 2em;"
         />
       </TableInset>
     </PeriodicTable>
+    <Tooltip
+      text="occurrence=(Fe: 1, O: 1), composition: Fe2O3=(Fe: 2, O: 3)"
+      style="display: inline-block; transform: translate(10cqw, 5ex);"
+    >
+      <label for="count-mode">Count Mode</label>
+    </Tooltip>
+    <Select
+      id="count-mode"
+      bind:selected={count_mode}
+      options={count_mode_ops}
+      minSelect={1}
+      maxSelect={1}
+    />
     <ColorScaleSelect bind:selected={color_scale} />
   </svelte:fragment>
   <svelte:fragment slot="mp-elements-heatmap">
@@ -68,7 +90,7 @@
           tick_labels={5}
           precision={3}
           range={[0, Math.max(...Object.values(mp_elem_counts))]}
-          style="width: 85%; margin: 0 2em;"
+          style="width: 85%; margin: 0 2em 2em;"
         />
       </TableInset>
     </PeriodicTable>
@@ -95,5 +117,6 @@
     gap: 1ex;
     place-content: center;
     align-items: start;
+    justify-items: center;
   }
 </style>
