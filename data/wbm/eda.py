@@ -30,17 +30,19 @@ module_dir = os.path.dirname(__file__)
 about_data_page = f"{ROOT}/site/src/routes/about-the-data"
 
 
-# %%
-wbm_elem_counts = count_elements(df_wbm.formula).astype(int)
-
-# wbm_elem_counts.to_json(f"{about_data_page}/wbm-element-counts.json")
-
-
 # %% load MP training set
 df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False)
-mp_elem_counts = count_elements(df_mp.formula_pretty).astype(int)
 
-# mp_elem_counts.to_json(f"{about_data_page}/mp-element-counts.json")
+
+# %%
+for count_mode in ["occurrence", "composition"]:
+    wbm_elem_counts = count_elements(df_wbm.formula, count_mode=count_mode).astype(int)
+
+    wbm_elem_counts.to_json(f"{about_data_page}/wbm-element-counts-{count_mode}.json")
+    mp_elem_counts = count_elements(df_mp.formula_pretty, count_mode=count_mode).astype(
+        int
+    )
+    mp_elem_counts.to_json(f"{about_data_page}/mp-element-counts-{count_mode}.json")
 
 
 # %% export element counts by WBM step to JSON
