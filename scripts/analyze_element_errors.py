@@ -9,11 +9,10 @@ import pandas as pd
 import plotly.express as px
 from pymatgen.core import Composition, Element
 from pymatviz import count_elements, ptable_heatmap_plotly
-from pymatviz.utils import bin_df_cols, save_fig
-from sklearn.metrics import r2_score
+from pymatviz.utils import bin_df_cols, df_ptable, save_fig
 from tqdm import tqdm
 
-from matbench_discovery import FIGS, MODELS, ROOT
+from matbench_discovery import FIGS, MODELS
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.preds import (
     df_each_err,
@@ -93,14 +92,16 @@ if normalized:
 y_col = "percent" if normalized else "count"
 fig = (
     df_struct_counts.reset_index()
-    .melt(var_name="dataset", value_name=y_col, id_vars="symbol")
-    .sort_values([y_col, "symbol"])
+    .melt(
+        var_name=(clr_col := "Dataset"), value_name=y_col, id_vars=(id_col := "symbol")
+    )
+    .sort_values([y_col, id_col])
     .plot.bar(
-        x="symbol",
+        x=id_col,
         y=y_col,
         backend="plotly",
         title="Number of structures containing each element",
-        color="dataset",
+        color=clr_col,
         barmode="group",
     )
 )
@@ -153,29 +154,41 @@ df_elem_err.round(4).to_json(f"{MODELS}/per-element-model-each-errors.json")
 # %% scatter plot error by element against prevalence in training set
 # for checking correlation and R2 of elemental prevalence in MP training data vs.
 # model error
-df_elem_err["elem_name"] = [Element(el).long_name for el in df_elem_err.index]
-R2 = r2_score(*df_elem_err[[train_count_col, model_mean_err_col]].dropna().values.T)
-r_P = df_elem_err[model_mean_err_col].corr(df_elem_err[train_count_col])
+elem_col = "Element"
+df_elem_err[elem_col] = [Element(el).long_name for el in df_elem_err.index]
 
-fig = df_elem_err.plot.scatter(
-    x=train_count_col,
-    y=model_mean_err_col,
-    backend="plotly",
-    hover_name="elem_name",
-    text=df_elem_err.index.where(
-        (df_elem_err[model_mean_err_col] > 0.04)
-        | (df_elem_err[train_count_col] > 6_000)
-    ),
-    title="Per-element error vs element-occurrence in MP training "
-    f"set: r<sub>Pearson</sub>={r_P:.2f}, R<sup>2</sup>={R2:.2f}",
-    hover_data={model_mean_err_col: ":.2f", train_count_col: ":,.0f"},
+df_melt = df_elem_err.melt(
+    id_vars=["MP Occurrences", "Test set standard deviation", elem_col],
+    value_name=(val_col := "Error"),
+    var_name=(clr_col := "Model"),
+    ignore_index=False,
 )
+size_col = "group"
+df_melt[size_col] = df_ptable[size_col].fillna(0)
+fig = df_melt.plot.scatter(
+    x=train_count_col,
+    y=val_col,
+    color=clr_col,
+    backend="plotly",
+    # size=size_col,
+    hover_name=elem_col,
+    # text=df_melt.index.where(
+    #     (df_melt[val_col] > 0.04) | (df_melt[train_count_col] > 6_000)
+    # ),
+    title="Per-element error vs element-occurrence in MP training set",
+    hover_data={val_col: ":.2f", train_count_col: ":,.0f"},
+)
+for trace in fig.data:
+    if trace.name in ("CHGNet", "Voronoi RF", model_mean_err_col):
+        continue
+    trace.visible = "legendonly"
 fig.update_traces(textposition="top center")  # place text above scatter points
 fig.layout.title.update(xanchor="center", x=0.5)
+fig.layout.legend.update(x=1, y=1, xanchor="right", yanchor="top", title="")
 fig.show()
 
-# save_fig(fig, f"{FIGS}/element-prevalence-vs-error.svelte")
-save_fig(fig, f"{ROOT}/tmp/figs/element-prevalence-vs-error.pdf")
+save_fig(fig, f"{FIGS}/element-prevalence-vs-error.svelte")
+# save_fig(fig, f"{ROOT}/tmp/figs/element-prevalence-vs-error.pdf")
 
 
 # %% plot EACH errors against least prevalent element in structure (by occurrence in

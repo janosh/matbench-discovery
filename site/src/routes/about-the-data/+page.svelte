@@ -14,7 +14,7 @@
 
   const elem_counts = import.meta.glob(`./*-element-counts-{occu,comp}*.json`, {
     eager: true,
-    import: 'default',
+    import: `default`,
   })
 
   let log = false // log color scale
