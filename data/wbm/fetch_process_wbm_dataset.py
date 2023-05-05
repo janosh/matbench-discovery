@@ -142,10 +142,10 @@ assert len(df_wbm) == sum(step_lens)
 
 
 def increment_wbm_material_id(wbm_id: str) -> str:
-    """Maps step_1_0, step_1_1, ... onto wbm-1-1, wbm-1-2, ..."""
+    """Map step_1_0, step_1_1, ... to wbm-1-1, wbm-1-2, ..."""
     try:
         prefix, step_num, material_num = wbm_id.split("_")
-    except ValueError:
+    except (ValueError, AttributeError):
         print(f"bad {wbm_id=}")
         return wbm_id
 
@@ -331,7 +331,7 @@ assert all(
 )
 
 df_summary.index = df_summary.index.map(increment_wbm_material_id)  # format IDs
-# drop materials with id='None' and missing initial structures
+# drop materials with id=NaN and missing initial structures
 df_summary = df_summary.drop(index=[*nan_init_structs_ids, float("NaN")])
 
 # the 8403 material IDs in step 3 with final number larger than any of the ones in
