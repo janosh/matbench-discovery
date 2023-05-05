@@ -4,14 +4,13 @@ import { dirname } from 'path'
 import model_stats from './model-stats.json'
 
 export const load = async () => {
-  const yml = import.meta.glob(`$root/models/**/metadata.yml`, {
+  const files = import.meta.glob(`$root/models/**/metadata.yml`, {
     eager: true,
-  })
+    import: `default`,
+  }) as Record<string, ModelData | ModelData[]>
 
   // merge computed and static model metadata
-  const models: ModelData[] = Object.entries(yml).flatMap(([key, module]) => {
-    let metadata = module.default as ModelData[]
-
+  const models = Object.entries(files).flatMap(([key, metadata]) => {
     if (!Array.isArray(metadata)) metadata = [metadata]
 
     return metadata.flatMap(({ model_name: name, ...rest }) => {
@@ -22,7 +21,7 @@ export const load = async () => {
         return { ...rest, model_name, ...(computed ?? {}), dir: dirname(key) }
       })
     })
-  })
+  }) as ModelData[]
 
   // markdown notes to html
   for (const { model_name, notes } of models) {
