@@ -17,6 +17,7 @@
   import ScatterLargestErrorsModelsMeanVsEachTrue from '$figs/scatter-largest-errors-models-mean-vs-each-true.svelte'
   import EAboveHullScatterWrenformerFailures from '$figs/e-above-hull-scatter-wrenformer-failures.svelte'
   import ProtoCountsWrenformerFailures from '$figs/proto-counts-wrenformer-failures.svelte'
+  import ElementPrevalenceVsError from '$figs/element-prevalence-vs-error.svelte'
   import { onMount } from 'svelte'
 
   let mounted = false
@@ -29,7 +30,7 @@
 
 <MetricsTableFirst10k />
 
-> @label:fig:metrics-table-first-10k An actual discovery campaign is unlikely to validate all of a model's stable predictions like we did in the [metrics table](/preprint#fig:metrics-table). Presumably it will rank model predictions from most to least stable and go down that list as far time and compute budgets permit. Assuming that increases in compute resources will allow average future discovery campaigns to grow in scope, we believe 10 k model validations to be a reasonable cutoff. To simulate this scenario, we calculated classification and regression metrics for the 10 k test set materials predicted to be most stable by each model.<br>
+> @label:fig:metrics-table-first-10k An actual discovery campaign is unlikely to validate all stable predictions coming from a given model like we did in the [metrics table](/preprint#fig:metrics-table). Presumably it will rank model predictions from most to least stable and go down that list as far time and compute budgets permit. Assuming that increases in compute resources will allow average future discovery campaigns to grow in scope, we believe 10 k model validations to be a reasonable cutoff. To simulate this scenario, we calculated classification and regression metrics for the 10 k test set materials predicted to be most stable by each model.<br>
 > We again show dummy performance in the bottom row. Note that each model is now evaluated on a different slice of the data, but this is still dummy performance across the whole dataset. CHGNet and M3GNet achieve a very impressive 83% and 80% precision, respectively. In concrete terms, this means in a discovery campaign that validates 10 k model predictions from a search pool of 257 k crystals which are chemically dissimilar from the training set and of which 16.7 % are stable, CHGNet and M3GNet would deliver 4 stable structures for every 5 predictions validated. In light of the significant resulting increase in stability hit rate, these models are well worth integrating into future materials searches.
 
 ## ROC Curves
@@ -134,3 +135,11 @@ We highlight this here to refute the suggestion that training on raw DFT energie
 Looking at the occurrence counts of isopointal prototypes in the shaded rectangle and comparing them with the occurrence of those same prototypes in the MP training data counts, we find almost no support for failing structure prototypes. This suggests the reason Wrenformer fails so spectacularly on these structures is that it cannot deal with structure prototypes it has not seen at least several hundred examples of in its training data. Hence Wrenformer may be unsuitable for discovering new prototypes.
 
 <ProtoCountsWrenformerFailures />
+
+## Element Prevalence vs Model Error
+
+{#if mounted}
+<ElementPrevalenceVsError />
+{/if}
+
+> @label:fig:element-prevalence-vs-error The y-axis is the average error of each model on each element averaged over all structures in the test set containing said element weighted by that structure's composition. The x-axis is each element's prevalence in the MP training set. We don't observe much correlation between element prevalence and model error. Instead, oxygen, the element with highest representation, is among the higher error elements for most models. Similarly, fluorine, the element with highest average error across models has very good training support at ~12 k samples, suggesting chemistry more than training coverage determines element errors.

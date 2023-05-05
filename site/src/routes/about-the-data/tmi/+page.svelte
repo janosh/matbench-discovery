@@ -8,13 +8,13 @@
   import { RadioButtons, Toggle } from 'svelte-zoo'
   import type { Snapshot } from './$types'
 
-  const elem_counts: Record<string, number[]> = {}
-  for (const [path, json] of Object.entries(
-    import.meta.glob(`../wbm-element-counts-*=*.json`, { eager: true, as: `raw` })
-  )) {
-    const split = path?.split(`.json`)[0]?.split(`-`).at(-1) as string
-    if (!split || !split?.includes(`=`)) console.error(`Invalid path: ${path}`)
-    elem_counts[split] = JSON.parse(json)
+  const elem_counts = import.meta.glob(`../wbm-element-counts-*=*.json`, {
+    eager: true,
+    import: 'default',
+  })
+  for (const key of Object.keys(elem_counts)) {
+    const new_key = key?.split(`-`).at(-1)?.split('.')[0] as string
+    elem_counts[new_key] = elem_counts[key]
   }
 
   let arity_keys = Object.keys(elem_counts).filter((k) => k.startsWith(`arity=`))
