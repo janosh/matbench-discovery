@@ -29,14 +29,14 @@ e_form_col = "e_form_per_atom_mp2020_corrected"
     "project_end_point,stability_threshold",
     [("", 0), ("x", 0), ("x", -0.05), ("xy", 0.1)],
 )
-@pytest.mark.parametrize("backend", ("matplotlib", "plotly"))
+@pytest.mark.parametrize("backend", ["matplotlib", "plotly"])
 @pytest.mark.parametrize(
     "metrics",
-    (
+    [
         ("Cumulative Recall",),
         ("Cumulative Recall", "Cumulative F1"),
         ("Cumulative Recall", "Cumulative Precision", "Cumulative F1"),
-    ),
+    ],
 )
 def test_cumulative_precision_recall(
     project_end_point: AxLine,
@@ -67,11 +67,11 @@ def test_cumulative_precision_recall(
         # assert set(subplot_titles) == set(metrics)
 
 
-@pytest.mark.parametrize("window", (0.02, 0.002))
-@pytest.mark.parametrize("bin_width", (0.1, 0.001))
-@pytest.mark.parametrize("x_lim", ((0, 0.6), (-0.2, 0.8)))
-@pytest.mark.parametrize("backend", ("matplotlib", "plotly"))
-@pytest.mark.parametrize("show_dft_acc", (True, False))
+@pytest.mark.parametrize("window", [0.02, 0.002])
+@pytest.mark.parametrize("bin_width", [0.1, 0.001])
+@pytest.mark.parametrize("x_lim", [(0, 0.6), (-0.2, 0.8)])
+@pytest.mark.parametrize("backend", ["matplotlib", "plotly"])
+@pytest.mark.parametrize("show_dft_acc", [True, False])
 def test_rolling_mae_vs_hull_dist(
     window: float,
     bin_width: float,
@@ -111,10 +111,10 @@ def test_rolling_mae_vs_hull_dist(
         assert ax.layout.xaxis.title.text == "E<sub>above MP hull</sub> (eV/atom)"
 
 
-@pytest.mark.parametrize("stability_threshold", (0.1, 0.01))
-@pytest.mark.parametrize("x_lim", ((0, 0.6), (-0.2, 0.8)))
-@pytest.mark.parametrize("which_energy", ("true", "pred"))
-@pytest.mark.parametrize("backend", ("plotly", "matplotlib"))
+@pytest.mark.parametrize("stability_threshold", [0.1, 0.01])
+@pytest.mark.parametrize("x_lim", [(0, 0.6), (-0.2, 0.8)])
+@pytest.mark.parametrize("which_energy", ["true", "pred"])
+@pytest.mark.parametrize("backend", ["plotly", "matplotlib"])
 def test_hist_classified_stable_vs_hull_dist(
     stability_threshold: float,
     x_lim: tuple[float, float],

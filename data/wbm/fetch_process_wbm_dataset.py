@@ -432,9 +432,8 @@ df_summary["uncorrected_energy_from_cse"] = [
 diff_e_cse_e_summary = (
     df_summary.uncorrected_energy - df_summary.uncorrected_energy_from_cse
 )
-assert (
-    diff_e_cse_e_summary.max() < 0.15 and sum(diff_e_cse_e_summary > 0.1) == 2
-), df_summary.query("energy - uncorrected_energy_from_cse > 0.1")
+assert diff_e_cse_e_summary.max() < 0.15
+assert sum(diff_e_cse_e_summary > 0.1) == 2
 
 density_scatter(df_summary.uncorrected_energy, df_summary.uncorrected_energy_from_cse)
 
