@@ -119,4 +119,15 @@ df_out = pd.concat(pd.read_json(out_file) for out_file in tqdm(out_files))
 
 df_out.index.name = "material_id"
 
+
+# %%
+fp_diff_col = "site_stats_fingerprint_init_final_norm_diff"
+df_out[fp_diff_col] = (
+    df_out[final_fp_col].map(np.array) - df_out[init_fp_col].map(np.array)
+).map(np.linalg.norm)
+
+df_out[fp_diff_col].hist(bins=100, backend="plotly")
+
+
+# %%
 df_out.reset_index().to_json(f"{out_dir}/site-stats.json.gz")
