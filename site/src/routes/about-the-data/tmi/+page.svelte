@@ -10,10 +10,10 @@
 
   const elem_counts = import.meta.glob(`../wbm-element-counts-*=*.json`, {
     eager: true,
-    import: 'default',
+    import: `default`,
   })
   for (const key of Object.keys(elem_counts)) {
-    const new_key = key?.split(`-`).at(-1)?.split('.')[0] as string
+    const new_key = key?.split(`-`).at(-1)?.split(`.`)[0] as string
     elem_counts[new_key] = elem_counts[key]
   }
 

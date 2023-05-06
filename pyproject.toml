@@ -55,6 +55,7 @@ Package = "https://pypi.org/project/matbench-discovery"
 test = ["pytest", "pytest-cov"]
 # how to specify git deps: https://stackoverflow.com/a/73572379
 running-models = [
+  "chgnet",
   # torch needs to install before aviary
   "torch",
   "aviary@git+https://github.com/CompRhys/aviary",
@@ -84,8 +85,10 @@ select = [
   "E",   # pycodestyle
   "F",   # pyflakes
   "I",   # isort
+  "PIE", # flake8-pie
   "PLE", # pylint error
   "PLW", # pylint warning
+  "PT",  # flake8-pytest-style
   "Q",   # flake8-quotes
   "RUF", # Ruff-specific rules
   "SIM", # flake8-simplify
@@ -101,6 +104,9 @@ ignore = [
   "E731",    # Do not assign a lambda expression, use a def
   "PLW1508", # Invalid type for environment variable default
   "PLW2901", # Outer for loop variable overwritten by inner assignment target
+  "PT006",   # pytest-parametrize-names-wrong-type
+  "PT011",   # pytest-raises-too-broad
+  "PT013",   # pytest-incorrect-pytest-import
 ]
 pydocstyle.convention = "google"
 isort.known-third-party = ["wandb"]

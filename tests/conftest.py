@@ -6,7 +6,7 @@ from pymatgen.core import Lattice, Structure
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 
 
-@pytest.fixture
+@pytest.fixture()
 def dummy_df_serialized(dummy_struct: Structure) -> pd.DataFrame:
     # create a dummy df with a structure column on which to test (de-)serialization
     df = pd.DataFrame(dict(material_id=range(5), structure=[dummy_struct] * 5))
@@ -17,7 +17,7 @@ def dummy_df_serialized(dummy_struct: Structure) -> pd.DataFrame:
     return df
 
 
-@pytest.fixture
+@pytest.fixture()
 def dummy_struct() -> Structure:
     return Structure(
         lattice=Lattice.cubic(4.2),

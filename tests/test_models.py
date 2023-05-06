@@ -50,9 +50,8 @@ def test_model_dirs_have_metadata() -> None:
                 1 <= mbd_version <= 1
             ), f"Invalid matbench-discovery version: {mbd_version}"
             assert isinstance(date_added, str), f"Invalid {date_added=} not a string"
-            assert (
-                isinstance(authors, list) and 1 < len(authors) < 30
-            ), "authors not list or not between 1 and 30 authors"
+            assert isinstance(authors, list)
+            assert 1 < len(authors) < 30, f"{len(authors)=} not between 1 and 30"
             assert repo.startswith(
                 "https://"
             ), f"Invalid {repo=} not starting with https://"
