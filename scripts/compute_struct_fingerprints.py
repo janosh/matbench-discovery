@@ -92,7 +92,7 @@ for struct_col, fp_col in (
         struct = Structure.from_dict(struct)
         try:
             ss_fp = site_stats_fp.featurize(struct)
-            df_in.at[row.Index, fp_col] = ss_fp
+            df_in.loc[row.Index, fp_col] = ss_fp
         except Exception as exc:
             print(f"{fp_col} for {row.Index} failed: {exc}")
 
@@ -116,8 +116,7 @@ if missing_files:
     print(f"{len(missing_files)=}: {missing_files}")
 
 df_out = pd.concat(pd.read_json(out_file) for out_file in tqdm(out_files))
-
-df_out.index.name = "material_id"
+df_out = df_out.set_index("material_id")
 
 
 # %%

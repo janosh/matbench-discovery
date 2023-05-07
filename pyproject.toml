@@ -85,12 +85,15 @@ select = [
   "E",   # pycodestyle
   "F",   # pyflakes
   "I",   # isort
+  "N",   # pep8-naming
+  "PD",  # pandas-vet
   "PIE", # flake8-pie
-  "PLE", # pylint error
-  "PLW", # pylint warning
+  "PL",  # pylint
   "PT",  # flake8-pytest-style
+  "PYI", # flakes8-pyi
   "Q",   # flake8-quotes
-  "RUF", # Ruff-specific rules
+  "RET", # flake8-return
+  "RUF", # ruff
   "SIM", # flake8-simplify
   "TID", # tidy imports
   "UP",  # pyupgrade
@@ -98,12 +101,17 @@ select = [
   "YTT", # flake8-2020
 ]
 ignore = [
-  "C408",    # Unnecessary dict call - rewrite as a literal
-  "D100",    # Missing docstring in public module
-  "D205",    # 1 blank line required between summary line and description
-  "E731",    # Do not assign a lambda expression, use a def
-  "PLW1508", # Invalid type for environment variable default
-  "PLW2901", # Outer for loop variable overwritten by inner assignment target
+  "C408",    # unnecessary-collection-call
+  "D100",    # undocumented-public-module
+  "D205",    # blank-line-after-summary
+  "E731",    # lambda-assignment
+  "N806",    # non-lowercase-variable-in-function
+  "PD901",   # pandas-df-variable-name
+  "PLC0414", # useless-import-alias
+  "PLC1901", # compare-to-empty-string
+  "PLR",     # pylint refactor
+  "PLW1508", # invalid-envvar-default
+  "PLW2901", # redefined-loop-name
   "PT006",   # pytest-parametrize-names-wrong-type
   "PT011",   # pytest-raises-too-broad
   "PT013",   # pytest-incorrect-pytest-import

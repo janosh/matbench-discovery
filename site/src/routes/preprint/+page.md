@@ -1,6 +1,6 @@
 <script>
   import { repository as repo } from '$site/package.json'
-  import EachScatterModels from '$figs/each-scatter-models.svelte'
+  import EachScatterModels from '$figs/each-scatter-models-4x2.svelte'
   import MetricsTable from '$figs/metrics-table.svelte'
   import CumulativeClfMetrics from '$figs/cumulative-clf-metrics.svelte'
   import RollingMaeVsHullDistModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'

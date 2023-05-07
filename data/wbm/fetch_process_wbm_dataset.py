@@ -326,7 +326,7 @@ assert len(df_summary.query("volume > 0")) == len(df_wbm) + len(nan_init_structs
 # make sure dropping materials with 0 volume removes exactly 6 materials, the same ones
 # listed in bad_struct_ids above
 assert all(
-    df_summary.reset_index().query("volume == 0").index.values - sum(step_lens[:2])
+    df_summary.reset_index().query("volume == 0").index.to_numpy() - sum(step_lens[:2])
     == bad_struct_ids
 )
 
@@ -413,7 +413,7 @@ df_summary.formula = df_wbm.formula_from_cse
 
 
 # fix bad energy which is 0 in df_summary but a more realistic -63.68 in CSE
-df_summary.at["wbm-2-18689", "uncorrected_energy"] = df_wbm.loc[
+df_summary.loc["wbm-2-18689", "uncorrected_energy"] = df_wbm.loc[
     "wbm-2-18689"
 ].computed_structure_entry["energy"]
 
@@ -558,7 +558,7 @@ for mat_id, cse in tqdm(df_wbm.cse.items(), total=len(df_wbm)):
 
     e_above_hull = ppd_mp.get_e_above_hull(cse, allow_negative=True)
 
-    df_summary.at[cse.entry_id, each_col] = e_above_hull
+    df_summary.loc[cse.entry_id, each_col] = e_above_hull
 
 
 # %% calculate formation energies from CSEs wrt MP elemental reference energies
@@ -581,7 +581,7 @@ for row in tqdm(df_wbm.itertuples(), total=len(df_wbm)):
     assert (
         abs(e_form - e_form_ppd) < 1e-4
     ), f"{mat_id}: {e_form=:.3} != {e_form_ppd=:.3} (diff={e_form - e_form_ppd:.3}))"
-    df_summary.at[cse.entry_id, e_form_col] = e_form
+    df_summary.loc[cse.entry_id, e_form_col] = e_form
 
 
 df_summary[e_form_col.replace("uncorrected", "mp2020_corrected")] = (
@@ -598,11 +598,11 @@ try:
         df_wbm[wyckoff_col] = None
 
     for idx, struct in tqdm(df_wbm.initial_structure.items(), total=len(df_wbm)):
-        if not pd.isna(df_summary.at[idx, wyckoff_col]):
+        if not pd.isna(df_summary.loc[idx, wyckoff_col]):
             continue
         try:
             struct = Structure.from_dict(struct)
-            df_summary.at[idx, wyckoff_col] = get_aflow_label_from_spglib(struct)
+            df_summary.loc[idx, wyckoff_col] = get_aflow_label_from_spglib(struct)
         except Exception as exc:
             print(f"{idx=} {exc=}")
 

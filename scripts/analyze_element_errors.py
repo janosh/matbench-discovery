@@ -115,7 +115,7 @@ save_fig(fig, f"{FIGS}/bar-element-counts-mp+wbm-{normalized=}.svelte")
 # %%
 test_set_std_col = "Test set standard deviation"
 df_elem_err[test_set_std_col] = (
-    df_frac_comp.where(pd.isna, 1) * df_wbm[each_true_col].values[:, None]
+    df_frac_comp.where(pd.isna, 1) * df_wbm[each_true_col].to_numpy()[:, None]
 ).std()
 
 
@@ -132,7 +132,7 @@ cs_range = (0, 0.5)  # same range for all plots
 # cs_range = (None, None)  # different range for each plot
 for model in (*df_metrics, model_mean_err_col):
     df_elem_err[model] = (
-        df_frac_comp * df_each_err[model].abs().values[:, None]
+        df_frac_comp * df_each_err[model].abs().to_numpy()[:, None]
     ).mean()
     # don't change series values in place, would change the df
     per_elem_err = df_elem_err[model].copy(deep=True)
