@@ -663,12 +663,12 @@ def cumulative_precision_recall(
         dfs["Cumulative Recall"][model_name] = pd.Series(recall_interp(xs))
         dfs["Cumulative F1"][model_name] = pd.Series(f1_interp(xs))
 
-    for key, df in dfs.items():
+    for key in dfs:
         # drop all-NaN rows so plotly plot x-axis only extends to largest number of
         # predicted materials by any model
-        df = df.dropna(how="all")
+        dfs[key] = dfs[key].dropna(how="all")
         # will be used as facet_col in plotly to split different metrics into subplots
-        df["metric"] = key
+        dfs[key]["metric"] = key
 
     df_cum = pd.concat(dfs.values())
     # subselect rows for speed, plot has sufficient precision with 1k rows
