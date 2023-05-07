@@ -124,7 +124,7 @@ fig = px.scatter(
     x=each_true_col,
     y=each_pred_col,
     facet_col=facet_col,
-    facet_col_wrap=2,
+    facet_col_wrap=4,
     facet_col_spacing=0.02,
     facet_row_spacing=0.04,
     hover_data=hover_cols,
@@ -196,7 +196,7 @@ fig.update_yaxes(nticks=5)
 
 # remove legend title and place legend centered above subplots, increase marker size
 fig.layout.legend.update(
-    title="", orientation="h", x=0.5, xanchor="center", y=1.1, itemsizing="constant"
+    title="", orientation="h", x=0.5, xanchor="center", y=1.15, itemsizing="constant"
 )
 
 # fig.update_layout(yaxis=dict(scaleanchor="x", scaleratio=1))
@@ -215,18 +215,21 @@ fig.add_annotation(  # y-axis title
     textangle=-90,
     **axis_titles,
 )
-fig.update_layout(margin=dict(l=40, r=10, t=10, b=50), height=1000)
+# fig.layout.update(height=1000)
+fig.layout.update(width=1100)
+fig.layout.margin.update(l=40, r=10, t=10, b=50)
 fig.update_xaxes(matches=None)
 fig.update_yaxes(matches=None)
-
 fig.show()
 
 
 # %%
-save_fig(fig, f"{FIGS}/each-scatter-models.svelte")
-save_fig(fig, f"{ROOT}/paper/figures/each-scatter-models.pdf", width=600, height=700)
+n_rows, n_cols, *_ = np.array(fig._validate_get_grid_ref(), object).shape
+fig_name = f"each-scatter-models-{n_rows}x{n_cols}"
+save_fig(fig, f"{FIGS}/{fig_name}.svelte")
+save_fig(fig, f"{ROOT}/paper/figures/{fig_name}.pdf")
 # save_fig(
-#     fig, f"{ROOT}/tmp/figs/each-scatter-models.webp", scale=4, width=700, height=800
+#     fig, f"{ROOT}/tmp/figs/{fig_name}.webp", scale=4, width=700, height=800
 # )
 
 
