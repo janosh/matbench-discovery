@@ -5,6 +5,7 @@ histogram stacks true/false positives/negatives with different colors.
 
 
 # %%
+import math
 from typing import Final
 
 from pymatviz.utils import save_fig
@@ -39,8 +40,9 @@ df_melt[each_pred_col] = (
 
 # %%
 backend: Final = "plotly"
-rows, cols = len(models) // 2, 2
-which_energy: Final = "true"
+cols = 4
+rows = math.ceil(len(models) // cols)
+which_energy: Final = "pred"
 kwds = (
     dict(facet_col=facet_col, facet_col_wrap=cols, category_orders={facet_col: models})
     if backend == "plotly"
@@ -90,10 +92,10 @@ else:
         )
         anno.text = f"{model_name} · {F1=:.2f} · {FPR=:.2f} · {FNR=:.2f} · {DAF=:.2f}"
 
-    fig.layout.height = 1000
-    fig.layout.margin.update(t=50, b=30, l=40, r=0)
+    # fig.layout.height = 1000
+    fig.layout.margin.update(t=50, b=30, l=30, r=0)
     fig.layout.legend.update(
-        y=1.1, xanchor="center", x=0.5, bgcolor="rgba(0,0,0,0)", orientation="h"
+        y=1.15, xanchor="center", x=0.5, bgcolor="rgba(0,0,0,0)", orientation="h"
     )
     fig.update_yaxes(range=[0, 11_000], title_text=None)
 
@@ -107,8 +109,8 @@ else:
 
 
 # %%
-img_name = f"hist-clf-{which_energy}-hull-dist-models"
+img_name = f"hist-clf-{which_energy}-hull-dist-models-{rows}x{cols}"
 save_fig(fig, f"{FIGS}/{img_name}.svelte")
 n_models = len(fig.layout.annotations)
 # save_fig(fig, f"{ROOT}/tmp/figs/{img_name}.webp", scale=3, height=100 * n_models)
-save_fig(fig, f"{ROOT}/tmp/figs/{img_name}.pdf", height=550, width=600)
+save_fig(fig, f"{ROOT}/tmp/figs/{img_name}.pdf", width=1000)

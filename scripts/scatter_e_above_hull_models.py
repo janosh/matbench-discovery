@@ -215,8 +215,8 @@ fig.add_annotation(  # y-axis title
     textangle=-90,
     **axis_titles,
 )
-# fig.layout.update(height=1000)
-fig.layout.update(width=1100)
+# fig.layout.height = 1000
+fig.layout.width = 1100
 fig.layout.margin.update(l=40, r=10, t=10, b=50)
 fig.update_xaxes(matches=None)
 fig.update_yaxes(matches=None)
