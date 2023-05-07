@@ -9,7 +9,7 @@ from tqdm import tqdm
 from matbench_discovery import ROOT
 from matbench_discovery.data import Files, df_wbm, glob_to_df
 from matbench_discovery.metrics import stable_metrics
-from matbench_discovery.plots import eVpa, model_labels, quantity_labels
+from matbench_discovery.plots import ev_per_atom, model_labels, quantity_labels
 
 """Centralize data-loading and computing metrics for plotting scripts"""
 
@@ -23,8 +23,8 @@ model_mean_err_col = "Mean error all models"
 model_std_col = "Std. dev. over models"
 
 
-quantity_labels[model_mean_err_col] = f"{model_mean_err_col} {eVpa}"
-quantity_labels[model_std_col] = f"{model_std_col} {eVpa}"
+quantity_labels[model_mean_err_col] = f"{model_mean_err_col} {ev_per_atom}"
+quantity_labels[model_std_col] = f"{model_std_col} {ev_per_atom}"
 
 
 class PredFiles(Files):

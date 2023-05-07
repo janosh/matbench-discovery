@@ -36,7 +36,7 @@ def unit(text: str) -> str:
     return f"<span style='font-size: 0.8em; font-weight: lighter;'>({text})</span>"
 
 
-eVpa = unit("eV/atom")
+ev_per_atom = unit("eV/atom")
 
 # --- start global plot settings
 quantity_labels = dict(
@@ -46,16 +46,16 @@ quantity_labels = dict(
     spg_num="Space group",
     n_wyckoff="Number of Wyckoff positions",
     n_sites="Lattice site count",
-    energy_per_atom=f"Energy {eVpa}",
-    e_form=f"DFT E<sub>form</sub> {eVpa}",
-    e_above_hull=f"E<sub>above hull</sub> {eVpa}",
-    e_above_hull_mp2020_corrected_ppd_mp=f"DFT E<sub>above hull</sub> {eVpa}",
-    e_above_hull_pred=f"Predicted E<sub>above hull</sub> {eVpa}",
-    e_above_hull_mp=f"E<sub>above MP hull</sub> {eVpa}",
-    e_above_hull_error=f"Error in E<sub>above hull</sub> {eVpa}",
+    energy_per_atom=f"Energy {ev_per_atom}",
+    e_form=f"DFT E<sub>form</sub> {ev_per_atom}",
+    e_above_hull=f"E<sub>above hull</sub> {ev_per_atom}",
+    e_above_hull_mp2020_corrected_ppd_mp=f"DFT E<sub>above hull</sub> {ev_per_atom}",
+    e_above_hull_pred=f"Predicted E<sub>above hull</sub> {ev_per_atom}",
+    e_above_hull_mp=f"E<sub>above MP hull</sub> {ev_per_atom}",
+    e_above_hull_error=f"Error in E<sub>above hull</sub> {ev_per_atom}",
     vol_diff="Volume difference (A^3)",
-    e_form_per_atom_mp2020_corrected=f"DFT E<sub>form</sub> {eVpa}",
-    e_form_per_atom_pred=f"Predicted E<sub>form</sub> {eVpa}",
+    e_form_per_atom_mp2020_corrected=f"DFT E<sub>form</sub> {ev_per_atom}",
+    e_form_per_atom_pred=f"Predicted E<sub>form</sub> {ev_per_atom}",
     material_id="Material ID",
     band_gap="Band gap (eV)",
     formula="Formula",
@@ -666,7 +666,7 @@ def cumulative_precision_recall(
     for key, df in dfs.items():
         # drop all-NaN rows so plotly plot x-axis only extends to largest number of
         # predicted materials by any model
-        df.dropna(how="all", inplace=True)
+        df = df.dropna(how="all")
         # will be used as facet_col in plotly to split different metrics into subplots
         df["metric"] = key
 

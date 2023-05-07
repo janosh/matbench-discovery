@@ -50,7 +50,7 @@ print(f"{today}: {len(docs) = :,}")
 df = pd.DataFrame(docs).set_index("material_id")
 
 df_spg = pd.json_normalize(df.pop("symmetry"))[["number", "symbol"]]
-df["spacegroup_symbol"] = df_spg.symbol.values
+df["spacegroup_symbol"] = df_spg.symbol.to_numpy()
 
 df.energy_type.value_counts().plot.pie(backend="plotly", autopct="%1.1f%%")
 # GGA: 72.2%, GGA+U: 27.8%

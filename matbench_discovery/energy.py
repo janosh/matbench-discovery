@@ -52,7 +52,7 @@ def get_elemental_ref_entries(
     if len(elemental_ref_entries) > dim:
         missing = elements - set(elemental_ref_entries)
         raise ValueError(f"Some terminal entries are {missing = }")
-    elif len(elemental_ref_entries) < dim:
+    if len(elemental_ref_entries) < dim:
         extra = set(elemental_ref_entries) - set(elements)
         raise ValueError(
             f"There are more terminal element entries than dimensions: {extra}"
