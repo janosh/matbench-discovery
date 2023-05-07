@@ -199,7 +199,7 @@ fig = px.scatter(
 add_identity_line(fig)
 
 len_overlap = df_m3gnet_is2re.filter(like="e_m3gnet_per_atom_").dropna().shape[0]
-x_vals, y_vals = df_m3gnet_is2re.filter(like="e_m3gnet_per_atom_").dropna().values.T
+x_vals, y_vals = df_m3gnet_is2re.filter(like="e_m3gnet_per_atom_").dropna().to_numpy().T
 
 MAE = abs(x_vals - y_vals).mean()
 R2 = r2_score(x_vals, y_vals)
