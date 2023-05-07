@@ -116,8 +116,7 @@ if missing_files:
     print(f"{len(missing_files)=}: {missing_files}")
 
 df_out = pd.concat(pd.read_json(out_file) for out_file in tqdm(out_files))
-
-df_out.index.name = "material_id"
+df_out = df_out.set_index("material_id")
 
 
 # %%
