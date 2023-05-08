@@ -11,6 +11,8 @@ from matbench_discovery.preds import (
     e_form_col,
     each_true_col,
     load_df_wbm_with_preds,
+    model_mean_each_col,
+    model_mean_err_col,
 )
 
 
@@ -29,13 +31,19 @@ def test_df_metrics() -> None:
 
 def test_df_each_pred() -> None:
     assert len(df_each_pred) == len(df_wbm)
-    assert {*df_each_pred} == {*df_metrics}, "df_each_pred has wrong columns"
+    assert {*df_each_pred} == {
+        *df_metrics,
+        model_mean_each_col,
+    }, "df_each_pred has wrong columns"
     assert all(df_each_pred.isna().mean() < 0.05), "too many NaNs in df_each_pred"
 
 
 def test_df_each_err() -> None:
     assert len(df_each_err) == len(df_wbm)
-    assert {*df_each_err} == {*df_metrics}, "df_each_err has wrong columns"
+    assert {*df_each_err} == {
+        *df_metrics,
+        model_mean_err_col,
+    }, "df_each_err has wrong columns"
     assert all(df_each_err.isna().mean() < 0.05), "too many NaNs in df_each_err"
 
 

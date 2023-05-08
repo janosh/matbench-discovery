@@ -10,23 +10,23 @@ authors = [{ name = "Janosh Riebesell", email = "janosh@lbl.gov" }]
 readme = "readme.md"
 license = { file = "license" }
 keywords = [
-  "materials discovery",
-  "inorganic crystal stability",
-  "machine learning",
-  "interatomic potential",
   "Bayesian optimization",
-  "high-throughput search",
   "convex hull",
+  "high-throughput search",
+  "inorganic crystal stability",
+  "interatomic potential",
+  "machine learning",
+  "materials discovery",
 ]
 classifiers = [
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.9",
-  "Topic :: Scientific/Engineering :: Chemistry",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Chemistry",
   "Topic :: Scientific/Engineering :: Physics",
 ]
 
@@ -58,6 +58,7 @@ running-models = [
   "chgnet",
   # torch needs to install before aviary
   "torch",
+
   "aviary@git+https://github.com/CompRhys/aviary",
   "m3gnet",
   "maml",
@@ -82,7 +83,7 @@ select = [
   "B",   # flake8-bugbear
   "C40", # flake8-comprehensions
   "D",   # pydocstyle
-  "E",   # pycodestyle
+  "E",   # pycodestyle error
   "F",   # pyflakes
   "I",   # isort
   "N",   # pep8-naming
@@ -97,7 +98,7 @@ select = [
   "SIM", # flake8-simplify
   "TID", # tidy imports
   "UP",  # pyupgrade
-  "W",   # pycodestyle
+  "W",   # pycodestyle warning
   "YTT", # flake8-2020
 ]
 ignore = [
