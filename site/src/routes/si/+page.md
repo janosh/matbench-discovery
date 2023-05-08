@@ -1,5 +1,5 @@
 <script lang="ts">
-  import MetricsTableMegnetCombos from '$figs/metrics-table-megnet-combos.svelte'
+  import MetricsTableMegnetUipCombos from '$figs/metrics-table-megnet-uip-combos.svelte'
   import MetricsTableFirst10k from '$figs/metrics-table-first-10k.svelte'
   import RunTimeBars from '$figs/model-run-times-bar.svelte'
   import RocModels from '$figs/roc-models.svelte'
@@ -14,7 +14,7 @@
   import HistClfPredHullDistModels from '$figs/hist-clf-pred-hull-dist-models-4x2.svelte'
   import SpacegroupSunburstWbm from '$figs/spacegroup-sunburst-wbm.svelte'
   import SpacegroupSunburstWrenformerFailures from '$figs/spacegroup-sunburst-wrenformer-failures.svelte'
-  import ScatterLargestErrorsModelsMeanVsEachTrue from '$figs/scatter-largest-errors-models-mean-vs-each-true.svelte'
+  import ScatterLargestErrorsModelsMeanVsTrueHullDist from '$figs/scatter-largest-errors-models-mean-vs-true-hull-dist.svelte'
   import EAboveHullScatterWrenformerFailures from '$figs/e-above-hull-scatter-wrenformer-failures.svelte'
   import ProtoCountsWrenformerFailures from '$figs/proto-counts-wrenformer-failures.svelte'
   import ElementPrevalenceVsError from '$figs/element-prevalence-vs-error.svelte'
@@ -99,19 +99,19 @@ Given its strong performance on batch 1, it is possible that given sufficiently 
 ## Largest Errors vs DFT Hull Distance
 
 {#if mounted}
-<ScatterLargestErrorsModelsMeanVsEachTrue />
+<ScatterLargestErrorsModelsMeanVsTrueHullDist />
 {/if}
 
-> @label:fig:scatter-largest-errors-models-mean-vs-each-true The 200 structures with largest error averaged over all models vs their DFT hull distance colored by model disagreement (as measured by standard deviation in hull distance predictions from different models) and sized by number of training structures containing the least prevalent element (e.g. if a scatter point had composition FeO, MP has 6.6k structures containing Fe and 82k containing O so its size would be set to 6.6k). Thus smaller points have less training support. This plot suggests all models are biased to predict low energy and perhaps fail to capture certain physics resulting in highly unstable structures. This is unsurprising considering MP training data mainly consists of low energy structures.<br>
-> It is also possible that some of the blue points with large error yet good agreement among models are in fact accurate ML predictions for a DFT relaxation gone wrong.
+> @label:fig:scatter-largest-errors-models-mean-vs-true-hull-dist DFT vs predicted hull distance (average over all models) for the 200 largest error structures colored by model disagreement (as measured by standard deviation in hull distance predictions from different models) and sized by number of atoms in the structures. This plot shows that high-error predictions are biased towards predicting too small hull distance. This is unsurprising considering MP training data mainly consists of low-energy structures.<br>
+> However, note the clear color separation between the mostly blue low-energy-bias predictions and the yellow/red high error prediction. Blue means models are in good agreement, i.e. all models are "wrong" together. Red/yellow are large-error predictions with little model agreement, i.e. all models are wrong in different ways. It is possible that some of the blue points with large error yet good agreement among models are in fact accurate ML predictions for a DFT relaxation gone wrong. Zooming in on the blue points reveals that many of them are large. Larger markers correspond to larger structures where DFT failures are less surprising. This suggests ML model committees could be used to cheaply screen large databases for DFT errors in a high-throughput manner.
 
 ## MEGNet formation energies from UIP-relaxed structures
 
 {#if mounted}
-<MetricsTableMegnetCombos select={[`model`, `MEGNet`, `CHGNet`, `M3GNet`, `CHGNet + MEGNet`, `M3GNet + MEGNet`]} />
+<MetricsTableMegnetUipCombos select={[`model`, `MEGNet`, `CHGNet`, `M3GNet`, `CHGNet + MEGNet`, `M3GNet + MEGNet`]} />
 {/if}
 
-> @label:fig:metrics-table-megnet-combos This table shows metrics obtained by combining MEGNet with both UIPs. The metrics in rows labeled M3GNet + MEGNet and CHGNet + MEGNet are the result of passing M3GNet/CHGNet-relaxed structures into MEGNet for formation energy prediction. Both combos perform worse than using the respective UIPs on their own with a more pronounced performance drop from CHGNet to CHGNet + MEGNet than M3GNet to M3GNet + MEGnet. This suggests MEGNet has learned no additional knowledge of the PES that is not already present in the UIPs. However, both combos perform better than MEGNet on its own, demonstrating that UIP relaxation provides real utility at very low cost for any downstream structure-dependent analysis.
+> @label:fig:metrics-table-megnet-uip-combos This table shows metrics obtained by combining MEGNet with both UIPs. The metrics in rows labeled M3GNet + MEGNet and CHGNet + MEGNet are the result of passing M3GNet/CHGNet-relaxed structures into MEGNet for formation energy prediction. Both combos perform worse than using the respective UIPs on their own with a more pronounced performance drop from CHGNet to CHGNet + MEGNet than M3GNet to M3GNet + MEGnet. This suggests MEGNet has learned no additional knowledge of the PES that is not already present in the UIPs. However, both combos perform better than MEGNet on its own, demonstrating that UIP relaxation provides real utility at very low cost for any downstream structure-dependent analysis.
 
 The UIPs M3GNet and CHGNet are both trained to predict DFT energies (including/excluding MP2020 energy corrections for CHGNet/M3GNet) while MEGNet is trained to predict formation energies.
 
