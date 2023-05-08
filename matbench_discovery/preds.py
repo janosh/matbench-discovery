@@ -19,12 +19,12 @@ __date__ = "2023-02-04"
 e_form_col = "e_form_per_atom_mp2020_corrected"
 each_true_col = "e_above_hull_mp2020_corrected_ppd_mp"
 each_pred_col = "e_above_hull_pred"
+model_mean_each_col = "Mean prediction all models"
 model_mean_err_col = "Mean error all models"
 model_std_col = "Std. dev. over models"
 
-
-quantity_labels[model_mean_err_col] = f"{model_mean_err_col} {ev_per_atom}"
-quantity_labels[model_std_col] = f"{model_std_col} {ev_per_atom}"
+for col in (model_mean_each_col, model_mean_err_col, model_std_col):
+    quantity_labels[col] = f"{col} {ev_per_atom}"
 
 
 class PredFiles(Files):
@@ -157,8 +157,18 @@ for model in df_metrics.T.MAE.sort_values().index:
         df_preds[each_true_col] + df_preds[model] - df_preds[e_form_col]
     )
 
+# important: do df_each_pred.std(axis=1) before inserting
+# df_each_pred[model_mean_each_col]
+df_preds[model_std_col] = df_each_pred.std(axis=1)
+df_each_pred[model_mean_each_col] = df_preds[model_mean_each_col] = df_each_pred.mean(
+    axis=1
+)
 
 # dataframe of all models' errors in their EACH predictions (eV/atom)
 df_each_err = pd.DataFrame()
 for model in df_metrics.T.MAE.sort_values().index:
     df_each_err[model] = df_preds[model] - df_preds[e_form_col]
+
+df_each_err[model_mean_err_col] = df_preds[model_mean_err_col] = df_each_err.abs().mean(
+    axis=1
+)

@@ -25,6 +25,7 @@ from matbench_discovery.preds import (
     df_metrics,
     df_preds,
     each_true_col,
+    model_mean_each_col,
     model_mean_err_col,
     model_std_col,
 )
@@ -33,10 +34,6 @@ __author__ = "Janosh Riebesell"
 __date__ = "2023-02-15"
 
 models = list(df_each_pred)
-df_preds[model_std_col] = df_preds[models].std(axis=1)
-df_each_err[model_mean_err_col] = df_preds[model_mean_err_col] = df_each_err.abs().mean(
-    axis=1
-)
 fp_diff_col = "site_stats_fingerprint_init_final_norm_diff"
 
 
@@ -181,14 +178,15 @@ df_preds[n_examp_for_rarest_elem_col] = df_wbm[n_examp_for_rarest_elem_col]
 # on MP which is highly low-energy enriched.
 # also possible models failed to learn whatever physics makes these materials highly
 # unstable
+n_structs = 200
 fig = (
-    df_preds.nlargest(200, model_mean_err_col)
+    df_preds.nlargest(n_structs, model_mean_err_col)
     .round(2)
     .plot.scatter(
         x=each_true_col,
-        y=model_mean_err_col,
+        y=model_mean_each_col,
         color=model_std_col,
-        size=n_examp_for_rarest_elem_col,
+        size="n_sites",
         backend="plotly",
         hover_name="material_id",
         hover_data=["formula"],
@@ -197,17 +195,19 @@ fig = (
 )
 # yanchor="bottom", y=1, xanchor="center", x=0.5, orientation="h", thickness=12
 fig.layout.coloraxis.colorbar.update(title_side="right", thickness=14)
+fig.layout.margin.update(l=0, r=30, b=0, t=30)
 add_identity_line(fig)
-fig.layout.title = (
-    "Largest model errors vs. DFT hull distance colored by model disagreement"
+fig.layout.title.update(
+    text=f"{n_structs} largest model errors: Predicted vs. DFT hull distance<br>"
+    "colored by model disagreement",
+    x=0.5,
 )
 # tried setting error_y=model_std_col but looks bad
 # fig.update_traces(error_y=dict(color="rgba(255,255,255,0.2)", width=3, thickness=2))
 fig.show()
-# save_fig(fig, f"{FIGS}/scatter-largest-errors-models-mean-vs-each-true.svelte")
-# save_fig(
-#     fig, f"{ROOT}/tmp/figs/scatter-largest-errors-models-mean-vs-each-true.pdf"
-# )
+img_name = "scatter-largest-errors-models-mean-vs-true-hull-dist"
+save_fig(fig, f"{FIGS}/{img_name}.svelte")
+# save_fig(fig, f"{ROOT}/tmp/figs/{img_name}.pdf")
 
 
 # %% find materials that were misclassified by all models

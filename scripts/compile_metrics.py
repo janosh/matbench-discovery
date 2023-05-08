@@ -223,8 +223,8 @@ for label, df, hide_cols in (
                 "margin-bottom": "0",
                 "margin-left": "0",
                 # fit page size to content
-                "page-width": f"{(len(styler.columns) + 1) * 10}",
-                "page-height": f"{(len(styler.index) + 1) * 6}",
+                "page-width": f"{(len(styler.columns) + 1) * 8.3}",
+                "page-height": f"{(len(styler.index) + 1) * 5.5}",
             },
         )
 

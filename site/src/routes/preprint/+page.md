@@ -5,7 +5,7 @@
   import CumulativeClfMetrics from '$figs/cumulative-clf-metrics.svelte'
   import RollingMaeVsHullDistModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'
   import ElementErrorsPtableHeatmap from '$models/element-errors-ptable-heatmap.svelte'
-  import HistClfTrueHullDistModels from '$figs/hist-clf-true-hull-dist-models.svelte'
+  import HistClfTrueHullDistModels from '$figs/hist-clf-true-hull-dist-models-4x2.svelte'
   import { onMount } from 'svelte'
 
   let mounted = false
