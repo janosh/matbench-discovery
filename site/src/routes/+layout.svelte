@@ -8,7 +8,7 @@
   import { GitHubCorner, PrevNext } from 'svelte-zoo'
   import '../app.css'
 
-  const routes = Object.keys(import.meta.glob(`./*/+page.{svx,svelte,md}`)).map(
+  const routes = Object.keys(import.meta.glob(`./*/+page.{svelte,md}`)).map(
     (filename) => `/` + filename.split(`/`)[1]
   )
 
@@ -31,7 +31,7 @@
   if (url && !description) console.warn(`No description for url=${url}`)
   $: title = url == `/` ? `` : `${url} • `
 
-  const actions = Object.keys(import.meta.glob(`./**/+page.{svx,svelte,md}`)).map(
+  const actions = Object.keys(import.meta.glob(`./**/+page.{svelte,md}`)).map(
     (filename) => {
       const parts = filename.split(`/`).filter((part) => !part.startsWith(`(`)) // remove hidden route segments
       const route = `/${parts.slice(1, -1).join(`/`)}`
