@@ -595,11 +595,11 @@ try:
 
     wyckoff_col = "wyckoff_spglib"
     if wyckoff_col not in df_wbm:
-        df_wbm[wyckoff_col] = None
+        df_summary[wyckoff_col] = None
 
     for idx, struct in tqdm(df_wbm.initial_structure.items(), total=len(df_wbm)):
         if not pd.isna(df_summary.loc[idx, wyckoff_col]):
-            continue
+            continue  # Aflow label already computed
         try:
             struct = Structure.from_dict(struct)
             df_summary.loc[idx, wyckoff_col] = get_aflow_label_from_spglib(struct)
