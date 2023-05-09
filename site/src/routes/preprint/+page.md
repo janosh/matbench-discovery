@@ -123,7 +123,7 @@ Our initial benchmark release includes 8 models. @Fig:metrics-table includes all
 
    CGCNN was among the first to show that just like in other areas of ML, given large enough training sets, neural networks can learn embeddings that reliably outperform all human-engineered structure features directly from the data.
 
-1. **CGCNN+P** @gibson_data-augmentation_2022 - This work proposes a simple, physically motivated structure perturbations to augment stock CGCNN's training data of relaxed structures with structures resembling unrelaxed ones but mapped to the same DFT final energy. Here we chose $P=5$, meaning the training set was augmented with 5 random perturbations of each relaxed MP structure mapped to the same target energy.
+1. **CGCNN+P** @gibson_data-augmentation_2022 - Identical to CGCNN except for a difference in training procedure. The +P stands for training set augmentation using random structure perturbations. We apply a slight lattice strain and nudge the atoms but keep the same energy target to create additional training samples. Here we chose $P=5$ meaning random perturbations are repeated 5 times for each relaxed MP structure.
 
    In contrast to all other structure-based GNNs considered in this benchmark, CGCNN+P is not attempting to learn the Born-Oppenheimer potential energy surface. The model is instead taught the PES as a step-function that maps each valley to its local minimum. The idea is that during testing on unrelaxed structures, the model will predict the energy of the nearest basin in the PES. The authors confirm this by demonstrating a lowering of the energy error on unrelaxed structures.
 
@@ -202,7 +202,8 @@ A line terminates when a model believes there are no more materials in the WBM t
 <HistClfTrueHullDistModels />
 {/if}
 
-> @label:fig:hist-clf-true-hull-dist-models These histograms show the classification performance of models as a function of DFT-computed hull distance on the $x$ axis. Models are sorted top to bottom by F1 score. While CHGNet and M3GNet perform almost equally well overall, M3GNet makes fewer false negative but more false positives predictions compared to CHGNet. This observation is also reflected in the higher TPR and lower TNR of M3GNet vs CHGNet in @fig:metrics-table, as well as the lower error for CHGNet vs M3GNet on the stable side (left half) of @fig:rolling-mae-vs-hull-dist-models and M3GNet over CHGNet on the unstable side (right half) of @fig:rolling-mae-vs-hull-dist-models.
+> @label:fig:hist-clf-true-hull-dist-models These histograms show the classification performance of models as a function of DFT-computed hull distance on the $x$ axis. The colors visualize the proportion of true to false predictions as a function of crystal stability. Models are sorted top to bottom by F1 score. While CHGNet and M3GNet perform almost equally well overall, these plots reveal that they do so via different trade-offs. M3GNet commits fewer false negative but more false positives predictions compared to CHGNet. In a real discovery campaign, false positives come back to bite you more than false negatives since they result in wasted DFT relaxations or even synthesis time in the lab. A false negative by contrast is just one missed opportunity out of millions.
+> This observation is also reflected in the higher TPR and lower TNR of M3GNet vs CHGNet in @fig:metrics-table, as well as the lower error for CHGNet vs M3GNet on the stable side (left half) of @fig:rolling-mae-vs-hull-dist-models and M3GNet over CHGNet on the unstable side (right half) of @fig:rolling-mae-vs-hull-dist-models.
 
 ### Predicted Hull Distance Parity Plots
 
@@ -210,7 +211,8 @@ A line terminates when a model believes there are no more materials in the WBM t
 <EachScatterModels />
 {/if}
 
-> @label:fig:each-scatter-models Parity plot for each model's energy above hull predictions (based on their formation energy preds) vs DFT ground truth
+> @label:fig:each-scatter-models Parity plot of DFT hull distance vs model hull distance predictions (derived from predicted formation energies). All models do well on the outliers. They suffer most in the mode of the distribution around the convex hull.
+> Interestingly, all models do very well on the outliers. Where they suffer is in the mode of the distribution near the convex hull. All models exhibit a horizontal spike at 0 predicted hull distance for crystals that are actually very unstable, resulting in false positive predictions. Some models, Wrenformer in particular, also have a spike pointing upwards, which are materials actually close to the hull but predicted to be highly unstable by the model. These are false negatives, or missed needles in the haystack we're searching that is materials space.
 
 <!-- TODO maybe mention we consistently see deducting old MP corrections and applying 2020 scheme from MEGNEt e_form predictions increases MAE, no matter if paired with BOWSR, M3GNet, CHGNet or standalone -->
 

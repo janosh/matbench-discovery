@@ -199,7 +199,7 @@ def test_as_dict_handler() -> None:
 
 
 def test_df_wbm() -> None:
-    assert df_wbm.shape == (256963, 16)
+    assert df_wbm.shape == (256_963, 16)
     assert df_wbm.index.name == "material_id"
     assert set(df_wbm) > {"bandgap_pbe", "formula", "material_id"}
 
