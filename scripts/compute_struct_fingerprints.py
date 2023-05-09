@@ -36,7 +36,7 @@ data_path = {
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", 0))
 slurm_array_task_count = 100
 
-out_dir = f"{ROOT}/data/{data_name}/structure-fingerprints"
+out_dir = f"{ROOT}/data/{data_name}"
 os.makedirs(out_dir, exist_ok=True)
 
 slurm_vars = slurm_submit(
