@@ -6,7 +6,7 @@
 
 ## 🔨 &thinsp; Installation
 
-The recommended way to acquire the training and test sets for this benchmark is through our Python package [available on PyPI](https://pypi.org/project/{name}):
+To download the training and test sets for this benchmark, we recommend installing our [PyPI package](https://pypi.org/project/{name}):
 
 ```zsh
 pip install matbench-discovery
@@ -14,24 +14,25 @@ pip install matbench-discovery
 
 ## 📙 &thinsp; Usage
 
-This example script downloads the training and test data for training a model:
+When you access an attribute of the `DATA_FILES` class, it automatically downloads and caches the corresponding data file. For example:
 
 ```py
-from matbench_discovery.data import load
-from matbench_discovery.data import df_wbm, DATA_FILES
+from matbench_discovery.data import DATA_FILES, load
 
-# any subset of these keys can be passed to load()
+# available data files
 assert sorted(DATA_FILES) == [
-    "mp-computed-structure-entries",
-    "mp-elemental-ref-energies",
-    "mp-energies",
-    "mp-patched-phase-diagram",
-    "wbm-computed-structure-entries",
-    "wbm-initial-structures",
-    "wbm-summary",
+    "mp_computed_structure_entries",
+    "mp_elemental_ref_entries",
+    "mp_energies",
+    "mp_patched_phase_diagram",
+    "wbm_computed_structure_entries",
+    "wbm_cses_plus_init_structs",
+    "wbm_initial_structures",
+    "wbm_summary",
 ]
 
-df_wbm = load("wbm-summary", version="v1.0.0")
+# version defaults to latest, set a specific version to avoid breaking changes
+df_wbm = load("wbm_summary", version="1.0.0")
 
 assert df_wbm.shape == (256963, 15)
 
@@ -43,13 +44,14 @@ assert list(df_wbm) == [
     "e_form_per_atom_wbm",
     "e_above_hull_wbm",
     "bandgap_pbe",
+    "wyckoff_spglib",
     "uncorrected_energy_from_cse",
     "e_correction_per_atom_mp2020",
     "e_correction_per_atom_mp_legacy",
-    "e_above_hull_mp2020_corrected_ppd_mp",
     "e_form_per_atom_uncorrected",
     "e_form_per_atom_mp2020_corrected",
-    "wyckoff_spglib",
+    "e_above_hull_mp2020_corrected_ppd_mp",
+    "site_stats_fingerprint_init_final_norm_diff",
 ]
 ```
 
@@ -60,14 +62,16 @@ assert list(df_wbm) == [
 1. **`volume`**: Relaxed structure volume in cubic Angstrom
 1. **`uncorrected_energy`**: Raw VASP-computed energy
 1. **`e_form_per_atom_wbm`**: Original formation energy per atom from [WBM paper]
-1. **`e_hull_wbm`**: Original energy above the convex hull in (eV/atom) from [WBM paper]
+1. **`e_above_hull_wbm`**: Original energy above the convex hull in (eV/atom) from [WBM paper]
+1. **`wyckoff_spglib`**: Aflow label strings built from spacegroup and Wyckoff positions of the relaxed structure as computed by [spglib](https://spglib.readthedocs.io/en/latest/python-spglib.html?highlight=get_symmetry_dataset#get-symmetry-dataset).
 1. **`bandgap_pbe`**: PBE-level DFT band gap from [WBM paper]
-1. **`uncorrected_energy_from_cse`**: Should be the same as `uncorrected_energy`. There are 2 cases where the absolute difference reported in the summary file and in the computed structure entries exceeds 0.1 eV (`wbm-2-3218`, `wbm-1-56320`) which we attribute to rounding errors.
-1. **`e_form_per_atom_mp2020_corrected`**: Matbench Discovery takes these as ground truth for the formation energy. Includes MP2020 energy corrections (latest correction scheme at time of release).
+1. **`uncorrected_energy_from_cse`**: Uncorrected DFT energy stored in `ComputedStructureEntries`. Should be the same as `uncorrected_energy`. There are 2 cases where the absolute difference reported in the summary file and in the computed structure entries exceeds 0.1 eV (`wbm-2-3218`, `wbm-1-56320`) which we attribute to rounding errors.
+1. **`e_form_per_atom_uncorrected`**: Uncorrected DFT formation energy per atom in eV/atom.
+1. **`e_form_per_atom_mp2020_corrected`**: Matbench Discovery takes these as ground truth for the formation energy. The result of applying the [MP2020 energy corrections](https://pymatgen.org/pymatgen.entries.compatibility.html#pymatgen.entries.compatibility.MaterialsProject2020Compatibility) (latest correction scheme at time of release) to `e_form_per_atom_uncorrected`.
 1. **`e_correction_per_atom_mp2020`**: [`MaterialsProject2020Compatibility`](https://pymatgen.org/pymatgen.entries.compatibility.html#pymatgen.entries.compatibility.MaterialsProject2020Compatibility) energy corrections in eV/atom.
 1. **`e_correction_per_atom_mp_legacy`**: Legacy [`MaterialsProjectCompatibility`](https://pymatgen.org/pymatgen.entries.compatibility.html#pymatgen.entries.compatibility.MaterialsProjectCompatibility) energy corrections in eV/atom. Having both old and new corrections allows updating predictions from older models like MEGNet that were trained on MP formation energies treated with the old correction scheme.
 1. **`e_above_hull_mp2020_corrected_ppd_mp`**: Energy above hull distances in eV/atom after applying the MP2020 correction scheme. The convex hull in question is the one spanned by all ~145k Materials Project `ComputedStructureEntries`. Matbench Discovery takes these as ground truth for material stability. Any value above 0 is assumed to be an unstable/metastable material.
-<!-- TODO document remaining columns, or maybe drop them from df -->
+1. **`site_stats_fingerprint_init_final_norm_diff`**: The norm of the difference between the initial and final site fingerprints. This is a volume-independent measure of how much the structure changed during DFT relaxation. Uses the `matminer` [`SiteStatsFingerprint`](https://github.com/hackingmaterials/matminer/blob/33bf112009b67b108f1008b8cc7398061b3e6db2/matminer/featurizers/structure/sites.py#L21-L33) (v0.8.0).
 
 ## 📥 &thinsp; Direct Download
 

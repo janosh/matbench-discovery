@@ -54,8 +54,9 @@ def load(
     JSON which will be cached locally to cache_dir for faster re-loading unless
     cache_dir is set to None.
 
-    See matbench_discovery.data.DATA_FILES for recognized data keys. For descriptions,
-    see https://janosh.github.io/matbench-discovery/contribute#--direct-download.
+    See matbench_discovery.data.DATA_FILES for recognized data keys. See [here]
+    (https://janosh.github.io/matbench-discovery/contribute#--direct-download) for file
+    descriptions.
 
     Args:
         data_key (str): Which parts of the MP/WBM data to load. Must be one of

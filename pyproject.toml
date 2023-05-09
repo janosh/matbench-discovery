@@ -86,6 +86,8 @@ select = [
   "E",   # pycodestyle error
   "F",   # pyflakes
   "I",   # isort
+  "ICN", # flake8-import-conventions
+  "ISC", # flake8-implicit-str-concat
   "N",   # pep8-naming
   "PD",  # pandas-vet
   "PIE", # flake8-pie
@@ -94,7 +96,7 @@ select = [
   "PYI", # flakes8-pyi
   "Q",   # flake8-quotes
   "RET", # flake8-return
-  "RUF", # ruff
+  "RUF", # Ruff-specific rules
   "SIM", # flake8-simplify
   "TID", # tidy imports
   "UP",  # pyupgrade
