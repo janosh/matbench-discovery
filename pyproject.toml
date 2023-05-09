@@ -96,6 +96,7 @@ select = [
   "PYI", # flakes8-pyi
   "Q",   # flake8-quotes
   "RET", # flake8-return
+  "RSE", # flake8-raise
   "RUF", # Ruff-specific rules
   "SIM", # flake8-simplify
   "TID", # tidy imports
