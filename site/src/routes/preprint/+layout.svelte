@@ -1,25 +1,26 @@
 <script lang="ts">
   import { References } from '$lib'
+  import cite from '$root/citation.cff'
   import { pretty_num } from 'elementari/labels'
   import { references } from './references.yaml'
 
   export let data
 
-  const authors = data.authors.map(
+  const authors = cite.authors.map(
     (auth) => `${auth[`given-names`]} ${auth[`family-names`]}<sup>${auth.affil_key}</sup>`
   )
 </script>
 
-<h1>{data.title}<br /><small>{data.subtitle}</small></h1>
+<h1>{cite.title}<br /><small>{cite.subtitle}</small></h1>
 
 <address>
   <span>
     {@html authors.join(`, `)}
   </span>
   <span>
-    {@html data.affiliations.map((affil, idx) => `${idx + 1}. ${affil}`).join(`<br/>`)}
+    {@html cite.affiliations.map((affil, idx) => `${idx + 1}. ${affil}`).join(`<br/>`)}
   </span>
-  <span style="font-weight: lighter;">{data[`date-released`]}</span>
+  <span style="font-weight: lighter;">{cite[`date-released`]}</span>
 </address>
 
 <div>

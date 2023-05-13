@@ -49,7 +49,7 @@ slurm_vars = slurm_submit(
 
 
 # %%
-slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", 3))
+slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "3"))
 out_path = f"{out_dir}/m3gnet-preds-{slurm_array_task_id}.json.gz"
 
 if os.path.isfile(out_path):
