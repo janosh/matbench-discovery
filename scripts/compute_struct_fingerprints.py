@@ -33,7 +33,7 @@ data_path = {
     "mp": DATA_FILES.mp_computed_structure_entries,
 }[data_name]
 
-slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", 0))
+slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
 slurm_array_task_count = 100
 
 out_dir = f"{ROOT}/data/{data_name}"

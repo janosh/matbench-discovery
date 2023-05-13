@@ -51,7 +51,7 @@ slurm_vars = slurm_submit(
 
 
 # %%
-slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", 0))
+slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
 run_name = f"{job_name}-{slurm_array_task_id}"
 out_path = f"{out_dir}/{run_name}.csv.bz2"
 
