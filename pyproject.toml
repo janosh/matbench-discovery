@@ -114,7 +114,6 @@ ignore = [
   "PLC0414", # useless-import-alias
   "PLC1901", # compare-to-empty-string
   "PLR",     # pylint refactor
-  "PLW1508", # invalid-envvar-default
   "PLW2901", # redefined-loop-name
   "PT006",   # pytest-parametrize-names-wrong-type
   "PT011",   # pytest-raises-too-broad

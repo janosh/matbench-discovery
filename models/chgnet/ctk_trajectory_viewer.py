@@ -28,7 +28,7 @@ module_dir = os.path.dirname(__file__)
 # %%
 init_struct_col = "initial_structure"
 df_cse = pd.read_json(f"{module_dir}/wbm-chgnet-bad-relax.json.gz").set_index(
-    "material_id",
+    "material_id"
 )
 
 

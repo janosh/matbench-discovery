@@ -3,7 +3,7 @@ import { sveltekit } from '@sveltejs/kit/vite'
 import type { UserConfig } from 'vite'
 
 export default {
-  plugins: [sveltekit(), yaml()],
+  plugins: [sveltekit(), yaml({ extensions: [`.yml`, `.yaml`, `.cff`] })],
 
   server: {
     fs: { allow: [`../..`] }, // needed to import from $root
