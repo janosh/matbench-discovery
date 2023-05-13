@@ -92,7 +92,7 @@ def load(
 
     cache_path = f"{cache_dir}/{file}"
     if not os.path.isfile(cache_path):  # download from Figshare URL
-        url = file_urls[data_key]
+        url = file_urls[data_key][0]
         print(f"Downloading {data_key!r} from {url}")
         try:
             # ensure directory exists

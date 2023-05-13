@@ -1,4 +1,4 @@
-"""Compute t-SNE and UMAP projections of the WBM and MP datasets."""
+"""Compute t-SNE or UMAP projections of WBM and MP compositions."""
 
 
 # %%

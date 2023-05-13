@@ -67,7 +67,7 @@ def test_load(
 
     stdout, _stderr = capsys.readouterr()
 
-    assert f"Downloading {data_key!r} from {figshare_urls[data_key]}" in stdout
+    assert f"Downloading {data_key!r} from {figshare_urls[data_key][0]}" in stdout
 
     # check we called read_csv/read_json once for each data_name
     assert urlretrieve.call_count == 1
@@ -172,7 +172,7 @@ def test_load_no_mock(
     rel_path = getattr(type(DATA_FILES), file_key)
     cache_path = f"{tmp_path}/{rel_path}"
     assert (
-        f"Downloading {file_key!r} from {figshare_urls[file_key]}\nCached "
+        f"Downloading {file_key!r} from {figshare_urls[file_key][0]}\nCached "
         f"{file_key!r} to {cache_path!r}" in stdout
     )
 

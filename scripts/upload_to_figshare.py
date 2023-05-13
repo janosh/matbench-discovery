@@ -13,6 +13,7 @@ from typing import Any
 import requests
 import tomllib  # needs python 3.11
 from requests.exceptions import HTTPError
+from tqdm.auto import tqdm
 
 from matbench_discovery import ROOT
 from matbench_discovery.data import DATA_FILES
@@ -21,6 +22,7 @@ __author__ = "Janosh Riebesell"
 __date__ = "2023-04-27"
 
 with open(f"{ROOT}/site/.env") as file:
+    # TOKEN: length 128, alphanumeric (e.g. 271431c6a94ff7...)
     TOKEN = file.read().split("figshare_token=")[1].split("\n")[0]
 
 BASE_URL = "https://api.figshare.com/v2"
@@ -51,7 +53,7 @@ if os.path.isfile(file_urls_out_path):
 
 def make_request(method: str, url: str, data: Any = None, binary: bool = False) -> Any:
     """Make a token-authorized HTTP request to the Figshare API."""
-    headers = {"Authorization": "token " + TOKEN}
+    headers = {"Authorization": f"token {TOKEN}"}
     if data is not None and not binary:
         data = json.dumps(data)
     response = requests.request(method, url, headers=headers, data=data)
@@ -95,22 +97,20 @@ def upload_file_to_figshare(article_id: int, file_path: str) -> int:
     data = dict(name=os.path.basename(file_path), md5=md5, size=size)
     endpoint = f"{BASE_URL}/account/articles/{article_id}/files"
     result = make_request("POST", endpoint, data=data)
-    print(f"Initiated file upload: {result['location']}\n")
     file_info = make_request("GET", result["location"])
 
     # Upload parts
     url = file_info["upload_url"]
     result = make_request("GET", url)
     with open(file_path, "rb") as file:
-        for part in result["parts"]:
+        for part in tqdm(result["parts"], desc=file_path):
             # Upload part
             u_data = file_info.copy()
             u_data.update(part)
-            url = f'{u_data["upload_url"]}/{part["partNo"]}'
+            url = f"{u_data['upload_url']}/{part['partNo']}"
             file.seek(part["startOffset"])
             chunk = file.read(part["endOffset"] - part["startOffset"] + 1)
             make_request("PUT", url, data=chunk, binary=True)
-            print(f'\tUploaded part {part["partNo"]}')
 
     # Complete upload
     make_request("POST", f"{endpoint}/{file_info['id']}")
@@ -127,20 +127,30 @@ def main() -> int:
         "categories": list(CATEGORIES),
         "references": REFERENCES,
     }
-    article_id = create_article(metadata)
-    uploaded_files: dict[str, str] = {}
-    for key, file_path in DATA_FILES.items():
-        file_id = upload_file_to_figshare(article_id, file_path)
-        file_url = f"https://figshare.com/ndownloader/files/{file_id}"
-        uploaded_files[key] = file_url
+    try:
+        article_id = create_article(metadata)
+        uploaded_files: dict[str, tuple[str, str]] = {}
+        pbar = tqdm(DATA_FILES.items(), desc="Uploading to Figshare")
+        for key, file_path in pbar:
+            pbar.set_postfix(file=key)
+            file_id = upload_file_to_figshare(article_id, file_path)
+            file_url = f"https://figshare.com/ndownloader/files/{file_id}"
+            uploaded_files[key] = (file_url, file_path.split("/")[-1])
 
-    print("\nUploaded files:")
-    for file_path, file_url in uploaded_files.items():
-        print(f"{file_path}: {file_url}")
+        print("\nUploaded files:")
+        for file_path, (file_url, _) in uploaded_files.items():
+            print(f"{file_path}: {file_url}")
 
-    # write to JSON file
-    with open(file_urls_out_path, "w") as file:
-        json.dump(uploaded_files, file)
+        # write uploaded file keys mapped to their URLs to JSON
+        with open(file_urls_out_path, "w") as file:
+            json.dump(uploaded_files, file)
+    except Exception as exc:  # prompt to delete article if something went wrong
+        answer = ""
+        print(f"Encountered {exc=}")
+        while answer not in ("y", "n"):
+            answer = input("Delete article? [y/n] ")
+        if answer == "y":
+            make_request("DELETE", f"{BASE_URL}/account/articles/{article_id}")
 
     return 0
 
