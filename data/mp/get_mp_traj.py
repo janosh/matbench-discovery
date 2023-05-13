@@ -1,14 +1,20 @@
-"""Download all MP ionic steps on 2023-03-15."""
+"""Download all MP ionic steps using direct read-access to the mp_core DB.
+
+Gzipped JSON is ~15GB.
+On a good connection, takes about 15 min per batch * 140 batches = 35 h.
+"""
 
 
 # %%
 import os
+import subprocess
+from glob import glob
 
 import pandas as pd
 from emmet.core.tasks import TaskDoc
 from pymongo import MongoClient
 from pymongo.database import Database
-from tqdm import trange
+from tqdm import tqdm, trange
 
 from matbench_discovery import ROOT, today
 
@@ -36,8 +42,8 @@ ids_path = f"{module_dir}/2023-03-15-mp-task-ids.csv.bz2"
 fields = "task_id formula_pretty run_type nsites task_type tags completed_at".split()
 
 if os.path.isfile(ids_path):
-    print(f"Found existing list of task IDs to query at {ids_path=}")
-    df_tasks = pd.read_csv(ids_path).set_index("task_id")
+    print(f"Found existing list of task IDs to query at\n{ids_path=}")
+    df_tasks = pd.read_csv(ids_path, low_memory=False).set_index("task_id")
 else:
     print(f"Querying all task docs from {db_name}\n{fields=}.\nThis takes a while...")
     task_docs = sorted(
@@ -97,6 +103,18 @@ for start_idx in pbar:
 
 
 # %% inspect saved task docs for expected data
-df_10k = pd.read_json(
-    f"{module_dir}/mp-tasks/mp-1708653__mp-1735769.json.gz"
+df_batch = pd.read_json(
+    f"{module_dir}/mp-tasks/mp-531529__mp-568116.json.gz"
 ).set_index("task_id")
+
+print(f"{len(df_batch)=}")
+df_batch.head()
+
+
+# %% use gzip CLI to check all files for archive corruption
+for path in tqdm(glob(f"{module_dir}/mp-tasks/*.json.gz")):
+    try:
+        subprocess.run(["gzip", "-t", path], check=True)
+    except subprocess.CalledProcessError as exc:
+        print(f"{path} raised {exc.stderr}")
+        # os.remove(path)

@@ -1,10 +1,34 @@
 {
-  "mp_computed_structure_entries": "https://figshare.com/ndownloader/files/40344436",
-  "mp_elemental_ref_entries": "https://figshare.com/ndownloader/files/40387775",
-  "mp_energies": "https://figshare.com/ndownloader/files/40344448",
-  "mp_patched_phase_diagram": "https://figshare.com/ndownloader/files/40344451",
-  "wbm_computed_structure_entries": "https://figshare.com/ndownloader/files/40344463",
-  "wbm_initial_structures": "https://figshare.com/ndownloader/files/40344466",
-  "wbm_cses_plus_init_structs": "https://figshare.com/ndownloader/files/40344469",
-  "wbm_summary": "https://figshare.com/ndownloader/files/40407575"
+  "mp_computed_structure_entries": [
+    "https://figshare.com/ndownloader/files/40344436",
+    "2023-02-07-mp-computed-structure-entries.json.gz"
+  ],
+  "mp_elemental_ref_entries": [
+    "https://figshare.com/ndownloader/files/40387775",
+    "2023-02-07-mp-elemental-reference-entries.json.gz"
+  ],
+  "mp_energies": [
+    "https://figshare.com/ndownloader/files/40344448",
+    "2023-01-10-mp-energies.csv"
+  ],
+  "mp_patched_phase_diagram": [
+    "https://figshare.com/ndownloader/files/40344451",
+    "2023-02-07-ppd-mp.pkl.gz"
+  ],
+  "wbm_computed_structure_entries": [
+    "https://figshare.com/ndownloader/files/40344463",
+    "2022-10-19-wbm-computed-structure-entries.json.bz2"
+  ],
+  "wbm_initial_structures": [
+    "https://figshare.com/ndownloader/files/40344466",
+    "2022-10-19-wbm-init-structs.json.bz2"
+  ],
+  "wbm_cses_plus_init_structs": [
+    "https://figshare.com/ndownloader/files/40344469",
+    "2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
+  ],
+  "wbm_summary": [
+    "https://figshare.com/ndownloader/files/40407575",
+    "2022-10-19-wbm-summary.csv"
+  ]
 }
