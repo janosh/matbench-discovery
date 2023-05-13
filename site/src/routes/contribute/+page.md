@@ -1,5 +1,32 @@
 <script>
-  import { name, repository as repo, homepage } from "$site/package.json";
+  import { name, repository as repo, homepage } from "$site/package.json"
+  import figshare_urls from "$root/data/figshare/1.0.0.json"
+  import { Tooltip } from 'svelte-zoo'
+
+  const ppd_doc_url = `https://github.com/materialsproject/pymatgen/blob/v2023.5.10/pymatgen/analysis/phase_diagram.py#L1480-L1814`
+  const ppd_link = `<a href=${ppd_doc_url}>PatchedPhaseDiagram</a>`
+  const cse_doc_url = `https://github.com/materialsproject/pymatgen/blob/v2023.5.10/pymatgen/entries/computed_entries.py#L579-L722`
+  const cse_link = `<a href=${cse_doc_url}>ComputedStructureEntry</a>`
+
+  const descriptions = {
+    mp_computed_structure_entries:
+      `JSON-Serialized MP ${cse_link} objects containing relaxed structures and DFT final energies`,
+    mp_elemental_ref_entries: `Minimum energy ComputedEntry for each element in MP`,
+    mp_energies: `Materials Project formation energies and energies above convex hull`,
+    mp_patched_phase_diagram:
+      `${ppd_link} constructed from all MP ComputedStructureEntries`,
+    wbm_computed_structure_entries: `Materials Project computed structure entries`,
+    wbm_initial_structures: `Unrelaxed WBM structures`,
+    wbm_cses_plus_init_structs: `Both unrelaxed and DFT-relaxed WBM structures, the latter stored with their final VASP energies as ${cse_link}`,
+    wbm_summary:
+      `Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more.`,
+  }
+  const desc_keys = Object.keys(descriptions).sort()
+  const figshare_keys = Object.keys(figshare_urls).sort()
+  const missing = figshare_keys.filter((key) => !desc_keys.includes(key))
+  if (missing.length > 0) {
+    console.error(`descriptions must contain all figshare_urls keys, missing=${missing}`)
+  }
 </script>
 
 # How to contribute
@@ -75,15 +102,19 @@ assert list(df_wbm) == [
 
 ## 📥 &thinsp; Direct Download
 
-You can also download the data files directly from GitHub:
+You can also download the data files directly from Figshare:
 
-1. [`2022-10-19-wbm-summary.csv`]({repo}/blob/-/data/wbm/2022-10-19-wbm-summary.csv): Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more.
-1. [`2022-10-19-wbm-init-structs.json`]({repo}/blob/-/data/wbm/2022-10-19-wbm-init-structs.json): Unrelaxed WBM structures
-1. [`2022-10-19-wbm-cses.json`]({repo}/blob/-/data/wbm/2022-10-19-wbm-cses.json): Relaxed WBM structures along with final VASP energies
-1. [`2023-01-10-mp-energies.json.gz`]({repo}/blob/-/data/mp/2023-01-10-mp-energies.json.gz): Materials Project formation energies and energies above convex hull
-1. [`2023-02-07-mp-computed-structure-entries.json.gz`]({repo}/blob/-/data/mp/2023-02-07-mp-computed-structure-entries.json.gz): Materials Project computed structure entries
-1. [`2023-02-07-ppd-mp.pkl.gz`]({repo}/blob/-/data/mp/2023-02-07-ppd-mp.pkl.gz): [PatchedPhaseDiagram](https://pymatgen.org/pymatgen.analysis.phase_diagram.html#pymatgen.analysis.phase_diagram.PatchedPhaseDiagram) constructed from all MP ComputedStructureEntries
-1. [`2023-02-07-mp-elemental-reference-entries.json.gz`]({repo}/blob/-/data/mp/2023-02-07-mp-elemental-reference-entries.json.gz): Minimum energy PDEntries for each element present in the Materials Project
+<ol>
+  {#each Object.entries(figshare_urls) as [key, lst]}
+    {@const [href, file_name] = lst}
+    <li>
+      <Tooltip text={file_name}>
+        <a {href}>{key}</a>:
+      </Tooltip>
+      {@html descriptions[key]}
+    </li>
+  {/each}
+</ol>
 
 [wbm paper]: https://nature.com/articles/s41524-020-00481-6
 
