@@ -42,10 +42,11 @@ material_classes = {
     "hydrides": r".*H\d.*",
     "oxynitrides": r".*[ON]\d.*",
 }
+n_structs = 200
+
 for material_cls, pattern in material_classes.items():
-    df_oxides = df_preds[df_preds["formula"].str.match(pattern)]
-    n_structs = 100
-    df_plot = df_oxides.nlargest(n_structs, model_mean_err_col).round(2)
+    df_subset = df_preds[df_preds["formula"].str.match(pattern)]
+    df_plot = df_subset.nlargest(n_structs, model_mean_err_col).round(2)
 
     fig = df_plot.plot.scatter(
         x=each_true_col,
