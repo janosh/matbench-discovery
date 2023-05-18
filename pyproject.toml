@@ -81,7 +81,7 @@ universal = true
 target-version = "py39"
 select = [
   "B",   # flake8-bugbear
-  "C40", # flake8-comprehensions
+  "C4",  # flake8-comprehensions
   "D",   # pydocstyle
   "E",   # pycodestyle error
   "F",   # pyflakes

@@ -14,7 +14,7 @@
   import HistClfPredHullDistModels from '$figs/hist-clf-pred-hull-dist-models-4x2.svelte'
   import SpacegroupSunburstWbm from '$figs/spacegroup-sunburst-wbm.svelte'
   import SpacegroupSunburstWrenformerFailures from '$figs/spacegroup-sunburst-wrenformer-failures.svelte'
-  import ScatterLargestErrorsModelsMeanVsTrueHullDist from '$figs/scatter-largest-errors-models-mean-vs-true-hull-dist.svelte'
+  import LargestErrorScatterSelect from './largest-error-scatter-select.svelte'
   import EAboveHullScatterWrenformerFailures from '$figs/e-above-hull-scatter-wrenformer-failures.svelte'
   import ProtoCountsWrenformerFailures from '$figs/proto-counts-wrenformer-failures.svelte'
   import ElementPrevalenceVsError from '$figs/element-prevalence-vs-error.svelte'
@@ -99,7 +99,7 @@ Given its strong performance on batch 1, it is possible that given sufficiently 
 ## Largest Errors vs DFT Hull Distance
 
 {#if mounted}
-<ScatterLargestErrorsModelsMeanVsTrueHullDist />
+<LargestErrorScatterSelect />
 {/if}
 
 > @label:fig:scatter-largest-errors-models-mean-vs-true-hull-dist DFT vs predicted hull distance (average over all models) for the 200 largest error structures colored by model disagreement (as measured by standard deviation in hull distance predictions from different models) and sized by number of atoms in the structures. This plot shows that high-error predictions are biased towards predicting too small hull distance. This is unsurprising considering MP training data mainly consists of low-energy structure.<br>
