@@ -12,7 +12,7 @@
   export let current_model: string[] = [models[2]]
   export let manual_cbar_max: boolean = false
   export let normalized: boolean = true
-  export let cbar_max: number | null = 0.03
+  export let cbar_max: number | null = 0.3
 
   const test_set_std_key = Object.keys(per_elem_errors).find((key) =>
     key.includes(`Test set standard deviation`)
@@ -61,7 +61,7 @@ convex hull.
       disabled={!manual_cbar_max}
       bind:value={cbar_max}
       min={0.01}
-      max={0.15}
+      max={0.7}
       step={0.001}
     />
     {cbar_max}
