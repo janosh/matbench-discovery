@@ -104,6 +104,6 @@ Element counts for MP training set consisting of 146,323 `ComputedStructureEntri
 
 ## 📊 &thinsp; Symmetry Statistics
 
-With one exception, MP and WBM have diverse representation across all 7 crystal systems. In MP, monoclinic (23%) and orthorhombic (21%) are most prevalent. In WBM, orthorhombic and tetragonal each make up 20%. Triclinic crystals are notably almost absent from WBM at just 1% prevalence, but well represented in MP (15%). Combined with the higher share of cubic structures in WBM (19% vs 14%), WBM structures have overall higher symmetry. This should benefit a model like Wrenformer reliant on symmetries to encode coarse-grained structural features. See [SI](/si#spacegroup-prevalence-in-wrenformer-failure-cases) for a failure case of this featurization.
+Both the MP training and WBM test set have good coverage of all 7 crystal systems, triclinic crystals being the only notable exception at just 1% prevalence in WBM but still well represented in MP (15%). In MP, monoclinic (23%) and orthorhombic (21%) are most prevalent. In WBM, orthorhombic and tetragonal each make up 20%. Combined with the higher share of cubic structures in WBM (19% vs 14%), WBM structures have overall higher symmetry. This should benefit a model like Wrenformer reliant on symmetries to encode coarse-grained structural features. See [SI](/si#spacegroup-prevalence-in-wrenformer-failure-cases) for a failure case of this featurization.
 
 <slot name="spacegroup-sunbursts" />

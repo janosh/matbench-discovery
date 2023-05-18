@@ -243,7 +243,9 @@ We welcome further model submissions at
 
 Janosh Riebesell acknowledges support from the German Academic Scholarship Foundation ([Studienstiftung](https://wikipedia.org/wiki/Studienstiftung)) and gracious hosting as a visiting affiliate in the groups of Kristin Persson and Anubhav Jain.
 
-We would like to thank Jason Blake Gibson, Shyue Ping Ong, Chi Chen, Ekin Dogus Cubuk, Bowen Deng, Tian Xie and Ryota Tomioka for helpful discussions. We also thank Hai-Chen Wang and co-authors for providing the initial structures for the WBM data set @wang_predicting_2021.
+We would like to thank Jason Blake Gibson, Shyue Ping Ong, Chi Chen, Tian Xie, Bowen Deng, Peichen Zhong, Ekin Dogus Cubuk for helpful discussions. We also thank Hai-Chen Wang and co-authors for creating and freely providing the WBM data set @wang_predicting_2021.
+
+Thanks also to [@pbenner](https://github.com/pbenner) for [finding and reporting many bugs]({repo}/issues?q=is%3Aissue+author%3Apbenner+) in the data loading and caching routines prior to the v1 release.
 
 ## Author Contributions
 

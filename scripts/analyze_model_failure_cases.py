@@ -13,7 +13,7 @@ import plotly.express as px
 import plotly.graph_objs as go
 from pymatgen.core import Composition, Structure
 from pymatviz import count_elements, plot_structure_2d, ptable_heatmap_plotly
-from pymatviz.utils import add_identity_line, save_fig
+from pymatviz.utils import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import FIGS, ROOT
@@ -25,9 +25,7 @@ from matbench_discovery.preds import (
     df_metrics,
     df_preds,
     each_true_col,
-    model_mean_each_col,
     model_mean_err_col,
-    model_std_col,
 )
 
 __author__ = "Janosh Riebesell"
@@ -170,44 +168,6 @@ df_wbm[n_examp_for_rarest_elem_col] = [
     for formula in tqdm(df_wbm.formula)
 ]
 df_preds[n_examp_for_rarest_elem_col] = df_wbm[n_examp_for_rarest_elem_col]
-
-
-# %% scatter plot of largest model errors vs. DFT hull distance
-# while some points lie on a horizontal line of constant error, more follow the identity
-# line showing models are biased to predict low energies likely as a result of training
-# on MP which is highly low-energy enriched.
-# also possible models failed to learn whatever physics makes these materials highly
-# unstable
-n_structs = 200
-fig = (
-    df_preds.nlargest(n_structs, model_mean_err_col)
-    .round(2)
-    .plot.scatter(
-        x=each_true_col,
-        y=model_mean_each_col,
-        color=model_std_col,
-        size="n_sites",
-        backend="plotly",
-        hover_name="material_id",
-        hover_data=["formula"],
-        color_continuous_scale="Turbo",
-    )
-)
-# yanchor="bottom", y=1, xanchor="center", x=0.5, orientation="h", thickness=12
-fig.layout.coloraxis.colorbar.update(title_side="right", thickness=14)
-fig.layout.margin.update(l=0, r=30, b=0, t=30)
-add_identity_line(fig)
-fig.layout.title.update(
-    text=f"{n_structs} largest model errors: Predicted vs. DFT hull distance<br>"
-    "colored by model disagreement",
-    x=0.5,
-)
-# tried setting error_y=model_std_col but looks bad
-# fig.update_traces(error_y=dict(color="rgba(255,255,255,0.2)", width=3, thickness=2))
-fig.show()
-img_name = "scatter-largest-errors-models-mean-vs-true-hull-dist"
-save_fig(fig, f"{FIGS}/{img_name}.svelte")
-# save_fig(fig, f"{ROOT}/tmp/figs/{img_name}.pdf")
 
 
 # %% find materials that were misclassified by all models
