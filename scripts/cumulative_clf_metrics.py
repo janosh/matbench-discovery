@@ -12,7 +12,7 @@ will provide the best hit rate for the given budget.
 import pandas as pd
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, ROOT
+from matbench_discovery import FIGS, PDF_FIGS
 from matbench_discovery.plots import cumulative_precision_recall
 from matbench_discovery.preds import df_each_pred, df_metrics, df_preds, each_true_col
 
@@ -92,4 +92,4 @@ fig.show()
 img_name = "cumulative-clf-metrics"
 save_fig(fig, f"{FIGS}/{img_name}.svelte")
 # save_fig(fig, f"{ROOT}/tmp/figs/{img_name}.webp", scale=3)
-save_fig(fig, f"{ROOT}/paper/figures/{img_name}.pdf", width=720, height=370)
+save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=720, height=370)

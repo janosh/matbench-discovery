@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 from sklearn.dummy import DummyClassifier
 
-from matbench_discovery import FIGS, ROOT
+from matbench_discovery import FIGS, PDF_FIGS, ROOT
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.plots import df_to_svelte_table
@@ -141,7 +141,7 @@ for label, df, extra_hide_metrics in (
     )
 
     if pdfkit is not None:
-        out_pdf = f"{ROOT}/paper/figures/metrics-table{label}.pdf"
+        out_pdf = f"{PDF_FIGS}/metrics-table{label}.pdf"
         pdfkit.from_string(styler.to_html(), out_pdf)
         styler.to_html()
         # remove huge PDF margins

@@ -9,7 +9,7 @@ import numpy as np
 import plotly.express as px
 from pymatviz.utils import add_identity_line, bin_df_cols, save_fig
 
-from matbench_discovery import FIGS, ROOT
+from matbench_discovery import FIGS, PDF_FIGS
 from matbench_discovery.metrics import classify_stable
 from matbench_discovery.plots import clf_color_map, clf_colors, clf_labels
 from matbench_discovery.preds import (
@@ -227,7 +227,7 @@ fig.show()
 n_rows, n_cols, *_ = np.array(fig._validate_get_grid_ref(), object).shape
 fig_name = f"each-scatter-models-{n_rows}x{n_cols}"
 save_fig(fig, f"{FIGS}/{fig_name}.svelte")
-save_fig(fig, f"{ROOT}/paper/figures/{fig_name}.pdf")
+save_fig(fig, f"{PDF_FIGS}/{fig_name}.pdf")
 # save_fig(
 #     fig, f"{ROOT}/tmp/figs/{fig_name}.webp", scale=4, width=700, height=800
 # )
