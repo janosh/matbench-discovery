@@ -1,5 +1,5 @@
 <script lang="ts">
-  import MetricsTableMegnetUipCombos from '$figs/metrics-table-megnet-uip-combos.svelte'
+  import MetricsTableMegnetUipCombos from '$figs/metrics-table-uip-megnet-combos.svelte'
   import MetricsTableFirst10k from '$figs/metrics-table-first-10k.svelte'
   import RunTimeBars from '$figs/model-run-times-bar.svelte'
   import RocModels from '$figs/roc-models.svelte'
