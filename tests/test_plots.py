@@ -187,9 +187,10 @@ def test_df_to_pdf(tmp_path: Path, crop: bool, capsys: CaptureFixture[str]) -> N
     except Exception as exc:
         if pdfkit is None:
             assert "pdfkit not installed\n" in str(exc)  # noqa: PT017
+            return
         if pdfCropMargins is None:
             assert "cropPdfMargins not installed\n" in str(exc)  # noqa: PT017
-        return
+            return
 
     assert file_path.exists()
     stdout, stderr = capsys.readouterr()
