@@ -6,8 +6,6 @@ pandas-styled HTML table and a plotly figure.
 # %%
 from __future__ import annotations
 
-import os
-
 import numpy as np
 import pandas as pd
 from sklearn.dummy import DummyClassifier
@@ -15,25 +13,11 @@ from sklearn.dummy import DummyClassifier
 from matbench_discovery import FIGS, PDF_FIGS, ROOT
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.metrics import stable_metrics
-from matbench_discovery.plots import df_to_svelte_table
+from matbench_discovery.plots import df_to_pdf, df_to_svelte_table
 from matbench_discovery.preds import df_metrics, df_metrics_10k, each_true_col
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
-
-try:
-    # pdfkit used to export pandas Styler to PDF, requires:
-    # pip install pdfkit && brew install homebrew/cask/wkhtmltopdf
-    import pdfkit
-except ImportError:
-    pdfkit = None
-
-try:
-    # needed to auto-crop large white margins from PDF-exported styled dataframes
-    # pip install pdfCropMargins
-    from pdfCropMargins import crop as crop_pdf
-except ImportError:
-    crop_pdf = None
 
 
 # %% add dummy classifier results to df_metrics
@@ -139,17 +123,7 @@ for label, df, extra_hide_metrics in (
         inline_props="class='roomy'",
         styles="#T_ :is(td, th):nth-last-child(4) { border-left: 1px dotted white; }",
     )
-
-    if pdfkit is not None:
-        out_pdf = f"{PDF_FIGS}/metrics-table{label}.pdf"
-        pdfkit.from_string(styler.to_html(), out_pdf)
-        styler.to_html()
-        # remove huge PDF margins
-    if crop_pdf is not None and os.path.isfile(out_pdf):
-        out_path, exit_code, stdout, stderr = crop_pdf(
-            ["--percentRetain", "0", out_pdf]
-        )
-        os.replace(out_path, out_pdf)
+    df_to_pdf(styler, f"{PDF_FIGS}/metrics-table{label}.pdf")
 
 
 # %%
