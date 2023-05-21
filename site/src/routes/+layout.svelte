@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { goto } from '$app/navigation'
+  import { afterNavigate, goto } from '$app/navigation'
   import { page } from '$app/stores'
   import { Footer, Nav } from '$lib'
   import { repository } from '$site/package.json'
@@ -39,6 +39,13 @@
       return { label: route, action: () => goto(route) }
     }
   )
+  afterNavigate(({ to }) => {
+    if (to?.route.id == `/models`) {
+      document.documentElement.style.setProperty(`--main-max-width`, `90em`)
+    } else {
+      document.documentElement.style.setProperty(`--main-max-width`, `50em`)
+    }
+  })
 </script>
 
 <CmdPalette {actions} placeholder="Go to..." />
@@ -75,12 +82,6 @@
 <Footer />
 
 <style>
-  main {
-    margin: auto;
-    margin-bottom: 3em;
-    width: 100%;
-    max-width: 50em;
-  }
   a[href='/'] {
     font-size: 14pt;
     background-color: rgba(255, 255, 255, 0.1);

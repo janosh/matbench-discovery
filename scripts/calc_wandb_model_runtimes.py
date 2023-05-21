@@ -9,31 +9,19 @@ from __future__ import annotations
 import re
 from typing import Any
 
-import numpy as np
 import pandas as pd
 import plotly.express as px
 import requests
 import wandb
 import wandb.apis.public
 from pymatviz.utils import save_fig
-from sklearn.dummy import DummyClassifier
 from tqdm import tqdm
 
-from matbench_discovery import FIGS, ROOT, WANDB_PATH
-from matbench_discovery.data import DATA_FILES, df_wbm
-from matbench_discovery.metrics import stable_metrics
-from matbench_discovery.plots import df_to_svelte_table
-from matbench_discovery.preds import df_metrics, df_metrics_10k, df_preds, each_true_col
+from matbench_discovery import FIGS, PDF_FIGS, WANDB_PATH
+from matbench_discovery.preds import df_metrics, df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
-
-try:
-    # pdfkit used to export pandas Styler to PDF, requires:
-    # pip install pdfkit && brew install homebrew/cask/wkhtmltopdf
-    import pdfkit
-except ImportError:
-    pdfkit = None
 
 
 # %% wandb API queries for relevant model runs to compute train and test times from
@@ -104,10 +92,12 @@ for label, stats, raw_filters in (
             "Slurm Jobs": n_runs,
         }
 
-# test_stats["M3GNet + MEGNet"] = test_stats["M3GNet"].copy()
-# test_stats["M3GNet + MEGNet"][time_col] = (
-#     test_stats["MEGNet"][time_col] + test_stats["M3GNet"][time_col]
-# )
+if False:  # commented out due to not incl. M3GNet + MEGNet in main analysis
+    # add M3GNet and MEGNet run times for M3GNet + MEGNet
+    test_stats["M3GNet + MEGNet"] = test_stats["M3GNet"].copy()
+    test_stats["M3GNet + MEGNet"][time_col] = (
+        test_stats["MEGNet"][time_col] + test_stats["M3GNet"][time_col]
+    )
 test_stats["CGCNN+P"] = {}
 
 
@@ -119,126 +109,6 @@ df_stats = pd.concat(
     ],
 ).T
 df_stats[time_col] = df_stats.filter(like=time_col).sum(axis="columns")
-
-
-# %% add dummy classifier results to df_metrics
-dummy_clf = DummyClassifier(strategy="stratified", random_state=0)
-df_mp = pd.read_csv(DATA_FILES.mp_energies, index_col=0)
-dummy_clf.fit(np.zeros_like(df_mp.energy_above_hull), df_mp.energy_above_hull == 0)
-dummy_clf_preds = dummy_clf.predict(np.zeros(len(df_wbm)))
-true_clf = df_wbm[each_true_col] < 0
-each_true = df_wbm[each_true_col]
-
-dummy_metrics = stable_metrics(
-    each_true, np.array([1, -1])[dummy_clf_preds.astype(int)]
-)
-
-# important: regression metrics from dummy_clf are meaningless, we overwrite them with
-# correct values here. don't remove!
-dummy_metrics["DAF"] = 1
-dummy_metrics["R2"] = 0
-dummy_metrics["MAE"] = (each_true - each_true.mean()).abs().mean()
-dummy_metrics["RMSE"] = ((each_true - each_true.mean()) ** 2).mean() ** 0.5
-
-df_metrics["Dummy"] = dummy_metrics
-# add 'global' to dummy to make explicit that this is not dummy on first 10k most stable
-# predictions but on the whole dataset
-df_metrics_10k["Dummy"] = dummy_metrics
-
-
-# %%
-ontology = {
-    "CHGNet": ("S2EFSM", "IS2RE-SR", "UIP-GNN"),
-    "M3GNet": ("S2EFS", "IS2RE-SR", "UIP-GNN"),
-    "MEGNet": ("RS2RE", "IS2E", "GNN"),
-    "CGCNN": ("RS2RE", "IS2E", "GNN"),
-    "CGCNN+P": ("S2RE", "IS2RE", "GNN"),
-    "Wrenformer": ("RP2RE", "IP2E", "Transformer"),
-    "BOWSR + MEGNet": ("RS2RE", "IS2RE-BO", "BO+GNN"),
-    "Voronoi RF": ("RS2RE", "IS2E", "Fingerprint+RF"),
-    "Dummy": ("", "", "scikit-learn"),
-}
-ontology_cols = ["Trained", "Deployed", "Model Class"]
-df_ont = pd.DataFrame(ontology, index=ontology_cols)
-
-
-# %%
-# time_cols = list(df_stats.filter(like=time_col))
-# for col in time_cols:  # uncomment to include run times in metrics table
-R2_col = "R<sup>2</sup>"
-higher_is_better = {*f"DAF {R2_col} Precision Recall F1 Accuracy TPR TNR TP TN".split()}
-lower_is_better = {"MAE", "RMSE", "FPR", "FNR", "FP", "FN"}
-
-for label, df, hide_cols in (
-    # hide redundant metrics (TPR = Recall, FPR = 1 - TNR, FNR = 1 - TPR)
-    ("", df_metrics, []),
-    ("-first-10k", df_metrics_10k, "Accuracy".split()),
-):
-    hide_cols += "TP FN FP TN FNR FPR Recall Trained Deployed".split()  # type: ignore
-    df_table = pd.concat([df, df_ont]).rename(index={"R2": R2_col})
-    idx_set = {*df_table.index}
-    df_table.index.name = "Model"
-
-    styler = (
-        df_table.T.style.format(
-            dict.fromkeys("TP FN FP TN".split(), "{:,.0f}"),
-            precision=2,
-            na_rep="",
-        )
-        # .background_gradient(
-        #     cmap="viridis_r",
-        #     subset=[time_col],
-        #     gmap=np.log10(df_stats[time_col].to_numpy()),  # for log scaled color map
-        # )
-        .background_gradient(cmap="viridis", subset=list(higher_is_better & idx_set))
-        # reverse color map if lower=better
-        .background_gradient(cmap="viridis_r", subset=list(lower_is_better & idx_set))
-    )
-    styles = {
-        "": "font-family: sans-serif; border-collapse: collapse;",
-        "td, th": "border: none; padding: 4px 6px; white-space: nowrap;",
-        "th": "border: 1px solid; border-width: 1px 0; text-align: left;",
-    }
-    styler.set_table_styles([dict(selector=sel, props=styles[sel]) for sel in styles])
-    styler.set_uuid("")
-
-    styler.hide(hide_cols, axis=1)
-
-    #  export model metrics as styled HTML table and Svelte component
-    # draw dotted line between classification and regression metrics
-    df_to_svelte_table(
-        styler,
-        f"{FIGS}/metrics-table{label}.svelte",
-        inline_props="class='roomy'",
-        styles="#T_ :is(td, th):nth-last-child(4) { border-left: 1px dotted white; }",
-    )
-
-    if pdfkit is not None:
-        pdfkit.from_string(
-            styler.to_html(),
-            f"{ROOT}/paper/figures/metrics-table{label}.pdf",
-            options={
-                "margin-top": "0",
-                "margin-right": "0",
-                "margin-bottom": "0",
-                "margin-left": "0",
-                # fit page size to content
-                "page-width": f"{(len(styler.columns) + 1) * 8.3}",
-                "page-height": f"{(len(styler.index) + 1) * 5.5}",
-            },
-        )
-
-
-# %%
-# hide_rows = list(set(df_metrics) - set(df_metrics.T.F1.nlargest(6).index))
-# styler.hide(hide_rows)  # show only the best models by F1 score
-png_metrics = f"{ROOT}/tmp/figs/metrics-table.png"
-try:
-    import dataframe_image
-
-    dataframe_image.export(styler, png_metrics, dpi=300)
-except ImportError:
-    print("dataframe_image not installed, skipping png export")
 
 
 # %% write model metrics to json for use by the website
@@ -321,6 +191,6 @@ title = f"Total: {df_stats[time_col].sum():.0f} h"
 fig.layout.legend.update(x=0.98, y=0.98, xanchor="right", yanchor="top", title=title)
 fig.layout.xaxis.title = ""
 fig.layout.margin.update(l=0, r=0, t=0, b=0)
-bar_path = f"{FIGS}/model-run-times-bar.svelte"
-save_fig(fig, bar_path)
+save_fig(fig, f"{FIGS}/model-run-times-bar.svelte")
+save_fig(fig, f"{PDF_FIGS}/model-run-times-bar.pdf")
 fig.show()

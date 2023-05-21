@@ -6,7 +6,7 @@ batch in a single plot.
 # %%
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, ROOT, today
+from matbench_discovery import FIGS, PDF_FIGS, today
 from matbench_discovery.plots import plt, rolling_mae_vs_hull_dist
 from matbench_discovery.preds import df_each_pred, df_preds, e_form_col, each_true_col
 
@@ -54,30 +54,28 @@ for line in ax.lines:
 
 
 # %% plotly
-df_pivot = df_each_pred.pivot(columns=batch_col, values=model)
+for model in list(df_each_pred)[:-2]:
+    df_pivot = df_each_pred.pivot(columns=batch_col, values=model)
 
-# unstack two-level column index into new model column
-# df_pivot.stack(level=0, dropna=False)
+    fig, df_err, df_std = rolling_mae_vs_hull_dist(
+        e_above_hull_true=df_preds[each_true_col],
+        e_above_hull_errors=df_pivot,
+        # df_rolling_err=df_err,
+        # df_err_std=df_std,
+        backend="plotly",
+        show_dummy_mae=False,
+        with_sem=False,
+    )
+    fig.layout.legend.update(title=f"<b>{model}</b>", x=0.02, y=0.02)
+    fig.layout.margin.update(l=10, r=10, b=10, t=10)
+    fig.update_layout(hovermode="x unified", hoverlabel_bgcolor="black")
+    fig.update_traces(
+        hovertemplate="y=%{y:.3f} eV",
+        selector=lambda trace: trace.name.startswith("Batch"),
+    )
+    fig.show()
 
-fig, df_err, df_std = rolling_mae_vs_hull_dist(
-    e_above_hull_true=df_preds[each_true_col],
-    e_above_hull_errors=df_pivot,
-    # df_rolling_err=df_err,
-    # df_err_std=df_std,
-    backend="plotly",
-    show_dummy_mae=False,
-    with_sem=False,
-)
-fig.layout.legend.title = f"<b>{model}</b>"
-fig.update_layout(hovermode="x unified", hoverlabel_bgcolor="black")
-fig.update_traces(
-    hovertemplate="y=%{y:.3f} eV", selector=lambda trace: trace.name.startswith("Batch")
-)
-fig.show()
-
-
-# %%
-model_snake_case = model.lower().replace(" + ", "-").replace(" ", "-")
-img_path = f"{model_snake_case}-rolling-mae-vs-hull-dist-wbm-batches"
-save_fig(fig, f"{FIGS}/{img_path}.svelte")
-save_fig(fig, f"{ROOT}/tmp/figs/{img_path}.pdf")
+    model_snake_case = model.lower().replace(" + ", "-").replace(" ", "-")
+    img_path = f"rolling-mae-vs-hull-dist-wbm-batches-{model_snake_case}"
+    save_fig(fig, f"{FIGS}/{img_path}.svelte")
+    save_fig(fig, f"{PDF_FIGS}/{img_path}.pdf")

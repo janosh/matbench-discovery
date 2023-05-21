@@ -90,19 +90,17 @@ Our initial benchmark release includes 8 models. @Fig:metrics-table includes all
 
 1. **Voronoi+RF** @ward_including_2017 - A random forest trained to map a combination of composition-based Magpie features and structure-based relaxation-invariant Voronoi tessellation features (effective coordination numbers, structural heterogeneity, local environment properties, ...) to DFT formation energies.
 
-2. **Wrenformer** @goodall_rapid_2022 - For this benchmark, we introduce Wrenformer which is a variation on Wren @goodall_rapid_2022 constructed using standard QKV-Transformer blocks to reduce memory usage, allowing it to scale to structures with >16 Wyckoff positions.
+1. **Wrenformer** @goodall_rapid_2022 - For this benchmark, we introduce Wrenformer which is a variation on Wren @goodall_rapid_2022 constructed using standard QKV-Transformer blocks to reduce memory usage, allowing it to scale to structures with >16 Wyckoff positions.
 
-3. **CGCNN** @xie_crystal_2018 - The Crystal Graph Convolutional Neural Network (CGCNN) was the first neural network model to directly learn 8 different DFT-computed material properties from a graph representing the atoms and bonds in a periodic crystal.
+1. **CGCNN** @xie_crystal_2018 - The Crystal Graph Convolutional Neural Network (CGCNN) was the first neural network model to directly learn 8 different DFT-computed material properties from a graph representing the atoms and bonds in a periodic crystal.
 
-4. **CGCNN+P** @gibson_data-augmentation_2022 - This work proposes a simple, physically motivated structure perturbations to augment stock CGCNN's training data of relaxed structures with structures resembling unrelaxed ones but mapped to the same DFT final energy. Here we chose $P=5$, meaning the training set was augmented with 5 random perturbations of each relaxed MP structure mapped to the same target energy.
+1. **CGCNN+P** @gibson_data-augmentation_2022 - This work proposes a simple, physically motivated structure perturbations to augment stock CGCNN's training data of relaxed structures with structures resembling unrelaxed ones but mapped to the same DFT final energy. Here we chose $P=5$, meaning the training set was augmented with 5 random perturbations of each relaxed MP structure mapped to the same target energy.
 
-5. **MEGNet** @chen_graph_2019 - MatErials Graph Network is another GNN similar to CGCNN for material properties of relaxed structures that also updates the edge and global features (like pressure, temperature, entropy) in its message passing operation.
+1. **MEGNet** @chen_graph_2019 - MatErials Graph Network is another GNN similar to CGCNN for material properties of relaxed structures that also updates the edge and global features (like pressure, temperature, entropy) in its message passing operation.
 
-6. **M3GNet** @chen_universal_2022 - M3GNet is a GNN-based universal (as in full periodic table) interatomic potential (UIP) for materials trained on up to 3-body interactions in the initial, middle and final frame of MP DFT relaxations. The model takes the unrelaxed input and emulates structure relaxation before predicting energy for the pseudo-relaxed structure.
+1. **M3GNet** @chen_universal_2022 - M3GNet is a GNN-based universal (as in full periodic table) interatomic potential (UIP) for materials trained on up to 3-body interactions in the initial, middle and final frame of MP DFT relaxations. The model takes the unrelaxed input and emulates structure relaxation before predicting energy for the pseudo-relaxed structure.
 
-7. **M3GNet + MEGNet** @chen_universal_2022 @chen_graph_2019 - This combination of models uses M3GNet to relax initial structures and then passes it to MEGNet to predict the formation energy.
-
-8. **BOSWR + MEGNet** @zuo_accelerating_2021 - BOWSR uses a symmetry-constrained Bayesian optimizer (BO) with a surrogate energy model (here MEGNet) to perform an iterative exploration-exploitation-based search of the potential energy landscape. The high sample count needed to explore the PES with BO makes this by far the most expensive model.
+1. **BOSWR + MEGNet** @zuo_accelerating_2021 - BOWSR uses a symmetry-constrained Bayesian optimizer (BO) with a surrogate energy model (here MEGNet) to perform an iterative exploration-exploitation-based search of the potential energy landscape. The high sample count needed to explore the PES with BO makes this by far the most expensive model.
 
 ## Results
 
