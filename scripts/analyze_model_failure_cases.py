@@ -16,7 +16,7 @@ from pymatviz import count_elements, plot_structure_2d, ptable_heatmap_plotly
 from pymatviz.utils import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import FIGS, ROOT
+from matbench_discovery import FIGS, PDF_FIGS, ROOT
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.metrics import classify_stable
 from matbench_discovery.preds import (
@@ -73,9 +73,7 @@ for good_or_bad, init_or_final in itertools.product(
             f"{idx}. {formula} (spg={spg_num})\n{mat_id} {error=:.2f}",
             fontweight="bold",
         )
-    out_path = (
-        f"{ROOT}/tmp/figs/{good_or_bad}-{len(errs)}-structures-{init_or_final}.webp"
-    )
+    out_path = f"{PDF_FIGS}/{good_or_bad}-{len(errs)}-structures-{init_or_final}.webp"
     # fig.savefig(out_path, dpi=300)
 
 
@@ -306,7 +304,7 @@ fig.layout.yaxis.title = "|E<sub>above hull</sub> error| (eV/atom)"
 fig.show()
 
 save_fig(fig, f"{FIGS}/largest-fp-diff-each-error-models.svelte")
-# save_fig(fig, f"{ROOT}/tmp/figs/large-fp-diff-vs-each-error.webp", scale=2)
+save_fig(fig, f"{PDF_FIGS}/large-fp-diff-vs-each-error.pdf")
 
 
 # %%
@@ -329,7 +327,7 @@ fig = px.scatter(
 )
 fig.show()
 
-save_fig(fig, f"{ROOT}/tmp/figs/tsne-2d-composition-by-wbm-step-bandgap.png", scale=3)
+save_fig(fig, f"{PDF_FIGS}/tsne-2d-composition-by-wbm-step-bandgap.png", scale=3)
 
 
 # %% violin plot of EACH error for largest norm-diff FP structures for each model

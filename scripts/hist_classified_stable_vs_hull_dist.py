@@ -11,7 +11,7 @@ from typing import Final
 
 from pymatviz.utils import save_fig
 
-from matbench_discovery import ROOT
+from matbench_discovery import PDF_FIGS
 from matbench_discovery.data import df_wbm
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist
 from matbench_discovery.preds import df_each_pred, each_true_col
@@ -48,4 +48,4 @@ if backend == "plotly":
 # %%
 img_name = f"hist-clf-{which_energy}-hull-dist-{model_name}"
 # save_fig(fig, f"{FIGS}/{img_name}.svelte")
-save_fig(fig, f"{ROOT}/tmp/figs/{img_name}.pdf")
+save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

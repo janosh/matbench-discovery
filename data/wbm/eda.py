@@ -12,7 +12,7 @@ from pymatviz import (
 )
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, ROOT, today
+from matbench_discovery import FIGS, PDF_FIGS, ROOT, today
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.energy import mp_elem_reference_entries
@@ -184,6 +184,7 @@ for symbol, e_per_atom, num, *_ in df_ref.itertuples(index=False):
 fig.show()
 
 save_fig(fig, f"{FIGS}/mp-elemental-ref-energies.svelte")
+save_fig(fig, f"{PDF_FIGS}/mp-elemental-ref-energies.pdf")
 
 
 # %% plot 2d and 3d t-SNE projections of one-hot encoded element vectors summed by
@@ -255,6 +256,7 @@ fig = spacegroup_sunburst(df_wbm[spg_col], width=350, height=350, show_counts="p
 fig.layout.title.update(text="WBM Spacegroup Sunburst", x=0.5, font_size=14)
 fig.show()
 save_fig(fig, f"{FIGS}/spacegroup-sunburst-wbm.svelte")
+save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-wbm.pdf")
 
 
 # %%
@@ -262,6 +264,7 @@ fig = spacegroup_sunburst(df_mp[spg_col], width=350, height=350, show_counts="pe
 fig.layout.title.update(text="MP Spacegroup Sunburst", x=0.5, font_size=14)
 fig.show()
 save_fig(fig, f"{FIGS}/spacegroup-sunburst-mp.svelte")
+save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-mp.pdf")
 # would be good to have consistent order of crystal systems between sunbursts but not
 # controllable yet
 # https://github.com/plotly/plotly.py/issues/4115

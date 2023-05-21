@@ -27,6 +27,9 @@
   --sms-border: 0.1px solid gray;
   --sms-focus-border: 0.1px solid white;
   --sms-active-color: var(--blue);
+
+  /* can be increased on pages without much text like /models */
+  --main-max-width: 50em;
 }
 html {
   scroll-behavior: smooth;
@@ -48,6 +51,10 @@ main {
   flex: 1;
   container-type: inline-size;
   box-sizing: border-box;
+  margin: auto;
+  margin-bottom: 3em;
+  width: 100%;
+  max-width: var(--main-max-width);
 }
 @media (max-width: 60em) {
   main {
@@ -172,7 +179,7 @@ kbd {
 aside.toc.desktop {
   position: fixed;
   top: 3em;
-  left: calc(50vw + 50em / 2);
+  left: calc(50vw + var(--main-max-width) / 2);
   max-width: 16em;
 }
 
@@ -196,10 +203,6 @@ caption {
 }
 :target {
   animation: highlight-scroll-target 3s;
-}
-
-.pull-left {
-  margin-left: calc(0.8 * (-50vw + 50cqw));
 }
 
 sup {

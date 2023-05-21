@@ -149,10 +149,12 @@ for model in PRED_FILES:
 df_metrics = df_metrics.round(3).sort_values("F1", axis=1, ascending=False)
 df_metrics_10k = df_metrics_10k.round(3).sort_values("F1", axis=1, ascending=False)
 
+models = list(df_metrics.T.MAE.sort_values().index)
+
 
 # dataframe of all models' energy above convex hull (EACH) predictions (eV/atom)
 df_each_pred = pd.DataFrame()
-for model in df_metrics.T.MAE.sort_values().index:
+for model in models:
     df_each_pred[model] = (
         df_preds[each_true_col] + df_preds[model] - df_preds[e_form_col]
     )
@@ -166,7 +168,7 @@ df_each_pred[model_mean_each_col] = df_preds[model_mean_each_col] = df_each_pred
 
 # dataframe of all models' errors in their EACH predictions (eV/atom)
 df_each_err = pd.DataFrame()
-for model in df_metrics.T.MAE.sort_values().index:
+for model in models:
     df_each_err[model] = df_preds[model] - df_preds[e_form_col]
 
 df_each_err[model_mean_err_col] = df_preds[model_mean_err_col] = df_each_err.abs().mean(

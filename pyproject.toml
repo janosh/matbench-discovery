@@ -66,6 +66,7 @@ running-models = [
 ]
 3d-structures = ["crystaltoolkit"]
 fetch-data = ["gdown"]
+df-pdf-export = ["pdfCropMargins", "pdfkit"]
 
 [tool.setuptools.packages.find]
 include = ["matbench_discovery*"]
@@ -84,7 +85,9 @@ select = [
   "C4",  # flake8-comprehensions
   "D",   # pydocstyle
   "E",   # pycodestyle error
+  "EXE", # flake8-executable
   "F",   # pyflakes
+  "FLY", # flynt
   "I",   # isort
   "ICN", # flake8-import-conventions
   "ISC", # flake8-implicit-str-concat

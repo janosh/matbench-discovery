@@ -8,7 +8,7 @@ import pandas as pd
 from crystal_toolkit.helpers.utils import hook_up_fig_with_struct_viewer
 from pymatviz.utils import add_identity_line, save_fig
 
-from matbench_discovery import FIGS
+from matbench_discovery import FIGS, PDF_FIGS
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.preds import (
     df_preds,
@@ -31,6 +31,8 @@ __date__ = "2023-02-15"
 
 material_classes = {
     "all": r".*",
+    "lanthanides": r".*(La|Ce|Pr|Nd|Pm|Sm|Eu|Gd|Tb|Dy|Ho|Er|Tm|Yb|Lu)\d.*",
+    "actinides": r".*(Ac|Th|Pa|U|Np|Pu|Am|Cm|Bk|Cf|Es|Fm|Md|No|Lr)\d.*",
     "oxides": r".*O\d.*",
     "nitrides": r".*N\d.*",
     "sulfides": r".*S\d.*",
@@ -57,6 +59,8 @@ for material_cls, pattern in material_classes.items():
         hover_name="material_id",
         hover_data=["formula"],
         color_continuous_scale="Turbo",
+        range_x=[-0.5, 4],
+        range_y=[-0.5, 4],
         # range_color=[0, df_plot[model_std_col].max()],
     )
     # for horizontal colorbar
@@ -76,7 +80,7 @@ for material_cls, pattern in material_classes.items():
     fig.show()
     img_name = f"scatter-largest-errors-models-mean-vs-true-hull-dist-{material_cls}"
     save_fig(fig, f"{FIGS}/{img_name}.svelte")
-    # save_fig(fig, f"{ROOT}/tmp/figs/{img_name}.pdf")
+    save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
 
 
 # %%

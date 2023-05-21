@@ -8,7 +8,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from pymatgen.core import Structure
 from pymatviz import density_scatter, plot_structure_2d, ptable_heatmap_plotly
+from pymatviz.utils import save_fig
 
+from matbench_discovery import PDF_FIGS
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.preds import PRED_FILES
@@ -89,4 +91,4 @@ for idx, (ax, row) in enumerate(
     id = row.Index
     ax.set_title(f"{idx}. {formula} (spg={spg_num})\n{id}", fontweight="bold")
 
-# fig.savefig(f"{ROOT}/tmp/figs/chgnet-bad-relax-structures.webp", dpi=300)
+save_fig(fig, f"{PDF_FIGS}/chgnet-bad-relax-structures.pdf")

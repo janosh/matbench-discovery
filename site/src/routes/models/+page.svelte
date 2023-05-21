@@ -46,7 +46,7 @@
   }
 </script>
 
-<div class="pull-left">
+<div>
   <h1>Models</h1>
 
   <span>
@@ -95,10 +95,10 @@
   </ol>
 </div>
 
-<div class="pull-left" style="margin-top: 6em;">
+<div style="margin-top: 6em;">
   <h2>Per-Element Model Error Heatmaps</h2>
 
-  <ElementErrorsPtableHeatmap class="pull-left" />
+  <ElementErrorsPtableHeatmap />
 </div>
 
 <style>

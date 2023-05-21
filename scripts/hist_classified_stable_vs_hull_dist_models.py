@@ -10,7 +10,7 @@ from typing import Final
 
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, ROOT, today
+from matbench_discovery import FIGS, PDF_FIGS, today
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist, plt
 from matbench_discovery.preds import df_metrics, df_preds, e_form_col, each_true_col
 
@@ -40,13 +40,15 @@ df_melt[each_pred_col] = (
 
 # %%
 backend: Final = "plotly"
-cols = 4
-rows = math.ceil(len(models) // cols)
+n_cols = 4
+n_rows = math.ceil(len(models) // n_cols)
 which_energy: Final = "pred"
 kwds = (
-    dict(facet_col=facet_col, facet_col_wrap=cols, category_orders={facet_col: models})
+    dict(
+        facet_col=facet_col, facet_col_wrap=n_cols, category_orders={facet_col: models}
+    )
     if backend == "plotly"
-    else dict(by=facet_col, figsize=(20, 20), layout=(rows, cols), bins=500)
+    else dict(by=facet_col, figsize=(20, 20), layout=(n_rows, n_cols), bins=500)
 )
 
 fig = hist_classified_stable_vs_hull_dist(
@@ -109,8 +111,6 @@ else:
 
 
 # %%
-img_name = f"hist-clf-{which_energy}-hull-dist-models-{rows}x{cols}"
+img_name = f"hist-clf-{which_energy}-hull-dist-models-{n_rows}x{n_cols}"
 save_fig(fig, f"{FIGS}/{img_name}.svelte")
-n_models = len(fig.layout.annotations)
-# save_fig(fig, f"{ROOT}/tmp/figs/{img_name}.webp", scale=3, height=100 * n_models)
-save_fig(fig, f"{ROOT}/tmp/figs/{img_name}.pdf", width=1000)
+save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=n_cols * 220, height=n_rows * 220)

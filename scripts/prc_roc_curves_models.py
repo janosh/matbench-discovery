@@ -10,9 +10,9 @@ from pymatviz.utils import save_fig
 from sklearn.metrics import auc, precision_recall_curve, roc_curve
 from tqdm import tqdm
 
-from matbench_discovery import FIGS
+from matbench_discovery import FIGS, PDF_FIGS
 from matbench_discovery import plots as plots
-from matbench_discovery.preds import df_each_pred, df_preds, each_true_col
+from matbench_discovery.preds import df_each_pred, df_preds, each_true_col, models
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-01-30"
@@ -27,7 +27,7 @@ color_col = "Stability Threshold"
 # %%
 df_roc = pd.DataFrame()
 
-for model in (pbar := tqdm(list(df_each_pred), desc="Calculating ROC curves")):
+for model in (pbar := tqdm(models, desc="Calculating ROC curves")):
     pbar.set_postfix_str(model)
     na_mask = df_preds[each_true_col].isna() | df_each_pred[model].isna()
     y_true = (df_preds[~na_mask][each_true_col] <= 0).astype(int)
@@ -85,6 +85,7 @@ fig.show()
 
 # %%
 save_fig(fig, f"{FIGS}/roc-models.svelte")
+save_fig(fig, f"{PDF_FIGS}/roc-models.pdf")
 
 
 # %%

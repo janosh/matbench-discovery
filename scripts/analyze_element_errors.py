@@ -12,7 +12,7 @@ from pymatviz import count_elements, ptable_heatmap_plotly
 from pymatviz.utils import bin_df_cols, df_ptable, save_fig
 from tqdm import tqdm
 
-from matbench_discovery import FIGS, MODELS
+from matbench_discovery import FIGS, MODELS, PDF_FIGS
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.preds import (
     df_each_err,
@@ -187,8 +187,8 @@ fig.layout.title.update(xanchor="center", x=0.5)
 fig.layout.legend.update(x=1, y=1, xanchor="right", yanchor="top", title="")
 fig.show()
 
-save_fig(fig, f"{FIGS}/element-prevalence-vs-error.svelte")
-# save_fig(fig, f"{ROOT}/tmp/figs/element-prevalence-vs-error.pdf")
+# save_fig(fig, f"{FIGS}/element-prevalence-vs-error.svelte")
+save_fig(fig, f"{PDF_FIGS}/element-prevalence-vs-error.pdf")
 
 
 # %% plot EACH errors against least prevalent element in structure (by occurrence in

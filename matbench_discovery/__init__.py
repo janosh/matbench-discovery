@@ -5,12 +5,12 @@ import sys
 from datetime import datetime
 
 ROOT = os.path.dirname(os.path.dirname(__file__))  # repo root directory
-FIGS = f"{ROOT}/site/src/figs"  # directory to store interactive figures
+FIGS = f"{ROOT}/site/src/figs"  # directory for interactive figures
 MODELS = f"{ROOT}/site/src/routes/models"  # directory to write model analysis
 FIGSHARE = f"{ROOT}/data/figshare"
-TMP_FIGS = f"{ROOT}/tmp/figs"  # directory to store temporary figures
+PDF_FIGS = f"{ROOT}/paper/figs"  # directory for light-themed PDF figures
 
-for directory in [FIGS, MODELS, FIGSHARE, TMP_FIGS]:
+for directory in [FIGS, MODELS, FIGSHARE, PDF_FIGS]:
     os.makedirs(directory, exist_ok=True)
 
 # whether a currently running slurm job is in debug mode

@@ -5,8 +5,8 @@
   import { MultiSelect } from 'svelte-multiselect'
   import per_elem_errors from './per-element-model-each-errors.json'
 
-  export let color_scale = [`Inferno`]
-  export let active_element: ChemicalElement
+  export let color_scale: string[] = [`Inferno`]
+  export let active_element: ChemicalElement | null = null
   // $: active_counts = elem_counts[filter]
   export let models: string[] = Object.keys(per_elem_errors)
   export let current_model: string[] = [models[2]]
