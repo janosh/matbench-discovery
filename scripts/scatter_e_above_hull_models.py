@@ -85,7 +85,7 @@ fig.update_layout(legend=legend)
 add_identity_line(fig)
 fig.show()
 
-img_path = f"{FIGS}/e-form-scatter-models"
+img_name = f"{FIGS}/e-form-scatter-models"
 # save_fig(fig, f"{img_path}.svelte")
 
 
@@ -112,7 +112,7 @@ fig.update_layout(legend=legend)
 add_identity_line(fig)
 fig.show()
 
-img_path = f"{FIGS}/e-above-hull-scatter-models"
+img_name = f"{FIGS}/e-above-hull-scatter-models"
 # save_fig(fig, f"{img_path}.svelte")
 
 
@@ -257,5 +257,6 @@ fig.add_shape(
 )
 fig.show()
 
-img_path = f"{FIGS}/e-above-hull-scatter-wrenformer-failures"
-save_fig(fig, f"{img_path}.svelte")
+img_name = "e-above-hull-scatter-wrenformer-failures"
+# save_fig(fig, f"{FIGS}/{img_name}.svelte")
+save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

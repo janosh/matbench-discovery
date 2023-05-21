@@ -17,7 +17,7 @@ import wandb.apis.public
 from pymatviz.utils import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import FIGS, WANDB_PATH
+from matbench_discovery import FIGS, PDF_FIGS, WANDB_PATH
 from matbench_discovery.preds import df_metrics, df_preds
 
 __author__ = "Janosh Riebesell"
@@ -191,6 +191,6 @@ title = f"Total: {df_stats[time_col].sum():.0f} h"
 fig.layout.legend.update(x=0.98, y=0.98, xanchor="right", yanchor="top", title=title)
 fig.layout.xaxis.title = ""
 fig.layout.margin.update(l=0, r=0, t=0, b=0)
-bar_path = f"{FIGS}/model-run-times-bar.svelte"
-save_fig(fig, bar_path)
+save_fig(fig, f"{FIGS}/model-run-times-bar.svelte")
+save_fig(fig, f"{PDF_FIGS}/model-run-times-bar.pdf")
 fig.show()
