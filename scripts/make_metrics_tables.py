@@ -123,7 +123,10 @@ for label, df, extra_hide_metrics in (
         inline_props="class='roomy'",
         styles="#T_ :is(td, th):nth-last-child(4) { border-left: 1px dotted white; }",
     )
-    df_to_pdf(styler, f"{PDF_FIGS}/metrics-table{label}.pdf")
+    try:
+        df_to_pdf(styler, f"{PDF_FIGS}/metrics-table{label}.pdf")
+    except ImportError as exc:
+        print(f"df_to_pdf failed: {exc}")
 
 
 # %%
