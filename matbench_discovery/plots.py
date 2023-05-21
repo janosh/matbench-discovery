@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import os
 from collections import defaultdict
 from collections.abc import Sequence
 from pathlib import Path
@@ -819,7 +820,7 @@ def df_to_svelte_table(
     """Convert a pandas Styler to a svelte table.
 
     Args:
-        styler (Styler): Styler object to convert.
+        styler (Styler): Styler object to export.
         file_path (str): Path to the file to write the svelte table to.
         inline_props (str): Inline props to pass to the table element.
         styles (str): CSS rules to add to the table styles.
@@ -833,11 +834,49 @@ def df_to_svelte_table(
 
     <table use:sortable {inline_props} {{...$$props}}
     """
-
-    html_table = (
-        styler.to_html(**kwargs)
-        .replace("<table", script)
-        .replace("</style>", f"{styles}</style>")
-    )
+    html_table = styler.to_html(**kwargs).replace("<table", script)
+    styled_table = html_table.replace("</style>", f"{styles}</style>")
     with open(file_path, "w") as file:
-        file.write(html_table)
+        file.write(styled_table)
+
+
+def df_to_pdf(
+    styler: Styler, file_path: str | Path, crop: bool = True, **kwargs: Any
+) -> None:
+    """Export a pandas Styler to PDF.
+
+    Args:
+        styler (Styler): Styler object to export.
+        file_path (str): Path to save the PDF to. Requires pdfkit.
+        crop (bool): Whether to crop the PDF margins. Requires pdfCropMargins. Defaults
+            to True.
+        **kwargs: Keyword arguments passed to Styler.to_html().
+    """
+    try:
+        # pdfkit used to export pandas Styler to PDF, requires:
+        # pip install pdfkit && brew install homebrew/cask/wkhtmltopdf
+        import pdfkit
+    except ImportError as exc:
+        raise ImportError(
+            "pdfkit not installed\nrun pip install pdfkit && brew install "
+            "homebrew/cask/wkhtmltopdf"
+        ) from exc
+
+    try:
+        # needed to auto-crop large white margins from PDF
+        # pip install pdfCropMargins
+        from pdfCropMargins import crop as crop_pdf
+    except ImportError as exc:
+        raise ImportError(
+            "pdfCropMargins not installed\nrun pip install pdfCropMargins.\n"
+        ) from exc
+
+    pdfkit.from_string(styler.to_html(**kwargs), file_path)
+    try:
+        # Remove PDF margins
+        cropped_file_path, _exit_code, _stdout, _stderr = crop_pdf(
+            ["--percentRetain", "0", file_path]
+        )
+        os.replace(cropped_file_path, file_path)
+    except Exception as exc:
+        raise RuntimeError("Error cropping PDF margins") from exc
