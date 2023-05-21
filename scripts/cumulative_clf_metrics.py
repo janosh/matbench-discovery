@@ -91,5 +91,4 @@ fig.show()
 # %%
 img_name = "cumulative-clf-metrics"
 save_fig(fig, f"{FIGS}/{img_name}.svelte")
-# save_fig(fig, f"{ROOT}/tmp/figs/{img_name}.webp", scale=3)
 save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=720, height=370)

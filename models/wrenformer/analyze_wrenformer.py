@@ -8,7 +8,7 @@ from pymatviz import spacegroup_hist, spacegroup_sunburst
 from pymatviz.ptable import ptable_heatmap_plotly
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, PDF_FIGS, ROOT
+from matbench_discovery import FIGS, PDF_FIGS
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import df_to_pdf, df_to_svelte_table
 from matbench_discovery.preds import df_each_pred, df_preds, each_true_col
@@ -45,7 +45,7 @@ df_mp.isopointal_proto_from_aflow.value_counts().head(12)
 # %%
 ax = spacegroup_hist(df_bad[spg_col])
 ax.set_title(f"Spacegroup hist for {title}", y=1.15)
-# save_fig(ax, f"{ROOT}/tmp/figs/spacegroup-hist-{model}-failures.png", dpi=300)
+save_fig(ax, f"{PDF_FIGS}/spacegroup-hist-{model.lower()}-failures.pdf")
 
 
 # %%
@@ -82,8 +82,8 @@ df_to_pdf(styler, f"{PDF_FIGS}/proto-counts-{model}-failures.pdf")
 fig = spacegroup_sunburst(df_bad[spg_col], width=350, height=350)
 fig.layout.title.update(text=f"Spacegroup sunburst for {title}", x=0.5, font_size=14)
 fig.show()
-# save_fig(fig, f"{ROOT}/tmp/figs/spacegroup-sunburst-{model}-failures.png", scale=3)
-save_fig(fig, f"{FIGS}/spacegroup-sunburst-{model}-failures.svelte")
+save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-{model.lower()}-failures.pdf")
+# save_fig(fig, f"{FIGS}/spacegroup-sunburst-{model}-failures.svelte")
 
 
 # %%
@@ -91,4 +91,4 @@ fig = ptable_heatmap_plotly(df_bad.formula)
 fig.layout.title = f"Elements in {title}"
 fig.layout.margin = dict(l=0, r=0, t=50, b=0)
 fig.show()
-save_fig(fig, f"{ROOT}/tmp/figs/elements-{model.lower()}-failures.pdf")
+save_fig(fig, f"{PDF_FIGS}/elements-{model.lower()}-failures.pdf")

@@ -55,5 +55,4 @@ else:
 # %%
 img_name = "rolling-mae-vs-hull-dist-models"
 save_fig(fig, f"{FIGS}/{img_name}.svelte")
-# save_fig(fig, f"{ROOT}/tmp/figs/{img_name}.webp", scale=3)
 save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=520, height=350)

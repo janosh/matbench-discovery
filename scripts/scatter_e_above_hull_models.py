@@ -228,9 +228,6 @@ n_rows, n_cols, *_ = np.array(fig._validate_get_grid_ref(), object).shape
 fig_name = f"each-scatter-models-{n_rows}x{n_cols}"
 save_fig(fig, f"{FIGS}/{fig_name}.svelte")
 save_fig(fig, f"{PDF_FIGS}/{fig_name}.pdf")
-# save_fig(
-#     fig, f"{ROOT}/tmp/figs/{fig_name}.webp", scale=4, width=700, height=800
-# )
 
 
 # %%

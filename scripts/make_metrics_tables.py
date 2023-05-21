@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from sklearn.dummy import DummyClassifier
 
-from matbench_discovery import FIGS, PDF_FIGS, ROOT
+from matbench_discovery import FIGS, PDF_FIGS
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.plots import df_to_pdf, df_to_svelte_table
@@ -132,7 +132,7 @@ for label, df, extra_hide_metrics in (
 # %%
 # hide_rows = list(set(df_metrics) - set(df_metrics.T.F1.nlargest(6).index))
 # styler.hide(hide_rows)  # show only the best models by F1 score
-png_metrics = f"{ROOT}/tmp/figs/metrics-table.png"
+png_metrics = f"{PDF_FIGS}/metrics-table.png"
 try:
     import dataframe_image
 
