@@ -10,7 +10,7 @@
 
 <summary>
 
-We present a new machine learning (ML) benchmark for materials stability predictions named `Matbench Discovery`. A goal of this benchmark is to highlight the need to focus on metrics that directly measure their utility in prospective discovery campaigns as opposed to analyzing models based on predictive accuracy alone. Our benchmark consists of a task designed to closely simulate the deployment of ML energy models in a high-throughput search for stable inorganic crystals. We explore a wide variety of models covering multiple methodologies ranging from random forests to GNNs, and from one-shot predictors to iterative Bayesian optimizers and interatomic potential-based relaxers. We find M3GNet to achieve the highest F1 score of 0.58 and $R^2$ of 0.59 while MEGNet wins on discovery acceleration factor (DAF) with 2.94. Our results provide valuable insights for maintainers of high throughput materials databases to start using these models as triaging steps to more effectively allocate compute for DFT relaxations.
+We present a new machine learning (ML) benchmark for materials stability predictions named `Matbench Discovery`. A goal of this benchmark is to highlight the need to focus on metrics that directly measure their utility in prospective discovery campaigns as opposed to analyzing models based on predictive accuracy alone. Our benchmark consists of a task designed to closely simulate the deployment of ML energy models in a high-throughput search for stable inorganic crystals. We explore a wide variety of models covering multiple methodologies ranging from random forests to GNNs, and from one-shot predictors to iterative Bayesian optimizers and interatomic potential relaxers. We find M3GNet to achieve the highest F1 score of 0.58 and $R^2$ of 0.59 while MEGNet wins on discovery acceleration factor (DAF) with 2.94. Our results provide valuable insights for maintainers of high throughput materials databases to start using these models as triaging steps to more effectively allocate compute for DFT relaxations.
 
 </summary>
 
@@ -51,7 +51,7 @@ As the name suggests, this work seeks to expand upon the original Matbench suite
 and attempt to accelerate the field similar to what ImageNet did for computer vision.
 
 Matbench released a test suite of 13 supervised tasks for different material properties ranging from thermal (formation energy, phonon frequency peak), electronic (band gap), optical (refractive index) to tensile and elastic (bulk and shear moduli).
-They range in size from ~300 to ~132,000 samples and include both DFT and experimental data sources. 4 tasks are composition-only while 9 provide the relaxed crystal structure as input.
+They range in size from ~300 to ~132,000 samples and include both DFT and experimental data sources.
 Importantly, all tasks were exclusively concerned with the properties of known materials.
 We believe a task that simulates a materials discovery campaign by requiring materials stability predictions from unrelaxed structures to be a missing piece here.
 
@@ -86,7 +86,7 @@ Moreover, to simulate a discovery campaign our test set inputs are unrelaxed str
 
 ## Models
 
-Our initial benchmark release includes 8 models. @Fig:metrics-table includes all models but we focus on the 6 best performers in subsequent figures for visual clarity.
+Our initial benchmark release includes 8 models.
 
 1. **Voronoi+RF** @ward_including_2017 - A random forest trained to map a combination of composition-based Magpie features and structure-based relaxation-invariant Voronoi tessellation features (effective coordination numbers, structural heterogeneity, local environment properties, ...) to DFT formation energies.
 
@@ -108,14 +108,14 @@ Our initial benchmark release includes 8 models. @Fig:metrics-table includes all
 
 > @label:fig:metrics-table Regression and classification metrics for all models tested on our benchmark. The heat map ranges from yellow (best) to blue (worst) performance. DAF = discovery acceleration factor (see text), TPR = true positive rate, TNR = false negative rate, MAE = mean absolute error, RMSE = root mean squared error
 
-@Fig:metrics-table shows performance metrics for all models considered in v1 of our benchmark.
+@Fig:metrics-table shows performance metrics for all models included in the initial release of Matbench Discovery.
 M3GNet takes the top spot on most metrics and emerges as current SOTA for ML-guided materials discovery. The discovery acceleration factor (DAF) measures how many more stable structures a model found among the ones it predicted stable compared to the dummy discovery rate of 43k / 257k $\approx$ 16.7% achieved by randomly selecting test set crystals. Consequently, the maximum possible DAF is ~6. This highlights the fact that our benchmark is made more challenging by deploying models on an already enriched space with a much higher fraction of stable structures over randomly exploring materials space. As the convex hull becomes more thoroughly sampled by future discovery, the fraction of unknown stable structures decreases, naturally leading to less enriched future test sets which will allow for higher maximum DAFs. The reason MEGNet outperforms M3GNet on DAF becomes clear from @fig:cumulative-clf-metrics by noting that MEGNet's line ends closest to the total number of stable materials. The other models overpredict this number, resulting in large numbers of false positive predictions that drag down their DAFs.
 
 {#if browser}
 <RollingMaeVsHullDistModels />
 {/if}
 
-> @label:fig:rolling-mae-vs-hull-dist-models Rolling MAE on the WBM test set as the energy to the convex hull of the MP training set is varied. The white box in the bottom left indicates the size of the rolling window. The highlighted 'triangle of peril' shows where the models are most likely to misclassify structures.
+> @label:fig:rolling-mae-vs-hull-dist-models Rolling MAE on the WBM test set as the energy to the convex hull of the MP training set is varied. The white box in the bottom left indicates the size of the rolling window. The highlighted 'triangle of peril' shows where the models are most likely to misclassify structures. We only show the 6 best performing models for visual clarity. We only show the 6 best performing models for visual clarity.
 
 {#if browser}
 <CumulativeClfMetrics style="margin: 0 -2em 0 -4em;" />

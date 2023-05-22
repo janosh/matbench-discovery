@@ -5,6 +5,8 @@ histogram stacks true/false positives/negatives with different colors.
 
 
 # %%
+import math
+
 import pandas as pd
 from pymatviz.utils import save_fig
 from sklearn.metrics import auc, precision_recall_curve, roc_curve
@@ -22,6 +24,9 @@ line = dict(dash="dash", width=0.5)
 
 facet_col = "Model"
 color_col = "Stability Threshold"
+
+n_cols = 4
+n_rows = math.ceil(len(models) // n_cols)
 
 
 # %%
@@ -50,7 +55,7 @@ fig = (
         x="FPR",
         y="TPR",
         facet_col=facet_col,
-        facet_col_wrap=2,
+        facet_col_wrap=4,
         backend="plotly",
         height=150 * len(df_roc[facet_col].unique()),
         color=color_col,
@@ -59,33 +64,32 @@ fig = (
         range_color=(-0.5, 0.5),
         hover_name=facet_col,
         hover_data={facet_col: False},
+        facet_col_spacing=0.03,
+        facet_row_spacing=0.1,
     )
 )
 
 for anno in fig.layout.annotations:
     anno.text = anno.text.split("=", 1)[1]  # remove Model= from subplot titles
 
-fig.layout.coloraxis.colorbar.update(
-    x=1,
-    y=1,
-    xanchor="right",
-    yanchor="top",
-    thickness=14,
-    lenmode="pixels",
-    len=210,
-    title_side="right",
-)
+fig.layout.coloraxis.colorbar.update(thickness=14, title_side="right")
+if n_cols == 2:
+    fig.layout.coloraxis.colorbar.update(
+        x=1, y=1, xanchor="right", yanchor="top", lenmode="pixels", len=210
+    )
+
 fig.add_shape(type="line", x0=0, y0=0, x1=1, y1=1, line=line, row="all", col="all")
 fig.add_annotation(text="No skill", x=0.5, y=0.5, showarrow=False, yshift=-10)
 # allow scrolling and zooming each subplot individually
 fig.update_xaxes(matches=None)
+fig.layout.margin.update(l=0, r=0, b=0, t=20, pad=0)
 fig.update_yaxes(matches=None)
 fig.show()
 
 
 # %%
-save_fig(fig, f"{FIGS}/roc-models.svelte")
-save_fig(fig, f"{PDF_FIGS}/roc-models.pdf")
+# save_fig(fig, f"{FIGS}/roc-models-{n_rows}x{n_cols}.svelte")
+save_fig(fig, f"{PDF_FIGS}/roc-models-{n_rows}x{n_cols}.pdf", width=1000, height=400)
 
 
 # %%
@@ -142,6 +146,7 @@ fig.show()
 
 
 # %%
-save_fig(fig, f"{FIGS}/prc-models.svelte")
+save_fig(fig, f"{FIGS}/prc-models-{n_rows}x{n_cols}.svelte")
+save_fig(fig, f"{PDF_FIGS}/prc-models-{n_rows}x{n_cols}.pdf")
 fig.update_yaxes(matches=None)
 fig.show()

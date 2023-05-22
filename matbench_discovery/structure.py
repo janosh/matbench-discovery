@@ -10,7 +10,8 @@ np.random.seed(0)  # ensure reproducible structure perturbations
 
 
 def perturb_structure(struct: Structure, gamma: float = 1.5) -> Structure:
-    """Perturb the atomic coordinates of a pymatgen structure.
+    """Perturb the atomic coordinates of a pymatgen structure. Used for CGCNN+P
+    training set augmentation.
 
     Args:
         struct (Structure): pymatgen structure to be perturbed
