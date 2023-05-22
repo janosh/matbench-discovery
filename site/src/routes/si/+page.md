@@ -30,8 +30,8 @@
 
 <MetricsTableFirst10k />
 
-> @label:fig:metrics-table-first-10k An actual discovery campaign is unlikely to validate all stable predictions coming from a given model like we did in the [metrics table](/preprint#fig:metrics-table). Presumably it will rank model predictions from most to least stable and go down that list as far time and compute budgets permit. Assuming that increases in compute resources will allow average future discovery campaigns to grow in scope, we believe 10 k model validations to be a reasonable cutoff. To simulate this scenario, we calculated classification and regression metrics for the 10 k test set materials predicted to be most stable by each model.<br>
-> We again show dummy performance in the bottom row. Note that each model is now evaluated on a different slice of the data, but this is still dummy performance across the whole dataset. CHGNet and M3GNet achieve a very impressive 83% and 80% precision, respectively. In concrete terms, this means in a discovery campaign that validates 10 k model predictions from a search pool of 257 k crystals which are chemically dissimilar from the training set and of which 16.7 % are stable, CHGNet and M3GNet would deliver 4 stable structures for every 5 predictions validated. In light of the significant resulting increase in stability hit rate, these models are well worth integrating into future materials searches.
+> @label:fig:metrics-table-first-10k An actual discovery campaign is unlikely to validate all stable predictions coming from a given model like we did in the [metrics table](/preprint#fig:metrics-table). Presumably, it will rank model predictions from most to least stable and go down that list as far time and compute budgets permit. Assuming that increases in compute resources will allow average future discovery campaigns to grow in scope, we believe 10 k model validations to be a reasonable cutoff. To simulate this scenario, we calculated classification and regression metrics for the 10 k test set materials predicted to be most stable by each model.<br>
+> We again show dummy performance in the bottom row. Note that each model is now evaluated on a different slice of the data, but this is still dummy performance across the whole dataset. CHGNet and M3GNet achieve a very impressive 83% and 80% precision, respectively. In concrete terms, this means in a discovery campaign that validates 10 k model predictions from a search pool of 257 k crystals that are chemically dissimilar from the training set and of which 16.7 % are stable, CHGNet and M3GNet would deliver 4 stable structures for every 5 predictions validated. In light of the significant resulting increase in stability hit rate, these models are well worth integrating into future materials searches.
 
 ## ROC Curves
 
@@ -48,7 +48,7 @@
 {/if}
 
 > @label:fig:model-run-times-pie Creating this benchmark (excluding debugging runs) used a total of 3210 hours of compute time (mix of CPU and GPU, mostly CPU). Notably, the vast majority of that (2705 h) was used in the Bayesian optimization step of BOWSR + MEGnet.<br>
-> Some bars have two sections. The bottom shows training time, the upper test time. If there's only one section (everything right of BOWSR + MEGnet) the model was not re-trained for this benchmark and the bar shows only the test time.
+> Some bars have two sections. The bottom shows training time, the upper test time. If there's only one section the model was not re-trained for this benchmark and the bar shows only the test time.
 
 ## Formation Energy MAE = Hull Distance MAE
 

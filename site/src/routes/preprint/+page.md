@@ -67,7 +67,7 @@ However, using the DFT-relaxed structure as input to CGCNN renders the discovery
 As the name suggests, this work seeks to expand upon the original Matbench suite of property prediction tasks @dunn_benchmarking_2020. By providing a standardized collection of datasets along with canonical cross-validation splits for model evaluation, Matbench helped focus the field of ML for materials, increase comparability across papers and provide a quantitative measure of progress in the field. It aimed to catalyze the field of ML for materials through competition and establishing common goal posts in a similar fashion as ImageNet did for computer vision.
 
 Matbench released a test suite of 13 supervised tasks for different material properties ranging from thermal (formation energy, phonon frequency peak), electronic (band gap), optical (refractive index) to tensile and elastic (bulk and shear moduli).
-They range in size from ~300 to ~132,000 samples and include both DFT and experimental data sources. 4 tasks are composition-only while 9 provide the relaxed crystal structure as input.
+They range in size from ~300 to ~132,000 samples and include both DFT and experimental data sources.
 Importantly, all tasks were exclusively concerned with the properties of known materials.
 We believe a task that simulates a materials discovery campaign by requiring materials stability prediction from unrelaxed structures to be a missing piece here.
 
@@ -107,7 +107,7 @@ To simulate a real discovery campaign, our test set inputs are unrelaxed structu
 
 ## Models
 
-Our initial benchmark release includes 8 models. @Fig:metrics-table includes all models but we focus on the 6 best performers in subsequent figures for visual clarity.
+Our initial benchmark release includes 8 models.
 
 1. **Voronoi+RF** @ward_including_2017 - A random forest trained to map a combination of composition-based Magpie features and structure-based relaxation-invariant Voronoi tessellation features (effective coordination numbers, structural heterogeneity, local environment properties, ...) to DFT formation energies.
 
@@ -163,7 +163,7 @@ Our initial benchmark release includes 8 models. @Fig:metrics-table includes all
 >
 > </details>
 
-@Fig:metrics-table shows performance metrics for all models considered in v1 of our benchmark.
+@Fig:metrics-table shows performance metrics for all models included in the initial release of Matbench Discovery.
 CHGNet takes the top spot on all metrics except true positive rate (TPR) and emerges as current SOTA for ML-guided materials discovery. The discovery acceleration factor (DAF) measures how many more stable structures a model found compared to the dummy discovery rate of 43k / 257k $\approx$ 16.7\% achieved by randomly selecting test set crystals. Consequently, the maximum possible DAF is ~6. This highlights the fact that our benchmark is made more challenging by deploying models on an already enriched space with a much higher fraction of stable structures than uncharted materials space at large. As the convex hull becomes more thoroughly sampled by future discovery, the fraction of unknown stable structures decreases, naturally leading to less enriched future test sets which will allow for higher maximum DAFs.
 
 Note that MEGNet outperforms M3GNet on DAF (2.70 vs 2.66) even though M3GNet is superior to MEGNet in all other metrics. The reason is the one outlined in the previous paragraph as becomes clear from @fig:cumulative-clf-metrics. MEGNet's line ends at 55.6 k materials which is closest to the true number of 43 k stable materials in our test set. All other models overpredict the sum total of stable materials by anywhere from 40% (~59 k for CGCNN) to 104% (85 k for Wrenformer), resulting in large numbers of false positive predictions which lower their DAFs.
@@ -180,7 +180,7 @@ The reason CGCNN+P achieves better regression metrics than CGCNN but is still wo
 <CumulativeClfMetrics style="margin: 0 -2em 0 -4em;" />
 {/if}
 
-> @label:fig:cumulative-clf-metrics Cumulative precision and recall over the course of a simulated discovery campaign. This figure highlights how different models perform better or worse depending on the length of the discovery campaign. Length here is an integer measuring how many DFT relaxations you have compute budget for.
+> @label:fig:cumulative-clf-metrics Cumulative precision and recall over the course of a simulated discovery campaign. This figure highlights how different models perform better or worse depending on the length of the discovery campaign. Length here is an integer measuring how many DFT relaxations you have compute budget for. We only show the 6 best performing models for visual clarity.
 
 @Fig:cumulative-clf-metrics simulates ranking materials from most to least stable according to model-predicted energies. For each model, we go down that list material by material, calculating at each step the precision and recall of correctly identified stable materials. This simulates exactly how these models might be used in a prospective materials discovery campaign and reveal how a model's performance changes as a function of the discovery campaign length, i.e. the amount of resources available to validate model predictions.
 
