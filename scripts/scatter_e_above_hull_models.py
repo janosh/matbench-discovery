@@ -5,6 +5,8 @@ Last plot is split into 2x3 subplots, one for each model.
 
 
 # %%
+import math
+
 import numpy as np
 import plotly.express as px
 from pymatviz.utils import add_identity_line, bin_df_cols, save_fig
@@ -118,6 +120,8 @@ img_name = f"{FIGS}/e-above-hull-scatter-models"
 
 # %% plot all models in separate subplots
 domain = (-4, 7)
+n_cols = 4
+n_rows = math.ceil(len(models) / n_cols)
 
 fig = px.scatter(
     df_bin,
@@ -224,7 +228,6 @@ fig.show()
 
 
 # %%
-n_rows, n_cols, *_ = np.array(fig._validate_get_grid_ref(), object).shape
 fig_name = f"each-scatter-models-{n_rows}x{n_cols}"
 save_fig(fig, f"{FIGS}/{fig_name}.svelte")
 save_fig(fig, f"{PDF_FIGS}/{fig_name}.pdf")

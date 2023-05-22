@@ -11,6 +11,7 @@ from typing import Any
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import requests
 import wandb
 import wandb.apis.public
@@ -122,9 +123,6 @@ df_stats.attrs["All Models Run Time"] = df_stats[time_col].sum()
 print(f"{df_stats[time_col].sum()=:.0f} hours")
 
 # df_stats.round(2).to_json(f"{MODELS}/model-stats.json", orient="index")
-
-
-# %% plot model run times as pie chart
 df_time = (
     df_stats.sort_index()
     .filter(like=time_col)
@@ -134,6 +132,9 @@ df_time = (
     # .drop(index="BOWSR + MEGNet")
     .reset_index(names=(model_col := "Model"))
 )
+
+
+# %% plot model run times as pie chart
 fig = px.pie(
     df_time,
     values=time_col,
@@ -179,18 +180,34 @@ fig.update_traces(marker=dict(line=dict(color="white", width=1)))
 
 # %% plot model run times as bar chart
 fig = df_melt.dropna().plot.bar(
-    y=time_col,
-    x=model_col,
+    x=time_col,
+    y=model_col,
     backend="plotly",
     # color=time_col,
     text_auto=".0f",
     text=time_col,
     color=model_col,
 )
-title = f"Total: {df_stats[time_col].sum():.0f} h"
+# reduce bar width
+fig.update_traces(width=0.7)
+
+title = f"All models: {df_stats[time_col].sum():.0f} h"
 fig.layout.legend.update(x=0.98, y=0.98, xanchor="right", yanchor="top", title=title)
 fig.layout.xaxis.title = ""
 fig.layout.margin.update(l=0, r=0, t=0, b=0)
-save_fig(fig, f"{FIGS}/model-run-times-bar.svelte")
-save_fig(fig, f"{PDF_FIGS}/model-run-times-bar.pdf")
+# save_fig(fig, f"{FIGS}/model-run-times-bar.svelte")
+
+pdf_fig = go.Figure(fig)
+# replace legend with annotation in PDF
+pdf_fig.layout.showlegend = False
+pdf_fig.add_annotation(
+    text=title,
+    font=dict(size=15),
+    x=0.99,
+    y=0.99,
+    showarrow=False,
+    xref="paper",
+    yref="paper",
+)
+save_fig(pdf_fig, f"{PDF_FIGS}/model-run-times-bar.pdf", height=300, width=800)
 fig.show()

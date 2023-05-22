@@ -208,6 +208,52 @@ references:
   URL: https://link.aps.org/doi/10.1103/PhysRevX.8.041048
   volume: '8'
 
+- id: batatia_mace_2023
+  abstract: >-
+    Creating fast and accurate force fields is a long-standing challenge in
+    computational chemistry and materials science. Recently, several equivariant
+    message passing neural networks (MPNNs) have been shown to outperform models
+    built using other approaches in terms of accuracy. However, most MPNNs
+    suffer from high computational cost and poor scalability. We propose that
+    these limitations arise because MPNNs only pass two-body messages leading to
+    a direct relationship between the number of layers and the expressivity of
+    the network. In this work, we introduce MACE, a new equivariant MPNN model
+    that uses higher body order messages. In particular, we show that using
+    four-body messages reduces the required number of message passing iterations
+    to just two, resulting in a fast and highly parallelizable model, reaching
+    or exceeding state-of-the-art accuracy on the rMD17, 3BPA, and AcAc
+    benchmark tasks. We also demonstrate that using higher order messages leads
+    to an improved steepness of the learning curves.
+  accessed:
+    - year: 2023
+      month: 5
+      day: 24
+  author:
+    - family: Batatia
+      given: Ilyes
+    - family: Kovács
+      given: Dávid Péter
+    - family: Simm
+      given: Gregor N. C.
+    - family: Ortner
+      given: Christoph
+    - family: Csányi
+      given: Gábor
+  citation-key: batatia_mace_2023
+  issued:
+    - year: 2023
+      month: 1
+      day: 26
+  number: arXiv:2206.07697
+  publisher: arXiv
+  source: arXiv.org
+  title: >-
+    MACE: Higher Order Equivariant Message Passing Neural Networks for Fast and
+    Accurate Force Fields
+  title-short: MACE
+  type: article
+  URL: http://arxiv.org/abs/2206.07697
+
 - id: batzner_e3-equivariant_2022
   abstract: >-
     This work presents Neural Equivariant Interatomic Potentials (NequIP), an
@@ -555,6 +601,74 @@ references:
   type: article-journal
   URL: https://www.nature.com/articles/s43588-022-00349-3
   volume: '2'
+
+- id: curtarolo_aflow_2012
+  abstract: >-
+    Recent advances in computational materials science present novel
+    opportunities for structure discovery and optimization, including uncovering
+    of unsuspected compounds and metastable structures, electronic structure,
+    surface, and nano-particle properties. The practical realization of these
+    opportunities requires systematic generation and classification of the
+    relevant computational data by high-throughput methods. In this paper we
+    present Aflow (Automatic Flow), a software framework for high-throughput
+    calculation of crystal structure properties of alloys, intermetallics and
+    inorganic compounds. The Aflow software is available for the scientific
+    community on the website of the materials research consortium, aflowlib.org.
+    Its geometric and electronic structure analysis and manipulation tools are
+    additionally available for online operation at the same website. The
+    combination of automatic methods and user online interfaces provide a
+    powerful tool for efficient quantum computational materials discovery and
+    characterization.
+  accessed:
+    - year: 2023
+      month: 5
+      day: 22
+  author:
+    - family: Curtarolo
+      given: Stefano
+    - family: Setyawan
+      given: Wahyu
+    - family: Hart
+      given: Gus L. W.
+    - family: Jahnatek
+      given: Michal
+    - family: Chepulskii
+      given: Roman V.
+    - family: Taylor
+      given: Richard H.
+    - family: Wang
+      given: Shidong
+    - family: Xue
+      given: Junkai
+    - family: Yang
+      given: Kesong
+    - family: Levy
+      given: Ohad
+    - family: Mehl
+      given: Michael J.
+    - family: Stokes
+      given: Harold T.
+    - family: Demchenko
+      given: Denis O.
+    - family: Morgan
+      given: Dane
+  citation-key: curtarolo_aflow_2012
+  container-title: Computational Materials Science
+  container-title-short: Computational Materials Science
+  DOI: 10.1016/j.commatsci.2012.02.005
+  ISSN: 0927-0256
+  issued:
+    - year: 2012
+      month: 6
+      day: 1
+  language: en
+  page: 218-226
+  source: ScienceDirect
+  title: 'AFLOW: An automatic framework for high-throughput materials discovery'
+  title-short: AFLOW
+  type: article-journal
+  URL: https://www.sciencedirect.com/science/article/pii/S0927025612000717
+  volume: '58'
 
 - id: davies_computational_2016
   abstract: "Forming a four-component compound from the first 103 elements of the periodic table results in more than 1012 combinations. Such a materials space is intractable to high-throughput experiment or first-principle computation. We\_introduce a framework to address this problem and quantify how many materials can exist. We apply principles of valency and electronegativity to filter chemically implausible compositions, which reduces the inorganic quaternary space to 1010 combinations. We demonstrate that estimates of band gaps and absolute electron energies can be made simply on the basis of the chemical composition and apply this to the search for new semiconducting materials to support the photoelectrochemical splitting of water. We show the applicability to predicting crystal structure by analogy with known compounds, including exploration of the phase space for ternary combinations that form a perovskite lattice. Computer screening reproduces known perovskite materials and predicts the feasibility of thousands more. Given the simplicity of the approach, large-scale searches can be performed on a single workstation."
@@ -1351,6 +1465,147 @@ references:
   type: article-journal
   URL: https://doi.org/10.1007/s11837-013-0755-4
   volume: '65'
+
+- id: takamoto_teanet_2022
+  abstract: >-
+    A universal interatomic potential for an arbitrary set of chemical elements
+    is urgently needed in computational materials science. Graph convolution
+    neural network (GCN) has rich expressive power, but previously was mainly
+    employed to transport scalars and vectors, not rank ≥2 tensors. As classic
+    interatomic potentials were inspired by tight-binding electronic relaxation
+    framework, we want to represent this iterative propagation of rank ≥2 tensor
+    information by GCN. Here we propose an architecture called the tensor
+    embedded atom network (TeaNet) where angular interaction is translated into
+    graph convolution through the incorporation of Euclidean tensors, vectors
+    and scalars. By applying the residual network (ResNet) architecture and
+    training with recurrent GCN weights initialization, a much deeper (16
+    layers) GCN was constructed, whose flow is similar to an iterative
+    electronic relaxation. Our training dataset is generated by density
+    functional theory calculation of mostly chemically and structurally
+    randomized configurations. We demonstrate that arbitrary structures and
+    reactions involving the first 18 elements on the periodic table (H to Ar)
+    can be realized satisfactorily by TeaNet, including C–H molecular
+    structures, metals, amorphous SiO2, and water, showing surprisingly good
+    performance (energy mean absolute error 19 meV/atom) and robustness for
+    arbitrary chemistries involving elements from H to Ar.
+  accessed:
+    - year: 2023
+      month: 5
+      day: 24
+  author:
+    - family: Takamoto
+      given: So
+    - family: Izumi
+      given: Satoshi
+    - family: Li
+      given: Ju
+  citation-key: takamoto_teanet_2022
+  container-title: Computational Materials Science
+  container-title-short: Computational Materials Science
+  DOI: 10.1016/j.commatsci.2022.111280
+  ISSN: 0927-0256
+  issued:
+    - year: 2022
+      month: 5
+      day: 1
+  language: en
+  page: '111280'
+  source: ScienceDirect
+  title: >-
+    TeaNet: Universal neural network interatomic potential inspired by iterative
+    electronic relaxations
+  title-short: TeaNet
+  type: article-journal
+  URL: https://www.sciencedirect.com/science/article/pii/S0927025622000799
+  volume: '207'
+
+- id: takamoto_towards_2022
+  abstract: >-
+    Computational material discovery is under intense study owing to its ability
+    to explore the vast space of chemical systems. Neural network potentials
+    (NNPs) have been shown to be particularly effective in conducting atomistic
+    simulations for such purposes. However, existing NNPs are generally designed
+    for narrow target materials, making them unsuitable for broader applications
+    in material discovery. Here we report a development of universal NNP called
+    PreFerred Potential (PFP), which is able to handle any combination of 45
+    elements. Particular emphasis is placed on the datasets, which include a
+    diverse set of virtual structures used to attain the universality. We
+    demonstrated the applicability of PFP in selected domains: lithium diffusion
+    in LiFeSO4F, molecular adsorption in metal-organic frameworks, an
+    order–disorder transition of Cu-Au alloys, and material discovery for a
+    Fischer–Tropsch catalyst. They showcase the power of PFP, and this
+    technology provides a highly useful tool for material discovery.
+  accessed:
+    - year: 2023
+      month: 5
+      day: 24
+  author:
+    - family: Takamoto
+      given: So
+    - family: Shinagawa
+      given: Chikashi
+    - family: Motoki
+      given: Daisuke
+    - family: Nakago
+      given: Kosuke
+    - family: Li
+      given: Wenwen
+    - family: Kurata
+      given: Iori
+    - family: Watanabe
+      given: Taku
+    - family: Yayama
+      given: Yoshihiro
+    - family: Iriguchi
+      given: Hiroki
+    - family: Asano
+      given: Yusuke
+    - family: Onodera
+      given: Tasuku
+    - family: Ishii
+      given: Takafumi
+    - family: Kudo
+      given: Takao
+    - family: Ono
+      given: Hideki
+    - family: Sawada
+      given: Ryohto
+    - family: Ishitani
+      given: Ryuichiro
+    - family: Ong
+      given: Marc
+    - family: Yamaguchi
+      given: Taiki
+    - family: Kataoka
+      given: Toshiki
+    - family: Hayashi
+      given: Akihide
+    - family: Charoenphakdee
+      given: Nontawat
+    - family: Ibuka
+      given: Takeshi
+  citation-key: takamoto_towards_2022
+  container-title: Nature Communications
+  container-title-short: Nat Commun
+  DOI: 10.1038/s41467-022-30687-9
+  ISSN: 2041-1723
+  issue: '1'
+  issued:
+    - year: 2022
+      month: 5
+      day: 30
+  language: en
+  license: 2022 The Author(s)
+  number: '1'
+  page: '2991'
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: >-
+    Towards universal neural network potential for material discovery applicable
+    to arbitrary combination of 45 elements
+  type: article-journal
+  URL: https://www.nature.com/articles/s41467-022-30687-9
+  volume: '13'
 
 - id: tran_open_2022
   abstract: >-

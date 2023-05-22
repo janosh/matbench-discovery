@@ -31,6 +31,22 @@ df_each_err[model_mean_err_col] = df_preds[model_mean_err_col] = df_each_err.abs
 )
 
 
+# %% map average model error onto elements
+frac_comp_col = "fractional composition"
+df_wbm[frac_comp_col] = [
+    Composition(comp).fractional_composition for comp in tqdm(df_wbm.formula)
+]
+
+df_frac_comp = pd.DataFrame(comp.as_dict() for comp in df_wbm[frac_comp_col]).set_index(
+    df_wbm.index
+)
+assert all(
+    df_frac_comp.sum(axis=1).round(6) == 1
+), "composition fractions don't sum to 1"
+
+# df_frac_comp = df_frac_comp.dropna(axis=1, thresh=100)  # remove Xe with only 1 entry
+
+
 # %%
 df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index("material_id")
 # compute number of samples per element in training set
@@ -48,22 +64,6 @@ fig = ptable_heatmap_plotly(df_elem_err[train_count_col], font_size=10)
 title = "Number of MP structures containing each element"
 fig.layout.title.update(text=title, x=0.4, y=0.9)
 fig.show()
-
-
-# %% map average model error onto elements
-frac_comp_col = "fractional composition"
-df_wbm[frac_comp_col] = [
-    Composition(comp).fractional_composition for comp in tqdm(df_wbm.formula)
-]
-
-df_frac_comp = pd.DataFrame(comp.as_dict() for comp in df_wbm[frac_comp_col]).set_index(
-    df_wbm.index
-)
-assert all(
-    df_frac_comp.sum(axis=1).round(6) == 1
-), "composition fractions don't sum to 1"
-
-# df_frac_comp = df_frac_comp.dropna(axis=1, thresh=100)  # remove Xe with only 1 entry
 
 
 # %%
