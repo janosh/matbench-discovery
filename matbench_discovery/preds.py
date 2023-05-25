@@ -6,7 +6,7 @@ from typing import Any
 import pandas as pd
 from tqdm import tqdm
 
-from matbench_discovery import ROOT
+from matbench_discovery import ROOT, STABILITY_THRESHOLD
 from matbench_discovery.data import Files, df_wbm, glob_to_df
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.plots import ev_per_atom, model_labels, quantity_labels
@@ -132,7 +132,7 @@ df_preds = load_df_wbm_with_preds().round(3)
 
 df_metrics = pd.DataFrame()
 df_metrics_10k = pd.DataFrame()  # look only at each model's 10k most stable predictions
-prevalence = (df_wbm[each_true_col] <= 0).mean()
+prevalence = (df_wbm[each_true_col] <= STABILITY_THRESHOLD).mean()
 
 df_metrics.index.name = "model"
 for model in PRED_FILES:

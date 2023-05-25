@@ -2,6 +2,7 @@
   import MetricsTableMegnetUipCombos from '$figs/metrics-table-uip-megnet-combos.svelte'
   import MetricsTableFirst10k from '$figs/metrics-table-first-10k.svelte'
   import RunTimeBars from '$figs/model-run-times-bar.svelte'
+  import BoxHullDistErrors from '$figs/box-hull-dist-errors.svelte'
   import RocModels from '$figs/roc-models.svelte'
   import { browser } from '$app/environment'
   import MPRefEnergies from '$figs/mp-elemental-ref-energies.svelte'
@@ -143,3 +144,11 @@ Looking at the occurrence counts of isopointal prototypes in the shaded rectangl
 {/if}
 
 > @label:fig:element-prevalence-vs-error The y-axis is the average error of each model on each element averaged over all structures in the test set containing said element weighted by that structure's composition. The x-axis is each element's prevalence in the MP training set. We don't observe much correlation between element prevalence and model error. Instead, oxygen, the element with highest representation, is among the higher error elements for most models. Similarly, fluorine, the element with highest average error across models has very good training support at ~12 k samples, suggesting chemistry more than training coverage determines element errors.
+
+## Hull Distance Box plot
+
+{#if mounted}
+<BoxHullDistErrors />
+{/if}
+
+> @label:fig:box-hull-dist-errors Box plot of interquartile ranges (IQR) of hull distance errors for each model. The whiskers extend to the 5th and 95th percentiles. The median is shown as a horizontal line inside the box. BOWSR + MEGNet has the largest median error while Voronoi RF has the largest IQR. Note that MEGNet and CGCNN are the only models with positive median. Their hull distance errors are biased towards more frequently predicting thermodynamic instability, explaining why they are closest to getting the overall number of stable structures in the test set right ([see rolling classification precision/recall plots](/preprint#fig:cumulative-clf-metrics))

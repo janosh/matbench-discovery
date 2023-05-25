@@ -22,5 +22,8 @@ CHECKPOINT_DIR = f"{ROOT}/wandb/checkpoints"
 # wandb <entity>/<project name> to record new runs to
 WANDB_PATH = "janosh/matbench-discovery"
 
+# threshold on hull distance for a material to be considered stable
+STABILITY_THRESHOLD = 0
+
 timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
 today = timestamp.split("@")[0]

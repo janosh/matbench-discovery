@@ -22,6 +22,7 @@ from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from pandas.io.formats.style import Styler
 from tqdm import tqdm
 
+from matbench_discovery import STABILITY_THRESHOLD
 from matbench_discovery.metrics import classify_stable
 
 __author__ = "Janosh Riebesell"
@@ -674,7 +675,7 @@ def cumulative_precision_recall(
     df_cum = pd.concat(dfs.values())
     # subselect rows for speed, plot has sufficient precision with 1k rows
     df_cum = df_cum.iloc[:: len(df_cum) // 1000 or 1]
-    n_stable = sum(e_above_hull_true <= 0)
+    n_stable = sum(e_above_hull_true <= STABILITY_THRESHOLD)
 
     if backend == "matplotlib":
         fig, axs = plt.subplots(

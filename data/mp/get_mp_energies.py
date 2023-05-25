@@ -8,7 +8,7 @@ from pymatgen.core import Structure
 from pymatviz.utils import annotate_metrics
 from tqdm import tqdm
 
-from matbench_discovery import today
+from matbench_discovery import STABILITY_THRESHOLD, today
 from matbench_discovery.data import DATA_FILES
 
 """
@@ -34,7 +34,6 @@ fields = {
     "energy_above_hull",
     "decomposition_enthalpy",
     "energy_type",
-    "symmetry",
 }
 
 with MPRester(use_document_model=False) as mpr:
@@ -86,7 +85,9 @@ ax = df.plot.scatter(
     alpha=0.1,
     xlim=[-5, 1],
     ylim=[-1, 1],
-    color=(df.decomposition_enthalpy > 0).map({True: "red", False: "blue"}),
+    color=(df.decomposition_enthalpy > STABILITY_THRESHOLD).map(
+        {True: "red", False: "blue"}
+    ),
     title=f"{today} - {len(df):,} MP entries",
 )
 

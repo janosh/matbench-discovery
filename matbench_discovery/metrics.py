@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import r2_score
 
+from matbench_discovery import STABILITY_THRESHOLD
+
 """Functions to classify energy above convex hull predictions as true/false
 positive/negative and compute performance metrics.
 """
@@ -53,7 +55,7 @@ def classify_stable(
 def stable_metrics(
     each_true: Sequence[float],
     each_pred: Sequence[float],
-    stability_threshold: float = 0,
+    stability_threshold: float = STABILITY_THRESHOLD,
 ) -> dict[str, float]:
     """Get a dictionary of stability prediction metrics. Mostly binary classification
     metrics, but also MAE, RMSE and R2.
@@ -64,9 +66,12 @@ def stable_metrics(
         stability_threshold (float): Where to place stability threshold relative to
             convex hull in eV/atom, usually 0 or 0.1 eV. Defaults to 0.
 
-    Note: Should give equivalent classification metrics to sklearn.metrics.
-        classification_report(each_true > 0, each_pred > 0, output_dict=True) which
-        takes binary labels.
+    Note: Should give equivalent classification metrics to
+        sklearn.metrics.classification_report(
+            each_true > STABILITY_THRESHOLD,
+            each_pred > STABILITY_THRESHOLD,
+            output_dict=True,
+        )
 
     Returns:
         dict[str, float]: dictionary of classification metrics with keys DAF, Precision,

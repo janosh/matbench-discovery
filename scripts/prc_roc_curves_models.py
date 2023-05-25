@@ -12,7 +12,7 @@ from pymatviz.utils import save_fig
 from sklearn.metrics import auc, precision_recall_curve, roc_curve
 from tqdm import tqdm
 
-from matbench_discovery import FIGS, PDF_FIGS
+from matbench_discovery import FIGS, PDF_FIGS, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots
 from matbench_discovery.preds import df_each_pred, df_preds, each_true_col, models
 
@@ -35,7 +35,7 @@ df_roc = pd.DataFrame()
 for model in (pbar := tqdm(models, desc="Calculating ROC curves")):
     pbar.set_postfix_str(model)
     na_mask = df_preds[each_true_col].isna() | df_each_pred[model].isna()
-    y_true = (df_preds[~na_mask][each_true_col] <= 0).astype(int)
+    y_true = (df_preds[~na_mask][each_true_col] <= STABILITY_THRESHOLD).astype(int)
     y_pred = df_each_pred[model][~na_mask]
     fpr, tpr, thresholds = roc_curve(y_true, y_pred, pos_label=0)
     AUC = auc(fpr, tpr)
@@ -98,7 +98,7 @@ df_prc = pd.DataFrame()
 for model in (pbar := tqdm(list(df_each_pred), desc="Calculating ROC curves")):
     pbar.set_postfix_str(model)
     na_mask = df_preds[each_true_col].isna() | df_each_pred[model].isna()
-    y_true = (df_preds[~na_mask][each_true_col] <= 0).astype(int)
+    y_true = (df_preds[~na_mask][each_true_col] <= STABILITY_THRESHOLD).astype(int)
     y_pred = df_each_pred[model][~na_mask]
     prec, recall, thresholds = precision_recall_curve(y_true, y_pred, pos_label=0)
     df_tmp = pd.DataFrame(
