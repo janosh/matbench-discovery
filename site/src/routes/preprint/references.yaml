@@ -1201,6 +1201,50 @@ references:
   URL: https://aip.scitation.org/doi/10.1063%2F1.4812323
   volume: '1'
 
+- id: kovacs_evaluation_2023
+  abstract: >-
+    The MACE architecture represents the state of the art in the field of
+    machine learning force fields for a variety of in-domain, extrapolation and
+    low-data regime tasks. In this paper, we further evaluate MACE by fitting
+    models for published benchmark datasets. We show that MACE generally
+    outperforms alternatives for a wide range of systems from amorphous carbon
+    and general small molecule organic chemistry to large molecules and liquid
+    water. We demonstrate the capabilities of the model on tasks ranging from
+    constrained geometry optimisation to molecular dynamics simulations and find
+    excellent performance across all tested domains. We show that MACE is very
+    data efficient, and can reproduce experimental molecular vibrational spectra
+    when trained on as few as 50 randomly selected reference configurations. We
+    further demonstrate that the strictly local atom-centered model is
+    sufficient for such tasks even in the case of large molecules and weakly
+    interacting molecular assemblies.
+  accessed:
+    - year: 2023
+      month: 5
+      day: 27
+  author:
+    - family: Kovacs
+      given: David Peter
+    - family: Batatia
+      given: Ilyes
+    - family: Arany
+      given: Eszter Sara
+    - family: Csanyi
+      given: Gabor
+  citation-key: kovacs_evaluation_2023
+  issued:
+    - year: 2023
+      month: 5
+      day: 23
+  number: arXiv:2305.14247
+  publisher: arXiv
+  source: arXiv.org
+  title: >-
+    Evaluation of the MACE Force Field Architecture: from Medicinal Chemistry to
+    Materials Science
+  title-short: Evaluation of the MACE Force Field Architecture
+  type: article
+  URL: http://arxiv.org/abs/2305.14247
+
 - id: mcdermott_graph-based_2021
   abstract: >-
     Accelerated inorganic synthesis remains a significant challenge in the

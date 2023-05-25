@@ -9,7 +9,7 @@
   import type { ChemicalElement } from 'elementari'
   import { ColorBar, ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
   import Select from 'svelte-multiselect'
-  import { Toggle, Tooltip } from 'svelte-zoo'
+  import { Toggle } from 'svelte-zoo'
   import type { Snapshot } from './$types'
 
   const elem_counts = import.meta.glob(`./*-element-counts-{occu,comp}*.json`, {
@@ -59,12 +59,10 @@
         />
       </TableInset>
     </PeriodicTable>
-    <Tooltip
-      text="occurrence=(Fe: 1, O: 1), composition: Fe2O3=(Fe: 2, O: 3)"
-      style="display: inline-block; transform: translate(10cqw, 5ex);"
+    <label
+      for="count-mode"
+      style="display: inline-block; transform: translate(10cqw, 5ex);">Count Mode</label
     >
-      <label for="count-mode">Count Mode</label>
-    </Tooltip>
     <Select
       id="count-mode"
       bind:selected={count_mode}
@@ -74,6 +72,7 @@
     />
     <ColorScaleSelect bind:selected={color_scale} />
   </svelte:fragment>
+
   <svelte:fragment slot="mp-elements-heatmap">
     <PeriodicTable
       heatmap_values={mp_elem_counts}
@@ -94,6 +93,13 @@
         />
       </TableInset>
     </PeriodicTable>
+    <p>
+      The difference between count modes is best explained by example. <code
+        >occurrence</code
+      >
+      mode maps Fe2O3 to (Fe: 1, O: 1), <code>composition</code> mode maps it to (Fe: 2, O:
+      3).
+    </p>
   </svelte:fragment>
   <svelte:fragment slot="wbm-each-hist">
     {#if browser}
