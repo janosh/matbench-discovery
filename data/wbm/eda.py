@@ -12,7 +12,7 @@ from pymatviz import (
 )
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, PDF_FIGS, ROOT, today
+from matbench_discovery import FIGS, PDF_FIGS, ROOT, STABILITY_THRESHOLD, today
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.energy import mp_elem_reference_entries
@@ -124,8 +124,8 @@ df_hist = pd.DataFrame([counts, bins], index=["count", x_label]).T
 fig = df_hist.plot.area(x=x_label, y="count", backend="plotly", range_x=range_x)
 
 if col.startswith("e_above_hull"):
-    n_stable = sum(df_wbm[col] <= 0)
-    n_unstable = sum(df_wbm[col] > 0)
+    n_stable = sum(df_wbm[col] <= STABILITY_THRESHOLD)
+    n_unstable = sum(df_wbm[col] > STABILITY_THRESHOLD)
     assert n_stable + n_unstable == len(df_wbm.dropna())
 
     dummy_mae = (df_wbm[col] - df_wbm[col].mean()).abs().mean()

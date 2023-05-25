@@ -5,7 +5,7 @@
   import { repository } from '$site/package.json'
   import { CmdPalette } from 'svelte-multiselect'
   import Toc from 'svelte-toc'
-  import { GitHubCorner, PrevNext } from 'svelte-zoo'
+  import { CopyButton, GitHubCorner, PrevNext } from 'svelte-zoo'
   import '../app.css'
 
   const routes = Object.keys(import.meta.glob(`./*/+page.{svelte,md}`)).map(
@@ -44,6 +44,20 @@
       document.documentElement.style.setProperty(`--main-max-width`, `90em`)
     } else {
       document.documentElement.style.setProperty(`--main-max-width`, `50em`)
+    }
+
+    for (const node of document.querySelectorAll('pre > code')) {
+      // skip if <pre> already contains a button (presumably for copy)
+      const pre = node.parentElement
+      if (!pre || pre.querySelector(`button`)) continue
+
+      new CopyButton({
+        target: pre,
+        props: {
+          content: node.textContent ?? '',
+          style: 'position: absolute; top: 1ex; right: 1ex;',
+        },
+      })
     }
   })
 </script>
