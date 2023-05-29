@@ -20,7 +20,6 @@ ax, df_err, df_std = rolling_mae_vs_hull_dist(
     e_above_hull_errors={model: df_preds[e_form_col] - df_preds[model]},
     # label=model,
     backend=(backend := "plotly"),
-    # template="plotly_white",
 )
 
 MAE, DAF, F1 = df_metrics[model][["MAE", "DAF", "F1"]]
