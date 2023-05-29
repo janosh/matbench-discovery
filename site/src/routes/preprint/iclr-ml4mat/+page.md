@@ -1,7 +1,7 @@
 <script>
   import { repository as repo } from '$site/package.json'
   import MetricsTable from '$figs/metrics-table.svelte'
-  import CumulativeClfMetrics from '$figs/cumulative-clf-metrics.svelte'
+  import CumulativePrecisionRecall from '$figs/cumulative-precision-recall.svelte'
   import RollingMaeVsHullDistModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'
   import { browser } from '$app/environment'
 </script>
@@ -109,7 +109,7 @@ Our initial benchmark release includes 8 models.
 > @label:fig:metrics-table Regression and classification metrics for all models tested on our benchmark. The heat map ranges from yellow (best) to blue (worst) performance. DAF = discovery acceleration factor (see text), TPR = true positive rate, TNR = false negative rate, MAE = mean absolute error, RMSE = root mean squared error
 
 @Fig:metrics-table shows performance metrics for all models included in the initial release of Matbench Discovery.
-M3GNet takes the top spot on most metrics and emerges as current SOTA for ML-guided materials discovery. The discovery acceleration factor (DAF) measures how many more stable structures a model found among the ones it predicted stable compared to the dummy discovery rate of 43k / 257k $\approx$ 16.7% achieved by randomly selecting test set crystals. Consequently, the maximum possible DAF is ~6. This highlights the fact that our benchmark is made more challenging by deploying models on an already enriched space with a much higher fraction of stable structures over randomly exploring materials space. As the convex hull becomes more thoroughly sampled by future discovery, the fraction of unknown stable structures decreases, naturally leading to less enriched future test sets which will allow for higher maximum DAFs. The reason MEGNet outperforms M3GNet on DAF becomes clear from @fig:cumulative-clf-metrics by noting that MEGNet's line ends closest to the total number of stable materials. The other models overpredict this number, resulting in large numbers of false positive predictions that drag down their DAFs.
+M3GNet takes the top spot on most metrics and emerges as current SOTA for ML-guided materials discovery. The discovery acceleration factor (DAF) measures how many more stable structures a model found among the ones it predicted stable compared to the dummy discovery rate of 43k / 257k $\approx$ 16.7% achieved by randomly selecting test set crystals. Consequently, the maximum possible DAF is ~6. This highlights the fact that our benchmark is made more challenging by deploying models on an already enriched space with a much higher fraction of stable structures over randomly exploring materials space. As the convex hull becomes more thoroughly sampled by future discovery, the fraction of unknown stable structures decreases, naturally leading to less enriched future test sets which will allow for higher maximum DAFs. The reason MEGNet outperforms M3GNet on DAF becomes clear from @fig:cumulative-precision-recall by noting that MEGNet's line ends closest to the total number of stable materials. The other models overpredict this number, resulting in large numbers of false positive predictions that drag down their DAFs.
 
 {#if browser}
 <RollingMaeVsHullDistModels />
@@ -118,10 +118,10 @@ M3GNet takes the top spot on most metrics and emerges as current SOTA for ML-gui
 > @label:fig:rolling-mae-vs-hull-dist-models Rolling MAE on the WBM test set as the energy to the convex hull of the MP training set is varied. The white box in the bottom left indicates the size of the rolling window. The highlighted 'triangle of peril' shows where the models are most likely to misclassify structures. We only show the 6 best performing models for visual clarity. We only show the 6 best performing models for visual clarity.
 
 {#if browser}
-<CumulativeClfMetrics style="margin: 0 -2em 0 -4em;" />
+<CumulativePrecisionRecall style="margin: 0 -2em 0 -4em;" />
 {/if}
 
-> @label:fig:cumulative-clf-metrics Cumulative precision and recall over the course of a simulated discovery campaign. This figure highlights how different models will perform best depending on the setup of the screening campaign.
+> @label:fig:cumulative-precision-recall Cumulative precision and recall over the course of a simulated discovery campaign. This figure highlights how different models will perform best depending on the setup of the screening campaign.
 
 @Fig:rolling-mae-vs-hull-dist-models visualizes a model's reliability as a function of a material's hull distance. The lower its rolling MAE exits the shaded triangle, the better. Inside this area, the model's mean error is larger than the distance to the convex hull, making misclassifications likely. Outside the triangle even if the model's error points toward the stability threshold at 0 eV from the hull (the plot's center), the mean error is too small to move a material over the stability threshold which would cause a false stability classification. M3GNet achieves the lowest overall MAE and exits the peril zone much sooner than other models on the right half of the plot. This means it rarely misclassifies unstable materials that lie more than 40 meV above the hull. On the plot's left half, CGCNN+P exits the peril zone first, albeit much further from the hull at more than 100 meV below. Essentially, all models are prone to false negative predictions even for materials far below the known hull. We note that while F1 score and DAF of models that make one-shot predictions directly from unrelaxed inputs (CGCNN & MEGNet) are seemingly unaffected, the $R^2$ of these models is significantly worse.
 

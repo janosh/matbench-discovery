@@ -2,6 +2,7 @@
   import MetricsTableMegnetUipCombos from '$figs/metrics-table-uip-megnet-combos.svelte'
   import MetricsTableFirst10k from '$figs/metrics-table-first-10k.svelte'
   import RunTimeBars from '$figs/model-run-times-bar.svelte'
+  import CumulativeMaeRmse from '$figs/cumulative-mae-rmse.svelte'
   import BoxHullDistErrors from '$figs/box-hull-dist-errors.svelte'
   import RocModels from '$figs/roc-models.svelte'
   import { browser } from '$app/environment'
@@ -41,6 +42,15 @@
 {/if}
 
 > @label:fig:roc-models Receiver operating characteristic (ROC) curve for each model. TPR/FPR = true/false positive rate. FPR on the $x$-axis is the fraction of unstable structures classified as stable. TPR on the $y$-axis is the fraction of stable structures classified as stable. Points are colored by stability threshold $t$ which sweeps from $-0.4 \ \frac{\text{eV}}{\text{atom}} \leq t \leq 0.4 \ \frac{\text{eV}}{\text{atom}}$ above the hull. A material is classified as stable if the predicted E<sub>above hull</sub> lies below the stability threshold. Since all models predict E<sub>form</sub> (and M3GNet predicted energies are converted to formation energy before stability classification), they are insensitive to changes in the threshold $t$. M3GNet wins in area under curve (AUC) with 0.87, coming in 34% higher than the worst model Voronoi Random Forest. The diagonal 'No skill' line shows performance of a dummy model that randomly ranks material stability.
+
+## Cumulative MAE + RMSE
+
+{#if mounted}
+<CumulativeMaeRmse />
+{/if}
+
+> @label:fig:cumulative-mae-rmse Cumulative mean absolute error (MAE) and root mean square error (RMSE) during a simulated discovery campaign. This figure expands on the [precision-recall figure](/preprint#fig:cumulative-precision-recall). The $x$-axis again shows number of materials sorted by model-predicted stability or 'campaign length'. This allows the reader to choose a cutoff point given their discovery campaign's resource constraints for validating model predictions and then read off the optimal model given those constraints.
+> CHGNet achieves the lowest regression error profile, with a larger gap to the runner-up model M3GNet than in the precision-recall plots.
 
 ## Model Run Times
 
@@ -151,4 +161,4 @@ Looking at the occurrence counts of isopointal prototypes in the shaded rectangl
 <BoxHullDistErrors />
 {/if}
 
-> @label:fig:box-hull-dist-errors Box plot of interquartile ranges (IQR) of hull distance errors for each model. The whiskers extend to the 5th and 95th percentiles. The median is shown as a horizontal line inside the box. BOWSR + MEGNet has the largest median error while Voronoi RF has the largest IQR. Note that MEGNet and CGCNN are the only models with positive median. Their hull distance errors are biased towards more frequently predicting thermodynamic instability, explaining why they are closest to getting the overall number of stable structures in the test set right ([see rolling classification precision/recall plots](/preprint#fig:cumulative-clf-metrics))
+> @label:fig:box-hull-dist-errors Box plot of interquartile ranges (IQR) of hull distance errors for each model. The whiskers extend to the 5th and 95th percentiles. The median is shown as a horizontal line inside the box. BOWSR + MEGNet has the largest median error while Voronoi RF has the largest IQR. Note that MEGNet and CGCNN are the only models with positive median. Their hull distance errors are biased towards more frequently predicting thermodynamic instability, explaining why they are closest to getting the overall number of stable structures in the test set right ([see rolling classification precision/recall plots](/preprint#fig:cumulative-precision-recall))

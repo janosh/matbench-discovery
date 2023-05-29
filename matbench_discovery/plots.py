@@ -591,10 +591,10 @@ def rolling_mae_vs_hull_dist(
     return fig, df_rolling_err, df_err_std
 
 
-def cumulative_precision_recall(
+def cumulative_metrics(
     e_above_hull_true: pd.Series,
     df_preds: pd.DataFrame,
-    metrics: Sequence[str] = ("Cumulative Precision", "Cumulative Recall"),
+    metrics: Sequence[str] = ("Precision", "Recall"),
     stability_threshold: float = 0,  # set stability threshold as distance to convex
     # hull in eV / atom, usually 0 or 0.1 eV
     project_end_point: Literal["x", "y", "xy", ""] = "xy",
@@ -638,32 +638,57 @@ def cumulative_precision_recall(
     """
     factory = lambda: pd.DataFrame(index=range(len(e_above_hull_true)))
     dfs: dict[str, pd.DataFrame] = defaultdict(factory)
+    metrics_no_case = [*map(str.casefold, metrics)]
+
+    valid_metrics = {"precision", "recall", "f1", "mae", "rmse"}
+    if invalid_metrics := set(metrics_no_case) - valid_metrics:
+        raise ValueError(
+            f"{invalid_metrics=}, should be case-insensitive subset of {valid_metrics=}"
+        )
 
     for model_name in df_preds:
         each_pred = df_preds[model_name].sort_values()
         # sort targets by model ranking
         each_true = e_above_hull_true.loc[each_pred.index]
 
-        true_pos_cum, false_neg_cum, false_pos_cum, _true_neg_cum = map(
+        true_pos_cum, false_neg_cum, false_pos_cum, true_neg_cum = map(
             np.cumsum, classify_stable(each_true, each_pred, stability_threshold)
         )
 
         # precision aka positive predictive value (PPV)
-        precision_cum = true_pos_cum / (true_pos_cum + false_pos_cum)
         n_total_pos = true_pos_cum[-1] + false_neg_cum[-1]
+        precision_cum = true_pos_cum / (true_pos_cum + false_pos_cum)
         recall_cum = true_pos_cum / n_total_pos  # aka true_pos_rate aka sensitivity
-        # cumulative F1 score
-        f1_cum = 2 * (precision_cum * recall_cum) / (precision_cum + recall_cum)
 
         end = int(np.argmax(recall_cum))
         xs = np.arange(end)
-        prec_interp = scipy.interpolate.interp1d(xs, precision_cum[:end], kind="cubic")
-        recall_interp = scipy.interpolate.interp1d(xs, recall_cum[:end], kind="cubic")
-        f1_interp = scipy.interpolate.interp1d(xs, f1_cum[:end], kind="cubic")
 
-        dfs["Cumulative Precision"][model_name] = pd.Series(prec_interp(xs))
-        dfs["Cumulative Recall"][model_name] = pd.Series(recall_interp(xs))
-        dfs["Cumulative F1"][model_name] = pd.Series(f1_interp(xs))
+        if "precision" in metrics_no_case:
+            prec_interp = scipy.interpolate.interp1d(
+                xs, precision_cum[:end], kind="cubic"
+            )
+            dfs["Precision"][model_name] = pd.Series(prec_interp(xs))
+        if "recall" in metrics_no_case:
+            recall_interp = scipy.interpolate.interp1d(
+                xs, recall_cum[:end], kind="cubic"
+            )
+            dfs["Recall"][model_name] = pd.Series(recall_interp(xs))
+        if "f1" in metrics_no_case:
+            f1_cum = 2 * (precision_cum * recall_cum) / (precision_cum + recall_cum)
+            f1_interp = scipy.interpolate.interp1d(xs, f1_cum[:end], kind="cubic")
+            dfs["F1"][model_name] = pd.Series(f1_interp(xs))
+
+        if "mae" in metrics_no_case:
+            cum_errors = (each_true - each_pred).abs().cumsum()
+            cum_counts = np.arange(1, len(each_true) + 1)
+            mae_cum = cum_errors / cum_counts
+            mae_interp = scipy.interpolate.interp1d(xs, mae_cum[:end], kind="cubic")
+            dfs["MAE"][model_name] = pd.Series(mae_interp(xs))
+
+        if "rmse" in metrics_no_case:
+            rmse_cum = (((each_true - each_pred) ** 2).cumsum() / cum_counts) ** 0.5
+            rmse_interp = scipy.interpolate.interp1d(xs, rmse_cum[:end], kind="cubic")
+            dfs["RMSE"][model_name] = pd.Series(rmse_interp(xs))
 
     for key in dfs:
         # drop all-NaN rows so plotly plot x-axis only extends to largest number of
@@ -736,11 +761,12 @@ def cumulative_precision_recall(
                 )
 
     elif backend == "plotly":
-        fig = df_cum.query(f"metric in {metrics}").plot(
+        n_cols = kwargs.pop("facet_col_wrap", 2)
+        kwargs.setdefault("facet_col_spacing", 0.03)
+        fig = df_cum.plot(
             backend=backend,
             facet_col="metric",
-            facet_col_wrap=2,
-            facet_col_spacing=0.03,
+            facet_col_wrap=n_cols,
             **kwargs,
         )
 
@@ -748,7 +774,7 @@ def cumulative_precision_recall(
         for idx, anno in enumerate(fig.layout.annotations):
             anno.text = anno.text.split("=")[1]
             anno.font.size = 16
-            grid_pos = dict(row=idx // 2 + 1, col=idx % 2 + 1)
+            grid_pos = dict(row=idx // n_cols + 1, col=idx % n_cols + 1)
             fig.update_traces(
                 hovertemplate=f"Index = %{{x:d}}<br>{anno.text} = %{{y:.2f}}",
                 **grid_pos,
@@ -774,7 +800,7 @@ def cumulative_precision_recall(
             fig.add_annotation(
                 x=n_stable,
                 y=0.95,
-                text="Stable<br>Materials",
+                text="Stable Materials",
                 showarrow=False,
                 xanchor="left",
                 align="left",

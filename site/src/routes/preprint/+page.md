@@ -2,7 +2,7 @@
   import { repository as repo } from '$site/package.json'
   import EachScatterModels from '$figs/each-scatter-models-4x2.svelte'
   import MetricsTable from '$figs/metrics-table.svelte'
-  import CumulativeClfMetrics from '$figs/cumulative-clf-metrics.svelte'
+  import CumulativePrecisionRecall from '$figs/cumulative-precision-recall.svelte'
   import RollingMaeVsHullDistModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'
   import ElementErrorsPtableHeatmap from '$models/element-errors-ptable-heatmap.svelte'
   import HistClfTrueHullDistModels from '$figs/hist-clf-true-hull-dist-models-4x2.svelte'
@@ -166,7 +166,7 @@ Our initial benchmark release includes 8 models.
 @Fig:metrics-table shows performance metrics for all models included in the initial release of Matbench Discovery.
 CHGNet takes the top spot on all metrics except true positive rate (TPR) and emerges as current SOTA for ML-guided materials discovery. The discovery acceleration factor (DAF) measures how many more stable structures a model found compared to the dummy discovery rate of 43k / 257k $\approx$ 16.7\% achieved by randomly selecting test set crystals. Consequently, the maximum possible DAF is ~6. This highlights the fact that our benchmark is made more challenging by deploying models on an already enriched space with a much higher fraction of stable structures than uncharted materials space at large. As the convex hull becomes more thoroughly sampled by future discovery, the fraction of unknown stable structures decreases, naturally leading to less enriched future test sets which will allow for higher maximum DAFs.
 
-Note that MEGNet outperforms M3GNet on DAF (2.70 vs 2.66) even though M3GNet is superior to MEGNet in all other metrics. The reason is the one outlined in the previous paragraph as becomes clear from @fig:cumulative-clf-metrics. MEGNet's line ends at 55.6 k materials which is closest to the true number of 43 k stable materials in our test set. All other models overpredict the sum total of stable materials by anywhere from 40% (~59 k for CGCNN) to 104% (85 k for Wrenformer), resulting in large numbers of false positive predictions which lower their DAFs.
+Note that MEGNet outperforms M3GNet on DAF (2.70 vs 2.66) even though M3GNet is superior to MEGNet in all other metrics. The reason is the one outlined in the previous paragraph as becomes clear from @fig:cumulative-precision-recall. MEGNet's line ends at 55.6 k materials which is closest to the true number of 43 k stable materials in our test set. All other models overpredict the sum total of stable materials by anywhere from 40% (~59 k for CGCNN) to 104% (85 k for Wrenformer), resulting in large numbers of false positive predictions which lower their DAFs.
 
 As noted, this is only a problem in practice for exhaustive discovery campaigns that validate _all_ stable predictions from a model. More frequently, model predictions will be ranked most-to-least stable and validation stops after some pre-determined compute budget is spent, say, 10k DFT relaxations. In that case, most of the false positive predictions near the less stable end of the candidate list are ignored and don't harm the campaign's overall discovery count.
 
@@ -174,15 +174,15 @@ We find a large performance gap between models that make one-shot predictions di
 
 The reason CGCNN+P achieves better regression metrics than CGCNN but is still worse as a classifier becomes apparent from [the SI histograms](/si#fig:hist-clf-pred-hull-dist-models) by noting that the CGCNN+P histogram is more sharply peaked at the 0 hull distance stability threshold. This causes even small errors in the predicted convex hull distance to be large enough to invert a classification. Again, this is evidence to choose carefully which metrics to optimize. Regression metrics are far more prevalent when evaluating energy predictions. In our benchmark, energies are just means to an end to classify compound stability. Regression accuracy is of little use on its own unless it helps classification. The field needs to be aware that this is not a given.
 
-### Cumulative Classification Metrics
+### Cumulative Precision + Recall
 
 {#if mounted}
-<CumulativeClfMetrics style="margin: 0 -2em 0 -4em;" />
+<CumulativePrecisionRecall style="margin: 0 -2em 0 -4em;" />
 {/if}
 
-> @label:fig:cumulative-clf-metrics Cumulative precision and recall over the course of a simulated discovery campaign. This figure highlights how different models perform better or worse depending on the length of the discovery campaign. Length here is an integer measuring how many DFT relaxations you have compute budget for. We only show the 6 best performing models for visual clarity.
+> @label:fig:cumulative-precision-recall Cumulative precision and recall over the course of a simulated discovery campaign. This figure highlights how different models perform better or worse depending on the length of the discovery campaign. Length here is an integer measuring how many DFT relaxations you have compute budget for. We only show the 6 best performing models for visual clarity.
 
-@Fig:cumulative-clf-metrics simulates ranking materials from most to least stable according to model-predicted energies. For each model, we go down that list material by material, calculating at each step the precision and recall of correctly identified stable materials. This simulates exactly how these models might be used in a prospective materials discovery campaign and reveal how a model's performance changes as a function of the discovery campaign length, i.e. the amount of resources available to validate model predictions.
+@Fig:cumulative-precision-recall simulates ranking materials from most to least stable according to model-predicted energies. For each model, we go down that list material by material, calculating at each step the precision and recall of correctly identified stable materials. This simulates exactly how these models might be used in a prospective materials discovery campaign and reveal how a model's performance changes as a function of the discovery campaign length, i.e. the amount of resources available to validate model predictions.
 
 A line terminates when a model believes there are no more materials in the WBM test set below the MP convex hull. The dashed vertical line shows the actual number of stable structures in our test set. All models are biased towards stability to some degree as they all overestimate this number, most of all Wrenformer by over 112%, least of all MEGNet by 30%. The diagonal Optimal Recall line would be achieved if a model never made a false negative prediction and stops predicting stable crystals exactly when the true number of stable materials is reached. Zooming in on the top-left corner of the precision plot, we observe that CHGNet is the only model without a sudden drop in precision right at the start of the discovery campaign. It keeps a strong lead over the runner-up M3GNet until reaching ~3k screened materials. From there, the CHGNet and M3GNet lines slowly converge until they almost tie at a precision of 0.52 after ~56k screened materials. At that point, CHGNet's list of stable predictions is exhausted while M3GNet continues to drop to 0.45 at 76 k, attributable to many false positives towards the end of the stable list.
 
