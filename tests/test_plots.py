@@ -11,7 +11,7 @@ from pytest import CaptureFixture
 
 from matbench_discovery.plots import (
     Backend,
-    cumulative_precision_recall,
+    cumulative_metrics,
     df_to_pdf,
     df_to_svelte_table,
     hist_classified_stable_vs_hull_dist,
@@ -35,18 +35,18 @@ e_form_col = "e_form_per_atom_mp2020_corrected"
 @pytest.mark.parametrize(
     "metrics",
     [
-        ("Cumulative Recall",),
-        ("Cumulative Recall", "Cumulative F1"),
-        ("Cumulative Recall", "Cumulative Precision", "Cumulative F1"),
+        ("Recall",),
+        ("Recall", "MAE"),
+        ("Recall", "Precision", "F1"),
     ],
 )
-def test_cumulative_precision_recall(
+def test_cumulative_metrics(
     project_end_point: AxLine,
     stability_threshold: float,
     backend: Backend,
     metrics: tuple[str, ...],
 ) -> None:
-    fig, df_metrics = cumulative_precision_recall(
+    fig, df_metrics = cumulative_metrics(
         e_above_hull_true=df_wbm[each_true_col],
         df_preds=df_wbm[models],
         backend=backend,
@@ -67,6 +67,18 @@ def test_cumulative_precision_recall(
         # TODO fix AssertionError {'Recall', 'metric=F1'} == {'F1', 'Recall'}
         # subplot_titles = [anno.text for anno in fig.layout.annotations][:len(metrics)]
         # assert set(subplot_titles) == set(metrics)
+
+
+def test_cumulative_metrics_raises() -> None:
+    with pytest.raises(ValueError) as exc_info:
+        cumulative_metrics(
+            e_above_hull_true=df_wbm[each_true_col],
+            df_preds=df_wbm[models],
+            metrics=("invalid",),
+        )
+    assert "invalid_metrics={'invalid'}, should be case-insensitive subset of" in str(
+        exc_info.value
+    )
 
 
 @pytest.mark.parametrize("window", [0.02, 0.002])
