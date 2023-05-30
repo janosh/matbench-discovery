@@ -50,7 +50,7 @@
 {/if}
 
 > @label:fig:cumulative-mae-rmse Cumulative mean absolute error (MAE) and root mean square error (RMSE) during a simulated discovery campaign. This figure expands on the [precision-recall figure](/preprint#fig:cumulative-precision-recall). The $x$-axis again shows number of materials sorted by model-predicted stability or 'campaign length'. This allows the reader to choose a cutoff point given their discovery campaign's resource constraints for validating model predictions and then read off the optimal model given those constraints.
-> CHGNet achieves the lowest regression error profile, with a larger gap to the runner-up model M3GNet than in the precision-recall plots.
+> CHGNet achieves the lowest regression error profile, with a larger gap to the runner-up model M3GNet than in the precision-recall plots. This is likely due to the difference in TPR/TNR trade off between CHGNet and M3GNet. M3GNet has TNR = 0.80 vs CHGNet's TNR = 0.87. Higher TNR means lower FPR. Lower false positive rate means lower cumulative MAE and RMSE. Lines end when models stop predicting materials as stable, so these cumulative plots only contain model-predicted positive (stable) materials. Besides the high opportunity cost of false positives, this highlights another reason to prioritize low FPR in discovery models: lower error on the predictions of highest relevance.
 
 ## Model Run Times
 
@@ -134,11 +134,11 @@ We highlight this here to refute the suggestion that training on raw DFT energie
 
 {#if mounted}
 
-<div style="display: flex; gap: 1em; justify-content: space-around;">
+<div style="display: flex; gap: 1em; justify-content: space-around; flex-wrap: wrap;">
 <SpacegroupSunburstWrenformerFailures />
 <SpacegroupSunburstWbm />
 </div>
-<EAboveHullScatterWrenformerFailures style="height: 300; width: 300;" />
+<EAboveHullScatterWrenformerFailures />
 {/if}
 
 > @label:fig:spacegroup-prevalence-wrenformer-failures The left spacegroup sunburst shows spacegroup 71 is by far the dominant lattice symmetry among the 941 Wrenformer failure cases where $E_\text{above hull,DFT} < 1$ and $E_\text{above hull,Wrenformer} > 1$ (points inside the shaded rectangle). On the right side for comparison is the spacegroup sunburst for the entire WBM test set.

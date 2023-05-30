@@ -30,13 +30,16 @@ warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen"
 # %%
 module_dir = os.path.dirname(__file__)
 task_type = "IS2RE"
-date = "2022-10-31"
-glob_pattern = f"{date}-m3gnet-wbm-{task_type}/*.json.gz"
+date = "2023-05-30"
+model_type = "directs"
+glob_pattern = f"{date}-m3gnet-{model_type}-wbm-{task_type}/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 struct_col = "m3gnet_structure"
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
-dfs: dict[str, pd.DataFrame] = {}
+# prevent accidental overwrites
+if "dfs" not in locals():
+    dfs: dict[str, pd.DataFrame] = {}
 
 
 # %%
@@ -66,7 +69,7 @@ cse: ComputedStructureEntry
 for row in tqdm(df_m3gnet.itertuples(), total=len(df_m3gnet)):
     mat_id, struct_dict, m3gnet_energy, *_ = row
     m3gnet_struct = Structure.from_dict(struct_dict)
-    df_m3gnet.loc[mat_id, struct_col] = m3gnet_struct
+    df_m3gnet.at[mat_id, struct_col] = m3gnet_struct  # noqa: PD008
     cse = df_cse.loc[mat_id, "cse"]
     cse._energy = m3gnet_energy  # cse._energy is the uncorrected energy
     cse._structure = m3gnet_struct
@@ -81,7 +84,7 @@ assert len(out) == len(df_m3gnet)
 
 
 # %% compute corrected formation energies
-df_m3gnet["e_form_per_atom_m3gnet"] = [
+df_m3gnet[f"e_form_per_atom_m3gnet_{model_type}"] = [
     get_e_form_per_atom(cse) for cse in tqdm(df_m3gnet.cse)
 ]
 
@@ -93,11 +96,11 @@ ax = density_scatter(
 
 
 # %%
-out_path = f"{module_dir}/{today}-m3gnet-wbm-{task_type}.json.gz"
+out_path = f"{module_dir}/{today}-m3gnet-{model_type}-wbm-{task_type}"
 df_m3gnet = df_m3gnet.round(4)
-df_m3gnet.reset_index().to_json(out_path, default_handler=as_dict_handler)
+df_m3gnet.select_dtypes("number").to_csv(f"{out_path}.csv")
+df_m3gnet.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
 
-df_m3gnet.select_dtypes("number").to_csv(out_path.replace(".json.gz", ".csv"))
 
 # in_path = f"{module_dir}/2022-10-31-m3gnet-wbm-IS2RE.json.gz"
 # df_m3gnet = pd.read_csv(in_path.replace(".json.gz", ".csv")).set_index("material_id")
