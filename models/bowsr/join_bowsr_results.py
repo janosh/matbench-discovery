@@ -66,11 +66,14 @@ pymatviz.density_scatter(
 
 
 # %%
-out_path = f"{module_dir}/{today}-bowsr-megnet-wbm-{task_type}.json.gz"
-df_bowsr.reset_index().to_json(out_path, default_handler=lambda x: x.as_dict())
+out_path = f"{module_dir}/{today}-bowsr-megnet-wbm-{task_type}"
+df_bowsr = df_bowsr.round(4)
+# save energy and formation energy as fast-loading CSV
+df_bowsr.select_dtypes("number").to_csv(f"{out_path}.csv")
+df_bowsr.reset_index().to_json(
+    f"{out_path}.json.gz", default_handler=lambda x: x.as_dict()
+)
 
-# save energy and formation energy as CSV for fast loading
-df_bowsr.select_dtypes("number").to_csv(out_path.replace(".json.gz", ".csv"))
 
 # in_path = f"{module_dir}/2023-01-23-bowsr-megnet-wbm-IS2RE.json.gz"
 # df_bowsr = pd.read_json(in_path).set_index("material_id")

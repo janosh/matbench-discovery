@@ -11,7 +11,7 @@ from __future__ import annotations
 import os
 import warnings
 from importlib.metadata import version
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -20,7 +20,7 @@ from m3gnet.models import Relaxer
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import DEBUG, timestamp, today
+from matbench_discovery import DEBUG, ROOT, timestamp, today
 from matbench_discovery.data import DATA_FILES, as_dict_handler
 from matbench_discovery.slurm import slurm_submit
 
@@ -29,9 +29,10 @@ __date__ = "2022-08-15"
 
 task_type = "IS2RE"  # "RS2RE"
 module_dir = os.path.dirname(__file__)
+model_type: Literal["orig", "direct", "manual-sampling"] = "manual-sampling"
 # set large job array size for smaller data splits and faster testing/debugging
 slurm_array_task_count = 100
-job_name = f"m3gnet-wbm-{task_type}{'-debug' if DEBUG else ''}"
+job_name = f"m3gnet-{model_type}-wbm-{task_type}{'-debug' if DEBUG else ''}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 slurm_vars = slurm_submit(
@@ -85,7 +86,12 @@ wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 
 # %%
-megnet = Relaxer()  # load default pre-trained M3GNet model
+checkpoint = None
+if model_type == "direct":
+    checkpoint = f"{ROOT}/models/m3gnet/2023-05-26-DI-DFTstrictF10-TTRS-128U-442E"
+if model_type == "manual-sampling":
+    checkpoint = f"{ROOT}/models/m3gnet/2023-05-26-MS-DFTstrictF10-128U-154E"
+megnet = Relaxer(potential=checkpoint)  # load pre-trained M3GNet model
 relax_results: dict[str, dict[str, Any]] = {}
 input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
 

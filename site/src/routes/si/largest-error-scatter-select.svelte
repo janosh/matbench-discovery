@@ -5,7 +5,7 @@
 
   const figs = import.meta.glob(
     `$figs/scatter-largest-errors-models-mean-vs-true-hull-dist-*.svelte`,
-    { eager: true, import: 'default' }
+    { eager: true, import: `default` }
   )
 
   let selected: string[] = [Object.keys(figs)[0]]

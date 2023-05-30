@@ -70,6 +70,7 @@ model_labels = dict(
     cgcnn="CGCNN",
     m3gnet_megnet="M3GNet + MEGNet",
     m3gnet="M3GNet",
+    m3gnet_directs="M3GNet DIRECTS",
     megnet="MEGNet",
     voronoi_rf="Voronoi RF",
     wrenformer="Wrenformer",
@@ -841,7 +842,7 @@ def df_to_svelte_table(
     styler: Styler,
     file_path: str | Path,
     inline_props: str = "",
-    styles: str = "",
+    styles: str = "table { overflow: scroll; max-width: 100%; display: block; }",
     **kwargs: Any,
 ) -> None:
     """Convert a pandas Styler to a svelte table.
