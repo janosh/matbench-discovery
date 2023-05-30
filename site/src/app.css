@@ -122,8 +122,10 @@ img {
 }
 
 table {
+  display: block;
+  max-width: 100%;
+  overflow: scroll;
   border-collapse: collapse;
-  width: 100%;
 }
 table :is(td, th) {
   border: 1px solid gray;

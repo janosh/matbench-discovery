@@ -44,6 +44,7 @@ class PredFiles(Files):
 
     # original M3GNet straight from publication, not re-trained
     m3gnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv"
+    # m3gnet_directs = "m3gnet/2023-05-30-m3gnet-directs-wbm-IS2RE.csv"
 
     # original MEGNet straight from publication, not re-trained
     megnet = "megnet/2022-11-18-megnet-wbm-IS2RE/megnet-e-form-preds.csv"

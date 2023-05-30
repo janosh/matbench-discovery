@@ -107,7 +107,7 @@
     {/if}
   </svelte:fragment>
   <div
-    style="display: flex; gap: 1em; justify-content: space-around;"
+    style="display: flex; gap: 1em; justify-content: space-around; flex-wrap: wrap;"
     slot="spacegroup-sunbursts"
   >
     {#if browser}
