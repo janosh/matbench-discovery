@@ -887,24 +887,24 @@ def df_to_pdf(
     except ImportError as exc:
         raise ImportError(
             "pdfkit not installed\nrun pip install pdfkit && brew install "
-            "homebrew/cask/wkhtmltopdf"
+            "homebrew/cask/wkhtmltopdf\n(brew is macOS only, use apt un linux))"
         ) from exc
 
+    pdfkit.from_string(styler.to_html(**kwargs), file_path)
+    if not crop:
+        return
     try:
         # needed to auto-crop large white margins from PDF
         # pip install pdfCropMargins
         from pdfCropMargins import crop as crop_pdf
-    except ImportError as exc:
-        raise ImportError(
-            "pdfCropMargins not installed\nrun pip install pdfCropMargins.\n"
-        ) from exc
 
-    pdfkit.from_string(styler.to_html(**kwargs), file_path)
-    try:
         # Remove PDF margins
         cropped_file_path, _exit_code, _stdout, _stderr = crop_pdf(
             ["--percentRetain", "0", file_path]
         )
         os.replace(cropped_file_path, file_path)
+    except ImportError as exc:
+        msg = "pdfCropMargins not installed\nrun pip install pdfCropMargins"
+        raise ImportError(msg) from exc
     except Exception as exc:
         raise RuntimeError("Error cropping PDF margins") from exc

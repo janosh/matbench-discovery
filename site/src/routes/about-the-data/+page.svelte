@@ -1,9 +1,9 @@
 <script lang="ts">
   import { browser } from '$app/environment'
   import FormEnergyHist from '$figs/hist-wbm-e-form-per-atom.svelte'
+  import HistWbmHullDist from '$figs/hist-wbm-hull-dist.svelte'
   import SpacegroupSunburstMp from '$figs/spacegroup-sunburst-mp.svelte'
   import SpacegroupSunburstWbm from '$figs/spacegroup-sunburst-wbm.svelte'
-  import WbmEachHist from '$figs/wbm-each-hist.svelte'
   import { PtableInset } from '$lib'
   import DataReadme from '$root/data/wbm/readme.md'
   import type { ChemicalElement } from 'elementari'
@@ -101,9 +101,9 @@
       3).
     </p>
   </svelte:fragment>
-  <svelte:fragment slot="wbm-each-hist">
+  <svelte:fragment slot="hist-wbm-hull-dist">
     {#if browser}
-      <WbmEachHist />
+      <HistWbmHullDist />
     {/if}
   </svelte:fragment>
   <div
