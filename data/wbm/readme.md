@@ -74,16 +74,16 @@ materialscloud:2021.68 includes a readme file with a description of the dataset,
 
 ## 🎯 &thinsp; Target Distribution
 
-The WBM test set has an energy above the MP convex hull distribution with **mean ± std = 0.02 ± 0.25 eV/atom**.
+Below is a histogram of hull distances of all WBM test set structures with respect to the Materials Project convex hull. This is the target distribution that the models are asked to predict.
 
 The dummy MAE of always predicting the test set mean is **0.12 eV/atom**.
 
-The number of stable materials (according to the MP convex hull which is spanned by the training data the models have access to) is **97k** out of **257k**, resulting in a dummy stability hit rate of **37%**.
+The number of stable materials (according to the MP convex hull which is spanned by the training data the models have access to) is **43k** out of **257k**, resulting in a dummy stability hit rate of **16.7%**.
 
 > Note: [According to the authors](https://www.nature.com/articles/s41524-020-00481-6#Sec2), the stability rate w.r.t. to the more complete hull constructed from the combined train and test set (MP + WBM) for the first 3 rounds of elemental substitution is 18,479 out of 189,981 crystals ($\approx$ 9.7%).
 
-<slot name="wbm-each-hist">
-  <img src="./figs/wbm-each-hist.svg" alt="WBM energy above MP convex hull distribution">
+<slot name="hist-wbm-hull-dist">
+  <img src="./figs/hist-wbm-hull-dist.svg" alt="WBM energy above MP convex hull distribution">
 </slot>
 
 ## 🧪 &thinsp; Chemical Diversity
@@ -104,6 +104,6 @@ Element counts for MP training set consisting of 146,323 `ComputedStructureEntri
 
 ## 📊 &thinsp; Symmetry Statistics
 
-Both the MP training and WBM test set have good coverage of all 7 crystal systems, triclinic crystals being the only notable exception at just 1% prevalence in WBM but still well represented in MP (15%). In MP, monoclinic (23%) and orthorhombic (21%) are most prevalent. In WBM, orthorhombic and tetragonal each make up 20%. Combined with the higher share of cubic structures in WBM (19% vs 14%), WBM structures have overall higher symmetry. This should benefit a model like Wrenformer reliant on symmetries to encode coarse-grained structural features. See [SI](/si#spacegroup-prevalence-in-wrenformer-failure-cases) for a failure case of this featurization.
+These sunburst diagrams show the spacegroup distribution of MP on the left and WBM on the right. Both have good coverage of all 7 crystal systems, the only exception being triclinic crystals which are just 1% of WBM but well represented in MP (15%). The 3 largest systems in MP are monoclinic, orthorhombic and triclinic vs orthorhombic, tetragonal and cubic in WBM. So WBM structures have overall higher symmetry which can benefit some models more than others. Wrenformer in particular uses symmetries as a coarse-grained description of the underlying structure. Its representations basically degrades to composition only on symmetry-less P1 structures. Given this spacegroup distribution, it should fare well on the WBM test set. The fact that Wrenformer is still outperformed by all interatomic potentials and some single-shot GNNs indicates the underlying methodology is unable to compete. See [SI](/si#spacegroup-prevalence-in-wrenformer-failure-cases) for a specific Wrenformer failure case.
 
 <slot name="spacegroup-sunbursts" />

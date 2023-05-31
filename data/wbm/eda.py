@@ -12,7 +12,7 @@ from pymatviz import (
 )
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, PDF_FIGS, ROOT, STABILITY_THRESHOLD, today
+from matbench_discovery import FIGS, PDF_FIGS, ROOT, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.energy import mp_elem_reference_entries
@@ -35,14 +35,25 @@ df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False)
 
 
 # %%
-for count_mode in ["occurrence", "composition"]:
-    wbm_elem_counts = count_elements(df_wbm.formula, count_mode=count_mode).astype(int)
+wbm_occu_counts = count_elements(df_wbm.formula, count_mode="occurrence").astype(int)
+wbm_comp_counts = count_elements(df_wbm.formula, count_mode="composition")
 
-    wbm_elem_counts.to_json(f"{about_data_page}/wbm-element-counts-{count_mode}.json")
-    mp_elem_counts = count_elements(df_mp.formula_pretty, count_mode=count_mode).astype(
-        int
-    )
-    mp_elem_counts.to_json(f"{about_data_page}/mp-element-counts-{count_mode}.json")
+mp_occu_counts = count_elements(df_mp.formula_pretty, count_mode="occurrence").astype(
+    int
+)
+mp_comp_counts = count_elements(df_mp.formula_pretty, count_mode="composition")
+
+all_counts = (
+    ("wbm", "occurrence", wbm_occu_counts),
+    ("wbm", "composition", wbm_comp_counts),
+    ("mp", "occurrence", mp_occu_counts),
+    ("mp", "composition", mp_comp_counts),
+)
+
+
+# %%
+for dataset, count_mode, elem_counts in all_counts:
+    elem_counts.to_json(f"{about_data_page}/{dataset}-element-counts-{count_mode}.json")
 
 
 # %% export element counts by WBM step to JSON
@@ -64,51 +75,21 @@ for arity, df_mp in df_wbm.groupby(df_wbm[comp_col].map(len)):
 
 
 # %%
-wbm_fig = ptable_heatmap_plotly(
-    wbm_elem_counts.drop("Xe"),
-    log=True,
-    colorscale="RdBu",
-    hover_props=dict(atomic_number="atomic number"),
-    hover_data=wbm_elem_counts,
-)
+for dataset, count_mode, elem_counts in all_counts:
+    ptable = ptable_heatmap_plotly(
+        elem_counts.drop("Xe")[elem_counts > 1],
+        font_size=11,
+        color_bar=dict(title=dict(text=f"WBM {count_mode} counts", font_size=24)),
+        # log=True,
+        # colorscale="cividis",
+        hover_props=dict(atomic_number="atomic number"),
+        hover_data=wbm_occu_counts,
+    )
 
-title = "WBM Elements"
-wbm_fig.update_layout(
-    title=dict(text=title, x=0.35, y=0.9, font_size=20),
-    xaxis=dict(fixedrange=True),
-    yaxis=dict(fixedrange=True),
-    paper_bgcolor="rgba(0,0,0,0)",
-)
-wbm_fig.show()
-
-
-# %%
-wbm_fig.write_image(f"{module_dir}/figs/wbm-elements.svg", width=1000, height=500)
-# save_fig(wbm_fig, f"{FIGS}/wbm-elements.svelte")
-
-
-# %%
-mp_fig = ptable_heatmap_plotly(
-    mp_elem_counts[mp_elem_counts > 1],
-    log=True,
-    colorscale="RdBu",
-    hover_props=dict(atomic_number="atomic number"),
-    hover_data=mp_elem_counts,
-)
-
-title = "MP Elements"
-mp_fig.update_layout(
-    title=dict(text=title, x=0.35, y=0.9, font_size=20),
-    xaxis=dict(fixedrange=True),
-    yaxis=dict(fixedrange=True),
-    paper_bgcolor="rgba(0,0,0,0)",
-)
-mp_fig.show()
-
-
-# %%
-mp_fig.write_image(f"{module_dir}/figs/{today}-mp-elements.svg", width=1000, height=500)
-# save_fig(mp_fig, f"{FIGS}/mp-elements.svelte")
+    ptable.layout.margin = dict(l=0, r=0, b=0, t=0)
+    ptable.show()
+    # save_fig(ptable, f"{module_dir}/figs/wbm-elements.svg", width=1000, height=500)
+    save_fig(ptable, f"{PDF_FIGS}/{dataset}-element-{count_mode}-counts.pdf")
 
 
 # %% histogram of energy above MP convex hull for WBM
@@ -148,8 +129,9 @@ for x_pos, label in (
 
 fig.show()
 
-save_fig(fig, f"{FIGS}/wbm-each-hist.svelte")
-save_fig(fig, "./figs/wbm-each-hist.svg", width=1000, height=500)
+# save_fig(fig, f"{FIGS}/hist-wbm-hull-dist.svelte")
+# save_fig(fig, "./figs/hist-wbm-hull-dist.svg", width=1000, height=500)
+save_fig(fig, f"{PDF_FIGS}/hist-wbm-hull-dist.pdf")
 
 
 # %%
@@ -254,6 +236,7 @@ df_mp[spg_col] = df_mp[wyk_col].str.split("_").str[2].astype(int)
 # %%
 fig = spacegroup_sunburst(df_wbm[spg_col], width=350, height=350, show_counts="percent")
 fig.layout.title.update(text="WBM Spacegroup Sunburst", x=0.5, font_size=14)
+fig.layout.margin = dict(l=0, r=0, t=30, b=0)
 fig.show()
 save_fig(fig, f"{FIGS}/spacegroup-sunburst-wbm.svelte")
 save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-wbm.pdf")
@@ -262,6 +245,7 @@ save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-wbm.pdf")
 # %%
 fig = spacegroup_sunburst(df_mp[spg_col], width=350, height=350, show_counts="percent")
 fig.layout.title.update(text="MP Spacegroup Sunburst", x=0.5, font_size=14)
+fig.layout.margin = dict(l=0, r=0, t=30, b=0)
 fig.show()
 save_fig(fig, f"{FIGS}/spacegroup-sunburst-mp.svelte")
 save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-mp.pdf")
