@@ -44,7 +44,8 @@ class PredFiles(Files):
 
     # original M3GNet straight from publication, not re-trained
     m3gnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv"
-    # m3gnet_directs = "m3gnet/2023-05-30-m3gnet-directs-wbm-IS2RE.csv"
+    # m3gnet_direct = "m3gnet/2023-05-30-m3gnet-direct-wbm-IS2RE.csv"
+    # m3gnet_ms = "m3gnet/2023-06-01-m3gnet-manual-sampling-wbm-IS2RE.csv"
 
     # original MEGNet straight from publication, not re-trained
     megnet = "megnet/2022-11-18-megnet-wbm-IS2RE/megnet-e-form-preds.csv"
@@ -117,8 +118,9 @@ def load_df_wbm_with_preds(
             df_out[model_name] = df[pred_cols].mean(axis=1)
 
         else:
+            cols = list(df)
             raise ValueError(
-                f"No pred col for {model_name=}, available cols={list(df)}"
+                f"No pred col for {model_name=} ({model_key=}), available {cols=}"
             )
 
     return df_out

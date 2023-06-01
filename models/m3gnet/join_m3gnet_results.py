@@ -9,12 +9,12 @@ from __future__ import annotations
 import os
 import warnings
 from glob import glob
+from typing import Literal
 
 import pandas as pd
 from pymatgen.core import Structure
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedStructureEntry
-from pymatviz import density_scatter
 from tqdm import tqdm
 
 from matbench_discovery import today
@@ -31,7 +31,8 @@ warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen"
 module_dir = os.path.dirname(__file__)
 task_type = "IS2RE"
 date = "2023-05-30"
-model_type = "directs"
+# direct: cluster sampling, ms: manual sampling
+model_type: Literal["orig", "direct", "ms"] = "ms"
 glob_pattern = f"{date}-m3gnet-{model_type}-wbm-{task_type}/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 struct_col = "m3gnet_structure"
@@ -84,15 +85,9 @@ assert len(out) == len(df_m3gnet)
 
 
 # %% compute corrected formation energies
-df_m3gnet[f"e_form_per_atom_m3gnet_{model_type}"] = [
+df_m3gnet["e_form_per_atom_m3gnet"] = [
     get_e_form_per_atom(cse) for cse in tqdm(df_m3gnet.cse)
 ]
-
-
-# %%
-ax = density_scatter(
-    df=df_m3gnet, x="e_form_per_atom_m3gnet", y="e_form_per_atom_m3gnet_uncorrected"
-)
 
 
 # %%
