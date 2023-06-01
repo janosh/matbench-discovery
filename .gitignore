@@ -12,8 +12,6 @@ __pycache__
 *.pkl.gz
 data/**/raw
 data/**/tsne
-data/2022-*
-data/m3gnet-*
 !data/mp/2023-02-07-mp-elemental-reference-entries.json.gz
 
 # slurm + Weights and Biases logs
@@ -25,3 +23,4 @@ site/src/routes/api/*.md
 
 # temporary ignore rules
 2023-02-05-ens=10-perturb=5
+models/m3gnet/2023-05-26-*
