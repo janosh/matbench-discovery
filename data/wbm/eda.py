@@ -4,6 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from pymatgen.core import Composition
 from pymatviz import (
     count_elements,
@@ -99,10 +100,15 @@ mean, std = df_wbm[col].mean(), df_wbm[col].std()
 
 range_x = (mean - 2 * std, mean + 2 * std)
 counts, bins = np.histogram(df_wbm[col], bins=150, range=range_x)
-x_label = "WBM energy above MP convex hull (eV/atom)"
-df_hist = pd.DataFrame([counts, bins], index=["count", x_label]).T
+bins = bins[1:]
+left_counts = counts[bins < 0]
+right_counts = counts[bins >= 0]
 
-fig = df_hist.plot.area(x=x_label, y="count", backend="plotly", range_x=range_x)
+x_label = "WBM energy above MP convex hull (eV/atom)"
+fig = px.bar(
+    x=bins[bins < 0], y=left_counts, opacity=0.7, labels={"x": x_label, "y": "Counts"}
+)
+fig.add_trace(go.Bar(x=bins[bins >= 0], y=right_counts, opacity=0.7))
 
 if col.startswith("e_above_hull"):
     n_stable = sum(df_wbm[col] <= STABILITY_THRESHOLD)
@@ -115,8 +121,9 @@ if col.startswith("e_above_hull"):
         f"n={len(df_wbm.dropna()):,} with {n_stable:,} stable + {n_unstable:,} "
         f"unstable, dummy MAE={dummy_mae:.2f}"
     )
-    fig.update_layout(title=dict(text=title, x=0.5, y=0.95))
+    fig.layout.title = dict(text=title, x=0.5)
 
+fig.layout.margin = dict(l=0, r=0, b=0, t=40)
 fig.update_layout(showlegend=False)
 
 for x_pos, label in (
@@ -129,7 +136,7 @@ for x_pos, label in (
 
 fig.show()
 
-# save_fig(fig, f"{FIGS}/hist-wbm-hull-dist.svelte")
+save_fig(fig, f"{FIGS}/hist-wbm-hull-dist.svelte")
 # save_fig(fig, "./figs/hist-wbm-hull-dist.svg", width=1000, height=500)
 save_fig(fig, f"{PDF_FIGS}/hist-wbm-hull-dist.pdf")
 

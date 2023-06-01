@@ -36,6 +36,13 @@
   <button on:click={() => (show_tips = true)} bind:this={btn} title={tips_title}>
     <Icon icon="mdi:lightbulb-on-outline" inline />
   </button>
+
+  <p>
+    <a href="/changelog">
+      <Icon icon="octicon:history" inline />
+      Changelog
+    </a>
+  </p>
 </footer>
 
 <dialog bind:this={dialog} open={show_tips}>

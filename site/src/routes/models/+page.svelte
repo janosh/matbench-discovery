@@ -77,8 +77,8 @@
     {#each models.slice(0, Math.max(min_models, show_n_best)) as data (data.model_name)}
       <li
         animate:flip={{ duration: 400 }}
-        in:fade|local={{ delay: 100 }}
-        out:fade|local={{ delay: 100 }}
+        in:fade={{ delay: 100 }}
+        out:fade={{ delay: 100 }}
       >
         <ModelCard {data} {stats} {sort_by} bind:show_details />
         {#if data.training_set}

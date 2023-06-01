@@ -78,7 +78,7 @@
 <GitHubCorner href={repository} />
 
 <main>
-  <Nav {routes} />
+  <Nav routes={routes.filter((route) => route != `/changelog`)} />
 
   <slot />
 

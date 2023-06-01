@@ -19,11 +19,9 @@
   minSelect={1}
   maxSelect={1}
   {disabled}
+  let:option
 >
-  <span let:option slot="selected">
-    {get_chemistry(option)}
-  </span>
-  <span let:option slot="option">
+  <span>
     {get_chemistry(option)}
   </span>
 </Select>
