@@ -12,19 +12,19 @@ index 175b915..42ce26e 100644
 +    id_test = ids[n_test:] if n_test > 0 else []
 +
      return id_train, id_val, id_test
- 
- 
+
+
 @@ -508,7 +509,7 @@ def get_train_val_loaders(
              classification=classification_threshold is not None,
              output_dir=output_dir,
              tmp_name="test_data",
 -        )
 +        ) if len(dataset_test) > 0 else None
- 
+
          collate_fn = train_data.collate
          # print("line_graph,line_dih_graph", line_graph, line_dih_graph)
 @@ -528,7 +529,7 @@ def get_train_val_loaders(
- 
+
          val_loader = DataLoader(
              val_data,
 -            batch_size=batch_size,
@@ -53,18 +53,18 @@ index 4fa072e..0b6330a 100644
 --- a/alignn/train.py
 +++ b/alignn/train.py
 @@ -69,7 +69,7 @@ torch.set_default_dtype(torch.float32)
- 
+
  device = "cpu"
  if torch.cuda.is_available():
 -    device = torch.device("cuda")
 +    device = torch.device("cuda:0")
- 
- 
+
+
  def activated_output_transform(output):
 @@ -817,6 +817,8 @@ def train_dgl(
          train_eos = EpochOutputStore()
          train_eos.attach(train_evaluator)
- 
+
 +    best_mae = np.inf
 +
      # collect evaluation performance
@@ -73,7 +73,7 @@ index 4fa072e..0b6330a 100644
 @@ -839,6 +841,20 @@ def train_dgl(
              history["train"][metric].append(tm)
              history["validation"][metric].append(vm)
- 
+
 +## Adapted so that the best model is saved
 +## ----------------------------------------------------------------------------
 +            nonlocal best_mae
@@ -152,7 +152,7 @@ index 4fa072e..0b6330a 100644
 +                    targets.append(target)
 +                    predictions.append(out_data)
 +            f.close()
- 
+
 -        print(
 -            "Test MAE:",
 -            mean_absolute_error(np.array(targets), np.array(predictions)),
