@@ -1,111 +1,82 @@
-#%% Imports
-### ----------------------------------------------------------------------------
+# %%
+from __future__ import annotations
+
+import csv
+import os
+from typing import Any
 
 import torch
-import os
-import csv
-
-from monty.serialization import dumpfn
-from tqdm import tqdm
-
-from alignn.models.alignn import ALIGNN
 from alignn.config import TrainingConfig
-
+from alignn.models.alignn import ALIGNN
 from jarvis.core.atoms import Atoms
 from jarvis.core.graphs import Graph
 from jarvis.db.jsonutils import loadjson
+from tqdm import tqdm
 
+from matbench_discovery import today
 from matbench_discovery.data import df_wbm
 
-#%% Cuda setup
-### ----------------------------------------------------------------------------
+__author__ = "Philipp Benner"
+__date__ = "2023-06-02"
 
-device = "cpu"
-if torch.cuda.is_available():
-    device = torch.device("cuda")
+module_dir = os.path.dirname(__file__)
 
-#%% ALIGNN config
-### ----------------------------------------------------------------------------
 
-config = loadjson("alignn_config.json")
+# %% ALIGNN config
+device = "cuda" if torch.cuda.is_available() else "cpu"
+config = loadjson(f"{module_dir}/alignn-config.json")
 config = TrainingConfig(**config)
 
-#%% Import an ALIGNN model
-### ----------------------------------------------------------------------------
 
-def load_model(basename):
-
-    filename = os.path.join(basename, 'model_best.pth')
-
-    model = ALIGNN(config.model)
-    model.load_state_dict(torch.load(filename, map_location=device))
-    model = model.to(device)
-    model = model.eval()
-
-    return model
-
-#%% Load test data
-### ----------------------------------------------------------------------------
-
-def load_data_directory(basename):
-
+# %% Load test data
+def load_data_directory(basename: str) -> list[dict[str, Any]]:
     id_prop_dat = os.path.join(basename, "id_prop.csv")
 
-    with open(id_prop_dat, "r") as f:
+    with open(id_prop_dat) as f:
         reader = csv.reader(f)
-        data = [row for row in reader]
+        data = list(reader)
 
     dataset = []
-    for i in data:
-        filename = os.path.join(basename, i[0])
+    for sample in data:
+        filename = os.path.join(basename, sample[0])
 
-        info           = {}
-        info["atoms"]  = Atoms.from_poscar(filename)
-        info["jid"]    = i[0]
-        info['target'] = float(i[1])
+        info = {}
+        info["atoms"] = Atoms.from_poscar(filename)
+        info["jid"] = sample[0]
+        info["target"] = float(sample[1])
 
         dataset.append(info)
-    
+
     return dataset
 
-#%% Get predictions
-### ----------------------------------------------------------------------------
 
-def get_predictions(model, dataset):
-    model.eval()
-    targets     = []
-    predictions = []
-    with torch.no_grad():
-        for datum in tqdm(dataset):
-            g, lg = Graph.atom_dgl_multigraph(
-                    datum['atoms'],
-                    cutoff        = config.cutoff,
-                    atom_features = config.atom_features,
-                    max_neighbors = config.max_neighbors)
-            y_hat = model([g.to(device), lg.to(device)]).item()
+# %% Compute test result
+model = ALIGNN(config.model)
+# load trained ALIGNN model
+state_dict = torch.load(
+    f"{module_dir}/data_train_result/model_best.pth", map_location=device
+)
+model.load_state_dict(state_dict)
+model = model.to(device)
 
-            predictions.append(y_hat)
-            targets    .append(datum['target'])
+dataset = load_data_directory("data_test_wbm")
 
-    return targets, predictions
+model.eval()
+predictions = []
+with torch.no_grad():  # get predictions
+    for datum in tqdm(dataset):
+        atom_graph, line_graph = Graph.atom_dgl_multigraph(
+            datum["atoms"],
+            cutoff=config.cutoff,
+            atom_features=config.atom_features,
+            max_neighbors=config.max_neighbors,
+        )
+        y_hat = model([atom_graph.to(device), line_graph.to(device)]).item()
 
-#%% Compute test result
-### ----------------------------------------------------------------------------
+        predictions.append(y_hat)
 
-if __name__ == "__main__":
+df_wbm["e_form_per_atom_alignn"] = predictions
 
-    model   = load_model('data_train_result')
-    dataset = load_data_directory('data_test_wbm')
-
-    targets, predictions = get_predictions(model, dataset)
-
-    mae = torch.nn.L1Loss()(torch.tensor(predictions), torch.tensor(targets)).item()
-
-    print(f'Test MAE: {mae}')
-
-    # %%
-    dumpfn({'material_id': list(df_wbm['material_id']),
-            'predictions': predictions,
-            'targets'    : targets,
-            'mae'        : mae },
-            'test_alignn_result.json')
+df_wbm.e_form_per_atom_alignn.round(4).to_csv(
+    f"{module_dir}/{today}-alignn-wbm-IS2RE.csv"
+)
