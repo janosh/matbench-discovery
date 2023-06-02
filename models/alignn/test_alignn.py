@@ -1,10 +1,10 @@
 # %%
 from __future__ import annotations
 
-import csv
 import os
 from typing import Any
 
+import pandas as pd
 import torch
 from alignn.config import TrainingConfig
 from alignn.models.alignn import ALIGNN
@@ -21,35 +21,13 @@ __date__ = "2023-06-02"
 
 module_dir = os.path.dirname(__file__)
 pred_col = "e_form_per_atom_alignn"
+target_col = "formation_energy_per_atom"
 
 
 # %% ALIGNN config
 device = "cuda" if torch.cuda.is_available() else "cpu"
 config = loadjson(f"{module_dir}/alignn-config.json")
 config = TrainingConfig(**config)
-
-
-# %% Load test data
-def load_data_directory(basename: str) -> list[dict[str, Any]]:
-    """Load ASE atoms, material IDs and target values from a directory."""
-    id_prop_dat = os.path.join(basename, "id_prop.csv")
-
-    with open(id_prop_dat) as file:
-        reader = csv.reader(file)
-        data = list(reader)
-
-    dataset = []
-    for sample in data:
-        filename = os.path.join(basename, sample[0])
-
-        info = {}
-        info["atoms"] = Atoms.from_poscar(filename)
-        info["jid"] = sample[0]
-        info["target"] = float(sample[1])
-
-        dataset.append(info)
-
-    return dataset
 
 
 # %% Compute test result
@@ -61,7 +39,13 @@ state_dict = torch.load(
 model.load_state_dict(state_dict)
 model = model.to(device)
 
-dataset = load_data_directory("data-test-wbm")
+df = pd.read_csv("data-test-wbm/targets.csv").set_index("material_id")
+
+dataset: list[dict[str, Any]] = []
+for material_id, target in df[target_col].items():
+    atoms = Atoms.from_poscar(f"data-test-wbm/{material_id}.poscar")
+    info = dict(atoms=atoms, jid=material_id, target=target)
+    dataset.append(info)
 
 model.eval()
 predictions = []
