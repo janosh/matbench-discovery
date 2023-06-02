@@ -1,0 +1,31 @@
+model_name: ALIGNN
+model_version: 2023.01.10
+matbench_discovery_version: 1.0
+date_added: "2023-06-02"
+date_published: "2021-02-22"
+authors:
+  - name: Kamal Choudhary
+    affiliation: National Institute of Standards and Technology
+    email: kamal.choudhary@nist.gov
+    orcid: https://orcid.org/0000-0001-9737-8074
+  - name: Brian DeCost
+    affiliation: National Institute of Standards and Technology
+    orcid: https://orcid.org/0000-0002-3459-5888
+    email: zhongpc@berkeley.edu
+  - name: Philipp Benner
+    affiliation: Bundesanstalt für Materialforschung und -prüfung BAM
+    orcid: https://orcid.org/0000-0002-0912-8137
+    github: https://github.com/pbenner
+repo: https://github.com/usnistgov/alignn
+url: https://jarvis.nist.gov/jalignn
+doi: https://nature.com/articles/s41524-021-00650-1
+preprint: https://arxiv.org/abs/2209.05554
+requirements:
+  ase: 3.22.0
+  dgl-cu111: 0.6.1
+  numpy: 1.24.3
+  pandas: 2.0.1
+  scikit-learn: 1.2.2
+  torch: 1.9.0+cu111
+trained_for_benchmark: true
+# hyperparams: see align-config.json
