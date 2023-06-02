@@ -1,10 +1,17 @@
 # %% Imports
+import os
+
 import pandas as pd
 from pymatgen.core import Structure
 from tqdm import tqdm
 
 from matbench_discovery import ROOT
 from matbench_discovery.data import DATA_FILES, df_wbm
+
+module_dir = os.path.dirname(__file__)
+
+__author__ = "Philipp Benner"
+__date__ = "2023-06-02"
 
 
 # %% Definitions
@@ -34,7 +41,8 @@ df[input_col] = [Structure.from_dict(x) for x in tqdm(df[input_col], disable=Non
 
 
 # %% write to ALIGNN format
-df[target_col].to_csv("train-data/targets.csv")
+out_dir = f"{module_dir}/data-test-wbm"
+df[target_col].to_csv(f"{out_dir}/targets.csv")
 
 for mat_id, struct in tqdm(df[input_col].items(), desc="Saving structures"):
-    struct.to(f"{mat_id}.poscar")
+    struct.to(f"{out_dir}/{mat_id}.poscar", fmt="POSCAR")

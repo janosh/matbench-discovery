@@ -20,6 +20,7 @@ __author__ = "Philipp Benner"
 __date__ = "2023-06-02"
 
 module_dir = os.path.dirname(__file__)
+pred_col = "e_form_per_atom_alignn"
 
 
 # %% ALIGNN config
@@ -30,10 +31,11 @@ config = TrainingConfig(**config)
 
 # %% Load test data
 def load_data_directory(basename: str) -> list[dict[str, Any]]:
+    """Load ASE atoms, material IDs and target values from a directory."""
     id_prop_dat = os.path.join(basename, "id_prop.csv")
 
-    with open(id_prop_dat) as f:
-        reader = csv.reader(f)
+    with open(id_prop_dat) as file:
+        reader = csv.reader(file)
         data = list(reader)
 
     dataset = []
@@ -54,12 +56,12 @@ def load_data_directory(basename: str) -> list[dict[str, Any]]:
 model = ALIGNN(config.model)
 # load trained ALIGNN model
 state_dict = torch.load(
-    f"{module_dir}/data_train_result/model_best.pth", map_location=device
+    f"{module_dir}/data-train-result/best-model.pth", map_location=device
 )
 model.load_state_dict(state_dict)
 model = model.to(device)
 
-dataset = load_data_directory("data_test_wbm")
+dataset = load_data_directory("data-test-wbm")
 
 model.eval()
 predictions = []
@@ -75,8 +77,6 @@ with torch.no_grad():  # get predictions
 
         predictions.append(y_hat)
 
-df_wbm["e_form_per_atom_alignn"] = predictions
+df_wbm[pred_col] = predictions
 
-df_wbm.e_form_per_atom_alignn.round(4).to_csv(
-    f"{module_dir}/{today}-alignn-wbm-IS2RE.csv"
-)
+df_wbm[pred_col].round(4).to_csv(f"{module_dir}/{today}-alignn-wbm-IS2RE.csv")

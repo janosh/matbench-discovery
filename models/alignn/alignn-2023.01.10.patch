@@ -82,7 +82,7 @@ index 4fa072e..0b6330a 100644
 +
 +                best_mae = vm
 +
-+                out_path = os.path.join(config.output_dir, 'model_best.pth')
++                out_path = os.path.join(config.output_dir, 'best-model.pth')
 +                print(f'Saving model with MAE={vm} to file "{out_path}"')
 +                torch.save(net.state_dict(), out_path)
 +

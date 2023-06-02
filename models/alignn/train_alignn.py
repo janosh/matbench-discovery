@@ -13,7 +13,7 @@ train_for_folder(
     root_dir="data_train",
     config_name="alignn-config.json",
     keep_data_order=False,
-    output_dir="data_train_result",
+    output_dir="data-train-result",
     epochs=1000,
     file_format="poscar",
 )
