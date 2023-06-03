@@ -60,6 +60,8 @@ class PredFiles(Files):
     # wrenformer 10-member ensemble
     wrenformer = "wrenformer/2022-11-15-wrenformer-IS2RE-preds.csv"
 
+    alignn = "alignn/2023-06-02-alignn-wbm-IS2RE.csv"
+
 
 # model_labels remaps model keys to pretty plot labels (see Files)
 PRED_FILES = PredFiles(root=f"{ROOT}/models", key_map=model_labels)

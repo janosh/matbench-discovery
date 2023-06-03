@@ -46,7 +46,8 @@ df_metrics_10k["Dummy"] = dummy_metrics
 
 
 # %%
-ontology = {
+ontology = {  # (training type, test type, model type)
+    "ALIGNN": ("RS2RE", "IS2RE", "GNN"),
     "CHGNet": ("S2EFSM", "IS2RE-SR", "UIP-GNN"),
     "M3GNet": ("S2EFS", "IS2RE-SR", "UIP-GNN"),
     "MEGNet": ("RS2RE", "IS2E", "GNN"),
