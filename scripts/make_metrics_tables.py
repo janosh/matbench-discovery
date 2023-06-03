@@ -75,8 +75,8 @@ hide_metrics = "TP FN FP TN FNR FPR Recall Trained Deployed".split()
 
 for label, df, extra_hide_metrics in (
     # hide redundant metrics (TPR = Recall, FPR = 1 - TNR, FNR = 1 - TPR)
-    ("", df_metrics, []),
     ("-first-10k", df_metrics_10k, ["TPR", "TNR"]),
+    ("", df_metrics, []),
 ):
     df_table = pd.concat([df, df_ont]).rename(index={"R2": R2_col})
     df_table.index.name = "Model"
