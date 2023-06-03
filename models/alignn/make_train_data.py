@@ -9,6 +9,9 @@ from tqdm import tqdm, trange
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.structure import perturb_structure
 
+__author__ = "Philipp Benner"
+__date__ = "2023-06-02"
+
 
 # %%
 target_col = "formation_energy_per_atom"
