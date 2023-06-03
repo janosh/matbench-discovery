@@ -16,7 +16,7 @@ from tqdm import tqdm
 from matbench_discovery import today
 from matbench_discovery.data import df_wbm
 
-__author__ = "Philipp Benner"
+__author__ = "Philipp Benner, Janosh Riebesell"
 __date__ = "2023-06-02"
 
 module_dir = os.path.dirname(__file__)

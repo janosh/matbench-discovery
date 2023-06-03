@@ -37,7 +37,7 @@ if task_type == "RS2RE":
     df[input_col] = [x["structure"] for x in df.computed_structure_entry]
 assert input_col in df, f"{input_col=} not in {list(df)}"
 
-df[input_col] = [Structure.from_dict(x) for x in tqdm(df[input_col], disable=None)]
+df[input_col] = [Structure.from_dict(dct) for dct in tqdm(df[input_col], disable=None)]
 
 
 # %% write to ALIGNN format
