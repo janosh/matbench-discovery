@@ -70,7 +70,9 @@ elif data_name == "wbm" and input_col == "relaxed_structure":
 elif data_name == "wbm" and input_col == "initial_structure":
     struct_dicts = df_in.initial_structure
 
-df_in[input_col] = [Structure.from_dict(x) for x in tqdm(struct_dicts, disable=None)]
+df_in[input_col] = [
+    Structure.from_dict(dct) for dct in tqdm(struct_dicts, disable=None)
+]
 
 
 # %%

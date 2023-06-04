@@ -60,7 +60,7 @@ if task_type == "RS2RE":
     df[input_col] = [x["structure"] for x in df.computed_structure_entry]
 assert input_col in df, f"{input_col=} not in {list(df)}"
 
-df[input_col] = [Structure.from_dict(x) for x in tqdm(df[input_col], disable=None)]
+df[input_col] = [Structure.from_dict(dct) for dct in tqdm(df[input_col], disable=None)]
 
 filters = {
     # "display_name": {"$regex": "^train-cgcnn-robust-augment=3-"},
@@ -117,7 +117,7 @@ df, ensemble_metrics = predict_from_wandb_checkpoints(
 )
 
 slurm_job_id = os.getenv("SLURM_JOB_ID", "debug")
-df.round(4).to_csv(f"{out_dir}/{job_name}-preds-{slurm_job_id}.csv")
+df.round(4).to_csv(f"{out_dir}/{job_name}-preds-{slurm_job_id}.csv.gz")
 pred_col = f"{e_form_col}_pred_ens"
 assert pred_col in df, f"{pred_col=} not in {list(df)}"
 table = wandb.Table(dataframe=df[[e_form_col, pred_col]].reset_index())

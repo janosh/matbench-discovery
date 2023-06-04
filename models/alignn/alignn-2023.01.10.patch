@@ -1,0 +1,179 @@
+diff --git a/alignn/data.py b/alignn/data.py
+index 175b915..42ce26e 100644
+--- a/alignn/data.py
++++ b/alignn/data.py
+@@ -171,8 +171,9 @@ def get_id_train_val_test(
+     # full train/val test split
+     # ids = ids[::-1]
+     id_train = ids[:n_train]
+-    id_val = ids[-(n_val + n_test) : -n_test]  # noqa:E203
+-    id_test = ids[-n_test:]
++    id_val = ids[-(n_val + n_test) : -n_test]  if n_test > 0 else ids[-(n_val + n_test) :] # noqa:E203
++    id_test = ids[n_test:] if n_test > 0 else []
++
+     return id_train, id_val, id_test
+
+
+@@ -508,7 +509,7 @@ def get_train_val_loaders(
+             classification=classification_threshold is not None,
+             output_dir=output_dir,
+             tmp_name="test_data",
+-        )
++        ) if len(dataset_test) > 0 else None
+
+         collate_fn = train_data.collate
+         # print("line_graph,line_dih_graph", line_graph, line_dih_graph)
+@@ -528,7 +529,7 @@ def get_train_val_loaders(
+
+         val_loader = DataLoader(
+             val_data,
+-            batch_size=batch_size,
++            batch_size=1,
+             shuffle=False,
+             collate_fn=collate_fn,
+             drop_last=True,
+@@ -549,9 +550,13 @@ def get_train_val_loaders(
+             torch.save(train_loader, train_sample)
+             torch.save(val_loader, val_sample)
+             torch.save(test_loader, test_sample)
++
+     print("n_train:", len(train_loader.dataset))
+-    print("n_val:", len(val_loader.dataset))
+-    print("n_test:", len(test_loader.dataset))
++    if val_loader.dataset is not None:
++        print("n_val:", len(val_loader.dataset))
++    if test_loader.dataset is not None:
++        print("n_test:", len(test_loader.dataset))
++
+     return (
+         train_loader,
+         val_loader,
+diff --git a/alignn/train.py b/alignn/train.py
+index 4fa072e..0b6330a 100644
+--- a/alignn/train.py
++++ b/alignn/train.py
+@@ -69,7 +69,7 @@ torch.set_default_dtype(torch.float32)
+
+ device = "cpu"
+ if torch.cuda.is_available():
+-    device = torch.device("cuda")
++    device = torch.device("cuda:0")
+
+
+ def activated_output_transform(output):
+@@ -817,6 +817,8 @@ def train_dgl(
+         train_eos = EpochOutputStore()
+         train_eos.attach(train_evaluator)
+
++    best_mae = np.inf
++
+     # collect evaluation performance
+     @trainer.on(Events.EPOCH_COMPLETED)
+     def log_results(engine):
+@@ -839,6 +841,20 @@ def train_dgl(
+             history["train"][metric].append(tm)
+             history["validation"][metric].append(vm)
+
++## Adapted so that the best model is saved
++## ----------------------------------------------------------------------------
++            nonlocal best_mae
++
++            if metric == 'mae' and vm < best_mae:
++
++                best_mae = vm
++
++                out_path = os.path.join(config.output_dir, 'best-model.pth')
++                print(f'Saving model with MAE={vm} to file "{out_path}"')
++                torch.save(net.state_dict(), out_path)
++
++## ----------------------------------------------------------------------------
++
+         # for metric in metrics.keys():
+         #    history["train"][metric].append(tmetrics[metric])
+         #    history["validation"][metric].append(vmetrics[metric])
+@@ -978,39 +994,40 @@ def train_dgl(
+         and not classification
+         and config.model.output_features == 1
+     ):
+-        net.eval()
+-        f = open(
+-            os.path.join(config.output_dir, "prediction_results_test_set.csv"),
+-            "w",
+-        )
+-        f.write("id,target,prediction\n")
+-        targets = []
+-        predictions = []
+-        with torch.no_grad():
+-            ids = test_loader.dataset.ids  # [test_loader.dataset.indices]
+-            for dat, id in zip(test_loader, ids):
+-                g, lg, target = dat
+-                out_data = net([g.to(device), lg.to(device)])
+-                out_data = out_data.cpu().numpy().tolist()
+-                if config.standard_scalar_and_pca:
+-                    sc = pk.load(
+-                        open(os.path.join(tmp_output_dir, "sc.pkl"), "rb")
+-                    )
+-                    out_data = sc.transform(np.array(out_data).reshape(-1, 1))[
+-                        0
+-                    ][0]
+-                target = target.cpu().numpy().flatten().tolist()
+-                if len(target) == 1:
+-                    target = target[0]
+-                f.write("%s, %6f, %6f\n" % (id, target, out_data))
+-                targets.append(target)
+-                predictions.append(out_data)
+-        f.close()
++        if test_loader is not None:
++            net.eval()
++            f = open(
++                os.path.join(config.output_dir, "prediction_results_test_set.csv"),
++                "w",
++            )
++            f.write("id,target,prediction\n")
++            targets = []
++            predictions = []
++            with torch.no_grad():
++                ids = test_loader.dataset.ids  # [test_loader.dataset.indices]
++                for dat, id in zip(test_loader, ids):
++                    g, lg, target = dat
++                    out_data = net([g.to(device), lg.to(device)])
++                    out_data = out_data.cpu().numpy().tolist()
++                    if config.standard_scalar_and_pca:
++                        sc = pk.load(
++                            open(os.path.join(tmp_output_dir, "sc.pkl"), "rb")
++                        )
++                        out_data = sc.transform(np.array(out_data).reshape(-1, 1))[
++                            0
++                        ][0]
++                    target = target.cpu().numpy().flatten().tolist()
++                    if len(target) == 1:
++                        target = target[0]
++                    f.write("%s, %6f, %6f\n" % (id, target, out_data))
++                    targets.append(target)
++                    predictions.append(out_data)
++            f.close()
+
+-        print(
+-            "Test MAE:",
+-            mean_absolute_error(np.array(targets), np.array(predictions)),
+-        )
++            print(
++                "Test MAE:",
++                mean_absolute_error(np.array(targets), np.array(predictions)),
++            )
+         if config.store_outputs and not classification:
+             x = []
+             y = []
+diff --git a/alignn/train_folder.py b/alignn/train_folder.py
+index b532d4e..c9eb4a5 100644
+--- a/alignn/train_folder.py
++++ b/alignn/train_folder.py
+@@ -180,7 +180,7 @@ def train_for_folder(
+         train_val_test_loaders=[
+             train_loader,
+             val_loader,
+-            test_loader,
++            None,
+             prepare_batch,
+         ],
+     )

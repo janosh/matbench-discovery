@@ -55,7 +55,9 @@ Package = "https://pypi.org/project/matbench-discovery"
 test = ["pytest", "pytest-cov"]
 # how to specify git deps: https://stackoverflow.com/a/73572379
 running-models = [
+  "alignn",
   "chgnet",
+  "jarvis-tools",
   # torch needs to install before aviary
   "torch",
 
