@@ -46,7 +46,7 @@
   }
 </script>
 
-<div>
+<div style="margin: 3vw;">
   <h1>Models</h1>
 
   <span>
@@ -93,10 +93,8 @@
       </li>
     {/each}
   </ol>
-</div>
 
-<div style="margin-top: 6em;">
-  <h2>Per-Element Model Error Heatmaps</h2>
+  <h2 style="margin-top: 6em;">Per-Element Model Error Heatmaps</h2>
 
   <ElementErrorsPtableHeatmap />
 </div>
