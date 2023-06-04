@@ -120,7 +120,7 @@ img_name = f"{FIGS}/e-above-hull-scatter-models"
 
 # %% plot all models in separate subplots
 domain = (-4, 7)
-n_cols = 4
+n_cols = 3
 n_rows = math.ceil(len(models) / n_cols)
 
 fig = px.scatter(
@@ -128,9 +128,9 @@ fig = px.scatter(
     x=each_true_col,
     y=each_pred_col,
     facet_col=facet_col,
-    facet_col_wrap=4,
+    facet_col_wrap=n_cols,
     facet_col_spacing=0.02,
-    facet_row_spacing=0.04,
+    facet_row_spacing=0.08,
     hover_data=hover_cols,
     hover_name=df_preds.index.name,
     color=clf_col,

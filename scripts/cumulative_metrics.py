@@ -38,7 +38,7 @@ fig, df_metric = cumulative_metrics(
     metrics=metrics,
     # facet_col_wrap=2,
     # increase facet col gap
-    facet_col_spacing=0.07,
+    facet_col_spacing=0.05,
 )
 
 x_label = "Number of screened WBM materials"
@@ -46,9 +46,7 @@ if backend == "matplotlib":
     # fig.suptitle(title)
     fig.text(0.5, -0.08, x_label, ha="center", fontdict={"size": 16})
 if backend == "plotly":
-    fig.layout.legend.update(
-        x=1, y=1, bgcolor="rgba(0,0,0,0)", xanchor="right", yanchor="top"
-    )
+    fig.layout.legend = dict(x=1, y=0, bgcolor="rgba(0,0,0,0)", xanchor="right")
     fig.layout.margin.update(l=0, r=0, t=30, b=50)
     fig.add_annotation(
         x=0.5,

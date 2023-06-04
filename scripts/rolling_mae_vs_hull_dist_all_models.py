@@ -8,7 +8,13 @@ from pymatviz.utils import save_fig
 
 from matbench_discovery import FIGS, PDF_FIGS
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
-from matbench_discovery.preds import df_each_pred, df_metrics, df_preds, each_true_col
+from matbench_discovery.preds import (
+    df_each_pred,
+    df_metrics,
+    df_preds,
+    each_true_col,
+    models,
+)
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
@@ -22,7 +28,7 @@ backend: Final = "plotly"
 
 fig, df_err, df_std = rolling_mae_vs_hull_dist(
     e_above_hull_true=df_preds[each_true_col],
-    e_above_hull_errors=df_each_pred,
+    e_above_hull_errors=df_each_pred[models],
     backend=backend,
     with_sem=False,
     df_rolling_err=df_err,
