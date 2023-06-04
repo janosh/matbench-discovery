@@ -29,13 +29,12 @@ module_dir = os.path.dirname(__file__)
 
 
 # %%
-model_name = "mp_e_form_alignnn"  # pre-trained by NIST
+model_name = "mp_e_form_alignn"  # pre-trained by NIST
 # model_name = f"{module_dir}/data-train-result/best-model.pth"
 task_type = "IS2RE"
 target_col = "e_form_per_atom_mp2020_corrected"
 input_col = "initial_structure"
 id_col = "material_id"
-pred_col = "e_form_per_atom_alignn"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 job_name = f"{model_name}-wbm-{task_type}{'-debug' if DEBUG else ''}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
@@ -43,7 +42,9 @@ out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 if model_name in all_models:  # load pre-trained model
     model = get_figshare_model(model_name)
+    pred_col = "e_form_per_atom_alignn_pretrained"
 elif os.path.isfile(model_name):
+    pred_col = "e_form_per_atom_alignn"
     with open(f"{module_dir}/alignn-config.json") as file:
         config = TrainingConfig(**json.load(file))
 
@@ -119,7 +120,10 @@ with torch.no_grad():  # get predictions
 
 df_wbm[pred_col] = e_form_preds
 
-df_wbm[pred_col].round(4).to_csv(f"{module_dir}/{today}-{model_name}-wbm-IS2RE.csv")
+df_wbm[pred_col] -= df_wbm.e_correction_per_atom_mp_legacy
+df_wbm[pred_col] += df_wbm.e_correction_per_atom_mp2020
+
+df_wbm[pred_col].round(4).to_csv(f"{module_dir}/{today}-{model_name}-wbm-IS2RE.csv.gz")
 
 
 # %%

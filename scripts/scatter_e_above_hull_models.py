@@ -52,7 +52,7 @@ df_bin = df_bin.reset_index()
 legend_order = list(df_metrics.T.MAE.sort_values().index)
 
 
-# %% determine each point's classification to color them by
+# determine each point's classification to color them by
 true_pos, false_neg, false_pos, true_neg = classify_stable(
     df_bin[each_true_col], df_bin[each_pred_col]
 )
@@ -220,7 +220,7 @@ fig.add_annotation(  # y-axis title
     **axis_titles,
 )
 # fig.layout.height = 1000
-fig.layout.width = 1100
+# fig.layout.width = 1100
 fig.layout.margin.update(l=40, r=10, t=10, b=50)
 fig.update_xaxes(matches=None)
 fig.update_yaxes(matches=None)
