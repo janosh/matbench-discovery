@@ -104,7 +104,7 @@ df, ensemble_metrics = predict_from_wandb_checkpoints(
 df = df.round(4)
 
 slurm_job_id = os.getenv("SLURM_JOB_ID", "debug")
-df.to_csv(f"{out_dir}/{job_name}-preds-{slurm_job_id}.csv")
+df.to_csv(f"{out_dir}/{job_name}-preds-{slurm_job_id}.csv.gz")
 
 
 # %%

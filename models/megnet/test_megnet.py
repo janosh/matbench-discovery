@@ -51,7 +51,7 @@ slurm_vars = slurm_submit(
 
 # %%
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
-out_path = f"{out_dir}/megnet-e-form-preds.csv"
+out_path = f"{out_dir}/megnet-e-form-preds.csv.gz"
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path = } already exists, exciting early")
 
@@ -121,8 +121,7 @@ df_megnet = (
     + df_wbm.e_correction_per_atom_mp2020
 ).to_frame(name=pred_col)
 
-df_megnet.round(4).to_csv("2022-11-18-megnet-wbm-IS2RE/megnet-e-form-preds.csv")
-
+df_megnet.round(4).to_csv(out_path)
 
 # df_megnet = pd.read_csv(f"{ROOT}/models/{PRED_FILES.megnet}").set_index("material_id")
 

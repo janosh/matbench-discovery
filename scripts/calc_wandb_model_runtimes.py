@@ -18,7 +18,7 @@ import wandb.apis.public
 from pymatviz.utils import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import FIGS, PDF_FIGS, WANDB_PATH
+from matbench_discovery import FIGS, MODELS, PDF_FIGS, WANDB_PATH
 from matbench_discovery.preds import df_metrics, df_preds
 
 __author__ = "Janosh Riebesell"
@@ -122,7 +122,7 @@ df_stats["missing_percent"] = [
 df_stats.attrs["All Models Run Time"] = df_stats[time_col].sum()
 print(f"{df_stats[time_col].sum()=:.0f} hours")
 
-# df_stats.round(2).to_json(f"{MODELS}/model-stats.json", orient="index")
+df_stats.round(2).to_json(f"{MODELS}/model-stats.json", orient="index")
 df_time = (
     df_stats.sort_index()
     .filter(like=time_col)

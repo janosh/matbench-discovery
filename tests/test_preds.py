@@ -66,7 +66,10 @@ def test_load_df_wbm_with_preds_raises() -> None:
 
 def test_pred_files() -> None:
     assert len(PRED_FILES) >= 6
-    assert all(path.endswith((".csv", ".json")) for path in PRED_FILES.values())
+    assert all(
+        path.endswith((".csv", ".csv.gz", ".json", ".json.gz"))
+        for path in PRED_FILES.values()
+    )
     for model, path in PRED_FILES.items():
         msg = f"Missing preds file for {model=}, expected at {path=}"
         assert os.path.isfile(path), msg

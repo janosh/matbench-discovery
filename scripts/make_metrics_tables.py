@@ -46,7 +46,8 @@ df_metrics_10k["Dummy"] = dummy_metrics
 
 
 # %%
-ontology = {
+ontology = {  # (training type, test type, model type)
+    "ALIGNN": ("RS2RE", "IS2RE", "GNN"),
     "CHGNet": ("S2EFSM", "IS2RE-SR", "UIP-GNN"),
     "M3GNet": ("S2EFS", "IS2RE-SR", "UIP-GNN"),
     "MEGNet": ("RS2RE", "IS2E", "GNN"),
@@ -74,8 +75,8 @@ hide_metrics = "TP FN FP TN FNR FPR Recall Trained Deployed".split()
 
 for label, df, extra_hide_metrics in (
     # hide redundant metrics (TPR = Recall, FPR = 1 - TNR, FNR = 1 - TPR)
-    ("", df_metrics, []),
     ("-first-10k", df_metrics_10k, ["TPR", "TNR"]),
+    ("", df_metrics, []),
 ):
     df_table = pd.concat([df, df_ont]).rename(index={"R2": R2_col})
     df_table.index.name = "Model"

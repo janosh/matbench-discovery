@@ -13,6 +13,9 @@ def perturb_structure(struct: Structure, gamma: float = 1.5) -> Structure:
     """Perturb the atomic coordinates of a pymatgen structure. Used for CGCNN+P
     training set augmentation.
 
+    Not identical but very similar to the perturbation method used in
+    https://nature.com/articles/s41524-022-00891-8#Fig5.
+
     Args:
         struct (Structure): pymatgen structure to be perturbed
         gamma (float, optional): Weibull distribution parameter. Defaults to 1.5.

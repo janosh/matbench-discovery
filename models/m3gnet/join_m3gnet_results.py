@@ -93,7 +93,7 @@ df_m3gnet["e_form_per_atom_m3gnet"] = [
 # %%
 out_path = f"{module_dir}/{today}-m3gnet-{model_type}-wbm-{task_type}"
 df_m3gnet = df_m3gnet.round(4)
-df_m3gnet.select_dtypes("number").to_csv(f"{out_path}.csv")
+df_m3gnet.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
 df_m3gnet.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
 
 

@@ -29,9 +29,10 @@ epochs = 300
 target_col = "formation_energy_per_atom"
 input_col = "structure"
 id_col = "material_id"
-perturb = 0  # 0 for no perturbation, n>1 means train on n perturbations of each crystal
+# 0 for no perturbation, n>1 means train on n perturbations of each crystal
 # in the training set all assigned the same original target energy
-job_name = f"train-cgcnn-robust-{perturb=}{'-debug' if DEBUG else ''}"
+n_perturb = 0
+job_name = f"train-cgcnn-robust-{n_perturb=}{'-debug' if DEBUG else ''}"
 print(f"{job_name=}")
 robust = "robust" in job_name.lower()
 ensemble_size = 10
@@ -61,19 +62,23 @@ task_type: TaskType = "regression"
 # %%
 data_path = DATA_FILES.mp_energies
 print(f"{data_path=}")
-df = pd.read_json(data_path).set_index(id_col)
-df[input_col] = [Structure.from_dict(s) for s in tqdm(df[input_col], disable=None)]
-assert target_col in df
+df_in = pd.read_json(data_path).set_index(id_col)
+df_in[input_col] = [
+    Structure.from_dict(s) for s in tqdm(df_in[input_col], disable=None)
+]
+assert target_col in df_in
 
-df_aug = df.copy()
+df_aug = df_in.copy()
 structs = df_aug.pop(input_col)
-for idx in trange(perturb, desc="Generating perturbed structures"):
+for idx in trange(n_perturb, desc="Generating perturbed structures"):
     df_aug[input_col] = [perturb_structure(x) for x in structs]
-    df = pd.concat([df, df_aug.set_index(f"{x}-aug={idx+1}" for x in df_aug.index)])
+    df_in = pd.concat(
+        [df_in, df_aug.set_index(f"{x}-aug={idx+1}" for x in df_aug.index)]
+    )
 
 del df_aug
 
-train_df, test_df = df_train_test_split(df, test_size=0.05)
+train_df, test_df = df_train_test_split(df_in, test_size=0.05)
 
 print(f"{train_df.shape=}")
 train_data = CrystalGraphData(train_df, task_dict={target_col: task_type})
@@ -88,7 +93,7 @@ test_loader = DataLoader(
 )
 
 # 1 for regression, n_classes for classification
-n_targets = [1 if task_type == "regression" else df[target_col].max() + 1]
+n_targets = [1 if task_type == "regression" else df_in[target_col].max() + 1]
 
 model_params = dict(
     n_targets=n_targets,
@@ -106,7 +111,7 @@ run_params = dict(
     train_df=dict(shape=str(train_data.df.shape), columns=", ".join(train_df)),
     test_df=dict(shape=str(test_data.df.shape), columns=", ".join(test_df)),
     slurm_vars=slurm_vars,
-    perturb=perturb,
+    n_perturb=n_perturb,
     input_col=input_col,
 )
 

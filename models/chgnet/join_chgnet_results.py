@@ -66,7 +66,7 @@ ax = density_scatter(df=df_preds, x=e_form_col, y=e_form_chgnet_col)
 # %%
 out_path = f"{module_dir}/{today}-chgnet-wbm-{task_type}"
 df_chgnet = df_chgnet.round(4)
-df_chgnet.select_dtypes("number").to_csv(f"{out_path}.csv")
+df_chgnet.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
 df_chgnet.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
 
 # in_path = f"{module_dir}/2023-03-04-chgnet-wbm-IS2RE.json.gz"
