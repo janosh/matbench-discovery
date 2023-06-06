@@ -25,7 +25,7 @@ line = dict(dash="dash", width=0.5)
 facet_col = "Model"
 color_col = "Stability Threshold"
 
-n_cols = 4
+n_cols = 3
 n_rows = math.ceil(len(models) // n_cols)
 
 
@@ -55,7 +55,7 @@ fig = (
         x="FPR",
         y="TPR",
         facet_col=facet_col,
-        facet_col_wrap=4,
+        facet_col_wrap=n_cols,
         backend="plotly",
         height=150 * len(df_roc[facet_col].unique()),
         color=color_col,
@@ -88,7 +88,7 @@ fig.show()
 
 
 # %%
-# save_fig(fig, f"{FIGS}/roc-models-{n_rows}x{n_cols}.svelte")
+save_fig(fig, f"{FIGS}/roc-models-{n_rows}x{n_cols}.svelte")
 save_fig(fig, f"{PDF_FIGS}/roc-models-{n_rows}x{n_cols}.pdf", width=1000, height=400)
 
 
