@@ -4,7 +4,7 @@
   import RunTimeBars from '$figs/model-run-times-bar.svelte'
   import CumulativeMaeRmse from '$figs/cumulative-mae-rmse.svelte'
   import BoxHullDistErrors from '$figs/box-hull-dist-errors.svelte'
-  import RocModels from '$figs/roc-models.svelte'
+  import RocModels from '$figs/roc-models-all-in-one.svelte'
   import { browser } from '$app/environment'
   import MPRefEnergies from '$figs/mp-elemental-ref-energies.svelte'
   import WrenformerRollingMaeBatches from '$figs/rolling-mae-vs-hull-dist-wbm-batches-wrenformer.svelte'
