@@ -3,7 +3,7 @@
   import type { ChemicalElement } from 'elementari'
   import { ColorBar, ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
   import { MultiSelect } from 'svelte-multiselect'
-  import per_elem_errors from './per-element-model-each-errors.json'
+  import per_elem_errors from './per-element-each-errors.json'
 
   export let color_scale: string[] = [`Inferno`]
   export let active_element: ChemicalElement | null = null

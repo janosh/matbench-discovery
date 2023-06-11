@@ -25,7 +25,7 @@ line = dict(dash="dash", width=0.5)
 facet_col = "Model"
 color_col = "Stability Threshold"
 
-n_cols = 4
+n_cols = 3
 n_rows = math.ceil(len(models) // n_cols)
 
 
@@ -48,30 +48,40 @@ for model in (pbar := tqdm(models, desc="Calculating ROC curves")):
 
 
 # %%
-fig = (
+facetted = False
+kwds = dict(
+    height=150 * len(df_roc[facet_col].unique()),
+    color=color_col,
+    facet_col=facet_col,
+    range_color=(-0.5, 0.5),
+    facet_col_spacing=0.03,
+    facet_row_spacing=0.1,
+)
+
+plot_fn = getattr(
     df_roc.iloc[:: len(df_roc) // 500 or 1]
     .sort_values(["AUC", "FPR"], ascending=False)
-    .plot.scatter(
-        x="FPR",
-        y="TPR",
-        facet_col=facet_col,
-        facet_col_wrap=4,
-        backend="plotly",
-        height=150 * len(df_roc[facet_col].unique()),
-        color=color_col,
-        range_x=(0, 1),
-        range_y=(0, 1),
-        range_color=(-0.5, 0.5),
-        hover_name=facet_col,
-        hover_data={facet_col: False},
-        facet_col_spacing=0.03,
-        facet_row_spacing=0.1,
-    )
+    .plot,
+    "scatter" if facetted else "line",
+)
+
+fig = plot_fn(
+    x="FPR",
+    y="TPR",
+    facet_col_wrap=n_cols,
+    backend="plotly",
+    range_x=(-0.01, 1),
+    range_y=(0, 1.02),
+    hover_name=facet_col,
+    hover_data={facet_col: False},
+    **kwds if facetted else dict(color=facet_col, markers=True),
 )
 
 for anno in fig.layout.annotations:
     anno.text = anno.text.split("=", 1)[1]  # remove Model= from subplot titles
 
+if not facetted:
+    fig.layout.legend.update(x=1, y=0, xanchor="right", title=None)
 fig.layout.coloraxis.colorbar.update(thickness=14, title_side="right")
 if n_cols == 2:
     fig.layout.coloraxis.colorbar.update(
@@ -88,8 +98,9 @@ fig.show()
 
 
 # %%
-# save_fig(fig, f"{FIGS}/roc-models-{n_rows}x{n_cols}.svelte")
-save_fig(fig, f"{PDF_FIGS}/roc-models-{n_rows}x{n_cols}.pdf", width=1000, height=400)
+img_name = f"roc-models-{f'{n_rows}x{n_cols}' if facetted else 'all-in-one'}"
+save_fig(fig, f"{FIGS}/{img_name}.svelte")
+save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=1000, height=400)
 
 
 # %%

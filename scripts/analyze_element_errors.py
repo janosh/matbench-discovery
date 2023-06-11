@@ -147,8 +147,14 @@ for model in (*df_metrics, model_mean_err_col):
 
 
 # %%
+expected_cols = {
+    *"ALIGNN, BOWSR + MEGNet, CGCNN, CGCNN+P, CHGNet, M3GNet, MEGNet, "
+    "MP Occurrences, Mean error all models, Test set standard deviation, Voronoi RF, "
+    "Wrenformer".split(", ")
+}
+assert {*df_elem_err} >= expected_cols
 assert (df_elem_err.isna().sum() < 35).all()
-df_elem_err.round(4).to_json(f"{MODELS}/per-element-model-each-errors.json")
+df_elem_err.round(4).to_json(f"{MODELS}/per-element-each-errors.json")
 
 
 # %% scatter plot error by element against prevalence in training set

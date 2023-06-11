@@ -35,17 +35,6 @@ ax.set(ylim=(-0.9, 0.9))
 
 
 # %%
-px.box(
-    df_each_err[models].melt(),
-    x="variable",
-    y="value",
-    color="variable",
-    points=False,
-    hover_data={"variable": False},
-)
-
-
-# %%
 px.violin(
     df_each_err[models].melt(),
     x="variable",
@@ -81,5 +70,8 @@ for col in models:
 
 fig.layout.legend.update(orientation="h", y=1.15)
 fig.show()
+
+
+# %%
 save_fig(fig, f"{FIGS}/box-hull-dist-errors.svelte")
 save_fig(fig, f"{PDF_FIGS}/box-hull-dist-errors.pdf")
