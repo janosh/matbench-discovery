@@ -1,11 +1,11 @@
 <script>
   import { repository as repo } from '$site/package.json'
-  import EachScatterModels from '$figs/each-scatter-models-4x2.svelte'
+  import EachScatterModels from '$figs/each-scatter-models-3x3.svelte'
   import MetricsTable from '$figs/metrics-table.svelte'
   import CumulativePrecisionRecall from '$figs/cumulative-precision-recall.svelte'
   import RollingMaeVsHullDistModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'
   import ElementErrorsPtableHeatmap from '$models/element-errors-ptable-heatmap.svelte'
-  import HistClfTrueHullDistModels from '$figs/hist-clf-true-hull-dist-models-4x2.svelte'
+  import HistClfTrueHullDistModels from '$figs/hist-clf-pred-hull-dist-models-3x3.svelte'
   import { onMount } from 'svelte'
 
   let mounted = false
@@ -202,7 +202,7 @@ A line terminates when a model believes there are no more materials in the WBM t
 <HistClfTrueHullDistModels />
 {/if}
 
-> @label:fig:hist-clf-true-hull-dist-models These histograms show the classification performance of models as a function of DFT-computed hull distance on the $x$ axis. The colors visualize the proportion of true to false predictions as a function of crystal stability. Models are sorted top to bottom by F1 score. While CHGNet and M3GNet perform almost equally well overall, these plots reveal that they do so via different trade-offs. M3GNet commits fewer false negative but more false positives predictions compared to CHGNet. In a real discovery campaign, false positives come back to bite you more than false negatives since they result in wasted DFT relaxations or even synthesis time in the lab. A false negative by contrast is just one missed opportunity out of millions.
+> @label:fig:hist-clf-true-hull-dist-models These histograms show the classification performance of models as a function of model-predicted hull distance on the $x$ axis. Models are sorted top to bottom by F1 score. While CHGNet and M3GNet perform almost equally well overall, these plots reveal that they do so via different trade-offs. M3GNet commits fewer false negative but more false positives predictions compared to CHGNet. In a real discovery campaign, false positives have a higher opportunity cost than false negatives since they result in wasted DFT relaxations or even synthesis time in the lab. A false negative by contrast is just one missed opportunity out of many.
 > This observation is also reflected in the higher TPR and lower TNR of M3GNet vs CHGNet in @fig:metrics-table, as well as the lower error for CHGNet vs M3GNet on the stable side (left half) of @fig:rolling-mae-vs-hull-dist-models and M3GNet over CHGNet on the unstable side (right half) of @fig:rolling-mae-vs-hull-dist-models.
 
 ### Predicted Hull Distance Parity Plots
