@@ -47,6 +47,8 @@ if backend == "matplotlib":
     fig.text(0.5, -0.08, x_label, ha="center", fontdict={"size": 16})
 if backend == "plotly":
     fig.layout.legend = dict(x=1, y=0, bgcolor="rgba(0,0,0,0)", xanchor="right")
+    if "MAE" in metrics:
+        fig.layout.legend.update(traceorder="reversed")
     fig.layout.margin.update(l=0, r=0, t=30, b=50)
     fig.add_annotation(
         x=0.5,

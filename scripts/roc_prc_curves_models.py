@@ -53,25 +53,28 @@ kwds = dict(
     height=150 * len(df_roc[facet_col].unique()),
     color=color_col,
     facet_col=facet_col,
+    range_color=(-0.5, 0.5),
+    facet_col_spacing=0.03,
+    facet_row_spacing=0.1,
 )
 
-fig = (
+plot_fn = getattr(
     df_roc.iloc[:: len(df_roc) // 500 or 1]
     .sort_values(["AUC", "FPR"], ascending=False)
-    .plot.scatter(
-        x="FPR",
-        y="TPR",
-        facet_col_wrap=n_cols,
-        backend="plotly",
-        range_x=(-0.01, 1),
-        range_y=(0, 1.02),
-        range_color=(-0.5, 0.5),
-        hover_name=facet_col,
-        hover_data={facet_col: False},
-        facet_col_spacing=0.03,
-        facet_row_spacing=0.1,
-        **kwds if facetted else dict(color=facet_col),
-    )
+    .plot,
+    "scatter" if facetted else "line",
+)
+
+fig = plot_fn(
+    x="FPR",
+    y="TPR",
+    facet_col_wrap=n_cols,
+    backend="plotly",
+    range_x=(-0.01, 1),
+    range_y=(0, 1.02),
+    hover_name=facet_col,
+    hover_data={facet_col: False},
+    **kwds if facetted else dict(color=facet_col, markers=True),
 )
 
 for anno in fig.layout.annotations:

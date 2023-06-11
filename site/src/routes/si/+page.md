@@ -13,7 +13,7 @@
   import MegnetRollingMaeBatches from '$figs/rolling-mae-vs-hull-dist-wbm-batches-megnet.svelte'
   import CgcnnRollingMaeBatches from '$figs/rolling-mae-vs-hull-dist-wbm-batches-cgcnn.svelte'
   import VoronoiRfRollingMaeBatches from '$figs/rolling-mae-vs-hull-dist-wbm-batches-voronoi-rf.svelte'
-  import HistClfPredHullDistModels from '$figs/hist-clf-pred-hull-dist-models-4x2.svelte'
+  import HistClfTrueHullDistModels from '$figs/hist-clf-true-hull-dist-models-3x3.svelte'
   import SpacegroupSunburstWbm from '$figs/spacegroup-sunburst-wbm.svelte'
   import SpacegroupSunburstWrenformerFailures from '$figs/spacegroup-sunburst-wrenformer-failures.svelte'
   import LargestErrorScatterSelect from './largest-error-scatter-select.svelte'
@@ -78,7 +78,7 @@ A further point of clarification: whenever we say distance to the convex hull we
 ## Classification Histograms using Model-Predicted Energies
 
 {#if mounted}
-<HistClfPredHullDistModels />
+<HistClfTrueHullDistModels />
 {/if}
 
 > @label:fig:hist-clf-pred-hull-dist-models Similar to the [true hull distance histograms](/preprint#fig:hist-clf-true-hull-dist-models), these histograms show model stability classification as a function of the distance to the convex hull. The difference here being the $x$ axis shows model-predicted rather than DFT hull distances. Intuitively, it shows how often models misclassify as a function of how far they think a material is from the convex hull.
