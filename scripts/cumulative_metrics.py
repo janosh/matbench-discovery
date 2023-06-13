@@ -27,14 +27,18 @@ __date__ = "2022-12-04"
 
 
 # %%
-metrics = ("Precision", "Recall")
-# metrics = ("MAE", "RMSE")
+# metrics = ("Precision", "Recall")
+metrics = ("MAE", "RMSE")
+range_y = {
+    ("MAE", "RMSE"): (0, 0.5),
+    ("Precision", "Recall"): (0, 1),
+}[metrics]
 fig, df_metric = cumulative_metrics(
     e_above_hull_true=df_preds[each_true_col],
     df_preds=df_each_pred[models],
     project_end_point="xy",
     backend=(backend := "plotly"),
-    range_y=(0, 1),
+    range_y=range_y,
     metrics=metrics,
     # facet_col_wrap=2,
     # increase facet col gap

@@ -56,9 +56,9 @@ else:
     # increase legend handle size and reverse order
     fig.layout.margin.update(l=5, r=5, t=5, b=55)
     fig.show()
+img_name = "rolling-mae-vs-hull-dist-models"
 
 
 # %%
-img_name = "rolling-mae-vs-hull-dist-models"
 save_fig(fig, f"{FIGS}/{img_name}.svelte")
 save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=520, height=350)

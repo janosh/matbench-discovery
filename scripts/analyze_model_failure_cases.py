@@ -300,9 +300,11 @@ fig.layout.legend.update(
 )
 fig.layout.xaxis.title = "|SSFP<sub>initial</sub> - SSFP<sub>final</sub>|"
 fig.layout.yaxis.title = "|E<sub>above hull</sub> error| (eV/atom)"
-
+fig.layout.margin = dict(t=40, b=0, l=0, r=0)
 fig.show()
 
+
+# %%
 save_fig(fig, f"{FIGS}/largest-fp-diff-each-error-models.svelte")
 save_fig(fig, f"{PDF_FIGS}/large-fp-diff-vs-each-error.pdf")
 

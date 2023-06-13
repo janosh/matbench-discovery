@@ -109,8 +109,9 @@ else:
     # increase height of figure
     fig.show()
 
+img_name = f"hist-clf-{which_energy}-hull-dist-models-{n_rows}x{n_cols}"
+
 
 # %%
-img_name = f"hist-clf-{which_energy}-hull-dist-models-{n_rows}x{n_cols}"
 save_fig(fig, f"{FIGS}/{img_name}.svelte")
 save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=n_cols * 220, height=n_rows * 220)

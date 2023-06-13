@@ -95,10 +95,10 @@ fig.update_xaxes(matches=None)
 fig.layout.margin.update(l=0, r=0, b=0, t=20, pad=0)
 fig.update_yaxes(matches=None)
 fig.show()
+img_name = f"roc-models-{f'{n_rows}x{n_cols}' if facetted else 'all-in-one'}"
 
 
 # %%
-img_name = f"roc-models-{f'{n_rows}x{n_cols}' if facetted else 'all-in-one'}"
 save_fig(fig, f"{FIGS}/{img_name}.svelte")
 save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=1000, height=400)
 
