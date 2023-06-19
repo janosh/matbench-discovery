@@ -196,7 +196,7 @@ def test_df_to_pdf(tmp_path: Path, crop: bool, capsys: CaptureFixture[str]) -> N
 
     try:
         df_to_pdf(df.style, file_path, crop=crop)
-    except Exception as exc:
+    except ImportError as exc:
         if pdfkit is None:
             assert "pdfkit not installed\n" in str(exc)  # noqa: PT017
             return
