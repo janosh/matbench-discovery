@@ -890,7 +890,7 @@ def df_to_pdf(
     except ImportError as exc:
         raise ImportError(
             "pdfkit not installed\nrun pip install pdfkit && brew install "
-            "homebrew/cask/wkhtmltopdf\n(brew is macOS only, use apt un linux))"
+            "homebrew/cask/wkhtmltopdf\n(brew is macOS only, use apt on linux)"
         ) from exc
 
     pdfkit.from_string(styler.to_html(**kwargs), file_path)

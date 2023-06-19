@@ -236,7 +236,7 @@ class DataFiles(Files):
         "mp/2023-02-07-mp-computed-structure-entries.json.gz"
     )
     mp_elemental_ref_entries = "mp/2023-02-07-mp-elemental-reference-entries.json.gz"
-    mp_energies = "mp/2023-01-10-mp-energies.csv"
+    mp_energies = "mp/2023-01-10-mp-energies.csv.gz"
     mp_patched_phase_diagram = "mp/2023-02-07-ppd-mp.pkl.gz"
     wbm_computed_structure_entries = (
         "wbm/2022-10-19-wbm-computed-structure-entries.json.bz2"
@@ -245,7 +245,7 @@ class DataFiles(Files):
     wbm_cses_plus_init_structs = (
         "wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
     )
-    wbm_summary = "wbm/2022-10-19-wbm-summary.csv"
+    wbm_summary = "wbm/2022-10-19-wbm-summary.csv.gz"
 
 
 # data files can be downloaded and cached with matbench_discovery.data.load()

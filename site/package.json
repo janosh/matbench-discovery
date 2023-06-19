@@ -14,7 +14,7 @@
     "preview": "vite preview",
     "serve": "vite build && vite preview",
     "check": "svelte-check",
-    "changelog": "npx auto-changelog --output changelog.md --hide-credit --commit-limit false --latest-version x.y.z"
+    "changelog": "npx auto-changelog --output ../changelog.md --hide-credit --commit-limit false --latest-version x.y.z"
   },
   "devDependencies": {
     "@iconify/svelte": "^3.1.4",

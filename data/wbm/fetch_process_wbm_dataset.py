@@ -632,7 +632,7 @@ df_summary.round(6).to_csv(f"{module_dir}/{today}-wbm-summary.csv")
 
 # %% only here to load data for later inspection
 if False:
-    df_summary = pd.read_csv(f"{module_dir}/2022-10-19-wbm-summary.csv").set_index(
+    df_summary = pd.read_csv(f"{module_dir}/2022-10-19-wbm-summary.csv.gz").set_index(
         "material_id"
     )
     df_wbm = pd.read_json(
