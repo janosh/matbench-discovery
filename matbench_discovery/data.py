@@ -140,7 +140,7 @@ def load(
 
 def glob_to_df(
     pattern: str,
-    reader: Callable[[Any], pd.DataFrame] = None,
+    reader: Callable[[Any], pd.DataFrame] | None = None,
     pbar: bool = True,
     **kwargs: Any,
 ) -> pd.DataFrame:
@@ -179,7 +179,7 @@ class Files(dict):  # type: ignore
     """
 
     def __init__(
-        self, root: str = default_cache_dir, key_map: dict[str, str] = None
+        self, root: str = default_cache_dir, key_map: dict[str, str] | None = None
     ) -> None:
         """Create a Files instance.
 
