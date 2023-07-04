@@ -18,7 +18,7 @@ Then open http://localhost:8000 in your browser.
 e_form_2000 = "e_form_per_atom_chgnet_2000"
 e_form_500 = "e_form_per_atom_chgnet_500"
 
-df_chgnet = pd.read_json(PRED_FILES.CHGNet.replace(".csv", ".json.gz"))
+df_chgnet = pd.read_json(PRED_FILES.CHGNet.replace(".csv.gz", ".json.gz"))
 df_chgnet = df_chgnet.set_index("material_id")
 
 df_chgnet_2000 = pd.read_csv(PRED_FILES.CHGNet)

@@ -58,8 +58,8 @@ if os.path.isfile(out_path):
 data_path = {
     "IS2RE": DATA_FILES.wbm_initial_structures,
     "RS2RE": DATA_FILES.wbm_computed_structure_entries,
-    "chgnet_structure": PRED_FILES.CHGNet.replace(".csv", ".json.gz"),
-    "m3gnet_structure": PRED_FILES.M3GNet.replace(".csv", ".json.gz"),
+    "chgnet_structure": PRED_FILES.CHGNet.replace(".csv.gz", ".json.gz"),
+    "m3gnet_structure": PRED_FILES.M3GNet.replace(".csv.gz", ".json.gz"),
 }[task_type]
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
