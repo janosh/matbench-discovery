@@ -6,8 +6,8 @@ default_stages: [commit]
 default_install_hook_types: [pre-commit, commit-msg]
 
 repos:
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.272
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.0.275
     hooks:
       - id: ruff
         args: [--fix]
@@ -34,13 +34,13 @@ repos:
       - id: trailing-whitespace
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.3.0
+    rev: v1.4.1
     hooks:
       - id: mypy
         additional_dependencies: [types-pyyaml, types-requests]
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.4
+    rev: v2.2.5
     hooks:
       - id: codespell
         stages: [commit, commit-msg]
@@ -60,15 +60,17 @@ repos:
         exclude: ^(site/src/figs/.+\.svelte|data/wbm/20.+\..+|site/src/routes/.+\.(yaml|json)|changelog.md)$
 
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.41.0
+    rev: v8.44.0
     hooks:
       - id: eslint
         types: [file]
-        args: [--fix, --resolve-plugins-relative-to, ~/.cache/pre-commit]
+        args: [--fix]
         files: \.(js|ts|svelte)$
         additional_dependencies:
           - eslint
+          - svelte
           - typescript
-          - eslint-plugin-svelte3
+          - eslint-plugin-svelte
           - "@typescript-eslint/eslint-plugin"
           - "@typescript-eslint/parser"
+          - svelte-eslint-parser
