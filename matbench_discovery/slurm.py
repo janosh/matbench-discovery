@@ -30,9 +30,9 @@ def slurm_submit(
     time: str,
     partition: str,
     account: str,
-    py_file_path: str = None,
+    py_file_path: str | None = None,
     slurm_flags: str | Sequence[str] = (),
-    array: str = None,
+    array: str | None = None,
     pre_cmd: str = "",
 ) -> dict[str, str]:
     """Slurm submits a python script using `sbatch --wrap 'python path/to/file.py'`.

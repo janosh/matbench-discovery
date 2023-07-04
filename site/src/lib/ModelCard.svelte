@@ -26,7 +26,7 @@
   {model_name}
   <button
     on:click={() => (show_details = !show_details)}
-    title="{show_details ? 'Hide' : 'Show'} authors and package versions"
+    title="{show_details ? `Hide` : `Show`} authors and package versions"
   >
     <!-- change between expand/collapse icon -->
     <Icon icon={show_details ? `ion:ios-arrow-up` : `ion:ios-arrow-down`} inline />
