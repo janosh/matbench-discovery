@@ -61,11 +61,11 @@ task_type: TaskType = "regression"
 
 # %%
 data_path = DATA_FILES.mp_energies
-print(f"{data_path=}")
-df_in = pd.read_json(data_path).set_index(id_col)
-df_in[input_col] = [
-    Structure.from_dict(s) for s in tqdm(df_in[input_col], disable=None)
-]
+df_in = pd.read_csv(data_path).set_index(id_col)
+
+df_cse = pd.read_json(DATA_FILES.mp_computed_structure_entries).set_index(id_col)
+df_in[input_col] = [Structure.from_dict(cse["structure"]) for cse in tqdm(df_cse.entry)]
+
 assert target_col in df_in
 
 df_aug = df_in.copy()

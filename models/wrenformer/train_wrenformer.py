@@ -51,7 +51,7 @@ print(f"\nJob started running {timestamp}")
 print(f"{job_name=}")
 print(f"{data_path=}")
 
-df = pd.read_json(data_path).set_index("material_id", drop=False)
+df = pd.read_csv(data_path).set_index("material_id", drop=False)
 
 assert target_col in df, f"{target_col=} not in {list(df)}"
 assert input_col in df, f"{input_col=} not in {list(df)}"
