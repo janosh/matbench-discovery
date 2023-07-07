@@ -2,8 +2,12 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
-#### [v1.0.0](https://github.com/janosh/matbench-discovery/compare/v0.1.4...v1.0.0)
+#### [v0.1.5](https://github.com/janosh/matbench-discovery/compare/v0.1.4...v0.1.5)
 
+> 7 July 2023
+
+- v0.1.5 [`#44`](https://github.com/janosh/matbench-discovery/pull/44)
+- [pre-commit.ci] pre-commit autoupdate [`#42`](https://github.com/janosh/matbench-discovery/pull/42)
 - Update site to show ALIGNN results [`#38`](https://github.com/janosh/matbench-discovery/pull/38)
 - ALIGNN test on WBM data [`#37`](https://github.com/janosh/matbench-discovery/pull/37)
 - Add PDF versions of all SI figures [`#36`](https://github.com/janosh/matbench-discovery/pull/36)
@@ -18,6 +22,7 @@ All notable changes to this project will be documented in this file. Dates are d
 - Add `upload_to_figshare.py` and replace local data-loading with cached Figshare downloads [`#13`](https://github.com/janosh/matbench-discovery/pull/13)
 - DRY workflows [`#8`](https://github.com/janosh/matbench-discovery/pull/8)
 - Add `Files`, `DataFiles` and `PredFiles` classes in `matbench_discovery/data.py` [`#7`](https://github.com/janosh/matbench-discovery/pull/7)
+- fix path issues and using JSON pandas reader for CSV files in train_(cgcnn|wrenformer).py (closes #43) [`#43`](https://github.com/janosh/matbench-discovery/issues/43)
 - Fix KeyError('wyckoff_spglib') in `fetch_process_wbm_dataset.py` (#34) [`#32`](https://github.com/janosh/matbench-discovery/issues/32) [`#33`](https://github.com/janosh/matbench-discovery/issues/33)
 - Fix `compute_struct_fingerprints.py`: cannot insert `material_id`, already exists (#31) [`#30`](https://github.com/janosh/matbench-discovery/issues/30)
 - Fix `fetch_process_wbm_dataset.py` unnecessarily loading WBM initial structures from disk (#29) [`#28`](https://github.com/janosh/matbench-discovery/issues/28)
@@ -38,6 +43,7 @@ All notable changes to this project will be documented in this file. Dates are d
 - add scripts/compute_struct_fingerprints.py to generate matminer SiteStats fingerprints for all MP+WBM structures [`7946b5e`](https://github.com/janosh/matbench-discovery/commit/7946b5e433713ef8f46b839562f09d889331e63b)
 - split model run times into train and test contribs [`b8a18d8`](https://github.com/janosh/matbench-discovery/commit/b8a18d8fd357ea4ec77dae837fdb8317fe978b28)
 - add models/chgnet/{test_chgnet,join_m3gnet_results}.py [`da39074`](https://github.com/janosh/matbench-discovery/commit/da390741b0d0f03fbcca5bcbac725c2211a80427)
+- git surgery purging all large CSV files from repo history [`4a90dee`](https://github.com/janosh/matbench-discovery/commit/4a90dee85965aebbcfcd547353c548eeb19651ce)
 - add scripts/compute_projections.py [`eec1cb4`](https://github.com/janosh/matbench-discovery/commit/eec1cb4073c2db65cd238157f656af963582ffc5)
 - make horizontal versions of roc-models-2x4.pdf and model-run-times-bar.pdf [`551050e`](https://github.com/janosh/matbench-discovery/commit/551050e17cc98cf786707448fd304bb06177a914)
 - add changelog.md [`0621282`](https://github.com/janosh/matbench-discovery/commit/0621282b0ed6ca397b6293e8d6f2bcbaac736468)
@@ -73,12 +79,11 @@ All notable changes to this project will be documented in this file. Dates are d
 - tweak contributing guide [`b3ea8d3`](https://github.com/janosh/matbench-discovery/commit/b3ea8d3980d62032ed33ae75fb0c7539fafcebe3)
 - upload @pbenner's ALIGNN checkpoint to Figshare and link from models/alignn/readme.md [`da56377`](https://github.com/janosh/matbench-discovery/commit/da5637725e3f785cdf8bd82ff6a3be95858b2eae)
 - start preprint [`fd8355d`](https://github.com/janosh/matbench-discovery/commit/fd8355dca9fe87ef9196980c06907ef377fdcd97)
-- git surgery purging all large CSV files from repo history [`873fa75`](https://github.com/janosh/matbench-discovery/commit/873fa7559fab539f2f1fe8fe6557d5c530b5aabc)
 - rename pages /about-test-test-set to /about-the-data and /how-to-contribute to /contribute [`e41ca32`](https://github.com/janosh/matbench-discovery/commit/e41ca32e768ea06f404b216353521f89e6bee2e2)
 
 #### v0.1.4
 
-> 24 February 2023
+> 19 June 2023
 
 - Add WBM element heatmap to site and data/wbm/readme.md [`#6`](https://github.com/janosh/matbench-discovery/pull/6)
 - doc: remove reference to alignn [`#4`](https://github.com/janosh/matbench-discovery/pull/4)

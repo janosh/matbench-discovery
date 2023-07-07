@@ -235,9 +235,9 @@ fig.show()
 
 
 # %%
-wyk_col, spg_col = "wyckoff_spglib", "spacegroup"
-df_wbm[spg_col] = df_wbm[wyk_col].str.split("_").str[2].astype(int)
-df_mp[spg_col] = df_mp[wyk_col].str.split("_").str[2].astype(int)
+wyckoff_col, spg_col = "wyckoff_spglib", "spacegroup"
+df_wbm[spg_col] = df_wbm[wyckoff_col].str.split("_").str[2].astype(int)
+df_mp[spg_col] = df_mp[wyckoff_col].str.split("_").str[2].astype(int)
 
 
 # %%

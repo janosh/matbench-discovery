@@ -64,7 +64,7 @@ data_path = DATA_FILES.mp_energies
 df_in = pd.read_csv(data_path).set_index(id_col)
 
 df_cse = pd.read_json(DATA_FILES.mp_computed_structure_entries).set_index(id_col)
-df_in[input_col] = [Structure.from_dict(cse["structure"]) for cse in tqdm(df_cse.entry)]
+df_in[input_col] = [Structure.from_dict(cse[input_col]) for cse in tqdm(df_cse.entry)]
 
 assert target_col in df_in
 
