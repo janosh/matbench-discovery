@@ -58,19 +58,20 @@ df.energy_type.value_counts().plot.pie(backend="plotly", autopct="%1.1f%%")
 # %%
 df_cse = pd.read_json(DATA_FILES.mp_computed_structure_entries).set_index("material_id")
 
-df_cse["structure"] = [
-    Structure.from_dict(cse["structure"]) for cse in tqdm(df_cse.entry)
+struct_col = "structure"
+df_cse[struct_col] = [
+    Structure.from_dict(cse[struct_col]) for cse in tqdm(df_cse.entry)
 ]
-wyk_col = "wyckoff_spglib"
-df_cse[wyk_col] = [
+wyckoff_col = "wyckoff_spglib"
+df_cse[wyckoff_col] = [
     get_aflow_label_from_spglib(struct, errors="ignore")
     for struct in tqdm(df_cse.structure)
 ]
 # make sure symmetry detection succeeded for all structures
-assert df_cse[wyk_col].str.startswith("invalid").sum() == 0
-df[wyk_col] = df_cse[wyk_col]
+assert df_cse[wyckoff_col].str.startswith("invalid").sum() == 0
+df[wyckoff_col] = df_cse[wyckoff_col]
 
-spg_nums = df[wyk_col].str.split("_").str[2].astype(int)
+spg_nums = df[wyckoff_col].str.split("_").str[2].astype(int)
 # make sure all our spacegroup numbers match MP's
 assert (spg_nums.sort_index() == df_spg["number"].sort_index()).all()
 
