@@ -32,7 +32,7 @@ export default {
               `svg`,
               { width: 16, height: 16, viewBox: `0 0 16 16` },
               // symbol #octicon-link defined in app.html
-              s(`use`, { 'xlink:href': `#octicon-link` })
+              s(`use`, { 'xlink:href': `#octicon-link` }),
             ),
           },
         ],
@@ -59,7 +59,7 @@ export default {
               const idx = (route.startsWith(`si`) ? `S` : ``) + fig_index.size
               const link_icon = `<a aria-hidden="true" tabindex="-1" href="#${id}"><svg width="16" height="16" viewBox="0 0 16 16"><use xlink:href="#octicon-link"></use></svg></a>`
               return `<strong id='${id}'>${link_icon}Fig. ${idx}</strong>`
-            }
+            },
           )
 
           // Replace figure references @fig:label with 'fig. {n}' and add to fig_index
@@ -73,12 +73,12 @@ export default {
                 console.error(
                   `Figure id '${id}' not found, expected one of ${[
                     ...fig_index,
-                  ]}`
+                  ]}`,
                 )
                 idx = `not found`
               }
               return `<a href="#${id_lower}">${fig_or_Fig}. ${idx}</a>`
-            }
+            },
           )
 
           // preprocess markdown citations @auth_1st-word-title_yyyy into superscript
@@ -93,7 +93,7 @@ export default {
                 console.error(`Reference id ${id} not found`)
               }
               return `[<a class="ref" href="#${id}">${author} ${year}</a>]`
-            }
+            },
           )
 
           return { code }

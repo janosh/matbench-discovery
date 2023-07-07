@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "matbench-discovery"
-version = "0.1.4"
+version = "0.1.5"
 description = "A benchmark for machine learning energy models on inorganic crystal stability prediction from unrelaxed structures"
 authors = [{ name = "Janosh Riebesell", email = "janosh@lbl.gov" }]
 readme = "readme.md"
@@ -124,7 +124,6 @@ ignore = [
   "PLR",     # pylint refactor
   "PLW2901", # redefined-loop-name
   "PT006",   # pytest-parametrize-names-wrong-type
-  "PT011",   # pytest-raises-too-broad
   "PT013",   # pytest-incorrect-pytest-import
 ]
 pydocstyle.convention = "google"
