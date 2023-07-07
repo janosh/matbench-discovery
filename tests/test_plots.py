@@ -70,15 +70,15 @@ def test_cumulative_metrics(
 
 
 def test_cumulative_metrics_raises() -> None:
-    with pytest.raises(ValueError) as exc_info:
+    with pytest.raises(
+        ValueError,
+        match="invalid_metrics={'invalid'}, should be case-insensitive subset of",
+    ):
         cumulative_metrics(
             e_above_hull_true=df_wbm[each_true_col],
             df_preds=df_wbm[models],
             metrics=("invalid",),
         )
-    assert "invalid_metrics={'invalid'}, should be case-insensitive subset of" in str(
-        exc_info.value
-    )
 
 
 @pytest.mark.parametrize("window", [0.02, 0.002])

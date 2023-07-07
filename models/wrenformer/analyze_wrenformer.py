@@ -27,16 +27,16 @@ bad_ids = df_each_pred.query(
 ).index
 
 spg_col = "spacegroup"
-wyk_col = "wyckoff_spglib"
-df_wbm[spg_col] = df_wbm[wyk_col].str.split("_").str[2].astype(int)
+wyckoff_col = "wyckoff_spglib"
+df_wbm[spg_col] = df_wbm[wyckoff_col].str.split("_").str[2].astype(int)
 df_bad = df_wbm.loc[bad_ids]
 title = f"{len(df_bad)} {model} preds<br>with {max_each_true=}, {min_each_pred=}"
 
 
 # %%
 df_mp = pd.read_csv(DATA_FILES.mp_energies).set_index("material_id")
-df_mp[spg_col] = df_mp[wyk_col].str.split("_").str[2].astype(int)
-df_mp["isopointal_proto_from_aflow"] = df_mp[wyk_col].map(
+df_mp[spg_col] = df_mp[wyckoff_col].str.split("_").str[2].astype(int)
+df_mp["isopointal_proto_from_aflow"] = df_mp[wyckoff_col].map(
     get_isopointal_proto_from_aflow
 )
 df_mp.isopointal_proto_from_aflow.value_counts().head(12)
@@ -51,7 +51,7 @@ save_fig(ax, f"{PDF_FIGS}/spacegroup-hist-{model.lower()}-failures.pdf")
 # %%
 proto_col = "Isopointal Prototypes"
 df_proto_counts = (
-    df_bad[wyk_col].map(get_isopointal_proto_from_aflow).value_counts().to_frame()
+    df_bad[wyckoff_col].map(get_isopointal_proto_from_aflow).value_counts().to_frame()
 )
 
 
