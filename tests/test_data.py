@@ -81,20 +81,17 @@ def test_load(
 
 def test_load_raises(tmp_path: Path) -> None:
     data_key = "bad-key"
-    with pytest.raises(ValueError) as exc_info:
+    with pytest.raises(ValueError) as exc:  # noqa: PT011
         load(data_key)
 
-    assert f"Unknown {data_key=}, must be one of {list(DATA_FILES)}" in str(
-        exc_info.value
-    )
+    assert f"Unknown {data_key=}, must be one of {list(DATA_FILES)}" in str(exc.value)
 
     version = "invalid-version"
-    with pytest.raises(ValueError) as exc_info:
+    with pytest.raises(ValueError) as exc:  # noqa: PT011
         load("wbm_summary", version=version, cache_dir=tmp_path)
 
     assert (
-        str(exc_info.value)
-        == f"Unexpected {version=}. Must be one of {figshare_versions}."
+        str(exc.value) == f"Unexpected {version=}. Must be one of {figshare_versions}."
     )
     assert os.listdir(tmp_path) == [], "cache_dir should be empty"
 

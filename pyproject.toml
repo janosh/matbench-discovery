@@ -124,7 +124,6 @@ ignore = [
   "PLR",     # pylint refactor
   "PLW2901", # redefined-loop-name
   "PT006",   # pytest-parametrize-names-wrong-type
-  "PT011",   # pytest-raises-too-broad
   "PT013",   # pytest-incorrect-pytest-import
 ]
 pydocstyle.convention = "google"
