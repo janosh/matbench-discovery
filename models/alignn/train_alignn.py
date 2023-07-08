@@ -149,8 +149,7 @@ train_loader, val_loader = df_to_loader(df_train), df_to_loader(df_val, shuffle=
 
 # %%
 prepare_batch = train_loader.dataset.prepare_batch
-config.epochs = 2
-config.write_predictions = False
+# config.write_predictions = False
 
 train_hist = train_dgl(
     config,
