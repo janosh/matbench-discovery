@@ -1,7 +1,7 @@
 <script lang="ts">
   import { References } from '$lib'
   import cite from '$root/citation.cff'
-  import { pretty_num } from 'elementari/labels'
+  import { pretty_num } from 'elementari'
   import { references } from './references.yaml'
 
   export let data
