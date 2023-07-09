@@ -28,8 +28,8 @@ def slurm_submit(
     job_name: str,
     out_dir: str,
     time: str,
-    partition: str,
     account: str,
+    partition: str | None = None,
     py_file_path: str | None = None,
     slurm_flags: str | Sequence[str] = (),
     array: str | None = None,
@@ -46,10 +46,10 @@ def slurm_submit(
         out_dir (str): Directory to write slurm logs. Log file will include slurm job
             ID and array task ID.
         time (str): 'HH:MM:SS' time limit for the job.
-        py_file_path (str, optional): Path to the python script to be submitted.
             Defaults to the path of the file calling slurm_submit().
+        account (str): Account to charge for this job.
         partition (str, optional): Slurm partition.
-        account (str, optional): Account to charge for this job.
+        py_file_path (str, optional): Path to the python script to be submitted.
         slurm_flags (str | list[str], optional): Extra slurm CLI flags. Defaults to ().
             Examples: ('--nodes 1', '--gpus-per-node 1') or ('--mem', '16G').
         array (str, optional): Slurm array specifier. Defaults to None. Example:
@@ -67,23 +67,19 @@ def slurm_submit(
         dict[str, str]: Slurm variables like job ID, array task ID, compute nodes IDs,
             submission node ID and total job memory.
     """
-    if py_file_path is None:
-        py_file_path = _get_calling_file_path(frame=2)
-
-    if "GPU" in partition:
-        # on Ampere GPU partition, source module CLI and load default Ampere env
-        # before actual job command
-        pre_cmd += ". /etc/profile.d/modules.sh; module load rhel8/default-amp;"
+    py_file_path = py_file_path or _get_calling_file_path(frame=2)
 
     os.makedirs(out_dir, exist_ok=True)  # slurm fails if out_dir is missing
 
     cmd = [
-        *f"sbatch --{partition=} --{account=} --{time=}".replace("'", "").split(),
+        *f"sbatch --{account=} --{time=}".replace("'", "").split(),
         *("--job-name", job_name),
         *("--output", f"{out_dir}/slurm-%A{'-%a' if array else ''}.log"),
         *(slurm_flags.split() if isinstance(slurm_flags, str) else slurm_flags),
         *("--wrap", f"{pre_cmd} python {py_file_path}".strip()),
     ]
+    if partition:
+        cmd += ["--partition", partition]
     if array:
         cmd += ["--array", array]
 

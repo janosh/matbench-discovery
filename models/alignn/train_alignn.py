@@ -48,20 +48,20 @@ config.output_dir = out_dir = os.getenv(
 
 slurm_vars = slurm_submit(
     job_name=job_name,
-    partition="ampere",
-    account="LEE-SL3-GPU",
-    time="12:0:0",
+    # partition="perlmuttter",
+    account="matgen_g",
+    time="4:0:0",
     out_dir=out_dir,
-    slurm_flags="--nodes 1 --gpus-per-node 1",
-    pre_cmd=". /etc/profile.d/modules.sh; module load rhel8/default-amp;"
-    "module load cuda/11.8",
+    slurm_flags="--qos regular --constraint gpu --gpus 1",
+    pre_cmd="module load pytorch/2.0.1;",
 )
 
 
 # %% Load data
 df_cse = pd.read_json(DATA_FILES.mp_computed_structure_entries).set_index(id_col)
 df_cse[struct_col] = [
-    Structure.from_dict(cse[struct_col]) for cse in tqdm(df_cse.entry, disable=None)
+    Structure.from_dict(cse[struct_col])
+    for cse in tqdm(df_cse.entry, desc="Structures from dict")
 ]
 
 # load energies
