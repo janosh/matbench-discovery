@@ -24,7 +24,7 @@
     "@sveltejs/vite-plugin-svelte": "^2.4.2",
     "@typescript-eslint/eslint-plugin": "^5.61.0",
     "@typescript-eslint/parser": "^5.61.0",
-    "elementari": "^0.1.8",
+    "elementari": "^0.2.2",
     "eslint": "^8.44.0",
     "eslint-plugin-svelte": "^2.32.2",
     "hastscript": "^7.2.0",
