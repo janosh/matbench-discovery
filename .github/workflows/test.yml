@@ -7,6 +7,13 @@ on:
     branches: [main]
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      task:
+        type: choice
+        options: [tests, release]
+        default: tests
+        description: Only run tests or release a new version of pymatgen to PyPI after tests pass.
 
 jobs:
   tests:
