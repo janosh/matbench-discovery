@@ -11,11 +11,13 @@ from matbench_discovery.slurm import _get_calling_file_path, slurm_submit
 
 @patch.dict(os.environ, {"SLURM_JOB_ID": "1234"}, clear=True)
 @pytest.mark.parametrize("py_file_path", [None, "path/to/file.py"])
-def test_slurm_submit(capsys: CaptureFixture[str], py_file_path: str | None) -> None:
+@pytest.mark.parametrize("partition", [None, "fake-partition"])
+def test_slurm_submit(
+    capsys: CaptureFixture[str], py_file_path: str | None, partition: str | None
+) -> None:
     job_name = "test_job"
     out_dir = "tmp"
     time = "0:0:1"
-    partition = "fake-partition"
     account = "fake-account"
 
     func_call = lambda: slurm_submit(
@@ -47,10 +49,12 @@ def test_slurm_submit(capsys: CaptureFixture[str], py_file_path: str | None) -> 
     assert mock_subprocess_run.call_count == 1
 
     sbatch_cmd = (
-        f"sbatch --partition={partition} --account={account} --time={time} "
+        f"sbatch --account={account} --time={time} "
         f"--job-name {job_name} --output {out_dir}/slurm-%A.log --foo "
         f"--wrap python {py_file_path or __file__}"
     ).replace(" --", "\n  --")
+    if partition:
+        sbatch_cmd += f"\n  --partition {partition}"
     stdout, stderr = capsys.readouterr()
     assert sbatch_cmd in stdout
     assert stderr == ""

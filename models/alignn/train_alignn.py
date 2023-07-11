@@ -149,7 +149,10 @@ train_loader, val_loader = df_to_loader(df_train), df_to_loader(df_val, shuffle=
 
 # %%
 prepare_batch = train_loader.dataset.prepare_batch
-# config.write_predictions = False
+# triggers error in alignn/train.py line 1059 in train_dgl()
+# f.write("%s, %6f, %6f\n" % (id, target, out_data))
+# TypeError: must be real number, not list
+config.write_predictions = False
 
 train_hist = train_dgl(
     config,
