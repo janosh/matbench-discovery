@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ChemicalElement } from 'elementari'
-  import { pretty_num } from 'elementari/labels'
+  import { pretty_num } from 'elementari'
 
   export let element: ChemicalElement
   export let elem_counts: number[] | Record<string, number>
