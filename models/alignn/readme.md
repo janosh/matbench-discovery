@@ -20,6 +20,5 @@ Replace `/path/to/` with the actual path to the patch file.
 
 The directory contains the following files, which must be executed in the given order to reproduce the results:
 
-1. `train_data.py`: Export Matbench Discovery training data to ALIGNN compatible format. This script outputs training data in the directory `data_train`. In addition, a small test data set is set apart and stored in the directory `data_test`
-1. `train_alignn.py`: Train an ALIGNN model on previously exported data. The resulting model is stored in the directory `data-train-result`
-1. `test_alignn.py`: Test a trained ALIGNN model on the WBM data. Generates `2023-06-03-mp-e-form-alignn-wbm-IS2RE.csv.gz`.
+1. `train_alignn.py`: Train an ALIGNN model on all 154k MP computed structure entries. The resulting model checkpoint is saved to the `out_dir` variable in that script and also uploaded to `wandb` from where it is publicly available for 3rd party reproducibility.
+1. `test_alignn.py`: Test a trained ALIGNN model on the WBM data. Generated `2023-06-03-mp-e-form-alignn-wbm-IS2RE.csv.gz`.
