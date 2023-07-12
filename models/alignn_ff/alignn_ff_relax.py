@@ -9,16 +9,16 @@ from pqdm.processes import pqdm
 from pymatgen.core import Structure
 from pymatgen.io.jarvis import JarvisAtomsAdaptor
 
-from matbench_discovery import DEBUG
+from matbench_discovery import DEBUG, today
 from matbench_discovery.data import DATA_FILES, df_wbm
 
 __author__ = "Janosh Riebesell, Philipp Benner"
-__date__ = "2023-06-03"
+__date__ = "2023-07-11"
 
 
 # %% read environment variables
 batch = int(os.getenv("TASK_ID", default="0"))
-out_dir = os.getenv("SBATCH_OUTPUT", default="2022-10-19-alignn-wbm-IS2RE")
+out_dir = os.getenv("SBATCH_OUTPUT", default=f"{today}-alignn-wbm-IS2RE")
 
 
 # %%
@@ -26,7 +26,7 @@ n_splits = 100
 n_processes_per_task = 10
 module_dir = os.path.dirname(__file__)
 # model_name = "mp_e_form_alignn"  # pre-trained by NIST
-model_name = f"{module_dir}/data-train-result/best-model.pth"
+model_name = f"{out_dir}/best-model.pth"
 task_type = "IS2RE"
 target_col = "e_form_per_atom_mp2020_corrected"
 input_col = "initial_structure"

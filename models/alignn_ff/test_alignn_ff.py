@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+from glob import glob
 from importlib.metadata import version
 
 import pandas as pd
@@ -20,25 +21,25 @@ from tqdm import tqdm
 from matbench_discovery import DEBUG, today
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import wandb_scatter
-from matbench_discovery.slurm import slurm_submit
 
-__author__ = "Janosh Riebesell, Philipp Benner"
-__date__ = "2023-06-03"
+__author__ = "Philipp Benner, Janosh Riebesell"
+__date__ = "2023-07-11"
 
 module_dir = os.path.dirname(__file__)
 
 
 # %%
-model_name = "mp_e_form_alignn"  # pre-trained by NIST
-# TODO fix this to load checkpoint from figshare
-# model_name = f"{module_dir}/data-train-result/best-model.pth"
+n_splits = 100
+# model_name = "mp_e_form_alignnn"  # pre-trained by NIST
 task_type = "IS2RE"
 target_col = "e_form_per_atom_mp2020_corrected"
 input_col = "initial_structure"
 id_col = "material_id"
 device = "cuda" if torch.cuda.is_available() else "cpu"
-job_name = f"{model_name}-wbm-{task_type}{'-debug' if DEBUG else ''}"
+model_name = f"alignn-ff-wbm-{task_type}"
+job_name = f"{model_name}-relaxed-wbm-{task_type}{'-debug' if DEBUG else ''}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
+in_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 
 if model_name in all_models:  # load pre-trained model
@@ -59,47 +60,25 @@ else:
         f"{model_name=} not found, train a model or use pre-trained {list(all_models)}"
     )
 
-slurm_vars = slurm_submit(
-    job_name=job_name,
-    partition="ampere",
-    account="LEE-SL3-GPU",
-    time="12:0:0",
-    out_dir=out_dir,
-    slurm_flags="--nodes 1 --gpus-per-node 1",
-    pre_cmd=". /etc/profile.d/modules.sh; module load rhel8/default-amp;"
-    "module load cuda/11.8",
-)
-
 
 # %% Load data
 data_path = {
     "IS2RE": DATA_FILES.wbm_initial_structures,
     "RS2RE": DATA_FILES.wbm_computed_structure_entries,
 }[task_type]
-input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
-
-df_in = pd.read_json(data_path).set_index(id_col)
-
-df_in[target_col] = df_wbm[target_col]
-if task_type == "RS2RE":
-    df_in[input_col] = [x["structure"] for x in df_in.computed_structure_entry]
-assert input_col in df_in, f"{input_col=} not in {list(df_in)}"
-
-df_in[input_col] = [
-    JarvisAtomsAdaptor.get_atoms(Structure.from_dict(x))
-    for x in tqdm(df_in[input_col], leave=False, desc="Converting to JARVIS atoms")
-]
+input_col = "relaxed_structure"
+# load ALIGNN-FF relaxed structures (TODO fix directory we're loading from)
+df_in = pd.concat(map(pd.read_json, glob(f"{module_dir}/data-train-result/*.json.gz")))
 
 
 # %%
 run_params = dict(
     data_path=data_path,
-    **{f"{dep}_version": version(dep) for dep in ("megnet", "numpy")},
+    **{f"{dep}_version": version(dep) for dep in ("alignn", "numpy")},
     model_name=model_name,
     task_type=task_type,
     target_col=target_col,
     df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
-    slurm_vars=slurm_vars,
 )
 
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)
@@ -109,11 +88,13 @@ wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 model.eval()
 e_form_preds: dict[str, float] = {}
 with torch.no_grad():  # get predictions
-    for material_id, atoms in tqdm(
+    for material_id, structure in tqdm(
         df_in[input_col].items(),
         total=len(df_in),
         desc=f"Predicting {target_col=} {task_type}",
     ):
+        atoms = JarvisAtomsAdaptor.get_atoms(Structure.from_dict(structure))
+
         atom_graph, line_graph = Graph.atom_dgl_multigraph(atoms)
         e_form = model([atom_graph.to(device), line_graph.to(device)]).item()
 
@@ -124,10 +105,19 @@ df_wbm[pred_col] = e_form_preds
 df_wbm[pred_col] -= df_wbm.e_correction_per_atom_mp_legacy
 df_wbm[pred_col] += df_wbm.e_correction_per_atom_mp2020
 
-df_wbm[pred_col].round(4).to_csv(f"{module_dir}/{today}-{model_name}-wbm-IS2RE.csv.gz")
+if model_name in all_models:
+    df_wbm[pred_col].round(4).to_csv(
+        f"{module_dir}/{today}-{model_name}-relaxed-wbm-IS2RE.csv.gz"
+    )
+else:
+    df_wbm[pred_col].round(4).to_csv(
+        f"{module_dir}/{today}-alignn-relaxed-wbm-IS2RE.csv.gz"
+    )
 
 
 # %%
+df_wbm = df_wbm.dropna()
+
 table = wandb.Table(dataframe=df_wbm[[target_col, pred_col]].reset_index())
 
 MAE = (df_wbm[target_col] - df_wbm[pred_col]).abs().mean()
