@@ -64,6 +64,7 @@ quantity_labels = dict(
 )
 model_labels = dict(
     alignn="ALIGNN",
+    alignn_ff="ALIGNN FF",
     alignn_pretrained="ALIGNN Pretrained",
     bowsr_megnet="BOWSR + MEGNet",
     chgnet="CHGNet",

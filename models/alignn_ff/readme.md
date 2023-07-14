@@ -1,5 +1,7 @@
 # ALIGNN-FF formation energy predictions on WBM test set after ML relaxation
 
+This submission is for the WBM IS2RE task (initial structure to relaxed energy) and uses the [`alignnff_wt10` checkpoint](https://github.com/usnistgov/alignn/blob/461b35fe6e5ed7ade7cbf9b345773e941371ecfc/alignn/ff/alignnff_wt10/best_model.pt).
+
 The patch `alignn-ff-2023.07.05.patch` fixes the following issue:
 
 ```bash

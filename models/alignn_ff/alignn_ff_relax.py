@@ -5,9 +5,9 @@ import os
 
 import numpy as np
 import pandas as pd
-from pqdm.processes import pqdm
 from pymatgen.core import Structure
 from pymatgen.io.jarvis import JarvisAtomsAdaptor
+from tqdm import tqdm
 
 from matbench_discovery import DEBUG, today
 from matbench_discovery.data import DATA_FILES, df_wbm
@@ -95,7 +95,7 @@ def alignn_relax(structure: Structure) -> Structure:
 structures = [
     df_in.loc[material_id]["initial_structure"] for material_id in df_in.index
 ]
-df_relaxed = pqdm(structures, alignn_relax, n_jobs=n_processes_per_task)
+df_relaxed = tqdm(structures, alignn_relax, n_jobs=n_processes_per_task)
 
 df_in = df_in.assign(relaxed_structure=df_relaxed)
 
