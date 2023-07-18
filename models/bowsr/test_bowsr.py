@@ -66,11 +66,11 @@ slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
 out_path = f"{out_dir}/bowsr-preds-{slurm_array_task_id}.json.gz"
 
 if os.path.isfile(out_path):
-    raise SystemExit(f"{out_path = } already exists, exciting early")
+    raise SystemExit(f"{out_path=} already exists, exciting early")
 
 print(f"\nJob started running {timestamp}")
 print(f"{data_path = }")
-print(f"{out_path = }")
+print(f"{out_path=}")
 
 df_in: pd.DataFrame = np.array_split(
     pd.read_json(data_path).set_index("material_id"), slurm_array_task_count
@@ -110,7 +110,7 @@ if task_type == "RS2RE":
 
 structures = df_in[input_col].map(Structure.from_dict).to_dict()
 
-for material_id in tqdm(structures, desc="Main loop", disable=None):
+for material_id in tqdm(structures, desc="Relaxing", disable=None):
     structure = structures[material_id]
     if material_id in relax_results:
         continue

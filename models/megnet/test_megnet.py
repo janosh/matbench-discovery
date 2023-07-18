@@ -53,7 +53,7 @@ slurm_vars = slurm_submit(
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
 out_path = f"{out_dir}/megnet-e-form-preds.csv.gz"
 if os.path.isfile(out_path):
-    raise SystemExit(f"{out_path = } already exists, exciting early")
+    raise SystemExit(f"{out_path=} already exists, exciting early")
 
 data_path = {
     "IS2RE": DATA_FILES.wbm_initial_structures,

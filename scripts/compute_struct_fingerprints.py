@@ -53,7 +53,7 @@ slurm_vars = slurm_submit(
 # %%
 out_path = f"{out_dir}/site-stats-{slurm_array_task_id}.json.gz"
 if os.path.isfile(out_path):
-    raise SystemExit(f"{out_path = } already exists, exciting early")
+    raise SystemExit(f"{out_path=} already exists, exciting early")
 
 print(f"\nJob started running {timestamp}")
 print(f"{out_path=}")

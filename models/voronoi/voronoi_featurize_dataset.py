@@ -56,7 +56,7 @@ run_name = f"{job_name}-{slurm_array_task_id}"
 out_path = f"{out_dir}/{run_name}.csv.bz2"
 
 if os.path.isfile(out_path):
-    raise SystemExit(f"{out_path = } already exists, exciting early")
+    raise SystemExit(f"{out_path=} already exists, exciting early")
 
 print(f"{data_path=}")
 df_in: pd.DataFrame = np.array_split(

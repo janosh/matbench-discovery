@@ -26,8 +26,8 @@ __date__ = "2023-03-01"
 task_type = "IS2RE"  # "RS2RE"
 module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
-slurm_array_task_count = 2
-job_name = f"chgnet-wbm-{task_type}{'-debug' if DEBUG else ''}"
+slurm_array_task_count = 10
+job_name = f"mace-wbm-{task_type}{'-debug' if DEBUG else ''}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 relax_cell = True
 ase_optimizer = "FIRE"
@@ -39,16 +39,16 @@ slurm_vars = slurm_submit(
     time="12:0:0",
     array=f"1-{slurm_array_task_count}",
     slurm_flags="--qos regular --constraint gpu --gpus 1",
-    pre_cmd="module load pytorch/2.0.1;",
+    pre_cmd="module load pytorch/2.0.1; . ~/.bashrc",
 )
 
 
 # %%
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
-out_path = f"{out_dir}/chgnet-preds-{slurm_array_task_id}.json.gz"
+out_path = f"{out_dir}/mace-preds-{slurm_array_task_id}.json.gz"
 
 if os.path.isfile(out_path):
-    raise SystemExit(f"{out_path = } already exists, exciting early")
+    raise SystemExit(f"{out_path=} already exists, exciting early")
 
 
 # %%
@@ -58,7 +58,7 @@ data_path = {
 }[task_type]
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
-e_pred_col = "chgnet_energy"
+e_pred_col = "mace_energy"
 max_steps = 500
 force_max = 0.05  # Run until the forces are smaller than this in eV/A
 
@@ -68,7 +68,7 @@ df_in: pd.DataFrame = np.array_split(
 
 run_params = dict(
     data_path=data_path,
-    **{f"{dep}_version": version(dep) for dep in ("chgnet", "numpy", "torch")},
+    **{f"{dep}_version": version(dep) for dep in ("mace", "numpy", "torch")},
     task_type=task_type,
     df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     slurm_vars=slurm_vars,
@@ -96,7 +96,7 @@ atoms_to_relax = (
     df_in[input_col].map(Structure.from_dict).map(AseAtomsAdaptor().get_atoms).to_dict()
 )
 
-for material_id in tqdm(atoms_to_relax, disable=None):
+for material_id in tqdm(atoms_to_relax, desc="Relaxing", disable=None):
     if material_id in relax_results:
         continue
     try:
@@ -133,7 +133,7 @@ table = wandb.Table(
     ].reset_index()
 )
 
-title = f"CHGNet {task_type} ({len(df_out):,})"
+title = f"MACE {task_type} ({len(df_out):,})"
 wandb_scatter(table, fields=dict(x="uncorrected_energy", y=e_pred_col), title=title)
 
-wandb.log_artifact(out_path, type=f"chgnet-wbm-{task_type}")
+wandb.log_artifact(out_path, type=f"mace-wbm-{task_type}")

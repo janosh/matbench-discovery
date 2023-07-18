@@ -55,7 +55,7 @@ slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "3"))
 out_path = f"{out_dir}/m3gnet-preds-{slurm_array_task_id}.json.gz"
 
 if os.path.isfile(out_path):
-    raise SystemExit(f"{out_path = } already exists, exciting early")
+    raise SystemExit(f"{out_path=} already exists, exciting early")
 
 warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
 warnings.filterwarnings(action="ignore", category=UserWarning, module="tensorflow")
@@ -101,7 +101,7 @@ if task_type == "RS2RE":
 
 structures = df_in[input_col].map(Structure.from_dict).to_dict()
 
-for material_id in tqdm(structures, disable=None):
+for material_id in tqdm(structures, desc="Relaxing", disable=None):
     if material_id in relax_results:
         continue
     try:

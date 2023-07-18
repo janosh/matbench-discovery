@@ -14,7 +14,7 @@ for directory in [FIGS, MODELS, FIGSHARE, PDF_FIGS]:
     os.makedirs(directory, exist_ok=True)
 
 # whether a currently running slurm job is in debug mode
-DEBUG = "DEBUG" in os.environ or (
+DEBUG = os.getenv("DEBUG", "").lower() != "true" or (
     "slurm-submit" not in sys.argv and "SLURM_JOB_ID" not in os.environ
 )
 # directory to store model checkpoints downloaded from wandb cloud storage
