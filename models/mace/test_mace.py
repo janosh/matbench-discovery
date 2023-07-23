@@ -15,7 +15,7 @@ from pymatgen.core import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 from tqdm import tqdm
 
-from matbench_discovery import DEBUG, ROOT, timestamp, today
+from matbench_discovery import ROOT, timestamp, today
 from matbench_discovery.data import DATA_FILES, as_dict_handler, df_wbm
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
@@ -26,8 +26,8 @@ __date__ = "2023-03-01"
 task_type = "IS2RE"  # "RS2RE"
 module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
-slurm_array_task_count = 250
-job_name = f"mace-wbm-{task_type}{'-debug' if DEBUG else ''}"
+slurm_array_task_count = 100
+job_name = f"mace-wbm-{task_type}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 relax_cell = True
 ase_optimizer = "FIRE"

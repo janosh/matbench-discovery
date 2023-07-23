@@ -8,7 +8,7 @@ from importlib.metadata import version
 import pandas as pd
 from aviary.train import df_train_test_split, train_wrenformer
 
-from matbench_discovery import DEBUG, WANDB_PATH, timestamp, today
+from matbench_discovery import WANDB_PATH, timestamp, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 
@@ -23,7 +23,7 @@ target_col = "formation_energy_per_atom"
 # data_path = f"{ROOT}/data/2022-08-25-m3gnet-trainset-mp-2021-struct-energy.json.gz"
 # target_col = "mp_energy_per_atom"
 data_name = "m3gnet-trainset" if "m3gnet" in data_path else "mp"
-job_name = f"train-wrenformer-robust-{data_name}{'-debug' if DEBUG else ''}"
+job_name = f"train-wrenformer-robust-{data_name}"
 ensemble_size = 10
 dataset = "mp"
 module_dir = os.path.dirname(__file__)

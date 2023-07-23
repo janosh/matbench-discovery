@@ -20,7 +20,7 @@ from pymatviz import density_scatter
 from sklearn.metrics import r2_score
 from tqdm import tqdm
 
-from matbench_discovery import DEBUG, timestamp, today
+from matbench_discovery import timestamp, today
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.preds import PRED_FILES
@@ -31,7 +31,7 @@ __date__ = "2022-11-14"
 
 task_type = "chgnet_structure"
 module_dir = os.path.dirname(__file__)
-job_name = f"megnet-wbm-{task_type}{'-debug' if DEBUG else ''}"
+job_name = f"megnet-wbm-{task_type}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 slurm_array_task_count = 20
 

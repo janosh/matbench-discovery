@@ -14,7 +14,7 @@ from maml.apps.bowsr.optimizer import BayesianOptimizer
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import DEBUG, timestamp, today
+from matbench_discovery import timestamp, today
 from matbench_discovery.data import DATA_FILES, as_dict_handler
 from matbench_discovery.slurm import slurm_submit
 
@@ -35,7 +35,7 @@ slurm_array_task_count = 500
 # post submission
 slurm_max_parallel = 100
 energy_model = "megnet"
-job_name = f"bowsr-{energy_model}-wbm-{task_type}{'-debug' if DEBUG else ''}"
+job_name = f"bowsr-{energy_model}-wbm-{task_type}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 data_path = {

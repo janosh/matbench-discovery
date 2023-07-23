@@ -15,7 +15,7 @@ import wandb
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import DEBUG, today
+from matbench_discovery import today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 from models.voronoi import featurizer
@@ -33,7 +33,7 @@ data_path = {
 input_col = "initial_structure"
 # input_col = "relaxed_structure"
 debug = "slurm-submit" in sys.argv
-job_name = f"voronoi-features-{data_name}{'-debug' if DEBUG else ''}"
+job_name = f"voronoi-features-{data_name}"
 module_dir = os.path.dirname(__file__)
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 slurm_array_task_count = 50

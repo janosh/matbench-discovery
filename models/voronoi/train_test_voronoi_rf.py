@@ -12,7 +12,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.metrics import r2_score
 from sklearn.pipeline import Pipeline
 
-from matbench_discovery import DEBUG, today
+from matbench_discovery import today
 from matbench_discovery.data import DATA_FILES, df_wbm, glob_to_df
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
@@ -32,7 +32,7 @@ out_path = f"{out_dir}/e-form-preds-{task_type}.csv.gz"
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path=} already exists, exciting early")
 
-job_name = f"train-test-voronoi-rf{'-debug' if DEBUG else ''}"
+job_name = "train-test-voronoi-rf"
 
 slurm_vars = slurm_submit(
     job_name=job_name,

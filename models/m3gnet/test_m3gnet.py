@@ -20,7 +20,7 @@ from m3gnet.models import Relaxer
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import DEBUG, ROOT, timestamp, today
+from matbench_discovery import ROOT, timestamp, today
 from matbench_discovery.data import DATA_FILES, as_dict_handler
 from matbench_discovery.slurm import slurm_submit
 
@@ -33,7 +33,7 @@ module_dir = os.path.dirname(__file__)
 model_type: Literal["orig", "direct", "ms"] = "ms"
 # set large job array size for smaller data splits and faster testing/debugging
 slurm_array_task_count = 100
-job_name = f"m3gnet-{model_type}-wbm-{task_type}{'-debug' if DEBUG else ''}"
+job_name = f"m3gnet-{model_type}-wbm-{task_type}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 slurm_vars = slurm_submit(

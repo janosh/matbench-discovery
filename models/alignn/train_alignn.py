@@ -18,7 +18,7 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from matbench_discovery import DEBUG, today
+from matbench_discovery import today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 
@@ -35,7 +35,7 @@ struct_col = "structure"
 input_col = "atoms"
 id_col = "material_id"
 device = "cuda" if torch.cuda.is_available() else "cpu"
-job_name = f"train-{model_name}{'-debug' if DEBUG else ''}"
+job_name = f"train-{model_name}"
 
 
 pred_col = "e_form_per_atom_alignn"
