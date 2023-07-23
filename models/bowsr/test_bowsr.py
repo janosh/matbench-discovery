@@ -125,8 +125,8 @@ for material_id in tqdm(structures, desc="Relaxing", disable=None):
 
         try:
             struct_bowsr, energy_bowsr = optimizer.get_optimized_structure_and_energy()
-        except Exception as error:
-            print(f"Failed to relax {material_id}: {error}")
+        except Exception as exc:
+            print(f"Failed to relax {material_id}: {exc}")
 
         results = {
             f"e_form_per_atom_bowsr_{energy_model}": model.predict_energy(struct_bowsr),

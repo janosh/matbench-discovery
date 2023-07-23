@@ -12,6 +12,7 @@ from ase.constraints import ExpCellFilter
 from ase.optimize import FIRE, LBFGS
 from mace.calculators.mace import MACECalculator
 from pymatgen.core import Structure
+from pymatgen.core.trajectory import Trajectory
 from pymatgen.io.ase import AseAtomsAdaptor
 from tqdm import tqdm
 
@@ -27,10 +28,10 @@ task_type = "IS2RE"  # "RS2RE"
 module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
 slurm_array_task_count = 100
-job_name = f"mace-wbm-{task_type}"
+ase_optimizer = "FIRE"
+job_name = f"mace-wbm-{task_type}-{ase_optimizer}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 relax_cell = True
-ase_optimizer = "FIRE"
 
 slurm_vars = slurm_submit(
     job_name=job_name,
@@ -92,30 +93,46 @@ input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_ty
 if task_type == "RS2RE":
     df_in[input_col] = [x["structure"] for x in df_in.computed_structure_entry]
 
-atoms_to_relax = (
-    df_in[input_col].map(Structure.from_dict).map(AseAtomsAdaptor().get_atoms).to_dict()
-)
+structs = df_in[input_col].map(Structure.from_dict).to_dict()
 
-for material_id in tqdm(atoms_to_relax, desc="Relaxing", disable=None):
+for material_id in tqdm(structs, desc="Relaxing", disable=None):
     if material_id in relax_results:
         continue
     try:
-        atoms = atoms_to_relax[material_id]
+        atoms = AseAtomsAdaptor.get_atoms(structs[material_id])
         atoms.calc = mace_calc
         if relax_cell:
             atoms = ExpCellFilter(atoms)
-        optim_cls = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
-        optimizer = optim_cls(atoms, logfile="/dev/null")
-        optimizer.run(fmax=force_max, steps=max_steps)
-        relax_result = atoms.get_potential_energy()
-    except Exception as error:
-        print(f"Failed to relax {material_id}: {error}")
-        continue
+            optim_cls = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
+            optimizer = optim_cls(atoms, logfile="/dev/null")
 
-    relax_results[material_id] = {
-        "mace_structure": atoms,
-        "mace_energy": relax_result,
-    }
+            coords, lattices = [], []
+            # attach observer functions to the optimizer
+            optimizer.attach(lambda: coords.append(atoms.get_positions()))  # noqa: B023
+            optimizer.attach(lambda: lattices.append(atoms.get_cell()))  # noqa: B023
+
+            optimizer.run(fmax=force_max, steps=max_steps)
+            mace_traj = Trajectory(
+                species=structs[material_id].species,
+                coords=coords,
+                lattice=lattices,
+                constant_lattice=False,
+            )
+        else:
+            mace_traj = None
+        mace_energy = atoms.get_potential_energy()
+        mace_struct = AseAtomsAdaptor.get_structure(
+            atoms.atoms if relax_cell else atoms
+        )
+
+        relax_results[material_id] = {
+            "mace_structure": mace_struct,
+            "mace_energy": mace_energy,
+            "mace_trajectory": mace_traj,  # Add the trajectory to the results
+        }
+    except Exception as exc:
+        print(f"Failed to relax {material_id}: {exc}")
+        continue
 
 
 # %%

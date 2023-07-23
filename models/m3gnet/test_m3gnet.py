@@ -92,7 +92,7 @@ if model_type == "direct":
     checkpoint = f"{ROOT}/models/m3gnet/2023-05-26-DI-DFTstrictF10-TTRS-128U-442E"
 if model_type == "ms":
     checkpoint = f"{ROOT}/models/m3gnet/2023-05-26-MS-DFTstrictF10-128U-154E"
-megnet = Relaxer(potential=checkpoint)  # load pre-trained M3GNet model
+m3gnet = Relaxer(potential=checkpoint)  # load pre-trained M3GNet model
 relax_results: dict[str, dict[str, Any]] = {}
 input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
 
@@ -105,16 +105,14 @@ for material_id in tqdm(structures, desc="Relaxing", disable=None):
     if material_id in relax_results:
         continue
     try:
-        relax_result = megnet.relax(structures[material_id])
-    except Exception as error:
-        print(f"Failed to relax {material_id}: {error}")
-        continue
-
-    relax_results[material_id] = {
-        f"m3gnet_{model_type}_structure": relax_result["final_structure"],
-        f"m3gnet_{model_type}_trajectory": relax_result["trajectory"].__dict__,
-        e_pred_col: relax_result["trajectory"].energies[-1],
-    }
+        relax_result = m3gnet.relax(structures[material_id])
+        relax_results[material_id] = {
+            f"m3gnet_{model_type}_structure": relax_result["final_structure"],
+            f"m3gnet_{model_type}_trajectory": relax_result["trajectory"].__dict__,
+            e_pred_col: relax_result["trajectory"].energies[-1],
+        }
+    except Exception as exc:
+        print(f"Failed to relax {material_id}: {exc}")
 
 
 # %%

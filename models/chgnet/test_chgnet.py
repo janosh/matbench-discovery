@@ -98,14 +98,13 @@ for material_id in tqdm(structures, desc="Relaxing", disable=None):
         relax_result = chgnet.relax(
             structures[material_id], verbose=False, steps=max_steps
         )
-    except Exception as error:
-        print(f"Failed to relax {material_id}: {error}")
-        continue
-    relax_results[material_id] = {
-        "chgnet_structure": relax_result["final_structure"],
-        "chgnet_trajectory": relax_result["trajectory"].__dict__,
-        e_pred_col: relax_result["trajectory"].energies[-1],
-    }
+        relax_results[material_id] = {
+            "chgnet_structure": relax_result["final_structure"],
+            "chgnet_trajectory": relax_result["trajectory"].__dict__,
+            e_pred_col: relax_result["trajectory"].energies[-1],
+        }
+    except Exception as exc:
+        print(f"Failed to relax {material_id}: {exc}")
 
 
 # %%
