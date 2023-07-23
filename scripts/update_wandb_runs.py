@@ -15,7 +15,7 @@ __date__ = "2022-09-21"
 
 
 # %%
-filters = dict(display_name={"$regex": "voronoi-featurize"})
+filters = dict(display_name={"$regex": "mace-wbm-"})
 runs = wandb.Api().runs(WANDB_PATH, filters=filters)
 
 print(f"matching runs: {len(runs)}")
@@ -37,7 +37,9 @@ wet_run = input("Wet run or dry run? [w/d] ").lower().startswith("w")
 for idx, run in enumerate(runs, 1):
     old_config, new_config = run.config.copy(), run.config.copy()
 
-    new_display_name = run.display_name.replace("featurize", "features")
+    new_display_name = run.display_name.replace(
+        "mace-wbm-IS2RE-debug-", "mace-wbm-IS2RE-"
+    )
 
     for x in ("IS2RE", "ES2RE"):
         if x in run.display_name:

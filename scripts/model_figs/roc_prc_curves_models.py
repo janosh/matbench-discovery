@@ -125,11 +125,14 @@ for model in (pbar := tqdm(list(df_each_pred), desc="Calculating ROC curves")):
 
 
 # %%
+n_cols = 2
+n_rows = math.ceil(len(models) // n_cols)
+
 fig = df_prc.iloc[:: len(df_roc) // 500 or 1].plot.scatter(
     x="Recall",
     y="Precision",
     facet_col=facet_col,
-    facet_col_wrap=2,
+    facet_col_wrap=n_cols,
     backend="plotly",
     height=150 * len(df_roc[facet_col].unique()),
     color=color_col,

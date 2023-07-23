@@ -49,7 +49,7 @@ config.output_dir = out_dir = os.getenv(
 slurm_vars = slurm_submit(
     job_name=job_name,
     # partition="perlmuttter",
-    account="matgen_g",
+    account="matgen",
     time="4:0:0",
     out_dir=out_dir,
     slurm_flags="--qos regular --constraint gpu --gpus 1",
