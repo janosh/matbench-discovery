@@ -232,6 +232,7 @@ class DataFiles(Files):
         if answer == "y":
             load(key)  # download and cache data file
 
+    # TODO maybe set attrs to None and load file names from Figshare json
     mp_computed_structure_entries = (
         "mp/2023-02-07-mp-computed-structure-entries.json.gz"
     )
@@ -246,6 +247,8 @@ class DataFiles(Files):
         "wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
     )
     wbm_summary = "wbm/2022-10-19-wbm-summary.csv.gz"
+    alignn_checkpoint = "2023-06-02-pbenner-best-alignn-model.pth.zip"
+    mace_checkpoint = "2023-07-14-mace-universal-2-big-128-6.model"
 
 
 # data files can be downloaded and cached with matbench_discovery.data.load()
