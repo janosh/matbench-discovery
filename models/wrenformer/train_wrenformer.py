@@ -59,7 +59,7 @@ train_df, test_df = df_train_test_split(df, test_size=0.05)
 
 run_params = dict(
     data_path=data_path,
-    **{f"{dep}_version": version(dep) for dep in ("aviary", "numpy", "torch")},
+    versions={dep: version(dep) for dep in ("aviary", "numpy", "torch")},
     batch_size=batch_size,
     train_df=dict(shape=train_df.shape, columns=", ".join(train_df)),
     test_df=dict(shape=test_df.shape, columns=", ".join(test_df)),

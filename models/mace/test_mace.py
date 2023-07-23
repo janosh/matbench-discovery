@@ -26,7 +26,7 @@ __date__ = "2023-03-01"
 task_type = "IS2RE"  # "RS2RE"
 module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
-slurm_array_task_count = 10
+slurm_array_task_count = 250
 job_name = f"mace-wbm-{task_type}{'-debug' if DEBUG else ''}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 relax_cell = True
@@ -39,7 +39,7 @@ slurm_vars = slurm_submit(
     time="12:0:0",
     array=f"1-{slurm_array_task_count}",
     slurm_flags="--qos regular --constraint gpu --gpus 1",
-    pre_cmd="module load pytorch/2.0.1; . ~/.bashrc",
+    pre_cmd="module load pytorch/2.0.1; . ~/.venv/py311/bin/activate;",
 )
 
 
@@ -68,7 +68,7 @@ df_in: pd.DataFrame = np.array_split(
 
 run_params = dict(
     data_path=data_path,
-    **{f"{dep}_version": version(dep) for dep in ("mace", "numpy", "torch")},
+    versions={dep: version(dep) for dep in ("mace", "numpy", "torch")},
     task_type=task_type,
     df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     slurm_vars=slurm_vars,

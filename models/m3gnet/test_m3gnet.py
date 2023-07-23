@@ -76,7 +76,7 @@ df_in: pd.DataFrame = np.array_split(
 
 run_params = dict(
     data_path=data_path,
-    **{f"{dep}_version": version(dep) for dep in ("m3gnet", "numpy")},
+    versions={dep: version(dep) for dep in ("m3gnet", "numpy")},
     task_type=task_type,
     df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     slurm_vars=slurm_vars,

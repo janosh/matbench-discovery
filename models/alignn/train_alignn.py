@@ -79,7 +79,7 @@ df_in[input_col] = [
 # %%
 run_params = dict(
     data_path=DATA_FILES.mp_energies,
-    **{f"{dep}_version": version(dep) for dep in ("alignn", "numpy", "torch", "dgl")},
+    versions={dep: version(dep) for dep in ("alignn", "numpy", "torch", "dgl")},
     model_name=model_name,
     target_col=target_col,
     df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),

@@ -75,7 +75,7 @@ megnet_mp_e_form = load_model(model_name := "Eform_MP_2019")
 # %%
 run_params = dict(
     data_path=data_path,
-    **{f"{dep}_version": version(dep) for dep in ("megnet", "numpy")},
+    versions={dep: version(dep) for dep in ("megnet", "numpy")},
     model_name=model_name,
     task_type=task_type,
     target_col=e_form_col,

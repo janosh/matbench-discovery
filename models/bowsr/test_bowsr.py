@@ -91,7 +91,7 @@ run_params = dict(
     data_path=data_path,
     df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     energy_model=energy_model,
-    **{f"{dep}_version": version(dep) for dep in ("maml", "numpy", energy_model)},
+    versions={dep: version(dep) for dep in ("maml", "numpy", energy_model)},
     optimize_kwargs=optimize_kwargs,
     task_type=task_type,
     slurm_vars=slurm_vars,

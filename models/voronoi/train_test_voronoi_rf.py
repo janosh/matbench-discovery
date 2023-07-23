@@ -72,7 +72,7 @@ run_params = dict(
     train_path=train_path,
     test_path=test_path,
     mp_energies_path=DATA_FILES.mp_energies,
-    **{f"{dep}_version": version(dep) for dep in ("scikit-learn", "matminer", "numpy")},
+    versions={dep: version(dep) for dep in ("scikit-learn", "matminer", "numpy")},
     model_name=model_name,
     train_target_col=train_e_form_col,
     test_target_col=test_e_form_col,

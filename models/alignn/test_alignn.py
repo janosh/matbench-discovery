@@ -93,7 +93,7 @@ df_in[input_col] = [
 # %%
 run_params = dict(
     data_path=data_path,
-    **{f"{dep}_version": version(dep) for dep in ("megnet", "numpy")},
+    versions={dep: version(dep) for dep in ("megnet", "numpy")},
     model_name=model_name,
     task_type=task_type,
     target_col=target_col,

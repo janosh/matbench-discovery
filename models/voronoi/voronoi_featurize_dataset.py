@@ -82,7 +82,7 @@ run_params = dict(
     input_col=input_col,
     slurm_vars=slurm_vars,
     out_path=out_path,
-    **{f"{dep}_version": version(dep) for dep in ("matminer", "numpy")},
+    versions={dep: version(dep) for dep in ("matminer", "numpy")},
 )
 
 wandb.init(project="matbench-discovery", name=run_name, config=run_params)
