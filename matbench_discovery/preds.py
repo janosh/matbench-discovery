@@ -47,6 +47,9 @@ class PredFiles(Files):
     # m3gnet_direct = "m3gnet/2023-05-30-m3gnet-direct-wbm-IS2RE.csv.gz"
     # m3gnet_ms = "m3gnet/2023-06-01-m3gnet-manual-sampling-wbm-IS2RE.csv.gz"
 
+    # MACE trained on original M3GNet training set
+    mace = "mace/2023-07-22-mace-wbm-IS2RE.csv.gz"
+
     # original MEGNet straight from publication, not re-trained
     megnet = "megnet/2022-11-18-megnet-wbm-IS2RE.csv.gz"
     # CHGNet-relaxed structures fed into MEGNet for formation energy prediction

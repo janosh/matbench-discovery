@@ -34,7 +34,7 @@ train_run_filters: dict[str, tuple[int, str, str, str]] = {
 }
 test_run_filters: dict[str, tuple[int, str, str, str]] = {
     # model: (n_runs, display_name, created_gt, created_lt)
-    "BOWSR + MEGNet": (476, "bowsr-megnet", "2023-01-20", "2023-01-22"),
+    "BOWSR": (476, "bowsr-megnet", "2023-01-20", "2023-01-22"),
     "CHGNet": (100, "chgnet-wbm-IS2RE-", "2023-03-05", "2023-03-07"),
     "CGCNN": (1, "test-cgcnn-wbm-IS2RE", "2022-12-03", "2022-12-05"),
     "M3GNet": (99, "m3gnet-wbm-IS2RE", "2022-10-31", "2022-11-01"),
@@ -49,7 +49,7 @@ test_stats: dict[str, dict[str, Any]] = {}
 
 # %% calculate total model run times from wandb logs
 # NOTE these model run times are pretty meaningless since some models were run on GPU
-# (Wrenformer and CGCNN), others on CPU. Also BOWSR + MEGNet, M3GNet and MEGNet weren't
+# (Wrenformer and CGCNN), others on CPU. Also BOWSR, M3GNet and MEGNet weren't
 # trained from scratch. Their run times only indicate the time needed to predict the
 # test set.
 
@@ -129,7 +129,7 @@ df_time = (
     .round(1)
     # maybe remove BOWSR since it used so much more compute time than the other models
     # that it makes the plot unreadable
-    # .drop(index="BOWSR + MEGNet")
+    # .drop(index="BOWSR")
     .reset_index(names=(model_col := "Model"))
 )
 

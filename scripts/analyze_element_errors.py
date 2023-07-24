@@ -148,7 +148,7 @@ for model in (*df_metrics, model_mean_err_col):
 
 # %%
 expected_cols = {
-    *"ALIGNN, BOWSR + MEGNet, CGCNN, CGCNN+P, CHGNet, M3GNet, MEGNet, "
+    *"ALIGNN, BOWSR, CGCNN, CGCNN+P, CHGNet, M3GNet, MEGNet, "
     "MP Occurrences, Mean error all models, Test set standard deviation, Voronoi RF, "
     "Wrenformer".split(", ")
 }

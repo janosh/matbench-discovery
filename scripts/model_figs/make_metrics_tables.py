@@ -55,11 +55,11 @@ ontology = {  # (training type, test type, model type)
     "CGCNN": ("RS2RE", "IS2E", "GNN"),
     "CGCNN+P": ("S2RE", "IS2RE", "GNN"),
     "Wrenformer": ("RP2RE", "IP2E", "Transformer"),
-    "BOWSR + MEGNet": ("RS2RE", "IS2RE-BO", "BO+GNN"),
-    "Voronoi RF": ("RS2RE", "IS2E", "Fingerprint+RF"),
-    "M3GNet + MEGNet": ("S2EFS", "IS2RE-SR", "UIP + GNN"),
-    "CHGNet + MEGNet": ("S2EFSM", "IS2RE-SR", "UIP + GNN"),
-    "Dummy": ("", "", "scikit-learn"),
+    "BOWSR": ("RS2RE", "IS2RE-BO", "BO-GNN"),
+    "Voronoi RF": ("RS2RE", "IS2E", "Fingerprint"),
+    "M3GNet->MEGNet": ("S2EFS", "IS2RE-SR", "UIP-GNN"),
+    "CHGNet->MEGNet": ("S2EFSM", "IS2RE-SR", "UIP-GNN"),
+    "Dummy": ("", "", ""),
 }
 ontology_cols = ["Trained", "Deployed", "Model Class"]
 df_ont = pd.DataFrame(ontology, index=ontology_cols)
