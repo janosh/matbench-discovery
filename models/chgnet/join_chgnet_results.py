@@ -14,7 +14,6 @@ import pandas as pd
 from pymatviz import density_scatter
 from tqdm import tqdm
 
-from matbench_discovery import today
 from matbench_discovery.data import as_dict_handler
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.preds import df_preds, e_form_col
@@ -64,7 +63,7 @@ ax = density_scatter(df=df_preds, x=e_form_col, y=e_form_chgnet_col)
 
 
 # %%
-out_path = f"{module_dir}/{today}-chgnet-wbm-{task_type}"
+out_path = f"{module_dir}/{glob_pattern.split('/*')[0]}"
 df_chgnet = df_chgnet.round(4)
 df_chgnet.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
 df_chgnet.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)

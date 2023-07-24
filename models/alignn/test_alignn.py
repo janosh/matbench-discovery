@@ -85,8 +85,8 @@ if task_type == "RS2RE":
 assert input_col in df_in, f"{input_col=} not in {list(df_in)}"
 
 df_in[input_col] = [
-    JarvisAtomsAdaptor.get_atoms(Structure.from_dict(x))
-    for x in tqdm(df_in[input_col], leave=False, desc="Converting to JARVIS atoms")
+    JarvisAtomsAdaptor.get_atoms(Structure.from_dict(dct))
+    for dct in tqdm(df_in[input_col], leave=False, desc="Converting to JARVIS atoms")
 ]
 
 
