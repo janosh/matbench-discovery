@@ -48,7 +48,7 @@ class PredFiles(Files):
     # m3gnet_ms = "m3gnet/2023-06-01-m3gnet-manual-sampling-wbm-IS2RE.csv.gz"
 
     # MACE trained on original M3GNet training set
-    mace = "mace/2023-07-22-mace-wbm-IS2RE.csv.gz"
+    mace = "mace/2023-07-23-mace-wbm-IS2RE-FIRE.csv.gz"
 
     # original MEGNet straight from publication, not re-trained
     megnet = "megnet/2022-11-18-megnet-wbm-IS2RE.csv.gz"
@@ -109,8 +109,15 @@ def load_df_wbm_with_preds(
     df_out = df_wbm.copy()
     for model_name, df in dfs.items():
         model_key = model_name.lower().replace(" + ", "_").replace(" ", "_")
-        if (col := f"e_form_per_atom_{model_key}") in df:
-            df_out[model_name] = df[col]
+
+        cols = [col for col in df if col.startswith(f"e_form_per_atom_{model_key}")]
+        if cols:
+            if len(cols) > 1:
+                print(
+                    f"Warning: multiple pred cols for {model_name=}, using {cols[0]!r} "
+                    f"out of {cols=}"
+                )
+            df_out[model_name] = df[cols[0]]
 
         elif pred_cols := list(df.filter(like="_pred_ens")):
             assert len(pred_cols) == 1
