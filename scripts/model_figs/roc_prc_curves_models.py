@@ -48,7 +48,7 @@ for model in (pbar := tqdm(models, desc="Calculating ROC curves")):
 
 
 # %%
-facetted = False
+facet_plot = False
 kwds = dict(
     height=150 * len(df_roc[facet_col].unique()),
     color=color_col,
@@ -62,7 +62,7 @@ plot_fn = getattr(
     df_roc.iloc[:: len(df_roc) // 500 or 1]
     .sort_values(["AUC", "FPR"], ascending=False)
     .plot,
-    "scatter" if facetted else "line",
+    "scatter" if facet_plot else "line",
 )
 
 fig = plot_fn(
@@ -74,13 +74,13 @@ fig = plot_fn(
     range_y=(0, 1.02),
     hover_name=facet_col,
     hover_data={facet_col: False},
-    **kwds if facetted else dict(color=facet_col, markers=True),
+    **kwds if facet_plot else dict(color=facet_col, markers=True, marker_size=3),
 )
 
 for anno in fig.layout.annotations:
     anno.text = anno.text.split("=", 1)[1]  # remove Model= from subplot titles
 
-if not facetted:
+if not facet_plot:
     fig.layout.legend.update(x=1, y=0, xanchor="right", title=None)
 fig.layout.coloraxis.colorbar.update(thickness=14, title_side="right")
 if n_cols == 2:
@@ -95,7 +95,7 @@ fig.update_xaxes(matches=None)
 fig.layout.margin.update(l=0, r=0, b=0, t=20, pad=0)
 fig.update_yaxes(matches=None)
 fig.show()
-img_name = f"roc-models-{f'{n_rows}x{n_cols}' if facetted else 'all-in-one'}"
+img_name = f"roc-models-{f'{n_rows}x{n_cols}' if facet_plot else 'all-in-one'}"
 
 
 # %%
@@ -125,7 +125,7 @@ for model in (pbar := tqdm(list(df_each_pred), desc="Calculating ROC curves")):
 
 
 # %%
-n_cols = 2
+n_cols = 3
 n_rows = math.ceil(len(models) // n_cols)
 
 fig = df_prc.iloc[:: len(df_roc) // 500 or 1].plot.scatter(
@@ -133,6 +133,8 @@ fig = df_prc.iloc[:: len(df_roc) // 500 or 1].plot.scatter(
     y="Precision",
     facet_col=facet_col,
     facet_col_wrap=n_cols,
+    facet_row_spacing=0.04,
+    facet_col_spacing=0.04,
     backend="plotly",
     height=150 * len(df_roc[facet_col].unique()),
     color=color_col,
@@ -147,7 +149,7 @@ for anno in fig.layout.annotations:
     anno.text = anno.text.split("=", 1)[1]  # remove Model= from subplot titles
 
 fig.layout.coloraxis.colorbar.update(
-    x=0.5, y=1.1, thickness=14, len=0.4, orientation="h"
+    x=0.5, y=1.03, thickness=14, len=0.4, orientation="h"
 )
 fig.add_hline(y=0.5, line=line)
 fig.add_annotation(

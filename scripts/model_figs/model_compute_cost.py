@@ -190,13 +190,13 @@ fig = df_melt.dropna().plot.bar(
     color=model_col,
 )
 # reduce bar width
-fig.update_traces(width=0.7)
+fig.update_traces(width=0.8)
 
 title = f"All models: {df_stats[time_col].sum():.0f} h"
-fig.layout.legend.update(x=0.98, y=0.98, xanchor="right", yanchor="top", title=title)
+fig.layout.legend.update(title=title, orientation="h", xanchor="center", x=0.4, y=1.2)
 fig.layout.xaxis.title = ""
 fig.layout.margin.update(l=0, r=0, t=0, b=0)
-# save_fig(fig, f"{FIGS}/model-run-times-bar.svelte")
+save_fig(fig, f"{FIGS}/model-run-times-bar.svelte")
 
 pdf_fig = go.Figure(fig)
 # replace legend with annotation in PDF
