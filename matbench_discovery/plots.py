@@ -885,12 +885,15 @@ def df_to_pdf(
             Defaults to True.
         **kwargs: Keyword arguments passed to Styler.to_html().
     """
-    # Convert Styler to HTML
-    from weasyprint import HTML
+    try:
+        from weasyprint import HTML
+    except ImportError as exc:
+        msg = "weasyprint not installed\nrun pip install weasyprint"
+        raise ImportError(msg) from exc
 
     html_str = styler.to_html(**kwargs)
 
-    # Add CSS to adjust layout and margins
+    # CSS to adjust layout and margins
     html_str = f"""
     <style>
         @page {{ size: landscape; margin: 1cm; }}
@@ -899,10 +902,8 @@ def df_to_pdf(
     {html_str}
     """
 
-    # Create an HTML object from the HTML string
     html = HTML(string=html_str)
 
-    # Write the HTML object to a PDF
     html.write_pdf(file_path)
 
     if crop:
