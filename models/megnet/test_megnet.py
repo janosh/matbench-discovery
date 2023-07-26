@@ -20,7 +20,7 @@ from pymatviz import density_scatter
 from sklearn.metrics import r2_score
 from tqdm import tqdm
 
-from matbench_discovery import DEBUG, timestamp, today
+from matbench_discovery import timestamp, today
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.preds import PRED_FILES
@@ -31,7 +31,7 @@ __date__ = "2022-11-14"
 
 task_type = "chgnet_structure"
 module_dir = os.path.dirname(__file__)
-job_name = f"megnet-wbm-{task_type}{'-debug' if DEBUG else ''}"
+job_name = f"megnet-wbm-{task_type}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 slurm_array_task_count = 20
 
@@ -53,7 +53,7 @@ slurm_vars = slurm_submit(
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
 out_path = f"{out_dir}/megnet-e-form-preds.csv.gz"
 if os.path.isfile(out_path):
-    raise SystemExit(f"{out_path = } already exists, exciting early")
+    raise SystemExit(f"{out_path=} already exists, exciting early")
 
 data_path = {
     "IS2RE": DATA_FILES.wbm_initial_structures,
@@ -75,7 +75,7 @@ megnet_mp_e_form = load_model(model_name := "Eform_MP_2019")
 # %%
 run_params = dict(
     data_path=data_path,
-    **{f"{dep}_version": version(dep) for dep in ("megnet", "numpy")},
+    versions={dep: version(dep) for dep in ("megnet", "numpy")},
     model_name=model_name,
     task_type=task_type,
     target_col=e_form_col,

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import os
-import sys
 from importlib.metadata import version
 
 import pandas as pd
@@ -14,7 +13,7 @@ from pymatgen.core import Structure
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from matbench_discovery import CHECKPOINT_DIR, DEBUG, ROOT, WANDB_PATH, today
+from matbench_discovery import CHECKPOINT_DIR, ROOT, WANDB_PATH, today
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
@@ -29,8 +28,8 @@ saves predictions to CSV.
 """
 
 task_type = "IS2RE"
-debug = "slurm-submit" in sys.argv
-job_name = f"test-cgcnn-wbm-{task_type}{'-debug' if DEBUG else ''}"
+debug = False
+job_name = f"test-cgcnn-wbm-{task_type}"
 module_dir = os.path.dirname(__file__)
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
@@ -49,7 +48,7 @@ data_path = {
     "IS2RE": DATA_FILES.wbm_initial_structures,
     "RS2RE": DATA_FILES.wbm_computed_structure_entries,
     "IS2RE-debug": f"{ROOT}/data/wbm/2022-10-19-wbm-init-structs.json-1k-samples.bz2",
-}[task_type + ("-debug" if DEBUG else "")]
+}[task_type]
 input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
 
 df = pd.read_json(data_path).set_index("material_id")
@@ -85,7 +84,7 @@ for idx, run in enumerate(runs):
 run_params = dict(
     data_path=data_path,
     df=dict(shape=str(df.shape), columns=", ".join(df)),
-    **{f"{dep}_version": version(dep) for dep in ("aviary", "numpy", "torch")},
+    versions={dep: version(dep) for dep in ("aviary", "numpy", "torch")},
     ensemble_size=len(runs),
     task_type=task_type,
     target_col=e_form_col,

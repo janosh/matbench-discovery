@@ -18,7 +18,7 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from matbench_discovery import DEBUG, today
+from matbench_discovery import today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 
@@ -35,7 +35,7 @@ struct_col = "structure"
 input_col = "atoms"
 id_col = "material_id"
 device = "cuda" if torch.cuda.is_available() else "cpu"
-job_name = f"train-{model_name}{'-debug' if DEBUG else ''}"
+job_name = f"train-{model_name}"
 
 
 pred_col = "e_form_per_atom_alignn"
@@ -49,7 +49,7 @@ config.output_dir = out_dir = os.getenv(
 slurm_vars = slurm_submit(
     job_name=job_name,
     # partition="perlmuttter",
-    account="matgen_g",
+    account="matgen",
     time="4:0:0",
     out_dir=out_dir,
     slurm_flags="--qos regular --constraint gpu --gpus 1",
@@ -79,7 +79,7 @@ df_in[input_col] = [
 # %%
 run_params = dict(
     data_path=DATA_FILES.mp_energies,
-    **{f"{dep}_version": version(dep) for dep in ("alignn", "numpy", "torch", "dgl")},
+    versions={dep: version(dep) for dep in ("alignn", "numpy", "torch", "dgl")},
     model_name=model_name,
     target_col=target_col,
     df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),

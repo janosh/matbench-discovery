@@ -32,7 +32,17 @@ with open(f"{ROOT}/pyproject.toml", "rb") as file:
     pyproject = tomllib.load(file)["project"]
 KEYWORDS = pyproject["keywords"]
 VERSION = pyproject["version"]
-DESCRIPTION = pyproject["description"]
+DESCRIPTION = f"""
+These are the v{VERSION} data files for Matbench Discovery,
+{pyproject['description'].lower()}. It contains relaxed structures of the MP
+training set, initial+relaxed structures of the WBM test set, plus several checkpoints
+for models trained on this data specifically for this benchmark. The full force field
+training set containing 1.3M structures along with their energies, forces, stresses and
+magmons is available at https://figshare.com/articles/dataset/23713842.
+""".replace(
+    "\n", " "
+).strip()
+# https://figshare.com/articles/dataset/Materials_Project_Trjectory_MPtrj_Dataset/23713842
 REFERENCES = list(pyproject["urls"].values())
 
 TITLE = f"Matbench Discovery v{VERSION}"

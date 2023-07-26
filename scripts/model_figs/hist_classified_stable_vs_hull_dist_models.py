@@ -40,7 +40,7 @@ df_melt[each_pred_col] = (
 
 # %%
 backend: Final = "plotly"
-n_cols = 3
+n_cols = 2
 n_rows = math.ceil(len(models) // n_cols)
 which_energy: Final = "pred"
 kwds = (
