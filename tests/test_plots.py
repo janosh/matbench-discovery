@@ -183,9 +183,9 @@ def test_df_to_svelte_table(tmp_path: Path) -> None:
 @pytest.mark.parametrize("crop", [True, False])
 def test_df_to_pdf(tmp_path: Path, crop: bool, capsys: CaptureFixture[str]) -> None:
     try:
-        import pdfkit
+        import weasyprint
     except ImportError:
-        pdfkit = None
+        weasyprint = None
     try:
         import pdfCropMargins
     except ImportError:
@@ -197,8 +197,8 @@ def test_df_to_pdf(tmp_path: Path, crop: bool, capsys: CaptureFixture[str]) -> N
     try:
         df_to_pdf(df.style, file_path, crop=crop)
     except ImportError as exc:
-        if pdfkit is None:
-            assert "pdfkit not installed\n" in str(exc)  # noqa: PT017
+        if weasyprint is None:
+            assert "weasyprint not installed\n" in str(exc)  # noqa: PT017
             return
         if pdfCropMargins is None:
             assert "cropPdfMargins not installed\n" in str(exc)  # noqa: PT017
