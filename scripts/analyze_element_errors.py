@@ -8,15 +8,14 @@ Might point to deficiencies in the data or models architecture.
 import pandas as pd
 import plotly.express as px
 from pymatgen.core import Composition, Element
-from pymatviz import count_elements, ptable_heatmap_plotly
+from pymatviz import ptable_heatmap_plotly
 from pymatviz.utils import bin_df_cols, df_ptable, save_fig
 from tqdm import tqdm
 
-from matbench_discovery import FIGS, MODELS, PDF_FIGS
-from matbench_discovery.data import DATA_FILES, df_wbm
+from matbench_discovery import FIGS, PDF_FIGS, ROOT
+from matbench_discovery.data import df_wbm
 from matbench_discovery.preds import (
     df_each_err,
-    df_metrics,
     df_preds,
     each_pred_col,
     each_true_col,
@@ -47,16 +46,15 @@ assert all(
 # df_frac_comp = df_frac_comp.dropna(axis=1, thresh=100)  # remove Xe with only 1 entry
 
 
-# %%
-df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index("material_id")
-# compute number of samples per element in training set
+# %% compute number of samples per element in training set
 # counting element occurrences not weighted by composition, assuming model don't learn
 # much more about iron and oxygen from Fe2O3 than from FeO
-
-train_count_col = "MP Occurrences"
-df_elem_err = count_elements(df_mp.formula_pretty, count_mode="occurrence").to_frame(
-    name=train_count_col
+df_elem_err = pd.read_json(
+    f"{ROOT}/site/src/routes/about-the-data/mp-element-counts-occurrence.json",
+    typ="series",
 )
+train_count_col = "MP Occurrences"
+df_elem_err = df_elem_err.reset_index(name=train_count_col).set_index("index")
 
 
 # %%
@@ -67,94 +65,10 @@ fig.show()
 
 
 # %%
-for label, srs in (
-    ("MP", df_elem_err[train_count_col]),
-    ("WBM", df_frac_comp.where(pd.isna, 1).sum()),
-):
-    title = f"Number of {label} structures containing each element"
-    srs = srs.sort_values().copy()
-    srs.index = [f"{len(srs) - idx} {el}" for idx, el in enumerate(srs.index)]
-    fig = srs.plot.bar(backend="plotly", title=title)
-    fig.layout.update(showlegend=False)
-    fig.show()
-
-
-# %% plot structure counts for each element in MP and WBM in a grouped bar chart
-df_struct_counts = pd.DataFrame(index=df_elem_err.index)
-df_struct_counts["MP"] = df_elem_err[train_count_col]
-df_struct_counts["WBM"] = df_frac_comp.where(pd.isna, 1).sum()
-min_count = 10  # only show elements with at least 10 structures
-df_struct_counts = df_struct_counts[df_struct_counts.sum(axis=1) > min_count]
-normalized = False
-if normalized:
-    df_struct_counts["MP"] /= len(df_mp) / 100
-    df_struct_counts["WBM"] /= len(df_wbm) / 100
-y_col = "percent" if normalized else "count"
-fig = (
-    df_struct_counts.reset_index()
-    .melt(
-        var_name=(clr_col := "Dataset"), value_name=y_col, id_vars=(id_col := "symbol")
-    )
-    .sort_values([y_col, id_col])
-    .plot.bar(
-        x=id_col,
-        y=y_col,
-        backend="plotly",
-        title="Number of structures containing each element",
-        color=clr_col,
-        barmode="group",
-    )
-)
-
-fig.layout.update(bargap=0.1)
-fig.layout.legend.update(x=0.02, y=0.98, font_size=16)
-fig.show()
-save_fig(fig, f"{FIGS}/bar-element-counts-mp+wbm-{normalized=}.svelte")
-
-
-# %%
 test_set_std_col = "Test set standard deviation"
 df_elem_err[test_set_std_col] = (
     df_frac_comp.where(pd.isna, 1) * df_wbm[each_true_col].to_numpy()[:, None]
 ).std()
-
-
-# %%
-fig = ptable_heatmap_plotly(
-    df_elem_err[test_set_std_col], precision=".2f", colorscale="Inferno"
-)
-fig.show()
-
-
-# %%
-normalized = True
-cs_range = (0, 0.5)  # same range for all plots
-# cs_range = (None, None)  # different range for each plot
-for model in (*df_metrics, model_mean_err_col):
-    df_elem_err[model] = (
-        df_frac_comp * df_each_err[model].abs().to_numpy()[:, None]
-    ).mean()
-    # don't change series values in place, would change the df
-    per_elem_err = df_elem_err[model].copy(deep=True)
-    per_elem_err.name = f"{model} (eV/atom)"
-    if normalized:
-        per_elem_err /= df_elem_err[test_set_std_col]
-        per_elem_err.name = f"{model} (normalized by test set std)"
-    fig = ptable_heatmap_plotly(
-        per_elem_err, precision=".2f", colorscale="Inferno", cscale_range=cs_range
-    )
-    fig.show()
-
-
-# %%
-expected_cols = {
-    *"ALIGNN, BOWSR, CGCNN, CGCNN+P, CHGNet, M3GNet, MEGNet, "
-    "MP Occurrences, Mean error all models, Test set standard deviation, Voronoi RF, "
-    "Wrenformer".split(", ")
-}
-assert {*df_elem_err} >= expected_cols
-assert (df_elem_err.isna().sum() < 35).all()
-df_elem_err.round(4).to_json(f"{MODELS}/per-element-each-errors.json")
 
 
 # %% scatter plot error by element against prevalence in training set
@@ -164,7 +78,7 @@ elem_col = "Element"
 df_elem_err[elem_col] = [Element(el).long_name for el in df_elem_err.index]
 
 df_melt = df_elem_err.melt(
-    id_vars=["MP Occurrences", "Test set standard deviation", elem_col],
+    id_vars=[train_count_col, test_set_std_col, elem_col],
     value_name=(val_col := "Error"),
     var_name=(clr_col := "Model"),
     ignore_index=False,
