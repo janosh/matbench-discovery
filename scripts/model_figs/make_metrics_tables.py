@@ -55,7 +55,7 @@ df_metrics_10k["Dummy"] = dummy_metrics
 # S2EFS(M) = structure to energy, forces, stress, (magmoms)
 ontology = {
     "ALIGNN": ("RS2RE", "IS2RE", "GNN"),
-    "ALIGNN Pretrained": ("RS2RE", "IS2RE", "GNN"),
+    # "ALIGNN Pretrained": ("RS2RE", "IS2RE", "GNN"),
     "CHGNet": ("S2EFSM", "IS2RE-SR", "UIP-GNN"),
     "MACE": ("S2EFS", "IS2RE-SR", "UIP-GNN"),
     "M3GNet": ("S2EFS", "IS2RE-SR", "UIP-GNN"),
