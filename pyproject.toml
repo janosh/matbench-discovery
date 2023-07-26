@@ -68,7 +68,7 @@ running-models = [
 ]
 3d-structures = ["crystaltoolkit"]
 fetch-data = ["gdown"]
-df-pdf-export = ["pdfCropMargins", "pdfkit"]
+df-pdf-export = ["pdfCropMargins", "weasyprint"]
 
 [tool.setuptools.packages.find]
 include = ["matbench_discovery*"]

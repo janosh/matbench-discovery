@@ -17,7 +17,10 @@ module_dir = os.path.dirname(__file__)
 
 # %%
 for file in glob(f"{module_dir}/*.py"):
-    if file == "run_all.py":
+    if file == __file__:  # skip this file
         continue
-    print(f"Running {file}...")
-    runpy.run_path(file)
+    print(f"Running {file.split(os.path.sep)[-1]}...")
+    try:
+        runpy.run_path(file)
+    except Exception as exc:
+        print(f"{file!r} failed: {exc}")

@@ -17,7 +17,6 @@ from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from tqdm import tqdm
 
-from matbench_discovery import today
 from matbench_discovery.data import DATA_FILES, as_dict_handler
 from matbench_discovery.energy import get_e_form_per_atom
 
@@ -60,7 +59,8 @@ df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(
 )
 
 df_cse["cse"] = [
-    ComputedStructureEntry.from_dict(x) for x in tqdm(df_cse.computed_structure_entry)
+    ComputedStructureEntry.from_dict(dct)
+    for dct in tqdm(df_cse.computed_structure_entry)
 ]
 
 
@@ -91,7 +91,7 @@ df_m3gnet["e_form_per_atom_m3gnet"] = [
 
 
 # %%
-out_path = f"{module_dir}/{today}-m3gnet-{model_type}-wbm-{task_type}"
+out_path = f"{module_dir}/{glob_pattern.split('/*')[0]}"
 df_m3gnet = df_m3gnet.round(4)
 df_m3gnet.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
 df_m3gnet.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)

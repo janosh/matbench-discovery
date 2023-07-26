@@ -120,7 +120,7 @@ img_name = f"{FIGS}/e-above-hull-scatter-models"
 
 # %% plot all models in separate subplots
 domain = (-4, 7)
-n_cols = 3
+n_cols = 2
 n_rows = math.ceil(len(models) / n_cols)
 
 fig = px.scatter(
@@ -130,7 +130,7 @@ fig = px.scatter(
     facet_col=facet_col,
     facet_col_wrap=n_cols,
     facet_col_spacing=0.02,
-    facet_row_spacing=0.08,
+    facet_row_spacing=0.04,
     hover_data=hover_cols,
     hover_name=df_preds.index.name,
     color=clf_col,
@@ -219,7 +219,7 @@ fig.add_annotation(  # y-axis title
     textangle=-90,
     **axis_titles,
 )
-# fig.layout.height = 1000
+fig.layout.height = 1000
 # fig.layout.width = 1100
 fig.layout.margin.update(l=40, r=10, t=10, b=50)
 fig.update_xaxes(matches=None)

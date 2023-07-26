@@ -1,0 +1,42 @@
+model_name: MACE
+model_version: 0.2.0-alpha
+matbench_discovery_version: 1.0
+date_added: "2023-07-14"
+date_published: "2022-05-13"
+authors:
+  - name: Ilyes Batatia
+    affiliation: University of Cambridge
+    email: ilyes.batatia@ens-paris-saclay.fr
+    orcid: https://orcid.org/0000-0001-6915-9851
+  - name: David P Kovacs
+    affiliation: University of Cambridge
+    orcid: https://orcid.org/0000-0002-0854-2635
+  - name: Gregor Simm
+    affiliation: University of Cambridge
+    orcid: https://orcid.org/0000-0001-6815-352X
+  - name: Christoph Ortner
+    affiliation: University of Cambridge
+    orcid: https://orcid.org/0000-0003-1498-8120
+  - name: Gabor Csanyi
+    affiliation: University of Cambridge
+    orcid: https://orcid.org/0000-0002-8180-2034
+repo: https://github.com/ACEsuit/mace
+doi: https://doi.org/10.48550/arXiv.2205.06643
+preprint: https://arxiv.org/abs/2205.06643
+requirements:
+  torch: 2.0.1
+  ase: 3.22.1
+  pymatgen: 2023.7.14
+  numpy: 1.25.0
+trained_for_benchmark: false
+
+hyperparams:
+  max_force: 0.05
+  max_steps: 500
+  ase_optimizer: FIRE
+
+notes:
+  description: |
+    The Many-body Atomic Convolutional Energies (MACE) is a higher-order equivariant message-passing neural network for fast and accurate force fields.
+  training: Using pre-trained model released with paper. Training set unspecified at time of writing.
+  corrections: None

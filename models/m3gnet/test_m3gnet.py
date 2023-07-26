@@ -20,7 +20,7 @@ from m3gnet.models import Relaxer
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import DEBUG, ROOT, timestamp, today
+from matbench_discovery import ROOT, timestamp, today
 from matbench_discovery.data import DATA_FILES, as_dict_handler
 from matbench_discovery.slurm import slurm_submit
 
@@ -33,7 +33,7 @@ module_dir = os.path.dirname(__file__)
 model_type: Literal["orig", "direct", "ms"] = "ms"
 # set large job array size for smaller data splits and faster testing/debugging
 slurm_array_task_count = 100
-job_name = f"m3gnet-{model_type}-wbm-{task_type}{'-debug' if DEBUG else ''}"
+job_name = f"m3gnet-{model_type}-wbm-{task_type}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 slurm_vars = slurm_submit(
@@ -55,7 +55,7 @@ slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "3"))
 out_path = f"{out_dir}/m3gnet-preds-{slurm_array_task_id}.json.gz"
 
 if os.path.isfile(out_path):
-    raise SystemExit(f"{out_path = } already exists, exciting early")
+    raise SystemExit(f"{out_path=} already exists, exciting early")
 
 warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
 warnings.filterwarnings(action="ignore", category=UserWarning, module="tensorflow")
@@ -76,7 +76,7 @@ df_in: pd.DataFrame = np.array_split(
 
 run_params = dict(
     data_path=data_path,
-    **{f"{dep}_version": version(dep) for dep in ("m3gnet", "numpy")},
+    versions={dep: version(dep) for dep in ("m3gnet", "numpy")},
     task_type=task_type,
     df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     slurm_vars=slurm_vars,
@@ -92,7 +92,7 @@ if model_type == "direct":
     checkpoint = f"{ROOT}/models/m3gnet/2023-05-26-DI-DFTstrictF10-TTRS-128U-442E"
 if model_type == "ms":
     checkpoint = f"{ROOT}/models/m3gnet/2023-05-26-MS-DFTstrictF10-128U-154E"
-megnet = Relaxer(potential=checkpoint)  # load pre-trained M3GNet model
+m3gnet = Relaxer(potential=checkpoint)  # load pre-trained M3GNet model
 relax_results: dict[str, dict[str, Any]] = {}
 input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
 
@@ -101,20 +101,18 @@ if task_type == "RS2RE":
 
 structures = df_in[input_col].map(Structure.from_dict).to_dict()
 
-for material_id in tqdm(structures, disable=None):
+for material_id in tqdm(structures, desc="Relaxing", disable=None):
     if material_id in relax_results:
         continue
     try:
-        relax_result = megnet.relax(structures[material_id])
-    except Exception as error:
-        print(f"Failed to relax {material_id}: {error}")
-        continue
-
-    relax_results[material_id] = {
-        f"m3gnet_{model_type}_structure": relax_result["final_structure"],
-        f"m3gnet_{model_type}_trajectory": relax_result["trajectory"].__dict__,
-        e_pred_col: relax_result["trajectory"].energies[-1],
-    }
+        relax_result = m3gnet.relax(structures[material_id])
+        relax_results[material_id] = {
+            f"m3gnet_{model_type}_structure": relax_result["final_structure"],
+            f"m3gnet_{model_type}_trajectory": relax_result["trajectory"].__dict__,
+            e_pred_col: relax_result["trajectory"].energies[-1],
+        }
+    except Exception as exc:
+        print(f"Failed to relax {material_id}: {exc}")
 
 
 # %%

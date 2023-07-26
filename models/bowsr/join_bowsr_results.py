@@ -8,7 +8,6 @@ import pandas as pd
 import pymatviz
 from tqdm import tqdm
 
-from matbench_discovery import today
 from matbench_discovery.data import DATA_FILES
 
 __author__ = "Janosh Riebesell"
@@ -66,7 +65,7 @@ pymatviz.density_scatter(
 
 
 # %%
-out_path = f"{module_dir}/{today}-bowsr-megnet-wbm-{task_type}"
+out_path = f"{module_dir}/{glob_pattern.split('/*')[0]}"
 df_bowsr = df_bowsr.round(4)
 # save energy and formation energy as fast-loading CSV
 df_bowsr.select_dtypes("number").to_csv(f"{out_path}.csv")

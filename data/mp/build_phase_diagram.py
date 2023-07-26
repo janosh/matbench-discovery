@@ -43,7 +43,7 @@ data_path = f"{module_dir}/2023-02-07-mp-computed-structure-entries.json.gz"
 df = pd.read_json(data_path).set_index("material_id")
 
 # drop the structure, just load ComputedEntry, makes the PPD faster to build and load
-mp_computed_entries = [ComputedEntry.from_dict(x) for x in tqdm(df.entry)]
+mp_computed_entries = [ComputedEntry.from_dict(dct) for dct in tqdm(df.entry)]
 
 print(f"{len(mp_computed_entries) = :,} on {today}")
 # len(mp_computed_entries) = 146,323 on 2022-09-16

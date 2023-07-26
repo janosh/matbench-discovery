@@ -502,7 +502,8 @@ for mat_id, cse in df_wbm.computed_structure_entry.items():
     assert mat_id == cse["entry_id"], f"{mat_id} != {cse['entry_id']}"
 
 df_wbm["cse"] = [
-    ComputedStructureEntry.from_dict(x) for x in tqdm(df_wbm.computed_structure_entry)
+    ComputedStructureEntry.from_dict(dct)
+    for dct in tqdm(df_wbm.computed_structure_entry)
 ]
 # raw WBM ComputedStructureEntries have no energy corrections applied:
 assert all(cse.uncorrected_energy == cse.energy for cse in df_wbm.cse)
@@ -640,6 +641,6 @@ if False:
     ).set_index("material_id")
 
     df_wbm["cse"] = [
-        ComputedStructureEntry.from_dict(x)
-        for x in tqdm(df_wbm.computed_structure_entry)
+        ComputedStructureEntry.from_dict(dct)
+        for dct in tqdm(df_wbm.computed_structure_entry)
     ]

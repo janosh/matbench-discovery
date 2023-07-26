@@ -28,10 +28,11 @@ df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(
 )
 
 cses = [
-    ComputedStructureEntry.from_dict(x) for x in tqdm(df_cse.computed_structure_entry)
+    ComputedStructureEntry.from_dict(dct)
+    for dct in tqdm(df_cse.computed_structure_entry)
 ]
 
-ces = [ComputedEntry.from_dict(x) for x in tqdm(df_cse.computed_structure_entry)]
+ces = [ComputedEntry.from_dict(dct) for dct in tqdm(df_cse.computed_structure_entry)]
 
 
 warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")

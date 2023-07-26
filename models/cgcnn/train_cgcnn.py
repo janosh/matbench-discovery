@@ -11,7 +11,7 @@ from pymatgen.core import Structure
 from torch.utils.data import DataLoader
 from tqdm import tqdm, trange
 
-from matbench_discovery import DEBUG, WANDB_PATH, timestamp, today
+from matbench_discovery import WANDB_PATH, timestamp, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 from matbench_discovery.structure import perturb_structure
@@ -32,7 +32,7 @@ id_col = "material_id"
 # 0 for no perturbation, n>1 means train on n perturbations of each crystal
 # in the training set all assigned the same original target energy
 n_perturb = 0
-job_name = f"train-cgcnn-robust-{n_perturb=}{'-debug' if DEBUG else ''}"
+job_name = f"train-cgcnn-robust-{n_perturb=}"
 print(f"{job_name=}")
 robust = "robust" in job_name.lower()
 ensemble_size = 10
@@ -107,7 +107,7 @@ model = CrystalGraphConvNet(**model_params)
 run_params = dict(
     data_path=data_path,
     batch_size=batch_size,
-    **{f"{dep}_version": version(dep) for dep in ("aviary", "numpy", "torch")},
+    versions={dep: version(dep) for dep in ("aviary", "numpy", "torch")},
     train_df=dict(shape=str(train_data.df.shape), columns=", ".join(train_df)),
     test_df=dict(shape=str(test_data.df.shape), columns=", ".join(test_df)),
     slurm_vars=slurm_vars,

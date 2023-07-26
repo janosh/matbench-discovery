@@ -1,4 +1,12 @@
 {
+  "alignn_checkpoint": [
+    "https://figshare.com/ndownloader/files/41233560",
+    "2023-06-02-pbenner-best-alignn-model.pth.zip"
+  ],
+  "mace_checkpoint": [
+    "https://figshare.com/ndownloader/files/41565618",
+    "2023-07-14-mace-universal-2-big-128-6.model"
+  ],
   "mp_computed_structure_entries": [
     "https://figshare.com/ndownloader/files/40344436",
     "2023-02-07-mp-computed-structure-entries.json.gz"

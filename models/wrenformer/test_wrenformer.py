@@ -17,7 +17,7 @@ from aviary.predict import predict_from_wandb_checkpoints
 from aviary.wrenformer.data import df_to_in_mem_dataloader
 from aviary.wrenformer.model import Wrenformer
 
-from matbench_discovery import CHECKPOINT_DIR, DEBUG, WANDB_PATH, today
+from matbench_discovery import CHECKPOINT_DIR, WANDB_PATH, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
@@ -29,7 +29,7 @@ __date__ = "2022-08-15"
 task_type = "IS2RE"
 data_path = DATA_FILES.wbm_summary
 debug = "slurm-submit" in sys.argv
-job_name = f"test-wrenformer-wbm-{task_type}{'-debug' if DEBUG else ''}"
+job_name = f"test-wrenformer-wbm-{task_type}"
 module_dir = os.path.dirname(__file__)
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
@@ -74,7 +74,7 @@ for idx, run in enumerate(runs):
 run_params = dict(
     data_path=data_path,
     df=dict(shape=str(df.shape), columns=", ".join(df)),
-    **{f"{dep}_version": version(dep) for dep in ("aviary", "numpy", "torch")},
+    versions={dep: version(dep) for dep in ("aviary", "numpy", "torch")},
     ensemble_size=len(runs),
     task_type=task_type,
     target_col=e_form_col,

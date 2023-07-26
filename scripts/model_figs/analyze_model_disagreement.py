@@ -4,6 +4,8 @@ models can pinpoint DFT calculation gone wrong.
 
 
 # %%
+import sys
+
 import pandas as pd
 from crystal_toolkit.helpers.utils import hook_up_fig_with_struct_viewer
 from pymatviz.utils import add_identity_line, save_fig
@@ -88,11 +90,14 @@ df_cse = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index("material
 
 
 # %% struct viewer
-app = hook_up_fig_with_struct_viewer(
-    fig,
-    df_cse,
-    "initial_structure",
-    # validate_id requires material_id to be hover_name
-    validate_id=lambda id: id.startswith(("wbm-", "mp-", "mvc-")),
-)
-app.run(port=8000)
+# only run this in Jupyter Notebook
+is_jupyter = "ipykernel" in sys.modules
+if is_jupyter:
+    app = hook_up_fig_with_struct_viewer(
+        fig,
+        df_cse,
+        "initial_structure",
+        # validate_id requires material_id to be hover_name
+        validate_id=lambda id: id.startswith(("wbm-", "mp-", "mvc-")),
+    )
+    app.run(port=8000)
