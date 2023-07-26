@@ -37,6 +37,7 @@ test_run_filters: dict[str, tuple[int, str, str, str]] = {
     "BOWSR": (476, "bowsr-megnet", "2023-01-20", "2023-01-22"),
     "CHGNet": (100, "chgnet-wbm-IS2RE-", "2023-03-05", "2023-03-07"),
     "CGCNN": (1, "test-cgcnn-wbm-IS2RE", "2022-12-03", "2022-12-05"),
+    "MACE": (100, "mace-wbm-IS2RE-FIRE", "2023-07-22", "2023-07-24"),
     "M3GNet": (99, "m3gnet-wbm-IS2RE", "2022-10-31", "2022-11-01"),
     "MEGNet": (1, "megnet-wbm-IS2RE", "2022-11-17", "2022-11-19"),
     "Voronoi RF": (20, "voronoi-features-wbm", "2022-11-15", "2022-11-19"),

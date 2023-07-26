@@ -125,7 +125,7 @@ for label, df, extra_hide_metrics in (
     styler.set_table_styles([dict(selector=sel, props=styles[sel]) for sel in styles])
     styler.set_uuid("")
 
-    #  export model metrics as styled HTML table and Svelte component
+    # export model metrics as styled HTML table and Svelte component
     # draw dotted line between classification and regression metrics
     df_to_svelte_table(
         styler,
