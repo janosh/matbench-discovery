@@ -22,10 +22,10 @@
   let active_mp_elem: ChemicalElement
   let active_wbm_elem: ChemicalElement
   const count_mode_ops = [`occurrence`, `composition`]
-  let count_mode = [count_mode_ops[0]]
+  let count_mode = count_mode_ops[0]
 
-  $: mp_elem_counts = elem_counts[`./mp-element-counts-${count_mode[0]}.json`]
-  $: wbm_elem_counts = elem_counts[`./wbm-element-counts-${count_mode[0]}.json`]
+  $: mp_elem_counts = elem_counts[`./mp-element-counts-${count_mode}.json`]
+  $: wbm_elem_counts = elem_counts[`./wbm-element-counts-${count_mode}.json`]
 
   export const snapshot: Snapshot = {
     capture: () => ({ color_scale, log, count_mode }),
@@ -65,7 +65,8 @@
     >
     <Select
       id="count-mode"
-      bind:selected={count_mode}
+      selected={[count_mode]}
+      bind:value={count_mode}
       options={count_mode_ops}
       minSelect={1}
       maxSelect={1}

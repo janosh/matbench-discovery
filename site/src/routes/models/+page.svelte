@@ -2,6 +2,7 @@
   import type { ModelStatLabel, ModelStats } from '$lib'
   import { ModelCard } from '$lib'
   import Icon from '@iconify/svelte'
+  import { interpolatePuOr } from 'd3-scale-chromatic'
   import { RadioButtons, Tooltip } from 'svelte-zoo'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
@@ -13,9 +14,9 @@
   let sort_by: keyof ModelStats | 'model_name' = `F1`
   let show_details: boolean = false
   let order: 'asc' | 'desc' = `desc`
-  let show_n_best: number = 8 // show only best models
+  let show_n_best: number = data.models.length // show only best models
   const min_models: number = 2
-  $: sort_factor = { asc: -1, desc: 1 }[order]
+  const lower_is_better = [`RMSE`, `MAE`, `Run Time (h)`]
 
   $: models = data.models.sort((model_1, model_2) => {
     const [val_1, val_2] = [model_1[sort_by], model_2[sort_by]]
@@ -24,7 +25,7 @@
     } else if (typeof val_1 == `number`) {
       return sort_factor * (val_2 - val_1)
     } else {
-      console.error(`Sorting by key ${sort_by} gives unknown type: ${typeof val_1}`)
+      throw `Sorting by key ${sort_by} gives unknown type: ${typeof val_1}`
     }
   })
   const stats: ModelStatLabel[] = [
@@ -43,6 +44,16 @@
   export const snapshot: Snapshot = {
     capture: () => ({ show_details, sort_by, order, show_n_best }),
     restore: (values) => ({ show_details, sort_by, order, show_n_best } = values),
+  }
+
+  $: sort_factor = { asc: -1, desc: 1 }[order]
+  $: min_val = Math.min(...models.map((model) => model[sort_by] as number))
+  $: max_val = Math.max(...models.map((model) => model[sort_by] as number))
+  $: if (lower_is_better.includes(sort_by)) [min_val, max_val] = [max_val, min_val]
+  $: order = lower_is_better.includes(sort_by) ? `asc` : `desc`
+
+  function bg_color(val: number, min: number, max: number) {
+    return interpolatePuOr(1 - (val - min) / (max - min)).replace(`)`, `, 0.3)`)
   }
 </script>
 
@@ -74,27 +85,30 @@
   </ul>
 
   <ol>
-    {#each models.slice(0, Math.max(min_models, show_n_best)) as data (data.model_name)}
+    {#each models.slice(0, Math.max(min_models, show_n_best)) as model (model.model_name)}
       <li
         animate:flip={{ duration: 400 }}
         in:fade={{ delay: 100 }}
         out:fade={{ delay: 100 }}
+        style="background-color: {bg_color(model[sort_by], min_val, max_val)};"
       >
-        <ModelCard {data} {stats} {sort_by} bind:show_details />
-        {#if data.training_set}
+        <ModelCard data={model} {stats} {sort_by} bind:show_details />
+        {#if model.training_set}
           <!-- maybe show this text in a tooltip: This model was not trained on the
-            canonical training set. It's results should not be seen as a one-to-one
-            comparison to the other models but rather proof of concept of what is possible. -->
+          canonical training set. It's results should not be seen as a one-to-one
+          comparison to the other models but rather proof of concept of what is possible. -->
           <strong class="train-set">
             <Icon icon="ion:ios-warning" inline />
-            Custom training set: {data.training_set}
+            Custom training set: {model.training_set}
           </strong>
         {/if}
       </li>
     {/each}
   </ol>
 
-  <h2 style="margin-top: 6em;">Per-Element Model Error Heatmaps</h2>
+  <h2 style="margin: 4em auto 1em; text-align: center;">
+    Per-Element Model Error Heatmaps
+  </h2>
 
   <ElementErrorsPtableHeatmap />
 </div>

@@ -24,6 +24,7 @@
     "@sveltejs/vite-plugin-svelte": "^2.4.3",
     "@typescript-eslint/eslint-plugin": "^6.2.0",
     "@typescript-eslint/parser": "^6.2.0",
+    "d3-scale-chromatic": "^3.0.0",
     "elementari": "^0.2.2",
     "eslint": "^8.45.0",
     "eslint-plugin-svelte": "^2.32.4",

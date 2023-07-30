@@ -42,11 +42,13 @@
   }
 </script>
 
-This periodic table is shaded by the MAE for the model-predicted convex hull distance for
-each element. The errors for every structure in the test set are projected onto the
-fraction of each element in the composition and averaged over all structures. The error is
-the absolute difference per atom between predicted and actual energy distance to the
-convex hull.
+<p style="max-width: 45em; margin: auto;">
+  This periodic table is shaded by the MAE for the model-predicted convex hull distance
+  for each element. The errors for every structure in the test set are projected onto the
+  fraction of each element in the composition and averaged over all structures. The error
+  is the absolute difference per atom between predicted and actual energy distance to the
+  convex hull.
+</p>
 
 <MultiSelect bind:selected={current_model} options={models} maxSelect={1} minSelect={1} />
 

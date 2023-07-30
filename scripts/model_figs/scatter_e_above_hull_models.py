@@ -9,6 +9,7 @@ import math
 
 import numpy as np
 import plotly.express as px
+import scipy.stats
 from pymatviz.utils import add_identity_line, bin_df_cols, save_fig
 
 from matbench_discovery import FIGS, PDF_FIGS
@@ -119,26 +120,34 @@ img_name = f"{FIGS}/e-above-hull-scatter-models"
 
 
 # %% plot all models in separate subplots
-domain = (-4, 7)
 n_cols = 2
 n_rows = math.ceil(len(models) / n_cols)
 
+
+def get_density(xs: np.ndarray, ys: np.ndarray) -> np.ndarray:
+    """Get kernel density estimate for each (x, y) point."""
+    return scipy.stats.gaussian_kde([xs, ys])([xs, ys])
+
+
+# scatter plot of DFT vs predicted hull distance
 fig = px.scatter(
     df_bin,
     x=each_true_col,
     y=each_pred_col,
     facet_col=facet_col,
     facet_col_wrap=n_cols,
+    color=get_density(df_bin[each_true_col], df_bin[each_pred_col]),
     facet_col_spacing=0.02,
     facet_row_spacing=0.04,
     hover_data=hover_cols,
     hover_name=df_preds.index.name,
-    color=clf_col,
+    # color=clf_col,
     color_discrete_map=clf_color_map,
     # opacity=0.4,
-    range_x=domain,
+    range_x=(domain := (-4, 7)),
     range_y=domain,
     category_orders={facet_col: legend_order},
+    color_continuous_scale="turbo",
 )
 
 x_title = fig.layout.xaxis.title.text  # used in annotations below
@@ -147,7 +156,7 @@ y_title = fig.layout.yaxis.title.text
 # iterate over subplots and set new title
 for idx, anno in enumerate(fig.layout.annotations, 1):
     traces = [t for t in fig.data if t.xaxis == f"x{idx if idx > 1 else ''}"]
-    assert len(traces) in (0, 4), f"Plots be empty or have 4 traces, got {len(traces)=}"
+    # assert len(traces) in (0, 4), f"Plots must have 0 or 4 traces, got {len(traces)=}"
 
     model = anno.text.split("=", 1)[1]
     assert model in df_preds, f"Unexpected {model=} not in {list(df_preds)=}"
@@ -219,9 +228,10 @@ fig.add_annotation(  # y-axis title
     textangle=-90,
     **axis_titles,
 )
-fig.layout.height = 1000
+fig.layout.height = 200 * n_rows
+fig.layout.coloraxis.showscale = False
 # fig.layout.width = 1100
-fig.layout.margin.update(l=40, r=10, t=10, b=50)
+fig.layout.margin.update(l=40, r=10, t=30, b=60)
 fig.update_xaxes(matches=None)
 fig.update_yaxes(matches=None)
 fig.show()

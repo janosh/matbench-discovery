@@ -36,7 +36,7 @@ export type ModelStats = {
   missing_preds: number
   missing_percent: number
   Accuracy: number
-  'Run Time (h)': string
+  'Run Time (h)': number
   TPR: number
   TNR: number
   DAF: number
