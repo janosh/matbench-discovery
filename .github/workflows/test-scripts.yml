@@ -15,7 +15,7 @@ jobs:
       matrix:
         script:
           - scripts/model_figs/make_metrics_tables.py
-          - scripts/analyze_element_errors.py
+          - scripts/model_figs/per_element_errors.py
     steps:
       - name: Check out repository
         uses: actions/checkout@v3

@@ -47,6 +47,63 @@ references:
   type: chapter
   URL: https://doi.org/10.1007/978-94-011-4653-1_21
 
+- id: allen_learning_2023
+  abstract: >-
+    The development of machine learning models has led to an abundance of
+    datasets containing quantum mechanical (QM) calculations for molecular and
+    material systems. However, traditional training methods for machine learning
+    models are unable to leverage the plethora of data available as they require
+    that each dataset be generated using the same QM method. Taking machine
+    learning interatomic potentials (MLIPs) as an example, we show that
+    meta-learning techniques, a recent advancement from the machine learning
+    community, can be used to fit multiple levels of QM theory in the same
+    training process. Meta-learning changes the training procedure to learn a
+    representation that can be easily re-trained to new tasks with small amounts
+    of data. We then demonstrate that meta-learning enables simultaneously
+    training to multiple large organic molecule datasets. As a proof of concept,
+    we examine the performance of a MLIP refit to a small drug-like molecule and
+    show that pre-training potentials to multiple levels of theory with
+    meta-learning improves performance. This difference in performance can be
+    seen both in the reduced error and in the improved smoothness of the
+    potential energy surface produced. We therefore show that meta-learning can
+    utilize existing datasets with inconsistent QM levels of theory to produce
+    models that are better at specializing to new datasets. This opens new
+    routes for creating pre-trained, foundational models for interatomic
+    potentials.
+  accessed:
+    - year: 2023
+      month: 7
+      day: 30
+  author:
+    - family: Allen
+      given: Alice E. A.
+    - family: Lubbers
+      given: Nicholas
+    - family: Matin
+      given: Sakib
+    - family: Smith
+      given: Justin
+    - family: Messerly
+      given: Richard
+    - family: Tretiak
+      given: Sergei
+    - family: Barros
+      given: Kipton
+  citation-key: allen_learning_2023
+  issued:
+    - year: 2023
+      month: 7
+      day: 8
+  number: arXiv:2307.04012
+  publisher: arXiv
+  source: arXiv.org
+  title: >-
+    Learning Together: Towards foundational models for machine learning
+    interatomic potentials with meta-learning
+  title-short: Learning Together
+  type: article
+  URL: http://arxiv.org/abs/2307.04012
+
 - id: aykol_rational_2021
   abstract: >-
     The rational solid-state synthesis of inorganic compounds is formulated as
@@ -1152,7 +1209,7 @@ references:
   URL: https://www.nature.com/articles/s41524-022-00891-8
   volume: '8'
 
-- id: glawe_optimal_2016a
+- id: glawe_optimal_2016
   abstract: >-
     Starting from the experimental data contained in the inorganic crystal
     structure database, we use a statistical analysis to determine the
@@ -1177,7 +1234,7 @@ references:
       given: E. K. U.
     - family: Marques
       given: Miguel A. L.
-  citation-key: glawe_optimal_2016a
+  citation-key: glawe_optimal_2016
   container-title: New Journal of Physics
   container-title-short: New J. Phys.
   DOI: 10.1088/1367-2630/18/9/093011
@@ -1905,7 +1962,7 @@ references:
   URL: https://www.nature.com/articles/nature17439
   volume: '533'
 
-- id: rupp_fast_2012a
+- id: rupp_fast_2012
   abstract: >-
     We introduce a machine learning model to predict atomization energies of a
     diverse set of organic molecules, based on nuclear charges and atomic
@@ -1930,7 +1987,7 @@ references:
     - family: Lilienfeld
       given: O. Anatole
       non-dropping-particle: von
-  citation-key: rupp_fast_2012a
+  citation-key: rupp_fast_2012
   container-title: Physical Review Letters
   container-title-short: Phys. Rev. Lett.
   DOI: 10.1103/PhysRevLett.108.058301
@@ -2370,6 +2427,45 @@ references:
   title: Attention Is All You Need
   type: article-journal
   URL: http://arxiv.org/abs/1706.03762
+
+- id: vonlilienfeld_retrospective_2020
+  abstract: >-
+    Over the last decade, we have witnessed the emergence of ever more machine
+    learning applications in all aspects of the chemical sciences. Here, we
+    highlight specific achievements of machine learning models in the field of
+    computational chemistry by considering selected studies of electronic
+    structure, interatomic potentials, and chemical compound space in
+    chronological order.
+  accessed:
+    - year: 2023
+      month: 7
+      day: 29
+  author:
+    - family: Lilienfeld
+      given: O. Anatole
+      non-dropping-particle: von
+    - family: Burke
+      given: Kieron
+  citation-key: vonlilienfeld_retrospective_2020
+  container-title: Nature Communications
+  container-title-short: Nat Commun
+  DOI: 10.1038/s41467-020-18556-9
+  ISSN: 2041-1723
+  issue: '1'
+  issued:
+    - year: 2020
+      month: 9
+      day: 29
+  language: en
+  license: 2020 The Author(s)
+  number: '1'
+  page: '4895'
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: Retrospective on a decade of machine learning for chemical discovery
+  type: article-journal
+  URL: https://www.nature.com/articles/s41467-020-18556-9
+  volume: '11'
 
 - id: wang_predicting_2021
   abstract: >-
