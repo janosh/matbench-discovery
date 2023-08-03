@@ -23,6 +23,6 @@ So far, we've tested 8 models covering multiple methodologies ranging from rando
 
 We welcome contributions that add new models to the leaderboard through GitHub PRs. See the [contributing guide](https://janosh.github.io/matbench-discovery/contribute) for details.
 
-Anyone interested in joining this effort please [open a GitHub discussion](https://github.com/janosh/matbench-discovery/discussions) or [reach out privately](mailto:janosh@lbl.gov?subject=Matbench%20Discovery).
+If you're interested in joining this work, feel free to [open a GitHub discussion](https://github.com/janosh/matbench-discovery/discussions) or [send an email](mailto:janosh@lbl.gov?subject=Collaborate%20on%20Matbench%20Discovery).
 
-For detailed results and analysis, check out our [preprint](https://janosh.github.io/matbench-discovery/preprint) and [SI](https://janosh.github.io/matbench-discovery/si).
+For detailed results and analysis, check out the [preprint](https://janosh.github.io/matbench-discovery/preprint) and [SI](https://janosh.github.io/matbench-discovery/si).

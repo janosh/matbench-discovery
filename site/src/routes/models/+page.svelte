@@ -3,6 +3,7 @@
   import { ModelCard } from '$lib'
   import Icon from '@iconify/svelte'
   import { interpolatePuOr } from 'd3-scale-chromatic'
+  import { ColorBar } from 'elementari'
   import { RadioButtons, Tooltip } from 'svelte-zoo'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
@@ -53,7 +54,7 @@
   $: order = lower_is_better.includes(sort_by) ? `asc` : `desc`
 
   function bg_color(val: number, min: number, max: number) {
-    return interpolatePuOr(1 - (val - min) / (max - min)).replace(`)`, `, 0.3)`)
+    return interpolatePuOr(1 - (val - min) / (max - min)).replace(`)`, `, 0.4)`)
   }
 </script>
 
@@ -83,6 +84,12 @@
       </li>
     {/each}
   </ul>
+
+  <legend>
+    best
+    <ColorBar color_scale={interpolatePuOr} style="min-width: min(70vw, 400px);" />
+    worst
+  </legend>
 
   <ol>
     {#each models.slice(0, Math.max(min_models, show_n_best)) as model (model.model_name)}
@@ -114,6 +121,14 @@
 </div>
 
 <style>
+  legend {
+    display: flex;
+    gap: 8pt;
+    place-content: center;
+    opacity: 0.8;
+    margin: 2em auto;
+    font-weight: lighter;
+  }
   :is(ul, ol) {
     padding: 0;
     list-style: none;
