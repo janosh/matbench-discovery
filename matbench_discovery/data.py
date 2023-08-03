@@ -126,7 +126,7 @@ def load(
             if not isinstance(df[col].iloc[0], dict):
                 continue
             try:
-                # convert dicts to pymatgen Structures and ComputedStructureEntrys
+                # convert dicts to pymatgen Structures and ComputedStructureEntries
                 df[col] = [
                     MontyDecoder().process_decoded(dct)
                     for dct in tqdm(df[col], desc=col)

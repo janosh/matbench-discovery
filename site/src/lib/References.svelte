@@ -25,9 +25,9 @@
         &mdash;
         <small>
           {#if DOI}
-            DOI: <a href="https://doi.org/{DOI}">{DOI}</a>
+            <a href="https://doi.org/{DOI}">{DOI}</a>
           {:else if href}
-            preprint: <a {href}>{href}</a>
+            <a {href}>{href}</a>
           {/if}
           {#if issued}
             &mdash; {issued[0].year}
@@ -39,10 +39,16 @@
 {/key}
 
 <style>
+  ol {
+    padding: 0 0 0 1em;
+  }
   ol > li {
     margin: 1ex 0;
   }
   ol > li > strong {
     display: block;
+  }
+  ol > li > :is(small, span) {
+    font-weight: lighter;
   }
 </style>
