@@ -174,10 +174,6 @@ strong a[aria-hidden='true'] {
   left: 0;
 }
 
-/* for /api/[slug] */
-kbd {
-  padding: 0 1ex 0 0;
-}
 aside.toc.desktop {
   position: fixed;
   top: 3em;
