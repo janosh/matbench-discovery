@@ -11,6 +11,7 @@ import numpy as np
 import plotly.express as px
 import scipy.stats
 from pymatviz.utils import add_identity_line, bin_df_cols, save_fig
+from tqdm import tqdm
 
 from matbench_discovery import FIGS, PDF_FIGS
 from matbench_discovery.metrics import classify_stable
@@ -119,35 +120,52 @@ img_name = f"{FIGS}/e-above-hull-scatter-models"
 # save_fig(fig, f"{img_path}.svelte")
 
 
-# %% plot all models in separate subplots
+# %%
+clr_col, cnt_col = "density", "counts"
+# compute KDE for each model's predictions separately
+for model in (pbar := tqdm(models)):
+    pbar.set_description(f"KDE for {model=}")
+
+    xy = df_preds[[each_true_col, model]].dropna().T
+    model_kde = scipy.stats.gaussian_kde(xy)
+
+    model_rows = df_bin[df_bin[facet_col] == model]
+    xy_binned = model_rows[[each_true_col, each_pred_col]].T
+    density = model_kde(xy_binned)
+    n_preds = len(df_preds[model].dropna())
+    df_bin.loc[model_rows.index, cnt_col] = density / density.sum() * n_preds
+
+df_bin[clr_col] = np.log1p(df_bin[cnt_col]).round(2)
+
+
+# %% scatter plot of DFT vs predicted hull distance with each model in separate subplot
 n_cols = 2
 n_rows = math.ceil(len(models) / n_cols)
 
-
-def get_density(xs: np.ndarray, ys: np.ndarray) -> np.ndarray:
-    """Get kernel density estimate for each (x, y) point."""
-    return scipy.stats.gaussian_kde([xs, ys])([xs, ys])
-
-
-# scatter plot of DFT vs predicted hull distance
 fig = px.scatter(
     df_bin,
     x=each_true_col,
     y=each_pred_col,
     facet_col=facet_col,
     facet_col_wrap=n_cols,
-    color=get_density(df_bin[each_true_col], df_bin[each_pred_col]),
+    color=clr_col,
     facet_col_spacing=0.02,
     facet_row_spacing=0.04,
     hover_data=hover_cols,
     hover_name=df_preds.index.name,
     # color=clf_col,
-    color_discrete_map=clf_color_map,
+    # color_discrete_map=clf_color_map,
     # opacity=0.4,
     range_x=(domain := (-4, 7)),
     range_y=domain,
     category_orders={facet_col: legend_order},
-    color_continuous_scale="turbo",
+    color_continuous_scale="turbo",  # "thermal"
+)
+
+# manually set colorbar ticks and labels (needed after log1p transform)
+tick_vals = [1, 10, 100, 1000, 10_000]
+fig.layout.coloraxis.colorbar.update(
+    tickvals=np.log1p(tick_vals), ticktext=list(map(str, tick_vals))
 )
 
 x_title = fig.layout.xaxis.title.text  # used in annotations below
@@ -229,7 +247,7 @@ fig.add_annotation(  # y-axis title
     **axis_titles,
 )
 fig.layout.height = 200 * n_rows
-fig.layout.coloraxis.showscale = False
+fig.layout.coloraxis.colorbar.update(orientation="h", thickness=9, len=0.5, y=1.05)
 # fig.layout.width = 1100
 fig.layout.margin.update(l=40, r=10, t=30, b=60)
 fig.update_xaxes(matches=None)
