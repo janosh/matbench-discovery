@@ -27,8 +27,8 @@ __date__ = "2022-12-04"
 
 
 # %%
-# metrics = ("Precision", "Recall")
-metrics = ("MAE", "RMSE")
+metrics = ("Precision", "Recall")
+# metrics = ("MAE", "RMSE")
 range_y = {
     ("MAE", "RMSE"): (0, 0.5),
     ("Precision", "Recall"): (0, 1),

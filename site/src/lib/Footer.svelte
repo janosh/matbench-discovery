@@ -8,12 +8,8 @@
   let btn: HTMLButtonElement
 
   function close_if_outside_click(event: MouseEvent) {
-    if (
-      dialog &&
-      show_tips &&
-      !dialog.contains(event.target as Node) &&
-      !btn.contains(event.target as Node)
-    ) {
+    const is_outside = dialog && !dialog.contains(event.target as Node)
+    if (show_tips && is_outside && !btn.contains(event.target as Node)) {
       show_tips = false
     }
   }
@@ -27,22 +23,25 @@
 <svelte:window on:click={close_if_outside_click} on:keydown={toggle} />
 
 <footer>
-  Questions/feedback?
-  <a href="{repository}/issues"><Icon icon="octicon:mark-github" inline /></a>
-  <a href="mailto:janosh@lbl.gov?subject=Matbench Discovery">
-    <Icon icon="mdi:email" inline />
-  </a>
-  <!-- open modal on clicking tips icon -->
-  <button on:click={() => (show_tips = true)} bind:this={btn} title={tips_title}>
-    <Icon icon="mdi:lightbulb-on-outline" inline />
-  </button>
-
-  <p>
-    <a href="/changelog">
-      <Icon icon="octicon:history" inline />
-      Changelog
-    </a>
-  </p>
+  <nav>
+    <a href="{repository}/issues">Issues</a>
+    <a href="mailto:janosh@lbl.gov?subject=Matbench Discovery">Contact</a>
+    <a href="/changelog">Changelog</a>
+    <button
+      on:click={() => (show_tips = true)}
+      bind:this={btn}
+      title={tips_title}
+      style="padding: 0; transform: scale(1.2);"
+    >
+      <Icon icon="mdi:lightbulb-on-outline" inline />
+    </button>
+  </nav>
+  <img
+    src="/favicon.svg"
+    alt="Logo"
+    width="30px"
+    style="vertical-align:middle;"
+  />&emsp;Matbench Discovery
 </footer>
 
 <dialog bind:this={dialog} open={show_tips}>
@@ -61,10 +60,13 @@
     background: #00061a;
     text-align: center;
   }
-  footer > a {
-    margin: 0 0 0 4pt;
+  footer nav {
+    display: flex;
+    gap: 1em;
+    justify-content: center;
+    margin: 2em 0;
   }
-  footer > button {
+  footer > nav > button {
     background: none;
     color: var(--blue);
   }
@@ -85,7 +87,7 @@
     visibility: visible;
     opacity: 1;
   }
-  dialog > * {
+  dialog > :is(p, h3) {
     margin: 0;
   }
   p kbd {

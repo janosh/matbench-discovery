@@ -20,7 +20,7 @@ from chgnet.model import StructOptimizer
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import DEBUG, timestamp, today
+from matbench_discovery import timestamp, today
 from matbench_discovery.data import DATA_FILES, as_dict_handler, df_wbm
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
@@ -32,7 +32,7 @@ task_type = "IS2RE"  # "RS2RE"
 module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
 slurm_array_task_count = 100
-job_name = f"chgnet-wbm-{task_type}{'-debug' if DEBUG else ''}"
+job_name = f"chgnet-wbm-{task_type}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 slurm_vars = slurm_submit(
@@ -51,7 +51,7 @@ slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
 out_path = f"{out_dir}/chgnet-preds-{slurm_array_task_id}.json.gz"
 
 if os.path.isfile(out_path):
-    raise SystemExit(f"{out_path = } already exists, exciting early")
+    raise SystemExit(f"{out_path=} already exists, exciting early")
 
 
 # %%
@@ -70,7 +70,7 @@ df_in: pd.DataFrame = np.array_split(
 
 run_params = dict(
     data_path=data_path,
-    **{f"{dep}_version": version(dep) for dep in ("chgnet", "numpy", "torch")},
+    versions={dep: version(dep) for dep in ("chgnet", "numpy", "torch")},
     task_type=task_type,
     df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     slurm_vars=slurm_vars,
@@ -91,21 +91,20 @@ if task_type == "RS2RE":
 
 structures = df_in[input_col].map(Structure.from_dict).to_dict()
 
-for material_id in tqdm(structures, disable=None):
+for material_id in tqdm(structures, desc="Relaxing", disable=None):
     if material_id in relax_results:
         continue
     try:
         relax_result = chgnet.relax(
             structures[material_id], verbose=False, steps=max_steps
         )
-    except Exception as error:
-        print(f"Failed to relax {material_id}: {error}")
-        continue
-    relax_results[material_id] = {
-        "chgnet_structure": relax_result["final_structure"],
-        "chgnet_trajectory": relax_result["trajectory"].__dict__,
-        e_pred_col: relax_result["trajectory"].energies[-1],
-    }
+        relax_results[material_id] = {
+            "chgnet_structure": relax_result["final_structure"],
+            "chgnet_trajectory": relax_result["trajectory"].__dict__,
+            e_pred_col: relax_result["trajectory"].energies[-1],
+        }
+    except Exception as exc:
+        print(f"Failed to relax {material_id}: {exc}")
 
 
 # %%

@@ -8,12 +8,12 @@ Might point to deficiencies in the data or models architecture.
 import pandas as pd
 import plotly.express as px
 from pymatgen.core import Composition, Element
-from pymatviz import count_elements, ptable_heatmap_plotly
+from pymatviz import ptable_heatmap_plotly
 from pymatviz.utils import bin_df_cols, df_ptable, save_fig
 from tqdm import tqdm
 
-from matbench_discovery import FIGS, MODELS, PDF_FIGS
-from matbench_discovery.data import DATA_FILES, df_wbm
+from matbench_discovery import FIGS, MODELS, PDF_FIGS, ROOT
+from matbench_discovery.data import df_wbm
 from matbench_discovery.preds import (
     df_each_err,
     df_metrics,
@@ -47,16 +47,14 @@ assert all(
 # df_frac_comp = df_frac_comp.dropna(axis=1, thresh=100)  # remove Xe with only 1 entry
 
 
-# %%
-df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index("material_id")
-# compute number of samples per element in training set
+# %% compute number of samples per element in training set
 # counting element occurrences not weighted by composition, assuming model don't learn
 # much more about iron and oxygen from Fe2O3 than from FeO
-
+counts_path = f"{ROOT}/site/src/routes/about-the-data/mp-element-counts-occurrence.json"
+df_elem_err = pd.read_json(counts_path, typ="series")
 train_count_col = "MP Occurrences"
-df_elem_err = count_elements(df_mp.formula_pretty, count_mode="occurrence").to_frame(
-    name=train_count_col
-)
+df_elem_err = df_elem_err.reset_index(name=train_count_col).set_index("index")
+df_elem_err.index.name = "symbol"
 
 
 # %%
@@ -87,7 +85,7 @@ min_count = 10  # only show elements with at least 10 structures
 df_struct_counts = df_struct_counts[df_struct_counts.sum(axis=1) > min_count]
 normalized = False
 if normalized:
-    df_struct_counts["MP"] /= len(df_mp) / 100
+    df_struct_counts["MP"] /= len(df_preds) / 100
     df_struct_counts["WBM"] /= len(df_wbm) / 100
 y_col = "percent" if normalized else "count"
 fig = (
@@ -148,8 +146,8 @@ for model in (*df_metrics, model_mean_err_col):
 
 # %%
 expected_cols = {
-    *"ALIGNN, BOWSR + MEGNet, CGCNN, CGCNN+P, CHGNet, M3GNet, MEGNet, "
-    "MP Occurrences, Mean error all models, Test set standard deviation, Voronoi RF, "
+    *"ALIGNN, BOWSR, CGCNN, CGCNN+P, CHGNet, M3GNet, MEGNet, "
+    f"{train_count_col}, Mean error all models, {test_set_std_col}, Voronoi RF, "
     "Wrenformer".split(", ")
 }
 assert {*df_elem_err} >= expected_cols
@@ -164,7 +162,7 @@ elem_col = "Element"
 df_elem_err[elem_col] = [Element(el).long_name for el in df_elem_err.index]
 
 df_melt = df_elem_err.melt(
-    id_vars=["MP Occurrences", "Test set standard deviation", elem_col],
+    id_vars=[train_count_col, test_set_std_col, elem_col],
     value_name=(val_col := "Error"),
     var_name=(clr_col := "Model"),
     ignore_index=False,

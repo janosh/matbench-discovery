@@ -10,16 +10,25 @@ authors:
     orcid: https://orcid.org/0000-0001-5233-3462
     corresponding: true
     affil_key: 1, 2
+    github: https://github.com/janosh
   - given-names: Rhys
     family-names: Goodall
     affiliation: University of Cambridge
     orcid: https://orcid.org/0000-0002-6589-1700
     affil_key: 1
+    github: https://github.com/comprhys
   - given-names: Anubhav
     family-names: Jain
     orcid: 0000-0001-5893-9967
     affiliation: Lawrence Berkeley National Laboratory
     affil_key: 2
+    github: https://github.com/computron
+  - given-names: Philipp
+    family-names: Benner
+    affiliation: German Federal Institute of Materials Research and Testing (BAM)
+    orcid: 0000-0002-0912-8137
+    affil_key: 3
+    github: https://github.com/pbenner
   - given-names: Kristin
     family-names: Persson
     orcid: 0000-0003-2495-5509
@@ -30,6 +39,7 @@ authors:
     orcid: 0000-0002-9616-3108
     affiliation: University of Cambridge
     affil_key: 1
+    github: https://github.com/alphaleegroup
 affiliations:
   - Cavendish Laboratory, University of Cambridge, UK
   - Lawrence Berkeley National Laboratory, Berkeley, USA

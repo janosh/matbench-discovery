@@ -58,7 +58,7 @@
 <RunTimeBars style="margin: 1em;" />
 {/if}
 
-> @label:fig:model-run-times-pie Creating this benchmark (excluding debugging runs) used a total of 3210 hours of compute time (mix of CPU and GPU, mostly CPU). Notably, the vast majority of that (2705 h) was used in the Bayesian optimization step of BOWSR + MEGnet.<br>
+> @label:fig:model-run-times-pie Creating this benchmark (excluding debugging runs) used a total of 3210 hours of compute time (mix of CPU and GPU, mostly CPU). Notably, the vast majority of that (2705 h) was used in the Bayesian optimization step of BOWSR.<br>
 > Some bars have two sections. The bottom shows training time, the upper test time. If there's only one section the model was not re-trained for this benchmark and the bar shows only the test time.
 
 ## Formation Energy MAE = Hull Distance MAE
@@ -161,4 +161,4 @@ Looking at the occurrence counts of isopointal prototypes in the shaded rectangl
 <BoxHullDistErrors />
 {/if}
 
-> @label:fig:box-hull-dist-errors Box plot of interquartile ranges (IQR) of hull distance errors for each model. The whiskers extend to the 5th and 95th percentiles. The median is shown as a horizontal line inside the box. BOWSR + MEGNet has the largest median error while Voronoi RF has the largest IQR. Note that MEGNet and CGCNN are the only models with positive median. Their hull distance errors are biased towards more frequently predicting thermodynamic instability, explaining why they are closest to getting the overall number of stable structures in the test set right ([see rolling classification precision/recall plots](/preprint#fig:cumulative-precision-recall))
+> @label:fig:box-hull-dist-errors Box plot of interquartile ranges (IQR) of hull distance errors for each model. The whiskers extend to the 5th and 95th percentiles. The median is shown as a horizontal line inside the box. BOWSR has the largest median error while Voronoi RF has the largest IQR. Note that MEGNet and CGCNN are the only models with positive median. Their hull distance errors are biased towards more frequently predicting thermodynamic instability, explaining why they are closest to getting the overall number of stable structures in the test set right ([see rolling classification precision/recall plots](/preprint#fig:cumulative-precision-recall))

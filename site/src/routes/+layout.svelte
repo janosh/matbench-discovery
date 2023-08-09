@@ -82,7 +82,11 @@
 
   <slot />
 
-  <PrevNext items={routes} current="/{url?.split(`/`)[1]}" style="margin-top: 4em;">
+  <PrevNext
+    items={routes}
+    current="/{url?.split(`/`)[1]}"
+    style="margin: 4em auto 1em; max-width: 60em;"
+  >
     <a slot="next" let:item={href} {href} class="link">{href} &raquo;</a>
     <a slot="prev" let:item={href} {href} class="link">&laquo; {href}</a>
   </PrevNext>

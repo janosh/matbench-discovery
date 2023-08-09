@@ -17,7 +17,7 @@ from pymatgen.io.jarvis import JarvisAtomsAdaptor
 from sklearn.metrics import r2_score
 from tqdm import tqdm
 
-from matbench_discovery import DEBUG, today
+from matbench_discovery import today
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
@@ -37,7 +37,7 @@ target_col = "e_form_per_atom_mp2020_corrected"
 input_col = "initial_structure"
 id_col = "material_id"
 device = "cuda" if torch.cuda.is_available() else "cpu"
-job_name = f"{model_name}-wbm-{task_type}{'-debug' if DEBUG else ''}"
+job_name = f"{model_name}-wbm-{task_type}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 
@@ -86,15 +86,15 @@ if task_type == "RS2RE":
 assert input_col in df_in, f"{input_col=} not in {list(df_in)}"
 
 df_in[input_col] = [
-    JarvisAtomsAdaptor.get_atoms(Structure.from_dict(x))
-    for x in tqdm(df_in[input_col], leave=False, desc="Converting to JARVIS atoms")
+    JarvisAtomsAdaptor.get_atoms(Structure.from_dict(dct))
+    for dct in tqdm(df_in[input_col], leave=False, desc="Converting to JARVIS atoms")
 ]
 
 
 # %%
 run_params = dict(
     data_path=data_path,
-    **{f"{dep}_version": version(dep) for dep in ("megnet", "numpy")},
+    versions={dep: version(dep) for dep in ("megnet", "numpy")},
     model_name=model_name,
     task_type=task_type,
     target_col=target_col,

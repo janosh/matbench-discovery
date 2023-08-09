@@ -14,7 +14,7 @@ from maml.apps.bowsr.optimizer import BayesianOptimizer
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import DEBUG, timestamp, today
+from matbench_discovery import timestamp, today
 from matbench_discovery.data import DATA_FILES, as_dict_handler
 from matbench_discovery.slurm import slurm_submit
 
@@ -35,7 +35,7 @@ slurm_array_task_count = 500
 # post submission
 slurm_max_parallel = 100
 energy_model = "megnet"
-job_name = f"bowsr-{energy_model}-wbm-{task_type}{'-debug' if DEBUG else ''}"
+job_name = f"bowsr-{energy_model}-wbm-{task_type}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 data_path = {
@@ -66,11 +66,11 @@ slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
 out_path = f"{out_dir}/bowsr-preds-{slurm_array_task_id}.json.gz"
 
 if os.path.isfile(out_path):
-    raise SystemExit(f"{out_path = } already exists, exciting early")
+    raise SystemExit(f"{out_path=} already exists, exciting early")
 
 print(f"\nJob started running {timestamp}")
 print(f"{data_path = }")
-print(f"{out_path = }")
+print(f"{out_path=}")
 
 df_in: pd.DataFrame = np.array_split(
     pd.read_json(data_path).set_index("material_id"), slurm_array_task_count
@@ -91,7 +91,7 @@ run_params = dict(
     data_path=data_path,
     df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     energy_model=energy_model,
-    **{f"{dep}_version": version(dep) for dep in ("maml", "numpy", energy_model)},
+    versions={dep: version(dep) for dep in ("maml", "numpy", energy_model)},
     optimize_kwargs=optimize_kwargs,
     task_type=task_type,
     slurm_vars=slurm_vars,
@@ -110,7 +110,7 @@ if task_type == "RS2RE":
 
 structures = df_in[input_col].map(Structure.from_dict).to_dict()
 
-for material_id in tqdm(structures, desc="Main loop", disable=None):
+for material_id in tqdm(structures, desc="Relaxing", disable=None):
     structure = structures[material_id]
     if material_id in relax_results:
         continue
@@ -125,8 +125,8 @@ for material_id in tqdm(structures, desc="Main loop", disable=None):
 
         try:
             struct_bowsr, energy_bowsr = optimizer.get_optimized_structure_and_energy()
-        except Exception as error:
-            print(f"Failed to relax {material_id}: {error}")
+        except Exception as exc:
+            print(f"Failed to relax {material_id}: {exc}")
 
         results = {
             f"e_form_per_atom_bowsr_{energy_model}": model.predict_energy(struct_bowsr),

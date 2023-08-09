@@ -1,6 +1,6 @@
 <script>
   import { repository as repo } from '$site/package.json'
-  import EachScatterModels from '$figs/each-scatter-models-3x3.svelte'
+  import EachScatterModels from '$figs/each-scatter-models-5x2.svelte'
   import MetricsTable from '$figs/metrics-table.svelte'
   import CumulativePrecisionRecall from '$figs/cumulative-precision-recall.svelte'
   import RollingMaeVsHullDistModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'
@@ -211,7 +211,7 @@ A line terminates when a model believes there are no more materials in the WBM t
 <EachScatterModels />
 {/if}
 
-> @label:fig:each-scatter-models Parity plot of DFT hull distance vs model hull distance predictions (derived from predicted formation energies). All models do well on the outliers. They suffer most in the mode of the distribution around the convex hull.
+> @label:fig:each-scatter-models Parity plot of DFT vs model-predicted hull distance sorted from top to bottom by increasing MAE. All models do well on the outliers. They suffer most in the mode of the distribution around the convex hull.
 > Interestingly, all models do very well on the outliers. Where they suffer is in the mode of the distribution near the convex hull. All models exhibit a horizontal spike at 0 predicted hull distance for crystals that are actually very unstable, resulting in false positive predictions. Some models, Wrenformer in particular, also have a spike pointing upwards, which are materials actually close to the hull but predicted to be highly unstable by the model. These are false negatives, or missed needles in the haystack we're searching that is materials space.
 
 <!-- TODO maybe mention we consistently see deducting old MP corrections and applying 2020 scheme from MEGNEt e_form predictions increases MAE, no matter if paired with BOWSR, M3GNet, CHGNet or standalone -->

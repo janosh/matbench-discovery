@@ -47,6 +47,63 @@ references:
   type: chapter
   URL: https://doi.org/10.1007/978-94-011-4653-1_21
 
+- id: allen_learning_2023
+  abstract: >-
+    The development of machine learning models has led to an abundance of
+    datasets containing quantum mechanical (QM) calculations for molecular and
+    material systems. However, traditional training methods for machine learning
+    models are unable to leverage the plethora of data available as they require
+    that each dataset be generated using the same QM method. Taking machine
+    learning interatomic potentials (MLIPs) as an example, we show that
+    meta-learning techniques, a recent advancement from the machine learning
+    community, can be used to fit multiple levels of QM theory in the same
+    training process. Meta-learning changes the training procedure to learn a
+    representation that can be easily re-trained to new tasks with small amounts
+    of data. We then demonstrate that meta-learning enables simultaneously
+    training to multiple large organic molecule datasets. As a proof of concept,
+    we examine the performance of a MLIP refit to a small drug-like molecule and
+    show that pre-training potentials to multiple levels of theory with
+    meta-learning improves performance. This difference in performance can be
+    seen both in the reduced error and in the improved smoothness of the
+    potential energy surface produced. We therefore show that meta-learning can
+    utilize existing datasets with inconsistent QM levels of theory to produce
+    models that are better at specializing to new datasets. This opens new
+    routes for creating pre-trained, foundational models for interatomic
+    potentials.
+  accessed:
+    - year: 2023
+      month: 7
+      day: 30
+  author:
+    - family: Allen
+      given: Alice E. A.
+    - family: Lubbers
+      given: Nicholas
+    - family: Matin
+      given: Sakib
+    - family: Smith
+      given: Justin
+    - family: Messerly
+      given: Richard
+    - family: Tretiak
+      given: Sergei
+    - family: Barros
+      given: Kipton
+  citation-key: allen_learning_2023
+  issued:
+    - year: 2023
+      month: 7
+      day: 8
+  number: arXiv:2307.04012
+  publisher: arXiv
+  source: arXiv.org
+  title: >-
+    Learning Together: Towards foundational models for machine learning
+    interatomic potentials with meta-learning
+  title-short: Learning Together
+  type: article
+  URL: http://arxiv.org/abs/2307.04012
+
 - id: aykol_rational_2021
   abstract: >-
     The rational solid-state synthesis of inorganic compounds is formulated as
@@ -89,6 +146,48 @@ references:
   type: article-journal
   URL: https://doi.org/10.1021/jacs.1c04888
   volume: '143'
+
+- id: aykol_thermodynamic_2018
+  abstract: >-
+    Realizing the growing number of possible or hypothesized metastable
+    crystalline materials is extremely challenging. There is no rigorous metric
+    to identify which compounds can or cannot be synthesized. We present a
+    thermodynamic upper limit on the energy scale, above which the laboratory
+    synthesis of a polymorph is highly unlikely. The limit is defined on the
+    basis of the amorphous state, and we validate its utility by effectively
+    classifying more than 700 polymorphs in 41 common inorganic material systems
+    in the Materials Project for synthesizability. The amorphous limit is highly
+    chemistry-dependent and is found to be in complete agreement with our
+    knowledge of existing polymorphs in these 41 systems, whether made by the
+    nature or in a laboratory. Quantifying the limits of metastability for
+    realizable compounds, the approach is expected to find major applications in
+    materials discovery.
+  author:
+    - family: Aykol
+      given: Muratahan
+    - family: Dwaraknath
+      given: Shyam S.
+    - family: Sun
+      given: Wenhao
+    - family: Persson
+      given: Kristin A.
+  citation-key: aykol_thermodynamic_2018
+  container-title: Science Advances
+  container-title-short: Sci Adv
+  DOI: 10.1126/sciadv.aaq0148
+  ISSN: 2375-2548
+  issue: '4'
+  issued:
+    - year: 2018
+      month: 4
+  language: eng
+  page: eaaq0148
+  PMCID: PMC5930398
+  PMID: '29725618'
+  source: PubMed
+  title: Thermodynamic limit for synthesis of metastable inorganic materials
+  type: article-journal
+  volume: '4'
 
 - id: bartel_critical_2020
   abstract: >-
@@ -254,7 +353,7 @@ references:
   type: article
   URL: http://arxiv.org/abs/2206.07697
 
-- id: batzner_e3-equivariant_2022
+- id: batzner_equivariant_2022
   abstract: >-
     This work presents Neural Equivariant Interatomic Potentials (NequIP), an
     E(3)-equivariant neural network approach for learning interatomic potentials
@@ -294,7 +393,7 @@ references:
       given: Tess E.
     - family: Kozinsky
       given: Boris
-  citation-key: batzner_e3-equivariant_2022
+  citation-key: batzner_equivariant_2022
   container-title: Nature Communications
   container-title-short: Nat Commun
   DOI: 10.1038/s41467-022-29939-5
@@ -602,6 +701,94 @@ references:
   URL: https://www.nature.com/articles/s43588-022-00349-3
   volume: '2'
 
+- id: choudhary_atomistic_2021
+  abstract: >-
+    Graph neural networks (GNN) have been shown to provide substantial
+    performance improvements for atomistic material representation and modeling
+    compared with descriptor-based machine learning models. While most existing
+    GNN models for atomistic predictions are based on atomic distance
+    information, they do not explicitly incorporate bond angles, which are
+    critical for distinguishing many atomic structures. Furthermore, many
+    material properties are known to be sensitive to slight changes in bond
+    angles. We present an Atomistic Line Graph Neural Network (ALIGNN), a GNN
+    architecture that performs message passing on both the interatomic bond
+    graph and its line graph corresponding to bond angles. We demonstrate that
+    angle information can be explicitly and efficiently included, leading to
+    improved performance on multiple atomistic prediction tasks. We ALIGNN
+    models for predicting 52 solid-state and molecular properties available in
+    the JARVIS-DFT, Materials project, and QM9 databases. ALIGNN can outperform
+    some previously reported GNN models on atomistic prediction tasks with
+    better or comparable model training speed.
+  accessed:
+    - year: 2023
+      month: 7
+      day: 27
+  author:
+    - family: Choudhary
+      given: Kamal
+    - family: DeCost
+      given: Brian
+  citation-key: choudhary_atomistic_2021
+  container-title: npj Computational Materials
+  container-title-short: npj Comput Mater
+  DOI: 10.1038/s41524-021-00650-1
+  ISSN: 2057-3960
+  issue: '1'
+  issued:
+    - year: 2021
+      month: 11
+      day: 15
+  language: en
+  license: >-
+    2021 This is a U.S. government work and not under copyright protection in
+    the U.S.; foreign copyright protection may apply
+  number: '1'
+  page: 1-8
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: >-
+    Atomistic Line Graph Neural Network for improved materials property
+    predictions
+  type: article-journal
+  URL: https://www.nature.com/articles/s41524-021-00650-1
+  volume: '7'
+
+- id: choudhary_unified_2023
+  accessed:
+    - year: 2023
+      month: 7
+      day: 20
+  author:
+    - family: Choudhary
+      given: Kamal
+    - family: DeCost
+      given: Brian
+    - family: Major
+      given: Lily
+    - family: Butler
+      given: Keith
+    - family: Thiyagalingam
+      given: Jeyan
+    - family: Tavazza
+      given: Francesca
+  citation-key: choudhary_unified_2023
+  container-title: Digital Discovery
+  DOI: 10.1039/D2DD00096B
+  issue: '2'
+  issued:
+    - year: 2023
+  language: en
+  page: 346-355
+  publisher: Royal Society of Chemistry
+  source: pubs.rsc.org
+  title: >-
+    Unified graph neural network force-field for the periodic table: solid state
+    applications
+  title-short: Unified graph neural network force-field for the periodic table
+  type: article-journal
+  URL: https://pubs.rsc.org/en/content/articlelanding/2023/dd/d2dd00096b
+  volume: '2'
+
 - id: curtarolo_aflow_2012
   abstract: >-
     Recent advances in computational materials science present novel
@@ -865,6 +1052,47 @@ references:
   URL: https://www.nature.com/articles/s41467-020-19168-z
   volume: '11'
 
+- id: drautz_atomic_2019
+  abstract: >-
+    The atomic cluster expansion is developed as a complete descriptor of the
+    local atomic environment, including multicomponent materials, and its
+    relation to a number of other descriptors and potentials is discussed. The
+    effort for evaluating the atomic cluster expansion is shown to scale
+    linearly with the number of neighbors, irrespective of the order of the
+    expansion. Application to small Cu clusters demonstrates smooth convergence
+    of the atomic cluster expansion to meV accuracy. By introducing nonlinear
+    functions of the atomic cluster expansion an interatomic potential is
+    obtained that is comparable in accuracy to state-of-the-art machine learning
+    potentials. Because of the efficient convergence of the atomic cluster
+    expansion relevant subspaces can be sampled uniformly and exhaustively. This
+    is demonstrated by testing against a large database of density functional
+    theory calculations for copper.
+  accessed:
+    - year: 2023
+      month: 7
+      day: 27
+  author:
+    - family: Drautz
+      given: Ralf
+  citation-key: drautz_atomic_2019
+  container-title: Physical Review B
+  container-title-short: Phys. Rev. B
+  DOI: 10.1103/PhysRevB.99.014104
+  issue: '1'
+  issued:
+    - year: 2019
+      month: 1
+      day: 8
+  page: '014104'
+  publisher: American Physical Society
+  source: APS
+  title: >-
+    Atomic cluster expansion for accurate and transferable interatomic
+    potentials
+  type: article-journal
+  URL: https://link.aps.org/doi/10.1103/PhysRevB.99.014104
+  volume: '99'
+
 - id: dunn_benchmarking_2020
   abstract: >-
     We present a benchmark test suite and an automated machine learning
@@ -980,6 +1208,52 @@ references:
   type: article-journal
   URL: https://www.nature.com/articles/s41524-022-00891-8
   volume: '8'
+
+- id: glawe_optimal_2016
+  abstract: >-
+    Starting from the experimental data contained in the inorganic crystal
+    structure database, we use a statistical analysis to determine the
+    likelihood that a chemical element A can be replaced by another B in a given
+    structure. This information can be used to construct a matrix where each
+    entry is a measure of this likelihood. By ordering the rows and columns of
+    this matrix in order to reduce its bandwidth, we construct a one-dimension
+    ordering of the chemical elements, analogous to the famous Pettifor scale.
+    The new scale shows large similarities with the one of Pettifor, but also
+    striking differences, especially in what comes to the ordering of the
+    non-metals.
+  accessed:
+    - year: 2023
+      month: 7
+      day: 23
+  author:
+    - family: Glawe
+      given: Henning
+    - family: Sanna
+      given: Antonio
+    - family: Gross
+      given: E. K. U.
+    - family: Marques
+      given: Miguel A. L.
+  citation-key: glawe_optimal_2016
+  container-title: New Journal of Physics
+  container-title-short: New J. Phys.
+  DOI: 10.1088/1367-2630/18/9/093011
+  ISSN: 1367-2630
+  issue: '9'
+  issued:
+    - year: 2016
+      month: 9
+  language: en
+  page: '093011'
+  publisher: IOP Publishing
+  source: Institute of Physics
+  title: >-
+    The optimal one dimensional periodic table: a modified Pettifor chemical
+    scale from data mining
+  title-short: The optimal one dimensional periodic table
+  type: article-journal
+  URL: https://dx.doi.org/10.1088/1367-2630/18/9/093011
+  volume: '18'
 
 - id: goodall_predicting_2020
   abstract: "Machine learning has the potential to accelerate materials discovery by accurately predicting materials properties at a low computational cost. However, the model inputs remain a key stumbling block. Current methods typically use descriptors constructed from knowledge of either the full crystal structure\_—\_therefore only applicable to materials with already characterised structures\_—\_or structure-agnostic fixed-length representations hand-engineered from the stoichiometry. We develop a machine learning approach that takes only the stoichiometry as input and automatically learns appropriate and systematically improvable descriptors from data. Our key insight is to treat the stoichiometric formula as a dense weighted graph between elements. Compared to the state of the art for structure-agnostic methods, our approach achieves lower errors with less data."
@@ -1245,6 +1519,189 @@ references:
   type: article
   URL: http://arxiv.org/abs/2305.14247
 
+- id: kovacs_quantitative_2021
+  abstract: >-
+    Organic synthesis remains a major challenge in drug discovery. Although a
+    plethora of machine learning models have been proposed as solutions in the
+    literature, they suffer from being opaque black-boxes. It is neither clear
+    if the models are making correct predictions because they inferred the
+    salient chemistry, nor is it clear which training data they are relying on
+    to reach a prediction. This opaqueness hinders both model developers and
+    users. In this paper, we quantitatively interpret the Molecular Transformer,
+    the state-of-the-art model for reaction prediction. We develop a framework
+    to attribute predicted reaction outcomes both to specific parts of
+    reactants, and to reactions in the training set. Furthermore, we demonstrate
+    how to retrieve evidence for predicted reaction outcomes, and understand
+    counterintuitive predictions by scrutinising the data. Additionally, we
+    identify Clever Hans predictions where the correct prediction is reached for
+    the wrong reason due to dataset bias. We present a new debiased dataset that
+    provides a more realistic assessment of model performance, which we propose
+    as the new standard benchmark for comparing reaction prediction models.
+  accessed:
+    - year: 2023
+      month: 7
+      day: 4
+  author:
+    - family: Kovács
+      given: Dávid Péter
+    - family: McCorkindale
+      given: William
+    - family: Lee
+      given: Alpha A.
+  citation-key: kovacs_quantitative_2021
+  container-title: Nature Communications
+  container-title-short: Nat Commun
+  DOI: 10.1038/s41467-021-21895-w
+  ISSN: 2041-1723
+  issue: '1'
+  issued:
+    - year: 2021
+      month: 3
+      day: 16
+  language: en
+  license: 2021 The Author(s)
+  number: '1'
+  page: '1695'
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: >-
+    Quantitative interpretation explains machine learning models for chemical
+    reaction prediction and uncovers bias
+  type: article-journal
+  URL: https://www.nature.com/articles/s41467-021-21895-w
+  volume: '12'
+
+- id: kpanou_robustness_2021
+  abstract: >-
+    Background
+
+    Deep learning methods are a proven commodity in many fields and endeavors.
+    One of these endeavors is predicting the presence of adverse drug–drug
+    interactions (DDIs). The models generated can predict, with reasonable
+    accuracy, the phenotypes arising from the drug interactions using their
+    molecular structures. Nevertheless, this task requires improvement to be
+    truly useful. Given the complexity of the predictive task, an extensive
+    benchmarking on structure-based models for DDIs prediction was performed to
+    evaluate their drawbacks and advantages.
+
+
+    Results
+
+    We rigorously tested various structure-based models that predict drug
+    interactions using different splitting strategies to simulate different
+    real-world scenarios. In addition to the effects of different training and
+    testing setups on the robustness and generalizability of the models, we then
+    explore the contribution of traditional approaches such as multitask
+    learning and data augmentation.
+
+
+    Conclusion
+
+    Structure-based models tend to generalize poorly to unseen drugs despite
+    their ability to identify new DDIs among drugs seen during training
+    accurately. Indeed, they efficiently propagate information between known
+    drugs and could be valuable for discovering new DDIs in a database. However,
+    these models will most probably fail when exposed to unknown drugs. While
+    multitask learning does not help in our case to solve the problem, the use
+    of data augmentation does at least mitigate it. Therefore, researchers must
+    be cautious of the bias of the random evaluation scheme, especially if their
+    goal is to discover new DDIs.
+
+
+    Supplementary Information
+
+    The online version contains supplementary material available at
+    10.1186/s12859-021-04398-9.
+  accessed:
+    - year: 2023
+      month: 7
+      day: 4
+  author:
+    - family: Kpanou
+      given: Rogia
+    - family: Osseni
+      given: Mazid Abiodoun
+    - family: Tossou
+      given: Prudencio
+    - family: Laviolette
+      given: Francois
+    - family: Corbeil
+      given: Jacques
+  citation-key: kpanou_robustness_2021
+  container-title: BMC Bioinformatics
+  container-title-short: BMC Bioinformatics
+  DOI: 10.1186/s12859-021-04398-9
+  ISSN: 1471-2105
+  issued:
+    - year: 2021
+      month: 10
+      day: 4
+  page: '477'
+  PMCID: PMC8489092
+  PMID: '34607569'
+  source: PubMed Central
+  title: On the robustness of generalization of drug–drug interaction models
+  type: article-journal
+  URL: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8489092/
+  volume: '22'
+
+- id: li_critical_2023
+  abstract: >-
+    Recent advances in machine learning (ML) methods have led to substantial
+    improvement in materials property prediction against community benchmarks,
+    but an excellent benchmark score may not imply good generalization of
+    performance. Here we show that ML models trained on the Materials Project
+    2018 (MP18) dataset can have severely degraded prediction performance on new
+    compounds in the Materials Project 2021 (MP21) dataset. We document
+    performance degradation in graph neural networks and traditional
+    descriptor-based ML models for both quantitative and qualitative
+    predictions. We find the source of the predictive degradation is due to the
+    distribution shift between the MP18 and MP21 versions. This is revealed by
+    the uniform manifold approximation and projection (UMAP) of the feature
+    space. We then show that the performance degradation issue can be foreseen
+    using a few simple tools. Firstly, the UMAP can be used to investigate the
+    connectivity and relative proximity of the training and test data within
+    feature space. Secondly, the disagreement between multiple ML models on the
+    test data can illuminate out-of-distribution samples. We demonstrate that
+    the simple yet efficient UMAP-guided and query-by-committee acquisition
+    strategies can greatly improve prediction accuracy through adding only 1~\%
+    of the test data. We believe this work provides valuable insights for
+    building materials databases and ML models that enable better prediction
+    robustness and generalizability.
+  accessed:
+    - year: 2023
+      month: 6
+      day: 18
+  author:
+    - family: Li
+      given: Kangming
+    - family: DeCost
+      given: Brian
+    - family: Choudhary
+      given: Kamal
+    - family: Greenwood
+      given: Michael
+    - family: Hattrick-Simpers
+      given: Jason
+  citation-key: li_critical_2023
+  container-title: npj Computational Materials
+  container-title-short: npj Comput Mater
+  DOI: 10.1038/s41524-023-01012-9
+  ISSN: 2057-3960
+  issue: '1'
+  issued:
+    - year: 2023
+      month: 4
+      day: 7
+  page: '55'
+  source: arXiv.org
+  title: >-
+    A critical examination of robustness and generalizability of machine
+    learning prediction of materials properties
+  type: article-journal
+  URL: http://arxiv.org/abs/2210.13597
+  volume: '9'
+
 - id: mcdermott_graph-based_2021
   abstract: >-
     Accelerated inorganic synthesis remains a significant challenge in the
@@ -1402,6 +1859,56 @@ references:
   URL: https://link.aps.org/doi/10.1103/PhysRevMaterials.4.063801
   volume: '4'
 
+- id: qi_robust_2023
+  abstract: >-
+    Machine learning interatomic potentials (MLIPs) enable the accurate
+    simulation of materials at larger sizes and time scales, and play
+    increasingly important roles in the computational understanding and design
+    of materials. However, MLIPs are only as accurate and robust as the data
+    they are trained on. In this work, we present DImensionality-Reduced Encoded
+    Clusters with sTratified (DIRECT) sampling as an approach to select a robust
+    training set of structures from a large and complex configuration space. By
+    applying DIRECT sampling on the Materials Project relaxation trajectories
+    dataset with over one million structures and 89 elements, we develop an
+    improved materials 3-body graph network (M3GNet) universal potential that
+    extrapolate more reliably to unseen structures. We further show that
+    molecular dynamics (MD) simulations with universal potentials such as M3GNet
+    can be used in place of expensive \textit{ab initio} MD to rapidly create a
+    large configuration space for target materials systems. Combined with DIRECT
+    sampling, we develop a highly reliable moment tensor potential for Ti-H
+    system without the need for iterative optimization. This work paves the way
+    towards robust high throughput development of MLIPs across any compositional
+    complexity.
+  accessed:
+    - year: 2023
+      month: 7
+      day: 27
+  author:
+    - family: Qi
+      given: Ji
+    - family: Ko
+      given: Tsz Wai
+    - family: Wood
+      given: Brandon C.
+    - family: Pham
+      given: Tuan Anh
+    - family: Ong
+      given: Shyue Ping
+  citation-key: qi_robust_2023
+  DOI: 10.48550/arXiv.2307.13710
+  issued:
+    - year: 2023
+      month: 7
+      day: 24
+  number: arXiv:2307.13710
+  publisher: arXiv
+  source: arXiv.org
+  title: >-
+    Robust Training of Machine Learning Interatomic Potentials with
+    Dimensionality Reduction and Stratified Sampling
+  type: article
+  URL: http://arxiv.org/abs/2307.13710
+
 - id: raccuglia_machine-learning-assisted_2016
   abstract: >-
     Failed chemical reactions are rarely reported, even though they could still
@@ -1454,6 +1961,50 @@ references:
   type: article-journal
   URL: https://www.nature.com/articles/nature17439
   volume: '533'
+
+- id: rupp_fast_2012
+  abstract: >-
+    We introduce a machine learning model to predict atomization energies of a
+    diverse set of organic molecules, based on nuclear charges and atomic
+    positions only. The problem of solving the molecular Schrödinger equation is
+    mapped onto a nonlinear statistical regression problem of reduced
+    complexity. Regression models are trained on and compared to atomization
+    energies computed with hybrid density-functional theory. Cross validation
+    over more than seven thousand organic molecules yields a mean absolute error
+    of ∼10 kcal/mol. Applicability is demonstrated for the prediction of
+    molecular atomization potential energy curves.
+  accessed:
+    - year: 2023
+      month: 7
+      day: 27
+  author:
+    - family: Rupp
+      given: Matthias
+    - family: Tkatchenko
+      given: Alexandre
+    - family: Müller
+      given: Klaus-Robert
+    - family: Lilienfeld
+      given: O. Anatole
+      non-dropping-particle: von
+  citation-key: rupp_fast_2012
+  container-title: Physical Review Letters
+  container-title-short: Phys. Rev. Lett.
+  DOI: 10.1103/PhysRevLett.108.058301
+  issue: '5'
+  issued:
+    - year: 2012
+      month: 1
+      day: 31
+  page: '058301'
+  publisher: American Physical Society
+  source: APS
+  title: >-
+    Fast and Accurate Modeling of Molecular Atomization Energies with Machine
+    Learning
+  type: article-journal
+  URL: https://link.aps.org/doi/10.1103/PhysRevLett.108.058301
+  volume: '108'
 
 - id: saal_materials_2013
   abstract: >-
@@ -1509,6 +2060,56 @@ references:
   type: article-journal
   URL: https://doi.org/10.1007/s11837-013-0755-4
   volume: '65'
+
+- id: schutt_how_2014
+  abstract: >-
+    High-throughput density functional calculations of solids are highly
+    time-consuming. As an alternative, we propose a machine learning approach
+    for the fast prediction of solid-state properties. To achieve this, local
+    spin-density approximation calculations are used as a training set. We focus
+    on predicting the value of the density of electronic states at the Fermi
+    energy. We find that conventional representations of the input data, such as
+    the Coulomb matrix, are not suitable for the training of learning machines
+    in the case of periodic solids. We propose a novel crystal structure
+    representation for which learning and competitive prediction accuracies
+    become possible within an unrestricted class of spd systems of arbitrary
+    unit-cell size.
+  accessed:
+    - year: 2023
+      month: 7
+      day: 27
+  author:
+    - family: Schütt
+      given: K. T.
+    - family: Glawe
+      given: H.
+    - family: Brockherde
+      given: F.
+    - family: Sanna
+      given: A.
+    - family: Müller
+      given: K. R.
+    - family: Gross
+      given: E. K. U.
+  citation-key: schutt_how_2014
+  container-title: Physical Review B
+  container-title-short: Phys. Rev. B
+  DOI: 10.1103/PhysRevB.89.205118
+  issue: '20'
+  issued:
+    - year: 2014
+      month: 5
+      day: 21
+  page: '205118'
+  publisher: American Physical Society
+  source: APS
+  title: >-
+    How to represent crystal structures for machine learning: Towards fast
+    prediction of electronic properties
+  title-short: How to represent crystal structures for machine learning
+  type: article-journal
+  URL: https://link.aps.org/doi/10.1103/PhysRevB.89.205118
+  volume: '89'
 
 - id: takamoto_teanet_2022
   abstract: >-
@@ -1651,6 +2252,52 @@ references:
   URL: https://www.nature.com/articles/s41467-022-30687-9
   volume: '13'
 
+- id: thomas_tensor_2018
+  abstract: >-
+    We introduce tensor field neural networks, which are locally equivariant to
+    3D rotations, translations, and permutations of points at every layer. 3D
+    rotation equivariance removes the need for data augmentation to identify
+    features in arbitrary orientations. Our network uses filters built from
+    spherical harmonics; due to the mathematical consequences of this filter
+    choice, each layer accepts as input (and guarantees as output) scalars,
+    vectors, and higher-order tensors, in the geometric sense of these terms. We
+    demonstrate the capabilities of tensor field networks with tasks in
+    geometry, physics, and chemistry.
+  accessed:
+    - year: 2023
+      month: 7
+      day: 23
+  author:
+    - family: Thomas
+      given: Nathaniel
+    - family: Smidt
+      given: Tess
+    - family: Kearnes
+      given: Steven
+    - family: Yang
+      given: Lusann
+    - family: Li
+      given: Li
+    - family: Kohlhoff
+      given: Kai
+    - family: Riley
+      given: Patrick
+  citation-key: thomas_tensor_2018
+  DOI: 10.48550/arXiv.1802.08219
+  issued:
+    - year: 2018
+      month: 5
+      day: 18
+  number: arXiv:1802.08219
+  publisher: arXiv
+  source: arXiv.org
+  title: >-
+    Tensor field networks: Rotation- and translation-equivariant neural networks
+    for 3D point clouds
+  title-short: Tensor field networks
+  type: article
+  URL: http://arxiv.org/abs/1802.08219
+
 - id: tran_open_2022
   abstract: >-
     The development of machine learning models for electrocatalysts requires a
@@ -1780,6 +2427,45 @@ references:
   title: Attention Is All You Need
   type: article-journal
   URL: http://arxiv.org/abs/1706.03762
+
+- id: vonlilienfeld_retrospective_2020
+  abstract: >-
+    Over the last decade, we have witnessed the emergence of ever more machine
+    learning applications in all aspects of the chemical sciences. Here, we
+    highlight specific achievements of machine learning models in the field of
+    computational chemistry by considering selected studies of electronic
+    structure, interatomic potentials, and chemical compound space in
+    chronological order.
+  accessed:
+    - year: 2023
+      month: 7
+      day: 29
+  author:
+    - family: Lilienfeld
+      given: O. Anatole
+      non-dropping-particle: von
+    - family: Burke
+      given: Kieron
+  citation-key: vonlilienfeld_retrospective_2020
+  container-title: Nature Communications
+  container-title-short: Nat Commun
+  DOI: 10.1038/s41467-020-18556-9
+  ISSN: 2041-1723
+  issue: '1'
+  issued:
+    - year: 2020
+      month: 9
+      day: 29
+  language: en
+  license: 2020 The Author(s)
+  number: '1'
+  page: '4895'
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: Retrospective on a decade of machine learning for chemical discovery
+  type: article-journal
+  URL: https://www.nature.com/articles/s41467-020-18556-9
+  volume: '11'
 
 - id: wang_predicting_2021
   abstract: >-
@@ -1992,6 +2678,68 @@ references:
   type: article-journal
   URL: https://www.nature.com/articles/s43588-022-00369-z
   volume: '3'
+
+- id: wu_moleculenet_2018
+  abstract: >-
+    Molecular machine learning has been maturing rapidly over the last few
+    years. Improved methods and the presence of larger datasets have enabled
+    machine learning algorithms to make increasingly accurate predictions about
+    molecular properties. However, algorithmic progress has been limited due to
+    the lack of a standard benchmark to compare the efficacy of proposed
+    methods; most new algorithms are benchmarked on different datasets making it
+    challenging to gauge the quality of proposed methods. This work introduces
+    MoleculeNet, a large scale benchmark for molecular machine learning.
+    MoleculeNet curates multiple public datasets, establishes metrics for
+    evaluation, and offers high quality open-source implementations of multiple
+    previously proposed molecular featurization and learning algorithms
+    (released as part of the DeepChem open source library). MoleculeNet
+    benchmarks demonstrate that learnable representations are powerful tools for
+    molecular machine learning and broadly offer the best performance. However,
+    this result comes with caveats. Learnable representations still struggle to
+    deal with complex tasks under data scarcity and highly imbalanced
+    classification. For quantum mechanical and biophysical datasets, the use of
+    physics-aware featurizations can be more important than choice of particular
+    learning algorithm.
+  accessed:
+    - year: 2023
+      month: 7
+      day: 23
+  author:
+    - family: Wu
+      given: Zhenqin
+    - family: Ramsundar
+      given: Bharath
+    - family: Feinberg
+      given: Evan N.
+    - family: Gomes
+      given: Joseph
+    - family: Geniesse
+      given: Caleb
+    - family: Pappu
+      given: Aneesh S.
+    - family: Leswing
+      given: Karl
+    - family: Pande
+      given: Vijay
+  citation-key: wu_moleculenet_2018
+  container-title: Chemical Science
+  container-title-short: Chem. Sci.
+  DOI: 10.1039/C7SC02664A
+  ISSN: 2041-6539
+  issue: '2'
+  issued:
+    - year: 2018
+      month: 1
+      day: 3
+  language: en
+  page: 513-530
+  publisher: The Royal Society of Chemistry
+  source: pubs.rsc.org
+  title: 'MoleculeNet: a benchmark for molecular machine learning'
+  title-short: MoleculeNet
+  type: article-journal
+  URL: https://pubs.rsc.org/en/content/articlelanding/2018/sc/c7sc02664a
+  volume: '9'
 
 - id: xie_crystal_2018
   abstract: >-
