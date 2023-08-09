@@ -65,6 +65,7 @@ class PredFiles(Files):
 
     alignn = "alignn/2023-06-02-alignn-wbm-IS2RE.csv.gz"
     # alignn_pretrained = "alignn/2023-06-03-mp-e-form-alignn-wbm-IS2RE.csv.gz"
+    alignn_ff = "alignn_ff/2023-07-11-alignn-ff-wbm-IS2RE.csv.gz"
 
 
 # model_labels remaps model keys to pretty plot labels (see Files)

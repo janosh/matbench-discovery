@@ -1,8 +1,8 @@
-model_name: ALIGNN
-model_version: 2023.01.10
+model_name: ALIGNN FF
+model_version: 2023.07.01
 matbench_discovery_version: 1.0
-date_added: "2023-06-02"
-date_published: "2021-02-22"
+date_added: "2023-07-11"
+date_published: "2022-09-16"
 authors:
   - name: Kamal Choudhary
     affiliation: National Institute of Standards and Technology
@@ -11,14 +11,26 @@ authors:
   - name: Brian DeCost
     affiliation: National Institute of Standards and Technology
     orcid: https://orcid.org/0000-0002-3459-5888
+  - name: Lily Major
+    affiliation: Aberystwyth University, UK
+    orcid: https://orcid.org/0000-0002-5783-8432
+  - name: Keith Butler
+    affiliation: Rutherford Appleton Laboratory, UK
+    orcid: https://orcid.org/0000-0001-5432-5597
+  - name: Jeyan Thiyagalingam
+    affiliation: Rutherford Appleton Laboratory, UK
+    orcid: https://orcid.org/0000-0002-2167-1343
+  - name: Francesca Tavazza
+    affiliation: National Institute of Standards and Technology
+    orcid: https://orcid.org/0000-0002-5602-180X
   - name: Philipp Benner
     affiliation: Bundesanstalt für Materialforschung und -prüfung BAM
     orcid: https://orcid.org/0000-0002-0912-8137
     github: https://github.com/pbenner
 repo: https://github.com/usnistgov/alignn
 url: https://jarvis.nist.gov/jalignn
-doi: https://nature.com/articles/s41524-021-00650-1
-preprint: https://arxiv.org/abs/2106.01829
+doi: https://doi.org/10.1039/D2DD00096B
+preprint: https://arxiv.org/abs/2209.05554
 requirements:
   ase: 3.22.0
   dgl-cu111: 0.6.1
@@ -26,5 +38,5 @@ requirements:
   pandas: 2.0.1
   scikit-learn: 1.2.2
   torch: 1.9.0+cu111
-trained_for_benchmark: true
+trained_for_benchmark: false
 # hyperparams: see align-config.json

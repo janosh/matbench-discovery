@@ -1,0 +1,73 @@
+diff --git a/alignn/ff/ff.py b/alignn/ff/ff.py
+index 2dc916f..a569184 100644
+--- a/alignn/ff/ff.py
++++ b/alignn/ff/ff.py
+@@ -46,6 +46,8 @@ from jarvis.analysis.defects.surface import Surface
+ # from jarvis.core.kpoints import Kpoints3D as Kpoints
+ # from jarvis.core.atoms import get_supercell_dims
+
++import torch
++
+ try:
+     from gpaw import GPAW, PW
+ except Exception:
+@@ -62,7 +64,6 @@ __author__ = "Kamal Choudhary, Brian DeCost, Keith Butler, Lily Major"
+ def default_path():
+     """Get default model path."""
+     dpath = os.path.abspath(str(os.path.join(os.path.dirname(__file__), ".")))
+-    print("model_path", dpath)
+     return dpath
+
+
+@@ -138,8 +139,6 @@ class AlignnAtomwiseCalculator(ase.calculators.calculator.Calculator):
+
+         config.model.output_features = 1
+
+-        import torch
+-
+         if self.device is None:
+             self.device = torch.device(
+                 "cuda" if torch.cuda.is_available() else "cpu"
+@@ -193,6 +192,7 @@ class ForceField(object):
+         logfile="alignn_ff.log",
+         dyn=None,
+         communicator=None,
++        device="cuda" if torch.cuda.is_available() else "cpu",
+     ):
+         """Initialize class."""
+         self.jarvis_atoms = jarvis_atoms
+@@ -225,12 +225,13 @@ class ForceField(object):
+         # print ('STRUCTURE PROVIDED:')
+         # print (ase_to_atoms(self.atoms))
+         # print ()
++        import torch
+         self.atoms.set_calculator(
+             AlignnAtomwiseCalculator(
+                 path=self.model_path,
+                 include_stress=self.include_stress,
+                 model_filename=self.model_filename,
+-                # device="cuda" if torch.cuda.is_available() else "cpu",
++                device=device,
+             )
+         )
+
+@@ -238,6 +239,7 @@ class ForceField(object):
+         """Print info."""
+         if isinstance(self.atoms, ExpCellFilter):
+             self.atoms = self.atoms.atoms
++        return
+         line = ""
+         try:
+             line = f"time={self.dyn.get_time() / units.fs: 5.0f} fs "
+@@ -297,9 +299,9 @@ class ForceField(object):
+             raise ValueError("Check optimizer", optimizer)
+         if optimize_lattice:
+             self.atoms = ExpCellFilter(self.atoms)
+-        print("OPTIMIZATION")
++
+         self.dyn = optimizer(
+-            self.atoms, trajectory="opt.traj", logfile="opt.log"
++            self.atoms, trajectory=trajectory, logfile=logfile
+         )
+         self.dyn.attach(self.print_format, interval=interval)
+         self.dyn.run(fmax=fmax, steps=steps)
