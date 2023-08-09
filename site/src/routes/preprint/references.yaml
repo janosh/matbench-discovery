@@ -1645,6 +1645,60 @@ references:
   URL: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8489092/
   volume: '22'
 
+- id: lan_adsorbml_2023
+  abstract: >-
+    Computational catalysis is playing an increasingly significant role in the
+    design of catalysts across a wide range of applications. A common task for
+    many computational methods is the need to accurately compute the minimum
+    binding energy - the adsorption energy - for an adsorbate and a catalyst
+    surface of interest. Traditionally, the identification of low energy
+    adsorbate-surface configurations relies on heuristic methods and researcher
+    intuition. As the desire to perform high-throughput screening increases, it
+    becomes challenging to use heuristics and intuition alone. In this paper, we
+    demonstrate machine learning potentials can be leveraged to identify low
+    energy adsorbate-surface configurations more accurately and efficiently. Our
+    algorithm provides a spectrum of trade-offs between accuracy and efficiency,
+    with one balanced option finding the lowest energy configuration, within a
+    0.1 eV threshold, 86.33% of the time, while achieving a 1331x speedup in
+    computation. To standardize benchmarking, we introduce the Open Catalyst
+    Dense dataset containing nearly 1,000 diverse surfaces and 85,658 unique
+    configurations.
+  accessed:
+    - year: 2023
+      month: 8
+      day: 7
+  author:
+    - family: Lan
+      given: Janice
+    - family: Palizhati
+      given: Aini
+    - family: Shuaibi
+      given: Muhammed
+    - family: Wood
+      given: Brandon M.
+    - family: Wander
+      given: Brook
+    - family: Das
+      given: Abhishek
+    - family: Uyttendaele
+      given: Matt
+    - family: Zitnick
+      given: C. Lawrence
+    - family: Ulissi
+      given: Zachary W.
+  citation-key: lan_adsorbml_2023
+  issued:
+    - year: 2023
+      month: 1
+      day: 4
+  number: arXiv:2211.16486
+  publisher: arXiv
+  source: arXiv.org
+  title: 'AdsorbML: Accelerating Adsorption Energy Calculations with Machine Learning'
+  title-short: AdsorbML
+  type: article
+  URL: http://arxiv.org/abs/2211.16486
+
 - id: li_critical_2023
   abstract: >-
     Recent advances in machine learning (ML) methods have led to substantial

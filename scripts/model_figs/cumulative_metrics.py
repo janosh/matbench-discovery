@@ -64,6 +64,10 @@ if backend == "plotly":
         font=dict(size=14),
     )
     fig.update_traces(line=dict(width=3))
+    fig.layout.legend.update(
+        orientation="h", yanchor="bottom", y=1.1, xanchor="center", x=0.5
+    )
+
     for trace in fig.data:
         # show only the N best models by default
         if trace.name in df_metrics.T.sort_values("F1").index[:-6]:
@@ -109,4 +113,4 @@ fig.show()
 # %%
 img_name = f"cumulative-{'-'.join(metrics).lower()}"
 save_fig(fig, f"{FIGS}/{img_name}.svelte")
-save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=900, height=330)
+save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=900, height=400)

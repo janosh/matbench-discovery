@@ -1,4 +1,3 @@
-import os
 from glob import glob
 
 import yaml
@@ -18,8 +17,9 @@ def test_model_dirs_have_metadata() -> None:
         "repo",
     )
     for model_dir in MODEL_DIRS:
-        md_file = f"{model_dir}metadata.yml"
-        assert os.path.isfile(md_file), f"Missing metadata file: {md_file}"
+        md_files = glob(f"{model_dir}metadata*.yml")
+        assert len(md_files) == 1, f"expected 1 metadata file, got {md_files=}"
+        md_file = md_files[0]
 
         # make sure all required keys are non-empty
         with open(md_file) as yml_file:
