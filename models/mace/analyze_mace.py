@@ -10,13 +10,13 @@ from pymatviz import density_scatter, ptable_heatmap_plotly, spacegroup_sunburst
 from matbench_discovery import plots as plots
 from matbench_discovery.data import df_wbm
 from matbench_discovery.preds import PRED_FILES
+from matbench_discovery.preds import e_form_col as target_col
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-07-23"
 
 module_dir = os.path.dirname(__file__)
 id_col = "material_id"
-target_col = "e_form_per_atom_mp2020_corrected"
 pred_col = "e_form_per_atom_mace"
 
 
