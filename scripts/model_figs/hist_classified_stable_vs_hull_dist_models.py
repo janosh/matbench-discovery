@@ -12,7 +12,13 @@ from pymatviz.utils import save_fig
 
 from matbench_discovery import FIGS, PDF_FIGS, today
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist, plt
-from matbench_discovery.preds import df_metrics, df_preds, e_form_col, each_true_col
+from matbench_discovery.preds import (
+    df_metrics,
+    df_preds,
+    e_form_col,
+    each_pred_col,
+    each_true_col,
+)
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-12-01"
@@ -21,7 +27,6 @@ __date__ = "2022-12-01"
 # %%
 hover_cols = (df_preds.index.name, e_form_col, each_true_col, "formula")
 e_form_preds = "e_form_per_atom_pred"
-each_pred_col = "e_above_hull_pred"
 facet_col = "Model"
 # sort facet plots by model's F1 scores (optionally only show top n=6)
 models = list(df_metrics.T.F1.sort_values().index)[::-1]

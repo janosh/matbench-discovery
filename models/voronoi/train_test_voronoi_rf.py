@@ -15,6 +15,7 @@ from sklearn.pipeline import Pipeline
 from matbench_discovery import today
 from matbench_discovery.data import DATA_FILES, df_wbm, glob_to_df
 from matbench_discovery.plots import wandb_scatter
+from matbench_discovery.preds import e_form_col as test_e_form_col
 from matbench_discovery.slurm import slurm_submit
 from models.voronoi import featurizer
 
@@ -54,8 +55,6 @@ train_e_form_col = "formation_energy_per_atom"
 test_path = f"{module_dir}/2022-11-18-features-wbm-{task_type}.csv.bz2"
 df_test = pd.read_csv(test_path).set_index("material_id")
 print(f"{df_test.shape=}")
-
-test_e_form_col = "e_form_per_atom_mp2020_corrected"
 
 
 for df, df_tar, col in (

@@ -94,8 +94,7 @@ for dataset, count_mode, elem_counts in all_counts:
 
 
 # %% histogram of energy above MP convex hull for WBM
-col = "e_above_hull_mp2020_corrected_ppd_mp"
-# col = "e_form_per_atom_mp2020_corrected"
+col = each_true_col  # or e_form_col
 mean, std = df_wbm[col].mean(), df_wbm[col].std()
 
 range_x = (mean - 2 * std, mean + 2 * std)

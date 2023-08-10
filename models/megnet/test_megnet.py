@@ -23,7 +23,7 @@ from tqdm import tqdm
 from matbench_discovery import timestamp, today
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import wandb_scatter
-from matbench_discovery.preds import PRED_FILES
+from matbench_discovery.preds import PRED_FILES, e_form_col
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
@@ -63,7 +63,6 @@ data_path = {
 }[task_type]
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
-e_form_col = "e_form_per_atom_mp2020_corrected"
 assert e_form_col in df_wbm, f"{e_form_col=} not in {list(df_wbm)=}"
 
 df_in: pd.DataFrame = np.array_split(

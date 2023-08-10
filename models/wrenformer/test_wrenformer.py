@@ -20,6 +20,7 @@ from aviary.wrenformer.model import Wrenformer
 from matbench_discovery import CHECKPOINT_DIR, WANDB_PATH, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.plots import wandb_scatter
+from matbench_discovery.preds import e_form_col
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
@@ -44,7 +45,6 @@ slurm_vars = slurm_submit(
 
 
 # %%
-e_form_col = "e_form_per_atom_mp2020_corrected"
 input_col = "wyckoff_spglib"
 df = pd.read_csv(data_path).dropna(subset=input_col).set_index("material_id")
 

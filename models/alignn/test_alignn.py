@@ -20,6 +20,7 @@ from tqdm import tqdm
 from matbench_discovery import today
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import wandb_scatter
+from matbench_discovery.preds import e_form_col
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell, Philipp Benner"
@@ -33,7 +34,7 @@ model_name = "mp_e_form_alignn"  # pre-trained by NIST
 # TODO fix this to load checkpoint from figshare
 # model_name = f"{module_dir}/data-train-result/best-model.pth"
 task_type = "IS2RE"
-target_col = "e_form_per_atom_mp2020_corrected"
+target_col = e_form_col
 input_col = "initial_structure"
 id_col = "material_id"
 device = "cuda" if torch.cuda.is_available() else "cpu"

@@ -18,9 +18,10 @@ from pymatgen.io.jarvis import JarvisAtomsAdaptor
 from sklearn.metrics import r2_score
 from tqdm import tqdm
 
-from matbench_discovery import DEBUG, today
+from matbench_discovery import today
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import wandb_scatter
+from matbench_discovery.preds import e_form_col as target_col
 
 __author__ = "Philipp Benner, Janosh Riebesell"
 __date__ = "2023-07-11"
@@ -32,12 +33,11 @@ module_dir = os.path.dirname(__file__)
 n_splits = 100
 # model_name = "mp_e_form_alignnn"  # pre-trained by NIST
 task_type = "IS2RE"
-target_col = "e_form_per_atom_mp2020_corrected"
 input_col = "initial_structure"
 id_col = "material_id"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model_name = f"alignn-ff-wbm-{task_type}"
-job_name = f"{model_name}-relaxed-wbm-{task_type}{'-debug' if DEBUG else ''}"
+job_name = f"{model_name}-relaxed-wbm-{task_type}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 in_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
