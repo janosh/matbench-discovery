@@ -147,7 +147,7 @@ for model in (*df_metrics, model_mean_err_col):
 # %%
 expected_cols = {
     *"ALIGNN, BOWSR, CGCNN, CGCNN+P, CHGNet, M3GNet, MEGNet, "
-    f"{train_count_col}, Mean error all models, {test_set_std_col}, Voronoi RF, "
+    f"{train_count_col}, {model_mean_err_col}, {test_set_std_col}, Voronoi RF, "
     "Wrenformer".split(", ")
 }
 assert {*df_elem_err} >= expected_cols

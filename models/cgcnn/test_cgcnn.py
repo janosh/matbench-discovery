@@ -16,6 +16,7 @@ from tqdm import tqdm
 from matbench_discovery import CHECKPOINT_DIR, ROOT, WANDB_PATH, today
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import wandb_scatter
+from matbench_discovery.preds import e_form_col as target_col
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
@@ -53,8 +54,7 @@ input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_ty
 
 df = pd.read_json(data_path).set_index("material_id")
 
-e_form_col = "e_form_per_atom_mp2020_corrected"
-df[e_form_col] = df_wbm[e_form_col]
+df[target_col] = df_wbm[target_col]
 if task_type == "RS2RE":
     df[input_col] = [x["structure"] for x in df.computed_structure_entry]
 assert input_col in df, f"{input_col=} not in {list(df)}"
@@ -87,7 +87,7 @@ run_params = dict(
     versions={dep: version(dep) for dep in ("aviary", "numpy", "torch")},
     ensemble_size=len(runs),
     task_type=task_type,
-    target_col=e_form_col,
+    target_col=target_col,
     input_col=input_col,
     wandb_run_filters=filters,
     slurm_vars=slurm_vars,
@@ -97,7 +97,7 @@ run_params = dict(
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 cg_data = CrystalGraphData(
-    df, task_dict={e_form_col: "regression"}, structure_col=input_col
+    df, task_dict={target_col: "regression"}, structure_col=input_col
 )
 data_loader = DataLoader(
     cg_data, batch_size=1024, shuffle=False, collate_fn=collate_batch
@@ -110,16 +110,16 @@ df, ensemble_metrics = predict_from_wandb_checkpoints(
     # dropping isolated-atom structs means len(cg_data.df) < len(df)
     cache_dir=CHECKPOINT_DIR,
     df=cg_data.df.drop(columns=input_col),
-    target_col=e_form_col,
+    target_col=target_col,
     model_cls=CrystalGraphConvNet,
     data_loader=data_loader,
 )
 
 slurm_job_id = os.getenv("SLURM_JOB_ID", "debug")
 df.round(4).to_csv(f"{out_dir}/{job_name}-preds-{slurm_job_id}.csv.gz")
-pred_col = f"{e_form_col}_pred_ens"
+pred_col = f"{target_col}_pred_ens"
 assert pred_col in df, f"{pred_col=} not in {list(df)}"
-table = wandb.Table(dataframe=df[[e_form_col, pred_col]].reset_index())
+table = wandb.Table(dataframe=df[[target_col, pred_col]].reset_index())
 
 
 # %%
@@ -128,4 +128,4 @@ R2 = ensemble_metrics.R2.mean()
 
 title = f"CGCNN {task_type} ensemble={len(runs)} {MAE=:.4} {R2=:.4}"
 
-wandb_scatter(table, fields=dict(x=e_form_col, y=pred_col), title=title)
+wandb_scatter(table, fields=dict(x=target_col, y=pred_col), title=title)

@@ -9,8 +9,9 @@ from pymatgen.core import Structure
 from pymatgen.io.jarvis import JarvisAtomsAdaptor
 from tqdm import tqdm
 
-from matbench_discovery import DEBUG, today
+from matbench_discovery import today
 from matbench_discovery.data import DATA_FILES, df_wbm
+from matbench_discovery.preds import e_form_col as target_col
 
 __author__ = "Janosh Riebesell, Philipp Benner"
 __date__ = "2023-07-11"
@@ -28,10 +29,9 @@ module_dir = os.path.dirname(__file__)
 # model_name = "mp_e_form_alignn"  # pre-trained by NIST
 model_name = f"{out_dir}/best-model.pth"
 task_type = "IS2RE"
-target_col = "e_form_per_atom_mp2020_corrected"
 input_col = "initial_structure"
 id_col = "material_id"
-job_name = f"{model_name}-wbm-{task_type}{'-debug' if DEBUG else ''}"
+job_name = f"{model_name}-wbm-{task_type}"
 out_path = (
     f"{out_dir}/{'alignn-relaxed-structs' if batch == 0 else f'{batch=}'}.json.gz"
 )
