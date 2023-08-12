@@ -1,11 +1,13 @@
 # package install
 *.egg-info
 dist
+build
 
 # cache
 __pycache__
 
 # datasets
+*.json
 *.json.gz
 *.json.bz2
 *.csv.bz2
@@ -24,3 +26,5 @@ site/src/routes/api/*.md
 # temporary ignore rules
 2023-02-05-ens=10-perturb=5
 models/m3gnet/2023-05-26-*
+models/mace/2023-07-14-mace-universal-2-big-128-6.model
+
