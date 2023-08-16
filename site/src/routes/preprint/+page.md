@@ -5,7 +5,7 @@
   import CumulativePrecisionRecall from '$figs/cumulative-precision-recall.svelte'
   import RollingMaeVsHullDistModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'
   import ElementErrorsPtableHeatmap from '$models/element-errors-ptable-heatmap.svelte'
-  import HistClfTrueHullDistModels from '$figs/hist-clf-pred-hull-dist-models-3x3.svelte'
+  import HistClfHullDistModels from '$figs/hist-clf-pred-hull-dist-models-5x2.svelte'
   import { onMount } from 'svelte'
 
   let mounted = false
@@ -145,7 +145,7 @@ Our initial benchmark release includes 8 models.
 
 <MetricsTable />
 
-> @label:fig:metrics-table Classification and regression metrics for all models tested on our benchmark. The heat map ranges from yellow (best) to blue (worst) performance. The dummy classifier uses the `scikit-learn` `stratified` strategy of randomly assigning stable/unstable labels according to the training set prevalence. The dummy regression metrics MAE, RMSE and $R^2$ are attained by always predicting the test set mean. Note that Voronoi RF, CGCNN and MEGNet are worse than dummy on regression metrics but better on some of the classification metrics, highlighting the importance of looking at the right metrics for the task at hand to gauge model performance.
+> @label:fig:metrics-table Classification and regression metrics for all models tested on our benchmark. The heat map ranges from yellow (best) to blue (worst) performance. Models are sorted by F1 score by default. Click other metrics to resort the table. Training size is the number structure/energy/(forces)/(stress) paris in each model's training set. Only models in the UIP-GNN model class use forces and stress as training labels. The dummy classifier uses the `scikit-learn` `stratified` strategy of randomly assigning stable/unstable labels according to the training set prevalence. The dummy regression metrics MAE, RMSE and $R^2$ are attained by always predicting the test set mean. Note that Voronoi RF, CGCNN and MEGNet are worse than dummy on regression metrics but better on some of the classification metrics, highlighting the importance of looking at the right metrics for the task at hand to gauge model performance.
 >
 > <details>
 > <summary>Table glossary</summary>
@@ -199,7 +199,7 @@ A line terminates when a model believes there are no more materials in the WBM t
 ### Classification Histograms
 
 {#if mounted}
-<HistClfTrueHullDistModels />
+<HistClfHullDistModels />
 {/if}
 
 > @label:fig:hist-clf-true-hull-dist-models These histograms show the classification performance of models as a function of model-predicted hull distance on the $x$ axis. Models are sorted top to bottom by F1 score. While CHGNet and M3GNet perform almost equally well overall, these plots reveal that they do so via different trade-offs. M3GNet commits fewer false negative but more false positives predictions compared to CHGNet. In a real discovery campaign, false positives have a higher opportunity cost than false negatives since they result in wasted DFT relaxations or even synthesis time in the lab. A false negative by contrast is just one missed opportunity out of many.
