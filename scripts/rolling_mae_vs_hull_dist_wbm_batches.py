@@ -6,7 +6,7 @@ batch in a single plot.
 # %%
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, PDF_FIGS, today
+from matbench_discovery import PDF_FIGS, SITE_FIGS, today
 from matbench_discovery.plots import plt, rolling_mae_vs_hull_dist
 from matbench_discovery.preds import df_each_pred, df_preds, e_form_col, each_true_col
 
@@ -77,5 +77,5 @@ for model in list(df_each_pred)[:-2]:
 
     model_snake_case = model.lower().replace(" + ", "-").replace(" ", "-")
     img_path = f"rolling-mae-vs-hull-dist-wbm-batches-{model_snake_case}"
-    save_fig(fig, f"{FIGS}/{img_path}.svelte")
+    save_fig(fig, f"{SITE_FIGS}/{img_path}.svelte")
     save_fig(fig, f"{PDF_FIGS}/{img_path}.pdf")

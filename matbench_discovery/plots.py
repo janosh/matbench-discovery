@@ -508,6 +508,14 @@ def rolling_mae_vs_hull_dist(
         )
         fig.set(xlabel=r"$E_\mathrm{above\ hull}$ (eV/atom)", ylabel=y_label)
         fig.set(xlim=x_lim, ylim=y_lim)
+        line_styles = "- -- -. :".split()
+        markers = "o s ^ v D * p X".split()
+        combinations = [(ls, mark) for mark in markers for ls in line_styles]
+
+        for idx, line in enumerate(fig.lines):
+            ls, marker = combinations[idx % len(combinations)]
+            line.set(ls=ls, marker=marker, markeredgewidth=0.5, markeredgecolor="black")
+            line.set_markevery(4)
 
     elif backend == "plotly":
         for idx, model in enumerate(df_rolling_err if with_sem else []):
@@ -595,6 +603,22 @@ def rolling_mae_vs_hull_dist(
         )
         fig.add_shape(type="rect", x0=x0, y0=y0, x1=x0 - window, y1=y0 + window / 5)
 
+        line_styles = "solid dash dot dashdot".split()
+        markers = "circle square triangle-up triangle-down diamond cross star x".split()
+        combinations = [(ls, mark) for mark in markers for ls in line_styles]
+        for idx, trace in enumerate(fig.data):
+            ls, marker = combinations[idx % len(combinations)]
+            trace.line.dash = ls
+            # marker_spacing = 2
+            # trace = go.Scatter(
+            #     x=trace.x[::marker_spacing],
+            #     y=trace.y[::marker_spacing],
+            #     mode="markers",
+            #     marker=dict(symbol=marker, color=trace.line.color, size=8),
+            #     showlegend=False,
+            #     legendgroup=getattr(trace, "legendgroup", None),
+            # )
+            # fig.add_trace(trace)
     return fig, df_rolling_err, df_err_std
 
 

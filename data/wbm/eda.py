@@ -13,7 +13,7 @@ from pymatviz import (
 )
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, PDF_FIGS, ROOT, STABILITY_THRESHOLD
+from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.energy import mp_elem_reference_entries
@@ -135,7 +135,7 @@ for x_pos, label in (
 
 fig.show()
 
-save_fig(fig, f"{FIGS}/hist-wbm-hull-dist.svelte")
+save_fig(fig, f"{SITE_FIGS}/hist-wbm-hull-dist.svelte")
 # save_fig(fig, "./figs/hist-wbm-hull-dist.svg", width=1000, height=500)
 save_fig(fig, f"{PDF_FIGS}/hist-wbm-hull-dist.pdf")
 
@@ -171,7 +171,7 @@ for symbol, e_per_atom, num, *_ in df_ref.itertuples(index=False):
 
 fig.show()
 
-save_fig(fig, f"{FIGS}/mp-elemental-ref-energies.svelte")
+save_fig(fig, f"{SITE_FIGS}/mp-elemental-ref-energies.svelte")
 save_fig(fig, f"{PDF_FIGS}/mp-elemental-ref-energies.pdf")
 
 
@@ -244,7 +244,7 @@ fig = spacegroup_sunburst(df_wbm[spg_col], width=350, height=350, show_counts="p
 fig.layout.title.update(text="WBM Spacegroup Sunburst", x=0.5, font_size=14)
 fig.layout.margin = dict(l=0, r=0, t=30, b=0)
 fig.show()
-save_fig(fig, f"{FIGS}/spacegroup-sunburst-wbm.svelte")
+save_fig(fig, f"{SITE_FIGS}/spacegroup-sunburst-wbm.svelte")
 save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-wbm.pdf")
 
 
@@ -253,7 +253,7 @@ fig = spacegroup_sunburst(df_mp[spg_col], width=350, height=350, show_counts="pe
 fig.layout.title.update(text="MP Spacegroup Sunburst", x=0.5, font_size=14)
 fig.layout.margin = dict(l=0, r=0, t=30, b=0)
 fig.show()
-save_fig(fig, f"{FIGS}/spacegroup-sunburst-mp.svelte")
+save_fig(fig, f"{SITE_FIGS}/spacegroup-sunburst-mp.svelte")
 save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-mp.pdf")
 # would be good to have consistent order of crystal systems between sunbursts but not
 # controllable yet

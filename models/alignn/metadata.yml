@@ -28,3 +28,12 @@ requirements:
   torch: 1.9.0+cu111
 trained_for_benchmark: true
 # hyperparams: see align-config.json
+
+training_set: # model trained from specifically for MBD
+  title: MP Computed Structure Entries
+  url: https://figshare.com/ndownloader/files/40344436
+  size: 154_719
+# training_set: # NIST pre-trained model
+#   title: Graphs of MP
+#   url: https://figshare.com/articles/dataset/7451351
+#   size: 69_239

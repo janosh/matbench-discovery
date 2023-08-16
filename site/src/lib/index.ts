@@ -21,6 +21,11 @@ export type ModelMetadata = {
   // whether this model was trained from scratch specifically for
   // this benchmark using our canonical training set
   trained_for_benchmark: boolean
+  training_set: {
+    title: string
+    url: string
+    size: number
+  }
   hyperparams: Record<string, string | number>
   notes?: Record<string, string>
   dir: string // models/{dir}/metadata.yml

@@ -5,6 +5,8 @@ https://colab.research.google.com/drive/13CAM8mL1u7ZsqNhfZLv7bNb1rdhMI64d?usp=sh
 Found notebook in docs: https://help.figshare.com/article/how-to-use-the-figshare-api
 """
 
+from __future__ import annotations
+
 import hashlib
 import json
 import os
@@ -36,7 +38,12 @@ DESCRIPTION = f"""
 These are the v{VERSION} data files for Matbench Discovery,
 {pyproject['description'].lower()}. It contains relaxed structures of the MP
 training set, initial+relaxed structures of the WBM test set, plus several checkpoints
-for models trained on this data specifically for this benchmark. The full force field
+for models trained on this data specifically for this benchmark.
+
+For a description of each file, see
+https://matbench-discovery.materialsproject.org/contribute#--direct-download.
+
+The full force field
 training set containing 1.3M structures along with their energies, forces, stresses and
 magmons is available at https://figshare.com/articles/dataset/23713842.
 """.replace(

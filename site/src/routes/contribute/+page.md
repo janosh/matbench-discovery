@@ -9,6 +9,8 @@
   const cse_link = `<a href=${cse_doc_url}>ComputedStructureEntry</a>`
 
   const descriptions = {
+    alignn_checkpoint: "ALIGNN model trained on <code>mp_computed_structure_entries</code>",
+    mace_checkpoint: "MACE model trained on the MPtrj dataset (https://figshare.com/articles/dataset/23713842)",
     mp_computed_structure_entries:
       `JSON-Serialized MP ${cse_link} objects containing relaxed structures and DFT final energies`,
     mp_elemental_ref_entries: `Minimum energy ComputedEntry for each element in MP`,
@@ -25,7 +27,7 @@
   const figshare_keys = Object.keys(figshare_urls).sort()
   const missing = figshare_keys.filter((key) => !desc_keys.includes(key))
   if (missing.length > 0) {
-    console.error(`descriptions must contain all figshare_urls keys, missing=${missing}`)
+    throw `descriptions must contain all figshare_urls keys, missing=${missing}`
   }
 </script>
 
@@ -102,7 +104,7 @@ assert list(df_wbm) == [
 
 ## 📥 &thinsp; Direct Download
 
-You can also download the data files directly from Figshare:
+You can download the data files from Figshare:
 
 <ol>
   {#each Object.entries(figshare_urls) as [key, lst]}
@@ -120,7 +122,7 @@ You can also download the data files directly from Figshare:
 
 ## ✨ &thinsp; How to submit a new model
 
-To deploy a new model on this benchmark and add it to our leaderboard, please create a pull request to the `main` branch of [{repo}]({repo}) that includes at least these 3 required files:
+To submit a new model to this benchmark and add it to our leaderboard, please create a pull request to the [`main` branch]({repo}) that includes at least these 3 required files:
 
 1. `<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz`: Your model's energy predictions for all ~250k WBM compounds as compressed JSON or CSV. The recommended way to create this file is with `pandas.DataFrame.to_{json|csv}('<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz')`. JSON is preferred over CSV if your model not only predicts energies (floats) but also objects like relaxed structures. See e.g. [M3GNet]({repo}/blob/-/models/m3gnet/test_m3gnet.py) and [CHGNet]({repo}/blob/-/models/chgnet/test_chgnet.py) test scripts.
 1. `test_<model_name>.(py|ipynb)`: The Python script or Jupyter notebook that generated the energy predictions. Ideally, this file should have comments explaining at a high level what the code is doing and how the model works so others can understand and reproduce your results. If the model deployed on this benchmark was trained specifically for this purpose (i.e. if you wrote any training/fine-tuning code while preparing your PR), please also include it as `train_<model_name>.(py|ipynb)`.
@@ -150,14 +152,21 @@ To deploy a new model on this benchmark and add it to our leaderboard, please cr
    url: https://<model-docs-or-similar>.org
    doi: https://doi.org/10.5281/zenodo.0000000
    preprint: https://arxiv.org/abs/xxxx.xxxxx
+
    requirements: # strongly recommended
      torch: 1.13.0
      torch-geometric: 2.0.9
      ...
+
+   training_set:
+     title: MPtrj
+     url: https://figshare.com/articles/dataset/23713842
+     size: 1_580_395
+
    notes: # notes can have any key, be multiline and support markdown.
      description: This is how my model works...
      steps: |
-      Optional free form multi-line notes that can help others reproduce your results.
+      Optional *free-form* [markdown](example.com) notes.
    ```
 
    Arbitrary other keys can be added as needed.

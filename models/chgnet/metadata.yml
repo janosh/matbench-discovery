@@ -32,7 +32,11 @@ requirements:
   pymatgen: 2022.10.22
   numpy: 1.24.0
 trained_for_benchmark: false
-# training_set: MPTraj
+
+training_set:
+  title: MPTrj
+  url: https://figshare.com/articles/dataset/19470599
+  size: 1_580_395
 
 hyperparams:
   max_steps: 2000
