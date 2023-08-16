@@ -124,6 +124,7 @@ df_stats.attrs["All Models Run Time"] = df_stats[time_col].sum()
 print(f"{df_stats[time_col].sum()=:.0f} hours")
 
 df_stats.round(2).to_json(f"{SITE_MODELS}/model-stats.json", orient="index")
+
 df_time = (
     df_stats.sort_index()
     .filter(like=time_col)

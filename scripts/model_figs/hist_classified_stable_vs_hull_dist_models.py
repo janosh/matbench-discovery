@@ -45,8 +45,9 @@ df_melt[each_pred_col] = (
 
 # %%
 backend: Final = "plotly"
-n_cols = 3
+n_cols = 2
 n_rows = math.ceil(len(models) / n_cols)
+# 'true' or 'pred': whether to put DFT or model-predicted hull distances on the x-axis
 which_energy: Final = "pred"
 kwds = (
     dict(
@@ -102,7 +103,7 @@ else:
     # fig.layout.height = 1000
     fig.layout.margin.update(t=50, b=30, l=30, r=0)
     fig.layout.legend.update(
-        y=1.15, xanchor="center", x=0.5, bgcolor="rgba(0,0,0,0)", orientation="h"
+        y=1.1, xanchor="center", x=0.5, bgcolor="rgba(0,0,0,0)", orientation="h"
     )
     fig.update_yaxes(range=[0, 11_000], title_text=None)
 
@@ -118,5 +119,8 @@ img_name = f"hist-clf-{which_energy}-hull-dist-models-{n_rows}x{n_cols}"
 
 
 # %%
+orig_height = fig.layout.height
+fig.layout.height = n_rows * 180
 save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+fig.layout.height = orig_height
 save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=n_cols * 220, height=n_rows * 220)
