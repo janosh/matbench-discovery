@@ -13,11 +13,19 @@ from sklearn.dummy import DummyClassifier
 from matbench_discovery import FIGS, PDF_FIGS
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.metrics import stable_metrics
+from matbench_discovery.models import MODEL_METADATA
 from matbench_discovery.plots import df_to_pdf, df_to_svelte_table
 from matbench_discovery.preds import df_metrics, df_metrics_10k, each_true_col
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
+
+
+for model in MODEL_METADATA:
+    n_structs = MODEL_METADATA[model]["training_set"]["size"]
+    loc = "training size", model
+    df_metrics.loc[loc] = f"{n_structs:,}"
+    df_metrics_10k.loc[loc] = f"{n_structs:,}"
 
 
 # %% add dummy classifier results to df_metrics

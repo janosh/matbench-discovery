@@ -1,10 +1,6 @@
 from glob import glob
 
-import yaml
-
-from matbench_discovery import ROOT
-
-MODEL_DIRS = glob(f"{ROOT}/models/*/")
+from matbench_discovery.models import MODEL_DIRS, MODEL_METADATA
 
 
 def test_model_dirs_have_metadata() -> None:
@@ -21,54 +17,45 @@ def test_model_dirs_have_metadata() -> None:
             "size": int,  # number of structures
         },
     }
-    for model_dir in MODEL_DIRS:
-        md_files = glob(f"{model_dir}metadata*.yml")
-        assert len(md_files) == 1, f"expected 1 metadata file, got {md_files=}"
-        md_file = md_files[0]
 
-        # make sure all required keys are non-empty
-        with open(md_file) as yml_file:
-            models = yaml.full_load(yml_file)
+    assert len(MODEL_METADATA) >= len(MODEL_DIRS), "Missing metadata for some models"
 
-        # some metadata files have a single model, some have multiple
-        if not isinstance(models, list):
-            models = [models]
-
-        for metadata in models:
-            for key in required:
-                assert key in metadata, f"Required {key=} missing in {md_file}"
-                if isinstance(required[key], dict):
-                    missing_keys = {*required[key]} - {*metadata[key]}  # type: ignore
-                    assert (
-                        not missing_keys
-                    ), f"Missing sub-keys {missing_keys} of {key=} in {md_file}"
-                    continue
-
-                err_msg = f"Invalid {key=}, expected {required[key]} in {md_file}"
-                assert isinstance(metadata[key], required[key]), err_msg  # type: ignore
-
-            authors, date_added, mbd_version, model_name, model_version, repo = (
-                metadata[key] for key in list(required)[:-1]
-            )
-
-            # make sure all keys are valid
-            for name in model_name if isinstance(model_name, list) else [model_name]:
+    for model_name, metadata in MODEL_METADATA.items():
+        model_dir = metadata["model_dir"]
+        for key in required:
+            assert key in metadata, f"Required {key=} missing in {model_dir}"
+            if isinstance(required[key], dict):
+                missing_keys = {*required[key]} - {*metadata[key]}  # type: ignore
                 assert (
-                    3 < len(name) < 50
-                ), f"Invalid {name=} not between 3 and 50 characters"
+                    not missing_keys
+                ), f"Missing sub-keys {missing_keys} of {key=} in {model_dir}"
+                continue
+
+            err_msg = f"Invalid {key=}, expected {required[key]} in {model_dir}"
+            assert isinstance(metadata[key], required[key]), err_msg  # type: ignore
+
+        authors, date_added, mbd_version, model_name, model_version, repo = (
+            metadata[key] for key in list(required)[:-1]
+        )
+
+        # make sure all keys are valid
+        for name in model_name if isinstance(model_name, list) else [model_name]:
             assert (
-                1 < len(model_version) < 15
-            ), f"Invalid {model_version=} not between 1 and 15 characters"
-            # TODO increase max allowed version when updating package
-            assert (
-                1 <= mbd_version <= 1
-            ), f"Invalid matbench-discovery version: {mbd_version}"
-            assert isinstance(date_added, str), f"Invalid {date_added=} not a string"
-            assert isinstance(authors, list)
-            assert 1 < len(authors) < 30, f"{len(authors)=} not between 1 and 30"
-            assert repo.startswith(
-                "https://"
-            ), f"Invalid {repo=} not starting with https://"
+                3 < len(name) < 50
+            ), f"Invalid {name=} not between 3 and 50 characters"
+        assert (
+            1 < len(model_version) < 15
+        ), f"Invalid {model_version=} not between 1 and 15 characters"
+        # TODO increase max allowed version when updating package
+        assert (
+            1 <= mbd_version <= 1
+        ), f"Invalid matbench-discovery version: {mbd_version}"
+        assert isinstance(date_added, str), f"Invalid {date_added=} not a string"
+        assert isinstance(authors, list)
+        assert 1 < len(authors) < 30, f"{len(authors)=} not between 1 and 30"
+        assert repo.startswith(
+            "https://"
+        ), f"Invalid {repo=} not starting with https://"
 
 
 def test_model_dirs_have_test_scripts() -> None:
