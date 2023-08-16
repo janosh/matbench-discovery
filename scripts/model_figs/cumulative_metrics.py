@@ -45,7 +45,7 @@ fig, df_metric = cumulative_metrics(
     facet_col_spacing=0.05,
 )
 
-x_label = "Number of screened WBM materials"
+x_label = "Number of screened WBM test set materials"
 if backend == "matplotlib":
     # fig.suptitle(title)
     fig.text(0.5, -0.08, x_label, ha="center", fontdict={"size": 16})
