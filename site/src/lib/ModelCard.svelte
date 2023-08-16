@@ -10,7 +10,8 @@
   export let sort_by: keyof ModelData
   export let show_details: boolean = false
 
-  $: ({ model_name, missing_preds, missing_percent, hyperparams, notes } = data)
+  $: ({ model_name, missing_preds, missing_percent, hyperparams, notes, training_set } =
+    data)
 
   $: links = [
     [data.repo, `Repo`, `octicon:mark-github`],
@@ -60,6 +61,12 @@
     Missing preds:
     {pretty_num(missing_preds, `,.0f`)}
     <small>({missing_percent})</small>
+  </span>
+  <span>
+    <Icon icon="fluent:missing-metadata-24-regular" inline />
+    Training set:
+    <a href={training_set.url}>{training_set.title}</a>
+    <small>({training_set.size})</small>
   </span>
 </p>
 {#if show_details}

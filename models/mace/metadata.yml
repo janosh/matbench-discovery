@@ -30,6 +30,11 @@ requirements:
   numpy: 1.25.0
 trained_for_benchmark: false
 
+training_set:
+  title: MPTrj
+  url: https://figshare.com/articles/dataset/19470599
+  size: 1_580_395
+
 hyperparams:
   max_force: 0.05
   max_steps: 500

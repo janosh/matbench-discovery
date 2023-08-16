@@ -26,7 +26,7 @@ facet_col = "Model"
 color_col = "Stability Threshold"
 
 n_cols = 3
-n_rows = math.ceil(len(models) // n_cols)
+n_rows = math.ceil(len(models) / n_cols)
 
 
 # %%
@@ -126,7 +126,7 @@ for model in (pbar := tqdm(list(df_each_pred), desc="Calculating ROC curves")):
 
 # %%
 n_cols = 3
-n_rows = math.ceil(len(models) // n_cols)
+n_rows = math.ceil(len(models) / n_cols)
 
 fig = df_prc.iloc[:: len(df_roc) // 500 or 1].plot.scatter(
     x="Recall",

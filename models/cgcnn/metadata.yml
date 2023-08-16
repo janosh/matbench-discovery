@@ -22,6 +22,11 @@
     pandas: 1.5.1
   trained_for_benchmark: true
 
+  training_set:
+    title: MP Computed Structure Entries
+    url: https://figshare.com/ndownloader/files/40344436
+    size: 154_719
+
   hyperparams:
     Ensemble Size: 10
 
@@ -58,6 +63,11 @@
     numpy: 1.24.0
     pandas: 1.5.1
   trained_for_benchmark: true
+
+  training_set:
+    title: MP Computed Structure Entries
+    url: https://figshare.com/ndownloader/files/40344436
+    size: 154_719
 
   hyperparams:
     Ensemble Size: 10

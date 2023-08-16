@@ -47,8 +47,8 @@ if backend == "matplotlib":
 else:
     for trace in fig.data:
         model = trace.name.split(" MAE=")[0]
-        if model in df_metrics.T.sort_values("MAE").index[6:]:
-            trace.visible = "legendonly"  # initially show only top models
+        if model in df_metrics.T.sort_values("MAE").index[8:]:
+            trace.visible = "legendonly"  # show only top models by default
 
     # increase line width
     fig.update_traces(line=dict(width=3))

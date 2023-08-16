@@ -45,14 +45,7 @@ df_metrics["Dummy"] = dummy_metrics
 df_metrics_10k["Dummy"] = dummy_metrics
 
 
-# %% for each model this ontology dict specifies
-# (training type, test type, model class)
-# RS2RE = relaxed structure to relaxed energy
-# RP2RE = relaxed prototype to predicted energy
-# IS2RE = initial structure to relaxed energy
-# IS2E = initial structure to energy
-# IS2RE-SR = initial structure to relaxed energy after ML structure relaxation
-# S2EFS(M) = structure to energy, forces, stress, (magmoms)
+# %% for each model this ontology dict specifies (training type, test type, model class)
 ontology = {
     "ALIGNN": ("RS2RE", "IS2RE", "GNN"),
     # "ALIGNN Pretrained": ("RS2RE", "IS2RE", "GNN"),
@@ -71,6 +64,17 @@ ontology = {
 }
 ontology_cols = ["Trained", "Deployed", "Model Class"]
 df_ont = pd.DataFrame(ontology, index=ontology_cols)
+# RS2RE = relaxed structure to relaxed energy
+# RP2RE = relaxed prototype to predicted energy
+# IS2RE = initial structure to relaxed energy
+# IS2E = initial structure to energy
+# IP2E = initial prototype to energy
+# IS2RE-SR = initial structure to relaxed energy after ML structure relaxation
+# S2EFS(M) = structure to energy, forces, stress, (magmoms)
+# GNN = graph neural network
+# UIP = universal interatomic potential
+# BO-GNN = Bayesian optimization
+# RF = random forest
 
 
 # %%

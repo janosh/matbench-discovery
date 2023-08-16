@@ -28,3 +28,8 @@ requirements:
   torch: 1.9.0+cu111
 trained_for_benchmark: true
 # hyperparams: see align-config.json
+
+training_set:
+  title: Graphs of MP
+  url: https://figshare.com/articles/dataset/7451351
+  size: 69_239

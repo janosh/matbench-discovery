@@ -8,14 +8,19 @@ MODEL_DIRS = glob(f"{ROOT}/models/*/")
 
 
 def test_model_dirs_have_metadata() -> None:
-    required = (
-        "authors",
-        "date_added",
-        "matbench_discovery_version",
-        "model_name",
-        "model_version",
-        "repo",
-    )
+    required = {
+        "authors": list,  # dict with name, affiliation, orcid?, email?
+        "date_added": str,
+        "matbench_discovery_version": float,
+        "model_name": str,
+        "model_version": str,
+        "repo": str,
+        "training_set": {
+            "title": str,  # name of training set
+            "url": str,  # url to e.g. figshare
+            "size": int,  # number of structures
+        },
+    }
     for model_dir in MODEL_DIRS:
         md_files = glob(f"{model_dir}metadata*.yml")
         assert len(md_files) == 1, f"expected 1 metadata file, got {md_files=}"
@@ -31,10 +36,19 @@ def test_model_dirs_have_metadata() -> None:
 
         for metadata in models:
             for key in required:
-                assert metadata.get(key), f"Empty required {key=} in {md_file}"
+                assert key in metadata, f"Required {key=} missing in {md_file}"
+                if isinstance(required[key], dict):
+                    missing_keys = {*required[key]} - {*metadata[key]}  # type: ignore
+                    assert (
+                        not missing_keys
+                    ), f"Missing sub-keys {missing_keys} of {key=} in {md_file}"
+                    continue
+
+                err_msg = f"Invalid {key=}, expected {required[key]} in {md_file}"
+                assert isinstance(metadata[key], required[key]), err_msg  # type: ignore
 
             authors, date_added, mbd_version, model_name, model_version, repo = (
-                metadata[key] for key in required
+                metadata[key] for key in list(required)[:-1]
             )
 
             # make sure all keys are valid
