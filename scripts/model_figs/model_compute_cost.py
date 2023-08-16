@@ -19,7 +19,7 @@ from pymatviz.utils import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, SITE_MODELS, WANDB_PATH
-from matbench_discovery.preds import df_metrics, df_preds
+from matbench_discovery.preds import df_metrics, df_metrics_10k, df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
@@ -103,28 +103,33 @@ if False:  # commented out due to not incl. M3GNet + MEGNet in main analysis
 test_stats["CGCNN+P"] = {}
 
 
-df_stats = pd.concat(
-    [
-        df_metrics,
-        pd.DataFrame(train_stats).add_prefix("Train ", axis="index"),
-        pd.DataFrame(test_stats).add_prefix("Test ", axis="index"),
-    ],
-).T
-df_stats[time_col] = df_stats.filter(like=time_col).sum(axis="columns")
+# %%
+for df_tmp, label in ((df_metrics, ""), (df_metrics_10k, "-10k")):
+    df_tmp = pd.concat(
+        [
+            df_metrics,
+            pd.DataFrame(train_stats).add_prefix("Train ", axis="index"),
+            pd.DataFrame(test_stats).add_prefix("Test ", axis="index"),
+        ],
+    ).T
+    df_tmp[time_col] = df_tmp.filter(like=time_col).sum(axis="columns")
+
+    # write model metrics to json for website use
+    in_both = [*set(df_metrics) & set(df_preds)]
+    df_tmp["missing_preds"] = df_preds[in_both].isna().sum()
+    df_tmp["missing_percent"] = [
+        f"{x / len(df_preds):.2%}" for x in df_tmp.missing_preds
+    ]
+
+    df_tmp.attrs["All Models Run Time"] = df_tmp[time_col].sum()
+    print(f"{df_tmp[time_col].sum()=:.0f} hours")
+
+    df_tmp.round(2).to_json(f"{SITE_MODELS}/model-stats{label}.json", orient="index")
+    if label == "":
+        df_stats = df_tmp
 
 
-# %% write model metrics to json for use by the website
-in_both = [*set(df_metrics) & set(df_preds)]
-df_stats["missing_preds"] = df_preds[in_both].isna().sum()
-df_stats["missing_percent"] = [
-    f"{x / len(df_preds):.2%}" for x in df_stats.missing_preds
-]
-
-df_stats.attrs["All Models Run Time"] = df_stats[time_col].sum()
-print(f"{df_stats[time_col].sum()=:.0f} hours")
-
-df_stats.round(2).to_json(f"{SITE_MODELS}/model-stats.json", orient="index")
-
+# %%
 df_time = (
     df_stats.sort_index()
     .filter(like=time_col)
