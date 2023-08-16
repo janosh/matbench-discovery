@@ -18,7 +18,7 @@ import wandb.apis.public
 from pymatviz.utils import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import FIGS, MODELS, PDF_FIGS, WANDB_PATH
+from matbench_discovery import PDF_FIGS, SITE_FIGS, SITE_MODELS, WANDB_PATH
 from matbench_discovery.preds import df_metrics, df_preds
 
 __author__ = "Janosh Riebesell"
@@ -123,7 +123,7 @@ df_stats["missing_percent"] = [
 df_stats.attrs["All Models Run Time"] = df_stats[time_col].sum()
 print(f"{df_stats[time_col].sum()=:.0f} hours")
 
-df_stats.round(2).to_json(f"{MODELS}/model-stats.json", orient="index")
+df_stats.round(2).to_json(f"{SITE_MODELS}/model-stats.json", orient="index")
 df_time = (
     df_stats.sort_index()
     .filter(like=time_col)
@@ -156,7 +156,7 @@ fig = px.pie(
 fig.layout.margin.update(l=0, r=0, t=0, b=0)
 title = f"Total CPU+GPU<br>time used:<br>{df_stats[time_col].sum():.1f} h"
 fig.add_annotation(text=title, font=dict(size=15), x=0.5, y=0.5, showarrow=False)
-pie_path = f"{FIGS}/model-run-times-pie.svelte"
+pie_path = f"{SITE_FIGS}/model-run-times-pie.svelte"
 # save_fig(fig, pie_path)
 fig.show()
 
@@ -196,7 +196,7 @@ title = f"All models: {df_stats[time_col].sum():.0f} h"
 fig.layout.legend.update(title=title, orientation="h", xanchor="center", x=0.4, y=1.2)
 fig.layout.xaxis.title = ""
 fig.layout.margin.update(l=0, r=0, t=0, b=0)
-save_fig(fig, f"{FIGS}/model-run-times-bar.svelte")
+save_fig(fig, f"{SITE_FIGS}/model-run-times-bar.svelte")
 
 pdf_fig = go.Figure(fig)
 # replace legend with annotation in PDF

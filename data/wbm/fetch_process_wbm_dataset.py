@@ -19,7 +19,7 @@ from pymatviz import density_scatter
 from pymatviz.utils import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import FIGS, today
+from matbench_discovery import SITE_FIGS, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.plots import pio
@@ -474,7 +474,7 @@ if not fig_compressed:
     fig_compressed = True
     fig.data[0].x = [round(x, 3) for x in fig.data[0].x[::10]]
 
-img_path = f"{FIGS}/hist-wbm-e-form-per-atom"
+img_path = f"{SITE_FIGS}/hist-wbm-e-form-per-atom"
 save_fig(fig, f"{img_path}.svelte")
 # recommended to upload SVG to vecta.io/nano for compression
 # save_fig(fig, f"{img_path}.svg", width=800, height=300)

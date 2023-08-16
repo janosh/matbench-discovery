@@ -12,7 +12,7 @@ will provide the best hit rate for the given budget.
 import pandas as pd
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, PDF_FIGS
+from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.plots import cumulative_metrics
 from matbench_discovery.preds import (
     df_each_pred,
@@ -112,5 +112,5 @@ fig.show()
 
 # %%
 img_name = f"cumulative-{'-'.join(metrics).lower()}"
-save_fig(fig, f"{FIGS}/{img_name}.svelte")
+save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=900, height=400)

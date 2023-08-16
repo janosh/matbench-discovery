@@ -6,7 +6,7 @@ from typing import Final
 
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, PDF_FIGS
+from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
 from matbench_discovery.preds import (
     df_each_pred,
@@ -60,5 +60,5 @@ img_name = "rolling-mae-vs-hull-dist-models"
 
 
 # %%
-save_fig(fig, f"{FIGS}/{img_name}.svelte")
+save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=520, height=350)

@@ -13,7 +13,7 @@ import scipy.stats
 from pymatviz.utils import add_identity_line, bin_df_cols, save_fig
 from tqdm import tqdm
 
-from matbench_discovery import FIGS, PDF_FIGS
+from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.metrics import classify_stable
 from matbench_discovery.plots import clf_color_map, clf_colors, clf_labels
 from matbench_discovery.preds import (
@@ -89,7 +89,7 @@ fig.update_layout(legend=legend)
 add_identity_line(fig)
 fig.show()
 
-img_name = f"{FIGS}/e-form-scatter-models"
+img_name = f"{SITE_FIGS}/e-form-scatter-models"
 # save_fig(fig, f"{img_path}.svelte")
 
 
@@ -116,7 +116,7 @@ fig.update_layout(legend=legend)
 add_identity_line(fig)
 fig.show()
 
-img_name = f"{FIGS}/e-above-hull-scatter-models"
+img_name = f"{SITE_FIGS}/e-above-hull-scatter-models"
 # save_fig(fig, f"{img_path}.svelte")
 
 
@@ -257,7 +257,7 @@ fig.show()
 
 # %%
 fig_name = f"each-scatter-models-{n_rows}x{n_cols}"
-save_fig(fig, f"{FIGS}/{fig_name}.svelte")
+save_fig(fig, f"{SITE_FIGS}/{fig_name}.svelte")
 save_fig(fig, f"{PDF_FIGS}/{fig_name}.pdf")
 
 

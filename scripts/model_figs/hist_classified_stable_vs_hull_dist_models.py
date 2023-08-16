@@ -10,7 +10,7 @@ from typing import Final
 
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, PDF_FIGS, today
+from matbench_discovery import PDF_FIGS, SITE_FIGS, today
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist, plt
 from matbench_discovery.preds import (
     df_metrics,
@@ -118,5 +118,5 @@ img_name = f"hist-clf-{which_energy}-hull-dist-models-{n_rows}x{n_cols}"
 
 
 # %%
-save_fig(fig, f"{FIGS}/{img_name}.svelte")
+save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=n_cols * 220, height=n_rows * 220)

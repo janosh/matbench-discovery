@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from sklearn.dummy import DummyClassifier
 
-from matbench_discovery import FIGS, PDF_FIGS
+from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.models import MODEL_METADATA
@@ -141,7 +141,7 @@ for label, df, extra_hide_metrics in (
     # draw dotted line between classification and regression metrics
     df_to_svelte_table(
         styler,
-        f"{FIGS}/metrics-table{label}.svelte",
+        f"{SITE_FIGS}/metrics-table{label}.svelte",
         inline_props="class='roomy'",
         styles="#T_ :is(td, th):nth-last-child(4) { border-left: 1px dotted white; }",
     )
