@@ -62,11 +62,11 @@
     {pretty_num(missing_preds, `,.0f`)}
     <small>({missing_percent})</small>
   </span>
-  <span>
-    <Icon icon="fluent:missing-metadata-24-regular" inline />
+  <span style="grid-column: span 2;">
+    <Icon icon="mdi:database" inline />
     Training set:
     <a href={training_set.url}>{training_set.title}</a>
-    <small>({training_set.size})</small>
+    <small>({pretty_num(training_set.size)})</small>
   </span>
 </p>
 {#if show_details}
