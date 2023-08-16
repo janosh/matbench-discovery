@@ -294,7 +294,7 @@
       <td id="T__row4_col4" class="data row4 col4" >0.19</td>
       <td id="T__row4_col5" class="data row4 col5" >0.27</td>
       <td id="T__row4_col6" class="data row4 col6" >0.14</td>
-      <td id="T__row4_col7" class="data row4 col7" >69,239</td>
+      <td id="T__row4_col7" class="data row4 col7" >154,719</td>
       <td id="T__row4_col8" class="data row4 col8" >GNN</td>
     </tr>
     <tr>
