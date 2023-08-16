@@ -214,7 +214,7 @@
   background-color: #1fa187;
   color: #f1f1f1;
 }
-#T_ :is(td, th):nth-last-child(4) { border-left: 1px dotted white; }</style>
+#T_ :is(td, th):nth-child(6) { border-left: 1px dotted white; }</style>
 
     <script lang="ts">
       import { sortable } from 'svelte-zoo/actions'

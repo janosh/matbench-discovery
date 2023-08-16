@@ -138,12 +138,15 @@ for label, df, extra_hide_metrics in (
     styler.set_uuid("")
 
     # export model metrics as styled HTML table and Svelte component
-    # draw dotted line between classification and regression metrics
+    # get index of MAE column
+    mae_col_idx = styler.columns.get_loc("MAE")
+    css_col_selector = f"#T_ :is(td, th):nth-child({mae_col_idx + 2})"
     df_to_svelte_table(
         styler,
         f"{SITE_FIGS}/metrics-table{label}.svelte",
         inline_props="class='roomy'",
-        styles="#T_ :is(td, th):nth-last-child(4) { border-left: 1px dotted white; }",
+        # draw dotted line between classification and regression metrics
+        styles=f"{css_col_selector} {{ border-left: 1px dotted white; }}",
     )
     try:
         df_to_pdf(styler, f"{PDF_FIGS}/metrics-table{label}.pdf")
