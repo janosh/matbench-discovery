@@ -96,7 +96,7 @@ Element counts for WBM test set consisting of 256,963 WBM `ComputedStructureEntr
   <img src="./figs/wbm-elements.svg" alt="Periodic table log heatmap of WBM elements">
 </slot>
 
-Element counts for MP training set consisting of 146,323 `ComputedStructureEntries`
+Element counts for MP training set consisting of 154,719 `ComputedStructureEntries`
 
 <slot name="mp-elements-heatmap">
   <img src="./figs/mp-elements.svg" alt="Periodic table log heatmap of MP elements">

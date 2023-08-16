@@ -8,7 +8,7 @@ from pymatviz import spacegroup_hist, spacegroup_sunburst
 from pymatviz.ptable import ptable_heatmap_plotly
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, PDF_FIGS
+from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import df_to_pdf, df_to_svelte_table
 from matbench_discovery.preds import df_each_pred, df_preds, each_true_col
@@ -74,7 +74,7 @@ styles = {
 styler.set_table_styles([dict(selector=sel, props=styles[sel]) for sel in styles])
 styler.set_uuid("")
 
-df_to_svelte_table(styler, f"{FIGS}/proto-counts-{model}-failures.svelte")
+df_to_svelte_table(styler, f"{SITE_FIGS}/proto-counts-{model}-failures.svelte")
 df_to_pdf(styler, f"{PDF_FIGS}/proto-counts-{model}-failures.pdf")
 
 

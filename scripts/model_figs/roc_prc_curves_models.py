@@ -12,7 +12,7 @@ from pymatviz.utils import save_fig
 from sklearn.metrics import auc, precision_recall_curve, roc_curve
 from tqdm import tqdm
 
-from matbench_discovery import FIGS, PDF_FIGS, STABILITY_THRESHOLD
+from matbench_discovery import PDF_FIGS, SITE_FIGS, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots
 from matbench_discovery.preds import df_each_pred, df_preds, each_true_col, models
 
@@ -26,7 +26,7 @@ facet_col = "Model"
 color_col = "Stability Threshold"
 
 n_cols = 3
-n_rows = math.ceil(len(models) // n_cols)
+n_rows = math.ceil(len(models) / n_cols)
 
 
 # %%
@@ -99,7 +99,7 @@ img_name = f"roc-models-{f'{n_rows}x{n_cols}' if facet_plot else 'all-in-one'}"
 
 
 # %%
-save_fig(fig, f"{FIGS}/{img_name}.svelte")
+save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=1000, height=400)
 
 
@@ -126,7 +126,7 @@ for model in (pbar := tqdm(list(df_each_pred), desc="Calculating ROC curves")):
 
 # %%
 n_cols = 3
-n_rows = math.ceil(len(models) // n_cols)
+n_rows = math.ceil(len(models) / n_cols)
 
 fig = df_prc.iloc[:: len(df_roc) // 500 or 1].plot.scatter(
     x="Recall",
@@ -162,7 +162,7 @@ fig.show()
 
 
 # %%
-save_fig(fig, f"{FIGS}/prc-models-{n_rows}x{n_cols}.svelte")
+save_fig(fig, f"{SITE_FIGS}/prc-models-{n_rows}x{n_cols}.svelte")
 save_fig(fig, f"{PDF_FIGS}/prc-models-{n_rows}x{n_cols}.pdf")
 fig.update_yaxes(matches=None)
 fig.show()

@@ -10,7 +10,7 @@ import pandas as pd
 from crystal_toolkit.helpers.utils import hook_up_fig_with_struct_viewer
 from pymatviz.utils import add_identity_line, save_fig
 
-from matbench_discovery import FIGS, PDF_FIGS
+from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.preds import (
     df_preds,
@@ -81,7 +81,7 @@ for material_cls, pattern in material_classes.items():
     # )
     fig.show()
     img_name = f"scatter-largest-errors-models-mean-vs-true-hull-dist-{material_cls}"
-    save_fig(fig, f"{FIGS}/{img_name}.svelte")
+    save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
     save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
 
 

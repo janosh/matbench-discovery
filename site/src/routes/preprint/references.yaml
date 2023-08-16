@@ -456,6 +456,91 @@ references:
   URL: https://link.aps.org/doi/10.1103/PhysRevLett.98.146401
   volume: '98'
 
+- id: belsky_new_2002
+  abstract: >-
+    The materials community in both science and industry use crystallographic
+    data models on a daily basis to visualize, explain and predict the behavior
+    of chemicals and materials. Access to reliable information on the structure
+    of crystalline materials helps researchers concentrate experimental work in
+    directions that optimize the discovery process. The Inorganic Crystal
+    Structure Database (ICSD) is a comprehensive collection of more than 60 000
+    crystal structure entries for inorganic materials and is produced
+    cooperatively by Fachinformationszentrum Karlsruhe (FIZ), Germany, and the
+    US National Institute of Standards and Technology (NIST). The ICSD is
+    disseminated in computerized formats with scientific software tools to
+    exploit the content of the database. Features of a new Windows-based
+    graphical user interface for the ICSD are outlined, together with directions
+    for future development in support of materials research and design.
+  accessed:
+    - year: 2023
+      month: 8
+      day: 16
+  author:
+    - family: Belsky
+      given: A.
+    - family: Hellenbrandt
+      given: M.
+    - family: Karen
+      given: V. L.
+    - family: Luksch
+      given: P.
+  citation-key: belsky_new_2002
+  container-title: 'Acta Crystallographica Section B: Structural Science'
+  container-title-short: Acta Cryst B
+  DOI: 10.1107/S0108768102006948
+  ISSN: 0108-7681
+  issue: '3'
+  issued:
+    - year: 2002
+      month: 6
+      day: 1
+  language: en
+  license: Copyright (c) 2002 International Union of Crystallography
+  number: ARRAY(0xa762024)
+  page: 364-369
+  publisher: International Union of Crystallography
+  source: scripts.iucr.org
+  title: >-
+    New developments in the Inorganic Crystal Structure Database (ICSD):
+    accessibility in support of materials research and design
+  title-short: New developments in the Inorganic Crystal Structure Database (ICSD)
+  type: article-journal
+  URL: http://scripts.iucr.org/cgi-bin/paper?an0615
+  volume: '58'
+
+- id: bergerhoff_inorganic_1983
+  accessed:
+    - year: 2020
+      month: 8
+      day: 31
+  author:
+    - family: Bergerhoff
+      given: G.
+    - family: Hundt
+      given: R.
+    - family: Sievers
+      given: R.
+    - family: Brown
+      given: I. D.
+  citation-key: bergerhoff_inorganic_1983
+  container-title: Journal of Chemical Information and Computer Sciences
+  container-title-short: J. Chem. Inf. Comput. Sci.
+  DOI: 10.1021/ci00038a003
+  ISSN: 0095-2338
+  issue: '2'
+  issued:
+    - year: 1983
+      month: 5
+      day: 1
+  note: 'ZSCC: 0000553'
+  page: 66-69
+  publisher: American Chemical Society
+  source: ACS Publications
+  title: The inorganic crystal structure data base
+  type: article-journal
+  URL: https://pubs.acs.org/doi/abs/10.1021/ci00038a003
+  volume: '23'
+
 - id: borg_quantifying_2022
   abstract: >-
     The predictive capabilities of machine learning (ML) models used in

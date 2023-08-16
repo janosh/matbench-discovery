@@ -16,7 +16,7 @@ from pymatviz import count_elements, plot_structure_2d, ptable_heatmap_plotly
 from pymatviz.utils import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import FIGS, PDF_FIGS, ROOT
+from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.metrics import classify_stable
 from matbench_discovery.preds import (
@@ -305,7 +305,7 @@ fig.show()
 
 
 # %%
-save_fig(fig, f"{FIGS}/largest-fp-diff-each-error-models.svelte")
+save_fig(fig, f"{SITE_FIGS}/largest-fp-diff-each-error-models.svelte")
 save_fig(fig, f"{PDF_FIGS}/large-fp-diff-vs-each-error.pdf")
 
 

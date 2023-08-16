@@ -2,7 +2,9 @@
 
 
 # %%
-from matbench_discovery import FIGS, today
+from pymatviz.utils import save_fig
+
+from matbench_discovery import PDF_FIGS, today
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
 from matbench_discovery.preds import df_metrics, df_preds, e_form_col, each_true_col
 
@@ -35,5 +37,7 @@ elif backend == "plotly":
     ax.update_layout(title=dict(text=title, x=0.5))
     ax.show()
 
-img_path = f"{FIGS}/rolling-mae-vs-hull-dist.pdf"
-# fig.savefig(img_path)
+
+# %%
+img_path = f"{PDF_FIGS}/rolling-mae-vs-hull-dist.pdf"
+save_fig(img_path)

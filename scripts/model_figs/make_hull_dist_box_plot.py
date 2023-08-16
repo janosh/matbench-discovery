@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 import seaborn as sns
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, PDF_FIGS, plots
+from matbench_discovery import PDF_FIGS, SITE_FIGS, plots
 from matbench_discovery.preds import df_each_err, models
 
 __author__ = "Janosh Riebesell"
@@ -73,5 +73,5 @@ fig.show()
 
 
 # %%
-save_fig(fig, f"{FIGS}/box-hull-dist-errors.svelte")
+save_fig(fig, f"{SITE_FIGS}/box-hull-dist-errors.svelte")
 save_fig(fig, f"{PDF_FIGS}/box-hull-dist-errors.pdf")

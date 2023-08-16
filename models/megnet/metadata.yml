@@ -31,6 +31,11 @@ requirements:
   pandas: 1.5.1
 trained_for_benchmark: false
 
+training_set:
+  title: Graphs of MP
+  url: https://figshare.com/articles/dataset/7451351
+  size: 69_239
+
 notes:
   description: MatErials Graph Network is another GNN for material properties of relaxed structure which showed that learned element embeddings encode periodic chemical trends and can be transfer-learned from large data sets (formation energies) to predictions on small data properties (band gaps, elastic moduli).
   training: Using pre-trained model released with paper. Was only trained on `MP-crystals-2018.6.1` dataset [available on Figshare](https://figshare.com/articles/Graphs_of_materials_project/7451351).

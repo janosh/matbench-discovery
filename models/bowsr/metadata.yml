@@ -27,6 +27,11 @@ requirements:
   pandas: 1.5.1
 trained_for_benchmark: false
 
+training_set:
+  title: Graphs of MP
+  url: https://figshare.com/articles/dataset/7451351
+  size: 69_239
+
 hyperparams:
   Optimizer Params:
     alpha: 0.000676

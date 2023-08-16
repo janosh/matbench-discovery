@@ -6,7 +6,7 @@ from typing import Final
 
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, PDF_FIGS
+from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
 from matbench_discovery.preds import (
     df_each_pred,
@@ -47,8 +47,8 @@ if backend == "matplotlib":
 else:
     for trace in fig.data:
         model = trace.name.split(" MAE=")[0]
-        if model in df_metrics.T.sort_values("MAE").index[6:]:
-            trace.visible = "legendonly"  # initially show only top models
+        if model in df_metrics.T.sort_values("MAE").index[8:]:
+            trace.visible = "legendonly"  # show only top models by default
 
     # increase line width
     fig.update_traces(line=dict(width=3))
@@ -60,5 +60,5 @@ img_name = "rolling-mae-vs-hull-dist-models"
 
 
 # %%
-save_fig(fig, f"{FIGS}/{img_name}.svelte")
+save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=520, height=350)
