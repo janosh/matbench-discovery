@@ -69,11 +69,11 @@ df_cse["cse"] = [
 cse: ComputedStructureEntry
 for row in tqdm(df_m3gnet.itertuples(), total=len(df_m3gnet)):
     mat_id, struct_dict, m3gnet_energy, *_ = row
-    m3gnet_struct = Structure.from_dict(struct_dict)
-    df_m3gnet.at[mat_id, struct_col] = m3gnet_struct  # noqa: PD008
+    mlip_struct = Structure.from_dict(struct_dict)
+    df_m3gnet.at[mat_id, struct_col] = mlip_struct  # noqa: PD008
     cse = df_cse.loc[mat_id, "cse"]
     cse._energy = m3gnet_energy  # cse._energy is the uncorrected energy
-    cse._structure = m3gnet_struct
+    cse._structure = mlip_struct
     df_m3gnet.loc[mat_id, "cse"] = cse
 
 
@@ -91,12 +91,12 @@ df_m3gnet["e_form_per_atom_m3gnet"] = [
 
 
 # %%
-out_path = f"{module_dir}/{glob_pattern.split('/*')[0]}"
+out_path = file_paths[0].rsplit("/", 1)[0]
 df_m3gnet = df_m3gnet.round(4)
 df_m3gnet.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
 df_m3gnet.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
 
 
-# in_path = f"{module_dir}/2022-10-31-m3gnet-wbm-IS2RE.json.gz"
-# df_m3gnet = pd.read_csv(in_path.replace(".json.gz", ".csv")).set_index("material_id")
-# df_m3gnet = pd.read_json(in_path).set_index("material_id")
+# in_path = f"{module_dir}/2022-10-31-m3gnet-wbm-IS2RE"
+# df_m3gnet = pd.read_csv(f"{in_path}.csv.gz").set_index("material_id")
+# df_m3gnet = pd.read_json(f"{in_path}.json.gz").set_index("material_id")

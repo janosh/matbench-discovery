@@ -5,6 +5,8 @@
   export let references: Reference[]
   export let ref_selector: string = `a.ref[href^='#']`
   export let found_on_page: Reference[] = references
+  export let n_authors: number = 1
+  export let first_name_mode: 'initial' | 'full' | 'none' = `none`
 
   function filter_refs() {
     const ref_links = document.querySelectorAll<HTMLAnchorElement>(ref_selector)
@@ -20,10 +22,24 @@
       <li>
         <strong {id}>{title}</strong>
         <span>
-          {@html author.map((a) => `${a.given} ${a.family}`).join(`, &thinsp; `)}
+          {@html author
+            .slice(0, n_authors)
+            .map((auth) => {
+              const { given, family } = auth
+              const first_name = {
+                initial: `${given[0]}. `,
+                full: `${given} `,
+                none: ``,
+              }[first_name_mode]
+              return `${first_name ?? ``}${family}`
+            })
+            .join(`,&thinsp; `)}
+          {#if author.length > n_authors}
+            <em>et al.</em>
+          {/if}
         </span>
-        &mdash;
         <small>
+          &mdash;
           {#if DOI}
             <a href="https://doi.org/{DOI}">{DOI}</a>
           {:else if href}

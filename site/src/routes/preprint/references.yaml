@@ -1178,6 +1178,48 @@ references:
   URL: https://link.aps.org/doi/10.1103/PhysRevB.99.014104
   volume: '99'
 
+- id: draxl_nomad_2018
+  abstract: >-
+    , Data are a crucial raw material of this century. The amount of data that
+    have been created in materials science thus far and that continues to be
+    created every day is immense. Without a proper infrastructure that allows
+    for collecting and sharing data, the envisioned success of big data-driven
+    materials science will be hampered. For the field of computational materials
+    science, the NOMAD (Novel Materials Discovery) Center of Excellence (CoE)
+    has changed the scientific culture toward comprehensive and findable,
+    accessible, interoperable, and reusable (FAIR) data, opening new avenues for
+    mining materials science big data. Novel data-analytics concepts and tools
+    turn data into knowledge and help in the prediction of new materials and in
+    the identification of new properties of already known materials.
+  accessed:
+    - year: 2020
+      month: 7
+      day: 29
+  author:
+    - family: Draxl
+      given: Claudia
+    - family: Scheffler
+      given: Matthias
+  citation-key: draxl_nomad_2018
+  container-title: MRS Bulletin
+  DOI: 10.1557/mrs.2018.208
+  ISSN: 0883-7694, 1938-1425
+  issue: '9'
+  issued:
+    - year: 2018
+      month: 9
+  language: en
+  note: 'ZSCC: 0000084'
+  page: 676-682
+  publisher: Cambridge University Press
+  source: Cambridge University Press
+  title: 'NOMAD: The FAIR concept for big data-driven materials science'
+  title-short: NOMAD
+  type: article-journal
+  URL: >-
+    https://www.cambridge.org/core/journals/mrs-bulletin/article/nomad-the-fair-concept-for-big-datadriven-materials-science/1EEF321F62D41997CA16AD367B74C4B0
+  volume: '43'
+
 - id: dunn_benchmarking_2020
   abstract: >-
     We present a benchmark test suite and an automated machine learning
