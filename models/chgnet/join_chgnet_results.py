@@ -63,11 +63,11 @@ ax = density_scatter(df=df_preds, x=e_form_col, y=e_form_chgnet_col)
 
 
 # %%
-out_path = f"{module_dir}/{glob_pattern.split('/*')[0]}"
+out_path = file_paths[0].rsplit("/", 1)[0]
 df_chgnet = df_chgnet.round(4)
 df_chgnet.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
 df_chgnet.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
 
-# in_path = f"{module_dir}/2023-03-04-chgnet-wbm-IS2RE.json.gz"
-# df_chgnet = pd.read_csv(in_path.replace(".json.gz", ".csv")).set_index("material_id")
-# df_chgnet = pd.read_json(in_path).set_index("material_id")
+# in_path = f"{module_dir}/2023-03-04-chgnet-wbm-IS2RE"
+# df_chgnet = pd.read_csv(f"{in_path}.csv.gz").set_index("material_id")
+# df_chgnet = pd.read_json(f"{in_path}.json.gz").set_index("material_id")

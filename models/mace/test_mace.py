@@ -32,6 +32,10 @@ ase_optimizer = "FIRE"
 job_name = f"mace-wbm-{task_type}-{ase_optimizer}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 relax_cell = True
+# MACE trained on M3GNet training set by original MACE authors
+# model_name = "2023-07-14-mace-ilyes-trained-MPF-2021-2-8-big-128-6"
+# MACE trained on CHGNet training set by Yuan Chiang
+model_name = "2023-08-14-mace-yuan-trained-mptrj-04"
 
 slurm_vars = slurm_submit(
     job_name=job_name,
@@ -62,6 +66,7 @@ print(f"{data_path=}")
 e_pred_col = "mace_energy"
 max_steps = 500
 force_max = 0.05  # Run until the forces are smaller than this in eV/A
+checkpoint = f"{ROOT}/models/mace/{model_name}.model"
 
 df_in: pd.DataFrame = np.array_split(
     pd.read_json(data_path).set_index("material_id"), slurm_array_task_count
@@ -70,6 +75,7 @@ df_in: pd.DataFrame = np.array_split(
 run_params = dict(
     data_path=data_path,
     versions={dep: version(dep) for dep in ("mace", "numpy", "torch")},
+    checkpoint=checkpoint,
     task_type=task_type,
     df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     slurm_vars=slurm_vars,
@@ -84,8 +90,6 @@ wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 
 # %%
-checkpoint = f"{ROOT}/models/mace/2023-07-14-mace-universal-2-big-128-6.model"
-# load MACE model pre-trained on M3GNet training set by original MACE authors
 mace_calc = MACECalculator(checkpoint, device="cuda", default_dtype="float32")
 relax_results: dict[str, dict[str, Any]] = {}
 input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
@@ -131,7 +135,7 @@ for material_id in tqdm(structs, desc="Relaxing", disable=None):
             "mace_trajectory": mace_traj,  # Add the trajectory to the results
         }
     except Exception as exc:
-        print(f"Failed to relax {material_id}: {exc}")
+        print(f"Failed to relax {material_id}: {exc!r}")
         continue
 
 

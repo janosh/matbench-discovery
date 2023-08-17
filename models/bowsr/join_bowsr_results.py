@@ -65,7 +65,7 @@ pymatviz.density_scatter(
 
 
 # %%
-out_path = f"{module_dir}/{glob_pattern.split('/*')[0]}"
+out_path = file_paths[0].rsplit("/", 1)[0]
 df_bowsr = df_bowsr.round(4)
 # save energy and formation energy as fast-loading CSV
 df_bowsr.select_dtypes("number").to_csv(f"{out_path}.csv")

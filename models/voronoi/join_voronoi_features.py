@@ -39,5 +39,5 @@ ax.set(xlabel="# NaNs", ylabel="# columns", title="NaNs per column")
 
 
 # %%
-out_path = f"{module_dir}/{glob_pattern.split('-*')[0]}.csv.bz2"
-df_features.to_csv(out_path)
+out_path = file_paths[0].rsplit("/", 1)[0]
+df_features.to_csv(f"{out_path}.csv.bz2")
