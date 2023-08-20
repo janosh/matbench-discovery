@@ -86,7 +86,7 @@
   </ul>
 
   <legend>
-    best
+    heading color: best
     <ColorBar color_scale={interpolatePuOr} style="min-width: min(70vw, 400px);" />
     worst
   </legend>
@@ -97,9 +97,14 @@
         animate:flip={{ duration: 400 }}
         in:fade={{ delay: 100 }}
         out:fade={{ delay: 100 }}
-        style="background-color: {bg_color(model[sort_by], min_val, max_val)};"
       >
-        <ModelCard data={model} {stats} {sort_by} bind:show_details />
+        <ModelCard
+          data={model}
+          {stats}
+          {sort_by}
+          bind:show_details
+          style="background-color: {bg_color(model[sort_by], min_val, max_val)};"
+        />
         <!-- maybe show this text in a tooltip: This model was not trained on the
         canonical training set. It's results should not be seen as a one-to-one
         comparison to the other models but rather proof of concept of what is possible. -->

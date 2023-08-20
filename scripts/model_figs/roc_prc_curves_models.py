@@ -74,11 +74,17 @@ fig = plot_fn(
     range_y=(0, 1.02),
     hover_name=facet_col,
     hover_data={facet_col: False},
-    **kwds if facet_plot else dict(color=facet_col, markers=True, marker_size=3),
+    **(kwds if facet_plot else dict(color=facet_col, markers=True)),
 )
 
 for anno in fig.layout.annotations:
     anno.text = anno.text.split("=", 1)[1]  # remove Model= from subplot titles
+
+line_styles = "solid dash dot dashdot".split() * 3
+markers = "circle square triangle-up triangle-down diamond cross star x".split() * 2
+for trace, ls, marker in zip(fig.data, line_styles, markers):
+    trace.line.dash = ls
+    trace.marker.symbol = marker
 
 if not facet_plot:
     fig.layout.legend.update(x=1, y=0, xanchor="right", title=None)
@@ -100,11 +106,12 @@ img_name = f"roc-models-{f'{n_rows}x{n_cols}' if facet_plot else 'all-in-one'}"
 
 # %%
 save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
-save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=1000, height=400)
+save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=500, height=500)
 
 
 # %%
 df_prc = pd.DataFrame()
+prec_col, recall_col = "Precision", "Recall"
 
 for model in (pbar := tqdm(list(df_each_pred), desc="Calculating ROC curves")):
     pbar.set_postfix_str(model)
@@ -112,16 +119,13 @@ for model in (pbar := tqdm(list(df_each_pred), desc="Calculating ROC curves")):
     y_true = (df_preds[~na_mask][each_true_col] <= STABILITY_THRESHOLD).astype(int)
     y_pred = df_each_pred[model][~na_mask]
     prec, recall, thresholds = precision_recall_curve(y_true, y_pred, pos_label=0)
-    df_tmp = pd.DataFrame(
-        {
-            "Precision": prec[:-1],
-            "Recall": recall[:-1],
-            color_col: thresholds,
-            facet_col: model,
-        }
-    ).round(3)
-
-    df_prc = pd.concat([df_prc, df_tmp])
+    dct = {
+        prec_col: prec[:-1],
+        recall_col: recall[:-1],
+        color_col: thresholds,
+        facet_col: model,
+    }
+    df_prc = pd.concat([df_prc, pd.DataFrame(dct).round(3)])
 
 
 # %%
@@ -129,8 +133,8 @@ n_cols = 3
 n_rows = math.ceil(len(models) / n_cols)
 
 fig = df_prc.iloc[:: len(df_roc) // 500 or 1].plot.scatter(
-    x="Recall",
-    y="Precision",
+    x=recall_col,
+    y=prec_col,
     facet_col=facet_col,
     facet_col_wrap=n_cols,
     facet_row_spacing=0.04,
@@ -149,7 +153,7 @@ for anno in fig.layout.annotations:
     anno.text = anno.text.split("=", 1)[1]  # remove Model= from subplot titles
 
 fig.layout.coloraxis.colorbar.update(
-    x=0.5, y=1.03, thickness=14, len=0.4, orientation="h"
+    x=0.5, y=1.03, thickness=11, len=0.8, orientation="h"
 )
 fig.add_hline(y=0.5, line=line)
 fig.add_annotation(

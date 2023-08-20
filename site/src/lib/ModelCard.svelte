@@ -9,6 +9,8 @@
   export let stats: ModelStatLabel[] // [key, label, unit][]
   export let sort_by: keyof ModelData
   export let show_details: boolean = false
+  export let style: string | null = null
+  export let metrics_style: string | null = null
 
   $: ({ model_name, missing_preds, missing_percent, hyperparams, notes, training_set } =
     data)
@@ -23,7 +25,7 @@
   const target = { target: `_blank`, rel: `noopener` }
 </script>
 
-<h2 id={model_name.toLowerCase().replaceAll(` `, `-`)}>
+<h2 id={model_name.toLowerCase().replaceAll(` `, `-`)} {style}>
   {model_name}
   <button
     on:click={() => (show_details = !show_details)}
@@ -107,7 +109,7 @@
     </section>
   </div>
 {/if}
-<section class="metrics">
+<section class="metrics" style={metrics_style}>
   <h3 class="toc-exclude">Metrics</h3>
   <ul>
     {#each stats as { key, label, unit }}
@@ -143,7 +145,7 @@
   <section>
     <h3 class="toc-exclude">Notes</h3>
     <ul>
-      {#each [`description`, `training`].filter((k) => k in (notes ?? {})) as key}
+      {#each [`description`, `training`].filter((key) => key in (notes ?? {})) as key}
         <li>{@html notes[key]}</li>
       {/each}
     </ul>
@@ -154,6 +156,7 @@
   h2 {
     margin: 8pt 0 1em;
     text-align: center;
+    border-radius: 5pt;
   }
   button {
     background: none;
