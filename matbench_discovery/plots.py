@@ -547,16 +547,16 @@ def rolling_mae_vs_hull_dist(
         scatter_kwds = dict(
             fill="toself", opacity=0.2, hoverinfo="skip", showlegend=False
         )
-        peril_cone_anno = "MAE > |E<sub>above hull</sub>|"
+        triangle_anno = "MAE > |E<sub>above hull</sub>|"
         fig.add_scatter(
             x=(-1, -dft_acc, dft_acc, 1) if show_dft_acc else (-1, 0, 1),
             y=(1, dft_acc, dft_acc, 1) if show_dft_acc else (1, 0, 1),
-            name=peril_cone_anno,
+            name=triangle_anno,
             fillcolor="red",
             **scatter_kwds,
         )
         fig.add_annotation(
-            x=0, y=0.8, text=peril_cone_anno, showarrow=False, yref="paper"
+            x=0, y=0.7, text=triangle_anno, showarrow=False, yref="paper"
         )
 
         if show_dummy_mae:

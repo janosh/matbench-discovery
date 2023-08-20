@@ -20,7 +20,7 @@
   <ol>
     {#each found_on_page as { title, id, author, DOI, URL: href, issued } (id)}
       <li>
-        <strong {id}>{title}</strong>
+        <p {id}>{title}</p>
         <span>
           {@html author
             .slice(0, n_authors)
@@ -61,8 +61,8 @@
   ol > li {
     margin: 1ex 0;
   }
-  ol > li > strong {
-    display: block;
+  ol > li > p {
+    margin: 0;
   }
   ol > li > :is(small, span) {
     font-weight: lighter;
