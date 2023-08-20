@@ -13,10 +13,13 @@ import pandas as pd
 from pymatviz.utils import save_fig
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
-from matbench_discovery.plots import cumulative_metrics
+from matbench_discovery.plots import (
+    cumulative_metrics,
+    plotly_line_styles,
+    plotly_markers,
+)
 from matbench_discovery.preds import (
     df_each_pred,
-    df_metrics,
     df_preds,
     each_true_col,
     models,
@@ -43,6 +46,7 @@ fig, df_metric = cumulative_metrics(
     # facet_col_wrap=2,
     # increase facet col gap
     facet_col_spacing=0.05,
+    # markers=True,
 )
 
 x_label = "Number of screened WBM test set materials"
@@ -50,9 +54,6 @@ if backend == "matplotlib":
     # fig.suptitle(title)
     fig.text(0.5, -0.08, x_label, ha="center", fontdict={"size": 16})
 if backend == "plotly":
-    fig.layout.legend = dict(x=1, y=0, bgcolor="rgba(0,0,0,0)", xanchor="right")
-    if "MAE" in metrics:
-        fig.layout.legend.update(traceorder="reversed")
     fig.layout.margin.update(l=0, r=0, t=30, b=50)
     fig.add_annotation(
         x=0.5,
@@ -64,14 +65,21 @@ if backend == "plotly":
         font=dict(size=14),
     )
     fig.update_traces(line=dict(width=3))
-    fig.layout.legend.update(
-        orientation="h", yanchor="bottom", y=1.1, xanchor="center", x=0.5
-    )
+    fig.layout.legend.update(bgcolor="rgba(0,0,0,0)")
+    # fig.layout.legend.update(
+    #     orientation="h", yanchor="bottom", y=1.1, xanchor="center", x=0.5
+    # )
+    # if "MAE" in metrics:
+    #     fig.layout.legend.update(traceorder="reversed")
 
-    for trace in fig.data:
+    for trace, ls, marker in zip(fig.data, plotly_line_styles, plotly_markers):
+        trace.line.dash = ls
+        trace.marker.symbol = marker
+
         # show only the N best models by default
-        if trace.name in df_metrics.T.sort_values("F1").index[:-6]:
-            trace.visible = "legendonly"
+        # if trace.name in df_metrics.T.sort_values("F1").index[:-6]:
+        #     trace.visible = "legendonly"
+
         last_idx = pd.Series(trace.y).last_valid_index()
         last_x = trace.x[last_idx]
         last_y = trace.y[last_idx]
@@ -113,4 +121,4 @@ fig.show()
 # %%
 img_name = f"cumulative-{'-'.join(metrics).lower()}"
 save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
-save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=900, height=400)
+save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=1000, height=400)

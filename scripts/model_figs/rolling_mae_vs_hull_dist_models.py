@@ -51,23 +51,23 @@ else:
         if model in df_metrics.T.sort_values("MAE").index[8:]:
             trace.visible = "legendonly"  # show only top models by default
 
-    # increase line width
-    fig.update_traces(line=dict(width=3))
+    fig.update_traces(line=dict(width=3))  # increase line width
     fig.layout.legend.update(
         bgcolor="rgba(0,0,0,0)", title="", x=1.01, y=0, yanchor="bottom"
     )
-    # increase legend handle size and reverse order
     fig.layout.margin.update(l=5, r=5, t=5, b=55)
 
-    # plot marginal histogram of true hull distances
+    # plot marginal histogram of true hull distances along top of figure
+    # fixes plot artifacts by adding noise to avoid piling up data in some bins
+    # from rounded data
+    noise = np.random.random(len(df_preds)) * 1e-12
     counts, bins = np.histogram(
-        df_preds[each_true_col], bins=400, range=fig.layout.xaxis.range
+        df_preds[each_true_col] + noise, bins=100, range=fig.layout.xaxis.range
     )
     marginal_trace = go.Scatter(
         x=bins, y=counts, name="Density", fill="tozeroy", showlegend=False, yaxis="y2"
     )
     marginal_trace.marker.color = "rgba(0, 150, 200, 1)"
-    # add marginal trace to existing figure
     fig.add_trace(marginal_trace)
 
     # update layout to include marginal plot

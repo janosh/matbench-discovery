@@ -15,6 +15,8 @@ from matbench_discovery.plots import (
     df_to_pdf,
     df_to_svelte_table,
     hist_classified_stable_vs_hull_dist,
+    plotly_line_styles,
+    plotly_markers,
     rolling_mae_vs_hull_dist,
 )
 from matbench_discovery.preds import (
@@ -210,3 +212,12 @@ def test_df_to_pdf(tmp_path: Path, crop: bool, capsys: CaptureFixture[str]) -> N
     stdout, stderr = capsys.readouterr()
     assert stderr == ""
     assert stdout == ""
+
+
+def test_plotly_markers_line_styles() -> None:
+    assert len(plotly_markers) > 100
+    assert len(plotly_line_styles) > 100
+    assert {*map(type, plotly_markers)} == {str}, "expect all markers are strings"
+    assert {*map(type, plotly_line_styles)} == {str}
+    assert "longdashdot" in plotly_line_styles
+    assert "circle" in plotly_markers

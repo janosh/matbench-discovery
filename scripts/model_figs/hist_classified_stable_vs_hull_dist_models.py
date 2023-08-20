@@ -123,4 +123,4 @@ orig_height = fig.layout.height
 fig.layout.height = n_rows * 180
 save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 fig.layout.height = orig_height
-save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=n_cols * 220, height=n_rows * 100)
+save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=n_cols * 280, height=n_rows * 130)

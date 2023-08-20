@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import math
 import os
 import subprocess
@@ -21,6 +22,8 @@ import scipy.stats
 import wandb
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from pandas.io.formats.style import Styler
+from plotly.validators.scatter.line import DashValidator
+from plotly.validators.scatter.marker import SymbolValidator
 from tqdm import tqdm
 
 from matbench_discovery import STABILITY_THRESHOLD
@@ -31,15 +34,20 @@ __date__ = "2022-08-05"
 
 Backend = Literal["matplotlib", "plotly"]
 
+plotly_markers = SymbolValidator().values[2::3]  # noqa: PD011
+plotly_line_styles = DashValidator().values[:-1]  # noqa: PD011
+# repeat line styles as many as times as needed to match number of markers
+plotly_line_styles *= len(plotly_markers) // len(plotly_line_styles)
 
-def unit(text: str) -> str:
+
+def plotly_unit(text: str) -> str:
     """Wrap text in a span with decreased font size and weight to display units in
     plotly labels.
     """
     return f"<span style='font-size: 0.8em; font-weight: lighter;'>({text})</span>"
 
 
-ev_per_atom = unit("eV/atom")
+ev_per_atom = plotly_unit("eV/atom")
 
 # --- start global plot settings
 quantity_labels = dict(
@@ -51,11 +59,11 @@ quantity_labels = dict(
     n_sites="Lattice site count",
     energy_per_atom=f"Energy {ev_per_atom}",
     e_form=f"DFT E<sub>form</sub> {ev_per_atom}",
-    e_above_hull=f"E<sub>above hull</sub> {ev_per_atom}",
-    e_above_hull_mp2020_corrected_ppd_mp=f"DFT E<sub>above hull</sub> {ev_per_atom}",
-    e_above_hull_pred=f"Predicted E<sub>above hull</sub> {ev_per_atom}",
+    e_above_hull=f"E<sub>hull dist</sub> {ev_per_atom}",
+    e_above_hull_mp2020_corrected_ppd_mp=f"DFT E<sub>hull dist</sub> {ev_per_atom}",
+    e_above_hull_pred=f"Predicted E<sub>hull dist</sub> {ev_per_atom}",
     e_above_hull_mp=f"E<sub>above MP hull</sub> {ev_per_atom}",
-    e_above_hull_error=f"Error in E<sub>above hull</sub> {ev_per_atom}",
+    e_above_hull_error=f"Error in E<sub>hull dist</sub> {ev_per_atom}",
     vol_diff="Volume difference (A^3)",
     e_form_per_atom_mp2020_corrected=f"DFT E<sub>form</sub> {ev_per_atom}",
     e_form_per_atom_pred=f"Predicted E<sub>form</sub> {ev_per_atom}",
@@ -547,7 +555,7 @@ def rolling_mae_vs_hull_dist(
         scatter_kwds = dict(
             fill="toself", opacity=0.2, hoverinfo="skip", showlegend=False
         )
-        triangle_anno = "MAE > |E<sub>above hull</sub>|"
+        triangle_anno = "MAE > |E<sub>hull dist</sub>|"
         fig.add_scatter(
             x=(-1, -dft_acc, dft_acc, 1) if show_dft_acc else (-1, 0, 1),
             y=(1, dft_acc, dft_acc, 1) if show_dft_acc else (1, 0, 1),
@@ -632,6 +640,7 @@ def cumulative_metrics(
     optimal_recall: str | None = "Optimal Recall",
     show_n_stable: bool = True,
     backend: Backend = "plotly",
+    n_points: int = 50,
     **kwargs: Any,
 ) -> tuple[plt.Figure | go.Figure, pd.DataFrame]:
     """Create 2 subplots side-by-side with cumulative precision and recall curves for
@@ -661,18 +670,24 @@ def cumulative_metrics(
             number of stable materials. Defaults to True.
         backend ('matplotlib' | 'plotly'], optional): Which plotting engine to use.
             Changes the return type. Defaults to 'plotly'.
+        n_points (int, optional): Number of points to use for interpolation of the
+            metric curves. Defaults to 80.
         **kwargs: Keyword arguments passed to df.plot().
 
     Returns:
         tuple[plt.Figure | go.Figure, pd.DataFrame]: The matplotlib/plotly figure and
             dataframe of cumulative metrics for each model.
     """
-    factory = lambda: pd.DataFrame(index=range(len(e_above_hull_true)))
-    dfs: dict[str, pd.DataFrame] = defaultdict(factory)
-    metrics_no_case = [*map(str.casefold, metrics)]
+    dfs: dict[str, pd.DataFrame] = defaultdict(pd.DataFrame)
 
-    valid_metrics = {"precision", "recall", "f1", "mae", "rmse"}
-    if invalid_metrics := set(metrics_no_case) - valid_metrics:
+    # largest number of materials predicted stable by any model, determines x-axis range
+    n_max_pred_stable = (df_preds < stability_threshold).sum().max()
+    longest_xs = np.linspace(0, n_max_pred_stable - 1, n_points)
+    for metric in metrics:
+        dfs[metric].index = longest_xs
+
+    valid_metrics = {"Precision", "Recall", "F1", "MAE", "RMSE"}
+    if invalid_metrics := set(metrics) - valid_metrics:
         raise ValueError(
             f"{invalid_metrics=}, should be case-insensitive subset of {valid_metrics=}"
         )
@@ -691,35 +706,36 @@ def cumulative_metrics(
         precision_cum = true_pos_cum / (true_pos_cum + false_pos_cum)
         recall_cum = true_pos_cum / n_total_pos  # aka true_pos_rate aka sensitivity
 
-        end = int(np.argmax(recall_cum))
-        xs = np.arange(end)
+        n_pred_stable = sum(each_pred <= stability_threshold)
+        model_range = np.arange(n_pred_stable)  # xs for interpolation
+        xs_model = longest_xs[longest_xs < n_pred_stable - 1]  # xs for plotting
 
-        if "precision" in metrics_no_case:
-            prec_interp = scipy.interpolate.interp1d(
-                xs, precision_cum[:end], kind="cubic"
-            )
-            dfs["Precision"][model_name] = pd.Series(prec_interp(xs))
-        if "recall" in metrics_no_case:
-            recall_interp = scipy.interpolate.interp1d(
-                xs, recall_cum[:end], kind="cubic"
-            )
-            dfs["Recall"][model_name] = pd.Series(recall_interp(xs))
-        if "f1" in metrics_no_case:
+        cubic_interpolate = functools.partial(scipy.interpolate.interp1d, kind="cubic")
+
+        if "Precision" in metrics:
+            prec_interp = cubic_interpolate(model_range, precision_cum[:n_pred_stable])
+            dfs["Precision"][model_name] = dict(zip(xs_model, prec_interp(xs_model)))
+
+        if "Recall" in metrics:
+            recall_interp = cubic_interpolate(model_range, recall_cum[:n_pred_stable])
+            dfs["Recall"][model_name] = dict(zip(xs_model, recall_interp(xs_model)))
+
+        if "F1" in metrics:
             f1_cum = 2 * (precision_cum * recall_cum) / (precision_cum + recall_cum)
-            f1_interp = scipy.interpolate.interp1d(xs, f1_cum[:end], kind="cubic")
-            dfs["F1"][model_name] = pd.Series(f1_interp(xs))
+            f1_interp = cubic_interpolate(model_range, f1_cum[:n_pred_stable])
+            dfs["F1"][model_name] = dict(zip(xs_model, f1_interp(xs_model)))
 
-        if "mae" in metrics_no_case:
+        if "MAE" in metrics:
             cum_errors = (each_true - each_pred).abs().cumsum()
             cum_counts = np.arange(1, len(each_true) + 1)
             mae_cum = cum_errors / cum_counts
-            mae_interp = scipy.interpolate.interp1d(xs, mae_cum[:end], kind="cubic")
-            dfs["MAE"][model_name] = pd.Series(mae_interp(xs))
+            mae_interp = cubic_interpolate(model_range, mae_cum[:n_pred_stable])
+            dfs["MAE"][model_name] = dict(zip(xs_model, mae_interp(xs_model)))
 
-        if "rmse" in metrics_no_case:
+        if "RMSE" in metrics:
             rmse_cum = (((each_true - each_pred) ** 2).cumsum() / cum_counts) ** 0.5
-            rmse_interp = scipy.interpolate.interp1d(xs, rmse_cum[:end], kind="cubic")
-            dfs["RMSE"][model_name] = pd.Series(rmse_interp(xs))
+            rmse_interp = cubic_interpolate(model_range, rmse_cum[:n_pred_stable])
+            dfs["RMSE"][model_name] = dict(zip(xs_model, rmse_interp(xs_model)))
 
     for key in dfs:
         # drop all-NaN rows so plotly plot x-axis only extends to largest number of
@@ -730,7 +746,6 @@ def cumulative_metrics(
 
     df_cum = pd.concat(dfs.values())
     # subselect rows for speed, plot has sufficient precision with 1k rows
-    df_cum = df_cum.iloc[:: len(df_cum) // 1000 or 1]
     n_stable = sum(e_above_hull_true <= STABILITY_THRESHOLD)
 
     if backend == "matplotlib":
@@ -751,7 +766,7 @@ def cumulative_metrics(
             # plotting speed and reduced file size
             # falls back on every row if df has less than 1000 rows
             df = dfs[metric]
-            df.iloc[:: len(df) // 1000 or 1].plot(
+            df.plot(
                 ax=ax,
                 legend=False,
                 backend=backend,

@@ -69,9 +69,19 @@ for col in models:
     fig.add_trace(box_plot)
 
 fig.layout.legend.update(orientation="h", y=1.15)
+# prevent x-labels from rotating
+fig.layout.xaxis.tickangle = 0
+# use line breaks to offset every other x-label
+x_labels_with_offset = [
+    label if idx % 2 == 0 else f"<br>{label}" for idx, label in enumerate(models)
+]
+fig.layout.xaxis.update(tickvals=models, ticktext=x_labels_with_offset)
+
 fig.show()
 
 
 # %%
 save_fig(fig, f"{SITE_FIGS}/box-hull-dist-errors.svelte")
+fig.layout.showlegend = False
 save_fig(fig, f"{PDF_FIGS}/box-hull-dist-errors.pdf")
+fig.layout.showlegend = True
