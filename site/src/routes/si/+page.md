@@ -13,7 +13,6 @@
   import MegnetRollingMaeBatches from '$figs/rolling-mae-vs-hull-dist-wbm-batches-megnet.svelte'
   import CgcnnRollingMaeBatches from '$figs/rolling-mae-vs-hull-dist-wbm-batches-cgcnn.svelte'
   import VoronoiRfRollingMaeBatches from '$figs/rolling-mae-vs-hull-dist-wbm-batches-voronoi-rf.svelte'
-  import HistClfTrueHullDistModels from '$figs/hist-clf-true-hull-dist-models-3x3.svelte'
   import SpacegroupSunburstWbm from '$figs/spacegroup-sunburst-wbm.svelte'
   import SpacegroupSunburstWrenformerFailures from '$figs/spacegroup-sunburst-wrenformer-failures.svelte'
   import LargestErrorScatterSelect from './largest-error-scatter-select.svelte'
@@ -74,16 +73,6 @@ A further point of clarification: whenever we say distance to the convex hull we
 {/if}
 
 > @label:fig:mp-elemental-reference-energies WBM formation energies were calculated w.r.t. these Materials Project elemental reference energies ([queried on 2023-02-07](https://github.com/janosh/matbench-discovery/blob/-/data/mp/2023-02-07-mp-elemental-reference-entries.json.gz)). Marker size indicates the number of atoms in the reference structure. Hover points for details.
-
-## Classification Histograms using Model-Predicted Energies
-
-{#if mounted}
-<HistClfTrueHullDistModels />
-{/if}
-
-> @label:fig:hist-clf-pred-hull-dist-models Similar to the [true hull distance histograms](/preprint#fig:hist-clf-true-hull-dist-models), these histograms show model stability classification as a function of the distance to the convex hull. The difference here being the $x$ axis shows model-predicted rather than DFT hull distances. Intuitively, it shows how often models misclassify as a function of how far they think a material is from the convex hull.
-
-Note the CGCNN+P histogram is more strongly peaked than CGCNN's which agrees better with the actual DFT ground truth [distribution of hull distances](/about-the-data#--target-distribution) in our test set. This explains why CGCNN+P performs better as a regressor but also reveals how it can simultaneously perform worse as a classifier. By moving predictions closer to the stability threshold at 0 eV/atom above the hull, even small errors are significant enough to tip a classification over the threshold.
 
 ## WBM Batch Robustness as a Measure of Extrapolation Prowess
 

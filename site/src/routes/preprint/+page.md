@@ -5,7 +5,7 @@
   import CumulativePrecisionRecall from '$figs/cumulative-precision-recall.svelte'
   import RollingMaeVsHullDistModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'
   import ElementErrorsPtableHeatmap from '$models/element-errors-ptable-heatmap.svelte'
-  import HistClfHullDistModels from '$figs/hist-clf-pred-hull-dist-models-5x2.svelte'
+  import HistClfPredHullDistModels from '$figs/hist-clf-pred-hull-dist-models-5x2.svelte'
   import { onMount } from 'svelte'
 
   let mounted = false
@@ -172,7 +172,7 @@ As noted, this is only a problem in practice for exhaustive discovery campaigns 
 
 We find a large performance gap between models that make one-shot predictions directly from unrelaxed inputs such as MEGNet, Wrenformer, CGCNN, CGCNN+P, Voronoi RF versus UIPs that predict forces to emulate DFT relaxation. While the F1 scores and DAFs of non-UIPs are seemingly unaffected, their $R^2$ coefficients are significantly worse. Except for CGCNN+P, all fail to achieve positive $R^2$. This means their predictions explain the observed variation in the data less than a horizontal line through the test set mean. In other words, these models are not predictive in a global sense (across the full dataset range). However, even models with negative $R^2$ can be locally good in the positive and negative tails of the test set hull distance distribution. They suffer most in the mode near the stability threshold of 0 eV/atom above the hull. This reveals an important shortcoming of $R^2$ as a metric for classification tasks like ours.
 
-The reason CGCNN+P achieves better regression metrics than CGCNN but is still worse as a classifier becomes apparent from [the SI histograms](/si#fig:hist-clf-pred-hull-dist-models) by noting that the CGCNN+P histogram is more sharply peaked at the 0 hull distance stability threshold. This causes even small errors in the predicted convex hull distance to be large enough to invert a classification. Again, this is evidence to choose carefully which metrics to optimize. Regression metrics are far more prevalent when evaluating energy predictions. In our benchmark, energies are just means to an end to classify compound stability. Regression accuracy is of little use on its own unless it helps classification. The field needs to be aware that this is not a given.
+The reason CGCNN+P achieves better regression metrics than CGCNN but is still worse as a classifier becomes apparent from @fig:hist-clf-pred-hull-dist-models by noting that the CGCNN+P histogram is more sharply peaked at the 0 hull distance stability threshold. This causes even small errors in the predicted convex hull distance to be large enough to invert a classification. Again, this is evidence to choose carefully which metrics to optimize. Regression metrics are far more prevalent when evaluating energy predictions. In our benchmark, energies are just means to an end to classify compound stability. Regression accuracy is of little use on its own unless it helps classification. The field needs to be aware that this is not a given.
 
 ### Cumulative Precision + Recall
 
@@ -199,11 +199,15 @@ A line terminates when a model believes there are no more materials in the WBM t
 ### Classification Histograms
 
 {#if mounted}
-<HistClfHullDistModels />
+<HistClfPredHullDistModels />
 {/if}
 
-> @label:fig:hist-clf-true-hull-dist-models These histograms show the classification performance of models as a function of model-predicted hull distance on the $x$ axis. Models are sorted top to bottom by F1 score. While CHGNet and M3GNet perform almost equally well overall, these plots reveal that they do so via different trade-offs. M3GNet commits fewer false negative but more false positives predictions compared to CHGNet. In a real discovery campaign, false positives have a higher opportunity cost than false negatives since they result in wasted DFT relaxations or even synthesis time in the lab. A false negative by contrast is just one missed opportunity out of many.
-> This observation is also reflected in the higher TPR and lower TNR of M3GNet vs CHGNet in @fig:metrics-table, as well as the lower error for CHGNet vs M3GNet on the stable side (left half) of @fig:rolling-mae-vs-hull-dist-models and M3GNet over CHGNet on the unstable side (right half) of @fig:rolling-mae-vs-hull-dist-models.
+> @label:fig:hist-clf-pred-hull-dist-models Distribution of model-predicted hull distance colored by stability classification. Models are sorted top to bottom by F1 score. The thickness of the red and yellow bands shows how often models misclassify as a function of how far away from the convex hull they place a material.
+
+While CHGNet and M3GNet perform almost equally well overall, these plots reveal that they do so via different trade-offs. M3GNet commits fewer false negative but more false positives predictions compared to CHGNet. In a real discovery campaign, false positives have a higher opportunity cost than false negatives since they result in wasted DFT relaxations or even synthesis time in the lab. A false negative by contrast is just one missed opportunity out of many.
+This observation is also reflected in the higher TPR and lower TNR of M3GNet vs CHGNet in @fig:metrics-table, as well as the lower error for CHGNet vs M3GNet on the stable side (left half) of @fig:rolling-mae-vs-hull-dist-models and M3GNet over CHGNet on the unstable side (right half) of @fig:rolling-mae-vs-hull-dist-models.
+
+The CGCNN+P histogram is more strongly peaked than CGCNN's. The former coincides more with the actual DFT ground truth [distribution of hull distances](/about-the-data#--target-distribution) in our test set. This explains why CGCNN+P performs better as a regressor but also reveals how it can simultaneously perform worse as a classifier. By moving predictions closer to the stability threshold at 0 eV/atom above the hull, even small errors are significant enough to tip a classification over the threshold.
 
 ### Predicted Hull Distance Parity Plots
 

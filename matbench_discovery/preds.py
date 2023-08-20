@@ -169,6 +169,21 @@ df_metrics_10k = df_metrics_10k.round(3).sort_values("F1", axis=1, ascending=Fal
 models = list(df_metrics.T.MAE.sort_values().index)
 
 
+# To avoid confusion for anyone reading this code, we calculate the formation energy MAE
+# here and report it as the MAE for the energy above the convex hull prediction. The
+# former is more easily calculated but the two quantities are the same. The formation
+# energy of a material is the difference in energy between a material and its
+# constituent elements in their standard states. The distance to the convex hull is
+# defined as the difference between a material's formation energy and the minimum
+# formation energy of all possible stable materials made from the same elements. Since
+# the formation energy of a material is used to calculate the distance to the convex
+# hull, the error of a formation energy prediction directly determines the error in the
+# distance to the convex hull prediction.
+
+# A further point of clarification: whenever we say convex hull distance we mean
+# the signed distance that is positive for thermodynamically unstable materials above
+# the hull and negative for stable materials below it.
+
 # dataframe of all models' energy above convex hull (EACH) predictions (eV/atom)
 df_each_pred = pd.DataFrame()
 for model in models:

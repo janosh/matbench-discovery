@@ -80,9 +80,7 @@ fig = plot_fn(
 for anno in fig.layout.annotations:
     anno.text = anno.text.split("=", 1)[1]  # remove Model= from subplot titles
 
-line_styles = "solid dash dot dashdot".split() * 3
-markers = "circle square triangle-up triangle-down diamond cross star x".split() * 2
-for trace, ls, marker in zip(fig.data, line_styles, markers):
+for trace, ls, marker in zip(fig.data, plots.plotly_line_styles, plots.plotly_markers):
     trace.line.dash = ls
     trace.marker.symbol = marker
 
