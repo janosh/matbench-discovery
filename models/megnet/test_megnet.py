@@ -29,15 +29,18 @@ from matbench_discovery.slurm import slurm_submit
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-14"
 
-task_type = "chgnet_structure"
+task_type = "RS2RE"
 module_dir = os.path.dirname(__file__)
 job_name = f"megnet-wbm-{task_type}"
-out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
-slurm_array_task_count = 20
+out_path = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}.csv.gz")
+slurm_array_task_count = 1
+
+if os.path.isfile(out_path):
+    raise SystemExit(f"{out_path=} already exists, exciting early")
 
 slurm_vars = slurm_submit(
     job_name=job_name,
-    out_dir=out_dir,
+    out_dir=module_dir,
     partition="icelake-himem",
     account="LEE-SL3-CPU",
     time="12:0:0",
@@ -51,10 +54,6 @@ slurm_vars = slurm_submit(
 
 # %%
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
-out_path = f"{out_dir}/megnet-e-form-preds.csv.gz"
-if os.path.isfile(out_path):
-    raise SystemExit(f"{out_path=} already exists, exciting early")
-
 data_path = {
     "IS2RE": DATA_FILES.wbm_initial_structures,
     "RS2RE": DATA_FILES.wbm_computed_structure_entries,
@@ -114,33 +113,33 @@ print(f"missing: {len(structures) - len(megnet_e_form_preds):,}")
 pred_col = "e_form_per_atom_megnet"
 # remove legacy MP corrections that MEGNet was trained on and apply newer MP2020
 # corrections instead
-df_megnet = (
+df_megnet = pd.DataFrame({f"{pred_col}_old_corr": megnet_e_form_preds})
+df_megnet[pred_col] = (
     pd.Series(megnet_e_form_preds)
     - df_wbm.e_correction_per_atom_mp_legacy
     + df_wbm.e_correction_per_atom_mp2020
-).to_frame(name=pred_col)
+)
+df_megnet.index.name = "material_id"
+if task_type != "IS2RE":
+    df_megnet = df_megnet.add_suffix(f"_{task_type.lower()}")
 
-df_megnet.round(4).to_csv(out_path)
+
+df_megnet.add_suffix(f"_{task_type.lower()}").round(4).to_csv(out_path)
 
 # df_megnet = pd.read_csv(f"{ROOT}/models/{PRED_FILES.megnet}").set_index("material_id")
 
 
 # %% compare MEGNet predictions with old and new MP corrections
-df_megnet["e_form_per_atom_megnet_old_corr"] = pd.Series(megnet_e_form_preds)
-
-ax = density_scatter(
-    df=df_megnet,
-    x="e_form_per_atom_megnet",
-    y="e_form_per_atom_megnet_old_corr",
-)
+ax = density_scatter(df=df_megnet, x=pred_col, y=f"{pred_col}_old_corr")
 # ax.figure.savefig("megnet-e-form-preds-old-vs-new-corr.png")
 
 
 # %%
+df_wbm[pred_col] = df_megnet[pred_col]
 table = wandb.Table(dataframe=df_wbm[[e_form_col, pred_col]].reset_index())
 
 MAE = (df_wbm[e_form_col] - df_wbm[pred_col]).abs().mean()
-R2 = r2_score(df_wbm[e_form_col], df_wbm[pred_col])
+R2 = r2_score(*df_wbm[[e_form_col, pred_col]].dropna().to_numpy().T)
 title = f"{model_name} {task_type} {MAE=:.4} {R2=:.4}"
 print(title)
 

@@ -16,7 +16,7 @@
   import SpacegroupSunburstWbm from '$figs/spacegroup-sunburst-wbm.svelte'
   import SpacegroupSunburstWrenformerFailures from '$figs/spacegroup-sunburst-wrenformer-failures.svelte'
   import LargestErrorScatterSelect from './largest-error-scatter-select.svelte'
-  import EAboveHullScatterWrenformerFailures from '$figs/e-above-hull-scatter-wrenformer-failures.svelte'
+  import HullDistScatterWrenformerFailures from '$figs/hull-dist-scatter-wrenformer-failures.svelte'
   import ProtoCountsWrenformerFailures from '$figs/proto-counts-wrenformer-failures.svelte'
   import ElementPrevalenceVsError from '$figs/element-prevalence-vs-error.svelte'
   import { onMount } from 'svelte'
@@ -111,7 +111,7 @@ Given its strong performance on batch 1, it is possible that given sufficiently 
 <MetricsTableMegnetUipCombos select={[`model`, `MEGNet`, `CHGNet`, `M3GNet`, `CHGNet + MEGNet`, `M3GNet + MEGNet`]} />
 {/if}
 
-> @label:fig:metrics-table-megnet-uip-combos This table shows metrics obtained by combining MEGNet with both UIPs. The metrics in rows labeled M3GNet + MEGNet and CHGNet + MEGNet are the result of passing M3GNet/CHGNet-relaxed structures into MEGNet for formation energy prediction. Both combos perform worse than using the respective UIPs on their own with a more pronounced performance drop from CHGNet to CHGNet + MEGNet than M3GNet to M3GNet + MEGnet. This suggests MEGNet has learned no additional knowledge of the PES that is not already present in the UIPs. However, both combos perform better than MEGNet on its own, demonstrating that UIP relaxation provides real utility at very low cost for any downstream structure-dependent analysis.
+> @label:fig:metrics-table-megnet-uip-combos This table shows metrics obtained by combining MEGNet with both UIPs. The metrics in rows labeled M3GNet→MEGNet and CHGNet→MEGNet are the result of passing M3GNet/CHGNet-relaxed structures into MEGNet for formation energy prediction. Both combos perform worse than using the respective UIPs on their own with a more pronounced performance drop from CHGNet to CHGNet→MEGNet than M3GNet to M3GNet→MEGnet. This suggests MEGNet has learned no additional knowledge of the PES that is not already present in the UIPs. However, both combos perform better than MEGNet on its own, demonstrating that UIP relaxation provides real utility at very low cost for any downstream structure-dependent analysis.
 
 The UIPs M3GNet and CHGNet are both trained to predict DFT energies (including/excluding MP2020 energy corrections for CHGNet/M3GNet) while MEGNet is trained to predict formation energies.
 
@@ -127,7 +127,7 @@ We highlight this here to refute the suggestion that training on raw DFT energie
 <SpacegroupSunburstWrenformerFailures />
 <SpacegroupSunburstWbm />
 </div>
-<EAboveHullScatterWrenformerFailures />
+<HullDistScatterWrenformerFailures />
 {/if}
 
 > @label:fig:spacegroup-prevalence-wrenformer-failures The left spacegroup sunburst shows spacegroup 71 is by far the dominant lattice symmetry among the 941 Wrenformer failure cases where $E_\text{above hull,DFT} < 1$ and $E_\text{above hull,Wrenformer} > 1$ (points inside the shaded rectangle). On the right side for comparison is the spacegroup sunburst for the entire WBM test set.
@@ -150,4 +150,4 @@ Looking at the occurrence counts of isopointal prototypes in the shaded rectangl
 <BoxHullDistErrors />
 {/if}
 
-> @label:fig:box-hull-dist-errors Box plot of interquartile ranges (IQR) of hull distance errors for each model. The whiskers extend to the 5th and 95th percentiles. The median is shown as a horizontal line inside the box. BOWSR has the largest median error while Voronoi RF has the largest IQR. Note that MEGNet and CGCNN are the only models with positive median. Their hull distance errors are biased towards more frequently predicting thermodynamic instability, explaining why they are closest to getting the overall number of stable structures in the test set right ([see rolling classification precision/recall plots](/preprint#fig:cumulative-precision-recall))
+> @label:fig:box-hull-dist-errors Box plot of interquartile ranges (IQR) of hull distance errors for each model. The whiskers extend to the 5th and 95th percentiles. The horizontal line inside the box shows the median. BOWSR has the largest median error while Voronoi RF has the largest IQR. Note that MEGNet and CGCNN are the only models with positive median. Their hull distance errors are biased towards more frequently predicting thermodynamic instability, explaining why they are closest to getting the overall number of stable structures in the test set right ([see rolling classification precision/recall plots](/preprint#fig:cumulative-precision-recall))

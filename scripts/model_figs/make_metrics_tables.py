@@ -20,9 +20,16 @@ from matbench_discovery.preds import df_metrics, df_metrics_10k, each_true_col
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
 
-
-for model in MODEL_METADATA:
-    n_structs = MODEL_METADATA[model]["training_set"]["size"]
+name_map = {
+    "MEGNet RS2RE": "MEGNet",
+    "M3GNet→MEGNet": "M3GNet",
+    "CHGNet→MEGNet": "CHGNet",
+}
+for model in df_metrics:
+    key = name_map.get(model, model)
+    if key not in MODEL_METADATA:
+        continue
+    n_structs = MODEL_METADATA[key]["training_set"]["size"]
     loc = "training size", model
     df_metrics.loc[loc] = f"{n_structs:,}"
     df_metrics_10k.loc[loc] = f"{n_structs:,}"
@@ -61,13 +68,14 @@ ontology = {
     "MACE": ("S2EFS", "IS2RE-SR", "UIP-GNN"),
     "M3GNet": ("S2EFS", "IS2RE-SR", "UIP-GNN"),
     "MEGNet": ("RS2RE", "IS2E", "GNN"),
+    "MEGNet RS2RE": ("RS2RE", "IS2E", "GNN"),
     "CGCNN": ("RS2RE", "IS2E", "GNN"),
     "CGCNN+P": ("S2RE", "IS2RE", "GNN"),
     "Wrenformer": ("RP2RE", "IP2E", "Transformer"),
     "BOWSR": ("RS2RE", "IS2RE-BO", "BO-GNN"),
     "Voronoi RF": ("RS2RE", "IS2E", "Fingerprint"),
-    "M3GNet->MEGNet": ("S2EFS", "IS2RE-SR", "UIP-GNN"),
-    "CHGNet->MEGNet": ("S2EFSM", "IS2RE-SR", "UIP-GNN"),
+    "M3GNet→MEGNet": ("S2EFS", "IS2RE-SR", "UIP-GNN"),
+    "CHGNet→MEGNet": ("S2EFSM", "IS2RE-SR", "UIP-GNN"),
     "Dummy": ("", "", ""),
 }
 ontology_cols = ["Trained", "Deployed", "Model Class"]
@@ -91,7 +99,7 @@ higher_is_better = {*f"DAF {R2_col} Precision Recall F1 Accuracy TPR TNR TP TN".
 lower_is_better = {"MAE", "RMSE", "FPR", "FNR", "FP", "FN"}
 
 # if True, make metrics-table-megnet-uip-combos.(svelte|pdf) for /si
-make_uip_megnet_comparison = False
+make_uip_megnet_comparison = True
 hide_metrics = "TP FN FP TN FNR FPR Recall Trained Deployed".split()
 
 for label, df, extra_hide_metrics in (
@@ -102,9 +110,11 @@ for label, df, extra_hide_metrics in (
     df_table = pd.concat([df, df_ont]).rename(index={"R2": R2_col})
     df_table.index.name = "Model"
 
-    drop_models = ["CHGNet->MEGNet", "M3GNet->MEGNet"]
+    drop_models = ["CHGNet→MEGNet", "M3GNet→MEGNet"]
     if make_uip_megnet_comparison:
-        drop_models = [*{*df_table} - {*drop_models, "MEGNet", "M3GNet", "CHGNet"}]
+        drop_models = [
+            *{*df_table} - {*drop_models, "MEGNet", "M3GNet", "CHGNet", "MEGNet RS2RE"}
+        ]
         label += "-uip-megnet-combos"
         print(
             "hint: for make_uip_megnet_comparison, uncomment the lines chgnet_megnet "
