@@ -77,15 +77,16 @@ model_labels = dict(
     alignn_pretrained="ALIGNN Pretrained",
     bowsr_megnet="BOWSR",
     chgnet="CHGNet",
-    chgnet_megnet="CHGNet + MEGNet",
+    chgnet_megnet="CHGNet->MEGNet",
     cgcnn_p="CGCNN+P",
     cgcnn="CGCNN",
-    m3gnet_megnet="M3GNet + MEGNet",
+    m3gnet_megnet="M3GNet->MEGNet",
     m3gnet="M3GNet",
     m3gnet_direct="M3GNet DIRECT",
     m3gnet_ms="M3GNet MS",
     mace="MACE",
     megnet="MEGNet",
+    megnet_rs2re="MEGNet RS2RE",
     voronoi_rf="Voronoi RF",
     wrenformer="Wrenformer",
     dft="DFT",
@@ -964,16 +965,12 @@ def normalize_and_crop_pdf(file_path: str | Path) -> None:
         # Normalize the PDF with Ghostscript
         subprocess.run(
             [
-                "gs",
-                "-sDEVICE=pdfwrite",
-                "-dCompatibilityLevel=1.4",
-                "-dPDFSETTINGS=/default",
-                "-dNOPAUSE",
-                "-dQUIET",
-                "-dBATCH",
+                *"gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4".split(),
+                *"-dPDFSETTINGS=/default -dNOPAUSE -dQUIET -dBATCH".split(),
                 f"-sOutputFile={normalized_file_path}",
                 str(file_path),
-            ]
+            ],
+            check=True,
         )
 
         # Crop the normalized PDF
