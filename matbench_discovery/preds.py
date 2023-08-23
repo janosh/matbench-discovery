@@ -53,9 +53,10 @@ class PredFiles(Files):
     # original MEGNet straight from publication, not re-trained
     megnet = "megnet/2022-11-18-megnet-wbm-IS2RE.csv.gz"
     # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
-    # chgnet_megnet = "chgnet/2023-03-04-chgnet-wbm-IS2RE.csv.gz"
+    chgnet_megnet = "chgnet/2023-03-04-chgnet-wbm-IS2RE.csv.gz"
     # M3GNet-relaxed structures fed into MEGNet for formation energy prediction
-    # m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv.gz"
+    m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv.gz"
+    megnet_rs2re = "megnet/2023-08-23-megnet-wbm-RS2RE.csv.gz"
 
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest
     voronoi_rf = "voronoi/2022-11-27-train-test/e-form-preds-IS2RE.csv.gz"
@@ -100,16 +101,20 @@ def load_df_wbm_with_preds(
 
     dfs: dict[str, pd.DataFrame] = {}
 
-    for model_name in (bar := tqdm(models, disable=not pbar, desc="Loading preds")):
-        bar.set_postfix_str(model_name)
-        df = glob_to_df(PRED_FILES[model_name], pbar=False, **kwargs).set_index(id_col)
-        dfs[model_name] = df
+    try:
+        for model_name in (bar := tqdm(models, disable=not pbar, desc="Loading preds")):
+            bar.set_postfix_str(model_name)
+            df = glob_to_df(PRED_FILES[model_name], pbar=False, **kwargs)
+            df = df.set_index(id_col)
+            dfs[model_name] = df
+    except Exception as exc:
+        raise RuntimeError(f"Failed to load {model_name=}") from exc
 
     from matbench_discovery.data import df_wbm
 
     df_out = df_wbm.copy()
     for model_name, df in dfs.items():
-        model_key = model_name.lower().replace(" + ", "_").replace(" ", "_")
+        model_key = model_name.lower().replace("→", "_").replace(" ", "_")
 
         cols = [col for col in df if col.startswith(f"e_form_per_atom_{model_key}")]
         if cols:

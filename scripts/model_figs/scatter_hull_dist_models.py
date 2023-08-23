@@ -285,6 +285,6 @@ fig.add_shape(
 )
 fig.show()
 
-img_name = "e-above-hull-scatter-wrenformer-failures"
+img_name = "hull-dist-scatter-wrenformer-failures"
 # save_fig(fig, f"{FIGS}/{img_name}.svelte")
 save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
