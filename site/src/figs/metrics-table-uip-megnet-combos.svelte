@@ -230,7 +230,7 @@
       <td id="T__row2_col10" class="data row2 col10" >GNN</td>
     </tr>
     <tr>
-      <th id="T__level0_row3" class="row_heading level0 row3" >M3GNet->MEGNet</th>
+      <th id="T__level0_row3" class="row_heading level0 row3" >M3GNet→MEGNet</th>
       <td id="T__row3_col0" class="data row3 col0" >0.55</td>
       <td id="T__row3_col1" class="data row3 col1" >2.54</td>
       <td id="T__row3_col2" class="data row3 col2" >0.43</td>
@@ -244,7 +244,7 @@
       <td id="T__row3_col10" class="data row3 col10" >UIP-GNN</td>
     </tr>
     <tr>
-      <th id="T__level0_row4" class="row_heading level0 row4" >CHGNet->MEGNet</th>
+      <th id="T__level0_row4" class="row_heading level0 row4" >CHGNet→MEGNet</th>
       <td id="T__row4_col0" class="data row4 col0" >0.55</td>
       <td id="T__row4_col1" class="data row4 col1" >2.56</td>
       <td id="T__row4_col2" class="data row4 col2" >0.43</td>

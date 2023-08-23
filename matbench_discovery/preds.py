@@ -114,7 +114,7 @@ def load_df_wbm_with_preds(
 
     df_out = df_wbm.copy()
     for model_name, df in dfs.items():
-        model_key = model_name.lower().replace("->", "_").replace(" ", "_")
+        model_key = model_name.lower().replace("→", "_").replace(" ", "_")
 
         cols = [col for col in df if col.startswith(f"e_form_per_atom_{model_key}")]
         if cols:
