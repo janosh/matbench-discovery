@@ -14,7 +14,13 @@ from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots
-from matbench_discovery.preds import df_each_pred, df_preds, each_true_col, models
+from matbench_discovery.preds import (
+    df_each_pred,
+    df_preds,
+    each_true_col,
+    model_styles,
+    models,
+)
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-01-30"
@@ -80,9 +86,13 @@ fig = plot_fn(
 for anno in fig.layout.annotations:
     anno.text = anno.text.split("=", 1)[1]  # remove Model= from subplot titles
 
-for trace, ls, marker in zip(fig.data, plots.plotly_line_styles, plots.plotly_markers):
-    trace.line.dash = ls
-    trace.marker.symbol = marker
+
+for trace in fig.data:
+    if styles := model_styles.get(trace.name.split(" · ")[0]):
+        ls, marker, color = styles
+        trace.line = dict(color=color, dash=ls, width=2)
+        trace.marker = dict(color=color, symbol=marker, size=4)
+
 
 if not facet_plot:
     fig.layout.legend.update(x=1, y=0, xanchor="right", title=None)

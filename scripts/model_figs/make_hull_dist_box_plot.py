@@ -33,6 +33,11 @@ ax = sns.violinplot(
 )
 ax.set(ylim=(-0.9, 0.9))
 
+for idx, label in enumerate(ax.get_xticklabels()):
+    label.set_va("bottom" if idx % 2 else "top")
+    # lower all labels
+    label.set_y(label.get_position()[1] - 0.05)
+
 
 # %%
 px.violin(
@@ -54,29 +59,37 @@ fig = go.Figure()
 fig.layout.yaxis.title = plots.quantity_labels["e_above_hull_error"]
 fig.layout.margin = dict(l=0, r=0, b=0, t=0)
 
-for col in models:
-    val_min = df_each_err[col].quantile(0.05)
-    lower_box = df_each_err[col].quantile(0.25)
-    median = df_each_err[col].median()
-    upper_box = df_each_err[col].quantile(0.75)
-    val_max = df_each_err[col].quantile(0.95)
+for idx, model in enumerate(models):
+    ys = [df_each_err[model].quantile(quant) for quant in (0.05, 0.25, 0.5, 0.75, 0.95)]
 
-    box_plot = go.Box(
-        y=[val_min, lower_box, median, upper_box, val_max],
-        name=col,
-        width=0.7,
-    )
+    box_plot = go.Box(y=ys, name=model, width=0.7)
     fig.add_trace(box_plot)
 
-fig.layout.legend.update(orientation="h", y=1.15)
+    # Add an annotation for the interquartile range
+    IQR = ys[3] - ys[1]
+    median = ys[2]
+    fig.add_annotation(
+        x=idx, y=1, text=f"{IQR:.2}", showarrow=False, yref="paper", yshift=-10
+    )
+    fig.add_annotation(
+        x=idx,
+        y=median,
+        text=f"{median:.2}",
+        showarrow=False,
+        yshift=7,
+        # bgcolor="rgba(0, 0, 0, 0.2)",
+        # width=50,
+    )
+fig.add_annotation(x=-0.6, y=1, text="IQR", showarrow=False, yref="paper", yshift=-10)
+
+fig.layout.legend.update(orientation="h", y=1.2)
 # prevent x-labels from rotating
 fig.layout.xaxis.tickangle = 0
 # use line breaks to offset every other x-label
 x_labels_with_offset = [
-    label if idx % 2 == 0 else f"<br>{label}" for idx, label in enumerate(models)
+    f"{'<br>' * (idx % 2)}{label}" for idx, label in enumerate(models)
 ]
 fig.layout.xaxis.update(tickvals=models, ticktext=x_labels_with_offset)
-
 fig.show()
 
 

@@ -46,9 +46,10 @@ if backend == "matplotlib":
     for line in fig.lines:
         line._linewidth *= 2
 else:
+    show_n_best_models = len(models)
     for trace in fig.data:
         model = trace.name.split(" MAE=")[0]
-        if model in df_metrics.T.sort_values("MAE").index[8:]:
+        if model in df_metrics.T.sort_values("MAE").index[show_n_best_models:]:
             trace.visible = "legendonly"  # show only top models by default
 
     fig.update_traces(line=dict(width=3))  # increase line width

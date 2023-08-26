@@ -19,7 +19,7 @@ from pymatviz.utils import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, SITE_MODELS, WANDB_PATH
-from matbench_discovery.preds import df_metrics, df_metrics_10k, df_preds
+from matbench_discovery.preds import df_metrics, df_metrics_10k, df_preds, model_styles
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
@@ -194,6 +194,7 @@ fig = df_melt.dropna().plot.bar(
     text_auto=".0f",
     text=time_col,
     color=model_col,
+    color_discrete_sequence=[model_styles[model][2] for model in df_melt[model_col]],
 )
 # reduce bar width
 fig.update_traces(width=0.8)
@@ -202,8 +203,11 @@ title = f"All models: {df_stats[time_col].sum():.0f} h"
 fig.layout.legend.update(title=title, orientation="h", xanchor="center", x=0.4, y=1.2)
 fig.layout.xaxis.title = ""
 fig.layout.margin.update(l=0, r=0, t=0, b=0)
-save_fig(fig, f"{SITE_FIGS}/model-run-times-bar.svelte")
+fig.show()
 
+
+# %%
+save_fig(fig, f"{SITE_FIGS}/model-run-times-bar.svelte")
 pdf_fig = go.Figure(fig)
 # replace legend with annotation in PDF
 pdf_fig.layout.showlegend = False
@@ -217,4 +221,3 @@ pdf_fig.add_annotation(
     yref="paper",
 )
 save_fig(pdf_fig, f"{PDF_FIGS}/model-run-times-bar.pdf", height=300, width=800)
-fig.show()
