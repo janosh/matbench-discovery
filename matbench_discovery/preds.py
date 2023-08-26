@@ -9,7 +9,14 @@ from tqdm import tqdm
 from matbench_discovery import ROOT, STABILITY_THRESHOLD
 from matbench_discovery.data import Files, df_wbm, glob_to_df
 from matbench_discovery.metrics import stable_metrics
-from matbench_discovery.plots import ev_per_atom, model_labels, quantity_labels
+from matbench_discovery.plots import (
+    ev_per_atom,
+    model_labels,
+    plotly_colors,
+    plotly_line_styles,
+    plotly_markers,
+    quantity_labels,
+)
 
 """Centralize data-loading and computing metrics for plotting scripts"""
 
@@ -52,11 +59,11 @@ class PredFiles(Files):
 
     # original MEGNet straight from publication, not re-trained
     megnet = "megnet/2022-11-18-megnet-wbm-IS2RE.csv.gz"
-    # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
-    chgnet_megnet = "chgnet/2023-03-04-chgnet-wbm-IS2RE.csv.gz"
-    # M3GNet-relaxed structures fed into MEGNet for formation energy prediction
-    m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv.gz"
-    megnet_rs2re = "megnet/2023-08-23-megnet-wbm-RS2RE.csv.gz"
+    # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
+    # chgnet_megnet = "chgnet/2023-03-04-chgnet-wbm-IS2RE.csv.gz"
+    # # M3GNet-relaxed structures fed into MEGNet for formation energy prediction
+    # m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv.gz"
+    # megnet_rs2re = "megnet/2023-08-23-megnet-wbm-RS2RE.csv.gz"
 
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest
     voronoi_rf = "voronoi/2022-11-27-train-test/e-form-preds-IS2RE.csv.gz"
@@ -172,7 +179,8 @@ df_metrics = df_metrics.round(3).sort_values("F1", axis=1, ascending=False)
 df_metrics_10k = df_metrics_10k.round(3).sort_values("F1", axis=1, ascending=False)
 
 models = list(df_metrics.T.MAE.sort_values().index)
-
+# used for consistent markers, line styles and colors for a given model across plots
+model_styles = dict(zip(models, zip(plotly_line_styles, plotly_markers, plotly_colors)))
 
 # To avoid confusion for anyone reading this code, we calculate the formation energy MAE
 # here and report it as the MAE for the energy above the convex hull prediction. The

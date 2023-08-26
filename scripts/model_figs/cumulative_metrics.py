@@ -13,15 +13,12 @@ import pandas as pd
 from pymatviz.utils import save_fig
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
-from matbench_discovery.plots import (
-    cumulative_metrics,
-    plotly_line_styles,
-    plotly_markers,
-)
+from matbench_discovery.plots import cumulative_metrics
 from matbench_discovery.preds import (
     df_each_pred,
     df_preds,
     each_true_col,
+    model_styles,
     models,
 )
 
@@ -30,10 +27,10 @@ __date__ = "2022-12-04"
 
 
 # %%
-metrics = ("Precision", "Recall")
-# metrics = ("MAE", "RMSE")
+# metrics = ("Precision", "Recall")
+metrics = ("MAE", "RMSE")
 range_y = {
-    ("MAE", "RMSE"): (0, 0.5),
+    ("MAE", "RMSE"): (0, 0.7),
     ("Precision", "Recall"): (0, 1),
 }[metrics]
 fig, df_metric = cumulative_metrics(
@@ -41,7 +38,6 @@ fig, df_metric = cumulative_metrics(
     df_preds=df_each_pred[models],
     project_end_point="xy",
     backend=(backend := "plotly"),
-    range_y=range_y,
     metrics=metrics,
     # facet_col_wrap=2,
     # increase facet col gap
@@ -54,6 +50,9 @@ if backend == "matplotlib":
     # fig.suptitle(title)
     fig.text(0.5, -0.08, x_label, ha="center", fontdict={"size": 16})
 if backend == "plotly":
+    for key in filter(lambda key: key.startswith("yaxis"), fig.layout):
+        fig.layout[key].range = range_y
+
     fig.layout.margin.update(l=0, r=0, t=30, b=50)
     fig.add_annotation(
         x=0.5,
@@ -71,10 +70,14 @@ if backend == "plotly":
     # )
     # if "MAE" in metrics:
     #     fig.layout.legend.update(traceorder="reversed")
+    assert len(metrics) * len(models) == len(
+        fig.data
+    ), f"expected one trace per model per metric, got {len(fig.data)}"
 
-    for trace, ls, marker in zip(fig.data, plotly_line_styles, plotly_markers):
-        trace.line.dash = ls
-        trace.marker.symbol = marker
+    for trace in fig.data:
+        if line_style := model_styles.get(trace.name):
+            ls, _marker, color = line_style
+            trace.line = dict(color=color, dash=ls, width=2)
 
         # show only the N best models by default
         # if trace.name in df_metrics.T.sort_values("F1").index[:-6]:

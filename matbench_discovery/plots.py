@@ -36,8 +36,10 @@ Backend = Literal["matplotlib", "plotly"]
 
 plotly_markers = SymbolValidator().values[2::3]  # noqa: PD011
 plotly_line_styles = DashValidator().values[:-1]  # noqa: PD011
-# repeat line styles as many as times as needed to match number of markers
+plotly_colors = px.colors.qualitative.Plotly
+# repeat line styles/colors as many as times as needed to match number of markers
 plotly_line_styles *= len(plotly_markers) // len(plotly_line_styles)
+plotly_colors *= len(plotly_markers) // len(plotly_colors)
 
 
 def plotly_unit(text: str) -> str:
@@ -614,10 +616,12 @@ def rolling_mae_vs_hull_dist(
 
         line_styles = "solid dash dot dashdot".split()
         markers = "circle square triangle-up triangle-down diamond cross star x".split()
-        combinations = [(ls, mark) for mark in markers for ls in line_styles]
-        for idx, trace in enumerate(fig.data):
-            ls, marker = combinations[idx % len(combinations)]
-            trace.line.dash = ls
+        from matbench_discovery.preds import model_styles
+
+        for trace in fig.data:
+            if style := model_styles.get(trace.name):
+                ls, _marker, color = style
+                trace.line = dict(color=color, dash=ls, width=2)
             # marker_spacing = 2
             # trace = go.Scatter(
             #     x=trace.x[::marker_spacing],
