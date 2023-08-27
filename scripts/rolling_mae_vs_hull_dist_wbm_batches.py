@@ -8,7 +8,13 @@ from pymatviz.utils import save_fig
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, today
 from matbench_discovery.plots import plt, rolling_mae_vs_hull_dist
-from matbench_discovery.preds import df_each_pred, df_preds, e_form_col, each_true_col
+from matbench_discovery.preds import (
+    df_each_pred,
+    df_preds,
+    e_form_col,
+    each_true_col,
+    models,
+)
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
@@ -39,7 +45,7 @@ for idx, marker in enumerate(markers, 1):
         markevery=20,
         markerfacecolor="white",
         markeredgewidth=2.5,
-        backend="matplotlib",
+        backend="matplotlib",  # don't change, code here not plotly compatible
         ax=ax,
         just_plot_lines=idx > 1,
         pbar=False,
@@ -54,7 +60,7 @@ for line in ax.lines:
 
 
 # %% plotly
-for model in list(df_each_pred)[:-2]:
+for model in models:
     df_pivot = df_each_pred.pivot(columns=batch_col, values=model)
 
     fig, df_err, df_std = rolling_mae_vs_hull_dist(
@@ -66,9 +72,11 @@ for model in list(df_each_pred)[:-2]:
         show_dummy_mae=False,
         with_sem=False,
     )
-    fig.layout.legend.update(title=f"<b>{model}</b>", x=0.02, y=0.02)
+    fig.layout.legend.update(
+        title=f"<b>{model}</b>", x=0.02, y=0.02, bgcolor="rgba(0,0,0,0)"
+    )
     fig.layout.margin.update(l=10, r=10, b=10, t=10)
-    fig.update_layout(hovermode="x unified", hoverlabel_bgcolor="black")
+    fig.layout.update(hovermode="x unified", hoverlabel_bgcolor="black")
     fig.update_traces(
         hovertemplate="y=%{y:.3f} eV",
         selector=lambda trace: trace.name.startswith("Batch"),
@@ -78,4 +86,4 @@ for model in list(df_each_pred)[:-2]:
     model_snake_case = model.lower().replace(" + ", "-").replace(" ", "-")
     img_path = f"rolling-mae-vs-hull-dist-wbm-batches-{model_snake_case}"
     save_fig(fig, f"{SITE_FIGS}/{img_path}.svelte")
-    save_fig(fig, f"{PDF_FIGS}/{img_path}.pdf")
+    save_fig(fig, f"{PDF_FIGS}/{img_path}.pdf", width=500, height=330)

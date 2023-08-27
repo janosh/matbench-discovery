@@ -521,12 +521,14 @@ def rolling_mae_vs_hull_dist(
         fig.set(xlim=x_lim, ylim=y_lim)
         line_styles = "- -- -. :".split()
         markers = "o s ^ v D * p X".split()
-        combinations = [(ls, mark) for mark in markers for ls in line_styles]
 
         for idx, line in enumerate(fig.lines):
-            ls, marker = combinations[idx % len(combinations)]
+            line_label = line.get_label()
+            if line_label.startswith("_"):
+                continue
+            ls, marker = line_styles[idx], markers[idx]
             line.set(ls=ls, marker=marker, markeredgewidth=0.5, markeredgecolor="black")
-            line.set_markevery(4)
+            line.set_markevery(8)
 
     elif backend == "plotly":
         for idx, model in enumerate(df_rolling_err if with_sem else []):
@@ -614,14 +616,16 @@ def rolling_mae_vs_hull_dist(
         )
         fig.add_shape(type="rect", x0=x0, y0=y0, x1=x0 - window, y1=y0 + window / 5)
 
-        line_styles = "solid dash dot dashdot".split()
-        markers = "circle square triangle-up triangle-down diamond cross star x".split()
         from matbench_discovery.preds import model_styles
 
-        for trace in fig.data:
+        for idx, trace in enumerate(fig.data):
             if style := model_styles.get(trace.name):
                 ls, _marker, color = style
                 trace.line = dict(color=color, dash=ls, width=2)
+            else:
+                trace.line = dict(
+                    color=plotly_colors[idx], dash=plotly_line_styles[idx], width=3
+                )
             # marker_spacing = 2
             # trace = go.Scatter(
             #     x=trace.x[::marker_spacing],
