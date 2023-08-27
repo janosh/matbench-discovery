@@ -9,13 +9,10 @@ import math
 
 import numpy as np
 import plotly.express as px
-import scipy.stats
 from pymatviz.utils import add_identity_line, bin_df_cols, save_fig
-from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
-from matbench_discovery.metrics import classify_stable
-from matbench_discovery.plots import clf_color_map, clf_colors, clf_labels
+from matbench_discovery.plots import clf_colors
 from matbench_discovery.preds import (
     df_metrics,
     df_preds,
@@ -47,7 +44,13 @@ df_melt = df_preds.melt(
 df_melt[each_pred_col] = (
     df_melt[each_true_col] + df_melt[e_form_pred_col] - df_melt[e_form_col]
 )
-df_bin = bin_df_cols(df_melt, [each_true_col, each_pred_col], [facet_col], n_bins=200)
+df_bin = bin_df_cols(
+    df_melt,
+    bin_by_cols=[each_true_col, each_pred_col],
+    group_by_cols=[facet_col],
+    n_bins=200,
+    bin_counts_col=(bin_cnt_col := "bin counts"),
+)
 df_bin = df_bin.reset_index()
 
 # sort legend and facet plots by MAE
@@ -55,14 +58,14 @@ legend_order = list(df_metrics.T.MAE.sort_values().index)
 
 
 # determine each point's classification to color them by
-true_pos, false_neg, false_pos, true_neg = classify_stable(
-    df_bin[each_true_col], df_bin[each_pred_col]
-)
-
-clf_col = "classified"
-df_bin[clf_col] = np.array(clf_labels)[
-    true_pos * 0 + false_neg * 1 + false_pos * 2 + true_neg * 3
-]
+# now unused, can be used to color points by TP/FP/TN/FN
+# true_pos, false_neg, false_pos, true_neg = classify_stable(
+#     df_bin[each_true_col], df_bin[each_pred_col]
+# )
+# clf_col = "classified"
+# df_bin[clf_col] = np.array(clf_labels)[
+#     true_pos * 0 + false_neg * 1 + false_pos * 2 + true_neg * 3
+# ]
 
 
 # %% scatter plot of actual vs predicted e_form_per_atom
@@ -121,21 +124,8 @@ img_name = f"{SITE_FIGS}/e-above-hull-scatter-models"
 
 
 # %%
-clr_col, cnt_col = "density", "counts"
-# compute KDE for each model's predictions separately
-for model in (pbar := tqdm(models)):
-    pbar.set_description(f"KDE for {model=}")
-
-    xy = df_preds[[each_true_col, model]].dropna().T
-    model_kde = scipy.stats.gaussian_kde(xy)
-
-    model_rows = df_bin[df_bin[facet_col] == model]
-    xy_binned = model_rows[[each_true_col, each_pred_col]].T
-    density = model_kde(xy_binned)
-    n_preds = len(df_preds[model].dropna())
-    df_bin.loc[model_rows.index, cnt_col] = density / density.sum() * n_preds
-
-df_bin[clr_col] = np.log1p(df_bin[cnt_col]).round(2)
+log_bin_cnt_col = f"log {bin_cnt_col}"
+df_bin[log_bin_cnt_col] = np.log1p(df_bin[bin_cnt_col]).round(2)
 
 
 # %% scatter plot of DFT vs predicted hull distance with each model in separate subplot
@@ -148,7 +138,7 @@ fig = px.scatter(
     y=each_pred_col,
     facet_col=facet_col,
     facet_col_wrap=n_cols,
-    color=clr_col,
+    color=log_bin_cnt_col,
     facet_col_spacing=0.02,
     facet_row_spacing=0.04,
     hover_data=hover_cols,
@@ -259,32 +249,3 @@ fig.show()
 fig_name = f"each-scatter-models-{n_rows}x{n_cols}"
 save_fig(fig, f"{SITE_FIGS}/{fig_name}.svelte")
 save_fig(fig, f"{PDF_FIGS}/{fig_name}.pdf")
-
-
-# %%
-model = "Wrenformer"
-fig = px.scatter(
-    df_bin.query(f"{facet_col} == {model!r}"),
-    x=each_true_col,
-    y=each_pred_col,
-    hover_data=hover_cols,
-    color=clf_col,
-    color_discrete_map=clf_color_map,
-    hover_name=df_preds.index.name,
-    opacity=0.7,
-)
-
-title = "Analysis of Wrenformer failure cases in the highlighted rectangle"
-fig.layout.title.update(text=title, x=0.5)
-fig.layout.legend.update(title="", x=1, y=0, xanchor="right")
-add_identity_line(fig)
-
-# add shape shaded rectangle at x < 1, y > 1
-fig.add_shape(
-    type="rect", **dict(x0=1, y0=1, x1=-1, y1=6), fillcolor="gray", opacity=0.2
-)
-fig.show()
-
-img_name = "hull-dist-scatter-wrenformer-failures"
-# save_fig(fig, f"{FIGS}/{img_name}.svelte")
-save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

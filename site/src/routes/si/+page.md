@@ -81,12 +81,12 @@ The figures below show the rolling MAE as a function of distance to the convex h
 {#if mounted}
 
 <div style="display: grid; grid-template-columns: 1fr 1fr; margin: 0 -1em 0 -4em;">
-  <M3gnetRollingMaeBatches style="margin: -2em 0 0; height: 400px;" />
-  <CHGNetRollingMaeBatches style="margin: -2em 0 0; height: 400px;" />
-  <WrenformerRollingMaeBatches style="margin: -2em 0 0; height: 400px;" />
-  <MegnetRollingMaeBatches style="margin: -2em 0 0; height: 400px;" />
-  <VoronoiRfRollingMaeBatches style="margin: -2em 0 0; height: 400px;" />
-  <CgcnnRollingMaeBatches style="margin: -2em 0 0; height: 400px;" />
+  <M3gnetRollingMaeBatches style="aspect-ratio: 1.2;" />
+  <CHGNetRollingMaeBatches style="aspect-ratio: 1.2;" />
+  <WrenformerRollingMaeBatches style="aspect-ratio: 1.2;" />
+  <MegnetRollingMaeBatches style="aspect-ratio: 1.2;" />
+  <VoronoiRfRollingMaeBatches style="aspect-ratio: 1.2;" />
+  <CgcnnRollingMaeBatches style="aspect-ratio: 1.2;" />
 </div>
 {/if}
 

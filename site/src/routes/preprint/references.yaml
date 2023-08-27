@@ -2648,6 +2648,62 @@ references:
   URL: https://www.nature.com/articles/s41467-020-18556-9
   volume: '11'
 
+- id: wang_framework_2021
+  abstract: >-
+    In this work, we demonstrate a method to quantify uncertainty in corrections
+    to density functional theory (DFT) energies based on empirical results. Such
+    corrections are commonly used to improve the accuracy of computational
+    enthalpies of formation, phase stability predictions, and other
+    energy-derived properties, for example. We incorporate this method into a
+    new DFT energy correction scheme comprising a mixture of oxidation-state and
+    composition-dependent corrections and show that many chemical systems
+    contain unstable polymorphs that may actually be predicted stable when
+    uncertainty is taken into account. We then illustrate how these
+    uncertainties can be used to estimate the probability that a compound is
+    stable on a compositional phase diagram, thus enabling better-informed
+    assessments of compound stability.
+  accessed:
+    - year: 2023
+      month: 8
+      day: 28
+  author:
+    - family: Wang
+      given: Amanda
+    - family: Kingsbury
+      given: Ryan
+    - family: McDermott
+      given: Matthew
+    - family: Horton
+      given: Matthew
+    - family: Jain
+      given: Anubhav
+    - family: Ong
+      given: Shyue Ping
+    - family: Dwaraknath
+      given: Shyam
+    - family: Persson
+      given: Kristin A.
+  citation-key: wang_framework_2021
+  container-title: Scientific Reports
+  container-title-short: Sci Rep
+  DOI: 10.1038/s41598-021-94550-5
+  ISSN: 2045-2322
+  issue: '1'
+  issued:
+    - year: 2021
+      month: 7
+      day: 29
+  language: en
+  license: 2021 The Author(s)
+  number: '1'
+  page: '15496'
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: A framework for quantifying uncertainty in DFT energy corrections
+  type: article-journal
+  URL: https://www.nature.com/articles/s41598-021-94550-5
+  volume: '11'
+
 - id: wang_predicting_2021
   abstract: >-
     We propose an efficient high-throughput scheme for the discovery of stable

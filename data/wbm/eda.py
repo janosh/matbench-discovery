@@ -93,7 +93,7 @@ for dataset, count_mode, elem_counts in all_counts:
     save_fig(ptable, f"{PDF_FIGS}/{dataset}-element-{count_mode}-counts.pdf")
 
 
-# %% histogram of energy above MP convex hull for WBM
+# %% histogram of energy distance to MP convex hull for WBM
 col = each_true_col  # or e_form_col
 mean, std = df_wbm[col].mean(), df_wbm[col].std()
 
