@@ -30,7 +30,7 @@ warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen"
 # %%
 module_dir = os.path.dirname(__file__)
 task_type = "IS2RE"
-date = "2023-08-14"
+date = "2023-09-02"
 glob_pattern = f"{date}-mace-wbm-{task_type}*/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
@@ -77,7 +77,7 @@ for row in tqdm(df_mace.itertuples(), total=len(df_mace)):
 
 # %% apply energy corrections
 out = MaterialsProject2020Compatibility().process_entries(
-    df_mace.cse, verbose=True, clean=True
+    df_mace[entry_col], verbose=True, clean=True
 )
 assert len(out) == len(df_mace)
 
@@ -96,7 +96,8 @@ df_wbm[e_form_mace_col] = df_mace[e_form_mace_col]
 
 # %%
 bad_mask = (df_wbm[e_form_col] - df_wbm[e_form_mace_col]).abs() > 10
-ax = density_scatter(df=df_wbm[bad_mask], x=e_form_col, y=e_form_mace_col)
+print(f"{sum(bad_mask)=}")
+ax = density_scatter(df=df_wbm[~bad_mask], x=e_form_col, y=e_form_mace_col)
 
 
 # %%
