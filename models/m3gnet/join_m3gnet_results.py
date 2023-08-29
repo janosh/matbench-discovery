@@ -57,8 +57,8 @@ df_m3gnet = pd.concat(dfs.values()).round(4)
 df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(
     "material_id"
 )
-
-df_cse["cse"] = [
+entry_col = "computed_structure_entry"
+df_cse[entry_col] = [
     ComputedStructureEntry.from_dict(dct)
     for dct in tqdm(df_cse.computed_structure_entry)
 ]
@@ -71,22 +71,22 @@ for row in tqdm(df_m3gnet.itertuples(), total=len(df_m3gnet)):
     mat_id, struct_dict, m3gnet_energy, *_ = row
     mlip_struct = Structure.from_dict(struct_dict)
     df_m3gnet.at[mat_id, struct_col] = mlip_struct  # noqa: PD008
-    cse = df_cse.loc[mat_id, "cse"]
+    cse = df_cse.loc[mat_id, entry_col]
     cse._energy = m3gnet_energy  # cse._energy is the uncorrected energy
     cse._structure = mlip_struct
-    df_m3gnet.loc[mat_id, "cse"] = cse
+    df_m3gnet.loc[mat_id, entry_col] = cse
 
 
 # %% apply energy corrections
 out = MaterialsProject2020Compatibility().process_entries(
-    df_m3gnet.cse, verbose=True, clean=True
+    df_m3gnet[entry_col], verbose=True, clean=True
 )
 assert len(out) == len(df_m3gnet)
 
 
 # %% compute corrected formation energies
 df_m3gnet["e_form_per_atom_m3gnet"] = [
-    get_e_form_per_atom(cse) for cse in tqdm(df_m3gnet.cse)
+    get_e_form_per_atom(cse) for cse in tqdm(df_m3gnet[entry_col])
 ]
 
 
