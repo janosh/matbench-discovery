@@ -36,6 +36,7 @@ dependencies = [
   "numpy",
   # output_formatting needed to for pandas Stylers
   # see https://github.com/pandas-dev/pandas/blob/-/pyproject.toml
+  "jinja2",
   "pandas[output_formatting]>=2.0.0",
   "plotly",
   "pymatgen",
