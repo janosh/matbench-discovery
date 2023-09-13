@@ -46,7 +46,8 @@ def plotly_unit(text: str) -> str:
     """Wrap text in a span with decreased font size and weight to display units in
     plotly labels.
     """
-    return f"<span style='font-size: 0.8em; font-weight: lighter;'>({text})</span>"
+    style = "font-size: 0.8em; font-weight: lighter;"
+    return f"<span {style=}>({text})</span>"
 
 
 ev_per_atom = plotly_unit("eV/atom")
@@ -519,14 +520,14 @@ def rolling_mae_vs_hull_dist(
         )
         fig.set(xlabel=r"$E_\mathrm{above\ hull}$ (eV/atom)", ylabel=y_label)
         fig.set(xlim=x_lim, ylim=y_lim)
-        line_styles = "- -- -. :".split()
-        markers = "o s ^ v D * p X".split()
+        plt_line_styles = "- -- -. :".split() * 10
+        plt_markers = "o s ^ v D * p X".split() * 10
 
         for idx, line in enumerate(fig.lines):
             line_label = line.get_label()
             if line_label.startswith("_"):
                 continue
-            ls, marker = line_styles[idx], markers[idx]
+            ls, marker = plt_line_styles[idx], plt_markers[idx]
             line.set(ls=ls, marker=marker, markeredgewidth=0.5, markeredgecolor="black")
             line.set_markevery(8)
 

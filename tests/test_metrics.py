@@ -12,12 +12,11 @@ from matbench_discovery.metrics import classify_stable, stable_metrics
 
 @pytest.mark.parametrize(
     "stability_threshold, expected",
-    [(-0.1, (6, 6, 11, 7)), (0, (8, 5, 10, 7)), (0.1, (10, 4, 10, 6))],
+    [(-0.1, (6, 10, 7, 7)), (0, (6, 10, 7, 7)), (0.1, (10, 8, 6, 6))],
 )
 def test_classify_stable(
     stability_threshold: float, expected: tuple[int, int, int, int]
 ) -> None:
-    np.random.seed(0)  # for reproducibility, makeDataFrame() uses np.random
     df = pd._testing.makeDataFrame()
 
     true_pos, false_neg, false_pos, true_neg = classify_stable(

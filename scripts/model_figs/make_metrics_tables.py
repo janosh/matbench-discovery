@@ -98,7 +98,7 @@ R2_col = "R<sup>2</sup>"
 higher_is_better = {*f"DAF {R2_col} Precision Recall F1 Accuracy TPR TNR TP TN".split()}
 lower_is_better = {"MAE", "RMSE", "FPR", "FNR", "FP", "FN"}
 
-# if True, make metrics-table-megnet-uip-combos.(svelte|pdf) for /si
+# if True, make metrics-table-megnet-uip-combos.(svelte|pdf) for SI
 make_uip_megnet_comparison = True
 hide_metrics = "TP FN FP TN FNR FPR Recall Trained Deployed".split()
 

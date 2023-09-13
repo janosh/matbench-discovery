@@ -26,7 +26,6 @@
     '/models': `Details on each model sortable by metrics.`,
     '/preprint': `The preprint released with the Matbench Discovery benchmark.`,
     '/preprint/iclr-ml4mat': `Extended abstract submitted to the ICLR ML4Materials workshop.`,
-    '/si': `Supplementary information including interesting but non-essential plots.`,
   }[url ?? ``]
   if (url && !description) console.warn(`No description for url=${url}`)
   $: title = url == `/` ? `` : `${url} • `
