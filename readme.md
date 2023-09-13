@@ -25,4 +25,4 @@ We welcome contributions that add new models to the leaderboard through GitHub P
 
 If you're interested in joining this work, feel free to [open a GitHub discussion](https://github.com/janosh/matbench-discovery/discussions) or [send an email](mailto:janosh@lbl.gov?subject=Collaborate%20on%20Matbench%20Discovery).
 
-For detailed results and analysis, check out the [preprint](https://janosh.github.io/matbench-discovery/preprint) and [SI](https://janosh.github.io/matbench-discovery/si).
+For detailed results and analysis, check out the [preprint](https://janosh.github.io/matbench-discovery/preprint).
