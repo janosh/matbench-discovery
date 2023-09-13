@@ -48,15 +48,15 @@ export default {
         if (!route) return
 
         if ([`paper`, `preprint`, `si`].some((key) => route.startsWith(key))) {
-          let fig_index = new Set()
-          let ref_index = new Set()
+          let fig_index = []
+          let ref_index = []
 
           // Replace figure labels with 'Fig. {n}' and add to fig_index
           let code = file.content.replace(
             /@label:(fig:[^\s]+)/g,
             (_match, id) => {
-              fig_index.add(id)
-              const idx = (route.startsWith(`si`) ? `S` : ``) + fig_index.size
+              if (!fig_index.includes(id)) fig_index.push(id)
+              const idx = (route.startsWith(`si`) ? `S` : ``) + fig_index.length
               const link_icon = `<a aria-hidden="true" tabindex="-1" href="#${id}"><svg width="16" height="16" viewBox="0 0 16 16"><use xlink:href="#octicon-link"></use></svg></a>`
               return `<strong id='${id}'>${link_icon}Fig. ${idx}</strong>`
             },
@@ -68,12 +68,10 @@ export default {
             // @(f|F)ig becomes '(f|F)ig. {n}'
             (_full_str, id, fig_or_Fig) => {
               const id_lower = id.toLowerCase()
-              let idx = [...fig_index].indexOf(id_lower) + 1
+              let idx = fig_index.indexOf(id_lower) + 1
               if (idx == 0) {
                 console.error(
-                  `Figure id '${id}' not found, expected one of ${[
-                    ...fig_index,
-                  ]}`,
+                  `Figure id='${id}' not found, expected one of ${fig_index}`,
                 )
                 idx = `not found`
               }
@@ -84,13 +82,12 @@ export default {
           // preprocess markdown citations @auth_1st-word-title_yyyy into superscript
           // links to bibliography items, href must match id format in References.svelte
           code = code.replace(
-            /@((.+?)_.+?_(\d{4}))/g,
+            /\[?@((.+?)_.+?_(\d{4}));?\]?/g, // ends with ;?\]? to match single and multiple citations
             (_match, id, author, year) => {
-              ref_index.add(id)
-
-              const idx = [...ref_index].indexOf(id)
+              let idx = ref_index.indexOf(id)
               if (idx == -1) {
-                console.error(`Reference id ${id} not found`)
+                ref_index.push(id)
+                idx = ref_index.length - 1
               }
               return `[<a class="ref" href="#${id}">${author} ${year}</a>]`
             },
