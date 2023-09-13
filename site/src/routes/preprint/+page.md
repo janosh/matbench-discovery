@@ -351,7 +351,7 @@ We welcome further model submissions to our GitHub repo <https://github.com/jano
 We chose the latest Materials Project (MP) [@jain_commentary_2013] database release ([v2022.10.28](https://docs.materialsproject.org/changes/database-versions) at time of writing) as the training set and the WBM dataset [@wang_predicting_2021] available at <https://figshare.com/articles/dataset/22715158> as the test set for this benchmark.
 A snapshot of every ionic step including energies, forces, stresses and magnetic moments in the MP database is available at <https://figshare.com/articles/dataset/23713842>.
 
-## Appendix
+## Supplementary Information
 
 ### Metrics for 10k materials predicted most stable
 
