@@ -142,17 +142,6 @@ Only current knowledge is accessible to a real discovery campaign and our metric
 
 ### Models
 
-{#if mounted}
-<MetricsTable />
-{/if}
-
-> @label:fig:metrics-table Classification and regression metrics for all models tested on our benchmark ranked by F1 score.
-> The heat map ranges from yellow (best) to blue (worst) performance.
-> DAF = discovery acceleration factor (see text), TPR = true positive rate, TNR = false negative rate, MAE = mean absolute error, RMSE = root mean squared error.
-> The dummy classifier uses the 'scikit-learn' 'stratified' strategy of randomly assigning stable/unstable labels according to the training set prevalence.
-> The dummy regression metrics MAE, RMSE and $R^2$ are attained by always predicting the test set mean.
-> The Voronoi RF, CGCNN and MEGNet models are seen to be worse than the dummy result on regression metrics but better on some of the classification metrics, highlighting the importance of looking at the right metrics for the task at hand to gauge model performance.
-
 To test a wide variety of methodologies proposed for learning the potential energy landscape, our initial benchmark release includes 10 models.
 
 1. **CHGNet** [@deng_chgnet_2023] (UIP-GNN) - CHGNet is a UIP for charge-informed atomistic modeling.
@@ -199,7 +188,34 @@ To test a wide variety of methodologies proposed for learning the potential ener
 
 ## Results
 
-shows performance metrics for all models included in the initial release of Matbench Discovery.
+{#if mounted}
+<MetricsTable />
+{/if}
+
+> @label:fig:metrics-table Classification and regression metrics for all models tested on our benchmark ranked by F1 score.
+> The heat map ranges from yellow (best) to blue (worst) performance.
+> DAF = discovery acceleration factor (see text), TPR = true positive rate, TNR = false negative rate, MAE = mean absolute error, RMSE = root mean squared error.
+> The dummy classifier uses the 'scikit-learn' 'stratified' strategy of randomly assigning stable/unstable labels according to the training set prevalence.
+> The dummy regression metrics MAE, RMSE and $R^2$ are attained by always predicting the test set mean.
+> The Voronoi RF, CGCNN and MEGNet models are seen to be worse than the dummy result on regression metrics but better on some of the classification metrics, highlighting the importance of looking at the right metrics for the task at hand to gauge model performance.
+>
+> <details>
+> <summary>Table glossary</summary>
+>
+> - DAF = discovery acceleration factor
+> - TPR = true positive rate, the fraction of stable structures correctly predicted as stable
+> - TNR = true negative rate, the fraction of unstable structures correctly predicted as unstable
+> - MAE = mean absolute error
+> - RMSE = root mean squared error
+> - GNN = graph neural network
+> - UIP = universal interatomic potential
+> - BO = Bayesian optimization
+> - RF = random forest
+> - +P = training data augmentation using random structure perturbations
+>
+> </details>
+
+@Fig:metrics-table shows performance metrics for all models included in the initial release of Matbench Discovery.
 CHGNet takes the top spot on all metrics except true positive rate (TPR) and emerges as the current SOTA for ML-guided materials discovery.
 The discovery acceleration factor (DAF) measures how many more stable structures a model found compared to the dummy discovery rate of 43k / 257k $\approx$ 16.7% achieved by randomly selecting test set crystals.
 The maximum possible DAF is the inverse of the dummy discovery rate which on our dataset is ~6.
@@ -238,7 +254,7 @@ Our results demonstrate that this is not a given.
 > This figure highlights how different models perform better or worse depending on the length of the discovery campaign.
 > The UIP models (CHGNet, M3GNet, MACE) are seen to offer significantly improved precision on shorter campaigns as they are less prone to early false positive predictions.
 
-has models rank materials by model-predicted hull distance from most to least stable; materials furthest below the known hull at the top, materials right on the hull at the bottom.
+@Fig:cumulative-precision-recall has models rank materials by model-predicted hull distance from most to least stable; materials furthest below the known hull at the top, materials right on the hull at the bottom.
 For each model, we iterate through that list and calculate at each step the precision and recall of correctly identified stable materials.
 This simulates exactly how these models would be used in a prospective materials discovery campaign and reveals how a model's performance changes as a function of the discovery campaign length. As a practitioner, you have a certain amount of resources available to validate model predictions. These curves allow you to read off the best model given these conditions and based on the optimal trade-off between fewer false positives (precision) or fewer negatives (recall) for the discovery task at hand.
 In this case, it so happens that CHGNet achieves the highest precision _and_ recall at any number of screened materials.
@@ -274,7 +290,7 @@ All force-free models exhibit a much worse case of early-on precision drop, fall
 > If the model's error for a given prediction happens to point towards the stability threshold at 0 eV from the hull (the plot's center), its average error will change the stability classification of a material from true positive/negative to false negative/positive.
 > The width of the 'rolling window' box indicates the width over which errors hull distance prediction errors were averaged.
 
-provides a visual representation of the reliability of different models based on the rolling mean absolute error (MAE) of model-predicted hull distances as a function of DFT distance to the Materials Project (MP) convex hull.
+@Fig:rolling-mae-vs-hull-dist-models provides a visual representation of the reliability of different models based on the rolling mean absolute error (MAE) of model-predicted hull distances as a function of DFT distance to the Materials Project (MP) convex hull.
 The red-shaded area, referred to as the 'triangle of peril', emphasizes the zone where the average model error surpasses the distance to the stability threshold at 0 eV.
 As long as the rolling MAE remains within this triangle, the model is most susceptible to misclassifying structures.
 Because the average error is larger than the distance to the classification threshold at 0, it is large enough to flip a correct classification into an incorrect one (if the error happens to point toward the stability threshold).
@@ -299,7 +315,7 @@ For @fig:rolling-mae-vs-hull-dist-models, this means models need to be much more
 ## Discussion
 
 We have demonstrated the effectiveness of ML-based triage in HT materials discovery and posit that the benefits of including ML in discovery workflows now clearly outweigh the costs.
-shows in a realistic benchmark scenario that several models achieve a discovery acceleration greater than 2.5 across the whole dataset and up to 5 when considering only the 10k most stable predictions from each model (@fig:metrics-table-first-10k).
+@fig:metrics-table shows in a realistic benchmark scenario that several models achieve a discovery acceleration greater than 2.5 across the whole dataset and up to 5 when considering only the 10k most stable predictions from each model (@fig:metrics-table-first-10k).
 When starting this project, we were unsure which is the most promising ML methodology for HT discovery.
 Our findings demonstrate a clear superiority in accuracy and extrapolation performance of UIPs like CHGNet, M3GNet and MACE.
 Modeling forces enables these models to chart a path through atomic configuration space closer to the DFT-relaxed structure from where a more informed final energy prediction is possible.
@@ -390,7 +406,7 @@ A material is classified as stable if the predicted $E_\text{above hull}$ lies b
 
 > @label:fig:each-scatter-models Parity plot for each model's energy above hull predictions (based on their formation energy predictions) vs DFT ground truth, color-coded by log density of points.
 
-shows that all models do well for materials far below the convex hull (left side of the plot). Performance for materials far above the convex hull is more varied with occasional underpredictions of the energy of materials far above the convex hull (right side). All models suffer most in the mode of the distribution at $x = 0$.
+@Fig:each-scatter-models shows that all models do well for materials far below the convex hull (left side of the plot). Performance for materials far above the convex hull is more varied with occasional underpredictions of the energy of materials far above the convex hull (right side). All models suffer most in the mode of the distribution at $x = 0$.
 
 Two models stand out as anomalous to the general trends.
 
@@ -410,7 +426,7 @@ Since these derailed values are easily identified in practice when actually perf
 
 > @label:fig:wrenformer-failures Symmetry analysis of the 941 Wrenformer failure cases in the shaded rectangle defined by $E_\text{DFT hull dist} < 1$ and $E_\text{ML hull dist} > 1$. Sunburst plot of spacegroups shows that close to 80% of severe energy overestimations are orthorhombic with spacegroup 71. The table on the right shows occurrence counts of exact structure prototypes for each material in the sunburst plot as well as their corresponding prevalence in the training set.
 
-shows 456 + 194 ($\sim$ 70%) of the failure cases in the shaded rectangle are two prototypes in spacegroup 71.
+@Fig:wrenformer-failures shows 456 + 194 ($\sim$ 70%) of the failure cases in the shaded rectangle are two prototypes in spacegroup 71.
 The occurrence of those same prototypes in the MP training set shows almost no data support for the failing prototypes.
 This suggests the reason Wrenformer fails so spectacularly on these structures is that it cannot deal with structure prototypes it has not seen at least several hundred examples of in its training data.
 This suggests that there are stronger limitations on how much the discrete Wyckoff-based representation can extrapolate to new prototypes compared to the smooth local-environment-based inputs to GNN-type models.
@@ -439,7 +455,7 @@ Note the CGCNN+P histogram is more strongly peaked than CGCNN's which agrees bet
 
 As a reminder, the WBM test set was generated in 5 successive batches, each step applying another element replacement to an MP source structure or a new stable crystal generated in one of the previous replacement rounds. The likelihood by which one element replaces another is governed by ISCD-mined chemical similarity scores for each pair of elements. Naively, one would expect model performance to degrade with increasing batch count, as repeated substitutions should on average 'diffuse' deeper into uncharted regions of material space, requiring the model to extrapolate more. We observe this effect for some models much more than others.
 
-shows the rolling MAE as a function of distance to the convex hull for each of the 5 WBM rounds of elemental substitution. These plots show a stronger performance decrease for Wrenformer and Voronoi RF than for UIPs like M3GNet, CHGNet, MACE and even force-less GNNs with larger errors like MEGNet and CGCNN.
+@Fig:rolling-mae-vs-hull-dist-wbm-batches-models shows the rolling MAE as a function of distance to the convex hull for each of the 5 WBM rounds of elemental substitution. These plots show a stronger performance decrease for Wrenformer and Voronoi RF than for UIPs like M3GNet, CHGNet, MACE and even force-less GNNs with larger errors like MEGNet and CGCNN.
 
 {#if mounted}
 <RollingMaeVsHullDistWbmBatchesModels />
