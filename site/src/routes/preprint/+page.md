@@ -285,7 +285,7 @@ All force-free models exhibit a much worse case of early-on precision drop, fall
 
 > @label:fig:rolling-mae-vs-hull-dist-models Universal potentials are more reliable classifiers because they exit the red triangle earliest.
 > These lines show the rolling MAE on the WBM test set as the energy to the convex hull of the MP training set is varied, lower is better.
-> The red-highlighted 'triangle of peril' shows where the models are most likely to misclassify structures.
+> The large red 'triangle of peril' shows where the models are most likely to misclassify structures.
 > As long as a model's rolling MAE remains inside the triangle, its mean error is larger than the distance to the convex hull.
 > If the model's error for a given prediction happens to point towards the stability threshold at 0 eV from the hull (the plot's center), its average error will change the stability classification of a material from true positive/negative to false negative/positive.
 > The width of the 'rolling window' box indicates the width over which errors hull distance prediction errors were averaged.

@@ -248,7 +248,7 @@ class DataFiles(Files):
     )
     wbm_summary = "wbm/2022-10-19-wbm-summary.csv.gz"
     alignn_checkpoint = "2023-06-02-pbenner-best-alignn-model.pth.zip"
-    mace_checkpoint = "2023-07-14-mace-universal-2-big-128-6.model"
+    mace_checkpoint = "2023-08-14-mace-yuan-trained-mptrj-04.model"
 
 
 # data files can be downloaded and cached with matbench_discovery.data.load()
