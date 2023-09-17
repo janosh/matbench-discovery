@@ -667,8 +667,9 @@ def cumulative_metrics(
         df_preds (pd.DataFrame): Distance to convex hull predicted by models, one column
             per model (in eV / atom). Same as true energy to convex hull plus predicted
             minus true formation energy.
-        metrics (Sequence[str], optional): Which metrics to plot. Defaults to
-            ('Precision', 'Recall'). Also accepts 'F1'.
+        metrics (Sequence[str], optional): Which metrics to plot. Any subset of
+            ("Precision", "Recall", "F1", "MAE", "RMSE").
+            Defaults to ('Precision', 'Recall').
         stability_threshold (float, optional): Max distance above convex hull before
             material is considered unstable. Defaults to 0.
         project_end_point ('x' | 'y' | 'xy' | '', optional): Whether to project end
@@ -735,9 +736,9 @@ def cumulative_metrics(
             f1_interp = cubic_interpolate(model_range, f1_cum[:n_pred_stable])
             dfs["F1"][model_name] = dict(zip(xs_model, f1_interp(xs_model)))
 
+        cum_counts = np.arange(1, len(each_true) + 1)
         if "MAE" in metrics:
             cum_errors = (each_true - each_pred).abs().cumsum()
-            cum_counts = np.arange(1, len(each_true) + 1)
             mae_cum = cum_errors / cum_counts
             mae_interp = cubic_interpolate(model_range, mae_cum[:n_pred_stable])
             dfs["MAE"][model_name] = dict(zip(xs_model, mae_interp(xs_model)))
@@ -848,6 +849,7 @@ def cumulative_metrics(
                     text=optimal_recall,
                     showarrow=False,
                     # rotate text parallel to line
+                    # angle not quite right, could be improved
                     textangle=math.degrees(math.cos(n_stable)),
                     **grid_pos,
                 )

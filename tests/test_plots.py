@@ -38,11 +38,7 @@ df_wbm = load_df_wbm_with_preds(models, nrows=100)
 @pytest.mark.parametrize("backend", ["matplotlib", "plotly"])
 @pytest.mark.parametrize(
     "metrics",
-    [
-        ("Recall",),
-        ("Recall", "MAE"),
-        ("Recall", "Precision", "F1"),
-    ],
+    [("Recall",), ("Recall", "MAE"), ("Recall", "Precision", "RMSE")],
 )
 def test_cumulative_metrics(
     project_end_point: AxLine,
@@ -68,9 +64,8 @@ def test_cumulative_metrics(
         assert {ax.get_ylabel() for ax in fig.axes} >= {*metrics}
     elif backend == "plotly":
         assert isinstance(fig, go.Figure)
-        # TODO fix AssertionError {'Recall', 'metric=F1'} == {'F1', 'Recall'}
-        # subplot_titles = [anno.text for anno in fig.layout.annotations][:len(metrics)]
-        # assert set(subplot_titles) == set(metrics)
+        subplot_titles = {anno.text.split("=")[-1] for anno in fig.layout.annotations}
+        assert subplot_titles >= set(metrics)
 
 
 def test_cumulative_metrics_raises() -> None:
