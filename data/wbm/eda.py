@@ -28,7 +28,7 @@ Start with comparing MP and WBM elemental prevalence.
 """
 
 module_dir = os.path.dirname(__file__)
-about_data_page = f"{ROOT}/site/src/routes/about-the-data"
+data_page = f"{ROOT}/site/src/routes/data"
 
 
 # %% load MP training set
@@ -54,7 +54,7 @@ all_counts = (
 
 # %%
 for dataset, count_mode, elem_counts in all_counts:
-    elem_counts.to_json(f"{about_data_page}/{dataset}-element-counts-{count_mode}.json")
+    elem_counts.to_json(f"{data_page}/{dataset}-element-counts-{count_mode}.json")
 
 
 # %% export element counts by WBM step to JSON
@@ -62,7 +62,7 @@ df_wbm["step"] = df_wbm.index.str.split("-").str[1].astype(int)
 assert df_wbm.step.between(1, 5).all()
 for batch in range(1, 6):
     count_elements(df_wbm[df_wbm.step == batch].formula).to_json(
-        f"{about_data_page}/wbm-element-counts-{batch=}.json"
+        f"{data_page}/wbm-element-counts-{batch=}.json"
     )
 
 # export element counts by arity (how many elements in the formula)
@@ -71,7 +71,7 @@ df_wbm[comp_col] = df_wbm.formula.map(Composition)
 
 for arity, df_mp in df_wbm.groupby(df_wbm[comp_col].map(len)):
     count_elements(df_mp.formula).to_json(
-        f"{about_data_page}/wbm-element-counts-{arity=}.json"
+        f"{data_page}/wbm-element-counts-{arity=}.json"
     )
 
 

@@ -50,7 +50,7 @@ assert all(
 # %% compute number of samples per element in training set
 # counting element occurrences not weighted by composition, assuming model don't learn
 # much more about iron and oxygen from Fe2O3 than from FeO
-counts_path = f"{ROOT}/site/src/routes/about-the-data/mp-element-counts-occurrence.json"
+counts_path = f"{ROOT}/site/src/routes/data/mp-element-counts-occurrence.json"
 df_elem_err = pd.read_json(counts_path, typ="series")
 train_count_col = "MP Occurrences"
 df_elem_err = df_elem_err.reset_index(name=train_count_col).set_index("index")
