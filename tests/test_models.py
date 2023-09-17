@@ -34,9 +34,10 @@ def test_model_dirs_have_metadata() -> None:
             err_msg = f"Invalid {key=}, expected {required[key]} in {model_dir}"
             assert isinstance(metadata[key], required[key]), err_msg  # type: ignore
 
-        authors, date_added, mbd_version, model_name, model_version, repo = (
+        authors, date_added, mbd_version, yml_model_name, model_version, repo = (
             metadata[key] for key in list(required)[:-1]
         )
+        assert model_name == yml_model_name, f"{model_name=} != {yml_model_name=}"
 
         # make sure all keys are valid
         for name in model_name if isinstance(model_name, list) else [model_name]:

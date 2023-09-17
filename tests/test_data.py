@@ -52,12 +52,12 @@ def test_load(
 ) -> None:
     filepath = DATA_FILES[data_key]
     # intercept HTTP requests and write dummy df to disk instead
-    with patch("urllib.request.urlretrieve") as urlretrieve:
+    with patch("urllib.request.urlretrieve") as url_retrieve:
         # dummy df with random floats and material_id column
         df_csv = pd._testing.makeDataFrame().reset_index(names="material_id")
 
         writer = dummy_df_serialized.to_json if ".json" in filepath else df_csv.to_csv
-        urlretrieve.side_effect = lambda url, path: writer(path)
+        url_retrieve.side_effect = lambda _url, path: writer(path)
         out = load(
             data_key,
             hydrate=hydrate,
@@ -70,7 +70,7 @@ def test_load(
     assert f"Downloading {data_key!r} from {figshare_urls[data_key][0]}" in stdout
 
     # check we called read_csv/read_json once for each data_name
-    assert urlretrieve.call_count == 1
+    assert url_retrieve.call_count == 1
 
     assert isinstance(out, pd.DataFrame), f"{data_key} not a DataFrame"
 
@@ -201,21 +201,17 @@ def test_df_wbm() -> None:
     assert set(df_wbm) > {"bandgap_pbe", "formula", "material_id"}
 
 
-@pytest.mark.parametrize("pattern", ["tmp/*df.csv", "tmp/*df.json"])
-def test_glob_to_df(pattern: str) -> None:
-    try:
-        df = pd._testing.makeMixedDataFrame()
+@pytest.mark.parametrize("pattern", ["*df.csv", "*df.json"])
+def test_glob_to_df(pattern: str, tmp_path: Path) -> None:
+    df = pd._testing.makeMixedDataFrame()
 
-        os.makedirs(f"{ROOT}/tmp", exist_ok=True)
-        df.to_csv(f"{ROOT}/tmp/dummy_df.csv", index=False)
-        df.to_json(f"{ROOT}/tmp/dummy_df.json")
+    os.makedirs(f"{tmp_path}", exist_ok=True)
+    df.to_csv(f"{tmp_path}/dummy_df.csv", index=False)
+    df.to_json(f"{tmp_path}/dummy_df.json")
 
-        df_out = glob_to_df(pattern)
-        assert df_out.shape == df.shape
-        assert list(df_out) == list(df)
+    df_out = glob_to_df(f"{tmp_path}/{pattern}")
+    assert df_out.shape == df.shape
+    assert list(df_out) == list(df)
 
-        with pytest.raises(FileNotFoundError):
-            glob_to_df("foo")
-    finally:
-        os.remove(f"{ROOT}/tmp/dummy_df.csv")
-        os.remove(f"{ROOT}/tmp/dummy_df.json")
+    with pytest.raises(FileNotFoundError):
+        glob_to_df("foo")
