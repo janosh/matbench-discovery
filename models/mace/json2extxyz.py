@@ -15,11 +15,11 @@ __date__ = "2023-08-10"
 
 mptrj_pretty_path = osp.join("../../data/figshare", "mptrj_2022.9_full.json")
 mptrj_extxyz_prefix = osp.join(os.curdir, "mptrj-2022.9")
+
 os.makedirs(mptrj_extxyz_prefix, exist_ok=True)
 
 with open(mptrj_pretty_path) as f:
     json_data = json.load(f)
-
 
 combined = []
 
@@ -74,7 +74,6 @@ for material_id in tqdm(json_data):
             combined.append(traj)
 
         except Exception as err:
-            print(err)
-            breakpoint()
+            print(err, f"skipping {material_id}, {trajectory_id}")
 
 write("mptrj-2022.9.xyz", combined, format="extxyz")
