@@ -1,5 +1,5 @@
 #!/bin/bash
-# -------------------- Time tracking, signal trapping, and requeue functions  ------------------------ 
+# -------------------- Time tracking, signal trapping, and requeue functions  ------------------------
 secs2timestr() {
     ((h=${1}/3600))
     ((m=(${1}%3600)/60))
@@ -32,7 +32,7 @@ parse_job(){
             if [[ -n $x ]]; then max_timelimit=`timestr2secs $x`; fi
         fi
     fi
-    
+
     if [[ -z $ckpt_overhead ]]; then let ckpt_overhead=60; fi
     if [[ -z $max_timelimit ]]; then let max_timelimit=172800; fi
 
@@ -56,7 +56,7 @@ parse_job(){
         scontrol update JobId=$SLURM_JOB_ID Comment=$remainingTime
 
         let maxtime=`timestr2secs $max_timelimit`
-        if [ $remainingTimeSec -gt $maxtime ]; then 
+        if [ $remainingTimeSec -gt $maxtime ]; then
            requestTime=$max_timelimit
         else
            requestTime=$remainingTimeSec
@@ -69,14 +69,14 @@ parse_job(){
 
 requeue_job() {
 
-    parse_job 
+    parse_job
 
     if [ -n $remainingTimeSec ] && [ $remainingTimeSec -gt 0 ]; then
         func="$1" ; shift
         for sig ; do
             trap "$func $sig" "$sig"
         done
-    else 
+    else
        echo no more job requeues,done!
     fi
 }
@@ -98,7 +98,7 @@ func_trap() {
 
 # Create dmtcp_command wrapper for easy communication with coordinator
 dmtcp_command_job () {
-    fname=dmtcp_command.$SLURM_JOB_ID	
+    fname=dmtcp_command.$SLURM_JOB_ID
     h=$1
     p=$2
     str="#!/bin/bash
@@ -144,7 +144,7 @@ start_coordinator()
     # Create dmtcp_command wrapper for easy communication with coordinator
     p=`cat $fname`
     str="#!/bin/bash
-    export PATH=$PATH 
+    export PATH=$PATH
     export DMTCP_COORD_HOST=$h
     export DMTCP_COORD_PORT=$p
     dmtcp_command \$@"
@@ -152,7 +152,7 @@ start_coordinator()
     chmod a+rx $fname
 
     #log dmtcp
-    echo $SLURM_JOB_ID $USER `date +%F` $(restart_count)  >> /usr/common/software/spool/dmtcp_command.log 
+    echo $SLURM_JOB_ID $USER `date +%F` $(restart_count)  >> /usr/common/software/spool/dmtcp_command.log
 }
 
 #wait for a process to complete
@@ -219,13 +219,13 @@ wait_coord () {
 
 #checkpoint before before requeue the job
 ckpt_dmtcp () {
-    dmtcp_command.$SLURM_JOB_ID -c 
+    dmtcp_command.$SLURM_JOB_ID -c
     wait_coord
 }
 
 #added 9/6/2021 for MANA
 wait_coord2 () {
-    sleep 1 #in case there is a delay in changing the satus of the dmtcp_coordinator 
+    sleep 1 #in case there is a delay in changing the satus of the dmtcp_coordinator
     let sum=0
     ckpt_done=0
     while true; do
@@ -256,4 +256,3 @@ ckpt_mana () {
     dmtcp_command -c
     wait_coord2
 }
-

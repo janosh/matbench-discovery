@@ -17,13 +17,13 @@ except Exception as e:
 
 
 job_name = "mace-train-mptrj"
-account="matgen"
+account = "matgen"
 
-total_time="7-00:00:00"
-time="2:00:00"
-time_min="1:00:00"
+total_time = "7-00:00:00"
+time = "2:00:00"
+time_min = "1:00:00"
 
-sbatch_script_path="./mace-universal-distributed.sbatch"
+sbatch_script_path = "./mace-universal-distributed.sbatch"
 
 sbatch_command = [
     "sbatch",
@@ -32,7 +32,7 @@ sbatch_command = [
     "--time=" + time,
     "--time-min=" + time_min,
     "--comment=" + total_time,
-    sbatch_script_path
+    sbatch_script_path,
 ]
 
 try:

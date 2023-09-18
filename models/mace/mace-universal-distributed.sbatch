@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 #SBATCH -q preempt
 #SBATCH -C gpu
 #SBATCH -G 40

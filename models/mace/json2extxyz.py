@@ -1,4 +1,3 @@
-
 import copy
 import json
 import os
@@ -25,7 +24,6 @@ combined = []
 
 for material_id in tqdm(json_data):
     for trajectory_id in json_data[material_id]:
-
         fout_path = osp.join(mptrj_extxyz_prefix, f"{material_id}.extxyz")
 
         if osp.exists(fout_path):
@@ -48,13 +46,13 @@ for material_id in tqdm(json_data):
             atoms = AseAtomsAdaptor.get_atoms(structure=structure)
 
             if forces:
-                atoms.arrays["forces"] =  np.array(forces)
+                atoms.arrays["forces"] = np.array(forces)
             if magmoms:
                 atoms.arrays["magmoms"] = np.array(magmoms)
             # if bandgap: will go into atoms.info
             #     atoms.set_tensor('bandgap', bandgap)
             if stress:
-                atoms.info["stress"]  = np.array(stress)
+                atoms.info["stress"] = np.array(stress)
             if uncorrected_total_energy:
                 atoms.info["energy"] = uncorrected_total_energy
 
@@ -63,12 +61,7 @@ for material_id in tqdm(json_data):
 
             assert mp_id == material_id
 
-            write(
-                fout_path,
-                atoms,
-                append=True,
-                format="extxyz"
-                )
+            write(fout_path, atoms, append=True, format="extxyz")
 
             traj = read(fout_path, index=":", format="extxyz")
             combined.append(traj)

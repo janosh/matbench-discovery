@@ -179,12 +179,8 @@ def main() -> None:
             for config in collections.valid
         ]
     else:
-        train_set = HDF5Dataset(
-            args.train_file, r_max=args.r_max, z_table=z_table
-        )
-        valid_set = HDF5Dataset(
-            args.valid_file, r_max=args.r_max, z_table=z_table
-        )
+        train_set = HDF5Dataset(args.train_file, r_max=args.r_max, z_table=z_table)
+        valid_set = HDF5Dataset(args.valid_file, r_max=args.r_max, z_table=z_table)
 
     train_sampler, valid_sampler = None, None
     if args.distributed:
@@ -564,7 +560,7 @@ def main() -> None:
         distributed_model=distributed_model,
         train_sampler=train_sampler,
         rank=rank,
-        keep_last = True
+        keep_last=True,
     )
 
     logging.info("Computing metrics for training, validation, and test sets")
