@@ -10,7 +10,7 @@ from typing import Final
 
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, PDF_FIGS, today
+from matbench_discovery import PDF_FIGS, SITE_FIGS, today
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist, plt
 from matbench_discovery.preds import (
     df_metrics,
@@ -46,7 +46,8 @@ df_melt[each_pred_col] = (
 # %%
 backend: Final = "plotly"
 n_cols = 2
-n_rows = math.ceil(len(models) // n_cols)
+n_rows = math.ceil(len(models) / n_cols)
+# 'true' or 'pred': whether to put DFT or model-predicted hull distances on the x-axis
 which_energy: Final = "pred"
 kwds = (
     dict(
@@ -118,5 +119,8 @@ img_name = f"hist-clf-{which_energy}-hull-dist-models-{n_rows}x{n_cols}"
 
 
 # %%
-save_fig(fig, f"{FIGS}/{img_name}.svelte")
-save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=n_cols * 220, height=n_rows * 220)
+orig_height = fig.layout.height
+fig.layout.height = n_rows * 180
+save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+fig.layout.height = orig_height
+save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=n_cols * 280, height=n_rows * 130)

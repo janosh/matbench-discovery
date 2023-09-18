@@ -14,14 +14,15 @@ import pandas as pd
 from pymatgen.core import Structure
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedStructureEntry
+from pymatviz import density_scatter
 from tqdm import tqdm
 
-from matbench_discovery import today
-from matbench_discovery.data import DATA_FILES, as_dict_handler
+from matbench_discovery.data import DATA_FILES, as_dict_handler, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
+from matbench_discovery.preds import e_form_col
 
 __author__ = "Janosh Riebesell"
-__date__ = "2023-07-23"
+__date__ = "2023-03-01"
 
 warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
 
@@ -29,22 +30,22 @@ warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen"
 # %%
 module_dir = os.path.dirname(__file__)
 task_type = "IS2RE"
-date = "2023-07-23"
-glob_pattern = f"{date}-mace-wbm-{task_type}-LBFGS/*.json.gz"
+date = "2023-09-02"
+glob_pattern = f"{date}-mace-wbm-{task_type}*/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
-struct_col = "mace_structure"
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
+struct_col = "mace_structure"
 
-# prevent accidental overwrites
-if "dfs" not in locals():
-    dfs: dict[str, pd.DataFrame] = {}
+dfs: dict[str, pd.DataFrame] = {}
 
 
 # %%
 for file_path in tqdm(file_paths):
     if file_path in dfs:
         continue
-    dfs[file_path] = pd.read_json(file_path).set_index("material_id")
+    df = pd.read_json(file_path).set_index("material_id")
+    # drop trajectory to save memory
+    dfs[file_path] = df.drop(columns="mace_trajectory")
 
 df_mace = pd.concat(dfs.values()).round(4)
 
@@ -54,49 +55,61 @@ df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(
     "material_id"
 )
 
-df_cse["cse"] = [
+entry_col = "computed_structure_entry"
+df_cse[entry_col] = [
     ComputedStructureEntry.from_dict(dct)
     for dct in tqdm(df_cse.computed_structure_entry)
 ]
 
 
-# %% transfer MACE energies and relaxed structures WBM CSEs since MP2020 energy
+# %% transfer mace energies and relaxed structures WBM CSEs since MP2020 energy
 # corrections applied below are structure-dependent (for oxides and sulfides)
 cse: ComputedStructureEntry
 for row in tqdm(df_mace.itertuples(), total=len(df_mace)):
     mat_id, struct_dict, mace_energy, *_ = row
-    import math
-    if math.isnan(struct_dict):
-        continue
-    mace_struct = Structure.from_dict(struct_dict)
-    df_mace.at[mat_id, struct_col] = mace_struct  # noqa: PD008, RUF100
-    cse = df_cse.loc[mat_id, "cse"]
+    mlip_struct = Structure.from_dict(struct_dict)
+    df_mace.at[mat_id, struct_col] = mlip_struct  # noqa: PD008
+    cse = df_cse.loc[mat_id, entry_col]
     cse._energy = mace_energy  # cse._energy is the uncorrected energy
-    cse._structure = mace_struct
-    df_mace.loc[mat_id, "cse"] = cse
+    cse._structure = mlip_struct
+    df_mace.loc[mat_id, entry_col] = cse
 
-breakpoint()
 
 # %% apply energy corrections
 out = MaterialsProject2020Compatibility().process_entries(
-    df_mace.cse, verbose=True, clean=True
+    df_mace[entry_col], verbose=True, clean=True
 )
 assert len(out) == len(df_mace)
 
 
 # %% compute corrected formation energies
-df_mace["e_form_per_atom_mace"] = [
-    get_e_form_per_atom(cse) for cse in tqdm(df_mace.cse)
+e_form_mace_col = "e_form_per_atom_mace"
+df_mace["formula"] = df_wbm.formula
+df_mace[e_form_mace_col] = [
+    get_e_form_per_atom(dict(energy=cse.energy, composition=formula))
+    for formula, cse in tqdm(
+        df_mace.set_index("formula")[entry_col].items(), total=len(df_mace)
+    )
 ]
+df_wbm[e_form_mace_col] = df_mace[e_form_mace_col]
 
 
 # %%
-out_path = f"{module_dir}/{today}-mace-wbm-{task_type}"
+bad_mask = (df_wbm[e_form_col] - df_wbm[e_form_mace_col]).abs() > 10
+print(f"{sum(bad_mask)=}")
+ax = density_scatter(df=df_wbm[~bad_mask], x=e_form_col, y=e_form_mace_col)
+
+
+# %%
+out_path = file_paths[0].rsplit("/", 1)[0]
 df_mace = df_mace.round(4)
-df_mace.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
+df_mace[~bad_mask].select_dtypes("number").to_csv(f"{out_path}.csv.gz")
 df_mace.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
 
+df_bad = df_mace[bad_mask].drop(columns=[entry_col, struct_col])
+df_bad[e_form_col] = df_wbm[e_form_col]
+df_bad.to_csv(f"{out_path}-bad.csv")
 
-# in_path = f"{module_dir}/2022-10-31-mace-wbm-IS2RE.json.gz"
-# df_mace = pd.read_csv(in_path.replace(".json.gz", ".csv")).set_index("material_id")
-# df_mace = pd.read_json(in_path).set_index("material_id")
+# in_path = f"{module_dir}/2023-08-14-mace-wbm-IS2RE-FIRE"
+# df_mace = pd.read_csv(f"{in_path}.csv.gz").set_index("material_id")
+# df_mace = pd.read_json(f"{in_path}.json.gz").set_index("material_id")

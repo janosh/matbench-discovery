@@ -5,6 +5,8 @@ https://colab.research.google.com/drive/13CAM8mL1u7ZsqNhfZLv7bNb1rdhMI64d?usp=sh
 Found notebook in docs: https://help.figshare.com/article/how-to-use-the-figshare-api
 """
 
+from __future__ import annotations
+
 import hashlib
 import json
 import os
@@ -26,7 +28,6 @@ with open(f"{ROOT}/site/.env") as file:
     TOKEN = file.read().split("figshare_token=")[1].split("\n")[0]
 
 BASE_URL = "https://api.figshare.com/v2"
-CHUNK_SIZE = 10_000_000  # ~10MB
 
 with open(f"{ROOT}/pyproject.toml", "rb") as file:
     pyproject = tomllib.load(file)["project"]
@@ -36,7 +37,12 @@ DESCRIPTION = f"""
 These are the v{VERSION} data files for Matbench Discovery,
 {pyproject['description'].lower()}. It contains relaxed structures of the MP
 training set, initial+relaxed structures of the WBM test set, plus several checkpoints
-for models trained on this data specifically for this benchmark. The full force field
+for models trained on this data specifically for this benchmark.
+
+For a description of each file, see
+https://matbench-discovery.materialsproject.org/contribute#--direct-download.
+
+The full force field
 training set containing 1.3M structures along with their energies, forces, stresses and
 magmons is available at https://figshare.com/articles/dataset/23713842.
 """.replace(
@@ -89,12 +95,16 @@ def create_article(metadata: dict[str, str | int | float]) -> int:
     return result["id"]
 
 
-def get_file_hash_and_size(file_name: str) -> tuple[str, int]:
-    """Get the md5 hash and size of a file."""
+def get_file_hash_and_size(
+    file_name: str, chunk_size: int = 10_000_000
+) -> tuple[str, int]:
+    """Get the md5 hash and size of a file. File is read in chunks of chunk_size bytes.
+    Default chunk size is 10_000_000 ~= 10MB.
+    """
     md5 = hashlib.md5()
     size = 0
     with open(file_name, "rb") as file:
-        while data := file.read(CHUNK_SIZE):
+        while data := file.read(chunk_size):
             size += len(data)
             md5.update(data)
     return md5.hexdigest(), size

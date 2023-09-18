@@ -2,13 +2,14 @@
 
 
 # %%
+import numpy as np
 import pandas as pd
 from aviary.wren.utils import get_isopointal_proto_from_aflow
 from pymatviz import spacegroup_hist, spacegroup_sunburst
 from pymatviz.ptable import ptable_heatmap_plotly
-from pymatviz.utils import save_fig
+from pymatviz.utils import add_identity_line, bin_df_cols, save_fig
 
-from matbench_discovery import FIGS, PDF_FIGS
+from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import df_to_pdf, df_to_svelte_table
 from matbench_discovery.preds import df_each_pred, df_preds, each_true_col
@@ -74,16 +75,20 @@ styles = {
 styler.set_table_styles([dict(selector=sel, props=styles[sel]) for sel in styles])
 styler.set_uuid("")
 
-df_to_svelte_table(styler, f"{FIGS}/proto-counts-{model}-failures.svelte")
+df_to_svelte_table(styler, f"{SITE_FIGS}/proto-counts-{model}-failures.svelte")
 df_to_pdf(styler, f"{PDF_FIGS}/proto-counts-{model}-failures.pdf")
 
 
 # %%
 fig = spacegroup_sunburst(df_bad[spg_col], width=350, height=350)
-fig.layout.title.update(text=f"Spacegroup sunburst for {title}", x=0.5, font_size=14)
+# fig.layout.title.update(text=f"Spacegroup sunburst for {title}", x=0.5, font_size=14)
+fig.layout.margin.update(l=1, r=1, t=1, b=1)
 fig.show()
+
+
+# %%
 save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-{model.lower()}-failures.pdf")
-# save_fig(fig, f"{FIGS}/spacegroup-sunburst-{model}-failures.svelte")
+save_fig(fig, f"{SITE_FIGS}/spacegroup-sunburst-{model}-failures.svelte")
 
 
 # %%
@@ -92,3 +97,46 @@ fig.layout.title = f"Elements in {title}"
 fig.layout.margin = dict(l=0, r=0, t=50, b=0)
 fig.show()
 save_fig(fig, f"{PDF_FIGS}/elements-{model.lower()}-failures.pdf")
+
+
+# %%
+model = "Wrenformer"
+cols = [model, each_true_col]
+bin_cnt_col = "bin counts"
+df_bin = bin_df_cols(
+    df_each_pred, [each_true_col, model], n_bins=200, bin_counts_col=bin_cnt_col
+)
+log_cnt_col = f"log {bin_cnt_col}"
+df_bin[log_cnt_col] = np.log1p(df_bin[bin_cnt_col]).round(2)
+
+
+# %%
+fig = df_bin.reset_index().plot.scatter(
+    x=each_true_col,
+    y=model,
+    hover_data=cols,
+    hover_name=df_preds.index.name,
+    backend="plotly",
+    color=log_cnt_col,
+    color_continuous_scale="turbo",
+)
+
+# title = "Analysis of Wrenformer failure cases in the highlighted rectangle"
+# fig.layout.title.update(text=title, x=0.5)
+fig.layout.margin.update(l=0, r=0, t=0, b=0)
+fig.layout.legend.update(title="", x=1, y=0, xanchor="right")
+add_identity_line(fig)
+fig.layout.coloraxis.colorbar.update(
+    x=1, y=0.5, xanchor="right", thickness=12, title=""
+)
+# add shape shaded rectangle at x < 1, y > 1
+fig.add_shape(
+    type="rect", **dict(x0=1, y0=1, x1=-1, y1=6), fillcolor="gray", opacity=0.2
+)
+fig.show()
+
+
+# %%
+img_name = "hull-dist-scatter-wrenformer-failures"
+save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=600, height=300)

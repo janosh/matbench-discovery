@@ -12,13 +12,13 @@ will provide the best hit rate for the given budget.
 import pandas as pd
 from pymatviz.utils import save_fig
 
-from matbench_discovery import FIGS, PDF_FIGS
+from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.plots import cumulative_metrics
 from matbench_discovery.preds import (
     df_each_pred,
-    df_metrics,
     df_preds,
     each_true_col,
+    model_styles,
     models,
 )
 
@@ -27,10 +27,10 @@ __date__ = "2022-12-04"
 
 
 # %%
-metrics = ("Precision", "Recall")
-# metrics = ("MAE", "RMSE")
+# metrics = ("Precision", "Recall")
+metrics = ("MAE", "RMSE")
 range_y = {
-    ("MAE", "RMSE"): (0, 0.5),
+    ("MAE", "RMSE"): (0, 0.7),
     ("Precision", "Recall"): (0, 1),
 }[metrics]
 fig, df_metric = cumulative_metrics(
@@ -38,21 +38,21 @@ fig, df_metric = cumulative_metrics(
     df_preds=df_each_pred[models],
     project_end_point="xy",
     backend=(backend := "plotly"),
-    range_y=range_y,
     metrics=metrics,
     # facet_col_wrap=2,
     # increase facet col gap
     facet_col_spacing=0.05,
+    # markers=True,
 )
 
-x_label = "Number of screened WBM materials"
+x_label = "Number of screened WBM test set materials"
 if backend == "matplotlib":
     # fig.suptitle(title)
     fig.text(0.5, -0.08, x_label, ha="center", fontdict={"size": 16})
 if backend == "plotly":
-    fig.layout.legend = dict(x=1, y=0, bgcolor="rgba(0,0,0,0)", xanchor="right")
-    if "MAE" in metrics:
-        fig.layout.legend.update(traceorder="reversed")
+    for key in filter(lambda key: key.startswith("yaxis"), fig.layout):
+        fig.layout[key].range = range_y
+
     fig.layout.margin.update(l=0, r=0, t=30, b=50)
     fig.add_annotation(
         x=0.5,
@@ -64,14 +64,25 @@ if backend == "plotly":
         font=dict(size=14),
     )
     fig.update_traces(line=dict(width=3))
-    fig.layout.legend.update(
-        orientation="h", yanchor="bottom", y=1.1, xanchor="center", x=0.5
-    )
+    fig.layout.legend.update(bgcolor="rgba(0,0,0,0)")
+    # fig.layout.legend.update(
+    #     orientation="h", yanchor="bottom", y=1.1, xanchor="center", x=0.5
+    # )
+    # if "MAE" in metrics:
+    #     fig.layout.legend.update(traceorder="reversed")
+    assert len(metrics) * len(models) == len(
+        fig.data
+    ), f"expected one trace per model per metric, got {len(fig.data)}"
 
     for trace in fig.data:
+        if line_style := model_styles.get(trace.name):
+            ls, _marker, color = line_style
+            trace.line = dict(color=color, dash=ls, width=2)
+
         # show only the N best models by default
-        if trace.name in df_metrics.T.sort_values("F1").index[:-6]:
-            trace.visible = "legendonly"
+        # if trace.name in df_metrics.T.sort_values("F1").index[:-6]:
+        #     trace.visible = "legendonly"
+
         last_idx = pd.Series(trace.y).last_valid_index()
         last_x = trace.x[last_idx]
         last_y = trace.y[last_idx]
@@ -112,5 +123,5 @@ fig.show()
 
 # %%
 img_name = f"cumulative-{'-'.join(metrics).lower()}"
-save_fig(fig, f"{FIGS}/{img_name}.svelte")
-save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=900, height=400)
+save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=1000, height=400)

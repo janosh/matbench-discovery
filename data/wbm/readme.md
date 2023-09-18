@@ -96,7 +96,7 @@ Element counts for WBM test set consisting of 256,963 WBM `ComputedStructureEntr
   <img src="./figs/wbm-elements.svg" alt="Periodic table log heatmap of WBM elements">
 </slot>
 
-Element counts for MP training set consisting of 146,323 `ComputedStructureEntries`
+Element counts for MP training set consisting of 154,719 `ComputedStructureEntries`
 
 <slot name="mp-elements-heatmap">
   <img src="./figs/mp-elements.svg" alt="Periodic table log heatmap of MP elements">
@@ -104,6 +104,6 @@ Element counts for MP training set consisting of 146,323 `ComputedStructureEntri
 
 ## 📊 &thinsp; Symmetry Statistics
 
-These sunburst diagrams show the spacegroup distribution of MP on the left and WBM on the right. Both have good coverage of all 7 crystal systems, the only exception being triclinic crystals which are just 1% of WBM but well represented in MP (15%). The 3 largest systems in MP are monoclinic, orthorhombic and triclinic vs orthorhombic, tetragonal and cubic in WBM. So WBM structures have overall higher symmetry which can benefit some models more than others. Wrenformer in particular uses symmetries as a coarse-grained description of the underlying structure. Its representations basically degrades to composition only on symmetry-less P1 structures. Given this spacegroup distribution, it should fare well on the WBM test set. The fact that Wrenformer is still outperformed by all interatomic potentials and some single-shot GNNs indicates the underlying methodology is unable to compete. See [SI](/si#spacegroup-prevalence-in-wrenformer-failure-cases) for a specific Wrenformer failure case.
+These sunburst diagrams show the spacegroup distribution of MP on the left and WBM on the right. Both have good coverage of all 7 crystal systems, the only exception being triclinic crystals which are just 1% of WBM but well represented in MP (15%). The 3 largest systems in MP are monoclinic, orthorhombic and triclinic vs orthorhombic, tetragonal and cubic in WBM. So WBM structures have overall higher symmetry which can benefit some models more than others. Wrenformer in particular uses symmetries as a coarse-grained description of the underlying structure. Its representations basically degrades to composition only on symmetry-less P1 structures. Given this spacegroup distribution, it should fare well on the WBM test set. The fact that Wrenformer is still outperformed by all interatomic potentials and some single-shot GNNs indicates the underlying methodology is unable to compete. See [SI](/preprint#spacegroup-prevalence-in-wrenformer-failure-cases) for a specific Wrenformer failure case.
 
 <slot name="spacegroup-sunbursts" />

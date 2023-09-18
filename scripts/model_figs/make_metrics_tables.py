@@ -10,14 +10,29 @@ import numpy as np
 import pandas as pd
 from sklearn.dummy import DummyClassifier
 
-from matbench_discovery import FIGS, PDF_FIGS
+from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.metrics import stable_metrics
+from matbench_discovery.models import MODEL_METADATA
 from matbench_discovery.plots import df_to_pdf, df_to_svelte_table
 from matbench_discovery.preds import df_metrics, df_metrics_10k, each_true_col
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
+
+name_map = {
+    "MEGNet RS2RE": "MEGNet",
+    "M3GNet→MEGNet": "M3GNet",
+    "CHGNet→MEGNet": "CHGNet",
+}
+for model in df_metrics:
+    key = name_map.get(model, model)
+    if key not in MODEL_METADATA:
+        continue
+    n_structs = MODEL_METADATA[key]["training_set"]["size"]
+    loc = "training size", model
+    df_metrics.loc[loc] = f"{n_structs:,}"
+    df_metrics_10k.loc[loc] = f"{n_structs:,}"
 
 
 # %% add dummy classifier results to df_metrics
@@ -45,14 +60,7 @@ df_metrics["Dummy"] = dummy_metrics
 df_metrics_10k["Dummy"] = dummy_metrics
 
 
-# %% for each model this ontology dict specifies
-# (training type, test type, model class)
-# RS2RE = relaxed structure to relaxed energy
-# RP2RE = relaxed prototype to predicted energy
-# IS2RE = initial structure to relaxed energy
-# IS2E = initial structure to energy
-# IS2RE-SR = initial structure to relaxed energy after ML structure relaxation
-# S2EFS(M) = structure to energy, forces, stress, (magmoms)
+# %% for each model this ontology dict specifies (training type, test type, model class)
 ontology = {
     "ALIGNN": ("RS2RE", "IS2RE", "GNN"),
     # "ALIGNN Pretrained": ("RS2RE", "IS2RE", "GNN"),
@@ -60,17 +68,29 @@ ontology = {
     "MACE": ("S2EFS", "IS2RE-SR", "UIP-GNN"),
     "M3GNet": ("S2EFS", "IS2RE-SR", "UIP-GNN"),
     "MEGNet": ("RS2RE", "IS2E", "GNN"),
+    "MEGNet RS2RE": ("RS2RE", "IS2E", "GNN"),
     "CGCNN": ("RS2RE", "IS2E", "GNN"),
     "CGCNN+P": ("S2RE", "IS2RE", "GNN"),
     "Wrenformer": ("RP2RE", "IP2E", "Transformer"),
     "BOWSR": ("RS2RE", "IS2RE-BO", "BO-GNN"),
     "Voronoi RF": ("RS2RE", "IS2E", "Fingerprint"),
-    "M3GNet->MEGNet": ("S2EFS", "IS2RE-SR", "UIP-GNN"),
-    "CHGNet->MEGNet": ("S2EFSM", "IS2RE-SR", "UIP-GNN"),
+    "M3GNet→MEGNet": ("S2EFS", "IS2RE-SR", "UIP-GNN"),
+    "CHGNet→MEGNet": ("S2EFSM", "IS2RE-SR", "UIP-GNN"),
     "Dummy": ("", "", ""),
 }
 ontology_cols = ["Trained", "Deployed", "Model Class"]
 df_ont = pd.DataFrame(ontology, index=ontology_cols)
+# RS2RE = relaxed structure to relaxed energy
+# RP2RE = relaxed prototype to predicted energy
+# IS2RE = initial structure to relaxed energy
+# IS2E = initial structure to energy
+# IP2E = initial prototype to energy
+# IS2RE-SR = initial structure to relaxed energy after ML structure relaxation
+# S2EFS(M) = structure to energy, forces, stress, (magmoms)
+# GNN = graph neural network
+# UIP = universal interatomic potential
+# BO-GNN = Bayesian optimization
+# RF = random forest
 
 
 # %%
@@ -78,8 +98,8 @@ R2_col = "R<sup>2</sup>"
 higher_is_better = {*f"DAF {R2_col} Precision Recall F1 Accuracy TPR TNR TP TN".split()}
 lower_is_better = {"MAE", "RMSE", "FPR", "FNR", "FP", "FN"}
 
-# if True, make metrics-table-megnet-uip-combos.(svelte|pdf) for /si
-make_uip_megnet_comparison = False
+# if True, make metrics-table-megnet-uip-combos.(svelte|pdf) for SI
+make_uip_megnet_comparison = True
 hide_metrics = "TP FN FP TN FNR FPR Recall Trained Deployed".split()
 
 for label, df, extra_hide_metrics in (
@@ -90,9 +110,11 @@ for label, df, extra_hide_metrics in (
     df_table = pd.concat([df, df_ont]).rename(index={"R2": R2_col})
     df_table.index.name = "Model"
 
-    drop_models = ["CHGNet->MEGNet", "M3GNet->MEGNet"]
+    drop_models = ["CHGNet→MEGNet", "M3GNet→MEGNet"]
     if make_uip_megnet_comparison:
-        drop_models = [*{*df_table} - {*drop_models, "MEGNet", "M3GNet", "CHGNet"}]
+        drop_models = [
+            *{*df_table} - {*drop_models, "MEGNet", "M3GNet", "CHGNet", "MEGNet RS2RE"}
+        ]
         label += "-uip-megnet-combos"
         print(
             "hint: for make_uip_megnet_comparison, uncomment the lines chgnet_megnet "
@@ -126,12 +148,15 @@ for label, df, extra_hide_metrics in (
     styler.set_uuid("")
 
     # export model metrics as styled HTML table and Svelte component
-    # draw dotted line between classification and regression metrics
+    # get index of MAE column
+    mae_col_idx = styler.columns.get_loc("MAE")
+    css_col_selector = f"#T_ :is(td, th):nth-child({mae_col_idx + 2})"
     df_to_svelte_table(
         styler,
-        f"{FIGS}/metrics-table{label}.svelte",
+        f"{SITE_FIGS}/metrics-table{label}.svelte",
         inline_props="class='roomy'",
-        styles="#T_ :is(td, th):nth-last-child(4) { border-left: 1px dotted white; }",
+        # draw dotted line between classification and regression metrics
+        styles=f"{css_col_selector} {{ border-left: 1px dotted white; }}",
     )
     try:
         df_to_pdf(styler, f"{PDF_FIGS}/metrics-table{label}.pdf")

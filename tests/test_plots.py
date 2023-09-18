@@ -15,6 +15,8 @@ from matbench_discovery.plots import (
     df_to_pdf,
     df_to_svelte_table,
     hist_classified_stable_vs_hull_dist,
+    plotly_line_styles,
+    plotly_markers,
     rolling_mae_vs_hull_dist,
 )
 from matbench_discovery.preds import (
@@ -36,11 +38,7 @@ df_wbm = load_df_wbm_with_preds(models, nrows=100)
 @pytest.mark.parametrize("backend", ["matplotlib", "plotly"])
 @pytest.mark.parametrize(
     "metrics",
-    [
-        ("Recall",),
-        ("Recall", "MAE"),
-        ("Recall", "Precision", "F1"),
-    ],
+    [("Recall",), ("Recall", "MAE"), ("Recall", "Precision", "RMSE")],
 )
 def test_cumulative_metrics(
     project_end_point: AxLine,
@@ -66,9 +64,8 @@ def test_cumulative_metrics(
         assert {ax.get_ylabel() for ax in fig.axes} >= {*metrics}
     elif backend == "plotly":
         assert isinstance(fig, go.Figure)
-        # TODO fix AssertionError {'Recall', 'metric=F1'} == {'F1', 'Recall'}
-        # subplot_titles = [anno.text for anno in fig.layout.annotations][:len(metrics)]
-        # assert set(subplot_titles) == set(metrics)
+        subplot_titles = {anno.text.split("=")[-1] for anno in fig.layout.annotations}
+        assert subplot_titles >= set(metrics)
 
 
 def test_cumulative_metrics_raises() -> None:
@@ -210,3 +207,12 @@ def test_df_to_pdf(tmp_path: Path, crop: bool, capsys: CaptureFixture[str]) -> N
     stdout, stderr = capsys.readouterr()
     assert stderr == ""
     assert stdout == ""
+
+
+def test_plotly_markers_line_styles() -> None:
+    assert len(plotly_markers) > 100
+    assert len(plotly_line_styles) > 100
+    assert {*map(type, plotly_markers)} == {str}, "expect all markers are strings"
+    assert {*map(type, plotly_line_styles)} == {str}
+    assert "longdashdot" in plotly_line_styles
+    assert "circle" in plotly_markers

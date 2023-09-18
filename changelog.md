@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+### [v1.0.0](https://github.com/janosh/matbench-discovery/compare/v0.1.5...v1.0.0)
+
+> 13 September 2023
+
+- Update site to match arXiv [`#51`](https://github.com/janosh/matbench-discovery/pull/51)
+- Add MEGNet RS2RE to UIP-&gt;MEGNet comparison [`#50`](https://github.com/janosh/matbench-discovery/pull/50)
+- Add training set URLs in ModelCard and show training set size in metrics tables [`#49`](https://github.com/janosh/matbench-discovery/pull/49)
+- Add ALIGNN FF [`#47`](https://github.com/janosh/matbench-discovery/pull/47)
+- Add MACE [`#48`](https://github.com/janosh/matbench-discovery/pull/48)
+- v0.1.5 [`#44`](https://github.com/janosh/matbench-discovery/pull/44)
+- `train_alignn.py` add `wandb` tracking and avoid POSCARs on disk [`#45`](https://github.com/janosh/matbench-discovery/pull/45)
+- fix lib/References.svelte mixing authors and titles on page reloads [`3aad858`](https://github.com/janosh/matbench-discovery/commit/3aad8582be68e2b40c8ecea6279e45e10ce69db8)
+- use bin counts directly (no KDE) in hull dist density scatter plot [`5df80ef`](https://github.com/janosh/matbench-discovery/commit/5df80efbc23541d38f9f300256cc30d92c61cbce)
+- add join_mace_results.py [`eb11ab0`](https://github.com/janosh/matbench-discovery/commit/eb11ab0acdf1f6c25563716af33623d76417610f)
+- use different line styles for models in cumulative-precision-recall.svelte plot [`7bd2038`](https://github.com/janosh/matbench-discovery/commit/7bd20386083c119f462dd66b7a3f1732e3ac9e78)
+- color hull distance scatter plots by density [`afe6ce9`](https://github.com/janosh/matbench-discovery/commit/afe6ce9aafee8ba4b897ffbf9b2857760a59407f)
+- use same colors, line styles and markers for a given model across plots [`d9bb043`](https://github.com/janosh/matbench-discovery/commit/d9bb043f21961f958f0858fa71af86b50a0debcc)
+- fix per-model KDE in scatter_e_above_hull_models.py, add color bar since color value is now meaningful [`13b1173`](https://github.com/janosh/matbench-discovery/commit/13b1173cb54876cf56a6267723e7bf6b04ff6a69)
+- add marginal hull distribution along rolling_mae_vs_hull_dist_models plot top edge [`e7f9fe8`](https://github.com/janosh/matbench-discovery/commit/e7f9fe8fd4f170ffa3aecfc6e1d112ed21546758)
+- delete outdated 'from matbench_discovery import DEBUG' [`a9386fb`](https://github.com/janosh/matbench-discovery/commit/a9386fb3549cef417fe34809280cbe937eefdd95)
+- add @pbenner to citation.cff, /models page add color bar for ModelCard bg color [`5f59a90`](https://github.com/janosh/matbench-discovery/commit/5f59a9090febc8870314e1694f328a95af501a2b)
+- fix tests/test_models.py::test_model_dirs_have_metadata - AssertionError: Missing metadata file: /home/runner/work/matbench-discovery/matbench-discovery/models/alignn_ff/metadata.yml [`50f5821`](https://github.com/janosh/matbench-discovery/commit/50f5821f2bbea0dbc58c7a6bf16329447cad1e62)
+- fix bad column name in join_mace_results.py [`d7f300b`](https://github.com/janosh/matbench-discovery/commit/d7f300b8b73b9c9d7e6e2ff05945139d40420dd9)
+- add scripts/model_figs/update_all_model_figs.py [`6696d22`](https://github.com/janosh/matbench-discovery/commit/6696d22d179ad0c85b7babaebf299335501dcb3d)
+
 #### [v0.1.5](https://github.com/janosh/matbench-discovery/compare/v0.1.4...v0.1.5)
 
 > 7 July 2023

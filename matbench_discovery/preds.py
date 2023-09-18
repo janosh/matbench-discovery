@@ -9,7 +9,14 @@ from tqdm import tqdm
 from matbench_discovery import ROOT, STABILITY_THRESHOLD
 from matbench_discovery.data import Files, df_wbm, glob_to_df
 from matbench_discovery.metrics import stable_metrics
-from matbench_discovery.plots import ev_per_atom, model_labels, quantity_labels
+from matbench_discovery.plots import (
+    ev_per_atom,
+    model_labels,
+    plotly_colors,
+    plotly_line_styles,
+    plotly_markers,
+    quantity_labels,
+)
 
 """Centralize data-loading and computing metrics for plotting scripts"""
 
@@ -48,14 +55,15 @@ class PredFiles(Files):
     # m3gnet_ms = "m3gnet/2023-06-01-m3gnet-manual-sampling-wbm-IS2RE.csv.gz"
 
     # MACE trained on original M3GNet training set
-    mace = "mace/2023-07-23-mace-wbm-IS2RE-FIRE.csv.gz"
+    mace = "mace/2023-08-14-mace-wbm-IS2RE-FIRE.csv.gz"
 
     # original MEGNet straight from publication, not re-trained
     megnet = "megnet/2022-11-18-megnet-wbm-IS2RE.csv.gz"
-    # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
+    # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
     # chgnet_megnet = "chgnet/2023-03-04-chgnet-wbm-IS2RE.csv.gz"
-    # M3GNet-relaxed structures fed into MEGNet for formation energy prediction
+    # # M3GNet-relaxed structures fed into MEGNet for formation energy prediction
     # m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv.gz"
+    # megnet_rs2re = "megnet/2023-08-23-megnet-wbm-RS2RE.csv.gz"
 
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest
     voronoi_rf = "voronoi/2022-11-27-train-test/e-form-preds-IS2RE.csv.gz"
@@ -65,7 +73,7 @@ class PredFiles(Files):
 
     alignn = "alignn/2023-06-02-alignn-wbm-IS2RE.csv.gz"
     # alignn_pretrained = "alignn/2023-06-03-mp-e-form-alignn-wbm-IS2RE.csv.gz"
-    alignn_ff = "alignn_ff/2023-07-11-alignn-ff-wbm-IS2RE.csv.gz"
+    # alignn_ff = "alignn_ff/2023-07-11-alignn-ff-wbm-IS2RE.csv.gz"
 
 
 # model_labels remaps model keys to pretty plot labels (see Files)
@@ -100,16 +108,20 @@ def load_df_wbm_with_preds(
 
     dfs: dict[str, pd.DataFrame] = {}
 
-    for model_name in (bar := tqdm(models, disable=not pbar, desc="Loading preds")):
-        bar.set_postfix_str(model_name)
-        df = glob_to_df(PRED_FILES[model_name], pbar=False, **kwargs).set_index(id_col)
-        dfs[model_name] = df
+    try:
+        for model_name in (bar := tqdm(models, disable=not pbar, desc="Loading preds")):
+            bar.set_postfix_str(model_name)
+            df = glob_to_df(PRED_FILES[model_name], pbar=False, **kwargs)
+            df = df.set_index(id_col)
+            dfs[model_name] = df
+    except Exception as exc:
+        raise RuntimeError(f"Failed to load {model_name=}") from exc
 
     from matbench_discovery.data import df_wbm
 
     df_out = df_wbm.copy()
     for model_name, df in dfs.items():
-        model_key = model_name.lower().replace(" + ", "_").replace(" ", "_")
+        model_key = model_name.lower().replace("→", "_").replace(" ", "_")
 
         cols = [col for col in df if col.startswith(f"e_form_per_atom_{model_key}")]
         if cols:
@@ -167,7 +179,23 @@ df_metrics = df_metrics.round(3).sort_values("F1", axis=1, ascending=False)
 df_metrics_10k = df_metrics_10k.round(3).sort_values("F1", axis=1, ascending=False)
 
 models = list(df_metrics.T.MAE.sort_values().index)
+# used for consistent markers, line styles and colors for a given model across plots
+model_styles = dict(zip(models, zip(plotly_line_styles, plotly_markers, plotly_colors)))
 
+# To avoid confusion for anyone reading this code, we calculate the formation energy MAE
+# here and report it as the MAE for the energy above the convex hull prediction. The
+# former is more easily calculated but the two quantities are the same. The formation
+# energy of a material is the difference in energy between a material and its
+# constituent elements in their standard states. The distance to the convex hull is
+# defined as the difference between a material's formation energy and the minimum
+# formation energy of all possible stable materials made from the same elements. Since
+# the formation energy of a material is used to calculate the distance to the convex
+# hull, the error of a formation energy prediction directly determines the error in the
+# distance to the convex hull prediction.
+
+# A further point of clarification: whenever we say convex hull distance we mean
+# the signed distance that is positive for thermodynamically unstable materials above
+# the hull and negative for stable materials below it.
 
 # dataframe of all models' energy above convex hull (EACH) predictions (eV/atom)
 df_each_pred = pd.DataFrame()

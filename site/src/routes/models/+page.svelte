@@ -86,7 +86,7 @@
   </ul>
 
   <legend>
-    best
+    heading color: best
     <ColorBar color_scale={interpolatePuOr} style="min-width: min(70vw, 400px);" />
     worst
   </legend>
@@ -97,18 +97,23 @@
         animate:flip={{ duration: 400 }}
         in:fade={{ delay: 100 }}
         out:fade={{ delay: 100 }}
-        style="background-color: {bg_color(model[sort_by], min_val, max_val)};"
       >
-        <ModelCard data={model} {stats} {sort_by} bind:show_details />
-        {#if model.training_set}
-          <!-- maybe show this text in a tooltip: This model was not trained on the
-          canonical training set. It's results should not be seen as a one-to-one
-          comparison to the other models but rather proof of concept of what is possible. -->
+        <ModelCard
+          data={model}
+          {stats}
+          {sort_by}
+          bind:show_details
+          style="background-color: {bg_color(model[sort_by], min_val, max_val)};"
+        />
+        <!-- maybe show this text in a tooltip: This model was not trained on the
+        canonical training set. It's results should not be seen as a one-to-one
+        comparison to the other models but rather proof of concept of what is possible. -->
+        <!-- {#if model.training_set}
           <strong class="train-set">
             <Icon icon="ion:ios-warning" inline />
             Custom training set: {model.training_set}
           </strong>
-        {/if}
+        {/if} -->
       </li>
     {/each}
   </ol>
@@ -175,7 +180,7 @@
   input[type='number']::-webkit-inner-spin-button {
     display: none;
   }
-  strong.train-set {
+  /* strong.train-set {
     display: block;
     background-color: rgb(174, 79, 28);
     color: white;
@@ -186,5 +191,5 @@
     padding: 1pt 3pt;
     border-radius: 1ex;
     font-size: smaller;
-  }
+  } */
 </style>

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "matbench-discovery"
-version = "0.1.5"
+version = "1.0.0"
 description = "A benchmark for machine learning energy models on inorganic crystal stability prediction from unrelaxed structures"
 authors = [{ name = "Janosh Riebesell", email = "janosh@lbl.gov" }]
 readme = "readme.md"
@@ -34,7 +34,9 @@ requires-python = ">=3.9"
 dependencies = [
   "matplotlib",
   "numpy",
-  # output_formatting needed to for pandas Stylers
+  # tmp: shouldn't be needed, used to be included in output_formatting
+  "jinja2",
+  # output_formatting needed for pandas Stylers
   # see https://github.com/pandas-dev/pandas/blob/-/pyproject.toml
   "pandas[output_formatting]>=2.0.0",
   "plotly",

@@ -29,6 +29,12 @@ authors:
     orcid: 0000-0002-0912-8137
     affil_key: 3
     github: https://github.com/pbenner
+  - given-names: Yuan
+    family-names: Chiang
+    affiliation: Lawrence Berkeley National Laboratory
+    orcid: 0000-0002-4017-7084
+    affil_key: 2
+    github: https://github.com/chiang-yuan
   - given-names: Kristin
     family-names: Persson
     orcid: 0000-0003-2495-5509
@@ -43,11 +49,12 @@ authors:
 affiliations:
   - Cavendish Laboratory, University of Cambridge, UK
   - Lawrence Berkeley National Laboratory, Berkeley, USA
+  - German Federal Institute of Materials Research and Testing (BAM)
 license: MIT
 license-url: https://github.com/janosh/matbench-discovery/blob/-/license"
 repository-code: https://github.com/janosh/matbench-discovery
 type: software
 url: https://github.com/janosh/matbench-discovery
-doi: TODO
+doi: 10.48550/arXiv.2308.14920
 version: 1.0.0 # replace with whatever Matbench Discovery version you use
-date-released: date TBD
+date-released: "2023-08-28"

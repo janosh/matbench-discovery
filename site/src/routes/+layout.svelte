@@ -19,14 +19,13 @@
 
   $: description = {
     '/': `Benchmarking machine learning energy models for materials discovery.`,
-    '/about-the-data': `Details about provenance, chemistry and energies in the benchmark's train and test set.`,
-    '/about-the-data/tmi': `Too much information on the benchmark's data.`,
+    '/data': `Details about provenance, chemistry and energies in the benchmark's train and test set.`,
+    '/data/tmi': `Too much information on the benchmark's data.`,
     '/api': `API docs for the Matbench Discovery PyPI package.`,
     '/contribute': `Steps for contributing a new model to the benchmark.`,
     '/models': `Details on each model sortable by metrics.`,
     '/preprint': `The preprint released with the Matbench Discovery benchmark.`,
     '/preprint/iclr-ml4mat': `Extended abstract submitted to the ICLR ML4Materials workshop.`,
-    '/si': `Supplementary information including interesting but non-essential plots.`,
   }[url ?? ``]
   if (url && !description) console.warn(`No description for url=${url}`)
   $: title = url == `/` ? `` : `${url} • `
@@ -71,14 +70,10 @@
 
 <Toc {headingSelector} breakpoint={1250} minItems={3} />
 
-{#if url !== `/`}
-  <a href="/" aria-label="Back to index page">&laquo; home</a>
-{/if}
-
 <GitHubCorner href={repository} />
 
 <main>
-  <Nav routes={routes.filter((route) => route != `/changelog`)} />
+  <Nav routes={[[`/about`, `/`], ...routes.filter((route) => route != `/changelog`)]} />
 
   <slot />
 

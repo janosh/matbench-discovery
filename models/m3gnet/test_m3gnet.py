@@ -112,7 +112,7 @@ for material_id in tqdm(structures, desc="Relaxing", disable=None):
             e_pred_col: relax_result["trajectory"].energies[-1],
         }
     except Exception as exc:
-        print(f"Failed to relax {material_id}: {exc}")
+        print(f"Failed to relax {material_id}: {exc!r}")
 
 
 # %%

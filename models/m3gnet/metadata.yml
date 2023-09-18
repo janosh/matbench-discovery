@@ -25,5 +25,10 @@ trained_for_benchmark: false
 notes:
   description: M3GNet is a GNN-based universal (as in full periodic table) interatomic potential for materials trained on up to 3-body interactions in the initial, middle and final frame of MP DFT relaxations.
   long: It thereby learns to emulate structure relaxation, MD simulations and property prediction of materials across diverse chemical spaces.
-  training: Using pre-trained model released with paper. Was only trained on a subset of 62,783 MP relaxation trajectories in the 2018 database release (see [related issue](https://github.com/materialsvirtuallab/m3gnet/issues/20#issuecomment-1207087219)).
+  training: Using pre-trained model released with paper. Was only trained on initial, middle and final frames of a subset of 62,783 MP relaxation trajectories in the 2018 database release (see [related issue](https://github.com/materialsvirtuallab/m3gnet/issues/20#issuecomment-1207087219)).
   testing: We also tried combining M3GNet with MEGNet where M3GNet is used to relax initial structures which are then passed to MEGNet to predict the formation energy.
+
+training_set:
+  title: MPF.2021.2.8
+  url: https://figshare.com/articles/dataset/19470599
+  size: 188_349

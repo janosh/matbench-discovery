@@ -5,15 +5,15 @@
 
 <h4 align="center" class="toc-exclude">
 
+[![arXiv](https://img.shields.io/badge/arXiv-2308.14920-blue)](https://arxiv.org/abs/2308.14920)
 [![Tests](https://github.com/janosh/matbench-discovery/actions/workflows/test.yml/badge.svg)](https://github.com/janosh/matbench-discovery/actions/workflows/test.yml)
 [![GitHub Pages](https://github.com/janosh/matbench-discovery/actions/workflows/gh-pages.yml/badge.svg)](https://github.com/janosh/matbench-discovery/actions/workflows/gh-pages.yml)
-[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/janosh/matbench-discovery/main.svg?badge_token=Qza33izjRxSbegTqeSyDvA)](https://results.pre-commit.ci/latest/github/janosh/matbench-discovery/main?badge_token=Qza33izjRxSbegTqeSyDvA)
 [![Requires Python 3.9+](https://img.shields.io/badge/Python-3.9+-blue.svg?logo=python&logoColor=white)](https://python.org/downloads)
 [![PyPI](https://img.shields.io/pypi/v/matbench-discovery?logo=pypi&logoColor=white)](https://pypi.org/project/matbench-discovery?logo=pypi&logoColor=white)
 
 </h4>
 
-> TL;DR: We benchmark ML models on crystal stability prediction from unrelaxed structures finding universal interatomic potentials (UIP) like [M3GNet](https://github.com/materialsvirtuallab/m3gnet) and [CHGNet](https://github.com/CederGroupHub/chgnet) to be highly accurate, robust across chemistries and ready for production use in high-throughput discovery pipelines.
+> TL;DR: We benchmark ML models on crystal stability prediction from unrelaxed structures finding universal interatomic potentials (UIP) like [CHGNet](https://github.com/CederGroupHub/chgnet), [M3GNet](https://github.com/materialsvirtuallab/m3gnet) and [MACE](https://github.com/ACEsuit/mace) to be highly accurate, robust across chemistries and ready for production use in high-throughput discovery pipelines.
 
 Matbench Discovery is an [interactive leaderboard](https://janosh.github.io/matbench-discovery/models) and associated [PyPI package](https://pypi.org/project/matbench-discovery) which together make it easy to rank ML energy models on a task designed to closely simulate a high-throughput discovery campaign for new stable inorganic crystals.
 
@@ -25,4 +25,4 @@ We welcome contributions that add new models to the leaderboard through GitHub P
 
 If you're interested in joining this work, feel free to [open a GitHub discussion](https://github.com/janosh/matbench-discovery/discussions) or [send an email](mailto:janosh@lbl.gov?subject=Collaborate%20on%20Matbench%20Discovery).
 
-For detailed results and analysis, check out the [preprint](https://janosh.github.io/matbench-discovery/preprint) and [SI](https://janosh.github.io/matbench-discovery/si).
+For detailed results and analysis, check out the [preprint](https://janosh.github.io/matbench-discovery/preprint).

@@ -12,7 +12,7 @@ from pymatviz import ptable_heatmap_plotly
 from pymatviz.utils import bin_df_cols, df_ptable, save_fig
 from tqdm import tqdm
 
-from matbench_discovery import FIGS, MODELS, PDF_FIGS, ROOT
+from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, SITE_MODELS
 from matbench_discovery.data import df_wbm
 from matbench_discovery.preds import (
     df_each_err,
@@ -50,7 +50,7 @@ assert all(
 # %% compute number of samples per element in training set
 # counting element occurrences not weighted by composition, assuming model don't learn
 # much more about iron and oxygen from Fe2O3 than from FeO
-counts_path = f"{ROOT}/site/src/routes/about-the-data/mp-element-counts-occurrence.json"
+counts_path = f"{ROOT}/site/src/routes/data/mp-element-counts-occurrence.json"
 df_elem_err = pd.read_json(counts_path, typ="series")
 train_count_col = "MP Occurrences"
 df_elem_err = df_elem_err.reset_index(name=train_count_col).set_index("index")
@@ -107,7 +107,7 @@ fig = (
 fig.layout.update(bargap=0.1)
 fig.layout.legend.update(x=0.02, y=0.98, font_size=16)
 fig.show()
-save_fig(fig, f"{FIGS}/bar-element-counts-mp+wbm-{normalized=}.svelte")
+save_fig(fig, f"{SITE_FIGS}/bar-element-counts-mp+wbm-{normalized=}.svelte")
 
 
 # %%
@@ -152,7 +152,7 @@ expected_cols = {
 }
 assert {*df_elem_err} >= expected_cols
 assert (df_elem_err.isna().sum() < 35).all()
-df_elem_err.round(4).to_json(f"{MODELS}/per-element-each-errors.json")
+df_elem_err.round(4).to_json(f"{SITE_MODELS}/per-element-each-errors.json")
 
 
 # %% scatter plot error by element against prevalence in training set
@@ -258,4 +258,4 @@ fig.add_annotation(
 )
 
 fig.show()
-save_fig(fig, f"{FIGS}/each-error-vs-least-prevalent-element-in-struct.svelte")
+save_fig(fig, f"{SITE_FIGS}/each-error-vs-least-prevalent-element-in-struct.svelte")
