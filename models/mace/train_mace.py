@@ -6,11 +6,14 @@ __author__ = "Yuan Chiang"
 __date__ = "2023-09-18"
 
 
-# Define the branch repository URL
+# Use multi-gpu distributed training branch
 branch_repo_url = "git+https://github.com/chiang-yuan/mace.git@mbd"
 
 try:
-    subprocess.run(["pip", "install", branch_repo_url])
+    subprocess.run(["module load pytorch/2.0.1"], check=True)
+    subprocess.run([". ~/.venv/py311/bin/activate"], check=True)
+    subprocess.run(["pip", "uninstall", "mace", "-y"], check=True)
+    subprocess.run(["pip", "install", branch_repo_url], check=True)
     print("Package installed successfully.")
 except Exception as e:
     print(f"Error installing the package: {e}")
@@ -36,7 +39,7 @@ sbatch_command = [
 ]
 
 try:
-    subprocess.run(sbatch_command)
+    subprocess.run(sbatch_command, check=True)
     print("Sbatch script executed successfully.")
 except Exception as e:
     print(f"Error executing the sbatch script: {e}")
