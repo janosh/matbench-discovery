@@ -16,9 +16,9 @@
 #SBATCH --exclusive
 #SBATCH --open-mode=append
 
-module load python
+
 module load pytorch/2.0.1
-source activate mbd
+. ~/.venv/py311/bin/activate
 
 exp_name=$(basename "$SLURM_SUBMIT_DIR")
 
@@ -66,7 +66,7 @@ srun python ./run_train.py \
     --device=cuda \
     --seed=3 \
     --save_cpu \
-    --wandb --wandb_project mbd-mace --wandb_entity astagroup --wandb_name $exp_name \
+    --wandb --wandb_project <project> --wandb_entity <entity> --wandb_name $exp_name \
     --restart_latest &
 
 ckpt_command=
