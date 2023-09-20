@@ -1,33 +1,34 @@
 import copy
 import json
 import os
-import os.path as osp
 
 import numpy as np
 from ase.io import read, write
 from pymatgen.core import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
-from tqdm.auto import tqdm
+from tqdm import tqdm
+
+from matbench_discovery import FIGSHARE
 
 __author__ = "Yuan Chiang"
 __date__ = "2023-08-10"
 
-mptrj_pretty_path = osp.join("../../data/figshare", "mptrj_2022.9_full.json")
-mptrj_extxyz_prefix = osp.join(os.curdir, "mptrj-2022.9")
-
-os.makedirs(mptrj_extxyz_prefix, exist_ok=True)
-
-with open(mptrj_pretty_path) as f:
-    json_data = json.load(f)
-
+module_dir = os.path.dirname(__file__)
+in_dir = f"{FIGSHARE}/mptrj_2022.9_full.json"
+out_dir = f"{module_dir}/mptrj-2022.9"
+os.makedirs(out_dir, exist_ok=True)
 combined = []
+
+
+with open(in_dir) as json_file:
+    json_data = json.load(json_file)
 
 for material_id in tqdm(json_data):
     for trajectory_id in json_data[material_id]:
-        fout_path = osp.join(mptrj_extxyz_prefix, f"{material_id}.extxyz")
+        out_xyz = f"{out_dir}/{material_id}.extxyz"
 
-        if osp.exists(fout_path):
-            traj = read(fout_path, index=":", format="extxyz")
+        if os.path.isfile(out_xyz):
+            traj = read(out_xyz, index=":", format="extxyz")
             combined.append(traj)
             continue
 
@@ -61,12 +62,12 @@ for material_id in tqdm(json_data):
 
             assert mp_id == material_id
 
-            write(fout_path, atoms, append=True, format="extxyz")
+            write(out_xyz, atoms, append=True, format="extxyz")
 
-            traj = read(fout_path, index=":", format="extxyz")
+            traj = read(out_xyz, index=":", format="extxyz")
             combined.append(traj)
 
-        except Exception as err:
-            print(err, f"skipping {material_id}, {trajectory_id}")
+        except Exception as exc:
+            print(exc, f"skipping {material_id}, {trajectory_id}")
 
 write("mptrj-2022.9.xyz", combined, format="extxyz")

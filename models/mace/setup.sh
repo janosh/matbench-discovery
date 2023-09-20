@@ -8,7 +8,7 @@ secs2timestr() {
 }
 
 timestr2secs() {
-    echo $1| sed 's/-/:/' | awk -F: '{print $4, $3, $2, $1}'|awk '{print $1+60*$2+3600*$3+86400*$4}'
+    echo "$1"| sed 's/-/:/' | awk -F: '{print $4, $3, $2, $1}'|awk '{print $1+60*$2+3600*$3+86400*$4}'
 }
 
 parse_job(){
@@ -17,52 +17,52 @@ parse_job(){
     if [[ -z $ckpt_overhead ]]; then
         jscript=/var/spool/slurmd/job$SLURM_JOB_ID/slurm_script
         if [[ -f $jscript ]]; then
-            x=`grep "#SBATCH*.--signal=" $jscript|grep -v "#*.#SBATCH"| tail -1 |awk -F@ '{print $2}'`
-            if [[ -n $x ]]; then ckpt_overhead=`timestr2secs $x`; fi
+            x=$(grep "#SBATCH*.--signal=" "$jscript"|grep -v "#*.#SBATCH"| tail -1 |awk -F@ '{print $2}')
+            if [[ -n $x ]]; then ckpt_overhead=$(timestr2secs "$x"); fi
         fi
     fi
     #read <comment> from job script
     if [[ -z $max_timelimit ]]; then
         jscript=/var/spool/slurmd/job$SLURM_JOB_ID/slurm_script
         if [[ -f $jscript ]]; then
-            x=`grep -o '#SBATCH*.--time=[^ ]*' $jscript | awk -F'=' '{print $2}'`
-            if [[ -n $x ]]; then max_timelimit=`timestr2secs $x`; fi
+            x=$(grep -o '#SBATCH*.--time=[^ ]*' "$jscript" | awk -F'=' '{print $2}')
+            if [[ -n $x ]]; then max_timelimit=$(timestr2secs "$x"); fi
 
-            x=`grep -o '#SBATCH*.-t=[^ ]*' $jscript | awk -F'=' '{print $2}'`
-            if [[ -n $x ]]; then max_timelimit=`timestr2secs $x`; fi
+            x=$(grep -o '#SBATCH*.-t=[^ ]*' "$jscript" | awk -F'=' '{print $2}')
+            if [[ -n $x ]]; then max_timelimit=$(timestr2secs "$x"); fi
         fi
     fi
 
     if [[ -z $ckpt_overhead ]]; then let ckpt_overhead=60; fi
     if [[ -z $max_timelimit ]]; then let max_timelimit=172800; fi
 
-    echo checkpoint overhead \$ckpt_overhead: `secs2timestr $ckpt_overhead`
-    echo maximum time limit  \$max_timelimit: `secs2timestr $max_timelimit`
+    echo checkpoint overhead \$ckpt_overhead: $(secs2timestr "$ckpt_overhead")
+    echo maximum time limit  \$max_timelimit: $(secs2timestr "$max_timelimit")
 
-    TOTAL_TIME=$(squeue -h -j $SLURM_JOB_ID -o %k)
-    timeAlloc=$(squeue -h -j $SLURM_JOB_ID -o %l)
+    TOTAL_TIME=$(squeue -h -j "$SLURM_JOB_ID" -o %k)
+    timeAlloc=$(squeue -h -j "$SLURM_JOB_ID" -o %l)
 
-    fields=`echo $timeAlloc | awk -F ':' '{print NF}'`
-    if [ $fields -le 2 ]; then
-       timeAlloc=`echo 0:$timeAlloc`
+    fields=$(echo "$timeAlloc" | awk -F ':' '{print NF}')
+    if [ "$fields" -le 2 ]; then
+       timeAlloc=$(echo 0:"$timeAlloc")
     fi
 
-    timeAlloc=`timestr2secs $timeAlloc`
-    TOTAL_TIME=`timestr2secs $TOTAL_TIME`
+    timeAlloc=$(timestr2secs "$timeAlloc")
+    TOTAL_TIME=$(timestr2secs "$TOTAL_TIME")
 
     let remainingTimeSec=TOTAL_TIME-timeAlloc+ckpt_overhead
     if [ $remainingTimeSec -gt 0 ]; then
-        remainingTime=`secs2timestr $remainingTimeSec`
-        scontrol update JobId=$SLURM_JOB_ID Comment=$remainingTime
+        remainingTime=$(secs2timestr $remainingTimeSec)
+        scontrol update JobId="$SLURM_JOB_ID" Comment="$remainingTime"
 
-        let maxtime=`timestr2secs $max_timelimit`
+        let maxtime=$(timestr2secs "$max_timelimit")
         if [ $remainingTimeSec -gt $maxtime ]; then
            requestTime=$max_timelimit
         else
            requestTime=$remainingTimeSec
         fi
-        echo time remaining \$remainingTime: $remainingTime
-        echo next timelimit \$requestTime: $requestTime
+        echo time remaining \$remainingTime: "$remainingTime"
+        echo next timelimit \$requestTime: "$requestTime"
     fi
     requestTime=$((requestTime/60))        #convert to minutes instead of seconds
 }
@@ -89,8 +89,8 @@ func_trap() {
     $ckpt_command >&2
     #set -x
     trap '' SIGTERM
-    scontrol requeue ${SLURM_JOB_ID} >&2
-    scontrol update JobId=${SLURM_JOB_ID} TimeLimit=${requestTime} >&2
+    scontrol requeue "${SLURM_JOB_ID}" >&2
+    scontrol update JobId="${SLURM_JOB_ID}" TimeLimit="${requestTime}" >&2
     trap - SIGTERM
     echo \$?: $? >&2
     #set +x
@@ -106,12 +106,12 @@ dmtcp_command_job () {
     export DMTCP_COORD_HOST=$h
     export DMTCP_COORD_PORT=$p
     dmtcp_command \$@"
-    echo "$str" >$fname
-    chmod a+rx $fname
+    echo "$str" >"$fname"
+    chmod a+rx "$fname"
 }
 
 restart_count () {
-	echo ${SLURM_RESTART_COUNT:-0}
+	echo "${SLURM_RESTART_COUNT:-0}"
 }
 
 
@@ -119,20 +119,20 @@ restart_count () {
 start_coordinator()
 {
     fname=dmtcp_command.$SLURM_JOBID
-    h=`hostname`
+    h=$(hostname)
 
-    check_coordinator=`which dmtcp_coordinator`
+    check_coordinator=$(which dmtcp_coordinator)
     if [ -z "$check_coordinator" ]; then
         echo "No dmtcp_coordinator found. Check your DMTCP installation and PATH settings."
         exit 0
     fi
 
     #ZZdmtcp_coordinator --daemon --exit-on-last -p 0 --port-file $fname $@ 1>/dev/null 2>&1
-    `which dmtcp_coordinator` --daemon --exit-on-last -p 0 --port-file $fname $@ 1>/dev/null 2>&1
+    $(which dmtcp_coordinator) --daemon --exit-on-last -p 0 --port-file "$fname" $@ 1>/dev/null 2>&1
 
     while true; do
         if [ -f "$fname" ]; then
-            p=`cat $fname`
+            p=$(cat "$fname")
             if [ -n "$p" ]; then
                 break
             fi
@@ -142,23 +142,23 @@ start_coordinator()
     export DMTCP_COORD_PORT=$p
 
     # Create dmtcp_command wrapper for easy communication with coordinator
-    p=`cat $fname`
+    p=$(cat "$fname")
     str="#!/bin/bash
     export PATH=$PATH
     export DMTCP_COORD_HOST=$h
     export DMTCP_COORD_PORT=$p
     dmtcp_command \$@"
-    echo "$str" >$fname
-    chmod a+rx $fname
+    echo "$str" >"$fname"
+    chmod a+rx "$fname"
 
     #log dmtcp
-    echo $SLURM_JOB_ID $USER `date +%F` $(restart_count)  >> /usr/common/software/spool/dmtcp_command.log
+    echo "$SLURM_JOB_ID" "$USER" $(date +%F) $(restart_count)  >> /usr/common/software/spool/dmtcp_command.log
 }
 
 #wait for a process to complete
 wait_pid () {
     pid=$1
-    while [ -e /proc/$pid ]
+    while [ -e /proc/"$pid" ]
     do
         sleep 1
     done
@@ -197,7 +197,7 @@ wait_coord () {
     let sum=0
     ckpt_done=0
     while true; do
-        x=(`dmtcp_command.$SLURM_JOB_ID -s`)
+        x=($(dmtcp_command."$SLURM_JOB_ID" -s))
         npeers=${x[6]/#*=/}
         running=${x[7]/#*=/}
         if [[ $npeers > 0 ]] && [[ $running == no ]] ; then
@@ -219,17 +219,17 @@ wait_coord () {
 
 #checkpoint before before requeue the job
 ckpt_dmtcp () {
-    dmtcp_command.$SLURM_JOB_ID -c
+    dmtcp_command."$SLURM_JOB_ID" -c
     wait_coord
 }
 
 #added 9/6/2021 for MANA
 wait_coord2 () {
-    sleep 1 #in case there is a delay in changing the satus of the dmtcp_coordinator
+    sleep 1 #in case there is a delay in changing the status of the dmtcp_coordinator
     let sum=0
     ckpt_done=0
     while true; do
-        x=(`dmtcp_command -s`)
+        x=($(dmtcp_command -s))
         #npeers=${x[6]/#*=/}
         #running=${x[7]/#*=/}
         npeers=${x[8]/#*=/}
