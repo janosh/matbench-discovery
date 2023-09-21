@@ -138,9 +138,12 @@ def main(*args: Any, **kwargs: Any) -> None:
             charges_key=args.charges_key,
         )
 
+        test_config_lens = ", ".join(
+            f"{name}: {len(test_configs)}" for name, test_configs in collections.tests
+        )
         logging.info(
             f"Total number of configurations: train={len(collections.train)}, valid="
-            f"{len(collections.valid)}, tests=[{', '.join(f'{name}: {len(test_configs)}' for name, test_configs in collections.tests)}]"
+            f"{len(collections.valid)}, tests=[{test_config_lens}]"
         )
     elif args.train_file.endswith(".h5"):
         atomic_energies_dict = None
@@ -632,7 +635,7 @@ def main(*args: Any, **kwargs: Any) -> None:
             test_set,
             batch_size=args.valid_batch_size,
             shuffle=(test_sampler is None),
-            drop_last=test_set.drop_last,
+            drop_last=test_set.drop_last,  # type: ignore
             num_workers=args.num_workers,
             pin_memory=args.pin_memory,
         )
@@ -737,14 +740,3 @@ if __name__ == "__main__":
         wandb_name=job_name,
         restart_latest=True,
     )
-
-
-"""
-TODO: can this shell code from mace-universal-distributed.sbatch be converted to python?
-ckpt_command=
-
-. ./setup.sh
-requeue_job func_trap USR1
-
-wait
-"""
