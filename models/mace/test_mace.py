@@ -46,7 +46,6 @@ slurm_vars = slurm_submit(
     time="12:0:0",
     array=f"1-{slurm_array_task_count}",
     slurm_flags="--qos regular --constraint gpu --gpus 1",
-    pre_cmd="module load pytorch/2.0.1; . ~/.venv/py311/bin/activate;",
 )
 
 

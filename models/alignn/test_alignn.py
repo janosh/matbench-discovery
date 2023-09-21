@@ -67,6 +67,8 @@ slurm_vars = slurm_submit(
     time="12:0:0",
     out_dir=out_dir,
     slurm_flags="--nodes 1 --gpus-per-node 1",
+    # pre_cmd is platform specific, remove when running on other systems
+    # just left here for reference
     pre_cmd=". /etc/profile.d/modules.sh; module load rhel8/default-amp;"
     "module load cuda/11.8",
 )

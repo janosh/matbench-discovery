@@ -47,10 +47,10 @@
 <dialog bind:this={dialog} open={show_tips}>
   <h3>{tips_title}</h3>
   <p title="For keyboard-only site navigation">
-    Use <kbd>cmd+k</kbd> to bring up a nav palette.
+    <kbd>cmd+k</kbd> to bring up a nav palette.
   </p>
   <p title="For keyboard-only site navigation">
-    Use <kbd>cmd+j</kbd> to bring up these site options.
+    <kbd>cmd+j</kbd> to bring up these site options.
   </p>
 </dialog>
 
