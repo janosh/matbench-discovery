@@ -59,7 +59,12 @@
 </script>
 
 <div style="margin: 3vw;">
-  <h1>Models</h1>
+  <h1>Interactive Leaderboard</h1>
+
+  <p style="text-align: center;">
+    Sort models by stability classification metrics, by their tun time or regressions
+    metrics for predicted convex hull distance.
+  </p>
 
   <span>
     Sort
@@ -70,7 +75,9 @@
   <ul>
     {#each [{ key: `model_name`, label: `Model Name` }, ...stats] as { key, label, tooltip }}
       <li class:active={key == sort_by}>
-        <button id={key} on:click={() => (sort_by = key)}>{@html label ?? key}</button>
+        <button id={key} on:click={() => (sort_by = key)} style="font-size: large;">
+          {@html label ?? key}
+        </button>
         {#if tooltip}
           <Tooltip
             text={tooltip}
@@ -142,7 +149,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 9pt;
-    margin: 1em auto 2em;
+    margin: 2.5ex auto 3ex;
     place-content: center;
   }
   ul > li button {

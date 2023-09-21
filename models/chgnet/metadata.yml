@@ -35,7 +35,7 @@ trained_for_benchmark: false
 
 training_set:
   title: MPTrj
-  url: https://figshare.com/articles/dataset/19470599
+  url: https://figshare.com/articles/dataset/23713842
   size: 1_580_395
 
 hyperparams:

@@ -14,7 +14,7 @@
 
   $: url = $page.url.pathname
   $: headingSelector = `main :is(${
-    url === `/api` ? `h1, ` : ``
+    { '/api': `h1, ` }[url] ?? ``
   }h2, h3, h4):not(.toc-exclude)`
 
   $: description = {
@@ -68,7 +68,9 @@
   <meta name="description" content={description} />
 </svelte:head>
 
-<Toc {headingSelector} breakpoint={1250} minItems={3} />
+{#if url !== `/models`}
+  <Toc {headingSelector} breakpoint={1250} minItems={3} />
+{/if}
 
 <GitHubCorner href={repository} />
 

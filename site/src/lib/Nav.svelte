@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/stores'
 
-  export let routes: string[]
+  export let routes: (string | [string, string])[]
   export let style: string | null = null
 
   $: is_current = (path: string) => {
@@ -24,7 +24,7 @@
     display: flex;
     gap: 1em 1ex;
     place-content: center;
-    margin: 1em auto 3em;
+    margin: 2em auto 3em;
     max-width: 45em;
     flex-wrap: wrap;
     font-size: 1.1em;
