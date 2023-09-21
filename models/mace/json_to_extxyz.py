@@ -1,4 +1,8 @@
-import copy
+"""This script converts the MPTrj relaxation trajectories in JSON format to
+extended XYZ format. The JSON data was downloaded from
+https://figshare.com/articles/dataset/23713842.
+"""
+
 import json
 import os
 
@@ -32,7 +36,7 @@ for material_id in tqdm(json_data):
             combined.append(traj)
             continue
 
-        block = copy.deepcopy(json_data[material_id][trajectory_id])
+        block = json_data[material_id][trajectory_id]
         try:
             structure = Structure.from_dict(block.pop("structure"))
 
