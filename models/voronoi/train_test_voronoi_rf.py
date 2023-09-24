@@ -3,6 +3,7 @@
 
 # %%
 import os
+import sys
 from importlib.metadata import version
 
 import pandas as pd
@@ -12,12 +13,14 @@ from sklearn.impute import SimpleImputer
 from sklearn.metrics import r2_score
 from sklearn.pipeline import Pipeline
 
-from matbench_discovery import today
+from matbench_discovery import ROOT, today
 from matbench_discovery.data import DATA_FILES, df_wbm, glob_to_df
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.preds import e_form_col as test_e_form_col
 from matbench_discovery.slurm import slurm_submit
-from models.voronoi import featurizer
+
+sys.path.append(f"{ROOT}/models")
+from voronoi import featurizer  # noqa: E402
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-26"

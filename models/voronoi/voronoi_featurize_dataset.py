@@ -14,10 +14,12 @@ import wandb
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import today
+from matbench_discovery import ROOT, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
-from models.voronoi import featurizer
+
+sys.path.append(f"{ROOT}/models")
+from voronoi import featurizer  # noqa: E402
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-10-31"
