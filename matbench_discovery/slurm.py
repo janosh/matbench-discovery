@@ -55,10 +55,9 @@ def slurm_submit(
         array (str, optional): Slurm array specifier. Defaults to None. Example:
             '9' (for SLURM_ARRAY_TASK_ID from 0-9 inclusive), '1-10' or '1-10%2', etc.
         pre_cmd (str, optional): Things like `module load` commands and environment
-            variables to set when running the python script go here. Example:
-            pre_cmd='ENV_VAR=42' or 'module load rhel8/default-amp;'. Defaults to "".
-            If running on CPU, pre_cmd="unset OMP_NUM_THREADS" allows PyTorch to use
-            all cores https://docs.hpc.cam.ac.uk/hpc/software-packages/pytorch.html
+            variables to set before running the python script go here. Example:
+            pre_cmd='ENV_VAR=42' or 'module load pytorch;'. Defaults to "". If running
+            on CPU, pre_cmd="unset OMP_NUM_THREADS" allows PyTorch to use all cores.
 
     Raises:
         SystemExit: Exit code will be subprocess.run(['sbatch', ...]).returncode.

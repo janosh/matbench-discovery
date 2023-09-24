@@ -74,7 +74,7 @@
 {#if show_details}
   <div transition:fade|fly={{ duration: 200 }}>
     <section transition:slide={{ duration: 200 }}>
-      <h3 class="toc-exclude">Authors</h3>
+      <h3>Authors</h3>
       <ul>
         {#each data.authors as { name, email, orcid, affiliation, url }}
           <li>
@@ -93,7 +93,7 @@
       </ul>
     </section>
     <section transition:slide={{ duration: 200 }}>
-      <h3 class="toc-exclude">Package versions</h3>
+      <h3>Package versions</h3>
       <ul>
         {#each Object.entries(data.requirements ?? {}) as [name, version]}
           <li>
@@ -110,7 +110,7 @@
   </div>
 {/if}
 <section class="metrics" style={metrics_style}>
-  <h3 class="toc-exclude">Metrics</h3>
+  <h3>Metrics</h3>
   <ul>
     {#each stats as { key, label, unit }}
       <li class:active={sort_by == key}>
@@ -122,7 +122,7 @@
 </section>
 {#if hyperparams && show_details}
   <section>
-    <h3 class="toc-exclude">Hyperparameters</h3>
+    <h3>Hyperparameters</h3>
     <ul>
       {#each Object.entries(hyperparams) as [key, value]}
         <li>
@@ -143,7 +143,7 @@
 {/if}
 {#if notes && show_details}
   <section>
-    <h3 class="toc-exclude">Notes</h3>
+    <h3>Notes</h3>
     <ul>
       {#each [`description`, `training`].filter((key) => key in (notes ?? {})) as key}
         <li>{@html notes[key]}</li>

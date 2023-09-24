@@ -53,7 +53,6 @@ slurm_vars = slurm_submit(
     time="4:0:0",
     out_dir=out_dir,
     slurm_flags="--qos regular --constraint gpu --gpus 1",
-    pre_cmd="module load pytorch/2.0.1;",
 )
 
 
