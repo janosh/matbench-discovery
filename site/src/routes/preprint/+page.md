@@ -5,7 +5,7 @@
   import BoxHullDistErrors from '$figs/box-hull-dist-errors.svelte'
   import CgcnnRollingMaeBatches from '$figs/rolling-mae-vs-hull-dist-wbm-batches-cgcnn.svelte'
   import CHGNetRollingMaeBatches from '$figs/rolling-mae-vs-hull-dist-wbm-batches-chgnet.svelte'
-  import CumulativeMaeRmse from '$figs/cumulative-mae-rmse.svelte'
+  import CumulativeMae from '$figs/cumulative-mae.svelte'
   import CumulativePrecisionRecall from '$figs/cumulative-precision-recall.svelte'
   import EachScatterModels from '$figs/each-scatter-models-5x2.svelte'
   import ElementPrevalenceVsError from '$figs/element-prevalence-vs-error.svelte'
@@ -529,3 +529,19 @@ But in practice, one might expect the problem of stability prediction to be easi
 However, empirical evidence so far suggests the opposite.
 Both UIP→MEGNet combos perform worse than those same UIPs by themselves.
 There are too many confounding effects at play to draw firm conclusions but this tentatively suggests using formation energy as targets offers no benefits over raw DFT.
+
+### Element Prevalence vs Model Error
+
+{#if mounted}
+<ElementPrevalenceVsError />
+{/if}
+
+> @label:fig:element-prevalence-vs-error The y-axis is the average error of each model on each element averaged over all structures in the test set containing said element weighted by that structure's composition. The x-axis is each element's prevalence in the MP training set, i.e. number of structures containing this element. We observe little correlation between element prevalence and model error. Instead, oxygen, the element with highest representation, is among the higher error elements for most models. Similarly, fluorine, the element with highest average error across models has very good training support at ~12 k samples, suggesting at the sample counts MP provides for its 89 elements, chemistry more than training coverage determines element errors.
+
+### Cumulative MAE
+
+{#if mounted}
+<CumulativeMae />
+{/if}
+
+> @label:fig:cumulative-mae-rmse CHGNet is consistently the lowest error regressor for materials it predicts as stable. Similar to @fig:cumulative-precision-recall, this figure shows the cumulative MAE over the course of a discovery campaign. As in @fig:cumulative-precision-recall, each model's line starts with those structures the model predicts as most stable and ends with those structures the model predicts as barely stable, i.e. predicted to lie directly on the convex hull.
