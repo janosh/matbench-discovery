@@ -55,7 +55,7 @@ class PredFiles(Files):
     # m3gnet_ms = "m3gnet/2023-06-01-m3gnet-manual-sampling-wbm-IS2RE.csv.gz"
 
     # MACE trained on original M3GNet training set
-    mace = "mace/2023-08-14-mace-wbm-IS2RE-FIRE.csv.gz"
+    mace = "mace/2023-09-02-mace-wbm-IS2RE-FIRE.csv.gz"
 
     # original MEGNet straight from publication, not re-trained
     megnet = "megnet/2022-11-18-megnet-wbm-IS2RE.csv.gz"
