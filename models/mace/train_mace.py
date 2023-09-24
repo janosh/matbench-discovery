@@ -39,8 +39,10 @@ __date__ = "2023-09-18"
 # Running this script requires merging the multi-gpu and develop branches of the MACE
 # repo. Presumably, the next MACE repo release will include these changes at which point
 # this script can be run by simply installing the latest MACE release. For now, run
-# pip install git+https://github.com/ACEsuit/mace@develop
 # pip install git+https://github.com/chiang-yuan/mace@mbd
+# once the multi-gpu branch is merged into develop, you can also try
+# pip install git+https://github.com/ACEsuit/mace@develop
+
 
 module_dir = os.path.dirname(__file__)
 
@@ -555,7 +557,7 @@ def main(**kwargs: Any) -> None:
 
     logging.info(model)
     logging.info(f"Number of parameters: {tools.count_parameters(model)}")
-    logging.info(f"Optimizer: {optimizer}")
+    logging.info(f"{optimizer=}")
 
     if args.wandb:
         logging.info("Using Weights and Biases for logging")
