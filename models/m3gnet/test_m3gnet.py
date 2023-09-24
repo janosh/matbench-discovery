@@ -57,7 +57,6 @@ out_path = f"{out_dir}/m3gnet-preds-{slurm_array_task_id}.json.gz"
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path=} already exists, exciting early")
 
-warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
 warnings.filterwarnings(action="ignore", category=UserWarning, module="tensorflow")
 
 

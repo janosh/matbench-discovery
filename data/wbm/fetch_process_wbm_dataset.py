@@ -3,7 +3,6 @@ import gzip
 import os
 import pickle
 import urllib.request
-import warnings
 from glob import glob
 
 import numpy as np
@@ -40,7 +39,6 @@ https://nature.com/articles/s41524-020-00481-6
 
 
 module_dir = os.path.dirname(__file__)
-warnings.filterwarnings("ignore", category=UserWarning, module="pymatgen")
 
 assert pio.templates.default == "plotly_dark+global"
 
@@ -548,7 +546,8 @@ with gzip.open(DATA_FILES.mp_patched_phase_diagram, "rb") as zip_file:
 
 
 # %% calculate e_above_hull for each material
-# this loop needs above warnings.filterwarnings() to not crash Jupyter kernel with logs
+# this loop needs above warnings.filterwarnings() in __init__.py to not crash Jupyter
+# kernel with logs
 # takes ~20 min at 200 it/s for 250k entries in WBM
 each_col = "e_above_hull_mp2020_corrected_ppd_mp"
 assert each_col not in df_summary

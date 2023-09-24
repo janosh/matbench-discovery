@@ -5,10 +5,9 @@
   import BoxHullDistErrors from '$figs/box-hull-dist-errors.svelte'
   import CgcnnRollingMaeBatches from '$figs/rolling-mae-vs-hull-dist-wbm-batches-cgcnn.svelte'
   import CHGNetRollingMaeBatches from '$figs/rolling-mae-vs-hull-dist-wbm-batches-chgnet.svelte'
-  import CumulativeMaeRmse from '$figs/cumulative-mae-rmse.svelte'
+  import CumulativeMae from '$figs/cumulative-mae.svelte'
   import CumulativePrecisionRecall from '$figs/cumulative-precision-recall.svelte'
   import EachScatterModels from '$figs/each-scatter-models-5x2.svelte'
-  import ElementErrorsPtableHeatmap from '$models/element-errors-ptable-heatmap.svelte'
   import ElementPrevalenceVsError from '$figs/element-prevalence-vs-error.svelte'
   import HistClfPredHullDistModels from '$figs/hist-clf-pred-hull-dist-models-5x2.svelte'
   import HullDistScatterWrenformerFailures from '$figs/hull-dist-scatter-wrenformer-failures.svelte'
@@ -18,7 +17,6 @@
   import MetricsTable from '$figs/metrics-table.svelte'
   import MetricsTableFirst10k from '$figs/metrics-table-first-10k.svelte'
   import MetricsTableMegnetUipCombos from '$figs/metrics-table-uip-megnet-combos.svelte'
-  import MPRefEnergies from '$figs/mp-elemental-ref-energies.svelte'
   import ProtoCountsWrenformerFailures from '$figs/proto-counts-wrenformer-failures.svelte'
   import RocModels from '$figs/roc-models-all-in-one.svelte'
   import RollingMaeVsHullDistModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'
@@ -418,10 +416,24 @@ Beyond these MACE outliers visible in the plot, MACE exhibits another rare but r
 Further analysis is ongoing.
 Since these derailed values are easily identified in practice when actually performing a prospective discovery campaign, we excluded them from the MACE parity plat and all other downstream analyses.
 
+### Model Run Times
+
+{#if mounted}
+<RunTimeBars style="margin: 1em;" />
+{/if}
+
+> @label:fig:model-run-times-pie Creating this benchmark (excluding debugging runs) used a total of 3210 hours of compute time (mix of CPU and GPU, mostly CPU). Notably, the vast majority of that (2705 h) was used in the Bayesian optimization step of BOWSR.<br>
+> Some bars have two sections. The bottom shows training time, the upper test time. If there's only one section the model was not re-trained for this benchmark and the bar shows only the test time.
+
 ### Spacegroup prevalence in Wrenformer failure cases
 
 {#if mounted}
-<WrenformerFailures />
+
+<div style="display: flex; gap: 1em; justify-content: space-around; flex-wrap: wrap; margin-bottom: 2em;">
+<SpacegroupSunburstWrenformerFailures />
+<SpacegroupSunburstWbm />
+</div>
+<HullDistScatterWrenformerFailures />
 {/if}
 
 > @label:fig:wrenformer-failures Symmetry analysis of the 941 Wrenformer failure cases in the shaded rectangle defined by $E_\text{DFT hull dist} < 1$ and $E_\text{ML hull dist} > 1$. Sunburst plot of spacegroups shows that close to 80% of severe energy overestimations are orthorhombic with spacegroup 71. The table on the right shows occurrence counts of exact structure prototypes for each material in the sunburst plot as well as their corresponding prevalence in the training set.
@@ -430,6 +442,8 @@ Since these derailed values are easily identified in practice when actually perf
 The occurrence of those same prototypes in the MP training set shows almost no data support for the failing prototypes.
 This suggests the reason Wrenformer fails so spectacularly on these structures is that it cannot deal with structure prototypes it has not seen at least several hundred examples of in its training data.
 This suggests that there are stronger limitations on how much the discrete Wyckoff-based representation can extrapolate to new prototypes compared to the smooth local-environment-based inputs to GNN-type models.
+
+<ProtoCountsWrenformerFailures />
 
 ### Hull Distance Box plot
 
@@ -458,7 +472,15 @@ As a reminder, the WBM test set was generated in 5 successive batches, each step
 @Fig:rolling-mae-vs-hull-dist-wbm-batches-models shows the rolling MAE as a function of distance to the convex hull for each of the 5 WBM rounds of elemental substitution. These plots show a stronger performance decrease for Wrenformer and Voronoi RF than for UIPs like M3GNet, CHGNet, MACE and even force-less GNNs with larger errors like MEGNet and CGCNN.
 
 {#if mounted}
-<RollingMaeVsHullDistWbmBatchesModels />
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; margin: 0 -1em 0 -4em;">
+  <M3gnetRollingMaeBatches style="aspect-ratio: 1.2;" />
+  <CHGNetRollingMaeBatches style="aspect-ratio: 1.2;" />
+  <WrenformerRollingMaeBatches style="aspect-ratio: 1.2;" />
+  <MegnetRollingMaeBatches style="aspect-ratio: 1.2;" />
+  <VoronoiRfRollingMaeBatches style="aspect-ratio: 1.2;" />
+  <CgcnnRollingMaeBatches style="aspect-ratio: 1.2;" />
+</div>
 {/if}
 
 > @label:fig:rolling-mae-vs-hull-dist-wbm-batches-models Rolling MAE as a function of distance to the convex hull for different models. On WBM batch 1, Wrenformer performs comparably to the SOTA UIPs M3GNet and CHGNet. However, the M3GNet and CHGNet UIPs show stronger extrapolative performance, as they barely deteriorate in performance on later batches that move further away from the original MP training distribution. Wrenformer, by contrast, exhibits a pronounced increase in MAE with batch count.
@@ -469,12 +491,12 @@ Given its strong performance on batch 1, it is possible that given sufficiently 
 
 ### Largest Errors vs. DFT Hull Distance
 
-Given the large variety of models tested, it is worth asking whether there is any additional insight into the data sets that can be gained from looking at how the predictions vary between different.
+Given the large variety of models tested, we asked whether any additional insight into the errors can be gained from looking at how the predictions vary between different models.
 In @fig:scatter-largest-errors-models-mean-vs-true-hull-dist we see two distinct groupings emerge when looking at the 200 structures with the largest errors.
 This clustering is particularly apparent when points are colored by model disagreement.
 
 {#if mounted}
-<ScatterLargestErrorsModelsMeanVsTrueHullDist />
+<LargestErrorScatterSelect />
 {/if}
 
 > @label:fig:scatter-largest-errors-models-mean-vs-true-hull-dist DFT vs predicted hull distance (average over all models) for the 200 largest error structures colored by model disagreement (as measured by the standard deviation in hull distance predictions from different models) and markers sized by the number of atoms in the structures.
@@ -507,3 +529,19 @@ But in practice, one might expect the problem of stability prediction to be easi
 However, empirical evidence so far suggests the opposite.
 Both UIP→MEGNet combos perform worse than those same UIPs by themselves.
 There are too many confounding effects at play to draw firm conclusions but this tentatively suggests using formation energy as targets offers no benefits over raw DFT.
+
+### Element Prevalence vs Model Error
+
+{#if mounted}
+<ElementPrevalenceVsError />
+{/if}
+
+> @label:fig:element-prevalence-vs-error The y-axis is the average error of each model on each element averaged over all structures in the test set containing said element weighted by that structure's composition. The x-axis is each element's prevalence in the MP training set, i.e. number of structures containing this element. We observe little correlation between element prevalence and model error. Instead, oxygen, the element with highest representation, is among the higher error elements for most models. Similarly, fluorine, the element with highest average error across models has very good training support at ~12 k samples, suggesting at the sample counts MP provides for its 89 elements, chemistry more than training coverage determines element errors.
+
+### Cumulative MAE
+
+{#if mounted}
+<CumulativeMae />
+{/if}
+
+> @label:fig:cumulative-mae-rmse CHGNet is consistently the lowest error regressor for materials it predicts as stable. Similar to @fig:cumulative-precision-recall, this figure shows the cumulative MAE over the course of a discovery campaign. As in @fig:cumulative-precision-recall, each model's line starts with those structures the model predicts as most stable and ends with those structures the model predicts as barely stable, i.e. predicted to lie directly on the convex hull.

@@ -713,7 +713,7 @@ def cumulative_metrics(
         )
 
         # precision aka positive predictive value (PPV)
-        n_total_pos = true_pos_cum[-1] + false_neg_cum[-1]
+        n_total_pos = true_pos_cum.iloc[-1] + false_neg_cum.iloc[-1]
         precision_cum = true_pos_cum / (true_pos_cum + false_pos_cum)
         recall_cum = true_pos_cum / n_total_pos  # aka true_pos_rate aka sensitivity
 

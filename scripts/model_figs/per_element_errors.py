@@ -26,9 +26,8 @@ from matbench_discovery.preds import (
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-15"
 
-df_each_err[model_mean_err_col] = df_preds[model_mean_err_col] = df_each_err.abs().mean(
-    axis=1
-)
+for df in (df_each_err, df_preds):
+    df[model_mean_err_col] = df_each_err.abs().mean(axis=1)
 
 
 # %% map average model error onto elements
@@ -48,8 +47,8 @@ assert all(
 
 
 # %% compute number of samples per element in training set
-# counting element occurrences not weighted by composition, assuming model don't learn
-# much more about iron and oxygen from Fe2O3 than from FeO
+# we count raw element occurrence, i.e. not weighted by composition, based on the
+# hypothesis that models don't learn more about iron and oxygen from Fe2O3 than from FeO
 counts_path = f"{ROOT}/site/src/routes/data/mp-element-counts-occurrence.json"
 df_elem_err = pd.read_json(counts_path, typ="series")
 train_count_col = "MP Occurrences"
@@ -88,20 +87,17 @@ if normalized:
     df_struct_counts["MP"] /= len(df_preds) / 100
     df_struct_counts["WBM"] /= len(df_wbm) / 100
 y_col = "percent" if normalized else "count"
-fig = (
-    df_struct_counts.reset_index()
-    .melt(
-        var_name=(clr_col := "Dataset"), value_name=y_col, id_vars=(id_col := "symbol")
-    )
-    .sort_values([y_col, id_col])
-    .plot.bar(
-        x=id_col,
-        y=y_col,
-        backend="plotly",
-        title="Number of structures containing each element",
-        color=clr_col,
-        barmode="group",
-    )
+
+df_melt = df_struct_counts.reset_index().melt(
+    var_name=(clr_col := "Dataset"), value_name=y_col, id_vars=(id_col := "symbol")
+)
+fig = df_melt.sort_values([y_col, id_col]).plot.bar(
+    x=id_col,
+    y=y_col,
+    backend="plotly",
+    title="Number of structures containing each element",
+    color=clr_col,
+    barmode="group",
 )
 
 fig.layout.update(bargap=0.1)
@@ -179,7 +175,7 @@ fig = df_melt.plot.scatter(
     # text=df_melt.index.where(
     #     (df_melt[val_col] > 0.04) | (df_melt[train_count_col] > 6_000)
     # ),
-    title="Per-element error vs element-occurrence in MP training set",
+    title="Per-element error vs element occurrence in MP training set",
     hover_data={val_col: ":.2f", train_count_col: ":,.0f"},
 )
 for trace in fig.data:

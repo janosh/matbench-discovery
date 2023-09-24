@@ -75,7 +75,7 @@
 <GitHubCorner href={repository} />
 
 <main>
-  <Nav routes={[[`/about`, `/`], ...routes.filter((route) => route != `/changelog`)]} />
+  <Nav routes={[[`/home`, `/`], ...routes.filter((route) => route != `/changelog`)]} />
 
   <slot />
 
