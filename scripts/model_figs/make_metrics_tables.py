@@ -25,14 +25,16 @@ name_map = {
     "M3GNet→MEGNet": "M3GNet",
     "CHGNet→MEGNet": "CHGNet",
 }
+train_size_col = "training size"
+df_metrics.loc[train_size_col] = df_metrics_10k.loc[train_size_col] = ""
 for model in df_metrics:
-    key = name_map.get(model, model)
-    if key not in MODEL_METADATA:
+    model_name = name_map.get(model, model)
+    if model_name not in MODEL_METADATA:
         continue
-    n_structs = MODEL_METADATA[key]["training_set"]["size"]
-    loc = "training size", model
-    df_metrics.loc[loc] = f"{n_structs:,}"
-    df_metrics_10k.loc[loc] = f"{n_structs:,}"
+    n_structs = MODEL_METADATA[model_name]["training_set"]["size"]
+
+    df_metrics.loc[train_size_col, model] = f"{n_structs:,}"
+    df_metrics_10k.loc[train_size_col, model] = f"{n_structs:,}"
 
 
 # %% add dummy classifier results to df_metrics
@@ -99,43 +101,41 @@ higher_is_better = {*f"DAF {R2_col} Precision Recall F1 Accuracy TPR TNR TP TN".
 lower_is_better = {"MAE", "RMSE", "FPR", "FNR", "FP", "FN"}
 
 # if True, make metrics-table-megnet-uip-combos.(svelte|pdf) for SI
-make_uip_megnet_comparison = True
-hide_metrics = "TP FN FP TN FNR FPR Recall Trained Deployed".split()
+make_uip_megnet_comparison = False
+show_cols = (
+    f"F1,DAF,Precision,Accuracy,TPR,TNR,MAE,RMSE,{R2_col},"
+    "training size,Model Class".split(",")
+)
 
-for label, df, extra_hide_metrics in (
-    # hide redundant metrics (TPR = Recall, FPR = 1 - TNR, FNR = 1 - TPR)
-    ("-first-10k", df_metrics_10k, ["TPR", "TNR"]),
-    ("", df_metrics, []),
-):
-    df_table = pd.concat([df, df_ont]).rename(index={"R2": R2_col})
+for label, df in (("-first-10k", df_metrics_10k), ("", df_metrics)):
+    df_table = pd.concat([df, df_ont[list(df)]]).rename(index={"R2": R2_col})
     df_table.index.name = "Model"
 
-    drop_models = ["CHGNet→MEGNet", "M3GNet→MEGNet"]
     if make_uip_megnet_comparison:
-        drop_models = [
-            *{*df_table} - {*drop_models, "MEGNet", "M3GNet", "CHGNet", "MEGNet RS2RE"}
-        ]
+        df_table = df_table.filter(regex="MEGNet|CHGNet|M3GNet")  # |Dummy
         label += "-uip-megnet-combos"
-        print(
-            "hint: for make_uip_megnet_comparison, uncomment the lines chgnet_megnet "
-            "and m3gnet_megnet in PredFiles"
-        )
-    df_filtered = df_table.T.drop(drop_models).drop(
-        [*hide_metrics, *extra_hide_metrics],  # type: ignore
-        axis="columns",
-        errors="ignore",
-    )
+        if "M3GNet→MEGNet" not in df_table:
+            print(
+                "hint: for make_uip_megnet_comparison, uncomment the lines "
+                "chgnet_megnet and m3gnet_megnet in PredFiles"
+            )
+    df_filtered = df_table.T[show_cols]  # only keep columns we want to show
+
+    if label == "-first-10k":
+        # hide redundant metrics for first 10k preds (all TPR = 1, TNR = 0)
+        df_filtered = df_filtered.drop(["TPR", "TNR"], axis=1)
+
     styler = (
         df_filtered.style.format(
             # render integers without decimal places
-            dict.fromkeys("TP FN FP TN".split(), "{:,.0f}"),
+            {k: "{:,.0f}" for k in "TP FN FP TN".split()},
             precision=2,  # render floats with 2 decimals
             na_rep="",  # render NaNs as empty string
-        ).background_gradient(
+        )
+        .background_gradient(
             cmap="viridis", subset=list(higher_is_better & {*df_filtered})
         )
-        # reverse color map if lower=better
-        .background_gradient(
+        .background_gradient(  # reverse color map if lower=better
             cmap="viridis_r", subset=list(lower_is_better & {*df_filtered})
         )
     )
