@@ -6,7 +6,6 @@ Might point to deficiencies in the data or models architecture.
 
 # %%
 import os
-import warnings
 from glob import glob
 
 import numpy as np
@@ -22,8 +21,6 @@ from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-26"
-
-warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
 
 
 # %% compute all initial and final MP/WBM structure fingerprints

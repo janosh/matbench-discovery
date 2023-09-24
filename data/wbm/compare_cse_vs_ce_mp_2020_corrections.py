@@ -1,7 +1,6 @@
 # %%
 import gzip
 import json
-import warnings
 
 import pandas as pd
 from pymatgen.entries.compatibility import (
@@ -33,9 +32,6 @@ cses = [
 ]
 
 ces = [ComputedEntry.from_dict(dct) for dct in tqdm(df_cse.computed_structure_entry)]
-
-
-warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
 
 
 # %%

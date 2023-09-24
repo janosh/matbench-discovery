@@ -32,12 +32,15 @@ slurm_array_task_count = 100
 ase_optimizer = "FIRE"
 job_name = f"mace-wbm-{task_type}-{ase_optimizer}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
-relax_cell = True
-# MACE trained on M3GNet training set by original MACE authors
-# model_name = "2023-07-14-mace-ilyes-trained-MPF-2021-2-8-big-128-6"
-# MACE trained on CHGNet training set by Yuan Chiang
-model_name = "2023-08-14-mace-yuan-trained-mptrj-04"
 device = "cuda" if torch.cuda.is_available() else "cpu"
+relax_cell = True
+model_name = [
+    # MACE trained on M3GNet training set by original MACE authors
+    "2023-07-14-mace-ilyes-MPF-2021-2-8-big-128-6",
+    # MACE trained by Yuan Chiang on CHGNet training set
+    "2023-08-14-mace-yuan-mptrj-04",
+    "2023-09-03-mace-yuan-mptrj-slower-14-lr-13_run-3",
+][-1]
 
 slurm_vars = slurm_submit(
     job_name=job_name,
@@ -68,7 +71,7 @@ e_pred_col = "mace_energy"
 id_col = "material_id"
 max_steps = 500
 force_max = 0.05  # Run until the forces are smaller than this in eV/A
-checkpoint = f"{ROOT}/models/mace/{model_name}.model"
+checkpoint = f"{ROOT}/models/mace/checkpoints/{model_name}.model"
 
 df_in: pd.DataFrame = np.array_split(
     pd.read_json(data_path).set_index(id_col), slurm_array_task_count

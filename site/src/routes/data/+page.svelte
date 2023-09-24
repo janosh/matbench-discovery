@@ -11,6 +11,7 @@
   import Select from 'svelte-multiselect'
   import { Toggle } from 'svelte-zoo'
   import type { Snapshot } from './$types'
+  import MpElementalReferenceEnergies from './mp-elemental-reference-energies.md'
 
   const elem_counts = import.meta.glob(`./*-element-counts-{occu,comp}*.json`, {
     eager: true,
@@ -117,6 +118,8 @@
     {/if}
   </div>
 </DataReadme>
+
+<MpElementalReferenceEnergies />
 
 <style>
   label {

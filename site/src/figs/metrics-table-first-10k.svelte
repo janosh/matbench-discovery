@@ -38,7 +38,7 @@
   background-color: #d2e21b;
   color: #000000;
 }
-#T__row1_col4 {
+#T__row1_col4, #T__row2_col0 {
   background-color: #c0df25;
   color: #000000;
 }
@@ -50,29 +50,25 @@
   background-color: #bade28;
   color: #000000;
 }
-#T__row2_col0 {
-  background-color: #c2df23;
-  color: #000000;
-}
 #T__row2_col1, #T__row2_col2 {
-  background-color: #9bd93c;
+  background-color: #95d840;
   color: #000000;
 }
-#T__row2_col3, #T__row10_col5 {
-  background-color: #63cb5f;
+#T__row2_col3 {
+  background-color: #5ec962;
   color: #000000;
 }
 #T__row2_col4 {
-  background-color: #70cf57;
+  background-color: #69cd5b;
   color: #000000;
 }
 #T__row2_col5 {
-  background-color: #32b67a;
+  background-color: #2c738e;
   color: #f1f1f1;
 }
 #T__row2_col6 {
-  background-color: #60ca60;
-  color: #000000;
+  background-color: #287c8e;
+  color: #f1f1f1;
 }
 #T__row3_col0 {
   background-color: #77d153;
@@ -210,6 +206,10 @@
   background-color: #8ed645;
   color: #000000;
 }
+#T__row10_col5 {
+  background-color: #63cb5f;
+  color: #000000;
+}
 #T__row10_col6 {
   background-color: #1fa187;
   color: #f1f1f1;
@@ -264,12 +264,12 @@
     <tr>
       <th id="T__level0_row2" class="row_heading level0 row2" >MACE</th>
       <td id="T__row2_col0" class="data row2 col0" >0.84</td>
-      <td id="T__row2_col1" class="data row2 col1" >4.36</td>
-      <td id="T__row2_col2" class="data row2 col2" >0.73</td>
-      <td id="T__row2_col3" class="data row2 col3" >0.73</td>
-      <td id="T__row2_col4" class="data row2 col4" >0.13</td>
-      <td id="T__row2_col5" class="data row2 col5" >0.21</td>
-      <td id="T__row2_col6" class="data row2 col6" >0.36</td>
+      <td id="T__row2_col1" class="data row2 col1" >4.33</td>
+      <td id="T__row2_col2" class="data row2 col2" >0.72</td>
+      <td id="T__row2_col3" class="data row2 col3" >0.72</td>
+      <td id="T__row2_col4" class="data row2 col4" >0.14</td>
+      <td id="T__row2_col5" class="data row2 col5" >0.30</td>
+      <td id="T__row2_col6" class="data row2 col6" >-0.30</td>
       <td id="T__row2_col7" class="data row2 col7" >1,580,395</td>
       <td id="T__row2_col8" class="data row2 col8" >UIP-GNN</td>
     </tr>

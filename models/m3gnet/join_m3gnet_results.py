@@ -7,7 +7,6 @@ into single file.
 from __future__ import annotations
 
 import os
-import warnings
 from glob import glob
 from typing import Literal
 
@@ -22,8 +21,6 @@ from matbench_discovery.energy import get_e_form_per_atom
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-16"
-
-warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
 
 
 # %%
