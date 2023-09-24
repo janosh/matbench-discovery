@@ -40,36 +40,42 @@ __date__ = "2023-09-18"
 # repo. Presumably, the next MACE repo release will include these changes at which point
 # this script can be run by simply installing the latest MACE release. For now, run
 # pip install git+https://github.com/ACEsuit/mace@develop
+# pip install git+https://github.com/chiang-yuan/mace@mbd
 
 module_dir = os.path.dirname(__file__)
 
 slurm_vars = slurm_submit(
     job_name=(job_name := "train-mace-mptrj"),
-    account="matgen",
+    account="m3828",
     time="7-00:00:00",
     out_dir=os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}"),
     slurm_flags="""
         -q preempt
         -C gpu
-        -G 40
-        -N 10
-        --ntasks=40
+        -G 4
+        -N 1
+        --ntasks=4
         --ntasks-per-node=4
         --cpus-per-task=8
-        --time=2:00:00
+        --time=02:00:00
         --time-min=01:00:00
         --comment=7-00:00:00
         --signal=B:USR1@180
         --requeue
         --exclusive
         --open-mode=append""",
-    pre_cmd="module load pytorch/2.0.1; . ~/.venv/py311/bin/activate;",
+    pre_cmd=". /pscratch/sd/c/cyrusyc/.venv/mbd/bin/activate;",
 )
 
 
-def main(*args: Any, **kwargs: Any) -> None:
+def main(**kwargs: Any) -> None:
     """Main function for training MACE models."""
-    args = tools.build_default_arg_parser().parse_args(*args, **kwargs)
+    args = tools.build_default_arg_parser()
+    args.parse_args(["--name", kwargs["name"], "--train_file", kwargs["train_file"]])
+
+    for key, values in kwargs.items():
+        setattr(args, key, values)
+
     tag = tools.get_tag(name=args.name, seed=args.seed)
     if args.distributed:
         try:
@@ -695,7 +701,7 @@ if __name__ == "__main__":
         train_file="../train.h5",
         valid_file="../valid.h5",
         statistics_file="../statistics.json",
-        loss="uip",
+        loss="stress",
         energy_weight=1,
         forces_weight=1,
         compute_stress=True,
@@ -710,7 +716,6 @@ if __name__ == "__main__":
         interaction_first="RealAgnosticResidualInteractionBlock",
         interaction="RealAgnosticResidualInteractionBlock",
         num_interactions=2,
-        num_channels=128,
         max_ell=3,
         hidden_irreps="64x0e + 64x1o + 64x2e",
         num_cutoff_basis=10,
