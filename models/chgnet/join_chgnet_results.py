@@ -7,7 +7,6 @@ into single file.
 from __future__ import annotations
 
 import os
-import warnings
 from glob import glob
 
 import pandas as pd
@@ -20,8 +19,6 @@ from matbench_discovery.preds import df_preds, e_form_col
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-01"
-
-warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
 
 
 # %%

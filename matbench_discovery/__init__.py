@@ -1,6 +1,6 @@
 """Global variables used all across the matbench_discovery package."""
-
 import os
+import warnings
 from datetime import datetime
 
 ROOT = os.path.dirname(os.path.dirname(__file__))  # repo root directory
@@ -22,3 +22,11 @@ STABILITY_THRESHOLD = 0
 
 timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
 today = timestamp.split("@")[0]
+
+# filter pymatgen warnings that spam the logs when e.g. applying corrections to
+# ComputedStructureEntries or using PatchedPhaseDiagram to get e_above_hull
+# warnings are:
+# > No electronegativity for Ne. Setting to NaN. This has no physical meaning
+warnings.filterwarnings(
+    action="ignore", category=UserWarning, module="pymatgen", lineno=221
+)

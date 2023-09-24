@@ -6,7 +6,6 @@ Voronoi tessellation structure-based features.
 # %%
 import os
 import sys
-import warnings
 from importlib.metadata import version
 
 import numpy as np
@@ -24,6 +23,7 @@ __author__ = "Janosh Riebesell"
 __date__ = "2022-10-31"
 
 
+# %%
 data_name = "mp"
 data_path = {
     "wbm": DATA_FILES.wbm_initial_structures,
@@ -88,10 +88,7 @@ run_params = dict(
 wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 
-# %% prints lots of pymatgen warnings
-# > No electronegativity for Ne. Setting to NaN. This has no physical meaning, ...
-warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
-
+# %%
 df_features = featurizer.featurize_dataframe(df_in, input_col, ignore_errors=True)[
     featurizer.feature_labels()
 ].round(4)
