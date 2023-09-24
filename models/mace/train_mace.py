@@ -46,7 +46,7 @@ module_dir = os.path.dirname(__file__)
 
 slurm_vars = slurm_submit(
     job_name=(job_name := "train-mace-mptrj"),
-    account="m3828",
+    account="matgen",
     time="7-00:00:00",
     out_dir=os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}"),
     slurm_flags="""
@@ -64,7 +64,7 @@ slurm_vars = slurm_submit(
         --requeue
         --exclusive
         --open-mode=append""",
-    pre_cmd=". /pscratch/sd/c/cyrusyc/.venv/mbd/bin/activate;",
+    pre_cmd=". ~/.venv/py311/bin/activate;",
 )
 
 
