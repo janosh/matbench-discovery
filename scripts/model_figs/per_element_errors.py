@@ -88,20 +88,16 @@ if normalized:
     df_struct_counts["MP"] /= len(df_preds) / 100
     df_struct_counts["WBM"] /= len(df_wbm) / 100
 y_col = "percent" if normalized else "count"
-fig = (
-    df_struct_counts.reset_index()
-    .melt(
-        var_name=(clr_col := "Dataset"), value_name=y_col, id_vars=(id_col := "symbol")
-    )
-    .sort_values([y_col, id_col])
-    .plot.bar(
-        x=id_col,
-        y=y_col,
-        backend="plotly",
-        title="Number of structures containing each element",
-        color=clr_col,
-        barmode="group",
-    )
+df_melt = df_struct_counts.reset_index().melt(
+    var_name=(clr_col := "Dataset"), value_name=y_col, id_vars=(id_col := "symbol")
+)
+fig = df_melt.sort_values([y_col, id_col]).plot.bar(
+    x=id_col,
+    y=y_col,
+    backend="plotly",
+    title="Number of structures containing each element",
+    color=clr_col,
+    barmode="group",
 )
 
 fig.layout.update(bargap=0.1)
