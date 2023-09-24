@@ -28,9 +28,9 @@ __date__ = "2022-12-04"
 
 # %%
 metrics = ("Precision", "Recall")
-# metrics = ("MAE", "RMSE")
+# metrics = ("MAE",)
 range_y = {
-    ("MAE", "RMSE"): (0, 0.7),
+    ("MAE",): (0, 0.7),
     ("Precision", "Recall"): (0, 1),
 }[metrics]
 fig, df_metric = cumulative_metrics(
@@ -43,6 +43,7 @@ fig, df_metric = cumulative_metrics(
     # increase facet col gap
     facet_col_spacing=0.05,
     # markers=True,
+    show_n_stable=metrics != ("MAE",),
 )
 
 x_label = "Number of screened WBM test set materials"
@@ -68,8 +69,10 @@ if backend == "plotly":
     # fig.layout.legend.update(
     #     orientation="h", yanchor="bottom", y=1.1, xanchor="center", x=0.5
     # )
-    # if "MAE" in metrics:
-    #     fig.layout.legend.update(traceorder="reversed")
+    if "MAE" in metrics:
+        fig.layout.legend.update(traceorder="reversed")
+    if metrics == ("MAE",):
+        fig.layout.legend.update(y=1, x=1, xanchor="right", yanchor="top")
     assert len(metrics) * len(models) == len(
         fig.data
     ), f"expected one trace per model per metric, got {len(fig.data)}"
