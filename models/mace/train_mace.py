@@ -52,9 +52,9 @@ slurm_vars = slurm_submit(
     slurm_flags="""
         -q preempt
         -C gpu
-        -G 4
-        -N 1
-        --ntasks=4
+        -G 40
+        -N 10
+        --ntasks=40
         --ntasks-per-node=4
         --cpus-per-task=8
         --time=02:00:00
@@ -64,7 +64,7 @@ slurm_vars = slurm_submit(
         --requeue
         --exclusive
         --open-mode=append""",
-    pre_cmd=". ~/.venv/py311/bin/activate;",
+    pre_cmd=". ~/.venv/py311/bin/activate",
 )
 
 
