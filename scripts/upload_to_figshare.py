@@ -15,7 +15,7 @@ from typing import Any
 import requests
 import tomllib  # needs python 3.11
 from requests.exceptions import HTTPError
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 from matbench_discovery import ROOT
 from matbench_discovery.data import DATA_FILES
