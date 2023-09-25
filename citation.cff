@@ -1,7 +1,7 @@
 # cff-version: 1.2.0
 message: If you use this software, please cite it as below.
 title: Matbench Discovery
-subtitle: Can machine learning identify stable crystals?
+subtitle: An evaluation framework for machine learning crystal stability prediction
 authors:
   - given-names: Janosh
     family-names: Riebesell

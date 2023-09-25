@@ -30,6 +30,21 @@
   onMount(() => (mounted = true))
 </script>
 
+<summary class="abstract">
+
+Matbench Discovery simulates using machine learning (ML) energy models as pre-filters to DFT in a high-throughput search for stable inorganic crystals.
+We address the disconnect between (i) thermodynamic stability and formation energy and (ii) in-domain vs out-of-distribution performance.
+Alongside this paper, we publish a Python package to aid with future model submissions and a growing online leaderboard with further insights into trade-offs between various performance metrics.
+To answer the question which ML methodology performs best at materials discovery, our initial release explores random forests, graph neural networks (GNN), one-shot predictors, iterative Bayesian optimizers and universal interatomic potentials (UIP).
+Ranked best-to-worst by their test set F1 score on thermodynamic stability prediction, we find CHGNet > M3GNet > MACE > ALIGNN > MEGNet > CGCNN > CGCNN+P > Wrenformer > BOWSR > Voronoi fingerprints with random forest.<br>
+The top 3 models are all UIPs, which we declare the winning methodology for ML-guided materials discovery, achieving F1 scores of ~0.6 for crystal stability classification and discovery acceleration factors (DAF) of up to 5x on the first 10k most stable predictions compared to dummy selection from our test set.<br>
+We also highlight a sharp disconnect between commonly used global regression metrics and more task-relevant classification metrics.
+Accurate regressors are susceptible to unexpectedly high false-positive rates if those accurate predictions lie close to the decision boundary at 0 eV/atom above the convex hull where most materials are.
+Our results highlight the need to for the field to focus more on classification than regression metrics, since the former actually correlate with improved stability hit rate.
+Finally, we share valuable insights for maintainers of high throughput materials databases by demonstrating that universal potentials have matured enough to play a useful role as triaging tools for effectively allocating compute budget in high-throughput DFT.
+
+</summary>
+
 ## Introduction
 
 Material science can be viewed as a combinatorial problem of mixing and arranging different atoms to leverage the complex range of properties that emerge.
