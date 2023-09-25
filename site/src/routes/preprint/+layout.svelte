@@ -47,6 +47,7 @@
   }
   div :global(summary.abstract) {
     font-weight: 300;
+    font-size: 0.95em;
   }
   div :global(summary.abstract)::before {
     content: 'Abstract';
