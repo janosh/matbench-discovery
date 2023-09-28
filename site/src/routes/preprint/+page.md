@@ -537,7 +537,7 @@ While the regression and classification metrics for MEGNet RS2RE are better than
 This suggests that for downstream use, at least by an imprecise method such as another ML model, the UIP-relaxed structures are almost as helpful as the DFT-relaxed ones.
 
 CHGNet, M3GNet and MEGNet were all trained on slightly different targets.
-While MEGNet was trained to predict formation energies, M3GNet and CHGNet were trained on raw DFT energies with the important distinction that CHGNet targets include [MP2020 energy correction scheme](https://pymatgen.org/pymatgen.entries.compatibility.html#pymatgen.entries.compatibility.MaterialsProject2020Compatibility) [@wang_framework_2021] while M3GNet targets do not.
+While MEGNet was trained to predict formation energies, M3GNet and CHGNet were trained on raw DFT energies with the important distinction that CHGNet targets include [MP2020 energy correction scheme](https://github.com/materialsproject/pymatgen/blob/02a4ca8aa0277b5f6db11f4de4fdbba129de70a5/pymatgen/entries/compatibility.py#L823) [@wang_framework_2021] while M3GNet targets do not.
 
 Changing the target from raw DFT energies to formation energies in principle merely constitutes a change of gauge since the difference is just a linear transformation of subtracting the elemental reference energies weighted by composition.
 But in practice, one might expect the problem of stability prediction to be easier when trained on formation energies, as the model output is one less step removed from the final target of convex hull distance.
