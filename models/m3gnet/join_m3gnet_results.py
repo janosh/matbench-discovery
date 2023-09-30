@@ -32,6 +32,7 @@ model_type: Literal["orig", "direct", "ms"] = "ms"
 glob_pattern = f"{date}-m3gnet-{model_type}-wbm-{task_type}/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 struct_col = "m3gnet_structure"
+id_col = "material_id"
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
 # prevent accidental overwrites
@@ -43,7 +44,7 @@ if "dfs" not in locals():
 for file_path in tqdm(file_paths):
     if file_path in dfs:
         continue
-    df = pd.read_json(file_path).set_index("material_id")
+    df = pd.read_json(file_path).set_index(id_col)
     # drop trajectory to save memory
     dfs[file_path] = df.drop(columns="m3gnet_trajectory")
 
@@ -51,9 +52,7 @@ df_m3gnet = pd.concat(dfs.values()).round(4)
 
 
 # %%
-df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(
-    "material_id"
-)
+df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(id_col)
 entry_col = "computed_structure_entry"
 df_cse[entry_col] = [
     ComputedStructureEntry.from_dict(dct)
@@ -95,5 +94,5 @@ df_m3gnet.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_h
 
 
 # in_path = f"{module_dir}/2022-10-31-m3gnet-wbm-IS2RE"
-# df_m3gnet = pd.read_csv(f"{in_path}.csv.gz").set_index("material_id")
-# df_m3gnet = pd.read_json(f"{in_path}.json.gz").set_index("material_id")
+# df_m3gnet = pd.read_csv(f"{in_path}.csv.gz").set_index(id_col)
+# df_m3gnet = pd.read_json(f"{in_path}.json.gz").set_index(id_col)

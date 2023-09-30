@@ -30,3 +30,8 @@ today = timestamp.split("@")[0]
 warnings.filterwarnings(
     action="ignore", category=UserWarning, module="pymatgen", lineno=221
 )
+# > Failed to guess oxidation states for Entry wbm-1-23288 (LaTlAu). Assigning anion
+# correction to only the most electronegative atom.
+warnings.filterwarnings(
+    action="ignore", category=UserWarning, module="pymatgen", lineno=1043
+)

@@ -23,13 +23,12 @@ __author__ = "Janosh Riebesell"
 __date__ = "2023-03-22"
 
 module_dir = os.path.dirname(__file__)
+id_col = "material_id"
 
 
 # %%
 init_struct_col = "initial_structure"
-df_cse = pd.read_json(f"{module_dir}/wbm-chgnet-bad-relax.json.gz").set_index(
-    "material_id"
-)
+df_cse = pd.read_json(f"{module_dir}/wbm-chgnet-bad-relax.json.gz").set_index(id_col)
 
 
 # %%

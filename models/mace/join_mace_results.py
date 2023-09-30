@@ -32,7 +32,7 @@ glob_pattern = f"{date}-mace-wbm-{task_type}*/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 struct_col = "mace_structure"
-
+id_col = "material_id"
 dfs: dict[str, pd.DataFrame] = {}
 
 
@@ -40,7 +40,7 @@ dfs: dict[str, pd.DataFrame] = {}
 for file_path in tqdm(file_paths):
     if file_path in dfs:
         continue
-    df = pd.read_json(file_path).set_index("material_id")
+    df = pd.read_json(file_path).set_index(id_col)
     # drop trajectory to save memory
     dfs[file_path] = df.drop(columns="mace_trajectory")
 
@@ -48,9 +48,7 @@ df_mace = pd.concat(dfs.values()).round(4)
 
 
 # %%
-df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(
-    "material_id"
-)
+df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(id_col)
 
 entry_col = "computed_structure_entry"
 df_cse[entry_col] = [

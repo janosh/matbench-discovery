@@ -21,10 +21,8 @@ correcting energies (only applies to certain oxides and sulfides). Always use
 ComputedStructureEntry, not ComputedEntry when applying corrections.
 """
 
-
-df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(
-    "material_id"
-)
+id_col = "material_id"
+df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(id_col)
 
 cses = [
     ComputedStructureEntry.from_dict(dct)
