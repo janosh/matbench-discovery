@@ -124,7 +124,10 @@ df_cse: pd.DataFrame = None
 
 
 def apply_mp_2020_corrections_to_ml_struct(
-    df_ml: pd.DataFrame, energy_col: str, struct_col: str
+    df_ml: pd.DataFrame,
+    energy_col: str,
+    struct_col: str,
+    entry_col: str = "computed_structure_entry",
 ) -> pd.DataFrame:
     """MaterialsProject2020Compatibility are structure-dependent for oxides and
     sulfides. This function applies MP2020 corrections to a DataFrame of
@@ -135,12 +138,13 @@ def apply_mp_2020_corrections_to_ml_struct(
         df_ml (pd.DataFrame): DataFrame with ML-predicted energies and structures.
         energy_col (str): Column name of ML-predicted energies.
         struct_col (str): Column name of ML-predicted structures.
+        entry_col (str, optional): Column name of ComputedStructureEntries. Defaults to
+            "computed_structure_entry".
 
     Returns:
         pd.DataFrame: DataFrame with MP2020-corrected energies and structures.
     """
     id_col = "material_id"
-    entry_col = "computed_structure_entry"
 
     # assign to global df_cse so data is only loaded once per python session
     global df_cse  # noqa: PLW0603
