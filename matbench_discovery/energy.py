@@ -3,8 +3,9 @@ from collections.abc import Sequence
 
 import pandas as pd
 from pymatgen.analysis.phase_diagram import Entry, PDEntry
-from pymatgen.core import Composition
-from pymatgen.entries.computed_entries import ComputedEntry
+from pymatgen.core import Composition, Structure
+from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
+from pymatgen.entries.computed_entries import ComputedEntry, ComputedStructureEntry
 from pymatgen.util.typing import EntryLike
 from tqdm import tqdm
 
@@ -117,3 +118,62 @@ def get_e_form_per_atom(
     form_energy = energy - sum(comp[el] * e_refs[str(el)] for el in comp)
 
     return form_energy / comp.num_atoms
+
+
+df_cse: pd.DataFrame = None
+
+
+def apply_mp_2020_corrections_to_ml_struct(
+    df_ml: pd.DataFrame, energy_col: str, struct_col: str
+) -> pd.DataFrame:
+    """MaterialsProject2020Compatibility are structure-dependent for oxides and
+    sulfides. This function applies MP2020 corrections to a DataFrame of
+    ComputedStructureEntries where the DFT structure is replaced by one predicted by a
+    ML force field.
+
+    Args:
+        df_ml (pd.DataFrame): DataFrame with ML-predicted energies and structures.
+        energy_col (str): Column name of ML-predicted energies.
+        struct_col (str): Column name of ML-predicted structures.
+
+    Returns:
+        pd.DataFrame: DataFrame with MP2020-corrected energies and structures.
+    """
+    id_col = "material_id"
+    entry_col = "computed_structure_entry"
+
+    # assign to global df_cse so data is only loaded once per python session
+    global df_cse  # noqa: PLW0603
+    if df_cse is None:
+        print(
+            "Loading WBM ComputedStructureEntries. This takes a bit on the 1st call "
+            "to this function",
+            flush=True,
+        )
+        df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries)
+        df_cse = df_cse.set_index(id_col)
+        df_cse[entry_col] = [
+            ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_cse[entry_col])
+        ]
+
+    # assign ML-predicted energies and ML-relaxed structures to WBM
+    # ComputedStructureEntries. needed because MP2020 energy
+    # corrections applied below are structure-dependent (for oxides and sulfides)
+    cse: ComputedStructureEntry
+    for row in tqdm(df_ml.itertuples(), total=len(df_ml)):
+        mat_id = row.Index
+        ml_energy = row[energy_col]
+        mlip_struct = Structure.from_dict(row[struct_col])
+        df_ml.loc[mat_id, struct_col] = mlip_struct
+        cse = df_cse.loc[mat_id, entry_col]
+        cse._energy = ml_energy  # cse._energy is the uncorrected energy
+        cse._structure = mlip_struct
+        df_ml.loc[mat_id, entry_col] = cse
+
+    # apply energy corrections
+    processed = MaterialsProject2020Compatibility().process_entries(
+        df_ml[entry_col], verbose=True, clean=True
+    )
+    assert len(processed) == len(df_ml)  # make sure no entries were skipped
+
+    return df_ml
