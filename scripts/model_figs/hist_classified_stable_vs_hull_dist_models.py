@@ -8,7 +8,7 @@ histogram stacks true/false positives/negatives with different colors.
 import math
 from typing import Final
 
-from pymatviz.utils import save_fig
+from pymatviz.io import save_fig
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, today
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist, plt

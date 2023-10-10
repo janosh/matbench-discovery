@@ -44,7 +44,6 @@ references:
   publisher-place: Dordrecht
   source: Springer Link
   title: Crystallographic Databases and Knowledge Bases in Materials Design
-  type: chapter
   URL: https://doi.org/10.1007/978-94-011-4653-1_21
 
 - id: allen_learning_2023
@@ -101,7 +100,6 @@ references:
     Learning Together: Towards foundational models for machine learning
     interatomic potentials with meta-learning
   title-short: Learning Together
-  type: article
   URL: http://arxiv.org/abs/2307.04012
 
 - id: aykol_rational_2021
@@ -143,7 +141,6 @@ references:
   publisher: American Chemical Society
   source: ACS Publications
   title: Rational Solid-State Synthesis Routes for Inorganic Materials
-  type: article-journal
   URL: https://doi.org/10.1021/jacs.1c04888
   volume: '143'
 
@@ -162,6 +159,10 @@ references:
     nature or in a laboratory. Quantifying the limits of metastability for
     realizable compounds, the approach is expected to find major applications in
     materials discovery.
+  accessed:
+    - year: 2023
+      month: 1
+      day: 24
   author:
     - family: Aykol
       given: Muratahan
@@ -173,20 +174,17 @@ references:
       given: Kristin A.
   citation-key: aykol_thermodynamic_2018
   container-title: Science Advances
-  container-title-short: Sci Adv
   DOI: 10.1126/sciadv.aaq0148
-  ISSN: 2375-2548
   issue: '4'
   issued:
     - year: 2018
       month: 4
-  language: eng
+      day: 20
   page: eaaq0148
-  PMCID: PMC5930398
-  PMID: '29725618'
-  source: PubMed
+  publisher: American Association for the Advancement of Science
+  source: science.org (Atypon)
   title: Thermodynamic limit for synthesis of metastable inorganic materials
-  type: article-journal
+  URL: https://www.science.org/doi/10.1126/sciadv.aaq0148
   volume: '4'
 
 - id: bartel_critical_2020
@@ -249,7 +247,6 @@ references:
   title: >-
     A critical examination of compound stability predictions from
     machine-learned formation energies
-  type: article-journal
   URL: https://www.nature.com/articles/s41524-020-00362-y
   volume: '6'
 
@@ -303,7 +300,6 @@ references:
   publisher: American Physical Society
   source: APS
   title: Machine Learning a General-Purpose Interatomic Potential for Silicon
-  type: article-journal
   URL: https://link.aps.org/doi/10.1103/PhysRevX.8.041048
   volume: '8'
 
@@ -350,7 +346,6 @@ references:
     MACE: Higher Order Equivariant Message Passing Neural Networks for Fast and
     Accurate Force Fields
   title-short: MACE
-  type: article
   URL: http://arxiv.org/abs/2206.07697
 
 - id: batzner_equivariant_2022
@@ -412,7 +407,6 @@ references:
   title: >-
     E(3)-equivariant graph neural networks for data-efficient and accurate
     interatomic potentials
-  type: article-journal
   URL: https://www.nature.com/articles/s41467-022-29939-5
   volume: '13'
 
@@ -452,7 +446,6 @@ references:
   title: >-
     Generalized Neural-Network Representation of High-Dimensional
     Potential-Energy Surfaces
-  type: article-journal
   URL: https://link.aps.org/doi/10.1103/PhysRevLett.98.146401
   volume: '98'
 
@@ -504,7 +497,6 @@ references:
     New developments in the Inorganic Crystal Structure Database (ICSD):
     accessibility in support of materials research and design
   title-short: New developments in the Inorganic Crystal Structure Database (ICSD)
-  type: article-journal
   URL: http://scripts.iucr.org/cgi-bin/paper?an0615
   volume: '58'
 
@@ -537,7 +529,6 @@ references:
   publisher: American Chemical Society
   source: ACS Publications
   title: The inorganic crystal structure data base
-  type: article-journal
   URL: https://pubs.acs.org/doi/abs/10.1021/ci00038a003
   volume: '23'
 
@@ -598,7 +589,6 @@ references:
   title: >-
     Quantifying the performance of machine learning models in materials
     discovery
-  type: article
   URL: http://arxiv.org/abs/2210.13587
 
 - id: chanussot_open_2021
@@ -678,7 +668,6 @@ references:
   publisher: American Chemical Society
   source: ACS Publications
   title: Open Catalyst 2020 (OC20) Dataset and Community Challenges
-  type: article-journal
   URL: https://doi.org/10.1021/acscatal.0c04525
   volume: '11'
 
@@ -735,7 +724,6 @@ references:
   title: >-
     Graph Networks as a Universal Machine Learning Framework for Molecules and
     Crystals
-  type: article-journal
   URL: https://doi.org/10.1021/acs.chemmater.9b01294
   volume: '31'
 
@@ -782,7 +770,6 @@ references:
   publisher: Nature Publishing Group
   source: www.nature.com
   title: A universal graph deep learning interatomic potential for the periodic table
-  type: article-journal
   URL: https://www.nature.com/articles/s43588-022-00349-3
   volume: '2'
 
@@ -834,7 +821,6 @@ references:
   title: >-
     Atomistic Line Graph Neural Network for improved materials property
     predictions
-  type: article-journal
   URL: https://www.nature.com/articles/s41524-021-00650-1
   volume: '7'
 
@@ -870,7 +856,6 @@ references:
     Unified graph neural network force-field for the periodic table: solid state
     applications
   title-short: Unified graph neural network force-field for the periodic table
-  type: article-journal
   URL: https://pubs.rsc.org/en/content/articlelanding/2023/dd/d2dd00096b
   volume: '2'
 
@@ -938,7 +923,6 @@ references:
   source: ScienceDirect
   title: 'AFLOW: An automatic framework for high-throughput materials discovery'
   title-short: AFLOW
-  type: article-journal
   URL: https://www.sciencedirect.com/science/article/pii/S0927025612000717
   volume: '58'
 
@@ -975,7 +959,6 @@ references:
   PMID: '27790643'
   source: PubMed
   title: Computational Screening of All Stoichiometric Inorganic Materials
-  type: article-journal
   volume: '1'
 
 - id: deng_chgnet_2023
@@ -1035,7 +1018,6 @@ references:
     CHGNet: Pretrained universal neural network potential for charge-informed
     atomistic modeling
   title-short: CHGNet
-  type: article
   URL: http://arxiv.org/abs/2302.14231
 
 - id: deng_imagenet_2009
@@ -1084,7 +1066,6 @@ references:
   source: IEEE Xplore
   title: 'ImageNet: A large-scale hierarchical image database'
   title-short: ImageNet
-  type: paper-conference
 
 - id: deringer_general-purpose_2020
   abstract: >-
@@ -1133,7 +1114,6 @@ references:
   title: >-
     A general-purpose machine-learning force field for bulk and nanostructured
     phosphorus
-  type: article-journal
   URL: https://www.nature.com/articles/s41467-020-19168-z
   volume: '11'
 
@@ -1174,7 +1154,6 @@ references:
   title: >-
     Atomic cluster expansion for accurate and transferable interatomic
     potentials
-  type: article-journal
   URL: https://link.aps.org/doi/10.1103/PhysRevB.99.014104
   volume: '99'
 
@@ -1215,7 +1194,6 @@ references:
   source: Cambridge University Press
   title: 'NOMAD: The FAIR concept for big data-driven materials science'
   title-short: NOMAD
-  type: article-journal
   URL: >-
     https://www.cambridge.org/core/journals/mrs-bulletin/article/nomad-the-fair-concept-for-big-datadriven-materials-science/1EEF321F62D41997CA16AD367B74C4B0
   volume: '43'
@@ -1279,7 +1257,6 @@ references:
     Benchmarking materials property prediction methods: the Matbench test set
     and Automatminer reference algorithm
   title-short: Benchmarking materials property prediction methods
-  type: article-journal
   URL: https://www.nature.com/articles/s41524-020-00406-3
   volume: '6'
 
@@ -1332,7 +1309,6 @@ references:
   title: >-
     Data-augmentation for graph neural network learning of the relaxed energies
     of unrelaxed structures
-  type: article-journal
   URL: https://www.nature.com/articles/s41524-022-00891-8
   volume: '8'
 
@@ -1378,7 +1354,6 @@ references:
     The optimal one dimensional periodic table: a modified Pettifor chemical
     scale from data mining
   title-short: The optimal one dimensional periodic table
-  type: article-journal
   URL: https://dx.doi.org/10.1088/1367-2630/18/9/093011
   volume: '18'
 
@@ -1413,7 +1388,6 @@ references:
     Predicting materials properties without crystal structure: deep
     representation learning from stoichiometry
   title-short: Predicting materials properties without crystal structure
-  type: article-journal
   URL: https://www.nature.com/articles/s41467-020-19964-7
   volume: '11'
 
@@ -1446,7 +1420,6 @@ references:
   source: science.org (Atypon)
   title: Rapid discovery of stable materials by coordinate-free coarse graining
   title-short: Wren
-  type: article-journal
   URL: https://www.science.org/doi/10.1126/sciadv.abn4117
   volume: '8'
 
@@ -1502,7 +1475,6 @@ references:
   title: >-
     Accuracy of density functional theory in predicting formation energies of
     ternary oxides from binary oxides and its implication on phase stability
-  type: article-journal
   URL: https://link.aps.org/doi/10.1103/PhysRevB.85.155208
   volume: '85'
 
@@ -1540,7 +1512,6 @@ references:
   publisher: Nature Publishing Group
   source: www.nature.com
   title: Promises and perils of computational materials databases
-  type: article-journal
   URL: https://www.nature.com/articles/s43588-020-00016-5
   volume: '1'
 
@@ -1598,7 +1569,6 @@ references:
     Commentary: The Materials Project: A materials genome approach to
     accelerating materials innovation
   title-short: Commentary
-  type: article-journal
   URL: https://aip.scitation.org/doi/10.1063%2F1.4812323
   volume: '1'
 
@@ -1643,7 +1613,6 @@ references:
     Evaluation of the MACE Force Field Architecture: from Medicinal Chemistry to
     Materials Science
   title-short: Evaluation of the MACE Force Field Architecture
-  type: article
   URL: http://arxiv.org/abs/2305.14247
 
 - id: kovacs_quantitative_2021
@@ -1694,7 +1663,6 @@ references:
   title: >-
     Quantitative interpretation explains machine learning models for chemical
     reaction prediction and uncovers bias
-  type: article-journal
   URL: https://www.nature.com/articles/s41467-021-21895-w
   volume: '12'
 
@@ -1768,7 +1736,6 @@ references:
   PMID: '34607569'
   source: PubMed Central
   title: On the robustness of generalization of drug–drug interaction models
-  type: article-journal
   URL: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8489092/
   volume: '22'
 
@@ -1823,7 +1790,6 @@ references:
   source: arXiv.org
   title: 'AdsorbML: Accelerating Adsorption Energy Calculations with Machine Learning'
   title-short: AdsorbML
-  type: article
   URL: http://arxiv.org/abs/2211.16486
 
 - id: li_critical_2023
@@ -1879,7 +1845,6 @@ references:
   title: >-
     A critical examination of robustness and generalizability of machine
     learning prediction of materials properties
-  type: article-journal
   URL: http://arxiv.org/abs/2210.13597
   volume: '9'
 
@@ -1930,7 +1895,6 @@ references:
   title: >-
     A graph-based network for predicting chemical reaction pathways in
     solid-state materials synthesis
-  type: article-journal
   URL: https://www.nature.com/articles/s41467-021-23339-x
   volume: '12'
 
@@ -1981,7 +1945,6 @@ references:
   title: >-
     Direction-based Graph Representation to Accelerate Stable Catalysts
     Discovery
-  type: report
   URL: >-
     https://chemrxiv.org/engage/chemrxiv/article-details/633660f9114b7ebf1a229015
 
@@ -2036,7 +1999,6 @@ references:
   title: >-
     Developing an improved crystal graph convolutional neural network framework
     for accelerated materials discovery
-  type: article-journal
   URL: https://link.aps.org/doi/10.1103/PhysRevMaterials.4.063801
   volume: '4'
 
@@ -2087,7 +2049,6 @@ references:
   title: >-
     Robust Training of Machine Learning Interatomic Potentials with
     Dimensionality Reduction and Stratified Sampling
-  type: article
   URL: http://arxiv.org/abs/2307.13710
 
 - id: raccuglia_machine-learning-assisted_2016
@@ -2139,7 +2100,6 @@ references:
   publisher: Nature Publishing Group
   source: www.nature.com
   title: Machine-learning-assisted materials discovery using failed experiments
-  type: article-journal
   URL: https://www.nature.com/articles/nature17439
   volume: '533'
 
@@ -2183,7 +2143,6 @@ references:
   title: >-
     Fast and Accurate Modeling of Molecular Atomization Energies with Machine
     Learning
-  type: article-journal
   URL: https://link.aps.org/doi/10.1103/PhysRevLett.108.058301
   volume: '108'
 
@@ -2238,7 +2197,6 @@ references:
   title-short: >-
     Materials Design and Discovery with High-Throughput Density Functional
     Theory
-  type: article-journal
   URL: https://doi.org/10.1007/s11837-013-0755-4
   volume: '65'
 
@@ -2288,7 +2246,6 @@ references:
     How to represent crystal structures for machine learning: Towards fast
     prediction of electronic properties
   title-short: How to represent crystal structures for machine learning
-  type: article-journal
   URL: https://link.aps.org/doi/10.1103/PhysRevB.89.205118
   volume: '89'
 
@@ -2341,7 +2298,6 @@ references:
     TeaNet: Universal neural network interatomic potential inspired by iterative
     electronic relaxations
   title-short: TeaNet
-  type: article-journal
   URL: https://www.sciencedirect.com/science/article/pii/S0927025622000799
   volume: '207'
 
@@ -2429,7 +2385,6 @@ references:
   title: >-
     Towards universal neural network potential for material discovery applicable
     to arbitrary combination of 45 elements
-  type: article-journal
   URL: https://www.nature.com/articles/s41467-022-30687-9
   volume: '13'
 
@@ -2476,7 +2431,6 @@ references:
     Tensor field networks: Rotation- and translation-equivariant neural networks
     for 3D point clouds
   title-short: Tensor field networks
-  type: article
   URL: http://arxiv.org/abs/1802.08219
 
 - id: tran_open_2022
@@ -2555,7 +2509,6 @@ references:
   title: >-
     The Open Catalyst 2022 (OC22) Dataset and Challenges for Oxide
     Electrocatalysts
-  type: article
   URL: http://arxiv.org/abs/2206.08917
 
 - id: vaswani_attention_2017
@@ -2606,7 +2559,6 @@ references:
   note: 'ZSCC: 0010850'
   source: arXiv.org
   title: Attention Is All You Need
-  type: article-journal
   URL: http://arxiv.org/abs/1706.03762
 
 - id: vonlilienfeld_retrospective_2020
@@ -2644,7 +2596,6 @@ references:
   publisher: Nature Publishing Group
   source: www.nature.com
   title: Retrospective on a decade of machine learning for chemical discovery
-  type: article-journal
   URL: https://www.nature.com/articles/s41467-020-18556-9
   volume: '11'
 
@@ -2700,7 +2651,6 @@ references:
   publisher: Nature Publishing Group
   source: www.nature.com
   title: A framework for quantifying uncertainty in DFT energy corrections
-  type: article-journal
   URL: https://www.nature.com/articles/s41598-021-94550-5
   volume: '11'
 
@@ -2750,7 +2700,6 @@ references:
   publisher: Nature Publishing Group
   source: www.nature.com
   title: Predicting stable crystalline compounds using chemical similarity
-  type: article-journal
   URL: https://www.nature.com/articles/s41524-020-00481-6
   volume: '7'
 
@@ -2801,7 +2750,6 @@ references:
   title: >-
     A general-purpose machine learning framework for predicting properties of
     inorganic materials
-  type: article-journal
   URL: https://www.nature.com/articles/npjcompumats201628
   volume: '2'
 
@@ -2865,7 +2813,6 @@ references:
   title: >-
     Including crystal structure attributes in machine learning models of
     formation energies via Voronoi tessellations
-  type: article-journal
   URL: https://link.aps.org/doi/10.1103/PhysRevB.96.024104
   volume: '96'
 
@@ -2912,7 +2859,6 @@ references:
   publisher: Nature Publishing Group
   source: www.nature.com
   title: Chemical reaction networks and opportunities for machine learning
-  type: article-journal
   URL: https://www.nature.com/articles/s43588-022-00369-z
   volume: '3'
 
@@ -2974,7 +2920,6 @@ references:
   source: pubs.rsc.org
   title: 'MoleculeNet: a benchmark for molecular machine learning'
   title-short: MoleculeNet
-  type: article-journal
   URL: https://pubs.rsc.org/en/content/articlelanding/2018/sc/c7sc02664a
   volume: '9'
 
@@ -3018,7 +2963,6 @@ references:
   title: >-
     Crystal Graph Convolutional Neural Networks for an Accurate and
     Interpretable Prediction of Material Properties
-  type: article-journal
   URL: https://link.aps.org/doi/10.1103/PhysRevLett.120.145301
   volume: '120'
 
@@ -3075,6 +3019,5 @@ references:
     Accelerating materials discovery with Bayesian optimization and graph deep
     learning
   title-short: BOWSR
-  type: article-journal
   URL: https://www.sciencedirect.com/science/article/pii/S1369702121002984
 ...

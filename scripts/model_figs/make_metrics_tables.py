@@ -8,13 +8,14 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+from pymatviz.io import df_to_pdf
 from sklearn.dummy import DummyClassifier
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.models import MODEL_METADATA
-from matbench_discovery.plots import df_to_pdf, df_to_svelte_table
+from matbench_discovery.plots import df_to_svelte_table
 from matbench_discovery.preds import df_metrics, df_metrics_10k, each_true_col
 
 __author__ = "Janosh Riebesell"
@@ -25,7 +26,7 @@ name_map = {
     "M3GNet→MEGNet": "M3GNet",
     "CHGNet→MEGNet": "CHGNet",
 }
-train_size_col = "training size"
+train_size_col = "Training Size"
 df_metrics.loc[train_size_col] = df_metrics_10k.loc[train_size_col] = ""
 for model in df_metrics:
     model_name = name_map.get(model, model)
@@ -62,7 +63,7 @@ df_metrics["Dummy"] = dummy_metrics
 df_metrics_10k["Dummy"] = dummy_metrics
 
 
-# %% for each model this ontology dict specifies (training type, test type, model class)
+# %% for each model this ontology dict specifies (training type, test type, model type)
 ontology = {
     "ALIGNN": ("RS2RE", "IS2RE", "GNN"),
     # "ALIGNN Pretrained": ("RS2RE", "IS2RE", "GNN"),
@@ -80,7 +81,7 @@ ontology = {
     "CHGNet→MEGNet": ("S2EFSM", "IS2RE-SR", "UIP-GNN"),
     "Dummy": ("", "", ""),
 }
-ontology_cols = ["Trained", "Deployed", "Model Class"]
+ontology_cols = ["Trained", "Deployed", model_type_col := "Model Type"]
 df_ont = pd.DataFrame(ontology, index=ontology_cols)
 # RS2RE = relaxed structure to relaxed energy
 # RP2RE = relaxed prototype to predicted energy
@@ -104,7 +105,7 @@ lower_is_better = {"MAE", "RMSE", "FPR", "FNR", "FP", "FN"}
 make_uip_megnet_comparison = False
 show_cols = (
     f"F1,DAF,Precision,Accuracy,TPR,TNR,MAE,RMSE,{R2_col},"
-    "training size,Model Class".split(",")
+    f"{train_size_col},{model_type_col}".split(",")
 )
 
 for label, df in (("-first-10k", df_metrics_10k), ("", df_metrics)):
@@ -160,7 +161,7 @@ for label, df in (("-first-10k", df_metrics_10k), ("", df_metrics)):
     )
     try:
         df_to_pdf(styler, f"{PDF_FIGS}/metrics-table{label}.pdf")
-    except ImportError as exc:
+    except (ImportError, RuntimeError) as exc:
         print(f"df_to_pdf failed: {exc}")
 
 

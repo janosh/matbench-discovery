@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from pymatgen.core import Structure
 from pymatviz import density_scatter, plot_structure_2d, ptable_heatmap_plotly
-from pymatviz.utils import save_fig
+from pymatviz.io import save_fig
 
 from matbench_discovery import PDF_FIGS
 from matbench_discovery import plots as plots

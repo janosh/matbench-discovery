@@ -8,7 +8,7 @@ histogram stacks true/false positives/negatives with different colors.
 import math
 
 import pandas as pd
-from pymatviz.utils import save_fig
+from pymatviz.io import save_fig
 from sklearn.metrics import auc, precision_recall_curve, roc_curve
 from tqdm import tqdm
 

@@ -4,7 +4,7 @@ batch in a single plot.
 
 
 # %%
-from pymatviz.utils import save_fig
+from pymatviz.io import save_fig
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, today
 from matbench_discovery.plots import plt, rolling_mae_vs_hull_dist

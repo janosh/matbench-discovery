@@ -13,7 +13,7 @@ import plotly.express as px
 import plotly.graph_objs as go
 from pymatgen.core import Composition, Structure
 from pymatviz import count_elements, plot_structure_2d, ptable_heatmap_plotly
-from pymatviz.utils import save_fig
+from pymatviz.io import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS

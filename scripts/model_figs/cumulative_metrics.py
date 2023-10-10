@@ -10,7 +10,7 @@ will provide the best hit rate for the given budget.
 
 # %%
 import pandas as pd
-from pymatviz.utils import save_fig
+from pymatviz.io import save_fig
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.plots import cumulative_metrics
