@@ -6,7 +6,7 @@ from typing import Final
 
 import numpy as np
 import plotly.graph_objects as go
-from pymatviz.utils import save_fig
+from pymatviz.io import save_fig
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.plots import rolling_mae_vs_hull_dist

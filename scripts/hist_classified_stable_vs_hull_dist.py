@@ -9,7 +9,7 @@ See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
 # %%
 from typing import Final
 
-from pymatviz.utils import save_fig
+from pymatviz.io import save_fig
 
 from matbench_discovery import PDF_FIGS
 from matbench_discovery.data import df_wbm

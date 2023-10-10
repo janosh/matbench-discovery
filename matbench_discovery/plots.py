@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import functools
 import math
-import os
-import subprocess
 from collections import defaultdict
 from collections.abc import Sequence
 from pathlib import Path
@@ -923,84 +921,3 @@ def df_to_svelte_table(
     styled_table = html_table.replace("</style>", f"{styles}</style>")
     with open(file_path, "w") as file:
         file.write(styled_table)
-
-
-def df_to_pdf(
-    styler: Styler, file_path: str | Path, crop: bool = True, **kwargs: Any
-) -> None:
-    """Export a pandas Styler to PDF with WeasyPrint.
-
-    Args:
-        styler (Styler): Styler object to export.
-        file_path (str): Path to save the PDF to. Requires WeasyPrint.
-        crop (bool): Whether to crop the PDF margins. Requires pdfCropMargins.
-            Defaults to True.
-        **kwargs: Keyword arguments passed to Styler.to_html().
-    """
-    try:
-        from weasyprint import HTML
-    except ImportError as exc:
-        msg = "weasyprint not installed\nrun pip install weasyprint"
-        raise ImportError(msg) from exc
-
-    html_str = styler.to_html(**kwargs)
-
-    # CSS to adjust layout and margins
-    html_str = f"""
-    <style>
-        @page {{ size: landscape; margin: 1cm; }}
-        body {{ margin: 0; padding: 1em; }}
-    </style>
-    {html_str}
-    """
-
-    html = HTML(string=html_str)
-
-    html.write_pdf(file_path)
-
-    if crop:
-        normalize_and_crop_pdf(file_path)
-
-
-def normalize_and_crop_pdf(file_path: str | Path) -> None:
-    """Normalize a PDF using Ghostscript and then crop it.
-    Without gs normalization, pdfCropMargins sometimes corrupts the PDF.
-
-    Args:
-        file_path (str | Path): Path to the PDF file.
-    """
-    try:
-        normalized_file_path = f"{file_path}_normalized.pdf"
-        from pdfCropMargins import crop
-
-        # Normalize the PDF with Ghostscript
-        subprocess.run(
-            [
-                *"gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4".split(),
-                *"-dPDFSETTINGS=/default -dNOPAUSE -dQUIET -dBATCH".split(),
-                f"-sOutputFile={normalized_file_path}",
-                str(file_path),
-            ],
-            check=True,
-        )
-
-        # Crop the normalized PDF
-        cropped_file_path, exit_code, stdout, stderr = crop(
-            ["--percentRetain", "0", normalized_file_path]
-        )
-
-        if stderr:
-            print(f"pdfCropMargins {stderr=}")
-            # something went wrong, remove the cropped PDF
-            os.remove(cropped_file_path)
-        else:
-            # replace the original PDF with the cropped one
-            os.replace(cropped_file_path, str(file_path))
-
-        os.remove(normalized_file_path)
-
-    except ImportError as exc:
-        msg = "pdfCropMargins not installed\nrun pip install pdfCropMargins"
-        raise ImportError(msg) from exc
-    except Exception as exc:
-        raise RuntimeError("Error cropping PDF margins") from exc

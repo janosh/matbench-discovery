@@ -11,7 +11,7 @@ from pymatviz import (
     ptable_heatmap_plotly,
     spacegroup_sunburst,
 )
-from pymatviz.utils import save_fig
+from pymatviz.io import save_fig
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots

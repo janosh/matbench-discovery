@@ -15,7 +15,7 @@ from pymatgen.entries.compatibility import (
 )
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz import density_scatter
-from pymatviz.utils import save_fig
+from pymatviz.io import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import SITE_FIGS, today

@@ -15,7 +15,7 @@ import plotly.graph_objects as go
 import requests
 import wandb
 import wandb.apis.public
-from pymatviz.utils import save_fig
+from pymatviz.io import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, SITE_MODELS, WANDB_PATH

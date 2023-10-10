@@ -6,7 +6,7 @@ import os
 
 import pandas as pd
 from pymatviz import density_scatter, ptable_heatmap_plotly, spacegroup_sunburst
-from pymatviz.utils import save_fig
+from pymatviz.io import save_fig
 
 from matbench_discovery import plots as plots
 from matbench_discovery.data import df_wbm
