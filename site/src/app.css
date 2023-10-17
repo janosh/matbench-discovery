@@ -221,3 +221,13 @@ input:focus {
   outline: none;
   background: rgba(255, 255, 255, 0.2);
 }
+kbd {
+  border: 1px solid #666;
+  display: inline-block;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 1pt 3pt;
+  border-radius: 2pt;
+}

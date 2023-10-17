@@ -2,10 +2,10 @@
   import { repository } from '$site/package.json'
   import Icon from '@iconify/svelte'
 
-  let show_tips: boolean
-  const tips_title = `Usage Tips`
-  let dialog: HTMLDialogElement
-  let btn: HTMLButtonElement
+  export let show_tips: boolean = false
+  export let tips_title = `Usage Tips`
+  export let dialog: HTMLDialogElement
+  export let btn: HTMLButtonElement
 
   function close_if_outside_click(event: MouseEvent) {
     const is_outside = dialog && !dialog.contains(event.target as Node)
@@ -47,10 +47,17 @@
 <dialog bind:this={dialog} open={show_tips}>
   <h3>{tips_title}</h3>
   <p title="For keyboard-only site navigation">
-    <kbd>cmd+k</kbd> to bring up a nav palette.
+    <kbd>cmd</kbd> + <kbd>k</kbd> to bring up a nav palette.
   </p>
   <p title="For keyboard-only site navigation">
-    <kbd>cmd+j</kbd> to bring up these site options.
+    <kbd>cmd</kbd> + <kbd>j</kbd> to bring up these site options.
+  </p>
+  <p title="single click to hide a trace">
+    <kbd>single click</kbd> a legend handle to hide its corresponding trace in a plot
+  </p>
+  <p title="double click to hide all other traces">
+    <kbd>double click</kbd> the legend handle of any trace in a plot to hide all others. double
+    click again to show all.
   </p>
 </dialog>
 
@@ -89,11 +96,5 @@
   }
   dialog > :is(p, h3) {
     margin: 0;
-  }
-  p kbd {
-    background-color: rgba(255, 255, 255, 0.1);
-    padding: 1pt 3pt;
-    font-size: larger;
-    border-radius: 2pt;
   }
 </style>
