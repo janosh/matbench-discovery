@@ -27,6 +27,7 @@ today = timestamp.split("@")[0]
 # ComputedStructureEntries or using PatchedPhaseDiagram to get e_above_hull
 # warnings are:
 # > No electronegativity for Ne. Setting to NaN. This has no physical meaning
-warnings.filterwarnings(
-    action="ignore", category=UserWarning, module="pymatgen", lineno=221
-)
+for lineno in (120, 221, 1043):
+    warnings.filterwarnings(
+        action="ignore", category=UserWarning, module="pymatgen", lineno=lineno
+    )

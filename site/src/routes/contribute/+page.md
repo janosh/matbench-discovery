@@ -24,7 +24,7 @@
       `Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more.`,
   }
   const desc_keys = Object.keys(descriptions).sort()
-  const figshare_keys = Object.keys(figshare_urls).sort()
+  const figshare_keys = Object.keys(figshare_urls.files).sort()
   const missing = figshare_keys.filter((key) => !desc_keys.includes(key))
   if (missing.length > 0) {
     throw `descriptions must contain all figshare_urls keys, missing=${missing}`
@@ -60,12 +60,15 @@ assert sorted(DATA_FILES) == [
     "wbm_summary",
 ]
 
-# version defaults to latest, set a specific version to avoid breaking changes
+# 1st arg can be any DATA_FILES key
+# version defaults to latest, set a specific version like 1.0.0 to avoid breaking changes
 df_wbm = load("wbm_summary", version="1.0.0")
 
-assert df_wbm.shape == (256963, 15)
+# test set size
+assert df_wbm.shape == (256_963, 15)
 
-assert list(df_wbm) == [
+# available columns in WBM summary data
+assert tuple(df_wbm) == [
     "formula",
     "n_sites",
     "volume",
@@ -107,15 +110,12 @@ assert list(df_wbm) == [
 
 ## 📥 &thinsp; Direct Download
 
-You can download the data files from Figshare:
+You can download all Matbench Discovery data files from <a href={figshare_urls.article}>this Figshare article</a>:
 
 <ol>
-  {#each Object.entries(figshare_urls) as [key, lst]}
-    {@const [href, file_name] = lst}
-    <li>
-      <Tooltip text={file_name}>
-        <a {href}>{key}</a>:
-      </Tooltip>
+  {#each Object.entries(figshare_urls.files) as [key, [href, file_name]]}
+    <li style="margin-top: 1ex;">
+    <strong>{key}</strong> (<a {href}>{file_name}</a>)<br/>
       {@html descriptions[key]}
     </li>
   {/each}

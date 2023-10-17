@@ -23,7 +23,7 @@ from matbench_discovery.data import (
 )
 
 with open(f"{FIGSHARE}/{figshare_versions[-1]}.json") as file:
-    figshare_urls = json.load(file)
+    figshare_urls = json.load(file)["files"]
 
 structure = Structure(
     lattice=Lattice.cubic(5),

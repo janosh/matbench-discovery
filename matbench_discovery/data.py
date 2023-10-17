@@ -86,7 +86,7 @@ def load(
         raise ValueError(f"Unknown {data_key=}, must be one of {list(DATA_FILES)}.")
 
     with open(f"{FIGSHARE}/{version}.json") as json_file:
-        file_urls = json.load(json_file)
+        file_urls = json.load(json_file)["files"]
 
     file = DataFiles.__dict__[data_key]
 
