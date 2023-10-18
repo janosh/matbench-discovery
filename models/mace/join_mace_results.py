@@ -36,7 +36,7 @@ entry_col = "computed_structure_entry"
 
 
 # %%
-def post_process_func(df: pd.DataFrame) -> pd.DataFrame:
+def post_process(df: pd.DataFrame) -> pd.DataFrame:
     """Apply MP 2020 energy corrections and compute corrected formation energy."""
     df = apply_mp_2020_corrections_to_ml_struct(
         df, energy_col="mace_energy", struct_col=struct_col, entry_col=entry_col
@@ -53,9 +53,7 @@ def post_process_func(df: pd.DataFrame) -> pd.DataFrame:
 
 
 df_mace, out_path = join_slurm_job_array_results(
-    glob_pattern=glob_pattern,
-    drop_cols="mace_trajectory",
-    post_process_func=post_process_func,
+    glob_pattern=glob_pattern, drop_cols="mace_trajectory", post_process=post_process
 )
 
 
