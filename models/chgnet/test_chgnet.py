@@ -15,6 +15,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+import torch
 import wandb
 from chgnet.model import StructOptimizer
 from pymatgen.core import Structure
@@ -34,15 +35,15 @@ module_dir = os.path.dirname(__file__)
 slurm_array_task_count = 100
 job_name = f"chgnet-wbm-{task_type}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 slurm_vars = slurm_submit(
     job_name=job_name,
     out_dir=out_dir,
-    partition="ampere",
-    account="LEE-SL3-GPU",
-    time="6:0:0",
+    account="matgen",
+    time="11:55:0",
     array=f"1-{slurm_array_task_count}",
-    slurm_flags="--nodes 1 --gpus-per-node 1",
+    slurm_flags="--qos regular --constraint gpu --gpus 1",
 )
 
 
@@ -62,7 +63,8 @@ data_path = {
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
 e_pred_col = "chgnet_energy"
-max_steps = 2000
+max_steps = 500
+fmax = 0.05
 
 df_in: pd.DataFrame = np.array_split(
     pd.read_json(data_path).set_index("material_id"), slurm_array_task_count
@@ -75,6 +77,8 @@ run_params = dict(
     df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     slurm_vars=slurm_vars,
     max_steps=max_steps,
+    fmax=fmax,
+    device=device,
 )
 
 run_name = f"{job_name}-{slurm_array_task_id}"
@@ -82,7 +86,7 @@ wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 
 # %%
-chgnet = StructOptimizer()  # load default pre-trained CHGNnet model
+chgnet = StructOptimizer(use_device=device)  # load default pre-trained CHGNnet model
 relax_results: dict[str, dict[str, Any]] = {}
 input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
 
@@ -96,7 +100,7 @@ for material_id in tqdm(structures, desc="Relaxing", disable=None):
         continue
     try:
         relax_result = chgnet.relax(
-            structures[material_id], verbose=False, steps=max_steps
+            structures[material_id], verbose=False, steps=max_steps, fmax=fmax
         )
         relax_results[material_id] = {
             "chgnet_structure": relax_result["final_structure"],
