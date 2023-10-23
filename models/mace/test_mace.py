@@ -46,7 +46,7 @@ slurm_vars = slurm_submit(
     job_name=job_name,
     out_dir=out_dir,
     account="matgen",
-    time="12:0:0",
+    time="11:55:0",
     array=f"1-{slurm_array_task_count}",
     slurm_flags="--qos regular --constraint gpu --gpus 1",
 )

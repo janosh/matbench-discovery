@@ -49,7 +49,7 @@ slurm_vars = slurm_submit(
     out_dir=out_dir,
     partition="skylake",
     account="LEE-SL3-CPU",
-    time="12:0:0",
+    time="11:55:0",
     # --time 2h is probably enough but best be safe.
     array=f"1-{slurm_array_task_count}%{slurm_max_parallel}",
     # --mem 12000 avoids slurmstepd: error: Detected 1 oom-kill event(s)

@@ -45,7 +45,7 @@ slurm_vars = slurm_submit(
     job_name=job_name,
     partition="icelake-himem",
     account="LEE-SL3-CPU",
-    time="12:0:0",
+    time="11:55:0",
     array=f"1-{slurm_array_task_count}",
     slurm_flags=("--mem", "15G") if data_name == "mp" else (),
     out_dir=out_dir,
