@@ -8,14 +8,13 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from pymatviz.io import df_to_pdf
+from pymatviz.io import df_to_pdf, df_to_svelte_table
 from sklearn.dummy import DummyClassifier
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.models import MODEL_METADATA
-from matbench_discovery.plots import df_to_svelte_table
 from matbench_discovery.preds import df_metrics, df_metrics_10k, each_true_col
 
 __author__ = "Janosh Riebesell"
@@ -79,6 +78,7 @@ ontology = {
     "Voronoi RF": ("RS2RE", "IS2E", "Fingerprint"),
     "M3GNet→MEGNet": ("S2EFS", "IS2RE-SR", "UIP-GNN"),
     "CHGNet→MEGNet": ("S2EFSM", "IS2RE-SR", "UIP-GNN"),
+    "PFP": ("S2EFS", "IS2RE", "UIP"),
     "Dummy": ("", "", ""),
 }
 ontology_cols = ["Trained", "Deployed", model_type_col := "Model Type"]
@@ -143,7 +143,7 @@ for label, df in (("-first-10k", df_metrics_10k), ("", df_metrics)):
     styles = {
         "": "font-family: sans-serif; border-collapse: collapse;",
         "td, th": "border: none; padding: 4px 6px; white-space: nowrap;",
-        "th": "border: 1px solid; border-width: 1px 0; text-align: left;",
+        "th.col_heading": "border: 1px solid; border-width: 1px 0; text-align: left;",
     }
     styler.set_table_styles([dict(selector=sel, props=styles[sel]) for sel in styles])
     styler.set_uuid("")
