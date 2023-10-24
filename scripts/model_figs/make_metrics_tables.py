@@ -151,13 +151,21 @@ for label, df in (("-first-10k", df_metrics_10k), ("", df_metrics)):
     # export model metrics as styled HTML table and Svelte component
     # get index of MAE column
     mae_col_idx = styler.columns.get_loc("MAE")
-    css_col_selector = f"#T_ :is(td, th):nth-child({mae_col_idx + 2})"
+    col_selector = f"#T_ :is(td, th):nth-child({mae_col_idx + 2})"
+    # https://stackoverflow.com/a/38994837
+    hide_scroll_bar = """
+    table {
+        scrollbar-width: none;  /* Firefox */
+    }
+    table::-webkit-scrollbar {
+        display: none;  /* Safari and Chrome */
+    }"""
     df_to_svelte_table(
         styler,
         f"{SITE_FIGS}/metrics-table{label}.svelte",
         inline_props="class='roomy'",
         # draw dotted line between classification and regression metrics
-        styles=f"{css_col_selector} {{ border-left: 1px dotted white; }}",
+        styles=f"{col_selector} {{ border-left: 1px dotted white; }};{hide_scroll_bar}",
     )
     try:
         df_to_pdf(styler, f"{PDF_FIGS}/metrics-table{label}.pdf")
