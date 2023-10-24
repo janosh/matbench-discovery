@@ -104,7 +104,7 @@ mask_above_line = df.energy_above_hull - df.decomposition_enthalpy.clip(0) > 0.1
 ax = df.plot.scatter(
     x="decomposition_enthalpy",
     y="energy_above_hull",
-    color=mask_above_line.map({True: "red", False: "blue"})
+    color=mask_above_line.map({True: "red", False: "blue"}),
     # backend="plotly",
     # hover_data=["index", "formula_pretty", "formation_energy_per_atom"],
 )

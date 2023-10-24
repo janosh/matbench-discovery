@@ -84,9 +84,9 @@ run_params = dict(
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 
-# %%
+# %% input_col=task_type for CHGNet and M3GNet
 input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}.get(
-    task_type, task_type  # input_col=task_type for CHGNet and M3GNet
+    task_type, task_type
 )
 
 if task_type == "RS2RE":
