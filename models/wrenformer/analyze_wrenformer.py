@@ -67,13 +67,6 @@ df_proto_counts = df_proto_counts.reset_index(names=proto_col)
 df_proto_counts[proto_col] = df_proto_counts[proto_col].str.replace("_", "-")
 
 styler = df_proto_counts.head(10).style.background_gradient(cmap="viridis")
-styles = {
-    "": "font-family: sans-serif; border-collapse: collapse;",
-    "td, th": "border: none; padding: 4px 6px; white-space: nowrap;",
-    "th": "border: 1px solid; border-width: 1px 0; text-align: left;",
-}
-styler.set_table_styles([dict(selector=sel, props=styles[sel]) for sel in styles])
-styler.set_uuid("")
 
 df_to_svelte_table(styler, f"{SITE_FIGS}/proto-counts-{model}-failures.svelte")
 df_to_pdf(styler, f"{PDF_FIGS}/proto-counts-{model}-failures.pdf")

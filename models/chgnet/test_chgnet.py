@@ -33,9 +33,10 @@ task_type = "IS2RE"  # "RS2RE"
 module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
 slurm_array_task_count = 100
-job_name = f"chgnet-wbm-{task_type}"
-out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 device = "cuda" if torch.cuda.is_available() else "cpu"
+chgnet = StructOptimizer(use_device=device)  # load default pre-trained CHGNnet model
+job_name = f"chgnet-{chgnet.version}-wbm-{task_type}"
+out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 slurm_vars = slurm_submit(
     job_name=job_name,
@@ -50,7 +51,8 @@ slurm_vars = slurm_submit(
 
 # %%
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
-out_path = f"{out_dir}/chgnet-preds-{slurm_array_task_id}.json.gz"
+slurm_job_id = os.getenv("SLURM_JOB_ID", "debug")
+out_path = f"{out_dir}/{slurm_job_id}-{slurm_array_task_id}.json.gz"
 
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path=} already exists, exciting early")
@@ -87,7 +89,6 @@ wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 
 # %%
-chgnet = StructOptimizer(use_device=device)  # load default pre-trained CHGNnet model
 relax_results: dict[str, dict[str, Any]] = {}
 input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
 

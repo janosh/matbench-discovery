@@ -24,7 +24,7 @@ __date__ = "2023-03-01"
 # %%
 module_dir = os.path.dirname(__file__)
 task_type = "IS2RE"
-date = "2023-03-06"
+date = "2023-10-23"
 glob_pattern = f"{date}-chgnet-wbm-{task_type}*/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
@@ -45,7 +45,9 @@ for file_path in tqdm(file_paths):
     # drop trajectory to save memory
     dfs[file_path] = df.drop(columns="chgnet_trajectory")
 
-print(f"{len(failed)=}")
+
+print(f"{pd.Series(failed).value_counts()=}")
+
 df_chgnet = pd.concat(dfs.values()).round(4)
 
 

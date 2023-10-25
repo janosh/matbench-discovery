@@ -140,13 +140,6 @@ for label, df in (("-first-10k", df_metrics_10k), ("", df_metrics)):
             cmap="viridis_r", subset=list(lower_is_better & {*df_filtered})
         )
     )
-    styles = {
-        "": "font-family: sans-serif; border-collapse: collapse;",
-        "td, th": "border: none; padding: 4px 6px; white-space: nowrap;",
-        "th.col_heading": "border: 1px solid; border-width: 1px 0; text-align: left;",
-    }
-    styler.set_table_styles([dict(selector=sel, props=styles[sel]) for sel in styles])
-    styler.set_uuid("")
 
     # export model metrics as styled HTML table and Svelte component
     # get index of MAE column

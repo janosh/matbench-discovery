@@ -63,7 +63,8 @@ slurm_vars = slurm_submit(
 
 # %%
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
-out_path = f"{out_dir}/bowsr-preds-{slurm_array_task_id}.json.gz"
+slurm_job_id = os.getenv("SLURM_JOB_ID", "debug")
+out_path = f"{out_dir}/{slurm_job_id}-{slurm_array_task_id}.json.gz"
 
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path=} already exists, exciting early")
