@@ -43,7 +43,8 @@ slurm_vars = slurm_submit(
     account="matgen",
     time="11:55:0",
     array=f"1-{slurm_array_task_count}",
-    slurm_flags="--qos regular --constraint gpu --gpus 1",
+    slurm_flags="--qos shared --constraint cpu --nodes 1 --mem 10G",
+    # slurm_flags="--qos regular --constraint gpu --gpus 1",
 )
 
 

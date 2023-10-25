@@ -33,13 +33,19 @@ dfs: dict[str, pd.DataFrame] = {}
 
 
 # %%
+failed = {}
 for file_path in tqdm(file_paths):
     if file_path in dfs:
         continue
-    df = pd.read_json(file_path).set_index("material_id")
+    try:
+        df = pd.read_json(file_path).set_index("material_id")
+    except Exception as exc:
+        failed[file_path] = str(exc)
+        continue
     # drop trajectory to save memory
     dfs[file_path] = df.drop(columns="chgnet_trajectory")
 
+print(f"{len(failed)=}")
 df_chgnet = pd.concat(dfs.values()).round(4)
 
 

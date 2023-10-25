@@ -109,7 +109,7 @@ for material_id in tqdm(structs, desc="Relaxing", disable=None):
     if material_id in relax_results:
         continue
     try:
-        atoms = AseAtomsAdaptor.get_atoms(structs[material_id])
+        atoms = structs[material_id].to_ase_atoms()
         atoms.calc = mace_calc
         if relax_cell:
             atoms = ExpCellFilter(atoms)
