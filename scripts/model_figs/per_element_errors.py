@@ -9,7 +9,8 @@ import pandas as pd
 import plotly.express as px
 from pymatgen.core import Composition, Element
 from pymatviz import ptable_heatmap_plotly
-from pymatviz.utils import bin_df_cols, df_ptable, save_fig
+from pymatviz.io import save_fig
+from pymatviz.utils import bin_df_cols, df_ptable
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, SITE_MODELS
