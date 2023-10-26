@@ -102,6 +102,9 @@ higher_is_better = {*f"DAF {R2_col} Precision Recall F1 Accuracy TPR TNR TP TN".
 lower_is_better = {"MAE", "RMSE", "FPR", "FNR", "FP", "FN"}
 
 # if True, make metrics-table-megnet-uip-combos.(svelte|pdf) for SI
+# if False, make metrics-table.(svelte|pdf) for main text
+# when setting to True, uncomment the lines chgnet_megnet, m3gnet_megnet, megnet_rs2re
+# in PredFiles!
 make_uip_megnet_comparison = False
 show_cols = (
     f"F1,DAF,Precision,Accuracy,TPR,TNR,MAE,RMSE,{R2_col},"

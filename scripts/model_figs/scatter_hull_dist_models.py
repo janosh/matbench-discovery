@@ -237,7 +237,7 @@ fig.add_annotation(  # y-axis title
     textangle=-90,
     **axis_titles,
 )
-fig.layout.height = 200 * n_rows
+fig.layout.height = 230 * n_rows
 fig.layout.coloraxis.colorbar.update(orientation="h", thickness=9, len=0.5, y=1.05)
 # fig.layout.width = 1100
 fig.layout.margin.update(l=40, r=10, t=30, b=60)

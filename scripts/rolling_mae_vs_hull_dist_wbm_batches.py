@@ -22,7 +22,7 @@ __date__ = "2022-06-18"
 batch_col = "batch_idx"
 df_each_pred[batch_col] = "Batch " + df_each_pred.index.str.split("-").str[1]
 df_err, df_std = None, None  # variables to cache rolling MAE and std
-model = "MEGNet"
+model = "CHGNet"
 
 
 # %% matplotlib
