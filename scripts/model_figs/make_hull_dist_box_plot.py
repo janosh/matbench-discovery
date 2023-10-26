@@ -2,7 +2,8 @@
 import plotly.express as px
 import plotly.graph_objects as go
 import seaborn as sns
-from pymatviz.utils import patch_dict, save_fig
+from pymatviz.io import save_fig
+from pymatviz.utils import patch_dict
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, plots
 from matbench_discovery.preds import df_each_err, models

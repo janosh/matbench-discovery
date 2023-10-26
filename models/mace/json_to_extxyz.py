@@ -9,7 +9,6 @@ import os
 import numpy as np
 from ase.io import read, write
 from pymatgen.core import Structure
-from pymatgen.io.ase import AseAtomsAdaptor
 from tqdm import tqdm
 
 from matbench_discovery import FIGSHARE
@@ -48,7 +47,7 @@ for material_id in tqdm(json_data):
             uncorrected_total_energy = block.pop("uncorrected_total_energy", None)
             mp_id = block.get("mp_id", None)
 
-            atoms = AseAtomsAdaptor.get_atoms(structure=structure)
+            atoms = structure.to_ase_atoms()
 
             if forces:
                 atoms.arrays["forces"] = np.array(forces)

@@ -42,7 +42,7 @@ class PredFiles(Files):
     # BOWSR optimizer coupled with original megnet
     bowsr_megnet = "bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv.gz"
     # default CHGNet model from publication with 400,438 params
-    chgnet = "chgnet/2023-03-06-chgnet-wbm-IS2RE.csv.gz"
+    chgnet = "chgnet/2023-10-23-chgnet-0.3.0-wbm-IS2RE.csv.gz"
 
     # CGCnn 10-member ensemble
     cgcnn = "cgcnn/2023-01-26-cgcnn-ens=10-wbm-IS2RE.csv.gz"

@@ -6,13 +6,12 @@ import numpy as np
 import pandas as pd
 from aviary.wren.utils import get_isopointal_proto_from_aflow
 from pymatviz import spacegroup_hist, spacegroup_sunburst
-from pymatviz.io import df_to_pdf
+from pymatviz.io import df_to_pdf, df_to_svelte_table, save_fig
 from pymatviz.ptable import ptable_heatmap_plotly
-from pymatviz.utils import add_identity_line, bin_df_cols, save_fig
+from pymatviz.utils import add_identity_line, bin_df_cols
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.data import DATA_FILES, df_wbm
-from matbench_discovery.plots import df_to_svelte_table
 from matbench_discovery.preds import df_each_pred, df_preds, each_true_col
 
 __author__ = "Janosh Riebesell"
@@ -68,13 +67,6 @@ df_proto_counts = df_proto_counts.reset_index(names=proto_col)
 df_proto_counts[proto_col] = df_proto_counts[proto_col].str.replace("_", "-")
 
 styler = df_proto_counts.head(10).style.background_gradient(cmap="viridis")
-styles = {
-    "": "font-family: sans-serif; border-collapse: collapse;",
-    "td, th": "border: none; padding: 4px 6px; white-space: nowrap;",
-    "th": "border: 1px solid; border-width: 1px 0; text-align: left;",
-}
-styler.set_table_styles([dict(selector=sel, props=styles[sel]) for sel in styles])
-styler.set_uuid("")
 
 df_to_svelte_table(styler, f"{SITE_FIGS}/proto-counts-{model}-failures.svelte")
 df_to_pdf(styler, f"{PDF_FIGS}/proto-counts-{model}-failures.pdf")

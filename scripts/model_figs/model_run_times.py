@@ -35,7 +35,8 @@ train_run_filters: dict[str, tuple[int, str, str, str]] = {
 test_run_filters: dict[str, tuple[int, str, str, str]] = {
     # model: (n_runs, display_name, created_gt, created_lt)
     "BOWSR": (476, "bowsr-megnet", "2023-01-20", "2023-01-22"),
-    "CHGNet": (100, "chgnet-wbm-IS2RE-", "2023-03-05", "2023-03-07"),
+    "CHGNet": (100, "chgnet-wbm-IS2RE-", "2023-03-05", "2023-03-07"),  # v0.2.0
+    # "CHGNet": (100, "chgnet-wbm-IS2RE-", "2023-10-22", "2023-10-25"),  # v0.3.0
     "CGCNN": (1, "test-cgcnn-wbm-IS2RE", "2022-12-03", "2022-12-05"),
     "MACE": (100, "mace-wbm-IS2RE-FIRE", "2023-07-22", "2023-07-24"),
     "M3GNet": (99, "m3gnet-wbm-IS2RE", "2022-10-31", "2022-11-01"),

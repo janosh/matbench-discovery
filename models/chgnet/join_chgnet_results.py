@@ -24,7 +24,7 @@ __date__ = "2023-03-01"
 # %%
 module_dir = os.path.dirname(__file__)
 task_type = "IS2RE"
-date = "2023-03-06"
+date = "2023-10-23"
 glob_pattern = f"{date}-chgnet-wbm-{task_type}*/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
@@ -33,12 +33,20 @@ dfs: dict[str, pd.DataFrame] = {}
 
 
 # %%
+failed = {}
 for file_path in tqdm(file_paths):
     if file_path in dfs:
         continue
-    df = pd.read_json(file_path).set_index("material_id")
+    try:
+        df = pd.read_json(file_path).set_index("material_id")
+    except Exception as exc:
+        failed[file_path] = str(exc)
+        continue
     # drop trajectory to save memory
     dfs[file_path] = df.drop(columns="chgnet_trajectory")
+
+
+print(f"{pd.Series(failed).value_counts()=}")
 
 df_chgnet = pd.concat(dfs.values()).round(4)
 

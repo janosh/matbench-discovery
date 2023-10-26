@@ -9,7 +9,8 @@ import math
 
 import numpy as np
 import plotly.express as px
-from pymatviz.utils import add_identity_line, bin_df_cols, save_fig
+from pymatviz.io import save_fig
+from pymatviz.utils import add_identity_line, bin_df_cols
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.plots import clf_colors

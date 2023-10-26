@@ -43,7 +43,7 @@ slurm_vars = slurm_submit(
     out_dir=module_dir,
     partition="icelake-himem",
     account="LEE-SL3-CPU",
-    time="12:0:0",
+    time="11:55:0",
     slurm_flags=("--mem", "30G"),
     array=f"1-{slurm_array_task_count}",
     # TF_CPP_MIN_LOG_LEVEL=2 means INFO and WARNING logs are not printed
@@ -84,9 +84,9 @@ run_params = dict(
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 
-# %%
+# %% input_col=task_type for CHGNet and M3GNet
 input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}.get(
-    task_type, task_type  # input_col=task_type for CHGNet and M3GNet
+    task_type, task_type
 )
 
 if task_type == "RS2RE":

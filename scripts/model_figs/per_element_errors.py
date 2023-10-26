@@ -9,7 +9,8 @@ import pandas as pd
 import plotly.express as px
 from pymatgen.core import Composition, Element
 from pymatviz import ptable_heatmap_plotly
-from pymatviz.utils import bin_df_cols, df_ptable, save_fig
+from pymatviz.io import save_fig
+from pymatviz.utils import bin_df_cols, df_ptable
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, SITE_MODELS
@@ -30,7 +31,7 @@ for df in (df_each_err, df_preds):
     df[model_mean_err_col] = df_each_err.abs().mean(axis=1)
 
 
-# %% map average model error onto elements
+# %% project average model error onto periodic table
 frac_comp_col = "fractional composition"
 df_wbm[frac_comp_col] = [
     Composition(comp).fractional_composition for comp in tqdm(df_wbm.formula)
@@ -106,14 +107,14 @@ fig.show()
 save_fig(fig, f"{SITE_FIGS}/bar-element-counts-mp+wbm-{normalized=}.svelte")
 
 
-# %%
+# %% compute std dev of DFT hull dist for each element in test set
 test_set_std_col = "Test set standard deviation"
 df_elem_err[test_set_std_col] = (
     df_frac_comp.where(pd.isna, 1) * df_wbm[each_true_col].to_numpy()[:, None]
 ).std()
 
 
-# %%
+# %% plot per-element std dev of DFT hull dist
 fig = ptable_heatmap_plotly(
     df_elem_err[test_set_std_col], precision=".2f", colorscale="Inferno"
 )
