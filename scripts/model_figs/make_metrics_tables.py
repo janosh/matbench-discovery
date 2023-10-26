@@ -158,7 +158,7 @@ for label, df in (("-first-10k", df_metrics_10k), ("", df_metrics)):
         f"{SITE_FIGS}/metrics-table{label}.svelte",
         inline_props="class='roomy'",
         # draw dotted line between classification and regression metrics
-        styles=f"{col_selector} {{ border-left: 1px dotted white; }};{hide_scroll_bar}",
+        styles=f"{col_selector} {{ border-left: 1px dotted white; }}{hide_scroll_bar}",
     )
     try:
         df_to_pdf(styler, f"{PDF_FIGS}/metrics-table{label}.pdf")
