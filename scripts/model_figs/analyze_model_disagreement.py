@@ -8,7 +8,8 @@ import sys
 
 import pandas as pd
 from crystal_toolkit.helpers.utils import hook_up_fig_with_struct_viewer
-from pymatviz.utils import add_identity_line, save_fig
+from pymatviz.io import save_fig
+from pymatviz.utils import add_identity_line
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.data import DATA_FILES

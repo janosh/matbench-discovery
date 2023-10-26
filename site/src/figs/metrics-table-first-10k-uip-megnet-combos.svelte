@@ -82,7 +82,14 @@
   background-color: #440154;
   color: #f1f1f1;
 }
-#T_ :is(td, th):nth-child(6) { border-left: 1px dotted white; }</style>
+#T_ :is(td, th):nth-child(6) { border-left: 1px dotted white; }
+table {
+  scrollbar-width: none;  /* Firefox */
+}
+table::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+</style>
 
     <script lang="ts">
       import { sortable } from 'svelte-zoo/actions'

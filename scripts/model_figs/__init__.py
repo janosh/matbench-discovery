@@ -9,10 +9,17 @@ import os
 import runpy
 from glob import glob
 
+import plotly.graph_objects as go
+from dash import Dash
+
 __author__ = "Janosh Riebesell"
 __date__ = "2023-07-14"
 
 module_dir = os.path.dirname(__file__)
+
+# monkey patch go.Figure.show() and Dash.run() to prevent them opening a browser
+go.Figure.show = lambda self, *args, **kwargs: None
+Dash.run = lambda self, *args, **kwargs: None
 
 
 # %%
