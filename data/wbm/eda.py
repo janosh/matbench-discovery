@@ -4,7 +4,6 @@ import os
 import numpy as np
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 from pymatgen.core import Composition
 from pymatviz import (
     count_elements,
@@ -107,7 +106,7 @@ x_label = "WBM energy above MP convex hull (eV/atom)"
 fig = px.bar(
     x=bins[bins < 0], y=left_counts, opacity=0.7, labels={"x": x_label, "y": "Counts"}
 )
-fig.add_trace(go.Bar(x=bins[bins >= 0], y=right_counts, opacity=0.7))
+fig.add_bar(x=bins[bins >= 0], y=right_counts, opacity=0.7)
 
 if col.startswith("e_above_hull"):
     n_stable = sum(df_wbm[col] <= STABILITY_THRESHOLD)

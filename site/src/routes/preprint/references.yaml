@@ -1,18 +1,6 @@
 ---
 references:
 - id: allen_crystallographic_1999
-  abstract: >-
-    The development of strategies for the design of novel materials is
-    increasingly a knowledge-based activity and this book highlights a variety
-    of experimental and computational methods that provide structural knowledge
-    about individual compounds or groups of related compounds. However,
-    scientific research and development is an evolutionary process in which the
-    critical analysis and assessment of all existing information is an essential
-    component. In the area of chemical structure, such analyses provide
-    fundamental insights which can lead to the detection of trends and
-    probabilities, and to the formulation of hypotheses and rules. These
-    indications, in their turn, can direct the future course of structural
-    design, synthesis and experiment.
   accessed:
     - year: 2020
       month: 8
@@ -47,28 +35,6 @@ references:
   URL: https://doi.org/10.1007/978-94-011-4653-1_21
 
 - id: allen_learning_2023
-  abstract: >-
-    The development of machine learning models has led to an abundance of
-    datasets containing quantum mechanical (QM) calculations for molecular and
-    material systems. However, traditional training methods for machine learning
-    models are unable to leverage the plethora of data available as they require
-    that each dataset be generated using the same QM method. Taking machine
-    learning interatomic potentials (MLIPs) as an example, we show that
-    meta-learning techniques, a recent advancement from the machine learning
-    community, can be used to fit multiple levels of QM theory in the same
-    training process. Meta-learning changes the training procedure to learn a
-    representation that can be easily re-trained to new tasks with small amounts
-    of data. We then demonstrate that meta-learning enables simultaneously
-    training to multiple large organic molecule datasets. As a proof of concept,
-    we examine the performance of a MLIP refit to a small drug-like molecule and
-    show that pre-training potentials to multiple levels of theory with
-    meta-learning improves performance. This difference in performance can be
-    seen both in the reduced error and in the improved smoothness of the
-    potential energy surface produced. We therefore show that meta-learning can
-    utilize existing datasets with inconsistent QM levels of theory to produce
-    models that are better at specializing to new datasets. This opens new
-    routes for creating pre-trained, foundational models for interatomic
-    potentials.
   accessed:
     - year: 2023
       month: 7
@@ -103,19 +69,6 @@ references:
   URL: http://arxiv.org/abs/2307.04012
 
 - id: aykol_rational_2021
-  abstract: >-
-    The rational solid-state synthesis of inorganic compounds is formulated as
-    catalytic nucleation on crystalline reactants, where contributions of
-    reaction and interfacial energies to the nucleation barriers are
-    approximated from high-throughput thermochemical data and structural and
-    interfacial features of crystals, respectively. Favorable synthesis
-    reactions are then identified by a Pareto analysis of relative nucleation
-    barriers and phase selectivities of reactions leading to the target. We
-    demonstrate the application of this approach in reaction planning for the
-    solid-state synthesis of a range of compounds, including the widely studied
-    oxides LiCoO2, BaTiO3, and YBa2Cu3O7, as well as other metal oxide,
-    oxyfluoride, phosphate, and nitride targets. Pathways for enabling the
-    retrosynthesis of inorganics are also discussed.
   accessed:
     - year: 2023
       month: 3
@@ -145,20 +98,6 @@ references:
   volume: '143'
 
 - id: aykol_thermodynamic_2018
-  abstract: >-
-    Realizing the growing number of possible or hypothesized metastable
-    crystalline materials is extremely challenging. There is no rigorous metric
-    to identify which compounds can or cannot be synthesized. We present a
-    thermodynamic upper limit on the energy scale, above which the laboratory
-    synthesis of a polymorph is highly unlikely. The limit is defined on the
-    basis of the amorphous state, and we validate its utility by effectively
-    classifying more than 700 polymorphs in 41 common inorganic material systems
-    in the Materials Project for synthesizability. The amorphous limit is highly
-    chemistry-dependent and is found to be in complete agreement with our
-    knowledge of existing polymorphs in these 41 systems, whether made by the
-    nature or in a laboratory. Quantifying the limits of metastability for
-    realizable compounds, the approach is expected to find major applications in
-    materials discovery.
   accessed:
     - year: 2023
       month: 1
@@ -188,29 +127,6 @@ references:
   volume: '4'
 
 - id: bartel_critical_2020
-  abstract: >-
-    Machine learning has emerged as a novel tool for the efficient prediction of
-    material properties, and claims have been made that machine-learned models
-    for the formation energy of compounds can approach the accuracy of Density
-    Functional Theory (DFT). The models tested in this work include five
-    recently published compositional models, a baseline model using
-    stoichiometry alone, and a structural model. By testing seven machine
-    learning models for formation energy on stability predictions using the
-    Materials Project database of DFT calculations for 85,014 unique chemical
-    compositions, we show that while formation energies can indeed be predicted
-    well, all compositional models perform poorly on predicting the stability of
-    compounds, making them considerably less useful than DFT for the discovery
-    and design of new solids. Most critically, in sparse chemical spaces where
-    few stoichiometries have stable compounds, only the structural model is
-    capable of efficiently detecting which materials are stable. The
-    nonincremental improvement of structural models compared with compositional
-    models is noteworthy and encourages the use of structural models for
-    materials discovery, with the constraint that for any new composition, the
-    ground-state structure is not known a priori. This work demonstrates that
-    accurate predictions of formation energy do not imply accurate predictions
-    of stability, emphasizing the importance of assessing model performance on
-    stability predictions, for which we provide a set of publicly available
-    tests.
   accessed:
     - year: 2022
       month: 3
@@ -251,29 +167,6 @@ references:
   volume: '6'
 
 - id: bartok_machine_2018
-  abstract: >-
-    The success of first-principles electronic-structure calculation for
-    predictive modeling in chemistry, solid-state physics, and materials science
-    is constrained by the limitations on simulated length scales and timescales
-    due to the computational cost and its scaling. Techniques based on
-    machine-learning ideas for interpolating the Born-Oppenheimer potential
-    energy surface without explicitly describing electrons have recently shown
-    great promise, but accurately and efficiently fitting the physically
-    relevant space of configurations remains a challenging goal. Here, we
-    present a Gaussian approximation potential for silicon that achieves this
-    milestone, accurately reproducing density-functional-theory reference
-    results for a wide range of observable properties, including crystal,
-    liquid, and amorphous bulk phases, as well as point, line, and plane
-    defects. We demonstrate that this new potential enables calculations such as
-    finite-temperature phase-boundary lines, self-diffusivity in the liquid,
-    formation of the amorphous by slow quench, and dynamic brittle fracture, all
-    of which are very expensive with a first-principles method. We show that the
-    uncertainty quantification inherent to the Gaussian process regression
-    framework gives a qualitative estimate of the potential’s accuracy for a
-    given atomic configuration. The success of this model shows that it is
-    indeed possible to create a useful machine-learning-based interatomic
-    potential that comprehensively describes a material on the atomic scale and
-    serves as a template for the development of such models in the future.
   accessed:
     - year: 2023
       month: 2
@@ -304,21 +197,6 @@ references:
   volume: '8'
 
 - id: batatia_mace_2023
-  abstract: >-
-    Creating fast and accurate force fields is a long-standing challenge in
-    computational chemistry and materials science. Recently, several equivariant
-    message passing neural networks (MPNNs) have been shown to outperform models
-    built using other approaches in terms of accuracy. However, most MPNNs
-    suffer from high computational cost and poor scalability. We propose that
-    these limitations arise because MPNNs only pass two-body messages leading to
-    a direct relationship between the number of layers and the expressivity of
-    the network. In this work, we introduce MACE, a new equivariant MPNN model
-    that uses higher body order messages. In particular, we show that using
-    four-body messages reduces the required number of message passing iterations
-    to just two, resulting in a fast and highly parallelizable model, reaching
-    or exceeding state-of-the-art accuracy on the rMD17, 3BPA, and AcAc
-    benchmark tasks. We also demonstrate that using higher order messages leads
-    to an improved steepness of the learning curves.
   accessed:
     - year: 2023
       month: 5
@@ -349,22 +227,6 @@ references:
   URL: http://arxiv.org/abs/2206.07697
 
 - id: batzner_equivariant_2022
-  abstract: >-
-    This work presents Neural Equivariant Interatomic Potentials (NequIP), an
-    E(3)-equivariant neural network approach for learning interatomic potentials
-    from ab-initio calculations for molecular dynamics simulations. While most
-    contemporary symmetry-aware models use invariant convolutions and only act
-    on scalars, NequIP employs E(3)-equivariant convolutions for interactions of
-    geometric tensors, resulting in a more information-rich and faithful
-    representation of atomic environments. The method achieves state-of-the-art
-    accuracy on a challenging and diverse set of molecules and materials while
-    exhibiting remarkable data efficiency. NequIP outperforms existing models
-    with up to three orders of magnitude fewer training data, challenging the
-    widely held belief that deep neural networks require massive training sets.
-    The high data efficiency of the method allows for the construction of
-    accurate potentials using high-order quantum chemical level of theory as
-    reference and enables high-fidelity molecular dynamics simulations over long
-    time scales.
   accessed:
     - year: 2023
       month: 4
@@ -411,17 +273,6 @@ references:
   volume: '13'
 
 - id: behler_generalized_2007
-  abstract: >-
-    The accurate description of chemical processes often requires the use of
-    computationally demanding methods like density-functional theory (DFT),
-    making long simulations of large systems unfeasible. In this Letter we
-    introduce a new kind of neural-network representation of DFT
-    potential-energy surfaces, which provides the energy and forces as a
-    function of all atomic positions in systems of arbitrary size and is several
-    orders of magnitude faster than DFT. The high accuracy of the method is
-    demonstrated for bulk silicon and compared with empirical potentials and
-    DFT. The method is general and can be applied to all types of periodic and
-    nonperiodic systems.
   accessed:
     - year: 2023
       month: 2
@@ -450,20 +301,6 @@ references:
   volume: '98'
 
 - id: belsky_new_2002
-  abstract: >-
-    The materials community in both science and industry use crystallographic
-    data models on a daily basis to visualize, explain and predict the behavior
-    of chemicals and materials. Access to reliable information on the structure
-    of crystalline materials helps researchers concentrate experimental work in
-    directions that optimize the discovery process. The Inorganic Crystal
-    Structure Database (ICSD) is a comprehensive collection of more than 60 000
-    crystal structure entries for inorganic materials and is produced
-    cooperatively by Fachinformationszentrum Karlsruhe (FIZ), Germany, and the
-    US National Institute of Standards and Technology (NIST). The ICSD is
-    disseminated in computerized formats with scientific software tools to
-    exploit the content of the database. Features of a new Windows-based
-    graphical user interface for the ICSD are outlined, together with directions
-    for future development in support of materials research and design.
   accessed:
     - year: 2023
       month: 8
@@ -533,31 +370,6 @@ references:
   volume: '23'
 
 - id: borg_quantifying_2022
-  abstract: >-
-    The predictive capabilities of machine learning (ML) models used in
-    materials discovery are typically measured using simple statistics such as
-    the root-mean-square error (RMSE) or the coefficient of determination
-    ($r^2$) between ML-predicted materials property values and their known
-    values. A tempting assumption is that models with low error should be
-    effective at guiding materials discovery, and conversely, models with high
-    error should give poor discovery performance. However, we observe that no
-    clear connection exists between a "static" quantity averaged across an
-    entire training set, such as RMSE, and an ML property model's ability to
-    dynamically guide the iterative (and often extrapolative) discovery of novel
-    materials with targeted properties. In this work, we simulate a sequential
-    learning (SL)-guided materials discovery process and demonstrate a
-    decoupling between traditional model error metrics and model performance in
-    guiding materials discoveries. We show that model performance in materials
-    discovery depends strongly on (1) the target range within the property
-    distribution (e.g., whether a 1st or 10th decile material is desired); (2)
-    the incorporation of uncertainty estimates in the SL acquisition function;
-    (3) whether the scientist is interested in one discovery or many targets;
-    and (4) how many SL iterations are allowed. To overcome the limitations of
-    static metrics and robustly capture SL performance, we recommend metrics
-    such as Discovery Yield ($DY$), a measure of how many high-performing
-    materials were discovered during SL, and Discovery Probability ($DP$), a
-    measure of likelihood of discovering high-performing materials at any point
-    in the SL process.
   accessed:
     - year: 2022
       month: 10
@@ -592,30 +404,6 @@ references:
   URL: http://arxiv.org/abs/2210.13587
 
 - id: chanussot_open_2021
-  abstract: >-
-    Catalyst discovery and optimization is key to solving many societal and
-    energy challenges including solar fuel synthesis, long-term energy storage,
-    and renewable fertilizer production. Despite considerable effort by the
-    catalysis community to apply machine learning models to the computational
-    catalyst discovery process, it remains an open challenge to build models
-    that can generalize across both elemental compositions of surfaces and
-    adsorbate identity/configurations, perhaps because datasets have been
-    smaller in catalysis than in related fields. To address this, we developed
-    the OC20 dataset, consisting of 1,281,040 density functional theory (DFT)
-    relaxations (∼264,890,000 single-point evaluations) across a wide swath of
-    materials, surfaces, and adsorbates (nitrogen, carbon, and oxygen
-    chemistries). We supplemented this dataset with randomly perturbed
-    structures, short timescale molecular dynamics, and electronic structure
-    analyses. The dataset comprises three central tasks indicative of day-to-day
-    catalyst modeling and comes with predefined train/validation/test splits to
-    facilitate direct comparisons with future model development efforts. We
-    applied three state-of-the-art graph neural network models (CGCNN, SchNet,
-    and DimeNet++) to each of these tasks as baseline demonstrations for the
-    community to build on. In almost every task, no upper limit on model size
-    was identified, suggesting that even larger models are likely to improve on
-    initial results. The dataset and baseline models are both provided as open
-    resources as well as a public leader board to encourage community
-    contributions to solve these important tasks.
   accessed:
     - year: 2023
       month: 2
@@ -672,27 +460,6 @@ references:
   volume: '11'
 
 - id: chen_graph_2019
-  abstract: >-
-    Graph networks are a new machine learning (ML) paradigm that supports both
-    relational reasoning and combinatorial generalization. Here, we develop
-    universal MatErials Graph Network (MEGNet) models for accurate property
-    prediction in both molecules and crystals. We demonstrate that the MEGNet
-    models outperform prior ML models such as the SchNet in 11 out of 13
-    properties of the QM9 molecule data set. Similarly, we show that MEGNet
-    models trained on ∼60 000 crystals in the Materials Project substantially
-    outperform prior ML models in the prediction of the formation energies, band
-    gaps, and elastic moduli of crystals, achieving better than density
-    functional theory accuracy over a much larger data set. We present two new
-    strategies to address data limitations common in materials science and
-    chemistry. First, we demonstrate a physically intuitive approach to unify
-    four separate molecular MEGNet models for the internal energy at 0 K and
-    room temperature, enthalpy, and Gibbs free energy into a single free energy
-    MEGNet model by incorporating the temperature, pressure, and entropy as
-    global state inputs. Second, we show that the learned element embeddings in
-    MEGNet models encode periodic chemical trends and can be transfer-learned
-    from a property model trained on a larger data set (formation energies) to
-    improve property models with smaller amounts of data (band gaps and elastic
-    moduli).
   accessed:
     - year: 2023
       month: 1
@@ -728,23 +495,6 @@ references:
   volume: '31'
 
 - id: chen_universal_2022
-  abstract: >-
-    Interatomic potentials (IAPs), which describe the potential energy surface
-    of atoms, are a fundamental input for atomistic simulations. However,
-    existing IAPs are either fitted to narrow chemistries or too inaccurate for
-    general applications. Here we report a universal IAP for materials based on
-    graph neural networks with three-body interactions (M3GNet). The M3GNet IAP
-    was trained on the massive database of structural relaxations performed by
-    the Materials Project over the past ten years and has broad applications in
-    structural relaxation, dynamic simulations and property prediction of
-    materials across diverse chemical spaces. About 1.8 million materials from a
-    screening of 31 million hypothetical crystal structures were identified to
-    be potentially stable against existing Materials Project crystals based on
-    M3GNet energies. Of the top 2,000 materials with the lowest energies above
-    the convex hull, 1,578 were verified to be stable using density functional
-    theory calculations. These results demonstrate a machine
-    learning-accelerated pathway to the discovery of synthesizable materials
-    with exceptional properties.
   accessed:
     - year: 2023
       month: 2
@@ -774,23 +524,6 @@ references:
   volume: '2'
 
 - id: choudhary_atomistic_2021
-  abstract: >-
-    Graph neural networks (GNN) have been shown to provide substantial
-    performance improvements for atomistic material representation and modeling
-    compared with descriptor-based machine learning models. While most existing
-    GNN models for atomistic predictions are based on atomic distance
-    information, they do not explicitly incorporate bond angles, which are
-    critical for distinguishing many atomic structures. Furthermore, many
-    material properties are known to be sensitive to slight changes in bond
-    angles. We present an Atomistic Line Graph Neural Network (ALIGNN), a GNN
-    architecture that performs message passing on both the interatomic bond
-    graph and its line graph corresponding to bond angles. We demonstrate that
-    angle information can be explicitly and efficiently included, leading to
-    improved performance on multiple atomistic prediction tasks. We ALIGNN
-    models for predicting 52 solid-state and molecular properties available in
-    the JARVIS-DFT, Materials project, and QM9 databases. ALIGNN can outperform
-    some previously reported GNN models on atomistic prediction tasks with
-    better or comparable model training speed.
   accessed:
     - year: 2023
       month: 7
@@ -860,22 +593,6 @@ references:
   volume: '2'
 
 - id: curtarolo_aflow_2012
-  abstract: >-
-    Recent advances in computational materials science present novel
-    opportunities for structure discovery and optimization, including uncovering
-    of unsuspected compounds and metastable structures, electronic structure,
-    surface, and nano-particle properties. The practical realization of these
-    opportunities requires systematic generation and classification of the
-    relevant computational data by high-throughput methods. In this paper we
-    present Aflow (Automatic Flow), a software framework for high-throughput
-    calculation of crystal structure properties of alloys, intermetallics and
-    inorganic compounds. The Aflow software is available for the scientific
-    community on the website of the materials research consortium, aflowlib.org.
-    Its geometric and electronic structure analysis and manipulation tools are
-    additionally available for online operation at the same website. The
-    combination of automatic methods and user online interfaces provide a
-    powerful tool for efficient quantum computational materials discovery and
-    characterization.
   accessed:
     - year: 2023
       month: 5
@@ -927,7 +644,6 @@ references:
   volume: '58'
 
 - id: davies_computational_2016
-  abstract: "Forming a four-component compound from the first 103 elements of the periodic table results in more than 1012 combinations. Such a materials space is intractable to high-throughput experiment or first-principle computation. We\_introduce a framework to address this problem and quantify how many materials can exist. We apply principles of valency and electronegativity to filter chemically implausible compositions, which reduces the inorganic quaternary space to 1010 combinations. We demonstrate that estimates of band gaps and absolute electron energies can be made simply on the basis of the chemical composition and apply this to the search for new semiconducting materials to support the photoelectrochemical splitting of water. We show the applicability to predicting crystal structure by analogy with known compounds, including exploration of the phase space for ternary combinations that form a perovskite lattice. Computer screening reproduces known perovskite materials and predicts the feasibility of thousands more. Given the simplicity of the approach, large-scale searches can be performed on a single workstation."
   author:
     - family: Davies
       given: Daniel W.
@@ -962,32 +678,6 @@ references:
   volume: '1'
 
 - id: deng_chgnet_2023
-  abstract: >-
-    The simulation of large-scale systems with complex electron interactions
-    remains one of the greatest challenges for the atomistic modeling of
-    materials. Although classical force-fields often fail to describe the
-    coupling between electronic states and ionic rearrangements, the more
-    accurate \textit{ab-initio} molecular dynamics suffers from computational
-    complexity that prevents long-time and large-scale simulations, which are
-    essential to study many technologically relevant phenomena, such as
-    reactions, ion migrations, phase transformations, and degradation. In this
-    work, we present the Crystal Hamiltonian Graph neural Network (CHGNet) as a
-    novel machine-learning interatomic potential (MLIP), using a
-    graph-neural-network-based force-field to model a universal potential energy
-    surface. CHGNet is pretrained on the energies, forces, stresses, and
-    magnetic moments from the Materials Project Trajectory Dataset, which
-    consists of over 10 years of density functional theory static and relaxation
-    trajectories of $\sim 1.5$ million inorganic structures. The explicit
-    inclusion of magnetic moments enables CHGNet to learn and accurately
-    represent the orbital occupancy of electrons, enhancing its capability to
-    describe both atomic and electronic degrees of freedom. We demonstrate
-    several applications of CHGNet in solid-state materials, including
-    charge-informed molecular dynamics in Li$_x$MnO$_2$, the finite temperature
-    phase diagram for Li$_x$FePO$_4$ and Li diffusion in garnet conductors. We
-    critically analyze the significance of including charge information for
-    capturing appropriate chemistry, and we provide new insights into ionic
-    systems with additional electronic degrees of freedom that can not be
-    observed by previous MLIPs.
   accessed:
     - year: 2023
       month: 4
@@ -1021,26 +711,6 @@ references:
   URL: http://arxiv.org/abs/2302.14231
 
 - id: deng_imagenet_2009
-  abstract: >-
-    The explosion of image data on the Internet has the potential to foster more
-    sophisticated and robust models and algorithms to index, retrieve, organize
-    and interact with images and multimedia data. But exactly how such data can
-    be harnessed and organized remains a critical problem. We introduce here a
-    new database called “ImageNet”, a large-scale ontology of images built upon
-    the backbone of the WordNet structure. ImageNet aims to populate the
-    majority of the 80,000 synsets of WordNet with an average of 500–1000 clean
-    and full resolution images. This will result in tens of millions of
-    annotated images organized by the semantic hierarchy of WordNet. This paper
-    offers a detailed analysis of ImageNet in its current state: 12 subtrees
-    with 5247 synsets and 3.2 million images in total. We show that ImageNet is
-    much larger in scale and diversity and much more accurate than the current
-    image datasets. Constructing such a large-scale database is a challenging
-    task. We describe the data collection scheme with Amazon Mechanical Turk.
-    Lastly, we illustrate the usefulness of ImageNet through three simple
-    applications in object recognition, image classification and automatic
-    object clustering. We hope that the scale, accuracy, diversity and
-    hierarchical structure of ImageNet can offer unparalleled opportunities to
-    researchers in the computer vision community and beyond.
   author:
     - family: Deng
       given: Jia
@@ -1068,22 +738,6 @@ references:
   title-short: ImageNet
 
 - id: deringer_general-purpose_2020
-  abstract: >-
-    Elemental phosphorus is attracting growing interest across fundamental and
-    applied fields of research. However, atomistic simulations of phosphorus
-    have remained an outstanding challenge. Here, we show that a universally
-    applicable force field for phosphorus can be created by machine learning
-    (ML) from a suitably chosen ensemble of quantum-mechanical results. Our
-    model is fitted to density-functional theory plus many-body dispersion
-    (DFT + MBD) data; its accuracy is demonstrated for the exfoliation of black
-    and violet phosphorus (yielding monolayers of “phosphorene” and
-    “hittorfene”); its transferability is shown for the transition between the
-    molecular and network liquid phases. An application to a phosphorene
-    nanoribbon on an experimentally relevant length scale exemplifies the power
-    of accurate and flexible ML-driven force fields for next-generation
-    materials modelling. The methodology promises new insights into phosphorus
-    as well as other structurally complex, e.g., layered solids that are
-    relevant in diverse areas of chemistry, physics, and materials science.
   accessed:
     - year: 2023
       month: 2
@@ -1118,20 +772,6 @@ references:
   volume: '11'
 
 - id: drautz_atomic_2019
-  abstract: >-
-    The atomic cluster expansion is developed as a complete descriptor of the
-    local atomic environment, including multicomponent materials, and its
-    relation to a number of other descriptors and potentials is discussed. The
-    effort for evaluating the atomic cluster expansion is shown to scale
-    linearly with the number of neighbors, irrespective of the order of the
-    expansion. Application to small Cu clusters demonstrates smooth convergence
-    of the atomic cluster expansion to meV accuracy. By introducing nonlinear
-    functions of the atomic cluster expansion an interatomic potential is
-    obtained that is comparable in accuracy to state-of-the-art machine learning
-    potentials. Because of the efficient convergence of the atomic cluster
-    expansion relevant subspaces can be sampled uniformly and exhaustively. This
-    is demonstrated by testing against a large database of density functional
-    theory calculations for copper.
   accessed:
     - year: 2023
       month: 7
@@ -1158,18 +798,6 @@ references:
   volume: '99'
 
 - id: draxl_nomad_2018
-  abstract: >-
-    , Data are a crucial raw material of this century. The amount of data that
-    have been created in materials science thus far and that continues to be
-    created every day is immense. Without a proper infrastructure that allows
-    for collecting and sharing data, the envisioned success of big data-driven
-    materials science will be hampered. For the field of computational materials
-    science, the NOMAD (Novel Materials Discovery) Center of Excellence (CoE)
-    has changed the scientific culture toward comprehensive and findable,
-    accessible, interoperable, and reusable (FAIR) data, opening new avenues for
-    mining materials science big data. Novel data-analytics concepts and tools
-    turn data into knowledge and help in the prediction of new materials and in
-    the identification of new properties of already known materials.
   accessed:
     - year: 2020
       month: 7
@@ -1199,27 +827,6 @@ references:
   volume: '43'
 
 - id: dunn_benchmarking_2020
-  abstract: >-
-    We present a benchmark test suite and an automated machine learning
-    procedure for evaluating supervised machine learning (ML) models for
-    predicting properties of inorganic bulk materials. The test suite, Matbench,
-    is a set of 13 ML tasks that range in size from 312 to 132k samples and
-    contain data from 10 density functional theory-derived and experimental
-    sources. Tasks include predicting optical, thermal, electronic,
-    thermodynamic, tensile, and elastic properties given a material’s
-    composition and/or crystal structure. The reference algorithm, Automatminer,
-    is a highly-extensible, fully automated ML pipeline for predicting materials
-    properties from materials primitives (such as composition and crystal
-    structure) without user intervention or hyperparameter tuning. We test
-    Automatminer on the Matbench test suite and compare its predictive power
-    with state-of-the-art crystal graph neural networks and a traditional
-    descriptor-based Random Forest model. We find Automatminer achieves the best
-    performance on 8 of 13 tasks in the benchmark. We also show our test suite
-    is capable of exposing predictive advantages of each algorithm—namely, that
-    crystal graph methods appear to outperform traditional machine learning
-    methods given ~104 or greater data points. We encourage evaluating materials
-    ML algorithms on the Matbench benchmark and comparing them against the
-    latest version of Automatminer.
   accessed:
     - year: 2023
       month: 2
@@ -1261,22 +868,6 @@ references:
   volume: '6'
 
 - id: gibson_data-augmentation_2022
-  abstract: >-
-    Computational materials discovery has grown in utility over the past decade
-    due to advances in computing power and crystal structure prediction
-    algorithms (CSPA). However, the computational cost of the ab initio
-    calculations required by CSPA limits its utility to small unit cells,
-    reducing the compositional and structural space the algorithms can explore.
-    Past studies have bypassed unneeded ab initio calculations by utilizing
-    machine learning to predict the stability of a material. Specifically, graph
-    neural networks trained on large datasets of relaxed structures display high
-    fidelity in predicting formation energy. Unfortunately, the geometries of
-    structures produced by CSPA deviate from the relaxed state, which leads to
-    poor predictions, hindering the model’s ability to filter unstable material.
-    To remedy this behavior, we propose a simple, physically motivated,
-    computationally efficient perturbation technique that augments training
-    data, improving predictions on unrelaxed structures by 66%. Finally, we show
-    how this error reduction can accelerate CSPA.
   accessed:
     - year: 2023
       month: 2
@@ -1313,17 +904,6 @@ references:
   volume: '8'
 
 - id: glawe_optimal_2016
-  abstract: >-
-    Starting from the experimental data contained in the inorganic crystal
-    structure database, we use a statistical analysis to determine the
-    likelihood that a chemical element A can be replaced by another B in a given
-    structure. This information can be used to construct a matrix where each
-    entry is a measure of this likelihood. By ordering the rows and columns of
-    this matrix in order to reduce its bandwidth, we construct a one-dimension
-    ordering of the chemical elements, analogous to the famous Pettifor scale.
-    The new scale shows large similarities with the one of Pettifor, but also
-    striking differences, especially in what comes to the ordering of the
-    non-metals.
   accessed:
     - year: 2023
       month: 7
@@ -1358,7 +938,6 @@ references:
   volume: '18'
 
 - id: goodall_predicting_2020
-  abstract: "Machine learning has the potential to accelerate materials discovery by accurately predicting materials properties at a low computational cost. However, the model inputs remain a key stumbling block. Current methods typically use descriptors constructed from knowledge of either the full crystal structure\_—\_therefore only applicable to materials with already characterised structures\_—\_or structure-agnostic fixed-length representations hand-engineered from the stoichiometry. We develop a machine learning approach that takes only the stoichiometry as input and automatically learns appropriate and systematically improvable descriptors from data. Our key insight is to treat the stoichiometric formula as a dense weighted graph between elements. Compared to the state of the art for structure-agnostic methods, our approach achieves lower errors with less data."
   accessed:
     - year: 2023
       month: 2
@@ -1424,27 +1003,6 @@ references:
   volume: '8'
 
 - id: hautier_accuracy_2012
-  abstract: >-
-    The evaluation of reaction energies between solids using density functional
-    theory (DFT) is of practical importance in many technological fields and
-    paramount in the study of the phase stability of known and predicted
-    compounds. In this work, we present a comparison between reaction energies
-    provided by experiments and computed by DFT in the generalized gradient
-    approximation (GGA), using a Hubbard U parameter for some transition metal
-    elements (GGA+U). We use a data set of 135 reactions involving the formation
-    of ternary oxides from binary oxides in a broad range of chemistries and
-    crystal structures. We find that the computational errors can be modeled by
-    a normal distribution with a mean close to zero and a standard deviation of
-    24 meV/atom. The significantly smaller error compared to the more commonly
-    reported errors in the formation energies from the elements is related to
-    the larger cancellation of errors in energies when reactions involve
-    chemically similar compounds. This result is of importance for phase diagram
-    computations for which the relevant reaction energies are often not from the
-    elements but from chemically close phases (e.g., ternary oxides versus
-    binary oxides). In addition, we discuss the distribution of computational
-    errors among chemistries and show that the use of a Hubbard U parameter is
-    critical to the accuracy of reaction energies involving transition metals
-    even when no major change in formal oxidation state is occurring.
   accessed:
     - year: 2023
       month: 1
@@ -1479,12 +1037,6 @@ references:
   volume: '85'
 
 - id: horton_promises_2021
-  abstract: >-
-    Over the past decade, the materials science community has fostered the
-    development of materials databases from high-performance computation. While
-    these databases have achieved great success, there are still several
-    challenges to be addressed for the community to realize the full potential
-    of the materials-by-design era.
   accessed:
     - year: 2023
       month: 4
@@ -1516,18 +1068,6 @@ references:
   volume: '1'
 
 - id: jain_commentary_2013
-  abstract: >-
-    Accelerating the discovery of advanced materials is essential for human
-    welfare and sustainable, clean energy. In this paper, we introduce the
-    Materials Project (www.materialsproject.org), a core program of the
-    Materials Genome Initiative that uses high-throughput computing to uncover
-    the properties of all known inorganic materials. This open dataset can be
-    accessed through multiple channels for both interactive exploration and data
-    mining. The Materials Project also seeks to create open-source platforms for
-    developing robust, sophisticated materials analyses. Future efforts will
-    enable users to perform ‘‘rapid-prototyping’’ of new materials in silico,
-    and provide researchers with new avenues for cost-effective, data-driven
-    materials design.
   accessed:
     - year: 2022
       month: 2
@@ -1573,21 +1113,6 @@ references:
   volume: '1'
 
 - id: kovacs_evaluation_2023
-  abstract: >-
-    The MACE architecture represents the state of the art in the field of
-    machine learning force fields for a variety of in-domain, extrapolation and
-    low-data regime tasks. In this paper, we further evaluate MACE by fitting
-    models for published benchmark datasets. We show that MACE generally
-    outperforms alternatives for a wide range of systems from amorphous carbon
-    and general small molecule organic chemistry to large molecules and liquid
-    water. We demonstrate the capabilities of the model on tasks ranging from
-    constrained geometry optimisation to molecular dynamics simulations and find
-    excellent performance across all tested domains. We show that MACE is very
-    data efficient, and can reproduce experimental molecular vibrational spectra
-    when trained on as few as 50 randomly selected reference configurations. We
-    further demonstrate that the strictly local atom-centered model is
-    sufficient for such tasks even in the case of large molecules and weakly
-    interacting molecular assemblies.
   accessed:
     - year: 2023
       month: 5
@@ -1616,23 +1141,6 @@ references:
   URL: http://arxiv.org/abs/2305.14247
 
 - id: kovacs_quantitative_2021
-  abstract: >-
-    Organic synthesis remains a major challenge in drug discovery. Although a
-    plethora of machine learning models have been proposed as solutions in the
-    literature, they suffer from being opaque black-boxes. It is neither clear
-    if the models are making correct predictions because they inferred the
-    salient chemistry, nor is it clear which training data they are relying on
-    to reach a prediction. This opaqueness hinders both model developers and
-    users. In this paper, we quantitatively interpret the Molecular Transformer,
-    the state-of-the-art model for reaction prediction. We develop a framework
-    to attribute predicted reaction outcomes both to specific parts of
-    reactants, and to reactions in the training set. Furthermore, we demonstrate
-    how to retrieve evidence for predicted reaction outcomes, and understand
-    counterintuitive predictions by scrutinising the data. Additionally, we
-    identify Clever Hans predictions where the correct prediction is reached for
-    the wrong reason due to dataset bias. We present a new debiased dataset that
-    provides a more realistic assessment of model performance, which we propose
-    as the new standard benchmark for comparing reaction prediction models.
   accessed:
     - year: 2023
       month: 7
@@ -1667,46 +1175,6 @@ references:
   volume: '12'
 
 - id: kpanou_robustness_2021
-  abstract: >-
-    Background
-
-    Deep learning methods are a proven commodity in many fields and endeavors.
-    One of these endeavors is predicting the presence of adverse drug–drug
-    interactions (DDIs). The models generated can predict, with reasonable
-    accuracy, the phenotypes arising from the drug interactions using their
-    molecular structures. Nevertheless, this task requires improvement to be
-    truly useful. Given the complexity of the predictive task, an extensive
-    benchmarking on structure-based models for DDIs prediction was performed to
-    evaluate their drawbacks and advantages.
-
-
-    Results
-
-    We rigorously tested various structure-based models that predict drug
-    interactions using different splitting strategies to simulate different
-    real-world scenarios. In addition to the effects of different training and
-    testing setups on the robustness and generalizability of the models, we then
-    explore the contribution of traditional approaches such as multitask
-    learning and data augmentation.
-
-
-    Conclusion
-
-    Structure-based models tend to generalize poorly to unseen drugs despite
-    their ability to identify new DDIs among drugs seen during training
-    accurately. Indeed, they efficiently propagate information between known
-    drugs and could be valuable for discovering new DDIs in a database. However,
-    these models will most probably fail when exposed to unknown drugs. While
-    multitask learning does not help in our case to solve the problem, the use
-    of data augmentation does at least mitigate it. Therefore, researchers must
-    be cautious of the bias of the random evaluation scheme, especially if their
-    goal is to discover new DDIs.
-
-
-    Supplementary Information
-
-    The online version contains supplementary material available at
-    10.1186/s12859-021-04398-9.
   accessed:
     - year: 2023
       month: 7
@@ -1740,23 +1208,6 @@ references:
   volume: '22'
 
 - id: lan_adsorbml_2023
-  abstract: >-
-    Computational catalysis is playing an increasingly significant role in the
-    design of catalysts across a wide range of applications. A common task for
-    many computational methods is the need to accurately compute the minimum
-    binding energy - the adsorption energy - for an adsorbate and a catalyst
-    surface of interest. Traditionally, the identification of low energy
-    adsorbate-surface configurations relies on heuristic methods and researcher
-    intuition. As the desire to perform high-throughput screening increases, it
-    becomes challenging to use heuristics and intuition alone. In this paper, we
-    demonstrate machine learning potentials can be leveraged to identify low
-    energy adsorbate-surface configurations more accurately and efficiently. Our
-    algorithm provides a spectrum of trade-offs between accuracy and efficiency,
-    with one balanced option finding the lowest energy configuration, within a
-    0.1 eV threshold, 86.33% of the time, while achieving a 1331x speedup in
-    computation. To standardize benchmarking, we introduce the Open Catalyst
-    Dense dataset containing nearly 1,000 diverse surfaces and 85,658 unique
-    configurations.
   accessed:
     - year: 2023
       month: 8
@@ -1793,28 +1244,6 @@ references:
   URL: http://arxiv.org/abs/2211.16486
 
 - id: li_critical_2023
-  abstract: >-
-    Recent advances in machine learning (ML) methods have led to substantial
-    improvement in materials property prediction against community benchmarks,
-    but an excellent benchmark score may not imply good generalization of
-    performance. Here we show that ML models trained on the Materials Project
-    2018 (MP18) dataset can have severely degraded prediction performance on new
-    compounds in the Materials Project 2021 (MP21) dataset. We document
-    performance degradation in graph neural networks and traditional
-    descriptor-based ML models for both quantitative and qualitative
-    predictions. We find the source of the predictive degradation is due to the
-    distribution shift between the MP18 and MP21 versions. This is revealed by
-    the uniform manifold approximation and projection (UMAP) of the feature
-    space. We then show that the performance degradation issue can be foreseen
-    using a few simple tools. Firstly, the UMAP can be used to investigate the
-    connectivity and relative proximity of the training and test data within
-    feature space. Secondly, the disagreement between multiple ML models on the
-    test data can illuminate out-of-distribution samples. We demonstrate that
-    the simple yet efficient UMAP-guided and query-by-committee acquisition
-    strategies can greatly improve prediction accuracy through adding only 1~\%
-    of the test data. We believe this work provides valuable insights for
-    building materials databases and ML models that enable better prediction
-    robustness and generalizability.
   accessed:
     - year: 2023
       month: 6
@@ -1849,22 +1278,6 @@ references:
   volume: '9'
 
 - id: mcdermott_graph-based_2021
-  abstract: >-
-    Accelerated inorganic synthesis remains a significant challenge in the
-    search for novel, functional materials. Many of the principles which enable
-    “synthesis by design” in synthetic organic chemistry do not exist in
-    solid-state chemistry, despite the availability of extensive
-    computed/experimental thermochemistry data. In this work, we present a
-    chemical reaction network model for solid-state synthesis constructed from
-    available thermochemistry data and devise a computationally tractable
-    approach for suggesting likely reaction pathways via the application of
-    pathfinding algorithms and linear combination of lowest-cost paths in the
-    network. We demonstrate initial success of the network in predicting complex
-    reaction pathways comparable to those reported in the literature for YMnO3,
-    Y2Mn2O7, Fe2SiS4, and YBa2Cu3O6.5. The reaction network presents
-    opportunities for enabling reaction pathway prediction, rapid iteration
-    between experimental/theoretical results, and ultimately, control of the
-    synthesis of solid-state materials.
   accessed:
     - year: 2022
       month: 4
@@ -1899,28 +1312,6 @@ references:
   volume: '12'
 
 - id: mok_direction-based_2022
-  abstract: >-
-    To realize renewable and sustainable energy cycle, there has been a lot of
-    effort put into discovering catalysts with desired properties from a large
-    chemical space. To achieve this goal, several screening strategies have been
-    proposed, most of which require validation of thermodynamic stability and
-    synthesizability of candidate materials via computationally intensive
-    quantum chemistry or solid-state physics calculations. This problem can be
-    overcome by reducing the number of calculations through machine learning
-    methods, which predict target properties using unrelaxed crystal structures
-    as inputs. However, numerical input representations of most of the previous
-    models are based on either too specific (e.g., atomic coordinates) or too
-    ambiguous (e.g., stoichiometry) information, practically inapplicable to
-    energy prediction of unrelaxed initial structures. In this work, we develop
-    direction-based crystal graph convolutional neural network (D-CGCNN) with
-    the highest accuracy toward formation energy predictions of the relaxed
-    structures using the initial structures as inputs. By comparing with other
-    approaches, we revealed correlations between crystal graph similarities and
-    model performances, elucidating the origin of the improved accuracy of our
-    model. We applied this model to the on-going high-throughput virtual
-    screening project, where the model discovered 1,725 stable materials from
-    15,318 unrelaxed structures by performing 3,966 structure optimizations (~25
-    %).
   accessed:
     - year: 2022
       month: 10
@@ -1949,32 +1340,6 @@ references:
     https://chemrxiv.org/engage/chemrxiv/article-details/633660f9114b7ebf1a229015
 
 - id: park_developing_2020
-  abstract: >-
-    The recently proposed crystal graph convolutional neural network (CGCNN)
-    offers a highly versatile and accurate machine learning (ML) framework by
-    learning material properties directly from graphlike representations of
-    crystal structures (“crystal graphs”). Here, we develop an improved variant
-    of the CGCNN model (iCGCNN) that outperforms the original by incorporating
-    information of the Voronoi tessellated crystal structure, explicit
-    three-body correlations of neighboring constituent atoms, and an optimized
-    chemical representation of interatomic bonds in the crystal graphs. We
-    demonstrate the accuracy of the improved framework in two distinct
-    illustrations: First, when trained/validated on 180 000/20 000 density
-    functional theory (DFT) calculated thermodynamic stability entries taken
-    from the Open Quantum Materials Database (OQMD) and evaluated on a separate
-    test set of 230 000 entries, iCGCNN achieves a predictive accuracy that is
-    significantly improved, i.e., 20% higher than that of the original CGCNN.
-    Second, when used to assist a high-throughput search for materials in the
-    ThCr2Si2 structure-type, iCGCNN exhibited a success rate of 31% which is 155
-    times higher than an undirected high-throughput search and 2.4 times higher
-    than that of the original CGCNN. Using both CGCNN and iCGCNN, we screened
-    132 600 compounds with elemental decorations of the ThCr2Si2 prototype
-    crystal structure and identified a total of 97 unique stable compounds by
-    performing 757 DFT calculations, accelerating the computational time of the
-    high-throughput search by a factor of 65. Our results suggest that the
-    iCGCNN can be used to accelerate high-throughput discoveries of new
-    materials by quickly and accurately identifying crystalline compounds with
-    properties of interest.
   accessed:
     - year: 2023
       month: 4
@@ -2003,25 +1368,6 @@ references:
   volume: '4'
 
 - id: qi_robust_2023
-  abstract: >-
-    Machine learning interatomic potentials (MLIPs) enable the accurate
-    simulation of materials at larger sizes and time scales, and play
-    increasingly important roles in the computational understanding and design
-    of materials. However, MLIPs are only as accurate and robust as the data
-    they are trained on. In this work, we present DImensionality-Reduced Encoded
-    Clusters with sTratified (DIRECT) sampling as an approach to select a robust
-    training set of structures from a large and complex configuration space. By
-    applying DIRECT sampling on the Materials Project relaxation trajectories
-    dataset with over one million structures and 89 elements, we develop an
-    improved materials 3-body graph network (M3GNet) universal potential that
-    extrapolate more reliably to unseen structures. We further show that
-    molecular dynamics (MD) simulations with universal potentials such as M3GNet
-    can be used in place of expensive \textit{ab initio} MD to rapidly create a
-    large configuration space for target materials systems. Combined with DIRECT
-    sampling, we develop a highly reliable moment tensor potential for Ti-H
-    system without the need for iterative optimization. This work paves the way
-    towards robust high throughput development of MLIPs across any compositional
-    complexity.
   accessed:
     - year: 2023
       month: 7
@@ -2052,12 +1398,6 @@ references:
   URL: http://arxiv.org/abs/2307.13710
 
 - id: raccuglia_machine-learning-assisted_2016
-  abstract: >-
-    Failed chemical reactions are rarely reported, even though they could still
-    provide information about the bounds on the reaction conditions needed for
-    product formation; here data from such reactions are used to train a
-    machine-learning algorithm, which is subsequently able to predict reaction
-    outcomes with greater accuracy than human intuition.
   accessed:
     - year: 2023
       month: 4
@@ -2104,16 +1444,6 @@ references:
   volume: '533'
 
 - id: rupp_fast_2012
-  abstract: >-
-    We introduce a machine learning model to predict atomization energies of a
-    diverse set of organic molecules, based on nuclear charges and atomic
-    positions only. The problem of solving the molecular Schrödinger equation is
-    mapped onto a nonlinear statistical regression problem of reduced
-    complexity. Regression models are trained on and compared to atomization
-    energies computed with hybrid density-functional theory. Cross validation
-    over more than seven thousand organic molecules yields a mean absolute error
-    of ∼10 kcal/mol. Applicability is demonstrated for the prediction of
-    molecular atomization potential energy curves.
   accessed:
     - year: 2023
       month: 7
@@ -2147,22 +1477,6 @@ references:
   volume: '108'
 
 - id: saal_materials_2013
-  abstract: >-
-    High-throughput density functional theory (HT DFT) is fast becoming a
-    powerful tool for accelerating materials design and discovery by the
-    amassing tens and even hundreds of thousands of DFT calculations in large
-    databases. Complex materials problems can be approached much more
-    efficiently and broadly through the sheer quantity of structures and
-    chemistries available in such databases. Our HT DFT database, the Open
-    Quantum Materials Database (OQMD), contains over 200,000 DFT calculated
-    crystal structures and will be freely available for public use at
-    http://oqmd.org. In this review, we describe the OQMD and its use in five
-    materials problems, spanning a wide range of applications and materials
-    types: (I) Li-air battery combination catalyst/electrodes, (II) Li-ion
-    battery anodes, (III) Li-ion battery cathode coatings reactive with HF, (IV)
-    Mg-alloy long-period stacking ordered (LPSO) strengthening precipitates, and
-    (V) training a machine learning model to predict new stable ternary
-    compounds.
   accessed:
     - year: 2023
       month: 2
@@ -2201,18 +1515,6 @@ references:
   volume: '65'
 
 - id: schutt_how_2014
-  abstract: >-
-    High-throughput density functional calculations of solids are highly
-    time-consuming. As an alternative, we propose a machine learning approach
-    for the fast prediction of solid-state properties. To achieve this, local
-    spin-density approximation calculations are used as a training set. We focus
-    on predicting the value of the density of electronic states at the Fermi
-    energy. We find that conventional representations of the input data, such as
-    the Coulomb matrix, are not suitable for the training of learning machines
-    in the case of periodic solids. We propose a novel crystal structure
-    representation for which learning and competitive prediction accuracies
-    become possible within an unrestricted class of spd systems of arbitrary
-    unit-cell size.
   accessed:
     - year: 2023
       month: 7
@@ -2250,27 +1552,6 @@ references:
   volume: '89'
 
 - id: takamoto_teanet_2022
-  abstract: >-
-    A universal interatomic potential for an arbitrary set of chemical elements
-    is urgently needed in computational materials science. Graph convolution
-    neural network (GCN) has rich expressive power, but previously was mainly
-    employed to transport scalars and vectors, not rank ≥2 tensors. As classic
-    interatomic potentials were inspired by tight-binding electronic relaxation
-    framework, we want to represent this iterative propagation of rank ≥2 tensor
-    information by GCN. Here we propose an architecture called the tensor
-    embedded atom network (TeaNet) where angular interaction is translated into
-    graph convolution through the incorporation of Euclidean tensors, vectors
-    and scalars. By applying the residual network (ResNet) architecture and
-    training with recurrent GCN weights initialization, a much deeper (16
-    layers) GCN was constructed, whose flow is similar to an iterative
-    electronic relaxation. Our training dataset is generated by density
-    functional theory calculation of mostly chemically and structurally
-    randomized configurations. We demonstrate that arbitrary structures and
-    reactions involving the first 18 elements on the periodic table (H to Ar)
-    can be realized satisfactorily by TeaNet, including C–H molecular
-    structures, metals, amorphous SiO2, and water, showing surprisingly good
-    performance (energy mean absolute error 19 meV/atom) and robustness for
-    arbitrary chemistries involving elements from H to Ar.
   accessed:
     - year: 2023
       month: 5
@@ -2302,21 +1583,6 @@ references:
   volume: '207'
 
 - id: takamoto_towards_2022
-  abstract: >-
-    Computational material discovery is under intense study owing to its ability
-    to explore the vast space of chemical systems. Neural network potentials
-    (NNPs) have been shown to be particularly effective in conducting atomistic
-    simulations for such purposes. However, existing NNPs are generally designed
-    for narrow target materials, making them unsuitable for broader applications
-    in material discovery. Here we report a development of universal NNP called
-    PreFerred Potential (PFP), which is able to handle any combination of 45
-    elements. Particular emphasis is placed on the datasets, which include a
-    diverse set of virtual structures used to attain the universality. We
-    demonstrated the applicability of PFP in selected domains: lithium diffusion
-    in LiFeSO4F, molecular adsorption in metal-organic frameworks, an
-    order–disorder transition of Cu-Au alloys, and material discovery for a
-    Fischer–Tropsch catalyst. They showcase the power of PFP, and this
-    technology provides a highly useful tool for material discovery.
   accessed:
     - year: 2023
       month: 5
@@ -2389,16 +1655,6 @@ references:
   volume: '13'
 
 - id: thomas_tensor_2018
-  abstract: >-
-    We introduce tensor field neural networks, which are locally equivariant to
-    3D rotations, translations, and permutations of points at every layer. 3D
-    rotation equivariance removes the need for data augmentation to identify
-    features in arbitrary orientations. Our network uses filters built from
-    spherical harmonics; due to the mathematical consequences of this filter
-    choice, each layer accepts as input (and guarantees as output) scalars,
-    vectors, and higher-order tensors, in the geometric sense of these terms. We
-    demonstrate the capabilities of tensor field networks with tasks in
-    geometry, physics, and chemistry.
   accessed:
     - year: 2023
       month: 7
@@ -2434,30 +1690,6 @@ references:
   URL: http://arxiv.org/abs/1802.08219
 
 - id: tran_open_2022
-  abstract: >-
-    The development of machine learning models for electrocatalysts requires a
-    broad set of training data to enable their use across a wide variety of
-    materials. One class of materials that currently lacks sufficient training
-    data is oxides, which are critical for the development of Oxygen Evolution
-    Reaction (OER) catalysts. To address this, we developed the Open Catalyst
-    2022 (OC22) dataset, consisting of 62,331 Density Functional Theory (DFT)
-    relaxations (~9,854,504 single point calculations) across a range of oxide
-    materials, coverages, and adsorbates. We define generalized total energy
-    tasks that enable property prediction beyond adsorption energies; we test
-    baseline performance of several graph neural networks; and we provide
-    pre-defined dataset splits to establish clear benchmarks for future efforts.
-    In the most general task, GemNet-OC sees a ~32% improvement in energy
-    predictions when combining the chemically dissimilar Open Catalyst 2020
-    Dataset (OC20) and OC22 datasets via fine-tuning. Similarly, we achieved a
-    ~19% improvement in total energy predictions on OC20 and a ~9% improvement
-    in force predictions in OC22 when using joint training. We demonstrate the
-    practical utility of a top performing model by capturing literature
-    adsorption energies and important OER scaling relationships. We expect OC22
-    to provide an important benchmark for models seeking to incorporate
-    intricate long-range electrostatic and magnetic interactions in oxide
-    surfaces. The dataset and baseline models are open sourced, and a public
-    leaderboard has been made available to encourage continued community
-    developments on the total energy tasks and data.
   accessed:
     - year: 2023
       month: 2
@@ -2512,23 +1744,6 @@ references:
   URL: http://arxiv.org/abs/2206.08917
 
 - id: vaswani_attention_2017
-  abstract: >-
-    The dominant sequence transduction models are based on complex recurrent or
-    convolutional neural networks in an encoder-decoder configuration. The best
-    performing models also connect the encoder and decoder through an attention
-    mechanism. We propose a new simple network architecture, the Transformer,
-    based solely on attention mechanisms, dispensing with recurrence and
-    convolutions entirely. Experiments on two machine translation tasks show
-    these models to be superior in quality while being more parallelizable and
-    requiring significantly less time to train. Our model achieves 28.4 BLEU on
-    the WMT 2014 English-to-German translation task, improving over the existing
-    best results, including ensembles by over 2 BLEU. On the WMT 2014
-    English-to-French translation task, our model establishes a new single-model
-    state-of-the-art BLEU score of 41.8 after training for 3.5 days on eight
-    GPUs, a small fraction of the training costs of the best models from the
-    literature. We show that the Transformer generalizes well to other tasks by
-    applying it successfully to English constituency parsing both with large and
-    limited training data.
   accessed:
     - year: 2020
       month: 8
@@ -2562,13 +1777,6 @@ references:
   URL: http://arxiv.org/abs/1706.03762
 
 - id: vonlilienfeld_retrospective_2020
-  abstract: >-
-    Over the last decade, we have witnessed the emergence of ever more machine
-    learning applications in all aspects of the chemical sciences. Here, we
-    highlight specific achievements of machine learning models in the field of
-    computational chemistry by considering selected studies of electronic
-    structure, interatomic potentials, and chemical compound space in
-    chronological order.
   accessed:
     - year: 2023
       month: 7
@@ -2600,19 +1808,6 @@ references:
   volume: '11'
 
 - id: wang_framework_2021
-  abstract: >-
-    In this work, we demonstrate a method to quantify uncertainty in corrections
-    to density functional theory (DFT) energies based on empirical results. Such
-    corrections are commonly used to improve the accuracy of computational
-    enthalpies of formation, phase stability predictions, and other
-    energy-derived properties, for example. We incorporate this method into a
-    new DFT energy correction scheme comprising a mixture of oxidation-state and
-    composition-dependent corrections and show that many chemical systems
-    contain unstable polymorphs that may actually be predicted stable when
-    uncertainty is taken into account. We then illustrate how these
-    uncertainties can be used to estimate the probability that a compound is
-    stable on a compositional phase diagram, thus enabling better-informed
-    assessments of compound stability.
   accessed:
     - year: 2023
       month: 8
@@ -2655,23 +1850,6 @@ references:
   volume: '11'
 
 - id: wang_predicting_2021
-  abstract: >-
-    We propose an efficient high-throughput scheme for the discovery of stable
-    crystalline phases. Our approach is based on the transmutation of known
-    compounds, through the substitution of atoms in the crystal structure with
-    chemically similar ones. The concept of similarity is defined quantitatively
-    using a measure of chemical replaceability, extracted by data-mining
-    experimental databases. In this way we build 189,981 possible crystal
-    phases, including 18,479 that are on the convex hull of stability. The
-    resulting success rate of 9.72% is at least one order of magnitude better
-    than the usual success rate of systematic high-throughput calculations for a
-    specific family of materials, and comparable with speed-up factors of
-    machine learning filtering procedures. As a characterization of the set of
-    18,479 stable compounds, we calculate their electronic band gaps, magnetic
-    moments, and hardness. Our approach, that can be used as a filter on top of
-    any high-throughput scheme, enables us to efficiently extract stable
-    compounds from tremendously large initial sets, without any initial
-    assumption on their crystal structures or chemical compositions.
   accessed:
     - year: 2022
       month: 2
@@ -2704,20 +1882,6 @@ references:
   volume: '7'
 
 - id: ward_general-purpose_2016
-  abstract: >-
-    A very active area of materials research is to devise methods that use
-    machine learning to automatically extract predictive models from existing
-    materials data. While prior examples have demonstrated successful models for
-    some applications, many more applications exist where machine learning can
-    make a strong impact. To enable faster development of machine-learning-based
-    models for such applications, we have created a framework capable of being
-    applied to a broad range of materials data. Our method works by using a
-    chemically diverse list of attributes, which we demonstrate are suitable for
-    describing a wide variety of properties, and a novel method for partitioning
-    the data set into groups of similar materials to boost the predictive
-    accuracy. In this manuscript, we demonstrate how this new method can be used
-    to predict diverse properties of crystalline and amorphous materials, such
-    as band gap energy and glass-forming ability.
   accessed:
     - year: 2020
       month: 7
@@ -2754,31 +1918,6 @@ references:
   volume: '2'
 
 - id: ward_including_2017
-  abstract: >-
-    While high-throughput density functional theory (DFT) has become a prevalent
-    tool for materials discovery, it is limited by the relatively large
-    computational cost. In this paper, we explore using DFT data from
-    high-throughput calculations to create faster, surrogate models with machine
-    learning (ML) that can be used to guide new searches. Our method works by
-    using decision tree models to map DFT-calculated formation enthalpies to a
-    set of attributes consisting of two distinct types: (i)
-    composition-dependent attributes of elemental properties (as have been used
-    in previous ML models of DFT formation energies), combined with (ii)
-    attributes derived from the Voronoi tessellation of the compound's crystal
-    structure. The ML models created using this method have half the
-    cross-validation error and similar training and evaluation speeds to models
-    created with the Coulomb matrix and partial radial distribution function
-    methods. For a dataset of 435 000 formation energies taken from the Open
-    Quantum Materials Database (OQMD), our model achieves a mean absolute error
-    of 80 meV/atom in cross validation, which is lower than the approximate
-    error between DFT-computed and experimentally measured formation enthalpies
-    and below 15% of the mean absolute deviation of the training set. We also
-    demonstrate that our method can accurately estimate the formation energy of
-    materials outside of the training set and be used to identify materials with
-    especially large formation enthalpies. We propose that our models can be
-    used to accelerate the discovery of new materials by identifying the most
-    promising materials to study with DFT at little additional computational
-    cost.
   accessed:
     - year: 2023
       month: 1
@@ -2817,15 +1956,6 @@ references:
   volume: '96'
 
 - id: wen_chemical_2023
-  abstract: >-
-    Chemical reaction networks (CRNs), defined by sets of species and possible
-    reactions between them, are widely used to interrogate chemical systems. To
-    capture increasingly complex phenomena, CRNs can be leveraged alongside
-    data-driven methods and machine learning (ML). In this Perspective, we
-    assess the diverse strategies available for CRN construction and analysis in
-    pursuit of a wide range of scientific goals, discuss ML techniques currently
-    being applied to CRNs and outline future CRN-ML approaches, presenting
-    scientific and technical challenges to overcome.
   accessed:
     - year: 2023
       month: 3
@@ -2863,26 +1993,6 @@ references:
   volume: '3'
 
 - id: wu_moleculenet_2018
-  abstract: >-
-    Molecular machine learning has been maturing rapidly over the last few
-    years. Improved methods and the presence of larger datasets have enabled
-    machine learning algorithms to make increasingly accurate predictions about
-    molecular properties. However, algorithmic progress has been limited due to
-    the lack of a standard benchmark to compare the efficacy of proposed
-    methods; most new algorithms are benchmarked on different datasets making it
-    challenging to gauge the quality of proposed methods. This work introduces
-    MoleculeNet, a large scale benchmark for molecular machine learning.
-    MoleculeNet curates multiple public datasets, establishes metrics for
-    evaluation, and offers high quality open-source implementations of multiple
-    previously proposed molecular featurization and learning algorithms
-    (released as part of the DeepChem open source library). MoleculeNet
-    benchmarks demonstrate that learnable representations are powerful tools for
-    molecular machine learning and broadly offer the best performance. However,
-    this result comes with caveats. Learnable representations still struggle to
-    deal with complex tasks under data scarcity and highly imbalanced
-    classification. For quantum mechanical and biophysical datasets, the use of
-    physics-aware featurizations can be more important than choice of particular
-    learning algorithm.
   accessed:
     - year: 2023
       month: 7
@@ -2924,22 +2034,6 @@ references:
   volume: '9'
 
 - id: xie_crystal_2018
-  abstract: >-
-    The use of machine learning methods for accelerating the design of
-    crystalline materials usually requires manually constructed feature vectors
-    or complex transformation of atom coordinates to input the crystal
-    structure, which either constrains the model to certain crystal types or
-    makes it difficult to provide chemical insights. Here, we develop a crystal
-    graph convolutional neural networks framework to directly learn material
-    properties from the connection of atoms in the crystal, providing a
-    universal and interpretable representation of crystalline materials. Our
-    method provides a highly accurate prediction of density functional theory
-    calculated properties for eight different properties of crystals with
-    various structure types and compositions after being trained with 104 data
-    points. Further, our framework is interpretable because one can extract the
-    contributions from local chemical environments to global properties. Using
-    an example of perovskites, we show how this information can be utilized to
-    discover empirical rules for materials design.
   accessed:
     - year: 2019
       month: 8
@@ -2967,23 +2061,6 @@ references:
   volume: '120'
 
 - id: zuo_accelerating_2021
-  abstract: >-
-    Machine learning (ML) models utilizing structure-based features provide an
-    efficient means for accurate property predictions across diverse chemical
-    spaces. However, obtaining equilibrium crystal structures typically requires
-    expensive density functional theory (DFT) calculations, which limits
-    ML-based exploration to either known crystals or a small number of
-    hypothetical crystals. Here, we demonstrate that the application of Bayesian
-    optimization with symmetry constraints using a graph deep learning energy
-    model can be used to perform “DFT-free” relaxations of crystal structures.
-    Using this approach to significantly improve the accuracy of ML-predicted
-    formation energies and elastic moduli of hypothetical crystals, two novel
-    ultra-incompressible hard MoWC2 (P63/mmc) and ReWB (Pca21) were identified
-    and successfully synthesized via in situ reactive spark plasma sintering
-    from screening 399,960 transition metal borides and carbides. This work
-    addresses a critical bottleneck to accurate property predictions for
-    hypothetical materials, paving the way to ML-accelerated discovery of new
-    materials with exceptional properties.
   accessed:
     - year: 2021
       month: 10

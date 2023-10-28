@@ -71,6 +71,7 @@ structure was generated in).
   {log}
   color_scale={color_scale[0]}
   bind:active_element
+  show_photo={false}
 >
   <TableInset slot="inset">
     <PtableInset element={active_element} elem_counts={active_counts} />
