@@ -89,19 +89,17 @@ def plot_energy_and_forces(
     """Plot energy and forces as a function of relaxation step."""
     fig = go.Figure()
     # energy trace = primary y-axis
-    fig.add_trace(go.Scatter(x=df.index, y=df[e_col], mode="lines", name="Energy"))
+    fig.add_scatter(x=df.index, y=df[e_col], mode="lines", name="Energy")
     # get energy line color
     line_color = fig.data[0].line.color
 
     # forces trace = secondary y-axis
-    fig.add_trace(
-        go.Scatter(
-            x=df.index,
-            y=df[force_col],
-            mode="lines",
-            name="Forces",
-            yaxis="y2",
-        ),
+    fig.add_scatter(
+        x=df.index,
+        y=df[force_col],
+        mode="lines",
+        name="Forces",
+        yaxis="y2",
     )
 
     fig.update_layout(

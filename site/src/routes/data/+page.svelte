@@ -46,6 +46,7 @@
       color_scale={color_scale[0]}
       {log}
       bind:active_element={active_wbm_elem}
+      show_photo={false}
     >
       <TableInset slot="inset">
         <label for="log">Log color scale<Toggle id="log" bind:checked={log} /></label>
@@ -81,6 +82,7 @@
       color_scale={color_scale[0]}
       {log}
       bind:active_element={active_mp_elem}
+      show_photo={false}
     >
       <TableInset slot="inset">
         <label for="log">Log color scale<Toggle id="log" bind:checked={log} /></label>

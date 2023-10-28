@@ -62,8 +62,7 @@ fig.layout.margin = dict(l=0, r=0, b=0, t=0)
 for idx, model in enumerate(models):
     ys = [df_each_err[model].quantile(quant) for quant in (0.05, 0.25, 0.5, 0.75, 0.95)]
 
-    box_plot = go.Box(y=ys, name=model, width=0.7)
-    fig.add_trace(box_plot)
+    fig.add_box(y=ys, name=model, width=0.7)
 
     # Add an annotation for the interquartile range
     IQR = ys[3] - ys[1]

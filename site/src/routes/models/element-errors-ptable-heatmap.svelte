@@ -69,9 +69,14 @@
     {cbar_max}
   </label>
   <label>
-    Divide errors by test set energies std. dev. over structures containing each element
+    Divide each element value by its std. dev. of target energies over all test structures
+    containing a given element
     <input type="checkbox" bind:checked={normalized} />
   </label>
+  <small>
+    This is meant to correct for the fact that some elements are inherently more difficult
+    to predict since some have a wider distribution of convex hull distances.
+  </small>
 </form>
 
 <PeriodicTable
@@ -82,6 +87,7 @@
   tile_props={{
     precision: `0.2`,
   }}
+  show_photo={false}
 >
   <TableInset slot="inset" style="align-content: center;">
     <PtableInset
@@ -112,5 +118,10 @@
     display: flex;
     place-content: center;
     gap: 1ex;
+  }
+  form label + small {
+    max-width: 60em;
+    margin: 0 auto;
+    text-align: center;
   }
 </style>

@@ -84,14 +84,13 @@ for idx, model in enumerate((model_mean_err_col, *df_metrics)):
     large_errors = df_each_err[model].abs().nlargest(n_structs)
     small_errors = df_each_err[model].abs().nsmallest(n_structs)
     for label, errors in zip(("min", "max"), (large_errors, small_errors)):
-        scatter = go.Histogram(
+        fig.add_histogram(
             x=df_wbm.loc[errors.index][fp_diff_col].values,
             name=f"{model} err<sub>{label}</sub>",
             visible="legendonly" if idx else True,
             legendgroup=model,
             hovertemplate=("SSFP diff: %{x:.2f}<br>Count: %{y}"),
         )
-        fig.add_trace(scatter)
 
 title = (
     f"Norm-diff between initial/final SiteStatsFingerprint<br>"
@@ -121,7 +120,7 @@ fig = go.Figure()
 for idx, model in enumerate(df_metrics):
     errors = df_each_err[model].abs().nlargest(n_structs)
     model_mae = errors.mean().round(3)
-    scatter = go.Scatter(
+    fig.add_scatter(
         x=df_wbm.loc[errors.index][fp_diff_col].values,
         y=errors.values,
         mode="markers",
@@ -136,7 +135,6 @@ for idx, model in enumerate(df_metrics):
         customdata=df_wbm.loc[errors.index][["material_id", "formula"]].values,
         legendrank=model_mae,
     )
-    fig.add_trace(scatter)
 
 title = (
     f"Norm-diff between initial/final SiteStatsFingerprint<br>"
@@ -246,7 +244,7 @@ for idx, model in enumerate(df_metrics):
     model_mae = df_each_err[model].loc[df_largest_fp_diff.index].abs().mean()
 
     visible = "legendonly" if idx else True
-    scatter = go.Scatter(
+    fig.add_scatter(
         x=df_largest_fp_diff.values,
         y=df_each_err[model].loc[df_largest_fp_diff.index].abs(),
         mode="markers",
@@ -265,7 +263,6 @@ for idx, model in enumerate(df_metrics):
         marker=dict(color=color),
         legendrank=model_mae,
     )
-    fig.add_trace(scatter)
     # add dashed mean line for each model that toggles with the scatter plot
     # fig.add_hline(
     #     y=model_mae,
@@ -357,14 +354,13 @@ for label, which in zip(("min", "max"), ("nlargest", "nsmallest")):
     fig = go.Figure()
     for model in df_metrics:
         errors = getattr(df_each_err[model].abs(), which)(n_structs)
-        violin = go.Violin(
+        fig.add_violin(
             x=df_wbm.loc[errors.index][fp_diff_col].values,
             name=f"{model} err<sub>{label}</sub>",
             legendgroup=model,
             hovertemplate=("SSFP diff: %{x:.2f}<br>Count: %{y}"),
             spanmode="hard",
         )
-        fig.add_trace(violin)
     fig.layout.update(showlegend=False)
     fig.layout.xaxis.title = "SSFP norm-diff before/after relaxation"
     fig.show()
