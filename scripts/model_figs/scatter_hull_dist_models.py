@@ -150,7 +150,8 @@ fig = px.scatter(
     range_x=(domain := (-4, 7)),
     range_y=domain,
     category_orders={facet_col: legend_order},
-    color_continuous_scale="turbo",  # "thermal"
+    # pick from https://plotly.com/python/builtin-colorscales
+    color_continuous_scale="agsunset",
 )
 
 # manually set colorbar ticks and labels (needed after log1p transform)

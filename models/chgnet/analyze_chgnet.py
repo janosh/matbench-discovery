@@ -23,15 +23,14 @@ id_col = "material_id"
 
 
 # %%
-df_chgnet = pd.read_csv(PRED_FILES.CHGNet)
-df_chgnet = df_chgnet.set_index(id_col).add_suffix("_2000")
-df_chgnet_500 = pd.read_csv(PRED_FILES.CHGNet.replace("-06", "-04"))
-df_chgnet_500 = df_chgnet_500.set_index(id_col).add_suffix("_500")
-df_chgnet[list(df_chgnet_500)] = df_chgnet_500
+df_chgnet = df_chgnet_v030 = pd.read_csv(PRED_FILES.CHGNet)
+df_chgnet_v020 = pd.read_csv(
+    f"{module_dir}/2023-03-06-chgnet-0.2.0-wbm-IS2RE.csv.gz", index_col=id_col
+)
 df_chgnet["formula"] = df_wbm.formula
 
-e_form_2000 = "e_form_per_atom_chgnet_2000"
-e_form_500 = "e_form_per_atom_chgnet_500"
+e_form_2000 = "e_form_per_atom_chgnet_relax_steps_2000"
+e_form_500 = "e_form_per_atom_chgnet_relax_steps_500"
 
 min_e_diff = 0.1
 # structures with smaller energy after longer relaxation need many steps

@@ -1,32 +1,3 @@
-<script>
-  import { onMount } from 'svelte'
-  import all_stats from './site/src/routes/models/model-stats.json'
-
-  let best = Object.entries(all_stats).reduce(
-    (acc, [model, stats]) => {
-      if (stats.F1 > acc.F1) {
-        return { model, ...stats }
-      }
-      return acc
-    },
-    { model: `CHGNet`, F1: 0.6 }
-  )
-
-  let best_report // HTMLDivElement
-  onMount(async () => {
-    if (best_report && best) {
-      best_report.style.display = `block`
-
-      const { default: metadata } = await import(
-        `$root/models/${best.model.toLowerCase()}/metadata.yml`
-      )
-
-      best = { ...best, ...metadata }
-      console.log(`best`, best)
-    }
-  })
-</script>
-
 <h1 align="center">
   <img src="https://github.com/janosh/matbench-discovery/raw/main/site/static/favicon.svg" alt="Logo" width="60px"><br>
   Matbench Discovery
@@ -48,11 +19,7 @@ Matbench Discovery is an [interactive leaderboard](https://janosh.github.io/matb
 
 So far, we've tested 8 models covering multiple methodologies ranging from random forests with structure fingerprints to graph neural networks, from one-shot predictors to iterative Bayesian optimizers and interatomic potential relaxers.
 
-<div bind:this={best_report} style="display: none;">
-
-We find [{best.model}]({best?.repo}) ([paper]({best?.doi})) to achieve the highest F1 score of {best.F1}, $R^2$ of {best.R2} and a discovery acceleration factor (DAF) of {best.DAF} (meaning a ~{Number(best.DAF).toFixed(0)}x higher rate of stable structures compared to dummy selection in our already enriched search space).
-
-</div>
+<slot name="best-report" />
 
 Our results show that ML models have become robust enough to deploy them as triaging steps to more effectively allocate compute in high-throughput DFT relaxations. This work provides valuable insights for anyone looking to build large-scale materials databases.
 

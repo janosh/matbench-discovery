@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from pymatviz.io import df_to_pdf, df_to_svelte_table
+from pymatviz.io import df_to_html_table, df_to_pdf
 from sklearn.dummy import DummyClassifier
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
@@ -156,7 +156,7 @@ for label, df in (("-first-10k", df_metrics_10k), ("", df_metrics)):
     table::-webkit-scrollbar {
         display: none;  /* Safari and Chrome */
     }"""
-    df_to_svelte_table(
+    df_to_html_table(
         styler,
         f"{SITE_FIGS}/metrics-table{label}.svelte",
         inline_props="class='roomy'",

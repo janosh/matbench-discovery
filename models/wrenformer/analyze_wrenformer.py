@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from aviary.wren.utils import get_isopointal_proto_from_aflow
 from pymatviz import spacegroup_hist, spacegroup_sunburst
-from pymatviz.io import df_to_pdf, df_to_svelte_table, save_fig
+from pymatviz.io import df_to_html_table, df_to_pdf, save_fig
 from pymatviz.ptable import ptable_heatmap_plotly
 from pymatviz.utils import add_identity_line, bin_df_cols
 
@@ -68,7 +68,7 @@ df_proto_counts[proto_col] = df_proto_counts[proto_col].str.replace("_", "-")
 
 styler = df_proto_counts.head(10).style.background_gradient(cmap="viridis")
 
-df_to_svelte_table(styler, f"{SITE_FIGS}/proto-counts-{model}-failures.svelte")
+df_to_html_table(styler, f"{SITE_FIGS}/proto-counts-{model}-failures.svelte")
 df_to_pdf(styler, f"{PDF_FIGS}/proto-counts-{model}-failures.pdf")
 
 

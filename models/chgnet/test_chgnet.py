@@ -82,6 +82,7 @@ run_params = dict(
     max_steps=max_steps,
     fmax=fmax,
     device=device,
+    trainable_params=chgnet.n_params,
 )
 
 run_name = f"{job_name}-{slurm_array_task_id}"
