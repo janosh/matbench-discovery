@@ -12,6 +12,7 @@ import wandb
 from ase.constraints import ExpCellFilter
 from ase.optimize import FIRE, LBFGS
 from mace.calculators.mace import MACECalculator
+from mace.tools import count_parameters
 from pymatgen.core import Structure
 from pymatgen.core.trajectory import Trajectory
 from pymatgen.io.ase import AseAtomsAdaptor
@@ -25,6 +26,8 @@ from matbench_discovery.slurm import slurm_submit
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-01"
 
+
+# %%
 task_type = "IS2RE"  # "RS2RE"
 module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
@@ -40,15 +43,17 @@ model_name = [
     # MACE trained by Yuan Chiang on CHGNet training set
     "2023-08-14-mace-yuan-mptrj-04",
     "2023-09-03-mace-yuan-mptrj-slower-14-lr-13_run-3",
+    "2023-10-29-mace-pbenner-mptrj-no-conditional-loss",
 ][-1]
 
 slurm_vars = slurm_submit(
     job_name=job_name,
     out_dir=out_dir,
     account="matgen",
-    time="11:55:0",
+    time="4:55:0",
     array=f"1-{slurm_array_task_count}",
-    slurm_flags="--qos regular --constraint gpu --gpus 1",
+    # slurm_flags="--qos shared --constraint gpu --gpus 1",
+    slurm_flags="--qos shared --constraint cpu --mem 16G",
 )
 
 
@@ -72,11 +77,14 @@ id_col = "material_id"
 max_steps = 500
 force_max = 0.05  # Run until the forces are smaller than this in eV/A
 checkpoint = f"{ROOT}/models/mace/checkpoints/{model_name}.model"
+mace_calc = MACECalculator(checkpoint, device=device)
 
 df_in: pd.DataFrame = np.array_split(
     pd.read_json(data_path).set_index(id_col), slurm_array_task_count
 )[slurm_array_task_id - 1]
 
+
+# %%
 run_params = dict(
     data_path=data_path,
     versions={dep: version(dep) for dep in ("mace", "numpy", "torch")},
@@ -89,6 +97,7 @@ run_params = dict(
     force_max=force_max,
     ase_optimizer=ase_optimizer,
     device=device,
+    trainable_params=count_parameters(mace_calc.models[0]),
 )
 
 run_name = f"{job_name}-{slurm_array_task_id}"
@@ -96,7 +105,6 @@ wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 
 # %%
-mace_calc = MACECalculator(checkpoint, device=device, default_dtype="float32")
 relax_results: dict[str, dict[str, Any]] = {}
 input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
 

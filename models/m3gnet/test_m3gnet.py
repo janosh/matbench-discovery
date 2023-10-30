@@ -29,8 +29,8 @@ __date__ = "2022-08-15"
 
 task_type = "IS2RE"  # "RS2RE"
 module_dir = os.path.dirname(__file__)
-# direct: cluster sampling, ms: manual sampling
-model_type: Literal["orig", "direct", "ms"] = "ms"
+# direct: DIRECT cluster sampling, ms: manual sampling
+model_type: Literal["orig", "direct", "manual-sampling"] = "orig"
 # set large job array size for smaller data splits and faster testing/debugging
 slurm_array_task_count = 100
 job_name = f"m3gnet-{model_type}-wbm-{task_type}"
@@ -74,12 +74,21 @@ df_in: pd.DataFrame = np.array_split(
     pd.read_json(data_path).set_index("material_id"), slurm_array_task_count
 )[slurm_array_task_id - 1]
 
+checkpoint = None
+if model_type == "direct":
+    checkpoint = f"{ROOT}/models/m3gnet/2023-05-26-DI-DFTstrictF10-TTRS-128U-442E"
+if model_type == "ms":
+    checkpoint = f"{ROOT}/models/m3gnet/2023-05-26-MS-DFTstrictF10-128U-154E"
+relax_results: dict[str, dict[str, Any]] = {}
+m3gnet = Relaxer(potential=checkpoint)  # load pre-trained M3GNet model
+
 run_params = dict(
     data_path=data_path,
     versions={dep: version(dep) for dep in ("m3gnet", "numpy")},
     task_type=task_type,
     df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     slurm_vars=slurm_vars,
+    trainable_params=sum(param.numel() for param in m3gnet.parameters()),
 )
 
 run_name = f"{job_name}-{slurm_array_task_id}"
@@ -87,13 +96,6 @@ wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 
 # %%
-checkpoint = None
-if model_type == "direct":
-    checkpoint = f"{ROOT}/models/m3gnet/2023-05-26-DI-DFTstrictF10-TTRS-128U-442E"
-if model_type == "ms":
-    checkpoint = f"{ROOT}/models/m3gnet/2023-05-26-MS-DFTstrictF10-128U-154E"
-m3gnet = Relaxer(potential=checkpoint)  # load pre-trained M3GNet model
-relax_results: dict[str, dict[str, Any]] = {}
 input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
 
 if task_type == "RS2RE":
