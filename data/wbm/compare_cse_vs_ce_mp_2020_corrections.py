@@ -35,10 +35,10 @@ ces = [ComputedEntry.from_dict(dct) for dct in tqdm(df_cse.computed_structure_en
 
 
 # %%
-out = MaterialsProject2020Compatibility().process_entries(cses, verbose=True)
-assert len(out) == len(df_cse)
-out = MaterialsProject2020Compatibility().process_entries(ces, verbose=True)
-assert len(out) == len(df_cse)
+processed = MaterialsProject2020Compatibility().process_entries(cses, verbose=True)
+assert len(processed) == len(df_cse)
+processed = MaterialsProject2020Compatibility().process_entries(ces, verbose=True)
+assert len(processed) == len(df_cse)
 
 df_wbm["e_form_per_atom_mp2020_from_ce"] = [
     get_e_form_per_atom(entry) for entry in tqdm(ces)
@@ -54,10 +54,10 @@ df_wbm["mp2020_ce_correction_per_atom"] = [ce.correction_per_atom for ce in tqdm
 
 
 # %%
-out = MaterialsProjectCompatibility().process_entries(cses, verbose=True)
-assert len(out) == len(df_cse)
-out = MaterialsProjectCompatibility().process_entries(ces, verbose=True)
-assert len(out) == len(df_cse)
+processed = MaterialsProjectCompatibility().process_entries(cses, verbose=True)
+assert len(processed) == len(df_cse)
+processed = MaterialsProjectCompatibility().process_entries(ces, verbose=True)
+assert len(processed) == len(df_cse)
 
 df_wbm["e_form_per_atom_legacy_from_ce"] = [
     get_e_form_per_atom(entry) for entry in tqdm(ces)

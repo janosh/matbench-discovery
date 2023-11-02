@@ -73,10 +73,10 @@ for row in tqdm(df_mace.itertuples(), total=len(df_mace)):
 
 
 # %% apply energy corrections
-out = MaterialsProject2020Compatibility().process_entries(
+processed = MaterialsProject2020Compatibility().process_entries(
     df_mace[entry_col], verbose=True, clean=True
 )
-assert len(out) == len(df_mace)
+assert len(processed) == len(df_mace)
 
 
 # %% compute corrected formation energies
