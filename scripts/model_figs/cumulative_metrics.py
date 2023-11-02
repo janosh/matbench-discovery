@@ -27,8 +27,8 @@ __date__ = "2022-12-04"
 
 
 # %%
-metrics = ("Precision", "Recall")
-# metrics = ("MAE",)
+# metrics = ("Precision", "Recall")
+metrics = ("MAE",)
 range_y = {
     ("MAE",): (0, 0.7),
     ("Precision", "Recall"): (0, 1),
@@ -46,7 +46,7 @@ fig, df_metric = cumulative_metrics(
     show_n_stable=metrics != ("MAE",),
 )
 
-x_label = "Number of screened WBM test set materials"
+x_label = "Test set structures ranked by model-predicted stability"
 if backend == "matplotlib":
     # fig.suptitle(title)
     fig.text(0.5, -0.08, x_label, ha="center", fontdict={"size": 16})
