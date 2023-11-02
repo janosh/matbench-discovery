@@ -45,7 +45,7 @@ for file_path in tqdm(file_paths):
         continue
     df = pd.read_json(file_path).set_index("material_id")
     # drop trajectory to save memory
-    dfs[file_path] = df.drop(columns="m3gnet_trajectory")
+    dfs[file_path] = df.drop(columns="m3gnet_trajectory", errors="ignore")
 
 df_m3gnet = pd.concat(dfs.values()).round(4)
 
@@ -75,10 +75,10 @@ for row in tqdm(df_m3gnet.itertuples(), total=len(df_m3gnet)):
 
 
 # %% apply energy corrections
-out = MaterialsProject2020Compatibility().process_entries(
+processed = MaterialsProject2020Compatibility().process_entries(
     df_m3gnet[entry_col], verbose=True, clean=True
 )
-assert len(out) == len(df_m3gnet)
+assert len(processed) == len(df_m3gnet)
 
 
 # %% compute corrected formation energies

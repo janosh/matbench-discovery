@@ -43,7 +43,7 @@ for file_path in tqdm(file_paths):
         failed[file_path] = str(exc)
         continue
     # drop trajectory to save memory
-    dfs[file_path] = df.drop(columns="chgnet_trajectory")
+    dfs[file_path] = df.drop(columns="chgnet_trajectory", errors="ignore")
 
 
 print(f"{pd.Series(failed).value_counts()=}")
