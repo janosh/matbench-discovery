@@ -124,12 +124,10 @@ img_name = f"{SITE_FIGS}/e-above-hull-scatter-models"
 # save_fig(fig, f"{img_path}.svelte")
 
 
-# %%
+# %% scatter plot of DFT vs predicted hull distance with each model in separate subplot
 log_bin_cnt_col = f"log {bin_cnt_col}"
 df_bin[log_bin_cnt_col] = np.log1p(df_bin[bin_cnt_col]).round(2)
 
-
-# %% scatter plot of DFT vs predicted hull distance with each model in separate subplot
 n_cols = 2
 n_rows = math.ceil(len(models) / n_cols)
 

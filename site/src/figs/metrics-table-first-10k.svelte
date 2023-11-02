@@ -34,7 +34,7 @@
   background-color: #b0dd2f;
   color: #000000;
 }
-#T__row1_col3 {
+#T__row1_col3, #T__row2_col4 {
   background-color: #89d548;
   color: #000000;
 }
@@ -51,27 +51,19 @@
   color: #000000;
 }
 #T__row2_col0 {
-  background-color: #a5db36;
+  background-color: #c8e020;
   color: #000000;
 }
-#T__row2_col1, #T__row2_col2, #T__row10_col5 {
-  background-color: #6ccd5a;
+#T__row2_col1, #T__row2_col2 {
+  background-color: #9dd93b;
   color: #000000;
 }
-#T__row2_col3, #T__row7_col0 {
-  background-color: #34b679;
-  color: #f1f1f1;
-}
-#T__row2_col4 {
-  background-color: #5cc863;
+#T__row2_col3, #T__row2_col6 {
+  background-color: #6ece58;
   color: #000000;
 }
-#T__row2_col5 {
-  background-color: #2b758e;
-  color: #f1f1f1;
-}
-#T__row2_col6 {
-  background-color: #287d8e;
+#T__row2_col5, #T__row6_col6 {
+  background-color: #40bd72;
   color: #f1f1f1;
 }
 #T__row3_col0 {
@@ -158,8 +150,8 @@
   background-color: #1e9d89;
   color: #f1f1f1;
 }
-#T__row6_col6 {
-  background-color: #40bd72;
+#T__row7_col0 {
+  background-color: #34b679;
   color: #f1f1f1;
 }
 #T__row7_col3 {
@@ -218,6 +210,10 @@
   background-color: #7fd34e;
   color: #000000;
 }
+#T__row10_col5 {
+  background-color: #6ccd5a;
+  color: #000000;
+}
 #T_ :is(td, th):nth-child(6) { border-left: 1px dotted white; }
     table {
         scrollbar-width: none;  /* Firefox */
@@ -226,12 +222,7 @@
         display: none;  /* Safari and Chrome */
     }
 </style>
-<script lang="ts">
-      import { sortable } from 'svelte-zoo/actions'
-    </script>
-
-    <table class='roomy' use:sortable {...$$props}
-     id="T_">
+<table class='roomy' id="T_">
   <thead>
     <tr>
       <th class="index_name level0" >Model</th>
@@ -273,13 +264,13 @@
     </tr>
     <tr>
       <th id="T__level0_row2" class="row_heading level0 row2" >MACE</th>
-      <td id="T__row2_col0" class="data row2 col0" >0.84</td>
-      <td id="T__row2_col1" class="data row2 col1" >4.33</td>
-      <td id="T__row2_col2" class="data row2 col2" >0.72</td>
-      <td id="T__row2_col3" class="data row2 col3" >0.72</td>
-      <td id="T__row2_col4" class="data row2 col4" >0.14</td>
-      <td id="T__row2_col5" class="data row2 col5" >0.30</td>
-      <td id="T__row2_col6" class="data row2 col6" >-0.30</td>
+      <td id="T__row2_col0" class="data row2 col0" >0.88</td>
+      <td id="T__row2_col1" class="data row2 col1" >4.67</td>
+      <td id="T__row2_col2" class="data row2 col2" >0.78</td>
+      <td id="T__row2_col3" class="data row2 col3" >0.78</td>
+      <td id="T__row2_col4" class="data row2 col4" >0.12</td>
+      <td id="T__row2_col5" class="data row2 col5" >0.21</td>
+      <td id="T__row2_col6" class="data row2 col6" >0.39</td>
       <td id="T__row2_col7" class="data row2 col7" >1,580,395</td>
       <td id="T__row2_col8" class="data row2 col8" >UIP-GNN</td>
     </tr>
