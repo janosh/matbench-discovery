@@ -42,7 +42,7 @@ for file_path in tqdm(file_paths):
         continue
     df = pd.read_json(file_path).set_index("material_id")
     # drop trajectory to save memory
-    dfs[file_path] = df.drop(columns="mace_trajectory")
+    dfs[file_path] = df.drop(columns="mace_trajectory", errors="ignore")
 
 df_mace = pd.concat(dfs.values()).round(4)
 
