@@ -59,7 +59,7 @@ slurm_vars = slurm_submit(
 
 # %%
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
-out_path = f"{out_dir}/mace-preds-{slurm_array_task_id}.json.gz"
+out_path = f"{out_dir}/mace-preds-{slurm_array_task_id:>03}.json.gz"
 
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path=} already exists, exciting early")
