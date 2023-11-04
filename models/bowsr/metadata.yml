@@ -28,9 +28,13 @@ requirements:
 trained_for_benchmark: false
 
 training_set:
-  title: Graphs of MP
-  url: https://figshare.com/articles/dataset/7451351
-  size: 69_239
+  title: Graphs of MP 2019
+  url: https://figshare.com/articles/dataset/8097992
+  n_structures: 133_420
+  # we tested the Eform_MP_2019 checkpoint of MEGNet, the original 2018 version was trained on 'Graphs of MP 2018'
+  # title: Graphs of MP 2018
+  # url: https://figshare.com/articles/dataset/7451351
+  # n_structures: 69_239
 
 hyperparams:
   Optimizer Params:
