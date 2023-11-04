@@ -26,6 +26,7 @@
 </script>
 
 <Readme>
+  <span slot="model-count">{Object.keys(all_stats).length}&ensp;</span>
   <div slot="best-report">
     {#if best_model}
       {@const { model_name, F1, R2, DAF, repo, doi } = best_model}
