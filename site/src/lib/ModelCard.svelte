@@ -69,12 +69,17 @@
     {pretty_num(missing_preds, `,.0f`)}
     <small>({missing_percent})</small>
   </span>
-  <span style="grid-column: span 2;">
-    <Icon icon="mdi:database" inline />
-    Training set:
-    <a href={training_set.url}>{training_set.title}</a>
-    <small>({pretty_num(training_set.size)})</small>
-  </span>
+  {#if training_set}
+    {@const { n_structures, url, title, n_materials } = training_set}
+    <span style="grid-column: span 2;">
+      <Icon icon="mdi:database" inline />
+      Training set:
+      <a href={url}>{title}</a>
+      <small>
+        ({pretty_num(n_structures)}{#if n_materials}{` `}from {pretty_num(n_materials)} materials{/if})
+      </small>
+    </span>
+  {/if}
 </p>
 {#if show_details}
   <div transition:fade|fly={{ duration: 200 }}>
