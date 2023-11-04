@@ -4,6 +4,7 @@
   import { pretty_num } from 'elementari'
   import { fade, slide } from 'svelte/transition'
   import type { ModelData, ModelStatLabel } from '.'
+  import AuthorBrief from './AuthorBrief.svelte'
 
   export let data: ModelData
   export let stats: ModelStatLabel[] // [key, label, unit][]
@@ -86,27 +87,28 @@
     <section transition:slide={{ duration: 200 }}>
       <h3>Authors</h3>
       <ul>
-        {#each data.authors as { name, email, orcid, affiliation, url }}
+        {#each data.authors as author (author.name)}
           <li>
-            <span title={affiliation}>{name}</span>
-            {#if email}
-              <a href="mailto:{email}"><Icon icon="ion:ios-mail" inline /></a>
-            {/if}
-            {#if orcid}
-              <a href={orcid}><Icon icon="fa-brands:orcid" inline /></a>
-            {/if}
-            {#if url}
-              <a href={url}><Icon icon="ion:ios-globe" inline /></a>
-            {/if}
+            <AuthorBrief {author} />
           </li>
         {/each}
       </ul>
+      {#if data.trained_by}
+        <h3>Trained By</h3>
+        <ul>
+          {#each data.trained_by as author (author.name)}
+            <li>
+              <AuthorBrief {author} />
+            </li>
+          {/each}
+        </ul>
+      {/if}
     </section>
     <section transition:slide={{ duration: 200 }}>
       <h3>Package versions</h3>
       <ul>
         {#each Object.entries(data.requirements ?? {}) as [name, version]}
-          <li>
+          <li style="font-size: smaller;">
             {#if ![`aviary`].includes(name)}
               {@const href = `https://pypi.org/project/${name}/${version}`}
               {name}: <a {href} {...target}>{version}</a>
