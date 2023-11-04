@@ -24,7 +24,8 @@ export type ModelMetadata = {
   training_set: {
     title: string
     url: string
-    size: number
+    n_structures: number
+    n_materials?: number
   }
   hyperparams: Record<string, string | number>
   notes?: Record<string, string>

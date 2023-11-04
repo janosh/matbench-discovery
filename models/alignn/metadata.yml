@@ -32,8 +32,8 @@ trained_for_benchmark: true
 training_set: # model trained from specifically for MBD
   title: MP Computed Structure Entries
   url: https://figshare.com/ndownloader/files/40344436
-  size: 154_719
+  n_structures: 154_719
 # training_set: # NIST pre-trained model
 #   title: Graphs of MP
 #   url: https://figshare.com/articles/dataset/7451351
-#   size: 69_239
+#   n_structures: 69_239

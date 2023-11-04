@@ -164,7 +164,8 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    training_set:
      title: MPtrj
      url: https://figshare.com/articles/dataset/23713842
-     size: 1_580_395
+     n_structures: 1_580_395
+     n_materials: 145_923
 
    notes: # notes can have any key, be multiline and support markdown.
      description: This is how my model works...
