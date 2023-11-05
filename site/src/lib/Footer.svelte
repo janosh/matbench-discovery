@@ -53,11 +53,11 @@
     <kbd>cmd</kbd> + <kbd>j</kbd> to bring up these site options.
   </p>
   <p title="single click to hide a trace">
-    <kbd>single click</kbd> a legend handle to hide its corresponding trace in a plot
+    <kbd>single click</kbd> a figure legend handle to hide its corresponding trace in a plot
   </p>
   <p title="double click to hide all other traces">
-    <kbd>double click</kbd> the legend handle of any trace in a plot to hide all others. double
-    click again to show all.
+    <kbd>double click</kbd> the figure legend handle of any trace in a plot to hide all others.
+    double click again to show all.
   </p>
 </dialog>
 

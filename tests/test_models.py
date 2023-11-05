@@ -14,7 +14,7 @@ def test_model_dirs_have_metadata() -> None:
         "training_set": {
             "title": str,  # name of training set
             "url": str,  # url to e.g. figshare
-            "size": int,  # number of structures
+            "n_structures": int,  # number of structures
         },
     }
 

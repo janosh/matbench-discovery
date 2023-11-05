@@ -247,7 +247,7 @@
       <td id="T__row0_col4" class="data row0 col4" >0.06</td>
       <td id="T__row0_col5" class="data row0 col5" >0.11</td>
       <td id="T__row0_col6" class="data row0 col6" >0.81</td>
-      <td id="T__row0_col7" class="data row0 col7" >1,580,395</td>
+      <td id="T__row0_col7" class="data row0 col7" >1.6M <small>(145.9K)</small></td>
       <td id="T__row0_col8" class="data row0 col8" >UIP-GNN</td>
     </tr>
     <tr>
@@ -259,7 +259,7 @@
       <td id="T__row1_col4" class="data row1 col4" >0.10</td>
       <td id="T__row1_col5" class="data row1 col5" >0.16</td>
       <td id="T__row1_col6" class="data row1 col6" >0.62</td>
-      <td id="T__row1_col7" class="data row1 col7" >188,349</td>
+      <td id="T__row1_col7" class="data row1 col7" >188.3K <small>(62.8K)</small></td>
       <td id="T__row1_col8" class="data row1 col8" >UIP-GNN</td>
     </tr>
     <tr>
@@ -271,7 +271,7 @@
       <td id="T__row2_col4" class="data row2 col4" >0.12</td>
       <td id="T__row2_col5" class="data row2 col5" >0.21</td>
       <td id="T__row2_col6" class="data row2 col6" >0.39</td>
-      <td id="T__row2_col7" class="data row2 col7" >1,580,395</td>
+      <td id="T__row2_col7" class="data row2 col7" >1.6M <small>(145.9K)</small></td>
       <td id="T__row2_col8" class="data row2 col8" >UIP-GNN</td>
     </tr>
     <tr>
@@ -283,7 +283,7 @@
       <td id="T__row3_col4" class="data row3 col4" >0.17</td>
       <td id="T__row3_col5" class="data row3 col5" >0.24</td>
       <td id="T__row3_col6" class="data row3 col6" >0.27</td>
-      <td id="T__row3_col7" class="data row3 col7" >154,719</td>
+      <td id="T__row3_col7" class="data row3 col7" >154.7K</td>
       <td id="T__row3_col8" class="data row3 col8" >GNN</td>
     </tr>
     <tr>
@@ -295,7 +295,7 @@
       <td id="T__row4_col4" class="data row4 col4" >0.19</td>
       <td id="T__row4_col5" class="data row4 col5" >0.27</td>
       <td id="T__row4_col6" class="data row4 col6" >0.14</td>
-      <td id="T__row4_col7" class="data row4 col7" >154,719</td>
+      <td id="T__row4_col7" class="data row4 col7" >154.7K</td>
       <td id="T__row4_col8" class="data row4 col8" >GNN</td>
     </tr>
     <tr>
@@ -307,7 +307,7 @@
       <td id="T__row5_col4" class="data row5 col4" >0.21</td>
       <td id="T__row5_col5" class="data row5 col5" >0.29</td>
       <td id="T__row5_col6" class="data row5 col6" >0.03</td>
-      <td id="T__row5_col7" class="data row5 col7" >154,719</td>
+      <td id="T__row5_col7" class="data row5 col7" >154.7K</td>
       <td id="T__row5_col8" class="data row5 col8" >GNN</td>
     </tr>
     <tr>
@@ -319,7 +319,7 @@
       <td id="T__row6_col4" class="data row6 col4" >0.19</td>
       <td id="T__row6_col5" class="data row6 col5" >0.25</td>
       <td id="T__row6_col6" class="data row6 col6" >0.22</td>
-      <td id="T__row6_col7" class="data row6 col7" >154,719</td>
+      <td id="T__row6_col7" class="data row6 col7" >154.7K</td>
       <td id="T__row6_col8" class="data row6 col8" >Transformer</td>
     </tr>
     <tr>
@@ -331,7 +331,7 @@
       <td id="T__row7_col4" class="data row7 col4" >0.27</td>
       <td id="T__row7_col5" class="data row7 col5" >0.33</td>
       <td id="T__row7_col6" class="data row7 col6" >-1.10</td>
-      <td id="T__row7_col7" class="data row7 col7" >69,239</td>
+      <td id="T__row7_col7" class="data row7 col7" >133.4K</td>
       <td id="T__row7_col8" class="data row7 col8" >BO-GNN</td>
     </tr>
     <tr>
@@ -343,7 +343,7 @@
       <td id="T__row8_col4" class="data row8 col4" >0.33</td>
       <td id="T__row8_col5" class="data row8 col5" >0.36</td>
       <td id="T__row8_col6" class="data row8 col6" >-0.82</td>
-      <td id="T__row8_col7" class="data row8 col7" >69,239</td>
+      <td id="T__row8_col7" class="data row8 col7" >133.4K</td>
       <td id="T__row8_col8" class="data row8 col8" >GNN</td>
     </tr>
     <tr>
@@ -355,7 +355,7 @@
       <td id="T__row9_col4" class="data row9 col4" >0.36</td>
       <td id="T__row9_col5" class="data row9 col5" >0.43</td>
       <td id="T__row9_col6" class="data row9 col6" >-0.81</td>
-      <td id="T__row9_col7" class="data row9 col7" >154,719</td>
+      <td id="T__row9_col7" class="data row9 col7" >154.7K</td>
       <td id="T__row9_col8" class="data row9 col8" >Fingerprint</td>
     </tr>
     <tr>

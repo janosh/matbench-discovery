@@ -31,4 +31,5 @@ notes:
 training_set:
   title: MPF.2021.2.8
   url: https://figshare.com/articles/dataset/19470599
-  size: 188_349
+  n_structures: 188_349
+  n_materials: 62_783

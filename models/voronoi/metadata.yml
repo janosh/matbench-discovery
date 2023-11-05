@@ -26,7 +26,7 @@ trained_for_benchmark: true
 training_set:
   title: MP Computed Structure Entries
   url: https://figshare.com/ndownloader/files/40344436
-  size: 154_719
+  n_structures: 154_719
 
 notes:
   description: A random forest trained to map the combo of composition-based Magpie features and structure-based relaxation-invariant Voronoi tessellation features (bond angles, coordination numbers, ...) to DFT formation energies.

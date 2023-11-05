@@ -25,7 +25,7 @@
   training_set:
     title: MP Computed Structure Entries
     url: https://figshare.com/ndownloader/files/40344436
-    size: 154_719
+    n_structures: 154_719
 
   hyperparams:
     Ensemble Size: 10
@@ -67,7 +67,7 @@
   training_set:
     title: MP Computed Structure Entries
     url: https://figshare.com/ndownloader/files/40344436
-    size: 154_719
+    n_structures: 154_719
 
   hyperparams:
     Ensemble Size: 10

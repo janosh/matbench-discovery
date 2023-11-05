@@ -9,6 +9,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from pymatviz.io import df_to_html_table, df_to_pdf
+from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
@@ -31,10 +32,15 @@ for model in df_metrics:
     model_name = name_map.get(model, model)
     if model_name not in MODEL_METADATA:
         continue
-    n_structs = MODEL_METADATA[model_name]["training_set"]["size"]
+    n_structs = MODEL_METADATA[model_name]["training_set"]["n_structures"]
+    n_materials = MODEL_METADATA[model_name]["training_set"].get("n_materials")
 
-    df_metrics.loc[train_size_col, model] = f"{n_structs:,}"
-    df_metrics_10k.loc[train_size_col, model] = f"{n_structs:,}"
+    formatted = si_fmt(n_structs)
+    if n_materials:
+        formatted += f" <small>({si_fmt(n_materials)})</small>"
+
+    df_metrics.loc[train_size_col, model] = formatted
+    df_metrics_10k.loc[train_size_col, model] = formatted
 
 
 # %% add dummy classifier results to df_metrics
