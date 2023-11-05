@@ -1,6 +1,5 @@
 <script lang="ts">
-  import MetricsTable from '$figs/metrics-table.svelte'
-  import type { ModelData } from '$lib'
+  import { CaptionedMetricsTable, type ModelData } from '$lib'
   import Readme from '$root/readme.md'
   import { onMount } from 'svelte'
   import all_stats from './models/model-stats.json'
@@ -26,6 +25,7 @@
 </script>
 
 <Readme>
+  <span slot="model-count">{Object.keys(all_stats).length}&ensp;</span>
   <div slot="best-report">
     {#if best_model}
       {@const { model_name, F1, R2, DAF, repo, doi } = best_model}
@@ -36,5 +36,5 @@
       dummy selection in our already enriched search space).
     {/if}
   </div>
-  <MetricsTable slot="metrics-table" />
+  <CaptionedMetricsTable slot="metrics-table" />
 </Readme>

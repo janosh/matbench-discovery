@@ -40,7 +40,8 @@ trained_for_benchmark: false
 training_set:
   title: MPTrj
   url: https://figshare.com/articles/dataset/23713842
-  size: 1_580_395
+  n_structures: 1_580_395
+  n_materials: 145_923
 
 hyperparams:
   max_steps: 2000

@@ -118,7 +118,7 @@
         <!-- {#if model.training_set}
           <strong class="train-set">
             <Icon icon="ion:ios-warning" inline />
-            Custom training set: {model.training_set}
+            Custom training set: {model.training_set.title}
           </strong>
         {/if} -->
       </li>
