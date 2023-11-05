@@ -20,6 +20,7 @@ import wandb
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from plotly.validators.scatter.line import DashValidator
 from plotly.validators.scatter.marker import SymbolValidator
+from pymatviz.utils import styled_html_tag
 from tqdm import tqdm
 
 from matbench_discovery import STABILITY_THRESHOLD
@@ -37,16 +38,9 @@ plotly_colors = px.colors.qualitative.Plotly
 plotly_line_styles *= len(plotly_markers) // len(plotly_line_styles)
 plotly_colors *= len(plotly_markers) // len(plotly_colors)
 
-
-def plotly_unit(text: str) -> str:
-    """Wrap text in a span with decreased font size and weight to display units in
-    plotly labels.
-    """
-    style = "font-size: 0.8em; font-weight: lighter;"
-    return f"<span {style=}>({text})</span>"
-
-
-ev_per_atom = plotly_unit("eV/atom")
+ev_per_atom = styled_html_tag(
+    "(eV/atom)", tag="span", style="font-size: 0.8em; font-weight: lighter;"
+)
 
 # --- start global plot settings
 quantity_labels = dict(
