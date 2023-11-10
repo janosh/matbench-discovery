@@ -8,6 +8,7 @@ import pandas as pd
 from pymatviz import density_scatter, ptable_heatmap_plotly, spacegroup_sunburst
 from pymatviz.io import save_fig
 
+from matbench_discovery import id_col
 from matbench_discovery import plots as plots
 from matbench_discovery.data import df_wbm
 from matbench_discovery.preds import PRED_FILES
@@ -17,7 +18,6 @@ __author__ = "Janosh Riebesell"
 __date__ = "2023-07-23"
 
 module_dir = os.path.dirname(__file__)
-id_col = "material_id"
 pred_col = "e_form_per_atom_mace"
 
 

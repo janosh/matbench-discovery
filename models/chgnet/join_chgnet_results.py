@@ -13,6 +13,7 @@ import pandas as pd
 from pymatviz import density_scatter
 from tqdm import tqdm
 
+from matbench_discovery import id_col
 from matbench_discovery.data import as_dict_handler
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.preds import df_preds, e_form_col
@@ -38,7 +39,7 @@ for file_path in tqdm(file_paths):
     if file_path in dfs:
         continue
     try:
-        df = pd.read_json(file_path).set_index("material_id")
+        df = pd.read_json(file_path).set_index(id_col)
     except Exception as exc:
         failed[file_path] = str(exc)
         continue
@@ -74,5 +75,5 @@ df_chgnet.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
 df_chgnet.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
 
 # in_path = f"{module_dir}/2023-03-04-chgnet-wbm-IS2RE"
-# df_chgnet = pd.read_csv(f"{in_path}.csv.gz").set_index("material_id")
-# df_chgnet = pd.read_json(f"{in_path}.json.gz").set_index("material_id")
+# df_chgnet = pd.read_csv(f"{in_path}.csv.gz").set_index(id_col)
+# df_chgnet = pd.read_json(f"{in_path}.json.gz").set_index(id_col)

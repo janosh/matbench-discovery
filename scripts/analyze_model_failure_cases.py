@@ -16,7 +16,7 @@ from pymatviz import count_elements, plot_structure_2d, ptable_heatmap_plotly
 from pymatviz.io import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS
+from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, id_col
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.metrics import classify_stable
 from matbench_discovery.preds import (
@@ -36,7 +36,7 @@ fp_diff_col = "site_stats_fingerprint_init_final_norm_diff"
 
 
 # %%
-df_cse = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index("material_id")
+df_cse = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index(id_col)
 
 
 # %% plot the highest and lowest error structures before and after relaxation
@@ -132,7 +132,7 @@ for idx, model in enumerate(df_metrics):
             "FP norm diff: %{x}<br>"
             "error: %{y} eV/atom"
         ),
-        customdata=df_wbm.loc[errors.index][["material_id", "formula"]].values,
+        customdata=df_wbm.loc[errors.index][[id_col, "formula"]].values,
         legendrank=model_mae,
     )
 
@@ -153,7 +153,7 @@ fig.show()
 
 
 # %%
-df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index("material_id")
+df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index(id_col)
 train_count_col = "MP Occurrences"
 df_elem_counts = count_elements(df_mp.formula_pretty, count_mode="occurrence").to_frame(
     name=train_count_col
@@ -256,9 +256,7 @@ for idx, model in enumerate(df_metrics):
             "FP diff: %{x}<br>"
             "error: %{y}<extra></extra>"
         ),
-        customdata=df_preds[["material_id", "formula"]]
-        .loc[df_largest_fp_diff.index]
-        .values,
+        customdata=df_preds[[id_col, "formula"]].loc[df_largest_fp_diff.index].values,
         legendgroup=model,
         marker=dict(color=color),
         legendrank=model_mae,
@@ -321,7 +319,7 @@ fig = px.scatter(
     x=tsne_cols[0],
     y=tsne_cols[1],
     color=(df_wbm.bandgap_pbe > 1).map({True: "band gap", False: "no gap"}),
-    hover_name="material_id",
+    hover_name=id_col,
     hover_data=("formula",),
 )
 fig.show()

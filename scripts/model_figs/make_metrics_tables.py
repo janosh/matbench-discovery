@@ -6,13 +6,15 @@ pandas-styled HTML table and a plotly figure.
 # %%
 from __future__ import annotations
 
+import json
+
 import numpy as np
 import pandas as pd
 from pymatviz.io import df_to_html_table, df_to_pdf
 from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery import PDF_FIGS, SCRIPTS, SITE_FIGS
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.models import MODEL_METADATA
@@ -103,9 +105,12 @@ df_ont = pd.DataFrame(ontology, index=ontology_cols)
 
 
 # %%
+with open(f"{SCRIPTS}/metrics-which-is-better.json") as file:
+    better = json.load(file)
+
 R2_col = "R<sup>2</sup>"
-higher_is_better = {*f"DAF {R2_col} Precision Recall F1 Accuracy TPR TNR TP TN".split()}
-lower_is_better = {"MAE", "RMSE", "FPR", "FNR", "FP", "FN"}
+higher_is_better = {*better["higher_is_better"]} - {"R2"} | {R2_col}
+lower_is_better = {*better["lower_is_better"]}
 
 # if True, make metrics-table-megnet-uip-combos.(svelte|pdf) for SI
 # if False, make metrics-table.(svelte|pdf) for main text

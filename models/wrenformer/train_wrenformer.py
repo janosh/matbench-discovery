@@ -8,7 +8,7 @@ from importlib.metadata import version
 import pandas as pd
 from aviary.train import df_train_test_split, train_wrenformer
 
-from matbench_discovery import WANDB_PATH, timestamp, today
+from matbench_discovery import WANDB_PATH, id_col, timestamp, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 
@@ -51,7 +51,7 @@ print(f"\nJob started running {timestamp}")
 print(f"{job_name=}")
 print(f"{data_path=}")
 
-df = pd.read_csv(data_path).set_index("material_id", drop=False)
+df = pd.read_csv(data_path).set_index(id_col, drop=False)
 
 assert target_col in df, f"{target_col=} not in {list(df)}"
 assert input_col in df, f"{input_col=} not in {list(df)}"

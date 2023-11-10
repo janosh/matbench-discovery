@@ -16,7 +16,7 @@ from monty.json import MontyDecoder
 from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
 from tqdm import tqdm
 
-from matbench_discovery import FIGSHARE
+from matbench_discovery import FIGSHARE, id_col
 
 # repo URL to raw files on GitHub
 RAW_REPO_URL = "https://github.com/janosh/matbench-discovery/raw"
@@ -119,8 +119,8 @@ def load(
         print(f"\n\nvariable dump:\n{file=},\n{reader=}\n{kwargs=}")
         raise
 
-    if "material_id" in df:
-        df = df.set_index("material_id")
+    if id_col in df:
+        df = df.set_index(id_col)
     if hydrate:
         for col in df:
             if not isinstance(df[col].iloc[0], dict):
@@ -256,4 +256,4 @@ DATA_FILES = DataFiles()
 
 
 df_wbm = load("wbm_summary")
-df_wbm["material_id"] = df_wbm.index
+df_wbm[id_col] = df_wbm.index

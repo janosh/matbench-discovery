@@ -17,7 +17,7 @@ from pymatgen.io.jarvis import JarvisAtomsAdaptor
 from sklearn.metrics import r2_score
 from tqdm import tqdm
 
-from matbench_discovery import today
+from matbench_discovery import id_col, today
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.preds import e_form_col
@@ -36,7 +36,6 @@ model_name = "mp_e_form_alignn"  # pre-trained by NIST
 task_type = "IS2RE"
 target_col = e_form_col
 input_col = "initial_structure"
-id_col = "material_id"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 job_name = f"{model_name}-wbm-{task_type}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")

@@ -17,7 +17,7 @@ from aviary.predict import predict_from_wandb_checkpoints
 from aviary.wrenformer.data import df_to_in_mem_dataloader
 from aviary.wrenformer.model import Wrenformer
 
-from matbench_discovery import CHECKPOINT_DIR, WANDB_PATH, today
+from matbench_discovery import CHECKPOINT_DIR, WANDB_PATH, id_col, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.preds import e_form_col
@@ -46,7 +46,7 @@ slurm_vars = slurm_submit(
 
 # %%
 input_col = "wyckoff_spglib"
-df = pd.read_csv(data_path).dropna(subset=input_col).set_index("material_id")
+df = pd.read_csv(data_path).dropna(subset=input_col).set_index(id_col)
 
 assert e_form_col in df, f"{e_form_col=} not in {list(df)}"
 assert input_col in df, f"{input_col=} not in {list(df)}"

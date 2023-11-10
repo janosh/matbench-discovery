@@ -17,6 +17,7 @@ from dash.dependencies import Input, Output
 from m3gnet.models import Relaxer as M3gnetRelaxer
 from pymatgen.core import Lattice, Structure
 
+from matbench_discovery import id_col
 from matbench_discovery.data import df_wbm
 
 __author__ = "Janosh Riebesell"
@@ -27,9 +28,7 @@ module_dir = os.path.dirname(__file__)
 
 # %%
 init_struct_col = "initial_structure"
-df_cse = pd.read_json(f"{module_dir}/wbm-chgnet-bad-relax.json.gz").set_index(
-    "material_id"
-)
+df_cse = pd.read_json(f"{module_dir}/wbm-chgnet-bad-relax.json.gz").set_index(id_col)
 
 
 # %%

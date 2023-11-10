@@ -13,7 +13,7 @@ from pymatgen.core import Structure
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from matbench_discovery import CHECKPOINT_DIR, ROOT, WANDB_PATH, today
+from matbench_discovery import CHECKPOINT_DIR, ROOT, WANDB_PATH, id_col, today
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.preds import e_form_col as target_col
@@ -52,7 +52,7 @@ data_path = {
 }[task_type]
 input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
 
-df = pd.read_json(data_path).set_index("material_id")
+df = pd.read_json(data_path).set_index(id_col)
 
 df[target_col] = df_wbm[target_col]
 if task_type == "RS2RE":

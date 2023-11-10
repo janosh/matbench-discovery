@@ -18,7 +18,7 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from matbench_discovery import today
+from matbench_discovery import e_form_col, id_col, struct_col, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 
@@ -30,10 +30,8 @@ module_dir = os.path.dirname(__file__)
 
 # %%
 model_name = "alignn-mp-e_form"
-target_col = "formation_energy_per_atom"
-struct_col = "structure"
+target_col = e_form_col
 input_col = "atoms"
-id_col = "material_id"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 job_name = f"train-{model_name}"
 
@@ -48,7 +46,6 @@ config.output_dir = out_dir = os.getenv(
 
 slurm_vars = slurm_submit(
     job_name=job_name,
-    # partition="perlmuttter",
     account="matgen",
     time="4:0:0",
     out_dir=out_dir,
