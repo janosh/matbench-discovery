@@ -10,7 +10,7 @@ from pymatgen.core import Structure
 from pymatviz import density_scatter, plot_structure_2d, ptable_heatmap_plotly
 from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS
+from matbench_discovery import PDF_FIGS, id_col
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.preds import PRED_FILES
@@ -19,7 +19,6 @@ __author__ = "Janosh Riebesell"
 __date__ = "2023-03-06"
 
 module_dir = os.path.dirname(__file__)
-id_col = "material_id"
 
 
 # %%

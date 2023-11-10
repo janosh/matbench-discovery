@@ -10,7 +10,7 @@ from pymatviz.io import df_to_html_table, df_to_pdf, save_fig
 from pymatviz.ptable import ptable_heatmap_plotly
 from pymatviz.utils import add_identity_line, bin_df_cols
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery import PDF_FIGS, SITE_FIGS, id_col
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.preds import df_each_pred, df_preds, each_true_col
 
@@ -35,7 +35,7 @@ title = f"{len(df_bad)} {model} preds<br>with {max_each_true=}, {min_each_pred=}
 
 
 # %%
-df_mp = pd.read_csv(DATA_FILES.mp_energies).set_index("material_id")
+df_mp = pd.read_csv(DATA_FILES.mp_energies).set_index(id_col)
 df_mp[spg_col] = df_mp[wyckoff_col].str.split("_").str[2].astype(int)
 df_mp["isopointal_proto_from_aflow"] = df_mp[wyckoff_col].map(
     get_isopointal_proto_from_aflow

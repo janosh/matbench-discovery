@@ -12,7 +12,7 @@ from pymatviz import (
 )
 from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD
+from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD, id_col
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.energy import mp_elem_reference_entries
@@ -180,14 +180,14 @@ save_fig(fig, f"{PDF_FIGS}/mp-elemental-ref-energies.pdf")
 # many models struggle on the halogens in per-element error periodic table heatmaps
 # https://janosh.github.io/matbench-discovery/models
 df_2d_tsne = pd.read_csv(f"{module_dir}/tsne/one-hot-112-composition-2d.csv.gz")
-df_2d_tsne = df_2d_tsne.set_index("material_id")
+df_2d_tsne = df_2d_tsne.set_index(id_col)
 
 df_3d_tsne = pd.read_csv(f"{module_dir}/tsne/one-hot-112-composition-3d.csv.gz")
 model = "Wrenformer"
 df_3d_tsne = pd.read_csv(
     f"{module_dir}/tsne/one-hot-112-composition+{model}-each-err-3d-metric=eucl.csv.gz"
 )
-df_3d_tsne = df_3d_tsne.set_index("material_id")
+df_3d_tsne = df_3d_tsne.set_index(id_col)
 
 df_wbm[list(df_2d_tsne)] = df_2d_tsne
 df_wbm[list(df_3d_tsne)] = df_3d_tsne
@@ -205,7 +205,7 @@ fig = px.scatter(
     x="2d t-SNE 1",
     y="2d t-SNE 2",
     color=color_col,
-    hover_name="material_id",
+    hover_name=id_col,
     hover_data=("formula", each_true_col),
     range_color=(0, clr_range_max),
 )
@@ -219,7 +219,7 @@ fig = px.scatter_3d(
     y="3d t-SNE 2",
     z="3d t-SNE 3",
     color=color_col,
-    custom_data=["material_id", "formula", each_true_col, color_col],
+    custom_data=[id_col, "formula", each_true_col, color_col],
     range_color=(0, clr_range_max),
 )
 fig.data[0].hovertemplate = (

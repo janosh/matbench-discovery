@@ -221,12 +221,17 @@
     display: flex;
     justify-content: space-between;
   }
-  section.metrics > ul > li > strong {
-    background-color: rgba(0, 0, 0, 0.3);
+  section.metrics > ul > li > :is(label, strong) {
     padding: 0 4pt;
     border-radius: 3pt;
   }
+  section.metrics > ul > li > strong {
+    background-color: rgba(0, 0, 0, 0.25);
+  }
   section.metrics > ul > li.active > strong {
     background-color: teal;
+  }
+  section.metrics > ul > li.active > label {
+    font-weight: bold;
   }
 </style>

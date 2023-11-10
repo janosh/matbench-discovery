@@ -18,7 +18,7 @@ from pymatgen.core.trajectory import Trajectory
 from pymatgen.io.ase import AseAtomsAdaptor
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, timestamp, today
+from matbench_discovery import ROOT, id_col, timestamp, today
 from matbench_discovery.data import DATA_FILES, as_dict_handler, df_wbm
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
@@ -73,7 +73,6 @@ data_path = {
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
 e_pred_col = "mace_energy"
-id_col = "material_id"
 max_steps = 500
 force_max = 0.05  # Run until the forces are smaller than this in eV/A
 checkpoint = f"{ROOT}/models/mace/checkpoints/{model_name}.model"

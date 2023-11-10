@@ -18,7 +18,7 @@ from pymatviz import density_scatter
 from pymatviz.io import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import SITE_FIGS, today
+from matbench_discovery import SITE_FIGS, id_col, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.plots import pio
@@ -156,7 +156,7 @@ def increment_wbm_material_id(wbm_id: str) -> str:
 
 
 df_wbm.index = df_wbm.index.map(increment_wbm_material_id)
-df_wbm.index.name = "material_id"
+df_wbm.index.name = id_col
 assert df_wbm.index[0] == "wbm-1-1"
 assert df_wbm.index[-1] == "wbm-5-23308"
 
@@ -296,13 +296,13 @@ col_map = {
     "e_form": "e_form_per_atom_wbm",
     "e_hull": "e_above_hull_wbm",
     "gap": "bandgap_pbe",
-    "id": "material_id",
+    "id": id_col,
 }
 # WBM summary was shared twice, once on google drive, once on materials cloud
 # download both and check for consistency
 df_summary = pd.read_csv(
     f"{module_dir}/raw/wbm-summary.txt", sep="\t", names=col_map.values()
-).set_index("material_id")
+).set_index(id_col)
 
 df_summary_bz2 = pd.read_csv(
     f"{mat_cloud_url}&filename=summary.txt.bz2", sep="\t"
@@ -618,7 +618,7 @@ fingerprints_path = f"{module_dir}/site-stats.json.gz"
 suggest = "not found, run scripts/compute_struct_fingerprints.py to generate"
 fp_diff_col = "site_stats_fingerprint_init_final_norm_diff"
 try:
-    df_fp = pd.read_json(fingerprints_path).set_index("material_id")
+    df_fp = pd.read_json(fingerprints_path).set_index(id_col)
     df_summary[fp_diff_col] = df_fp[fp_diff_col]
 except FileNotFoundError:
     print(f"{fingerprints_path=} {suggest}")
@@ -633,11 +633,11 @@ df_summary.round(6).to_csv(f"{module_dir}/{today}-wbm-summary.csv")
 # %% only here to load data for later inspection
 if False:
     df_summary = pd.read_csv(f"{module_dir}/2022-10-19-wbm-summary.csv.gz").set_index(
-        "material_id"
+        id_col
     )
     df_wbm = pd.read_json(
         f"{module_dir}/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
-    ).set_index("material_id")
+    ).set_index(id_col)
 
     df_wbm["cse"] = [
         ComputedStructureEntry.from_dict(dct)

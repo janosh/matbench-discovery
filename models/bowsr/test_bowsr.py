@@ -14,7 +14,7 @@ from maml.apps.bowsr.optimizer import BayesianOptimizer
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import timestamp, today
+from matbench_discovery import id_col, timestamp, today
 from matbench_discovery.data import DATA_FILES, as_dict_handler
 from matbench_discovery.slurm import slurm_submit
 
@@ -74,7 +74,7 @@ print(f"{data_path = }")
 print(f"{out_path=}")
 
 df_in: pd.DataFrame = np.array_split(
-    pd.read_json(data_path).set_index("material_id"), slurm_array_task_count
+    pd.read_json(data_path).set_index(id_col), slurm_array_task_count
 )[slurm_array_task_id - 1]
 
 
@@ -142,7 +142,7 @@ for material_id in tqdm(structures, desc="Relaxing", disable=None):
 
 # %%
 df_out = pd.DataFrame(relax_results).T
-df_out.index.name = "material_id"
+df_out.index.name = id_col
 
 df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
 

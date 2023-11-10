@@ -1,8 +1,9 @@
 <script lang="ts">
   import type { ModelStatLabel, ModelStats } from '$lib'
   import { ModelCard } from '$lib'
+  import metrics_order from '$root/scripts/metrics-which-is-better.json'
   import Icon from '@iconify/svelte'
-  import { interpolatePuOr } from 'd3-scale-chromatic'
+  import { interpolateCividis } from 'd3-scale-chromatic'
   import { ColorBar } from 'elementari'
   import { RadioButtons, Tooltip } from 'svelte-zoo'
   import { flip } from 'svelte/animate'
@@ -17,7 +18,7 @@
   let order: 'asc' | 'desc' = `desc`
   let show_n_best: number = data.models.length // show only best models
   const min_models: number = 2
-  const lower_is_better = [`RMSE`, `MAE`, `Run Time (h)`]
+  const { lower_is_better } = metrics_order
 
   $: models = data.models.sort((model_1, model_2) => {
     const [val_1, val_2] = [model_1[sort_by], model_2[sort_by]]
@@ -54,16 +55,16 @@
   $: order = lower_is_better.includes(sort_by) ? `asc` : `desc`
 
   function bg_color(val: number, min: number, max: number) {
-    return interpolatePuOr(1 - (val - min) / (max - min)).replace(`)`, `, 0.4)`)
+    return interpolateCividis(1 - (val - min) / (max - min)).replace(`)`, `, 0.5)`)
   }
 </script>
 
 <div style="margin: 3vw;">
-  <h1>Interactive Leaderboard</h1>
+  <h1>Leaderboard</h1>
 
   <p style="text-align: center;">
-    Sort models by stability classification metrics, by their tun time or regressions
-    metrics for predicted convex hull distance.
+    Sort models by stability classification metrics, by predicted convex hull distance
+    regressions metrics or by their tun time.
   </p>
 
   <span>
@@ -93,8 +94,8 @@
   </ul>
 
   <legend>
-    heading color: best
-    <ColorBar color_scale={interpolatePuOr} style="min-width: min(70vw, 400px);" />
+    heading color best
+    <ColorBar color_scale={interpolateCividis} style="min-width: min(70vw, 400px);" />
     worst
   </legend>
 

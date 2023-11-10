@@ -14,7 +14,7 @@ import wandb
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, today
+from matbench_discovery import ROOT, id_col, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 
@@ -62,7 +62,7 @@ if os.path.isfile(out_path):
 
 print(f"{data_path=}")
 df_in: pd.DataFrame = np.array_split(
-    pd.read_json(data_path).set_index("material_id"), slurm_array_task_count
+    pd.read_json(data_path).set_index(id_col), slurm_array_task_count
 )[slurm_array_task_id - 1]
 
 if data_name == "mp":  # extract structure dicts from ComputedStructureEntry

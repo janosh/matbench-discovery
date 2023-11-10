@@ -16,6 +16,7 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz import density_scatter
 from tqdm import tqdm
 
+from matbench_discovery import id_col
 from matbench_discovery.data import DATA_FILES, as_dict_handler, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.preds import e_form_col
@@ -40,7 +41,7 @@ dfs: dict[str, pd.DataFrame] = {}
 for file_path in tqdm(file_paths):
     if file_path in dfs:
         continue
-    df = pd.read_json(file_path).set_index("material_id")
+    df = pd.read_json(file_path).set_index(id_col)
     # drop trajectory to save memory
     dfs[file_path] = df.drop(columns="mace_trajectory", errors="ignore")
 
@@ -48,9 +49,7 @@ df_mace = pd.concat(dfs.values()).round(4)
 
 
 # %%
-df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(
-    "material_id"
-)
+df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(id_col)
 
 entry_col = "computed_structure_entry"
 df_cse[entry_col] = [
@@ -108,5 +107,5 @@ df_bad[e_form_col] = df_wbm[e_form_col]
 df_bad.to_csv(f"{out_path}-bad.csv")
 
 # in_path = f"{module_dir}/2023-08-14-mace-wbm-IS2RE-FIRE"
-# df_mace = pd.read_csv(f"{in_path}.csv.gz").set_index("material_id")
-# df_mace = pd.read_json(f"{in_path}.json.gz").set_index("material_id")
+# df_mace = pd.read_csv(f"{in_path}.csv.gz").set_index(id_col)
+# df_mace = pd.read_json(f"{in_path}.json.gz").set_index(id_col)

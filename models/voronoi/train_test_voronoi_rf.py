@@ -13,7 +13,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.metrics import r2_score
 from sklearn.pipeline import Pipeline
 
-from matbench_discovery import ROOT, today
+from matbench_discovery import ROOT, id_col, today
 from matbench_discovery.data import DATA_FILES, df_wbm, glob_to_df
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.preds import e_form_col as test_e_form_col
@@ -49,14 +49,14 @@ slurm_vars = slurm_submit(
 
 # %%
 train_path = f"{module_dir}/2022-11-25-features-mp/voronoi-features-mp-*.csv.bz2"
-df_train = glob_to_df(train_path).set_index("material_id")
+df_train = glob_to_df(train_path).set_index(id_col)
 print(f"{df_train.shape=}")
 
-df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index("material_id")
+df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index(id_col)
 train_e_form_col = "formation_energy_per_atom"
 
 test_path = f"{module_dir}/2022-11-18-features-wbm-{task_type}.csv.bz2"
-df_test = pd.read_csv(test_path).set_index("material_id")
+df_test = pd.read_csv(test_path).set_index(id_col)
 print(f"{df_test.shape=}")
 
 

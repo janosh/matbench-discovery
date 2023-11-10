@@ -29,7 +29,6 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Chemistry",
   "Topic :: Scientific/Engineering :: Physics",
 ]
-
 requires-python = ">=3.9"
 dependencies = [
   "matplotlib",

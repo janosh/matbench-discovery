@@ -13,7 +13,7 @@ from pymatviz.io import save_fig
 from pymatviz.utils import bin_df_cols, df_ptable
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, SITE_MODELS
+from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, SITE_MODELS, id_col
 from matbench_discovery.data import df_wbm
 from matbench_discovery.preds import (
     df_each_err,
@@ -90,10 +90,10 @@ if normalized:
 y_col = "percent" if normalized else "count"
 
 df_melt = df_struct_counts.reset_index().melt(
-    var_name=(clr_col := "Dataset"), value_name=y_col, id_vars=(id_col := "symbol")
+    var_name=(clr_col := "Dataset"), value_name=y_col, id_vars=(symbol_col := "symbol")
 )
-fig = df_melt.sort_values([y_col, id_col]).plot.bar(
-    x=id_col,
+fig = df_melt.sort_values([y_col, symbol_col]).plot.bar(
+    x=symbol_col,
     y=y_col,
     backend="plotly",
     title="Number of structures containing each element",
@@ -205,13 +205,13 @@ df_wbm[n_examp_for_rarest_elem_col] = [
 df_melt = (
     df_each_err.abs()
     .reset_index()
-    .melt(var_name="Model", value_name=each_pred_col, id_vars="material_id")
-    .set_index("material_id")
+    .melt(var_name="Model", value_name=each_pred_col, id_vars=id_col)
+    .set_index(id_col)
 )
 df_melt[n_examp_for_rarest_elem_col] = df_wbm[n_examp_for_rarest_elem_col]
 
 df_bin = bin_df_cols(df_melt, [n_examp_for_rarest_elem_col, each_pred_col], ["Model"])
-df_bin = df_bin.reset_index().set_index("material_id")
+df_bin = df_bin.reset_index().set_index(id_col)
 df_bin["formula"] = df_wbm.formula
 
 
