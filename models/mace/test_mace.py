@@ -39,21 +39,22 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 relax_cell = True
 model_name = [
     # MACE trained on M3GNet training set by original MACE authors
-    "2023-07-14-mace-ilyes-MPF-2021-2-8-big-128-6",
+    # 9M = model size (number of trainable params), 9,255,168 to be exact
+    "2023-07-14-mace-9M-ilyas-universal-2-big-128-6",
     # MACE trained by Yuan Chiang on CHGNet training set
-    "2023-08-14-mace-yuan-mptrj-04",
-    "2023-09-03-mace-yuan-mptrj-slower-14-lr-13_run-3",
-    "2023-10-29-mace-pbenner-mptrj-no-conditional-loss",
-][-1]
+    "2023-08-14-mace-2M-yuan-mptrj-04",
+    "2023-09-03-mace-2M-yuan-mptrj-slower-14-lr-13_run-3",
+    "2023-10-29-mace-16M-pbenner-mptrj-no-conditional-loss",
+][0]
 
 slurm_vars = slurm_submit(
     job_name=job_name,
     out_dir=out_dir,
     account="matgen",
-    time="4:55:0",
+    time="9:55:0",
     array=f"1-{slurm_array_task_count}",
-    # slurm_flags="--qos shared --constraint gpu --gpus 1",
-    slurm_flags="--qos shared --constraint cpu --mem 16G",
+    slurm_flags="--qos shared --constraint gpu --gpus 1",
+    # slurm_flags="--qos shared --constraint cpu --mem 16G",
 )
 
 

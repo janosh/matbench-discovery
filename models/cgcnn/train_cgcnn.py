@@ -72,7 +72,7 @@ structs = df_aug.pop(input_col)
 for idx in trange(n_perturb, desc="Generating perturbed structures"):
     df_aug[input_col] = [perturb_structure(x) for x in structs]
     df_in = pd.concat(
-        [df_in, df_aug.set_index(f"{x}-aug={idx+1}" for x in df_aug.index)]
+        [df_in, df_aug.set_index(f"{x}-aug={idx + 1}" for x in df_aug.index)]
     )
 
 del df_aug

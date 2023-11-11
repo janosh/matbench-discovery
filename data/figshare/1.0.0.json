@@ -4,9 +4,13 @@
       "https://figshare.com/ndownloader/files/41233560",
       "2023-06-02-pbenner-best-alignn-model.pth.zip"
     ],
-    "mace_checkpoint": [
+    "mace_checkpoint_1": [
       "https://figshare.com/ndownloader/files/42374049",
       "2023-08-14-mace-yuan-trained-mptrj-04.model"
+    ],
+    "mace_checkpoint_2": [
+      "https://figshare.com/ndownloader/files/43117273",
+      "2023-10-29-mace-16M-pbenner-mptrj-no-conditional-loss.model"
     ],
     "mp_computed_structure_entries": [
       "https://figshare.com/ndownloader/files/40344436",

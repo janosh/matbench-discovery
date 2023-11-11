@@ -10,7 +10,8 @@
 
   const descriptions = {
     alignn_checkpoint: "ALIGNN model trained on <code>mp_computed_structure_entries</code>",
-    mace_checkpoint: "MACE model trained on the MPtrj dataset (https://figshare.com/articles/dataset/23713842)",
+    mace_checkpoint_1: "2M params MACE model trained by Yuan Chiang on MPtrj (https://figshare.com/articles/dataset/23713842)",
+    mace_checkpoint_2: "16M params MACE model trained by Philipp Benner on MPtrj (https://figshare.com/articles/dataset/23713842)",
     mp_computed_structure_entries:
       `JSON-Serialized MP ${cse_link} objects containing relaxed structures and DFT final energies`,
     mp_elemental_ref_entries: `Minimum energy ComputedEntry for each element in MP`,

@@ -197,7 +197,7 @@ for col in ("All models false neg", "All models false pos"):
         if normalized
         else elem_counts[col],
         color_bar=dict(title=col),
-        precision=".3f",
+        fmt=".3f",
         cscale_range=[0, 0.1],
     )
     fig.show()

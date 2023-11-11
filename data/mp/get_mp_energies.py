@@ -111,7 +111,7 @@ ax = df.plot.scatter(
 # most points lie on line y=x for x > 0 and y = 0 for x < 0.
 n_above_line = sum(mask_above_line)
 ax.set(
-    title=f"{n_above_line:,} / {len(df):,} = {n_above_line/len(df):.1%} "
+    title=f"{n_above_line:,} / {len(df):,} = {n_above_line / len(df):.1%} "
     "MP materials with\nenergy_above_hull - decomposition_enthalpy.clip(0) > 0.1"
 )
 # ax.figure.savefig(f"{module_dir}/mp-e-above-hull-vs-decomp-enth.webp", dpi=300)
