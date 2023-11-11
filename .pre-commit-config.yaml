@@ -7,7 +7,7 @@ default_install_hook_types: [pre-commit, commit-msg]
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.2
+    rev: v0.1.5
     hooks:
       - id: ruff
         args: [--fix]
@@ -30,7 +30,7 @@ repos:
       - id: trailing-whitespace
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.6.1
+    rev: v1.7.0
     hooks:
       - id: mypy
         additional_dependencies: [types-pyyaml, types-requests]
@@ -56,7 +56,7 @@ repos:
         exclude: ^(site/src/figs/.+\.svelte|data/wbm/20.+\..+|site/src/routes/.+\.(yaml|json)|changelog.md)$
 
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.52.0
+    rev: v8.53.0
     hooks:
       - id: eslint
         types: [file]

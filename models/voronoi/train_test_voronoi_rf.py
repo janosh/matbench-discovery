@@ -90,7 +90,7 @@ wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 feature_names = featurizer.feature_labels()
 n_nans = df_train[feature_names].isna().any(axis=1).sum()
 
-print(f"train set NaNs: {n_nans:,} / {len(df_train):,} = {n_nans/len(df_train):.3%}")
+print(f"train set NaNs: {n_nans:,} / {len(df_train):,} = {n_nans / len(df_train):.3%}")
 
 df_train = df_train.dropna(subset=feature_names)
 
@@ -110,7 +110,7 @@ model.fit(df_train[feature_names], df_train[train_e_form_col])
 
 # %%
 n_nans = df_test[feature_names].isna().any(axis=1).sum()
-print(f"test set NaNs: {n_nans:,} / {len(df_train):,} = {n_nans/len(df_train):.1%}")
+print(f"test set NaNs: {n_nans:,} / {len(df_train):,} = {n_nans / len(df_train):.1%}")
 
 df_test = df_test.dropna(subset=feature_names)
 

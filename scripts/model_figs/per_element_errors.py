@@ -116,7 +116,7 @@ df_elem_err[test_set_std_col] = (
 
 # %% plot per-element std dev of DFT hull dist
 fig = ptable_heatmap_plotly(
-    df_elem_err[test_set_std_col], precision=".2f", colorscale="Inferno"
+    df_elem_err[test_set_std_col], fmt=".2f", colorscale="Inferno"
 )
 fig.show()
 
@@ -136,7 +136,7 @@ for model in (*df_metrics, model_mean_err_col):
         per_elem_err /= df_elem_err[test_set_std_col]
         per_elem_err.name = f"{model} (normalized by test set std)"
     fig = ptable_heatmap_plotly(
-        per_elem_err, precision=".2f", colorscale="Inferno", cscale_range=cs_range
+        per_elem_err, fmt=".2f", colorscale="Inferno", cscale_range=cs_range
     )
     fig.show()
 
