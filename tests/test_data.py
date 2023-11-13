@@ -12,7 +12,7 @@ import pytest
 from pymatgen.core import Lattice, Structure
 from pytest import CaptureFixture
 
-from matbench_discovery import FIGSHARE, ROOT, id_col
+from matbench_discovery import FIGSHARE, ROOT, formula_col, id_col
 from matbench_discovery.data import (
     DATA_FILES,
     as_dict_handler,
@@ -114,7 +114,7 @@ wbm_summary_expected_cols = {
     "e_form_per_atom_uncorrected",
     "e_form_per_atom_wbm",
     "e_above_hull_wbm",
-    "formula",
+    formula_col,
     "n_sites",
     "uncorrected_energy",
     "uncorrected_energy_from_cse",
@@ -198,7 +198,7 @@ def test_as_dict_handler() -> None:
 def test_df_wbm() -> None:
     assert df_wbm.shape == (256_963, 16)
     assert df_wbm.index.name == id_col
-    assert set(df_wbm) > {"bandgap_pbe", "formula", id_col}
+    assert set(df_wbm) > {"bandgap_pbe", formula_col, id_col}
 
 
 @pytest.mark.parametrize("pattern", ["*df.csv", "*df.json"])

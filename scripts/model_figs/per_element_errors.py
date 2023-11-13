@@ -13,7 +13,14 @@ from pymatviz.io import save_fig
 from pymatviz.utils import bin_df_cols, df_ptable
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, SITE_MODELS, id_col
+from matbench_discovery import (
+    PDF_FIGS,
+    ROOT,
+    SITE_FIGS,
+    SITE_MODELS,
+    formula_col,
+    id_col,
+)
 from matbench_discovery.data import df_wbm
 from matbench_discovery.preds import (
     df_each_err,
@@ -34,7 +41,7 @@ for df in (df_each_err, df_preds):
 # %% project average model error onto periodic table
 frac_comp_col = "fractional composition"
 df_wbm[frac_comp_col] = [
-    Composition(comp).fractional_composition for comp in tqdm(df_wbm.formula)
+    Composition(comp).fractional_composition for comp in tqdm(df_wbm[formula_col])
 ]
 
 df_frac_comp = pd.DataFrame(comp.as_dict() for comp in df_wbm[frac_comp_col]).set_index(
@@ -197,7 +204,7 @@ save_fig(fig, f"{PDF_FIGS}/element-prevalence-vs-error.pdf")
 n_examp_for_rarest_elem_col = "Examples for rarest element in structure"
 df_wbm[n_examp_for_rarest_elem_col] = [
     df_elem_err[train_count_col].loc[list(map(str, Composition(formula)))].min()
-    for formula in tqdm(df_wbm.formula)
+    for formula in tqdm(df_wbm[formula_col])
 ]
 
 
@@ -212,7 +219,7 @@ df_melt[n_examp_for_rarest_elem_col] = df_wbm[n_examp_for_rarest_elem_col]
 
 df_bin = bin_df_cols(df_melt, [n_examp_for_rarest_elem_col, each_pred_col], ["Model"])
 df_bin = df_bin.reset_index().set_index(id_col)
-df_bin["formula"] = df_wbm.formula
+df_bin[formula_col] = df_wbm[formula_col]
 
 
 # %%
@@ -223,7 +230,7 @@ fig = px.scatter(
     color="Model",
     facet_col="Model",
     facet_col_wrap=3,
-    hover_data=dict(material_id=True, formula=True, Model=False),
+    hover_data={id_col: True, formula_col: True, "Model": False},
     title="Absolute errors in model-predicted E<sub>above hull</sub> vs. occurrence "
     "count in MP training set<br>of least prevalent element in structure",
 )

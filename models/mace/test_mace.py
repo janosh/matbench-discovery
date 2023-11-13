@@ -18,7 +18,7 @@ from pymatgen.core.trajectory import Trajectory
 from pymatgen.io.ase import AseAtomsAdaptor
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, id_col, timestamp, today
+from matbench_discovery import ROOT, formula_col, id_col, timestamp, today
 from matbench_discovery.data import DATA_FILES, as_dict_handler, df_wbm
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
@@ -60,7 +60,8 @@ slurm_vars = slurm_submit(
 
 # %%
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
-out_path = f"{out_dir}/mace-preds-{slurm_array_task_id:>03}.json.gz"
+slurm_job_id = os.getenv("SLURM_JOB_ID", "debug")
+out_path = f"{out_dir}/{slurm_job_id}-{slurm_array_task_id:>03}.json.gz"
 
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path=} already exists, exciting early")
@@ -164,7 +165,7 @@ df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
 df_wbm[e_pred_col] = df_out[e_pred_col]
 table = wandb.Table(
     dataframe=df_wbm.dropna()[
-        ["uncorrected_energy", e_pred_col, "formula"]
+        ["uncorrected_energy", e_pred_col, formula_col]
     ].reset_index()
 )
 

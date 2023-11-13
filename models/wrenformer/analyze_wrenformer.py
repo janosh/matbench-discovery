@@ -10,7 +10,7 @@ from pymatviz.io import df_to_html_table, df_to_pdf, save_fig
 from pymatviz.ptable import ptable_heatmap_plotly
 from pymatviz.utils import add_identity_line, bin_df_cols
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, id_col
+from matbench_discovery import PDF_FIGS, SITE_FIGS, formula_col, id_col
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.preds import df_each_pred, df_preds, each_true_col
 
@@ -85,7 +85,7 @@ save_fig(fig, f"{SITE_FIGS}/spacegroup-sunburst-{model}-failures.svelte")
 
 
 # %%
-fig = ptable_heatmap_plotly(df_bad.formula)
+fig = ptable_heatmap_plotly(df_bad[formula_col])
 fig.layout.title = f"Elements in {title}"
 fig.layout.margin = dict(l=0, r=0, t=50, b=0)
 fig.show()

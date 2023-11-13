@@ -12,7 +12,7 @@ import plotly.express as px
 from pymatviz.io import save_fig
 from pymatviz.utils import add_identity_line, bin_df_cols
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery import PDF_FIGS, SITE_FIGS, formula_col
 from matbench_discovery.plots import clf_colors
 from matbench_discovery.preds import (
     df_metrics,
@@ -31,7 +31,7 @@ legend = dict(x=1, y=0, xanchor="right", yanchor="bottom", title=None)
 
 # %%
 facet_col = "Model"
-hover_cols = (each_true_col, "formula")
+hover_cols = (each_true_col, formula_col)
 models = list(df_metrics.T.MAE.nsmallest(6).index)  # top 6 models by MAE
 models = list(df_metrics)  # all models
 

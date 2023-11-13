@@ -1,6 +1,5 @@
-"""This script converts the MPTrj relaxation trajectories from JSON to
-extended XYZ format. The JSON data was downloaded from
-https://figshare.com/articles/dataset/23713842.
+"""This script converts the MPTrj relaxation trajectories downloaded from
+https://figshare.com/articles/dataset/23713842 from JSON to extended XYZ format.
 """
 
 import json

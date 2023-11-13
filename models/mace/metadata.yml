@@ -52,7 +52,7 @@ hyperparams:
 
 notes:
   description: |
-    The Many-body Atomic Convolutional Energies (MACE) is a higher-order equivariant message-passing neural network for fast and accurate force fields.
+    MACE is a higher-order equivariant message-passing neural network for fast and accurate force fields.
   training: Using pre-trained model released with paper. Training set unspecified at time of writing.
   corrections: None
 # n_params: 2_026_624 # 2023-09-03-mace-yuan-mptrj-slower-14-lr-13_run-3

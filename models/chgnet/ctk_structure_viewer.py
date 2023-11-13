@@ -3,7 +3,7 @@ from __future__ import annotations
 import pandas as pd
 from crystal_toolkit.helpers.utils import hook_up_fig_with_struct_viewer
 
-from matbench_discovery import id_col
+from matbench_discovery import formula_col, id_col
 from matbench_discovery.preds import PRED_FILES
 
 __author__ = "Janosh Riebesell"
@@ -47,7 +47,7 @@ fig = df_plot.reset_index().plot.scatter(
     y=e_form_2000,
     backend="plotly",
     hover_name=id_col,
-    hover_data=["formula"],
+    hover_data=[formula_col],
     labels=plot_labels,
     size=e_form_abs_diff,
     color=e_form_abs_diff,
