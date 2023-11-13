@@ -12,7 +12,14 @@ from pymatviz import (
 )
 from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD, id_col
+from matbench_discovery import (
+    PDF_FIGS,
+    ROOT,
+    SITE_FIGS,
+    STABILITY_THRESHOLD,
+    formula_col,
+    id_col,
+)
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.energy import mp_elem_reference_entries
@@ -35,8 +42,10 @@ df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False)
 
 
 # %%
-wbm_occu_counts = count_elements(df_wbm.formula, count_mode="occurrence").astype(int)
-wbm_comp_counts = count_elements(df_wbm.formula, count_mode="composition")
+wbm_occu_counts = count_elements(df_wbm[formula_col], count_mode="occurrence").astype(
+    int
+)
+wbm_comp_counts = count_elements(df_wbm[formula_col], count_mode="composition")
 
 mp_occu_counts = count_elements(df_mp.formula_pretty, count_mode="occurrence").astype(
     int
@@ -60,16 +69,16 @@ for dataset, count_mode, elem_counts in all_counts:
 df_wbm["step"] = df_wbm.index.str.split("-").str[1].astype(int)
 assert df_wbm.step.between(1, 5).all()
 for batch in range(1, 6):
-    count_elements(df_wbm[df_wbm.step == batch].formula).to_json(
+    count_elements(df_wbm[df_wbm.step == batch][formula_col]).to_json(
         f"{data_page}/wbm-element-counts-{batch=}.json"
     )
 
 # export element counts by arity (how many elements in the formula)
 comp_col = "composition"
-df_wbm[comp_col] = df_wbm.formula.map(Composition)
+df_wbm[comp_col] = df_wbm[formula_col].map(Composition)
 
 for arity, df_mp in df_wbm.groupby(df_wbm[comp_col].map(len)):
-    count_elements(df_mp.formula).to_json(
+    count_elements(df_mp[formula_col]).to_json(
         f"{data_page}/wbm-element-counts-{arity=}.json"
     )
 
@@ -206,7 +215,7 @@ fig = px.scatter(
     y="2d t-SNE 2",
     color=color_col,
     hover_name=id_col,
-    hover_data=("formula", each_true_col),
+    hover_data=(formula_col, each_true_col),
     range_color=(0, clr_range_max),
 )
 fig.show()
@@ -219,7 +228,7 @@ fig = px.scatter_3d(
     y="3d t-SNE 2",
     z="3d t-SNE 3",
     color=color_col,
-    custom_data=[id_col, "formula", each_true_col, color_col],
+    custom_data=[id_col, formula_col, each_true_col, color_col],
     range_color=(0, clr_range_max),
 )
 fig.data[0].hovertemplate = (

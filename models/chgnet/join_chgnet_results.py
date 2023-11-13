@@ -13,7 +13,7 @@ import pandas as pd
 from pymatviz import density_scatter
 from tqdm import tqdm
 
-from matbench_discovery import id_col
+from matbench_discovery import formula_col, id_col
 from matbench_discovery.data import as_dict_handler
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.preds import df_preds, e_form_col
@@ -54,11 +54,11 @@ df_chgnet = pd.concat(dfs.values()).round(4)
 
 # %% compute corrected formation energies
 e_form_chgnet_col = "e_form_per_atom_chgnet"
-df_chgnet["formula"] = df_preds.formula
+df_chgnet[formula_col] = df_preds[formula_col]
 df_chgnet[e_form_chgnet_col] = [
     get_e_form_per_atom(dict(energy=ene, composition=formula))
     for formula, ene in tqdm(
-        df_chgnet.set_index("formula").chgnet_energy.items(), total=len(df_chgnet)
+        df_chgnet.set_index(formula_col).chgnet_energy.items(), total=len(df_chgnet)
     )
 ]
 df_preds[e_form_chgnet_col] = df_chgnet[e_form_chgnet_col]

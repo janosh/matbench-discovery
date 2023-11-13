@@ -11,7 +11,7 @@ from crystal_toolkit.helpers.utils import hook_up_fig_with_struct_viewer
 from pymatviz.io import save_fig
 from pymatviz.utils import add_identity_line
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, id_col
+from matbench_discovery import PDF_FIGS, SITE_FIGS, formula_col, id_col
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.preds import (
     df_preds,
@@ -50,7 +50,7 @@ material_classes = {
 n_structs = 200
 
 for material_cls, pattern in material_classes.items():
-    df_subset = df_preds[df_preds["formula"].str.match(pattern)]
+    df_subset = df_preds[df_preds[formula_col].str.match(pattern)]
     df_plot = df_subset.nlargest(n_structs, model_mean_err_col).round(2)
 
     fig = df_plot.plot.scatter(
@@ -60,7 +60,7 @@ for material_cls, pattern in material_classes.items():
         size="n_sites",
         backend="plotly",
         hover_name=id_col,
-        hover_data=["formula"],
+        hover_data=[formula_col],
         color_continuous_scale="Turbo",
         range_x=[-0.5, 4],
         range_y=[-0.5, 4],

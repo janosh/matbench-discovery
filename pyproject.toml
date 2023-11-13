@@ -60,6 +60,7 @@ running-models = [
 
   "aviary@git+https://github.com/CompRhys/aviary",
   "m3gnet",
+  "mace@git+https://github.com/ACEsuit/mace",
   "maml",
   "megnet",
 ]

@@ -13,7 +13,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.metrics import r2_score
 from sklearn.pipeline import Pipeline
 
-from matbench_discovery import ROOT, id_col, today
+from matbench_discovery import ROOT, formula_col, id_col, today
 from matbench_discovery.data import DATA_FILES, df_wbm, glob_to_df
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.preds import e_form_col as test_e_form_col
@@ -123,7 +123,7 @@ df_wbm[pred_col] = df_test[pred_col]
 df_wbm[pred_col].round(4).to_csv(out_path)
 
 table = wandb.Table(
-    dataframe=df_wbm[["formula", test_e_form_col, pred_col]].reset_index()
+    dataframe=df_wbm[[formula_col, test_e_form_col, pred_col]].reset_index()
 )
 
 df_wbm[pred_col].isna().sum()

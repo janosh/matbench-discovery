@@ -18,7 +18,7 @@ from pymatviz import density_scatter
 from pymatviz.io import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import SITE_FIGS, id_col, today
+from matbench_discovery import SITE_FIGS, formula_col, id_col, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.plots import pio
@@ -289,7 +289,7 @@ df_wbm["formula_from_cse"] = [
 
 # %%
 col_map = {
-    "# comp": "formula",
+    "# comp": formula_col,
     "nsites": "n_sites",
     "vol": "volume",
     "e": "uncorrected_energy",
@@ -319,7 +319,7 @@ pd.testing.assert_frame_equal(
 
 assert sum(no_id_mask := df_summary.index.isna()) == 6, f"{sum(no_id_mask)=}"
 # the 'None' materials have 0 volume, energy, n_sites, bandgap, etc.
-assert all(df_summary[no_id_mask].drop(columns=["formula"]) == 0)
+assert all(df_summary[no_id_mask].drop(columns=[formula_col]) == 0)
 assert len(df_summary.query("volume > 0")) == len(df_wbm) + len(nan_init_structs_ids)
 # make sure dropping materials with 0 volume removes exactly 6 materials, the same ones
 # listed in bad_struct_ids above
@@ -378,13 +378,13 @@ for mat_id, cse in df_wbm.computed_structure_entry.items():
 
 # sort formulas alphabetically
 df_summary["alph_formula"] = [
-    Composition(x).alphabetical_formula for x in df_summary.formula
+    Composition(x).alphabetical_formula for x in df_summary[formula_col]
 ]
 # alphabetical formula and original formula differ due to spaces, number 1 after element
 # symbols (FeO vs Fe1 O1), and element order (FeO vs OFe)
-assert sum(df_summary.alph_formula != df_summary.formula) == 257_483
+assert sum(df_summary.alph_formula != df_summary[formula_col]) == 257_483
 
-df_summary["formula"] = df_summary.pop("alph_formula")
+df_summary[formula_col] = df_summary.pop("alph_formula")
 
 
 # %% write initial structures and computed structure entries to compressed json
@@ -404,10 +404,10 @@ for fname, cols in (
 # df_summary and df_wbm formulas differ because summary formulas are reduced while
 # df_wbm formulas are not (e.g. Ac6 U2 vs Ac3 U1 in summary). unreduced is more
 # informative so we use it.
-assert sum(df_summary.formula != df_wbm.formula_from_cse) == 114_273
-assert sum(df_summary.formula == df_wbm.formula_from_cse) == 143_214
+assert sum(df_summary[formula_col] != df_wbm.formula_from_cse) == 114_273
+assert sum(df_summary[formula_col] == df_wbm.formula_from_cse) == 143_214
 
-df_summary.formula = df_wbm.formula_from_cse
+df_summary[formula_col] = df_wbm.formula_from_cse
 
 
 # fix bad energy which is 0 in df_summary but a more realistic -63.68 in CSE

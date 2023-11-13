@@ -16,7 +16,7 @@ from pymatviz import count_elements, plot_structure_2d, ptable_heatmap_plotly
 from pymatviz.io import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, id_col
+from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, formula_col, id_col
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.metrics import classify_stable
 from matbench_discovery.preds import (
@@ -132,7 +132,7 @@ for idx, model in enumerate(df_metrics):
             "FP norm diff: %{x}<br>"
             "error: %{y} eV/atom"
         ),
-        customdata=df_wbm.loc[errors.index][[id_col, "formula"]].values,
+        customdata=df_wbm.loc[errors.index][[id_col, formula_col]].values,
         legendrank=model_mae,
     )
 
@@ -161,7 +161,7 @@ df_elem_counts = count_elements(df_mp.formula_pretty, count_mode="occurrence").t
 n_examp_for_rarest_elem_col = "Examples for rarest element in structure"
 df_wbm[n_examp_for_rarest_elem_col] = [
     df_elem_counts[train_count_col].loc[list(map(str, Composition(formula)))].min()
-    for formula in tqdm(df_wbm.formula)
+    for formula in tqdm(df_wbm[formula_col])
 ]
 df_preds[n_examp_for_rarest_elem_col] = df_wbm[n_examp_for_rarest_elem_col]
 
@@ -190,7 +190,7 @@ normalized = True
 elem_counts: dict[str, pd.Series] = {}
 for col in ("All models false neg", "All models false pos"):
     elem_counts[col] = elem_counts.get(
-        col, count_elements(df_preds[df_preds[col]].formula)
+        col, count_elements(df_preds[df_preds[col]][formula_col])
     )
     fig = ptable_heatmap_plotly(
         elem_counts[col] / df_elem_counts[train_count_col]
@@ -209,7 +209,7 @@ for col in ("All models false neg", "All models false pos"):
 # fraction and average over all test set structures
 frac_comp_col = "fractional composition"
 df_wbm[frac_comp_col] = [
-    Composition(comp).fractional_composition for comp in tqdm(df_wbm.formula)
+    Composition(comp).fractional_composition for comp in tqdm(df_wbm[formula_col])
 ]
 
 df_frac_comp = pd.json_normalize(
@@ -256,7 +256,7 @@ for idx, model in enumerate(df_metrics):
             "FP diff: %{x}<br>"
             "error: %{y}<extra></extra>"
         ),
-        customdata=df_preds[[id_col, "formula"]].loc[df_largest_fp_diff.index].values,
+        customdata=df_preds[[id_col, formula_col]].loc[df_largest_fp_diff.index].values,
         legendgroup=model,
         marker=dict(color=color),
         legendrank=model_mae,
@@ -320,7 +320,7 @@ fig = px.scatter(
     y=tsne_cols[1],
     color=(df_wbm.bandgap_pbe > 1).map({True: "band gap", False: "no gap"}),
     hover_name=id_col,
-    hover_data=("formula",),
+    hover_data=(formula_col,),
 )
 fig.show()
 

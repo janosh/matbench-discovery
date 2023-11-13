@@ -10,7 +10,7 @@ from pymatgen.core import Structure
 from pymatviz import density_scatter, plot_structure_2d, ptable_heatmap_plotly
 from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS, id_col
+from matbench_discovery import PDF_FIGS, formula_col, id_col
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.preds import PRED_FILES
@@ -26,7 +26,7 @@ df_chgnet = df_chgnet_v030 = pd.read_csv(PRED_FILES.CHGNet)
 df_chgnet_v020 = pd.read_csv(
     f"{module_dir}/2023-03-06-chgnet-0.2.0-wbm-IS2RE.csv.gz", index_col=id_col
 )
-df_chgnet["formula"] = df_wbm.formula
+df_chgnet[formula_col] = df_wbm[formula_col]
 
 e_form_2000 = "e_form_per_atom_chgnet_relax_steps_2000"
 e_form_500 = "e_form_per_atom_chgnet_relax_steps_500"
@@ -51,7 +51,7 @@ df_diff.reset_index().plot.scatter(
     x=e_form_500,
     y=e_form_2000,
     hover_name=id_col,
-    hover_data=["formula"],
+    hover_data=[formula_col],
     backend="plotly",
     title=f"{len(df_diff)} structures have > {min_e_diff} eV/atom energy diff after "
     "longer relaxation",
@@ -59,7 +59,7 @@ df_diff.reset_index().plot.scatter(
 
 
 # %%
-fig = ptable_heatmap_plotly(df_bad.formula)
+fig = ptable_heatmap_plotly(df_bad[formula_col])
 title = "structures with larger error<br>after longer relaxation"
 fig.layout.title.update(text=f"{len(df_diff)} {title}", x=0.4, y=0.9)
 fig.show()

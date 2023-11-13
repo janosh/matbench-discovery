@@ -16,7 +16,7 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz import density_scatter
 from tqdm import tqdm
 
-from matbench_discovery import id_col
+from matbench_discovery import formula_col, id_col
 from matbench_discovery.data import DATA_FILES, as_dict_handler, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.preds import e_form_col
@@ -80,11 +80,11 @@ assert len(processed) == len(df_mace)
 
 # %% compute corrected formation energies
 e_form_mace_col = "e_form_per_atom_mace"
-df_mace["formula"] = df_wbm.formula
+df_mace[formula_col] = df_wbm[formula_col]
 df_mace[e_form_mace_col] = [
     get_e_form_per_atom(dict(energy=cse.energy, composition=formula))
     for formula, cse in tqdm(
-        df_mace.set_index("formula")[entry_col].items(), total=len(df_mace)
+        df_mace.set_index(formula_col)[entry_col].items(), total=len(df_mace)
     )
 ]
 df_wbm[e_form_mace_col] = df_mace[e_form_mace_col]
@@ -106,6 +106,6 @@ df_bad = df_mace[bad_mask].drop(columns=[entry_col, struct_col])
 df_bad[e_form_col] = df_wbm[e_form_col]
 df_bad.to_csv(f"{out_path}-bad.csv")
 
-# in_path = f"{module_dir}/2023-08-14-mace-wbm-IS2RE-FIRE"
+# in_path = f"{module_dir}/2023-11-02-mace-wbm-IS2RE-FIRE"
 # df_mace = pd.read_csv(f"{in_path}.csv.gz").set_index(id_col)
 # df_mace = pd.read_json(f"{in_path}.json.gz").set_index(id_col)
