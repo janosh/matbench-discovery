@@ -4,7 +4,6 @@ import os
 import os.path as osp
 
 import numpy as np
-import wget
 from tqdm.auto import tqdm
 
 from ase import units
@@ -16,7 +15,7 @@ __author__ = "Yuan Chiang"
 __date__ = "2023-08-10"
 
 mptrj_path = wget.download("https://figshare.com/ndownloader/files/41619375")
-# mptrj_path = "./MPtrj_2022.9_full.json"
+mptrj_path = "./MPtrj_2022.9_full.json"
 
 with open(mptrj_path, "r") as f:
     json_data = json.load(f)
@@ -35,12 +34,12 @@ combined = []
 for material_id in tqdm(json_data):
     fout_path = osp.join(mptrj_extxyz_prefix, f"{material_id}.extxyz")
 
-    for trajectory_id in json_data[material_id]:
-        if osp.exists(fout_path):
-            traj = read(fout_path, index=":", format="extxyz")
-            combined.append(traj)
-            continue
+    if osp.exists(fout_path):
+        traj = read(fout_path, index=":", format="extxyz")
+        combined.extend(traj)
+        continue
 
+    for trajectory_id in json_data[material_id]:
         block = copy.deepcopy(json_data[material_id][trajectory_id])
         try:
             structure = Structure.from_dict(block.pop("structure"))
