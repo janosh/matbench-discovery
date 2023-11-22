@@ -13,7 +13,9 @@ __author__ = "Yuan Chiang"
 __date__ = "2023-08-10"
 
 module_dir = os.path.dirname(__file__)
-mptrj_path = "./MPtrj_2022.9_full.json"
+mptrj_path = f"{module_dir}/MPtrj_2022.9_full.json"
+# MPtrj figshare URL
+# https://figshare.com/articles/dataset/23713842
 urllib.request.urlretrieve(
     "https://figshare.com/ndownloader/files/41619375", mptrj_path
 )
@@ -34,6 +36,7 @@ for material_id in tqdm(json_data):
         continue
 
     for trajectory_id in json_data[material_id]:
+        # copy to since can't modify dict while iterating over it
         block = copy.deepcopy(json_data[material_id][trajectory_id])
         try:
             structure = Structure.from_dict(block.pop("structure"))
