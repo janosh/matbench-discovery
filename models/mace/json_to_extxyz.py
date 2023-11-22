@@ -2,6 +2,7 @@ import copy
 import json
 import os
 import os.path as osp
+import wget
 
 import numpy as np
 from tqdm.auto import tqdm
@@ -20,14 +21,14 @@ mptrj_path = "./MPtrj_2022.9_full.json"
 with open(mptrj_path, "r") as f:
     json_data = json.load(f)
 
-pretty_json_string = json.dumps(json_data, indent=4, ensure_ascii=False)
+#pretty_json_string = json.dumps(json_data, indent=4, ensure_ascii=False)
 
-mptrj_pretty_path = osp.join(os.curdir, "mptrj_2022.9_pretty.json")
+#mptrj_pretty_path = osp.join(os.curdir, "mptrj_2022.9_pretty.json")
 mptrj_extxyz_prefix = osp.join(os.curdir, "mptrj-gga-ggapu")
 os.makedirs(mptrj_extxyz_prefix, exist_ok=True)
 
-with open(mptrj_pretty_path, "r") as f:
-    json_data = json.load(f)
+#with open(mptrj_pretty_path, "r") as f:
+#    json_data = json.load(f)
 
 combined = []
 
