@@ -1,4 +1,3 @@
-import copy
 import json
 import os
 import urllib.request
@@ -36,34 +35,26 @@ for material_id in tqdm(json_data):
         continue
 
     for trajectory_id in json_data[material_id]:
-        # copy to since can't modify dict while iterating over it
-        block = copy.deepcopy(json_data[material_id][trajectory_id])
+        block = json_data[material_id][trajectory_id]
         try:
-            structure = Structure.from_dict(block.pop("structure"))
+            atoms = Structure.from_dict(block["structure"]).to_ase_atoms()
 
-            forces = block.pop("force", None)
-            magmoms = block.pop("magmom", None)
-            stress = block.pop("stress", None)
+            mp_id = block.get("mp_id")
+            assert mp_id == material_id, f"{mp_id=} != {material_id=}"
 
-            uncorrected_total_energy = block.pop("uncorrected_total_energy", None)
-            mp_id = block.get("mp_id", None)
-
-            atoms = structure.to_ase_atoms()
-
-            if forces:
+            if uncorrected_total_energy := block.get("uncorrected_total_energy"):
+                atoms.info["energy"] = uncorrected_total_energy
+            if forces := block.get("force"):
                 atoms.arrays["forces"] = np.array(forces)
-            if magmoms:
+            if magmoms := block.get("magmom"):
                 atoms.arrays["magmoms"] = np.array(magmoms)
-            if stress:
+            if stress := block.get("stress"):
                 # kB to eV/A^3
                 atoms.info["stress"] = np.array(stress) * 1e-1 * ase.units.GPa
-            if uncorrected_total_energy:
-                atoms.info["energy"] = uncorrected_total_energy
 
-            for key, value in block.items():
-                atoms.info[key] = value
-
-            assert mp_id == material_id
+            special_keys = {"uncorrected_total_energy", "force", "magmom", "stress"}
+            for key in {*block} - special_keys:
+                atoms.info[key] = block[key]
 
             ase.io.write(xyz_path, atoms, append=True, format="extxyz")
 
