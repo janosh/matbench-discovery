@@ -1,13 +1,11 @@
 # package install
 *.egg-info
 dist
-build
 
 # cache
 __pycache__
 
 # datasets
-*.json
 *.json.gz
 *.json.bz2
 *.csv.bz2
