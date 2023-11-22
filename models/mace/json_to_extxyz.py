@@ -36,6 +36,7 @@ for material_id in tqdm(json_data):
 
     for trajectory_id in json_data[material_id]:
         block = json_data[material_id][trajectory_id]
+        task_id, calc_id, ionic_step = trajectory_id.split("-")
         try:
             atoms = Structure.from_dict(block["structure"]).to_ase_atoms()
 
@@ -54,7 +55,12 @@ for material_id in tqdm(json_data):
 
             special_keys = {"uncorrected_total_energy", "force", "magmom", "stress"}
             for key in {*block} - special_keys:
-                atoms.info[key] = block[key]
+                if block[key] is not None:
+                    atoms.info[key] = block[key]
+
+            atoms.info["task_id"] = task_id
+            atoms.info["calc_id"] = calc_id
+            atoms.info["ionic_step"] = ionic_step
 
             ase.io.write(xyz_path, atoms, append=True, format="extxyz")
 
