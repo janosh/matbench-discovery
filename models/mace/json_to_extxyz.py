@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import urllib.request
 
 import ase.io
@@ -36,7 +37,12 @@ for material_id in tqdm(json_data):
 
     for trajectory_id in json_data[material_id]:
         block = json_data[material_id][trajectory_id]
-        task_id, calc_id, ionic_step = trajectory_id.split("-")
+        match = re.match(r"(mp-\d+)-(\d+)-(\d+)", trajectory_id)
+        if match:
+            task_id, calc_id, ionic_step = match.groups()
+        else:
+            print(f"Failed to parse {trajectory_id}")
+            continue
         try:
             atoms = Structure.from_dict(block["structure"]).to_ase_atoms()
 
