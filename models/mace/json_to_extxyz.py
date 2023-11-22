@@ -43,7 +43,7 @@ for material_id in tqdm(json_data):
             match = re.match(r"(mp-\d+)-(\d+)-(\d+)", trajectory_id)
             if not match:
                 raise ValueError(f"Invalid {trajectory_id=}")
-            
+
             task_id, calc_id, ionic_step = match.groups()
             atoms.info["task_id"] = task_id
             atoms.info["calc_id"] = int(calc_id)
