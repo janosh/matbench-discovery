@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import urllib.request
 
 import ase.io
@@ -39,6 +40,15 @@ for material_id in tqdm(json_data):
         try:
             atoms = Structure.from_dict(block["structure"]).to_ase_atoms()
 
+            match = re.match(r"(mp-\d+)-(\d+)-(\d+)", trajectory_id)
+            if not match:
+                raise ValueError(f"Invalid {trajectory_id=}")
+
+            task_id, calc_id, ionic_step = match.groups()
+            atoms.info["task_id"] = task_id
+            atoms.info["calc_id"] = int(calc_id)
+            atoms.info["ionic_step"] = int(ionic_step)
+
             mp_id = block.get("mp_id")
             assert mp_id == material_id, f"{mp_id=} != {material_id=}"
 
@@ -50,11 +60,12 @@ for material_id in tqdm(json_data):
                 atoms.arrays["magmoms"] = np.array(magmoms)
             if stress := block.get("stress"):
                 # kB to eV/A^3
-                atoms.info["stress"] = np.array(stress) * 1e-1 * ase.units.GPa
+                atoms.info["stress"] = np.array(stress) * -1e-1 * ase.units.GPa
 
             special_keys = {"uncorrected_total_energy", "force", "magmom", "stress"}
             for key in {*block} - special_keys:
-                atoms.info[key] = block[key]
+                if val := atoms.get(key):
+                    atoms.info[key] = val
 
             ase.io.write(xyz_path, atoms, append=True, format="extxyz")
 
