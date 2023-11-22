@@ -29,19 +29,14 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Chemistry",
   "Topic :: Scientific/Engineering :: Physics",
 ]
-
 requires-python = ">=3.9"
 dependencies = [
   "matplotlib",
   "numpy",
-  # tmp: shouldn't be needed, used to be included in output_formatting
-  "jinja2",
-  # output_formatting needed for pandas Stylers
-  # see https://github.com/pandas-dev/pandas/blob/-/pyproject.toml
-  "pandas[output_formatting]>=2.0.0",
+  "pandas>=2.0.0",
   "plotly",
   "pymatgen",
-  "pymatviz[export-figs]",
+  "pymatviz[export-figs,df-pdf-export]",
   "scikit-learn",
   "scipy",
   "tqdm",
@@ -65,12 +60,13 @@ running-models = [
 
   "aviary@git+https://github.com/CompRhys/aviary",
   "m3gnet",
+  "mace@git+https://github.com/ACEsuit/mace",
   "maml",
   "megnet",
 ]
 3d-structures = ["crystaltoolkit"]
+df-to-pdf = ["jinja2"]
 fetch-data = ["gdown"]
-df-pdf-export = ["pdfCropMargins", "weasyprint"]
 
 [tool.setuptools.packages.find]
 include = ["matbench_discovery*"]

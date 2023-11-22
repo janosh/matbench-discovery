@@ -12,7 +12,7 @@ import pytest
 from pymatgen.core import Lattice, Structure
 from pytest import CaptureFixture
 
-from matbench_discovery import FIGSHARE, ROOT
+from matbench_discovery import FIGSHARE, ROOT, formula_col, id_col
 from matbench_discovery.data import (
     DATA_FILES,
     as_dict_handler,
@@ -23,7 +23,7 @@ from matbench_discovery.data import (
 )
 
 with open(f"{FIGSHARE}/{figshare_versions[-1]}.json") as file:
-    figshare_urls = json.load(file)
+    figshare_urls = json.load(file)["files"]
 
 structure = Structure(
     lattice=Lattice.cubic(5),
@@ -54,7 +54,7 @@ def test_load(
     # intercept HTTP requests and write dummy df to disk instead
     with patch("urllib.request.urlretrieve") as url_retrieve:
         # dummy df with random floats and material_id column
-        df_csv = pd._testing.makeDataFrame().reset_index(names="material_id")
+        df_csv = pd._testing.makeDataFrame().reset_index(names=id_col)
 
         writer = dummy_df_serialized.to_json if ".json" in filepath else df_csv.to_csv
         url_retrieve.side_effect = lambda _url, path: writer(path)
@@ -114,7 +114,7 @@ wbm_summary_expected_cols = {
     "e_form_per_atom_uncorrected",
     "e_form_per_atom_wbm",
     "e_above_hull_wbm",
-    "formula",
+    formula_col,
     "n_sites",
     "uncorrected_energy",
     "uncorrected_energy_from_cse",
@@ -197,8 +197,8 @@ def test_as_dict_handler() -> None:
 
 def test_df_wbm() -> None:
     assert df_wbm.shape == (256_963, 16)
-    assert df_wbm.index.name == "material_id"
-    assert set(df_wbm) > {"bandgap_pbe", "formula", "material_id"}
+    assert df_wbm.index.name == id_col
+    assert set(df_wbm) > {"bandgap_pbe", formula_col, id_col}
 
 
 @pytest.mark.parametrize("pattern", ["*df.csv", "*df.json"])

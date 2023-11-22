@@ -14,7 +14,7 @@ from maml.apps.bowsr.optimizer import BayesianOptimizer
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import timestamp, today
+from matbench_discovery import id_col, timestamp, today
 from matbench_discovery.data import DATA_FILES, as_dict_handler
 from matbench_discovery.slurm import slurm_submit
 
@@ -49,8 +49,8 @@ slurm_vars = slurm_submit(
     out_dir=out_dir,
     partition="skylake",
     account="LEE-SL3-CPU",
-    time="12:0:0",
-    # --time 2h is probably enough but best be safe.
+    time="11:55:0",
+    # --time=2:0:0 is probably enough but best be safe.
     array=f"1-{slurm_array_task_count}%{slurm_max_parallel}",
     # --mem 12000 avoids slurmstepd: error: Detected 1 oom-kill event(s)
     # Some of your processes may have been killed by the cgroup out-of-memory handler.
@@ -63,7 +63,8 @@ slurm_vars = slurm_submit(
 
 # %%
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
-out_path = f"{out_dir}/bowsr-preds-{slurm_array_task_id}.json.gz"
+slurm_job_id = os.getenv("SLURM_JOB_ID", "debug")
+out_path = f"{out_dir}/{slurm_job_id}-{slurm_array_task_id:>03}.json.gz"
 
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path=} already exists, exciting early")
@@ -73,7 +74,7 @@ print(f"{data_path = }")
 print(f"{out_path=}")
 
 df_in: pd.DataFrame = np.array_split(
-    pd.read_json(data_path).set_index("material_id"), slurm_array_task_count
+    pd.read_json(data_path).set_index(id_col), slurm_array_task_count
 )[slurm_array_task_id - 1]
 
 
@@ -141,7 +142,7 @@ for material_id in tqdm(structures, desc="Relaxing", disable=None):
 
 # %%
 df_out = pd.DataFrame(relax_results).T
-df_out.index.name = "material_id"
+df_out.index.name = id_col
 
 df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
 

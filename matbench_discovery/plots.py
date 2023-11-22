@@ -4,11 +4,8 @@ from __future__ import annotations
 
 import functools
 import math
-import os
-import subprocess
 from collections import defaultdict
 from collections.abc import Sequence
-from pathlib import Path
 from typing import Any, Literal
 
 import matplotlib.pyplot as plt
@@ -21,9 +18,9 @@ import scipy.interpolate
 import scipy.stats
 import wandb
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
-from pandas.io.formats.style import Styler
 from plotly.validators.scatter.line import DashValidator
 from plotly.validators.scatter.marker import SymbolValidator
+from pymatviz.utils import styled_html_tag
 from tqdm import tqdm
 
 from matbench_discovery import STABILITY_THRESHOLD
@@ -41,16 +38,9 @@ plotly_colors = px.colors.qualitative.Plotly
 plotly_line_styles *= len(plotly_markers) // len(plotly_line_styles)
 plotly_colors *= len(plotly_markers) // len(plotly_colors)
 
-
-def plotly_unit(text: str) -> str:
-    """Wrap text in a span with decreased font size and weight to display units in
-    plotly labels.
-    """
-    style = "font-size: 0.8em; font-weight: lighter;"
-    return f"<span {style=}>({text})</span>"
-
-
-ev_per_atom = plotly_unit("eV/atom")
+ev_per_atom = styled_html_tag(
+    "(eV/atom)", tag="span", style="font-size: 0.8em; font-weight: lighter;"
+)
 
 # --- start global plot settings
 quantity_labels = dict(
@@ -92,6 +82,7 @@ model_labels = dict(
     megnet_rs2re="MEGNet RS2RE",
     voronoi_rf="Voronoi RF",
     wrenformer="Wrenformer",
+    pfp="PFP",
     dft="DFT",
     wbm="WBM",
 )
@@ -628,7 +619,7 @@ def rolling_mae_vs_hull_dist(
                     color=plotly_colors[idx], dash=plotly_line_styles[idx], width=3
                 )
             # marker_spacing = 2
-            # trace = go.Scatter(
+            # fig.add_scatter(
             #     x=trace.x[::marker_spacing],
             #     y=trace.y[::marker_spacing],
             #     mode="markers",
@@ -636,7 +627,6 @@ def rolling_mae_vs_hull_dist(
             #     showlegend=False,
             #     legendgroup=getattr(trace, "legendgroup", None),
             # )
-            # fig.add_trace(trace)
     return fig, df_rolling_err, df_err_std
 
 
@@ -713,7 +703,7 @@ def cumulative_metrics(
         )
 
         # precision aka positive predictive value (PPV)
-        n_total_pos = true_pos_cum[-1] + false_neg_cum[-1]
+        n_total_pos = true_pos_cum.iloc[-1] + false_neg_cum.iloc[-1]
         precision_cum = true_pos_cum / (true_pos_cum + false_pos_cum)
         recall_cum = true_pos_cum / n_total_pos  # aka true_pos_rate aka sensitivity
 
@@ -893,114 +883,3 @@ def wandb_scatter(table: wandb.Table, fields: dict[str, str], **kwargs: Any) -> 
     )
 
     wandb.log({"true_pred_scatter": scatter_plot})
-
-
-def df_to_svelte_table(
-    styler: Styler,
-    file_path: str | Path,
-    inline_props: str = "",
-    styles: str = "table { overflow: scroll; max-width: 100%; display: block; }",
-    **kwargs: Any,
-) -> None:
-    """Convert a pandas Styler to a svelte table.
-
-    Args:
-        styler (Styler): Styler object to export.
-        file_path (str): Path to the file to write the svelte table to.
-        inline_props (str): Inline props to pass to the table element.
-        styles (str): CSS rules to add to the table styles.
-        **kwargs: Keyword arguments passed to Styler.to_html().
-    """
-    # insert svelte {...props} forwarding to the table element
-    script = f"""
-    <script lang="ts">
-      import {{ sortable }} from 'svelte-zoo/actions'
-    </script>
-
-    <table use:sortable {inline_props} {{...$$props}}
-    """
-    html_table = styler.to_html(**kwargs).replace("<table", script)
-    styled_table = html_table.replace("</style>", f"{styles}</style>")
-    with open(file_path, "w") as file:
-        file.write(styled_table)
-
-
-def df_to_pdf(
-    styler: Styler, file_path: str | Path, crop: bool = True, **kwargs: Any
-) -> None:
-    """Export a pandas Styler to PDF with WeasyPrint.
-
-    Args:
-        styler (Styler): Styler object to export.
-        file_path (str): Path to save the PDF to. Requires WeasyPrint.
-        crop (bool): Whether to crop the PDF margins. Requires pdfCropMargins.
-            Defaults to True.
-        **kwargs: Keyword arguments passed to Styler.to_html().
-    """
-    try:
-        from weasyprint import HTML
-    except ImportError as exc:
-        msg = "weasyprint not installed\nrun pip install weasyprint"
-        raise ImportError(msg) from exc
-
-    html_str = styler.to_html(**kwargs)
-
-    # CSS to adjust layout and margins
-    html_str = f"""
-    <style>
-        @page {{ size: landscape; margin: 1cm; }}
-        body {{ margin: 0; padding: 1em; }}
-    </style>
-    {html_str}
-    """
-
-    html = HTML(string=html_str)
-
-    html.write_pdf(file_path)
-
-    if crop:
-        normalize_and_crop_pdf(file_path)
-
-
-def normalize_and_crop_pdf(file_path: str | Path) -> None:
-    """Normalize a PDF using Ghostscript and then crop it.
-    Without gs normalization, pdfCropMargins sometimes corrupts the PDF.
-
-    Args:
-        file_path (str | Path): Path to the PDF file.
-    """
-    try:
-        normalized_file_path = f"{file_path}_normalized.pdf"
-        from pdfCropMargins import crop
-
-        # Normalize the PDF with Ghostscript
-        subprocess.run(
-            [
-                *"gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4".split(),
-                *"-dPDFSETTINGS=/default -dNOPAUSE -dQUIET -dBATCH".split(),
-                f"-sOutputFile={normalized_file_path}",
-                str(file_path),
-            ],
-            check=True,
-        )
-
-        # Crop the normalized PDF
-        cropped_file_path, exit_code, stdout, stderr = crop(
-            ["--percentRetain", "0", normalized_file_path]
-        )
-
-        if stderr:
-            print(f"pdfCropMargins {stderr=}")
-            # something went wrong, remove the cropped PDF
-            os.remove(cropped_file_path)
-        else:
-            # replace the original PDF with the cropped one
-            os.replace(cropped_file_path, str(file_path))
-
-        os.remove(normalized_file_path)
-
-    except ImportError as exc:
-        msg = "pdfCropMargins not installed\nrun pip install pdfCropMargins"
-        raise ImportError(msg) from exc
-    except Exception as exc:
-        raise RuntimeError("Error cropping PDF margins") from exc

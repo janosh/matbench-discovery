@@ -1,49 +1,53 @@
-"""This script converts the MPTrj relaxation trajectories in JSON format to
-extended XYZ format. The JSON data was downloaded from
-https://figshare.com/articles/dataset/23713842.
-"""
-
+import copy
 import json
 import os
+import os.path as osp
 
 import numpy as np
+import wget
+from tqdm.auto import tqdm
+
+from ase import units
 from ase.io import read, write
 from pymatgen.core import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
-from tqdm import tqdm
-
-from matbench_discovery import FIGSHARE
 
 __author__ = "Yuan Chiang"
 __date__ = "2023-08-10"
 
-module_dir = os.path.dirname(__file__)
-in_dir = f"{FIGSHARE}/mptrj_2022.9_full.json"
-out_dir = f"{module_dir}/mptrj-2022.9"
-os.makedirs(out_dir, exist_ok=True)
+mptrj_path = wget.download("https://figshare.com/ndownloader/files/41619375")
+# mptrj_path = "./MPtrj_2022.9_full.json"
+
+with open(mptrj_path, "r") as f:
+    json_data = json.load(f)
+
+pretty_json_string = json.dumps(json_data, indent=4, ensure_ascii=False)
+
+mptrj_pretty_path = osp.join(os.curdir, "mptrj_2022.9_pretty.json")
+mptrj_extxyz_prefix = osp.join(os.curdir, "mptrj-gga-ggapu")
+os.makedirs(mptrj_extxyz_prefix, exist_ok=True)
+
+with open(mptrj_pretty_path, "r") as f:
+    json_data = json.load(f)
+
 combined = []
 
-
-with open(in_dir) as json_file:
-    json_data = json.load(json_file)
-
 for material_id in tqdm(json_data):
-    for trajectory_id in json_data[material_id]:
-        out_xyz = f"{out_dir}/{material_id}.extxyz"
+    fout_path = osp.join(mptrj_extxyz_prefix, f"{material_id}.extxyz")
 
-        if os.path.isfile(out_xyz):
-            traj = read(out_xyz, index=":", format="extxyz")
+    for trajectory_id in json_data[material_id]:
+        if osp.exists(fout_path):
+            traj = read(fout_path, index=":", format="extxyz")
             combined.append(traj)
             continue
 
-        block = json_data[material_id][trajectory_id]
+        block = copy.deepcopy(json_data[material_id][trajectory_id])
         try:
             structure = Structure.from_dict(block.pop("structure"))
 
             forces = block.pop("force", None)
             magmoms = block.pop("magmom", None)
             stress = block.pop("stress", None)
-            # bandgap = block.pop('bandgap', None)
 
             uncorrected_total_energy = block.pop("uncorrected_total_energy", None)
             mp_id = block.get("mp_id", None)
@@ -54,10 +58,10 @@ for material_id in tqdm(json_data):
                 atoms.arrays["forces"] = np.array(forces)
             if magmoms:
                 atoms.arrays["magmoms"] = np.array(magmoms)
-            # if bandgap: will go into atoms.info
-            #     atoms.set_tensor('bandgap', bandgap)
             if stress:
-                atoms.info["stress"] = np.array(stress)
+                atoms.info["stress"] = (
+                    np.array(stress) * 1e-1 * units.GPa
+                )  # kB to eV/A^3
             if uncorrected_total_energy:
                 atoms.info["energy"] = uncorrected_total_energy
 
@@ -66,12 +70,12 @@ for material_id in tqdm(json_data):
 
             assert mp_id == material_id
 
-            write(out_xyz, atoms, append=True, format="extxyz")
+            write(fout_path, atoms, append=True, format="extxyz")
 
-            traj = read(out_xyz, index=":", format="extxyz")
-            combined.append(traj)
+        except Exception as err:
+            print(err)
 
-        except Exception as exc:
-            print(exc, f"skipping {material_id}, {trajectory_id}")
+    traj = read(fout_path, index=":", format="extxyz")
+    combined.extend(traj)
 
-write("mptrj-2022.9.xyz", combined, format="extxyz")
+write("mptrj-gga-ggapu.xyz", combined, format="extxyz", append=True)

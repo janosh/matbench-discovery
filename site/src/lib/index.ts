@@ -1,3 +1,5 @@
+export { default as AuthorBrief } from './AuthorBrief.svelte'
+export { default as CaptionedMetricsTable } from './CaptionedMetricsTable.svelte'
 export { default as Footer } from './Footer.svelte'
 export { default as ModelCard } from './ModelCard.svelte'
 export { default as Nav } from './Nav.svelte'
@@ -13,6 +15,7 @@ export type ModelMetadata = {
   date_added: string
   date_published?: string
   authors: Author[]
+  trained_by?: Author[]
   repo: string
   url?: string
   doi?: string
@@ -24,11 +27,13 @@ export type ModelMetadata = {
   training_set: {
     title: string
     url: string
-    size: number
+    n_structures: number
+    n_materials?: number
   }
   hyperparams: Record<string, string | number>
   notes?: Record<string, string>
   dir: string // models/{dir}/metadata.yml
+  n_params?: number // number of trainable parameters aka model size
 }
 
 export type ModelStats = {
@@ -65,6 +70,14 @@ export type Author = {
   orcid?: string
   url?: string
   twitter?: string
+  github?: string
+}
+
+// used in citation.cff
+export type CffAuthor = Omit<Author, 'name'> & {
+  'family-names': string
+  'given-names': string
+  affil_key: string
 }
 
 export type Reference = {
@@ -83,13 +96,7 @@ export type Reference = {
 export type Citation = {
   title: string
   subtitle?: string
-  authors: {
-    'family-names': string
-    'given-names': string
-    affiliation: string
-    affil_key: string
-    orcid: string
-  }[]
+  authors: CffAuthor[]
   affiliations: string[]
   'date-released': string
   license: string

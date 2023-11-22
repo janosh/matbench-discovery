@@ -10,7 +10,7 @@ will provide the best hit rate for the given budget.
 
 # %%
 import pandas as pd
-from pymatviz.utils import save_fig
+from pymatviz.io import save_fig
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.plots import cumulative_metrics
@@ -28,9 +28,9 @@ __date__ = "2022-12-04"
 
 # %%
 # metrics = ("Precision", "Recall")
-metrics = ("MAE", "RMSE")
+metrics = ("MAE",)
 range_y = {
-    ("MAE", "RMSE"): (0, 0.7),
+    ("MAE",): (0, 0.7),
     ("Precision", "Recall"): (0, 1),
 }[metrics]
 fig, df_metric = cumulative_metrics(
@@ -43,9 +43,10 @@ fig, df_metric = cumulative_metrics(
     # increase facet col gap
     facet_col_spacing=0.05,
     # markers=True,
+    show_n_stable=metrics != ("MAE",),
 )
 
-x_label = "Number of screened WBM test set materials"
+x_label = "Test set structures ranked by model-predicted stability"
 if backend == "matplotlib":
     # fig.suptitle(title)
     fig.text(0.5, -0.08, x_label, ha="center", fontdict={"size": 16})
@@ -68,8 +69,10 @@ if backend == "plotly":
     # fig.layout.legend.update(
     #     orientation="h", yanchor="bottom", y=1.1, xanchor="center", x=0.5
     # )
-    # if "MAE" in metrics:
-    #     fig.layout.legend.update(traceorder="reversed")
+    if "MAE" in metrics:
+        fig.layout.legend.update(traceorder="reversed")
+    if metrics == ("MAE",):
+        fig.layout.legend.update(y=1, x=1, xanchor="right", yanchor="top")
     assert len(metrics) * len(models) == len(
         fig.data
     ), f"expected one trace per model per metric, got {len(fig.data)}"

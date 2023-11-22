@@ -43,11 +43,11 @@
 </script>
 
 <p style="max-width: 45em; margin: auto;">
-  This periodic table is shaded by the MAE for the model-predicted convex hull distance
-  for each element. The errors for every structure in the test set are projected onto the
-  fraction of each element in the composition and averaged over all structures. The error
-  is the absolute difference per atom between predicted and actual energy distance to the
-  convex hull.
+  This periodic table heatmap shows the MAE of model-predicted convex hull distance
+  projected onto each element. The errors for every structure in the test set are
+  projected onto the fraction of each element in the composition and averaged over all
+  structures. The error is the absolute difference per atom between predicted and actual
+  energy distance to the convex hull.
 </p>
 
 <MultiSelect bind:selected={current_model} options={models} maxSelect={1} minSelect={1} />
@@ -69,9 +69,14 @@
     {cbar_max}
   </label>
   <label>
-    Divide errors by test set energies std. dev. over structures containing each element
+    Divide each element value by its std. dev. of target energies over all test structures
+    containing a given element
     <input type="checkbox" bind:checked={normalized} />
   </label>
+  <small>
+    This is meant to correct for the fact that some elements are inherently more difficult
+    to predict since some have a wider distribution of convex hull distances.
+  </small>
 </form>
 
 <PeriodicTable
@@ -79,6 +84,10 @@
   color_scale={color_scale[0]}
   bind:active_element
   color_scale_range={cs_range}
+  tile_props={{
+    precision: `0.2`,
+  }}
+  show_photo={false}
 >
   <TableInset slot="inset" style="align-content: center;">
     <PtableInset
@@ -109,5 +118,10 @@
     display: flex;
     place-content: center;
     gap: 1ex;
+  }
+  form label + small {
+    max-width: 60em;
+    margin: 0 auto;
+    text-align: center;
   }
 </style>

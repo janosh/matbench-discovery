@@ -6,7 +6,6 @@ Might point to deficiencies in the data or models architecture.
 
 # %%
 import os
-import warnings
 from glob import glob
 
 import numpy as np
@@ -16,14 +15,12 @@ from matminer.featurizers.structure import SiteStatsFingerprint
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, timestamp
+from matbench_discovery import ROOT, id_col, timestamp
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-26"
-
-warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
 
 
 # %% compute all initial and final MP/WBM structure fingerprints
@@ -51,7 +48,7 @@ slurm_vars = slurm_submit(
 
 
 # %%
-out_path = f"{out_dir}/site-stats-{slurm_array_task_id}.json.gz"
+out_path = f"{out_dir}/site-stats-{slurm_array_task_id:>03}.json.gz"
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path=} already exists, exciting early")
 
@@ -61,7 +58,7 @@ print(f"{out_path=}")
 
 # %%
 df_in: pd.DataFrame = np.array_split(
-    pd.read_json(data_path).set_index("material_id"), slurm_array_task_count
+    pd.read_json(data_path).set_index(id_col), slurm_array_task_count
 )[slurm_array_task_id - 1]
 
 cnn_fp = CrystalNNFingerprint.from_preset("ops")
@@ -116,7 +113,7 @@ if missing_files:
     print(f"{len(missing_files)=}: {missing_files}")
 
 df_out = pd.concat(pd.read_json(out_file) for out_file in tqdm(out_files))
-df_out = df_out.set_index("material_id")
+df_out = df_out.set_index(id_col)
 
 
 # %%

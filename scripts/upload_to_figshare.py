@@ -45,9 +45,7 @@ https://matbench-discovery.materialsproject.org/contribute#--direct-download.
 The full force field
 training set containing 1.3M structures along with their energies, forces, stresses and
 magmons is available at https://figshare.com/articles/dataset/23713842.
-""".replace(
-    "\n", " "
-).strip()
+""".replace("\n", " ").strip()
 # https://figshare.com/articles/dataset/Materials_Project_Trjectory_MPtrj_Dataset/23713842
 REFERENCES = list(pyproject["urls"].values())
 
@@ -162,8 +160,12 @@ def main() -> int:
             print(f"{file_path}: {file_url}")
 
         # write uploaded file keys mapped to their URLs to JSON
+        figshare_urls = {
+            "files": uploaded_files,
+            "article": f"https://figshare.com/articles/dataset/{article_id}",
+        }
         with open(file_urls_out_path, "w") as file:
-            json.dump(uploaded_files, file)
+            json.dump(figshare_urls, file)
     except Exception as exc:  # prompt to delete article if something went wrong
         answer = ""
         print(f"Encountered {exc=}")

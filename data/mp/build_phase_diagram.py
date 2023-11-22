@@ -17,7 +17,7 @@ from pymatgen.entries.computed_entries import ComputedEntry, ComputedStructureEn
 from pymatgen.ext.matproj import MPRester
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, today
+from matbench_discovery import ROOT, id_col, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.energy import get_e_form_per_atom, get_elemental_ref_entries
 
@@ -30,7 +30,7 @@ all_mp_computed_structure_entries = MPRester().get_entries("")
 # save all ComputedStructureEntries to disk
 # mp-15590 appears twice so we drop_duplicates()
 df = pd.DataFrame(all_mp_computed_structure_entries, columns=["entry"])
-df.index.name = "material_id"
+df.index.name = id_col
 df.index = [e.entry_id for e in df.entry]
 df.reset_index().to_json(
     f"{module_dir}/{today}-mp-computed-structure-entries.json.gz",
@@ -40,7 +40,7 @@ df.reset_index().to_json(
 
 # %%
 data_path = f"{module_dir}/2023-02-07-mp-computed-structure-entries.json.gz"
-df = pd.read_json(data_path).set_index("material_id")
+df = pd.read_json(data_path).set_index(id_col)
 
 # drop the structure, just load ComputedEntry, makes the PPD faster to build and load
 mp_computed_entries = [ComputedEntry.from_dict(dct) for dct in tqdm(df.entry)]
@@ -63,9 +63,7 @@ with gzip.open(f"{module_dir}/{today}-ppd-mp.pkl.gz", "wb") as zip_file:
 
 
 # %% build phase diagram with both MP entries + WBM entries
-df_wbm = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(
-    "material_id"
-)
+df_wbm = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(id_col)
 
 # using ComputedStructureEntry vs ComputedEntry here is important as CSEs receive
 # more accurate energy corrections that take into account peroxide/superoxide nature
@@ -104,7 +102,7 @@ with gzip.open(
     json.dump(elemental_ref_entries, file, default=lambda x: x.as_dict())
 
 
-df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index("material_id")
+df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index(id_col)
 
 
 # %%

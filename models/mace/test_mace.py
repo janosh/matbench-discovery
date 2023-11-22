@@ -12,12 +12,13 @@ import wandb
 from ase.constraints import ExpCellFilter
 from ase.optimize import FIRE, LBFGS
 from mace.calculators.mace import MACECalculator
+from mace.tools import count_parameters
 from pymatgen.core import Structure
 from pymatgen.core.trajectory import Trajectory
 from pymatgen.io.ase import AseAtomsAdaptor
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, timestamp, today
+from matbench_discovery import ROOT, formula_col, id_col, timestamp, today
 from matbench_discovery.data import DATA_FILES, as_dict_handler, df_wbm
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
@@ -25,6 +26,8 @@ from matbench_discovery.slurm import slurm_submit
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-01"
 
+
+# %%
 task_type = "IS2RE"  # "RS2RE"
 module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
@@ -32,26 +35,33 @@ slurm_array_task_count = 100
 ase_optimizer = "FIRE"
 job_name = f"mace-wbm-{task_type}-{ase_optimizer}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
-relax_cell = True
-# MACE trained on M3GNet training set by original MACE authors
-# model_name = "2023-07-14-mace-ilyes-trained-MPF-2021-2-8-big-128-6"
-# MACE trained on CHGNet training set by Yuan Chiang
-model_name = "2023-08-14-mace-yuan-trained-mptrj-04"
 device = "cuda" if torch.cuda.is_available() else "cpu"
+relax_cell = True
+model_name = [
+    # MACE trained on M3GNet training set by original MACE authors
+    # 9M = model size (number of trainable params), 9,255,168 to be exact
+    "2023-07-14-mace-9M-ilyas-universal-2-big-128-6",
+    # MACE trained by Yuan Chiang on CHGNet training set
+    "2023-08-14-mace-2M-yuan-mptrj-04",
+    "2023-09-03-mace-2M-yuan-mptrj-slower-14-lr-13_run-3",
+    "2023-10-29-mace-16M-pbenner-mptrj-no-conditional-loss",
+][0]
 
 slurm_vars = slurm_submit(
     job_name=job_name,
     out_dir=out_dir,
     account="matgen",
-    time="12:0:0",
+    time="9:55:0",
     array=f"1-{slurm_array_task_count}",
-    slurm_flags="--qos regular --constraint gpu --gpus 1",
+    slurm_flags="--qos shared --constraint gpu --gpus 1",
+    # slurm_flags="--qos shared --constraint cpu --mem 16G",
 )
 
 
 # %%
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
-out_path = f"{out_dir}/mace-preds-{slurm_array_task_id}.json.gz"
+slurm_job_id = os.getenv("SLURM_JOB_ID", "debug")
+out_path = f"{out_dir}/{slurm_job_id}-{slurm_array_task_id:>03}.json.gz"
 
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path=} already exists, exciting early")
@@ -65,15 +75,17 @@ data_path = {
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
 e_pred_col = "mace_energy"
-id_col = "material_id"
 max_steps = 500
 force_max = 0.05  # Run until the forces are smaller than this in eV/A
-checkpoint = f"{ROOT}/models/mace/{model_name}.model"
+checkpoint = f"{ROOT}/models/mace/checkpoints/{model_name}.model"
+mace_calc = MACECalculator(checkpoint, device=device)
 
 df_in: pd.DataFrame = np.array_split(
     pd.read_json(data_path).set_index(id_col), slurm_array_task_count
 )[slurm_array_task_id - 1]
 
+
+# %%
 run_params = dict(
     data_path=data_path,
     versions={dep: version(dep) for dep in ("mace", "numpy", "torch")},
@@ -86,6 +98,7 @@ run_params = dict(
     force_max=force_max,
     ase_optimizer=ase_optimizer,
     device=device,
+    trainable_params=count_parameters(mace_calc.models[0]),
 )
 
 run_name = f"{job_name}-{slurm_array_task_id}"
@@ -93,7 +106,6 @@ wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 
 # %%
-mace_calc = MACECalculator(checkpoint, device=device, default_dtype="float32")
 relax_results: dict[str, dict[str, Any]] = {}
 input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
 
@@ -106,7 +118,7 @@ for material_id in tqdm(structs, desc="Relaxing", disable=None):
     if material_id in relax_results:
         continue
     try:
-        atoms = AseAtomsAdaptor.get_atoms(structs[material_id])
+        atoms = structs[material_id].to_ase_atoms()
         atoms.calc = mace_calc
         if relax_cell:
             atoms = ExpCellFilter(atoms)
@@ -153,7 +165,7 @@ df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
 df_wbm[e_pred_col] = df_out[e_pred_col]
 table = wandb.Table(
     dataframe=df_wbm.dropna()[
-        ["uncorrected_energy", e_pred_col, "formula"]
+        ["uncorrected_energy", e_pred_col, formula_col]
     ].reset_index()
 )
 

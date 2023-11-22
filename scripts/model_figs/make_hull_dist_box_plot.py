@@ -2,7 +2,7 @@
 import plotly.express as px
 import plotly.graph_objects as go
 import seaborn as sns
-from pymatviz.utils import patch_dict, save_fig
+from pymatviz.io import save_fig
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, plots
 from matbench_discovery.preds import df_each_err, models
@@ -62,8 +62,7 @@ fig.layout.margin = dict(l=0, r=0, b=0, t=0)
 for idx, model in enumerate(models):
     ys = [df_each_err[model].quantile(quant) for quant in (0.05, 0.25, 0.5, 0.75, 0.95)]
 
-    box_plot = go.Box(y=ys, name=model, width=0.7)
-    fig.add_trace(box_plot)
+    fig.add_box(y=ys, name=model, width=0.7)
 
     # Add an annotation for the interquartile range
     IQR = ys[3] - ys[1]
@@ -95,6 +94,5 @@ fig.show()
 
 # %%
 save_fig(fig, f"{SITE_FIGS}/box-hull-dist-errors.svelte")
-
-with patch_dict(fig.layout, showlegend=False):
-    save_fig(fig, f"{PDF_FIGS}/box-hull-dist-errors.pdf")
+fig.layout.showlegend = False
+save_fig(fig, f"{PDF_FIGS}/box-hull-dist-errors.pdf")

@@ -4,7 +4,7 @@ batch in a single plot.
 
 
 # %%
-from pymatviz.utils import save_fig
+from pymatviz.io import save_fig
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, today
 from matbench_discovery.plots import plt, rolling_mae_vs_hull_dist
@@ -22,7 +22,7 @@ __date__ = "2022-06-18"
 batch_col = "batch_idx"
 df_each_pred[batch_col] = "Batch " + df_each_pred.index.str.split("-").str[1]
 df_err, df_std = None, None  # variables to cache rolling MAE and std
-model = "MEGNet"
+model = "CHGNet"
 
 
 # %% matplotlib

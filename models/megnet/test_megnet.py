@@ -20,7 +20,7 @@ from pymatviz import density_scatter
 from sklearn.metrics import r2_score
 from tqdm import tqdm
 
-from matbench_discovery import timestamp, today
+from matbench_discovery import id_col, timestamp, today
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.preds import PRED_FILES, e_form_col
@@ -43,7 +43,7 @@ slurm_vars = slurm_submit(
     out_dir=module_dir,
     partition="icelake-himem",
     account="LEE-SL3-CPU",
-    time="12:0:0",
+    time="11:55:0",
     slurm_flags=("--mem", "30G"),
     array=f"1-{slurm_array_task_count}",
     # TF_CPP_MIN_LOG_LEVEL=2 means INFO and WARNING logs are not printed
@@ -65,7 +65,7 @@ print(f"{data_path=}")
 assert e_form_col in df_wbm, f"{e_form_col=} not in {list(df_wbm)=}"
 
 df_in: pd.DataFrame = np.array_split(
-    pd.read_json(data_path).set_index("material_id"), slurm_array_task_count
+    pd.read_json(data_path).set_index(id_col), slurm_array_task_count
 )[slurm_array_task_id - 1]
 megnet_mp_e_form = load_model(model_name := "Eform_MP_2019")
 
@@ -84,9 +84,9 @@ run_params = dict(
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 
-# %%
+# %% input_col=task_type for CHGNet and M3GNet
 input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}.get(
-    task_type, task_type  # input_col=task_type for CHGNet and M3GNet
+    task_type, task_type
 )
 
 if task_type == "RS2RE":
@@ -119,14 +119,14 @@ df_megnet[pred_col] = (
     - df_wbm.e_correction_per_atom_mp_legacy
     + df_wbm.e_correction_per_atom_mp2020
 )
-df_megnet.index.name = "material_id"
+df_megnet.index.name = id_col
 if task_type != "IS2RE":
     df_megnet = df_megnet.add_suffix(f"_{task_type.lower()}")
 
 
 df_megnet.add_suffix(f"_{task_type.lower()}").round(4).to_csv(out_path)
 
-# df_megnet = pd.read_csv(f"{ROOT}/models/{PRED_FILES.megnet}").set_index("material_id")
+# df_megnet = pd.read_csv(f"{ROOT}/models/{PRED_FILES.megnet}").set_index(id_col)
 
 
 # %% compare MEGNet predictions with old and new MP corrections

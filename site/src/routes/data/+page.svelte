@@ -11,6 +11,7 @@
   import Select from 'svelte-multiselect'
   import { Toggle } from 'svelte-zoo'
   import type { Snapshot } from './$types'
+  import MpElementalReferenceEnergies from './mp-elemental-reference-energies.md'
 
   const elem_counts = import.meta.glob(`./*-element-counts-{occu,comp}*.json`, {
     eager: true,
@@ -45,6 +46,7 @@
       color_scale={color_scale[0]}
       {log}
       bind:active_element={active_wbm_elem}
+      show_photo={false}
     >
       <TableInset slot="inset">
         <label for="log">Log color scale<Toggle id="log" bind:checked={log} /></label>
@@ -80,6 +82,7 @@
       color_scale={color_scale[0]}
       {log}
       bind:active_element={active_mp_elem}
+      show_photo={false}
     >
       <TableInset slot="inset">
         <label for="log">Log color scale<Toggle id="log" bind:checked={log} /></label>
@@ -117,6 +120,8 @@
     {/if}
   </div>
 </DataReadme>
+
+<MpElementalReferenceEnergies />
 
 <style>
   label {

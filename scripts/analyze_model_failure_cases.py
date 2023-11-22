@@ -13,10 +13,10 @@ import plotly.express as px
 import plotly.graph_objs as go
 from pymatgen.core import Composition, Structure
 from pymatviz import count_elements, plot_structure_2d, ptable_heatmap_plotly
-from pymatviz.utils import save_fig
+from pymatviz.io import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS
+from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, formula_col, id_col
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.metrics import classify_stable
 from matbench_discovery.preds import (
@@ -36,7 +36,7 @@ fp_diff_col = "site_stats_fingerprint_init_final_norm_diff"
 
 
 # %%
-df_cse = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index("material_id")
+df_cse = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index(id_col)
 
 
 # %% plot the highest and lowest error structures before and after relaxation
@@ -84,14 +84,13 @@ for idx, model in enumerate((model_mean_err_col, *df_metrics)):
     large_errors = df_each_err[model].abs().nlargest(n_structs)
     small_errors = df_each_err[model].abs().nsmallest(n_structs)
     for label, errors in zip(("min", "max"), (large_errors, small_errors)):
-        scatter = go.Histogram(
+        fig.add_histogram(
             x=df_wbm.loc[errors.index][fp_diff_col].values,
             name=f"{model} err<sub>{label}</sub>",
             visible="legendonly" if idx else True,
             legendgroup=model,
             hovertemplate=("SSFP diff: %{x:.2f}<br>Count: %{y}"),
         )
-        fig.add_trace(scatter)
 
 title = (
     f"Norm-diff between initial/final SiteStatsFingerprint<br>"
@@ -121,7 +120,7 @@ fig = go.Figure()
 for idx, model in enumerate(df_metrics):
     errors = df_each_err[model].abs().nlargest(n_structs)
     model_mae = errors.mean().round(3)
-    scatter = go.Scatter(
+    fig.add_scatter(
         x=df_wbm.loc[errors.index][fp_diff_col].values,
         y=errors.values,
         mode="markers",
@@ -133,10 +132,9 @@ for idx, model in enumerate(df_metrics):
             "FP norm diff: %{x}<br>"
             "error: %{y} eV/atom"
         ),
-        customdata=df_wbm.loc[errors.index][["material_id", "formula"]].values,
+        customdata=df_wbm.loc[errors.index][[id_col, formula_col]].values,
         legendrank=model_mae,
     )
-    fig.add_trace(scatter)
 
 title = (
     f"Norm-diff between initial/final SiteStatsFingerprint<br>"
@@ -155,7 +153,7 @@ fig.show()
 
 
 # %%
-df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index("material_id")
+df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index(id_col)
 train_count_col = "MP Occurrences"
 df_elem_counts = count_elements(df_mp.formula_pretty, count_mode="occurrence").to_frame(
     name=train_count_col
@@ -163,7 +161,7 @@ df_elem_counts = count_elements(df_mp.formula_pretty, count_mode="occurrence").t
 n_examp_for_rarest_elem_col = "Examples for rarest element in structure"
 df_wbm[n_examp_for_rarest_elem_col] = [
     df_elem_counts[train_count_col].loc[list(map(str, Composition(formula)))].min()
-    for formula in tqdm(df_wbm.formula)
+    for formula in tqdm(df_wbm[formula_col])
 ]
 df_preds[n_examp_for_rarest_elem_col] = df_wbm[n_examp_for_rarest_elem_col]
 
@@ -192,14 +190,14 @@ normalized = True
 elem_counts: dict[str, pd.Series] = {}
 for col in ("All models false neg", "All models false pos"):
     elem_counts[col] = elem_counts.get(
-        col, count_elements(df_preds[df_preds[col]].formula)
+        col, count_elements(df_preds[df_preds[col]][formula_col])
     )
     fig = ptable_heatmap_plotly(
         elem_counts[col] / df_elem_counts[train_count_col]
         if normalized
         else elem_counts[col],
         color_bar=dict(title=col),
-        precision=".3f",
+        fmt=".3f",
         cscale_range=[0, 0.1],
     )
     fig.show()
@@ -211,7 +209,7 @@ for col in ("All models false neg", "All models false pos"):
 # fraction and average over all test set structures
 frac_comp_col = "fractional composition"
 df_wbm[frac_comp_col] = [
-    Composition(comp).fractional_composition for comp in tqdm(df_wbm.formula)
+    Composition(comp).fractional_composition for comp in tqdm(df_wbm[formula_col])
 ]
 
 df_frac_comp = pd.json_normalize(
@@ -246,7 +244,7 @@ for idx, model in enumerate(df_metrics):
     model_mae = df_each_err[model].loc[df_largest_fp_diff.index].abs().mean()
 
     visible = "legendonly" if idx else True
-    scatter = go.Scatter(
+    fig.add_scatter(
         x=df_largest_fp_diff.values,
         y=df_each_err[model].loc[df_largest_fp_diff.index].abs(),
         mode="markers",
@@ -258,14 +256,11 @@ for idx, model in enumerate(df_metrics):
             "FP diff: %{x}<br>"
             "error: %{y}<extra></extra>"
         ),
-        customdata=df_preds[["material_id", "formula"]]
-        .loc[df_largest_fp_diff.index]
-        .values,
+        customdata=df_preds[[id_col, formula_col]].loc[df_largest_fp_diff.index].values,
         legendgroup=model,
         marker=dict(color=color),
         legendrank=model_mae,
     )
-    fig.add_trace(scatter)
     # add dashed mean line for each model that toggles with the scatter plot
     # fig.add_hline(
     #     y=model_mae,
@@ -324,8 +319,8 @@ fig = px.scatter(
     x=tsne_cols[0],
     y=tsne_cols[1],
     color=(df_wbm.bandgap_pbe > 1).map({True: "band gap", False: "no gap"}),
-    hover_name="material_id",
-    hover_data=("formula",),
+    hover_name=id_col,
+    hover_data=(formula_col,),
 )
 fig.show()
 
@@ -357,14 +352,13 @@ for label, which in zip(("min", "max"), ("nlargest", "nsmallest")):
     fig = go.Figure()
     for model in df_metrics:
         errors = getattr(df_each_err[model].abs(), which)(n_structs)
-        violin = go.Violin(
+        fig.add_violin(
             x=df_wbm.loc[errors.index][fp_diff_col].values,
             name=f"{model} err<sub>{label}</sub>",
             legendgroup=model,
             hovertemplate=("SSFP diff: %{x:.2f}<br>Count: %{y}"),
             spanmode="hard",
         )
-        fig.add_trace(violin)
     fig.layout.update(showlegend=False)
     fig.layout.xaxis.title = "SSFP norm-diff before/after relaxation"
     fig.show()

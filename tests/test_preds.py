@@ -2,6 +2,7 @@ import os
 
 import pytest
 
+from matbench_discovery import id_col
 from matbench_discovery.data import df_wbm
 from matbench_discovery.preds import (
     PRED_FILES,
@@ -52,7 +53,7 @@ def test_load_df_wbm_with_preds(models: list[str]) -> None:
     df = load_df_wbm_with_preds(models)
     assert len(df) == len(df_wbm)
     assert list(df) == list(df_wbm) + models + [f"{model}_std" for model in models]
-    assert df.index.name == "material_id"
+    assert df.index.name == id_col
 
     for model_name in models:
         assert model_name in df

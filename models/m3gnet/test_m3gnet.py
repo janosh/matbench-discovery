@@ -20,7 +20,7 @@ from m3gnet.models import Relaxer
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, timestamp, today
+from matbench_discovery import ROOT, id_col, timestamp, today
 from matbench_discovery.data import DATA_FILES, as_dict_handler
 from matbench_discovery.slurm import slurm_submit
 
@@ -29,8 +29,8 @@ __date__ = "2022-08-15"
 
 task_type = "IS2RE"  # "RS2RE"
 module_dir = os.path.dirname(__file__)
-# direct: cluster sampling, ms: manual sampling
-model_type: Literal["orig", "direct", "ms"] = "ms"
+# direct: DIRECT cluster sampling, ms: manual sampling
+model_type: Literal["orig", "direct", "manual-sampling"] = "orig"
 # set large job array size for smaller data splits and faster testing/debugging
 slurm_array_task_count = 100
 job_name = f"m3gnet-{model_type}-wbm-{task_type}"
@@ -52,12 +52,12 @@ slurm_vars = slurm_submit(
 
 # %%
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "3"))
-out_path = f"{out_dir}/m3gnet-preds-{slurm_array_task_id}.json.gz"
+slurm_job_id = os.getenv("SLURM_JOB_ID", "debug")
+out_path = f"{out_dir}/{slurm_job_id}-{slurm_array_task_id:>03}.json.gz"
 
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path=} already exists, exciting early")
 
-warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
 warnings.filterwarnings(action="ignore", category=UserWarning, module="tensorflow")
 
 
@@ -71,8 +71,16 @@ print(f"{data_path=}")
 e_pred_col = f"m3gnet_{model_type}_energy"
 
 df_in: pd.DataFrame = np.array_split(
-    pd.read_json(data_path).set_index("material_id"), slurm_array_task_count
+    pd.read_json(data_path).set_index(id_col), slurm_array_task_count
 )[slurm_array_task_id - 1]
+
+checkpoint = None
+if model_type == "direct":
+    checkpoint = f"{ROOT}/models/m3gnet/2023-05-26-DI-DFTstrictF10-TTRS-128U-442E"
+if model_type == "ms":
+    checkpoint = f"{ROOT}/models/m3gnet/2023-05-26-MS-DFTstrictF10-128U-154E"
+relax_results: dict[str, dict[str, Any]] = {}
+m3gnet = Relaxer(potential=checkpoint)  # load pre-trained M3GNet model
 
 run_params = dict(
     data_path=data_path,
@@ -80,6 +88,7 @@ run_params = dict(
     task_type=task_type,
     df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     slurm_vars=slurm_vars,
+    trainable_params=sum(param.numel() for param in m3gnet.parameters()),
 )
 
 run_name = f"{job_name}-{slurm_array_task_id}"
@@ -87,13 +96,6 @@ wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 
 # %%
-checkpoint = None
-if model_type == "direct":
-    checkpoint = f"{ROOT}/models/m3gnet/2023-05-26-DI-DFTstrictF10-TTRS-128U-442E"
-if model_type == "ms":
-    checkpoint = f"{ROOT}/models/m3gnet/2023-05-26-MS-DFTstrictF10-128U-154E"
-m3gnet = Relaxer(potential=checkpoint)  # load pre-trained M3GNet model
-relax_results: dict[str, dict[str, Any]] = {}
 input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
 
 if task_type == "RS2RE":
@@ -117,7 +119,7 @@ for material_id in tqdm(structures, desc="Relaxing", disable=None):
 
 # %%
 df_out = pd.DataFrame(relax_results).T
-df_out.index.name = "material_id"
+df_out.index.name = id_col
 
 df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
 

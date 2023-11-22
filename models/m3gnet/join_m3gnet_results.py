@@ -7,7 +7,6 @@ into single file.
 from __future__ import annotations
 
 import os
-import warnings
 from glob import glob
 from typing import Literal
 
@@ -17,13 +16,11 @@ from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from tqdm import tqdm
 
-from matbench_discovery.data import DATA_FILES, as_dict_handler
+from matbench_discovery.data import DATA_FILES, as_dict_handler, id_col
 from matbench_discovery.energy import get_e_form_per_atom
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-16"
-
-warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
 
 
 # %%
@@ -46,17 +43,15 @@ if "dfs" not in locals():
 for file_path in tqdm(file_paths):
     if file_path in dfs:
         continue
-    df = pd.read_json(file_path).set_index("material_id")
+    df = pd.read_json(file_path).set_index(id_col)
     # drop trajectory to save memory
-    dfs[file_path] = df.drop(columns="m3gnet_trajectory")
+    dfs[file_path] = df.drop(columns="m3gnet_trajectory", errors="ignore")
 
 df_m3gnet = pd.concat(dfs.values()).round(4)
 
 
 # %%
-df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(
-    "material_id"
-)
+df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(id_col)
 entry_col = "computed_structure_entry"
 df_cse[entry_col] = [
     ComputedStructureEntry.from_dict(dct)
@@ -78,10 +73,10 @@ for row in tqdm(df_m3gnet.itertuples(), total=len(df_m3gnet)):
 
 
 # %% apply energy corrections
-out = MaterialsProject2020Compatibility().process_entries(
+processed = MaterialsProject2020Compatibility().process_entries(
     df_m3gnet[entry_col], verbose=True, clean=True
 )
-assert len(out) == len(df_m3gnet)
+assert len(processed) == len(df_m3gnet)
 
 
 # %% compute corrected formation energies
@@ -98,5 +93,5 @@ df_m3gnet.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_h
 
 
 # in_path = f"{module_dir}/2022-10-31-m3gnet-wbm-IS2RE"
-# df_m3gnet = pd.read_csv(f"{in_path}.csv.gz").set_index("material_id")
-# df_m3gnet = pd.read_json(f"{in_path}.json.gz").set_index("material_id")
+# df_m3gnet = pd.read_csv(f"{in_path}.csv.gz").set_index(id_col)
+# df_m3gnet = pd.read_json(f"{in_path}.json.gz").set_index(id_col)

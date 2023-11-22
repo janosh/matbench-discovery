@@ -1,14 +1,11 @@
-"""Histogram of the energy difference (either according to DFT ground truth [default] or
-model predicted energy) to the convex hull for materials in the WBM data set. The
-histogram stacks true/false positives/negatives with different colors.
-"""
+"""Plot ROC and PR (precision-recall) curves for each model."""
 
 
 # %%
 import math
 
 import pandas as pd
-from pymatviz.utils import save_fig
+from pymatviz.io import save_fig
 from sklearn.metrics import auc, precision_recall_curve, roc_curve
 from tqdm import tqdm
 
@@ -40,12 +37,14 @@ df_roc = pd.DataFrame()
 
 for model in (pbar := tqdm(models, desc="Calculating ROC curves")):
     pbar.set_postfix_str(model)
+
     na_mask = df_preds[each_true_col].isna() | df_each_pred[model].isna()
     y_true = (df_preds[~na_mask][each_true_col] <= STABILITY_THRESHOLD).astype(int)
     y_pred = df_each_pred[model][~na_mask]
     fpr, tpr, thresholds = roc_curve(y_true, y_pred, pos_label=0)
     AUC = auc(fpr, tpr)
     title = f"{model} · {AUC=:.2f}"
+    thresholds = [f"{t:.3} eV/atom" for t in thresholds]
     df_tmp = pd.DataFrame(
         {"FPR": fpr, "TPR": tpr, color_col: thresholds, "AUC": AUC, facet_col: title}
     ).round(3)
@@ -79,7 +78,7 @@ fig = plot_fn(
     range_x=(-0.01, 1),
     range_y=(0, 1.02),
     hover_name=facet_col,
-    hover_data={facet_col: False},
+    hover_data={facet_col: False, color_col: True},
     **(kwds if facet_plot else dict(color=facet_col, markers=True)),
 )
 

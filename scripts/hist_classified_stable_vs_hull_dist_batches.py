@@ -10,7 +10,7 @@ See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
 from typing import Final
 
 import pandas as pd
-from pymatviz.utils import save_fig
+from pymatviz.io import save_fig
 
 from matbench_discovery import PDF_FIGS
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist

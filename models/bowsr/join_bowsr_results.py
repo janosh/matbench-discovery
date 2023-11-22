@@ -8,7 +8,7 @@ import pandas as pd
 import pymatviz
 from tqdm import tqdm
 
-from matbench_discovery.data import DATA_FILES
+from matbench_discovery.data import DATA_FILES, id_col
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-09-22"
@@ -30,14 +30,14 @@ dfs: dict[str, pd.DataFrame] = {}
 for file_path in tqdm(file_paths):
     if file_path in dfs:
         continue
-    dfs[file_path] = pd.read_json(file_path).set_index("material_id")
+    dfs[file_path] = pd.read_json(file_path).set_index(id_col)
 
 
 df_bowsr = pd.concat(dfs.values()).round(4)
 
 
 # %% compare against WBM formation energy targets to make sure we got sensible results
-df_wbm = pd.read_csv(DATA_FILES.wbm_summary).set_index("material_id")
+df_wbm = pd.read_csv(DATA_FILES.wbm_summary).set_index(id_col)
 
 
 print(
@@ -75,4 +75,4 @@ df_bowsr.reset_index().to_json(
 
 
 # in_path = f"{module_dir}/2023-01-23-bowsr-megnet-wbm-IS2RE.json.gz"
-# df_bowsr = pd.read_json(in_path).set_index("material_id")
+# df_bowsr = pd.read_json(in_path).set_index(id_col)

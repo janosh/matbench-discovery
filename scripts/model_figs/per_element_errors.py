@@ -9,10 +9,18 @@ import pandas as pd
 import plotly.express as px
 from pymatgen.core import Composition, Element
 from pymatviz import ptable_heatmap_plotly
-from pymatviz.utils import bin_df_cols, df_ptable, save_fig
+from pymatviz.io import save_fig
+from pymatviz.utils import bin_df_cols, df_ptable
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, SITE_MODELS
+from matbench_discovery import (
+    PDF_FIGS,
+    ROOT,
+    SITE_FIGS,
+    SITE_MODELS,
+    formula_col,
+    id_col,
+)
 from matbench_discovery.data import df_wbm
 from matbench_discovery.preds import (
     df_each_err,
@@ -26,15 +34,14 @@ from matbench_discovery.preds import (
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-15"
 
-df_each_err[model_mean_err_col] = df_preds[model_mean_err_col] = df_each_err.abs().mean(
-    axis=1
-)
+for df in (df_each_err, df_preds):
+    df[model_mean_err_col] = df_each_err.abs().mean(axis=1)
 
 
-# %% map average model error onto elements
+# %% project average model error onto periodic table
 frac_comp_col = "fractional composition"
 df_wbm[frac_comp_col] = [
-    Composition(comp).fractional_composition for comp in tqdm(df_wbm.formula)
+    Composition(comp).fractional_composition for comp in tqdm(df_wbm[formula_col])
 ]
 
 df_frac_comp = pd.DataFrame(comp.as_dict() for comp in df_wbm[frac_comp_col]).set_index(
@@ -48,8 +55,8 @@ assert all(
 
 
 # %% compute number of samples per element in training set
-# counting element occurrences not weighted by composition, assuming model don't learn
-# much more about iron and oxygen from Fe2O3 than from FeO
+# we count raw element occurrence, i.e. not weighted by composition, based on the
+# hypothesis that models don't learn more about iron and oxygen from Fe2O3 than from FeO
 counts_path = f"{ROOT}/site/src/routes/data/mp-element-counts-occurrence.json"
 df_elem_err = pd.read_json(counts_path, typ="series")
 train_count_col = "MP Occurrences"
@@ -88,20 +95,17 @@ if normalized:
     df_struct_counts["MP"] /= len(df_preds) / 100
     df_struct_counts["WBM"] /= len(df_wbm) / 100
 y_col = "percent" if normalized else "count"
-fig = (
-    df_struct_counts.reset_index()
-    .melt(
-        var_name=(clr_col := "Dataset"), value_name=y_col, id_vars=(id_col := "symbol")
-    )
-    .sort_values([y_col, id_col])
-    .plot.bar(
-        x=id_col,
-        y=y_col,
-        backend="plotly",
-        title="Number of structures containing each element",
-        color=clr_col,
-        barmode="group",
-    )
+
+df_melt = df_struct_counts.reset_index().melt(
+    var_name=(clr_col := "Dataset"), value_name=y_col, id_vars=(symbol_col := "symbol")
+)
+fig = df_melt.sort_values([y_col, symbol_col]).plot.bar(
+    x=symbol_col,
+    y=y_col,
+    backend="plotly",
+    title="Number of structures containing each element",
+    color=clr_col,
+    barmode="group",
 )
 
 fig.layout.update(bargap=0.1)
@@ -110,16 +114,16 @@ fig.show()
 save_fig(fig, f"{SITE_FIGS}/bar-element-counts-mp+wbm-{normalized=}.svelte")
 
 
-# %%
+# %% compute std dev of DFT hull dist for each element in test set
 test_set_std_col = "Test set standard deviation"
 df_elem_err[test_set_std_col] = (
     df_frac_comp.where(pd.isna, 1) * df_wbm[each_true_col].to_numpy()[:, None]
 ).std()
 
 
-# %%
+# %% plot per-element std dev of DFT hull dist
 fig = ptable_heatmap_plotly(
-    df_elem_err[test_set_std_col], precision=".2f", colorscale="Inferno"
+    df_elem_err[test_set_std_col], fmt=".2f", colorscale="Inferno"
 )
 fig.show()
 
@@ -139,7 +143,7 @@ for model in (*df_metrics, model_mean_err_col):
         per_elem_err /= df_elem_err[test_set_std_col]
         per_elem_err.name = f"{model} (normalized by test set std)"
     fig = ptable_heatmap_plotly(
-        per_elem_err, precision=".2f", colorscale="Inferno", cscale_range=cs_range
+        per_elem_err, fmt=".2f", colorscale="Inferno", cscale_range=cs_range
     )
     fig.show()
 
@@ -179,7 +183,7 @@ fig = df_melt.plot.scatter(
     # text=df_melt.index.where(
     #     (df_melt[val_col] > 0.04) | (df_melt[train_count_col] > 6_000)
     # ),
-    title="Per-element error vs element-occurrence in MP training set",
+    title="Per-element error vs element occurrence in MP training set",
     hover_data={val_col: ":.2f", train_count_col: ":,.0f"},
 )
 for trace in fig.data:
@@ -200,7 +204,7 @@ save_fig(fig, f"{PDF_FIGS}/element-prevalence-vs-error.pdf")
 n_examp_for_rarest_elem_col = "Examples for rarest element in structure"
 df_wbm[n_examp_for_rarest_elem_col] = [
     df_elem_err[train_count_col].loc[list(map(str, Composition(formula)))].min()
-    for formula in tqdm(df_wbm.formula)
+    for formula in tqdm(df_wbm[formula_col])
 ]
 
 
@@ -208,14 +212,14 @@ df_wbm[n_examp_for_rarest_elem_col] = [
 df_melt = (
     df_each_err.abs()
     .reset_index()
-    .melt(var_name="Model", value_name=each_pred_col, id_vars="material_id")
-    .set_index("material_id")
+    .melt(var_name="Model", value_name=each_pred_col, id_vars=id_col)
+    .set_index(id_col)
 )
 df_melt[n_examp_for_rarest_elem_col] = df_wbm[n_examp_for_rarest_elem_col]
 
 df_bin = bin_df_cols(df_melt, [n_examp_for_rarest_elem_col, each_pred_col], ["Model"])
-df_bin = df_bin.reset_index().set_index("material_id")
-df_bin["formula"] = df_wbm.formula
+df_bin = df_bin.reset_index().set_index(id_col)
+df_bin[formula_col] = df_wbm[formula_col]
 
 
 # %%
@@ -226,7 +230,7 @@ fig = px.scatter(
     color="Model",
     facet_col="Model",
     facet_col_wrap=3,
-    hover_data=dict(material_id=True, formula=True, Model=False),
+    hover_data={id_col: True, formula_col: True, "Model": False},
     title="Absolute errors in model-predicted E<sub>above hull</sub> vs. occurrence "
     "count in MP training set<br>of least prevalent element in structure",
 )

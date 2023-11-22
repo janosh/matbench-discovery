@@ -11,9 +11,10 @@ authors:
   - name: Brian DeCost
     affiliation: National Institute of Standards and Technology
     orcid: https://orcid.org/0000-0002-3459-5888
+trained_by:
   - name: Philipp Benner
-    affiliation: Bundesanstalt für Materialforschung und -prüfung BAM
-    orcid: https://orcid.org/0000-0002-0912-8137
+    affiliation: German Federal Institute of Materials Research and Testing (BAM)
+    orcid: 0000-0002-0912-8137
     github: https://github.com/pbenner
 repo: https://github.com/usnistgov/alignn
 url: https://jarvis.nist.gov/jalignn
@@ -32,8 +33,8 @@ trained_for_benchmark: true
 training_set: # model trained from specifically for MBD
   title: MP Computed Structure Entries
   url: https://figshare.com/ndownloader/files/40344436
-  size: 154_719
+  n_structures: 154_719
 # training_set: # NIST pre-trained model
 #   title: Graphs of MP
 #   url: https://figshare.com/articles/dataset/7451351
-#   size: 69_239
+#   n_structures: 69_239

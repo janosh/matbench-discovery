@@ -3,6 +3,7 @@
 
 # %%
 import os
+import sys
 from importlib.metadata import version
 
 import pandas as pd
@@ -12,12 +13,14 @@ from sklearn.impute import SimpleImputer
 from sklearn.metrics import r2_score
 from sklearn.pipeline import Pipeline
 
-from matbench_discovery import today
+from matbench_discovery import ROOT, formula_col, id_col, today
 from matbench_discovery.data import DATA_FILES, df_wbm, glob_to_df
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.preds import e_form_col as test_e_form_col
 from matbench_discovery.slurm import slurm_submit
-from models.voronoi import featurizer
+
+sys.path.append(f"{ROOT}/models")
+from voronoi import featurizer  # noqa: E402
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-26"
@@ -46,14 +49,14 @@ slurm_vars = slurm_submit(
 
 # %%
 train_path = f"{module_dir}/2022-11-25-features-mp/voronoi-features-mp-*.csv.bz2"
-df_train = glob_to_df(train_path).set_index("material_id")
+df_train = glob_to_df(train_path).set_index(id_col)
 print(f"{df_train.shape=}")
 
-df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index("material_id")
+df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index(id_col)
 train_e_form_col = "formation_energy_per_atom"
 
 test_path = f"{module_dir}/2022-11-18-features-wbm-{task_type}.csv.bz2"
-df_test = pd.read_csv(test_path).set_index("material_id")
+df_test = pd.read_csv(test_path).set_index(id_col)
 print(f"{df_test.shape=}")
 
 
@@ -87,7 +90,7 @@ wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 feature_names = featurizer.feature_labels()
 n_nans = df_train[feature_names].isna().any(axis=1).sum()
 
-print(f"train set NaNs: {n_nans:,} / {len(df_train):,} = {n_nans/len(df_train):.3%}")
+print(f"train set NaNs: {n_nans:,} / {len(df_train):,} = {n_nans / len(df_train):.3%}")
 
 df_train = df_train.dropna(subset=feature_names)
 
@@ -107,7 +110,7 @@ model.fit(df_train[feature_names], df_train[train_e_form_col])
 
 # %%
 n_nans = df_test[feature_names].isna().any(axis=1).sum()
-print(f"test set NaNs: {n_nans:,} / {len(df_train):,} = {n_nans/len(df_train):.1%}")
+print(f"test set NaNs: {n_nans:,} / {len(df_train):,} = {n_nans / len(df_train):.1%}")
 
 df_test = df_test.dropna(subset=feature_names)
 
@@ -120,7 +123,7 @@ df_wbm[pred_col] = df_test[pred_col]
 df_wbm[pred_col].round(4).to_csv(out_path)
 
 table = wandb.Table(
-    dataframe=df_wbm[["formula", test_e_form_col, pred_col]].reset_index()
+    dataframe=df_wbm[[formula_col, test_e_form_col, pred_col]].reset_index()
 )
 
 df_wbm[pred_col].isna().sum()

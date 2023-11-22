@@ -5,9 +5,11 @@ import subprocess
 import sys
 from collections.abc import Sequence
 
+# taken from https://slurm.schedmd.com/job_array.html#env_vars, lower-cased and
+# and removed the SLURM_ prefix
 SLURM_KEYS = (
-    "job_id array_task_id array_task_count mem_per_node nodelist submit_host"
-    "job_partition job_user job_account tasks_per_node job_qos"
+    "job_id array_job_id array_task_id array_task_count mem_per_node nodelist"
+    "submit_host job_partition job_user job_account tasks_per_node job_qos"
 ).split()
 
 

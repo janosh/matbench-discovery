@@ -4,16 +4,22 @@ import os
 import numpy as np
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 from pymatgen.core import Composition
 from pymatviz import (
     count_elements,
     ptable_heatmap_plotly,
     spacegroup_sunburst,
 )
-from pymatviz.utils import save_fig
+from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD
+from matbench_discovery import (
+    PDF_FIGS,
+    ROOT,
+    SITE_FIGS,
+    STABILITY_THRESHOLD,
+    formula_col,
+    id_col,
+)
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.energy import mp_elem_reference_entries
@@ -36,8 +42,10 @@ df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False)
 
 
 # %%
-wbm_occu_counts = count_elements(df_wbm.formula, count_mode="occurrence").astype(int)
-wbm_comp_counts = count_elements(df_wbm.formula, count_mode="composition")
+wbm_occu_counts = count_elements(df_wbm[formula_col], count_mode="occurrence").astype(
+    int
+)
+wbm_comp_counts = count_elements(df_wbm[formula_col], count_mode="composition")
 
 mp_occu_counts = count_elements(df_mp.formula_pretty, count_mode="occurrence").astype(
     int
@@ -61,16 +69,16 @@ for dataset, count_mode, elem_counts in all_counts:
 df_wbm["step"] = df_wbm.index.str.split("-").str[1].astype(int)
 assert df_wbm.step.between(1, 5).all()
 for batch in range(1, 6):
-    count_elements(df_wbm[df_wbm.step == batch].formula).to_json(
+    count_elements(df_wbm[df_wbm.step == batch][formula_col]).to_json(
         f"{data_page}/wbm-element-counts-{batch=}.json"
     )
 
 # export element counts by arity (how many elements in the formula)
 comp_col = "composition"
-df_wbm[comp_col] = df_wbm.formula.map(Composition)
+df_wbm[comp_col] = df_wbm[formula_col].map(Composition)
 
 for arity, df_mp in df_wbm.groupby(df_wbm[comp_col].map(len)):
-    count_elements(df_mp.formula).to_json(
+    count_elements(df_mp[formula_col]).to_json(
         f"{data_page}/wbm-element-counts-{arity=}.json"
     )
 
@@ -107,7 +115,7 @@ x_label = "WBM energy above MP convex hull (eV/atom)"
 fig = px.bar(
     x=bins[bins < 0], y=left_counts, opacity=0.7, labels={"x": x_label, "y": "Counts"}
 )
-fig.add_trace(go.Bar(x=bins[bins >= 0], y=right_counts, opacity=0.7))
+fig.add_bar(x=bins[bins >= 0], y=right_counts, opacity=0.7)
 
 if col.startswith("e_above_hull"):
     n_stable = sum(df_wbm[col] <= STABILITY_THRESHOLD)
@@ -181,14 +189,14 @@ save_fig(fig, f"{PDF_FIGS}/mp-elemental-ref-energies.pdf")
 # many models struggle on the halogens in per-element error periodic table heatmaps
 # https://janosh.github.io/matbench-discovery/models
 df_2d_tsne = pd.read_csv(f"{module_dir}/tsne/one-hot-112-composition-2d.csv.gz")
-df_2d_tsne = df_2d_tsne.set_index("material_id")
+df_2d_tsne = df_2d_tsne.set_index(id_col)
 
 df_3d_tsne = pd.read_csv(f"{module_dir}/tsne/one-hot-112-composition-3d.csv.gz")
 model = "Wrenformer"
 df_3d_tsne = pd.read_csv(
     f"{module_dir}/tsne/one-hot-112-composition+{model}-each-err-3d-metric=eucl.csv.gz"
 )
-df_3d_tsne = df_3d_tsne.set_index("material_id")
+df_3d_tsne = df_3d_tsne.set_index(id_col)
 
 df_wbm[list(df_2d_tsne)] = df_2d_tsne
 df_wbm[list(df_3d_tsne)] = df_3d_tsne
@@ -206,8 +214,8 @@ fig = px.scatter(
     x="2d t-SNE 1",
     y="2d t-SNE 2",
     color=color_col,
-    hover_name="material_id",
-    hover_data=("formula", each_true_col),
+    hover_name=id_col,
+    hover_data=(formula_col, each_true_col),
     range_color=(0, clr_range_max),
 )
 fig.show()
@@ -220,7 +228,7 @@ fig = px.scatter_3d(
     y="3d t-SNE 2",
     z="3d t-SNE 3",
     color=color_col,
-    custom_data=["material_id", "formula", each_true_col, color_col],
+    custom_data=[id_col, formula_col, each_true_col, color_col],
     range_color=(0, clr_range_max),
 )
 fig.data[0].hovertemplate = (

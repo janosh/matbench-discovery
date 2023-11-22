@@ -10,7 +10,8 @@
 
   const descriptions = {
     alignn_checkpoint: "ALIGNN model trained on <code>mp_computed_structure_entries</code>",
-    mace_checkpoint: "MACE model trained on the MPtrj dataset (https://figshare.com/articles/dataset/23713842)",
+    mace_checkpoint_1: "2M params MACE model trained by Yuan Chiang on MPtrj (https://figshare.com/articles/dataset/23713842)",
+    mace_checkpoint_2: "16M params MACE model trained by Philipp Benner on MPtrj (https://figshare.com/articles/dataset/23713842)",
     mp_computed_structure_entries:
       `JSON-Serialized MP ${cse_link} objects containing relaxed structures and DFT final energies`,
     mp_elemental_ref_entries: `Minimum energy ComputedEntry for each element in MP`,
@@ -24,7 +25,7 @@
       `Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more.`,
   }
   const desc_keys = Object.keys(descriptions).sort()
-  const figshare_keys = Object.keys(figshare_urls).sort()
+  const figshare_keys = Object.keys(figshare_urls.files).sort()
   const missing = figshare_keys.filter((key) => !desc_keys.includes(key))
   if (missing.length > 0) {
     throw `descriptions must contain all figshare_urls keys, missing=${missing}`
@@ -60,12 +61,15 @@ assert sorted(DATA_FILES) == [
     "wbm_summary",
 ]
 
-# version defaults to latest, set a specific version to avoid breaking changes
+# 1st arg can be any DATA_FILES key
+# version defaults to latest, set a specific version like 1.0.0 to avoid breaking changes
 df_wbm = load("wbm_summary", version="1.0.0")
 
-assert df_wbm.shape == (256963, 15)
+# test set size
+assert df_wbm.shape == (256_963, 15)
 
-assert list(df_wbm) == [
+# available columns in WBM summary data
+assert tuple(df_wbm) == [
     "formula",
     "n_sites",
     "volume",
@@ -96,27 +100,29 @@ assert list(df_wbm) == [
 1. **`bandgap_pbe`**: PBE-level DFT band gap from [WBM paper]
 1. **`uncorrected_energy_from_cse`**: Uncorrected DFT energy stored in `ComputedStructureEntries`. Should be the same as `uncorrected_energy`. There are 2 cases where the absolute difference reported in the summary file and in the computed structure entries exceeds 0.1 eV (`wbm-2-3218`, `wbm-1-56320`) which we attribute to rounding errors.
 1. **`e_form_per_atom_uncorrected`**: Uncorrected DFT formation energy per atom in eV/atom.
-1. **`e_form_per_atom_mp2020_corrected`**: Matbench Discovery takes these as ground truth for the formation energy. The result of applying the [MP2020 energy corrections](https://pymatgen.org/pymatgen.entries.compatibility.html#pymatgen.entries.compatibility.MaterialsProject2020Compatibility) (latest correction scheme at time of release) to `e_form_per_atom_uncorrected`.
-1. **`e_correction_per_atom_mp2020`**: [`MaterialsProject2020Compatibility`](https://pymatgen.org/pymatgen.entries.compatibility.html#pymatgen.entries.compatibility.MaterialsProject2020Compatibility) energy corrections in eV/atom.
-1. **`e_correction_per_atom_mp_legacy`**: Legacy [`MaterialsProjectCompatibility`](https://pymatgen.org/pymatgen.entries.compatibility.html#pymatgen.entries.compatibility.MaterialsProjectCompatibility) energy corrections in eV/atom. Having both old and new corrections allows updating predictions from older models like MEGNet that were trained on MP formation energies treated with the old correction scheme.
+1. **`e_form_per_atom_mp2020_corrected`**: Matbench Discovery takes these as ground truth for the formation energy. The result of applying the [MP2020 energy corrections][`MaterialsProject2020Compatibility`] (latest correction scheme at time of release) to `e_form_per_atom_uncorrected`.
+1. **`e_correction_per_atom_mp2020`**: [`MaterialsProject2020Compatibility`] energy corrections in eV/atom.
+1. **`e_correction_per_atom_mp_legacy`**: Legacy [`MaterialsProjectCompatibility`] energy corrections in eV/atom. Having both old and new corrections allows updating predictions from older models like MEGNet that were trained on MP formation energies treated with the old correction scheme.
 1. **`e_above_hull_mp2020_corrected_ppd_mp`**: Energy above hull distances in eV/atom after applying the MP2020 correction scheme. The convex hull in question is the one spanned by all ~145k Materials Project `ComputedStructureEntries`. Matbench Discovery takes these as ground truth for material stability. Any value above 0 is assumed to be an unstable/metastable material.
 1. **`site_stats_fingerprint_init_final_norm_diff`**: The norm of the difference between the initial and final site fingerprints. This is a volume-independent measure of how much the structure changed during DFT relaxation. Uses the `matminer` [`SiteStatsFingerprint`](https://github.com/hackingmaterials/matminer/blob/33bf112009b67b108f1008b8cc7398061b3e6db2/matminer/featurizers/structure/sites.py#L21-L33) (v0.8.0).
 
+[`MaterialsProject2020Compatibility`]: https://github.com/materialsproject/pymatgen/blob/02a4ca8aa0277b5f6db11f4de4fdbba129de70a5/pymatgen/entries/compatibility.py#L823
+[`MaterialsProjectCompatibility`]: https://github.com/materialsproject/pymatgen/blob/02a4ca8aa0277b5f6db11f4de4fdbba129de70a5/pymatgen/entries/compatibility.py#L766
+
 ## 📥 &thinsp; Direct Download
 
-You can download the data files from Figshare:
+You can download all Matbench Discovery data files from <a href={figshare_urls.article}>this Figshare article</a>:
 
 <ol>
-  {#each Object.entries(figshare_urls) as [key, lst]}
-    {@const [href, file_name] = lst}
-    <li>
-      <Tooltip text={file_name}>
-        <a {href}>{key}</a>:
-      </Tooltip>
+  {#each Object.entries(figshare_urls.files) as [key, [href, file_name]]}
+    <li style="margin-top: 1ex;">
+    <strong>{key}</strong> (<a {href}>{file_name}</a>)<br/>
       {@html descriptions[key]}
     </li>
   {/each}
 </ol>
+
+To train an interatomic potential, we recommend the [**MPtrj dataset**](https://figshare.com/articles/dataset/23713842) which was created to train [CHGNet](https://www.nature.com/articles/s42256-023-00716-3). With thanks to [Bowen Deng](https://scholar.google.com/citations?user=PRPXA0QAAAAJ) for cleaning and releasing this dataset. It was created from the [2021.11.10](https://docs.materialsproject.org/changes/database-versions#v2021.11.10) release of Materials Project and therefore constitutes a slightly smaller but valid subset of the allowed [2022.10.28](https://docs.materialsproject.org/changes/database-versions#v2022.10.28) MP release that is our training set.
 
 [wbm paper]: https://nature.com/articles/s41524-020-00481-6
 
@@ -161,7 +167,8 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    training_set:
      title: MPtrj
      url: https://figshare.com/articles/dataset/23713842
-     size: 1_580_395
+     n_structures: 1_580_395
+     n_materials: 145_923
 
    notes: # notes can have any key, be multiline and support markdown.
      description: This is how my model works...

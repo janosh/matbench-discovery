@@ -11,7 +11,7 @@ from pymatgen.core import Structure
 from torch.utils.data import DataLoader
 from tqdm import tqdm, trange
 
-from matbench_discovery import WANDB_PATH, timestamp, today
+from matbench_discovery import WANDB_PATH, id_col, struct_col, timestamp, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 from matbench_discovery.structure import perturb_structure
@@ -27,8 +27,7 @@ __date__ = "2022-06-13"
 # %%
 epochs = 300
 target_col = "formation_energy_per_atom"
-input_col = "structure"
-id_col = "material_id"
+input_col = struct_col
 # 0 for no perturbation, n>1 means train on n perturbations of each crystal
 # in the training set all assigned the same original target energy
 n_perturb = 0
@@ -43,7 +42,7 @@ slurm_vars = slurm_submit(
     job_name=job_name,
     partition="ampere",
     account="LEE-SL3-GPU",
-    time="12:0:0",
+    time="11:55:0",
     array=f"1-{ensemble_size}",
     out_dir=out_dir,
     slurm_flags="--nodes 1 --gpus-per-node 1",
@@ -73,7 +72,7 @@ structs = df_aug.pop(input_col)
 for idx in trange(n_perturb, desc="Generating perturbed structures"):
     df_aug[input_col] = [perturb_structure(x) for x in structs]
     df_in = pd.concat(
-        [df_in, df_aug.set_index(f"{x}-aug={idx+1}" for x in df_aug.index)]
+        [df_in, df_aug.set_index(f"{x}-aug={idx + 1}" for x in df_aug.index)]
     )
 
 del df_aug

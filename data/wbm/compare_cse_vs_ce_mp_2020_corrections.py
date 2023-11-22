@@ -1,7 +1,6 @@
 # %%
 import gzip
 import json
-import warnings
 
 import pandas as pd
 from pymatgen.entries.compatibility import (
@@ -11,7 +10,7 @@ from pymatgen.entries.compatibility import (
 from pymatgen.entries.computed_entries import ComputedEntry, ComputedStructureEntry
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, today
+from matbench_discovery import ROOT, formula_col, id_col, today
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.plots import plt
@@ -23,9 +22,7 @@ ComputedStructureEntry, not ComputedEntry when applying corrections.
 """
 
 
-df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(
-    "material_id"
-)
+df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(id_col)
 
 cses = [
     ComputedStructureEntry.from_dict(dct)
@@ -35,14 +32,11 @@ cses = [
 ces = [ComputedEntry.from_dict(dct) for dct in tqdm(df_cse.computed_structure_entry)]
 
 
-warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
-
-
 # %%
-out = MaterialsProject2020Compatibility().process_entries(cses, verbose=True)
-assert len(out) == len(df_cse)
-out = MaterialsProject2020Compatibility().process_entries(ces, verbose=True)
-assert len(out) == len(df_cse)
+processed = MaterialsProject2020Compatibility().process_entries(cses, verbose=True)
+assert len(processed) == len(df_cse)
+processed = MaterialsProject2020Compatibility().process_entries(ces, verbose=True)
+assert len(processed) == len(df_cse)
 
 df_wbm["e_form_per_atom_mp2020_from_ce"] = [
     get_e_form_per_atom(entry) for entry in tqdm(ces)
@@ -58,10 +52,10 @@ df_wbm["mp2020_ce_correction_per_atom"] = [ce.correction_per_atom for ce in tqdm
 
 
 # %%
-out = MaterialsProjectCompatibility().process_entries(cses, verbose=True)
-assert len(out) == len(df_cse)
-out = MaterialsProjectCompatibility().process_entries(ces, verbose=True)
-assert len(out) == len(df_cse)
+processed = MaterialsProjectCompatibility().process_entries(cses, verbose=True)
+assert len(processed) == len(df_cse)
+processed = MaterialsProjectCompatibility().process_entries(ces, verbose=True)
+assert len(processed) == len(df_cse)
 
 df_wbm["e_form_per_atom_legacy_from_ce"] = [
     get_e_form_per_atom(entry) for entry in tqdm(ces)
@@ -74,7 +68,9 @@ df_wbm["legacy_ce_correction"] = [ce.correction for ce in tqdm(ces)]
 
 
 # %%
-df_wbm["chem_sys"] = df_wbm.formula.str.replace("[0-9]+", "", regex=True).str.split()
+df_wbm["chem_sys"] = (
+    df_wbm[formula_col].str.replace("[0-9]+", "", regex=True).str.split()
+)
 df_wbm["anion"] = None
 df_wbm["anion"][df_wbm.chem_sys.astype(str).str.contains("'O'")] = "oxide"
 df_wbm["anion"][df_wbm.chem_sys.astype(str).str.contains("'S'")] = "sulfide"

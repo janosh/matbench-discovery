@@ -7,6 +7,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, STABILITY_THRESHOLD
+from matbench_discovery import id_col as default_id_col
 from matbench_discovery.data import Files, df_wbm, glob_to_df
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.plots import (
@@ -42,7 +43,7 @@ class PredFiles(Files):
     # BOWSR optimizer coupled with original megnet
     bowsr_megnet = "bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv.gz"
     # default CHGNet model from publication with 400,438 params
-    chgnet = "chgnet/2023-03-06-chgnet-wbm-IS2RE.csv.gz"
+    chgnet = "chgnet/2023-10-23-chgnet-0.3.0-wbm-IS2RE.csv.gz"
 
     # CGCnn 10-member ensemble
     cgcnn = "cgcnn/2023-01-26-cgcnn-ens=10-wbm-IS2RE.csv.gz"
@@ -55,7 +56,7 @@ class PredFiles(Files):
     # m3gnet_ms = "m3gnet/2023-06-01-m3gnet-manual-sampling-wbm-IS2RE.csv.gz"
 
     # MACE trained on original M3GNet training set
-    mace = "mace/2023-08-14-mace-wbm-IS2RE-FIRE.csv.gz"
+    mace = "mace/2023-11-02-mace-wbm-IS2RE-FIRE.csv.gz"
 
     # original MEGNet straight from publication, not re-trained
     megnet = "megnet/2022-11-18-megnet-wbm-IS2RE.csv.gz"
@@ -83,7 +84,7 @@ PRED_FILES = PredFiles(root=f"{ROOT}/models", key_map=model_labels)
 def load_df_wbm_with_preds(
     models: Sequence[str] = (*PRED_FILES,),
     pbar: bool = True,
-    id_col: str = "material_id",
+    id_col: str = default_id_col,
     **kwargs: Any,
 ) -> pd.DataFrame:
     """Load WBM summary dataframe with model predictions from disk.

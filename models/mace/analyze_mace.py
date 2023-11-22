@@ -6,8 +6,9 @@ import os
 
 import pandas as pd
 from pymatviz import density_scatter, ptable_heatmap_plotly, spacegroup_sunburst
-from pymatviz.utils import save_fig
+from pymatviz.io import save_fig
 
+from matbench_discovery import formula_col, id_col
 from matbench_discovery import plots as plots
 from matbench_discovery.data import df_wbm
 from matbench_discovery.preds import PRED_FILES
@@ -17,7 +18,6 @@ __author__ = "Janosh Riebesell"
 __date__ = "2023-07-23"
 
 module_dir = os.path.dirname(__file__)
-id_col = "material_id"
 pred_col = "e_form_per_atom_mace"
 
 
@@ -44,7 +44,7 @@ save_fig(ax, "mace-too-low-hull-dist-scatter.pdf")
 
 
 # %%
-fig = ptable_heatmap_plotly(df_low.formula)
+fig = ptable_heatmap_plotly(df_low[formula_col])
 title = f"Elements in {len(df_low):,} MACE severe energy underpredictions"
 fig.layout.title.update(text=title, x=0.4, y=0.95)
 fig.show()

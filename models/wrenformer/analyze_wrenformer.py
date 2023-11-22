@@ -6,12 +6,12 @@ import numpy as np
 import pandas as pd
 from aviary.wren.utils import get_isopointal_proto_from_aflow
 from pymatviz import spacegroup_hist, spacegroup_sunburst
+from pymatviz.io import df_to_html_table, df_to_pdf, save_fig
 from pymatviz.ptable import ptable_heatmap_plotly
-from pymatviz.utils import add_identity_line, bin_df_cols, save_fig
+from pymatviz.utils import add_identity_line, bin_df_cols
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery import PDF_FIGS, SITE_FIGS, formula_col, id_col
 from matbench_discovery.data import DATA_FILES, df_wbm
-from matbench_discovery.plots import df_to_pdf, df_to_svelte_table
 from matbench_discovery.preds import df_each_pred, df_preds, each_true_col
 
 __author__ = "Janosh Riebesell"
@@ -35,7 +35,7 @@ title = f"{len(df_bad)} {model} preds<br>with {max_each_true=}, {min_each_pred=}
 
 
 # %%
-df_mp = pd.read_csv(DATA_FILES.mp_energies).set_index("material_id")
+df_mp = pd.read_csv(DATA_FILES.mp_energies).set_index(id_col)
 df_mp[spg_col] = df_mp[wyckoff_col].str.split("_").str[2].astype(int)
 df_mp["isopointal_proto_from_aflow"] = df_mp[wyckoff_col].map(
     get_isopointal_proto_from_aflow
@@ -67,15 +67,8 @@ df_proto_counts = df_proto_counts.reset_index(names=proto_col)
 df_proto_counts[proto_col] = df_proto_counts[proto_col].str.replace("_", "-")
 
 styler = df_proto_counts.head(10).style.background_gradient(cmap="viridis")
-styles = {
-    "": "font-family: sans-serif; border-collapse: collapse;",
-    "td, th": "border: none; padding: 4px 6px; white-space: nowrap;",
-    "th": "border: 1px solid; border-width: 1px 0; text-align: left;",
-}
-styler.set_table_styles([dict(selector=sel, props=styles[sel]) for sel in styles])
-styler.set_uuid("")
 
-df_to_svelte_table(styler, f"{SITE_FIGS}/proto-counts-{model}-failures.svelte")
+df_to_html_table(styler, f"{SITE_FIGS}/proto-counts-{model}-failures.svelte")
 df_to_pdf(styler, f"{PDF_FIGS}/proto-counts-{model}-failures.pdf")
 
 
@@ -92,7 +85,7 @@ save_fig(fig, f"{SITE_FIGS}/spacegroup-sunburst-{model}-failures.svelte")
 
 
 # %%
-fig = ptable_heatmap_plotly(df_bad.formula)
+fig = ptable_heatmap_plotly(df_bad[formula_col])
 fig.layout.title = f"Elements in {title}"
 fig.layout.margin = dict(l=0, r=0, t=50, b=0)
 fig.show()

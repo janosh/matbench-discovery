@@ -1,19 +1,15 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Literal
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.graph_objects as go
 import pytest
-from pytest import CaptureFixture
 
 from matbench_discovery.plots import (
     Backend,
     cumulative_metrics,
-    df_to_pdf,
-    df_to_svelte_table,
     hist_classified_stable_vs_hull_dist,
     plotly_line_styles,
     plotly_markers,
@@ -157,56 +153,6 @@ def test_hist_classified_stable_vs_hull_dist(
     else:
         assert isinstance(ax, go.Figure)
         assert ax.layout.yaxis.title.text == "count"
-
-
-def test_df_to_svelte_table(tmp_path: Path) -> None:
-    df = pd._testing.makeMixedDataFrame()
-
-    file_path = tmp_path / "test_df.svelte"
-
-    df_to_svelte_table(df.style, file_path)
-
-    assert file_path.exists()
-    with open(file_path) as file:
-        content = file.read()
-
-    # check table was made sortable
-    assert '<script lang="ts">' in content
-    assert "import { sortable } from 'svelte-zoo/actions'" in content
-    assert "<table use:sortable" in content
-
-    # check file contains original dataframe value
-    assert str(df.iloc[0, 0]) in content
-
-
-@pytest.mark.parametrize("crop", [True, False])
-def test_df_to_pdf(tmp_path: Path, crop: bool, capsys: CaptureFixture[str]) -> None:
-    try:
-        import weasyprint
-    except ImportError:
-        weasyprint = None
-    try:
-        import pdfCropMargins
-    except ImportError:
-        pdfCropMargins = None
-
-    df = pd._testing.makeMixedDataFrame()
-    file_path = tmp_path / "test_df.pdf"
-
-    try:
-        df_to_pdf(df.style, file_path, crop=crop)
-    except ImportError as exc:
-        if weasyprint is None:
-            assert "weasyprint not installed\n" in str(exc)  # noqa: PT017
-            return
-        if pdfCropMargins is None:
-            assert "cropPdfMargins not installed\n" in str(exc)  # noqa: PT017
-            return
-
-    assert file_path.exists()
-    stdout, stderr = capsys.readouterr()
-    assert stderr == ""
-    assert stdout == ""
 
 
 def test_plotly_markers_line_styles() -> None:

@@ -11,7 +11,7 @@ import pandas as pd
 from pymatgen.core import Composition
 from tqdm import tqdm
 
-from matbench_discovery import ROOT
+from matbench_discovery import ROOT, id_col
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 
@@ -41,7 +41,7 @@ print(f"{out_dim=}")
 print(f"{projection_type=}")
 start_time = datetime.now()
 print(f"job started at {start_time:%Y-%m-%d %H:%M:%S}")
-df_in = pd.read_csv(data_path, na_filter=False).set_index("material_id")
+df_in = pd.read_csv(data_path, na_filter=False).set_index(id_col)
 
 
 def metric(

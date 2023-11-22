@@ -7,7 +7,6 @@ into single file.
 from __future__ import annotations
 
 import os
-import warnings
 from glob import glob
 
 import pandas as pd
@@ -17,14 +16,13 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz import density_scatter
 from tqdm import tqdm
 
+from matbench_discovery import formula_col, id_col
 from matbench_discovery.data import DATA_FILES, as_dict_handler, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.preds import e_form_col
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-01"
-
-warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
 
 
 # %%
@@ -43,17 +41,15 @@ dfs: dict[str, pd.DataFrame] = {}
 for file_path in tqdm(file_paths):
     if file_path in dfs:
         continue
-    df = pd.read_json(file_path).set_index("material_id")
+    df = pd.read_json(file_path).set_index(id_col)
     # drop trajectory to save memory
-    dfs[file_path] = df.drop(columns="mace_trajectory")
+    dfs[file_path] = df.drop(columns="mace_trajectory", errors="ignore")
 
 df_mace = pd.concat(dfs.values()).round(4)
 
 
 # %%
-df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(
-    "material_id"
-)
+df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(id_col)
 
 entry_col = "computed_structure_entry"
 df_cse[entry_col] = [
@@ -76,19 +72,19 @@ for row in tqdm(df_mace.itertuples(), total=len(df_mace)):
 
 
 # %% apply energy corrections
-out = MaterialsProject2020Compatibility().process_entries(
+processed = MaterialsProject2020Compatibility().process_entries(
     df_mace[entry_col], verbose=True, clean=True
 )
-assert len(out) == len(df_mace)
+assert len(processed) == len(df_mace)
 
 
 # %% compute corrected formation energies
 e_form_mace_col = "e_form_per_atom_mace"
-df_mace["formula"] = df_wbm.formula
+df_mace[formula_col] = df_wbm[formula_col]
 df_mace[e_form_mace_col] = [
     get_e_form_per_atom(dict(energy=cse.energy, composition=formula))
     for formula, cse in tqdm(
-        df_mace.set_index("formula")[entry_col].items(), total=len(df_mace)
+        df_mace.set_index(formula_col)[entry_col].items(), total=len(df_mace)
     )
 ]
 df_wbm[e_form_mace_col] = df_mace[e_form_mace_col]
@@ -110,6 +106,6 @@ df_bad = df_mace[bad_mask].drop(columns=[entry_col, struct_col])
 df_bad[e_form_col] = df_wbm[e_form_col]
 df_bad.to_csv(f"{out_path}-bad.csv")
 
-# in_path = f"{module_dir}/2023-08-14-mace-wbm-IS2RE-FIRE"
-# df_mace = pd.read_csv(f"{in_path}.csv.gz").set_index("material_id")
-# df_mace = pd.read_json(f"{in_path}.json.gz").set_index("material_id")
+# in_path = f"{module_dir}/2023-11-02-mace-wbm-IS2RE-FIRE"
+# df_mace = pd.read_csv(f"{in_path}.csv.gz").set_index(id_col)
+# df_mace = pd.read_json(f"{in_path}.json.gz").set_index(id_col)

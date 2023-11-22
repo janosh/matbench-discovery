@@ -20,6 +20,15 @@ authors:
   - name: Gabor Csanyi
     affiliation: University of Cambridge
     orcid: https://orcid.org/0000-0002-8180-2034
+trained_by:
+  - name: Philipp Benner
+    affiliation: German Federal Institute of Materials Research and Testing (BAM)
+    orcid: 0000-0002-0912-8137
+    github: https://github.com/pbenner
+  - name: Yuan Chiang
+    affiliation: Lawrence Berkeley National Laboratory
+    orcid: 0000-0002-4017-7084
+    github: https://github.com/chiang-yuan
 repo: https://github.com/ACEsuit/mace
 doi: https://doi.org/10.48550/arXiv.2205.06643
 preprint: https://arxiv.org/abs/2205.06643
@@ -33,7 +42,8 @@ trained_for_benchmark: true
 training_set:
   title: MPTrj
   url: https://figshare.com/articles/dataset/23713842
-  size: 1_580_395
+  n_structures: 1_580_395
+  n_materials: 145_923
 
 hyperparams:
   max_force: 0.05
@@ -42,6 +52,8 @@ hyperparams:
 
 notes:
   description: |
-    The Many-body Atomic Convolutional Energies (MACE) is a higher-order equivariant message-passing neural network for fast and accurate force fields.
+    MACE is a higher-order equivariant message-passing neural network for fast and accurate force fields.
   training: Using pre-trained model released with paper. Training set unspecified at time of writing.
   corrections: None
+# n_params: 2_026_624 # 2023-09-03-mace-yuan-mptrj-slower-14-lr-13_run-3
+n_params: 15_847_440 # 2023-10-29-mace-pbenner-mptrj-no-conditional-loss

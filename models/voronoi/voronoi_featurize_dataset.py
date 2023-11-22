@@ -6,7 +6,6 @@ Voronoi tessellation structure-based features.
 # %%
 import os
 import sys
-import warnings
 from importlib.metadata import version
 
 import numpy as np
@@ -15,15 +14,18 @@ import wandb
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import today
+from matbench_discovery import ROOT, id_col, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
-from models.voronoi import featurizer
+
+sys.path.append(f"{ROOT}/models")
+from voronoi import featurizer  # noqa: E402
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-10-31"
 
 
+# %%
 data_name = "mp"
 data_path = {
     "wbm": DATA_FILES.wbm_initial_structures,
@@ -43,7 +45,7 @@ slurm_vars = slurm_submit(
     job_name=job_name,
     partition="icelake-himem",
     account="LEE-SL3-CPU",
-    time="12:0:0",
+    time="11:55:0",
     array=f"1-{slurm_array_task_count}",
     slurm_flags=("--mem", "15G") if data_name == "mp" else (),
     out_dir=out_dir,
@@ -60,7 +62,7 @@ if os.path.isfile(out_path):
 
 print(f"{data_path=}")
 df_in: pd.DataFrame = np.array_split(
-    pd.read_json(data_path).set_index("material_id"), slurm_array_task_count
+    pd.read_json(data_path).set_index(id_col), slurm_array_task_count
 )[slurm_array_task_id - 1]
 
 if data_name == "mp":  # extract structure dicts from ComputedStructureEntry
@@ -88,10 +90,7 @@ run_params = dict(
 wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 
-# %% prints lots of pymatgen warnings
-# > No electronegativity for Ne. Setting to NaN. This has no physical meaning, ...
-warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
-
+# %%
 df_features = featurizer.featurize_dataframe(df_in, input_col, ignore_errors=True)[
     featurizer.feature_labels()
 ].round(4)

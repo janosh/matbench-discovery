@@ -17,6 +17,7 @@ from dash.dependencies import Input, Output
 from m3gnet.models import Relaxer as M3gnetRelaxer
 from pymatgen.core import Lattice, Structure
 
+from matbench_discovery import id_col
 from matbench_discovery.data import df_wbm
 
 __author__ = "Janosh Riebesell"
@@ -27,9 +28,7 @@ module_dir = os.path.dirname(__file__)
 
 # %%
 init_struct_col = "initial_structure"
-df_cse = pd.read_json(f"{module_dir}/wbm-chgnet-bad-relax.json.gz").set_index(
-    "material_id"
-)
+df_cse = pd.read_json(f"{module_dir}/wbm-chgnet-bad-relax.json.gz").set_index(id_col)
 
 
 # %%
@@ -89,19 +88,17 @@ def plot_energy_and_forces(
     """Plot energy and forces as a function of relaxation step."""
     fig = go.Figure()
     # energy trace = primary y-axis
-    fig.add_trace(go.Scatter(x=df.index, y=df[e_col], mode="lines", name="Energy"))
+    fig.add_scatter(x=df.index, y=df[e_col], mode="lines", name="Energy")
     # get energy line color
     line_color = fig.data[0].line.color
 
     # forces trace = secondary y-axis
-    fig.add_trace(
-        go.Scatter(
-            x=df.index,
-            y=df[force_col],
-            mode="lines",
-            name="Forces",
-            yaxis="y2",
-        ),
+    fig.add_scatter(
+        x=df.index,
+        y=df[force_col],
+        mode="lines",
+        name="Forces",
+        yaxis="y2",
     )
 
     fig.update_layout(

@@ -5,8 +5,7 @@
 from typing import Final
 
 import numpy as np
-import plotly.graph_objects as go
-from pymatviz.utils import save_fig
+from pymatviz.io import save_fig
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
@@ -65,11 +64,10 @@ else:
     counts, bins = np.histogram(
         df_preds[each_true_col] + noise, bins=100, range=fig.layout.xaxis.range
     )
-    marginal_trace = go.Scatter(
+    fig.add_scatter(
         x=bins, y=counts, name="Density", fill="tozeroy", showlegend=False, yaxis="y2"
     )
-    marginal_trace.marker.color = "rgba(0, 150, 200, 1)"
-    fig.add_trace(marginal_trace)
+    fig.data[-1].marker.color = "rgba(0, 150, 200, 1)"
 
     # update layout to include marginal plot
     fig.layout.update(

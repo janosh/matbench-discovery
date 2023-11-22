@@ -13,157 +13,157 @@
   padding: 4px 6px;
   white-space: nowrap;
 }
-#T_ th {
+#T_ th.col_heading {
   border: 1px solid;
   border-width: 1px 0;
   text-align: left;
 }
-#T__row0_col0, #T__row0_col1, #T__row0_col2, #T__row0_col3, #T__row0_col5, #T__row1_col4, #T__row2_col6, #T__row2_col7, #T__row2_col8 {
+#T_ th.row_heading {
+  font-weight: normal;
+  padding: 3pt;
+}
+#T__row0_col0, #T__row0_col1, #T__row0_col2, #T__row0_col3, #T__row0_col4, #T__row0_col6, #T__row1_col7, #T__row1_col8, #T__row3_col5 {
   background-color: #fde725;
   color: #000000;
 }
-#T__row0_col4, #T__row2_col5 {
-  background-color: #73d056;
-  color: #000000;
-}
-#T__row0_col6 {
-  background-color: #ece51b;
-  color: #000000;
-}
-#T__row0_col7 {
-  background-color: #f8e621;
-  color: #000000;
-}
-#T__row0_col8 {
-  background-color: #f6e620;
-  color: #000000;
-}
-#T__row1_col0, #T__row1_col7 {
-  background-color: #efe51c;
-  color: #000000;
-}
-#T__row1_col1 {
-  background-color: #81d34d;
-  color: #000000;
-}
-#T__row1_col2 {
-  background-color: #7fd34e;
-  color: #000000;
-}
-#T__row1_col3, #T__row5_col1 {
-  background-color: #75d054;
-  color: #000000;
-}
-#T__row1_col5 {
-  background-color: #37b878;
-  color: #f1f1f1;
-}
-#T__row1_col6 {
+#T__row0_col5 {
   background-color: #e5e419;
   color: #000000;
 }
-#T__row1_col8 {
-  background-color: #f1e51d;
+#T__row0_col7 {
+  background-color: #f6e620;
   color: #000000;
 }
-#T__row2_col0 {
-  background-color: #eae51a;
+#T__row0_col8, #T__row1_col1 {
+  background-color: #f4e61e;
   color: #000000;
 }
-#T__row2_col1 {
-  background-color: #a2da37;
-  color: #000000;
-}
-#T__row2_col2 {
-  background-color: #9bd93c;
-  color: #000000;
-}
-#T__row2_col3, #T__row4_col3 {
-  background-color: #a0da39;
-  color: #000000;
-}
-#T__row2_col4 {
-  background-color: #c2df23;
-  color: #000000;
-}
-#T__row3_col0, #T__row3_col5 {
-  background-color: #e2e418;
-  color: #000000;
-}
-#T__row3_col1 {
+#T__row1_col0 {
   background-color: #d2e21b;
   color: #000000;
 }
-#T__row3_col2, #T__row8_col4 {
-  background-color: #d8e219;
+#T__row1_col2, #T__row1_col5, #T__row2_col4 {
+  background-color: #e2e418;
   color: #000000;
 }
-#T__row3_col3 {
-  background-color: #dde318;
+#T__row1_col3 {
+  background-color: #dfe318;
   color: #000000;
 }
-#T__row3_col4 {
-  background-color: #6ccd5a;
+#T__row1_col4 {
+  background-color: #c2df23;
   color: #000000;
 }
-#T__row3_col6, #T__row6_col2 {
-  background-color: #3dbc74;
+#T__row1_col6 {
+  background-color: #efe51c;
+  color: #000000;
+}
+#T__row2_col0 {
+  background-color: #98d83e;
+  color: #000000;
+}
+#T__row2_col1 {
+  background-color: #73d056;
+  color: #000000;
+}
+#T__row2_col2, #T__row5_col3 {
+  background-color: #6ece58;
+  color: #000000;
+}
+#T__row2_col3 {
+  background-color: #5ec962;
+  color: #000000;
+}
+#T__row2_col5 {
+  background-color: #44bf70;
   color: #f1f1f1;
 }
-#T__row3_col7, #T__row8_col0 {
-  background-color: #2cb17e;
-  color: #f1f1f1;
-}
-#T__row3_col8 {
-  background-color: #4cc26c;
+#T__row2_col6 {
+  background-color: #95d840;
   color: #000000;
 }
-#T__row4_col0, #T__row4_col1, #T__row5_col3 {
-  background-color: #89d548;
+#T__row2_col7, #T__row3_col3 {
+  background-color: #bddf26;
   color: #000000;
 }
-#T__row4_col2 {
+#T__row2_col8, #T__row5_col5 {
+  background-color: #d0e11c;
+  color: #000000;
+}
+#T__row3_col0 {
   background-color: #8ed645;
   color: #000000;
 }
-#T__row4_col4, #T__row6_col5 {
-  background-color: #2ab07f;
-  color: #f1f1f1;
-}
-#T__row4_col5 {
-  background-color: #d5e21a;
+#T__row3_col1, #T__row3_col2 {
+  background-color: #c0df25;
   color: #000000;
 }
-#T__row4_col6, #T__row9_col7 {
-  background-color: #424186;
-  color: #f1f1f1;
-}
-#T__row4_col7 {
-  background-color: #3f4889;
-  color: #f1f1f1;
-}
-#T__row4_col8 {
-  background-color: #38598c;
-  color: #f1f1f1;
-}
-#T__row5_col0, #T__row6_col0, #T__row6_col4 {
-  background-color: #84d44b;
+#T__row3_col4 {
+  background-color: #58c765;
   color: #000000;
 }
-#T__row5_col2 {
+#T__row3_col6 {
+  background-color: #23a983;
+  color: #f1f1f1;
+}
+#T__row3_col7 {
+  background-color: #21a585;
+  color: #f1f1f1;
+}
+#T__row3_col8 {
+  background-color: #3bbb75;
+  color: #f1f1f1;
+}
+#T__row4_col0 {
+  background-color: #4ac16d;
+  color: #000000;
+}
+#T__row4_col1 {
   background-color: #7ad151;
   color: #000000;
 }
-#T__row5_col4, #T__row6_col3 {
-  background-color: #32b67a;
-  color: #f1f1f1;
-}
-#T__row5_col5 {
-  background-color: #b2dd2d;
+#T__row4_col2 {
+  background-color: #7cd250;
   color: #000000;
 }
-#T__row5_col6 {
-  background-color: #482374;
+#T__row4_col3 {
+  background-color: #84d44b;
+  color: #000000;
+}
+#T__row4_col4 {
+  background-color: #24aa83;
+  color: #f1f1f1;
+}
+#T__row4_col5 {
+  background-color: #f1e51d;
+  color: #000000;
+}
+#T__row4_col6 {
+  background-color: #443a83;
+  color: #f1f1f1;
+}
+#T__row4_col7 {
+  background-color: #414487;
+  color: #f1f1f1;
+}
+#T__row4_col8, #T__row10_col6 {
+  background-color: #39558c;
+  color: #f1f1f1;
+}
+#T__row5_col0, #T__row6_col0 {
+  background-color: #46c06f;
+  color: #f1f1f1;
+}
+#T__row5_col1, #T__row5_col2 {
+  background-color: #67cc5c;
+  color: #000000;
+}
+#T__row5_col4 {
+  background-color: #29af7f;
+  color: #f1f1f1;
+}
+#T__row5_col6, #T__row10_col3 {
+  background-color: #481f70;
   color: #f1f1f1;
 }
 #T__row5_col7, #T__row5_col8, #T__row8_col5, #T__row9_col3, #T__row9_col6, #T__row10_col0, #T__row10_col1, #T__row10_col2, #T__row10_col4 {
@@ -171,109 +171,142 @@
   color: #f1f1f1;
 }
 #T__row6_col1 {
-  background-color: #3aba76;
+  background-color: #32b67a;
   color: #f1f1f1;
 }
-#T__row6_col6, #T__row7_col8 {
-  background-color: #23888e;
+#T__row6_col2, #T__row6_col5 {
+  background-color: #34b679;
   color: #f1f1f1;
 }
-#T__row6_col7 {
-  background-color: #26818e;
+#T__row6_col3 {
+  background-color: #28ae80;
+  color: #f1f1f1;
+}
+#T__row6_col4 {
+  background-color: #6ccd5a;
+  color: #000000;
+}
+#T__row6_col6 {
+  background-color: #297a8e;
+  color: #f1f1f1;
+}
+#T__row6_col7, #T__row7_col5 {
+  background-color: #29798e;
   color: #f1f1f1;
 }
 #T__row6_col8, #T__row9_col4 {
-  background-color: #1f948c;
+  background-color: #218f8d;
   color: #f1f1f1;
 }
 #T__row7_col0 {
-  background-color: #54c568;
-  color: #000000;
+  background-color: #2cb17e;
+  color: #f1f1f1;
 }
 #T__row7_col1 {
-  background-color: #1e9c89;
+  background-color: #1f988b;
   color: #f1f1f1;
 }
 #T__row7_col2 {
-  background-color: #1f9e89;
+  background-color: #1f998a;
   color: #f1f1f1;
 }
-#T__row7_col3, #T__row8_col1 {
-  background-color: #26828e;
-  color: #f1f1f1;
-}
-#T__row7_col4 {
-  background-color: #9dd93b;
-  color: #000000;
-}
-#T__row7_col5, #T__row7_col7, #T__row9_col0 {
-  background-color: #2b748e;
-  color: #f1f1f1;
-}
-#T__row7_col6 {
-  background-color: #20928c;
-  color: #f1f1f1;
-}
-#T__row8_col2, #T__row10_col7 {
+#T__row7_col3 {
   background-color: #287c8e;
   color: #f1f1f1;
 }
-#T__row8_col3 {
-  background-color: #482878;
+#T__row7_col4 {
+  background-color: #86d549;
+  color: #000000;
+}
+#T__row7_col6 {
+  background-color: #25838e;
   color: #f1f1f1;
 }
-#T__row8_col6 {
-  background-color: #2d718e;
+#T__row7_col7 {
+  background-color: #2e6e8e;
   color: #f1f1f1;
 }
-#T__row8_col7 {
+#T__row7_col8 {
+  background-color: #26828e;
+  color: #f1f1f1;
+}
+#T__row8_col0 {
   background-color: #1e9d89;
   color: #f1f1f1;
 }
+#T__row8_col1 {
+  background-color: #277f8e;
+  color: #f1f1f1;
+}
+#T__row8_col2 {
+  background-color: #2a788e;
+  color: #f1f1f1;
+}
+#T__row8_col3 {
+  background-color: #482576;
+  color: #f1f1f1;
+}
+#T__row8_col4 {
+  background-color: #bade28;
+  color: #000000;
+}
+#T__row8_col6 {
+  background-color: #31668e;
+  color: #f1f1f1;
+}
+#T__row8_col7 {
+  background-color: #20928c;
+  color: #f1f1f1;
+}
 #T__row8_col8 {
-  background-color: #25ab82;
+  background-color: #20a386;
+  color: #f1f1f1;
+}
+#T__row9_col0 {
+  background-color: #31688e;
   color: #f1f1f1;
 }
 #T__row9_col1 {
-  background-color: #3b518b;
+  background-color: #3c4f8a;
   color: #f1f1f1;
 }
 #T__row9_col2 {
-  background-color: #3a538b;
+  background-color: #3b518b;
   color: #f1f1f1;
 }
 #T__row9_col5 {
-  background-color: #472a7a;
+  background-color: #472c7a;
+  color: #f1f1f1;
+}
+#T__row9_col7 {
+  background-color: #433d84;
   color: #f1f1f1;
 }
 #T__row9_col8 {
-  background-color: #3c508b;
-  color: #f1f1f1;
-}
-#T__row10_col3 {
-  background-color: #482071;
+  background-color: #3d4d8a;
   color: #f1f1f1;
 }
 #T__row10_col5 {
-  background-color: #228b8d;
+  background-color: #21918c;
   color: #f1f1f1;
 }
-#T__row10_col6 {
-  background-color: #355f8d;
+#T__row10_col7 {
+  background-color: #2b748e;
   color: #f1f1f1;
 }
 #T__row10_col8 {
-  background-color: #21908d;
+  background-color: #23898e;
   color: #f1f1f1;
 }
-#T_ :is(td, th):nth-child(8) { border-left: 1px dotted white; }</style>
-
-    <script lang="ts">
-      import { sortable } from 'svelte-zoo/actions'
-    </script>
-
-    <table use:sortable class='roomy' {...$$props}
-     id="T_">
+#T_ :is(td, th):nth-child(8) { border-left: 1px dotted white; }
+    table {
+        scrollbar-width: none;  /* Firefox */
+    }
+    table::-webkit-scrollbar {
+        display: none;  /* Safari and Chrome */
+    }
+</style>
+<table class='roomy' id="T_">
   <thead>
     <tr>
       <th class="index_name level0" >Model</th>
@@ -286,51 +319,51 @@
       <th id="T__level0_col6" class="col_heading level0 col6" >MAE</th>
       <th id="T__level0_col7" class="col_heading level0 col7" >RMSE</th>
       <th id="T__level0_col8" class="col_heading level0 col8" >R<sup>2</sup></th>
-      <th id="T__level0_col9" class="col_heading level0 col9" >training size</th>
-      <th id="T__level0_col10" class="col_heading level0 col10" >Model Class</th>
+      <th id="T__level0_col9" class="col_heading level0 col9" >Training Size</th>
+      <th id="T__level0_col10" class="col_heading level0 col10" >Model Type</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <th id="T__level0_row0" class="row_heading level0 row0" >CHGNet</th>
-      <td id="T__row0_col0" class="data row0 col0" >0.58</td>
-      <td id="T__row0_col1" class="data row0 col1" >3.06</td>
-      <td id="T__row0_col2" class="data row0 col2" >0.52</td>
-      <td id="T__row0_col3" class="data row0 col3" >0.84</td>
-      <td id="T__row0_col4" class="data row0 col4" >0.66</td>
-      <td id="T__row0_col5" class="data row0 col5" >0.88</td>
-      <td id="T__row0_col6" class="data row0 col6" >0.07</td>
-      <td id="T__row0_col7" class="data row0 col7" >0.11</td>
-      <td id="T__row0_col8" class="data row0 col8" >0.61</td>
-      <td id="T__row0_col9" class="data row0 col9" >1,580,395</td>
+      <th id="T__level0_row0" class="row_heading level0 row0" >MACE</th>
+      <td id="T__row0_col0" class="data row0 col0" >0.64</td>
+      <td id="T__row0_col1" class="data row0 col1" >3.13</td>
+      <td id="T__row0_col2" class="data row0 col2" >0.54</td>
+      <td id="T__row0_col3" class="data row0 col3" >0.85</td>
+      <td id="T__row0_col4" class="data row0 col4" >0.80</td>
+      <td id="T__row0_col5" class="data row0 col5" >0.86</td>
+      <td id="T__row0_col6" class="data row0 col6" >0.06</td>
+      <td id="T__row0_col7" class="data row0 col7" >0.10</td>
+      <td id="T__row0_col8" class="data row0 col8" >0.67</td>
+      <td id="T__row0_col9" class="data row0 col9" >1.6M <small>(145.9K)</small></td>
       <td id="T__row0_col10" class="data row0 col10" >UIP-GNN</td>
     </tr>
     <tr>
-      <th id="T__level0_row1" class="row_heading level0 row1" >M3GNet</th>
-      <td id="T__row1_col0" class="data row1 col0" >0.57</td>
-      <td id="T__row1_col1" class="data row1 col1" >2.67</td>
-      <td id="T__row1_col2" class="data row1 col2" >0.45</td>
-      <td id="T__row1_col3" class="data row1 col3" >0.80</td>
-      <td id="T__row1_col4" class="data row1 col4" >0.77</td>
-      <td id="T__row1_col5" class="data row1 col5" >0.81</td>
-      <td id="T__row1_col6" class="data row1 col6" >0.07</td>
-      <td id="T__row1_col7" class="data row1 col7" >0.11</td>
-      <td id="T__row1_col8" class="data row1 col8" >0.60</td>
-      <td id="T__row1_col9" class="data row1 col9" >188,349</td>
+      <th id="T__level0_row1" class="row_heading level0 row1" >CHGNet</th>
+      <td id="T__row1_col0" class="data row1 col0" >0.61</td>
+      <td id="T__row1_col1" class="data row1 col1" >3.09</td>
+      <td id="T__row1_col2" class="data row1 col2" >0.52</td>
+      <td id="T__row1_col3" class="data row1 col3" >0.84</td>
+      <td id="T__row1_col4" class="data row1 col4" >0.74</td>
+      <td id="T__row1_col5" class="data row1 col5" >0.86</td>
+      <td id="T__row1_col6" class="data row1 col6" >0.06</td>
+      <td id="T__row1_col7" class="data row1 col7" >0.10</td>
+      <td id="T__row1_col8" class="data row1 col8" >0.69</td>
+      <td id="T__row1_col9" class="data row1 col9" >1.6M <small>(145.9K)</small></td>
       <td id="T__row1_col10" class="data row1 col10" >UIP-GNN</td>
     </tr>
     <tr>
-      <th id="T__level0_row2" class="row_heading level0 row2" >MACE</th>
+      <th id="T__level0_row2" class="row_heading level0 row2" >M3GNet</th>
       <td id="T__row2_col0" class="data row2 col0" >0.57</td>
-      <td id="T__row2_col1" class="data row2 col1" >2.78</td>
-      <td id="T__row2_col2" class="data row2 col2" >0.47</td>
-      <td id="T__row2_col3" class="data row2 col3" >0.81</td>
-      <td id="T__row2_col4" class="data row2 col4" >0.72</td>
-      <td id="T__row2_col5" class="data row2 col5" >0.83</td>
+      <td id="T__row2_col1" class="data row2 col1" >2.67</td>
+      <td id="T__row2_col2" class="data row2 col2" >0.45</td>
+      <td id="T__row2_col3" class="data row2 col3" >0.80</td>
+      <td id="T__row2_col4" class="data row2 col4" >0.77</td>
+      <td id="T__row2_col5" class="data row2 col5" >0.81</td>
       <td id="T__row2_col6" class="data row2 col6" >0.07</td>
       <td id="T__row2_col7" class="data row2 col7" >0.11</td>
-      <td id="T__row2_col8" class="data row2 col8" >0.63</td>
-      <td id="T__row2_col9" class="data row2 col9" >1,580,395</td>
+      <td id="T__row2_col8" class="data row2 col8" >0.60</td>
+      <td id="T__row2_col9" class="data row2 col9" >188.3K <small>(62.8K)</small></td>
       <td id="T__row2_col10" class="data row2 col10" >UIP-GNN</td>
     </tr>
     <tr>
@@ -344,7 +377,7 @@
       <td id="T__row3_col6" class="data row3 col6" >0.09</td>
       <td id="T__row3_col7" class="data row3 col7" >0.15</td>
       <td id="T__row3_col8" class="data row3 col8" >0.27</td>
-      <td id="T__row3_col9" class="data row3 col9" >154,719</td>
+      <td id="T__row3_col9" class="data row3 col9" >154.7K</td>
       <td id="T__row3_col10" class="data row3 col10" >GNN</td>
     </tr>
     <tr>
@@ -358,7 +391,7 @@
       <td id="T__row4_col6" class="data row4 col6" >0.13</td>
       <td id="T__row4_col7" class="data row4 col7" >0.20</td>
       <td id="T__row4_col8" class="data row4 col8" >-0.28</td>
-      <td id="T__row4_col9" class="data row4 col9" >69,239</td>
+      <td id="T__row4_col9" class="data row4 col9" >133.4K</td>
       <td id="T__row4_col10" class="data row4 col10" >GNN</td>
     </tr>
     <tr>
@@ -372,7 +405,7 @@
       <td id="T__row5_col6" class="data row5 col6" >0.14</td>
       <td id="T__row5_col7" class="data row5 col7" >0.23</td>
       <td id="T__row5_col8" class="data row5 col8" >-0.62</td>
-      <td id="T__row5_col9" class="data row5 col9" >154,719</td>
+      <td id="T__row5_col9" class="data row5 col9" >154.7K</td>
       <td id="T__row5_col10" class="data row5 col10" >GNN</td>
     </tr>
     <tr>
@@ -386,7 +419,7 @@
       <td id="T__row6_col6" class="data row6 col6" >0.11</td>
       <td id="T__row6_col7" class="data row6 col7" >0.18</td>
       <td id="T__row6_col8" class="data row6 col8" >0.03</td>
-      <td id="T__row6_col9" class="data row6 col9" >154,719</td>
+      <td id="T__row6_col9" class="data row6 col9" >154.7K</td>
       <td id="T__row6_col10" class="data row6 col10" >GNN</td>
     </tr>
     <tr>
@@ -400,7 +433,7 @@
       <td id="T__row7_col6" class="data row7 col6" >0.10</td>
       <td id="T__row7_col7" class="data row7 col7" >0.18</td>
       <td id="T__row7_col8" class="data row7 col8" >-0.04</td>
-      <td id="T__row7_col9" class="data row7 col9" >154,719</td>
+      <td id="T__row7_col9" class="data row7 col9" >154.7K</td>
       <td id="T__row7_col10" class="data row7 col10" >Transformer</td>
     </tr>
     <tr>
@@ -414,7 +447,7 @@
       <td id="T__row8_col6" class="data row8 col6" >0.12</td>
       <td id="T__row8_col7" class="data row8 col7" >0.16</td>
       <td id="T__row8_col8" class="data row8 col8" >0.14</td>
-      <td id="T__row8_col9" class="data row8 col9" >69,239</td>
+      <td id="T__row8_col9" class="data row8 col9" >133.4K</td>
       <td id="T__row8_col10" class="data row8 col10" >BO-GNN</td>
     </tr>
     <tr>
@@ -428,7 +461,7 @@
       <td id="T__row9_col6" class="data row9 col6" >0.14</td>
       <td id="T__row9_col7" class="data row9 col7" >0.21</td>
       <td id="T__row9_col8" class="data row9 col8" >-0.31</td>
-      <td id="T__row9_col9" class="data row9 col9" >154,719</td>
+      <td id="T__row9_col9" class="data row9 col9" >154.7K</td>
       <td id="T__row9_col10" class="data row9 col10" >Fingerprint</td>
     </tr>
     <tr>

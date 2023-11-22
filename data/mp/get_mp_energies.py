@@ -8,7 +8,7 @@ from pymatgen.core import Structure
 from pymatviz.utils import annotate_metrics
 from tqdm import tqdm
 
-from matbench_discovery import STABILITY_THRESHOLD, today
+from matbench_discovery import STABILITY_THRESHOLD, id_col, today
 from matbench_discovery.data import DATA_FILES
 
 """
@@ -26,7 +26,7 @@ module_dir = os.path.dirname(__file__)
 
 # %%
 fields = {
-    "material_id",
+    id_col,
     "formula_pretty",
     "formation_energy_per_atom",
     "energy_per_atom",
@@ -46,7 +46,7 @@ print(f"{today}: {len(docs) = :,}")
 
 
 # %%
-df = pd.DataFrame(docs).set_index("material_id")
+df = pd.DataFrame(docs).set_index(id_col)
 
 df_spg = pd.json_normalize(df.pop("symmetry"))[["number", "symbol"]]
 df["spacegroup_symbol"] = df_spg.symbol.to_numpy()
@@ -56,7 +56,7 @@ df.energy_type.value_counts().plot.pie(backend="plotly", autopct="%1.1f%%")
 
 
 # %%
-df_cse = pd.read_json(DATA_FILES.mp_computed_structure_entries).set_index("material_id")
+df_cse = pd.read_json(DATA_FILES.mp_computed_structure_entries).set_index(id_col)
 
 struct_col = "structure"
 df_cse[struct_col] = [
@@ -76,7 +76,7 @@ spg_nums = df[wyckoff_col].str.split("_").str[2].astype(int)
 assert (spg_nums.sort_index() == df_spg["number"].sort_index()).all()
 
 df.to_csv(DATA_FILES.mp_energies)
-# df = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index("material_id")
+# df = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index(id_col)
 
 
 # %% reproduce fig. 1b from https://arxiv.org/abs/2001.10591 (as data consistency check)
@@ -104,14 +104,14 @@ mask_above_line = df.energy_above_hull - df.decomposition_enthalpy.clip(0) > 0.1
 ax = df.plot.scatter(
     x="decomposition_enthalpy",
     y="energy_above_hull",
-    color=mask_above_line.map({True: "red", False: "blue"})
+    color=mask_above_line.map({True: "red", False: "blue"}),
     # backend="plotly",
     # hover_data=["index", "formula_pretty", "formation_energy_per_atom"],
 )
 # most points lie on line y=x for x > 0 and y = 0 for x < 0.
 n_above_line = sum(mask_above_line)
 ax.set(
-    title=f"{n_above_line:,} / {len(df):,} = {n_above_line/len(df):.1%} "
+    title=f"{n_above_line:,} / {len(df):,} = {n_above_line / len(df):.1%} "
     "MP materials with\nenergy_above_hull - decomposition_enthalpy.clip(0) > 0.1"
 )
 # ax.figure.savefig(f"{module_dir}/mp-e-above-hull-vs-decomp-enth.webp", dpi=300)

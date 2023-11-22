@@ -3,7 +3,6 @@ import gzip
 import os
 import pickle
 import urllib.request
-import warnings
 from glob import glob
 
 import numpy as np
@@ -16,10 +15,10 @@ from pymatgen.entries.compatibility import (
 )
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz import density_scatter
-from pymatviz.utils import save_fig
+from pymatviz.io import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import SITE_FIGS, today
+from matbench_discovery import SITE_FIGS, formula_col, id_col, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.plots import pio
@@ -40,7 +39,6 @@ https://nature.com/articles/s41524-020-00481-6
 
 
 module_dir = os.path.dirname(__file__)
-warnings.filterwarnings("ignore", category=UserWarning, module="pymatgen")
 
 assert pio.templates.default == "plotly_dark+global"
 
@@ -158,7 +156,7 @@ def increment_wbm_material_id(wbm_id: str) -> str:
 
 
 df_wbm.index = df_wbm.index.map(increment_wbm_material_id)
-df_wbm.index.name = "material_id"
+df_wbm.index.name = id_col
 assert df_wbm.index[0] == "wbm-1-1"
 assert df_wbm.index[-1] == "wbm-5-23308"
 
@@ -291,20 +289,20 @@ df_wbm["formula_from_cse"] = [
 
 # %%
 col_map = {
-    "# comp": "formula",
+    "# comp": formula_col,
     "nsites": "n_sites",
     "vol": "volume",
     "e": "uncorrected_energy",
     "e_form": "e_form_per_atom_wbm",
     "e_hull": "e_above_hull_wbm",
     "gap": "bandgap_pbe",
-    "id": "material_id",
+    "id": id_col,
 }
 # WBM summary was shared twice, once on google drive, once on materials cloud
 # download both and check for consistency
 df_summary = pd.read_csv(
     f"{module_dir}/raw/wbm-summary.txt", sep="\t", names=col_map.values()
-).set_index("material_id")
+).set_index(id_col)
 
 df_summary_bz2 = pd.read_csv(
     f"{mat_cloud_url}&filename=summary.txt.bz2", sep="\t"
@@ -321,7 +319,7 @@ pd.testing.assert_frame_equal(
 
 assert sum(no_id_mask := df_summary.index.isna()) == 6, f"{sum(no_id_mask)=}"
 # the 'None' materials have 0 volume, energy, n_sites, bandgap, etc.
-assert all(df_summary[no_id_mask].drop(columns=["formula"]) == 0)
+assert all(df_summary[no_id_mask].drop(columns=[formula_col]) == 0)
 assert len(df_summary.query("volume > 0")) == len(df_wbm) + len(nan_init_structs_ids)
 # make sure dropping materials with 0 volume removes exactly 6 materials, the same ones
 # listed in bad_struct_ids above
@@ -380,13 +378,13 @@ for mat_id, cse in df_wbm.computed_structure_entry.items():
 
 # sort formulas alphabetically
 df_summary["alph_formula"] = [
-    Composition(x).alphabetical_formula for x in df_summary.formula
+    Composition(x).alphabetical_formula for x in df_summary[formula_col]
 ]
 # alphabetical formula and original formula differ due to spaces, number 1 after element
 # symbols (FeO vs Fe1 O1), and element order (FeO vs OFe)
-assert sum(df_summary.alph_formula != df_summary.formula) == 257_483
+assert sum(df_summary.alph_formula != df_summary[formula_col]) == 257_483
 
-df_summary["formula"] = df_summary.pop("alph_formula")
+df_summary[formula_col] = df_summary.pop("alph_formula")
 
 
 # %% write initial structures and computed structure entries to compressed json
@@ -406,10 +404,10 @@ for fname, cols in (
 # df_summary and df_wbm formulas differ because summary formulas are reduced while
 # df_wbm formulas are not (e.g. Ac6 U2 vs Ac3 U1 in summary). unreduced is more
 # informative so we use it.
-assert sum(df_summary.formula != df_wbm.formula_from_cse) == 114_273
-assert sum(df_summary.formula == df_wbm.formula_from_cse) == 143_214
+assert sum(df_summary[formula_col] != df_wbm.formula_from_cse) == 114_273
+assert sum(df_summary[formula_col] == df_wbm.formula_from_cse) == 143_214
 
-df_summary.formula = df_wbm.formula_from_cse
+df_summary[formula_col] = df_wbm.formula_from_cse
 
 
 # fix bad energy which is 0 in df_summary but a more realistic -63.68 in CSE
@@ -548,7 +546,8 @@ with gzip.open(DATA_FILES.mp_patched_phase_diagram, "rb") as zip_file:
 
 
 # %% calculate e_above_hull for each material
-# this loop needs above warnings.filterwarnings() to not crash Jupyter kernel with logs
+# this loop needs above warnings.filterwarnings() in __init__.py to not crash Jupyter
+# kernel with logs
 # takes ~20 min at 200 it/s for 250k entries in WBM
 each_col = "e_above_hull_mp2020_corrected_ppd_mp"
 assert each_col not in df_summary
@@ -619,7 +618,7 @@ fingerprints_path = f"{module_dir}/site-stats.json.gz"
 suggest = "not found, run scripts/compute_struct_fingerprints.py to generate"
 fp_diff_col = "site_stats_fingerprint_init_final_norm_diff"
 try:
-    df_fp = pd.read_json(fingerprints_path).set_index("material_id")
+    df_fp = pd.read_json(fingerprints_path).set_index(id_col)
     df_summary[fp_diff_col] = df_fp[fp_diff_col]
 except FileNotFoundError:
     print(f"{fingerprints_path=} {suggest}")
@@ -634,11 +633,11 @@ df_summary.round(6).to_csv(f"{module_dir}/{today}-wbm-summary.csv")
 # %% only here to load data for later inspection
 if False:
     df_summary = pd.read_csv(f"{module_dir}/2022-10-19-wbm-summary.csv.gz").set_index(
-        "material_id"
+        id_col
     )
     df_wbm = pd.read_json(
         f"{module_dir}/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
-    ).set_index("material_id")
+    ).set_index(id_col)
 
     df_wbm["cse"] = [
         ComputedStructureEntry.from_dict(dct)
