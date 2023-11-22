@@ -1,41 +1,35 @@
 import copy
 import json
 import os
-import os.path as osp
+import urllib.request
 
+import ase.io
+import ase.units
 import numpy as np
-import wget
-from ase import units
-from ase.io import read, write
 from pymatgen.core import Structure
-from pymatgen.io.ase import AseAtomsAdaptor
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 __author__ = "Yuan Chiang"
 __date__ = "2023-08-10"
 
-mptrj_path = wget.download("https://figshare.com/ndownloader/files/41619375")
+module_dir = os.path.dirname(__file__)
 mptrj_path = "./MPtrj_2022.9_full.json"
+urllib.request.urlretrieve(
+    "https://figshare.com/ndownloader/files/41619375", mptrj_path
+)
 
-with open(mptrj_path) as f:
-    json_data = json.load(f)
+with open(mptrj_path) as file:
+    json_data = json.load(file)
 
-# pretty_json_string = json.dumps(json_data, indent=4, ensure_ascii=False)
-
-# mptrj_pretty_path = osp.join(os.curdir, "mptrj_2022.9_pretty.json")
-mptrj_extxyz_prefix = osp.join(os.curdir, "mptrj-gga-ggapu")
-os.makedirs(mptrj_extxyz_prefix, exist_ok=True)
-
-# with open(mptrj_pretty_path, "r") as f:
-#    json_data = json.load(f)
-
+out_dir = f"{module_dir}/mptrj-gga-ggapu"
+os.makedirs(out_dir, exist_ok=True)
 combined = []
 
 for material_id in tqdm(json_data):
-    fout_path = osp.join(mptrj_extxyz_prefix, f"{material_id}.extxyz")
+    xyz_path = f"{out_dir}/{material_id}.extxyz"
 
-    if osp.exists(fout_path):
-        traj = read(fout_path, index=":", format="extxyz")
+    if os.path.isfile(xyz_path):  # read already converted file
+        traj = ase.io.read(xyz_path, index=":", format="extxyz")
         combined.extend(traj)
         continue
 
@@ -51,16 +45,15 @@ for material_id in tqdm(json_data):
             uncorrected_total_energy = block.pop("uncorrected_total_energy", None)
             mp_id = block.get("mp_id", None)
 
-            atoms = AseAtomsAdaptor.get_atoms(structure=structure)
+            atoms = structure.to_ase_atoms()
 
             if forces:
                 atoms.arrays["forces"] = np.array(forces)
             if magmoms:
                 atoms.arrays["magmoms"] = np.array(magmoms)
             if stress:
-                atoms.info["stress"] = (
-                    np.array(stress) * 1e-1 * units.GPa
-                )  # kB to eV/A^3
+                # kB to eV/A^3
+                atoms.info["stress"] = np.array(stress) * 1e-1 * ase.units.GPa
             if uncorrected_total_energy:
                 atoms.info["energy"] = uncorrected_total_energy
 
@@ -69,12 +62,12 @@ for material_id in tqdm(json_data):
 
             assert mp_id == material_id
 
-            write(fout_path, atoms, append=True, format="extxyz")
+            ase.io.write(xyz_path, atoms, append=True, format="extxyz")
 
         except Exception as err:
             print(err)
 
-    traj = read(fout_path, index=":", format="extxyz")
+    traj = ase.io.read(xyz_path, index=":", format="extxyz")
     combined.extend(traj)
 
-write("mptrj-gga-ggapu.xyz", combined, format="extxyz", append=True)
+ase.io.write("mptrj-gga-ggapu.xyz", combined, format="extxyz", append=True)
