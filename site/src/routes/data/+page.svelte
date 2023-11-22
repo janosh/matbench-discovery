@@ -13,10 +13,13 @@
   import type { Snapshot } from './$types'
   import MpElementalReferenceEnergies from './mp-elemental-reference-energies.md'
 
-  const elem_counts = import.meta.glob(`./*-element-counts-{occu,comp}*.json`, {
-    eager: true,
-    import: `default`,
-  })
+  const elem_counts = import.meta.glob(
+    `./*-element-counts-by-{occurrence,composition}*.json`,
+    {
+      eager: true,
+      import: `default`,
+    },
+  )
 
   let log = false // log color scale
   let color_scale = [`Inferno`]
@@ -25,8 +28,10 @@
   const count_mode_ops = [`occurrence`, `composition`]
   let count_mode = count_mode_ops[0]
 
-  $: mp_elem_counts = elem_counts[`./mp-element-counts-${count_mode}.json`]
-  $: wbm_elem_counts = elem_counts[`./wbm-element-counts-${count_mode}.json`]
+  $: mp_elem_counts = elem_counts[`./mp-element-counts-by-${count_mode}.json`]
+  $: if (!mp_elem_counts) throw `No MP data for count mode ${count_mode}!`
+  $: wbm_elem_counts = elem_counts[`./wbm-element-counts-by-${count_mode}.json`]
+  $: if (!wbm_elem_counts) throw `No WBM data for count mode ${count_mode}!`
 
   export const snapshot: Snapshot = {
     capture: () => ({ color_scale, log, count_mode }),

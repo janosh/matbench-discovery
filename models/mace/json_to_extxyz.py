@@ -59,7 +59,7 @@ for material_id in tqdm(json_data):
             if magmoms := block.get("magmom"):
                 atoms.arrays["magmoms"] = np.array(magmoms)
             if stress := block.get("stress"):
-                # kB to eV/A^3
+                # kB to eV/A^3 and opposite sign convention
                 atoms.info["stress"] = np.array(stress) * -1e-1 * ase.units.GPa
 
             special_keys = {"uncorrected_total_energy", "force", "magmom", "stress"}
