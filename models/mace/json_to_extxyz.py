@@ -1,75 +1,67 @@
-"""This script converts the MPTrj relaxation trajectories downloaded from
-https://figshare.com/articles/dataset/23713842 from JSON to extended XYZ format.
-"""
-
 import json
 import os
+import urllib.request
 
+import ase.io
+import ase.units
 import numpy as np
-from ase.io import read, write
 from pymatgen.core import Structure
 from tqdm import tqdm
-
-from matbench_discovery import FIGSHARE
 
 __author__ = "Yuan Chiang"
 __date__ = "2023-08-10"
 
 module_dir = os.path.dirname(__file__)
-in_dir = f"{FIGSHARE}/mptrj_2022.9_full.json"
-out_dir = f"{module_dir}/mptrj-2022.9"
+mptrj_path = f"{module_dir}/MPtrj_2022.9_full.json"
+# MPtrj figshare URL
+# https://figshare.com/articles/dataset/23713842
+urllib.request.urlretrieve(
+    "https://figshare.com/ndownloader/files/41619375", mptrj_path
+)
+
+with open(mptrj_path) as file:
+    json_data = json.load(file)
+
+out_dir = f"{module_dir}/mptrj-gga-ggapu"
 os.makedirs(out_dir, exist_ok=True)
 combined = []
 
-
-with open(in_dir) as json_file:
-    json_data = json.load(json_file)
-
 for material_id in tqdm(json_data):
+    xyz_path = f"{out_dir}/{material_id}.extxyz"
+
+    if os.path.isfile(xyz_path):  # read already converted file
+        traj = ase.io.read(xyz_path, index=":", format="extxyz")
+        combined.extend(traj)
+        continue
+
     for trajectory_id in json_data[material_id]:
-        out_xyz = f"{out_dir}/{material_id}.extxyz"
-
-        if os.path.isfile(out_xyz):
-            traj = read(out_xyz, index=":", format="extxyz")
-            combined.append(traj)
-            continue
-
         block = json_data[material_id][trajectory_id]
         try:
-            structure = Structure.from_dict(block.pop("structure"))
+            atoms = Structure.from_dict(block["structure"]).to_ase_atoms()
 
-            forces = block.pop("force", None)
-            magmoms = block.pop("magmom", None)
-            stress = block.pop("stress", None)
-            # bandgap = block.pop('bandgap', None)
+            mp_id = block.get("mp_id")
+            assert mp_id == material_id, f"{mp_id=} != {material_id=}"
 
-            uncorrected_total_energy = block.pop("uncorrected_total_energy", None)
-            mp_id = block.get("mp_id", None)
-
-            atoms = structure.to_ase_atoms()
-
-            if forces:
-                atoms.arrays["forces"] = np.array(forces)
-            if magmoms:
-                atoms.arrays["magmoms"] = np.array(magmoms)
-            # if bandgap: will go into atoms.info
-            #     atoms.set_tensor('bandgap', bandgap)
-            if stress:
-                atoms.info["stress"] = np.array(stress)
-            if uncorrected_total_energy:
+            if uncorrected_total_energy := block.get("uncorrected_total_energy"):
                 atoms.info["energy"] = uncorrected_total_energy
+            if forces := block.get("force"):
+                atoms.arrays["forces"] = np.array(forces)
+            if magmoms := block.get("magmom"):
+                atoms.arrays["magmoms"] = np.array(magmoms)
+            if stress := block.get("stress"):
+                # kB to eV/A^3
+                atoms.info["stress"] = np.array(stress) * 1e-1 * ase.units.GPa
 
-            for key, value in block.items():
-                atoms.info[key] = value
+            special_keys = {"uncorrected_total_energy", "force", "magmom", "stress"}
+            for key in {*block} - special_keys:
+                atoms.info[key] = block[key]
 
-            assert mp_id == material_id
+            ase.io.write(xyz_path, atoms, append=True, format="extxyz")
 
-            write(out_xyz, atoms, append=True, format="extxyz")
+        except Exception as err:
+            print(err)
 
-            traj = read(out_xyz, index=":", format="extxyz")
-            combined.append(traj)
+    traj = ase.io.read(xyz_path, index=":", format="extxyz")
+    combined.extend(traj)
 
-        except Exception as exc:
-            print(exc, f"skipping {material_id}, {trajectory_id}")
-
-write("mptrj-2022.9.xyz", combined, format="extxyz")
+ase.io.write("mptrj-gga-ggapu.xyz", combined, format="extxyz", append=True)

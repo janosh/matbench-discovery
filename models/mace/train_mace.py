@@ -36,13 +36,8 @@ __author__ = "Yuan Chiang, Ilyes Batatia, Gregor Simm, David Kovacs"
 __date__ = "2023-09-18"
 
 
-# Running this script requires merging the multi-gpu and develop branches of the MACE
-# repo. Presumably, the next MACE repo release will include these changes at which point
-# this script can be run by simply installing the latest MACE release. For now, run
-# pip install git+https://github.com/chiang-yuan/mace@mbd
-# once the multi-gpu branch is merged into develop, you can also try
-# pip install git+https://github.com/ACEsuit/mace@develop
-
+# This script requires installing MACE.
+# pip install git+https://github.com/ACEsuit/mace
 
 module_dir = os.path.dirname(__file__)
 
