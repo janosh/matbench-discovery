@@ -37,14 +37,17 @@ for material_id in tqdm(json_data):
 
     for trajectory_id in json_data[material_id]:
         block = json_data[material_id][trajectory_id]
-        match = re.match(r"(mp-\d+)-(\d+)-(\d+)", trajectory_id)
-        if match:
-            task_id, calc_id, ionic_step = match.groups()
-        else:
-            print(f"Failed to parse {trajectory_id}")
-            continue
         try:
             atoms = Structure.from_dict(block["structure"]).to_ase_atoms()
+
+            match = re.match(r"(mp-\d+)-(\d+)-(\d+)", trajectory_id)
+            if not match:
+                raise ValueError(f"Invalid {trajectory_id=}")
+            
+            task_id, calc_id, ionic_step = match.groups()
+            atoms.info["task_id"] = task_id
+            atoms.info["calc_id"] = int(calc_id)
+            atoms.info["ionic_step"] = int(ionic_step)
 
             mp_id = block.get("mp_id")
             assert mp_id == material_id, f"{mp_id=} != {material_id=}"
@@ -61,12 +64,8 @@ for material_id in tqdm(json_data):
 
             special_keys = {"uncorrected_total_energy", "force", "magmom", "stress"}
             for key in {*block} - special_keys:
-                if block[key] is not None:
-                    atoms.info[key] = block[key]
-
-            atoms.info["task_id"] = task_id
-            atoms.info["calc_id"] = calc_id
-            atoms.info["ionic_step"] = ionic_step
+                if val := atoms.get(key):
+                    atoms.info[key] = val
 
             ase.io.write(xyz_path, atoms, append=True, format="extxyz")
 
