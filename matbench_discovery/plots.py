@@ -63,6 +63,8 @@ quantity_labels = dict(
     material_id="Material ID",
     band_gap="Band gap (eV)",
     formula="Formula",
+    stress="σ (eV/Å³)",  # noqa: RUF001
+    stress_trace="1/3 Tr(σ) (eV/Å³)",  # noqa: RUF001
 )
 model_labels = dict(
     alignn="ALIGNN",
@@ -87,6 +89,7 @@ model_labels = dict(
     wbm="WBM",
 )
 px.defaults.labels = quantity_labels | model_labels
+
 
 # color list https://plotly.com/python-api-reference/generated/plotly.graph_objects.layout
 colorway = ("lightseagreen", "orange", "lightsalmon", "dodgerblue")

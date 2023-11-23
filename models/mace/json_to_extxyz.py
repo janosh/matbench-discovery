@@ -1,4 +1,5 @@
 # %%
+import gzip
 import json
 import os
 import re
@@ -17,23 +18,30 @@ __author__ = "Yuan Chiang"
 __date__ = "2023-08-10"
 
 module_dir = os.path.dirname(__file__)
-mp_trj_path = f"{DATA_DIR}/MPtrj_2022.9_full.json"
+mp_trj_path = f"{DATA_DIR}/mp/mp-trj-2022-09.json"
 
 
 # %% MPtrj figshare URL https://figshare.com/articles/dataset/23713842
 # the download is 11.3 GB and can easily take 1h
 mp_trj_url = "https://figshare.com/ndownloader/files/41619375"
 
+if os.path.isfile(f"{mp_trj_path}.gz"):
+    with gzip.open(f"{mp_trj_path}.gz", "rt") as zip_file:
+        json_data = json.load(zip_file)
+else:  # if file not found, download and compress it
+    with TqdmDownload(desc=mp_trj_url) as pbar:
+        urllib.request.urlretrieve(mp_trj_url, mp_trj_path, reporthook=pbar.update_to)
 
-with TqdmDownload(desc=mp_trj_url) as pbar:
-    urllib.request.urlretrieve(mp_trj_url, mp_trj_path, reporthook=pbar.update_to)
+    with open(mp_trj_path) as file:
+        json_data = json.load(file)
+
+    # save as compressed JSON
+    with gzip.open(f"{mp_trj_path}.gz", "wt") as zip_file:
+        json.dump(json_data, zip_file)
 
 
 # %%
-with open(mp_trj_path) as file:
-    json_data = json.load(file)
-
-out_dir = f"{module_dir}/mptrj-gga-ggapu"
+out_dir = f"{module_dir}/mp-trj-2022-09"
 os.makedirs(out_dir, exist_ok=True)
 combined = []
 
@@ -89,4 +97,4 @@ for material_id in tqdm(json_data):
 
 
 # %%
-ase.io.write("mptrj-gga-ggapu.xyz", combined, format="extxyz", append=True)
+ase.io.write("mp-trj-2022-09.xyz", combined, format="extxyz", append=True)
