@@ -1,3 +1,4 @@
+# %%
 import json
 import os
 import re
@@ -7,26 +8,37 @@ import ase.io
 import ase.units
 import numpy as np
 from pymatgen.core import Structure
+from pymatviz.io import TqdmDownload
 from tqdm import tqdm
+
+from matbench_discovery import DATA_DIR
 
 __author__ = "Yuan Chiang"
 __date__ = "2023-08-10"
 
 module_dir = os.path.dirname(__file__)
-mptrj_path = f"{module_dir}/MPtrj_2022.9_full.json"
-# MPtrj figshare URL
-# https://figshare.com/articles/dataset/23713842
-urllib.request.urlretrieve(
-    "https://figshare.com/ndownloader/files/41619375", mptrj_path
-)
+mp_trj_path = f"{DATA_DIR}/MPtrj_2022.9_full.json"
 
-with open(mptrj_path) as file:
+
+# %% MPtrj figshare URL https://figshare.com/articles/dataset/23713842
+# the download is 11.3 GB and can easily take 1h
+mp_trj_url = "https://figshare.com/ndownloader/files/41619375"
+
+
+with TqdmDownload(desc=mp_trj_url) as pbar:
+    urllib.request.urlretrieve(mp_trj_url, mp_trj_path, reporthook=pbar.update_to)
+
+
+# %%
+with open(mp_trj_path) as file:
     json_data = json.load(file)
 
 out_dir = f"{module_dir}/mptrj-gga-ggapu"
 os.makedirs(out_dir, exist_ok=True)
 combined = []
 
+
+# %%
 for material_id in tqdm(json_data):
     xyz_path = f"{out_dir}/{material_id}.extxyz"
 
@@ -75,4 +87,6 @@ for material_id in tqdm(json_data):
     traj = ase.io.read(xyz_path, index=":", format="extxyz")
     combined.extend(traj)
 
+
+# %%
 ase.io.write("mptrj-gga-ggapu.xyz", combined, format="extxyz", append=True)

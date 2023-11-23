@@ -4,6 +4,7 @@ import warnings
 from datetime import datetime
 
 ROOT = os.path.dirname(os.path.dirname(__file__))  # repo root directory
+DATA_DIR = f"{ROOT}/data"  # directory to store raw data
 SITE_FIGS = f"{ROOT}/site/src/figs"  # directory for interactive figures
 SITE_MODELS = f"{ROOT}/site/src/routes/models"  # directory to write model analysis
 FIGSHARE = f"{ROOT}/data/figshare"
