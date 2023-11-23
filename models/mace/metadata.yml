@@ -1,5 +1,5 @@
 model_name: MACE
-model_version: 0.2.0-alpha
+model_version: 0.3.0
 matbench_discovery_version: 1.0
 date_added: "2023-07-14"
 date_published: "2022-05-13"

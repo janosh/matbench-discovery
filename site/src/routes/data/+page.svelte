@@ -30,6 +30,8 @@
 
   $: mp_elem_counts = elem_counts[`./mp-element-counts-by-${count_mode}.json`]
   $: if (!mp_elem_counts) throw `No MP data for count mode ${count_mode}!`
+  $: mp_trj_elem_counts = elem_counts[`./mp-trj-element-counts-by-${count_mode}.json`]
+  $: if (!mp_trj_elem_counts) throw `No MPtrj data for count mode ${count_mode}!`
   $: wbm_elem_counts = elem_counts[`./wbm-element-counts-by-${count_mode}.json`]
   $: if (!wbm_elem_counts) throw `No WBM data for count mode ${count_mode}!`
 
@@ -46,6 +48,25 @@
     {/if}
   </svelte:fragment>
   <svelte:fragment slot="wbm-elements-heatmap">
+    <label
+      for="count-mode"
+      style="display: inline-block; transform: translate(10cqw, 5ex);">Count Mode</label
+    >
+    <Select
+      id="count-mode"
+      selected={[count_mode]}
+      bind:value={count_mode}
+      options={count_mode_ops}
+      minSelect={1}
+      maxSelect={1}
+    />
+    <ColorScaleSelect bind:selected={color_scale} />
+    <p style="text-align: center; margin: 2em; font-size: smaller;">
+      The difference between count modes is best explained by example.
+      <code>occurrence</code> mode maps Fe<sub>2</sub>O<sub>3</sub> to {`{Fe: 1, O: 1}`},
+      <code>composition</code>
+      mode maps it to {`{Fe: 2, O: 3}`}.
+    </p>
     <PeriodicTable
       heatmap_values={wbm_elem_counts}
       color_scale={color_scale[0]}
@@ -66,19 +87,6 @@
         />
       </TableInset>
     </PeriodicTable>
-    <label
-      for="count-mode"
-      style="display: inline-block; transform: translate(10cqw, 5ex);">Count Mode</label
-    >
-    <Select
-      id="count-mode"
-      selected={[count_mode]}
-      bind:value={count_mode}
-      options={count_mode_ops}
-      minSelect={1}
-      maxSelect={1}
-    />
-    <ColorScaleSelect bind:selected={color_scale} />
   </svelte:fragment>
 
   <svelte:fragment slot="mp-elements-heatmap">
@@ -102,19 +110,43 @@
         />
       </TableInset>
     </PeriodicTable>
-    <p>
-      The difference between count modes is best explained by example. <code
-        >occurrence</code
-      >
-      mode maps Fe2O3 to (Fe: 1, O: 1), <code>composition</code> mode maps it to (Fe: 2, O:
-      3).
-    </p>
   </svelte:fragment>
+
+  <svelte:fragment slot="mp-trj-elements-heatmap">
+    <p>
+      Below: Element counts for
+      <a href="https://figshare.com/articles/dataset/23713842">Mptrj training set</a> consisting
+      of 1,580,395 structures which are frames of the DFT relaxations performed on all 154,719
+      MP materials.
+    </p>
+    <PeriodicTable
+      heatmap_values={mp_trj_elem_counts}
+      color_scale={color_scale[0]}
+      {log}
+      bind:active_element={active_mp_elem}
+      show_photo={false}
+    >
+      <TableInset slot="inset">
+        <label for="log">Log color scale<Toggle id="log" bind:checked={log} /></label>
+        <PtableInset element={active_mp_elem} elem_counts={mp_trj_elem_counts} />
+        <ColorBar
+          text_side="top"
+          color_scale={color_scale[0]}
+          tick_labels={5}
+          precision={3}
+          range={[0, Math.max(...Object.values(mp_trj_elem_counts))]}
+          style="width: 85%; margin: 0 2em 2em;"
+        />
+      </TableInset>
+    </PeriodicTable>
+  </svelte:fragment>
+
   <svelte:fragment slot="hist-wbm-hull-dist">
     {#if browser}
       <HistWbmHullDist />
     {/if}
   </svelte:fragment>
+
   <div
     style="display: flex; gap: 1em; justify-content: space-around; flex-wrap: wrap;"
     slot="spacegroup-sunbursts"
