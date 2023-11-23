@@ -1,4 +1,5 @@
 """Global variables used all across the matbench_discovery package."""
+
 import os
 import warnings
 from datetime import datetime
@@ -39,3 +40,5 @@ init_struct_col = "initial_structure"
 struct_col = "structure"
 e_form_col = "formation_energy_per_atom"
 formula_col = "formula"
+stress_col = "stress"
+stress_trace_col = "stress_trace"
