@@ -83,13 +83,17 @@ for dataset, count_mode, elem_counts in all_counts:
 
 
 # %% ratio of WBM to MP counts
-ax_mp_ratio_wbm = ptable_heatmap_ratio(
-    wbm_occu_counts,
-    mp_occu_counts,
+normalized = True
+ax_ptable = ptable_heatmap_ratio(
+    wbm_occu_counts / (len(df_wbm) if normalized else 1),
+    mp_occu_counts / (len(df_mp) if normalized else 1),
     zero_color="#efefef",
-    exclude_elements=["Xe", "Th", "Pa", "U", "Np", "Pu"],
+    exclude_elements="Xe Th Pa U Np Pu".split(),
 )
-save_fig(ax_mp_ratio_wbm, f"{PDF_FIGS}/wbm-mp-element-counts-ratio-by-occurrence.pdf")
+img_name = "wbm-mp-ratio-element-counts-by-occurrence"
+if normalized:
+    img_name += "-normalized"
+save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
 
 
 # %% export element counts by WBM step to JSON
