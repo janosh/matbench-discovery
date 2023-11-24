@@ -17,6 +17,7 @@ from pymatgen.entries.compatibility import (
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz import density_scatter
 from pymatviz.io import save_fig
+from pymatviz.utils import patch_dict
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, formula_col, id_col, today
@@ -478,7 +479,9 @@ save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 
 # ensure full data range is visible in PDF (since can't zoom out)
 fig.update_layout(xaxis_range=[-12, 82])
-save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
+# remove title in PDF
+with patch_dict(fig.layout, title=""):
+    save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
 
 
 # %%

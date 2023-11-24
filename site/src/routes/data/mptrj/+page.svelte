@@ -1,5 +1,7 @@
 <script lang="ts">
-  import figshare_urls from '$root/data/figshare/1.0.0.json'
+  import { browser } from '$app/environment'
+  import MPtrjElemCountsPtable from './MPtrjElemCountsPtable.svelte'
+  import Readme from './readme.md'
 
   const plots = import.meta.glob(`$figs/mp-trj-*.svelte`, {
     eager: true,
@@ -8,25 +10,27 @@
 
   const title_map: Record<string, string> = {
     'e-form': `Formation Energy`,
+    forces: `Forces`,
+    stresses: `Stresses`,
     magmoms: `Magnetic Moments`,
   }
 </script>
 
-<h1>MPtrj Target Distributions</h1>
+<Readme />
 
-The MPtrj universal potential training set
-<a href={figshare_urls.mptrj.article}>available on figshare</a>
-contains 1,580,395 structures, 1,580,395 energies, 7,944,833 magnetic moments, 49,295,660 forces,
-and 14,223,555 stresses that were used to train the open-source interatomic potentials tested
-on Matbench Discovery.
+{#if browser}
+  <ul>
+    {#each Object.entries(plots) as [name, plot]}
+      {@const title = name.split(`mp-trj-`)[1].split(`-hist.svelte`)[0]}
+      <h2>{title_map[title] ?? title}</h2>
+      <svelte:component this={plot} style="width: 100%;" {title} />
+    {/each}
+  </ul>
+{/if}
 
-<ul>
-  {#each Object.entries(plots) as [name, figure]}
-    {@const title = name.split(`mp-trj-`)[1].split(`-hist.svelte`)[0]}
-    <h2>{title_map[title] ?? title}</h2>
-    <svelte:component this={figure} style="width: 100%;" {title} />
-  {/each}
-</ul>
+<h2>Elemental Prevalence</h2>
+
+<MPtrjElemCountsPtable />
 
 <style>
   ul {
