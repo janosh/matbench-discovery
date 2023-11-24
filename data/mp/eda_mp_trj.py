@@ -25,7 +25,6 @@ from matbench_discovery import (
     stress_trace_col,
 )
 from matbench_discovery.data import DATA_FILES
-from matbench_discovery.plots import quantity_labels
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-11-22"
@@ -146,28 +145,29 @@ ax_ptable = ptable_heatmap_ratio(
     not_in_either=None,
 )
 
-img_name = (
-    f"mp-trj-mp-ratio-element-counts-by-occurrence-{'normalized' if normalized else ''}"
-)
+img_name = "mp-trj-mp-ratio-element-counts-by-occurrence"
+if normalized:
+    img_name += "-normalized"
 save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
 
 
 # %% plot formation energy per atom distribution
-count_col = "Number of structures"
+count_col = "Number of Structures"
+axes_kwds = dict(linewidth=1, ticks="outside")
 pdf_kwds = dict(width=500, height=300)
-if "e_form_per_atom_hist" not in locals():  # only compute once for speed
-    e_form_per_atom_hist, e_form_per_atom_bins = np.histogram(
-        df_mp_trj[e_form_per_atom_col], bins=300
-    )
-fig = px.bar(
-    x=e_form_per_atom_bins[:-1],
-    y=e_form_per_atom_hist,
-    log_y=True,
-)
-bin_width = (e_form_per_atom_bins[1] - e_form_per_atom_bins[0]) * 1.2
+
+x_col, y_col = "E<sub>form</sub> (eV/atom)", count_col
+
+if "df_e_form" not in locals():  # only compute once for speed
+    e_form_hist = np.histogram(df_mp_trj[e_form_per_atom_col], bins=300)
+    df_e_form = pd.DataFrame(e_form_hist, index=[y_col, x_col]).T.round(3)
+
+fig = px.bar(df_e_form, x=x_col, y=count_col, log_y=True)
+
+bin_width = df_e_form[x_col].diff().iloc[-1] * 1.2
 fig.update_traces(width=bin_width, marker_line_width=0)
-fig.layout.xaxis.update(linecolor="lightgray", title="E<sub>form</sub> (eV/atom)")
-fig.layout.yaxis.update(linecolor="lightgray", title=count_col)
+fig.layout.xaxis.update(**axes_kwds)
+fig.layout.yaxis.update(**axes_kwds)
 fig.layout.margin = dict(l=5, r=5, b=5, t=5)
 fig.show()
 save_fig(fig, f"{PDF_FIGS}/mp-trj-e-form-hist.pdf", **pdf_kwds)
@@ -176,15 +176,20 @@ save_fig(fig, f"{SITE_FIGS}/mp-trj-e-form-hist.svelte")
 
 # %% plot forces distribution
 # use numpy to pre-compute histogram
-if "forces_hist" not in locals():  # only compute once for speed
-    forces_hist, forces_bins = np.histogram(
-        df_mp_trj[forces_col].abs().explode().explode(), bins=300
+x_col, y_col = "|Forces| (eV/Å)", count_col
+
+if "df_forces" not in locals():  # only compute once for speed
+    forces_hist = np.histogram(
+        df_mp_trj[forces_col].explode().explode().abs(), bins=300
     )
-fig = px.bar(x=forces_bins[:-1], y=forces_hist, log_y=True)
-bin_width = (forces_bins[1] - forces_bins[0]) * 1.2
+    df_forces = pd.DataFrame(forces_hist, index=[y_col, x_col]).T.round(3)
+
+fig = px.bar(df_forces, x=x_col, y=count_col, log_y=True)
+
+bin_width = df_forces[x_col].diff().iloc[-1] * 1.2
 fig.update_traces(width=bin_width, marker_line_width=0)
-fig.layout.xaxis.update(linecolor="lightgray", title="|Forces| (eV/Å)")
-fig.layout.yaxis.update(linecolor="lightgray", title=count_col)
+fig.layout.xaxis.update(**axes_kwds)
+fig.layout.yaxis.update(**axes_kwds)
 fig.layout.margin = dict(l=5, r=5, b=5, t=5)
 fig.show()
 save_fig(fig, f"{PDF_FIGS}/mp-trj-forces-hist.pdf", **pdf_kwds)
@@ -192,30 +197,38 @@ save_fig(fig, f"{SITE_FIGS}/mp-trj-forces-hist.svelte")
 
 
 # %% plot hydrostatic stress distribution
-if "stress_hist" not in locals():  # only compute once for speed
-    stress_hist, stress_bins = np.histogram(df_mp_trj[stress_trace_col], bins=300)
-fig = px.bar(x=stress_bins[:-1], y=stress_hist, log_y=True)
-bin_width = (stress_bins[1] - stress_bins[0]) * 1.2
+x_col, y_col = "1/3 Tr(σ) (eV/Å³)", count_col  # noqa: RUF001
+
+if "df_stresses" not in locals():  # only compute once for speed
+    stresses_hist = np.histogram(df_mp_trj[stress_trace_col], bins=300)
+    df_stresses = pd.DataFrame(stresses_hist, index=[y_col, x_col]).T.round(3)
+
+fig = px.bar(df_stresses, x=x_col, y=y_col, log_y=True)
+
+bin_width = (df_stresses[x_col].diff().mean()) * 1.2
 fig.update_traces(width=bin_width, marker_line_width=0)
-fig.layout.xaxis.update(linecolor="lightgray", title=quantity_labels[stress_trace_col])
-fig.layout.yaxis.update(linecolor="lightgray", title=count_col)
+fig.layout.xaxis.update(**axes_kwds)
+fig.layout.yaxis.update(**axes_kwds)
 fig.layout.margin = dict(l=5, r=5, b=5, t=5)
 fig.show()
+
 save_fig(fig, f"{PDF_FIGS}/mp-trj-stresses-hist.pdf", **pdf_kwds)
 save_fig(fig, f"{SITE_FIGS}/mp-trj-stresses-hist.svelte")
 
 
 # %% plot magmoms distribution
-if "magmoms_hist" not in locals():  # only compute once for speed
-    magmoms_hist, magmoms_bins = np.histogram(
-        df_mp_trj[magmoms_col].dropna().explode(), bins=300
-    )
+x_col, y_col = "Magmoms (μ<sub>B</sub>)", count_col
 
-fig = px.bar(x=magmoms_bins[:-1], y=magmoms_hist, log_y=True)
-bin_width = (magmoms_bins[1] - magmoms_bins[0]) * 1.2
+if "df_magmoms" not in locals():  # only compute once for speed
+    magmoms_hist = np.histogram(df_mp_trj[magmoms_col].dropna().explode(), bins=300)
+    df_magmoms = pd.DataFrame(magmoms_hist, index=[y_col, x_col]).T.round(3)
+
+fig = px.bar(df_magmoms, x=x_col, y=y_col, log_y=True)
+
+bin_width = df_magmoms[x_col].diff().iloc[-1] * 1.2
 fig.update_traces(width=bin_width, marker_line_width=0)
-fig.layout.xaxis.update(linecolor="lightgray", title="Magmoms (μ<sub>B</sub>)")
-fig.layout.yaxis.update(linecolor="lightgray", title=count_col)
+fig.layout.xaxis.update(**axes_kwds)
+fig.layout.yaxis.update(**axes_kwds)
 fig.layout.margin = dict(l=5, r=5, b=5, t=5)
 fig.show()
 save_fig(fig, f"{PDF_FIGS}/mp-trj-magmoms-hist.pdf", **pdf_kwds)

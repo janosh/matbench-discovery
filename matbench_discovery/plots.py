@@ -109,6 +109,7 @@ global_layout = dict(
 )
 pio.templates["global"] = dict(layout=global_layout)
 pio.templates.default = "plotly_dark+global"
+px.defaults.template = "plotly_dark+global"
 
 # https://github.com/plotly/Kaleido/issues/122#issuecomment-994906924
 # when seeing MathJax "loading" message in exported PDFs, try:
