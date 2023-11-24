@@ -91,7 +91,8 @@ df_wbm[e_form_mace_col] = df_mace[e_form_mace_col]
 
 
 # %%
-bad_mask = (df_wbm[e_form_col] - df_wbm[e_form_mace_col]).abs() > 10
+bad_mask = (df_wbm[e_form_mace_col] - df_wbm[e_form_col]) < -3
+df_wbm[bad_mask].to_csv(f"{module_dir}/mace-underpredictions<-3.csv")
 print(f"{sum(bad_mask)=}")
 ax = density_scatter(df=df_wbm[~bad_mask], x=e_form_col, y=e_form_mace_col)
 

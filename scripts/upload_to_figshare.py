@@ -17,7 +17,7 @@ import tomllib  # needs python 3.11
 from requests.exceptions import HTTPError
 from tqdm import tqdm
 
-from matbench_discovery import ROOT
+from matbench_discovery import DATA_DIR, ROOT
 from matbench_discovery.data import DATA_FILES
 
 __author__ = "Janosh Riebesell"
@@ -57,7 +57,7 @@ CATEGORIES = {
     25186: "Cheminformatics and Quantitative Structure-Activity Relationships",
 }
 
-file_urls_out_path = f"{ROOT}/data/figshare/{VERSION}.json"
+file_urls_out_path = f"{DATA_DIR}/figshare/{VERSION}.json"
 if os.path.isfile(file_urls_out_path):
     raise SystemExit(
         f"{file_urls_out_path!r} already exists, exiting early. Increment the version "
@@ -163,6 +163,10 @@ def main() -> int:
         figshare_urls = {
             "files": uploaded_files,
             "article": f"https://figshare.com/articles/dataset/{article_id}",
+            "mptrj": {
+                "article": "https://figshare.com/articles/dataset/23713842",
+                "download": "https://figshare.com/ndownloader/files/41619375",
+            },
         }
         with open(file_urls_out_path, "w") as file:
             json.dump(figshare_urls, file)

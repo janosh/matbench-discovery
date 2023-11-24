@@ -1,3 +1,5 @@
+# %%
+import gzip
 import json
 import os
 import re
@@ -7,26 +9,43 @@ import ase.io
 import ase.units
 import numpy as np
 from pymatgen.core import Structure
+from pymatviz.io import TqdmDownload
 from tqdm import tqdm
+
+from matbench_discovery import DATA_DIR, FIGSHARE_URLS
 
 __author__ = "Yuan Chiang"
 __date__ = "2023-08-10"
 
 module_dir = os.path.dirname(__file__)
-mptrj_path = f"{module_dir}/MPtrj_2022.9_full.json"
-# MPtrj figshare URL
-# https://figshare.com/articles/dataset/23713842
-urllib.request.urlretrieve(
-    "https://figshare.com/ndownloader/files/41619375", mptrj_path
-)
+mp_trj_path = f"{DATA_DIR}/mp/mp-trj-2022-09.json"
 
-with open(mptrj_path) as file:
-    json_data = json.load(file)
 
-out_dir = f"{module_dir}/mptrj-gga-ggapu"
+# %% download MPtrj from figshare (11.3 GB JSON file, can easily take 1h)
+mp_trj_url = FIGSHARE_URLS["mptrj"]["download"]
+
+if os.path.isfile(f"{mp_trj_path}.gz"):
+    with gzip.open(f"{mp_trj_path}.gz", "rt") as zip_file:
+        json_data = json.load(zip_file)
+else:  # if file not found, download and compress it
+    with TqdmDownload(desc=mp_trj_url) as pbar:
+        urllib.request.urlretrieve(mp_trj_url, mp_trj_path, reporthook=pbar.update_to)
+
+    with open(mp_trj_path) as file:
+        json_data = json.load(file)
+
+    # save as compressed JSON
+    with gzip.open(f"{mp_trj_path}.gz", "wt") as zip_file:
+        json.dump(json_data, zip_file)
+
+
+# %%
+out_dir = f"{module_dir}/mp-trj-2022-09"
 os.makedirs(out_dir, exist_ok=True)
 combined = []
 
+
+# %%
 for material_id in tqdm(json_data):
     xyz_path = f"{out_dir}/{material_id}.extxyz"
 
@@ -59,7 +78,7 @@ for material_id in tqdm(json_data):
             if magmoms := block.get("magmom"):
                 atoms.arrays["magmoms"] = np.array(magmoms)
             if stress := block.get("stress"):
-                # kB to eV/A^3
+                # kB to eV/A^3 and opposite sign convention
                 atoms.info["stress"] = np.array(stress) * -1e-1 * ase.units.GPa
 
             special_keys = {"uncorrected_total_energy", "force", "magmom", "stress"}
@@ -75,4 +94,6 @@ for material_id in tqdm(json_data):
     traj = ase.io.read(xyz_path, index=":", format="extxyz")
     combined.extend(traj)
 
-ase.io.write("mptrj-gga-ggapu.xyz", combined, format="extxyz", append=True)
+
+# %%
+ase.io.write("mp-trj-2022-09.xyz", combined, format="extxyz", append=True)

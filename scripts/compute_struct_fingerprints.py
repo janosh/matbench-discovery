@@ -15,7 +15,7 @@ from matminer.featurizers.structure import SiteStatsFingerprint
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, id_col, timestamp
+from matbench_discovery import DATA_DIR, id_col, timestamp
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 
@@ -33,7 +33,7 @@ data_path = {
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
 slurm_array_task_count = 100
 
-out_dir = f"{ROOT}/data/{data_name}"
+out_dir = f"{DATA_DIR}/{data_name}"
 os.makedirs(out_dir, exist_ok=True)
 
 slurm_vars = slurm_submit(

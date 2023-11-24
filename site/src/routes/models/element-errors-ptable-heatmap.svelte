@@ -5,7 +5,7 @@
   import { MultiSelect } from 'svelte-multiselect'
   import per_elem_errors from './per-element-each-errors.json'
 
-  export let color_scale: string[] = [`Inferno`]
+  export let color_scale: string[] = [`Viridis`]
   export let active_element: ChemicalElement | null = null
   // $: active_counts = elem_counts[filter]
   export let models: string[] = Object.keys(per_elem_errors)
@@ -15,7 +15,7 @@
   export let cbar_max: number | null = 0.3
 
   const test_set_std_key = Object.keys(per_elem_errors).find((key) =>
-    key.includes(`Test set standard deviation`)
+    key.includes(`Test set standard deviation`),
   ) as string
   const test_set_std = Object.values(per_elem_errors[test_set_std_key]) as number[]
 
@@ -24,7 +24,7 @@
       const denom = normalized ? test_set_std[idx] : 1
       if (denom) return val / denom
       return null
-    }
+    },
   )
   $: current_data_max = Math.max(...heatmap_values)
   $: cs_range = [0, manual_cbar_max ? cbar_max : current_data_max]

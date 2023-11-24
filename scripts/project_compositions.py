@@ -11,7 +11,7 @@ import pandas as pd
 from pymatgen.core import Composition
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, id_col
+from matbench_discovery import DATA_DIR, id_col
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 
@@ -24,7 +24,7 @@ projection_type: Literal["tsne", "umap"] = "tsne"  # which projection method to 
 out_dim = 2  # number of dimensions to project to
 one_hot_dim = 112  # number of elements to use for one-hot encoding
 
-out_dir = f"{ROOT}/data/{data_name}/{projection_type}"
+out_dir = f"{DATA_DIR}/{data_name}/{projection_type}"
 os.makedirs(out_dir, exist_ok=True)
 
 slurm_vars = slurm_submit(
