@@ -57,18 +57,11 @@ assert all(
 # %% compute number of samples per element in training set
 # we count raw element occurrence, i.e. not weighted by composition, based on the
 # hypothesis that models don't learn more about iron and oxygen from Fe2O3 than from FeO
-counts_path = f"{ROOT}/site/src/routes/data/mp-element-counts-occurrence.json"
+counts_path = f"{ROOT}/site/src/routes/data/mp-element-counts-by-occurrence.json"
 df_elem_err = pd.read_json(counts_path, typ="series")
 train_count_col = "MP Occurrences"
 df_elem_err = df_elem_err.reset_index(name=train_count_col).set_index("index")
 df_elem_err.index.name = "symbol"
-
-
-# %%
-fig = ptable_heatmap_plotly(df_elem_err[train_count_col], font_size=10)
-title = "Number of MP structures containing each element"
-fig.layout.title.update(text=title, x=0.4, y=0.9)
-fig.show()
 
 
 # %%

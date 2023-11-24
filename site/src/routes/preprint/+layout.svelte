@@ -7,7 +7,8 @@
   export let data
 
   const authors = cite.authors.map(
-    (auth) => `${auth[`given-names`]} ${auth[`family-names`]}<sup>${auth.affil_key}</sup>`
+    (auth) =>
+      `${auth[`given-names`]} ${auth[`family-names`]}<sup>${auth.affil_key}</sup>`,
   )
 </script>
 
@@ -17,7 +18,7 @@
   <span>
     {@html authors.join(`, `)}
   </span>
-  <span>
+  <span style="font-weight: lighter; font-size: 0.96em;">
     {@html cite.affiliations.map((affil, idx) => `${idx + 1}. ${affil}`).join(`<br/>`)}
   </span>
   <span style="font-weight: lighter;">{cite[`date-released`]}</span>

@@ -7,6 +7,7 @@ from glob import glob
 
 import numpy as np
 import pandas as pd
+import plotly.express as px
 from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
 from pymatgen.core import Composition, Structure
 from pymatgen.entries.compatibility import (
@@ -16,9 +17,10 @@ from pymatgen.entries.compatibility import (
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz import density_scatter
 from pymatviz.io import save_fig
+from pymatviz.utils import patch_dict
 from tqdm import tqdm
 
-from matbench_discovery import SITE_FIGS, formula_col, id_col, today
+from matbench_discovery import PDF_FIGS, SITE_FIGS, formula_col, id_col, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.plots import pio
@@ -443,9 +445,7 @@ print(f"{n_too_stable = }")  # n_too_stable = 502
 n_too_unstable = sum(df_summary.e_form_per_atom_wbm > e_form_cutoff)
 print(f"{n_too_unstable = }")  # n_too_unstable = 22
 
-fig = df_summary.hist(
-    x="e_form_per_atom_wbm", backend="plotly", log_y=True, range_x=[-5.5, 5.5]
-)
+fig = px.histogram(df_summary, x="e_form_per_atom_wbm", log_y=True, range_x=[-5.5, 5.5])
 fig_compressed = False
 fig.add_vline(x=e_form_cutoff, line=dict(dash="dash"))
 fig.add_vline(x=-e_form_cutoff, line=dict(dash="dash"))
@@ -472,10 +472,16 @@ if not fig_compressed:
     fig_compressed = True
     fig.data[0].x = [round(x, 3) for x in fig.data[0].x[::10]]
 
-img_path = f"{SITE_FIGS}/hist-wbm-e-form-per-atom"
-save_fig(fig, f"{img_path}.svelte")
+img_name = "hist-wbm-e-form-per-atom"
+save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 # recommended to upload SVG to vecta.io/nano for compression
-# save_fig(fig, f"{img_path}.svg", width=800, height=300)
+# save_fig(fig, f"{img_name}.svg", width=800, height=300)
+
+# ensure full data range is visible in PDF (since can't zoom out)
+fig.update_layout(xaxis_range=[-12, 82])
+# remove title in PDF
+with patch_dict(fig.layout, title=""):
+    save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
 
 
 # %%

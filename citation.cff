@@ -17,12 +17,6 @@ authors:
     orcid: https://orcid.org/0000-0002-6589-1700
     affil_key: 1
     github: https://github.com/comprhys
-  - given-names: Anubhav
-    family-names: Jain
-    orcid: 0000-0001-5893-9967
-    affiliation: Lawrence Berkeley National Laboratory
-    affil_key: 2
-    github: https://github.com/computron
   - given-names: Philipp
     family-names: Benner
     affiliation: German Federal Institute of Materials Research and Testing (BAM)
@@ -35,21 +29,29 @@ authors:
     orcid: 0000-0002-4017-7084
     affil_key: 2
     github: https://github.com/chiang-yuan
-  - given-names: Kristin
-    family-names: Persson
-    orcid: 0000-0003-2495-5509
-    affiliation: Lawrence Berkeley National Laboratory
-    affil_key: 2
   - given-names: Alpha
     family-names: Lee
     orcid: 0000-0002-9616-3108
     affiliation: University of Cambridge
     affil_key: 1
     github: https://github.com/alphaleegroup
+  - given-names: Anubhav
+    family-names: Jain
+    orcid: 0000-0001-5893-9967
+    affiliation: Lawrence Berkeley National Laboratory
+    affil_key: 2
+    github: https://github.com/computron
+  - given-names: Kristin
+    family-names: Persson
+    orcid: 0000-0003-2495-5509
+    affiliation: Lawrence Berkeley National Laboratory
+    affil_key: 2, 4, 5
 affiliations:
   - Cavendish Laboratory, University of Cambridge, UK
   - Lawrence Berkeley National Laboratory, Berkeley, USA
-  - German Federal Institute of Materials Research and Testing (BAM)
+  - Federal Institute of Materials Research and Testing (BAM), Germany
+  - Molecular Foundry, Lawrence Berkeley National Laboratory, USA
+  - Department of Materials Science and Engineering, University of California - Berkeley, USA
 license: MIT
 license-url: https://github.com/janosh/matbench-discovery/blob/-/license"
 repository-code: https://github.com/janosh/matbench-discovery

@@ -1,9 +1,12 @@
 """Global variables used all across the matbench_discovery package."""
+
+import json
 import os
 import warnings
 from datetime import datetime
 
 ROOT = os.path.dirname(os.path.dirname(__file__))  # repo root directory
+DATA_DIR = f"{ROOT}/data"  # directory to store raw data
 SITE_FIGS = f"{ROOT}/site/src/figs"  # directory for interactive figures
 SITE_MODELS = f"{ROOT}/site/src/routes/models"  # directory to write model analysis
 FIGSHARE = f"{ROOT}/data/figshare"
@@ -38,3 +41,9 @@ init_struct_col = "initial_structure"
 struct_col = "structure"
 e_form_col = "formation_energy_per_atom"
 formula_col = "formula"
+stress_col = "stress"
+stress_trace_col = "stress_trace"
+
+# load figshare 1.0.0
+with open(f"{FIGSHARE}/1.0.0.json") as file:
+    FIGSHARE_URLS = json.load(file)

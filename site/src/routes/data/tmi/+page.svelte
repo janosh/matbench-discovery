@@ -6,7 +6,6 @@
   import type { ChemicalElement } from 'elementari'
   import { ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
   import { RadioButtons, Toggle } from 'svelte-zoo'
-  import type { Snapshot } from './$types'
 
   const elem_counts = import.meta.glob(`../wbm-element-counts-*=*.json`, {
     eager: true,
@@ -21,17 +20,13 @@
   let batch_keys = Object.keys(elem_counts).filter((k) => k.startsWith(`batch=`))
   let log = false // log color scale
   let filter = arity_keys[0]
-  let color_scale = [`Inferno`]
+  let color_scale = [`Viridis`]
   let active_element: ChemicalElement
   $: active_counts = elem_counts[filter]
   let normalized_bar_counts: boolean = false
 
   const style = `display: flex; place-items: center; place-content: center;`
 
-  export const snapshot: Snapshot = {
-    capture: () => ({ filter, log, color_scale }),
-    restore: (values) => ({ filter, log, color_scale } = values),
-  }
   const radio_style = `display: inline-flex; margin: 2pt 8pt; border-radius: 3pt;`
 </script>
 

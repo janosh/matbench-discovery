@@ -63,6 +63,8 @@ quantity_labels = dict(
     material_id="Material ID",
     band_gap="Band gap (eV)",
     formula="Formula",
+    stress="σ (eV/Å³)",  # noqa: RUF001
+    stress_trace="1/3 Tr(σ) (eV/Å³)",  # noqa: RUF001
 )
 model_labels = dict(
     alignn="ALIGNN",
@@ -88,6 +90,7 @@ model_labels = dict(
 )
 px.defaults.labels = quantity_labels | model_labels
 
+
 # color list https://plotly.com/python-api-reference/generated/plotly.graph_objects.layout
 colorway = ("lightseagreen", "orange", "lightsalmon", "dodgerblue")
 clf_labels = ("True Positive", "False Negative", "False Positive", "True Negative")
@@ -106,6 +109,7 @@ global_layout = dict(
 )
 pio.templates["global"] = dict(layout=global_layout)
 pio.templates.default = "plotly_dark+global"
+px.defaults.template = "plotly_dark+global"
 
 # https://github.com/plotly/Kaleido/issues/122#issuecomment-994906924
 # when seeing MathJax "loading" message in exported PDFs, try:

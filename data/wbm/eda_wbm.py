@@ -7,10 +7,13 @@ import plotly.express as px
 from pymatgen.core import Composition
 from pymatviz import (
     count_elements,
+    ptable_heatmap,
     ptable_heatmap_plotly,
+    ptable_heatmap_ratio,
     spacegroup_sunburst,
 )
 from pymatviz.io import save_fig
+from pymatviz.utils import si_fmt
 
 from matbench_discovery import (
     PDF_FIGS,
@@ -62,7 +65,35 @@ all_counts = (
 
 # %%
 for dataset, count_mode, elem_counts in all_counts:
-    elem_counts.to_json(f"{data_page}/{dataset}-element-counts-{count_mode}.json")
+    filename = f"{dataset}-element-counts-by-{count_mode}"
+    elem_counts.to_json(f"{data_page}/{filename}.json")
+
+    title = "Number of MP structures containing each element"
+    fig = ptable_heatmap_plotly(elem_counts, font_size=10)
+    fig.layout.title.update(text=title, x=0.4, y=0.9)
+    fig.show()
+
+    ax_mp_cnt = ptable_heatmap(  # matplotlib version looks better for SI
+        elem_counts,
+        fmt=lambda x, _: si_fmt(x, ".1f"),
+        cbar_fmt=lambda x, _: si_fmt(x, ".0f"),
+        zero_color="#efefef",
+    )
+    save_fig(ax_mp_cnt, f"{PDF_FIGS}/{filename}.pdf")
+
+
+# %% ratio of WBM to MP counts
+normalized = True
+ax_ptable = ptable_heatmap_ratio(
+    wbm_occu_counts / (len(df_wbm) if normalized else 1),
+    mp_occu_counts / (len(df_mp) if normalized else 1),
+    zero_color="#efefef",
+    exclude_elements="Xe Th Pa U Np Pu".split(),
+)
+img_name = "wbm-mp-ratio-element-counts-by-occurrence"
+if normalized:
+    img_name += "-normalized"
+save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
 
 
 # %% export element counts by WBM step to JSON
