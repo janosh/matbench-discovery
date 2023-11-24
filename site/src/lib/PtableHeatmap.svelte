@@ -6,7 +6,7 @@
 
   export let heatmap_values: Record<string, number>
   export let color_scale: string = `Viridis`
-  export let active_elem: ChemicalElement
+  export let active_element: ChemicalElement
   export let log = false // log color scale
 
   export const snapshot: Snapshot = {
@@ -19,12 +19,12 @@
   {heatmap_values}
   {color_scale}
   {log}
-  bind:active_element={active_elem}
+  bind:active_element
   show_photo={false}
 >
   <TableInset slot="inset">
     <label for="log">Log color scale<Toggle id="log" bind:checked={log} /></label>
-    <PtableInset element={active_elem} elem_counts={heatmap_values} />
+    <PtableInset element={active_element} elem_counts={heatmap_values} />
     <ColorBar
       text_side="top"
       {color_scale}
