@@ -1,12 +1,13 @@
 <script lang="ts">
   import { browser } from '$app/environment'
+  import type { SvelteComponent } from 'svelte'
   import MPtrjElemCountsPtable from './MPtrjElemCountsPtable.svelte'
   import Readme from './readme.md'
 
   const plots = import.meta.glob(`$figs/mp-trj-*.svelte`, {
     eager: true,
     import: `default`,
-  })
+  }) as Record<string, typeof SvelteComponent>
 
   const title_map: Record<string, string> = {
     'e-form': `Formation Energy`,
@@ -20,10 +21,10 @@
 
 {#if browser}
   <ul>
-    {#each Object.entries(plots) as [name, plot]}
+    {#each Object.entries(plots) as [name, Plot]}
       {@const title = name.split(`mp-trj-`)[1].split(`-hist.svelte`)[0]}
       <h2>{title_map[title] ?? title}</h2>
-      <svelte:component this={plot} style="width: 100%;" {title} />
+      <Plot {title} style="width: 100%; max-width: 700px; max-height: 400px;" />
     {/each}
   </ul>
 {/if}
