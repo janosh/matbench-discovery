@@ -1,5 +1,6 @@
 """Global variables used all across the matbench_discovery package."""
 
+import json
 import os
 import warnings
 from datetime import datetime
@@ -42,3 +43,7 @@ e_form_col = "formation_energy_per_atom"
 formula_col = "formula"
 stress_col = "stress"
 stress_trace_col = "stress_trace"
+
+# load figshare 1.0.0
+with open(f"{FIGSHARE}/1.0.0.json") as file:
+    FIGSHARE_URLS = json.load(file)

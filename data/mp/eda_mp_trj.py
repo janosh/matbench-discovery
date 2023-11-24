@@ -31,12 +31,15 @@ __author__ = "Janosh Riebesell"
 __date__ = "2023-11-22"
 
 data_page = f"{ROOT}/site/src/routes/data"
+e_form_per_atom_col = "ef_per_atom"
+magmoms_col = "magmoms"
+forces_col = "forces"
 
 
 # %% downloaded mptrj-gga-ggapu.tar.gz from https://drive.google.com/drive/folders/1JQ-ry1RHvNliVg1Ut5OuyUxne51RHiT_
 # and extracted the mptrj-gga-ggapu directory (6.2 GB) to data/mp using macOS Finder
 # then zipped it to mp-trj-extxyz.zip (also using Finder, 1.6 GB)
-zip_path = f"{DATA_DIR}/mp/mp-trj-extxyz.zip"
+zip_path = f"{DATA_DIR}/mp/mp-trj-extxyz-by-yuan.zip"
 mp_trj_atoms: dict[str, list[ase.Atoms]] = {}
 
 # extract extXYZ files from zipped directory without unpacking the whole archive
@@ -75,17 +78,18 @@ assert formula_col in df_mp_trj
 
 # this is the unrelaxed (but MP2020 corrected) formation energy per atom of the actual
 # relaxation step
-e_form_per_atom_col = "ef_per_atom"
-magmoms_col = "magmoms"
-forces_col = "forces"
 df_mp_trj[stress_trace_col] = [
     np.trace(stress) / 3 for stress in tqdm(df_mp_trj[stress_col])
 ]
 
 
 # %%
-df_mp_trj.to_csv(f"{DATA_DIR}/mp/mp-trj-2022-09-summary.csv.bz2")
-df_mp_trj.to_csv(f"{DATA_DIR}/mp/mp-trj-2022-09-summary.csv.gz")
+df_mp_trj.to_json(f"{DATA_DIR}/mp/mp-trj-2022-09-summary.json.bz2")
+
+
+# %% load MPtrj summary data
+df_mp_trj = pd.read_json(f"{DATA_DIR}/mp/mp-trj-2022-09-summary.json.bz2")
+df_mp_trj.index.name = "frame_id"
 
 
 # %%
@@ -100,7 +104,13 @@ for count_mode in ("composition", "occurrence"):
 
 
 # %%
+if "trj_elem_counts" not in locals():
+    trj_elem_counts = pd.read_json(
+        f"{data_page}/mp-trj-element-counts-by-occurrence.json", typ="series"
+    )
+
 excl_elems = "He Ne Ar Kr Xe".split() if (excl_noble := True) else ()
+
 ax_ptable = ptable_heatmap(  # matplotlib version looks better for SI
     trj_elem_counts,
     fmt=lambda x, _: si_fmt(x, ".1f"),
@@ -110,6 +120,7 @@ ax_ptable = ptable_heatmap(  # matplotlib version looks better for SI
     # drop noble gases
     exclude_elements=excl_elems,
 )
+
 img_name = f"mp-trj-element-counts-by-occurrence{'-log' if log else ''}"
 if excl_noble:
     img_name += "-excl-noble"
@@ -141,8 +152,9 @@ img_name = (
 save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
 
 
-# %% plot energy per atom distribution
+# %% plot formation energy per atom distribution
 count_col = "Number of structures"
+pdf_kwds = dict(width=500, height=300)
 if "e_form_per_atom_hist" not in locals():  # only compute once for speed
     e_form_per_atom_hist, e_form_per_atom_bins = np.histogram(
         df_mp_trj[e_form_per_atom_col], bins=300
@@ -151,8 +163,6 @@ fig = px.bar(
     x=e_form_per_atom_bins[:-1],
     y=e_form_per_atom_hist,
     log_y=True,
-    width=500,
-    height=300,
 )
 bin_width = (e_form_per_atom_bins[1] - e_form_per_atom_bins[0]) * 1.2
 fig.update_traces(width=bin_width, marker_line_width=0)
@@ -160,38 +170,38 @@ fig.layout.xaxis.update(linecolor="lightgray", title="E<sub>form</sub> (eV/atom)
 fig.layout.yaxis.update(linecolor="lightgray", title=count_col)
 fig.layout.margin = dict(l=5, r=5, b=5, t=5)
 fig.show()
-save_fig(fig, f"{PDF_FIGS}/mp-trj-e-form-hist.pdf")
+save_fig(fig, f"{PDF_FIGS}/mp-trj-e-form-hist.pdf", **pdf_kwds)
 save_fig(fig, f"{SITE_FIGS}/mp-trj-e-form-hist.svelte")
 
 
 # %% plot forces distribution
-# use numpy to precompute histogram
+# use numpy to pre-compute histogram
 if "forces_hist" not in locals():  # only compute once for speed
     forces_hist, forces_bins = np.histogram(
         df_mp_trj[forces_col].abs().explode().explode(), bins=300
     )
-fig = px.bar(x=forces_bins[:-1], y=forces_hist, log_y=True, width=500, height=300)
+fig = px.bar(x=forces_bins[:-1], y=forces_hist, log_y=True)
 bin_width = (forces_bins[1] - forces_bins[0]) * 1.2
 fig.update_traces(width=bin_width, marker_line_width=0)
 fig.layout.xaxis.update(linecolor="lightgray", title="|Forces| (eV/Å)")
 fig.layout.yaxis.update(linecolor="lightgray", title=count_col)
 fig.layout.margin = dict(l=5, r=5, b=5, t=5)
 fig.show()
-save_fig(fig, f"{PDF_FIGS}/mp-trj-forces-hist.pdf")
+save_fig(fig, f"{PDF_FIGS}/mp-trj-forces-hist.pdf", **pdf_kwds)
 save_fig(fig, f"{SITE_FIGS}/mp-trj-forces-hist.svelte")
 
 
 # %% plot hydrostatic stress distribution
 if "stress_hist" not in locals():  # only compute once for speed
     stress_hist, stress_bins = np.histogram(df_mp_trj[stress_trace_col], bins=300)
-fig = px.bar(x=stress_bins[:-1], y=stress_hist, log_y=True, width=500, height=300)
+fig = px.bar(x=stress_bins[:-1], y=stress_hist, log_y=True)
 bin_width = (stress_bins[1] - stress_bins[0]) * 1.2
 fig.update_traces(width=bin_width, marker_line_width=0)
 fig.layout.xaxis.update(linecolor="lightgray", title=quantity_labels[stress_trace_col])
 fig.layout.yaxis.update(linecolor="lightgray", title=count_col)
 fig.layout.margin = dict(l=5, r=5, b=5, t=5)
 fig.show()
-save_fig(fig, f"{PDF_FIGS}/mp-trj-stresses-hist.pdf")
+save_fig(fig, f"{PDF_FIGS}/mp-trj-stresses-hist.pdf", **pdf_kwds)
 save_fig(fig, f"{SITE_FIGS}/mp-trj-stresses-hist.svelte")
 
 
@@ -201,12 +211,12 @@ if "magmoms_hist" not in locals():  # only compute once for speed
         df_mp_trj[magmoms_col].dropna().explode(), bins=300
     )
 
-fig = px.bar(x=magmoms_bins[:-1], y=magmoms_hist, log_y=True, width=500, height=300)
+fig = px.bar(x=magmoms_bins[:-1], y=magmoms_hist, log_y=True)
 bin_width = (magmoms_bins[1] - magmoms_bins[0]) * 1.2
 fig.update_traces(width=bin_width, marker_line_width=0)
 fig.layout.xaxis.update(linecolor="lightgray", title="Magmoms (μ<sub>B</sub>)")
 fig.layout.yaxis.update(linecolor="lightgray", title=count_col)
 fig.layout.margin = dict(l=5, r=5, b=5, t=5)
 fig.show()
-save_fig(fig, f"{PDF_FIGS}/mp-trj-magmoms-hist.pdf")
+save_fig(fig, f"{PDF_FIGS}/mp-trj-magmoms-hist.pdf", **pdf_kwds)
 save_fig(fig, f"{SITE_FIGS}/mp-trj-magmoms-hist.svelte")

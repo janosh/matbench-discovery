@@ -163,6 +163,10 @@ def main() -> int:
         figshare_urls = {
             "files": uploaded_files,
             "article": f"https://figshare.com/articles/dataset/{article_id}",
+            "mptrj": {
+                "article": "https://figshare.com/articles/dataset/23713842",
+                "download": "https://figshare.com/ndownloader/files/41619375",
+            },
         }
         with open(file_urls_out_path, "w") as file:
             json.dump(figshare_urls, file)

@@ -5,6 +5,7 @@
   import SpacegroupSunburstMp from '$figs/spacegroup-sunburst-mp.svelte'
   import SpacegroupSunburstWbm from '$figs/spacegroup-sunburst-wbm.svelte'
   import { PtableInset } from '$lib'
+  import figshare_urls from '$root/data/figshare/1.0.0.json'
   import DataReadme from '$root/data/wbm/readme.md'
   import type { ChemicalElement } from 'elementari'
   import { ColorBar, ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
@@ -115,9 +116,8 @@
   <svelte:fragment slot="mp-trj-elements-heatmap">
     <p>
       Below: Element counts for
-      <a href="https://figshare.com/articles/dataset/23713842">Mptrj training set</a> consisting
-      of 1,580,395 structures which are frames of the DFT relaxations performed on all 154,719
-      MP materials.
+      <a href={figshare_urls.mptrj.article}>MPtrj training set</a> consisting of 1,580,395
+      structures which are frames of the DFT relaxations performed on all 154,719 MP materials.
     </p>
     <PeriodicTable
       heatmap_values={mp_trj_elem_counts}

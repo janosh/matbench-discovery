@@ -12,7 +12,7 @@ from pymatgen.core import Structure
 from pymatviz.io import TqdmDownload
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR
+from matbench_discovery import DATA_DIR, FIGSHARE_URLS
 
 __author__ = "Yuan Chiang"
 __date__ = "2023-08-10"
@@ -21,9 +21,8 @@ module_dir = os.path.dirname(__file__)
 mp_trj_path = f"{DATA_DIR}/mp/mp-trj-2022-09.json"
 
 
-# %% MPtrj figshare URL https://figshare.com/articles/dataset/23713842
-# the download is 11.3 GB and can easily take 1h
-mp_trj_url = "https://figshare.com/ndownloader/files/41619375"
+# %% download MPtrj from figshare (11.3 GB JSON file, can easily take 1h)
+mp_trj_url = FIGSHARE_URLS["mptrj"]["download"]
 
 if os.path.isfile(f"{mp_trj_path}.gz"):
     with gzip.open(f"{mp_trj_path}.gz", "rt") as zip_file:
