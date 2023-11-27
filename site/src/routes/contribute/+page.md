@@ -8,10 +8,11 @@
   const cse_doc_url = `https://github.com/materialsproject/pymatgen/blob/v2023.5.10/pymatgen/entries/computed_entries.py#L579-L722`
   const cse_link = `<a href=${cse_doc_url}>ComputedStructureEntry</a>`
 
+  const mp_trj_link = `<a href="https://figshare.com/articles/dataset/23713842">MPtrj</a>`
   const descriptions = {
-    alignn_checkpoint: "ALIGNN model trained on <code>mp_computed_structure_entries</code>",
-    mace_checkpoint_1: "2M params MACE model trained by Yuan Chiang on MPtrj (https://figshare.com/articles/dataset/23713842)",
-    mace_checkpoint_2: "16M params MACE model trained by Philipp Benner on MPtrj (https://figshare.com/articles/dataset/23713842)",
+    alignn_checkpoint: `ALIGNN model trained on <code>mp_computed_structure_entries</code>`,
+    mace_checkpoint_1: `2M params MACE model trained by Yuan Chiang on ${mp_trj_link}`,
+    mace_checkpoint_2: `16M params MACE model trained by Philipp Benner on ${mp_trj_link}`,
     mp_computed_structure_entries:
       `JSON-Serialized MP ${cse_link} objects containing relaxed structures and DFT final energies`,
     mp_elemental_ref_entries: `Minimum energy ComputedEntry for each element in MP`,
@@ -23,6 +24,7 @@
     wbm_cses_plus_init_structs: `Both unrelaxed and DFT-relaxed WBM structures, the latter stored with their final VASP energies as ${cse_link}`,
     wbm_summary:
       `Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more.`,
+    mp_trj_extxyz_by_yuan: `${mp_trj_link} converted to <code>ase</code>-compatible extended XYZ format and compressed (11.3 to 1.6 GB) by Yuan Chiang`,
   }
   const desc_keys = Object.keys(descriptions).sort()
   const figshare_keys = Object.keys(figshare_urls.files).sort()

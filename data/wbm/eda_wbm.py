@@ -64,8 +64,11 @@ all_counts = (
 
 
 # %%
+log = True
 for dataset, count_mode, elem_counts in all_counts:
     filename = f"{dataset}-element-counts-by-{count_mode}"
+    if log:
+        filename += "-log"
     elem_counts.to_json(f"{data_page}/{filename}.json")
 
     title = "Number of MP structures containing each element"
@@ -75,9 +78,14 @@ for dataset, count_mode, elem_counts in all_counts:
 
     ax_mp_cnt = ptable_heatmap(  # matplotlib version looks better for SI
         elem_counts,
-        fmt=lambda x, _: si_fmt(x, ".1f"),
+        fmt=lambda x, _: si_fmt(x, ".0f"),
         cbar_fmt=lambda x, _: si_fmt(x, ".0f"),
         zero_color="#efefef",
+        label_font_size=17,
+        value_font_size=14,
+        cbar_title=f"{dataset.upper()} Element Count",
+        log=log,
+        cbar_range=(100, None),
     )
     save_fig(ax_mp_cnt, f"{PDF_FIGS}/{filename}.pdf")
 
@@ -133,31 +141,37 @@ for dataset, count_mode, elem_counts in all_counts:
 
 
 # %% histogram of energy distance to MP convex hull for WBM
-col = each_true_col  # or e_form_col
-mean, std = df_wbm[col].mean(), df_wbm[col].std()
+# e_col = each_true_col  # or e_form_col
+e_col = "e_form_per_atom_uncorrected"
+e_col = "e_form_per_atom_mp2020_corrected"
+mean, std = df_wbm[e_col].mean(), df_wbm[e_col].std()
 
 range_x = (mean - 2 * std, mean + 2 * std)
-counts, bins = np.histogram(df_wbm[col], bins=150, range=range_x)
-bins = bins[1:]
+counts, bins = np.histogram(df_wbm[e_col], bins=150, range=range_x)
+bins = bins[1:]  # remove left-most bin edge
 left_counts = counts[bins < 0]
 right_counts = counts[bins >= 0]
 
-x_label = "WBM energy above MP convex hull (eV/atom)"
+assert e_col.startswith(("e_form_per_atom", "e_above_hull"))
+x_label = "energy above MP convex hull" if "above" in e_col else "formation energy"
+y_label = "Number of Structures"
 fig = px.bar(
-    x=bins[bins < 0], y=left_counts, opacity=0.7, labels={"x": x_label, "y": "Counts"}
+    x=bins[bins < 0],
+    y=left_counts,
+    labels={"x": f"WBM {x_label} (eV/atom)", "y": y_label},
 )
-fig.add_bar(x=bins[bins >= 0], y=right_counts, opacity=0.7)
+fig.add_bar(x=bins[bins >= 0], y=right_counts)
+fig.update_traces(width=(bins[1] - bins[0]))  # make bars touch
 
-if col.startswith("e_above_hull"):
-    n_stable = sum(df_wbm[col] <= STABILITY_THRESHOLD)
-    n_unstable = sum(df_wbm[col] > STABILITY_THRESHOLD)
+if e_col.startswith("e_above_hull"):
+    n_stable = sum(df_wbm[e_col] <= STABILITY_THRESHOLD)
+    n_unstable = sum(df_wbm[e_col] > STABILITY_THRESHOLD)
     assert n_stable + n_unstable == len(df_wbm.dropna())
 
-    dummy_mae = (df_wbm[col] - df_wbm[col].mean()).abs().mean()
+    dummy_mae = (df_wbm[e_col] - df_wbm[e_col].mean()).abs().mean()
 
     title = (
-        f"n={len(df_wbm.dropna()):,} with {n_stable:,} stable + {n_unstable:,} "
-        f"unstable, dummy MAE={dummy_mae:.2f}"
+        f"{len(df_wbm.dropna()):,} structures with {n_stable:,} stable + {n_unstable:,}"
     )
     fig.layout.title = dict(text=title, x=0.5)
 
@@ -170,7 +184,8 @@ for x_pos, label in (
     (mean + std, f"{mean + std = :.2f}"),
 ):
     anno = dict(text=label, yshift=-10, xshift=-5, xanchor="right")
-    fig.add_vline(x=x_pos, line=dict(width=1, dash="dash"), annotation=anno)
+    line_width = 1 if x_pos == mean else 0.5
+    fig.add_vline(x=x_pos, line=dict(width=line_width, dash="dash"), annotation=anno)
 
 fig.show()
 

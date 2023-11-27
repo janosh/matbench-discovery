@@ -13,14 +13,12 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objs as go
-import plotly.io as pio
 import scipy.interpolate
 import scipy.stats
 import wandb
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from plotly.validators.scatter.line import DashValidator
 from plotly.validators.scatter.marker import SymbolValidator
-from pymatviz.utils import styled_html_tag
 from tqdm import tqdm
 
 from matbench_discovery import STABILITY_THRESHOLD
@@ -38,91 +36,12 @@ plotly_colors = px.colors.qualitative.Plotly
 plotly_line_styles *= len(plotly_markers) // len(plotly_line_styles)
 plotly_colors *= len(plotly_markers) // len(plotly_colors)
 
-ev_per_atom = styled_html_tag(
-    "(eV/atom)", tag="span", style="font-size: 0.8em; font-weight: lighter;"
-)
-
-# --- start global plot settings
-quantity_labels = dict(
-    n_atoms="Atom Count",
-    n_elems="Element Count",
-    crystal_sys="Crystal system",
-    spg_num="Space group",
-    n_wyckoff="Number of Wyckoff positions",
-    n_sites="Lattice site count",
-    energy_per_atom=f"Energy {ev_per_atom}",
-    e_form=f"DFT E<sub>form</sub> {ev_per_atom}",
-    e_above_hull=f"E<sub>hull dist</sub> {ev_per_atom}",
-    e_above_hull_mp2020_corrected_ppd_mp=f"DFT E<sub>hull dist</sub> {ev_per_atom}",
-    e_above_hull_pred=f"Predicted E<sub>hull dist</sub> {ev_per_atom}",
-    e_above_hull_mp=f"E<sub>above MP hull</sub> {ev_per_atom}",
-    e_above_hull_error=f"Error in E<sub>hull dist</sub> {ev_per_atom}",
-    vol_diff="Volume difference (A^3)",
-    e_form_per_atom_mp2020_corrected=f"DFT E<sub>form</sub> {ev_per_atom}",
-    e_form_per_atom_pred=f"Predicted E<sub>form</sub> {ev_per_atom}",
-    material_id="Material ID",
-    band_gap="Band gap (eV)",
-    formula="Formula",
-    stress="σ (eV/Å³)",  # noqa: RUF001
-    stress_trace="1/3 Tr(σ) (eV/Å³)",  # noqa: RUF001
-)
-model_labels = dict(
-    alignn="ALIGNN",
-    alignn_ff="ALIGNN FF",
-    alignn_pretrained="ALIGNN Pretrained",
-    bowsr_megnet="BOWSR",
-    chgnet="CHGNet",
-    chgnet_megnet="CHGNet→MEGNet",
-    cgcnn_p="CGCNN+P",
-    cgcnn="CGCNN",
-    m3gnet_megnet="M3GNet→MEGNet",
-    m3gnet="M3GNet",
-    m3gnet_direct="M3GNet DIRECT",
-    m3gnet_ms="M3GNet MS",
-    mace="MACE",
-    megnet="MEGNet",
-    megnet_rs2re="MEGNet RS2RE",
-    voronoi_rf="Voronoi RF",
-    wrenformer="Wrenformer",
-    pfp="PFP",
-    dft="DFT",
-    wbm="WBM",
-)
-px.defaults.labels = quantity_labels | model_labels
-
 
 # color list https://plotly.com/python-api-reference/generated/plotly.graph_objects.layout
 colorway = ("lightseagreen", "orange", "lightsalmon", "dodgerblue")
 clf_labels = ("True Positive", "False Negative", "False Positive", "True Negative")
 clf_colors = ("lightseagreen", "orange", "lightsalmon", "dodgerblue")
 clf_color_map = dict(zip(clf_labels, clf_colors))
-
-global_layout = dict(
-    # colorway=px.colors.qualitative.Pastel,
-    # colorway=colorway,
-    margin=dict(l=30, r=20, t=60, b=20),
-    paper_bgcolor="rgba(0,0,0,0)",
-    # plot_bgcolor="rgba(0,0,0,0)",
-    font_size=13,
-    # increase legend marker size and make background transparent
-    legend=dict(itemsizing="constant", bgcolor="rgba(0, 0, 0, 0)"),
-)
-pio.templates["global"] = dict(layout=global_layout)
-pio.templates.default = "plotly_dark+global"
-px.defaults.template = "plotly_dark+global"
-
-# https://github.com/plotly/Kaleido/issues/122#issuecomment-994906924
-# when seeing MathJax "loading" message in exported PDFs, try:
-# pio.kaleido.scope.mathjax = None
-
-
-plt.rc("font", size=14)
-plt.rc("legend", fontsize=16, title_fontsize=16)
-plt.rc("axes", titlesize=16, labelsize=16)
-plt.rc("savefig", bbox="tight", dpi=200)
-plt.rc("figure", dpi=200, titlesize=16)
-plt.rcParams["figure.constrained_layout.use"] = True
-# --- end global plot settings
 
 
 def hist_classified_stable_vs_hull_dist(

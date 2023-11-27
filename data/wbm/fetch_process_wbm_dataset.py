@@ -17,13 +17,11 @@ from pymatgen.entries.compatibility import (
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz import density_scatter
 from pymatviz.io import save_fig
-from pymatviz.utils import patch_dict
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, formula_col, id_col, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.energy import get_e_form_per_atom
-from matbench_discovery.plots import pio
 
 try:
     import gdown
@@ -41,8 +39,7 @@ https://nature.com/articles/s41524-020-00481-6
 
 
 module_dir = os.path.dirname(__file__)
-
-assert pio.templates.default == "plotly_dark+global"
+e_form_col = "e_form_per_atom_wbm"
 
 
 # %% links to google drive files received via email from 1st author Hai-Chen Wang
@@ -295,7 +292,7 @@ col_map = {
     "nsites": "n_sites",
     "vol": "volume",
     "e": "uncorrected_energy",
-    "e_form": "e_form_per_atom_wbm",
+    "e_form": e_form_col,
     "e_hull": "e_above_hull_wbm",
     "gap": "bandgap_pbe",
     "id": id_col,
@@ -440,22 +437,28 @@ density_scatter(df_summary.uncorrected_energy, df_summary.uncorrected_energy_fro
 
 # %% remove suspicious formation energy outliers
 e_form_cutoff = 5
-n_too_stable = sum(df_summary.e_form_per_atom_wbm < -e_form_cutoff)
+n_too_stable = sum(df_summary[e_form_col] < -e_form_cutoff)
 print(f"{n_too_stable = }")  # n_too_stable = 502
-n_too_unstable = sum(df_summary.e_form_per_atom_wbm > e_form_cutoff)
+n_too_unstable = sum(df_summary[e_form_col] > e_form_cutoff)
 print(f"{n_too_unstable = }")  # n_too_unstable = 22
 
-fig = px.histogram(df_summary, x="e_form_per_atom_wbm", log_y=True, range_x=[-5.5, 5.5])
-fig_compressed = False
+e_form_hist, e_form_bins = np.histogram(
+    df_summary[e_form_col], bins=300, range=(-5.5, 5.5)
+)
+x_label = {e_form_col: "WBM uncorrected formation energy (eV/atom)"}[e_form_col]
+fig = px.bar(
+    x=e_form_bins[:-1],  # [:-1] to drop last bin edge which is not needed
+    y=e_form_hist,
+    log_y=True,
+    labels=dict(x=x_label, y="Number of Structures"),
+)
+fig.update_traces(width=(e_form_bins[1] - e_form_bins[0]), marker_line_width=0)
 fig.add_vline(x=e_form_cutoff, line=dict(dash="dash"))
 fig.add_vline(x=-e_form_cutoff, line=dict(dash="dash"))
-fig.add_annotation(
-    **dict(x=0, y=1, yref="paper", yshift=20),
-    text=f"<b>dataset cropped to within +/- {e_form_cutoff} eV/atom</b>",
-    showarrow=False,
+fig.layout.title = dict(
+    text=f"dataset cropped to within +/- {e_form_cutoff} eV/atom", x=0.5
 )
-x_axis_title = "WBM uncorrected formation energy (eV/atom)"
-fig.update_layout(xaxis_title=x_axis_title, margin=dict(l=10, r=10, t=40, b=10))
+fig.layout.margin = dict(l=0, r=0, b=0, t=40)
 fig.update_yaxes(fixedrange=True)  # disable zooming y-axis
 fig.show(
     config=dict(
@@ -466,28 +469,19 @@ fig.show(
 
 
 # %%
-# no need to store all 250k x values in plot, leads to 1.7 MB file, subsample every 10th
-# point is enough to see the distribution, round to 3 decimal places to reduce file size
-if not fig_compressed:
-    fig_compressed = True
-    fig.data[0].x = [round(x, 3) for x in fig.data[0].x[::10]]
-
 img_name = "hist-wbm-e-form-per-atom"
 save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 # recommended to upload SVG to vecta.io/nano for compression
 # save_fig(fig, f"{img_name}.svg", width=800, height=300)
 
-# ensure full data range is visible in PDF (since can't zoom out)
-fig.update_layout(xaxis_range=[-12, 82])
-# remove title in PDF
-with patch_dict(fig.layout, title=""):
-    save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
+# fig.update_layout(xaxis_range=[-12, 82]) # if full data range should be visible in PDF
+save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
 
 
 # %%
 assert len(df_summary) == len(df_wbm) == 257_487
 
-query_str = f"{-e_form_cutoff} < e_form_per_atom_wbm < {e_form_cutoff}"
+query_str = f"{-e_form_cutoff} < {e_form_col} < {e_form_cutoff}"
 dropped_ids = sorted(set(df_summary.index) - set(df_summary.query(query_str).index))
 assert len(dropped_ids) == 502 + 22
 assert dropped_ids[:3] == "wbm-1-12142 wbm-1-12143 wbm-1-12144".split()
