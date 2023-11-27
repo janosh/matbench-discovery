@@ -6,18 +6,17 @@ from typing import Any
 import pandas as pd
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, STABILITY_THRESHOLD
+from matbench_discovery import (
+    ROOT,
+    STABILITY_THRESHOLD,
+    ev_per_atom,
+    model_labels,
+    quantity_labels,
+)
 from matbench_discovery import id_col as default_id_col
 from matbench_discovery.data import Files, df_wbm, glob_to_df
 from matbench_discovery.metrics import stable_metrics
-from matbench_discovery.plots import (
-    ev_per_atom,
-    model_labels,
-    plotly_colors,
-    plotly_line_styles,
-    plotly_markers,
-    quantity_labels,
-)
+from matbench_discovery.plots import plotly_colors, plotly_line_styles, plotly_markers
 
 """Centralize data-loading and computing metrics for plotting scripts"""
 

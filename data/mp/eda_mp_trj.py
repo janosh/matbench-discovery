@@ -38,7 +38,7 @@ forces_col = "forces"
 # %% downloaded mptrj-gga-ggapu.tar.gz from https://drive.google.com/drive/folders/1JQ-ry1RHvNliVg1Ut5OuyUxne51RHiT_
 # and extracted the mptrj-gga-ggapu directory (6.2 GB) to data/mp using macOS Finder
 # then zipped it to mp-trj-extxyz.zip (also using Finder, 1.6 GB)
-zip_path = f"{DATA_DIR}/mp/mp-trj-extxyz-by-yuan.zip"
+zip_path = f"{DATA_DIR}/mp/2023-11-22-mp-trj-extxyz-by-yuan.zip"
 mp_trj_atoms: dict[str, list[ase.Atoms]] = {}
 
 # extract extXYZ files from zipped directory without unpacking the whole archive
@@ -56,7 +56,7 @@ for name in tqdm((zip_file := ZipFile(zip_path)).namelist()):
         mp_trj_atoms[mp_id] = atoms_list
 
 
-assert len(mp_trj_atoms) == 145_919
+assert len(mp_trj_atoms) == 145_919  # number of unique MP IDs
 
 
 # %%
@@ -72,7 +72,7 @@ df_mp_trj = pd.DataFrame(
     }
 ).T.convert_dtypes()  # convert object columns to float/int where possible
 df_mp_trj.index.name = "frame_id"
-assert len(df_mp_trj) == 1_580_312
+assert len(df_mp_trj) == 1_580_312  # number of total frames
 assert formula_col in df_mp_trj
 
 # this is the unrelaxed (but MP2020 corrected) formation energy per atom of the actual
@@ -108,16 +108,18 @@ if "trj_elem_counts" not in locals():
         f"{data_page}/mp-trj-element-counts-by-occurrence.json", typ="series"
     )
 
-excl_elems = "He Ne Ar Kr Xe".split() if (excl_noble := True) else ()
+excl_elems = "He Ne Ar Kr Xe".split() if (excl_noble := False) else ()
 
 ax_ptable = ptable_heatmap(  # matplotlib version looks better for SI
     trj_elem_counts,
-    fmt=lambda x, _: si_fmt(x, ".1f"),
+    fmt=lambda x, _: si_fmt(x, ".0f"),
     cbar_fmt=lambda x, _: si_fmt(x, ".0f"),
     zero_color="#efefef",
     log=(log := True),
-    # drop noble gases
-    exclude_elements=excl_elems,
+    exclude_elements=excl_elems,  # drop noble gases
+    cbar_range=None if excl_noble else (2000, None),
+    label_font_size=17,
+    value_font_size=14,
 )
 
 img_name = f"mp-trj-element-counts-by-occurrence{'-log' if log else ''}"

@@ -15,7 +15,6 @@ data/**/tsne
 !data/mp/2023-02-07-mp-elemental-reference-entries.json.gz
 models/**/checkpoints
 data/**/*.json*
-data/**/*.gz*
 data/**/*.zip*
 
 # slurm + Weights and Biases logs
