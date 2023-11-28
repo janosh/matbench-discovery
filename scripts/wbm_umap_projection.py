@@ -159,7 +159,7 @@ if not os.path.isfile(wbm_matminer_feat_path):
 
 
 # %%
-umap_out_path = f"{DATA_DIR}/wbm/umap/umap-projections.csv.bz2"
+umap_out_path = f"{DATA_DIR}/wbm/umap/2d-umap-projections.csv.bz2"
 if not os.path.isfile(umap_out_path):
     print("Computing UMAP...")
 
