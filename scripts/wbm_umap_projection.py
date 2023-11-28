@@ -35,6 +35,9 @@ mp_matminer_feat_path = f"{DATA_DIR}/mp/mp-final-structures-matminer-features.cs
 wbm_matminer_feat_path = (
     f"{DATA_DIR}/wbm/wbm-initial-structures-matminer-features.csv.bz2"
 )
+# default n_umap_neighbors=15 results resemble PCA, i.e. a single blob of points.
+# The larger n_neighbors, the more MP point clusters move apart. Those islands may
+# correspond to some material classes (but we didn't test this).
 n_umap_neighbors = 750
 
 
