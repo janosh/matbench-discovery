@@ -65,8 +65,8 @@ running-models = [
   "megnet",
 ]
 3d-structures = ["crystaltoolkit"]
-df-to-pdf = ["jinja2"]
-fetch-data = ["gdown"]
+fetch-wbm-data = ["gdown"]
+make-wbm-umap = ["umap-learn"]
 
 [tool.setuptools.packages.find]
 include = ["matbench_discovery*"]

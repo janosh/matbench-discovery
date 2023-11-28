@@ -16,6 +16,7 @@ data/**/tsne
 models/**/checkpoints
 data/**/*.json*
 data/**/*.zip*
+!data/**/*umap-projections.csv.bz2
 
 # slurm + Weights and Biases logs
 wandb/
