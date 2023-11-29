@@ -69,9 +69,10 @@ for dataset, count_mode, elem_counts in all_counts:
     filename = f"{dataset}-element-counts-by-{count_mode}"
     if log:
         filename += "-log"
-    elem_counts.to_json(f"{data_page}/{filename}.json")
+    else:
+        elem_counts.to_json(f"{data_page}/{filename}.json")
 
-    title = "Number of MP structures containing each element"
+    title = f"Number of {dataset.upper()} structures containing each element"
     fig = ptable_heatmap_plotly(elem_counts, font_size=10)
     fig.layout.title.update(text=title, x=0.4, y=0.9)
     fig.show()
