@@ -6,6 +6,7 @@ Last plot is split into 2x3 subplots, one for each model.
 
 # %%
 import math
+from typing import Literal
 
 import numpy as np
 import plotly.express as px
@@ -28,6 +29,15 @@ __date__ = "2022-11-28"
 e_form_pred_col = "e_form_per_atom_pred"
 legend = dict(x=1, y=0, xanchor="right", yanchor="bottom", title=None)
 
+# toggle between formation energy and energy above convex hull
+which_energy: Literal["e-form", "each"] = "each"
+if which_energy == "each":
+    e_pred_col = each_pred_col
+    e_true_col = each_true_col
+if which_energy == "e-form":
+    e_true_col = e_form_col
+    e_pred_col = e_form_pred_col
+
 
 # %%
 facet_col = "Model"
@@ -45,9 +55,10 @@ df_melt = df_preds.melt(
 df_melt[each_pred_col] = (
     df_melt[each_true_col] + df_melt[e_form_pred_col] - df_melt[e_form_col]
 )
+
 df_bin = bin_df_cols(
     df_melt,
-    bin_by_cols=[each_true_col, each_pred_col],
+    bin_by_cols=[e_true_col, e_pred_col],
     group_by_cols=[facet_col],
     n_bins=200,
     bin_counts_col=(bin_cnt_col := "bin counts"),
@@ -61,7 +72,7 @@ legend_order = list(df_metrics.T.MAE.sort_values().index)
 # determine each point's classification to color them by
 # now unused, can be used to color points by TP/FP/TN/FN
 # true_pos, false_neg, false_pos, true_neg = classify_stable(
-#     df_bin[each_true_col], df_bin[each_pred_col]
+#     df_bin[e_true_col], df_bin[e_pred_col]
 # )
 # clf_col = "classified"
 # df_bin[clf_col] = np.array(clf_labels)[
@@ -100,8 +111,8 @@ img_name = f"{SITE_FIGS}/e-form-scatter-models"
 # %% scatter plot of actual vs predicted e_above_hull
 fig = px.scatter(
     df_bin,
-    x=each_true_col,
-    y=each_pred_col,
+    x=e_true_col,
+    y=e_pred_col,
     color=facet_col,
     hover_data=hover_cols,
     hover_name=df_preds.index.name,
@@ -133,8 +144,8 @@ n_rows = math.ceil(len(models) / n_cols)
 
 fig = px.scatter(
     df_bin,
-    x=each_true_col,
-    y=each_pred_col,
+    x=e_true_col,
+    y=e_pred_col,
     facet_col=facet_col,
     facet_col_wrap=n_cols,
     color=log_bin_cnt_col,
@@ -145,7 +156,7 @@ fig = px.scatter(
     # color=clf_col,
     # color_discrete_map=clf_color_map,
     # opacity=0.4,
-    range_x=(domain := (-4, 7)),
+    range_x=(domain := (-4, 7) if which_energy == "each" else (None, None)),
     range_y=domain,
     category_orders={facet_col: legend_order},
     # pick from https://plotly.com/python/builtin-colorscales
@@ -179,41 +190,52 @@ for idx, anno in enumerate(fig.layout.annotations, 1):
     fig.layout[f"yaxis{idx}"].title.text = ""
 
 # add transparent rectangle with TN, TP, FN, FP labels in each quadrant
-for sign_x, sign_y, color, label in zip(
-    [-1, -1, 1, 1], [-1, 1, -1, 1], clf_colors, ("TP", "FN", "FP", "TN")
-):
-    # instead of coloring points in each quadrant, we can add a transparent
-    # background to each quadrant (looks worse maybe than coloring points)
-    # fig.add_shape(
-    #     type="rect",
-    #     x0=0,
-    #     y0=0,
-    #     x1=sign_x * 100,
-    #     y1=sign_y * 100,
-    #     fillcolor=color,
-    #     opacity=0.2,
-    #     layer="below",
-    #     row="all",
-    #     col="all",
-    # )
-    fig.add_annotation(
-        x=(domain[0] if sign_x < 0 else domain[1]),
-        y=(domain[0] if sign_y < 0 else domain[1]),
-        xshift=-20 * sign_x,
-        yshift=-20 * sign_y,
-        text=label,
-        showarrow=False,
-        font=dict(size=16, color=color),
-        row="all",
-        col="all",
-    )
+if e_true_col == each_true_col:
+    # add dashed quadrant separators
+    fig.add_vline(x=0, line=dict(width=0.5, dash="dash"))
+    fig.add_hline(y=0, line=dict(width=0.5, dash="dash"))
 
-# add dashed quadrant separators
-fig.add_vline(x=0, line=dict(width=0.5, dash="dash"))
-fig.add_hline(y=0, line=dict(width=0.5, dash="dash"))
+    for sign_x, sign_y, label, color in (
+        (-1, -1, "TP", clf_colors[0]),
+        (-1, 1, "FN", clf_colors[1]),
+        (1, -1, "FP", clf_colors[2]),
+        (1, 1, "TN", clf_colors[3]),
+    ):
+        # instead of coloring points in each quadrant, we can add a transparent
+        # background to each quadrant (looks worse maybe than coloring points)
+        # fig.add_shape(
+        #     type="rect",
+        #     x0=0,
+        #     y0=0,
+        #     x1=sign_x * 100,
+        #     y1=sign_y * 100,
+        #     fillcolor=color,
+        #     opacity=0.2,
+        #     layer="below",
+        #     row="all",
+        #     col="all",
+        # )
+        fig.add_annotation(
+            x=(domain[0] if sign_x < 0 else domain[1]),
+            y=(domain[0] if sign_y < 0 else domain[1]),
+            xshift=-20 * sign_x,
+            yshift=-15 * sign_y,
+            text=label,
+            showarrow=False,
+            font=dict(size=16, color=color),
+            row="all",
+            col="all",
+        )
 
-fig.update_xaxes(nticks=5)
-fig.update_yaxes(nticks=5)
+# enable grid
+fig.update_layout(
+    xaxis=dict(showgrid=True),
+    yaxis=dict(showgrid=True),
+)
+
+fig.update_xaxes(nticks=8)
+fig.update_yaxes(nticks=8)
+add_identity_line(fig)
 
 # remove legend title and place legend centered above subplots, increase marker size
 fig.layout.legend.update(
@@ -236,6 +258,7 @@ fig.add_annotation(  # y-axis title
     textangle=-90,
     **axis_titles,
 )
+
 fig.layout.height = 230 * n_rows
 fig.layout.coloraxis.colorbar.update(orientation="h", thickness=9, len=0.5, y=1.05)
 # fig.layout.width = 1100
@@ -246,6 +269,6 @@ fig.show()
 
 
 # %%
-fig_name = f"each-scatter-models-{n_rows}x{n_cols}"
+fig_name = f"{which_energy}-scatter-models-{n_rows}x{n_cols}"
 save_fig(fig, f"{SITE_FIGS}/{fig_name}.svelte")
 save_fig(fig, f"{PDF_FIGS}/{fig_name}.pdf")
