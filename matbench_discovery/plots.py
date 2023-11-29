@@ -563,7 +563,7 @@ def cumulative_metrics(
     optimal_recall: str | None = "Optimal Recall",
     show_n_stable: bool = True,
     backend: Backend = "plotly",
-    n_points: int = 50,
+    n_points: int = 100,
     **kwargs: Any,
 ) -> tuple[plt.Figure | go.Figure, pd.DataFrame]:
     """Create 2 subplots side-by-side with cumulative precision and recall curves for
@@ -595,7 +595,7 @@ def cumulative_metrics(
         backend ('matplotlib' | 'plotly'], optional): Which plotting engine to use.
             Changes the return type. Defaults to 'plotly'.
         n_points (int, optional): Number of points to use for interpolation of the
-            metric curves. Defaults to 80.
+            metric curves. Defaults to 100.
         **kwargs: Keyword arguments passed to df.plot().
 
     Returns:
@@ -606,7 +606,7 @@ def cumulative_metrics(
 
     # largest number of materials predicted stable by any model, determines x-axis range
     n_max_pred_stable = (df_preds < stability_threshold).sum().max()
-    longest_xs = np.linspace(0, n_max_pred_stable - 1, n_points)
+    longest_xs = np.logspace(0, np.log2(n_max_pred_stable - 1), n_points, base=2)
     for metric in metrics:
         dfs[metric].index = longest_xs
 

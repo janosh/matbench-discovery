@@ -55,11 +55,9 @@ if backend == "plotly":
         fig.layout[key].range = range_y
 
     fig.layout.margin.update(l=0, r=0, t=30, b=50)
+    # use annotation for x-axis label
     fig.add_annotation(
-        x=0.5,
-        y=-0.15,
-        xref="paper",
-        yref="paper",
+        **dict(x=0.5, y=-0.15, xref="paper", yref="paper"),
         text=x_label,
         showarrow=False,
         font=dict(size=14),
