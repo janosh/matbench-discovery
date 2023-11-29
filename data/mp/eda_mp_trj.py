@@ -3,6 +3,7 @@
 
 # %%
 import io
+import os
 from zipfile import ZipFile
 
 import ase
@@ -10,7 +11,7 @@ import ase.io.extxyz
 import numpy as np
 import pandas as pd
 import plotly.express as px
-from pymatviz import count_elements, ptable_heatmap, ptable_heatmap_ratio
+from pymatviz import count_elements, ptable_heatmap, ptable_heatmap_ratio, ptable_hists
 from pymatviz.io import save_fig
 from pymatviz.utils import si_fmt
 from tqdm import tqdm
@@ -60,15 +61,15 @@ assert len(mp_trj_atoms) == 145_919  # number of unique MP IDs
 
 
 # %%
+info_to_id = lambda info: f"{info['task_id']}-{info['calc_id']}-{info['ionic_step']}"
+
 df_mp_trj = pd.DataFrame(
     {
-        f"{atm.info['task_id']}-{atm.info['calc_id']}-{atm.info['ionic_step']}": {
-            "formula": str(atm.symbols)
-        }
-        | {key: atm.arrays.get(key) for key in ("forces", "magmoms")}
-        | atm.info
-        for atoms_list in mp_trj_atoms.values()
-        for atm in atoms_list
+        info_to_id(atoms.info): {"formula": str(atoms.symbols)}
+        | {key: atoms.arrays.get(key) for key in ("forces", "magmoms")}
+        | atoms.info
+        for atoms_list in tqdm(mp_trj_atoms.values(), total=len(mp_trj_atoms))
+        for atoms in atoms_list
     }
 ).T.convert_dtypes()  # convert object columns to float/int where possible
 df_mp_trj.index.name = "frame_id"
@@ -86,9 +87,44 @@ df_mp_trj[stress_trace_col] = [
 df_mp_trj.to_json(f"{DATA_DIR}/mp/mp-trj-2022-09-summary.json.bz2")
 
 
-# %% load MPtrj summary data
+# %% --- load preprocessed MPtrj summary data ---
 df_mp_trj = pd.read_json(f"{DATA_DIR}/mp/mp-trj-2022-09-summary.json.bz2")
 df_mp_trj.index.name = "frame_id"
+
+
+# %% plot per-element magmom histograms
+magmom_hist_path = f"{DATA_DIR}/mp/mp-trj-2022-09-elem-magmoms.json.bz2"
+
+if os.path.isfile(magmom_hist_path):
+    mp_trj_elem_magmoms = pd.read_json(magmom_hist_path, typ="series")
+elif "mp_trj_elem_magmoms" not in locals():
+    df_mp_trj_magmom = pd.DataFrame(
+        {
+            info_to_id(atoms.info): (
+                dict(zip(atoms.symbols, atoms.arrays["magmoms"], strict=True))
+                if magmoms_col in atoms.arrays
+                else None
+            )
+            for frame_id in tqdm(mp_trj_atoms)
+            for atoms in mp_trj_atoms[frame_id]
+        }
+    ).T.dropna(axis=0, how="all")
+
+    mp_trj_elem_magmoms = {
+        col: list(df_mp_trj_magmom[col].dropna()) for col in df_mp_trj_magmom
+    }
+    pd.Series(mp_trj_elem_magmoms).to_json(magmom_hist_path)
+
+ax = ptable_hists(
+    mp_trj_elem_magmoms,
+    symbol_pos=(0.2, 0.8),
+    log=True,
+    cbar_title="Magmoms ($μ_B$)",
+    # annotate each element with its number of magmoms in MPtrj
+    anno_kwds=dict(text=lambda hist_vals: si_fmt(len(hist_vals), ".0f")),
+)
+
+save_fig(ax, f"{PDF_FIGS}/mp-trj-magmoms-ptable-hists.pdf")
 
 
 # %%
