@@ -86,16 +86,16 @@ bad_struct_ids = (70802, 70803, 70825, 70826, 70828, 70829)
 
 
 assert len(json_paths) == len(step_lens), "Mismatch in WBM steps and JSON files"
-wbm_struct_json_checksums = (
-    -7815922250032563359,
-    -86268461085685423,
-    -7707371069320539066,
-    -3579196048285845088,
-    -248039116266365352,
+wbm_structs_index_checksums = (
+    10630821823676988257,
+    18360475612623866193,
+    10739373004389012550,
+    14867548025423706528,
+    18198704957443186264,
 )
 
-
-dfs_wbm_structs = {}
+if "dfs_wbm_structs" not in locals():
+    dfs_wbm_structs = {}
 for json_path in json_paths:
     step = int(json_path.split(".json.bz2")[0][-1])
     assert step in range(1, 6)
@@ -110,7 +110,11 @@ for json_path in json_paths:
     # we hash index only for speed
     # could use joblib.hash(df) to hash whole df but it's slow
     checksum = pd.util.hash_pandas_object(df.index).sum()
-    assert checksum == wbm_struct_json_checksums[step - 1], "bad JSON file checksum"
+    expected = wbm_structs_index_checksums[step - 1]
+    assert checksum == expected, (
+        f"bad df.index checksum for {step=}, {expected=}, got {checksum=}\n"
+        f"\n{json_path=}"
+    )
 
     if step == 3:
         df = df.drop(index=[f"step_3_{id}" for id in bad_struct_ids])
