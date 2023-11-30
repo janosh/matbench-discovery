@@ -41,7 +41,9 @@ data_page = f"{ROOT}/site/src/routes/data"
 
 
 # %% load MP training set
-df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False)
+df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False, na_values=[])
+
+df_mp[df_mp[formula_col].isna()]
 
 
 # %%
@@ -50,10 +52,8 @@ wbm_occu_counts = count_elements(df_wbm[formula_col], count_mode="occurrence").a
 )
 wbm_comp_counts = count_elements(df_wbm[formula_col], count_mode="composition")
 
-mp_occu_counts = count_elements(df_mp.formula_pretty, count_mode="occurrence").astype(
-    int
-)
-mp_comp_counts = count_elements(df_mp.formula_pretty, count_mode="composition")
+mp_occu_counts = count_elements(df_mp[formula_col], count_mode="occurrence").astype(int)
+mp_comp_counts = count_elements(df_mp[formula_col], count_mode="composition")
 
 all_counts = (
     ("wbm", "occurrence", wbm_occu_counts),
@@ -315,3 +315,27 @@ save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-mp.pdf")
 # https://github.com/plotly/plotly.py/issues/4115
 # https://github.com/plotly/plotly.js/issues/5341
 # https://github.com/plotly/plotly.js/issues/4728
+
+
+# %% compute compositional arity histograms
+arity_col = "arity"
+df_wbm[arity_col] = df_wbm[formula_col].map(Composition).map(len)
+df_mp[arity_col] = df_mp[formula_col].map(Composition).map(len)
+
+mp_arity_counts = df_mp[arity_col].value_counts().sort_index() / len(df_mp)
+wbm_arity_counts = df_wbm[arity_col].value_counts().sort_index() / len(df_wbm)
+
+df_arity = pd.DataFrame({"MP": mp_arity_counts, "WBM": wbm_arity_counts}).query(
+    "0 < index < 7"
+)
+
+fig = px.bar(df_arity, barmode="group")
+fig.layout.legend.update(x=1, y=1, xanchor="right", yanchor="top", title=None)
+fig.layout.margin = dict(l=0, r=0, b=0, t=0)
+fig.layout.yaxis.title = "Fraction of Structures in Dataset"
+fig.layout.xaxis.title = "Number of Elements in Formula"
+
+fig.show()
+img_name = "mp-vs-wbm-arity-hist"
+save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=450, height=280)

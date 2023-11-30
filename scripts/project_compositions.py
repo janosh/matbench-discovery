@@ -11,7 +11,7 @@ import pandas as pd
 from pymatgen.core import Composition
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR, id_col
+from matbench_discovery import DATA_DIR, formula_col, id_col
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 
@@ -80,9 +80,8 @@ def sum_one_hot_elem(formula: str) -> np.ndarray[Any, np.int64]:
     return sum(identity[el.Z - 1] * amt for el, amt in Composition(formula).items())
 
 
-in_col = {"wbm": "formula", "mp": "formula_pretty"}[data_name]
 one_hot_encoding = np.array(
-    [sum_one_hot_elem(formula) for formula in tqdm(df_in[in_col])]
+    [sum_one_hot_elem(formula) for formula in tqdm(df_in[formula_col])]
 )
 
 projections = projector.fit_transform(one_hot_encoding)
