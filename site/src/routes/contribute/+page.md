@@ -31,7 +31,7 @@
   const figshare_keys = Object.keys(figshare_urls.files).sort()
   const missing = figshare_keys.filter((key) => !desc_keys.includes(key))
   if (missing.length > 0) {
-    throw`descriptions must contain all figshare_urls keys, missing=${missing}`
+    throw `descriptions must contain all figshare_urls keys, missing=${missing}`
   }
 </script>
 

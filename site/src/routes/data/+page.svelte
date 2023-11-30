@@ -2,6 +2,8 @@
   import { browser } from '$app/environment'
   import FormEnergyHist from '$figs/hist-wbm-e-form-per-atom.svelte'
   import HistWbmHullDist from '$figs/hist-wbm-hull-dist.svelte'
+  import MPtrjNSitesHist from '$figs/mp-trj-n-sites-hist.svelte'
+  import MPvsMPtrjvsWBMArityHist from '$figs/mp-vs-mp-trj-vs-wbm-arity-hist.svelte'
   import SpacegroupSunburstMp from '$figs/spacegroup-sunburst-mp.svelte'
   import SpacegroupSunburstWbm from '$figs/spacegroup-sunburst-wbm.svelte'
   import { PtableHeatmap } from '$lib'
@@ -103,6 +105,29 @@
 </DataReadme>
 
 <MpElementalReferenceEnergies />
+
+{#if browser}
+  <MPvsMPtrjvsWBMArityHist style="margin: auto; max-width: 60cqw; padding-right: 2em;" />
+{/if}
+<p>
+  Distribution of unique elements per structure in MP, MPtrj and WBM. The bar heights are
+  normalized by the total number of structures in each data set. WBM is dominated by
+  ternary phases making up 74% of the data set followed by about 13% each of binaries and
+  quaternaries. MP has a more even distribution, in particular with more than double the
+  relative share of quaternary phases and a significant number of quinternaries which are
+  almost absent from WBM. Not shown in this plot for visual clarity are 3% of MP
+  structures containing more than 5 elements (up to 9). We also include MPTrj in this plot
+  to show a slight drop in relative abundance of quinternary and higher phases vs MP
+  ground states.
+</p>
+
+<MPtrjNSitesHist style="margin: auto; max-width: 80cqw; padding-right: 2em;" />
+<p>
+  Histogram of number of atoms per structure. The inset shows the same distribution
+  log-scaled to visualize the tail of large structures. The green cumulative line in the
+  inset shows that 82% have less than 50 sites and 97% of structures in MPTrj have less
+  than 100 atoms.
+</p>
 
 <style>
   label {

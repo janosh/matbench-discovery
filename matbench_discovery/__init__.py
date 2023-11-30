@@ -48,6 +48,7 @@ e_form_col = "formation_energy_per_atom"
 formula_col = "formula"
 stress_col = "stress"
 stress_trace_col = "stress_trace"
+n_sites_col = "n_sites"
 
 # load figshare 1.0.0
 with open(f"{FIGSHARE}/1.0.0.json") as file:
@@ -65,7 +66,7 @@ quantity_labels = dict(
     crystal_sys="Crystal system",
     spg_num="Space group",
     n_wyckoff="Number of Wyckoff positions",
-    n_sites="Lattice site count",
+    n_sites="Number of atoms",
     energy_per_atom=f"Energy {ev_per_atom}",
     e_form=f"DFT E<sub>form</sub> {ev_per_atom}",
     e_above_hull=f"E<sub>hull dist</sub> {ev_per_atom}",

@@ -11,6 +11,7 @@ import ase.io.extxyz
 import numpy as np
 import pandas as pd
 import plotly.express as px
+from pymatgen.core import Composition
 from pymatviz import count_elements, ptable_heatmap, ptable_heatmap_ratio, ptable_hists
 from pymatviz.io import save_fig
 from pymatviz.utils import si_fmt
@@ -22,10 +23,12 @@ from matbench_discovery import (
     ROOT,
     SITE_FIGS,
     formula_col,
+    id_col,
+    n_sites_col,
     stress_col,
     stress_trace_col,
 )
-from matbench_discovery.data import DATA_FILES
+from matbench_discovery.data import DATA_FILES, df_wbm
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-11-22"
@@ -34,6 +37,22 @@ data_page = f"{ROOT}/site/src/routes/data"
 e_form_per_atom_col = "ef_per_atom"
 magmoms_col = "magmoms"
 forces_col = "forces"
+
+
+# %% load MP element counts by occurrence to compute ratio with MPtrj
+mp_occu_counts = pd.read_json(
+    f"{data_page}/mp-element-counts-by-occurrence.json", typ="series"
+)
+df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index(id_col)
+
+
+# %% --- load preprocessed MPtrj summary data ---
+mp_trj_summary_path = f"{DATA_DIR}/mp/mp-trj-2022-09-summary.json.bz2"
+if os.path.isfile(mp_trj_summary_path):
+    df_mp_trj = pd.read_json(mp_trj_summary_path)
+    df_mp_trj.index.name = "frame_id"
+else:
+    print("MPtrj summary data not found, run cell below to generate")
 
 
 # %% downloaded mptrj-gga-ggapu.tar.gz from https://drive.google.com/drive/folders/1JQ-ry1RHvNliVg1Ut5OuyUxne51RHiT_
@@ -84,12 +103,7 @@ df_mp_trj[stress_trace_col] = [
 
 
 # %%
-df_mp_trj.to_json(f"{DATA_DIR}/mp/mp-trj-2022-09-summary.json.bz2")
-
-
-# %% --- load preprocessed MPtrj summary data ---
-df_mp_trj = pd.read_json(f"{DATA_DIR}/mp/mp-trj-2022-09-summary.json.bz2")
-df_mp_trj.index.name = "frame_id"
+df_mp_trj.to_json(mp_trj_summary_path)
 
 
 # %% plot per-element magmom histograms
@@ -162,13 +176,6 @@ img_name = f"mp-trj-element-counts-by-occurrence{'-log' if log else ''}"
 if excl_noble:
     img_name += "-excl-noble"
 save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
-
-
-# %% load MP element counts by occurrence to compute ratio with MPtrj
-mp_occu_counts = pd.read_json(
-    f"{data_page}/mp-element-counts-by-occurrence.json", typ="series"
-)
-df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False)
 
 
 # %%
@@ -271,3 +278,94 @@ fig.layout.margin = dict(l=5, r=5, b=5, t=5)
 fig.show()
 save_fig(fig, f"{PDF_FIGS}/mp-trj-magmoms-hist.pdf", **pdf_kwds)
 save_fig(fig, f"{SITE_FIGS}/mp-trj-magmoms-hist.svelte")
+
+
+# %%
+arity_col = "arity"
+for df in (df_mp_trj, df_mp, df_wbm):
+    if arity_col not in df:
+        df[arity_col] = df[formula_col].map(Composition).map(len)
+
+
+# %%
+df_arity = pd.DataFrame(
+    {
+        key: df[arity_col].value_counts().sort_index() / len(df)
+        for key, df in (("MP", df_mp), ("MPtrj", df_mp_trj), ("WBM", df_wbm))
+    }
+)
+df_arity = df_arity.query("0 < index < 7")
+
+fig = px.bar(df_arity, barmode="group")
+fig.update_traces(marker_line_width=0)
+fig.layout.legend.update(x=1, y=1, xanchor="right", yanchor="top", title=None)
+fig.layout.margin = dict(l=0, r=0, b=0, t=0)
+fig.layout.yaxis.title = "Fraction of Structures in Dataset"
+fig.layout.xaxis.title = "Number of Elements in Formula"
+
+fig.show()
+img_name = "mp-vs-mp-trj-vs-wbm-arity-hist"
+save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=450, height=280)
+
+
+# %% calc n_sites from forces len
+df_mp_trj[n_sites_col] = df_mp_trj[forces_col].map(len)
+log_y = False
+n_sites_hist, n_sites_bins = np.histogram(
+    df_mp_trj[n_sites_col], bins=range(1, df_mp_trj[n_sites_col].max() + 1)
+)
+
+n_struct_col = "Number of Structures"
+df_n_sites = pd.DataFrame({n_sites_col: n_sites_bins[:-1], n_struct_col: n_sites_hist})
+
+
+# %% plot n_sites distribution
+fig = px.bar(df_n_sites, x=n_sites_col, y=n_struct_col, log_y=log_y, range_x=(1, 200))
+# add inset plot with log scale
+fig.add_bar(
+    x=df_n_sites[n_sites_col],
+    y=df_n_sites[n_struct_col],
+    showlegend=False,
+    xaxis="x2",
+    yaxis="y2",
+    marker=dict(color=fig.data[0].marker.color),  # same color as main plot
+)
+
+bin_width = n_sites_bins[1] - n_sites_bins[0]
+fig.update_traces(width=bin_width, marker_line_width=0)
+# add cumulative distribution as 2nd y axis
+fig.add_scatter(
+    x=df_n_sites[n_sites_col],
+    y=df_n_sites[n_struct_col].cumsum() / df_n_sites[n_struct_col].sum(),
+    mode="lines",
+    name="Cumulative",
+    xaxis="x3",
+    yaxis="y3",
+    hovertemplate="x: %{x}<br>y: %{y:.1%}",
+)
+# add inset title 'log-scaled to show tail'
+inset_domain = [0.4, 1]
+fig.layout.xaxis2 = dict(domain=inset_domain, anchor="y2")
+fig.layout.yaxis2 = dict(
+    domain=inset_domain,
+    anchor="x2",
+    type="log",
+    title="log-scaled to show tail",
+    title_standoff=0,
+)
+
+fig.layout.yaxis3 = dict(  # move y3 axis to right side of y2
+    overlaying="y2", side="right", tickformat=".0%"
+)
+fig.layout.xaxis3 = dict(overlaying="x2", visible=False)
+
+fig.layout.margin = dict(l=5, r=5, b=5, t=5)
+fig.layout.legend.update(x=0.96, y=0.25, xanchor="right")
+fig.show()
+
+img_name = "mp-trj-n-sites-hist"
+if log_y:
+    img_name += "-log"
+save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+# save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=450, height=300)

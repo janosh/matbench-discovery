@@ -8,7 +8,13 @@ from pymatgen.core import Structure
 from pymatviz.utils import annotate_metrics
 from tqdm import tqdm
 
-from matbench_discovery import STABILITY_THRESHOLD, id_col, today
+from matbench_discovery import (
+    STABILITY_THRESHOLD,
+    formula_col,
+    id_col,
+    n_sites_col,
+    today,
+)
 from matbench_discovery.data import DATA_FILES
 
 """
@@ -34,6 +40,7 @@ fields = {
     "energy_above_hull",
     "decomposition_enthalpy",
     "energy_type",
+    "nsites",
 }
 
 with MPRester(use_document_model=False) as mpr:
@@ -47,6 +54,7 @@ print(f"{today}: {len(docs) = :,}")
 
 # %%
 df = pd.DataFrame(docs).set_index(id_col)
+df = df.rename(columns={"formula_pretty": formula_col, "nsites": n_sites_col})
 
 df_spg = pd.json_normalize(df.pop("symmetry"))[["number", "symbol"]]
 df["spacegroup_symbol"] = df_spg.symbol.to_numpy()
@@ -106,7 +114,7 @@ ax = df.plot.scatter(
     y="energy_above_hull",
     color=mask_above_line.map({True: "red", False: "blue"}),
     # backend="plotly",
-    # hover_data=["index", "formula_pretty", "formation_energy_per_atom"],
+    hover_data=["index", formula_col, "formation_energy_per_atom"],
 )
 # most points lie on line y=x for x > 0 and y = 0 for x < 0.
 n_above_line = sum(mask_above_line)

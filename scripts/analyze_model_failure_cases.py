@@ -155,7 +155,7 @@ fig.show()
 # %%
 df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index(id_col)
 train_count_col = "MP Occurrences"
-df_elem_counts = count_elements(df_mp.formula_pretty, count_mode="occurrence").to_frame(
+df_elem_counts = count_elements(df_mp[formula_col], count_mode="occurrence").to_frame(
     name=train_count_col
 )
 n_examp_for_rarest_elem_col = "Examples for rarest element in structure"
