@@ -1,15 +1,18 @@
 {
   "higher_is_better": [
-    "DAF",
-    "R2",
-    "Precision",
-    "Recall",
-    "F1",
+    "Acc",
     "Accuracy",
-    "TPR",
+    "AUC",
+    "DAF",
+    "F1",
+    "Prec",
+    "Precision",
+    "R2",
+    "Recall",
+    "TN",
     "TNR",
     "TP",
-    "TN"
+    "TPR"
   ],
   "lower_is_better": ["MAE", "RMSE", "FPR", "FNR", "FP", "FN"]
 }

@@ -251,6 +251,8 @@ class DataFiles(Files):
     mace_checkpoint = "2023-08-14-mace-yuan-trained-mptrj-04.model"
 
     mp_trj_extxyz = "mp/2023-11-22-mp-trj-extxyz-by-yuan.zip"
+    # snapshot of every task (calculation) in MP as of 2023-03-16 (14 GB)
+    all_mp_tasks = "mp/2023-03-16-all-mp-tasks.zip"
 
     mace_checkpoint1 = "2023-08-14-mace-2M-yuan-mptrj-04.model"
     mace_checkpoint2 = "2023-10-29-mace-16M-pbenner-mptrj-no-conditional-loss"

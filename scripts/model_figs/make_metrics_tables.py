@@ -136,9 +136,12 @@ for label, df in (("-first-10k", df_metrics_10k), ("", df_metrics)):
             )
     df_filtered = df_table.T[show_cols]  # only keep columns we want to show
 
+    # abbreviate long column names: Precision, Accuracy -> Prec, Acc
+    df_filtered = df_filtered.rename(columns={"Precision": "Prec", "Accuracy": "Acc"})
+
     if label == "-first-10k":
         # hide redundant metrics for first 10k preds (all TPR = 1, TNR = 0)
-        df_filtered = df_filtered.drop(["TPR", "TNR"], axis=1)
+        df_filtered = df_filtered.drop(["TPR", "TNR"], axis="columns")
 
     styler = (
         df_filtered.style.format(
@@ -153,6 +156,13 @@ for label, df in (("-first-10k", df_metrics_10k), ("", df_metrics)):
         .background_gradient(  # reverse color map if lower=better
             cmap="viridis_r", subset=list(lower_is_better & {*df_filtered})
         )
+    )
+    arrow_suffix = dict.fromkeys(higher_is_better, " ↑") | dict.fromkeys(
+        lower_is_better, " ↓"
+    )
+    styler.relabel_index(
+        [f"{col}{arrow_suffix.get(col, '')}" for col in df_filtered],
+        axis="columns",
     )
 
     # export model metrics as styled HTML table and Svelte component

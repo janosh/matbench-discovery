@@ -122,7 +122,9 @@ img {
 
 table {
   display: block;
+  width: max-content;
   max-width: 100%;
+  margin: auto;
   overflow: scroll;
   border-collapse: collapse;
 }

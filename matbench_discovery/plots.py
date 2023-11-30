@@ -606,6 +606,8 @@ def cumulative_metrics(
 
     # largest number of materials predicted stable by any model, determines x-axis range
     n_max_pred_stable = (df_preds < stability_threshold).sum().max()
+    # use log2-spaced sampling to get higher sampling density at equal file size for
+    # start of the discovery campaign where model performance fluctuates more
     longest_xs = np.logspace(0, np.log2(n_max_pred_stable - 1), n_points, base=2)
     for metric in metrics:
         dfs[metric].index = longest_xs

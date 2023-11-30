@@ -25,12 +25,13 @@
     wbm_summary:
       `Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more.`,
     mp_trj_extxyz_by_yuan: `${mp_trj_link} converted to <code>ase</code>-compatible extended XYZ format and compressed (11.3 to 1.6 GB) by Yuan Chiang`,
+    all_mp_tasks: `Complete copy of the MP database on 2023-03-16 (release <a href="https://docs.materialsproject.org/changes/database-versions#v2022.10.28">v2022.10.28</a>)`,
   }
   const desc_keys = Object.keys(descriptions).sort()
   const figshare_keys = Object.keys(figshare_urls.files).sort()
   const missing = figshare_keys.filter((key) => !desc_keys.includes(key))
   if (missing.length > 0) {
-    throw `descriptions must contain all figshare_urls keys, missing=${missing}`
+    throw`descriptions must contain all figshare_urls keys, missing=${missing}`
   }
 </script>
 

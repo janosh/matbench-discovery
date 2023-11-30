@@ -1,7 +1,8 @@
 """Download all MP ionic steps using direct read-access to the mp_core DB.
 
 Gzipped JSON is ~15GB.
-On a good connection, takes about 15 min per batch * 140 batches = 35 h.
+On a good connection, takes about 15 min per batch * 140 batches = 35 h to download
+all 1.6M task docs.
 """
 
 
@@ -71,7 +72,7 @@ task_ids = df_tasks.index.tolist()
 
 os.makedirs(f"{module_dir}/mp-tasks", exist_ok=True)
 # Iterate over task_ids in batches
-desc = "Loading MP task docs"
+desc = "Fetching MP task docs..."
 pbar = trange(0, len(task_ids), batch_size, desc=desc, unit_scale=batch_size)
 for start_idx in pbar:
     # Define start and end indices for batch
@@ -114,7 +115,7 @@ df_batch.head()
 # %% use gzip CLI to check all files for archive corruption
 for path in tqdm(glob(f"{module_dir}/mp-tasks/*.json.gz")):
     try:
-        subprocess.run(["gzip", "-t", path], check=True)
+        subprocess.run(["gzip", "--test", path], check=True)
     except subprocess.CalledProcessError as exc:
         print(f"{path} raised {exc.stderr}")
-        # os.remove(path)
+        # os.remove(path)  # delete corrupted file
