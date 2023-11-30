@@ -306,19 +306,24 @@
         display: none;  /* Safari and Chrome */
     }
 </style>
-<table class='roomy' id="T_">
+<script lang="ts">
+      import { sortable } from 'svelte-zoo/actions'
+    </script>
+
+    <table class='roomy' use:sortable {...$$props}
+     id="T_">
   <thead>
     <tr>
       <th class="index_name level0" >Model</th>
-      <th id="T__level0_col0" class="col_heading level0 col0" >F1</th>
-      <th id="T__level0_col1" class="col_heading level0 col1" >DAF</th>
-      <th id="T__level0_col2" class="col_heading level0 col2" >Precision</th>
-      <th id="T__level0_col3" class="col_heading level0 col3" >Accuracy</th>
-      <th id="T__level0_col4" class="col_heading level0 col4" >TPR</th>
-      <th id="T__level0_col5" class="col_heading level0 col5" >TNR</th>
-      <th id="T__level0_col6" class="col_heading level0 col6" >MAE</th>
-      <th id="T__level0_col7" class="col_heading level0 col7" >RMSE</th>
-      <th id="T__level0_col8" class="col_heading level0 col8" >R<sup>2</sup></th>
+      <th id="T__level0_col0" class="col_heading level0 col0" >F1 ↑</th>
+      <th id="T__level0_col1" class="col_heading level0 col1" >DAF ↑</th>
+      <th id="T__level0_col2" class="col_heading level0 col2" >Prec ↑</th>
+      <th id="T__level0_col3" class="col_heading level0 col3" >Acc ↑</th>
+      <th id="T__level0_col4" class="col_heading level0 col4" >TPR ↑</th>
+      <th id="T__level0_col5" class="col_heading level0 col5" >TNR ↑</th>
+      <th id="T__level0_col6" class="col_heading level0 col6" >MAE ↓</th>
+      <th id="T__level0_col7" class="col_heading level0 col7" >RMSE ↓</th>
+      <th id="T__level0_col8" class="col_heading level0 col8" >R<sup>2</sup> ↑</th>
       <th id="T__level0_col9" class="col_heading level0 col9" >Training Size</th>
       <th id="T__level0_col10" class="col_heading level0 col10" >Model Type</th>
     </tr>
