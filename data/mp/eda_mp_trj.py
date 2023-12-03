@@ -4,10 +4,13 @@
 # %%
 import io
 import os
+from typing import Any
 from zipfile import ZipFile
 
 import ase
 import ase.io.extxyz
+import matplotlib.colors
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -37,6 +40,7 @@ data_page = f"{ROOT}/site/src/routes/data"
 e_form_per_atom_col = "ef_per_atom"
 magmoms_col = "magmoms"
 forces_col = "forces"
+elems_col = "symbols"
 
 
 # %% load MP element counts by occurrence to compute ratio with MPtrj
@@ -46,7 +50,7 @@ mp_occu_counts = pd.read_json(
 df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index(id_col)
 
 
-# %% --- load preprocessed MPtrj summary data ---
+# %% --- load preprocessed MPtrj summary data if available ---
 mp_trj_summary_path = f"{DATA_DIR}/mp/mp-trj-2022-09-summary.json.bz2"
 if os.path.isfile(mp_trj_summary_path):
     df_mp_trj = pd.read_json(mp_trj_summary_path)
@@ -84,9 +88,9 @@ info_to_id = lambda info: f"{info['task_id']}-{info['calc_id']}-{info['ionic_ste
 
 df_mp_trj = pd.DataFrame(
     {
-        info_to_id(atoms.info): {"formula": str(atoms.symbols)}
+        info_to_id(atoms.info): atoms.info
         | {key: atoms.arrays.get(key) for key in ("forces", "magmoms")}
-        | atoms.info
+        | {"formula": str(atoms.symbols), elems_col: atoms.symbols}
         for atoms_list in tqdm(mp_trj_atoms.values(), total=len(mp_trj_atoms))
         for atoms in atoms_list
     }
@@ -106,39 +110,95 @@ df_mp_trj[stress_trace_col] = [
 df_mp_trj.to_json(mp_trj_summary_path)
 
 
+# %%
+def tile_count_anno(hist_vals: list[Any]) -> dict[str, Any]:
+    """Annotate each periodic table tile with the number of values in its histogram."""
+    facecolor = cmap(norm(np.sum(len(hist_vals)))) if hist_vals else "none"
+    bbox = dict(facecolor=facecolor, alpha=0.4, pad=2, edgecolor="none")
+    return dict(text=si_fmt(len(hist_vals), ".0f"), bbox=bbox)
+
+
 # %% plot per-element magmom histograms
 magmom_hist_path = f"{DATA_DIR}/mp/mp-trj-2022-09-elem-magmoms.json.bz2"
 
 if os.path.isfile(magmom_hist_path):
     mp_trj_elem_magmoms = pd.read_json(magmom_hist_path, typ="series")
 elif "mp_trj_elem_magmoms" not in locals():
-    df_mp_trj_magmom = pd.DataFrame(
-        {
-            info_to_id(atoms.info): (
-                dict(zip(atoms.symbols, atoms.arrays["magmoms"], strict=True))
-                if magmoms_col in atoms.arrays
-                else None
-            )
-            for frame_id in tqdm(mp_trj_atoms)
-            for atoms in mp_trj_atoms[frame_id]
-        }
-    ).T.dropna(axis=0, how="all")
+    # project magmoms onto symbols in dict
+    df_mp_trj_elem_magmom = pd.DataFrame(
+        [
+            dict(zip(elems, magmoms))
+            for elems, magmoms in df_mp_trj.set_index(elems_col)[magmoms_col]
+            .dropna()
+            .items()
+        ]
+    )
 
     mp_trj_elem_magmoms = {
-        col: list(df_mp_trj_magmom[col].dropna()) for col in df_mp_trj_magmom
+        col: list(df_mp_trj_elem_magmom[col].dropna()) for col in df_mp_trj_elem_magmom
     }
     pd.Series(mp_trj_elem_magmoms).to_json(magmom_hist_path)
+
+cmap = plt.cm.get_cmap("viridis")
+norm = matplotlib.colors.LogNorm(vmin=1, vmax=150_000)
 
 ax = ptable_hists(
     mp_trj_elem_magmoms,
     symbol_pos=(0.2, 0.8),
     log=True,
     cbar_title="Magmoms ($μ_B$)",
+    cbar_title_kwds=dict(fontsize=16),
+    cbar_coords=(0.18, 0.85, 0.42, 0.02),
     # annotate each element with its number of magmoms in MPtrj
-    anno_kwds=dict(text=lambda hist_vals: si_fmt(len(hist_vals), ".0f")),
+    anno_kwds=tile_count_anno,
 )
 
+cbar_ax = ax.figure.add_axes([0.26, 0.78, 0.25, 0.015])
+cbar = matplotlib.colorbar.ColorbarBase(
+    cbar_ax, cmap=cmap, norm=norm, orientation="horizontal"
+)
 save_fig(ax, f"{PDF_FIGS}/mp-trj-magmoms-ptable-hists.pdf")
+
+
+# %% plot per-element force histograms
+force_hist_path = f"{DATA_DIR}/mp/mp-trj-2022-09-elem-forces.json.bz2"
+
+if os.path.isfile(force_hist_path):
+    mp_trj_elem_forces = pd.read_json(force_hist_path, typ="series")
+elif "mp_trj_elem_forces" not in locals():
+    df_mp_trj_elem_forces = pd.DataFrame(
+        [
+            dict(zip(elems, np.abs(forces).mean(axis=1)))
+            for elems, forces in df_mp_trj.set_index(elems_col)[forces_col].items()
+        ]
+    )
+    mp_trj_elem_forces = {
+        col: list(df_mp_trj_elem_forces[col].dropna()) for col in df_mp_trj_elem_forces
+    }
+    mp_trj_elem_forces = pd.Series(mp_trj_elem_forces)
+    mp_trj_elem_forces.to_json(force_hist_path)
+
+cmap = plt.cm.get_cmap("viridis")
+norm = matplotlib.colors.LogNorm(vmin=1, vmax=1_000_000)
+
+max_force = 10  # eV/Å
+ax = ptable_hists(
+    mp_trj_elem_forces.copy().map(lambda x: [val for val in x if val < max_force]),
+    symbol_pos=(0.3, 0.8),
+    log=True,
+    cbar_title="1/3 Σ|Forces| (eV/Å)",
+    cbar_title_kwds=dict(fontsize=16),
+    cbar_coords=(0.18, 0.85, 0.42, 0.02),
+    x_range=(0, max_force),
+    anno_kwds=tile_count_anno,
+)
+
+cbar_ax = ax.figure.add_axes([0.26, 0.78, 0.25, 0.015])
+cbar = matplotlib.colorbar.ColorbarBase(
+    cbar_ax, cmap=cmap, norm=norm, orientation="horizontal"
+)
+
+save_fig(ax, f"{PDF_FIGS}/mp-trj-forces-ptable-hists.pdf")
 
 
 # %%
@@ -153,9 +213,11 @@ for count_mode in ("composition", "occurrence"):
 
 
 # %%
+count_mode = "composition"
 if "trj_elem_counts" not in locals():
     trj_elem_counts = pd.read_json(
-        f"{data_page}/mp-trj-element-counts-by-occurrence.json", typ="series"
+        f"{data_page}/mp-trj-element-counts-by-{count_mode}.json",
+        typ="series",
     )
 
 excl_elems = "He Ne Ar Kr Xe".split() if (excl_noble := False) else ()
@@ -167,12 +229,12 @@ ax_ptable = ptable_heatmap(  # matplotlib version looks better for SI
     zero_color="#efefef",
     log=(log := True),
     exclude_elements=excl_elems,  # drop noble gases
-    cbar_range=None if excl_noble else (2000, None),
+    cbar_range=None if excl_noble else (10_000, None),
     label_font_size=17,
     value_font_size=14,
 )
 
-img_name = f"mp-trj-element-counts-by-occurrence{'-log' if log else ''}"
+img_name = f"mp-trj-element-counts-by-{count_mode}{'-log' if log else ''}"
 if excl_noble:
     img_name += "-excl-noble"
 save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")

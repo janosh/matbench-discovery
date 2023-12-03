@@ -8,7 +8,7 @@ Might point to deficiencies in the data or models architecture.
 import pandas as pd
 import plotly.express as px
 from pymatgen.core import Composition, Element
-from pymatviz import ptable_heatmap_plotly
+from pymatviz import ptable_heatmap_plotly, ptable_hists
 from pymatviz.io import save_fig
 from pymatviz.utils import bin_df_cols, df_ptable
 from tqdm import tqdm
@@ -256,3 +256,17 @@ fig.add_annotation(
 
 fig.show()
 save_fig(fig, f"{SITE_FIGS}/each-error-vs-least-prevalent-element-in-struct.svelte")
+
+
+# %% plot histogram of model errors for each element
+model = "MACE"
+ax = ptable_hists(
+    df_frac_comp * (df_each_err[model].to_numpy()[:, None]),
+    log=True,
+    cbar_title=f"{model} convex hull distance errors (eV/atom)",
+    x_range=(-0.5, 0.5),
+    symbol_pos=(0.1, 0.8),
+)
+
+img_name = f"ptable-each-error-hists-{model.lower().replace(' ', '-')}"
+save_fig(ax, f"{PDF_FIGS}/{img_name}.pdf")

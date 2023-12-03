@@ -111,7 +111,7 @@ px.defaults.labels = quantity_labels | model_labels
 global_layout = dict(
     # colorway=px.colors.qualitative.Pastel,
     # colorway=colorway,
-    margin=dict(l=30, r=20, t=60, b=20),
+    # margin=dict(l=30, r=20, t=60, b=20),
     paper_bgcolor="rgba(0,0,0,0)",
     # plot_bgcolor="rgba(0,0,0,0)",
     font_size=13,
