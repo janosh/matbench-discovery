@@ -4,6 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 import plotly.express as px
+from matplotlib.colors import SymLogNorm
 from pymatgen.core import Composition
 from pymatviz import (
     count_elements,
@@ -64,13 +65,9 @@ all_counts = (
 
 
 # %%
-log = True
 for dataset, count_mode, elem_counts in all_counts:
     filename = f"{dataset}-element-counts-by-{count_mode}"
-    if log:
-        filename += "-log"
-    else:
-        elem_counts.to_json(f"{data_page}/{filename}.json")
+    elem_counts.to_json(f"{data_page}/{filename}.json")
 
     title = f"Number of {dataset.upper()} structures containing each element"
     fig = ptable_heatmap_plotly(elem_counts, font_size=10)
@@ -85,9 +82,11 @@ for dataset, count_mode, elem_counts in all_counts:
         label_font_size=17,
         value_font_size=14,
         cbar_title=f"{dataset.upper()} Element Count",
-        log=log,
-        cbar_range=(100, None),
+        log=(log := SymLogNorm(linthresh=100)),
+        # cbar_range=(100, None),
     )
+    if log:
+        filename += "-symlog" if isinstance(log, SymLogNorm) else "-log"
     save_fig(ax_mp_cnt, f"{PDF_FIGS}/{filename}.pdf")
 
 

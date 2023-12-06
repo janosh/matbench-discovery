@@ -53,12 +53,13 @@ df_chgnet = pd.concat(dfs.values()).round(4)
 
 
 # %% compute corrected formation energies
-e_form_chgnet_col = "e_form_per_atom_chgnet"
+e_pred_col = "chgnet_energy"
+e_form_chgnet_col = f"e_form_per_atom_{e_pred_col.split('_energy')[0]}"
 df_chgnet[formula_col] = df_preds[formula_col]
 df_chgnet[e_form_chgnet_col] = [
     get_e_form_per_atom(dict(energy=ene, composition=formula))
     for formula, ene in tqdm(
-        df_chgnet.set_index(formula_col).chgnet_energy.items(), total=len(df_chgnet)
+        df_chgnet.set_index(formula_col)[e_pred_col].items(), total=len(df_chgnet)
     )
 ]
 df_preds[e_form_chgnet_col] = df_chgnet[e_form_chgnet_col]
