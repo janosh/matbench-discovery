@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.express as px
+from matplotlib.colors import SymLogNorm
 from pymatgen.core import Composition
 from pymatviz import count_elements, ptable_heatmap, ptable_heatmap_ratio, ptable_hists
 from pymatviz.io import save_fig
@@ -213,28 +214,27 @@ for count_mode in ("composition", "occurrence"):
 
 
 # %%
-count_mode = "composition"
-if "trj_elem_counts" not in locals():
-    trj_elem_counts = pd.read_json(
-        f"{data_page}/mp-trj-element-counts-by-{count_mode}.json",
-        typ="series",
-    )
+count_mode = "occurrence"
+trj_elem_counts = pd.read_json(
+    f"{data_page}/mp-trj-element-counts-by-{count_mode}.json", typ="series"
+)
 
 excl_elems = "He Ne Ar Kr Xe".split() if (excl_noble := False) else ()
 
 ax_ptable = ptable_heatmap(  # matplotlib version looks better for SI
     trj_elem_counts,
-    fmt=lambda x, _: si_fmt(x, ".0f"),
-    cbar_fmt=lambda x, _: si_fmt(x, ".0f"),
     zero_color="#efefef",
-    log=(log := True),
+    log=(log := SymLogNorm(linthresh=10_000)),
     exclude_elements=excl_elems,  # drop noble gases
-    cbar_range=None if excl_noble else (10_000, None),
+    # cbar_range=None if excl_noble else (10_000, None),
     label_font_size=17,
     value_font_size=14,
+    cbar_title="MPtrj Element Counts",
 )
 
-img_name = f"mp-trj-element-counts-by-{count_mode}{'-log' if log else ''}"
+img_name = f"mp-trj-element-counts-by-{count_mode}"
+if log:
+    img_name += "-symlog" if isinstance(log, SymLogNorm) else "-log"
 if excl_noble:
     img_name += "-excl-noble"
 save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")

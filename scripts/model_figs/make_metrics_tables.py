@@ -37,12 +37,12 @@ for model in df_metrics:
     n_structs = MODEL_METADATA[model_name]["training_set"]["n_structures"]
     n_materials = MODEL_METADATA[model_name]["training_set"].get("n_materials")
 
-    formatted = si_fmt(n_structs)
+    n_structs_fmt = si_fmt(n_structs)
     if n_materials:
-        formatted += f" <small>({si_fmt(n_materials)})</small>"
+        n_structs_fmt += f" <small>({si_fmt(n_materials)})</small>"
 
-    df_metrics.loc[train_size_col, model] = formatted
-    df_metrics_10k.loc[train_size_col, model] = formatted
+    df_metrics.loc[train_size_col, model] = n_structs_fmt
+    df_metrics_10k.loc[train_size_col, model] = n_structs_fmt
 
 
 # %% add dummy classifier results to df_metrics
@@ -157,6 +157,7 @@ for label, df in (("-first-10k", df_metrics_10k), ("", df_metrics)):
             cmap="viridis_r", subset=list(lower_is_better & {*df_filtered})
         )
     )
+    # add up/down arrows to indicate which metrics are better when higher/lower
     arrow_suffix = dict.fromkeys(higher_is_better, " ↑") | dict.fromkeys(
         lower_is_better, " ↓"
     )
@@ -182,7 +183,7 @@ for label, df in (("-first-10k", df_metrics_10k), ("", df_metrics)):
         f"{SITE_FIGS}/metrics-table{label}.svelte",
         inline_props="class='roomy'",
         # draw dotted line between classification and regression metrics
-        styles=f"{col_selector} {{ border-left: 1px dotted white; }}{hide_scroll_bar}",
+        styles=f"{col_selector} {{ border-left: 2px dotted white; }}{hide_scroll_bar}",
     )
     try:
         df_to_pdf(styler, f"{PDF_FIGS}/metrics-table{label}.pdf")

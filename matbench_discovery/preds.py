@@ -145,9 +145,10 @@ def load_df_wbm_with_preds(
 
         else:
             cols = list(df)
-            raise ValueError(
-                f"No pred col for {model_name=} ({model_key=}), available {cols=}"
-            )
+            msg = f"No pred col for {model_name=}, available {cols=}"
+            if model_name != model_key:
+                msg = msg.replace(", ", f" ({model_key=}), ")
+            raise ValueError(msg)
 
     return df_out
 
