@@ -36,7 +36,6 @@ ase_optimizer = "FIRE"
 job_name = f"mace-wbm-{task_type}-{ase_optimizer}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 device = "cuda" if torch.cuda.is_available() else "cpu"
-relax_cell = True
 # whether to record intermediate structures into pymatgen Trajectory
 record_traj = False  # has no effect if relax_cell is False
 model_name = [
@@ -92,7 +91,6 @@ run_params = dict(
     df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     slurm_vars=slurm_vars,
     max_steps=max_steps,
-    relax_cell=relax_cell,
     record_traj=record_traj,
     force_max=force_max,
     ase_optimizer=ase_optimizer,
@@ -122,7 +120,7 @@ for material_id in tqdm(structs, desc="Relaxing"):
         mace_traj = None
         atoms = structs[material_id].to_ase_atoms()
         atoms.calc = mace_calc
-        if relax_cell:
+        if max_steps > 0:
             atoms = FrechetCellFilter(atoms)
             optim_cls = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
             optimizer = optim_cls(atoms, logfile="/dev/null")
@@ -136,11 +134,11 @@ for material_id in tqdm(structs, desc="Relaxing"):
             optimizer.run(fmax=force_max, steps=max_steps)
         mace_energy = atoms.get_potential_energy()  # relaxed energy
         mace_struct = AseAtomsAdaptor.get_structure(
-            atoms.atoms if relax_cell else atoms
+            getattr(atoms, "atoms", atoms)  # atoms might be wrapped in ase filter
         )
 
         relax_results[material_id] = {"structure": mace_struct, "energy": mace_energy}
-        if record_traj:
+        if record_traj and len(coords) > 0:
             mace_traj = Trajectory(
                 species=structs[material_id].species,
                 coords=coords,
