@@ -7,10 +7,11 @@
   import CHGNetRollingMaeBatches from '$figs/rolling-mae-vs-hull-dist-wbm-batches-chgnet.svelte'
   import CumulativeMae from '$figs/cumulative-mae.svelte'
   import CumulativePrecisionRecall from '$figs/cumulative-precision-recall.svelte'
-  import EachScatterModels from '$figs/each-scatter-models-5x2.svelte'
+  import EachParityModels from '$figs/each-parity-models-5x2.svelte'
+  import EformParityModels from '$figs/e-form-parity-models-5x2.svelte'
   import ElementPrevalenceVsError from '$figs/element-prevalence-vs-error.svelte'
   import HistClfPredHullDistModels from '$figs/hist-clf-pred-hull-dist-models-5x2.svelte'
-  import HullDistScatterWrenformerFailures from '$figs/hull-dist-scatter-wrenformer-failures.svelte'
+  import HullDistParityWrenformerFailures from '$figs/hull-dist-parity-wrenformer-failures.svelte'
   import LargestErrorScatterSelect from './largest-error-scatter-select.svelte'
   import M3gnetRollingMaeBatches from '$figs/rolling-mae-vs-hull-dist-wbm-batches-m3gnet.svelte'
   import MegnetRollingMaeBatches from '$figs/rolling-mae-vs-hull-dist-wbm-batches-megnet.svelte'
@@ -283,7 +284,7 @@ The diagonal Optimal Recall line would be achieved if a model never made a false
 Zooming in on the top-left corner of the precision plot, we observe that CHGNet is the only model without a sudden drop in precision right at the start of the discovery campaign.
 This means CHGNet is the only model whose first few hundred most stable materials are largely actually stable.
 MACE in particular suffers from a large number of initial failure cases.
-These are unstable materials whose energy MACE underpredicts by several eV/atom (see @fig:each-scatter-models), resulting in MACE's initial precision starting at 0 before quickly climbing to ~0.8.
+These are unstable materials whose energy MACE underpredicts by several eV/atom (see @fig:each-parity-models), resulting in MACE's initial precision starting at 0 before quickly climbing to ~0.8.
 We experienced this behavior with multiple independently trained MACE variants; even more so with a checkpoint we received directly from the MACE authors which was trained on the M3GNet training set. The results shown here are from a superior MACE we trained ourselves on the much larger MPtrj dataset.
 Even M3GNet, the other universal potential and 2nd best model, exhibits the early-on precision drop.
 As a result, CHGNet has a strong lead over M3GNet until reaching ~3k screened materials.
@@ -414,12 +415,12 @@ A material is classified as stable if the predicted $E_\text{above hull}$ lies b
 ### Parity Plots
 
 {#if mounted}
-<EachScatterModels />
+<EachParityModels />
 {/if}
 
-> @label:fig:each-scatter-models Parity plot for each model's energy above hull predictions (based on their formation energy predictions) vs DFT ground truth, color-coded by log density of points.
+> @label:fig:each-parity-models Parity plots for each model's energy above hull predictions (based on their formation energy predictions) vs DFT ground truth, color-coded by log density of points.
 
-@Fig:each-scatter-models shows that all models do well for materials far below the convex hull (left side of the plot). Performance for materials far above the convex hull is more varied with occasional underpredictions of the energy of materials far above the convex hull (right side). All models suffer most in the mode of the distribution at $x = 0$.
+@Fig:each-parity-models shows that all models do well for materials far below the convex hull (left side of the plot). Performance for materials far above the convex hull is more varied with occasional underpredictions of the energy of materials far above the convex hull (right side). All models suffer most in the mode of the distribution at $x = 0$.
 
 Two models stand out as anomalous to the general trends.
 
@@ -448,7 +449,7 @@ Since these derailed values are easily identified in practice when actually perf
 <SpacegroupSunburstWrenformerFailures />
 <SpacegroupSunburstWbm />
 </div>
-<HullDistScatterWrenformerFailures />
+<HullDistParityWrenformerFailures />
 {/if}
 
 > @label:fig:wrenformer-failures Symmetry analysis of the 941 Wrenformer failure cases in the shaded rectangle defined by $E_\text{DFT hull dist} < 1$ and $E_\text{ML hull dist} > 1$. Sunburst plot of spacegroups shows that close to 80% of severe energy overestimations are orthorhombic with spacegroup 71. The table on the right shows occurrence counts of exact structure prototypes for each material in the sunburst plot as well as their corresponding prevalence in the training set.
@@ -560,3 +561,14 @@ There are too many confounding effects at play to draw firm conclusions but this
 {/if}
 
 > @label:fig:cumulative-mae-rmse CHGNet is consistently the lowest error regressor for materials it predicts as stable. Similar to @fig:cumulative-precision-recall, this figure shows the cumulative MAE over the course of a discovery campaign. As in @fig:cumulative-precision-recall, each model's line starts with those structures the model predicts as most stable and ends with those structures the model predicts as barely stable, i.e. predicted to lie directly on the convex hull.
+
+### Formation Energy Parity Plots
+
+{#if mounted}
+<EformParityModels />
+{/if}
+
+> @label:fig:e-form-parity-models Parity plots of model-predicted formation energies vs PBE, color-coded by log density of points.
+> The models are sorted from left to right and top to bottom by MAE.
+> While similar to the parity plots in @fig:each-parity-models, which shows the predicted convex hull distance vs PBE hull distance, this figure better visualizes the point density due to formation energy's wider spread.
+> We observe broadly the same failure modes with occasional high DFT energy outliers predicted as near 0 formation energy by the models.
