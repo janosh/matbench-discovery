@@ -80,9 +80,9 @@ force_max = 0.05  # Run until the forces are smaller than this in eV/A
 checkpoint = f"{ROOT}/models/mace/checkpoints/{model_name}.model"
 mace_calc = MACECalculator(checkpoint, device=device)
 
-df_in: pd.DataFrame = np.array_split(
-    pd.read_json(data_path).set_index(id_col), slurm_array_task_count
-)[slurm_array_task_id - 1]
+df_in = pd.read_json(data_path).set_index(id_col)
+if slurm_array_task_count > 1:
+    df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
 
 
 # %%
