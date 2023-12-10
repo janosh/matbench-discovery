@@ -9,9 +9,9 @@ import numpy as np
 import pandas as pd
 import torch
 import wandb
-from ase.constraints import ExpCellFilter
+from ase.filters import FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
-from mace.calculators.mace import MACECalculator
+from mace.calculators import mace_mp
 from mace.tools import count_parameters
 from pymatgen.core import Structure
 from pymatgen.core.trajectory import Trajectory
@@ -31,21 +31,18 @@ __date__ = "2023-03-01"
 task_type = "IS2RE"  # "RS2RE"
 module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
-slurm_array_task_count = 100
+slurm_array_task_count = 20
 ase_optimizer = "FIRE"
 job_name = f"mace-wbm-{task_type}-{ase_optimizer}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 device = "cuda" if torch.cuda.is_available() else "cpu"
 relax_cell = True
+# whether to record intermediate structures into pymatgen Trajectory
+record_traj = False  # has no effect if relax_cell is False
 model_name = [
-    # MACE trained on M3GNet training set by original MACE authors
-    # 9M = model size (number of trainable params), 9,255,168 to be exact
-    "2023-07-14-mace-9M-ilyas-universal-2-big-128-6",
-    # MACE trained by Yuan Chiang on CHGNet training set
-    "2023-08-14-mace-2M-yuan-mptrj-04",
-    "2023-09-03-mace-2M-yuan-mptrj-slower-14-lr-13_run-3",
     "2023-10-29-mace-16M-pbenner-mptrj-no-conditional-loss",
-][0]
+    "https://tinyurl.com/y7uhwpje",
+][-1]
 
 slurm_vars = slurm_submit(
     job_name=job_name,
@@ -78,7 +75,8 @@ e_pred_col = "mace_energy"
 max_steps = 500
 force_max = 0.05  # Run until the forces are smaller than this in eV/A
 checkpoint = f"{ROOT}/models/mace/checkpoints/{model_name}.model"
-mace_calc = MACECalculator(checkpoint, device=device)
+dtype = "float64"
+mace_calc = mace_mp(model=model_name, device=device, default_dtype=dtype)
 
 df_in = pd.read_json(data_path).set_index(id_col)
 if slurm_array_task_count > 1:
@@ -95,10 +93,13 @@ run_params = dict(
     slurm_vars=slurm_vars,
     max_steps=max_steps,
     relax_cell=relax_cell,
+    record_traj=record_traj,
     force_max=force_max,
     ase_optimizer=ase_optimizer,
     device=device,
     trainable_params=count_parameters(mace_calc.models[0]),
+    model_name=model_name,
+    dtype=dtype,
 )
 
 run_name = f"{job_name}-{slurm_array_task_id}"
@@ -114,41 +115,39 @@ if task_type == "RS2RE":
 
 structs = df_in[input_col].map(Structure.from_dict).to_dict()
 
-for material_id in tqdm(structs, desc="Relaxing", disable=None):
+for material_id in tqdm(structs, desc="Relaxing"):
     if material_id in relax_results:
         continue
     try:
+        mace_traj = None
         atoms = structs[material_id].to_ase_atoms()
         atoms.calc = mace_calc
         if relax_cell:
-            atoms = ExpCellFilter(atoms)
+            atoms = FrechetCellFilter(atoms)
             optim_cls = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
             optimizer = optim_cls(atoms, logfile="/dev/null")
 
-            coords, lattices = [], []
-            # attach observer functions to the optimizer
-            optimizer.attach(lambda: coords.append(atoms.get_positions()))  # noqa: B023
-            optimizer.attach(lambda: lattices.append(atoms.get_cell()))  # noqa: B023
+            if record_traj:
+                coords, lattices = [], []
+                # attach observer functions to the optimizer
+                optimizer.attach(lambda: coords.append(atoms.get_positions()))  # noqa: B023
+                optimizer.attach(lambda: lattices.append(atoms.get_cell()))  # noqa: B023
 
             optimizer.run(fmax=force_max, steps=max_steps)
+        mace_energy = atoms.get_potential_energy()  # relaxed energy
+        mace_struct = AseAtomsAdaptor.get_structure(
+            atoms.atoms if relax_cell else atoms
+        )
+
+        relax_results[material_id] = {"structure": mace_struct, "energy": mace_energy}
+        if record_traj:
             mace_traj = Trajectory(
                 species=structs[material_id].species,
                 coords=coords,
                 lattice=lattices,
                 constant_lattice=False,
             )
-        else:
-            mace_traj = None
-        mace_energy = atoms.get_potential_energy()
-        mace_struct = AseAtomsAdaptor.get_structure(
-            atoms.atoms if relax_cell else atoms
-        )
-
-        relax_results[material_id] = {
-            "structure": mace_struct,
-            "energy": mace_energy,
-            "trajectory": mace_traj,
-        }
+            relax_results[material_id]["trajectory"] = mace_traj
     except Exception as exc:
         print(f"Failed to relax {material_id}: {exc!r}")
         continue
