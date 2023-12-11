@@ -10,8 +10,8 @@ __author__ = "Janosh Riebesell"
 __date__ = "2023-03-07"
 
 """
-This scripts runs a Crystal Toolkit app that shows a scatter plot of CHGNet energies
-and allows to click on points to view the corresponding structures. Run with:
+This scripts runs a Crystal Toolkit app that shows a parity plot of CHGNet vs PBE
+energies and allows to click on points to view the corresponding structures. Run with:
 python scripts/ctk_structure_viewer.py
 Then open http://localhost:8000 in your browser.
 """

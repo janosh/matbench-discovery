@@ -130,6 +130,6 @@ fig.show()
 
 
 # %%
-img_name = "hull-dist-scatter-wrenformer-failures"
+img_name = "hull-dist-parity-wrenformer-failures"
 save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=600, height=300)

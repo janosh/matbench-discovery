@@ -260,7 +260,7 @@ save_fig(fig, f"{SITE_FIGS}/each-error-vs-least-prevalent-element-in-struct.svel
 
 # %% plot histogram of model errors for each element
 model = "MACE"
-ax = ptable_hists(
+fig_ptable_each_errors = ptable_hists(
     df_frac_comp * (df_each_err[model].to_numpy()[:, None]),
     log=True,
     cbar_title=f"{model} convex hull distance errors (eV/atom)",
@@ -269,4 +269,4 @@ ax = ptable_hists(
 )
 
 img_name = f"ptable-each-error-hists-{model.lower().replace(' ', '-')}"
-save_fig(ax, f"{PDF_FIGS}/{img_name}.pdf")
+save_fig(fig_ptable_each_errors, f"{PDF_FIGS}/{img_name}.pdf")
