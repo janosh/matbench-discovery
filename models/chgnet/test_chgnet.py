@@ -51,8 +51,8 @@ slurm_vars = slurm_submit(
 
 # %%
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
-slurm_job_id = os.getenv("SLURM_JOB_ID", "debug")
-out_path = f"{out_dir}/{slurm_job_id}-{slurm_array_task_id:>03}.json.gz"
+slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", "debug")
+out_path = f"{out_dir}/{slurm_array_job_id}-{slurm_array_task_id:>03}.json.gz"
 
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path=} already exists, exciting early")
@@ -66,12 +66,12 @@ data_path = {
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
 e_pred_col = "chgnet_energy"
-max_steps = 500
+max_steps = 0
 fmax = 0.05
 
-df_in: pd.DataFrame = np.array_split(
-    pd.read_json(data_path).set_index(id_col), slurm_array_task_count
-)[slurm_array_task_id - 1]
+df_in = pd.read_json(data_path).set_index(id_col)
+if slurm_array_task_count > 1:
+    df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
 
 run_params = dict(
     data_path=data_path,
@@ -98,18 +98,25 @@ if task_type == "RS2RE":
 
 structures = df_in[input_col].map(Structure.from_dict).to_dict()
 
-for material_id in tqdm(structures, desc="Relaxing", disable=None):
+for material_id in tqdm(structures, desc="Relaxing"):
     if material_id in relax_results:
         continue
     try:
         relax_result = chgnet.relax(
-            structures[material_id], verbose=False, steps=max_steps, fmax=fmax
+            structures[material_id],
+            verbose=False,
+            steps=max_steps,
+            fmax=fmax,
+            relax_cell=max_steps > 0,
         )
         relax_results[material_id] = {
-            "chgnet_structure": relax_result["final_structure"],
-            "chgnet_trajectory": relax_result["trajectory"].__dict__,
-            e_pred_col: relax_result["trajectory"].energies[-1],
+            e_pred_col: relax_result["trajectory"].energies[-1]
         }
+        if max_steps > 0:
+            relax_struct = relax_result["final_structure"]
+            relax_results[material_id]["chgnet_structure"] = relax_struct
+            traj = relax_result["trajectory"]
+            relax_results[material_id]["chgnet_trajectory"] = traj.__dict__
     except Exception as exc:
         print(f"Failed to relax {material_id}: {exc!r}")
 
@@ -118,7 +125,10 @@ for material_id in tqdm(structures, desc="Relaxing", disable=None):
 df_out = pd.DataFrame(relax_results).T
 df_out.index.name = id_col
 
-df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
+if max_steps == 0:
+    df_out.add_suffix("_no_relax").to_csv(out_path.replace(".json.gz", ".csv.gz"))
+else:
+    df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
 
 
 # %%

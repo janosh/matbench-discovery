@@ -1,4 +1,4 @@
-"""Scatter plot of actual vs predicted e_above_hull and e_form_per_atom for all
+"""parity plot of actual vs predicted e_above_hull and e_form_per_atom for all
 models. First 2 plots put all models in single figure with selectable traces.
 Last plot is split into 2x3 subplots, one for each model.
 """
@@ -80,7 +80,7 @@ legend_order = list(df_metrics.T.MAE.sort_values().index)
 # ]
 
 
-# %% scatter plot of actual vs predicted e_form_per_atom
+# %% parity plot of actual vs predicted e_form_per_atom
 fig = px.scatter(
     df_bin,
     x=e_form_col,
@@ -104,11 +104,11 @@ fig.update_layout(legend=legend)
 add_identity_line(fig)
 fig.show()
 
-img_name = f"{SITE_FIGS}/e-form-scatter-models"
+img_name = f"{SITE_FIGS}/e-form-parity-models"
 # save_fig(fig, f"{img_path}.svelte")
 
 
-# %% scatter plot of actual vs predicted e_above_hull
+# %% parity plot of actual vs predicted e_above_hull
 fig = px.scatter(
     df_bin,
     x=e_true_col,
@@ -131,11 +131,11 @@ fig.update_layout(legend=legend)
 add_identity_line(fig)
 fig.show()
 
-img_name = f"{SITE_FIGS}/e-above-hull-scatter-models"
+img_name = f"{SITE_FIGS}/e-above-hull-parity-models"
 # save_fig(fig, f"{img_path}.svelte")
 
 
-# %% scatter plot of DFT vs predicted hull distance with each model in separate subplot
+# %% parity plot of DFT vs predicted hull distance with each model in separate subplot
 log_bin_cnt_col = f"log {bin_cnt_col}"
 df_bin[log_bin_cnt_col] = np.log1p(df_bin[bin_cnt_col]).round(2)
 
@@ -269,6 +269,6 @@ fig.show()
 
 
 # %%
-fig_name = f"{which_energy}-scatter-models-{n_rows}x{n_cols}"
+fig_name = f"{which_energy}-parity-models-{n_rows}x{n_cols}"
 save_fig(fig, f"{SITE_FIGS}/{fig_name}.svelte")
 save_fig(fig, f"{PDF_FIGS}/{fig_name}.pdf")

@@ -36,10 +36,9 @@ today = timestamp.split("@")[0]
 # ComputedStructureEntries or using PatchedPhaseDiagram to get e_above_hull
 # warnings are:
 # > No electronegativity for Ne. Setting to NaN. This has no physical meaning
-for lineno in (120, 221, 1043):
-    warnings.filterwarnings(
-        action="ignore", category=UserWarning, module="pymatgen", lineno=lineno
-    )
+# and MaterialsProject2020Compatibility to get formation energies
+# > Failed to guess oxidation states for Entry
+warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
 
 id_col = "material_id"
 init_struct_col = "initial_structure"

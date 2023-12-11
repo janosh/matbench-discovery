@@ -68,7 +68,7 @@ print(f"{df_wbm.isna().sum()=}")
 df_wbm.query("initial_wbm_volume.isna()").index.tolist()
 
 
-# %% scatter plot of M3GNet/initial volumes vs DFT-relaxed volumes
+# %% parity plot of M3GNet/initial volumes vs DFT-relaxed volumes
 ax = density_scatter(
     df=df_wbm.query("m3gnet_volume < 2000"),
     x="final_wbm_volume",
@@ -211,7 +211,7 @@ fig.update_layout(title=dict(text=title, x=0.5))
 # notebook server
 fig.show(renderer="png", scale=2)
 fig.write_image(
-    f"{SITE_FIGS}/m3gnet-energy-per-atom-scatter-is2re-vs-rs2re.webp", scale=2
+    f"{SITE_FIGS}/m3gnet-energy-per-atom-parity-is2re-vs-rs2re.webp", scale=2
 )
 
 

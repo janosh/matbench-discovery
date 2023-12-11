@@ -64,9 +64,9 @@ print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
 assert e_form_col in df_wbm, f"{e_form_col=} not in {list(df_wbm)=}"
 
-df_in: pd.DataFrame = np.array_split(
-    pd.read_json(data_path).set_index(id_col), slurm_array_task_count
-)[slurm_array_task_id - 1]
+df_in = pd.read_json(data_path).set_index(id_col)
+if slurm_array_task_count > 1:
+    df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
 megnet_mp_e_form = load_model(model_name := "Eform_MP_2019")
 
 

@@ -52,8 +52,8 @@ slurm_vars = slurm_submit(
 
 # %%
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "3"))
-slurm_job_id = os.getenv("SLURM_JOB_ID", "debug")
-out_path = f"{out_dir}/{slurm_job_id}-{slurm_array_task_id:>03}.json.gz"
+slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", "debug")
+out_path = f"{out_dir}/{slurm_array_job_id}-{slurm_array_task_id:>03}.json.gz"
 
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path=} already exists, exciting early")
@@ -70,9 +70,9 @@ print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
 e_pred_col = f"m3gnet_{model_type}_energy"
 
-df_in: pd.DataFrame = np.array_split(
-    pd.read_json(data_path).set_index(id_col), slurm_array_task_count
-)[slurm_array_task_id - 1]
+df_in = pd.read_json(data_path).set_index(id_col)
+if slurm_array_task_count > 1:
+    df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
 
 checkpoint = None
 if model_type == "direct":
