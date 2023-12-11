@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 from matplotlib.colors import SymLogNorm
-from pymatgen.core import Composition
+from pymatgen.core import Composition, Element
 from pymatviz import count_elements, ptable_heatmap, ptable_heatmap_ratio, ptable_hists
 from pymatviz.io import save_fig
 from pymatviz.utils import si_fmt
@@ -41,7 +41,7 @@ data_page = f"{ROOT}/site/src/routes/data"
 e_form_per_atom_col = "ef_per_atom"
 magmoms_col = "magmoms"
 forces_col = "forces"
-elems_col = "symbols"
+site_nums_col = "site_nums"
 
 
 # %% load MP element counts by occurrence to compute ratio with MPtrj
@@ -91,7 +91,7 @@ df_mp_trj = pd.DataFrame(
     {
         info_to_id(atoms.info): atoms.info
         | {key: atoms.arrays.get(key) for key in ("forces", "magmoms")}
-        | {"formula": str(atoms.symbols), elems_col: atoms.symbols}
+        | {"formula": str(atoms.symbols), site_nums_col: atoms.symbols}
         for atoms_list in tqdm(mp_trj_atoms.values(), total=len(mp_trj_atoms))
         for atoms in atoms_list
     }
@@ -120,31 +120,31 @@ def tile_count_anno(hist_vals: list[Any]) -> dict[str, Any]:
 
 
 # %% plot per-element magmom histograms
-magmom_hist_path = f"{DATA_DIR}/mp/mp-trj-2022-09-elem-magmoms.json.bz2"
+ptable_magmom_hist_path = f"{DATA_DIR}/mp/mp-trj-2022-09-elem-magmoms.json.bz2"
 
-if os.path.isfile(magmom_hist_path):
-    mp_trj_elem_magmoms = pd.read_json(magmom_hist_path, typ="series")
-elif "mp_trj_elem_magmoms" not in locals():
+if os.path.isfile(ptable_magmom_hist_path):
+    srs_mp_trj_elem_magmoms = pd.read_json(ptable_magmom_hist_path, typ="series")
+elif "srs_mp_trj_elem_magmoms" not in locals():
     # project magmoms onto symbols in dict
     df_mp_trj_elem_magmom = pd.DataFrame(
         [
             dict(zip(elems, magmoms))
-            for elems, magmoms in df_mp_trj.set_index(elems_col)[magmoms_col]
+            for elems, magmoms in df_mp_trj.set_index(site_nums_col)[magmoms_col]
             .dropna()
             .items()
         ]
     )
 
-    mp_trj_elem_magmoms = {
+    srs_mp_trj_elem_magmoms = {
         col: list(df_mp_trj_elem_magmom[col].dropna()) for col in df_mp_trj_elem_magmom
     }
-    pd.Series(mp_trj_elem_magmoms).to_json(magmom_hist_path)
+    pd.Series(srs_mp_trj_elem_magmoms).to_json(ptable_magmom_hist_path)
 
-cmap = plt.cm.get_cmap("viridis")
+cmap = plt.get_cmap(color_map := "viridis")
 norm = matplotlib.colors.LogNorm(vmin=1, vmax=150_000)
 
-ax = ptable_hists(
-    mp_trj_elem_magmoms,
+fig_ptable_magmoms = ptable_hists(
+    srs_mp_trj_elem_magmoms,
     symbol_pos=(0.2, 0.8),
     log=True,
     cbar_title="Magmoms ($μ_B$)",
@@ -152,39 +152,40 @@ ax = ptable_hists(
     cbar_coords=(0.18, 0.85, 0.42, 0.02),
     # annotate each element with its number of magmoms in MPtrj
     anno_kwds=tile_count_anno,
+    colormap=color_map,
 )
 
-cbar_ax = ax.figure.add_axes([0.26, 0.78, 0.25, 0.015])
+cbar_ax = fig_ptable_magmoms.figure.add_axes([0.26, 0.78, 0.25, 0.015])
 cbar = matplotlib.colorbar.ColorbarBase(
     cbar_ax, cmap=cmap, norm=norm, orientation="horizontal"
 )
-save_fig(ax, f"{PDF_FIGS}/mp-trj-magmoms-ptable-hists.pdf")
+save_fig(fig_ptable_magmoms, f"{PDF_FIGS}/mp-trj-magmoms-ptable-hists.pdf")
 
 
 # %% plot per-element force histograms
-force_hist_path = f"{DATA_DIR}/mp/mp-trj-2022-09-elem-forces.json.bz2"
+ptable_force_hist_path = f"{DATA_DIR}/mp/mp-trj-2022-09-elem-forces.json.bz2"
 
-if os.path.isfile(force_hist_path):
-    mp_trj_elem_forces = pd.read_json(force_hist_path, typ="series")
-elif "mp_trj_elem_forces" not in locals():
+if os.path.isfile(ptable_force_hist_path):
+    srs_mp_trj_elem_forces = pd.read_json(ptable_force_hist_path, typ="series")
+elif "srs_mp_trj_elem_forces" not in locals():
     df_mp_trj_elem_forces = pd.DataFrame(
         [
             dict(zip(elems, np.abs(forces).mean(axis=1)))
-            for elems, forces in df_mp_trj.set_index(elems_col)[forces_col].items()
+            for elems, forces in df_mp_trj.set_index(site_nums_col)[forces_col].items()
         ]
     )
     mp_trj_elem_forces = {
         col: list(df_mp_trj_elem_forces[col].dropna()) for col in df_mp_trj_elem_forces
     }
-    mp_trj_elem_forces = pd.Series(mp_trj_elem_forces)
-    mp_trj_elem_forces.to_json(force_hist_path)
+    srs_mp_trj_elem_forces = pd.Series(mp_trj_elem_forces)
+    srs_mp_trj_elem_forces.to_json(ptable_force_hist_path)
 
-cmap = plt.cm.get_cmap("viridis")
+cmap = plt.get_cmap(color_map := "viridis")
 norm = matplotlib.colors.LogNorm(vmin=1, vmax=1_000_000)
 
 max_force = 10  # eV/Å
-ax = ptable_hists(
-    mp_trj_elem_forces.copy().map(lambda x: [val for val in x if val < max_force]),
+fig_ptable_forces = ptable_hists(
+    srs_mp_trj_elem_forces.copy().map(lambda x: [val for val in x if val < max_force]),
     symbol_pos=(0.3, 0.8),
     log=True,
     cbar_title="1/3 Σ|Forces| (eV/Å)",
@@ -192,14 +193,81 @@ ax = ptable_hists(
     cbar_coords=(0.18, 0.85, 0.42, 0.02),
     x_range=(0, max_force),
     anno_kwds=tile_count_anno,
+    colormap=color_map,
 )
 
-cbar_ax = ax.figure.add_axes([0.26, 0.78, 0.25, 0.015])
+cbar_ax = fig_ptable_forces.figure.add_axes([0.26, 0.78, 0.25, 0.015])
 cbar = matplotlib.colorbar.ColorbarBase(
     cbar_ax, cmap=cmap, norm=norm, orientation="horizontal"
 )
 
-save_fig(ax, f"{PDF_FIGS}/mp-trj-forces-ptable-hists.pdf")
+save_fig(fig_ptable_forces, f"{PDF_FIGS}/mp-trj-forces-ptable-hists.pdf")
+
+
+# %% plot histogram of number of sites per element
+ptable_n_sites_hist_path = f"{DATA_DIR}/mp/mp-trj-2022-09-elem-n-sites.json.bz2"
+
+if os.path.isfile(ptable_n_sites_hist_path):
+    srs_mp_trj_elem_n_sites = pd.read_json(ptable_n_sites_hist_path, typ="series")
+elif "mp_trj_elem_n_sites" not in locals():
+    # construct a series of lists of site numbers per element (i.e. how often each
+    # element appears in a structure with n sites)
+    # create all df cols as int dtype
+    df_mp_trj_elem_n_sites = pd.DataFrame(
+        [
+            dict.fromkeys(set(site_nums), len(site_nums))
+            for site_nums in df_mp_trj[site_nums_col]
+        ]
+    ).astype(int)
+    mp_trj_elem_n_sites = {
+        col: list(df_mp_trj_elem_n_sites[col].dropna())
+        for col in df_mp_trj_elem_n_sites
+    }
+    srs_mp_trj_elem_n_sites = pd.Series(mp_trj_elem_n_sites).sort_index()
+
+    srs_mp_trj_elem_n_sites.index = srs_mp_trj_elem_n_sites.index.map(
+        Element.from_Z
+    ).map(str)
+    srs_mp_trj_elem_n_sites.to_json(ptable_n_sites_hist_path)
+
+
+cmap = plt.get_cmap("Blues")
+cbar_ticks = (100, 1_000, 10_000, 100_000, 1_000_000)
+norm = matplotlib.colors.LogNorm(vmin=min(cbar_ticks), vmax=max(cbar_ticks))
+
+fig_ptable_sites = ptable_hists(
+    srs_mp_trj_elem_n_sites,
+    symbol_pos=(0.8, 0.9),
+    log=True,
+    cbar_title="Number of Sites",
+    cbar_title_kwds=dict(fontsize=16),
+    cbar_coords=(0.18, 0.85, 0.42, 0.02),
+    anno_kwds=lambda hist_vals: dict(
+        text=si_fmt(len(hist_vals), ".0f"),
+        xy=(0.8, 0.6),
+        bbox=dict(pad=2, edgecolor="none", facecolor="none"),
+    ),
+    x_range=(1, 300),
+    hist_kwds=lambda hist_vals: dict(
+        color=cmap(norm(len(hist_vals))), edgecolor="none"
+    ),
+)
+
+# turn off y axis for helium (why is it even there?)
+fig_ptable_sites.axes[17].get_yaxis().set_visible(False)
+
+cbar_ax = fig_ptable_sites.figure.add_axes([0.23, 0.8, 0.31, 0.025])
+cbar = matplotlib.colorbar.ColorbarBase(
+    cbar_ax,
+    cmap=cmap,
+    norm=norm,
+    orientation="horizontal",
+    ticks=cbar_ticks,
+)
+cbar.set_label("Number of atoms in MPtrj structures", fontsize=16)
+cbar.ax.xaxis.set_label_position("top")
+
+save_fig(fig_ptable_sites, f"{PDF_FIGS}/mp-trj-n-sites-ptable-hists.pdf")
 
 
 # %%
@@ -371,15 +439,15 @@ save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=450, height=280)
 
 
-# %% calc n_sites from forces len
-df_mp_trj[n_sites_col] = df_mp_trj[forces_col].map(len)
-log_y = False
+# %% calc n_sites from per-site atomic numbers
+df_mp_trj[n_sites_col] = df_mp_trj[site_nums_col].map(len)
 n_sites_hist, n_sites_bins = np.histogram(
     df_mp_trj[n_sites_col], bins=range(1, df_mp_trj[n_sites_col].max() + 1)
 )
 
 n_struct_col = "Number of Structures"
 df_n_sites = pd.DataFrame({n_sites_col: n_sites_bins[:-1], n_struct_col: n_sites_hist})
+log_y = False
 
 
 # %% plot n_sites distribution
