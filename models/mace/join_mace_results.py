@@ -28,7 +28,9 @@ __date__ = "2023-03-01"
 # %%
 module_dir = os.path.dirname(__file__)
 task_type = "IS2RE"
-date = "2023-09-02"
+e_form_mace_col = "e_form_per_atom_mace"
+
+date = "2023-12-11"
 glob_pattern = f"{date}-mace-wbm-{task_type}*/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
@@ -79,7 +81,6 @@ assert len(processed) == len(df_mace)
 
 
 # %% compute corrected formation energies
-e_form_mace_col = "e_form_per_atom_mace"
 df_mace[formula_col] = df_wbm[formula_col]
 df_mace[e_form_mace_col] = [
     get_e_form_per_atom(dict(energy=cse.energy, composition=formula))
@@ -107,6 +108,6 @@ df_bad = df_mace[bad_mask].drop(columns=[entry_col, struct_col])
 df_bad[e_form_col] = df_wbm[e_form_col]
 df_bad.to_csv(f"{out_path}-bad.csv")
 
-# in_path = f"{module_dir}/2023-11-02-mace-wbm-IS2RE-FIRE"
+# in_path = f"{module_dir}/2023-12-11-mace-wbm-IS2RE-FIRE"
 # df_mace = pd.read_csv(f"{in_path}.csv.gz").set_index(id_col)
 # df_mace = pd.read_json(f"{in_path}.json.gz").set_index(id_col)
