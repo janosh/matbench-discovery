@@ -48,8 +48,6 @@ slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
 input_col = "wyckoff_spglib"
 
 print(f"\nJob started running {timestamp}")
-print(f"{job_name=}")
-print(f"{data_path=}")
 
 df = pd.read_csv(data_path).set_index(id_col, drop=False)
 

@@ -19,8 +19,8 @@ __date__ = "2023-07-14"
 module_dir = os.path.dirname(__file__)
 
 # monkey patch go.Figure.show() and Dash.run() to prevent them from opening browser
-go.Figure.show = lambda self, *args, **kwargs: None
-Dash.run = lambda self, *args, **kwargs: None
+go.Figure.show = lambda *_args, **_kwargs: None
+Dash.run = lambda *_args, **_kwargs: None
 
 # subtract __file__ to avoid this file calling itself
 scripts = set(glob(f"{module_dir}/*.py")) - {__file__}

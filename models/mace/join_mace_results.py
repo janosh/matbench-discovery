@@ -68,8 +68,8 @@ for row in tqdm(df_mace.itertuples(), total=len(df_mace)):
     mlip_struct = Structure.from_dict(struct_dict)
     df_mace.at[mat_id, struct_col] = mlip_struct  # noqa: PD008
     cse = df_cse.loc[mat_id, entry_col]
-    cse._energy = mace_energy  # cse._energy is the uncorrected energy
-    cse._structure = mlip_struct
+    cse._energy = mace_energy  # cse._energy is the uncorrected energy  # noqa: SLF001
+    cse._structure = mlip_struct  # noqa: SLF001
     df_mace.loc[mat_id, entry_col] = cse
 
 

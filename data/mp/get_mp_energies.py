@@ -113,7 +113,6 @@ ax = df.plot.scatter(
     x="decomposition_enthalpy",
     y="energy_above_hull",
     color=mask_above_line.map({True: "red", False: "blue"}),
-    # backend="plotly",
     hover_data=["index", formula_col, "formation_energy_per_atom"],
 )
 # most points lie on line y=x for x > 0 and y = 0 for x < 0.

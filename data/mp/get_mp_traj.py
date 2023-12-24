@@ -63,7 +63,7 @@ else:
 doc = db.tasks.find_one({"task_id": "mp-288"})
 # the most relevant task data is found in the 1st calc's ionic steps which are
 # the relaxation trajectory frames with the highest rate of change
-# docs[0]["calcs_reversed"][-1]["output"]["ionic_steps"]
+# see docs[0]["calcs_reversed"][-1]["output"]["ionic_steps"]
 
 
 # %%
@@ -115,7 +115,9 @@ df_batch.head()
 # %% use gzip CLI to check all files for archive corruption
 for path in tqdm(glob(f"{module_dir}/mp-tasks/*.json.gz")):
     try:
-        subprocess.run(["gzip", "--test", path], check=True)
+        subprocess.run(["gzip", "--test", path], check=True)  # noqa: S607
     except subprocess.CalledProcessError as exc:
         print(f"{path} raised {exc.stderr}")
-        # os.remove(path)  # delete corrupted file
+        # ask user to delete corrupted file
+        if input("Delete corrupted file? [y/N] ").lower() == "y":
+            os.remove(path)

@@ -56,7 +56,7 @@ for idx, marker in enumerate(markers, 1):
 ax.legend(loc="lower right", frameon=False)
 ax.set(title=f"{today} {model}")
 for line in ax.lines:
-    line._linewidth *= 3
+    line._linewidth *= 3  # noqa: SLF001
     line.set_markersize(10)
 
 

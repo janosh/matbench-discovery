@@ -66,6 +66,6 @@ app = hook_up_fig_with_struct_viewer(
     df_plot,
     "chgnet_structure",
     # validate_id requires material_id to be hover_name
-    validate_id=lambda id: id.startswith(("wbm-", "mp-", "mvc-")),
+    validate_id=lambda mat_id: mat_id.startswith(("wbm-", "mp-", "mvc-")),
 )
 app.run(debug=True, port=8000)

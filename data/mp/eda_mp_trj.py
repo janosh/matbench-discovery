@@ -254,7 +254,7 @@ fig_ptable_sites = ptable_hists(
 )
 
 # turn off y axis for helium (why is it even there?)
-fig_ptable_sites.axes[17].get_yaxis().set_visible(False)
+fig_ptable_sites.axes[17].get_yaxis().set_visible(b=False)
 
 cbar_ax = fig_ptable_sites.figure.add_axes([0.23, 0.8, 0.31, 0.025])
 cbar = matplotlib.colorbar.ColorbarBase(

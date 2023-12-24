@@ -132,11 +132,11 @@ cse_mp2020, cse_legacy = cses[idx].copy(), cses[idx].copy()
 ce_mp2020, ce_legacy = ces[idx].copy(), ces[idx].copy()
 
 
-with gzip.open(f"{ROOT}/tmp/cse-wbm-2-34803.json.zip", "w") as f:
-    f.write(cse_mp2020.to_json().encode("utf-8"))
+with gzip.open(f"{ROOT}/tmp/cse-wbm-2-34803.json.zip", "w") as file:
+    file.write(cse_mp2020.to_json().encode("utf-8"))
 
-with gzip.open(f"{ROOT}/tmp/cse-wbm-2-34803.json.zip") as f:
-    cse = ComputedStructureEntry.from_dict(json.load(f))
+with gzip.open(f"{ROOT}/tmp/cse-wbm-2-34803.json.zip") as file:
+    cse = ComputedStructureEntry.from_dict(json.load(file))
 
 cse_mp2020 = cse.copy()
 cse_legacy = cse.copy()

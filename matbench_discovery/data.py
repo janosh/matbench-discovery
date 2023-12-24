@@ -103,7 +103,7 @@ def load(
             # ensure directory exists
             os.makedirs(os.path.dirname(cache_path), exist_ok=True)
             # download and save to disk
-            urllib.request.urlretrieve(url, cache_path)  # noqa: S310
+            urllib.request.urlretrieve(url, cache_path)
             print(f"Cached {data_key!r} to {cache_path!r}")
         except urllib.error.HTTPError as exc:
             raise ValueError(f"Bad {url=}") from exc
@@ -114,7 +114,7 @@ def load(
     print(f"Loading {data_key!r} from cached file at {cache_path!r}")
     if ".pkl" in file:  # handle key='mp_patched_phase_diagram' separately
         with gzip.open(cache_path, "rb") as zip_file:
-            return pickle.load(zip_file)  # noqa: S301
+            return pickle.load(zip_file)
 
     csv_ext = (".csv", ".csv.gz", ".csv.bz2")
     reader = pd.read_csv if file.endswith(csv_ext) else pd.read_json

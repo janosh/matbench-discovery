@@ -86,8 +86,7 @@ for idx, (ax, row) in enumerate(
     plot_structure_2d(struct, ax=ax)
     _, spg_num = struct.get_space_group_info()
     formula = struct.composition.reduced_formula
-    id = row.Index
-    ax.set_title(f"{idx}. {formula} (spg={spg_num})\n{id}", fontweight="bold")
+    ax.set_title(f"{idx}. {formula} (spg={spg_num})\n{row.Index}", fontweight="bold")
 
 save_fig(fig, f"{PDF_FIGS}/chgnet-bad-relax-structures.pdf")
 
