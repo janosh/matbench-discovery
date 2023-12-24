@@ -8,15 +8,20 @@ import sys
 import urllib.error
 import urllib.request
 from glob import glob
-from pathlib import Path
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 import pandas as pd
 from monty.json import MontyDecoder
-from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
 from tqdm import tqdm
 
 from matbench_discovery import FIGSHARE, id_col
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
+
+# ruff: noqa: T201
 
 # repo URL to raw files on GitHub
 RAW_REPO_URL = "https://github.com/janosh/matbench-discovery/raw"
@@ -171,7 +176,7 @@ def glob_to_df(
     return pd.concat(sub_dfs.values())
 
 
-class Files(dict):  # type: ignore
+class Files(dict):  # type: ignore[type-arg]
     """Files instance inherits from dict so that .values(), items(), etc. are supported
     but also allows accessing attributes by dot notation. E.g. FILES.wbm_summary instead
     of FILES["wbm_summary"]. This enables tab completion in IDEs and auto-updating

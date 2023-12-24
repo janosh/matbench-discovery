@@ -3,14 +3,13 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 import crystal_toolkit.components as ctc
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from chgnet.model import StructOptimizer as ChgnetRelaxer
-from chgnet.model.dynamics import TrajectoryObserver
 from crystal_toolkit.settings import SETTINGS
 from dash import Dash, dcc, html
 from dash.dependencies import Input, Output
@@ -20,6 +19,10 @@ from pymatgen.core import Lattice, Structure
 from matbench_discovery import id_col
 from matbench_discovery.data import df_wbm
 
+if TYPE_CHECKING:
+    from chgnet.model.dynamics import TrajectoryObserver
+
+# ruff: noqa: T201
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-22"
 
@@ -187,7 +190,8 @@ for name, df, traj in (
             lattice = trajectory.cells[step]
             coords = trajectory.atom_positions[step]
             init_struct.lattice = lattice
-            assert len(init_struct) == len(coords)
+            if len(init_struct) != len(coords):
+                raise ValueError(f"{len(init_struct)} != {len(coords)}")
             for site, coord in zip(init_struct, coords):
                 site.coords = coord
 

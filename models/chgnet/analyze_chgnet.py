@@ -13,7 +13,7 @@ from pymatviz.io import save_fig
 from matbench_discovery import PDF_FIGS, formula_col, id_col
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DATA_FILES, df_wbm
-from matbench_discovery.preds import PRED_FILES
+from matbench_discovery.preds import PRED_FILES, df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-06"
@@ -86,7 +86,12 @@ for idx, (ax, row) in enumerate(
     plot_structure_2d(struct, ax=ax)
     _, spg_num = struct.get_space_group_info()
     formula = struct.composition.reduced_formula
-    id = row.Index
-    ax.set_title(f"{idx}. {formula} (spg={spg_num})\n{id}", fontweight="bold")
+    ax.set_title(f"{idx}. {formula} (spg={spg_num})\n{row.Index}", fontweight="bold")
 
 save_fig(fig, f"{PDF_FIGS}/chgnet-bad-relax-structures.pdf")
+
+
+# %% ensure all CHGNet static predictions (direct energy without any structure
+# relaxation) are higher in energy than the relaxed ones, i.e. that the optimizer is
+# working correctly
+density_scatter(df=df_preds, x="CHGNet", y="chgnet_no_relax")

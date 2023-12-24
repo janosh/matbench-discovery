@@ -3,7 +3,10 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
-from collections.abc import Sequence
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 # taken from https://slurm.schedmd.com/job_array.html#env_vars, lower-cased and
 # and removed the SLURM_ prefix
@@ -22,7 +25,7 @@ def _get_calling_file_path(frame: int = 1) -> str:
     Returns:
         str: Calling function's file path n frames up the stack.
     """
-    caller_path = sys._getframe(frame).f_code.co_filename
+    caller_path = sys._getframe(frame).f_code.co_filename  # noqa: SLF001
     return os.path.abspath(caller_path)
 
 

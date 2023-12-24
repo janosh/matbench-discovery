@@ -254,7 +254,7 @@ fig_ptable_sites = ptable_hists(
 )
 
 # turn off y axis for helium (why is it even there?)
-fig_ptable_sites.axes[17].get_yaxis().set_visible(False)
+fig_ptable_sites.axes[17].get_yaxis().set_visible(b=False)
 
 cbar_ax = fig_ptable_sites.figure.add_axes([0.23, 0.8, 0.31, 0.025])
 cbar = matplotlib.colorbar.ColorbarBase(
@@ -282,7 +282,7 @@ for count_mode in ("composition", "occurrence"):
 
 
 # %%
-count_mode = "occurrence"
+count_mode = "composition"
 trj_elem_counts = pd.read_json(
     f"{data_page}/mp-trj-element-counts-by-{count_mode}.json", typ="series"
 )
@@ -295,7 +295,8 @@ ax_ptable = ptable_heatmap(  # matplotlib version looks better for SI
     log=(log := SymLogNorm(linthresh=10_000)),
     exclude_elements=excl_elems,  # drop noble gases
     # cbar_range=None if excl_noble else (10_000, None),
-    label_font_size=17,
+    show_values=(show_vals := True),
+    label_font_size=17 if show_vals else 25,
     value_font_size=14,
     cbar_title="MPtrj Element Counts",
 )

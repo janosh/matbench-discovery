@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import ast
 import json
-import logging
 import os
 from pathlib import Path
 from typing import Any
@@ -78,7 +77,7 @@ def main(**kwargs: Any) -> None:
         try:
             distr_env = DistributedEnvironment()
         except Exception as e:
-            logging.info(f"Error specifying environment for distributed training: {e}")
+            print(f"Error specifying environment for distributed training: {e}")
             return
         world_size = distr_env.world_size
         local_rank = distr_env.local_rank
@@ -95,14 +94,14 @@ def main(**kwargs: Any) -> None:
 
     if args.distributed:
         torch.cuda.set_device(local_rank)
-        logging.info(f"Process group initialized: {torch.distributed.is_initialized()}")
-        logging.info(f"Processes: {world_size}")
+        print(f"Process group initialized: {torch.distributed.is_initialized()}")
+        print(f"Processes: {world_size}")
 
     try:
-        logging.info(f"MACE version: {mace.__version__}")
+        print(f"MACE version: {mace.__version__}")
     except AttributeError:
-        logging.info("Cannot find MACE version, please install MACE via pip")
-    logging.info(f"Configuration: {args}")
+        print("Cannot find MACE version, please install MACE via pip")
+    print(f"Configuration: {args}")
 
     tools.set_default_dtype(args.default_dtype)
     device = tools.init_device(args.device)
@@ -110,7 +109,7 @@ def main(**kwargs: Any) -> None:
     if args.statistics_file is not None:
         with open(args.statistics_file) as f:
             statistics = json.load(f)
-        logging.info("Using statistics json file")
+        print("Using statistics json file")
         args.r_max = statistics["r_max"]
         args.atomic_numbers = statistics["atomic_numbers"]
         args.mean = statistics["mean"]
@@ -144,7 +143,7 @@ def main(**kwargs: Any) -> None:
         test_config_lens = ", ".join(
             f"{name}: {len(test_configs)}" for name, test_configs in collections.tests
         )
-        logging.info(
+        print(
             f"Total number of configurations: train={len(collections.train)}, valid="
             f"{len(collections.valid)}, tests=[{test_config_lens}]"
         )
@@ -168,13 +167,13 @@ def main(**kwargs: Any) -> None:
         )
     else:
         if args.statistics_file is None:
-            logging.info("Using atomic numbers from command line argument")
+            print("Using atomic numbers from command line argument")
         else:
-            logging.info("Using atomic numbers from statistics file")
+            print("Using atomic numbers from statistics file")
         zs_list = ast.literal_eval(args.atomic_numbers)
         assert isinstance(zs_list, list)
         z_table = tools.get_atomic_number_table_from_zs(zs_list)
-    logging.info(z_table)
+    print(z_table)
 
     if atomic_energies_dict is None or len(atomic_energies_dict) == 0:
         if args.train_file.endswith(".xyz"):
@@ -205,7 +204,7 @@ def main(**kwargs: Any) -> None:
             compute_dipole = False
 
         atomic_energies = np.array([atomic_energies_dict[z] for z in z_table.zs])
-        logging.info(f"Atomic energies: {atomic_energies.tolist()}")
+        print(f"Atomic energies: {atomic_energies.tolist()}")
 
     if args.train_file.endswith(".xyz"):
         train_set = [
@@ -268,11 +267,11 @@ def main(**kwargs: Any) -> None:
         dipole_only,
         compute_dipole,
     )
-    logging.info(loss_fn)
+    print(loss_fn)
 
     if args.compute_avg_num_neighbors:
         args.avg_num_neighbors = modules.compute_avg_num_neighbors(train_loader)
-    logging.info(f"Average number of neighbors: {args.avg_num_neighbors}")
+    print(f"Average number of neighbors: {args.avg_num_neighbors}")
 
     # Selecting outputs
     compute_virials = False
@@ -291,10 +290,10 @@ def main(**kwargs: Any) -> None:
         "stress": args.compute_stress,
         "dipoles": compute_dipole,
     }
-    logging.info(f"Selected the following outputs: {output_args}")
+    print(f"Selected the following outputs: {output_args}")
 
     # Build model
-    logging.info("Building model")
+    print("Building model")
     if args.num_channels is not None and args.max_L is not None:
         assert args.num_channels > 0, "num_channels must be positive integer"
         assert args.max_L >= 0, "max_L must be non-negative integer"
@@ -309,7 +308,7 @@ def main(**kwargs: Any) -> None:
         " keywords to specify the number of channels and the maximum L"
     )
 
-    logging.info(f"Hidden irreps: {args.hidden_irreps}")
+    print(f"Hidden irreps: {args.hidden_irreps}")
 
     model_config = dict(
         r_max=args.r_max,
@@ -329,7 +328,7 @@ def main(**kwargs: Any) -> None:
 
     if args.scaling == "no_scaling":
         args.std = 1.0
-        logging.info("No scaling selected")
+        print("No scaling selected")
     elif args.mean is None or args.std is None:
         args.mean, args.std = modules.scaling_classes[args.scaling](
             train_loader, atomic_energies
@@ -484,7 +483,7 @@ def main(**kwargs: Any) -> None:
             f"{args.swa_forces_weight}, learning rate : {args.swa_lr}"
         )
         if args.loss == "forces_only":
-            logging.info("Can not select swa with forces only loss.")
+            print("Can not select swa with forces only loss.")
         elif args.loss == "virials":
             loss_fn_energy = modules.WeightedEnergyForcesVirialsLoss(
                 energy_weight=args.swa_energy_weight,
@@ -503,13 +502,13 @@ def main(**kwargs: Any) -> None:
                 forces_weight=args.swa_forces_weight,
                 dipole_weight=args.swa_dipole_weight,
             )
-            logging.info(f"{log_msg}, dipole weight : {args.swa_dipole_weight}")
+            print(f"{log_msg}, dipole weight : {args.swa_dipole_weight}")
         else:
             loss_fn_energy = modules.WeightedEnergyForcesLoss(
                 energy_weight=args.swa_energy_weight,
                 forces_weight=args.swa_forces_weight,
             )
-            logging.info(log_msg)
+            print(log_msg)
         swa = tools.SWAContainer(
             model=AveragedModel(model),
             scheduler=SWALR(
@@ -550,12 +549,12 @@ def main(**kwargs: Any) -> None:
     if args.ema:
         ema = ExponentialMovingAverage(model.parameters(), decay=args.ema_decay)
 
-    logging.info(model)
-    logging.info(f"Number of parameters: {tools.count_parameters(model)}")
-    logging.info(f"{optimizer=}")
+    print(model)
+    print(f"Number of parameters: {tools.count_parameters(model)}")
+    print(f"{optimizer=}")
 
     if args.wandb:
-        logging.info("Using Weights and Biases for logging")
+        print("Using Weights and Biases for logging")
         import wandb
 
         wandb_config = {}
@@ -603,7 +602,7 @@ def main(**kwargs: Any) -> None:
         keep_last=True,
     )
 
-    logging.info("Computing metrics for training, validation, and test sets")
+    print("Computing metrics for training, validation, and test sets")
 
     all_data_loaders = {
         "train": train_loader,
@@ -638,7 +637,7 @@ def main(**kwargs: Any) -> None:
             test_set,
             batch_size=args.valid_batch_size,
             shuffle=(test_sampler is None),
-            drop_last=test_set.drop_last,  # type: ignore
+            drop_last=test_set.drop_last,  # type: ignore[attr-defined]
             num_workers=args.num_workers,
             pin_memory=args.pin_memory,
         )
@@ -654,7 +653,7 @@ def main(**kwargs: Any) -> None:
         if args.distributed:
             distributed_model = DistributedDataParallel(model, device_ids=[local_rank])
         model_to_evaluate = model if not args.distributed else distributed_model
-        logging.info(f"Loaded model from epoch {epoch}")
+        print(f"Loaded model from epoch {epoch}")
 
         table = create_error_table(
             table_type=args.error_table,
@@ -666,7 +665,7 @@ def main(**kwargs: Any) -> None:
             device=device,
             distributed=args.distributed,
         )
-        logging.info("\n" + str(table))
+        print("\n" + str(table))
 
         if rank == 0:
             # Save entire model
@@ -674,7 +673,7 @@ def main(**kwargs: Any) -> None:
                 model_path = Path(args.checkpoints_dir) / (tag + "_swa.model")
             else:
                 model_path = Path(args.checkpoints_dir) / (tag + ".model")
-            logging.info(f"Saving model to {model_path}")
+            print(f"Saving model to {model_path}")
             if args.save_cpu:
                 model = model.to("cpu")
             torch.save(model, model_path)
@@ -687,7 +686,7 @@ def main(**kwargs: Any) -> None:
         if args.distributed:
             torch.distributed.barrier()
 
-    logging.info("Done")
+    print("Done")
     if args.distributed:
         torch.distributed.destroy_process_group()
 

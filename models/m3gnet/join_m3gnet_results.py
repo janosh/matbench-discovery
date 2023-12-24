@@ -67,8 +67,8 @@ for row in tqdm(df_m3gnet.itertuples(), total=len(df_m3gnet)):
     mlip_struct = Structure.from_dict(struct_dict)
     df_m3gnet.at[mat_id, struct_col] = mlip_struct  # noqa: PD008
     cse = df_cse.loc[mat_id, entry_col]
-    cse._energy = m3gnet_energy  # cse._energy is the uncorrected energy
-    cse._structure = mlip_struct
+    cse._energy = m3gnet_energy  # cse._energy is the uncorrected energy  # noqa: SLF001
+    cse._structure = mlip_struct  # noqa: SLF001
     df_m3gnet.loc[mat_id, entry_col] = cse
 
 

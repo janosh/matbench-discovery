@@ -103,11 +103,11 @@ def featurize_dataframe(
     matminer_features = featurizer.featurize_dataframe(
         df=df, col_id=struct_col, ignore_errors=ignore_errors
     )
+    print("Featurization complete")
     # check failed entries
-    print("Featurization completed.")
     failed = np.any(pd.isna(matminer_features.iloc[:, df.shape[1] :]), axis=1)
     if sum(failed) > 0:
-        print(f"Number failed: {sum(failed)}/{len(failed)}")
+        print(f"Number failed: {sum(failed)} / {len(failed)}")
     return matminer_features
 
 
@@ -142,27 +142,21 @@ def features_to_drop(df_in: pd.DataFrame, threshold: float = 0.95) -> list[str]:
     return [col for col in upper_tri if any(upper_tri[col] > threshold)]
 
 
-# %% Compute features and export to CSV
+# %% Compute matminer features for MP and WBM, then export to CSV
 if not os.path.isfile(mp_matminer_feat_path):
-    print("Computing matminer features for MP...")
-
     df_mp_feats = featurize_file(
         DATA_FILES.mp_computed_structure_entries, struct_col="entry"
     )
     df_mp_feats.to_csv(mp_matminer_feat_path)
 
 if not os.path.isfile(wbm_matminer_feat_path):
-    print("Computing matminer features for WBM...")
-
     df_wbm_feats = featurize_file(DATA_FILES.wbm_initial_structures)
     df_wbm_feats.to_csv(wbm_matminer_feat_path)
 
 
-# %%
+# %% Compute UMAP projection of matminer features
 umap_out_path = f"{DATA_DIR}/wbm/umap/2d-umap-projections.csv.bz2"
 if not os.path.isfile(umap_out_path):
-    print("Computing UMAP...")
-
     df_mp = pd.read_csv(mp_matminer_feat_path).set_index(id_col)
     df_wbm = pd.read_csv(wbm_matminer_feat_path).set_index(id_col)
 

@@ -56,4 +56,5 @@ notes:
   training: Using pre-trained model released with paper. Training set unspecified at time of writing.
   corrections: None
 # n_params: 2_026_624 # 2023-09-03-mace-yuan-mptrj-slower-14-lr-13_run-3
-n_params: 15_847_440 # 2023-10-29-mace-pbenner-mptrj-no-conditional-loss
+# n_params: 15_847_440 # 2023-10-29-mace-pbenner-mptrj-no-conditional-loss
+n_params: 4_688_656 # https://tinyurl.com/y7uhwpje
