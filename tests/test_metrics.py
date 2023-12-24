@@ -17,7 +17,7 @@ from matbench_discovery.metrics import classify_stable, stable_metrics
 def test_classify_stable(
     stability_threshold: float, expected: tuple[int, int, int, int]
 ) -> None:
-    df = pd._testing.makeDataFrame()
+    df = pd._testing.makeDataFrame()  # noqa: SLF001
 
     true_pos, false_neg, false_pos, true_neg = classify_stable(
         e_above_hull_true=df.A,
@@ -55,7 +55,7 @@ def test_stable_metrics() -> None:
 
     # test stable_metrics gives the same result as sklearn.metrics.classification_report
     # for random numpy data
-    # np.random.seed(0)
+    np.random.seed(0)
     y_true, y_pred = np.random.randn(100, 2).T
     metrics = stable_metrics(y_true, y_pred)
 

@@ -8,15 +8,20 @@ import sys
 import urllib.error
 import urllib.request
 from glob import glob
-from pathlib import Path
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 import pandas as pd
 from monty.json import MontyDecoder
-from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
 from tqdm import tqdm
 
 from matbench_discovery import FIGSHARE, id_col
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
+
+# ruff: noqa: T201
 
 # repo URL to raw files on GitHub
 RAW_REPO_URL = "https://github.com/janosh/matbench-discovery/raw"
@@ -98,7 +103,7 @@ def load(
             # ensure directory exists
             os.makedirs(os.path.dirname(cache_path), exist_ok=True)
             # download and save to disk
-            urllib.request.urlretrieve(url, cache_path)
+            urllib.request.urlretrieve(url, cache_path)  # noqa: S310
             print(f"Cached {data_key!r} to {cache_path!r}")
         except urllib.error.HTTPError as exc:
             raise ValueError(f"Bad {url=}") from exc
@@ -109,7 +114,7 @@ def load(
     print(f"Loading {data_key!r} from cached file at {cache_path!r}")
     if ".pkl" in file:  # handle key='mp_patched_phase_diagram' separately
         with gzip.open(cache_path, "rb") as zip_file:
-            return pickle.load(zip_file)
+            return pickle.load(zip_file)  # noqa: S301
 
     csv_ext = (".csv", ".csv.gz", ".csv.bz2")
     reader = pd.read_csv if file.endswith(csv_ext) else pd.read_json
@@ -171,7 +176,7 @@ def glob_to_df(
     return pd.concat(sub_dfs.values())
 
 
-class Files(dict):  # type: ignore
+class Files(dict):  # type: ignore[type-arg]
     """Files instance inherits from dict so that .values(), items(), etc. are supported
     but also allows accessing attributes by dot notation. E.g. FILES.wbm_summary instead
     of FILES["wbm_summary"]. This enables tab completion in IDEs and auto-updating
