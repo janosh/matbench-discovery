@@ -5,6 +5,8 @@ https://colab.research.google.com/drive/13CAM8mL1u7ZsqNhfZLv7bNb1rdhMI64d?usp=sh
 Found notebook in docs: https://help.figshare.com/article/how-to-use-the-figshare-api
 """
 
+# ruff: noqa: T201
+
 from __future__ import annotations
 
 import hashlib
@@ -79,7 +81,7 @@ def make_request(method: str, url: str, data: Any = None, binary: bool = False) 
             data = response.content
     except HTTPError as error:
         print(f"Caught an HTTPError: {error}")
-        print("Body:\n", response.content)
+        print(f"Body:\n{response.content.decode()}")
         raise
 
     return data
@@ -88,7 +90,7 @@ def make_request(method: str, url: str, data: Any = None, binary: bool = False) 
 def create_article(metadata: dict[str, str | int | float]) -> int:
     """Create a new Figshare article with given metadata and return the article ID."""
     result = make_request("POST", f"{BASE_URL}/account/articles", data=metadata)
-    print("Created article:", result["location"], "\n")
+    print(f"Created article: {result['location']}\n")
     result = make_request("GET", result["location"])
     return result["id"]
 
@@ -99,7 +101,7 @@ def get_file_hash_and_size(
     """Get the md5 hash and size of a file. File is read in chunks of chunk_size bytes.
     Default chunk size is 10_000_000 ~= 10MB.
     """
-    md5 = hashlib.md5()
+    md5 = hashlib.md5()  # noqa: S324
     size = 0
     with open(file_name, "rb") as file:
         while data := file.read(chunk_size):

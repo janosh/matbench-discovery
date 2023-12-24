@@ -27,8 +27,8 @@ __date__ = "2022-12-04"
 
 
 # %%
-# metrics = ("Precision", "Recall")
-metrics = ("MAE",)
+metrics: tuple[str, ...] = globals().get("metrics", ("Precision", "Recall"))
+# metrics = ("MAE",)
 range_y = {
     ("MAE",): (0, 0.7),
     ("Precision", "Recall"): (0, 1),

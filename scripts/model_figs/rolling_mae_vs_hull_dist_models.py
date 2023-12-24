@@ -41,9 +41,9 @@ if backend == "matplotlib":
     legend = fig.legend(frameon=False, loc="lower right")
     fig.figure.set_size_inches(10, 9)
     for handle in legend.get_lines():
-        handle._linewidth *= 6
+        handle._linewidth *= 6  # noqa: SLF001
     for line in fig.lines:
-        line._linewidth *= 2
+        line._linewidth *= 2  # noqa: SLF001
 else:
     show_n_best_models = len(models)
     for trace in fig.data:

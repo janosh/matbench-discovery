@@ -117,7 +117,7 @@ for json_path in json_paths:
     )
 
     if step == 3:
-        df = df.drop(index=[f"step_3_{id}" for id in bad_struct_ids])
+        df = df.drop(index=[f"step_3_{wbm_id}" for wbm_id in bad_struct_ids])
         # re-index after dropping bad structures to get same indices as summary file
         # where IDs are consecutive, i.e. step_3_70801 is followed by step_3_70802,
         # not step_3_70804, etc.
@@ -419,9 +419,8 @@ df_summary.loc["wbm-2-18689", "uncorrected_energy"] = df_wbm.loc[
 ].computed_structure_entry["energy"]
 
 # NOTE careful with ComputedEntries as object vs as dicts, the meaning of keys changes:
-# cse.energy == cse.uncorrected_energy + cse.correction
-# whereas
-# cse.as_dict()["energy"] == cse.uncorrected_energy
+# for example cse.energy == cse.uncorrected_energy + cse.correction
+# whereas cse.as_dict()["energy"] == cse.uncorrected_energy
 
 
 # %% scatter plot summary energies vs CSE energies
@@ -478,7 +477,8 @@ save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 # recommended to upload SVG to vecta.io/nano for compression
 # save_fig(fig, f"{img_name}.svg", width=800, height=300)
 
-# fig.update_layout(xaxis_range=[-12, 82]) # if full data range should be visible in PDF
+# make full data range visible in PDF
+# fig.layout.xaxis.range = [-12, 82]
 save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
 
 

@@ -30,7 +30,7 @@ e_form_pred_col = "e_form_per_atom_pred"
 legend = dict(x=1, y=0, xanchor="right", yanchor="bottom", title=None)
 
 # toggle between formation energy and energy above convex hull
-which_energy: Literal["e-form", "each"] = "each"
+which_energy: Literal["e-form", "each"] = globals().get("which_energy", "each")
 if which_energy == "each":
     e_pred_col = each_pred_col
     e_true_col = each_true_col

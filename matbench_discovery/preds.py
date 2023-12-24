@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 from tqdm import tqdm
@@ -17,6 +16,9 @@ from matbench_discovery import id_col as default_id_col
 from matbench_discovery.data import Files, df_wbm, glob_to_df
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.plots import plotly_colors, plotly_line_styles, plotly_markers
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 """Centralize data-loading and computing metrics for plotting scripts"""
 
@@ -42,7 +44,8 @@ class PredFiles(Files):
     # BOWSR optimizer coupled with original megnet
     bowsr_megnet = "bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv.gz"
     # default CHGNet model from publication with 400,438 params
-    chgnet = "chgnet/2023-10-23-chgnet-0.3.0-wbm-IS2RE.csv.gz"
+    chgnet = "chgnet/2023-12-21-chgnet-0.3.0-wbm-IS2RE.csv.gz"
+    # chgnet_no_relax = "chgnet/2023-12-05-chgnet-0.3.0-wbm-IS2RE-no-relax.csv.gz"
 
     # CGCnn 10-member ensemble
     cgcnn = "cgcnn/2023-01-26-cgcnn-ens=10-wbm-IS2RE.csv.gz"
@@ -55,7 +58,7 @@ class PredFiles(Files):
     # m3gnet_ms = "m3gnet/2023-06-01-m3gnet-manual-sampling-wbm-IS2RE.csv.gz"
 
     # MACE trained on original M3GNet training set
-    mace = "mace/2023-11-02-mace-wbm-IS2RE-FIRE.csv.gz"
+    mace = "mace/2023-12-11-mace-wbm-IS2RE-FIRE-no-bad.csv.gz"
 
     # original MEGNet straight from publication, not re-trained
     megnet = "megnet/2022-11-18-megnet-wbm-IS2RE.csv.gz"
@@ -133,14 +136,16 @@ def load_df_wbm_with_preds(
             df_out[model_name] = df[cols[0]]
 
         elif pred_cols := list(df.filter(like="_pred_ens")):
-            assert len(pred_cols) == 1
+            if len(pred_cols) != 1:
+                raise ValueError(f"{len(pred_cols)=}, expected 1")
             df_out[model_name] = df[pred_cols[0]]
             if std_cols := list(df.filter(like="_std_ens")):
                 df_out[f"{model_name}_std"] = df[std_cols[0]]
 
         elif pred_cols := list(df.filter(like=r"_pred_")):
             # make sure we average the expected number of ensemble member predictions
-            assert len(pred_cols) == 10, f"{len(pred_cols) = }, expected 10"
+            if len(pred_cols) != 10:
+                raise ValueError(f"{len(pred_cols)=}, expected 10")
             df_out[model_name] = df[pred_cols].mean(axis=1)
 
         else:
@@ -205,8 +210,7 @@ for model in models:
         df_preds[each_true_col] + df_preds[model] - df_preds[e_form_col]
     )
 
-# important: do df_each_pred.std(axis=1) before inserting
-# df_each_pred[model_mean_each_col]
+# important: do df_each_pred.std(axis=1) before inserting model_mean_each_col into df
 df_preds[model_std_col] = df_each_pred.std(axis=1)
 df_each_pred[model_mean_each_col] = df_preds[model_mean_each_col] = df_each_pred.mean(
     axis=1

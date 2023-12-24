@@ -83,7 +83,6 @@ for dataset, count_mode, elem_counts in all_counts:
         value_font_size=14,
         cbar_title=f"{dataset.upper()} Element Count",
         log=(log := SymLogNorm(linthresh=100)),
-        # cbar_range=(100, None),
     )
     if log:
         filename += "-symlog" if isinstance(log, SymLogNorm) else "-log"
@@ -124,24 +123,24 @@ for arity, df_mp in df_wbm.groupby(df_wbm[comp_col].map(len)):
 
 # %%
 for dataset, count_mode, elem_counts in all_counts:
-    ptable = ptable_heatmap_plotly(
+    fig = ptable_heatmap_plotly(
         elem_counts.drop("Xe")[elem_counts > 1],
         font_size=11,
         color_bar=dict(title=dict(text=f"WBM {count_mode} counts", font_size=24)),
-        # log=True,
-        # colorscale="cividis",
+        log=True,
         hover_props=dict(atomic_number="atomic number"),
         hover_data=wbm_occu_counts,
     )
 
-    ptable.layout.margin = dict(l=0, r=0, b=0, t=0)
-    ptable.show()
-    # save_fig(ptable, f"{module_dir}/figs/wbm-elements.svg", width=1000, height=500)
-    save_fig(ptable, f"{PDF_FIGS}/{dataset}-element-{count_mode}-counts.pdf")
+    fig.layout.margin = dict(l=0, r=0, b=0, t=0)
+    fig.show()
+    svg_path = f"{module_dir}/figs/wbm-elements.svg"
+    # save_fig(fig, svg_path, width=1000, height=500)
+    save_fig(fig, f"{PDF_FIGS}/{dataset}-element-{count_mode}-counts.pdf")
 
 
 # %% histogram of energy distance to MP convex hull for WBM
-# e_col = each_true_col  # or e_form_col
+e_col = each_true_col  # or e_form_col
 e_col = "e_form_per_atom_uncorrected"
 e_col = "e_form_per_atom_mp2020_corrected"
 mean, std = df_wbm[e_col].mean(), df_wbm[e_col].std()

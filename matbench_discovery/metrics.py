@@ -1,16 +1,21 @@
+"""Functions to classify energy above convex hull predictions as true/false
+positive/negative and compute performance metrics.
+"""
+
 from __future__ import annotations
 
-from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 import numpy as np
-import pandas as pd
 from sklearn.metrics import r2_score
 
 from matbench_discovery import STABILITY_THRESHOLD
 
-"""Functions to classify energy above convex hull predictions as true/false
-positive/negative and compute performance metrics.
-"""
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    import pandas as pd
+
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-01"
@@ -96,10 +101,12 @@ def stable_metrics(
     FPR = n_false_pos / n_total_neg
     TNR = n_true_neg / n_total_neg
     FNR = n_false_neg / n_total_pos
-    # sanity check: false positives + true negatives = all negatives
-    assert FPR + TNR == 1
-    # sanity check: true positives + false negatives = all positives
-    assert TPR + FNR == 1
+
+    if FPR + TNR != 1:  # sanity check: false positives + true negatives = all negatives
+        raise ValueError(f"{FPR=} {TNR=} don't add up to 1")
+
+    if TPR + FNR != 1:  # sanity check: true positives + false negatives = all positives
+        raise ValueError(f"{TPR=} {FNR=} don't add up to 1")
 
     return dict(
         F1=2 * (precision * recall) / (precision + recall),

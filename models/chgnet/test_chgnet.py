@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import os
 from importlib.metadata import version
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -32,7 +32,7 @@ __date__ = "2023-03-01"
 task_type = "IS2RE"  # "RS2RE"
 module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
-slurm_array_task_count = 100
+slurm_array_task_count = 50
 device = "cuda" if torch.cuda.is_available() else "cpu"
 chgnet = StructOptimizer(use_device=device)  # load default pre-trained CHGNnet model
 job_name = f"chgnet-{chgnet.version}-wbm-{task_type}"
@@ -66,7 +66,8 @@ data_path = {
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
 e_pred_col = "chgnet_energy"
-max_steps = 0
+ase_filter: Literal["FrechetCellFilter", "ExpCellFilter"] = "FrechetCellFilter"
+max_steps = 500
 fmax = 0.05
 
 df_in = pd.read_json(data_path).set_index(id_col)
@@ -108,6 +109,7 @@ for material_id in tqdm(structures, desc="Relaxing"):
             steps=max_steps,
             fmax=fmax,
             relax_cell=max_steps > 0,
+            ase_filter=ase_filter,
         )
         relax_results[material_id] = {
             e_pred_col: relax_result["trajectory"].energies[-1]
@@ -115,8 +117,8 @@ for material_id in tqdm(structures, desc="Relaxing"):
         if max_steps > 0:
             relax_struct = relax_result["final_structure"]
             relax_results[material_id]["chgnet_structure"] = relax_struct
-            traj = relax_result["trajectory"]
-            relax_results[material_id]["chgnet_trajectory"] = traj.__dict__
+            # traj = relax_result["trajectory"]
+            # relax_results[material_id]["chgnet_trajectory"] = traj.__dict__
     except Exception as exc:
         print(f"Failed to relax {material_id}: {exc!r}")
 

@@ -85,7 +85,9 @@ for label, stats, raw_filters in (
 
         run_time_total = sum(run_times)
         # NOTE we assume all jobs have the same metadata here
-        metadata = requests.get(runs[0].file("wandb-metadata.json").url).json()
+        metadata = requests.get(
+            runs[0].file("wandb-metadata.json").url, timeout=10
+        ).json()
 
         n_gpu, n_cpu = metadata.get("gpu_count", 0), metadata.get("cpu_count", 0)
         stats[model] = {

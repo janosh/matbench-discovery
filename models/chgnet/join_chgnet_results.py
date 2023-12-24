@@ -22,11 +22,16 @@ __author__ = "Janosh Riebesell"
 __date__ = "2023-03-01"
 
 
+df_chgnet = pd.read_csv("2023-12-05-chgnet-0.3.0-wbm-IS2RE-static.csv.gz").set_index(
+    id_col
+)
+
+
 # %%
 module_dir = os.path.dirname(__file__)
 task_type = "IS2RE"
 date = "2023-10-23"
-glob_pattern = f"{date}-chgnet-wbm-{task_type}*/*.json.gz"
+glob_pattern = f"{date}-chgnet-*-wbm-{task_type}*/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
@@ -53,7 +58,7 @@ df_chgnet = pd.concat(dfs.values()).round(4)
 
 
 # %% compute corrected formation energies
-e_pred_col = "chgnet_energy"
+e_pred_col = "chgnet_energy_no_relax"
 e_form_chgnet_col = f"e_form_per_atom_{e_pred_col.split('_energy')[0]}"
 df_chgnet[formula_col] = df_preds[formula_col]
 df_chgnet[e_form_chgnet_col] = [

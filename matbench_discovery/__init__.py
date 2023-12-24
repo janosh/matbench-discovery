@@ -108,11 +108,7 @@ px.defaults.labels = quantity_labels | model_labels
 
 
 global_layout = dict(
-    # colorway=px.colors.qualitative.Pastel,
-    # colorway=colorway,
-    # margin=dict(l=30, r=20, t=60, b=20),
     paper_bgcolor="rgba(0,0,0,0)",
-    # plot_bgcolor="rgba(0,0,0,0)",
     font_size=13,
     # increase legend marker size and make background transparent
     legend=dict(itemsizing="constant", bgcolor="rgba(0, 0, 0, 0)"),
@@ -122,8 +118,8 @@ pio.templates.default = "plotly_dark+global"
 px.defaults.template = "plotly_dark+global"
 
 # https://github.com/plotly/Kaleido/issues/122#issuecomment-994906924
-# when seeing MathJax "loading" message in exported PDFs, try:
-# pio.kaleido.scope.mathjax = None
+# when seeing MathJax "loading" message in exported PDFs,
+# use pio.kaleido.scope.mathjax = None
 
 
 plt.rc("font", size=14)

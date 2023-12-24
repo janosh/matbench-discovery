@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
 from random import random
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pandas as pd
@@ -21,6 +20,10 @@ from matbench_discovery.data import (
     glob_to_df,
     load,
 )
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
 
 with open(f"{FIGSHARE}/{figshare_versions[-1]}.json") as file:
     figshare_urls = json.load(file)["files"]
@@ -54,7 +57,7 @@ def test_load(
     # intercept HTTP requests and write dummy df to disk instead
     with patch("urllib.request.urlretrieve") as url_retrieve:
         # dummy df with random floats and material_id column
-        df_csv = pd._testing.makeDataFrame().reset_index(names=id_col)
+        df_csv = pd._testing.makeDataFrame().reset_index(names=id_col)  # noqa: SLF001
 
         writer = dummy_df_serialized.to_json if ".json" in filepath else df_csv.to_csv
         url_retrieve.side_effect = lambda _url, path: writer(path)
@@ -203,7 +206,7 @@ def test_df_wbm() -> None:
 
 @pytest.mark.parametrize("pattern", ["*df.csv", "*df.json"])
 def test_glob_to_df(pattern: str, tmp_path: Path) -> None:
-    df = pd._testing.makeMixedDataFrame()
+    df = pd._testing.makeMixedDataFrame()  # noqa: SLF001
 
     os.makedirs(f"{tmp_path}", exist_ok=True)
     df.to_csv(f"{tmp_path}/dummy_df.csv", index=False)

@@ -20,7 +20,6 @@ model = "CHGNet"
 ax, df_err, df_std = rolling_mae_vs_hull_dist(
     e_above_hull_true=df_preds[each_true_col],
     e_above_hull_errors={model: df_preds[e_form_col] - df_preds[model]},
-    # label=model,
     backend=(backend := "plotly"),
 )
 
@@ -32,7 +31,7 @@ if backend == "matplotlib":
     ax.legend(loc="lower right", frameon=False)
     ax.set(title=title)
     for line in ax.lines:
-        line._linewidth *= 2
+        line._linewidth *= 2  # noqa: SLF001
 elif backend == "plotly":
     ax.update_layout(title=dict(text=title, x=0.5))
     ax.show()

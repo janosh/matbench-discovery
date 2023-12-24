@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
-from pymatgen.core import Structure
 
 from matbench_discovery.structure import perturb_structure
+
+if TYPE_CHECKING:
+    from pymatgen.core import Structure
 
 
 def test_perturb_structure(dummy_struct: Structure) -> None:

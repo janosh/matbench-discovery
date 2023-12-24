@@ -5,8 +5,7 @@ from __future__ import annotations
 import functools
 import math
 from collections import defaultdict
-from collections.abc import Sequence
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,6 +22,9 @@ from tqdm import tqdm
 
 from matbench_discovery import STABILITY_THRESHOLD
 from matbench_discovery.metrics import classify_stable
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-05"
@@ -794,7 +796,8 @@ def wandb_scatter(table: wandb.Table, fields: dict[str, str], **kwargs: Any) -> 
             vega spec. Currently the only Vega fields are 'x' and 'y'.
         **kwargs: Keyword arguments passed to wandb.plot_table(string_fields=kwargs).
     """
-    assert set(fields) >= {"x", "y"}, f"{fields=} must specify x and y column names"
+    if set(fields) < {"x", "y"}:
+        raise ValueError(f"{fields=} must specify x=str and y=str column names")
 
     if "form" in fields["x"] and "form" in fields["y"]:
         kwargs.setdefault("x_label", "DFT formation energy (eV/atom)")

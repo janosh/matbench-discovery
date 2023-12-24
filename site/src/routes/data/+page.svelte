@@ -3,7 +3,7 @@
   import FormEnergyHist from '$figs/hist-wbm-e-form-per-atom.svelte'
   import HistWbmHullDist from '$figs/hist-wbm-hull-dist.svelte'
   import MPtrjNSitesHist from '$figs/mp-trj-n-sites-hist.svelte'
-  import MPvsMPtrjvsWBMArityHist from '$figs/mp-vs-mp-trj-vs-wbm-arity-hist.svelte'
+  import MPvsMPtrjVsWBMArityHist from '$figs/mp-vs-mp-trj-vs-wbm-arity-hist.svelte'
   import SpacegroupSunburstMp from '$figs/spacegroup-sunburst-mp.svelte'
   import SpacegroupSunburstWbm from '$figs/spacegroup-sunburst-wbm.svelte'
   import { PtableHeatmap } from '$lib'
@@ -107,7 +107,7 @@
 <MpElementalReferenceEnergies />
 
 {#if browser}
-  <MPvsMPtrjvsWBMArityHist style="margin: auto; max-width: 60cqw; padding-right: 2em;" />
+  <MPvsMPtrjVsWBMArityHist style="margin: auto; max-width: 60cqw; padding-right: 2em;" />
 {/if}
 <p>
   Distribution of unique elements per structure in MP, MPtrj and WBM. The bar heights are
