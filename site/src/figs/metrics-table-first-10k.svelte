@@ -27,44 +27,48 @@
   color: #000000;
 }
 #T__row1_col0 {
-  background-color: #d2e21b;
+  background-color: #dde318;
   color: #000000;
 }
-#T__row1_col1, #T__row1_col2 {
-  background-color: #b0dd2f;
-  color: #000000;
-}
-#T__row1_col3, #T__row2_col4 {
-  background-color: #89d548;
-  color: #000000;
-}
-#T__row1_col4 {
-  background-color: #addc30;
-  color: #000000;
-}
-#T__row1_col5 {
-  background-color: #95d840;
-  color: #000000;
-}
-#T__row1_col6 {
+#T__row1_col1, #T__row2_col6 {
   background-color: #c0df25;
   color: #000000;
 }
-#T__row2_col0 {
-  background-color: #c8e020;
+#T__row1_col2, #T__row1_col4 {
+  background-color: #bddf26;
   color: #000000;
 }
-#T__row2_col1, #T__row2_col2 {
+#T__row1_col3 {
   background-color: #9dd93b;
   color: #000000;
 }
-#T__row2_col3, #T__row2_col6 {
-  background-color: #6ece58;
-  color: #000000;
+#T__row1_col5 {
+  background-color: #28ae80;
+  color: #f1f1f1;
 }
-#T__row2_col5, #T__row6_col6 {
+#T__row1_col6, #T__row6_col6 {
   background-color: #40bd72;
   color: #f1f1f1;
+}
+#T__row2_col0 {
+  background-color: #d2e21b;
+  color: #000000;
+}
+#T__row2_col1, #T__row2_col2 {
+  background-color: #b0dd2f;
+  color: #000000;
+}
+#T__row2_col3 {
+  background-color: #89d548;
+  color: #000000;
+}
+#T__row2_col4 {
+  background-color: #addc30;
+  color: #000000;
+}
+#T__row2_col5 {
+  background-color: #95d840;
+  color: #000000;
 }
 #T__row3_col0 {
   background-color: #63cb5f;
@@ -214,7 +218,7 @@
   background-color: #6ccd5a;
   color: #000000;
 }
-#T_ :is(td, th):nth-child(6) { border-left: 1px dotted white; }
+#T_ :is(td, th):nth-child(6) { border-left: 2px dotted white; }
     table {
         scrollbar-width: none;  /* Firefox */
     }
@@ -256,27 +260,27 @@
       <td id="T__row0_col8" class="data row0 col8" >UIP-GNN</td>
     </tr>
     <tr>
-      <th id="T__level0_row1" class="row_heading level0 row1" >M3GNet</th>
-      <td id="T__row1_col0" class="data row1 col0" >0.89</td>
-      <td id="T__row1_col1" class="data row1 col1" >4.79</td>
-      <td id="T__row1_col2" class="data row1 col2" >0.80</td>
-      <td id="T__row1_col3" class="data row1 col3" >0.80</td>
-      <td id="T__row1_col4" class="data row1 col4" >0.10</td>
-      <td id="T__row1_col5" class="data row1 col5" >0.16</td>
-      <td id="T__row1_col6" class="data row1 col6" >0.62</td>
-      <td id="T__row1_col7" class="data row1 col7" >188.3K <small>(62.8K)</small></td>
+      <th id="T__level0_row1" class="row_heading level0 row1" >MACE</th>
+      <td id="T__row1_col0" class="data row1 col0" >0.90</td>
+      <td id="T__row1_col1" class="data row1 col1" >4.88</td>
+      <td id="T__row1_col2" class="data row1 col2" >0.81</td>
+      <td id="T__row1_col3" class="data row1 col3" >0.81</td>
+      <td id="T__row1_col4" class="data row1 col4" >0.09</td>
+      <td id="T__row1_col5" class="data row1 col5" >0.23</td>
+      <td id="T__row1_col6" class="data row1 col6" >0.22</td>
+      <td id="T__row1_col7" class="data row1 col7" >1.6M <small>(145.9K)</small></td>
       <td id="T__row1_col8" class="data row1 col8" >UIP-GNN</td>
     </tr>
     <tr>
-      <th id="T__level0_row2" class="row_heading level0 row2" >MACE</th>
-      <td id="T__row2_col0" class="data row2 col0" >0.88</td>
-      <td id="T__row2_col1" class="data row2 col1" >4.67</td>
-      <td id="T__row2_col2" class="data row2 col2" >0.78</td>
-      <td id="T__row2_col3" class="data row2 col3" >0.78</td>
-      <td id="T__row2_col4" class="data row2 col4" >0.12</td>
-      <td id="T__row2_col5" class="data row2 col5" >0.21</td>
-      <td id="T__row2_col6" class="data row2 col6" >0.39</td>
-      <td id="T__row2_col7" class="data row2 col7" >1.6M <small>(145.9K)</small></td>
+      <th id="T__level0_row2" class="row_heading level0 row2" >M3GNet</th>
+      <td id="T__row2_col0" class="data row2 col0" >0.89</td>
+      <td id="T__row2_col1" class="data row2 col1" >4.79</td>
+      <td id="T__row2_col2" class="data row2 col2" >0.80</td>
+      <td id="T__row2_col3" class="data row2 col3" >0.80</td>
+      <td id="T__row2_col4" class="data row2 col4" >0.10</td>
+      <td id="T__row2_col5" class="data row2 col5" >0.16</td>
+      <td id="T__row2_col6" class="data row2 col6" >0.62</td>
+      <td id="T__row2_col7" class="data row2 col7" >188.3K <small>(62.8K)</small></td>
       <td id="T__row2_col8" class="data row2 col8" >UIP-GNN</td>
     </tr>
     <tr>
