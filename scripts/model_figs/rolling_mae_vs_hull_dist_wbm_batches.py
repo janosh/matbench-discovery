@@ -8,13 +8,8 @@ from pymatviz.io import save_fig
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, today
 from matbench_discovery.plots import plt, rolling_mae_vs_hull_dist
-from matbench_discovery.preds import (
-    df_each_pred,
-    df_preds,
-    e_form_col,
-    each_true_col,
-    models,
-)
+from matbench_discovery.preds import df_each_pred, df_preds, e_form_col, each_true_col
+from matbench_discovery.preds import models as all_models
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
@@ -22,7 +17,7 @@ __date__ = "2022-06-18"
 batch_col = "batch_idx"
 df_each_pred[batch_col] = "Batch " + df_each_pred.index.str.split("-").str[1]
 df_err, df_std = None, None  # variables to cache rolling MAE and std
-models = globals().get("models", models)
+models = globals().get("models", all_models)
 
 
 # %% matplotlib version

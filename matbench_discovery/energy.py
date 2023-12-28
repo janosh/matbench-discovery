@@ -114,6 +114,6 @@ def get_e_form_per_atom(
         if isinstance(ref_entry, dict):
             e_refs[key] = PDEntry.from_dict(ref_entry)
 
-    form_energy = energy - sum(comp[el] * e_refs[str(el)] for el in comp)
+    e_form = energy - sum(comp[el] * e_refs[str(el)] for el in comp)
 
-    return form_energy / comp.num_atoms
+    return e_form / comp.num_atoms

@@ -30,11 +30,11 @@
   background-color: #dde318;
   color: #000000;
 }
-#T__row1_col1, #T__row2_col6 {
+#T__row1_col1 {
   background-color: #c0df25;
   color: #000000;
 }
-#T__row1_col2, #T__row1_col4 {
+#T__row1_col2, #T__row1_col4, #T__row2_col6 {
   background-color: #bddf26;
   color: #000000;
 }
@@ -51,10 +51,14 @@
   color: #f1f1f1;
 }
 #T__row2_col0 {
-  background-color: #d2e21b;
+  background-color: #d5e21a;
   color: #000000;
 }
-#T__row2_col1, #T__row2_col2 {
+#T__row2_col1 {
+  background-color: #b2dd2d;
+  color: #000000;
+}
+#T__row2_col2 {
   background-color: #b0dd2f;
   color: #000000;
 }
@@ -63,11 +67,11 @@
   color: #000000;
 }
 #T__row2_col4 {
-  background-color: #addc30;
+  background-color: #a8db34;
   color: #000000;
 }
 #T__row2_col5 {
-  background-color: #95d840;
+  background-color: #93d741;
   color: #000000;
 }
 #T__row3_col0 {
