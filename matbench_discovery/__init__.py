@@ -48,6 +48,7 @@ formula_col = "formula"
 stress_col = "stress"
 stress_trace_col = "stress_trace"
 n_sites_col = "n_sites"
+entry_col = "computed_structure_entry"
 
 # load figshare 1.0.0
 with open(f"{FIGSHARE}/1.0.0.json") as file:

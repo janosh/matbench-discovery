@@ -53,7 +53,7 @@ class PredFiles(Files):
     cgcnn_p = "cgcnn/2023-02-05-cgcnn-perturb=5-wbm-IS2RE.csv.gz"
 
     # original M3GNet straight from publication, not re-trained
-    m3gnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv.gz"
+    m3gnet = "m3gnet/2023-12-28-m3gnet-wbm-IS2RE.csv.gz"
     # m3gnet_direct = "m3gnet/2023-05-30-m3gnet-direct-wbm-IS2RE.csv.gz"
     # m3gnet_ms = "m3gnet/2023-06-01-m3gnet-manual-sampling-wbm-IS2RE.csv.gz"
 
