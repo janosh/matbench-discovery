@@ -22,19 +22,23 @@
   font-weight: normal;
   padding: 3pt;
 }
-#T__row0_col0, #T__row0_col1, #T__row0_col2, #T__row0_col3, #T__row0_col4, #T__row0_col5, #T__row0_col6, #T__row1_col7, #T__row1_col8 {
+#T__row0_col0, #T__row0_col1, #T__row0_col2, #T__row0_col3, #T__row0_col5, #T__row0_col6, #T__row1_col7, #T__row1_col8, #T__row2_col4 {
   background-color: #fde725;
+  color: #000000;
+}
+#T__row0_col4 {
+  background-color: #f6e620;
   color: #000000;
 }
 #T__row0_col7 {
   background-color: #f1e51d;
   color: #000000;
 }
-#T__row0_col8, #T__row2_col4 {
+#T__row0_col8 {
   background-color: #f4e61e;
   color: #000000;
 }
-#T__row1_col0 {
+#T__row1_col0, #T__row2_col7 {
   background-color: #b2dd2d;
   color: #000000;
 }
@@ -50,8 +54,8 @@
   background-color: #a5db36;
   color: #000000;
 }
-#T__row1_col4 {
-  background-color: #cde11d;
+#T__row1_col4, #T__row8_col4 {
+  background-color: #c5e021;
   color: #000000;
 }
 #T__row1_col5 {
@@ -62,36 +66,32 @@
   background-color: #d2e21b;
   color: #000000;
 }
-#T__row2_col0, #T__row6_col4 {
-  background-color: #7ad151;
+#T__row2_col0 {
+  background-color: #7fd34e;
   color: #000000;
 }
 #T__row2_col1 {
-  background-color: #37b878;
+  background-color: #32b67a;
   color: #f1f1f1;
 }
 #T__row2_col2 {
   background-color: #3fbc73;
   color: #f1f1f1;
 }
-#T__row2_col3, #T__row4_col1, #T__row5_col2 {
-  background-color: #3bbb75;
+#T__row2_col3 {
+  background-color: #3aba76;
   color: #f1f1f1;
 }
 #T__row2_col5 {
-  background-color: #2cb17e;
+  background-color: #26ad81;
   color: #f1f1f1;
 }
 #T__row2_col6, #T__row3_col2 {
   background-color: #7cd250;
   color: #000000;
 }
-#T__row2_col7 {
-  background-color: #bddf26;
-  color: #000000;
-}
 #T__row2_col8 {
-  background-color: #d5e21a;
+  background-color: #cde11d;
   color: #000000;
 }
 #T__row3_col0 {
@@ -103,7 +103,7 @@
   color: #000000;
 }
 #T__row3_col4 {
-  background-color: #63cb5f;
+  background-color: #5ec962;
   color: #000000;
 }
 #T__row3_col5 {
@@ -126,6 +126,10 @@
   background-color: #38b977;
   color: #f1f1f1;
 }
+#T__row4_col1, #T__row5_col2 {
+  background-color: #3bbb75;
+  color: #f1f1f1;
+}
 #T__row4_col2 {
   background-color: #4ac16d;
   color: #000000;
@@ -135,7 +139,7 @@
   color: #000000;
 }
 #T__row4_col4 {
-  background-color: #27ad81;
+  background-color: #25ac82;
   color: #f1f1f1;
 }
 #T__row4_col5 {
@@ -167,7 +171,7 @@
   color: #f1f1f1;
 }
 #T__row5_col4 {
-  background-color: #2eb37c;
+  background-color: #2cb17e;
   color: #f1f1f1;
 }
 #T__row5_col6 {
@@ -185,6 +189,10 @@
 #T__row6_col3 {
   background-color: #1fa188;
   color: #f1f1f1;
+}
+#T__row6_col4 {
+  background-color: #73d056;
+  color: #000000;
 }
 #T__row6_col5 {
   background-color: #24aa83;
@@ -219,7 +227,7 @@
   color: #f1f1f1;
 }
 #T__row7_col4 {
-  background-color: #95d840;
+  background-color: #8ed645;
   color: #000000;
 }
 #T__row7_col5 {
@@ -254,15 +262,11 @@
   background-color: #482374;
   color: #f1f1f1;
 }
-#T__row8_col4 {
-  background-color: #cae11f;
-  color: #000000;
-}
 #T__row8_col6 {
   background-color: #33628d;
   color: #f1f1f1;
 }
-#T__row8_col7, #T__row9_col4 {
+#T__row8_col7 {
   background-color: #20928c;
   color: #f1f1f1;
 }
@@ -280,6 +284,10 @@
 }
 #T__row9_col2 {
   background-color: #3e4989;
+  color: #f1f1f1;
+}
+#T__row9_col4 {
+  background-color: #21918c;
   color: #f1f1f1;
 }
 #T__row9_col5 {
@@ -371,15 +379,15 @@
     </tr>
     <tr>
       <th id="T__level0_row2" class="row_heading level0 row2" >M3GNet</th>
-      <td id="T__row2_col0" class="data row2 col0" >0.57</td>
-      <td id="T__row2_col1" class="data row2 col1" >2.67</td>
+      <td id="T__row2_col0" class="data row2 col0" >0.58</td>
+      <td id="T__row2_col1" class="data row2 col1" >2.65</td>
       <td id="T__row2_col2" class="data row2 col2" >0.45</td>
       <td id="T__row2_col3" class="data row2 col3" >0.80</td>
-      <td id="T__row2_col4" class="data row2 col4" >0.77</td>
-      <td id="T__row2_col5" class="data row2 col5" >0.81</td>
+      <td id="T__row2_col4" class="data row2 col4" >0.79</td>
+      <td id="T__row2_col5" class="data row2 col5" >0.80</td>
       <td id="T__row2_col6" class="data row2 col6" >0.07</td>
-      <td id="T__row2_col7" class="data row2 col7" >0.11</td>
-      <td id="T__row2_col8" class="data row2 col8" >0.60</td>
+      <td id="T__row2_col7" class="data row2 col7" >0.12</td>
+      <td id="T__row2_col8" class="data row2 col8" >0.58</td>
       <td id="T__row2_col9" class="data row2 col9" >188.3K <small>(62.8K)</small></td>
       <td id="T__row2_col10" class="data row2 col10" >UIP-GNN</td>
     </tr>
