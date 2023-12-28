@@ -16,7 +16,8 @@ from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from tqdm import tqdm
 
-from matbench_discovery.data import DATA_FILES, as_dict_handler, id_col
+from matbench_discovery import entry_col, id_col
+from matbench_discovery.data import DATA_FILES, as_dict_handler
 from matbench_discovery.energy import get_e_form_per_atom
 
 __author__ = "Janosh Riebesell"
@@ -26,12 +27,11 @@ __date__ = "2022-08-16"
 # %%
 module_dir = os.path.dirname(__file__)
 task_type = "IS2RE"
-date = "2023-05-30"
+date = "2023-12-28"
 # direct: cluster sampling, ms: manual sampling
-model_type: Literal["orig", "direct", "ms"] = "ms"
+model_type: Literal["orig", "direct", "ms"] = "orig"
 glob_pattern = f"{date}-m3gnet-{model_type}-wbm-{task_type}/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
-struct_col = "m3gnet_structure"
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
 # prevent accidental overwrites
@@ -52,7 +52,6 @@ df_m3gnet = pd.concat(dfs.values()).round(4)
 
 # %%
 df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(id_col)
-entry_col = "computed_structure_entry"
 df_cse[entry_col] = [
     ComputedStructureEntry.from_dict(dct)
     for dct in tqdm(df_cse.computed_structure_entry)
@@ -62,9 +61,12 @@ df_cse[entry_col] = [
 # %% transfer M3GNet energies and relaxed structures WBM CSEs since MP2020 energy
 # corrections applied below are structure-dependent (for oxides and sulfides)
 cse: ComputedStructureEntry
-for row in tqdm(df_m3gnet.itertuples(), total=len(df_m3gnet)):
-    mat_id, struct_dict, m3gnet_energy, *_ = row
-    mlip_struct = Structure.from_dict(struct_dict)
+e_col = "m3gnet_orig_energy"
+struct_col = "m3gnet_orig_structure"
+
+for mat_id in tqdm(df_m3gnet.index):
+    m3gnet_energy = df_m3gnet.loc[mat_id, e_col]
+    mlip_struct = Structure.from_dict(df_m3gnet.loc[mat_id, struct_col])
     df_m3gnet.at[mat_id, struct_col] = mlip_struct  # noqa: PD008
     cse = df_cse.loc[mat_id, entry_col]
     cse._energy = m3gnet_energy  # cse._energy is the uncorrected energy  # noqa: SLF001

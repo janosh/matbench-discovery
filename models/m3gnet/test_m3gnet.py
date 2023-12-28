@@ -33,6 +33,7 @@ module_dir = os.path.dirname(__file__)
 model_type: Literal["orig", "direct", "manual-sampling"] = "orig"
 # set large job array size for smaller data splits and faster testing/debugging
 slurm_array_task_count = 50
+record_traj = False
 job_name = f"m3gnet-{model_type}-wbm-{task_type}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
@@ -94,6 +95,7 @@ run_params = dict(
     model_type=model_type,
     out_path=out_path,
     job_name=job_name,
+    record_traj=record_traj,
 )
 
 run_name = f"{job_name}-{slurm_array_task_id}"
@@ -112,12 +114,15 @@ for material_id in tqdm(structures, desc="Relaxing"):
     if material_id in relax_results:
         continue
     try:
-        relax_result = m3gnet.relax(structures[material_id])
+        result = m3gnet.relax(structures[material_id])
         relax_results[material_id] = {
-            f"m3gnet_{model_type}_structure": relax_result["final_structure"],
-            f"m3gnet_{model_type}_trajectory": relax_result["trajectory"].__dict__,
-            e_pred_col: relax_result["trajectory"].energies[-1],
+            f"m3gnet_{model_type}_structure": result["final_structure"],
+            e_pred_col: result["trajectory"].energies[-1],
         }
+        if record_traj:
+            relax_results[f"m3gnet_{model_type}_trajectory"] = result[
+                "trajectory"
+            ].__dict__
     except Exception as exc:
         print(f"Failed to relax {material_id}: {exc!r}")
 
