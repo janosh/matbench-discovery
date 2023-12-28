@@ -3,13 +3,13 @@ from __future__ import annotations
 
 import os
 from importlib.metadata import version
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
 import torch
 import wandb
-from ase.filters import FrechetCellFilter
+from ase.filters import ExpCellFilter, FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
 from mace.calculators import mace_mp
 from mace.tools import count_parameters
@@ -31,7 +31,7 @@ __date__ = "2023-03-01"
 task_type = "IS2RE"  # "RS2RE"
 module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
-slurm_array_task_count = 20
+slurm_array_task_count = 50
 ase_optimizer = "FIRE"
 job_name = f"mace-wbm-{task_type}-{ase_optimizer}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
@@ -42,15 +42,16 @@ model_name = [
     "2023-10-29-mace-16M-pbenner-mptrj-no-conditional-loss",
     "https://tinyurl.com/y7uhwpje",
 ][-1]
+ase_filter: Literal["frechet", "exp"] = "frechet"
 
 slurm_vars = slurm_submit(
     job_name=job_name,
     out_dir=out_dir,
     account="matgen",
-    time="9:55:0",
+    time="11:55:0",
     array=f"1-{slurm_array_task_count}",
-    slurm_flags="--qos shared --constraint gpu --gpus 1",
-    # slurm_flags="--qos shared --constraint cpu --mem 16G",
+    # slurm_flags="--qos shared --constraint gpu --gpus 1",
+    slurm_flags="--qos shared --constraint cpu --mem 32G",
 )
 
 
@@ -98,6 +99,7 @@ run_params = dict(
     trainable_params=count_parameters(mace_calc.models[0]),
     model_name=model_name,
     dtype=dtype,
+    ase_filter=ase_filter,
 )
 
 run_name = f"{job_name}-{slurm_array_task_id}"
@@ -112,6 +114,7 @@ if task_type == "RS2RE":
     df_in[input_col] = [x["structure"] for x in df_in.computed_structure_entry]
 
 structs = df_in[input_col].map(Structure.from_dict).to_dict()
+filter_cls = {"frechet": FrechetCellFilter, "exp": ExpCellFilter}[ase_filter]
 
 for material_id in tqdm(structs, desc="Relaxing"):
     if material_id in relax_results:
@@ -121,7 +124,7 @@ for material_id in tqdm(structs, desc="Relaxing"):
         atoms = structs[material_id].to_ase_atoms()
         atoms.calc = mace_calc
         if max_steps > 0:
-            atoms = FrechetCellFilter(atoms)
+            atoms = filter_cls(atoms)
             optim_cls = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
             optimizer = optim_cls(atoms, logfile="/dev/null")
 

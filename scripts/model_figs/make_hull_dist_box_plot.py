@@ -20,7 +20,7 @@ ax = df_each_err[models].plot.box(
     # different fill colors for each box
     # patch_artist=True,
     # notch=True,
-    # bootstrap=10000,
+    # bootstrap=10_000,
     showmeans=True,
     # meanline=True,
 )

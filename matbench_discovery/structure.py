@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 __author__ = "Janosh Riebesell"
 __date__ = "2022-12-02"
 
-np.random.seed(0)  # ensure reproducible structure perturbations
+rng = np.random.default_rng(0)  # ensure reproducible structure perturbations
 
 
 def perturb_structure(struct: Structure, gamma: float = 1.5) -> Structure:
@@ -29,8 +29,8 @@ def perturb_structure(struct: Structure, gamma: float = 1.5) -> Structure:
     """
     perturbed = struct.copy()
     for site in perturbed:
-        magnitude = np.random.weibull(gamma)
-        vec = np.random.randn(3)  # TODO maybe make func recursive to deal with 0-vector
+        magnitude = rng.weibull(gamma)
+        vec = rng.normal(3)  # TODO maybe make func recursive to deal with 0-vector
         vec /= np.linalg.norm(vec)  # unit vector
         site.coords += vec * magnitude
         site.to_unit_cell(in_place=True)
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     gamma = 1.5
-    samples = np.array([np.random.weibull(gamma) for _ in range(10000)])
+    samples = np.array([rng.weibull(gamma) for _ in range(10_000)])
     mean = samples.mean()
 
     # reproduces the dist in https://www.nature.com/articles/s41524-022-00891-8#Fig5

@@ -32,18 +32,17 @@ module_dir = os.path.dirname(__file__)
 # direct: DIRECT cluster sampling, ms: manual sampling
 model_type: Literal["orig", "direct", "manual-sampling"] = "orig"
 # set large job array size for smaller data splits and faster testing/debugging
-slurm_array_task_count = 100
+slurm_array_task_count = 50
 job_name = f"m3gnet-{model_type}-wbm-{task_type}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 slurm_vars = slurm_submit(
     job_name=job_name,
     out_dir=out_dir,
-    partition="icelake-himem",
-    account="LEE-SL3-CPU",
-    time="3:0:0",
+    account="matgen",
+    time="11:55:0",
     array=f"1-{slurm_array_task_count}",
-    slurm_flags=("--mem", "12G"),
+    slurm_flags="--qos shared --constraint cpu --mem 16G",
     # TF_CPP_MIN_LOG_LEVEL=2 means INFO and WARNING logs are not printed
     # https://stackoverflow.com/a/40982782
     pre_cmd="TF_CPP_MIN_LOG_LEVEL=2",
@@ -88,7 +87,13 @@ run_params = dict(
     task_type=task_type,
     df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     slurm_vars=slurm_vars,
-    trainable_params=sum(param.numel() for param in m3gnet.parameters()),
+    trainable_params=sum(
+        [np.prod(weight.shape) for weight in m3gnet.potential.model.trainable_weights]
+    ),
+    checkpoint=checkpoint,
+    model_type=model_type,
+    out_path=out_path,
+    job_name=job_name,
 )
 
 run_name = f"{job_name}-{slurm_array_task_id}"
@@ -103,7 +108,7 @@ if task_type == "RS2RE":
 
 structures = df_in[input_col].map(Structure.from_dict).to_dict()
 
-for material_id in tqdm(structures, desc="Relaxing", disable=None):
+for material_id in tqdm(structures, desc="Relaxing"):
     if material_id in relax_results:
         continue
     try:

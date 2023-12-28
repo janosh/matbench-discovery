@@ -155,7 +155,7 @@ fig = px.pie(
 ).update_traces(
     textinfo="percent+label",
     textfont_size=14,
-    marker=dict(line=dict(color="#000000", width=2)),
+    marker=dict(line=dict(color="black", width=2)),
     hoverinfo="label+percent+name",
     texttemplate="%{label}<br>%{percent:.1%}",
     hovertemplate="%{label} %{percent:.1%} (%{value:.1f} h)",

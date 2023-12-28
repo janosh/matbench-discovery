@@ -30,7 +30,7 @@ df_chgnet = pd.read_csv("2023-12-05-chgnet-0.3.0-wbm-IS2RE-static.csv.gz").set_i
 # %%
 module_dir = os.path.dirname(__file__)
 task_type = "IS2RE"
-date = "2023-10-23"
+date = "2023-12-21"
 glob_pattern = f"{date}-chgnet-*-wbm-{task_type}*/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")

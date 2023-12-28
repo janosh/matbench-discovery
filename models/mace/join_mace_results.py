@@ -29,7 +29,6 @@ __date__ = "2023-03-01"
 module_dir = os.path.dirname(__file__)
 task_type = "IS2RE"
 e_form_mace_col = "e_form_per_atom_mace"
-
 date = "2023-12-11"
 glob_pattern = f"{date}-mace-wbm-{task_type}*/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
@@ -92,8 +91,7 @@ df_wbm[e_form_mace_col] = df_mace[e_form_mace_col]
 
 
 # %%
-bad_mask = (df_wbm[e_form_mace_col] - df_wbm[e_form_col]) < -3
-df_wbm[bad_mask].to_csv(f"{module_dir}/mace-underpredictions<-3.csv")
+bad_mask = (df_wbm[e_form_mace_col] - df_wbm[e_form_col]) < -5
 print(f"{sum(bad_mask)=}")
 ax = density_scatter(df=df_wbm[~bad_mask], x=e_form_col, y=e_form_mace_col)
 
@@ -101,7 +99,7 @@ ax = density_scatter(df=df_wbm[~bad_mask], x=e_form_col, y=e_form_mace_col)
 # %%
 out_path = file_paths[0].rsplit("/", 1)[0]
 df_mace = df_mace.round(4)
-df_mace[~bad_mask].select_dtypes("number").to_csv(f"{out_path}.csv.gz")
+df_mace.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
 df_mace.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
 
 df_bad = df_mace[bad_mask].drop(columns=[entry_col, struct_col])

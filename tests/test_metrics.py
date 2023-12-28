@@ -55,8 +55,8 @@ def test_stable_metrics() -> None:
 
     # test stable_metrics gives the same result as sklearn.metrics.classification_report
     # for random numpy data
-    np.random.seed(0)
-    y_true, y_pred = np.random.randn(100, 2).T
+    rng = np.random.default_rng(0)
+    y_true, y_pred = rng.normal(size=(2, 100))
     metrics = stable_metrics(y_true, y_pred)
 
     from sklearn.metrics import classification_report

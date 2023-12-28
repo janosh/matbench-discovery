@@ -10,9 +10,11 @@ from matbench_discovery.structure import perturb_structure
 __author__ = "Janosh Riebesell"
 __date__ = "2022-12-02"
 
+rng = np.random.default_rng(0)
+
 
 # %%
-ax = pd.Series(np.random.weibull(1.5, 100000)).hist(bins=100)
+ax = pd.Series(rng.weibull(1.5, 100_000)).hist(bins=100)
 title = "Distribution of perturbation magnitudes"
 ax.set(xlabel="magnitude of perturbation", ylabel="count", title=title)
 
