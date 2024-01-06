@@ -24,8 +24,7 @@
         <span>
           {@html author
             .slice(0, n_authors)
-            .map((auth) => {
-              const { given, family } = auth
+            .map(({ given, family }) => {
               const first_name = {
                 initial: `${given[0]}. `,
                 full: `${given} `,

@@ -13,4 +13,8 @@ export default {
   preview: {
     port: 3000,
   },
+
+  ssr: {
+    noExternal: [`lodash`],
+  },
 } satisfies UserConfig

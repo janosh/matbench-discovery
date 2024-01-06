@@ -90,17 +90,17 @@ The number of stable materials (according to the MP convex hull which is spanned
 
 The WBM test set and even more so the MP training set are heavily oxide dominated. The WBM test set is about 75% larger than the MP training set and also more chemically diverse, containing a higher fraction of transition metals, post-transition metals and metalloids. Our goal in picking such a large diverse test set is future-proofing. Ideally, this data will provide a challenging materials discovery test bed even for large foundational ML models in the future.
 
-Below: Element counts for WBM test set consisting of 256,963 WBM `ComputedStructureEntries`
-
 <slot name="wbm-elements-heatmap">
   <img src="./figs/wbm-elements.svg" alt="Periodic table log heatmap of WBM elements">
 </slot>
 
-Below: Element counts for MP training set consisting of 154,719 `ComputedStructureEntries`
+The WBM test set consists of 256,963 WBM `ComputedStructureEntries`
 
 <slot name="mp-elements-heatmap">
   <img src="./figs/mp-elements.svg" alt="Periodic table log heatmap of MP elements">
 </slot>
+
+The MP training set consists of 154,719 `ComputedStructureEntries`
 
 <slot name="mp-trj-elements-heatmap" />
 

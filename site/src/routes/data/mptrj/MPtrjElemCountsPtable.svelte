@@ -19,4 +19,10 @@
   which are frames of the DFT relaxations performed on all 154,719 MP materials.
 </p>
 
-<PtableHeatmap heatmap_values={mp_trj_elem_counts} {log} {count_mode} {...$$props} />
+<PtableHeatmap
+  heatmap_values={mp_trj_elem_counts}
+  {log}
+  {count_mode}
+  {...$$props}
+  color_bar_props={{ label: `MPtrj Element Occurrences` }}
+/>

@@ -483,6 +483,8 @@ def rolling_mae_vs_hull_dist(
             y=(1, dft_acc, dft_acc, 1) if show_dft_acc else (1, 0, 1),
             name=triangle_anno,
             fillcolor="red",
+            # remove triangle border
+            line=dict(color="rgba(0,0,0,0)"),
             **scatter_kwds,
         )
         fig.add_annotation(
@@ -535,14 +537,10 @@ def rolling_mae_vs_hull_dist(
 
         from matbench_discovery.preds import model_styles
 
-        for idx, trace in enumerate(fig.data):
+        for trace in fig.data:
             if style := model_styles.get(trace.name):
                 ls, _marker, color = style
                 trace.line = dict(color=color, dash=ls, width=2)
-            else:
-                trace.line = dict(
-                    color=plotly_colors[idx], dash=plotly_line_styles[idx], width=3
-                )
             # marker_spacing = 2
             # fig.add_scatter(
             #     x=trace.x[::marker_spacing],

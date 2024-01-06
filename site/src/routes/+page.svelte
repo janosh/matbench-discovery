@@ -32,8 +32,8 @@
       We find <a href={repo}>{model_name}</a> (<a href={doi}>paper</a>) to achieve the
       highest F1 score of {F1}, R<sup>2</sup> of {R2}
       and a discovery acceleration factor (DAF) of {DAF}
-      (meaning a ~{Number(DAF).toFixed(0)}x higher rate of stable structures compared to
-      dummy selection in our already enriched search space).
+      (i.e. a ~{Number(DAF).toFixed(1)}x higher rate of stable structures compared to
+      dummy discovery in the already enriched test set containing 16% stable materials).
     {/if}
   </div>
   <CaptionedMetricsTable slot="metrics-table" />
