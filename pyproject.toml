@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "matbench-discovery"
 version = "1.0.0"
 description = "A benchmark for machine learning energy models on inorganic crystal stability prediction from unrelaxed structures"
-authors = [{ name = "Janosh Riebesell", email = "janosh@lbl.gov" }]
+authors = [{ name = "Janosh Riebesell", email = "janosh.riebesell@gmail.com" }]
 readme = "readme.md"
 license = { file = "license" }
 keywords = [
@@ -60,7 +60,7 @@ running-models = [
 
   "aviary@git+https://github.com/CompRhys/aviary",
   "m3gnet",
-  "mace@git+https://github.com/ACEsuit/mace",
+  "mace-torch",
   "maml",
   "megnet",
 ]

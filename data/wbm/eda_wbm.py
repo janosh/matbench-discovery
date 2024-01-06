@@ -14,20 +14,21 @@ from pymatviz import (
     spacegroup_sunburst,
 )
 from pymatviz.io import save_fig
-from pymatviz.utils import si_fmt
+from pymatviz.utils import si_fmt, si_fmt_int
 
 from matbench_discovery import (
     PDF_FIGS,
     ROOT,
     SITE_FIGS,
     STABILITY_THRESHOLD,
+    e_form_raw_col,
     formula_col,
     id_col,
 )
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.energy import mp_elem_reference_entries
-from matbench_discovery.preds import df_each_err, each_true_col
+from matbench_discovery.preds import df_each_err, e_form_col, each_true_col
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-30"
@@ -141,8 +142,8 @@ for dataset, count_mode, elem_counts in all_counts:
 
 # %% histogram of energy distance to MP convex hull for WBM
 e_col = each_true_col  # or e_form_col
-e_col = "e_form_per_atom_uncorrected"
-e_col = "e_form_per_atom_mp2020_corrected"
+# e_col = e_form_raw_col
+# e_col = e_form_col
 mean, std = df_wbm[e_col].mean(), df_wbm[e_col].std()
 
 range_x = (mean - 2 * std, mean + 2 * std)
@@ -170,9 +171,28 @@ if e_col.startswith("e_above_hull"):
     dummy_mae = (df_wbm[e_col] - df_wbm[e_col].mean()).abs().mean()
 
     title = (
-        f"{len(df_wbm.dropna()):,} structures with {n_stable:,} stable + {n_unstable:,}"
+        f"{si_fmt_int(len(df_wbm.dropna()))} structures with {si_fmt_int(n_stable)} "
+        f"stable + {si_fmt_int(n_unstable)} unstable (stable rate="
+        f"{n_stable / len(df_wbm):.1%})"
     )
-    fig.layout.title = dict(text=title, x=0.5)
+    fig.layout.title = dict(text=title, x=0.5, font_size=16, y=0.95)
+
+    # add red/blue annotations to left and right of mean saying stable/unstable
+    for idx, (label, x_pos) in enumerate(
+        (("stable", mean - std), ("unstable", mean + std))
+    ):
+        fig.add_annotation(
+            x=x_pos,
+            y=0.5,
+            text=label,
+            showarrow=False,
+            font_size=18,
+            font_color=px.colors.qualitative.Plotly[idx],
+            yref="paper",
+            xanchor="right",
+            xshift=-40,
+        )
+
 
 fig.layout.margin = dict(l=0, r=0, b=0, t=40)
 fig.update_layout(showlegend=False)
@@ -183,14 +203,19 @@ for x_pos, label in (
     (mean + std, f"{mean + std = :.2f}"),
 ):
     anno = dict(text=label, yshift=-10, xshift=-5, xanchor="right")
-    line_width = 1 if x_pos == mean else 0.5
+    line_width = 3 if x_pos == mean else 2
     fig.add_vline(x=x_pos, line=dict(width=line_width, dash="dash"), annotation=anno)
 
 fig.show()
-
-save_fig(fig, f"{SITE_FIGS}/hist-wbm-hull-dist.svelte")
-# save_fig(fig, "./figs/hist-wbm-hull-dist.svg", width=1000, height=500)
-save_fig(fig, f"{PDF_FIGS}/hist-wbm-hull-dist.pdf")
+suffix = {
+    each_true_col: "hull-dist",
+    e_form_col: "e-form",
+    e_form_raw_col: "e-form-uncorrected",
+}[e_col]
+img_name = f"hist-wbm-{suffix}"
+save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+# save_fig(fig, f"./figs/{img_name}.svg", width=800, height=500)
+save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=600, height=300)
 
 
 # %%

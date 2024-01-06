@@ -60,7 +60,7 @@ df_bin = bin_df_cols(
     df_melt,
     bin_by_cols=[e_true_col, e_pred_col],
     group_by_cols=[facet_col],
-    n_bins=200,
+    n_bins=300,
     bin_counts_col=(bin_cnt_col := "bin counts"),
 )
 df_bin = df_bin.reset_index()
@@ -162,7 +162,8 @@ fig = px.scatter(
     # pick from https://plotly.com/python/builtin-colorscales
     color_continuous_scale="agsunset",
 )
-
+# decrease marker size
+fig.update_traces(marker=dict(size=2))
 # manually set colorbar ticks and labels (needed after log1p transform)
 tick_vals = [1, 10, 100, 1000, 10_000]
 fig.layout.coloraxis.colorbar.update(
@@ -181,9 +182,8 @@ for idx, anno in enumerate(fig.layout.annotations, 1):
     assert model in df_preds, f"Unexpected {model=} not in {list(df_preds)=}"
     # add MAE and R2 to subplot titles
     MAE, R2 = df_metrics[model][["MAE", "R2"]]
-    fig.layout.annotations[
-        idx - 1
-    ].text = f"{model} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
+    sub_title = f"{model} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
+    fig.layout.annotations[idx - 1].text = sub_title
 
     # remove subplot x and y axis titles
     fig.layout[f"xaxis{idx}"].title.text = ""
@@ -222,7 +222,7 @@ if e_true_col == each_true_col:
             yshift=-15 * sign_y,
             text=label,
             showarrow=False,
-            font=dict(size=16, color=color),
+            font=dict(size=14, color=color),
             row="all",
             col="all",
         )
@@ -245,9 +245,10 @@ fig.layout.legend.update(
 # fig.update_layout(yaxis=dict(scaleanchor="x", scaleratio=1))
 
 axis_titles = dict(xref="paper", yref="paper", showarrow=False)
+portrait = n_rows > n_cols
 fig.add_annotation(  # x-axis title
     x=0.5,
-    y=-0.06,
+    y=-0.06 if portrait else -0.18,
     text=x_title,
     **axis_titles,
 )
@@ -259,10 +260,10 @@ fig.add_annotation(  # y-axis title
     **axis_titles,
 )
 
-fig.layout.height = 230 * n_rows
+fig.layout.update(height=230 * n_rows, width=180 * n_cols)
 fig.layout.coloraxis.colorbar.update(orientation="h", thickness=9, len=0.5, y=1.05)
 # fig.layout.width = 1100
-fig.layout.margin.update(l=40, r=10, t=30, b=60)
+fig.layout.margin.update(l=40, r=10, t=30 if portrait else 10, b=60 if portrait else 10)
 fig.update_xaxes(matches=None)
 fig.update_yaxes(matches=None)
 fig.show()

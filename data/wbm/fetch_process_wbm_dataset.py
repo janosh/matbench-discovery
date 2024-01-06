@@ -19,7 +19,14 @@ from pymatviz import density_scatter
 from pymatviz.io import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, formula_col, id_col, today
+from matbench_discovery import (
+    PDF_FIGS,
+    SITE_FIGS,
+    e_form_raw_col,
+    formula_col,
+    id_col,
+    today,
+)
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.energy import get_e_form_per_atom
 
@@ -39,7 +46,7 @@ https://nature.com/articles/s41524-020-00481-6
 
 
 module_dir = os.path.dirname(__file__)
-e_form_col = "e_form_per_atom_wbm"
+e_form_wbm_col = "e_form_per_atom_wbm"
 
 
 # %% links to google drive files received via email from 1st author Hai-Chen Wang
@@ -296,7 +303,7 @@ col_map = {
     "nsites": "n_sites",
     "vol": "volume",
     "e": "uncorrected_energy",
-    "e_form": e_form_col,
+    "e_form": e_form_wbm_col,
     "e_hull": "e_above_hull_wbm",
     "gap": "bandgap_pbe",
     "id": id_col,
@@ -440,15 +447,15 @@ density_scatter(df_summary.uncorrected_energy, df_summary.uncorrected_energy_fro
 
 # %% remove suspicious formation energy outliers
 e_form_cutoff = 5
-n_too_stable = sum(df_summary[e_form_col] < -e_form_cutoff)
+n_too_stable = sum(df_summary[e_form_wbm_col] < -e_form_cutoff)
 print(f"{n_too_stable = }")  # n_too_stable = 502
-n_too_unstable = sum(df_summary[e_form_col] > e_form_cutoff)
+n_too_unstable = sum(df_summary[e_form_wbm_col] > e_form_cutoff)
 print(f"{n_too_unstable = }")  # n_too_unstable = 22
 
 e_form_hist, e_form_bins = np.histogram(
-    df_summary[e_form_col], bins=300, range=(-5.5, 5.5)
+    df_summary[e_form_wbm_col], bins=300, range=(-5.5, 5.5)
 )
-x_label = {e_form_col: "WBM uncorrected formation energy (eV/atom)"}[e_form_col]
+x_label = {e_form_wbm_col: "WBM uncorrected formation energy (eV/atom)"}[e_form_wbm_col]
 fig = px.bar(
     x=e_form_bins[:-1],  # [:-1] to drop last bin edge which is not needed
     y=e_form_hist,
@@ -485,7 +492,7 @@ save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
 # %%
 assert len(df_summary) == len(df_wbm) == 257_487
 
-query_str = f"{-e_form_cutoff} < {e_form_col} < {e_form_cutoff}"
+query_str = f"{-e_form_cutoff} < {e_form_wbm_col} < {e_form_cutoff}"
 dropped_ids = sorted(set(df_summary.index) - set(df_summary.query(query_str).index))
 assert len(dropped_ids) == 502 + 22
 assert dropped_ids[:3] == "wbm-1-12142 wbm-1-12143 wbm-1-12144".split()
@@ -569,8 +576,6 @@ for mat_id, cse in tqdm(df_wbm.cse.items(), total=len(df_wbm)):
 # first make sure source and target dfs have matching indices
 assert sum(df_wbm.index != df_summary.index) == 0
 
-e_form_col = "e_form_per_atom_uncorrected"
-
 for row in tqdm(df_wbm.itertuples(), total=len(df_wbm)):
     mat_id, cse, formula = row.Index, row.cse, row.formula_from_cse
     assert mat_id == cse.entry_id, f"{mat_id=} != {cse.entry_id=}"
@@ -585,11 +590,11 @@ for row in tqdm(df_wbm.itertuples(), total=len(df_wbm)):
     assert (
         abs(e_form - e_form_ppd) < 1e-4
     ), f"{mat_id}: {e_form=:.3} != {e_form_ppd=:.3} (diff={e_form - e_form_ppd:.3}))"
-    df_summary.loc[cse.entry_id, e_form_col] = e_form
+    df_summary.loc[cse.entry_id, e_form_raw_col] = e_form
 
 
-df_summary[e_form_col.replace("uncorrected", "mp2020_corrected")] = (
-    df_summary[e_form_col] + df_summary["e_correction_per_atom_mp2020"]
+df_summary[e_form_raw_col.replace("uncorrected", "mp2020_corrected")] = (
+    df_summary[e_form_raw_col] + df_summary["e_correction_per_atom_mp2020"]
 )
 
 

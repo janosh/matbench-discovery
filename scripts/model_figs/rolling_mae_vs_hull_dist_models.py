@@ -51,7 +51,6 @@ else:
         if model in df_metrics.T.sort_values("MAE").index[show_n_best_models:]:
             trace.visible = "legendonly"  # show only top models by default
 
-    fig.update_traces(line=dict(width=3))  # increase line width
     fig.layout.legend.update(
         bgcolor="rgba(0,0,0,0)", title="", x=1.01, y=0, yanchor="bottom"
     )
@@ -83,4 +82,4 @@ img_name = "rolling-mae-vs-hull-dist-models"
 
 # %%
 save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
-save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=600, height=400)
+save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=650, height=400)

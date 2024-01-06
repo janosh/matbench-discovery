@@ -18,7 +18,7 @@ from matbench_discovery.preds import (
     each_true_col,
     model_mean_each_col,
     model_mean_err_col,
-    model_std_col,
+    model_std_each_col,
 )
 
 __author__ = "Janosh Riebesell"
@@ -56,8 +56,7 @@ for material_cls, pattern in material_classes.items():
     fig = df_plot.plot.scatter(
         x=each_true_col,
         y=model_mean_each_col,
-        color=model_std_col,
-        size="n_sites",
+        color=model_std_each_col,
         backend="plotly",
         hover_name=id_col,
         hover_data=[formula_col],
@@ -71,11 +70,14 @@ for material_cls, pattern in material_classes.items():
     fig.layout.coloraxis.colorbar.update(title_side="right", thickness=14)
     fig.layout.margin.update(l=0, r=30, b=0, t=60)
     add_identity_line(fig)
+    label = {"all": "structures"}.get(material_cls, material_cls)
     fig.layout.title.update(
-        text=f"{n_structs} largest {material_cls} model errors: Predicted vs.<br>"
-        "DFT hull distance colored by model disagreement",
+        text=f"{n_structs} {material_cls} with largest hull distance errors<br>"
+        "colored by model disagreement, sized by number of sites",
         x=0.5,
     )
+    # size markers by structure
+    fig.data[0].marker.size = df_plot["n_sites"] ** 0.5 * 3
     # tried setting error_y=model_std_col but looks bad
     # fig.update_traces(
     #     error_y=dict(color="rgba(255,255,255,0.2)", width=3, thickness=2)
