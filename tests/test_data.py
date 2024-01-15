@@ -11,7 +11,7 @@ import pytest
 from pymatgen.core import Lattice, Structure
 from pytest import CaptureFixture
 
-from matbench_discovery import FIGSHARE, ROOT, formula_col, id_col
+from matbench_discovery import FIGSHARE_DIR, ROOT, formula_col, id_col
 from matbench_discovery.data import (
     DATA_FILES,
     as_dict_handler,
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-with open(f"{FIGSHARE}/{figshare_versions[-1]}.json") as file:
+with open(f"{FIGSHARE_DIR}/{figshare_versions[-1]}.json") as file:
     figshare_urls = json.load(file)["files"]
 
 structure = Structure(

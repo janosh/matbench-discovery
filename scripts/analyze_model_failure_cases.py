@@ -16,7 +16,7 @@ from pymatviz import count_elements, plot_structure_2d, ptable_heatmap_plotly
 from pymatviz.io import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR, PDF_FIGS, SITE_FIGS, formula_col, id_col
+from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR, formula_col, id_col
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.metrics import classify_stable
 from matbench_discovery.preds import (
@@ -306,9 +306,8 @@ save_fig(fig, f"{PDF_FIGS}/large-fp-diff-vs-each-error.pdf")
 
 # %%
 tsne_cols = ["t-SNE 1", "t-SNE 2"]
-df_wbm[tsne_cols] = pd.read_csv(
-    f"{DATA_DIR}/wbm/tsne/onehot-112-composition-2d.csv", index_col=0
-)
+tsne_comp_2d_path = f"{WBM_DIR}/tsne/onehot-112-composition-2d.csv"
+df_wbm[tsne_cols] = pd.read_csv(tsne_comp_2d_path, index_col=0)
 
 df_wbm["wbm_step"] = df_wbm.index.str.split("-").str[1]
 

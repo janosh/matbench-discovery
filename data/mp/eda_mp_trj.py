@@ -22,7 +22,7 @@ from pymatviz.utils import si_fmt
 from tqdm import tqdm
 
 from matbench_discovery import (
-    DATA_DIR,
+    MP_DIR,
     PDF_FIGS,
     ROOT,
     SITE_FIGS,
@@ -52,7 +52,7 @@ df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index(id_col)
 
 
 # %% --- load preprocessed MPtrj summary data if available ---
-mp_trj_summary_path = f"{DATA_DIR}/mp/mp-trj-2022-09-summary.json.bz2"
+mp_trj_summary_path = f"{MP_DIR}/mp-trj-2022-09-summary.json.bz2"
 if os.path.isfile(mp_trj_summary_path):
     df_mp_trj = pd.read_json(mp_trj_summary_path)
     df_mp_trj.index.name = "frame_id"
@@ -63,7 +63,7 @@ else:
 # %% downloaded mptrj-gga-ggapu.tar.gz from https://drive.google.com/drive/folders/1JQ-ry1RHvNliVg1Ut5OuyUxne51RHiT_
 # and extracted the mptrj-gga-ggapu directory (6.2 GB) to data/mp using macOS Finder
 # then zipped it to mp-trj-extxyz.zip (also using Finder, 1.6 GB)
-zip_path = f"{DATA_DIR}/mp/2023-11-22-mp-trj-extxyz-by-yuan.zip"
+zip_path = f"{MP_DIR}/2023-11-22-mp-trj-extxyz-by-yuan.zip"
 mp_trj_atoms: dict[str, list[ase.Atoms]] = {}
 
 # extract extXYZ files from zipped directory without unpacking the whole archive
@@ -120,7 +120,7 @@ def tile_count_anno(hist_vals: list[Any]) -> dict[str, Any]:
 
 
 # %% plot per-element magmom histograms
-ptable_magmom_hist_path = f"{DATA_DIR}/mp/mp-trj-2022-09-elem-magmoms.json.bz2"
+ptable_magmom_hist_path = f"{MP_DIR}/mp-trj-2022-09-elem-magmoms.json.bz2"
 
 if os.path.isfile(ptable_magmom_hist_path):
     srs_mp_trj_elem_magmoms = pd.read_json(ptable_magmom_hist_path, typ="series")
@@ -163,7 +163,7 @@ save_fig(fig_ptable_magmoms, f"{PDF_FIGS}/mp-trj-magmoms-ptable-hists.pdf")
 
 
 # %% plot per-element force histograms
-ptable_force_hist_path = f"{DATA_DIR}/mp/mp-trj-2022-09-elem-forces.json.bz2"
+ptable_force_hist_path = f"{MP_DIR}/mp-trj-2022-09-elem-forces.json.bz2"
 
 if os.path.isfile(ptable_force_hist_path):
     srs_mp_trj_elem_forces = pd.read_json(ptable_force_hist_path, typ="series")
@@ -205,7 +205,7 @@ save_fig(fig_ptable_forces, f"{PDF_FIGS}/mp-trj-forces-ptable-hists.pdf")
 
 
 # %% plot histogram of number of sites per element
-ptable_n_sites_hist_path = f"{DATA_DIR}/mp/mp-trj-2022-09-elem-n-sites.json.bz2"
+ptable_n_sites_hist_path = f"{MP_DIR}/mp-trj-2022-09-elem-n-sites.json.bz2"
 
 if os.path.isfile(ptable_n_sites_hist_path):
     srs_mp_trj_elem_n_sites = pd.read_json(ptable_n_sites_hist_path, typ="series")

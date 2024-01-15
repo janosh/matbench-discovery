@@ -13,7 +13,7 @@ from pymatgen.core import Structure
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from matbench_discovery import CHECKPOINT_DIR, DATA_DIR, WANDB_PATH, id_col, today
+from matbench_discovery import CHECKPOINT_DIR, WANDB_PATH, WBM_DIR, id_col, today
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.preds import e_form_col as target_col
@@ -48,7 +48,7 @@ slurm_vars = slurm_submit(
 data_path = {
     "IS2RE": DATA_FILES.wbm_initial_structures,
     "RS2RE": DATA_FILES.wbm_computed_structure_entries,
-    "IS2RE-debug": f"{DATA_DIR}/wbm/2022-10-19-wbm-init-structs.json-1k-samples.bz2",
+    "IS2RE-debug": f"{WBM_DIR}/2022-10-19-wbm-init-structs.json-1k-samples.bz2",
 }[task_type]
 input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
 

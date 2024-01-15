@@ -23,7 +23,7 @@ from pymatgen.core import Structure
 from pymatviz.io import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR, PDF_FIGS, id_col
+from matbench_discovery import MP_DIR, PDF_FIGS, WBM_DIR, id_col
 from matbench_discovery.data import DATA_FILES
 
 __author__ = "Philipp Benner, Janosh Riebesell"
@@ -31,10 +31,8 @@ __date__ = "2023-11-28"
 
 
 # %%
-mp_matminer_feat_path = f"{DATA_DIR}/mp/mp-final-structures-matminer-features.csv.bz2"
-wbm_matminer_feat_path = (
-    f"{DATA_DIR}/wbm/wbm-initial-structures-matminer-features.csv.bz2"
-)
+mp_matminer_feat_path = f"{MP_DIR}/mp-final-structures-matminer-features.csv.bz2"
+wbm_matminer_feat_path = f"{WBM_DIR}/wbm-initial-structures-matminer-features.csv.bz2"
 # default n_umap_neighbors=15 results resemble PCA, i.e. a single blob of points.
 # The larger n_neighbors, the more MP point clusters move apart. Those islands may
 # correspond to some material classes (but we didn't test this).
@@ -155,7 +153,7 @@ if not os.path.isfile(wbm_matminer_feat_path):
 
 
 # %% Compute UMAP projection of matminer features
-umap_out_path = f"{DATA_DIR}/wbm/umap/2d-umap-projections.csv.bz2"
+umap_out_path = f"{WBM_DIR}/umap/2d-umap-projections.csv.bz2"
 if not os.path.isfile(umap_out_path):
     df_mp = pd.read_csv(mp_matminer_feat_path).set_index(id_col)
     df_wbm = pd.read_csv(wbm_matminer_feat_path).set_index(id_col)
