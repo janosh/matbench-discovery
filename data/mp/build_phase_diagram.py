@@ -17,7 +17,7 @@ from pymatgen.entries.computed_entries import ComputedEntry, ComputedStructureEn
 from pymatgen.ext.matproj import MPRester
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR, ROOT, id_col, today
+from matbench_discovery import MP_DIR, ROOT, id_col, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.energy import get_e_form_per_atom, get_elemental_ref_entries
 
@@ -95,10 +95,9 @@ with gzip.open(f"{module_dir}/{today}-ppd-mp-wbm.pkl.gz", "wb") as zip_file:
 # compatible formation energies quickly)
 elemental_ref_entries = get_elemental_ref_entries(mp_computed_entries)
 
-# save elemental_ref_entries to disk as json
-with gzip.open(
-    f"{DATA_DIR}/mp/{today}-mp-elemental-reference-entries.json.gz", "wt"
-) as file:
+# save MP phase diagram elemental_ref_entries as JSON
+mp_pd_elem_ref_entries_path = f"{MP_DIR}/{today}-mp-elemental-reference-entries.json.gz"
+with gzip.open(mp_pd_elem_ref_entries_path, "wt") as file:
     json.dump(elemental_ref_entries, file, default=lambda x: x.as_dict())
 
 

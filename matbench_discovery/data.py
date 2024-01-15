@@ -14,7 +14,7 @@ import pandas as pd
 from monty.json import MontyDecoder
 from tqdm import tqdm
 
-from matbench_discovery import FIGSHARE, id_col
+from matbench_discovery import FIGSHARE_DIR, id_col
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 # repo URL to raw files on GitHub
 RAW_REPO_URL = "https://github.com/janosh/matbench-discovery/raw"
 figshare_versions = sorted(
-    x.split(os.path.sep)[-1].split(".json")[0] for x in glob(f"{FIGSHARE}/*.json")
+    x.split(os.path.sep)[-1].split(".json")[0] for x in glob(f"{FIGSHARE_DIR}/*.json")
 )
 # directory to cache downloaded data files
 default_cache_dir = os.getenv(
@@ -90,7 +90,7 @@ def load(
     if not isinstance(data_key, str) or data_key not in DATA_FILES:
         raise ValueError(f"Unknown {data_key=}, must be one of {list(DATA_FILES)}.")
 
-    with open(f"{FIGSHARE}/{version}.json") as json_file:
+    with open(f"{FIGSHARE_DIR}/{version}.json") as json_file:
         file_urls = json.load(json_file)["files"]
 
     file = DataFiles.__dict__[data_key]

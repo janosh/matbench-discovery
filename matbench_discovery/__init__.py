@@ -10,16 +10,28 @@ import plotly.express as px
 import plotly.io as pio
 from pymatviz.utils import styled_html_tag
 
-ROOT = os.path.dirname(os.path.dirname(__file__))  # repo root directory
+PKG_DIR = os.path.dirname(__file__)
+
+# check if package is installed in editable mode
+# hopefully better method coming in https://github.com/pypa/setuptools/issues/4186
+pkg_is_editable = os.path.isdir(f"{PKG_DIR}/../matbench_discovery.egg-info")
+
+# repo root directory if editable install, else the pkg directory
+ROOT = os.path.dirname(PKG_DIR) if pkg_is_editable else PKG_DIR
 DATA_DIR = f"{ROOT}/data"  # directory to store raw data
 SITE_FIGS = f"{ROOT}/site/src/figs"  # directory for interactive figures
-SITE_MODELS = f"{ROOT}/site/src/routes/models"  # directory to write model analysis
-FIGSHARE = f"{ROOT}/data/figshare"
-SCRIPTS = f"{ROOT}/scripts"
+# directory to write model analysis for website
+SITE_MODELS = f"{ROOT}/site/src/routes/models"
+SCRIPTS = f"{ROOT}/scripts"  # model and date analysis scripts
 PDF_FIGS = f"{ROOT}/paper/figs"  # directory for light-themed PDF figures
 
-for directory in [SITE_FIGS, SITE_MODELS, FIGSHARE, PDF_FIGS]:
+for directory in (SITE_FIGS, SITE_MODELS, PDF_FIGS):
     os.makedirs(directory, exist_ok=True)
+
+os.makedirs(MP_DIR := f"{DATA_DIR}/mp", exist_ok=True)
+os.makedirs(WBM_DIR := f"{DATA_DIR}/wbm", exist_ok=True)
+# JSON files with URLS to data files on figshare
+os.makedirs(FIGSHARE_DIR := f"{ROOT}/data/figshare", exist_ok=True)
 
 # directory to store model checkpoints downloaded from wandb cloud storage
 CHECKPOINT_DIR = f"{ROOT}/wandb/checkpoints"
@@ -52,7 +64,7 @@ n_sites_col = "n_sites"
 entry_col = "computed_structure_entry"
 
 # load figshare 1.0.0
-with open(f"{FIGSHARE}/1.0.0.json") as file:
+with open(f"{FIGSHARE_DIR}/1.0.0.json") as file:
     FIGSHARE_URLS = json.load(file)
 
 

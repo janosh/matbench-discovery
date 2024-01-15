@@ -12,13 +12,13 @@ from pymatgen.core import Structure
 from pymatviz.io import TqdmDownload
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR, FIGSHARE_URLS
+from matbench_discovery import FIGSHARE_URLS, MP_DIR
 
 __author__ = "Yuan Chiang"
 __date__ = "2023-08-10"
 
 module_dir = os.path.dirname(__file__)
-mp_trj_path = f"{DATA_DIR}/mp/mp-trj-2022-09.json"
+mp_trj_path = f"{MP_DIR}/mp-trj-2022-09.json"
 
 
 # %% download MPtrj from figshare (11.3 GB JSON file, can easily take 1h)
