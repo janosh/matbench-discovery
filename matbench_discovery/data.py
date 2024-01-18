@@ -178,9 +178,9 @@ def glob_to_df(
 
 class Files(dict):  # type: ignore[type-arg]
     """Files instance inherits from dict so that .values(), items(), etc. are supported
-    but also allows accessing attributes by dot notation. E.g. FILES.wbm_summary instead
-    of FILES["wbm_summary"]. This enables tab completion in IDEs and auto-updating
-    attribute names across the code base when changing the key of a file.
+    but also allows accessing attributes by dot notation. E.g. FILES.some_file_key.
+    This enables tab completion in IDEs and auto-updating attribute names across the
+    code base when changing the key of a file.
     """
 
     def __init__(
@@ -197,7 +197,13 @@ class Files(dict):  # type: ignore[type-arg]
                 the dict. Useful if you want to have keys like 'foo+bar' that are not
                 valid Python identifiers. Defaults to None.
         """
-        self._on_not_found: Callable[[str, str], None] | None = None
+        # callback that's triggered when a file corresponding to a class attribute does
+        # not exist. gets passed key and missing filepath. set to None to disable
+        self._on_not_found: Callable[[str, str], None] | None = lambda key, path: print(
+            f"Warning: {path!r} associated with {key=} does not exist.",
+            file=sys.stderr,
+        )
+
         rel_paths = {
             (key_map or {}).get(key, key): file
             for key, file in type(self).__dict__.items()
@@ -208,15 +214,11 @@ class Files(dict):  # type: ignore[type-arg]
         super().__init__(abs_paths)
 
     def __getattribute__(self, key: str) -> str:
-        """Override __getattr__ to check if file corresponding to key exists."""
-        val = super().__getattribute__(key)
-        if key in self and not os.path.isfile(val):
-            msg = f"Warning: {val!r} associated with {key=} does not exist."
-            if self._on_not_found:
-                self._on_not_found(key, msg)
-            else:
-                print(msg, file=sys.stderr)
-        return val
+        """Override __getattr__ to check if key matches a file attribute."""
+        filepath = super().__getattribute__(key)
+        if key in self and not os.path.isfile(filepath) and self._on_not_found:
+            self._on_not_found(key, filepath)
+        return filepath
 
 
 class DataFiles(Files):
@@ -224,10 +226,10 @@ class DataFiles(Files):
     See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
     """
 
-    def _on_not_found(self, key: str, msg: str) -> None:  # type: ignore[override]
-        msg += (
-            " Would you like to download it now using matbench_discovery."
-            f"data.load({key!r}). This will cache the file for future use."
+    def _on_not_found(self, key: str, path: str) -> None:  # type: ignore[override]
+        msg = (
+            f"{path!r} associated with {key=} does not exist. Would you like to "
+            "download it now? This will cache the file for future use."
         )
 
         # default to 'y' if not in interactive session, and user can't answer
