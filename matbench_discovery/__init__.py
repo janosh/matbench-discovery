@@ -4,18 +4,18 @@ import json
 import os
 import warnings
 from datetime import datetime
+from importlib.metadata import Distribution
 
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.io as pio
 from pymatviz.utils import styled_html_tag
 
+pkg_name = "matbench-discovery"
+direct_url = Distribution.from_name(pkg_name).read_text("direct_url.json") or ""
+pkg_is_editable = json.loads(direct_url).get("dir_info", {}).get("editable", False)
+
 PKG_DIR = os.path.dirname(__file__)
-
-# check if package is installed in editable mode
-# hopefully better method coming in https://github.com/pypa/setuptools/issues/4186
-pkg_is_editable = os.path.isdir(f"{PKG_DIR}/../matbench_discovery.egg-info")
-
 # repo root directory if editable install, else the pkg directory
 ROOT = os.path.dirname(PKG_DIR) if pkg_is_editable else PKG_DIR
 DATA_DIR = f"{ROOT}/data"  # directory to store raw data
