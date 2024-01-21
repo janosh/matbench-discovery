@@ -15,7 +15,7 @@ from matminer.featurizers.structure import SiteStatsFingerprint
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR, id_col, timestamp
+from matbench_discovery import DATA_DIR, Key, timestamp
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 
@@ -57,7 +57,7 @@ print(f"{out_path=}")
 
 
 # %%
-df_in = pd.read_json(data_path).set_index(id_col)
+df_in = pd.read_json(data_path).set_index(Key.mat_id)
 if slurm_array_task_count > 1:
     df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
 
@@ -69,13 +69,11 @@ site_stats_fp = SiteStatsFingerprint(
 
 
 # %%
-init_struct_col = "initial_structure"
-final_struct_col = "computed_structure_entry"
 init_fp_col = "initial_site_stats_fingerprint"
 final_fp_col = "final_site_stats_fingerprint"
 for struct_col, fp_col in (
-    (init_struct_col, init_fp_col),
-    (final_struct_col, final_fp_col),
+    (Key.init_struct, init_fp_col),
+    (Key.cse, final_fp_col),
     ("entry", final_fp_col),
 ):
     if struct_col not in df_in:
@@ -113,7 +111,7 @@ if missing_files:
     print(f"{len(missing_files)=}: {missing_files}")
 
 df_out = pd.concat(pd.read_json(out_file) for out_file in tqdm(out_files))
-df_out = df_out.set_index(id_col)
+df_out = df_out.set_index(Key.mat_id)
 
 
 # %%

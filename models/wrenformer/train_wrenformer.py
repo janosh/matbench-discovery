@@ -8,7 +8,7 @@ from importlib.metadata import version
 import pandas as pd
 from aviary.train import df_train_test_split, train_wrenformer
 
-from matbench_discovery import WANDB_PATH, id_col, timestamp, today
+from matbench_discovery import WANDB_PATH, Key, timestamp, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 
@@ -19,7 +19,7 @@ __date__ = "2022-08-13"
 # %%
 epochs = 300
 data_path = DATA_FILES.mp_energies
-target_col = "formation_energy_per_atom"
+target_col = Key.form_energy
 # data_path = f"{ROOT}/data/2022-08-25-m3gnet-trainset-mp-2021-struct-energy.json.gz"
 # target_col = "mp_energy_per_atom"
 data_name = "m3gnet-trainset" if "m3gnet" in data_path else "mp"
@@ -45,14 +45,13 @@ slurm_vars = slurm_submit(
 learning_rate = 3e-4
 batch_size = 128
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
-input_col = "wyckoff_spglib"
 
 print(f"\nJob started running {timestamp}")
 
-df = pd.read_csv(data_path).set_index(id_col, drop=False)
+df = pd.read_csv(data_path).set_index(Key.mat_id, drop=False)
 
 assert target_col in df, f"{target_col=} not in {list(df)}"
-assert input_col in df, f"{input_col=} not in {list(df)}"
+assert Key.wyckoff in df, f"{Key.wyckoff=} not in {list(df)}"
 train_df, test_df = df_train_test_split(df, test_size=0.05)
 
 run_params = dict(
@@ -74,7 +73,7 @@ train_wrenformer(
     # folds=(ensemble_size, slurm_array_task_id),
     epochs=epochs,
     checkpoint="wandb",  # None | 'local' | 'wandb',
-    input_col=input_col,
+    input_col=Key.wyckoff,
     learning_rate=learning_rate,
     batch_size=batch_size,
     wandb_path=WANDB_PATH,

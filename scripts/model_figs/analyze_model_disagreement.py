@@ -11,15 +11,9 @@ from crystal_toolkit.helpers.utils import hook_up_fig_with_struct_viewer
 from pymatviz.io import save_fig
 from pymatviz.utils import add_identity_line
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, formula_col, id_col
+from matbench_discovery import PDF_FIGS, SITE_FIGS, Key
 from matbench_discovery.data import DATA_FILES
-from matbench_discovery.preds import (
-    df_preds,
-    each_true_col,
-    model_mean_each_col,
-    model_mean_err_col,
-    model_std_each_col,
-)
+from matbench_discovery.preds import df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-15"
@@ -50,16 +44,16 @@ material_classes = {
 n_structs = 200
 
 for material_cls, pattern in material_classes.items():
-    df_subset = df_preds[df_preds[formula_col].str.match(pattern)]
-    df_plot = df_subset.nlargest(n_structs, model_mean_err_col).round(2)
+    df_subset = df_preds[df_preds[Key.formula].str.match(pattern)]
+    df_plot = df_subset.nlargest(n_structs, Key.model_mean_err).round(2)
 
     fig = df_plot.plot.scatter(
-        x=each_true_col,
-        y=model_mean_each_col,
-        color=model_std_each_col,
+        x=Key.each_true,
+        y=Key.model_mean_each,
+        color=Key.model_std_each,
         backend="plotly",
-        hover_name=id_col,
-        hover_data=[formula_col],
+        hover_name=Key.mat_id,
+        hover_data=[Key.formula],
         color_continuous_scale="Turbo",
         range_x=[-0.5, 4],
         range_y=[-0.5, 4],
@@ -89,7 +83,7 @@ for material_cls, pattern in material_classes.items():
 
 
 # %%
-df_cse = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index(id_col)
+df_cse = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index(Key.mat_id)
 
 
 # %% struct viewer
@@ -99,7 +93,7 @@ if is_jupyter:
     app = hook_up_fig_with_struct_viewer(
         fig,
         df_cse,
-        "initial_structure",
+        Key.init_struct,
         # validate_id requires material_id to be hover_name
         validate_id=lambda mat_id: mat_id.startswith(("wbm-", "mp-", "mvc-")),
     )

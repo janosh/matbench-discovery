@@ -10,23 +10,21 @@ from typing import Final
 
 from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, formula_col, today
+from matbench_discovery import PDF_FIGS, SITE_FIGS, Key, today
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist, plt
-from matbench_discovery.preds import (
-    df_metrics,
-    df_preds,
-    e_form_col,
-    each_pred_col,
-    each_true_col,
-)
+from matbench_discovery.preds import df_metrics, df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-12-01"
 
 
 # %%
-hover_cols = (df_preds.index.name, e_form_col, each_true_col, formula_col)
-e_form_preds = "e_form_per_atom_pred"
+hover_cols = (
+    df_preds.index.name,
+    Key.e_form,
+    Key.each_true,
+    Key.formula,
+)
 facet_col = "Model"
 # sort facet plots by model's F1 scores (optionally only show top n=6)
 models = list(df_metrics.T.F1.sort_values().index)[::-1]
@@ -35,11 +33,11 @@ df_melt = df_preds.melt(
     id_vars=hover_cols,
     value_vars=models,
     var_name=facet_col,
-    value_name=e_form_preds,
+    value_name=Key.e_form_pred,
 )
 
-df_melt[each_pred_col] = (
-    df_melt[each_true_col] + df_melt[e_form_preds] - df_melt[e_form_col]
+df_melt[Key.each_pred] = (
+    df_melt[Key.each_true] + df_melt[Key.e_form_pred] - df_melt[Key.e_form]
 )
 
 
@@ -59,8 +57,8 @@ kwds = (
 
 fig = hist_classified_stable_vs_hull_dist(
     df=df_melt,
-    each_true_col=each_true_col,
-    each_pred_col=each_pred_col,
+    each_true_col=Key.each_true,
+    each_pred_col=Key.each_pred,
     which_energy=which_energy,
     backend=backend,
     rolling_acc=None,

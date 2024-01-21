@@ -16,17 +16,10 @@ from pymatviz import count_elements, plot_structure_2d, ptable_heatmap_plotly
 from pymatviz.io import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR, formula_col, id_col
+from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR, Key
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.metrics import classify_stable
-from matbench_discovery.preds import (
-    df_each_err,
-    df_each_pred,
-    df_metrics,
-    df_preds,
-    each_true_col,
-    model_mean_err_col,
-)
+from matbench_discovery.preds import df_each_err, df_each_pred, df_metrics, df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-15"
@@ -36,7 +29,7 @@ fp_diff_col = "site_stats_fingerprint_init_final_norm_diff"
 
 
 # %%
-df_cse = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index(id_col)
+df_cse = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index(Key.mat_id)
 
 
 # %% plot the highest and lowest error structures before and after relaxation
@@ -46,14 +39,11 @@ for good_or_bad, init_or_final in itertools.product(
 ):
     fig, axs = plt.subplots(n_rows, n_cols, figsize=(4 * n_cols, 3 * n_rows))
     n_structs = len(axs.flat)
-    struct_col = {
-        "initial": "initial_structure",
-        "final": "computed_structure_entry",
-    }[init_or_final]
+    struct_col = {"initial": Key.init_struct, "final": Key.cse}[init_or_final]
 
     errs = {
-        "best": df_each_err[model_mean_err_col].nsmallest(n_structs),
-        "worst": df_each_err[model_mean_err_col].nlargest(n_structs),
+        "best": df_each_err[Key.model_mean_err].nsmallest(n_structs),
+        "worst": df_each_err[Key.model_mean_err].nlargest(n_structs),
     }[good_or_bad]
     title = (
         f"{good_or_bad.title()} {len(errs)} {init_or_final} structures (across "
@@ -80,7 +70,7 @@ for good_or_bad, init_or_final in itertools.product(
 # %%
 n_structs = 1000
 fig = go.Figure()
-for idx, model in enumerate((model_mean_err_col, *df_metrics)):
+for idx, model in enumerate((Key.model_mean_err, *df_metrics)):
     large_errors = df_each_err[model].abs().nlargest(n_structs)
     small_errors = df_each_err[model].abs().nsmallest(n_structs)
     for label, errors in zip(("min", "max"), (large_errors, small_errors)):
@@ -132,7 +122,7 @@ for idx, model in enumerate(df_metrics):
             "FP norm diff: %{x}<br>"
             "error: %{y} eV/atom"
         ),
-        customdata=df_wbm.loc[errors.index][[id_col, formula_col]].values,
+        customdata=df_wbm.loc[errors.index][[Key.mat_id, Key.formula]].values,
         legendrank=model_mae,
     )
 
@@ -153,15 +143,15 @@ fig.show()
 
 
 # %%
-df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index(id_col)
+df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index(Key.mat_id)
 train_count_col = "MP Occurrences"
-df_elem_counts = count_elements(df_mp[formula_col], count_mode="occurrence").to_frame(
+df_elem_counts = count_elements(df_mp[Key.formula], count_mode="occurrence").to_frame(
     name=train_count_col
 )
 n_examp_for_rarest_elem_col = "Examples for rarest element in structure"
 df_wbm[n_examp_for_rarest_elem_col] = [
     df_elem_counts[train_count_col].loc[list(map(str, Composition(formula)))].min()
-    for formula in tqdm(df_wbm[formula_col])
+    for formula in tqdm(df_wbm[Key.formula])
 ]
 df_preds[n_examp_for_rarest_elem_col] = df_wbm[n_examp_for_rarest_elem_col]
 
@@ -169,7 +159,7 @@ df_preds[n_examp_for_rarest_elem_col] = df_wbm[n_examp_for_rarest_elem_col]
 # %% find materials that were misclassified by all models
 for model in df_each_pred:
     true_pos, false_neg, false_pos, true_neg = classify_stable(
-        df_each_pred[model], df_preds[each_true_col]
+        df_each_pred[model], df_preds[Key.each_true]
     )
     df_preds[f"{model} true pos"] = true_pos
     df_preds[f"{model} false neg"] = false_neg
@@ -190,7 +180,7 @@ normalized = True
 elem_counts: dict[str, pd.Series] = {}
 for col in ("All models false neg", "All models false pos"):
     elem_counts[col] = elem_counts.get(
-        col, count_elements(df_preds[df_preds[col]][formula_col])
+        col, count_elements(df_preds[df_preds[col]][Key.formula])
     )
     fig = ptable_heatmap_plotly(
         elem_counts[col] / df_elem_counts[train_count_col]
@@ -209,7 +199,7 @@ for col in ("All models false neg", "All models false pos"):
 # fraction and average over all test set structures
 frac_comp_col = "fractional composition"
 df_wbm[frac_comp_col] = [
-    Composition(comp).fractional_composition for comp in tqdm(df_wbm[formula_col])
+    Composition(comp).fractional_composition for comp in tqdm(df_wbm[Key.formula])
 ]
 
 df_frac_comp = pd.json_normalize(
@@ -256,7 +246,9 @@ for idx, model in enumerate(df_metrics):
             "FP diff: %{x}<br>"
             "error: %{y}<extra></extra>"
         ),
-        customdata=df_preds[[id_col, formula_col]].loc[df_largest_fp_diff.index].values,
+        customdata=df_preds[[Key.mat_id, Key.formula]]
+        .loc[df_largest_fp_diff.index]
+        .values,
         legendgroup=model,
         marker=dict(color=color),
         legendrank=model_mae,
@@ -317,9 +309,9 @@ fig = px.scatter(
     df_wbm,
     x=tsne_cols[0],
     y=tsne_cols[1],
-    color=(df_wbm.bandgap_pbe > 1).map({True: "band gap", False: "no gap"}),
-    hover_name=id_col,
-    hover_data=(formula_col,),
+    color=(df_wbm[Key.bandgap_pbe] > 1).map({True: "band gap", False: "no gap"}),
+    hover_name=Key.mat_id,
+    hover_data=(Key.formula,),
 )
 fig.show()
 

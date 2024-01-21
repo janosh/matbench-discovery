@@ -16,7 +16,7 @@ from dash.dependencies import Input, Output
 from m3gnet.models import Relaxer as M3gnetRelaxer
 from pymatgen.core import Lattice, Structure
 
-from matbench_discovery import id_col
+from matbench_discovery import Key
 from matbench_discovery.data import df_wbm
 
 if TYPE_CHECKING:
@@ -30,17 +30,16 @@ module_dir = os.path.dirname(__file__)
 
 
 # %%
-init_struct_col = "initial_structure"
-df_cse = pd.read_json(f"{module_dir}/wbm-chgnet-bad-relax.json.gz").set_index(id_col)
+df_cse = pd.read_json(f"{module_dir}/wbm-chgnet-bad-relax.json.gz").set_index(
+    Key.mat_id
+)
 
 
 # %%
 material_id = "wbm-1-7168"
-init_struct = Structure.from_dict(df_cse[init_struct_col].loc[material_id])
+init_struct = Structure.from_dict(df_cse[Key.init_struct].loc[material_id])
 
-final_struct = Structure.from_dict(
-    df_cse.computed_structure_entry.loc[material_id]["structure"],
-)
+final_struct = Structure.from_dict(df_cse[Key.cse].loc[material_id]["structure"])
 
 init_spg = init_struct.get_space_group_info()
 final_spg = final_struct.get_space_group_info()

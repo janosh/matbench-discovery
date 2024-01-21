@@ -4,18 +4,19 @@ import json
 import os
 import warnings
 from datetime import datetime
+from enum import Enum, unique
+from importlib.metadata import Distribution
 
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.io as pio
 from pymatviz.utils import styled_html_tag
 
+pkg_name = "matbench-discovery"
+direct_url = Distribution.from_name(pkg_name).read_text("direct_url.json") or ""
+pkg_is_editable = json.loads(direct_url).get("dir_info", {}).get("editable", False)
+
 PKG_DIR = os.path.dirname(__file__)
-
-# check if package is installed in editable mode
-# hopefully better method coming in https://github.com/pypa/setuptools/issues/4186
-pkg_is_editable = os.path.isdir(f"{PKG_DIR}/../matbench_discovery.egg-info")
-
 # repo root directory if editable install, else the pkg directory
 ROOT = os.path.dirname(PKG_DIR) if pkg_is_editable else PKG_DIR
 DATA_DIR = f"{ROOT}/data"  # directory to store raw data
@@ -52,16 +53,61 @@ today = timestamp.split("@")[0]
 # > Failed to guess oxidation states for Entry
 warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
 
-id_col = "material_id"
-init_struct_col = "initial_structure"
-struct_col = "structure"
-e_form_col = "formation_energy_per_atom"
-e_form_raw_col = "e_form_per_atom_uncorrected"
-formula_col = "formula"
-stress_col = "stress"
-stress_trace_col = "stress_trace"
-n_sites_col = "n_sites"
-entry_col = "computed_structure_entry"
+
+class StrEnum(str, Enum):
+    """Enum whose members are also (and must be) strings."""
+
+
+@unique
+class Key(StrEnum):
+    """Keys used to access dataframes columns."""
+
+    arity = "arity"
+    bandgap_pbe = "bandgap_pbe"
+    chem_sys = "chemical_system"
+    composition = "composition"
+    cse = "computed_structure_entry"
+    dft_energy = "uncorrected_energy"
+    e_form = "e_form_per_atom_mp2020_corrected"
+    e_form_pred = "e_form_per_atom_pred"
+    e_form_raw = "e_form_per_atom_uncorrected"
+    e_form_wbm = "e_form_per_atom_wbm"
+    each_pred = "e_above_hull_pred"
+    each_true = "e_above_hull_mp2020_corrected_ppd_mp"
+    final_struct = "relaxed_structure"
+    forces = "forces"
+    form_energy = "formation_energy_per_atom"
+    formula = "formula"
+    init_struct = "initial_structure"
+    magmoms = "magmoms"
+    mat_id = "material_id"
+    model_mean_each = "Mean prediction all models"
+    model_mean_err = "Mean error all models"
+    model_std_each = "Std. dev. over models"
+    n_sites = "n_sites"
+    site_nums = "site_nums"
+    spacegroup = "spacegroup"
+    stress = "stress"
+    stress_trace = "stress_trace"
+    struct = "structure"
+    task_id = "task_id"
+    volume = "volume"
+    wyckoff = "wyckoff_spglib"
+
+
+@unique
+class Task(StrEnum):
+    """Thermodynamic stability prediction task types."""
+
+    IS2RE = "IS2RE"  # initial structure to relaxed energy
+    RS2RE = "RS2RE"  # relaxed structure to relaxed energy
+    S2EFSM = "S2EFSM"  # structure to energy force stress magmom
+    S2EFS = "S2EFS"  # structure to energy force stress
+    S2RE = "S2RE"  # structure to relaxed energy (for models that learned a discrete
+    # version of the PES like CGCNN+P)
+    RP2RE = "RP2RE"  # relaxed prototype to relaxed energy
+    IP2RE = "IP2RE"  # initial prototype to relaxed energy
+
 
 # load figshare 1.0.0
 with open(f"{FIGSHARE_DIR}/1.0.0.json") as file:

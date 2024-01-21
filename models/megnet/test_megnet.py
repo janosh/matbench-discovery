@@ -20,16 +20,16 @@ from pymatviz import density_scatter
 from sklearn.metrics import r2_score
 from tqdm import tqdm
 
-from matbench_discovery import id_col, timestamp, today
+from matbench_discovery import Key, Task, timestamp, today
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import wandb_scatter
-from matbench_discovery.preds import PRED_FILES, e_form_col
+from matbench_discovery.preds import PRED_FILES
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-14"
 
-task_type = "RS2RE"
+task_type = Task.RS2RE
 module_dir = os.path.dirname(__file__)
 job_name = f"megnet-wbm-{task_type}"
 out_path = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}.csv.gz")
@@ -55,16 +55,16 @@ slurm_vars = slurm_submit(
 # %%
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
 data_path = {
-    "IS2RE": DATA_FILES.wbm_initial_structures,
-    "RS2RE": DATA_FILES.wbm_computed_structure_entries,
+    Task.IS2RE: DATA_FILES.wbm_initial_structures,
+    Task.RS2RE: DATA_FILES.wbm_computed_structure_entries,
     "chgnet_structure": PRED_FILES.CHGNet.replace(".csv.gz", ".json.gz"),
     "m3gnet_structure": PRED_FILES.M3GNet.replace(".csv.gz", ".json.gz"),
 }[task_type]
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
-assert e_form_col in df_wbm, f"{e_form_col=} not in {list(df_wbm)=}"
+assert Key.e_form in df_wbm, f"{Key.e_form=} not in {list(df_wbm)=}"
 
-df_in = pd.read_json(data_path).set_index(id_col)
+df_in = pd.read_json(data_path).set_index(Key.mat_id)
 if slurm_array_task_count > 1:
     df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
 megnet_mp_e_form = load_model(model_name := "Eform_MP_2019")
@@ -76,7 +76,7 @@ run_params = dict(
     versions={dep: version(dep) for dep in ("megnet", "numpy")},
     model_name=model_name,
     task_type=task_type,
-    target_col=e_form_col,
+    target_col=Key.e_form,
     df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     slurm_vars=slurm_vars,
 )
@@ -85,12 +85,12 @@ wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 
 # %% input_col=task_type for CHGNet and M3GNet
-input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}.get(
+input_col = {Task.IS2RE: Key.init_struct, Task.RS2RE: Key.final_struct}.get(
     task_type, task_type
 )
 
-if task_type == "RS2RE":
-    df_in[input_col] = [x["structure"] for x in df_in.computed_structure_entry]
+if task_type == Task.RS2RE:
+    df_in[input_col] = [cse["structure"] for cse in df_in[Key.cse]]
 
 structures = df_in[input_col].map(Structure.from_dict).to_dict()
 
@@ -119,14 +119,14 @@ df_megnet[pred_col] = (
     - df_wbm.e_correction_per_atom_mp_legacy
     + df_wbm.e_correction_per_atom_mp2020
 )
-df_megnet.index.name = id_col
-if task_type != "IS2RE":
+df_megnet.index.name = Key.mat_id
+if task_type != Task.IS2RE:
     df_megnet = df_megnet.add_suffix(f"_{task_type.lower()}")
 
 
 df_megnet.add_suffix(f"_{task_type.lower()}").round(4).to_csv(out_path)
 
-# df_megnet = pd.read_csv(f"{ROOT}/models/{PRED_FILES.megnet}").set_index(id_col)
+# df_megnet = pd.read_csv(f"{ROOT}/models/{PRED_FILES.megnet}").set_index(Key.mat_id)
 
 
 # %% compare MEGNet predictions with old and new MP corrections
@@ -136,11 +136,11 @@ ax = density_scatter(df=df_megnet, x=pred_col, y=f"{pred_col}_old_corr")
 
 # %%
 df_wbm[pred_col] = df_megnet[pred_col]
-table = wandb.Table(dataframe=df_wbm[[e_form_col, pred_col]].reset_index())
+table = wandb.Table(dataframe=df_wbm[[Key.e_form, pred_col]].reset_index())
 
-MAE = (df_wbm[e_form_col] - df_wbm[pred_col]).abs().mean()
-R2 = r2_score(*df_wbm[[e_form_col, pred_col]].dropna().to_numpy().T)
+MAE = (df_wbm[Key.e_form] - df_wbm[pred_col]).abs().mean()
+R2 = r2_score(*df_wbm[[Key.e_form, pred_col]].dropna().to_numpy().T)
 title = f"{model_name} {task_type} {MAE=:.4} {R2=:.4}"
 print(title)
 
-wandb_scatter(table, fields=dict(x=e_form_col, y=pred_col), title=title)
+wandb_scatter(table, fields=dict(x=Key.e_form, y=pred_col), title=title)

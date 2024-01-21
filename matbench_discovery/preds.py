@@ -8,11 +8,11 @@ from tqdm import tqdm
 from matbench_discovery import (
     ROOT,
     STABILITY_THRESHOLD,
+    Key,
     ev_per_atom,
     model_labels,
     quantity_labels,
 )
-from matbench_discovery import id_col as default_id_col
 from matbench_discovery.data import Files, df_wbm, glob_to_df
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.plots import plotly_colors, plotly_line_styles, plotly_markers
@@ -25,14 +25,8 @@ if TYPE_CHECKING:
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-04"
 
-e_form_col = "e_form_per_atom_mp2020_corrected"
-each_true_col = "e_above_hull_mp2020_corrected_ppd_mp"
-each_pred_col = "e_above_hull_pred"
-model_mean_each_col = "Mean prediction all models"
-model_mean_err_col = "Mean error all models"
-model_std_each_col = "Std. dev. over models"
 
-for col in (model_mean_each_col, model_mean_err_col, model_std_each_col):
+for col in (Key.model_mean_each, Key.model_mean_err, Key.model_std_each):
     quantity_labels[col] = f"{col} {ev_per_atom}"
 
 
@@ -86,7 +80,7 @@ PRED_FILES = PredFiles(root=f"{ROOT}/models", key_map=model_labels)
 def load_df_wbm_with_preds(
     models: Sequence[str] = (*PRED_FILES,),
     pbar: bool = True,
-    id_col: str = default_id_col,
+    id_col: str = Key.mat_id,
     **kwargs: Any,
 ) -> pd.DataFrame:
     """Load WBM summary dataframe with model predictions from disk.
@@ -167,15 +161,15 @@ df_preds = load_df_wbm_with_preds().round(3)
 
 df_metrics = pd.DataFrame()
 df_metrics_10k = pd.DataFrame()  # look only at each model's 10k most stable predictions
-prevalence = (df_wbm[each_true_col] <= STABILITY_THRESHOLD).mean()
+prevalence = (df_wbm[Key.each_true] <= STABILITY_THRESHOLD).mean()
 
 df_metrics.index.name = "model"
 for model in PRED_FILES:
-    each_pred = df_preds[each_true_col] + df_preds[model] - df_preds[e_form_col]
-    df_metrics[model] = stable_metrics(df_preds[each_true_col], each_pred)
+    each_pred = df_preds[Key.each_true] + df_preds[model] - df_preds[Key.e_form]
+    df_metrics[model] = stable_metrics(df_preds[Key.each_true], each_pred)
     most_stable_10k = each_pred.nsmallest(10_000)
     df_metrics_10k[model] = stable_metrics(
-        df_preds[each_true_col].loc[most_stable_10k.index], most_stable_10k
+        df_preds[Key.each_true].loc[most_stable_10k.index], most_stable_10k
     )
     df_metrics_10k[model]["DAF"] = df_metrics_10k[model]["Precision"] / prevalence
 
@@ -207,20 +201,20 @@ model_styles = dict(zip(models, zip(plotly_line_styles, plotly_markers, plotly_c
 df_each_pred = pd.DataFrame()
 for model in models:
     df_each_pred[model] = (
-        df_preds[each_true_col] + df_preds[model] - df_preds[e_form_col]
+        df_preds[Key.each_true] + df_preds[model] - df_preds[Key.e_form]
     )
 
-# important: do df_each_pred.std(axis=1) before inserting model_mean_each_col into df
-df_preds[model_std_each_col] = df_each_pred.std(axis=1)
-df_each_pred[model_mean_each_col] = df_preds[model_mean_each_col] = df_each_pred.mean(
+# important: do df_each_pred.std(axis=1) before inserting Key.model_mean_each into df
+df_preds[Key.model_std_each] = df_each_pred.std(axis=1)
+df_each_pred[Key.model_mean_each] = df_preds[Key.model_mean_each] = df_each_pred.mean(
     axis=1
 )
 
 # dataframe of all models' errors in their EACH predictions (eV/atom)
 df_each_err = pd.DataFrame()
 for model in models:
-    df_each_err[model] = df_preds[model] - df_preds[e_form_col]
+    df_each_err[model] = df_preds[model] - df_preds[Key.e_form]
 
-df_each_err[model_mean_err_col] = df_preds[model_mean_err_col] = df_each_err.abs().mean(
+df_each_err[Key.model_mean_err] = df_preds[Key.model_mean_err] = df_each_err.abs().mean(
     axis=1
 )

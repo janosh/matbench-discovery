@@ -8,7 +8,8 @@ import pandas as pd
 import pymatviz
 from tqdm import tqdm
 
-from matbench_discovery.data import DATA_FILES, id_col
+from matbench_discovery import Task
+from matbench_discovery.data import DATA_FILES, Key
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-09-22"
@@ -16,10 +17,9 @@ __date__ = "2022-09-22"
 
 # %%
 module_dir = os.path.dirname(__file__)
-task_type = "IS2RE"
 date = "2023-01-20"
 energy_model = "megnet"
-glob_pattern = f"{date}-bowsr-{energy_model}-wbm-{task_type}/*.json.gz"
+glob_pattern = f"{date}-bowsr-{energy_model}-wbm-{Task.IS2RE}/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
@@ -30,14 +30,14 @@ dfs: dict[str, pd.DataFrame] = {}
 for file_path in tqdm(file_paths):
     if file_path in dfs:
         continue
-    dfs[file_path] = pd.read_json(file_path).set_index(id_col)
+    dfs[file_path] = pd.read_json(file_path).set_index(Key.mat_id)
 
 
 df_bowsr = pd.concat(dfs.values()).round(4)
 
 
 # %% compare against WBM formation energy targets to make sure we got sensible results
-df_wbm = pd.read_csv(DATA_FILES.wbm_summary).set_index(id_col)
+df_wbm = pd.read_csv(DATA_FILES.wbm_summary).set_index(Key.mat_id)
 
 
 print(
@@ -75,4 +75,4 @@ df_bowsr.reset_index().to_json(
 
 
 # in_path = f"{module_dir}/2023-01-23-bowsr-megnet-wbm-IS2RE.json.gz"
-# df_bowsr = pd.read_json(in_path).set_index(id_col)
+# df_bowsr = pd.read_json(in_path).set_index(Key.mat_id)

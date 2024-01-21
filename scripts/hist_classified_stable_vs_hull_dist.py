@@ -11,10 +11,10 @@ from typing import Final
 
 from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS
+from matbench_discovery import PDF_FIGS, Key
 from matbench_discovery.data import df_wbm
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist
-from matbench_discovery.preds import df_each_pred, each_true_col
+from matbench_discovery.preds import df_each_pred
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
@@ -25,12 +25,12 @@ __date__ = "2022-06-18"
 model_name = "CGCNN"
 # model_name = "CGCNN+P"
 which_energy: Final = "pred"
-df_each_pred[each_true_col] = df_wbm[each_true_col]
+df_each_pred[Key.each_true] = df_wbm[Key.each_true]
 backend: Final = "plotly"
 
 fig = hist_classified_stable_vs_hull_dist(
     df_each_pred,
-    each_true_col=each_true_col,
+    each_true_col=Key.each_true,
     each_pred_col=model_name,
     which_energy=which_energy,
     # stability_threshold=-0.05,

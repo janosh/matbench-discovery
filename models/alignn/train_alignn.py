@@ -18,7 +18,7 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from matbench_discovery import e_form_col, id_col, struct_col, today
+from matbench_discovery import Key, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 
@@ -30,7 +30,7 @@ module_dir = os.path.dirname(__file__)
 
 # %%
 model_name = "alignn-mp-e_form"
-target_col = e_form_col
+target_col = Key.form_energy
 input_col = "atoms"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 job_name = f"train-{model_name}"
@@ -54,21 +54,21 @@ slurm_vars = slurm_submit(
 
 
 # %% Load data
-df_cse = pd.read_json(DATA_FILES.mp_computed_structure_entries).set_index(id_col)
-df_cse[struct_col] = [
-    Structure.from_dict(cse[struct_col])
+df_cse = pd.read_json(DATA_FILES.mp_computed_structure_entries).set_index(Key.mat_id)
+df_cse[Key.struct] = [
+    Structure.from_dict(cse[Key.struct])
     for cse in tqdm(df_cse.entry, desc="Structures from dict")
 ]
 
 # load energies
-df_in = pd.read_csv(DATA_FILES.mp_energies).set_index(id_col)
-df_in[struct_col] = df_cse[struct_col]
+df_in = pd.read_csv(DATA_FILES.mp_energies).set_index(Key.mat_id)
+df_in[Key.struct] = df_cse[Key.struct]
 assert target_col in df_in
 
-df_in[input_col] = df_in[struct_col]
+df_in[input_col] = df_in[Key.struct]
 df_in[input_col] = [
     JarvisAtomsAdaptor.get_atoms(struct)
-    for struct in tqdm(df_in[struct_col], desc="Converting to JARVIS atoms")
+    for struct in tqdm(df_in[Key.struct], desc="Converting to JARVIS atoms")
 ]
 
 
@@ -88,7 +88,7 @@ wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 # %%
 df_train, df_val = train_test_split(
-    df_in.head(1000).reset_index()[[id_col, input_col, target_col]],
+    df_in.head(1000).reset_index()[[Key.mat_id, input_col, target_col]],
     test_size=0.05,
     random_state=42,
 )
@@ -126,7 +126,7 @@ def df_to_loader(
         target=target_col,
         line_graph=line_graph,
         atom_features=config.atom_features,
-        id_tag=id_col,
+        id_tag=Key.mat_id,
         **kwargs,
     )
     collate_fn = getattr(dataset, f"collate{'_line' if line_graph else ''}_graph")

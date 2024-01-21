@@ -14,11 +14,11 @@ from pymatviz.io import df_to_html_table, df_to_pdf
 from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
 
-from matbench_discovery import PDF_FIGS, SCRIPTS, SITE_FIGS
+from matbench_discovery import PDF_FIGS, SCRIPTS, SITE_FIGS, Key, Task
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.models import MODEL_METADATA
-from matbench_discovery.preds import df_metrics, df_metrics_10k, each_true_col
+from matbench_discovery.preds import df_metrics, df_metrics_10k
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
@@ -50,8 +50,8 @@ dummy_clf = DummyClassifier(strategy="stratified", random_state=0)
 df_mp = pd.read_csv(DATA_FILES.mp_energies, index_col=0)
 dummy_clf.fit(np.zeros_like(df_mp.energy_above_hull), df_mp.energy_above_hull == 0)
 dummy_clf_preds = dummy_clf.predict(np.zeros(len(df_wbm)))
-true_clf = df_wbm[each_true_col] < 0
-each_true = df_wbm[each_true_col]
+true_clf = df_wbm[Key.each_true] < 0
+each_true = df_wbm[Key.each_true]
 
 dummy_metrics = stable_metrics(
     each_true, np.array([1, -1])[dummy_clf_preds.astype(int)]
@@ -72,21 +72,21 @@ df_metrics_10k["Dummy"] = dummy_metrics
 
 # %% for each model this ontology dict specifies (training type, test type, model type)
 ontology = {
-    "ALIGNN": ("RS2RE", "IS2RE", "GNN"),
-    # "ALIGNN Pretrained": ("RS2RE", "IS2RE", "GNN"),
-    "CHGNet": ("S2EFSM", "IS2RE-SR", "UIP-GNN"),
-    "MACE": ("S2EFS", "IS2RE-SR", "UIP-GNN"),
-    "M3GNet": ("S2EFS", "IS2RE-SR", "UIP-GNN"),
-    "MEGNet": ("RS2RE", "IS2E", "GNN"),
-    "MEGNet RS2RE": ("RS2RE", "IS2E", "GNN"),
-    "CGCNN": ("RS2RE", "IS2E", "GNN"),
-    "CGCNN+P": ("S2RE", "IS2RE", "GNN"),
-    "Wrenformer": ("RP2RE", "IP2E", "Transformer"),
-    "BOWSR": ("RS2RE", "IS2RE-BO", "BO-GNN"),
-    "Voronoi RF": ("RS2RE", "IS2E", "Fingerprint"),
-    "M3GNet→MEGNet": ("S2EFS", "IS2RE-SR", "UIP-GNN"),
-    "CHGNet→MEGNet": ("S2EFSM", "IS2RE-SR", "UIP-GNN"),
-    "PFP": ("S2EFS", "IS2RE", "UIP"),
+    "ALIGNN": (Task.RS2RE, Task.IS2RE, "GNN"),
+    # "ALIGNN Pretrained": (Task.RS2RE, Task.IS2RE, "GNN"),
+    "CHGNet": (Task.S2EFSM, "IS2RE-SR", "UIP-GNN"),
+    "MACE": (Task.S2EFS, "IS2RE-SR", "UIP-GNN"),
+    "M3GNet": (Task.S2EFS, "IS2RE-SR", "UIP-GNN"),
+    "MEGNet": (Task.RS2RE, "IS2E", "GNN"),
+    "MEGNet RS2RE": (Task.RS2RE, "IS2E", "GNN"),
+    "CGCNN": (Task.RS2RE, "IS2E", "GNN"),
+    "CGCNN+P": (Task.S2RE, Task.IS2RE, "GNN"),
+    "Wrenformer": (Task.RP2RE, Task.IP2RE, "Transformer"),
+    "BOWSR": (Task.RS2RE, "IS2RE-BO", "BO-GNN"),
+    "Voronoi RF": (Task.RS2RE, "IS2E", "Fingerprint"),
+    "M3GNet→MEGNet": (Task.S2EFS, "IS2RE-SR", "UIP-GNN"),
+    "CHGNet→MEGNet": (Task.S2EFSM, "IS2RE-SR", "UIP-GNN"),
+    "PFP": (Task.S2EFS, Task.IS2RE, "UIP"),
     "Dummy": ("", "", ""),
 }
 ontology_cols = ["Trained", "Deployed", model_type_col := "Model Type"]

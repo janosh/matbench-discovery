@@ -18,10 +18,9 @@ from pymatgen.io.jarvis import JarvisAtomsAdaptor
 from sklearn.metrics import r2_score
 from tqdm import tqdm
 
-from matbench_discovery import init_struct_col, today
+from matbench_discovery import Key, Task, today
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import wandb_scatter
-from matbench_discovery.preds import e_form_col as target_col
 
 __author__ = "Philipp Benner, Janosh Riebesell"
 __date__ = "2023-07-11"
@@ -32,8 +31,7 @@ module_dir = os.path.dirname(__file__)
 # %%
 n_splits = 100
 # model_name = "mp_e_form_alignnn"  # pre-trained by NIST
-task_type = "IS2RE"
-input_col = init_struct_col
+task_type = Task.IS2RE
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model_name = f"alignn-ff-wbm-{task_type}"
 job_name = f"{model_name}-relaxed-wbm-{task_type}"
@@ -62,10 +60,9 @@ else:
 
 # %% Load data
 data_path = {
-    "IS2RE": DATA_FILES.wbm_initial_structures,
-    "RS2RE": DATA_FILES.wbm_computed_structure_entries,
+    Task.IS2RE: DATA_FILES.wbm_initial_structures,
+    Task.RS2RE: DATA_FILES.wbm_computed_structure_entries,
 }[task_type]
-input_col = "relaxed_structure"
 # load ALIGNN-FF relaxed structures (TODO fix directory we're loading from)
 df_in = pd.concat(map(pd.read_json, glob(f"{module_dir}/data-train-result/*.json.gz")))
 
@@ -76,7 +73,7 @@ run_params = dict(
     **{f"{dep}_version": version(dep) for dep in ("alignn", "numpy")},
     model_name=model_name,
     task_type=task_type,
-    target_col=target_col,
+    target_col=Key.e_form,
     df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
 )
 
@@ -88,9 +85,9 @@ model.eval()
 e_form_preds: dict[str, float] = {}
 with torch.no_grad():  # get predictions
     for material_id, structure in tqdm(
-        df_in[input_col].items(),
+        df_in[Key.final_struct].items(),
         total=len(df_in),
-        desc=f"Predicting {target_col=} {task_type}",
+        desc=f"Predicting {Key.e_form=} {task_type}",
     ):
         atoms = JarvisAtomsAdaptor.get_atoms(Structure.from_dict(structure))
 
@@ -117,11 +114,11 @@ else:
 # %%
 df_wbm = df_wbm.dropna()
 
-table = wandb.Table(dataframe=df_wbm[[target_col, pred_col]].reset_index())
+table = wandb.Table(dataframe=df_wbm[[Key.e_form, pred_col]].reset_index())
 
-MAE = (df_wbm[target_col] - df_wbm[pred_col]).abs().mean()
-R2 = r2_score(df_wbm[target_col], df_wbm[pred_col])
+MAE = (df_wbm[Key.e_form] - df_wbm[pred_col]).abs().mean()
+R2 = r2_score(df_wbm[Key.e_form], df_wbm[pred_col])
 title = f"{model_name} {task_type} {MAE=:.4} {R2=:.4}"
 print(title)
 
-wandb_scatter(table, fields=dict(x=target_col, y=pred_col), title=title)
+wandb_scatter(table, fields=dict(x=Key.e_form, y=pred_col), title=title)
