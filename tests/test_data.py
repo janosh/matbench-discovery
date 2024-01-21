@@ -46,20 +46,18 @@ structure = Structure(
     ],
 )
 def test_load(
-    data_key: str,
-    hydrate: bool,
+    df_float: pd.DataFrame,
     # df with Structures and ComputedStructureEntries as dicts
-    dummy_df_serialized: pd.DataFrame,
+    df_with_pmg_objects: pd.DataFrame,
     capsys: CaptureFixture[str],
     tmp_path: Path,
+    data_key: str,
+    hydrate: bool,
 ) -> None:
     filepath = DATA_FILES[data_key]
     # intercept HTTP requests and write dummy df to disk instead
     with patch("urllib.request.urlretrieve") as url_retrieve:
-        # dummy df with random floats and material_id column
-        df_csv = pd._testing.makeDataFrame().reset_index(names=Key.mat_id)  # noqa: SLF001
-
-        writer = dummy_df_serialized.to_json if ".json" in filepath else df_csv.to_csv
+        writer = df_with_pmg_objects.to_json if ".json" in filepath else df_float.to_csv
         url_retrieve.side_effect = lambda _url, path: writer(path)
         out = load(
             data_key,
@@ -205,16 +203,14 @@ def test_df_wbm() -> None:
 
 
 @pytest.mark.parametrize("pattern", ["*df.csv", "*df.json"])
-def test_glob_to_df(pattern: str, tmp_path: Path) -> None:
-    df = pd._testing.makeMixedDataFrame()  # noqa: SLF001
-
+def test_glob_to_df(pattern: str, tmp_path: Path, df_mixed: pd.DataFrame) -> None:
     os.makedirs(f"{tmp_path}", exist_ok=True)
-    df.to_csv(f"{tmp_path}/dummy_df.csv", index=False)
-    df.to_json(f"{tmp_path}/dummy_df.json")
+    df_mixed.to_csv(f"{tmp_path}/dummy_df.csv", index=False)
+    df_mixed.to_json(f"{tmp_path}/dummy_df.json")
 
     df_out = glob_to_df(f"{tmp_path}/{pattern}")
-    assert df_out.shape == df.shape
-    assert list(df_out) == list(df)
+    assert df_out.shape == df_mixed.shape
+    assert list(df_out) == list(df_mixed)
 
     with pytest.raises(FileNotFoundError):
         glob_to_df("foo")

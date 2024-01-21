@@ -1,27 +1,30 @@
 from __future__ import annotations
 
 import math
+from typing import TYPE_CHECKING
 
 import numpy as np
-import pandas as pd
 import pytest
 from pytest import approx
 
 from matbench_discovery.metrics import classify_stable, stable_metrics
 
+if TYPE_CHECKING:
+    import pandas as pd
+
 
 @pytest.mark.parametrize(
     "stability_threshold, expected",
-    [(-0.1, (6, 10, 7, 7)), (0, (6, 10, 7, 7)), (0.1, (10, 8, 6, 6))],
+    [(-0.1, (0, 0, 0, 10)), (0, (0, 0, 0, 10)), (0.1, (0, 0, 2, 8))],
 )
 def test_classify_stable(
-    stability_threshold: float, expected: tuple[int, int, int, int]
+    stability_threshold: float,
+    expected: tuple[int, int, int, int],
+    df_float: pd.DataFrame,
 ) -> None:
-    df = pd._testing.makeDataFrame()  # noqa: SLF001
-
     true_pos, false_neg, false_pos, true_neg = classify_stable(
-        e_above_hull_true=df.A,
-        e_above_hull_pred=df.B,
+        e_above_hull_true=df_float.A,
+        e_above_hull_pred=df_float.B,
         stability_threshold=stability_threshold,
     )
     n_true_pos, n_false_neg, n_false_pos, n_true_neg = map(
@@ -29,9 +32,9 @@ def test_classify_stable(
     )
 
     assert (n_true_pos, n_false_neg, n_false_pos, n_true_neg) == expected
-    assert n_true_pos + n_false_neg + n_false_pos + n_true_neg == len(df)
-    assert n_true_neg + n_false_pos == sum(stability_threshold < df.A)
-    assert n_true_pos + n_false_neg == sum(stability_threshold >= df.A)
+    assert n_true_pos + n_false_neg + n_false_pos + n_true_neg == len(df_float)
+    assert n_true_neg + n_false_pos == sum(stability_threshold < df_float.A)
+    assert n_true_pos + n_false_neg == sum(stability_threshold >= df_float.A)
 
 
 def test_stable_metrics() -> None:
@@ -63,10 +66,10 @@ def test_stable_metrics() -> None:
 
     skl_report = classification_report(y_true > 0, y_pred > 0, output_dict=True)
 
-    assert metrics["Precision"] == skl_report["False"]["precision"]
-    assert metrics["Recall"] == skl_report["False"]["recall"]
-    assert metrics["F1"] == skl_report["False"]["f1-score"]
-    assert metrics["Accuracy"] == skl_report["accuracy"]
+    assert metrics["Precision"] == pytest.approx(skl_report["False"]["precision"])
+    assert metrics["Recall"] == pytest.approx(skl_report["False"]["recall"])
+    assert metrics["F1"] == pytest.approx(skl_report["False"]["f1-score"])
+    assert metrics["Accuracy"] == pytest.approx(skl_report["accuracy"])
 
     from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
