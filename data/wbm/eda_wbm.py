@@ -16,19 +16,11 @@ from pymatviz import (
 from pymatviz.io import save_fig
 from pymatviz.utils import si_fmt, si_fmt_int
 
-from matbench_discovery import (
-    PDF_FIGS,
-    ROOT,
-    SITE_FIGS,
-    STABILITY_THRESHOLD,
-    e_form_raw_col,
-    formula_col,
-    id_col,
-)
+from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD, Key
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.energy import mp_elem_reference_entries
-from matbench_discovery.preds import df_each_err, e_form_col, each_true_col
+from matbench_discovery.preds import df_each_err
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-30"
@@ -45,17 +37,17 @@ data_page = f"{ROOT}/site/src/routes/data"
 # %% load MP training set
 df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False, na_values=[])
 
-df_mp[df_mp[formula_col].isna()]
+df_mp[df_mp[Key.formula].isna()]
 
 
 # %%
-wbm_occu_counts = count_elements(df_wbm[formula_col], count_mode="occurrence").astype(
+wbm_occu_counts = count_elements(df_wbm[Key.formula], count_mode="occurrence").astype(
     int
 )
-wbm_comp_counts = count_elements(df_wbm[formula_col], count_mode="composition")
+wbm_comp_counts = count_elements(df_wbm[Key.formula], count_mode="composition")
 
-mp_occu_counts = count_elements(df_mp[formula_col], count_mode="occurrence").astype(int)
-mp_comp_counts = count_elements(df_mp[formula_col], count_mode="composition")
+mp_occu_counts = count_elements(df_mp[Key.formula], count_mode="occurrence").astype(int)
+mp_comp_counts = count_elements(df_mp[Key.formula], count_mode="composition")
 
 all_counts = (
     ("wbm", "occurrence", wbm_occu_counts),
@@ -108,16 +100,15 @@ save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
 df_wbm["step"] = df_wbm.index.str.split("-").str[1].astype(int)
 assert df_wbm.step.between(1, 5).all()
 for batch in range(1, 6):
-    count_elements(df_wbm[df_wbm.step == batch][formula_col]).to_json(
+    count_elements(df_wbm[df_wbm.step == batch][Key.formula]).to_json(
         f"{data_page}/wbm-element-counts-{batch=}.json"
     )
 
 # export element counts by arity (how many elements in the formula)
-comp_col = "composition"
-df_wbm[comp_col] = df_wbm[formula_col].map(Composition)
+df_wbm[Key.composition] = df_wbm[Key.formula].map(Composition)
 
-for arity, df_mp in df_wbm.groupby(df_wbm[comp_col].map(len)):
-    count_elements(df_mp[formula_col]).to_json(
+for arity, df_mp in df_wbm.groupby(df_wbm[Key.composition].map(len)):
+    count_elements(df_mp[Key.formula]).to_json(
         f"{data_page}/wbm-element-counts-{arity=}.json"
     )
 
@@ -141,9 +132,9 @@ for dataset, count_mode, elem_counts in all_counts:
 
 
 # %% histogram of energy distance to MP convex hull for WBM
-e_col = each_true_col  # or e_form_col
-# e_col = e_form_raw_col
-# e_col = e_form_col
+e_col = Key.each_true
+# e_col = Key.e_form_raw
+# e_col = Key.e_form
 mean, std = df_wbm[e_col].mean(), df_wbm[e_col].std()
 
 range_x = (mean - 2 * std, mean + 2 * std)
@@ -208,9 +199,9 @@ for x_pos, label in (
 
 fig.show()
 suffix = {
-    each_true_col: "hull-dist",
-    e_form_col: "e-form",
-    e_form_raw_col: "e-form-uncorrected",
+    Key.each_true: "hull-dist",
+    Key.e_form: "e-form",
+    Key.e_form_raw: "e-form-uncorrected",
 }[e_col]
 img_name = f"hist-wbm-{suffix}"
 save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
@@ -220,25 +211,25 @@ save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=600, height=300)
 
 # %%
 e_col, n_atoms_col = "Energy (eV/atom)", "Number of Atoms"
-elem_num_col = "Atomic number"
+atom_num_col = "Atomic number"
 mp_ref_data = [
     {
         "Element": key,
         e_col: entry.energy_per_atom,
-        elem_num_col: entry.composition.elements[0].number,
+        atom_num_col: entry.composition.elements[0].number,
         n_atoms_col: entry.composition.num_atoms,
         "Name": entry.composition.elements[0].long_name,
         "Material ID": entry.entry_id.replace("-GGA", ""),
     }
     for key, entry in mp_elem_reference_entries.items()
 ]
-df_ref = pd.DataFrame(mp_ref_data).sort_values(elem_num_col)
+df_ref = pd.DataFrame(mp_ref_data).sort_values(atom_num_col)
 
 
 # %% plot MP elemental reference energies vs atomic number
 # marker size = number of atoms in reference structure
 fig = df_ref.round(2).plot.scatter(
-    x=elem_num_col, y=e_col, backend="plotly", hover_data=list(df_ref), size=n_atoms_col
+    x=atom_num_col, y=e_col, backend="plotly", hover_data=list(df_ref), size=n_atoms_col
 )
 fig.update_traces(mode="markers+lines")
 fig.layout.margin = dict(l=0, r=0, t=0, b=0)
@@ -259,14 +250,14 @@ save_fig(fig, f"{PDF_FIGS}/mp-elemental-ref-energies.pdf")
 # many models struggle on the halogens in per-element error periodic table heatmaps
 # https://janosh.github.io/matbench-discovery/models
 df_2d_tsne = pd.read_csv(f"{module_dir}/tsne/one-hot-112-composition-2d.csv.gz")
-df_2d_tsne = df_2d_tsne.set_index(id_col)
+df_2d_tsne = df_2d_tsne.set_index(Key.mat_id)
 
 df_3d_tsne = pd.read_csv(f"{module_dir}/tsne/one-hot-112-composition-3d.csv.gz")
 model = "Wrenformer"
 df_3d_tsne = pd.read_csv(
     f"{module_dir}/tsne/one-hot-112-composition+{model}-each-err-3d-metric=eucl.csv.gz"
 )
-df_3d_tsne = df_3d_tsne.set_index(id_col)
+df_3d_tsne = df_3d_tsne.set_index(Key.mat_id)
 
 df_wbm[list(df_2d_tsne)] = df_2d_tsne
 df_wbm[list(df_3d_tsne)] = df_3d_tsne
@@ -284,8 +275,8 @@ fig = px.scatter(
     x="2d t-SNE 1",
     y="2d t-SNE 2",
     color=color_col,
-    hover_name=id_col,
-    hover_data=(formula_col, each_true_col),
+    hover_name=Key.mat_id,
+    hover_data=(Key.formula, Key.each_true),
     range_color=(0, clr_range_max),
 )
 fig.show()
@@ -298,7 +289,7 @@ fig = px.scatter_3d(
     y="3d t-SNE 2",
     z="3d t-SNE 3",
     color=color_col,
-    custom_data=[id_col, formula_col, each_true_col, color_col],
+    custom_data=[Key.mat_id, Key.formula, Key.each_true, color_col],
     range_color=(0, clr_range_max),
 )
 fig.data[0].hovertemplate = (
@@ -312,13 +303,14 @@ fig.show()
 
 
 # %%
-wyckoff_col, spg_col = "wyckoff_spglib", "spacegroup"
-df_wbm[spg_col] = df_wbm[wyckoff_col].str.split("_").str[2].astype(int)
-df_mp[spg_col] = df_mp[wyckoff_col].str.split("_").str[2].astype(int)
+df_wbm[Key.spacegroup] = df_wbm[Key.wyckoff].str.split("_").str[2].astype(int)
+df_mp[Key.spacegroup] = df_mp[Key.wyckoff].str.split("_").str[2].astype(int)
 
 
 # %%
-fig = spacegroup_sunburst(df_wbm[spg_col], width=350, height=350, show_counts="percent")
+fig = spacegroup_sunburst(
+    df_wbm[Key.spacegroup], width=350, height=350, show_counts="percent"
+)
 fig.layout.title.update(text="WBM Spacegroup Sunburst", x=0.5, font_size=14)
 fig.layout.margin = dict(l=0, r=0, t=30, b=0)
 fig.show()
@@ -327,7 +319,9 @@ save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-wbm.pdf")
 
 
 # %%
-fig = spacegroup_sunburst(df_mp[spg_col], width=350, height=350, show_counts="percent")
+fig = spacegroup_sunburst(
+    df_mp[Key.spacegroup], width=350, height=350, show_counts="percent"
+)
 fig.layout.title.update(text="MP Spacegroup Sunburst", x=0.5, font_size=14)
 fig.layout.margin = dict(l=0, r=0, t=30, b=0)
 fig.show()
@@ -342,8 +336,8 @@ save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-mp.pdf")
 
 # %% compute compositional arity histograms
 arity_col = "arity"
-df_wbm[arity_col] = df_wbm[formula_col].map(Composition).map(len)
-df_mp[arity_col] = df_mp[formula_col].map(Composition).map(len)
+df_wbm[arity_col] = df_wbm[Key.formula].map(Composition).map(len)
+df_mp[arity_col] = df_mp[Key.formula].map(Composition).map(len)
 
 mp_arity_counts = df_mp[arity_col].value_counts().sort_index() / len(df_mp)
 wbm_arity_counts = df_wbm[arity_col].value_counts().sort_index() / len(df_wbm)

@@ -10,7 +10,7 @@ from pymatgen.entries.compatibility import (
 from pymatgen.entries.computed_entries import ComputedEntry, ComputedStructureEntry
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, formula_col, id_col, today
+from matbench_discovery import ROOT, Key, today
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.plots import plt
@@ -22,14 +22,11 @@ ComputedStructureEntry, not ComputedEntry when applying corrections.
 """
 
 
-df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(id_col)
+df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(Key.mat_id)
 
-cses = [
-    ComputedStructureEntry.from_dict(dct)
-    for dct in tqdm(df_cse.computed_structure_entry)
-]
+cses = [ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_cse[Key.cse])]
 
-ces = [ComputedEntry.from_dict(dct) for dct in tqdm(df_cse.computed_structure_entry)]
+ces = [ComputedEntry.from_dict(dct) for dct in tqdm(df_cse[Key.cse])]
 
 
 # %%
@@ -68,12 +65,12 @@ df_wbm["legacy_ce_correction"] = [ce.correction for ce in tqdm(ces)]
 
 
 # %%
-df_wbm["chem_sys"] = (
-    df_wbm[formula_col].str.replace("[0-9]+", "", regex=True).str.split()
+df_wbm[Key.chem_sys] = (
+    df_wbm[Key.formula].str.replace("[0-9]+", "", regex=True).str.split()
 )
 df_wbm["anion"] = None
-df_wbm["anion"][df_wbm.chem_sys.astype(str).str.contains("'O'")] = "oxide"
-df_wbm["anion"][df_wbm.chem_sys.astype(str).str.contains("'S'")] = "sulfide"
+df_wbm["anion"][df_wbm[Key.chem_sys].astype(str).str.contains("'O'")] = "oxide"
+df_wbm["anion"][df_wbm[Key.chem_sys].astype(str).str.contains("'S'")] = "sulfide"
 
 assert dict(df_wbm.anion.value_counts()) == {"oxide": 26984, "sulfide": 10606}
 

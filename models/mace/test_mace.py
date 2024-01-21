@@ -18,7 +18,7 @@ from pymatgen.core.trajectory import Trajectory
 from pymatgen.io.ase import AseAtomsAdaptor
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, formula_col, id_col, timestamp, today
+from matbench_discovery import ROOT, Key, Task, timestamp, today
 from matbench_discovery.data import DATA_FILES, as_dict_handler, df_wbm
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
@@ -28,7 +28,7 @@ __date__ = "2023-03-01"
 
 
 # %%
-task_type = "IS2RE"  # "RS2RE"
+task_type = Task.IS2RE
 module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
 slurm_array_task_count = 50
@@ -66,8 +66,8 @@ if os.path.isfile(out_path):
 
 # %%
 data_path = {
-    "RS2RE": DATA_FILES.wbm_computed_structure_entries,
-    "IS2RE": DATA_FILES.wbm_initial_structures,
+    Task.RS2RE: DATA_FILES.wbm_computed_structure_entries,
+    Task.IS2RE: DATA_FILES.wbm_initial_structures,
 }[task_type]
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
@@ -78,7 +78,7 @@ checkpoint = f"{ROOT}/models/mace/checkpoints/{model_name}.model"
 dtype = "float64"
 mace_calc = mace_mp(model=model_name, device=device, default_dtype=dtype)
 
-df_in = pd.read_json(data_path).set_index(id_col)
+df_in = pd.read_json(data_path).set_index(Key.mat_id)
 if slurm_array_task_count > 1:
     df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
 
@@ -108,10 +108,10 @@ wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 # %%
 relax_results: dict[str, dict[str, Any]] = {}
-input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
+input_col = {Task.IS2RE: Key.init_struct, Task.RS2RE: Key.final_struct}[task_type]
 
-if task_type == "RS2RE":
-    df_in[input_col] = [x["structure"] for x in df_in.computed_structure_entry]
+if task_type == Task.RS2RE:
+    df_in[input_col] = [cse["structure"] for cse in df_in[Key.cse]]
 
 structs = df_in[input_col].map(Structure.from_dict).to_dict()
 filter_cls = {"frechet": FrechetCellFilter, "exp": ExpCellFilter}[ase_filter]
@@ -156,7 +156,7 @@ for material_id in tqdm(structs, desc="Relaxing"):
 
 # %%
 df_out = pd.DataFrame(relax_results).T.add_prefix("mace_")
-df_out.index.name = id_col
+df_out.index.name = Key.mat_id
 
 df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
 
@@ -164,12 +164,10 @@ df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
 # %%
 df_wbm[e_pred_col] = df_out[e_pred_col]
 table = wandb.Table(
-    dataframe=df_wbm.dropna()[
-        ["uncorrected_energy", e_pred_col, formula_col]
-    ].reset_index()
+    dataframe=df_wbm.dropna()[[Key.dft_energy, e_pred_col, Key.formula]].reset_index()
 )
 
 title = f"MACE {task_type} ({len(df_out):,})"
-wandb_scatter(table, fields=dict(x="uncorrected_energy", y=e_pred_col), title=title)
+wandb_scatter(table, fields=dict(x=Key.dft_energy, y=e_pred_col), title=title)
 
 wandb.log_artifact(out_path, type=f"mace-wbm-{task_type}")

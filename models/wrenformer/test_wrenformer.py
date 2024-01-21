@@ -17,17 +17,16 @@ from aviary.predict import predict_from_wandb_checkpoints
 from aviary.wrenformer.data import df_to_in_mem_dataloader
 from aviary.wrenformer.model import Wrenformer
 
-from matbench_discovery import CHECKPOINT_DIR, WANDB_PATH, id_col, today
+from matbench_discovery import CHECKPOINT_DIR, WANDB_PATH, Key, Task, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.plots import wandb_scatter
-from matbench_discovery.preds import e_form_col
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-15"
 
 
-task_type = "IS2RE"
+task_type = Task.IS2RE
 data_path = DATA_FILES.wbm_summary
 debug = "slurm-submit" in sys.argv
 job_name = f"test-wrenformer-wbm-{task_type}"
@@ -45,11 +44,10 @@ slurm_vars = slurm_submit(
 
 
 # %%
-input_col = "wyckoff_spglib"
-df = pd.read_csv(data_path).dropna(subset=input_col).set_index(id_col)
+df = pd.read_csv(data_path).dropna(subset=Key.wyckoff).set_index(Key.mat_id)
 
-assert e_form_col in df, f"{e_form_col=} not in {list(df)}"
-assert input_col in df, f"{input_col=} not in {list(df)}"
+assert Key.e_form in df, f"{Key.e_form=} not in {list(df)}"
+assert Key.wyckoff in df, f"{Key.wyckoff=} not in {list(df)}"
 
 
 # %%
@@ -77,8 +75,8 @@ run_params = dict(
     versions={dep: version(dep) for dep in ("aviary", "numpy", "torch")},
     ensemble_size=len(runs),
     task_type=task_type,
-    target_col=e_form_col,
-    input_col=input_col,
+    target_col=Key.e_form,
+    input_col=Key.wyckoff,
     wandb_run_filters=filters,
     slurm_vars=slurm_vars,
     training_run_ids=[run.id for run in runs],
@@ -91,15 +89,19 @@ wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 data_loader = df_to_in_mem_dataloader(
     df=df,
     cache_dir=CHECKPOINT_DIR,
-    target_col=e_form_col,
+    target_col=Key.e_form,
     batch_size=1024,
-    input_col=input_col,
+    input_col=Key.wyckoff,
     embedding_type="wyckoff",
     shuffle=False,  # False is default but best be explicit
 )
 
 df, ensemble_metrics = predict_from_wandb_checkpoints(
-    runs, data_loader=data_loader, df=df, model_cls=Wrenformer, target_col=e_form_col
+    runs,
+    data_loader=data_loader,
+    df=df,
+    model_cls=Wrenformer,
+    target_col=Key.e_form,
 )
 df = df.round(4)
 
@@ -108,9 +110,9 @@ df.to_csv(f"{out_dir}/{job_name}-preds-{slurm_array_job_id}.csv.gz")
 
 
 # %%
-pred_col = f"{e_form_col}_pred_ens"
+pred_col = f"{Key.e_form}_pred_ens"
 assert pred_col in df, f"{pred_col=} not in {list(df)}"
-table = wandb.Table(dataframe=df[[e_form_col, pred_col]].reset_index())
+table = wandb.Table(dataframe=df[[Key.e_form, pred_col]].reset_index())
 
 
 # %%
@@ -119,4 +121,4 @@ R2 = ensemble_metrics.R2.mean()
 
 title = f"Wrenformer {task_type} ensemble={len(runs)} {MAE=:.4} {R2=:.4}"
 
-wandb_scatter(table, fields=dict(x=e_form_col, y=pred_col), title=title)
+wandb_scatter(table, fields=dict(x=Key.e_form, y=pred_col), title=title)

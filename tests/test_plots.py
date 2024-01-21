@@ -7,6 +7,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import pytest
 
+from matbench_discovery import Key
 from matbench_discovery.plots import (
     Backend,
     cumulative_metrics,
@@ -15,12 +16,7 @@ from matbench_discovery.plots import (
     plotly_markers,
     rolling_mae_vs_hull_dist,
 )
-from matbench_discovery.preds import (
-    e_form_col,
-    each_pred_col,
-    each_true_col,
-    load_df_wbm_with_preds,
-)
+from matbench_discovery.preds import load_df_wbm_with_preds
 
 AxLine = Literal["x", "y", "xy", ""]
 models = ["MEGNet", "CGCNN", "Voronoi RF"]
@@ -43,7 +39,7 @@ def test_cumulative_metrics(
     metrics: tuple[str, ...],
 ) -> None:
     fig, df_metrics = cumulative_metrics(
-        e_above_hull_true=df_wbm[each_true_col],
+        e_above_hull_true=df_wbm[Key.each_true],
         df_preds=df_wbm[models],
         backend=backend,
         project_end_point=project_end_point,
@@ -70,7 +66,7 @@ def test_cumulative_metrics_raises() -> None:
         match="invalid_metrics={'invalid'}, should be case-insensitive subset of",
     ):
         cumulative_metrics(
-            e_above_hull_true=df_wbm[each_true_col],
+            e_above_hull_true=df_wbm[Key.each_true],
             df_preds=df_wbm[models],
             metrics=("invalid",),
         )
@@ -132,14 +128,14 @@ def test_hist_classified_stable_vs_hull_dist(
 ) -> None:
     ax = plt.figure().gca()  # new figure ensures test functions use different axes
 
-    df_wbm[each_pred_col] = (
-        df_wbm[each_true_col] + df_wbm[models[0]] - df_wbm[e_form_col]
+    df_wbm[Key.each_pred] = (
+        df_wbm[Key.each_true] + df_wbm[models[0]] - df_wbm[Key.e_form]
     )
 
     ax = hist_classified_stable_vs_hull_dist(
         df_wbm,
-        each_true_col=each_true_col,
-        each_pred_col=each_pred_col,
+        each_true_col=Key.each_true,
+        each_pred_col=Key.each_pred,
         ax=ax,
         stability_threshold=stability_threshold,
         x_lim=x_lim,

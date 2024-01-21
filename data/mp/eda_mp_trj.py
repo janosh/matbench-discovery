@@ -21,34 +21,20 @@ from pymatviz.io import save_fig
 from pymatviz.utils import si_fmt
 from tqdm import tqdm
 
-from matbench_discovery import (
-    MP_DIR,
-    PDF_FIGS,
-    ROOT,
-    SITE_FIGS,
-    formula_col,
-    id_col,
-    n_sites_col,
-    stress_col,
-    stress_trace_col,
-)
+from matbench_discovery import MP_DIR, PDF_FIGS, ROOT, SITE_FIGS, Key
 from matbench_discovery.data import DATA_FILES, df_wbm
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-11-22"
 
 data_page = f"{ROOT}/site/src/routes/data"
-e_form_per_atom_col = "ef_per_atom"
-magmoms_col = "magmoms"
-forces_col = "forces"
-site_nums_col = "site_nums"
 
 
 # %% load MP element counts by occurrence to compute ratio with MPtrj
 mp_occu_counts = pd.read_json(
     f"{data_page}/mp-element-counts-by-occurrence.json", typ="series"
 )
-df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index(id_col)
+df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index(Key.mat_id)
 
 
 # %% --- load preprocessed MPtrj summary data if available ---
@@ -85,25 +71,26 @@ assert len(mp_trj_atoms) == 145_919  # number of unique MP IDs
 
 
 # %%
-info_to_id = lambda info: f"{info['task_id']}-{info['calc_id']}-{info['ionic_step']}"
+info_to_id = lambda info: f"{info[Key.task_id]}-{info['calc_id']}-{info['ionic_step']}"
 
 df_mp_trj = pd.DataFrame(
     {
         info_to_id(atoms.info): atoms.info
         | {key: atoms.arrays.get(key) for key in ("forces", "magmoms")}
-        | {"formula": str(atoms.symbols), site_nums_col: atoms.symbols}
+        | {"formula": str(atoms.symbols), Key.site_nums: atoms.symbols}
         for atoms_list in tqdm(mp_trj_atoms.values(), total=len(mp_trj_atoms))
         for atoms in atoms_list
     }
 ).T.convert_dtypes()  # convert object columns to float/int where possible
 df_mp_trj.index.name = "frame_id"
 assert len(df_mp_trj) == 1_580_312  # number of total frames
-assert formula_col in df_mp_trj
+assert Key.formula in df_mp_trj
 
 # this is the unrelaxed (but MP2020 corrected) formation energy per atom of the actual
 # relaxation step
-df_mp_trj[stress_trace_col] = [
-    np.trace(stress) / 3 for stress in tqdm(df_mp_trj[stress_col])
+df_mp_trj = df_mp_trj.rename(columns={"ef_per_atom": Key.e_form})
+df_mp_trj[Key.stress_trace] = [
+    np.trace(stress) / 3 for stress in tqdm(df_mp_trj[Key.stress])
 ]
 
 
@@ -129,7 +116,7 @@ elif "srs_mp_trj_elem_magmoms" not in locals():
     df_mp_trj_elem_magmom = pd.DataFrame(
         [
             dict(zip(elems, magmoms))
-            for elems, magmoms in df_mp_trj.set_index(site_nums_col)[magmoms_col]
+            for elems, magmoms in df_mp_trj.set_index(Key.site_nums)[Key.magmoms]
             .dropna()
             .items()
         ]
@@ -171,7 +158,7 @@ elif "srs_mp_trj_elem_forces" not in locals():
     df_mp_trj_elem_forces = pd.DataFrame(
         [
             dict(zip(elems, np.abs(forces).mean(axis=1)))
-            for elems, forces in df_mp_trj.set_index(site_nums_col)[forces_col].items()
+            for elems, forces in df_mp_trj.set_index(Key.site_nums)[Key.forces].items()
         ]
     )
     mp_trj_elem_forces = {
@@ -216,7 +203,7 @@ elif "mp_trj_elem_n_sites" not in locals():
     df_mp_trj_elem_n_sites = pd.DataFrame(
         [
             dict.fromkeys(set(site_nums), len(site_nums))
-            for site_nums in df_mp_trj[site_nums_col]
+            for site_nums in df_mp_trj[Key.site_nums]
         ]
     ).astype(int)
     mp_trj_elem_n_sites = {
@@ -274,7 +261,7 @@ save_fig(fig_ptable_sites, f"{PDF_FIGS}/mp-trj-n-sites-ptable-hists.pdf")
 elem_counts: dict[str, dict[str, int]] = {}
 for count_mode in ("composition", "occurrence"):
     trj_elem_counts = count_elements(
-        df_mp_trj[formula_col], count_mode=count_mode
+        df_mp_trj[Key.formula], count_mode=count_mode
     ).astype(int)
     elem_counts[count_mode] = trj_elem_counts
     filename = f"mp-trj-element-counts-by-{count_mode}"
@@ -335,7 +322,7 @@ pdf_kwds = dict(width=500, height=300)
 x_col, y_col = "E<sub>form</sub> (eV/atom)", count_col
 
 if "df_e_form" not in locals():  # only compute once for speed
-    e_form_hist = np.histogram(df_mp_trj[e_form_per_atom_col], bins=300)
+    e_form_hist = np.histogram(df_mp_trj[Key.e_form], bins=300)
     df_e_form = pd.DataFrame(e_form_hist, index=[y_col, x_col]).T.round(3)
 
 fig = px.bar(df_e_form, x=x_col, y=count_col, log_y=True)
@@ -356,7 +343,7 @@ x_col, y_col = "|Forces| (eV/Å)", count_col
 
 if "df_forces" not in locals():  # only compute once for speed
     forces_hist = np.histogram(
-        df_mp_trj[forces_col].explode().explode().abs(), bins=300
+        df_mp_trj[Key.forces].explode().explode().abs(), bins=300
     )
     df_forces = pd.DataFrame(forces_hist, index=[y_col, x_col]).T.round(3)
 
@@ -376,7 +363,7 @@ save_fig(fig, f"{SITE_FIGS}/mp-trj-forces-hist.svelte")
 x_col, y_col = "1/3 Tr(σ) (eV/Å³)", count_col  # noqa: RUF001
 
 if "df_stresses" not in locals():  # only compute once for speed
-    stresses_hist = np.histogram(df_mp_trj[stress_trace_col], bins=300)
+    stresses_hist = np.histogram(df_mp_trj[Key.stress_trace], bins=300)
     df_stresses = pd.DataFrame(stresses_hist, index=[y_col, x_col]).T.round(3)
 
 fig = px.bar(df_stresses, x=x_col, y=y_col, log_y=True)
@@ -396,7 +383,7 @@ save_fig(fig, f"{SITE_FIGS}/mp-trj-stresses-hist.svelte")
 x_col, y_col = "Magmoms (μ<sub>B</sub>)", count_col
 
 if "df_magmoms" not in locals():  # only compute once for speed
-    magmoms_hist = np.histogram(df_mp_trj[magmoms_col].dropna().explode(), bins=300)
+    magmoms_hist = np.histogram(df_mp_trj[Key.magmoms].dropna().explode(), bins=300)
     df_magmoms = pd.DataFrame(magmoms_hist, index=[y_col, x_col]).T.round(3)
 
 fig = px.bar(df_magmoms, x=x_col, y=y_col, log_y=True)
@@ -412,16 +399,15 @@ save_fig(fig, f"{SITE_FIGS}/mp-trj-magmoms-hist.svelte")
 
 
 # %%
-arity_col = "arity"
 for df in (df_mp_trj, df_mp, df_wbm):
-    if arity_col not in df:
-        df[arity_col] = df[formula_col].map(Composition).map(len)
+    if Key.arity not in df:
+        df[Key.arity] = df[Key.formula].map(Composition).map(len)
 
 
 # %%
 df_arity = pd.DataFrame(
     {
-        key: df[arity_col].value_counts().sort_index() / len(df)
+        key: df[Key.arity].value_counts().sort_index() / len(df)
         for key, df in (("MP", df_mp), ("MPtrj", df_mp_trj), ("WBM", df_wbm))
     }
 )
@@ -441,21 +427,21 @@ save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=450, height=280)
 
 
 # %% calc n_sites from per-site atomic numbers
-df_mp_trj[n_sites_col] = df_mp_trj[site_nums_col].map(len)
+df_mp_trj[Key.n_sites] = df_mp_trj[Key.site_nums].map(len)
 n_sites_hist, n_sites_bins = np.histogram(
-    df_mp_trj[n_sites_col], bins=range(1, df_mp_trj[n_sites_col].max() + 1)
+    df_mp_trj[Key.n_sites], bins=range(1, df_mp_trj[Key.n_sites].max() + 1)
 )
 
 n_struct_col = "Number of Structures"
-df_n_sites = pd.DataFrame({n_sites_col: n_sites_bins[:-1], n_struct_col: n_sites_hist})
+df_n_sites = pd.DataFrame({Key.n_sites: n_sites_bins[:-1], n_struct_col: n_sites_hist})
 log_y = False
 
 
 # %% plot n_sites distribution
-fig = px.bar(df_n_sites, x=n_sites_col, y=n_struct_col, log_y=log_y, range_x=(1, 200))
+fig = px.bar(df_n_sites, x=Key.n_sites, y=n_struct_col, log_y=log_y, range_x=(1, 200))
 # add inset plot with log scale
 fig.add_bar(
-    x=df_n_sites[n_sites_col],
+    x=df_n_sites[Key.n_sites],
     y=df_n_sites[n_struct_col],
     showlegend=False,
     xaxis="x2",
@@ -467,7 +453,7 @@ bin_width = n_sites_bins[1] - n_sites_bins[0]
 fig.update_traces(width=bin_width, marker_line_width=0)
 # add cumulative distribution as 2nd y axis
 fig.add_scatter(
-    x=df_n_sites[n_sites_col],
+    x=df_n_sites[Key.n_sites],
     y=df_n_sites[n_struct_col].cumsum() / df_n_sites[n_struct_col].sum(),
     mode="lines",
     name="Cumulative",

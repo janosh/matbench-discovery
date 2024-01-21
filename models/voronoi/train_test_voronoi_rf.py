@@ -13,10 +13,9 @@ from sklearn.impute import SimpleImputer
 from sklearn.metrics import r2_score
 from sklearn.pipeline import Pipeline
 
-from matbench_discovery import ROOT, formula_col, id_col, today
+from matbench_discovery import ROOT, Key, Task, today
 from matbench_discovery.data import DATA_FILES, df_wbm, glob_to_df
 from matbench_discovery.plots import wandb_scatter
-from matbench_discovery.preds import e_form_col as test_e_form_col
 from matbench_discovery.slurm import slurm_submit
 
 sys.path.append(f"{ROOT}/models")
@@ -28,7 +27,7 @@ __date__ = "2022-11-26"
 
 # %%
 module_dir = os.path.dirname(__file__)
-task_type = "IS2RE"
+task_type = Task.IS2RE
 print(f"{task_type=}")
 
 out_dir = f"{module_dir}/{today}-train-test"
@@ -49,22 +48,21 @@ slurm_vars = slurm_submit(
 
 # %%
 train_path = f"{module_dir}/2022-11-25-features-mp/voronoi-features-mp-*.csv.bz2"
-df_train = glob_to_df(train_path).set_index(id_col)
+df_train = glob_to_df(train_path).set_index(Key.mat_id)
 print(f"{df_train.shape=}")
 
-df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index(id_col)
-train_e_form_col = "formation_energy_per_atom"
+df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index(Key.mat_id)
 
 test_path = f"{module_dir}/2022-11-18-features-wbm-{task_type}.csv.bz2"
-df_test = pd.read_csv(test_path).set_index(id_col)
+df_test = pd.read_csv(test_path).set_index(Key.mat_id)
 print(f"{df_test.shape=}")
 
 
 for df, df_tar, col in (
-    (df_train, df_mp, train_e_form_col),
-    (df_test, df_wbm, test_e_form_col),
+    (df_train, df_mp, Key.form_energy),
+    (df_test, df_wbm, Key.e_form),
 ):
-    df[train_e_form_col] = df_tar[train_e_form_col]
+    df[Key.form_energy] = df_tar[Key.form_energy]
     nans = df_tar[col].isna().sum()
     assert nans == 0, f"{nans} NaNs in {col} targets"
 
@@ -76,8 +74,8 @@ run_params = dict(
     mp_energies_path=DATA_FILES.mp_energies,
     versions={dep: version(dep) for dep in ("scikit-learn", "matminer", "numpy")},
     model_name=model_name,
-    train_target_col=train_e_form_col,
-    test_target_col=test_e_form_col,
+    train_target_col=Key.form_energy,
+    test_target_col=Key.e_form,
     df_train=dict(shape=str(df_train.shape)),
     df_test=dict(shape=str(df_test.shape)),
     slurm_vars=slurm_vars,
@@ -105,7 +103,7 @@ model = Pipeline(
 
 
 # %%
-model.fit(df_train[feature_names], df_train[train_e_form_col])
+model.fit(df_train[feature_names], df_train[Key.form_energy])
 
 
 # %%
@@ -122,14 +120,12 @@ df_wbm[pred_col] = df_test[pred_col]
 
 df_wbm[pred_col].round(4).to_csv(out_path)
 
-table = wandb.Table(
-    dataframe=df_wbm[[formula_col, test_e_form_col, pred_col]].reset_index()
-)
+table = wandb.Table(dataframe=df_wbm[[Key.formula, Key.e_form, pred_col]].reset_index())
 
 df_wbm[pred_col].isna().sum()
-MAE = (df_wbm[test_e_form_col] - df_wbm[pred_col]).abs().mean()
-R2 = r2_score(*df_wbm[[test_e_form_col, pred_col]].dropna().to_numpy().T)
+MAE = (df_wbm[Key.e_form] - df_wbm[pred_col]).abs().mean()
+R2 = r2_score(*df_wbm[[Key.e_form, pred_col]].dropna().to_numpy().T)
 title = f"{model_name} {task_type} {MAE=:.3} {R2=:.3}"
 print(title)
 
-wandb_scatter(table, fields=dict(x=test_e_form_col, y=pred_col), title=title)
+wandb_scatter(table, fields=dict(x=Key.e_form, y=pred_col), title=title)

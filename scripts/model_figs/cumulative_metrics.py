@@ -12,15 +12,9 @@ will provide the best hit rate for the given budget.
 import pandas as pd
 from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery import PDF_FIGS, SITE_FIGS, Key
 from matbench_discovery.plots import cumulative_metrics
-from matbench_discovery.preds import (
-    df_each_pred,
-    df_preds,
-    each_true_col,
-    model_styles,
-    models,
-)
+from matbench_discovery.preds import df_each_pred, df_preds, model_styles, models
 
 __author__ = "Janosh Riebesell, Rhys Goodall"
 __date__ = "2022-12-04"
@@ -34,7 +28,7 @@ range_y = {
     ("Precision", "Recall"): (0, 1),
 }[metrics]
 fig, df_metric = cumulative_metrics(
-    e_above_hull_true=df_preds[each_true_col],
+    e_above_hull_true=df_preds[Key.each_true],
     df_preds=df_each_pred[models],
     project_end_point="xy",
     backend=(backend := "plotly"),

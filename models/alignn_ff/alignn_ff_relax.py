@@ -9,16 +9,15 @@ from pymatgen.core import Structure
 from pymatgen.io.jarvis import JarvisAtomsAdaptor
 from tqdm import tqdm
 
-from matbench_discovery import id_col, init_struct_col, today
+from matbench_discovery import Key, Task, today
 from matbench_discovery.data import DATA_FILES, df_wbm
-from matbench_discovery.preds import e_form_col as target_col
 
 __author__ = "Janosh Riebesell, Philipp Benner"
 __date__ = "2023-07-11"
 
 
 # %% read environment variables
-batch = int(os.getenv("TASK_ID", default="0"))
+task_id = int(os.getenv("TASK_ID", default="0"))
 out_dir = os.getenv("SBATCH_OUTPUT", default=f"{today}-alignn-wbm-IS2RE")
 
 
@@ -28,38 +27,37 @@ n_processes_per_task = 10
 module_dir = os.path.dirname(__file__)
 # model_name = "mp_e_form_alignn"  # pre-trained by NIST
 model_name = f"{out_dir}/best-model.pth"
-task_type = "IS2RE"
-input_col = init_struct_col
+task_type = Task.IS2RE
+input_col = Key.init_struct
 job_name = f"{model_name}-wbm-{task_type}"
 out_path = (
-    f"{out_dir}/{'alignn-relaxed-structs' if batch == 0 else f'{batch=}'}.json.gz"
+    f"{out_dir}/{'alignn-relaxed-structs' if task_id == 0 else f'{task_id=}'}.json.gz"
 )
 
-if batch < 0 or batch > n_splits:
-    raise SystemExit(f"Invalid task_id={batch}")
-if batch > 0 and not os.path.exists(out_dir):
-    os.mkdir(out_dir)
+if not (0 < task_id <= n_splits):
+    raise SystemExit(f"Invalid {task_id=}")
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path = } already exists, exiting")
+os.makedirs(out_dir, exist_ok=True)
 
 
 # %% Load data
 data_path = {
-    "IS2RE": DATA_FILES.wbm_initial_structures,
-    "RS2RE": DATA_FILES.wbm_computed_structure_entries,
+    Task.IS2RE: DATA_FILES.wbm_initial_structures,
+    Task.RS2RE: DATA_FILES.wbm_computed_structure_entries,
 }[task_type]
-input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
+input_col = {Task.IS2RE: Key.init_struct, Task.RS2RE: Key.final_struct}[task_type]
 
-df_in = pd.read_json(data_path).set_index(id_col)
+df_in = pd.read_json(data_path).set_index(Key.mat_id)
 
-df_in[target_col] = df_wbm[target_col]
-if task_type == "RS2RE":
-    df_in[input_col] = [x["structure"] for x in df_in.computed_structure_entry]
+df_in[Key.e_form] = df_wbm[Key.e_form]
+if task_type == Task.RS2RE:
+    df_in[input_col] = [cse["structure"] for cse in df_in[Key.cse]]
 assert input_col in df_in, f"{input_col=} not in {list(df_in)}"
 
 # Split data into parts and process only one batch
-if batch != 0:
-    df_in = np.array_split(df_in, 100)[batch - 1]
+if task_id != 0:
+    df_in = np.array_split(df_in, 100)[task_id - 1]
     print(f"Relaxing materials in range {df_in.index[0]} - {df_in.index[-1]}")
 else:
     print("Relaxing full range of materials")
@@ -82,7 +80,7 @@ def alignn_relax(structure: Structure) -> Structure:
     ff = ForceField(
         jarvis_atoms=JarvisAtomsAdaptor.get_atoms(Structure.from_dict(structure)),
         model_path=default_path(),
-        device=f"cuda:{batch % 4}" if torch.cuda.is_available() else "cpu",
+        device=f"cuda:{task_id % 4}" if torch.cuda.is_available() else "cpu",
         logfile="/dev/null",
     )
     # Relax structure
@@ -91,9 +89,7 @@ def alignn_relax(structure: Structure) -> Structure:
     return JarvisAtomsAdaptor.get_structure(opt)
 
 
-structures = [
-    df_in.loc[material_id]["initial_structure"] for material_id in df_in.index
-]
+structures = [df_in.loc[material_id][Key.init_struct] for material_id in df_in.index]
 df_relaxed = tqdm(structures, alignn_relax, n_jobs=n_processes_per_task)
 
 df_in = df_in.assign(relaxed_structure=df_relaxed)

@@ -10,7 +10,7 @@ from pymatgen.core import Structure
 from pymatviz import density_scatter, plot_structure_2d, ptable_heatmap_plotly
 from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS, formula_col, id_col
+from matbench_discovery import PDF_FIGS, Key
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.preds import PRED_FILES, df_preds
@@ -24,9 +24,9 @@ module_dir = os.path.dirname(__file__)
 # %%
 df_chgnet = df_chgnet_v030 = pd.read_csv(PRED_FILES.CHGNet)
 df_chgnet_v020 = pd.read_csv(
-    f"{module_dir}/2023-03-06-chgnet-0.2.0-wbm-IS2RE.csv.gz", index_col=id_col
+    f"{module_dir}/2023-03-06-chgnet-0.2.0-wbm-IS2RE.csv.gz", index_col=Key.mat_id
 )
-df_chgnet[formula_col] = df_wbm[formula_col]
+df_chgnet[Key.formula] = df_wbm[Key.formula]
 
 e_form_2000 = "e_form_per_atom_chgnet_relax_steps_2000"
 e_form_500 = "e_form_per_atom_chgnet_relax_steps_500"
@@ -50,8 +50,8 @@ density_scatter(df=df_chgnet, x=e_form_500, y=e_form_2000)
 df_diff.reset_index().plot.scatter(
     x=e_form_500,
     y=e_form_2000,
-    hover_name=id_col,
-    hover_data=[formula_col],
+    hover_name=Key.mat_id,
+    hover_data=[Key.formula],
     backend="plotly",
     title=f"{len(df_diff)} structures have > {min_e_diff} eV/atom energy diff after "
     "longer relaxation",
@@ -59,14 +59,14 @@ df_diff.reset_index().plot.scatter(
 
 
 # %%
-fig = ptable_heatmap_plotly(df_bad[formula_col])
+fig = ptable_heatmap_plotly(df_bad[Key.formula])
 title = "structures with larger error<br>after longer relaxation"
 fig.layout.title.update(text=f"{len(df_diff)} {title}", x=0.4, y=0.9)
 fig.show()
 
 
 # %%
-df_cse = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index(id_col)
+df_cse = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index(Key.mat_id)
 df_cse.loc[df_diff.index].reset_index().to_json(
     f"{module_dir}/wbm-chgnet-bad-relax.json.gz"
 )
@@ -76,7 +76,7 @@ df_cse.loc[df_diff.index].reset_index().to_json(
 n_rows, n_cols = 3, 4
 fig, axs = plt.subplots(n_rows, n_cols, figsize=(3 * n_cols, 4 * n_rows))
 n_struct = min(n_rows * n_cols, len(df_diff))
-struct_col = "initial_structure"
+struct_col = Key.init_struct
 
 fig.suptitle(f"{n_struct} {struct_col} {title}", fontsize=16, fontweight="bold", y=1.05)
 for idx, (ax, row) in enumerate(

@@ -13,47 +13,40 @@ import plotly.express as px
 from pymatviz.io import save_fig
 from pymatviz.utils import add_identity_line, bin_df_cols
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, formula_col
+from matbench_discovery import PDF_FIGS, SITE_FIGS, Key
 from matbench_discovery.plots import clf_colors
-from matbench_discovery.preds import (
-    df_metrics,
-    df_preds,
-    e_form_col,
-    each_pred_col,
-    each_true_col,
-)
+from matbench_discovery.preds import df_metrics, df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
 
-e_form_pred_col = "e_form_per_atom_pred"
 legend = dict(x=1, y=0, xanchor="right", yanchor="bottom", title=None)
 
 # toggle between formation energy and energy above convex hull
 which_energy: Literal["e-form", "each"] = globals().get("which_energy", "each")
 if which_energy == "each":
-    e_pred_col = each_pred_col
-    e_true_col = each_true_col
+    e_pred_col = Key.each_pred
+    e_true_col = Key.each_true
 if which_energy == "e-form":
-    e_true_col = e_form_col
-    e_pred_col = e_form_pred_col
+    e_true_col = Key.e_form
+    e_pred_col = Key.e_form_pred
 
 
 # %%
 facet_col = "Model"
-hover_cols = (each_true_col, formula_col)
+hover_cols = (Key.each_true, Key.formula)
 models = list(df_metrics.T.MAE.nsmallest(6).index)  # top 6 models by MAE
 models = list(df_metrics)  # all models
 
 df_melt = df_preds.melt(
-    id_vars=(df_preds.index.name, e_form_col, *hover_cols),
+    id_vars=(df_preds.index.name, Key.e_form, *hover_cols),
     var_name=facet_col,
     value_vars=models,
-    value_name=e_form_pred_col,
+    value_name=Key.e_form_pred,
 )
 
-df_melt[each_pred_col] = (
-    df_melt[each_true_col] + df_melt[e_form_pred_col] - df_melt[e_form_col]
+df_melt[Key.each_pred] = (
+    df_melt[Key.each_true] + df_melt[Key.e_form_pred] - df_melt[Key.e_form]
 )
 
 df_bin = bin_df_cols(
@@ -83,8 +76,8 @@ legend_order = list(df_metrics.T.MAE.sort_values().index)
 # %% parity plot of actual vs predicted e_form_per_atom
 fig = px.scatter(
     df_bin,
-    x=e_form_col,
-    y=e_form_pred_col,
+    x=Key.e_form,
+    y=Key.e_form_pred,
     color=facet_col,
     hover_data=hover_cols,
     hover_name=df_preds.index.name,
@@ -190,7 +183,7 @@ for idx, anno in enumerate(fig.layout.annotations, 1):
     fig.layout[f"yaxis{idx}"].title.text = ""
 
 # add transparent rectangle with TN, TP, FN, FP labels in each quadrant
-if e_true_col == each_true_col:
+if e_true_col == Key.each_true:
     # add dashed quadrant separators
     fig.add_vline(x=0, line=dict(width=0.5, dash="dash"))
     fig.add_hline(y=0, line=dict(width=0.5, dash="dash"))

@@ -14,7 +14,7 @@ import wandb
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, id_col, today
+from matbench_discovery import ROOT, Key, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 
@@ -32,8 +32,7 @@ data_path = {
     "mp": DATA_FILES.mp_computed_structure_entries,
 }[data_name]
 
-input_col = "initial_structure"
-# input_col = "relaxed_structure"
+input_col = Key.init_struct  # or Key.final_struct
 debug = "slurm-submit" in sys.argv
 job_name = f"voronoi-features-{data_name}"
 module_dir = os.path.dirname(__file__)
@@ -61,16 +60,16 @@ if os.path.isfile(out_path):
     raise SystemExit(f"{out_path=} already exists, exciting early")
 
 print(f"{data_path=}")
-df_in = pd.read_json(data_path).set_index(id_col)
+df_in = pd.read_json(data_path).set_index(Key.mat_id)
 if slurm_array_task_count > 1:
     df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
 
 if data_name == "mp":  # extract structure dicts from ComputedStructureEntry
-    struct_dicts = [x["structure"] for x in df_in.entry]
-elif data_name == "wbm" and input_col == "relaxed_structure":
-    struct_dicts = [x["structure"] for x in df_in.computed_structure_entry]
-elif data_name == "wbm" and input_col == "initial_structure":
-    struct_dicts = df_in.initial_structure
+    struct_dicts = [cse["structure"] for cse in df_in.entry]
+elif data_name == "wbm" and input_col == Key.final_struct:
+    struct_dicts = [cse["structure"] for cse in df_in[Key.cse]]
+elif data_name == "wbm" and input_col == Key.init_struct:
+    struct_dicts = df_in[Key.init_struct]
 
 df_in[input_col] = [
     Structure.from_dict(dct) for dct in tqdm(struct_dicts, disable=None)

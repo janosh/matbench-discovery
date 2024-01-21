@@ -17,7 +17,7 @@ from pymongo import MongoClient
 from pymongo.database import Database
 from tqdm import tqdm, trange
 
-from matbench_discovery import ROOT, today
+from matbench_discovery import ROOT, Key, today
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-15"
@@ -40,27 +40,30 @@ db: Database[TaskDoc] = MongoClient(uri)[db_name]
 
 # %%
 ids_path = f"{module_dir}/2023-03-15-mp-task-ids.csv.bz2"
-fields = "task_id formula_pretty run_type nsites task_type tags completed_at".split()
+fields = (
+    f"{Key.task_id} formula_pretty run_type nsites task_type tags completed_at".split()
+)
 
 if os.path.isfile(ids_path):
     print(f"Found existing list of task IDs to query at\n{ids_path=}")
-    df_tasks = pd.read_csv(ids_path, low_memory=False).set_index("task_id")
+    df_tasks = pd.read_csv(ids_path, low_memory=False).set_index(Key.task_id)
 else:
     print(f"Querying all task docs from {db_name}\n{fields=}.\nThis takes a while...")
     task_docs = sorted(
-        db["tasks"].find({}, fields), key=lambda doc: int(doc["task_id"].split("-")[1])
+        db["tasks"].find({}, fields),
+        key=lambda doc: int(doc[Key.task_id].split("-")[1]),
     )
 
     print(f"{today}: {len(task_docs) = :,}")
 
-    df_tasks = pd.DataFrame(task_docs).drop(columns=["_id"]).set_index("task_id")
+    df_tasks = pd.DataFrame(task_docs).drop(columns=["_id"]).set_index(Key.task_id)
     df_tasks.task_type.value_counts(dropna=False).plot.pie()
 
     df_tasks.to_csv(f"{module_dir}/{today}-mp-task-ids.csv.bz2")
 
 
 # %% inspect schema of a single task doc
-doc = db.tasks.find_one({"task_id": "mp-288"})
+doc = db.tasks.find_one({Key.task_id: "mp-288"})
 # the most relevant task data is found in the 1st calc's ionic steps which are
 # the relaxation trajectory frames with the highest rate of change
 # see docs[0]["calcs_reversed"][-1]["output"]["ionic_steps"]
@@ -91,13 +94,13 @@ for start_idx in pbar:
     # query batch of task docs
     batch_docs = list(
         db["tasks"].find(
-            {"task_id": {"$in": batch_ids}},
+            {Key.task_id: {"$in": batch_ids}},
             [*fields, "calcs_reversed.output.ionic_steps"],
         )
     )
 
     # Convert documents to DataFrame and save to file
-    df_batch = pd.DataFrame(batch_docs).set_index("task_id").drop(columns=["_id"])
+    df_batch = pd.DataFrame(batch_docs).set_index(Key.task_id).drop(columns=["_id"])
     # handler=str needed since MongoDB ObjectId is not JSON serializable
     df_batch.reset_index().to_json(out_path, default_handler=str)
     # don't store df_batch to save memory
@@ -106,7 +109,7 @@ for start_idx in pbar:
 # %% inspect saved task docs for expected data
 df_batch = pd.read_json(
     f"{module_dir}/mp-tasks/mp-531529__mp-568116.json.gz"
-).set_index("task_id")
+).set_index(Key.task_id)
 
 print(f"{len(df_batch)=}")
 df_batch.head()

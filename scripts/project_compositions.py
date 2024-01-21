@@ -11,7 +11,7 @@ import pandas as pd
 from pymatgen.core import Composition
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR, formula_col, id_col
+from matbench_discovery import DATA_DIR, Key
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 
@@ -41,7 +41,7 @@ print(f"{out_dim=}")
 print(f"{projection_type=}")
 start_time = datetime.now()
 print(f"job started at {start_time:%Y-%m-%d %H:%M:%S}")
-df_in = pd.read_csv(data_path, na_filter=False).set_index(id_col)
+df_in = pd.read_csv(data_path, na_filter=False).set_index(Key.mat_id)
 
 
 def metric(
@@ -81,7 +81,7 @@ def sum_one_hot_elem(formula: str) -> np.ndarray[Any, np.int64]:
 
 
 one_hot_encoding = np.array(
-    [sum_one_hot_elem(formula) for formula in tqdm(df_in[formula_col])]
+    [sum_one_hot_elem(formula) for formula in tqdm(df_in[Key.formula])]
 )
 
 projections = projector.fit_transform(one_hot_encoding)
