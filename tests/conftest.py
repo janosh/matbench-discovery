@@ -8,8 +8,6 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 
 from matbench_discovery import Key
 
-rng = np.random.default_rng(0)
-
 
 @pytest.fixture()
 def dummy_struct() -> Structure:
@@ -22,18 +20,19 @@ def dummy_struct() -> Structure:
 
 @pytest.fixture()
 def df_float() -> pd.DataFrame:
-    return pd.DataFrame(rng.random(size=(10, 5)), columns=[*"ABCDE"])
+    rng = np.random.default_rng(0)
+
+    return pd.DataFrame(rng.normal(size=(10, 5)), columns=[*"ABCDE"])
 
 
 @pytest.fixture()
 def df_mixed() -> pd.DataFrame:
-    return pd.DataFrame(
-        dict(
-            A=rng.random(size=10),
-            B=rng.choice([True, False], size=10),
-            C=rng.choice([*"abcdef"], size=10),
-        )
-    )
+    rng = np.random.default_rng(0)
+
+    floats = rng.random(size=10)
+    bools = rng.choice([True, False], size=10)
+    strings = rng.choice([*"abcdef"], size=10)
+    return pd.DataFrame(dict(floats=floats, bools=bools, strings=strings))
 
 
 @pytest.fixture()

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 @pytest.mark.parametrize(
     "stability_threshold, expected",
-    [(-0.1, (0, 0, 0, 10)), (0, (0, 0, 0, 10)), (0.1, (0, 0, 2, 8))],
+    [(-0.1, (2, 4, 3, 1)), (0, (2, 4, 3, 1)), (0.1, (4, 3, 2, 1))],
 )
 def test_classify_stable(
     stability_threshold: float,
