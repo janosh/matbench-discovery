@@ -13,10 +13,9 @@ from pymatgen.core import Structure
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from matbench_discovery import CHECKPOINT_DIR, WANDB_PATH, WBM_DIR, id_col, today
+from matbench_discovery import CHECKPOINT_DIR, WANDB_PATH, WBM_DIR, Key, Task, today
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import wandb_scatter
-from matbench_discovery.preds import e_form_col as target_col
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
@@ -28,7 +27,7 @@ formation energies, then make predictions on some dataset, prints ensemble metri
 saves predictions to CSV.
 """
 
-task_type = "IS2RE"
+task_type = Task.IS2RE
 debug = False
 job_name = f"test-cgcnn-wbm-{task_type}"
 module_dir = os.path.dirname(__file__)
@@ -46,17 +45,17 @@ slurm_vars = slurm_submit(
 
 # %%
 data_path = {
-    "IS2RE": DATA_FILES.wbm_initial_structures,
-    "RS2RE": DATA_FILES.wbm_computed_structure_entries,
+    Task.IS2RE: DATA_FILES.wbm_initial_structures,
+    Task.RS2RE: DATA_FILES.wbm_computed_structure_entries,
     "IS2RE-debug": f"{WBM_DIR}/2022-10-19-wbm-init-structs.json-1k-samples.bz2",
 }[task_type]
-input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
+input_col = {Task.IS2RE: Key.init_struct, Task.RS2RE: Key.final_struct}[task_type]
 
-df = pd.read_json(data_path).set_index(id_col)
+df = pd.read_json(data_path).set_index(Key.mat_id)
 
-df[target_col] = df_wbm[target_col]
-if task_type == "RS2RE":
-    df[input_col] = [x["structure"] for x in df.computed_structure_entry]
+df[Key.e_form] = df_wbm[Key.e_form]
+if task_type == Task.RS2RE:
+    df[input_col] = [cse["structure"] for cse in df[Key.cse]]
 assert input_col in df, f"{input_col=} not in {list(df)}"
 
 df[input_col] = [Structure.from_dict(dct) for dct in tqdm(df[input_col], disable=None)]
@@ -87,7 +86,7 @@ run_params = dict(
     versions={dep: version(dep) for dep in ("aviary", "numpy", "torch")},
     ensemble_size=len(runs),
     task_type=task_type,
-    target_col=target_col,
+    target_col=Key.e_form,
     input_col=input_col,
     wandb_run_filters=filters,
     slurm_vars=slurm_vars,
@@ -97,7 +96,7 @@ run_params = dict(
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 cg_data = CrystalGraphData(
-    df, task_dict={target_col: "regression"}, structure_col=input_col
+    df, task_dict={Key.e_form: "regression"}, structure_col=input_col
 )
 data_loader = DataLoader(
     cg_data, batch_size=1024, shuffle=False, collate_fn=collate_batch
@@ -110,16 +109,16 @@ df, ensemble_metrics = predict_from_wandb_checkpoints(
     # dropping isolated-atom structs means len(cg_data.df) < len(df)
     cache_dir=CHECKPOINT_DIR,
     df=cg_data.df.drop(columns=input_col),
-    target_col=target_col,
+    target_col=Key.e_form,
     model_cls=CrystalGraphConvNet,
     data_loader=data_loader,
 )
 
 slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", "debug")
 df.round(4).to_csv(f"{out_dir}/{job_name}-preds-{slurm_array_job_id}.csv.gz")
-pred_col = f"{target_col}_pred_ens"
+pred_col = f"{Key.e_form}_pred_ens"
 assert pred_col in df, f"{pred_col=} not in {list(df)}"
-table = wandb.Table(dataframe=df[[target_col, pred_col]].reset_index())
+table = wandb.Table(dataframe=df[[Key.e_form, pred_col]].reset_index())
 
 
 # %%
@@ -128,4 +127,4 @@ R2 = ensemble_metrics.R2.mean()
 
 title = f"CGCNN {task_type} ensemble={len(runs)} {MAE=:.4} {R2=:.4}"
 
-wandb_scatter(table, fields=dict(x=target_col, y=pred_col), title=title)
+wandb_scatter(table, fields=dict(x=Key.e_form, y=pred_col), title=title)

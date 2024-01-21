@@ -14,7 +14,7 @@ import pandas as pd
 from monty.json import MontyDecoder
 from tqdm import tqdm
 
-from matbench_discovery import FIGSHARE_DIR, id_col
+from matbench_discovery import FIGSHARE_DIR, Key
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -124,8 +124,8 @@ def load(
         print(f"\n\nvariable dump:\n{file=},\n{reader=}\n{kwargs=}")
         raise
 
-    if id_col in df:
-        df = df.set_index(id_col)
+    if Key.mat_id in df:
+        df = df.set_index(Key.mat_id)
     if hydrate:
         for col in df:
             if not isinstance(df[col].iloc[0], dict):
@@ -270,4 +270,4 @@ DATA_FILES = DataFiles()
 
 
 df_wbm = load("wbm_summary")
-df_wbm[id_col] = df_wbm.index
+df_wbm[Key.mat_id] = df_wbm.index

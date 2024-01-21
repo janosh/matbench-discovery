@@ -14,7 +14,7 @@ from maml.apps.bowsr.optimizer import BayesianOptimizer
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import id_col, timestamp, today
+from matbench_discovery import Key, Task, timestamp, today
 from matbench_discovery.data import DATA_FILES, as_dict_handler
 from matbench_discovery.slurm import slurm_submit
 
@@ -27,7 +27,7 @@ Requires MEGNet and MAML installation: pip install megnet maml
 https://github.com/materialsvirtuallab/maml
 """
 
-task_type = "IS2RE"  # "RS2RE"
+task_type = Task.IS2RE
 module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
 slurm_array_task_count = 500
@@ -39,8 +39,8 @@ job_name = f"bowsr-{energy_model}-wbm-{task_type}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 data_path = {
-    "IS2RE": DATA_FILES.wbm_initial_structures,
-    "RS2RE": DATA_FILES.wbm_computed_structure_entries,
+    Task.IS2RE: DATA_FILES.wbm_initial_structures,
+    Task.RS2RE: DATA_FILES.wbm_computed_structure_entries,
 }[task_type]
 
 
@@ -73,7 +73,7 @@ print(f"\nJob started running {timestamp}")
 print(f"{data_path = }")
 print(f"{out_path=}")
 
-df_in = pd.read_json(data_path).set_index(id_col)
+df_in = pd.read_json(data_path).set_index(Key.mat_id)
 if slurm_array_task_count > 1:
     df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
 
@@ -104,10 +104,10 @@ wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 # %%
 model = MEGNet()
 relax_results: dict[str, dict[str, Any]] = {}
-input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
+input_col = {Task.IS2RE: Key.init_struct, Task.RS2RE: Key.final_struct}[task_type]
 
-if task_type == "RS2RE":
-    df_in[input_col] = [x["structure"] for x in df_in.computed_structure_entry]
+if task_type == Task.RS2RE:
+    df_in[input_col] = [cse["structure"] for cse in df_in[Key.cse]]
 
 structures = df_in[input_col].map(Structure.from_dict).to_dict()
 
@@ -142,7 +142,7 @@ for material_id in tqdm(structures, desc="Relaxing", disable=None):
 
 # %%
 df_out = pd.DataFrame(relax_results).T
-df_out.index.name = id_col
+df_out.index.name = Key.mat_id
 
 df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
 

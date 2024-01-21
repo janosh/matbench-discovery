@@ -5,15 +5,17 @@ import pytest
 from pymatgen.core import Lattice, Structure
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 
+from matbench_discovery import Key
+
 
 @pytest.fixture()
 def dummy_df_serialized(dummy_struct: Structure) -> pd.DataFrame:
     # create a dummy df with a structure column on which to test (de-)serialization
     df = pd.DataFrame(dict(material_id=range(5), structure=[dummy_struct] * 5))
-    df["volume"] = [x.volume for x in df.structure]
-    df["structure"] = [x.as_dict() for x in df.structure]
+    df[Key.volume] = [x.volume for x in df.structure]
+    df[Key.struct] = [x.as_dict() for x in df.structure]
     cse_dict = ComputedStructureEntry(dummy_struct, 0).as_dict()
-    df["computed_structure_entry"] = [cse_dict] * len(df)
+    df[Key.cse] = [cse_dict] * len(df)
     return df
 
 

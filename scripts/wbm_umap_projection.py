@@ -23,7 +23,7 @@ from pymatgen.core import Structure
 from pymatviz.io import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import MP_DIR, PDF_FIGS, WBM_DIR, id_col
+from matbench_discovery import MP_DIR, PDF_FIGS, WBM_DIR, Key
 from matbench_discovery.data import DATA_FILES
 
 __author__ = "Philipp Benner, Janosh Riebesell"
@@ -110,11 +110,9 @@ def featurize_dataframe(
 
 
 # %%
-def featurize_file(
-    filename: str, struct_col: str = "initial_structure"
-) -> pd.DataFrame:
+def featurize_file(filename: str, struct_col: str = Key.init_struct) -> pd.DataFrame:
     """Featurize pymatgen Structures in a file with matminer."""
-    df_in = pd.read_json(filename).set_index(id_col)
+    df_in = pd.read_json(filename).set_index(Key.mat_id)
 
     # ComputedStructureEntry dicts have a "structure" key, if that's missing it's a
     # Structure dict
@@ -155,8 +153,8 @@ if not os.path.isfile(wbm_matminer_feat_path):
 # %% Compute UMAP projection of matminer features
 umap_out_path = f"{WBM_DIR}/umap/2d-umap-projections.csv.bz2"
 if not os.path.isfile(umap_out_path):
-    df_mp = pd.read_csv(mp_matminer_feat_path).set_index(id_col)
-    df_wbm = pd.read_csv(wbm_matminer_feat_path).set_index(id_col)
+    df_mp = pd.read_csv(mp_matminer_feat_path).set_index(Key.mat_id)
+    df_wbm = pd.read_csv(wbm_matminer_feat_path).set_index(Key.mat_id)
 
     # Drop all rows containing NaN values
     df_wbm = df_wbm.dropna(axis=0)

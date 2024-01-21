@@ -8,7 +8,7 @@ import pandas as pd
 import wandb
 from wandb.wandb_run import Run
 
-from matbench_discovery import WANDB_PATH
+from matbench_discovery import WANDB_PATH, Task
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-09-21"
@@ -41,7 +41,7 @@ for idx, run in enumerate(runs, 1):
         "mace-wbm-IS2RE-debug-", "mace-wbm-IS2RE-"
     )
 
-    for x in ("IS2RE", "ES2RE"):
+    for x in (Task.IS2RE, "ES2RE"):
         if x in run.display_name:
             new_config["task_type"] = x
 

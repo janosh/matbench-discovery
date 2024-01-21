@@ -12,7 +12,7 @@ from glob import glob
 import pandas as pd
 from tqdm import tqdm
 
-from matbench_discovery import id_col
+from matbench_discovery import Key
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-16"
@@ -32,7 +32,7 @@ dfs: dict[str, pd.DataFrame] = {}
 for file_path in tqdm(file_paths):
     if file_path in dfs:
         continue
-    dfs[file_path] = pd.read_csv(file_path).set_index(id_col)
+    dfs[file_path] = pd.read_csv(file_path).set_index(Key.mat_id)
 
 df_features = pd.concat(dfs.values()).round(4)
 

@@ -19,14 +19,7 @@ from pymatviz import density_scatter
 from pymatviz.io import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import (
-    PDF_FIGS,
-    SITE_FIGS,
-    e_form_raw_col,
-    formula_col,
-    id_col,
-    today,
-)
+from matbench_discovery import PDF_FIGS, SITE_FIGS, Key, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.energy import get_e_form_per_atom
 
@@ -46,7 +39,6 @@ https://nature.com/articles/s41524-020-00481-6
 
 
 module_dir = os.path.dirname(__file__)
-e_form_wbm_col = "e_form_per_atom_wbm"
 
 
 # %% links to google drive files received via email from 1st author Hai-Chen Wang
@@ -166,13 +158,13 @@ def increment_wbm_material_id(wbm_id: str) -> str:
 
 
 df_wbm.index = df_wbm.index.map(increment_wbm_material_id)
-df_wbm.index.name = id_col
+df_wbm.index.name = Key.mat_id
 assert df_wbm.index[0] == "wbm-1-1"
 assert df_wbm.index[-1] == "wbm-5-23308"
 
-df_wbm["initial_structure"] = df_wbm.pop("org")
+df_wbm[Key.init_struct] = df_wbm.pop("org")
 df_wbm["final_structure"] = df_wbm.pop("opt")
-assert list(df_wbm.columns) == ["initial_structure", "final_structure"]
+assert list(df_wbm.columns) == [Key.init_struct, "final_structure"]
 
 
 # %% download WBM ComputedStructureEntries from
@@ -230,9 +222,9 @@ for json_path in cse_step_paths:
 
 
 # %%
-df_wbm["computed_structure_entry"] = np.concatenate([*dfs_wbm_cses.values()]).squeeze()
+df_wbm[Key.cse] = np.concatenate([*dfs_wbm_cses.values()]).squeeze()
 
-for mat_id, cse in df_wbm.computed_structure_entry.items():
+for mat_id, cse in df_wbm[Key.cse].items():
     # needed to ensure MaterialsProjectCompatibility can process the entries
     cse["parameters"]["run_type"] = (
         "GGA+U" if cse["parameters"]["is_hubbard"] else "GGA"
@@ -241,7 +233,7 @@ for mat_id, cse in df_wbm.computed_structure_entry.items():
     assert cse["entry_id"].startswith("wbm-")
 
 assert pd.Series(
-    cse["parameters"]["run_type"] for cse in tqdm(df_wbm.computed_structure_entry)
+    cse["parameters"]["run_type"] for cse in tqdm(df_wbm[Key.cse])
 ).value_counts().to_dict() == {"GGA": 248481, "GGA+U": 9008}
 
 # make sure only 2 materials have missing initial structures with expected IDs
@@ -253,8 +245,7 @@ df_wbm = df_wbm.drop(index=nan_init_structs_ids)
 
 # %% get composition from CSEs
 df_wbm["composition_from_cse"] = [
-    ComputedStructureEntry.from_dict(cse).composition
-    for cse in tqdm(df_wbm.computed_structure_entry)
+    ComputedStructureEntry.from_dict(cse).composition for cse in tqdm(df_wbm[Key.cse])
 ]
 
 df_wbm["composition_from_final_struct"] = [
@@ -280,11 +271,11 @@ df_wbm.pop("composition_from_final_struct")  # not needed anymore
 n_samples = 1000
 for row in tqdm(df_wbm.sample(n_samples).itertuples(), total=n_samples):
     struct_final = Structure.from_dict(row.final_structure)
-    struct_from_cse = Structure.from_dict(row.computed_structure_entry["structure"])
+    struct_from_cse = Structure.from_dict(row[Key.cse]["structure"])
     assert struct_final.matches(struct_from_cse), f"structure mismatch for {row.Index=}"
 
     # and check initial and final compositions match
-    struct_init = Structure.from_dict(row.initial_structure)
+    struct_init = Structure.from_dict(row[Key.init_struct])
     assert (
         struct_init.composition == struct_final.composition
     ), f"composition mismatch for {row.Index=}"
@@ -299,20 +290,20 @@ df_wbm["formula_from_cse"] = [
 
 # %%
 col_map = {
-    "# comp": formula_col,
-    "nsites": "n_sites",
+    "# comp": Key.formula,
+    "nsites": Key.n_sites,
     "vol": "volume",
-    "e": "uncorrected_energy",
-    "e_form": e_form_wbm_col,
+    "e": Key.dft_energy,
+    "e_form": Key.e_form_wbm,
     "e_hull": "e_above_hull_wbm",
-    "gap": "bandgap_pbe",
-    "id": id_col,
+    "gap": Key.bandgap_pbe,
+    "id": Key.mat_id,
 }
 # WBM summary was shared twice, once on google drive, once on materials cloud
 # download both and check for consistency
 df_summary = pd.read_csv(
     f"{module_dir}/raw/wbm-summary.txt", sep="\t", names=col_map.values()
-).set_index(id_col)
+).set_index(Key.mat_id)
 
 df_summary_bz2 = pd.read_csv(
     f"{mat_cloud_url}&filename=summary.txt.bz2", sep="\t"
@@ -329,7 +320,7 @@ pd.testing.assert_frame_equal(
 
 assert sum(no_id_mask := df_summary.index.isna()) == 6, f"{sum(no_id_mask)=}"
 # the 'None' materials have 0 volume, energy, n_sites, bandgap, etc.
-assert all(df_summary[no_id_mask].drop(columns=[formula_col]) == 0)
+assert all(df_summary[no_id_mask].drop(columns=[Key.formula]) == 0)
 assert len(df_summary.query("volume > 0")) == len(df_wbm) + len(nan_init_structs_ids)
 # make sure dropping materials with 0 volume removes exactly 6 materials, the same ones
 # listed in bad_struct_ids above
@@ -379,7 +370,7 @@ if sum(df_summary.index != df_wbm.index) != 0:
 assert sum(df_summary.index != df_wbm.index) == 0
 
 # update ComputedStructureEntry entry_ids to match material_ids
-for mat_id, cse in df_wbm.computed_structure_entry.items():
+for mat_id, cse in df_wbm[Key.cse].items():
     entry_id = cse["entry_id"]
     if mat_id != entry_id:
         print(f"{mat_id=} != {entry_id=}, updating entry_id to mat_id")
@@ -388,25 +379,25 @@ for mat_id, cse in df_wbm.computed_structure_entry.items():
 
 # sort formulas alphabetically
 df_summary["alph_formula"] = [
-    Composition(x).alphabetical_formula for x in df_summary[formula_col]
+    Composition(x).alphabetical_formula for x in df_summary[Key.formula]
 ]
 # alphabetical formula and original formula differ due to spaces, number 1 after element
 # symbols (FeO vs Fe1 O1), and element order (FeO vs OFe)
-assert sum(df_summary.alph_formula != df_summary[formula_col]) == 257_483
+assert sum(df_summary.alph_formula != df_summary[Key.formula]) == 257_483
 
-df_summary[formula_col] = df_summary.pop("alph_formula")
+df_summary[Key.formula] = df_summary.pop("alph_formula")
 
 
 # %% write initial structures and computed structure entries to compressed json
 for fname, cols in (
-    ("computed-structure-entries", ["computed_structure_entry"]),
-    ("init-structs", ["initial_structure"]),
+    ("computed-structure-entries", [Key.cse]),
+    ("init-structs", [Key.init_struct]),
     (
         "computed-structure-entries+init-structs",
-        ["initial_structure", "computed_structure_entry"],
+        [Key.init_struct, Key.cse],
     ),
 ):
-    cols = ["formula_from_cse", *cols]
+    cols = ["formula_from_cse", *cols]  # type: ignore[list-item]
     df_wbm[cols].reset_index().to_json(f"{module_dir}/{today}-wbm-{fname}.json.bz2")
 
 
@@ -414,16 +405,16 @@ for fname, cols in (
 # df_summary and df_wbm formulas differ because summary formulas are reduced while
 # df_wbm formulas are not (e.g. Ac6 U2 vs Ac3 U1 in summary). unreduced is more
 # informative so we use it.
-assert sum(df_summary[formula_col] != df_wbm.formula_from_cse) == 114_273
-assert sum(df_summary[formula_col] == df_wbm.formula_from_cse) == 143_214
+assert sum(df_summary[Key.formula] != df_wbm.formula_from_cse) == 114_273
+assert sum(df_summary[Key.formula] == df_wbm.formula_from_cse) == 143_214
 
-df_summary[formula_col] = df_wbm.formula_from_cse
+df_summary[Key.formula] = df_wbm.formula_from_cse
 
 
 # fix bad energy which is 0 in df_summary but a more realistic -63.68 in CSE
-df_summary.loc["wbm-2-18689", "uncorrected_energy"] = df_wbm.loc[
-    "wbm-2-18689"
-].computed_structure_entry["energy"]
+df_summary.loc["wbm-2-18689", Key.dft_energy] = df_wbm.loc["wbm-2-18689"][Key.cse][
+    "energy"
+]
 
 # NOTE careful with ComputedEntries as object vs as dicts, the meaning of keys changes:
 # for example cse.energy == cse.uncorrected_energy + cse.correction
@@ -431,31 +422,31 @@ df_summary.loc["wbm-2-18689", "uncorrected_energy"] = df_wbm.loc[
 
 
 # %% scatter plot summary energies vs CSE energies
-df_summary["uncorrected_energy_from_cse"] = [
-    cse["energy"] for cse in tqdm(df_wbm.computed_structure_entry)
+df_summary[f"{Key.dft_energy}_from_cse"] = [
+    cse["energy"] for cse in tqdm(df_wbm[Key.cse])
 ]
 
 # check CSE and summary energies are consistent, only exceeding 0.1 eV difference twice
 diff_e_cse_e_summary = (
-    df_summary.uncorrected_energy - df_summary.uncorrected_energy_from_cse
+    df_summary[Key.dft_energy] - df_summary.uncorrected_energy_from_cse
 )
 assert diff_e_cse_e_summary.max() < 0.15
 assert sum(diff_e_cse_e_summary > 0.1) == 2
 
-density_scatter(df_summary.uncorrected_energy, df_summary.uncorrected_energy_from_cse)
+density_scatter(df_summary[Key.dft_energy], df_summary.uncorrected_energy_from_cse)
 
 
 # %% remove suspicious formation energy outliers
 e_form_cutoff = 5
-n_too_stable = sum(df_summary[e_form_wbm_col] < -e_form_cutoff)
+n_too_stable = sum(df_summary[Key.e_form_wbm] < -e_form_cutoff)
 print(f"{n_too_stable = }")  # n_too_stable = 502
-n_too_unstable = sum(df_summary[e_form_wbm_col] > e_form_cutoff)
+n_too_unstable = sum(df_summary[Key.e_form_wbm] > e_form_cutoff)
 print(f"{n_too_unstable = }")  # n_too_unstable = 22
 
 e_form_hist, e_form_bins = np.histogram(
-    df_summary[e_form_wbm_col], bins=300, range=(-5.5, 5.5)
+    df_summary[Key.e_form_wbm], bins=300, range=(-5.5, 5.5)
 )
-x_label = {e_form_wbm_col: "WBM uncorrected formation energy (eV/atom)"}[e_form_wbm_col]
+x_label = {Key.e_form_wbm: "WBM uncorrected formation energy (eV/atom)"}[Key.e_form_wbm]
 fig = px.bar(
     x=e_form_bins[:-1],  # [:-1] to drop last bin edge which is not needed
     y=e_form_hist,
@@ -492,7 +483,7 @@ save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
 # %%
 assert len(df_summary) == len(df_wbm) == 257_487
 
-query_str = f"{-e_form_cutoff} < {e_form_wbm_col} < {e_form_cutoff}"
+query_str = f"{-e_form_cutoff} < {Key.e_form_wbm} < {e_form_cutoff}"
 dropped_ids = sorted(set(df_summary.index) - set(df_summary.query(query_str).index))
 assert len(dropped_ids) == 502 + 22
 assert dropped_ids[:3] == "wbm-1-12142 wbm-1-12143 wbm-1-12144".split()
@@ -507,13 +498,10 @@ assert len(df_summary) == len(df_wbm) == 257_487 - 502 - 22
 
 
 # %%
-for mat_id, cse in df_wbm.computed_structure_entry.items():
+for mat_id, cse in df_wbm[Key.cse].items():
     assert mat_id == cse["entry_id"], f"{mat_id} != {cse['entry_id']}"
 
-df_wbm["cse"] = [
-    ComputedStructureEntry.from_dict(dct)
-    for dct in tqdm(df_wbm.computed_structure_entry)
-]
+df_wbm["cse"] = [ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_wbm[Key.cse])]
 # raw WBM ComputedStructureEntries have no energy corrections applied:
 assert all(cse.uncorrected_energy == cse.energy for cse in df_wbm.cse)
 # summary and CSE n_sites match
@@ -560,8 +548,7 @@ with gzip.open(DATA_FILES.mp_patched_phase_diagram, "rb") as zip_file:
 # this loop needs above warnings.filterwarnings() in __init__.py to not crash Jupyter
 # kernel with logs
 # takes ~20 min at 200 it/s for 250k entries in WBM
-each_col = "e_above_hull_mp2020_corrected_ppd_mp"
-assert each_col not in df_summary
+assert Key.each_true not in df_summary
 
 for mat_id, cse in tqdm(df_wbm.cse.items(), total=len(df_wbm)):
     assert mat_id == cse.entry_id, f"{mat_id=} != {cse.entry_id=}"
@@ -569,7 +556,7 @@ for mat_id, cse in tqdm(df_wbm.cse.items(), total=len(df_wbm)):
 
     e_above_hull = ppd_mp.get_e_above_hull(cse, allow_negative=True)
 
-    df_summary.loc[cse.entry_id, each_col] = e_above_hull
+    df_summary.loc[cse.entry_id, Key.each_true] = e_above_hull
 
 
 # %% calculate formation energies from CSEs wrt MP elemental reference energies
@@ -590,11 +577,11 @@ for row in tqdm(df_wbm.itertuples(), total=len(df_wbm)):
     assert (
         abs(e_form - e_form_ppd) < 1e-4
     ), f"{mat_id}: {e_form=:.3} != {e_form_ppd=:.3} (diff={e_form - e_form_ppd:.3}))"
-    df_summary.loc[cse.entry_id, e_form_raw_col] = e_form
+    df_summary.loc[cse.entry_id, Key.e_form_raw] = e_form
 
 
-df_summary[e_form_raw_col.replace("uncorrected", "mp2020_corrected")] = (
-    df_summary[e_form_raw_col] + df_summary["e_correction_per_atom_mp2020"]
+df_summary[Key.e_form_raw.replace("uncorrected", "mp2020_corrected")] = (
+    df_summary[Key.e_form_raw] + df_summary["e_correction_per_atom_mp2020"]
 )
 
 
@@ -602,20 +589,19 @@ df_summary[e_form_raw_col.replace("uncorrected", "mp2020_corrected")] = (
 try:
     from aviary.wren.utils import get_aflow_label_from_spglib
 
-    wyckoff_col = "wyckoff_spglib"
-    if wyckoff_col not in df_wbm:
-        df_summary[wyckoff_col] = None
+    if Key.wyckoff not in df_wbm:
+        df_summary[Key.wyckoff] = None
 
-    for idx, struct in tqdm(df_wbm.initial_structure.items(), total=len(df_wbm)):
-        if not pd.isna(df_summary.loc[idx, wyckoff_col]):
+    for idx, struct in tqdm(df_wbm[Key.init_struct].items(), total=len(df_wbm)):
+        if not pd.isna(df_summary.loc[idx, Key.wyckoff]):
             continue  # Aflow label already computed
         try:
             struct = Structure.from_dict(struct)
-            df_summary.loc[idx, wyckoff_col] = get_aflow_label_from_spglib(struct)
+            df_summary.loc[idx, Key.wyckoff] = get_aflow_label_from_spglib(struct)
         except Exception as exc:
             print(f"{idx=} {exc=}")
 
-    assert df_summary[wyckoff_col].isna().sum() == 0
+    assert df_summary[Key.wyckoff].isna().sum() == 0
 except ImportError:
     print("aviary not installed, skipping Wyckoff label generation")
 except Exception as exception:
@@ -627,7 +613,7 @@ fingerprints_path = f"{module_dir}/site-stats.json.gz"
 suggest = "not found, run scripts/compute_struct_fingerprints.py to generate"
 fp_diff_col = "site_stats_fingerprint_init_final_norm_diff"
 try:
-    df_fp = pd.read_json(fingerprints_path).set_index(id_col)
+    df_fp = pd.read_json(fingerprints_path).set_index(Key.mat_id)
     df_summary[fp_diff_col] = df_fp[fp_diff_col]
 except FileNotFoundError:
     print(f"{fingerprints_path=} {suggest}")
@@ -641,14 +627,12 @@ df_summary.round(6).to_csv(f"{module_dir}/{today}-wbm-summary.csv")
 
 # %% only here to load data for later inspection
 if False:
-    df_summary = pd.read_csv(f"{module_dir}/2022-10-19-wbm-summary.csv.gz").set_index(
-        id_col
-    )
+    wbm_summary_path = f"{module_dir}/2022-10-19-wbm-summary.csv.gz"
+    df_summary = pd.read_csv(wbm_summary_path).set_index(Key.mat_id)
     df_wbm = pd.read_json(
         f"{module_dir}/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
-    ).set_index(id_col)
+    ).set_index(Key.mat_id)
 
     df_wbm["cse"] = [
-        ComputedStructureEntry.from_dict(dct)
-        for dct in tqdm(df_wbm.computed_structure_entry)
+        ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_wbm[Key.cse])
     ]

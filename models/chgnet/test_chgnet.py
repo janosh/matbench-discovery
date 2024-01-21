@@ -21,7 +21,7 @@ from chgnet.model import StructOptimizer
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import formula_col, id_col, timestamp, today
+from matbench_discovery import Key, Task, timestamp, today
 from matbench_discovery.data import DATA_FILES, as_dict_handler, df_wbm
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
@@ -29,7 +29,7 @@ from matbench_discovery.slurm import slurm_submit
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-01"
 
-task_type = "IS2RE"  # "RS2RE"
+task_type = Task.IS2RE
 module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
 slurm_array_task_count = 50
@@ -60,8 +60,8 @@ if os.path.isfile(out_path):
 
 # %%
 data_path = {
-    "RS2RE": DATA_FILES.wbm_computed_structure_entries,
-    "IS2RE": DATA_FILES.wbm_initial_structures,
+    Task.RS2RE: DATA_FILES.wbm_computed_structure_entries,
+    Task.IS2RE: DATA_FILES.wbm_initial_structures,
 }[task_type]
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
@@ -70,7 +70,7 @@ ase_filter: Literal["FrechetCellFilter", "ExpCellFilter"] = "FrechetCellFilter"
 max_steps = 500
 fmax = 0.05
 
-df_in = pd.read_json(data_path).set_index(id_col)
+df_in = pd.read_json(data_path).set_index(Key.mat_id)
 if slurm_array_task_count > 1:
     df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
 
@@ -92,10 +92,10 @@ wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 # %%
 relax_results: dict[str, dict[str, Any]] = {}
-input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
+input_col = {Task.IS2RE: Key.init_struct, Task.RS2RE: Key.final_struct}[task_type]
 
-if task_type == "RS2RE":
-    df_in[input_col] = [x["structure"] for x in df_in.computed_structure_entry]
+if task_type == Task.RS2RE:
+    df_in[input_col] = [cse["structure"] for cse in df_in[Key.cse]]
 
 structures = df_in[input_col].map(Structure.from_dict).to_dict()
 
@@ -125,7 +125,7 @@ for material_id in tqdm(structures, desc="Relaxing"):
 
 # %%
 df_out = pd.DataFrame(relax_results).T
-df_out.index.name = id_col
+df_out.index.name = Key.mat_id
 
 if max_steps == 0:
     df_out.add_suffix("_no_relax").to_csv(out_path.replace(".json.gz", ".csv.gz"))
@@ -136,12 +136,10 @@ else:
 # %%
 df_wbm[e_pred_col] = df_out[e_pred_col]
 table = wandb.Table(
-    dataframe=df_wbm.dropna()[
-        ["uncorrected_energy", e_pred_col, formula_col]
-    ].reset_index()
+    dataframe=df_wbm.dropna()[[Key.dft_energy, e_pred_col, Key.formula]].reset_index()
 )
 
 title = f"CHGNet {task_type} ({len(df_out):,})"
-wandb_scatter(table, fields=dict(x="uncorrected_energy", y=e_pred_col), title=title)
+wandb_scatter(table, fields=dict(x=Key.dft_energy, y=e_pred_col), title=title)
 
 wandb.log_artifact(out_path, type=f"chgnet-wbm-{task_type}")

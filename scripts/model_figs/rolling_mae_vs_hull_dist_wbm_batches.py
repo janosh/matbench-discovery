@@ -6,9 +6,9 @@ batch in a single plot.
 # %%
 from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, today
+from matbench_discovery import PDF_FIGS, SITE_FIGS, Key, today
 from matbench_discovery.plots import plt, rolling_mae_vs_hull_dist
-from matbench_discovery.preds import df_each_pred, df_preds, e_form_col, each_true_col
+from matbench_discovery.preds import df_each_pred, df_preds
 from matbench_discovery.preds import models as all_models
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
@@ -34,8 +34,8 @@ for idx, marker in enumerate(markers, 1):
     assert 1e4 < len(df_step) < 1e5, print(f"{len(df_step) = :,}")
 
     ax, df_err, df_std = rolling_mae_vs_hull_dist(
-        e_above_hull_true=df_step[each_true_col],
-        e_above_hull_errors={title: df_step[e_form_col] - df_step[model]},
+        e_above_hull_true=df_step[Key.each_true],
+        e_above_hull_errors={title: df_step[Key.e_form] - df_step[model]},
         label=title,
         marker=marker,
         markevery=20,
@@ -60,7 +60,7 @@ for model in models:
     df_pivot = df_each_pred.pivot(columns=batch_col, values=model)
 
     fig, df_err, df_std = rolling_mae_vs_hull_dist(
-        e_above_hull_true=df_preds[each_true_col],
+        e_above_hull_true=df_preds[Key.each_true],
         e_above_hull_errors=df_pivot,
         # df_rolling_err=df_err,
         # df_err_std=df_std,

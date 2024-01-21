@@ -11,7 +11,7 @@ from pymatgen.core import Structure
 from torch.utils.data import DataLoader
 from tqdm import tqdm, trange
 
-from matbench_discovery import WANDB_PATH, id_col, struct_col, timestamp, today
+from matbench_discovery import WANDB_PATH, Key, timestamp, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.slurm import slurm_submit
 from matbench_discovery.structure import perturb_structure
@@ -26,8 +26,8 @@ __date__ = "2022-06-13"
 
 # %%
 epochs = 300
-target_col = "formation_energy_per_atom"
-input_col = struct_col
+target_col = Key.form_energy
+input_col = Key.struct
 # 0 for no perturbation, n>1 means train on n perturbations of each crystal
 # in the training set all assigned the same original target energy
 n_perturb = 0
@@ -60,9 +60,9 @@ task_type: TaskType = "regression"
 
 # %%
 data_path = DATA_FILES.mp_energies
-df_in = pd.read_csv(data_path).set_index(id_col)
+df_in = pd.read_csv(data_path).set_index(Key.mat_id)
 
-df_cse = pd.read_json(DATA_FILES.mp_computed_structure_entries).set_index(id_col)
+df_cse = pd.read_json(DATA_FILES.mp_computed_structure_entries).set_index(Key.mat_id)
 df_in[input_col] = [Structure.from_dict(cse[input_col]) for cse in tqdm(df_cse.entry)]
 
 assert target_col in df_in

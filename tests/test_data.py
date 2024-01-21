@@ -11,7 +11,7 @@ import pytest
 from pymatgen.core import Lattice, Structure
 from pytest import CaptureFixture
 
-from matbench_discovery import FIGSHARE_DIR, ROOT, formula_col, id_col
+from matbench_discovery import FIGSHARE_DIR, ROOT, Key
 from matbench_discovery.data import (
     DATA_FILES,
     as_dict_handler,
@@ -57,7 +57,7 @@ def test_load(
     # intercept HTTP requests and write dummy df to disk instead
     with patch("urllib.request.urlretrieve") as url_retrieve:
         # dummy df with random floats and material_id column
-        df_csv = pd._testing.makeDataFrame().reset_index(names=id_col)  # noqa: SLF001
+        df_csv = pd._testing.makeDataFrame().reset_index(names=Key.mat_id)  # noqa: SLF001
 
         writer = dummy_df_serialized.to_json if ".json" in filepath else df_csv.to_csv
         url_retrieve.side_effect = lambda _url, path: writer(path)
@@ -112,17 +112,17 @@ def test_load_doc_str() -> None:
 
 
 wbm_summary_expected_cols = {
-    "bandgap_pbe",
+    Key.bandgap_pbe,
     "e_form_per_atom_mp2020_corrected",
-    "e_form_per_atom_uncorrected",
-    "e_form_per_atom_wbm",
+    Key.e_form_raw,
+    Key.e_form_wbm,
     "e_above_hull_wbm",
-    formula_col,
+    Key.formula,
     "n_sites",
-    "uncorrected_energy",
+    Key.dft_energy,
     "uncorrected_energy_from_cse",
     "volume",
-    "wyckoff_spglib",
+    Key.wyckoff,
 }
 
 
@@ -200,8 +200,8 @@ def test_as_dict_handler() -> None:
 
 def test_df_wbm() -> None:
     assert df_wbm.shape == (256_963, 16)
-    assert df_wbm.index.name == id_col
-    assert set(df_wbm) > {"bandgap_pbe", formula_col, id_col}
+    assert df_wbm.index.name == Key.mat_id
+    assert set(df_wbm) > {Key.formula, Key.mat_id, Key.bandgap_pbe}
 
 
 @pytest.mark.parametrize("pattern", ["*df.csv", "*df.json"])

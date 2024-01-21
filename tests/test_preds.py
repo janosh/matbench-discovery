@@ -2,23 +2,19 @@ import os
 
 import pytest
 
-from matbench_discovery import id_col
+from matbench_discovery import Key
 from matbench_discovery.data import df_wbm
 from matbench_discovery.preds import (
     PRED_FILES,
     df_each_err,
     df_each_pred,
     df_metrics,
-    e_form_col,
-    each_true_col,
     load_df_wbm_with_preds,
-    model_mean_each_col,
-    model_mean_err_col,
 )
 
 
 def test_df_wbm() -> None:
-    for col in (e_form_col, each_true_col):
+    for col in (Key.e_form, Key.each_true):
         assert col in df_wbm, f"{col=} not in {list(df_wbm)=}"
 
 
@@ -34,7 +30,7 @@ def test_df_each_pred() -> None:
     assert len(df_each_pred) == len(df_wbm)
     assert {*df_each_pred} == {
         *df_metrics,
-        model_mean_each_col,
+        Key.model_mean_each,
     }, "df_each_pred has wrong columns"
     assert all(df_each_pred.isna().mean() < 0.05), "too many NaNs in df_each_pred"
 
@@ -43,7 +39,7 @@ def test_df_each_err() -> None:
     assert len(df_each_err) == len(df_wbm)
     assert {*df_each_err} == {
         *df_metrics,
-        model_mean_err_col,
+        Key.model_mean_err,
     }, "df_each_err has wrong columns"
     assert all(df_each_err.isna().mean() < 0.05), "too many NaNs in df_each_err"
 
@@ -53,7 +49,7 @@ def test_load_df_wbm_with_preds(models: list[str]) -> None:
     df = load_df_wbm_with_preds(models)
     assert len(df) == len(df_wbm)
     assert list(df) == list(df_wbm) + models + [f"{model}_std" for model in models]
-    assert df.index.name == id_col
+    assert df.index.name == Key.mat_id
 
     for model_name in models:
         assert model_name in df

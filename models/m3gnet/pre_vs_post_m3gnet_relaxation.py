@@ -12,7 +12,7 @@ from pymatviz import density_scatter
 from pymatviz.utils import add_identity_line
 from sklearn.metrics import r2_score
 
-from matbench_discovery import ROOT, SITE_FIGS, id_col, plots
+from matbench_discovery import ROOT, SITE_FIGS, Key, plots
 from matbench_discovery.data import DATA_FILES
 
 __author__ = "Janosh Riebesell"
@@ -23,17 +23,17 @@ del plots  # https://github.com/PyCQA/pyflakes/issues/366
 
 
 # %%
-df_wbm = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index(id_col)
+df_wbm = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index(Key.mat_id)
 
-df_summary = pd.read_csv(DATA_FILES.wbm_summary).set_index(id_col)
+df_summary = pd.read_csv(DATA_FILES.wbm_summary).set_index(Key.mat_id)
 
 
 # %%
 is2re_path = f"{ROOT}/models/m3gnet/2022-10-31-m3gnet-wbm-IS2RE.json.gz"
-df_m3gnet_is2re = pd.read_json(is2re_path).set_index(id_col)
+df_m3gnet_is2re = pd.read_json(is2re_path).set_index(Key.mat_id)
 
 rs2re_path = f"{ROOT}/models/m3gnet/2022-08-19-m3gnet-wbm-RS2RE.json.gz"
-df_m3gnet_rs2re = pd.read_json(rs2re_path).set_index(id_col)
+df_m3gnet_rs2re = pd.read_json(rs2re_path).set_index(Key.mat_id)
 
 
 # %%
@@ -42,7 +42,7 @@ df_wbm["m3gnet_volume"] = df_m3gnet_is2re.m3gnet_volume
 
 # %% spread M3GNet post-pseudo-relaxation lattice params into separate columns
 df_m3gnet_lattice = pd.json_normalize(
-    df_m3gnet_is2re.initial_structure.map(lambda x: x["lattice"])
+    df_m3gnet_is2re[Key.init_struct].map(lambda x: x["lattice"])
 ).add_prefix("m3gnet_")
 df_m3gnet_is2re[df_m3gnet_lattice.columns] = df_m3gnet_lattice.to_numpy()
 
@@ -53,12 +53,12 @@ df_m3gnet_is2re[df_m3gnet_lattice.columns] = df_m3gnet_lattice.to_numpy()
 
 # %% spread WBM initial and final lattice params into separate columns
 df_wbm_final_lattice = pd.json_normalize(
-    df_wbm.computed_structure_entry.map(lambda x: x["structure"]["lattice"])
+    df_wbm[Key.cse].map(lambda cse: cse["structure"]["lattice"])
 ).add_prefix("final_wbm_")
 df_wbm["final_wbm_volume"] = df_wbm_final_lattice.final_wbm_volume.to_numpy()
 
 df_wbm_initial_lattice = pd.json_normalize(
-    df_wbm.initial_structure.map(lambda x: (x or {}).get("lattice"))
+    df_wbm[Key.init_struct].map(lambda x: (x or {}).get("lattice"))
 ).add_prefix("initial_wbm_")
 df_wbm["initial_wbm_volume"] = df_wbm_initial_lattice.initial_wbm_volume.to_numpy()
 
@@ -219,4 +219,4 @@ fig.write_image(
 # filter out columns containing 'rs2re'
 # df_m3gnet_is2re.reset_index().filter(regex="^((?!rs2re).)*$").to_json(
 #     f"{module_dir}/2022-10-31-m3gnet-wbm-IS2RE-2.json.gz"
-# ).set_index(id_col)
+# ).set_index(Key.mat_id)

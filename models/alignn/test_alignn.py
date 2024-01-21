@@ -17,10 +17,9 @@ from pymatgen.io.jarvis import JarvisAtomsAdaptor
 from sklearn.metrics import r2_score
 from tqdm import tqdm
 
-from matbench_discovery import id_col, today
+from matbench_discovery import Key, Task, today
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.plots import wandb_scatter
-from matbench_discovery.preds import e_form_col
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell, Philipp Benner"
@@ -33,9 +32,9 @@ module_dir = os.path.dirname(__file__)
 model_name = "mp_e_form_alignn"  # pre-trained by NIST
 # TODO fix this to load checkpoint from figshare
 # model_name = f"{module_dir}/data-train-result/best-model.pth"
-task_type = "IS2RE"
-target_col = e_form_col
-input_col = "initial_structure"
+task_type = Task.IS2RE
+target_col = Key.e_form
+input_col = Key.init_struct
 device = "cuda" if torch.cuda.is_available() else "cpu"
 job_name = f"{model_name}-wbm-{task_type}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
@@ -75,16 +74,16 @@ slurm_vars = slurm_submit(
 
 # %% Load data
 data_path = {
-    "IS2RE": DATA_FILES.wbm_initial_structures,
-    "RS2RE": DATA_FILES.wbm_computed_structure_entries,
+    Task.IS2RE: DATA_FILES.wbm_initial_structures,
+    Task.RS2RE: DATA_FILES.wbm_computed_structure_entries,
 }[task_type]
-input_col = {"IS2RE": "initial_structure", "RS2RE": "relaxed_structure"}[task_type]
+input_col = {Task.IS2RE: Key.init_struct, Task.RS2RE: Key.final_struct}[task_type]
 
-df_in = pd.read_json(data_path).set_index(id_col)
+df_in = pd.read_json(data_path).set_index(Key.mat_id)
 
 df_in[target_col] = df_wbm[target_col]
-if task_type == "RS2RE":
-    df_in[input_col] = [x["structure"] for x in df_in.computed_structure_entry]
+if task_type == Task.RS2RE:
+    df_in[input_col] = [cse["structure"] for cse in df_in[Key.cse]]
 assert input_col in df_in, f"{input_col=} not in {list(df_in)}"
 
 df_in[input_col] = [

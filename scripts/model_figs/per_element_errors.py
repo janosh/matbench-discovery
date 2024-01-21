@@ -13,35 +13,21 @@ from pymatviz.io import save_fig
 from pymatviz.utils import bin_df_cols, df_ptable
 from tqdm import tqdm
 
-from matbench_discovery import (
-    PDF_FIGS,
-    ROOT,
-    SITE_FIGS,
-    SITE_MODELS,
-    formula_col,
-    id_col,
-)
+from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, SITE_MODELS, Key
 from matbench_discovery.data import df_wbm
-from matbench_discovery.preds import (
-    df_each_err,
-    df_metrics,
-    df_preds,
-    each_pred_col,
-    each_true_col,
-    model_mean_err_col,
-)
+from matbench_discovery.preds import df_each_err, df_metrics, df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-15"
 
 for df in (df_each_err, df_preds):
-    df[model_mean_err_col] = df_each_err.abs().mean(axis=1)
+    df[Key.model_mean_err] = df_each_err.abs().mean(axis=1)
 
 
 # %% project average model error onto periodic table
 frac_comp_col = "fractional composition"
 df_wbm[frac_comp_col] = [
-    Composition(comp).fractional_composition for comp in tqdm(df_wbm[formula_col])
+    Composition(comp).fractional_composition for comp in tqdm(df_wbm[Key.formula])
 ]
 
 df_frac_comp = pd.DataFrame(comp.as_dict() for comp in df_wbm[frac_comp_col]).set_index(
@@ -110,7 +96,7 @@ save_fig(fig, f"{SITE_FIGS}/bar-element-counts-mp+wbm-{normalized=}.svelte")
 # %% compute std dev of DFT hull dist for each element in test set
 test_set_std_col = "Test set standard deviation"
 df_elem_err[test_set_std_col] = (
-    df_frac_comp.where(pd.isna, 1) * df_wbm[each_true_col].to_numpy()[:, None]
+    df_frac_comp.where(pd.isna, 1) * df_wbm[Key.each_true].to_numpy()[:, None]
 ).std()
 
 
@@ -125,7 +111,7 @@ fig.show()
 normalized = True
 cs_range = (0, 0.5)  # same range for all plots
 # cs_range = (None, None)  # different range for each plot
-for model in (*df_metrics, model_mean_err_col):
+for model in (*df_metrics, Key.model_mean_err):
     df_elem_err[model] = (
         df_frac_comp * df_each_err[model].abs().to_numpy()[:, None]
     ).mean()
@@ -144,7 +130,7 @@ for model in (*df_metrics, model_mean_err_col):
 # %%
 expected_cols = {
     *"ALIGNN, BOWSR, CGCNN, CGCNN+P, CHGNet, M3GNet, MEGNet, "
-    f"{train_count_col}, {model_mean_err_col}, {test_set_std_col}, Voronoi RF, "
+    f"{train_count_col}, {Key.model_mean_err}, {test_set_std_col}, Voronoi RF, "
     "Wrenformer".split(", ")
 }
 assert {*df_elem_err} >= expected_cols
@@ -180,7 +166,7 @@ fig = df_melt.plot.scatter(
     hover_data={val_col: ":.2f", train_count_col: ":,.0f"},
 )
 for trace in fig.data:
-    if trace.name in ("CHGNet", "Voronoi RF", model_mean_err_col):
+    if trace.name in ("CHGNet", "Voronoi RF", Key.model_mean_err):
         continue
     trace.visible = "legendonly"
 fig.update_traces(textposition="top center")  # place text above scatter points
@@ -197,7 +183,7 @@ save_fig(fig, f"{PDF_FIGS}/element-prevalence-vs-error.pdf")
 n_examp_for_rarest_elem_col = "Examples for rarest element in structure"
 df_wbm[n_examp_for_rarest_elem_col] = [
     df_elem_err[train_count_col].loc[list(map(str, Composition(formula)))].min()
-    for formula in tqdm(df_wbm[formula_col])
+    for formula in tqdm(df_wbm[Key.formula])
 ]
 
 
@@ -205,25 +191,25 @@ df_wbm[n_examp_for_rarest_elem_col] = [
 df_melt = (
     df_each_err.abs()
     .reset_index()
-    .melt(var_name="Model", value_name=each_pred_col, id_vars=id_col)
-    .set_index(id_col)
+    .melt(var_name="Model", value_name=Key.each_pred, id_vars=Key.mat_id)
+    .set_index(Key.mat_id)
 )
 df_melt[n_examp_for_rarest_elem_col] = df_wbm[n_examp_for_rarest_elem_col]
 
-df_bin = bin_df_cols(df_melt, [n_examp_for_rarest_elem_col, each_pred_col], ["Model"])
-df_bin = df_bin.reset_index().set_index(id_col)
-df_bin[formula_col] = df_wbm[formula_col]
+df_bin = bin_df_cols(df_melt, [n_examp_for_rarest_elem_col, Key.each_pred], ["Model"])
+df_bin = df_bin.reset_index().set_index(Key.mat_id)
+df_bin[Key.formula] = df_wbm[Key.formula]
 
 
 # %%
 fig = px.scatter(
     df_bin.reset_index(),
     x=n_examp_for_rarest_elem_col,
-    y=each_pred_col,
+    y=Key.each_pred,
     color="Model",
     facet_col="Model",
     facet_col_wrap=3,
-    hover_data={id_col: True, formula_col: True, "Model": False},
+    hover_data={Key.mat_id: True, Key.formula: True, "Model": False},
     title="Absolute errors in model-predicted E<sub>above hull</sub> vs. occurrence "
     "count in MP training set<br>of least prevalent element in structure",
 )

@@ -12,7 +12,7 @@ from pymatgen.core import Structure
 from pymatviz.io import TqdmDownload
 from tqdm import tqdm
 
-from matbench_discovery import FIGSHARE_URLS, MP_DIR
+from matbench_discovery import FIGSHARE_URLS, MP_DIR, Key
 
 __author__ = "Yuan Chiang"
 __date__ = "2023-08-10"
@@ -64,7 +64,7 @@ for material_id in tqdm(json_data):
                 raise ValueError(f"Invalid {trajectory_id=}")
 
             task_id, calc_id, ionic_step = match.groups()
-            atoms.info["task_id"] = task_id
+            atoms.info[Key.task_id] = task_id
             atoms.info["calc_id"] = int(calc_id)
             atoms.info["ionic_step"] = int(ionic_step)
 
