@@ -32,17 +32,16 @@ train_size_col = "Training Size"
 df_metrics.loc[train_size_col] = df_metrics_10k.loc[train_size_col] = ""
 for model in df_metrics:
     model_name = name_map.get(model, model)
-    if model_name not in MODEL_METADATA:
+    if not (model_data := MODEL_METADATA.get(model_name)):
         continue
-    n_structs = MODEL_METADATA[model_name]["training_set"]["n_structures"]
-    n_materials = MODEL_METADATA[model_name]["training_set"].get("n_materials")
+    n_structs = model_data["training_set"]["n_structures"]
+    n_structs_str = si_fmt(n_structs)
 
-    n_structs_fmt = si_fmt(n_structs)
-    if n_materials:
-        n_structs_fmt += f" <small>({si_fmt(n_materials)})</small>"
+    if n_materials := model_data["training_set"].get("n_materials"):
+        n_structs_str += f" <small>({si_fmt(n_materials)})</small>"
 
-    df_metrics.loc[train_size_col, model] = n_structs_fmt
-    df_metrics_10k.loc[train_size_col, model] = n_structs_fmt
+    df_metrics.loc[train_size_col, model] = n_structs_str
+    df_metrics_10k.loc[train_size_col, model] = n_structs_str
 
 
 # %% add dummy classifier results to df_metrics
@@ -183,7 +182,7 @@ for label, df in (("-first-10k", df_metrics_10k), ("", df_metrics)):
         f"{SITE_FIGS}/metrics-table{label}.svelte",
         inline_props="class='roomy'",
         # draw dotted line between classification and regression metrics
-        styles=f"{col_selector} {{ border-left: 2px dotted white; }}{hide_scroll_bar}",
+        styles=f"{col_selector} {{ border-left: 1px solid white; }}{hide_scroll_bar}",
     )
     try:
         df_to_pdf(styler, f"{PDF_FIGS}/metrics-table{label}.pdf")

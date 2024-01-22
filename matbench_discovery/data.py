@@ -125,7 +125,7 @@ def load(
         raise
 
     if Key.mat_id in df:
-        df = df.set_index(Key.mat_id)
+        df = df.set_index(Key.mat_id.value)
     if hydrate:
         for col in df:
             if not isinstance(df[col].iloc[0], dict):
@@ -270,4 +270,4 @@ DATA_FILES = DataFiles()
 
 
 df_wbm = load("wbm_summary")
-df_wbm[Key.mat_id] = df_wbm.index
+df_wbm[Key.mat_id.value] = df_wbm.index
