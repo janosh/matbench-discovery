@@ -16,7 +16,7 @@ Each iteration has varying numbers of materials which are counted by the 2nd int
 
 ## 🪓 &thinsp; Data Processing Steps
 
-The full set of processing steps used to curate the WBM test set from the raw data files (downloaded from [URLs listed below](#--links-to-wbm-files)) can be found in [`data/wbm/fetch_process_wbm_dataset.py`](https://github.com/janosh/matbench-discovery/blob/site/data/wbm/fetch_process_wbm_dataset.py). Processing steps taken:
+The full set of processing steps used to curate the WBM test set from the raw data files (downloaded from [URLs listed below](#--links-to-wbm-files)) can be found in [`data/wbm/compile_wbm_test_set.py`](https://github.com/janosh/matbench-discovery/blob/site/data/wbm/compile_wbm_test_set.py). Processing steps taken:
 
 - re-format material IDs: `step_1-0->wbm-1-1`, `step_1-1->wbm-1-2`, ...
 - correctly align initial structures to DFT-relaxed [`ComputedStructureEntries`](https://github.com/materialsproject/pymatgen/blob/02a4ca8aa0277b5f6db11f4de4fdbba129de70a5/pymatgen/entries/computed_entries.py#L536) (the initial structure files had 6 extra structures inserted towards the end of step 3 which had no corresponding IDs in the summary file)
@@ -31,7 +31,7 @@ The full set of processing steps used to curate the WBM test set from the raw da
 - apply the [`MaterialsProject2020Compatibility`](https://github.com/materialsproject/pymatgen/blob/02a4ca8aa0277b5f6db11f4de4fdbba129de70a5/pymatgen/entries/compatibility.py#L823) energy correction scheme to the formation energies
 - compute energy to the Materials Project convex hull constructed from all MP `ComputedStructureEntries` queried on 2023-02-07 ([database release 2021.05.13](https://docs.materialsproject.org/changes/database-versions#v2021.05.13))
 
-Invoking the script `python fetch_process_wbm_dataset.py` will auto-download and regenerate the WBM test set files from scratch. If you find
+Invoking the script `python compile_wbm_test_set.py` will auto-download and regenerate the WBM test set files from scratch. If you find
 
 - any questionable structures or data records in the released test set, or
 - inconsistencies between the files on GitHub vs the output of that script,

@@ -152,6 +152,9 @@ blockquote > :is(:first-child, :last-child) {
   margin: 0 auto;
 }
 
+:where(h1, h2, h3, h4, h5, h6, address) {
+  text-wrap: balance;
+}
 :where(h2, h3, h4, h5, h6) {
   scroll-margin-top: 50px;
   transition: 0.3s;

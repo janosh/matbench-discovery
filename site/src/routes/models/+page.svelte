@@ -63,8 +63,8 @@
   <h1>Leaderboard</h1>
 
   <p style="text-align: center;">
-    Sort models by stability classification metrics, by predicted convex hull distance
-    regressions metrics or by their tun time.
+    Sort models by different metrics (thermodynamic stability classification, convex hull
+    distance regressions or tun time).
   </p>
 
   <span>
