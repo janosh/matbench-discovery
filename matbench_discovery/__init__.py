@@ -88,7 +88,8 @@ class Key(StrEnum):
     struct = "structure"
     task_id = "task_id"
     volume = "volume"
-    wyckoff = "wyckoff_spglib"
+    wyckoff = "wyckoff_spglib"  # relaxed structure Aflow label
+    init_wyckoff = "wyckoff_spglib_initial_structure"  # initial structure Aflow label
 
 
 @unique

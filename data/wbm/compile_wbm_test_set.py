@@ -589,18 +589,34 @@ df_summary[Key.e_form_raw.replace("uncorrected", "mp2020_corrected")] = (
 try:
     from aviary.wren.utils import get_aflow_label_from_spglib
 
-    if Key.wyckoff not in df_wbm:
-        df_summary[Key.wyckoff] = None
+    # add Aflow-style Wyckoff labels for initial and relaxed structures
+    for key in (Key.init_wyckoff, Key.wyckoff):
+        if key not in df_wbm:
+            df_summary[key] = None
 
-    for idx, struct in tqdm(df_wbm[Key.init_struct].items(), total=len(df_wbm)):
-        if not pd.isna(df_summary.loc[idx, Key.wyckoff]):
+    # from initial structures
+    for idx in tqdm(df_wbm.index):
+        if not pd.isna(df_summary.loc[idx, Key.init_wyckoff]):
             continue  # Aflow label already computed
         try:
-            struct = Structure.from_dict(struct)
+            struct = Structure.from_dict(df_wbm.loc[idx, Key.init_struct])
+            df_summary.loc[idx, Key.init_wyckoff] = get_aflow_label_from_spglib(struct)
+        except Exception as exc:
+            print(f"{idx=} {exc=}")
+
+    # from relaxed structures
+    for idx in tqdm(df_wbm.index):
+        if not pd.isna(df_summary.loc[idx, Key.wyckoff]):
+            continue
+
+        try:
+            cse = df_wbm.loc[idx, Key.cse]
+            struct = Structure.from_dict(cse["structure"])
             df_summary.loc[idx, Key.wyckoff] = get_aflow_label_from_spglib(struct)
         except Exception as exc:
             print(f"{idx=} {exc=}")
 
+    assert df_summary[Key.init_wyckoff].isna().sum() == 0
     assert df_summary[Key.wyckoff].isna().sum() == 0
 except ImportError:
     print("aviary not installed, skipping Wyckoff label generation")
@@ -622,7 +638,7 @@ except KeyError:
 
 
 # %% write final summary data to disk (yeah!)
-df_summary.round(6).to_csv(f"{module_dir}/{today}-wbm-summary.csv")
+df_summary.round(6).to_csv(f"{module_dir}/{today}-wbm-summary.csv.gz")
 
 
 # %% only here to load data for later inspection

@@ -24,7 +24,7 @@ pred_col = "e_form_per_atom_mace"
 df_mace = pd.read_csv(PRED_FILES.MACE).set_index(Key.mat_id)
 df_mace[list(df_wbm)] = df_wbm
 
-df_mace[Key.spacegroup] = df_wbm[Key.wyckoff].str.split("_").str[2].astype(int)
+df_mace[Key.spacegroup] = df_wbm[Key.init_wyckoff].str.split("_").str[2].astype(int)
 
 
 # %%

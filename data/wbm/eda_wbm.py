@@ -303,7 +303,7 @@ fig.show()
 
 
 # %%
-df_wbm[Key.spacegroup] = df_wbm[Key.wyckoff].str.split("_").str[2].astype(int)
+df_wbm[Key.spacegroup] = df_wbm[Key.init_wyckoff].str.split("_").str[2].astype(int)
 df_mp[Key.spacegroup] = df_mp[Key.wyckoff].str.split("_").str[2].astype(int)
 
 
