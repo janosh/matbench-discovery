@@ -4,7 +4,7 @@ import json
 import os
 import warnings
 from datetime import datetime
-from enum import Enum, unique
+from enum import StrEnum, unique
 from importlib.metadata import Distribution
 
 import matplotlib.pyplot as plt
@@ -52,10 +52,6 @@ today = timestamp.split("@")[0]
 # and MaterialsProject2020Compatibility to get formation energies
 # > Failed to guess oxidation states for Entry
 warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
-
-
-class StrEnum(str, Enum):
-    """Enum whose members are also (and must be) strings."""
 
 
 @unique
