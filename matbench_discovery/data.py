@@ -246,6 +246,10 @@ class DataFiles(Files):
     mp_elemental_ref_entries = "mp/2023-02-07-mp-elemental-reference-entries.json.gz"
     mp_energies = "mp/2023-01-10-mp-energies.csv.gz"
     mp_patched_phase_diagram = "mp/2023-02-07-ppd-mp.pkl.gz"
+    mp_trj_extxyz = "mp/2023-11-22-mp-trj-extxyz-by-yuan.zip"
+    # snapshot of every task (calculation) in MP as of 2023-03-16 (14 GB)
+    all_mp_tasks = "mp/2023-03-16-all-mp-tasks.zip"
+
     wbm_computed_structure_entries = (
         "wbm/2022-10-19-wbm-computed-structure-entries.json.bz2"
     )
@@ -253,16 +257,9 @@ class DataFiles(Files):
     wbm_cses_plus_init_structs = (
         "wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
     )
-    wbm_summary = "wbm/2022-10-19-wbm-summary.csv.gz"
+    wbm_summary = "wbm/2023-12-13-wbm-summary.csv.gz"
+
     alignn_checkpoint = "2023-06-02-pbenner-best-alignn-model.pth.zip"
-    mace_checkpoint = "2023-08-14-mace-yuan-trained-mptrj-04.model"
-
-    mp_trj_extxyz = "mp/2023-11-22-mp-trj-extxyz-by-yuan.zip"
-    # snapshot of every task (calculation) in MP as of 2023-03-16 (14 GB)
-    all_mp_tasks = "mp/2023-03-16-all-mp-tasks.zip"
-
-    mace_checkpoint1 = "2023-08-14-mace-2M-yuan-mptrj-04.model"
-    mace_checkpoint2 = "2023-10-29-mace-16M-pbenner-mptrj-no-conditional-loss"
 
 
 # data files can be downloaded and cached with matbench_discovery.data.load()

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import pandas as pd
 from tqdm import tqdm
@@ -81,6 +81,7 @@ def load_df_wbm_with_preds(
     models: Sequence[str] = (*PRED_FILES,),
     pbar: bool = True,
     id_col: str = Key.mat_id,
+    subset: pd.Index | Sequence[str] | Literal["uniq_protos"] | None = None,
     **kwargs: Any,
 ) -> pd.DataFrame:
     """Load WBM summary dataframe with model predictions from disk.
@@ -90,6 +91,11 @@ def load_df_wbm_with_preds(
             matbench_discovery.data.PRED_FILES. Defaults to all models.
         pbar (bool, optional): Whether to show progress bar. Defaults to True.
         id_col (str, optional): Column to set as df.index. Defaults to "material_id".
+        subset (pd.Index | Sequence[str] | 'uniq_protos' | None, optional):
+            Subset of material IDs to keep. Defaults to None, which loads all materials.
+            'uniq_protos' drops WBM structures with matching prototype in MP
+            training set and duplicate prototypes in WBM test set (keeping only the most
+            stable structure per prototype). This increases the 'OOD-ness' of WBM.
         **kwargs: Keyword arguments passed to glob_to_df().
 
     Raises:
@@ -149,6 +155,11 @@ def load_df_wbm_with_preds(
                 msg = msg.replace(", ", f" ({model_key=}), ")
             raise ValueError(msg)
 
+    if subset == "uniq_protos":
+        df_out = df_out.query(Key.uniq_proto)
+    elif subset is not None:
+        df_out = df_out.loc[subset]
+
     return df_out
 
 
@@ -160,10 +171,13 @@ df_preds = load_df_wbm_with_preds().round(3)
 
 
 df_metrics = pd.DataFrame()
+df_metrics.attrs["title"] = "Metrics for Full Test Set"
 df_metrics_10k = pd.DataFrame()  # look only at each model's 10k most stable predictions
-prevalence = (df_wbm[Key.each_true] <= STABILITY_THRESHOLD).mean()
+df_metrics_10k.attrs["title"] = "Metrics for 10k Most Stable Predictions"
+for df in (df_metrics, df_metrics_10k):
+    df.index.name = "model"
 
-df_metrics.index.name = "model"
+prevalence = (df_wbm[Key.each_true] <= STABILITY_THRESHOLD).mean()
 for model in PRED_FILES:
     each_pred = df_preds[Key.each_true] + df_preds[model] - df_preds[Key.e_form]
     df_metrics[model] = stable_metrics(df_preds[Key.each_true], each_pred)
@@ -171,7 +185,10 @@ for model in PRED_FILES:
     df_metrics_10k[model] = stable_metrics(
         df_preds[Key.each_true].loc[most_stable_10k.index], most_stable_10k
     )
-    df_metrics_10k[model]["DAF"] = df_metrics_10k[model]["Precision"] / prevalence
+    # DAF is only defined w.r.t. whole test set stability prevalence, stable_metrics()
+    # uses the stable prevalence of just the subset of predictions used to calculate the
+    # metrics
+    df_metrics_10k.loc["DAF", model] = df_metrics_10k[model]["Precision"] / prevalence
 
 
 # pick F1 as primary metric to sort by

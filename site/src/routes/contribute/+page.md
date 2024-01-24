@@ -1,6 +1,6 @@
 <script>
   import { name, repository as repo, homepage } from "$site/package.json"
-  import figshare_urls from "$root/data/figshare/1.0.0.json"
+  import figshare_urls from "$root/data/figshare/1.1.0.json"
   import { Tooltip } from 'svelte-zoo'
 
   const ppd_doc_url = `https://github.com/materialsproject/pymatgen/blob/v2023.5.10/pymatgen/analysis/phase_diagram.py#L1480-L1814`
@@ -11,8 +11,6 @@
   const mp_trj_link = `<a href="https://figshare.com/articles/dataset/23713842">MPtrj</a>`
   const descriptions = {
     alignn_checkpoint: `ALIGNN model trained on <code>mp_computed_structure_entries</code>`,
-    mace_checkpoint_1: `2M params MACE model trained by Yuan Chiang on ${mp_trj_link}`,
-    mace_checkpoint_2: `16M params MACE model trained by Philipp Benner on ${mp_trj_link}`,
     mp_computed_structure_entries:
       `JSON-Serialized MP ${cse_link} objects containing relaxed structures and DFT final energies`,
     mp_elemental_ref_entries: `Minimum energy ComputedEntry for each element in MP`,
