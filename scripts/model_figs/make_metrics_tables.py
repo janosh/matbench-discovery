@@ -10,7 +10,6 @@ import json
 
 import numpy as np
 import pandas as pd
-from IPython.display import display
 from pymatviz.io import df_to_html_table, df_to_pdf
 from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
@@ -20,6 +19,11 @@ from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.models import MODEL_METADATA
 from matbench_discovery.preds import df_metrics, df_metrics_10k, df_metrics_uniq_protos
+
+try:
+    from IPython.display import display
+except ImportError:
+    display = print
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"

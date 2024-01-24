@@ -5,13 +5,12 @@ https://colab.research.google.com/drive/13CAM8mL1u7ZsqNhfZLv7bNb1rdhMI64d?usp=sh
 Found notebook in docs: https://help.figshare.com/article/how-to-use-the-figshare-api
 """
 
-# ruff: noqa: T201
-
 from __future__ import annotations
 
 import hashlib
 import json
 import os
+import sys
 from typing import Any
 
 import requests
@@ -19,8 +18,8 @@ import tomllib  # needs python 3.11
 from requests.exceptions import HTTPError
 from tqdm import tqdm
 
-from matbench_discovery import FIGSHARE_DIR, ROOT
-from matbench_discovery.data import DATA_FILES
+from matbench_discovery import DATA_DIR, FIGSHARE_DIR, ROOT
+from matbench_discovery.data import DATA_FILES, DataFiles
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-04-27"
@@ -30,41 +29,6 @@ with open(f"{ROOT}/site/.env") as file:
     TOKEN = file.read().split("figshare_token=")[1].split("\n")[0]
 
 BASE_URL = "https://api.figshare.com/v2"
-
-with open(f"{ROOT}/pyproject.toml", "rb") as file:
-    pyproject = tomllib.load(file)["project"]
-KEYWORDS = pyproject["keywords"]
-VERSION = pyproject["version"]
-DESCRIPTION = f"""
-These are the v{VERSION} data files for Matbench Discovery,
-{pyproject['description'].lower()}. It contains relaxed structures of the MP
-training set, initial+relaxed structures of the WBM test set, plus several checkpoints
-for models trained on this data specifically for this benchmark.
-
-For a description of each file, see
-https://matbench-discovery.materialsproject.org/contribute#--direct-download.
-
-The full force field
-training set containing 1.3M structures along with their energies, forces, stresses and
-magmons is available at https://figshare.com/articles/dataset/23713842.
-""".replace("\n", " ").strip()
-# https://figshare.com/articles/dataset/Materials_Project_Trjectory_MPtrj_Dataset/23713842
-REFERENCES = list(pyproject["urls"].values())
-
-TITLE = f"Matbench Discovery v{VERSION}"
-# category IDs can be found at https://api.figshare.com/v2/categories
-CATEGORIES = {
-    25162: "Structure and dynamics of materials",
-    25144: "Inorganic materials (incl. nanomaterials)",
-    25186: "Cheminformatics and Quantitative Structure-Activity Relationships",
-}
-
-file_urls_out_path = f"{FIGSHARE_DIR}/{VERSION}.json"
-if os.path.isfile(file_urls_out_path):
-    raise SystemExit(
-        f"{file_urls_out_path!r} already exists, exiting early. Increment the version "
-        "in pyproject.toml before publishing a new set of data files to figshare."
-    )
 
 
 def make_request(method: str, url: str, data: Any = None, binary: bool = False) -> Any:
@@ -137,22 +101,43 @@ def upload_file_to_figshare(article_id: int, file_path: str) -> int:
     return file_info["id"]
 
 
-def main() -> int:
+def main(pyproject: dict[str, Any], urls_json_path: str) -> int:
     """Main function to upload all files in FILE_PATHS to the same Figshare article."""
+    pkg_name, version = pyproject["name"], pyproject["version"]
+    # category IDs can be found at https://api.figshare.com/v2/categories
+    categories = {
+        25162: "Structure and dynamics of materials",
+        25144: "Inorganic materials (incl. nanomaterials)",
+        25186: "Cheminformatics and Quantitative Structure-Activity Relationships",
+    }
+
+    DESCRIPTION = f"""
+    These are the v{version} data files for Matbench Discovery,
+    {pyproject['description'].lower()}. It contains relaxed structures of the MP
+    training set, initial+relaxed structures of the WBM test set, plus several
+    checkpoints  for models trained on this data specifically for this benchmark.
+
+    For a description of each file, see
+    https://matbench-discovery.materialsproject.org/contribute#--direct-download.
+
+    The original MPtrj training set containing 1.3M structures with their energies,
+    forces, stresses and (partial) magmoms is available at https://figshare.com/articles/dataset/23713842.
+    """.replace("\n", " ").strip()
     metadata = {
-        "title": TITLE,
+        "title": f"{pkg_name.title()} v{version}",
         "description": DESCRIPTION,
         "defined_type": "dataset",  # seems to be default anyway
-        "tags": KEYWORDS,
-        "categories": list(CATEGORIES),
-        "references": REFERENCES,
+        "tags": pyproject["keywords"],
+        "categories": list(categories),
+        "references": list(pyproject["urls"].values()),
     }
     try:
         article_id = create_article(metadata)
         uploaded_files: dict[str, tuple[str, str]] = {}
-        pbar = tqdm(DATA_FILES.items(), desc="Uploading to Figshare")
-        for key, file_path in pbar:
+        pbar = tqdm(DATA_FILES, desc="Uploading to Figshare")
+        for key in pbar:
             pbar.set_postfix(file=key)
+            file_path = f"{DATA_DIR}/{DataFiles.__dict__[key]}"
             file_id = upload_file_to_figshare(article_id, file_path)
             file_url = f"https://figshare.com/ndownloader/files/{file_id}"
             uploaded_files[key] = (file_url, file_path.split("/")[-1])
@@ -170,11 +155,11 @@ def main() -> int:
                 "download": "https://figshare.com/ndownloader/files/41619375",
             },
         }
-        with open(file_urls_out_path, "w") as file:
+        with open(urls_json_path, "w") as file:
             json.dump(figshare_urls, file)
     except Exception as exc:  # prompt to delete article if something went wrong
         answer = ""
-        print(f"Encountered {exc=}")
+        print(f"Encountered {exc=} for {file_path=}")
         while answer not in ("y", "n"):
             answer = input("Delete article? [y/n] ")
         if answer == "y":
@@ -184,4 +169,16 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    main()  # upload all data files to figshare with current pyproject.toml version
+    with open(f"{ROOT}/pyproject.toml", "rb") as toml_file:
+        pyproject = tomllib.load(toml_file)["project"]
+
+    figshare_urls_json_path = f"{FIGSHARE_DIR}/{pyproject['version']}.json"
+    if os.path.isfile(figshare_urls_json_path):
+        print(
+            f"{figshare_urls_json_path!r} already exists, exiting early. Increment the "
+            "version in pyproject.toml before publishing a new set of data files to "
+            "figshare. Else existing file will be overwritten.",
+            file=sys.stderr,
+        )
+    # upload all data files to figshare with current pyproject.toml version
+    main(pyproject, figshare_urls_json_path)
