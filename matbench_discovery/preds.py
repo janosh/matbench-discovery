@@ -174,7 +174,10 @@ df_metrics = pd.DataFrame()
 df_metrics.attrs["title"] = "Metrics for Full Test Set"
 df_metrics_10k = pd.DataFrame()  # look only at each model's 10k most stable predictions
 df_metrics_10k.attrs["title"] = "Metrics for 10k Most Stable Predictions"
-for df in (df_metrics, df_metrics_10k):
+df_metrics_uniq_protos = pd.DataFrame(index=df_metrics.index)
+df_metrics_uniq_protos.attrs["title"] = "Metrics for unique non-MP prototypes"
+
+for df in (df_metrics, df_metrics_10k, df_metrics_uniq_protos):
     df.index.name = "model"
 
 prevalence = (df_wbm[Key.each_true] <= STABILITY_THRESHOLD).mean()
@@ -190,10 +193,23 @@ for model in PRED_FILES:
     # metrics
     df_metrics_10k.loc["DAF", model] = df_metrics_10k[model]["Precision"] / prevalence
 
+    df_uniq_proto_preds = df_preds[df_wbm[Key.uniq_proto]]
+    each_pred_uniq_proto = (
+        df_uniq_proto_preds[Key.each_true]
+        + df_uniq_proto_preds[model]
+        - df_uniq_proto_preds[Key.e_form]
+    )
+    df_metrics_uniq_protos[model] = stable_metrics(
+        df_uniq_proto_preds[Key.each_true], each_pred_uniq_proto
+    )
+
 
 # pick F1 as primary metric to sort by
 df_metrics = df_metrics.round(3).sort_values("F1", axis=1, ascending=False)
 df_metrics_10k = df_metrics_10k.round(3).sort_values("F1", axis=1, ascending=False)
+df_metrics_uniq_protos = df_metrics_uniq_protos.round(3).sort_values(
+    "F1", axis=1, ascending=False
+)
 
 models = list(df_metrics.T.MAE.sort_values().index)
 # used for consistent markers, line styles and colors for a given model across plots

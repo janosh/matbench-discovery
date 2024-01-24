@@ -10,6 +10,7 @@ import json
 
 import numpy as np
 import pandas as pd
+from IPython.display import display
 from pymatviz.io import df_to_html_table, df_to_pdf
 from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
@@ -18,18 +19,19 @@ from matbench_discovery import PDF_FIGS, SCRIPTS, SITE_FIGS, Key, Task
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.models import MODEL_METADATA
-from matbench_discovery.preds import df_metrics, df_metrics_10k
+from matbench_discovery.preds import df_metrics, df_metrics_10k, df_metrics_uniq_protos
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
 
+
+# %%
 name_map = {
     "MEGNet RS2RE": "MEGNet",
     "M3GNet→MEGNet": "M3GNet",
     "CHGNet→MEGNet": "CHGNet",
 }
 train_size_col = "Training Size"
-df_metrics.loc[train_size_col] = df_metrics_10k.loc[train_size_col] = ""
 for model in df_metrics:
     model_name = name_map.get(model, model)
     if not (model_data := MODEL_METADATA.get(model_name)):
@@ -40,33 +42,39 @@ for model in df_metrics:
     if n_materials := model_data["training_set"].get("n_materials"):
         n_structs_str += f" <small>({si_fmt(n_materials)})</small>"
 
-    df_metrics.loc[train_size_col, model] = n_structs_str
-    df_metrics_10k.loc[train_size_col, model] = n_structs_str
+    for df in (df_metrics, df_metrics_10k, df_metrics_uniq_protos):
+        if train_size_col not in df.index:
+            df.loc[train_size_col] = ""
+        df.loc[train_size_col, model] = n_structs_str
 
 
-# %% add dummy classifier results to df_metrics
-dummy_clf = DummyClassifier(strategy="stratified", random_state=0)
+# %% add dummy classifier results to df_metrics(_10k, _uniq_protos)
 df_mp = pd.read_csv(DATA_FILES.mp_energies, index_col=0)
-dummy_clf.fit(np.zeros_like(df_mp.energy_above_hull), df_mp.energy_above_hull == 0)
-dummy_clf_preds = dummy_clf.predict(np.zeros(len(df_wbm)))
-true_clf = df_wbm[Key.each_true] < 0
-each_true = df_wbm[Key.each_true]
 
-dummy_metrics = stable_metrics(
-    each_true, np.array([1, -1])[dummy_clf_preds.astype(int)]
-)
+for df_in, df_out, col in (
+    (df_wbm, df_metrics, "Dummy"),
+    # "Dummy" for df_metrics_10k is still for the full test set, not dummy metrics on
+    # only first 10k most stable predictions
+    (df_wbm, df_metrics_10k, "Dummy"),
+    (df_wbm.query(Key.uniq_proto), df_metrics_uniq_protos, "Dummy"),
+):
+    dummy_clf = DummyClassifier(strategy="stratified", random_state=0)
+    dummy_clf.fit(np.zeros_like(df_mp[Key.each]), df_mp[Key.each] == 0)
+    dummy_clf_preds = dummy_clf.predict(np.zeros(len(df_in)))
 
-# important: regression metrics from dummy_clf are meaningless, we overwrite them with
-# correct values here. don't remove!
-dummy_metrics["DAF"] = 1
-dummy_metrics["R2"] = 0
-dummy_metrics["MAE"] = (each_true - each_true.mean()).abs().mean()
-dummy_metrics["RMSE"] = ((each_true - each_true.mean()) ** 2).mean() ** 0.5
+    each_true = df_in[Key.each_true]
+    dummy_metrics = stable_metrics(
+        each_true, np.array([1, -1])[dummy_clf_preds.astype(int)]
+    )
 
-df_metrics["Dummy"] = dummy_metrics
-# add 'global' to dummy to make explicit that this is not dummy on first 10k most stable
-# predictions but on the whole dataset
-df_metrics_10k["Dummy"] = dummy_metrics
+    # important: regression metrics from dummy_clf are meaningless, we overwrite them
+    # with correct values here. don't remove!
+    dummy_metrics["DAF"] = 1
+    dummy_metrics["R2"] = 0
+    dummy_metrics["MAE"] = (each_true - each_true.mean()).abs().mean()
+    dummy_metrics["RMSE"] = ((each_true - each_true.mean()) ** 2).mean() ** 0.5
+
+    df_out[col] = dummy_metrics
 
 
 # %% for each model this ontology dict specifies (training type, test type, model type)
@@ -121,7 +129,11 @@ show_cols = (
     f"{train_size_col},{model_type_col}".split(",")
 )
 
-for label, df in (("-first-10k", df_metrics_10k), ("", df_metrics)):
+for label, df in (
+    ("", df_metrics),
+    ("-uniq-protos", df_metrics_uniq_protos),
+    ("-first-10k", df_metrics_10k),
+):
     df_table = pd.concat([df, df_ont[list(df)]]).rename(index={"R2": R2_col})
     df_table.index.name = "Model"
 
@@ -135,7 +147,7 @@ for label, df in (("-first-10k", df_metrics_10k), ("", df_metrics)):
             )
     df_filtered = df_table.T[show_cols]  # only keep columns we want to show
 
-    # abbreviate long column names: Precision, Accuracy -> Prec, Acc
+    # abbreviate long column names
     df_filtered = df_filtered.rename(columns={"Precision": "Prec", "Accuracy": "Acc"})
 
     if label == "-first-10k":
@@ -165,6 +177,8 @@ for label, df in (("-first-10k", df_metrics_10k), ("", df_metrics)):
         axis="columns",
     )
 
+    display(styler.set_caption(df.attrs.get("title")))
+
     # export model metrics as styled HTML table and Svelte component
     # get index of MAE column
     mae_col_idx = styler.columns.get_loc("MAE")
@@ -181,7 +195,7 @@ for label, df in (("-first-10k", df_metrics_10k), ("", df_metrics)):
         styler,
         f"{SITE_FIGS}/metrics-table{label}.svelte",
         inline_props="class='roomy'",
-        # draw dotted line between classification and regression metrics
+        # draw line between classification and regression metrics
         styles=f"{col_selector} {{ border-left: 1px solid white; }}{hide_scroll_bar}",
     )
     try:

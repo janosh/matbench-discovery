@@ -222,7 +222,7 @@
   background-color: #6ccd5a;
   color: #000000;
 }
-#T_ :is(td, th):nth-child(6) { border-left: 2px dotted white; }
+#T_ :is(td, th):nth-child(6) { border-left: 1px solid white; }
     table {
         scrollbar-width: none;  /* Firefox */
     }
@@ -236,6 +236,7 @@
 
     <table class='roomy' use:sortable {...$$props}
      id="T_">
+  <caption>Metrics for 10k Most Stable Predictions</caption>
   <thead>
     <tr>
       <th class="index_name level0" >Model</th>
