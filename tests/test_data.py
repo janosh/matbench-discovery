@@ -110,16 +110,16 @@ def test_load_doc_str() -> None:
 
 
 wbm_summary_expected_cols = {
+    "uncorrected_energy_from_cse",
     Key.bandgap_pbe,
-    "e_form_per_atom_mp2020_corrected",
+    Key.dft_energy,
     Key.e_form_raw,
     Key.e_form_wbm,
-    "e_above_hull_wbm",
+    Key.e_form,
+    Key.each_wbm,
     Key.formula,
-    "n_sites",
-    Key.dft_energy,
-    "uncorrected_energy_from_cse",
-    "volume",
+    Key.n_sites,
+    Key.volume,
     Key.wyckoff,
 }
 

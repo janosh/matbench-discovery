@@ -68,8 +68,10 @@ class Key(StrEnum):
     e_form_pred = "e_form_per_atom_pred"
     e_form_raw = "e_form_per_atom_uncorrected"
     e_form_wbm = "e_form_per_atom_wbm"
+    each = "energy_above_hull"  # as returned by MP API
     each_pred = "e_above_hull_pred"
     each_true = "e_above_hull_mp2020_corrected_ppd_mp"
+    each_wbm = "e_above_hull_wbm"
     final_struct = "relaxed_structure"
     forces = "forces"
     form_energy = "formation_energy_per_atom"
@@ -87,6 +89,8 @@ class Key(StrEnum):
     stress_trace = "stress_trace"
     struct = "structure"
     task_id = "task_id"
+    # lowest WBM structures for a given prototype that isn't already in MP
+    uniq_proto = "unique_prototype"
     volume = "volume"
     wyckoff = "wyckoff_spglib"  # relaxed structure Aflow label
     init_wyckoff = "wyckoff_spglib_initial_structure"  # initial structure Aflow label

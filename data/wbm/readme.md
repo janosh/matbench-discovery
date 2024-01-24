@@ -23,7 +23,7 @@ The full set of processing steps used to curate the WBM test set from the raw da
 - remove 6 pathological structures (with 0 volume)
 - remove formation energy outliers below -5 and above 5 eV/atom (502 and 22 crystals respectively out of 257,487 total, including an anomaly of 500 structures at exactly -10 eV/atom)
 
-  <caption>WBM Formation energy distribution. 524 materials outside dashed lines were discarded.<br />(zoom out on this plot to see discarded samples)</caption>
+  <caption style="margin: 1em;">WBM Formation energy distribution. 524 materials outside dashed lines were discarded.</caption>
   <slot name="hist-e-form-per-atom">
     <img src="./figs/hist-wbm-e-form-per-atom.svg" alt="WBM formation energy histogram indicating outlier cutoffs">
   </slot>
