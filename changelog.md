@@ -2,6 +2,52 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.1.0](https://github.com/janosh/matbench-discovery/compare/v1.0.0...v1.1.0)
+
+> 25 January 2024
+
+- Add metrics analysis excluding WBM materials with duplicate/MP-matching structure prototype [`#75`](https://github.com/janosh/matbench-discovery/pull/75)
+- Define `StrEnums` `Key` and `Task` for consistent + easily updatable dataframe columns [`#74`](https://github.com/janosh/matbench-discovery/pull/74)
+- Rerun M3GNet with new ASE `FrechetCellFilter` (prev `ExpCellFilter`) [`#72`](https://github.com/janosh/matbench-discovery/pull/72)
+- Rerun `CHGNet` with new ASE `FrechetCellFilter` (prev `ExpCellFilter`) [`#71`](https://github.com/janosh/matbench-discovery/pull/71)
+- Add flags to CHGNet and MACE test scripts to run in static mode (no relaxation) [`#70`](https://github.com/janosh/matbench-discovery/pull/70)
+- UMAP visualization of MP and WBM data [`#65`](https://github.com/janosh/matbench-discovery/pull/65)
+- More extensive MP/WBM data analysis for site and SI [`#64`](https://github.com/janosh/matbench-discovery/pull/64)
+- add `task_id`, `calc_id`, `ionic_step` metadata to atoms.info [`#63`](https://github.com/janosh/matbench-discovery/pull/63)
+- Fix missing stress unit conversion (kBar-&gt;eV/A^3) in `json_to_extxyz.py` [`#61`](https://github.com/janosh/matbench-discovery/pull/61)
+- Make distinction between training set `n_structures` and `n_materials` for models trained on DFT trajectories [`#60`](https://github.com/janosh/matbench-discovery/pull/60)
+- Update figures to latest MACE checkpoint [`#59`](https://github.com/janosh/matbench-discovery/pull/59)
+- Re-test CHGNet v0.3.0 [`#58`](https://github.com/janosh/matbench-discovery/pull/58)
+- Add `train_mace.py` for easier reproducibility [`#52`](https://github.com/janosh/matbench-discovery/pull/52)
+- Update MACE results [`#54`](https://github.com/janosh/matbench-discovery/pull/54)
+- create DATA_DIR and co in PKG_DIR (not /site-packages) if MBD not installed in editable mode (closes #25) [`#25`](https://github.com/janosh/matbench-discovery/issues/25)
+- fix outdated pandas checksums in [`#66`](https://github.com/janosh/matbench-discovery/issues/66)
+- fix dead pymatgen doc links (closes #55) [`#55`](https://github.com/janosh/matbench-discovery/issues/55)
+- clarify element-errors-ptable-heatmap.svelte normalized checkbox purpose [`1f69374`](https://github.com/janosh/matbench-discovery/commit/1f6937483f5880d0ad12a4c7cccdc65044664eab)
+- change ModelCard heading color scale from PuOr to Cividis [`2fcf6c2`](https://github.com/janosh/matbench-discovery/commit/2fcf6c2a0b73b78d64361a3797f7f83caaea1c10)
+- tweak WBM formation energy and convex hull distance histograms [`1098aa6`](https://github.com/janosh/matbench-discovery/commit/1098aa616ebe3f2e8763bd66a04fc1abdf003962)
+- remove df_to_pdf and normalize_and_crop_pdf from matbench_discovery/plots.py [`071174a`](https://github.com/janosh/matbench-discovery/commit/071174a3cd9d267f3d837c61e759466df7133f83)
+- add color bar labels to MP/WBM/MPtrj ptable element occurrence heatmaps [`e7d57ee`](https://github.com/janosh/matbench-discovery/commit/e7d57ee004d7a66b424ff6c56926be8949925cc1)
+- add site/src/figs/mp-vs-mp-trj-vs-wbm-arity-hist.svelte and site/src/figs/mp-trj-n-sites-hist.svelte to /data page [`46366d1`](https://github.com/janosh/matbench-discovery/commit/46366d1600468ab897ac6c6ae2bc53290b388e58)
+- link MPtrj dataset from /contribute page "Direct Download" section [`db999fd`](https://github.com/janosh/matbench-discovery/commit/db999fde0fc939276add8aa039615c6376c8e484)
+- add figshare article link to /contribute page [`df4f827`](https://github.com/janosh/matbench-discovery/commit/df4f82781148e541422abdb4e97d319318732bc7)
+- change scatter_hull_dist_models colorscale (turbo-&gt;PuOr) to improve outlier visibility on dark bg [`467d777`](https://github.com/janosh/matbench-discovery/commit/467d77746c1f7a445b035a02db97ccc832af7dd1)
+- add toggle to switch between formation energy and convex hull distance in scripts/scatter_energy_models.py [`82d07f1`](https://github.com/janosh/matbench-discovery/commit/82d07f1eff5296f66b866039a0f8ef82b7cb4bf5)
+- eda_mp_trj.py add code for mp-trj-forces-ptable-hists.pdf showing the distribution of forces for each element in the periodic table [`62a6458`](https://github.com/janosh/matbench-discovery/commit/62a6458c60de26fc6cc9b034b221539bc8cec70a)
+- fix trainable params in test_m3gnet.py [`e203f8f`](https://github.com/janosh/matbench-discovery/commit/e203f8f7ab0095b28bf27f773312c4fc99715fdc)
+- make landing page best model report dynamic [`2f4c33a`](https://github.com/janosh/matbench-discovery/commit/2f4c33adba77d0009d1f77962617eda01cc1d67f)
+- add 2023-03-16-all-mp-tasks.zip figshare url [`9376630`](https://github.com/janosh/matbench-discovery/commit/9376630486911dcb01c4dc58a3bf0bda2dc121d6)
+- fix plot function cumulative_metrics() when 'RMSE' in metrics [`71d77f4`](https://github.com/janosh/matbench-discovery/commit/71d77f41242a566484321101f9ae6eb13e33ae66)
+- use SymLogNorm for MP+WBM+MPtrj ptable element count heatmaps [`f959ee8`](https://github.com/janosh/matbench-discovery/commit/f959ee8a903148d4d2aa1bf35aa0aaae797ef5e8)
+- add per-element MPtrj magmom ptable histogram [`13cbb90`](https://github.com/janosh/matbench-discovery/commit/13cbb90b1e05d2122d4633cb6bf9706b9e83babf)
+- update email address, rename (fetch_process_wbm_dataset-&gt;compile_wbm_test_set).py [`d221cee`](https://github.com/janosh/matbench-discovery/commit/d221ceeab7464ab54f7c2664745961785aede43d)
+- fix wrong MPtrj training_set URL in chgnet, mace, alignn_ff metadata.yml [`5697156`](https://github.com/janosh/matbench-discovery/commit/56971568665350fd2f240a02eb5163d833c64469)
+- preprint restore abstract [`dc81813`](https://github.com/janosh/matbench-discovery/commit/dc81813ec18e90076ae99281894039387d1f8381)
+- fix preprint/+page.md missing figure refs and accidentally deleted MetricsTable glossary [`ccd4000`](https://github.com/janosh/matbench-discovery/commit/ccd40003fb92d0c20af1a2af22a6db88a08828ae)
+- fix ptable_heatmap_plotly precision keyword renamed to fmt [`4ce353b`](https://github.com/janosh/matbench-discovery/commit/4ce353b6079440b16c8524f2960092012f36c86d)
+- mv site/src/routes/(about-the-data-&gt;data) [`6f06b4c`](https://github.com/janosh/matbench-discovery/commit/6f06b4c43e6741ce0666600ef8fd639d3c6be615)
+- document both MACE checkpoints tested and update the checkpoint on figshare to the one used for MBD v1 submission [`5d28a57`](https://github.com/janosh/matbench-discovery/commit/5d28a576a5b07d18522b7172ec158c6f7be06c11)
+
 ### [v1.0.0](https://github.com/janosh/matbench-discovery/compare/v0.1.5...v1.0.0)
 
 > 13 September 2023
