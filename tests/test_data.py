@@ -36,7 +36,7 @@ structure = Structure(
 
 
 @pytest.mark.parametrize(
-    "data_key, hydrate",
+    "key, hydrate",
     [
         ("wbm_summary", True),
         ("wbm_initial_structures", True),
@@ -51,16 +51,16 @@ def test_load(
     df_with_pmg_objects: pd.DataFrame,
     capsys: CaptureFixture[str],
     tmp_path: Path,
-    data_key: str,
+    key: str,
     hydrate: bool,
 ) -> None:
-    filepath = DATA_FILES[data_key]
+    filepath = DATA_FILES[key]
     # intercept HTTP requests and write dummy df to disk instead
     with patch("urllib.request.urlretrieve") as url_retrieve:
         writer = df_with_pmg_objects.to_json if ".json" in filepath else df_float.to_csv
         url_retrieve.side_effect = lambda _url, path: writer(path)
         out = load(
-            data_key,
+            key,
             hydrate=hydrate,
             # test both str and Path for cache_dir
             cache_dir=str(tmp_path) if random() < 0.5 else tmp_path,
@@ -68,24 +68,24 @@ def test_load(
 
     stdout, _stderr = capsys.readouterr()
 
-    assert f"Downloading {data_key!r} from {figshare_urls[data_key][0]}" in stdout
+    assert f"Downloading {key!r} from {figshare_urls[key][0]}" in stdout
 
     # check we called read_csv/read_json once for each data_name
     assert url_retrieve.call_count == 1
 
-    assert isinstance(out, pd.DataFrame), f"{data_key} not a DataFrame"
+    assert isinstance(out, pd.DataFrame), f"{key} not a DataFrame"
 
     # test that df loaded from cache is the same as initial df
-    from_cache = load(data_key, hydrate=hydrate, cache_dir=tmp_path)
+    from_cache = load(key, hydrate=hydrate, cache_dir=tmp_path)
     pd.testing.assert_frame_equal(out, from_cache)
 
 
 def test_load_raises(tmp_path: Path) -> None:
-    data_key = "bad-key"
+    key = "bad-key"
     with pytest.raises(ValueError) as exc:  # noqa: PT011
-        load(data_key)
+        load(key)
 
-    assert f"Unknown {data_key=}, must be one of {list(DATA_FILES)}" in str(exc.value)
+    assert f"Unknown {key=}, must be one of {list(DATA_FILES)}" in str(exc.value)
 
     version = "invalid-version"
     with pytest.raises(ValueError) as exc:  # noqa: PT011
@@ -110,16 +110,16 @@ def test_load_doc_str() -> None:
 
 
 wbm_summary_expected_cols = {
+    "uncorrected_energy_from_cse",
     Key.bandgap_pbe,
-    "e_form_per_atom_mp2020_corrected",
+    Key.dft_energy,
     Key.e_form_raw,
     Key.e_form_wbm,
-    "e_above_hull_wbm",
+    Key.e_form,
+    Key.each_wbm,
     Key.formula,
-    "n_sites",
-    Key.dft_energy,
-    "uncorrected_energy_from_cse",
-    "volume",
+    Key.n_sites,
+    Key.volume,
     Key.wyckoff,
 }
 
@@ -197,7 +197,7 @@ def test_as_dict_handler() -> None:
 
 
 def test_df_wbm() -> None:
-    assert df_wbm.shape == (256_963, 16)
+    assert df_wbm.shape == (256_963, 18)
     assert df_wbm.index.name == Key.mat_id
     assert set(df_wbm) > {Key.formula, Key.mat_id, Key.bandgap_pbe}
 

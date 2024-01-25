@@ -318,7 +318,7 @@
   background-color: #2b748e;
   color: #f1f1f1;
 }
-#T_ :is(td, th):nth-child(8) { border-left: 2px dotted white; }
+#T_ :is(td, th):nth-child(8) { border-left: 1px solid white; }
     table {
         scrollbar-width: none;  /* Firefox */
     }

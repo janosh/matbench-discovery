@@ -27,7 +27,7 @@ bad_ids = df_each_pred.query(
     f"{model} > {min_each_pred} & {Key.each_true} < {min_each_pred}"
 ).index
 
-df_wbm[Key.spacegroup] = df_wbm[Key.wyckoff].str.split("_").str[2].astype(int)
+df_wbm[Key.spacegroup] = df_wbm[Key.init_wyckoff].str.split("_").str[2].astype(int)
 df_bad = df_wbm.loc[bad_ids]
 title = f"{len(df_bad)} {model} preds<br>with {max_each_true=}, {min_each_pred=}"
 
@@ -50,7 +50,10 @@ save_fig(ax, f"{PDF_FIGS}/spacegroup-hist-{model.lower()}-failures.pdf")
 # %%
 proto_col = "Isopointal Prototypes"
 df_proto_counts = (
-    df_bad[Key.wyckoff].map(get_isopointal_proto_from_aflow).value_counts().to_frame()
+    df_bad[Key.init_wyckoff]
+    .map(get_isopointal_proto_from_aflow)
+    .value_counts()
+    .to_frame()
 )
 
 

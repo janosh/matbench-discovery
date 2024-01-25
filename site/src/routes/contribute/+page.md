@@ -11,8 +11,6 @@
   const mp_trj_link = `<a href="https://figshare.com/articles/dataset/23713842">MPtrj</a>`
   const descriptions = {
     alignn_checkpoint: `ALIGNN model trained on <code>mp_computed_structure_entries</code>`,
-    mace_checkpoint_1: `2M params MACE model trained by Yuan Chiang on ${mp_trj_link}`,
-    mace_checkpoint_2: `16M params MACE model trained by Philipp Benner on ${mp_trj_link}`,
     mp_computed_structure_entries:
       `JSON-Serialized MP ${cse_link} objects containing relaxed structures and DFT final energies`,
     mp_elemental_ref_entries: `Minimum energy ComputedEntry for each element in MP`,
@@ -81,6 +79,7 @@ assert tuple(df_wbm) == [
     "e_above_hull_wbm",
     "bandgap_pbe",
     "wyckoff_spglib",
+    "wyckoff_spglib_initial_structure",
     "uncorrected_energy_from_cse",
     "e_correction_per_atom_mp2020",
     "e_correction_per_atom_mp_legacy",
@@ -99,7 +98,8 @@ assert tuple(df_wbm) == [
 1. **`uncorrected_energy`**: Raw VASP-computed energy
 1. **`e_form_per_atom_wbm`**: Original formation energy per atom from [WBM paper]
 1. **`e_above_hull_wbm`**: Original energy above the convex hull in (eV/atom) from [WBM paper]
-1. **`wyckoff_spglib`**: Aflow label strings built from spacegroup and Wyckoff positions of the relaxed structure as computed by [spglib](https://spglib.readthedocs.io/en/latest/python-spglib.html?highlight=get_symmetry_dataset#get-symmetry-dataset).
+1. **`wyckoff_spglib`**: Aflow label strings built from spacegroup and Wyckoff positions of the DFT-relaxed structure as computed by [spglib](https://spglib.readthedocs.io/en/latest/python-spglib.html?highlight=get_symmetry_dataset#get-symmetry-dataset).
+1. **`wyckoff_spglib_initial_structure`**: Same as `wyckoff_spglib` but computed from the initial structure.
 1. **`bandgap_pbe`**: PBE-level DFT band gap from [WBM paper]
 1. **`uncorrected_energy_from_cse`**: Uncorrected DFT energy stored in `ComputedStructureEntries`. Should be the same as `uncorrected_energy`. There are 2 cases where the absolute difference reported in the summary file and in the computed structure entries exceeds 0.1 eV (`wbm-2-3218`, `wbm-1-56320`) which we attribute to rounding errors.
 1. **`e_form_per_atom_uncorrected`**: Uncorrected DFT formation energy per atom in eV/atom.

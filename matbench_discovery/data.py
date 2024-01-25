@@ -48,7 +48,7 @@ def as_dict_handler(obj: Any) -> dict[str, Any] | None:
 
 
 def load(
-    data_key: str,
+    key: str,
     version: str = figshare_versions[-1],
     cache_dir: str | Path = default_cache_dir,
     hydrate: bool = False,
@@ -64,7 +64,7 @@ def load(
     descriptions.
 
     Args:
-        data_key (str): Which parts of the MP/WBM data to load. Must be one of
+        key (str): Which parts of the MP/WBM data to load. Must be one of
             list(DATA_FILES).
         version (str, optional): Which version of the dataset to load. Defaults to
             latest version of data files published to Figshare. Pass any invalid version
@@ -87,45 +87,45 @@ def load(
     if version not in figshare_versions:
         raise ValueError(f"Unexpected {version=}. Must be one of {figshare_versions}.")
 
-    if not isinstance(data_key, str) or data_key not in DATA_FILES:
-        raise ValueError(f"Unknown {data_key=}, must be one of {list(DATA_FILES)}.")
+    if not isinstance(key, str) or key not in DATA_FILES:
+        raise ValueError(f"Unknown {key=}, must be one of {list(DATA_FILES)}.")
 
     with open(f"{FIGSHARE_DIR}/{version}.json") as json_file:
         file_urls = json.load(json_file)["files"]
 
-    file = DataFiles.__dict__[data_key]
+    file_path = DataFiles.__dict__[key]
 
-    cache_path = f"{cache_dir}/{file}"
+    cache_path = f"{cache_dir}/{file_path}"
     if not os.path.isfile(cache_path):  # download from Figshare URL
-        url = file_urls[data_key][0]
-        print(f"Downloading {data_key!r} from {url}")
+        url = file_urls[key][0]
+        print(f"Downloading {key!r} from {url}")
         try:
             # ensure directory exists
             os.makedirs(os.path.dirname(cache_path), exist_ok=True)
             # download and save to disk
             urllib.request.urlretrieve(url, cache_path)
-            print(f"Cached {data_key!r} to {cache_path!r}")
+            print(f"Cached {key!r} to {cache_path!r}")
         except urllib.error.HTTPError as exc:
             raise ValueError(f"Bad {url=}") from exc
         except Exception:
-            print(f"\n\nvariable dump:\n{file=},\n{url=}")
+            print(f"\n\nvariable dump:\n{file_path=},\n{url=}")
             raise
 
-    print(f"Loading {data_key!r} from cached file at {cache_path!r}")
-    if ".pkl" in file:  # handle key='mp_patched_phase_diagram' separately
+    print(f"Loading {key!r} from cached file at {cache_path!r}")
+    if ".pkl" in file_path:  # handle key='mp_patched_phase_diagram' separately
         with gzip.open(cache_path, "rb") as zip_file:
             return pickle.load(zip_file)
 
     csv_ext = (".csv", ".csv.gz", ".csv.bz2")
-    reader = pd.read_csv if file.endswith(csv_ext) else pd.read_json
+    reader = pd.read_csv if file_path.endswith(csv_ext) else pd.read_json
     try:
         df = reader(cache_path, **kwargs)
     except Exception:
-        print(f"\n\nvariable dump:\n{file=},\n{reader=}\n{kwargs=}")
+        print(f"\n\nvariable dump:\n{file_path=},\n{reader=}\n{kwargs=}")
         raise
 
     if Key.mat_id in df:
-        df = df.set_index(Key.mat_id.value)
+        df = df.set_index(Key.mat_id)
     if hydrate:
         for col in df:
             if not isinstance(df[col].iloc[0], dict):
@@ -246,6 +246,10 @@ class DataFiles(Files):
     mp_elemental_ref_entries = "mp/2023-02-07-mp-elemental-reference-entries.json.gz"
     mp_energies = "mp/2023-01-10-mp-energies.csv.gz"
     mp_patched_phase_diagram = "mp/2023-02-07-ppd-mp.pkl.gz"
+    mp_trj_extxyz = "mp/2023-11-22-mp-trj-extxyz-by-yuan.zip"
+    # snapshot of every task (calculation) in MP as of 2023-03-16 (14 GB)
+    all_mp_tasks = "mp/2023-03-16-all-mp-tasks.zip"
+
     wbm_computed_structure_entries = (
         "wbm/2022-10-19-wbm-computed-structure-entries.json.bz2"
     )
@@ -253,16 +257,9 @@ class DataFiles(Files):
     wbm_cses_plus_init_structs = (
         "wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
     )
-    wbm_summary = "wbm/2022-10-19-wbm-summary.csv.gz"
+    wbm_summary = "wbm/2023-12-13-wbm-summary.csv.gz"
+
     alignn_checkpoint = "2023-06-02-pbenner-best-alignn-model.pth.zip"
-    mace_checkpoint = "2023-08-14-mace-yuan-trained-mptrj-04.model"
-
-    mp_trj_extxyz = "mp/2023-11-22-mp-trj-extxyz-by-yuan.zip"
-    # snapshot of every task (calculation) in MP as of 2023-03-16 (14 GB)
-    all_mp_tasks = "mp/2023-03-16-all-mp-tasks.zip"
-
-    mace_checkpoint1 = "2023-08-14-mace-2M-yuan-mptrj-04.model"
-    mace_checkpoint2 = "2023-10-29-mace-16M-pbenner-mptrj-no-conditional-loss"
 
 
 # data files can be downloaded and cached with matbench_discovery.data.load()
@@ -270,4 +267,4 @@ DATA_FILES = DataFiles()
 
 
 df_wbm = load("wbm_summary")
-df_wbm[Key.mat_id.value] = df_wbm.index
+df_wbm[Key.mat_id] = df_wbm.index
