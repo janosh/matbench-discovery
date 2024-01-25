@@ -4,14 +4,6 @@
       "https://figshare.com/ndownloader/files/41233560",
       "2023-06-02-pbenner-best-alignn-model.pth.zip"
     ],
-    "mace_checkpoint_1": [
-      "https://figshare.com/ndownloader/files/42374049",
-      "2023-08-14-mace-yuan-trained-mptrj-04.model"
-    ],
-    "mace_checkpoint_2": [
-      "https://figshare.com/ndownloader/files/43117273",
-      "2023-10-29-mace-16M-pbenner-mptrj-no-conditional-loss.model"
-    ],
     "mp_computed_structure_entries": [
       "https://figshare.com/ndownloader/files/40344436",
       "2023-02-07-mp-computed-structure-entries.json.gz"
@@ -41,8 +33,8 @@
       "2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
     ],
     "wbm_summary": [
-      "https://figshare.com/ndownloader/files/41296866",
-      "2022-10-19-wbm-summary.csv.gz"
+      "https://figshare.com/ndownloader/files/44225498",
+      "2023-12-13-wbm-summary.csv.gz"
     ],
     "mp_trj_extxyz_by_yuan": [
       "https://figshare.com/ndownloader/files/43302033",

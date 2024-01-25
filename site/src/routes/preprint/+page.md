@@ -208,7 +208,7 @@ To test a wide variety of methodologies proposed for learning the potential ener
 
 > @label:fig:metrics-table Classification and regression metrics for all models tested on our benchmark ranked by F1 score.
 > The heat map ranges from yellow (best) to blue (worst) performance.
-> DAF = discovery acceleration factor (see text), TPR = true positive rate, TNR = false negative rate, MAE = mean absolute error, RMSE = root mean squared error.
+> DAF = discovery acceleration factor (see text), TPR = true positive rate, TNR = true negative rate, MAE = mean absolute error, RMSE = root mean squared error.
 > The dummy classifier uses the 'scikit-learn' 'stratified' strategy of randomly assigning stable/unstable labels according to the training set prevalence.
 > The dummy regression metrics MAE, RMSE and $R^2$ are attained by always predicting the test set mean.
 > The Voronoi RF, CGCNN and MEGNet models are seen to be worse than the dummy result on regression metrics but better on some of the classification metrics, highlighting the importance of looking at the right metrics for the task at hand to gauge model performance.

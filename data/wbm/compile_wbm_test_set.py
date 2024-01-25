@@ -19,7 +19,7 @@ from pymatviz import density_scatter
 from pymatviz.io import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, Key, today
+from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR, Key, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.energy import get_e_form_per_atom
 
@@ -38,9 +38,6 @@ https://nature.com/articles/s41524-020-00481-6
 """
 
 
-module_dir = os.path.dirname(__file__)
-
-
 # %% links to google drive files received via email from 1st author Hai-Chen Wang
 # on 2021-06-15 containing initial and relaxed structures
 google_drive_ids = {
@@ -53,10 +50,10 @@ google_drive_ids = {
 
 
 # %%
-os.makedirs(f"{module_dir}/raw", exist_ok=True)
+os.makedirs(f"{WBM_DIR}/raw", exist_ok=True)
 
 for step, file_id in google_drive_ids.items():
-    file_path = f"{module_dir}/raw/wbm-structures-step-{step}.json.bz2"
+    file_path = f"{WBM_DIR}/raw/wbm-structures-step-{step}.json.bz2"
 
     if os.path.exists(file_path):
         print(f"{file_path} already exists, skipping")
@@ -67,7 +64,7 @@ for step, file_id in google_drive_ids.items():
 
 
 # %%
-summary_path = f"{module_dir}/raw/wbm-summary.txt"
+summary_path = f"{WBM_DIR}/raw/wbm-summary.txt"
 
 if not os.path.exists(summary_path):
     summary_id_file = "1639IFUG7poaDE2uB6aISUOi65ooBwCIg"
@@ -76,7 +73,7 @@ if not os.path.exists(summary_path):
 
 
 # %%
-json_paths = sorted(glob(f"{module_dir}/raw/wbm-structures-step-*.json.bz2"))
+json_paths = sorted(glob(f"{WBM_DIR}/raw/wbm-structures-step-*.json.bz2"))
 step_lens = (61848, 52800, 79205, 40328, 23308)
 # step 3 has 79,211 initial structures but only 79,205 ComputedStructureEntries
 # i.e. 6 extra structures which have missing energy, volume, etc. in the summary file
@@ -177,7 +174,7 @@ for filename in (
     # "summary.txt.bz2",
     *(f"step_{step}.json.bz2" for step in range(1, 6)),
 ):
-    file_path = f"{module_dir}/raw/wbm-cse-{filename.lower().replace('_', '-')}"
+    file_path = f"{WBM_DIR}/raw/wbm-cse-{filename.lower().replace('_', '-')}"
     if os.path.exists(file_path):
         print(f"{file_path} already exists, skipping")
         continue
@@ -191,7 +188,7 @@ for filename in (
 
 
 # %%
-cse_step_paths = sorted(glob(f"{module_dir}/raw/wbm-cse-step-*.json.bz2"))
+cse_step_paths = sorted(glob(f"{WBM_DIR}/raw/wbm-cse-step-*.json.bz2"))
 assert len(cse_step_paths) == 5
 
 """
@@ -295,14 +292,14 @@ col_map = {
     "vol": "volume",
     "e": Key.dft_energy,
     "e_form": Key.e_form_wbm,
-    "e_hull": "e_above_hull_wbm",
+    "e_hull": Key.each_wbm,
     "gap": Key.bandgap_pbe,
     "id": Key.mat_id,
 }
 # WBM summary was shared twice, once on google drive, once on materials cloud
 # download both and check for consistency
 df_summary = pd.read_csv(
-    f"{module_dir}/raw/wbm-summary.txt", sep="\t", names=col_map.values()
+    f"{WBM_DIR}/raw/wbm-summary.txt", sep="\t", names=col_map.values()
 ).set_index(Key.mat_id)
 
 df_summary_bz2 = pd.read_csv(
@@ -398,7 +395,7 @@ for fname, cols in (
     ),
 ):
     cols = ["formula_from_cse", *cols]  # type: ignore[list-item]
-    df_wbm[cols].reset_index().to_json(f"{module_dir}/{today}-wbm-{fname}.json.bz2")
+    df_wbm[cols].reset_index().to_json(f"{WBM_DIR}/{today}-wbm-{fname}.json.bz2")
 
 
 # %%
@@ -589,18 +586,34 @@ df_summary[Key.e_form_raw.replace("uncorrected", "mp2020_corrected")] = (
 try:
     from aviary.wren.utils import get_aflow_label_from_spglib
 
-    if Key.wyckoff not in df_wbm:
-        df_summary[Key.wyckoff] = None
+    # add Aflow-style Wyckoff labels for initial and relaxed structures
+    for key in (Key.init_wyckoff, Key.wyckoff):
+        if key not in df_wbm:
+            df_summary[key] = None
 
-    for idx, struct in tqdm(df_wbm[Key.init_struct].items(), total=len(df_wbm)):
-        if not pd.isna(df_summary.loc[idx, Key.wyckoff]):
+    # from initial structures
+    for idx in tqdm(df_wbm.index):
+        if not pd.isna(df_summary.loc[idx, Key.init_wyckoff]):
             continue  # Aflow label already computed
         try:
-            struct = Structure.from_dict(struct)
+            struct = Structure.from_dict(df_wbm.loc[idx, Key.init_struct])
+            df_summary.loc[idx, Key.init_wyckoff] = get_aflow_label_from_spglib(struct)
+        except Exception as exc:
+            print(f"{idx=} {exc=}")
+
+    # from relaxed structures
+    for idx in tqdm(df_wbm.index):
+        if not pd.isna(df_summary.loc[idx, Key.wyckoff]):
+            continue
+
+        try:
+            cse = df_wbm.loc[idx, Key.cse]
+            struct = Structure.from_dict(cse["structure"])
             df_summary.loc[idx, Key.wyckoff] = get_aflow_label_from_spglib(struct)
         except Exception as exc:
             print(f"{idx=} {exc=}")
 
+    assert df_summary[Key.init_wyckoff].isna().sum() == 0
     assert df_summary[Key.wyckoff].isna().sum() == 0
 except ImportError:
     print("aviary not installed, skipping Wyckoff label generation")
@@ -609,7 +622,7 @@ except Exception as exception:
 
 
 # %%
-fingerprints_path = f"{module_dir}/site-stats.json.gz"
+fingerprints_path = f"{WBM_DIR}/site-stats.json.gz"
 suggest = "not found, run scripts/compute_struct_fingerprints.py to generate"
 fp_diff_col = "site_stats_fingerprint_init_final_norm_diff"
 try:
@@ -621,16 +634,40 @@ except KeyError:
     print(f"{fingerprints_path=} does not contain {fp_diff_col=}")
 
 
+# %% mark WBM materials with matching prototype in MP or duplicate prototypes
+# in WBM (keeping only the lowest energy one)
+df_mp = pd.read_csv(DATA_FILES.mp_energies, index_col=0)
+
+# mask WBM materials with matching prototype in MP
+mask_proto_in_mp = df_summary[Key.wyckoff].isin(df_mp[Key.wyckoff])
+# mask duplicate prototypes in WBM (keeping the lowest energy one)
+mask_dupe_protos = df_summary.sort_values(by=[Key.wyckoff, Key.each_wbm]).duplicated(
+    subset=Key.wyckoff, keep="first"
+)
+assert sum(mask_proto_in_mp) == 11_175, f"{sum(mask_proto_in_mp)=:_}"
+assert sum(mask_dupe_protos) == 32_784, f"{sum(mask_dupe_protos)=:_}"
+
+df_summary[Key.uniq_proto] = ~(mask_proto_in_mp | mask_dupe_protos)
+assert dict(df_summary[Key.uniq_proto].value_counts()) == {True: 215_488, False: 41_475}
+assert list(df_summary.query(f"~{Key.uniq_proto}").head(5).index) == [
+    "wbm-1-7",
+    "wbm-1-8",
+    "wbm-1-15",
+    "wbm-1-20",
+    "wbm-1-33",
+]
+
+
 # %% write final summary data to disk (yeah!)
-df_summary.round(6).to_csv(f"{module_dir}/{today}-wbm-summary.csv")
+df_summary.round(6).to_csv(f"{WBM_DIR}/{today}-wbm-summary.csv.gz")
 
 
 # %% only here to load data for later inspection
 if False:
-    wbm_summary_path = f"{module_dir}/2022-10-19-wbm-summary.csv.gz"
+    wbm_summary_path = f"{WBM_DIR}/2022-10-19-wbm-summary.csv.gz"
     df_summary = pd.read_csv(wbm_summary_path).set_index(Key.mat_id)
     df_wbm = pd.read_json(
-        f"{module_dir}/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
+        f"{WBM_DIR}/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
     ).set_index(Key.mat_id)
 
     df_wbm["cse"] = [
