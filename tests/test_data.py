@@ -133,7 +133,7 @@ wbm_summary_expected_cols = {
         pytest.param(
             "wbm_summary",
             figshare_versions[-1],
-            (256963, 15),
+            (256_963, 17),
             wbm_summary_expected_cols,
             marks=pytest.mark.slow,  # run pytest -m 'slow' to select this marker
         ),
@@ -141,7 +141,7 @@ wbm_summary_expected_cols = {
             # large file but needed to test loading compressed JSON from URL
             "mp_computed_structure_entries",
             figshare_versions[-1],
-            (154718, 1),
+            (154_718, 1),
             {"entry"},
             marks=pytest.mark.very_slow,
         ),
