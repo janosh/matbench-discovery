@@ -644,6 +644,8 @@ mask_proto_in_mp = df_summary[Key.wyckoff].isin(df_mp[Key.wyckoff])
 mask_dupe_protos = df_summary.sort_values(by=[Key.wyckoff, Key.each_wbm]).duplicated(
     subset=Key.wyckoff, keep="first"
 )
+assert sum(mask_proto_in_mp) == 11_175, f"{sum(mask_proto_in_mp)=:_}"
+assert sum(mask_dupe_protos) == 32_784, f"{sum(mask_dupe_protos)=:_}"
 
 df_summary[Key.uniq_proto] = ~(mask_proto_in_mp | mask_dupe_protos)
 assert dict(df_summary[Key.uniq_proto].value_counts()) == {True: 215_488, False: 41_475}

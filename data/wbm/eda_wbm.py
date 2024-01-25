@@ -57,6 +57,16 @@ all_counts = (
 )
 
 
+# %% print prevalence of stable structures in full WBM and uniq-prototypes only
+for df, label in (
+    (df_wbm, "full WBM"),
+    (df_wbm.query(Key.uniq_proto), "WBM unique prototypes"),
+):
+    n_stable = sum(df[Key.each_true] <= STABILITY_THRESHOLD)
+    stable_rate = n_stable / len(df)
+    print(f"{label}: {stable_rate=:.1%} ({n_stable:,} out of {len(df):,})")
+
+
 # %%
 for dataset, count_mode, elem_counts in all_counts:
     filename = f"{dataset}-element-counts-by-{count_mode}"

@@ -324,7 +324,6 @@
 
     <table class='roomy' use:sortable {...$$props}
      id="T_">
-  <caption>Metrics for unique non-MP prototypes</caption>
   <thead>
     <tr>
       <th class="index_name level0" >Model</th>

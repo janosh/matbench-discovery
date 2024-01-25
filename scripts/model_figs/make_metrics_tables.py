@@ -181,8 +181,6 @@ for label, df in (
         axis="columns",
     )
 
-    display(styler.set_caption(df.attrs.get("title")))
-
     # export model metrics as styled HTML table and Svelte component
     # get index of MAE column
     mae_col_idx = styler.columns.get_loc("MAE")
@@ -206,6 +204,8 @@ for label, df in (
         df_to_pdf(styler, f"{PDF_FIGS}/metrics-table{label}.pdf")
     except (ImportError, RuntimeError) as exc:
         print(f"df_to_pdf failed: {exc}")
+
+    display(styler.set_caption(df.attrs.get("title")))
 
 
 # %%

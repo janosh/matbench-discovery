@@ -332,7 +332,6 @@
 
     <table class='roomy' use:sortable {...$$props}
      id="T_">
-  <caption>Metrics for Full Test Set</caption>
   <thead>
     <tr>
       <th class="index_name level0" >Model</th>
