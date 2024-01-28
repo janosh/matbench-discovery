@@ -1,6 +1,6 @@
 <script lang="ts">
   import { PtableHeatmap } from '$lib'
-  import figshare_urls from '$root/data/figshare/1.0.0.json'
+  import figshare_urls from '$pkg/figshare/1.0.0.json'
 
   export let log = false // log color scale
   export let count_mode = `occurrence`

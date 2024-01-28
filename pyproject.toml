@@ -50,13 +50,12 @@ Package = "https://pypi.org/project/matbench-discovery"
 test = ["pytest", "pytest-cov"]
 # how to specify git deps: https://stackoverflow.com/a/73572379
 running-models = [
+  # aviary commented-out since dep on git repo raises "Invalid value for requires_dist"
+  # when attempting PyPI publish
+  # "aviary@git+https://github.com/CompRhys/aviary",
   "alignn",
   "chgnet",
   "jarvis-tools",
-  # torch needs to install before aviary
-  "torch",
-
-  "aviary@git+https://github.com/CompRhys/aviary",
   "m3gnet",
   "mace-torch",
   "maml",
@@ -71,7 +70,7 @@ include = ["matbench_discovery*"]
 exclude = ["tests", "tests.*"]
 
 [tool.setuptools.package-data]
-matbench_discovery = ["../data/figshare/*"]
+matbench_discovery = ["figshare/*"]
 
 [tool.distutils.bdist_wheel]
 universal = true
