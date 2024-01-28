@@ -70,7 +70,7 @@ include = ["matbench_discovery*"]
 exclude = ["tests", "tests.*"]
 
 [tool.setuptools.package-data]
-matbench_discovery = ["../data/figshare/*"]
+matbench_discovery = ["figshare/*"]
 
 [tool.distutils.bdist_wheel]
 universal = true
