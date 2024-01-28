@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.1.1](https://github.com/janosh/matbench-discovery/compare/v1.1.0...v1.1.1)
+
+> 28 January 2024
+
+- Fix failing `pkg_is_editable` check in PyPI release [`#78`](https://github.com/janosh/matbench-discovery/pull/78)
+
 #### [v1.1.0](https://github.com/janosh/matbench-discovery/compare/v1.0.0...v1.1.0)
 
 > 25 January 2024
