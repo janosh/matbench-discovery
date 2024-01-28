@@ -108,6 +108,28 @@ class Task(StrEnum):
     # version of the PES like CGCNN+P)
     RP2RE = "RP2RE"  # relaxed prototype to relaxed energy
     IP2RE = "IP2RE"  # initial prototype to relaxed energy
+    IS2E = "IS2E"  # initial structure to energy
+    IS2RE_SR = "IS2RE-SR"  # initial structure to relaxed energy after ML relaxation
+
+
+@unique
+class Targets(StrEnum):
+    """Thermodynamic stability prediction task types."""
+
+    E = "E"
+    EFS = "EFS"
+    EFSM = "EFSM"
+
+
+@unique
+class ModelType(StrEnum):
+    """Model types."""
+
+    GNN = "GNN"
+    UIP = "UIP-GNN"
+    BO_GNN = "BO-GNN"
+    Fingerprint = "Fingerprint"
+    Transformer = "Transformer"
 
 
 # load figshare 1.0.0

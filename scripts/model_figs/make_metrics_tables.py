@@ -14,7 +14,15 @@ from pymatviz.io import df_to_html_table, df_to_pdf
 from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
 
-from matbench_discovery import PDF_FIGS, SCRIPTS, SITE_FIGS, Key, Task
+from matbench_discovery import (
+    PDF_FIGS,
+    SCRIPTS,
+    SITE_FIGS,
+    Key,
+    ModelType,
+    Targets,
+    Task,
+)
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.models import MODEL_METADATA
@@ -82,25 +90,28 @@ for df_in, df_out, col in (
 
 
 # %% for each model this ontology dict specifies (training type, test type, model type)
+model_type_col, targets_col = "Model Type", "Targets"
+ontology_cols = ["Trained", "Task", model_type_col, targets_col]
 ontology = {
-    "ALIGNN": (Task.RS2RE, Task.IS2RE, "GNN"),
-    # "ALIGNN Pretrained": (Task.RS2RE, Task.IS2RE, "GNN"),
-    "CHGNet": (Task.S2EFSM, "IS2RE-SR", "UIP-GNN"),
-    "MACE": (Task.S2EFS, "IS2RE-SR", "UIP-GNN"),
-    "M3GNet": (Task.S2EFS, "IS2RE-SR", "UIP-GNN"),
-    "MEGNet": (Task.RS2RE, "IS2E", "GNN"),
-    "MEGNet RS2RE": (Task.RS2RE, "IS2E", "GNN"),
-    "CGCNN": (Task.RS2RE, "IS2E", "GNN"),
-    "CGCNN+P": (Task.S2RE, Task.IS2RE, "GNN"),
-    "Wrenformer": (Task.RP2RE, Task.IP2RE, "Transformer"),
-    "BOWSR": (Task.RS2RE, "IS2RE-BO", "BO-GNN"),
-    "Voronoi RF": (Task.RS2RE, "IS2E", "Fingerprint"),
-    "M3GNet→MEGNet": (Task.S2EFS, "IS2RE-SR", "UIP-GNN"),
-    "CHGNet→MEGNet": (Task.S2EFSM, "IS2RE-SR", "UIP-GNN"),
-    "PFP": (Task.S2EFS, Task.IS2RE, "UIP"),
-    "Dummy": ("", "", ""),
+    "ALIGNN": (Task.RS2RE, Task.IS2RE, ModelType.GNN, Targets.E),
+    # "ALIGNN Pretrained": (Task.RS2RE, Task.IS2RE, ModelType.GNN, Targets.E),
+    "CHGNet": (Task.S2EFSM, Task.IS2RE_SR, ModelType.UIP, Targets.EFSM),
+    "chgnet_no_relax": (Task.S2EFSM, "IS2RE-STATIC", ModelType.UIP, Targets.EFSM),
+    "MACE": (Task.S2EFS, Task.IS2RE_SR, ModelType.UIP, Targets.EFS),
+    "M3GNet": (Task.S2EFS, Task.IS2RE_SR, ModelType.UIP, Targets.EFS),
+    "MEGNet": (Task.RS2RE, Task.IS2E, ModelType.GNN, Targets.E),
+    "MEGNet RS2RE": (Task.RS2RE, Task.IS2E, ModelType.GNN, Targets.E),
+    "CGCNN": (Task.RS2RE, Task.IS2E, ModelType.GNN, Targets.E),
+    "CGCNN+P": ("S2RE", Task.IS2RE, ModelType.GNN, Targets.E),
+    "Wrenformer": ("RP2RE", "IP2E", ModelType.Transformer, Targets.E),
+    "BOWSR": (Task.RS2RE, "IS2RE-BO", ModelType.BO_GNN, Targets.E),
+    "Voronoi RF": (Task.RS2RE, Task.IS2E, "Fingerprint", Targets.E),
+    "M3GNet→MEGNet": (Task.S2EFS, Task.IS2RE_SR, ModelType.UIP, Targets.EFS),
+    "CHGNet→MEGNet": (Task.S2EFSM, Task.IS2RE_SR, ModelType.UIP, Targets.EFSM),
+    "PFP": (Task.S2EFS, Task.IS2RE, ModelType.UIP, Targets.EFS),
+    "GNoMe": (Task.S2EFS, Task.IS2RE, ModelType.UIP, Targets.EFS),
+    "Dummy": ("", "", "", ""),
 }
-ontology_cols = ["Trained", "Deployed", model_type_col := "Model Type"]
 df_ont = pd.DataFrame(ontology, index=ontology_cols)
 # RS2RE = relaxed structure to relaxed energy
 # RP2RE = relaxed prototype to predicted energy
@@ -128,10 +139,11 @@ lower_is_better = {*better["lower_is_better"]}
 # when setting to True, uncomment the lines chgnet_megnet, m3gnet_megnet, megnet_rs2re
 # in PredFiles!
 make_uip_megnet_comparison = False
-show_cols = (
-    f"F1,DAF,Precision,Accuracy,TPR,TNR,MAE,RMSE,{R2_col},"
-    f"{train_size_col},{model_type_col}".split(",")
-)
+meta_cols = [train_size_col, model_type_col, targets_col]
+show_cols = [
+    *f"F1,DAF,Precision,Accuracy,TPR,TNR,MAE,RMSE,{R2_col}".split(","),
+    *meta_cols,
+]
 
 for label, df in (
     ("", df_metrics),
@@ -154,14 +166,16 @@ for label, df in (
     # abbreviate long column names
     df_filtered = df_filtered.rename(columns={"Precision": "Prec", "Accuracy": "Acc"})
 
-    if label == "-first-10k":
+    if "-first-10k" in label:
         # hide redundant metrics for first 10k preds (all TPR = 1, TNR = 0)
         df_filtered = df_filtered.drop(["TPR", "TNR"], axis="columns")
+    if label != "-uniq-protos":  # only show training size and model type once
+        df_filtered = df_filtered.drop(meta_cols, axis="columns")
 
     styler = (
         df_filtered.style.format(
             # render integers without decimal places
-            {k: "{:,.0f}" for k in "TP FN FP TN".split()},
+            {key: "{:,.0f}" for key in "TP FN FP TN".split()},
             precision=2,  # render floats with 2 decimals
             na_rep="",  # render NaNs as empty string
         )
