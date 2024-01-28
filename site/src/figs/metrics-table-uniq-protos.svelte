@@ -338,6 +338,7 @@
       <th id="T__level0_col8" class="col_heading level0 col8" >R<sup>2</sup> ↑</th>
       <th id="T__level0_col9" class="col_heading level0 col9" >Training Size</th>
       <th id="T__level0_col10" class="col_heading level0 col10" >Model Type</th>
+      <th id="T__level0_col11" class="col_heading level0 col11" >Targets</th>
     </tr>
   </thead>
   <tbody>
@@ -354,6 +355,7 @@
       <td id="T__row0_col8" class="data row0 col8" >0.66</td>
       <td id="T__row0_col9" class="data row0 col9" >1.6M <small>(145.9K)</small></td>
       <td id="T__row0_col10" class="data row0 col10" >UIP-GNN</td>
+      <td id="T__row0_col11" class="data row0 col11" >EFS</td>
     </tr>
     <tr>
       <th id="T__level0_row1" class="row_heading level0 row1" >CHGNet</th>
@@ -368,6 +370,7 @@
       <td id="T__row1_col8" class="data row1 col8" >0.69</td>
       <td id="T__row1_col9" class="data row1 col9" >1.6M <small>(145.9K)</small></td>
       <td id="T__row1_col10" class="data row1 col10" >UIP-GNN</td>
+      <td id="T__row1_col11" class="data row1 col11" >EFSM</td>
     </tr>
     <tr>
       <th id="T__level0_row2" class="row_heading level0 row2" >M3GNet</th>
@@ -382,6 +385,7 @@
       <td id="T__row2_col8" class="data row2 col8" >0.58</td>
       <td id="T__row2_col9" class="data row2 col9" >188.3K <small>(62.8K)</small></td>
       <td id="T__row2_col10" class="data row2 col10" >UIP-GNN</td>
+      <td id="T__row2_col11" class="data row2 col11" >EFS</td>
     </tr>
     <tr>
       <th id="T__level0_row3" class="row_heading level0 row3" >ALIGNN</th>
@@ -396,6 +400,7 @@
       <td id="T__row3_col8" class="data row3 col8" >0.30</td>
       <td id="T__row3_col9" class="data row3 col9" >154.7K</td>
       <td id="T__row3_col10" class="data row3 col10" >GNN</td>
+      <td id="T__row3_col11" class="data row3 col11" >E</td>
     </tr>
     <tr>
       <th id="T__level0_row4" class="row_heading level0 row4" >MEGNet</th>
@@ -410,6 +415,7 @@
       <td id="T__row4_col8" class="data row4 col8" >-0.25</td>
       <td id="T__row4_col9" class="data row4 col9" >133.4K</td>
       <td id="T__row4_col10" class="data row4 col10" >GNN</td>
+      <td id="T__row4_col11" class="data row4 col11" >E</td>
     </tr>
     <tr>
       <th id="T__level0_row5" class="row_heading level0 row5" >CGCNN</th>
@@ -424,6 +430,7 @@
       <td id="T__row5_col8" class="data row5 col8" >-0.60</td>
       <td id="T__row5_col9" class="data row5 col9" >154.7K</td>
       <td id="T__row5_col10" class="data row5 col10" >GNN</td>
+      <td id="T__row5_col11" class="data row5 col11" >E</td>
     </tr>
     <tr>
       <th id="T__level0_row6" class="row_heading level0 row6" >CGCNN+P</th>
@@ -438,6 +445,7 @@
       <td id="T__row6_col8" class="data row6 col8" >0.02</td>
       <td id="T__row6_col9" class="data row6 col9" >154.7K</td>
       <td id="T__row6_col10" class="data row6 col10" >GNN</td>
+      <td id="T__row6_col11" class="data row6 col11" >E</td>
     </tr>
     <tr>
       <th id="T__level0_row7" class="row_heading level0 row7" >Wrenformer</th>
@@ -452,6 +460,7 @@
       <td id="T__row7_col8" class="data row7 col8" >-0.04</td>
       <td id="T__row7_col9" class="data row7 col9" >154.7K</td>
       <td id="T__row7_col10" class="data row7 col10" >Transformer</td>
+      <td id="T__row7_col11" class="data row7 col11" >E</td>
     </tr>
     <tr>
       <th id="T__level0_row8" class="row_heading level0 row8" >BOWSR</th>
@@ -466,6 +475,7 @@
       <td id="T__row8_col8" class="data row8 col8" >0.15</td>
       <td id="T__row8_col9" class="data row8 col9" >133.4K</td>
       <td id="T__row8_col10" class="data row8 col10" >BO-GNN</td>
+      <td id="T__row8_col11" class="data row8 col11" >E</td>
     </tr>
     <tr>
       <th id="T__level0_row9" class="row_heading level0 row9" >Voronoi RF</th>
@@ -480,6 +490,7 @@
       <td id="T__row9_col8" class="data row9 col8" >-0.33</td>
       <td id="T__row9_col9" class="data row9 col9" >154.7K</td>
       <td id="T__row9_col10" class="data row9 col10" >Fingerprint</td>
+      <td id="T__row9_col11" class="data row9 col11" >E</td>
     </tr>
     <tr>
       <th id="T__level0_row10" class="row_heading level0 row10" >Dummy</th>
@@ -494,6 +505,7 @@
       <td id="T__row10_col8" class="data row10 col8" >0.00</td>
       <td id="T__row10_col9" class="data row10 col9" ></td>
       <td id="T__row10_col10" class="data row10 col10" ></td>
+      <td id="T__row10_col11" class="data row10 col11" ></td>
     </tr>
   </tbody>
 </table>
