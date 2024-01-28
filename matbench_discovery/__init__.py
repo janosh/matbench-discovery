@@ -13,7 +13,7 @@ import plotly.io as pio
 from pymatviz.utils import styled_html_tag
 
 pkg_name = "matbench-discovery"
-direct_url = Distribution.from_name(pkg_name).read_text("direct_url.json") or ""
+direct_url = Distribution.from_name(pkg_name).read_text("direct_url.json") or "{}"
 pkg_is_editable = json.loads(direct_url).get("dir_info", {}).get("editable", False)
 
 PKG_DIR = os.path.dirname(__file__)
@@ -25,6 +25,7 @@ SITE_FIGS = f"{ROOT}/site/src/figs"  # directory for interactive figures
 SITE_MODELS = f"{ROOT}/site/src/routes/models"
 SCRIPTS = f"{ROOT}/scripts"  # model and date analysis scripts
 PDF_FIGS = f"{ROOT}/paper/figs"  # directory for light-themed PDF figures
+FIGSHARE_DIR = f"{PKG_DIR}/figshare"
 
 for directory in (SITE_FIGS, SITE_MODELS, PDF_FIGS):
     os.makedirs(directory, exist_ok=True)
@@ -32,7 +33,6 @@ for directory in (SITE_FIGS, SITE_MODELS, PDF_FIGS):
 os.makedirs(MP_DIR := f"{DATA_DIR}/mp", exist_ok=True)
 os.makedirs(WBM_DIR := f"{DATA_DIR}/wbm", exist_ok=True)
 # JSON files with URLS to data files on figshare
-os.makedirs(FIGSHARE_DIR := f"{ROOT}/data/figshare", exist_ok=True)
 
 # directory to store model checkpoints downloaded from wandb cloud storage
 CHECKPOINT_DIR = f"{ROOT}/wandb/checkpoints"
@@ -108,15 +108,34 @@ class Task(StrEnum):
     # version of the PES like CGCNN+P)
     RP2RE = "RP2RE"  # relaxed prototype to relaxed energy
     IP2RE = "IP2RE"  # initial prototype to relaxed energy
+    IS2E = "IS2E"  # initial structure to energy
+    IS2RE_SR = "IS2RE-SR"  # initial structure to relaxed energy after ML relaxation
 
 
-# load figshare 1.0.0
+@unique
+class Targets(StrEnum):
+    """Thermodynamic stability prediction task types."""
+
+    E = "E"
+    EFS = "EFS"
+    EFSM = "EFSM"
+
+
+@unique
+class ModelType(StrEnum):
+    """Model types."""
+
+    GNN = "GNN"
+    UIP = "UIP-GNN"
+    BO_GNN = "BO-GNN"
+    Fingerprint = "Fingerprint"
+    Transformer = "Transformer"
+
+
 with open(f"{FIGSHARE_DIR}/1.0.0.json") as file:
     FIGSHARE_URLS = json.load(file)
 
-
 # --- start global plot settings
-
 ev_per_atom = styled_html_tag(
     "(eV/atom)", tag="span", style="font-size: 0.8em; font-weight: lighter;"
 )

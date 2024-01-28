@@ -1,6 +1,6 @@
 <script>
   import { name, repository as repo, homepage } from "$site/package.json"
-  import figshare_urls from "$root/data/figshare/1.0.0.json"
+  import figshare_urls from "$pkg/figshare/1.0.0.json"
   import { Tooltip } from 'svelte-zoo'
 
   const ppd_doc_url = `https://github.com/materialsproject/pymatgen/blob/v2023.5.10/pymatgen/analysis/phase_diagram.py#L1480-L1814`

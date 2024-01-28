@@ -250,8 +250,10 @@ fig_ptable_each_errors = ptable_hists(
     df_frac_comp * (df_each_err[model].to_numpy()[:, None]),
     log=True,
     cbar_title=f"{model} convex hull distance errors (eV/atom)",
+    cbar_title_kwds=dict(fontsize=16),
     x_range=(-0.5, 0.5),
     symbol_pos=(0.1, 0.8),
+    colormap="viridis",
 )
 
 img_name = f"ptable-each-error-hists-{model.lower().replace(' ', '-')}"
