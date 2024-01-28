@@ -105,6 +105,7 @@ export default {
     alias: {
       $site: `.`,
       $root: `..`,
+      $pkg: `../matbench_discovery`,
       $models: `src/routes/models`,
       $figs: `src/figs`,
     },

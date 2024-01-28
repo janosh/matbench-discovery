@@ -1,5 +1,5 @@
 <script>
-  import figshare_urls from '$root/data/figshare/1.0.0.json'
+  import figshare_urls from '$pkg/figshare/1.0.0.json'
 </script>
 
 # MPtrj Target Distributions
