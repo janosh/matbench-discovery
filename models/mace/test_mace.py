@@ -38,10 +38,7 @@ out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 device = "cuda" if torch.cuda.is_available() else "cpu"
 # whether to record intermediate structures into pymatgen Trajectory
 record_traj = False  # has no effect if relax_cell is False
-model_name = [
-    "2023-10-29-mace-16M-pbenner-mptrj-no-conditional-loss",
-    "https://tinyurl.com/y7uhwpje",
-][-1]
+model_name = "https://tinyurl.com/y7uhwpje"
 ase_filter: Literal["frechet", "exp"] = "frechet"
 
 slurm_vars = slurm_submit(
@@ -163,8 +160,9 @@ df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
 
 # %%
 df_wbm[e_pred_col] = df_out[e_pred_col]
+
 table = wandb.Table(
-    dataframe=df_wbm.dropna()[[Key.dft_energy, e_pred_col, Key.formula]].reset_index()
+    dataframe=df_wbm[[Key.dft_energy, e_pred_col, Key.formula]].reset_index().dropna()
 )
 
 title = f"MACE {task_type} ({len(df_out):,})"

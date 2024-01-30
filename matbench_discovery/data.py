@@ -267,4 +267,5 @@ DATA_FILES = DataFiles()
 
 
 df_wbm = load("wbm_summary")
-df_wbm[Key.mat_id] = df_wbm.index
+# str() around Key.mat_id added for https://github.com/janosh/matbench-discovery/issues/81
+df_wbm[str(Key.mat_id)] = df_wbm.index

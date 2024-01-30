@@ -175,7 +175,7 @@ for label, df in (
     styler = (
         df_filtered.style.format(
             # render integers without decimal places
-            {key: "{:,.0f}" for key in "TP FN FP TN".split()},
+            dict.fromkeys("TP FN FP TN".split(), "{:,.0f}"),
             precision=2,  # render floats with 2 decimals
             na_rep="",  # render NaNs as empty string
         )

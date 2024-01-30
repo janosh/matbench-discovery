@@ -112,9 +112,7 @@ else:
 
 
 # %%
-df_wbm = df_wbm.dropna()
-
-table = wandb.Table(dataframe=df_wbm[[Key.e_form, pred_col]].reset_index())
+table = wandb.Table(dataframe=df_wbm[[Key.e_form, pred_col]].reset_index().dropna())
 
 MAE = (df_wbm[Key.e_form] - df_wbm[pred_col]).abs().mean()
 R2 = r2_score(df_wbm[Key.e_form], df_wbm[pred_col])
