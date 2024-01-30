@@ -136,7 +136,7 @@ else:
 # %%
 df_wbm[e_pred_col] = df_out[e_pred_col]
 table = wandb.Table(
-    dataframe=df_wbm.dropna()[[Key.dft_energy, e_pred_col, Key.formula]].reset_index()
+    dataframe=df_wbm[[Key.dft_energy, e_pred_col, Key.formula]].reset_index().dropna()
 )
 
 title = f"CHGNet {task_type} ({len(df_out):,})"
