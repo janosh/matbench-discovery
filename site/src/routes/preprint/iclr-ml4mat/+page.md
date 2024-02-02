@@ -66,13 +66,15 @@ In contrast, we believe the discovery of stable materials is a problem where ML 
 
 ## Data Sets
 
-The choice of data for the train and test sets of this benchmark fell on the latest Materials Project (MP) @jain_commentary_2013 database release (2021.05.13 at time of writing) and the WBM dataset @wang_predicting_2021.
+The choice of data for the train and test sets of this benchmark fell on the latest Materials Project (MP) @jain_commentary_2013 database release ([2022.10.28] at time of writing) and the WBM dataset @wang_predicting_2021.
+
+[2022.10.28]: https://docs.materialsproject.org/changes/database-versions#v2022.10.28
 
 ### The Materials Project - Training Set
 
 The Materials Project is a well-known effort to calculate the properties of all inorganic materials using high-throughput ab-initio methods.
 At the time of access, the Materials Project database contains approximately 154k crystals (providing relaxed+initial structure and the relaxation trajectory for each of them) covering a diverse range of chemistries.
-For our benchmark, the training set is all data available from the 2021.05.13 MP release. Models are free to train on relaxed and/or unrelaxed structures or the full DFT relaxation trajectory. This flexibility is intended to allow authors to experiment and exploit the large variety of data available.
+For our benchmark, the training set is all data available from the [2022.10.28] MP release. Models are free to train on relaxed and/or unrelaxed structures or the full DFT relaxation trajectory. This flexibility is intended to allow authors to experiment and exploit the large variety of data available.
 
 ### WBM - Test Set
 

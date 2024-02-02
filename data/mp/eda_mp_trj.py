@@ -477,8 +477,25 @@ fig.layout.yaxis3 = dict(  # move y3 axis to right side of y2
 )
 fig.layout.xaxis3 = dict(overlaying="x2", visible=False)
 
+# project line from 90% cumulative to x axis
+x_90 = df_n_sites[Key.n_sites][
+    (df_n_sites[n_struct_col].cumsum() / df_n_sites[n_struct_col].sum()) < 0.9
+].iloc[-1]
+for x0, y0, x1, y1 in (
+    (x_90, 0, x_90, 0.9),
+    (x_90, 0.9, df_n_sites[Key.n_sites].max(), 0.9),
+):
+    fig.add_shape(
+        type="line",
+        **dict(x0=x0, y0=y0, x1=x1, y1=y1),
+        line=dict(width=1, dash="dot"),
+        xref="x3",
+        yref="y3",
+    )
+fig.layout.yaxis3.update(showgrid=False, rangemode="tozero")
+
 fig.layout.margin = dict(l=5, r=5, b=5, t=5)
-fig.layout.legend.update(x=0.96, y=0.25, xanchor="right")
+fig.layout.legend.update(x=0.96, y=0.18, xanchor="right", bgcolor="rgba(0,0,0,0)")
 fig.show()
 
 img_name = "mp-trj-n-sites-hist"

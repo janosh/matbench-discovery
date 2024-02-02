@@ -27,6 +27,6 @@ Our results show that ML models have become robust enough to deploy them as tria
 
 We welcome contributions that add new models to the leaderboard through GitHub PRs. See the [contributing guide](https://janosh.github.io/matbench-discovery/contribute) for details.
 
-If you're interested in joining this work, feel free to [open a GitHub discussion](https://github.com/janosh/matbench-discovery/discussions) or [send an email](mailto:janosh.riebesell@gmail.gov?subject=Collaborate%20on%20Matbench%20Discovery).
+If you're interested in joining this work, feel free to [open a GitHub discussion](https://github.com/janosh/matbench-discovery/discussions) or [send an email](mailto:janosh.riebesell@gmail.com?subject=Collaborate%20on%20Matbench%20Discovery).
 
 For detailed results and analysis, check out the [preprint](https://janosh.github.io/matbench-discovery/preprint).

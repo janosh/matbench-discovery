@@ -25,7 +25,7 @@
 <footer>
   <nav>
     <a href="{repository}/issues">Issues</a>
-    <a href="mailto:janosh.riebesell@gmail.gov?subject=Matbench Discovery">Contact</a>
+    <a href="mailto:janosh.riebesell@gmail.com?subject=Matbench Discovery">Contact</a>
     <a href="/changelog">Changelog</a>
     <button
       on:click={() => (show_tips = true)}
