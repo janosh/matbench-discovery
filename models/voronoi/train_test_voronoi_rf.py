@@ -19,7 +19,8 @@ from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 
 sys.path.append(f"{ROOT}/models")
-from voronoi import featurizer  # noqa: E402
+
+from voronoi import featurizer
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-26"

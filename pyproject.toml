@@ -77,8 +77,8 @@ universal = true
 
 [tool.ruff]
 target-version = "py39"
-select = ["ALL"]
-ignore = [
+lint.select = ["ALL"]
+lint.ignore = [
   "ANN101",
   "ANN401",
   "BLE001",
@@ -113,11 +113,11 @@ ignore = [
   "TRY003",
   "TRY301",
 ]
-pydocstyle.convention = "google"
-isort.known-third-party = ["wandb"]
-isort.split-on-trailing-comma = false
+lint.pydocstyle.convention = "google"
+lint.isort.known-third-party = ["wandb"]
+lint.isort.split-on-trailing-comma = false
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "tests/*" = ["D", "S101"]
 "matbench_discovery/plots.py" = ["ERA001"] # allow commented out code
 "matbench_discovery/preds.py" = ["ERA001"] # allow commented out code

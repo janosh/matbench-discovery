@@ -314,8 +314,8 @@ pd.testing.assert_frame_equal(
     df_summary_bz2.reset_index(drop=True).query(query_str),
 )
 
-
-assert sum(no_id_mask := df_summary.index.isna()) == 6, f"{sum(no_id_mask)=}"
+no_id_mask = df_summary.index.isna()
+assert sum(no_id_mask) == 6, f"{sum(no_id_mask)=}"
 # the 'None' materials have 0 volume, energy, n_sites, bandgap, etc.
 assert all(df_summary[no_id_mask].drop(columns=[Key.formula]) == 0)
 assert len(df_summary.query("volume > 0")) == len(df_wbm) + len(nan_init_structs_ids)
