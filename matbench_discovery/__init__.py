@@ -12,7 +12,14 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.io as pio
 
-from matbench_discovery.enums import Key, Model, ModelType, Quantity, Task  # noqa: F401
+from matbench_discovery.enums import (  # noqa: F401
+    Key,
+    Model,
+    ModelType,
+    Quantity,
+    Targets,
+    Task,
+)
 
 pkg_name = "matbench-discovery"
 direct_url = Distribution.from_name(pkg_name).read_text("direct_url.json") or "{}"
