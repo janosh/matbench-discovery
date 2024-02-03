@@ -19,7 +19,7 @@
   $: links = [
     [data.repo, `Repo`, `octicon:mark-github`],
     [data.doi, `DOI`, `academicons:doi`],
-    [data.preprint, `Preprint`, `ion:ios-paper`],
+    [data.paper, `Paper`, `ion:ios-paper`],
     [data.url, `Website`, `ion:ios-globe`],
     [`${repository}/blob/-/models/${data.dir}`, `Files`, `octicon:file-directory`],
   ]

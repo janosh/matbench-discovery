@@ -13,7 +13,7 @@
       url: https://dmse.mit.edu/people/jeffrey-c-grossman
   repo: https://github.com/txie-93/cgcnn
   doi: https://doi.org/10.1103/PhysRevLett.120.145301
-  preprint: https://arxiv.org/abs/1710.10324
+  paper: https://arxiv.org/abs/1710.10324
   requirements:
     aviary: 0.1.0
     torch: 1.11.0
@@ -55,7 +55,7 @@
       orcid: https://orcid.org/0000-0003-4933-7686
   repo: https://github.com/JasonGibsonUfl/Augmented_CGCNN
   doi: https://doi.org/10.1038/s41524-022-00891-8
-  preprint: https://arxiv.org/abs/2202.13947
+  paper: https://arxiv.org/abs/2202.13947
   requirements:
     aviary: 0.1.0
     torch: 1.11.0

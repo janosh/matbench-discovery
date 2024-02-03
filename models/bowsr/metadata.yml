@@ -18,7 +18,7 @@ authors:
 repo: https://github.com/materialsvirtuallab/maml
 url: https://materialsvirtuallab.github.io/maml
 doi: https://doi.org/10.1016/j.mattod.2021.08.012
-preprint: https://arxiv.org/abs/2104.10242
+paper: https://arxiv.org/abs/2104.10242
 requirements:
   maml: 2022.9.20
   pymatgen: 2022.10.22

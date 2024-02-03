@@ -20,7 +20,7 @@ export type ModelMetadata = {
   repo: string
   url?: string
   doi?: string
-  preprint?: string
+  paper?: string
   requirements?: Record<string, string>
   // whether this model was trained from scratch specifically for
   // this benchmark using our canonical training set
