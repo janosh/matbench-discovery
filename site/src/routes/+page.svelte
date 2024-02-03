@@ -13,7 +13,8 @@
   }) as Record<string, ModelData | ModelData[]>
 
   $: best_model = Object.entries(all_stats).reduce((best, [model_name, stats]) => {
-    let md = metadata[`../models/${model_name.toLowerCase()}/metadata.yml`]
+    const model_key = model_name.toLowerCase().replaceAll(` `, `_`)
+    let md = metadata[`../models/${model_key}/metadata.yml`]
     if (!md && dev) {
       console.warn(`No metadata found for ${model_name}`)
     }
