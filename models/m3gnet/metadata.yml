@@ -15,7 +15,7 @@ authors:
 repo: https://github.com/materialsvirtuallab/m3gnet
 url: https://materialsvirtuallab.github.io/m3gnet
 doi: https://doi.org/10.1038/s43588-022-00349-3
-preprint: https://arxiv.org/abs/2202.02450
+paper: https://arxiv.org/abs/2202.02450
 requirements:
   m3gnet: 0.1.0
   pymatgen: 2022.10.22

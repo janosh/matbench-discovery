@@ -19,7 +19,7 @@
   $: links = [
     [data.repo, `Repo`, `octicon:mark-github`],
     [data.doi, `DOI`, `academicons:doi`],
-    [data.preprint, `Preprint`, `ion:ios-paper`],
+    [data.paper, `Paper`, `ion:ios-paper`],
     [data.url, `Website`, `ion:ios-globe`],
     [`${repository}/blob/-/models/${data.dir}`, `Files`, `octicon:file-directory`],
   ]
@@ -77,7 +77,9 @@
       Training set:
       <a href={url}>{title}</a>
       <small>
-        ({pretty_num(n_structures)}{#if n_materials}{` `}from {pretty_num(n_materials)} materials{/if})
+        ({pretty_num(n_structures)} structures{#if n_materials}{` `}from {pretty_num(
+          n_materials,
+        )} materials{/if})
       </small>
     </span>
   {/if}

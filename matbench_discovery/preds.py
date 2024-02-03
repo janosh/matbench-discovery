@@ -5,14 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal
 import pandas as pd
 from tqdm import tqdm
 
-from matbench_discovery import (
-    ROOT,
-    STABILITY_THRESHOLD,
-    Key,
-    ev_per_atom,
-    model_labels,
-    quantity_labels,
-)
+from matbench_discovery import ROOT, STABILITY_THRESHOLD, Key, Model
 from matbench_discovery.data import Files, df_wbm, glob_to_df
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.plots import plotly_colors, plotly_line_styles, plotly_markers
@@ -24,10 +17,6 @@ if TYPE_CHECKING:
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-04"
-
-
-for col in (Key.model_mean_each, Key.model_mean_err, Key.model_std_each):
-    quantity_labels[col] = f"{col} {ev_per_atom}"
 
 
 class PredFiles(Files):
@@ -63,7 +52,7 @@ class PredFiles(Files):
     # megnet_rs2re = "megnet/2023-08-23-megnet-wbm-RS2RE.csv.gz"
 
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest
-    voronoi_rf = "voronoi/2022-11-27-train-test/e-form-preds-IS2RE.csv.gz"
+    voronoi_rf = "voronoi_rf/2022-11-27-train-test/e-form-preds-IS2RE.csv.gz"
 
     # wrenformer 10-member ensemble
     wrenformer = "wrenformer/2022-11-15-wrenformer-ens=10-IS2RE-preds.csv.gz"
@@ -72,9 +61,11 @@ class PredFiles(Files):
     # alignn_pretrained = "alignn/2023-06-03-mp-e-form-alignn-wbm-IS2RE.csv.gz"
     # alignn_ff = "alignn_ff/2023-07-11-alignn-ff-wbm-IS2RE.csv.gz"
 
+    gnome = "gnome/2023-11-01-gnome-preds-50076332.csv.gz"
 
-# model_labels remaps model keys to pretty plot labels (see Files)
-PRED_FILES = PredFiles(root=f"{ROOT}/models", key_map=model_labels)
+
+# key_map maps model keys to pretty labels
+PRED_FILES = PredFiles(root=f"{ROOT}/models", key_map=Model.dict())
 
 
 def load_df_wbm_with_preds(
@@ -126,7 +117,11 @@ def load_df_wbm_with_preds(
     for model_name, df in dfs.items():
         model_key = model_name.lower().replace("→", "_").replace(" ", "_")
 
-        cols = [col for col in df if col.startswith(f"e_form_per_atom_{model_key}")]
+        cols = [
+            col
+            for col in df
+            if col.startswith((f"e_form_per_atom_{model_key}", f"e_{model_key}_"))
+        ]
         if cols:
             if len(cols) > 1:
                 print(

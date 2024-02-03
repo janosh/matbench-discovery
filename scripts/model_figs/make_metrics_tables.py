@@ -19,6 +19,7 @@ from matbench_discovery import (
     SCRIPTS,
     SITE_FIGS,
     Key,
+    Model,
     ModelType,
     Targets,
     Task,
@@ -43,7 +44,7 @@ name_map = {
     "M3GNet→MEGNet": "M3GNet",
     "CHGNet→MEGNet": "CHGNet",
 }
-train_size_col = "Training Size"
+train_size_col, open_col = "Training Size", "Openness"
 for model in df_metrics:
     model_name = name_map.get(model, model)
     if not (model_data := MODEL_METADATA.get(model_name)):
@@ -54,10 +55,12 @@ for model in df_metrics:
     if n_materials := model_data["training_set"].get("n_materials"):
         n_structs_str += f" <small>({si_fmt(n_materials)})</small>"
 
-    for df in (df_metrics, df_metrics_10k, df_metrics_uniq_protos):
-        if train_size_col not in df.index:
-            df.loc[train_size_col] = ""
-        df.loc[train_size_col, model] = n_structs_str
+    for df_m in (df_metrics, df_metrics_10k, df_metrics_uniq_protos):
+        if train_size_col not in df_m.index:
+            df_m.loc[train_size_col] = ""
+        df_m.loc[train_size_col, model] = n_structs_str
+        # default openness=OSOD (Open-Source Open-Data)
+        df_m.loc[open_col, model] = model_data.get("openness", "OSOD")
 
 
 # %% add dummy classifier results to df_metrics(_10k, _uniq_protos)
@@ -93,37 +96,26 @@ for df_in, df_out, col in (
 model_type_col, targets_col = "Model Type", "Targets"
 ontology_cols = ["Trained", "Task", model_type_col, targets_col]
 ontology = {
-    "ALIGNN": (Task.RS2RE, Task.IS2RE, ModelType.GNN, Targets.E),
+    Model.alignn: (Task.RS2RE, Task.IS2RE, ModelType.GNN, Targets.E),
     # "ALIGNN Pretrained": (Task.RS2RE, Task.IS2RE, ModelType.GNN, Targets.E),
-    "CHGNet": (Task.S2EFSM, Task.IS2RE_SR, ModelType.UIP, Targets.EFSM),
+    Model.chgnet: (Task.S2EFSM, Task.IS2RE_SR, ModelType.UIP, Targets.EFSM),
     "chgnet_no_relax": (Task.S2EFSM, "IS2RE-STATIC", ModelType.UIP, Targets.EFSM),
-    "MACE": (Task.S2EFS, Task.IS2RE_SR, ModelType.UIP, Targets.EFS),
-    "M3GNet": (Task.S2EFS, Task.IS2RE_SR, ModelType.UIP, Targets.EFS),
-    "MEGNet": (Task.RS2RE, Task.IS2E, ModelType.GNN, Targets.E),
+    Model.mace: (Task.S2EFS, Task.IS2RE_SR, ModelType.UIP, Targets.EFS),
+    Model.m3gnet: (Task.S2EFS, Task.IS2RE_SR, ModelType.UIP, Targets.EFS),
+    Model.megnet: (Task.RS2RE, Task.IS2E, ModelType.GNN, Targets.E),
     "MEGNet RS2RE": (Task.RS2RE, Task.IS2E, ModelType.GNN, Targets.E),
-    "CGCNN": (Task.RS2RE, Task.IS2E, ModelType.GNN, Targets.E),
-    "CGCNN+P": ("S2RE", Task.IS2RE, ModelType.GNN, Targets.E),
-    "Wrenformer": ("RP2RE", "IP2E", ModelType.Transformer, Targets.E),
-    "BOWSR": (Task.RS2RE, "IS2RE-BO", ModelType.BO_GNN, Targets.E),
-    "Voronoi RF": (Task.RS2RE, Task.IS2E, "Fingerprint", Targets.E),
+    Model.cgcnn: (Task.RS2RE, Task.IS2E, ModelType.GNN, Targets.E),
+    Model.cgcnn_p: ("S2RE", Task.IS2RE, ModelType.GNN, Targets.E),
+    Model.wrenformer: ("RP2RE", "IP2E", ModelType.Transformer, Targets.E),
+    Model.bowsr_megnet: (Task.RS2RE, "IS2RE-BO", ModelType.BO_GNN, Targets.E),
+    Model.voronoi_rf: (Task.RS2RE, Task.IS2E, "Fingerprint", Targets.E),
     "M3GNet→MEGNet": (Task.S2EFS, Task.IS2RE_SR, ModelType.UIP, Targets.EFS),
     "CHGNet→MEGNet": (Task.S2EFSM, Task.IS2RE_SR, ModelType.UIP, Targets.EFSM),
     "PFP": (Task.S2EFS, Task.IS2RE, ModelType.UIP, Targets.EFS),
-    "GNoMe": (Task.S2EFS, Task.IS2RE, ModelType.UIP, Targets.EFS),
-    "Dummy": ("", "", "", ""),
+    Model.gnome: (Task.S2EFS, Task.IS2RE, ModelType.UIP, Targets.EFS),
+    "Dummy": [""] * len(ontology_cols),
 }
 df_ont = pd.DataFrame(ontology, index=ontology_cols)
-# RS2RE = relaxed structure to relaxed energy
-# RP2RE = relaxed prototype to predicted energy
-# IS2RE = initial structure to relaxed energy
-# IS2E = initial structure to energy
-# IP2E = initial prototype to energy
-# IS2RE-SR = initial structure to relaxed energy after ML structure relaxation
-# S2EFS(M) = structure to energy, forces, stress, (magmoms)
-# GNN = graph neural network
-# UIP = universal interatomic potential
-# BO-GNN = Bayesian optimization
-# RF = random forest
 
 
 # %%

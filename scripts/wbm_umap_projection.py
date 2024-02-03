@@ -178,8 +178,8 @@ if not os.path.isfile(umap_out_path):
 
     # transform everything
     umap_points = reducer.transform(df_all)
-    cols = [f"UMAP {idx + 1}" for idx in range(umap_points.shape[1])]
-    df_umap = pd.DataFrame(umap_points, index=df_all.index, columns=cols)
+    umap_cols = [f"UMAP {idx + 1}" for idx in range(umap_points.shape[1])]
+    df_umap = pd.DataFrame(umap_points, index=df_all.index, columns=umap_cols)
 
     df_umap.to_csv(umap_out_path)
 
@@ -187,10 +187,11 @@ if not os.path.isfile(umap_out_path):
 # %% Plot UMAP 2d projection
 df_umap = pd.read_csv(umap_out_path).set_index("wbm_step")
 
-assert (cols := list(df_umap)) == ["UMAP 1", "UMAP 2"]
+umap_cols = list(df_umap)
+assert umap_cols == ["UMAP 1", "UMAP 2"]
 min_step, max_step = df_umap.index.min(), df_umap.index.max()
 ax = df_umap.plot.scatter(
-    *cols, c=df_umap.index, cmap="Spectral", s=5, figsize=(6, 4), colorbar=False
+    *umap_cols, c=df_umap.index, cmap="Spectral", s=5, figsize=(6, 4), colorbar=False
 )
 cbar = ax.figure.colorbar(
     ax.collections[0],

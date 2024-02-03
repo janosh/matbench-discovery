@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 import seaborn as sns
 from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, quantity_labels
+from matbench_discovery import PDF_FIGS, SITE_FIGS, Quantity
 from matbench_discovery.preds import df_each_err, models
 
 __author__ = "Janosh Riebesell"
@@ -56,7 +56,7 @@ px.violin(
 
 # %%
 fig = go.Figure()
-fig.layout.yaxis.title = quantity_labels["e_above_hull_error"]
+fig.layout.yaxis.title = Quantity.e_above_hull_error
 fig.layout.margin = dict(l=0, r=0, b=0, t=0)
 
 for idx, model in enumerate(models):

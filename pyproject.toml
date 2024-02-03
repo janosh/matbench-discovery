@@ -80,6 +80,7 @@ target-version = "py39"
 lint.select = ["ALL"]
 lint.ignore = [
   "ANN101",
+  "ANN102",
   "ANN401",
   "BLE001",
   "C408",    # unnecessary-collection-call
