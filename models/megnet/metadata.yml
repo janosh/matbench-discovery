@@ -23,7 +23,7 @@ authors:
 repo: https://github.com/materialsvirtuallab/megnet
 url: https://materialsvirtuallab.github.io/megnet
 doi: https://doi.org/10.1021/acs.chemmater.9b01294
-preprint: https://arxiv.org/abs/1812.05055
+paper: https://arxiv.org/abs/1812.05055
 requirements:
   megnet: 1.3.2
   pymatgen: 2022.10.22

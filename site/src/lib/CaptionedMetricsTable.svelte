@@ -1,8 +1,10 @@
 <script lang="ts">
-  import MetricsTable from '$figs/metrics-table.svelte'
+  import MetricsTable from '$figs/metrics-table-uniq-protos.svelte'
+
+  export let show_proprietary = false
 </script>
 
-<figure {...$$props}>
+<figure {...$$props} class:hide-prop={!show_proprietary}>
   <MetricsTable />
   <figcaption>
     Training size is the number of structures used to train the model. For models trained
@@ -14,10 +16,16 @@
 <style>
   figure {
     margin: 0;
+    display: grid;
+    gap: 1ex;
+    overflow: scroll;
   }
   figcaption {
     font-size: 0.9em;
-    text-align: center;
-    margin-top: 1ex;
+    padding: 2pt 6pt;
+    background-color: rgba(255, 255, 255, 0.07);
+  }
+  figure.hide-prop :global(tbody > tr:first-child) {
+    display: none;
   }
 </style>

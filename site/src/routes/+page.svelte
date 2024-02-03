@@ -1,31 +1,41 @@
 <script lang="ts">
+  import { dev } from '$app/environment'
   import { CaptionedMetricsTable, type ModelData } from '$lib'
   import Readme from '$root/readme.md'
-  import { onMount } from 'svelte'
+  import { Toggle } from 'svelte-zoo'
   import all_stats from './models/model-stats.json'
 
-  let best_model = Object.entries(all_stats).reduce((current, [model_name, stats]) => {
-    if (!current?.F1 || stats.F1 > current.F1) {
-      return { model_name, ...stats }
-    }
-    return current
-  }, {}) as ModelData
+  let show_proprietary = false
 
   const metadata = import.meta.glob(`$root/models/**/metadata.yml`, {
     eager: true,
     import: `default`,
   }) as Record<string, ModelData | ModelData[]>
 
-  onMount(async () => {
-    if (best_model) {
-      const md = metadata[`../models/${best_model.model_name.toLowerCase()}/metadata.yml`]
-      best_model = { ...best_model, ...md }
+  $: best_model = Object.entries(all_stats).reduce((best, [model_name, stats]) => {
+    const model_key = model_name.toLowerCase().replaceAll(` `, `_`)
+    let md = metadata[`../models/${model_key}/metadata.yml`]
+    if (!md && dev) {
+      console.warn(`No metadata found for ${model_name}`)
     }
-  })
+    if (Array.isArray(md)) md = md[0]
+
+    const model_data = { ...stats, ...md } as ModelData
+
+    const openness = model_data.open ?? `OSOD`
+    if (
+      (!best?.F1 || model_data.F1 > best.F1) &&
+      (show_proprietary || openness == `OSOD`)
+    )
+      return model_data
+
+    return best
+  }, {} as ModelData)
 </script>
 
 <Readme>
   <span slot="model-count">{Object.keys(all_stats).length}&ensp;</span>
+
   <div slot="best-report">
     {#if best_model}
       {@const { model_name, F1, R2, DAF, repo, doi } = best_model}
@@ -36,5 +46,9 @@
       dummy discovery in the already enriched test set containing 16% stable materials).
     {/if}
   </div>
-  <CaptionedMetricsTable slot="metrics-table" />
+
+  <div slot="metrics-table" style="display: grid; gap: 1ex; place-items: center;">
+    <Toggle bind:checked={show_proprietary}>Show proprietary models</Toggle>
+    <CaptionedMetricsTable bind:show_proprietary />
+  </div>
 </Readme>

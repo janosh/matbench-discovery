@@ -30,8 +30,8 @@ trained_by:
     orcid: 0000-0002-4017-7084
     github: https://github.com/chiang-yuan
 repo: https://github.com/ACEsuit/mace
-doi: https://doi.org/10.48550/arXiv.2205.06643
-preprint: https://arxiv.org/abs/2205.06643
+doi: https://doi.org/10.48550/arXiv.2401.00096
+paper: https://arxiv.org/abs/2401.00096
 requirements:
   torch: 2.0.1
   ase: 3.22.1
@@ -53,8 +53,7 @@ hyperparams:
 notes:
   description: |
     MACE is a higher-order equivariant message-passing neural network for fast and accurate force fields.
-  training: Using pre-trained model released with paper. Training set unspecified at time of writing.
-  corrections: None
+  training: Using pre-trained 'medium' model released with paper.
 # n_params: 2_026_624 # 2023-09-03-mace-yuan-mptrj-slower-14-lr-13_run-3
 # n_params: 15_847_440 # 2023-10-29-mace-pbenner-mptrj-no-conditional-loss
 n_params: 4_688_656 # https://tinyurl.com/y7uhwpje

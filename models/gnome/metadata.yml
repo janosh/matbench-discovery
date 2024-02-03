@@ -1,0 +1,64 @@
+model_name: GNoME
+model_version: n/a
+matbench_discovery_version: 1.0
+date_added: "2024-02-03"
+date_published: "2023-11-29"
+authors:
+  - name: Amil Merchant
+    affiliation: Google DeepMind
+    email: amilmerchant@google.com
+    orcid: https://orcid.org/0000-0001-5262-6599
+  - name: Simon Batzner
+    affiliation: Google DeepMind
+  - name: Samuel S. Schoenholz
+    affiliation: Google DeepMind
+  - name: Muratahan Aykol
+    affiliation: Google DeepMind
+  - name: Gowoon Cheon
+    affiliation: Google DeepMind
+  - name: Ekin Dogus Cubuk
+    affiliation: Google DeepMind
+    email: cubuk@google.com
+    orcid: https://orcid.org/0000-0003-0524-2837
+trained_by:
+  - name: Philipp Benner
+    affiliation: German Federal Institute of Materials Research and Testing (BAM)
+    orcid: 0000-0002-0912-8137
+    github: https://github.com/pbenner
+  - name: Yuan Chiang
+    affiliation: Lawrence Berkeley National Laboratory
+    orcid: 0000-0002-4017-7084
+    github: https://github.com/chiang-yuan
+repo: https://github.com/google-deepmind/materials_discovery
+doi: https://doi.org/10.1038/s41586-023-06735-9
+paper: https://nature.com/articles/s41586-023-06735-9
+requirements:
+  e3nn-jax: 0.20.3
+  flax: 0.7.5
+  jax-md: 0.2.8
+  jax: 0.4.20
+  numpy: 1.26.2
+  pymatgen: 2023.11.12
+trained_for_benchmark: false
+open: OSCD
+
+training_set:
+  title: GNoME training set
+  url: https://doi.org/10.1038/s41586-023-06735-9
+  # numbers below are best guesses based on paper and private communication
+  n_structures: 8_000_000
+  n_materials: 2_200_000
+
+hyperparams:
+  optimizer: Adam
+  learning_rate: 2e-3
+  batch_size: 32
+  n_layers: 5
+  n_features: 128 l=0 scalars, 64 l=1 vectors, 32 l=2 tensors
+  radial_cutoff: 5.0
+
+notes:
+  description: |
+    GNoME is an equivariant Nequip-type graph neural network implemented in e3nn-jax.
+  training: Using pre-trained model released with paper. Training set unspecified at time of writing.
+n_params: 16_240_000
