@@ -44,6 +44,7 @@ open: OSCD
 
 training_set:
   title: GNoME training set
+  url: https://doi.org/10.1038/s41586-023-06735-9
   # numbers below are best guesses based on paper and private communication
   n_structures: 8_000_000
   n_materials: 2_200_000
