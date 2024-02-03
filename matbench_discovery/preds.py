@@ -52,7 +52,7 @@ class PredFiles(Files):
     # megnet_rs2re = "megnet/2023-08-23-megnet-wbm-RS2RE.csv.gz"
 
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest
-    voronoi_rf = "voronoi/2022-11-27-train-test/e-form-preds-IS2RE.csv.gz"
+    voronoi_rf = "voronoi_rf/2022-11-27-train-test/e-form-preds-IS2RE.csv.gz"
 
     # wrenformer 10-member ensemble
     wrenformer = "wrenformer/2022-11-15-wrenformer-ens=10-IS2RE-preds.csv.gz"
