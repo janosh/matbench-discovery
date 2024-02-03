@@ -5,7 +5,7 @@
   import Icon from '@iconify/svelte'
   import { interpolateCividis } from 'd3-scale-chromatic'
   import { ColorBar } from 'elementari'
-  import { RadioButtons, Tooltip } from 'svelte-zoo'
+  import { RadioButtons, Toggle, Tooltip } from 'svelte-zoo'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
   import type { Snapshot } from './$types'
@@ -14,22 +14,30 @@
   export let data
 
   let sort_by: keyof ModelStats | 'model_name' = `F1`
+  let show_proprietary: boolean = false
   let show_details: boolean = false
   let order: 'asc' | 'desc' = `desc`
   let show_n_best: number = data.models.length // show only best models
   const min_models: number = 2
   const { lower_is_better } = metrics_order
 
-  $: models = data.models.sort((model_1, model_2) => {
-    const [val_1, val_2] = [model_1[sort_by], model_2[sort_by]]
-    if (typeof val_1 == `string`) {
-      return sort_factor * val_1.localeCompare(val_2)
-    } else if (typeof val_1 == `number`) {
-      return sort_factor * (val_2 - val_1)
-    } else {
-      throw `Sorting by key ${sort_by} gives unknown type: ${typeof val_1}`
-    }
-  })
+  $: models = data.models
+    .filter((model) => show_proprietary || (model.open ?? `OSOD`) == `OSOD`)
+    .sort((model_1, model_2) => {
+      const [val_1, val_2] = [model_1[sort_by], model_2[sort_by]]
+      if (typeof val_1 == `string`) {
+        return sort_factor * val_1.localeCompare(val_2)
+      } else if (typeof val_1 == `number` && typeof val_2 == `number`) {
+        // interpret runt_time==0 as infinity
+        if (sort_by == `Run Time (h)`) {
+          if (val_1 == 0) return -sort_factor
+          if (val_2 == 0) return sort_factor
+        }
+        return sort_factor * (val_2 - val_1)
+      } else {
+        throw `Unexpected type ${val_1} encountered sorting by key ${sort_by}`
+      }
+    })
   const stats: ModelStatLabel[] = [
     { key: `Accuracy` },
     { key: `DAF`, tooltip: `Discovery Acceleration Factor` },
@@ -59,7 +67,7 @@
   }
 </script>
 
-<div style="margin: 3vw;">
+<div style="display: grid; margin: 1vw 3vw;">
   <h1>Leaderboard</h1>
 
   <p style="text-align: center;">
@@ -68,7 +76,8 @@
   </p>
 
   <span>
-    Sort
+    <Toggle bind:checked={show_proprietary}>Show proprietary models&ensp;</Toggle>
+    &emsp;&emsp; Sort
     <input type="number" min={min_models} max={models.length} bind:value={show_n_best} />
     best models
     <RadioButtons bind:selected={order} options={[`asc`, `desc`]} /> by:

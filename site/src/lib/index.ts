@@ -25,6 +25,8 @@ export type ModelMetadata = {
   // whether this model was trained from scratch specifically for
   // this benchmark using our canonical training set
   trained_for_benchmark: boolean
+  // whether model and/or data are open or closed
+  open: 'OSOD' | 'CSOD' | 'OSCD' | 'CSCD'
   training_set: {
     title: string
     url: string

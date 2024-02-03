@@ -77,7 +77,9 @@
       Training set:
       <a href={url}>{title}</a>
       <small>
-        ({pretty_num(n_structures)}{#if n_materials}{` `}from {pretty_num(n_materials)} materials{/if})
+        ({pretty_num(n_structures)} structures{#if n_materials}{` `}from {pretty_num(
+          n_materials,
+        )} materials{/if})
       </small>
     </span>
   {/if}
