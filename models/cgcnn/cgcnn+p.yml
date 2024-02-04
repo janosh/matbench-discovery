@@ -1,0 +1,42 @@
+model_name: CGCNN+P
+model_version: 0.1.0 # the aviary version
+matbench_discovery_version: 1.0
+date_added: "2023-02-03"
+date_published: "2022-02-28"
+authors:
+  - name: Jason B. Gibson
+    affiliation: University of Florida
+    orcid: https://orcid.org/0000-0001-7974-5264
+  - name: Ajinkya C. Hire
+    affiliation: University of Florida
+    orcid: https://orcid.org/0000-0003-3147-2521
+  - name: Richard G. Hennig
+    affiliation: University of Florida
+    url: https://hennig.mse.ufl.edu
+    email: rhennig@ufl.edu
+    orcid: https://orcid.org/0000-0003-4933-7686
+repo: https://github.com/JasonGibsonUfl/Augmented_CGCNN
+doi: https://doi.org/10.1038/s41524-022-00891-8
+paper: https://arxiv.org/abs/2202.13947
+requirements:
+  aviary: 0.1.0
+  torch: 1.11.0
+  torch-scatter: 2.0.9
+  numpy: 1.24.0
+  pandas: 1.5.1
+trained_for_benchmark: true
+
+training_set:
+  title: MP Computed Structure Entries
+  url: https://figshare.com/ndownloader/files/40344436
+  n_structures: 154719
+
+hyperparams:
+  Ensemble Size: 10
+  Perturbations: 5
+
+notes:
+  description: |
+    This work proposes simple structure perturbations to augment CGCNN's training data of relaxed structures with randomly perturbed ones resembling unrelaxed structures that are mapped to the same DFT final energy during training.
+    ![Step function PES](https://media.springernature.com/full/springer-static/image/art%3A10.1038%2Fs41524-022-00891-8/MediaObjects/41524_2022_891_Fig1_HTML.png?as=webp)
+  long: The model is essentially taught the potential energy surface (PES) is a step-function that maps each valley to its local minimum. The expectation is that during testing on unrelaxed structures, the model will predict the energy of the nearest basin in the PES. The authors confirm this by demonstrating a lowering of the energy error on unrelaxed structures.
