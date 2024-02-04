@@ -537,10 +537,14 @@ def rolling_mae_vs_hull_dist(
 
         from matbench_discovery.preds import model_styles
 
-        for trace in fig.data:
+        for idx, trace in enumerate(fig.data):
             if style := model_styles.get(trace.name):
                 ls, _marker, color = style
                 trace.line = dict(color=color, dash=ls, width=2)
+            else:  # pick from default colors, line styles, markers
+                trace.line = dict(
+                    color=plotly_colors[idx], dash=plotly_line_styles[idx], width=2
+                )
             # marker_spacing = 2
             # fig.add_scatter(
             #     x=trace.x[::marker_spacing],

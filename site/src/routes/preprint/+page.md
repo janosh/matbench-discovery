@@ -4,6 +4,8 @@
   import { repository as repo } from '$site/package.json'
   import BoxHullDistErrors from '$figs/box-hull-dist-errors.svelte'
   import CgcnnRollingMaeBatches from '$figs/rolling-mae-vs-hull-dist-wbm-batches-cgcnn.svelte'
+  import MACERollingMaeBatches from '$figs/rolling-mae-vs-hull-dist-wbm-batches-mace.svelte'
+  import AlignnRollingMaeBatches from '$figs/rolling-mae-vs-hull-dist-wbm-batches-alignn.svelte'
   import CHGNetRollingMaeBatches from '$figs/rolling-mae-vs-hull-dist-wbm-batches-chgnet.svelte'
   import CumulativeMae from '$figs/cumulative-mae.svelte'
   import CumulativePrecisionRecall from '$figs/cumulative-precision-recall.svelte'
@@ -490,8 +492,10 @@ As a reminder, the WBM test set was generated in 5 successive batches, each step
 {#if mounted}
 
 <div style="display: grid; grid-template-columns: 1fr 1fr; margin: 0 -1em 0 -4em;">
-  <M3gnetRollingMaeBatches style="aspect-ratio: 1.2;" />
+  <MACERollingMaeBatches style="aspect-ratio: 1.2;" />
   <CHGNetRollingMaeBatches style="aspect-ratio: 1.2;" />
+  <M3gnetRollingMaeBatches style="aspect-ratio: 1.2;" />
+  <AlignnRollingMaeBatches style="aspect-ratio: 1.2;" />
   <WrenformerRollingMaeBatches style="aspect-ratio: 1.2;" />
   <MegnetRollingMaeBatches style="aspect-ratio: 1.2;" />
   <VoronoiRfRollingMaeBatches style="aspect-ratio: 1.2;" />
