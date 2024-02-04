@@ -1,33 +1,31 @@
 <script lang="ts">
   import { dev } from '$app/environment'
-  import { CaptionedMetricsTable, type ModelData } from '$lib'
+  import type { ModelData, ModelStats } from '$lib'
+  import { CaptionedMetricsTable } from '$lib'
   import all_stats from '$lib/model-stats.json'
   import Readme from '$root/readme.md'
   import { Toggle } from 'svelte-zoo'
 
   let show_proprietary = false
 
-  const metadata = import.meta.glob(`$root/models/**/metadata.yml`, {
+  const metadata = import.meta.glob(`$root/models/**/*.yml`, {
     eager: true,
     import: `default`,
-  }) as Record<string, ModelData | ModelData[]>
+  }) as Record<string, ModelData>
 
-  $: best_model = Object.entries(all_stats).reduce((best, [model_name, stats]) => {
-    const model_key = model_name.toLowerCase().replaceAll(` `, `_`)
-    let md = metadata[`../models/${model_key}/metadata.yml`]
-    if (!md && dev) {
-      console.warn(`No metadata found for ${model_name}`)
+  $: best_model = Object.values(metadata).reduce((best, md: ModelData) => {
+    const stats = all_stats[md.model_name] as ModelStats | undefined
+    if (!stats && dev) {
+      const avail_keys = Object.keys(all_stats)
+      console.warn(
+        `No metadata found for '${md.model_name}', available keys: ${avail_keys}`,
+      )
+      return best
     }
-    if (Array.isArray(md)) md = md[0]
 
-    const model_data = { ...stats, ...md } as ModelData
-
-    const openness = model_data.open ?? `OSOD`
-    if (
-      (!best?.F1 || model_data.F1 > best.F1) &&
-      (show_proprietary || openness == `OSOD`)
-    )
-      return model_data
+    const openness = md.open ?? `OSOD`
+    if ((!best?.F1 || stats?.F1 > best?.F1) && (show_proprietary || openness == `OSOD`))
+      return { ...stats, ...md } as ModelData
 
     return best
   }, {} as ModelData)
