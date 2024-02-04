@@ -15,6 +15,7 @@ authors:
     orcid: https://orcid.org/0000-0003-2248-474X
 repo: https://github.com/janosh/matbench-discovery
 doi: https://doi.org/10.1103/PhysRevB.96.024104
+paper: https://doi.org/10.1103/PhysRevB.96.024104
 requirements:
   matminer: 0.8.0
   scikit-learn: 1.1.2

@@ -9,7 +9,7 @@ declare module '*package.json' {
 }
 
 // model metadata files
-declare module '*metadata.yml' {
+declare module 'models/*.yml' {
   const data: import('$lib').ModelMetadata
   export default data
 }

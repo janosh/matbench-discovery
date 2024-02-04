@@ -13,7 +13,7 @@ from pymatviz.io import save_fig
 from pymatviz.utils import bin_df_cols, df_ptable
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, SITE_MODELS, Key
+from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, SITE_LIB, Key
 from matbench_discovery.data import df_wbm
 from matbench_discovery.preds import df_each_err, df_metrics, df_preds
 
@@ -135,7 +135,7 @@ expected_cols = {
 }
 assert {*df_elem_err} >= expected_cols
 assert (df_elem_err.isna().sum() < 35).all()
-df_elem_err.round(4).to_json(f"{SITE_MODELS}/per-element-each-errors.json")
+df_elem_err.round(4).to_json(f"{SITE_LIB}/per-element-each-errors.json")
 
 
 # %% scatter plot error by element against prevalence in training set

@@ -1,4 +1,4 @@
-# ALIGNN-FF (aborted)
+# ALIGNN-FF (submission aborted)
 
 The [ALIGNN FF model submission](https://github.com/janosh/matbench-discovery/pull/47) intended to get a complete set of formation energy predictions for the WBM test set post-ALIGNN-FF structure relaxation (i.e. the WBM IS2RE task).
 

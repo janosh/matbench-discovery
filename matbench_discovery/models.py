@@ -12,8 +12,8 @@ for model_dir in MODEL_DIRS:
     # skip directories without python files
     if glob(f"{model_dir}*.py") == []:
         continue
-    md_files = glob(f"{model_dir}metadata*.yml")
-    if len(md_files) != 1:
+    md_files = glob(f"{model_dir}*.yml")
+    if not 1 <= len(md_files) <= 2:
         raise RuntimeError(f"expected 1 metadata file, got {md_files=} in {model_dir=}")
     md_file = md_files[0]
     if md_file.endswith("aborted.yml"):
