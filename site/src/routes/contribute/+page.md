@@ -135,10 +135,9 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 
 1. `<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz`: Your model's energy predictions for all ~250k WBM compounds as compressed JSON or CSV. The recommended way to create this file is with `pandas.DataFrame.to_{json|csv}('<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz')`. JSON is preferred over CSV if your model not only predicts energies (floats) but also objects like relaxed structures. See e.g. [M3GNet]({repo}/blob/-/models/m3gnet/test_m3gnet.py) and [CHGNet]({repo}/blob/-/models/chgnet/test_chgnet.py) test scripts.
 1. `test_<model_name>.(py|ipynb)`: The Python script or Jupyter notebook that generated the energy predictions. Ideally, this file should have comments explaining at a high level what the code is doing and how the model works so others can understand and reproduce your results. If the model deployed on this benchmark was trained specifically for this purpose (i.e. if you wrote any training/fine-tuning code while preparing your PR), please also include it as `train_<model_name>.(py|ipynb)`.
-1. `metadata.yml`: A file to record all relevant metadata of your algorithm like model name and version, authors, package requirements, links to publications, notes, etc. Here's a template:
+1. `<model_name.yml>`: A file to record all relevant metadata of your algorithm like model name and version, authors, package requirements, links to publications, notes, etc. Here's a template:
 
    ```yml
-   # metadata.yml template
    model_name: My fancy model # required
    model_version: 1.0.0 # required
    matbench_discovery_version: 1.0 # required
@@ -179,7 +178,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
       Optional *free-form* [markdown](example.com) notes.
    ```
 
-   Arbitrary other keys can be added as needed.
+   Arbitrary other keys can be added as needed. The above keys will be schema-validated with `pre-commit` (if installed) with errors for missing keys.
 
 Please see any of the subdirectories in [`models/`]({repo}/blob/-/models) for example submissions. More detailed step-by-step instructions below.
 
@@ -207,7 +206,7 @@ and place the above-listed files there. The file structure should look like this
 matbench-discovery-root
 └── models
     └── <model_name>
-        ├── metadata.yml
+        ├── <model_name>.yml
         ├── <yyyy-mm-dd>-<model_name>-preds.(json|csv).gz
         ├── test_<model_name>.py
         ├── readme.md  # optional

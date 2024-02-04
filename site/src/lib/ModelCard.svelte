@@ -21,7 +21,7 @@
     [data.doi, `DOI`, `academicons:doi`],
     [data.paper, `Paper`, `ion:ios-paper`],
     [data.url, `Website`, `ion:ios-globe`],
-    [`${repository}/blob/-/models/${data.dir}`, `Files`, `octicon:file-directory`],
+    [`${repository}/blob/-/models/${data.dirname}`, `Files`, `octicon:file-directory`],
   ]
   const target = { target: `_blank`, rel: `noopener` }
 </script>

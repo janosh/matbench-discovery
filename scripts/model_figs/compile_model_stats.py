@@ -18,7 +18,7 @@ import wandb.apis.public
 from pymatviz.io import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, SITE_MODELS, WANDB_PATH
+from matbench_discovery import PDF_FIGS, SITE_FIGS, SITE_LIB, WANDB_PATH
 from matbench_discovery.preds import df_metrics, df_metrics_10k, df_preds, model_styles
 
 __author__ = "Janosh Riebesell"
@@ -127,7 +127,7 @@ for df_tmp, label in ((df_metrics, ""), (df_metrics_10k, "-10k")):
     df_tmp.attrs["All Models Run Time"] = df_tmp[time_col].sum()
     print(f"{df_tmp[time_col].sum()=:.0f} hours")
 
-    df_tmp.round(2).to_json(f"{SITE_MODELS}/model-stats{label}.json", orient="index")
+    df_tmp.round(2).to_json(f"{SITE_LIB}/model-stats{label}.json", orient="index")
     if label == "":
         df_stats = df_tmp
 

@@ -1,9 +1,9 @@
 <script lang="ts">
   import { PtableInset } from '$lib'
+  import per_elem_errors from '$lib/per-element-each-errors.json'
   import type { ChemicalElement } from 'elementari'
   import { ColorBar, ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
   import { MultiSelect } from 'svelte-multiselect'
-  import per_elem_errors from './per-element-each-errors.json'
 
   export let color_scale: string[] = [`Viridis`]
   export let active_element: ChemicalElement | null = null

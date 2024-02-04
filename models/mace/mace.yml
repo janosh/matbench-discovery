@@ -37,6 +37,7 @@ requirements:
   ase: 3.22.1
   pymatgen: 2023.7.14
   numpy: 1.25.0
+  834905: 0.0.1
 trained_for_benchmark: true
 
 training_set:

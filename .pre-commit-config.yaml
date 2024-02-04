@@ -53,7 +53,7 @@ repos:
           - prettier
           - prettier-plugin-svelte
           - svelte
-        exclude: ^(site/src/figs/.+\.svelte|data/wbm/20.+\..+|site/src/routes/.+\.(yaml|json)|changelog.md)$
+        exclude: ^(site/src/figs/.+\.svelte|data/wbm/20.+\..+|site/src/.+\.(yaml|json)|changelog.md)$
 
   - repo: https://github.com/pre-commit/mirrors-eslint
     rev: v9.0.0-alpha.2
@@ -70,3 +70,11 @@ repos:
           - "@typescript-eslint/eslint-plugin"
           - "@typescript-eslint/parser"
           - svelte-eslint-parser
+
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.27.4
+    hooks:
+      - id: check-jsonschema
+        files: ^models/(.+)/\1.*\.yml$
+        args: [--schemafile, tests/model-metadata-schema.json]
+      - id: check-github-actions
