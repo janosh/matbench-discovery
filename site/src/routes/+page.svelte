@@ -1,9 +1,9 @@
 <script lang="ts">
   import { dev } from '$app/environment'
   import { CaptionedMetricsTable, type ModelData } from '$lib'
+  import all_stats from '$lib/model-stats.json'
   import Readme from '$root/readme.md'
   import { Toggle } from 'svelte-zoo'
-  import all_stats from './models/model-stats.json'
 
   let show_proprietary = false
 
@@ -48,7 +48,7 @@
   </div>
 
   <div slot="metrics-table" style="display: grid; gap: 1ex; place-items: center;">
-    <Toggle bind:checked={show_proprietary}>Show proprietary models</Toggle>
+    <Toggle bind:checked={show_proprietary}>Show proprietary models ensp;</Toggle>
     <CaptionedMetricsTable bind:show_proprietary />
   </div>
 </Readme>

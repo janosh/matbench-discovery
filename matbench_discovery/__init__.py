@@ -31,12 +31,12 @@ ROOT = os.path.dirname(PKG_DIR) if pkg_is_editable else PKG_DIR
 DATA_DIR = f"{ROOT}/data"  # directory to store raw data
 SITE_FIGS = f"{ROOT}/site/src/figs"  # directory for interactive figures
 # directory to write model analysis for website
-SITE_MODELS = f"{ROOT}/site/src/routes/models"
+SITE_LIB = f"{ROOT}/site/src/lib"
 SCRIPTS = f"{ROOT}/scripts"  # model and date analysis scripts
 PDF_FIGS = f"{ROOT}/paper/figs"  # directory for light-themed PDF figures
 FIGSHARE_DIR = f"{PKG_DIR}/figshare"
 
-for directory in (SITE_FIGS, SITE_MODELS, PDF_FIGS):
+for directory in (SITE_FIGS, SITE_LIB, PDF_FIGS):
     os.makedirs(directory, exist_ok=True)
 
 os.makedirs(MP_DIR := f"{DATA_DIR}/mp", exist_ok=True)
