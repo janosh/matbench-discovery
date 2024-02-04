@@ -53,7 +53,7 @@ repos:
           - prettier
           - prettier-plugin-svelte
           - svelte
-        exclude: ^(site/src/figs/.+\.svelte|data/wbm/20.+\..+|site/src/lib/.+\.(yaml|json)|changelog.md)$
+        exclude: ^(site/src/figs/.+\.svelte|data/wbm/20.+\..+|site/src/.+\.(yaml|json)|changelog.md)$
 
   - repo: https://github.com/pre-commit/mirrors-eslint
     rev: v9.0.0-alpha.2
