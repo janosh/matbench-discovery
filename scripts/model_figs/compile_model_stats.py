@@ -19,7 +19,13 @@ from pymatviz.io import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, SITE_LIB, WANDB_PATH
-from matbench_discovery.preds import df_metrics, df_metrics_10k, df_preds, model_styles
+from matbench_discovery.preds import (
+    df_metrics,
+    df_metrics_10k,
+    df_metrics_uniq_protos,
+    df_preds,
+    model_styles,
+)
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
@@ -107,10 +113,14 @@ test_stats["CGCNN+P"] = {}
 
 
 # %%
-for df_tmp, label in ((df_metrics, ""), (df_metrics_10k, "-10k")):
+for df_tmp, label in (
+    (df_metrics, ""),
+    (df_metrics_10k, "-10k"),
+    (df_metrics_uniq_protos, "-uniq-protos"),
+):
     df_tmp = pd.concat(
         [
-            df_metrics,
+            df_tmp,
             pd.DataFrame(train_stats).add_prefix("Train ", axis="index"),
             pd.DataFrame(test_stats).add_prefix("Test ", axis="index"),
         ],
@@ -125,7 +135,6 @@ for df_tmp, label in ((df_metrics, ""), (df_metrics_10k, "-10k")):
     ]
 
     df_tmp.attrs["All Models Run Time"] = df_tmp[time_col].sum()
-    print(f"{df_tmp[time_col].sum()=:.0f} hours")
 
     df_tmp.round(2).to_json(f"{SITE_LIB}/model-stats{label}.json", orient="index")
     if label == "":
