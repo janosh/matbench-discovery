@@ -19,6 +19,7 @@
     display: grid;
     gap: 1ex;
     overflow: scroll;
+    max-width: 90vw; /* enable horizontal scrolling on smaller screens */
   }
   figcaption {
     font-size: 0.9em;

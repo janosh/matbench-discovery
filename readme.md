@@ -1,9 +1,9 @@
-<h1 align="center">
+<h1 align="center" style="line-height: 0; margin: 0 auto 1em;">
   <img src="https://github.com/janosh/matbench-discovery/raw/main/site/static/favicon.svg" alt="Logo" width="60px"><br>
   Matbench Discovery
 </h1>
 
-<h4 align="center" class="toc-exclude">
+<h4 align="center" class="toc-exclude" style="display: none;">
 
 [![arXiv](https://img.shields.io/badge/arXiv-2308.14920-blue?logo=arxiv&logoColor=white)](https://arxiv.org/abs/2308.14920)
 [![Tests](https://github.com/janosh/matbench-discovery/actions/workflows/test.yml/badge.svg)](https://github.com/janosh/matbench-discovery/actions/workflows/test.yml)
@@ -13,7 +13,7 @@
 
 </h4>
 
-> TL;DR: We benchmark ML models on crystal stability prediction from unrelaxed structures finding universal interatomic potentials (UIP) like [CHGNet](https://github.com/CederGroupHub/chgnet), [MACE](https://github.com/ACEsuit/mace) and [M3GNet](https://github.com/materialsvirtuallab/m3gnet) to be highly accurate, robust across chemistries and ready for production use in high-throughput materials discovery.
+> TL;DR: We benchmark ML models on crystal stability prediction from unrelaxed structures finding universal interatomic potentials (UIP) like [MACE](https://github.com/ACEsuit/mace), [CHGNet](https://github.com/CederGroupHub/chgnet) and [M3GNet](https://github.com/materialsvirtuallab/m3gnet) to be highly accurate, robust across chemistries and ready for production use in high-throughput materials discovery.
 
 Matbench Discovery is an [interactive leaderboard](https://janosh.github.io/matbench-discovery/models) and associated [PyPI package](https://pypi.org/project/matbench-discovery) which together make it easy to rank ML energy models on a task designed to simulate a high-throughput discovery campaign for new stable inorganic crystals.
 

@@ -346,7 +346,7 @@
       import { sortable } from 'svelte-zoo/actions'
     </script>
 
-    <table class='roomy' use:sortable {...$$props}
+    <table class='metrics' use:sortable {...$$props}
      id="T_">
   <thead>
     <tr>
