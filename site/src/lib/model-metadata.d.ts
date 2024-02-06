@@ -60,7 +60,7 @@ export interface ModelMetadata {
     training?: string
     [k: string]: unknown
   }
-  model_params: number
+  model_params: 'non-parametric' | number
   train_task:
     | 'IS2RE'
     | 'RS2RE'

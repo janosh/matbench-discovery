@@ -103,8 +103,11 @@ properties:
       training:
         type: string
   model_params:
-    type: number
-    minimum: 0
+    oneOf:
+      - type: string
+        enum: [non-parametric]
+      - type: number
+        minimum: 0
   train_task:
     type: string
     enum: &task_enum

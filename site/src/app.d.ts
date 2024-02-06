@@ -24,7 +24,7 @@ declare module '*references.yaml' {
   export const references: import('$lib').Reference[]
 }
 
-declare module '*model-metadata-schema.yaml' {
+declare module '*model-metadata-schema.yml' {
   export const ModelMetadata: import('$lib/model-metadata').ModelMetadata
 }
 

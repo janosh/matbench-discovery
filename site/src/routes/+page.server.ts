@@ -1,4 +1,4 @@
-import schema from '$root/tests/model-metadata-schema.yaml'
+import schema from '$root/tests/model-metadata-schema.yml'
 import fs from 'fs'
 import { compile } from 'json-schema-to-typescript'
 
