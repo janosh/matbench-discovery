@@ -182,7 +182,7 @@ for label, df in (
     df_to_html_table(
         styler,
         f"{SITE_FIGS}/metrics-table{label}.svelte",
-        inline_props="class='roomy'",
+        inline_props="class='metrics'",
         # draw line between classification and regression metrics
         styles=f"{col_selector} {{ border-left: 1px solid white; }}{hide_scroll_bar}",
     )
