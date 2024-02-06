@@ -76,5 +76,5 @@ repos:
     hooks:
       - id: check-jsonschema
         files: ^models/(.+)/\1.*\.yml$
-        args: [--schemafile, tests/model-metadata-schema.json]
+        args: [--schemafile, tests/model-metadata-schema.yaml]
       - id: check-github-actions
