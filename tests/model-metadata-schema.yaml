@@ -73,7 +73,7 @@ properties:
         type: number
       n_materials:
         type: number
-    required: [title, url]
+    required: [title, url, n_structures]
   hyperparams:
     type: object
     properties:
@@ -102,7 +102,7 @@ properties:
         type: string
       training:
         type: string
-  n_params:
+  model_params:
     type: number
     minimum: 0
   train_task:
@@ -146,3 +146,4 @@ required:
   - train_task
   - trained_for_benchmark
   - training_set
+  - model_params

@@ -62,11 +62,15 @@ class Key(DictableStrEnum):
     stress_trace = "stress_trace"
     struct = "structure"
     task_id = "task_id"
+    task_type = "task_type"
     # lowest WBM structures for a given prototype that isn't already in MP
     uniq_proto = "unique_prototype"
     volume = "volume"
     wyckoff = "wyckoff_spglib"  # relaxed structure Aflow label
     init_wyckoff = "wyckoff_spglib_initial_structure"  # initial structure Aflow label
+    train_size = "Training Size"  # number of structures in the training set
+    model_params = "Model Params"  # number of parameters in the model
+    openness = "Openness"
 
 
 @unique

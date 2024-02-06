@@ -16,6 +16,7 @@ from matbench_discovery.enums import (  # noqa: F401
     Key,
     Model,
     ModelType,
+    Open,
     Quantity,
     Targets,
     Task,

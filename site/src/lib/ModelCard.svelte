@@ -14,7 +14,7 @@
   export let metrics_style: string | null = null
 
   $: ({ model_name, missing_preds, missing_percent } = data)
-  $: ({ n_params, hyperparams, notes, training_set } = data)
+  $: ({ model_params, hyperparams, notes, training_set } = data)
 
   $: links = [
     [data.repo, `Repo`, `octicon:mark-github`],
@@ -56,9 +56,9 @@
     </span>
   {/if}
   <span>
-    {#if n_params}
+    {#if model_params}
       <Icon icon="eos-icons:neural-network" inline />
-      {pretty_num(n_params, `.3~s`)} params
+      {pretty_num(model_params, `.3~s`)} params
     {:else}
       <Icon icon="carbon:version" inline />
       Benchmark version: {data.matbench_discovery_version}
@@ -77,9 +77,8 @@
       Training set:
       <a href={url}>{title}</a>
       <small>
-        ({pretty_num(n_structures)} structures{#if n_materials}{` `}from {pretty_num(
-          n_materials,
-        )} materials{/if})
+        ({pretty_num(n_structures)} structures
+        {#if n_materials}{` `}from {pretty_num(n_materials)} materials{/if})
       </small>
     </span>
   {/if}

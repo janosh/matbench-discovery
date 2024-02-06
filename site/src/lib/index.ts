@@ -36,7 +36,7 @@ export type ModelMetadata = {
   hyperparams: Record<string, string | number>
   notes?: Record<string, string>
   dirname: string // models/{dirname}/{dirname}.yml
-  n_params?: number // number of trainable parameters aka model size
+  model_params?: number // number of trainable parameters aka model size
 }
 
 export type ModelStats = {
