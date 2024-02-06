@@ -24,6 +24,10 @@ declare module '*references.yaml' {
   export const references: import('$lib').Reference[]
 }
 
+declare module '*model-metadata-schema.yaml' {
+  export const ModelMetadata: import('$lib/model-metadata').ModelMetadata
+}
+
 declare module '*element-counts.json' {
   const map: Record<string, number>
   export default map
