@@ -23,6 +23,11 @@ requirements:
   numpy: 1.24.0
   pandas: 1.5.1
 trained_for_benchmark: true
+train_task: RS2RE
+test_task: IS2E
+targets: E
+model_type: Fingerprint
+model_params: non-parametric
 
 training_set:
   title: MP Computed Structure Entries

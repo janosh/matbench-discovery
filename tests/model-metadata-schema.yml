@@ -126,7 +126,7 @@ properties:
     enum: *task_enum
   model_type:
     type: string
-    enum: [GNN, UIP, BO_GNN, Fingerprint, Transformer, RF]
+    enum: [GNN, UIP, BO-GNN, Fingerprint, Transformer, RF]
   targets:
     type: string
     enum: [E, EFS, EFSM]
@@ -140,6 +140,8 @@ required:
   - doi
   - matbench_discovery_version
   - model_name
+  - model_params
+  - model_type
   - model_version
   - paper
   - repo
@@ -149,4 +151,3 @@ required:
   - train_task
   - trained_for_benchmark
   - training_set
-  - model_params
