@@ -48,7 +48,7 @@ model_type: UIP
 model_params: 16_240_000
 
 training_set:
-  title: GNoME training set
+  title: GNoME
   url: https://doi.org/10.1038/s41586-023-06735-9
   # numbers below are based on private communication with Dogus
   n_structures: 96_000_000

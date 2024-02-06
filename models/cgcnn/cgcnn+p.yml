@@ -32,7 +32,7 @@ model_type: GNN
 model_params: 128_450
 
 training_set:
-  title: MP Computed Structure Entries
+  title: MP v2022.10.28
   url: https://figshare.com/ndownloader/files/40344436
   n_structures: 154_719
 

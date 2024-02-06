@@ -83,7 +83,7 @@ class Key(LabelEnum):
     )
     # number of structures in a model's training set
     train_size = "train_size", "Training Size"
-    model_params = "model_params", "Model Parameters"  # model's parameter count
+    model_params = "model_params", "Model Params"  # model's parameter count
     model_type = "model_type", "Model Type"  # number of parameters in the model
     openness = "openness", "Openness"  # openness of data and code for a model
 
