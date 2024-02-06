@@ -11,6 +11,7 @@ import os
 import sys
 from importlib.metadata import version
 
+import torch
 import wandb
 from aviary.predict import predict_from_wandb_checkpoints
 from aviary.wrenformer.data import df_to_in_mem_dataloader
@@ -51,7 +52,7 @@ assert Key.wyckoff in df, f"{Key.wyckoff=} not in {list(df)}"
 # %%
 filters = {
     "created_at": {"$gt": "2022-11-15", "$lt": "2022-11-16"},
-    "display_name": {"$regex": "wrenformer-robust"},
+    "display_name": {"$regex": "wrenformer-"},
 }
 runs = wandb.Api().runs(WANDB_PATH, filters=filters)
 expected_runs = 10
@@ -78,6 +79,14 @@ run_params = dict(
     slurm_vars=slurm_vars,
     training_run_ids=[run.id for run in runs],
 )
+
+try:  # load checkpoint to get number of parameters
+    runs[0].file("checkpoint.pth").download(root=module_dir)
+    state_dict = torch.load(f"{module_dir}/checkpoint.pth", map_location="cpu")
+    model = Wrenformer(**state_dict["model_params"])
+    run_params[Key.model_params] = model.num_params
+except Exception as exc:
+    print(exc)
 
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 

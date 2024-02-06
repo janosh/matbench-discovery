@@ -81,23 +81,23 @@ if slurm_array_task_count > 1:
 
 
 # %%
-run_params = dict(
-    data_path=data_path,
-    versions={dep: version(dep) for dep in ("mace", "numpy", "torch")},
-    checkpoint=checkpoint,
-    task_type=task_type,
-    df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
-    slurm_vars=slurm_vars,
-    max_steps=max_steps,
-    record_traj=record_traj,
-    force_max=force_max,
-    ase_optimizer=ase_optimizer,
-    device=device,
-    trainable_params=count_parameters(mace_calc.models[0]),
-    model_name=model_name,
-    dtype=dtype,
-    ase_filter=ase_filter,
-)
+run_params = {
+    "data_path": data_path,
+    "versions": {dep: version(dep) for dep in ("mace", "numpy", "torch")},
+    "checkpoint": checkpoint,
+    Key.task_type: task_type,
+    "df": {"shape": str(df_in.shape), "columns": ", ".join(df_in)},
+    "slurm_vars": slurm_vars,
+    "max_steps": max_steps,
+    "record_traj": record_traj,
+    "force_max": force_max,
+    "ase_optimizer": ase_optimizer,
+    "device": device,
+    Key.model_params: count_parameters(mace_calc.models[0]),
+    "model_name": model_name,
+    "dtype": dtype,
+    "ase_filter": ase_filter,
+}
 
 run_name = f"{job_name}-{slurm_array_task_id}"
 wandb.init(project="matbench-discovery", name=run_name, config=run_params)

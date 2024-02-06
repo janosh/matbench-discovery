@@ -82,21 +82,21 @@ if model_type == "ms":
 relax_results: dict[str, dict[str, Any]] = {}
 m3gnet = Relaxer(potential=checkpoint)  # load pre-trained M3GNet model
 
-run_params = dict(
-    data_path=data_path,
-    versions={dep: version(dep) for dep in ("m3gnet", "numpy")},
-    task_type=task_type,
-    df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
-    slurm_vars=slurm_vars,
-    trainable_params=sum(
-        [np.prod(weight.shape) for weight in m3gnet.potential.model.trainable_weights]
+run_params = {
+    "data_path": data_path,
+    "versions": {dep: version(dep) for dep in ("m3gnet", "numpy")},
+    Key.task_type: task_type,
+    "df": {"shape": str(df_in.shape), "columns": ", ".join(df_in)},
+    "slurm_vars": slurm_vars,
+    Key.model_params: sum(
+        np.prod(weight.shape) for weight in m3gnet.potential.model.trainable_weights
     ),
-    checkpoint=checkpoint,
-    model_type=model_type,
-    out_path=out_path,
-    job_name=job_name,
-    record_traj=record_traj,
-)
+    "checkpoint": checkpoint,
+    "model_type": model_type,
+    "out_path": out_path,
+    "job_name": job_name,
+    "record_traj": record_traj,
+}
 
 run_name = f"{job_name}-{slurm_array_task_id}"
 wandb.init(project="matbench-discovery", name=run_name, config=run_params)
