@@ -28,6 +28,7 @@ export interface ModelMetadata {
   repo: string
   doi: string
   paper: string
+  url?: string
   requirements: {
     /**
      * This interface was referenced by `undefined`'s JSON-Schema definition
@@ -60,7 +61,7 @@ export interface ModelMetadata {
     training?: string
     [k: string]: unknown
   }
-  model_params: 'non-parametric' | number
+  model_params: number
   train_task:
     | 'IS2RE'
     | 'RS2RE'
@@ -83,8 +84,7 @@ export interface ModelMetadata {
     | 'IP2RE'
     | 'IS2E'
     | 'IS2RE-SR'
-  model_type?: 'GNN' | 'UIP' | 'BO_GNN' | 'Fingerprint' | 'Transformer' | 'RF'
+  model_type: 'GNN' | 'UIP' | 'BO-GNN' | 'Fingerprint' | 'Transformer' | 'RF'
   targets: 'E' | 'EFS' | 'EFSM'
   openness?: 'OSOD' | 'OSCD' | 'CSOD' | 'CSCD'
-  [k: string]: unknown
 }

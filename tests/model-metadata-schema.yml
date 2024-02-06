@@ -7,12 +7,10 @@ properties:
     type: string
   matbench_discovery_version:
     type: number
-  date_added:
+  date_added: &date
     type: string
     format: date
-  date_published:
-    type: string
-    format: date
+  date_published: *date
   authors:
     type: array
     items:
@@ -25,7 +23,7 @@ properties:
         email:
           type: string
           format: email
-        orcid:
+        orcid: &url
           type: string
           format: uri
       required: [name]
@@ -38,22 +36,13 @@ properties:
           type: string
         affiliation:
           type: string
-        orcid:
-          type: string
-          format: uri
-        github:
-          type: string
-          format: uri
+        orcid: *url
+        github: *url
       required: [name]
-  repo:
-    type: string
-    format: uri
-  doi:
-    type: string
-    format: uri
-  paper:
-    type: string
-    format: uri
+  repo: *url
+  doi: *url
+  paper: *url
+  url: *url
   requirements:
     type: object
     patternProperties:
@@ -103,11 +92,8 @@ properties:
       training:
         type: string
   model_params:
-    oneOf:
-      - type: string
-        enum: [non-parametric]
-      - type: number
-        minimum: 0
+    type: number
+    minimum: 0
   train_task:
     type: string
     enum: &task_enum
@@ -151,3 +137,5 @@ required:
   - train_task
   - trained_for_benchmark
   - training_set
+# disallow properties not in the schema
+additionalProperties: false
