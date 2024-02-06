@@ -132,7 +132,7 @@ img_name = f"{SITE_FIGS}/e-above-hull-parity-models"
 log_bin_cnt_col = f"log {bin_cnt_col}"
 df_bin[log_bin_cnt_col] = np.log1p(df_bin[bin_cnt_col]).round(2)
 
-n_cols = 2
+n_cols = 4
 n_rows = math.ceil(len(models) / n_cols)
 
 fig = px.scatter(
@@ -149,7 +149,7 @@ fig = px.scatter(
     # color=clf_col,
     # color_discrete_map=clf_color_map,
     # opacity=0.4,
-    range_x=(domain := (-4, 7) if which_energy == "each" else (None, None)),
+    range_x=(domain := (-4, 7) if which_energy == "each" else (-6, 6)),
     range_y=domain,
     category_orders={facet_col: legend_order},
     # pick from https://plotly.com/python/builtin-colorscales
@@ -253,7 +253,7 @@ fig.add_annotation(  # y-axis title
     **axis_titles,
 )
 
-fig.layout.update(height=230 * n_rows, width=180 * n_cols)
+fig.layout.update(height=230 * n_rows, width=240 * n_cols)
 fig.layout.coloraxis.colorbar.update(orientation="h", thickness=9, len=0.5, y=1.05)
 # fig.layout.width = 1100
 fig.layout.margin.update(l=40, r=10, t=30 if portrait else 10, b=60 if portrait else 10)

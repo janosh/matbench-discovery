@@ -40,14 +40,19 @@ requirements:
   numpy: 1.26.2
   pymatgen: 2023.11.12
 trained_for_benchmark: false
-open: OSCD
+openness: OSCD
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS
+model_type: UIP
+model_params: 16_240_000
 
 training_set:
-  title: GNoME training set
+  title: GNoME
   url: https://doi.org/10.1038/s41586-023-06735-9
-  # numbers below are best guesses based on paper and private communication
-  n_structures: 8_000_000
-  n_materials: 2_200_000
+  # numbers below are based on private communication with Dogus
+  n_structures: 96_000_000
+  n_materials: 8_000_000
 
 hyperparams:
   optimizer: Adam
@@ -61,4 +66,3 @@ notes:
   description: |
     GNoME is an equivariant Nequip-type graph neural network implemented in e3nn-jax.
   training: Using pre-trained model released with paper. Training set unspecified at time of writing.
-n_params: 16_240_000

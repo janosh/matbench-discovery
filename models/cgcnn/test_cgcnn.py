@@ -5,6 +5,7 @@ import os
 from importlib.metadata import version
 
 import pandas as pd
+import torch
 import wandb
 from aviary.cgcnn.data import CrystalGraphData, collate_batch
 from aviary.cgcnn.model import CrystalGraphConvNet
@@ -61,9 +62,9 @@ assert input_col in df, f"{input_col=} not in {list(df)}"
 df[input_col] = [Structure.from_dict(dct) for dct in tqdm(df[input_col], disable=None)]
 
 filters = {
-    # "display_name": {"$regex": "^train-cgcnn-robust-augment=3-"},
+    # "display_name": {"$regex": "^train-cgcnn-augment=3-"},
     # "created_at": {"$gt": "2022-12-03", "$lt": "2022-12-04"},
-    "display_name": {"$regex": "^train-cgcnn-robust-augment=0-"},
+    "display_name": {"$regex": "^train-cgcnn-augment=0-"},
     "created_at": {"$gt": "2023-01-09", "$lt": "2023-01-10"},
 }
 runs = wandb.Api().runs(WANDB_PATH, filters=filters)
@@ -92,6 +93,13 @@ run_params = dict(
     slurm_vars=slurm_vars,
     training_run_ids=[run.id for run in runs],
 )
+try:  # load checkpoint to get number of parameters
+    runs[0].file("checkpoint.pth").download(root=module_dir)
+    state_dict = torch.load(f"{module_dir}/checkpoint.pth", map_location="cpu")
+    model = CrystalGraphConvNet(**state_dict["model_params"])
+    run_params[Key.model_params] = model.num_params
+except Exception as exc:
+    print(exc)
 
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 

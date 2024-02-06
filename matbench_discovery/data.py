@@ -115,6 +115,8 @@ def load(
     if ".pkl" in file_path:  # handle key='mp_patched_phase_diagram' separately
         with gzip.open(cache_path, "rb") as zip_file:
             return pickle.load(zip_file)
+    if ".pth" in file_path:  # handle model checkpoints (e.g. key='alignn_checkpoint')
+        return cache_path
 
     csv_ext = (".csv", ".csv.gz", ".csv.bz2")
     reader = pd.read_csv if file_path.endswith(csv_ext) else pd.read_json

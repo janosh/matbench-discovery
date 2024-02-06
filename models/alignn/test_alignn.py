@@ -29,9 +29,8 @@ module_dir = os.path.dirname(__file__)
 
 
 # %%
-model_name = "mp_e_form_alignn"  # pre-trained by NIST
-# TODO fix this to load checkpoint from figshare
-# model_name = f"{module_dir}/data-train-result/best-model.pth"
+# model_name = "mp_e_form_alignn"  # pre-trained by NIST (not used for MBD submission)
+model_name = DATA_FILES.alignn_checkpoint  # trained by Philipp Benner
 task_type = Task.IS2RE
 target_col = Key.e_form
 input_col = Key.init_struct
@@ -93,15 +92,18 @@ df_in[input_col] = [
 
 
 # %%
-run_params = dict(
-    data_path=data_path,
-    versions={dep: version(dep) for dep in ("megnet", "numpy")},
-    model_name=model_name,
-    task_type=task_type,
-    target_col=target_col,
-    df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
-    slurm_vars=slurm_vars,
-)
+run_params = {
+    "data_path": data_path,
+    "versions": {dep: version(dep) for dep in ("megnet", "numpy")},
+    "model_name": model_name,
+    "task_type": task_type,
+    "target_col": target_col,
+    "df": {"shape": str(df_in.shape), "columns": ", ".join(df_in)},
+    "slurm_vars": slurm_vars,
+    Key.model_params: sum(  # count trainable params
+        p.numel() for p in model.parameters() if p.requires_grad
+    ),
+}
 
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 

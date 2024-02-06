@@ -14,13 +14,12 @@
   export let metrics_style: string | null = null
 
   $: ({ model_name, missing_preds, missing_percent } = data)
-  $: ({ n_params, hyperparams, notes, training_set } = data)
+  $: ({ model_params, hyperparams, notes, training_set } = data)
 
   $: links = [
     [data.repo, `Repo`, `octicon:mark-github`],
-    [data.doi, `DOI`, `academicons:doi`],
     [data.paper, `Paper`, `ion:ios-paper`],
-    [data.url, `Website`, `ion:ios-globe`],
+    [data.url, `Docs`, `ion:ios-globe`],
     [`${repository}/blob/-/models/${data.dirname}`, `Files`, `octicon:file-directory`],
   ]
   const target = { target: `_blank`, rel: `noopener` }
@@ -56,13 +55,8 @@
     </span>
   {/if}
   <span>
-    {#if n_params}
-      <Icon icon="eos-icons:neural-network" inline />
-      {pretty_num(n_params, `.3~s`)} params
-    {:else}
-      <Icon icon="carbon:version" inline />
-      Benchmark version: {data.matbench_discovery_version}
-    {/if}
+    <Icon icon="eos-icons:neural-network" inline />
+    {pretty_num(model_params, `.3~s`)} params
   </span>
   <span>
     <Icon icon="fluent:missing-metadata-24-regular" inline />
@@ -72,14 +66,13 @@
   </span>
   {#if training_set}
     {@const { n_structures, url, title, n_materials } = training_set}
+    {@const n_mat_str = n_materials ? ` from ${pretty_num(n_materials)} materials` : ``}
     <span style="grid-column: span 2;">
       <Icon icon="mdi:database" inline />
       Training set:
       <a href={url}>{title}</a>
       <small>
-        ({pretty_num(n_structures)} structures{#if n_materials}{` `}from {pretty_num(
-          n_materials,
-        )} materials{/if})
+        ({pretty_num(n_structures)} structures{n_mat_str})
       </small>
     </span>
   {/if}

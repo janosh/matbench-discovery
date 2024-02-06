@@ -74,17 +74,17 @@ df_in = pd.read_json(data_path).set_index(Key.mat_id)
 if slurm_array_task_count > 1:
     df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
 
-run_params = dict(
-    data_path=data_path,
-    versions={dep: version(dep) for dep in ("chgnet", "numpy", "torch")},
-    task_type=task_type,
-    df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
-    slurm_vars=slurm_vars,
-    max_steps=max_steps,
-    fmax=fmax,
-    device=device,
-    trainable_params=chgnet.n_params,
-)
+run_params = {
+    "data_path": data_path,
+    "versions": {dep: version(dep) for dep in ("chgnet", "numpy", "torch")},
+    Key.task_type: task_type,
+    "df": {"shape": str(df_in.shape), "columns": ", ".join(df_in)},
+    "slurm_vars": slurm_vars,
+    "max_steps": max_steps,
+    "fmax": fmax,
+    "device": device,
+    Key.model_params: chgnet.n_params,
+}
 
 run_name = f"{job_name}-{slurm_array_task_id}"
 wandb.init(project="matbench-discovery", name=run_name, config=run_params)

@@ -14,16 +14,7 @@ from pymatviz.io import df_to_html_table, df_to_pdf
 from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
 
-from matbench_discovery import (
-    PDF_FIGS,
-    SCRIPTS,
-    SITE_FIGS,
-    Key,
-    Model,
-    ModelType,
-    Targets,
-    Task,
-)
+from matbench_discovery import PDF_FIGS, SCRIPTS, SITE_FIGS, Key, Open
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.models import MODEL_METADATA
@@ -44,7 +35,6 @@ name_map = {
     "M3GNet→MEGNet": "M3GNet",
     "CHGNet→MEGNet": "CHGNet",
 }
-train_size_col, open_col = "Training Size", "Openness"
 for model in df_metrics:
     model_name = name_map.get(model, model)
     if not (model_data := MODEL_METADATA.get(model_name)):
@@ -56,11 +46,22 @@ for model in df_metrics:
         n_structs_str += f" <small>({si_fmt(n_materials)})</small>"
 
     for df_m in (df_metrics, df_metrics_10k, df_metrics_uniq_protos):
-        if train_size_col not in df_m.index:
-            df_m.loc[train_size_col] = ""
-        df_m.loc[train_size_col, model] = n_structs_str
-        # default openness=OSOD (Open-Source Open-Data)
-        df_m.loc[open_col, model] = model_data.get("openness", "OSOD")
+        if Key.train_size not in df_m.index:
+            df_m.loc[Key.train_size.label] = ""
+        df_m.loc[Key.train_size.label, model] = n_structs_str
+        model_params = model_data.get(Key.model_params)
+        df_m.loc[Key.model_params.label, model] = (
+            si_fmt(model_params) if isinstance(model_params, int) else model_params
+        )
+        for key in (
+            Key.openness,
+            Key.model_type,
+            Key.train_task,
+            Key.test_task,
+            Key.targets,
+        ):
+            default = {Key.openness: Open.OSOD}.get(key, pd.NA)
+            df_m.loc[key.label, model] = model_data.get(key, default)
 
 
 # %% add dummy classifier results to df_metrics(_10k, _uniq_protos)
@@ -92,32 +93,6 @@ for df_in, df_out, col in (
     df_out[col] = dummy_metrics
 
 
-# %% for each model this ontology dict specifies (training type, test type, model type)
-model_type_col, targets_col = "Model Type", "Targets"
-ontology_cols = ["Trained", "Task", model_type_col, targets_col]
-ontology = {
-    Model.alignn: (Task.RS2RE, Task.IS2RE, ModelType.GNN, Targets.E),
-    # "ALIGNN Pretrained": (Task.RS2RE, Task.IS2RE, ModelType.GNN, Targets.E),
-    Model.chgnet: (Task.S2EFSM, Task.IS2RE_SR, ModelType.UIP, Targets.EFSM),
-    "chgnet_no_relax": (Task.S2EFSM, "IS2RE-STATIC", ModelType.UIP, Targets.EFSM),
-    Model.mace: (Task.S2EFS, Task.IS2RE_SR, ModelType.UIP, Targets.EFS),
-    Model.m3gnet: (Task.S2EFS, Task.IS2RE_SR, ModelType.UIP, Targets.EFS),
-    Model.megnet: (Task.RS2RE, Task.IS2E, ModelType.GNN, Targets.E),
-    "MEGNet RS2RE": (Task.RS2RE, Task.IS2E, ModelType.GNN, Targets.E),
-    Model.cgcnn: (Task.RS2RE, Task.IS2E, ModelType.GNN, Targets.E),
-    Model.cgcnn_p: ("S2RE", Task.IS2RE, ModelType.GNN, Targets.E),
-    Model.wrenformer: ("RP2RE", "IP2E", ModelType.Transformer, Targets.E),
-    Model.bowsr_megnet: (Task.RS2RE, "IS2RE-BO", ModelType.BO_GNN, Targets.E),
-    Model.voronoi_rf: (Task.RS2RE, Task.IS2E, "Fingerprint", Targets.E),
-    "M3GNet→MEGNet": (Task.S2EFS, Task.IS2RE_SR, ModelType.UIP, Targets.EFS),
-    "CHGNet→MEGNet": (Task.S2EFSM, Task.IS2RE_SR, ModelType.UIP, Targets.EFSM),
-    "PFP": (Task.S2EFS, Task.IS2RE, ModelType.UIP, Targets.EFS),
-    Model.gnome: (Task.S2EFS, Task.IS2RE, ModelType.UIP, Targets.EFS),
-    "Dummy": [""] * len(ontology_cols),
-}
-df_ont = pd.DataFrame(ontology, index=ontology_cols)
-
-
 # %%
 with open(f"{SCRIPTS}/metrics-which-is-better.json") as file:
     better = json.load(file)
@@ -131,7 +106,12 @@ lower_is_better = {*better["lower_is_better"]}
 # when setting to True, uncomment the lines chgnet_megnet, m3gnet_megnet, megnet_rs2re
 # in PredFiles!
 make_uip_megnet_comparison = False
-meta_cols = [train_size_col, model_type_col, targets_col]
+meta_cols = [
+    Key.train_size.label,
+    Key.model_params.label,
+    Key.model_type.label,
+    Key.targets.label,
+]
 show_cols = [
     *f"F1,DAF,Precision,Accuracy,TPR,TNR,MAE,RMSE,{R2_col}".split(","),
     *meta_cols,
@@ -142,7 +122,7 @@ for label, df in (
     ("-uniq-protos", df_metrics_uniq_protos),
     ("-first-10k", df_metrics_10k),
 ):
-    df_table = pd.concat([df, df_ont[list(df)]]).rename(index={"R2": R2_col})
+    df_table = df.rename(index={"R2": R2_col})
     df_table.index.name = "Model"
 
     if make_uip_megnet_comparison:
