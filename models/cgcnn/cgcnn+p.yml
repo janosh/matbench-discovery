@@ -25,11 +25,16 @@ requirements:
   numpy: 1.24.0
   pandas: 1.5.1
 trained_for_benchmark: true
+train_task: S2RE
+test_task: IS2RE
+targets: E
+model_type: GNN
+model_params: 128_450
 
 training_set:
-  title: MP Computed Structure Entries
+  title: MP v2022.10.28
   url: https://figshare.com/ndownloader/files/40344436
-  n_structures: 154719
+  n_structures: 154_719
 
 hyperparams:
   Ensemble Size: 10

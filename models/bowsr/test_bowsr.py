@@ -86,23 +86,26 @@ bayes_optim_kwargs = dict(
     seed=42,
 )
 optimize_kwargs = dict(n_init=100, n_iter=100, alpha=0.026**2)
+model = MEGNet()
 
-run_params = dict(
-    bayes_optim_kwargs=bayes_optim_kwargs,
-    data_path=data_path,
-    df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
-    energy_model=energy_model,
-    versions={dep: version(dep) for dep in ("maml", "numpy", energy_model)},
-    optimize_kwargs=optimize_kwargs,
-    task_type=task_type,
-    slurm_vars=slurm_vars,
-)
+
+# %%
+run_params = {
+    "bayes_optim_kwargs": bayes_optim_kwargs,
+    "data_path": data_path,
+    "df": {"shape": str(df_in.shape), "columns": ", ".join(df_in)},
+    "energy_model": energy_model,
+    "versions": {dep: version(dep) for dep in ("maml", "numpy", energy_model)},
+    "optimize_kwargs": optimize_kwargs,
+    "task_type": task_type,
+    "slurm_vars": slurm_vars,
+    Key.model_params: sum(np.prod(p.shape) for p in model.model.trainable_weights),
+}
 
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 
 # %%
-model = MEGNet()
 relax_results: dict[str, dict[str, Any]] = {}
 input_col = {Task.IS2RE: Key.init_struct, Task.RS2RE: Key.final_struct}[task_type]
 

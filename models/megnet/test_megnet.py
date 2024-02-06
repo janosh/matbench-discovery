@@ -71,15 +71,18 @@ megnet_mp_e_form = load_model(model_name := "Eform_MP_2019")
 
 
 # %%
-run_params = dict(
-    data_path=data_path,
-    versions={dep: version(dep) for dep in ("megnet", "numpy")},
-    model_name=model_name,
-    task_type=task_type,
-    target_col=Key.e_form,
-    df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
-    slurm_vars=slurm_vars,
-)
+run_params = {
+    "data_path": data_path,
+    "versions": {dep: version(dep) for dep in ("megnet", "numpy")},
+    "model_name": model_name,
+    Key.task_type: task_type,
+    "target_col": Key.e_form,
+    "df": {"shape": str(df_in.shape), "columns": ", ".join(df_in)},
+    "slurm_vars": slurm_vars,
+    Key.model_params: sum(
+        np.prod(p.shape) for p in megnet_mp_e_form.trainable_variables
+    ),
+}
 
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 

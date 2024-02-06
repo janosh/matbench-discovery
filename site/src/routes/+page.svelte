@@ -23,7 +23,7 @@
       return best
     }
 
-    const openness = md.open ?? `OSOD`
+    const openness = md.openness ?? `OSOD`
     if ((!best?.F1 || stats?.F1 > best?.F1) && (show_proprietary || openness == `OSOD`))
       return { ...stats, ...md } as ModelData
 

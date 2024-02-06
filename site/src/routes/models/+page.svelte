@@ -22,7 +22,7 @@
   const { lower_is_better } = metrics_order
 
   $: models = data.models
-    .filter((model) => show_proprietary || (model.open ?? `OSOD`) == `OSOD`)
+    .filter((model) => show_proprietary || (model.openness ?? `OSOD`) == `OSOD`)
     .sort((model_1, model_2) => {
       const [val_1, val_2] = [model_1[sort_by], model_2[sort_by]]
       if (typeof val_1 == `string`) {

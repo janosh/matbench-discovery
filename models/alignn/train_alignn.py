@@ -115,7 +115,7 @@ def df_to_loader(
         **kwargs: Additional arguments to pass to the StructureDataset
 
     Returns:
-        DataLoader: _description_
+        DataLoader: PyTorch data loader
     """
     graphs = load_graphs(
         df, neighbor_strategy=config.neighbor_strategy, use_canonize=config.use_canonize
