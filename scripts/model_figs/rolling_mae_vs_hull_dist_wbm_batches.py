@@ -19,6 +19,7 @@ df_each_pred[batch_col] = "Batch " + df_each_pred.index.str.split("-").str[1]
 df_err, df_std = None, None  # variables to cache rolling MAE and std
 models = globals().get("models", all_models)
 
+
 # %% plotly version
 for model in models:
     df_pivot = df_each_pred.pivot(columns=batch_col, values=model)

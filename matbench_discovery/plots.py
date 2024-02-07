@@ -347,12 +347,20 @@ def rolling_mae_vs_hull_dist(
 
                 mask = (e_above_hull_true <= high) & (e_above_hull_true > low)
 
-                bin_mae = (e_above_hull_preds[model]-e_above_hull_true).loc[mask].abs().mean()
+                bin_mae = (
+                    (e_above_hull_preds[model] - e_above_hull_true)
+                    .loc[mask]
+                    .abs()
+                    .mean()
+                )
                 df_rolling_err.loc[bin_center, model] = bin_mae
 
                 # drop NaNs to avoid error, scipy doesn't ignore NaNs
                 each_std = scipy.stats.sem(
-                    (e_above_hull_preds[model]-e_above_hull_true).loc[mask].dropna().abs()
+                    (e_above_hull_preds[model] - e_above_hull_true)
+                    .loc[mask]
+                    .dropna()
+                    .abs()
                 )
                 df_err_std.loc[bin_center, model] = each_std
     else:
