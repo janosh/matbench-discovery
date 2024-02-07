@@ -71,9 +71,8 @@ else:
     )
     fig.show()
 
-img_name = "rolling-mae-vs-hull-dist-models"
-
 
 # %%
+img_name = "rolling-mae-vs-hull-dist-models"
 save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=650, height=400)

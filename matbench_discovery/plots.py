@@ -268,12 +268,13 @@ def rolling_mae_vs_hull_dist(
     e_above_hull_preds: pd.DataFrame | dict[str, pd.Series],
     df_rolling_err: pd.DataFrame | None = None,
     df_err_std: pd.DataFrame | None = None,
-    window: float = 0.02,
+    window: float = 0.04,
     bin_width: float = 0.005,
     x_lim: tuple[float, float] = (-0.2, 0.2),
     y_lim: tuple[float, float] = (0, 0.2),
     backend: Backend = "plotly",
-    y_label: str = "rolling MAE (eV/atom)",
+    x_label: str | None = None,
+    y_label: str = "Rolling MAE (eV/atom)",
     just_plot_lines: bool = False,
     with_sem: bool = True,
     show_dft_acc: bool = False,
@@ -281,7 +282,7 @@ def rolling_mae_vs_hull_dist(
     pbar: bool = True,
     **kwargs: Any,
 ) -> plt.Axes | go.Figure:
-    """Rolling mean absolute error as the energy to the convex hull is varied. A scale
+    r"""Rolling mean absolute error as the energy to the convex hull is varied. A scale
     bar is shown for the windowing period of 40 meV per atom used when calculating the
     rolling MAE. The standard error in the mean is shaded around each curve. The
     highlighted V-shaped region shows the area in which the average absolute error is
@@ -305,6 +306,9 @@ def rolling_mae_vs_hull_dist(
         y_lim (tuple[float, float], optional): y-axis range. Defaults to (0.0, 0.14).
         backend ('matplotlib' | 'plotly'], optional): Which plotting engine to use.
             Changes the return type. Defaults to 'plotly'.
+        x_label (str, optional): x-axis label. Defaults to "$E_\mathrm{above\ MP\ hull}$
+            (eV/atom)" for matplotlib and "E<sub>above MP hull</sub> (eV/atom)" for
+            plotly.
         y_label (str, optional): y-axis label. Defaults to "rolling MAE (eV/atom)".
         just_plot_line (bool, optional): If True, plot only the rolling MAE, no shapes
             and annotations. Also won't plot the standard error in the mean. Defaults
@@ -345,8 +349,8 @@ def rolling_mae_vs_hull_dist(
             e_above_hull_ref = e_above_hull_true.loc[e_above_hull_pred.index]
 
             for bin_center in bins:
-                low = bin_center - window
-                high = bin_center + window
+                low = bin_center - window / 2
+                high = bin_center + window / 2
 
                 mask = (e_above_hull_ref <= high) & (e_above_hull_ref > low)
 
@@ -374,7 +378,7 @@ def rolling_mae_vs_hull_dist(
     href = "https://doi.org/10.1103/PhysRevB.85.155208"
     dft_acc = 0.025
 
-    window_bar_anno = f"rolling window={2 * window * 1000:.0f} meV"
+    window_bar_anno = f"rolling window={window * 1000:.0f} meV"
     dummy_mae = (e_above_hull_true - e_above_hull_true.mean()).abs().mean()
     dummy_mae_text = f"dummy MAE = {dummy_mae:.2f} eV/atom"
 
@@ -436,7 +440,9 @@ def rolling_mae_vs_hull_dist(
         fig.text(
             0, 0.13, r"MAE > $|E_\mathrm{above\ hull}|$", horizontalalignment="center"
         )
-        fig.set(xlabel=r"$E_\mathrm{above\ hull}$ (eV/atom)", ylabel=y_label)
+        fig.set(
+            xlabel=x_label or r"$E_\mathrm{above\ MP\ hull}$ (eV/atom)", ylabel=y_label
+        )
         fig.set(xlim=x_lim, ylim=y_lim)
         plt_line_styles = "- -- -. :".split() * 10
         plt_markers = "o s ^ v D * p X".split() * 10
@@ -471,8 +477,8 @@ def rolling_mae_vs_hull_dist(
         fig.layout.legend.update(title="", x=0, y=0, yanchor="bottom")
         # change tooltip precision to 2 decimal places
         fig.update_traces(hovertemplate="x = %{x:.2f} eV/atom<br>y = %{y:.2f} eV/atom")
-        fig.layout.xaxis.title.text = "E<sub>above MP hull</sub> (eV/atom)"
-        fig.layout.yaxis.title.text = "rolling MAE (eV/atom)"
+        fig.layout.xaxis.title.text = x_label or "E<sub>above MP hull</sub> (eV/atom)"
+        fig.layout.yaxis.title.text = y_label
         fig.update_xaxes(range=x_lim)
         fig.update_yaxes(range=y_lim)
         # exclude from hover tooltip
@@ -534,6 +540,7 @@ def rolling_mae_vs_hull_dist(
             yshift=-6,
             yanchor="bottom",
             xanchor="right",
+            xref="x",
         )
         fig.add_shape(type="rect", x0=x0, y0=y0, x1=x0 - window, y1=y0 + window / 5)
 
