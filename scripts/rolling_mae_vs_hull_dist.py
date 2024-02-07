@@ -4,7 +4,7 @@
 # %%
 from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS, Key, Model
+from matbench_discovery import PDF_FIGS, SITE_FIGS, Key, Model
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
 from matbench_discovery.preds import df_each_pred, df_metrics, df_wbm
 
@@ -15,7 +15,7 @@ __date__ = "2022-06-18"
 # %%
 model = Model.chgnet
 
-ax, df_err, df_std = rolling_mae_vs_hull_dist(
+fig, df_err, df_std = rolling_mae_vs_hull_dist(
     e_above_hull_true=df_wbm[Key.each_true],
     e_above_hull_preds={model: df_each_pred[model]},
     backend=(backend := "plotly"),
@@ -24,17 +24,18 @@ ax, df_err, df_std = rolling_mae_vs_hull_dist(
 MAE, DAF, F1 = df_metrics[model][["MAE", "DAF", "F1"]]
 title = f"{model} · {MAE=:.2f} · {DAF=:.2f} · {F1=:.2f}"
 if backend == "matplotlib":
-    fig = ax.figure
+    fig = fig.figure
     fig.set_size_inches(6, 5)
-    ax.legend(loc="lower right", frameon=False)
-    ax.set(title=title)
-    for line in ax.lines:
+    fig.legend(loc="lower right", frameon=False)
+    fig.set(title=title)
+    for line in fig.lines:
         line._linewidth *= 2  # noqa: SLF001
 elif backend == "plotly":
-    ax.update_layout(title=dict(text=title, x=0.5))
-    ax.show()
+    fig.update_layout(title=dict(text=title, x=0.5))
+    fig.show()
 
 
 # %%
-img_path = f"{PDF_FIGS}/rolling-mae-vs-hull-dist.pdf"
-save_fig(img_path)
+img_name = "rolling-mae-vs-hull-dist"
+save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
+save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
