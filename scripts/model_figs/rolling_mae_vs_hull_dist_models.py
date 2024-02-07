@@ -7,9 +7,16 @@ from typing import Final
 import numpy as np
 from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, Key, Model
+from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery.enums import Key, TestSubset
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
-from matbench_discovery.preds import df_each_pred, df_metrics, df_preds, models
+from matbench_discovery.preds import (
+    df_each_pred,
+    df_metrics,
+    df_metrics_uniq_protos,
+    df_preds,
+    models,
+)
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
@@ -20,9 +27,17 @@ df_err, df_std = None, None  # variables to cache rolling MAE and std
 # %%
 backend: Final = "plotly"
 
+test_subset = globals().get("test_subset", TestSubset.full)
+
+if test_subset == TestSubset.uniq_protos:
+    df_preds = df_preds.query(Key.uniq_proto)
+    df_each_pred = df_each_pred.loc[df_preds.index]
+    df_metrics = df_metrics_uniq_protos
+
+
 fig, df_err, df_std = rolling_mae_vs_hull_dist(
     e_above_hull_true=df_preds[Key.each_true],
-    e_above_hull_preds=df_each_pred[models].drop(columns=Model.gnome),
+    e_above_hull_preds=df_each_pred[models],
     backend=backend,
     with_sem=False,
     df_rolling_err=df_err,

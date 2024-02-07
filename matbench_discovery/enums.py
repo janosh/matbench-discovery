@@ -135,7 +135,16 @@ class Open(LabelEnum):
     CSCD = "CSCD", "closed source, closed data"
 
 
-ev_per_atom = styled_html_tag(
+@unique
+class TestSubset(LabelEnum):
+    """Test set subsets."""
+
+    uniq_protos = "uniq_protos", "Unique Structure Prototypes"
+    ten_k_most_stable = "10k_most_stable", "10k Most Stable"
+    full = "full", "Full Test Set"
+
+
+eV_per_atom = styled_html_tag(  # noqa: N816
     "(eV/atom)", tag="span", style="font-size: 0.8em; font-weight: lighter;"
 )
 
@@ -149,16 +158,16 @@ class Quantity(LabelEnum):
     spg_num = "Space group"
     n_wyckoff = "Number of Wyckoff positions"
     n_sites = "Number of atoms"
-    energy_per_atom = f"Energy {ev_per_atom}"
-    e_form = f"DFT E<sub>form</sub> {ev_per_atom}"
-    e_above_hull = f"E<sub>hull dist</sub> {ev_per_atom}"
-    e_above_hull_mp2020_corrected_ppd_mp = f"DFT E<sub>hull dist</sub> {ev_per_atom}"
-    e_above_hull_pred = f"Predicted E<sub>hull dist</sub> {ev_per_atom}"
-    e_above_hull_mp = f"E<sub>above MP hull</sub> {ev_per_atom}"
-    e_above_hull_error = f"Error in E<sub>hull dist</sub> {ev_per_atom}"
+    energy_per_atom = f"Energy {eV_per_atom}"
+    e_form = f"DFT E<sub>form</sub> {eV_per_atom}"
+    e_above_hull = f"E<sub>hull dist</sub> {eV_per_atom}"
+    e_above_hull_mp2020_corrected_ppd_mp = f"DFT E<sub>hull dist</sub> {eV_per_atom}"
+    e_above_hull_pred = f"Predicted E<sub>hull dist</sub> {eV_per_atom}"
+    e_above_hull_mp = f"E<sub>above MP hull</sub> {eV_per_atom}"
+    e_above_hull_error = f"Error in E<sub>hull dist</sub> {eV_per_atom}"
     vol_diff = "Volume difference (A^3)"
-    e_form_per_atom_mp2020_corrected = f"DFT E<sub>form</sub> {ev_per_atom}"
-    e_form_per_atom_pred = f"Predicted E<sub>form</sub> {ev_per_atom}"
+    e_form_per_atom_mp2020_corrected = f"DFT E<sub>form</sub> {eV_per_atom}"
+    e_form_per_atom_pred = f"Predicted E<sub>form</sub> {eV_per_atom}"
     material_id = "Material ID"
     band_gap = "Band gap (eV)"
     formula = "Formula"

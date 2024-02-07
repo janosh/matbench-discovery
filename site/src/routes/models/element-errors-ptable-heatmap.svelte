@@ -1,6 +1,6 @@
 <script lang="ts">
+  import per_elem_errors from '$figs/per-element-each-errors.json'
   import { PtableInset } from '$lib'
-  import per_elem_errors from '$lib/per-element-each-errors.json'
   import type { ChemicalElement } from 'elementari'
   import { ColorBar, ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
   import { MultiSelect } from 'svelte-multiselect'

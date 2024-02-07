@@ -13,12 +13,29 @@ from pymatviz.io import save_fig
 from pymatviz.utils import bin_df_cols, df_ptable
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, SITE_LIB, Key, Model
+from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS
 from matbench_discovery.data import df_wbm
-from matbench_discovery.preds import df_each_err, df_metrics, df_preds
+from matbench_discovery.enums import Key, Model, TestSubset
+from matbench_discovery.preds import (
+    df_each_err,
+    df_metrics,
+    df_metrics_uniq_protos,
+    df_preds,
+)
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-15"
+
+
+# %%
+test_subset = globals().get("test_subset", TestSubset.full)
+
+if test_subset == TestSubset.uniq_protos:
+    df_preds = df_preds.query(Key.uniq_proto)
+    df_each_err = df_each_err.loc[df_preds.index]
+    df_metrics = df_metrics_uniq_protos
+    df_wbm = df_wbm.loc[df_preds.index]
+
 
 for df in (df_each_err, df_preds):
     df[Key.model_mean_err] = df_each_err.abs().mean(axis=1)
@@ -135,7 +152,7 @@ expected_cols = {
 }
 assert {*df_elem_err} >= expected_cols
 assert (df_elem_err.isna().sum() < 35).all()
-df_elem_err.round(4).to_json(f"{SITE_LIB}/per-element-each-errors.json")
+df_elem_err.round(4).to_json(f"{SITE_FIGS}/per-element-each-errors.json")
 
 
 # %% scatter plot error by element against prevalence in training set

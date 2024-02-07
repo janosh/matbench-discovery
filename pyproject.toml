@@ -37,6 +37,7 @@ dependencies = [
   "pymatviz[export-figs,df-pdf-export]",
   "scikit-learn",
   "scipy",
+  "seaborn",
   "tqdm",
   "wandb",
 ]
