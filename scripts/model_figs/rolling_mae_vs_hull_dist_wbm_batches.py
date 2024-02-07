@@ -21,6 +21,7 @@ models = globals().get("models", all_models)
 
 use_unique_proto = True
 
+
 # %% plotly version
 for model in models:
     df_pivot = df_each_pred.pivot(columns=batch_col, values=model)
