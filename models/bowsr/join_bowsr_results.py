@@ -8,7 +8,7 @@ import pandas as pd
 import pymatviz
 from tqdm import tqdm
 
-from matbench_discovery import Task
+from matbench_discovery import Model, Task
 from matbench_discovery.data import DATA_FILES, Key
 
 __author__ = "Janosh Riebesell"
@@ -18,7 +18,7 @@ __date__ = "2022-09-22"
 # %%
 module_dir = os.path.dirname(__file__)
 date = "2023-01-20"
-energy_model = "megnet"
+energy_model = Model.megnet.lower()
 glob_pattern = f"{date}-bowsr-{energy_model}-wbm-{Task.IS2RE}/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")

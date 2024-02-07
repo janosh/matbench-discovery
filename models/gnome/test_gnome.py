@@ -1,7 +1,7 @@
 # %%
 from pymatviz import density_scatter
 
-from matbench_discovery.enums import Key, Model
+from matbench_discovery import Key, Model
 from matbench_discovery.preds import df_preds
 
 __author__ = "Janosh Riebesell"

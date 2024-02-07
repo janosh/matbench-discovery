@@ -92,7 +92,7 @@ def test_rolling_mae_vs_hull_dist(
     for model_name in models:
         ax, df_err, df_std = rolling_mae_vs_hull_dist(
             e_above_hull_true=df_wbm[model_name],
-            e_above_hull_errors=df_wbm[models],
+            e_above_hull_preds=df_wbm[models],
             x_lim=x_lim,
             show_dft_acc=show_dft_acc,
             **kwargs,  # type: ignore[arg-type]
@@ -104,12 +104,12 @@ def test_rolling_mae_vs_hull_dist(
         list(df_err) == list(df_std) == models
     ), f"expected {list(df_err)} == {list(df_std)} == {models}"
 
-    expected_ylabel = "rolling MAE (eV/atom)"
+    expected_ylabel = "Rolling MAE (eV/atom)"
     if backend == "matplotlib":
         assert isinstance(ax, plt.Axes)
         assert ax.get_ylim()[0] == 0
         assert ax.get_ylabel() == expected_ylabel
-        assert ax.get_xlabel() == r"$E_\mathrm{above\ hull}$ (eV/atom)"
+        assert ax.get_xlabel() == r"$E_\mathrm{above\ MP\ hull}$ (eV/atom)"
     elif backend == "plotly":
         assert isinstance(ax, go.Figure)
         assert ax.layout.yaxis.title.text == expected_ylabel
