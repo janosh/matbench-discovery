@@ -53,7 +53,7 @@ export default {
 
           // Replace figure labels with 'Fig. {n}' and add to fig_index
           let code = file.content.replace(
-            /@label:(fig:[^\s]+)/g,
+            /@label:((fig|tab):[^\s]+)/g,
             (_match, id) => {
               if (!fig_index.includes(id)) fig_index.push(id)
               const idx = (route.startsWith(`si`) ? `S` : ``) + fig_index.length
