@@ -26,7 +26,8 @@
     padding: 2pt 6pt;
     background-color: rgba(255, 255, 255, 0.07);
   }
-  figure.hide-prop :global(tbody > tr:first-child) {
+  /* hide rows (<tr>) where any cell has a class of proprietary */
+  figure.hide-prop :global(tr:has(.proprietary)) {
     display: none;
   }
 </style>

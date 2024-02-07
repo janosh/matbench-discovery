@@ -22,7 +22,7 @@ module_dir = os.path.dirname(__file__)
 go.Figure.show = lambda *_args, **_kwargs: None
 Dash.run = lambda *_args, **_kwargs: None
 
-# subtract __file__ to avoid this file calling itself
+# subtract __file__ to prevent this file from calling itself
 scripts = set(glob(f"{module_dir}/*.py")) - {__file__}
 
 
