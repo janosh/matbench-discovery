@@ -9,7 +9,7 @@ from pymatviz.io import save_fig
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, Key
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
-from matbench_discovery.preds import df_each_pred, df_metrics, df_preds, models
+from matbench_discovery.preds import df_each_pred, df_metrics, df_preds, models, df_metrics_uniq_protos
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
@@ -19,6 +19,13 @@ df_err, df_std = None, None  # variables to cache rolling MAE and std
 
 # %%
 backend: Final = "plotly"
+use_unique_proto = True
+
+if use_unique_proto:
+    df_preds = df_preds.query(Key.uniq_proto)
+    df_each_pred = df_each_pred.loc[df_preds.index]
+    df_metrics = df_metrics_uniq_protos
+
 
 fig, df_err, df_std = rolling_mae_vs_hull_dist(
     e_above_hull_true=df_preds[Key.each_true],

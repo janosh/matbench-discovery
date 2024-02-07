@@ -6,13 +6,20 @@ from pymatviz.io import save_fig
 
 from matbench_discovery import PDF_FIGS, Key, today
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
-from matbench_discovery.preds import df_each_pred, df_metrics, df_preds
+from matbench_discovery.preds import df_each_pred, df_metrics, df_preds, df_metrics_uniq_protos
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
 
 
 # %%
+use_unique_proto = True
+
+if use_unique_proto:
+    df_preds = df_preds.query(Key.uniq_proto)
+    df_each_pred = df_each_pred.loc[df_preds.index]
+    df_metrics = df_metrics_uniq_protos
+
 model = "Wrenformer"
 model = "MEGNet"
 model = "CHGNet"

@@ -12,11 +12,17 @@ from pymatviz.io import save_fig
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, Key, today
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist, plt
-from matbench_discovery.preds import df_metrics, df_preds
+from matbench_discovery.preds import df_metrics, df_preds, df_metrics_uniq_protos
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-12-01"
 
+
+use_unique_proto = True
+
+if use_unique_proto:
+    df_preds = df_preds.query(Key.uniq_proto)
+    df_metrics = df_metrics_uniq_protos
 
 # %%
 hover_cols = (

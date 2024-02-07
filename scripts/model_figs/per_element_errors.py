@@ -15,10 +15,21 @@ from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, SITE_LIB, Key
 from matbench_discovery.data import df_wbm
-from matbench_discovery.preds import df_each_err, df_metrics, df_preds
+from matbench_discovery.preds import df_each_err, df_metrics, df_preds, df_metrics_uniq_protos
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-15"
+
+
+# %%
+use_unique_proto = True
+
+if use_unique_proto:
+    df_preds = df_preds.query(Key.uniq_proto)
+    df_each_err = df_each_err.loc[df_preds.index]
+    df_metrics = df_metrics_uniq_protos
+    df_wbm = df_wbm.loc[df_preds.index]
+
 
 for df in (df_each_err, df_preds):
     df[Key.model_mean_err] = df_each_err.abs().mean(axis=1)

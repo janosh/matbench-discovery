@@ -19,6 +19,12 @@ from matbench_discovery.preds import df_each_pred, df_preds, model_styles, model
 __author__ = "Janosh Riebesell, Rhys Goodall"
 __date__ = "2022-12-04"
 
+use_unique_proto = True
+
+if use_unique_proto:
+    df_preds = df_preds.query(Key.uniq_proto)
+    df_each_pred = df_each_pred.loc[df_preds.index]
+
 
 # %%
 metrics: tuple[str, ...] = globals().get("metrics", ("Precision", "Recall"))
