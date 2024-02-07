@@ -90,12 +90,11 @@ for material_cls, pattern in material_classes.items():
 df_cse = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index(Key.mat_id)
 
 
-# %% struct viewer
-from crystal_toolkit.helpers.utils import hook_up_fig_with_struct_viewer
-
-# only run this in Jupyter Notebook
+# %% CTK structure viewer
 is_jupyter = "ipykernel" in sys.modules
-if is_jupyter:
+if is_jupyter:  # only run this in Jupyter Notebook
+    from crystal_toolkit.helpers.utils import hook_up_fig_with_struct_viewer
+
     app = hook_up_fig_with_struct_viewer(
         fig,
         df_cse,
