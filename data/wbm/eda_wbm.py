@@ -16,10 +16,11 @@ from pymatviz import (
 from pymatviz.io import save_fig
 from pymatviz.utils import si_fmt, si_fmt_int
 
-from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD, Key
+from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.energy import mp_elem_reference_entries
+from matbench_discovery.enums import Key, Model
 from matbench_discovery.preds import df_each_err
 
 __author__ = "Janosh Riebesell"
@@ -263,7 +264,7 @@ df_2d_tsne = pd.read_csv(f"{module_dir}/tsne/one-hot-112-composition-2d.csv.gz")
 df_2d_tsne = df_2d_tsne.set_index(Key.mat_id)
 
 df_3d_tsne = pd.read_csv(f"{module_dir}/tsne/one-hot-112-composition-3d.csv.gz")
-model = "Wrenformer"
+model = Model.wrenformer
 df_3d_tsne = pd.read_csv(
     f"{module_dir}/tsne/one-hot-112-composition+{model}-each-err-3d-metric=eucl.csv.gz"
 )

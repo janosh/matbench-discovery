@@ -10,7 +10,7 @@ from pymatviz.io import df_to_html_table, df_to_pdf, save_fig
 from pymatviz.ptable import ptable_heatmap_plotly
 from pymatviz.utils import add_identity_line, bin_df_cols
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, Key
+from matbench_discovery import PDF_FIGS, SITE_FIGS, Key, Model
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.preds import df_each_pred, df_preds
 
@@ -19,7 +19,7 @@ __date__ = "2023-03-20"
 
 
 # %%
-model = "Wrenformer"
+model = Model.wrenformer
 max_each_true = 1
 min_each_pred = 1
 df_each_pred[Key.each_true] = df_preds[Key.each_true]
@@ -94,7 +94,7 @@ save_fig(fig, f"{PDF_FIGS}/elements-{model.lower()}-failures.pdf")
 
 
 # %%
-model = "Wrenformer"
+model = Model.wrenformer
 cols = [model, Key.each_true]
 bin_cnt_col = "bin counts"
 df_bin = bin_df_cols(

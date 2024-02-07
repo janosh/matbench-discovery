@@ -1,7 +1,6 @@
 """Histogram of the energy difference (either according to DFT ground truth [default] or
 model predicted energy) to the convex hull for materials in the WBM data set. The
 histogram stacks true/false positives/negatives with different colors.
-
 See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
 """
 
@@ -22,7 +21,7 @@ __date__ = "2022-06-18"
 
 # %%
 # model_name = "Wrenformer"
-model_name = "CGCNN"
+model_name = "CHGNet"
 # model_name = "CGCNN+P"
 which_energy: Final = "pred"
 df_each_pred[Key.each_true] = df_wbm[Key.each_true]
@@ -41,7 +40,7 @@ fig = hist_classified_stable_vs_hull_dist(
 if backend == "plotly":
     # fig.layout.title.update(text=model_name, x=0.5)
     fig.layout.margin.update(l=0, r=0, b=0, t=30)
-    # fig.update_yaxes(range=[0, 12000])
+    fig.update_yaxes(range=[0, 12000])
     fig.show()
 
 
