@@ -25,6 +25,7 @@ if use_unique_proto:
     df_preds = df_preds.query(Key.uniq_proto)
     df_each_pred = df_each_pred.loc[df_preds.index]
 
+
 # %% plotly version
 for model in models:
     df_pivot = df_each_pred.pivot(columns=batch_col, values=model)

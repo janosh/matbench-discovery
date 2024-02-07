@@ -9,7 +9,13 @@ from pymatviz.io import save_fig
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, Key
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
-from matbench_discovery.preds import df_each_pred, df_metrics, df_preds, models, df_metrics_uniq_protos
+from matbench_discovery.preds import (
+    df_each_pred,
+    df_metrics,
+    df_metrics_uniq_protos,
+    df_preds,
+    models,
+)
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"

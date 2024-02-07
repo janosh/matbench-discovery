@@ -15,7 +15,12 @@ from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, SITE_LIB, Key
 from matbench_discovery.data import df_wbm
-from matbench_discovery.preds import df_each_err, df_metrics, df_preds, df_metrics_uniq_protos
+from matbench_discovery.preds import (
+    df_each_err,
+    df_metrics,
+    df_metrics_uniq_protos,
+    df_preds,
+)
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-15"
