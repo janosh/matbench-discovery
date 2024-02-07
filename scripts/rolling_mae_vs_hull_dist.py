@@ -4,27 +4,25 @@
 # %%
 from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS, Key, today
+from matbench_discovery import PDF_FIGS, Key, Model
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
-from matbench_discovery.preds import df_each_pred, df_metrics, df_preds
+from matbench_discovery.preds import df_each_pred, df_metrics, df_wbm
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
 
 
 # %%
-model = "Wrenformer"
-model = "MEGNet"
-model = "CHGNet"
+model = Model.chgnet
 
 ax, df_err, df_std = rolling_mae_vs_hull_dist(
-    e_above_hull_true=df_preds[Key.each_true],
+    e_above_hull_true=df_wbm[Key.each_true],
     e_above_hull_preds={model: df_each_pred[model]},
     backend=(backend := "plotly"),
 )
 
 MAE, DAF, F1 = df_metrics[model][["MAE", "DAF", "F1"]]
-title = f"{today} {model} · {MAE=:.2f} · {DAF=:.2f} · {F1=:.2f}"
+title = f"{model} · {MAE=:.2f} · {DAF=:.2f} · {F1=:.2f}"
 if backend == "matplotlib":
     fig = ax.figure
     fig.set_size_inches(6, 5)

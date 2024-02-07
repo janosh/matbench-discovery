@@ -13,7 +13,7 @@ from pymatviz.io import save_fig
 from pymatviz.utils import bin_df_cols, df_ptable
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, SITE_LIB, Key
+from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, SITE_LIB, Key, Model
 from matbench_discovery.data import df_wbm
 from matbench_discovery.preds import df_each_err, df_metrics, df_preds
 
@@ -245,7 +245,7 @@ save_fig(fig, f"{SITE_FIGS}/each-error-vs-least-prevalent-element-in-struct.svel
 
 
 # %% plot histogram of model errors for each element
-model = "MACE"
+model = Model.mace
 fig_ptable_each_errors = ptable_hists(
     df_frac_comp * (df_each_err[model].to_numpy()[:, None]),
     log=True,

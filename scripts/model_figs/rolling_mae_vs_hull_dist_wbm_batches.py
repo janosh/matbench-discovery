@@ -6,7 +6,7 @@ batch in a single plot.
 # %%
 from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, Key, today
+from matbench_discovery import PDF_FIGS, SITE_FIGS, Key, Model, today
 from matbench_discovery.plots import plt, rolling_mae_vs_hull_dist
 from matbench_discovery.preds import df_each_pred, df_preds
 from matbench_discovery.preds import models as all_models
@@ -54,7 +54,7 @@ for model in models:
 fig, ax = plt.subplots(1, figsize=(10, 9))
 markers = ("o", "v", "^", "H", "D")
 assert len(markers) == 5  # number of iterations of element substitution in WBM data set
-model = "CHGNet"
+model = Model.chgnet
 
 for idx, marker in enumerate(markers, 1):
     # select all rows from WBM step=idx
