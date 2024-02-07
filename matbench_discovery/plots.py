@@ -341,18 +341,21 @@ def rolling_mae_vs_hull_dist(
             prog_bar := tqdm(models, desc="Calculating rolling MAE", disable=not pbar)
         ):
             prog_bar.set_postfix_str(model)
+            e_above_hull_pred = e_above_hull_preds[model].dropna()
+            e_above_hull_ref = e_above_hull_true.loc[e_above_hull_pred.index]
+
             for bin_center in bins:
                 low = bin_center - window
                 high = bin_center + window
 
-                mask = (e_above_hull_true <= high) & (e_above_hull_true > low)
+                mask = (e_above_hull_ref <= high) & (e_above_hull_ref > low)
 
-                bin_mae = (e_above_hull_preds[model]-e_above_hull_true).loc[mask].abs().mean()
+                bin_mae = (e_above_hull_pred-e_above_hull_ref).loc[mask].abs().mean()
                 df_rolling_err.loc[bin_center, model] = bin_mae
 
                 # drop NaNs to avoid error, scipy doesn't ignore NaNs
                 each_std = scipy.stats.sem(
-                    (e_above_hull_preds[model]-e_above_hull_true).loc[mask].dropna().abs()
+                    (e_above_hull_pred-e_above_hull_ref).loc[mask].dropna().abs()
                 )
                 df_err_std.loc[bin_center, model] = each_std
     else:
