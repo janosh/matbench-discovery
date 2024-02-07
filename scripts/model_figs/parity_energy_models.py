@@ -13,9 +13,10 @@ import plotly.express as px
 from pymatviz.io import save_fig
 from pymatviz.utils import add_identity_line, bin_df_cols
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, Key
+from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery.enums import Key, TestSubset
 from matbench_discovery.plots import clf_colors
-from matbench_discovery.preds import df_metrics, df_preds
+from matbench_discovery.preds import df_metrics, df_metrics_uniq_protos, df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
@@ -30,6 +31,13 @@ if which_energy == "each":
 if which_energy == "e-form":
     e_true_col = Key.e_form
     e_pred_col = Key.e_form_pred
+
+
+test_subset = globals().get("test_subset", TestSubset.full)
+
+if test_subset == TestSubset.uniq_protos:
+    df_preds = df_preds.query(Key.uniq_proto)
+    df_metrics = df_metrics_uniq_protos
 
 
 # %%

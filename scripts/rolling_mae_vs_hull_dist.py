@@ -36,6 +36,6 @@ elif backend == "plotly":
 
 
 # %%
-img_name = "rolling-mae-vs-hull-dist"
+img_name = f"rolling-mae-vs-hull-dist-{model}"
 save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
 save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")

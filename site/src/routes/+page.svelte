@@ -36,8 +36,8 @@
 
   <div slot="best-report">
     {#if best_model}
-      {@const { model_name, F1, R2, DAF, repo, doi } = best_model}
-      We find <a href={repo}>{model_name}</a> (<a href={doi}>paper</a>) to achieve the
+      {@const { model_name, F1, R2, DAF, repo, paper } = best_model}
+      We find <a href={repo}>{model_name}</a> (<a href={paper}>paper</a>) to achieve the
       highest F1 score of {F1}, R<sup>2</sup> of {R2}
       and a discovery acceleration factor (DAF) of {DAF}
       (i.e. a ~{Number(DAF).toFixed(1)}x higher rate of stable structures compared to

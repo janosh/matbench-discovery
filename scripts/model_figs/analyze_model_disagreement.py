@@ -7,16 +7,21 @@ models can pinpoint DFT calculation gone wrong.
 import sys
 
 import pandas as pd
-from crystal_toolkit.helpers.utils import hook_up_fig_with_struct_viewer
 from pymatviz.io import save_fig
 from pymatviz.utils import add_identity_line
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, Key
+from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.data import DATA_FILES
+from matbench_discovery.enums import Key, TestSubset
 from matbench_discovery.preds import df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-15"
+
+test_subset = globals().get("test_subset", TestSubset.full)
+
+if test_subset == TestSubset.uniq_protos:
+    df_preds = df_preds.query(Key.uniq_proto)
 
 
 # %% scatter plot of largest model errors vs. DFT hull distance
@@ -86,10 +91,11 @@ for material_cls, pattern in material_classes.items():
 df_cse = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index(Key.mat_id)
 
 
-# %% struct viewer
-# only run this in Jupyter Notebook
+# %% CTK structure viewer
 is_jupyter = "ipykernel" in sys.modules
-if is_jupyter:
+if is_jupyter:  # only run this in Jupyter Notebook
+    from crystal_toolkit.helpers.utils import hook_up_fig_with_struct_viewer
+
     app = hook_up_fig_with_struct_viewer(
         fig,
         df_cse,

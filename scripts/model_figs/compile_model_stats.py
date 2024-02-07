@@ -26,6 +26,7 @@ from matbench_discovery.preds import (
     df_preds,
     model_styles,
 )
+from matbench_discovery.preds import models as all_models
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
@@ -128,8 +129,7 @@ for df_tmp, label in (
     df_tmp[time_col] = df_tmp.filter(like=time_col).sum(axis="columns")
 
     # write model metrics to json for website use
-    in_both = [*set(df_metrics) & set(df_preds)]
-    df_tmp["missing_preds"] = df_preds[in_both].isna().sum()
+    df_tmp["missing_preds"] = df_preds[all_models].isna().sum()
     df_tmp["missing_percent"] = [
         f"{x / len(df_preds):.2%}" for x in df_tmp.missing_preds
     ]

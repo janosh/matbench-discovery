@@ -10,24 +10,28 @@ from typing import Final
 
 from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, Key, today
+from matbench_discovery import PDF_FIGS, SITE_FIGS, today
+from matbench_discovery.enums import Key, TestSubset
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist, plt
-from matbench_discovery.preds import df_metrics, df_preds
+from matbench_discovery.preds import df_metrics, df_metrics_uniq_protos, df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-12-01"
 
 
+test_subset = globals().get("test_subset", TestSubset.full)
+
+if test_subset == TestSubset.uniq_protos:
+    df_preds = df_preds.query(Key.uniq_proto)
+    df_metrics = df_metrics_uniq_protos
+
+
 # %%
-hover_cols = (
-    df_preds.index.name,
-    Key.e_form,
-    Key.each_true,
-    Key.formula,
-)
+hover_cols = (df_preds.index.name, Key.e_form, Key.each_true, Key.formula)
 facet_col = "Model"
-# sort facet plots by model's F1 scores (optionally only show top n=6)
-models = list(df_metrics.T.F1.sort_values().index)[::-1]
+# sort models by F1 scores so that facet plots are ordered by model performance
+# (optionally only show top n=6)
+models = list(df_preds.filter([*df_metrics.sort_values("F1", axis=1)]))[::-1]
 
 df_melt = df_preds.melt(
     id_vars=hover_cols,

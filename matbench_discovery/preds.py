@@ -61,7 +61,7 @@ class PredFiles(Files):
     # alignn_pretrained = "alignn/2023-06-03-mp-e-form-alignn-wbm-IS2RE.csv.gz"
     # alignn_ff = "alignn_ff/2023-07-11-alignn-ff-wbm-IS2RE.csv.gz"
 
-    gnome = "gnome/2023-11-01-gnome-preds-50076332.csv.gz"
+    # gnome = "gnome/2023-11-01-gnome-preds-50076332.csv.gz"
 
 
 # key_map maps model keys to pretty labels
