@@ -7,7 +7,8 @@ from typing import Final
 import numpy as np
 from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, Key
+from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery.enums import Key, TestSubset
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
 from matbench_discovery.preds import (
     df_each_pred,
@@ -25,9 +26,10 @@ df_err, df_std = None, None  # variables to cache rolling MAE and std
 
 # %%
 backend: Final = "plotly"
-use_unique_proto = True
 
-if use_unique_proto:
+test_subset = globals().get("test_subset", TestSubset.full)
+
+if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(Key.uniq_proto)
     df_each_pred = df_each_pred.loc[df_preds.index]
     df_metrics = df_metrics_uniq_protos

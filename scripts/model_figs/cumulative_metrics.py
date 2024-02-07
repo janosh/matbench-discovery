@@ -12,16 +12,18 @@ will provide the best hit rate for the given budget.
 import pandas as pd
 from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, Key
+from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery.enums import Key, TestSubset
 from matbench_discovery.plots import cumulative_metrics
 from matbench_discovery.preds import df_each_pred, df_preds, model_styles, models
 
 __author__ = "Janosh Riebesell, Rhys Goodall"
 __date__ = "2022-12-04"
 
-use_unique_proto = True
 
-if use_unique_proto:
+test_subset = globals().get("test_subset", TestSubset.full)
+
+if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(Key.uniq_proto)
     df_each_pred = df_each_pred.loc[df_preds.index]
 

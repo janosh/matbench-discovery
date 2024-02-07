@@ -13,8 +13,9 @@ from pymatviz.io import save_fig
 from pymatviz.utils import bin_df_cols, df_ptable
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, SITE_LIB, Key, Model
+from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, SITE_LIB
 from matbench_discovery.data import df_wbm
+from matbench_discovery.enums import Key, Model, TestSubset
 from matbench_discovery.preds import (
     df_each_err,
     df_metrics,
@@ -27,9 +28,9 @@ __date__ = "2023-02-15"
 
 
 # %%
-use_unique_proto = True
+test_subset = globals().get("test_subset", TestSubset.full)
 
-if use_unique_proto:
+if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(Key.uniq_proto)
     df_each_err = df_each_err.loc[df_preds.index]
     df_metrics = df_metrics_uniq_protos

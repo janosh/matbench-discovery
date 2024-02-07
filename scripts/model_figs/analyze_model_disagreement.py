@@ -10,16 +10,17 @@ import pandas as pd
 from pymatviz.io import save_fig
 from pymatviz.utils import add_identity_line
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, Key
+from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.data import DATA_FILES
+from matbench_discovery.enums import Key, TestSubset
 from matbench_discovery.preds import df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-15"
 
-use_unique_proto = True
+test_subset = globals().get("test_subset", TestSubset.full)
 
-if use_unique_proto:
+if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(Key.uniq_proto)
 
 

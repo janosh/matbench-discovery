@@ -4,16 +4,17 @@ import plotly.graph_objects as go
 import seaborn as sns
 from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, Key, Quantity
+from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery.enums import Key, Quantity, TestSubset
 from matbench_discovery.preds import df_each_err, df_preds, models
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-05-25"
 
 
-use_unique_proto = True
+test_subset = globals().get("test_subset", TestSubset.full)
 
-if use_unique_proto:
+if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(Key.uniq_proto)
     df_each_err = df_each_err.loc[df_preds.index]
 

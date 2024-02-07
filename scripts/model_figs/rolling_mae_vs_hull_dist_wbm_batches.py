@@ -6,7 +6,8 @@ batch in a single plot.
 # %%
 from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, Key, Model, today
+from matbench_discovery import PDF_FIGS, SITE_FIGS, today
+from matbench_discovery.enums import Key, Model, TestSubset
 from matbench_discovery.plots import plt, rolling_mae_vs_hull_dist
 from matbench_discovery.preds import df_each_pred, df_preds
 from matbench_discovery.preds import models as all_models
@@ -19,12 +20,17 @@ df_each_pred[batch_col] = "Batch " + df_each_pred.index.str.split("-").str[1]
 df_err, df_std = None, None  # variables to cache rolling MAE and std
 models = globals().get("models", all_models)
 
-use_unique_proto = True
+
+test_subset = globals().get("test_subset", TestSubset.full)
+
+if test_subset == TestSubset.uniq_protos:
+    df_preds = df_preds.query(Key.uniq_proto)
+    df_each_pred = df_each_pred.loc[df_preds.index]
 
 
 # %% plotly version
 for model in models:
-    df_pivot = df_each_pred.pivot(columns=batch_col, values=model)
+    df_pivot = df_each_pred.pivot(columns=batch_col, values=model)  # noqa: PD010
 
     fig, df_err, df_std = rolling_mae_vs_hull_dist(
         e_above_hull_true=df_preds[Key.each_true],

@@ -9,8 +9,9 @@ from pymatviz.io import save_fig
 from sklearn.metrics import auc, precision_recall_curve, roc_curve
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, STABILITY_THRESHOLD, Key
+from matbench_discovery import PDF_FIGS, SITE_FIGS, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots
+from matbench_discovery.enums import Key, TestSubset
 from matbench_discovery.preds import df_each_pred, df_preds, model_styles, models
 
 __author__ = "Janosh Riebesell"
@@ -23,9 +24,10 @@ color_col = "Stability Threshold"
 n_cols = 3
 n_rows = math.ceil(len(models) / n_cols)
 
-use_unique_proto = True
 
-if use_unique_proto:
+test_subset = globals().get("test_subset", TestSubset.full)
+
+if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(Key.uniq_proto)
     df_each_pred = df_each_pred.loc[df_preds.index]
 
