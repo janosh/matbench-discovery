@@ -7,7 +7,7 @@ from typing import Final
 import numpy as np
 from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, Key, Model
+from matbench_discovery import PDF_FIGS, SITE_FIGS, Key
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
 from matbench_discovery.preds import (
     df_each_pred,
@@ -35,7 +35,7 @@ if use_unique_proto:
 
 fig, df_err, df_std = rolling_mae_vs_hull_dist(
     e_above_hull_true=df_preds[Key.each_true],
-    e_above_hull_preds=df_each_pred[models].drop(columns=Model.gnome),
+    e_above_hull_preds=df_each_pred[models],
     backend=backend,
     with_sem=False,
     df_rolling_err=df_err,

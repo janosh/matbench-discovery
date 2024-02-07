@@ -26,15 +26,11 @@ if use_unique_proto:
 
 
 # %%
-hover_cols = (
-    df_preds.index.name,
-    Key.e_form,
-    Key.each_true,
-    Key.formula,
-)
+hover_cols = (df_preds.index.name, Key.e_form, Key.each_true, Key.formula)
 facet_col = "Model"
-# sort facet plots by model's F1 scores (optionally only show top n=6)
-models = list(df_metrics.T.F1.sort_values().index)[::-1]
+# sort models by F1 scores so that facet plots are ordered by model performance
+# (optionally only show top n=6)
+models = list(df_preds.filter([*df_metrics.sort_values("F1", axis=1)]))[::-1]
 
 df_melt = df_preds.melt(
     id_vars=hover_cols,

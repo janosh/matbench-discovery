@@ -35,33 +35,33 @@ name_map = {
     "M3GNet→MEGNet": "M3GNet",
     "CHGNet→MEGNet": "CHGNet",
 }
+df_met = df_metrics_uniq_protos
+df_met.loc[Key.train_size.label] = ""
+
 for model in df_metrics:
     model_name = name_map.get(model, model)
     if not (model_data := MODEL_METADATA.get(model_name)):
         continue
     n_structs = model_data["training_set"]["n_structures"]
-    n_structs_str = si_fmt(n_structs)
+    train_size_str = si_fmt(n_structs)
 
     if n_materials := model_data["training_set"].get("n_materials"):
-        n_structs_str += f" <small>({si_fmt(n_materials)})</small>"
+        train_size_str += f" <small>({si_fmt(n_materials)})</small>"
 
-    for df_m in (df_metrics, df_metrics_10k, df_metrics_uniq_protos):
-        if Key.train_size not in df_m.index:
-            df_m.loc[Key.train_size.label] = ""
-        df_m.loc[Key.train_size.label, model] = n_structs_str
-        model_params = model_data.get(Key.model_params)
-        df_m.loc[Key.model_params.label, model] = (
-            si_fmt(model_params) if isinstance(model_params, int) else model_params
-        )
-        for key in (
-            Key.openness,
-            Key.model_type,
-            Key.train_task,
-            Key.test_task,
-            Key.targets,
-        ):
-            default = {Key.openness: Open.OSOD}.get(key, pd.NA)
-            df_m.loc[key.label, model] = model_data.get(key, default)
+    df_met.loc[Key.train_size.label, model] = train_size_str
+    model_params = model_data.get(Key.model_params)
+    df_met.loc[Key.model_params.label, model] = (
+        si_fmt(model_params) if isinstance(model_params, int) else model_params
+    )
+    for key in (
+        Key.openness,
+        Key.model_type,
+        Key.train_task,
+        Key.test_task,
+        Key.targets,
+    ):
+        default = {Key.openness: Open.OSOD}.get(key, pd.NA)
+        df_met.loc[key.label, model] = model_data.get(key, default)
 
 
 # %% add dummy classifier results to df_metrics(_10k, _uniq_protos)
@@ -112,18 +112,18 @@ meta_cols = [
     Key.model_type.label,
     Key.targets.label,
 ]
-show_cols = [
-    *f"F1,DAF,Precision,Accuracy,TPR,TNR,MAE,RMSE,{R2_col}".split(","),
-    *meta_cols,
-]
+show_cols = [*f"F1,DAF,Prec,Acc,TPR,TNR,MAE,RMSE,{R2_col}".split(","), *meta_cols]
 
 for label, df in (
     ("", df_metrics),
     ("-uniq-protos", df_metrics_uniq_protos),
     ("-first-10k", df_metrics_10k),
 ):
-    df_table = df.rename(index={"R2": R2_col})
-    df_table.index.name = "Model"
+    # abbreviate long column names
+    df = df.rename(index={"R2": R2_col, "Precision": "Prec", "Accuracy": "Acc"})
+    df.index.name = "Model"
+    # only keep columns we want to show
+    df_table = df.T.filter(show_cols)
 
     if make_uip_megnet_comparison:
         df_table = df_table.filter(regex="MEGNet|CHGNet|M3GNet")  # |Dummy
@@ -133,29 +133,25 @@ for label, df in (
                 "hint: for make_uip_megnet_comparison, uncomment the lines "
                 "chgnet_megnet and m3gnet_megnet in PredFiles"
             )
-    df_filtered = df_table.T[show_cols]  # only keep columns we want to show
-
-    # abbreviate long column names
-    df_filtered = df_filtered.rename(columns={"Precision": "Prec", "Accuracy": "Acc"})
 
     if "-first-10k" in label:
         # hide redundant metrics for first 10k preds (all TPR = 1, TNR = 0)
-        df_filtered = df_filtered.drop(["TPR", "TNR"], axis="columns")
+        df_table = df_table.drop(["TPR", "TNR"], axis="columns")
     if label != "-uniq-protos":  # only show training size and model type once
-        df_filtered = df_filtered.drop(meta_cols, axis="columns")
+        df_table = df_table.drop(meta_cols, axis="columns", errors="ignore")
 
     styler = (
-        df_filtered.style.format(
+        df_table.style.format(
             # render integers without decimal places
             dict.fromkeys("TP FN FP TN".split(), "{:,.0f}"),
             precision=2,  # render floats with 2 decimals
             na_rep="",  # render NaNs as empty string
         )
         .background_gradient(
-            cmap="viridis", subset=list(higher_is_better & {*df_filtered})
+            cmap="viridis", subset=list(higher_is_better & {*df_table})
         )
         .background_gradient(  # reverse color map if lower=better
-            cmap="viridis_r", subset=list(lower_is_better & {*df_filtered})
+            cmap="viridis_r", subset=list(lower_is_better & {*df_table})
         )
     )
     # add up/down arrows to indicate which metrics are better when higher/lower
@@ -163,7 +159,7 @@ for label, df in (
         lower_is_better, " ↓"
     )
     styler.relabel_index(
-        [f"{col}{arrow_suffix.get(col, '')}" for col in df_filtered],
+        [f"{col}{arrow_suffix.get(col, '')}" for col in df_table],
         axis="columns",
     )
 
