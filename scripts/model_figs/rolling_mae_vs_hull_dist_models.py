@@ -22,7 +22,7 @@ backend: Final = "plotly"
 
 fig, df_err, df_std = rolling_mae_vs_hull_dist(
     e_above_hull_true=df_preds[Key.each_true],
-    e_above_hull_errors=df_each_pred[models],
+    e_above_hull_preds=df_each_pred[models],
     backend=backend,
     with_sem=False,
     df_rolling_err=df_err,

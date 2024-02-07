@@ -6,7 +6,7 @@ from pymatviz.io import save_fig
 
 from matbench_discovery import PDF_FIGS, Key, today
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
-from matbench_discovery.preds import df_metrics, df_preds
+from matbench_discovery.preds import df_each_pred, df_metrics, df_preds
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
@@ -19,7 +19,7 @@ model = "CHGNet"
 
 ax, df_err, df_std = rolling_mae_vs_hull_dist(
     e_above_hull_true=df_preds[Key.each_true],
-    e_above_hull_errors={model: df_preds[Key.e_form] - df_preds[model]},
+    e_above_hull_preds={model: df_each_pred[model]},
     backend=(backend := "plotly"),
 )
 

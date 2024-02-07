@@ -265,7 +265,7 @@ def hist_classified_stable_vs_hull_dist(
 
 def rolling_mae_vs_hull_dist(
     e_above_hull_true: pd.Series,
-    e_above_hull_errors: pd.DataFrame | dict[str, pd.Series],
+    e_above_hull_preds: pd.DataFrame | dict[str, pd.Series],
     df_rolling_err: pd.DataFrame | None = None,
     df_err_std: pd.DataFrame | None = None,
     window: float = 0.02,
@@ -291,9 +291,8 @@ def rolling_mae_vs_hull_dist(
     Args:
         e_above_hull_true (pd.Series): Distance to convex hull according to DFT
             ground truth (in eV / atom).
-        e_above_hull_errors (pd.DataFrame | dict[str, pd.Series]): Error in
-            model-predicted distance to convex hull, i.e. actual hull distance minus
-            predicted hull distance (in eV / atom).
+        e_above_hull_preds (pd.DataFrame | dict[str, pd.Series]): Predicted distance to
+            convex hull by models, one column per model (in eV / atom).
         df_rolling_err (pd.DataFrame, optional): Cached rolling MAE(s) as returned by
             previous call to this function. Defaults to None.
         df_err_std (pd.DataFrame, optional): Cached standard error in the mean of the
@@ -332,7 +331,7 @@ def rolling_mae_vs_hull_dist(
             standard error in the mean.
     """
     bins = np.arange(*x_lim, bin_width)
-    models = list(e_above_hull_errors)
+    models = list(e_above_hull_preds)
 
     if df_rolling_err is None or df_err_std is None:
         df_rolling_err = pd.DataFrame(columns=models, index=bins)
@@ -342,20 +341,20 @@ def rolling_mae_vs_hull_dist(
             prog_bar := tqdm(models, desc="Calculating rolling MAE", disable=not pbar)
         ):
             prog_bar.set_postfix_str(model)
-            for idx, bin_center in enumerate(bins):
+            for bin_center in bins:
                 low = bin_center - window
                 high = bin_center + window
 
                 mask = (e_above_hull_true <= high) & (e_above_hull_true > low)
 
-                bin_mae = e_above_hull_errors[model].loc[mask].abs().mean()
-                df_rolling_err[model].iloc[idx] = bin_mae
+                bin_mae = (e_above_hull_preds[model]-e_above_hull_true).loc[mask].abs().mean()
+                df_rolling_err.loc[bin_center, model] = bin_mae
 
                 # drop NaNs to avoid error, scipy doesn't ignore NaNs
                 each_std = scipy.stats.sem(
-                    e_above_hull_errors[model].loc[mask].dropna().abs()
+                    (e_above_hull_preds[model]-e_above_hull_true).loc[mask].dropna().abs()
                 )
-                df_err_std[model].iloc[idx] = each_std
+                df_err_std.loc[bin_center, model] = each_std
     else:
         print("Using pre-calculated rolling MAE")
 
