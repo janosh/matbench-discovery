@@ -86,7 +86,7 @@ for df_in, df_out, col in (
 
     # important: regression metrics from dummy_clf are meaningless, we overwrite them
     # with correct values here. don't remove!
-    dummy_metrics["DAF"] = 1
+    dummy_metrics[Key.daf] = 1
     dummy_metrics["R2"] = 0
     dummy_metrics["MAE"] = (each_true - each_true.mean()).abs().mean()
     dummy_metrics["RMSE"] = ((each_true - each_true.mean()) ** 2).mean() ** 0.5

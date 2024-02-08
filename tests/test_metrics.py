@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 from pytest import approx
 
+from matbench_discovery.enums import Key
 from matbench_discovery.metrics import classify_stable, stable_metrics
 
 if TYPE_CHECKING:
@@ -91,4 +92,4 @@ def test_stable_metrics() -> None:
         n_true_pos + n_false_pos + n_false_neg + n_true_neg
     )
     precision = n_true_pos / (n_true_pos + n_false_pos)
-    assert metrics["DAF"] == precision / dummy_hit_rate
+    assert metrics[Key.daf] == precision / dummy_hit_rate

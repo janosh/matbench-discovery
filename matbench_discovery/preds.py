@@ -175,7 +175,11 @@ df_metrics_uniq_protos.attrs["title"] = "Metrics for unique non-MP prototypes"
 for df in (df_metrics, df_metrics_10k, df_metrics_uniq_protos):
     df.index.name = "model"
 
-prevalence = (df_wbm[Key.each_true] <= STABILITY_THRESHOLD).mean()
+full_prevalence = (df_wbm[Key.each_true] <= STABILITY_THRESHOLD).mean()
+uniq_proto_prevalence = (
+    df_wbm.query(Key.uniq_proto)[Key.each_true] <= STABILITY_THRESHOLD
+).mean()
+
 for model in PRED_FILES:
     each_pred = df_preds[Key.each_true] + df_preds[model] - df_preds[Key.e_form]
     df_metrics[model] = stable_metrics(df_preds[Key.each_true], each_pred)
@@ -186,7 +190,9 @@ for model in PRED_FILES:
     # DAF is only defined w.r.t. whole test set stability prevalence, stable_metrics()
     # uses the stable prevalence of just the subset of predictions used to calculate the
     # metrics
-    df_metrics_10k.loc["DAF", model] = df_metrics_10k[model]["Precision"] / prevalence
+    df_metrics_10k.loc[Key.daf, model] = (
+        df_metrics_10k[model]["Precision"] / uniq_proto_prevalence
+    )
 
     df_uniq_proto_preds = df_preds[df_wbm[Key.uniq_proto]]
     each_pred_uniq_proto = (
@@ -196,6 +202,9 @@ for model in PRED_FILES:
     )
     df_metrics_uniq_protos[model] = stable_metrics(
         df_uniq_proto_preds[Key.each_true], each_pred_uniq_proto
+    )
+    df_metrics_uniq_protos.loc[Key.daf, model] = (
+        df_metrics_uniq_protos[model]["Precision"] / uniq_proto_prevalence
     )
 
 
