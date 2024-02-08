@@ -680,8 +680,8 @@ references:
 - id: deng_chgnet_2023
   accessed:
     - year: 2023
-      month: 4
-      day: 7
+      month: 11
+      day: 24
   author:
     - family: Deng
       given: Bowen
@@ -689,6 +689,8 @@ references:
       given: Peichen
     - family: Jun
       given: KyuJung
+    - family: Riebesell
+      given: Janosh
     - family: Han
       given: Kevin
     - family: Bartel
@@ -696,19 +698,28 @@ references:
     - family: Ceder
       given: Gerbrand
   citation-key: deng_chgnet_2023
-  DOI: 10.48550/arXiv.2302.14231
+  container-title: Nature Machine Intelligence
+  container-title-short: Nat Mach Intell
+  DOI: 10.1038/s42256-023-00716-3
+  ISSN: 2522-5839
+  issue: '9'
   issued:
     - year: 2023
-      month: 2
-      day: 27
-  number: arXiv:2302.14231
-  publisher: arXiv
-  source: arXiv.org
+      month: 9
+      day: 14
+  language: en
+  license: >-
+    2023 This is a U.S. Government work and not under copyright protection in
+    the US; foreign copyright protection may apply
+  number: '9'
+  page: 1031-1041
+  publisher: Nature Publishing Group
+  source: www.nature.com
   title: >-
-    CHGNet: Pretrained universal neural network potential for charge-informed
-    atomistic modeling
-  title-short: CHGNet
-  URL: http://arxiv.org/abs/2302.14231
+    CHGNet as a pretrained universal neural network potential for
+    charge-informed atomistic modelling
+  URL: https://www.nature.com/articles/s42256-023-00716-3
+  volume: '5'
 
 - id: deng_imagenet_2009
   author:
@@ -736,6 +747,32 @@ references:
   source: IEEE Xplore
   title: 'ImageNet: A large-scale hierarchical image database'
   title-short: ImageNet
+
+- id: depeweg_decomposition_2017
+  accessed:
+    - year: 2019
+      month: 3
+      day: 3
+  author:
+    - family: Depeweg
+      given: Stefan
+    - family: Hernández-Lobato
+      given: José Miguel
+    - family: Doshi-Velez
+      given: Finale
+    - family: Udluft
+      given: Steffen
+  citation-key: depeweg_decomposition_2017
+  container-title: 'arXiv: 1710.07283 [cs, stat]'
+  issued:
+    - year: 2017
+      month: 10
+      day: 19
+  source: arXiv.org
+  title: >-
+    Decomposition of Uncertainty in Bayesian Deep Learning for Efficient and
+    Risk-sensitive Learning
+  URL: http://arxiv.org/abs/1710.07283
 
 - id: deringer_general-purpose_2020
   accessed:
@@ -1036,6 +1073,44 @@ references:
   URL: https://link.aps.org/doi/10.1103/PhysRevB.85.155208
   volume: '85'
 
+- id: hicks_aflow_2021
+  accessed:
+    - year: 2024
+      month: 1
+      day: 24
+  author:
+    - family: Hicks
+      given: David
+    - family: Mehl
+      given: Michael J.
+    - family: Esters
+      given: Marco
+    - family: Oses
+      given: Corey
+    - family: Levy
+      given: Ohad
+    - family: Hart
+      given: Gus L. W.
+    - family: Toher
+      given: Cormac
+    - family: Curtarolo
+      given: Stefano
+  citation-key: hicks_aflow_2021
+  container-title: Computational Materials Science
+  container-title-short: Computational Materials Science
+  DOI: 10.1016/j.commatsci.2021.110450
+  ISSN: 0927-0256
+  issued:
+    - year: 2021
+      month: 11
+      day: 1
+  page: '110450'
+  source: ScienceDirect
+  title: 'The AFLOW Library of Crystallographic Prototypes: Part 3'
+  title-short: The AFLOW Library of Crystallographic Prototypes
+  URL: https://www.sciencedirect.com/science/article/pii/S0927025621001750
+  volume: '199'
+
 - id: horton_promises_2021
   accessed:
     - year: 2023
@@ -1277,6 +1352,46 @@ references:
   URL: http://arxiv.org/abs/2210.13597
   volume: '9'
 
+- id: li_exploiting_2023
+  accessed:
+    - year: 2023
+      month: 12
+      day: 14
+  author:
+    - family: Li
+      given: Kangming
+    - family: Persaud
+      given: Daniel
+    - family: Choudhary
+      given: Kamal
+    - family: DeCost
+      given: Brian
+    - family: Greenwood
+      given: Michael
+    - family: Hattrick-Simpers
+      given: Jason
+  citation-key: li_exploiting_2023
+  container-title: Nature Communications
+  container-title-short: Nat Commun
+  DOI: 10.1038/s41467-023-42992-y
+  ISSN: 2041-1723
+  issue: '1'
+  issued:
+    - year: 2023
+      month: 11
+      day: 10
+  language: en
+  license: 2023 The Author(s)
+  number: '1'
+  page: '7283'
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: >-
+    Exploiting redundancy in large materials datasets for efficient machine
+    learning with less data
+  URL: https://www.nature.com/articles/s41467-023-42992-y
+  volume: '14'
+
 - id: mcdermott_graph-based_2021
   accessed:
     - year: 2022
@@ -1442,6 +1557,59 @@ references:
   title: Machine-learning-assisted materials discovery using failed experiments
   URL: https://www.nature.com/articles/nature17439
   volume: '533'
+
+- id: riebesell_pushing_2024
+  accessed:
+    - year: 2024
+      month: 1
+      day: 12
+  author:
+    - family: Riebesell
+      given: Janosh
+    - family: Surta
+      given: T. Wesley
+    - family: Goodall
+      given: Rhys
+    - family: Gaultois
+      given: Michael
+    - family: Lee
+      given: Alpha A.
+  citation-key: riebesell_pushing_2024
+  container-title: arXiv.org
+  issued:
+    - year: 2024
+      month: 1
+      day: 11
+  language: en
+  title: >-
+    Pushing the Pareto front of band gap and permittivity: ML-guided search for
+    dielectric materials
+  title-short: Pushing the Pareto front of band gap and permittivity
+  URL: https://arxiv.org/abs/2401.05848v1
+
+- id: riebesell_pymatviz_2022
+  accessed:
+    - year: 2023
+      month: 12
+      day: 2
+  author:
+    - family: Riebesell
+      given: Janosh
+    - family: Goodall
+      given: Rhys
+    - family: Baird
+      given: Sterling G.
+  citation-key: riebesell_pymatviz_2022
+  DOI: 10.5281/zenodo.7486816
+  genre: Python
+  issued:
+    - year: 2022
+      month: 10
+  license: MIT
+  source: GitHub
+  title: 'Pymatviz: A toolkit for visualizations in materials informatics'
+  URL: https://github.com/janosh/pymatviz
+  version: 0.8.0
 
 - id: rupp_fast_2012
   accessed:
@@ -1955,6 +2123,60 @@ references:
   URL: https://link.aps.org/doi/10.1103/PhysRevB.96.024104
   volume: '96'
 
+- id: ward_matminer_2018
+  accessed:
+    - year: 2023
+      month: 12
+      day: 6
+  author:
+    - family: Ward
+      given: Logan
+    - family: Dunn
+      given: Alexander
+    - family: Faghaninia
+      given: Alireza
+    - family: Zimmermann
+      given: Nils E. R.
+    - family: Bajaj
+      given: Saurabh
+    - family: Wang
+      given: Qi
+    - family: Montoya
+      given: Joseph
+    - family: Chen
+      given: Jiming
+    - family: Bystrom
+      given: Kyle
+    - family: Dylla
+      given: Maxwell
+    - family: Chard
+      given: Kyle
+    - family: Asta
+      given: Mark
+    - family: Persson
+      given: Kristin A.
+    - family: Snyder
+      given: G. Jeffrey
+    - family: Foster
+      given: Ian
+    - family: Jain
+      given: Anubhav
+  citation-key: ward_matminer_2018
+  container-title: Computational Materials Science
+  container-title-short: Computational Materials Science
+  DOI: 10.1016/j.commatsci.2018.05.018
+  ISSN: 0927-0256
+  issued:
+    - year: 2018
+      month: 9
+      day: 1
+  page: 60-69
+  source: ScienceDirect
+  title: 'Matminer: An open source toolkit for materials data mining'
+  title-short: Matminer
+  URL: https://www.sciencedirect.com/science/article/pii/S0927025618303252
+  volume: '152'
+
 - id: wen_chemical_2023
   accessed:
     - year: 2023
@@ -2059,6 +2281,36 @@ references:
     Interpretable Prediction of Material Properties
   URL: https://link.aps.org/doi/10.1103/PhysRevLett.120.145301
   volume: '120'
+
+- id: zhu_fast_2023
+  accessed:
+    - year: 2024
+      month: 2
+      day: 2
+  author:
+    - family: Zhu
+      given: Albert
+    - family: Batzner
+      given: Simon
+    - family: Musaelian
+      given: Albert
+    - family: Kozinsky
+      given: Boris
+  citation-key: zhu_fast_2023
+  container-title: The Journal of Chemical Physics
+  container-title-short: The Journal of Chemical Physics
+  DOI: 10.1063/5.0136574
+  ISSN: 0021-9606
+  issue: '16'
+  issued:
+    - year: 2023
+      month: 4
+      day: 27
+  page: '164111'
+  source: Silverchair
+  title: Fast uncertainty estimates in deep learning interatomic potentials
+  URL: https://doi.org/10.1063/5.0136574
+  volume: '158'
 
 - id: zuo_accelerating_2021
   accessed:
