@@ -30,7 +30,7 @@
   },
   "MACE": {
     "F1": 0.67,
-    "DAF": 3.5,
+    "DAF": 3.4,
     "Precision": 0.58,
     "Recall": 0.78,
     "Accuracy": 0.87,
@@ -38,13 +38,13 @@
     "FPR": 0.12,
     "TNR": 0.88,
     "FNR": 0.22,
-    "TP": 33428.0,
-    "FP": 23943.0,
-    "TN": 182497.0,
-    "FN": 9360.0,
+    "TP": 34420.0,
+    "FP": 24576.0,
+    "TN": 188259.0,
+    "FN": 9670.0,
     "MAE": 0.06,
     "RMSE": 0.1,
-    "R2": 0.66,
+    "R2": 0.7,
     "Train Run Time (h)": null,
     "Train GPU": null,
     "Train CPU": null,
@@ -54,8 +54,8 @@
     "Test CPU": 64.0,
     "Test Slurm Jobs": 100.0,
     "Run Time (h)": 111.9,
-    "missing_preds": 7735,
-    "missing_percent": "3.01%"
+    "missing_preds": 38,
+    "missing_percent": "0.01%"
   },
   "CHGNet": {
     "F1": 0.61,

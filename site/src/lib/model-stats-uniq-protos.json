@@ -1,7 +1,7 @@
 {
   "GNoME": {
     "F1": 0.83,
-    "DAF": 5.49,
+    "DAF": 5.52,
     "Precision": 0.84,
     "Recall": 0.82,
     "Accuracy": 0.95,
@@ -30,7 +30,7 @@
   },
   "MACE": {
     "F1": 0.67,
-    "DAF": 3.84,
+    "DAF": 3.78,
     "Precision": 0.58,
     "Recall": 0.8,
     "Accuracy": 0.88,
@@ -38,13 +38,13 @@
     "FPR": 0.11,
     "TNR": 0.89,
     "FNR": 0.2,
-    "TP": 25734.0,
-    "FP": 18924.0,
-    "TN": 157508.0,
-    "FN": 6560.0,
+    "TP": 26582.0,
+    "FP": 19457.0,
+    "TN": 162625.0,
+    "FN": 6790.0,
     "MAE": 0.06,
-    "RMSE": 0.11,
-    "R2": 0.66,
+    "RMSE": 0.1,
+    "R2": 0.7,
     "Train Run Time (h)": null,
     "Train GPU": null,
     "Train CPU": null,
@@ -54,12 +54,12 @@
     "Test CPU": 64.0,
     "Test Slurm Jobs": 100.0,
     "Run Time (h)": 111.9,
-    "missing_preds": 7735,
-    "missing_percent": "3.01%"
+    "missing_preds": 38,
+    "missing_percent": "0.01%"
   },
   "CHGNet": {
     "F1": 0.61,
-    "DAF": 3.32,
+    "DAF": 3.36,
     "Precision": 0.51,
     "Recall": 0.76,
     "Accuracy": 0.85,
@@ -88,7 +88,7 @@
   },
   "M3GNet": {
     "F1": 0.57,
-    "DAF": 2.84,
+    "DAF": 2.88,
     "Precision": 0.44,
     "Recall": 0.8,
     "Accuracy": 0.81,
@@ -117,7 +117,7 @@
   },
   "ALIGNN": {
     "F1": 0.57,
-    "DAF": 3.16,
+    "DAF": 3.21,
     "Precision": 0.49,
     "Recall": 0.67,
     "Accuracy": 0.84,
@@ -146,7 +146,7 @@
   },
   "MEGNet": {
     "F1": 0.51,
-    "DAF": 2.92,
+    "DAF": 2.96,
     "Precision": 0.45,
     "Recall": 0.58,
     "Accuracy": 0.83,
@@ -175,7 +175,7 @@
   },
   "CGCNN": {
     "F1": 0.51,
-    "DAF": 2.82,
+    "DAF": 2.86,
     "Precision": 0.44,
     "Recall": 0.6,
     "Accuracy": 0.82,
@@ -204,7 +204,7 @@
   },
   "CGCNN+P": {
     "F1": 0.5,
-    "DAF": 2.53,
+    "DAF": 2.56,
     "Precision": 0.39,
     "Recall": 0.69,
     "Accuracy": 0.79,
@@ -233,7 +233,7 @@
   },
   "Wrenformer": {
     "F1": 0.47,
-    "DAF": 2.23,
+    "DAF": 2.26,
     "Precision": 0.34,
     "Recall": 0.72,
     "Accuracy": 0.74,
@@ -262,7 +262,7 @@
   },
   "BOWSR": {
     "F1": 0.43,
-    "DAF": 2.0,
+    "DAF": 1.96,
     "Precision": 0.3,
     "Recall": 0.74,
     "Accuracy": 0.7,
@@ -291,7 +291,7 @@
   },
   "Voronoi RF": {
     "F1": 0.33,
-    "DAF": 1.56,
+    "DAF": 1.58,
     "Precision": 0.24,
     "Recall": 0.54,
     "Accuracy": 0.67,
