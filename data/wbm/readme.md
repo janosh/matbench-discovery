@@ -6,7 +6,7 @@ The resulting novel structures were relaxed using MP-compatible VASP inputs (i.e
 
 The authors performed 5 rounds of elemental substitution in total, each time relaxing all generated structures and adding those found to lie on the convex hull back to the source pool. In total, ~20k or close to 10% were found to lie on the Materials Project convex hull.
 
-Since repeated substitutions should - on average - increase chemical dissimilarity, the 5 iterations of this data-generation process are a unique and compelling feature as it allows out-of-distribution testing. We can check how model performance degrades when asked to predict structures increasingly more dissimilar from the training set (which is restricted to the MP 2022 database release (or earlier) for all models in this benchmark).
+Since repeated substitutions should - on average - increase chemical dissimilarity, the 5 iterations of this data-generation process are a unique and compelling feature as they allow testing on successively more out-of-distribution (OOD) data slices. We can check how model performance degrades when asked to predict structures increasingly more dissimilar from the training set (which is restricted to the [MP v2022.10.28](https://docs.materialsproject.org/changes/database-versions#v2022.10.28) database release (or earlier) for all models in this benchmark).
 
 ## 🆔 &thinsp; About the IDs
 
@@ -44,6 +44,34 @@ The number of materials in each step before and after processing are:
 | ------ | ------ | ------ | ------ | ------ | ------ | ------- |
 | before | 61,848 | 52,800 | 79,205 | 40,328 | 23,308 | 257,487 |
 | after  | 61,466 | 52,755 | 79,160 | 40,314 | 23,268 | 256,963 |
+
+### Prototype Analysis
+
+A common issue that can arise in high-throughput screening is deciding when two materials that are output from a high-throughput workflow should be treated as the same.
+At the crudest level of granularity, one could simply compare the reduced formulae of materials.
+However, this approach is too coarse-grained to be useful in many cases.
+For example, the chemical formulae of two materials could be the same, but the materials could have different crystal structures, the canonical example being graphite and diamond.
+Alternatively, materials can be matched by fingerprinting their crystal structures and determining their similarity through some choice of kernel function and cutoff.
+This approach has the downside that it can be quite expensive to compute, especially for large datasets, and requires selecting multiple hyperparameters.
+We adopt the procedure of determining the prototype of each crystal by looking at the Wyckoff positions of the different elements.
+This approach is a middle ground between the two approaches mentioned above in terms of cost, number of hyperparameters and ability to distinguish polymorphs.
+
+We used [`get_aflow_label_from_spglib`] from the [`aviary`] package in [`compile_wbm_test_set.py`] to get prototype labels in a modified aflow format for each structure.
+Having determined the prototypes for both the MP and WBM datasets, we first removed any structures in the WBM dataset that had the same prototype as any structure in the MP dataset.
+The next filter was to drop all but the lowest energy structure for each unique prototype remaining in the WBM dataset.
+The WBM prototypes were determined for the relaxed structures. This choice avoids inflating the metrics due to duplicates arising from different initial prototypes that fall into the same basin of attraction during relaxation.
+In total 41,475 candidates can be removed from the WBM dataset if using this approach.
+
+The number of materials in each step before and after prototype filtering are:
+
+| step   | 1      | 2      | 3      | 4      | 5      | total   |
+| ------ | ------ | ------ | ------ | ------ | ------ | ------- |
+| before | 61,466 | 52,755 | 79,160 | 40,314 | 23,268 | 256,963 |
+| after  | 54,209 | 45,979 | 66,528 | 34,531 | 14,241 | 215,488 |
+
+[`get_aflow_label_from_spglib`]: https://github.com/CompRhys/aviary/blob/a8da6c468a2407fd14687de327fe181c5de0169f/aviary/wren/utils.py#L140
+[`aviary`]: https://github.com/CompRhys/aviary
+[`compile_wbm_test_set.py`]: https://github.com/janosh/matbench-discovery/blob/eec1e22c69bc1b0183d7f9138f9e60d1ae733e09/data/wbm/compile_wbm_test_set.py#L587
 
 ## 🔗 &thinsp; Links to WBM Files
 
