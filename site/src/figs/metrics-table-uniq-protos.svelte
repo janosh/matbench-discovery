@@ -366,7 +366,7 @@
       <td id="T__row0_col6" class="data row0 col6 proprietary" >0.04</td>
       <td id="T__row0_col7" class="data row0 col7 proprietary" >0.09</td>
       <td id="T__row0_col8" class="data row0 col8 proprietary" >0.79</td>
-      <td id="T__row0_col9" class="data row0 col9 proprietary" >96.0M <small>(8.0M)</small></td>
+      <td id="T__row0_col9" class="data row0 col9 proprietary" >89.0M <small>(6.0M)</small></td>
       <td id="T__row0_col10" class="data row0 col10 proprietary" >16.2M</td>
       <td id="T__row0_col11" class="data row0 col11 proprietary" >UIP</td>
       <td id="T__row0_col12" class="data row0 col12 proprietary" >EFS</td>
