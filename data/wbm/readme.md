@@ -45,6 +45,30 @@ The number of materials in each step before and after processing are:
 | before | 61,848 | 52,800 | 79,205 | 40,328 | 23,308 | 257,487 |
 | after  | 61,466 | 52,755 | 79,160 | 40,314 | 23,268 | 256,963 |
 
+### Prototype Analysis 
+
+A common issue that can arise in high-throughput screening is deciding when two materials that are output from a high-throughput workflow should be treated as the same.
+At the crudest level of granularity, one could simply compare the reduced formulae of materials.
+However, this approach is too coarse-grained to be useful in many cases.
+For example, the chemical formulae of two materials could be the same, but the materials could have different crystal structures, the canonical example being graphite and diamond. 
+Alternatively, materials can be matched by fingerprinting their crystal structures and determining their similarity through some choice of kernel function and cutoff.
+This approach has the downside that it can be quite expensive to compute, especially for large datasets, and requires selection of multiple hyperparameters.
+We adopt the procedure of determining the prototype of each crystal by looking at the Wyckoff positions of the different elements.
+This approach is a middle ground between the two approaches mentioned above in terms of cost, number of hyperparameters and ability to distinguish polymorphs.
+
+We used the `get_aflow_label_from_spglib` from the `aviary` package to get prototype labels in a modified aflow format for each structure.
+Having determined the prototypes for both the MP and WBM datasets, we first removed any structures in the WBM dataset that had the same prototype as any structure in the MP dataset.
+The next filter was to drop all bar the lowest energy structure for each unique prototype remaining in the WBM dataset.
+The WBM prototypes were determined for the relaxed structures choice avoids inflating the metrics due to duplicates arising from different initial prototypes that fall into the same basin of attraction during relaxation.
+In total 41,475 candidates can be removed from the WBM dataset if using this approach.
+
+The number of materials in each step before and after processing are:
+
+| step   | 1      | 2      | 3      | 4      | 5      | total   |
+| ------ | ------ | ------ | ------ | ------ | ------ | ------- |
+| before | 61,466 | 52,755 | 79,160 | 40,314 | 23,268 | 256,963 |
+| after  | 54,209 | 45,979 | 66,528 | 34,531 | 14,241 | 215,488 |
+
 ## 🔗 &thinsp; Links to WBM Files
 
 Links to raw WBM data files have proliferated. This is an attempt to keep track of them.
