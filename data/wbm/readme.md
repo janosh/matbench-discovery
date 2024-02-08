@@ -45,12 +45,12 @@ The number of materials in each step before and after processing are:
 | before | 61,848 | 52,800 | 79,205 | 40,328 | 23,308 | 257,487 |
 | after  | 61,466 | 52,755 | 79,160 | 40,314 | 23,268 | 256,963 |
 
-### Prototype Analysis 
+### Prototype Analysis
 
 A common issue that can arise in high-throughput screening is deciding when two materials that are output from a high-throughput workflow should be treated as the same.
 At the crudest level of granularity, one could simply compare the reduced formulae of materials.
 However, this approach is too coarse-grained to be useful in many cases.
-For example, the chemical formulae of two materials could be the same, but the materials could have different crystal structures, the canonical example being graphite and diamond. 
+For example, the chemical formulae of two materials could be the same, but the materials could have different crystal structures, the canonical example being graphite and diamond.
 Alternatively, materials can be matched by fingerprinting their crystal structures and determining their similarity through some choice of kernel function and cutoff.
 This approach has the downside that it can be quite expensive to compute, especially for large datasets, and requires selection of multiple hyperparameters.
 We adopt the procedure of determining the prototype of each crystal by looking at the Wyckoff positions of the different elements.
