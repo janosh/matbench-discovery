@@ -1,6 +1,6 @@
-export { default as AuthorBrief } from './AuthorBrief.svelte'
 export { default as CaptionedMetricsTable } from './CaptionedMetricsTable.svelte'
 export { default as Footer } from './Footer.svelte'
+export { default as AuthorBrief } from './ModelAuthor.svelte'
 export { default as ModelCard } from './ModelCard.svelte'
 export { default as Nav } from './Nav.svelte'
 export { default as PtableHeatmap } from './PtableHeatmap.svelte'

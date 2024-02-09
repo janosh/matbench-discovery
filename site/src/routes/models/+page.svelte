@@ -9,7 +9,7 @@
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
   import type { Snapshot } from './$types'
-  import ElementErrorsPtableHeatmap from './element-errors-ptable-heatmap.svelte'
+  import ElementErrorsPtableHeatmap from './ElementErrorsPtableHeatmap.svelte'
 
   export let data
 

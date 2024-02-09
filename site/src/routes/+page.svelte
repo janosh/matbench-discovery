@@ -16,10 +16,8 @@
   $: best_model = Object.values(metadata).reduce((best, md: ModelData) => {
     const stats = all_stats[md.model_name] as ModelStats | undefined
     if (!stats && dev) {
-      const avail_keys = Object.keys(all_stats)
-      console.warn(
-        `No metadata found for '${md.model_name}', available keys: ${avail_keys}`,
-      )
+      const avail_keys = Object.keys(all_stats).join(`, `)
+      console.warn(`No metadata for '${md.model_name}', available keys: ${avail_keys}`)
       return best
     }
 

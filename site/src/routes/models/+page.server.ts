@@ -13,9 +13,9 @@ export const load = async () => {
   const models = Object.entries(files)
     .filter(([key]) => key.match(/models\/(.+)\/\1.*\.yml/))
     .map(([key, metadata]) => {
-      const { model_name: name } = metadata
-      const stats = model_stats[name] as ModelData
-      if (!stats) console.error(`Missing stats for ${name}`)
+      const { model_name } = metadata
+      const stats = model_stats[model_name] as ModelData
+      if (!stats) console.error(`Missing stats for ${model_name}`)
       return { ...metadata, ...(stats ?? {}), dirname: dirname(key) }
     }) as ModelData[]
 

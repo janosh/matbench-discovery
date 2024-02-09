@@ -36,12 +36,8 @@
       <Icon icon="mdi:lightbulb-on-outline" inline />
     </button>
   </nav>
-  <img
-    src="/favicon.svg"
-    alt="Logo"
-    width="30px"
-    style="vertical-align:middle;"
-  />&emsp;Matbench Discovery
+  <img src="/favicon.svg" alt="Logo" width="30px" style="vertical-align: middle;" />
+  &ensp;Matbench Discovery (2023)
 </footer>
 
 <dialog bind:this={dialog} open={show_tips}>

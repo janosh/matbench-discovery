@@ -47,9 +47,9 @@ for idx, label in enumerate(ax.get_xticklabels()):
     label.set_y(label.get_position()[1] - 0.05)
 
 
-# %%
+# %% take only 1_000 samples for speed (should not be used only for inspection)
 px.violin(
-    df_each_err[models].melt(),
+    df_each_err[models].sample(1_000).melt(),
     x="variable",
     y="value",
     color="variable",

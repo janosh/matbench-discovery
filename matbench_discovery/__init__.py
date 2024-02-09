@@ -11,6 +11,7 @@ from importlib.metadata import Distribution
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.io as pio
+import pymatviz  # noqa: F401
 
 from matbench_discovery.enums import (  # noqa: F401
     Key,
@@ -22,8 +23,8 @@ from matbench_discovery.enums import (  # noqa: F401
     Task,
 )
 
-pkg_name = "matbench-discovery"
-direct_url = Distribution.from_name(pkg_name).read_text("direct_url.json") or "{}"
+PKG_NAME = "matbench-discovery"
+direct_url = Distribution.from_name(PKG_NAME).read_text("direct_url.json") or "{}"
 pkg_is_editable = json.loads(direct_url).get("dir_info", {}).get("editable", False)
 
 PKG_DIR = os.path.dirname(__file__)
@@ -70,7 +71,6 @@ with open(f"{FIGSHARE_DIR}/1.0.0.json") as file:
 # --- start global plot settings
 px.defaults.labels = Quantity.dict() | Model.dict()
 
-
 global_layout = dict(
     paper_bgcolor="rgba(0,0,0,0)",
     font_size=13,
@@ -78,8 +78,8 @@ global_layout = dict(
     legend=dict(itemsizing="constant", bgcolor="rgba(0, 0, 0, 0)"),
 )
 pio.templates["global"] = dict(layout=global_layout)
-pio.templates.default = "plotly_dark+global"
-px.defaults.template = "plotly_dark+global"
+pio.templates.default = "pymatviz_dark+global"
+px.defaults.template = "pymatviz_dark+global"
 
 # https://github.com/plotly/Kaleido/issues/122#issuecomment-994906924
 # when seeing MathJax "loading" message in exported PDFs,

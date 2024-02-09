@@ -1,6 +1,6 @@
 <script lang="ts">
+  import type { Reference } from '$lib'
   import { beforeUpdate } from 'svelte'
-  import type { Reference } from '.'
 
   export let references: Reference[]
   export let ref_selector: string = `a.ref[href^='#']`

@@ -636,7 +636,7 @@ def cumulative_metrics(
         # sort targets by model ranking
         each_true = e_above_hull_true.loc[each_pred.index]
 
-        true_pos_cum, false_neg_cum, false_pos_cum, true_neg_cum = map(
+        true_pos_cum, false_neg_cum, false_pos_cum, _true_neg_cum = map(
             np.cumsum, classify_stable(each_true, each_pred, stability_threshold)
         )
 

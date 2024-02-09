@@ -9,7 +9,7 @@
   import '../app.css'
 
   const routes = Object.keys(import.meta.glob(`./*/+page.{svelte,md}`)).map(
-    (filename) => `/` + filename.split(`/`)[1]
+    (filename) => `/` + filename.split(`/`)[1],
   )
 
   $: url = $page.url.pathname
@@ -36,7 +36,7 @@
       const route = `/${parts.slice(1, -1).join(`/`)}`
 
       return { label: route, action: () => goto(route) }
-    }
+    },
   )
   afterNavigate(({ to }) => {
     if (to?.route.id == `/models`) {
@@ -80,36 +80,13 @@
   <slot />
 
   <PrevNext
-    items={routes}
+    items={[`/`, ...routes]}
     current="/{url?.split(`/`)[1]}"
     style="margin: 4em auto 1em; max-width: 60em;"
   >
-    <a slot="next" let:item={href} {href} class="link">{href} &raquo;</a>
-    <a slot="prev" let:item={href} {href} class="link">&laquo; {href}</a>
+    <a slot="next" let:item={href} {href} class="link">{href} &rarr;</a>
+    <a slot="prev" let:item={href} {href} class="link">&larr; {href}</a>
   </PrevNext>
 </main>
 
 <Footer />
-
-<style>
-  a[href='/'] {
-    font-size: 14pt;
-    background-color: rgba(255, 255, 255, 0.1);
-    padding: 1pt 5pt;
-    border-radius: 3pt;
-    transition: 0.2s;
-    width: max-content;
-    box-sizing: border-box;
-    margin: 1em 0 0 1em;
-  }
-  @media (min-width: 900px) {
-    a[href='/'] {
-      position: absolute;
-      top: 1em;
-      left: 1em;
-    }
-  }
-  a[href='/']:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-  }
-</style>
