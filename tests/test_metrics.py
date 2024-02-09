@@ -57,16 +57,23 @@ def test_stable_metrics() -> None:
 
     assert math.isnan(metrics["F1"])
 
-    metrics = stable_metrics(np.array((-1, 1, 0.1, -0.5, 0.5)), np.array((-1, 1, -0.1, np.nan, np.nan)), fillna=False)
-    fillna_metrics = stable_metrics(np.array((-1, 1, 0.1, -0.5, 0.5)), np.array((-1, 1, -0.1, np.nan, np.nan)), fillna=True)
+    metrics = stable_metrics(
+        np.array((-1, 1, 0.1, -0.5, 0.5)),
+        np.array((-1, 1, -0.1, np.nan, np.nan)),
+        fillna=False,
+    )
+    fillna_metrics = stable_metrics(
+        np.array((-1, 1, 0.1, -0.5, 0.5)),
+        np.array((-1, 1, -0.1, np.nan, np.nan)),
+        fillna=True,
+    )
 
     assert metrics["Precision"] == fillna_metrics["Precision"]
     assert metrics["DAF"] > fillna_metrics["DAF"]  # nan's dropped in prevalence
     assert metrics["TNR"] == 0.5
     assert metrics["FNR"] == 0
-    assert fillna_metrics["TNR"] == 2/3
-    assert fillna_metrics["FNR"] == 1/2
-
+    assert fillna_metrics["TNR"] == 2 / 3
+    assert fillna_metrics["FNR"] == 1 / 2
 
     # test stable_metrics gives the same result as sklearn.metrics.classification_report
     # for random numpy data
