@@ -43,6 +43,7 @@ class Key(LabelEnum):
     chem_sys = "chemical_system", "Chemical System"
     composition = "composition", "Composition"
     cse = "computed_structure_entry", "Computed Structure Entry"
+    daf = "DAF", "Discovery Acceleration Factor"
     dft_energy = "uncorrected_energy", "DFT Energy"
     e_form = "e_form_per_atom_mp2020_corrected", "DFT E_form"
     e_form_pred = "e_form_per_atom_pred", "Predicted E_form"

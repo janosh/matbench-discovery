@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 from pytest import approx
 
+from matbench_discovery.enums import Key
 from matbench_discovery.metrics import classify_stable, stable_metrics
 
 if TYPE_CHECKING:
@@ -38,7 +39,7 @@ def test_classify_stable(
 
 
 def test_stable_metrics() -> None:
-    metrics = stable_metrics(np.arange(-1, 1, 0.1), np.arange(1, -1, -0.1))
+    metrics = stable_metrics(np.arange(-1, 1, 0.1), np.arange(1, -1, -0.1), fillna=True)
     for key, val in dict(
         DAF=0,
         Precision=0,
@@ -56,11 +57,29 @@ def test_stable_metrics() -> None:
 
     assert math.isnan(metrics["F1"])
 
+    metrics = stable_metrics(
+        np.array((-1, 1, 0.1, -0.5, 0.5)),
+        np.array((-1, 1, -0.1, np.nan, np.nan)),
+        fillna=False,
+    )
+    fillna_metrics = stable_metrics(
+        np.array((-1, 1, 0.1, -0.5, 0.5)),
+        np.array((-1, 1, -0.1, np.nan, np.nan)),
+        fillna=True,
+    )
+
+    assert metrics["Precision"] == fillna_metrics["Precision"]
+    assert metrics["DAF"] > fillna_metrics["DAF"]  # nan's dropped in prevalence
+    assert metrics["TNR"] == 0.5
+    assert metrics["FNR"] == 0
+    assert fillna_metrics["TNR"] == 2 / 3
+    assert fillna_metrics["FNR"] == 1 / 2
+
     # test stable_metrics gives the same result as sklearn.metrics.classification_report
     # for random numpy data
     rng = np.random.default_rng(0)
     y_true, y_pred = rng.normal(size=(2, 100))
-    metrics = stable_metrics(y_true, y_pred)
+    metrics = stable_metrics(y_true, y_pred, fillna=True)
 
     from sklearn.metrics import classification_report
 
@@ -84,11 +103,11 @@ def test_stable_metrics() -> None:
 
     # test discovery acceleration factor (DAF)
     n_true_pos, n_false_neg, n_false_pos, n_true_neg = map(
-        sum, classify_stable(y_true, y_pred)
+        sum, classify_stable(y_true, y_pred, fillna=True)
     )
 
     dummy_hit_rate = (n_true_pos + n_false_neg) / (
         n_true_pos + n_false_pos + n_false_neg + n_true_neg
     )
     precision = n_true_pos / (n_true_pos + n_false_pos)
-    assert metrics["DAF"] == precision / dummy_hit_rate
+    assert metrics[Key.daf] == precision / dummy_hit_rate

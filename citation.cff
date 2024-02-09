@@ -5,7 +5,7 @@ subtitle: An evaluation framework for machine learning crystal stability predict
 authors:
   - given-names: Janosh
     family-names: Riebesell
-    affiliation: University of Cambridge, Lawrence Berkeley National Laboratory
+    affiliation: University of Cambridge, Lawrence Berkeley National Lab
     email: janosh.riebesell@gmail.com
     orcid: https://orcid.org/0000-0001-5233-3462
     corresponding: true
@@ -25,10 +25,16 @@ authors:
     github: https://github.com/pbenner
   - given-names: Yuan
     family-names: Chiang
-    affiliation: Lawrence Berkeley National Laboratory
+    affiliation: Lawrence Berkeley National Lab, UC Berkeley
     orcid: 0000-0002-4017-7084
-    affil_key: 2
+    affil_key: 2, 5
     github: https://github.com/chiang-yuan
+  - given-names: Bowen
+    family-names: Deng
+    affiliation: Lawrence Berkeley National Lab, UC Berkeley
+    orcid: 0000-0002-5720-5299
+    affil_key: 2, 5
+    github: https://github.com/bowen-deng
   - given-names: Alpha
     family-names: Lee
     orcid: 0000-0002-9616-3108
@@ -38,19 +44,19 @@ authors:
   - given-names: Anubhav
     family-names: Jain
     orcid: 0000-0001-5893-9967
-    affiliation: Lawrence Berkeley National Laboratory
+    affiliation: Lawrence Berkeley National Lab
     affil_key: 2
     github: https://github.com/computron
   - given-names: Kristin
     family-names: Persson
     orcid: 0000-0003-2495-5509
-    affiliation: Lawrence Berkeley National Laboratory
+    affiliation: Lawrence Berkeley National Lab
     affil_key: 2, 4, 5
 affiliations:
   - Cavendish Laboratory, University of Cambridge, UK
-  - Lawrence Berkeley National Laboratory, Berkeley, USA
+  - Lawrence Berkeley National Lab, Berkeley, USA
   - Federal Institute of Materials Research and Testing (BAM), Germany
-  - Molecular Foundry, Lawrence Berkeley National Laboratory, USA
+  - Molecular Foundry, Lawrence Berkeley National Lab, USA
   - Department of Materials Science and Engineering, University of California - Berkeley, USA
 license: MIT
 license-url: https://github.com/janosh/matbench-discovery/blob/-/license"

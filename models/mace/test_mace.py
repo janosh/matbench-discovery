@@ -31,14 +31,14 @@ __date__ = "2023-03-01"
 task_type = Task.IS2RE
 module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
-slurm_array_task_count = 50
+slurm_array_task_count = 100
 ase_optimizer = "FIRE"
 job_name = f"mace-wbm-{task_type}-{ase_optimizer}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 device = "cuda" if torch.cuda.is_available() else "cpu"
 # whether to record intermediate structures into pymatgen Trajectory
 record_traj = False  # has no effect if relax_cell is False
-model_name = "https://tinyurl.com/y7uhwpje"
+model_name = "https://tinyurl.com/5yyxdm76"
 ase_filter: Literal["frechet", "exp"] = "frechet"
 
 slurm_vars = slurm_submit(

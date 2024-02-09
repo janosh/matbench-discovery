@@ -80,7 +80,7 @@ for struct_col, fp_col in (
         continue
     df_in[fp_col] = None
 
-    for row in tqdm(df_in.itertuples(), total=len(df_in)):
+    for row in tqdm(df_in.itertuples(), total=len(df_in), desc=f"Featurize {fp_col}"):
         struct = getattr(row, struct_col)
         if "structure" in struct:  # is a ComputedStructureEntry as dict
             struct = struct["structure"]

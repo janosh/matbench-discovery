@@ -81,12 +81,12 @@ for df_in, df_out, col in (
 
     each_true = df_in[Key.each_true]
     dummy_metrics = stable_metrics(
-        each_true, np.array([1, -1])[dummy_clf_preds.astype(int)]
+        each_true, np.array([1, -1])[dummy_clf_preds.astype(int)], fillna=True
     )
 
     # important: regression metrics from dummy_clf are meaningless, we overwrite them
     # with correct values here. don't remove!
-    dummy_metrics["DAF"] = 1
+    dummy_metrics[Key.daf] = 1
     dummy_metrics["R2"] = 0
     dummy_metrics["MAE"] = (each_true - each_true.mean()).abs().mean()
     dummy_metrics["RMSE"] = ((each_true - each_true.mean()) ** 2).mean() ** 0.5
@@ -193,13 +193,12 @@ for label, df in (
     display(styler.set_caption(df.attrs.get("title")))
 
 
-# %%
-# hide_rows = list(set(df_metrics) - set(df_metrics.T.F1.nlargest(6).index))
-# styler.hide(hide_rows)  # show only the best models by F1 score
-png_metrics = f"{PDF_FIGS}/metrics-table.png"
-try:
-    import dataframe_image
+# %% PNG metrics table unused
+if False:
+    try:
+        import dataframe_image
 
-    dataframe_image.export(styler, png_metrics, dpi=300)
-except ImportError:
-    print("dataframe_image not installed, skipping png export")
+        png_metrics = f"{PDF_FIGS}/metrics-table.png"
+        dataframe_image.export(styler, png_metrics, dpi=300)
+    except ImportError:
+        print("dataframe_image not installed, skipping png export")
