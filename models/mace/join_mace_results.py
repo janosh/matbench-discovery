@@ -59,7 +59,7 @@ df_cse[Key.cse] = [
 # %% transfer mace energies and relaxed structures WBM CSEs since MP2020 energy
 # corrections applied below are structure-dependent (for oxides and sulfides)
 cse: ComputedStructureEntry
-for row in tqdm(df_mace.itertuples(), total=len(df_mace)):
+for row in tqdm(df_mace.itertuples(), total=len(df_mace), desc="ML energies to CSEs"):
     mat_id, struct_dict, mace_energy, *_ = row
     mlip_struct = Structure.from_dict(struct_dict)
     df_mace.at[mat_id, struct_col] = mlip_struct  # noqa: PD008
@@ -97,6 +97,7 @@ ax = density_scatter(df=df_wbm[~bad_mask], x=Key.e_form, y=e_form_mace_col)
 out_path = file_paths[0].rsplit("/", 1)[0]
 df_mace = df_mace.round(4)
 df_mace.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
+df_mace[~bad_mask].select_dtypes("number").to_csv(f"{out_path}-no-bad.csv.gz")
 df_mace.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
 
 df_bad = df_mace[bad_mask].drop(columns=[Key.cse, struct_col])

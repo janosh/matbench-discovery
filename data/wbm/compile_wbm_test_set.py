@@ -560,7 +560,7 @@ for mat_id, cse in tqdm(df_wbm.cse.items(), total=len(df_wbm)):
 # first make sure source and target dfs have matching indices
 assert sum(df_wbm.index != df_summary.index) == 0
 
-for row in tqdm(df_wbm.itertuples(), total=len(df_wbm)):
+for row in tqdm(df_wbm.itertuples(), total=len(df_wbm), desc="ML energies to CSEs"):
     mat_id, cse, formula = row.Index, row.cse, row.formula_from_cse
     assert mat_id == cse.entry_id, f"{mat_id=} != {cse.entry_id=}"
     assert mat_id in df_summary.index, f"{mat_id=} not in df_summary"
