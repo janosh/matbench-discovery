@@ -58,8 +58,12 @@ def classify_stable(
         model_pos[nan_mask] = False  # fill NaNs as unstable
         model_neg[nan_mask] = True  # fill NaNs as unstable
 
-        if model_pos.sum() + model_neg.sum() != len(e_above_hull_pred):
-            raise ValueError("After filling NaNs, the sum of PP and PN should equal N")
+        n_pos, n_neg, total = model_pos.sum(), model_neg.sum(), len(e_above_hull_pred)
+        if n_pos + n_neg != total:
+            raise ValueError(
+                f"after filling NaNs, the sum of positive ({n_pos}) and negative "
+                f"({n_neg}) predictions should add up to {total=}"
+            )
 
     true_pos = actual_pos & model_pos
     false_neg = actual_pos & model_neg
