@@ -27,23 +27,19 @@
   color: #000000;
 }
 #T__row1_col0 {
-  background-color: #65cb5e;
+  background-color: #67cc5c;
   color: #000000;
 }
-#T__row1_col1 {
-  background-color: #2fb47c;
-  color: #f1f1f1;
-}
-#T__row1_col2 {
+#T__row1_col1, #T__row1_col2, #T__row6_col4 {
   background-color: #29af7f;
   color: #f1f1f1;
 }
 #T__row1_col3 {
-  background-color: #58c765;
+  background-color: #52c569;
   color: #000000;
 }
 #T__row1_col4 {
-  background-color: #eae51a;
+  background-color: #efe51c;
   color: #000000;
 }
 #T__row1_col5 {
@@ -55,38 +51,38 @@
   color: #000000;
 }
 #T__row1_col7 {
-  background-color: #a8db34;
+  background-color: #c0df25;
   color: #000000;
 }
 #T__row1_col8 {
-  background-color: #c8e020;
+  background-color: #d8e219;
   color: #000000;
 }
 #T__row2_col0 {
-  background-color: #38b977;
+  background-color: #3aba76;
   color: #f1f1f1;
 }
-#T__row2_col1 {
-  background-color: #1f978b;
+#T__row2_col1, #T__row5_col3 {
+  background-color: #1f988b;
   color: #f1f1f1;
 }
 #T__row2_col2 {
   background-color: #1f998a;
   color: #f1f1f1;
 }
-#T__row2_col3, #T__row2_col5, #T__row4_col8 {
-  background-color: #2cb17e;
+#T__row2_col3, #T__row2_col5 {
+  background-color: #28ae80;
   color: #f1f1f1;
 }
 #T__row2_col4 {
-  background-color: #b8de29;
+  background-color: #bddf26;
   color: #000000;
 }
 #T__row2_col6 {
   background-color: #5cc863;
   color: #000000;
 }
-#T__row2_col7, #T__row9_col4 {
+#T__row2_col7 {
   background-color: #b5de2b;
   color: #000000;
 }
@@ -95,30 +91,26 @@
   color: #000000;
 }
 #T__row3_col0 {
-  background-color: #25ac82;
+  background-color: #26ad81;
   color: #f1f1f1;
 }
-#T__row3_col1 {
-  background-color: #277f8e;
+#T__row3_col1, #T__row6_col2 {
+  background-color: #27808e;
   color: #f1f1f1;
 }
-#T__row3_col2 {
+#T__row3_col2, #T__row3_col5 {
   background-color: #26818e;
   color: #f1f1f1;
 }
-#T__row3_col3, #T__row4_col1 {
-  background-color: #21918c;
+#T__row3_col3, #T__row10_col4 {
+  background-color: #218f8d;
   color: #f1f1f1;
 }
 #T__row3_col4 {
-  background-color: #f1e51d;
+  background-color: #f6e620;
   color: #000000;
 }
-#T__row3_col5 {
-  background-color: #25838e;
-  color: #f1f1f1;
-}
-#T__row3_col6, #T__row5_col5 {
+#T__row3_col6 {
   background-color: #2eb37c;
   color: #f1f1f1;
 }
@@ -130,27 +122,27 @@
   background-color: #a2da37;
   color: #000000;
 }
-#T__row4_col0, #T__row5_col4 {
-  background-color: #22a884;
+#T__row4_col0, #T__row6_col5 {
+  background-color: #23a983;
   color: #f1f1f1;
 }
-#T__row4_col2, #T__row6_col0, #T__row7_col0 {
+#T__row4_col1, #T__row4_col2 {
   background-color: #20928c;
   color: #f1f1f1;
 }
 #T__row4_col3 {
-  background-color: #23a983;
+  background-color: #21a685;
   color: #f1f1f1;
 }
 #T__row4_col4 {
-  background-color: #54c568;
+  background-color: #58c765;
   color: #000000;
 }
 #T__row4_col5 {
-  background-color: #34b679;
+  background-color: #31b57b;
   color: #f1f1f1;
 }
-#T__row4_col6, #T__row7_col8 {
+#T__row4_col6, #T__row7_col8, #T__row8_col0 {
   background-color: #24878e;
   color: #f1f1f1;
 }
@@ -158,23 +150,27 @@
   background-color: #1f968b;
   color: #f1f1f1;
 }
-#T__row5_col0 {
-  background-color: #20938c;
+#T__row4_col8, #T__row5_col5 {
+  background-color: #2cb17e;
   color: #f1f1f1;
 }
-#T__row5_col1, #T__row7_col5, #T__row11_col8 {
-  background-color: #26828e;
+#T__row5_col0 {
+  background-color: #1f948c;
+  color: #f1f1f1;
+}
+#T__row5_col1 {
+  background-color: #25838e;
   color: #f1f1f1;
 }
 #T__row5_col2 {
   background-color: #25848e;
   color: #f1f1f1;
 }
-#T__row5_col3, #T__row9_col8 {
-  background-color: #1e9b8a;
+#T__row5_col4 {
+  background-color: #24aa83;
   color: #f1f1f1;
 }
-#T__row5_col6, #T__row10_col1 {
+#T__row5_col6 {
   background-color: #472e7c;
   color: #f1f1f1;
 }
@@ -182,28 +178,16 @@
   background-color: #433d84;
   color: #f1f1f1;
 }
-#T__row5_col8 {
+#T__row5_col8, #T__row10_col0 {
   background-color: #3c508b;
   color: #f1f1f1;
 }
+#T__row6_col0, #T__row6_col3, #T__row7_col0 {
+  background-color: #20938c;
+  color: #f1f1f1;
+}
 #T__row6_col1 {
-  background-color: #277e8e;
-  color: #f1f1f1;
-}
-#T__row6_col2 {
-  background-color: #27808e;
-  color: #f1f1f1;
-}
-#T__row6_col3 {
-  background-color: #1f958b;
-  color: #f1f1f1;
-}
-#T__row6_col4 {
-  background-color: #27ad81;
-  color: #f1f1f1;
-}
-#T__row6_col5 {
-  background-color: #25ab82;
+  background-color: #277f8e;
   color: #f1f1f1;
 }
 #T__row6_col6 {
@@ -223,23 +207,23 @@
   color: #f1f1f1;
 }
 #T__row7_col3 {
-  background-color: #287d8e;
+  background-color: #297b8e;
   color: #f1f1f1;
 }
 #T__row7_col4 {
-  background-color: #69cd5b;
+  background-color: #6ccd5a;
   color: #000000;
 }
-#T__row7_col6 {
+#T__row7_col5 {
+  background-color: #277e8e;
+  color: #f1f1f1;
+}
+#T__row7_col6, #T__row11_col5 {
   background-color: #33638d;
   color: #f1f1f1;
 }
 #T__row7_col7 {
   background-color: #2e6e8e;
-  color: #f1f1f1;
-}
-#T__row8_col0 {
-  background-color: #24868e;
   color: #f1f1f1;
 }
 #T__row8_col1 {
@@ -251,15 +235,15 @@
   color: #f1f1f1;
 }
 #T__row8_col3 {
-  background-color: #375a8c;
+  background-color: #38598c;
   color: #f1f1f1;
 }
 #T__row8_col4 {
-  background-color: #81d34d;
+  background-color: #86d549;
   color: #000000;
 }
-#T__row8_col5 {
-  background-color: #39568c;
+#T__row8_col5, #T__row9_col6 {
+  background-color: #3b518b;
   color: #f1f1f1;
 }
 #T__row8_col6, #T__row11_col7 {
@@ -275,43 +259,39 @@
   color: #f1f1f1;
 }
 #T__row9_col0 {
-  background-color: #2a788e;
+  background-color: #2a768e;
   color: #f1f1f1;
 }
 #T__row9_col1 {
-  background-color: #3d4e8a;
+  background-color: #3e4989;
   color: #f1f1f1;
 }
 #T__row9_col2 {
   background-color: #3e4a89;
   color: #f1f1f1;
 }
-#T__row9_col3 {
-  background-color: #481a6c;
+#T__row9_col3, #T__row10_col1 {
+  background-color: #472f7d;
   color: #f1f1f1;
 }
-#T__row9_col6 {
-  background-color: #3b518b;
-  color: #f1f1f1;
+#T__row9_col4 {
+  background-color: #9bd93c;
+  color: #000000;
 }
 #T__row9_col7 {
   background-color: #25858e;
   color: #f1f1f1;
 }
-#T__row10_col0 {
-  background-color: #3c4f8a;
+#T__row9_col8 {
+  background-color: #1e9b8a;
   color: #f1f1f1;
 }
 #T__row10_col2 {
   background-color: #46307e;
   color: #f1f1f1;
 }
-#T__row10_col4 {
-  background-color: #218e8d;
-  color: #f1f1f1;
-}
 #T__row10_col5 {
-  background-color: #481f70;
+  background-color: #481769;
   color: #f1f1f1;
 }
 #T__row10_col7 {
@@ -326,12 +306,12 @@
   background-color: #481668;
   color: #f1f1f1;
 }
-#T__row11_col5 {
-  background-color: #31688e;
-  color: #f1f1f1;
-}
 #T__row11_col6 {
   background-color: #414487;
+  color: #f1f1f1;
+}
+#T__row11_col8 {
+  background-color: #26828e;
   color: #f1f1f1;
 }
 #T_ :is(td, th):nth-child(8) { border-left: 1px solid white; }
@@ -366,7 +346,7 @@
     <tr>
       <th id="T__level0_row0" class="row_heading level0 row0" >GNoME</th>
       <td id="T__row0_col0" class="data row0 col0 proprietary" >0.81</td>
-      <td id="T__row0_col1" class="data row0 col1 proprietary" >4.84</td>
+      <td id="T__row0_col1" class="data row0 col1 proprietary" >4.81</td>
       <td id="T__row0_col2" class="data row0 col2 proprietary" >0.82</td>
       <td id="T__row0_col3" class="data row0 col3 proprietary" >0.94</td>
       <td id="T__row0_col4" class="data row0 col4 proprietary" >0.80</td>
@@ -378,14 +358,14 @@
     <tr>
       <th id="T__level0_row1" class="row_heading level0 row1" >MACE</th>
       <td id="T__row1_col0" class="data row1 col0" >0.67</td>
-      <td id="T__row1_col1" class="data row1 col1" >3.50</td>
+      <td id="T__row1_col1" class="data row1 col1" >3.40</td>
       <td id="T__row1_col2" class="data row1 col2" >0.58</td>
       <td id="T__row1_col3" class="data row1 col3" >0.87</td>
       <td id="T__row1_col4" class="data row1 col4" >0.78</td>
-      <td id="T__row1_col5" class="data row1 col5" >0.88</td>
+      <td id="T__row1_col5" class="data row1 col5" >0.89</td>
       <td id="T__row1_col6" class="data row1 col6" >0.06</td>
       <td id="T__row1_col7" class="data row1 col7" >0.10</td>
-      <td id="T__row1_col8" class="data row1 col8" >0.66</td>
+      <td id="T__row1_col8" class="data row1 col8" >0.70</td>
     </tr>
     <tr>
       <th id="T__level0_row2" class="row_heading level0 row2" >CHGNet</th>
@@ -474,11 +454,11 @@
     <tr>
       <th id="T__level0_row9" class="row_heading level0 row9" >BOWSR</th>
       <td id="T__row9_col0" class="data row9 col0" >0.44</td>
-      <td id="T__row9_col1" class="data row9 col1" >1.91</td>
+      <td id="T__row9_col1" class="data row9 col1" >1.84</td>
       <td id="T__row9_col2" class="data row9 col2" >0.32</td>
-      <td id="T__row9_col3" class="data row9 col3" >0.68</td>
-      <td id="T__row9_col4" class="data row9 col4" >0.74</td>
-      <td id="T__row9_col5" class="data row9 col5" >0.67</td>
+      <td id="T__row9_col3" class="data row9 col3" >0.70</td>
+      <td id="T__row9_col4" class="data row9 col4" >0.71</td>
+      <td id="T__row9_col5" class="data row9 col5" >0.68</td>
       <td id="T__row9_col6" class="data row9 col6" >0.12</td>
       <td id="T__row9_col7" class="data row9 col7" >0.16</td>
       <td id="T__row9_col8" class="data row9 col8" >0.14</td>
