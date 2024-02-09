@@ -57,8 +57,12 @@ def test_stable_metrics() -> None:
 
     assert math.isnan(metrics["F1"])
 
-    metrics = stable_metrics(np.array((-1, 1, 0.1, -0.5)), np.array((-1, -1, -0.1, np.nan)), fillna=False)
-    fillna_metrics = stable_metrics(np.array((-1, 1, 0.1, -0.5)), np.array((-11, -1, -0.1, np.nan)), fillna=True)
+    metrics = stable_metrics(
+        np.array((-1, 1, 0.1, -0.5)), np.array((-1, -1, -0.1, np.nan)), fillna=False
+    )
+    fillna_metrics = stable_metrics(
+        np.array((-1, 1, 0.1, -0.5)), np.array((-11, -1, -0.1, np.nan)), fillna=True
+    )
 
     # When we fill NaNs, the DAF should decrease as there are more False Negatives created
     # The precision remains unchanged as it only depends on the numbers of
