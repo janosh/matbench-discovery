@@ -81,7 +81,7 @@ for df_in, df_out, col in (
 
     each_true = df_in[Key.each_true]
     dummy_metrics = stable_metrics(
-        each_true, np.array([1, -1])[dummy_clf_preds.astype(int)]
+        each_true, np.array([1, -1])[dummy_clf_preds.astype(int)], fillna=True
     )
 
     # important: regression metrics from dummy_clf are meaningless, we overwrite them
