@@ -193,13 +193,12 @@ for label, df in (
     display(styler.set_caption(df.attrs.get("title")))
 
 
-# %%
-# hide_rows = list(set(df_metrics) - set(df_metrics.T.F1.nlargest(6).index))
-# styler.hide(hide_rows)  # show only the best models by F1 score
-png_metrics = f"{PDF_FIGS}/metrics-table.png"
-try:
-    import dataframe_image
+# %% PNG metrics table unused
+if False:
+    try:
+        import dataframe_image
 
-    dataframe_image.export(styler, png_metrics, dpi=300)
-except ImportError:
-    print("dataframe_image not installed, skipping png export")
+        png_metrics = f"{PDF_FIGS}/metrics-table.png"
+        dataframe_image.export(styler, png_metrics, dpi=300)
+    except ImportError:
+        print("dataframe_image not installed, skipping png export")
