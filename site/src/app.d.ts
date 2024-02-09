@@ -8,25 +8,23 @@ declare module '*package.json' {
   export default pkg
 }
 
-// model metadata files
 declare module 'models/*.yml' {
-  const data: import('$lib').ModelMetadata
+  const data: import('$lib/model-metadata').ModelMetadata
   export default data
-}
+} // model metadata files
 
-// paper metadata
 declare module '*citation.cff' {
   const data: import('$lib').Citation
   export = data
-}
+} // paper metadata
 
 declare module '*references.yaml' {
   export const references: import('$lib').Reference[]
-}
+} // paper references (auto-exported by Zotero)
 
 declare module '*model-metadata-schema.yml' {
   export const ModelMetadata: import('$lib/model-metadata').ModelMetadata
-}
+} // model metadata schema
 
 declare module '*element-counts.json' {
   const map: Record<string, number>

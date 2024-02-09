@@ -3,7 +3,7 @@
   import { PtableInset } from '$lib'
   import type { ChemicalElement } from 'elementari'
   import { ColorBar, ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
-  import { MultiSelect } from 'svelte-multiselect'
+  import Select from 'svelte-multiselect'
 
   export let color_scale: string[] = [`Viridis`]
   export let active_element: ChemicalElement | null = null
@@ -14,14 +14,16 @@
   export let normalized: boolean = true
   export let cbar_max: number | null = 0.3
 
-  const test_set_std_key = Object.keys(per_elem_errors).find((key) =>
-    key.includes(`Test set standard deviation`),
-  ) as string
-  const test_set_std = Object.values(per_elem_errors[test_set_std_key]) as number[]
+  const test_set_std_key = `Test set standard deviation`
 
-  $: heatmap_values = (Object.values(per_elem_errors[current_model[0]]) as number[]).map(
-    (val, idx) => {
-      const denom = normalized ? test_set_std[idx] : 1
+  // remove test_set_std_key from models
+  $: models = models.filter((model) => model !== test_set_std_key)
+
+  const test_set_std = per_elem_errors[test_set_std_key]
+
+  $: heatmap_values = Object.entries(per_elem_errors[current_model[0]]).map(
+    ([key, val]) => {
+      const denom = normalized ? test_set_std[key] : 1
       if (denom) return val / denom
       return null
     },
@@ -50,7 +52,7 @@
   energy distance to the convex hull.
 </p>
 
-<MultiSelect bind:selected={current_model} options={models} maxSelect={1} minSelect={1} />
+<Select bind:selected={current_model} options={models} maxSelect={1} minSelect={1} />
 
 <ColorScaleSelect bind:selected={color_scale} />
 

@@ -106,8 +106,13 @@ export default {
       $site: `.`,
       $root: `..`,
       $pkg: `../matbench_discovery`,
-      $models: `src/routes/models`,
       $figs: `src/figs`,
+    },
+  },
+
+  vitePlugin: {
+    experimental: {
+      inspector: true,
     },
   },
 }

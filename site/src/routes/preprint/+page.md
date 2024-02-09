@@ -6,7 +6,6 @@
   import CumulativeMae from '$figs/cumulative-mae.svelte'
   import CumulativePrecisionRecall from '$figs/cumulative-precision-recall.svelte'
   import EachParityModels from '$figs/each-parity-models-5x2.svelte'
-  import EformParityModels from '$figs/e-form-parity-models-5x2.svelte'
   import ElementPrevalenceVsError from '$figs/element-prevalence-vs-error.svelte'
   import HistClfPredHullDistModels from '$figs/hist-clf-pred-hull-dist-models-5x2.svelte'
   import HullDistParityWrenformerFailures from '$figs/hull-dist-parity-wrenformer-failures.svelte'
@@ -29,9 +28,15 @@
   import RollingMaeVsHullDistWbmBatchesWrenformer from '$figs/rolling-mae-vs-hull-dist-wbm-batches-wrenformer.svelte'
   import RollingMaeVsHullDistWbmBatchesCgcnn from '$figs/rolling-mae-vs-hull-dist-wbm-batches-cgcnn.svelte'
   import RollingMaeVsHullDistWbmBatchesVoronoiRf from '$figs/rolling-mae-vs-hull-dist-wbm-batches-voronoi-rf.svelte'
-//   import WbmFinalStructMatminerFeatures2dUmap from '$figs/wbm-final-struct-matminer-features-2d-umap.png?url'
+  import wbm_matminer_2d_umap_url from '$figs/wbm-final-struct-matminer-features-2d-umap.png?url'
   import ScatterLargestErrorsModelsMeanVsTrueHullDist from '$figs/scatter-largest-errors-models-mean-vs-true-hull-dist-all.svelte'
-  import MpTrjNsitesHist from '$figs/mp-trj-n-sites-hist.svelte'
+  import MpTrjNSitesHist from '$figs/mp-trj-n-sites-hist.svelte'
+  import MPTrjEFormHist from '$figs/mp-trj-e-form-hist.svelte'
+  import MPTrjForcesHist from '$figs/mp-trj-forces-hist.svelte'
+  import MPTrjStressesHist from '$figs/mp-trj-stresses-hist.svelte'
+  import MPTrjMagMomsHist from '$figs/mp-trj-magmoms-hist.svelte'
+  import HistWbmEForm from '$figs/hist-wbm-e-form.svelte'
+  import HistWbmHullDist from '$figs/hist-wbm-hull-dist.svelte'
   import EFormParityModels from '$figs/e-form-parity-models-5x2.svelte'
 
   let mounted = false
@@ -320,7 +325,7 @@ As a result, CHGNet has a strong lead over M3GNet until reaching ~3k screened ma
 From there, CHGNet and M3GNet slowly converge until they almost tie at a precision of 0.52 after ~56k screened materials.
 At that point, CHGNet's list of stable predictions is exhausted while M3GNet continues, dropping in precision to 0.45 at 76 k, attributable to many false positives near the end of the list of stable predictions.
 
-All force-free models exhibit much stronger early-on precision drop, falling to 0.6 or less in the first 5k screened materials. Many of these models (all except BOWSR, Wrenformer and Voronoi RF) display an interesting hook shape in their cumulative precision, recovering again slightly in the middle of the simulated campaign between  5k and up to  30k before dropping again until the end.
+All force-free models exhibit much stronger early-on precision drop, falling to 0.6 or less in the first 5k screened materials. Many of these models (all except BOWSR, Wrenformer and Voronoi RF) display an interesting hook shape in their cumulative precision, recovering again slightly in the middle of the simulated campaign between ~5k and up to ~30k before dropping again until the end.
 
 {#if mounted}
 <RollingMaeVsHullDistModels />
@@ -488,11 +493,11 @@ Since these derailed values are easily identified in practice when actually perf
 
 {#if mounted}
 
-<div style="display: flex; gap: 1em; justify-content: space-around; flex-wrap: wrap; margin-bottom: 2em;">
-<SpacegroupSunburstWrenformerFailures />
-<SpacegroupSunburstWbm />
-</div>
-<HullDistParityWrenformerFailures />
+  <div style="display: flex; gap: 1em; justify-content: space-around; flex-wrap: wrap; margin-bottom: 2em;">
+    <SpacegroupSunburstWrenformerFailures />
+    <SpacegroupSunburstWbm />
+  </div>
+  <HullDistParityWrenformerFailures />
 {/if}
 
 > @label:fig:wrenformer-failures Symmetry analysis of the 941 Wrenformer failure cases in the shaded rectangle defined by $E_\text{DFT hull dist} < 1$ and $E_\text{ML hull dist} > 1$. Sunburst plot of spacegroups shows that close to 80% of severe energy overestimations are orthorhombic with spacegroup 71. The table on the right shows occurrence counts of exact structure prototypes for each material in the sunburst plot as well as their corresponding prevalence in the training set.
@@ -529,17 +534,18 @@ As a reminder, the WBM test set was generated in 5 successive batches, each step
 @Fig:rolling-mae-vs-hull-dist-wbm-batches-models shows the rolling MAE as a function of distance to the convex hull for each of the 5 WBM rounds of elemental substitution. These plots show a stronger performance decrease for Wrenformer and Voronoi RF than for UIPs like M3GNet, CHGNet, MACE and even force-less GNNs with larger errors like MEGNet and CGCNN.
 
 {#if mounted}
+{@const style=`aspect-ratio: 1.3;`}
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; margin: 0 -1em 0 -4em;">
-  <RollingMaeVsHullDistWbmBatchesMace style="aspect-ratio: 1.2;" />
-  <RollingMaeVsHullDistWbmBatchesChgnet style="aspect-ratio: 1.2;" />
-  <RollingMaeVsHullDistWbmBatchesM3gnet style="aspect-ratio: 1.2;" />
-  <RollingMaeVsHullDistWbmBatchesAlignn style="aspect-ratio: 1.2;" />
-  <RollingMaeVsHullDistWbmBatchesMegnet style="aspect-ratio: 1.2;" />
-  <RollingMaeVsHullDistWbmBatchesWrenformer style="aspect-ratio: 1.2;" />
-  <RollingMaeVsHullDistWbmBatchesCgcnn style="aspect-ratio: 1.2;" />
-  <RollingMaeVsHullDistWbmBatchesVoronoiRf style="aspect-ratio: 1.2;" />
-</div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; margin: 0 -1em 0 -4em;">
+    <RollingMaeVsHullDistWbmBatchesMace {style} />
+    <RollingMaeVsHullDistWbmBatchesChgnet {style} />
+    <RollingMaeVsHullDistWbmBatchesM3gnet {style} />
+    <RollingMaeVsHullDistWbmBatchesAlignn {style} />
+    <RollingMaeVsHullDistWbmBatchesMegnet {style} />
+    <RollingMaeVsHullDistWbmBatchesWrenformer {style} />
+    <RollingMaeVsHullDistWbmBatchesCgcnn {style} />
+    <RollingMaeVsHullDistWbmBatchesVoronoiRf {style} />
+  </div>
 {/if}
 
 > @label:fig:rolling-mae-vs-hull-dist-wbm-batches-models Rolling MAE as a function of distance to the convex hull for different models.
@@ -599,7 +605,7 @@ There are too many confounding effects at play to draw firm conclusions but this
 
 ### Exploratory Data Analysis
 
-<!-- ![WBM matminer features 2D UMAP projection](WbmFinalStructMatminerFeatures2dUmap) -->
+<img src={wbm_matminer_2d_umap_url} alt="WBM matminer features 2D UMAP projection" style="background-color: rgba(255, 255, 255, 0.3); border-radius: 4px; max-width: 550px; margin: auto; display: block;">
 
 > @label:fig:wbm-final-struct-matminer-features-2d-umap 2D UMAP projection of `matminer` [@ward_matminer_2018] features computed for all initial structures in the WBM test set.
 > Points are colored by elemental substitution step.
@@ -655,7 +661,7 @@ The histogram in @fig:mp-trj-n-sites-hist shows the distribution of the number o
 > This assumes structures of higher arity correlate with larger structures.
 
 {#if mounted}
-<MpTrjNsitesHist />
+<MpTrjNSitesHist />
 {/if}
 
 > @label:fig:mp-trj-n-sites-hist Histogram of number of atoms per structure.
@@ -663,34 +669,40 @@ The histogram in @fig:mp-trj-n-sites-hist shows the distribution of the number o
 > The green cumulative line in the inset shows that 82% have less than 50 sites and 97% of structures in MPTrj have less than 100 atoms.
 
 {#if mounted}
+{@const style=`aspect-ratio: 3/2;`}
 
-<!-- <MpTrjHists /> -->
-
+  <div style="display: grid; gap: 1em; grid-template-columns: 1fr 1fr;">
+    <MPTrjEFormHist {style} />
+    <MPTrjForcesHist {style} />
+    <MPTrjStressesHist {style} />
+    <MPTrjMagMomsHist {style} />
+  </div>
 {/if}
 
 > @label:fig:mp-trj-hists Distribution of energies, forces, stresses and magnetic moments MPTrj.
 > The bimodality in the formation energy distribution is due to the MP anion correction scheme [@wang_framework_2021] which significantly lowers some formation energies, especially for oxides.
 
 {#if mounted}
+{@const style=`aspect-ratio: 1.2;`}
 
-<!-- <WbmEnergyHists /> -->
-
+  <div style="display: grid; gap: 1em; grid-template-columns: 1fr 1fr;">
+    <HistWbmEForm {style} />
+    <HistWbmHullDist {style} />
+  </div>
 {/if}
 
 > @label:fig:wbm-energy-hists Distribution of formation energies and convex hull distances (both per atom) in the WBM test set [@wang_predicting_2021].
-> We removed what we believe to be invalid calculations with formation energies outside the range of  ± 5 eV/atom plotted in **)**.
+> **Left**: We removed what we believe to be invalid calculations with formation energies outside the range of ±5 eV/atom plotted in.
 > This filter discarded 22 structures to the right of the visible distribution with formation energies between 5 eV/atom and 80 eV/atom as well as 502 suspicious structures to the left of it with exactly −10 eV/atom formation energy.
-> However, even the cleaned formation energy distribution still exhibits much wider spread than the convex hull distance distribution, spanning almost 10 eV/atom vs less than 1 eV/atom spread in the hull distances.
+> However, even the cleaned formation energy distribution still exhibits much wider spread than the convex hull distance distribution (**right**), spanning almost 10 eV/atom vs less than 1 eV/atom spread in the hull distances.
 > This highlights why stability prediction is a much more challenging task than predicting energy of formation.
 > It requires correctly ranking the subtle energy differences between chemically similar compounds in the same chemical system rather than comparing a single material with the reference energies of its constituent elements.
 > DFT has been shown to significantly benefit from the systematic cancellation of errors between chemically similar systems when trying to identify the lowest-lying polymorph [@hautier_accuracy_2012].
 > This beneficial cancellation has yet to be conclusively demonstrated for ML stability predictions.
 > So far, only the lack thereof has been shown in [@bartel_critical_2020] where they encountered a much more random error distribution among similar chemistries than simulations from first principles.
 
-{#if mounted}
-
-<!-- <MpTrjPtableHists /> -->
-
+<!-- {#if mounted}
+<MpTrjPtableHists />
 {/if}
 
 > @label:fig:mp-trj-ptable-hists Distribution of magnetic moments and forces for each element MPTrj. This data is used as training targets for all interatomic potentials in this work (only CHGNet uses the absolute value of magnetic moments as targets).
@@ -699,11 +711,13 @@ The histogram in @fig:mp-trj-n-sites-hist shows the distribution of the number o
 > ) reveals rare erroneous data points in MPtrj.
 > For instance, has a single-point calculation with a highly unphysical magnetic moment of 17$\mu_\text{B}$.
 > For visualization purposes, the $y$-axes are again log-scaled and distributions are truncated at 10 eV/Å.
-> Oxygen has the largest outliers with mean absolute forces of up to 160 eV/Å.
+> Oxygen has the largest outliers with mean absolute forces of up to 160 eV/Å. -->
 
 ### Predicted Formation Energy Analysis
 
-We show the distribution for all materials in the WBM test set of model-predicted formation energies vs DFT ground truth in @fig:e-form-parity-models and the distribution of convex hull distance errors projected onto elements by composition for MACE and CHGNet in @fig:ptable-each-error-hists.
+We show the distribution for all materials in the WBM test set of model-predicted formation energies vs DFT ground truth in @fig:e-form-parity-models
+
+<!-- and the distribution of convex hull distance errors projected onto elements by composition for MACE and CHGNet in @fig:ptable-each-error-hists. -->
 
 {#if mounted}
 <EFormParityModels />
@@ -714,10 +728,8 @@ We show the distribution for all materials in the WBM test set of model-predicte
 > While similar to the parity plots in @fig:each-parity-models which shows the predicted convex hull distance vs PBE hull distance, this figure better visualizes the point density due to formation energy's wider spread.
 > We observe broadly the same failure modes with occasional high DFT energy outliers predicted as near 0 formation energy by the models.
 
-{#if mounted}
-
-<!-- <PtableEachErrorHists /> -->
-
+<!-- {#if mounted}
+<PtableEachErrorHists />
 {/if}
 
 > @label:fig:ptable-each-error-hists Distribution of convex hull distance errors for all materials in the WBM test set projected onto elements by composition, for the two best models we tested, MACE [@batatia_mace_2023] and CHGNet [@deng_chgnet_2023].
@@ -726,4 +738,4 @@ We show the distribution for all materials in the WBM test set of model-predicte
 > We observe very similar error distributions for MACE and CHGNet, confirming that the two models are learning a similar map of the PES.
 > There's a weak trend of distributions more sharply peaked at 0 error for CHGNet than MACE.
 > We also observe slightly skewed error distributions from MACE on the halides which accumulate more density on negative than positive errors.
-> That is, MACE tends to underestimate the convex hull distance and therefore overestimate the stability of halide-containing materials.
+> That is, MACE tends to underestimate the convex hull distance and therefore overestimate the stability of halide-containing materials. -->

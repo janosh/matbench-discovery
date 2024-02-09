@@ -1,10 +1,10 @@
 <script lang="ts">
+  import type { ModelData, ModelStatLabel } from '$lib'
+  import { AuthorBrief } from '$lib'
   import { repository } from '$site/package.json'
   import Icon from '@iconify/svelte'
   import { pretty_num } from 'elementari'
   import { fade, slide } from 'svelte/transition'
-  import type { ModelData, ModelStatLabel } from '.'
-  import AuthorBrief from './AuthorBrief.svelte'
 
   export let data: ModelData
   export let stats: ModelStatLabel[] // [key, label, unit][]

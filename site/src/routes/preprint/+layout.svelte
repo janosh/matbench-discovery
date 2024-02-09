@@ -5,18 +5,18 @@
   import { references } from './references.yaml'
 
   export let data
-
-  const authors = cite.authors.map(
-    (auth) =>
-      `${auth[`given-names`]} ${auth[`family-names`]}<sup>${auth.affil_key}</sup>`,
-  )
 </script>
 
 <h1>{cite.title}<br /><small>{cite.subtitle}</small></h1>
 
 <address>
   <span>
-    {@html authors.join(`, `)}
+    {#each cite.authors as auth, idx}
+      {#if idx > 0},
+      {/if}
+      <a href={auth.github ?? auth.orcid}>{auth[`given-names`]} {auth[`family-names`]}</a
+      ><sup>{`${auth.affil_key}`.replaceAll(` `, ``)}</sup>
+    {/each}
   </span>
   <span style="font-weight: lighter; font-size: 0.96em;">
     {@html cite.affiliations.map((affil, idx) => `${idx + 1}. ${affil}`).join(`<br/>`)}
@@ -34,13 +34,24 @@
 
 <small style="float: right;">
   <code>{pretty_num(data.word_count)}</code> words (<code>
-    ~{Math.floor(data.word_count / 200)}</code
+    ~{Math.floor(data.word_count / 150)}</code
   > min)
 </small>
 
 <style>
-  address {
+  address,
+  h1 > small {
     text-align: center;
+    text-wrap: balance;
+    font-style: normal;
+  }
+  address sup {
+    white-space: nowrap;
+    padding: 0 0 0 1px;
+  }
+  h1 > small {
+    display: block;
+    font-size: 0.7em;
   }
   address span {
     margin: 1em;
