@@ -105,7 +105,7 @@ def stable_metrics(
     n_total_neg = n_true_neg + n_false_pos
     # prevalence: dummy discovery rate of stable crystals by selecting randomly from
     # all materials
-    prevalence = n_total_pos / len(each_true)
+    prevalence = n_total_pos / (n_total_pos + n_total_neg)
     precision = n_true_pos / (n_true_pos + n_false_pos)  # model's discovery rate
     recall = n_true_pos / n_total_pos
 
