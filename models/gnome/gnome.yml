@@ -20,15 +20,6 @@ authors:
     affiliation: Google DeepMind
     email: cubuk@google.com
     orcid: https://orcid.org/0000-0003-0524-2837
-trained_by:
-  - name: Philipp Benner
-    affiliation: German Federal Institute of Materials Research and Testing (BAM)
-    orcid: 0000-0002-0912-8137
-    github: https://github.com/pbenner
-  - name: Yuan Chiang
-    affiliation: Lawrence Berkeley National Laboratory
-    orcid: 0000-0002-4017-7084
-    github: https://github.com/chiang-yuan
 repo: https://github.com/google-deepmind/materials_discovery
 doi: https://doi.org/10.1038/s41586-023-06735-9
 paper: https://nature.com/articles/s41586-023-06735-9
@@ -65,4 +56,4 @@ hyperparams:
 notes:
   description: |
     GNoME is an equivariant Nequip-type graph neural network implemented in e3nn-jax.
-  training: Using pre-trained model released with paper. Training set unspecified at time of writing.
+  training: Using pre-trained model released with "Scaling deep learning for materials discovery" paper. Training set unpublished as of 2024-02-03. The model was trained 1.5 years prior to submission to Matbench Discovery according to private communication.

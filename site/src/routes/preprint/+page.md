@@ -14,7 +14,7 @@
   import MetricsTable from '$figs/metrics-table.svelte'
   import MetricsTableFirst10k from '$figs/metrics-table-first-10k.svelte'
   import MetricsTableMegnetUipCombos from '$figs/metrics-table-uip-megnet-combos.svelte'
-  import RocModels from '$figs/roc-models-all-in-one.svelte'
+  import RocModels from '$figs/roc-models.svelte'
   import RollingMaeVsHullDistModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'
   import RunTimeBars from '$figs/model-run-times-bar.svelte'
   import SpacegroupSunburstWbm from '$figs/spacegroup-sunburst-wbm.svelte'
