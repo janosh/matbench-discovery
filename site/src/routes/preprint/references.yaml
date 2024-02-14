@@ -942,9 +942,9 @@ references:
 
 - id: glawe_optimal_2016
   accessed:
-    - year: 2023
-      month: 7
-      day: 23
+    - year: 2022
+      month: 2
+      day: 9
   author:
     - family: Glawe
       given: Henning
@@ -971,7 +971,7 @@ references:
     The optimal one dimensional periodic table: a modified Pettifor chemical
     scale from data mining
   title-short: The optimal one dimensional periodic table
-  URL: https://dx.doi.org/10.1088/1367-2630/18/9/093011
+  URL: https://doi.org/10.1088/1367-2630/18/9/093011
   volume: '18'
 
 - id: goodall_predicting_2020

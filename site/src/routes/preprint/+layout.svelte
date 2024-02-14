@@ -14,7 +14,8 @@
     {#each cite.authors as auth, idx}
       {#if idx > 0},
       {/if}
-      <a href={auth.github ?? auth.orcid}>{auth[`given-names`]} {auth[`family-names`]}</a
+      <a href={auth.github ?? `https://orcid.org/${auth.orcid}`}>
+        {auth[`given-names`]} {auth[`family-names`]}</a
       ><sup>{`${auth.affil_key}`.replaceAll(` `, ``)}</sup>
     {/each}
   </span>
