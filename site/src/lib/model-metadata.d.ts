@@ -59,7 +59,12 @@ export interface ModelMetadata {
   notes?: {
     description?: string
     training?: string
-    [k: string]: unknown
+    missing_preds?: string
+    /**
+     * This interface was referenced by `undefined`'s JSON-Schema definition
+     * via the `patternProperty` ".+".
+     */
+    [k: string]: string
   }
   model_params: number
   train_task:

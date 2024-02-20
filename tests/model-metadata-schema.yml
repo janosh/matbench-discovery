@@ -86,10 +86,15 @@ properties:
         type: number
   notes:
     type: object
+    patternProperties: # all values must be strings
+      ".+":
+        type: string
     properties:
       description:
         type: string
       training:
+        type: string
+      missing_preds:
         type: string
   model_params:
     type: number

@@ -4,6 +4,7 @@
   import { repository } from '$site/package.json'
   import Icon from '@iconify/svelte'
   import { pretty_num } from 'elementari'
+  import { Tooltip } from 'svelte-zoo'
   import { fade, slide } from 'svelte/transition'
 
   export let data: ModelData
@@ -14,7 +15,7 @@
   export let metrics_style: string | null = null
 
   $: ({ model_name, missing_preds, missing_percent } = data)
-  $: ({ model_params, hyperparams, notes, training_set } = data)
+  $: ({ model_params, hyperparams, notes = {}, training_set } = data)
 
   $: links = [
     [data.repo, `Repo`, `octicon:mark-github`],
@@ -63,6 +64,16 @@
     Missing preds:
     {pretty_num(missing_preds, `,.0f`)}
     <small>({missing_percent})</small>
+    {#if notes?.missing_preds}
+      <Tooltip
+        text={notes.missing_preds ?? ``}
+        tip_style="font-size: 9pt;"
+        max_width="20em"
+        min_width="20em"
+      >
+        <Icon icon="ion:information-circle" inline />
+      </Tooltip>
+    {/if}
   </span>
   {#if training_set}
     {@const { n_structures, url, title, n_materials } = training_set}
