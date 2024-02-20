@@ -115,7 +115,7 @@ properties:
     enum: [GNN, UIP, BO-GNN, Fingerprint, Transformer, RF]
   targets:
     type: string
-    enum: [E, EFS, EFSM]
+    enum: [E, EF, EFS, EFSM]
   openness:
     type: string
     enum: [OSOD, OSCD, CSOD, CSCD]

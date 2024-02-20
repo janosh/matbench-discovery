@@ -34,7 +34,7 @@ trained_for_benchmark: false
 openness: OSCD
 train_task: S2EFS
 test_task: IS2RE-SR
-targets: EFS
+targets: EF
 model_type: UIP
 model_params: 16_240_000
 
@@ -57,3 +57,4 @@ notes:
   description: |
     GNoME is an equivariant Nequip-type graph neural network implemented in e3nn-jax.
   training: Using pre-trained model released with "Scaling deep learning for materials discovery" paper. Training set unpublished as of 2024-02-03. The model was trained 1.5 years prior to submission to Matbench Discovery according to private communication.
+  missing_preds: According to the authors, the 1734 missing WBM predictions are mostly due out-of-memory (OOM) errors. The model was evaluated on A100s but without neighbor lists. The plan is to backfill the missing predictions once H100s are available or neighbor list implementation goes live.
