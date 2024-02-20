@@ -65,7 +65,7 @@ class PredFiles(Files):
 
 
 # key_map maps model keys to pretty labels
-PRED_FILES = PredFiles(root=f"{ROOT}/models", key_map=Model.dict())
+PRED_FILES = PredFiles(root=f"{ROOT}/models", key_map=Model.val_dict())
 
 
 def load_df_wbm_with_preds(

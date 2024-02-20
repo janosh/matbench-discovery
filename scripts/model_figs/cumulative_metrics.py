@@ -48,7 +48,7 @@ fig, df_metric = cumulative_metrics(
     show_n_stable=metrics != ("MAE",),
 )
 
-x_label = "Test set structures ranked by model-predicted stability"
+x_label = "Number of screened materials"
 if backend == "matplotlib":
     # fig.suptitle(title)
     fig.text(0.5, -0.08, x_label, ha="center", fontdict={"size": 16})

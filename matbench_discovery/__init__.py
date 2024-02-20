@@ -69,7 +69,7 @@ with open(f"{FIGSHARE_DIR}/1.0.0.json") as file:
     FIGSHARE_URLS = json.load(file)
 
 # --- start global plot settings
-px.defaults.labels = Quantity.dict() | Model.dict()
+px.defaults.labels = Quantity.val_dict() | Model.val_dict()
 
 global_layout = dict(
     paper_bgcolor="rgba(0,0,0,0)",

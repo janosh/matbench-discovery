@@ -22,8 +22,8 @@ declare module '*references.yaml' {
   export const references: import('$lib').Reference[]
 } // paper references (auto-exported by Zotero)
 
-declare module '*model-metadata-schema.yml' {
-  export const ModelMetadata: import('$lib/model-metadata').ModelMetadata
+declare module '*model-schema.yml' {
+  export const ModelMetadata: import('$lib/model-schema').ModelMetadata
 } // model metadata schema
 
 declare module '*element-counts.json' {
