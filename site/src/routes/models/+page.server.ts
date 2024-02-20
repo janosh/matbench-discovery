@@ -1,5 +1,5 @@
 import type { ModelData } from '$lib'
-import model_stats from '$lib/model-stats.json'
+import model_stats from '$lib/model-stats-uniq-protos.json'
 import { compile } from 'mdsvex'
 import { dirname } from 'path'
 
