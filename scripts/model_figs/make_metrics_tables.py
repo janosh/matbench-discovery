@@ -37,7 +37,7 @@ name_map = {
     "CHGNet→MEGNet": "CHGNet",
 }
 df_met = df_metrics_uniq_protos
-df_met.loc[Key.train_size.label] = ""
+df_met.loc[Key.train_set.label] = ""
 
 for model in df_metrics:
     model_name = name_map.get(model, model)
@@ -49,7 +49,13 @@ for model in df_metrics:
     if n_materials := model_data["training_set"].get("n_materials"):
         train_size_str += f" <small>({si_fmt(n_materials)})</small>"
 
-    df_met.loc[Key.train_size.label, model] = train_size_str
+    if train_url := model_data.get("training_set", {}).get("url"):
+        train_size_str = (
+            f"<a href='{train_url}' target='_blank' rel='noopener "
+            f"noreferrer'>{train_size_str}</a>"
+        )
+
+    df_met.loc[Key.train_set.label, model] = train_size_str
     model_params = model_data.get(Key.model_params)
     df_met.loc[Key.model_params.label, model] = (
         si_fmt(model_params) if isinstance(model_params, int) else model_params
@@ -108,7 +114,7 @@ lower_is_better = {*better["lower_is_better"]}
 # in PredFiles!
 make_uip_megnet_comparison = False
 meta_cols = [
-    Key.train_size.label,
+    Key.train_set.label,
     Key.model_params.label,
     Key.model_type.label,
     Key.targets.label,
@@ -144,7 +150,7 @@ for label, df in (
     styler = (
         df_table.style.format(
             # render integers without decimal places
-            dict.fromkeys("TP FN FP TN".split(), "{:,.0f}"),
+            lambda val: f"{val:.0f}" if val == int(val) else f"{val:.2f}",
             precision=2,  # render floats with 2 decimals
             na_rep="",  # render NaNs as empty string
         )

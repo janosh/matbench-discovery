@@ -88,7 +88,7 @@ class Key(LabelEnum):
         "Aflow-Wyckoff Label Initial Structure",
     )
     # number of structures in a model's training set
-    train_size = "train_size", "Training Size"
+    train_set = "train_set", "Training Set"
     model_params = "model_params", "Model Params"  # model's parameter count
     model_type = "model_type", "Model Type"  # number of parameters in the model
     openness = "openness", "Openness"  # openness of data and code for a model
