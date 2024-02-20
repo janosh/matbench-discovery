@@ -59,7 +59,12 @@ export interface ModelMetadata {
   notes?: {
     description?: string
     training?: string
-    [k: string]: unknown
+    missing_preds?: string
+    /**
+     * This interface was referenced by `undefined`'s JSON-Schema definition
+     * via the `patternProperty` ".+".
+     */
+    [k: string]: string
   }
   model_params: number
   train_task:
@@ -85,6 +90,6 @@ export interface ModelMetadata {
     | 'IS2E'
     | 'IS2RE-SR'
   model_type: 'GNN' | 'UIP' | 'BO-GNN' | 'Fingerprint' | 'Transformer' | 'RF'
-  targets: 'E' | 'EFS' | 'EFSM'
+  targets: 'E' | 'EF' | 'EFS' | 'EFSM'
   openness?: 'OSOD' | 'OSCD' | 'CSOD' | 'CSCD'
 }

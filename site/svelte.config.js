@@ -111,8 +111,6 @@ export default {
   },
 
   vitePlugin: {
-    experimental: {
-      inspector: true,
-    },
+    inspector: true,
   },
 }

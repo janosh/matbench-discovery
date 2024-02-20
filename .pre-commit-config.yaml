@@ -7,7 +7,7 @@ default_install_hook_types: [pre-commit, commit-msg]
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.2.1
+    rev: v0.2.2
     hooks:
       - id: ruff
         args: [--fix]
@@ -76,5 +76,5 @@ repos:
     hooks:
       - id: check-jsonschema
         files: ^models/(.+)/\1.*\.yml$
-        args: [--schemafile, tests/model-metadata-schema.yml]
+        args: [--schemafile, tests/model-schema.yml]
       - id: check-github-actions
