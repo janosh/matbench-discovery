@@ -145,3 +145,8 @@ markers = [
   "slow: deselect slow tests with -m 'not slow'",
   "very_slow: select with -m 'very_slow'",
 ]
+
+[tool.pyright]
+typeCheckingMode = "off"
+reportPossiblyUnboundVariable = true
+reportUnboundVariable = true
