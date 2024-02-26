@@ -34,8 +34,7 @@ file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
 # prevent accidental overwrites
-if "dfs" not in locals():
-    dfs: dict[str, pd.DataFrame] = {}
+dfs: dict[str, pd.DataFrame] = locals().get("dfs", {})
 
 
 # %%

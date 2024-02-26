@@ -101,7 +101,6 @@ def load_df_wbm_with_preds(
         )
 
     dfs: dict[str, pd.DataFrame] = {}
-
     try:
         for model_name in (bar := tqdm(models, disable=not pbar, desc="Loading preds")):
             bar.set_postfix_str(model_name)
@@ -109,7 +108,7 @@ def load_df_wbm_with_preds(
             df = df.set_index(id_col)
             dfs[model_name] = df
     except Exception as exc:
-        raise RuntimeError(f"Failed to load {model_name=}") from exc
+        raise RuntimeError(f"Failed to load {locals().get('model_name')=}") from exc
 
     from matbench_discovery.data import df_wbm
 

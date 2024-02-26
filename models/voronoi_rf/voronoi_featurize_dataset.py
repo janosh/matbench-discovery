@@ -71,6 +71,8 @@ elif data_name == "wbm" and input_col == Key.final_struct:
     struct_dicts = [cse["structure"] for cse in df_in[Key.cse]]
 elif data_name == "wbm" and input_col == Key.init_struct:
     struct_dicts = df_in[Key.init_struct]
+else:
+    raise ValueError(f"Invalid {data_name=}, {input_col=} combo")
 
 df_in[input_col] = [
     Structure.from_dict(dct) for dct in tqdm(struct_dicts, disable=None)

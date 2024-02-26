@@ -7,12 +7,13 @@ from pathlib import Path
 from typing import Any
 
 import mace
+import mace.data
 import numpy as np
 import torch.distributed
 import torch.nn.functional
 from e3nn import o3
-from mace import data, modules, tools
-from mace.data import HDF5Dataset
+from mace import modules, tools
+from mace.mace.data import HDF5Dataset
 from mace.tools import torch_geometric
 from mace.tools.scripts_utils import (
     LRScheduler,
@@ -87,6 +88,7 @@ def main(**kwargs: Any) -> None:
         torch.distributed.init_process_group(backend="nccl")
     else:
         rank = 0
+        local_rank = world_size = 1
 
     # Setup
     tools.set_seeds(args.seed)
@@ -208,11 +210,11 @@ def main(**kwargs: Any) -> None:
 
     if args.train_file.endswith(".xyz"):
         train_set = [
-            data.AtomicData.from_config(config, z_table=z_table, cutoff=args.r_max)
+            mace.data.AtomicData.from_config(config, z_table=z_table, cutoff=args.r_max)
             for config in collections.train
         ]
         valid_set = [
-            data.AtomicData.from_config(config, z_table=z_table, cutoff=args.r_max)
+            mace.data.AtomicData.from_config(config, z_table=z_table, cutoff=args.r_max)
             for config in collections.valid
         ]
     else:
@@ -221,7 +223,7 @@ def main(**kwargs: Any) -> None:
 
     train_sampler, valid_sampler = None, None
     if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(
+        train_sampler = torch.utils.mace.data.distributed.DistributedSampler(
             train_set,
             num_replicas=world_size,
             rank=rank,
@@ -613,7 +615,9 @@ def main(**kwargs: Any) -> None:
     if args.train_file.endswith(".xyz"):
         for name, subset in collections.tests:
             test_sets[name] = [
-                data.AtomicData.from_config(config, z_table=z_table, cutoff=args.r_max)
+                mace.data.AtomicData.from_config(
+                    config, z_table=z_table, cutoff=args.r_max
+                )
                 for config in subset
             ]
     else:

@@ -108,10 +108,11 @@ def tile_count_anno(hist_vals: list[Any]) -> dict[str, Any]:
 
 # %% plot per-element magmom histograms
 ptable_magmom_hist_path = f"{MP_DIR}/mp-trj-2022-09-elem-magmoms.json.bz2"
+srs_mp_trj_elem_magmoms = locals().get("srs_mp_trj_elem_magmoms")
 
 if os.path.isfile(ptable_magmom_hist_path):
     srs_mp_trj_elem_magmoms = pd.read_json(ptable_magmom_hist_path, typ="series")
-elif "srs_mp_trj_elem_magmoms" not in locals():
+if srs_mp_trj_elem_magmoms is None:
     # project magmoms onto symbols in dict
     df_mp_trj_elem_magmom = pd.DataFrame(
         [
@@ -151,10 +152,11 @@ save_fig(fig_ptable_magmoms, f"{PDF_FIGS}/mp-trj-magmoms-ptable-hists.pdf")
 
 # %% plot per-element force histograms
 ptable_force_hist_path = f"{MP_DIR}/mp-trj-2022-09-elem-forces.json.bz2"
+srs_mp_trj_elem_forces = locals().get("srs_mp_trj_elem_forces")
 
 if os.path.isfile(ptable_force_hist_path):
     srs_mp_trj_elem_forces = pd.read_json(ptable_force_hist_path, typ="series")
-elif "srs_mp_trj_elem_forces" not in locals():
+if srs_mp_trj_elem_forces is None:
     df_mp_trj_elem_forces = pd.DataFrame(
         [
             dict(zip(elems, np.abs(forces).mean(axis=1)))
@@ -193,10 +195,11 @@ save_fig(fig_ptable_forces, f"{PDF_FIGS}/mp-trj-forces-ptable-hists.pdf")
 
 # %% plot histogram of number of sites per element
 ptable_n_sites_hist_path = f"{MP_DIR}/mp-trj-2022-09-elem-n-sites.json.bz2"
+srs_mp_trj_elem_n_sites = locals().get("srs_mp_trj_elem_n_sites")
 
 if os.path.isfile(ptable_n_sites_hist_path):
     srs_mp_trj_elem_n_sites = pd.read_json(ptable_n_sites_hist_path, typ="series")
-elif "mp_trj_elem_n_sites" not in locals():
+elif srs_mp_trj_elem_n_sites is None:
     # construct a series of lists of site numbers per element (i.e. how often each
     # element appears in a structure with n sites)
     # create all df cols as int dtype
@@ -320,8 +323,9 @@ axes_kwds = dict(linewidth=1, ticks="outside")
 pdf_kwds = dict(width=500, height=300)
 
 x_col, y_col = "E<sub>form</sub> (eV/atom)", count_col
+df_e_form = locals().get("df_e_form")
 
-if "df_e_form" not in locals():  # only compute once for speed
+if df_e_form is None:  # only compute once for speed
     e_form_hist = np.histogram(df_mp_trj[Key.e_form], bins=300)
     df_e_form = pd.DataFrame(e_form_hist, index=[y_col, x_col]).T.round(3)
 
@@ -340,8 +344,9 @@ save_fig(fig, f"{SITE_FIGS}/mp-trj-e-form-hist.svelte")
 # %% plot forces distribution
 # use numpy to pre-compute histogram
 x_col, y_col = "|Forces| (eV/Å)", count_col
+df_forces = locals().get("df_forces")
 
-if "df_forces" not in locals():  # only compute once for speed
+if df_forces is None:  # only compute once for speed
     forces_hist = np.histogram(
         df_mp_trj[Key.forces].explode().explode().abs(), bins=300
     )
@@ -361,8 +366,9 @@ save_fig(fig, f"{SITE_FIGS}/mp-trj-forces-hist.svelte")
 
 # %% plot hydrostatic stress distribution
 x_col, y_col = "1/3 Tr(σ) (eV/Å³)", count_col  # noqa: RUF001
+df_stresses = locals().get("df_stresses")
 
-if "df_stresses" not in locals():  # only compute once for speed
+if df_stresses is None:  # only compute once for speed
     stresses_hist = np.histogram(df_mp_trj[Key.stress_trace], bins=300)
     df_stresses = pd.DataFrame(stresses_hist, index=[y_col, x_col]).T.round(3)
 
@@ -381,8 +387,9 @@ save_fig(fig, f"{SITE_FIGS}/mp-trj-stresses-hist.svelte")
 
 # %% plot magmoms distribution
 x_col, y_col = "Magmoms (μ<sub>B</sub>)", count_col
+df_magmoms = locals().get("df_magmoms")
 
-if "df_magmoms" not in locals():  # only compute once for speed
+if df_magmoms is None:  # only compute once for speed
     magmoms_hist = np.histogram(df_mp_trj[Key.magmoms].dropna().explode(), bins=300)
     df_magmoms = pd.DataFrame(magmoms_hist, index=[y_col, x_col]).T.round(3)
 

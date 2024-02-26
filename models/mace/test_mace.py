@@ -138,7 +138,9 @@ for material_id in tqdm(structs, desc="Relaxing"):
         )
 
         relax_results[material_id] = {"structure": mace_struct, "energy": mace_energy}
-        if record_traj and len(coords) > 0:
+
+        coords, lattices = (locals().get(key, []) for key in ("coords", "lattices"))
+        if record_traj and coords and lattices:
             mace_traj = Trajectory(
                 species=structs[material_id].species,
                 coords=coords,

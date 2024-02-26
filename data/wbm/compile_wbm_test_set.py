@@ -25,11 +25,12 @@ from matbench_discovery.energy import get_e_form_per_atom
 
 try:
     import gdown
-except ImportError:
-    print(
+except ImportError as exc:
+    exc.add_note(
         "gdown not installed. Needed for downloading WBM initial + relaxed structures "
         "from Google Drive."
     )
+    raise
 
 """
 Dataset generated with DFT and published in Jan 2021 as
@@ -90,8 +91,8 @@ wbm_structs_index_checksums = (
     18198704957443186264,
 )
 
-if "dfs_wbm_structs" not in locals():
-    dfs_wbm_structs = {}
+dfs_wbm_structs = locals().get("dfs_wbm_structs", {})
+
 for json_path in json_paths:
     step = int(json_path.split(".json.bz2")[0][-1])
     assert step in range(1, 6)
@@ -179,8 +180,8 @@ for filename in (
         print(f"{file_path} already exists, skipping")
         continue
 
+    url = f"{mat_cloud_url}&filename={filename}"
     try:
-        url = f"{mat_cloud_url}&filename={filename}"
         urllib.request.urlretrieve(url, file_path)
     except urllib.error.HTTPError as exc:
         print(f"failed to download {url=}: {exc}")

@@ -28,7 +28,8 @@ which_energy: Literal["e-form", "each"] = globals().get("which_energy", "each")
 if which_energy == "each":
     e_pred_col = Key.each_pred
     e_true_col = Key.each_true
-if which_energy == "e-form":
+else:
+    assert which_energy == "e-form", f"Invalid {which_energy=}"
     e_true_col = Key.e_form
     e_pred_col = Key.e_form_pred
 
