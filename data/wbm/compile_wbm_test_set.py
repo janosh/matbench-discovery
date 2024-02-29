@@ -19,9 +19,10 @@ from pymatviz import density_scatter
 from pymatviz.io import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR, Key, today
+from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.energy import get_e_form_per_atom
+from matbench_discovery.enums import Key
 
 try:
     import gdown

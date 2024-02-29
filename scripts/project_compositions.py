@@ -11,8 +11,9 @@ import pandas as pd
 from pymatgen.core import Composition
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR, Key
+from matbench_discovery import DATA_DIR
 from matbench_discovery.data import DATA_FILES
+from matbench_discovery.enums import Key
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"

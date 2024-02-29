@@ -21,8 +21,9 @@ from pymatviz.io import save_fig
 from pymatviz.utils import si_fmt
 from tqdm import tqdm
 
-from matbench_discovery import MP_DIR, PDF_FIGS, ROOT, SITE_FIGS, Key
+from matbench_discovery import MP_DIR, PDF_FIGS, ROOT, SITE_FIGS
 from matbench_discovery.data import DATA_FILES, df_wbm
+from matbench_discovery.enums import Key
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-11-22"

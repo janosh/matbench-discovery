@@ -6,7 +6,7 @@ import pytest
 from pymatgen.core import Lattice, Structure
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 
-from matbench_discovery import Key
+from matbench_discovery.enums import Key
 
 
 @pytest.fixture()

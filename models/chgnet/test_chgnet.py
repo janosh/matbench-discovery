@@ -21,8 +21,9 @@ from chgnet.model import StructOptimizer
 from pymatgen.core import Structure
 from tqdm import tqdm
 
-from matbench_discovery import Key, Task, timestamp, today
+from matbench_discovery import timestamp, today
 from matbench_discovery.data import DATA_FILES, as_dict_handler, df_wbm
+from matbench_discovery.enums import Key, Task
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 

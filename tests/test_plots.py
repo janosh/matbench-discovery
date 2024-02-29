@@ -7,7 +7,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import pytest
 
-from matbench_discovery import Key
+from matbench_discovery.enums import Key
 from matbench_discovery.plots import (
     Backend,
     cumulative_metrics,

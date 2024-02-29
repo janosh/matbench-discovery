@@ -18,8 +18,9 @@ from pymatgen.core.trajectory import Trajectory
 from pymatgen.io.ase import AseAtomsAdaptor
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, Key, Task, timestamp, today
+from matbench_discovery import ROOT, timestamp, today
 from matbench_discovery.data import DATA_FILES, as_dict_handler, df_wbm
+from matbench_discovery.enums import Key, Task
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 

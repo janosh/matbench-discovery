@@ -3,7 +3,7 @@ from __future__ import annotations
 import pandas as pd
 from crystal_toolkit.helpers.utils import hook_up_fig_with_struct_viewer
 
-from matbench_discovery import Key
+from matbench_discovery.enums import Key
 from matbench_discovery.preds import PRED_FILES
 
 __author__ = "Janosh Riebesell"

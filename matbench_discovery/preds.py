@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING, Any, Literal
 import pandas as pd
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, STABILITY_THRESHOLD, Key, Model
+from matbench_discovery import ROOT, STABILITY_THRESHOLD, Model
 from matbench_discovery.data import Files, df_wbm, glob_to_df
+from matbench_discovery.enums import Key
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.plots import plotly_colors, plotly_line_styles, plotly_markers
 
@@ -65,7 +66,7 @@ class PredFiles(Files):
 
 
 # key_map maps model keys to pretty labels
-PRED_FILES = PredFiles(root=f"{ROOT}/models", key_map=Model.val_dict())
+PRED_FILES = PredFiles(root=f"{ROOT}/models", key_map=Model.key_val_dict())
 
 
 def load_df_wbm_with_preds(

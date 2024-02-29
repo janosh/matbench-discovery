@@ -2,8 +2,8 @@ import os
 
 import pytest
 
-from matbench_discovery import Key
 from matbench_discovery.data import df_wbm
+from matbench_discovery.enums import Key
 from matbench_discovery.preds import (
     PRED_FILES,
     df_each_err,

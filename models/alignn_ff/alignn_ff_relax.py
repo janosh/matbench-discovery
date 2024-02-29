@@ -9,8 +9,9 @@ from pymatgen.core import Structure
 from pymatgen.io.jarvis import JarvisAtomsAdaptor
 from tqdm import tqdm
 
-from matbench_discovery import Key, Task, today
+from matbench_discovery import today
 from matbench_discovery.data import DATA_FILES, df_wbm
+from matbench_discovery.enums import Key, Task
 
 __author__ = "Janosh Riebesell, Philipp Benner"
 __date__ = "2023-07-11"
