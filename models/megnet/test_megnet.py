@@ -20,8 +20,9 @@ from pymatviz import density_scatter
 from sklearn.metrics import r2_score
 from tqdm import tqdm
 
-from matbench_discovery import Key, Task, timestamp, today
+from matbench_discovery import timestamp, today
 from matbench_discovery.data import DATA_FILES, df_wbm
+from matbench_discovery.enums import Key, Task
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.preds import PRED_FILES
 from matbench_discovery.slurm import slurm_submit

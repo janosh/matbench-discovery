@@ -4,7 +4,8 @@
 # %%
 from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, Key, Model
+from matbench_discovery import PDF_FIGS, SITE_FIGS, Model
+from matbench_discovery.enums import Key
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
 from matbench_discovery.preds import df_each_pred, df_metrics, df_wbm
 

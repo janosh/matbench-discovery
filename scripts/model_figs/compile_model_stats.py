@@ -62,6 +62,7 @@ test_stats: dict[str, dict[str, Any]] = {}
 # trained from scratch. Their run times only indicate the time needed to predict the
 # test set.
 
+time_col = "Run Time (h)"
 for label, stats, raw_filters in (
     ("train", train_stats, train_run_filters),
     ("test", test_stats, test_run_filters),
@@ -98,7 +99,7 @@ for label, stats, raw_filters in (
 
         n_gpu, n_cpu = metadata.get("gpu_count", 0), metadata.get("cpu_count", 0)
         stats[model] = {
-            (time_col := "Run Time (h)"): run_time_total / 3600,
+            time_col: run_time_total / 3600,
             "GPU": n_gpu,
             "CPU": n_cpu,
             "Slurm Jobs": n_runs,
@@ -114,18 +115,16 @@ test_stats["CGCNN+P"] = {}
 
 
 # %%
-for df_tmp, label in (
-    (df_metrics, ""),
-    (df_metrics_10k, "-10k"),
-    (df_metrics_uniq_protos, "-uniq-protos"),
-):
-    df_tmp = pd.concat(
-        [
-            df_tmp,
-            pd.DataFrame(train_stats).add_prefix("Train ", axis="index"),
-            pd.DataFrame(test_stats).add_prefix("Test ", axis="index"),
-        ],
-    ).T
+stats_dict = {
+    "": df_metrics,
+    "-10k": df_metrics_10k,
+    "-uniq-protos": df_metrics_uniq_protos,
+}
+for label, df_tmp in stats_dict.items():
+    df_train_stats = pd.DataFrame(train_stats).add_prefix("Train ", axis="index")
+    df_test_stats = pd.DataFrame(test_stats).add_prefix("Test ", axis="index")
+    df_tmp = pd.concat([df_tmp, df_train_stats, df_test_stats]).T
+
     df_tmp[time_col] = df_tmp.filter(like=time_col).sum(axis="columns")
 
     # write model metrics to json for website use
@@ -136,9 +135,11 @@ for df_tmp, label in (
 
     df_tmp.attrs["All Models Run Time"] = df_tmp[time_col].sum()
 
+    # write stats for different data subsets to JSON
     df_tmp.round(2).to_json(f"{SITE_LIB}/model-stats{label}.json", orient="index")
-    if label == "":
-        df_stats = df_tmp
+    stats_dict[label] = df_tmp
+
+df_stats = stats_dict[""]
 
 
 # %%

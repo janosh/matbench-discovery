@@ -18,8 +18,9 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from matbench_discovery import Key, today
+from matbench_discovery import today
 from matbench_discovery.data import DATA_FILES
+from matbench_discovery.enums import Key
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Philipp Benner, Janosh Riebesell"

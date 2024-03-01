@@ -78,8 +78,10 @@ universal = true
 
 [tool.ruff]
 target-version = "py39"
-lint.select = ["ALL"]
-lint.ignore = [
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
   "ANN101",
   "ANN102",
   "ANN401",
@@ -115,9 +117,9 @@ lint.ignore = [
   "TRY003",
   "TRY301",
 ]
-lint.pydocstyle.convention = "google"
-lint.isort.known-third-party = ["wandb"]
-lint.isort.split-on-trailing-comma = false
+pydocstyle.convention = "google"
+isort.known-third-party = ["wandb"]
+isort.split-on-trailing-comma = false
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["D", "S101"]
@@ -145,3 +147,9 @@ markers = [
   "slow: deselect slow tests with -m 'not slow'",
   "very_slow: select with -m 'very_slow'",
 ]
+
+[tool.pyright]
+typeCheckingMode = "off"
+reportPossiblyUnboundVariable = true
+reportUnboundVariable = true
+reportMissingImports = false

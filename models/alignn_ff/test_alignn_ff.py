@@ -18,8 +18,9 @@ from pymatgen.io.jarvis import JarvisAtomsAdaptor
 from sklearn.metrics import r2_score
 from tqdm import tqdm
 
-from matbench_discovery import Key, Task, today
+from matbench_discovery import today
 from matbench_discovery.data import DATA_FILES, df_wbm
+from matbench_discovery.enums import Key, Task
 from matbench_discovery.plots import wandb_scatter
 
 __author__ = "Philipp Benner, Janosh Riebesell"

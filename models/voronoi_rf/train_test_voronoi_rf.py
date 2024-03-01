@@ -13,8 +13,9 @@ from sklearn.impute import SimpleImputer
 from sklearn.metrics import r2_score
 from sklearn.pipeline import Pipeline
 
-from matbench_discovery import ROOT, Key, Task, today
+from matbench_discovery import ROOT, today
 from matbench_discovery.data import DATA_FILES, df_wbm, glob_to_df
+from matbench_discovery.enums import Key, Task
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 

@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         script:
-          - scripts/model_figs/make_metrics_tables.py
+          - scripts/model_figs/metrics_tables.py
           - scripts/model_figs/rolling_mae_vs_hull_dist_models.py
     steps:
       - name: Check out repository

@@ -10,8 +10,9 @@ from typing import Final
 
 from pymatviz.io import save_fig
 
-from matbench_discovery import PDF_FIGS, Key
+from matbench_discovery import PDF_FIGS
 from matbench_discovery.data import df_wbm
+from matbench_discovery.enums import Key
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist
 from matbench_discovery.preds import df_each_pred
 

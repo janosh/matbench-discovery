@@ -7,7 +7,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import pytest
 
-from matbench_discovery import Key
+from matbench_discovery.enums import Key
 from matbench_discovery.plots import (
     Backend,
     cumulative_metrics,
@@ -89,14 +89,13 @@ def test_rolling_mae_vs_hull_dist(
         ax = plt.figure().gca()  # new figure ensures test functions use different axes
         kwargs["ax"] = ax
 
-    for model_name in models:
-        ax, df_err, df_std = rolling_mae_vs_hull_dist(
-            e_above_hull_true=df_wbm[model_name],
-            e_above_hull_preds=df_wbm[models],
-            x_lim=x_lim,
-            show_dft_acc=show_dft_acc,
-            **kwargs,  # type: ignore[arg-type]
-        )
+    ax, df_err, df_std = rolling_mae_vs_hull_dist(
+        e_above_hull_true=df_wbm[models[0]],
+        e_above_hull_preds=df_wbm[models],
+        x_lim=x_lim,
+        show_dft_acc=show_dft_acc,
+        **kwargs,  # type: ignore[arg-type]
+    )
 
     assert isinstance(df_err, pd.DataFrame)
     assert isinstance(df_std, pd.DataFrame)

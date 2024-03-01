@@ -16,8 +16,8 @@ from dash.dependencies import Input, Output
 from m3gnet.models import Relaxer as M3gnetRelaxer
 from pymatgen.core import Lattice, Structure
 
-from matbench_discovery import Key
 from matbench_discovery.data import df_wbm
+from matbench_discovery.enums import Key
 
 if TYPE_CHECKING:
     from chgnet.model.dynamics import TrajectoryObserver

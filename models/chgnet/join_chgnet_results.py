@@ -13,18 +13,17 @@ import pandas as pd
 from pymatviz import density_scatter
 from tqdm import tqdm
 
-from matbench_discovery import Key, Task
 from matbench_discovery.data import as_dict_handler
 from matbench_discovery.energy import get_e_form_per_atom
+from matbench_discovery.enums import Key, Task
 from matbench_discovery.preds import df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-01"
 
 
-df_chgnet = pd.read_csv("2023-12-05-chgnet-0.3.0-wbm-IS2RE-static.csv.gz").set_index(
-    Key.mat_id
-)
+csv_path = "2023-12-05-chgnet-0.3.0-wbm-IS2RE-static.csv.gz"
+df_chgnet = pd.read_csv(csv_path).set_index(Key.mat_id)
 
 
 # %%

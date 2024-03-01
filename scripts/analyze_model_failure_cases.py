@@ -16,8 +16,9 @@ from pymatviz import count_elements, plot_structure_2d, ptable_heatmap_plotly
 from pymatviz.io import save_fig
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR, Key
+from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR
 from matbench_discovery.data import DATA_FILES, df_wbm
+from matbench_discovery.enums import Key
 from matbench_discovery.metrics import classify_stable
 from matbench_discovery.preds import df_each_err, df_each_pred, df_metrics, df_preds
 

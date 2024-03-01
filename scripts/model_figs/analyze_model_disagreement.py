@@ -46,7 +46,7 @@ material_classes = {
     "hydrides": r".*H\d.*",
     "oxynitrides": r".*[ON]\d.*",
 }
-n_structs = 200
+n_structs, fig = 200, None
 
 for material_cls, pattern in material_classes.items():
     df_subset = df_preds[df_preds[Key.formula].str.match(pattern)]

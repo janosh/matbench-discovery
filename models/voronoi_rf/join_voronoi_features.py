@@ -12,7 +12,7 @@ from glob import glob
 import pandas as pd
 from tqdm import tqdm
 
-from matbench_discovery import Key
+from matbench_discovery.enums import Key
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-16"

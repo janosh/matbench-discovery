@@ -8,8 +8,8 @@ import pandas as pd
 import pymatviz
 from tqdm import tqdm
 
-from matbench_discovery import Model, Task
-from matbench_discovery.data import DATA_FILES, Key
+from matbench_discovery.data import DATA_FILES
+from matbench_discovery.enums import Key, Model, Task
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-09-22"

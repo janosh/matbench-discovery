@@ -17,7 +17,8 @@ from pymongo import MongoClient
 from pymongo.database import Database
 from tqdm import tqdm, trange
 
-from matbench_discovery import ROOT, Key, today
+from matbench_discovery import ROOT, today
+from matbench_discovery.enums import Key
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-15"

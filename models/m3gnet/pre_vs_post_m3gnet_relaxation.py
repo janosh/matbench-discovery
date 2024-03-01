@@ -12,8 +12,9 @@ from pymatviz import density_scatter
 from pymatviz.utils import add_identity_line
 from sklearn.metrics import r2_score
 
-from matbench_discovery import ROOT, SITE_FIGS, Key, plots
+from matbench_discovery import ROOT, SITE_FIGS, plots
 from matbench_discovery.data import DATA_FILES
+from matbench_discovery.enums import Key
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-06-18"

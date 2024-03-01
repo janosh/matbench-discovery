@@ -17,9 +17,10 @@ from pymatgen.entries.computed_entries import ComputedEntry, ComputedStructureEn
 from pymatgen.ext.matproj import MPRester
 from tqdm import tqdm
 
-from matbench_discovery import MP_DIR, ROOT, Key, today
+from matbench_discovery import MP_DIR, ROOT, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.energy import get_e_form_per_atom, get_elemental_ref_entries
+from matbench_discovery.enums import Key
 
 module_dir = os.path.dirname(__file__)
 

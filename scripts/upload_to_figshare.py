@@ -158,11 +158,12 @@ def main(pyproject: dict[str, Any], urls_json_path: str) -> int:
         with open(urls_json_path, "w") as file:
             json.dump(figshare_urls, file)
     except Exception as exc:  # prompt to delete article if something went wrong
-        answer = ""
-        print(f"Encountered {exc=} for {file_path=}")
-        while answer not in ("y", "n"):
+        if file_path := str(locals().get("file_path", "")):
+            exc.add_note(f"{file_path=}")
+        answer, article_id = "", int(locals().get("article_id", 0))
+        while article_id and answer.lower() not in ("y", "n"):
             answer = input("Delete article? [y/n] ")
-        if answer == "y":
+        if answer.lower() == "y":
             make_request("DELETE", f"{BASE_URL}/account/articles/{article_id}")
 
     return 0

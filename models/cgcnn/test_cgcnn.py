@@ -14,8 +14,9 @@ from pymatgen.core import Structure
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from matbench_discovery import CHECKPOINT_DIR, WANDB_PATH, WBM_DIR, Key, Task, today
+from matbench_discovery import CHECKPOINT_DIR, WANDB_PATH, WBM_DIR, today
 from matbench_discovery.data import DATA_FILES, df_wbm
+from matbench_discovery.enums import Key, Task
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 
