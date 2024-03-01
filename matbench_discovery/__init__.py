@@ -13,15 +13,7 @@ import plotly.express as px
 import plotly.io as pio
 import pymatviz  # noqa: F401
 
-from matbench_discovery.enums import (  # noqa: F401
-    Key,
-    Model,
-    ModelType,
-    Open,
-    Quantity,
-    Targets,
-    Task,
-)
+from matbench_discovery.enums import Model, Quantity
 
 PKG_NAME = "matbench-discovery"
 direct_url = Distribution.from_name(PKG_NAME).read_text("direct_url.json") or "{}"
@@ -69,7 +61,7 @@ with open(f"{FIGSHARE_DIR}/1.0.0.json") as file:
     FIGSHARE_URLS = json.load(file)
 
 # --- start global plot settings
-px.defaults.labels = Quantity.val_dict() | Model.val_dict()
+px.defaults.labels = Quantity.key_val_dict() | Model.key_val_dict()
 
 global_layout = dict(
     paper_bgcolor="rgba(0,0,0,0)",
@@ -77,9 +69,9 @@ global_layout = dict(
     # increase legend marker size and make background transparent
     legend=dict(itemsizing="constant", bgcolor="rgba(0, 0, 0, 0)"),
 )
-pio.templates["global"] = dict(layout=global_layout)
-pio.templates.default = "pymatviz_dark+global"
-px.defaults.template = "pymatviz_dark+global"
+pio.templates["mbd_global"] = dict(layout=global_layout)
+pio.templates.default = "pymatviz_dark+mbd_global"
+px.defaults.template = "pymatviz_dark+mbd_global"
 
 # https://github.com/plotly/Kaleido/issues/122#issuecomment-994906924
 # when seeing MathJax "loading" message in exported PDFs,

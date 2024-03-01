@@ -16,9 +16,9 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz import density_scatter
 from tqdm import tqdm
 
-from matbench_discovery import Key, Task
 from matbench_discovery.data import DATA_FILES, as_dict_handler, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
+from matbench_discovery.enums import Key, Task
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-01"

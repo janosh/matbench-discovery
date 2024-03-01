@@ -29,14 +29,24 @@ class LabelEnum(StrEnum):
         return self.__dict__["desc"]
 
     @classmethod
-    def val_dict(cls) -> dict[str, str]:
-        """Return the Enum as dictionary."""
+    def key_val_dict(cls) -> dict[str, str]:
+        """Map of keys to values."""
         return {key: str(val) for key, val in cls.__members__.items()}
 
     @classmethod
-    def label_dict(cls) -> dict[str, str]:
-        """Return the Enum as dictionary."""
-        return {str(val): val.label for key, val in cls.__members__.items()}
+    def val_label_dict(cls) -> dict[str, str | None]:
+        """Map of values to labels."""
+        return {str(val): val.label for val in cls.__members__.values()}
+
+    @classmethod
+    def val_desc_dict(cls) -> dict[str, str | None]:
+        """Map of values to descriptions."""
+        return {str(val): val.description for val in cls.__members__.values()}
+
+    @classmethod
+    def label_desc_dict(cls) -> dict[str | None, str | None]:
+        """Map of labels to descriptions."""
+        return {str(val.label): val.description for val in cls.__members__.values()}
 
 
 @unique

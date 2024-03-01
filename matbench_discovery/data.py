@@ -14,7 +14,8 @@ import pandas as pd
 from monty.json import MontyDecoder
 from tqdm import tqdm
 
-from matbench_discovery import FIGSHARE_DIR, Key
+from matbench_discovery import FIGSHARE_DIR
+from matbench_discovery.enums import Key
 
 if TYPE_CHECKING:
     from pathlib import Path

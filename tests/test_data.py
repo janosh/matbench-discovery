@@ -11,7 +11,7 @@ import pytest
 from pymatgen.core import Lattice, Structure
 from pytest import CaptureFixture
 
-from matbench_discovery import FIGSHARE_DIR, ROOT, Key
+from matbench_discovery import FIGSHARE_DIR, ROOT
 from matbench_discovery.data import (
     DATA_FILES,
     as_dict_handler,
@@ -20,6 +20,7 @@ from matbench_discovery.data import (
     glob_to_df,
     load,
 )
+from matbench_discovery.enums import Key
 
 if TYPE_CHECKING:
     from pathlib import Path

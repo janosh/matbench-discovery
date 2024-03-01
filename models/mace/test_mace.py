@@ -18,8 +18,9 @@ from pymatgen.core.trajectory import Trajectory
 from pymatgen.io.ase import AseAtomsAdaptor
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, Key, Task, timestamp, today
+from matbench_discovery import ROOT, timestamp, today
 from matbench_discovery.data import DATA_FILES, as_dict_handler, df_wbm
+from matbench_discovery.enums import Key, Task
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 
@@ -138,7 +139,9 @@ for material_id in tqdm(structs, desc="Relaxing"):
         )
 
         relax_results[material_id] = {"structure": mace_struct, "energy": mace_energy}
-        if record_traj and len(coords) > 0:
+
+        coords, lattices = (locals().get(key, []) for key in ("coords", "lattices"))
+        if record_traj and coords and lattices:
             mace_traj = Trajectory(
                 species=structs[material_id].species,
                 coords=coords,

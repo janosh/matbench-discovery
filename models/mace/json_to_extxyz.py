@@ -12,7 +12,8 @@ from pymatgen.core import Structure
 from pymatviz.io import TqdmDownload
 from tqdm import tqdm
 
-from matbench_discovery import FIGSHARE_URLS, MP_DIR, Key
+from matbench_discovery import FIGSHARE_URLS, MP_DIR
+from matbench_discovery.enums import Key
 
 __author__ = "Yuan Chiang"
 __date__ = "2023-08-10"

@@ -103,8 +103,10 @@ def hist_classified_stable_vs_hull_dist(
     fixed in Inkscape or similar by merging regions by color.
     """
     x_col = dict(true=each_true_col, pred=each_pred_col)[which_energy]
+    clf_col, value_name = "classified", "count"
 
     df_plot = pd.DataFrame()
+
     for facet, df_group in (
         df.groupby(kwargs["facet_col"]) if "facet_col" in kwargs else [(None, df)]
     ):
@@ -113,16 +115,16 @@ def hist_classified_stable_vs_hull_dist(
         )
 
         # switch between hist of DFT-computed and model-predicted convex hull distance
-        e_above_hull = df_group[x_col]
-        each_true_pos = e_above_hull[true_pos]
-        each_true_neg = e_above_hull[true_neg]
-        each_false_neg = e_above_hull[false_neg]
-        each_false_pos = e_above_hull[false_pos]
+        srs_each = df_group[x_col]
+        each_true_pos = srs_each[true_pos]
+        each_true_neg = srs_each[true_neg]
+        each_false_neg = srs_each[false_neg]
+        each_false_pos = srs_each[false_pos]
         # n_true_pos, n_false_pos, n_true_neg, n_false_neg = map(
         #     sum, (true_pos, false_pos, true_neg, false_neg)
         # )
 
-        df_group[(clf_col := "classified")] = np.array(clf_labels)[
+        df_group[clf_col] = np.array(clf_labels)[
             true_pos * 0 + false_neg * 1 + false_pos * 2 + true_neg * 3
         ]
 
@@ -144,7 +146,6 @@ def hist_classified_stable_vs_hull_dist(
             index=clf_labels,
         ).T
         df_hist[x_col] = bin_edges[:-1]
-        value_name = "count"
         df_melt = df_hist.melt(
             id_vars=x_col,
             value_vars=clf_labels,
@@ -714,6 +715,7 @@ def cumulative_metrics(
             )
             df = dfs[metric]
             ax.set(ylim=(0, 1), xlim=(0, None), ylabel=metric)
+            bbox = dict(facecolor="white", alpha=0.5, edgecolor="none")
             for model in df_preds:
                 # TODO is this really necessary?
                 if len(df[model].dropna()) == 0:
@@ -722,7 +724,6 @@ def cumulative_metrics(
                 y_end = df[model].dropna().iloc[-1]
                 # add some visual guidelines to the plot
                 intersect_kwargs = dict(linestyle=":", alpha=0.4, linewidth=2)
-                bbox = dict(facecolor="white", alpha=0.5, edgecolor="none")
                 # place model name at the end of every line
                 ax.text(x_end, y_end, model, va="bottom", rotation=30, bbox=bbox)
                 if "x" in project_end_point:

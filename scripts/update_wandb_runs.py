@@ -8,7 +8,8 @@ import pandas as pd
 import wandb
 from wandb.wandb_run import Run
 
-from matbench_discovery import WANDB_PATH, Task
+from matbench_discovery import WANDB_PATH
+from matbench_discovery.enums import Task
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-09-21"
