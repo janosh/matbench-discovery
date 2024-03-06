@@ -1,6 +1,5 @@
 """Train a Wrenformer ensemble on target_col of data_path."""
 
-
 # %%
 import os
 from importlib.metadata import version

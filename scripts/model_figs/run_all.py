@@ -3,7 +3,6 @@ scripts needed to generate the interactive and static PDF versions of each
 model-comparison figure.
 """
 
-
 # %%
 import os
 import runpy

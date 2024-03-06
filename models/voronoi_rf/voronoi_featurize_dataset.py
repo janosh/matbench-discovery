@@ -2,7 +2,6 @@
 Voronoi tessellation structure-based features.
 """
 
-
 # %%
 import os
 import sys

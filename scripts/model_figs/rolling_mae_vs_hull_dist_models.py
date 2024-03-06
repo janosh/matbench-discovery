@@ -1,6 +1,5 @@
 """Plot rolling MAE as a function of hull distance for all models."""
 
-
 # %%
 from typing import Final
 

@@ -7,7 +7,6 @@ a cutoff point for the number of DFT calculations they have budget and see which
 will provide the best hit rate for the given budget.
 """
 
-
 # %%
 import pandas as pd
 from pymatviz.io import save_fig

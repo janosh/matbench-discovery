@@ -5,7 +5,6 @@ On a good connection, takes about 15 min per batch * 140 batches = 35 h to downl
 all 1.6M task docs.
 """
 
-
 # %%
 import os
 import subprocess

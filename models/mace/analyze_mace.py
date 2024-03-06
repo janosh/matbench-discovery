@@ -1,6 +1,5 @@
 """Investigate MACE energy underpredictions."""
 
-
 # %%
 import os
 

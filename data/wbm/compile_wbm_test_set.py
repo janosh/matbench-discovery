@@ -39,7 +39,6 @@ Dataset generated with DFT and published in Jan 2021 as
 https://nature.com/articles/s41524-020-00481-6
 """
 
-
 # %% links to google drive files received via email from 1st author Hai-Chen Wang
 # on 2021-06-15 containing initial and relaxed structures
 google_drive_ids = {

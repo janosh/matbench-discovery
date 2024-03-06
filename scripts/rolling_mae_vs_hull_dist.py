@@ -1,6 +1,5 @@
 """Plot rolling MAE as a function of hull distance for a single model."""
 
-
 # %%
 from pymatviz.io import save_fig
 

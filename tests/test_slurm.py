@@ -41,9 +41,11 @@ def test_slurm_submit(
     assert stderr == stderr == ""
 
     # check slurm_submit() prints cmd and calls subprocess.run() in submit mode
-    with pytest.raises(SystemExit), patch("sys.argv", ["slurm-submit"]), patch(
-        "matbench_discovery.slurm.subprocess.run"
-    ) as mock_subprocess_run:
+    with (
+        pytest.raises(SystemExit),
+        patch("sys.argv", ["slurm-submit"]),
+        patch("matbench_discovery.slurm.subprocess.run") as mock_subprocess_run,
+    ):
         func_call()
 
     assert mock_subprocess_run.call_count == 1

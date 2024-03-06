@@ -1,6 +1,5 @@
 """Compare M3GNet-relaxed vs DFT-relaxed WBM lattice volumes and angles."""
 
-
 # %%
 import os
 

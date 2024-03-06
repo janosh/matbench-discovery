@@ -2,7 +2,6 @@
 batch in a single plot.
 """
 
-
 # %%
 from pymatviz.io import save_fig
 

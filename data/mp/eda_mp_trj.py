@@ -1,6 +1,5 @@
 """MPtrj exploratory data analysis (EDA)."""
 
-
 # %%
 import io
 import os

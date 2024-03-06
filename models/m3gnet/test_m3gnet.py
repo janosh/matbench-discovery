@@ -4,7 +4,6 @@ Requires M3GNet installation: pip install m3gnet
 https://github.com/materialsvirtuallab/m3gnet.
 """
 
-
 # %%
 from __future__ import annotations
 

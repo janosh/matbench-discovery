@@ -4,7 +4,6 @@ Requires MEGNet installation: pip install megnet
 See https://github.com/materialsvirtuallab/megnet.
 """
 
-
 # %%
 from __future__ import annotations
 

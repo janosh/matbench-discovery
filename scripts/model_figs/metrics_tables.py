@@ -2,7 +2,6 @@
 pandas-styled HTML table and a plotly figure.
 """
 
-
 # %%
 from __future__ import annotations
 

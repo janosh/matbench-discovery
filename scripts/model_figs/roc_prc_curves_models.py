@@ -1,6 +1,5 @@
 """Plot ROC and PR (precision-recall) curves for each model."""
 
-
 # %%
 import math
 
@@ -44,7 +43,7 @@ for model in (pbar := tqdm(models, desc="Calculating ROC curves")):
     fpr, tpr, thresholds = roc_curve(y_true, y_pred, pos_label=0)
     AUC = auc(fpr, tpr)
     title = f"{model} · {AUC=:.2f}"
-    thresholds = [f"{t:.3} eV/atom" for t in thresholds]
+    thresholds = [f"{thresh:.3} eV/atom" for thresh in thresholds]
     df_tmp = pd.DataFrame(
         {"FPR": fpr, "TPR": tpr, color_col: thresholds, "AUC": AUC, facet_col: title}
     ).round(3)

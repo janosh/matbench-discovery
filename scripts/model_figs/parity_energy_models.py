@@ -3,7 +3,6 @@ models. First 2 plots put all models in single figure with selectable traces.
 Last plot is split into 2x3 subplots, one for each model.
 """
 
-
 # %%
 import math
 from typing import Literal
