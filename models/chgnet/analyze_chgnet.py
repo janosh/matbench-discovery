@@ -1,6 +1,5 @@
 """Compare CHGNet long vs short relaxations."""
 
-
 # %%
 import os
 

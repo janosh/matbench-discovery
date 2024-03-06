@@ -1,6 +1,5 @@
 """Compare CHGNet long vs short relaxations."""
 
-
 # %%
 import numpy as np
 import pandas as pd

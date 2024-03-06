@@ -1,6 +1,5 @@
 """Compute t-SNE or UMAP projections of WBM and MP compositions."""
 
-
 # %%
 import os
 from datetime import datetime

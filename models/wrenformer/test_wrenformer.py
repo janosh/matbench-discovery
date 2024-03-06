@@ -3,7 +3,6 @@ formation energies, then makes predictions on some dataset, prints ensemble metr
 saves predictions to CSV.
 """
 
-
 # %%
 from __future__ import annotations
 

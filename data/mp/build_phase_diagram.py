@@ -2,7 +2,6 @@
 DFT-ground truth convex hull energies.
 """
 
-
 # %%
 import gzip
 import json

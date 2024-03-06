@@ -2,7 +2,6 @@
 models can pinpoint DFT calculation gone wrong.
 """
 
-
 # %%
 import sys
 

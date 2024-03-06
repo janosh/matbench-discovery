@@ -2,7 +2,6 @@
 into single file.
 """
 
-
 # %%
 from __future__ import annotations
 

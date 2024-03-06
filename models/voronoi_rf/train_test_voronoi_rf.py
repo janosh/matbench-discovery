@@ -1,6 +1,5 @@
 """Train and test a Voronoi RandomForestRegressor model."""
 
-
 # %%
 import os
 import sys

@@ -2,7 +2,6 @@
 https://wandb.ai/janosh/matbench-discovery.
 """
 
-
 # %%
 import pandas as pd
 import wandb

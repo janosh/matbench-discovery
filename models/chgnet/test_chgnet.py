@@ -5,7 +5,6 @@ git clone https://github.com/CederGroupHub/chgnet
 pip install -e ./chgnet.
 """
 
-
 # %%
 from __future__ import annotations
 

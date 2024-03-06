@@ -3,7 +3,6 @@ model predicted energy) to the convex hull for materials in the WBM data set. Th
 histogram stacks true/false positives/negatives with different colors.
 """
 
-
 # %%
 import math
 from typing import Final
