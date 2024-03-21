@@ -105,13 +105,14 @@ df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index(Key.mat_i
 
 
 # %%
-df_mp["our_mp_e_form"] = [
+e_form_us = "e_form_us"
+df_mp[e_form_us] = [
     get_e_form_per_atom(mp_computed_entries[mp_id]) for mp_id in df_mp.index
 ]
 
 
 # make sure get_form_energy_per_atom() reproduces MP formation energies
-ax = pymatviz.density_scatter(df_mp[Key.form_energy], df_mp["our_mp_e_form"])
+ax = pymatviz.density_scatter(df_mp[Key.form_energy], df_mp[e_form_us])
 ax.set(
     title="MP Formation Energy Comparison",
     xlabel="MP Formation Energy (eV/atom)",

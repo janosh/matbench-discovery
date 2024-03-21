@@ -55,7 +55,7 @@ running-models = [
   # when attempting PyPI publish
   # "aviary@git+https://github.com/CompRhys/aviary",
   "alignn",
-  "chgnet",
+  "chgnet>=0.3.0",
   "jarvis-tools",
   "m3gnet",
   "mace-torch",
@@ -93,6 +93,7 @@ ignore = [
   "D205",    # blank-line-after-summary
   "DTZ005",
   "E731",    # lambda-assignment
+  "EM101",
   "EM102",
   "FBT001",
   "FBT002",

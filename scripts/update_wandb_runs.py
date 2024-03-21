@@ -22,12 +22,12 @@ print(f"matching runs: {len(runs)}")
 
 
 # %%
-df = pd.DataFrame([run.config | dict(run.summary) for run in runs])
-df[["display_name", "id"]] = [(run.display_name, run.id) for run in runs]
+df_runs = pd.DataFrame([run.config | dict(run.summary) for run in runs])
+df_runs[["display_name", "id"]] = [(run.display_name, run.id) for run in runs]
 
 
 # %%
-df.isna().sum()
+df_runs.isna().sum()
 
 
 # %% --- Update run metadata ---
@@ -41,9 +41,9 @@ for idx, run in enumerate(runs, 1):
         "mace-wbm-IS2RE-debug-", "mace-wbm-IS2RE-"
     )
 
-    for x in (Task.IS2RE, "ES2RE"):
-        if x in run.display_name:
-            new_config["task_type"] = x
+    for key in (Task.IS2RE, Task.RS2RE):
+        if key in run.display_name:
+            new_config["task_type"] = key
 
     if "SLURM_JOB_ID" in new_config:
         new_config["slurm_job_id"] = new_config.pop("SLURM_JOB_ID")

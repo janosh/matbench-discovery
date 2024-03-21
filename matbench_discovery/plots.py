@@ -106,6 +106,7 @@ def hist_classified_stable_vs_hull_dist(
     clf_col, value_name = "classified", "count"
 
     df_plot = pd.DataFrame()
+    each_true_pos = each_true_neg = each_false_neg = each_false_pos = None
 
     for facet, df_group in (
         df.groupby(kwargs["facet_col"]) if "facet_col" in kwargs else [(None, df)]
