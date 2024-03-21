@@ -161,8 +161,8 @@ assert df_wbm.index[0] == "wbm-1-1"
 assert df_wbm.index[-1] == "wbm-5-23308"
 
 df_wbm[Key.init_struct] = df_wbm.pop("org")
-df_wbm["final_structure"] = df_wbm.pop("opt")
-assert list(df_wbm.columns) == [Key.init_struct, "final_structure"]
+df_wbm[Key.final_struct] = df_wbm.pop("opt")
+assert list(df_wbm.columns) == [Key.init_struct, Key.final_struct]
 
 
 # %% download WBM ComputedStructureEntries from
@@ -247,7 +247,7 @@ df_wbm["composition_from_cse"] = [
 ]
 
 df_wbm["composition_from_final_struct"] = [
-    Structure.from_dict(struct).composition for struct in tqdm(df_wbm.final_structure)
+    Structure.from_dict(struct).composition for struct in tqdm(df_wbm[Key.final_struct])
 ]
 
 # all but 1 composition matches between CSE and final structure
@@ -499,7 +499,9 @@ assert len(df_summary) == len(df_wbm) == 257_487 - 502 - 22
 for mat_id, cse in df_wbm[Key.cse].items():
     assert mat_id == cse["entry_id"], f"{mat_id} != {cse['entry_id']}"
 
-df_wbm["cse"] = [ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_wbm[Key.cse])]
+df_wbm[Key.cse] = [
+    ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_wbm[Key.cse])
+]
 # raw WBM ComputedStructureEntries have no energy corrections applied:
 assert all(cse.uncorrected_energy == cse.energy for cse in df_wbm.cse)
 # summary and CSE n_sites match
@@ -548,7 +550,7 @@ with gzip.open(DATA_FILES.mp_patched_phase_diagram, "rb") as zip_file:
 # takes ~20 min at 200 it/s for 250k entries in WBM
 assert Key.each_true not in df_summary
 
-for mat_id, cse in tqdm(df_wbm.cse.items(), total=len(df_wbm)):
+for mat_id, cse in tqdm(df_wbm[Key.cse].items(), total=len(df_wbm)):
     assert mat_id == cse.entry_id, f"{mat_id=} != {cse.entry_id=}"
     assert cse.entry_id in df_summary.index, f"{cse.entry_id=} not in df_summary"
 
@@ -562,7 +564,7 @@ for mat_id, cse in tqdm(df_wbm.cse.items(), total=len(df_wbm)):
 assert sum(df_wbm.index != df_summary.index) == 0
 
 for row in tqdm(df_wbm.itertuples(), total=len(df_wbm), desc="ML energies to CSEs"):
-    mat_id, cse, formula = row.Index, row.cse, row.formula_from_cse
+    mat_id, cse, formula = row.Index, row[Key.cse], row.formula_from_cse
     assert mat_id == cse.entry_id, f"{mat_id=} != {cse.entry_id=}"
     assert mat_id in df_summary.index, f"{mat_id=} not in df_summary"
 
@@ -665,12 +667,9 @@ df_summary.round(6).to_csv(f"{WBM_DIR}/{today}-wbm-summary.csv.gz")
 
 # %% only here to load data for later inspection
 if False:
-    wbm_summary_path = f"{WBM_DIR}/2022-10-19-wbm-summary.csv.gz"
-    df_summary = pd.read_csv(wbm_summary_path).set_index(Key.mat_id)
-    df_wbm = pd.read_json(
-        f"{WBM_DIR}/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
-    ).set_index(Key.mat_id)
+    df_summary = pd.read_csv(DATA_FILES.wbm_summary).set_index(Key.mat_id)
+    df_wbm = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index(Key.mat_id)
 
-    df_wbm["cse"] = [
+    df_wbm[Key.cse] = [
         ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_wbm[Key.cse])
     ]

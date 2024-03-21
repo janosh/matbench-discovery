@@ -1,3 +1,17 @@
+"""
+This script requires installing the as-yet unmerged multi-GPU branch
+in the MACE repo.
+pip install git+https://github.com/ACEsuit/mace@multi-GPU
+Plan is to merge it into main and then release to PyPI. At that point,
+the install command will be:
+pip install mace-torch
+
+If you want to fine-tune an existing MACE checkpoint rather than train a
+model from scratch, install the foundations branch instead which has an interface
+just for that.
+pip install git+https://github.com/ACEsuit/mace@foundations
+"""
+
 from __future__ import annotations
 
 import ast
@@ -35,9 +49,6 @@ from matbench_discovery.slurm import slurm_submit
 __author__ = "Yuan Chiang, Ilyes Batatia, Gregor Simm, David Kovacs"
 __date__ = "2023-09-18"
 
-
-# This script requires installing MACE.
-# pip install git+https://github.com/ACEsuit/mace
 
 module_dir = os.path.dirname(__file__)
 
@@ -77,8 +88,8 @@ def main(**kwargs: Any) -> None:
     if args.distributed:
         try:
             distr_env = DistributedEnvironment()
-        except Exception as e:
-            print(f"Error specifying environment for distributed training: {e}")
+        except Exception as exc:
+            print(f"Error specifying environment for distributed training: {exc}")
             return
         world_size = distr_env.world_size
         local_rank = distr_env.local_rank
@@ -122,10 +133,10 @@ def main(**kwargs: Any) -> None:
 
     # Data preparation
     if args.train_file.endswith(".xyz"):
-        if args.valid_file is not None:
-            assert args.valid_file.endswith(
-                ".xyz"
-            ), "valid_file if given must be same format as train_file"
+        if args.valid_file is not None and not args.valid_file.endswith(".xyz"):
+            raise RuntimeError(
+                f"valid_file must be .xyz if train_file is .xyz, got {args.valid_file}"
+            )
         config_type_weights = get_config_type_weights(args.config_type_weights)
         collections, atomic_energies_dict = get_dataset_from_xyz(
             train_path=args.train_file,
@@ -150,7 +161,7 @@ def main(**kwargs: Any) -> None:
             f"{len(collections.valid)}, tests=[{test_config_lens}]"
         )
     elif args.train_file.endswith(".h5"):
-        atomic_energies_dict = None
+        atomic_energies_dict = collections = None
     else:
         raise RuntimeError(
             f"train_file must be either .xyz or .h5, got {args.train_file}"
@@ -485,8 +496,8 @@ def main(**kwargs: Any) -> None:
             f"{args.swa_forces_weight}, learning rate : {args.swa_lr}"
         )
         if args.loss == "forces_only":
-            print("Can not select swa with forces only loss.")
-        elif args.loss == "virials":
+            raise RuntimeError("Can not select SWA with forces-only loss.")
+        if args.loss == "virials":
             loss_fn_energy = modules.WeightedEnergyForcesVirialsLoss(
                 energy_weight=args.swa_energy_weight,
                 forces_weight=args.swa_forces_weight,

@@ -1426,7 +1426,7 @@ references:
   URL: https://www.nature.com/articles/s41467-021-23339-x
   volume: '12'
 
-- id: mok_direction-based_2022
+- id: mok_directionbased_2022
   accessed:
     - year: 2022
       month: 10
@@ -1438,7 +1438,7 @@ references:
       given: Jongseung
     - family: Back
       given: Seoin
-  citation-key: mok_direction-based_2022
+  citation-key: mok_directionbased_2022
   DOI: 10.26434/chemrxiv-2022-dp58c
   genre: preprint
   issued:

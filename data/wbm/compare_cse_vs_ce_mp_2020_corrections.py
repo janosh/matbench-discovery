@@ -18,7 +18,7 @@ from matbench_discovery.plots import plt
 
 """
 NOTE MaterialsProject2020Compatibility takes structural information into account when
-correcting energies (only applies to certain oxides and sulfides). Always use
+correcting energies (for certain oxides and sulfides). Always use
 ComputedStructureEntry, not ComputedEntry when applying corrections.
 """
 
