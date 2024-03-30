@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import pandas as pd
 from crystal_toolkit.helpers.utils import hook_up_fig_with_struct_viewer
 

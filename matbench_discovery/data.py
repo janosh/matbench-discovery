@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import gzip
 import json
 import os
@@ -7,20 +5,18 @@ import pickle
 import sys
 import urllib.error
 import urllib.request
+from collections.abc import Callable
 from glob import glob
-from typing import TYPE_CHECKING, Any, Callable
+from pathlib import Path
+from typing import Any
 
 import pandas as pd
 from monty.json import MontyDecoder
+from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
 from tqdm import tqdm
 
 from matbench_discovery import FIGSHARE_DIR
 from matbench_discovery.enums import Key
-
-if TYPE_CHECKING:
-    from pathlib import Path
-
-    from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
 
 # ruff: noqa: T201
 

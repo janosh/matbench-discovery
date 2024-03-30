@@ -2,20 +2,13 @@
 positive/negative and compute performance metrics.
 """
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
+from collections.abc import Sequence
 
 import numpy as np
+import pandas as pd
 from sklearn.metrics import r2_score
 
 from matbench_discovery import STABILITY_THRESHOLD
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
-
-    import pandas as pd
-
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-01"

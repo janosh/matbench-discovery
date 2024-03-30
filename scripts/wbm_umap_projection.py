@@ -10,8 +10,6 @@ https://www.nature.com/articles/s41524-023-01012-9
 """
 
 # %%
-from __future__ import annotations
-
 import os
 
 import matplotlib.pyplot as plt

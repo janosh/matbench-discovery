@@ -1,9 +1,8 @@
-from __future__ import annotations
-
 import json
 import os
+from pathlib import Path
 from random import random
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from unittest.mock import patch
 
 import pandas as pd
@@ -21,10 +20,6 @@ from matbench_discovery.data import (
     load,
 )
 from matbench_discovery.enums import Key
-
-if TYPE_CHECKING:
-    from pathlib import Path
-
 
 with open(f"{FIGSHARE_DIR}/{figshare_versions[-1]}.json") as file:
     figshare_urls = json.load(file)["files"]

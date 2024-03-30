@@ -12,8 +12,6 @@ just for that.
 pip install git+https://github.com/ACEsuit/mace@foundations
 """
 
-from __future__ import annotations
-
 import ast
 import json
 import os

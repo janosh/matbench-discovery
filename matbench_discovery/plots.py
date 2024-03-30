@@ -1,11 +1,10 @@
 """Plotting functions for analyzing model performance on materials discovery."""
 
-from __future__ import annotations
-
 import functools
 import math
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Literal
+from collections.abc import Sequence
+from typing import Any, Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,9 +21,6 @@ from tqdm import tqdm
 
 from matbench_discovery import STABILITY_THRESHOLD
 from matbench_discovery.metrics import classify_stable
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-05"
