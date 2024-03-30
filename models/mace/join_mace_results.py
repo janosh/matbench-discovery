@@ -3,8 +3,6 @@ into single file.
 """
 
 # %%
-from __future__ import annotations
-
 import os
 from glob import glob
 

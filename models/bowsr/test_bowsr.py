@@ -1,6 +1,4 @@
 # %%
-from __future__ import annotations
-
 import contextlib
 import os
 from importlib.metadata import version

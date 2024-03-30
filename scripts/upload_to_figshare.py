@@ -5,16 +5,14 @@ https://colab.research.google.com/drive/13CAM8mL1u7ZsqNhfZLv7bNb1rdhMI64d?usp=sh
 Found notebook in docs: https://help.figshare.com/article/how-to-use-the-figshare-api
 """
 
-from __future__ import annotations
-
 import hashlib
 import json
 import os
 import sys
+import tomllib  # needs python 3.11
 from typing import Any
 
 import requests
-import tomllib  # needs python 3.11
 from requests.exceptions import HTTPError
 from tqdm import tqdm
 

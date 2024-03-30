@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import os
 
 from matbench_discovery import ROOT, WANDB_PATH, timestamp, today

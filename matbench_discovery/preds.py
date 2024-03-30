@@ -1,6 +1,5 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, Any, Literal
+from collections.abc import Sequence
+from typing import Any, Literal
 
 import pandas as pd
 from tqdm import tqdm
@@ -10,9 +9,6 @@ from matbench_discovery.data import Files, df_wbm, glob_to_df
 from matbench_discovery.enums import Key
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.plots import plotly_colors, plotly_line_styles, plotly_markers
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
 
 """Centralize data-loading and computing metrics for plotting scripts"""
 

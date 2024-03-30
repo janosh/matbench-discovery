@@ -3,8 +3,6 @@ pandas-styled HTML table and a plotly figure.
 """
 
 # %%
-from __future__ import annotations
-
 import json
 
 import numpy as np

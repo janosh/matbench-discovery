@@ -1,17 +1,12 @@
-from __future__ import annotations
-
 import math
-from typing import TYPE_CHECKING
 
 import numpy as np
+import pandas as pd
 import pytest
 from pytest import approx
 
 from matbench_discovery.enums import Key
 from matbench_discovery.metrics import classify_stable, stable_metrics
-
-if TYPE_CHECKING:
-    import pandas as pd
 
 
 @pytest.mark.parametrize(

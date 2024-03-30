@@ -1,11 +1,5 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 import numpy as np
-
-if TYPE_CHECKING:
-    from pymatgen.core import Structure
+from pymatgen.core import Structure
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-12-02"

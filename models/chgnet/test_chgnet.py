@@ -6,8 +6,6 @@ pip install -e ./chgnet.
 """
 
 # %%
-from __future__ import annotations
-
 import os
 from importlib.metadata import version
 from typing import Any, Literal

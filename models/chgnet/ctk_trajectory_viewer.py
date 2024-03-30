@@ -1,15 +1,14 @@
 # %%
-from __future__ import annotations
-
 import os
 import sys
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
 
 import crystal_toolkit.components as ctc
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from chgnet.model import StructOptimizer as ChgnetRelaxer
+from chgnet.model.dynamics import TrajectoryObserver
 from crystal_toolkit.settings import SETTINGS
 from dash import Dash, dcc, html
 from dash.dependencies import Input, Output
@@ -18,9 +17,6 @@ from pymatgen.core import Lattice, Structure
 
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import Key
-
-if TYPE_CHECKING:
-    from chgnet.model.dynamics import TrajectoryObserver
 
 # ruff: noqa: T201
 __author__ = "Janosh Riebesell"
