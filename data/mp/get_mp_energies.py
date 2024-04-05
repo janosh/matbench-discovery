@@ -5,7 +5,7 @@ import pandas as pd
 from aviary.wren.utils import get_aflow_label_from_spglib
 from mp_api.client import MPRester
 from pymatgen.core import Structure
-from pymatviz.utils import annotate_metrics
+from pymatviz.powerups import annotate_metrics
 from tqdm import tqdm
 
 from matbench_discovery import STABILITY_THRESHOLD, today

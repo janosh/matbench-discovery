@@ -30,7 +30,7 @@ def test_df_each_pred() -> None:
     assert len(df_each_pred) == len(df_wbm)
     assert {*df_each_pred} == {
         *df_metrics,
-        Key.model_mean_each,
+        Key.each_mean_models,
     }, "df_each_pred has wrong columns"
     assert all(df_each_pred.isna().mean() < 0.05), "too many NaNs in df_each_pred"
 
@@ -39,7 +39,7 @@ def test_df_each_err() -> None:
     assert len(df_each_err) == len(df_wbm)
     assert {*df_each_err} == {
         *df_metrics,
-        Key.model_mean_err,
+        Key.each_err_models,
     }, "df_each_err has wrong columns"
     assert all(df_each_err.isna().mean() < 0.05), "too many NaNs in df_each_err"
 

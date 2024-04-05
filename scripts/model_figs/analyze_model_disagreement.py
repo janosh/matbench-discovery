@@ -7,7 +7,7 @@ import sys
 
 import pandas as pd
 from pymatviz.io import save_fig
-from pymatviz.utils import add_identity_line
+from pymatviz.powerups import add_identity_line
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.data import DATA_FILES
@@ -49,32 +49,32 @@ n_structs, fig = 200, None
 
 for material_cls, pattern in material_classes.items():
     df_subset = df_preds[df_preds[Key.formula].str.match(pattern)]
-    df_plot = df_subset.nlargest(n_structs, Key.model_mean_err).round(2)
+    df_plot = df_subset.nlargest(n_structs, Key.each_err_models).round(2)
+    y_max = df_plot[Key.each_mean_models].max() + 0.6
+    y_min = df_plot[Key.each_mean_models].min() - 0.3
 
     fig = df_plot.plot.scatter(
         x=Key.each_true,
-        y=Key.model_mean_each,
+        y=Key.each_mean_models,
         color=Key.model_std_each,
         backend="plotly",
         hover_name=Key.mat_id,
         hover_data=[Key.formula],
         color_continuous_scale="Turbo",
-        range_x=[-0.5, 4],
-        range_y=[-0.5, 4],
-        # range_color=[0, df_plot[model_std_col].max()],
+        range_y=(-0.5, y_max),
     )
     # for horizontal colorbar
     # yanchor="bottom", y=1, xanchor="center", x=0.5, orientation="h", thickness=12
     fig.layout.coloraxis.colorbar.update(title_side="right", thickness=14)
-    fig.layout.margin.update(l=0, r=30, b=0, t=60)
+    fig.layout.margin.update(l=0, r=30, b=0, t=0)
     add_identity_line(fig)
     label = {"all": "structures"}.get(material_cls, material_cls)
-    fig.layout.title.update(
-        text=f"{n_structs} {material_cls} with largest hull distance errors<br>"
-        "colored by model disagreement, sized by number of sites",
-        x=0.5,
-    )
-    # size markers by structure
+    # fig.layout.title.update(
+    #     text=f"{n_structs} {material_cls} with largest hull distance errors<br>"
+    #     "colored by model disagreement, sized by number of sites",
+    #     x=0.5,
+    # )
+    # size markers by square root of structure site count
     fig.data[0].marker.size = df_plot["n_sites"] ** 0.5 * 3
     # tried setting error_y=model_std_col but looks bad
     # fig.update_traces(
@@ -83,7 +83,7 @@ for material_cls, pattern in material_classes.items():
     fig.show()
     img_name = f"scatter-largest-errors-models-mean-vs-true-hull-dist-{material_cls}"
     save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
-    save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
+    save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=600, height=300)
 
 
 # %%
