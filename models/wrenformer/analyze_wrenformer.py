@@ -6,8 +6,8 @@ import pandas as pd
 from aviary.wren.utils import get_isopointal_proto_from_aflow
 from pymatviz import spacegroup_hist, spacegroup_sunburst
 from pymatviz.io import df_to_html_table, df_to_pdf, save_fig
+from pymatviz.powerups import add_identity_line, bin_df_cols
 from pymatviz.ptable import ptable_heatmap_plotly
-from pymatviz.utils import add_identity_line, bin_df_cols
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, Model
 from matbench_discovery.data import DATA_FILES, df_wbm

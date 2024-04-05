@@ -238,7 +238,7 @@ for model in models:
 
 # important: do df_each_pred.std(axis=1) before inserting Key.model_mean_each into df
 df_preds[Key.model_std_each] = df_each_pred.std(axis=1)
-df_each_pred[Key.model_mean_each] = df_preds[Key.model_mean_each] = df_each_pred.mean(
+df_each_pred[Key.each_mean_models] = df_preds[Key.each_mean_models] = df_each_pred.mean(
     axis=1
 )
 
@@ -247,6 +247,6 @@ df_each_err = pd.DataFrame()
 for model in models:
     df_each_err[model] = df_preds[model] - df_preds[Key.e_form]
 
-df_each_err[Key.model_mean_err] = df_preds[Key.model_mean_err] = df_each_err.abs().mean(
-    axis=1
+df_each_err[Key.each_err_models] = df_preds[Key.each_err_models] = (
+    df_each_err.abs().mean(axis=1)
 )

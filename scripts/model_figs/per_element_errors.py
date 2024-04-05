@@ -37,7 +37,7 @@ if test_subset == TestSubset.uniq_protos:
 
 
 for df in (df_each_err, df_preds):
-    df[Key.model_mean_err] = df_each_err.abs().mean(axis=1)
+    df[Key.each_err_models] = df_each_err.abs().mean(axis=1)
 
 
 # %% project average model error onto periodic table
@@ -127,7 +127,7 @@ fig.show()
 normalized = True
 cs_range = (0, 0.5)  # same range for all plots
 # cs_range = (None, None)  # different range for each plot
-for model in (*df_metrics, Key.model_mean_err):
+for model in (*df_metrics, Key.each_err_models):
     df_elem_err[model] = (
         df_frac_comp * df_each_err[model].abs().to_numpy()[:, None]
     ).mean()
@@ -146,7 +146,7 @@ for model in (*df_metrics, Key.model_mean_err):
 # %%
 expected_cols = {
     *"ALIGNN, BOWSR, CGCNN, CGCNN+P, CHGNet, M3GNet, MEGNet, "
-    f"{train_count_col}, {Key.model_mean_err}, {test_set_std_col}, Voronoi RF, "
+    f"{train_count_col}, {Key.each_err_models}, {test_set_std_col}, Voronoi RF, "
     "Wrenformer".split(", ")
 }
 assert {*df_elem_err} >= expected_cols
@@ -182,7 +182,7 @@ fig = df_melt.plot.scatter(
     hover_data={val_col: ":.2f", train_count_col: ":,.0f"},
 )
 for trace in fig.data:
-    if trace.name in ("CHGNet", "Voronoi RF", Key.model_mean_err):
+    if trace.name in ("CHGNet", "Voronoi RF", Key.each_err_models):
         continue
     trace.visible = "legendonly"
 fig.update_traces(textposition="top center")  # place text above scatter points

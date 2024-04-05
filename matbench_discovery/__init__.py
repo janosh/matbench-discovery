@@ -9,9 +9,9 @@ from importlib.metadata import Distribution
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.io as pio
-import pymatviz  # noqa: F401
+import pymatviz  # noqa: F401 # needed for pymatviz_dark template
 
-from matbench_discovery.enums import Model, Quantity
+from matbench_discovery.enums import Key, Model, Quantity
 
 PKG_NAME = "matbench-discovery"
 direct_url = Distribution.from_name(PKG_NAME).read_text("direct_url.json") or "{}"
@@ -59,7 +59,9 @@ with open(f"{FIGSHARE_DIR}/1.0.0.json") as file:
     FIGSHARE_URLS = json.load(file)
 
 # --- start global plot settings
-px.defaults.labels = Quantity.key_val_dict() | Model.key_val_dict()
+px.defaults.labels = (  # Quantity last to get precedence over Key and Model
+    Key.val_label_dict() | Model.key_val_dict() | Quantity.key_val_dict()
+)
 
 global_layout = dict(
     paper_bgcolor="rgba(0,0,0,0)",

@@ -42,8 +42,8 @@ for good_or_bad, init_or_final in itertools.product(
     struct_col = {"initial": Key.init_struct, "final": Key.cse}[init_or_final]
 
     errs = {
-        "best": df_each_err[Key.model_mean_err].nsmallest(n_structs),
-        "worst": df_each_err[Key.model_mean_err].nlargest(n_structs),
+        "best": df_each_err[Key.each_err_models].nsmallest(n_structs),
+        "worst": df_each_err[Key.each_err_models].nlargest(n_structs),
     }[good_or_bad]
     title = (
         f"{good_or_bad.title()} {len(errs)} {init_or_final} structures (across "
@@ -70,7 +70,7 @@ for good_or_bad, init_or_final in itertools.product(
 # %%
 n_structs = 1000
 fig = go.Figure()
-for idx, model in enumerate((Key.model_mean_err, *df_metrics)):
+for idx, model in enumerate((Key.each_err_models, *df_metrics)):
     large_errors = df_each_err[model].abs().nlargest(n_structs)
     small_errors = df_each_err[model].abs().nsmallest(n_structs)
     for label, errors in zip(("min", "max"), (large_errors, small_errors)):
