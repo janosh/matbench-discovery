@@ -41,29 +41,27 @@ for good_or_bad, init_or_final in itertools.product(
     n_structs = len(axs.flat)
     struct_col = {"initial": Key.init_struct, "final": Key.cse}[init_or_final]
 
-    errs = {
+    errors = {
         "best": df_each_err[Key.each_err_models].nsmallest(n_structs),
         "worst": df_each_err[Key.each_err_models].nlargest(n_structs),
     }[good_or_bad]
     title = (
-        f"{good_or_bad.title()} {len(errs)} {init_or_final} structures (across "
+        f"{good_or_bad.title()} {len(errors)} {init_or_final} structures (across "
         f"{len(list(df_each_pred))} models)\nErrors in (ev/atom)"
     )
     fig.suptitle(title, fontsize=20, fontweight="bold", y=1.05)
 
-    for idx, (ax, (mat_id, error)) in enumerate(zip(axs.flat, errs.items()), 1):
+    for idx, (mat_id, error) in enumerate(errors.items(), 1):
         struct = df_cse[struct_col].loc[mat_id]
         if "structure" in struct:
             struct = struct["structure"]
         struct = Structure.from_dict(struct)
-        plot_structure_2d(struct, ax=ax)
+        ax = plot_structure_2d(struct, ax=axs.flat[idx - 1])
         _, spg_num = struct.get_space_group_info()
         formula = struct.composition.reduced_formula
-        ax.set_title(
-            f"{idx}. {formula} (spg={spg_num})\n{mat_id} {error=:.2f}",
-            fontweight="bold",
-        )
-    out_path = f"{PDF_FIGS}/{good_or_bad}-{len(errs)}-structures-{init_or_final}.webp"
+        ax_title = f"{idx}. {formula} (spg={spg_num})\n{mat_id} {error=:.2f}"
+        ax.set_title(ax_title, fontweight="bold")
+    out_path = f"{PDF_FIGS}/{good_or_bad}-{len(errors)}-structures-{init_or_final}.webp"
     # fig.savefig(out_path, dpi=300)
 
 
@@ -73,7 +71,7 @@ fig = go.Figure()
 for idx, model in enumerate((Key.each_err_models, *df_metrics)):
     large_errors = df_each_err[model].abs().nlargest(n_structs)
     small_errors = df_each_err[model].abs().nsmallest(n_structs)
-    for label, errors in zip(("min", "max"), (large_errors, small_errors)):
+    for label, errors in (("min", large_errors), ("max", small_errors)):
         fig.add_histogram(
             x=df_wbm.loc[errors.index][fp_diff_col].values,
             name=f"{model} err<sub>{label}</sub>",
@@ -339,7 +337,7 @@ fig.show()
 y_label = "E<sub>above hull</sub> error (eV/atom)"
 n_structs = 1000
 
-for label, which in zip(("min", "max"), ("nlargest", "nsmallest")):
+for label, which in (("min", "nlargest"), ("max", "nsmallest")):
     fig = go.Figure()
     for model in df_metrics:
         errors = getattr(df_each_err[model].abs(), which)(n_structs)

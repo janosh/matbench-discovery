@@ -187,8 +187,8 @@ for name, df, traj in (
             init_struct.lattice = lattice
             if len(init_struct) != len(coords):
                 raise ValueError(f"{len(init_struct)} != {len(coords)}")
-            for site, coord in zip(init_struct, coords):
-                site.coords = coord
+            for idx, site in enumerate(init_struct):
+                site.coords = coords[idx]
 
             spg = init_struct.get_space_group_info()
             title = f"{material_id} - Spacegroup = {spg}"

@@ -162,17 +162,17 @@ print(
 )
 
 wbm_pbc_diffs_mean = df_m3gnet_is2re.wbm_pbc_diffs.mean()
-print(f"{wbm_pbc_diffs_mean = :.3}")
+print(f"{wbm_pbc_diffs_mean=:.3}")
 
 m3gnet_pbc_diffs_mean = df_m3gnet_is2re.m3gnet_pbc_diffs.mean()
-print(f"{m3gnet_pbc_diffs_mean = :.3}")
+print(f"{m3gnet_pbc_diffs_mean=:.3}")
 
 m3gnet_to_final_wbm_pbc_diffs_mean = (
     df_m3gnet_is2re.m3gnet_to_final_wbm_pbc_diffs.mean()
 )
-print(f"{m3gnet_to_final_wbm_pbc_diffs_mean = :.3}")
+print(f"{m3gnet_to_final_wbm_pbc_diffs_mean=:.3}")
 
-print(f"{wbm_pbc_diffs_mean / m3gnet_pbc_diffs_mean = :.3}")
+print(f"{wbm_pbc_diffs_mean / m3gnet_pbc_diffs_mean=:.3}")
 
 
 # %%

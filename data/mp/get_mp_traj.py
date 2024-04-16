@@ -54,7 +54,7 @@ else:
         key=lambda doc: int(doc[Key.task_id].split("-")[1]),
     )
 
-    print(f"{today}: {len(task_docs) = :,}")
+    print(f"{today}: {len(task_docs)=:,}")
 
     df_tasks = pd.DataFrame(task_docs).drop(columns=["_id"]).set_index(Key.task_id)
     df_tasks.task_type.value_counts(dropna=False).plot.pie()

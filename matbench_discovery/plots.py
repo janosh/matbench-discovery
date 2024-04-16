@@ -39,7 +39,7 @@ plotly_colors *= len(plotly_markers) // len(plotly_colors)
 colorway = ("lightseagreen", "orange", "lightsalmon", "dodgerblue")
 clf_labels = ("True Positive", "False Negative", "False Positive", "True Negative")
 clf_colors = ("lightseagreen", "orange", "lightsalmon", "dodgerblue")
-clf_color_map = dict(zip(clf_labels, clf_colors))
+clf_color_map = dict(zip(clf_labels, clf_colors, strict=True))
 
 
 def hist_classified_stable_vs_hull_dist(

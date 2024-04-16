@@ -45,7 +45,7 @@ if __name__ == "__main__":
     plt.axvline(mean, color="gray", linestyle="dashed", linewidth=1)
     # annotate the mean line
     plt.annotate(
-        f"{mean = :.2f}",
+        f"{mean=:.2f}",
         xy=(mean, 1),
         # use ax coords for y
         xycoords=("data", "axes fraction"),

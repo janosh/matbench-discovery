@@ -42,7 +42,7 @@ with MPRester(use_document_model=False) as mpr:
     docs = mpr.thermo.search(fields=fields, thermo_types=["GGA_GGA+U"])
 
 assert fields == set(docs[0]), f"missing fields: {fields - set(docs[0])}"
-print(f"{today}: {len(docs) = :,}")
+print(f"{today}: {len(docs)=:,}")
 # 2022-08-13: len(docs) = 146,323
 # 2023-01-10: len(docs) = 154,718
 

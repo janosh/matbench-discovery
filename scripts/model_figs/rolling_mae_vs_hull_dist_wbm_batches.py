@@ -69,7 +69,7 @@ for idx, marker in enumerate(markers, 1):
     df_each_step = df_each_pred[df_each_pred.index.str.startswith(f"wbm-{idx}-")]
 
     title = f"Batch {idx} ({len(df_step.filter(like='e_').dropna()):,})"
-    assert 1e4 < len(df_step) < 1e5, print(f"{len(df_step) = :,}")
+    assert 1e4 < len(df_step) < 1e5, print(f"{len(df_step)=:,}")
     assert (df_step.index == df_each_step.index).all()
 
     ax, df_err, df_std = rolling_mae_vs_hull_dist(
