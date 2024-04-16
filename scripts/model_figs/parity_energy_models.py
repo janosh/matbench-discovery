@@ -10,7 +10,8 @@ from typing import Literal
 import numpy as np
 import plotly.express as px
 from pymatviz.io import save_fig
-from pymatviz.powerups import add_identity_line, bin_df_cols
+from pymatviz.powerups import add_identity_line
+from pymatviz.utils import bin_df_cols
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.enums import Key, TestSubset

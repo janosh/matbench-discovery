@@ -71,11 +71,14 @@ assert len(mp_trj_atoms) == 145_919  # number of unique MP IDs
 
 
 # %%
-info_to_id = lambda info: f"{info[Key.task_id]}-{info['calc_id']}-{info['ionic_step']}"
+def info_dict_to_id(info: dict[str, int | str]) -> str:
+    """Construct a unique frame ID from the atoms info dict."""
+    return f"{info[Key.task_id]}-{info['calc_id']}-{info['ionic_step']}"
+
 
 df_mp_trj = pd.DataFrame(
     {
-        info_to_id(atoms.info): atoms.info
+        info_dict_to_id(atoms.info): atoms.info
         | {key: atoms.arrays.get(key) for key in ("forces", "magmoms")}
         | {"formula": str(atoms.symbols), Key.site_nums: atoms.symbols}
         for atoms_list in tqdm(mp_trj_atoms.values(), total=len(mp_trj_atoms))
@@ -101,8 +104,8 @@ df_mp_trj.to_json(mp_trj_summary_path)
 # %%
 def tile_count_anno(hist_vals: list[Any]) -> dict[str, Any]:
     """Annotate each periodic table tile with the number of values in its histogram."""
-    facecolor = cmap(norm(np.sum(len(hist_vals)))) if hist_vals else "none"
-    bbox = dict(facecolor=facecolor, alpha=0.4, pad=2, edgecolor="none")
+    face_color = cmap(norm(np.sum(len(hist_vals)))) if hist_vals else "none"
+    bbox = dict(facecolor=face_color, alpha=0.4, pad=2, edgecolor="none")
     return dict(text=si_fmt(len(hist_vals), ".0f"), bbox=bbox)
 
 
@@ -116,7 +119,7 @@ if srs_mp_trj_elem_magmoms is None:
     # project magmoms onto symbols in dict
     df_mp_trj_elem_magmom = pd.DataFrame(
         [
-            dict(zip(elems, magmoms))
+            dict(zip(elems, magmoms, strict=False))
             for elems, magmoms in df_mp_trj.set_index(Key.site_nums)[Key.magmoms]
             .dropna()
             .items()
@@ -159,7 +162,7 @@ if os.path.isfile(ptable_force_hist_path):
 if srs_mp_trj_elem_forces is None:
     df_mp_trj_elem_forces = pd.DataFrame(
         [
-            dict(zip(elems, np.abs(forces).mean(axis=1)))
+            dict(zip(elems, np.abs(forces).mean(axis=1), strict=False))
             for elems, forces in df_mp_trj.set_index(Key.site_nums)[Key.forces].items()
         ]
     )

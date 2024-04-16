@@ -59,6 +59,7 @@ all_counts = (
 
 
 # %% print prevalence of stable structures in full WBM and uniq-prototypes only
+print(f"{STABILITY_THRESHOLD=}")
 for df, label in (
     (df_wbm, "full WBM"),
     (df_wbm.query(Key.uniq_proto), "WBM unique prototypes"),
@@ -66,6 +67,10 @@ for df, label in (
     n_stable = sum(df[Key.each_true] <= STABILITY_THRESHOLD)
     stable_rate = n_stable / len(df)
     print(f"{label}: {stable_rate=:.1%} ({n_stable:,} out of {len(df):,})")
+
+# on 2024-04-15: STABILITY_THRESHOLD=0
+# full WBM: stable_rate=16.7% (42,825 out of 256,963)
+# WBM unique prototypes: stable_rate=15.3% (32,942 out of 215,488)
 
 
 # %%

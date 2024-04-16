@@ -18,7 +18,7 @@ def test_slurm_submit(
     time = "0:0:1"
     account = "fake-account"
 
-    func_call = lambda: slurm_submit(
+    kwargs = dict(
         job_name=job_name,
         out_dir=out_dir,
         time=time,
@@ -28,7 +28,7 @@ def test_slurm_submit(
         slurm_flags="--foo",
     )
 
-    slurm_vars = func_call()
+    slurm_vars = slurm_submit(**kwargs)  # type: ignore[arg-type]
 
     assert slurm_vars == dict(
         slurm_job_id="1234", slurm_timelimit="0:0:1", slurm_flags="--foo"
@@ -44,7 +44,7 @@ def test_slurm_submit(
         patch("sys.argv", ["slurm-submit"]),
         patch("matbench_discovery.slurm.subprocess.run") as mock_subprocess_run,
     ):
-        func_call()
+        slurm_submit(**kwargs)  # type: ignore[arg-type]
 
     assert mock_subprocess_run.call_count == 1
 

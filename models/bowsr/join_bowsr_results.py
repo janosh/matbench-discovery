@@ -38,9 +38,7 @@ df_bowsr = pd.concat(dfs.values()).round(4)
 df_wbm = pd.read_csv(DATA_FILES.wbm_summary).set_index(Key.mat_id)
 
 
-print(
-    f"{len(df_bowsr) - len(df_wbm) = :,} missing ({len(df_bowsr):,} - {len(df_wbm):,})"
-)
+print(f"{len(df_bowsr) - len(df_wbm)=:,} missing ({len(df_bowsr):,} - {len(df_wbm):,})")
 
 
 # %% sanity check: since Bowsr uses MEGNet as energy model final BOWSR energy and Megnet

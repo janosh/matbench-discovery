@@ -4,10 +4,12 @@
 import numpy as np
 import pandas as pd
 from aviary.wren.utils import get_isopointal_proto_from_aflow
+from IPython.display import display
 from pymatviz import spacegroup_hist, spacegroup_sunburst
 from pymatviz.io import df_to_html_table, df_to_pdf, save_fig
-from pymatviz.powerups import add_identity_line, bin_df_cols
+from pymatviz.powerups import add_identity_line
 from pymatviz.ptable import ptable_heatmap_plotly
+from pymatviz.utils import bin_df_cols
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, Model
 from matbench_discovery.data import DATA_FILES, df_wbm
@@ -20,6 +22,7 @@ __date__ = "2023-03-20"
 
 # %%
 model = Model.wrenformer
+model_low = model.lower()
 max_each_true = 1
 min_each_pred = 1
 df_each_pred[Key.each_true] = df_preds[Key.each_true]
@@ -42,9 +45,11 @@ df_mp.isopointal_proto_from_aflow.value_counts().head(12)
 
 
 # %%
-ax = spacegroup_hist(df_bad[Key.spacegroup])
-ax.set_title(f"Spacegroup hist for {title}", y=1.15)
-save_fig(ax, f"{PDF_FIGS}/spacegroup-hist-{model.lower()}-failures.pdf")
+fig = spacegroup_hist(df_bad[Key.spacegroup])
+fig.layout.title.update(text=f"Spacegroup hist for {title}", y=0.96)
+fig.layout.margin.update(l=0, r=0, t=80, b=0)
+save_fig(fig, f"{PDF_FIGS}/spacegroup-hist-{model.lower()}-failures.pdf")
+fig.show()
 
 
 # %%
@@ -68,21 +73,24 @@ df_proto_counts = df_proto_counts.reset_index(names=proto_col)
 df_proto_counts[proto_col] = df_proto_counts[proto_col].str.replace("_", "-")
 
 styler = df_proto_counts.head(10).style.background_gradient(cmap="viridis")
-
-df_to_html_table(styler, f"{SITE_FIGS}/proto-counts-{model}-failures.svelte")
-df_to_pdf(styler, f"{PDF_FIGS}/proto-counts-{model}-failures.pdf")
+styler.set_caption(f"Top 10 {proto_col} in {len(df_bad)} {model} failures")
+display(styler)
+df_to_html_table(styler, f"{SITE_FIGS}/proto-counts-{model_low}-failures.svelte")
+df_to_pdf(styler, f"{PDF_FIGS}/proto-counts-{model_low}-failures.pdf")
 
 
 # %%
-fig = spacegroup_sunburst(df_bad[Key.spacegroup], width=350, height=350)
+fig = spacegroup_sunburst(
+    df_bad[Key.spacegroup], width=350, height=350, show_counts="percent"
+)
 # fig.layout.title.update(text=f"Spacegroup sunburst for {title}", x=0.5, font_size=14)
 fig.layout.margin.update(l=1, r=1, t=1, b=1)
 fig.show()
 
 
 # %%
-save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-{model.lower()}-failures.pdf")
-save_fig(fig, f"{SITE_FIGS}/spacegroup-sunburst-{model}-failures.svelte")
+save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-{model_low}-failures.pdf")
+save_fig(fig, f"{SITE_FIGS}/spacegroup-sunburst-{model_low}-failures.svelte")
 
 
 # %%
@@ -90,7 +98,7 @@ fig = ptable_heatmap_plotly(df_bad[Key.formula])
 fig.layout.title = f"Elements in {title}"
 fig.layout.margin = dict(l=0, r=0, t=50, b=0)
 fig.show()
-save_fig(fig, f"{PDF_FIGS}/elements-{model.lower()}-failures.pdf")
+save_fig(fig, f"{PDF_FIGS}/elements-{model_low}-failures.pdf")
 
 
 # %%
