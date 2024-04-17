@@ -1,3 +1,5 @@
+"""Centralize data-loading and computing metrics for plotting scripts."""
+
 from collections.abc import Sequence
 from typing import Any, Literal
 
@@ -9,8 +11,6 @@ from matbench_discovery.data import Files, df_wbm, glob_to_df
 from matbench_discovery.enums import Key
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.plots import plotly_colors, plotly_line_styles, plotly_markers
-
-"""Centralize data-loading and computing metrics for plotting scripts"""
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-04"

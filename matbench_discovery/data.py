@@ -1,3 +1,8 @@
+"""Download, cache and hydrate data files from the Matbench Discovery Figshare article.
+
+https://figshare.com/articles/dataset/22715158
+"""
+
 import gzip
 import json
 import os
