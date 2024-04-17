@@ -1,3 +1,5 @@
+"""Enums used as keys/accessors for dicts and dataframes across Matbench Discovery."""
+
 from enum import StrEnum, unique
 from typing import Self
 

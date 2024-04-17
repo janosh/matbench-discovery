@@ -1,3 +1,8 @@
+"""Perturb atomic coordinates of a pymatgen structure.
+
+Used for CGCNN+P training set augmentation.
+"""
+
 import numpy as np
 from pymatgen.core import Structure
 

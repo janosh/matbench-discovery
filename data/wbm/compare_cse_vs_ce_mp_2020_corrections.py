@@ -1,3 +1,8 @@
+"""NOTE MaterialsProject2020Compatibility takes structural information into account when
+correcting energies (for oxides and sulfides only). Always use
+ComputedStructureEntry, not ComputedEntry when applying energy corrections.
+"""
+
 # %%
 import gzip
 import json
@@ -15,13 +20,6 @@ from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.enums import Key
 from matbench_discovery.plots import plt
-
-"""
-NOTE MaterialsProject2020Compatibility takes structural information into account when
-correcting energies (for certain oxides and sulfides). Always use
-ComputedStructureEntry, not ComputedEntry when applying corrections.
-"""
-
 
 df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(Key.mat_id)
 

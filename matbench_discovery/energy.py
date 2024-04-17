@@ -1,3 +1,7 @@
+"""Functions to compute formation and elemental reference energies from
+pymatgen EntryLikes.
+"""
+
 import itertools
 from collections.abc import Sequence
 

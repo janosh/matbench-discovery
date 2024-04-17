@@ -6,20 +6,19 @@
   const ppd_doc_url = `https://github.com/materialsproject/pymatgen/blob/v2023.5.10/pymatgen/analysis/phase_diagram.py#L1480-L1814`
   const ppd_link = `<a href=${ppd_doc_url}>PatchedPhaseDiagram</a>`
   const cse_doc_url = `https://github.com/materialsproject/pymatgen/blob/v2023.5.10/pymatgen/entries/computed_entries.py#L579-L722`
-  const cse_link = `<a href=${cse_doc_url}>ComputedStructureEntry</a>`
 
   const mp_trj_link = `<a href="https://figshare.com/articles/dataset/23713842">MPtrj</a>`
   const descriptions = {
     alignn_checkpoint: `ALIGNN model trained on <code>mp_computed_structure_entries</code>`,
     mp_computed_structure_entries:
-      `JSON-Serialized MP ${cse_link} objects containing relaxed structures and DFT final energies`,
+      `JSON-Serialized MP <a href=${cse_doc_url}>ComputedStructureEntries</a> containing DFT relaxed structures and corresponding final energies`,
     mp_elemental_ref_entries: `Minimum energy ComputedEntry for each element in MP`,
     mp_energies: `Materials Project formation energies and energies above convex hull`,
     mp_patched_phase_diagram:
       `${ppd_link} constructed from all MP ComputedStructureEntries`,
-    wbm_computed_structure_entries: `Materials Project computed structure entries`,
+    wbm_computed_structure_entries: `WBM <a href=${cse_doc_url}>ComputedStructureEntries</a> containing DFT relaxed structures and corresponding final energies`,
     wbm_initial_structures: `Unrelaxed WBM structures`,
-    wbm_cses_plus_init_structs: `Both unrelaxed and DFT-relaxed WBM structures, the latter stored with their final VASP energies as ${cse_link}`,
+    wbm_cses_plus_init_structs: `Both unrelaxed and DFT-relaxed WBM structures, the latter stored with their final VASP energies as <a href=${cse_doc_url}>ComputedStructureEntry</a>`,
     wbm_summary:
       `Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more.`,
     mp_trj_extxyz_by_yuan: `${mp_trj_link} converted to <code>ase</code>-compatible extended XYZ format and compressed (11.3 to 1.6 GB) by Yuan Chiang`,

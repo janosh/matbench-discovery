@@ -1,3 +1,7 @@
+"""WBM exploratory data analysis (EDA).
+Start with comparing MP and WBM elemental prevalence.
+"""
+
 # %%
 import os
 
@@ -25,11 +29,6 @@ from matbench_discovery.preds import df_each_err
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-30"
-
-"""
-WBM exploratory data analysis (EDA).
-Start with comparing MP and WBM elemental prevalence.
-"""
 
 module_dir = os.path.dirname(__file__)
 data_page = f"{ROOT}/site/src/routes/data"

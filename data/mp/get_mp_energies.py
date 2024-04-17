@@ -1,3 +1,9 @@
+"""Download all MP formation and above hull energies on 2023-01-10.
+
+Related EDA of MP formation energies:
+https://github.com/janosh/pymatviz/blob/-/examples/mp_bimodal_e_form.ipynb
+"""
+
 # %%
 import os
 
@@ -11,13 +17,6 @@ from tqdm import tqdm
 from matbench_discovery import STABILITY_THRESHOLD, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.enums import Key
-
-"""
-Download all MP formation and above hull energies on 2023-01-10.
-
-Related EDA of MP formation energies:
-https://github.com/janosh/pymatviz/blob/-/examples/mp_bimodal_e_form.ipynb
-"""
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-01-10"

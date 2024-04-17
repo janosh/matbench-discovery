@@ -1,3 +1,5 @@
+"""Initializes global variable MODEL_METADATA."""
+
 from glob import glob
 from typing import Any
 
@@ -20,11 +22,7 @@ for model_dir in MODEL_DIRS:
             continue
         # make sure all required keys are non-empty
         with open(md_file) as yml_file:
-            models = yaml.full_load(yml_file)
+            model_data = yaml.full_load(yml_file)
 
-        # some metadata files contain a single model, some have multiple
-        if not isinstance(models, list):
-            models = [models]
-        for model in models:
-            model["model_dir"] = model_dir
-            MODEL_METADATA[model["model_name"]] = model
+        model_data["model_dir"] = model_dir
+        MODEL_METADATA[model_data["model_name"]] = model_data

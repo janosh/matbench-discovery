@@ -1,3 +1,5 @@
+"""Slurm job submission helper function."""
+
 import os
 import subprocess
 import sys
