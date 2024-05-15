@@ -108,7 +108,9 @@ def hist_classified_stable_vs_hull_dist(
         df.groupby(kwargs["facet_col"]) if "facet_col" in kwargs else [(None, df)]
     ):
         true_pos, false_neg, false_pos, true_neg = classify_stable(
-            df_group[each_true_col], df_group[each_pred_col], stability_threshold
+            df_group[each_true_col],
+            df_group[each_pred_col],
+            stability_threshold=stability_threshold,
         )
 
         # switch between hist of DFT-computed and model-predicted convex hull distance
@@ -264,6 +266,7 @@ def hist_classified_stable_vs_hull_dist(
 def rolling_mae_vs_hull_dist(
     e_above_hull_true: pd.Series,
     e_above_hull_preds: pd.DataFrame | dict[str, pd.Series],
+    *,
     df_rolling_err: pd.DataFrame | None = None,
     df_err_std: pd.DataFrame | None = None,
     window: float = 0.04,
@@ -567,6 +570,7 @@ def rolling_mae_vs_hull_dist(
 def cumulative_metrics(
     e_above_hull_true: pd.Series,
     df_preds: pd.DataFrame,
+    *,
     metrics: Sequence[str] = ("Precision", "Recall"),
     stability_threshold: float = 0,  # set stability threshold as distance to convex
     # hull in eV / atom, usually 0 or 0.1 eV
@@ -635,7 +639,10 @@ def cumulative_metrics(
         each_true = e_above_hull_true.loc[each_pred.index]
 
         true_pos_cum, false_neg_cum, false_pos_cum, _true_neg_cum = map(
-            np.cumsum, classify_stable(each_true, each_pred, stability_threshold)
+            np.cumsum,
+            classify_stable(
+                each_true, each_pred, stability_threshold=stability_threshold
+            ),
         )
 
         # precision aka positive predictive value (PPV)

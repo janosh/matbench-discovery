@@ -29,7 +29,9 @@ with open(f"{ROOT}/site/.env") as file:
 BASE_URL = "https://api.figshare.com/v2"
 
 
-def make_request(method: str, url: str, data: Any = None, binary: bool = False) -> Any:
+def make_request(
+    method: str, url: str, *, data: Any = None, binary: bool = False
+) -> Any:
     """Make a token-authorized HTTP request to the Figshare API."""
     headers = {"Authorization": f"token {TOKEN}"}
     if data is not None and not binary:

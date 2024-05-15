@@ -66,6 +66,7 @@ PRED_FILES = PredFiles(root=f"{ROOT}/models", key_map=Model.key_val_dict())
 
 
 def load_df_wbm_with_preds(
+    *,
     models: Sequence[str] = (*PRED_FILES,),
     pbar: bool = True,
     id_col: str = Key.mat_id,

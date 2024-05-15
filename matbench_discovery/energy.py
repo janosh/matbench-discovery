@@ -16,7 +16,7 @@ from matbench_discovery.data import DATA_FILES
 
 
 def get_elemental_ref_entries(
-    entries: Sequence[EntryLike], verbose: bool = True
+    entries: Sequence[EntryLike], *, verbose: bool = True
 ) -> dict[str, Entry]:
     """Get the lowest energy pymatgen Entry for each element in a list of entries.
 

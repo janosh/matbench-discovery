@@ -33,6 +33,6 @@ ax.set_aspect("equal")
 
 # %%
 fig, axs = plt.subplots(3, 4, figsize=(12, 10))
-for idx, ax in enumerate(axs.flat, 1):
+for idx, ax in enumerate(axs.flat, start=1):
     plot_structure_2d(perturb_structure(struct), ax=ax)
     ax.set(title=f"perturbation {idx}")

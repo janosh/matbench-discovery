@@ -7,7 +7,7 @@ from pymatviz.utils import styled_html_tag
 
 
 class LabelEnum(StrEnum):
-    """StrEnum with optional label and description attributes plus dict() method."""
+    """StrEnum with optional label and description attributes plus dict() methods."""
 
     def __new__(
         cls, val: str, label: str | None = None, desc: str | None = None
@@ -153,7 +153,7 @@ class Open(LabelEnum):
 
 @unique
 class TestSubset(LabelEnum):
-    """Test set subsets."""
+    """Which subset of the test data to use for evaluation."""
 
     uniq_protos = "uniq_protos", "Unique Structure Prototypes"
     ten_k_most_stable = "10k_most_stable", "10k Most Stable"

@@ -63,7 +63,7 @@ markers = ("o", "v", "^", "H", "D")
 assert len(markers) == 5  # number of iterations of element substitution in WBM data set
 model = Model.chgnet
 
-for idx, marker in enumerate(markers, 1):
+for idx, marker in enumerate(markers, start=1):
     # select all rows from WBM step=idx
     df_step = df_preds[df_preds.index.str.startswith(f"wbm-{idx}-")]
     df_each_step = df_each_pred[df_each_pred.index.str.startswith(f"wbm-{idx}-")]
