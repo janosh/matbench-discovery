@@ -17,6 +17,7 @@ __date__ = "2023-02-01"
 def classify_stable(
     e_above_hull_true: pd.Series,
     e_above_hull_pred: pd.Series,
+    *,
     stability_threshold: float | None = 0,
     fillna: bool = True,
 ) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
@@ -69,6 +70,7 @@ def classify_stable(
 def stable_metrics(
     each_true: Sequence[float],
     each_pred: Sequence[float],
+    *,
     stability_threshold: float = STABILITY_THRESHOLD,
     fillna: bool = True,
 ) -> dict[str, float]:
@@ -95,7 +97,10 @@ def stable_metrics(
             Recall, Accuracy, F1, TPR, FPR, TNR, FNR, MAE, RMSE, R2.
     """
     n_true_pos, n_false_neg, n_false_pos, n_true_neg = map(
-        sum, classify_stable(each_true, each_pred, stability_threshold, fillna)
+        sum,
+        classify_stable(
+            each_true, each_pred, stability_threshold=stability_threshold, fillna=fillna
+        ),
     )
 
     n_total_pos = n_true_pos + n_false_neg

@@ -79,7 +79,7 @@ n_struct = min(n_rows * n_cols, len(df_diff))
 struct_col = Key.init_struct
 
 fig.suptitle(f"{n_struct} {struct_col} {title}", fontsize=16, fontweight="bold", y=1.05)
-for idx, row in enumerate(df_cse.loc[df_diff.index].itertuples(), 1):
+for idx, row in enumerate(df_cse.loc[df_diff.index].itertuples(), start=1):
     struct = Structure.from_dict(getattr(row, struct_col))
     ax = plot_structure_2d(struct, ax=axs.flat[idx - 1])
     _, spg_num = struct.get_space_group_info()

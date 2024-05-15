@@ -90,14 +90,10 @@ ignore = [
   "C408",    # unnecessary-collection-call
   "C901",
   "COM812",
-  "D100",    # undocumented-public-module
   "D205",    # blank-line-after-summary
-  "DTZ005",
   "E731",    # lambda-assignment
   "EM101",
   "EM102",
-  "FBT001",
-  "FBT002",
   "FIX002",
   "INP001",
   "ISC001",
@@ -125,9 +121,9 @@ isort.known-third-party = ["wandb"]
 isort.split-on-trailing-comma = false
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["D", "S101"]
-"matbench_discovery/plots.py" = ["ERA001"] # allow commented out code
-"matbench_discovery/preds.py" = ["ERA001"] # allow commented out code
+"tests/*" = ["D", "FBT001", "FBT002", "S101"]
+"matbench_discovery/plots.py" = ["ERA001"]    # allow commented out code
+"matbench_discovery/preds.py" = ["ERA001"]    # allow commented out code
 "scripts/*" = ["D", "ERA001", "S101"]
 "models/*" = ["D", "ERA001", "S101"]
 "data/*" = ["ERA001", "S101"]

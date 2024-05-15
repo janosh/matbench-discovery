@@ -40,6 +40,7 @@ n_umap_neighbors = 750
 # %%
 def featurize_dataframe(
     df_in: pd.DataFrame | pd.Series,
+    *,
     struct_col: str = "structure",
     ignore_errors: bool = True,
     chunk_size: int = 30,

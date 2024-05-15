@@ -3,7 +3,7 @@
 import json
 import os
 import warnings
-from datetime import datetime
+from datetime import UTC, datetime
 from importlib.metadata import Distribution
 
 import matplotlib.pyplot as plt
@@ -43,7 +43,7 @@ WANDB_PATH = "janosh/matbench-discovery"
 # threshold on hull distance for a material to be considered stable
 STABILITY_THRESHOLD = 0
 
-timestamp = f"{datetime.now():%Y-%m-%d@%H-%M-%S}"
+timestamp = f"{datetime.now(tz=UTC):%Y-%m-%d@%H-%M-%S}"
 today = timestamp.split("@")[0]
 
 # filter pymatgen warnings that spam the logs when e.g. applying corrections to

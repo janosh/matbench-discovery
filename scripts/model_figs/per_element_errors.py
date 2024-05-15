@@ -66,7 +66,7 @@ df_elem_err = df_elem_err.reset_index(name=train_count_col).set_index("index")
 df_elem_err.index.name = "symbol"
 
 
-# %%
+# %% plot number of structures containing each element in MP and WBM
 for label, srs in (
     ("MP", df_elem_err[train_count_col]),
     ("WBM", df_frac_comp.where(pd.isna, 1).sum()),

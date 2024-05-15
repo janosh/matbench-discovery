@@ -95,6 +95,7 @@ df_train, df_val = train_test_split(
 
 def df_to_loader(
     df: pd.DataFrame,
+    *,
     batch_size: int = 128,
     line_graph: bool = True,
     pin_memory: bool = False,

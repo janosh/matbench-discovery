@@ -34,7 +34,7 @@ df_runs.isna().sum()
 updated_runs: list[Run] = []
 wet_run = input("Wet run or dry run? [w/d] ").lower().startswith("w")
 
-for idx, run in enumerate(runs, 1):
+for idx, run in enumerate(runs, start=1):
     old_config, new_config = run.config.copy(), run.config.copy()
 
     new_display_name = run.display_name.replace(

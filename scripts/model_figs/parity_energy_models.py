@@ -176,7 +176,7 @@ x_title = fig.layout.xaxis.title.text  # used in annotations below
 y_title = fig.layout.yaxis.title.text
 
 # iterate over subplots and set new title
-for idx, anno in enumerate(fig.layout.annotations, 1):
+for idx, anno in enumerate(fig.layout.annotations, start=1):
     traces = [t for t in fig.data if t.xaxis == f"x{idx if idx > 1 else ''}"]
     # assert len(traces) in (0, 4), f"Plots must have 0 or 4 traces, got {len(traces)=}"
 

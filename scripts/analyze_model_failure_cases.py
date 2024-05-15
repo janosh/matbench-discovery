@@ -51,7 +51,7 @@ for good_or_bad, init_or_final in itertools.product(
     )
     fig.suptitle(title, fontsize=20, fontweight="bold", y=1.05)
 
-    for idx, (mat_id, error) in enumerate(errors.items(), 1):
+    for idx, (mat_id, error) in enumerate(errors.items(), start=1):
         struct = df_cse[struct_col].loc[mat_id]
         if "structure" in struct:
             struct = struct["structure"]

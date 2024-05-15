@@ -51,6 +51,7 @@ def as_dict_handler(obj: Any) -> dict[str, Any] | None:
 
 def load(
     key: str,
+    *,
     version: str = figshare_versions[-1],
     cache_dir: str | Path = default_cache_dir,
     hydrate: bool = False,
@@ -149,6 +150,7 @@ def load(
 
 def glob_to_df(
     pattern: str,
+    *,
     reader: Callable[[Any], pd.DataFrame] | None = None,
     pbar: bool = True,
     **kwargs: Any,

@@ -2,7 +2,7 @@
 
 # %%
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 import numpy as np
@@ -39,7 +39,7 @@ data_path = {"wbm": DATA_FILES.wbm_summary, "mp": DATA_FILES.mp_energies}[data_n
 print(f"{data_path=}")
 print(f"{out_dim=}")
 print(f"{projection_type=}")
-start_time = datetime.now()
+start_time = datetime.now(tz=UTC)
 print(f"job started at {start_time:%Y-%m-%d %H:%M:%S}")
 df_in = pd.read_csv(data_path, na_filter=False).set_index(Key.mat_id)
 
@@ -92,7 +92,7 @@ out_path = f"{out_dir}/one-hot-{one_hot_dim}-composition-{out_dim}d.csv.gz"
 df_in[out_cols].to_csv(out_path)
 
 print(f"Wrote projections to {out_path!r}")
-end_time = datetime.now()
+end_time = datetime.now(tz=UTC)
 print(
     f"Job finished at {end_time:%Y-%m-%d %H:%M:%S} and took "
     f"{(end_time - start_time).seconds} sec"
