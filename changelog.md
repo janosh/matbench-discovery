@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.1.2](https://github.com/janosh/matbench-discovery/compare/v1.1.1...v1.1.2)
+
+> 15 May 2024
+
+- Add `pyright` pre-commit hook and fix possibly unbound variables [`#93`](https://github.com/janosh/matbench-discovery/pull/93)
+- Fix landing page vs model page metrics mismatch [`#92`](https://github.com/janosh/matbench-discovery/pull/92)
+- Fill 3% missing MACE preds [`#90`](https://github.com/janosh/matbench-discovery/pull/90)
+- doc: add prototype description [`#89`](https://github.com/janosh/matbench-discovery/pull/89)
+- Rough solution to recreating plots for unique proto set [`#88`](https://github.com/janosh/matbench-discovery/pull/88)
+- Pass preds rather than err to v-plots [`#87`](https://github.com/janosh/matbench-discovery/pull/87)
+- Extend model metadata schema [`#86`](https://github.com/janosh/matbench-discovery/pull/86)
+- Model metadata schema validation [`#85`](https://github.com/janosh/matbench-discovery/pull/85)
+- Add GNoME model [`#84`](https://github.com/janosh/matbench-discovery/pull/84)
+- Fix test scripts raising `wandb.Table` `AssertionError`: columns argument expects list of strings or ints [`#82`](https://github.com/janosh/matbench-discovery/pull/82)
+- Fix landing page vs model page metrics mismatch (#92) [`#91`](https://github.com/janosh/matbench-discovery/issues/91)
+- fix CaptionedMetricsTable proprietary models toggle [`64e97af`](https://github.com/janosh/matbench-discovery/commit/64e97af41f6e08e4c51cef394fb9c914b0af3830)
+- hide test_set_std_key from &lt;Select /&gt; in Per-Element Model Error Heatmaps on /models page [`07555b5`](https://github.com/janosh/matbench-discovery/commit/07555b54733164090c033bb8c186c7ef1443d605)
+- fix pymatviz bin_df_cols util imports + ruff fixes + bump site deps [`a3b4362`](https://github.com/janosh/matbench-discovery/commit/a3b43624b5bba0562bdbf5b0fb9fc15cefb8ffbe)
+- bump ruff target-version = "py311" [`e8a4444`](https://github.com/janosh/matbench-discovery/commit/e8a4444741da9996fcc2fa83f73b035ad219fab8)
+- add module doc string with installation instructions to train_mace.py [`29eecf2`](https://github.com/janosh/matbench-discovery/commit/29eecf28f756289e4b8a286d00e7c20d219e496a)
+- plot script fixes [`202a305`](https://github.com/janosh/matbench-discovery/commit/202a3058d428dc7867ba6b0105d087cf29c7e130)
+- change TL;DR to MP non-endorsement disclaimer [`016e71f`](https://github.com/janosh/matbench-discovery/commit/016e71fac0040edaad2b73df8aeea61e5097d453)
+- fix and unignore ruff DTZ005 FBT001 FBT002 [`0249327`](https://github.com/janosh/matbench-discovery/commit/0249327b6b5a1eb7578b99ea95613d50d2465392)
+- fix email and MP DB version used for convex hull construction in list of WBM processing steps [`1cc9fe6`](https://github.com/janosh/matbench-discovery/commit/1cc9fe614f431fd9fdae96512dc7bbde5137c81c)
+- fix model stats JSON export in compile_model_stats.py and use model-stats-uniq-protos.json on landing page to match metrics table [`4d40cd6`](https://github.com/janosh/matbench-discovery/commit/4d40cd61eb529d0242756ccb5a0cd87f732e4b59)
+- bump ruff pre-commit to 0.3.0 + auto-fixes [`71a5edc`](https://github.com/janosh/matbench-discovery/commit/71a5edc666a50bcab757bd5211886610677ab24e)
+- fix metrics-table horizontal scrolling [`a5a7bda`](https://github.com/janosh/matbench-discovery/commit/a5a7bdaefc781a14453aa604689e5131425ee67a)
+- fix copy-paste error of trained_by section in gnome.yml [`0ade5d6`](https://github.com/janosh/matbench-discovery/commit/0ade5d65a3544502649b00f756c984125463fe38)
+
 #### [v1.1.1](https://github.com/janosh/matbench-discovery/compare/v1.1.0...v1.1.1)
 
 > 28 January 2024

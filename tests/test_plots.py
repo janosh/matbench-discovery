@@ -18,7 +18,7 @@ from matbench_discovery.preds import load_df_wbm_with_preds
 
 AxLine = Literal["x", "y", "xy", ""]
 models = ["MEGNet", "CGCNN", "Voronoi RF"]
-df_wbm = load_df_wbm_with_preds(models, nrows=100)
+df_wbm = load_df_wbm_with_preds(models=models, nrows=100)
 
 
 @pytest.mark.parametrize(

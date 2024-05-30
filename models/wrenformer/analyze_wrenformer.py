@@ -75,8 +75,9 @@ df_proto_counts[proto_col] = df_proto_counts[proto_col].str.replace("_", "-")
 styler = df_proto_counts.head(10).style.background_gradient(cmap="viridis")
 styler.set_caption(f"Top 10 {proto_col} in {len(df_bad)} {model} failures")
 display(styler)
-df_to_html_table(styler, f"{SITE_FIGS}/proto-counts-{model_low}-failures.svelte")
-df_to_pdf(styler, f"{PDF_FIGS}/proto-counts-{model_low}-failures.pdf")
+img_name = f"proto-counts-{model_low}-failures"
+df_to_html_table(styler, file_path=f"{SITE_FIGS}/{img_name}.svelte")
+df_to_pdf(styler, f"{PDF_FIGS}/{img_name}.pdf")
 
 
 # %%

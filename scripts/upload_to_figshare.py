@@ -36,7 +36,7 @@ def make_request(
     headers = {"Authorization": f"token {TOKEN}"}
     if data is not None and not binary:
         data = json.dumps(data)
-    response = requests.request(method, url, headers=headers, data=data)
+    response = requests.request(method, url, headers=headers, data=data, timeout=10)
     try:
         response.raise_for_status()
         try:

@@ -122,7 +122,7 @@ def stable_metrics(
     if TPR + FNR != 1:  # sanity check: true positives + false negatives = all positives
         raise ValueError(f"{TPR=} {FNR=} don't add up to 1")
 
-    # Drop NaNs to calculat the regression metrics
+    # Drop NaNs to calculate regression metrics
     is_nan = np.isnan(each_true) | np.isnan(each_pred)
     each_true, each_pred = np.array(each_true)[~is_nan], np.array(each_pred)[~is_nan]
 

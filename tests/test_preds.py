@@ -46,7 +46,7 @@ def test_df_each_err() -> None:
 
 @pytest.mark.parametrize("models", [[], ["Wrenformer"]])
 def test_load_df_wbm_with_preds(models: list[str]) -> None:
-    df = load_df_wbm_with_preds(models)
+    df = load_df_wbm_with_preds(models=models)
     assert len(df) == len(df_wbm)
     assert list(df) == list(df_wbm) + models + [f"{model}_std" for model in models]
     assert df.index.name == Key.mat_id
