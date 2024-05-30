@@ -859,8 +859,7 @@ references:
   source: Cambridge University Press
   title: 'NOMAD: The FAIR concept for big data-driven materials science'
   title-short: NOMAD
-  URL: >-
-    https://www.cambridge.org/core/journals/mrs-bulletin/article/nomad-the-fair-concept-for-big-datadriven-materials-science/1EEF321F62D41997CA16AD367B74C4B0
+  URL: https://doi.org/10.1557/mrs.2018.208
   volume: '43'
 
 - id: dunn_benchmarking_2020
@@ -1184,7 +1183,7 @@ references:
     Commentary: The Materials Project: A materials genome approach to
     accelerating materials innovation
   title-short: Commentary
-  URL: https://aip.scitation.org/doi/10.1063%2F1.4812323
+  URL: https://doi.org/10.1063/1.4812323
   volume: '1'
 
 - id: kovacs_evaluation_2023
@@ -1451,8 +1450,7 @@ references:
   title: >-
     Direction-based Graph Representation to Accelerate Stable Catalysts
     Discovery
-  URL: >-
-    https://chemrxiv.org/engage/chemrxiv/article-details/633660f9114b7ebf1a229015
+  URL: https://doi.org/10.26434/chemrxiv-2022-dp58c
 
 - id: park_developing_2020
   accessed:
