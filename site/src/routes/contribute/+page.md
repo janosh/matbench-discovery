@@ -97,7 +97,7 @@ assert tuple(df_wbm) == [
 1. **`uncorrected_energy`**: Raw VASP-computed energy
 1. **`e_form_per_atom_wbm`**: Original formation energy per atom from [WBM paper]
 1. **`e_above_hull_wbm`**: Original energy above the convex hull in (eV/atom) from [WBM paper]
-1. **`wyckoff_spglib`**: Aflow label strings built from spacegroup and Wyckoff positions of the DFT-relaxed structure as computed by [spglib](https://spglib.readthedocs.io/en/latest/python-spglib.html?highlight=get_symmetry_dataset#get-symmetry-dataset).
+1. **`wyckoff_spglib`**: Aflow label strings built from spacegroup and Wyckoff positions of the DFT-relaxed structure as computed by [spglib](https://spglib.readthedocs.io/en/stable/api/python-api/spglib/spglib.html#spglib.get_symmetry_dataset).
 1. **`wyckoff_spglib_initial_structure`**: Same as `wyckoff_spglib` but computed from the initial structure.
 1. **`bandgap_pbe`**: PBE-level DFT band gap from [WBM paper]
 1. **`uncorrected_energy_from_cse`**: Uncorrected DFT energy stored in `ComputedStructureEntries`. Should be the same as `uncorrected_energy`. There are 2 cases where the absolute difference reported in the summary file and in the computed structure entries exceeds 0.1 eV (`wbm-2-3218`, `wbm-1-56320`) which we attribute to rounding errors.

@@ -16,7 +16,7 @@ Each iteration has varying numbers of materials which are counted by the 2nd int
 
 ## 🪓 &thinsp; Data Processing Steps
 
-The full set of processing steps used to curate the WBM test set from the raw data files (downloaded from [URLs listed below](#--links-to-wbm-files)) can be found in [`data/wbm/compile_wbm_test_set.py`](https://github.com/janosh/matbench-discovery/blob/site/data/wbm/compile_wbm_test_set.py). Processing steps taken:
+The full set of processing steps used to curate the WBM test set from the raw data files (downloaded from [URLs listed below](#--links-to-wbm-files)) can be found in [`data/wbm/compile_wbm_test_set.py`](https://github.com/janosh/matbench-discovery/blob/-/data/wbm/compile_wbm_test_set.py). Processing steps taken:
 
 - re-format material IDs: `step_1-0->wbm-1-1`, `step_1-1->wbm-1-2`, ...
 - correctly align initial structures to DFT-relaxed [`ComputedStructureEntries`](https://github.com/materialsproject/pymatgen/blob/02a4ca8aa0277b5f6db11f4de4fdbba129de70a5/pymatgen/entries/computed_entries.py#L536) (the initial structure files had 6 extra structures inserted towards the end of step 3 which had no corresponding IDs in the summary file)
@@ -85,6 +85,8 @@ Initial structures (after element substitution but before DFT relaxation) were s
 | ------------------ | --------------------------------------------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 
 ### Halle University
+
+> Edit 2024-05-31: These links are now dead. The data is still available on Materials Cloud and Google Drive.
 
 The [paper itself][wbm paper] links to a [Halle University data page](https://tddft.org/bmg/data.php) which lists download URLs for CIF files and the `ComputedStructureEntries` (CSEs) of steps 1-3:
 
