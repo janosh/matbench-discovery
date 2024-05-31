@@ -1,7 +1,3 @@
-[build-system]
-requires = ["setuptools>=61.2"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "matbench-discovery"
 version = "1.1.2"
@@ -76,6 +72,10 @@ matbench_discovery = ["figshare/*"]
 [tool.distutils.bdist_wheel]
 universal = true
 
+[build-system]
+requires = ["setuptools>=70"]
+build-backend = "setuptools.build_meta"
+
 [tool.ruff]
 target-version = "py311"
 
@@ -137,7 +137,6 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 allow_redefinition = true
 no_namespace_packages = true
-no_implicit_optional = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
