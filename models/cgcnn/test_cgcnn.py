@@ -35,8 +35,7 @@ out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 slurm_vars = slurm_submit(
     job_name=job_name,
-    partition="ampere",
-    account="LEE-SL3-GPU",
+    account="matgen",
     time="2:0:0",
     out_dir=out_dir,
     slurm_flags="--nodes 1 --gpus-per-node 1",

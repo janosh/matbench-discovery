@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 from matplotlib.colors import SymLogNorm
-from pymatgen.core import Composition
+from pymatgen.core import Composition, Structure
 from pymatviz import (
     count_elements,
     ptable_heatmap,
@@ -18,6 +18,7 @@ from pymatviz import (
     spacegroup_sunburst,
 )
 from pymatviz.io import save_fig
+from pymatviz.structure_viz import plot_structure_2d
 from pymatviz.utils import si_fmt, si_fmt_int
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD
@@ -371,3 +372,39 @@ fig.show()
 img_name = "mp-vs-wbm-arity-hist"
 save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=450, height=280)
+
+
+# %% find large structures that changed symmetry during relaxation
+df_sym_change = (
+    df_wbm.query(f"{Key.init_wyckoff} != {Key.wyckoff}")
+    .filter(regex="wyckoff|sites")
+    .nlargest(10, Key.n_sites)
+)
+
+
+# %%
+df_wbm_structs = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index(
+    Key.mat_id
+)
+
+
+# %%
+for wbm_id in df_sym_change.index:
+    init_struct = Structure.from_dict(df_wbm_structs.loc[wbm_id][Key.init_struct])
+    final_struct = Structure.from_dict(df_wbm_structs.loc[wbm_id][Key.cse]["structure"])
+    init_struct.properties[Key.mat_id] = f"{wbm_id}-init"
+    final_struct.properties[Key.mat_id] = f"{wbm_id}-final"
+
+    plot_structure_2d([init_struct, final_struct])
+
+
+# %% export initial and final structures with symmetry change to CIF
+wbm_id = df_sym_change.index[0]
+
+struct = Structure.from_dict(df_wbm_structs.loc[wbm_id][Key.cse]["structure"])
+struct.to(f"{module_dir}/{wbm_id}.cif")
+struct.to(f"{module_dir}/{wbm_id}.json")
+
+struct = Structure.from_dict(df_wbm_structs.loc[wbm_id][Key.init_struct])
+struct.to(f"{module_dir}/{wbm_id}-init.cif")
+struct.to(f"{module_dir}/{wbm_id}-init.json")

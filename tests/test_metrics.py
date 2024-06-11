@@ -3,7 +3,6 @@ import math
 import numpy as np
 import pandas as pd
 import pytest
-from pytest import approx
 
 from matbench_discovery.enums import Key
 from matbench_discovery.metrics import classify_stable, stable_metrics
@@ -48,7 +47,7 @@ def test_stable_metrics() -> None:
         RMSE=1.157,
         R2=-3.030,
     ).items():
-        assert metrics[key] == approx(val, abs=1e-3), f"{key=}"
+        assert metrics[key] == pytest.approx(val, abs=1e-3), f"{key=}"
 
     assert math.isnan(metrics["F1"])
 

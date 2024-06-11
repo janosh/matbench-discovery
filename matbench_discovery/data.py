@@ -117,7 +117,7 @@ def load(
     print(f"Loading {key!r} from cached file at {cache_path!r}")
     if ".pkl" in file_path:  # handle key='mp_patched_phase_diagram' separately
         with gzip.open(cache_path, "rb") as zip_file:
-            return pickle.load(zip_file)
+            return pickle.load(zip_file)  # noqa: S301
     if ".pth" in file_path:  # handle model checkpoints (e.g. key='alignn_checkpoint')
         return cache_path
 

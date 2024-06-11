@@ -39,10 +39,9 @@ if os.path.isfile(out_path):
 slurm_vars = slurm_submit(
     job_name=job_name,
     out_dir=module_dir,
-    partition="icelake-himem",
-    account="LEE-SL3-CPU",
+    account="matgen",
     time="11:55:0",
-    slurm_flags=("--mem", "30G"),
+    slurm_flags="--mem 30G",
     array=f"1-{slurm_array_task_count}",
     # TF_CPP_MIN_LOG_LEVEL=2 means INFO and WARNING logs are not printed
     # https://stackoverflow.com/a/40982782

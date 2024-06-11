@@ -29,8 +29,9 @@ def _get_calling_file_path(frame: int = 1) -> str:
 def slurm_submit(
     job_name: str,
     out_dir: str,
-    time: str,
-    account: str,
+    *,
+    time: str | None = None,
+    account: str | None = None,
     partition: str | None = None,
     py_file_path: str | None = None,
     slurm_flags: str | Sequence[str] = (),
@@ -72,30 +73,34 @@ def slurm_submit(
 
     os.makedirs(out_dir, exist_ok=True)  # slurm fails if out_dir is missing
 
+    # ensure pre_cmd ends with a semicolon
+    if pre_cmd and not pre_cmd.strip().endswith(";"):
+        pre_cmd += ";"
+
     cmd = [
-        *f"sbatch --{account=} --{time=}".replace("'", "").split(),
-        *("--job-name", job_name),
+        *("sbatch", "--job-name", job_name),
         *("--output", f"{out_dir}/slurm-%A{'-%a' if array else ''}.log"),
         *(slurm_flags.split() if isinstance(slurm_flags, str) else slurm_flags),
-        *("--wrap", f"{pre_cmd} python {py_file_path}".strip()),
+        *("--wrap", f"{pre_cmd or ''} python {py_file_path}".strip()),
     ]
-    if partition:
-        cmd += ["--partition", partition]
-    if array:
-        cmd += ["--array", array]
+    for flag in (f"{time=}", f"{account=}", f"{partition=}", f"{array=}"):
+        key, val = flag.split("=")
+        if val != "None":
+            cmd += (f"--{key}", val)
 
     is_log_file = not sys.stdout.isatty()
     is_slurm_job = "SLURM_JOB_ID" in os.environ
 
     slurm_vars = {
-        f"slurm_{key}": val
+        f"slurm_{key}": os.environ[f"SLURM_{key}".upper()]
         for key in SLURM_KEYS
-        if (val := os.getenv(f"SLURM_{key}".upper()))
+        if f"SLURM_{key}".upper() in os.environ
     }
-    slurm_vars["slurm_timelimit"] = time
-    if slurm_flags:
+    if time is not None:
+        slurm_vars["slurm_timelimit"] = time
+    if slurm_flags != ():
         slurm_vars["slurm_flags"] = str(slurm_flags)
-    if pre_cmd:
+    if pre_cmd not in ("", None):
         slurm_vars["pre_cmd"] = pre_cmd
 
     # print sbatch command into slurm log file and at job submission time

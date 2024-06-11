@@ -41,8 +41,7 @@ job_name = "train-test-voronoi-rf"
 slurm_vars = slurm_submit(
     job_name=job_name,
     out_dir=out_dir,
-    partition="icelake-himem",
-    account="LEE-SL3-CPU",
+    account="matgen",
     time="6:0:0",
 )
 
