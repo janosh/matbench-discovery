@@ -58,15 +58,13 @@ else:
 
 slurm_vars = slurm_submit(
     job_name=job_name,
-    partition="ampere",
-    account="LEE-SL3-GPU",
+    account="matgen",
     time="11:55:0",
     out_dir=out_dir,
     slurm_flags="--nodes 1 --gpus-per-node 1",
     # pre_cmd is platform specific, remove when running on other systems
     # just left here for reference
-    pre_cmd=". /etc/profile.d/modules.sh; module load rhel8/default-amp;"
-    "module load cuda/11.8",
+    pre_cmd="module load cuda/11.8",
 )
 
 

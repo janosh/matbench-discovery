@@ -8,7 +8,6 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 from pymatgen.core import Lattice, Structure
-from pytest import CaptureFixture
 
 from matbench_discovery import FIGSHARE_DIR, ROOT
 from matbench_discovery.data import (
@@ -45,7 +44,7 @@ def test_load(
     df_float: pd.DataFrame,
     # df with Structures and ComputedStructureEntries as dicts
     df_with_pmg_objects: pd.DataFrame,
-    capsys: CaptureFixture[str],
+    capsys: pytest.CaptureFixture[str],
     tmp_path: Path,
     key: str,
     hydrate: bool,
@@ -148,7 +147,7 @@ def test_load_no_mock(
     version: str,
     expected_shape: tuple[int, int],
     expected_cols: set[str],
-    capsys: CaptureFixture[str],
+    capsys: pytest.CaptureFixture[str],
     tmp_path: Path,
 ) -> None:
     assert os.listdir(tmp_path) == [], "cache_dir should be empty"

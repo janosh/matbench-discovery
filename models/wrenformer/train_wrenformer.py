@@ -32,8 +32,7 @@ out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 slurm_vars = slurm_submit(
     job_name=job_name,
-    partition="ampere",
-    account="LEE-SL3-GPU",
+    account="matgen",
     time="8:0:0",
     array=f"1-{ensemble_size}",
     out_dir=out_dir,

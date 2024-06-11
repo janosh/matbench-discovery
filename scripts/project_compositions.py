@@ -30,8 +30,7 @@ os.makedirs(out_dir, exist_ok=True)
 slurm_vars = slurm_submit(
     job_name=f"{data_name}-{projection_type}-{out_dim}d",
     out_dir=out_dir,
-    partition="icelake-himem",
-    account="LEE-SL3-CPU",
+    account="matgen",
     time="6:0:0",
 )
 

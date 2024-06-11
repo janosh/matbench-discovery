@@ -5,7 +5,6 @@ import pytest
 from pymatgen.analysis.phase_diagram import PDEntry
 from pymatgen.core import Lattice, Structure
 from pymatgen.entries.computed_entries import ComputedEntry, Entry
-from pytest import approx
 
 from matbench_discovery.energy import (
     get_e_form_per_atom,
@@ -59,5 +58,5 @@ def test_mp_ref_energies() -> None:
     """Test MP elemental reference energies are in sync with PDEntries saved to disk."""
     for key, val in mp_elemental_ref_energies.items():
         actual = mp_elem_reference_entries[key].energy_per_atom
-        assert actual == approx(val, abs=1e-3), f"{key=}"
-        assert actual == approx(val, abs=1e-3), f"{key=}"
+        assert actual == pytest.approx(val, abs=1e-3), f"{key=}"
+        assert actual == pytest.approx(val, abs=1e-3), f"{key=}"

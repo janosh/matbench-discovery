@@ -104,10 +104,8 @@ ignore = [
   "PLR",     # pylint refactor
   "PLW2901", # redefined-loop-name
   "PT006",   # pytest-parametrize-names-wrong-type
-  "PT013",   # pytest-incorrect-pytest-import
   "PTH",
   "S108",
-  "S301",
   "S310",
   "S311",
   "S603",

@@ -541,7 +541,7 @@ assert df_summary.e_correction_per_atom_mp2020.mean().round(4) == -0.1069
 
 # %%
 with gzip.open(DATA_FILES.mp_patched_phase_diagram, "rb") as zip_file:
-    ppd_mp: PatchedPhaseDiagram = pickle.load(zip_file)
+    ppd_mp: PatchedPhaseDiagram = pickle.load(zip_file)  # noqa: S301
 
 
 # %% calculate e_above_hull for each material

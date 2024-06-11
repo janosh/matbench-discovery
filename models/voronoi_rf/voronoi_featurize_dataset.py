@@ -43,8 +43,7 @@ slurm_array_task_count = 50
 
 slurm_vars = slurm_submit(
     job_name=job_name,
-    partition="icelake-himem",
-    account="LEE-SL3-CPU",
+    account="matgen",
     time="11:55:0",
     array=f"1-{slurm_array_task_count}",
     slurm_flags=("--mem", "15G") if data_name == "mp" else (),
