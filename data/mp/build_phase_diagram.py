@@ -14,6 +14,7 @@ from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedEntry, ComputedStructureEntry
 from pymatgen.ext.matproj import MPRester
+from pymatviz.io import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, ROOT, today
@@ -29,10 +30,10 @@ all_mp_computed_structure_entries = MPRester().get_entries("")
 
 # save all ComputedStructureEntries to disk
 # mp-15590 appears twice so we drop_duplicates()
-df = pd.DataFrame(all_mp_computed_structure_entries, columns=["entry"])
-df.index.name = Key.mat_id
-df.index = [e.entry_id for e in df.entry]
-df.reset_index().to_json(
+df_mp_cse = pd.DataFrame(all_mp_computed_structure_entries, columns=["entry"])
+df_mp_cse.index.name = Key.mat_id
+df_mp_cse.index = [e.entry_id for e in df_mp_cse.entry]
+df_mp_cse.reset_index().to_json(
     f"{module_dir}/{today}-mp-computed-structure-entries.json.gz",
     default_handler=lambda x: x.as_dict(),
 )
@@ -40,10 +41,10 @@ df.reset_index().to_json(
 
 # %%
 data_path = f"{module_dir}/2023-02-07-mp-computed-structure-entries.json.gz"
-df = pd.read_json(data_path).set_index(Key.mat_id)
+df_mp_cse = pd.read_json(data_path).set_index(Key.mat_id)
 
 # drop the structure, just load ComputedEntry, makes the PPD faster to build and load
-mp_computed_entries = [ComputedEntry.from_dict(dct) for dct in tqdm(df.entry)]
+mp_computed_entries = [ComputedEntry.from_dict(dct) for dct in tqdm(df_mp_cse.entry)]
 
 print(f"{len(mp_computed_entries)=:,} on {today}")
 # len(mp_computed_entries) = 146,323 on 2022-09-16
@@ -118,4 +119,4 @@ ax.set(
     xlabel="MP Formation Energy (eV/atom)",
     ylabel="Our Formation Energy (eV/atom)",
 )
-ax.figure.savefig(f"{ROOT}/tmp/{today}-our-vs-mp-formation-energies.webp", dpi=300)
+save_fig(ax, f"{ROOT}/tmp/{today}-our-vs-mp-formation-energies.webp", dpi=300)

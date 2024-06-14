@@ -40,12 +40,12 @@ for file_path in tqdm(file_paths):
     if file_path in dfs:
         continue
     try:
-        df = pd.read_json(file_path).set_index(Key.mat_id)
+        df_i = pd.read_json(file_path).set_index(Key.mat_id)
     except Exception as exc:
         failed[file_path] = str(exc)
         continue
     # drop trajectory to save memory
-    dfs[file_path] = df.drop(columns="chgnet_trajectory", errors="ignore")
+    dfs[file_path] = df_i.drop(columns="chgnet_trajectory", errors="ignore")
 
 
 print(f"{pd.Series(failed).value_counts()=}")

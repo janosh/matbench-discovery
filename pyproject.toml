@@ -26,7 +26,7 @@ classifiers = [
 requires-python = ">=3.11"
 dependencies = [
   "matplotlib",
-  "numpy",
+  "numpy<2",
   "pandas>=2.0.0",
   "plotly",
   "pymatgen",
@@ -98,7 +98,6 @@ ignore = [
   "INP001",
   "ISC001",
   "N806",    # non-lowercase-variable-in-function
-  "PD901",   # pandas-df-variable-name
   "PERF203", # try-except-in-loop
   "PLC0414", # useless-import-alias
   "PLR",     # pylint refactor

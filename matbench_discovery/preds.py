@@ -102,21 +102,21 @@ def load_df_wbm_with_preds(
     try:
         for model_name in (bar := tqdm(models, disable=not pbar, desc="Loading preds")):
             bar.set_postfix_str(model_name)
-            df = glob_to_df(PRED_FILES[model_name], pbar=False, **kwargs)
-            df = df.set_index(id_col)
-            dfs[model_name] = df
+            df_preds = glob_to_df(PRED_FILES[model_name], pbar=False, **kwargs)
+            df_preds = df_preds.set_index(id_col)
+            dfs[model_name] = df_preds
     except Exception as exc:
         raise RuntimeError(f"Failed to load {locals().get('model_name')=}") from exc
 
     from matbench_discovery.data import df_wbm
 
     df_out = df_wbm.copy()
-    for model_name, df in dfs.items():
+    for model_name, df_preds in dfs.items():
         model_key = model_name.lower().replace("→", "_").replace(" ", "_")
 
         cols = [
             col
-            for col in df
+            for col in df_preds
             if col.startswith((f"e_form_per_atom_{model_key}", f"e_{model_key}_"))
         ]
         if cols:
@@ -125,23 +125,23 @@ def load_df_wbm_with_preds(
                     f"Warning: multiple pred cols for {model_name=}, using {cols[0]!r} "
                     f"out of {cols=}"
                 )
-            df_out[model_name] = df[cols[0]]
+            df_out[model_name] = df_preds[cols[0]]
 
-        elif pred_cols := list(df.filter(like="_pred_ens")):
+        elif pred_cols := list(df_preds.filter(like="_pred_ens")):
             if len(pred_cols) != 1:
                 raise ValueError(f"{len(pred_cols)=}, expected 1")
-            df_out[model_name] = df[pred_cols[0]]
-            if std_cols := list(df.filter(like="_std_ens")):
-                df_out[f"{model_name}_std"] = df[std_cols[0]]
+            df_out[model_name] = df_preds[pred_cols[0]]
+            if std_cols := list(df_preds.filter(like="_std_ens")):
+                df_out[f"{model_name}_std"] = df_preds[std_cols[0]]
 
-        elif pred_cols := list(df.filter(like=r"_pred_")):
+        elif pred_cols := list(df_preds.filter(like=r"_pred_")):
             # make sure we average the expected number of ensemble member predictions
             if len(pred_cols) != 10:
                 raise ValueError(f"{len(pred_cols)=}, expected 10")
-            df_out[model_name] = df[pred_cols].mean(axis=1)
+            df_out[model_name] = df_preds[pred_cols].mean(axis=1)
 
         else:
-            cols = list(df)
+            cols = list(df_preds)
             msg = f"No pred col for {model_name=}, available {cols=}"
             if model_name != model_key:
                 msg = msg.replace(", ", f" ({model_key=}), ")

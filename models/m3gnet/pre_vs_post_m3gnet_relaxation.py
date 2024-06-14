@@ -8,6 +8,7 @@ import plotly.express as px
 from pymatgen.core import Structure
 from pymatgen.util.coord import pbc_diff
 from pymatviz import density_scatter
+from pymatviz.io import save_fig
 from pymatviz.powerups import add_identity_line
 from sklearn.metrics import r2_score
 
@@ -89,18 +90,16 @@ density_scatter(
 ax.set(title="M3GNet-relaxed vs DFT-relaxed WBM volumes")
 ax.set(xlabel="DFT-relaxed volume [Å³]")
 ax.set(ylabel="M3GNet-relaxed / unrelaxed volume [Å³]")
-ax.figure.savefig(f"{SITE_FIGS}/m3gnet-wbm-volume-scatter.webp", dpi=200)
+save_fig(ax, f"{SITE_FIGS}/m3gnet-wbm-volume-scatter.webp", dpi=200)
 
 
 # %% histogram of M3GNet-relaxed vs initial WBM volume residuals wrt DFT-relaxed volume
-df = df_wbm.query("m3gnet_volume < 300").filter(like="volume")
-df["m3gnet_vol_diff"] = df.m3gnet_volume - df.final_wbm_volume
-df["dft_vol_diff"] = df.initial_wbm_volume - df.final_wbm_volume
+df_plot = df_wbm.query("m3gnet_volume < 300").filter(like="volume")
+df_plot["m3gnet_vol_diff"] = df_plot.m3gnet_volume - df_plot.final_wbm_volume
+df_plot["dft_vol_diff"] = df_plot.initial_wbm_volume - df_plot.final_wbm_volume
 fig = px.histogram(
-    df.melt(
-        value_vars=["m3gnet", "dft"],
-        value_name="vol_diff",
-        var_name="method",
+    df_plot.melt(
+        value_vars=["m3gnet", "dft"], value_name="vol_diff", var_name="method"
     ),
     x="vol_diff",
     color="method",

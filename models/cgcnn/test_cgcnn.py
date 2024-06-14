@@ -50,14 +50,16 @@ data_path = {
 }[task_type]
 input_col = {Task.IS2RE: Key.init_struct, Task.RS2RE: Key.final_struct}[task_type]
 
-df = pd.read_json(data_path).set_index(Key.mat_id)
+df_in = pd.read_json(data_path).set_index(Key.mat_id)
 
-df[Key.e_form] = df_wbm[Key.e_form]
+df_in[Key.e_form] = df_wbm[Key.e_form]
 if task_type == Task.RS2RE:
-    df[input_col] = [cse["structure"] for cse in df[Key.cse]]
-assert input_col in df, f"{input_col=} not in {list(df)}"
+    df_in[input_col] = [cse["structure"] for cse in df_in[Key.cse]]
+assert input_col in df_in, f"{input_col=} not in {list(df_in)}"
 
-df[input_col] = [Structure.from_dict(dct) for dct in tqdm(df[input_col], disable=None)]
+df_in[input_col] = [
+    Structure.from_dict(dct) for dct in tqdm(df_in[input_col], disable=None)
+]
 
 filters = {
     # "display_name": {"$regex": "^train-cgcnn-augment=3-"},
@@ -81,7 +83,7 @@ for idx, run in enumerate(runs):
 
 run_params = dict(
     data_path=data_path,
-    df=dict(shape=str(df.shape), columns=", ".join(df)),
+    df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
     versions={dep: version(dep) for dep in ("aviary", "numpy", "torch")},
     ensemble_size=len(runs),
     task_type=task_type,
@@ -102,7 +104,7 @@ except Exception as exc:
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 cg_data = CrystalGraphData(
-    df, task_dict={Key.e_form: "regression"}, structure_col=input_col
+    df_in, task_dict={Key.e_form: "regression"}, structure_col=input_col
 )
 data_loader = DataLoader(
     cg_data, batch_size=1024, shuffle=False, collate_fn=collate_batch
@@ -110,7 +112,7 @@ data_loader = DataLoader(
 
 
 # %%
-df, ensemble_metrics = predict_from_wandb_checkpoints(
+df_in, ensemble_metrics = predict_from_wandb_checkpoints(
     runs,
     # dropping isolated-atom structs means len(cg_data.df) < len(df)
     cache_dir=CHECKPOINT_DIR,
@@ -121,10 +123,10 @@ df, ensemble_metrics = predict_from_wandb_checkpoints(
 )
 
 slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", "debug")
-df.round(4).to_csv(f"{out_dir}/{job_name}-preds-{slurm_array_job_id}.csv.gz")
+df_in.round(4).to_csv(f"{out_dir}/{job_name}-preds-{slurm_array_job_id}.csv.gz")
 pred_col = f"{Key.e_form}_pred_ens"
-assert pred_col in df, f"{pred_col=} not in {list(df)}"
-table = wandb.Table(dataframe=df[[Key.e_form, pred_col]].reset_index())
+assert pred_col in df_in, f"{pred_col=} not in {list(df_in)}"
+table = wandb.Table(dataframe=df_in[[Key.e_form, pred_col]].reset_index())
 
 
 # %%

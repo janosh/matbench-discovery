@@ -118,16 +118,16 @@ meta_cols = [
 ]
 show_cols = [*f"F1,DAF,Prec,Acc,TPR,TNR,MAE,RMSE,{R2_col}".split(","), *meta_cols]
 
-for label, df in (
+for label, df_met in (
     ("", df_metrics),
     ("-uniq-protos", df_metrics_uniq_protos),
     ("-first-10k", df_metrics_10k),
 ):
     # abbreviate long column names
-    df = df.rename(index={"R2": R2_col, "Precision": "Prec", "Accuracy": "Acc"})
-    df.index.name = "Model"
+    df_met = df_met.rename(index={"R2": R2_col, "Precision": "Prec", "Accuracy": "Acc"})
+    df_met.index.name = "Model"
     # only keep columns we want to show
-    df_table = df.T.filter(show_cols)
+    df_table = df_met.T.filter(show_cols)
 
     if make_uip_megnet_comparison:
         df_table = df_table.filter(regex="MEGNet|CHGNet|M3GNet")  # |Dummy
@@ -193,7 +193,7 @@ for label, df in (
     except (ImportError, RuntimeError) as exc:
         print(f"df_to_pdf failed: {exc}")
 
-    display(styler.set_caption(df.attrs.get("title")))
+    display(styler.set_caption(df_met.attrs.get("title")))
 
 
 # %% PNG metrics table unused

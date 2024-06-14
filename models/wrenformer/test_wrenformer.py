@@ -40,10 +40,10 @@ slurm_vars = slurm_submit(
 
 
 # %%
-df = df_wbm.dropna(subset=Key.init_wyckoff)
+df_wbm_clean = df_wbm.dropna(subset=Key.init_wyckoff)
 
-assert Key.e_form in df, f"{Key.e_form=} not in {list(df)}"
-assert Key.wyckoff in df, f"{Key.wyckoff=} not in {list(df)}"
+assert Key.e_form in df_wbm_clean, f"{Key.e_form=} not in {list(df_wbm_clean)}"
+assert Key.wyckoff in df_wbm_clean, f"{Key.wyckoff=} not in {list(df_wbm_clean)}"
 
 
 # %%
@@ -66,7 +66,7 @@ for idx, run in enumerate(runs):
         )
 
 run_params = dict(
-    df=dict(shape=str(df.shape), columns=", ".join(df)),
+    df=dict(shape=str(df_wbm_clean.shape), columns=", ".join(df_wbm_clean)),
     versions={dep: version(dep) for dep in ("aviary", "numpy", "torch")},
     ensemble_size=len(runs),
     task_type=task_type,
@@ -90,7 +90,7 @@ wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 # %%
 data_loader = df_to_in_mem_dataloader(
-    df=df,
+    df=df_wbm_clean,
     cache_dir=CHECKPOINT_DIR,
     target_col=Key.e_form,
     batch_size=1024,
@@ -99,23 +99,23 @@ data_loader = df_to_in_mem_dataloader(
     shuffle=False,  # False is default but best be explicit
 )
 
-df, ensemble_metrics = predict_from_wandb_checkpoints(
+df_pred, ensemble_metrics = predict_from_wandb_checkpoints(
     runs,
     data_loader=data_loader,
-    df=df,
+    df=df_wbm_clean,
     model_cls=Wrenformer,
     target_col=Key.e_form,
 )
-df = df.round(4)
+df_pred = df_pred.round(4)
 
 slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", "debug")
-df.to_csv(f"{out_dir}/{job_name}-preds-{slurm_array_job_id}.csv.gz")
+df_pred.to_csv(f"{out_dir}/{job_name}-preds-{slurm_array_job_id}.csv.gz")
 
 
 # %%
 pred_col = f"{Key.e_form}_pred_ens"
-assert pred_col in df, f"{pred_col=} not in {list(df)}"
-table = wandb.Table(dataframe=df[[Key.e_form, pred_col]].reset_index())
+assert pred_col in df_pred, f"{pred_col=} not in {list(df_pred)}"
+table = wandb.Table(dataframe=df_pred[[Key.e_form, pred_col]].reset_index())
 
 
 # %%

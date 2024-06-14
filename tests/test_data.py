@@ -153,12 +153,12 @@ def test_load_no_mock(
     assert os.listdir(tmp_path) == [], "cache_dir should be empty"
     # This function runs the download from Figshare for real hence takes some time and
     # requires being online
-    df = load(file_key, version=version, cache_dir=tmp_path)
+    df_out = load(file_key, version=version, cache_dir=tmp_path)
     assert len(os.listdir(tmp_path)) == 1, "cache_dir should have one file"
-    assert df.shape == expected_shape
+    assert df_out.shape == expected_shape
     assert (
-        set(df) >= expected_cols
-    ), f"Loaded df missing columns {expected_cols - set(df)}"
+        set(df_out) >= expected_cols
+    ), f"Loaded df missing columns {expected_cols - set(df_out)}"
 
     stdout, stderr = capsys.readouterr()
     assert stderr == ""
@@ -171,7 +171,7 @@ def test_load_no_mock(
 
     # test that df loaded from cache is the same as initial df
     pd.testing.assert_frame_equal(
-        df, load(file_key, version=version, cache_dir=tmp_path)
+        df_out, load(file_key, version=version, cache_dir=tmp_path)
     )
 
     stdout, stderr = capsys.readouterr()

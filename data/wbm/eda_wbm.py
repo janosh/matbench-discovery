@@ -24,7 +24,7 @@ from pymatviz.utils import si_fmt, si_fmt_int
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DATA_FILES, df_wbm
-from matbench_discovery.energy import mp_elem_reference_entries
+from matbench_discovery.energy import mp_elem_ref_entries
 from matbench_discovery.enums import Key, Model
 from matbench_discovery.preds import df_each_err
 
@@ -237,7 +237,7 @@ mp_ref_data = [
         "Name": entry.composition.elements[0].long_name,
         "Material ID": entry.entry_id.replace("-GGA", ""),
     }
-    for key, entry in mp_elem_reference_entries.items()
+    for key, entry in mp_elem_ref_entries.items()
 ]
 df_ref = pd.DataFrame(mp_ref_data).sort_values(atom_num_col)
 
