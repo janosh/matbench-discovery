@@ -709,23 +709,22 @@ def cumulative_metrics(
             # select every n-th row of df so that 1000 rows are left for increased
             # plotting speed and reduced file size
             # falls back on every row if df has less than 1000 rows
-            df = dfs[metric]
-            df.plot(
+            df_metric = dfs[metric]
+            df_metric.plot(
                 ax=ax,
                 legend=False,
                 backend=backend,
                 **line_kwargs | kwargs,
                 ylabel=metric,
             )
-            df = dfs[metric]
             ax.set(ylim=(0, 1), xlim=(0, None), ylabel=metric)
             bbox = dict(facecolor="white", alpha=0.5, edgecolor="none")
             for model in df_preds:
                 # TODO is this really necessary?
-                if len(df[model].dropna()) == 0:
+                if len(df_metric[model].dropna()) == 0:
                     continue
-                x_end = df[model].dropna().index[-1]
-                y_end = df[model].dropna().iloc[-1]
+                x_end = df_metric[model].dropna().index[-1]
+                y_end = df_metric[model].dropna().iloc[-1]
                 # add some visual guidelines to the plot
                 intersect_kwargs = dict(linestyle=":", alpha=0.4, linewidth=2)
                 # place model name at the end of every line

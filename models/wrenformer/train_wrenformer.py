@@ -47,11 +47,11 @@ slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
 
 print(f"\nJob started running {timestamp}")
 
-df = pd.read_csv(data_path).set_index(Key.mat_id, drop=False)
+df_data = pd.read_csv(data_path).set_index(Key.mat_id, drop=False)
 
-assert target_col in df, f"{target_col=} not in {list(df)}"
-assert Key.wyckoff in df, f"{Key.wyckoff=} not in {list(df)}"
-train_df, test_df = df_train_test_split(df, test_size=0.05)
+assert target_col in df_data, f"{target_col=} not in {list(df_data)}"
+assert Key.wyckoff in df_data, f"{Key.wyckoff=} not in {list(df_data)}"
+train_df, test_df = df_train_test_split(df_data, test_size=0.05)
 
 run_params = dict(
     data_path=data_path,

@@ -38,9 +38,9 @@ dfs: dict[str, pd.DataFrame] = locals().get("dfs", {})
 for file_path in tqdm(file_paths):
     if file_path in dfs:
         continue
-    df = pd.read_json(file_path).set_index(Key.mat_id)
+    df_i = pd.read_json(file_path).set_index(Key.mat_id)
     # drop trajectory to save memory
-    dfs[file_path] = df.drop(columns="m3gnet_trajectory", errors="ignore")
+    dfs[file_path] = df_i.drop(columns="m3gnet_trajectory", errors="ignore")
 
 df_m3gnet = pd.concat(dfs.values()).round(4)
 

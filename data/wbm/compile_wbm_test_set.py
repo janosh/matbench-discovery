@@ -102,11 +102,11 @@ for json_path in json_paths:
         continue
 
     print(f"{step=}")
-    df = pd.read_json(json_path).T
+    df_wbm_step = pd.read_json(json_path).T
 
     # we hash index only for speed
     # could use joblib.hash(df) to hash whole df but it's slow
-    checksum = pd.util.hash_pandas_object(df.index).sum()
+    checksum = pd.util.hash_pandas_object(df_wbm_step.index).sum()
     expected = wbm_structs_index_checksums[step - 1]
     assert checksum == expected, (
         f"bad df.index checksum for {step=}, {expected=}, got {checksum=}\n"
@@ -114,15 +114,19 @@ for json_path in json_paths:
     )
 
     if step == 3:
-        df = df.drop(index=[f"step_3_{wbm_id}" for wbm_id in bad_struct_ids])
+        df_wbm_step = df_wbm_step.drop(
+            index=[f"step_3_{wbm_id}" for wbm_id in bad_struct_ids]
+        )
         # re-index after dropping bad structures to get same indices as summary file
         # where IDs are consecutive, i.e. step_3_70801 is followed by step_3_70802,
         # not step_3_70804, etc.
         # df.index = [f"step_3_{idx + 1}" for idx in range(len(df))]
 
     step_len = step_lens[step - 1]
-    assert len(df) == step_len, f"bad len for {step=}: {len(df)} != {step_len}"
-    dfs_wbm_structs[step] = df
+    assert (
+        len(df_wbm_step) == step_len
+    ), f"bad len for {step=}: {len(df_wbm_step)} != {step_len}"
+    dfs_wbm_structs[step] = df_wbm_step
 
 
 # NOTE step 5 is missing 2 initial structures, see nan_init_structs_ids below
@@ -212,11 +216,11 @@ for json_path in cse_step_paths:
         print(f"{json_path=} already loaded.")
         continue
 
-    df = pd.read_json(json_path)
+    df_wbm_step = pd.read_json(json_path)
 
     step_len = step_lens[step - 1]
-    dfs_wbm_cses[step] = df
-    assert len(df) == step_len, f"{step=}: {len(df)} != {step_len}"
+    dfs_wbm_cses[step] = df_wbm_step
+    assert len(df_wbm_step) == step_len, f"{step=}: {len(df_wbm_step)} != {step_len}"
 
 
 # %%
@@ -589,14 +593,9 @@ df_summary[Key.e_form_raw.replace("uncorrected", "mp2020_corrected")] = (
 try:
     from aviary.wren.utils import get_aflow_label_from_spglib
 
-    # add Aflow-style Wyckoff labels for initial and relaxed structures
-    for key in (Key.init_wyckoff, Key.wyckoff):
-        if key not in df_wbm:
-            df_summary[key] = None
-
     # from initial structures
     for idx in tqdm(df_wbm.index):
-        if not pd.isna(df_summary.loc[idx, Key.init_wyckoff]):
+        if not pd.isna(df_summary.loc[idx].get(Key.init_wyckoff)):
             continue  # Aflow label already computed
         try:
             struct = Structure.from_dict(df_wbm.loc[idx, Key.init_struct])
@@ -606,7 +605,7 @@ try:
 
     # from relaxed structures
     for idx in tqdm(df_wbm.index):
-        if not pd.isna(df_summary.loc[idx, Key.wyckoff]):
+        if not pd.isna(df_summary.loc[idx].get(Key.wyckoff)):
             continue
 
         try:

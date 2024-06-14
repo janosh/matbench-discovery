@@ -15,7 +15,13 @@ import pandas as pd
 import plotly.express as px
 from matplotlib.colors import SymLogNorm
 from pymatgen.core import Composition, Element
-from pymatviz import count_elements, ptable_heatmap, ptable_heatmap_ratio, ptable_hists
+from pymatviz import (
+    count_elements,
+    plot_histogram,
+    ptable_heatmap,
+    ptable_heatmap_ratio,
+    ptable_hists,
+)
 from pymatviz.io import save_fig
 from pymatviz.utils import si_fmt
 from tqdm import tqdm
@@ -321,91 +327,50 @@ save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
 
 
 # %% plot formation energy per atom distribution
+# pdf_kwds defined to use the same figure size for all plots
+fig = plot_histogram(df_mp_trj[Key.e_form], bins=300)
+# fig.update_yaxes(type="log")
+fig.layout.xaxis.title = "E<sub>form</sub> (eV/atom)"
 count_col = "Number of Structures"
-axes_kwds = dict(linewidth=1, ticks="outside")
-pdf_kwds = dict(width=500, height=300)
-
-x_col, y_col = "E<sub>form</sub> (eV/atom)", count_col
-df_e_form = locals().get("df_e_form")
-
-if df_e_form is None:  # only compute once for speed
-    e_form_hist = np.histogram(df_mp_trj[Key.e_form], bins=300)
-    df_e_form = pd.DataFrame(e_form_hist, index=[y_col, x_col]).T.round(3)
-
-fig = px.bar(df_e_form, x=x_col, y=count_col, log_y=True)
-
-bin_width = df_e_form[x_col].diff().iloc[-1] * 1.2
-fig.update_traces(width=bin_width, marker_line_width=0)
-fig.layout.xaxis.update(**axes_kwds)
-fig.layout.yaxis.update(**axes_kwds)
-fig.layout.margin = dict(l=5, r=5, b=5, t=5)
+fig.layout.yaxis.title = count_col
 fig.show()
-save_fig(fig, f"{PDF_FIGS}/mp-trj-e-form-hist.pdf", **pdf_kwds)
-save_fig(fig, f"{SITE_FIGS}/mp-trj-e-form-hist.svelte")
+
+pdf_kwds = dict(width=500, height=300)
+# save_fig(fig, f"{PDF_FIGS}/mp-trj-e-form-hist.pdf", **pdf_kwds)
+# save_fig(fig, f"{SITE_FIGS}/mp-trj-e-form-hist.svelte")
 
 
 # %% plot forces distribution
-# use numpy to pre-compute histogram
-x_col, y_col = "|Forces| (eV/Å)", count_col
-df_forces = locals().get("df_forces")
-
-if df_forces is None:  # only compute once for speed
-    forces_hist = np.histogram(
-        df_mp_trj[Key.forces].explode().explode().abs(), bins=300
-    )
-    df_forces = pd.DataFrame(forces_hist, index=[y_col, x_col]).T.round(3)
-
-fig = px.bar(df_forces, x=x_col, y=count_col, log_y=True)
-
-bin_width = df_forces[x_col].diff().iloc[-1] * 1.2
-fig.update_traces(width=bin_width, marker_line_width=0)
-fig.layout.xaxis.update(**axes_kwds)
-fig.layout.yaxis.update(**axes_kwds)
-fig.layout.margin = dict(l=5, r=5, b=5, t=5)
+fig = plot_histogram(df_mp_trj[Key.forces].explode().explode().abs(), bins=300)
+fig.layout.xaxis.title = "|Forces| (eV/Å)"
+fig.layout.yaxis.title = count_col
+fig.update_yaxes(type="log")
 fig.show()
-save_fig(fig, f"{PDF_FIGS}/mp-trj-forces-hist.pdf", **pdf_kwds)
-save_fig(fig, f"{SITE_FIGS}/mp-trj-forces-hist.svelte")
+
+# save_fig(fig, f"{PDF_FIGS}/mp-trj-forces-hist.pdf", **pdf_kwds)
+# save_fig(fig, f"{SITE_FIGS}/mp-trj-forces-hist.svelte")
 
 
 # %% plot hydrostatic stress distribution
-x_col, y_col = "1/3 Tr(σ) (eV/Å³)", count_col  # noqa: RUF001
-df_stresses = locals().get("df_stresses")
-
-if df_stresses is None:  # only compute once for speed
-    stresses_hist = np.histogram(df_mp_trj[Key.stress_trace], bins=300)
-    df_stresses = pd.DataFrame(stresses_hist, index=[y_col, x_col]).T.round(3)
-
-fig = px.bar(df_stresses, x=x_col, y=y_col, log_y=True)
-
-bin_width = (df_stresses[x_col].diff().mean()) * 1.2
-fig.update_traces(width=bin_width, marker_line_width=0)
-fig.layout.xaxis.update(**axes_kwds)
-fig.layout.yaxis.update(**axes_kwds)
-fig.layout.margin = dict(l=5, r=5, b=5, t=5)
+fig = plot_histogram(df_mp_trj[Key.stress_trace], bins=300)
+fig.layout.xaxis.title = "1/3 Tr(σ) (eV/Å³)"  # noqa: RUF001
+fig.layout.yaxis.title = count_col
+fig.update_yaxes(type="log")
 fig.show()
 
-save_fig(fig, f"{PDF_FIGS}/mp-trj-stresses-hist.pdf", **pdf_kwds)
-save_fig(fig, f"{SITE_FIGS}/mp-trj-stresses-hist.svelte")
+# save_fig(fig, f"{PDF_FIGS}/mp-trj-stresses-hist.pdf", **pdf_kwds)
+# save_fig(fig, f"{SITE_FIGS}/mp-trj-stresses-hist.svelte")
 
 
 # %% plot magmoms distribution
-x_col, y_col = "Magmoms (μ<sub>B</sub>)", count_col
-df_magmoms = locals().get("df_magmoms")
-
-if df_magmoms is None:  # only compute once for speed
-    magmoms_hist = np.histogram(df_mp_trj[Key.magmoms].dropna().explode(), bins=300)
-    df_magmoms = pd.DataFrame(magmoms_hist, index=[y_col, x_col]).T.round(3)
-
-fig = px.bar(df_magmoms, x=x_col, y=y_col, log_y=True)
-
-bin_width = df_magmoms[x_col].diff().iloc[-1] * 1.2
-fig.update_traces(width=bin_width, marker_line_width=0)
-fig.layout.xaxis.update(**axes_kwds)
-fig.layout.yaxis.update(**axes_kwds)
-fig.layout.margin = dict(l=5, r=5, b=5, t=5)
+fig = plot_histogram(df_mp_trj[Key.magmoms].dropna().explode(), bins=300)
+fig.layout.xaxis.title = "Magmoms (μB)"
+fig.layout.yaxis.title = count_col
+fig.update_yaxes(type="log")
 fig.show()
-save_fig(fig, f"{PDF_FIGS}/mp-trj-magmoms-hist.pdf", **pdf_kwds)
-save_fig(fig, f"{SITE_FIGS}/mp-trj-magmoms-hist.svelte")
+
+# save_fig(fig, f"{PDF_FIGS}/mp-trj-magmoms-hist.pdf", **pdf_kwds)
+# save_fig(fig, f"{SITE_FIGS}/mp-trj-magmoms-hist.svelte")
 
 
 # %%

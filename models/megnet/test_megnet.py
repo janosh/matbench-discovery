@@ -14,6 +14,7 @@ import wandb
 from megnet.utils.models import load_model
 from pymatgen.core import Structure
 from pymatviz import density_scatter
+from pymatviz.io import save_fig
 from sklearn.metrics import r2_score
 from tqdm import tqdm
 
@@ -131,7 +132,7 @@ df_megnet.add_suffix(f"_{task_type.lower()}").round(4).to_csv(out_path)
 
 # %% compare MEGNet predictions with old and new MP corrections
 ax = density_scatter(df=df_megnet, x=pred_col, y=f"{pred_col}_old_corr")
-# ax.figure.savefig("megnet-e-form-preds-old-vs-new-corr.png")
+save_fig(ax, "megnet-e-form-preds-old-vs-new-corr.png")
 
 
 # %%

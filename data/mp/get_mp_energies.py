@@ -11,6 +11,7 @@ import pandas as pd
 from aviary.wren.utils import get_aflow_label_from_spglib
 from mp_api.client import MPRester
 from pymatgen.core import Structure
+from pymatviz.io import save_fig  # noqa: F401
 from pymatviz.powerups import annotate_metrics
 from tqdm import tqdm
 
@@ -47,13 +48,13 @@ print(f"{today}: {len(docs)=:,}")
 
 
 # %%
-df = pd.DataFrame(docs).set_index(Key.mat_id)
-df = df.rename(columns={"formula_pretty": Key.formula, "nsites": Key.n_sites})
+df_mp = pd.DataFrame(docs).set_index(Key.mat_id)
+df_mp = df_mp.rename(columns={"formula_pretty": Key.formula, "nsites": Key.n_sites})
 
-df_spg = pd.json_normalize(df.pop("symmetry"))[["number", "symbol"]]
-df["spacegroup_symbol"] = df_spg.symbol.to_numpy()
+df_spg = pd.json_normalize(df_mp.pop("symmetry"))[["number", "symbol"]]
+df_mp["spacegroup_symbol"] = df_spg.symbol.to_numpy()
 
-df.energy_type.value_counts().plot.pie(backend="plotly", autopct="%1.1f%%")
+df_mp.energy_type.value_counts().plot.pie(backend="plotly", autopct="%1.1f%%")
 # GGA: 72.2%, GGA+U: 27.8%
 
 
@@ -69,39 +70,39 @@ df_cse[Key.wyckoff] = [
 ]
 # make sure symmetry detection succeeded for all structures
 assert df_cse[Key.wyckoff].str.startswith("invalid").sum() == 0
-df[Key.wyckoff] = df_cse[Key.wyckoff]
+df_mp[Key.wyckoff] = df_cse[Key.wyckoff]
 
-spg_nums = df[Key.wyckoff].str.split("_").str[2].astype(int)
+spg_nums = df_mp[Key.wyckoff].str.split("_").str[2].astype(int)
 # make sure all our spacegroup numbers match MP's
 assert (spg_nums.sort_index() == df_spg["number"].sort_index()).all()
 
-df.to_csv(DATA_FILES.mp_energies)
+df_mp.to_csv(DATA_FILES.mp_energies)
 # df = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index(Key.mat_id)
 
 
 # %% reproduce fig. 1b from https://arxiv.org/abs/2001.10591 (as data consistency check)
-ax = df.plot.scatter(
+ax = df_mp.plot.scatter(
     x=Key.form_energy,
     y="decomposition_enthalpy",
     alpha=0.1,
     xlim=[-5, 1],
     ylim=[-1, 1],
-    color=(df.decomposition_enthalpy > STABILITY_THRESHOLD).map(
+    color=(df_mp.decomposition_enthalpy > STABILITY_THRESHOLD).map(
         {True: "red", False: "blue"}
     ),
-    title=f"{today} - {len(df):,} MP entries",
+    title=f"{today} - {len(df_mp):,} MP entries",
 )
 
-annotate_metrics(df.formation_energy_per_atom, df.decomposition_enthalpy)
+annotate_metrics(df_mp.formation_energy_per_atom, df_mp.decomposition_enthalpy)
 # result on 2023-01-10: plots match. no correlation between formation energy and
 # decomposition enthalpy. R^2 = -1.571, MAE = 1.604
-# ax.figure.savefig(f"{module_dir}/mp-decomp-enth-vs-e-form.webp", dpi=300)
+# save_fig(ax, f"{module_dir}/mp-decomp-enth-vs-e-form.webp", dpi=300)
 
 
 # %% scatter plot energy above convex hull vs decomposition enthalpy
 # https://berkeleytheory.slack.com/archives/C16RE1TUN/p1673887564955539
-mask_above_line = df.energy_above_hull - df.decomposition_enthalpy.clip(0) > 0.1
-ax = df.plot.scatter(
+mask_above_line = df_mp.energy_above_hull - df_mp.decomposition_enthalpy.clip(0) > 0.1
+ax = df_mp.plot.scatter(
     x="decomposition_enthalpy",
     y="energy_above_hull",
     color=mask_above_line.map({True: "red", False: "blue"}),
@@ -110,7 +111,7 @@ ax = df.plot.scatter(
 # most points lie on line y=x for x > 0 and y = 0 for x < 0.
 n_above_line = sum(mask_above_line)
 ax.set(
-    title=f"{n_above_line:,} / {len(df):,} = {n_above_line / len(df):.1%} "
+    title=f"{n_above_line:,} / {len(df_mp):,} = {n_above_line / len(df_mp):.1%} "
     "MP materials with\nenergy_above_hull - decomposition_enthalpy.clip(0) > 0.1"
 )
-# ax.figure.savefig(f"{module_dir}/mp-e-above-hull-vs-decomp-enth.webp", dpi=300)
+# save_fig(ax, f"{module_dir}/mp-e-above-hull-vs-decomp-enth.webp", dpi=300)

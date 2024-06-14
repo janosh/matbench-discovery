@@ -67,7 +67,7 @@ def get_elemental_ref_entries(
 
 # contains all MP elemental reference entries to compute formation energies
 # produced by get_elemental_ref_entries() in build_phase_diagram.py
-mp_elem_reference_entries = (
+mp_elem_ref_entries = (
     pd.read_json(DATA_FILES.mp_elemental_ref_entries, typ="series")
     .map(ComputedEntry.from_dict)
     .to_dict()
@@ -76,8 +76,7 @@ mp_elem_reference_entries = (
 # tested to agree with TRI's MP reference energies
 # https://github.com/TRI-AMDD/CAMD/blob/1c965cba636531e542f4821a555b98b2d81ed034/camd/utils/data.py#L134
 mp_elemental_ref_energies = {
-    elem: round(entry.energy_per_atom, 4)
-    for elem, entry in mp_elem_reference_entries.items()
+    elem: round(entry.energy_per_atom, 4) for elem, entry in mp_elem_ref_entries.items()
 }
 
 

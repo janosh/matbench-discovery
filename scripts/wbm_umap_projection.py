@@ -73,8 +73,8 @@ def featurize_dataframe(
         StructureComposition,
     )
 
-    df = df_in.to_frame() if isinstance(df_in, pd.Series) else df_in
-    for struct in df[struct_col]:
+    df_in = df_in.to_frame() if isinstance(df_in, pd.Series) else df_in
+    for struct in df_in[struct_col]:
         for site in struct:
             site.to_unit_cell(in_place=True)
 
@@ -96,13 +96,13 @@ def featurize_dataframe(
     featurizer = MultipleFeaturizer([*struct_feat, *comp_feat])
     # Set the chunk size used for Pool.map parallelization
     featurizer.set_chunksize(chunksize=chunk_size)
-    featurizer.fit(df[struct_col])
+    featurizer.fit(df_in[struct_col])
     matminer_features = featurizer.featurize_dataframe(
-        df=df, col_id=struct_col, ignore_errors=ignore_errors
+        df=df_in, col_id=struct_col, ignore_errors=ignore_errors
     )
     print("Featurization complete")
     # check failed entries
-    failed = np.any(pd.isna(matminer_features.iloc[:, df.shape[1] :]), axis=1)
+    failed = np.any(pd.isna(matminer_features.iloc[:, df_in.shape[1] :]), axis=1)
     if sum(failed) > 0:
         print(f"Number failed: {sum(failed)} / {len(failed)}")
     return matminer_features

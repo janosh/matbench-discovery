@@ -124,28 +124,28 @@ def load(
     csv_ext = (".csv", ".csv.gz", ".csv.bz2")
     reader = pd.read_csv if file_path.endswith(csv_ext) else pd.read_json
     try:
-        df = reader(cache_path, **kwargs)
+        df_out = reader(cache_path, **kwargs)
     except Exception:
         print(f"\n\nvariable dump:\n{file_path=},\n{reader=}\n{kwargs=}")
         raise
 
-    if Key.mat_id in df:
-        df = df.set_index(Key.mat_id)
+    if Key.mat_id in df_out:
+        df_out = df_out.set_index(Key.mat_id)
     if hydrate:
-        for col in df:
-            if not isinstance(df[col].iloc[0], dict):
+        for col in df_out:
+            if not isinstance(df_out[col].iloc[0], dict):
                 continue
             try:
                 # convert dicts to pymatgen Structures and ComputedStructureEntries
-                df[col] = [
+                df_out[col] = [
                     MontyDecoder().process_decoded(dct)
-                    for dct in tqdm(df[col], desc=col)
+                    for dct in tqdm(df_out[col], desc=col)
                 ]
             except Exception:
-                print(f"\n\nvariable dump:\n{col=},\n{df[col]=}")
+                print(f"\n\nvariable dump:\n{col=},\n{df_out[col]=}")
                 raise
 
-    return df
+    return df_out
 
 
 def glob_to_df(
@@ -176,8 +176,8 @@ def glob_to_df(
 
     sub_dfs = {}  # used to join slurm job array results into single df
     for file in tqdm(files, disable=not pbar):
-        df = reader(file, **kwargs)
-        sub_dfs[file] = df
+        df_i = reader(file, **kwargs)
+        sub_dfs[file] = df_i
 
     return pd.concat(sub_dfs.values())
 
