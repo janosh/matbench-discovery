@@ -84,13 +84,13 @@ def get_e_form_per_atom(
     entry: EntryLike,
     elemental_ref_energies: dict[str, float] = mp_elemental_ref_energies,
 ) -> float:
-    """Get the formation energy of a composition from a list of entries and a dict
-    mapping elements to reference energies.
+    """Get formation energy for a phase diagram entry (1st arg, composition + absolute
+    energy) and a dict mapping elements to per-atom reference energies (2nd arg).
 
     Args:
         entry: Entry | dict[str, float | str | Composition]: pymatgen Entry (PDEntry,
-            ComputedEntry or ComputedStructureEntry) or dict with energy and composition
-            keys to compute formation energy of.
+            ComputedEntry or ComputedStructureEntry) or dict with energy (absolute, not
+            per atom) and composition keys to compute formation energy of.
         elemental_ref_energies (dict[str, float], optional): Must be a covering set (for
             entry) of terminal reference energies, i.e. eV/atom of the lowest energy
             elemental phase for each element. Defaults to MP elemental reference
@@ -101,8 +101,9 @@ def get_e_form_per_atom(
         float: formation energy in eV/atom.
     """
     if isinstance(entry, dict):
-        energy = entry["energy"]
-        comp = Composition(entry["composition"])  # is idempotent if already Composition
+        energy, comp = entry["energy"], entry["composition"]
+        if isinstance(comp, str):
+            comp = Composition(comp)
     elif isinstance(entry, Entry):
         energy = entry.energy
         comp = entry.composition
