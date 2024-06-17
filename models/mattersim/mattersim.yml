@@ -42,6 +42,7 @@ authors:
     orcid: https://orcid.org/0000-0003-1454-188X
   - name: Andrew Fowler
     affiliation: Microsoft Research AI for Science
+    orcid: https://orcid.org/0000-0002-7360-3078
   - name: Daniel Zügner
     affiliation: Microsoft Research AI for Science
     orcid: https://orcid.org/0000-0003-1626-5065
@@ -77,7 +78,7 @@ paper: https://arxiv.org/abs/2405.04967
 requirements:
   Graphormer: v1
   numpy: 1.26.2
-  pymatgen: 2024.2.20 # TODO which versions were used?
+  pymatgen: 2024.5.1
 trained_for_benchmark: false
 openness: CSCD
 train_task: S2EFS
@@ -89,8 +90,7 @@ model_params: 182_000_000
 training_set:
   title: MatterSim # TODO is this the correct name for the training set?
   url: https://doi.org/10.48550/arXiv.2405.04967
-  n_structures: 17_000_000 # TODO get exact number of relaxation frames
-  n_materials: 0 # TODO get number of relaxation trajectories
+  n_structures: 17_000_000
 
 hyperparams:
   optimizer: AdamW
@@ -99,7 +99,6 @@ hyperparams:
   n_layers: 5
   n_features: 128 l=0 scalars, 64 l=1 vectors, 32 l=2 tensors
   radial_cutoff: 5.0 # Å
-  # TODO any more hyperparameters worth mentioning?
 
 notes:
   description: |
