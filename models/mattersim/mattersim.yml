@@ -1,0 +1,107 @@
+model_name: MatterSim
+model_version: n/a
+matbench_discovery_version: 1.0
+date_added: "2024-05-17"
+date_published: "2024-05-08"
+authors:
+  - name: Han Yang
+    affiliation: Microsoft Research AI for Science
+    email: hanyang@microsoft.com
+    orcid: https://orcid.org/0000-0002-4531-093X
+  - name: Chenxi Hu
+    affiliation: Microsoft Research AI for Science
+    orcid: https://orcid.org/0009-0006-8486-9230
+  - name: Yichi Zhou
+    affiliation: Microsoft Research AI for Science
+  - name: Xixian Liu
+    affiliation: Microsoft Research AI for Science
+    orcid: https://orcid.org/0009-0008-9215-3990
+  - name: Yu Shi
+    affiliation: Microsoft Research AI for Science
+    orcid: https://orcid.org/0000-0001-9235-8963
+  - name: Jielan Li
+    affiliation: Microsoft Research AI for Science
+    email: jielanli@microsoft.com
+  - name: Guanzhi Li
+    affiliation: Microsoft Research AI for Science
+    orcid: https://orcid.org/0000-0002-4167-6432
+  - name: Zekun Chen
+    affiliation: Microsoft Research AI for Science
+    orcid: https://orcid.org/0000-0002-4183-2941
+  - name: Shuizhou Chen
+    affiliation: Microsoft Research AI for Science
+    orcid: https://orcid.org/0009-0005-2701-5565
+  - name: Claudio Zeni
+    affiliation: Microsoft Research AI for Science
+    orcid: https://orcid.org/0000-0002-6334-2679
+  - name: Matthew Horton
+    affiliation: Microsoft Research AI for Science
+    orcid: https://orcid.org/0000-0001-7777-8871
+  - name: Robert Pinsler
+    affiliation: Microsoft Research AI for Science
+    orcid: https://orcid.org/0000-0003-1454-188X
+  - name: Andrew Fowler
+    affiliation: Microsoft Research AI for Science
+  - name: Daniel Zügner
+    affiliation: Microsoft Research AI for Science
+    orcid: https://orcid.org/0000-0003-1626-5065
+  - name: Tian Xie
+    affiliation: Microsoft Research AI for Science
+    orcid: https://orcid.org/0000-0002-0987-4666
+  - name: Jake Smith
+    affiliation: Microsoft Research AI for Science
+    orcid: https://orcid.org/0000-0003-0412-1312
+  - name: Lixin Sun
+    affiliation: Microsoft Research AI for Science
+    orcid: https://orcid.org/0000-0002-7971-5222
+  - name: Qian Wang
+    affiliation: Microsoft Research AI for Science
+    orcid: https://orcid.org/0009-0007-7680-4514
+  - name: Lingyu Kong
+    affiliation: Microsoft Research AI for Science
+    orcid: https://orcid.org/0009-0006-2226-5730
+  - name: Chang Liu
+    affiliation: Microsoft Research AI for Science
+    orcid: https://orcid.org/0000-0001-5207-5440
+  - name: Hongxia Hao
+    affiliation: Microsoft Research AI for Science
+    email: hongxiahao@microsoft.com
+    orcid: https://orcid.org/0000-0002-4382-200X
+  - name: Ziheng Lu
+    affiliation: Microsoft Research AI for Science
+    email: zihenglu@microsoft.com
+    orcid: https://orcid.org/0000-0003-2239-8526
+repo: https://github.com/microsoft/Graphormer
+doi: https://doi.org/10.48550/arXiv.2405.04967
+paper: https://arxiv.org/abs/2405.04967
+requirements:
+  Graphormer: v1
+  numpy: 1.26.2
+  pymatgen: 2024.2.20 # TODO which versions were used?
+trained_for_benchmark: false
+openness: CSCD
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS
+model_type: UIP
+model_params: 182_000_000
+
+training_set:
+  title: MatterSim # TODO is this the correct name for the training set?
+  url: https://doi.org/10.48550/arXiv.2405.04967
+  n_structures: 17_000_000 # TODO get exact number of relaxation frames
+  n_materials: 0 # TODO get number of relaxation trajectories
+
+hyperparams:
+  optimizer: AdamW
+  learning_rate: 2e-4 # initial value, linearly decayed to 0
+  batch_size: 256
+  n_layers: 5
+  n_features: 128 l=0 scalars, 64 l=1 vectors, 32 l=2 tensors
+  radial_cutoff: 5.0 # Å
+  # TODO any more hyperparameters worth mentioning?
+
+notes:
+  description: |
+    Graphormer is a general-purpose deep learning backbone for molecular modeling.
+  training: The model was trained on a large closed dataset with diverse chemistry, temperature and pressure.

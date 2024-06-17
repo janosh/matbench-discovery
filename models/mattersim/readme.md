@@ -1,4 +1,6 @@
-# MatterSim: all of the materials in the dataset
+# MatterSim Metrics
+
+## All of the materials in the dataset
 
 | model      | F1    | DAF   | Precision | Recall | Accuracy | TPR   | FPR   | TNR   | FNR   | TP      | FP      | TN       | FN      | MAE   | RMSE  | R2     |
 | ---------- | ----- | ----- | --------- | ------ | -------- | ----- | ----- | ----- | ----- | ------- | ------- | -------- | ------- | ----- | ----- | ------ |
@@ -15,7 +17,7 @@
 | BOWSR      | 0.437 | 1.836 | 0.315     | 0.711  | 0.702    | 0.711 | 0.320 | 0.680 | 0.289 | 31347.0 | 68140.0 | 144731.0 | 12745.0 | 0.115 | 0.164 | 0.141  |
 | Voronoi RF | 0.344 | 1.509 | 0.259     | 0.511  | 0.665    | 0.511 | 0.303 | 0.697 | 0.489 | 22517.0 | 64431.0 | 148440.0 | 21575.0 | 0.142 | 0.207 | -0.314 |
 
-# MatterSim: 10k most stable predictions in the unique prototype set
+## 10k most stable predictions in the unique prototype set
 
 | model      | F1    | DAF   | Precision | Recall | Accuracy | TPR | FPR | TNR | FNR | TP     | FP     | TN  | FN  | MAE   | RMSE  | R2     |
 | ---------- | ----- | ----- | --------- | ------ | -------- | --- | --- | --- | --- | ------ | ------ | --- | --- | ----- | ----- | ------ |
@@ -32,7 +34,7 @@
 | MEGNet     | 0.632 | 3.022 | 0.462     | 1.0    | 0.462    | 1.0 | 1.0 | 0.0 | 0.0 | 4620.0 | 5380.0 | 0.0 | 0.0 | 0.304 | 0.336 | -0.908 |
 | Voronoi RF | 0.551 | 2.487 | 0.380     | 1.0    | 0.380    | 1.0 | 1.0 | 0.0 | 0.0 | 3802.0 | 6198.0 | 0.0 | 0.0 | 0.349 | 0.417 | -1.012 |
 
-# MatterSim: materials in the unique prototype set
+## Materials in the unique prototype set
 
 | model      | F1    | DAF   | Precision | Recall | Accuracy | TPR   | FPR   | TNR   | FNR   | TP      | FP      | TN       | FN      | MAE   | RMSE  | R2     |
 | ---------- | ----- | ----- | --------- | ------ | -------- | ----- | ----- | ----- | ----- | ------- | ------- | -------- | ------- | ----- | ----- | ------ |
