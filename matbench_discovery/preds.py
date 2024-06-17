@@ -60,6 +60,8 @@ class PredFiles(Files):
 
     gnome = "gnome/2023-11-01-gnome-preds-50076332.csv.gz"
 
+    mattersim = "mattersim/mattersim-wbm-IS2RE.csv.gz"
+
 
 # key_map maps model keys to pretty labels
 PRED_FILES = PredFiles(root=f"{ROOT}/models", key_map=Model.key_val_dict())
