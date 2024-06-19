@@ -38,7 +38,7 @@ def dummy_mattersim_calculator(
     backbone: Literal["m3gnet", "graphomer"] = "m3gnet",
 ) -> SinglePointCalculator:
     """
-    This is a dummy function to that makes a dummy mattersim calculator
+    This is a dummy function that makes a mattersim calculator
     """
     print(backbone)
     calc: SinglePointCalculator = None
@@ -173,7 +173,7 @@ def parse_relaxed_atoms_list_as_df(
 
 if __name__ == "__main__":
     init_wbm_atoms_list = convert_wbm_to_atoms_list()
-    relaxed_wbm_atoms_list = relax_atoms_list(init_wbm_atoms_list)
+    relaxed_wbm_atoms_list = relax_atoms_list(init_wbm_atoms_list, backbone="graphomer")
     parse_relaxed_atoms_list_as_df(relaxed_wbm_atoms_list).to_csv(
         "mattersim-wbm-IS2RE.csv.gz"
     )
