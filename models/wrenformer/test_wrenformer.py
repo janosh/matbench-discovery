@@ -100,7 +100,7 @@ data_loader = df_to_in_mem_dataloader(
     df=df_wbm_clean,
     batch_size=1024,
     shuffle=False,  # False is default but best be explicit
-    **data_loader_kwargs,  # type: ignore[arg-type]
+    **data_loader_kwargs,
 )
 
 
