@@ -89,18 +89,24 @@ wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 
 # %%
-data_loader = df_to_in_mem_dataloader(
-    df=df_wbm_clean,
-    cache_dir=CHECKPOINT_DIR,
-    target_col=Key.e_form,
-    batch_size=1024,
+data_loader_kwargs = dict(
     input_col=Key.wyckoff,
+    target_col=Key.e_form,
+    id_col=Key.mat_id,
     embedding_type="wyckoff",
-    shuffle=False,  # False is default but best be explicit
 )
 
+data_loader = df_to_in_mem_dataloader(
+    df=df_wbm_clean,
+    batch_size=1024,
+    shuffle=False,  # False is default but best be explicit
+    **data_loader_kwargs,  # type: ignore[arg-type]
+)
+
+# %%
 df_pred, ensemble_metrics = predict_from_wandb_checkpoints(
     runs,
+    cache_dir=module_dir,
     data_loader=data_loader,
     df=df_wbm_clean,
     model_cls=Wrenformer,
