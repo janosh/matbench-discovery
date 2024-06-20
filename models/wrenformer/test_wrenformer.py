@@ -14,7 +14,7 @@ from aviary.predict import predict_from_wandb_checkpoints
 from aviary.wrenformer.data import df_to_in_mem_dataloader
 from aviary.wrenformer.model import Wrenformer
 
-from matbench_discovery import CHECKPOINT_DIR, WANDB_PATH, today
+from matbench_discovery import WANDB_PATH, today
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import Key, Task
 from matbench_discovery.plots import wandb_scatter
@@ -89,18 +89,25 @@ wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 
 # %%
-data_loader = df_to_in_mem_dataloader(
-    df=df_wbm_clean,
-    cache_dir=CHECKPOINT_DIR,
-    target_col=Key.e_form,
-    batch_size=1024,
+data_loader_kwargs = dict(
     input_col=Key.wyckoff,
+    target_col=Key.e_form,
+    id_col=Key.mat_id,
     embedding_type="wyckoff",
-    shuffle=False,  # False is default but best be explicit
 )
 
+data_loader = df_to_in_mem_dataloader(
+    df=df_wbm_clean,
+    batch_size=1024,
+    shuffle=False,  # False is default but best be explicit
+    **data_loader_kwargs,
+)
+
+
+# %%
 df_pred, ensemble_metrics = predict_from_wandb_checkpoints(
     runs,
+    cache_dir=module_dir,
     data_loader=data_loader,
     df=df_wbm_clean,
     model_cls=Wrenformer,
