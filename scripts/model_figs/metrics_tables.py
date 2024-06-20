@@ -152,14 +152,10 @@ for label, df_met in (
             na_rep="",  # render NaNs as empty string
         )
         .background_gradient(
-            cmap="viridis",
-            subset=list(higher_is_better & {*df_table}),
-            axis=0
+            cmap="viridis", subset=list(higher_is_better & {*df_table}), axis=0
         )
         .background_gradient(  # reverse color map if lower=better
-            cmap="viridis_r",
-            subset=list(lower_is_better & {*df_table}),
-            axis=0
+            cmap="viridis_r", subset=list(lower_is_better & {*df_table}), axis=0
         )
     )
     # add up/down arrows to indicate which metrics are better when higher/lower
