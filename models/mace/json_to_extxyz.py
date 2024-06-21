@@ -70,7 +70,8 @@ for material_id in tqdm(json_data):
             atoms.info["ionic_step"] = int(ionic_step)
 
             mp_id = block.get("mp_id")
-            assert mp_id == material_id, f"{mp_id=} != {material_id=}"
+            if mp_id != material_id:
+                raise ValueError(f"ID mismatch: {mp_id=} vs {material_id=}")
 
             if uncorrected_total_energy := block.get("uncorrected_total_energy"):
                 atoms.info["energy"] = uncorrected_total_energy

@@ -12,6 +12,7 @@ import plotly.express as px
 from pymatviz.io import save_fig
 from pymatviz.powerups import add_identity_line
 from pymatviz.utils import bin_df_cols
+from sklearn.metrics import r2_score
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.enums import Key, TestSubset
@@ -24,14 +25,17 @@ __date__ = "2022-11-28"
 legend = dict(x=1, y=0, xanchor="right", yanchor="bottom", title=None)
 
 # toggle between formation energy and energy above convex hull
-which_energy: Literal["e-form", "each"] = globals().get("which_energy", "each")
+EnergyType = Literal["e-form", "each"]
+# which_energy: EnergyType = globals().get("which_energy", "each")
+which_energy = "e-form"
 if which_energy == "each":
     e_pred_col = Key.each_pred
     e_true_col = Key.each_true
-else:
-    assert which_energy == "e-form", f"Invalid {which_energy=}"
+elif which_energy == "e-form":
     e_true_col = Key.e_form
     e_pred_col = Key.e_form_pred
+else:
+    raise ValueError(f"Unexpected {which_energy=}")
 
 
 test_subset = globals().get("test_subset", TestSubset.full)
@@ -98,7 +102,9 @@ for trace in fig.data:
     # initially hide all traces, let users select which models to compare
     trace.visible = "legendonly"
     model = trace.name
-    assert model in df_preds, f"Unexpected {model=} not in {models}"
+    if model not in df_preds:
+        print(f"Unexpected {model=}, not in {models=}")
+        continue
     MAE, R2 = df_metrics[model][["MAE", "R2"]]
     trace.name = f"{model} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
 
@@ -125,7 +131,9 @@ fig = px.scatter(
 for trace in fig.data:
     trace.visible = "legendonly"
     model = trace.name
-    assert model in df_preds, f"Unexpected {model=} not in {models}"
+    if model not in df_preds:
+        print(f"Unexpected {model=}, not in {models=}")
+        continue
     MAE, R2 = df_metrics[model][["MAE", "R2"]]
     trace.name = f"{model} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
 
@@ -141,7 +149,7 @@ img_name = f"{SITE_FIGS}/e-above-hull-parity-models"
 log_bin_cnt_col = f"log {bin_cnt_col}"
 df_bin[log_bin_cnt_col] = np.log1p(df_bin[bin_cnt_col]).round(2)
 
-n_cols = 4
+n_cols = 2
 n_rows = math.ceil(len(models) / n_cols)
 
 fig = px.scatter(
@@ -181,9 +189,18 @@ for idx, anno in enumerate(fig.layout.annotations, start=1):
     # assert len(traces) in (0, 4), f"Plots must have 0 or 4 traces, got {len(traces)=}"
 
     model = anno.text.split("=", 1)[1]
-    assert model in df_preds, f"Unexpected {model=} not in {list(df_preds)=}"
+    if model not in df_preds:
+        print(f"Unexpected {model=}, not in {list(df_preds)=}")
+        continue
     # add MAE and R2 to subplot titles
-    MAE, R2 = df_metrics[model][["MAE", "R2"]]
+    if which_energy == "each":
+        MAE, R2 = df_metrics[model][["MAE", "R2"]]
+    elif which_energy == "e-form":
+        MAE = df_metrics[model]["MAE"]
+        R2 = r2_score(*df_preds[[e_true_col, model]].dropna().to_numpy().T)
+    else:
+        raise ValueError(f"Unexpected {which_energy=}")
+
     sub_title = f"{model} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
     fig.layout.annotations[idx - 1].text = sub_title
 
@@ -230,10 +247,7 @@ if e_true_col == Key.each_true:
         )
 
 # enable grid
-fig.update_layout(
-    xaxis=dict(showgrid=True),
-    yaxis=dict(showgrid=True),
-)
+fig.update_layout(xaxis=dict(showgrid=True), yaxis=dict(showgrid=True))
 
 fig.update_xaxes(nticks=8)
 fig.update_yaxes(nticks=8)
@@ -246,7 +260,7 @@ fig.layout.legend.update(
 
 # fig.update_layout(yaxis=dict(scaleanchor="x", scaleratio=1))
 
-axis_titles = dict(xref="paper", yref="paper", showarrow=False)
+axis_titles = dict(xref="paper", yref="paper", showarrow=False, font_size=16)
 portrait = n_rows > n_cols
 fig.add_annotation(  # x-axis title
     x=0.5,
@@ -255,17 +269,17 @@ fig.add_annotation(  # x-axis title
     **axis_titles,
 )
 fig.add_annotation(  # y-axis title
-    x=-0.07,
+    x=-0.09 if portrait else -0.07,
     y=0.5,
     text=y_title,
     textangle=-90,
     **axis_titles,
 )
 
-fig.layout.update(height=230 * n_rows, width=240 * n_cols)
-fig.layout.coloraxis.colorbar.update(orientation="h", thickness=9, len=0.5, y=1.05)
+fig.layout.update(height=230 * n_rows)
+fig.layout.coloraxis.colorbar.update(orientation="h", thickness=9, len=0.5, y=1.02)
 # fig.layout.width = 1100
-fig.layout.margin.update(l=40, r=10, t=30 if portrait else 10, b=60 if portrait else 10)
+fig.layout.margin.update(l=60, r=10, t=0 if portrait else 10, b=60 if portrait else 10)
 fig.update_xaxes(matches=None)
 fig.update_yaxes(matches=None)
 fig.show()
@@ -274,4 +288,5 @@ fig.show()
 # %%
 fig_name = f"{which_energy}-parity-models-{n_rows}x{n_cols}"
 save_fig(fig, f"{SITE_FIGS}/{fig_name}.svelte")
+fig.layout.update(width=280 * n_cols)
 save_fig(fig, f"{PDF_FIGS}/{fig_name}.pdf")

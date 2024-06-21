@@ -68,9 +68,12 @@ for label, stats, raw_filters in (
         n_runs, name, created_gt, created_lt = raw_filters[model]
 
         date_pat = r"\d{4}-\d{2}-\d{2}"
-        assert re.match(date_pat, created_gt), f"{created_gt=} must be yyyy-mm-dd"
-        assert re.match(date_pat, created_lt), f"{created_lt=} must be yyyy-mm-dd"
-        assert created_gt < created_lt, f"{created_gt=} must be before {created_lt=}"
+        if not re.match(date_pat, created_gt):
+            raise ValueError(f"{created_gt=} must be yyyy-mm-dd")
+        if not re.match(date_pat, created_lt):
+            raise ValueError(f"{created_lt=} must be yyyy-mm-dd")
+        if created_gt > created_lt:
+            raise ValueError(f"{created_gt=} must be before {created_lt=}")
 
         if n_runs == 0 or model in stats:
             continue  # skip models with no runs or already processed
@@ -82,9 +85,10 @@ for label, stats, raw_filters in (
         }
         runs = wandb.Api().runs(WANDB_PATH, filters=filters)
 
-        assert (
-            len(runs) == n_runs
-        ), f"found {len(runs)} {label} runs for {name!r}, expected {n_runs}"
+        if len(runs) != n_runs:
+            raise ValueError(
+                f"found {len(runs)} {label} runs for {name!r}, expected {n_runs}"
+            )
 
         run_times = [run.summary.get("_wandb", {}).get("runtime", 0) for run in runs]
 

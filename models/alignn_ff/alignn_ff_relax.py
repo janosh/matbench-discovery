@@ -52,7 +52,8 @@ df_in = pd.read_json(data_path).set_index(Key.mat_id)
 df_in[Key.e_form] = df_wbm[Key.e_form]
 if task_type == Task.RS2RE:
     df_in[input_col] = [cse["structure"] for cse in df_in[Key.cse]]
-assert input_col in df_in, f"{input_col=} not in {list(df_in)}"
+if input_col not in df_in:
+    raise TypeError(f"{input_col} not in {df_in.columns=}")
 
 # Split data into parts and process only one batch
 if task_id != 0:

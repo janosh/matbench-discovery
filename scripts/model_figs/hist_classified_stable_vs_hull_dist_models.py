@@ -84,7 +84,8 @@ if backend == "matplotlib":
     # add metrics to subplot titles
     for ax in fig.axes:
         model_name = ax.get_title()
-        assert model_name in models
+        if model_name not in models:
+            raise KeyError(f"{model_name=} not in {models=}")
         if not show_metrics:
             continue
         F1, FPR, FNR, DAF = (

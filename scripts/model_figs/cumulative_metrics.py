@@ -72,9 +72,11 @@ if backend == "plotly":
         fig.layout.legend.update(traceorder="reversed")
     if metrics == ("MAE",):
         fig.layout.legend.update(y=1, x=1, xanchor="right", yanchor="top")
-    assert len(metrics) * len(models) == len(
-        fig.data
-    ), f"expected one trace per model per metric, got {len(fig.data)}"
+    if len(metrics) * len(models) != len(fig.data):
+        raise ValueError(
+            "Expected one trace per model per metric, i.e. "
+            f"{len(metrics) * len(models)} traces, got {len(fig.data)}"
+        )
 
     for trace in fig.data:
         if line_style := model_styles.get(trace.name):

@@ -72,7 +72,8 @@ for mat_id in tqdm(df_m3gnet.index):
 processed = MaterialsProject2020Compatibility().process_entries(
     df_m3gnet[Key.cse], verbose=True, clean=True
 )
-assert len(processed) == len(df_m3gnet)
+if len(processed) != len(df_m3gnet):
+    raise ValueError(f"not all entries processed: {len(processed)=} {len(df_m3gnet)=}")
 
 
 # %% compute corrected formation energies

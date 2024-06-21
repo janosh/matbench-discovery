@@ -60,7 +60,10 @@ for model in models:
 # %% matplotlib version
 fig, ax = plt.subplots(1, figsize=(10, 9))
 markers = ("o", "v", "^", "H", "D")
-assert len(markers) == 5  # number of iterations of element substitution in WBM data set
+if len(markers) != 5:
+    raise ValueError("Need 5 markers for 5 batches")
+    # number of iterations of element substitution in WBM data set
+
 model = Model.chgnet
 
 for idx, marker in enumerate(markers, start=1):
@@ -69,8 +72,10 @@ for idx, marker in enumerate(markers, start=1):
     df_each_step = df_each_pred[df_each_pred.index.str.startswith(f"wbm-{idx}-")]
 
     title = f"Batch {idx} ({len(df_step.filter(like='e_').dropna()):,})"
-    assert 1e4 < len(df_step) < 1e5, print(f"{len(df_step)=:,}")
-    assert (df_step.index == df_each_step.index).all()
+    if not (1e4 < len(df_step) < 1e5):
+        raise ValueError(f"WBM batches are 30k-50k in length, got {len(df_step)}")
+    if any(df_step.index != df_each_step.index):
+        raise ValueError("Index mismatch between df_step and df_each_step")
 
     ax, df_err, df_std = rolling_mae_vs_hull_dist(
         e_above_hull_true=df_step[Key.each_true],

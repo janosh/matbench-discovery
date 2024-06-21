@@ -63,8 +63,9 @@ for df, df_tar, col in (
     (df_test, df_wbm, Key.e_form),
 ):
     df[Key.form_energy] = df_tar[Key.form_energy]
-    nans = df_tar[col].isna().sum()
-    assert nans == 0, f"{nans} NaNs in {col} targets"
+    n_nans = df_tar[col].isna().sum()
+    if n_nans != 0:
+        raise ValueError(f"{col=} has {n_nans} NaNs")
 
 model_name = "Voronoi RandomForestRegressor"
 

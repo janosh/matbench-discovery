@@ -60,7 +60,8 @@ data_path = {
 }[task_type]
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
-assert Key.e_form in df_wbm, f"{Key.e_form=} not in {list(df_wbm)=}"
+if Key.e_form not in df_wbm:
+    raise KeyError(f"{Key.e_form!s} not in {df_wbm.columns=}")
 
 df_in = pd.read_json(data_path).set_index(Key.mat_id)
 if slurm_array_task_count > 1:

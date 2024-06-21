@@ -93,7 +93,8 @@ df_mp_trj = pd.DataFrame(
 ).T.convert_dtypes()  # convert object columns to float/int where possible
 df_mp_trj.index.name = "frame_id"
 assert len(df_mp_trj) == 1_580_312  # number of total frames
-assert Key.formula in df_mp_trj
+if Key.formula not in df_mp_trj:
+    raise KeyError(f"{Key.formula!s} not in {df_mp_trj.columns=}")
 
 # this is the unrelaxed (but MP2020 corrected) formation energy per atom of the actual
 # relaxation step
