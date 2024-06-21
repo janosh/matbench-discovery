@@ -65,7 +65,8 @@ df_in = pd.read_csv(data_path).set_index(Key.mat_id)
 df_cse = pd.read_json(DATA_FILES.mp_computed_structure_entries).set_index(Key.mat_id)
 df_in[input_col] = [Structure.from_dict(cse[input_col]) for cse in tqdm(df_cse.entry)]
 
-assert target_col in df_in
+if target_col not in df_in:
+    raise TypeError(f"{target_col!s} not in {df_in.columns=}")
 
 df_aug = df_in.copy()
 structs = df_aug.pop(input_col)

@@ -49,9 +49,8 @@ df_wbm[frac_comp_col] = [
 df_frac_comp = pd.DataFrame(comp.as_dict() for comp in df_wbm[frac_comp_col]).set_index(
     df_wbm.index
 )
-assert all(
-    df_frac_comp.sum(axis=1).round(6) == 1
-), "composition fractions don't sum to 1"
+if any(df_frac_comp.sum(axis=1).round(6) != 1):
+    raise ValueError("Sum of fractional compositions is not 1")
 
 # df_frac_comp = df_frac_comp.dropna(axis=1, thresh=100)  # remove Xe with only 1 entry
 
@@ -149,8 +148,10 @@ expected_cols = {
     f"{train_count_col}, {Key.each_err_models}, {test_set_std_col}, Voronoi RF, "
     "Wrenformer".split(", ")
 }
-assert {*df_elem_err} >= expected_cols
-assert (df_elem_err.isna().sum() < 35).all()
+if missing_cols := expected_cols - {*df_elem_err}:
+    raise ValueError(f"{missing_cols=} not in {df_elem_err.columns=}")
+if any(df_elem_err.isna().sum() > 35):
+    raise ValueError("Too many NaNs in df_elem_err")
 df_elem_err.round(4).to_json(f"{SITE_FIGS}/per-element-each-errors.json")
 
 

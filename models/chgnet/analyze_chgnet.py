@@ -39,7 +39,8 @@ df_bad = df_chgnet.query(f"{e_form_2000} - {e_form_500} > {min_e_diff}")
 # both combined
 df_diff = df_chgnet.query(f"abs({e_form_2000} - {e_form_500}) > {min_e_diff}")
 
-assert len(df_long) + len(df_bad) == len(df_diff)
+if len(df_long) + len(df_bad) != len(df_diff):
+    raise ValueError(f"{len(df_long)=} + {len(df_bad)=} != {len(df_diff)=}")
 
 
 # %%

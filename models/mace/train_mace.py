@@ -1,5 +1,4 @@
-"""
-This script requires installing the as-yet unmerged multi-GPU branch
+"""This script requires installing the as-yet unmerged multi-GPU branch
 in the MACE repo.
 pip install git+https://github.com/ACEsuit/mace@multi-GPU
 Plan is to merge it into main and then release to PyPI. At that point,
@@ -167,9 +166,10 @@ def main(**kwargs: Any) -> None:
 
     # Atomic number table
     if args.atomic_numbers is None:
-        assert args.train_file.endswith(
-            ".xyz"
-        ), "Must specify atomic_numbers when using .h5 train_file input"
+        if not args.train_file.endswith(".xyz"):
+            raise RuntimeError(
+                "atomic_numbers must be provided if train_file is not in .xyz format"
+            )
         z_table = tools.get_atomic_number_table_from_zs(
             z
             for configs in (collections.train, collections.valid)
@@ -182,7 +182,8 @@ def main(**kwargs: Any) -> None:
         else:
             print("Using atomic numbers from statistics file")
         zs_list = ast.literal_eval(args.atomic_numbers)
-        assert isinstance(zs_list, list)
+        if not isinstance(zs_list, list):
+            raise ValueError("atomic_numbers did not parse to a list")
         z_table = tools.get_atomic_number_table_from_zs(zs_list)
     print(z_table)
 
@@ -306,18 +307,21 @@ def main(**kwargs: Any) -> None:
     # Build model
     print("Building model")
     if args.num_channels is not None and args.max_L is not None:
-        assert args.num_channels > 0, "num_channels must be positive integer"
-        assert args.max_L >= 0, "max_L must be non-negative integer"
+        if args.num_channels <= 0:
+            raise ValueError("num_channels must be a positive integer")
+        if args.max_L < 0:
+            raise ValueError("max_L must be a non-negative integer")
         args.hidden_irreps = o3.Irreps(
             (args.num_channels * o3.Irreps.spherical_harmonics(args.max_L))
             .sort()
             .irreps.simplify()
         )
 
-    assert len({irrep.mul for irrep in o3.Irreps(args.hidden_irreps)}) == 1, (
-        "All channels must have the same dimension, use the num_channels and max_L"
-        " keywords to specify the number of channels and the maximum L"
-    )
+    if len({irrep.mul for irrep in o3.Irreps(args.hidden_irreps)}) != 1:
+        raise ValueError(
+            "All channels must have the same dimension, use the num_channels and max_L"
+            " keywords to specify the number of channels and the maximum L"
+        )
 
     print(f"Hidden irreps: {args.hidden_irreps}")
 
@@ -391,10 +395,12 @@ def main(**kwargs: Any) -> None:
         )
     elif args.model == "AtomicDipolesMACE":
         # std_df = modules.scaling_classes["rms_dipoles_scaling"](train_loader)
-        assert args.loss == "dipole", "Use dipole loss with AtomicDipolesMACE model"
-        assert (
-            args.error_table == "DipoleRMSE"
-        ), "Use error_table DipoleRMSE with AtomicDipolesMACE model"
+        if args.loss != "dipole":
+            raise ValueError("Must use dipole loss with AtomicDipolesMACE model")
+        if args.error_table != "DipoleRMSE":
+            raise ValueError(
+                "Must use error_table DipoleRMSE with AtomicDipolesMACE model"
+            )
         model = modules.AtomicDipolesMACE(
             **model_config,
             correlation=args.correlation,
@@ -408,12 +414,14 @@ def main(**kwargs: Any) -> None:
         )
     elif args.model == "EnergyDipolesMACE":
         # std_df = modules.scaling_classes["rms_dipoles_scaling"](train_loader)
-        assert (
-            args.loss == "energy_forces_dipole"
-        ), "Use energy_forces_dipole loss with EnergyDipolesMACE model"
-        assert (
-            args.error_table == "EnergyDipoleRMSE"
-        ), "Use error_table EnergyDipoleRMSE with AtomicDipolesMACE model"
+        if args.loss != "energy_forces_dipole":
+            raise ValueError(
+                "Use energy_forces_dipole loss with EnergyDipolesMACE model"
+            )
+        if args.error_table != "EnergyDipoleRMSE":
+            raise ValueError(
+                "Use error_table EnergyDipoleRMSE with AtomicDipolesMACE model"
+            )
         model = modules.EnergyDipolesMACE(
             **model_config,
             correlation=args.correlation,
@@ -482,7 +490,8 @@ def main(**kwargs: Any) -> None:
     swa: tools.SWAContainer | None = None
     swas = [False]
     if args.swa:
-        assert dipole_only is False, "swa for dipole fitting not implemented"
+        if dipole_only is not False:
+            raise RuntimeError("swa for dipole fitting not implemented")
         swas.append(True)
         if args.start_swa is None:
             args.start_swa = (

@@ -42,8 +42,10 @@ slurm_vars = slurm_submit(
 # %%
 df_wbm_clean = df_wbm.dropna(subset=Key.init_wyckoff)
 
-assert Key.e_form in df_wbm_clean, f"{Key.e_form=} not in {list(df_wbm_clean)}"
-assert Key.wyckoff in df_wbm_clean, f"{Key.wyckoff=} not in {list(df_wbm_clean)}"
+if Key.e_form not in df_wbm_clean:
+    raise KeyError(f"{Key.e_form!s} not in {df_wbm_clean.columns=}")
+if Key.wyckoff not in df_wbm_clean:
+    raise KeyError(f"{Key.wyckoff!s} not in {df_wbm_clean.columns=}")
 
 
 # %%
@@ -53,9 +55,10 @@ filters = {
 }
 runs = wandb.Api().runs(WANDB_PATH, filters=filters)
 expected_runs = 10
-assert (
-    len(runs) == expected_runs
-), f"{expected_runs=}, got {len(runs)} filtering {WANDB_PATH=} with {filters=}"
+if len(runs) != expected_runs:
+    raise ValueError(
+        f"{expected_runs=}, got {len(runs)} filtering {WANDB_PATH=} with {filters=}"
+    )
 
 for idx, run in enumerate(runs):
     for key, val in run.config.items():
@@ -121,7 +124,8 @@ df_pred.to_csv(f"{out_dir}/{job_name}-preds-{slurm_array_job_id}.csv.gz")
 
 # %%
 pred_col = f"{Key.e_form}_pred_ens"
-assert pred_col in df_pred, f"{pred_col=} not in {list(df_pred)}"
+if pred_col not in df_pred:
+    raise KeyError(f"{pred_col!s} not in {df_pred.columns=}")
 table = wandb.Table(dataframe=df_pred[[Key.e_form, pred_col]].reset_index())
 
 

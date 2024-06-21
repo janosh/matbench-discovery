@@ -70,7 +70,8 @@ for row in tqdm(df_mace.itertuples(), total=len(df_mace), desc="ML energies to C
 processed = MaterialsProject2020Compatibility().process_entries(
     df_mace[Key.cse], verbose=True, clean=True
 )
-assert len(processed) == len(df_mace)
+if len(processed) != len(df_mace):
+    raise ValueError(f"not all entries processed: {len(processed)=} {len(df_mace)=}")
 
 
 # %% compute corrected formation energies

@@ -62,7 +62,8 @@ df_cse[Key.struct] = [
 # load energies
 df_in = pd.read_csv(DATA_FILES.mp_energies).set_index(Key.mat_id)
 df_in[Key.struct] = df_cse[Key.struct]
-assert target_col in df_in
+if target_col not in df_in:
+    raise TypeError(f"{target_col!s} not in {df_in.columns=}")
 
 df_in[input_col] = df_in[Key.struct]
 df_in[input_col] = [

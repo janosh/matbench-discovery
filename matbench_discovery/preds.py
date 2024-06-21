@@ -163,13 +163,15 @@ df_preds = load_df_wbm_with_preds().round(3)
 
 
 df_metrics = pd.DataFrame()
-df_metrics.attrs["title"] = "Metrics for Full Test Set"
 df_metrics_10k = pd.DataFrame()  # look only at each model's 10k most stable predictions
-df_metrics_10k.attrs["title"] = "Metrics for 10k Most Stable Predictions"
 df_metrics_uniq_protos = pd.DataFrame(index=df_metrics.index)
-df_metrics_uniq_protos.attrs["title"] = "Metrics for unique non-MP prototypes"
 
-for df in (df_metrics, df_metrics_10k, df_metrics_uniq_protos):
+for df, title in (
+    (df_metrics, "Metrics for Full Test Set"),
+    (df_metrics_10k, "Metrics for 10k Most Stable Predictions"),
+    (df_metrics_uniq_protos, "Metrics for unique non-MP prototypes"),
+):
+    df.attrs["title"] = title
     df.index.name = "model"
 
 full_prevalence = (df_wbm[Key.each_true] <= STABILITY_THRESHOLD).mean()

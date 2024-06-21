@@ -121,8 +121,8 @@ isort.split-on-trailing-comma = false
 "tests/*" = ["D", "FBT001", "FBT002", "S101"]
 "matbench_discovery/plots.py" = ["ERA001"]    # allow commented out code
 "matbench_discovery/preds.py" = ["ERA001"]    # allow commented out code
-"scripts/*" = ["D", "ERA001", "S101"]
-"models/*" = ["D", "ERA001", "S101"]
+"scripts/*" = ["D", "ERA001"]
+"models/*" = ["D", "ERA001"]
 "data/*" = ["ERA001", "S101"]
 
 [tool.mypy]

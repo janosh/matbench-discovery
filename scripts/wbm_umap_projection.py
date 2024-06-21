@@ -187,7 +187,8 @@ if not os.path.isfile(umap_out_path):
 df_umap = pd.read_csv(umap_out_path).set_index("wbm_step")
 
 umap_cols = list(df_umap)
-assert umap_cols == ["UMAP 1", "UMAP 2"]
+if umap_cols != ["UMAP 1", "UMAP 2"]:
+    raise ValueError(f"Unexpected {umap_cols=}")
 min_step, max_step = df_umap.index.min(), df_umap.index.max()
 ax = df_umap.plot.scatter(
     *umap_cols, c=df_umap.index, cmap="Spectral", s=5, figsize=(6, 4), colorbar=False
