@@ -55,7 +55,8 @@ df_in = pd.read_json(data_path).set_index(Key.mat_id)
 df_in[Key.e_form] = df_wbm[Key.e_form]
 if task_type == Task.RS2RE:
     df_in[input_col] = [cse["structure"] for cse in df_in[Key.cse]]
-assert input_col in df_in, f"{input_col=} not in {list(df_in)}"
+if input_col not in df_in:
+    raise TypeError(f"{input_col!s} not in {df_in.columns=}")
 
 df_in[input_col] = [
     Structure.from_dict(dct) for dct in tqdm(df_in[input_col], disable=None)
@@ -69,9 +70,10 @@ filters = {
 }
 runs = wandb.Api().runs(WANDB_PATH, filters=filters)
 expected_runs = 10
-assert (
-    len(runs) == expected_runs
-), f"{expected_runs=}, got {len(runs)} filtering {WANDB_PATH=} with {filters=}"
+if len(runs) != expected_runs:
+    raise ValueError(
+        f"{expected_runs=}, got {len(runs)} filtering {WANDB_PATH=} with {filters=}"
+    )
 
 for idx, run in enumerate(runs):
     for key, val in run.config.items():
@@ -125,7 +127,8 @@ df_in, ensemble_metrics = predict_from_wandb_checkpoints(
 slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", "debug")
 df_in.round(4).to_csv(f"{out_dir}/{job_name}-preds-{slurm_array_job_id}.csv.gz")
 pred_col = f"{Key.e_form}_pred_ens"
-assert pred_col in df_in, f"{pred_col=} not in {list(df_in)}"
+if pred_col not in df_in:
+    raise KeyError(f"{pred_col} not in {df_in.columns=}")
 table = wandb.Table(dataframe=df_in[[Key.e_form, pred_col]].reset_index())
 
 

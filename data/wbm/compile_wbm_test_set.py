@@ -552,7 +552,8 @@ with gzip.open(DATA_FILES.mp_patched_phase_diagram, "rb") as zip_file:
 # this loop needs above warnings.filterwarnings() in __init__.py to not crash Jupyter
 # kernel with logs
 # takes ~20 min at 200 it/s for 250k entries in WBM
-assert Key.each_true not in df_summary
+if Key.each_true in df_summary:
+    raise KeyError(f"{Key.each_true!s} already in {df_summary.columns=}")
 
 for mat_id, cse in tqdm(df_wbm[Key.cse].items(), total=len(df_wbm)):
     assert mat_id == cse.entry_id, f"{mat_id=} != {cse.entry_id=}"

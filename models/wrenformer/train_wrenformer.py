@@ -49,8 +49,10 @@ print(f"\nJob started running {timestamp}")
 
 df_data = pd.read_csv(data_path).set_index(Key.mat_id, drop=False)
 
-assert target_col in df_data, f"{target_col=} not in {list(df_data)}"
-assert Key.wyckoff in df_data, f"{Key.wyckoff=} not in {list(df_data)}"
+if target_col not in df_data:
+    raise TypeError(f"{target_col!s} not in {df_data.columns=}")
+if Key.wyckoff not in df_data:
+    raise TypeError(f"{Key.wyckoff!s} not in {df_data.columns=}")
 train_df, test_df = df_train_test_split(df_data, test_size=0.05)
 
 run_params = dict(

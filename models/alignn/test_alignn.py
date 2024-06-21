@@ -80,7 +80,8 @@ df_in = pd.read_json(data_path).set_index(Key.mat_id)
 df_in[target_col] = df_wbm[target_col]
 if task_type == Task.RS2RE:
     df_in[input_col] = [cse["structure"] for cse in df_in[Key.cse]]
-assert input_col in df_in, f"{input_col=} not in {list(df_in)}"
+if input_col not in df_in:
+    raise KeyError(f"{input_col!s} not in {df_in.columns=}")
 
 df_in[input_col] = [
     JarvisAtomsAdaptor.get_atoms(Structure.from_dict(dct))

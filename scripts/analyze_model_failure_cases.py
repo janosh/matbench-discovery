@@ -203,9 +203,8 @@ df_wbm[frac_comp_col] = [
 df_frac_comp = pd.json_normalize(
     [comp.as_dict() for comp in df_wbm[frac_comp_col]]
 ).set_index(df_wbm.index)
-assert all(
-    df_frac_comp.sum(axis=1).round(6) == 1
-), "composition fractions don't sum to 1"
+if any(df_frac_comp.sum(axis=1).round(6) != 1):
+    raise ValueError("Sum of fractional compositions is not 1")
 
 # bar plot showing number of structures in MP containing each element
 (len(df_frac_comp) - df_frac_comp.isna().sum()).sort_values().plot.bar(backend="plotly")

@@ -24,14 +24,17 @@ __date__ = "2022-11-28"
 legend = dict(x=1, y=0, xanchor="right", yanchor="bottom", title=None)
 
 # toggle between formation energy and energy above convex hull
-which_energy: Literal["e-form", "each"] = globals().get("which_energy", "each")
+EnergyType = Literal["e-form", "each"]
+# which_energy: EnergyType = globals().get("which_energy", "each")
+which_energy = "e-form"
 if which_energy == "each":
     e_pred_col = Key.each_pred
     e_true_col = Key.each_true
-else:
-    assert which_energy == "e-form", f"Invalid {which_energy=}"
+elif which_energy == "e-form":
     e_true_col = Key.e_form
     e_pred_col = Key.e_form_pred
+else:
+    raise ValueError(f"Unexpected {which_energy=}")
 
 
 test_subset = globals().get("test_subset", TestSubset.full)
@@ -98,7 +101,9 @@ for trace in fig.data:
     # initially hide all traces, let users select which models to compare
     trace.visible = "legendonly"
     model = trace.name
-    assert model in df_preds, f"Unexpected {model=} not in {models}"
+    if model not in df_preds:
+        print(f"Unexpected {model=}, not in {models=}")
+        continue
     MAE, R2 = df_metrics[model][["MAE", "R2"]]
     trace.name = f"{model} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
 
@@ -125,7 +130,9 @@ fig = px.scatter(
 for trace in fig.data:
     trace.visible = "legendonly"
     model = trace.name
-    assert model in df_preds, f"Unexpected {model=} not in {models}"
+    if model not in df_preds:
+        print(f"Unexpected {model=}, not in {models=}")
+        continue
     MAE, R2 = df_metrics[model][["MAE", "R2"]]
     trace.name = f"{model} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
 
@@ -181,7 +188,9 @@ for idx, anno in enumerate(fig.layout.annotations, start=1):
     # assert len(traces) in (0, 4), f"Plots must have 0 or 4 traces, got {len(traces)=}"
 
     model = anno.text.split("=", 1)[1]
-    assert model in df_preds, f"Unexpected {model=} not in {list(df_preds)=}"
+    if model not in df_preds:
+        print(f"Unexpected {model=}, not in {list(df_preds)=}")
+        continue
     # add MAE and R2 to subplot titles
     MAE, R2 = df_metrics[model][["MAE", "R2"]]
     sub_title = f"{model} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
