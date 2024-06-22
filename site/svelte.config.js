@@ -8,7 +8,7 @@ import math from 'remark-math'
 import preprocess from 'svelte-preprocess'
 
 const { default: pkg } = await import(`./package.json`, {
-  assert: { type: `json` },
+  with: { type: `json` },
 })
 
 /** @type {import('@sveltejs/kit').Config} */
