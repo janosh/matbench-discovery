@@ -77,7 +77,9 @@
   </span>
   {#if training_set}
     {@const { n_structures, url, title, n_materials } = training_set}
-    {@const n_mat_str = n_materials ? ` from ${pretty_num(n_materials)} materials` : ``}
+    {@const pretty_n_mat =
+      typeof n_materials == `number` ? pretty_num(n_materials) : n_materials}
+    {@const n_mat_str = n_materials ? ` from ${pretty_n_mat} materials` : ``}
     <span style="grid-column: span 2;">
       <Icon icon="mdi:database" inline />
       Training set:

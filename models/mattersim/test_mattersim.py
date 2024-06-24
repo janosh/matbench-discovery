@@ -38,7 +38,7 @@ def dummy_mattersim_calculator(
     backbone: Literal["m3gnet", "graphomer"] = "m3gnet",
 ) -> SinglePointCalculator:
     """
-    This is a dummy function that makes a mattersim calculator
+    This is a dummy function that makes a MatterSim calculator
     """
     print(backbone)
     calc: SinglePointCalculator = None

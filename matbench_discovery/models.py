@@ -7,7 +7,8 @@ import yaml
 
 from matbench_discovery import ROOT
 
-MODEL_DIRS = glob(f"{ROOT}/models/[!_]*/")  # ignore underscore-prefixed directories
+# ignore underscore-prefixed directories for WIP model submissions
+MODEL_DIRS = glob(f"{ROOT}/models/[!_]*/")
 MODEL_METADATA: dict[str, dict[str, Any]] = {}
 
 for model_dir in MODEL_DIRS:

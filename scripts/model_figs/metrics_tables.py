@@ -155,7 +155,7 @@ for label, df_met in (
         df_table.style.format(
             # render integers without decimal places
             dict.fromkeys("TP FN FP TN".split(), "{:,.0f}"),
-            precision=2,  # render floats with 2 decimals
+            precision=3,  # render floats with 2 decimals
             na_rep="",  # render NaNs as empty string
         )
         .background_gradient(
