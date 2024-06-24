@@ -79,6 +79,8 @@ class Key(LabelEnum):
     each_err_models = "each_err_models", "E<sub>hull dist</sub> mean error of models"
     model_std_each = "each_std_models", "Std. dev. over models"
     n_sites = "n_sites", "Number of Sites"
+    run_time_sec = "run_time_sec", "Run Time (sec)"  # time to train a model
+    run_time_hr = "run_time_hr", "Run Time (hr)"  # time to train a model
     site_nums = "site_nums", "Site Numbers", "Atomic numbers for each crystal site"
     spacegroup = "spacegroup", "Spacegroup"
     stress = "stress", "Stress"
@@ -209,6 +211,7 @@ class Model(LabelEnum):
     m3gnet_ms = "M3GNet MS"
     m3gnet = "M3GNet"
     mace = "MACE"
+    mattersim = "MatterSim"
     megnet_rs2re = "MEGNet RS2RE"
     megnet = "MEGNet"
     pfp = "PFP"

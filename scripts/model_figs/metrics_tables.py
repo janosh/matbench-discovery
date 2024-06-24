@@ -13,7 +13,7 @@ from sklearn.dummy import DummyClassifier
 
 from matbench_discovery import PDF_FIGS, SCRIPTS, SITE_FIGS
 from matbench_discovery.data import DATA_FILES, df_wbm
-from matbench_discovery.enums import Key, Model, Open
+from matbench_discovery.enums import Key, Open
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.models import MODEL_METADATA
 from matbench_discovery.preds import df_metrics, df_metrics_10k, df_metrics_uniq_protos
@@ -25,6 +25,13 @@ except ImportError:
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
+
+
+proprietaries = [
+    key
+    for key, meta in MODEL_METADATA.items()
+    if meta.get("openness", Open.OSOD) != Open.OSOD
+]
 
 
 # %%
@@ -148,7 +155,7 @@ for label, df_met in (
         df_table.style.format(
             # render integers without decimal places
             dict.fromkeys("TP FN FP TN".split(), "{:,.0f}"),
-            precision=2,  # render floats with 2 decimals
+            precision=3,  # render floats with 2 decimals
             na_rep="",  # render NaNs as empty string
         )
         .background_gradient(
@@ -167,7 +174,11 @@ for label, df_met in (
     ).set_uuid("")
 
     # add CSS class 'proprietary' to cells of proprietary models (openness != OSOD)
-    styler.set_td_classes(df_table.T.assign(GNoME="proprietary")[[Model.gnome]].T)
+    styler.set_td_classes(
+        df_table.T.assign(**dict.fromkeys(proprietaries, "proprietary"))[
+            proprietaries
+        ].T
+    )
 
     # export model metrics as styled HTML table and Svelte component
     # get index of MAE column
