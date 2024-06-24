@@ -102,7 +102,7 @@ def get_e_form_per_atom(
     """
     if isinstance(entry, dict):
         energy, comp = entry["energy"], entry["composition"]
-        if isinstance(comp, str):
+        if isinstance(comp, str | dict):
             comp = Composition(comp)
     elif isinstance(entry, Entry):
         energy = entry.energy
