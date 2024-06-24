@@ -5,10 +5,10 @@ import link_headings from 'rehype-autolink-headings'
 import katex from 'rehype-katex-svelte'
 import heading_slugs from 'rehype-slug'
 import math from 'remark-math'
-import preprocess from 'svelte-preprocess'
+import { sveltePreprocess } from 'svelte-preprocess'
 
 const { default: pkg } = await import(`./package.json`, {
-  assert: { type: `json` },
+  with: { type: `json` },
 })
 
 /** @type {import('@sveltejs/kit').Config} */
@@ -18,7 +18,7 @@ export default {
   preprocess: [
     // replace readme links to docs with site-internal links
     // (which don't require browser navigation)
-    preprocess({ replace: [[pkg.homepage, ``]] }),
+    sveltePreprocess({ replace: [[pkg.homepage, ``]] }),
     mdsvex({
       rehypePlugins: [
         katex,
