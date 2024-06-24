@@ -86,16 +86,18 @@ properties:
         type: number
   notes:
     type: object
-    patternProperties: # all values must be strings
-      ".+":
-        type: string
     properties:
       description:
         type: string
       training:
-        type: string
+        oneOf:
+          - type: string
+          - type: object
+            values:
+              type: string
       missing_preds:
         type: string
+      additionalProperties: true
   model_params:
     type: number
     minimum: 0
