@@ -9,11 +9,12 @@ will provide the best hit rate for the given budget.
 
 # %%
 import pandas as pd
+from pymatviz.enums import Key
 from pymatviz.io import save_fig
 from pymatviz.utils import MATPLOTLIB, PLOTLY
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
-from matbench_discovery.enums import Key, TestSubset
+from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.plots import cumulative_metrics
 from matbench_discovery.preds import df_each_pred, df_preds, model_styles, models
 
@@ -36,7 +37,7 @@ range_y = {
     ("Precision", "Recall"): (0, 1),
 }[metrics]
 fig, df_metric = cumulative_metrics(
-    e_above_hull_true=df_preds[Key.each_true],
+    e_above_hull_true=df_preds[MbdKey.each_true],
     df_preds=df_each_pred[models],
     project_end_point="xy",
     backend=(backend := PLOTLY),

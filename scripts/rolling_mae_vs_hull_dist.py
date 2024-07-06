@@ -1,11 +1,12 @@
 """Plot rolling MAE as a function of hull distance for a single model."""
 
 # %%
+from pymatviz.enums import Key
 from pymatviz.io import save_fig
 from pymatviz.utils import MATPLOTLIB, PLOTLY
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, Model
-from matbench_discovery.enums import Key
+from matbench_discovery.enums import MbdKey
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
 from matbench_discovery.preds import df_each_pred, df_metrics, df_wbm
 
@@ -17,7 +18,7 @@ __date__ = "2022-06-18"
 model = Model.chgnet
 
 fig, df_err, df_std = rolling_mae_vs_hull_dist(
-    e_above_hull_true=df_wbm[Key.each_true],
+    e_above_hull_true=df_wbm[MbdKey.each_true],
     e_above_hull_preds={model: df_each_pred[model]},
     backend=(backend := PLOTLY),
 )

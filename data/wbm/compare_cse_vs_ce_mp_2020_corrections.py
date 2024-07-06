@@ -13,13 +13,13 @@ from pymatgen.entries.compatibility import (
     MaterialsProjectCompatibility,
 )
 from pymatgen.entries.computed_entries import ComputedEntry, ComputedStructureEntry
+from pymatviz.enums import Key
 from pymatviz.io import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, today
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
-from matbench_discovery.enums import Key
 from matbench_discovery.plots import plt
 
 df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(Key.mat_id)

@@ -9,11 +9,12 @@ See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
 from typing import Final
 
 import pandas as pd
+from pymatviz.enums import Key
 from pymatviz.io import save_fig
 from pymatviz.utils import MATPLOTLIB, PLOTLY
 
 from matbench_discovery import PDF_FIGS
-from matbench_discovery.enums import Key
+from matbench_discovery.enums import MbdKey
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist
 from matbench_discovery.preds import df_preds
 
@@ -26,7 +27,7 @@ model_name = "M3GNet"
 which_energy: Final = "true"
 backend: Final = MATPLOTLIB
 df_preds[Key.each_pred] = (
-    df_preds[Key.each_true] + df_preds[model_name] - df_preds[Key.e_form]
+    df_preds[MbdKey.each_true] + df_preds[model_name] - df_preds[MbdKey.e_form]
 )
 df_preds[(batch_col := "batch_idx")] = df_preds.index.str.split("-").str[1].astype(int)
 
@@ -39,14 +40,14 @@ df_preds[(batch_col := "batch_idx")] = df_preds.index.str.split("-").str[1].asty
 
 #     ax = hist_classified_stable_vs_hull_dist(
 #         df=df_batch,
-#         each_true_col=Key.each_true,
+#         each_true_col=MbdKey.each_true,
 #         each_pred_col=Key.each_pred,
 #         which_energy=which_energy,
 #         ax=ax,
 #         backend=backend,
 #     )
 
-#     metrics = stable_metrics(df_batch[Key.each_true], df_batch[Key.each_pred])
+#     metrics = stable_metrics(df_batch[MbdKey.each_true], df_batch[Key.each_pred])
 #     text = f"DAF = {metrics['DAF']:.3}"
 #     ax.text(0.02, 0.25, text, fontsize=16, transform=ax.transAxes)
 
@@ -56,14 +57,14 @@ df_preds[(batch_col := "batch_idx")] = df_preds.index.str.split("-").str[1].asty
 
 # ax = hist_classified_stable_vs_hull_dist(
 #     df=df_wbm,
-#     each_true_col=Key.each_true,
+#     each_true_col=MbdKey.each_true,
 #     each_pred_col=Key.each_pred,
 #     which_energy=which_energy,
 #     ax=axs.flat[-1],
 #     backend=backend,
 # )
 
-# metrics = stable_metrics(df_wbm[Key.each_true], df_wbm[Key.each_pred])
+# metrics = stable_metrics(df_wbm[MbdKey.each_true], df_wbm[Key.each_pred])
 # text = f"DAF = {metrics['DAF']:.3}"
 # ax.text(0.02, 0.3, text, fontsize=16, transform=ax.transAxes)
 
@@ -77,7 +78,7 @@ df_preds[(batch_col := "batch_idx")] = df_preds.index.str.split("-").str[1].asty
 fig = hist_classified_stable_vs_hull_dist(
     # # plot whole df as last subplot
     df=pd.concat([df_preds, df_preds.assign(batch_idx=6)]),
-    each_true_col=Key.each_true,
+    each_true_col=MbdKey.each_true,
     each_pred_col=Key.each_pred,
     which_energy=which_energy,
     facet_col=batch_col,

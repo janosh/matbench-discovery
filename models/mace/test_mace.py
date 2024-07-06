@@ -14,11 +14,12 @@ from mace.tools import count_parameters
 from pymatgen.core import Structure
 from pymatgen.core.trajectory import Trajectory
 from pymatgen.io.ase import AseAtomsAdaptor
+from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, timestamp, today
 from matbench_discovery.data import DATA_FILES, as_dict_handler, df_wbm
-from matbench_discovery.enums import Key, Task
+from matbench_discovery.enums import MbdKey, Task
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 
@@ -163,10 +164,12 @@ df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
 df_wbm[e_pred_col] = df_out[e_pred_col]
 
 table = wandb.Table(
-    dataframe=df_wbm[[Key.dft_energy, e_pred_col, Key.formula]].reset_index().dropna()
+    dataframe=df_wbm[[MbdKey.dft_energy, e_pred_col, Key.formula]]
+    .reset_index()
+    .dropna()
 )
 
 title = f"MACE {task_type} ({len(df_out):,})"
-wandb_scatter(table, fields=dict(x=Key.dft_energy, y=e_pred_col), title=title)
+wandb_scatter(table, fields=dict(x=MbdKey.dft_energy, y=e_pred_col), title=title)
 
 wandb.log_artifact(out_path, type=f"mace-wbm-{task_type}")

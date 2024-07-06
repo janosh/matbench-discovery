@@ -17,12 +17,12 @@ import numpy as np
 import pandas as pd
 import umap
 from pymatgen.core import Structure
+from pymatviz.enums import Key
 from pymatviz.io import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, PDF_FIGS, WBM_DIR
 from matbench_discovery.data import DATA_FILES
-from matbench_discovery.enums import Key
 
 __author__ = "Philipp Benner, Janosh Riebesell"
 __date__ = "2023-11-28"

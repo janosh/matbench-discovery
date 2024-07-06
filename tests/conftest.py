@@ -3,8 +3,7 @@ import pandas as pd
 import pytest
 from pymatgen.core import Lattice, Structure
 from pymatgen.entries.computed_entries import ComputedStructureEntry
-
-from matbench_discovery.enums import Key
+from pymatviz.enums import Key
 
 
 @pytest.fixture()

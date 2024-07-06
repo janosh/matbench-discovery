@@ -7,13 +7,13 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from pymatgen.core import Structure
 from pymatviz import density_scatter, plot_structure_2d, ptable_heatmap_plotly
+from pymatviz.enums import Key
 from pymatviz.io import save_fig
 from pymatviz.utils import PLOTLY
 
 from matbench_discovery import PDF_FIGS
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DATA_FILES, df_wbm
-from matbench_discovery.enums import Key
 from matbench_discovery.preds import PRED_FILES, df_preds
 
 __author__ = "Janosh Riebesell"

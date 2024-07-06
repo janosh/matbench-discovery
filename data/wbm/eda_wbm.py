@@ -17,6 +17,7 @@ from pymatviz import (
     ptable_heatmap_ratio,
     spacegroup_sunburst,
 )
+from pymatviz.enums import Key
 from pymatviz.io import save_fig
 from pymatviz.structure_viz import plot_structure_2d
 from pymatviz.utils import PLOTLY, si_fmt, si_fmt_int
@@ -25,7 +26,7 @@ from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DATA_FILES, df_wbm
 from matbench_discovery.energy import mp_elem_ref_entries
-from matbench_discovery.enums import Key, Model
+from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.preds import df_each_err
 
 __author__ = "Janosh Riebesell"
@@ -64,7 +65,7 @@ for df, label in (
     (df_wbm, "full WBM"),
     (df_wbm.query(Key.uniq_proto), "WBM unique prototypes"),
 ):
-    n_stable = sum(df[Key.each_true] <= STABILITY_THRESHOLD)
+    n_stable = sum(df[MbdKey.each_true] <= STABILITY_THRESHOLD)
     stable_rate = n_stable / len(df)
     print(f"{label}: {stable_rate=:.1%} ({n_stable:,} out of {len(df):,})")
 
@@ -148,9 +149,9 @@ for dataset, count_mode, elem_counts in all_counts:
 
 
 # %% histogram of energy distance to MP convex hull for WBM
-e_col = Key.each_true
-# e_col = Key.e_form_raw
-# e_col = Key.e_form
+e_col = MbdKey.each_true
+# e_col = MbdKey.e_form_raw
+# e_col = MbdKey.e_form
 mean, std = df_wbm[e_col].mean(), df_wbm[e_col].std()
 
 range_x = (mean - 2 * std, mean + 2 * std)
@@ -215,9 +216,9 @@ for x_pos, label in (
 
 fig.show()
 suffix = {
-    Key.each_true: "hull-dist",
-    Key.e_form: "e-form",
-    Key.e_form_raw: "e-form-uncorrected",
+    MbdKey.each_true: "hull-dist",
+    MbdKey.e_form: "e-form",
+    MbdKey.e_form_raw: "e-form-uncorrected",
 }[e_col]
 img_name = f"hist-wbm-{suffix}"
 save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
@@ -292,7 +293,7 @@ fig = px.scatter(
     y="2d t-SNE 2",
     color=color_col,
     hover_name=Key.mat_id,
-    hover_data=(Key.formula, Key.each_true),
+    hover_data=(Key.formula, MbdKey.each_true),
     range_color=(0, clr_range_max),
 )
 fig.show()
@@ -305,7 +306,7 @@ fig = px.scatter_3d(
     y="3d t-SNE 2",
     z="3d t-SNE 3",
     color=color_col,
-    custom_data=[Key.mat_id, Key.formula, Key.each_true, color_col],
+    custom_data=[Key.mat_id, Key.formula, MbdKey.each_true, color_col],
     range_color=(0, clr_range_max),
 )
 fig.data[0].hovertemplate = (
@@ -319,13 +320,13 @@ fig.show()
 
 
 # %%
-df_wbm[Key.spacegroup] = df_wbm[Key.init_wyckoff].str.split("_").str[2].astype(int)
-df_mp[Key.spacegroup] = df_mp[Key.wyckoff].str.split("_").str[2].astype(int)
+df_wbm[Key.spg_num] = df_wbm[MbdKey.init_wyckoff].str.split("_").str[2].astype(int)
+df_mp[Key.spg_num] = df_mp[Key.wyckoff].str.split("_").str[2].astype(int)
 
 
 # %%
 fig = spacegroup_sunburst(
-    df_wbm[Key.spacegroup], width=350, height=350, show_counts="percent"
+    df_wbm[Key.spg_num], width=350, height=350, show_counts="percent"
 )
 fig.layout.title.update(text="WBM Spacegroup Sunburst", x=0.5, font_size=14)
 fig.layout.margin = dict(l=0, r=0, t=30, b=0)
@@ -336,7 +337,7 @@ save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-wbm.pdf")
 
 # %%
 fig = spacegroup_sunburst(
-    df_mp[Key.spacegroup], width=350, height=350, show_counts="percent"
+    df_mp[Key.spg_num], width=350, height=350, show_counts="percent"
 )
 fig.layout.title.update(text="MP Spacegroup Sunburst", x=0.5, font_size=14)
 fig.layout.margin = dict(l=0, r=0, t=30, b=0)
@@ -376,7 +377,7 @@ save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=450, height=280)
 
 # %% find large structures that changed symmetry during relaxation
 df_sym_change = (
-    df_wbm.query(f"{Key.init_wyckoff} != {Key.wyckoff}")
+    df_wbm.query(f"{MbdKey.init_wyckoff} != {Key.wyckoff}")
     .filter(regex="wyckoff|sites")
     .nlargest(10, Key.n_sites)
 )

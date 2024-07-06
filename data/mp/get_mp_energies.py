@@ -11,6 +11,7 @@ import pandas as pd
 from aviary.wren.utils import get_aflow_label_from_spglib
 from mp_api.client import MPRester
 from pymatgen.core import Structure
+from pymatviz.enums import Key
 from pymatviz.io import save_fig  # noqa: F401
 from pymatviz.powerups import annotate_metrics
 from pymatviz.utils import PLOTLY
@@ -18,7 +19,6 @@ from tqdm import tqdm
 
 from matbench_discovery import STABILITY_THRESHOLD, today
 from matbench_discovery.data import DATA_FILES
-from matbench_discovery.enums import Key
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-01-10"

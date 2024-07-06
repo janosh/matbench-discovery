@@ -22,13 +22,14 @@ from pymatviz import (
     ptable_heatmap_ratio,
     ptable_hists,
 )
+from pymatviz.enums import Key
 from pymatviz.io import save_fig
 from pymatviz.utils import si_fmt
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, PDF_FIGS, ROOT, SITE_FIGS
 from matbench_discovery.data import DATA_FILES, df_wbm
-from matbench_discovery.enums import Key
+from matbench_discovery.enums import MbdKey
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-11-22"
@@ -86,7 +87,7 @@ df_mp_trj = pd.DataFrame(
     {
         info_dict_to_id(atoms.info): atoms.info
         | {key: atoms.arrays.get(key) for key in ("forces", "magmoms")}
-        | {"formula": str(atoms.symbols), Key.site_nums: atoms.symbols}
+        | {"formula": str(atoms.symbols), Key.atom_nums: atoms.symbols}
         for atoms_list in tqdm(mp_trj_atoms.values(), total=len(mp_trj_atoms))
         for atoms in atoms_list
     }
@@ -98,7 +99,7 @@ if Key.formula not in df_mp_trj:
 
 # this is the unrelaxed (but MP2020 corrected) formation energy per atom of the actual
 # relaxation step
-df_mp_trj = df_mp_trj.rename(columns={"ef_per_atom": Key.e_form})
+df_mp_trj = df_mp_trj.rename(columns={"ef_per_atom": MbdKey.e_form})
 df_mp_trj[Key.stress_trace] = [
     np.trace(stress) / 3 for stress in tqdm(df_mp_trj[Key.stress])
 ]
@@ -127,7 +128,7 @@ if srs_mp_trj_elem_magmoms is None:
     df_mp_trj_elem_magmom = pd.DataFrame(
         [
             dict(zip(elems, magmoms, strict=False))
-            for elems, magmoms in df_mp_trj.set_index(Key.site_nums)[Key.magmoms]
+            for elems, magmoms in df_mp_trj.set_index(Key.atom_nums)[Key.magmoms]
             .dropna()
             .items()
         ]
@@ -170,7 +171,7 @@ if srs_mp_trj_elem_forces is None:
     df_mp_trj_elem_forces = pd.DataFrame(
         [
             dict(zip(elems, np.abs(forces).mean(axis=1), strict=False))
-            for elems, forces in df_mp_trj.set_index(Key.site_nums)[Key.forces].items()
+            for elems, forces in df_mp_trj.set_index(Key.atom_nums)[Key.forces].items()
         ]
     )
     mp_trj_elem_forces = {
@@ -216,7 +217,7 @@ elif srs_mp_trj_elem_n_sites is None:
     df_mp_trj_elem_n_sites = pd.DataFrame(
         [
             dict.fromkeys(set(site_nums), len(site_nums))
-            for site_nums in df_mp_trj[Key.site_nums]
+            for site_nums in df_mp_trj[Key.atom_nums]
         ]
     ).astype(int)
     mp_trj_elem_n_sites = {
@@ -329,7 +330,7 @@ save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
 
 # %% plot formation energy per atom distribution
 # pdf_kwds defined to use the same figure size for all plots
-fig = plot_histogram(df_mp_trj[Key.e_form], bins=300)
+fig = plot_histogram(df_mp_trj[MbdKey.e_form], bins=300)
 # fig.update_yaxes(type="log")
 fig.layout.xaxis.title = "E<sub>form</sub> (eV/atom)"
 count_col = "Number of Structures"
@@ -403,7 +404,7 @@ save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=450, height=280)
 
 
 # %% calc n_sites from per-site atomic numbers
-df_mp_trj[Key.n_sites] = df_mp_trj[Key.site_nums].map(len)
+df_mp_trj[Key.n_sites] = df_mp_trj[Key.atom_nums].map(len)
 n_sites_hist, n_sites_bins = np.histogram(
     df_mp_trj[Key.n_sites], bins=range(1, df_mp_trj[Key.n_sites].max() + 1)
 )

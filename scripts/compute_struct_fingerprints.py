@@ -12,12 +12,12 @@ import pandas as pd
 from matminer.featurizers.site import CrystalNNFingerprint
 from matminer.featurizers.structure import SiteStatsFingerprint
 from pymatgen.core import Structure
+from pymatviz.enums import Key
 from pymatviz.utils import PLOTLY
 from tqdm import tqdm
 
 from matbench_discovery import DATA_DIR, timestamp
 from matbench_discovery.data import DATA_FILES
-from matbench_discovery.enums import Key
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"

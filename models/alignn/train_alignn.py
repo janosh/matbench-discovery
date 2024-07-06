@@ -12,13 +12,13 @@ from alignn.data import StructureDataset, load_graphs
 from alignn.train import train_dgl
 from pymatgen.core import Structure
 from pymatgen.io.jarvis import JarvisAtomsAdaptor
+from pymatviz.enums import Key
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from matbench_discovery import today
 from matbench_discovery.data import DATA_FILES
-from matbench_discovery.enums import Key
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Philipp Benner, Janosh Riebesell"

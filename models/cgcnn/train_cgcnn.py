@@ -8,12 +8,12 @@ from aviary.cgcnn.model import CrystalGraphConvNet
 from aviary.core import TaskType
 from aviary.train import df_train_test_split, train_model
 from pymatgen.core import Structure
+from pymatviz.enums import Key
 from torch.utils.data import DataLoader
 from tqdm import tqdm, trange
 
 from matbench_discovery import WANDB_PATH, timestamp, today
 from matbench_discovery.data import DATA_FILES
-from matbench_discovery.enums import Key
 from matbench_discovery.slurm import slurm_submit
 from matbench_discovery.structure import perturb_structure
 

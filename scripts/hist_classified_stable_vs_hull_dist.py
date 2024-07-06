@@ -12,7 +12,7 @@ from pymatviz.utils import PLOTLY
 
 from matbench_discovery import PDF_FIGS
 from matbench_discovery.data import df_wbm
-from matbench_discovery.enums import Key
+from matbench_discovery.enums import MbdKey
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist
 from matbench_discovery.preds import df_each_pred
 
@@ -25,12 +25,12 @@ __date__ = "2022-06-18"
 model_name = "CHGNet"
 # model_name = "CGCNN+P"
 which_energy: Final = "pred"
-df_each_pred[Key.each_true] = df_wbm[Key.each_true]
+df_each_pred[MbdKey.each_true] = df_wbm[MbdKey.each_true]
 backend: Final = PLOTLY
 
 fig = hist_classified_stable_vs_hull_dist(
     df_each_pred,
-    each_true_col=Key.each_true,
+    each_true_col=MbdKey.each_true,
     each_pred_col=model_name,
     which_energy=which_energy,
     # stability_threshold=-0.05,

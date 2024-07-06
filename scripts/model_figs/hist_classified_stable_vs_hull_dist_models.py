@@ -7,11 +7,12 @@ histogram stacks true/false positives/negatives with different colors.
 import math
 from typing import Final
 
+from pymatviz.enums import Key
 from pymatviz.io import save_fig
 from pymatviz.utils import MATPLOTLIB, PLOTLY
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, today
-from matbench_discovery.enums import Key, TestSubset
+from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist, plt
 from matbench_discovery.preds import df_metrics, df_metrics_uniq_protos, df_preds
 
@@ -27,7 +28,7 @@ if test_subset == TestSubset.uniq_protos:
 
 
 # %%
-hover_cols = (df_preds.index.name, Key.e_form, Key.each_true, Key.formula)
+hover_cols = (df_preds.index.name, MbdKey.e_form, MbdKey.each_true, Key.formula)
 facet_col = "Model"
 # sort models by F1 scores so that facet plots are ordered by model performance
 # (optionally only show top n=6)
@@ -41,7 +42,7 @@ df_melt = df_preds.melt(
 )
 
 df_melt[Key.each_pred] = (
-    df_melt[Key.each_true] + df_melt[Key.e_form_pred] - df_melt[Key.e_form]
+    df_melt[MbdKey.each_true] + df_melt[Key.e_form_pred] - df_melt[MbdKey.e_form]
 )
 
 
@@ -61,7 +62,7 @@ kwds = (
 
 fig = hist_classified_stable_vs_hull_dist(
     df=df_melt,
-    each_true_col=Key.each_true,
+    each_true_col=MbdKey.each_true,
     each_pred_col=Key.each_pred,
     which_energy=which_energy,
     backend=backend,
