@@ -19,7 +19,7 @@ from pymatviz import (
 )
 from pymatviz.io import save_fig
 from pymatviz.structure_viz import plot_structure_2d
-from pymatviz.utils import si_fmt, si_fmt_int
+from pymatviz.utils import PLOTLY, si_fmt, si_fmt_int
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots
@@ -245,7 +245,7 @@ df_ref = pd.DataFrame(mp_ref_data).sort_values(atom_num_col)
 # %% plot MP elemental reference energies vs atomic number
 # marker size = number of atoms in reference structure
 fig = df_ref.round(2).plot.scatter(
-    x=atom_num_col, y=e_col, backend="plotly", hover_data=list(df_ref), size=n_atoms_col
+    x=atom_num_col, y=e_col, backend=PLOTLY, hover_data=list(df_ref), size=n_atoms_col
 )
 fig.update_traces(mode="markers+lines")
 fig.layout.margin = dict(l=0, r=0, t=0, b=0)

@@ -10,6 +10,7 @@ from typing import Final
 
 import pandas as pd
 from pymatviz.io import save_fig
+from pymatviz.utils import MATPLOTLIB, PLOTLY
 
 from matbench_discovery import PDF_FIGS
 from matbench_discovery.enums import Key
@@ -23,7 +24,7 @@ __date__ = "2022-08-25"
 # %%
 model_name = "M3GNet"
 which_energy: Final = "true"
-backend: Final = "matplotlib"
+backend: Final = MATPLOTLIB
 df_preds[Key.each_pred] = (
     df_preds[Key.each_true] + df_preds[model_name] - df_preds[Key.e_form]
 )
@@ -83,7 +84,7 @@ fig = hist_classified_stable_vs_hull_dist(
     facet_col_wrap=2,
     stability_threshold=None,
     rolling_acc=None,
-    backend="plotly",
+    backend=PLOTLY,
 )
 for anno in fig.layout.annotations:
     if not anno.text.startswith("batch_idx="):

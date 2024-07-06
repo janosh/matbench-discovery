@@ -9,7 +9,7 @@ import plotly.express as px
 from pymatgen.core import Composition, Element
 from pymatviz import ptable_heatmap_plotly, ptable_hists
 from pymatviz.io import save_fig
-from pymatviz.utils import bin_df_cols, df_ptable
+from pymatviz.utils import PLOTLY, bin_df_cols, df_ptable
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS
@@ -73,7 +73,7 @@ for label, srs in (
     title = f"Number of {label} structures containing each element"
     srs = srs.sort_values().copy()
     srs.index = [f"{len(srs) - idx} {el}" for idx, el in enumerate(srs.index)]
-    fig = srs.plot.bar(backend="plotly", title=title)
+    fig = srs.plot.bar(backend=PLOTLY, title=title)
     fig.layout.update(showlegend=False)
     fig.show()
 
@@ -96,7 +96,7 @@ df_melt = df_struct_counts.reset_index().melt(
 fig = df_melt.sort_values([y_col, symbol_col]).plot.bar(
     x=symbol_col,
     y=y_col,
-    backend="plotly",
+    backend=PLOTLY,
     title="Number of structures containing each element",
     color=clr_col,
     barmode="group",
@@ -173,7 +173,7 @@ fig = df_melt.plot.scatter(
     x=train_count_col,
     y=val_col,
     color=clr_col,
-    backend="plotly",
+    backend=PLOTLY,
     # size=size_col,
     hover_name=elem_col,
     # text=df_melt.index.where(

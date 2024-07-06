@@ -13,6 +13,7 @@ import plotly.graph_objs as go
 from pymatgen.core import Composition, Structure
 from pymatviz import count_elements, plot_structure_2d, ptable_heatmap_plotly
 from pymatviz.io import save_fig
+from pymatviz.utils import PLOTLY
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR
@@ -207,7 +208,7 @@ if any(df_frac_comp.sum(axis=1).round(6) != 1):
     raise ValueError("Sum of fractional compositions is not 1")
 
 # bar plot showing number of structures in MP containing each element
-(len(df_frac_comp) - df_frac_comp.isna().sum()).sort_values().plot.bar(backend="plotly")
+(len(df_frac_comp) - df_frac_comp.isna().sum()).sort_values().plot.bar(backend=PLOTLY)
 
 # df_frac_comp = df_frac_comp.dropna(axis=1, thresh=100)  # remove Xe with only 1 entry
 

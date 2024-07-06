@@ -8,6 +8,7 @@ import math
 from typing import Final
 
 from pymatviz.io import save_fig
+from pymatviz.utils import MATPLOTLIB, PLOTLY
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, today
 from matbench_discovery.enums import Key, TestSubset
@@ -45,7 +46,7 @@ df_melt[Key.each_pred] = (
 
 
 # %%
-backend: Final = "plotly"
+backend: Final = PLOTLY
 n_cols = 2
 n_rows = math.ceil(len(models) / n_cols)
 # 'true' or 'pred': whether to put DFT or model-predicted hull distances on the x-axis
@@ -54,7 +55,7 @@ kwds = (
     dict(
         facet_col=facet_col, facet_col_wrap=n_cols, category_orders={facet_col: models}
     )
-    if backend == "plotly"
+    if backend == PLOTLY
     else dict(by=facet_col, figsize=(20, 20), layout=(n_rows, n_cols), bins=500)
 )
 
@@ -71,7 +72,7 @@ fig = hist_classified_stable_vs_hull_dist(
 
 # TODO add line showing the true hull distance histogram on each subplot
 show_metrics = False
-if backend == "matplotlib":
+if backend == MATPLOTLIB:
     fig = plt.gcf()
     fig.suptitle(f"{today} {which_energy=}", y=1.04, fontsize=18, fontweight="bold")
     plt.figlegend(

@@ -5,6 +5,7 @@ import math
 
 import pandas as pd
 from pymatviz.io import save_fig
+from pymatviz.utils import PLOTLY
 from sklearn.metrics import auc, precision_recall_curve, roc_curve
 from tqdm import tqdm
 
@@ -73,7 +74,7 @@ fig = plot_fn(
     x="FPR",
     y="TPR",
     facet_col_wrap=n_cols,
-    backend="plotly",
+    backend=PLOTLY,
     range_x=(-0.01, 1),
     range_y=(0, 1.02),
     hover_name=facet_col,
@@ -145,7 +146,7 @@ fig = df_prc.iloc[:: len(df_roc) // 500 or 1].plot.scatter(
     facet_col_wrap=n_cols,
     facet_row_spacing=0.04,
     facet_col_spacing=0.04,
-    backend="plotly",
+    backend=PLOTLY,
     height=150 * len(df_roc[facet_col].unique()),
     color=color_col,
     range_x=(0, 1),

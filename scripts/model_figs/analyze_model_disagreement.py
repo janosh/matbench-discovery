@@ -8,6 +8,7 @@ import sys
 import pandas as pd
 from pymatviz.io import save_fig
 from pymatviz.powerups import add_identity_line
+from pymatviz.utils import PLOTLY
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.data import DATA_FILES
@@ -57,7 +58,7 @@ for material_cls, pattern in material_classes.items():
         x=Key.each_true,
         y=Key.each_mean_models,
         color=Key.model_std_each,
-        backend="plotly",
+        backend=PLOTLY,
         hover_name=Key.mat_id,
         hover_data=[Key.formula],
         color_continuous_scale="Turbo",

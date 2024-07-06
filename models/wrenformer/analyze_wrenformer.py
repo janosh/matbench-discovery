@@ -9,7 +9,7 @@ from pymatviz import spacegroup_hist, spacegroup_sunburst
 from pymatviz.io import df_to_html_table, df_to_pdf, save_fig
 from pymatviz.powerups import add_identity_line
 from pymatviz.ptable import ptable_heatmap_plotly
-from pymatviz.utils import bin_df_cols
+from pymatviz.utils import PLOTLY, bin_df_cols
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, Model
 from matbench_discovery.data import DATA_FILES, df_wbm
@@ -119,7 +119,7 @@ fig = df_bin.reset_index().plot.scatter(
     y=model,
     hover_data=cols,
     hover_name=df_preds.index.name,
-    backend="plotly",
+    backend=PLOTLY,
     color=log_cnt_col,
     color_continuous_scale="turbo",
 )

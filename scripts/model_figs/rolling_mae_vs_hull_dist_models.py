@@ -5,6 +5,7 @@ from typing import Final
 
 import numpy as np
 from pymatviz.io import save_fig
+from pymatviz.utils import MATPLOTLIB, PLOTLY
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.enums import Key, TestSubset
@@ -24,7 +25,7 @@ df_err, df_std = None, None  # variables to cache rolling MAE and std
 
 
 # %%
-backend: Final = "plotly"
+backend: Final = PLOTLY
 
 test_subset = globals().get("test_subset", TestSubset.full)
 
@@ -44,7 +45,7 @@ fig, df_err, df_std = rolling_mae_vs_hull_dist(
     show_dummy_mae=False,
 )
 
-if backend == "matplotlib":
+if backend == MATPLOTLIB:
     # increase line width in legend
     legend = fig.legend(frameon=False, loc="lower right")
     fig.figure.set_size_inches(10, 9)

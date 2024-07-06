@@ -4,6 +4,7 @@ batch in a single plot.
 
 # %%
 from pymatviz.io import save_fig
+from pymatviz.utils import MATPLOTLIB, PLOTLY
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, today
 from matbench_discovery.enums import Key, Model, TestSubset
@@ -36,7 +37,7 @@ for model in models:
         e_above_hull_preds=df_pivot,
         # df_rolling_err=df_err,
         # df_err_std=df_std,
-        backend="plotly",
+        backend=PLOTLY,
         show_dummy_mae=False,
         with_sem=False,
     )
@@ -85,7 +86,7 @@ for idx, marker in enumerate(markers, start=1):
         markevery=20,
         markerfacecolor="white",
         markeredgewidth=2.5,
-        backend="matplotlib",  # don't change, code here not plotly compatible
+        backend=MATPLOTLIB,  # don't change, code here not plotly compatible
         ax=ax,
         just_plot_lines=idx > 1,
         pbar=False,

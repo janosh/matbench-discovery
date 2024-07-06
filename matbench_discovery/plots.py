@@ -17,6 +17,7 @@ import wandb
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from plotly.validators.scatter.line import DashValidator
 from plotly.validators.scatter.marker import SymbolValidator
+from pymatviz.utils import MATPLOTLIB, PLOTLY, Backend
 from tqdm import tqdm
 
 from matbench_discovery import STABILITY_THRESHOLD
@@ -25,7 +26,6 @@ from matbench_discovery.metrics import classify_stable
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-05"
 
-Backend = Literal["matplotlib", "plotly"]
 
 plotly_markers = SymbolValidator().values[2::3]  # noqa: PD011
 plotly_line_styles = DashValidator().values[:-1]  # noqa: PD011
@@ -52,7 +52,7 @@ def hist_classified_stable_vs_hull_dist(
     x_lim: tuple[float, float] = (-0.7, 0.7),
     n_bins: int = 200,
     rolling_acc: float | None = 0.02,
-    backend: Backend = "plotly",
+    backend: Backend = PLOTLY,
     y_label: str = "Number of materials",
     clf_labels: Sequence[str] = clf_labels,
     **kwargs: Any,
@@ -153,7 +153,7 @@ def hist_classified_stable_vs_hull_dist(
         ).assign(**{kwargs.get("facet_col", ""): facet})
         df_plot = pd.concat([df_plot, df_melt])
 
-    if backend == "plotly":
+    if backend == PLOTLY:
         kwargs.update(
             barmode="stack",
             range_x=x_lim,
@@ -173,7 +173,7 @@ def hist_classified_stable_vs_hull_dist(
 
     fig = df_plot.round(4).plot.bar(backend=backend, **kwargs)
 
-    if backend == "matplotlib":
+    if backend == MATPLOTLIB:
         # ax.hist(
         #     [eah_true_pos, eah_false_neg, eah_false_pos, eah_true_neg],
         #     bins=200,
@@ -197,7 +197,7 @@ def hist_classified_stable_vs_hull_dist(
                     stability_threshold, color="black", linestyle="--", label=label
                 )
 
-    if backend == "plotly":
+    if backend == PLOTLY:
         fig.layout.legend.update(title=None, y=0.5, xanchor="right", x=1)
         fig.update_traces(marker_line=dict(color="rgba(0, 0, 0, 0)"))
         fig.update_layout(bargap=0)
@@ -227,7 +227,7 @@ def hist_classified_stable_vs_hull_dist(
             where=bin_counts != 0,
         )
 
-        if backend == "matplotlib":
+        if backend == MATPLOTLIB:
             for ax in fig.flat if isinstance(fig, np.ndarray) else [fig]:
                 ax_acc = ax.twinx()
                 ax_acc.set_ylabel("Rolling Accuracy", color="darkblue")
@@ -273,7 +273,7 @@ def rolling_mae_vs_hull_dist(
     bin_width: float = 0.005,
     x_lim: tuple[float, float] = (-0.2, 0.2),
     y_lim: tuple[float, float] = (0, 0.2),
-    backend: Backend = "plotly",
+    backend: Backend = PLOTLY,
     x_label: str | None = None,
     y_label: str = "Rolling MAE (eV/atom)",
     just_plot_lines: bool = False,
@@ -383,7 +383,7 @@ def rolling_mae_vs_hull_dist(
     dummy_mae = (e_above_hull_true - e_above_hull_true.mean()).abs().mean()
     dummy_mae_text = f"dummy MAE = {dummy_mae:.2f} eV/atom"
 
-    if backend == "matplotlib":
+    if backend == MATPLOTLIB:
         # assert df_rolling_err.isna().sum().sum() == 0, "NaNs in df_rolling_err"
         # assert df_err_std.isna().sum().sum() == 0, "NaNs in df_err_std"
         # for model in df_rolling_err if with_sem else []:
@@ -456,7 +456,7 @@ def rolling_mae_vs_hull_dist(
             line.set(ls=ls, marker=marker, markeredgewidth=0.5, markeredgecolor="black")
             line.set_markevery(8)
 
-    elif backend == "plotly":
+    elif backend == PLOTLY:
         for idx, model in enumerate(df_rolling_err if with_sem else []):
             # set legendgroup to model name so SEM shading toggles with model curve
             fig.data[idx].legendgroup = model
@@ -577,7 +577,7 @@ def cumulative_metrics(
     project_end_point: Literal["x", "y", "xy", ""] = "xy",
     optimal_recall: str | None = "Optimal Recall",
     show_n_stable: bool = True,
-    backend: Backend = "plotly",
+    backend: Backend = PLOTLY,
     n_points: int = 100,
     **kwargs: Any,
 ) -> tuple[plt.Figure | go.Figure, pd.DataFrame]:
@@ -692,7 +692,7 @@ def cumulative_metrics(
     # subselect rows for speed, plot has sufficient precision with 1k rows
     n_stable = sum(e_above_hull_true <= STABILITY_THRESHOLD)
 
-    if backend == "matplotlib":
+    if backend == MATPLOTLIB:
         fig, axs = plt.subplots(
             ncols=min(len(metrics), 2),
             nrows=math.ceil(len(metrics) / 2),
@@ -749,7 +749,7 @@ def cumulative_metrics(
                     bbox=bbox,
                 )
 
-    elif backend == "plotly":
+    elif backend == PLOTLY:
         n_cols = kwargs.pop("facet_col_wrap", 2)
         kwargs.setdefault("facet_col_spacing", 0.03)
         fig = df_cum.plot(
@@ -798,6 +798,9 @@ def cumulative_metrics(
         fig.layout.legend.title = ""
         fig.update_xaxes(showticklabels=True, title="", matches=None)
         fig.update_yaxes(showticklabels=True, title="", matches=None)
+
+    else:
+        raise ValueError(f"Unknown {backend=}")
 
     return fig, df_cum
 

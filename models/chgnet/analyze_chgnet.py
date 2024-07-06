@@ -8,6 +8,7 @@ import pandas as pd
 from pymatgen.core import Structure
 from pymatviz import density_scatter, plot_structure_2d, ptable_heatmap_plotly
 from pymatviz.io import save_fig
+from pymatviz.utils import PLOTLY
 
 from matbench_discovery import PDF_FIGS
 from matbench_discovery import plots as plots
@@ -53,7 +54,7 @@ df_diff.reset_index().plot.scatter(
     y=e_form_2000,
     hover_name=Key.mat_id,
     hover_data=[Key.formula],
-    backend="plotly",
+    backend=PLOTLY,
     title=f"{len(df_diff)} structures have > {min_e_diff} eV/atom energy diff after "
     "longer relaxation",
 )
