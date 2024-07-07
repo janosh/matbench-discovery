@@ -11,11 +11,11 @@ import numpy as np
 import pandas as pd
 import wandb
 from pymatgen.core import Structure
+from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, today
 from matbench_discovery.data import DATA_FILES
-from matbench_discovery.enums import Key
 from matbench_discovery.slurm import slurm_submit
 
 sys.path.append(f"{ROOT}/models")

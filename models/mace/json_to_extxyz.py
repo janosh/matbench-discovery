@@ -9,11 +9,11 @@ import ase.io
 import ase.units
 import numpy as np
 from pymatgen.core import Structure
+from pymatviz.enums import Key
 from pymatviz.io import TqdmDownload
 from tqdm import tqdm
 
 from matbench_discovery import FIGSHARE_URLS, MP_DIR
-from matbench_discovery.enums import Key
 
 __author__ = "Yuan Chiang"
 __date__ = "2023-08-10"

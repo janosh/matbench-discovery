@@ -4,13 +4,15 @@
 import math
 
 import pandas as pd
+from pymatviz.enums import Key
 from pymatviz.io import save_fig
+from pymatviz.utils import PLOTLY
 from sklearn.metrics import auc, precision_recall_curve, roc_curve
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots
-from matbench_discovery.enums import Key, TestSubset
+from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.preds import df_each_pred, df_preds, model_styles, models
 
 __author__ = "Janosh Riebesell"
@@ -37,8 +39,8 @@ df_roc = pd.DataFrame()
 for model in (pbar := tqdm(models, desc="Calculating ROC curves")):
     pbar.set_postfix_str(model)
 
-    na_mask = df_preds[Key.each_true].isna() | df_each_pred[model].isna()
-    y_true = (df_preds[~na_mask][Key.each_true] <= STABILITY_THRESHOLD).astype(int)
+    na_mask = df_preds[MbdKey.each_true].isna() | df_each_pred[model].isna()
+    y_true = (df_preds[~na_mask][MbdKey.each_true] <= STABILITY_THRESHOLD).astype(int)
     y_pred = df_each_pred[model][~na_mask]
     fpr, tpr, thresholds = roc_curve(y_true, y_pred, pos_label=0)
     AUC = auc(fpr, tpr)
@@ -73,7 +75,7 @@ fig = plot_fn(
     x="FPR",
     y="TPR",
     facet_col_wrap=n_cols,
-    backend="plotly",
+    backend=PLOTLY,
     range_x=(-0.01, 1),
     range_y=(0, 1.02),
     hover_name=facet_col,
@@ -121,8 +123,8 @@ prec_col, recall_col = "Precision", "Recall"
 
 for model in (pbar := tqdm(list(df_each_pred), desc="Calculating ROC curves")):
     pbar.set_postfix_str(model)
-    na_mask = df_preds[Key.each_true].isna() | df_each_pred[model].isna()
-    y_true = (df_preds[~na_mask][Key.each_true] <= STABILITY_THRESHOLD).astype(int)
+    na_mask = df_preds[MbdKey.each_true].isna() | df_each_pred[model].isna()
+    y_true = (df_preds[~na_mask][MbdKey.each_true] <= STABILITY_THRESHOLD).astype(int)
     y_pred = df_each_pred[model][~na_mask]
     prec, recall, thresholds = precision_recall_curve(y_true, y_pred, pos_label=0)
     dct = {
@@ -145,7 +147,7 @@ fig = df_prc.iloc[:: len(df_roc) // 500 or 1].plot.scatter(
     facet_col_wrap=n_cols,
     facet_row_spacing=0.04,
     facet_col_spacing=0.04,
-    backend="plotly",
+    backend=PLOTLY,
     height=150 * len(df_roc[facet_col].unique()),
     color=color_col,
     range_x=(0, 1),

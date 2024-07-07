@@ -3,10 +3,12 @@ batch in a single plot.
 """
 
 # %%
+from pymatviz.enums import Key
 from pymatviz.io import save_fig
+from pymatviz.utils import MATPLOTLIB, PLOTLY
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, today
-from matbench_discovery.enums import Key, Model, TestSubset
+from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.plots import plt, rolling_mae_vs_hull_dist
 from matbench_discovery.preds import df_each_pred, df_preds
 from matbench_discovery.preds import models as all_models
@@ -32,11 +34,11 @@ for model in models:
     df_pivot = df_each_pred.pivot(columns=batch_col, values=model)  # noqa: PD010
 
     fig, df_err, df_std = rolling_mae_vs_hull_dist(
-        e_above_hull_true=df_preds[Key.each_true],
+        e_above_hull_true=df_preds[MbdKey.each_true],
         e_above_hull_preds=df_pivot,
         # df_rolling_err=df_err,
         # df_err_std=df_std,
-        backend="plotly",
+        backend=PLOTLY,
         show_dummy_mae=False,
         with_sem=False,
     )
@@ -78,14 +80,14 @@ for idx, marker in enumerate(markers, start=1):
         raise ValueError("Index mismatch between df_step and df_each_step")
 
     ax, df_err, df_std = rolling_mae_vs_hull_dist(
-        e_above_hull_true=df_step[Key.each_true],
+        e_above_hull_true=df_step[MbdKey.each_true],
         e_above_hull_preds={title: df_each_step[model]},
         label=title,
         marker=marker,
         markevery=20,
         markerfacecolor="white",
         markeredgewidth=2.5,
-        backend="matplotlib",  # don't change, code here not plotly compatible
+        backend=MATPLOTLIB,  # don't change, code here not plotly compatible
         ax=ax,
         just_plot_lines=idx > 1,
         pbar=False,

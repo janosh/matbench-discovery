@@ -8,13 +8,14 @@ import pandas as pd
 import plotly.express as px
 from pymatgen.core import Composition, Element
 from pymatviz import ptable_heatmap_plotly, ptable_hists
+from pymatviz.enums import Key
 from pymatviz.io import save_fig
-from pymatviz.utils import bin_df_cols, df_ptable
+from pymatviz.utils import PLOTLY, bin_df_cols, df_ptable
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS
 from matbench_discovery.data import df_wbm
-from matbench_discovery.enums import Key, Model, TestSubset
+from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.preds import (
     df_each_err,
     df_metrics,
@@ -37,7 +38,7 @@ if test_subset == TestSubset.uniq_protos:
 
 
 for df in (df_each_err, df_preds):
-    df[Key.each_err_models] = df_each_err.abs().mean(axis=1)
+    df[MbdKey.each_err_models] = df_each_err.abs().mean(axis=1)
 
 
 # %% project average model error onto periodic table
@@ -73,7 +74,7 @@ for label, srs in (
     title = f"Number of {label} structures containing each element"
     srs = srs.sort_values().copy()
     srs.index = [f"{len(srs) - idx} {el}" for idx, el in enumerate(srs.index)]
-    fig = srs.plot.bar(backend="plotly", title=title)
+    fig = srs.plot.bar(backend=PLOTLY, title=title)
     fig.layout.update(showlegend=False)
     fig.show()
 
@@ -96,7 +97,7 @@ df_melt = df_struct_counts.reset_index().melt(
 fig = df_melt.sort_values([y_col, symbol_col]).plot.bar(
     x=symbol_col,
     y=y_col,
-    backend="plotly",
+    backend=PLOTLY,
     title="Number of structures containing each element",
     color=clr_col,
     barmode="group",
@@ -111,7 +112,7 @@ save_fig(fig, f"{SITE_FIGS}/bar-element-counts-mp+wbm-{normalized=}.svelte")
 # %% compute std dev of DFT hull dist for each element in test set
 test_set_std_col = "Test set standard deviation"
 df_elem_err[test_set_std_col] = (
-    df_frac_comp.where(pd.isna, 1) * df_wbm[Key.each_true].to_numpy()[:, None]
+    df_frac_comp.where(pd.isna, 1) * df_wbm[MbdKey.each_true].to_numpy()[:, None]
 ).std()
 
 
@@ -126,7 +127,7 @@ fig.show()
 normalized = True
 cs_range = (0, 0.5)  # same range for all plots
 # cs_range = (None, None)  # different range for each plot
-for model in (*df_metrics, Key.each_err_models):
+for model in (*df_metrics, MbdKey.each_err_models):
     df_elem_err[model] = (
         df_frac_comp * df_each_err[model].abs().to_numpy()[:, None]
     ).mean()
@@ -145,7 +146,7 @@ for model in (*df_metrics, Key.each_err_models):
 # %%
 expected_cols = {
     *"ALIGNN, BOWSR, CGCNN, CGCNN+P, CHGNet, M3GNet, MEGNet, "
-    f"{train_count_col}, {Key.each_err_models}, {test_set_std_col}, Voronoi RF, "
+    f"{train_count_col}, {MbdKey.each_err_models}, {test_set_std_col}, Voronoi RF, "
     "Wrenformer".split(", ")
 }
 if missing_cols := expected_cols - {*df_elem_err}:
@@ -173,7 +174,7 @@ fig = df_melt.plot.scatter(
     x=train_count_col,
     y=val_col,
     color=clr_col,
-    backend="plotly",
+    backend=PLOTLY,
     # size=size_col,
     hover_name=elem_col,
     # text=df_melt.index.where(
@@ -183,7 +184,7 @@ fig = df_melt.plot.scatter(
     hover_data={val_col: ":.2f", train_count_col: ":,.0f"},
 )
 for trace in fig.data:
-    if trace.name in ("CHGNet", "Voronoi RF", Key.each_err_models):
+    if trace.name in ("CHGNet", "Voronoi RF", MbdKey.each_err_models):
         continue
     trace.visible = "legendonly"
 fig.update_traces(textposition="top center")  # place text above scatter points

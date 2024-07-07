@@ -12,12 +12,13 @@ from alignn.pretrained import all_models, get_figshare_model
 from jarvis.core.graphs import Graph
 from pymatgen.core import Structure
 from pymatgen.io.jarvis import JarvisAtomsAdaptor
+from pymatviz.enums import Key
 from sklearn.metrics import r2_score
 from tqdm import tqdm
 
 from matbench_discovery import today
 from matbench_discovery.data import DATA_FILES, df_wbm
-from matbench_discovery.enums import Key, Task
+from matbench_discovery.enums import MbdKey, Task
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 
@@ -31,7 +32,7 @@ module_dir = os.path.dirname(__file__)
 # model_name = "mp_e_form_alignn"  # pre-trained by NIST (not used for MBD submission)
 model_name = DATA_FILES.alignn_checkpoint  # trained by Philipp Benner
 task_type = Task.IS2RE
-target_col = Key.e_form
+target_col = MbdKey.e_form
 input_col = Key.init_struct
 device = "cuda" if torch.cuda.is_available() else "cpu"
 job_name = f"{model_name}-wbm-{task_type}"

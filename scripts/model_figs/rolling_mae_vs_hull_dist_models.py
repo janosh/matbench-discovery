@@ -4,10 +4,12 @@
 from typing import Final
 
 import numpy as np
+from pymatviz.enums import Key
 from pymatviz.io import save_fig
+from pymatviz.utils import MATPLOTLIB, PLOTLY
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
-from matbench_discovery.enums import Key, TestSubset
+from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
 from matbench_discovery.preds import (
     df_each_pred,
@@ -24,7 +26,7 @@ df_err, df_std = None, None  # variables to cache rolling MAE and std
 
 
 # %%
-backend: Final = "plotly"
+backend: Final = PLOTLY
 
 test_subset = globals().get("test_subset", TestSubset.full)
 
@@ -35,7 +37,7 @@ if test_subset == TestSubset.uniq_protos:
 
 
 fig, df_err, df_std = rolling_mae_vs_hull_dist(
-    e_above_hull_true=df_preds[Key.each_true],
+    e_above_hull_true=df_preds[MbdKey.each_true],
     e_above_hull_preds=df_each_pred[models],
     backend=backend,
     with_sem=False,
@@ -44,7 +46,7 @@ fig, df_err, df_std = rolling_mae_vs_hull_dist(
     show_dummy_mae=False,
 )
 
-if backend == "matplotlib":
+if backend == MATPLOTLIB:
     # increase line width in legend
     legend = fig.legend(frameon=False, loc="lower right")
     fig.figure.set_size_inches(10, 9)
@@ -62,7 +64,7 @@ else:
     rng = np.random.default_rng()
     small_noise = rng.random(len(df_preds)) * 1e-12
     counts, bins = np.histogram(
-        df_preds[Key.each_true] + small_noise, bins=100, range=fig.layout.xaxis.range
+        df_preds[MbdKey.each_true] + small_noise, bins=100, range=fig.layout.xaxis.range
     )
     fig.add_scatter(
         x=bins, y=counts, name="Density", fill="tozeroy", showlegend=False, yaxis="y2"

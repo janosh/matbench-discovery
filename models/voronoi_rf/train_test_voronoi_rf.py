@@ -7,6 +7,7 @@ from importlib.metadata import version
 
 import pandas as pd
 import wandb
+from pymatviz.enums import Key
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import r2_score
@@ -14,7 +15,7 @@ from sklearn.pipeline import Pipeline
 
 from matbench_discovery import ROOT, today
 from matbench_discovery.data import DATA_FILES, df_wbm, glob_to_df
-from matbench_discovery.enums import Key, Task
+from matbench_discovery.enums import MbdKey, Task
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 
@@ -60,7 +61,7 @@ print(f"{df_test.shape=}")
 
 for df, df_tar, col in (
     (df_train, df_mp, Key.form_energy),
-    (df_test, df_wbm, Key.e_form),
+    (df_test, df_wbm, MbdKey.e_form),
 ):
     df[Key.form_energy] = df_tar[Key.form_energy]
     n_nans = df_tar[col].isna().sum()
@@ -76,7 +77,7 @@ run_params = dict(
     versions={dep: version(dep) for dep in ("scikit-learn", "matminer", "numpy")},
     model_name=model_name,
     train_target_col=Key.form_energy,
-    test_target_col=Key.e_form,
+    test_target_col=MbdKey.e_form,
     df_train=dict(shape=str(df_train.shape)),
     df_test=dict(shape=str(df_test.shape)),
     slurm_vars=slurm_vars,
@@ -121,12 +122,14 @@ df_wbm[pred_col] = df_test[pred_col]
 
 df_wbm[pred_col].round(4).to_csv(out_path)
 
-table = wandb.Table(dataframe=df_wbm[[Key.formula, Key.e_form, pred_col]].reset_index())
+table = wandb.Table(
+    dataframe=df_wbm[[Key.formula, MbdKey.e_form, pred_col]].reset_index()
+)
 
 df_wbm[pred_col].isna().sum()
-MAE = (df_wbm[Key.e_form] - df_wbm[pred_col]).abs().mean()
-R2 = r2_score(*df_wbm[[Key.e_form, pred_col]].dropna().to_numpy().T)
+MAE = (df_wbm[MbdKey.e_form] - df_wbm[pred_col]).abs().mean()
+R2 = r2_score(*df_wbm[[MbdKey.e_form, pred_col]].dropna().to_numpy().T)
 title = f"{model_name} {task_type} {MAE=:.3} {R2=:.3}"
 print(title)
 
-wandb_scatter(table, fields=dict(x=Key.e_form, y=pred_col), title=title)
+wandb_scatter(table, fields=dict(x=MbdKey.e_form, y=pred_col), title=title)

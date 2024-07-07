@@ -30,7 +30,7 @@ dependencies = [
   "pandas>=2.0.0",
   "plotly",
   "pymatgen",
-  "pymatviz[export-figs,df-pdf-export]",
+  "pymatviz[export-figs,df-pdf-export]>=0.9.1",
   "scikit-learn",
   "scipy",
   "seaborn",

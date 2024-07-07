@@ -1,7 +1,8 @@
 import pandas as pd
 from crystal_toolkit.helpers.utils import hook_up_fig_with_struct_viewer
+from pymatviz.enums import Key
+from pymatviz.utils import PLOTLY
 
-from matbench_discovery.enums import Key
 from matbench_discovery.preds import PRED_FILES
 
 __author__ = "Janosh Riebesell"
@@ -43,7 +44,7 @@ plot_labels = {
 fig = df_plot.reset_index().plot.scatter(
     x=e_form_500,
     y=e_form_2000,
-    backend="plotly",
+    backend=PLOTLY,
     hover_name=Key.mat_id,
     hover_data=[Key.formula],
     labels=plot_labels,

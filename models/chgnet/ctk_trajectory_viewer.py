@@ -14,9 +14,9 @@ from dash import Dash, dcc, html
 from dash.dependencies import Input, Output
 from m3gnet.models import Relaxer as M3gnetRelaxer
 from pymatgen.core import Lattice, Structure
+from pymatviz.enums import Key
 
 from matbench_discovery.data import df_wbm
-from matbench_discovery.enums import Key
 
 # ruff: noqa: T201
 __author__ = "Janosh Riebesell"

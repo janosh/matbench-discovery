@@ -12,12 +12,14 @@ import plotly.express as px
 import plotly.graph_objs as go
 from pymatgen.core import Composition, Structure
 from pymatviz import count_elements, plot_structure_2d, ptable_heatmap_plotly
+from pymatviz.enums import Key
 from pymatviz.io import save_fig
+from pymatviz.utils import PLOTLY
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR
 from matbench_discovery.data import DATA_FILES, df_wbm
-from matbench_discovery.enums import Key
+from matbench_discovery.enums import MbdKey
 from matbench_discovery.metrics import classify_stable
 from matbench_discovery.preds import df_each_err, df_each_pred, df_metrics, df_preds
 
@@ -42,8 +44,8 @@ for good_or_bad, init_or_final in itertools.product(
     struct_col = {"initial": Key.init_struct, "final": Key.cse}[init_or_final]
 
     errors = {
-        "best": df_each_err[Key.each_err_models].nsmallest(n_structs),
-        "worst": df_each_err[Key.each_err_models].nlargest(n_structs),
+        "best": df_each_err[MbdKey.each_err_models].nsmallest(n_structs),
+        "worst": df_each_err[MbdKey.each_err_models].nlargest(n_structs),
     }[good_or_bad]
     title = (
         f"{good_or_bad.title()} {len(errors)} {init_or_final} structures (across "
@@ -68,7 +70,7 @@ for good_or_bad, init_or_final in itertools.product(
 # %%
 n_structs = 1000
 fig = go.Figure()
-for idx, model in enumerate((Key.each_err_models, *df_metrics)):
+for idx, model in enumerate((MbdKey.each_err_models, *df_metrics)):
     large_errors = df_each_err[model].abs().nlargest(n_structs)
     small_errors = df_each_err[model].abs().nsmallest(n_structs)
     for label, errors in (("min", large_errors), ("max", small_errors)):
@@ -157,7 +159,7 @@ df_preds[n_examp_for_rarest_elem_col] = df_wbm[n_examp_for_rarest_elem_col]
 # %% find materials that were misclassified by all models
 for model in df_each_pred:
     true_pos, false_neg, false_pos, true_neg = classify_stable(
-        df_each_pred[model], df_preds[Key.each_true]
+        df_each_pred[model], df_preds[MbdKey.each_true]
     )
     df_preds[f"{model} true pos"] = true_pos
     df_preds[f"{model} false neg"] = false_neg
@@ -207,7 +209,7 @@ if any(df_frac_comp.sum(axis=1).round(6) != 1):
     raise ValueError("Sum of fractional compositions is not 1")
 
 # bar plot showing number of structures in MP containing each element
-(len(df_frac_comp) - df_frac_comp.isna().sum()).sort_values().plot.bar(backend="plotly")
+(len(df_frac_comp) - df_frac_comp.isna().sum()).sort_values().plot.bar(backend=PLOTLY)
 
 # df_frac_comp = df_frac_comp.dropna(axis=1, thresh=100)  # remove Xe with only 1 entry
 
