@@ -21,13 +21,14 @@ from pymatgen.entries.compatibility import (
 )
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz import density_scatter
+from pymatviz.enums import Key
 from pymatviz.io import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.energy import get_e_form_per_atom
-from matbench_discovery.enums import Key
+from matbench_discovery.enums import MbdKey
 
 try:
     import gdown
@@ -295,9 +296,9 @@ col_map = {
     "# comp": Key.formula,
     "nsites": Key.n_sites,
     "vol": "volume",
-    "e": Key.dft_energy,
-    "e_form": Key.e_form_wbm,
-    "e_hull": Key.each_wbm,
+    "e": MbdKey.dft_energy,
+    "e_form": MbdKey.e_form_wbm,
+    "e_hull": MbdKey.each_wbm,
     "gap": Key.bandgap_pbe,
     "id": Key.mat_id,
 }
@@ -399,7 +400,7 @@ for fname, cols in (
         [Key.init_struct, Key.cse],
     ),
 ):
-    cols = ["formula_from_cse", *cols]  # type: ignore[list-item]
+    cols = ["formula_from_cse", *cols]
     df_wbm[cols].reset_index().to_json(f"{WBM_DIR}/{today}-wbm-{fname}.json.bz2")
 
 
@@ -414,7 +415,7 @@ df_summary[Key.formula] = df_wbm.formula_from_cse
 
 
 # fix bad energy which is 0 in df_summary but a more realistic -63.68 in CSE
-df_summary.loc["wbm-2-18689", Key.dft_energy] = df_wbm.loc["wbm-2-18689"][Key.cse][
+df_summary.loc["wbm-2-18689", MbdKey.dft_energy] = df_wbm.loc["wbm-2-18689"][Key.cse][
     "energy"
 ]
 
@@ -424,31 +425,33 @@ df_summary.loc["wbm-2-18689", Key.dft_energy] = df_wbm.loc["wbm-2-18689"][Key.cs
 
 
 # %% scatter plot summary energies vs CSE energies
-df_summary[f"{Key.dft_energy}_from_cse"] = [
+df_summary[f"{MbdKey.dft_energy}_from_cse"] = [
     cse["energy"] for cse in tqdm(df_wbm[Key.cse])
 ]
 
 # check CSE and summary energies are consistent, only exceeding 0.1 eV difference twice
 diff_e_cse_e_summary = (
-    df_summary[Key.dft_energy] - df_summary.uncorrected_energy_from_cse
+    df_summary[MbdKey.dft_energy] - df_summary.uncorrected_energy_from_cse
 )
 assert diff_e_cse_e_summary.max() < 0.15
 assert sum(diff_e_cse_e_summary > 0.1) == 2
 
-density_scatter(df_summary[Key.dft_energy], df_summary.uncorrected_energy_from_cse)
+density_scatter(df_summary[MbdKey.dft_energy], df_summary.uncorrected_energy_from_cse)
 
 
 # %% remove suspicious formation energy outliers
 e_form_cutoff = 5
-n_too_stable = sum(df_summary[Key.e_form_wbm] < -e_form_cutoff)
+n_too_stable = sum(df_summary[MbdKey.e_form_wbm] < -e_form_cutoff)
 print(f"{n_too_stable = }")  # n_too_stable = 502
-n_too_unstable = sum(df_summary[Key.e_form_wbm] > e_form_cutoff)
+n_too_unstable = sum(df_summary[MbdKey.e_form_wbm] > e_form_cutoff)
 print(f"{n_too_unstable = }")  # n_too_unstable = 22
 
 e_form_hist, e_form_bins = np.histogram(
-    df_summary[Key.e_form_wbm], bins=300, range=(-5.5, 5.5)
+    df_summary[MbdKey.e_form_wbm], bins=300, range=(-5.5, 5.5)
 )
-x_label = {Key.e_form_wbm: "WBM uncorrected formation energy (eV/atom)"}[Key.e_form_wbm]
+x_label = {MbdKey.e_form_wbm: "WBM uncorrected formation energy (eV/atom)"}[
+    MbdKey.e_form_wbm
+]
 fig = px.bar(
     x=e_form_bins[:-1],  # [:-1] to drop last bin edge which is not needed
     y=e_form_hist,
@@ -485,7 +488,7 @@ save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
 # %%
 assert len(df_summary) == len(df_wbm) == 257_487
 
-query_str = f"{-e_form_cutoff} < {Key.e_form_wbm} < {e_form_cutoff}"
+query_str = f"{-e_form_cutoff} < {MbdKey.e_form_wbm} < {e_form_cutoff}"
 dropped_ids = sorted(set(df_summary.index) - set(df_summary.query(query_str).index))
 assert len(dropped_ids) == 502 + 22
 assert dropped_ids[:3] == "wbm-1-12142 wbm-1-12143 wbm-1-12144".split()
@@ -552,8 +555,8 @@ with gzip.open(DATA_FILES.mp_patched_phase_diagram, "rb") as zip_file:
 # this loop needs above warnings.filterwarnings() in __init__.py to not crash Jupyter
 # kernel with logs
 # takes ~20 min at 200 it/s for 250k entries in WBM
-if Key.each_true in df_summary:
-    raise KeyError(f"{Key.each_true!s} already in {df_summary.columns=}")
+if MbdKey.each_true in df_summary:
+    raise KeyError(f"{MbdKey.each_true!s} already in {df_summary.columns=}")
 
 for mat_id, cse in tqdm(df_wbm[Key.cse].items(), total=len(df_wbm)):
     assert mat_id == cse.entry_id, f"{mat_id=} != {cse.entry_id=}"
@@ -561,7 +564,7 @@ for mat_id, cse in tqdm(df_wbm[Key.cse].items(), total=len(df_wbm)):
 
     e_above_hull = ppd_mp.get_e_above_hull(cse, allow_negative=True)
 
-    df_summary.loc[cse.entry_id, Key.each_true] = e_above_hull
+    df_summary.loc[cse.entry_id, MbdKey.each_true] = e_above_hull
 
 
 # %% calculate formation energies from CSEs wrt MP elemental reference energies
@@ -582,11 +585,11 @@ for row in tqdm(df_wbm.itertuples(), total=len(df_wbm), desc="ML energies to CSE
     assert (
         abs(e_form - e_form_ppd) < 1e-4
     ), f"{mat_id}: {e_form=:.3} != {e_form_ppd=:.3} (diff={e_form - e_form_ppd:.3}))"
-    df_summary.loc[cse.entry_id, Key.e_form_raw] = e_form
+    df_summary.loc[cse.entry_id, MbdKey.e_form_raw] = e_form
 
 
-df_summary[Key.e_form_raw.replace("uncorrected", "mp2020_corrected")] = (
-    df_summary[Key.e_form_raw] + df_summary["e_correction_per_atom_mp2020"]
+df_summary[MbdKey.e_form_raw.replace("uncorrected", "mp2020_corrected")] = (
+    df_summary[MbdKey.e_form_raw] + df_summary["e_correction_per_atom_mp2020"]
 )
 
 
@@ -596,11 +599,13 @@ try:
 
     # from initial structures
     for idx in tqdm(df_wbm.index):
-        if not pd.isna(df_summary.loc[idx].get(Key.init_wyckoff)):
+        if not pd.isna(df_summary.loc[idx].get(MbdKey.init_wyckoff)):
             continue  # Aflow label already computed
         try:
             struct = Structure.from_dict(df_wbm.loc[idx, Key.init_struct])
-            df_summary.loc[idx, Key.init_wyckoff] = get_aflow_label_from_spglib(struct)
+            df_summary.loc[idx, MbdKey.init_wyckoff] = get_aflow_label_from_spglib(
+                struct
+            )
         except Exception as exc:
             print(f"{idx=} {exc=}")
 
@@ -616,7 +621,7 @@ try:
         except Exception as exc:
             print(f"{idx=} {exc=}")
 
-    assert df_summary[Key.init_wyckoff].isna().sum() == 0
+    assert df_summary[MbdKey.init_wyckoff].isna().sum() == 0
     assert df_summary[Key.wyckoff].isna().sum() == 0
 except ImportError:
     print("aviary not installed, skipping Wyckoff label generation")
@@ -644,14 +649,17 @@ df_mp = pd.read_csv(DATA_FILES.mp_energies, index_col=0)
 # mask WBM materials with matching prototype in MP
 mask_proto_in_mp = df_summary[Key.wyckoff].isin(df_mp[Key.wyckoff])
 # mask duplicate prototypes in WBM (keeping the lowest energy one)
-mask_dupe_protos = df_summary.sort_values(by=[Key.wyckoff, Key.each_wbm]).duplicated(
+mask_dupe_protos = df_summary.sort_values(by=[Key.wyckoff, MbdKey.each_wbm]).duplicated(
     subset=Key.wyckoff, keep="first"
 )
 assert sum(mask_proto_in_mp) == 11_175, f"{sum(mask_proto_in_mp)=:_}"
 assert sum(mask_dupe_protos) == 32_784, f"{sum(mask_dupe_protos)=:_}"
 
 df_summary[Key.uniq_proto] = ~(mask_proto_in_mp | mask_dupe_protos)
-assert dict(df_summary[Key.uniq_proto].value_counts()) == {True: 215_488, False: 41_475}
+assert dict(df_summary[Key.uniq_proto].value_counts()) == {
+    True: 215_488,
+    False: 41_475,
+}
 assert list(df_summary.query(f"~{Key.uniq_proto}").head(5).index) == [
     "wbm-1-7",
     "wbm-1-8",

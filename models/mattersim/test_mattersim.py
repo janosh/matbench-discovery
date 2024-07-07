@@ -18,9 +18,9 @@ from pymatgen.core import Structure
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatgen.io.ase import AseAtomsAdaptor
+from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery import Key
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.energy import get_e_form_per_atom
 

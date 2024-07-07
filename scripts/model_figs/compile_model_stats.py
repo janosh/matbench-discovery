@@ -13,6 +13,7 @@ import requests
 import wandb
 import wandb.apis.public
 from pymatviz.io import save_fig
+from pymatviz.utils import PLOTLY
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, SITE_LIB, WANDB_PATH
@@ -203,7 +204,7 @@ fig.update_traces(marker=dict(line=dict(color="white", width=1)))
 fig = df_melt.dropna().plot.bar(
     x=time_col,
     y=model_col,
-    backend="plotly",
+    backend=PLOTLY,
     # color=time_col,
     text_auto=".0f",
     text=time_col,

@@ -9,13 +9,14 @@ from typing import Literal
 
 import numpy as np
 import plotly.express as px
+from pymatviz.enums import Key
 from pymatviz.io import save_fig
 from pymatviz.powerups import add_identity_line
 from pymatviz.utils import bin_df_cols
 from sklearn.metrics import r2_score
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
-from matbench_discovery.enums import Key, TestSubset
+from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.plots import clf_colors
 from matbench_discovery.preds import df_metrics, df_metrics_uniq_protos, df_preds
 
@@ -30,9 +31,9 @@ EnergyType = Literal["e-form", "each"]
 which_energy = "e-form"
 if which_energy == "each":
     e_pred_col = Key.each_pred
-    e_true_col = Key.each_true
+    e_true_col = MbdKey.each_true
 elif which_energy == "e-form":
-    e_true_col = Key.e_form
+    e_true_col = MbdKey.e_form
     e_pred_col = Key.e_form_pred
 else:
     raise ValueError(f"Unexpected {which_energy=}")
@@ -47,19 +48,19 @@ if test_subset == TestSubset.uniq_protos:
 
 # %%
 facet_col = "Model"
-hover_cols = (Key.each_true, Key.formula)
+hover_cols = (MbdKey.each_true, Key.formula)
 models = list(df_metrics.T.MAE.nsmallest(6).index)  # top 6 models by MAE
 models = list(df_metrics)  # all models
 
 df_melt = df_preds.melt(
-    id_vars=(df_preds.index.name, Key.e_form, *hover_cols),
+    id_vars=(df_preds.index.name, MbdKey.e_form, *hover_cols),
     var_name=facet_col,
     value_vars=models,
     value_name=Key.e_form_pred,
 )
 
 df_melt[Key.each_pred] = (
-    df_melt[Key.each_true] + df_melt[Key.e_form_pred] - df_melt[Key.e_form]
+    df_melt[MbdKey.each_true] + df_melt[Key.e_form_pred] - df_melt[MbdKey.e_form]
 )
 
 df_bin = bin_df_cols(
@@ -89,7 +90,7 @@ legend_order = list(df_metrics.T.MAE.sort_values().index)
 # %% parity plot of actual vs predicted e_form_per_atom
 fig = px.scatter(
     df_bin,
-    x=Key.e_form,
+    x=MbdKey.e_form,
     y=Key.e_form_pred,
     color=facet_col,
     hover_data=hover_cols,
@@ -209,7 +210,7 @@ for idx, anno in enumerate(fig.layout.annotations, start=1):
     fig.layout[f"yaxis{idx}"].title.text = ""
 
 # add transparent rectangle with TN, TP, FN, FP labels in each quadrant
-if e_true_col == Key.each_true:
+if e_true_col == MbdKey.each_true:
     # add dashed quadrant separators
     fig.add_vline(x=0, line=dict(width=0.5, dash="dash"))
     fig.add_hline(y=0, line=dict(width=0.5, dash="dash"))

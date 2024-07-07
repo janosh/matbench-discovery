@@ -9,10 +9,12 @@ will provide the best hit rate for the given budget.
 
 # %%
 import pandas as pd
+from pymatviz.enums import Key
 from pymatviz.io import save_fig
+from pymatviz.utils import MATPLOTLIB, PLOTLY
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
-from matbench_discovery.enums import Key, TestSubset
+from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.plots import cumulative_metrics
 from matbench_discovery.preds import df_each_pred, df_preds, model_styles, models
 
@@ -35,10 +37,10 @@ range_y = {
     ("Precision", "Recall"): (0, 1),
 }[metrics]
 fig, df_metric = cumulative_metrics(
-    e_above_hull_true=df_preds[Key.each_true],
+    e_above_hull_true=df_preds[MbdKey.each_true],
     df_preds=df_each_pred[models],
     project_end_point="xy",
-    backend=(backend := "plotly"),
+    backend=(backend := PLOTLY),
     metrics=metrics,
     # facet_col_wrap=2,
     # increase facet col gap
@@ -48,10 +50,10 @@ fig, df_metric = cumulative_metrics(
 )
 
 x_label = "Number of screened materials"
-if backend == "matplotlib":
+if backend == MATPLOTLIB:
     # fig.suptitle(title)
     fig.text(0.5, -0.08, x_label, ha="center", fontdict={"size": 16})
-if backend == "plotly":
+if backend == PLOTLY:
     for key in filter(lambda key: key.startswith("yaxis"), fig.layout):
         fig.layout[key].range = range_y
 

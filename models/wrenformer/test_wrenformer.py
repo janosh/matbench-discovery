@@ -13,10 +13,11 @@ import wandb
 from aviary.predict import predict_from_wandb_checkpoints
 from aviary.wrenformer.data import df_to_in_mem_dataloader
 from aviary.wrenformer.model import Wrenformer
+from pymatviz.enums import Key
 
 from matbench_discovery import WANDB_PATH, today
 from matbench_discovery.data import df_wbm
-from matbench_discovery.enums import Key, Task
+from matbench_discovery.enums import MbdKey, Task
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 
@@ -40,10 +41,10 @@ slurm_vars = slurm_submit(
 
 
 # %%
-df_wbm_clean = df_wbm.dropna(subset=Key.init_wyckoff)
+df_wbm_clean = df_wbm.dropna(subset=MbdKey.init_wyckoff)
 
-if Key.e_form not in df_wbm_clean:
-    raise KeyError(f"{Key.e_form!s} not in {df_wbm_clean.columns=}")
+if MbdKey.e_form not in df_wbm_clean:
+    raise KeyError(f"{MbdKey.e_form!s} not in {df_wbm_clean.columns=}")
 if Key.wyckoff not in df_wbm_clean:
     raise KeyError(f"{Key.wyckoff!s} not in {df_wbm_clean.columns=}")
 
@@ -73,7 +74,7 @@ run_params = dict(
     versions={dep: version(dep) for dep in ("aviary", "numpy", "torch")},
     ensemble_size=len(runs),
     task_type=task_type,
-    target_col=Key.e_form,
+    target_col=MbdKey.e_form,
     input_col=Key.wyckoff,
     wandb_run_filters=filters,
     slurm_vars=slurm_vars,
@@ -94,7 +95,7 @@ wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 # %%
 data_loader_kwargs = dict(
     input_col=Key.wyckoff,
-    target_col=Key.e_form,
+    target_col=MbdKey.e_form,
     id_col=Key.mat_id,
     embedding_type="wyckoff",
 )
@@ -114,7 +115,7 @@ df_pred, ensemble_metrics = predict_from_wandb_checkpoints(
     data_loader=data_loader,
     df=df_wbm_clean,
     model_cls=Wrenformer,
-    target_col=Key.e_form,
+    target_col=MbdKey.e_form,
 )
 df_pred = df_pred.round(4)
 
@@ -123,10 +124,10 @@ df_pred.to_csv(f"{out_dir}/{job_name}-preds-{slurm_array_job_id}.csv.gz")
 
 
 # %%
-pred_col = f"{Key.e_form}_pred_ens"
+pred_col = f"{MbdKey.e_form}_pred_ens"
 if pred_col not in df_pred:
     raise KeyError(f"{pred_col!s} not in {df_pred.columns=}")
-table = wandb.Table(dataframe=df_pred[[Key.e_form, pred_col]].reset_index())
+table = wandb.Table(dataframe=df_pred[[MbdKey.e_form, pred_col]].reset_index())
 
 
 # %%
@@ -135,4 +136,4 @@ R2 = ensemble_metrics.R2.mean()
 
 title = f"Wrenformer {task_type} ensemble={len(runs)} {MAE=:.4} {R2=:.4}"
 
-wandb_scatter(table, fields=dict(x=Key.e_form, y=pred_col), title=title)
+wandb_scatter(table, fields=dict(x=MbdKey.e_form, y=pred_col), title=title)

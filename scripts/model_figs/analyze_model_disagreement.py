@@ -6,12 +6,14 @@ models can pinpoint DFT calculation gone wrong.
 import sys
 
 import pandas as pd
+from pymatviz.enums import Key
 from pymatviz.io import save_fig
 from pymatviz.powerups import add_identity_line
+from pymatviz.utils import PLOTLY
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.data import DATA_FILES
-from matbench_discovery.enums import Key, TestSubset
+from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.preds import df_preds
 
 __author__ = "Janosh Riebesell"
@@ -49,15 +51,15 @@ n_structs, fig = 200, None
 
 for material_cls, pattern in material_classes.items():
     df_subset = df_preds[df_preds[Key.formula].str.match(pattern)]
-    df_plot = df_subset.nlargest(n_structs, Key.each_err_models).round(2)
-    y_max = df_plot[Key.each_mean_models].max() + 0.6
-    y_min = df_plot[Key.each_mean_models].min() - 0.3
+    df_plot = df_subset.nlargest(n_structs, MbdKey.each_err_models).round(2)
+    y_max = df_plot[MbdKey.each_mean_models].max() + 0.6
+    y_min = df_plot[MbdKey.each_mean_models].min() - 0.3
 
     fig = df_plot.plot.scatter(
-        x=Key.each_true,
-        y=Key.each_mean_models,
-        color=Key.model_std_each,
-        backend="plotly",
+        x=MbdKey.each_true,
+        y=MbdKey.each_mean_models,
+        color=MbdKey.model_std_each,
+        backend=PLOTLY,
         hover_name=Key.mat_id,
         hover_data=[Key.formula],
         color_continuous_scale="Turbo",

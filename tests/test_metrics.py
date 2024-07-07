@@ -3,8 +3,8 @@ import math
 import numpy as np
 import pandas as pd
 import pytest
+from pymatviz.enums import Key
 
-from matbench_discovery.enums import Key
 from matbench_discovery.metrics import classify_stable, stable_metrics
 
 

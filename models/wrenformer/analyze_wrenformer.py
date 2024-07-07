@@ -6,14 +6,15 @@ import pandas as pd
 from aviary.wren.utils import get_isopointal_proto_from_aflow
 from IPython.display import display
 from pymatviz import spacegroup_hist, spacegroup_sunburst
+from pymatviz.enums import Key
 from pymatviz.io import df_to_html_table, df_to_pdf, save_fig
 from pymatviz.powerups import add_identity_line
 from pymatviz.ptable import ptable_heatmap_plotly
-from pymatviz.utils import bin_df_cols
+from pymatviz.utils import PLOTLY, bin_df_cols
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, Model
 from matbench_discovery.data import DATA_FILES, df_wbm
-from matbench_discovery.enums import Key
+from matbench_discovery.enums import MbdKey
 from matbench_discovery.preds import df_each_pred, df_preds
 
 __author__ = "Janosh Riebesell"
@@ -25,19 +26,19 @@ model = Model.wrenformer
 model_low = model.lower()
 max_each_true = 1
 min_each_pred = 1
-df_each_pred[Key.each_true] = df_preds[Key.each_true]
+df_each_pred[MbdKey.each_true] = df_preds[MbdKey.each_true]
 bad_ids = df_each_pred.query(
-    f"{model} > {min_each_pred} & {Key.each_true} < {min_each_pred}"
+    f"{model} > {min_each_pred} & {MbdKey.each_true} < {min_each_pred}"
 ).index
 
-df_wbm[Key.spacegroup] = df_wbm[Key.init_wyckoff].str.split("_").str[2].astype(int)
+df_wbm[Key.spg_num] = df_wbm[MbdKey.init_wyckoff].str.split("_").str[2].astype(int)
 df_bad = df_wbm.loc[bad_ids]
 title = f"{len(df_bad)} {model} preds<br>with {max_each_true=}, {min_each_pred=}"
 
 
 # %%
 df_mp = pd.read_csv(DATA_FILES.mp_energies).set_index(Key.mat_id)
-df_mp[Key.spacegroup] = df_mp[Key.wyckoff].str.split("_").str[2].astype(int)
+df_mp[Key.spg_num] = df_mp[Key.wyckoff].str.split("_").str[2].astype(int)
 df_mp["isopointal_proto_from_aflow"] = df_mp[Key.wyckoff].map(
     get_isopointal_proto_from_aflow
 )
@@ -45,7 +46,7 @@ df_mp.isopointal_proto_from_aflow.value_counts().head(12)
 
 
 # %%
-fig = spacegroup_hist(df_bad[Key.spacegroup])
+fig = spacegroup_hist(df_bad[Key.spg_num])
 fig.layout.title.update(text=f"Spacegroup hist for {title}", y=0.96)
 fig.layout.margin.update(l=0, r=0, t=80, b=0)
 save_fig(fig, f"{PDF_FIGS}/spacegroup-hist-{model.lower()}-failures.pdf")
@@ -55,7 +56,7 @@ fig.show()
 # %%
 proto_col = "Isopointal Prototypes"
 df_proto_counts = (
-    df_bad[Key.init_wyckoff]
+    df_bad[MbdKey.init_wyckoff]
     .map(get_isopointal_proto_from_aflow)
     .value_counts()
     .to_frame()
@@ -82,7 +83,7 @@ df_to_pdf(styler, f"{PDF_FIGS}/{img_name}.pdf")
 
 # %%
 fig = spacegroup_sunburst(
-    df_bad[Key.spacegroup], width=350, height=350, show_counts="percent"
+    df_bad[Key.spg_num], width=350, height=350, show_counts="percent"
 )
 # fig.layout.title.update(text=f"Spacegroup sunburst for {title}", x=0.5, font_size=14)
 fig.layout.margin.update(l=1, r=1, t=1, b=1)
@@ -104,10 +105,10 @@ save_fig(fig, f"{PDF_FIGS}/elements-{model_low}-failures.pdf")
 
 # %%
 model = Model.wrenformer
-cols = [model, Key.each_true]
+cols = [model, MbdKey.each_true]
 bin_cnt_col = "bin counts"
 df_bin = bin_df_cols(
-    df_each_pred, [Key.each_true, model], n_bins=200, bin_counts_col=bin_cnt_col
+    df_each_pred, [MbdKey.each_true, model], n_bins=200, bin_counts_col=bin_cnt_col
 )
 log_cnt_col = f"log {bin_cnt_col}"
 df_bin[log_cnt_col] = np.log1p(df_bin[bin_cnt_col]).round(2)
@@ -115,11 +116,11 @@ df_bin[log_cnt_col] = np.log1p(df_bin[bin_cnt_col]).round(2)
 
 # %%
 fig = df_bin.reset_index().plot.scatter(
-    x=Key.each_true,
+    x=MbdKey.each_true,
     y=model,
     hover_data=cols,
     hover_name=df_preds.index.name,
-    backend="plotly",
+    backend=PLOTLY,
     color=log_cnt_col,
     color_continuous_scale="turbo",
 )

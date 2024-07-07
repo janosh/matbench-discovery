@@ -12,11 +12,12 @@ import pandas as pd
 from matminer.featurizers.site import CrystalNNFingerprint
 from matminer.featurizers.structure import SiteStatsFingerprint
 from pymatgen.core import Structure
+from pymatviz.enums import Key
+from pymatviz.utils import PLOTLY
 from tqdm import tqdm
 
 from matbench_discovery import DATA_DIR, timestamp
 from matbench_discovery.data import DATA_FILES
-from matbench_discovery.enums import Key
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
@@ -119,7 +120,7 @@ df_out[fp_diff_col] = (
     df_out[final_fp_col].map(np.array) - df_out[init_fp_col].map(np.array)
 ).map(np.linalg.norm)
 
-df_out[fp_diff_col].hist(bins=100, backend="plotly")
+df_out[fp_diff_col].hist(bins=100, backend=PLOTLY)
 
 
 # %%

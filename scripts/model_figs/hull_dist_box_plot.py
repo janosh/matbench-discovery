@@ -2,10 +2,11 @@
 import plotly.express as px
 import plotly.graph_objects as go
 import seaborn as sns
+from pymatviz.enums import Key
 from pymatviz.io import save_fig
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
-from matbench_discovery.enums import Key, Quantity, TestSubset
+from matbench_discovery.enums import Quantity, TestSubset
 from matbench_discovery.preds import df_each_err, df_preds, models
 
 __author__ = "Janosh Riebesell"

@@ -14,13 +14,13 @@ from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedEntry, ComputedStructureEntry
 from pymatgen.ext.matproj import MPRester
+from pymatviz.enums import Key
 from pymatviz.io import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, ROOT, today
 from matbench_discovery.data import DATA_FILES
 from matbench_discovery.energy import get_e_form_per_atom, get_elemental_ref_entries
-from matbench_discovery.enums import Key
 
 module_dir = os.path.dirname(__file__)
 

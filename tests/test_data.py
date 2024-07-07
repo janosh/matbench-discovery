@@ -8,6 +8,7 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 from pymatgen.core import Lattice, Structure
+from pymatviz.enums import Key
 
 from matbench_discovery import FIGSHARE_DIR, ROOT
 from matbench_discovery.data import (
@@ -18,7 +19,7 @@ from matbench_discovery.data import (
     glob_to_df,
     load,
 )
-from matbench_discovery.enums import Key
+from matbench_discovery.enums import MbdKey
 
 with open(f"{FIGSHARE_DIR}/{figshare_versions[-1]}.json") as file:
     figshare_urls = json.load(file)["files"]
@@ -107,11 +108,11 @@ def test_load_doc_str() -> None:
 wbm_summary_expected_cols = {
     "uncorrected_energy_from_cse",
     Key.bandgap_pbe,
-    Key.dft_energy,
-    Key.e_form_raw,
-    Key.e_form_wbm,
-    Key.e_form,
-    Key.each_wbm,
+    MbdKey.dft_energy,
+    MbdKey.e_form_raw,
+    MbdKey.e_form_wbm,
+    MbdKey.e_form,
+    MbdKey.each_wbm,
     Key.formula,
     Key.n_sites,
     Key.volume,

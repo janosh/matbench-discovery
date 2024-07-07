@@ -1,9 +1,10 @@
 import os
 
 import pytest
+from pymatviz.enums import Key
 
 from matbench_discovery.data import df_wbm
-from matbench_discovery.enums import Key
+from matbench_discovery.enums import MbdKey
 from matbench_discovery.preds import (
     PRED_FILES,
     df_each_err,
@@ -14,7 +15,7 @@ from matbench_discovery.preds import (
 
 
 def test_df_wbm() -> None:
-    for col in (Key.e_form, Key.each_true):
+    for col in (MbdKey.e_form, MbdKey.each_true):
         assert col in df_wbm, f"{col=} not in {list(df_wbm)=}"
 
 
@@ -30,7 +31,7 @@ def test_df_each_pred() -> None:
     assert len(df_each_pred) == len(df_wbm)
     assert {*df_each_pred} == {
         *df_metrics,
-        Key.each_mean_models,
+        MbdKey.each_mean_models,
     }, "df_each_pred has wrong columns"
     assert all(df_each_pred.isna().mean() < 0.05), "too many NaNs in df_each_pred"
 
@@ -39,7 +40,7 @@ def test_df_each_err() -> None:
     assert len(df_each_err) == len(df_wbm)
     assert {*df_each_err} == {
         *df_metrics,
-        Key.each_err_models,
+        MbdKey.each_err_models,
     }, "df_each_err has wrong columns"
     assert all(df_each_err.isna().mean() < 0.05), "too many NaNs in df_each_err"
 

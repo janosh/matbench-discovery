@@ -6,10 +6,10 @@ from importlib.metadata import version
 
 import pandas as pd
 from aviary.train import df_train_test_split, train_wrenformer
+from pymatviz.enums import Key
 
 from matbench_discovery import WANDB_PATH, timestamp, today
 from matbench_discovery.data import DATA_FILES
-from matbench_discovery.enums import Key
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"

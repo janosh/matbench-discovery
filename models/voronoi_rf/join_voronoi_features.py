@@ -7,9 +7,8 @@ import os
 from glob import glob
 
 import pandas as pd
+from pymatviz.enums import Key
 from tqdm import tqdm
-
-from matbench_discovery.enums import Key
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-16"

@@ -18,10 +18,10 @@ from typing import Any
 import pandas as pd
 from monty.json import MontyDecoder
 from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
+from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import FIGSHARE_DIR
-from matbench_discovery.enums import Key
 
 # ruff: noqa: T201
 

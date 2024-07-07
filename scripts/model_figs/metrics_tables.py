@@ -7,13 +7,14 @@ import json
 
 import numpy as np
 import pandas as pd
+from pymatviz.enums import Key
 from pymatviz.io import df_to_html_table, df_to_pdf
 from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
 
 from matbench_discovery import PDF_FIGS, SCRIPTS, SITE_FIGS
 from matbench_discovery.data import DATA_FILES, df_wbm
-from matbench_discovery.enums import Key, Open
+from matbench_discovery.enums import MbdKey, Open
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.models import MODEL_METADATA
 from matbench_discovery.preds import df_metrics, df_metrics_10k, df_metrics_uniq_protos
@@ -65,13 +66,13 @@ for model in df_metrics:
         si_fmt(model_params) if isinstance(model_params, int) else model_params
     )
     for key in (
-        Key.openness,
+        MbdKey.openness,
         Key.model_type,
         Key.train_task,
         Key.test_task,
         Key.targets,
     ):
-        default = {Key.openness: Open.OSOD}.get(key, pd.NA)
+        default = {MbdKey.openness: Open.OSOD}.get(key, pd.NA)
         df_met.loc[key.label, model] = model_data.get(key, default)
 
 
@@ -89,7 +90,7 @@ for df_in, df_out, col in (
     dummy_clf.fit(np.zeros_like(df_mp[Key.each]), df_mp[Key.each] == 0)
     dummy_clf_preds = dummy_clf.predict(np.zeros(len(df_in)))
 
-    each_true = df_in[Key.each_true]
+    each_true = df_in[MbdKey.each_true]
     dummy_metrics = stable_metrics(
         each_true, np.array([1, -1])[dummy_clf_preds.astype(int)], fillna=True
     )

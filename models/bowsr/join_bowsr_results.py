@@ -4,10 +4,11 @@ from glob import glob
 
 import pandas as pd
 import pymatviz
+from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery.data import DATA_FILES
-from matbench_discovery.enums import Key, Model, Task
+from matbench_discovery.enums import Model, Task
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-09-22"

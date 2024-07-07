@@ -5,11 +5,12 @@ import numpy as np
 import pandas as pd
 from pymatgen.core import Structure
 from pymatgen.io.jarvis import JarvisAtomsAdaptor
+from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import today
 from matbench_discovery.data import DATA_FILES, df_wbm
-from matbench_discovery.enums import Key, Task
+from matbench_discovery.enums import MbdKey, Task
 
 __author__ = "Janosh Riebesell, Philipp Benner"
 __date__ = "2023-07-11"
@@ -49,7 +50,7 @@ input_col = {Task.IS2RE: Key.init_struct, Task.RS2RE: Key.final_struct}[task_typ
 
 df_in = pd.read_json(data_path).set_index(Key.mat_id)
 
-df_in[Key.e_form] = df_wbm[Key.e_form]
+df_in[MbdKey.e_form] = df_wbm[MbdKey.e_form]
 if task_type == Task.RS2RE:
     df_in[input_col] = [cse["structure"] for cse in df_in[Key.cse]]
 if input_col not in df_in:

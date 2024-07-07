@@ -10,11 +10,12 @@ import wandb
 from maml.apps.bowsr.model.megnet import MEGNet
 from maml.apps.bowsr.optimizer import BayesianOptimizer
 from pymatgen.core import Structure
+from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import Model, timestamp, today
 from matbench_discovery.data import DATA_FILES, as_dict_handler
-from matbench_discovery.enums import Key, Task
+from matbench_discovery.enums import Task
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
