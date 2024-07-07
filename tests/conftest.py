@@ -37,7 +37,7 @@ def df_with_pmg_objects(dummy_struct: Structure) -> pd.DataFrame:
     # create a dummy df with a structure column on which to test (de-)serialization
     df_dummy = pd.DataFrame(dict(material_id=range(5), structure=[dummy_struct] * 5))
     df_dummy[Key.volume] = [x.volume for x in df_dummy.structure]
-    df_dummy[Key.struct] = [x.as_dict() for x in df_dummy.structure]
+    df_dummy[Key.structure] = [x.as_dict() for x in df_dummy.structure]
     cse_dict = ComputedStructureEntry(dummy_struct, 0).as_dict()
     df_dummy[Key.cse] = [cse_dict] * len(df_dummy)
     return df_dummy

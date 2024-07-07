@@ -62,8 +62,8 @@ df_mp.energy_type.value_counts().plot.pie(backend=PLOTLY, autopct="%1.1f%%")
 # %%
 df_cse = pd.read_json(DATA_FILES.mp_computed_structure_entries).set_index(Key.mat_id)
 
-df_cse[Key.struct] = [
-    Structure.from_dict(cse[Key.struct]) for cse in tqdm(df_cse.entry)
+df_cse[Key.structure] = [
+    Structure.from_dict(cse[Key.structure]) for cse in tqdm(df_cse.entry)
 ]
 df_cse[Key.wyckoff] = [
     get_aflow_label_from_spglib(struct, errors="ignore")

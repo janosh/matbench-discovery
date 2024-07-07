@@ -54,21 +54,21 @@ slurm_vars = slurm_submit(
 
 # %% Load data
 df_cse = pd.read_json(DATA_FILES.mp_computed_structure_entries).set_index(Key.mat_id)
-df_cse[Key.struct] = [
-    Structure.from_dict(cse[Key.struct])
+df_cse[Key.structure] = [
+    Structure.from_dict(cse[Key.structure])
     for cse in tqdm(df_cse.entry, desc="Structures from dict")
 ]
 
 # load energies
 df_in = pd.read_csv(DATA_FILES.mp_energies).set_index(Key.mat_id)
-df_in[Key.struct] = df_cse[Key.struct]
+df_in[Key.structure] = df_cse[Key.structure]
 if target_col not in df_in:
     raise TypeError(f"{target_col!s} not in {df_in.columns=}")
 
-df_in[input_col] = df_in[Key.struct]
+df_in[input_col] = df_in[Key.structure]
 df_in[input_col] = [
     JarvisAtomsAdaptor.get_atoms(struct)
-    for struct in tqdm(df_in[Key.struct], desc="Converting to JARVIS atoms")
+    for struct in tqdm(df_in[Key.structure], desc="Converting to JARVIS atoms")
 ]
 
 
