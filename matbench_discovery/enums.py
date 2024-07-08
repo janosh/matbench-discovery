@@ -53,7 +53,9 @@ class LabelEnum(StrEnum):
 class MbdKey(LabelEnum):
     """Keys used to access dataframes columns."""
 
-    e_form = "e_form_per_atom_mp2020_corrected", "DFT E_form"
+    e_form_dft = "e_form_per_atom_mp2020_corrected", "DFT E_form"
+    e_form_raw = "e_form_per_atom_uncorrected", "DFT E_form raw"
+    e_form_wbm = "e_form_per_atom_wbm", "WBM E_form"
     each_true = "e_above_hull_mp2020_corrected_ppd_mp", "E<sub>MP hull dist</sub>"
     each_mean_models = "each_mean_models", "E<sub>hull dist</sub> mean of models"
     each_err_models = "each_err_models", "E<sub>hull dist</sub> mean error of models"
@@ -64,8 +66,6 @@ class MbdKey(LabelEnum):
     )
     openness = "openness", "Openness"
     dft_energy = "uncorrected_energy", "DFT Energy"
-    e_form_raw = "e_form_per_atom_uncorrected", "DFT E_form raw"
-    e_form_wbm = "e_form_per_atom_wbm", "WBM E_form"
     each_wbm = "e_above_hull_wbm", "E<sub>WBM hull dist</sub>"
 
 

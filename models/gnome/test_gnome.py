@@ -13,4 +13,4 @@ df_preds[Model.gnome].hist(bins=100, figsize=(10, 10))
 
 
 # %%
-density_scatter(df=df_preds, x=MbdKey.e_form, y=Model.gnome)
+density_scatter(df=df_preds, x=MbdKey.e_form_dft, y=Model.gnome)

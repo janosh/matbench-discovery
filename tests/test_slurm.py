@@ -61,7 +61,7 @@ def test_slurm_submit(
         f"sbatch --job-name {job_name} --output {out_dir}/slurm-%A.log --foo "
         f"--wrap {pre_cmd + ' ' if pre_cmd else ''}python {py_file_path or __file__}"
     ).replace(" --", "\n  --")
-    for flag in (f"{time=}", f"{account=}", f"{partition=}"):
+    for flag in (f"{time=!s}", f"{account=!s}", f"{partition=!s}"):
         key, val = flag.split("=")
         if val != "None":
             sbatch_cmd += f"\n  --{key} {val}"

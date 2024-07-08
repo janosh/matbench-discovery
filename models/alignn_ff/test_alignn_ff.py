@@ -73,7 +73,7 @@ run_params = dict(
     **{f"{dep}_version": version(dep) for dep in ("alignn", "numpy")},
     model_name=model_name,
     task_type=task_type,
-    target_col=MbdKey.e_form,
+    target_col=MbdKey.e_form_dft,
     df=dict(shape=str(df_in.shape), columns=", ".join(df_in)),
 )
 
@@ -87,7 +87,7 @@ with torch.no_grad():  # get predictions
     for material_id, structure in tqdm(
         df_in[Key.final_struct].items(),
         total=len(df_in),
-        desc=f"Predicting {MbdKey.e_form=} {task_type}",
+        desc=f"Predicting {MbdKey.e_form_dft=} {task_type}",
     ):
         atoms = JarvisAtomsAdaptor.get_atoms(Structure.from_dict(structure))
 
@@ -112,11 +112,13 @@ else:
 
 
 # %%
-table = wandb.Table(dataframe=df_wbm[[MbdKey.e_form, pred_col]].reset_index().dropna())
+table = wandb.Table(
+    dataframe=df_wbm[[MbdKey.e_form_dft, pred_col]].reset_index().dropna()
+)
 
-MAE = (df_wbm[MbdKey.e_form] - df_wbm[pred_col]).abs().mean()
-R2 = r2_score(df_wbm[MbdKey.e_form], df_wbm[pred_col])
+MAE = (df_wbm[MbdKey.e_form_dft] - df_wbm[pred_col]).abs().mean()
+R2 = r2_score(df_wbm[MbdKey.e_form_dft], df_wbm[pred_col])
 title = f"{model_name} {task_type} {MAE=:.4} {R2=:.4}"
 print(title)
 
-wandb_scatter(table, fields=dict(x=MbdKey.e_form, y=pred_col), title=title)
+wandb_scatter(table, fields=dict(x=MbdKey.e_form_dft, y=pred_col), title=title)
