@@ -33,7 +33,7 @@ if which_energy == "each":
     e_pred_col = Key.each_pred
     e_true_col = MbdKey.each_true
 elif which_energy == "e-form":
-    e_true_col = MbdKey.e_form
+    e_true_col = MbdKey.e_form_dft
     e_pred_col = Key.e_form_pred
 else:
     raise ValueError(f"Unexpected {which_energy=}")
@@ -53,14 +53,14 @@ models = list(df_metrics.T.MAE.nsmallest(6).index)  # top 6 models by MAE
 models = list(df_metrics)  # all models
 
 df_melt = df_preds.melt(
-    id_vars=(df_preds.index.name, MbdKey.e_form, *hover_cols),
+    id_vars=(df_preds.index.name, MbdKey.e_form_dft, *hover_cols),
     var_name=facet_col,
     value_vars=models,
     value_name=Key.e_form_pred,
 )
 
 df_melt[Key.each_pred] = (
-    df_melt[MbdKey.each_true] + df_melt[Key.e_form_pred] - df_melt[MbdKey.e_form]
+    df_melt[MbdKey.each_true] + df_melt[Key.e_form_pred] - df_melt[MbdKey.e_form_dft]
 )
 
 df_bin = bin_df_cols(
@@ -90,7 +90,7 @@ legend_order = list(df_metrics.T.MAE.sort_values().index)
 # %% parity plot of actual vs predicted e_form_per_atom
 fig = px.scatter(
     df_bin,
-    x=MbdKey.e_form,
+    x=MbdKey.e_form_dft,
     y=Key.e_form_pred,
     color=facet_col,
     hover_data=hover_cols,

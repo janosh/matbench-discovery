@@ -87,7 +87,7 @@ df_wbm[e_form_mace_col] = df_mace[e_form_mace_col]
 
 
 # %%
-bad_mask = (df_wbm[e_form_mace_col] - df_wbm[MbdKey.e_form]) < -5
+bad_mask = (df_wbm[e_form_mace_col] - df_wbm[MbdKey.e_form_dft]) < -5
 print(f"{sum(bad_mask)=}")
 ax = density_scatter(df=df_wbm[~bad_mask], x=MbdKey.e_form, y=e_form_mace_col)
 
@@ -100,7 +100,7 @@ df_mace[~bad_mask].select_dtypes("number").to_csv(f"{out_path}-no-bad.csv.gz")
 df_mace.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
 
 df_bad = df_mace[bad_mask].drop(columns=[Key.cse, struct_col])
-df_bad[MbdKey.e_form] = df_wbm[MbdKey.e_form]
+df_bad[MbdKey.e_form_dft] = df_wbm[MbdKey.e_form_dft]
 df_bad.to_csv(f"{out_path}-bad.csv")
 
 # in_path = f"{module_dir}/2023-12-11-mace-wbm-IS2RE-FIRE"

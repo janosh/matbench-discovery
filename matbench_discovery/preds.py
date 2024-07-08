@@ -183,7 +183,9 @@ uniq_proto_prevalence = (
 ).mean()
 
 for model in PRED_FILES:
-    each_pred = df_preds[MbdKey.each_true] + df_preds[model] - df_preds[MbdKey.e_form]
+    each_pred = (
+        df_preds[MbdKey.each_true] + df_preds[model] - df_preds[MbdKey.e_form_dft]
+    )
     df_metrics[model] = stable_metrics(
         df_preds[MbdKey.each_true], each_pred, fillna=True
     )
@@ -192,7 +194,7 @@ for model in PRED_FILES:
     each_pred_uniq_proto = (
         df_uniq_proto_preds[MbdKey.each_true]
         + df_uniq_proto_preds[model]
-        - df_uniq_proto_preds[MbdKey.e_form]
+        - df_uniq_proto_preds[MbdKey.e_form_dft]
     )
     df_metrics_uniq_protos[model] = stable_metrics(
         df_uniq_proto_preds[MbdKey.each_true], each_pred_uniq_proto, fillna=True
@@ -243,7 +245,7 @@ model_styles = dict(zip(models, zip(plotly_line_styles, plotly_markers, plotly_c
 df_each_pred = pd.DataFrame()
 for model in models:
     df_each_pred[model] = (
-        df_preds[MbdKey.each_true] + df_preds[model] - df_preds[MbdKey.e_form]
+        df_preds[MbdKey.each_true] + df_preds[model] - df_preds[MbdKey.e_form_dft]
     )
 
 # important: do df_each_pred.std(axis=1) before inserting Key.model_mean_each into df
@@ -255,7 +257,7 @@ df_each_pred[MbdKey.each_mean_models] = df_preds[MbdKey.each_mean_models] = (
 # dataframe of all models' errors in their EACH predictions (eV/atom)
 df_each_err = pd.DataFrame()
 for model in models:
-    df_each_err[model] = df_preds[model] - df_preds[MbdKey.e_form]
+    df_each_err[model] = df_preds[model] - df_preds[MbdKey.e_form_dft]
 
 df_each_err[MbdKey.each_err_models] = df_preds[MbdKey.each_err_models] = (
     df_each_err.abs().mean(axis=1)

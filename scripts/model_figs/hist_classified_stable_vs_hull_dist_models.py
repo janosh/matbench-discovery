@@ -28,7 +28,7 @@ if test_subset == TestSubset.uniq_protos:
 
 
 # %%
-hover_cols = (df_preds.index.name, MbdKey.e_form, MbdKey.each_true, Key.formula)
+hover_cols = (df_preds.index.name, MbdKey.e_form_dft, MbdKey.each_true, Key.formula)
 facet_col = "Model"
 # sort models by F1 scores so that facet plots are ordered by model performance
 # (optionally only show top n=6)
@@ -42,7 +42,7 @@ df_melt = df_preds.melt(
 )
 
 df_melt[Key.each_pred] = (
-    df_melt[MbdKey.each_true] + df_melt[Key.e_form_pred] - df_melt[MbdKey.e_form]
+    df_melt[MbdKey.each_true] + df_melt[Key.e_form_pred] - df_melt[MbdKey.e_form_dft]
 )
 
 

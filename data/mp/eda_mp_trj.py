@@ -99,7 +99,7 @@ if Key.formula not in df_mp_trj:
 
 # this is the unrelaxed (but MP2020 corrected) formation energy per atom of the actual
 # relaxation step
-df_mp_trj = df_mp_trj.rename(columns={"ef_per_atom": MbdKey.e_form})
+df_mp_trj = df_mp_trj.rename(columns={"ef_per_atom": MbdKey.e_form_dft})
 df_mp_trj[Key.stress_trace] = [
     np.trace(stress) / 3 for stress in tqdm(df_mp_trj[Key.stress])
 ]
@@ -330,7 +330,7 @@ save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
 
 # %% plot formation energy per atom distribution
 # pdf_kwds defined to use the same figure size for all plots
-fig = plot_histogram(df_mp_trj[MbdKey.e_form], bins=300)
+fig = plot_histogram(df_mp_trj[MbdKey.e_form_dft], bins=300)
 # fig.update_yaxes(type="log")
 fig.layout.xaxis.title = "E<sub>form</sub> (eV/atom)"
 count_col = "Number of Structures"

@@ -61,8 +61,8 @@ data_path = {
 }[task_type]
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
-if MbdKey.e_form not in df_wbm:
-    raise KeyError(f"{MbdKey.e_form!s} not in {df_wbm.columns=}")
+if MbdKey.e_form_dft not in df_wbm:
+    raise KeyError(f"{MbdKey.e_form_dft!s} not in {df_wbm.columns=}")
 
 df_in = pd.read_json(data_path).set_index(Key.mat_id)
 if slurm_array_task_count > 1:
@@ -76,7 +76,7 @@ run_params = {
     "versions": {dep: version(dep) for dep in ("megnet", "numpy")},
     "model_name": model_name,
     Key.task_type: task_type,
-    "target_col": MbdKey.e_form,
+    "target_col": MbdKey.e_form_dft,
     "df": {"shape": str(df_in.shape), "columns": ", ".join(df_in)},
     "slurm_vars": slurm_vars,
     Key.model_params: sum(
@@ -139,11 +139,11 @@ save_fig(ax, "megnet-e-form-preds-old-vs-new-corr.png")
 
 # %%
 df_wbm[pred_col] = df_megnet[pred_col]
-table = wandb.Table(dataframe=df_wbm[[MbdKey.e_form, pred_col]].reset_index())
+table = wandb.Table(dataframe=df_wbm[[MbdKey.e_form_dft, pred_col]].reset_index())
 
-MAE = (df_wbm[MbdKey.e_form] - df_wbm[pred_col]).abs().mean()
-R2 = r2_score(*df_wbm[[MbdKey.e_form, pred_col]].dropna().to_numpy().T)
+MAE = (df_wbm[MbdKey.e_form_dft] - df_wbm[pred_col]).abs().mean()
+R2 = r2_score(*df_wbm[[MbdKey.e_form_dft, pred_col]].dropna().to_numpy().T)
 title = f"{model_name} {task_type} {MAE=:.4} {R2=:.4}"
 print(title)
 
-wandb_scatter(table, fields=dict(x=MbdKey.e_form, y=pred_col), title=title)
+wandb_scatter(table, fields=dict(x=MbdKey.e_form_dft, y=pred_col), title=title)
