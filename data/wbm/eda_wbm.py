@@ -217,7 +217,7 @@ for x_pos, label in (
 fig.show()
 suffix = {
     MbdKey.each_true: "hull-dist",
-    MbdKey.e_form: "e-form",
+    MbdKey.e_form_dft: "e-form",
     MbdKey.e_form_raw: "e-form-uncorrected",
 }[e_col]
 img_name = f"hist-wbm-{suffix}"

@@ -10,7 +10,6 @@ import pandas as pd
 from pymatgen.core import Structure
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedStructureEntry
-from pymatviz import density_scatter
 from pymatviz.enums import Key
 from tqdm import tqdm
 
@@ -83,16 +82,13 @@ df_mace[e_form_mace_col] = [
         df_mace.set_index(Key.formula)[Key.cse].items(), total=len(df_mace)
     )
 ]
-df_wbm[e_form_mace_col] = df_mace[e_form_mace_col]
+df_wbm[[*df_mace]] = df_mace
 
 
 # %%
-bad_mask = (df_wbm[e_form_mace_col] - df_wbm[MbdKey.e_form]) < -5
+bad_mask = (df_wbm[e_form_mace_col] - df_wbm[MbdKey.e_form_dft]) < -5
 print(f"{sum(bad_mask)=}")
-ax = density_scatter(df=df_wbm[~bad_mask], x=MbdKey.e_form, y=e_form_mace_col)
 
-
-# %%
 out_path = file_paths[0].rsplit("/", 1)[0]
 df_mace = df_mace.round(4)
 df_mace.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
@@ -100,9 +96,9 @@ df_mace[~bad_mask].select_dtypes("number").to_csv(f"{out_path}-no-bad.csv.gz")
 df_mace.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
 
 df_bad = df_mace[bad_mask].drop(columns=[Key.cse, struct_col])
-df_bad[MbdKey.e_form] = df_wbm[MbdKey.e_form]
+df_bad[MbdKey.e_form_dft] = df_wbm[MbdKey.e_form_dft]
 df_bad.to_csv(f"{out_path}-bad.csv")
 
-# in_path = f"{module_dir}/2023-12-11-mace-wbm-IS2RE-FIRE"
+# in_path = f"{module_dir}/2023-12-11-mace-wbm-IS2RE-FIRE-no-bad"
 # df_mace = pd.read_csv(f"{in_path}.csv.gz").set_index(Key.mat_id)
 # df_mace = pd.read_json(f"{in_path}.json.gz").set_index(Key.mat_id)

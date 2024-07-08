@@ -111,7 +111,7 @@ wbm_summary_expected_cols = {
     MbdKey.dft_energy,
     MbdKey.e_form_raw,
     MbdKey.e_form_wbm,
-    MbdKey.e_form,
+    MbdKey.e_form_dft,
     MbdKey.each_wbm,
     Key.formula,
     Key.n_sites,

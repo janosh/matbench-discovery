@@ -83,7 +83,7 @@ def slurm_submit(
         *(slurm_flags.split() if isinstance(slurm_flags, str) else slurm_flags),
         *("--wrap", f"{pre_cmd or ''} python {py_file_path}".strip()),
     ]
-    for flag in (f"{time=}", f"{account=}", f"{partition=}", f"{array=}"):
+    for flag in (f"{time=!s}", f"{account=!s}", f"{partition=!s}", f"{array=!s}"):
         key, val = flag.split("=")
         if val != "None":
             cmd += (f"--{key}", val)

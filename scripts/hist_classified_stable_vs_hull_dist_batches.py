@@ -27,7 +27,7 @@ model_name = "M3GNet"
 which_energy: Final = "true"
 backend: Final = MATPLOTLIB
 df_preds[Key.each_pred] = (
-    df_preds[MbdKey.each_true] + df_preds[model_name] - df_preds[MbdKey.e_form]
+    df_preds[MbdKey.each_true] + df_preds[model_name] - df_preds[MbdKey.e_form_dft]
 )
 df_preds[(batch_col := "batch_idx")] = df_preds.index.str.split("-").str[1].astype(int)
 

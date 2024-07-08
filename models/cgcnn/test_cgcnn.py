@@ -53,7 +53,7 @@ input_col = {Task.IS2RE: Key.init_struct, Task.RS2RE: Key.final_struct}[task_typ
 
 df_in = pd.read_json(data_path).set_index(Key.mat_id)
 
-df_in[MbdKey.e_form] = df_wbm[MbdKey.e_form]
+df_in[MbdKey.e_form_dft] = df_wbm[MbdKey.e_form_dft]
 if task_type == Task.RS2RE:
     df_in[input_col] = [cse["structure"] for cse in df_in[Key.cse]]
 if input_col not in df_in:
@@ -90,7 +90,7 @@ run_params = dict(
     versions={dep: version(dep) for dep in ("aviary", "numpy", "torch")},
     ensemble_size=len(runs),
     task_type=task_type,
-    target_col=MbdKey.e_form,
+    target_col=MbdKey.e_form_dft,
     input_col=input_col,
     wandb_run_filters=filters,
     slurm_vars=slurm_vars,
@@ -107,7 +107,7 @@ except Exception as exc:
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 cg_data = CrystalGraphData(
-    df_in, task_dict={MbdKey.e_form: "regression"}, structure_col=input_col
+    df_in, task_dict={MbdKey.e_form_dft: "regression"}, structure_col=input_col
 )
 data_loader = DataLoader(
     cg_data, batch_size=1024, shuffle=False, collate_fn=collate_batch
@@ -120,17 +120,17 @@ df_in, ensemble_metrics = predict_from_wandb_checkpoints(
     # dropping isolated-atom structs means len(cg_data.df) < len(df)
     cache_dir=CHECKPOINT_DIR,
     df=cg_data.df.drop(columns=input_col),
-    target_col=MbdKey.e_form,
+    target_col=MbdKey.e_form_dft,
     model_cls=CrystalGraphConvNet,
     data_loader=data_loader,
 )
 
 slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", "debug")
 df_in.round(4).to_csv(f"{out_dir}/{job_name}-preds-{slurm_array_job_id}.csv.gz")
-pred_col = f"{MbdKey.e_form}_pred_ens"
+pred_col = f"{MbdKey.e_form_dft}_pred_ens"
 if pred_col not in df_in:
     raise KeyError(f"{pred_col} not in {df_in.columns=}")
-table = wandb.Table(dataframe=df_in[[MbdKey.e_form, pred_col]].reset_index())
+table = wandb.Table(dataframe=df_in[[MbdKey.e_form_dft, pred_col]].reset_index())
 
 
 # %%
@@ -139,4 +139,4 @@ R2 = ensemble_metrics.R2.mean()
 
 title = f"CGCNN {task_type} ensemble={len(runs)} {MAE=:.4} {R2=:.4}"
 
-wandb_scatter(table, fields=dict(x=MbdKey.e_form, y=pred_col), title=title)
+wandb_scatter(table, fields=dict(x=MbdKey.e_form_dft, y=pred_col), title=title)
