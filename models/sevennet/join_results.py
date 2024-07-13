@@ -1,4 +1,3 @@
-import sys
 from glob import glob
 
 import pandas as pd
@@ -38,10 +37,15 @@ df_cse[Key.cse] = [
 # As SevenNet-0 (11July2024) is trained on 'uncorrected energy' of MPTrj,
 # energies should be corrected basd on MP
 
+
 # %% transfer energies and relaxed structures WBM CSEs since MP2020 energy
 # corrections applied below are structure-dependent (for oxides and sulfides)
-cse: ComputedStructureEntry  # pymatgen class that has both structure and computed energy
-for row in tqdm(df_sevenn.itertuples(), total=len(df_sevenn), desc="ML energies to CSEs"):
+cse: (
+    ComputedStructureEntry  # pymatgen class that has both structure and computed energy
+)
+for row in tqdm(
+    df_sevenn.itertuples(), total=len(df_sevenn), desc="ML energies to CSEs"
+):
     mat_id, struct_dict, energy, *_ = row
     mlip_struct = Structure.from_dict(struct_dict)
     df_sevenn.at[mat_id, STRUCT_COL] = mlip_struct  # noqa: PD008
@@ -59,12 +63,16 @@ assert len(df_sevenn) == orig_len
 
 ############# df_sevenn is now have corrected energy #############
 
-df_sevenn[Key.formula] = df_wbm[Key.formula]  # pd automatically match rows by material_id
+df_sevenn[Key.formula] = df_wbm[
+    Key.formula
+]  # pd automatically match rows by material_id
 
 df_sevenn[E_FORM_COL] = [
     # see https://matbench-discovery.materialsproject.org/data#mp-elemental-reference-energies
     # MP ref energies are 'the lowest energies found for unary structures of each element'
-    get_e_form_per_atom(dict(energy=cse.energy, composition=formula), mp_elemental_ref_energies)
+    get_e_form_per_atom(
+        dict(energy=cse.energy, composition=formula), mp_elemental_ref_energies
+    )
     for formula, cse in tqdm(
         df_sevenn.set_index(Key.formula)[Key.cse].items(), total=len(df_sevenn)
     )

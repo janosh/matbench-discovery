@@ -1,5 +1,4 @@
 import os
-import sys
 from typing import Any, Literal
 
 import numpy as np
@@ -8,16 +7,15 @@ import torch
 from ase.filters import ExpCellFilter, FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
 from pymatgen.core import Structure
-#from pymatgen.core.trajectory import Trajectory
+
+# from pymatgen.core.trajectory import Trajectory
 from pymatgen.io.ase import AseAtomsAdaptor
+from sevenn.sevennet_calculator import SevenNetCalculator
 from tqdm import tqdm
 
 from matbench_discovery import timestamp
 from matbench_discovery.data import DATA_FILES, as_dict_handler
 from matbench_discovery.enums import Key, Task
-
-from sevenn.sevennet_calculator import SevenNetCalculator
-
 
 __author__ = "Yutack Park"
 __date__ = "2024-06-25"
@@ -93,4 +91,3 @@ df_out = pd.DataFrame(relax_results).T.add_prefix("sevennet_")
 df_out.index.name = Key.mat_id
 
 df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
-
