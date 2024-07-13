@@ -4,7 +4,7 @@ from matbench_discovery import __version__
 from matbench_discovery.models import MODEL_DIRS, MODEL_METADATA
 
 
-def parse_version(v: str) -> tuple[int, int, int]:
+def parse_version(v: str) -> tuple[int, ...]:
     return tuple(map(int, v.split(".")))
 
 
