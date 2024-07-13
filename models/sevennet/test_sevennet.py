@@ -1,14 +1,14 @@
+# %%
 import os
 from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
+import requests
 import torch
 from ase.filters import ExpCellFilter, FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
 from pymatgen.core import Structure
-
-# from pymatgen.core.trajectory import Trajectory
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from sevenn.sevennet_calculator import SevenNetCalculator
@@ -22,15 +22,13 @@ __author__ = "Yutack Park"
 __date__ = "2024-06-25"
 
 
+# %%
 #########################  EDITABLE  ###########################
-pot_name = "sevennet"
+SMOKE_TEST = True
 sevennet_root = None  # root to SevenNet repo
-sevennet_checkpoint = (
-    f"{sevennet_root}/pretrained_potentials/SevenNet_0__11July2024/"
-    "checkpoint_sevennet_0.pth"
-)
-if not os.path.isfile(sevennet_checkpoint):
-    raise FileNotFoundError(f"Missing {sevennet_checkpoint=}")
+module_dir = os.path.dirname(__file__)
+sevennet_checkpoint = f"{module_dir}/sevennet_checkpoint.pth.tar"
+pot_name = "sevennet"
 task_type = Task.IS2RE
 ase_optimizer = "FIRE"
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -40,7 +38,20 @@ max_steps = 500
 force_max = 0.05  # Run until the forces are smaller than this in eV/A
 
 slurm_array_task_count = 32
-#########################  EDITABLE  ###########################
+
+
+# %%
+if not os.path.isfile(sevennet_checkpoint):
+    url = (
+        "https://raw.githubusercontent.com/MDIL-SNU/SevenNet/main/"
+        "pretrained_potentials/SevenNet_0__11July2024/checkpoint_sevennet_0.pth"
+    )
+    response = requests.get(url)  # noqa: S113
+    with open(sevennet_checkpoint, "wb") as file:
+        file.write(response.content)
+
+
+# %%
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
 
 out_dir = "./results"
@@ -58,11 +69,16 @@ e_pred_col = "sevennet_energy"
 # Init ASE SevenNet Calculator from checkpoint
 sevennet_calc = SevenNetCalculator(sevennet_checkpoint)
 
+
+# %%
 print(f"Read data from {data_path}")
 df_in = pd.read_json(data_path).set_index(Key.mat_id)
-df_in = df_in.sample(frac=1, random_state=7)  # shuffle data for equal runtime
-if slurm_array_task_count > 1:
-    df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
+if SMOKE_TEST:
+    df_in = df_in.head(10)
+else:
+    df_in = df_in.sample(frac=1, random_state=7)  # shuffle data for equal runtime
+    if slurm_array_task_count > 1:
+        df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
 
 relax_results: dict[str, dict[str, Any]] = {}
 input_col = {Task.IS2RE: Key.init_struct}[task_type]
@@ -71,6 +87,8 @@ structs = df_in[input_col].map(Structure.from_dict).to_dict()
 filter_cls = {"frechet": FrechetCellFilter, "exp": ExpCellFilter}[ase_filter]
 optim_cls = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
+
+# %%
 for material_id in tqdm(structs, desc="Relaxing"):
     if material_id in relax_results:
         continue
@@ -94,4 +112,7 @@ for material_id in tqdm(structs, desc="Relaxing"):
 df_out = pd.DataFrame(relax_results).T.add_prefix("sevennet_")
 df_out.index.name = Key.mat_id
 
-df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
+
+# %%
+if not SMOKE_TEST:
+    df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
