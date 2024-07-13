@@ -1,7 +1,7 @@
 model_name: SevenNet
 model_version: SevenNet-0 (22July2024)
 matbench_discovery_version: 1.1.2 # required
-date_added: "2023-07-13" # required
+date_added: "2024-07-13" # required
 authors: # required (only name, other keys are optional)
   - name: Yutack Park
     affiliation: Seoul National University
@@ -52,3 +52,5 @@ notes: # notes can have any key, be multiline and support markdown.
   description: |
     SevenNet is a graph neural network interatomic potential package that supports parallel molecular dynamics simulations.
     In the SevenNet-0 model, based on the NequIP architecture, the tensor product in the self-connection layer, which includes numerous element-specific parameters, is replaced by a linear (or self-interaction) layer.
+    SevenNet-0 features 5 interaction blocks with node features comprising irreducible representations of 128 scalars (l = 0), 64 vectors (l = 1), and 32 tensors (l = 2).
+    The convolutional filter employs rc of 5 Å, and a tensor product of learnable radial functions from bases of 8 radial Bessel functions and spherical harmonics up to l = 2.
