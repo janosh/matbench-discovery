@@ -50,9 +50,6 @@ class PredFiles(Files):
     # original MEGNet straight from publication, not re-trained
     megnet = "megnet/2022-11-18-megnet-wbm-IS2RE.csv.gz"
 
-    # SevenNet
-    sevennet = "sevennet/2024-07-11-sevennet-preds-no-bad.csv.gz"
-
     # SevenNet trained on MPtrj
     sevennet = "sevennet/2024-07-11-sevennet-preds-no-bad.csv.gz"
 
