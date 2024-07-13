@@ -178,7 +178,7 @@ class Model(LabelEnum):
     megnet_rs2re = "MEGNet RS2RE"
     megnet = "MEGNet"
     pfp = "PFP"
-    sevennet = "SevenNet-0"
+    sevennet = "SevenNet"
     voronoi_rf = "Voronoi RF"
     wbm = "WBM"
     wrenformer = "Wrenformer"

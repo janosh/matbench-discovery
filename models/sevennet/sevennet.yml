@@ -1,5 +1,5 @@
-model_name: SevenNet-0
-model_version: 11July2024
+model_name: SevenNet
+model_version: SevenNet-0 (11July2024)
 matbench_discovery_version: 1.1.2 # required
 date_added: "2024-07-13" # required
 authors: # required (only name, other keys are optional)
