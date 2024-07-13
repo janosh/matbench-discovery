@@ -5,7 +5,8 @@ from matbench_discovery.models import MODEL_DIRS, MODEL_METADATA
 
 
 def parse_version(v: str) -> tuple[int, int, int]:
-    return tuple(map(int, v.split('.')))
+    return tuple(map(int, v.split(".")))
+
 
 def test_model_dirs_have_metadata() -> None:
     required = {
@@ -53,7 +54,9 @@ def test_model_dirs_have_metadata() -> None:
         ), f"Invalid {model_version=} not between 1 and 15 characters"
         # TODO increase max allowed version when updating package
         assert (
-            parse_version("1.0.0") <= parse_version(mbd_version) <= parse_version(__version__)
+            parse_version("1.0.0")
+            <= parse_version(mbd_version)
+            <= parse_version(__version__)
         ), f"Invalid matbench-discovery version: {mbd_version}"
         assert isinstance(date_added, str), f"Invalid {date_added=} not a string"
         assert isinstance(authors, list)
