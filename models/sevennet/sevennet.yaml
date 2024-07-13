@@ -1,0 +1,54 @@
+model_name: SevenNet
+model_version: SevenNet-0 (22July2024)
+matbench_discovery_version: 1.1.2 # required
+date_added: "2023-07-13" # required
+authors: # required (only name, other keys are optional)
+  - name: Yutack Park
+    affiliation: Seoul National University
+    email: parkyutack@snu.ac.kr
+    orcid: https://orcid.org/0009-0008-8690-935X
+  - name: Jaesun Kim
+    affiliation: Seoul National University
+    orcid: https://orcid.org/0009-0000-6646-1318
+  - name: Seungwoo Hwang
+    affiliation: Seoul National University
+    orcid: https://orcid.org/0000-0002-1523-8340
+  - name: Seungwu Han
+    affiliation: Seoul National University, Korea Institute for Advanced Study
+    email: hansw@snu.ac.kr
+    orcid: https://orcid.org/0000-0003-3958-0922
+    corresponding: True
+trained_by:
+  - name: Saerom Choi
+    affiliation: Samsung Advanced Institute of Technology, Seoul National University
+repo: https://github.com/MDIL-SNU/SevenNet # required
+url: https://github.com/MDIL-SNU/SevenNet/tree/main/pretrained_potentials/SevenNet_0__11July2024
+doi: https://doi.org/10.1021/acs.jctc.4c00190
+
+model_params: 842_440
+targets: EFS
+model_type: UIP
+
+hyperparams:
+  max_force: 0.05
+  max_steps: 500
+  ase_optimizer: FIRE
+
+requirements: # strongly recommended
+  torch: 2.2.1
+  torch-geometric: 2.5.2
+  torch_scatter: 2.1.2
+  ase: 3.22.1
+  pymatgen: 2024.6.10
+  numpy: 1.26.4
+
+training_set:
+  title: MPtrj
+  url: https://figshare.com/articles/dataset/23713842
+  n_structures: 1_580_395
+  n_materials: 145_923
+
+notes: # notes can have any key, be multiline and support markdown.
+  description: |
+    SevenNet is a graph neural network interatomic potential package that supports parallel molecular dynamics simulations.
+    In the SevenNet-0 model, based on the NequIP architecture, the tensor product in the self-connection layer, which includes numerous element-specific parameters, is replaced by a linear (or self-interaction) layer.
