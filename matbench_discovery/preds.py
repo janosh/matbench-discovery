@@ -49,6 +49,9 @@ class PredFiles(Files):
     # m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv.gz"
     # megnet_rs2re = "megnet/2023-08-23-megnet-wbm-RS2RE.csv.gz"
 
+    # SevenNet
+    sevennet = "sevennet/2024-07-11-sevennet-preds-no-bad.csv.gz"
+
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest
     voronoi_rf = "voronoi_rf/2022-11-27-train-test/e-form-preds-IS2RE.csv.gz"
 
