@@ -1,6 +1,6 @@
 model_name: CGCNN+P
 model_version: 0.1.0 # the aviary version
-matbench_discovery_version: 1.0
+matbench_discovery_version: 1.0.0
 date_added: "2023-02-03"
 date_published: "2022-02-28"
 authors:

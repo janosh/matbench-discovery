@@ -1,6 +1,6 @@
 model_name: CHGNet
 model_version: 0.0.1
-matbench_discovery_version: 1.0
+matbench_discovery_version: 1.0.0
 date_added: "2023-03-03"
 date_published: "2023-03-01"
 authors:

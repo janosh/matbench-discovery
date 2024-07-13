@@ -1,13 +1,17 @@
 from glob import glob
 
+from matbench_discovery import __version__
 from matbench_discovery.models import MODEL_DIRS, MODEL_METADATA
 
+
+def parse_version(v: str) -> tuple[int, int, int]:
+    return tuple(map(int, v.split('.')))
 
 def test_model_dirs_have_metadata() -> None:
     required = {
         "authors": list,  # dict with name, affiliation, orcid?, email?
         "date_added": str,
-        "matbench_discovery_version": float,
+        "matbench_discovery_version": str,
         "model_name": str,
         "model_version": str,
         "repo": str,
@@ -49,7 +53,7 @@ def test_model_dirs_have_metadata() -> None:
         ), f"Invalid {model_version=} not between 1 and 15 characters"
         # TODO increase max allowed version when updating package
         assert (
-            1 <= mbd_version <= 1
+            parse_version("1.0.0") <= parse_version(mbd_version) <= parse_version(__version__)
         ), f"Invalid matbench-discovery version: {mbd_version}"
         assert isinstance(date_added, str), f"Invalid {date_added=} not a string"
         assert isinstance(authors, list)
