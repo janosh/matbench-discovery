@@ -21,6 +21,7 @@ class PredFiles(Files):
     """Data files provided by Matbench Discovery.
     See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
     """
+
     alignn = "alignn/2023-06-02-alignn-wbm-IS2RE.csv.gz"
     # alignn_pretrained = "alignn/2023-06-03-mp-e-form-alignn-wbm-IS2RE.csv.gz"
     # alignn_ff = "alignn_ff/2023-07-11-alignn-ff-wbm-IS2RE.csv.gz"
