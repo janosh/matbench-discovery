@@ -83,7 +83,7 @@ if slurm_array_task_count > 1:
 # %%
 run_params = {
     "data_path": data_path,
-    "versions": {dep: version(dep) for dep in ("mace", "numpy", "torch")},
+    "versions": {dep: version(dep) for dep in ("mace-torch", "numpy", "torch")},
     "checkpoint": checkpoint,
     Key.task_type: task_type,
     "df": {"shape": str(df_in.shape), "columns": ", ".join(df_in)},

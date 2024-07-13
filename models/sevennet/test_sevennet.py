@@ -10,12 +10,13 @@ from pymatgen.core import Structure
 
 # from pymatgen.core.trajectory import Trajectory
 from pymatgen.io.ase import AseAtomsAdaptor
+from pymatviz.enums import Key
 from sevenn.sevennet_calculator import SevenNetCalculator
 from tqdm import tqdm
 
 from matbench_discovery import timestamp
 from matbench_discovery.data import DATA_FILES, as_dict_handler
-from matbench_discovery.enums import Key, Task
+from matbench_discovery.enums import Task
 
 __author__ = "Yutack Park"
 __date__ = "2024-06-25"
@@ -24,8 +25,12 @@ __date__ = "2024-06-25"
 #########################  EDITABLE  ###########################
 pot_name = "sevennet"
 sevennet_root = None  # root to SevenNet repo
-sevennet_checkpoint = f"{sevennet_root}/pretrained_potentials/SevenNet_0__11July2024/checkpoint_sevennet_0.pth"
-assert os.path.isfile(sevennet_checkpoint)
+sevennet_checkpoint = (
+    f"{sevennet_root}/pretrained_potentials/SevenNet_0__11July2024/"
+    "checkpoint_sevennet_0.pth"
+)
+if not os.path.isfile(sevennet_checkpoint):
+    raise FileNotFoundError(f"Missing {sevennet_checkpoint=}")
 task_type = Task.IS2RE
 ase_optimizer = "FIRE"
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -77,9 +82,8 @@ for material_id in tqdm(structs, desc="Relaxing"):
             optimizer = optim_cls(atoms, logfile="/dev/null")
             optimizer.run(fmax=force_max, steps=max_steps)
         energy = atoms.get_potential_energy()  # relaxed energy
-        relaxed = AseAtomsAdaptor.get_structure(
-            getattr(atoms, "atoms", atoms)  # atoms might be wrapped in ase filter
-        )
+        # atoms might be wrapped in ase filter
+        relaxed = AseAtomsAdaptor.get_structure(getattr(atoms, "atoms", atoms))
         relax_results[material_id] = {"structure": relaxed, "energy": energy}
 
         coords, lattices = (locals().get(key, []) for key in ("coords", "lattices"))
