@@ -2,6 +2,7 @@ model_name: SevenNet
 model_version: SevenNet-0 (11July2024)
 matbench_discovery_version: 1.1.2 # required
 date_added: "2024-07-13" # required
+date_published: "2024-02-06"
 authors: # required (only name, other keys are optional)
   - name: Yutack Park
     affiliation: Seoul National University
@@ -24,10 +25,11 @@ trained_by:
 repo: https://github.com/MDIL-SNU/SevenNet # required
 url: https://github.com/MDIL-SNU/SevenNet/tree/main/pretrained_potentials/SevenNet_0__11July2024
 doi: https://doi.org/10.1021/acs.jctc.4c00190
+paper: https://arxiv.org/abs/2402.03789
 
 openness: OSOD
 trained_for_benchmark: false
-train_task: S2EF
+train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS
 model_type: UIP

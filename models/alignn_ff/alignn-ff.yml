@@ -40,6 +40,7 @@ requirements:
   scikit-learn: 1.2.2
   torch: 1.9.0+cu111
 
+openness: OSOD
 trained_for_benchmark: true
 
 training_set:

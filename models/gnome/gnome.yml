@@ -32,8 +32,8 @@ requirements:
   numpy: 1.26.2
   pymatgen: 2023.11.12
 
-trained_for_benchmark: false
 openness: OSCD
+trained_for_benchmark: false
 train_task: S2EFS
 test_task: IS2RE-SR
 targets: EF

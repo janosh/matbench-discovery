@@ -75,12 +75,14 @@ authors:
 repo: https://github.com/microsoft/Graphormer
 doi: https://doi.org/10.48550/arXiv.2405.04967
 paper: https://arxiv.org/abs/2405.04967
+
 requirements:
   Graphormer: v1
   numpy: 1.26.2
   pymatgen: 2024.5.1
-trained_for_benchmark: false
+
 openness: CSCD
+trained_for_benchmark: false
 train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS
