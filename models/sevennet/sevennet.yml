@@ -41,11 +41,11 @@ hyperparams:
   ase_optimizer: FIRE
   optimizer: Adam
   loss: Huber - delta=0.01
-  loss_weights: { energy: 1, force: 0.1, stress: 0.01 }
-  batch_size: 16
-  initial_learning_rate: 0.004
-  learning_rate_schedule: ReduceOnPlateau - factor=0.5, patience=50
-  epochs: 450
+  loss_weights: { energy: 1.0, force: 1.0, stress: 0.01 }
+  batch_size: 128  # 32 (gpus) * 4 (batch per gpu) = 128 (total batch size)
+  initial_learning_rate: 0.010
+  learning_rate_schedule: LinearLR - start_factor=1.0, total_iters=600, end_factor=0.0001
+  epochs: 600
   n_layers: 5
   n_features: 128 l=0 scalars, 64 l=1 vectors, 32 l=2 tensors
   n_radial_bessel_basis: 8
