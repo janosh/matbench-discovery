@@ -53,9 +53,6 @@ class PredFiles(Files):
     # SevenNet trained on MPtrj
     sevennet = "sevennet/2024-07-11-sevennet-preds-no-bad.csv.gz"
 
-    # SevenNet
-    sevennet = "sevennet/2024-07-11-sevennet-preds-no-bad.csv.gz"
-
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest
     voronoi_rf = "voronoi_rf/2022-11-27-train-test/e-form-preds-IS2RE.csv.gz"
 
