@@ -33,7 +33,7 @@ repo: https://github.com/ACEsuit/mace
 doi: https://doi.org/10.48550/arXiv.2401.00096
 paper: https://arxiv.org/abs/2401.00096
 requirements:
-  mace-torch: 0.3.0
+  mace-torch: 0.3.3
   torch: 2.0.1
   ase: 3.22.1
   pymatgen: 2023.7.14
