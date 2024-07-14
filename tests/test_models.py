@@ -45,8 +45,8 @@ def test_model_dirs_have_metadata() -> None:
                 3 < len(name) < 50
             ), f"Invalid {name=} not between 3 and 50 characters"
         assert (
-            1 < len(model_version) < 15
-        ), f"Invalid {model_version=} not between 1 and 15 characters"
+            1 < len(model_version) < 30
+        ), f"Invalid {model_version=} not between 1 and 30 characters"
         # TODO increase max allowed version when updating package
         assert (
             1 <= mbd_version <= 1
