@@ -1,5 +1,5 @@
 model_name: MACE
-model_version: 0.3.0
+model_version: 2023-12-03-mace-128-L1
 matbench_discovery_version: 1.0.0
 date_added: "2023-07-14"
 date_published: "2022-05-13"
@@ -34,6 +34,7 @@ doi: https://doi.org/10.48550/arXiv.2401.00096
 paper: https://arxiv.org/abs/2401.00096
 
 requirements:
+  mace-torch: 0.3.3
   torch: 2.0.1
   ase: 3.22.1
   pymatgen: 2023.7.14
@@ -47,7 +48,7 @@ targets: EFS
 model_type: UIP
 # model_params: 2_026_624 # 2023-09-03-mace-yuan-mptrj-slower-14-lr-13_run-3
 # model_params: 15_847_440 # 2023-10-29-mace-pbenner-mptrj-no-conditional-loss
-model_params: 4_688_656 # https://tinyurl.com/y7uhwpje
+model_params: 4_688_656 # 2023-12-03-mace-128-L1: https://tinyurl.com/y7uhwpje
 
 training_set:
   title: MPTrj

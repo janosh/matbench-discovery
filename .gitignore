@@ -19,6 +19,10 @@ data/**/*.json*
 data/**/*.zip*
 !data/**/*umap-projections.csv.bz2
 
+# Checkpoints
+*.pth.tar
+*.pt
+
 # slurm + Weights and Biases logs
 wandb/
 *slurm-*.log

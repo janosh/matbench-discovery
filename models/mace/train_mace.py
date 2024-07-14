@@ -1,14 +1,18 @@
-"""This script requires installing the as-yet unmerged multi-GPU branch
-in the MACE repo.
-pip install git+https://github.com/ACEsuit/mace@multi-GPU
-Plan is to merge it into main and then release to PyPI. At that point,
-the install command will be:
-pip install mace-torch
+"""This example training script demonstrates how to train a MACE model
+using multiple GPUs with PyTorch's DistributedDataParallel.
+
+earlier versions of this script were used to train the
+`2023-08-14-mace-yuan-trained-mptrj-04` and
+`2023-07-14-mace-universal-2-big-128-6` models.
 
 If you want to fine-tune an existing MACE checkpoint rather than train a
-model from scratch, install the foundations branch instead which has an interface
-just for that.
+model from scratch, install the foundations branch instead which has an
+interface just for that.
 pip install git+https://github.com/ACEsuit/mace@foundations
+
+The training here did _not_ use MACE's newest attention block feature
+which in our testing performed significantly worse than
+`RealAgnosticResidualInteractionBlock`.
 """
 
 import ast
