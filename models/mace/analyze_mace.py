@@ -71,11 +71,11 @@ Lanthanide and heavy alkali metals.
 """
 
 # %%
-bad_mask = (df_wbm[e_form_mace_col] - df_wbm[MbdKey.e_form_dft]) < -5
+bad_mask = (df_mace[e_form_mace_col] - df_mace[MbdKey.e_form_dft]) < -5
 print(f"{sum(bad_mask)=}")
 
 fig = density_scatter_plotly(
-    df_wbm[~bad_mask],
+    df_mace[~bad_mask],
     x=MbdKey.e_form_dft,
     y=e_form_mace_col,
     log_density=(log := True),
@@ -87,7 +87,7 @@ save_fig(fig, f"{SITE_FIGS}/mace-wbm-IS2RE-e-form-parity.svelte")
 
 # %%
 fig = density_scatter_plotly(
-    df_wbm[~bad_mask], x="uncorrected_energy", y="mace_energy", log_density=log
+    df_mace[~bad_mask], x="uncorrected_energy", y="mace_energy", log_density=log
 )
 fig.layout.yaxis.title = "MACE energy"
 
