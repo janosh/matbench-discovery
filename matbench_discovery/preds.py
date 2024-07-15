@@ -22,15 +22,21 @@ class PredFiles(Files):
     See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
     """
 
+    alignn = "alignn/2023-06-02-alignn-wbm-IS2RE.csv.gz"
+    # alignn_pretrained = "alignn/2023-06-03-mp-e-form-alignn-wbm-IS2RE.csv.gz"
+    # alignn_ff = "alignn_ff/2023-07-11-alignn-ff-wbm-IS2RE.csv.gz"
+
     # BOWSR optimizer coupled with original megnet
     bowsr_megnet = "bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv.gz"
+
     # default CHGNet model from publication with 400,438 params
     chgnet = "chgnet/2023-12-21-chgnet-0.3.0-wbm-IS2RE.csv.gz"
     # chgnet_no_relax = "chgnet/2023-12-05-chgnet-0.3.0-wbm-IS2RE-no-relax.csv.gz"
 
-    # CGCnn 10-member ensemble
+    # CGCNN 10-member ensemble
     cgcnn = "cgcnn/2023-01-26-cgcnn-ens=10-wbm-IS2RE.csv.gz"
-    # CGCnn 10-member ensemble with 5-fold training set perturbations
+
+    # CGCNN 10-member ensemble with 5-fold training set perturbations
     cgcnn_p = "cgcnn/2023-02-05-cgcnn-perturb=5-wbm-IS2RE.csv.gz"
 
     # original M3GNet straight from publication, not re-trained
@@ -43,11 +49,9 @@ class PredFiles(Files):
 
     # original MEGNet straight from publication, not re-trained
     megnet = "megnet/2022-11-18-megnet-wbm-IS2RE.csv.gz"
-    # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
-    # chgnet_megnet = "chgnet/2023-03-06-chgnet-0.2.0-wbm-IS2RE.csv.gz"
-    # # M3GNet-relaxed structures fed into MEGNet for formation energy prediction
-    # m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv.gz"
-    # megnet_rs2re = "megnet/2023-08-23-megnet-wbm-RS2RE.csv.gz"
+
+    # SevenNet trained on MPtrj
+    sevennet = "sevennet/2024-07-11-sevennet-preds-no-bad.csv.gz"
 
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest
     voronoi_rf = "voronoi_rf/2022-11-27-train-test/e-form-preds-IS2RE.csv.gz"
@@ -55,13 +59,19 @@ class PredFiles(Files):
     # wrenformer 10-member ensemble
     wrenformer = "wrenformer/2022-11-15-wrenformer-ens=10-IS2RE-preds.csv.gz"
 
-    alignn = "alignn/2023-06-02-alignn-wbm-IS2RE.csv.gz"
-    # alignn_pretrained = "alignn/2023-06-03-mp-e-form-alignn-wbm-IS2RE.csv.gz"
-    # alignn_ff = "alignn_ff/2023-07-11-alignn-ff-wbm-IS2RE.csv.gz"
-
+    ## Proprietary Models
+    # GNoMe
     gnome = "gnome/2023-11-01-gnome-preds-50076332.csv.gz"
 
+    # MatterSim
     mattersim = "mattersim/mattersim-wbm-IS2RE.csv.gz"
+
+    ## Miscellaneous
+    # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
+    # chgnet_megnet = "chgnet/2023-03-06-chgnet-0.2.0-wbm-IS2RE.csv.gz"
+    # # M3GNet-relaxed structures fed into MEGNet for formation energy prediction
+    # m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv.gz"
+    # megnet_rs2re = "megnet/2023-08-23-megnet-wbm-RS2RE.csv.gz"
 
 
 # key_map maps model keys to pretty labels

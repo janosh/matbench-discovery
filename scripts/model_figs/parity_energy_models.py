@@ -5,7 +5,7 @@ Last plot is split into 2x3 subplots, one for each model.
 
 # %%
 import math
-from typing import Literal
+from typing import Literal, get_args
 
 import numpy as np
 import plotly.express as px
@@ -27,12 +27,13 @@ legend = dict(x=1, y=0, xanchor="right", yanchor="bottom", title=None)
 
 # toggle between formation energy and energy above convex hull
 EnergyType = Literal["e-form", "each"]
-# which_energy: EnergyType = globals().get("which_energy", "each")
-which_energy = "e-form"
-if which_energy == "each":
+use_e_form, use_each = get_args(EnergyType)
+# which_energy: EnergyType = globals().get("which_energy", use_each)
+which_energy = use_each
+if which_energy == use_each:
     e_pred_col = Key.each_pred
     e_true_col = MbdKey.each_true
-elif which_energy == "e-form":
+elif which_energy == use_e_form:
     e_true_col = MbdKey.e_form_dft
     e_pred_col = Key.e_form_pred
 else:
@@ -167,7 +168,7 @@ fig = px.scatter(
     # color=clf_col,
     # color_discrete_map=clf_color_map,
     # opacity=0.4,
-    range_x=(domain := (-4, 7) if which_energy == "each" else (-6, 6)),
+    range_x=(domain := (-4, 7) if which_energy == use_each else (-6, 6)),
     range_y=domain,
     category_orders={facet_col: legend_order},
     # pick from https://plotly.com/python/builtin-colorscales
@@ -194,9 +195,9 @@ for idx, anno in enumerate(fig.layout.annotations, start=1):
         print(f"Unexpected {model=}, not in {list(df_preds)=}")
         continue
     # add MAE and R2 to subplot titles
-    if which_energy == "each":
+    if which_energy == use_each:
         MAE, R2 = df_metrics[model][["MAE", "R2"]]
-    elif which_energy == "e-form":
+    elif which_energy == use_e_form:
         MAE = df_metrics[model]["MAE"]
         R2 = r2_score(*df_preds[[e_true_col, model]].dropna().to_numpy().T)
     else:

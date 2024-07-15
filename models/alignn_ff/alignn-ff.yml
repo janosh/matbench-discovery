@@ -1,6 +1,6 @@
 model_name: ALIGNN FF
 model_version: 2023.07.01
-matbench_discovery_version: 1.0
+matbench_discovery_version: 1.0.0
 date_added: "2023-07-11"
 date_published: "2022-09-16"
 authors:
@@ -40,6 +40,7 @@ requirements:
   scikit-learn: 1.2.2
   torch: 1.9.0+cu111
 
+openness: OSOD
 trained_for_benchmark: true
 
 training_set:

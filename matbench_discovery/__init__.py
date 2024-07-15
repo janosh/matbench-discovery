@@ -4,7 +4,7 @@ import json
 import os
 import warnings
 from datetime import UTC, datetime
-from importlib.metadata import Distribution
+from importlib.metadata import Distribution, version
 
 import matplotlib.pyplot as plt
 import plotly.express as px
@@ -14,6 +14,7 @@ import pymatviz  # noqa: F401 # needed for pymatviz_dark template
 from matbench_discovery.enums import MbdKey, Model, Quantity
 
 PKG_NAME = "matbench-discovery"
+__version__ = version(PKG_NAME)
 direct_url = Distribution.from_name(PKG_NAME).read_text("direct_url.json") or "{}"
 pkg_is_editable = json.loads(direct_url).get("dir_info", {}).get("editable", False)
 

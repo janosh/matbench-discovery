@@ -1,6 +1,6 @@
 model_name: MEGNet
 model_version: 2022.9.20
-matbench_discovery_version: 1.0
+matbench_discovery_version: 1.0.0
 date_added: "2022-11-14"
 date_published: "2021-12-18"
 authors:
@@ -29,9 +29,11 @@ requirements:
   pymatgen: 2022.10.22
   numpy: 1.24.0
   pandas: 1.5.1
+
+openness: OSOD
 trained_for_benchmark: false
 train_task: RS2RE
-test_task: IS2RE
+test_task: IS2E
 targets: E
 model_type: GNN
 model_params: 167_761

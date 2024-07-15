@@ -61,7 +61,7 @@ for model in df_metrics:
         )
 
     df_met.loc[Key.train_set.label, model] = train_size_str
-    model_params = model_data.get(Key.model_params)
+    model_params = model_data.get(Key.model_params, "")
     df_met.loc[Key.model_params.label, model] = (
         si_fmt(model_params) if isinstance(model_params, int) else model_params
     )

@@ -1,6 +1,6 @@
 model_name: MACE
 model_version: 2023-12-03-mace-128-L1
-matbench_discovery_version: 1.0
+matbench_discovery_version: 1.0.0
 date_added: "2023-07-14"
 date_published: "2022-05-13"
 authors:
@@ -32,12 +32,15 @@ trained_by:
 repo: https://github.com/ACEsuit/mace
 doi: https://doi.org/10.48550/arXiv.2401.00096
 paper: https://arxiv.org/abs/2401.00096
+
 requirements:
   mace-torch: 0.3.3
   torch: 2.0.1
   ase: 3.22.1
   pymatgen: 2023.7.14
   numpy: 1.25.0
+
+openness: OSOD
 trained_for_benchmark: true
 train_task: S2EFS
 test_task: IS2RE-SR
