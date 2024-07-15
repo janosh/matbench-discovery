@@ -1,6 +1,6 @@
 [project]
 name = "matbench-discovery"
-version = "1.1.2"
+version = "1.2.0"
 description = "A benchmark for machine learning energy models on inorganic crystal stability prediction from unrelaxed structures"
 authors = [{ name = "Janosh Riebesell", email = "janosh.riebesell@gmail.com" }]
 readme = "readme.md"
