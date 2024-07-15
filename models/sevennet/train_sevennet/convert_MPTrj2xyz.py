@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+from typing import Optional
+import random
 import json
 import random
 
@@ -12,67 +13,44 @@ from tqdm import tqdm
 KBAR_TO_EVpA3 = 1 / 1602.1766208
 filename = "MPtrj_2022.9_full.json"
 
-train_ratio = 0.8
+train_ratio = 0.9
 val_ratio = 0.1
-test_ratio = 0.1
+test_ratio = 0.0
 
 print(f"Reading {filename} ...", flush=True)
 with open(filename) as jfile:
     data = json.load(jfile)
 
-
 def get_id_train_val_test(
-    total_size=1000,
-    split_seed=123,
-    train_ratio=None,
-    val_ratio=0.1,
-    test_ratio=0.1,
-    n_train=None,
-    n_test=None,
-    n_val=None,
-    keep_data_order=False,
-):
+    total_size: int,
+    train_ratio: float,
+    val_ratio: float,
+    test_ratio: float,
+    split_seed: Optional[int] = 123,
+) -> tuple[list, list, list]:
     """Get train, val, test IDs."""
-    if train_ratio is None and val_ratio is not None and test_ratio is not None:
-        if train_ratio is None:
-            assert val_ratio + test_ratio < 1
-            train_ratio = 1 - val_ratio - test_ratio
-            print("Using rest of the dataset except the test and val sets.")
-        else:
-            assert train_ratio + val_ratio + test_ratio <= 1
-    if n_train is None:
-        n_train = int(train_ratio * total_size)
-    if n_test is None:
-        n_test = int(test_ratio * total_size)
-    if n_val is None:
-        n_val = int(val_ratio * total_size)
+    if train_ratio + val_ratio + test_ratio > 1.0:
+        raise ValueError("train_ratio + val_ratio + test_ratio is over 1.0")
+    n_train = int(train_ratio * total_size)
+    n_val = int(val_ratio * total_size)
+    n_test = int(test_ratio * total_size)
     ids = list(np.arange(total_size))
-    if not keep_data_order:
-        random.seed(split_seed)
-        random.shuffle(ids)
-    if n_train + n_val + n_test > total_size:
-        raise ValueError(
-            "Check total number of samples.",
-            n_train + n_val + n_test,
-            ">",
-            total_size,
-        )
+
+    random.seed(split_seed)
+    random.shuffle(ids)
 
     id_train = ids[:n_train]
     id_val = ids[-(n_val + n_test) : -n_test]
-    id_test = ids[-n_test:]
+    id_test = ids[-n_test:] if n_test != 0 else []
     return id_train, id_val, id_test
 
 
 id_train, id_val, id_test = get_id_train_val_test(
     total_size=len(data),
-    split_seed=1,
     train_ratio=train_ratio,
     val_ratio=val_ratio,
     test_ratio=test_ratio,
-    keep_data_order=False,
 )
-
 
 info_keys = [
     "uncorrected_total_energy",
@@ -85,7 +63,7 @@ info_keys = [
 ]
 
 
-def chgnet_to_ase_atoms(datum):
+def chgnet_to_ase_atoms(datum: dict) -> list[Atoms]:
     atoms_list = []
     for m3gid, dtm in datum.items():
         energy = dtm["uncorrected_total_energy"]
