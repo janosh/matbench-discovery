@@ -5,6 +5,7 @@ from typing import Any, Literal
 import numpy as np
 import pandas as pd
 import requests
+import sevenn
 import torch
 from ase.filters import ExpCellFilter, FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
@@ -22,12 +23,11 @@ __author__ = "Yutack Park"
 __date__ = "2024-06-25"
 
 
-# %%
-#########################  EDITABLE  ###########################
+# %% this config is editable
 SMOKE_TEST = True
-sevennet_root = None  # root to SevenNet repo
+sevennet_root = os.path.dirname(sevenn.__path__[0])
 module_dir = os.path.dirname(__file__)
-sevennet_checkpoint = f"{module_dir}/sevennet_checkpoint.pth.tar"
+sevennet_chkpt = f"{module_dir}/sevennet_checkpoint.pth.tar"
 pot_name = "sevennet"
 task_type = Task.IS2RE
 ase_optimizer = "FIRE"
@@ -41,33 +41,30 @@ slurm_array_task_count = 32
 
 
 # %%
-if not os.path.isfile(sevennet_checkpoint):
+if not os.path.isfile(sevennet_chkpt):
     url = (
-        "https://raw.githubusercontent.com/MDIL-SNU/SevenNet/main/"
-        "pretrained_potentials/SevenNet_0__11July2024/checkpoint_sevennet_0.pth"
+        "https://github.com/MDIL-SNU/SevenNet/raw/main/pretrained_potentials"
+        "/SevenNet_0__11July2024/checkpoint_sevennet_0.pth"
     )
-    response = requests.get(url)  # noqa: S113
-    with open(sevennet_checkpoint, "wb") as file:
+    response = requests.get(url, timeout=20)
+    with open(sevennet_chkpt, mode="wb") as file:
         file.write(response.content)
 
 
 # %%
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
 
-out_dir = "./results"
-os.makedirs(out_dir, exist_ok=True)
+os.makedirs(out_dir := "./results", exist_ok=True)
 out_path = f"{out_dir}/{pot_name}-{slurm_array_task_id:>03}.json.gz"
 
-data_path = {
-    Task.IS2RE: DATA_FILES.wbm_initial_structures,
-}[task_type]
+data_path = {Task.IS2RE: DATA_FILES.wbm_initial_structures}[task_type]
 print(f"\nJob started running {timestamp}, eval {pot_name}", flush=True)
 print(f"{data_path=}", flush=True)
 
 e_pred_col = "sevennet_energy"
 
 # Init ASE SevenNet Calculator from checkpoint
-sevennet_calc = SevenNetCalculator(sevennet_checkpoint)
+sevennet_calc = SevenNetCalculator(sevennet_chkpt)
 
 
 # %%
@@ -89,11 +86,11 @@ optim_cls = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
 
 # %%
-for material_id in tqdm(structs, desc="Relaxing"):
-    if material_id in relax_results:
+for mat_id in tqdm(structs, desc="Relaxing"):
+    if mat_id in relax_results:
         continue
     try:
-        atoms = structs[material_id].to_ase_atoms()
+        atoms = structs[mat_id].to_ase_atoms()
         atoms.calc = sevennet_calc
         if max_steps > 0:
             atoms = filter_cls(atoms)
@@ -102,11 +99,11 @@ for material_id in tqdm(structs, desc="Relaxing"):
         energy = atoms.get_potential_energy()  # relaxed energy
         # atoms might be wrapped in ase filter
         relaxed = AseAtomsAdaptor.get_structure(getattr(atoms, "atoms", atoms))
-        relax_results[material_id] = {"structure": relaxed, "energy": energy}
+        relax_results[mat_id] = {"structure": relaxed, "energy": energy}
 
         coords, lattices = (locals().get(key, []) for key in ("coords", "lattices"))
     except Exception as exc:
-        print(f"Failed to relax {material_id}: {exc!r}")
+        print(f"Failed to relax {mat_id}: {exc!r}")
         continue
 
 df_out = pd.DataFrame(relax_results).T.add_prefix("sevennet_")
