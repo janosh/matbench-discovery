@@ -2,9 +2,25 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.2.0](https://github.com/janosh/matbench-discovery/compare/v1.1.2...v1.2.0)
+
+> 15 July 2024
+
+- add SevenNet to Matbench Discovery leaderboard [`#112`](https://github.com/janosh/matbench-discovery/pull/112)
+- Update mace description [`#113`](https://github.com/janosh/matbench-discovery/pull/113)
+- Add new `/models/mace` page with formation energy and raw energy parity plots [`#111`](https://github.com/janosh/matbench-discovery/pull/111)
+- Migrate `Key` enum to use `pymatviz.enums.Key` [`#110`](https://github.com/janosh/matbench-discovery/pull/110)
+- Add MatterSim predictions [`#104`](https://github.com/janosh/matbench-discovery/pull/104)
+- fix: CHGNet MPTrj training set now published and widely used. [`#107`](https://github.com/janosh/matbench-discovery/pull/107)
+- Fix `figs/e-form-parity-models` showing convex hull distance instead of formation energy R² in subplot titles [`#106`](https://github.com/janosh/matbench-discovery/pull/106)
+- fix: changes to wrenformer test script [`#105`](https://github.com/janosh/matbench-discovery/pull/105)
+- refactor eda_mp_trj.py using pymatviz.plot_histogram [`b10e608`](https://github.com/janosh/matbench-discovery/commit/b10e608f5c0d3bec6f77097dcd84e5e2f11b4a58)
+- make slurm_submit() time and account optional [`604cb04`](https://github.com/janosh/matbench-discovery/commit/604cb049d96548631e3493d357ecff93bdad79a3)
+- fix dead links [`02b2657`](https://github.com/janosh/matbench-discovery/commit/02b2657cbb9feb810e8fce621c0eb5597816dd34)
+
 #### [v1.1.2](https://github.com/janosh/matbench-discovery/compare/v1.1.1...v1.1.2)
 
-> 15 May 2024
+> 30 May 2024
 
 - Add `pyright` pre-commit hook and fix possibly unbound variables [`#93`](https://github.com/janosh/matbench-discovery/pull/93)
 - Fix landing page vs model page metrics mismatch [`#92`](https://github.com/janosh/matbench-discovery/pull/92)
