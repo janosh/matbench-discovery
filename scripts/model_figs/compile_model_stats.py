@@ -138,7 +138,9 @@ for label, df_tmp in stats_dict.items():
     df_tmp.attrs["All Models Run Time"] = df_tmp[time_col].sum()
 
     # write stats for different data subsets to JSON
-    df_tmp.round(2).to_json(f"{SITE_LIB}/model-stats{label}.json", orient="index")
+    df_tmp.drop(columns="Dummy", errors="ignore").round(2).to_json(
+        f"{SITE_LIB}/model-stats{label}.json", orient="index"
+    )
     stats_dict[label] = df_tmp
 
 df_stats = stats_dict[""]

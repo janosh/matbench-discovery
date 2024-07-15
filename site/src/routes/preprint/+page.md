@@ -5,9 +5,9 @@
   import BoxHullDistErrors from '$figs/box-hull-dist-errors.svelte'
   import CumulativeMae from '$figs/cumulative-mae.svelte'
   import CumulativePrecisionRecall from '$figs/cumulative-precision-recall.svelte'
-  import EachParityModels from '$figs/each-parity-models-5x2.svelte'
+  import EachParityModels from '$figs/each-parity-models-7x2.svelte'
   import ElementPrevalenceVsError from '$figs/element-prevalence-vs-error.svelte'
-  import HistClfPredHullDistModels from '$figs/hist-clf-pred-hull-dist-models-5x2.svelte'
+  import HistClfPredHullDistModels from '$figs/hist-clf-pred-hull-dist-models-7x2.svelte'
   import HullDistParityWrenformerFailures from '$figs/hull-dist-parity-wrenformer-failures.svelte'
   import LargestErrorScatterSelect from './largest-error-scatter-select.svelte'
   import MetricsTableUniqProtos from '$figs/metrics-table-uniq-protos.svelte'
@@ -20,14 +20,17 @@
   import SpacegroupSunburstWbm from '$figs/spacegroup-sunburst-wbm.svelte'
   import SpacegroupSunburstWrenformerFailures from '$figs/spacegroup-sunburst-wrenformer-failures.svelte'
   import MPvsMPTrjVsWbmArityHist from '$figs/mp-vs-mp-trj-vs-wbm-arity-hist.svelte'
-  import RollingMaeVsHullDistWbmBatchesMace from '$figs/rolling-mae-vs-hull-dist-wbm-batches-mace.svelte'
-  import RollingMaeVsHullDistWbmBatchesChgnet from '$figs/rolling-mae-vs-hull-dist-wbm-batches-chgnet.svelte'
-  import RollingMaeVsHullDistWbmBatchesM3gnet from '$figs/rolling-mae-vs-hull-dist-wbm-batches-m3gnet.svelte'
   import RollingMaeVsHullDistWbmBatchesAlignn from '$figs/rolling-mae-vs-hull-dist-wbm-batches-alignn.svelte'
-  import RollingMaeVsHullDistWbmBatchesMegnet from '$figs/rolling-mae-vs-hull-dist-wbm-batches-megnet.svelte'
-  import RollingMaeVsHullDistWbmBatchesWrenformer from '$figs/rolling-mae-vs-hull-dist-wbm-batches-wrenformer.svelte'
   import RollingMaeVsHullDistWbmBatchesCgcnn from '$figs/rolling-mae-vs-hull-dist-wbm-batches-cgcnn.svelte'
+  import RollingMaeVsHullDistWbmBatchesChgnet from '$figs/rolling-mae-vs-hull-dist-wbm-batches-chgnet.svelte'
+  import RollingMaeVsHullDistWbmBatchesGnome from '$figs/rolling-mae-vs-hull-dist-wbm-batches-gnome.svelte'
+  import RollingMaeVsHullDistWbmBatchesM3gnet from '$figs/rolling-mae-vs-hull-dist-wbm-batches-m3gnet.svelte'
+  import RollingMaeVsHullDistWbmBatchesMace from '$figs/rolling-mae-vs-hull-dist-wbm-batches-mace.svelte'
+  import RollingMaeVsHullDistWbmBatchesMatterSim from '$figs/rolling-mae-vs-hull-dist-wbm-batches-mattersim.svelte'
+  import RollingMaeVsHullDistWbmBatchesMegnet from '$figs/rolling-mae-vs-hull-dist-wbm-batches-megnet.svelte'
+  import RollingMaeVsHullDistWbmBatchesSevenNet from '$figs/rolling-mae-vs-hull-dist-wbm-batches-sevennet.svelte'
   import RollingMaeVsHullDistWbmBatchesVoronoiRf from '$figs/rolling-mae-vs-hull-dist-wbm-batches-voronoi-rf.svelte'
+  import RollingMaeVsHullDistWbmBatchesWrenformer from '$figs/rolling-mae-vs-hull-dist-wbm-batches-wrenformer.svelte'
   import wbm_matminer_2d_umap_url from '$figs/wbm-final-struct-matminer-features-2d-umap.png?url'
   import ScatterLargestErrorsModelsMeanVsTrueHullDist from '$figs/scatter-largest-errors-models-mean-vs-true-hull-dist-all.svelte'
   import MpTrjNSitesHist from '$figs/mp-trj-n-sites-hist.svelte'
@@ -37,7 +40,7 @@
   import MPTrjMagMomsHist from '$figs/mp-trj-magmoms-hist.svelte'
   import HistWbmEForm from '$figs/hist-wbm-e-form.svelte'
   import HistWbmHullDist from '$figs/hist-wbm-hull-dist.svelte'
-  import EFormParityModels from '$figs/e-form-parity-models-5x2.svelte'
+  import EFormParityModels from '$figs/e-form-parity-models-7x2.svelte'
 
   let mounted = false
   onMount(() => (mounted = true))
@@ -537,6 +540,9 @@ As a reminder, the WBM test set was generated in 5 successive batches, each step
 {@const style=`aspect-ratio: 1.3;`}
 
   <div style="display: grid; grid-template-columns: 1fr 1fr; margin: 0 -1em 0 -4em;">
+    <RollingMaeVsHullDistWbmBatchesMatterSim {style} />
+    <RollingMaeVsHullDistWbmBatchesGnome {style} />
+    <RollingMaeVsHullDistWbmBatchesSevenNet {style} />
     <RollingMaeVsHullDistWbmBatchesMace {style} />
     <RollingMaeVsHullDistWbmBatchesChgnet {style} />
     <RollingMaeVsHullDistWbmBatchesM3gnet {style} />

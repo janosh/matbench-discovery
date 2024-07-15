@@ -6,6 +6,7 @@ dist
 __pycache__
 
 # datasets
+*.pth.tar
 *.json.gz
 *.json.bz2
 *.csv.bz2

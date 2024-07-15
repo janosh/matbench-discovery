@@ -1,6 +1,6 @@
 model_name: ALIGNN
 model_version: 2023.01.10
-matbench_discovery_version: 1.0
+matbench_discovery_version: 1.0.0
 date_added: "2023-06-02"
 date_published: "2021-02-22"
 authors:
@@ -20,6 +20,7 @@ repo: https://github.com/usnistgov/alignn
 url: https://jarvis.nist.gov/jalignn
 doi: https://nature.com/articles/s41524-021-00650-1
 paper: https://arxiv.org/abs/2106.01829
+
 requirements:
   ase: 3.22.0
   dgl-cu111: 0.6.1
@@ -27,10 +28,12 @@ requirements:
   pandas: 2.0.1
   scikit-learn: 1.2.2
   torch: 1.9.0+cu111
+
+openness: OSOD
 trained_for_benchmark: true
 model_type: GNN
 train_task: RS2RE
-test_task: IS2RE
+test_task: IS2E
 targets: E
 model_params: 4_026_753 # pre-trained 'mp_e_form_alignn' and our custom MBD checkpoint have the same size
 # other hyperparams: see align-config.json

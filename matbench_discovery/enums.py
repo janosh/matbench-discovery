@@ -73,16 +73,26 @@ class MbdKey(LabelEnum):
 class Task(LabelEnum):
     """Thermodynamic stability prediction task types."""
 
-    IS2RE = "IS2RE", "initial structure to relaxed energy"
+    RP2RE = "RP2RE", "relaxed prototype to relaxed energy"
     RS2RE = "RS2RE", "relaxed structure to relaxed energy"
-    S2EFSM = "S2EFSM", "structure to energy force stress magmom"
-    S2EFS = "S2EFS", "structure to energy force stress"
+    S2E = "S2E", "structure to energy"
     # S2RE is for models that learned a discrete version of PES like CGCNN+P
     S2RE = "S2RE", "structure to relaxed energy"
-    RP2RE = "RP2RE", "relaxed prototype to relaxed energy"
-    IP2RE = "IP2RE", "initial prototype to relaxed energy"
+    S2EF = "S2EF", "structure to energy, force"
+    S2EFS = "S2EFS", "structure to energy, force, stress"
+    S2EFSM = "S2EFSM" "structure to energy, force, stress, magmoms"
+    IP2E = "IP2E", "initial prototype to energy"
     IS2E = "IS2E", "initial structure to energy"
-    IS2RE_SR = "IS2RE-SR", "initial structure to relaxed energy after ML relaxation"
+    # IS2RE is for models that learned a discrete version of PES like CGCNN+P
+    IS2RE = "IS2RE", "initial structure to relaxed energy"
+    IS2RE_SR = (
+        "IS2RE-SR",
+        "initial structure to relaxed energy with structure relaxation",
+    )
+    IS2RE_BO = (
+        "IS2RE-BO",
+        "initial structure to relaxed energy with Bayesian optimization",
+    )
 
 
 @unique
@@ -90,6 +100,7 @@ class Targets(LabelEnum):
     """Thermodynamic stability prediction task types."""
 
     E = "E", "energy"
+    EF = "EF", "energy forces"
     EFS = "EFS", "energy forces stress"
     EFSM = "EFSM", "energy forces stress magmoms"
 
@@ -178,6 +189,7 @@ class Model(LabelEnum):
     megnet_rs2re = "MEGNet RS2RE"
     megnet = "MEGNet"
     pfp = "PFP"
+    sevennet = "SevenNet"
     voronoi_rf = "Voronoi RF"
     wbm = "WBM"
     wrenformer = "Wrenformer"

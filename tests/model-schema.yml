@@ -6,7 +6,7 @@ properties:
   model_version:
     type: string
   matbench_discovery_version:
-    type: number
+    type: string
   date_added: &date
     type: string
     format: date
@@ -103,20 +103,22 @@ properties:
     minimum: 0
   train_task:
     type: string
-    enum: &task_enum
-      - IS2RE # initial structure to relaxed energy
-      - RS2RE # relaxed structure to relaxed energy
-      - S2EFSM # structure to energy, force, stress, magmoms
-      - S2EFS # structure to energy, force, stress
-      - S2RE # structure to relaxed energy
-      - IS2RE-BO # initial structure to relaxed energy with Bayesian optimization
+    enum: &train_task_enum
       - RP2RE # relaxed prototype to relaxed energy
-      - IP2RE # initial prototype to relaxed energy
-      - IS2E # initial structure to energy
-      - IS2RE-SR # initial structure to relaxed energy with structure relaxation
+      - RS2RE # relaxed structure to relaxed energy
+      - S2E # structure to energy
+      - S2RE # structure to relaxed energy -- CGCNN+P
+      - S2EF # structure to energy, force
+      - S2EFS # structure to energy, force, stress
+      - S2EFSM # structure to energy, force, stress, magmoms
   test_task:
     type: string
-    enum: *task_enum
+    enum: &test_task_enum
+      - IP2E # initial prototype to energy
+      - IS2E # initial structure to energy
+      - IS2RE # initial structure to relaxed energy -- CGCNN+P
+      - IS2RE-SR # initial structure to relaxed energy with structure relaxation
+      - IS2RE-BO # initial structure to relaxed energy with Bayesian optimization
   model_type:
     type: string
     enum: [GNN, UIP, BO-GNN, Fingerprint, Transformer, RF]

@@ -1,6 +1,6 @@
 model_name: GNoME
 model_version: n/a
-matbench_discovery_version: 1.0
+matbench_discovery_version: 1.0.0
 date_added: "2024-02-03"
 date_published: "2023-11-29"
 authors:
@@ -23,6 +23,7 @@ authors:
 repo: https://github.com/google-deepmind/materials_discovery
 doi: https://doi.org/10.1038/s41586-023-06735-9
 paper: https://nature.com/articles/s41586-023-06735-9
+
 requirements:
   e3nn-jax: 0.20.3
   flax: 0.7.5
@@ -30,8 +31,9 @@ requirements:
   jax: 0.4.20
   numpy: 1.26.2
   pymatgen: 2023.11.12
-trained_for_benchmark: false
+
 openness: OSCD
+trained_for_benchmark: false
 train_task: S2EFS
 test_task: IS2RE-SR
 targets: EF

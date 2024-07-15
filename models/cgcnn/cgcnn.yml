@@ -1,6 +1,6 @@
 model_name: CGCNN
 model_version: 0.1.0 # the aviary version
-matbench_discovery_version: 1.0
+matbench_discovery_version: 1.0.0
 date_added: "2022-12-28"
 date_published: "2017-10-27"
 authors:
@@ -14,12 +14,15 @@ authors:
 repo: https://github.com/txie-93/cgcnn
 doi: https://doi.org/10.1103/PhysRevLett.120.145301
 paper: https://arxiv.org/abs/1710.10324
+
 requirements:
   aviary: 0.1.0
   torch: 1.11.0
   torch-scatter: 2.0.9
   numpy: 1.24.0
   pandas: 1.5.1
+
+openness: OSOD
 trained_for_benchmark: true
 train_task: RS2RE
 test_task: IS2E
