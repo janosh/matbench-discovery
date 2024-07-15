@@ -1,3 +1,5 @@
+from typing import Optional, Any
+import random
 import json
 import random
 
@@ -19,14 +21,13 @@ print(f"Reading {filename} ...", flush=True)
 with open(filename) as jfile:
     data = json.load(jfile)
 
-
 def get_id_train_val_test(
     total_size: int,
     train_ratio: float,
     val_ratio: float,
     test_ratio: float,
-    split_seed: int | None = 123,
-) -> tuple[list, list, list]:
+    split_seed: Optional[int] = 123,
+) -> tuple[list[int], list[int], list[int]]:
     """Get train, val, test IDs."""
     if train_ratio + val_ratio + test_ratio > 1.0:
         raise ValueError("train_ratio + val_ratio + test_ratio is over 1.0")
@@ -62,9 +63,9 @@ info_keys = [
 ]
 
 
-def chgnet_to_ase_atoms(datum: dict) -> list[Atoms]:
+def chgnet_to_ase_atoms(datum: dict[str, dict[str, Any]]) -> list[Atoms]:
     atoms_list = []
-    for m3gid, dtm in datum.items():
+    for matid, dtm in datum.items():
         energy = dtm["uncorrected_total_energy"]
         force = dtm["force"]
         stress = dtm["stress"]
@@ -97,9 +98,9 @@ def chgnet_to_ase_atoms(datum: dict) -> list[Atoms]:
         calculator = SinglePointCalculator(atom, **calc_results)
         atom = calculator.get_atoms()
 
-        mpid = m3gid.split("-")[0] + "-" + m3gid.split("-")[1]
-        calc_id = m3gid.split("-")[2]
-        ionic_step_id = m3gid.split("-")[3]
+        mpid = matid.split("-")[0] + "-" + matid.split("-")[1]
+        calc_id = matid.split("-")[2]
+        ionic_step_id = matid.split("-")[3]
 
         info = {
             "data_from": "MP-CHGNet",
