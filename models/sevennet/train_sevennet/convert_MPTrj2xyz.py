@@ -1,14 +1,13 @@
 #!/usr/bin/env python
-import random
 import json
-
-import numpy as np
-from tqdm import tqdm
+import random
 
 import ase.io
+import numpy as np
 from ase import Atoms
-from ase.data import atomic_numbers
 from ase.calculators.singlepoint import SinglePointCalculator
+from ase.data import atomic_numbers
+from tqdm import tqdm
 
 KBAR_TO_EVpA3 = 1 / 1602.1766208
 filename = "MPtrj_2022.9_full.json"
