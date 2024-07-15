@@ -22,6 +22,7 @@ authors: # required (only name, other keys are optional)
 trained_by:
   - name: Saerom Choi
     affiliation: Samsung Advanced Institute of Technology, Seoul National University
+    orcid: https://orcid.org/0009-0004-2240-5428
 repo: https://github.com/MDIL-SNU/SevenNet # required
 url: https://github.com/MDIL-SNU/SevenNet/tree/main/pretrained_potentials/SevenNet_0__11July2024
 doi: https://doi.org/10.1021/acs.jctc.4c00190
