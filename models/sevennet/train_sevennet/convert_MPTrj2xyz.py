@@ -1,5 +1,3 @@
-from typing import Optional
-import random
 import json
 import random
 
@@ -21,12 +19,13 @@ print(f"Reading {filename} ...", flush=True)
 with open(filename) as jfile:
     data = json.load(jfile)
 
+
 def get_id_train_val_test(
     total_size: int,
     train_ratio: float,
     val_ratio: float,
     test_ratio: float,
-    split_seed: Optional[int] = 123,
+    split_seed: int | None = 123,
 ) -> tuple[list, list, list]:
     """Get train, val, test IDs."""
     if train_ratio + val_ratio + test_ratio > 1.0:
