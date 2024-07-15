@@ -7,18 +7,16 @@ import numpy as np
 from ase import Atoms
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.data import atomic_numbers
+from ase.stress import full_3x3_to_voigt_6_stress
 from tqdm import tqdm
 
-KBAR_TO_EVpA3 = 1 / 1602.1766208
+kbar_to_evpa3 = 1 / 1602.1766208
 filename = "MPtrj_2022.9_full.json"
-
-train_ratio = 0.9
-val_ratio = 0.1
-test_ratio = 0.0
+train_ratio, val_ratio, test_ratio = 0.9, 0.1, 0.0
 
 print(f"Reading {filename} ...", flush=True)
-with open(filename) as jfile:
-    data = json.load(jfile)
+with open(filename) as file:
+    data = json.load(file)
 
 
 def get_id_train_val_test(
@@ -26,10 +24,10 @@ def get_id_train_val_test(
     train_ratio: float,
     val_ratio: float,
     test_ratio: float,
-    split_seed: int | None = 123,
+    split_seed: int = 123,
 ) -> tuple[list[int], list[int], list[int]]:
     """Get train, val, test IDs."""
-    if train_ratio + val_ratio + test_ratio > 1.0:
+    if train_ratio + val_ratio + test_ratio > 1:
         raise ValueError("train_ratio + val_ratio + test_ratio is over 1.0")
     n_train = int(train_ratio * total_size)
     n_val = int(val_ratio * total_size)
@@ -65,26 +63,15 @@ info_keys = [
 
 def chgnet_to_ase_atoms(datum: dict[str, dict[str, Any]]) -> list[Atoms]:
     atoms_list = []
-    for matid, dtm in datum.items():
+    for mat_id, dtm in datum.items():
         energy = dtm["uncorrected_total_energy"]
         force = dtm["force"]
-        stress = dtm["stress"]
-        stress = np.array(
-            [
-                stress[0][0],
-                stress[1][1],
-                stress[2][2],
-                stress[1][2],
-                stress[2][0],
-                stress[0][1],
-            ]
-        )
-        stress *= -KBAR_TO_EVpA3  # to eV/Angstrom^3
-        # internal stress
+        stress = full_3x3_to_voigt_6_stress(dtm["stress"])  # internal stress
+        stress *= -kbar_to_evpa3  # to eV/Angstrom^3
 
-        stct = dtm["structure"]
-        cell = stct["lattice"]["matrix"]
-        sites = stct["sites"]
+        struct = dtm["structure"]
+        cell = struct["lattice"]["matrix"]
+        sites = struct["sites"]
         species = [atomic_numbers[site["species"][0]["element"]] for site in sites]
         pos = [site["xyz"] for site in sites]
 
@@ -98,38 +85,32 @@ def chgnet_to_ase_atoms(datum: dict[str, dict[str, Any]]) -> list[Atoms]:
         calculator = SinglePointCalculator(atom, **calc_results)
         atom = calculator.get_atoms()
 
-        mpid = matid.split("-")[0] + "-" + matid.split("-")[1]
-        calc_id = matid.split("-")[2]
-        ionic_step_id = matid.split("-")[3]
-
         info = {
             "data_from": "MP-CHGNet",
-            "material_id": mpid,
-            "calc_id": calc_id,
-            "ionic_step_id": ionic_step_id,
+            "material_id": mat_id.split("-")[0] + "-" + mat_id.split("-")[1],
+            "calc_id": mat_id.split("-")[2],
+            "ionic_step_id": mat_id.split("-")[3],
         }
-        for if_key in info_keys:
-            info[if_key] = dtm[if_key]
+        for key in info_keys:
+            info[key] = dtm[key]
         atom.info = info
         atoms_list.append(atom)
     return atoms_list
 
 
 dataset = list(data.values())
-dataset_train = []
-dataset_val = []
-dataset_test = []
+train_set, val_set, test_set = [], [], []
 
 for idx in tqdm(id_train):
-    dataset_train.extend(chgnet_to_ase_atoms(dataset[idx]))
-ase.io.write("train.extxyz", dataset_train, "extxyz", append=True)
+    train_set.extend(chgnet_to_ase_atoms(dataset[idx]))
+ase.io.write("train.extxyz", train_set, "extxyz", append=True)
 
 for idx in tqdm(id_val):
-    dataset_val.extend(chgnet_to_ase_atoms(dataset[idx]))
-ase.io.write("valid.extxyz", dataset_val, "extxyz", append=True)
+    val_set.extend(chgnet_to_ase_atoms(dataset[idx]))
+ase.io.write("valid.extxyz", val_set, "extxyz", append=True)
 
 for idx in tqdm(id_test):
-    dataset_test.extend(chgnet_to_ase_atoms(dataset[idx]))
-ase.io.write("test.extxyz", dataset_test, "extxyz", append=True)
+    test_set.extend(chgnet_to_ase_atoms(dataset[idx]))
+ase.io.write("test.extxyz", test_set, "extxyz", append=True)
 
 print("Done!")
