@@ -12,7 +12,7 @@ from pymatviz.powerups import add_identity_line
 from pymatviz.utils import PLOTLY
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
-from matbench_discovery.data import DATA_FILES
+from matbench_discovery.data import DataFiles
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.preds import df_preds
 
@@ -89,7 +89,7 @@ for material_cls, pattern in material_classes.items():
 
 
 # %%
-df_cse = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index(Key.mat_id)
+df_cse = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path).set_index(Key.mat_id)
 
 
 # %% CTK structure viewer

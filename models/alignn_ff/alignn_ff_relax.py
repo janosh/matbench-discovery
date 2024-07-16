@@ -9,7 +9,7 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import today
-from matbench_discovery.data import DATA_FILES, df_wbm
+from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.enums import MbdKey, Task
 
 __author__ = "Janosh Riebesell, Philipp Benner"
@@ -43,8 +43,8 @@ os.makedirs(out_dir, exist_ok=True)
 
 # %% Load data
 data_path = {
-    Task.IS2RE: DATA_FILES.wbm_initial_structures,
-    Task.RS2RE: DATA_FILES.wbm_computed_structure_entries,
+    Task.IS2RE: DataFiles.wbm_initial_structures.path,
+    Task.RS2RE: DataFiles.wbm_computed_structure_entries.path,
 }[task_type]
 input_col = {Task.IS2RE: Key.init_struct, Task.RS2RE: Key.final_struct}[task_type]
 

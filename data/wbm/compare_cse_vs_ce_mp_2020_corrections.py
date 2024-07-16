@@ -18,11 +18,13 @@ from pymatviz.io import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, today
-from matbench_discovery.data import DATA_FILES, df_wbm
+from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.plots import plt
 
-df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(Key.mat_id)
+df_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_index(
+    Key.mat_id
+)
 
 cses = [ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_cse[Key.cse])]
 

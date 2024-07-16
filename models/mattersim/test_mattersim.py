@@ -21,7 +21,7 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery.data import DATA_FILES
+from matbench_discovery.data import DataFiles
 from matbench_discovery.energy import get_e_form_per_atom
 
 if TYPE_CHECKING:
@@ -107,17 +107,14 @@ def parse_relaxed_atoms_list_as_df(
     e_form_col = "e_form_per_atom_mattersim"
 
     ## Read pre-computed CSEs by WBM
-    df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(
-        Key.mat_id
-    )
+    wbm_cse_paths = DataFiles.wbm_computed_structure_entries.path
+    df_cse = pd.read_json(wbm_cse_paths).set_index(Key.mat_id)
 
     df_cse[Key.cse] = [
         ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_cse[Key.cse])
     ]
 
-    print(
-        f"Found {len(df_cse):,} CSEs in {DATA_FILES.wbm_computed_structure_entries = }"
-    )
+    print(f"Found {len(df_cse):,} CSEs in {wbm_cse_paths=}")
     print(f"Found {len(atoms_list):,} relaxed structures")
 
     def parse_single_atoms(atoms: ase.Atoms) -> tuple[str, bool, float, float, float]:

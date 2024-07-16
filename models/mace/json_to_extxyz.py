@@ -13,7 +13,8 @@ from pymatviz.enums import Key
 from pymatviz.io import TqdmDownload
 from tqdm import tqdm
 
-from matbench_discovery import FIGSHARE_URLS, MP_DIR
+from matbench_discovery import MP_DIR
+from matbench_discovery.data import DataFiles
 
 __author__ = "Yuan Chiang"
 __date__ = "2023-08-10"
@@ -23,14 +24,14 @@ mp_trj_path = f"{MP_DIR}/mp-trj-2022-09.json"
 
 
 # %% download MPtrj from figshare (11.3 GB JSON file, can easily take 1h)
-mp_trj_url = FIGSHARE_URLS["mptrj"]["download"]
-
 if os.path.isfile(f"{mp_trj_path}.gz"):
     with gzip.open(f"{mp_trj_path}.gz", "rt") as zip_file:
         json_data = json.load(zip_file)
 else:  # if file not found, download and compress it
-    with TqdmDownload(desc=mp_trj_url) as pbar:
-        urllib.request.urlretrieve(mp_trj_url, mp_trj_path, reporthook=pbar.update_to)
+    with TqdmDownload(desc=DataFiles.mp_trj.url) as pbar:
+        urllib.request.urlretrieve(
+            DataFiles.mp_trj.url, mp_trj_path, reporthook=pbar.update_to
+        )
 
     with open(mp_trj_path) as file:
         json_data = json.load(file)

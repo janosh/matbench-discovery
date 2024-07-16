@@ -24,7 +24,7 @@ from pymatviz.utils import PLOTLY, si_fmt, si_fmt_int
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots
-from matbench_discovery.data import DATA_FILES, df_wbm
+from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.energy import mp_elem_ref_entries
 from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.preds import df_each_err
@@ -37,7 +37,7 @@ data_page = f"{ROOT}/site/src/routes/data"
 
 
 # %% load MP training set
-df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False, na_values=[])
+df_mp = pd.read_csv(DataFiles.mp_energies.path, na_filter=False, na_values=[])
 
 df_mp[df_mp[Key.formula].isna()]
 
@@ -384,7 +384,7 @@ df_sym_change = (
 
 
 # %%
-df_wbm_structs = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index(
+df_wbm_structs = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path).set_index(
     Key.mat_id
 )
 

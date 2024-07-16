@@ -17,7 +17,7 @@ from sklearn.metrics import r2_score
 from tqdm import tqdm
 
 from matbench_discovery import today
-from matbench_discovery.data import DATA_FILES, df_wbm
+from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.enums import MbdKey, Task
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
@@ -30,7 +30,7 @@ module_dir = os.path.dirname(__file__)
 
 # %%
 # model_name = "mp_e_form_alignn"  # pre-trained by NIST (not used for MBD submission)
-model_name = DATA_FILES.alignn_checkpoint  # trained by Philipp Benner
+model_name = DataFiles.alignn_checkpoint.path  # trained by Philipp Benner
 task_type = Task.IS2RE
 target_col = MbdKey.e_form_dft
 input_col = Key.init_struct
@@ -71,8 +71,8 @@ slurm_vars = slurm_submit(
 
 # %% Load data
 data_path = {
-    Task.IS2RE: DATA_FILES.wbm_initial_structures,
-    Task.RS2RE: DATA_FILES.wbm_computed_structure_entries,
+    Task.IS2RE: DataFiles.wbm_initial_structures.path,
+    Task.RS2RE: DataFiles.wbm_computed_structure_entries.path,
 }[task_type]
 input_col = {Task.IS2RE: Key.init_struct, Task.RS2RE: Key.final_struct}[task_type]
 

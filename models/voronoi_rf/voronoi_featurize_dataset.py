@@ -15,7 +15,7 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, today
-from matbench_discovery.data import DATA_FILES
+from matbench_discovery.data import DataFiles
 from matbench_discovery.slurm import slurm_submit
 
 sys.path.append(f"{ROOT}/models")
@@ -29,8 +29,8 @@ __date__ = "2022-10-31"
 # %%
 data_name = "mp"
 data_path = {
-    "wbm": DATA_FILES.wbm_initial_structures,
-    "mp": DATA_FILES.mp_computed_structure_entries,
+    "wbm": DataFiles.wbm_initial_structures.path,
+    "mp": DataFiles.mp_computed_structure_entries.path,
 }[data_name]
 
 input_col = Key.init_struct  # or Key.final_struct

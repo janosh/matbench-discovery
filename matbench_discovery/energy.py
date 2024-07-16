@@ -12,7 +12,7 @@ from pymatgen.entries.computed_entries import ComputedEntry
 from pymatgen.util.typing import EntryLike
 from tqdm import tqdm
 
-from matbench_discovery.data import DATA_FILES
+from matbench_discovery.data import DataFiles
 
 
 def get_elemental_ref_entries(
@@ -68,7 +68,7 @@ def get_elemental_ref_entries(
 # contains all MP elemental reference entries to compute formation energies
 # produced by get_elemental_ref_entries() in build_phase_diagram.py
 mp_elem_ref_entries = (
-    pd.read_json(DATA_FILES.mp_elemental_ref_entries, typ="series")
+    pd.read_json(DataFiles.mp_elemental_ref_entries.path, typ="series")
     .map(ComputedEntry.from_dict)
     .to_dict()
 )
