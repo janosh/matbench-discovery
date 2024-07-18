@@ -6,7 +6,7 @@ https://figshare.com/articles/dataset/22715158
 import os
 import sys
 from collections.abc import Callable
-from enum import EnumMeta, StrEnum
+from enum import StrEnum
 from glob import glob
 from typing import Any, Self
 
@@ -92,27 +92,22 @@ def download_file(file_path: str, url: str) -> None:
         print(f"Error downloading {url=}\nto {file_path=}.\n{exc!s}")
 
 
-class FilesMeta(EnumMeta):
-    """Metaclass for FileUrls enum."""
+class Files(StrEnum):
+    """Enum of data files with associated file directories and URLs."""
 
-    def __new__(
+    def __init_subclass__(
         cls,
         *args: Any,
-        base: str = DEFAULT_CACHE_DIR,
-        key_map: dict[str, str] | None = None,
+        base_dir: str = DEFAULT_CACHE_DIR,
+        label_map: dict[str, str] | None = None,
         **kwargs: Any,
-    ) -> "FilesMeta":
+    ) -> None:
         """Set the base directory where to save the files and a key map to give pretty
         labels to the files.
         """
-        obj = super().__new__(cls, *args, **kwargs)
-        cls.base = base
-        cls.key_map = key_map or {}
-        return obj
-
-
-class Files(StrEnum, metaclass=FilesMeta):
-    """Enum of data files with associated file directories and URLs."""
+        super().__init_subclass__(*args, **kwargs)
+        cls.base_dir = base_dir  # type: ignore[attr-defined]
+        cls.label_map = label_map or {}  # type: ignore[attr-defined]
 
     def __new__(cls, file_path: str, url: str | None = None) -> Self:
         """Create a new member of the FileUrls enum with a given URL where to load the
@@ -122,10 +117,9 @@ class Files(StrEnum, metaclass=FilesMeta):
         if url is not None and len(url) == 33:
             # looks like a Google Drive ID, turn into direct download link
             url = f"https://drive.usercontent.google.com/download?id={url}&confirm=t"
-        obj._value_ = _file_name = file_path.split("/")[-1]
+        obj._value_ = file_path.split("/")[-1]  # use file name as enum value
 
         obj._rel_path = file_path  # type: ignore[attr-defined] # noqa: SLF001
-        obj._file_path = f"{cls.base}/{file_path}"  # type: ignore[attr-defined] # noqa: SLF001
         obj._url = url  # type: ignore[attr-defined] # noqa: SLF001
 
         return obj
@@ -135,7 +129,7 @@ class Files(StrEnum, metaclass=FilesMeta):
         want the absolute file path without auto-downloading the file if it doesn't
         exist yet, e.g. for use in script that generates the file in the first place.
         """
-        return self._file_path  # type: ignore[attr-defined]
+        return f"{self.base_dir}/{self._rel_path}"  # type: ignore[attr-defined]
 
     def __repr__(self) -> str:
         """Return enum attribute's string representation."""
@@ -146,20 +140,21 @@ class Files(StrEnum, metaclass=FilesMeta):
         """Return the file path associated with the file URL if it exists, otherwise
         download the file first, then return the path.
         """
-        key, url, file_path = self.name, self._url, self._file_path  # type: ignore[attr-defined]
-        if not os.path.isfile(file_path):
+        key, url, rel_path = self.name, self._url, self._rel_path  # type: ignore[attr-defined]
+        abs_path = f"{self.base_dir}/{rel_path}"  # type: ignore[attr-defined]
+        if not os.path.isfile(abs_path):
             is_ipython = hasattr(__builtins__, "__IPYTHON__")
             # default to 'y' if not in interactive session, and user can't answer
             answer = "" if is_ipython or sys.stdin.isatty() else "y"
             answer = input(
-                f"{file_path!r} associated with {key=} does not exist. Would you like"
+                f"{abs_path!r} associated with {key=} does not exist. Would you like"
                 " to download it now? This will cache the file for future use. [y/n] "
             )
             if answer.lower().strip() == "y":
                 if not is_ipython:
-                    print(f"Downloading {key!r} from {url} to {file_path} for caching")
-                download_file(file_path, url)
-        return file_path
+                    print(f"Downloading {key!r} from {url} to {abs_path} for caching")
+                download_file(abs_path, url)
+        return abs_path
 
     @property
     def url(self) -> str:
@@ -174,7 +169,7 @@ class Files(StrEnum, metaclass=FilesMeta):
     @property
     def label(self) -> str:
         """Return the label associated with the file URL."""
-        return type(self).key_map.get(self.name, self.name)
+        return self.label_map.get(self.name, self.name)  # type: ignore[attr-defined]
 
 
 class DataFiles(Files):

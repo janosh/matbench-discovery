@@ -17,10 +17,13 @@ __author__ = "Janosh Riebesell"
 __date__ = "2023-02-04"
 
 
-class PredFiles(Files, base=f"{ROOT}/models", key_map=Model.key_val_dict()):
+class PredFiles(Files):
     """Data files provided by Matbench Discovery.
     See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
     """
+
+    base_dir = f"{ROOT}/models"
+    label_map = Model.key_val_dict()
 
     alignn = "alignn/2023-06-02-alignn-wbm-IS2RE.csv.gz"
     # alignn_pretrained = "alignn/2023-06-03-mp-e-form-alignn-wbm-IS2RE.csv.gz"
@@ -105,8 +108,8 @@ def load_df_wbm_with_preds(
     valid_pred_files = {model.name for model in PredFiles}
     if models == ():
         models = tuple(valid_pred_files)
-    inv_map = {v: k for k, v in PredFiles.key_map.items()}
-    models = {inv_map.get(model, model) for model in models}
+    inv_label_map = {v: k for k, v in PredFiles.label_map.items()}  # type: ignore[attr-defined]
+    models = {inv_label_map.get(model, model) for model in models}
     if mismatch := ", ".join(models - valid_pred_files):
         raise ValueError(
             f"Unknown models: {mismatch}, expected subset of {valid_pred_files}"
