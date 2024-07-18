@@ -18,7 +18,7 @@ from pymatviz.utils import PLOTLY
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR
-from matbench_discovery.data import DATA_FILES, df_wbm
+from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.metrics import classify_stable
 from matbench_discovery.preds import df_each_err, df_each_pred, df_metrics, df_preds
@@ -31,7 +31,7 @@ fp_diff_col = "site_stats_fingerprint_init_final_norm_diff"
 
 
 # %%
-df_cse = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index(Key.mat_id)
+df_cse = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path).set_index(Key.mat_id)
 
 
 # %% plot the highest and lowest error structures before and after relaxation
@@ -143,7 +143,7 @@ fig.show()
 
 
 # %%
-df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index(Key.mat_id)
+df_mp = pd.read_csv(DataFiles.mp_energies.path, na_filter=False).set_index(Key.mat_id)
 train_count_col = "MP Occurrences"
 df_elem_counts = count_elements(df_mp[Key.formula], count_mode="occurrence").to_frame(
     name=train_count_col

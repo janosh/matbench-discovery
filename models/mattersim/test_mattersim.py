@@ -21,7 +21,7 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery.data import DATA_FILES
+from matbench_discovery.data import DataFiles
 from matbench_discovery.energy import get_e_form_per_atom
 
 if TYPE_CHECKING:
@@ -107,17 +107,14 @@ def parse_relaxed_atoms_list_as_df(
     e_form_col = "e_form_per_atom_mattersim"
 
     ## Read pre-computed CSEs by WBM
-    df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(
-        Key.mat_id
-    )
+    wbm_cse_paths = DataFiles.wbm_computed_structure_entries.path
+    df_cse = pd.read_json(wbm_cse_paths).set_index(Key.mat_id)
 
     df_cse[Key.cse] = [
         ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_cse[Key.cse])
     ]
 
-    print(
-        f"Found {len(df_cse):,} CSEs in {DATA_FILES.wbm_computed_structure_entries = }"
-    )
+    print(f"Found {len(df_cse):,} CSEs in {wbm_cse_paths=}")
     print(f"Found {len(atoms_list):,} relaxed structures")
 
     def parse_single_atoms(atoms: ase.Atoms) -> tuple[str, bool, float, float, float]:
@@ -142,11 +139,8 @@ def parse_relaxed_atoms_list_as_df(
 
         return mat_id, converged, formation_energy, energy, corrected_energy
 
-    mat_id_list = []
-    cenvergence_list = []
-    e_form_list = []
-    energy_list = []
-    corrected_energy_list = []
+    mat_id_list, converged_list, e_form_list = [], [], []
+    energy_list, corrected_energy_list = [], []
 
     for atoms in tqdm(atoms_list, "Processing relaxed structures"):
         mat_id, converged, formation_energy, energy, corrected_energy = (
@@ -154,16 +148,16 @@ def parse_relaxed_atoms_list_as_df(
         )
         if not keep_unconverged and not converged:
             continue
-        mat_id_list.append(mat_id)
-        cenvergence_list.append(converged)
-        e_form_list.append(formation_energy)
-        energy_list.append(energy)
-        corrected_energy_list.append(corrected_energy)
+        mat_id_list += [mat_id]
+        converged_list += [converged]
+        e_form_list += [formation_energy]
+        energy_list += [energy]
+        corrected_energy_list += [corrected_energy]
 
     return pd.DataFrame(
         {
             Key.mat_id: mat_id_list,
-            "converged": cenvergence_list,
+            "converged": converged_list,
             e_form_col: e_form_list,
             "mattersim_energy": energy_list,
             "corrected_energy": corrected_energy_list,

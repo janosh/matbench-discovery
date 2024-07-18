@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from matbench_discovery import CHECKPOINT_DIR, WANDB_PATH, WBM_DIR, today
-from matbench_discovery.data import DATA_FILES, df_wbm
+from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.enums import MbdKey, Task
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
@@ -45,8 +45,8 @@ slurm_vars = slurm_submit(
 
 # %%
 data_path = {
-    Task.IS2RE: DATA_FILES.wbm_initial_structures,
-    Task.RS2RE: DATA_FILES.wbm_computed_structure_entries,
+    Task.IS2RE: DataFiles.wbm_initial_structures.path,
+    Task.RS2RE: DataFiles.wbm_computed_structure_entries.path,
     "IS2RE-debug": f"{WBM_DIR}/2022-10-19-wbm-init-structs.json-1k-samples.bz2",
 }[task_type]
 input_col = {Task.IS2RE: Key.init_struct, Task.RS2RE: Key.final_struct}[task_type]

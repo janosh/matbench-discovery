@@ -7,7 +7,7 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery.data import DATA_FILES, as_dict_handler, df_wbm
+from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom, mp_elemental_ref_energies
 
 e_form_7net_col = "e_form_per_atom_sevennet"
@@ -28,7 +28,9 @@ df_7net = pd.concat(dfs.values()).round(4)
 if len(df_7net) != len(df_wbm):  # make sure there is no missing structure
     raise ValueError("Missing structures in SevenNet results")
 
-df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(Key.mat_id)
+df_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_index(
+    Key.mat_id
+)
 df_cse[Key.cse] = [
     ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_cse[Key.cse])
 ]

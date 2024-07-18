@@ -19,7 +19,7 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, timestamp, today
-from matbench_discovery.data import DATA_FILES, as_dict_handler
+from matbench_discovery.data import DataFiles, as_dict_handler
 from matbench_discovery.enums import Task
 from matbench_discovery.slurm import slurm_submit
 
@@ -62,8 +62,8 @@ warnings.filterwarnings(action="ignore", category=UserWarning, module="tensorflo
 
 # %%
 data_path = {
-    Task.IS2RE: DATA_FILES.wbm_initial_structures,
-    Task.RS2RE: DATA_FILES.wbm_computed_structure_entries,
+    Task.IS2RE: DataFiles.wbm_initial_structures.path,
+    Task.RS2RE: DataFiles.wbm_computed_structure_entries.path,
 }[task_type]
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")

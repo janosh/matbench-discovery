@@ -171,7 +171,7 @@ All notable changes to this project will be documented in this file. Dates are d
 - add changelog.md [`0621282`](https://github.com/janosh/matbench-discovery/commit/0621282b0ed6ca397b6293e8d6f2bcbaac736468)
 - add models/chgnet/ctk_struct_traj.py and models/wrenformer/analyze_wrenformer.py [`c9fed5a`](https://github.com/janosh/matbench-discovery/commit/c9fed5ae7bddc02c3fbb2160a00b4e8822b1a179)
 - add data/mp/get_mp_traj.py to save a snapshot of all MP ionic steps on 2023-03-15 to be released as MBD canonical training set [`76647e3`](https://github.com/janosh/matbench-discovery/commit/76647e37b9fdfbbc77fb2317ad2a0cf3369638a9)
-- move load_df_wbm_preds+PRED_FILES from matbench_discovery/{data->preds}.py [`387184c`](https://github.com/janosh/matbench-discovery/commit/387184caa50c27e2574a86a4bef65a1628434378)
+- move load_df_wbm_preds+PredFiles from matbench_discovery/{data->preds}.py [`387184c`](https://github.com/janosh/matbench-discovery/commit/387184caa50c27e2574a86a4bef65a1628434378)
 - add site/src/figs/(largest-fp-diff-each-error-models|largest-each-errors-fp-diff-models).svelte [`4b6e83a`](https://github.com/janosh/matbench-discovery/commit/4b6e83a13816f9b8dcc911af5cbe1d79f05bf876)
 - move /paper/preprint to /paper [`8a0c3bb`](https://github.com/janosh/matbench-discovery/commit/8a0c3bb47609cf784d95e7499394785487383d82)
 - add global STABILITY_THRESHOLD to consistently parametrize across the codebase when materials count as thermodynamically stable [`70b2b1d`](https://github.com/janosh/matbench-discovery/commit/70b2b1d81476e5913802d8286f281af9385a8754)

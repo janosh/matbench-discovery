@@ -12,7 +12,7 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import DATA_DIR
-from matbench_discovery.data import DATA_FILES
+from matbench_discovery.data import DataFiles
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
@@ -34,7 +34,9 @@ slurm_vars = slurm_submit(
     time="6:0:0",
 )
 
-data_path = {"wbm": DATA_FILES.wbm_summary, "mp": DATA_FILES.mp_energies}[data_name]
+data_path = {"wbm": DataFiles.wbm_summary.path, "mp": DataFiles.mp_energies.path}[
+    data_name
+]
 print(f"{data_path=}")
 print(f"{out_dim=}")
 print(f"{projection_type=}")

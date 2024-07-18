@@ -18,7 +18,7 @@ from pymatviz.utils import PLOTLY
 from tqdm import tqdm
 
 from matbench_discovery import STABILITY_THRESHOLD, today
-from matbench_discovery.data import DATA_FILES
+from matbench_discovery.data import DataFiles
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-01-10"
@@ -60,7 +60,9 @@ df_mp.energy_type.value_counts().plot.pie(backend=PLOTLY, autopct="%1.1f%%")
 
 
 # %%
-df_cse = pd.read_json(DATA_FILES.mp_computed_structure_entries).set_index(Key.mat_id)
+df_cse = pd.read_json(DataFiles.mp_computed_structure_entries.path).set_index(
+    Key.mat_id
+)
 
 df_cse[Key.structure] = [
     Structure.from_dict(cse[Key.structure]) for cse in tqdm(df_cse.entry)
@@ -77,8 +79,8 @@ spg_nums = df_mp[Key.wyckoff].str.split("_").str[2].astype(int)
 # make sure all our spacegroup numbers match MP's
 assert (spg_nums.sort_index() == df_spg["number"].sort_index()).all()
 
-df_mp.to_csv(DATA_FILES.mp_energies)
-# df = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index(Key.mat_id)
+df_mp.to_csv(DataFiles.mp_energies.path)
+# df = pd.read_csv(DataFiles.mp_energies.path, na_filter=False).set_index(Key.mat_id)
 
 
 # %% reproduce fig. 1b from https://arxiv.org/abs/2001.10591 (as data consistency check)

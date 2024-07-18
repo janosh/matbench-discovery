@@ -14,7 +14,7 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import Model, timestamp, today
-from matbench_discovery.data import DATA_FILES, as_dict_handler
+from matbench_discovery.data import DataFiles, as_dict_handler
 from matbench_discovery.enums import Task
 from matbench_discovery.slurm import slurm_submit
 
@@ -39,8 +39,8 @@ job_name = f"bowsr-{energy_model}-wbm-{task_type}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 data_path = {
-    Task.IS2RE: DATA_FILES.wbm_initial_structures,
-    Task.RS2RE: DATA_FILES.wbm_computed_structure_entries,
+    Task.IS2RE: DataFiles.wbm_initial_structures.path,
+    Task.RS2RE: DataFiles.wbm_computed_structure_entries.path,
 }[task_type]
 
 

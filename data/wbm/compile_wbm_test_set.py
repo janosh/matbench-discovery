@@ -26,7 +26,7 @@ from pymatviz.io import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR, today
-from matbench_discovery.data import DATA_FILES
+from matbench_discovery.data import DataFiles
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.enums import MbdKey
 
@@ -547,7 +547,7 @@ assert df_summary.e_correction_per_atom_mp2020.mean().round(4) == -0.1069
 
 
 # %%
-with gzip.open(DATA_FILES.mp_patched_phase_diagram, "rb") as zip_file:
+with gzip.open(DataFiles.mp_patched_phase_diagram.path, "rb") as zip_file:
     ppd_mp: PatchedPhaseDiagram = pickle.load(zip_file)  # noqa: S301
 
 
@@ -644,7 +644,7 @@ except KeyError:
 
 # %% mark WBM materials with matching prototype in MP or duplicate prototypes
 # in WBM (keeping only the lowest energy one)
-df_mp = pd.read_csv(DATA_FILES.mp_energies, index_col=0)
+df_mp = pd.read_csv(DataFiles.mp_energies.path, index_col=0)
 
 # mask WBM materials with matching prototype in MP
 mask_proto_in_mp = df_summary[Key.wyckoff].isin(df_mp[Key.wyckoff])
@@ -675,8 +675,10 @@ df_summary.round(6).to_csv(f"{WBM_DIR}/{today}-wbm-summary.csv.gz")
 
 # %% only here to load data for later inspection
 if False:
-    df_summary = pd.read_csv(DATA_FILES.wbm_summary).set_index(Key.mat_id)
-    df_wbm = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index(Key.mat_id)
+    df_summary = pd.read_csv(DataFiles.wbm_summary.path).set_index(Key.mat_id)
+    df_wbm = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path).set_index(
+        Key.mat_id
+    )
 
     df_wbm[Key.cse] = [
         ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_wbm[Key.cse])

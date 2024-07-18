@@ -22,7 +22,7 @@ from pymatviz.io import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, PDF_FIGS, WBM_DIR
-from matbench_discovery.data import DATA_FILES
+from matbench_discovery.data import DataFiles
 
 __author__ = "Philipp Benner, Janosh Riebesell"
 __date__ = "2023-11-28"
@@ -140,12 +140,12 @@ def features_to_drop(df_in: pd.DataFrame, threshold: float = 0.95) -> list[str]:
 # %% Compute matminer features for MP and WBM, then export to CSV
 if not os.path.isfile(mp_matminer_feat_path):
     df_mp_feats = featurize_file(
-        DATA_FILES.mp_computed_structure_entries, struct_col="entry"
+        DataFiles.mp_computed_structure_entries.path, struct_col="entry"
     )
     df_mp_feats.to_csv(mp_matminer_feat_path)
 
 if not os.path.isfile(wbm_matminer_feat_path):
-    df_wbm_feats = featurize_file(DATA_FILES.wbm_initial_structures)
+    df_wbm_feats = featurize_file(DataFiles.wbm_initial_structures.path)
     df_wbm_feats.to_csv(wbm_matminer_feat_path)
 
 

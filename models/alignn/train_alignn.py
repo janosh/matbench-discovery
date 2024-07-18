@@ -18,7 +18,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from matbench_discovery import today
-from matbench_discovery.data import DATA_FILES
+from matbench_discovery.data import DataFiles
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Philipp Benner, Janosh Riebesell"
@@ -53,14 +53,16 @@ slurm_vars = slurm_submit(
 
 
 # %% Load data
-df_cse = pd.read_json(DATA_FILES.mp_computed_structure_entries).set_index(Key.mat_id)
+df_cse = pd.read_json(DataFiles.mp_computed_structure_entries.path).set_index(
+    Key.mat_id
+)
 df_cse[Key.structure] = [
     Structure.from_dict(cse[Key.structure])
     for cse in tqdm(df_cse.entry, desc="Structures from dict")
 ]
 
 # load energies
-df_in = pd.read_csv(DATA_FILES.mp_energies).set_index(Key.mat_id)
+df_in = pd.read_csv(DataFiles.mp_energies.path).set_index(Key.mat_id)
 df_in[Key.structure] = df_cse[Key.structure]
 if target_col not in df_in:
     raise TypeError(f"{target_col!s} not in {df_in.columns=}")
@@ -74,7 +76,7 @@ df_in[input_col] = [
 
 # %%
 run_params = dict(
-    data_path=DATA_FILES.mp_energies,
+    data_path=DataFiles.mp_energies.path,
     versions={dep: version(dep) for dep in ("alignn", "numpy", "torch", "dgl")},
     model_name=model_name,
     target_col=target_col,

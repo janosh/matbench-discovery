@@ -16,7 +16,7 @@ from sevenn.sevennet_calculator import SevenNetCalculator
 from tqdm import tqdm
 
 from matbench_discovery import timestamp
-from matbench_discovery.data import DATA_FILES, as_dict_handler
+from matbench_discovery.data import DataFiles, as_dict_handler
 from matbench_discovery.enums import Task
 
 __author__ = "Yutack Park"
@@ -57,7 +57,7 @@ slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
 os.makedirs(out_dir := "./results", exist_ok=True)
 out_path = f"{out_dir}/{pot_name}-{slurm_array_task_id:>03}.json.gz"
 
-data_path = {Task.IS2RE: DATA_FILES.wbm_initial_structures}[task_type]
+data_path = {Task.IS2RE: DataFiles.wbm_initial_structures.path}[task_type]
 print(f"\nJob started running {timestamp}, eval {pot_name}", flush=True)
 print(f"{data_path=}", flush=True)
 
