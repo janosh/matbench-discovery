@@ -6,7 +6,7 @@ https://figshare.com/articles/dataset/22715158
 import os
 import sys
 from collections.abc import Callable
-from enum import StrEnum
+from enum import EnumMeta, StrEnum
 from glob import glob
 from typing import Any, Self
 
@@ -92,23 +92,42 @@ def download_file(file_path: str, url: str) -> None:
         print(f"Error downloading {url=}\nto {file_path=}.\n{exc!s}")
 
 
-class Files(StrEnum):
+class FilesMeta(EnumMeta):
+    """Metaclass for FileUrls enum."""
+
+    def __new__(
+        cls,
+        *args: Any,
+        base: str = DEFAULT_CACHE_DIR,
+        key_map: dict[str, str] | None = None,
+        **kwargs: Any,
+    ) -> "FilesMeta":
+        """Set the base directory where to save the files and a key map to give pretty
+        labels to the files.
+        """
+        obj = super().__new__(cls, *args, **kwargs)
+        cls.base = base
+        cls.key_map = key_map or {}
+        return obj
+
+
+class Files(StrEnum, metaclass=FilesMeta):
     """Enum of data files with associated file directories and URLs."""
 
-    def __new__(cls, file_path: str, url: str, base: str = DEFAULT_CACHE_DIR) -> Self:
+    def __new__(cls, file_path: str, url: str | None = None) -> Self:
         """Create a new member of the FileUrls enum with a given URL where to load the
         file from and directory where to save it to.
         """
         obj = str.__new__(cls)
-        if len(url) == 33:
+        if url is not None and len(url) == 33:
             # looks like a Google Drive ID, turn into direct download link
             url = f"https://drive.usercontent.google.com/download?id={url}&confirm=t"
-        file_name = file_path.split("/")[-1]
-        obj._value_ = file_name
+        obj._value_ = _file_name = file_path.split("/")[-1]
 
         obj._rel_path = file_path  # type: ignore[attr-defined] # noqa: SLF001
-        obj._file_path = f"{base}/{file_path}"  # type: ignore[attr-defined] # noqa: SLF001
+        obj._file_path = f"{cls.base}/{file_path}"  # type: ignore[attr-defined] # noqa: SLF001
         obj._url = url  # type: ignore[attr-defined] # noqa: SLF001
+
         return obj
 
     def __str__(self) -> str:
@@ -117,6 +136,10 @@ class Files(StrEnum):
         exist yet, e.g. for use in script that generates the file in the first place.
         """
         return self._file_path  # type: ignore[attr-defined]
+
+    def __repr__(self) -> str:
+        """Return enum attribute's string representation."""
+        return f"{type(self).__name__}.{self.name}"
 
     @property
     def path(self) -> str:
@@ -137,6 +160,21 @@ class Files(StrEnum):
                     print(f"Downloading {key!r} from {url} to {file_path} for caching")
                 download_file(file_path, url)
         return file_path
+
+    @property
+    def url(self) -> str:
+        """Return the URL associated with the file URL."""
+        return self._url  # type: ignore[attr-defined]
+
+    @property
+    def rel_path(self) -> str:
+        """Return the relative path of the file associated with the file URL."""
+        return self._rel_path  # type: ignore[attr-defined]
+
+    @property
+    def label(self) -> str:
+        """Return the label associated with the file URL."""
+        return type(self).key_map.get(self.name, self.name)
 
 
 class DataFiles(Files):
@@ -196,4 +234,4 @@ class DataFiles(Files):
 
 df_wbm = pd.read_csv(DataFiles.wbm_summary.path)
 # str() around Key.mat_id added for https://github.com/janosh/matbench-discovery/issues/81
-df_wbm[str(Key.mat_id)] = df_wbm.index
+df_wbm.index = df_wbm[str(Key.mat_id)]

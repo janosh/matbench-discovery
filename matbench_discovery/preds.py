@@ -7,9 +7,9 @@ import pandas as pd
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, STABILITY_THRESHOLD, Model
+from matbench_discovery import ROOT, STABILITY_THRESHOLD
 from matbench_discovery.data import Files, df_wbm, glob_to_df
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.plots import plotly_colors, plotly_line_styles, plotly_markers
 
@@ -17,7 +17,7 @@ __author__ = "Janosh Riebesell"
 __date__ = "2023-02-04"
 
 
-class PredFiles(Files):
+class PredFiles(Files, base=f"{ROOT}/models", key_map=Model.key_val_dict()):
     """Data files provided by Matbench Discovery.
     See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
     """
@@ -74,13 +74,9 @@ class PredFiles(Files):
     # megnet_rs2re = "megnet/2023-08-23-megnet-wbm-RS2RE.csv.gz"
 
 
-# key_map maps model keys to pretty labels
-PRED_FILES = PredFiles(root=f"{ROOT}/models", key_map=Model.key_val_dict())
-
-
 def load_df_wbm_with_preds(
     *,
-    models: Sequence[str] = (*PRED_FILES,),
+    models: Sequence[str] = (),
     pbar: bool = True,
     id_col: str = Key.mat_id,
     subset: pd.Index | Sequence[str] | Literal["uniq_protos"] | None = None,
@@ -90,7 +86,7 @@ def load_df_wbm_with_preds(
 
     Args:
         models (Sequence[str], optional): Model names must be keys of
-            matbench_discovery.data.PRED_FILES. Defaults to all models.
+            matbench_discovery.data.PredFiles. Defaults to all models.
         pbar (bool, optional): Whether to show progress bar. Defaults to True.
         id_col (str, optional): Column to set as df.index. Defaults to "material_id".
         subset (pd.Index | Sequence[str] | 'uniq_protos' | None, optional):
@@ -106,20 +102,26 @@ def load_df_wbm_with_preds(
     Returns:
         pd.DataFrame: WBM summary dataframe with model predictions.
     """
-    if mismatch := ", ".join(set(models) - set(PRED_FILES)):
+    valid_pred_files = {model.name for model in PredFiles}
+    if models == ():
+        models = tuple(valid_pred_files)
+    inv_map = {v: k for k, v in PredFiles.key_map.items()}
+    models = {inv_map.get(model, model) for model in models}
+    if mismatch := ", ".join(models - valid_pred_files):
         raise ValueError(
-            f"Unknown models: {mismatch}, expected subset of {set(PRED_FILES)}"
+            f"Unknown models: {mismatch}, expected subset of {valid_pred_files}"
         )
 
     dfs: dict[str, pd.DataFrame] = {}
+    model: str = ""
     try:
-        for model_name in (bar := tqdm(models, disable=not pbar, desc="Loading preds")):
-            bar.set_postfix_str(model_name)
-            df_preds = glob_to_df(PRED_FILES[model_name], pbar=False, **kwargs)
-            df_preds = df_preds.set_index(id_col)
-            dfs[model_name] = df_preds
+        for model in (bar := tqdm(models, disable=not pbar, desc="Loading preds")):
+            bar.set_postfix_str(model)
+            pred_file = PredFiles[model]
+            df_preds = glob_to_df(pred_file.path, pbar=False, **kwargs)
+            dfs[pred_file.label] = df_preds.set_index(id_col)
     except Exception as exc:
-        raise RuntimeError(f"Failed to load {locals().get('model_name')=}") from exc
+        raise RuntimeError(f"Failed to load {model=}") from exc
 
     from matbench_discovery.data import df_wbm
 
@@ -172,7 +174,7 @@ def load_df_wbm_with_preds(
 df_preds = load_df_wbm_with_preds().round(3)
 # for combo in [["CHGNet", "M3GNet"]]:
 #     df_preds[" + ".join(combo)] = df_preds[combo].mean(axis=1)
-#     PRED_FILES[" + ".join(combo)] = "combo"
+#     PredFiles[" + ".join(combo)] = "combo"
 
 
 df_metrics = pd.DataFrame()
@@ -192,36 +194,38 @@ uniq_proto_prevalence = (
     df_wbm.query(Key.uniq_proto)[MbdKey.each_true] <= STABILITY_THRESHOLD
 ).mean()
 
-for model in PRED_FILES:
+for model in PredFiles:
+    model_name = model.label
     each_pred = (
-        df_preds[MbdKey.each_true] + df_preds[model] - df_preds[MbdKey.e_form_dft]
+        df_preds[MbdKey.each_true] + df_preds[model_name] - df_preds[MbdKey.e_form_dft]
     )
-    df_metrics[model] = stable_metrics(
+    df_metrics[model_name] = stable_metrics(
         df_preds[MbdKey.each_true], each_pred, fillna=True
     )
 
     df_uniq_proto_preds = df_preds[df_wbm[Key.uniq_proto]]
+    list(df_uniq_proto_preds)
     each_pred_uniq_proto = (
         df_uniq_proto_preds[MbdKey.each_true]
-        + df_uniq_proto_preds[model]
+        + df_uniq_proto_preds[model_name]
         - df_uniq_proto_preds[MbdKey.e_form_dft]
     )
-    df_metrics_uniq_protos[model] = stable_metrics(
+    df_metrics_uniq_protos[model_name] = stable_metrics(
         df_uniq_proto_preds[MbdKey.each_true], each_pred_uniq_proto, fillna=True
     )
-    df_metrics_uniq_protos.loc[Key.daf, model] = (
-        df_metrics_uniq_protos[model]["Precision"] / uniq_proto_prevalence
+    df_metrics_uniq_protos.loc[Key.daf, model_name] = (
+        df_metrics_uniq_protos[model_name]["Precision"] / uniq_proto_prevalence
     )
 
     # look only at each model's 10k most stable predictions in the unique prototype set
     most_stable_10k = each_pred_uniq_proto.nsmallest(10_000)
-    df_metrics_10k[model] = stable_metrics(
+    df_metrics_10k[model_name] = stable_metrics(
         df_preds[MbdKey.each_true].loc[most_stable_10k.index],
         most_stable_10k,
         fillna=True,
     )
-    df_metrics_10k.loc[Key.daf, model] = (
-        df_metrics_10k[model]["Precision"] / uniq_proto_prevalence
+    df_metrics_10k.loc[Key.daf, model_name] = (
+        df_metrics_10k[model_name]["Precision"] / uniq_proto_prevalence
     )
 
 

@@ -6,7 +6,7 @@ from pymatviz.enums import Key
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.preds import (
-    PRED_FILES,
+    PredFiles,
     df_each_err,
     df_each_pred,
     df_metrics,
@@ -20,7 +20,8 @@ def test_df_wbm() -> None:
 
 
 def test_df_metrics() -> None:
-    assert {*df_metrics} >= {*PRED_FILES}
+    missing_cols = {*df_metrics} - {model.name for model in PredFiles}
+    assert missing_cols == set(), f"{missing_cols=}"
     assert df_metrics.T.MAE.between(0, 0.2).all(), f"unexpected {df_metrics.T.MAE=}"
     assert df_metrics.T.R2.between(-1.5, 1).all(), f"unexpected {df_metrics.T.R2=}"
     assert df_metrics.T.RMSE.between(0, 0.3).all(), f"unexpected {df_metrics.T.RMSE=}"
@@ -65,11 +66,12 @@ def test_load_df_wbm_with_preds_raises() -> None:
 
 
 def test_pred_files() -> None:
-    assert len(PRED_FILES) >= 6
+    assert len(PredFiles) >= 6
     assert all(
-        path.endswith((".csv", ".csv.gz", ".json", ".json.gz"))
-        for path in PRED_FILES.values()
+        file.path.endswith((".csv", ".csv.gz", ".json", ".json.gz"))
+        for file in PredFiles
     )
-    for model, path in PRED_FILES.items():
+    for model in PredFiles:
+        path = model.path
         msg = f"Missing preds file for {model=}, expected at {path=}"
         assert os.path.isfile(path), msg
