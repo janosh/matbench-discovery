@@ -33,14 +33,12 @@ test_task: IP2E
 targets: E
 model_type: Transformer
 model_params: 5_166_658
+n_estimators: 10
 
 training_set:
   title: MP v2022.10.28
   url: https://figshare.com/ndownloader/files/40344436
   n_structures: 154_719
-
-hyperparams:
-  Ensemble Size: 10
 
 notes:
   description: |

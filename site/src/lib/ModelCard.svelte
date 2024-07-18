@@ -15,7 +15,7 @@
   export let metrics_style: string | null = null
 
   $: ({ model_name, missing_preds, missing_percent } = data)
-  $: ({ model_params, hyperparams, notes = {}, training_set } = data)
+  $: ({ model_params, hyperparams, notes = {}, training_set, n_estimators } = data)
 
   $: links = [
     [data.repo, `Repo`, `octicon:mark-github`],
@@ -59,6 +59,20 @@
     <Icon icon="eos-icons:neural-network" inline />
     {pretty_num(model_params, `.3~s`)} params
   </span>
+  {#if n_estimators > 1}
+    <span>
+      <Icon icon="material-symbols:forest" inline />
+      Ensemble of {n_estimators > 1 ? `${n_estimators}` : ``}
+      <Tooltip
+        icon="ion:information-circle"
+        text="This result used a model ensemble with {n_estimators} members with {pretty_num(
+          model_params,
+          `.3~s`,
+        )} parameters."
+        ><Icon icon="ion:information-circle" inline />
+      </Tooltip>
+    </span>
+  {/if}
   <span>
     <Icon icon="fluent:missing-metadata-24-regular" inline />
     Missing preds:

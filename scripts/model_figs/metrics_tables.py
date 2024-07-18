@@ -49,10 +49,12 @@ for model in df_metrics:
     if not (model_data := MODEL_METADATA.get(model_name)):
         continue
     n_structs = model_data["training_set"]["n_structures"]
-    train_size_str = si_fmt(n_structs)
+    n_materials = model_data["training_set"].get("n_materials", n_structs)
+    train_size_str = si_fmt(n_materials)
 
-    if n_materials := model_data["training_set"].get("n_materials"):
-        train_size_str += f" <small>({si_fmt(n_materials)})</small>"
+    if n_materials != n_structs:
+        title = "number of materials vs structures in training set"
+        train_size_str += f" <small {title=}>({si_fmt(n_structs)})</small>"
 
     if train_url := model_data.get("training_set", {}).get("url"):
         train_size_str = (
@@ -62,8 +64,11 @@ for model in df_metrics:
 
     df_met.loc[Key.train_set.label, model] = train_size_str
     model_params = model_data.get(Key.model_params, "")
-    df_met.loc[Key.model_params.label, model] = (
-        si_fmt(model_params) if isinstance(model_params, int) else model_params
+    n_estimators = model_data.get(Key.n_estimators, "")
+    df_met.loc[Key.model_params.label.replace("eter", ""), model] = (
+        f"{si_fmt(model_params)} {f'(N={n_estimators})' if n_estimators >1 else ''} "
+        if isinstance(model_params, int)
+        else model_params
     )
     for key in (
         MbdKey.openness,
@@ -120,7 +125,7 @@ lower_is_better = {*better["lower_is_better"]}
 make_uip_megnet_comparison = False
 meta_cols = [
     Key.train_set.label,
-    Key.model_params.label,
+    Key.model_params.label.replace("eter", ""),
     Key.model_type.label,
     Key.targets.label,
 ]

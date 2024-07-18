@@ -35,6 +35,7 @@ test_task: IS2RE-SR
 targets: EFS
 model_type: UIP
 model_params: 842_440
+n_estimators: 1
 
 hyperparams:
   max_force: 0.05
