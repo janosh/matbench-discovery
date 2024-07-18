@@ -20,7 +20,7 @@ def test_df_wbm() -> None:
 
 
 def test_df_metrics() -> None:
-    missing_cols = {*df_metrics} - {model.name for model in PredFiles}
+    missing_cols = {*df_metrics} - {model.label for model in PredFiles}
     assert missing_cols == set(), f"{missing_cols=}"
     assert df_metrics.T.MAE.between(0, 0.2).all(), f"unexpected {df_metrics.T.MAE=}"
     assert df_metrics.T.R2.between(-1.5, 1).all(), f"unexpected {df_metrics.T.R2=}"
