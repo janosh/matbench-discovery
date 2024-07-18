@@ -95,20 +95,6 @@ def download_file(file_path: str, url: str) -> None:
 class Files(StrEnum):
     """Enum of data files with associated file directories and URLs."""
 
-    def __init_subclass__(
-        cls,
-        *args: Any,
-        base_dir: str = DEFAULT_CACHE_DIR,
-        label_map: dict[str, str] | None = None,
-        **kwargs: Any,
-    ) -> None:
-        """Set the base directory where to save the files and a key map to give pretty
-        labels to the files.
-        """
-        super().__init_subclass__(*args, **kwargs)
-        cls.base_dir = base_dir  # type: ignore[attr-defined]
-        cls.label_map = label_map or {}  # type: ignore[attr-defined]
-
     def __new__(cls, file_path: str, url: str | None = None) -> Self:
         """Create a new member of the FileUrls enum with a given URL where to load the
         file from and directory where to save it to.
@@ -145,12 +131,14 @@ class Files(StrEnum):
         if not os.path.isfile(abs_path):
             is_ipython = hasattr(__builtins__, "__IPYTHON__")
             # default to 'y' if not in interactive session, and user can't answer
-            answer = "" if is_ipython or sys.stdin.isatty() else "y"
-            if answer == "":
-                answer = input(
+            answer = (
+                input(
                     f"{abs_path!r} associated with {key=} does not exist. Download it "
                     "now? This will cache the file for future use. [y/n] "
                 )
+                if is_ipython or sys.stdin.isatty()
+                else "y"
+            )
             if answer.lower().strip() == "y":
                 if not is_ipython:
                     print(f"Downloading {key!r} from {url} to {abs_path} for caching")
@@ -171,6 +159,10 @@ class Files(StrEnum):
     def label(self) -> str:
         """Return the label associated with the file URL."""
         return self.label_map.get(self.name, self.name)  # type: ignore[attr-defined]
+
+
+Files.base_dir = DEFAULT_CACHE_DIR  # type: ignore[attr-defined]
+Files.label_map = None  # type: ignore[attr-defined]
 
 
 class DataFiles(Files):

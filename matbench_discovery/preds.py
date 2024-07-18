@@ -22,9 +22,6 @@ class PredFiles(Files):
     See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
     """
 
-    base_dir = f"{ROOT}/models"
-    label_map = Model.key_val_dict()
-
     alignn = "alignn/2023-06-02-alignn-wbm-IS2RE.csv.gz"
     # alignn_pretrained = "alignn/2023-06-03-mp-e-form-alignn-wbm-IS2RE.csv.gz"
     # alignn_ff = "alignn_ff/2023-07-11-alignn-ff-wbm-IS2RE.csv.gz"
@@ -75,6 +72,10 @@ class PredFiles(Files):
     # # M3GNet-relaxed structures fed into MEGNet for formation energy prediction
     # m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv.gz"
     # megnet_rs2re = "megnet/2023-08-23-megnet-wbm-RS2RE.csv.gz"
+
+
+PredFiles.base_dir = f"{ROOT}/models"  # type: ignore[attr-defined]
+PredFiles.label_map = Model.key_val_dict()  # type: ignore[attr-defined]
 
 
 def load_df_wbm_with_preds(

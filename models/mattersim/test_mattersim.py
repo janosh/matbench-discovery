@@ -139,11 +139,8 @@ def parse_relaxed_atoms_list_as_df(
 
         return mat_id, converged, formation_energy, energy, corrected_energy
 
-    mat_id_list = []
-    cenvergence_list = []
-    e_form_list = []
-    energy_list = []
-    corrected_energy_list = []
+    mat_id_list, converged_list, e_form_list = [], [], []
+    energy_list, corrected_energy_list = [], []
 
     for atoms in tqdm(atoms_list, "Processing relaxed structures"):
         mat_id, converged, formation_energy, energy, corrected_energy = (
@@ -151,16 +148,16 @@ def parse_relaxed_atoms_list_as_df(
         )
         if not keep_unconverged and not converged:
             continue
-        mat_id_list.append(mat_id)
-        cenvergence_list.append(converged)
-        e_form_list.append(formation_energy)
-        energy_list.append(energy)
-        corrected_energy_list.append(corrected_energy)
+        mat_id_list += [mat_id]
+        converged_list += [converged]
+        e_form_list += [formation_energy]
+        energy_list += [energy]
+        corrected_energy_list += [corrected_energy]
 
     return pd.DataFrame(
         {
             Key.mat_id: mat_id_list,
-            "converged": cenvergence_list,
+            "converged": converged_list,
             e_form_col: e_form_list,
             "mattersim_energy": energy_list,
             "corrected_energy": corrected_energy_list,
