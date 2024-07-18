@@ -146,10 +146,11 @@ class Files(StrEnum):
             is_ipython = hasattr(__builtins__, "__IPYTHON__")
             # default to 'y' if not in interactive session, and user can't answer
             answer = "" if is_ipython or sys.stdin.isatty() else "y"
-            answer = input(
-                f"{abs_path!r} associated with {key=} does not exist. Would you like"
-                " to download it now? This will cache the file for future use. [y/n] "
-            )
+            if answer == "":
+                answer = input(
+                    f"{abs_path!r} associated with {key=} does not exist. Download it "
+                    "now? This will cache the file for future use. [y/n] "
+                )
             if answer.lower().strip() == "y":
                 if not is_ipython:
                     print(f"Downloading {key!r} from {url} to {abs_path} for caching")
