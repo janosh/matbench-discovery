@@ -139,8 +139,6 @@ class Files(StrEnum):
                 if is_ipython or sys.stdin.isatty()
                 else "y"
             )
-            if os.getenv("CI"):
-                answer = "n"
             if answer.lower().strip() == "y":
                 if not is_ipython:
                     print(f"Downloading {key!r} from {url} to {abs_path} for caching")
