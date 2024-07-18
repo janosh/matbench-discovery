@@ -28,7 +28,7 @@ from pymatviz.utils import si_fmt
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, PDF_FIGS, ROOT, SITE_FIGS
-from matbench_discovery.data import DATA_FILES, df_wbm
+from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.enums import MbdKey
 
 __author__ = "Janosh Riebesell"
@@ -41,7 +41,7 @@ data_page = f"{ROOT}/site/src/routes/data"
 mp_occu_counts = pd.read_json(
     f"{data_page}/mp-element-counts-by-occurrence.json", typ="series"
 )
-df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index(Key.mat_id)
+df_mp = pd.read_csv(DataFiles.mp_energies.path, na_filter=False).set_index(Key.mat_id)
 
 
 # %% --- load preprocessed MPtrj summary data if available ---

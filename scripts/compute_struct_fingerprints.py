@@ -17,7 +17,7 @@ from pymatviz.utils import PLOTLY
 from tqdm import tqdm
 
 from matbench_discovery import DATA_DIR, timestamp
-from matbench_discovery.data import DATA_FILES
+from matbench_discovery.data import DataFiles
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
@@ -27,8 +27,8 @@ __date__ = "2023-03-26"
 # %% compute all initial and final MP/WBM structure fingerprints
 data_name = "wbm"
 data_path = {
-    "wbm": DATA_FILES.wbm_cses_plus_init_structs,
-    "mp": DATA_FILES.mp_computed_structure_entries,
+    "wbm": DataFiles.wbm_cses_plus_init_structs.path,
+    "mp": DataFiles.mp_computed_structure_entries.path,
 }[data_name]
 
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))

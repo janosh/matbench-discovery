@@ -17,7 +17,7 @@ from requests.exceptions import HTTPError
 from tqdm import tqdm
 
 from matbench_discovery import DATA_DIR, FIGSHARE_DIR, ROOT
-from matbench_discovery.data import DATA_FILES, DataFiles
+from matbench_discovery.data import DataFiles
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-04-27"
@@ -134,10 +134,10 @@ def main(pyproject: dict[str, Any], urls_json_path: str) -> int:
     try:
         article_id = create_article(metadata)
         uploaded_files: dict[str, tuple[str, str]] = {}
-        pbar = tqdm(DATA_FILES, desc="Uploading to Figshare")
+        pbar = tqdm(DataFiles, desc="Uploading to Figshare")
         for key in pbar:
             pbar.set_postfix(file=key)
-            file_path = f"{DATA_DIR}/{DataFiles.__dict__[key]}"
+            file_path = f"{DATA_DIR}/{key.rel_path}"
             file_id = upload_file_to_figshare(article_id, file_path)
             file_url = f"https://figshare.com/ndownloader/files/{file_id}"
             uploaded_files[key] = (file_url, file_path.split("/")[-1])

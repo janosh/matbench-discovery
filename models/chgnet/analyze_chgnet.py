@@ -13,8 +13,8 @@ from pymatviz.utils import PLOTLY
 
 from matbench_discovery import PDF_FIGS
 from matbench_discovery import plots as plots
-from matbench_discovery.data import DATA_FILES, df_wbm
-from matbench_discovery.preds import PRED_FILES, df_preds
+from matbench_discovery.data import DataFiles, df_wbm
+from matbench_discovery.preds import PredFiles, df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-06"
@@ -23,7 +23,7 @@ module_dir = os.path.dirname(__file__)
 
 
 # %%
-df_chgnet = df_chgnet_v030 = pd.read_csv(PRED_FILES.CHGNet)
+df_chgnet = df_chgnet_v030 = pd.read_csv(PredFiles.chgnet.path)
 df_chgnet_v020 = pd.read_csv(
     f"{module_dir}/2023-03-06-chgnet-0.2.0-wbm-IS2RE.csv.gz", index_col=Key.mat_id
 )
@@ -68,7 +68,7 @@ fig.show()
 
 
 # %%
-df_cse = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index(Key.mat_id)
+df_cse = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path).set_index(Key.mat_id)
 df_cse.loc[df_diff.index].reset_index().to_json(
     f"{module_dir}/wbm-chgnet-bad-relax.json.gz"
 )

@@ -17,7 +17,7 @@ from matbench_discovery import SITE_FIGS
 from matbench_discovery import plots as plots
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import MbdKey
-from matbench_discovery.preds import PRED_FILES
+from matbench_discovery.preds import PredFiles
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-07-23"
@@ -27,7 +27,7 @@ e_form_mace_col = "e_form_per_atom_mace"
 
 
 # %%
-df_mace = pd.read_csv(PRED_FILES.MACE).set_index(Key.mat_id)
+df_mace = pd.read_csv(PredFiles.mace.path).set_index(Key.mat_id)
 df_mace[list(df_wbm)] = df_wbm
 
 df_mace[Key.spg_num] = df_wbm[MbdKey.init_wyckoff].str.split("_").str[2].astype(int)

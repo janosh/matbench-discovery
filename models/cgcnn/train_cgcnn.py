@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm, trange
 
 from matbench_discovery import WANDB_PATH, timestamp, today
-from matbench_discovery.data import DATA_FILES
+from matbench_discovery.data import DataFiles
 from matbench_discovery.slurm import slurm_submit
 from matbench_discovery.structure import perturb_structure
 
@@ -59,10 +59,12 @@ task_type: TaskType = "regression"
 
 
 # %%
-data_path = DATA_FILES.mp_energies
+data_path = DataFiles.mp_energies.path
 df_in = pd.read_csv(data_path).set_index(Key.mat_id)
 
-df_cse = pd.read_json(DATA_FILES.mp_computed_structure_entries).set_index(Key.mat_id)
+df_cse = pd.read_json(DataFiles.mp_computed_structure_entries.path).set_index(
+    Key.mat_id
+)
 df_in[input_col] = [Structure.from_dict(cse[input_col]) for cse in tqdm(df_cse.entry)]
 
 if target_col not in df_in:

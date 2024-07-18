@@ -14,7 +14,7 @@ from pymatviz.powerups import add_identity_line
 from sklearn.metrics import r2_score
 
 from matbench_discovery import ROOT, SITE_FIGS, plots
-from matbench_discovery.data import DATA_FILES
+from matbench_discovery.data import DataFiles
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-06-18"
@@ -24,9 +24,9 @@ del plots  # https://github.com/PyCQA/pyflakes/issues/366
 
 
 # %%
-df_wbm = pd.read_json(DATA_FILES.wbm_cses_plus_init_structs).set_index(Key.mat_id)
+df_wbm = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path).set_index(Key.mat_id)
 
-df_summary = pd.read_csv(DATA_FILES.wbm_summary).set_index(Key.mat_id)
+df_summary = pd.read_csv(DataFiles.wbm_summary.path).set_index(Key.mat_id)
 
 
 # %%

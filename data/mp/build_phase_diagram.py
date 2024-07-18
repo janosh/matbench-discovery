@@ -19,7 +19,7 @@ from pymatviz.io import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, ROOT, today
-from matbench_discovery.data import DATA_FILES
+from matbench_discovery.data import DataFiles
 from matbench_discovery.energy import get_e_form_per_atom, get_elemental_ref_entries
 
 module_dir = os.path.dirname(__file__)
@@ -64,7 +64,9 @@ with gzip.open(f"{module_dir}/{today}-ppd-mp.pkl.gz", "wb") as zip_file:
 
 
 # %% build phase diagram with both MP entries + WBM entries
-df_wbm = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(Key.mat_id)
+df_wbm = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_index(
+    Key.mat_id
+)
 
 # using ComputedStructureEntry vs ComputedEntry here is important as CSEs receive
 # more accurate energy corrections that take into account peroxide/superoxide nature
@@ -102,7 +104,7 @@ with gzip.open(mp_pd_elem_ref_entries_path, "wt") as file:
     json.dump(elemental_ref_entries, file, default=lambda x: x.as_dict())
 
 
-df_mp = pd.read_csv(DATA_FILES.mp_energies, na_filter=False).set_index(Key.mat_id)
+df_mp = pd.read_csv(DataFiles.mp_energies.path, na_filter=False).set_index(Key.mat_id)
 
 
 # %%

@@ -20,10 +20,10 @@ from sklearn.metrics import r2_score
 from tqdm import tqdm
 
 from matbench_discovery import timestamp, today
-from matbench_discovery.data import DATA_FILES, df_wbm
+from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.enums import MbdKey, Task
 from matbench_discovery.plots import wandb_scatter
-from matbench_discovery.preds import PRED_FILES
+from matbench_discovery.preds import PredFiles
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
@@ -54,10 +54,10 @@ slurm_vars = slurm_submit(
 # %%
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
 data_path = {
-    Task.IS2RE: DATA_FILES.wbm_initial_structures,
-    Task.RS2RE: DATA_FILES.wbm_computed_structure_entries,
-    "chgnet_structure": PRED_FILES.CHGNet.replace(".csv.gz", ".json.gz"),
-    "m3gnet_structure": PRED_FILES.M3GNet.replace(".csv.gz", ".json.gz"),
+    Task.IS2RE: DataFiles.wbm_initial_structures.path,
+    Task.RS2RE: DataFiles.wbm_computed_structure_entries.path,
+    "chgnet_structure": PredFiles.chgnet.path.replace(".csv.gz", ".json.gz"),
+    "m3gnet_structure": PredFiles.m3gnet.path.replace(".csv.gz", ".json.gz"),
 }[task_type]
 print(f"\nJob started running {timestamp}")
 print(f"{data_path=}")
@@ -129,7 +129,9 @@ if task_type != Task.IS2RE:
 
 df_megnet.add_suffix(f"_{task_type.lower()}").round(4).to_csv(out_path)
 
-# df_megnet = pd.read_csv(f"{ROOT}/models/{PRED_FILES.megnet}").set_index(Key.mat_id)
+# df_megnet = pd.read_csv(
+#     f"{ROOT}/models/{PredFiles.megnet.path}"
+# ).set_index(Key.mat_id)
 
 
 # %% compare MEGNet predictions with old and new MP corrections

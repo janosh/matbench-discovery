@@ -7,7 +7,7 @@ import pymatviz
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery.data import DATA_FILES
+from matbench_discovery.data import DataFiles
 from matbench_discovery.enums import Model, Task
 
 __author__ = "Janosh Riebesell"
@@ -36,7 +36,7 @@ df_bowsr = pd.concat(dfs.values()).round(4)
 
 
 # %% compare against WBM formation energy targets to make sure we got sensible results
-df_wbm = pd.read_csv(DATA_FILES.wbm_summary).set_index(Key.mat_id)
+df_wbm = pd.read_csv(DataFiles.wbm_summary.path).set_index(Key.mat_id)
 
 
 print(f"{len(df_bowsr) - len(df_wbm)=:,} missing ({len(df_bowsr):,} - {len(df_wbm):,})")

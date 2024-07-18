@@ -13,7 +13,7 @@ from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
 
 from matbench_discovery import PDF_FIGS, SCRIPTS, SITE_FIGS
-from matbench_discovery.data import DATA_FILES, df_wbm
+from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.enums import MbdKey, Open
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.models import MODEL_METADATA
@@ -77,7 +77,7 @@ for model in df_metrics:
 
 
 # %% add dummy classifier results to df_metrics(_10k, _uniq_protos)
-df_mp = pd.read_csv(DATA_FILES.mp_energies, index_col=0)
+df_mp = pd.read_csv(DataFiles.mp_energies.path, index_col=0)
 
 for df_in, df_out, col in (
     (df_wbm, df_metrics, "Dummy"),

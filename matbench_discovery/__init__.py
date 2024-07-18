@@ -56,9 +56,6 @@ today = timestamp.split("@")[0]
 warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
 
 
-with open(f"{FIGSHARE_DIR}/1.0.0.json") as file:
-    FIGSHARE_URLS = json.load(file)
-
 # --- start global plot settings
 px.defaults.labels = (  # Quantity last to get precedence over Key and Model
     MbdKey.val_label_dict() | Model.key_val_dict() | Quantity.key_val_dict()
