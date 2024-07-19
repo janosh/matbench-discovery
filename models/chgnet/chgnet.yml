@@ -45,6 +45,7 @@ test_task: IS2RE-SR
 targets: EFSM
 model_type: UIP
 model_params: 412_525
+n_estimators: 1
 
 training_set:
   title: MPTrj

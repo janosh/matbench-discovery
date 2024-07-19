@@ -15,7 +15,7 @@ import requests
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery import FIGSHARE_DIR
+from matbench_discovery import DATA_DIR, FIGSHARE_DIR, pkg_is_editable
 
 # ruff: noqa: T201
 
@@ -27,7 +27,7 @@ figshare_versions = sorted(
 # directory to cache downloaded data files
 DEFAULT_CACHE_DIR = os.getenv(
     "MATBENCH_DISCOVERY_CACHE_DIR",
-    f"{os.path.expanduser('~/.cache/matbench-discovery')}",
+    DATA_DIR if pkg_is_editable else os.path.expanduser("~/.cache/matbench-discovery"),
 )
 
 

@@ -34,6 +34,7 @@ test_task: IS2RE-BO
 targets: E
 model_type: BO-GNN
 model_params: 167_761
+n_estimators: 1
 
 training_set:
   title: Graphs of MP 2019

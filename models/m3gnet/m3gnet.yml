@@ -30,6 +30,7 @@ test_task: IS2RE-SR
 targets: EFS
 model_type: UIP
 model_params: 227_549
+n_estimators: 1
 
 notes:
   description: M3GNet is a GNN-based universal (as in full periodic table) interatomic potential for materials trained on up to 3-body interactions in the initial, middle and final frame of MP DFT relaxations.
