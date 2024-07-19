@@ -30,7 +30,8 @@ dependencies = [
   "pandas>=2.0.0",
   "plotly",
   "pymatgen",
-  "pymatviz[export-figs,df-pdf-export]>=0.9.1",
+  # TODO remove df-svg-export following pymatviz>=0.9.4 release
+  "pymatviz[export-figs,df-pdf-export,df-svg-export]>=0.9.3",
   "scikit-learn",
   "scipy",
   "seaborn",
