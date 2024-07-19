@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { ModelStatLabel, ModelStats } from '$lib'
   import { ModelCard } from '$lib'
-  import metrics_order from '$root/scripts/metrics-which-is-better.json'
+  import { lower_is_better } from '$root/scripts/metrics-which-is-better.yml'
   import Icon from '@iconify/svelte'
   import { interpolateCividis } from 'd3-scale-chromatic'
   import { ColorBar } from 'elementari'
@@ -19,7 +19,6 @@
   let order: 'asc' | 'desc' = `desc`
   let show_n_best: number = data.models.length // show only best models
   const min_models: number = 2
-  const { lower_is_better } = metrics_order
 
   $: models = data.models
     .filter((model) => show_proprietary || (model.openness ?? `OSOD`) == `OSOD`)

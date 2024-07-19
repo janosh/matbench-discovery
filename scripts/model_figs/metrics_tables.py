@@ -3,10 +3,9 @@ pandas-styled HTML table and a plotly figure.
 """
 
 # %%
-import json
-
 import numpy as np
 import pandas as pd
+import yaml
 from pymatviz.enums import Key
 from pymatviz.io import df_to_html_table, df_to_pdf
 from pymatviz.utils import si_fmt
@@ -111,8 +110,8 @@ for df_in, df_out, col in (
 
 
 # %%
-with open(f"{SCRIPTS}/metrics-which-is-better.json") as file:
-    better = json.load(file)
+with open(f"{SCRIPTS}/metrics-which-is-better.yml") as file:
+    better = yaml.safe_load(file)
 
 R2_col = "R<sup>2</sup>"
 higher_is_better = {*better["higher_is_better"]} - {"R2"} | {R2_col}
