@@ -7,7 +7,7 @@
 export interface ModelMetadata {
   model_name: string
   model_version: string
-  matbench_discovery_version: number
+  matbench_discovery_version: string
   date_added: string
   date_published: string
   authors: {
@@ -67,28 +67,9 @@ export interface ModelMetadata {
     [k: string]: unknown
   }
   model_params: number
-  train_task:
-    | 'IS2RE'
-    | 'RS2RE'
-    | 'S2EFSM'
-    | 'S2EFS'
-    | 'S2RE'
-    | 'IS2RE-BO'
-    | 'RP2RE'
-    | 'IP2RE'
-    | 'IS2E'
-    | 'IS2RE-SR'
-  test_task:
-    | 'IS2RE'
-    | 'RS2RE'
-    | 'S2EFSM'
-    | 'S2EFS'
-    | 'S2RE'
-    | 'IS2RE-BO'
-    | 'RP2RE'
-    | 'IP2RE'
-    | 'IS2E'
-    | 'IS2RE-SR'
+  n_estimators: number
+  train_task: 'RP2RE' | 'RS2RE' | 'S2E' | 'S2RE' | 'S2EF' | 'S2EFS' | 'S2EFSM'
+  test_task: 'IP2E' | 'IS2E' | 'IS2RE' | 'IS2RE-SR' | 'IS2RE-BO'
   model_type: 'GNN' | 'UIP' | 'BO-GNN' | 'Fingerprint' | 'Transformer' | 'RF'
   targets: 'E' | 'EF' | 'EFS' | 'EFSM'
   openness?: 'OSOD' | 'OSCD' | 'CSOD' | 'CSCD'

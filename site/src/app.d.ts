@@ -29,4 +29,9 @@ declare module '*model-schema.yml' {
 declare module '*element-counts.json' {
   const map: Record<string, number>
   export default map
-}
+} // element counts for different datasets
+
+declare module '*metrics-which-is-better.yml' {
+  export const higher_is_better: string[]
+  export const lower_is_better: string[]
+} // which metrics are better higher or lower

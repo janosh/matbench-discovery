@@ -33,6 +33,7 @@ test_task: IS2RE
 targets: E
 model_type: GNN
 model_params: 128_450
+n_estimators: 10
 
 training_set:
   title: MP v2022.10.28
@@ -40,7 +41,6 @@ training_set:
   n_structures: 154_719
 
 hyperparams:
-  Ensemble Size: 10
   Perturbations: 5
 
 notes:

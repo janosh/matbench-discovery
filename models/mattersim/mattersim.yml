@@ -88,6 +88,7 @@ test_task: IS2RE-SR
 targets: EFS
 model_type: UIP
 model_params: 182_000_000
+n_estimators: 1
 
 training_set:
   title: MatterSim # TODO is this the correct name for the training set?

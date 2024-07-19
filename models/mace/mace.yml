@@ -49,6 +49,7 @@ model_type: UIP
 # model_params: 2_026_624 # 2023-09-03-mace-yuan-mptrj-slower-14-lr-13_run-3
 # model_params: 15_847_440 # 2023-10-29-mace-pbenner-mptrj-no-conditional-loss
 model_params: 4_688_656 # 2023-12-03-mace-128-L1: https://tinyurl.com/y7uhwpje
+n_estimators: 1
 
 training_set:
   title: MPTrj

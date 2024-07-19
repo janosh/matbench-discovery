@@ -101,6 +101,9 @@ properties:
   model_params:
     type: number
     minimum: 0
+  n_estimators:
+    type: number
+    minimum: 1
   train_task:
     type: string
     enum: &train_task_enum
@@ -138,6 +141,7 @@ required:
   - model_params
   - model_type
   - model_version
+  - n_estimators
   - paper
   - repo
   - requirements
