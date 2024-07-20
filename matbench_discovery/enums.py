@@ -109,12 +109,12 @@ class Targets(LabelEnum):
 class ModelType(LabelEnum):
     """Model types."""
 
-    GNN = "GNN", "graph neural network"
-    UIP = "UIP-GNN", "universal interatomic potential"
-    BO_GNN = "BO-GNN", "GNN in a Bayesian optimization loop"
-    Fingerprint = "Fingerprint", "models with structural fingerprint features"  # ex. RF
-    Transformer = "Transformer", "transformer-based models"  # ex. Wrenformer
-    RF = "RF", "random forest"
+    GNN = "GNN", "Graph Neural Network"
+    UIP = "UIP", "Universal Interatomic Potential"
+    BO_GNN = "BO-GNN", "GNN in a Bayesian Optimization Loop"
+    Fingerprint = "Fingerprint", "Models with Structural Fingerprint Features"  # ex. RF
+    Transformer = "Transformer", "Transformer-Based Models"  # ex. Wrenformer
+    RF = "RF", "Random Forest"
 
 
 @unique
