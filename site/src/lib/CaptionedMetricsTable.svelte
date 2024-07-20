@@ -7,9 +7,11 @@
 <figure {...$$props} class:hide-prop={!show_proprietary}>
   <MetricsTable />
   <figcaption>
-    Training size is the number of structures used to train the model. For models trained
-    on DFT relaxations, we show the number of distinct materials in parentheses where we
-    count multiple frames from the same trajectory as one material.
+    Training size is the number of materials used to train the model. For models trained
+    on DFT relaxations, we show the number of distinct frames in parentheses. In cases
+    where only the number of frames is known, we report the number of frames as the
+    training set size. `(N=x)` in the Model Params column shows the number of estimators
+    if an ensemble was used.
   </figcaption>
 </figure>
 

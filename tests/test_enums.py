@@ -10,9 +10,9 @@ def test_label_enum() -> None:
     for enum in dir(matbench_discovery.enums):
         if inspect.isclass(enum) and issubclass(enum, StrEnum):
             assert issubclass(enum, LabelEnum)
-            val_dict = enum.val_dict()  # type: ignore[attr-defined]
+            val_dict = enum.val_dict()
             assert isinstance(val_dict, dict)
-            label_dict = enum.label_dict()  # type: ignore[attr-defined]
+            label_dict = enum.label_dict()
             assert isinstance(label_dict, dict)
             assert val_dict != label_dict
             assert len(val_dict) == len(label_dict)

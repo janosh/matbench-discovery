@@ -13,7 +13,7 @@ from sklearn.dummy import DummyClassifier
 
 from matbench_discovery import PDF_FIGS, SCRIPTS, SITE_FIGS
 from matbench_discovery.data import DataFiles, df_wbm
-from matbench_discovery.enums import MbdKey, Open
+from matbench_discovery.enums import MbdKey, ModelType, Open
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.models import MODEL_METADATA
 from matbench_discovery.preds import df_metrics, df_metrics_10k, df_metrics_uniq_protos
@@ -49,11 +49,15 @@ for model in df_metrics:
         continue
     n_structs = model_data["training_set"]["n_structures"]
     n_materials = model_data["training_set"].get("n_materials", n_structs)
-    train_size_str = si_fmt(n_materials)
+    title = "Number of materials in training set"
+    train_size_str = f"<span {title=}>{si_fmt(n_materials, fmt='.0f')}</span>"
 
     if n_materials != n_structs:
-        title = "number of materials vs structures in training set"
-        train_size_str += f" <small {title=}>({si_fmt(n_structs)})</small>"
+        title = "Number of materials (and structures) in training set"
+        train_size_str = (
+            f"<span {title=}>{si_fmt(n_materials, fmt='.0f')}</span> "
+            f"<small {title=}>({si_fmt(n_structs, fmt='.0f')})</small>"
+        )
 
     if train_url := model_data.get("training_set", {}).get("url"):
         train_size_str = (
@@ -64,14 +68,23 @@ for model in df_metrics:
     df_met.loc[Key.train_set.label, model] = train_size_str
     model_params = model_data.get(Key.model_params, "")
     n_estimators = model_data.get(Key.n_estimators, "")
+    title = "Number of models in ensemble"
+    n_estimators_str = (
+        f" <small {title=}>(N={n_estimators})</small>" if n_estimators > 1 else ""
+    )
+
+    model_type = model_data.get(Key.model_type, "")
+    title = ModelType.val_label_dict().get(model_type, "")
+    df_met.loc[Key.model_type.label, model] = f"<span {title=}>{model_type}</span>"
+
+    title = "Number of trainable model parameters"
     df_met.loc[Key.model_params.label.replace("eter", ""), model] = (
-        f"{si_fmt(model_params)} {f'(N={n_estimators})' if n_estimators >1 else ''} "
+        f"<span {title=}>{si_fmt(model_params)}</span>{n_estimators_str}"
         if isinstance(model_params, int)
         else model_params
     )
     for key in (
         MbdKey.openness,
-        Key.model_type,
         Key.train_task,
         Key.test_task,
         Key.targets,
