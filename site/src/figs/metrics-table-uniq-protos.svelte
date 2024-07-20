@@ -404,7 +404,7 @@
       <td id="T__row0_col8" class="data row0 col8 proprietary" >0.812</td>
       <td id="T__row0_col9" class="data row0 col9 proprietary" ><a href='https://doi.org/10.48550/arXiv.2405.04967' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set'>17.0M</span></a></td>
       <td id="T__row0_col10" class="data row0 col10 proprietary" ><span title='Number of trainable model parameters'>182.0M</span></td>
-      <td id="T__row0_col11" class="data row0 col11 proprietary" >UIP</td>
+      <td id="T__row0_col11" class="data row0 col11 proprietary" ><span title='Universal Interatomic Potential'>UIP</span></td>
       <td id="T__row0_col12" class="data row0 col12 proprietary" >EFS</td>
     </tr>
     <tr>
@@ -420,7 +420,7 @@
       <td id="T__row1_col8" class="data row1 col8 proprietary" >0.785</td>
       <td id="T__row1_col9" class="data row1 col9 proprietary" ><a href='https://doi.org/10.1038/s41586-023-06735-9' target='_blank' rel='noopener noreferrer'><span title='Number of materials (and structures) in training set'>6.0M</span> <small title='Number of materials (and structures) in training set'>(89.0M)</small></a></td>
       <td id="T__row1_col10" class="data row1 col10 proprietary" ><span title='Number of trainable model parameters'>16.2M</span></td>
-      <td id="T__row1_col11" class="data row1 col11 proprietary" >UIP</td>
+      <td id="T__row1_col11" class="data row1 col11 proprietary" ><span title='Universal Interatomic Potential'>UIP</span></td>
       <td id="T__row1_col12" class="data row1 col12 proprietary" >EF</td>
     </tr>
     <tr>
@@ -436,7 +436,7 @@
       <td id="T__row2_col8" class="data row2 col8" >0.750</td>
       <td id="T__row2_col9" class="data row2 col9" ><a href='https://figshare.com/articles/dataset/23713842' target='_blank' rel='noopener noreferrer'><span title='Number of materials (and structures) in training set'>145.9K</span> <small title='Number of materials (and structures) in training set'>(1.6M)</small></a></td>
       <td id="T__row2_col10" class="data row2 col10" ><span title='Number of trainable model parameters'>842.4K</span></td>
-      <td id="T__row2_col11" class="data row2 col11" >UIP</td>
+      <td id="T__row2_col11" class="data row2 col11" ><span title='Universal Interatomic Potential'>UIP</span></td>
       <td id="T__row2_col12" class="data row2 col12" >EFS</td>
     </tr>
     <tr>
@@ -452,7 +452,7 @@
       <td id="T__row3_col8" class="data row3 col8" >0.697</td>
       <td id="T__row3_col9" class="data row3 col9" ><a href='https://figshare.com/articles/dataset/23713842' target='_blank' rel='noopener noreferrer'><span title='Number of materials (and structures) in training set'>145.9K</span> <small title='Number of materials (and structures) in training set'>(1.6M)</small></a></td>
       <td id="T__row3_col10" class="data row3 col10" ><span title='Number of trainable model parameters'>4.7M</span></td>
-      <td id="T__row3_col11" class="data row3 col11" >UIP</td>
+      <td id="T__row3_col11" class="data row3 col11" ><span title='Universal Interatomic Potential'>UIP</span></td>
       <td id="T__row3_col12" class="data row3 col12" >EFS</td>
     </tr>
     <tr>
@@ -468,7 +468,7 @@
       <td id="T__row4_col8" class="data row4 col8" >0.689</td>
       <td id="T__row4_col9" class="data row4 col9" ><a href='https://figshare.com/articles/dataset/23713842' target='_blank' rel='noopener noreferrer'><span title='Number of materials (and structures) in training set'>145.9K</span> <small title='Number of materials (and structures) in training set'>(1.6M)</small></a></td>
       <td id="T__row4_col10" class="data row4 col10" ><span title='Number of trainable model parameters'>412.5K</span></td>
-      <td id="T__row4_col11" class="data row4 col11" >UIP</td>
+      <td id="T__row4_col11" class="data row4 col11" ><span title='Universal Interatomic Potential'>UIP</span></td>
       <td id="T__row4_col12" class="data row4 col12" >EFSM</td>
     </tr>
     <tr>
@@ -484,7 +484,7 @@
       <td id="T__row5_col8" class="data row5 col8" >0.585</td>
       <td id="T__row5_col9" class="data row5 col9" ><a href='https://figshare.com/articles/dataset/19470599' target='_blank' rel='noopener noreferrer'><span title='Number of materials (and structures) in training set'>62.8K</span> <small title='Number of materials (and structures) in training set'>(188.3K)</small></a></td>
       <td id="T__row5_col10" class="data row5 col10" ><span title='Number of trainable model parameters'>227.5K</span></td>
-      <td id="T__row5_col11" class="data row5 col11" >UIP</td>
+      <td id="T__row5_col11" class="data row5 col11" ><span title='Universal Interatomic Potential'>UIP</span></td>
       <td id="T__row5_col12" class="data row5 col12" >EFS</td>
     </tr>
     <tr>
@@ -500,7 +500,7 @@
       <td id="T__row6_col8" class="data row6 col8" >0.297</td>
       <td id="T__row6_col9" class="data row6 col9" ><a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set'>154.7K</span></a></td>
       <td id="T__row6_col10" class="data row6 col10" ><span title='Number of trainable model parameters'>4.0M</span></td>
-      <td id="T__row6_col11" class="data row6 col11" >GNN</td>
+      <td id="T__row6_col11" class="data row6 col11" ><span title='Graph Neural Network'>GNN</span></td>
       <td id="T__row6_col12" class="data row6 col12" >E</td>
     </tr>
     <tr>
@@ -516,7 +516,7 @@
       <td id="T__row7_col8" class="data row7 col8" >-0.248</td>
       <td id="T__row7_col9" class="data row7 col9" ><a href='https://figshare.com/articles/dataset/8097992' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set'>133.4K</span></a></td>
       <td id="T__row7_col10" class="data row7 col10" ><span title='Number of trainable model parameters'>167.8K</span></td>
-      <td id="T__row7_col11" class="data row7 col11" >GNN</td>
+      <td id="T__row7_col11" class="data row7 col11" ><span title='Graph Neural Network'>GNN</span></td>
       <td id="T__row7_col12" class="data row7 col12" >E</td>
     </tr>
     <tr>
@@ -532,7 +532,7 @@
       <td id="T__row8_col8" class="data row8 col8" >-0.603</td>
       <td id="T__row8_col9" class="data row8 col9" ><a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set'>154.7K</span></a></td>
       <td id="T__row8_col10" class="data row8 col10" ><span title='Number of trainable model parameters'>128.4K</span> <small title='Number of models in ensemble'>(N=10)</small></td>
-      <td id="T__row8_col11" class="data row8 col11" >GNN</td>
+      <td id="T__row8_col11" class="data row8 col11" ><span title='Graph Neural Network'>GNN</span></td>
       <td id="T__row8_col12" class="data row8 col12" >E</td>
     </tr>
     <tr>
@@ -548,7 +548,7 @@
       <td id="T__row9_col8" class="data row9 col8" >0.019</td>
       <td id="T__row9_col9" class="data row9 col9" ><a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set'>154.7K</span></a></td>
       <td id="T__row9_col10" class="data row9 col10" ><span title='Number of trainable model parameters'>128.4K</span> <small title='Number of models in ensemble'>(N=10)</small></td>
-      <td id="T__row9_col11" class="data row9 col11" >GNN</td>
+      <td id="T__row9_col11" class="data row9 col11" ><span title='Graph Neural Network'>GNN</span></td>
       <td id="T__row9_col12" class="data row9 col12" >E</td>
     </tr>
     <tr>
@@ -564,7 +564,7 @@
       <td id="T__row10_col8" class="data row10 col8" >-0.036</td>
       <td id="T__row10_col9" class="data row10 col9" ><a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set'>154.7K</span></a></td>
       <td id="T__row10_col10" class="data row10 col10" ><span title='Number of trainable model parameters'>5.2M</span> <small title='Number of models in ensemble'>(N=10)</small></td>
-      <td id="T__row10_col11" class="data row10 col11" >Transformer</td>
+      <td id="T__row10_col11" class="data row10 col11" ><span title='Transformer-Based Models'>Transformer</span></td>
       <td id="T__row10_col12" class="data row10 col12" >E</td>
     </tr>
     <tr>
@@ -580,7 +580,7 @@
       <td id="T__row11_col8" class="data row11 col8" >0.151</td>
       <td id="T__row11_col9" class="data row11 col9" ><a href='https://figshare.com/articles/dataset/8097992' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set'>133.4K</span></a></td>
       <td id="T__row11_col10" class="data row11 col10" ><span title='Number of trainable model parameters'>167.8K</span></td>
-      <td id="T__row11_col11" class="data row11 col11" >BO-GNN</td>
+      <td id="T__row11_col11" class="data row11 col11" ><span title='GNN in a Bayesian Optimization Loop'>BO-GNN</span></td>
       <td id="T__row11_col12" class="data row11 col12" >E</td>
     </tr>
     <tr>
@@ -596,7 +596,7 @@
       <td id="T__row12_col8" class="data row12 col8" >-0.329</td>
       <td id="T__row12_col9" class="data row12 col9" ><a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set'>154.7K</span></a></td>
       <td id="T__row12_col10" class="data row12 col10" ><span title='Number of trainable model parameters'>0.0</span></td>
-      <td id="T__row12_col11" class="data row12 col11" >Fingerprint</td>
+      <td id="T__row12_col11" class="data row12 col11" ><span title='Models with Structural Fingerprint Features'>Fingerprint</span></td>
       <td id="T__row12_col12" class="data row12 col12" >E</td>
     </tr>
     <tr>

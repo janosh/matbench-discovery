@@ -13,7 +13,7 @@ from sklearn.dummy import DummyClassifier
 
 from matbench_discovery import PDF_FIGS, SCRIPTS, SITE_FIGS
 from matbench_discovery.data import DataFiles, df_wbm
-from matbench_discovery.enums import MbdKey, Open
+from matbench_discovery.enums import MbdKey, ModelType, Open
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.models import MODEL_METADATA
 from matbench_discovery.preds import df_metrics, df_metrics_10k, df_metrics_uniq_protos
@@ -73,6 +73,10 @@ for model in df_metrics:
         f" <small {title=}>(N={n_estimators})</small>" if n_estimators > 1 else ""
     )
 
+    model_type = model_data.get(Key.model_type, "")
+    title = ModelType.val_label_dict().get(model_type, "")
+    df_met.loc[Key.model_type.label, model] = f"<span {title=}>{model_type}</span>"
+
     title = "Number of trainable model parameters"
     df_met.loc[Key.model_params.label.replace("eter", ""), model] = (
         f"<span {title=}>{si_fmt(model_params)}</span>{n_estimators_str}"
@@ -81,7 +85,6 @@ for model in df_metrics:
     )
     for key in (
         MbdKey.openness,
-        Key.model_type,
         Key.train_task,
         Key.test_task,
         Key.targets,
