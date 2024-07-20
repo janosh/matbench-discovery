@@ -50,13 +50,13 @@ for model in df_metrics:
     n_structs = model_data["training_set"]["n_structures"]
     n_materials = model_data["training_set"].get("n_materials", n_structs)
     title = "Number of materials in training set"
-    train_size_str = f"<span {title=}>{si_fmt(n_materials)}</span>"
+    train_size_str = f"<span {title=}>{si_fmt(n_materials, fmt='.0f')}</span>"
 
     if n_materials != n_structs:
         title = "Number of materials (and structures) in training set"
         train_size_str = (
-            f"<span {title=}>{si_fmt(n_materials)}</span> "
-            f"<small {title=}>({si_fmt(n_structs)})</small>"
+            f"<span {title=}>{si_fmt(n_materials, fmt='.0f')}</span> "
+            f"<small {title=}>({si_fmt(n_structs, fmt='.0f')})</small>"
         )
 
     if train_url := model_data.get("training_set", {}).get("url"):
