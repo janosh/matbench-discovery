@@ -431,7 +431,7 @@ This ~10% increase is largely due to a ~10% decrease in the fraction of material
 Since DAF is the ratio of the model's precision for stability prediction to the prevalence of stable structures, a lower prevalence results in a higher DAF.
 
 While prototypes are non-trivial to match, thus potentially introducing bias into the test set by trying to deduplicate them, we still opted to feature @tab:metrics-table-uniq-protos in the main text since the removal of overlapping prototypes with MP makes it more closely reflect a model's true ability to extrapolate to out-of-domain materials.
-Prototypes were matched based on an Aflow-style [@hicks_aflow_2021] Wyckoff representation as implemented in `aviary.wren.utils.get_aflow_label_from_spglib` [@goodall_rapid_2022]. This string encodes the crystal's prototype and is invariant to relaxation (unless the system changes spacegroup during relaxation, usually by gaining symmetry) and will count structures with different lattice parameters as duplicates if both are expected to relax to the same ground state.
+Prototypes were matched based on an Aflow-style [@hicks_aflow_2021] Wyckoff representation as implemented in `aviary.wren.utils.get_protostructure_label_from_spglib` [@goodall_rapid_2022]. This string encodes the crystal's prototype and is invariant to relaxation (unless the system changes spacegroup during relaxation, usually by gaining symmetry) and will count structures with different lattice parameters as duplicates if both are expected to relax to the same ground state.
 
 {#if mounted}
 <MetricsTable />

@@ -56,7 +56,7 @@ This approach has the downside that it can be quite expensive to compute, especi
 We adopt the procedure of determining the prototype of each crystal by looking at the Wyckoff positions of the different elements.
 This approach is a middle ground between the two approaches mentioned above in terms of cost, number of hyperparameters and ability to distinguish polymorphs.
 
-We used [`get_aflow_label_from_spglib`] from the [`aviary`] package in [`compile_wbm_test_set.py`] to get prototype labels in a modified aflow format for each structure.
+We used [`get_protostructure_label_from_spglib`] from the [`aviary`] package in [`compile_wbm_test_set.py`] to get prototype labels in a modified aflow format for each structure.
 Having determined the prototypes for both the MP and WBM datasets, we first removed any structures in the WBM dataset that had the same prototype as any structure in the MP dataset.
 The next filter was to drop all but the lowest energy structure for each unique prototype remaining in the WBM dataset.
 The WBM prototypes were determined for the relaxed structures. This choice avoids inflating the metrics due to duplicates arising from different initial prototypes that fall into the same basin of attraction during relaxation.
@@ -69,7 +69,7 @@ The number of materials in each step before and after prototype filtering are:
 | before | 61,466 | 52,755 | 79,160 | 40,314 | 23,268 | 256,963 |
 | after  | 54,209 | 45,979 | 66,528 | 34,531 | 14,241 | 215,488 |
 
-[`get_aflow_label_from_spglib`]: https://github.com/CompRhys/aviary/blob/a8da6c468a2407fd14687de327fe181c5de0169f/aviary/wren/utils.py#L140
+[`get_protostructure_label_from_spglib`]: https://github.com/CompRhys/aviary/blob/a8da6c468a2407fd14687de327fe181c5de0169f/aviary/wren/utils.py#L140
 [`aviary`]: https://github.com/CompRhys/aviary
 [`compile_wbm_test_set.py`]: https://github.com/janosh/matbench-discovery/blob/eec1e22c69bc1b0183d7f9138f9e60d1ae733e09/data/wbm/compile_wbm_test_set.py#L587
 
