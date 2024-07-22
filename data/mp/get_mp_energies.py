@@ -8,7 +8,7 @@ https://github.com/janosh/pymatviz/blob/-/examples/mp_bimodal_e_form.ipynb
 import os
 
 import pandas as pd
-from aviary.wren.utils import get_aflow_label_from_spglib
+from aviary.wren.utils import get_protostructure_label_from_spglib
 from mp_api.client import MPRester
 from pymatgen.core import Structure
 from pymatviz.enums import Key
@@ -68,7 +68,7 @@ df_cse[Key.structure] = [
     Structure.from_dict(cse[Key.structure]) for cse in tqdm(df_cse.entry)
 ]
 df_cse[Key.wyckoff] = [
-    get_aflow_label_from_spglib(struct, errors="ignore")
+    get_protostructure_label_from_spglib(struct, errors="ignore")
     for struct in tqdm(df_cse.structure)
 ]
 # make sure symmetry detection succeeded for all structures

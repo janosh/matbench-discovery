@@ -595,7 +595,7 @@ df_summary[MbdKey.e_form_raw.replace("uncorrected", "mp2020_corrected")] = (
 
 # %%
 try:
-    from aviary.wren.utils import get_aflow_label_from_spglib
+    from aviary.wren.utils import get_protostructure_label_from_spglib
 
     # from initial structures
     for idx in tqdm(df_wbm.index):
@@ -603,8 +603,8 @@ try:
             continue  # Aflow label already computed
         try:
             struct = Structure.from_dict(df_wbm.loc[idx, Key.init_struct])
-            df_summary.loc[idx, MbdKey.init_wyckoff] = get_aflow_label_from_spglib(
-                struct
+            df_summary.loc[idx, MbdKey.init_wyckoff] = (
+                get_protostructure_label_from_spglib(struct)
             )
         except Exception as exc:
             print(f"{idx=} {exc=}")
@@ -617,7 +617,9 @@ try:
         try:
             cse = df_wbm.loc[idx, Key.cse]
             struct = Structure.from_dict(cse["structure"])
-            df_summary.loc[idx, Key.wyckoff] = get_aflow_label_from_spglib(struct)
+            df_summary.loc[idx, Key.wyckoff] = get_protostructure_label_from_spglib(
+                struct
+            )
         except Exception as exc:
             print(f"{idx=} {exc=}")
 
