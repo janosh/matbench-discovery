@@ -44,8 +44,10 @@ class PredFiles(Files):
     # m3gnet_direct = "m3gnet/2023-05-30-m3gnet-direct-wbm-IS2RE.csv.gz"
     # m3gnet_ms = "m3gnet/2023-06-01-m3gnet-manual-sampling-wbm-IS2RE.csv.gz"
 
-    # MACE trained on original M3GNet training set
+    # MACE-MP as published in https://arxiv.org/abs/2401.00096 trained on MPtrj
     mace = "mace/2023-12-11-mace-wbm-IS2RE-FIRE-no-bad.csv.gz"
+    # https://github.com/ACEsuit/mace-mp/releases/tag/mace_mp_0b
+    # mace_0b = "mace/2024-07-20-mace-wbm-IS2RE-FIRE-no-bad.csv.gz"
 
     # original MEGNet straight from publication, not re-trained
     megnet = "megnet/2022-11-18-megnet-wbm-IS2RE.csv.gz"
@@ -138,7 +140,9 @@ def load_df_wbm_with_preds(
             for col in df_preds
             if col.startswith((f"e_form_per_atom_{model_key}", f"e_{model_key}_"))
         ]
-        if cols:
+        if model_name == "mace_0b":
+            df_out["mace_0b"] = df_preds["e_form_per_atom_mace"]
+        elif cols:
             if len(cols) > 1:
                 print(
                     f"Warning: multiple pred cols for {model_name=}, using {cols[0]!r} "

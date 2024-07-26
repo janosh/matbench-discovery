@@ -115,6 +115,7 @@ ignore = [
   "TRY301",
 ]
 pydocstyle.convention = "google"
+isort.known-first-party = ["matbench_discovery"]
 isort.known-third-party = ["wandb"]
 isort.split-on-trailing-comma = false
 
