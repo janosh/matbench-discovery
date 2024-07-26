@@ -86,6 +86,7 @@ def load_df_wbm_with_preds(
     pbar: bool = True,
     id_col: str = Key.mat_id,
     subset: pd.Index | Sequence[str] | Literal["uniq_protos"] | None = None,
+    max_error_threshold: float | None = 5.0,
     **kwargs: Any,
 ) -> pd.DataFrame:
     """Load WBM summary dataframe with model predictions from disk.
@@ -100,6 +101,12 @@ def load_df_wbm_with_preds(
             'uniq_protos' drops WBM structures with matching prototype in MP
             training set and duplicate prototypes in WBM test set (keeping only the most
             stable structure per prototype). This increases the 'OOD-ness' of WBM.
+        max_error_threshold (float, optional): Maximum absolute error between predicted
+            and DFT formation energies before a prediction is filtered out as
+            unrealistic. Doing this filtering is acceptable as it could also be done by
+            a practitioner doing a prospective discovery effort. Predictions exceeding
+            this threshold will be ignored in all downstream calculations of metrics.
+            Defaults to 5 eV/atom.
         **kwargs: Keyword arguments passed to glob_to_df().
 
     Raises:
@@ -111,7 +118,7 @@ def load_df_wbm_with_preds(
     valid_pred_files = {model.name for model in PredFiles}
     if models == ():
         models = tuple(valid_pred_files)
-    inv_label_map = {v: k for k, v in PredFiles.label_map.items()}  # type: ignore[attr-defined]
+    inv_label_map = {v: k for k, v in PredFiles.label_map.items()}
     models = {inv_label_map.get(model, model) for model in models}
     if mismatch := ", ".join(models - valid_pred_files):
         raise ValueError(
@@ -169,6 +176,18 @@ def load_df_wbm_with_preds(
             if model_name != model_key:
                 msg = msg.replace(", ", f" ({model_key=}), ")
             raise ValueError(msg)
+
+        if max_error_threshold is not None:
+            # Apply centralized model prediction cleaning criterion (see doc string)
+            bad_mask = (
+                abs(df_out[model_name] - df_out[MbdKey.e_form_dft])
+                > max_error_threshold
+            )
+            df_out.loc[bad_mask, model_name] = pd.NA
+            n_preds = len(df_out[model_name].dropna())
+            print(
+                f"{sum(bad_mask)=} is {sum(bad_mask) / len(df_wbm):.2%} of {n_preds:,}"
+            )
 
     if subset == "uniq_protos":
         df_out = df_out.query(Key.uniq_proto)
