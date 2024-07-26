@@ -45,15 +45,15 @@ class PredFiles(Files):
     # m3gnet_ms = "m3gnet/2023-06-01-m3gnet-manual-sampling-wbm-IS2RE.csv.gz"
 
     # MACE-MP as published in https://arxiv.org/abs/2401.00096 trained on MPtrj
-    mace = "mace/2023-12-11-mace-wbm-IS2RE-FIRE-no-bad.csv.gz"
+    mace = "mace/2023-12-11-mace-wbm-IS2RE-FIRE.csv.gz"
     # https://github.com/ACEsuit/mace-mp/releases/tag/mace_mp_0b
-    # mace_0b = "mace/2024-07-20-mace-wbm-IS2RE-FIRE-no-bad.csv.gz"
+    # mace_0b = "mace/2024-07-20-mace-wbm-IS2RE-FIRE.csv.gz"
 
     # original MEGNet straight from publication, not re-trained
     megnet = "megnet/2022-11-18-megnet-wbm-IS2RE.csv.gz"
 
     # SevenNet trained on MPtrj
-    sevennet = "sevennet/2024-07-11-sevennet-preds-no-bad.csv.gz"
+    sevennet = "sevennet/2024-07-11-sevennet-preds.csv.gz"
 
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest
     voronoi_rf = "voronoi_rf/2022-11-27-train-test/e-form-preds-IS2RE.csv.gz"
