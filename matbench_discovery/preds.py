@@ -118,7 +118,7 @@ def load_df_wbm_with_preds(
     valid_pred_files = {model.name for model in PredFiles}
     if models == ():
         models = tuple(valid_pred_files)
-    inv_label_map = {v: k for k, v in PredFiles.label_map.items()}
+    inv_label_map = {v: k for k, v in PredFiles.label_map.items()}  # type: ignore[attr-defined]
     models = {inv_label_map.get(model, model) for model in models}
     if mismatch := ", ".join(models - valid_pred_files):
         raise ValueError(
@@ -181,13 +181,11 @@ def load_df_wbm_with_preds(
             # Apply centralized model prediction cleaning criterion (see doc string)
             bad_mask = (
                 abs(df_out[model_name] - df_out[MbdKey.e_form_dft])
-                > max_error_threshold
-            )
+            ) > max_error_threshold
             df_out.loc[bad_mask, model_name] = pd.NA
-            n_preds = len(df_out[model_name].dropna())
-            print(
-                f"{sum(bad_mask)=} is {sum(bad_mask) / len(df_wbm):.2%} of {n_preds:,}"
-            )
+            n_preds, n_bad = len(df_out[model_name].dropna()), sum(bad_mask)
+            if n_bad > 0:
+                print(f"{n_bad:,} of {n_preds:,} unrealistic preds for {model_name}")
 
     if subset == "uniq_protos":
         df_out = df_out.query(Key.uniq_proto)
