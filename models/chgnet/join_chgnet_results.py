@@ -7,7 +7,7 @@ import os
 from glob import glob
 
 import pandas as pd
-from pymatviz import density_scatter_plotly
+import pymatviz as pmv
 from pymatviz.enums import Key
 from tqdm import tqdm
 
@@ -64,7 +64,7 @@ df_preds[e_form_chgnet_col] = df_chgnet[e_form_chgnet_col]
 
 
 # %%
-ax = density_scatter_plotly(
+ax = pmv.density_scatter_plotly(
     df=df_preds,
     x=MbdKey.e_form_dft,
     y=e_form_chgnet_col,

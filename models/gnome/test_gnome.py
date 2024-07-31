@@ -1,5 +1,5 @@
 # %%
-from pymatviz import density_scatter
+import pymatviz as pmv
 
 from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.preds import df_preds
@@ -13,4 +13,4 @@ df_preds[Model.gnome].hist(bins=100, figsize=(10, 10))
 
 
 # %%
-density_scatter(df=df_preds, x=MbdKey.e_form_dft, y=Model.gnome)
+pmv.density_scatter(df=df_preds, x=MbdKey.e_form_dft, y=Model.gnome)

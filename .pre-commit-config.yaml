@@ -31,7 +31,7 @@ repos:
       - id: trailing-whitespace
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.11.0
+    rev: v1.11.1
     hooks:
       - id: mypy
         additional_dependencies: [types-pyyaml, types-requests]
@@ -71,7 +71,7 @@ repos:
           - typescript-eslint
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.29.0
+    rev: 0.29.1
     hooks:
       - id: check-jsonschema
         files: ^models/(.+)/\1.*\.yml$
@@ -79,7 +79,7 @@ repos:
       - id: check-github-actions
 
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.373
+    rev: v1.1.374
     hooks:
       - id: pyright
         args: [--level, error]
