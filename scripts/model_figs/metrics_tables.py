@@ -22,13 +22,6 @@ __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
 
 
-proprietaries = [
-    key
-    for key, meta in MODEL_METADATA.items()
-    if meta.get("openness", Open.OSOD) != Open.OSOD
-]
-
-
 # %%
 name_map = {
     "MEGNet RS2RE": "MEGNet",
@@ -143,6 +136,14 @@ lower_is_better = {*better["lower_is_better"]}
 # when setting to True, uncomment the lines chgnet_megnet, m3gnet_megnet, megnet_rs2re
 # in PredFiles!
 make_uip_megnet_comparison = False
+
+hide_closed = True  # hide proprietary models (openness != OSOD)
+closed_models = [
+    key
+    for key, meta in MODEL_METADATA.items()
+    if meta.get("openness", Open.OSOD) != Open.OSOD
+]
+
 meta_cols = [
     Key.train_set.label,
     Key.model_params.label.replace("eter", ""),
@@ -162,7 +163,9 @@ for label, df_met in (
     df_met = df_met.rename(index={"R2": R2_col, "Precision": "Prec", "Accuracy": "Acc"})
     df_met.index.name = "Model"
     # only keep columns we want to show
-    df_table = df_met.T.filter(show_cols)
+    df_table = df_met.drop(columns=closed_models if hide_closed else []).T.filter(
+        show_cols
+    )
     df_table = df_table.set_index(Key.model_name.label)
     df_table.index.name = None
 
@@ -205,8 +208,8 @@ for label, df_met in (
 
     # add CSS class 'proprietary' to cells of proprietary models (openness != OSOD)
     styler.set_td_classes(
-        df_table.T.assign(**dict.fromkeys(proprietaries, "proprietary"))[
-            proprietaries
+        df_table.T.assign(**dict.fromkeys(closed_models, "proprietary"))[
+            closed_models
         ].T
     )
 
@@ -229,8 +232,9 @@ for label, df_met in (
         # draw line between classification and regression metrics
         styles=f"{col_selector} {{ border-left: 1px solid white; }}{hide_scroll_bar}",
     )
+    suffix = "" if hide_closed else "-with-closed"
     try:
-        df_to_pdf(styler, f"{PDF_FIGS}/metrics-table{label}.pdf")
+        df_to_pdf(styler, f"{PDF_FIGS}/metrics-table{label}{suffix}.pdf")
     except (ImportError, RuntimeError) as exc:
         print(f"df_to_pdf failed: {exc}")
 
