@@ -24,11 +24,11 @@ __date__ = "2024-06-25"
 
 
 # %% this config is editable
-SMOKE_TEST = True
+smoke_test = True
 sevennet_root = os.path.dirname(sevenn.__path__[0])
 module_dir = os.path.dirname(__file__)
 sevennet_chkpt = f"{module_dir}/sevennet_checkpoint.pth.tar"
-pot_name = "sevennet"
+model_name = "sevennet"
 task_type = Task.IS2RE
 ase_optimizer = "FIRE"
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -55,22 +55,20 @@ if not os.path.isfile(sevennet_chkpt):
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
 
 os.makedirs(out_dir := "./results", exist_ok=True)
-out_path = f"{out_dir}/{pot_name}-{slurm_array_task_id:>03}.json.gz"
+out_path = f"{out_dir}/{model_name}-{slurm_array_task_id:>03}.json.gz"
 
 data_path = {Task.IS2RE: DataFiles.wbm_initial_structures.path}[task_type]
-print(f"\nJob started running {timestamp}, eval {pot_name}", flush=True)
+print(f"\nJob started running {timestamp}, eval {model_name}", flush=True)
 print(f"{data_path=}", flush=True)
 
-e_pred_col = "sevennet_energy"
-
-# Init ASE SevenNet Calculator from checkpoint
+# Initialize ASE SevenNet Calculator from checkpoint
 sevennet_calc = SevenNetCalculator(sevennet_chkpt)
 
 
 # %%
 print(f"Read data from {data_path}")
 df_in = pd.read_json(data_path).set_index(Key.mat_id)
-if SMOKE_TEST:
+if smoke_test:
     df_in = df_in.head(10)
 else:
     df_in = df_in.sample(frac=1, random_state=7)  # shuffle data for equal runtime
@@ -111,5 +109,5 @@ df_out.index.name = Key.mat_id
 
 
 # %%
-if not SMOKE_TEST:
+if not smoke_test:
     df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)

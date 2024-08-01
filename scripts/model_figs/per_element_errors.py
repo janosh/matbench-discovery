@@ -6,8 +6,8 @@ Might point to deficiencies in the data or models architecture.
 # %%
 import pandas as pd
 import plotly.express as px
+import pymatviz as pmv
 from pymatgen.core import Composition, Element
-from pymatviz import ptable_heatmap_plotly, ptable_hists
 from pymatviz.enums import Key
 from pymatviz.io import save_fig
 from pymatviz.utils import PLOTLY, bin_df_cols, df_ptable
@@ -117,7 +117,7 @@ df_elem_err[test_set_std_col] = (
 
 
 # %% plot per-element std dev of DFT hull dist
-fig = ptable_heatmap_plotly(
+fig = pmv.ptable_heatmap_plotly(
     df_elem_err[test_set_std_col], fmt=".2f", colorscale="Inferno"
 )
 fig.show()
@@ -137,7 +137,7 @@ for model in (*df_metrics, MbdKey.each_err_models):
     if normalized:
         per_elem_err /= df_elem_err[test_set_std_col]
         per_elem_err.name = f"{model} (normalized by test set std)"
-    fig = ptable_heatmap_plotly(
+    fig = pmv.ptable_heatmap_plotly(
         per_elem_err, fmt=".2f", colorscale="Inferno", cscale_range=cs_range
     )
     fig.show()
@@ -264,7 +264,7 @@ save_fig(fig, f"{SITE_FIGS}/each-error-vs-least-prevalent-element-in-struct.svel
 
 # %% plot histogram of model errors for each element
 model = Model.mace
-fig_ptable_each_errors = ptable_hists(
+fig_ptable_each_errors = pmv.ptable_hists(
     df_frac_comp * (df_each_err[model].to_numpy()[:, None]),
     log=True,
     cbar_title=f"{model} convex hull distance errors (eV/atom)",

@@ -3,7 +3,7 @@
 from enum import StrEnum, unique
 from typing import Self
 
-from pymatviz.utils import styled_html_tag
+from pymatviz.utils import html_tag
 
 
 class LabelEnum(StrEnum):
@@ -136,7 +136,7 @@ class TestSubset(LabelEnum):
     full = "full", "Full Test Set"
 
 
-eV_per_atom = styled_html_tag(  # noqa: N816
+eV_per_atom = html_tag(  # noqa: N816
     "(eV/atom)", tag="span", style="font-size: 0.8em; font-weight: lighter;"
 )
 

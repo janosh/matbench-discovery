@@ -30,13 +30,16 @@ dependencies = [
   "pandas>=2.0.0",
   "plotly",
   "pymatgen",
-  # TODO remove df-svg-export following pymatviz>=0.9.4 release
-  "pymatviz[export-figs,df-pdf-export,df-svg-export]>=0.9.3",
+  "pymatviz[export-figs,df-pdf-export,df-svg-export]>=0.10.0",
   "scikit-learn",
   "scipy",
   "seaborn",
+  # TODO remove svgutils after next pymatviz release 0.10.1
+  "svgutils",
+  "svgwrite",
   "tqdm",
   "wandb",
+
 ]
 
 [project.urls]
@@ -115,6 +118,7 @@ ignore = [
   "TRY301",
 ]
 pydocstyle.convention = "google"
+isort.known-first-party = ["matbench_discovery"]
 isort.known-third-party = ["wandb"]
 isort.split-on-trailing-comma = false
 

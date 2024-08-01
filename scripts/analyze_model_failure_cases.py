@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objs as go
+import pymatviz as pmv
 from pymatgen.core import Composition, Structure
-from pymatviz import count_elements, plot_structure_2d, ptable_heatmap_plotly
 from pymatviz.enums import Key
 from pymatviz.io import save_fig
 from pymatviz.utils import PLOTLY
@@ -58,7 +58,7 @@ for good_or_bad, init_or_final in itertools.product(
         if "structure" in struct:
             struct = struct["structure"]
         struct = Structure.from_dict(struct)
-        ax = plot_structure_2d(struct, ax=axs.flat[idx - 1])
+        ax = pmv.structure_2d(struct, ax=axs.flat[idx - 1])
         _, spg_num = struct.get_space_group_info()
         formula = struct.composition.reduced_formula
         ax_title = f"{idx}. {formula} (spg={spg_num})\n{mat_id} {error=:.2f}"
@@ -145,9 +145,9 @@ fig.show()
 # %%
 df_mp = pd.read_csv(DataFiles.mp_energies.path, na_filter=False).set_index(Key.mat_id)
 train_count_col = "MP Occurrences"
-df_elem_counts = count_elements(df_mp[Key.formula], count_mode="occurrence").to_frame(
-    name=train_count_col
-)
+df_elem_counts = pmv.count_elements(
+    df_mp[Key.formula], count_mode="occurrence"
+).to_frame(name=train_count_col)
 n_examp_for_rarest_elem_col = "Examples for rarest element in structure"
 df_wbm[n_examp_for_rarest_elem_col] = [
     df_elem_counts[train_count_col].loc[list(map(str, Composition(formula)))].min()
@@ -180,9 +180,9 @@ normalized = True
 elem_counts: dict[str, pd.Series] = {}
 for col in ("All models false neg", "All models false pos"):
     elem_counts[col] = elem_counts.get(
-        col, count_elements(df_preds[df_preds[col]][Key.formula])
+        col, pmv.count_elements(df_preds[df_preds[col]][Key.formula])
     )
-    fig = ptable_heatmap_plotly(
+    fig = pmv.ptable_heatmap_plotly(
         elem_counts[col] / df_elem_counts[train_count_col]
         if normalized
         else elem_counts[col],

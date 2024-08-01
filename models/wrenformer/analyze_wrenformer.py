@@ -3,9 +3,9 @@
 # %%
 import numpy as np
 import pandas as pd
+import pymatviz as pmv
 from aviary.wren.utils import get_prototype_from_protostructure
 from IPython.display import display
-from pymatviz import spacegroup_hist, spacegroup_sunburst
 from pymatviz.enums import Key
 from pymatviz.io import df_to_html_table, df_to_pdf, save_fig
 from pymatviz.powerups import add_identity_line
@@ -46,7 +46,7 @@ df_mp.isopointal_proto_from_aflow.value_counts().head(12)
 
 
 # %%
-fig = spacegroup_hist(df_bad[Key.spg_num])
+fig = pmv.spacegroup_bar(df_bad[Key.spg_num])
 fig.layout.title.update(text=f"Spacegroup hist for {title}", y=0.96)
 fig.layout.margin.update(l=0, r=0, t=80, b=0)
 save_fig(fig, f"{PDF_FIGS}/spacegroup-hist-{model.lower()}-failures.pdf")
@@ -82,7 +82,7 @@ df_to_pdf(styler, f"{PDF_FIGS}/{img_name}.pdf")
 
 
 # %%
-fig = spacegroup_sunburst(
+fig = pmv.spacegroup_sunburst(
     df_bad[Key.spg_num], width=350, height=350, show_counts="percent"
 )
 # fig.layout.title.update(text=f"Spacegroup sunburst for {title}", x=0.5, font_size=14)

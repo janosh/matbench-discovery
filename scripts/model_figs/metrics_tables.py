@@ -1,8 +1,3 @@
-"""Compile metrics and total run times for all models and export them to JSON, a
-pandas-styled HTML table and a plotly figure.
-"""
-
-# %%
 import numpy as np
 import pandas as pd
 import yaml
@@ -27,13 +22,6 @@ __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
 
 
-proprietaries = [
-    key
-    for key, meta in MODEL_METADATA.items()
-    if meta.get("openness", Open.OSOD) != Open.OSOD
-]
-
-
 # %%
 name_map = {
     "MEGNet RS2RE": "MEGNet",
@@ -41,12 +29,25 @@ name_map = {
     "CHGNet→MEGNet": "CHGNet",
 }
 df_met = df_metrics_uniq_protos
-df_met.loc[Key.train_set.label] = ""
+date_added_col = "Date Added"
+df_met.loc[Key.train_set.label] = df_met.loc[date_added_col] = ""
 
 for model in df_metrics:
     model_name = name_map.get(model, model)
     if not (model_data := MODEL_METADATA.get(model_name)):
         continue
+
+    df_met.loc[date_added_col, model] = model_data.get("date_added", "")
+
+    # Add model version as hover tooltip to model name
+    model_version = model_data.get("model_version", "")
+    df_met.loc[Key.model_name.label, model] = (
+        f'<span title="Version: {model_version}">{model}</span>'
+    )
+    # assign this col to all tables
+    for df in (df_metrics, df_metrics_10k, df_metrics_uniq_protos):
+        df.loc[Key.model_name.label] = df_met.loc[Key.model_name.label]
+
     n_structs = model_data["training_set"]["n_structures"]
     n_materials = model_data["training_set"].get("n_materials", n_structs)
     title = "Number of materials in training set"
@@ -55,8 +56,8 @@ for model in df_metrics:
     if n_materials != n_structs:
         title = "Number of materials (and structures) in training set"
         train_size_str = (
-            f"<span {title=}>{si_fmt(n_materials, fmt='.0f')}</span> "
-            f"<small {title=}>({si_fmt(n_structs, fmt='.0f')})</small>"
+            f"<span {title=}>{si_fmt(n_materials, fmt='.1f')}</span> "
+            f"<small {title=}>({si_fmt(n_structs, fmt='.1f')})</small>"
         )
 
     if train_url := model_data.get("training_set", {}).get("url"):
@@ -119,7 +120,7 @@ for df_in, df_out, col in (
     dummy_metrics["MAE"] = (each_true - each_true.mean()).abs().mean()
     dummy_metrics["RMSE"] = ((each_true - each_true.mean()) ** 2).mean() ** 0.5
 
-    df_out[col] = dummy_metrics
+    df_out[col] = dummy_metrics | {Key.model_name.label: col}
 
 
 # %%
@@ -135,24 +136,38 @@ lower_is_better = {*better["lower_is_better"]}
 # when setting to True, uncomment the lines chgnet_megnet, m3gnet_megnet, megnet_rs2re
 # in PredFiles!
 make_uip_megnet_comparison = False
+
+hide_closed = True  # hide proprietary models (openness != OSOD)
+closed_models = [
+    key
+    for key, meta in MODEL_METADATA.items()
+    if meta.get("openness", Open.OSOD) != Open.OSOD
+]
+
 meta_cols = [
     Key.train_set.label,
     Key.model_params.label.replace("eter", ""),
     Key.model_type.label,
     Key.targets.label,
+    date_added_col,
+    Key.model_name.label,
 ]
 show_cols = [*f"F1,DAF,Prec,Acc,TPR,TNR,MAE,RMSE,{R2_col}".split(","), *meta_cols]
 
 for label, df_met in (
     ("", df_metrics),
-    ("-uniq-protos", df_metrics_uniq_protos),
     ("-first-10k", df_metrics_10k),
+    ("-uniq-protos", df_metrics_uniq_protos),
 ):
     # abbreviate long column names
     df_met = df_met.rename(index={"R2": R2_col, "Precision": "Prec", "Accuracy": "Acc"})
     df_met.index.name = "Model"
     # only keep columns we want to show
-    df_table = df_met.T.filter(show_cols)
+    df_table = df_met.drop(columns=closed_models if hide_closed else []).T.filter(
+        show_cols
+    )
+    df_table = df_table.set_index(Key.model_name.label)
+    df_table.index.name = None
 
     if make_uip_megnet_comparison:
         df_table = df_table.filter(regex="MEGNet|CHGNet|M3GNet")  # |Dummy
@@ -193,8 +208,8 @@ for label, df_met in (
 
     # add CSS class 'proprietary' to cells of proprietary models (openness != OSOD)
     styler.set_td_classes(
-        df_table.T.assign(**dict.fromkeys(proprietaries, "proprietary"))[
-            proprietaries
+        df_table.T.assign(**dict.fromkeys(closed_models, "proprietary"))[
+            closed_models
         ].T
     )
 
@@ -217,8 +232,9 @@ for label, df_met in (
         # draw line between classification and regression metrics
         styles=f"{col_selector} {{ border-left: 1px solid white; }}{hide_scroll_bar}",
     )
+    suffix = "" if hide_closed else "-with-closed"
     try:
-        df_to_pdf(styler, f"{PDF_FIGS}/metrics-table{label}.pdf")
+        df_to_pdf(styler, f"{PDF_FIGS}/metrics-table{label}{suffix}.pdf")
     except (ImportError, RuntimeError) as exc:
         print(f"df_to_pdf failed: {exc}")
 
