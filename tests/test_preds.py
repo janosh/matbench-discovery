@@ -5,7 +5,7 @@ import pytest
 from pymatviz.enums import Key
 
 from matbench_discovery.data import df_wbm
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.preds import (
     PredFiles,
     df_each_err,
@@ -74,20 +74,16 @@ def test_load_df_wbm_with_preds(
             assert df_wbm_with_preds[model_name].isna().sum() == 0
 
 
-def test_load_df_wbm_with_preds_threshold_effect() -> None:
-    models = ["Wrenformer"]  # Use a specific model for this test
-    df_no_threshold = load_df_wbm_with_preds(models=models)
-    df_high_threshold = load_df_wbm_with_preds(models=models, max_error_threshold=10.0)
-    df_low_threshold = load_df_wbm_with_preds(models=models, max_error_threshold=0.1)
+def test_load_df_wbm_max_error_threshold() -> None:
+    models = {Model.mace: 38}  # num missing preds for default max_error_threshold
+    df_no_thresh = load_df_wbm_with_preds(models=list(models))
+    df_high_thresh = load_df_wbm_with_preds(models=list(models), max_error_threshold=10)
+    df_low_thresh = load_df_wbm_with_preds(models=list(models), max_error_threshold=0.1)
 
-    for model in models:
-        assert df_no_threshold[model].isna().sum() == 0
-        assert (
-            df_high_threshold[model].isna().sum() <= df_no_threshold[model].isna().sum()
-        )
-        assert (
-            df_low_threshold[model].isna().sum() > df_high_threshold[model].isna().sum()
-        )
+    for model, n_missing in models.items():
+        assert df_no_thresh[model].isna().sum() == n_missing
+        assert df_high_thresh[model].isna().sum() <= df_no_thresh[model].isna().sum()
+        assert df_high_thresh[model].isna().sum() <= df_low_thresh[model].isna().sum()
 
 
 def test_load_df_wbm_with_preds_raises() -> None:

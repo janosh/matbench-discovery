@@ -178,6 +178,8 @@ def load_df_wbm_with_preds(
             raise ValueError(msg)
 
         if max_error_threshold is not None:
+            if max_error_threshold < 0:
+                raise ValueError("max_error_threshold must be a positive number")
             # Apply centralized model prediction cleaning criterion (see doc string)
             bad_mask = (
                 abs(df_out[model_name] - df_out[MbdKey.e_form_dft])
