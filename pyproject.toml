@@ -36,6 +36,7 @@ dependencies = [
   "seaborn",
   # TODO remove svgutils after next pymatviz release 0.10.1
   "svgutils",
+  "svgwrite",
   "tqdm",
   "wandb",
 
