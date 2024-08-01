@@ -25,7 +25,7 @@ __date__ = "2023-03-01"
 module_dir = os.path.dirname(__file__)
 task_type = Task.IS2RE
 e_form_mace_col = "e_form_per_atom_mace"
-date = "2023-12-11"
+date = "2024-07-20"
 glob_pattern = f"{date}-mace-wbm-{task_type}*/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
@@ -88,19 +88,20 @@ df_wbm[[*df_mace]] = df_mace
 
 
 # %%
-bad_mask = (df_wbm[e_form_mace_col] - df_wbm[MbdKey.e_form_dft]) < -5
-print(f"{sum(bad_mask)=}")
-
+bad_mask = abs(df_wbm[e_form_mace_col] - df_wbm[MbdKey.e_form_dft]) > 5
+n_preds = len(df_wbm[e_form_mace_col].dropna())
+print(f"{sum(bad_mask)=} is {sum(bad_mask) / len(df_wbm):.2%} of {n_preds:,}")
 out_path = file_paths[0].rsplit("/", 1)[0]
 df_mace = df_mace.round(4)
 df_mace.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
-df_mace[~bad_mask].select_dtypes("number").to_csv(f"{out_path}-no-bad.csv.gz")
-df_mace.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
 
 df_bad = df_mace[bad_mask].drop(columns=[Key.cse, struct_col])
 df_bad[MbdKey.e_form_dft] = df_wbm[MbdKey.e_form_dft]
 df_bad.to_csv(f"{out_path}-bad.csv")
 
-# in_path = f"{module_dir}/2023-12-11-mace-wbm-IS2RE-FIRE-no-bad"
+df_mace.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
+
+
+# in_path = f"{module_dir}/2024-07-20-mace-wbm-IS2RE-FIRE"
 # df_mace = pd.read_csv(f"{in_path}.csv.gz").set_index(Key.mat_id)
 # df_mace = pd.read_json(f"{in_path}.json.gz").set_index(Key.mat_id)

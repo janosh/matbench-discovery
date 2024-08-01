@@ -13,15 +13,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import pymatviz as pmv
 from matplotlib.colors import SymLogNorm
 from pymatgen.core import Composition, Element
-from pymatviz import (
-    count_elements,
-    plot_histogram,
-    ptable_heatmap,
-    ptable_heatmap_ratio,
-    ptable_hists,
-)
 from pymatviz.enums import Key
 from pymatviz.io import save_fig
 from pymatviz.utils import si_fmt
@@ -142,7 +136,7 @@ if srs_mp_trj_elem_magmoms is None:
 cmap = plt.get_cmap(color_map := "viridis")
 norm = matplotlib.colors.LogNorm(vmin=1, vmax=150_000)
 
-fig_ptable_magmoms = ptable_hists(
+fig_ptable_magmoms = pmv.ptable_hists(
     srs_mp_trj_elem_magmoms,
     symbol_pos=(0.2, 0.8),
     log=True,
@@ -184,7 +178,7 @@ cmap = plt.get_cmap(color_map := "viridis")
 norm = matplotlib.colors.LogNorm(vmin=1, vmax=1_000_000)
 
 max_force = 10  # eV/Å
-fig_ptable_forces = ptable_hists(
+fig_ptable_forces = pmv.ptable_hists(
     srs_mp_trj_elem_forces.copy().map(lambda x: [val for val in x if val < max_force]),
     symbol_pos=(0.3, 0.8),
     log=True,
@@ -236,7 +230,7 @@ cmap = plt.get_cmap("Blues")
 cbar_ticks = (100, 1_000, 10_000, 100_000, 1_000_000)
 norm = matplotlib.colors.LogNorm(vmin=min(cbar_ticks), vmax=max(cbar_ticks))
 
-fig_ptable_sites = ptable_hists(
+fig_ptable_sites = pmv.ptable_hists(
     srs_mp_trj_elem_n_sites,
     symbol_pos=(0.8, 0.9),
     log=True,
@@ -274,7 +268,7 @@ save_fig(fig_ptable_sites, f"{PDF_FIGS}/mp-trj-n-sites-ptable-hists.pdf")
 # %%
 elem_counts: dict[str, dict[str, int]] = {}
 for count_mode in ("composition", "occurrence"):
-    trj_elem_counts = count_elements(
+    trj_elem_counts = pmv.count_elements(
         df_mp_trj[Key.formula], count_mode=count_mode
     ).astype(int)
     elem_counts[count_mode] = trj_elem_counts
@@ -290,7 +284,7 @@ trj_elem_counts = pd.read_json(
 
 excl_elems = "He Ne Ar Kr Xe".split() if (excl_noble := False) else ()
 
-ax_ptable = ptable_heatmap(  # matplotlib version looks better for SI
+ax_ptable = pmv.ptable_heatmap(  # matplotlib version looks better for SI
     trj_elem_counts,
     zero_color="#efefef",
     log=(log := SymLogNorm(linthresh=10_000)),
@@ -312,7 +306,7 @@ save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
 
 # %%
 normalized = True
-ax_ptable = ptable_heatmap_ratio(
+ax_ptable = pmv.ptable_heatmap_ratio(
     trj_elem_counts / (len(df_mp_trj) if normalized else 1),
     mp_occu_counts / (len(df_mp) if normalized else 1),
     zero_color="#efefef",
@@ -330,7 +324,7 @@ save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
 
 # %% plot formation energy per atom distribution
 # pdf_kwds defined to use the same figure size for all plots
-fig = plot_histogram(df_mp_trj[MbdKey.e_form_dft], bins=300)
+fig = pmv.histogram(df_mp_trj[MbdKey.e_form_dft], bins=300)
 # fig.update_yaxes(type="log")
 fig.layout.xaxis.title = "E<sub>form</sub> (eV/atom)"
 count_col = "Number of Structures"
@@ -343,7 +337,7 @@ pdf_kwds = dict(width=500, height=300)
 
 
 # %% plot forces distribution
-fig = plot_histogram(df_mp_trj[Key.forces].explode().explode().abs(), bins=300)
+fig = pmv.histogram(df_mp_trj[Key.forces].explode().explode().abs(), bins=300)
 fig.layout.xaxis.title = "|Forces| (eV/Å)"
 fig.layout.yaxis.title = count_col
 fig.update_yaxes(type="log")
@@ -354,7 +348,7 @@ fig.show()
 
 
 # %% plot hydrostatic stress distribution
-fig = plot_histogram(df_mp_trj[Key.stress_trace], bins=300)
+fig = pmv.histogram(df_mp_trj[Key.stress_trace], bins=300)
 fig.layout.xaxis.title = "1/3 Tr(σ) (eV/Å³)"  # noqa: RUF001
 fig.layout.yaxis.title = count_col
 fig.update_yaxes(type="log")
@@ -365,7 +359,7 @@ fig.show()
 
 
 # %% plot magmoms distribution
-fig = plot_histogram(df_mp_trj[Key.magmoms].dropna().explode(), bins=300)
+fig = pmv.histogram(df_mp_trj[Key.magmoms].dropna().explode(), bins=300)
 fig.layout.xaxis.title = "Magmoms (μB)"
 fig.layout.yaxis.title = count_col
 fig.update_yaxes(type="log")

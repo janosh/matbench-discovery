@@ -10,7 +10,7 @@
     Training size is the number of materials used to train the model. For models trained
     on DFT relaxations, we show the number of distinct frames in parentheses. In cases
     where only the number of frames is known, we report the number of frames as the
-    training set size. `(N=x)` in the Model Params column shows the number of estimators
+    training set size. <code>(N=x)</code> in the Model Params column shows the number of estimators
     if an ensemble was used.
   </figcaption>
 </figure>

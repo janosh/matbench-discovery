@@ -13,6 +13,7 @@ from glob import glob
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import pymatviz as pmv
 from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
 from pymatgen.core import Composition, Structure
 from pymatgen.entries.compatibility import (
@@ -20,7 +21,6 @@ from pymatgen.entries.compatibility import (
     MaterialsProjectCompatibility,
 )
 from pymatgen.entries.computed_entries import ComputedStructureEntry
-from pymatviz import density_scatter
 from pymatviz.enums import Key
 from pymatviz.io import save_fig
 from tqdm import tqdm
@@ -436,7 +436,9 @@ diff_e_cse_e_summary = (
 assert diff_e_cse_e_summary.max() < 0.15
 assert sum(diff_e_cse_e_summary > 0.1) == 2
 
-density_scatter(df_summary[MbdKey.dft_energy], df_summary.uncorrected_energy_from_cse)
+pmv.density_scatter(
+    df_summary[MbdKey.dft_energy], df_summary.uncorrected_energy_from_cse
+)
 
 
 # %% remove suspicious formation energy outliers

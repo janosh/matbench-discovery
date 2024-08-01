@@ -1,8 +1,8 @@
 # %%
 import numpy as np
 import pandas as pd
+import pymatviz as pmv
 from pymatgen.core import Lattice, Structure
-from pymatviz import plot_structure_2d
 
 from matbench_discovery.plots import plt
 from matbench_discovery.structure import perturb_structure
@@ -26,7 +26,7 @@ struct = Structure(
     coords=((0, 0, 0), (0.5, 0.5, 0.5)),
 )
 
-ax = plot_structure_2d(struct)
+ax = pmv.structure_2d(struct)
 ax.set(title=f"Original structure: {struct.formula}")
 ax.set_aspect("equal")
 
@@ -34,5 +34,5 @@ ax.set_aspect("equal")
 # %%
 fig, axs = plt.subplots(3, 4, figsize=(12, 10))
 for idx, ax in enumerate(axs.flat, start=1):
-    plot_structure_2d(perturb_structure(struct), ax=ax)
+    pmv.structure_2d(perturb_structure(struct), ax=ax)
     ax.set(title=f"perturbation {idx}")

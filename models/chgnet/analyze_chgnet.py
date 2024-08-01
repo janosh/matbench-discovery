@@ -5,8 +5,8 @@ import os
 
 import matplotlib.pyplot as plt
 import pandas as pd
+import pymatviz as pmv
 from pymatgen.core import Structure
-from pymatviz import density_scatter, plot_structure_2d, ptable_heatmap_plotly
 from pymatviz.enums import Key
 from pymatviz.io import save_fig
 from pymatviz.utils import PLOTLY
@@ -45,7 +45,7 @@ if len(df_long) + len(df_bad) != len(df_diff):
 
 
 # %%
-density_scatter(df=df_chgnet, x=e_form_500, y=e_form_2000)
+pmv.density_scatter(df=df_chgnet, x=e_form_500, y=e_form_2000)
 
 
 # %%
@@ -61,7 +61,7 @@ df_diff.reset_index().plot.scatter(
 
 
 # %%
-fig = ptable_heatmap_plotly(df_bad[Key.formula])
+fig = pmv.ptable_heatmap_plotly(df_bad[Key.formula])
 title = "structures with larger error<br>after longer relaxation"
 fig.layout.title.update(text=f"{len(df_diff)} {title}", x=0.4, y=0.9)
 fig.show()
@@ -83,7 +83,7 @@ struct_col = Key.init_struct
 fig.suptitle(f"{n_struct} {struct_col} {title}", fontsize=16, fontweight="bold", y=1.05)
 for idx, row in enumerate(df_cse.loc[df_diff.index].itertuples(), start=1):
     struct = Structure.from_dict(getattr(row, struct_col))
-    ax = plot_structure_2d(struct, ax=axs.flat[idx - 1])
+    ax = pmv.structure_2d(struct, ax=axs.flat[idx - 1])
     _, spg_num = struct.get_space_group_info()
     formula = struct.composition.reduced_formula
     ax.set_title(f"{idx}. {formula} (spg={spg_num})\n{row.Index}", fontweight="bold")
@@ -94,4 +94,4 @@ save_fig(fig, f"{PDF_FIGS}/chgnet-bad-relax-structures.pdf")
 # %% ensure all CHGNet static predictions (direct energy without any structure
 # relaxation) are higher in energy than the relaxed ones, i.e. that the optimizer is
 # working correctly
-density_scatter(df=df_preds, x="CHGNet", y="chgnet_no_relax")
+pmv.density_scatter(df=df_preds, x="CHGNet", y="chgnet_no_relax")

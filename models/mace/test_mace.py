@@ -38,17 +38,16 @@ out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 device = "cuda" if torch.cuda.is_available() else "cpu"
 # whether to record intermediate structures into pymatgen Trajectory
 record_traj = False  # has no effect if relax_cell is False
-model_name = "https://tinyurl.com/5yyxdm76"
+model_name = "https://github.com/ACEsuit/mace-mp/releases/download/mace_mp_0b/mace_agnesi_medium.model"
+# model_name = "https://tinyurl.com/5yyxdm76"
 ase_filter: Literal["frechet", "exp"] = "frechet"
 
 slurm_vars = slurm_submit(
     job_name=job_name,
     out_dir=out_dir,
-    account="matgen",
-    time="11:55:0",
     array=f"1-{slurm_array_task_count}",
     # slurm_flags="--qos shared --constraint gpu --gpus 1",
-    slurm_flags="--qos shared --constraint cpu --mem 32G",
+    slurm_flags="--ntasks=1 --cpus-per-task=1 --partition high-priority",
 )
 
 

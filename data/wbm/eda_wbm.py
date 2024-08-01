@@ -8,18 +8,11 @@ import os
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import pymatviz as pmv
 from matplotlib.colors import SymLogNorm
 from pymatgen.core import Composition, Structure
-from pymatviz import (
-    count_elements,
-    ptable_heatmap,
-    ptable_heatmap_plotly,
-    ptable_heatmap_ratio,
-    spacegroup_sunburst,
-)
 from pymatviz.enums import Key
 from pymatviz.io import save_fig
-from pymatviz.structure_viz import plot_structure_2d
 from pymatviz.utils import PLOTLY, si_fmt, si_fmt_int
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD
@@ -43,13 +36,15 @@ df_mp[df_mp[Key.formula].isna()]
 
 
 # %%
-wbm_occu_counts = count_elements(df_wbm[Key.formula], count_mode="occurrence").astype(
+wbm_occu_counts = pmv.count_elements(
+    df_wbm[Key.formula], count_mode="occurrence"
+).astype(int)
+wbm_comp_counts = pmv.count_elements(df_wbm[Key.formula], count_mode="composition")
+
+mp_occu_counts = pmv.count_elements(df_mp[Key.formula], count_mode="occurrence").astype(
     int
 )
-wbm_comp_counts = count_elements(df_wbm[Key.formula], count_mode="composition")
-
-mp_occu_counts = count_elements(df_mp[Key.formula], count_mode="occurrence").astype(int)
-mp_comp_counts = count_elements(df_mp[Key.formula], count_mode="composition")
+mp_comp_counts = pmv.count_elements(df_mp[Key.formula], count_mode="composition")
 
 all_counts = (
     ("wbm", "occurrence", wbm_occu_counts),
@@ -80,11 +75,11 @@ for dataset, count_mode, elem_counts in all_counts:
     elem_counts.to_json(f"{data_page}/{filename}.json")
 
     title = f"Number of {dataset.upper()} structures containing each element"
-    fig = ptable_heatmap_plotly(elem_counts, font_size=10)
+    fig = pmv.ptable_heatmap_plotly(elem_counts, font_size=10)
     fig.layout.title.update(text=title, x=0.4, y=0.9)
     fig.show()
 
-    ax_mp_cnt = ptable_heatmap(  # matplotlib version looks better for SI
+    ax_mp_cnt = pmv.ptable_heatmap(  # matplotlib version looks better for SI
         elem_counts,
         fmt=lambda x, _: si_fmt(x, ".0f"),
         cbar_fmt=lambda x, _: si_fmt(x, ".0f"),
@@ -101,7 +96,7 @@ for dataset, count_mode, elem_counts in all_counts:
 
 # %% ratio of WBM to MP counts
 normalized = True
-ax_ptable = ptable_heatmap_ratio(
+ax_ptable = pmv.ptable_heatmap_ratio(
     wbm_occu_counts / (len(df_wbm) if normalized else 1),
     mp_occu_counts / (len(df_mp) if normalized else 1),
     zero_color="#efefef",
@@ -117,7 +112,7 @@ save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
 df_wbm["step"] = df_wbm.index.str.split("-").str[1].astype(int)
 assert df_wbm.step.between(1, 5).all()
 for batch in range(1, 6):
-    count_elements(df_wbm[df_wbm.step == batch][Key.formula]).to_json(
+    pmv.count_elements(df_wbm[df_wbm.step == batch][Key.formula]).to_json(
         f"{data_page}/wbm-element-counts-{batch=}.json"
     )
 
@@ -125,14 +120,14 @@ for batch in range(1, 6):
 df_wbm[Key.composition] = df_wbm[Key.formula].map(Composition)
 
 for arity, df_mp in df_wbm.groupby(df_wbm[Key.composition].map(len)):
-    count_elements(df_mp[Key.formula]).to_json(
+    pmv.count_elements(df_mp[Key.formula]).to_json(
         f"{data_page}/wbm-element-counts-{arity=}.json"
     )
 
 
 # %%
 for dataset, count_mode, elem_counts in all_counts:
-    fig = ptable_heatmap_plotly(
+    fig = pmv.ptable_heatmap_plotly(
         elem_counts.drop("Xe")[elem_counts > 1],
         font_size=11,
         color_bar=dict(title=dict(text=f"WBM {count_mode} counts", font_size=24)),
@@ -325,7 +320,7 @@ df_mp[Key.spg_num] = df_mp[Key.wyckoff].str.split("_").str[2].astype(int)
 
 
 # %%
-fig = spacegroup_sunburst(
+fig = pmv.spacegroup_sunburst(
     df_wbm[Key.spg_num], width=350, height=350, show_counts="percent"
 )
 fig.layout.title.update(text="WBM Spacegroup Sunburst", x=0.5, font_size=14)
@@ -336,7 +331,7 @@ save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-wbm.pdf")
 
 
 # %%
-fig = spacegroup_sunburst(
+fig = pmv.spacegroup_sunburst(
     df_mp[Key.spg_num], width=350, height=350, show_counts="percent"
 )
 fig.layout.title.update(text="MP Spacegroup Sunburst", x=0.5, font_size=14)
@@ -396,7 +391,7 @@ for wbm_id in df_sym_change.index:
     init_struct.properties[Key.mat_id] = f"{wbm_id}-init"
     final_struct.properties[Key.mat_id] = f"{wbm_id}-final"
 
-    plot_structure_2d([init_struct, final_struct])
+    pmv.structure_2d([init_struct, final_struct])
 
 
 # %% export initial and final structures with symmetry change to CIF

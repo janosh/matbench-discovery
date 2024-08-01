@@ -44,14 +44,16 @@ class PredFiles(Files):
     # m3gnet_direct = "m3gnet/2023-05-30-m3gnet-direct-wbm-IS2RE.csv.gz"
     # m3gnet_ms = "m3gnet/2023-06-01-m3gnet-manual-sampling-wbm-IS2RE.csv.gz"
 
-    # MACE trained on original M3GNet training set
-    mace = "mace/2023-12-11-mace-wbm-IS2RE-FIRE-no-bad.csv.gz"
+    # MACE-MP as published in https://arxiv.org/abs/2401.00096 trained on MPtrj
+    mace = "mace/2023-12-11-mace-wbm-IS2RE-FIRE.csv.gz"
+    # https://github.com/ACEsuit/mace-mp/releases/tag/mace_mp_0b
+    # mace_0b = "mace/2024-07-20-mace-wbm-IS2RE-FIRE.csv.gz"
 
     # original MEGNet straight from publication, not re-trained
     megnet = "megnet/2022-11-18-megnet-wbm-IS2RE.csv.gz"
 
     # SevenNet trained on MPtrj
-    sevennet = "sevennet/2024-07-11-sevennet-preds-no-bad.csv.gz"
+    sevennet = "sevennet/2024-07-11-sevennet-preds.csv.gz"
 
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest
     voronoi_rf = "voronoi_rf/2022-11-27-train-test/e-form-preds-IS2RE.csv.gz"
@@ -84,6 +86,7 @@ def load_df_wbm_with_preds(
     pbar: bool = True,
     id_col: str = Key.mat_id,
     subset: pd.Index | Sequence[str] | Literal["uniq_protos"] | None = None,
+    max_error_threshold: float | None = 5.0,
     **kwargs: Any,
 ) -> pd.DataFrame:
     """Load WBM summary dataframe with model predictions from disk.
@@ -98,6 +101,12 @@ def load_df_wbm_with_preds(
             'uniq_protos' drops WBM structures with matching prototype in MP
             training set and duplicate prototypes in WBM test set (keeping only the most
             stable structure per prototype). This increases the 'OOD-ness' of WBM.
+        max_error_threshold (float, optional): Maximum absolute error between predicted
+            and DFT formation energies before a prediction is filtered out as
+            unrealistic. Doing this filtering is acceptable as it could also be done by
+            a practitioner doing a prospective discovery effort. Predictions exceeding
+            this threshold will be ignored in all downstream calculations of metrics.
+            Defaults to 5 eV/atom.
         **kwargs: Keyword arguments passed to glob_to_df().
 
     Raises:
@@ -138,7 +147,9 @@ def load_df_wbm_with_preds(
             for col in df_preds
             if col.startswith((f"e_form_per_atom_{model_key}", f"e_{model_key}_"))
         ]
-        if cols:
+        if model_name == "mace_0b":
+            df_out["mace_0b"] = df_preds["e_form_per_atom_mace"]
+        elif cols:
             if len(cols) > 1:
                 print(
                     f"Warning: multiple pred cols for {model_name=}, using {cols[0]!r} "
@@ -165,6 +176,18 @@ def load_df_wbm_with_preds(
             if model_name != model_key:
                 msg = msg.replace(", ", f" ({model_key=}), ")
             raise ValueError(msg)
+
+        if max_error_threshold is not None:
+            if max_error_threshold < 0:
+                raise ValueError("max_error_threshold must be a positive number")
+            # Apply centralized model prediction cleaning criterion (see doc string)
+            bad_mask = (
+                abs(df_out[model_name] - df_out[MbdKey.e_form_dft])
+            ) > max_error_threshold
+            df_out.loc[bad_mask, model_name] = pd.NA
+            n_preds, n_bad = len(df_out[model_name].dropna()), sum(bad_mask)
+            if n_bad > 0:
+                print(f"{n_bad:,} of {n_preds:,} unrealistic preds for {model_name}")
 
     if subset == "uniq_protos":
         df_out = df_out.query(Key.uniq_proto)
