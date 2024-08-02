@@ -10,12 +10,12 @@ import pickle
 
 import pandas as pd
 import pymatviz
+import pymatviz as pmv
 from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedEntry, ComputedStructureEntry
 from pymatgen.ext.matproj import MPRester
 from pymatviz.enums import Key
-from pymatviz.io import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, ROOT, today
@@ -121,4 +121,4 @@ ax.set(
     xlabel="MP Formation Energy (eV/atom)",
     ylabel="Our Formation Energy (eV/atom)",
 )
-save_fig(ax, f"{ROOT}/tmp/{today}-our-vs-mp-formation-energies.webp", dpi=300)
+pmv.save_fig(ax, f"{ROOT}/tmp/{today}-our-vs-mp-formation-energies.webp", dpi=300)

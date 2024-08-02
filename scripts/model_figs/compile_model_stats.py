@@ -9,10 +9,10 @@ from typing import Any
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import pymatviz as pmv
 import requests
 import wandb
 import wandb.apis.public
-from pymatviz.io import save_fig
 from pymatviz.utils import PLOTLY
 from tqdm import tqdm
 
@@ -180,7 +180,7 @@ fig.layout.margin.update(l=0, r=0, t=0, b=0)
 title = f"Total CPU+GPU<br>time used:<br>{df_stats[time_col].sum():.1f} h"
 fig.add_annotation(text=title, font=dict(size=15), x=0.5, y=0.5, showarrow=False)
 pie_path = f"{SITE_FIGS}/model-run-times-pie.svelte"
-# save_fig(fig, pie_path)
+# pmv.save_fig(fig, pie_path)
 fig.show()
 
 
@@ -224,7 +224,7 @@ fig.show()
 
 
 # %%
-save_fig(fig, f"{SITE_FIGS}/model-run-times-bar.svelte")
+pmv.save_fig(fig, f"{SITE_FIGS}/model-run-times-bar.svelte")
 pdf_fig = go.Figure(fig)
 # replace legend with annotation in PDF
 pdf_fig.layout.showlegend = False
@@ -237,4 +237,4 @@ pdf_fig.add_annotation(
     xref="paper",
     yref="paper",
 )
-save_fig(pdf_fig, f"{PDF_FIGS}/model-run-times-bar.pdf", height=300, width=800)
+pmv.save_fig(pdf_fig, f"{PDF_FIGS}/model-run-times-bar.pdf", height=300, width=800)

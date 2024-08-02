@@ -3,8 +3,8 @@ batch in a single plot.
 """
 
 # %%
+import pymatviz as pmv
 from pymatviz.enums import Key
-from pymatviz.io import save_fig
 from pymatviz.utils import MATPLOTLIB, PLOTLY
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, today
@@ -55,8 +55,8 @@ for model in models:
 
     model_snake_case = model.lower().replace(" + ", "-").replace(" ", "-")
     img_path = f"rolling-mae-vs-hull-dist-wbm-batches-{model_snake_case}"
-    save_fig(fig, f"{SITE_FIGS}/{img_path}.svelte")
-    save_fig(fig, f"{PDF_FIGS}/{img_path}.pdf", width=500, height=330)
+    pmv.save_fig(fig, f"{SITE_FIGS}/{img_path}.svelte")
+    pmv.save_fig(fig, f"{PDF_FIGS}/{img_path}.pdf", width=500, height=330)
 
 
 # %% matplotlib version

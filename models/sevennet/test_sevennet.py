@@ -4,8 +4,6 @@ from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
-import requests
-import sevenn
 import torch
 from ase.filters import ExpCellFilter, FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
@@ -25,10 +23,7 @@ __date__ = "2024-06-25"
 
 # %% this config is editable
 smoke_test = True
-sevennet_root = os.path.dirname(sevenn.__path__[0])
-module_dir = os.path.dirname(__file__)
-sevennet_chkpt = f"{module_dir}/sevennet_checkpoint.pth.tar"
-model_name = "sevennet"
+model_name = "7net-0"
 task_type = Task.IS2RE
 ase_optimizer = "FIRE"
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -38,17 +33,6 @@ max_steps = 500
 force_max = 0.05  # Run until the forces are smaller than this in eV/A
 
 slurm_array_task_count = 32
-
-
-# %%
-if not os.path.isfile(sevennet_chkpt):
-    url = (
-        "https://github.com/MDIL-SNU/SevenNet/raw/main/pretrained_potentials"
-        "/SevenNet_0__11July2024/checkpoint_sevennet_0.pth"
-    )
-    response = requests.get(url, timeout=20)
-    with open(sevennet_chkpt, mode="wb") as file:
-        file.write(response.content)
 
 
 # %%
@@ -62,7 +46,7 @@ print(f"\nJob started running {timestamp}, eval {model_name}", flush=True)
 print(f"{data_path=}", flush=True)
 
 # Initialize ASE SevenNet Calculator from checkpoint
-sevennet_calc = SevenNetCalculator(sevennet_chkpt)
+seven_net_calc = SevenNetCalculator(model=model_name)
 
 
 # %%
@@ -89,7 +73,7 @@ for mat_id in tqdm(structs, desc="Relaxing"):
         continue
     try:
         atoms = structs[mat_id].to_ase_atoms()
-        atoms.calc = sevennet_calc
+        atoms.calc = seven_net_calc
         if max_steps > 0:
             atoms = filter_cls(atoms)
             optimizer = optim_cls(atoms, logfile="/dev/null")

@@ -6,7 +6,6 @@ import os
 import pandas as pd
 import pymatviz as pmv
 from pymatviz.enums import Key
-from pymatviz.io import save_fig
 
 from matbench_discovery import SITE_FIGS
 from matbench_discovery import plots as plots
@@ -31,7 +30,7 @@ df_mace[Key.spg_num] = df_wbm[MbdKey.init_wyckoff].str.split("_").str[2].astype(
 # %%
 ax = pmv.density_scatter(df=df_mace, x=MbdKey.e_form_dft, y=e_form_mace_col)
 ax.set(title=f"{len(df_mace):,} MACE severe energy underpredictions")
-save_fig(ax, "mace-hull-dist-scatter.pdf")
+pmv.save_fig(ax, "mace-hull-dist-scatter.pdf")
 
 
 # %%
@@ -39,7 +38,7 @@ df_low = df_mace.query(f"{MbdKey.e_form_dft} - {e_form_mace_col} > 2")
 
 ax = pmv.density_scatter(df=df_low, x=MbdKey.e_form_dft, y=e_form_mace_col)
 ax.set(title=f"{len(df_low):,} MACE severe energy underpredictions")
-save_fig(ax, "mace-too-low-hull-dist-scatter.pdf")
+pmv.save_fig(ax, "mace-too-low-hull-dist-scatter.pdf")
 
 
 # %%
@@ -48,7 +47,7 @@ title = f"Elements in {len(df_low):,} MACE severe energy underpredictions"
 fig.layout.title.update(text=title, x=0.4, y=0.95)
 fig.show()
 
-save_fig(fig, "mace-too-low-elements-heatmap.pdf")
+pmv.save_fig(fig, "mace-too-low-elements-heatmap.pdf")
 
 
 # %%
@@ -57,7 +56,7 @@ title = f"Spacegroup sunburst of {len(df_low):,} MACE severe energy underpredict
 fig.layout.title.update(text=title, x=0.5)
 fig.show()
 
-save_fig(fig, "mace-too-low-spacegroup-sunburst.pdf")
+pmv.save_fig(fig, "mace-too-low-spacegroup-sunburst.pdf")
 
 
 """
@@ -77,7 +76,7 @@ fig = pmv.density_scatter_plotly(
 )
 fig.layout.yaxis.title = MbdKey.e_form_dft.replace("DFT", "MACE")
 fig.show()
-save_fig(fig, f"{SITE_FIGS}/mace-wbm-IS2RE-e-form-parity.svelte")
+pmv.save_fig(fig, f"{SITE_FIGS}/mace-wbm-IS2RE-e-form-parity.svelte")
 
 
 # %%
@@ -87,4 +86,4 @@ fig = pmv.density_scatter_plotly(
 fig.layout.yaxis.title = "MACE energy"
 
 fig.show()
-save_fig(fig, f"{SITE_FIGS}/mace-wbm-IS2RE-raw-energy-parity.svelte")
+pmv.save_fig(fig, f"{SITE_FIGS}/mace-wbm-IS2RE-raw-energy-parity.svelte")

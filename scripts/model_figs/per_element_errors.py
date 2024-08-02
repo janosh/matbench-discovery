@@ -9,7 +9,6 @@ import plotly.express as px
 import pymatviz as pmv
 from pymatgen.core import Composition, Element
 from pymatviz.enums import Key
-from pymatviz.io import save_fig
 from pymatviz.utils import PLOTLY, bin_df_cols, df_ptable
 from tqdm import tqdm
 
@@ -106,7 +105,7 @@ fig = df_melt.sort_values([y_col, symbol_col]).plot.bar(
 fig.layout.update(bargap=0.1)
 fig.layout.legend.update(x=0.02, y=0.98, font_size=16)
 fig.show()
-save_fig(fig, f"{SITE_FIGS}/bar-element-counts-mp+wbm-{normalized=}.svelte")
+pmv.save_fig(fig, f"{SITE_FIGS}/bar-element-counts-mp+wbm-{normalized=}.svelte")
 
 
 # %% compute std dev of DFT hull dist for each element in test set
@@ -192,8 +191,8 @@ fig.layout.title.update(xanchor="center", x=0.5)
 fig.layout.legend.update(x=1, y=1, xanchor="right", yanchor="top", title="")
 fig.show()
 
-# save_fig(fig, f"{FIGS}/element-prevalence-vs-error.svelte")
-save_fig(fig, f"{PDF_FIGS}/element-prevalence-vs-error.pdf")
+# pmv.save_fig(fig, f"{FIGS}/element-prevalence-vs-error.svelte")
+pmv.save_fig(fig, f"{PDF_FIGS}/element-prevalence-vs-error.pdf")
 
 
 # %% plot EACH errors against least prevalent element in structure (by occurrence in
@@ -259,7 +258,7 @@ fig.add_annotation(
 )
 
 fig.show()
-save_fig(fig, f"{SITE_FIGS}/each-error-vs-least-prevalent-element-in-struct.svelte")
+pmv.save_fig(fig, f"{SITE_FIGS}/each-error-vs-least-prevalent-element-in-struct.svelte")
 
 
 # %% plot histogram of model errors for each element
@@ -275,4 +274,4 @@ fig_ptable_each_errors = pmv.ptable_hists(
 )
 
 img_name = f"ptable-each-error-hists-{model.lower().replace(' ', '-')}"
-save_fig(fig_ptable_each_errors, f"{PDF_FIGS}/{img_name}.pdf")
+pmv.save_fig(fig_ptable_each_errors, f"{PDF_FIGS}/{img_name}.pdf")

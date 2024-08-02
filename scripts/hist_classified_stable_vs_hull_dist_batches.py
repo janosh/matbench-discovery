@@ -9,8 +9,8 @@ See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
 from typing import Final
 
 import pandas as pd
+import pymatviz as pmv
 from pymatviz.enums import Key
-from pymatviz.io import save_fig
 from pymatviz.utils import MATPLOTLIB, PLOTLY
 
 from matbench_discovery import PDF_FIGS
@@ -103,4 +103,4 @@ fig.show()
 
 # %%
 img_path = f"{PDF_FIGS}/{model_name}-wbm-hull-dist-hist-batches.pdf"
-save_fig(fig, img_path)
+pmv.save_fig(fig, img_path)

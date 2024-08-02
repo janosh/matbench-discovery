@@ -7,7 +7,7 @@ See fig. S1 in https://science.org/doi/10.1126/sciadv.abn4117.
 # %%
 from typing import Final
 
-from pymatviz.io import save_fig
+import pymatviz as pmv
 from pymatviz.utils import PLOTLY
 
 from matbench_discovery import PDF_FIGS
@@ -47,5 +47,5 @@ if backend == PLOTLY:
 
 # %%
 img_name = f"hist-clf-{which_energy}-hull-dist-{model_name}"
-# save_fig(fig, f"{FIGS}/{img_name}.svelte")
-save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
+# pmv.save_fig(fig, f"{FIGS}/{img_name}.svelte")
+pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

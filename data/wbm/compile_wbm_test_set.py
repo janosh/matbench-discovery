@@ -22,7 +22,6 @@ from pymatgen.entries.compatibility import (
 )
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz.enums import Key
-from pymatviz.io import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR, today
@@ -478,13 +477,13 @@ fig.show(
 
 # %%
 img_name = "hist-wbm-e-form-per-atom"
-save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 # recommended to upload SVG to vecta.io/nano for compression
-# save_fig(fig, f"{img_name}.svg", width=800, height=300)
+# pmv.save_fig(fig, f"{img_name}.svg", width=800, height=300)
 
 # make full data range visible in PDF
 # fig.layout.xaxis.range = [-12, 82]
-save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
+pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
 
 
 # %%

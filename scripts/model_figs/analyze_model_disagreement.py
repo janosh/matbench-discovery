@@ -6,8 +6,8 @@ models can pinpoint DFT calculation gone wrong.
 import sys
 
 import pandas as pd
+import pymatviz as pmv
 from pymatviz.enums import Key
-from pymatviz.io import save_fig
 from pymatviz.powerups import add_identity_line
 from pymatviz.utils import PLOTLY
 
@@ -84,8 +84,8 @@ for material_cls, pattern in material_classes.items():
     # )
     fig.show()
     img_name = f"scatter-largest-errors-models-mean-vs-true-hull-dist-{material_cls}"
-    save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
-    save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=600, height=300)
+    pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+    pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=600, height=300)
 
 
 # %%
