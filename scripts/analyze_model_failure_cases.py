@@ -13,7 +13,6 @@ import plotly.graph_objs as go
 import pymatviz as pmv
 from pymatgen.core import Composition, Structure
 from pymatviz.enums import Key
-from pymatviz.io import save_fig
 from pymatviz.utils import PLOTLY
 from tqdm import tqdm
 
@@ -101,7 +100,7 @@ fig.layout.yaxis.title = "Count"
 
 fig.show()
 
-# save_fig(fig, f"{FIGS}/hist-largest-each-errors-fp-diff-models.svelte")
+# pmv.save_fig(fig, f"{FIGS}/hist-largest-each-errors-fp-diff-models.svelte")
 
 
 # %%
@@ -139,7 +138,7 @@ fig.layout.yaxis.title = "Absolute error (eV/atom)"
 
 fig.show()
 
-# save_fig(fig, f"{FIGS}/scatter-largest-each-errors-fp-diff-models.svelte")
+# pmv.save_fig(fig, f"{FIGS}/scatter-largest-each-errors-fp-diff-models.svelte")
 
 
 # %%
@@ -291,8 +290,8 @@ fig.show()
 
 
 # %%
-save_fig(fig, f"{SITE_FIGS}/largest-fp-diff-each-error-models.svelte")
-save_fig(fig, f"{PDF_FIGS}/large-fp-diff-vs-each-error.pdf")
+pmv.save_fig(fig, f"{SITE_FIGS}/largest-fp-diff-each-error-models.svelte")
+pmv.save_fig(fig, f"{PDF_FIGS}/large-fp-diff-vs-each-error.pdf")
 
 
 # %%
@@ -314,7 +313,7 @@ fig = px.scatter(
 )
 fig.show()
 
-save_fig(fig, f"{PDF_FIGS}/tsne-2d-composition-by-wbm-step-bandgap.png", scale=3)
+pmv.save_fig(fig, f"{PDF_FIGS}/tsne-2d-composition-by-wbm-step-bandgap.png", scale=3)
 
 
 # %% violin plot of EACH error for largest norm-diff FP structures for each model

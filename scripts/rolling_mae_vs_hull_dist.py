@@ -1,8 +1,8 @@
 """Plot rolling MAE as a function of hull distance for a single model."""
 
 # %%
+import pymatviz as pmv
 from pymatviz.enums import Key
-from pymatviz.io import save_fig
 from pymatviz.utils import MATPLOTLIB, PLOTLY
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, Model
@@ -39,5 +39,5 @@ elif backend == PLOTLY:
 
 # %%
 img_name = f"rolling-mae-vs-hull-dist-{model}"
-save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
-save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
+pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")

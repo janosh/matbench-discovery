@@ -15,10 +15,10 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pymatviz as pmv
 import umap
 from pymatgen.core import Structure
 from pymatviz.enums import Key
-from pymatviz.io import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, PDF_FIGS, WBM_DIR
@@ -203,4 +203,4 @@ cbar.ax.set_title("WBM step (0 = MP)", rotation=90, y=0.5, x=3, va="center")
 
 # %%
 plt.tight_layout()
-save_fig(ax, f"{PDF_FIGS}/wbm-final-struct-matminer-features-2d-umap.png", dpi=300)
+pmv.save_fig(ax, f"{PDF_FIGS}/wbm-final-struct-matminer-features-2d-umap.png", dpi=300)

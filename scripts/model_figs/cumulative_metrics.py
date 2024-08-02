@@ -9,8 +9,8 @@ will provide the best hit rate for the given budget.
 
 # %%
 import pandas as pd
+import pymatviz as pmv
 from pymatviz.enums import Key
-from pymatviz.io import save_fig
 from pymatviz.utils import MATPLOTLIB, PLOTLY
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
@@ -129,5 +129,5 @@ fig.show()
 
 # %%
 img_name = f"cumulative-{'-'.join(metrics).lower()}"
-save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
-save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=1000, height=400)
+pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=1000, height=400)

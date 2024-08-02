@@ -12,7 +12,6 @@ import pymatviz as pmv
 from matplotlib.colors import SymLogNorm
 from pymatgen.core import Composition, Structure
 from pymatviz.enums import Key
-from pymatviz.io import save_fig
 from pymatviz.utils import PLOTLY, si_fmt, si_fmt_int
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD
@@ -91,7 +90,7 @@ for dataset, count_mode, elem_counts in all_counts:
     )
     if log:
         filename += "-symlog" if isinstance(log, SymLogNorm) else "-log"
-    save_fig(ax_mp_cnt, f"{PDF_FIGS}/{filename}.pdf")
+    pmv.save_fig(ax_mp_cnt, f"{PDF_FIGS}/{filename}.pdf")
 
 
 # %% ratio of WBM to MP counts
@@ -105,7 +104,7 @@ ax_ptable = pmv.ptable_heatmap_ratio(
 img_name = "wbm-mp-ratio-element-counts-by-occurrence"
 if normalized:
     img_name += "-normalized"
-save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
+pmv.save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
 
 
 # %% export element counts by WBM step to JSON
@@ -139,8 +138,8 @@ for dataset, count_mode, elem_counts in all_counts:
     fig.layout.margin = dict(l=0, r=0, b=0, t=0)
     fig.show()
     svg_path = f"{module_dir}/figs/wbm-elements.svg"
-    # save_fig(fig, svg_path, width=1000, height=500)
-    save_fig(fig, f"{PDF_FIGS}/{dataset}-element-{count_mode}-counts.pdf")
+    # pmv.save_fig(fig, svg_path, width=1000, height=500)
+    pmv.save_fig(fig, f"{PDF_FIGS}/{dataset}-element-{count_mode}-counts.pdf")
 
 
 # %% histogram of energy distance to MP convex hull for WBM
@@ -216,9 +215,9 @@ suffix = {
     MbdKey.e_form_raw: "e-form-uncorrected",
 }[e_col]
 img_name = f"hist-wbm-{suffix}"
-save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
-# save_fig(fig, f"./figs/{img_name}.svg", width=800, height=500)
-save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=600, height=300)
+pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+# pmv.save_fig(fig, f"./figs/{img_name}.svg", width=800, height=500)
+pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=600, height=300)
 
 
 # %%
@@ -252,8 +251,8 @@ for symbol, e_per_atom, num, *_ in df_ref.itertuples(index=False):
 
 fig.show()
 
-save_fig(fig, f"{SITE_FIGS}/mp-elemental-ref-energies.svelte")
-save_fig(fig, f"{PDF_FIGS}/mp-elemental-ref-energies.pdf")
+pmv.save_fig(fig, f"{SITE_FIGS}/mp-elemental-ref-energies.svelte")
+pmv.save_fig(fig, f"{PDF_FIGS}/mp-elemental-ref-energies.pdf")
 
 
 # %% plot 2d and 3d t-SNE projections of one-hot encoded element vectors summed by
@@ -326,8 +325,8 @@ fig = pmv.spacegroup_sunburst(
 fig.layout.title.update(text="WBM Spacegroup Sunburst", x=0.5, font_size=14)
 fig.layout.margin = dict(l=0, r=0, t=30, b=0)
 fig.show()
-save_fig(fig, f"{SITE_FIGS}/spacegroup-sunburst-wbm.svelte")
-save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-wbm.pdf")
+pmv.save_fig(fig, f"{SITE_FIGS}/spacegroup-sunburst-wbm.svelte")
+pmv.save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-wbm.pdf")
 
 
 # %%
@@ -337,8 +336,8 @@ fig = pmv.spacegroup_sunburst(
 fig.layout.title.update(text="MP Spacegroup Sunburst", x=0.5, font_size=14)
 fig.layout.margin = dict(l=0, r=0, t=30, b=0)
 fig.show()
-save_fig(fig, f"{SITE_FIGS}/spacegroup-sunburst-mp.svelte")
-save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-mp.pdf")
+pmv.save_fig(fig, f"{SITE_FIGS}/spacegroup-sunburst-mp.svelte")
+pmv.save_fig(fig, f"{PDF_FIGS}/spacegroup-sunburst-mp.pdf")
 # would be good to have consistent order of crystal systems between sunbursts but not
 # controllable yet
 # https://github.com/plotly/plotly.py/issues/4115
@@ -366,8 +365,8 @@ fig.layout.xaxis.title = "Number of Elements in Formula"
 
 fig.show()
 img_name = "mp-vs-wbm-arity-hist"
-save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
-save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=450, height=280)
+pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=450, height=280)
 
 
 # %% find large structures that changed symmetry during relaxation

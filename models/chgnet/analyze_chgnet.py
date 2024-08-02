@@ -8,8 +8,6 @@ import pandas as pd
 import pymatviz as pmv
 from pymatgen.core import Structure
 from pymatviz.enums import Key
-from pymatviz.io import save_fig
-from pymatviz.utils import PLOTLY
 
 from matbench_discovery import PDF_FIGS
 from matbench_discovery import plots as plots
@@ -54,7 +52,7 @@ df_diff.reset_index().plot.scatter(
     y=e_form_2000,
     hover_name=Key.mat_id,
     hover_data=[Key.formula],
-    backend=PLOTLY,
+    backend=pmv.utils.PLOTLY,
     title=f"{len(df_diff)} structures have > {min_e_diff} eV/atom energy diff after "
     "longer relaxation",
 )
@@ -88,7 +86,7 @@ for idx, row in enumerate(df_cse.loc[df_diff.index].itertuples(), start=1):
     formula = struct.composition.reduced_formula
     ax.set_title(f"{idx}. {formula} (spg={spg_num})\n{row.Index}", fontweight="bold")
 
-save_fig(fig, f"{PDF_FIGS}/chgnet-bad-relax-structures.pdf")
+pmv.save_fig(fig, f"{PDF_FIGS}/chgnet-bad-relax-structures.pdf")
 
 
 # %% ensure all CHGNet static predictions (direct energy without any structure

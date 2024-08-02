@@ -9,9 +9,8 @@ from typing import Literal, get_args
 
 import numpy as np
 import plotly.express as px
+import pymatviz as pmv
 from pymatviz.enums import Key
-from pymatviz.io import save_fig
-from pymatviz.powerups import add_identity_line
 from pymatviz.utils import bin_df_cols
 from sklearn.metrics import r2_score
 
@@ -111,11 +110,11 @@ for trace in fig.data:
     trace.name = f"{model} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
 
 fig.update_layout(legend=legend)
-add_identity_line(fig)
+pmv.powerups.add_identity_line(fig)
 fig.show()
 
 img_name = f"{SITE_FIGS}/e-form-parity-models"
-# save_fig(fig, f"{img_path}.svelte")
+# pmv.save_fig(fig, f"{img_path}.svelte")
 
 
 # %% parity plot of actual vs predicted e_above_hull
@@ -140,11 +139,11 @@ for trace in fig.data:
     trace.name = f"{model} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
 
 fig.update_layout(legend=legend)
-add_identity_line(fig)
+pmv.powerups.add_identity_line(fig)
 fig.show()
 
 img_name = f"{SITE_FIGS}/e-above-hull-parity-models"
-# save_fig(fig, f"{img_path}.svelte")
+# pmv.save_fig(fig, f"{img_path}.svelte")
 
 
 # %% parity plot of DFT vs predicted hull distance with each model in separate subplot
@@ -253,7 +252,7 @@ fig.update_layout(xaxis=dict(showgrid=True), yaxis=dict(showgrid=True))
 
 fig.update_xaxes(nticks=8)
 fig.update_yaxes(nticks=8)
-add_identity_line(fig)
+pmv.powerups.add_identity_line(fig)
 
 # remove legend title and place legend centered above subplots, increase marker size
 fig.layout.legend.update(
@@ -289,6 +288,6 @@ fig.show()
 
 # %%
 fig_name = f"{which_energy}-parity-models-{n_rows}x{n_cols}"
-save_fig(fig, f"{SITE_FIGS}/{fig_name}.svelte")
+pmv.save_fig(fig, f"{SITE_FIGS}/{fig_name}.svelte")
 fig.layout.update(width=280 * n_cols)
-save_fig(fig, f"{PDF_FIGS}/{fig_name}.pdf")
+pmv.save_fig(fig, f"{PDF_FIGS}/{fig_name}.pdf")

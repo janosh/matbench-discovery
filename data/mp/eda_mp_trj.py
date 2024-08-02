@@ -17,8 +17,6 @@ import pymatviz as pmv
 from matplotlib.colors import SymLogNorm
 from pymatgen.core import Composition, Element
 from pymatviz.enums import Key
-from pymatviz.io import save_fig
-from pymatviz.utils import si_fmt
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, PDF_FIGS, ROOT, SITE_FIGS
@@ -108,7 +106,7 @@ def tile_count_anno(hist_vals: list[Any]) -> dict[str, Any]:
     """Annotate each periodic table tile with the number of values in its histogram."""
     face_color = cmap(norm(np.sum(len(hist_vals)))) if hist_vals else "none"
     bbox = dict(facecolor=face_color, alpha=0.4, pad=2, edgecolor="none")
-    return dict(text=si_fmt(len(hist_vals), ".0f"), bbox=bbox)
+    return dict(text=pmv.si_fmt(len(hist_vals), ".0f"), bbox=bbox)
 
 
 # %% plot per-element magmom histograms
@@ -152,7 +150,7 @@ cbar_ax = fig_ptable_magmoms.figure.add_axes([0.26, 0.78, 0.25, 0.015])
 cbar = matplotlib.colorbar.ColorbarBase(
     cbar_ax, cmap=cmap, norm=norm, orientation="horizontal"
 )
-save_fig(fig_ptable_magmoms, f"{PDF_FIGS}/mp-trj-magmoms-ptable-hists.pdf")
+pmv.save_fig(fig_ptable_magmoms, f"{PDF_FIGS}/mp-trj-magmoms-ptable-hists.pdf")
 
 
 # %% plot per-element force histograms
@@ -195,7 +193,7 @@ cbar = matplotlib.colorbar.ColorbarBase(
     cbar_ax, cmap=cmap, norm=norm, orientation="horizontal"
 )
 
-save_fig(fig_ptable_forces, f"{PDF_FIGS}/mp-trj-forces-ptable-hists.pdf")
+pmv.save_fig(fig_ptable_forces, f"{PDF_FIGS}/mp-trj-forces-ptable-hists.pdf")
 
 
 # %% plot histogram of number of sites per element
@@ -238,7 +236,7 @@ fig_ptable_sites = pmv.ptable_hists(
     cbar_title_kwds=dict(fontsize=16),
     cbar_coords=(0.18, 0.85, 0.42, 0.02),
     anno_kwds=lambda hist_vals: dict(
-        text=si_fmt(len(hist_vals), ".0f"),
+        text=pmv.si_fmt(len(hist_vals), ".0f"),
         xy=(0.8, 0.6),
         bbox=dict(pad=2, edgecolor="none", facecolor="none"),
     ),
@@ -262,7 +260,7 @@ cbar = matplotlib.colorbar.ColorbarBase(
 cbar.set_label("Number of atoms in MPtrj structures", fontsize=16)
 cbar.ax.xaxis.set_label_position("top")
 
-save_fig(fig_ptable_sites, f"{PDF_FIGS}/mp-trj-n-sites-ptable-hists.pdf")
+pmv.save_fig(fig_ptable_sites, f"{PDF_FIGS}/mp-trj-n-sites-ptable-hists.pdf")
 
 
 # %%
@@ -301,7 +299,7 @@ if log:
     img_name += "-symlog" if isinstance(log, SymLogNorm) else "-log"
 if excl_noble:
     img_name += "-excl-noble"
-save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
+pmv.save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
 
 
 # %%
@@ -319,7 +317,7 @@ ax_ptable = pmv.ptable_heatmap_ratio(
 img_name = "mp-trj-mp-ratio-element-counts-by-occurrence"
 if normalized:
     img_name += "-normalized"
-save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
+pmv.save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
 
 
 # %% plot formation energy per atom distribution
@@ -332,8 +330,8 @@ fig.layout.yaxis.title = count_col
 fig.show()
 
 pdf_kwds = dict(width=500, height=300)
-# save_fig(fig, f"{PDF_FIGS}/mp-trj-e-form-hist.pdf", **pdf_kwds)
-# save_fig(fig, f"{SITE_FIGS}/mp-trj-e-form-hist.svelte")
+# pmv.save_fig(fig, f"{PDF_FIGS}/mp-trj-e-form-hist.pdf", **pdf_kwds)
+# pmv.save_fig(fig, f"{SITE_FIGS}/mp-trj-e-form-hist.svelte")
 
 
 # %% plot forces distribution
@@ -343,8 +341,8 @@ fig.layout.yaxis.title = count_col
 fig.update_yaxes(type="log")
 fig.show()
 
-# save_fig(fig, f"{PDF_FIGS}/mp-trj-forces-hist.pdf", **pdf_kwds)
-# save_fig(fig, f"{SITE_FIGS}/mp-trj-forces-hist.svelte")
+# pmv.save_fig(fig, f"{PDF_FIGS}/mp-trj-forces-hist.pdf", **pdf_kwds)
+# pmv.save_fig(fig, f"{SITE_FIGS}/mp-trj-forces-hist.svelte")
 
 
 # %% plot hydrostatic stress distribution
@@ -354,8 +352,8 @@ fig.layout.yaxis.title = count_col
 fig.update_yaxes(type="log")
 fig.show()
 
-# save_fig(fig, f"{PDF_FIGS}/mp-trj-stresses-hist.pdf", **pdf_kwds)
-# save_fig(fig, f"{SITE_FIGS}/mp-trj-stresses-hist.svelte")
+# pmv.save_fig(fig, f"{PDF_FIGS}/mp-trj-stresses-hist.pdf", **pdf_kwds)
+# pmv.save_fig(fig, f"{SITE_FIGS}/mp-trj-stresses-hist.svelte")
 
 
 # %% plot magmoms distribution
@@ -365,8 +363,8 @@ fig.layout.yaxis.title = count_col
 fig.update_yaxes(type="log")
 fig.show()
 
-# save_fig(fig, f"{PDF_FIGS}/mp-trj-magmoms-hist.pdf", **pdf_kwds)
-# save_fig(fig, f"{SITE_FIGS}/mp-trj-magmoms-hist.svelte")
+# pmv.save_fig(fig, f"{PDF_FIGS}/mp-trj-magmoms-hist.pdf", **pdf_kwds)
+# pmv.save_fig(fig, f"{SITE_FIGS}/mp-trj-magmoms-hist.svelte")
 
 
 # %%
@@ -393,8 +391,8 @@ fig.layout.xaxis.title = "Number of Elements in Formula"
 
 fig.show()
 img_name = "mp-vs-mp-trj-vs-wbm-arity-hist"
-save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
-save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=450, height=280)
+pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=450, height=280)
 
 
 # %% calc n_sites from per-site atomic numbers
@@ -472,5 +470,5 @@ fig.show()
 img_name = "mp-trj-n-sites-hist"
 if log_y:
     img_name += "-log"
-save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
-# save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=450, height=300)
+pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+# pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=450, height=300)

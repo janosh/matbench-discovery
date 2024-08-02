@@ -8,13 +8,13 @@ import gzip
 import json
 
 import pandas as pd
+import pymatviz as pmv
 from pymatgen.entries.compatibility import (
     MaterialsProject2020Compatibility,
     MaterialsProjectCompatibility,
 )
 from pymatgen.entries.computed_entries import ComputedEntry, ComputedStructureEntry
 from pymatviz.enums import Key
-from pymatviz.io import save_fig
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, today
@@ -96,7 +96,7 @@ for key, df_anion in df_ce_ne_cse.groupby("anion"):
 
 ax.axline((0, 0), slope=1, color="gray", linestyle="dashed", zorder=-1)
 
-save_fig(ax, f"{ROOT}/tmp/{today}-ce-vs-cse-corrections-outliers.pdf")
+pmv.save_fig(ax, f"{ROOT}/tmp/{today}-ce-vs-cse-corrections-outliers.pdf")
 
 
 # %%
@@ -117,7 +117,7 @@ ax.axline((0, 0), slope=1, color="gray", linestyle="dashed", zorder=-1)
 # insight: all materials for which ComputedEntry and ComputedStructureEntry give
 # different formation energies are oxides or sulfides for which MP 2020 compat takes
 # into account structural information to make more accurate corrections.
-save_fig(ax, f"{ROOT}/tmp/{today}-ce-vs-cse-e-form-outliers.pdf")
+pmv.save_fig(ax, f"{ROOT}/tmp/{today}-ce-vs-cse-e-form-outliers.pdf")
 
 
 # %% below code resulted in

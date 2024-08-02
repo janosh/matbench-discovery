@@ -9,7 +9,6 @@ import pymatviz as pmv
 from pymatgen.core import Structure
 from pymatgen.util.coord import pbc_diff
 from pymatviz.enums import Key
-from pymatviz.io import save_fig
 from pymatviz.powerups import add_identity_line
 from sklearn.metrics import r2_score
 
@@ -90,7 +89,7 @@ pmv.density_scatter(
 ax.set(title="M3GNet-relaxed vs DFT-relaxed WBM volumes")
 ax.set(xlabel="DFT-relaxed volume [Å³]")
 ax.set(ylabel="M3GNet-relaxed / unrelaxed volume [Å³]")
-save_fig(ax, f"{SITE_FIGS}/m3gnet-wbm-volume-scatter.webp", dpi=200)
+pmv.save_fig(ax, f"{SITE_FIGS}/m3gnet-wbm-volume-scatter.webp", dpi=200)
 
 
 # %% histogram of M3GNet-relaxed vs initial WBM volume residuals wrt DFT-relaxed volume
