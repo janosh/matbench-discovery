@@ -11,14 +11,18 @@ from ase.filters import ExpCellFilter, FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
 from mace.calculators import mace_mp
 from mace.tools import count_parameters
-from pymatgen.core import Structure
 from pymatgen.core.trajectory import Trajectory
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, timestamp, today
-from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
+from matbench_discovery import ROOT, WBM_DIR, timestamp, today
+from matbench_discovery.data import (
+    DataFiles,
+    as_dict_handler,
+    ase_atoms_from_zip,
+    df_wbm,
+)
 from matbench_discovery.enums import MbdKey, Task
 from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
@@ -28,6 +32,7 @@ __date__ = "2023-03-01"
 
 
 # %%
+smoke_test = False
 task_type = Task.IS2RE
 module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
@@ -62,10 +67,10 @@ if os.path.isfile(out_path):
 
 # %%
 data_path = {
-    Task.RS2RE: DataFiles.wbm_computed_structure_entries.path,
-    Task.IS2RE: DataFiles.wbm_initial_structures.path,
+    Task.RS2RE: DataFiles.wbm_relaxed_atoms.path,
+    Task.IS2RE: DataFiles.wbm_initial_atoms.path,
 }[task_type]
-print(f"\nJob started running {timestamp}")
+print(f"\nJob {job_name} started {timestamp}")
 print(f"{data_path=}")
 e_pred_col = "mace_energy"
 max_steps = 500
@@ -74,9 +79,17 @@ checkpoint = f"{ROOT}/models/mace/checkpoints/{model_name}.model"
 dtype = "float64"
 mace_calc = mace_mp(model=model_name, device=device, default_dtype=dtype)
 
-df_in = pd.read_json(data_path).set_index(Key.mat_id)
-if slurm_array_task_count > 1:
-    df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
+print(f"Read data from {data_path}")
+zip_filename = f"{WBM_DIR}/2024-08-04-wbm-initial-atoms.extxyz.zip"
+atoms_list = ase_atoms_from_zip(zip_filename)
+
+if smoke_test:
+    df_in = atoms_list[:10]
+else:
+    if slurm_array_task_count > 1:
+        atoms_list = np.array_split(atoms_list, slurm_array_task_count)[
+            slurm_array_task_id - 1
+        ]
 
 
 # %%
@@ -85,7 +98,7 @@ run_params = {
     "versions": {dep: version(dep) for dep in ("mace-torch", "numpy", "torch")},
     "checkpoint": checkpoint,
     Key.task_type: task_type,
-    "df": {"shape": str(df_in.shape), "columns": ", ".join(df_in)},
+    "n_structures": len(atoms_list),
     "slurm_vars": slurm_vars,
     "max_steps": max_steps,
     "record_traj": record_traj,
@@ -104,24 +117,17 @@ wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 # %%
 relax_results: dict[str, dict[str, Any]] = {}
-input_col = {Task.IS2RE: Key.init_struct, Task.RS2RE: Key.final_struct}[task_type]
-
-if task_type == Task.RS2RE:
-    df_in[input_col] = [cse["structure"] for cse in df_in[Key.cse]]
-
-structs = df_in[input_col].map(Structure.from_dict).to_dict()
 filter_cls = {"frechet": FrechetCellFilter, "exp": ExpCellFilter}[ase_filter]
+optim_cls = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
-for material_id in tqdm(structs, desc="Relaxing"):
-    if material_id in relax_results:
+for atoms in tqdm(atoms_list, desc="Relaxing"):
+    mat_id = atoms.info[Key.mat_id]
+    if mat_id in relax_results:
         continue
     try:
-        mace_traj = None
-        atoms = structs[material_id].to_ase_atoms()
         atoms.calc = mace_calc
         if max_steps > 0:
             atoms = filter_cls(atoms)
-            optim_cls = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
             optimizer = optim_cls(atoms, logfile="/dev/null")
 
             if record_traj:
@@ -131,32 +137,30 @@ for material_id in tqdm(structs, desc="Relaxing"):
                 optimizer.attach(lambda: lattices.append(atoms.get_cell()))  # noqa: B023
 
             optimizer.run(fmax=force_max, steps=max_steps)
-        mace_energy = atoms.get_potential_energy()  # relaxed energy
-        mace_struct = AseAtomsAdaptor.get_structure(
-            getattr(atoms, "atoms", atoms)  # atoms might be wrapped in ase filter
-        )
-
-        relax_results[material_id] = {"structure": mace_struct, "energy": mace_energy}
+        energy = atoms.get_potential_energy()  # relaxed energy
+        # if max_steps > 0, atoms is wrapped by filter_cls, so extract with getattr
+        relaxed_struct = AseAtomsAdaptor.get_structure(getattr(atoms, "atoms", atoms))
+        relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
 
         coords, lattices = (locals().get(key, []) for key in ("coords", "lattices"))
         if record_traj and coords and lattices:
             mace_traj = Trajectory(
-                species=structs[material_id].species,
+                species=relaxed_struct[mat_id].species,
                 coords=coords,
                 lattice=lattices,
                 constant_lattice=False,
             )
-            relax_results[material_id]["trajectory"] = mace_traj
+            relax_results[mat_id]["trajectory"] = mace_traj
     except Exception as exc:
-        print(f"Failed to relax {material_id}: {exc!r}")
+        print(f"Failed to relax {mat_id}: {exc!r}")
         continue
 
 
 # %%
 df_out = pd.DataFrame(relax_results).T.add_prefix("mace_")
 df_out.index.name = Key.mat_id
-
-df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
+if not smoke_test:
+    df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
 
 
 # %%

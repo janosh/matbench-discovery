@@ -24,9 +24,17 @@
       "https://figshare.com/ndownloader/files/40344463",
       "2022-10-19-wbm-computed-structure-entries.json.bz2"
     ],
+    "wbm_relaxed_atoms": [
+      "https://figshare.com/ndownloader/files/48169600",
+      "2024-08-03-wbm-relaxed-atoms.extxyz.zip"
+    ],
     "wbm_initial_structures": [
       "https://figshare.com/ndownloader/files/40344466",
       "2022-10-19-wbm-init-structs.json.bz2"
+    ],
+    "wbm_initial_atoms": [
+      "https://figshare.com/ndownloader/files/48169597",
+      "2024-08-03-wbm-initial-atoms.extxyz.zip"
     ],
     "wbm_cses_plus_init_structs": [
       "https://figshare.com/ndownloader/files/40344469",
@@ -36,9 +44,9 @@
       "https://figshare.com/ndownloader/files/44225498",
       "2023-12-13-wbm-summary.csv.gz"
     ],
-    "mp_trj_extxyz_by_yuan": [
+    "mp_trj_extxyz": [
       "https://figshare.com/ndownloader/files/43302033",
-      "2023-11-22-mp-trj-extxyz-by-yuan.zip"
+      "2023-11-22-mp-trj.extxyz.zip"
     ],
     "all_mp_tasks": [
       "https://figshare.com/ndownloader/files/43350447",
