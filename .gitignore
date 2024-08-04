@@ -15,6 +15,7 @@ data/**/raw
 data/**/tsne
 !data/mp/2023-02-07-mp-elemental-reference-entries.json.gz
 models/**/checkpoints
+data/**/*.extxyz*
 data/**/*.json*
 data/**/*.zip*
 !data/**/*umap-projections.csv.bz2

@@ -26,6 +26,7 @@ __date__ = "2023-03-26"
 
 # %% compute all initial and final MP/WBM structure fingerprints
 data_name = "wbm"
+job_name = f"{data_name}-struct-fingerprints"
 data_path = {
     "wbm": DataFiles.wbm_cses_plus_init_structs.path,
     "mp": DataFiles.mp_computed_structure_entries.path,
@@ -38,7 +39,7 @@ out_dir = f"{DATA_DIR}/{data_name}"
 os.makedirs(out_dir, exist_ok=True)
 
 slurm_vars = slurm_submit(
-    job_name=f"{data_name}-struct-fingerprints",
+    job_name=job_name,
     out_dir=out_dir,
     account="matgen",
     time="6:0:0",
@@ -52,7 +53,7 @@ out_path = f"{out_dir}/site-stats-{slurm_array_task_id:>03}.json.gz"
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path=} already exists, exciting early")
 
-print(f"\nJob started running {timestamp}")
+print(f"\nJob {job_name} started running {timestamp}")
 print(f"{out_path=}")
 
 
