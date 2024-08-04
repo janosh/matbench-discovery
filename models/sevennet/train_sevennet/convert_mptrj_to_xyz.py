@@ -3,14 +3,17 @@ import random
 from typing import Any
 
 import ase.io
+import ase.units
 import numpy as np
 from ase import Atoms
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.data import atomic_numbers
 from ase.stress import full_3x3_to_voigt_6_stress
+from pymatviz.enums import Key
 from tqdm import tqdm
 
-kbar_to_evpa3 = 1 / 1602.1766208
+# Convert stress from kBar to eV/A^3 and use ASE sign convention
+kbar_to_evpa3 = -0.1 / ase.units.GPa
 filename = "MPtrj_2022.9_full.json"
 train_ratio, val_ratio, test_ratio = 0.9, 0.1, 0.0
 
@@ -67,7 +70,7 @@ def chgnet_to_ase_atoms(datum: dict[str, dict[str, Any]]) -> list[Atoms]:
         energy = dtm["uncorrected_total_energy"]
         force = dtm["force"]
         stress = full_3x3_to_voigt_6_stress(dtm["stress"])  # internal stress
-        stress *= -kbar_to_evpa3  # to eV/Angstrom^3
+        stress *= kbar_to_evpa3  # to eV/Angstrom^3
 
         struct = dtm["structure"]
         cell = struct["lattice"]["matrix"]
@@ -75,15 +78,15 @@ def chgnet_to_ase_atoms(datum: dict[str, dict[str, Any]]) -> list[Atoms]:
         species = [atomic_numbers[site["species"][0]["element"]] for site in sites]
         pos = [site["xyz"] for site in sites]
 
-        atom = Atoms(species, pos, cell=cell, pbc=True)
+        atoms = Atoms(species, pos, cell=cell, pbc=True)
         calc_results = {
-            "energy": energy,
-            "free_energy": energy,
-            "forces": force,
-            "stress": stress,
+            Key.energy: energy,
+            Key.free_energy: energy,
+            Key.forces: force,
+            Key.stress: stress,
         }
-        calculator = SinglePointCalculator(atom, **calc_results)
-        atom = calculator.get_atoms()
+        calculator = SinglePointCalculator(atoms, **calc_results)
+        atoms = calculator.get_atoms()
 
         info = {
             "data_from": "MP-CHGNet",
@@ -93,8 +96,8 @@ def chgnet_to_ase_atoms(datum: dict[str, dict[str, Any]]) -> list[Atoms]:
         }
         for key in info_keys:
             info[key] = dtm[key]
-        atom.info = info
-        atoms_list.append(atom)
+        atoms.info = info
+        atoms_list += [atoms]
     return atoms_list
 
 

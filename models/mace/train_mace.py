@@ -121,8 +121,8 @@ def main(**kwargs: Any) -> None:
     device = tools.init_device(args.device)
 
     if args.statistics_file is not None:
-        with open(args.statistics_file) as f:
-            statistics = json.load(f)
+        with open(args.statistics_file) as file:
+            statistics = json.load(file)
         print("Using statistics json file")
         args.r_max = statistics["r_max"]
         args.atomic_numbers = statistics["atomic_numbers"]

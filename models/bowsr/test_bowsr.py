@@ -68,7 +68,7 @@ out_path = f"{out_dir}/{slurm_array_job_id}-{slurm_array_task_id:>03}.json.gz"
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path=} already exists, exciting early")
 
-print(f"\nJob started running {timestamp}")
+print(f"\nJob {job_name} started {timestamp}")
 print(f"{data_path = }")
 print(f"{out_path=}")
 
