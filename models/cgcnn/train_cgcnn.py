@@ -119,7 +119,7 @@ run_params = dict(
 
 
 # %%
-print(f"\nJob started running {timestamp}")
+print(f"\nJob {job_name} started {timestamp}")
 
 train_model(
     checkpoint="wandb",  # None | 'local' | 'wandb',

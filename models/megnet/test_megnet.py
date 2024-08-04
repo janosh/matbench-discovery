@@ -58,7 +58,7 @@ data_path = {
     "chgnet_structure": PredFiles.chgnet.path.replace(".csv.gz", ".json.gz"),
     "m3gnet_structure": PredFiles.m3gnet.path.replace(".csv.gz", ".json.gz"),
 }[task_type]
-print(f"\nJob started running {timestamp}")
+print(f"\nJob {job_name} started {timestamp}")
 print(f"{data_path=}")
 if MbdKey.e_form_dft not in df_wbm:
     raise KeyError(f"{MbdKey.e_form_dft!s} not in {df_wbm.columns=}")

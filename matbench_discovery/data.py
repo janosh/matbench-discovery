@@ -3,15 +3,20 @@
 https://figshare.com/articles/dataset/22715158
 """
 
+import io
 import os
 import sys
+import zipfile
 from collections.abc import Callable
 from enum import StrEnum
 from glob import glob
+from pathlib import Path
 from typing import Any, Self
 
+import ase.io
 import pandas as pd
 import requests
+from ase import Atoms
 from pymatviz.enums import Key
 from tqdm import tqdm
 
@@ -75,6 +80,61 @@ def glob_to_df(
         sub_dfs[file] = df_i
 
     return pd.concat(sub_dfs.values())
+
+
+def ase_atoms_from_zip(
+    zip_filename: str | Path,
+    *,
+    file_check: Callable[[str], bool] = lambda fname: fname.endswith(".extxyz"),
+    filename_to_info: bool = False,
+) -> list[Atoms]:
+    """Read ASE Atoms objects from a ZIP file containing extXYZ files.
+
+    Args:
+        zip_filename (str): Path to the ZIP file.
+        file_check (Callable[[str], bool], optional): Function to check if a file
+            should be read. Defaults to lambda fname: fname.endswith(".extxyz").
+        filename_to_info (bool, optional): If True, assign filename to Atoms.info.
+            Defaults to False.
+
+    Returns:
+        list[Atoms]: ASE Atoms objects.
+    """
+    atoms_list = []
+    with zipfile.ZipFile(zip_filename) as zip_file:
+        for filename in tqdm(zip_file.namelist(), desc=f"Reading {zip_filename=}"):
+            if not file_check(filename):
+                continue
+            with zip_file.open(filename) as file:
+                content = io.TextIOWrapper(file, encoding="utf-8").read()
+                atoms = ase.io.read(
+                    io.StringIO(content), format="extxyz", index=slice(None)
+                )
+                if isinstance(atoms, Atoms):
+                    atoms = [atoms]  # Wrap single Atoms object in a list
+                if filename_to_info:
+                    for atom in atoms:
+                        atom.info["filename"] = filename
+                atoms_list.extend(atoms)
+    return atoms_list
+
+
+def ase_atoms_to_zip(atoms_list: list[Atoms], zip_filename: str | Path) -> None:
+    """Write a list of ASE Atoms to a ZIP file with each Atoms object as an extxyz
+    file.
+    """
+    with zipfile.ZipFile(
+        zip_filename, "w", compression=zipfile.ZIP_DEFLATED
+    ) as zip_file:
+        for atoms in tqdm(atoms_list, desc="Writing to ZIP"):
+            mat_id = atoms.info.get(Key.mat_id, f"no-id-{atoms.get_chemical_formula()}")
+
+            # Create a string buffer to write the extxyz content
+            buffer = io.StringIO()
+            ase.io.write(buffer, atoms, format="extxyz", append=True, write_info=True)
+
+            # Write the buffer content to the ZIP file
+            zip_file.writestr(f"{mat_id}.extxyz", buffer.getvalue())
 
 
 def download_file(file_path: str, url: str) -> None:
@@ -185,7 +245,7 @@ class DataFiles(Files):
         "https://figshare.com/ndownloader/files/40344451",
     )
     mp_trj_extxyz = (
-        "mp/2023-11-22-mp-trj-extxyz-by-yuan.zip",
+        "mp/2023-11-22-mp-trj.extxyz.zip",
         "https://figshare.com/ndownloader/files/43302033",
     )
     # snapshot of every task (calculation) in MP as of 2023-03-16 (14 GB)
@@ -198,9 +258,17 @@ class DataFiles(Files):
         "wbm/2022-10-19-wbm-computed-structure-entries.json.bz2",
         "https://figshare.com/ndownloader/files/40344463",
     )
+    wbm_relaxed_atoms = (
+        "wbm/2024-08-04-wbm-relaxed-atoms.extxyz.zip",
+        "https://figshare.com/ndownloader/files/48169600",
+    )
     wbm_initial_structures = (
         "wbm/2022-10-19-wbm-init-structs.json.bz2",
         "https://figshare.com/ndownloader/files/40344466",
+    )
+    wbm_initial_atoms = (
+        "wbm/2024-08-04-wbm-initial-atoms.extxyz.zip",
+        "https://figshare.com/ndownloader/files/48169597",
     )
     wbm_cses_plus_init_structs = (
         "wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2",
@@ -215,7 +283,7 @@ class DataFiles(Files):
         "https://figshare.com/ndownloader/files/41233560",
     )
     mp_trj = (
-        "mp/2022-09-16-mp-trj-2022-09.json.gz",
+        "mp/2022-09-16-mp-trj.json",
         "https://figshare.com/ndownloader/files/41619375",
     )
 

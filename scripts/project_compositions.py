@@ -11,7 +11,7 @@ from pymatgen.core import Composition
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR
+from matbench_discovery import DATA_DIR, timestamp
 from matbench_discovery.data import DataFiles
 from matbench_discovery.slurm import slurm_submit
 
@@ -23,12 +23,13 @@ data_name = "mp"  # which data to project
 projection_type: Literal["tsne", "umap"] = "tsne"  # which projection method to use
 out_dim = 2  # number of dimensions to project to
 one_hot_dim = 112  # number of elements to use for one-hot encoding
+job_name = f"{data_name}-{projection_type}-{out_dim}d"
 
 out_dir = f"{DATA_DIR}/{data_name}/{projection_type}"
 os.makedirs(out_dir, exist_ok=True)
 
 slurm_vars = slurm_submit(
-    job_name=f"{data_name}-{projection_type}-{out_dim}d",
+    job_name=job_name,
     out_dir=out_dir,
     account="matgen",
     time="6:0:0",
@@ -41,7 +42,7 @@ print(f"{data_path=}")
 print(f"{out_dim=}")
 print(f"{projection_type=}")
 start_time = datetime.now(tz=UTC)
-print(f"job started at {start_time:%Y-%m-%d %H:%M:%S}")
+print(f"job {job_name} started at {timestamp}")
 df_in = pd.read_csv(data_path, na_filter=False).set_index(Key.mat_id)
 
 

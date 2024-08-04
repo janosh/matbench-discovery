@@ -49,4 +49,4 @@ training_set:
   url: https://figshare.com/articles/dataset/23713842
   n_structures: 1_580_395
   n_materials: 145_923
-# hyperparams: see align-config.json
+# for other hyperparams, see alignn-config.json

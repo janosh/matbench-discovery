@@ -62,7 +62,7 @@ data_path = {
     Task.RS2RE: DataFiles.wbm_computed_structure_entries.path,
     Task.IS2RE: DataFiles.wbm_initial_structures.path,
 }[task_type]
-print(f"\nJob started running {timestamp}")
+print(f"\nJob {job_name} started {timestamp}")
 print(f"{data_path=}")
 e_pred_col = "chgnet_energy"
 ase_filter: Literal["FrechetCellFilter", "ExpCellFilter"] = "FrechetCellFilter"

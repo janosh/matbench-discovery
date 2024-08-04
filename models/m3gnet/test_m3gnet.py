@@ -28,12 +28,13 @@ __date__ = "2022-08-15"
 
 task_type = Task.IS2RE
 module_dir = os.path.dirname(__file__)
+model_name = "m3gnet"
 # direct: DIRECT cluster sampling, ms: manual sampling
 model_type: Literal["orig", "direct", "manual-sampling"] = "orig"
 # set large job array size for smaller data splits and faster testing/debugging
 slurm_array_task_count = 50
 record_traj = False
-job_name = f"m3gnet-{model_type}-wbm-{task_type}"
+job_name = f"{model_name}-{model_type}-wbm-{task_type}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 
 slurm_vars = slurm_submit(
@@ -65,9 +66,9 @@ data_path = {
     Task.IS2RE: DataFiles.wbm_initial_structures.path,
     Task.RS2RE: DataFiles.wbm_computed_structure_entries.path,
 }[task_type]
-print(f"\nJob started running {timestamp}")
+print(f"\nJob {job_name} started {timestamp}")
 print(f"{data_path=}")
-e_pred_col = f"m3gnet_{model_type}_energy"
+e_pred_col = f"{model_name}_{model_type}_energy"
 
 df_in = pd.read_json(data_path).set_index(Key.mat_id)
 if slurm_array_task_count > 1:
@@ -75,9 +76,9 @@ if slurm_array_task_count > 1:
 
 checkpoint = None
 if model_type == "direct":
-    checkpoint = f"{ROOT}/models/m3gnet/2023-05-26-DI-DFTstrictF10-TTRS-128U-442E"
+    checkpoint = f"{ROOT}/models/{model_name}/2023-05-26-DI-DFTstrictF10-TTRS-128U-442E"
 if model_type == "ms":
-    checkpoint = f"{ROOT}/models/m3gnet/2023-05-26-MS-DFTstrictF10-128U-154E"
+    checkpoint = f"{ROOT}/models/{model_name}/2023-05-26-MS-DFTstrictF10-128U-154E"
 relax_results: dict[str, dict[str, Any]] = {}
 m3gnet = Relaxer(potential=checkpoint)  # load pre-trained M3GNet model
 
@@ -115,11 +116,11 @@ for material_id in tqdm(structures, desc="Relaxing"):
     try:
         result = m3gnet.relax(structures[material_id])
         relax_results[material_id] = {
-            f"m3gnet_{model_type}_structure": result["final_structure"],
+            f"{model_name}_{model_type}_structure": result["final_structure"],
             e_pred_col: result["trajectory"].energies[-1],
         }
         if record_traj:
-            relax_results[f"m3gnet_{model_type}_trajectory"] = result[
+            relax_results[f"{model_name}_{model_type}_trajectory"] = result[
                 "trajectory"
             ].__dict__
     except Exception as exc:
@@ -132,4 +133,4 @@ df_out.index.name = Key.mat_id
 
 df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
 
-wandb.log_artifact(out_path, type=f"m3gnet-wbm-{task_type}")
+wandb.log_artifact(out_path, type=f"{model_name}-wbm-{task_type}")

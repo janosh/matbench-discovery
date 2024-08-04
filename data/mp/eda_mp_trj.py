@@ -1,8 +1,8 @@
 """MPtrj exploratory data analysis (EDA)."""
 
 # %%
-import io
 import os
+from collections import defaultdict
 from typing import Any
 from zipfile import ZipFile
 
@@ -20,7 +20,7 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, PDF_FIGS, ROOT, SITE_FIGS
-from matbench_discovery.data import DataFiles, df_wbm
+from matbench_discovery.data import DataFiles, ase_atoms_from_zip, df_wbm
 from matbench_discovery.enums import MbdKey
 
 __author__ = "Janosh Riebesell"
@@ -37,7 +37,7 @@ df_mp = pd.read_csv(DataFiles.mp_energies.path, na_filter=False).set_index(Key.m
 
 
 # %% --- load preprocessed MPtrj summary data if available ---
-mp_trj_summary_path = f"{MP_DIR}/mp-trj-2022-09-summary.json.bz2"
+mp_trj_summary_path = f"{MP_DIR}/2022-09-16-mp-trj-summary.json.bz2"
 if os.path.isfile(mp_trj_summary_path):
     df_mp_trj = pd.read_json(mp_trj_summary_path)
     df_mp_trj.index.name = "frame_id"
@@ -47,24 +47,23 @@ else:
 
 # %% downloaded mptrj-gga-ggapu.tar.gz from https://drive.google.com/drive/folders/1JQ-ry1RHvNliVg1Ut5OuyUxne51RHiT_
 # and extracted the mptrj-gga-ggapu directory (6.2 GB) to data/mp using macOS Finder
-# then zipped it to mp-trj-extxyz.zip (also using Finder, 1.6 GB)
-zip_path = f"{MP_DIR}/2023-11-22-mp-trj-extxyz-by-yuan.zip"
-mp_trj_atoms: dict[str, list[ase.Atoms]] = {}
+# then zipped it to mp-trj.extxyz.zip (also using Finder, 1.6 GB)
+zip_path = f"{MP_DIR}/2023-11-22-mp-trj.extxyz.zip"
+zip_file = ZipFile(zip_path)
+
+atoms_list = ase_atoms_from_zip(
+    zip_path, file_check=lambda name: name.startswith("mptrj-gga-ggapu/mp-")
+)
 
 # extract extXYZ files from zipped directory without unpacking the whole archive
 # takes ~8 min on M2 Max
-for name in tqdm((zip_file := ZipFile(zip_path)).namelist()):
-    if name.startswith("mptrj-gga-ggapu/mp-"):
-        mp_id = name.split("/")[1].split(".")[0]
-        assert mp_id.startswith("mp-")
-        assert mp_id not in mp_trj_atoms
+mp_trj_atoms: dict[str, list[ase.Atoms]] = defaultdict(list)
+for atoms in atoms_list:
+    mp_id = atoms[0].info.get(Key.mat_id, "no-id")
+    assert mp_id.startswith("mp-")
+    mp_trj_atoms[mp_id].extend(atoms)
 
-        with zip_file.open(name) as file:
-            # wrap byte stream with TextIOWrapper to use as file
-            text_file = io.TextIOWrapper(file, encoding="utf-8")
-            atoms_list = list(ase.io.extxyz.read_xyz(text_file, index=slice(None)))
-        mp_trj_atoms[mp_id] = atoms_list
-
+del atoms_list  # free up memory
 
 assert len(mp_trj_atoms) == 145_919  # number of unique MP IDs
 
@@ -110,7 +109,7 @@ def tile_count_anno(hist_vals: list[Any]) -> dict[str, Any]:
 
 
 # %% plot per-element magmom histograms
-ptable_magmom_hist_path = f"{MP_DIR}/mp-trj-2022-09-elem-magmoms.json.bz2"
+ptable_magmom_hist_path = f"{MP_DIR}/2022-09-16-mp-trj-elem-magmoms.json.bz2"
 srs_mp_trj_elem_magmoms = locals().get("srs_mp_trj_elem_magmoms")
 
 if os.path.isfile(ptable_magmom_hist_path):
@@ -154,7 +153,7 @@ pmv.save_fig(fig_ptable_magmoms, f"{PDF_FIGS}/mp-trj-magmoms-ptable-hists.pdf")
 
 
 # %% plot per-element force histograms
-ptable_force_hist_path = f"{MP_DIR}/mp-trj-2022-09-elem-forces.json.bz2"
+ptable_force_hist_path = f"{MP_DIR}/2022-09-16-mp-trj-elem-forces.json.bz2"
 srs_mp_trj_elem_forces = locals().get("srs_mp_trj_elem_forces")
 
 if os.path.isfile(ptable_force_hist_path):
@@ -197,7 +196,7 @@ pmv.save_fig(fig_ptable_forces, f"{PDF_FIGS}/mp-trj-forces-ptable-hists.pdf")
 
 
 # %% plot histogram of number of sites per element
-ptable_n_sites_hist_path = f"{MP_DIR}/mp-trj-2022-09-elem-n-sites.json.bz2"
+ptable_n_sites_hist_path = f"{MP_DIR}/2022-09-16-mp-trj-elem-n-sites.json.bz2"
 srs_mp_trj_elem_n_sites = locals().get("srs_mp_trj_elem_n_sites")
 
 if os.path.isfile(ptable_n_sites_hist_path):
