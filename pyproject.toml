@@ -25,6 +25,7 @@ classifiers = [
 ]
 requires-python = ">=3.11"
 dependencies = [
+  "ase>=3.23",
   "matplotlib",
   "numpy<2",
   "pandas>=2.0.0",
