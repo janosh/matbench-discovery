@@ -50,6 +50,8 @@ properties:
         type: string
   trained_for_benchmark:
     type: boolean
+  uses_extra_data:
+    type: boolean
   training_set:
     type: object
     properties:

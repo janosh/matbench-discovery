@@ -32,6 +32,7 @@ requirements:
 openness: OSOD
 trained_for_benchmark: true
 model_type: GNN
+uses_extra_data: false
 train_task: RS2RE
 test_task: IS2E
 targets: E

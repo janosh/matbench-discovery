@@ -83,6 +83,7 @@ requirements:
 
 openness: CSCD
 trained_for_benchmark: false
+uses_extra_data: true
 train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS

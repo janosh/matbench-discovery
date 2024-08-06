@@ -25,6 +25,7 @@ requirements:
 
 openness: OSOD
 trained_for_benchmark: false
+uses_extra_data: false
 train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS

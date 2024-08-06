@@ -43,6 +43,7 @@ requirements:
 openness: OSOD
 model_type: UIP
 trained_for_benchmark: true
+uses_extra_data: false
 
 training_set:
   title: MPTrj
