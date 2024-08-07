@@ -1,5 +1,6 @@
 # %%
 import os
+from collections.abc import Callable
 from importlib.metadata import version
 from typing import Any, Literal
 
@@ -7,8 +8,10 @@ import numpy as np
 import pandas as pd
 import torch
 import wandb
+from ase import Atoms
 from ase.filters import ExpCellFilter, FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
+from ase.optimize.optimize import Optimizer
 from mace.calculators import mace_mp
 from mace.tools import count_parameters
 from pymatgen.core.trajectory import Trajectory
@@ -32,7 +35,7 @@ __date__ = "2023-03-01"
 
 
 # %%
-smoke_test = False
+smoke_test = True
 task_type = Task.IS2RE
 module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
@@ -83,13 +86,15 @@ print(f"Read data from {data_path}")
 zip_filename = f"{WBM_DIR}/2024-08-04-wbm-initial-atoms.extxyz.zip"
 atoms_list = ase_atoms_from_zip(zip_filename)
 
-if smoke_test:
-    df_in = atoms_list[:10]
-else:
-    if slurm_array_task_count > 1:
-        atoms_list = np.array_split(atoms_list, slurm_array_task_count)[
-            slurm_array_task_id - 1
-        ]
+if slurm_array_job_id == "debug":
+    if smoke_test:
+        atoms_list = atoms_list[:128]
+    else:
+        pass
+elif slurm_array_task_count > 1:
+    atoms_list = np.array_split(atoms_list, slurm_array_task_count)[
+        slurm_array_task_id - 1
+    ]
 
 
 # %%
@@ -112,13 +117,17 @@ run_params = {
 }
 
 run_name = f"{job_name}-{slurm_array_task_id}"
+
 wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 
-# %%
+# %% time
 relax_results: dict[str, dict[str, Any]] = {}
-filter_cls = {"frechet": FrechetCellFilter, "exp": ExpCellFilter}[ase_filter]
-optim_cls = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
+filter_cls: Callable[[Atoms], Atoms] = {
+    "frechet": FrechetCellFilter,
+    "exp": ExpCellFilter,
+}[ase_filter]
+optim_cls: Callable[..., Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
 for atoms in tqdm(atoms_list, desc="Relaxing"):
     mat_id = atoms.info[Key.mat_id]

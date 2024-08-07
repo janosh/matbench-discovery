@@ -1,12 +1,15 @@
 # %%
 import os
+from collections.abc import Callable
 from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
 import torch
+from ase import Atoms
 from ase.filters import ExpCellFilter, FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
+from ase.optimize.optimize import Optimizer
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from sevenn.sevennet_calculator import SevenNetCalculator
@@ -37,6 +40,7 @@ slurm_array_task_count = 32
 
 # %%
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
+slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", "debug")
 
 os.makedirs(out_dir := "./results", exist_ok=True)
 out_path = f"{out_dir}/{model_name}-{slurm_array_task_id:>03}.json.gz"
@@ -54,18 +58,23 @@ print(f"Read data from {data_path}")
 zip_filename = f"{WBM_DIR}/2024-08-04-wbm-initial-atoms.extxyz.zip"
 atoms_list = ase_atoms_from_zip(zip_filename)
 
-if smoke_test:
-    df_in = atoms_list[10]
-else:
-    if slurm_array_task_count > 1:
-        atoms_list = np.array_split(atoms_list, slurm_array_task_count)[
-            slurm_array_task_id - 1
-        ]
+if slurm_array_job_id == "debug":
+    if smoke_test:
+        atoms_list = atoms_list[:128]
+    else:
+        pass
+elif slurm_array_task_count > 1:
+    atoms_list = np.array_split(atoms_list, slurm_array_task_count)[
+        slurm_array_task_id - 1
+    ]
 
 relax_results: dict[str, dict[str, Any]] = {}
 
-filter_cls = {"frechet": FrechetCellFilter, "exp": ExpCellFilter}[ase_filter]
-optim_cls = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
+filter_cls: Callable[[Atoms], Atoms] = {
+    "frechet": FrechetCellFilter,
+    "exp": ExpCellFilter,
+}[ase_filter]
+optim_cls: Callable[..., Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
 
 # %%
