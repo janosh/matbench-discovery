@@ -7,6 +7,7 @@ https://nature.com/articles/s41524-020-00481-6
 import gzip
 import os
 import pickle
+import urllib.error
 import urllib.request
 from glob import glob
 
@@ -271,7 +272,7 @@ df_wbm.pop("composition_from_final_struct")  # not needed anymore
 
 # %% randomly sample structures and ensure they match between CSE and final structure
 n_samples = 1000
-for row in tqdm(df_wbm.sample(n_samples).itertuples(), total=n_samples):
+for _mat_id, row in tqdm(df_wbm.sample(n_samples).iterrows(), total=n_samples):
     struct_final = Structure.from_dict(row.final_structure)
     struct_from_cse = Structure.from_dict(row[Key.cse]["structure"])
     assert struct_final.matches(struct_from_cse), f"structure mismatch for {row.Index=}"
@@ -372,12 +373,15 @@ if sum(df_summary.index != df_wbm.index) != 0:
 assert sum(df_summary.index != df_wbm.index) == 0
 
 # update ComputedStructureEntry entry_ids to match material_ids
+updated_ids: list[str] = []
 for mat_id, cse in df_wbm[Key.cse].items():
     entry_id = cse["entry_id"]
     if mat_id != entry_id:
         print(f"{mat_id=} != {entry_id=}, updating entry_id to mat_id")
         cse["entry_id"] = mat_id
+        updated_ids += [entry_id]
 
+print(f"total mismatching CSE IDs fixed: {len(updated_ids):,}")
 
 # sort formulas alphabetically
 df_summary["alph_formula"] = [
@@ -511,9 +515,9 @@ df_wbm[Key.cse] = [
     ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_wbm[Key.cse])
 ]
 # raw WBM ComputedStructureEntries have no energy corrections applied:
-assert all(cse.uncorrected_energy == cse.energy for cse in df_wbm.cse)
+assert all(cse.uncorrected_energy == cse.energy for cse in df_wbm[Key.cse])
 # summary and CSE n_sites match
-assert all(df_summary.n_sites == [len(cse.structure) for cse in df_wbm.cse])
+assert all(df_summary.n_sites == [len(cse.structure) for cse in df_wbm[Key.cse]])
 
 
 # entries are corrected in-place by default so we apply legacy corrections first
@@ -522,33 +526,42 @@ assert all(df_summary.n_sites == [len(cse.structure) for cse in df_wbm.cse])
 # like MEGNet that were trained on MP release prior to new corrections by subtracting
 # old corrections and adding the new ones
 entries_old_corr = MaterialsProjectCompatibility().process_entries(
-    df_wbm.cse, clean=True, verbose=True
+    df_wbm[Key.cse], clean=True, verbose=True
 )
-assert len(entries_old_corr) == len(df_wbm), f"{len(entries_old_corr)=} {len(df_wbm)=}"
+assert len(entries_old_corr) == 76_390, f"{len(entries_old_corr)=}, expected 76,390"
+
+n_old_corrected = sum(cse.uncorrected_energy != cse.energy for cse in entries_old_corr)
+assert n_old_corrected == 99_000, f"{n_old_corrected=:,} expected 100,930"
 
 # extract legacy MP energy corrections to df_megnet
 df_wbm["e_correction_per_atom_mp_legacy"] = [
-    cse.correction_per_atom for cse in df_wbm.cse
+    cse.correction_per_atom for cse in df_wbm[Key.cse]
 ]
 
 # clean up legacy corrections and apply new corrections
-entries_new_corr = MaterialsProject2020Compatibility().process_entries(
-    df_wbm.cse, clean=True, verbose=True
-)
+entries_new_corr = MaterialsProject2020Compatibility(
+    strict_anions="no_check"
+).process_entries(df_wbm[Key.cse], clean=True, verbose=True)
 assert len(entries_new_corr) == len(df_wbm), f"{len(entries_new_corr)=} {len(df_wbm)=}"
 
-n_corrected = sum(cse.uncorrected_energy != cse.energy for cse in df_wbm.cse)
-assert n_corrected == 100_930, f"{n_corrected=} expected 100,930"
+n_corrected = sum(cse.uncorrected_energy != cse.energy for cse in df_wbm[Key.cse])
+# TODO 2024-08-07 n_corrected used to be 100,930, may have changed as a result of the
+# new strict_anions kwarg added in https://github.com/materialsproject/pymatgen/pull/3803
+# but strict_anions="no_check" which is meant to restore the pre-3803 behavior now
+# results in 99_000 corrected entries, which is closest one to the old number compared
+# to the other strict_anions options "require_exact" and "require_bound"
+assert n_corrected == 99_000, f"{n_corrected=:,} expected 100,930"
 
 df_summary["e_correction_per_atom_mp2020"] = [
-    cse.correction_per_atom for cse in df_wbm.cse
+    cse.correction_per_atom for cse in df_wbm[Key.cse]
 ]
 
-assert df_summary.e_correction_per_atom_mp2020.mean().round(4) == -0.1069
+avg_energy_corr = df_summary.e_correction_per_atom_mp2020.mean().round(4)
+assert avg_energy_corr == -0.1065, f"{avg_energy_corr=:.4}, expected -0.1065"
 
 
 # %%
-with gzip.open(DataFiles.mp_patched_phase_diagram.path, "rb") as zip_file:
+with gzip.open(DataFiles.mp_patched_phase_diagram.path, mode="rb") as zip_file:
     ppd_mp: PatchedPhaseDiagram = pickle.load(zip_file)  # noqa: S301
 
 
@@ -663,13 +676,12 @@ assert dict(df_summary[Key.uniq_proto].value_counts()) == {
     True: 215_488,
     False: 41_475,
 }
-assert list(df_summary.query(f"~{Key.uniq_proto}").head(5).index) == [
-    "wbm-1-7",
-    "wbm-1-8",
-    "wbm-1-15",
-    "wbm-1-20",
-    "wbm-1-33",
-]
+
+first_uniq_proto_wbm_ids = ["wbm-1-7", "wbm-1-8", "wbm-1-15", "wbm-1-20", "wbm-1-33"]
+assert (
+    list(df_summary.query(f"~{Key.uniq_proto}").head(5).index)
+    == first_uniq_proto_wbm_ids
+)
 
 
 # %% write final summary data to disk (yeah!)
