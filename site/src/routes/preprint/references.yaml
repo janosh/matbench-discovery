@@ -1,5 +1,75 @@
 ---
 references:
+- id: zuo_accelerating_2021
+  accessed:
+    - year: 2021
+      month: 10
+      day: 21
+  author:
+    - family: Zuo
+      given: Yunxing
+    - family: Qin
+      given: Mingde
+    - family: Chen
+      given: Chi
+    - family: Ye
+      given: Weike
+    - family: Li
+      given: Xiangguo
+    - family: Luo
+      given: Jian
+    - family: Ong
+      given: Shyue Ping
+  citation-key: zuo_accelerating_2021
+  container-title: Materials Today
+  container-title-short: Materials Today
+  DOI: 10.1016/j.mattod.2021.08.012
+  ISSN: 1369-7021
+  issued:
+    - year: 2021
+      month: 10
+      day: 1
+  language: en
+  note: 'ZSCC: 0000001'
+  source: ScienceDirect
+  title: >-
+    Accelerating materials discovery with Bayesian optimization and graph deep
+    learning
+  title-short: BOWSR
+  URL: https://www.sciencedirect.com/science/article/pii/S1369702121002984
+
+- id: bergerhoff_inorganic_1983
+  accessed:
+    - year: 2020
+      month: 8
+      day: 31
+  author:
+    - family: Bergerhoff
+      given: G.
+    - family: Hundt
+      given: R.
+    - family: Sievers
+      given: R.
+    - family: Brown
+      given: I. D.
+  citation-key: bergerhoff_inorganic_1983
+  container-title: Journal of Chemical Information and Computer Sciences
+  container-title-short: J. Chem. Inf. Comput. Sci.
+  DOI: 10.1021/ci00038a003
+  ISSN: 0095-2338
+  issue: '2'
+  issued:
+    - year: 1983
+      month: 5
+      day: 1
+  note: 'ZSCC: 0000553'
+  page: 66-69
+  publisher: American Chemical Society
+  source: ACS Publications
+  title: The inorganic crystal structure data base
+  URL: https://pubs.acs.org/doi/abs/10.1021/ci00038a003
+  volume: '23'
+
 - id: allen_crystallographic_1999
   accessed:
     - year: 2020
@@ -34,97 +104,266 @@ references:
   title: Crystallographic Databases and Knowledge Bases in Materials Design
   URL: https://doi.org/10.1007/978-94-011-4653-1_21
 
-- id: allen_learning_2023
+- id: vaswani_attention_2017
   accessed:
-    - year: 2023
-      month: 7
-      day: 30
+    - year: 2020
+      month: 8
+      day: 5
   author:
-    - family: Allen
-      given: Alice E. A.
-    - family: Lubbers
-      given: Nicholas
-    - family: Matin
-      given: Sakib
-    - family: Smith
-      given: Justin
-    - family: Messerly
-      given: Richard
-    - family: Tretiak
-      given: Sergei
-    - family: Barros
-      given: Kipton
-  citation-key: allen_learning_2023
+    - family: Vaswani
+      given: Ashish
+    - family: Shazeer
+      given: Noam
+    - family: Parmar
+      given: Niki
+    - family: Uszkoreit
+      given: Jakob
+    - family: Jones
+      given: Llion
+    - family: Gomez
+      given: Aidan N.
+    - family: Kaiser
+      given: Lukasz
+    - family: Polosukhin
+      given: Illia
+  citation-key: vaswani_attention_2017
+  container-title: arXiv:1706.03762 [cs]
   issued:
-    - year: 2023
-      month: 7
-      day: 8
-  number: arXiv:2307.04012
-  publisher: arXiv
+    - year: 2017
+      month: 12
+      day: 5
+  note: 'ZSCC: 0010850'
   source: arXiv.org
-  title: >-
-    Learning Together: Towards foundational models for machine learning
-    interatomic potentials with meta-learning
-  title-short: Learning Together
-  URL: http://arxiv.org/abs/2307.04012
+  title: Attention Is All You Need
+  URL: http://arxiv.org/abs/1706.03762
 
-- id: aykol_rational_2021
+- id: ward_general-purpose_2016
   accessed:
-    - year: 2023
-      month: 3
-      day: 6
+    - year: 2020
+      month: 7
+      day: 29
   author:
-    - family: Aykol
-      given: Muratahan
-    - family: Montoya
-      given: Joseph H.
-    - family: Hummelshøj
-      given: Jens
-  citation-key: aykol_rational_2021
-  container-title: Journal of the American Chemical Society
-  container-title-short: J. Am. Chem. Soc.
-  DOI: 10.1021/jacs.1c04888
-  ISSN: 0002-7863
-  issue: '24'
+    - family: Ward
+      given: Logan
+    - family: Agrawal
+      given: Ankit
+    - family: Choudhary
+      given: Alok
+    - family: Wolverton
+      given: Christopher
+  citation-key: ward_general-purpose_2016
+  container-title: npj Computational Materials
+  DOI: 10.1038/npjcompumats.2016.28
+  ISSN: 2057-3960
+  issue: '1'
   issued:
-    - year: 2021
-      month: 6
-      day: 23
-  page: 9244-9259
-  publisher: American Chemical Society
-  source: ACS Publications
-  title: Rational Solid-State Synthesis Routes for Inorganic Materials
-  URL: https://doi.org/10.1021/jacs.1c04888
-  volume: '143'
+    - year: 2016
+      month: 8
+      day: 26
+  language: en
+  license: 2016 The Author(s)
+  note: 'ZSCC: 0000247'
+  number: '1'
+  page: 1-7
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: >-
+    A general-purpose machine learning framework for predicting properties of
+    inorganic materials
+  URL: https://www.nature.com/articles/npjcompumats201628
+  volume: '2'
 
-- id: aykol_thermodynamic_2018
+- id: draxl_nomad_2018
   accessed:
-    - year: 2023
-      month: 1
-      day: 24
+    - year: 2020
+      month: 7
+      day: 29
   author:
-    - family: Aykol
-      given: Muratahan
-    - family: Dwaraknath
-      given: Shyam S.
-    - family: Sun
-      given: Wenhao
-    - family: Persson
-      given: Kristin A.
-  citation-key: aykol_thermodynamic_2018
-  container-title: Science Advances
-  DOI: 10.1126/sciadv.aaq0148
-  issue: '4'
+    - family: Draxl
+      given: Claudia
+    - family: Scheffler
+      given: Matthias
+  citation-key: draxl_nomad_2018
+  container-title: MRS Bulletin
+  DOI: 10.1557/mrs.2018.208
+  ISSN: 0883-7694, 1938-1425
+  issue: '9'
+  issued:
+    - year: 2018
+      month: 9
+  language: en
+  note: 'ZSCC: 0000084'
+  page: 676-682
+  publisher: Cambridge University Press
+  source: Cambridge University Press
+  title: 'NOMAD: The FAIR concept for big data-driven materials science'
+  title-short: NOMAD
+  URL: https://doi.org/10.1557/mrs.2018.208
+  volume: '43'
+
+- id: xie_crystal_2018
+  accessed:
+    - year: 2019
+      month: 8
+      day: 22
+  author:
+    - family: Xie
+      given: Tian
+    - family: Grossman
+      given: Jeffrey C.
+  citation-key: xie_crystal_2018
+  container-title: Physical Review Letters
+  container-title-short: Phys. Rev. Lett.
+  DOI: 10.1103/PhysRevLett.120.145301
+  issue: '14'
   issued:
     - year: 2018
       month: 4
-      day: 20
-  page: eaaq0148
-  publisher: American Association for the Advancement of Science
-  source: science.org (Atypon)
-  title: Thermodynamic limit for synthesis of metastable inorganic materials
-  URL: https://www.science.org/doi/10.1126/sciadv.aaq0148
-  volume: '4'
+      day: 6
+  page: '145301'
+  source: APS
+  title: >-
+    Crystal Graph Convolutional Neural Networks for an Accurate and
+    Interpretable Prediction of Material Properties
+  URL: https://link.aps.org/doi/10.1103/PhysRevLett.120.145301
+  volume: '120'
+
+- id: depeweg_decomposition_2017
+  accessed:
+    - year: 2019
+      month: 3
+      day: 3
+  author:
+    - family: Depeweg
+      given: Stefan
+    - family: Hernández-Lobato
+      given: José Miguel
+    - family: Doshi-Velez
+      given: Finale
+    - family: Udluft
+      given: Steffen
+  citation-key: depeweg_decomposition_2017
+  container-title: 'arXiv: 1710.07283 [cs, stat]'
+  issued:
+    - year: 2017
+      month: 10
+      day: 19
+  source: arXiv.org
+  title: >-
+    Decomposition of Uncertainty in Bayesian Deep Learning for Efficient and
+    Risk-sensitive Learning
+  URL: http://arxiv.org/abs/1710.07283
+
+- id: glawe_optimal_2016
+  accessed:
+    - year: 2022
+      month: 2
+      day: 9
+  author:
+    - family: Glawe
+      given: Henning
+    - family: Sanna
+      given: Antonio
+    - family: Gross
+      given: E. K. U.
+    - family: Marques
+      given: Miguel A. L.
+  citation-key: glawe_optimal_2016
+  container-title: New Journal of Physics
+  container-title-short: New J. Phys.
+  DOI: 10.1088/1367-2630/18/9/093011
+  ISSN: 1367-2630
+  issue: '9'
+  issued:
+    - year: 2016
+      month: 9
+  language: en
+  page: '093011'
+  publisher: IOP Publishing
+  source: Institute of Physics
+  title: >-
+    The optimal one dimensional periodic table: a modified Pettifor chemical
+    scale from data mining
+  title-short: The optimal one dimensional periodic table
+  URL: https://doi.org/10.1088/1367-2630/18/9/093011
+  volume: '18'
+
+- id: jain_commentary_2013
+  accessed:
+    - year: 2022
+      month: 2
+      day: 21
+  author:
+    - family: Jain
+      given: Anubhav
+    - family: Ong
+      given: Shyue Ping
+    - family: Hautier
+      given: Geoffroy
+    - family: Chen
+      given: Wei
+    - family: Richards
+      given: William Davidson
+    - family: Dacek
+      given: Stephen
+    - family: Cholia
+      given: Shreyas
+    - family: Gunter
+      given: Dan
+    - family: Skinner
+      given: David
+    - family: Ceder
+      given: Gerbrand
+    - family: Persson
+      given: Kristin A.
+  citation-key: jain_commentary_2013
+  container-title: APL Materials
+  DOI: 10.1063/1.4812323
+  issue: '1'
+  issued:
+    - year: 2013
+      month: 7
+  page: '011002'
+  publisher: American Institute of Physics
+  source: aip.scitation.org (Atypon)
+  title: >-
+    Commentary: The Materials Project: A materials genome approach to
+    accelerating materials innovation
+  title-short: Commentary
+  URL: https://doi.org/10.1063/1.4812323
+  volume: '1'
+
+- id: wang_predicting_2021
+  accessed:
+    - year: 2022
+      month: 2
+      day: 21
+  author:
+    - family: Wang
+      given: Hai-Chen
+    - family: Botti
+      given: Silvana
+    - family: Marques
+      given: Miguel A. L.
+  citation-key: wang_predicting_2021
+  container-title: npj Computational Materials
+  container-title-short: npj Comput Mater
+  DOI: 10.1038/s41524-020-00481-6
+  ISSN: 2057-3960
+  issue: '1'
+  issued:
+    - year: 2021
+      month: 1
+      day: 26
+  language: en
+  license: 2021 The Author(s)
+  number: '1'
+  page: 1-9
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: Predicting stable crystalline compounds using chemical similarity
+  URL: https://www.nature.com/articles/s41524-020-00481-6
+  volume: '7'
 
 - id: bartel_critical_2020
   accessed:
@@ -166,208 +405,98 @@ references:
   URL: https://www.nature.com/articles/s41524-020-00362-y
   volume: '6'
 
-- id: bartok_machine_2018
+- id: mcdermott_graph-based_2021
   accessed:
-    - year: 2023
-      month: 2
-      day: 8
-  author:
-    - family: Bartók
-      given: Albert P.
-    - family: Kermode
-      given: James
-    - family: Bernstein
-      given: Noam
-    - family: Csányi
-      given: Gábor
-  citation-key: bartok_machine_2018
-  container-title: Physical Review X
-  container-title-short: Phys. Rev. X
-  DOI: 10.1103/PhysRevX.8.041048
-  issue: '4'
-  issued:
-    - year: 2018
-      month: 12
-      day: 14
-  page: '041048'
-  publisher: American Physical Society
-  source: APS
-  title: Machine Learning a General-Purpose Interatomic Potential for Silicon
-  URL: https://link.aps.org/doi/10.1103/PhysRevX.8.041048
-  volume: '8'
-
-- id: batatia_mace_2023
-  accessed:
-    - year: 2023
-      month: 5
-      day: 24
-  author:
-    - family: Batatia
-      given: Ilyes
-    - family: Kovács
-      given: Dávid Péter
-    - family: Simm
-      given: Gregor N. C.
-    - family: Ortner
-      given: Christoph
-    - family: Csányi
-      given: Gábor
-  citation-key: batatia_mace_2023
-  issued:
-    - year: 2023
-      month: 1
-      day: 26
-  number: arXiv:2206.07697
-  publisher: arXiv
-  source: arXiv.org
-  title: >-
-    MACE: Higher Order Equivariant Message Passing Neural Networks for Fast and
-    Accurate Force Fields
-  title-short: MACE
-  URL: http://arxiv.org/abs/2206.07697
-
-- id: batzner_equivariant_2022
-  accessed:
-    - year: 2023
+    - year: 2022
       month: 4
-      day: 26
+      day: 23
   author:
-    - family: Batzner
-      given: Simon
-    - family: Musaelian
-      given: Albert
-    - family: Sun
-      given: Lixin
-    - family: Geiger
-      given: Mario
-    - family: Mailoa
-      given: Jonathan P.
-    - family: Kornbluth
-      given: Mordechai
-    - family: Molinari
-      given: Nicola
-    - family: Smidt
-      given: Tess E.
-    - family: Kozinsky
-      given: Boris
-  citation-key: batzner_equivariant_2022
+    - family: McDermott
+      given: Matthew J.
+    - family: Dwaraknath
+      given: Shyam S.
+    - family: Persson
+      given: Kristin A.
+  citation-key: mcdermott_graph-based_2021
   container-title: Nature Communications
   container-title-short: Nat Commun
-  DOI: 10.1038/s41467-022-29939-5
+  DOI: 10.1038/s41467-021-23339-x
   ISSN: 2041-1723
   issue: '1'
   issued:
-    - year: 2022
+    - year: 2021
       month: 5
-      day: 4
+      day: 25
   language: en
-  license: 2022 The Author(s)
+  license: 2021 The Author(s)
   number: '1'
-  page: '2453'
+  page: '3097'
   publisher: Nature Publishing Group
   source: www.nature.com
   title: >-
-    E(3)-equivariant graph neural networks for data-efficient and accurate
-    interatomic potentials
-  URL: https://www.nature.com/articles/s41467-022-29939-5
-  volume: '13'
+    A graph-based network for predicting chemical reaction pathways in
+    solid-state materials synthesis
+  URL: https://www.nature.com/articles/s41467-021-23339-x
+  volume: '12'
 
-- id: behler_generalized_2007
+- id: goodall_rapid_2022
   accessed:
-    - year: 2023
-      month: 2
-      day: 6
+    - year: 2022
+      month: 9
+      day: 19
   author:
-    - family: Behler
-      given: Jörg
-    - family: Parrinello
-      given: Michele
-  citation-key: behler_generalized_2007
-  container-title: Physical Review Letters
-  container-title-short: Phys. Rev. Lett.
-  DOI: 10.1103/PhysRevLett.98.146401
-  issue: '14'
+    - family: Goodall
+      given: Rhys E. A.
+    - family: Parackal
+      given: Abhijith S.
+    - family: Faber
+      given: Felix A.
+    - family: Armiento
+      given: Rickard
+    - family: Lee
+      given: Alpha A.
+  citation-key: goodall_rapid_2022
+  container-title: Science Advances
+  DOI: 10.1126/sciadv.abn4117
+  issue: '30'
   issued:
-    - year: 2007
-      month: 4
-      day: 2
-  page: '146401'
-  publisher: American Physical Society
-  source: APS
-  title: >-
-    Generalized Neural-Network Representation of High-Dimensional
-    Potential-Energy Surfaces
-  URL: https://link.aps.org/doi/10.1103/PhysRevLett.98.146401
-  volume: '98'
+    - year: 2022
+      month: 7
+      day: 27
+  page: eabn4117
+  publisher: American Association for the Advancement of Science
+  source: science.org (Atypon)
+  title: Rapid discovery of stable materials by coordinate-free coarse graining
+  title-short: Wren
+  URL: https://www.science.org/doi/10.1126/sciadv.abn4117
+  volume: '8'
 
-- id: belsky_new_2002
+- id: mok_directionbased_2022
   accessed:
-    - year: 2023
-      month: 8
-      day: 16
+    - year: 2022
+      month: 10
+      day: 4
   author:
-    - family: Belsky
-      given: A.
-    - family: Hellenbrandt
-      given: M.
-    - family: Karen
-      given: V. L.
-    - family: Luksch
-      given: P.
-  citation-key: belsky_new_2002
-  container-title: 'Acta Crystallographica Section B: Structural Science'
-  container-title-short: Acta Cryst B
-  DOI: 10.1107/S0108768102006948
-  ISSN: 0108-7681
-  issue: '3'
+    - family: Mok
+      given: Dong Hyeon
+    - family: Kim
+      given: Jongseung
+    - family: Back
+      given: Seoin
+  citation-key: mok_directionbased_2022
+  DOI: 10.26434/chemrxiv-2022-dp58c
+  genre: preprint
   issued:
-    - year: 2002
-      month: 6
-      day: 1
+    - year: 2022
+      month: 9
+      day: 30
   language: en
-  license: Copyright (c) 2002 International Union of Crystallography
-  number: ARRAY(0xa762024)
-  page: 364-369
-  publisher: International Union of Crystallography
-  source: scripts.iucr.org
+  publisher: Chemistry
+  source: DOI.org (Crossref)
   title: >-
-    New developments in the Inorganic Crystal Structure Database (ICSD):
-    accessibility in support of materials research and design
-  title-short: New developments in the Inorganic Crystal Structure Database (ICSD)
-  URL: http://scripts.iucr.org/cgi-bin/paper?an0615
-  volume: '58'
-
-- id: bergerhoff_inorganic_1983
-  accessed:
-    - year: 2020
-      month: 8
-      day: 31
-  author:
-    - family: Bergerhoff
-      given: G.
-    - family: Hundt
-      given: R.
-    - family: Sievers
-      given: R.
-    - family: Brown
-      given: I. D.
-  citation-key: bergerhoff_inorganic_1983
-  container-title: Journal of Chemical Information and Computer Sciences
-  container-title-short: J. Chem. Inf. Comput. Sci.
-  DOI: 10.1021/ci00038a003
-  ISSN: 0095-2338
-  issue: '2'
-  issued:
-    - year: 1983
-      month: 5
-      day: 1
-  note: 'ZSCC: 0000553'
-  page: 66-69
-  publisher: American Chemical Society
-  source: ACS Publications
-  title: The inorganic crystal structure data base
-  URL: https://pubs.acs.org/doi/abs/10.1021/ci00038a003
-  volume: '23'
+    Direction-based Graph Representation to Accelerate Stable Catalysts
+    Discovery
+  URL: https://doi.org/10.26434/chemrxiv-2022-dp58c
 
 - id: borg_quantifying_2022
   accessed:
@@ -402,6 +531,333 @@ references:
     Quantifying the performance of machine learning models in materials
     discovery
   URL: http://arxiv.org/abs/2210.13587
+
+- id: deng_imagenet_2009
+  author:
+    - family: Deng
+      given: Jia
+    - family: Dong
+      given: Wei
+    - family: Socher
+      given: Richard
+    - family: Li
+      given: Li-Jia
+    - family: Li
+      given: Kai
+    - family: Fei-Fei
+      given: Li
+  citation-key: deng_imagenet_2009
+  container-title: 2009 IEEE Conference on Computer Vision and Pattern Recognition
+  DOI: 10.1109/CVPR.2009.5206848
+  event-title: 2009 IEEE Conference on Computer Vision and Pattern Recognition
+  ISSN: 1063-6919
+  issued:
+    - year: 2009
+      month: 6
+  page: 248-255
+  source: IEEE Xplore
+  title: 'ImageNet: A large-scale hierarchical image database'
+  title-short: ImageNet
+
+- id: chen_graph_2019
+  accessed:
+    - year: 2023
+      month: 1
+      day: 12
+  author:
+    - family: Chen
+      given: Chi
+    - family: Ye
+      given: Weike
+    - family: Zuo
+      given: Yunxing
+    - family: Zheng
+      given: Chen
+    - family: Ong
+      given: Shyue Ping
+  citation-key: chen_graph_2019
+  container-title: Chemistry of Materials
+  container-title-short: Chem. Mater.
+  DOI: 10.1021/acs.chemmater.9b01294
+  ISSN: 0897-4756
+  issue: '9'
+  issued:
+    - year: 2019
+      month: 5
+      day: 14
+  page: 3564-3572
+  publisher: American Chemical Society
+  source: ACS Publications
+  title: >-
+    Graph Networks as a Universal Machine Learning Framework for Molecules and
+    Crystals
+  URL: https://doi.org/10.1021/acs.chemmater.9b01294
+  volume: '31'
+
+- id: ward_including_2017
+  accessed:
+    - year: 2023
+      month: 1
+      day: 12
+  author:
+    - family: Ward
+      given: Logan
+    - family: Liu
+      given: Ruoqian
+    - family: Krishna
+      given: Amar
+    - family: Hegde
+      given: Vinay I.
+    - family: Agrawal
+      given: Ankit
+    - family: Choudhary
+      given: Alok
+    - family: Wolverton
+      given: Chris
+  citation-key: ward_including_2017
+  container-title: Physical Review B
+  container-title-short: Phys. Rev. B
+  DOI: 10.1103/PhysRevB.96.024104
+  issue: '2'
+  issued:
+    - year: 2017
+      month: 7
+      day: 14
+  page: '024104'
+  publisher: American Physical Society
+  source: APS
+  title: >-
+    Including crystal structure attributes in machine learning models of
+    formation energies via Voronoi tessellations
+  URL: https://link.aps.org/doi/10.1103/PhysRevB.96.024104
+  volume: '96'
+
+- id: hautier_accuracy_2012
+  accessed:
+    - year: 2023
+      month: 1
+      day: 17
+  author:
+    - family: Hautier
+      given: Geoffroy
+    - family: Ong
+      given: Shyue Ping
+    - family: Jain
+      given: Anubhav
+    - family: Moore
+      given: Charles J.
+    - family: Ceder
+      given: Gerbrand
+  citation-key: hautier_accuracy_2012
+  container-title: Physical Review B
+  container-title-short: Phys. Rev. B
+  DOI: 10.1103/PhysRevB.85.155208
+  issue: '15'
+  issued:
+    - year: 2012
+      month: 4
+      day: 30
+  page: '155208'
+  publisher: American Physical Society
+  source: APS
+  title: >-
+    Accuracy of density functional theory in predicting formation energies of
+    ternary oxides from binary oxides and its implication on phase stability
+  URL: https://link.aps.org/doi/10.1103/PhysRevB.85.155208
+  volume: '85'
+
+- id: davies_computational_2016
+  author:
+    - family: Davies
+      given: Daniel W.
+    - family: Butler
+      given: Keith T.
+    - family: Jackson
+      given: Adam J.
+    - family: Morris
+      given: Andrew
+    - family: Frost
+      given: Jarvist M.
+    - family: Skelton
+      given: Jonathan M.
+    - family: Walsh
+      given: Aron
+  citation-key: davies_computational_2016
+  container-title: Chem
+  container-title-short: Chem
+  DOI: 10.1016/j.chempr.2016.09.010
+  ISSN: 2451-9294
+  issue: '4'
+  issued:
+    - year: 2016
+      month: 10
+      day: 13
+  language: eng
+  page: 617-627
+  PMCID: PMC5074417
+  PMID: '27790643'
+  source: PubMed
+  title: Computational Screening of All Stoichiometric Inorganic Materials
+  volume: '1'
+
+- id: aykol_thermodynamic_2018
+  accessed:
+    - year: 2023
+      month: 1
+      day: 24
+  author:
+    - family: Aykol
+      given: Muratahan
+    - family: Dwaraknath
+      given: Shyam S.
+    - family: Sun
+      given: Wenhao
+    - family: Persson
+      given: Kristin A.
+  citation-key: aykol_thermodynamic_2018
+  container-title: Science Advances
+  DOI: 10.1126/sciadv.aaq0148
+  issue: '4'
+  issued:
+    - year: 2018
+      month: 4
+      day: 20
+  page: eaaq0148
+  publisher: American Association for the Advancement of Science
+  source: science.org (Atypon)
+  title: Thermodynamic limit for synthesis of metastable inorganic materials
+  URL: https://www.science.org/doi/10.1126/sciadv.aaq0148
+  volume: '4'
+
+- id: behler_generalized_2007
+  accessed:
+    - year: 2023
+      month: 2
+      day: 6
+  author:
+    - family: Behler
+      given: Jörg
+    - family: Parrinello
+      given: Michele
+  citation-key: behler_generalized_2007
+  container-title: Physical Review Letters
+  container-title-short: Phys. Rev. Lett.
+  DOI: 10.1103/PhysRevLett.98.146401
+  issue: '14'
+  issued:
+    - year: 2007
+      month: 4
+      day: 2
+  page: '146401'
+  publisher: American Physical Society
+  source: APS
+  title: >-
+    Generalized Neural-Network Representation of High-Dimensional
+    Potential-Energy Surfaces
+  URL: https://link.aps.org/doi/10.1103/PhysRevLett.98.146401
+  volume: '98'
+
+- id: deringer_general-purpose_2020
+  accessed:
+    - year: 2023
+      month: 2
+      day: 8
+  author:
+    - family: Deringer
+      given: Volker L.
+    - family: Caro
+      given: Miguel A.
+    - family: Csányi
+      given: Gábor
+  citation-key: deringer_general-purpose_2020
+  container-title: Nature Communications
+  container-title-short: Nat Commun
+  DOI: 10.1038/s41467-020-19168-z
+  ISSN: 2041-1723
+  issue: '1'
+  issued:
+    - year: 2020
+      month: 10
+      day: 29
+  language: en
+  license: 2020 The Author(s)
+  number: '1'
+  page: '5461'
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: >-
+    A general-purpose machine-learning force field for bulk and nanostructured
+    phosphorus
+  URL: https://www.nature.com/articles/s41467-020-19168-z
+  volume: '11'
+
+- id: bartok_machine_2018
+  accessed:
+    - year: 2023
+      month: 2
+      day: 8
+  author:
+    - family: Bartók
+      given: Albert P.
+    - family: Kermode
+      given: James
+    - family: Bernstein
+      given: Noam
+    - family: Csányi
+      given: Gábor
+  citation-key: bartok_machine_2018
+  container-title: Physical Review X
+  container-title-short: Phys. Rev. X
+  DOI: 10.1103/PhysRevX.8.041048
+  issue: '4'
+  issued:
+    - year: 2018
+      month: 12
+      day: 14
+  page: '041048'
+  publisher: American Physical Society
+  source: APS
+  title: Machine Learning a General-Purpose Interatomic Potential for Silicon
+  URL: https://link.aps.org/doi/10.1103/PhysRevX.8.041048
+  volume: '8'
+
+- id: saal_materials_2013
+  accessed:
+    - year: 2023
+      month: 2
+      day: 8
+  author:
+    - family: Saal
+      given: James E.
+    - family: Kirklin
+      given: Scott
+    - family: Aykol
+      given: Muratahan
+    - family: Meredig
+      given: Bryce
+    - family: Wolverton
+      given: C.
+  citation-key: saal_materials_2013
+  container-title: JOM
+  container-title-short: JOM
+  DOI: 10.1007/s11837-013-0755-4
+  ISSN: 1543-1851
+  issue: '11'
+  issued:
+    - year: 2013
+      month: 11
+      day: 1
+  language: en
+  page: 1501-1509
+  source: Springer Link
+  title: >-
+    Materials Design and Discovery with High-Throughput Density Functional
+    Theory: The Open Quantum Materials Database (OQMD)
+  title-short: >-
+    Materials Design and Discovery with High-Throughput Density Functional
+    Theory
+  URL: https://doi.org/10.1007/s11837-013-0755-4
+  volume: '65'
 
 - id: chanussot_open_2021
   accessed:
@@ -459,40 +915,133 @@ references:
   URL: https://doi.org/10.1021/acscatal.0c04525
   volume: '11'
 
-- id: chen_graph_2019
+- id: tran_open_2022
   accessed:
     - year: 2023
-      month: 1
-      day: 12
+      month: 2
+      day: 8
   author:
-    - family: Chen
-      given: Chi
-    - family: Ye
-      given: Weike
-    - family: Zuo
-      given: Yunxing
-    - family: Zheng
-      given: Chen
-    - family: Ong
-      given: Shyue Ping
-  citation-key: chen_graph_2019
-  container-title: Chemistry of Materials
-  container-title-short: Chem. Mater.
-  DOI: 10.1021/acs.chemmater.9b01294
-  ISSN: 0897-4756
-  issue: '9'
+    - family: Tran
+      given: Richard
+    - family: Lan
+      given: Janice
+    - family: Shuaibi
+      given: Muhammed
+    - family: Wood
+      given: Brandon M.
+    - family: Goyal
+      given: Siddharth
+    - family: Das
+      given: Abhishek
+    - family: Heras-Domingo
+      given: Javier
+    - family: Kolluru
+      given: Adeesh
+    - family: Rizvi
+      given: Ammar
+    - family: Shoghi
+      given: Nima
+    - family: Sriram
+      given: Anuroop
+    - family: Therrien
+      given: Felix
+    - family: Abed
+      given: Jehad
+    - family: Voznyy
+      given: Oleksandr
+    - family: Sargent
+      given: Edward H.
+    - family: Ulissi
+      given: Zachary
+    - family: Zitnick
+      given: C. Lawrence
+  citation-key: tran_open_2022
+  DOI: 10.48550/arXiv.2206.08917
   issued:
-    - year: 2019
-      month: 5
-      day: 14
-  page: 3564-3572
-  publisher: American Chemical Society
-  source: ACS Publications
+    - year: 2022
+      month: 11
+      day: 4
+  number: arXiv:2206.08917
+  publisher: arXiv
+  source: arXiv.org
   title: >-
-    Graph Networks as a Universal Machine Learning Framework for Molecules and
-    Crystals
-  URL: https://doi.org/10.1021/acs.chemmater.9b01294
-  volume: '31'
+    The Open Catalyst 2022 (OC22) Dataset and Challenges for Oxide
+    Electrocatalysts
+  URL: http://arxiv.org/abs/2206.08917
+
+- id: dunn_benchmarking_2020
+  accessed:
+    - year: 2023
+      month: 2
+      day: 8
+  author:
+    - family: Dunn
+      given: Alexander
+    - family: Wang
+      given: Qi
+    - family: Ganose
+      given: Alex
+    - family: Dopp
+      given: Daniel
+    - family: Jain
+      given: Anubhav
+  citation-key: dunn_benchmarking_2020
+  container-title: npj Computational Materials
+  container-title-short: npj Comput Mater
+  DOI: 10.1038/s41524-020-00406-3
+  ISSN: 2057-3960
+  issue: '1'
+  issued:
+    - year: 2020
+      month: 9
+      day: 15
+  language: en
+  license: >-
+    2020 This is a U.S. government work and not under copyright protection in
+    the U.S.; foreign copyright protection may apply
+  number: '1'
+  page: 1-10
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: >-
+    Benchmarking materials property prediction methods: the Matbench test set
+    and Automatminer reference algorithm
+  title-short: Benchmarking materials property prediction methods
+  URL: https://www.nature.com/articles/s41524-020-00406-3
+  volume: '6'
+
+- id: goodall_predicting_2020
+  accessed:
+    - year: 2023
+      month: 2
+      day: 8
+  author:
+    - family: Goodall
+      given: Rhys E. A.
+    - family: Lee
+      given: Alpha A.
+  citation-key: goodall_predicting_2020
+  container-title: Nature Communications
+  container-title-short: Nat Commun
+  DOI: 10.1038/s41467-020-19964-7
+  ISSN: 2041-1723
+  issue: '1'
+  issued:
+    - year: 2020
+      month: 12
+      day: 8
+  language: en
+  license: 2020 The Author(s)
+  number: '1'
+  page: '6280'
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: >-
+    Predicting materials properties without crystal structure: deep
+    representation learning from stoichiometry
+  title-short: Predicting materials properties without crystal structure
+  URL: https://www.nature.com/articles/s41467-020-19964-7
+  volume: '11'
 
 - id: chen_universal_2022
   accessed:
@@ -523,74 +1072,258 @@ references:
   URL: https://www.nature.com/articles/s43588-022-00349-3
   volume: '2'
 
-- id: choudhary_atomistic_2021
+- id: gibson_data-augmentation_2022
   accessed:
     - year: 2023
-      month: 7
-      day: 27
+      month: 2
+      day: 10
   author:
-    - family: Choudhary
-      given: Kamal
-    - family: DeCost
-      given: Brian
-  citation-key: choudhary_atomistic_2021
+    - family: Gibson
+      given: Jason
+    - family: Hire
+      given: Ajinkya
+    - family: Hennig
+      given: Richard G.
+  citation-key: gibson_data-augmentation_2022
   container-title: npj Computational Materials
   container-title-short: npj Comput Mater
-  DOI: 10.1038/s41524-021-00650-1
+  DOI: 10.1038/s41524-022-00891-8
   ISSN: 2057-3960
   issue: '1'
   issued:
-    - year: 2021
-      month: 11
-      day: 15
+    - year: 2022
+      month: 9
+      day: 30
   language: en
   license: >-
-    2021 This is a U.S. government work and not under copyright protection in
-    the U.S.; foreign copyright protection may apply
+    2022 This is a U.S. Government work and not under copyright protection in
+    the US; foreign copyright protection may apply
   number: '1'
-  page: 1-8
+  page: 1-7
   publisher: Nature Publishing Group
   source: www.nature.com
   title: >-
-    Atomistic Line Graph Neural Network for improved materials property
-    predictions
-  URL: https://www.nature.com/articles/s41524-021-00650-1
-  volume: '7'
+    Data-augmentation for graph neural network learning of the relaxed energies
+    of unrelaxed structures
+  URL: https://www.nature.com/articles/s41524-022-00891-8
+  volume: '8'
 
-- id: choudhary_unified_2023
+- id: aykol_rational_2021
   accessed:
     - year: 2023
-      month: 7
-      day: 20
+      month: 3
+      day: 6
   author:
-    - family: Choudhary
-      given: Kamal
-    - family: DeCost
-      given: Brian
-    - family: Major
-      given: Lily
-    - family: Butler
-      given: Keith
-    - family: Thiyagalingam
-      given: Jeyan
-    - family: Tavazza
-      given: Francesca
-  citation-key: choudhary_unified_2023
-  container-title: Digital Discovery
-  DOI: 10.1039/D2DD00096B
-  issue: '2'
+    - family: Aykol
+      given: Muratahan
+    - family: Montoya
+      given: Joseph H.
+    - family: Hummelshøj
+      given: Jens
+  citation-key: aykol_rational_2021
+  container-title: Journal of the American Chemical Society
+  container-title-short: J. Am. Chem. Soc.
+  DOI: 10.1021/jacs.1c04888
+  ISSN: 0002-7863
+  issue: '24'
+  issued:
+    - year: 2021
+      month: 6
+      day: 23
+  page: 9244-9259
+  publisher: American Chemical Society
+  source: ACS Publications
+  title: Rational Solid-State Synthesis Routes for Inorganic Materials
+  URL: https://doi.org/10.1021/jacs.1c04888
+  volume: '143'
+
+- id: wen_chemical_2023
+  accessed:
+    - year: 2023
+      month: 3
+      day: 7
+  author:
+    - family: Wen
+      given: Mingjian
+    - family: Spotte-Smith
+      given: Evan Walter Clark
+    - family: Blau
+      given: Samuel M.
+    - family: McDermott
+      given: Matthew J.
+    - family: Krishnapriyan
+      given: Aditi S.
+    - family: Persson
+      given: Kristin A.
+  citation-key: wen_chemical_2023
+  container-title: Nature Computational Science
+  container-title-short: Nat Comput Sci
+  DOI: 10.1038/s43588-022-00369-z
+  ISSN: 2662-8457
+  issue: '1'
   issued:
     - year: 2023
+      month: 1
   language: en
-  page: 346-355
-  publisher: Royal Society of Chemistry
-  source: pubs.rsc.org
+  license: 2023 Springer Nature America, Inc.
+  number: '1'
+  page: 12-24
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: Chemical reaction networks and opportunities for machine learning
+  URL: https://www.nature.com/articles/s43588-022-00369-z
+  volume: '3'
+
+- id: park_developing_2020
+  accessed:
+    - year: 2023
+      month: 4
+      day: 5
+  author:
+    - family: Park
+      given: Cheol Woo
+    - family: Wolverton
+      given: Chris
+  citation-key: park_developing_2020
+  container-title: Physical Review Materials
+  container-title-short: Phys. Rev. Mater.
+  DOI: 10.1103/PhysRevMaterials.4.063801
+  issue: '6'
+  issued:
+    - year: 2020
+      month: 6
+      day: 1
+  page: '063801'
+  publisher: American Physical Society
+  source: APS
   title: >-
-    Unified graph neural network force-field for the periodic table: solid state
-    applications
-  title-short: Unified graph neural network force-field for the periodic table
-  URL: https://pubs.rsc.org/en/content/articlelanding/2023/dd/d2dd00096b
-  volume: '2'
+    Developing an improved crystal graph convolutional neural network framework
+    for accelerated materials discovery
+  URL: https://link.aps.org/doi/10.1103/PhysRevMaterials.4.063801
+  volume: '4'
+
+- id: raccuglia_machine-learning-assisted_2016
+  accessed:
+    - year: 2023
+      month: 4
+      day: 7
+  author:
+    - family: Raccuglia
+      given: Paul
+    - family: Elbert
+      given: Katherine C.
+    - family: Adler
+      given: Philip D. F.
+    - family: Falk
+      given: Casey
+    - family: Wenny
+      given: Malia B.
+    - family: Mollo
+      given: Aurelio
+    - family: Zeller
+      given: Matthias
+    - family: Friedler
+      given: Sorelle A.
+    - family: Schrier
+      given: Joshua
+    - family: Norquist
+      given: Alexander J.
+  citation-key: raccuglia_machine-learning-assisted_2016
+  container-title: Nature
+  DOI: 10.1038/nature17439
+  ISSN: 1476-4687
+  issue: '7601'
+  issued:
+    - year: 2016
+      month: 5
+  language: en
+  license: >-
+    2016 Nature Publishing Group, a division of Macmillan Publishers Limited.
+    All Rights Reserved.
+  number: '7601'
+  page: 73-76
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: Machine-learning-assisted materials discovery using failed experiments
+  URL: https://www.nature.com/articles/nature17439
+  volume: '533'
+
+- id: horton_promises_2021
+  accessed:
+    - year: 2023
+      month: 4
+      day: 7
+  author:
+    - family: Horton
+      given: M. K.
+    - family: Dwaraknath
+      given: S.
+    - family: Persson
+      given: K. A.
+  citation-key: horton_promises_2021
+  container-title: Nature Computational Science
+  container-title-short: Nat Comput Sci
+  DOI: 10.1038/s43588-020-00016-5
+  ISSN: 2662-8457
+  issue: '1'
+  issued:
+    - year: 2021
+      month: 1
+  language: en
+  license: 2021 Springer Nature America, Inc.
+  number: '1'
+  page: 3-5
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: Promises and perils of computational materials databases
+  URL: https://www.nature.com/articles/s43588-020-00016-5
+  volume: '1'
+
+- id: batzner_equivariant_2022
+  accessed:
+    - year: 2023
+      month: 4
+      day: 26
+  author:
+    - family: Batzner
+      given: Simon
+    - family: Musaelian
+      given: Albert
+    - family: Sun
+      given: Lixin
+    - family: Geiger
+      given: Mario
+    - family: Mailoa
+      given: Jonathan P.
+    - family: Kornbluth
+      given: Mordechai
+    - family: Molinari
+      given: Nicola
+    - family: Smidt
+      given: Tess E.
+    - family: Kozinsky
+      given: Boris
+  citation-key: batzner_equivariant_2022
+  container-title: Nature Communications
+  container-title-short: Nat Commun
+  DOI: 10.1038/s41467-022-29939-5
+  ISSN: 2041-1723
+  issue: '1'
+  issued:
+    - year: 2022
+      month: 5
+      day: 4
+  language: en
+  license: 2022 The Author(s)
+  number: '1'
+  page: '2453'
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: >-
+    E(3)-equivariant graph neural networks for data-efficient and accurate
+    interatomic potentials
+  URL: https://www.nature.com/articles/s41467-022-29939-5
+  volume: '13'
 
 - id: curtarolo_aflow_2012
   accessed:
@@ -642,1111 +1375,6 @@ references:
   title-short: AFLOW
   URL: https://www.sciencedirect.com/science/article/pii/S0927025612000717
   volume: '58'
-
-- id: davies_computational_2016
-  author:
-    - family: Davies
-      given: Daniel W.
-    - family: Butler
-      given: Keith T.
-    - family: Jackson
-      given: Adam J.
-    - family: Morris
-      given: Andrew
-    - family: Frost
-      given: Jarvist M.
-    - family: Skelton
-      given: Jonathan M.
-    - family: Walsh
-      given: Aron
-  citation-key: davies_computational_2016
-  container-title: Chem
-  container-title-short: Chem
-  DOI: 10.1016/j.chempr.2016.09.010
-  ISSN: 2451-9294
-  issue: '4'
-  issued:
-    - year: 2016
-      month: 10
-      day: 13
-  language: eng
-  page: 617-627
-  PMCID: PMC5074417
-  PMID: '27790643'
-  source: PubMed
-  title: Computational Screening of All Stoichiometric Inorganic Materials
-  volume: '1'
-
-- id: deng_chgnet_2023
-  accessed:
-    - year: 2023
-      month: 11
-      day: 24
-  author:
-    - family: Deng
-      given: Bowen
-    - family: Zhong
-      given: Peichen
-    - family: Jun
-      given: KyuJung
-    - family: Riebesell
-      given: Janosh
-    - family: Han
-      given: Kevin
-    - family: Bartel
-      given: Christopher J.
-    - family: Ceder
-      given: Gerbrand
-  citation-key: deng_chgnet_2023
-  container-title: Nature Machine Intelligence
-  container-title-short: Nat Mach Intell
-  DOI: 10.1038/s42256-023-00716-3
-  ISSN: 2522-5839
-  issue: '9'
-  issued:
-    - year: 2023
-      month: 9
-      day: 14
-  language: en
-  license: >-
-    2023 This is a U.S. Government work and not under copyright protection in
-    the US; foreign copyright protection may apply
-  number: '9'
-  page: 1031-1041
-  publisher: Nature Publishing Group
-  source: www.nature.com
-  title: >-
-    CHGNet as a pretrained universal neural network potential for
-    charge-informed atomistic modelling
-  URL: https://www.nature.com/articles/s42256-023-00716-3
-  volume: '5'
-
-- id: deng_imagenet_2009
-  author:
-    - family: Deng
-      given: Jia
-    - family: Dong
-      given: Wei
-    - family: Socher
-      given: Richard
-    - family: Li
-      given: Li-Jia
-    - family: Li
-      given: Kai
-    - family: Fei-Fei
-      given: Li
-  citation-key: deng_imagenet_2009
-  container-title: 2009 IEEE Conference on Computer Vision and Pattern Recognition
-  DOI: 10.1109/CVPR.2009.5206848
-  event-title: 2009 IEEE Conference on Computer Vision and Pattern Recognition
-  ISSN: 1063-6919
-  issued:
-    - year: 2009
-      month: 6
-  page: 248-255
-  source: IEEE Xplore
-  title: 'ImageNet: A large-scale hierarchical image database'
-  title-short: ImageNet
-
-- id: depeweg_decomposition_2017
-  accessed:
-    - year: 2019
-      month: 3
-      day: 3
-  author:
-    - family: Depeweg
-      given: Stefan
-    - family: Hernández-Lobato
-      given: José Miguel
-    - family: Doshi-Velez
-      given: Finale
-    - family: Udluft
-      given: Steffen
-  citation-key: depeweg_decomposition_2017
-  container-title: 'arXiv: 1710.07283 [cs, stat]'
-  issued:
-    - year: 2017
-      month: 10
-      day: 19
-  source: arXiv.org
-  title: >-
-    Decomposition of Uncertainty in Bayesian Deep Learning for Efficient and
-    Risk-sensitive Learning
-  URL: http://arxiv.org/abs/1710.07283
-
-- id: deringer_general-purpose_2020
-  accessed:
-    - year: 2023
-      month: 2
-      day: 8
-  author:
-    - family: Deringer
-      given: Volker L.
-    - family: Caro
-      given: Miguel A.
-    - family: Csányi
-      given: Gábor
-  citation-key: deringer_general-purpose_2020
-  container-title: Nature Communications
-  container-title-short: Nat Commun
-  DOI: 10.1038/s41467-020-19168-z
-  ISSN: 2041-1723
-  issue: '1'
-  issued:
-    - year: 2020
-      month: 10
-      day: 29
-  language: en
-  license: 2020 The Author(s)
-  number: '1'
-  page: '5461'
-  publisher: Nature Publishing Group
-  source: www.nature.com
-  title: >-
-    A general-purpose machine-learning force field for bulk and nanostructured
-    phosphorus
-  URL: https://www.nature.com/articles/s41467-020-19168-z
-  volume: '11'
-
-- id: drautz_atomic_2019
-  accessed:
-    - year: 2023
-      month: 7
-      day: 27
-  author:
-    - family: Drautz
-      given: Ralf
-  citation-key: drautz_atomic_2019
-  container-title: Physical Review B
-  container-title-short: Phys. Rev. B
-  DOI: 10.1103/PhysRevB.99.014104
-  issue: '1'
-  issued:
-    - year: 2019
-      month: 1
-      day: 8
-  page: '014104'
-  publisher: American Physical Society
-  source: APS
-  title: >-
-    Atomic cluster expansion for accurate and transferable interatomic
-    potentials
-  URL: https://link.aps.org/doi/10.1103/PhysRevB.99.014104
-  volume: '99'
-
-- id: draxl_nomad_2018
-  accessed:
-    - year: 2020
-      month: 7
-      day: 29
-  author:
-    - family: Draxl
-      given: Claudia
-    - family: Scheffler
-      given: Matthias
-  citation-key: draxl_nomad_2018
-  container-title: MRS Bulletin
-  DOI: 10.1557/mrs.2018.208
-  ISSN: 0883-7694, 1938-1425
-  issue: '9'
-  issued:
-    - year: 2018
-      month: 9
-  language: en
-  note: 'ZSCC: 0000084'
-  page: 676-682
-  publisher: Cambridge University Press
-  source: Cambridge University Press
-  title: 'NOMAD: The FAIR concept for big data-driven materials science'
-  title-short: NOMAD
-  URL: https://doi.org/10.1557/mrs.2018.208
-  volume: '43'
-
-- id: dunn_benchmarking_2020
-  accessed:
-    - year: 2023
-      month: 2
-      day: 8
-  author:
-    - family: Dunn
-      given: Alexander
-    - family: Wang
-      given: Qi
-    - family: Ganose
-      given: Alex
-    - family: Dopp
-      given: Daniel
-    - family: Jain
-      given: Anubhav
-  citation-key: dunn_benchmarking_2020
-  container-title: npj Computational Materials
-  container-title-short: npj Comput Mater
-  DOI: 10.1038/s41524-020-00406-3
-  ISSN: 2057-3960
-  issue: '1'
-  issued:
-    - year: 2020
-      month: 9
-      day: 15
-  language: en
-  license: >-
-    2020 This is a U.S. government work and not under copyright protection in
-    the U.S.; foreign copyright protection may apply
-  number: '1'
-  page: 1-10
-  publisher: Nature Publishing Group
-  source: www.nature.com
-  title: >-
-    Benchmarking materials property prediction methods: the Matbench test set
-    and Automatminer reference algorithm
-  title-short: Benchmarking materials property prediction methods
-  URL: https://www.nature.com/articles/s41524-020-00406-3
-  volume: '6'
-
-- id: gibson_data-augmentation_2022
-  accessed:
-    - year: 2023
-      month: 2
-      day: 10
-  author:
-    - family: Gibson
-      given: Jason
-    - family: Hire
-      given: Ajinkya
-    - family: Hennig
-      given: Richard G.
-  citation-key: gibson_data-augmentation_2022
-  container-title: npj Computational Materials
-  container-title-short: npj Comput Mater
-  DOI: 10.1038/s41524-022-00891-8
-  ISSN: 2057-3960
-  issue: '1'
-  issued:
-    - year: 2022
-      month: 9
-      day: 30
-  language: en
-  license: >-
-    2022 This is a U.S. Government work and not under copyright protection in
-    the US; foreign copyright protection may apply
-  number: '1'
-  page: 1-7
-  publisher: Nature Publishing Group
-  source: www.nature.com
-  title: >-
-    Data-augmentation for graph neural network learning of the relaxed energies
-    of unrelaxed structures
-  URL: https://www.nature.com/articles/s41524-022-00891-8
-  volume: '8'
-
-- id: glawe_optimal_2016
-  accessed:
-    - year: 2022
-      month: 2
-      day: 9
-  author:
-    - family: Glawe
-      given: Henning
-    - family: Sanna
-      given: Antonio
-    - family: Gross
-      given: E. K. U.
-    - family: Marques
-      given: Miguel A. L.
-  citation-key: glawe_optimal_2016
-  container-title: New Journal of Physics
-  container-title-short: New J. Phys.
-  DOI: 10.1088/1367-2630/18/9/093011
-  ISSN: 1367-2630
-  issue: '9'
-  issued:
-    - year: 2016
-      month: 9
-  language: en
-  page: '093011'
-  publisher: IOP Publishing
-  source: Institute of Physics
-  title: >-
-    The optimal one dimensional periodic table: a modified Pettifor chemical
-    scale from data mining
-  title-short: The optimal one dimensional periodic table
-  URL: https://doi.org/10.1088/1367-2630/18/9/093011
-  volume: '18'
-
-- id: goodall_predicting_2020
-  accessed:
-    - year: 2023
-      month: 2
-      day: 8
-  author:
-    - family: Goodall
-      given: Rhys E. A.
-    - family: Lee
-      given: Alpha A.
-  citation-key: goodall_predicting_2020
-  container-title: Nature Communications
-  container-title-short: Nat Commun
-  DOI: 10.1038/s41467-020-19964-7
-  ISSN: 2041-1723
-  issue: '1'
-  issued:
-    - year: 2020
-      month: 12
-      day: 8
-  language: en
-  license: 2020 The Author(s)
-  number: '1'
-  page: '6280'
-  publisher: Nature Publishing Group
-  source: www.nature.com
-  title: >-
-    Predicting materials properties without crystal structure: deep
-    representation learning from stoichiometry
-  title-short: Predicting materials properties without crystal structure
-  URL: https://www.nature.com/articles/s41467-020-19964-7
-  volume: '11'
-
-- id: goodall_rapid_2022
-  accessed:
-    - year: 2022
-      month: 9
-      day: 19
-  author:
-    - family: Goodall
-      given: Rhys E. A.
-    - family: Parackal
-      given: Abhijith S.
-    - family: Faber
-      given: Felix A.
-    - family: Armiento
-      given: Rickard
-    - family: Lee
-      given: Alpha A.
-  citation-key: goodall_rapid_2022
-  container-title: Science Advances
-  DOI: 10.1126/sciadv.abn4117
-  issue: '30'
-  issued:
-    - year: 2022
-      month: 7
-      day: 27
-  page: eabn4117
-  publisher: American Association for the Advancement of Science
-  source: science.org (Atypon)
-  title: Rapid discovery of stable materials by coordinate-free coarse graining
-  title-short: Wren
-  URL: https://www.science.org/doi/10.1126/sciadv.abn4117
-  volume: '8'
-
-- id: hautier_accuracy_2012
-  accessed:
-    - year: 2023
-      month: 1
-      day: 17
-  author:
-    - family: Hautier
-      given: Geoffroy
-    - family: Ong
-      given: Shyue Ping
-    - family: Jain
-      given: Anubhav
-    - family: Moore
-      given: Charles J.
-    - family: Ceder
-      given: Gerbrand
-  citation-key: hautier_accuracy_2012
-  container-title: Physical Review B
-  container-title-short: Phys. Rev. B
-  DOI: 10.1103/PhysRevB.85.155208
-  issue: '15'
-  issued:
-    - year: 2012
-      month: 4
-      day: 30
-  page: '155208'
-  publisher: American Physical Society
-  source: APS
-  title: >-
-    Accuracy of density functional theory in predicting formation energies of
-    ternary oxides from binary oxides and its implication on phase stability
-  URL: https://link.aps.org/doi/10.1103/PhysRevB.85.155208
-  volume: '85'
-
-- id: hicks_aflow_2021
-  accessed:
-    - year: 2024
-      month: 1
-      day: 24
-  author:
-    - family: Hicks
-      given: David
-    - family: Mehl
-      given: Michael J.
-    - family: Esters
-      given: Marco
-    - family: Oses
-      given: Corey
-    - family: Levy
-      given: Ohad
-    - family: Hart
-      given: Gus L. W.
-    - family: Toher
-      given: Cormac
-    - family: Curtarolo
-      given: Stefano
-  citation-key: hicks_aflow_2021
-  container-title: Computational Materials Science
-  container-title-short: Computational Materials Science
-  DOI: 10.1016/j.commatsci.2021.110450
-  ISSN: 0927-0256
-  issued:
-    - year: 2021
-      month: 11
-      day: 1
-  page: '110450'
-  source: ScienceDirect
-  title: 'The AFLOW Library of Crystallographic Prototypes: Part 3'
-  title-short: The AFLOW Library of Crystallographic Prototypes
-  URL: https://www.sciencedirect.com/science/article/pii/S0927025621001750
-  volume: '199'
-
-- id: horton_promises_2021
-  accessed:
-    - year: 2023
-      month: 4
-      day: 7
-  author:
-    - family: Horton
-      given: M. K.
-    - family: Dwaraknath
-      given: S.
-    - family: Persson
-      given: K. A.
-  citation-key: horton_promises_2021
-  container-title: Nature Computational Science
-  container-title-short: Nat Comput Sci
-  DOI: 10.1038/s43588-020-00016-5
-  ISSN: 2662-8457
-  issue: '1'
-  issued:
-    - year: 2021
-      month: 1
-  language: en
-  license: 2021 Springer Nature America, Inc.
-  number: '1'
-  page: 3-5
-  publisher: Nature Publishing Group
-  source: www.nature.com
-  title: Promises and perils of computational materials databases
-  URL: https://www.nature.com/articles/s43588-020-00016-5
-  volume: '1'
-
-- id: jain_commentary_2013
-  accessed:
-    - year: 2022
-      month: 2
-      day: 21
-  author:
-    - family: Jain
-      given: Anubhav
-    - family: Ong
-      given: Shyue Ping
-    - family: Hautier
-      given: Geoffroy
-    - family: Chen
-      given: Wei
-    - family: Richards
-      given: William Davidson
-    - family: Dacek
-      given: Stephen
-    - family: Cholia
-      given: Shreyas
-    - family: Gunter
-      given: Dan
-    - family: Skinner
-      given: David
-    - family: Ceder
-      given: Gerbrand
-    - family: Persson
-      given: Kristin A.
-  citation-key: jain_commentary_2013
-  container-title: APL Materials
-  DOI: 10.1063/1.4812323
-  issue: '1'
-  issued:
-    - year: 2013
-      month: 7
-  page: '011002'
-  publisher: American Institute of Physics
-  source: aip.scitation.org (Atypon)
-  title: >-
-    Commentary: The Materials Project: A materials genome approach to
-    accelerating materials innovation
-  title-short: Commentary
-  URL: https://doi.org/10.1063/1.4812323
-  volume: '1'
-
-- id: kovacs_evaluation_2023
-  accessed:
-    - year: 2023
-      month: 5
-      day: 27
-  author:
-    - family: Kovacs
-      given: David Peter
-    - family: Batatia
-      given: Ilyes
-    - family: Arany
-      given: Eszter Sara
-    - family: Csanyi
-      given: Gabor
-  citation-key: kovacs_evaluation_2023
-  issued:
-    - year: 2023
-      month: 5
-      day: 23
-  number: arXiv:2305.14247
-  publisher: arXiv
-  source: arXiv.org
-  title: >-
-    Evaluation of the MACE Force Field Architecture: from Medicinal Chemistry to
-    Materials Science
-  title-short: Evaluation of the MACE Force Field Architecture
-  URL: http://arxiv.org/abs/2305.14247
-
-- id: kovacs_quantitative_2021
-  accessed:
-    - year: 2023
-      month: 7
-      day: 4
-  author:
-    - family: Kovács
-      given: Dávid Péter
-    - family: McCorkindale
-      given: William
-    - family: Lee
-      given: Alpha A.
-  citation-key: kovacs_quantitative_2021
-  container-title: Nature Communications
-  container-title-short: Nat Commun
-  DOI: 10.1038/s41467-021-21895-w
-  ISSN: 2041-1723
-  issue: '1'
-  issued:
-    - year: 2021
-      month: 3
-      day: 16
-  language: en
-  license: 2021 The Author(s)
-  number: '1'
-  page: '1695'
-  publisher: Nature Publishing Group
-  source: www.nature.com
-  title: >-
-    Quantitative interpretation explains machine learning models for chemical
-    reaction prediction and uncovers bias
-  URL: https://www.nature.com/articles/s41467-021-21895-w
-  volume: '12'
-
-- id: kpanou_robustness_2021
-  accessed:
-    - year: 2023
-      month: 7
-      day: 4
-  author:
-    - family: Kpanou
-      given: Rogia
-    - family: Osseni
-      given: Mazid Abiodoun
-    - family: Tossou
-      given: Prudencio
-    - family: Laviolette
-      given: Francois
-    - family: Corbeil
-      given: Jacques
-  citation-key: kpanou_robustness_2021
-  container-title: BMC Bioinformatics
-  container-title-short: BMC Bioinformatics
-  DOI: 10.1186/s12859-021-04398-9
-  ISSN: 1471-2105
-  issued:
-    - year: 2021
-      month: 10
-      day: 4
-  page: '477'
-  PMCID: PMC8489092
-  PMID: '34607569'
-  source: PubMed Central
-  title: On the robustness of generalization of drug–drug interaction models
-  URL: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8489092/
-  volume: '22'
-
-- id: lan_adsorbml_2023
-  accessed:
-    - year: 2023
-      month: 8
-      day: 7
-  author:
-    - family: Lan
-      given: Janice
-    - family: Palizhati
-      given: Aini
-    - family: Shuaibi
-      given: Muhammed
-    - family: Wood
-      given: Brandon M.
-    - family: Wander
-      given: Brook
-    - family: Das
-      given: Abhishek
-    - family: Uyttendaele
-      given: Matt
-    - family: Zitnick
-      given: C. Lawrence
-    - family: Ulissi
-      given: Zachary W.
-  citation-key: lan_adsorbml_2023
-  issued:
-    - year: 2023
-      month: 1
-      day: 4
-  number: arXiv:2211.16486
-  publisher: arXiv
-  source: arXiv.org
-  title: 'AdsorbML: Accelerating Adsorption Energy Calculations with Machine Learning'
-  title-short: AdsorbML
-  URL: http://arxiv.org/abs/2211.16486
-
-- id: li_critical_2023
-  accessed:
-    - year: 2023
-      month: 6
-      day: 18
-  author:
-    - family: Li
-      given: Kangming
-    - family: DeCost
-      given: Brian
-    - family: Choudhary
-      given: Kamal
-    - family: Greenwood
-      given: Michael
-    - family: Hattrick-Simpers
-      given: Jason
-  citation-key: li_critical_2023
-  container-title: npj Computational Materials
-  container-title-short: npj Comput Mater
-  DOI: 10.1038/s41524-023-01012-9
-  ISSN: 2057-3960
-  issue: '1'
-  issued:
-    - year: 2023
-      month: 4
-      day: 7
-  page: '55'
-  source: arXiv.org
-  title: >-
-    A critical examination of robustness and generalizability of machine
-    learning prediction of materials properties
-  URL: http://arxiv.org/abs/2210.13597
-  volume: '9'
-
-- id: li_exploiting_2023
-  accessed:
-    - year: 2023
-      month: 12
-      day: 14
-  author:
-    - family: Li
-      given: Kangming
-    - family: Persaud
-      given: Daniel
-    - family: Choudhary
-      given: Kamal
-    - family: DeCost
-      given: Brian
-    - family: Greenwood
-      given: Michael
-    - family: Hattrick-Simpers
-      given: Jason
-  citation-key: li_exploiting_2023
-  container-title: Nature Communications
-  container-title-short: Nat Commun
-  DOI: 10.1038/s41467-023-42992-y
-  ISSN: 2041-1723
-  issue: '1'
-  issued:
-    - year: 2023
-      month: 11
-      day: 10
-  language: en
-  license: 2023 The Author(s)
-  number: '1'
-  page: '7283'
-  publisher: Nature Publishing Group
-  source: www.nature.com
-  title: >-
-    Exploiting redundancy in large materials datasets for efficient machine
-    learning with less data
-  URL: https://www.nature.com/articles/s41467-023-42992-y
-  volume: '14'
-
-- id: mcdermott_graph-based_2021
-  accessed:
-    - year: 2022
-      month: 4
-      day: 23
-  author:
-    - family: McDermott
-      given: Matthew J.
-    - family: Dwaraknath
-      given: Shyam S.
-    - family: Persson
-      given: Kristin A.
-  citation-key: mcdermott_graph-based_2021
-  container-title: Nature Communications
-  container-title-short: Nat Commun
-  DOI: 10.1038/s41467-021-23339-x
-  ISSN: 2041-1723
-  issue: '1'
-  issued:
-    - year: 2021
-      month: 5
-      day: 25
-  language: en
-  license: 2021 The Author(s)
-  number: '1'
-  page: '3097'
-  publisher: Nature Publishing Group
-  source: www.nature.com
-  title: >-
-    A graph-based network for predicting chemical reaction pathways in
-    solid-state materials synthesis
-  URL: https://www.nature.com/articles/s41467-021-23339-x
-  volume: '12'
-
-- id: mok_directionbased_2022
-  accessed:
-    - year: 2022
-      month: 10
-      day: 4
-  author:
-    - family: Mok
-      given: Dong Hyeon
-    - family: Kim
-      given: Jongseung
-    - family: Back
-      given: Seoin
-  citation-key: mok_directionbased_2022
-  DOI: 10.26434/chemrxiv-2022-dp58c
-  genre: preprint
-  issued:
-    - year: 2022
-      month: 9
-      day: 30
-  language: en
-  publisher: Chemistry
-  source: DOI.org (Crossref)
-  title: >-
-    Direction-based Graph Representation to Accelerate Stable Catalysts
-    Discovery
-  URL: https://doi.org/10.26434/chemrxiv-2022-dp58c
-
-- id: park_developing_2020
-  accessed:
-    - year: 2023
-      month: 4
-      day: 5
-  author:
-    - family: Park
-      given: Cheol Woo
-    - family: Wolverton
-      given: Chris
-  citation-key: park_developing_2020
-  container-title: Physical Review Materials
-  container-title-short: Phys. Rev. Mater.
-  DOI: 10.1103/PhysRevMaterials.4.063801
-  issue: '6'
-  issued:
-    - year: 2020
-      month: 6
-      day: 1
-  page: '063801'
-  publisher: American Physical Society
-  source: APS
-  title: >-
-    Developing an improved crystal graph convolutional neural network framework
-    for accelerated materials discovery
-  URL: https://link.aps.org/doi/10.1103/PhysRevMaterials.4.063801
-  volume: '4'
-
-- id: qi_robust_2023
-  accessed:
-    - year: 2023
-      month: 7
-      day: 27
-  author:
-    - family: Qi
-      given: Ji
-    - family: Ko
-      given: Tsz Wai
-    - family: Wood
-      given: Brandon C.
-    - family: Pham
-      given: Tuan Anh
-    - family: Ong
-      given: Shyue Ping
-  citation-key: qi_robust_2023
-  DOI: 10.48550/arXiv.2307.13710
-  issued:
-    - year: 2023
-      month: 7
-      day: 24
-  number: arXiv:2307.13710
-  publisher: arXiv
-  source: arXiv.org
-  title: >-
-    Robust Training of Machine Learning Interatomic Potentials with
-    Dimensionality Reduction and Stratified Sampling
-  URL: http://arxiv.org/abs/2307.13710
-
-- id: raccuglia_machine-learning-assisted_2016
-  accessed:
-    - year: 2023
-      month: 4
-      day: 7
-  author:
-    - family: Raccuglia
-      given: Paul
-    - family: Elbert
-      given: Katherine C.
-    - family: Adler
-      given: Philip D. F.
-    - family: Falk
-      given: Casey
-    - family: Wenny
-      given: Malia B.
-    - family: Mollo
-      given: Aurelio
-    - family: Zeller
-      given: Matthias
-    - family: Friedler
-      given: Sorelle A.
-    - family: Schrier
-      given: Joshua
-    - family: Norquist
-      given: Alexander J.
-  citation-key: raccuglia_machine-learning-assisted_2016
-  container-title: Nature
-  DOI: 10.1038/nature17439
-  ISSN: 1476-4687
-  issue: '7601'
-  issued:
-    - year: 2016
-      month: 5
-  language: en
-  license: >-
-    2016 Nature Publishing Group, a division of Macmillan Publishers Limited.
-    All Rights Reserved.
-  number: '7601'
-  page: 73-76
-  publisher: Nature Publishing Group
-  source: www.nature.com
-  title: Machine-learning-assisted materials discovery using failed experiments
-  URL: https://www.nature.com/articles/nature17439
-  volume: '533'
-
-- id: riebesell_pushing_2024
-  accessed:
-    - year: 2024
-      month: 1
-      day: 12
-  author:
-    - family: Riebesell
-      given: Janosh
-    - family: Surta
-      given: T. Wesley
-    - family: Goodall
-      given: Rhys
-    - family: Gaultois
-      given: Michael
-    - family: Lee
-      given: Alpha A.
-  citation-key: riebesell_pushing_2024
-  container-title: arXiv.org
-  issued:
-    - year: 2024
-      month: 1
-      day: 11
-  language: en
-  title: >-
-    Pushing the Pareto front of band gap and permittivity: ML-guided search for
-    dielectric materials
-  title-short: Pushing the Pareto front of band gap and permittivity
-  URL: https://arxiv.org/abs/2401.05848v1
-
-- id: riebesell_pymatviz_2022
-  accessed:
-    - year: 2023
-      month: 12
-      day: 2
-  author:
-    - family: Riebesell
-      given: Janosh
-    - family: Goodall
-      given: Rhys
-    - family: Baird
-      given: Sterling G.
-  citation-key: riebesell_pymatviz_2022
-  DOI: 10.5281/zenodo.7486816
-  genre: Python
-  issued:
-    - year: 2022
-      month: 10
-  license: MIT
-  source: GitHub
-  title: 'Pymatviz: A toolkit for visualizations in materials informatics'
-  URL: https://github.com/janosh/pymatviz
-  version: 0.8.0
-
-- id: rupp_fast_2012
-  accessed:
-    - year: 2023
-      month: 7
-      day: 27
-  author:
-    - family: Rupp
-      given: Matthias
-    - family: Tkatchenko
-      given: Alexandre
-    - family: Müller
-      given: Klaus-Robert
-    - family: Lilienfeld
-      given: O. Anatole
-      non-dropping-particle: von
-  citation-key: rupp_fast_2012
-  container-title: Physical Review Letters
-  container-title-short: Phys. Rev. Lett.
-  DOI: 10.1103/PhysRevLett.108.058301
-  issue: '5'
-  issued:
-    - year: 2012
-      month: 1
-      day: 31
-  page: '058301'
-  publisher: American Physical Society
-  source: APS
-  title: >-
-    Fast and Accurate Modeling of Molecular Atomization Energies with Machine
-    Learning
-  URL: https://link.aps.org/doi/10.1103/PhysRevLett.108.058301
-  volume: '108'
-
-- id: saal_materials_2013
-  accessed:
-    - year: 2023
-      month: 2
-      day: 8
-  author:
-    - family: Saal
-      given: James E.
-    - family: Kirklin
-      given: Scott
-    - family: Aykol
-      given: Muratahan
-    - family: Meredig
-      given: Bryce
-    - family: Wolverton
-      given: C.
-  citation-key: saal_materials_2013
-  container-title: JOM
-  container-title-short: JOM
-  DOI: 10.1007/s11837-013-0755-4
-  ISSN: 1543-1851
-  issue: '11'
-  issued:
-    - year: 2013
-      month: 11
-      day: 1
-  language: en
-  page: 1501-1509
-  source: Springer Link
-  title: >-
-    Materials Design and Discovery with High-Throughput Density Functional
-    Theory: The Open Quantum Materials Database (OQMD)
-  title-short: >-
-    Materials Design and Discovery with High-Throughput Density Functional
-    Theory
-  URL: https://doi.org/10.1007/s11837-013-0755-4
-  volume: '65'
-
-- id: schutt_how_2014
-  accessed:
-    - year: 2023
-      month: 7
-      day: 27
-  author:
-    - family: Schütt
-      given: K. T.
-    - family: Glawe
-      given: H.
-    - family: Brockherde
-      given: F.
-    - family: Sanna
-      given: A.
-    - family: Müller
-      given: K. R.
-    - family: Gross
-      given: E. K. U.
-  citation-key: schutt_how_2014
-  container-title: Physical Review B
-  container-title-short: Phys. Rev. B
-  DOI: 10.1103/PhysRevB.89.205118
-  issue: '20'
-  issued:
-    - year: 2014
-      month: 5
-      day: 21
-  page: '205118'
-  publisher: American Physical Society
-  source: APS
-  title: >-
-    How to represent crystal structures for machine learning: Towards fast
-    prediction of electronic properties
-  title-short: How to represent crystal structures for machine learning
-  URL: https://link.aps.org/doi/10.1103/PhysRevB.89.205118
-  volume: '89'
-
-- id: takamoto_teanet_2022
-  accessed:
-    - year: 2023
-      month: 5
-      day: 24
-  author:
-    - family: Takamoto
-      given: So
-    - family: Izumi
-      given: Satoshi
-    - family: Li
-      given: Ju
-  citation-key: takamoto_teanet_2022
-  container-title: Computational Materials Science
-  container-title-short: Computational Materials Science
-  DOI: 10.1016/j.commatsci.2022.111280
-  ISSN: 0927-0256
-  issued:
-    - year: 2022
-      month: 5
-      day: 1
-  language: en
-  page: '111280'
-  source: ScienceDirect
-  title: >-
-    TeaNet: Universal neural network interatomic potential inspired by iterative
-    electronic relaxations
-  title-short: TeaNet
-  URL: https://www.sciencedirect.com/science/article/pii/S0927025622000799
-  volume: '207'
 
 - id: takamoto_towards_2022
   accessed:
@@ -1820,6 +1448,272 @@ references:
   URL: https://www.nature.com/articles/s41467-022-30687-9
   volume: '13'
 
+- id: takamoto_teanet_2022
+  accessed:
+    - year: 2023
+      month: 5
+      day: 24
+  author:
+    - family: Takamoto
+      given: So
+    - family: Izumi
+      given: Satoshi
+    - family: Li
+      given: Ju
+  citation-key: takamoto_teanet_2022
+  container-title: Computational Materials Science
+  container-title-short: Computational Materials Science
+  DOI: 10.1016/j.commatsci.2022.111280
+  ISSN: 0927-0256
+  issued:
+    - year: 2022
+      month: 5
+      day: 1
+  language: en
+  page: '111280'
+  source: ScienceDirect
+  title: >-
+    TeaNet: Universal neural network interatomic potential inspired by iterative
+    electronic relaxations
+  title-short: TeaNet
+  URL: https://www.sciencedirect.com/science/article/pii/S0927025622000799
+  volume: '207'
+
+- id: batatia_mace_2023
+  accessed:
+    - year: 2023
+      month: 5
+      day: 24
+  author:
+    - family: Batatia
+      given: Ilyes
+    - family: Kovács
+      given: Dávid Péter
+    - family: Simm
+      given: Gregor N. C.
+    - family: Ortner
+      given: Christoph
+    - family: Csányi
+      given: Gábor
+  citation-key: batatia_mace_2023
+  issued:
+    - year: 2023
+      month: 1
+      day: 26
+  number: arXiv:2206.07697
+  publisher: arXiv
+  source: arXiv.org
+  title: >-
+    MACE: Higher Order Equivariant Message Passing Neural Networks for Fast and
+    Accurate Force Fields
+  title-short: MACE
+  URL: http://arxiv.org/abs/2206.07697
+
+- id: kovacs_evaluation_2023
+  accessed:
+    - year: 2023
+      month: 5
+      day: 27
+  author:
+    - family: Kovacs
+      given: David Peter
+    - family: Batatia
+      given: Ilyes
+    - family: Arany
+      given: Eszter Sara
+    - family: Csanyi
+      given: Gabor
+  citation-key: kovacs_evaluation_2023
+  issued:
+    - year: 2023
+      month: 5
+      day: 23
+  number: arXiv:2305.14247
+  publisher: arXiv
+  source: arXiv.org
+  title: >-
+    Evaluation of the MACE Force Field Architecture: from Medicinal Chemistry to
+    Materials Science
+  title-short: Evaluation of the MACE Force Field Architecture
+  URL: http://arxiv.org/abs/2305.14247
+
+- id: li_critical_2023
+  accessed:
+    - year: 2023
+      month: 6
+      day: 18
+  author:
+    - family: Li
+      given: Kangming
+    - family: DeCost
+      given: Brian
+    - family: Choudhary
+      given: Kamal
+    - family: Greenwood
+      given: Michael
+    - family: Hattrick-Simpers
+      given: Jason
+  citation-key: li_critical_2023
+  container-title: npj Computational Materials
+  container-title-short: npj Comput Mater
+  DOI: 10.1038/s41524-023-01012-9
+  ISSN: 2057-3960
+  issue: '1'
+  issued:
+    - year: 2023
+      month: 4
+      day: 7
+  page: '55'
+  source: arXiv.org
+  title: >-
+    A critical examination of robustness and generalizability of machine
+    learning prediction of materials properties
+  URL: http://arxiv.org/abs/2210.13597
+  volume: '9'
+
+- id: kpanou_robustness_2021
+  accessed:
+    - year: 2023
+      month: 7
+      day: 4
+  author:
+    - family: Kpanou
+      given: Rogia
+    - family: Osseni
+      given: Mazid Abiodoun
+    - family: Tossou
+      given: Prudencio
+    - family: Laviolette
+      given: Francois
+    - family: Corbeil
+      given: Jacques
+  citation-key: kpanou_robustness_2021
+  container-title: BMC Bioinformatics
+  container-title-short: BMC Bioinformatics
+  DOI: 10.1186/s12859-021-04398-9
+  ISSN: 1471-2105
+  issued:
+    - year: 2021
+      month: 10
+      day: 4
+  page: '477'
+  PMCID: PMC8489092
+  PMID: '34607569'
+  source: PubMed Central
+  title: On the robustness of generalization of drug–drug interaction models
+  URL: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8489092/
+  volume: '22'
+
+- id: kovacs_quantitative_2021
+  accessed:
+    - year: 2023
+      month: 7
+      day: 4
+  author:
+    - family: Kovács
+      given: Dávid Péter
+    - family: McCorkindale
+      given: William
+    - family: Lee
+      given: Alpha A.
+  citation-key: kovacs_quantitative_2021
+  container-title: Nature Communications
+  container-title-short: Nat Commun
+  DOI: 10.1038/s41467-021-21895-w
+  ISSN: 2041-1723
+  issue: '1'
+  issued:
+    - year: 2021
+      month: 3
+      day: 16
+  language: en
+  license: 2021 The Author(s)
+  number: '1'
+  page: '1695'
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: >-
+    Quantitative interpretation explains machine learning models for chemical
+    reaction prediction and uncovers bias
+  URL: https://www.nature.com/articles/s41467-021-21895-w
+  volume: '12'
+
+- id: choudhary_unified_2023
+  accessed:
+    - year: 2023
+      month: 7
+      day: 20
+  author:
+    - family: Choudhary
+      given: Kamal
+    - family: DeCost
+      given: Brian
+    - family: Major
+      given: Lily
+    - family: Butler
+      given: Keith
+    - family: Thiyagalingam
+      given: Jeyan
+    - family: Tavazza
+      given: Francesca
+  citation-key: choudhary_unified_2023
+  container-title: Digital Discovery
+  DOI: 10.1039/D2DD00096B
+  issue: '2'
+  issued:
+    - year: 2023
+  language: en
+  page: 346-355
+  publisher: Royal Society of Chemistry
+  source: pubs.rsc.org
+  title: >-
+    Unified graph neural network force-field for the periodic table: solid state
+    applications
+  title-short: Unified graph neural network force-field for the periodic table
+  URL: https://pubs.rsc.org/en/content/articlelanding/2023/dd/d2dd00096b
+  volume: '2'
+
+- id: wu_moleculenet_2018
+  accessed:
+    - year: 2023
+      month: 7
+      day: 23
+  author:
+    - family: Wu
+      given: Zhenqin
+    - family: Ramsundar
+      given: Bharath
+    - family: Feinberg
+      given: Evan N.
+    - family: Gomes
+      given: Joseph
+    - family: Geniesse
+      given: Caleb
+    - family: Pappu
+      given: Aneesh S.
+    - family: Leswing
+      given: Karl
+    - family: Pande
+      given: Vijay
+  citation-key: wu_moleculenet_2018
+  container-title: Chemical Science
+  container-title-short: Chem. Sci.
+  DOI: 10.1039/C7SC02664A
+  ISSN: 2041-6539
+  issue: '2'
+  issued:
+    - year: 2018
+      month: 1
+      day: 3
+  language: en
+  page: 513-530
+  publisher: The Royal Society of Chemistry
+  source: pubs.rsc.org
+  title: 'MoleculeNet: a benchmark for molecular machine learning'
+  title-short: MoleculeNet
+  URL: https://pubs.rsc.org/en/content/articlelanding/2018/sc/c7sc02664a
+  volume: '9'
+
 - id: thomas_tensor_2018
   accessed:
     - year: 2023
@@ -1855,92 +1749,165 @@ references:
   title-short: Tensor field networks
   URL: http://arxiv.org/abs/1802.08219
 
-- id: tran_open_2022
+- id: qi_robust_2023
   accessed:
     - year: 2023
-      month: 2
-      day: 8
+      month: 7
+      day: 27
   author:
-    - family: Tran
-      given: Richard
-    - family: Lan
-      given: Janice
-    - family: Shuaibi
-      given: Muhammed
+    - family: Qi
+      given: Ji
+    - family: Ko
+      given: Tsz Wai
     - family: Wood
-      given: Brandon M.
-    - family: Goyal
-      given: Siddharth
-    - family: Das
-      given: Abhishek
-    - family: Heras-Domingo
-      given: Javier
-    - family: Kolluru
-      given: Adeesh
-    - family: Rizvi
-      given: Ammar
-    - family: Shoghi
-      given: Nima
-    - family: Sriram
-      given: Anuroop
-    - family: Therrien
-      given: Felix
-    - family: Abed
-      given: Jehad
-    - family: Voznyy
-      given: Oleksandr
-    - family: Sargent
-      given: Edward H.
-    - family: Ulissi
-      given: Zachary
-    - family: Zitnick
-      given: C. Lawrence
-  citation-key: tran_open_2022
-  DOI: 10.48550/arXiv.2206.08917
+      given: Brandon C.
+    - family: Pham
+      given: Tuan Anh
+    - family: Ong
+      given: Shyue Ping
+  citation-key: qi_robust_2023
+  DOI: 10.48550/arXiv.2307.13710
   issued:
-    - year: 2022
-      month: 11
-      day: 4
-  number: arXiv:2206.08917
+    - year: 2023
+      month: 7
+      day: 24
+  number: arXiv:2307.13710
   publisher: arXiv
   source: arXiv.org
   title: >-
-    The Open Catalyst 2022 (OC22) Dataset and Challenges for Oxide
-    Electrocatalysts
-  URL: http://arxiv.org/abs/2206.08917
+    Robust Training of Machine Learning Interatomic Potentials with
+    Dimensionality Reduction and Stratified Sampling
+  URL: http://arxiv.org/abs/2307.13710
 
-- id: vaswani_attention_2017
+- id: choudhary_atomistic_2021
   accessed:
-    - year: 2020
-      month: 8
-      day: 5
+    - year: 2023
+      month: 7
+      day: 27
   author:
-    - family: Vaswani
-      given: Ashish
-    - family: Shazeer
-      given: Noam
-    - family: Parmar
-      given: Niki
-    - family: Uszkoreit
-      given: Jakob
-    - family: Jones
-      given: Llion
-    - family: Gomez
-      given: Aidan N.
-    - family: Kaiser
-      given: Lukasz
-    - family: Polosukhin
-      given: Illia
-  citation-key: vaswani_attention_2017
-  container-title: arXiv:1706.03762 [cs]
+    - family: Choudhary
+      given: Kamal
+    - family: DeCost
+      given: Brian
+  citation-key: choudhary_atomistic_2021
+  container-title: npj Computational Materials
+  container-title-short: npj Comput Mater
+  DOI: 10.1038/s41524-021-00650-1
+  ISSN: 2057-3960
+  issue: '1'
   issued:
-    - year: 2017
-      month: 12
-      day: 5
-  note: 'ZSCC: 0010850'
-  source: arXiv.org
-  title: Attention Is All You Need
-  URL: http://arxiv.org/abs/1706.03762
+    - year: 2021
+      month: 11
+      day: 15
+  language: en
+  license: >-
+    2021 This is a U.S. government work and not under copyright protection in
+    the U.S.; foreign copyright protection may apply
+  number: '1'
+  page: 1-8
+  publisher: Nature Publishing Group
+  source: www.nature.com
+  title: >-
+    Atomistic Line Graph Neural Network for improved materials property
+    predictions
+  URL: https://www.nature.com/articles/s41524-021-00650-1
+  volume: '7'
+
+- id: rupp_fast_2012
+  accessed:
+    - year: 2023
+      month: 7
+      day: 27
+  author:
+    - family: Rupp
+      given: Matthias
+    - family: Tkatchenko
+      given: Alexandre
+    - family: Müller
+      given: Klaus-Robert
+    - family: Lilienfeld
+      given: O. Anatole
+      non-dropping-particle: von
+  citation-key: rupp_fast_2012
+  container-title: Physical Review Letters
+  container-title-short: Phys. Rev. Lett.
+  DOI: 10.1103/PhysRevLett.108.058301
+  issue: '5'
+  issued:
+    - year: 2012
+      month: 1
+      day: 31
+  page: '058301'
+  publisher: American Physical Society
+  source: APS
+  title: >-
+    Fast and Accurate Modeling of Molecular Atomization Energies with Machine
+    Learning
+  URL: https://link.aps.org/doi/10.1103/PhysRevLett.108.058301
+  volume: '108'
+
+- id: schutt_how_2014
+  accessed:
+    - year: 2023
+      month: 7
+      day: 27
+  author:
+    - family: Schütt
+      given: K. T.
+    - family: Glawe
+      given: H.
+    - family: Brockherde
+      given: F.
+    - family: Sanna
+      given: A.
+    - family: Müller
+      given: K. R.
+    - family: Gross
+      given: E. K. U.
+  citation-key: schutt_how_2014
+  container-title: Physical Review B
+  container-title-short: Phys. Rev. B
+  DOI: 10.1103/PhysRevB.89.205118
+  issue: '20'
+  issued:
+    - year: 2014
+      month: 5
+      day: 21
+  page: '205118'
+  publisher: American Physical Society
+  source: APS
+  title: >-
+    How to represent crystal structures for machine learning: Towards fast
+    prediction of electronic properties
+  title-short: How to represent crystal structures for machine learning
+  URL: https://link.aps.org/doi/10.1103/PhysRevB.89.205118
+  volume: '89'
+
+- id: drautz_atomic_2019
+  accessed:
+    - year: 2023
+      month: 7
+      day: 27
+  author:
+    - family: Drautz
+      given: Ralf
+  citation-key: drautz_atomic_2019
+  container-title: Physical Review B
+  container-title-short: Phys. Rev. B
+  DOI: 10.1103/PhysRevB.99.014104
+  issue: '1'
+  issued:
+    - year: 2019
+      month: 1
+      day: 8
+  page: '014104'
+  publisher: American Physical Society
+  source: APS
+  title: >-
+    Atomic cluster expansion for accurate and transferable interatomic
+    potentials
+  URL: https://link.aps.org/doi/10.1103/PhysRevB.99.014104
+  volume: '99'
 
 - id: vonlilienfeld_retrospective_2020
   accessed:
@@ -1972,6 +1939,113 @@ references:
   title: Retrospective on a decade of machine learning for chemical discovery
   URL: https://www.nature.com/articles/s41467-020-18556-9
   volume: '11'
+
+- id: allen_learning_2023
+  accessed:
+    - year: 2023
+      month: 7
+      day: 30
+  author:
+    - family: Allen
+      given: Alice E. A.
+    - family: Lubbers
+      given: Nicholas
+    - family: Matin
+      given: Sakib
+    - family: Smith
+      given: Justin
+    - family: Messerly
+      given: Richard
+    - family: Tretiak
+      given: Sergei
+    - family: Barros
+      given: Kipton
+  citation-key: allen_learning_2023
+  issued:
+    - year: 2023
+      month: 7
+      day: 8
+  number: arXiv:2307.04012
+  publisher: arXiv
+  source: arXiv.org
+  title: >-
+    Learning Together: Towards foundational models for machine learning
+    interatomic potentials with meta-learning
+  title-short: Learning Together
+  URL: http://arxiv.org/abs/2307.04012
+
+- id: lan_adsorbml_2023
+  accessed:
+    - year: 2023
+      month: 8
+      day: 7
+  author:
+    - family: Lan
+      given: Janice
+    - family: Palizhati
+      given: Aini
+    - family: Shuaibi
+      given: Muhammed
+    - family: Wood
+      given: Brandon M.
+    - family: Wander
+      given: Brook
+    - family: Das
+      given: Abhishek
+    - family: Uyttendaele
+      given: Matt
+    - family: Zitnick
+      given: C. Lawrence
+    - family: Ulissi
+      given: Zachary W.
+  citation-key: lan_adsorbml_2023
+  issued:
+    - year: 2023
+      month: 1
+      day: 4
+  number: arXiv:2211.16486
+  publisher: arXiv
+  source: arXiv.org
+  title: 'AdsorbML: Accelerating Adsorption Energy Calculations with Machine Learning'
+  title-short: AdsorbML
+  URL: http://arxiv.org/abs/2211.16486
+
+- id: belsky_new_2002
+  accessed:
+    - year: 2023
+      month: 8
+      day: 16
+  author:
+    - family: Belsky
+      given: A.
+    - family: Hellenbrandt
+      given: M.
+    - family: Karen
+      given: V. L.
+    - family: Luksch
+      given: P.
+  citation-key: belsky_new_2002
+  container-title: 'Acta Crystallographica Section B: Structural Science'
+  container-title-short: Acta Cryst B
+  DOI: 10.1107/S0108768102006948
+  ISSN: 0108-7681
+  issue: '3'
+  issued:
+    - year: 2002
+      month: 6
+      day: 1
+  language: en
+  license: Copyright (c) 2002 International Union of Crystallography
+  number: ARRAY(0xa762024)
+  page: 364-369
+  publisher: International Union of Crystallography
+  source: scripts.iucr.org
+  title: >-
+    New developments in the Inorganic Crystal Structure Database (ICSD):
+    accessibility in support of materials research and design
+  title-short: New developments in the Inorganic Crystal Structure Database (ICSD)
+  URL: http://scripts.iucr.org/cgi-bin/paper?an0615
+  volume: '58'
 
 - id: wang_framework_2021
   accessed:
@@ -2015,111 +2089,73 @@ references:
   URL: https://www.nature.com/articles/s41598-021-94550-5
   volume: '11'
 
-- id: wang_predicting_2021
-  accessed:
-    - year: 2022
-      month: 2
-      day: 21
-  author:
-    - family: Wang
-      given: Hai-Chen
-    - family: Botti
-      given: Silvana
-    - family: Marques
-      given: Miguel A. L.
-  citation-key: wang_predicting_2021
-  container-title: npj Computational Materials
-  container-title-short: npj Comput Mater
-  DOI: 10.1038/s41524-020-00481-6
-  ISSN: 2057-3960
-  issue: '1'
-  issued:
-    - year: 2021
-      month: 1
-      day: 26
-  language: en
-  license: 2021 The Author(s)
-  number: '1'
-  page: 1-9
-  publisher: Nature Publishing Group
-  source: www.nature.com
-  title: Predicting stable crystalline compounds using chemical similarity
-  URL: https://www.nature.com/articles/s41524-020-00481-6
-  volume: '7'
-
-- id: ward_general-purpose_2016
-  accessed:
-    - year: 2020
-      month: 7
-      day: 29
-  author:
-    - family: Ward
-      given: Logan
-    - family: Agrawal
-      given: Ankit
-    - family: Choudhary
-      given: Alok
-    - family: Wolverton
-      given: Christopher
-  citation-key: ward_general-purpose_2016
-  container-title: npj Computational Materials
-  DOI: 10.1038/npjcompumats.2016.28
-  ISSN: 2057-3960
-  issue: '1'
-  issued:
-    - year: 2016
-      month: 8
-      day: 26
-  language: en
-  license: 2016 The Author(s)
-  note: 'ZSCC: 0000247'
-  number: '1'
-  page: 1-7
-  publisher: Nature Publishing Group
-  source: www.nature.com
-  title: >-
-    A general-purpose machine learning framework for predicting properties of
-    inorganic materials
-  URL: https://www.nature.com/articles/npjcompumats201628
-  volume: '2'
-
-- id: ward_including_2017
+- id: deng_chgnet_2023
   accessed:
     - year: 2023
-      month: 1
-      day: 12
+      month: 11
+      day: 24
   author:
-    - family: Ward
-      given: Logan
-    - family: Liu
-      given: Ruoqian
-    - family: Krishna
-      given: Amar
-    - family: Hegde
-      given: Vinay I.
-    - family: Agrawal
-      given: Ankit
-    - family: Choudhary
-      given: Alok
-    - family: Wolverton
-      given: Chris
-  citation-key: ward_including_2017
-  container-title: Physical Review B
-  container-title-short: Phys. Rev. B
-  DOI: 10.1103/PhysRevB.96.024104
-  issue: '2'
+    - family: Deng
+      given: Bowen
+    - family: Zhong
+      given: Peichen
+    - family: Jun
+      given: KyuJung
+    - family: Riebesell
+      given: Janosh
+    - family: Han
+      given: Kevin
+    - family: Bartel
+      given: Christopher J.
+    - family: Ceder
+      given: Gerbrand
+  citation-key: deng_chgnet_2023
+  container-title: Nature Machine Intelligence
+  container-title-short: Nat Mach Intell
+  DOI: 10.1038/s42256-023-00716-3
+  ISSN: 2522-5839
+  issue: '9'
   issued:
-    - year: 2017
-      month: 7
+    - year: 2023
+      month: 9
       day: 14
-  page: '024104'
-  publisher: American Physical Society
-  source: APS
+  language: en
+  license: >-
+    2023 This is a U.S. Government work and not under copyright protection in
+    the US; foreign copyright protection may apply
+  number: '9'
+  page: 1031-1041
+  publisher: Nature Publishing Group
+  source: www.nature.com
   title: >-
-    Including crystal structure attributes in machine learning models of
-    formation energies via Voronoi tessellations
-  URL: https://link.aps.org/doi/10.1103/PhysRevB.96.024104
-  volume: '96'
+    CHGNet as a pretrained universal neural network potential for
+    charge-informed atomistic modelling
+  URL: https://www.nature.com/articles/s42256-023-00716-3
+  volume: '5'
+
+- id: riebesell_pymatviz_2022
+  accessed:
+    - year: 2023
+      month: 12
+      day: 2
+  author:
+    - family: Riebesell
+      given: Janosh
+    - family: Goodall
+      given: Rhys
+    - family: Baird
+      given: Sterling G.
+  citation-key: riebesell_pymatviz_2022
+  DOI: 10.5281/zenodo.7486816
+  genre: Python
+  issued:
+    - year: 2022
+      month: 10
+  license: MIT
+  source: GitHub
+  title: 'Pymatviz: A toolkit for visualizations in materials informatics'
+  URL: https://github.com/janosh/pymatviz
+  version: 0.8.0
 
 - id: ward_matminer_2018
   accessed:
@@ -2175,110 +2211,112 @@ references:
   URL: https://www.sciencedirect.com/science/article/pii/S0927025618303252
   volume: '152'
 
-- id: wen_chemical_2023
+- id: li_exploiting_2023
   accessed:
     - year: 2023
-      month: 3
-      day: 7
+      month: 12
+      day: 14
   author:
-    - family: Wen
-      given: Mingjian
-    - family: Spotte-Smith
-      given: Evan Walter Clark
-    - family: Blau
-      given: Samuel M.
-    - family: McDermott
-      given: Matthew J.
-    - family: Krishnapriyan
-      given: Aditi S.
-    - family: Persson
-      given: Kristin A.
-  citation-key: wen_chemical_2023
-  container-title: Nature Computational Science
-  container-title-short: Nat Comput Sci
-  DOI: 10.1038/s43588-022-00369-z
-  ISSN: 2662-8457
+    - family: Li
+      given: Kangming
+    - family: Persaud
+      given: Daniel
+    - family: Choudhary
+      given: Kamal
+    - family: DeCost
+      given: Brian
+    - family: Greenwood
+      given: Michael
+    - family: Hattrick-Simpers
+      given: Jason
+  citation-key: li_exploiting_2023
+  container-title: Nature Communications
+  container-title-short: Nat Commun
+  DOI: 10.1038/s41467-023-42992-y
+  ISSN: 2041-1723
   issue: '1'
   issued:
     - year: 2023
-      month: 1
+      month: 11
+      day: 10
   language: en
-  license: 2023 Springer Nature America, Inc.
+  license: 2023 The Author(s)
   number: '1'
-  page: 12-24
+  page: '7283'
   publisher: Nature Publishing Group
   source: www.nature.com
-  title: Chemical reaction networks and opportunities for machine learning
-  URL: https://www.nature.com/articles/s43588-022-00369-z
-  volume: '3'
-
-- id: wu_moleculenet_2018
-  accessed:
-    - year: 2023
-      month: 7
-      day: 23
-  author:
-    - family: Wu
-      given: Zhenqin
-    - family: Ramsundar
-      given: Bharath
-    - family: Feinberg
-      given: Evan N.
-    - family: Gomes
-      given: Joseph
-    - family: Geniesse
-      given: Caleb
-    - family: Pappu
-      given: Aneesh S.
-    - family: Leswing
-      given: Karl
-    - family: Pande
-      given: Vijay
-  citation-key: wu_moleculenet_2018
-  container-title: Chemical Science
-  container-title-short: Chem. Sci.
-  DOI: 10.1039/C7SC02664A
-  ISSN: 2041-6539
-  issue: '2'
-  issued:
-    - year: 2018
-      month: 1
-      day: 3
-  language: en
-  page: 513-530
-  publisher: The Royal Society of Chemistry
-  source: pubs.rsc.org
-  title: 'MoleculeNet: a benchmark for molecular machine learning'
-  title-short: MoleculeNet
-  URL: https://pubs.rsc.org/en/content/articlelanding/2018/sc/c7sc02664a
-  volume: '9'
-
-- id: xie_crystal_2018
-  accessed:
-    - year: 2019
-      month: 8
-      day: 22
-  author:
-    - family: Xie
-      given: Tian
-    - family: Grossman
-      given: Jeffrey C.
-  citation-key: xie_crystal_2018
-  container-title: Physical Review Letters
-  container-title-short: Phys. Rev. Lett.
-  DOI: 10.1103/PhysRevLett.120.145301
-  issue: '14'
-  issued:
-    - year: 2018
-      month: 4
-      day: 6
-  page: '145301'
-  source: APS
   title: >-
-    Crystal Graph Convolutional Neural Networks for an Accurate and
-    Interpretable Prediction of Material Properties
-  URL: https://link.aps.org/doi/10.1103/PhysRevLett.120.145301
-  volume: '120'
+    Exploiting redundancy in large materials datasets for efficient machine
+    learning with less data
+  URL: https://www.nature.com/articles/s41467-023-42992-y
+  volume: '14'
+
+- id: riebesell_pushing_2024
+  accessed:
+    - year: 2024
+      month: 1
+      day: 12
+  author:
+    - family: Riebesell
+      given: Janosh
+    - family: Surta
+      given: T. Wesley
+    - family: Goodall
+      given: Rhys
+    - family: Gaultois
+      given: Michael
+    - family: Lee
+      given: Alpha A.
+  citation-key: riebesell_pushing_2024
+  container-title: arXiv.org
+  issued:
+    - year: 2024
+      month: 1
+      day: 11
+  language: en
+  title: >-
+    Pushing the Pareto front of band gap and permittivity: ML-guided search for
+    dielectric materials
+  title-short: Pushing the Pareto front of band gap and permittivity
+  URL: https://arxiv.org/abs/2401.05848v1
+
+- id: hicks_aflow_2021
+  accessed:
+    - year: 2024
+      month: 1
+      day: 24
+  author:
+    - family: Hicks
+      given: David
+    - family: Mehl
+      given: Michael J.
+    - family: Esters
+      given: Marco
+    - family: Oses
+      given: Corey
+    - family: Levy
+      given: Ohad
+    - family: Hart
+      given: Gus L. W.
+    - family: Toher
+      given: Cormac
+    - family: Curtarolo
+      given: Stefano
+  citation-key: hicks_aflow_2021
+  container-title: Computational Materials Science
+  container-title-short: Computational Materials Science
+  DOI: 10.1016/j.commatsci.2021.110450
+  ISSN: 0927-0256
+  issued:
+    - year: 2021
+      month: 11
+      day: 1
+  page: '110450'
+  source: ScienceDirect
+  title: 'The AFLOW Library of Crystallographic Prototypes: Part 3'
+  title-short: The AFLOW Library of Crystallographic Prototypes
+  URL: https://www.sciencedirect.com/science/article/pii/S0927025621001750
+  volume: '199'
 
 - id: zhu_fast_2023
   accessed:
@@ -2309,42 +2347,4 @@ references:
   title: Fast uncertainty estimates in deep learning interatomic potentials
   URL: https://doi.org/10.1063/5.0136574
   volume: '158'
-
-- id: zuo_accelerating_2021
-  accessed:
-    - year: 2021
-      month: 10
-      day: 21
-  author:
-    - family: Zuo
-      given: Yunxing
-    - family: Qin
-      given: Mingde
-    - family: Chen
-      given: Chi
-    - family: Ye
-      given: Weike
-    - family: Li
-      given: Xiangguo
-    - family: Luo
-      given: Jian
-    - family: Ong
-      given: Shyue Ping
-  citation-key: zuo_accelerating_2021
-  container-title: Materials Today
-  container-title-short: Materials Today
-  DOI: 10.1016/j.mattod.2021.08.012
-  ISSN: 1369-7021
-  issued:
-    - year: 2021
-      month: 10
-      day: 1
-  language: en
-  note: 'ZSCC: 0000001'
-  source: ScienceDirect
-  title: >-
-    Accelerating materials discovery with Bayesian optimization and graph deep
-    learning
-  title-short: BOWSR
-  URL: https://www.sciencedirect.com/science/article/pii/S1369702121002984
 ...

@@ -338,7 +338,7 @@
   </thead>
   <tbody>
     <tr>
-      <th id="T__level0_row0" class="row_heading level0 row0" ><span title="Version: n/a">MatterSim</span></th>
+      <th id="T__level0_row0" class="row_heading level0 row0" ><span title="Version: n/a" class="proprietary">MatterSim</span></th>
       <td id="T__row0_col0" class="data row0 col0" >0.989</td>
       <td id="T__row0_col1" class="data row0 col1" >6.401</td>
       <td id="T__row0_col2" class="data row0 col2" >0.978</td>
@@ -348,7 +348,7 @@
       <td id="T__row0_col6" class="data row0 col6" >0.906</td>
     </tr>
     <tr>
-      <th id="T__level0_row1" class="row_heading level0 row1" ><span title="Version: n/a">GNoME</span></th>
+      <th id="T__level0_row1" class="row_heading level0 row1" ><span title="Version: n/a" class="proprietary">GNoME</span></th>
       <td id="T__row1_col0" class="data row1 col0" >0.967</td>
       <td id="T__row1_col1" class="data row1 col1" >6.127</td>
       <td id="T__row1_col2" class="data row1 col2" >0.937</td>
