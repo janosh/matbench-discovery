@@ -92,8 +92,6 @@ for atoms in tqdm(atoms_list, desc="Relaxing"):
         # if max_steps > 0, atoms is wrapped by filter_cls, so extract with getattr
         relaxed_struct = AseAtomsAdaptor.get_structure(getattr(atoms, "atoms", atoms))
         relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
-
-        coords, lattices = (locals().get(key, []) for key in ("coords", "lattices"))
     except Exception as exc:
         print(f"Failed to relax {mat_id}: {exc!r}")
         continue
