@@ -561,7 +561,7 @@ assert avg_energy_corr == -0.1065, f"{avg_energy_corr=:.4}, expected -0.1065"
 
 
 # %%
-with gzip.open(DataFiles.mp_patched_phase_diagram.path, "rb") as zip_file:
+with gzip.open(DataFiles.mp_patched_phase_diagram.path, mode="rb") as zip_file:
     ppd_mp: PatchedPhaseDiagram = pickle.load(zip_file)  # noqa: S301
 
 
@@ -676,13 +676,12 @@ assert dict(df_summary[Key.uniq_proto].value_counts()) == {
     True: 215_488,
     False: 41_475,
 }
-assert list(df_summary.query(f"~{Key.uniq_proto}").head(5).index) == [
-    "wbm-1-7",
-    "wbm-1-8",
-    "wbm-1-15",
-    "wbm-1-20",
-    "wbm-1-33",
-]
+
+first_uniq_proto_wbm_ids = ["wbm-1-7", "wbm-1-8", "wbm-1-15", "wbm-1-20", "wbm-1-33"]
+assert (
+    list(df_summary.query(f"~{Key.uniq_proto}").head(5).index)
+    == first_uniq_proto_wbm_ids
+)
 
 
 # %% write final summary data to disk (yeah!)
