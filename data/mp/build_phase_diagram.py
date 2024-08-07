@@ -40,15 +40,17 @@ df_mp_cse.reset_index().to_json(
 
 
 # %%
-data_path = f"{module_dir}/2023-02-07-mp-computed-structure-entries.json.gz"
+data_path = DataFiles.mp_computed_structure_entries.path
 df_mp_cse = pd.read_json(data_path).set_index(Key.mat_id)
 
 # drop the structure, just load ComputedEntry, makes the PPD faster to build and load
 mp_computed_entries = [ComputedEntry.from_dict(dct) for dct in tqdm(df_mp_cse.entry)]
 
 print(f"{len(mp_computed_entries)=:,} on {today}")
+assert len(mp_computed_entries) == 154_718
 # len(mp_computed_entries) = 146,323 on 2022-09-16
 # len(mp_computed_entries) = 154,719 on 2023-02-07
+# len(mp_computed_entries) = 154,718 on 2024-08-07
 
 
 # %% build phase diagram with MP entries only
@@ -57,9 +59,17 @@ print(f"{ppd_mp} on {today}")
 # prints:
 # PatchedPhaseDiagram covering 44805 sub-spaces on 2022-09-16
 # PatchedPhaseDiagram covering 46216 sub-spaces on 2023-02-07
+# PatchedPhaseDiagram covering 26236 sub-spaces on 2024-08-07
+
+# CompRhys fixed the subspace selection algorithm in https://github.com/materialsproject/pymatgen/pull/3900
+# resulting in a 46216->26236 sub-spaces drop, meaning ~20k were redundant.
+# The pickled PatchedPhaseDiagram on figshare was rebuilt with the same
+# 2023-02-07-mp-computed-structure-entries to reflect these changes and to fix
+# AttributeError: 'Composition' object has no attribute '_n_atoms' from changes to
+# pymatgen's Composition class since its original pickling.
 
 # save MP PPD to disk
-with gzip.open(f"{module_dir}/{today}-ppd-mp.pkl.gz", "wb") as zip_file:
+with gzip.open(f"{module_dir}/{today}-ppd-mp.pkl.gz", mode="wb") as zip_file:
     pickle.dump(ppd_mp, zip_file)
 
 
@@ -90,7 +100,7 @@ mp_wbm_ppd = PatchedPhaseDiagram(
 )
 
 # save MP+WBM PPD to disk (was not run)
-with gzip.open(f"{module_dir}/{today}-ppd-mp-wbm.pkl.gz", "wb") as zip_file:
+with gzip.open(f"{module_dir}/{today}-ppd-mp-wbm.pkl.gz", mode="wb") as zip_file:
     pickle.dump(mp_wbm_ppd, zip_file)
 
 

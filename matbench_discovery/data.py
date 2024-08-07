@@ -242,7 +242,7 @@ class DataFiles(Files):
     )
     mp_patched_phase_diagram = (
         "mp/2023-02-07-ppd-mp.pkl.gz",
-        "https://figshare.com/ndownloader/files/40344451",
+        "https://figshare.com/ndownloader/files/48241624",
     )
     mp_trj_extxyz = (
         "mp/2023-11-22-mp-trj.extxyz.zip",
