@@ -1,3 +1,4 @@
+# %%
 import numpy as np
 import pandas as pd
 import yaml
@@ -32,6 +33,13 @@ df_met = df_metrics_uniq_protos
 date_added_col = "Date Added"
 df_met.loc[Key.train_set.label] = df_met.loc[date_added_col] = ""
 
+hide_closed = False  # hide proprietary models (openness != OSOD)
+closed_models = [
+    key
+    for key, meta in MODEL_METADATA.items()
+    if meta.get("openness", Open.OSOD) != Open.OSOD
+]
+
 for model in df_metrics:
     model_name = name_map.get(model, model)
     if not (model_data := MODEL_METADATA.get(model_name)):
@@ -41,9 +49,10 @@ for model in df_metrics:
 
     # Add model version as hover tooltip to model name
     model_version = model_data.get("model_version", "")
-    df_met.loc[Key.model_name.label, model] = (
-        f'<span title="Version: {model_version}">{model}</span>'
-    )
+    css_cls = "proprietary" if model in closed_models else ""
+    attrs = {"title": f"Version: {model_version}", "class": css_cls}
+    attr_str = " ".join(f'{k}="{v}"' for k, v in attrs.items() if v)
+    df_met.loc[Key.model_name.label, model] = f"<span {attr_str}>{model}</span>"
     # assign this col to all tables
     for df in (df_metrics, df_metrics_10k, df_metrics_uniq_protos):
         df.loc[Key.model_name.label] = df_met.loc[Key.model_name.label]
@@ -137,13 +146,6 @@ lower_is_better = {*better["lower_is_better"]}
 # in PredFiles!
 make_uip_megnet_comparison = False
 
-hide_closed = True  # hide proprietary models (openness != OSOD)
-closed_models = [
-    key
-    for key, meta in MODEL_METADATA.items()
-    if meta.get("openness", Open.OSOD) != Open.OSOD
-]
-
 meta_cols = [
     Key.train_set.label,
     Key.model_params.label.replace("eter", ""),
@@ -205,13 +207,6 @@ for label, df_met in (
     styler.relabel_index(
         [f"{col}{arrow_suffix.get(col, '')}" for col in df_table], axis="columns"
     ).set_uuid("")
-
-    # add CSS class 'proprietary' to cells of proprietary models (openness != OSOD)
-    styler.set_td_classes(
-        df_table.T.assign(**dict.fromkeys(closed_models, "proprietary"))[
-            closed_models
-        ].T
-    )
 
     # export model metrics as styled HTML table and Svelte component
     # get index of MAE column
