@@ -87,6 +87,7 @@ def ase_atoms_from_zip(
     *,
     file_check: Callable[[str], bool] = lambda fname: fname.endswith(".extxyz"),
     filename_to_info: bool = False,
+    limit: int | None = None,
 ) -> list[Atoms]:
     """Read ASE Atoms objects from a ZIP file containing extXYZ files.
 
@@ -96,13 +97,16 @@ def ase_atoms_from_zip(
             should be read. Defaults to lambda fname: fname.endswith(".extxyz").
         filename_to_info (bool, optional): If True, assign filename to Atoms.info.
             Defaults to False.
+        limit (int, optional): Maximum number of files to read. Defaults to None.
+            Use a small number to speed up debugging runs.
 
     Returns:
         list[Atoms]: ASE Atoms objects.
     """
     atoms_list = []
     with zipfile.ZipFile(zip_filename) as zip_file:
-        for filename in tqdm(zip_file.namelist(), desc=f"Reading {zip_filename=}"):
+        desc = f"Reading ASE Atoms from {zip_filename=}"
+        for filename in tqdm(zip_file.namelist()[:limit], desc=desc):
             if not file_check(filename):
                 continue
             with zip_file.open(filename) as file:
@@ -120,17 +124,20 @@ def ase_atoms_from_zip(
 
 
 def ase_atoms_to_zip(atoms_list: list[Atoms], zip_filename: str | Path) -> None:
-    """Write a list of ASE Atoms to a ZIP file with each Atoms object as an extxyz
-    file.
+    """Write a list of ASE Atoms to a ZIP archive with each Atoms object as a separate
+    extXYZ file.
+
+    Args:
+        atoms_list (list[Atoms]): List of ASE Atoms objects.
+        zip_filename (str): Path to the ZIP file.
     """
     with zipfile.ZipFile(
-        zip_filename, "w", compression=zipfile.ZIP_DEFLATED
+        zip_filename, mode="w", compression=zipfile.ZIP_DEFLATED
     ) as zip_file:
-        for atoms in tqdm(atoms_list, desc="Writing to ZIP"):
+        for atoms in tqdm(atoms_list, desc=f"Writing ASE Atoms to {zip_filename=}"):
             mat_id = atoms.info.get(Key.mat_id, f"no-id-{atoms.get_chemical_formula()}")
 
-            # Create a string buffer to write the extxyz content
-            buffer = io.StringIO()
+            buffer = io.StringIO()  # string buffer to write the extxyz content
             ase.io.write(buffer, atoms, format="extxyz", append=True, write_info=True)
 
             # Write the buffer content to the ZIP file
