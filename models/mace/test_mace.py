@@ -7,6 +7,7 @@ from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
+import plotly.express as px
 import torch
 import wandb
 from ase import Atoms
@@ -46,7 +47,7 @@ job_name = f"mace-wbm-{task_type}-{ase_optimizer}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 device = "cuda" if torch.cuda.is_available() else "cpu"
 # whether to record intermediate structures into pymatgen Trajectory
-record_traj = False  # has no effect if relax_cell is False
+record_traj = True  # has no effect if relax_cell is False
 model_name = "https://github.com/ACEsuit/mace-mp/releases/download/mace_mp_0b/mace_agnesi_medium.model"
 # model_name = "https://tinyurl.com/5yyxdm76"
 ase_filter: Literal["frechet", "exp"] = "frechet"
@@ -175,6 +176,41 @@ df_out = pd.DataFrame(relax_results).T.add_prefix("mace_")
 df_out.index.name = Key.mat_id
 if not smoke_test:
     df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
+
+
+# %%
+energy_series = df_out["mace_trajectory"].map(
+    lambda x: [d["energy"] / len(x.species) for d in x.frame_properties]
+)
+
+# Create a DataFrame from the Series
+df_energies = pd.DataFrame(energy_series.tolist()).T
+df_energies.columns = df_out.index
+df_energies["Step"] = df_energies.index
+
+# Melt the DataFrame to long format
+df_melted = df_energies.melt(
+    id_vars=["Step"], var_name="Trajectory", value_name="Energy"
+)
+
+# Create the line plot
+fig = px.line(
+    df_melted,
+    x="Step",
+    y="Energy",
+    color="Trajectory",
+    title="Trajectory Energies",
+    labels={"Step": "Optimization Step", "Energy": "Energy"},
+    line_group="Trajectory",
+)
+
+# Customize the layout if needed
+fig.update_layout(
+    xaxis_title="Optimization Step", yaxis_title="Energy", legend_title="Trajectory"
+)
+
+# Show the plot
+fig.show()
 
 
 # %%
