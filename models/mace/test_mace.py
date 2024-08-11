@@ -1,11 +1,13 @@
 # %%
 import os
 from collections.abc import Callable
+from copy import deepcopy
 from importlib.metadata import version
 from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
+import plotly.express as px
 import torch
 import wandb
 from ase import Atoms
@@ -45,7 +47,7 @@ job_name = f"mace-wbm-{task_type}-{ase_optimizer}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 device = "cuda" if torch.cuda.is_available() else "cpu"
 # whether to record intermediate structures into pymatgen Trajectory
-record_traj = False  # has no effect if relax_cell is False
+record_traj = True  # has no effect if relax_cell is False
 model_name = "https://github.com/ACEsuit/mace-mp/releases/download/mace_mp_0b/mace_agnesi_medium.model"
 # model_name = "https://tinyurl.com/5yyxdm76"
 ase_filter: Literal["frechet", "exp"] = "frechet"
@@ -84,7 +86,7 @@ mace_calc = mace_mp(model=model_name, device=device, default_dtype=dtype)
 
 print(f"Read data from {data_path}")
 zip_filename = f"{WBM_DIR}/2024-08-04-wbm-initial-atoms.extxyz.zip"
-atoms_list = ase_atoms_from_zip(zip_filename)
+atoms_list: list[Atoms] = ase_atoms_from_zip(zip_filename)
 
 if slurm_array_job_id == "debug":
     if smoke_test:
@@ -129,35 +131,39 @@ filter_cls: Callable[[Atoms], Atoms] = {
 }[ase_filter]
 optim_cls: Callable[..., Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
-for atoms in tqdm(atoms_list, desc="Relaxing"):
+for atoms in tqdm(deepcopy(atoms_list), desc="Relaxing"):
     mat_id = atoms.info[Key.mat_id]
     if mat_id in relax_results:
         continue
     try:
         atoms.calc = mace_calc
         if max_steps > 0:
-            atoms = filter_cls(atoms)
-            optimizer = optim_cls(atoms, logfile="/dev/null")
+            filtered_atoms = filter_cls(atoms)
+            optimizer = optim_cls(filtered_atoms, logfile="/dev/null")
 
             if record_traj:
-                coords, lattices = [], []
+                coords, lattices, energies = [], [], []
                 # attach observer functions to the optimizer
                 optimizer.attach(lambda: coords.append(atoms.get_positions()))  # noqa: B023
                 optimizer.attach(lambda: lattices.append(atoms.get_cell()))  # noqa: B023
+                optimizer.attach(lambda: energies.append(atoms.get_potential_energy()))  # noqa: B023
 
             optimizer.run(fmax=force_max, steps=max_steps)
         energy = atoms.get_potential_energy()  # relaxed energy
         # if max_steps > 0, atoms is wrapped by filter_cls, so extract with getattr
-        relaxed_struct = AseAtomsAdaptor.get_structure(getattr(atoms, "atoms", atoms))
+        relaxed_struct = AseAtomsAdaptor.get_structure(atoms)
         relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
 
-        coords, lattices = (locals().get(key, []) for key in ("coords", "lattices"))
-        if record_traj and coords and lattices:
+        coords = locals().get("coords", [])
+        lattices = locals().get("lattices", [])
+        energies = locals().get("energies", [])
+        if record_traj and coords and lattices and energies:
             mace_traj = Trajectory(
-                species=relaxed_struct[mat_id].species,
+                species=atoms.get_chemical_symbols(),
                 coords=coords,
                 lattice=lattices,
                 constant_lattice=False,
+                frame_properties=[{"energy": energy} for energy in energies],
             )
             relax_results[mat_id]["trajectory"] = mace_traj
     except Exception as exc:
@@ -170,6 +176,41 @@ df_out = pd.DataFrame(relax_results).T.add_prefix("mace_")
 df_out.index.name = Key.mat_id
 if not smoke_test:
     df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
+
+
+# %%
+energy_series = df_out["mace_trajectory"].map(
+    lambda x: [d["energy"] / len(x.species) for d in x.frame_properties]
+)
+
+# Create a DataFrame from the Series
+df_energies = pd.DataFrame(energy_series.tolist()).T
+df_energies.columns = df_out.index
+df_energies["Step"] = df_energies.index
+
+# Melt the DataFrame to long format
+df_melted = df_energies.melt(
+    id_vars=["Step"], var_name="Trajectory", value_name="Energy"
+)
+
+# Create the line plot
+fig = px.line(
+    df_melted,
+    x="Step",
+    y="Energy",
+    color="Trajectory",
+    title="Trajectory Energies",
+    labels={"Step": "Optimization Step", "Energy": "Energy"},
+    line_group="Trajectory",
+)
+
+# Customize the layout if needed
+fig.update_layout(
+    xaxis_title="Optimization Step", yaxis_title="Energy", legend_title="Trajectory"
+)
+
+# Show the plot
+fig.show()
 
 
 # %%

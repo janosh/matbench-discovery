@@ -18,8 +18,8 @@ from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.energy import mp_elem_ref_entries
-from matbench_discovery.enums import MbdKey, Model
-from matbench_discovery.preds import df_each_err
+from matbench_discovery.enums import MbdKey
+from matbench_discovery.preds import Model, df_each_err
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-30"
@@ -264,7 +264,7 @@ df_2d_tsne = pd.read_csv(f"{module_dir}/tsne/one-hot-112-composition-2d.csv.gz")
 df_2d_tsne = df_2d_tsne.set_index(Key.mat_id)
 
 df_3d_tsne = pd.read_csv(f"{module_dir}/tsne/one-hot-112-composition-3d.csv.gz")
-model = Model.wrenformer
+model = Model.wrenformer.label
 df_3d_tsne = pd.read_csv(
     f"{module_dir}/tsne/one-hot-112-composition+{model}-each-err-3d-metric=eucl.csv.gz"
 )
