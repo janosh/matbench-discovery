@@ -8,7 +8,8 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery.data import DataFiles
-from matbench_discovery.enums import Model, Task
+from matbench_discovery.enums import Task
+from matbench_discovery.preds import Model
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-09-22"
@@ -17,7 +18,7 @@ __date__ = "2022-09-22"
 # %%
 module_dir = os.path.dirname(__file__)
 date = "2023-01-20"
-energy_model = Model.megnet.lower()
+energy_model = Model.megnet.label.lower()
 glob_pattern = f"{date}-bowsr-{energy_model}-wbm-{Task.IS2RE}/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")

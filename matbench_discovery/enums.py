@@ -165,31 +165,3 @@ class Quantity(LabelEnum):
     formula = "Formula"
     stress = "σ (eV/Å³)"  # noqa: RUF001
     stress_trace = "1/3 Tr(σ) (eV/Å³)"  # noqa: RUF001
-
-
-class Model(LabelEnum):
-    """Model labels for plots."""
-
-    alignn_ff = "ALIGNN FF"
-    alignn_pretrained = "ALIGNN Pretrained"
-    alignn = "ALIGNN"
-    bowsr_megnet = "BOWSR"
-    cgcnn_p = "CGCNN+P"
-    cgcnn = "CGCNN"
-    chgnet_megnet = "CHGNet→MEGNet"
-    chgnet = "CHGNet"
-    dft = "DFT"
-    gnome = "GNoME"
-    m3gnet_direct = "M3GNet DIRECT"
-    m3gnet_megnet = "M3GNet→MEGNet"
-    m3gnet_ms = "M3GNet MS"
-    m3gnet = "M3GNet"
-    mace = "MACE"
-    mattersim = "MatterSim"
-    megnet_rs2re = "MEGNet RS2RE"
-    megnet = "MEGNet"
-    pfp = "PFP"
-    sevennet = "SevenNet"
-    voronoi_rf = "Voronoi RF"
-    wbm = "WBM"
-    wrenformer = "Wrenformer"

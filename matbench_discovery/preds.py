@@ -4,12 +4,13 @@ from collections.abc import Sequence
 from typing import Any, Literal
 
 import pandas as pd
+import plotly.express as px
 from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, STABILITY_THRESHOLD
 from matbench_discovery.data import Files, df_wbm, glob_to_df
-from matbench_discovery.enums import MbdKey, Model
+from matbench_discovery.enums import MbdKey
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.plots import plotly_colors, plotly_line_styles, plotly_markers
 
@@ -17,67 +18,76 @@ __author__ = "Janosh Riebesell"
 __date__ = "2023-02-04"
 
 
-class PredFiles(Files):
+# ruff: noqa: E501
+class Model(Files, base_dir=f"{ROOT}/models"):
     """Data files provided by Matbench Discovery.
     See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
     """
 
-    alignn = "alignn/2023-06-02-alignn-wbm-IS2RE.csv.gz"
-    # alignn_pretrained = "alignn/2023-06-03-mp-e-form-alignn-wbm-IS2RE.csv.gz"
-    # alignn_ff = "alignn_ff/2023-07-11-alignn-ff-wbm-IS2RE.csv.gz"
+    alignn = "alignn/2023-06-02-alignn-wbm-IS2RE.csv.gz", None, "ALIGNN"
+    # alignn_pretrained = "alignn/2023-06-03-mp-e-form-alignn-wbm-IS2RE.csv.gz", None, "ALIGNN Pretrained"
+    # alignn_ff = "alignn_ff/2023-07-11-alignn-ff-wbm-IS2RE.csv.gz", None, "ALIGNN FF"
 
     # BOWSR optimizer coupled with original megnet
-    bowsr_megnet = "bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv.gz"
+    bowsr_megnet = "bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv.gz", None, "BOWSR"
 
     # default CHGNet model from publication with 400,438 params
-    chgnet = "chgnet/2023-12-21-chgnet-0.3.0-wbm-IS2RE.csv.gz"
-    # chgnet_no_relax = "chgnet/2023-12-05-chgnet-0.3.0-wbm-IS2RE-no-relax.csv.gz"
+    chgnet = "chgnet/2023-12-21-chgnet-0.3.0-wbm-IS2RE.csv.gz", None, "CHGNet"
+    # chgnet_no_relax = "chgnet/2023-12-05-chgnet-0.3.0-wbm-IS2RE-no-relax.csv.gz", None, "CHGNet No Relax"
 
     # CGCNN 10-member ensemble
-    cgcnn = "cgcnn/2023-01-26-cgcnn-ens=10-wbm-IS2RE.csv.gz"
+    cgcnn = "cgcnn/2023-01-26-cgcnn-ens=10-wbm-IS2RE.csv.gz", None, "CGCNN"
 
     # CGCNN 10-member ensemble with 5-fold training set perturbations
-    cgcnn_p = "cgcnn/2023-02-05-cgcnn-perturb=5-wbm-IS2RE.csv.gz"
+    cgcnn_p = "cgcnn/2023-02-05-cgcnn-perturb=5-wbm-IS2RE.csv.gz", None, "CGCNN+P"
 
     # original M3GNet straight from publication, not re-trained
-    m3gnet = "m3gnet/2023-12-28-m3gnet-wbm-IS2RE.csv.gz"
-    # m3gnet_direct = "m3gnet/2023-05-30-m3gnet-direct-wbm-IS2RE.csv.gz"
-    # m3gnet_ms = "m3gnet/2023-06-01-m3gnet-manual-sampling-wbm-IS2RE.csv.gz"
+    m3gnet = "m3gnet/2023-12-28-m3gnet-wbm-IS2RE.csv.gz", None, "M3GNet"
+    # m3gnet_direct = "m3gnet/2023-05-30-m3gnet-direct-wbm-IS2RE.csv.gz", None, "M3GNet DIRECT"
+    # m3gnet_ms = "m3gnet/2023-06-01-m3gnet-manual-sampling-wbm-IS2RE.csv.gz", None, "M3GNet MS"
 
     # MACE-MP as published in https://arxiv.org/abs/2401.00096 trained on MPtrj
-    mace = "mace/2023-12-11-mace-wbm-IS2RE-FIRE.csv.gz"
+    mace = "mace/2023-12-11-mace-wbm-IS2RE-FIRE.csv.gz", None, "MACE"
+    # mace_alex = "mace/2024-08-09-mace-wbm-IS2RE-FIRE.csv.gz", None, "MACE Alex"
     # https://github.com/ACEsuit/mace-mp/releases/tag/mace_mp_0b
-    # mace_0b = "mace/2024-07-20-mace-wbm-IS2RE-FIRE.csv.gz"
+    # mace_0b = "mace/2024-07-20-mace-wbm-IS2RE-FIRE.csv.gz", None, "MACE 0b"
 
     # original MEGNet straight from publication, not re-trained
-    megnet = "megnet/2022-11-18-megnet-wbm-IS2RE.csv.gz"
+    megnet = "megnet/2022-11-18-megnet-wbm-IS2RE.csv.gz", None, "MEGNet"
 
     # SevenNet trained on MPtrj
-    sevennet = "sevennet/2024-07-11-sevennet-preds.csv.gz"
+    sevennet = "sevennet/2024-07-11-sevennet-preds.csv.gz", None, "SevenNet"
 
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest
-    voronoi_rf = "voronoi_rf/2022-11-27-train-test/e-form-preds-IS2RE.csv.gz"
+    voronoi_rf = (
+        "voronoi_rf/2022-11-27-train-test/e-form-preds-IS2RE.csv.gz",
+        None,
+        "Voronoi RF",
+    )
 
     # wrenformer 10-member ensemble
-    wrenformer = "wrenformer/2022-11-15-wrenformer-ens=10-IS2RE-preds.csv.gz"
+    wrenformer = (
+        "wrenformer/2022-11-15-wrenformer-ens=10-IS2RE-preds.csv.gz",
+        None,
+        "Wrenformer",
+    )
 
     ## Proprietary Models
     # GNoMe
-    gnome = "gnome/2023-11-01-gnome-preds-50076332.csv.gz"
+    gnome = "gnome/2023-11-01-gnome-preds-50076332.csv.gz", None, "GNoME"
 
     # MatterSim
-    mattersim = "mattersim/mattersim-wbm-IS2RE.csv.gz"
+    mattersim = "mattersim/mattersim-wbm-IS2RE.csv.gz", None, "MatterSim"
 
     ## Miscellaneous
     # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
-    # chgnet_megnet = "chgnet/2023-03-06-chgnet-0.2.0-wbm-IS2RE.csv.gz"
+    # chgnet_megnet = "chgnet/2023-03-06-chgnet-0.2.0-wbm-IS2RE.csv.gz", None, "CHGNet→MEGNet"
     # # M3GNet-relaxed structures fed into MEGNet for formation energy prediction
-    # m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv.gz"
-    # megnet_rs2re = "megnet/2023-08-23-megnet-wbm-RS2RE.csv.gz"
+    # m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv.gz", None, "M3GNet→MEGNet"
+    # megnet_rs2re = "megnet/2023-08-23-megnet-wbm-RS2RE.csv.gz", None, "MEGNet RS2RE"
 
 
-PredFiles.base_dir = f"{ROOT}/models"  # type: ignore[attr-defined]
-PredFiles.label_map = Model.key_val_dict()  # type: ignore[attr-defined]
+px.defaults.labels |= Model.label_map
 
 
 def load_df_wbm_with_preds(
@@ -93,7 +103,7 @@ def load_df_wbm_with_preds(
 
     Args:
         models (Sequence[str], optional): Model names must be keys of
-            matbench_discovery.data.PredFiles. Defaults to all models.
+            matbench_discovery.data.Model. Defaults to all models.
         pbar (bool, optional): Whether to show progress bar. Defaults to True.
         id_col (str, optional): Column to set as df.index. Defaults to "material_id".
         subset (pd.Index | Sequence[str] | 'uniq_protos' | None, optional):
@@ -115,10 +125,10 @@ def load_df_wbm_with_preds(
     Returns:
         pd.DataFrame: WBM summary dataframe with model predictions.
     """
-    valid_pred_files = {model.name for model in PredFiles}
+    valid_pred_files = {model.name for model in Model}
     if models == ():
         models = tuple(valid_pred_files)
-    inv_label_map = {v: k for k, v in PredFiles.label_map.items()}  # type: ignore[attr-defined]
+    inv_label_map = {v: k for k, v in Model.label_map.items()}
     models = {inv_label_map.get(model, model) for model in models}
     if mismatch := ", ".join(models - valid_pred_files):
         raise ValueError(
@@ -130,11 +140,12 @@ def load_df_wbm_with_preds(
     try:
         for model in (bar := tqdm(models, disable=not pbar, desc="Loading preds")):
             bar.set_postfix_str(model)
-            pred_file = PredFiles[model]
+            pred_file = Model[model]
             df_preds = glob_to_df(pred_file.path, pbar=False, **kwargs)
             dfs[pred_file.label] = df_preds.set_index(id_col)
     except Exception as exc:
-        raise RuntimeError(f"Failed to load {model=}") from exc
+        exc.add_note(f"Failed to load {model=}")
+        raise
 
     from matbench_discovery.data import df_wbm
 
@@ -199,9 +210,9 @@ def load_df_wbm_with_preds(
 
 # load WBM summary dataframe with all models' formation energy predictions (eV/atom)
 df_preds = load_df_wbm_with_preds().round(3)
-# for combo in [["CHGNet", "M3GNet"]]:
+# for combo in [("CHGNet", "M3GNet")]:
 #     df_preds[" + ".join(combo)] = df_preds[combo].mean(axis=1)
-#     PredFiles[" + ".join(combo)] = "combo"
+#     Model[" + ".join(combo)] = "combo"
 
 
 df_metrics = pd.DataFrame()
@@ -221,7 +232,7 @@ uniq_proto_prevalence = (
     df_wbm.query(Key.uniq_proto)[MbdKey.each_true] <= STABILITY_THRESHOLD
 ).mean()
 
-for model in PredFiles:
+for model in Model:
     model_name = model.label
     each_pred = (
         df_preds[MbdKey.each_true] + df_preds[model_name] - df_preds[MbdKey.e_form_dft]
