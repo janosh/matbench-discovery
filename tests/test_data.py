@@ -30,6 +30,20 @@ structure = Structure(
     coords=((0, 0, 0), (0.5, 0.5, 0.5)),
 )
 
+atoms1 = Atoms("H2O", positions=[[0, 0, 0], [0, 0, 1], [0, 1, 0]], cell=[5, 5, 5])
+atoms1.info[Key.mat_id] = "structure1"
+atoms1.info["formation_energy"] = 1.23
+atoms1.info["forces"] = np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0]])
+atoms1.info["dict_data"] = {"a": 1, "b": 2}
+atoms1.info["list_data"] = [1, 2, 3]
+
+atoms2 = Atoms("CO2", positions=[[0, 0, 0], [0, 0, 1], [0, 0, -1]], cell=[6, 6, 6])
+atoms2.info[Key.mat_id] = "structure2"
+atoms2.info["bandgap"] = 2.34
+atoms2.info["magmoms"] = np.array([0.1, -0.1, 0.1])
+
+dummy_atoms = [atoms1, atoms2]
+
 
 def test_as_dict_handler() -> None:
     class C:
@@ -63,28 +77,7 @@ def test_glob_to_df(pattern: str, tmp_path: Path, df_mixed: pd.DataFrame) -> Non
         glob_to_df("foo")
 
 
-@pytest.fixture()
-def dummy_atoms() -> list[Atoms]:
-    atoms1 = Atoms(
-        "H2O", positions=[[0, 0, 0], [0, 0, 1], [0, 1, 0]], cell=[5, 5, 5], pbc=True
-    )
-    atoms1.info[Key.mat_id] = "structure1"
-    atoms1.info["formation_energy"] = 1.23
-    atoms1.info["forces"] = np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0]])
-    atoms1.info["dict_data"] = {"a": 1, "b": 2}
-    atoms1.info["list_data"] = [1, 2, 3]
-
-    atoms2 = Atoms(
-        "CO2", positions=[[0, 0, 0], [0, 0, 1], [0, 0, -1]], cell=[6, 6, 6], pbc=True
-    )
-    atoms2.info[Key.mat_id] = "structure2"
-    atoms2.info["bandgap"] = 2.34
-    atoms2.info["magmoms"] = np.array([0.1, -0.1, 0.1])
-
-    return [atoms1, atoms2]
-
-
-def test_atoms_zip_round_trip(dummy_atoms: list[Atoms], tmp_path: Path) -> None:
+def test_atoms_zip_round_trip(tmp_path: Path) -> None:
     # Write atoms to a temporary ZIP file
     zip_path = tmp_path / "test_structures.zip"
     ase_atoms_to_zip(dummy_atoms, zip_path)
@@ -115,9 +108,7 @@ def test_atoms_zip_round_trip(dummy_atoms: list[Atoms], tmp_path: Path) -> None:
         assert set(original.info) == set(read.info)
 
 
-def test_ase_atoms_from_zip_with_file_check(
-    dummy_atoms: list[Atoms], tmp_path: Path
-) -> None:
+def test_ase_atoms_from_zip_with_file_check(tmp_path: Path) -> None:
     zip_path = tmp_path / "test_structures.zip"
     ase_atoms_to_zip(dummy_atoms, zip_path)
     read_atoms = ase_atoms_from_zip(zip_path, file_check=lambda name: "1" in name)
@@ -125,9 +116,7 @@ def test_ase_atoms_from_zip_with_file_check(
     assert read_atoms[0].get_chemical_formula() == "H2O"
 
 
-def test_ase_atoms_from_zip_with_filename_to_info(
-    dummy_atoms: list[Atoms], tmp_path: Path
-) -> None:
+def test_ase_atoms_from_zip_with_filename_to_info(tmp_path: Path) -> None:
     zip_path = tmp_path / "test_structures.zip"
     ase_atoms_to_zip(dummy_atoms, zip_path)
     read_atoms = ase_atoms_from_zip(zip_path, filename_to_info=True)
@@ -150,3 +139,27 @@ def test_ase_atoms_from_zip_invalid_file(tmp_path: Path) -> None:
         file.write("This is not a zip file")
     with pytest.raises(zipfile.BadZipFile):
         ase_atoms_from_zip(invalid_zip)
+
+
+def test_ase_atoms_from_zip_with_limit(tmp_path: Path) -> None:
+    zip_path = tmp_path / "test_structures.zip"
+    ase_atoms_to_zip(dummy_atoms, zip_path)
+
+    # Test with limit=1
+    read_atoms = ase_atoms_from_zip(zip_path, limit=1)
+    assert len(read_atoms) == 1
+    assert read_atoms[0].get_chemical_formula() == "H2O"
+
+    # Test with limit=2 (should read all structures as there are only 2)
+    read_atoms = ase_atoms_from_zip(zip_path, limit=2)
+    assert len(read_atoms) == 2
+    assert read_atoms[0].get_chemical_formula() == "H2O"
+    assert read_atoms[1].get_chemical_formula() == "CO2"
+
+    # Test with limit=None (default behavior, should read all structures)
+    read_atoms = ase_atoms_from_zip(zip_path, limit=None)
+    assert len(read_atoms) == 2
+
+    # Test with limit greater than the number of structures
+    read_atoms = ase_atoms_from_zip(zip_path, limit=10)
+    assert len(read_atoms) == 2

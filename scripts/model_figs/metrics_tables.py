@@ -42,8 +42,7 @@ closed_models = [
 
 for model in df_metrics:
     model_name = name_map.get(model, model)
-    if not (model_data := MODEL_METADATA.get(model_name)):
-        continue
+    model_data = MODEL_METADATA.get(model_name, {})
 
     df_met.loc[date_added_col, model] = model_data.get("date_added", "")
 
@@ -57,34 +56,35 @@ for model in df_metrics:
     for df in (df_metrics, df_metrics_10k, df_metrics_uniq_protos):
         df.loc[Key.model_name.label] = df_met.loc[Key.model_name.label]
 
-    n_structs = model_data["training_set"]["n_structures"]
-    n_materials = model_data["training_set"].get("n_materials", n_structs)
-    title = "Number of materials in training set"
-    train_size_str = f"<span {title=}>{si_fmt(n_materials, fmt='.0f')}</span>"
+    if train_set_meta := model_data.get("training_set"):
+        n_structs = train_set_meta["n_structures"]
+        n_materials = train_set_meta.get("n_materials", n_structs)
+        title = "Number of materials in training set"
+        train_size_str = f"<span {title=}>{si_fmt(n_materials, fmt='.0f')}</span>"
 
-    if n_materials != n_structs:
-        title = "Number of materials (and structures) in training set"
-        train_size_str = (
-            f"<span {title=}>{si_fmt(n_materials, fmt='.1f')}</span> "
-            f"<small {title=}>({si_fmt(n_structs, fmt='.1f')})</small>"
-        )
+        if n_materials != n_structs:
+            title = "Number of materials (and structures) in training set"
+            train_size_str = (
+                f"<span {title=}>{si_fmt(n_materials, fmt='.1f')}</span> "
+                f"<small {title=}>({si_fmt(n_structs, fmt='.1f')})</small>"
+            )
 
-    if train_url := model_data.get("training_set", {}).get("url"):
-        train_size_str = (
-            f"<a href='{train_url}' target='_blank' rel='noopener "
-            f"noreferrer'>{train_size_str}</a>"
-        )
+        if train_url := train_set_meta.get("url"):
+            train_size_str = (
+                f"<a href='{train_url}' target='_blank' rel='noopener "
+                f"noreferrer'>{train_size_str}</a>"
+            )
 
-    df_met.loc[Key.train_set.label, model] = train_size_str
+        df_met.loc[Key.train_set.label, model] = train_size_str
     model_params = model_data.get(Key.model_params, "")
-    n_estimators = model_data.get(Key.n_estimators, "")
+    n_estimators = model_data.get(Key.n_estimators, -1)
     title = "Number of models in ensemble"
     n_estimators_str = (
         f" <small {title=}>(N={n_estimators})</small>" if n_estimators > 1 else ""
     )
 
     model_type = model_data.get(Key.model_type, "")
-    title = ModelType.val_label_dict().get(model_type, "")
+    title = ModelType.val_label_dict().get(model_type) or ""
     df_met.loc[Key.model_type.label, model] = f"<span {title=}>{model_type}</span>"
 
     title = "Number of trainable model parameters"
@@ -143,7 +143,7 @@ lower_is_better = {*better["lower_is_better"]}
 # if True, make metrics-table-megnet-uip-combos.(svelte|pdf) for SI
 # if False, make metrics-table.(svelte|pdf) for main text
 # when setting to True, uncomment the lines chgnet_megnet, m3gnet_megnet, megnet_rs2re
-# in PredFiles!
+# in the Model enum!
 make_uip_megnet_comparison = False
 
 meta_cols = [
@@ -177,7 +177,7 @@ for label, df_met in (
         if "M3GNet→MEGNet" not in df_table:
             print(
                 "hint: for make_uip_megnet_comparison, uncomment the lines "
-                "chgnet_megnet and m3gnet_megnet in PredFiles"
+                "chgnet_megnet and m3gnet_megnet in the Model enum"
             )
 
     if "-first-10k" in label:

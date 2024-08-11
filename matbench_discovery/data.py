@@ -8,10 +8,10 @@ import os
 import sys
 import zipfile
 from collections.abc import Callable
-from enum import StrEnum
+from enum import EnumMeta, StrEnum, _EnumDict
 from glob import glob
 from pathlib import Path
-from typing import Any, Self
+from typing import Any, Self, TypeVar
 
 import ase.io
 import pandas as pd
@@ -23,6 +23,7 @@ from tqdm import tqdm
 from matbench_discovery import DATA_DIR, FIGSHARE_DIR, pkg_is_editable
 
 # ruff: noqa: T201
+T = TypeVar("T", bound="Files")
 
 # repo URL to raw files on GitHub
 RAW_REPO_URL = "https://github.com/janosh/matbench-discovery/raw"
@@ -87,6 +88,7 @@ def ase_atoms_from_zip(
     *,
     file_check: Callable[[str], bool] = lambda fname: fname.endswith(".extxyz"),
     filename_to_info: bool = False,
+    limit: int | None = None,
 ) -> list[Atoms]:
     """Read ASE Atoms objects from a ZIP file containing extXYZ files.
 
@@ -96,13 +98,16 @@ def ase_atoms_from_zip(
             should be read. Defaults to lambda fname: fname.endswith(".extxyz").
         filename_to_info (bool, optional): If True, assign filename to Atoms.info.
             Defaults to False.
+        limit (int, optional): Maximum number of files to read. Defaults to None.
+            Use a small number to speed up debugging runs.
 
     Returns:
         list[Atoms]: ASE Atoms objects.
     """
     atoms_list = []
     with zipfile.ZipFile(zip_filename) as zip_file:
-        for filename in tqdm(zip_file.namelist(), desc=f"Reading {zip_filename=}"):
+        desc = f"Reading ASE Atoms from {zip_filename=}"
+        for filename in tqdm(zip_file.namelist()[:limit], desc=desc):
             if not file_check(filename):
                 continue
             with zip_file.open(filename) as file:
@@ -120,17 +125,20 @@ def ase_atoms_from_zip(
 
 
 def ase_atoms_to_zip(atoms_list: list[Atoms], zip_filename: str | Path) -> None:
-    """Write a list of ASE Atoms to a ZIP file with each Atoms object as an extxyz
-    file.
+    """Write a list of ASE Atoms to a ZIP archive with each Atoms object as a separate
+    extXYZ file.
+
+    Args:
+        atoms_list (list[Atoms]): List of ASE Atoms objects.
+        zip_filename (str): Path to the ZIP file.
     """
     with zipfile.ZipFile(
-        zip_filename, "w", compression=zipfile.ZIP_DEFLATED
+        zip_filename, mode="w", compression=zipfile.ZIP_DEFLATED
     ) as zip_file:
-        for atoms in tqdm(atoms_list, desc="Writing to ZIP"):
+        for atoms in tqdm(atoms_list, desc=f"Writing ASE Atoms to {zip_filename=}"):
             mat_id = atoms.info.get(Key.mat_id, f"no-id-{atoms.get_chemical_formula()}")
 
-            # Create a string buffer to write the extxyz content
-            buffer = io.StringIO()
+            buffer = io.StringIO()  # string buffer to write the extxyz content
             ase.io.write(buffer, atoms, format="extxyz", append=True, write_info=True)
 
             # Write the buffer content to the ZIP file
@@ -152,10 +160,49 @@ def download_file(file_path: str, url: str) -> None:
         print(f"Error downloading {url=}\nto {file_path=}.\n{exc!s}")
 
 
-class Files(StrEnum):
+class MetaFiles(EnumMeta):
+    """Metaclass of Files enum that adds base_dir and (member|label)_map class
+    properties.
+    """
+
+    _base_dir: str
+
+    def __new__(
+        cls,
+        name: str,
+        bases: tuple[type, ...],
+        namespace: _EnumDict,
+        base_dir: str = DEFAULT_CACHE_DIR,
+        **kwargs: Any,
+    ) -> "MetaFiles":
+        """Create new Files enum with given base directory."""
+        obj = super().__new__(cls, name, bases, namespace, **kwargs)
+        obj._base_dir = base_dir  # noqa: SLF001
+        return obj
+
+    # Improvement 2: Add type annotation for cls
+    @property
+    def member_map(cls: type[T]) -> dict[str, "Files"]:  # type: ignore[misc]
+        """Map of member names to member objects."""
+        return cls._member_map_  # type: ignore[return-value]
+
+    @property
+    def label_map(cls: type[T]) -> dict[str, str]:  # type: ignore[misc]
+        """Map of member names to member labels."""
+        return {k: v.label for k, v in cls.member_map.items()}
+
+    @property
+    def base_dir(cls) -> str:
+        """Return the base directory of the file URL."""
+        return cls._base_dir
+
+
+class Files(StrEnum, metaclass=MetaFiles):
     """Enum of data files with associated file directories and URLs."""
 
-    def __new__(cls, file_path: str, url: str | None = None) -> Self:
+    def __new__(
+        cls, file_path: str, url: str | None = None, label: str | None = None
+    ) -> Self:
         """Create a new member of the FileUrls enum with a given URL where to load the
         file from and directory where to save it to.
         """
@@ -167,6 +214,7 @@ class Files(StrEnum):
 
         obj._rel_path = file_path  # type: ignore[attr-defined] # noqa: SLF001
         obj._url = url  # type: ignore[attr-defined] # noqa: SLF001
+        obj._label = label  #  type: ignore[attr-defined] # noqa: SLF001
 
         return obj
 
@@ -175,7 +223,7 @@ class Files(StrEnum):
         want the absolute file path without auto-downloading the file if it doesn't
         exist yet, e.g. for use in script that generates the file in the first place.
         """
-        return f"{self.base_dir}/{self._rel_path}"  # type: ignore[attr-defined]
+        return f"{type(self).base_dir}/{self._rel_path}"  # type: ignore[attr-defined]
 
     def __repr__(self) -> str:
         """Return enum attribute's string representation."""
@@ -187,7 +235,7 @@ class Files(StrEnum):
         download the file first, then return the path.
         """
         key, url, rel_path = self.name, self._url, self._rel_path  # type: ignore[attr-defined]
-        abs_path = f"{self.base_dir}/{rel_path}"  # type: ignore[attr-defined]
+        abs_path = f"{type(self).base_dir}/{rel_path}"
         if not os.path.isfile(abs_path):
             is_ipython = hasattr(__builtins__, "__IPYTHON__")
             # default to 'y' if not in interactive session, and user can't answer
@@ -218,11 +266,7 @@ class Files(StrEnum):
     @property
     def label(self) -> str:
         """Return the label associated with the file URL."""
-        return self.label_map.get(self.name, self.name)  # type: ignore[attr-defined]
-
-
-Files.base_dir = DEFAULT_CACHE_DIR  # type: ignore[attr-defined]
-Files.label_map = None  # type: ignore[attr-defined]
+        return self._label  # type: ignore[attr-defined]
 
 
 class DataFiles(Files):

@@ -11,7 +11,7 @@ import plotly.express as px
 import plotly.io as pio
 import pymatviz  # noqa: F401 # needed for pymatviz_dark template
 
-from matbench_discovery.enums import MbdKey, Model, Quantity
+from matbench_discovery.enums import MbdKey, Quantity
 
 PKG_NAME = "matbench-discovery"
 __version__ = version(PKG_NAME)
@@ -58,7 +58,7 @@ warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen"
 
 # --- start global plot settings
 px.defaults.labels = (  # Quantity last to get precedence over Key and Model
-    MbdKey.val_label_dict() | Model.key_val_dict() | Quantity.key_val_dict()
+    MbdKey.val_label_dict() | Quantity.key_val_dict()
 )
 
 global_layout = dict(

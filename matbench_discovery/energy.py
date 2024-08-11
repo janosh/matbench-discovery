@@ -112,12 +112,17 @@ def get_e_form_per_atom(
             f"{entry=} must be Entry (or subclass like ComputedEntry) or dict"
         )
 
-    e_refs = {str(el): elemental_ref_energies[str(el)] for el in comp}
+    try:
+        e_refs = {str(el): elemental_ref_energies[str(el)] for el in comp}
 
-    for key, ref_entry in e_refs.items():
-        if isinstance(ref_entry, dict):
-            e_refs[key] = PDEntry.from_dict(ref_entry)
+        for key, ref_entry in e_refs.items():
+            if isinstance(ref_entry, dict):
+                e_refs[key] = PDEntry.from_dict(ref_entry)
 
-    e_form = energy - sum(comp[el] * e_refs[str(el)] for el in comp)
+        e_form = energy - sum(comp[el] * e_refs[str(el)] for el in comp)
 
-    return e_form / comp.num_atoms
+        return e_form / comp.num_atoms
+
+    except (TypeError, Exception) as exc:
+        exc.add_note(f"Failed to compute formation energy for {comp=}")
+        raise

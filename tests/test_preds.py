@@ -5,9 +5,9 @@ import pytest
 from pymatviz.enums import Key
 
 from matbench_discovery.data import df_wbm
-from matbench_discovery.enums import MbdKey, Model
+from matbench_discovery.enums import MbdKey
 from matbench_discovery.preds import (
-    PredFiles,
+    Model,
     df_each_err,
     df_each_pred,
     df_metrics,
@@ -21,7 +21,7 @@ def test_df_wbm() -> None:
 
 
 def test_df_metrics() -> None:
-    missing_cols = {*df_metrics} - {model.label for model in PredFiles}
+    missing_cols = {*df_metrics} - {model.label for model in Model}
     assert missing_cols == set(), f"{missing_cols=}"
     assert df_metrics.T.MAE.between(0, 0.2).all(), f"unexpected {df_metrics.T.MAE=}"
     assert df_metrics.T.R2.between(-1.5, 1).all(), f"unexpected {df_metrics.T.R2=}"
@@ -44,7 +44,17 @@ def test_df_each_err() -> None:
         *df_metrics,
         MbdKey.each_err_models,
     }, "df_each_err has wrong columns"
-    assert all(df_each_err.isna().mean() < 0.05), "too many NaNs in df_each_err"
+    # get model names that have more than 5 percent NaNs
+    models_with_too_many_nans = df_each_err.columns[
+        df_each_err.isna().mean() > 0.05
+    ].tolist()
+    assert len(models_with_too_many_nans) == 0, (
+        "Some models have too many NaNs in df_each_err:\n"
+        + "\n".join(
+            f"- {model}: {df_each_err[model].isna().mean():.2%}"
+            for model in models_with_too_many_nans
+        )
+    )
 
 
 @pytest.mark.parametrize("models", [[], ["Wrenformer"]])
@@ -75,7 +85,7 @@ def test_load_df_wbm_with_preds(
 
 
 def test_load_df_wbm_max_error_threshold() -> None:
-    models = {Model.mace: 38}  # num missing preds for default max_error_threshold
+    models = {Model.mace.label: 38}  # num missing preds for default max_error_threshold
     df_no_thresh = load_df_wbm_with_preds(models=list(models))
     df_high_thresh = load_df_wbm_with_preds(models=list(models), max_error_threshold=10)
     df_low_thresh = load_df_wbm_with_preds(models=list(models), max_error_threshold=0.1)
@@ -97,12 +107,11 @@ def test_load_df_wbm_with_preds_raises() -> None:
 
 
 def test_pred_files() -> None:
-    assert len(PredFiles) >= 6
+    assert len(Model) >= 6
     assert all(
-        file.path.endswith((".csv", ".csv.gz", ".json", ".json.gz"))
-        for file in PredFiles
+        file.path.endswith((".csv", ".csv.gz", ".json", ".json.gz")) for file in Model
     )
-    for model in PredFiles:
+    for model in Model:
         path = model.path
         msg = f"Missing preds file for {model=}, expected at {path=}"
         assert os.path.isfile(path), msg

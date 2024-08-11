@@ -8,9 +8,9 @@ from pymatviz.enums import Key
 from pymatviz.utils import MATPLOTLIB, PLOTLY
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, today
-from matbench_discovery.enums import MbdKey, Model, TestSubset
+from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.plots import plt, rolling_mae_vs_hull_dist
-from matbench_discovery.preds import df_each_pred, df_preds
+from matbench_discovery.preds import Model, df_each_pred, df_preds
 from matbench_discovery.preds import models as all_models
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
@@ -66,7 +66,7 @@ if len(markers) != 5:
     raise ValueError("Need 5 markers for 5 batches")
     # number of iterations of element substitution in WBM data set
 
-model = Model.chgnet
+model = Model.chgnet.label
 
 for idx, marker in enumerate(markers, start=1):
     # select all rows from WBM step=idx

@@ -14,8 +14,9 @@ from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS
 from matbench_discovery.data import df_wbm
-from matbench_discovery.enums import MbdKey, Model, TestSubset
+from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.preds import (
+    Model,
     df_each_err,
     df_metrics,
     df_metrics_uniq_protos,
@@ -262,7 +263,7 @@ pmv.save_fig(fig, f"{SITE_FIGS}/each-error-vs-least-prevalent-element-in-struct.
 
 
 # %% plot histogram of model errors for each element
-model = Model.mace
+model = Model.mace.label
 fig_ptable_each_errors = pmv.ptable_hists(
     df_frac_comp * (df_each_err[model].to_numpy()[:, None]),
     log=True,
