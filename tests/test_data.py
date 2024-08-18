@@ -47,7 +47,8 @@ dummy_atoms = [atoms1, atoms2]
 
 def test_as_dict_handler() -> None:
     class C:
-        def as_dict(self) -> dict[str, Any]:
+        @staticmethod
+        def as_dict() -> dict[str, Any]:
             return {"foo": "bar"}
 
     assert as_dict_handler(C()) == {"foo": "bar"}

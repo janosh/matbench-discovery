@@ -35,7 +35,7 @@ __date__ = "2024-06-19"
 
 
 def dummy_mattersim_calculator(
-    backbone: Literal["m3gnet", "graphomer"] = "m3gnet",
+    backbone: Literal["m3gnet", "graphormer"] = "m3gnet",
 ) -> SinglePointCalculator:
     """
     This is a dummy function that makes a MatterSim calculator
@@ -69,7 +69,7 @@ def relax_atoms_list(
     atoms_list: list[ase.Atoms],
     fmax: float = 0.01,
     steps: int = 500,
-    backbone: Literal["m3gnet", "graphomer"] = "m3gnet",
+    backbone: Literal["m3gnet", "graphormer"] = "m3gnet",
 ) -> list[ase.Atoms]:
     """
     This function relax the atoms.
@@ -88,11 +88,11 @@ def relax_atoms_list(
         else:
             atoms.info["converged"] = True
 
-        if backbone == "graphomer":
+        if backbone == "graphormer":
             # Please note that we only re-calculate the
-            # energy in the case of MatterSim(graphomer).
+            # energy in the case of MatterSim(graphormer).
             # The structure relaxation is always done with MatterSim(m3gnet).
-            calc = dummy_mattersim_calculator(backbone="graphomer")
+            calc = dummy_mattersim_calculator(backbone="graphormer")
             atoms.set_calculator(calc)
 
         relaxed_atoms_list.append(atoms)
@@ -106,7 +106,6 @@ def parse_relaxed_atoms_list_as_df(
 ) -> pd.DataFrame:
     e_form_col = "e_form_per_atom_mattersim"
 
-    ## Read pre-computed CSEs by WBM
     wbm_cse_paths = DataFiles.wbm_computed_structure_entries.path
     df_cse = pd.read_json(wbm_cse_paths).set_index(Key.mat_id)
 
@@ -167,7 +166,9 @@ def parse_relaxed_atoms_list_as_df(
 
 if __name__ == "__main__":
     init_wbm_atoms_list = convert_wbm_to_atoms_list()
-    relaxed_wbm_atoms_list = relax_atoms_list(init_wbm_atoms_list, backbone="graphomer")
+    relaxed_wbm_atoms_list = relax_atoms_list(
+        init_wbm_atoms_list, backbone="graphormer"
+    )
     parse_relaxed_atoms_list_as_df(relaxed_wbm_atoms_list).to_csv(
         "mattersim-wbm-IS2RE.csv.gz"
     )

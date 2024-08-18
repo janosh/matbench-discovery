@@ -190,10 +190,10 @@ def hist_classified_stable_vs_hull_dist(
         )[which_energy]
 
         if stability_threshold is not None:
-            for ax in [fig] if isinstance(fig, plt.Axes) else fig.flat:
-                ax.set(xlabel=xlabel, ylabel=y_label, xlim=x_lim)
+            for ax_i in [fig] if isinstance(fig, plt.Axes) else fig.flat:
+                ax_i.set(xlabel=xlabel, ylabel=y_label, xlim=x_lim)
                 label = "Stability Threshold"
-                ax.axvline(
+                ax_i.axvline(
                     stability_threshold, color="black", linestyle="--", label=label
                 )
 
@@ -228,8 +228,8 @@ def hist_classified_stable_vs_hull_dist(
         )
 
         if backend == MATPLOTLIB:
-            for ax in fig.flat if isinstance(fig, np.ndarray) else [fig]:
-                ax_acc = ax.twinx()
+            for ax_i in fig.flat if isinstance(fig, np.ndarray) else [fig]:
+                ax_acc = ax_i.twinx()
                 ax_acc.set_ylabel("Rolling Accuracy", color="darkblue")
                 ax_acc.tick_params(labelcolor="darkblue")
                 ax_acc.set(ylim=(0, 1.1))
@@ -681,14 +681,14 @@ def cumulative_metrics(
             rmse_interp = cubic_interpolate(model_range, rmse_cum[:n_pred_stable])
             dfs["RMSE"][model_name] = dict(zip(xs_model, rmse_interp(xs_model)))
 
-    for key in dfs:
+    for key, df_i in dfs.items():
+        # will be used as facet_col in plotly to split different metrics into subplots
+        df_i["metric"] = key
         # drop all-NaN rows so plotly plot x-axis only extends to largest number of
         # predicted materials by any model
-        dfs[key] = dfs[key].dropna(how="all")
-        # will be used as facet_col in plotly to split different metrics into subplots
-        dfs[key]["metric"] = key
+        dfs[key] = df_i.dropna(how="all")
 
-    df_cum = pd.concat(dfs.values())
+    df_cumu_metrics = pd.concat(dfs.values())
     # subselect rows for speed, plot has sufficient precision with 1k rows
     n_stable = sum(e_above_hull_true <= STABILITY_THRESHOLD)
 
@@ -752,7 +752,7 @@ def cumulative_metrics(
     elif backend == PLOTLY:
         n_cols = kwargs.pop("facet_col_wrap", 2)
         kwargs.setdefault("facet_col_spacing", 0.03)
-        fig = df_cum.plot(
+        fig = df_cumu_metrics.plot(
             backend=backend,
             facet_col="metric",
             facet_col_wrap=n_cols,
@@ -802,7 +802,7 @@ def cumulative_metrics(
     else:
         raise ValueError(f"Unknown {backend=}")
 
-    return fig, df_cum
+    return fig, df_cumu_metrics
 
 
 def wandb_scatter(table: wandb.Table, fields: dict[str, str], **kwargs: Any) -> None:
