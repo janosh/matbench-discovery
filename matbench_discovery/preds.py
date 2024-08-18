@@ -72,14 +72,14 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         "Wrenformer",
     )
 
-    ## Proprietary Models
+    # --- Proprietary Models
     # GNoMe
     gnome = "gnome/2023-11-01-gnome-preds-50076332.csv.gz", None, "GNoME"
 
     # MatterSim
     mattersim = "mattersim/mattersim-wbm-IS2RE.csv.gz", None, "MatterSim"
 
-    ## Miscellaneous
+    # --- Model Combos
     # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
     # chgnet_megnet = "chgnet/2023-03-06-chgnet-0.2.0-wbm-IS2RE.csv.gz", None, "CHGNet→MEGNet"
     # # M3GNet-relaxed structures fed into MEGNet for formation energy prediction

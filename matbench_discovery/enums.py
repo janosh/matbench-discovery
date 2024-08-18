@@ -80,7 +80,7 @@ class Task(LabelEnum):
     S2RE = "S2RE", "structure to relaxed energy"
     S2EF = "S2EF", "structure to energy, force"
     S2EFS = "S2EFS", "structure to energy, force, stress"
-    S2EFSM = "S2EFSM" "structure to energy, force, stress, magmoms"
+    S2EFSM = "S2EFSM", "structure to energy, force, stress, magmoms"
     IP2E = "IP2E", "initial prototype to energy"
     IS2E = "IS2E", "initial structure to energy"
     # IS2RE is for models that learned a discrete version of PES like CGCNN+P

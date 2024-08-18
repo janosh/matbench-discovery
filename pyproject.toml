@@ -31,13 +31,10 @@ dependencies = [
   "pandas>=2.0.0",
   "plotly",
   "pymatgen",
-  "pymatviz[export-figs,df-pdf-export,df-svg-export]>=0.10.0",
+  "pymatviz[export-figs,df-pdf-export,df-svg-export]>=0.10.1",
   "scikit-learn",
   "scipy",
   "seaborn",
-  # TODO remove svgutils after next pymatviz release 0.10.1
-  "svgutils",
-  "svgwrite",
   "tqdm",
   "wandb",
 

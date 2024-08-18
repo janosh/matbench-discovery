@@ -214,7 +214,7 @@ class Files(StrEnum, metaclass=MetaFiles):
 
         obj._rel_path = file_path  # type: ignore[attr-defined] # noqa: SLF001
         obj._url = url  # type: ignore[attr-defined] # noqa: SLF001
-        obj._label = label  #  type: ignore[attr-defined] # noqa: SLF001
+        obj._label = label  # type: ignore[attr-defined] # noqa: SLF001
 
         return obj
 

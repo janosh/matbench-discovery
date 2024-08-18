@@ -6,7 +6,6 @@ import pytest
 from matbench_discovery.slurm import _get_calling_file_path, slurm_submit
 
 
-@patch.dict(os.environ, {"SLURM_JOB_ID": "1234"}, clear=True)
 @pytest.mark.parametrize("py_file_path", [None, "path/to/file.py"])
 @pytest.mark.parametrize("partition", [None, "fake-partition"])
 @pytest.mark.parametrize("time", [None, "0:0:1"])
@@ -34,7 +33,14 @@ def test_slurm_submit(
         pre_cmd=pre_cmd,
     )
 
-    slurm_vars = slurm_submit(**kwargs)  # type: ignore[arg-type]
+    slurm_submit(**kwargs)  # type: ignore[arg-type]
+
+    stdout, stderr = capsys.readouterr()
+    # check slurm_submit() did nothing in normal mode
+    assert stdout == stderr == ""
+
+    with patch.dict(os.environ, {"SLURM_JOB_ID": "1234"}, clear=True):
+        slurm_vars = slurm_submit(**kwargs)  # type: ignore[arg-type]
     expected_slurm_vars = dict(slurm_job_id="1234", slurm_flags="--foo")
     if time is not None:
         expected_slurm_vars["slurm_timelimit"] = time
@@ -44,15 +50,12 @@ def test_slurm_submit(
         expected_slurm_vars["pre_cmd"] = pre_cmd
     assert slurm_vars == expected_slurm_vars
 
-    stdout, stderr = capsys.readouterr()
-    # check slurm_submit() did nothing in normal mode
-    assert stderr == stderr == ""
-
     # check slurm_submit() prints cmd and calls subprocess.run() in submit mode
     with (
         pytest.raises(SystemExit),
         patch("sys.argv", ["slurm-submit"]),
         patch("matbench_discovery.slurm.subprocess.run") as mock_subprocess_run,
+        patch.dict(os.environ, {"SLURM_JOB_ID": "1234"}, clear=True),
     ):
         slurm_submit(**kwargs)  # type: ignore[arg-type]
 

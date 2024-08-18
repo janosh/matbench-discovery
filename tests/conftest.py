@@ -6,7 +6,7 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz.enums import Key
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_struct() -> Structure:
     return Structure(
         lattice=Lattice.cubic(4.2),
@@ -15,14 +15,14 @@ def dummy_struct() -> Structure:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def df_float() -> pd.DataFrame:
     rng = np.random.default_rng(0)
 
     return pd.DataFrame(rng.normal(size=(10, 5)), columns=[*"ABCDE"])
 
 
-@pytest.fixture()
+@pytest.fixture
 def df_mixed() -> pd.DataFrame:
     rng = np.random.default_rng(0)
 
@@ -32,7 +32,7 @@ def df_mixed() -> pd.DataFrame:
     return pd.DataFrame(dict(floats=floats, bools=bools, strings=strings))
 
 
-@pytest.fixture()
+@pytest.fixture
 def df_with_pmg_objects(dummy_struct: Structure) -> pd.DataFrame:
     # create a dummy df with a structure column on which to test (de-)serialization
     df_dummy = pd.DataFrame(dict(material_id=range(5), structure=[dummy_struct] * 5))
