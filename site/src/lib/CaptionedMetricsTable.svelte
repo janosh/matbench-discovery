@@ -10,8 +10,11 @@
     Training size is the number of materials used to train the model. For models trained
     on DFT relaxations, we show the number of distinct frames in parentheses. In cases
     where only the number of frames is known, we report the number of frames as the
-    training set size. <code>(N=x)</code> in the Model Params column shows the number of estimators
-    if an ensemble was used.
+    training set size. <code>(N=x)</code> in the Model Params column shows the number of
+    estimators if an ensemble was used. DAF = Discovery Acceleration Factor measures how
+    many more stable materials a model finds compared to random selection from the test
+    set. The WBM test set has a 16.7% rate of stable crystals, meaning the max possible
+    DAF is <code>100 / 16.7 = 6</code>.
   </figcaption>
 </figure>
 

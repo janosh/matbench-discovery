@@ -9,7 +9,7 @@ from sklearn.dummy import DummyClassifier
 
 from matbench_discovery import PDF_FIGS, SCRIPTS, SITE_FIGS
 from matbench_discovery.data import DataFiles, df_wbm
-from matbench_discovery.enums import MbdKey, ModelType, Open
+from matbench_discovery.enums import MbdKey, Open
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.models import MODEL_METADATA
 from matbench_discovery.preds import df_metrics, df_metrics_10k, df_metrics_uniq_protos
@@ -60,12 +60,16 @@ for model in df_metrics:
         n_structs = train_set_meta["n_structures"]
         n_materials = train_set_meta.get("n_materials", n_structs)
         title = "Number of materials in training set"
-        train_size_str = f"<span {title=}>{si_fmt(n_materials, fmt='.0f')}</span>"
+        train_size_str = (
+            f"<span {title=} data-sort-value={n_materials}>"
+            f"{si_fmt(n_materials, fmt='.0f')}</span>"
+        )
 
         if n_materials != n_structs:
             title = "Number of materials (and structures) in training set"
             train_size_str = (
-                f"<span {title=}>{si_fmt(n_materials, fmt='.1f')}</span> "
+                f"<span {title=} data-sort-value={n_materials}>"
+                f"{si_fmt(n_materials, fmt='.0f')}</span>"
                 f"<small {title=}>({si_fmt(n_structs, fmt='.1f')})</small>"
             )
 
@@ -76,23 +80,20 @@ for model in df_metrics:
             )
 
         df_met.loc[Key.train_set.label, model] = train_size_str
-    model_params = model_data.get(Key.model_params, "")
+    model_params = model_data.get(Key.model_params, 0)
     n_estimators = model_data.get(Key.n_estimators, -1)
     title = "Number of models in ensemble"
     n_estimators_str = (
         f" <small {title=}>(N={n_estimators})</small>" if n_estimators > 1 else ""
     )
 
-    model_type = model_data.get(Key.model_type, "")
-    title = ModelType.val_label_dict().get(model_type) or ""
-    df_met.loc[Key.model_type.label, model] = f"<span {title=}>{model_type}</span>"
-
     title = "Number of trainable model parameters"
+    formatted_params = si_fmt(model_params)
     df_met.loc[Key.model_params.label.replace("eter", ""), model] = (
-        f"<span {title=}>{si_fmt(model_params)}</span>{n_estimators_str}"
-        if isinstance(model_params, int)
-        else model_params
+        f'<span {title=} data-sort-value="{model_params}">{formatted_params}'
+        f"</span>{n_estimators_str}"
     )
+
     for key in (
         MbdKey.openness,
         Key.train_task,
@@ -194,10 +195,10 @@ for label, df_met in (
             na_rep="",  # render NaNs as empty string
         )
         .background_gradient(
-            cmap="viridis", subset=list(higher_is_better & {*df_table}), axis=0
+            cmap="viridis", subset=list(higher_is_better & {*df_table}), axis="index"
         )
         .background_gradient(  # reverse color map if lower=better
-            cmap="viridis_r", subset=list(lower_is_better & {*df_table}), axis=0
+            cmap="viridis_r", subset=list(lower_is_better & {*df_table}), axis="index"
         )
     )
     # add up/down arrows to indicate which metrics are better when higher/lower

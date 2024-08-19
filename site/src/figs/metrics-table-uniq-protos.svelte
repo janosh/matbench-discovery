@@ -370,8 +370,81 @@
         display: none;  /* Safari and Chrome */
     }
 </style>
-<script lang="ts">
-      import { sortable } from 'svelte-zoo/actions'
+<script lang="ts">export function get_html_sort_value(element: Element): string {
+  if (element.dataset.sortValue !== undefined) {
+    return element.dataset.sortValue
+  }
+  for (const child of element.children) {
+    const childValue = get_html_sort_value(child)
+    if (childValue !== '') {
+      return childValue
+    }
+  }
+  return element.textContent ?? ''
+}
+
+export function sortable(
+  node: HTMLElement,
+  { header_selector = `thead th` } = {},
+) {
+  const headers = node.querySelectorAll<HTMLTableCellElement>(header_selector)
+  let sort_col_idx: number
+  let sort_dir = 1 // 1 = asc, -1 = desc
+
+  for (const [idx, header] of headers.entries()) {
+    // add cursor pointer to headers
+    header.style.cursor = `pointer`
+    const init_bg = header.style.backgroundColor
+    header.addEventListener(`click`, () => {
+      for (const header of headers) {
+        // removing any existing arrows
+        header.textContent = header.textContent?.replace(/ ↑| ↓/, ``) ?? ``
+        header.classList.remove(`asc`, `desc`)
+        header.style.backgroundColor = init_bg
+      }
+      header.classList.toggle(sort_dir > 0 ? `asc` : `desc`)
+      header.style.backgroundColor = `rgba(255, 255, 255, 0.1)`
+      // append arrow to header text
+      if (idx === sort_col_idx) {
+        sort_dir *= -1 // reverse sort direction
+      } else {
+        sort_col_idx = idx // set new sort column index
+        sort_dir = 1 // reset sort direction
+      }
+      header.classList.add(sort_dir > 0 ? `asc` : `desc`)
+      header.style.backgroundColor = `rgba(255, 255, 255, 0.1)`
+      header.textContent = `${header.textContent?.replace(/ ↑| ↓/, ``)} ${sort_dir > 0 ? `↑` : `↓`}`
+      const table_body = node.querySelector(`tbody`)
+      if (!table_body) return
+
+      // re-sort table
+      const rows = Array.from(table_body.querySelectorAll(`tr`))
+      rows.sort((row_1, row_2) => {
+        const cell_1 = row_1.cells[sort_col_idx]
+        const cell_2 = row_2.cells[sort_col_idx]
+        const val_1 = get_html_sort_value(cell_1)
+        const val_2 = get_html_sort_value(cell_2)
+
+        if (val_1 === val_2) return 0
+        if (val_1 === '') return 1 // treat empty string as lower than any value
+        if (val_2 === '') return -1 // any value is considered higher than empty string
+
+        const num_1 = Number(val_1)
+        const num_2 = Number(val_2)
+
+        if (isNaN(num_1) && isNaN(num_2)) {
+          return (
+            sort_dir * val_1.localeCompare(val_2, undefined, { numeric: true })
+          )
+        }
+        return sort_dir * (num_1 - num_2)
+      })
+
+      for (const row of rows) table_body.appendChild(row)
+    })
+  }
+}
+
     </script>
 
     <table class='metrics' use:sortable {...$$props}
@@ -390,9 +463,8 @@
       <th id="T__level0_col8" class="col_heading level0 col8" >R<sup>2</sup> ↑</th>
       <th id="T__level0_col9" class="col_heading level0 col9" >Training Set</th>
       <th id="T__level0_col10" class="col_heading level0 col10" >Model Params</th>
-      <th id="T__level0_col11" class="col_heading level0 col11" >Model Type</th>
-      <th id="T__level0_col12" class="col_heading level0 col12" >Targets</th>
-      <th id="T__level0_col13" class="col_heading level0 col13" >Date Added</th>
+      <th id="T__level0_col11" class="col_heading level0 col11" >Targets</th>
+      <th id="T__level0_col12" class="col_heading level0 col12" >Date Added</th>
     </tr>
   </thead>
   <tbody>
@@ -407,11 +479,10 @@
       <td id="T__row0_col6" class="data row0 col6" >0.026</td>
       <td id="T__row0_col7" class="data row0 col7" >0.080</td>
       <td id="T__row0_col8" class="data row0 col8" >0.812</td>
-      <td id="T__row0_col9" class="data row0 col9" ><a href='https://doi.org/10.48550/arXiv.2405.04967' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set'>17M</span></a></td>
-      <td id="T__row0_col10" class="data row0 col10" ><span title='Number of trainable model parameters'>182.0M</span></td>
-      <td id="T__row0_col11" class="data row0 col11" ><span title='Universal Interatomic Potential'>UIP</span></td>
-      <td id="T__row0_col12" class="data row0 col12" >EFS</td>
-      <td id="T__row0_col13" class="data row0 col13" >2024-06-16</td>
+      <td id="T__row0_col9" class="data row0 col9" ><a href='https://doi.org/10.48550/arXiv.2405.04967' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set' data-sort-value=17000000>17M</span></a></td>
+      <td id="T__row0_col10" class="data row0 col10" ><span title='Number of trainable model parameters' data-sort-value="182000000">182.0M</span></td>
+      <td id="T__row0_col11" class="data row0 col11" >EFS</td>
+      <td id="T__row0_col12" class="data row0 col12" >2024-06-16</td>
     </tr>
     <tr>
       <th id="T__level0_row1" class="row_heading level0 row1" ><span title="Version: n/a" class="proprietary">GNoME</span></th>
@@ -424,11 +495,10 @@
       <td id="T__row1_col6" class="data row1 col6" >0.035</td>
       <td id="T__row1_col7" class="data row1 col7" >0.085</td>
       <td id="T__row1_col8" class="data row1 col8" >0.785</td>
-      <td id="T__row1_col9" class="data row1 col9" ><a href='https://doi.org/10.1038/s41586-023-06735-9' target='_blank' rel='noopener noreferrer'><span title='Number of materials (and structures) in training set'>6.0M</span> <small title='Number of materials (and structures) in training set'>(89.0M)</small></a></td>
-      <td id="T__row1_col10" class="data row1 col10" ><span title='Number of trainable model parameters'>16.2M</span></td>
-      <td id="T__row1_col11" class="data row1 col11" ><span title='Universal Interatomic Potential'>UIP</span></td>
-      <td id="T__row1_col12" class="data row1 col12" >EF</td>
-      <td id="T__row1_col13" class="data row1 col13" >2024-02-03</td>
+      <td id="T__row1_col9" class="data row1 col9" ><a href='https://doi.org/10.1038/s41586-023-06735-9' target='_blank' rel='noopener noreferrer'><span title='Number of materials (and structures) in training set' data-sort-value=6000000>6M</span><small title='Number of materials (and structures) in training set'>(89.0M)</small></a></td>
+      <td id="T__row1_col10" class="data row1 col10" ><span title='Number of trainable model parameters' data-sort-value="16240000">16.2M</span></td>
+      <td id="T__row1_col11" class="data row1 col11" >EF</td>
+      <td id="T__row1_col12" class="data row1 col12" >2024-02-03</td>
     </tr>
     <tr>
       <th id="T__level0_row2" class="row_heading level0 row2" ><span title="Version: SevenNet-0 (11July2024)">SevenNet</span></th>
@@ -441,11 +511,10 @@
       <td id="T__row2_col6" class="data row2 col6" >0.048</td>
       <td id="T__row2_col7" class="data row2 col7" >0.092</td>
       <td id="T__row2_col8" class="data row2 col8" >0.750</td>
-      <td id="T__row2_col9" class="data row2 col9" ><a href='https://figshare.com/articles/dataset/23713842' target='_blank' rel='noopener noreferrer'><span title='Number of materials (and structures) in training set'>145.9K</span> <small title='Number of materials (and structures) in training set'>(1.6M)</small></a></td>
-      <td id="T__row2_col10" class="data row2 col10" ><span title='Number of trainable model parameters'>842.4K</span></td>
-      <td id="T__row2_col11" class="data row2 col11" ><span title='Universal Interatomic Potential'>UIP</span></td>
-      <td id="T__row2_col12" class="data row2 col12" >EFS</td>
-      <td id="T__row2_col13" class="data row2 col13" >2024-07-13</td>
+      <td id="T__row2_col9" class="data row2 col9" ><a href='https://figshare.com/articles/dataset/23713842' target='_blank' rel='noopener noreferrer'><span title='Number of materials (and structures) in training set' data-sort-value=145923>146K</span><small title='Number of materials (and structures) in training set'>(1.6M)</small></a></td>
+      <td id="T__row2_col10" class="data row2 col10" ><span title='Number of trainable model parameters' data-sort-value="842440">842.4K</span></td>
+      <td id="T__row2_col11" class="data row2 col11" >EFS</td>
+      <td id="T__row2_col12" class="data row2 col12" >2024-07-13</td>
     </tr>
     <tr>
       <th id="T__level0_row3" class="row_heading level0 row3" ><span title="Version: 2023-12-03-mace-128-L1">MACE</span></th>
@@ -458,11 +527,10 @@
       <td id="T__row3_col6" class="data row3 col6" >0.057</td>
       <td id="T__row3_col7" class="data row3 col7" >0.101</td>
       <td id="T__row3_col8" class="data row3 col8" >0.697</td>
-      <td id="T__row3_col9" class="data row3 col9" ><a href='https://figshare.com/articles/dataset/23713842' target='_blank' rel='noopener noreferrer'><span title='Number of materials (and structures) in training set'>145.9K</span> <small title='Number of materials (and structures) in training set'>(1.6M)</small></a></td>
-      <td id="T__row3_col10" class="data row3 col10" ><span title='Number of trainable model parameters'>4.7M</span></td>
-      <td id="T__row3_col11" class="data row3 col11" ><span title='Universal Interatomic Potential'>UIP</span></td>
-      <td id="T__row3_col12" class="data row3 col12" >EFS</td>
-      <td id="T__row3_col13" class="data row3 col13" >2023-07-14</td>
+      <td id="T__row3_col9" class="data row3 col9" ><a href='https://figshare.com/articles/dataset/23713842' target='_blank' rel='noopener noreferrer'><span title='Number of materials (and structures) in training set' data-sort-value=145923>146K</span><small title='Number of materials (and structures) in training set'>(1.6M)</small></a></td>
+      <td id="T__row3_col10" class="data row3 col10" ><span title='Number of trainable model parameters' data-sort-value="4688656">4.7M</span></td>
+      <td id="T__row3_col11" class="data row3 col11" >EFS</td>
+      <td id="T__row3_col12" class="data row3 col12" >2023-07-14</td>
     </tr>
     <tr>
       <th id="T__level0_row4" class="row_heading level0 row4" ><span title="Version: 0.3.0">CHGNet</span></th>
@@ -475,11 +543,10 @@
       <td id="T__row4_col6" class="data row4 col6" >0.063</td>
       <td id="T__row4_col7" class="data row4 col7" >0.103</td>
       <td id="T__row4_col8" class="data row4 col8" >0.689</td>
-      <td id="T__row4_col9" class="data row4 col9" ><a href='https://figshare.com/articles/dataset/23713842' target='_blank' rel='noopener noreferrer'><span title='Number of materials (and structures) in training set'>145.9K</span> <small title='Number of materials (and structures) in training set'>(1.6M)</small></a></td>
-      <td id="T__row4_col10" class="data row4 col10" ><span title='Number of trainable model parameters'>412.5K</span></td>
-      <td id="T__row4_col11" class="data row4 col11" ><span title='Universal Interatomic Potential'>UIP</span></td>
-      <td id="T__row4_col12" class="data row4 col12" >EFSM</td>
-      <td id="T__row4_col13" class="data row4 col13" >2023-03-03</td>
+      <td id="T__row4_col9" class="data row4 col9" ><a href='https://figshare.com/articles/dataset/23713842' target='_blank' rel='noopener noreferrer'><span title='Number of materials (and structures) in training set' data-sort-value=145923>146K</span><small title='Number of materials (and structures) in training set'>(1.6M)</small></a></td>
+      <td id="T__row4_col10" class="data row4 col10" ><span title='Number of trainable model parameters' data-sort-value="412525">412.5K</span></td>
+      <td id="T__row4_col11" class="data row4 col11" >EFSM</td>
+      <td id="T__row4_col12" class="data row4 col12" >2023-03-03</td>
     </tr>
     <tr>
       <th id="T__level0_row5" class="row_heading level0 row5" ><span title="Version: 2022.9.20">M3GNet</span></th>
@@ -492,11 +559,10 @@
       <td id="T__row5_col6" class="data row5 col6" >0.075</td>
       <td id="T__row5_col7" class="data row5 col7" >0.118</td>
       <td id="T__row5_col8" class="data row5 col8" >0.585</td>
-      <td id="T__row5_col9" class="data row5 col9" ><a href='https://figshare.com/articles/dataset/19470599' target='_blank' rel='noopener noreferrer'><span title='Number of materials (and structures) in training set'>62.8K</span> <small title='Number of materials (and structures) in training set'>(188.3K)</small></a></td>
-      <td id="T__row5_col10" class="data row5 col10" ><span title='Number of trainable model parameters'>227.5K</span></td>
-      <td id="T__row5_col11" class="data row5 col11" ><span title='Universal Interatomic Potential'>UIP</span></td>
-      <td id="T__row5_col12" class="data row5 col12" >EFS</td>
-      <td id="T__row5_col13" class="data row5 col13" >2022-09-20</td>
+      <td id="T__row5_col9" class="data row5 col9" ><a href='https://figshare.com/articles/dataset/19470599' target='_blank' rel='noopener noreferrer'><span title='Number of materials (and structures) in training set' data-sort-value=62783>63K</span><small title='Number of materials (and structures) in training set'>(188.3K)</small></a></td>
+      <td id="T__row5_col10" class="data row5 col10" ><span title='Number of trainable model parameters' data-sort-value="227549">227.5K</span></td>
+      <td id="T__row5_col11" class="data row5 col11" >EFS</td>
+      <td id="T__row5_col12" class="data row5 col12" >2022-09-20</td>
     </tr>
     <tr>
       <th id="T__level0_row6" class="row_heading level0 row6" ><span title="Version: 2023.01.10">ALIGNN</span></th>
@@ -509,11 +575,10 @@
       <td id="T__row6_col6" class="data row6 col6" >0.093</td>
       <td id="T__row6_col7" class="data row6 col7" >0.154</td>
       <td id="T__row6_col8" class="data row6 col8" >0.297</td>
-      <td id="T__row6_col9" class="data row6 col9" ><a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set'>155K</span></a></td>
-      <td id="T__row6_col10" class="data row6 col10" ><span title='Number of trainable model parameters'>4.0M</span></td>
-      <td id="T__row6_col11" class="data row6 col11" ><span title='Graph Neural Network'>GNN</span></td>
-      <td id="T__row6_col12" class="data row6 col12" >E</td>
-      <td id="T__row6_col13" class="data row6 col13" >2023-06-02</td>
+      <td id="T__row6_col9" class="data row6 col9" ><a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set' data-sort-value=154719>155K</span></a></td>
+      <td id="T__row6_col10" class="data row6 col10" ><span title='Number of trainable model parameters' data-sort-value="4026753">4.0M</span></td>
+      <td id="T__row6_col11" class="data row6 col11" >E</td>
+      <td id="T__row6_col12" class="data row6 col12" >2023-06-02</td>
     </tr>
     <tr>
       <th id="T__level0_row7" class="row_heading level0 row7" ><span title="Version: 2022.9.20">MEGNet</span></th>
@@ -526,11 +591,10 @@
       <td id="T__row7_col6" class="data row7 col6" >0.130</td>
       <td id="T__row7_col7" class="data row7 col7" >0.206</td>
       <td id="T__row7_col8" class="data row7 col8" >-0.248</td>
-      <td id="T__row7_col9" class="data row7 col9" ><a href='https://figshare.com/articles/dataset/8097992' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set'>133K</span></a></td>
-      <td id="T__row7_col10" class="data row7 col10" ><span title='Number of trainable model parameters'>167.8K</span></td>
-      <td id="T__row7_col11" class="data row7 col11" ><span title='Graph Neural Network'>GNN</span></td>
-      <td id="T__row7_col12" class="data row7 col12" >E</td>
-      <td id="T__row7_col13" class="data row7 col13" >2022-11-14</td>
+      <td id="T__row7_col9" class="data row7 col9" ><a href='https://figshare.com/articles/dataset/8097992' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set' data-sort-value=133420>133K</span></a></td>
+      <td id="T__row7_col10" class="data row7 col10" ><span title='Number of trainable model parameters' data-sort-value="167761">167.8K</span></td>
+      <td id="T__row7_col11" class="data row7 col11" >E</td>
+      <td id="T__row7_col12" class="data row7 col12" >2022-11-14</td>
     </tr>
     <tr>
       <th id="T__level0_row8" class="row_heading level0 row8" ><span title="Version: 0.1.0">CGCNN</span></th>
@@ -543,11 +607,10 @@
       <td id="T__row8_col6" class="data row8 col6" >0.138</td>
       <td id="T__row8_col7" class="data row8 col7" >0.233</td>
       <td id="T__row8_col8" class="data row8 col8" >-0.603</td>
-      <td id="T__row8_col9" class="data row8 col9" ><a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set'>155K</span></a></td>
-      <td id="T__row8_col10" class="data row8 col10" ><span title='Number of trainable model parameters'>128.4K</span> <small title='Number of models in ensemble'>(N=10)</small></td>
-      <td id="T__row8_col11" class="data row8 col11" ><span title='Graph Neural Network'>GNN</span></td>
-      <td id="T__row8_col12" class="data row8 col12" >E</td>
-      <td id="T__row8_col13" class="data row8 col13" >2022-12-28</td>
+      <td id="T__row8_col9" class="data row8 col9" ><a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set' data-sort-value=154719>155K</span></a></td>
+      <td id="T__row8_col10" class="data row8 col10" ><span title='Number of trainable model parameters' data-sort-value="128450">128.4K</span> <small title='Number of models in ensemble'>(N=10)</small></td>
+      <td id="T__row8_col11" class="data row8 col11" >E</td>
+      <td id="T__row8_col12" class="data row8 col12" >2022-12-28</td>
     </tr>
     <tr>
       <th id="T__level0_row9" class="row_heading level0 row9" ><span title="Version: 0.1.0">CGCNN+P</span></th>
@@ -560,11 +623,10 @@
       <td id="T__row9_col6" class="data row9 col6" >0.113</td>
       <td id="T__row9_col7" class="data row9 col7" >0.182</td>
       <td id="T__row9_col8" class="data row9 col8" >0.019</td>
-      <td id="T__row9_col9" class="data row9 col9" ><a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set'>155K</span></a></td>
-      <td id="T__row9_col10" class="data row9 col10" ><span title='Number of trainable model parameters'>128.4K</span> <small title='Number of models in ensemble'>(N=10)</small></td>
-      <td id="T__row9_col11" class="data row9 col11" ><span title='Graph Neural Network'>GNN</span></td>
-      <td id="T__row9_col12" class="data row9 col12" >E</td>
-      <td id="T__row9_col13" class="data row9 col13" >2023-02-03</td>
+      <td id="T__row9_col9" class="data row9 col9" ><a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set' data-sort-value=154719>155K</span></a></td>
+      <td id="T__row9_col10" class="data row9 col10" ><span title='Number of trainable model parameters' data-sort-value="128450">128.4K</span> <small title='Number of models in ensemble'>(N=10)</small></td>
+      <td id="T__row9_col11" class="data row9 col11" >E</td>
+      <td id="T__row9_col12" class="data row9 col12" >2023-02-03</td>
     </tr>
     <tr>
       <th id="T__level0_row10" class="row_heading level0 row10" ><span title="Version: 0.1.0">Wrenformer</span></th>
@@ -577,11 +639,10 @@
       <td id="T__row10_col6" class="data row10 col6" >0.110</td>
       <td id="T__row10_col7" class="data row10 col7" >0.186</td>
       <td id="T__row10_col8" class="data row10 col8" >-0.018</td>
-      <td id="T__row10_col9" class="data row10 col9" ><a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set'>155K</span></a></td>
-      <td id="T__row10_col10" class="data row10 col10" ><span title='Number of trainable model parameters'>5.2M</span> <small title='Number of models in ensemble'>(N=10)</small></td>
-      <td id="T__row10_col11" class="data row10 col11" ><span title='Transformer-Based Models'>Transformer</span></td>
-      <td id="T__row10_col12" class="data row10 col12" >E</td>
-      <td id="T__row10_col13" class="data row10 col13" >2022-11-26</td>
+      <td id="T__row10_col9" class="data row10 col9" ><a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set' data-sort-value=154719>155K</span></a></td>
+      <td id="T__row10_col10" class="data row10 col10" ><span title='Number of trainable model parameters' data-sort-value="5166658">5.2M</span> <small title='Number of models in ensemble'>(N=10)</small></td>
+      <td id="T__row10_col11" class="data row10 col11" >E</td>
+      <td id="T__row10_col12" class="data row10 col12" >2022-11-26</td>
     </tr>
     <tr>
       <th id="T__level0_row11" class="row_heading level0 row11" ><span title="Version: 2022.9.20">BOWSR</span></th>
@@ -594,11 +655,10 @@
       <td id="T__row11_col6" class="data row11 col6" >0.118</td>
       <td id="T__row11_col7" class="data row11 col7" >0.167</td>
       <td id="T__row11_col8" class="data row11 col8" >0.151</td>
-      <td id="T__row11_col9" class="data row11 col9" ><a href='https://figshare.com/articles/dataset/8097992' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set'>133K</span></a></td>
-      <td id="T__row11_col10" class="data row11 col10" ><span title='Number of trainable model parameters'>167.8K</span></td>
-      <td id="T__row11_col11" class="data row11 col11" ><span title='GNN in a Bayesian Optimization Loop'>BO-GNN</span></td>
-      <td id="T__row11_col12" class="data row11 col12" >E</td>
-      <td id="T__row11_col13" class="data row11 col13" >2022-11-17</td>
+      <td id="T__row11_col9" class="data row11 col9" ><a href='https://figshare.com/articles/dataset/8097992' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set' data-sort-value=133420>133K</span></a></td>
+      <td id="T__row11_col10" class="data row11 col10" ><span title='Number of trainable model parameters' data-sort-value="167761">167.8K</span></td>
+      <td id="T__row11_col11" class="data row11 col11" >E</td>
+      <td id="T__row11_col12" class="data row11 col12" >2022-11-17</td>
     </tr>
     <tr>
       <th id="T__level0_row12" class="row_heading level0 row12" ><span title="Version: 1.1.2">Voronoi RF</span></th>
@@ -611,11 +671,10 @@
       <td id="T__row12_col6" class="data row12 col6" >0.148</td>
       <td id="T__row12_col7" class="data row12 col7" >0.212</td>
       <td id="T__row12_col8" class="data row12 col8" >-0.329</td>
-      <td id="T__row12_col9" class="data row12 col9" ><a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set'>155K</span></a></td>
-      <td id="T__row12_col10" class="data row12 col10" ><span title='Number of trainable model parameters'>0.0</span></td>
-      <td id="T__row12_col11" class="data row12 col11" ><span title='Models with Structural Fingerprint Features'>Fingerprint</span></td>
-      <td id="T__row12_col12" class="data row12 col12" >E</td>
-      <td id="T__row12_col13" class="data row12 col13" >2022-11-26</td>
+      <td id="T__row12_col9" class="data row12 col9" ><a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'><span title='Number of materials in training set' data-sort-value=154719>155K</span></a></td>
+      <td id="T__row12_col10" class="data row12 col10" ><span title='Number of trainable model parameters' data-sort-value="0">0.0</span></td>
+      <td id="T__row12_col11" class="data row12 col11" >E</td>
+      <td id="T__row12_col12" class="data row12 col12" >2022-11-26</td>
     </tr>
     <tr>
       <th id="T__level0_row13" class="row_heading level0 row13" >Dummy</th>
@@ -632,7 +691,6 @@
       <td id="T__row13_col10" class="data row13 col10" ></td>
       <td id="T__row13_col11" class="data row13 col11" ></td>
       <td id="T__row13_col12" class="data row13 col12" ></td>
-      <td id="T__row13_col13" class="data row13 col13" ></td>
     </tr>
   </tbody>
 </table>

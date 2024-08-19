@@ -156,8 +156,8 @@ if not os.path.isfile(umap_out_path):
     df_wbm = pd.read_csv(wbm_matminer_feat_path).set_index(Key.mat_id)
 
     # Drop all rows containing NaN values
-    df_wbm = df_wbm.dropna(axis=0)
-    df_mp = df_mp.dropna(axis=0)
+    df_wbm = df_wbm.dropna(axis="index")
+    df_mp = df_mp.dropna(axis="index")
 
     # Drop highly correlated features
     cols_to_drop = features_to_drop(df_mp, threshold=0.95)
