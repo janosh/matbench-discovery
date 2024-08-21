@@ -10,16 +10,17 @@ import pandas as pd
 import plotly.express as px
 import pymatviz as pmv
 from matplotlib.colors import SymLogNorm
+from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Composition, Structure
 from pymatviz.enums import Key
 from pymatviz.utils import PLOTLY, si_fmt, si_fmt_int
+from tqdm.auto import tqdm
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.energy import mp_elem_ref_entries
 from matbench_discovery.enums import MbdKey
-from matbench_discovery.preds import Model, df_each_err
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-30"
@@ -30,19 +31,18 @@ data_page = f"{ROOT}/site/src/routes/data"
 
 # %% load MP training set
 df_mp = pd.read_csv(DataFiles.mp_energies.path, na_filter=False, na_values=[])
-
-df_mp[df_mp[Key.formula].isna()]
+df_mp = df_mp.rename(columns={"formula_pretty": Key.formula})
+df_mp.loc[
+    df_mp[Key.mat_id].isin(["mp-1080032", "mp-1179882", "mp-1009221"]), Key.formula
+] = "NaN"
+df_mp[df_mp[Key.formula].isna() | (df_mp[Key.formula] == "")]
 
 
 # %%
-wbm_occu_counts = pmv.count_elements(
-    df_wbm[Key.formula], count_mode="occurrence"
-).astype(int)
+wbm_occu_counts = pmv.count_elements(df_wbm[Key.formula], count_mode="occurrence")
 wbm_comp_counts = pmv.count_elements(df_wbm[Key.formula], count_mode="composition")
 
-mp_occu_counts = pmv.count_elements(df_mp[Key.formula], count_mode="occurrence").astype(
-    int
-)
+mp_occu_counts = pmv.count_elements(df_mp[Key.formula], count_mode="occurrence")
 mp_comp_counts = pmv.count_elements(df_mp[Key.formula], count_mode="composition")
 
 all_counts = (
@@ -82,9 +82,6 @@ for dataset, count_mode, elem_counts in all_counts:
         elem_counts,
         fmt=lambda x, _: si_fmt(x, ".0f"),
         cbar_fmt=lambda x, _: si_fmt(x, ".0f"),
-        zero_color="#efefef",
-        label_font_size=17,
-        value_font_size=14,
         cbar_title=f"{dataset.upper()} Element Count",
         log=(log := SymLogNorm(linthresh=100)),
     )
@@ -255,67 +252,9 @@ pmv.save_fig(fig, f"{SITE_FIGS}/mp-elemental-ref-energies.svelte")
 pmv.save_fig(fig, f"{PDF_FIGS}/mp-elemental-ref-energies.pdf")
 
 
-# %% plot 2d and 3d t-SNE projections of one-hot encoded element vectors summed by
-# weight in each WBM composition. TLDR: no obvious structure in the data
-# was hoping to find certain clusters to have higher or lower errors after seeing
-# many models struggle on the halogens in per-element error periodic table heatmaps
-# https://janosh.github.io/matbench-discovery/models
-df_2d_tsne = pd.read_csv(f"{module_dir}/tsne/one-hot-112-composition-2d.csv.gz")
-df_2d_tsne = df_2d_tsne.set_index(Key.mat_id)
-
-df_3d_tsne = pd.read_csv(f"{module_dir}/tsne/one-hot-112-composition-3d.csv.gz")
-model = Model.wrenformer.label
-df_3d_tsne = pd.read_csv(
-    f"{module_dir}/tsne/one-hot-112-composition+{model}-each-err-3d-metric=eucl.csv.gz"
-)
-df_3d_tsne = df_3d_tsne.set_index(Key.mat_id)
-
-df_wbm[list(df_2d_tsne)] = df_2d_tsne
-df_wbm[list(df_3d_tsne)] = df_3d_tsne
-df_wbm[list(df_each_err.add_suffix(" abs EACH error"))] = df_each_err.abs()
-
-
-# %%
-color_col = f"{model} abs EACH error"
-clr_range_max = df_wbm[color_col].mean() + df_wbm[color_col].std()
-
-
-# %%
-fig = px.scatter(
-    df_wbm,
-    x="2d t-SNE 1",
-    y="2d t-SNE 2",
-    color=color_col,
-    hover_name=Key.mat_id,
-    hover_data=(Key.formula, MbdKey.each_true),
-    range_color=(0, clr_range_max),
-)
-fig.show()
-
-
-# %%
-fig = px.scatter_3d(
-    df_wbm,
-    x="3d t-SNE 1",
-    y="3d t-SNE 2",
-    z="3d t-SNE 3",
-    color=color_col,
-    custom_data=[Key.mat_id, Key.formula, MbdKey.each_true, color_col],
-    range_color=(0, clr_range_max),
-)
-fig.data[0].hovertemplate = (
-    "<b>material_id: %{customdata[0]}</b><br><br>"
-    "t-SNE: (%{x:.2f}, %{y:.2f}, %{z:.2f})<br>"
-    "Formula: %{customdata[1]}<br>"
-    "E<sub>above hull</sub>: %{customdata[2]:.2f}<br>"
-    f"{color_col}: %{{customdata[3]:.2f}}<br>"
-)
-fig.show()
-
-
 # %%
 df_wbm[Key.spg_num] = df_wbm[MbdKey.init_wyckoff].str.split("_").str[2].astype(int)
-df_mp[Key.spg_num] = df_mp[Key.wyckoff].str.split("_").str[2].astype(int)
+df_mp[Key.spg_num] = df_mp[MbdKey.wyckoff].str.split("_").str[2].astype(int)
 
 
 # %%
@@ -371,7 +310,7 @@ pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=450, height=280)
 
 # %% find large structures that changed symmetry during relaxation
 df_sym_change = (
-    df_wbm.query(f"{MbdKey.init_wyckoff} != {Key.wyckoff}")
+    df_wbm.query(f"{MbdKey.init_wyckoff} != {MbdKey.wyckoff}")
     .filter(regex="wyckoff|sites")
     .nlargest(10, Key.n_sites)
 )
@@ -403,3 +342,19 @@ struct.to(f"{module_dir}/{wbm_id}.json")
 struct = Structure.from_dict(df_wbm_structs.loc[wbm_id][Key.init_struct])
 struct.to(f"{module_dir}/{wbm_id}-init.cif")
 struct.to(f"{module_dir}/{wbm_id}-init.json")
+
+
+# %%
+# look at RSMD between initial and final structures
+df_wbm_structs["rmsd"] = [
+    StructureMatcher().get_rms_dist(
+        Structure.from_dict(df_wbm_structs.loc[wbm_id][Key.init_struct]),
+        Structure.from_dict(df_wbm_structs.loc[wbm_id][Key.cse]["structure"]),
+    )
+    for wbm_id in tqdm(df_wbm_structs.index)
+]
+df_wbm_structs["max_dist"] = df_wbm_structs["rmsd"].str[1]
+df_wbm_structs["rmsd"] = df_wbm_structs["rmsd"].str[0]
+
+fig = px.histogram(df_wbm_structs, x="rmsd", nbins=200)
+fig.show()

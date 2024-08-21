@@ -64,6 +64,10 @@ class MbdKey(LabelEnum):
         "wyckoff_spglib_initial_structure",
         "Aflow-Wyckoff Label Initial Structure",
     )
+    wyckoff = (
+        "wyckoff_spglib",
+        "Aflow-Wyckoff Label",
+    )
     openness = "openness", "Openness"
     dft_energy = "uncorrected_energy", "DFT Energy"
     each_wbm = "e_above_hull_wbm", "E<sub>WBM hull dist</sub>"
