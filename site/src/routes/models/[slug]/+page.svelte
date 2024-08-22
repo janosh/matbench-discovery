@@ -3,7 +3,7 @@
   import pkg from '$site/package.json'
   import Icon from '@iconify/svelte'
   import { pretty_num } from 'elementari'
-  import { Tooltip } from 'svelte-zoo'
+  import { CopyButton, Tooltip } from 'svelte-zoo'
   import Mace from './mace.svelte'
 
   export let data
@@ -71,6 +71,13 @@
           </span>
         </div>
       {/if}
+      {#if model.pypi}
+        <code>
+          pip install {model.pypi.split('/').pop()}
+          <!-- TODO add custom CopyButton labels to remove text -->
+          <CopyButton />
+        </code>
+      {/if}
     </section>
 
     <section class="links">
@@ -95,6 +102,11 @@
       >
         <Icon icon="octicon:file-directory" inline /> Files
       </a>
+      {#if model.pypi}
+        <a href={model.pypi} target="_blank" rel="noopener noreferrer">
+          <Icon icon="simple-icons:pypi" inline /> PyPI
+        </a>
+      {/if}
     </section>
 
     <section class="authors">
@@ -275,17 +287,16 @@
     padding: 0;
   }
 
-  .meta-info {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    margin-bottom: 20px;
+  h3 {
+    margin: 1em 0;
   }
 
+  .meta-info,
   .links {
     display: flex;
-    gap: 1ex;
     flex-wrap: wrap;
+    gap: 1ex;
+    place-content: center;
   }
 
   .links a {

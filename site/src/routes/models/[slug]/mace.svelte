@@ -4,7 +4,7 @@
   import RawEnergyParity from '$figs/mace-wbm-IS2RE-raw-energy-parity.svelte'
 </script>
 
-<h2>MACE Additional Analysis for WBM IS2RE</h2>
+<h2>MACE Analysis for WBM IS2RE</h2>
 
 <h3>Formation Energy Parity</h3>
 
