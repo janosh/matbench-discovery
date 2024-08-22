@@ -19,6 +19,7 @@ repo: https://github.com/materialsvirtuallab/maml
 url: https://materialsvirtuallab.github.io/maml
 doi: https://doi.org/10.1016/j.mattod.2021.08.012
 paper: https://arxiv.org/abs/2104.10242
+pypi: https://pypi.org/project/maml
 
 requirements:
   maml: 2022.9.20
@@ -52,6 +53,6 @@ hyperparams:
     n_iter: 100
 
 notes:
-  description: BOWSR is a Bayesian optimizer with symmetry constraints using a graph deep learning energy model to perform "DFT-free" relaxations of crystal structures.
-  long: The authors show that this iterative approach improves the accuracy of ML-predicted formation energies over single-shot predictions.
-  training: Uses same version of MEGNet as standalone MEGNet.
+  Description: BOWSR is a Bayesian optimizer with symmetry constraints using a graph deep learning energy model to perform "DFT-free" relaxations of crystal structures.
+  Long: The authors show that this iterative approach improves the accuracy of ML-predicted formation energies over single-shot predictions.
+  Training: Uses same version of MEGNet as standalone MEGNet.

@@ -4,15 +4,15 @@
   import RawEnergyParity from '$figs/mace-wbm-IS2RE-raw-energy-parity.svelte'
 </script>
 
-<h1>MACE Additional Analysis for WBM IS2RE</h1>
+<h2>MACE Additional Analysis for WBM IS2RE</h2>
 
-<h2>Formation Energy Parity</h2>
+<h3>Formation Energy Parity</h3>
 
 {#if browser}
   <EformParity style="margin: 2em 0;" />
 {/if}
 
-<h2>Raw Energy Parity</h2>
+<h3>Raw Energy Parity</h3>
 
 {#if browser}
   <RawEnergyParity style="margin: 2em 0;" />

@@ -27,6 +27,7 @@ repo: https://github.com/MDIL-SNU/SevenNet # required
 url: https://github.com/MDIL-SNU/SevenNet/tree/main/pretrained_potentials/SevenNet_0__11July2024
 doi: https://doi.org/10.1021/acs.jctc.4c00190
 paper: https://arxiv.org/abs/2402.03789
+pypi: https://pypi.org/project/sevenn
 
 openness: OSOD
 trained_for_benchmark: false
@@ -54,7 +55,7 @@ hyperparams:
   radial_cutoff: 5.0 # Å
   sph_harmonics_l_max: 2
 
-requirements: # strongly recommended
+requirements:
   torch: 2.2.1
   torch-geometric: 2.5.2
   torch_scatter: 2.1.2
@@ -68,7 +69,7 @@ training_set:
   n_structures: 1_580_395
   n_materials: 145_923
 
-notes: # notes can have any key, be multiline and support markdown.
-  description: |
+notes:
+  Description: |
     SevenNet is a graph neural network interatomic potential package that supports parallel molecular dynamics simulations.
     In the SevenNet-0 model, based on the NequIP architecture, the tensor product in the self-connection layer, which includes numerous element-specific parameters, is replaced by a linear (or self-interaction) layer, this reduces the number of parameters from 16_240_000 (c.f. GNoME) to 842_440.

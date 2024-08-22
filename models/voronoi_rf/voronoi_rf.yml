@@ -16,6 +16,8 @@ authors:
 repo: https://github.com/janosh/matbench-discovery
 doi: https://doi.org/10.1103/PhysRevB.96.024104
 paper: https://doi.org/10.1103/PhysRevB.96.024104
+pypi: https://pypi.org/project/scikit-learn
+
 requirements:
   matminer: 0.8.0
   scikit-learn: 1.1.2
@@ -38,5 +40,5 @@ training_set:
   n_structures: 154_719
 
 notes:
-  description: A random forest trained to map the combo of composition-based Magpie features and structure-based relaxation-invariant Voronoi tessellation features (bond angles, coordination numbers, ...) to DFT formation energies.
-  long: This is an old model that predates most deep learning for materials but significantly improved over Coulomb matrix and partial radial distribution function methods. It therefore serves as a good baseline model to see what modern ML buys us.
+  Description: A random forest trained to map the combo of composition-based Magpie features and structure-based relaxation-invariant Voronoi tessellation features (bond angles, coordination numbers, ...) to DFT formation energies.
+  Long: This is an old model that predates most deep learning for materials but significantly improved over Coulomb matrix and partial radial distribution function methods. It therefore serves as a good baseline model to see what modern ML buys us.
