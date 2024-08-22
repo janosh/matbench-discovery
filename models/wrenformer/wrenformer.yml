@@ -41,9 +41,9 @@ training_set:
   n_structures: 154_719
 
 notes:
-  description: |
+  Description: |
     Wrenformer is a standard PyTorch Transformer Encoder trained to learn material embeddings from composition, space group, Wyckoff positions in a structure.
     ![Model workings](https://science.org/cms/10.1126/sciadv.abn4117/asset/a29e0899-77d1-47c8-82e3-00ab87c3b8d5/assets/images/large/sciadv.abn4117-f1.jpg)
     A ML–powered materials discovery workflow using Wrenformer's Wyckoff string inputs to predict formation energies for candidate materials in an enumerated library of Wyckoff representations (shapes are used to denote different Wyckoff positions and colors to denote different element types). Predicted formation energies are then compared against the known convex hull of stability. Structures satisfying the required symmetries are relaxed for materials predicted to be stable.
 
-  long: It builds on [Roost](https://doi.org/10.1038/s41467-020-19964-7) and [Wren](https://doi.org/10.1126/sciadv.abn4117), by being a fast structure-free model that is still able to distinguish polymorphs through symmetry.
+  Long: It builds on [Roost](https://doi.org/10.1038/s41467-020-19964-7) and [Wren](https://doi.org/10.1126/sciadv.abn4117), by being a fast structure-free model that is still able to distinguish polymorphs through symmetry.

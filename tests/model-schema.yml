@@ -43,6 +43,7 @@ properties:
   doi: *url
   paper: *url
   url: *url
+  pypi: *url
   requirements:
     type: object
     patternProperties:
@@ -87,15 +88,15 @@ properties:
   notes:
     type: object
     properties:
-      description:
+      Description:
         type: string
-      training:
+      Training:
         oneOf:
           - type: string
           - type: object
             values:
               type: string
-      missing_preds:
+      Missing Preds:
         type: string
       additionalProperties: true
   model_params:

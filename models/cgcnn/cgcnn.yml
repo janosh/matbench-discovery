@@ -37,7 +37,7 @@ training_set:
   n_structures: 154_719
 
 notes:
-  description: |
+  Description: |
     Published in 2018, CGCNN was the first crystal graph convolutional neural network to directly learn 8 different DFT-computed material properties from a graph representing the atoms and bonds in a crystal.
     ![Illustration of the crystal graph convolutional neural networks](https://researchgate.net/profile/Tian-Xie-11/publication/320726915/figure/fig1/AS:635258345119746@1528468800829/Illustration-of-the-crystal-graph-convolutional-neural-networks-a-Construction-of-the.png)
-  long: CGCNN was among the first to show that just like in other areas of ML, given large enough training sets, neural networks can learn embeddings that reliably outperform all human-engineered structure features directly from the data.
+  Long: CGCNN was among the first to show that just like in other areas of ML, given large enough training sets, neural networks can learn embeddings that reliably outperform all human-engineered structure features directly from the data.

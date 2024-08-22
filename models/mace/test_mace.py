@@ -21,7 +21,7 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, WBM_DIR, timestamp, today
+from matbench_discovery import ROOT, timestamp, today
 from matbench_discovery.data import (
     DataFiles,
     as_dict_handler,
@@ -76,7 +76,6 @@ data_path = {
     Task.IS2RE: DataFiles.wbm_initial_atoms.path,
 }[task_type]
 print(f"\nJob {job_name} started {timestamp}")
-print(f"{data_path=}")
 e_pred_col = "mace_energy"
 max_steps = 500
 force_max = 0.05  # Run until the forces are smaller than this in eV/A
@@ -85,8 +84,7 @@ dtype = "float64"
 mace_calc = mace_mp(model=model_name, device=device, default_dtype=dtype)
 
 print(f"Read data from {data_path}")
-zip_filename = f"{WBM_DIR}/2024-08-04-wbm-initial-atoms.extxyz.zip"
-atoms_list: list[Atoms] = ase_atoms_from_zip(zip_filename)
+atoms_list: list[Atoms] = ase_atoms_from_zip(data_path)
 
 if slurm_array_job_id == "debug":
     if smoke_test:

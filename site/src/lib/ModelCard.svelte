@@ -24,10 +24,11 @@
     [`${repository}/blob/-/models/${data.dirname}`, `Files`, `octicon:file-directory`],
   ]
   const target = { target: `_blank`, rel: `noopener` }
+  $: model_slug = model_name?.toLowerCase().replaceAll(` `, `-`) ?? ``
 </script>
 
-<h2 id={model_name.toLowerCase().replaceAll(` `, `-`)} {style}>
-  {model_name}
+<h2 id={model_slug} {style}>
+  <a href="/models/{model_slug}">{model_name}</a>
   <button
     on:click={() => (show_details = !show_details)}
     title="{show_details ? `Hide` : `Show`} authors and package versions"
