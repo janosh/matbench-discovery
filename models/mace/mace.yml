@@ -1,5 +1,5 @@
 model_name: MACE
-model_version: 2023-12-03-mace-128-L1
+model_version: v0.3.5
 matbench_discovery_version: 1.0.0
 date_added: "2023-07-14"
 date_published: "2022-05-13"
@@ -32,6 +32,7 @@ trained_by:
 repo: https://github.com/ACEsuit/mace
 doi: https://doi.org/10.48550/arXiv.2401.00096
 paper: https://arxiv.org/abs/2401.00096
+pypi: https://pypi.org/project/mace-torch
 
 requirements:
   mace-torch: 0.3.3
@@ -63,6 +64,6 @@ hyperparams:
   ase_optimizer: FIRE
 
 notes:
-  description: |
+  Description: |
     MACE is a higher-order equivariant message-passing neural network for fast and accurate force fields.
-  training: Using pre-trained 'medium' model released with paper.
+  Training: Using pre-trained 'medium' model released with paper.

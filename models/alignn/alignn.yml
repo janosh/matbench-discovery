@@ -20,6 +20,7 @@ repo: https://github.com/usnistgov/alignn
 url: https://jarvis.nist.gov/jalignn
 doi: https://nature.com/articles/s41524-021-00650-1
 paper: https://arxiv.org/abs/2106.01829
+pypi: https://pypi.org/project/alignn
 
 requirements:
   ase: 3.22.0
