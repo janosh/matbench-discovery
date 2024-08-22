@@ -1,4 +1,4 @@
-model_name: ORB
+model_name: ORB-mptraj-only
 model_version: v1
 matbench_discovery_version: 1.2.0
 date_added: "2024-08-20" # required
@@ -30,7 +30,7 @@ url: TBD
 doi: TBD
 paper: Coming Soon
 
-openness: OSCD
+openness: OSOD
 trained_for_benchmark: false
 train_task: S2EFS
 test_task: IS2RE-SR
@@ -61,15 +61,10 @@ requirements: # strongly recommended
   orbitalmaterials: 0.0.2
 
 training_set:
-  - title: MPtrj
-    url: https://figshare.com/articles/dataset/23713842
-    n_structures: 1_580_395
-    n_materials: 145_923
-  - title: Alexandria
-    url: https://alexandria.icams.rub.de/
-    n_structures: 30_497_628 (subsampled)
-    n_materials: 3_100_000
-  
+  title: MPtrj
+  url: https://figshare.com/articles/dataset/23713842
+  n_structures: 1_580_395
+  n_materials: 145_923
 
 notes: # notes can have any key, be multiline and support markdown.
   description: |
