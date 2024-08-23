@@ -214,7 +214,9 @@ df_melt = (
 )
 df_melt[n_examp_for_rarest_elem_col] = df_wbm[n_examp_for_rarest_elem_col]
 
-df_bin = bin_df_cols(df_melt, [n_examp_for_rarest_elem_col, Key.each_pred], ["Model"])
+df_bin = bin_df_cols(
+    df_melt, [n_examp_for_rarest_elem_col, Key.each_pred], group_by_cols=["Model"]
+)
 df_bin = df_bin.reset_index().set_index(Key.mat_id)
 df_bin[Key.formula] = df_wbm[Key.formula]
 
@@ -268,11 +270,13 @@ fig_ptable_each_errors = pmv.ptable_hists(
     df_frac_comp * (df_each_err[model].to_numpy()[:, None]),
     log=True,
     cbar_title=f"{model} convex hull distance errors (eV/atom)",
-    cbar_title_kwds=dict(fontsize=16),
+    cbar_title_kwargs=dict(fontsize=16),
     x_range=(-0.5, 0.5),
     symbol_pos=(0.1, 0.8),
     colormap="viridis",
 )
 
+
+# %%
 img_name = f"ptable-each-error-hists-{model.lower().replace(' ', '-')}"
 pmv.save_fig(fig_ptable_each_errors, f"{PDF_FIGS}/{img_name}.pdf")

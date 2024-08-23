@@ -1,5 +1,5 @@
 model_name: CGCNN+P
-model_version: 0.1.0 # the aviary version
+model_version: v0.1.0 # the aviary version
 matbench_discovery_version: 1.0.0
 date_added: "2023-02-03"
 date_published: "2022-02-28"
@@ -20,7 +20,7 @@ doi: https://doi.org/10.1038/s41524-022-00891-8
 paper: https://arxiv.org/abs/2202.13947
 
 requirements:
-  aviary: 0.1.0
+  aviary: https://github.com/CompRhys/aviary/releases/tag/v0.1.0
   torch: 1.11.0
   torch-scatter: 2.0.9
   numpy: 1.24.0
