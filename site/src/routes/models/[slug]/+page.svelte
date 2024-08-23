@@ -295,8 +295,9 @@
   .links {
     display: flex;
     flex-wrap: wrap;
-    gap: 1ex;
+    gap: 3ex;
     place-content: center;
+    margin: 2em auto;
   }
 
   .links a {

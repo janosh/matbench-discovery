@@ -180,7 +180,7 @@
   <section>
     <h3>Notes</h3>
     <ul>
-      {#each [`description`, `training`].filter((key) => key in (notes ?? {})) as key}
+      {#each [`Description`, `Training`].filter((key) => key in (notes ?? {})) as key}
         <li>{@html notes[key]}</li>
       {/each}
     </ul>
