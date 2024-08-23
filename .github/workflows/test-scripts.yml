@@ -15,7 +15,7 @@ jobs:
           - scripts/model_figs/metrics_tables.py
           - scripts/model_figs/rolling_mae_vs_hull_dist_models.py
           - scripts/model_figs/cumulative_metrics.py
-          - scripts/model_figs/rolling_mae_vs_hull_dist.py
+          - scripts/rolling_mae_vs_hull_dist.py
           - scripts/hist_classified_stable_vs_hull_dist.py
           - scripts/model_figs/hist_classified_stable_vs_hull_dist_models.py
     steps:
