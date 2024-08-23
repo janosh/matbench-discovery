@@ -14,7 +14,7 @@ authors:
 trained_by:
   - name: Philipp Benner
     affiliation: German Federal Institute of Materials Research and Testing (BAM)
-    orcid: 0000-0002-0912-8137
+    orcid: https://orcid.org/0000-0002-0912-8137
     github: https://github.com/pbenner
 repo: https://github.com/usnistgov/alignn
 url: https://jarvis.nist.gov/jalignn

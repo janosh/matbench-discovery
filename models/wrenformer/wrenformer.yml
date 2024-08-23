@@ -1,5 +1,5 @@
 model_name: Wrenformer
-model_version: 0.1.0 # the aviary version
+model_version: v0.1.0 # the aviary version
 matbench_discovery_version: 1.0.0
 date_added: "2022-11-26"
 date_published: "2021-06-21"
@@ -15,11 +15,11 @@ authors:
     affiliation: University of Cambridge
     email: re344@cam.ac.uk
     orcid: https://orcid.org/0000-0001-6397-0002
-repo: https://github.com/janosh/matbench-discovery
+repo: https://github.com/CompRhys/aviary
 doi: https://doi.org/10.1126/sciadv.abn4117
 paper: https://arxiv.org/abs/2106.11132
 requirements:
-  aviary: 0.1.0
+  aviary: https://github.com/CompRhys/aviary/releases/tag/v0.1.0
   torch: 1.11.0
   torch-scatter: 2.0.9
   pymatgen: 2022.10.22

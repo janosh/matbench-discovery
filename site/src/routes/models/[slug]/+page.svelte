@@ -225,13 +225,12 @@
         <h2>Package Dependencies</h2>
         <ul>
           {#each Object.entries(model.requirements) as [pkg, version]}
+            {@const href = version.startsWith('http')
+              ? version
+              : `https://pypi.org/project/${pkg}/${version}`}
             <li>
               <strong>{pkg}</strong>:
-              <a
-                href="https://pypi.org/project/{pkg}/{version}"
-                target="_blank"
-                rel="noopener noreferrer">{version}</a
-              >
+              <a {href} target="_blank" rel="noopener noreferrer">{version}</a>
             </li>
           {/each}
         </ul>

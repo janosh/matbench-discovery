@@ -88,10 +88,10 @@ Initial structures (after element substitution but before DFT relaxation) were s
 
 > Edit 2024-05-31: These links are now dead. The data is still available on Materials Cloud and Google Drive.
 
-The [paper itself][wbm paper] links to a [Halle University data page](https://tddft.org/bmg/data.php) which lists download URLs for CIF files and the `ComputedStructureEntries` (CSEs) of steps 1-3:
+The [paper itself][wbm paper] links to a discontinued site `https://tddft.org/bmg/data.php` which used to list download URLs for CIF files and the `ComputedStructureEntries` (CSEs) of steps 1-3:
 
-| [Halle University links](https://tddft.org/bmg/data.php) | [step 1 CSEs](https://tddft.org/bmg/files/data/substitutions_000.json.bz2) | [step 2 CSEs](https://tddft.org/bmg/files/data/substitutions_001.json.bz2) | [step 3 CSEs](https://tddft.org/bmg/files/data/substitutions_002.json.bz2) | [CIF files](https://tddft.org/bmg/files/data/similarity-cifs.tar.gz) |
-| -------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Halle University links | [step 1 CSEs](https://tddft.org/bmg/files/data/substitutions_000.json.bz2) | [step 2 CSEs](https://tddft.org/bmg/files/data/substitutions_001.json.bz2) | [step 3 CSEs](https://tddft.org/bmg/files/data/substitutions_002.json.bz2) | [CIF files](https://tddft.org/bmg/files/data/similarity-cifs.tar.gz) |
+| ---------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 
 ### Materials Cloud
 

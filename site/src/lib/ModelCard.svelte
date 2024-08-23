@@ -131,13 +131,12 @@
       <h3>Package versions</h3>
       <ul>
         {#each Object.entries(data.requirements ?? {}) as [name, version]}
+          {@const [href, link_text] = version.startsWith(`http`)
+            ? // version.split(`/`).at(-1) assumes final part after / of URL is the package version, as is the case for GitHub releases
+              [version, version.split(`/`).at(-1)]
+            : [`https://pypi.org/project/${name}/${version}`, version]}
           <li style="font-size: smaller;">
-            {#if ![`aviary`].includes(name)}
-              {@const href = `https://pypi.org/project/${name}/${version}`}
-              {name}: <a {href} {...target}>{version}</a>
-            {:else}
-              {name}: {version}
-            {/if}
+            {name}: <a {href} {...target}>{link_text}</a>
           </li>
         {/each}
       </ul>

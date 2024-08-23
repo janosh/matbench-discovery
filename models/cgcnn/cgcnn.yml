@@ -1,5 +1,5 @@
 model_name: CGCNN
-model_version: 0.1.0 # the aviary version
+model_version: v0.1.0 # the aviary version
 matbench_discovery_version: 1.0.0
 date_added: "2022-12-28"
 date_published: "2017-10-27"
@@ -11,12 +11,12 @@ authors:
   - name: Jeffrey C. Grossman
     affiliation: Massachusetts Institute of Technology
     url: https://dmse.mit.edu/people/jeffrey-c-grossman
-repo: https://github.com/txie-93/cgcnn
+repo: https://github.com/CompRhys/aviary
 doi: https://doi.org/10.1103/PhysRevLett.120.145301
 paper: https://arxiv.org/abs/1710.10324
 
 requirements:
-  aviary: 0.1.0
+  aviary: https://github.com/CompRhys/aviary/releases/tag/v0.1.0
   torch: 1.11.0
   torch-scatter: 2.0.9
   numpy: 1.24.0
@@ -40,4 +40,5 @@ notes:
   Description: |
     Published in 2018, CGCNN was the first crystal graph convolutional neural network to directly learn 8 different DFT-computed material properties from a graph representing the atoms and bonds in a crystal.
     ![Illustration of the crystal graph convolutional neural networks](https://researchgate.net/profile/Tian-Xie-11/publication/320726915/figure/fig1/AS:635258345119746@1528468800829/Illustration-of-the-crystal-graph-convolutional-neural-networks-a-Construction-of-the.png)
+    Aviary CGCNN model is based on the original implementation in https://github.com/txie-93/cgcnn.
   Long: CGCNN was among the first to show that just like in other areas of ML, given large enough training sets, neural networks can learn embeddings that reliably outperform all human-engineered structure features directly from the data.
