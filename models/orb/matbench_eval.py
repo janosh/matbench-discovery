@@ -54,7 +54,7 @@ PREDICTED_ENERGY_COL = "orb_energy"
 
 @app.command()
 def main(
-    model_name: str,
+    model_name: str = "orb-v1",  # Or orb-v1-mptraj-only
     ase_optimizer: str = typer.Option("FIRE", help="ASE optimizer to use"),
     ase_filter: str = typer.Option("frechet", help="ASE filter to use"),
     device: str = typer.Option(
