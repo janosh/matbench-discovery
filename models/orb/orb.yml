@@ -1,4 +1,4 @@
-model_name: ORB
+model_name: orb-v1
 model_version: v1
 matbench_discovery_version: 1.2.0
 date_added: "2024-08-20" # required
