@@ -7,7 +7,7 @@ import { compile } from 'mdsvex'
 import { dirname } from 'path'
 
 export const load = async () => {
-  const files = import.meta.glob(`$root/models/[^_]**/[^_]*.yml`, {
+  const files = import.meta.glob(`$root/models/**/*.yml`, {
     eager: true,
     import: `default`,
   }) as Record<string, ModelData>

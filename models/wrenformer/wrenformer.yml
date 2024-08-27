@@ -1,5 +1,5 @@
 model_name: Wrenformer
-model_version: 0.1.0 # the aviary version
+model_version: v0.1.0 # the aviary version
 matbench_discovery_version: 1.0.0
 date_added: "2022-11-26"
 date_published: "2021-06-21"
@@ -15,11 +15,11 @@ authors:
     affiliation: University of Cambridge
     email: re344@cam.ac.uk
     orcid: https://orcid.org/0000-0001-6397-0002
-repo: https://github.com/janosh/matbench-discovery
+repo: https://github.com/CompRhys/aviary
 doi: https://doi.org/10.1126/sciadv.abn4117
 paper: https://arxiv.org/abs/2106.11132
 requirements:
-  aviary: 0.1.0
+  aviary: https://github.com/CompRhys/aviary/releases/tag/v0.1.0
   torch: 1.11.0
   torch-scatter: 2.0.9
   pymatgen: 2022.10.22
@@ -41,9 +41,9 @@ training_set:
   n_structures: 154_719
 
 notes:
-  description: |
+  Description: |
     Wrenformer is a standard PyTorch Transformer Encoder trained to learn material embeddings from composition, space group, Wyckoff positions in a structure.
     ![Model workings](https://science.org/cms/10.1126/sciadv.abn4117/asset/a29e0899-77d1-47c8-82e3-00ab87c3b8d5/assets/images/large/sciadv.abn4117-f1.jpg)
     A ML–powered materials discovery workflow using Wrenformer's Wyckoff string inputs to predict formation energies for candidate materials in an enumerated library of Wyckoff representations (shapes are used to denote different Wyckoff positions and colors to denote different element types). Predicted formation energies are then compared against the known convex hull of stability. Structures satisfying the required symmetries are relaxed for materials predicted to be stable.
 
-  long: It builds on [Roost](https://doi.org/10.1038/s41467-020-19964-7) and [Wren](https://doi.org/10.1126/sciadv.abn4117), by being a fast structure-free model that is still able to distinguish polymorphs through symmetry.
+  Long: It builds on [Roost](https://doi.org/10.1038/s41467-020-19964-7) and [Wren](https://doi.org/10.1126/sciadv.abn4117), by being a fast structure-free model that is still able to distinguish polymorphs through symmetry.

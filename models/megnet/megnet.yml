@@ -1,5 +1,5 @@
 model_name: MEGNet
-model_version: 2022.9.20
+model_version: v2022.9.20
 matbench_discovery_version: 1.0.0
 date_added: "2022-11-14"
 date_published: "2021-12-18"
@@ -24,6 +24,8 @@ repo: https://github.com/materialsvirtuallab/megnet
 url: https://materialsvirtuallab.github.io/megnet
 doi: https://doi.org/10.1021/acs.chemmater.9b01294
 paper: https://arxiv.org/abs/1812.05055
+pypi: https://pypi.org/project/megnet
+
 requirements:
   megnet: 1.3.2
   pymatgen: 2022.10.22
@@ -49,5 +51,5 @@ training_set:
   # n_structures: 69_239
 
 notes:
-  description: MatErials Graph Network is another GNN for material properties of relaxed structure which showed that learned element embeddings encode periodic chemical trends and can be transfer-learned from large data sets (formation energies) to predictions on small data properties (band gaps, elastic moduli).
-  training: Using pre-trained model released with paper. Was only trained on `MP-crystals-2018.6.1` dataset [available on Figshare](https://figshare.com/articles/Graphs_of_materials_project/7451351).
+  Description: MatErials Graph Network is another GNN for material properties of relaxed structure which showed that learned element embeddings encode periodic chemical trends and can be transfer-learned from large data sets (formation energies) to predictions on small data properties (band gaps, elastic moduli).
+  Training: Using pre-trained model released with paper. Was only trained on `MP-crystals-2018.6.1` dataset [available on Figshare](https://figshare.com/articles/Graphs_of_materials_project/7451351).

@@ -24,10 +24,11 @@
     [`${repository}/blob/-/models/${data.dirname}`, `Files`, `octicon:file-directory`],
   ]
   const target = { target: `_blank`, rel: `noopener` }
+  $: model_slug = model_name?.toLowerCase().replaceAll(` `, `-`) ?? ``
 </script>
 
-<h2 id={model_name.toLowerCase().replaceAll(` `, `-`)} {style}>
-  {model_name}
+<h2 id={model_slug} {style}>
+  <a href="/models/{model_slug}">{model_name}</a>
   <button
     on:click={() => (show_details = !show_details)}
     title="{show_details ? `Hide` : `Show`} authors and package versions"
@@ -130,13 +131,12 @@
       <h3>Package versions</h3>
       <ul>
         {#each Object.entries(data.requirements ?? {}) as [name, version]}
+          {@const [href, link_text] = version.startsWith(`http`)
+            ? // version.split(`/`).at(-1) assumes final part after / of URL is the package version, as is the case for GitHub releases
+              [version, version.split(`/`).at(-1)]
+            : [`https://pypi.org/project/${name}/${version}`, version]}
           <li style="font-size: smaller;">
-            {#if ![`aviary`].includes(name)}
-              {@const href = `https://pypi.org/project/${name}/${version}`}
-              {name}: <a {href} {...target}>{version}</a>
-            {:else}
-              {name}: {version}
-            {/if}
+            {name}: <a {href} {...target}>{link_text}</a>
           </li>
         {/each}
       </ul>
@@ -179,7 +179,7 @@
   <section>
     <h3>Notes</h3>
     <ul>
-      {#each [`description`, `training`].filter((key) => key in (notes ?? {})) as key}
+      {#each [`Description`, `Training`].filter((key) => key in (notes ?? {})) as key}
         <li>{@html notes[key]}</li>
       {/each}
     </ul>

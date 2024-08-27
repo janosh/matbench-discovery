@@ -1,5 +1,5 @@
 model_name: CGCNN+P
-model_version: 0.1.0 # the aviary version
+model_version: v0.1.0 # the aviary version
 matbench_discovery_version: 1.0.0
 date_added: "2023-02-03"
 date_published: "2022-02-28"
@@ -20,7 +20,7 @@ doi: https://doi.org/10.1038/s41524-022-00891-8
 paper: https://arxiv.org/abs/2202.13947
 
 requirements:
-  aviary: 0.1.0
+  aviary: https://github.com/CompRhys/aviary/releases/tag/v0.1.0
   torch: 1.11.0
   torch-scatter: 2.0.9
   numpy: 1.24.0
@@ -44,7 +44,7 @@ hyperparams:
   Perturbations: 5
 
 notes:
-  description: |
+  Description: |
     This work proposes simple structure perturbations to augment CGCNN's training data of relaxed structures with randomly perturbed ones resembling unrelaxed structures that are mapped to the same DFT final energy during training.
     ![Step function PES](https://media.springernature.com/full/springer-static/image/art%3A10.1038%2Fs41524-022-00891-8/MediaObjects/41524_2022_891_Fig1_HTML.png?as=webp)
-  long: The model is essentially taught the potential energy surface (PES) is a step-function that maps each valley to its local minimum. The expectation is that during testing on unrelaxed structures, the model will predict the energy of the nearest basin in the PES. The authors confirm this by demonstrating a lowering of the energy error on unrelaxed structures.
+  Long: The model is essentially taught the potential energy surface (PES) is a step-function that maps each valley to its local minimum. The expectation is that during testing on unrelaxed structures, the model will predict the energy of the nearest basin in the PES. The authors confirm this by demonstrating a lowering of the energy error on unrelaxed structures.
