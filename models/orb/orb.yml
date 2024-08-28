@@ -1,4 +1,4 @@
-model_name: orb-v1
+model_name: orb
 model_version: v1
 matbench_discovery_version: 1.2.0
 date_added: "2024-08-20" # required
@@ -12,7 +12,7 @@ authors: # required (only name, other keys are optional)
     affiliation: Orbital Materials
     email: jonathan@orbitalmaterials.com
     corresponding: True
-  - name: James Gin
+  - name: James Gin-Pollock
     affiliation: Orbital Materials
   - name: Zhiyi Li
     affiliation: Orbital Materials
@@ -74,4 +74,4 @@ training_set:
 
 notes: # notes can have any key, be multiline and support markdown.
   description: |
-    ORB is a pretrained model for atomic simulations.
+    ORB is a pretrained model for atomic simulations. ORB uses a pretrained diffusion model backbone which is fine-tuned on MPtrj + Alexandria.
