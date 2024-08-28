@@ -21,7 +21,7 @@ STRUCT_COL = "orb_structure"
 def main(
     predictions_dir: str,
     glob_pattern: str = "*shard*.json.gz",
-    correct_energies: bool = True,
+    correct_energies: bool = True,  # noqa: FBT001,FBT002
 ) -> None:
     """Join ORB predictions with WBM data.
 
@@ -31,7 +31,8 @@ def main(
 
     This script produces 4 files:
     - {predictions_dir}/{prefix}.csv.gz (all predictions)
-    - {predictions_dir}/{prefix}-no-bad.csv.gz (all predictions except ones with large errors)
+    - {predictions_dir}/{prefix}-no-bad.csv.gz
+      (all predictions except ones with large errors)
     - {predictions_dir}/{prefix}.json.gz (all predictions as JSON)
     - {predictions_dir}/{prefix}-bad.csv (predictions with large errors)
     """
@@ -59,18 +60,20 @@ def main(
             for dct in tqdm(df_cse[Key.cse], desc="Loading CSEs")
         ]
 
-        # transfer predicted energies and relaxed structures WBM CSEs since MP2020 energy
-        # corrections applied below are structure-dependent (for oxides and sulfides)
+        # transfer predicted energies and relaxed structures WBM CSEs since
+        # MP2020 energy corrections applied below are structure-dependent
+        # (for oxides and sulfides)
         cse: ComputedStructureEntry
         for row in tqdm(
             df_orb.itertuples(), total=len(df_orb), desc="ML energies to CSEs"
         ):
             mat_id, struct_dict, orb_energy, *_ = row
             mlip_struct = Structure.from_dict(struct_dict)
-            df_orb.at[mat_id, STRUCT_COL] = mlip_struct
+            df_orb.loc[mat_id, STRUCT_COL] = mlip_struct
             cse = df_cse.loc[mat_id, Key.cse]
-            cse._energy = orb_energy  # cse._energy is the uncorrected energy
-            cse._structure = mlip_struct
+            # cse._energy is the uncorrected energy
+            cse._energy = orb_energy  # noqa: SLF001
+            cse._structure = mlip_struct  # noqa: SLF001
             df_orb.loc[mat_id, Key.cse] = cse
 
         # apply energy corrections inplace
