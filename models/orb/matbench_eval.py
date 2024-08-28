@@ -66,7 +66,7 @@ def main(
     limit: int | None = typer.Option(None, help="Debug mode, only use 100 samples"),
     shard: int | None = typer.Option(None, help="Shard the data"),
     total_shards: int | None = typer.Option(None, help="Total number of shards"),
-):
+) -> None:
     """Run ORB relaxation on the WBM dataset.
 
     Produces (possibly sharded) compressed JSON files with relaxed structures and energies.

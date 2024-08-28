@@ -22,7 +22,7 @@ def main(
     predictions_dir: str,
     glob_pattern: str = "*shard*.json.gz",
     correct_energies: bool = True,
-):
+) -> None:
     """Join ORB predictions with WBM data.
 
     In addition, this script applies the MaterialsProject2020Compatibility
