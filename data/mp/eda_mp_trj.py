@@ -88,9 +88,15 @@ def info_dict_to_id(info: dict[str, int | str]) -> str:
 df_mp_trj = pd.DataFrame(
     {
         info_dict_to_id(atoms.info): atoms.info
-        | {key: atoms.arrays.get(key) for key in ("magmoms",)}  # This is None?
-        | {Key.forces: atoms.get_forces(), Key.stress: atoms.get_stress()}
-        | {"formula": str(atoms.symbols), Key.atom_nums: atoms.symbols}
+        | {
+            Key.forces: atoms.get_forces(),
+            Key.stress: atoms.get_stress(),
+            Key.magmoms: atoms.get_magnetic_moments()
+            if "magmoms" in atoms.calc.results
+            else None,
+            Key.formula: str(atoms.symbols),
+            Key.atom_nums: atoms.symbols,
+        }
         for atoms_list in tqdm(mp_trj_atoms.values(), total=len(mp_trj_atoms))
         for atoms in atoms_list
     }
@@ -121,7 +127,6 @@ def tile_count_anno(hist_vals: list[Any]) -> dict[str, Any]:
 
 
 # %% plot per-element magmom histograms
-# TODO magmom data is missing?
 ptable_magmom_hist_path = f"{MP_DIR}/2022-09-16-mp-trj-elem-magmoms.json.bz2"
 srs_mp_trj_elem_magmoms = locals().get("srs_mp_trj_elem_magmoms")
 
@@ -132,9 +137,9 @@ if srs_mp_trj_elem_magmoms is None:
     df_mp_trj_elem_magmom = pd.DataFrame(
         [
             dict(zip(elems, magmoms, strict=False))
-            for elems, magmoms in df_mp_trj.set_index(Key.atom_nums)[Key.magmoms]
+            for elems, magmoms in df_mp_trj[[Key.atom_nums, Key.magmoms]]
             .dropna()
-            .items()
+            .itertuples(index=False)
         ]
     )
 
@@ -175,7 +180,9 @@ if srs_mp_trj_elem_forces is None:
     df_mp_trj_elem_forces = pd.DataFrame(
         [
             dict(zip(elems, np.abs(forces).mean(axis=1), strict=False))
-            for elems, forces in df_mp_trj.set_index(Key.atom_nums)[Key.forces].items()
+            for elems, forces in df_mp_trj[[Key.atom_nums, Key.forces]].itertuples(
+                index=False
+            )
         ]
     )
     mp_trj_elem_forces = {
@@ -365,7 +372,6 @@ fig.show()
 
 
 # %% plot magmoms distribution
-# TODO magmoms are missing?
 fig = pmv.histogram(df_mp_trj[Key.magmoms].dropna().explode(), bins=300)
 fig.layout.xaxis.title = "Magmoms (μB)"
 fig.layout.yaxis.title = count_col
