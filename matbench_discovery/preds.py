@@ -79,6 +79,10 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # MatterSim
     mattersim = "mattersim/mattersim-wbm-IS2RE.csv.gz", None, "MatterSim"
 
+    # ORB
+    orb = "orb/orbff-v1-20240827.csv.gz", None, "ORB"
+    orb_mptrj = "orb/orbff-mptraj-only-v1-20240827.csv.gz", None, "ORB-MPtrj"
+
     # --- Model Combos
     # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
     # chgnet_megnet = "chgnet/2023-03-06-chgnet-0.2.0-wbm-IS2RE.csv.gz", None, "CHGNet→MEGNet"
@@ -159,7 +163,11 @@ def load_df_wbm_with_preds(
             if col.startswith((f"e_form_per_atom_{model_key}", f"e_{model_key}_"))
         ]
         if model_name == "mace_0b":
-            df_out["mace_0b"] = df_preds["e_form_per_atom_mace"]
+            df_out[model_name] = df_preds["e_form_per_atom_mace"]
+
+        elif model_key == "orb-mptrj":
+            df_out[model_name] = df_preds["e_form_per_atom_orb"]
+
         elif cols:
             if len(cols) > 1:
                 print(

@@ -1,28 +1,24 @@
 import os
-from typing import Any, Optional
 from pathlib import Path
+from typing import Any
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import torch
+import typer
 import wandb
 from ase.filters import ExpCellFilter, FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
+from orbitalmaterials.forcefield.calculator import ORBCalculator
+from orbitalmaterials.forcefield.pretrained import ORB_PRETRAINED_MODELS
 from pymatgen.core import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import today
-
 from matbench_discovery.enums import MbdKey, Task
 from matbench_discovery.plots import wandb_scatter
-
-from orbitalmaterials.forcefield.calculator import ORBCalculator
-from orbitalmaterials.forcefield.pretrained import ORB_PRETRAINED_MODELS
-
-import typer
-
 
 """
 pip install git+https://github.com/janosh/matbench-discovery.git@5c8601a
@@ -67,9 +63,9 @@ def main(
     max_steps: int = typer.Option(500, help="Max steps"),
     force_max: float = typer.Option(0.05, help="Max force"),
     cell_opt: bool = typer.Option(True, help="Optimize cell"),
-    limit: Optional[int] = typer.Option(None, help="Debug mode, only use 100 samples"),
-    shard: Optional[int] = typer.Option(None, help="Shard the data"),
-    total_shards: Optional[int] = typer.Option(None, help="Total number of shards"),
+    limit: int | None = typer.Option(None, help="Debug mode, only use 100 samples"),
+    shard: int | None = typer.Option(None, help="Shard the data"),
+    total_shards: int | None = typer.Option(None, help="Total number of shards"),
 ):
     """Run ORB relaxation on the WBM dataset.
 

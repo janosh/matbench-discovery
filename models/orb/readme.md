@@ -1,31 +1,25 @@
-
 ## Orb Models from [Orbital Materials](https://orbitalmaterials.com)
 
-
-All models described here are available for use via our Python package, [`orbitalmaterials`](https://github.com/orbital-materials/orbitalmaterials). 
-
+All models described here are available for use via our Python package, [`orbitalmaterials`](https://github.com/orbital-materials/orbitalmaterials).
 
 ### Models
 
-The benchmark submission contains two models. These models are architecturally identical and use the same training proceedure, but differ in the training data used to train them.
+The benchmark submission contains two models. These models are architecturally identical and use the same training procedure, but differ in the training data used to train them.
 
-
-*Note: The models in the benchmark submissions are not trained with the D3 dispersion correction. If you are interested in models with integrated D3 corrections, please see our github link above.*
+_Note: The models in the benchmark submissions are not trained with the D3 dispersion correction. If you are interested in models with integrated D3 corrections, please see our github link above._
 
 - `orb-v1` - This is our full model, pretrained as a de-noising model on a wide variety of collected crystal structures. It is then finetuned using [`MPtraj`](https://figshare.com/articles/dataset/23713842) and [`Alexandria`](https://alexandria.icams.rub.de/) jointly.
 
 - `orb-v1-mptraj-only` - This is our model which fits the data requirements of the Matbench Discovery benchmark - namely that it is trained only on the MPtraj dataset. This model uses the full MPTraj dataset for both the pretraining steps and the finetuning steps. It uses no other data sources.
 
-
 For more information on the models, please refer to our [Github Repository](https://github.com/orbital-materials/orbitalmaterials). We are working on a more complete technical report which will be available soon.
 
 ### `orb-v1`: Full dataset pretraining, MPtraj + Alexandria finetuning
 
-| Item | Link/Url |
-|-----|-------|
-| Results CSV | [orbff-v1-20240827.csv.gz](./orbff-v1-20240827.csv.gz) |
+| Item                 | Link/Url                                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------------------ |
+| Results CSV          | [orbff-v1-20240827.csv.gz](./orbff-v1-20240827.csv.gz)                                           |
 | Public Model Weights | https://storage.googleapis.com/orbitalmaterials-public-models/forcefields/orbff-v1-20230827.ckpt |
-
 
 ```
                       orb          10k         unique
@@ -47,13 +41,11 @@ RMSE            0.080986     0.064470       0.079003
 R2              0.798803     0.907903       0.815941
 ```
 
-
 ### `orb-v1-mptraj-only`: MPTraj pretraining, MPTraj finetuning
 
-
-| Item | Link/URL |
-|------|----------|
-| Results CSV | [orbff-mptraj-only-v1-20240827.csv.gz](./orbff-mptraj-only-v1-20240827.csv.gz) |
+| Item                 | Link/URL                                                                                                     |
+| -------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Results CSV          | [orbff-mptraj-only-v1-20240827.csv.gz](./orbff-mptraj-only-v1-20240827.csv.gz)                               |
 | Public Model Weights | https://storage.googleapis.com/orbitalmaterials-public-models/forcefields/orbff-mptraj-only-v1-20230827.ckpt |
 
 ```
@@ -75,4 +67,3 @@ MAE             0.044745     0.040998       0.046230
 RMSE            0.093426     0.102950       0.093919
 R2              0.732243     0.780546       0.739879
 ```
-

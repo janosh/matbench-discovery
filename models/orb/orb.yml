@@ -24,7 +24,7 @@ authors: # required (only name, other keys are optional)
     affiliation: Orbital Materials
   - name: Arthur Hussey
     affiliation: Orbital Materials
-    
+
 repo: https://github.com/orbital-materials/orbitalmaterials/
 url: TBD
 doi: TBD
@@ -35,7 +35,7 @@ trained_for_benchmark: false
 train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS
-model_type: UIP/GNN
+model_type: UIP
 model_params: 25_161_727
 n_estimators: 1
 
@@ -69,7 +69,6 @@ training_set:
     url: https://alexandria.icams.rub.de/
     n_structures: 30_497_628 (subsampled)
     n_materials: 3_100_000
-  
 
 notes: # notes can have any key, be multiline and support markdown.
   description: |

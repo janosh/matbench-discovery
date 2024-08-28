@@ -1,6 +1,7 @@
 import glob
 
 import pandas as pd
+import typer
 from pymatgen.core import Structure
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedStructureEntry
@@ -10,9 +11,6 @@ from tqdm import tqdm
 from matbench_discovery.data import DATA_FILES, as_dict_handler, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.enums import MbdKey
-
-
-import typer
 
 app = typer.Typer(pretty_exceptions_enable=False, no_args_is_help=True)
 FORMATION_ENERGY_COL = "e_form_per_atom_orb"
@@ -52,7 +50,6 @@ def main(
     df_orb = pd.concat(dfs.values()).round(4)
 
     if correct_energies:
-
         df_cse = pd.read_json(DATA_FILES.wbm_computed_structure_entries).set_index(
             Key.mat_id
         )
@@ -95,7 +92,6 @@ def main(
         ]
 
     else:
-
         df_orb[Key.formula] = df_wbm[Key.formula]
         df_orb[FORMATION_ENERGY_COL] = [
             get_e_form_per_atom(dict(energy=energy, composition=formula))
