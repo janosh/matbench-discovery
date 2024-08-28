@@ -57,8 +57,18 @@ for model in df_metrics:
         df.loc[Key.model_name.label] = df_met.loc[Key.model_name.label]
 
     if train_set_meta := model_data.get("training_set"):
-        n_structs = train_set_meta["n_structures"]
-        n_materials = train_set_meta.get("n_materials", n_structs)
+        if isinstance(train_set_meta, dict):
+            n_structs = train_set_meta["n_structures"]
+            n_materials = train_set_meta.get("n_materials", n_structs)
+        elif isinstance(train_set_meta, list):
+            n_structs = sum(dataset["n_structures"] for dataset in train_set_meta)
+            n_materials = sum(
+                dataset.get("n_materials", dataset["n_structures"])
+                for dataset in train_set_meta
+            )
+            # TODO: how to do multiple URLs?
+        else:
+            raise ValueError(f"Unknown training set format: {train_set_meta}")
         title = "Number of materials in training set"
         train_size_str = (
             f"<span {title=} data-sort-value={n_materials}>"
@@ -73,7 +83,9 @@ for model in df_metrics:
                 f"<small {title=}>({si_fmt(n_structs, fmt='.1f')})</small>"
             )
 
-        if train_url := train_set_meta.get("url"):
+        if isinstance(train_set_meta, dict) and (
+            train_url := train_set_meta.get("url")
+        ):
             train_size_str = (
                 f"<a href='{train_url}' target='_blank' rel='noopener "
                 f"noreferrer'>{train_size_str}</a>"
