@@ -1,10 +1,10 @@
 # %%
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pymatviz as pmv
 from pymatgen.core import Lattice, Structure
 
-from matbench_discovery.plots import plt
 from matbench_discovery.structure import perturb_structure
 
 __author__ = "Janosh Riebesell"
