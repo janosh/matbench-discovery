@@ -81,7 +81,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
 
     # ORB
     orb = "orb/orbff-v1-20240827.csv.gz", None, "ORB"
-    orb_mptrj = "orb/orbff-mptraj-only-v1-20240827.csv.gz", None, "ORB-MPtrj"
+    orb_mptrj = "orb/orbff-mptrj-only-v1-20240827.csv.gz", None, "ORB-MPtrj"
 
     # --- Model Combos
     # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
@@ -162,7 +162,7 @@ def load_df_wbm_with_preds(
             for col in df_preds
             if col.startswith((f"e_form_per_atom_{model_key}", f"e_{model_key}_"))
         ]
-        if model_name == "mace_0b":
+        if model_key == "mace_0b":
             df_out[model_name] = df_preds["e_form_per_atom_mace"]
 
         elif model_key == "orb-mptrj":

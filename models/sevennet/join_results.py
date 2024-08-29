@@ -47,7 +47,7 @@ for row in tqdm(df_7net.itertuples(), total=len(df_7net), desc="ML energies to C
     mlip_struct = Structure.from_dict(struct_dict)
     df_7net.at[mat_id, Key.structure] = mlip_struct  # noqa: PD008
     cse = df_cse.loc[mat_id, Key.cse]
-    cse._energy = energy  # cse._energy is the uncorrected energy from MPtraj dataset (or vasp raw)  # noqa: E501, SLF001
+    cse._energy = energy  # cse._energy is the uncorrected energy from MPtrj dataset (or vasp raw)  # noqa: E501, SLF001
     cse._structure = mlip_struct  # noqa: SLF001
     df_7net.loc[mat_id, Key.cse] = cse
 

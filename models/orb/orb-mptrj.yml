@@ -1,8 +1,8 @@
-model_name: orb-mptrj
+model_name: ORB-MPtrj
 model_version: v1
 matbench_discovery_version: 1.2.0
-date_added: "2024-08-20" # required
-date_published: "2024-08-20"
+date_added: "2024-09-02" # required
+date_published: "2024-09-02" # Update when paper published
 authors: # required (only name, other keys are optional)
   - name: Mark Neumann
     affiliation: Orbital Materials
@@ -26,12 +26,12 @@ authors: # required (only name, other keys are optional)
     affiliation: Orbital Materials
 
 repo: https://github.com/orbital-materials/orbitalmaterials/
-url: TBD
-doi: TBD
-paper: Coming Soon
+url: <TBD>
+doi: <TBD>
+paper: <TBD>
 
 openness: OSOD
-trained_for_benchmark: false
+trained_for_benchmark: true
 train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS

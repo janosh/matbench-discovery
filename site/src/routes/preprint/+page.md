@@ -408,7 +408,7 @@ We would like to thank Jason Blake Gibson, Shyue Ping Ong, Chi Chen, Tian Xie, P
 
 ## Author Contributions
 
-Janosh Riebesell: Methodology, software, data curation, training and testing models, formal analysis. Rhys Goodall: Conceptualization, software, formal analysis. Philipp Benner: Software, training ALIGNN + MACE. Yuan Chiang: Training MACE, data analysis. Bowen Deng: Curating MPtraj dataset and training CHGNet. Alpha Lee: Supervision. Anubhav Jain: Supervision. Kristin Persson: Funding Acquisition.
+Janosh Riebesell: Methodology, software, data curation, training and testing models, formal analysis. Rhys Goodall: Conceptualization, software, formal analysis. Philipp Benner: Software, training ALIGNN + MACE. Yuan Chiang: Training MACE, data analysis. Bowen Deng: Curating MPtrj dataset and training CHGNet. Alpha Lee: Supervision. Anubhav Jain: Supervision. Kristin Persson: Funding Acquisition.
 
 ## Code availability
 

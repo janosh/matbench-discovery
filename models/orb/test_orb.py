@@ -50,19 +50,16 @@ PREDICTED_ENERGY_COL = "orb_energy"
 
 @app.command()
 def main(
-    model_name: str = "orb-v1",  # Or orb-v1-mptraj-only
+    model_name: str = "orb-v1",  # Or orb-v1-mptrj-only
     ase_optimizer: str = typer.Option("FIRE", help="ASE optimizer to use"),
     ase_filter: str = typer.Option("frechet", help="ASE filter to use"),
     device: str = typer.Option(
         "cuda" if torch.cuda.is_available() else "cpu", help="Device to use"
     ),
-    out_dir: Path = typer.Option(
-        "matbench_eval",
-        help="Output directory",
-    ),
+    out_dir: Path = typer.Option("matbench_eval", help="Output directory"),  # noqa: B008
     max_steps: int = typer.Option(500, help="Max steps"),
     force_max: float = typer.Option(0.05, help="Max force"),
-    cell_opt: bool = typer.Option(True, help="Optimize cell"),  # noqa: FBT001
+    cell_opt: bool = typer.Option(True, help="Optimize cell"),  # noqa: FBT001, FBT003
     limit: int | None = typer.Option(None, help="Debug mode, only use 100 samples"),
     shard: int | None = typer.Option(None, help="Shard the data"),
     total_shards: int | None = typer.Option(None, help="Total number of shards"),
@@ -73,11 +70,14 @@ def main(
     and energies. These are then aggregated and evaluated in the
     `join_predictions` script.
     """
-    if total_shards is not None and shard is None:
-        raise ValueError("Shard must be provided if total_shards is provided")
+    if not (
+        (total_shards is None and shard is None)
+        or (isinstance(total_shards, int) and isinstance(shard, int))
+    ):
+        raise ValueError(
+            "Either both shard and total_shards must be None, or both must be ints"
+        )
 
-    # TODO: I don't think anyone reports on RS2RE,
-    # so this is hardcoded for now.
     task_type = Task.IS2RE
 
     out_dir.mkdir(exist_ok=True, parents=True)
@@ -95,11 +95,11 @@ def main(
     # This is inside the script because accessing the variables causes a download
     # to be triggered if they are not present, meaning it's better to only load them
     # if the script is actually going to be run.
-    from matbench_discovery.data import DATA_FILES, as_dict_handler, df_wbm
+    from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
 
     DATA_PATHS = {
-        Task.RS2RE: DATA_FILES.wbm_computed_structure_entries,
-        Task.IS2RE: DATA_FILES.wbm_initial_structures,
+        Task.RS2RE: DataFiles.wbm_relaxed_atoms.path,
+        Task.IS2RE: DataFiles.wbm_initial_atoms.path,
     }
 
     data_path = DATA_PATHS[task_type]
@@ -110,7 +110,7 @@ def main(
     orb_calc = ORBCalculator(model, device=device)
 
     df_in = pd.read_json(data_path).set_index(str(Key.mat_id))
-    if total_shards is not None:
+    if total_shards is not None and shard is not None:
         df_in = np.array_split(df_in, total_shards)[shard - 1]
 
     run_params = {
