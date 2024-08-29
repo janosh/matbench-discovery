@@ -43,9 +43,9 @@ R2              0.798803     0.907903       0.815941
 
 ### **ORB-MPtrj**: `orb-v1-mptrj-only` - MPTraj pretraining, MPTraj finetuning
 
-| Item                 | Link/URL                                                                                                    |
-| -------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Results CSV          | [orbff-mptrj-only-v1-20240827.csv.gz](./orbff-mptrj-only-v1-20240827.csv.gz)                                |
+| Item                 | Link/URL                                                                                                     |
+| -------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Results CSV          | [orbff-mptrj-only-v1-20240827.csv.gz](./orbff-mptrj-only-v1-20240827.csv.gz)                                 |
 | Public Model Weights | https://storage.googleapis.com/orbitalmaterials-public-models/forcefields/orbff-mptraj-only-v1-20230827.ckpt |
 
 ```
