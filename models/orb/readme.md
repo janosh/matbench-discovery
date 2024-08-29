@@ -46,7 +46,7 @@ R2              0.798803     0.907903       0.815941
 | Item                 | Link/URL                                                                                                    |
 | -------------------- | ----------------------------------------------------------------------------------------------------------- |
 | Results CSV          | [orbff-mptrj-only-v1-20240827.csv.gz](./orbff-mptrj-only-v1-20240827.csv.gz)                                |
-| Public Model Weights | https://storage.googleapis.com/orbitalmaterials-public-models/forcefields/orbff-mptrj-only-v1-20230827.ckpt |
+| Public Model Weights | https://storage.googleapis.com/orbitalmaterials-public-models/forcefields/orbff-mptraj-only-v1-20230827.ckpt |
 
 ```
                      orb          10k         unique

@@ -40,7 +40,7 @@ model_params: 25_161_727
 n_estimators: 1
 
 hyperparams:
-  max_force: 0.05
+  max_force: 0.02
   max_steps: 500
   ase_optimizer: FIRE
   optimizer: Adam
