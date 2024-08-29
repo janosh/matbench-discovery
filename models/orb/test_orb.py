@@ -62,18 +62,19 @@ def main(
     ),
     max_steps: int = typer.Option(500, help="Max steps"),
     force_max: float = typer.Option(0.05, help="Max force"),
-    cell_opt: bool = typer.Option(True, help="Optimize cell"),
+    cell_opt: bool = typer.Option(True, help="Optimize cell"),  # noqa: B008,FBT001
     limit: int | None = typer.Option(None, help="Debug mode, only use 100 samples"),
     shard: int | None = typer.Option(None, help="Shard the data"),
     total_shards: int | None = typer.Option(None, help="Total number of shards"),
 ) -> None:
     """Run ORB relaxation on the WBM dataset.
 
-    Produces (possibly sharded) compressed JSON files with relaxed structures and energies.
-    These are then aggregated and evaluated in the `join_predictions` script.
+    Produces (possibly sharded) compressed JSON files with relaxed structures
+    and energies. These are then aggregated and evaluated in the 
+    `join_predictions` script.
     """
-    if total_shards is not None:
-        assert shard is not None, "Shard must be provided if total_shards is provided"
+    if total_shards is not None and shard is None:
+        raise ValueError("Shard must be provided if total_shards is provided")
 
     # TODO: I don't think anyone reports on RS2RE,
     # so this is hardcoded for now.
@@ -106,11 +107,10 @@ def main(
     print(f"Loading model {model_name} on {device}")
     model = ORB_PRETRAINED_MODELS[model_name]()
     model.to(device)
-    orb_calc = ORBCalculator(model, device=device)  # type: ignore
+    orb_calc = ORBCalculator(model, device=device)
 
     df_in = pd.read_json(data_path).set_index(str(Key.mat_id))
     if total_shards is not None:
-        assert shard is not None
         df_in = np.array_split(df_in, total_shards)[shard - 1]
 
     run_params = {
