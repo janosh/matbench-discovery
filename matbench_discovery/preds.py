@@ -18,7 +18,7 @@ __author__ = "Janosh Riebesell"
 __date__ = "2023-02-04"
 
 
-# ruff: noqa: E501
+# ruff: noqa: E501 (ignore long lines in class Model)
 class Model(Files, base_dir=f"{ROOT}/models"):
     """Data files provided by Matbench Discovery.
     See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
