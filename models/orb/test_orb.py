@@ -9,8 +9,8 @@ import typer
 import wandb
 from ase.filters import ExpCellFilter, FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
-from orbitalmaterials.forcefield.calculator import ORBCalculator
-from orbitalmaterials.forcefield.pretrained import ORB_PRETRAINED_MODELS
+from orb_models.forcefield.calculator import ORBCalculator
+from orb_models.forcefield.pretrained import ORB_PRETRAINED_MODELS
 from pymatgen.core import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
