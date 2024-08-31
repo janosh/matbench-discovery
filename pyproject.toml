@@ -26,18 +26,17 @@ classifiers = [
 requires-python = ">=3.11"
 dependencies = [
   "ase>=3.23",
-  "matplotlib>=3.8,!=3.9.1",
-  "numpy<2",
+  "matplotlib>=3.8",
+  "numpy>=2",
   "pandas>=2.0.0",
-  "plotly",
-  "pymatgen",
+  "plotly>=5.23",
+  "pymatgen>=2024.8.9",
   "pymatviz[export-figs,df-pdf-export,df-svg-export]>=0.10.1",
-  "scikit-learn",
-  "scipy",
-  "seaborn",
-  "tqdm",
-  "wandb",
-
+  "scikit-learn>=1.5",
+  "scipy>=1.13",
+  "seaborn>=0.13",
+  "tqdm>=4.66",
+  "wandb>=0.17",
 ]
 
 [project.urls]
