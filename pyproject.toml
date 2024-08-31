@@ -45,23 +45,23 @@ Repo = "https://github.com/janosh/matbench-discovery"
 Package = "https://pypi.org/project/matbench-discovery"
 
 [project.optional-dependencies]
-test = ["pytest", "pytest-cov"]
+test = ["pytest-cov>=5", "pytest>=8.1"]
 # how to specify git deps: https://stackoverflow.com/a/73572379
 running-models = [
   # aviary commented-out since dep on git repo raises "Invalid value for requires_dist"
   # when attempting PyPI publish
   # "aviary@git+https://github.com/CompRhys/aviary",
-  "alignn",
+  "alignn>=2024.1.14",
   "chgnet>=0.3.0",
   "jarvis-tools",
-  "m3gnet",
-  "mace-torch",
-  "maml",
-  "megnet",
+  "m3gnet>=0.2.4",
+  "mace-torch>=0.3.6",
+  "maml>=2023.9.9",
+  "megnet>=1.3.2",
 ]
-3d-structures = ["crystaltoolkit"]
-fetch-wbm-data = ["gdown"]
-make-wbm-umap = ["umap-learn"]
+3d-structures = ["crystal-toolkit>=2023.11.3"]
+fetch-wbm-data = ["gdown>=5.1"]
+make-wbm-umap = ["umap-learn>=0.5.5"]
 
 [tool.setuptools.packages.find]
 include = ["matbench_discovery*"]

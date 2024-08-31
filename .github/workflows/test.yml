@@ -47,7 +47,7 @@ jobs:
           python-version: 3.11
 
       - name: Install package and dependencies
-        run: pip install -e .[fetch-data]
+        run: pip install -e .
 
       - name: Run script
         run: python ${{ matrix.script }}
