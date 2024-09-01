@@ -55,6 +55,9 @@ properties:
     oneOf:
       - type: string
         enum: [MP 2022, MPtrj, MPF, MP Graphs, GNoME, MatterSim, Alex]
+      - type: array
+        items:
+          enum: [MP 2022, MPtrj, MPF, MP Graphs, GNoME, MatterSim, Alex]
       - type: object
         properties:
           title:
