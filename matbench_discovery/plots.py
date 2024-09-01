@@ -702,8 +702,6 @@ def cumulative_metrics(
         line_kwargs = dict(
             linewidth=3, markevery=[-1], marker="x", markersize=14, markeredgewidth=2.5
         )
-        # TODO breaks for len(metrics) == 1 since axs has no .flat attribute
-        # assert len(axs.flat) == len(metrics), f"{len(axs.flat)=} != {len(metrics)=}"
 
         for metric, ax in zip(metrics, axs.flat if len(metrics) > 1 else [axs]):
             # select every n-th row of df so that 1000 rows are left for increased

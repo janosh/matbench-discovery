@@ -34,10 +34,7 @@ model_type: Fingerprint
 model_params: 0
 n_estimators: 1
 
-training_set:
-  title: MP v2022.10.28
-  url: https://figshare.com/ndownloader/files/40344436
-  n_structures: 154_719
+training_set: MP 2022
 
 notes:
   Description: A random forest trained to map the combo of composition-based Magpie features and structure-based relaxation-invariant Voronoi tessellation features (bond angles, coordination numbers, ...) to DFT formation energies.
