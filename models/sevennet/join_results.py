@@ -35,7 +35,7 @@ df_cse[Key.cse] = [
     ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_cse[Key.cse])
 ]
 
-# As SevenNet-0 (11July2024) is trained on 'uncorrected energy' of MPTrj,
+# As SevenNet-0 (11July2024) is trained on 'uncorrected energy' of MPtrj,
 # MP formation energy corrections need to be applied
 
 

@@ -46,7 +46,7 @@ model_type: UIP
 trained_for_benchmark: true
 
 training_set:
-  title: MPTrj
+  title: MPtrj
   url: https://figshare.com/articles/dataset/23713842
   n_structures: 1_580_395
   n_materials: 145_923

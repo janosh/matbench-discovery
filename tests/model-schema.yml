@@ -54,7 +54,7 @@ properties:
   training_set:
     oneOf:
       - type: string
-        enum: [MP 2022, MPTrj, MPF, MP Graphs, GNoME, MatterSim, Alex]
+        enum: [MP 2022, MPtrj, MPF, MP Graphs, GNoME, MatterSim, Alex]
       - type: object
         properties:
           title:
