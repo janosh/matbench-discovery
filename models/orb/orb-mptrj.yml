@@ -25,10 +25,10 @@ authors: # required (only name, other keys are optional)
   - name: Arthur Hussey
     affiliation: Orbital Materials
 
-repo: https://github.com/orbital-materials/orb-models/
-url: <TBD>
-doi: <TBD>
-paper: <TBD>
+repo: https://github.com/orbital-materials/orb-models
+url: "#" # placeholder
+doi: "#" # placeholder
+paper: "#" # placeholder
 
 openness: OSOD
 trained_for_benchmark: true

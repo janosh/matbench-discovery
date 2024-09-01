@@ -26,9 +26,9 @@ authors: # required (only name, other keys are optional)
     affiliation: Orbital Materials
 
 repo: https://github.com/orbital-materials/orb-models/
-url: <TBD>
-doi: <TBD>
-paper: <TBD>
+url: "#" # placeholder
+doi: "#" # placeholder
+paper: "#" # placeholder
 
 openness: OSCD
 trained_for_benchmark: false
