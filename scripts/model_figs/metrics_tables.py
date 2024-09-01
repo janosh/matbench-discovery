@@ -7,7 +7,7 @@ from pymatviz.io import df_to_html_table, df_to_pdf
 from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
 
-from matbench_discovery import PDF_FIGS, SCRIPTS, SITE_FIGS
+from matbench_discovery import DATA_DIR, PDF_FIGS, SCRIPTS, SITE_FIGS
 from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.enums import MbdKey, Open
 from matbench_discovery.metrics import stable_metrics
@@ -40,6 +40,9 @@ closed_models = [
     if meta.get("openness", Open.OSOD) != Open.OSOD
 ]
 
+with open(f"{DATA_DIR}/training-sets.yaml") as file:
+    TRAINING_SETS = yaml.safe_load(file)
+
 for model in df_metrics:
     model_name = name_map.get(model, model)
     model_data = MODEL_METADATA.get(model_name, {})
@@ -56,42 +59,70 @@ for model in df_metrics:
     for df in (df_metrics, df_metrics_10k, df_metrics_uniq_protos):
         df.loc[Key.model_name.label] = df_met.loc[Key.model_name.label]
 
-    if train_set_meta := model_data.get("training_set"):
-        if isinstance(train_set_meta, dict):
-            n_structs = train_set_meta["n_structures"]
-            n_materials = train_set_meta.get("n_materials", n_structs)
-        elif isinstance(train_set_meta, list):
-            n_structs = sum(dataset["n_structures"] for dataset in train_set_meta)
-            n_materials = sum(
-                dataset.get("n_materials", dataset["n_structures"])
-                for dataset in train_set_meta
-            )
-            # TODO: how to do multiple URLs?
-        else:
-            raise ValueError(f"Unknown training set format: {train_set_meta}")
+    if training_sets := model_data.get("training_set"):
+        if isinstance(training_sets, dict | str):
+            training_sets = [training_sets]
+
+        n_structs_total = n_materials_total = 0
+        dataset_urls, tooltip_lines = {}, []
+
+        for train_set in training_sets:
+            if isinstance(train_set, str) and train_set not in TRAINING_SETS:
+                raise ValueError(f"Unknown training set {train_set=} for {model=}")
+            key = train_set if isinstance(train_set, str) else ""
+            dataset_info = TRAINING_SETS.get(key, train_set)
+            n_structs = dataset_info["n_structures"]
+            n_materials = dataset_info.get("n_materials", n_structs)
+
+            n_structs_total += n_structs
+            n_materials_total += n_materials
+
+            title = dataset_info.get("title", key)
+            dataset_urls[key or title] = dataset_info.get("url", "")
+
+            if n_materials != n_structs:
+                tooltip_lines += [
+                    f"{title}: {si_fmt(n_materials)} materials ({si_fmt(n_structs)} "
+                    "structures)"
+                ]
+            else:
+                tooltip_lines += [f"{title}: {si_fmt(n_materials)} materials"]
+
         title = "Number of materials in training set"
         train_size_str = (
-            f"<span {title=} data-sort-value={n_materials}>"
-            f"{si_fmt(n_materials, fmt='.0f')}</span>"
+            f"<span {title=} data-sort-value={n_materials_total}>"
+            f"{si_fmt(n_materials_total, fmt='.0f')}</span>"
         )
 
-        if n_materials != n_structs:
+        if n_materials_total != n_structs_total:
             title = "Number of materials (and structures) in training set"
             train_size_str = (
-                f"<span {title=} data-sort-value={n_materials}>"
-                f"{si_fmt(n_materials, fmt='.0f')}</span>"
-                f"<small {title=}>({si_fmt(n_structs, fmt='.1f')})</small>"
+                f"<span {title=} data-sort-value={n_materials_total}>"
+                f"{si_fmt(n_materials_total, fmt='.0f')}</span>"
+                f"<small {title=}> ({si_fmt(n_structs_total, fmt='.1f')})</small>"
             )
 
-        if isinstance(train_set_meta, dict) and (
-            train_url := train_set_meta.get("url")
-        ):
-            train_size_str = (
-                f"<a href='{train_url}' target='_blank' rel='noopener "
-                f"noreferrer'>{train_size_str}</a>"
-            )
+        dataset_links = []
+        for key, href in dataset_urls.items():
+            if href:
+                dataset_links += [
+                    f"<a {href=} target='_blank' rel='noopener noreferrer'>{key}</a>"
+                ]
+            else:
+                dataset_links += [key]
+        dataset_str = "+".join(dataset_links)
+
+        tooltip = "\\n".join(tooltip_lines)
+        train_size_str = (
+            f"<span title='{tooltip}'>{train_size_str} ({dataset_str})</span>"
+        )
 
         df_met.loc[Key.train_set.label, model] = train_size_str
+    elif model == "Dummy":
+        continue
+    else:
+        raise ValueError(f"Unknown {training_sets=} for {model=}")
+
     model_params = model_data.get(Key.model_params, 0)
     n_estimators = model_data.get(Key.n_estimators, -1)
     title = "Number of models in ensemble"

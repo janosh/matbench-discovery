@@ -39,11 +39,7 @@ hyperparams:
   optimizer: Adam
   loss_weights: { energy: 1, force: 1, stress: 0.1 }
 
-training_set:
-  title: MPF.2021.2.8
-  url: https://figshare.com/articles/dataset/19470599
-  n_structures: 188_349
-  n_materials: 62_783
+training_set: MPF
 
 notes:
   Description: M3GNet is a GNN-based universal (as in full periodic table) interatomic potential for materials trained on up to 3-body interactions in the initial, middle and final frame of MP DFT relaxations.
