@@ -61,11 +61,7 @@ requirements: # strongly recommended
   orb-models: "0.1"
   pynanoflann: "pynanoflann@git+https://github.com/dwastberg/pynanoflann#egg=af434039ae14bedcbb838a7808924d6689274168"
 
-training_set:
-  title: MPtrj
-  url: https://figshare.com/articles/dataset/23713842
-  n_structures: 1_580_395
-  n_materials: 145_923
+training_set: MPtrj
 
 notes: # notes can have any key, be multiline and support markdown.
   description: |

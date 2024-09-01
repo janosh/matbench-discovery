@@ -61,20 +61,7 @@ requirements: # strongly recommended
   orb-models: "0.1"
   pynanoflann: "pynanoflann@git+https://github.com/dwastberg/pynanoflann#egg=af434039ae14bedcbb838a7808924d6689274168"
 
-training_set:
-  title: MPtrj + Alexandria
-  url: https://alexandria.icams.rub.de/ # fix when #132 merged
-  n_structures: 32_078023
-  n_materials: 3_245_923
-  # TODO: Restore after https://github.com/janosh/matbench-discovery/pull/132
-  # - title: MPtrj
-  #   url: https://figshare.com/articles/dataset/23713842
-  #   n_structures: 1_580_395
-  #   n_materials: 145_923
-  # - title: Alexandria
-  #   url: https://alexandria.icams.rub.de/
-  #   n_structures: 30_497_628  # (subsampled)
-  #   n_materials: 3_100_000
+training_set: [MPtrj, Alex]
 
 notes: # notes can have any key, be multiline and support markdown.
   description: |
