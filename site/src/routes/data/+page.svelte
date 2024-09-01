@@ -121,7 +121,7 @@
   quaternaries. MP has a more even distribution, in particular with more than double the
   relative share of quaternary phases and a significant number of quinternaries which are
   almost absent from WBM. Not shown in this plot for visual clarity are 3% of MP
-  structures containing more than 5 elements (up to 9). We also include MPTrj in this plot
+  structures containing more than 5 elements (up to 9). We also include MPtrj in this plot
   to show a slight drop in relative abundance of quinternary and higher phases vs MP
   ground states.
 </p>
@@ -130,7 +130,7 @@
 <p>
   Histogram of number of atoms per structure. The inset shows the same distribution
   log-scaled to visualize the tail of large structures. The green cumulative line in the
-  inset shows that 82% have less than 50 sites and 97% of structures in MPTrj have less
+  inset shows that 82% have less than 50 sites and 97% of structures in MPtrj have less
   than 100 atoms.
 </p>
 

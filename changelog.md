@@ -11,7 +11,7 @@ All notable changes to this project will be documented in this file. Dates are d
 - Add new `/models/mace` page with formation energy and raw energy parity plots [`#111`](https://github.com/janosh/matbench-discovery/pull/111)
 - Migrate `Key` enum to use `pymatviz.enums.Key` [`#110`](https://github.com/janosh/matbench-discovery/pull/110)
 - Add MatterSim predictions [`#104`](https://github.com/janosh/matbench-discovery/pull/104)
-- fix: CHGNet MPTrj training set now published and widely used. [`#107`](https://github.com/janosh/matbench-discovery/pull/107)
+- fix: CHGNet MPtrj training set now published and widely used. [`#107`](https://github.com/janosh/matbench-discovery/pull/107)
 - Fix `figs/e-form-parity-models` showing convex hull distance instead of formation energy R² in subplot titles [`#106`](https://github.com/janosh/matbench-discovery/pull/106)
 - fix: changes to wrenformer test script [`#105`](https://github.com/janosh/matbench-discovery/pull/105)
 - refactor eda_mp_trj.py using pymatviz.plot_histogram [`b10e608`](https://github.com/janosh/matbench-discovery/commit/b10e608f5c0d3bec6f77097dcd84e5e2f11b4a58)

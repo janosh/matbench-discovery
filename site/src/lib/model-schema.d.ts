@@ -38,13 +38,32 @@ export interface ModelMetadata {
     [k: string]: string
   }
   trained_for_benchmark: boolean
-  training_set: {
-    title: string
-    url: string
-    n_structures: number
-    n_materials?: number
-    [k: string]: unknown
-  }
+  training_set:
+    | (
+        | 'MP 2022'
+        | 'MPtrj'
+        | 'MPF'
+        | 'MP Graphs'
+        | 'GNoME'
+        | 'MatterSim'
+        | 'Alex'
+      )
+    | (
+        | 'MP 2022'
+        | 'MPtrj'
+        | 'MPF'
+        | 'MP Graphs'
+        | 'GNoME'
+        | 'MatterSim'
+        | 'Alex'
+      )[]
+    | {
+        title: string
+        url: string
+        n_structures: number
+        n_materials?: number
+        [k: string]: unknown
+      }
   hyperparams?: {
     max_force?: number
     max_steps?: number
@@ -62,10 +81,9 @@ export interface ModelMetadata {
     Training?:
       | string
       | {
-          [k: string]: unknown
+          [k: string]: string
         }
     'Missing Preds'?: string
-    additionalProperties?: unknown
     [k: string]: unknown
   }
   model_params: number

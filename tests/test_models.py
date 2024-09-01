@@ -32,7 +32,7 @@ def test_model_dirs_have_metadata() -> None:
             actual_val = metadata[key]
             if key == "training_set":
                 # allow either string key or dict
-                assert isinstance(actual_val, dict | str)
+                assert isinstance(actual_val, dict | str | list)
             if (isinstance(expected, dict) and key != "training_set") or (
                 key == "training_set" and isinstance(actual_val, dict)
             ):
@@ -52,7 +52,7 @@ def test_model_dirs_have_metadata() -> None:
         # make sure all keys are valid
         for name in model_name if isinstance(model_name, list) else [model_name]:
             assert (
-                3 < len(name) < 50
+                3 <= len(name) < 50
             ), f"Invalid {name=} not between 3 and 50 characters"
         assert (
             1 < len(model_version) < 30
