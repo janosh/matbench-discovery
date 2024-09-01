@@ -7,6 +7,7 @@ ComputedStructureEntry, not ComputedEntry when applying energy corrections.
 import gzip
 import json
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import pymatviz as pmv
 from pymatgen.entries.compatibility import (
@@ -20,7 +21,6 @@ from tqdm import tqdm
 from matbench_discovery import ROOT, today
 from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
-from matbench_discovery.plots import plt
 
 df_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_index(
     Key.mat_id
@@ -103,7 +103,7 @@ pmv.save_fig(ax, f"{ROOT}/tmp/{today}-ce-vs-cse-corrections-outliers.pdf")
 ax = plt.gca()
 for key, df_anion in df_ce_ne_cse.groupby("anion"):
     ax = df_anion.plot.scatter(
-        ax=locals().get("ax"),
+        ax=ax,
         x="e_form_per_atom_mp2020_from_cse",
         y="e_form_per_atom_mp2020_from_ce",
         label=f"{key} ({len(df_anion):,})",

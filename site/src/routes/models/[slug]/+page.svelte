@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from '$app/stores'
+  import TRAINING_SETS from '$root/data/training-sets.yml'
   import pkg from '$site/package.json'
   import Icon from '@iconify/svelte'
   import { pretty_num } from 'elementari'
@@ -182,7 +183,11 @@
     </section>
 
     {#if model.training_set}
-      {@const { n_structures, url, title, n_materials } = model.training_set}
+      {@const train_set_info =
+        typeof model.training_set == 'string'
+          ? TRAINING_SETS[model.training_set]
+          : model.training_set}
+      {@const { n_structures, url, title, n_materials } = train_set_info}
       {@const pretty_n_mat =
         typeof n_materials == `number` ? pretty_num(n_materials) : n_materials}
       {@const n_mat_str = n_materials ? ` from ${pretty_n_mat} materials` : ``}

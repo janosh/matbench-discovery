@@ -72,3 +72,13 @@ export type Citation = {
   url: string
   version: string
 }
+
+export type TrainingSet =
+  | ('MP 2022' | 'MPTrj' | 'MPF' | 'MP Graphs' | 'GNoME' | 'MatterSim' | 'Alex')
+  | {
+      title: string
+      url: string
+      n_structures: number
+      n_materials?: number
+      [k: string]: unknown
+    }

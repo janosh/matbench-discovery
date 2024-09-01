@@ -27,17 +27,22 @@ def test_model_dirs_have_metadata() -> None:
 
     for model_name, metadata in MODEL_METADATA.items():
         model_dir = metadata["model_dir"]
-        for key, val in required.items():
+        for key, expected in required.items():
             assert key in metadata, f"Required {key=} missing in {model_dir}"
-            if isinstance(val, dict):
-                missing_keys = {*val} - {*metadata[key]}
-                assert (
-                    not missing_keys
-                ), f"Missing sub-keys {missing_keys} of {key=} in {model_dir}"
+            actual_val = metadata[key]
+            if key == "training_set":
+                # allow either string key or dict
+                assert isinstance(actual_val, dict | str)
+            if (isinstance(expected, dict) and key != "training_set") or (
+                key == "training_set" and isinstance(actual_val, dict)
+            ):
+                missing_keys = {*expected} - {*actual_val}  # type: ignore[misc]
+                assert not missing_keys, f"{missing_keys=} under {key=} in {model_dir}"
                 continue
 
-            err_msg = f"Invalid {key=}, expected {val} in {model_dir}"
-            assert isinstance(metadata[key], val), err_msg  # type: ignore[arg-type]
+            if type(expected) is type:
+                err_msg = f"Invalid {key=}, expected {expected} in {model_dir}"
+                assert isinstance(actual_val, expected), err_msg
 
         authors, date_added, mbd_version, yml_model_name, model_version, repo = (
             metadata[key] for key in list(required)[:-1]

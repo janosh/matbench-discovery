@@ -18,7 +18,7 @@ __author__ = "Janosh Riebesell"
 __date__ = "2023-02-04"
 
 
-# ruff: noqa: E501
+# ruff: noqa: E501 (ignore long lines in class Model)
 class Model(Files, base_dir=f"{ROOT}/models"):
     """Data files provided by Matbench Discovery.
     See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
@@ -158,8 +158,8 @@ def load_df_wbm_with_preds(
             for col in df_preds
             if col.startswith((f"e_form_per_atom_{model_key}", f"e_{model_key}_"))
         ]
-        if model_name == "mace_0b":
-            df_out["mace_0b"] = df_preds["e_form_per_atom_mace"]
+        if model_key == "mace_0b":
+            df_out[model_name] = df_preds["e_form_per_atom_mace"]
         elif cols:
             if len(cols) > 1:
                 print(

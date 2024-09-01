@@ -376,8 +376,6 @@ def main(**kwargs: Any) -> None:
             MLP_irreps=o3.Irreps(args.MLP_irreps),
             atomic_inter_scale=args.std,
             atomic_inter_shift=args.mean,
-            # TODO: the following options exist in `multi-GPU` branch but not Gaussian.
-            # check if necessary
             radial_MLP=ast.literal_eval(args.radial_MLP),
             radial_type=args.radial_type,
         )

@@ -44,7 +44,6 @@ n_estimators: 1
 training_set:
   title: GNoME
   url: https://doi.org/10.1038/s41586-023-06735-9
-  # numbers below are based on private communication with Ekin Dogus Cubuk
   n_structures: 89_000_000
   n_materials: 6_000_000
 
