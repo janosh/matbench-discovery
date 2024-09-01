@@ -40,7 +40,7 @@ closed_models = [
     if meta.get("openness", Open.OSOD) != Open.OSOD
 ]
 
-with open(f"{DATA_DIR}/training-sets.yaml") as file:
+with open(f"{DATA_DIR}/training-sets.yml") as file:
     TRAINING_SETS = yaml.safe_load(file)
 
 for model in df_metrics:
