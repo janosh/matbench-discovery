@@ -323,4 +323,10 @@
     font-style: italic;
     color: gray;
   }
+
+  ul li {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
 </style>

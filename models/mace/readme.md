@@ -2,7 +2,7 @@
 
 The original MACE submission used the 2M parameter checkpoint [`2023-08-14-mace-yuan-trained-mptrj-04.model`](https://figshare.com/ndownloader/files/42374049) trained by Yuan Chiang on the [MPtrj dataset](https://figshare.com/articles/dataset/23713842).
 
-We also tested the `2023-07-14-mace-universal-2-big-128-6.model` checkpoint trained by Ilyes Batatia on the [MPF training set](https://figshare.com/articles/dataset/MPF_2021_2_8/19470599). Although both derived from the Materials Project, MPF has both less materials and less frames than MPtraj. The MPtrj-trained MACE performed better and was used for the original Matbench Discovery submission.
+We also tested the `2023-07-14-mace-universal-2-big-128-6.model` checkpoint trained by Ilyes Batatia on the [MPF training set](https://figshare.com/articles/dataset/MPF_2021_2_8/19470599). Although both derived from the Materials Project, MPF has both less materials and less frames than MPtrj. The MPtrj-trained MACE performed better and was used for the original Matbench Discovery submission.
 
 On 2023-10-29 Philipp Benner shared a much larger 16M parameter MACE he trained for over 100 epochs in MPtrj which achieved an (at the time SOTA) F1 score of 0.64 and DAF of 3.13.
 

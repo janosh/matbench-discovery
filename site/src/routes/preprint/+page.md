@@ -210,7 +210,7 @@ To test a wide variety of methodologies proposed for learning the potential ener
    It is the only $E(3)$-equivariant model we tested.
 
 2. **CHGNet** [@deng_chgnet_2023] (UIP-GNN) - CHGNet is a UIP for charge-informed atomistic modeling.
-   Its distinguishing feature is that it was trained to predict magnetic moments on top of energies, forces and stresses in the MPTrj dataset consisting of relaxation trajectories for ~1.5 million MP structures (see @sec:eda for detailed analysis of this dataset).
+   Its distinguishing feature is that it was trained to predict magnetic moments on top of energies, forces and stresses in the MPtrj dataset consisting of relaxation trajectories for ~1.5 million MP structures (see @sec:eda for detailed analysis of this dataset).
    By modeling magnetic moments, CHGNet learns to accurately represent the orbital occupancy of electrons which allows it to predict both atomic and electronic degrees of freedom.
 
 3. **M3GNet** [@chen_universal_2022] (UIP-GNN) - M3GNet is a GNN-based universal interatomic potential (UIP) (as in covering the full periodic table) for materials trained on up to 3-body interactions in the initial, middle and final frame of MP DFT relaxations.
@@ -408,7 +408,7 @@ We would like to thank Jason Blake Gibson, Shyue Ping Ong, Chi Chen, Tian Xie, P
 
 ## Author Contributions
 
-Janosh Riebesell: Methodology, software, data curation, training and testing models, formal analysis. Rhys Goodall: Conceptualization, software, formal analysis. Philipp Benner: Software, training ALIGNN + MACE. Yuan Chiang: Training MACE, data analysis. Bowen Deng: Curating MPtraj dataset and training CHGNet. Alpha Lee: Supervision. Anubhav Jain: Supervision. Kristin Persson: Funding Acquisition.
+Janosh Riebesell: Methodology, software, data curation, training and testing models, formal analysis. Rhys Goodall: Conceptualization, software, formal analysis. Philipp Benner: Software, training ALIGNN + MACE. Yuan Chiang: Training MACE, data analysis. Bowen Deng: Curating MPtrj dataset and training CHGNet. Alpha Lee: Supervision. Anubhav Jain: Supervision. Kristin Persson: Funding Acquisition.
 
 ## Code availability
 
@@ -488,7 +488,7 @@ Wrenformer is the only model with a large number of severe energy overprediction
 
 The other anomalous model is MACE with several severe underpredictions at $x = 0$ along the negative $y$ axis. We investigated these points for common traits in composition or crystal symmetry but noticed no pattern.
 
-Beyond these MACE outliers visible in the plot, MACE exhibits another rare but reproducible type of failure case, in which the final predicted energy after relaxation is off by several orders of magnitude. The largest 'derailed' prediction was $-10^{22}$ eV/atom for `wbm-3-31970` (formula H$_2$Ir). In each case, the MACE relaxation exhausted the maximum number of ionic steps set to 500 and caused a volume implosion from initial cell volumes of hundreds to relaxed cell volumes of tens of cubic Angstrom. Using the checkpoint trained on the M3GNet dataset which we received from the MACE authors, this failure mode occurred for several hundred of the 250k test set crystals. Using the checkpoint we trained ourselves on the MPTrj dataset, it affects only 44 test crystals, suggesting that these holes in the MACE PES can perhaps be fully plugged by further increasing the training set or even changing the loss function.
+Beyond these MACE outliers visible in the plot, MACE exhibits another rare but reproducible type of failure case, in which the final predicted energy after relaxation is off by several orders of magnitude. The largest 'derailed' prediction was $-10^{22}$ eV/atom for `wbm-3-31970` (formula H$_2$Ir). In each case, the MACE relaxation exhausted the maximum number of ionic steps set to 500 and caused a volume implosion from initial cell volumes of hundreds to relaxed cell volumes of tens of cubic Angstrom. Using the checkpoint trained on the M3GNet dataset which we received from the MACE authors, this failure mode occurred for several hundred of the 250k test set crystals. Using the checkpoint we trained ourselves on the MPtrj dataset, it affects only 44 test crystals, suggesting that these holes in the MACE PES can perhaps be fully plugged by further increasing the training set or even changing the loss function.
 Further analysis is ongoing.
 Since these derailed values are easily identified in practice when actually performing a prospective discovery campaign, we excluded them from the MACE parity plat and all other downstream analyses.
 
@@ -630,7 +630,7 @@ To get a visual sense of coverage of atomic configuration space afforded by WBM 
 
 Finally, @fig:mp-vs-mp-trj-vs-wbm-arity-hist shows the elements-per-structure distribution of MP, MPtrj and WBM, normalized by dataset size.
 The mode of all three datasets is 3, but WBM's share of ternary phases is noticeably more peaked than MP's, which includes small numbers of unary and senary phases.
-The histogram in @fig:mp-trj-n-sites-hist shows the distribution of the number of sites in MPtrj structures. The inset displays the same histogram log-scaled y-axis as well as a cumulative line to show that 90% of MPTrj structures contain fewer than 70 sites.
+The histogram in @fig:mp-trj-n-sites-hist shows the distribution of the number of sites in MPtrj structures. The inset displays the same histogram log-scaled y-axis as well as a cumulative line to show that 90% of MPtrj structures contain fewer than 70 sites.
 
 {#if mounted}
 
@@ -639,7 +639,7 @@ The histogram in @fig:mp-trj-n-sites-hist shows the distribution of the number o
 {/if}
 
 > @label:fig:element-counts-by-occurrence The number of structures containing a given element in the MP training set, the MPtrj dataset containing multiple from every relaxation trajectory in MP [@deng_chgnet_2023], and WBM test set [@wang_predicting_2021].
-> The WBM test set is noticeably more chemically diverse than MP (and, by extension, MPTrj).
+> The WBM test set is noticeably more chemically diverse than MP (and, by extension, MPtrj).
 > Made with pymatviz [@riebesell_pymatviz_2022].
 
 {#if mounted}
@@ -649,7 +649,7 @@ The histogram in @fig:mp-trj-n-sites-hist shows the distribution of the number o
 {/if}
 
 > @label:fig:element-counts-ratio-by-occurrence **)** shows the ratio of elements in the WBM test set to the MP training set.
-> Similarly, **)** shows the ratio of elements in the MPTrj dataset to the MP training set.
+> Similarly, **)** shows the ratio of elements in the MPtrj dataset to the MP training set.
 > We note a slight overabundance of structures containing hydrogen and halides, indicating that more frames were selected from structures containing these elements which might correlate with the number of ionic steps to find their ground states.
 
 {#if mounted}
@@ -661,9 +661,9 @@ The histogram in @fig:mp-trj-n-sites-hist shows the distribution of the number o
 > WBM is dominated by ternary phases making up 74% of the data set followed by about 13% each of binaries and quaternaries.
 > MP has a more even distribution, in particular with more than double the relative share of quaternary phases and a significant number of quinternaries which are almost absent from WBM.
 > Not shown in this plot for visual clarity are 3% of MP structures containing more than 5 elements (up to 9).
-> We also include MPTrj in this plot to show a slight drop in the relative abundance of quinternaries and higher phases vs MP ground states.
+> We also include MPtrj in this plot to show a slight drop in the relative abundance of quinternaries and higher phases vs MP ground states.
 > This may be due to a poor choice of convergence criteria in early MP relaxation workflows that scaled with the size of the structure (see `EDIFF_PER_ATOM` parameter in `pymatgen` VASP input sets), resulting in unconverged large structures with short relaxation trajectories entering the database.
-> Short relaxations would result in fewer frames of such structures selected for MPTrj.
+> Short relaxations would result in fewer frames of such structures selected for MPtrj.
 > This assumes structures of higher arity correlate with larger structures.
 
 {#if mounted}
@@ -672,7 +672,7 @@ The histogram in @fig:mp-trj-n-sites-hist shows the distribution of the number o
 
 > @label:fig:mp-trj-n-sites-hist Histogram of number of atoms per structure.
 > The inset shows the same distribution log-scaled to visualize the tail of large structures.
-> The green cumulative line in the inset shows that 82% have less than 50 sites and 97% of structures in MPTrj have less than 100 atoms.
+> The green cumulative line in the inset shows that 82% have less than 50 sites and 97% of structures in MPtrj have less than 100 atoms.
 
 {#if mounted}
 {@const style=`aspect-ratio: 3/2;`}
@@ -685,7 +685,7 @@ The histogram in @fig:mp-trj-n-sites-hist shows the distribution of the number o
   </div>
 {/if}
 
-> @label:fig:mp-trj-hists Distribution of energies, forces, stresses and magnetic moments MPTrj.
+> @label:fig:mp-trj-hists Distribution of energies, forces, stresses and magnetic moments MPtrj.
 > The bimodality in the formation energy distribution is due to the MP anion correction scheme [@wang_framework_2021] which significantly lowers some formation energies, especially for oxides.
 
 {#if mounted}
@@ -711,8 +711,8 @@ The histogram in @fig:mp-trj-n-sites-hist shows the distribution of the number o
 <MpTrjPtableHists />
 {/if}
 
-> @label:fig:mp-trj-ptable-hists Distribution of magnetic moments and forces for each element MPTrj. This data is used as training targets for all interatomic potentials in this work (only CHGNet uses the absolute value of magnetic moments as targets).
-> The number in the top right corner of each element tile counts the number of target values for that element in all of MPTrj.
+> @label:fig:mp-trj-ptable-hists Distribution of magnetic moments and forces for each element MPtrj. This data is used as training targets for all interatomic potentials in this work (only CHGNet uses the absolute value of magnetic moments as targets).
+> The number in the top right corner of each element tile counts the number of target values for that element in all of MPtrj.
 > $y$-axes are log-scaled to reveal the tail of high magnetic moments in some elements.
 > ) reveals rare erroneous data points in MPtrj.
 > For instance, has a single-point calculation with a highly unphysical magnetic moment of 17$\mu_\text{B}$.

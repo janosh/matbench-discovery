@@ -12,7 +12,7 @@ n_gpus=1  # Number of GPUs per nodes for multi-GPU training
 
 echo "This is an example script for using SevenNet, from data preprocessing to training."
 echo "It is recommended to adjust n_gpus in train_sevennet.sh and batch_size in pre_train.yaml for real training."
-echo "Refer to convert_MPTrj2xyz.py to use MPTrj data. Note that *all* data points in MPTrj are used for SevenNet-0 (July112024)"
+echo "Refer to convert_MPTrj2xyz.py to use MPtrj data. Note that *all* data points in MPtrj are used for SevenNet-0 (July112024)"
 
 
 # check whether command 'sevenn' exist or not. If not exist, raise error and quit
