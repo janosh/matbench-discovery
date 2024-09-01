@@ -52,18 +52,21 @@ properties:
   trained_for_benchmark:
     type: boolean
   training_set:
-    type: object
-    properties:
-      title:
-        type: string
-      url:
-        type: string
-        format: uri
-      n_structures:
-        type: number
-      n_materials:
-        type: number
-    required: [title, url, n_structures]
+    oneOf:
+      - type: string
+        enum: [MP 2022, MPTrj, MPF, MP Graphs, GNoME, MatterSim, Alex]
+      - type: object
+        properties:
+          title:
+            type: string
+          url:
+            type: string
+            format: uri
+          n_structures:
+            type: number
+          n_materials:
+            type: number
+        required: [title, url, n_structures]
   hyperparams:
     type: object
     properties:
@@ -94,11 +97,11 @@ properties:
         oneOf:
           - type: string
           - type: object
-            values:
+            additionalProperties:
               type: string
       Missing Preds:
         type: string
-      additionalProperties: true
+    additionalProperties: true
   model_params:
     type: number
     minimum: 0
