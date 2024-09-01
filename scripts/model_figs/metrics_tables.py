@@ -95,11 +95,14 @@ for model in df_metrics:
         )
 
         if n_materials_total != n_structs_total:
-            title = "Number of materials (and structures) in training set"
+            title = (
+                "Number of materials in training set&#013;In parenthesis=number of "
+                "structures, usually from multiple DFT relaxation frames per material"
+            )
             train_size_str = (
                 f"<span {title=} data-sort-value={n_materials_total}>"
                 f"{si_fmt(n_materials_total, fmt='.0f')}</span>"
-                f"<small {title=}> ({si_fmt(n_structs_total, fmt='.1f')})</small>"
+                f" <small {title=}> ({si_fmt(n_structs_total, fmt='.1f')})</small>"
             )
 
         dataset_links = []
@@ -112,7 +115,7 @@ for model in df_metrics:
                 dataset_links += [key]
         dataset_str = "+".join(dataset_links)
 
-        tooltip = "\\n".join(tooltip_lines)
+        tooltip = "&#013;".join(tooltip_lines)
         train_size_str = (
             f"<span title='{tooltip}'>{train_size_str} ({dataset_str})</span>"
         )

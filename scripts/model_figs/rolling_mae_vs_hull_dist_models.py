@@ -44,6 +44,7 @@ fig, df_err, df_std = rolling_mae_vs_hull_dist(
     df_rolling_err=df_err,
     df_err_std=df_std,
     show_dummy_mae=False,
+    height=600,
 )
 
 if backend == MATPLOTLIB:
@@ -55,7 +56,7 @@ if backend == MATPLOTLIB:
     for line in fig.lines:
         line._linewidth *= 2  # noqa: SLF001
 else:
-    show_n_best_models = len(models)
+    show_n_best_models = 8
     for trace in fig.data:
         model = trace.name.split(" MAE=")[0]
         if model in df_metrics.T.sort_values("MAE").index[show_n_best_models:]:

@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { ModelData, ModelStatLabel } from '$lib'
   import { AuthorBrief } from '$lib'
+  import TRAINING_SETS from '$root/data/training-sets.yml'
   import { repository } from '$site/package.json'
   import Icon from '@iconify/svelte'
   import { pretty_num } from 'elementari'
@@ -91,17 +92,27 @@
     {/if}
   </span>
   {#if training_set}
-    {@const { n_structures, url, title, n_materials } = training_set}
-    {@const pretty_n_mat =
-      typeof n_materials == `number` ? pretty_num(n_materials) : n_materials}
-    {@const n_mat_str = n_materials ? ` from ${pretty_n_mat} materials` : ``}
+    {@const training_sets = Array.isArray(training_set) ? training_set : [training_set]}
     <span style="grid-column: span 2;">
       <Icon icon="mdi:database" inline />
       Training set:
-      <a href={url}>{title}</a>
-      <small>
-        ({pretty_num(n_structures)} structures{n_mat_str})
-      </small>
+      {#each training_sets as training_set_or_key, idx}
+        {#if idx > 0}
+          &nbsp;+&nbsp;
+        {/if}
+        {@const training_set =
+          typeof training_set_or_key == `string`
+            ? TRAINING_SETS[training_set_or_key]
+            : training_set_or_key}
+        {@const { n_structures, url, title, n_materials } = training_set}
+        {@const pretty_n_mat =
+          typeof n_materials == `number` ? pretty_num(n_materials) : n_materials}
+        {@const n_mat_str = n_materials ? ` from ${pretty_n_mat} materials` : ``}
+        <a href={url}>{title}</a>
+        <small>
+          ({pretty_num(n_structures)} structures{n_mat_str})
+        </small>
+      {/each}
     </span>
   {/if}
 </p>
@@ -127,7 +138,10 @@
         </ul>
       {/if}
     </section>
-    <section transition:slide={{ duration: 200 }}>
+    <section
+      transition:slide={{ duration: 200 }}
+      style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis;"
+    >
       <h3>Package versions</h3>
       <ul>
         {#each Object.entries(data.requirements ?? {}) as [name, version]}
