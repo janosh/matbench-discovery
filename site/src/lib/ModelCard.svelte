@@ -26,6 +26,7 @@
   ]
   const target = { target: `_blank`, rel: `noopener` }
   $: model_slug = model_name?.toLowerCase().replaceAll(` `, `-`) ?? ``
+  $: n_model_params = pretty_num(model_params, `.3~s`)
 </script>
 
 <h2 id={model_slug} {style}>
@@ -59,19 +60,16 @@
   {/if}
   <span>
     <Icon icon="eos-icons:neural-network" inline />
-    {pretty_num(model_params, `.3~s`)} params
+    {n_model_params} params
   </span>
   {#if n_estimators > 1}
     <span>
       <Icon icon="material-symbols:forest" inline />
       Ensemble of {n_estimators > 1 ? `${n_estimators}` : ``}
       <Tooltip
-        icon="ion:information-circle"
-        text="This result used a model ensemble with {n_estimators} members with {pretty_num(
-          model_params,
-          `.3~s`,
-        )} parameters."
-        ><Icon icon="ion:information-circle" inline />
+        text="This result used a model ensemble with {n_estimators} members with {n_model_params} parameters each."
+      >
+        <Icon icon="ion:information-circle" inline />
       </Tooltip>
     </span>
   {/if}

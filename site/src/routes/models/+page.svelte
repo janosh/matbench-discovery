@@ -94,7 +94,7 @@
             max_width="20em"
             style="position: absolute; transform: translate(-45%, -45%); color: gray;"
           >
-            <Icon icon="material-symbols:info-outline" title="Info" height="9pt" />
+            <Icon icon="octicon:info-16" title="Info" height="9pt" />
           </Tooltip>
         {/if}
       </li>
