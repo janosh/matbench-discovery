@@ -67,9 +67,6 @@ make-wbm-umap = ["umap-learn>=0.5.5"]
 include = ["matbench_discovery*"]
 exclude = ["tests", "tests.*"]
 
-[tool.setuptools.package-data]
-matbench_discovery = ["figshare/*"]
-
 [tool.distutils.bdist_wheel]
 universal = true
 

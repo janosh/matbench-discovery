@@ -20,16 +20,13 @@ from ase import Atoms
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR, FIGSHARE_DIR, pkg_is_editable
+from matbench_discovery import DATA_DIR, pkg_is_editable
 
 # ruff: noqa: T201
 T = TypeVar("T", bound="Files")
 
 # repo URL to raw files on GitHub
 RAW_REPO_URL = "https://github.com/janosh/matbench-discovery/raw"
-figshare_versions = sorted(
-    x.split(os.path.sep)[-1].split(".json")[0] for x in glob(f"{FIGSHARE_DIR}/*.json")
-)
 # directory to cache downloaded data files
 DEFAULT_CACHE_DIR = os.getenv(
     "MATBENCH_DISCOVERY_CACHE_DIR",
