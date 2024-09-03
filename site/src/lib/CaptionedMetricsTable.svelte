@@ -1,7 +1,11 @@
 <script lang="ts">
   import MetricsTable from '$figs/metrics-table-uniq-protos.svelte'
+  import { pretty_num } from 'elementari'
 
   export let show_proprietary = false
+
+  let n_wbm_stable_uniq_protos = 32_942
+  let n_wbm_uniq_protos = 215_488
 </script>
 
 <figure {...$$props} class:hide-prop={!show_proprietary}>
@@ -14,7 +18,11 @@
     estimators if an ensemble was used. DAF = Discovery Acceleration Factor measures how
     many more stable materials a model finds compared to random selection from the test
     set. The WBM test set has a 16.7% rate of stable crystals, meaning the max possible
-    DAF is <code>100 / 16.7 = 6</code>.
+    DAF is
+    <code
+      >({pretty_num(n_wbm_stable_uniq_protos)} / {pretty_num(n_wbm_uniq_protos)})^−1 ≈
+      {pretty_num(n_wbm_uniq_protos / n_wbm_stable_uniq_protos)}</code
+    >.
   </figcaption>
 </figure>
 

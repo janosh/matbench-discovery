@@ -134,10 +134,8 @@ def load_df_wbm_with_preds(
         models = tuple(valid_pred_files)
     inv_label_map = {v: k for k, v in Model.label_map.items()}
     models = {inv_label_map.get(model, model) for model in models}
-    if mismatch := ", ".join(models - valid_pred_files):
-        raise ValueError(
-            f"Unknown models: {mismatch}, expected subset of {valid_pred_files}"
-        )
+    if unknown_models := ", ".join(models - valid_pred_files):
+        raise ValueError(f"{unknown_models=}, expected subset of {valid_pred_files}")
 
     dfs: dict[str, pd.DataFrame] = {}
     model: str = ""
