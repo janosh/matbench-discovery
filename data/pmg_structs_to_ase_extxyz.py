@@ -47,7 +47,7 @@ for mat_id, trajectories in tqdm(mptrj_data.items(), desc="MPtrj"):
             atoms.info["stress"] = np.array(stress) * -0.1 * ase.units.GPa
         mptrj_atoms_list.append(atoms)
 
-ase_atoms_to_zip(mptrj_atoms_list, f"{MP_DIR}/{today}-mp-trj.zip")
+ase_atoms_to_zip(mptrj_atoms_list, f"{MP_DIR}/{today}-mp-trj.extxyz.zip")
 
 
 # %% convert WBM initial structures to ASE Atoms (no properties other than material ID

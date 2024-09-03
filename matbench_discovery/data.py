@@ -7,6 +7,7 @@ import io
 import os
 import sys
 import zipfile
+from collections import defaultdict
 from collections.abc import Callable
 from enum import EnumMeta, StrEnum, _EnumDict
 from glob import glob
@@ -126,22 +127,32 @@ def ase_atoms_from_zip(
 
 def ase_atoms_to_zip(atoms_list: list[Atoms], zip_filename: str | Path) -> None:
     """Write a list of ASE Atoms to a ZIP archive with each Atoms object as a separate
-    extXYZ file.
+    extXYZ file, grouped by mat_id.
 
     Args:
         atoms_list (list[Atoms]): List of ASE Atoms objects.
-        zip_filename (str): Path to the ZIP file.
+        zip_filename (str | Path): Path to the ZIP file.
     """
+    # Group atoms by mat_id to avoid overwriting files with the same name
+    atoms_by_id = defaultdict(list)
+    for atoms in atoms_list:
+        mat_id = atoms.info.get(Key.mat_id, f"no-id-{atoms.get_chemical_formula()}")
+        atoms_by_id[mat_id].append(atoms)
+
+    # Write grouped atoms to the ZIP archive
     with zipfile.ZipFile(
         zip_filename, mode="w", compression=zipfile.ZIP_DEFLATED
     ) as zip_file:
-        for atoms in tqdm(atoms_list, desc=f"Writing ASE Atoms to {zip_filename=}"):
-            mat_id = atoms.info.get(Key.mat_id, f"no-id-{atoms.get_chemical_formula()}")
-
+        for mat_id, grouped_atoms in tqdm(
+            atoms_by_id.items(), desc=f"Writing ASE Atoms to {zip_filename=}"
+        ):
             buffer = io.StringIO()  # string buffer to write the extxyz content
-            ase.io.write(buffer, atoms, format="extxyz", append=True, write_info=True)
+            for atoms in grouped_atoms:
+                ase.io.write(
+                    buffer, atoms, format="extxyz", append=True, write_info=True
+                )
 
-            # Write the buffer content to the ZIP file
+            # Write the combined buffer content to the ZIP file
             zip_file.writestr(f"{mat_id}.extxyz", buffer.getvalue())
 
 
