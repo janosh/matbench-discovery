@@ -161,6 +161,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    url: https://<model-docs-or-similar>.org
    doi: https://doi.org/10.5281/zenodo.0000000
    preprint: https://arxiv.org/abs/xxxx.xxxxx
+   pred_col: e_form_per_atom_mp2020_corrected_<model_name> # required
 
    requirements: # strongly recommended
      torch: 1.13.0
@@ -191,7 +192,7 @@ cd matbench-discovery
 git checkout -b model-name-you-want-to-add
 ```
 
-Use `--depth 1` to only clone the latest commit and save bandwidth. No need to load previous versions of large data files.
+Tip: `--depth 1` only clones the latest commit, not the full `git history` which is faster if a repo contains large data files that changed over time.
 
 ### Step 2: Commit model preds, script and metadata
 
