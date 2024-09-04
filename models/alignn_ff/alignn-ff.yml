@@ -44,10 +44,6 @@ requirements:
 openness: OSOD
 model_type: UIP
 trained_for_benchmark: true
+# for hyperparams, see alignn-config.json
 
-training_set:
-  title: MPtrj
-  url: https://figshare.com/articles/dataset/23713842
-  n_structures: 1_580_395
-  n_materials: 145_923
-# for other hyperparams, see alignn-config.json
+training_set: MPtrj

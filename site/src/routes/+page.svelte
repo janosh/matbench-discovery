@@ -4,7 +4,8 @@
   import { CaptionedMetricsTable } from '$lib'
   import all_stats from '$lib/model-stats-uniq-protos.json'
   import Readme from '$root/readme.md'
-  import { Toggle } from 'svelte-zoo'
+  import Icon from '@iconify/svelte'
+  import { Toggle, Tooltip } from 'svelte-zoo'
 
   let show_proprietary = false
 
@@ -44,7 +45,22 @@
   </div>
 
   <div slot="metrics-table" style="display: grid; gap: 1ex; place-items: center;">
-    <Toggle bind:checked={show_proprietary}>Show proprietary models &ensp;</Toggle>
+    <Toggle bind:checked={show_proprietary}
+      >Show non-compliant models <Tooltip max_width="10em">
+        <span slot="tip">
+          Models can be non-compliant for multiple reasons<br />
+          - closed source (model implementation and/or train/test code)<br />
+          - closed weights<br />
+          - trained on more than the permissible training set (<a
+            href="https://docs.materialsproject.org/changes/database-versions#v2022.10.28"
+            >MP v2022.10.28 release</a
+          >)<br />
+          We still show these models behind a toggle as we expect them<br /> to nonetheless
+          provide helpful signals for developing future models.
+        </span>
+        <Icon icon="octicon:info-16" inline style="padding: 0 3pt;" />
+      </Tooltip>&ensp;</Toggle
+    >
     <CaptionedMetricsTable bind:show_proprietary />
   </div>
 </Readme>

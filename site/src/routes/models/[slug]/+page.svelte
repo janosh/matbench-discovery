@@ -41,13 +41,13 @@
       </div>
       <div>
         <Icon icon="ion:ios-calendar" inline />
-        <Tooltip text={`${n_days_ago(model.date_added)} days ago`}>
+        <Tooltip text="{n_days_ago(model.date_added)} days ago">
           <span>Added: {model.date_added}</span>
         </Tooltip>
       </div>
       <div>
         <Icon icon="ri:calendar-check-line" inline />
-        <Tooltip text={`${n_days_ago(model.date_published)} days ago`}>
+        <Tooltip text="{n_days_ago(model.date_published)} days ago">
           <span>Published: {model.date_published}</span>
         </Tooltip>
       </div>

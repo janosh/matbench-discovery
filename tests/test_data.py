@@ -1,4 +1,3 @@
-import json
 import os
 import zipfile
 from pathlib import Path
@@ -11,18 +10,13 @@ from ase import Atoms
 from pymatgen.core import Lattice, Structure
 from pymatviz.enums import Key
 
-from matbench_discovery import FIGSHARE_DIR
 from matbench_discovery.data import (
     as_dict_handler,
     ase_atoms_from_zip,
     ase_atoms_to_zip,
     df_wbm,
-    figshare_versions,
     glob_to_df,
 )
-
-with open(f"{FIGSHARE_DIR}/{figshare_versions[-1]}.json") as file:
-    figshare_urls = json.load(file)["files"]
 
 structure = Structure(
     lattice=Lattice.cubic(5),

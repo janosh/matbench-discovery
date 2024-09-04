@@ -81,6 +81,7 @@ requirements:
   numpy: 1.26.2
   pymatgen: 2024.5.1
 
+pred_col: e_form_per_atom_mattersim
 openness: CSCD
 trained_for_benchmark: false
 train_task: S2EFS

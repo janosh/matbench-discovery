@@ -27,7 +27,6 @@ SITE_FIGS = f"{ROOT}/site/src/figs"  # directory for interactive figures
 SITE_LIB = f"{ROOT}/site/src/lib"
 SCRIPTS = f"{ROOT}/scripts"  # model and date analysis scripts
 PDF_FIGS = f"{ROOT}/paper/figs"  # directory for light-themed PDF figures
-FIGSHARE_DIR = f"{PKG_DIR}/figshare"
 
 for directory in (SITE_FIGS, SITE_LIB, PDF_FIGS):
     os.makedirs(directory, exist_ok=True)

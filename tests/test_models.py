@@ -1,7 +1,9 @@
+import os
 from glob import glob
 
-from matbench_discovery import __version__
+from matbench_discovery import ROOT, __version__
 from matbench_discovery.models import MODEL_DIRS, MODEL_METADATA
+from matbench_discovery.preds import Model
 
 
 def parse_version(v: str) -> tuple[int, ...]:
@@ -76,3 +78,10 @@ def test_model_dirs_have_test_scripts() -> None:
         test_scripts = glob(f"{model_dir}*test_*.py")
         test_nbs = glob(f"{model_dir}*test_*.ipynb")
         assert len(test_scripts + test_nbs) > 0, f"Missing test file in {model_dir}"
+
+
+def test_model_enum() -> None:
+    for model_key in Model:
+        model_yaml_path = f"{ROOT}/models/{model_key.url}"
+        assert os.path.isfile(model_key.path)
+        assert os.path.isfile(model_yaml_path) or model_key.url is None

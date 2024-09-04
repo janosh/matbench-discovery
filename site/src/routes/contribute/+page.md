@@ -139,7 +139,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 1. `<model_name.yml>`: A file to record all relevant metadata of your algorithm like model name and version, authors, package requirements, links to publications, notes, etc. Here's a template:
 
    ```yml
-   model_name: My fancy model # required
+   model_name: My fancy model # required (this must match the model's label which is the 3rg in the matbench_discovery.preds.Model enum)
    model_version: 1.0.0 # required
    matbench_discovery_version: 1.0 # required
    date_added: "2023-01-01" # required
@@ -161,13 +161,15 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    url: https://<model-docs-or-similar>.org
    doi: https://doi.org/10.5281/zenodo.0000000
    preprint: https://arxiv.org/abs/xxxx.xxxxx
+   pred_col: e_form_per_atom_mp2020_corrected_<model_name> # required
 
    requirements: # strongly recommended
      torch: 1.13.0
      torch-geometric: 2.0.9
      ...
 
-   training_set:
+   training_set: # can be a single key or list of keys (see data/training-sets.yml)
+     # or a single or list of dicts with keys title, url, n_structures, n_materials
      title: MPtrj
      url: https://figshare.com/articles/dataset/23713842
      n_structures: 1_580_395
@@ -191,7 +193,7 @@ cd matbench-discovery
 git checkout -b model-name-you-want-to-add
 ```
 
-Use `--depth 1` to only clone the latest commit and save bandwidth. No need to load previous versions of large data files.
+Tip: `--depth 1` only clones the latest commit, not the full `git history` which is faster if a repo contains large data files that changed over time.
 
 ### Step 2: Commit model preds, script and metadata
 

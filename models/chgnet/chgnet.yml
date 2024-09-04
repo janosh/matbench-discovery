@@ -39,6 +39,7 @@ requirements:
   pymatgen: 2022.10.22
   numpy: 1.24.0
 
+pred_col: e_form_per_atom_chgnet
 openness: OSOD
 trained_for_benchmark: false
 train_task: S2EFSM
@@ -48,11 +49,7 @@ model_type: UIP
 model_params: 412_525
 n_estimators: 1
 
-training_set:
-  title: MPtrj
-  url: https://figshare.com/articles/dataset/23713842
-  n_structures: 1_580_395
-  n_materials: 145_923
+training_set: MPtrj
 
 hyperparams:
   max_steps: 2000

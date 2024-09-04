@@ -16,7 +16,7 @@ import requests
 from requests.exceptions import HTTPError
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR, FIGSHARE_DIR, ROOT
+from matbench_discovery import DATA_DIR, PKG_DIR, ROOT
 from matbench_discovery.data import DataFiles
 
 __author__ = "Janosh Riebesell"
@@ -173,7 +173,7 @@ if __name__ == "__main__":
     with open(f"{ROOT}/pyproject.toml", "rb") as toml_file:
         pyproject = tomllib.load(toml_file)["project"]
 
-    figshare_urls_json_path = f"{FIGSHARE_DIR}/{pyproject['version']}.json"
+    figshare_urls_json_path = f"{PKG_DIR}/figshare/{pyproject['version']}.json"
     if os.path.isfile(figshare_urls_json_path):
         print(
             f"{figshare_urls_json_path!r} already exists, exiting early. Increment the "

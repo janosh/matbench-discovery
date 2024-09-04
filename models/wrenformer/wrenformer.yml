@@ -26,6 +26,7 @@ requirements:
   numpy: 1.24.0
   pandas: 1.5.1
 
+pred_col: e_form_per_atom_wrenformer_pred_ens
 openness: OSOD
 trained_for_benchmark: true
 train_task: RP2RE
