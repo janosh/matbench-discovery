@@ -34,7 +34,7 @@
         }
         return sort_factor * (val_2 - val_1)
       } else {
-        throw `Unexpected type ${val_1} encountered sorting by key ${sort_by}`
+        throw `Unexpected type '${val_1}' encountered sorting by key '${sort_by}'`
       }
     })
   const stats: ModelStatLabel[] = [

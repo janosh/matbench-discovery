@@ -12,7 +12,7 @@ _Note: The models in the benchmark submissions are not trained with the D3 dispe
 
 - **ORB**: `orb-v1` - This is our full model, pretrained as a de-noising model on a wide variety of collected crystal structures. It is then finetuned using [`MPtrj`](https://figshare.com/articles/dataset/23713842) and [`Alexandria`](https://alexandria.icams.rub.de/) jointly.
 
-- **ORB-MPtrj**: `orb-v1-mptrj-only` - This is our model which fits the data requirements of the Matbench Discovery benchmark - namely that it is trained only on the MPtrj dataset. This model uses the full MPTraj dataset for both the pretraining steps and the finetuning steps. It uses no other data sources.
+- **ORB MPtrj**: `orb-v1-mptrj-only` - This is our model which fits the data requirements of the Matbench Discovery benchmark - namely that it is trained only on the MPtrj dataset. This model uses the full MPTraj dataset for both the pretraining steps and the finetuning steps. It uses no other data sources.
 
 For more information on the models, please refer to our [Github Repository][`orb-models`]. We are working on a more complete technical report which will be available soon.
 
@@ -43,7 +43,7 @@ RMSE            0.080986     0.064470       0.079003
 R2              0.798803     0.907903       0.815941
 ```
 
-## **ORB-MPtrj**: `orb-v1-mptrj-only` - MPTraj pretraining, MPTraj finetuning
+## **ORB MPtrj**: `orb-v1-mptrj-only` - MPTraj pretraining, MPTraj finetuning
 
 | Item                 | Link/URL                                                                                                     |
 | -------------------- | ------------------------------------------------------------------------------------------------------------ |
