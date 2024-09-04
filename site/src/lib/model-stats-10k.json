@@ -89,7 +89,7 @@
     "missing_preds": 1744.0,
     "missing_percent": "0.68%"
   },
-  "ORB-MPtrj": {
+  "ORB MPtrj": {
     "F1": 0.963,
     "DAF": 6.079,
     "Precision": 0.929,
@@ -106,7 +106,7 @@
     "MAE": 0.041,
     "RMSE": 0.103,
     "R2": 0.781,
-    "Model Name": "<span title=\"Version: v1\">ORB-MPtrj</span>",
+    "Model Name": "<span title=\"Version: v1\">ORB MPtrj</span>",
     "Train Run Time (h)": null,
     "Train GPU": null,
     "Train CPU": null,

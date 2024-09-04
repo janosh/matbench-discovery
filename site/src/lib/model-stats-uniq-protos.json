@@ -110,7 +110,7 @@
     "missing_preds": 1744.0,
     "missing_percent": "0.68%"
   },
-  "ORB-MPtrj": {
+  "ORB MPtrj": {
     "F1": 0.763,
     "DAF": 4.679,
     "Precision": 0.715,
@@ -129,7 +129,7 @@
     "R2": 0.74,
     "Training Set": "<span title='MPtrj: 145.9K materials (1.6M structures)'><span title='Number of materials (and structures) in training set' data-sort-value=145923>146K</span><small title='Number of materials (and structures) in training set'> (1.6M)</small> (<a href='https://figshare.com/articles/dataset/23713842' target='_blank' rel='noopener noreferrer'>MPtrj</a>)</span>",
     "Date Added": "2024-09-02",
-    "Model Name": "<span title=\"Version: v1\">ORB-MPtrj</span>",
+    "Model Name": "<span title=\"Version: v1\">ORB MPtrj</span>",
     "Model Params": "<span title='Number of trainable model parameters' data-sort-value=\"25161727\">25.2M</span>",
     "Openness": "OSOD",
     "Training Task": "S2EFS",
