@@ -168,7 +168,8 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
      torch-geometric: 2.0.9
      ...
 
-   training_set:
+   training_set: # can be a single key or list of keys (see data/training-sets.yml)
+     # or a single or list of dicts with keys title, url, n_structures, n_materials
      title: MPtrj
      url: https://figshare.com/articles/dataset/23713842
      n_structures: 1_580_395

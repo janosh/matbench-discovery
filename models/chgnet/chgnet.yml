@@ -49,11 +49,7 @@ model_type: UIP
 model_params: 412_525
 n_estimators: 1
 
-training_set:
-  title: MPtrj
-  url: https://figshare.com/articles/dataset/23713842
-  n_structures: 1_580_395
-  n_materials: 145_923
+training_set: MPtrj
 
 hyperparams:
   max_steps: 2000

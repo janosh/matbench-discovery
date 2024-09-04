@@ -66,8 +66,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     wrenformer = "wrenformer/2022-11-15-wrenformer-ens=10-IS2RE-preds.csv.gz", "wrenformer/wrenformer.yml", "Wrenformer"  # fmt: skip
 
     # --- Proprietary Models
-    # GNoMe
-    gnome = "gnome/2023-11-01-gnome-preds-50076332.csv.gz", "gnome/gnome.yml", "GNoMe"
+    # GNoME
+    gnome = "gnome/2023-11-01-gnome-preds-50076332.csv.gz", "gnome/gnome.yml", "GNoME"
 
     # MatterSim
     mattersim = "mattersim/mattersim-wbm-IS2RE.csv.gz", "mattersim/mattersim.yml", "MatterSim"  # fmt: skip

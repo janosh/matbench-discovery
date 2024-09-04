@@ -45,21 +45,21 @@ with open(f"{DATA_DIR}/training-sets.yml") as file:
 
 for model in df_metrics:
     model_name = name_map.get(model, model)
-    model_data = MODEL_METADATA.get(model_name, {})
+    model_metadata = MODEL_METADATA.get(model_name, {})
 
-    df_met.loc[date_added_col, model] = model_data.get("date_added", "")
+    df_met.loc[date_added_col, model] = model_metadata.get("date_added", "")
 
     # Add model version as hover tooltip to model name
-    model_version = model_data.get("model_version", "")
+    model_version = model_metadata.get("model_version", "")
     css_cls = "proprietary" if model in closed_models else ""
     attrs = {"title": f"Version: {model_version}", "class": css_cls}
-    attr_str = " ".join(f'{k}="{v}"' for k, v in attrs.items() if v)
-    df_met.loc[Key.model_name.label, model] = f"<span {attr_str}>{model}</span>"
+    html_attr_str = " ".join(f'{k}="{v}"' for k, v in attrs.items() if v)
+    df_met.loc[Key.model_name.label, model] = f"<span {html_attr_str}>{model}</span>"
     # assign this col to all tables
     for df in (df_metrics, df_metrics_10k, df_metrics_uniq_protos):
         df.loc[Key.model_name.label] = df_met.loc[Key.model_name.label]
 
-    if training_sets := model_data.get("training_set"):
+    if training_sets := model_metadata.get("training_set"):
         if isinstance(training_sets, dict | str):
             training_sets = [training_sets]
 
@@ -124,10 +124,12 @@ for model in df_metrics:
     elif model == "Dummy":
         continue
     else:
-        raise ValueError(f"Unknown {training_sets=} for {model=}")
+        raise ValueError(
+            f"Unknown {training_sets=} for {model=}\nwith {model_metadata=}"
+        )
 
-    model_params = model_data.get(Key.model_params, 0)
-    n_estimators = model_data.get(Key.n_estimators, -1)
+    model_params = model_metadata.get(Key.model_params, 0)
+    n_estimators = model_metadata.get(Key.n_estimators, -1)
     title = "Number of models in ensemble"
     n_estimators_str = (
         f" <small {title=}>(N={n_estimators})</small>" if n_estimators > 1 else ""
@@ -147,7 +149,7 @@ for model in df_metrics:
         Key.targets,
     ):
         default = {MbdKey.openness: Open.OSOD}.get(key, pd.NA)
-        df_met.loc[key.label, model] = model_data.get(key, default)
+        df_met.loc[key.label, model] = model_metadata.get(key, default)
 
 
 # %% add dummy classifier results to df_metrics(_10k, _uniq_protos)
