@@ -29,6 +29,7 @@ doi: https://doi.org/10.1021/acs.jctc.4c00190
 paper: https://arxiv.org/abs/2402.03789
 pypi: https://pypi.org/project/sevenn
 
+pred_col: e_form_per_atom_sevennet
 openness: OSOD
 trained_for_benchmark: false
 train_task: S2EFS
@@ -63,11 +64,7 @@ requirements:
   pymatgen: 2024.6.10
   numpy: 1.26.4
 
-training_set:
-  title: MPtrj
-  url: https://figshare.com/articles/dataset/23713842
-  n_structures: 1_580_395
-  n_materials: 145_923
+training_set: MPtrj
 
 notes:
   Description: |

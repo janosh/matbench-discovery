@@ -138,6 +138,9 @@ properties:
   openness:
     type: string
     enum: [OSOD, OSCD, CSOD, CSCD]
+  pred_col:
+    type: string
+
 required:
   - authors
   - date_added
@@ -150,6 +153,7 @@ required:
   - model_version
   - n_estimators
   - paper
+  - pred_col
   - repo
   - requirements
   - targets

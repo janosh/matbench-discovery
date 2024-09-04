@@ -1,4 +1,4 @@
-model_name: ORB-MPtrj
+model_name: ORB MPtrj
 model_version: v1
 matbench_discovery_version: 1.2.0
 date_added: "2024-09-02" # required
@@ -30,6 +30,7 @@ url: "#" # placeholder
 doi: "#" # placeholder
 paper: "#" # placeholder
 
+pred_col: e_form_per_atom_orb
 openness: OSOD
 trained_for_benchmark: true
 train_task: S2EFS

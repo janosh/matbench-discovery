@@ -388,7 +388,7 @@
       <td id="T__row2_col6" class="data row2 col6" >0.836</td>
     </tr>
     <tr>
-      <th id="T__level0_row3" class="row_heading level0 row3" ><span title="Version: v1">ORB-MPtrj</span></th>
+      <th id="T__level0_row3" class="row_heading level0 row3" ><span title="Version: v1">ORB MPtrj</span></th>
       <td id="T__row3_col0" class="data row3 col0" >0.963</td>
       <td id="T__row3_col1" class="data row3 col1" >6.079</td>
       <td id="T__row3_col2" class="data row3 col2" >0.929</td>

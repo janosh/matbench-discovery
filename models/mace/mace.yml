@@ -41,6 +41,7 @@ requirements:
   pymatgen: 2023.7.14
   numpy: 1.25.0
 
+pred_col: e_form_per_atom_mace
 openness: OSOD
 trained_for_benchmark: true
 train_task: S2EFS
@@ -52,11 +53,7 @@ model_type: UIP
 model_params: 4_688_656 # 2023-12-03-mace-128-L1: https://tinyurl.com/y7uhwpje
 n_estimators: 1
 
-training_set:
-  title: MPtrj
-  url: https://figshare.com/articles/dataset/23713842
-  n_structures: 1_580_395
-  n_materials: 145_923
+training_set: MPtrj
 
 hyperparams:
   max_force: 0.05

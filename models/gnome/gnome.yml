@@ -32,6 +32,7 @@ requirements:
   numpy: 1.26.2
   pymatgen: 2023.11.12
 
+pred_col: e_gnome_after_relax
 openness: OSCD
 trained_for_benchmark: false
 train_task: S2EFS
