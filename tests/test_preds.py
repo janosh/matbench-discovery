@@ -66,8 +66,9 @@ def test_load_df_wbm_with_preds(
         models=models, max_error_threshold=max_error_threshold
     )
     assert len(df_wbm_with_preds) == len(df_wbm)
-    assert list(df_wbm_with_preds) == list(df_wbm) + models + [
-        f"{model}_std" for model in models
+
+    assert list(df_wbm_with_preds) == list(df_wbm) + [
+        Model.label_map.get(model, model) for model in models
     ]
     assert df_wbm_with_preds.index.name == Key.mat_id
 
@@ -97,7 +98,7 @@ def test_load_df_wbm_max_error_threshold() -> None:
 
 
 def test_load_df_wbm_with_preds_raises() -> None:
-    with pytest.raises(ValueError, match="Unknown models: foo"):
+    with pytest.raises(ValueError, match="unknown_models='foo'"):
         load_df_wbm_with_preds(models=["foo"])
 
     with pytest.raises(

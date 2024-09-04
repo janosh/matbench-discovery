@@ -30,6 +30,7 @@ url: "#" # placeholder
 doi: "#" # placeholder
 paper: "#" # placeholder
 
+pred_col: e_form_per_atom_orb
 openness: OSCD
 trained_for_benchmark: false
 train_task: S2EFS

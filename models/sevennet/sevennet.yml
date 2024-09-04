@@ -29,6 +29,7 @@ doi: https://doi.org/10.1021/acs.jctc.4c00190
 paper: https://arxiv.org/abs/2402.03789
 pypi: https://pypi.org/project/sevenn
 
+pred_col: e_form_per_atom_sevennet
 openness: OSOD
 trained_for_benchmark: false
 train_task: S2EFS

@@ -204,9 +204,6 @@ class Files(StrEnum, metaclass=MetaFiles):
         file from and directory where to save it to.
         """
         obj = str.__new__(cls)
-        if url is not None and len(url) == 33:
-            # looks like a Google Drive ID, turn into direct download link
-            url = f"https://drive.usercontent.google.com/download?id={url}&confirm=t"
         obj._value_ = file_path.split("/")[-1]  # use file name as enum value
 
         obj._rel_path = file_path  # type: ignore[attr-defined] # noqa: SLF001

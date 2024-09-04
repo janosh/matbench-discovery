@@ -39,6 +39,7 @@ requirements:
   pymatgen: 2022.10.22
   numpy: 1.24.0
 
+pred_col: e_form_per_atom_chgnet
 openness: OSOD
 trained_for_benchmark: false
 train_task: S2EFSM

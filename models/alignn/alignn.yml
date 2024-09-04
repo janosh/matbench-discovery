@@ -30,6 +30,7 @@ requirements:
   scikit-learn: 1.2.2
   torch: 1.9.0+cu111
 
+pred_col: e_form_per_atom_alignn
 openness: OSOD
 trained_for_benchmark: true
 model_type: GNN

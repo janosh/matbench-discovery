@@ -1,7 +1,7 @@
 import svelte from 'eslint-plugin-svelte'
 import tslint from 'typescript-eslint'
 
-/** @type { import("eslint").Linter.FlatConfig[] } */
+/** @type { import("eslint").Linter.Config[] } */
 export default [
   ...tslint.configs.recommended,
   ...svelte.configs[`flat/recommended`],

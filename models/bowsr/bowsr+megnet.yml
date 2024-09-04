@@ -28,6 +28,7 @@ requirements:
   numpy: 1.24.0
   pandas: 1.5.1
 
+pred_col: e_form_per_atom_bowsr_megnet
 openness: OSOD
 trained_for_benchmark: false
 train_task: RS2RE
