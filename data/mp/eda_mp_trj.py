@@ -64,19 +64,17 @@ if zip_path != f"{MP_DIR}/2023-11-22-mp-trj.extxyz.zip":
 # %% extract extXYZ files from zipped directory without unpacking the whole archive
 # takes ~8 mins on M2 Max
 # takes ~5 mins on M3 Max
-atoms_list = ase_atoms_from_zip(
-    zip_path, file_check=lambda name: name.startswith("mptrj-gga-ggapu/mp-")
-)
+atoms_list = ase_atoms_from_zip(zip_path)
 
 mp_trj_atoms: dict[str, list[ase.Atoms]] = defaultdict(list)
 for atoms in atoms_list:
-    mp_id = atoms.info.get("mp_id", "no-id")
-    assert mp_id.startswith("mp-")
+    mp_id = atoms.info.get(Key.mat_id, "no-id")
+    assert mp_id.startswith(("mp-", "mvc-"))
     mp_trj_atoms[mp_id].append(atoms)
 
 del atoms_list  # free up memory
 
-assert len(mp_trj_atoms) == 145_919  # number of unique MP IDs
+assert len(mp_trj_atoms) == 145_923  # number of unique MP IDs
 
 
 # %%
@@ -102,7 +100,7 @@ df_mp_trj = pd.DataFrame(
     }
 ).T.convert_dtypes()  # convert object columns to float/int where possible
 df_mp_trj.index.name = "frame_id"
-assert len(df_mp_trj) == 1_580_312  # number of total frames
+assert len(df_mp_trj) == 1_580_395  # number of total frames
 if Key.formula not in df_mp_trj:
     raise KeyError(f"{Key.formula!s} not in {df_mp_trj.columns=}")
 
