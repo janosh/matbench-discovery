@@ -115,7 +115,7 @@ def ase_atoms_from_zip(
                 content = io.TextIOWrapper(file, encoding="utf-8").read()
                 atoms = ase.io.read(
                     io.StringIO(content), format="extxyz", index=slice(None)
-                )
+                )  # reads multiple Atoms objects as frames if file contains trajectory
                 if isinstance(atoms, Atoms):
                     atoms = [atoms]  # Wrap single Atoms object in a list
                 if filename_to_info:

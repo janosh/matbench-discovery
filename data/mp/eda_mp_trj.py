@@ -7,6 +7,7 @@ from typing import Any
 
 import ase
 import ase.io.extxyz
+import matplotlib.colorbar
 import matplotlib.colors
 import matplotlib.pyplot as plt
 import numpy as np
@@ -60,8 +61,7 @@ if zip_path != f"{MP_DIR}/2023-11-22-mp-trj.extxyz.zip":
     raise ValueError(f"expected zip file to be at {zip_path}")
 
 
-# %%
-# extract extXYZ files from zipped directory without unpacking the whole archive
+# %% extract extXYZ files from zipped directory without unpacking the whole archive
 # takes ~8 mins on M2 Max
 # takes ~5 mins on M3 Max
 atoms_list = ase_atoms_from_zip(
@@ -216,7 +216,7 @@ pmv.save_fig(fig_ptable_forces, f"{PDF_FIGS}/mp-trj-forces-ptable-hists.pdf")
 
 
 # %% plot histogram of number of sites per element
-# TODO fix the cbar position and weirdness with 6x10e0
+# TODO fix weirdness with 6x10^e0 y axis label on Cl tile
 ptable_n_sites_hist_path = f"{MP_DIR}/2022-09-16-mp-trj-elem-n-sites.json.bz2"
 srs_mp_trj_elem_n_sites = locals().get("srs_mp_trj_elem_n_sites")
 
@@ -265,7 +265,7 @@ fig_ptable_sites = pmv.ptable_hists(
 # turn off y axis for helium (why is it even there?)
 fig_ptable_sites.axes[17].get_yaxis().set_visible(b=False)
 
-cbar_ax = fig_ptable_sites.figure.add_axes([0.23, 0.8, 0.31, 0.025])
+cbar_ax = fig_ptable_sites.figure.add_axes([0.23, 0.73, 0.31, 0.025])
 cbar = matplotlib.colorbar.ColorbarBase(
     cbar_ax,
     cmap=cmap,
@@ -288,8 +288,7 @@ for count_mode in ("composition", "occurrence"):
     trj_elem_counts.to_json(f"{data_page}/{filename}.json")
 
 
-# %%
-# TODO https://github.com/janosh/pymatviz/issues/188 font sizes and box sizes
+# %% TODO https://github.com/janosh/pymatviz/issues/188 font sizes and box sizes
 count_mode = "composition"
 trj_elem_counts = pd.read_json(
     f"{data_page}/mp-trj-element-counts-by-{count_mode}.json", typ="series"
