@@ -103,10 +103,10 @@ def test_atoms_zip_round_trip(tmp_path: Path) -> None:
         assert set(original.info) == set(read.info)
 
 
-def test_ase_atoms_from_zip_with_file_check(tmp_path: Path) -> None:
+def test_ase_atoms_from_zip_with_file_filter(tmp_path: Path) -> None:
     zip_path = tmp_path / "test_structures.zip"
     ase_atoms_to_zip(dummy_atoms, zip_path)
-    read_atoms = ase_atoms_from_zip(zip_path, file_check=lambda name: "1" in name)
+    read_atoms = ase_atoms_from_zip(zip_path, file_filter=lambda name: "1" in name)
     assert len(read_atoms) == 1
     assert read_atoms[0].get_chemical_formula() == "H2O"
 
