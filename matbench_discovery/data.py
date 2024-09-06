@@ -300,8 +300,8 @@ class DataFiles(Files):
         "https://figshare.com/ndownloader/files/48241624",
     )
     mp_trj_extxyz = (
-        "mp/2023-11-22-mp-trj.extxyz.zip",
-        "https://figshare.com/ndownloader/files/43302033",
+        "mp/2024-09-03-mp-trj.extxyz.zip",
+        "https://figshare.com/ndownloader/files/49034296",
     )
     # snapshot of every task (calculation) in MP as of 2023-03-16 (14 GB)
     all_mp_tasks = (
