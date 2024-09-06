@@ -10,6 +10,15 @@
 
 <figure {...$$props} class:nide-non-compliant={!show_non_compliant}>
   <MetricsTable />
+  <div class="downloads">
+    Download table as
+    {#each ['PDF', 'SVG'] as file_ext}
+      {@const suffix = show_non_compliant ? '' : '-only-compliant'}
+      <a href="/figs/metrics-table-uniq-protos{suffix}.{file_ext.toLowerCase()}" download>
+        {file_ext}</a
+      >
+    {/each}
+  </div>
   <figcaption>
     Training size is the number of materials used to train the model. For models trained
     on DFT relaxations, we show the number of distinct frames in parentheses. In cases
@@ -42,5 +51,16 @@
   /* hide rows (<tr>) where any cell has a class of non-compliant */
   figure.nide-non-compliant :global(tr:has(.non-compliant)) {
     display: none;
+  }
+  div.downloads {
+    display: flex;
+    gap: 1ex;
+    justify-content: center;
+    margin: 1ex 0;
+  }
+  div.downloads a {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 0 6pt;
+    border-radius: 4pt;
   }
 </style>

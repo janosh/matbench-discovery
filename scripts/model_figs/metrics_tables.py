@@ -299,12 +299,17 @@ for (label, df_met), show_non_compliant in itertools.product(
     display(styler.set_caption(df_met.attrs.get("title")))
 
 
-# convert PDFs in site/static/figs to SVGs
-for pdf_path in glob(f"{ROOT}/site/static/figs/metrics-table*.pdf"):
-    subprocess.run(["pdf2svg", pdf_path, pdf_path.replace(".pdf", ".svg")], check=False)
+try:
+    # convert PDFs in site/static/figs to SVGs
+    for pdf_path in glob(f"{ROOT}/site/static/figs/metrics-table*.pdf"):
+        subprocess.run(
+            ["pdf2svg", pdf_path, pdf_path.replace(".pdf", ".svg")], check=False
+        )
 
-# svgo compress SVGs
-subprocess.run(["svgo", "--multipass", f"{ROOT}/site/static/figs"], check=False)
+    # svgo compress SVGs
+    subprocess.run(["svgo", "--multipass", f"{ROOT}/site/static/figs"], check=False)
+except FileNotFoundError:  # skip in CI where pdf2svg and svgo not installed
+    pass
 
 
 # %% PNG metrics table unused
