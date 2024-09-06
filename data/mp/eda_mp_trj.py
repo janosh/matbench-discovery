@@ -4,10 +4,10 @@
 import os
 from collections import defaultdict
 from typing import Any
-from zipfile import ZipFile
 
 import ase
 import ase.io.extxyz
+import matplotlib.colorbar
 import matplotlib.colors
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,12 +15,14 @@ import pandas as pd
 import plotly.express as px
 import pymatviz as pmv
 from matplotlib.colors import SymLogNorm
-from pymatgen.core import Composition, Element
+from pymatgen.core import Composition
+from pymatgen.core.tensors import Tensor
 from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, PDF_FIGS, ROOT, SITE_FIGS
 from matbench_discovery.data import DataFiles, ase_atoms_from_zip, df_wbm
+from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.enums import MbdKey
 
 __author__ = "Janosh Riebesell"
@@ -33,7 +35,14 @@ data_page = f"{ROOT}/site/src/routes/data"
 mp_occu_counts = pd.read_json(
     f"{data_page}/mp-element-counts-by-occurrence.json", typ="series"
 )
-df_mp = pd.read_csv(DataFiles.mp_energies.path, na_filter=False).set_index(Key.mat_id)
+df_mp = pd.read_csv(DataFiles.mp_energies.path, na_filter=False)
+# TODO get the real formula from the Composition rather than rename.
+df_mp = df_mp.rename(columns={"formula_pretty": Key.formula, "nsites": Key.n_sites})
+df_mp.loc[
+    df_mp[Key.mat_id].isin(["mp-1080032", "mp-1179882", "mp-1009221"]), Key.formula
+] = "NaN"
+assert len(df_mp[df_mp[Key.formula].isna() | (df_mp[Key.formula] == "")]) == 0
+df_mp = df_mp.set_index(Key.mat_id)
 
 
 # %% --- load preprocessed MPtrj summary data if available ---
@@ -45,27 +54,20 @@ else:
     print("MPtrj summary data not found, run cell below to generate")
 
 
-# %% downloaded mptrj-gga-ggapu.tar.gz from https://drive.google.com/drive/folders/1JQ-ry1RHvNliVg1Ut5OuyUxne51RHiT_
-# and extracted the mptrj-gga-ggapu directory (6.2 GB) to data/mp using macOS Finder
-# then zipped it to mp-trj.extxyz.zip (also using Finder, 1.6 GB)
-zip_path = f"{MP_DIR}/2023-11-22-mp-trj.extxyz.zip"
-zip_file = ZipFile(zip_path)
+# %% extract extXYZ files from zipped directory without unpacking the whole archive
+# takes ~8 mins on M2 Max
+# takes ~5 mins on M3 Max
+atoms_list = ase_atoms_from_zip(DataFiles.mp_trj_extxyz.path)
 
-atoms_list = ase_atoms_from_zip(
-    zip_path, file_check=lambda name: name.startswith("mptrj-gga-ggapu/mp-")
-)
-
-# extract extXYZ files from zipped directory without unpacking the whole archive
-# takes ~8 min on M2 Max
 mp_trj_atoms: dict[str, list[ase.Atoms]] = defaultdict(list)
 for atoms in atoms_list:
-    mp_id = atoms[0].info.get(Key.mat_id, "no-id")
-    assert mp_id.startswith("mp-")
-    mp_trj_atoms[mp_id].extend(atoms)
+    mp_id = atoms.info.get(Key.mat_id, "no-id")
+    assert mp_id.startswith(("mp-", "mvc-"))
+    mp_trj_atoms[mp_id].append(atoms)
 
 del atoms_list  # free up memory
 
-assert len(mp_trj_atoms) == 145_919  # number of unique MP IDs
+assert len(mp_trj_atoms) == 145_923  # number of unique MP IDs
 
 
 # %%
@@ -77,22 +79,36 @@ def info_dict_to_id(info: dict[str, int | str]) -> str:
 df_mp_trj = pd.DataFrame(
     {
         info_dict_to_id(atoms.info): atoms.info
-        | {key: atoms.arrays.get(key) for key in ("forces", "magmoms")}
-        | {"formula": str(atoms.symbols), Key.atom_nums: atoms.symbols}
+        | {
+            Key.forces: atoms.get_forces(),
+            Key.stress: atoms.get_stress(),
+            Key.magmoms: atoms.get_magnetic_moments()
+            if "magmoms" in atoms.calc.results
+            else None,
+            Key.formula: str(atoms.symbols),
+            Key.atom_nums: atoms.symbols,
+        }
         for atoms_list in tqdm(mp_trj_atoms.values(), total=len(mp_trj_atoms))
         for atoms in atoms_list
     }
 ).T.convert_dtypes()  # convert object columns to float/int where possible
 df_mp_trj.index.name = "frame_id"
-assert len(df_mp_trj) == 1_580_312  # number of total frames
+assert len(df_mp_trj) == 1_580_395  # number of total frames
 if Key.formula not in df_mp_trj:
     raise KeyError(f"{Key.formula!s} not in {df_mp_trj.columns=}")
 
 # this is the unrelaxed (but MP2020 corrected) formation energy per atom of the actual
 # relaxation step
-df_mp_trj = df_mp_trj.rename(columns={"ef_per_atom": MbdKey.e_form_dft})
+df_mp_trj[MbdKey.e_form_dft] = [
+    get_e_form_per_atom(
+        {"composition": row[Key.formula], "energy": row["mp2020_corrected_energy"]}
+    )
+    for _idx, row in tqdm(
+        df_mp_trj.iterrows(), total=len(df_mp_trj), desc="Compute formation energies"
+    )
+]
 df_mp_trj[Key.stress_trace] = [
-    np.trace(stress) / 3 for stress in tqdm(df_mp_trj[Key.stress])
+    np.trace(Tensor.from_voigt(stress)) / 3 for stress in tqdm(df_mp_trj[Key.stress])
 ]
 
 
@@ -119,9 +135,9 @@ if srs_mp_trj_elem_magmoms is None:
     df_mp_trj_elem_magmom = pd.DataFrame(
         [
             dict(zip(elems, magmoms, strict=False))
-            for elems, magmoms in df_mp_trj.set_index(Key.atom_nums)[Key.magmoms]
+            for elems, magmoms in df_mp_trj[[Key.atom_nums, Key.magmoms]]
             .dropna()
-            .items()
+            .itertuples(index=False)
         ]
     )
 
@@ -138,10 +154,10 @@ fig_ptable_magmoms = pmv.ptable_hists(
     symbol_pos=(0.2, 0.8),
     log=True,
     cbar_title="Magmoms ($μ_B$)",
-    cbar_title_kwds=dict(fontsize=16),
+    cbar_title_kwargs=dict(fontsize=16),
     cbar_coords=(0.18, 0.85, 0.42, 0.02),
     # annotate each element with its number of magmoms in MPtrj
-    anno_kwds=tile_count_anno,
+    # anno_kwds=tile_count_anno,
     colormap=color_map,
 )
 
@@ -162,7 +178,9 @@ if srs_mp_trj_elem_forces is None:
     df_mp_trj_elem_forces = pd.DataFrame(
         [
             dict(zip(elems, np.abs(forces).mean(axis=1), strict=False))
-            for elems, forces in df_mp_trj.set_index(Key.atom_nums)[Key.forces].items()
+            for elems, forces in df_mp_trj[[Key.atom_nums, Key.forces]].itertuples(
+                index=False
+            )
         ]
     )
     mp_trj_elem_forces = {
@@ -180,10 +198,10 @@ fig_ptable_forces = pmv.ptable_hists(
     symbol_pos=(0.3, 0.8),
     log=True,
     cbar_title="1/3 Σ|Forces| (eV/Å)",
-    cbar_title_kwds=dict(fontsize=16),
+    cbar_title_kwargs=dict(fontsize=16),
     cbar_coords=(0.18, 0.85, 0.42, 0.02),
     x_range=(0, max_force),
-    anno_kwds=tile_count_anno,
+    # anno_kwds=tile_count_anno,
     colormap=color_map,
 )
 
@@ -196,6 +214,7 @@ pmv.save_fig(fig_ptable_forces, f"{PDF_FIGS}/mp-trj-forces-ptable-hists.pdf")
 
 
 # %% plot histogram of number of sites per element
+# TODO fix weirdness with 6x10^e0 y axis label on Cl tile
 ptable_n_sites_hist_path = f"{MP_DIR}/2022-09-16-mp-trj-elem-n-sites.json.bz2"
 srs_mp_trj_elem_n_sites = locals().get("srs_mp_trj_elem_n_sites")
 
@@ -210,16 +229,12 @@ elif srs_mp_trj_elem_n_sites is None:
             dict.fromkeys(set(site_nums), len(site_nums))
             for site_nums in df_mp_trj[Key.atom_nums]
         ]
-    ).astype(int)
+    )
     mp_trj_elem_n_sites = {
-        col: list(df_mp_trj_elem_n_sites[col].dropna())
+        col: list(df_mp_trj_elem_n_sites[col].dropna().astype(int))
         for col in df_mp_trj_elem_n_sites
     }
     srs_mp_trj_elem_n_sites = pd.Series(mp_trj_elem_n_sites).sort_index()
-
-    srs_mp_trj_elem_n_sites.index = srs_mp_trj_elem_n_sites.index.map(
-        Element.from_Z
-    ).map(str)
     srs_mp_trj_elem_n_sites.to_json(ptable_n_sites_hist_path)
 
 
@@ -232,23 +247,23 @@ fig_ptable_sites = pmv.ptable_hists(
     symbol_pos=(0.8, 0.9),
     log=True,
     cbar_title="Number of Sites",
-    cbar_title_kwds=dict(fontsize=16),
+    cbar_title_kwargs=dict(fontsize=16),
     cbar_coords=(0.18, 0.85, 0.42, 0.02),
-    anno_kwds=lambda hist_vals: dict(
-        text=pmv.si_fmt(len(hist_vals), ".0f"),
-        xy=(0.8, 0.6),
-        bbox=dict(pad=2, edgecolor="none", facecolor="none"),
-    ),
+    # anno_kwds=lambda hist_vals: dict(
+    #     text=pmv.si_fmt(len(hist_vals), ".0f"),
+    #     xy=(0.8, 0.6),
+    #     bbox=dict(pad=2, edgecolor="none", facecolor="none"),
+    # ),
     x_range=(1, 300),
-    hist_kwds=lambda hist_vals: dict(
-        color=cmap(norm(len(hist_vals))), edgecolor="none"
-    ),
+    # hist_kwds=lambda hist_vals: dict(
+    #     color=cmap(norm(len(hist_vals))), edgecolor="none"
+    # ),
 )
 
 # turn off y axis for helium (why is it even there?)
 fig_ptable_sites.axes[17].get_yaxis().set_visible(b=False)
 
-cbar_ax = fig_ptable_sites.figure.add_axes([0.23, 0.8, 0.31, 0.025])
+cbar_ax = fig_ptable_sites.figure.add_axes([0.23, 0.73, 0.31, 0.025])
 cbar = matplotlib.colorbar.ColorbarBase(
     cbar_ax,
     cmap=cmap,
@@ -265,15 +280,13 @@ pmv.save_fig(fig_ptable_sites, f"{PDF_FIGS}/mp-trj-n-sites-ptable-hists.pdf")
 # %%
 elem_counts: dict[str, dict[str, int]] = {}
 for count_mode in ("composition", "occurrence"):
-    trj_elem_counts = pmv.count_elements(
-        df_mp_trj[Key.formula], count_mode=count_mode
-    ).astype(int)
+    trj_elem_counts = pmv.count_elements(df_mp_trj[Key.formula], count_mode=count_mode)
     elem_counts[count_mode] = trj_elem_counts
     filename = f"mp-trj-element-counts-by-{count_mode}"
     trj_elem_counts.to_json(f"{data_page}/{filename}.json")
 
 
-# %%
+# %% TODO https://github.com/janosh/pymatviz/issues/188 font sizes and box sizes
 count_mode = "composition"
 trj_elem_counts = pd.read_json(
     f"{data_page}/mp-trj-element-counts-by-{count_mode}.json", typ="series"
@@ -283,13 +296,13 @@ excl_elems = "He Ne Ar Kr Xe".split() if (excl_noble := False) else ()
 
 ax_ptable = pmv.ptable_heatmap(  # matplotlib version looks better for SI
     trj_elem_counts,
-    zero_color="#efefef",
+    # zero_color="#efefef",
     log=(log := SymLogNorm(linthresh=10_000)),
     exclude_elements=excl_elems,  # drop noble gases
     # cbar_range=None if excl_noble else (10_000, None),
     show_values=(show_vals := True),
-    label_font_size=17 if show_vals else 25,
-    value_font_size=14,
+    # label_font_size=17 if show_vals else 25,
+    # value_font_size=14,
     cbar_title="MPtrj Element Counts",
 )
 
@@ -321,15 +334,18 @@ pmv.save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
 
 # %% plot formation energy per atom distribution
 # pdf_kwds defined to use the same figure size for all plots
-fig = pmv.histogram(df_mp_trj[MbdKey.e_form_dft], bins=300)
-# fig.update_yaxes(type="log")
+fig = pmv.histogram(df_mp_trj[MbdKey.e_form_dft], bins=300, opacity=1)
+if log := False:
+    fig.update_yaxes(type="log")
 fig.layout.xaxis.title = "E<sub>form</sub> (eV/atom)"
 count_col = "Number of Structures"
 fig.layout.yaxis.title = count_col
 fig.show()
 
 pdf_kwds = dict(width=500, height=300)
-# pmv.save_fig(fig, f"{PDF_FIGS}/mp-trj-e-form-hist.pdf", **pdf_kwds)
+# pmv.save_fig(
+#     fig, f"{PDF_FIGS}/mp-trj-e-form-hist{'-log' if log else ''}.pdf", **pdf_kwds
+# )
 # pmv.save_fig(fig, f"{SITE_FIGS}/mp-trj-e-form-hist.svelte")
 
 

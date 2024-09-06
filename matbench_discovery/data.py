@@ -7,6 +7,7 @@ import io
 import os
 import sys
 import zipfile
+from collections import defaultdict
 from collections.abc import Callable
 from enum import EnumMeta, StrEnum, _EnumDict
 from glob import glob
@@ -83,7 +84,7 @@ def glob_to_df(
 def ase_atoms_from_zip(
     zip_filename: str | Path,
     *,
-    file_check: Callable[[str], bool] = lambda fname: fname.endswith(".extxyz"),
+    file_filter: Callable[[str], bool] = lambda fname: fname.endswith(".extxyz"),
     filename_to_info: bool = False,
     limit: int | None = None,
 ) -> list[Atoms]:
@@ -91,7 +92,7 @@ def ase_atoms_from_zip(
 
     Args:
         zip_filename (str): Path to the ZIP file.
-        file_check (Callable[[str], bool], optional): Function to check if a file
+        file_filter (Callable[[str], bool], optional): Function to check if a file
             should be read. Defaults to lambda fname: fname.endswith(".extxyz").
         filename_to_info (bool, optional): If True, assign filename to Atoms.info.
             Defaults to False.
@@ -105,13 +106,13 @@ def ase_atoms_from_zip(
     with zipfile.ZipFile(zip_filename) as zip_file:
         desc = f"Reading ASE Atoms from {zip_filename=}"
         for filename in tqdm(zip_file.namelist()[:limit], desc=desc):
-            if not file_check(filename):
+            if not file_filter(filename):
                 continue
             with zip_file.open(filename) as file:
                 content = io.TextIOWrapper(file, encoding="utf-8").read()
                 atoms = ase.io.read(
                     io.StringIO(content), format="extxyz", index=slice(None)
-                )
+                )  # reads multiple Atoms objects as frames if file contains trajectory
                 if isinstance(atoms, Atoms):
                     atoms = [atoms]  # Wrap single Atoms object in a list
                 if filename_to_info:
@@ -123,22 +124,32 @@ def ase_atoms_from_zip(
 
 def ase_atoms_to_zip(atoms_list: list[Atoms], zip_filename: str | Path) -> None:
     """Write a list of ASE Atoms to a ZIP archive with each Atoms object as a separate
-    extXYZ file.
+    extXYZ file, grouped by mat_id.
 
     Args:
         atoms_list (list[Atoms]): List of ASE Atoms objects.
-        zip_filename (str): Path to the ZIP file.
+        zip_filename (str | Path): Path to the ZIP file.
     """
+    # Group atoms by mat_id to avoid overwriting files with the same name
+    atoms_by_id = defaultdict(list)
+    for atoms in atoms_list:
+        mat_id = atoms.info.get(Key.mat_id, f"no-id-{atoms.get_chemical_formula()}")
+        atoms_by_id[mat_id].append(atoms)
+
+    # Write grouped atoms to the ZIP archive
     with zipfile.ZipFile(
         zip_filename, mode="w", compression=zipfile.ZIP_DEFLATED
     ) as zip_file:
-        for atoms in tqdm(atoms_list, desc=f"Writing ASE Atoms to {zip_filename=}"):
-            mat_id = atoms.info.get(Key.mat_id, f"no-id-{atoms.get_chemical_formula()}")
-
+        for mat_id, grouped_atoms in tqdm(
+            atoms_by_id.items(), desc=f"Writing ASE Atoms to {zip_filename=}"
+        ):
             buffer = io.StringIO()  # string buffer to write the extxyz content
-            ase.io.write(buffer, atoms, format="extxyz", append=True, write_info=True)
+            for atoms in grouped_atoms:
+                ase.io.write(
+                    buffer, atoms, format="extxyz", append=True, write_info=True
+                )
 
-            # Write the buffer content to the ZIP file
+            # Write the combined buffer content to the ZIP file
             zip_file.writestr(f"{mat_id}.extxyz", buffer.getvalue())
 
 
@@ -283,8 +294,8 @@ class DataFiles(Files):
         "https://figshare.com/ndownloader/files/48241624",
     )
     mp_trj_extxyz = (
-        "mp/2023-11-22-mp-trj.extxyz.zip",
-        "https://figshare.com/ndownloader/files/43302033",
+        "mp/2024-09-03-mp-trj.extxyz.zip",
+        "https://figshare.com/ndownloader/files/49034296",
     )
     # snapshot of every task (calculation) in MP as of 2023-03-16 (14 GB)
     all_mp_tasks = (
