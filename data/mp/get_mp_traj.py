@@ -118,7 +118,7 @@ df_batch.head()
 # %% use gzip CLI to check all files for archive corruption
 for path in tqdm(glob(f"{module_dir}/mp-tasks/*.json.gz")):
     try:
-        subprocess.run(["gzip", "--test", path], check=True)  # noqa: S607
+        subprocess.run(["gzip", "--test", path], check=True)
     except subprocess.CalledProcessError as exc:
         print(f"{path} raised {exc.stderr}")
         # ask user to delete corrupted file

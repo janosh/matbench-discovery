@@ -25,7 +25,11 @@ Our results show that ML models have become robust enough to deploy them as tria
 
 <slot name="metrics-table" />
 
-We welcome contributions that add new models to the leaderboard through GitHub PRs. See the [contributing guide](https://janosh.github.io/matbench-discovery/contribute) for details.
+If you'd like to refer to Matbench Discovery in a publication, please cite the [preprint](https://doi.org/10.48550/arXiv.2308.14920):
+
+> Riebesell, Janosh, Rhys E. A. Goodall, Philipp Benner, Yuan Chiang, Bowen Deng, Alpha A. Lee, Anubhav Jain, and Kristin A. Persson. "Matbench Discovery -- A Framework to Evaluate Machine Learning Crystal Stability Predictions." arXiv, August 28, 2023. https://doi.org/10.48550/arXiv.2308.14920.
+
+We welcome new models additions to the leaderboard through GitHub PRs. See the [contributing guide](https://janosh.github.io/matbench-discovery/contribute) for details.
 
 If you're interested in joining this work, please reach out via [GitHub discussion](https://github.com/janosh/matbench-discovery/discussions) or [email](mailto:janosh.riebesell@gmail.com?subject=Collaborate%20on%20Matbench%20Discovery).
 
