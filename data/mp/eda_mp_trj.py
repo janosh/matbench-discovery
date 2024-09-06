@@ -22,6 +22,7 @@ from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, PDF_FIGS, ROOT, SITE_FIGS
 from matbench_discovery.data import DataFiles, ase_atoms_from_zip, df_wbm
+from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.enums import MbdKey
 
 __author__ = "Janosh Riebesell"
@@ -53,18 +54,10 @@ else:
     print("MPtrj summary data not found, run cell below to generate")
 
 
-# %% downloaded mptrj-gga-ggapu.tar.gz from https://drive.google.com/drive/folders/1JQ-ry1RHvNliVg1Ut5OuyUxne51RHiT_
-# and extracted the mptrj-gga-ggapu directory (6.2 GB) to data/mp using macOS Finder
-# then zipped it to mp-trj.extxyz.zip (also using Finder, 1.6 GB)
-zip_path = DataFiles.mp_trj_extxyz.path
-if zip_path != f"{MP_DIR}/2023-11-22-mp-trj.extxyz.zip":
-    raise ValueError(f"expected zip file to be at {zip_path}")
-
-
 # %% extract extXYZ files from zipped directory without unpacking the whole archive
 # takes ~8 mins on M2 Max
 # takes ~5 mins on M3 Max
-atoms_list = ase_atoms_from_zip(zip_path)
+atoms_list = ase_atoms_from_zip(DataFiles.mp_trj_extxyz.path)
 
 mp_trj_atoms: dict[str, list[ase.Atoms]] = defaultdict(list)
 for atoms in atoms_list:
@@ -106,7 +99,14 @@ if Key.formula not in df_mp_trj:
 
 # this is the unrelaxed (but MP2020 corrected) formation energy per atom of the actual
 # relaxation step
-df_mp_trj = df_mp_trj.rename(columns={"ef_per_atom": MbdKey.e_form_dft})
+df_mp_trj[MbdKey.e_form_dft] = [
+    get_e_form_per_atom(
+        {"composition": row[Key.formula], "energy": row["mp2020_corrected_energy"]}
+    )
+    for _idx, row in tqdm(
+        df_mp_trj.iterrows(), total=len(df_mp_trj), desc="Compute formation energies"
+    )
+]
 df_mp_trj[Key.stress_trace] = [
     np.trace(Tensor.from_voigt(stress)) / 3 for stress in tqdm(df_mp_trj[Key.stress])
 ]
@@ -334,15 +334,18 @@ pmv.save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
 
 # %% plot formation energy per atom distribution
 # pdf_kwds defined to use the same figure size for all plots
-fig = pmv.histogram(df_mp_trj[MbdKey.e_form_dft], bins=300)
-# fig.update_yaxes(type="log")
+fig = pmv.histogram(df_mp_trj[MbdKey.e_form_dft], bins=300, opacity=1)
+if log := False:
+    fig.update_yaxes(type="log")
 fig.layout.xaxis.title = "E<sub>form</sub> (eV/atom)"
 count_col = "Number of Structures"
 fig.layout.yaxis.title = count_col
 fig.show()
 
 pdf_kwds = dict(width=500, height=300)
-# pmv.save_fig(fig, f"{PDF_FIGS}/mp-trj-e-form-hist.pdf", **pdf_kwds)
+# pmv.save_fig(
+#     fig, f"{PDF_FIGS}/mp-trj-e-form-hist{'-log' if log else ''}.pdf", **pdf_kwds
+# )
 # pmv.save_fig(fig, f"{SITE_FIGS}/mp-trj-e-form-hist.svelte")
 
 
