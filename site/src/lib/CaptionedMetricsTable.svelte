@@ -2,13 +2,13 @@
   import MetricsTable from '$figs/metrics-table-uniq-protos.svelte'
   import { pretty_num } from 'elementari'
 
-  export let show_proprietary = false
+  export let show_non_compliant = false
 
   let n_wbm_stable_uniq_protos = 32_942
   let n_wbm_uniq_protos = 215_488
 </script>
 
-<figure {...$$props} class:hide-prop={!show_proprietary}>
+<figure {...$$props} class:nide-non-compliant={!show_non_compliant}>
   <MetricsTable />
   <figcaption>
     Training size is the number of materials used to train the model. For models trained
@@ -39,8 +39,8 @@
     padding: 2pt 6pt;
     background-color: rgba(255, 255, 255, 0.07);
   }
-  /* hide rows (<tr>) where any cell has a class of proprietary */
-  figure.hide-prop :global(tr:has(.proprietary)) {
+  /* hide rows (<tr>) where any cell has a class of non-compliant */
+  figure.nide-non-compliant :global(tr:has(.non-compliant)) {
     display: none;
   }
 </style>

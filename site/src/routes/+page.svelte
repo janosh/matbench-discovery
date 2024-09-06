@@ -7,7 +7,7 @@
   import Icon from '@iconify/svelte'
   import { Toggle, Tooltip } from 'svelte-zoo'
 
-  let show_proprietary = false
+  let show_non_compliant = false
 
   const metadata = import.meta.glob(`$root/models/**/*.yml`, {
     eager: true,
@@ -23,7 +23,7 @@
     }
 
     const openness = md.openness ?? `OSOD`
-    if ((!best?.F1 || stats?.F1 > best?.F1) && (show_proprietary || openness == `OSOD`))
+    if ((!best?.F1 || stats?.F1 > best?.F1) && (show_non_compliant || openness == `OSOD`))
       return { ...stats, ...md } as ModelData
 
     return best
@@ -36,8 +36,8 @@
   <div slot="best-report">
     {#if best_model}
       {@const { model_name, F1, R2, DAF, repo, paper } = best_model}
-      We find <a href={repo}>{model_name}</a> (<a href={paper}>paper</a>) to achieve the
-      highest F1 score of {F1}, R<sup>2</sup> of {R2}
+      <a href={repo}>{model_name}</a> (<a href={paper}>paper</a>) achieves the highest F1
+      score of {F1}, R<sup>2</sup> of {R2}
       and a discovery acceleration factor (DAF) of {DAF}
       (i.e. a ~{Number(DAF).toFixed(1)}x higher rate of stable structures compared to
       dummy discovery in the already enriched test set containing 16% stable materials).
@@ -45,7 +45,7 @@
   </div>
 
   <div slot="metrics-table" style="display: grid; gap: 1ex; place-items: center;">
-    <Toggle bind:checked={show_proprietary}
+    <Toggle bind:checked={show_non_compliant}
       >Show non-compliant models <Tooltip max_width="10em">
         <span slot="tip">
           Models can be non-compliant for multiple reasons<br />
@@ -61,6 +61,6 @@
         <Icon icon="octicon:info-16" inline style="padding: 0 3pt;" />
       </Tooltip>&ensp;</Toggle
     >
-    <CaptionedMetricsTable bind:show_proprietary />
+    <CaptionedMetricsTable bind:show_non_compliant />
   </div>
 </Readme>
