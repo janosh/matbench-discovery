@@ -14,14 +14,14 @@
   export let data
 
   let sort_by: keyof ModelStats | 'model_name' = `F1`
-  let show_proprietary: boolean = false
+  let show_non_compliant: boolean = false
   let show_details: boolean = false
   let order: 'asc' | 'desc' = `desc`
   let show_n_best: number = data.models.length // show only best models
   const min_models: number = 2
 
   $: models = data.models
-    .filter((model) => show_proprietary || (model.openness ?? `OSOD`) == `OSOD`)
+    .filter((model) => show_non_compliant || (model.openness ?? `OSOD`) == `OSOD`)
     .sort((model_1, model_2) => {
       const [val_1, val_2] = [model_1[sort_by], model_2[sort_by]]
       if (typeof val_1 == `string`) {
@@ -75,7 +75,7 @@
   </p>
 
   <span>
-    <Toggle bind:checked={show_proprietary}>Show proprietary models&ensp;</Toggle>
+    <Toggle bind:checked={show_non_compliant}>Show non-compliant models&ensp;</Toggle>
     &emsp;&emsp; Sort
     <input type="number" min={min_models} max={models.length} bind:value={show_n_best} />
     best models
