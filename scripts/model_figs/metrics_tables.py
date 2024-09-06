@@ -1,4 +1,8 @@
 # %%
+import itertools
+import subprocess
+from glob import glob
+
 import numpy as np
 import pandas as pd
 import yaml
@@ -7,7 +11,7 @@ from pymatviz.io import df_to_html_table, df_to_pdf
 from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
 
-from matbench_discovery import DATA_DIR, PDF_FIGS, SCRIPTS, SITE_FIGS
+from matbench_discovery import DATA_DIR, PDF_FIGS, ROOT, SCRIPTS, SITE_FIGS
 from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.enums import MbdKey, Open
 from matbench_discovery.metrics import stable_metrics
@@ -33,11 +37,11 @@ df_met = df_metrics_uniq_protos
 date_added_col = "Date Added"
 df_met.loc[Key.train_set.label] = df_met.loc[date_added_col] = ""
 
-hide_closed = False  # hide proprietary models (openness != OSOD)
-closed_models = [
+non_compliant_models = [
     key
     for key, meta in MODEL_METADATA.items()
-    if meta.get("openness", Open.OSOD) != Open.OSOD
+    if meta.get("openness", Open.OSOD)
+    != Open.OSOD  # TODO add `or uses_extra_training_data`
 ]
 
 with open(f"{DATA_DIR}/training-sets.yml") as file:
@@ -51,7 +55,7 @@ for model in df_metrics:
 
     # Add model version as hover tooltip to model name
     model_version = model_metadata.get("model_version", "")
-    css_cls = "proprietary" if model in closed_models else ""
+    css_cls = "non-compliant" if model in non_compliant_models else ""
     attrs = {"title": f"Version: {model_version}", "class": css_cls}
     html_attr_str = " ".join(f'{k}="{v}"' for k, v in attrs.items() if v)
     df_met.loc[Key.model_name.label, model] = f"<span {html_attr_str}>{model}</span>"
@@ -205,18 +209,19 @@ meta_cols = [
 ]
 show_cols = [*f"F1,DAF,Prec,Acc,TPR,TNR,MAE,RMSE,{R2_col}".split(","), *meta_cols]
 
-for label, df_met in (
-    ("", df_metrics),
-    ("-first-10k", df_metrics_10k),
-    ("-uniq-protos", df_metrics_uniq_protos),
+for (label, df_met), show_non_compliant in itertools.product(
+    (
+        ("", df_metrics),
+        ("-first-10k", df_metrics_10k),
+        ("-uniq-protos", df_metrics_uniq_protos),
+    ),
+    (True, False),
 ):
     # abbreviate long column names
     df_met = df_met.rename(index={"R2": R2_col, "Precision": "Prec", "Accuracy": "Acc"})
     df_met.index.name = "Model"
     # only keep columns we want to show
-    df_table = df_met.drop(columns=closed_models if hide_closed else []).T.filter(
-        show_cols
-    )
+    df_table = df_met.T.filter(show_cols)
     df_table = df_table.set_index(Key.model_name.label)
     df_table.index.name = None
 
@@ -276,13 +281,30 @@ for label, df_met in (
         # draw line between classification and regression metrics
         styles=f"{col_selector} {{ border-left: 1px solid white; }}{hide_scroll_bar}",
     )
-    suffix = "" if hide_closed else "-with-closed"
+    suffix = "" if show_non_compliant else "-only-compliant"
+    non_compliant_idx = [  # get index HTML strings of non-compliant models
+        idx
+        for idx in styler.index
+        if any(f">{model_name}<" in idx for model_name in non_compliant_models)
+    ]
     try:
-        df_to_pdf(styler, f"{PDF_FIGS}/metrics-table{label}{suffix}.pdf")
+        for pdf_path in (PDF_FIGS, f"{ROOT}/site/static/figs"):
+            df_to_pdf(
+                styler.hide([] if show_non_compliant else non_compliant_idx),
+                f"{pdf_path}/metrics-table{label}{suffix}.pdf",
+            )
     except (ImportError, RuntimeError) as exc:
         print(f"df_to_pdf failed: {exc}")
 
     display(styler.set_caption(df_met.attrs.get("title")))
+
+
+# convert PDFs in site/static/figs to SVGs
+for pdf_path in glob(f"{ROOT}/site/static/figs/metrics-table*.pdf"):
+    subprocess.run(["pdf2svg", pdf_path, pdf_path.replace(".pdf", ".svg")], check=False)
+
+# svgo compress SVGs
+subprocess.run(["svgo", "--multipass", f"{ROOT}/site/static/figs"], check=False)
 
 
 # %% PNG metrics table unused
