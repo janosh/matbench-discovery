@@ -282,7 +282,7 @@ for (label, df_met), show_non_compliant in itertools.product(
         styles=f"{col_selector} {{ border-left: 1px solid white; }}{hide_scroll_bar}",
     )
     suffix = "" if show_non_compliant else "-only-compliant"
-    non_compliant_idx = [  # get index HTML strings of non-compliant models
+    non_compliant_idx = [  # get HTML strings of non-compliant models in styler.index
         idx
         for idx in styler.index
         if any(f">{model_name}<" in idx for model_name in non_compliant_models)
