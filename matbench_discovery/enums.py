@@ -49,13 +49,24 @@ class LabelEnum(StrEnum):
         return {str(val.label): val.description for val in cls.__members__.values()}
 
 
+eV_per_atom = pmv.html_tag(  # noqa: N816
+    "(eV/atom)", tag="span", style="font-size: 0.8em; font-weight: lighter;"
+)
+
+
 @unique
 class MbdKey(LabelEnum):
     """Keys used to access dataframes columns."""
 
-    e_form_dft = "e_form_per_atom_mp2020_corrected", "DFT E_form"
-    e_form_raw = "e_form_per_atom_uncorrected", "DFT E_form raw"
-    e_form_wbm = "e_form_per_atom_wbm", "WBM E_form"
+    e_form_dft = (
+        "e_form_per_atom_mp2020_corrected",
+        f"DFT E<sub>form</sub> {eV_per_atom}",
+    )
+    e_form_raw = (
+        "e_form_per_atom_uncorrected",
+        f"DFT raw E<sub>form</sub> {eV_per_atom}",
+    )
+    e_form_wbm = "e_form_per_atom_wbm", f"WBM E<sub>form</sub> {eV_per_atom}"
     each_true = "e_above_hull_mp2020_corrected_ppd_mp", "E<sub>MP hull dist</sub>"
     each_mean_models = "each_mean_models", "E<sub>hull dist</sub> mean of models"
     each_err_models = "each_err_models", "E<sub>hull dist</sub> mean error of models"
@@ -134,11 +145,6 @@ class TestSubset(LabelEnum):
     uniq_protos = "uniq_protos", "Unique Structure Prototypes"
     ten_k_most_stable = "10k_most_stable", "10k Most Stable"
     full = "full", "Full Test Set"
-
-
-eV_per_atom = pmv.html_tag(  # noqa: N816
-    "(eV/atom)", tag="span", style="font-size: 0.8em; font-weight: lighter;"
-)
 
 
 class Quantity(LabelEnum):

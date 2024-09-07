@@ -6,35 +6,40 @@ import { compile as json_to_ts } from 'json-schema-to-typescript'
 import { compile } from 'mdsvex'
 import { dirname } from 'path'
 
-export const load = async () => {
+export const load = async ({ params }) => {
   const files = import.meta.glob(`$root/models/**/*.yml`, {
     eager: true,
     import: `default`,
   }) as Record<string, ModelData>
 
+  let slug = params.slug
+  if (slug === `bowsr`) slug = `bowsr+megnet` // TODO change model name to BOWSR+MEGNet everywhere
+
   // merge computed and static model metadata
-  const models = Object.entries(files)
-    .filter(([key]) => key.match(/models\/(.+)\/\1.*\.yml/))
-    .map(([key, metadata]) => {
-      const { model_name } = metadata
-      const stats = model_stats[model_name] as ModelData
-      if (!stats) console.trace(`Missing stats for ${model_name}`)
-      return { ...metadata, ...(stats ?? {}), dirname: dirname(key) }
-    }) as ModelData[]
+  console.log(`Object.keys(files)`, Object.keys(files))
+
+  const [path, metadata] = Object.entries(files).filter(([key]) =>
+    key.endsWith(`${slug}.yml`),
+  )?.[0] as [string, ModelData]
+
+  metadata.dirname = dirname(path)
+  const { model_name } = metadata
 
   // parse markdown notes to html with mdsvex
-  for (const { model_name, notes } of models) {
-    if (!notes) continue
-    for (const [key, note] of Object.entries(notes)) {
+  if (metadata.notes) {
+    for (const [key, note] of Object.entries(metadata.notes)) {
       const out = await compile(note)
       if (!out?.code) {
         console.trace(`Failed to compile model note ${model_name}/${key}`)
         // remove outer p tags
-      } else notes[key] = out.code.replace(/^\s<p>(.*)<\/p>\s$/, `$1`)
+      } else metadata.notes[key] = out.code.replace(/^\s<p>(.*)<\/p>\s$/, `$1`)
     }
   }
 
-  return { models }
+  const stats = model_stats[model_name] as ModelData
+  if (!stats) console.trace(`Missing stats for ${model_name}`)
+
+  return { model: { ...metadata, ...(stats ?? {}) } }
 }
 
 // keep model-schema.d.ts in sync with model-schema.yml (source of truth)

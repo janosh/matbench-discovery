@@ -109,7 +109,7 @@ for trace in fig.data:
     MAE, R2 = df_metrics[model][["MAE", "R2"]]
     trace.name = f"{model} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
 
-fig.update_layout(legend=legend)
+fig.layout.legend.update(legend)
 pmv.powerups.add_identity_line(fig)
 fig.show()
 
@@ -138,7 +138,7 @@ for trace in fig.data:
     MAE, R2 = df_metrics[model][["MAE", "R2"]]
     trace.name = f"{model} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
 
-fig.update_layout(legend=legend)
+fig.layout.legend.update(legend)
 pmv.powerups.add_identity_line(fig)
 fig.show()
 
