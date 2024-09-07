@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { dev } from '$app/environment'
   import { page } from '$app/stores'
   import TRAINING_SETS from '$root/data/training-sets.yml'
   import pkg from '$site/package.json'
@@ -8,10 +9,7 @@
   import Mace from './mace.svelte'
 
   export let data
-
-  $: model = data.models.find(
-    (model) => model.model_name.toLowerCase().replace(/\s+/g, '-') === $page.params.slug,
-  )
+  $: model = data.model
 
   function n_days_ago(dateString: string): string {
     return (
@@ -109,6 +107,20 @@
         </a>
       {/if}
     </section>
+
+    {#each [['e-form', 'Formation Energies'], ['each', 'Convex Hull Distance']] as [which_energy, title]}
+      {#await import(`$figs/energy-parity/${which_energy}-parity-${model.model_name.toLowerCase().replaceAll(` `, `-`)}.svelte`) then ParityPlot}
+        <h3 style="text-align: center; margin: 2em auto -2em;">
+          DFT vs ML {title}
+        </h3>
+        <svelte:component this={ParityPlot.default} height="500" />
+      {:catch error}
+        {#if dev}
+          <p>Failed to load plot:</p>
+          <pre>{error}</pre>
+        {/if}
+      {/await}
+    {/each}
 
     <section class="authors">
       <h2>Authors</h2>
@@ -328,5 +340,10 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+  }
+
+  /* hide plotly titles */
+  div.model-detail :global(svg g.infolayer g.g-gtitle) {
+    display: none;
   }
 </style>
