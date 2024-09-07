@@ -92,4 +92,5 @@ export interface ModelMetadata {
   model_type: 'GNN' | 'UIP' | 'BO-GNN' | 'Fingerprint' | 'Transformer' | 'RF'
   targets: 'E' | 'EF' | 'EFS' | 'EFSM'
   openness?: 'OSOD' | 'OSCD' | 'CSOD' | 'CSCD'
+  pred_col: string
 }
