@@ -15,9 +15,9 @@
 
 > Disclaimer: We evaluate how accurately ML models predict solid-state thermodynamic stability. Although this is an important aspect of high-throughput materials discovery, the ranking cannot give a complete picture of a model's general applicability to materials. A high ranking does not constitute endorsement by the Materials Project.
 
-Matbench Discovery is an [interactive leaderboard](https://janosh.github.io/matbench-discovery/models) and associated [PyPI package](https://pypi.org/project/matbench-discovery) which together make it easy to rank ML energy models on a task designed to simulate a high-throughput discovery campaign for new stable inorganic crystals.
+Matbench Discovery is an [interactive leaderboard](https://janosh.github.io/matbench-discovery/models) and associated [PyPI package](https://pypi.org/project/matbench-discovery) which together make it easy to rank ML energy models on a task designed to simulate high-throughput discovery of new stable inorganic crystals.
 
-We've tested <slot name="model-count" />models covering multiple methodologies ranging from random forests with structure fingerprints to graph neural networks, from one-shot predictors to iterative Bayesian optimizers and interatomic potential relaxers.
+We've tested <slot name="model-count" />models covering multiple methodologies including graph neural network (GNN) interatomic potentials, GNN one-shot predictors, iterative Bayesian optimizers and random forests with shallow-learning structure fingerprints.
 
 <slot name="best-report" />
 
@@ -27,10 +27,8 @@ Our results show that ML models have become robust enough to deploy them as tria
 
 If you'd like to refer to Matbench Discovery in a publication, please cite the [preprint](https://doi.org/10.48550/arXiv.2308.14920):
 
-> Riebesell, Janosh, Rhys E. A. Goodall, Philipp Benner, Yuan Chiang, Bowen Deng, Alpha A. Lee, Anubhav Jain, and Kristin A. Persson. "Matbench Discovery -- A Framework to Evaluate Machine Learning Crystal Stability Predictions." arXiv, August 28, 2023. https://doi.org/10.48550/arXiv.2308.14920.
+> Janosh Riebesell, Rhys E. A. Goodall, Philipp Benner, Yuan Chiang, Bowen Deng, Alpha A. Lee, Anubhav Jain, and Kristin A. Persson. "Matbench Discovery -- A Framework to Evaluate Machine Learning Crystal Stability Predictions." arXiv, August 28, 2023. https://doi.org/10.48550/arXiv.2308.14920.
 
-We welcome new models additions to the leaderboard through GitHub PRs. See the [contributing guide](https://janosh.github.io/matbench-discovery/contribute) for details.
-
-If you're interested in joining this work, please reach out via [GitHub discussion](https://github.com/janosh/matbench-discovery/discussions) or [email](mailto:janosh.riebesell@gmail.com?subject=Collaborate%20on%20Matbench%20Discovery).
+We welcome new models additions to the leaderboard through GitHub PRs. See the [contributing guide](https://janosh.github.io/matbench-discovery/contribute) for details and ask support questions via [GitHub discussion](https://github.com/janosh/matbench-discovery/discussions).
 
 For detailed results and analysis, check out the [preprint](https://janosh.github.io/matbench-discovery/preprint).

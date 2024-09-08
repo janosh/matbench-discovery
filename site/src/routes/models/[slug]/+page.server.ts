@@ -12,12 +12,9 @@ export const load = async ({ params }) => {
     import: `default`,
   }) as Record<string, ModelData>
 
-  let slug = params.slug
-  if (slug === `bowsr`) slug = `bowsr+megnet` // TODO change model name to BOWSR+MEGNet everywhere
-
   // merge performance metrics and static model metadata
   const [path, metadata] = Object.entries(files).filter(([key]) =>
-    key.endsWith(`${slug}.yml`),
+    key.endsWith(`${params.slug}.yml`),
   )?.[0] as [string, ModelData]
 
   metadata.dirname = dirname(path)
