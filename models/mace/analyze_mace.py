@@ -2,14 +2,19 @@
 
 # %%
 import os
+from pathlib import Path
 
 import pandas as pd
+import plotly.express as px
 import pymatviz as pmv
+from pymatgen.analysis.structure_matcher import StructureMatcher
+from pymatgen.core import Structure
 from pymatviz.enums import Key
+from tqdm.auto import tqdm
 
 from matbench_discovery import SITE_FIGS
 from matbench_discovery import plots as plots
-from matbench_discovery.data import df_wbm
+from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.preds import Model
 
@@ -87,3 +92,40 @@ fig.layout.yaxis.title = "MACE energy"
 
 fig.show()
 pmv.save_fig(fig, f"{SITE_FIGS}/mace-wbm-IS2RE-raw-energy-parity.svelte")
+
+
+# %%
+df_mace_struc = pd.read_json(
+    Path(str(Model.mace)).with_suffix("").with_suffix(".json.gz")
+).set_index(Key.mat_id)
+
+
+# %%
+df_wbm_structs = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path).set_index(
+    Key.mat_id
+)
+
+
+# %%
+# look at RSMD between initial and final structures
+df_mace_struc["rmsd"] = [
+    StructureMatcher().get_rms_dist(
+        Structure.from_dict(df_mace_struc.loc[wbm_id]["mace_structure"]),
+        Structure.from_dict(df_wbm_structs.loc[wbm_id][Key.cse]["structure"]),
+    )
+    for wbm_id in tqdm(df_mace_struc.index)
+]
+df_mace_struc["max_dist"] = df_mace_struc["rmsd"].str[1]
+df_mace_struc["rmsd"] = df_mace_struc["rmsd"].str[0]
+
+
+# %%
+# TODO why do we get NaNs?
+df_mace_struc["rmsd-filled"] = df_mace_struc["rmsd"].fillna(0)
+
+
+# %%
+fig = px.histogram(
+    df_mace_struc, x="rmsd-filled", nbins=200, log_y=False, range_x=(-1e-4, 0.3)
+)
+fig.show()
