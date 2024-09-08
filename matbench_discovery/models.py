@@ -26,11 +26,12 @@ for model_dir in MODEL_DIRS:
             model_data = yaml.full_load(yml_file)
 
         model_data["model_dir"] = model_dir
+        # YAML file name serves as model key and must match Model enum attribute
+        model_data["model_key"] = metadata_file.split("/")[-1].split(".yml")[0]
         MODEL_METADATA[model_data["model_name"]] = model_data
 
-        model_type = model_data.get("model_type")
         try:
-            ModelType(model_type)  # check if model_type is valid
+            ModelType(model_data.get("model_type"))  # check if model_type is valid
         except ValueError as exc:
             exc.add_note(f"{metadata_file=}")
             raise

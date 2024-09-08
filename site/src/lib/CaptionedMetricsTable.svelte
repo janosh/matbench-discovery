@@ -1,11 +1,20 @@
 <script lang="ts">
   import MetricsTable from '$figs/metrics-table-uniq-protos.svelte'
   import { pretty_num } from 'elementari'
+  import { onMount } from 'svelte'
 
   export let show_non_compliant = false
 
   let n_wbm_stable_uniq_protos = 32_942
   let n_wbm_uniq_protos = 215_488
+
+  onMount(() => {
+    // convert model names into clickable links to /models/<model_key>
+    for (const cell of document.querySelectorAll('span[data-model-key]')) {
+      const model_key = cell.getAttribute('data-model-key')
+      cell.innerHTML = `<a href="/models/${model_key}">${cell.innerHTML}</a>`
+    }
+  })
 </script>
 
 <figure {...$$props} class:nide-non-compliant={!show_non_compliant}>
