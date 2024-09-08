@@ -3,7 +3,7 @@
   import { ModelCard } from '$lib'
   import { lower_is_better } from '$root/scripts/metrics-which-is-better.yml'
   import Icon from '@iconify/svelte'
-  import { interpolateCividis } from 'd3-scale-chromatic'
+  import { interpolateCividis as cividis } from 'd3-scale-chromatic'
   import { ColorBar } from 'elementari'
   import { RadioButtons, Toggle, Tooltip } from 'svelte-zoo'
   import { flip } from 'svelte/animate'
@@ -61,7 +61,7 @@
   $: order = lower_is_better.includes(sort_by) ? `asc` : `desc`
 
   function bg_color(val: number, min: number, max: number) {
-    return interpolateCividis(1 - (val - min) / (max - min)).replace(`)`, `, 0.5)`)
+    return cividis(1 - (val - min) / (max - min)).replace(`)`, `, 0.5)`)
   }
 </script>
 
@@ -102,7 +102,7 @@
 
   <legend>
     heading color best
-    <ColorBar color_scale={interpolateCividis} style="min-width: min(70vw, 400px);" />
+    <ColorBar color_scale={cividis} style="min-width: min(70vw, 400px);" />
     worst
   </legend>
 
@@ -133,6 +133,13 @@
     {/each}
   </ol>
 </div>
+
+<!-- link to ALL model pages with hidden links for the crawler -->
+{#each data.models as model}
+  <a href="/models/{model.model_name.toLowerCase().replaceAll(` `, `-`)}" hidden>
+    {model.model_name}
+  </a>
+{/each}
 
 <style>
   legend {
