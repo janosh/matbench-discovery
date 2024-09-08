@@ -33,9 +33,10 @@ name_map = {
     "M3GNet→MEGNet": "M3GNet",
     "CHGNet→MEGNet": "CHGNet",
 }
-df_met = df_metrics_uniq_protos
 date_added_col = "Date Added"
-df_met.loc[Key.train_set.label] = df_met.loc[date_added_col] = ""
+df_metrics_uniq_protos.loc[Key.train_set.label] = df_metrics_uniq_protos.loc[
+    date_added_col
+] = ""
 
 non_compliant_models = [
     key
@@ -47,21 +48,31 @@ non_compliant_models = [
 with open(f"{DATA_DIR}/training-sets.yml") as file:
     TRAINING_SETS = yaml.safe_load(file)
 
+# add model metadata to df_metrics(_10k, _uniq_protos)
 for model in df_metrics:
     model_name = name_map.get(model, model)
     model_metadata = MODEL_METADATA.get(model_name, {})
+    model_key = model_metadata.get("model_key", model_name)
 
-    df_met.loc[date_added_col, model] = model_metadata.get("date_added", "")
+    df_metrics_uniq_protos.loc[date_added_col, model] = model_metadata.get(
+        "date_added", ""
+    )
 
     # Add model version as hover tooltip to model name
     model_version = model_metadata.get("model_version", "")
-    css_cls = "non-compliant" if model in non_compliant_models else ""
-    attrs = {"title": f"Version: {model_version}", "class": css_cls}
+    compliant_css_cls = "non-compliant" if model in non_compliant_models else ""
+    attrs = {
+        "title": f"Version: {model_version}",
+        "class": compliant_css_cls,
+        "data-model-key": model_key,
+    }
     html_attr_str = " ".join(f'{k}="{v}"' for k, v in attrs.items() if v)
-    df_met.loc[Key.model_name.label, model] = f"<span {html_attr_str}>{model}</span>"
+    df_metrics_uniq_protos.loc[Key.model_name.label, model] = (
+        f"<span {html_attr_str}>{model}</span>"
+    )
     # assign this col to all tables
     for df in (df_metrics, df_metrics_10k, df_metrics_uniq_protos):
-        df.loc[Key.model_name.label] = df_met.loc[Key.model_name.label]
+        df.loc[Key.model_name.label] = df_metrics_uniq_protos.loc[Key.model_name.label]
 
     if training_sets := model_metadata.get("training_set"):
         if isinstance(training_sets, dict | str):
@@ -124,7 +135,7 @@ for model in df_metrics:
             f"<span title='{tooltip}'>{train_size_str} ({dataset_str})</span>"
         )
 
-        df_met.loc[Key.train_set.label, model] = train_size_str
+        df_metrics_uniq_protos.loc[Key.train_set.label, model] = train_size_str
     elif model == "Dummy":
         continue
     else:
@@ -141,7 +152,7 @@ for model in df_metrics:
 
     title = "Number of trainable model parameters"
     formatted_params = si_fmt(model_params)
-    df_met.loc[Key.model_params.label.replace("eter", ""), model] = (
+    df_metrics_uniq_protos.loc[Key.model_params.label.replace("eter", ""), model] = (
         f'<span {title=} data-sort-value="{model_params}">{formatted_params}'
         f"</span>{n_estimators_str}"
     )
@@ -153,7 +164,7 @@ for model in df_metrics:
         Key.targets,
     ):
         default = {MbdKey.openness: Open.OSOD}.get(key, pd.NA)
-        df_met.loc[key.label, model] = model_metadata.get(key, default)
+        df_metrics_uniq_protos.loc[key.label, model] = model_metadata.get(key, default)
 
 
 # %% add dummy classifier results to df_metrics(_10k, _uniq_protos)

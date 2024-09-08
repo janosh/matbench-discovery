@@ -36,10 +36,9 @@
   <div slot="best-report">
     {#if best_model}
       {@const { model_name, F1, R2, DAF, repo, paper, model_type } = best_model}
-      {@const model_key = model_name.replace(/ /g, `-`).toLowerCase()}
-      <a href="/models/{model_key}">{model_name}</a> ({model_type},
-      <a href={paper}>paper</a>, <a href={repo}>code</a>) achieves the highest F1 score of {F1},
-      R<sup>2</sup> of {R2}
+      {@const model_key = model_name.replaceAll(` `, `-`).toLowerCase()}
+      <a href="/models/{model_key}">{model_name}</a> (<a href={paper}>paper</a>,
+      <a href={repo}>code</a>) achieves the highest F1 score of {F1}, R<sup>2</sup> of {R2}
       and a discovery acceleration factor (DAF) of {DAF}
       (i.e. a ~{Number(DAF).toFixed(1)}x higher rate of stable structures compared to
       dummy discovery in the already enriched test set containing 16% stable materials).

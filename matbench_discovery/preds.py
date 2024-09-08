@@ -153,7 +153,7 @@ def load_df_wbm_with_preds(
             pred_col = model_data.get("pred_col")
             if not pred_col:
                 raise ValueError(
-                    f"pred_col not specified for {model_name} in {model_yaml_path}"
+                    f"pred_col not specified for {model_name} in {model_yaml_path!r}"
                 )
 
             if pred_col not in df_preds:

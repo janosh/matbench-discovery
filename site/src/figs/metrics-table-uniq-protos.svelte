@@ -412,7 +412,7 @@
   </thead>
   <tbody>
     <tr>
-      <th id="T__level0_row0" class="row_heading level0 row0" ><span title="Version: v1" class="non-compliant">ORB</span></th>
+      <th id="T__level0_row0" class="row_heading level0 row0" ><span title="Version: v1" class="non-compliant" data-model-key="orb">ORB</span></th>
       <td id="T__row0_col0" class="data row0 col0" >0.867</td>
       <td id="T__row0_col1" class="data row0 col1" >6.020</td>
       <td id="T__row0_col2" class="data row0 col2" >0.920</td>
@@ -428,7 +428,7 @@
       <td id="T__row0_col12" class="data row0 col12" >2024-09-02</td>
     </tr>
     <tr>
-      <th id="T__level0_row1" class="row_heading level0 row1" ><span title="Version: n/a" class="non-compliant">MatterSim</span></th>
+      <th id="T__level0_row1" class="row_heading level0 row1" ><span title="Version: n/a" class="non-compliant" data-model-key="mattersim">MatterSim</span></th>
       <td id="T__row1_col0" class="data row1 col0" >0.859</td>
       <td id="T__row1_col1" class="data row1 col1" >5.646</td>
       <td id="T__row1_col2" class="data row1 col2" >0.863</td>
@@ -444,7 +444,7 @@
       <td id="T__row1_col12" class="data row1 col12" >2024-06-16</td>
     </tr>
     <tr>
-      <th id="T__level0_row2" class="row_heading level0 row2" ><span title="Version: n/a" class="non-compliant">GNoME</span></th>
+      <th id="T__level0_row2" class="row_heading level0 row2" ><span title="Version: n/a" class="non-compliant" data-model-key="gnome">GNoME</span></th>
       <td id="T__row2_col0" class="data row2 col0" >0.829</td>
       <td id="T__row2_col1" class="data row2 col1" >5.523</td>
       <td id="T__row2_col2" class="data row2 col2" >0.844</td>
@@ -460,7 +460,7 @@
       <td id="T__row2_col12" class="data row2 col12" >2024-02-03</td>
     </tr>
     <tr>
-      <th id="T__level0_row3" class="row_heading level0 row3" ><span title="Version: v1">ORB MPtrj</span></th>
+      <th id="T__level0_row3" class="row_heading level0 row3" ><span title="Version: v1" data-model-key="orb-mptrj">ORB MPtrj</span></th>
       <td id="T__row3_col0" class="data row3 col0" >0.763</td>
       <td id="T__row3_col1" class="data row3 col1" >4.679</td>
       <td id="T__row3_col2" class="data row3 col2" >0.715</td>
@@ -476,7 +476,7 @@
       <td id="T__row3_col12" class="data row3 col12" >2024-09-02</td>
     </tr>
     <tr>
-      <th id="T__level0_row4" class="row_heading level0 row4" ><span title="Version: v0.9.1_w_cutoff">SevenNet</span></th>
+      <th id="T__level0_row4" class="row_heading level0 row4" ><span title="Version: v0.9.1_w_cutoff" data-model-key="sevennet">SevenNet</span></th>
       <td id="T__row4_col0" class="data row4 col0" >0.724</td>
       <td id="T__row4_col1" class="data row4 col1" >4.252</td>
       <td id="T__row4_col2" class="data row4 col2" >0.650</td>
@@ -492,7 +492,7 @@
       <td id="T__row4_col12" class="data row4 col12" >2024-07-13</td>
     </tr>
     <tr>
-      <th id="T__level0_row5" class="row_heading level0 row5" ><span title="Version: v0.3.5">MACE</span></th>
+      <th id="T__level0_row5" class="row_heading level0 row5" ><span title="Version: v0.3.5" data-model-key="mace">MACE</span></th>
       <td id="T__row5_col0" class="data row5 col0" >0.669</td>
       <td id="T__row5_col1" class="data row5 col1" >3.777</td>
       <td id="T__row5_col2" class="data row5 col2" >0.577</td>
@@ -508,7 +508,7 @@
       <td id="T__row5_col12" class="data row5 col12" >2023-07-14</td>
     </tr>
     <tr>
-      <th id="T__level0_row6" class="row_heading level0 row6" ><span title="Version: v0.3.0">CHGNet</span></th>
+      <th id="T__level0_row6" class="row_heading level0 row6" ><span title="Version: v0.3.0" data-model-key="chgnet">CHGNet</span></th>
       <td id="T__row6_col0" class="data row6 col0" >0.613</td>
       <td id="T__row6_col1" class="data row6 col1" >3.361</td>
       <td id="T__row6_col2" class="data row6 col2" >0.514</td>
@@ -524,7 +524,7 @@
       <td id="T__row6_col12" class="data row6 col12" >2023-03-03</td>
     </tr>
     <tr>
-      <th id="T__level0_row7" class="row_heading level0 row7" ><span title="Version: v2022.9.20">M3GNet</span></th>
+      <th id="T__level0_row7" class="row_heading level0 row7" ><span title="Version: v2022.9.20" data-model-key="m3gnet">M3GNet</span></th>
       <td id="T__row7_col0" class="data row7 col0" >0.569</td>
       <td id="T__row7_col1" class="data row7 col1" >2.882</td>
       <td id="T__row7_col2" class="data row7 col2" >0.441</td>
@@ -540,7 +540,7 @@
       <td id="T__row7_col12" class="data row7 col12" >2022-09-20</td>
     </tr>
     <tr>
-      <th id="T__level0_row8" class="row_heading level0 row8" ><span title="Version: 2023.01.10">ALIGNN</span></th>
+      <th id="T__level0_row8" class="row_heading level0 row8" ><span title="Version: 2023.01.10" data-model-key="alignn">ALIGNN</span></th>
       <td id="T__row8_col0" class="data row8 col0" >0.567</td>
       <td id="T__row8_col1" class="data row8 col1" >3.206</td>
       <td id="T__row8_col2" class="data row8 col2" >0.490</td>
@@ -556,7 +556,7 @@
       <td id="T__row8_col12" class="data row8 col12" >2023-06-02</td>
     </tr>
     <tr>
-      <th id="T__level0_row9" class="row_heading level0 row9" ><span title="Version: v2022.9.20">MEGNet</span></th>
+      <th id="T__level0_row9" class="row_heading level0 row9" ><span title="Version: v2022.9.20" data-model-key="megnet">MEGNet</span></th>
       <td id="T__row9_col0" class="data row9 col0" >0.510</td>
       <td id="T__row9_col1" class="data row9 col1" >2.959</td>
       <td id="T__row9_col2" class="data row9 col2" >0.452</td>
@@ -572,7 +572,7 @@
       <td id="T__row9_col12" class="data row9 col12" >2022-11-14</td>
     </tr>
     <tr>
-      <th id="T__level0_row10" class="row_heading level0 row10" ><span title="Version: v0.1.0">CGCNN</span></th>
+      <th id="T__level0_row10" class="row_heading level0 row10" ><span title="Version: v0.1.0" data-model-key="cgcnn">CGCNN</span></th>
       <td id="T__row10_col0" class="data row10 col0" >0.507</td>
       <td id="T__row10_col1" class="data row10 col1" >2.855</td>
       <td id="T__row10_col2" class="data row10 col2" >0.436</td>
@@ -588,7 +588,7 @@
       <td id="T__row10_col12" class="data row10 col12" >2022-12-28</td>
     </tr>
     <tr>
-      <th id="T__level0_row11" class="row_heading level0 row11" ><span title="Version: v0.1.0">CGCNN+P</span></th>
+      <th id="T__level0_row11" class="row_heading level0 row11" ><span title="Version: v0.1.0" data-model-key="cgcnn+p">CGCNN+P</span></th>
       <td id="T__row11_col0" class="data row11 col0" >0.500</td>
       <td id="T__row11_col1" class="data row11 col1" >2.563</td>
       <td id="T__row11_col2" class="data row11 col2" >0.392</td>
@@ -604,7 +604,7 @@
       <td id="T__row11_col12" class="data row11 col12" >2023-02-03</td>
     </tr>
     <tr>
-      <th id="T__level0_row12" class="row_heading level0 row12" ><span title="Version: v0.1.0">Wrenformer</span></th>
+      <th id="T__level0_row12" class="row_heading level0 row12" ><span title="Version: v0.1.0" data-model-key="wrenformer">Wrenformer</span></th>
       <td id="T__row12_col0" class="data row12 col0" >0.466</td>
       <td id="T__row12_col1" class="data row12 col1" >2.256</td>
       <td id="T__row12_col2" class="data row12 col2" >0.345</td>
@@ -620,7 +620,7 @@
       <td id="T__row12_col12" class="data row12 col12" >2022-11-26</td>
     </tr>
     <tr>
-      <th id="T__level0_row13" class="row_heading level0 row13" ><span title="Version: 2022.9.20">BOWSR</span></th>
+      <th id="T__level0_row13" class="row_heading level0 row13" ><span title="Version: 2022.9.20" data-model-key="bowsr">BOWSR</span></th>
       <td id="T__row13_col0" class="data row13 col0" >0.423</td>
       <td id="T__row13_col1" class="data row13 col1" >1.964</td>
       <td id="T__row13_col2" class="data row13 col2" >0.300</td>
@@ -636,7 +636,7 @@
       <td id="T__row13_col12" class="data row13 col12" >2022-11-17</td>
     </tr>
     <tr>
-      <th id="T__level0_row14" class="row_heading level0 row14" ><span title="Version: v1.1.2">Voronoi RF</span></th>
+      <th id="T__level0_row14" class="row_heading level0 row14" ><span title="Version: v1.1.2" data-model-key="voronoi-rf">Voronoi RF</span></th>
       <td id="T__row14_col0" class="data row14 col0" >0.333</td>
       <td id="T__row14_col1" class="data row14 col1" >1.579</td>
       <td id="T__row14_col2" class="data row14 col2" >0.241</td>
