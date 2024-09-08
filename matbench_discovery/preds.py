@@ -30,7 +30,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # alignn_ff = "alignn_ff/2023-07-11-alignn-ff-wbm-IS2RE.csv.gz", "alignn/alignn-ff.yml", "ALIGNN FF"
 
     # BOWSR optimizer coupled with original megnet
-    bowsr_megnet = "bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv.gz", "bowsr/bowsr+megnet.yml", "BOWSR"  # fmt: skip
+    bowsr_megnet = "bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv.gz", "bowsr/bowsr.yml", "BOWSR"  # fmt: skip
 
     # default CHGNet model from publication with 400,438 params
     chgnet = "chgnet/2023-12-21-chgnet-0.3.0-wbm-IS2RE.csv.gz", "chgnet/chgnet.yml", "CHGNet"  # fmt: skip
@@ -153,7 +153,7 @@ def load_df_wbm_with_preds(
             pred_col = model_data.get("pred_col")
             if not pred_col:
                 raise ValueError(
-                    f"pred_col not specified for {model_name} in {model_yaml_path}"
+                    f"pred_col not specified for {model_name} in {model_yaml_path!r}"
                 )
 
             if pred_col not in df_preds:

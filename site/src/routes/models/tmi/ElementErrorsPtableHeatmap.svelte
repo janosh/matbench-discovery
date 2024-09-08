@@ -1,5 +1,5 @@
 <script lang="ts">
-  import per_elem_errors from '$figs/per-element-each-errors.json'
+  import per_elem_each_errors from '$figs/per-element-each-errors.json'
   import { PtableInset } from '$lib'
   import type { ChemicalElement } from 'elementari'
   import { ColorBar, ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
@@ -7,8 +7,8 @@
 
   export let color_scale: string[] = [`Viridis`]
   export let active_element: ChemicalElement | null = null
-  // $: active_counts = elem_counts[filter]
-  export let models: string[] = Object.keys(per_elem_errors)
+  export let models: string[] = Object.keys(per_elem_each_errors)
+  // must be string[] instead of string for svelte-multiselect to be correctly restored by snapshot
   export let current_model: string[] = [models[2]]
   export let manual_cbar_max: boolean = false
   export let normalized: boolean = true
@@ -19,9 +19,9 @@
   // remove test_set_std_key from models
   $: models = models.filter((model) => model !== test_set_std_key)
 
-  const test_set_std = per_elem_errors[test_set_std_key]
+  const test_set_std = per_elem_each_errors[test_set_std_key]
 
-  $: heatmap_values = Object.entries(per_elem_errors[current_model[0]]).map(
+  $: heatmap_values = Object.entries(per_elem_each_errors[current_model[0]]).map(
     ([key, val]) => {
       const denom = normalized ? test_set_std[key] : 1
       if (denom) return val / denom
@@ -86,9 +86,7 @@
   color_scale={color_scale[0]}
   bind:active_element
   color_scale_range={cs_range}
-  tile_props={{
-    precision: `0.2`,
-  }}
+  tile_props={{ precision: `0.2` }}
   show_photo={false}
 >
   <TableInset slot="inset" style="align-content: center;">

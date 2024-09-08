@@ -5,12 +5,18 @@
   import HistLargestEachErrorsFpDiffModels from '$figs/hist-largest-each-errors-fp-diff-models.svelte'
   import ScatterLargestEachErrorsFpDiffModels from '$figs/scatter-largest-each-errors-fp-diff-models.svelte'
   import ScatterLargeFpDiffVsEachError from '$figs/scatter-largest-fp-diff-each-error-models.svelte'
+  import ElementErrorsPtableHeatmap from './ElementErrorsPtableHeatmap.svelte'
 </script>
 
 <h1>Too Much Information</h1>
 
-Stuff that didn't make the cut into the
-<a href="/models">model page</a>.
+Stuff that didn't make the cut into the&nbsp;<a href="/models">model page</a>.
+
+<h2 style="margin: 4em auto 1em; text-align: center;">
+  Per-Element Model Error Heatmaps
+</h2>
+
+<ElementErrorsPtableHeatmap />
 
 <h2>Does error correlate with element prevalence in training set?</h2>
 
