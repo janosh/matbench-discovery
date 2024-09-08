@@ -228,15 +228,12 @@
     <section class="model-info">
       <h2>Model Info</h2>
       <ul>
-        <li><strong>Type:</strong> {model.model_type}</li>
-        <li><strong>Targets:</strong> {model.targets}</li>
-        <li><strong>Openness:</strong> {model.openness}</li>
-        <li><strong>Train Task:</strong> {model.train_task}</li>
-        <li><strong>Test Task:</strong> {model.test_task}</li>
-        <li>
-          <strong>Trained for Benchmark:</strong>
-          {model.trained_for_benchmark ? `Yes` : `No`}
-        </li>
+        {#each [['Model Version', model.model_version], ['Model Type', model.model_type], ['Targets', model.targets], ['Openness', model.openness], ['Train Task', model.train_task], ['Test Task', model.test_task], ['Trained for Benchmark', model.trained_for_benchmark ? `Yes` : `No`]] as [key, value]}
+          <li>
+            {key}
+            <strong>{value}</strong>
+          </li>
+        {/each}
       </ul>
     </section>
 
@@ -285,15 +282,15 @@
     {/if}
 
     {#if model.requirements}
-      <section class="requirements">
-        <h2>Package Dependencies</h2>
+      <section class="deps">
+        <h2>Dependencies</h2>
         <ul>
           {#each Object.entries(model.requirements) as [pkg, version]}
             {@const href = version.startsWith(`http`)
               ? version
               : `https://pypi.org/project/${pkg}/${version}`}
             <li>
-              <strong>{pkg}</strong>:
+              {pkg}
               <a {href} target="_blank" rel="noopener noreferrer">{version}</a>
             </li>
           {/each}
@@ -348,6 +345,25 @@
 
   h3 {
     margin: 1em 0;
+  }
+
+  section:is(.deps, .model-info) ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1em;
+    padding: 0;
+  }
+  section:is(.deps, .model-info) ul li {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 2pt 6pt;
+    border-radius: 3pt;
+    text-align: center;
+    margin: 0;
+    font-weight: lighter;
+  }
+  section:is(.deps, .model-info) ul li :is(a, strong) {
+    display: block;
+    font-weight: bold;
   }
 
   .meta-info,
