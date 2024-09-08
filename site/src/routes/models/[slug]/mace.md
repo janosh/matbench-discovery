@@ -8,7 +8,7 @@
 Total energy without [MP 2020 energy corrections](https://github.com/materialsproject/pymatgen/blob/02a4ca8aa0277b5f6db11f4de4fdbba129de70a5/pymatgen/entries/compatibility.py#L823).
 
 {#if browser}
-  <RawEnergyParity style="margin: 2em 0;" />
+<RawEnergyParity style="margin: 2em 0;" />
 {/if}
 
 <style>
