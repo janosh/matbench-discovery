@@ -39,9 +39,10 @@ os.makedirs(parity_scatter_out_dir, exist_ok=True)
 
 for model, which_energy in itertools.product(df_metrics, (use_e_form, use_each)):
     if which_energy == use_each:
-        df_in = df_each_pred.copy().assign(
-            **{MbdKey.each_true: df_preds[MbdKey.each_true]}
-        )
+        df_in = df_each_pred.copy()
+        df_in[MbdKey.each_true] = df_preds[MbdKey.each_true]
+        df_in[Key.formula] = df_preds[Key.formula]
+        df_in[Key.mat_id] = df_preds[Key.mat_id]
         e_true_col = MbdKey.each_true
     elif which_energy == use_e_form:
         df_in = df_preds
@@ -51,7 +52,6 @@ for model, which_energy in itertools.product(df_metrics, (use_e_form, use_each))
 
     e_pred_col = f"{model} {e_true_col.label.replace('DFT ', '')}"
     df_in = df_in.rename(columns={model: e_pred_col})
-    list(df_in)
 
     fig = pmv.density_scatter_plotly(
         df=df_in.reset_index(drop=True),
@@ -60,6 +60,7 @@ for model, which_energy in itertools.product(df_metrics, (use_e_form, use_each))
         hover_data=[Key.formula],
         hover_name=Key.mat_id,
         opacity=0.7,
+        color_continuous_scale="agsunset",
     )
 
     fig.layout.title.update(text=f"{model} {which_energy}", x=0.5)
