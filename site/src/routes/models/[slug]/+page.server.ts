@@ -12,7 +12,11 @@ export const load = async ({ params }) => {
   // merge performance metrics and static model metadata
   const [path, metadata] = Object.entries(files).filter(([key]) =>
     key.endsWith(`${params.slug}.yml`),
-  )?.[0] as [string, ModelData]
+  )[0] as [string, ModelData]
+
+  if (!metadata) {
+    throw `Failed to load model metadata for ${params.slug}`
+  }
 
   metadata.dirname = dirname(path)
   const { model_name } = metadata
@@ -20,6 +24,7 @@ export const load = async ({ params }) => {
   // parse markdown notes to html with mdsvex
   if (metadata.notes) {
     for (const [key, note] of Object.entries(metadata.notes)) {
+      if (typeof note !== `string`) continue
       const out = await compile(note)
       if (!out?.code) {
         console.trace(`Failed to compile model note ${model_name}/${key}`)

@@ -238,35 +238,27 @@
     </section>
 
     {#if model.training_set}
-      {@const train_set_info =
-        typeof model.training_set == `string`
-          ? TRAINING_SETS[model.training_set]
-          : model.training_set}
-      {@const { n_structures, url, title, n_materials } = train_set_info}
-      {@const pretty_n_mat =
-        typeof n_materials == `number` ? pretty_num(n_materials) : n_materials}
+      <h2>Training Set</h2>
       <section class="training-set">
-        <h2>Training Set</h2>
-        <ul>
-          <li>
-            <strong>Title:</strong>
-            <a href={url} target="_blank" rel="noopener noreferrer">{title}</a>
-          </li>
-          <li>
-            <strong>Number of Structures:</strong>
+        {#each Array.isArray(model.training_set) ? model.training_set : [model.training_set] as train_set}
+          {@const train_set_info =
+            typeof train_set == `string` ? TRAINING_SETS[train_set] : train_set}
+          {@const { n_structures, url, title, n_materials } = train_set_info}
+          {@const pretty_n_mat =
+            typeof n_materials == `number` ? pretty_num(n_materials) : n_materials}
+          <p>
+            <a href={url} target="_blank" rel="noopener noreferrer">{title}</a>:
             <Tooltip text={n_structures.toLocaleString()}>
-              <span>{pretty_num(n_structures)}</span>
+              <strong slot="trigger">{pretty_num(n_structures)}</strong>
             </Tooltip>
-          </li>
-          {#if n_materials}
-            <li>
-              <strong>Number of Materials:</strong>
+            structures
+            {#if n_materials}
               <Tooltip text={n_materials.toLocaleString()}>
-                <span>{pretty_n_mat}</span>
+                from <strong slot="trigger">{pretty_n_mat}</strong> materials
               </Tooltip>
-            </li>
-          {/if}
-        </ul>
+            {/if}
+          </p>
+        {/each}
       </section>
     {/if}
 
@@ -299,32 +291,25 @@
     {/if}
 
     {#if model.notes}
-      {@const { description, training, missing_preds, ...otherNotes } = model.notes}
       <section class="notes">
         <h2>Notes</h2>
-        {#if description}
-          <h3>Description</h3>
-          <p>{@html description}</p>
-        {/if}
-        {#if training}
-          <h3>Training</h3>
-          {#if typeof training === `string`}
-            <p>{@html training}</p>
+        {#each Object.entries(model.notes) as [key, note]}
+          <h3>{key}</h3>
+          {#if typeof note === `string`}
+            <p>{@html note}</p>
+          {:else if Array.isArray(note)}
+            <ol>
+              {#each note as val}
+                <li>{@html val}</li>
+              {/each}
+            </ol>
           {:else}
             <ul>
-              {#each Object.entries(training) as [key, value]}
-                <li><strong>{key}:</strong> {value}</li>
+              {#each Object.entries(note) as [key, val]}
+                <li><strong>{key}:</strong> {val}</li>
               {/each}
             </ul>
           {/if}
-        {/if}
-        {#if missing_preds}
-          <h3>Missing Predictions</h3>
-          <p>{missing_preds}</p>
-        {/if}
-        {#each Object.entries(otherNotes) as [key, value]}
-          <h3>{key}</h3>
-          <p>{@html value}</p>
         {/each}
       </section>
     {/if}
@@ -360,6 +345,7 @@
     text-align: center;
     margin: 0;
     font-weight: lighter;
+    max-width: 12em;
   }
   section:is(.deps, .model-info) ul li :is(a, strong) {
     display: block;
@@ -402,7 +388,7 @@
   }
 
   /* hide plotly titles */
-  div.model-detail :global(h3) {
+  div.model-detail :not(section.notes) :global(h3) {
     text-align: center;
     margin: 2em auto 0;
   }

@@ -158,10 +158,11 @@
 <section class="metrics" style={metrics_style}>
   <h3>Metrics</h3>
   <ul>
-    {#each stats as { key, label, unit }}
+    <!-- hide run time if value is 0 (i.e. not available) -->
+    {#each stats.filter(({ key }) => key != `Run Time (h)` || data[key] > 0) as { key, label, unit }}
       <li class:active={sort_by == key}>
         <label for={key}>{@html label ?? key}</label>
-        <strong>{data[key]} <small>{unit ?? ``}</small></strong>
+        <strong>{pretty_num(data[key])} <small>{unit ?? ``}</small></strong>
       </li>
     {/each}
   </ul>
