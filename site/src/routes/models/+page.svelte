@@ -9,7 +9,6 @@
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
   import type { Snapshot } from './$types'
-  import ElementErrorsPtableHeatmap from './ElementErrorsPtableHeatmap.svelte'
 
   export let data
 
@@ -133,12 +132,6 @@
       </li>
     {/each}
   </ol>
-
-  <h2 style="margin: 4em auto 1em; text-align: center;">
-    Per-Element Model Error Heatmaps
-  </h2>
-
-  <ElementErrorsPtableHeatmap />
 </div>
 
 <style>

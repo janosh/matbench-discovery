@@ -15,9 +15,7 @@ export const load = async ({ params }) => {
   let slug = params.slug
   if (slug === `bowsr`) slug = `bowsr+megnet` // TODO change model name to BOWSR+MEGNet everywhere
 
-  // merge computed and static model metadata
-  console.log(`Object.keys(files)`, Object.keys(files))
-
+  // merge performance metrics and static model metadata
   const [path, metadata] = Object.entries(files).filter(([key]) =>
     key.endsWith(`${slug}.yml`),
   )?.[0] as [string, ModelData]

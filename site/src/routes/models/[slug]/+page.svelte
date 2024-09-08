@@ -1,21 +1,37 @@
 <script lang="ts">
   import { dev } from '$app/environment'
   import { page } from '$app/stores'
+  import per_elem_each_errors from '$figs/per-element-each-errors.json'
+  import { PtableInset } from '$lib'
   import TRAINING_SETS from '$root/data/training-sets.yml'
   import pkg from '$site/package.json'
   import Icon from '@iconify/svelte'
-  import { pretty_num } from 'elementari'
+  import type { ChemicalElement } from 'elementari'
+  import {
+    ColorBar,
+    ColorScaleSelect,
+    PeriodicTable,
+    pretty_num,
+    TableInset,
+  } from 'elementari'
   import { CopyButton, Tooltip } from 'svelte-zoo'
-  import Mace from './mace.svelte'
+  import Mace from './mace.md'
 
   export let data
   $: model = data.model
+  let color_scale: string[] = [`Viridis`]
+  let active_element: ChemicalElement | null = null
 
   function n_days_ago(dateString: string): string {
     return (
       (new Date().getTime() - new Date(dateString).getTime()) /
       (1000 * 60 * 60 * 24)
     ).toLocaleString('en-US', { maximumFractionDigits: 0 })
+  }
+
+  export const snapshot = {
+    capture: () => ({ color_scale }),
+    restore: (values) => ({ color_scale } = values),
   }
 </script>
 
@@ -110,7 +126,8 @@
 
     {#each [['e-form', 'Formation Energies'], ['each', 'Convex Hull Distance']] as [which_energy, title]}
       {#await import(`$figs/energy-parity/${which_energy}-parity-${model.model_name.toLowerCase().replaceAll(` `, `-`)}.svelte`) then ParityPlot}
-        <h3 style="text-align: center; margin: 2em auto -2em;">
+        <!-- negative margin-bottom corrects for display: none plot title -->
+        <h3 style="margin-bottom: -2em;">
           DFT vs ML {title}
         </h3>
         <svelte:component this={ParityPlot.default} height="500" />
@@ -121,6 +138,35 @@
         {/if}
       {/await}
     {/each}
+    {#if $page.params.slug == `mace`}
+      <Mace />
+    {/if}
+
+    <ColorScaleSelect bind:selected={color_scale} />
+
+    <h3>Convex hull distance prediction errors projected onto elements</h3>
+    <PeriodicTable
+      heatmap_values={per_elem_each_errors[model.model_name]}
+      color_scale={color_scale[0]}
+      bind:active_element
+      tile_props={{ precision: `0.2` }}
+      show_photo={false}
+    >
+      <TableInset slot="inset" style="align-content: center;">
+        <PtableInset
+          element={active_element}
+          elem_counts={per_elem_each_errors[model.model_name]}
+          show_percent={false}
+          unit="<small style='font-weight: lighter;'>eV / atom</small>"
+        />
+        <ColorBar
+          text_side="top"
+          color_scale={color_scale[0]}
+          tick_labels={5}
+          style="width: 85%; margin: 0 2em;"
+        />
+      </TableInset>
+    </PeriodicTable>
 
     <section class="authors">
       <h2>Authors</h2>
@@ -189,20 +235,19 @@
         <li><strong>Test Task:</strong> {model.test_task}</li>
         <li>
           <strong>Trained for Benchmark:</strong>
-          {model.trained_for_benchmark ? 'Yes' : 'No'}
+          {model.trained_for_benchmark ? `Yes` : `No`}
         </li>
       </ul>
     </section>
 
     {#if model.training_set}
       {@const train_set_info =
-        typeof model.training_set == 'string'
+        typeof model.training_set == `string`
           ? TRAINING_SETS[model.training_set]
           : model.training_set}
       {@const { n_structures, url, title, n_materials } = train_set_info}
       {@const pretty_n_mat =
         typeof n_materials == `number` ? pretty_num(n_materials) : n_materials}
-      {@const n_mat_str = n_materials ? ` from ${pretty_n_mat} materials` : ``}
       <section class="training-set">
         <h2>Training Set</h2>
         <ul>
@@ -216,12 +261,14 @@
               <span>{pretty_num(n_structures)}</span>
             </Tooltip>
           </li>
-          {#if n_materials}<li>
+          {#if n_materials}
+            <li>
               <strong>Number of Materials:</strong>
               <Tooltip text={n_materials.toLocaleString()}>
                 <span>{pretty_n_mat}</span>
               </Tooltip>
-            </li>{/if}
+            </li>
+          {/if}
         </ul>
       </section>
     {/if}
@@ -242,7 +289,7 @@
         <h2>Package Dependencies</h2>
         <ul>
           {#each Object.entries(model.requirements) as [pkg, version]}
-            {@const href = version.startsWith('http')
+            {@const href = version.startsWith(`http`)
               ? version
               : `https://pypi.org/project/${pkg}/${version}`}
             <li>
@@ -264,7 +311,7 @@
         {/if}
         {#if training}
           <h3>Training</h3>
-          {#if typeof training === 'string'}
+          {#if typeof training === `string`}
             <p>{@html training}</p>
           {:else}
             <ul>
@@ -284,10 +331,6 @@
         {/each}
       </section>
     {/if}
-
-    {#if $page.params.slug == 'mace'}
-      <Mace />
-    {/if}
   </div>
 {:else}
   <p>Model not found.</p>
@@ -299,7 +342,7 @@
   }
 
   h2 {
-    margin: 0;
+    margin: 1em auto 0;
     padding: 0;
   }
 
@@ -343,6 +386,10 @@
   }
 
   /* hide plotly titles */
+  div.model-detail :global(h3) {
+    text-align: center;
+    margin: 2em auto 0;
+  }
   div.model-detail :global(svg g.infolayer g.g-gtitle) {
     display: none;
   }
