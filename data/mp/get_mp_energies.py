@@ -78,7 +78,7 @@ spg_nums = df_mp[Key.wyckoff].str.split("_").str[2].astype(int)
 assert (spg_nums.sort_index() == df_spg["number"].sort_index()).all()
 
 df_mp.to_csv(DataFiles.mp_energies.path)
-# df = pd.read_csv(DataFiles.mp_energies.path, na_filter=False).set_index(Key.mat_id)
+# df_mp = pd.read_csv(DataFiles.mp_energies.path, na_filter=False).set_index(Key.mat_id)
 
 
 # %% reproduce fig. 1b from https://arxiv.org/abs/2001.10591 (as data consistency check)

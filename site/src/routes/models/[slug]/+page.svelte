@@ -97,14 +97,14 @@
 
     <section class="links">
       <a href={model.repo} target="_blank" rel="noopener noreferrer">
-        <Icon icon="octicon:mark-github" inline /> Repository
+        <Icon icon="octicon:mark-github" inline /> Repo
       </a>
       <a href={model.paper} target="_blank" rel="noopener noreferrer">
         <Icon icon="ion:ios-paper" inline /> Paper
       </a>
       {#if model.url}
         <a href={model.url} target="_blank" rel="noopener noreferrer">
-          <Icon icon="ion:ios-globe" inline /> Documentation
+          <Icon icon="ion:ios-globe" inline /> Docs
         </a>
       {/if}
       <a href={model.doi} target="_blank" rel="noopener noreferrer">
