@@ -287,7 +287,7 @@ class DataFiles(Files):
     )
     mp_energies = (
         "mp/2023-01-10-mp-energies.csv.gz",
-        "https://figshare.com/ndownloader/files/41296875",
+        "https://figshare.com/ndownloader/files/49083124",
     )
     mp_patched_phase_diagram = (
         "mp/2023-02-07-ppd-mp.pkl.gz",

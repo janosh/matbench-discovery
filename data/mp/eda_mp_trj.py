@@ -36,13 +36,8 @@ mp_occu_counts = pd.read_json(
     f"{data_page}/mp-element-counts-by-occurrence.json", typ="series"
 )
 df_mp = pd.read_csv(DataFiles.mp_energies.path, na_filter=False)
-# TODO get the real formula from the Composition rather than rename.
-df_mp = df_mp.rename(columns={"formula_pretty": Key.formula, "nsites": Key.n_sites})
-df_mp.loc[
-    df_mp[Key.mat_id].isin(["mp-1080032", "mp-1179882", "mp-1009221"]), Key.formula
-] = "NaN"
-assert len(df_mp[df_mp[Key.formula].isna() | (df_mp[Key.formula] == "")]) == 0
 df_mp = df_mp.set_index(Key.mat_id)
+assert sum(df_mp[Key.formula].isna() | (df_mp[Key.formula] == "")) == 0
 
 
 # %% --- load preprocessed MPtrj summary data if available ---

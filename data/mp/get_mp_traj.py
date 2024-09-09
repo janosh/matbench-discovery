@@ -41,7 +41,13 @@ db: Database[TaskDoc] = MongoClient(uri)[db_name]
 # %%
 ids_path = f"{module_dir}/2023-03-15-mp-task-ids.csv.bz2"
 fields = (
-    f"{Key.task_id} formula_pretty run_type nsites task_type tags completed_at".split()
+    Key.task_id,
+    "formula_pretty",
+    "run_type",
+    "nsites",
+    Key.task_type,
+    "tags",
+    "completed_at",
 )
 
 if os.path.isfile(ids_path):
