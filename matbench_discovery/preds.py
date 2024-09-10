@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from matbench_discovery import ROOT, STABILITY_THRESHOLD
 from matbench_discovery.data import Files, df_wbm, glob_to_df
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.plots import plotly_colors, plotly_line_styles, plotly_markers
 
@@ -92,7 +92,7 @@ def load_df_wbm_with_preds(
     models: Sequence[str] = (),
     pbar: bool = True,
     id_col: str = Key.mat_id,
-    subset: pd.Index | Sequence[str] | Literal["uniq_protos"] | None = None,
+    subset: pd.Index | Sequence[str] | Literal[TestSubset.uniq_protos] | None = None,
     max_error_threshold: float | None = 5.0,
     **kwargs: Any,
 ) -> pd.DataFrame:
@@ -177,7 +177,7 @@ def load_df_wbm_with_preds(
         exc.add_note(f"Failed to load {model_name=}")
         raise
 
-    if subset == "uniq_protos":
+    if subset == TestSubset.uniq_protos:
         df_out = df_out.query(Key.uniq_proto)
     elif subset is not None:
         df_out = df_out.loc[subset]

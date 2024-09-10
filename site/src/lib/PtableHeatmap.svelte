@@ -32,7 +32,6 @@
       label_side="top"
       {color_scale}
       tick_labels={5}
-      precision={3}
       range={[0, Math.max(...Object.values(heatmap_values))]}
       style="width: 85%; margin: 0 2em 2em;"
       {...color_bar_props}
