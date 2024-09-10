@@ -66,29 +66,24 @@
       <code>composition</code>
       mode maps it to {`{Fe: 2, O: 3}`}.
     </p>
-    <h3>WBM</h3>
     <PtableHeatmap
       heatmap_values={wbm_elem_counts}
       color_scale={color_scale[0]}
-      color_bar_props={{ label: `WBM Element Occurrences` }}
+      color_bar_props={{ label: `WBM element counts by ${count_mode}` }}
       {log}
-      {count_mode}
     />
   </svelte:fragment>
 
   <svelte:fragment slot="mp-elements-heatmap">
-    <h3>MP</h3>
     <PtableHeatmap
       heatmap_values={mp_elem_counts}
       color_scale={color_scale[0]}
-      color_bar_props={{ label: `MP Element Occurrences` }}
+      color_bar_props={{ label: `MP element counts by ${count_mode}` }}
       {log}
-      {count_mode}
     />
   </svelte:fragment>
 
   <svelte:fragment slot="mp-trj-elements-heatmap">
-    <h3>MPtrj</h3>
     <MPtrjElemCountsPtable {count_mode} {log} color_scale={color_scale[0]} />
   </svelte:fragment>
 

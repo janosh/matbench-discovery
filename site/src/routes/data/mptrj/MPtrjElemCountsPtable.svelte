@@ -22,7 +22,6 @@
 <PtableHeatmap
   heatmap_values={mp_trj_elem_counts}
   {log}
-  {count_mode}
-  {...$$props}
-  color_bar_props={{ label: `MPtrj Element Occurrences` }}
+  {...$$restProps}
+  color_bar_props={{ label: `MPtrj element counts by ${count_mode}` }}
 />
