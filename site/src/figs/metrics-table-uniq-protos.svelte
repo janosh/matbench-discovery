@@ -422,10 +422,10 @@
       <td id="T__row0_col6" class="data row0 col6" >0.031</td>
       <td id="T__row0_col7" class="data row0 col7" >0.079</td>
       <td id="T__row0_col8" class="data row0 col8" >0.816</td>
-      <td id="T__row0_col9" class="data row0 col9" ><span title='MPtrj: 145.9K materials (1.6M structures)&#013;Alexandria: 3.1M materials (30.5M structures)'><span title='Number of materials in training set&#013;In parenthesis=number of structures, usually from multiple DFT relaxation frames per material' data-sort-value=3245923>3M</span> <small title='Number of materials in training set&#013;In parenthesis=number of structures, usually from multiple DFT relaxation frames per material'> (32.1M)</small> (<a href='https://figshare.com/articles/dataset/23713842' target='_blank' rel='noopener noreferrer'>MPtrj</a>+<a href='https://alexandria.icams.rub.de' target='_blank' rel='noopener noreferrer'>Alex</a>)</span></td>
-      <td id="T__row0_col10" class="data row0 col10" ><span title='Number of trainable model parameters' data-sort-value="25161727">25.2M</span></td>
-      <td id="T__row0_col11" class="data row0 col11" >EFS</td>
-      <td id="T__row0_col12" class="data row0 col12" >2024-09-02</td>
+      <td id="T__row0_col9" class="data row0 col9" ><span title='MPtrj: 145.9K materials (1.6M structures)&#013;Alexandria: 3.1M materials (30.5M structures)'><span title='Number of materials in training set = 3,245,923&#013;In parenthesis is number of structures = 32078023, usually from multiple DFT relaxation frames per material' data-sort-value=3245923>3M</span> <small title='Number of materials in training set = 3,245,923&#013;In parenthesis is number of structures = 32078023, usually from multiple DFT relaxation frames per material'> (32.1M)</small> (<a href='https://figshare.com/articles/dataset/23713842' target='_blank' rel='noopener noreferrer'>MPtrj</a>+<a href='https://alexandria.icams.rub.de' target='_blank' rel='noopener noreferrer'>Alex</a>)</span></td>
+      <td id="T__row0_col10" class="data row0 col10" ><span title='Number of trainable model parameters = 25,161,727' data-sort-value="25161727">25.2M</span></td>
+      <td id="T__row0_col11" class="data row0 col11" ><span title="energy forces stress">EFS</span></td>
+      <td id="T__row0_col12" class="data row0 col12" ><span title='Monday, 02 September 2024'>2024-09-02</span></td>
     </tr>
     <tr>
       <th id="T__level0_row1" class="row_heading level0 row1" ><span title="Version: n/a" class="non-compliant" data-model-key="mattersim">MatterSim</span></th>
@@ -438,10 +438,10 @@
       <td id="T__row1_col6" class="data row1 col6" >0.026</td>
       <td id="T__row1_col7" class="data row1 col7" >0.080</td>
       <td id="T__row1_col8" class="data row1 col8" >0.812</td>
-      <td id="T__row1_col9" class="data row1 col9" ><span title='MatterSim: 17.0M materials'><span title='Number of materials in training set' data-sort-value=17000000>17M</span> (<a href='https://doi.org/10.48550/arXiv.2405.04967' target='_blank' rel='noopener noreferrer'>MatterSim</a>)</span></td>
-      <td id="T__row1_col10" class="data row1 col10" ><span title='Number of trainable model parameters' data-sort-value="182000000">182.0M</span></td>
-      <td id="T__row1_col11" class="data row1 col11" >EFS</td>
-      <td id="T__row1_col12" class="data row1 col12" >2024-06-16</td>
+      <td id="T__row1_col9" class="data row1 col9" ><span title='MatterSim: 17.0M materials'><span title='Number of materials in training set = 17,000,000' data-sort-value=17000000>17M</span> (<a href='https://doi.org/10.48550/arXiv.2405.04967' target='_blank' rel='noopener noreferrer'>MatterSim</a>)</span></td>
+      <td id="T__row1_col10" class="data row1 col10" ><span title='Number of trainable model parameters = 182,000,000' data-sort-value="182000000">182.0M</span></td>
+      <td id="T__row1_col11" class="data row1 col11" ><span title="energy forces stress">EFS</span></td>
+      <td id="T__row1_col12" class="data row1 col12" ><span title='Sunday, 16 June 2024'>2024-06-16</span></td>
     </tr>
     <tr>
       <th id="T__level0_row2" class="row_heading level0 row2" ><span title="Version: n/a" class="non-compliant" data-model-key="gnome">GNoME</span></th>
@@ -454,10 +454,10 @@
       <td id="T__row2_col6" class="data row2 col6" >0.035</td>
       <td id="T__row2_col7" class="data row2 col7" >0.085</td>
       <td id="T__row2_col8" class="data row2 col8" >0.785</td>
-      <td id="T__row2_col9" class="data row2 col9" ><span title='GNoME: 6.0M materials (89.0M structures)'><span title='Number of materials in training set&#013;In parenthesis=number of structures, usually from multiple DFT relaxation frames per material' data-sort-value=6000000>6M</span> <small title='Number of materials in training set&#013;In parenthesis=number of structures, usually from multiple DFT relaxation frames per material'> (89.0M)</small> (<a href='https://doi.org/10.1038/s41586-023-06735-9' target='_blank' rel='noopener noreferrer'>GNoME</a>)</span></td>
-      <td id="T__row2_col10" class="data row2 col10" ><span title='Number of trainable model parameters' data-sort-value="16240000">16.2M</span></td>
-      <td id="T__row2_col11" class="data row2 col11" >EF</td>
-      <td id="T__row2_col12" class="data row2 col12" >2024-02-03</td>
+      <td id="T__row2_col9" class="data row2 col9" ><span title='GNoME: 6.0M materials (89.0M structures)'><span title='Number of materials in training set = 6,000,000&#013;In parenthesis is number of structures = 89000000, usually from multiple DFT relaxation frames per material' data-sort-value=6000000>6M</span> <small title='Number of materials in training set = 6,000,000&#013;In parenthesis is number of structures = 89000000, usually from multiple DFT relaxation frames per material'> (89.0M)</small> (<a href='https://doi.org/10.1038/s41586-023-06735-9' target='_blank' rel='noopener noreferrer'>GNoME</a>)</span></td>
+      <td id="T__row2_col10" class="data row2 col10" ><span title='Number of trainable model parameters = 16,240,000' data-sort-value="16240000">16.2M</span></td>
+      <td id="T__row2_col11" class="data row2 col11" ><span title="energy forces">EF</span></td>
+      <td id="T__row2_col12" class="data row2 col12" ><span title='Saturday, 03 February 2024'>2024-02-03</span></td>
     </tr>
     <tr>
       <th id="T__level0_row3" class="row_heading level0 row3" ><span title="Version: v1" data-model-key="orb-mptrj">ORB MPtrj</span></th>
@@ -470,10 +470,10 @@
       <td id="T__row3_col6" class="data row3 col6" >0.046</td>
       <td id="T__row3_col7" class="data row3 col7" >0.094</td>
       <td id="T__row3_col8" class="data row3 col8" >0.740</td>
-      <td id="T__row3_col9" class="data row3 col9" ><span title='MPtrj: 145.9K materials (1.6M structures)'><span title='Number of materials in training set&#013;In parenthesis=number of structures, usually from multiple DFT relaxation frames per material' data-sort-value=145923>146K</span> <small title='Number of materials in training set&#013;In parenthesis=number of structures, usually from multiple DFT relaxation frames per material'> (1.6M)</small> (<a href='https://figshare.com/articles/dataset/23713842' target='_blank' rel='noopener noreferrer'>MPtrj</a>)</span></td>
-      <td id="T__row3_col10" class="data row3 col10" ><span title='Number of trainable model parameters' data-sort-value="25161727">25.2M</span></td>
-      <td id="T__row3_col11" class="data row3 col11" >EFS</td>
-      <td id="T__row3_col12" class="data row3 col12" >2024-09-02</td>
+      <td id="T__row3_col9" class="data row3 col9" ><span title='MPtrj: 145.9K materials (1.6M structures)'><span title='Number of materials in training set = 145,923&#013;In parenthesis is number of structures = 1580395, usually from multiple DFT relaxation frames per material' data-sort-value=145923>146K</span> <small title='Number of materials in training set = 145,923&#013;In parenthesis is number of structures = 1580395, usually from multiple DFT relaxation frames per material'> (1.6M)</small> (<a href='https://figshare.com/articles/dataset/23713842' target='_blank' rel='noopener noreferrer'>MPtrj</a>)</span></td>
+      <td id="T__row3_col10" class="data row3 col10" ><span title='Number of trainable model parameters = 25,161,727' data-sort-value="25161727">25.2M</span></td>
+      <td id="T__row3_col11" class="data row3 col11" ><span title="energy forces stress">EFS</span></td>
+      <td id="T__row3_col12" class="data row3 col12" ><span title='Monday, 02 September 2024'>2024-09-02</span></td>
     </tr>
     <tr>
       <th id="T__level0_row4" class="row_heading level0 row4" ><span title="Version: v0.9.1_w_cutoff" data-model-key="sevennet">SevenNet</span></th>
@@ -486,10 +486,10 @@
       <td id="T__row4_col6" class="data row4 col6" >0.048</td>
       <td id="T__row4_col7" class="data row4 col7" >0.092</td>
       <td id="T__row4_col8" class="data row4 col8" >0.750</td>
-      <td id="T__row4_col9" class="data row4 col9" ><span title='MPtrj: 145.9K materials (1.6M structures)'><span title='Number of materials in training set&#013;In parenthesis=number of structures, usually from multiple DFT relaxation frames per material' data-sort-value=145923>146K</span> <small title='Number of materials in training set&#013;In parenthesis=number of structures, usually from multiple DFT relaxation frames per material'> (1.6M)</small> (<a href='https://figshare.com/articles/dataset/23713842' target='_blank' rel='noopener noreferrer'>MPtrj</a>)</span></td>
-      <td id="T__row4_col10" class="data row4 col10" ><span title='Number of trainable model parameters' data-sort-value="842440">842.4K</span></td>
-      <td id="T__row4_col11" class="data row4 col11" >EFS</td>
-      <td id="T__row4_col12" class="data row4 col12" >2024-07-13</td>
+      <td id="T__row4_col9" class="data row4 col9" ><span title='MPtrj: 145.9K materials (1.6M structures)'><span title='Number of materials in training set = 145,923&#013;In parenthesis is number of structures = 1580395, usually from multiple DFT relaxation frames per material' data-sort-value=145923>146K</span> <small title='Number of materials in training set = 145,923&#013;In parenthesis is number of structures = 1580395, usually from multiple DFT relaxation frames per material'> (1.6M)</small> (<a href='https://figshare.com/articles/dataset/23713842' target='_blank' rel='noopener noreferrer'>MPtrj</a>)</span></td>
+      <td id="T__row4_col10" class="data row4 col10" ><span title='Number of trainable model parameters = 842,440' data-sort-value="842440">842.4K</span></td>
+      <td id="T__row4_col11" class="data row4 col11" ><span title="energy forces stress">EFS</span></td>
+      <td id="T__row4_col12" class="data row4 col12" ><span title='Saturday, 13 July 2024'>2024-07-13</span></td>
     </tr>
     <tr>
       <th id="T__level0_row5" class="row_heading level0 row5" ><span title="Version: v0.3.5" data-model-key="mace">MACE</span></th>
@@ -502,10 +502,10 @@
       <td id="T__row5_col6" class="data row5 col6" >0.057</td>
       <td id="T__row5_col7" class="data row5 col7" >0.101</td>
       <td id="T__row5_col8" class="data row5 col8" >0.697</td>
-      <td id="T__row5_col9" class="data row5 col9" ><span title='MPtrj: 145.9K materials (1.6M structures)'><span title='Number of materials in training set&#013;In parenthesis=number of structures, usually from multiple DFT relaxation frames per material' data-sort-value=145923>146K</span> <small title='Number of materials in training set&#013;In parenthesis=number of structures, usually from multiple DFT relaxation frames per material'> (1.6M)</small> (<a href='https://figshare.com/articles/dataset/23713842' target='_blank' rel='noopener noreferrer'>MPtrj</a>)</span></td>
-      <td id="T__row5_col10" class="data row5 col10" ><span title='Number of trainable model parameters' data-sort-value="4688656">4.7M</span></td>
-      <td id="T__row5_col11" class="data row5 col11" >EFS</td>
-      <td id="T__row5_col12" class="data row5 col12" >2023-07-14</td>
+      <td id="T__row5_col9" class="data row5 col9" ><span title='MPtrj: 145.9K materials (1.6M structures)'><span title='Number of materials in training set = 145,923&#013;In parenthesis is number of structures = 1580395, usually from multiple DFT relaxation frames per material' data-sort-value=145923>146K</span> <small title='Number of materials in training set = 145,923&#013;In parenthesis is number of structures = 1580395, usually from multiple DFT relaxation frames per material'> (1.6M)</small> (<a href='https://figshare.com/articles/dataset/23713842' target='_blank' rel='noopener noreferrer'>MPtrj</a>)</span></td>
+      <td id="T__row5_col10" class="data row5 col10" ><span title='Number of trainable model parameters = 4,688,656' data-sort-value="4688656">4.7M</span></td>
+      <td id="T__row5_col11" class="data row5 col11" ><span title="energy forces stress">EFS</span></td>
+      <td id="T__row5_col12" class="data row5 col12" ><span title='Friday, 14 July 2023'>2023-07-14</span></td>
     </tr>
     <tr>
       <th id="T__level0_row6" class="row_heading level0 row6" ><span title="Version: v0.3.0" data-model-key="chgnet">CHGNet</span></th>
@@ -518,10 +518,10 @@
       <td id="T__row6_col6" class="data row6 col6" >0.063</td>
       <td id="T__row6_col7" class="data row6 col7" >0.103</td>
       <td id="T__row6_col8" class="data row6 col8" >0.689</td>
-      <td id="T__row6_col9" class="data row6 col9" ><span title='MPtrj: 145.9K materials (1.6M structures)'><span title='Number of materials in training set&#013;In parenthesis=number of structures, usually from multiple DFT relaxation frames per material' data-sort-value=145923>146K</span> <small title='Number of materials in training set&#013;In parenthesis=number of structures, usually from multiple DFT relaxation frames per material'> (1.6M)</small> (<a href='https://figshare.com/articles/dataset/23713842' target='_blank' rel='noopener noreferrer'>MPtrj</a>)</span></td>
-      <td id="T__row6_col10" class="data row6 col10" ><span title='Number of trainable model parameters' data-sort-value="412525">412.5K</span></td>
-      <td id="T__row6_col11" class="data row6 col11" >EFSM</td>
-      <td id="T__row6_col12" class="data row6 col12" >2023-03-03</td>
+      <td id="T__row6_col9" class="data row6 col9" ><span title='MPtrj: 145.9K materials (1.6M structures)'><span title='Number of materials in training set = 145,923&#013;In parenthesis is number of structures = 1580395, usually from multiple DFT relaxation frames per material' data-sort-value=145923>146K</span> <small title='Number of materials in training set = 145,923&#013;In parenthesis is number of structures = 1580395, usually from multiple DFT relaxation frames per material'> (1.6M)</small> (<a href='https://figshare.com/articles/dataset/23713842' target='_blank' rel='noopener noreferrer'>MPtrj</a>)</span></td>
+      <td id="T__row6_col10" class="data row6 col10" ><span title='Number of trainable model parameters = 412,525' data-sort-value="412525">412.5K</span></td>
+      <td id="T__row6_col11" class="data row6 col11" ><span title="energy forces stress magmoms">EFSM</span></td>
+      <td id="T__row6_col12" class="data row6 col12" ><span title='Friday, 03 March 2023'>2023-03-03</span></td>
     </tr>
     <tr>
       <th id="T__level0_row7" class="row_heading level0 row7" ><span title="Version: v2022.9.20" data-model-key="m3gnet">M3GNet</span></th>
@@ -534,10 +534,10 @@
       <td id="T__row7_col6" class="data row7 col6" >0.075</td>
       <td id="T__row7_col7" class="data row7 col7" >0.118</td>
       <td id="T__row7_col8" class="data row7 col8" >0.585</td>
-      <td id="T__row7_col9" class="data row7 col9" ><span title='MPF.2021.2.8: 62.8K materials (188.3K structures)'><span title='Number of materials in training set&#013;In parenthesis=number of structures, usually from multiple DFT relaxation frames per material' data-sort-value=62783>63K</span> <small title='Number of materials in training set&#013;In parenthesis=number of structures, usually from multiple DFT relaxation frames per material'> (188.3K)</small> (<a href='https://figshare.com/articles/dataset/19470599' target='_blank' rel='noopener noreferrer'>MPF</a>)</span></td>
-      <td id="T__row7_col10" class="data row7 col10" ><span title='Number of trainable model parameters' data-sort-value="227549">227.5K</span></td>
-      <td id="T__row7_col11" class="data row7 col11" >EFS</td>
-      <td id="T__row7_col12" class="data row7 col12" >2022-09-20</td>
+      <td id="T__row7_col9" class="data row7 col9" ><span title='MPF.2021.2.8: 62.8K materials (188.3K structures)'><span title='Number of materials in training set = 62,783&#013;In parenthesis is number of structures = 188349, usually from multiple DFT relaxation frames per material' data-sort-value=62783>63K</span> <small title='Number of materials in training set = 62,783&#013;In parenthesis is number of structures = 188349, usually from multiple DFT relaxation frames per material'> (188.3K)</small> (<a href='https://figshare.com/articles/dataset/19470599' target='_blank' rel='noopener noreferrer'>MPF</a>)</span></td>
+      <td id="T__row7_col10" class="data row7 col10" ><span title='Number of trainable model parameters = 227,549' data-sort-value="227549">227.5K</span></td>
+      <td id="T__row7_col11" class="data row7 col11" ><span title="energy forces stress">EFS</span></td>
+      <td id="T__row7_col12" class="data row7 col12" ><span title='Tuesday, 20 September 2022'>2022-09-20</span></td>
     </tr>
     <tr>
       <th id="T__level0_row8" class="row_heading level0 row8" ><span title="Version: 2023.01.10" data-model-key="alignn">ALIGNN</span></th>
@@ -550,10 +550,10 @@
       <td id="T__row8_col6" class="data row8 col6" >0.093</td>
       <td id="T__row8_col7" class="data row8 col7" >0.154</td>
       <td id="T__row8_col8" class="data row8 col8" >0.297</td>
-      <td id="T__row8_col9" class="data row8 col9" ><span title='MP v2022.10.28: 154.7K materials'><span title='Number of materials in training set' data-sort-value=154719>155K</span> (<a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'>MP 2022</a>)</span></td>
-      <td id="T__row8_col10" class="data row8 col10" ><span title='Number of trainable model parameters' data-sort-value="4026753">4.0M</span></td>
-      <td id="T__row8_col11" class="data row8 col11" >E</td>
-      <td id="T__row8_col12" class="data row8 col12" >2023-06-02</td>
+      <td id="T__row8_col9" class="data row8 col9" ><span title='MP v2022.10.28: 154.7K materials'><span title='Number of materials in training set = 154,719' data-sort-value=154719>155K</span> (<a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'>MP 2022</a>)</span></td>
+      <td id="T__row8_col10" class="data row8 col10" ><span title='Number of trainable model parameters = 4,026,753' data-sort-value="4026753">4.0M</span></td>
+      <td id="T__row8_col11" class="data row8 col11" ><span title="energy">E</span></td>
+      <td id="T__row8_col12" class="data row8 col12" ><span title='Friday, 02 June 2023'>2023-06-02</span></td>
     </tr>
     <tr>
       <th id="T__level0_row9" class="row_heading level0 row9" ><span title="Version: v2022.9.20" data-model-key="megnet">MEGNet</span></th>
@@ -566,10 +566,10 @@
       <td id="T__row9_col6" class="data row9 col6" >0.130</td>
       <td id="T__row9_col7" class="data row9 col7" >0.206</td>
       <td id="T__row9_col8" class="data row9 col8" >-0.248</td>
-      <td id="T__row9_col9" class="data row9 col9" ><span title='Graphs of MP 2019: 133.4K materials'><span title='Number of materials in training set' data-sort-value=133420>133K</span> (<a href='https://figshare.com/articles/dataset/8097992' target='_blank' rel='noopener noreferrer'>MP Graphs</a>)</span></td>
-      <td id="T__row9_col10" class="data row9 col10" ><span title='Number of trainable model parameters' data-sort-value="167761">167.8K</span></td>
-      <td id="T__row9_col11" class="data row9 col11" >E</td>
-      <td id="T__row9_col12" class="data row9 col12" >2022-11-14</td>
+      <td id="T__row9_col9" class="data row9 col9" ><span title='Graphs of MP 2019: 133.4K materials'><span title='Number of materials in training set = 133,420' data-sort-value=133420>133K</span> (<a href='https://figshare.com/articles/dataset/8097992' target='_blank' rel='noopener noreferrer'>MP Graphs</a>)</span></td>
+      <td id="T__row9_col10" class="data row9 col10" ><span title='Number of trainable model parameters = 167,761' data-sort-value="167761">167.8K</span></td>
+      <td id="T__row9_col11" class="data row9 col11" ><span title="energy">E</span></td>
+      <td id="T__row9_col12" class="data row9 col12" ><span title='Monday, 14 November 2022'>2022-11-14</span></td>
     </tr>
     <tr>
       <th id="T__level0_row10" class="row_heading level0 row10" ><span title="Version: v0.1.0" data-model-key="cgcnn">CGCNN</span></th>
@@ -582,10 +582,10 @@
       <td id="T__row10_col6" class="data row10 col6" >0.138</td>
       <td id="T__row10_col7" class="data row10 col7" >0.233</td>
       <td id="T__row10_col8" class="data row10 col8" >-0.603</td>
-      <td id="T__row10_col9" class="data row10 col9" ><span title='MP v2022.10.28: 154.7K materials'><span title='Number of materials in training set' data-sort-value=154719>155K</span> (<a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'>MP 2022</a>)</span></td>
-      <td id="T__row10_col10" class="data row10 col10" ><span title='Number of trainable model parameters' data-sort-value="128450">128.4K</span> <small title='Number of models in ensemble'>(N=10)</small></td>
-      <td id="T__row10_col11" class="data row10 col11" >E</td>
-      <td id="T__row10_col12" class="data row10 col12" >2022-12-28</td>
+      <td id="T__row10_col9" class="data row10 col9" ><span title='MP v2022.10.28: 154.7K materials'><span title='Number of materials in training set = 154,719' data-sort-value=154719>155K</span> (<a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'>MP 2022</a>)</span></td>
+      <td id="T__row10_col10" class="data row10 col10" ><span title='Number of trainable model parameters = 128,450' data-sort-value="128450">128.4K</span> <small title='Number of models in ensemble = 10'>(N=10)</small></td>
+      <td id="T__row10_col11" class="data row10 col11" ><span title="energy">E</span></td>
+      <td id="T__row10_col12" class="data row10 col12" ><span title='Wednesday, 28 December 2022'>2022-12-28</span></td>
     </tr>
     <tr>
       <th id="T__level0_row11" class="row_heading level0 row11" ><span title="Version: v0.1.0" data-model-key="cgcnn+p">CGCNN+P</span></th>
@@ -598,10 +598,10 @@
       <td id="T__row11_col6" class="data row11 col6" >0.113</td>
       <td id="T__row11_col7" class="data row11 col7" >0.182</td>
       <td id="T__row11_col8" class="data row11 col8" >0.019</td>
-      <td id="T__row11_col9" class="data row11 col9" ><span title='MP v2022.10.28: 154.7K materials'><span title='Number of materials in training set' data-sort-value=154719>155K</span> (<a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'>MP 2022</a>)</span></td>
-      <td id="T__row11_col10" class="data row11 col10" ><span title='Number of trainable model parameters' data-sort-value="128450">128.4K</span> <small title='Number of models in ensemble'>(N=10)</small></td>
-      <td id="T__row11_col11" class="data row11 col11" >E</td>
-      <td id="T__row11_col12" class="data row11 col12" >2023-02-03</td>
+      <td id="T__row11_col9" class="data row11 col9" ><span title='MP v2022.10.28: 154.7K materials'><span title='Number of materials in training set = 154,719' data-sort-value=154719>155K</span> (<a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'>MP 2022</a>)</span></td>
+      <td id="T__row11_col10" class="data row11 col10" ><span title='Number of trainable model parameters = 128,450' data-sort-value="128450">128.4K</span> <small title='Number of models in ensemble = 10'>(N=10)</small></td>
+      <td id="T__row11_col11" class="data row11 col11" ><span title="energy">E</span></td>
+      <td id="T__row11_col12" class="data row11 col12" ><span title='Friday, 03 February 2023'>2023-02-03</span></td>
     </tr>
     <tr>
       <th id="T__level0_row12" class="row_heading level0 row12" ><span title="Version: v0.1.0" data-model-key="wrenformer">Wrenformer</span></th>
@@ -614,10 +614,10 @@
       <td id="T__row12_col6" class="data row12 col6" >0.110</td>
       <td id="T__row12_col7" class="data row12 col7" >0.186</td>
       <td id="T__row12_col8" class="data row12 col8" >-0.018</td>
-      <td id="T__row12_col9" class="data row12 col9" ><span title='MP v2022.10.28: 154.7K materials'><span title='Number of materials in training set' data-sort-value=154719>155K</span> (<a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'>MP 2022</a>)</span></td>
-      <td id="T__row12_col10" class="data row12 col10" ><span title='Number of trainable model parameters' data-sort-value="5166658">5.2M</span> <small title='Number of models in ensemble'>(N=10)</small></td>
-      <td id="T__row12_col11" class="data row12 col11" >E</td>
-      <td id="T__row12_col12" class="data row12 col12" >2022-11-26</td>
+      <td id="T__row12_col9" class="data row12 col9" ><span title='MP v2022.10.28: 154.7K materials'><span title='Number of materials in training set = 154,719' data-sort-value=154719>155K</span> (<a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'>MP 2022</a>)</span></td>
+      <td id="T__row12_col10" class="data row12 col10" ><span title='Number of trainable model parameters = 5,166,658' data-sort-value="5166658">5.2M</span> <small title='Number of models in ensemble = 10'>(N=10)</small></td>
+      <td id="T__row12_col11" class="data row12 col11" ><span title="energy">E</span></td>
+      <td id="T__row12_col12" class="data row12 col12" ><span title='Saturday, 26 November 2022'>2022-11-26</span></td>
     </tr>
     <tr>
       <th id="T__level0_row13" class="row_heading level0 row13" ><span title="Version: 2022.9.20" data-model-key="bowsr">BOWSR</span></th>
@@ -630,10 +630,10 @@
       <td id="T__row13_col6" class="data row13 col6" >0.118</td>
       <td id="T__row13_col7" class="data row13 col7" >0.167</td>
       <td id="T__row13_col8" class="data row13 col8" >0.151</td>
-      <td id="T__row13_col9" class="data row13 col9" ><span title='Graphs of MP 2019: 133.4K materials'><span title='Number of materials in training set' data-sort-value=133420>133K</span> (<a href='https://figshare.com/articles/dataset/8097992' target='_blank' rel='noopener noreferrer'>MP Graphs</a>)</span></td>
-      <td id="T__row13_col10" class="data row13 col10" ><span title='Number of trainable model parameters' data-sort-value="167761">167.8K</span></td>
-      <td id="T__row13_col11" class="data row13 col11" >E</td>
-      <td id="T__row13_col12" class="data row13 col12" >2022-11-17</td>
+      <td id="T__row13_col9" class="data row13 col9" ><span title='Graphs of MP 2019: 133.4K materials'><span title='Number of materials in training set = 133,420' data-sort-value=133420>133K</span> (<a href='https://figshare.com/articles/dataset/8097992' target='_blank' rel='noopener noreferrer'>MP Graphs</a>)</span></td>
+      <td id="T__row13_col10" class="data row13 col10" ><span title='Number of trainable model parameters = 167,761' data-sort-value="167761">167.8K</span></td>
+      <td id="T__row13_col11" class="data row13 col11" ><span title="energy">E</span></td>
+      <td id="T__row13_col12" class="data row13 col12" ><span title='Thursday, 17 November 2022'>2022-11-17</span></td>
     </tr>
     <tr>
       <th id="T__level0_row14" class="row_heading level0 row14" ><span title="Version: v1.1.2" data-model-key="voronoi-rf">Voronoi RF</span></th>
@@ -646,10 +646,10 @@
       <td id="T__row14_col6" class="data row14 col6" >0.148</td>
       <td id="T__row14_col7" class="data row14 col7" >0.212</td>
       <td id="T__row14_col8" class="data row14 col8" >-0.329</td>
-      <td id="T__row14_col9" class="data row14 col9" ><span title='MP v2022.10.28: 154.7K materials'><span title='Number of materials in training set' data-sort-value=154719>155K</span> (<a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'>MP 2022</a>)</span></td>
-      <td id="T__row14_col10" class="data row14 col10" ><span title='Number of trainable model parameters' data-sort-value="0">0.0</span></td>
-      <td id="T__row14_col11" class="data row14 col11" >E</td>
-      <td id="T__row14_col12" class="data row14 col12" >2022-11-26</td>
+      <td id="T__row14_col9" class="data row14 col9" ><span title='MP v2022.10.28: 154.7K materials'><span title='Number of materials in training set = 154,719' data-sort-value=154719>155K</span> (<a href='https://figshare.com/ndownloader/files/40344436' target='_blank' rel='noopener noreferrer'>MP 2022</a>)</span></td>
+      <td id="T__row14_col10" class="data row14 col10" ><span title='Number of trainable model parameters = 0' data-sort-value="0">0.0</span></td>
+      <td id="T__row14_col11" class="data row14 col11" ><span title="energy">E</span></td>
+      <td id="T__row14_col12" class="data row14 col12" ><span title='Saturday, 26 November 2022'>2022-11-26</span></td>
     </tr>
     <tr>
       <th id="T__level0_row15" class="row_heading level0 row15" >Dummy</th>
