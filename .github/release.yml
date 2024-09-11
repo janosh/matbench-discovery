@@ -14,6 +14,8 @@ changelog:
       labels: [fix]
     - title: 📖 Documentation
       labels: [docs]
+    - title: 🌐 Site Upgrades
+      labels: [site]
     - title: 🧹 House-Keeping
       labels: [housekeeping]
     - title: 🚀 Performance
