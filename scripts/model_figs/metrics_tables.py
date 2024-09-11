@@ -1,6 +1,7 @@
 # %%
 import itertools
 import subprocess
+from datetime import date
 from glob import glob
 
 import numpy as np
@@ -13,7 +14,7 @@ from sklearn.dummy import DummyClassifier
 
 from matbench_discovery import DATA_DIR, PDF_FIGS, ROOT, SCRIPTS, SITE_FIGS
 from matbench_discovery.data import DataFiles, df_wbm
-from matbench_discovery.enums import MbdKey, Open
+from matbench_discovery.enums import MbdKey, Open, Targets
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.models import MODEL_METADATA
 from matbench_discovery.preds import df_metrics, df_metrics_10k, df_metrics_uniq_protos
@@ -54,8 +55,18 @@ for model in df_metrics:
     model_metadata = MODEL_METADATA.get(model_name, {})
     model_key = model_metadata.get("model_key", model_name)
 
-    df_metrics_uniq_protos.loc[date_added_col, model] = model_metadata.get(
-        "date_added", ""
+    date_added = model_metadata.get("date_added", "")
+    # long format date for tooltip, e.g. Monday, 28 November 2022
+    title = f"{date.fromisoformat(date_added):%A, %d %B %Y}"
+    df_metrics_uniq_protos.loc[date_added_col, model] = (
+        f"<span {title=}>{date_added}</span>"
+    )
+
+    # Update targets column with full label in tooltip
+    model_targets = model_metadata.get(Key.targets, "")
+    targets_label = Targets[model_targets].label
+    df_metrics_uniq_protos.loc[Key.targets.label, model] = (
+        f'<span title="{targets_label}">{model_targets}</span>'
     )
 
     # Add model version as hover tooltip to model name
@@ -103,7 +114,7 @@ for model in df_metrics:
             else:
                 tooltip_lines += [f"{title}: {si_fmt(n_materials)} materials"]
 
-        title = "Number of materials in training set"
+        title = f"Number of materials in training set = {n_materials_total:,}"
         train_size_str = (
             f"<span {title=} data-sort-value={n_materials_total}>"
             f"{si_fmt(n_materials_total, fmt='.0f')}</span>"
@@ -111,8 +122,9 @@ for model in df_metrics:
 
         if n_materials_total != n_structs_total:
             title = (
-                "Number of materials in training set&#013;In parenthesis=number of "
-                "structures, usually from multiple DFT relaxation frames per material"
+                f"Number of materials in training set = {n_materials_total:,}&#013;In "
+                f"parenthesis is number of structures = {n_structs_total}, usually "
+                "from multiple DFT relaxation frames per material"
             )
             train_size_str = (
                 f"<span {title=} data-sort-value={n_materials_total}>"
@@ -145,24 +157,19 @@ for model in df_metrics:
 
     model_params = model_metadata.get(Key.model_params, 0)
     n_estimators = model_metadata.get(Key.n_estimators, -1)
-    title = "Number of models in ensemble"
+    title = f"Number of models in ensemble = {n_estimators:,}"
     n_estimators_str = (
         f" <small {title=}>(N={n_estimators})</small>" if n_estimators > 1 else ""
     )
 
-    title = "Number of trainable model parameters"
+    title = f"Number of trainable model parameters = {model_params:,}"
     formatted_params = si_fmt(model_params)
     df_metrics_uniq_protos.loc[Key.model_params.label.replace("eter", ""), model] = (
         f'<span {title=} data-sort-value="{model_params}">{formatted_params}'
         f"</span>{n_estimators_str}"
     )
 
-    for key in (
-        MbdKey.openness,
-        Key.train_task,
-        Key.test_task,
-        Key.targets,
-    ):
+    for key in (MbdKey.openness, Key.train_task, Key.test_task):
         default = {MbdKey.openness: Open.OSOD}.get(key, pd.NA)
         df_metrics_uniq_protos.loc[key.label, model] = model_metadata.get(key, default)
 

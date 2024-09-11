@@ -22,6 +22,7 @@
   let color_scale: string[] = [`Viridis`]
   let active_element: ChemicalElement | null = null
 
+  // TODO make this dynamic (static n_days_ago from time of last site build is misleading)
   function n_days_ago(dateString: string): string {
     return (
       (new Date().getTime() - new Date(dateString).getTime()) /

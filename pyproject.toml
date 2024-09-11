@@ -27,7 +27,7 @@ requires-python = ">=3.11"
 dependencies = [
   "ase>=3.23",
   "matplotlib>=3.9.2",
-  "numpy>=2",
+  "numpy>=1.26",
   "pandas>=2.2.2",
   "plotly>=5.23",
   "pymatgen>=2024.8.9",
