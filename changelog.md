@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.3.1](https://github.com/janosh/matbench-discovery/compare/v1.3.0...v1.3.1)
+
+> 11 September 2024
+
+- Fix model detail pages for models with array of training sets and non-string notes in YAML metadata [`#138`](https://github.com/janosh/matbench-discovery/pull/138)
+- Move element-projected convex hull distance errors to model detail pages [`#137`](https://github.com/janosh/matbench-discovery/pull/137)
+- Show single-model energy parity plots on model detail pages [`#136`](https://github.com/janosh/matbench-discovery/pull/136)
+- fix pkg unnecessarily pinning numpy&gt;2 [`8eb916b`](https://github.com/janosh/matbench-discovery/commit/8eb916b73e36417b23dbf925452a696b9c32c1c0)
+- fix errors in eda_wbm.py [`c1f34da`](https://github.com/janosh/matbench-discovery/commit/c1f34dac228ef7f0da7598e99fe9be6db36198f5)
+- fix /data page MP/WBM element count ptable heatmaps [`1ebad52`](https://github.com/janosh/matbench-discovery/commit/1ebad52cff8e80febf7beadb1fe210b7741802b5)
+
 #### [v1.3.0](https://github.com/janosh/matbench-discovery/compare/v1.2.0...v1.3.0)
 
 > 6 September 2024
