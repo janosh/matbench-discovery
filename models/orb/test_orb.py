@@ -68,15 +68,16 @@ def main(
 
     Produces (possibly sharded) compressed JSON files with relaxed structures
     and energies. These are then aggregated and evaluated in the
-    `join_predictions` script.
+    join_predictions script.
+
+    Raises:
+        ValueError: If total_shards and shard are not both None or both ints.
     """
     if not (
         (total_shards is None and shard is None)
         or (isinstance(total_shards, int) and isinstance(shard, int))
     ):
-        raise ValueError(
-            "Either both shard and total_shards must be None, or both must be ints"
-        )
+        raise ValueError(f"{shard=} and {total_shards=} must be both None or both ints")
 
     task_type = Task.IS2RE
 

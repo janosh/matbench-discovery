@@ -32,7 +32,20 @@ BASE_URL = "https://api.figshare.com/v2"
 def make_request(
     method: str, url: str, *, data: Any = None, binary: bool = False
 ) -> Any:
-    """Make a token-authorized HTTP request to the Figshare API."""
+    """Make a token-authorized HTTP request to the Figshare API.
+
+    Args:
+        method (str): HTTP method (GET, POST, PUT, DELETE).
+        url (str): URL to send the request to.
+        data (Any, optional): Data to send in the request body. Defaults to None.
+        binary (bool, optional): Whether the data is binary. Defaults to False.
+
+    Returns:
+        Any: JSON response data or binary data.
+
+    Raises:
+        HTTPError: If the request fails. Error will contain the response body.
+    """
     headers = {"Authorization": f"token {TOKEN}"}
     if data is not None and not binary:
         data = json.dumps(data)
@@ -43,9 +56,8 @@ def make_request(
             data = json.loads(response.content)
         except ValueError:
             data = response.content
-    except HTTPError as error:
-        print(f"Caught an HTTPError: {error}")
-        print(f"Body:\n{response.content.decode()}")
+    except HTTPError as exc:
+        exc.add_note(f"body={response.content.decode()}")
         raise
 
     return data

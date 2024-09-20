@@ -40,6 +40,9 @@ def classify_stable(
     Returns:
         tuple[TP, FN, FP, TN]: Indices as pd.Series for true positives,
             false negatives, false positives and true negatives (in this order).
+
+    Raises:
+        ValueError: If sum of positive + negative preds doesn't add up to the total.
     """
     actual_pos = e_above_hull_true <= (stability_threshold or 0)  # guard against None
     actual_neg = e_above_hull_true > (stability_threshold or 0)
@@ -49,8 +52,9 @@ def classify_stable(
 
     if fillna:
         nan_mask = np.isnan(e_above_hull_pred)
-        model_pos[nan_mask] = False  # fill NaNs as unstable
-        model_neg[nan_mask] = True  # fill NaNs as unstable
+        # for in both the model's stable and unstable preds, fill NaNs as unstable
+        model_pos[nan_mask] = False
+        model_neg[nan_mask] = True
 
         n_pos, n_neg, total = model_pos.sum(), model_neg.sum(), len(e_above_hull_pred)
         if n_pos + n_neg != total:
@@ -95,6 +99,10 @@ def stable_metrics(
     Returns:
         dict[str, float]: dictionary of classification metrics with keys DAF, Precision,
             Recall, Accuracy, F1, TPR, FPR, TNR, FNR, MAE, RMSE, R2.
+
+    Raises:
+        ValueError: If FPR + TNR don't add up to 1.
+        ValueError: If TPR + FNR don't add up to 1.
     """
     n_true_pos, n_false_neg, n_false_pos, n_true_neg = map(
         sum,

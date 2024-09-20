@@ -64,7 +64,6 @@ struct_col = "m3gnet_orig_structure"
 for mat_id in tqdm(df_m3gnet.index):
     m3gnet_energy = df_m3gnet.loc[mat_id, e_col]
     mlip_struct = Structure.from_dict(df_m3gnet.loc[mat_id, struct_col])
-    df_m3gnet.at[mat_id, struct_col] = mlip_struct  # noqa: PD008
     cse = df_cse.loc[mat_id, Key.cse]
     cse._energy = m3gnet_energy  # cse._energy is the uncorrected energy  # noqa: SLF001
     cse._structure = mlip_struct  # noqa: SLF001

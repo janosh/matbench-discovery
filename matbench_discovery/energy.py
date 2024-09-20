@@ -99,6 +99,9 @@ def get_e_form_per_atom(
 
     Returns:
         float: formation energy in eV/atom.
+
+    Raises:
+        TypeError: If entry is not a pymatgen Entry or dict.
     """
     if isinstance(entry, dict):
         energy, comp = entry["energy"], entry["composition"]
