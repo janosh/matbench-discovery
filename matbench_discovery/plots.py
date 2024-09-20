@@ -616,6 +616,10 @@ def cumulative_metrics(
     Returns:
         tuple[plt.Figure | go.Figure, pd.DataFrame]: The matplotlib/plotly figure and
             dataframe of cumulative metrics for each model.
+
+    Raises:
+        ValueError: If metrics are not a subset of ("Precision", "Recall", "F1", "MAE",
+            "RMSE").
     """
     dfs: dict[str, pd.DataFrame] = defaultdict(pd.DataFrame)
 
@@ -811,6 +815,9 @@ def wandb_scatter(table: wandb.Table, fields: dict[str, str], **kwargs: Any) -> 
         fields (dict[str, str]): Map from table columns to fields defined in the custom
             vega spec. Currently the only Vega fields are 'x' and 'y'.
         **kwargs: Keyword arguments passed to wandb.plot_table(string_fields=kwargs).
+
+    Raises:
+        ValueError: If 'fields' does not contain 'x' and 'y' keys.
     """
     if set(fields) < {"x", "y"}:
         raise ValueError(f"{fields=} must specify x=str and y=str column names")

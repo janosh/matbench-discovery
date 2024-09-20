@@ -65,6 +65,9 @@ def glob_to_df(
 
     Returns:
         pd.DataFrame: Combined dataframe.
+
+    Raises:
+        FileNotFoundError: If no files match the glob pattern.
     """
     reader = reader or pd.read_csv if ".csv" in pattern.lower() else pd.read_json
 

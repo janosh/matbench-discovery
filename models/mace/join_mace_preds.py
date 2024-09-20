@@ -61,7 +61,6 @@ cse: ComputedStructureEntry
 for row in tqdm(df_mace.itertuples(), total=len(df_mace), desc="ML energies to CSEs"):
     mat_id, struct_dict, mace_energy, *_ = row
     mlip_struct = Structure.from_dict(struct_dict)
-    df_mace.at[mat_id, struct_col] = mlip_struct  # noqa: PD008
     cse = df_cse.loc[mat_id, Key.cse]
     cse._energy = mace_energy  # cse._energy is the uncorrected energy  # noqa: SLF001
     cse._structure = mlip_struct  # noqa: SLF001

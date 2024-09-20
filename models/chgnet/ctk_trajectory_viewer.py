@@ -176,7 +176,19 @@ for name, df, traj in (
         e_col: str,
         force_col: str,
     ) -> Callable[[int], tuple[Structure, go.Figure]]:
-        """Factory function to create update callback for each structure component."""
+        """Factory function to create update callback for each structure component.
+
+        Args:
+            trajectory (TrajectoryObserver): Contains relaxation trajectory.
+            df_traj (pd.DataFrame): DataFrame with energy and force data.
+            material_id (str): Material ID.
+            init_struct (Structure): Initial structure.
+            e_col (str): Column name for energy data.
+            force_col (str): Column name for force data.
+
+        Returns:
+            Callable[[int], tuple[Structure, go.Figure]]: Update callback.
+        """
 
         def update_structure(step: int) -> tuple[Structure, go.Figure]:
             """Update the structure displayed in the StructureMoleculeComponent and the
