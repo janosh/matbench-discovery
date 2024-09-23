@@ -110,10 +110,10 @@ class Task(LabelEnum):
 class Targets(LabelEnum):
     """Thermodynamic stability prediction task types."""
 
-    E = "E", "energy"
-    EF = "EF", "energy forces"
-    EFS = "EFS", "energy forces stress"
-    EFSM = "EFSM", "energy forces stress magmoms"
+    E = "E", "Energy"
+    EF = "EF", "Energy Forces"
+    EFS = "EFS", "Energy Forces Stress"
+    EFSM = "EFSM", "Energy Forces Stress Magmoms"
 
 
 @unique

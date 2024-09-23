@@ -59,16 +59,22 @@ df_test = pd.read_csv(test_path).set_index(Key.mat_id)
 print(f"{df_test.shape=}")
 
 
-for df, df_tar, col in (
+for df, df_tar, e_form_col in (
     (df_train, df_mp, Key.form_energy),
     (df_test, df_wbm, MbdKey.e_form_dft),
 ):
-    df[Key.form_energy] = df_tar[Key.form_energy]
-    n_nans = df_tar[col].isna().sum()
+    df[Key.form_energy] = df_tar[e_form_col]
+    e_form_col = str(e_form_col)
+    n_nans = df_tar[e_form_col].isna().sum()
     if n_nans != 0:
-        raise ValueError(f"{col=} has {n_nans} NaNs")
+        raise ValueError(f"{e_form_col=} has {n_nans} NaNs")
 
 model_name = "Voronoi RandomForestRegressor"
+n_estimators = 150
+random_forest = RandomForestRegressor(n_estimators=n_estimators, n_jobs=-1, verbose=1)
+# counting only the threshold values for node splitting, see https://stackoverflow.com/a/75995417
+n_trainable_params = sum(tree.tree_.node_count for tree in random_forest.estimators_)
+print(f"{n_trainable_params=:,}")
 
 run_params = dict(
     train_path=train_path,
@@ -81,9 +87,11 @@ run_params = dict(
     df_train=dict(shape=str(df_train.shape)),
     df_test=dict(shape=str(df_test.shape)),
     slurm_vars=slurm_vars,
+    n_estimators=n_estimators,
+    n_trainable_params=n_trainable_params,
 )
 
-wandb.init(project="matbench-discovery", name=job_name, config=run_params)
+# wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 
 # %%
@@ -92,16 +100,12 @@ n_nans = df_train[feature_names].isna().any(axis=1).sum()
 
 print(f"train set NaNs: {n_nans:,} / {len(df_train):,} = {n_nans / len(df_train):.3%}")
 
-df_train = df_train.dropna(subset=feature_names)
+df_train = df_train.dropna(subset=[*feature_names, Key.form_energy])
 
 
 # %%
-model = Pipeline(
-    [
-        ("imputer", SimpleImputer()),  # For the failed structures
-        ("model", RandomForestRegressor(n_estimators=150, n_jobs=-1, verbose=1)),
-    ]
-)
+# SimpleImputer for the failed structures
+model = Pipeline([("imputer", SimpleImputer()), ("model", random_forest)])
 
 
 # %%

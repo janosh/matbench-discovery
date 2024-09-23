@@ -90,7 +90,7 @@ for model in df_metrics:
             training_sets = [training_sets]
 
         n_structs_total = n_materials_total = 0
-        dataset_urls, tooltip_lines = {}, []
+        dataset_urls, dataset_tooltip_lines = {}, []
 
         for train_set in training_sets:
             if isinstance(train_set, str) and train_set not in TRAINING_SETS:
@@ -107,30 +107,12 @@ for model in df_metrics:
             dataset_urls[key or title] = dataset_info.get("url", "")
 
             if n_materials != n_structs:
-                tooltip_lines += [
+                dataset_tooltip_lines += [
                     f"{title}: {si_fmt(n_materials)} materials ({si_fmt(n_structs)} "
                     "structures)"
                 ]
             else:
-                tooltip_lines += [f"{title}: {si_fmt(n_materials)} materials"]
-
-        title = f"Number of materials in training set = {n_materials_total:,}"
-        train_size_str = (
-            f"<span {title=} data-sort-value={n_materials_total}>"
-            f"{si_fmt(n_materials_total, fmt='.0f')}</span>"
-        )
-
-        if n_materials_total != n_structs_total:
-            title = (
-                f"Number of materials in training set = {n_materials_total:,}&#013;In "
-                f"parenthesis is number of structures = {n_structs_total}, usually "
-                "from multiple DFT relaxation frames per material"
-            )
-            train_size_str = (
-                f"<span {title=} data-sort-value={n_materials_total}>"
-                f"{si_fmt(n_materials_total, fmt='.0f')}</span>"
-                f" <small {title=}> ({si_fmt(n_structs_total, fmt='.1f')})</small>"
-            )
+                dataset_tooltip_lines += [f"{title}: {si_fmt(n_materials)} materials"]
 
         dataset_links = []
         for key, href in dataset_urls.items():
@@ -141,11 +123,34 @@ for model in df_metrics:
             else:
                 dataset_links += [key]
         dataset_str = "+".join(dataset_links)
-
-        tooltip = "&#013;".join(tooltip_lines)
-        train_size_str = (
-            f"<span title='{tooltip}'>{train_size_str} ({dataset_str})</span>"
+        new_line = "&#013;"  # line break that works in title attribute
+        dataset_tooltip = (
+            f"{new_line}&bull; ".join(["", *dataset_tooltip_lines])
+            if len(dataset_tooltip_lines) > 1
+            else ""
         )
+
+        title = (
+            f"{n_materials_total:,} materials in training set{new_line}"
+            f"{dataset_tooltip}"
+        )
+        train_size_str = (
+            f"<span {title=} data-sort-value={n_materials_total}>"
+            f"{si_fmt(n_materials_total, fmt='.0f')} ({dataset_str})</span>"
+        )
+
+        if n_materials_total != n_structs_total:
+            title = (
+                f"{n_materials_total:,} materials in training set ({n_structs_total:,} "
+                f"structures counting all DFT relaxation frames per material)"
+                f"{dataset_tooltip}"
+            )
+            train_size_str = (
+                f"<span {title=} data-sort-value={n_materials_total}>"
+                f"{si_fmt(n_materials_total, fmt='.0f')}"
+                f" <small>({si_fmt(n_structs_total, fmt='.1f')})</small>"
+                f" ({dataset_str})</span>"
+            )
 
         df_metrics_uniq_protos.loc[Key.train_set.label, model] = train_size_str
     elif model == "Dummy":
@@ -157,12 +162,12 @@ for model in df_metrics:
 
     model_params = model_metadata.get(Key.model_params, 0)
     n_estimators = model_metadata.get(Key.n_estimators, -1)
-    title = f"Number of models in ensemble = {n_estimators:,}"
+    title = f"{n_estimators:,} models in ensemble"
     n_estimators_str = (
         f" <small {title=}>(N={n_estimators})</small>" if n_estimators > 1 else ""
     )
 
-    title = f"Number of trainable model parameters = {model_params:,}"
+    title = f"{model_params:,} trainable model parameters"
     formatted_params = si_fmt(model_params)
     df_metrics_uniq_protos.loc[Key.model_params.label.replace("eter", ""), model] = (
         f'<span {title=} data-sort-value="{model_params}">{formatted_params}'
@@ -298,6 +303,7 @@ for (label, df_met), show_non_compliant in itertools.product(
         inline_props="class='metrics'",
         # draw line between classification and regression metrics
         styles=f"{col_selector} {{ border-left: 1px solid white; }}{hide_scroll_bar}",
+        sortable=True,
     )
     suffix = "" if show_non_compliant else "-only-compliant"
     non_compliant_idx = [  # get HTML strings of non-compliant models in styler.index
@@ -314,6 +320,7 @@ for (label, df_met), show_non_compliant in itertools.product(
     except (ImportError, RuntimeError) as exc:
         print(f"df_to_pdf failed: {exc}")
 
+    styler.set_sticky()
     display(styler.set_caption(df_met.attrs.get("title")))
 
 
