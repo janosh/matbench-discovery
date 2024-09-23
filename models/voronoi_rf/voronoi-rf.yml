@@ -32,7 +32,7 @@ train_task: RS2RE
 test_task: IS2E
 targets: E
 model_type: Fingerprint
-model_params: 0
+model_params: 26_243_464
 n_estimators: 1
 
 training_set: MP 2022
