@@ -1,5 +1,5 @@
 import os
-from unittest.mock import patch
+from unittest.mock import mock_open, patch
 
 import pytest
 
@@ -11,6 +11,7 @@ from matbench_discovery.slurm import _get_calling_file_path, slurm_submit
 @pytest.mark.parametrize("time", [None, "0:0:1"])
 @pytest.mark.parametrize("account", [None, "fake-account"])
 @pytest.mark.parametrize("pre_cmd", [None, "module load pytorch;", "ENV_VAR=42"])
+@pytest.mark.parametrize("submit_as_temp_file", [True, False])
 def test_slurm_submit(
     capsys: pytest.CaptureFixture[str],
     py_file_path: str | None,
@@ -18,6 +19,7 @@ def test_slurm_submit(
     time: str | None,
     account: str | None,
     pre_cmd: str | None,
+    submit_as_temp_file: bool,
 ) -> None:
     job_name = "test_job"
     out_dir = "tmp"
@@ -31,6 +33,7 @@ def test_slurm_submit(
         py_file_path=py_file_path,
         slurm_flags="--foo",
         pre_cmd=pre_cmd,
+        submit_as_temp_file=submit_as_temp_file,
     )
 
     slurm_submit(**kwargs)  # type: ignore[arg-type]
@@ -55,14 +58,32 @@ def test_slurm_submit(
         pytest.raises(SystemExit),
         patch("sys.argv", ["slurm-submit"]),
         patch("matbench_discovery.slurm.subprocess.run") as mock_subprocess_run,
+        patch(
+            "matbench_discovery.slurm.tempfile.mkdtemp",
+            return_value="/tmp/slurm_job_123",
+        ),
+        patch("matbench_discovery.slurm.shutil.copy2") as mock_copy2,
+        patch("builtins.open", mock_open()),
         patch.dict(os.environ, {"SLURM_JOB_ID": "1234"}, clear=True),
     ):
         slurm_submit(**kwargs)  # type: ignore[arg-type]
 
     assert mock_subprocess_run.call_count == 1
+
+    expected_py_file_path = py_file_path or __file__
+    if submit_as_temp_file:
+        expected_py_file_path = os.path.join(
+            "/tmp/slurm_job_123", os.path.basename(expected_py_file_path)
+        )
+        assert mock_copy2.called
+        assert mock_copy2.call_args[0][0] == (py_file_path or __file__)
+        assert mock_copy2.call_args[0][1] == expected_py_file_path
+    else:
+        assert not mock_copy2.called
+
     sbatch_cmd = (
         f"sbatch --job-name {job_name} --output {out_dir}/slurm-%A.log --foo "
-        f"--wrap {pre_cmd + ' ' if pre_cmd else ''}python {py_file_path or __file__}"
+        f"--wrap {pre_cmd + ' ' if pre_cmd else ''}python {expected_py_file_path}"
     ).replace(" --", "\n  --")
     for flag in (f"{time=!s}", f"{account=!s}", f"{partition=!s}"):
         key, val = flag.split("=")
