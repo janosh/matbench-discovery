@@ -1,8 +1,10 @@
 """Slurm job submission helper function."""
 
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 from collections.abc import Sequence
 
 # taken from https://slurm.schedmd.com/job_array.html#env_vars, lower-cased and
@@ -11,6 +13,7 @@ SLURM_KEYS = (
     "job_id array_job_id array_task_id array_task_count mem_per_node nodelist"
     "submit_host job_partition job_user job_account tasks_per_node job_qos"
 ).split()
+SLURM_SUBMIT_KEY = "slurm-submit"
 
 
 def _get_calling_file_path(frame: int = 1) -> str:
@@ -37,6 +40,7 @@ def slurm_submit(
     slurm_flags: str | Sequence[str] = (),
     array: str | None = None,
     pre_cmd: str = "",
+    submit_as_temp_file: bool = True,
 ) -> dict[str, str]:
     """Slurm submits a python script using `sbatch --wrap 'python path/to/file.py'`.
 
@@ -61,6 +65,9 @@ def slurm_submit(
             variables to set before running the python script go here. Example:
             pre_cmd='ENV_VAR=42' or 'module load pytorch;'. Defaults to "". If running
             on CPU, pre_cmd="unset OMP_NUM_THREADS" allows PyTorch to use all cores.
+        submit_as_temp_file (bool, optional): If True, copy the Python file to a
+            temporary directory before submitting. This allows the user to modify
+            the original file without affecting queued jobs. Defaults to True.
 
     Raises:
         SystemExit: Exit code will be subprocess.run(['sbatch', ...]).returncode.
@@ -72,6 +79,13 @@ def slurm_submit(
     py_file_path = py_file_path or _get_calling_file_path(frame=2)
 
     os.makedirs(out_dir, exist_ok=True)  # slurm fails if out_dir is missing
+
+    # Copy the file to a temporary directory if submit_as_temp_file is True
+    if submit_as_temp_file and SLURM_SUBMIT_KEY in sys.argv:
+        temp_dir = tempfile.mkdtemp(prefix="slurm_job_")
+        temp_file_path = os.path.join(temp_dir, os.path.basename(py_file_path))
+        shutil.copy2(py_file_path, temp_file_path)
+        py_file_path = temp_file_path
 
     # ensure pre_cmd ends with a semicolon
     if pre_cmd and not pre_cmd.strip().endswith(";"):
@@ -105,13 +119,13 @@ def slurm_submit(
 
     # print sbatch command into slurm log file and at job submission time
     # but not into terminal or Jupyter
-    if (is_slurm_job and is_log_file) or "slurm-submit" in sys.argv:
+    if (is_slurm_job and is_log_file) or SLURM_SUBMIT_KEY in sys.argv:
         print(f"\n{' '.join(cmd)}\n".replace(" --", "\n  --"))
     if is_slurm_job and is_log_file:
         for key, val in slurm_vars.items():
             print(f"{key}={val}")
 
-    if "slurm-submit" not in sys.argv:
+    if SLURM_SUBMIT_KEY not in sys.argv:
         return slurm_vars  # if not submitting slurm job, resume outside code as normal
 
     result = subprocess.run(cmd, check=True)
