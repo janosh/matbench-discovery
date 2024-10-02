@@ -35,9 +35,9 @@ name_map = {
     "CHGNet→MEGNet": "CHGNet",
 }
 date_added_col = "Date Added"
-df_metrics_uniq_protos.loc[Key.train_set.label] = df_metrics_uniq_protos.loc[
-    date_added_col
-] = ""
+model_name_col = "Model"
+df_metrics_uniq_protos.loc[Key.train_set.label] = ""
+df_metrics_uniq_protos.loc[date_added_col] = ""
 
 non_compliant_models = [
     key
@@ -78,12 +78,9 @@ for model in df_metrics:
         "data-model-key": model_key,
     }
     html_attr_str = " ".join(f'{k}="{v}"' for k, v in attrs.items() if v)
-    df_metrics_uniq_protos.loc[Key.model_name.label, model] = (
+    df_metrics_uniq_protos.loc[model_name_col, model] = (
         f"<span {html_attr_str}>{model}</span>"
     )
-    # assign this col to all tables
-    for df in (df_metrics, df_metrics_10k, df_metrics_uniq_protos):
-        df.loc[Key.model_name.label] = df_metrics_uniq_protos.loc[Key.model_name.label]
 
     if training_sets := model_metadata.get("training_set"):
         if isinstance(training_sets, dict | str):
@@ -178,6 +175,10 @@ for model in df_metrics:
         default = {MbdKey.openness: Open.OSOD}.get(key, pd.NA)
         df_metrics_uniq_protos.loc[key.label, model] = model_metadata.get(key, default)
 
+# assign this col to all tables
+for df in (df_metrics, df_metrics_10k, df_metrics_uniq_protos):
+    df.loc[model_name_col] = df_metrics_uniq_protos.loc[model_name_col]
+
 
 # %% add dummy classifier results to df_metrics(_10k, _uniq_protos)
 df_mp = pd.read_csv(DataFiles.mp_energies.path, index_col=0)
@@ -205,7 +206,7 @@ for df_in, df_out, col in (
     dummy_metrics["MAE"] = (each_true - each_true.mean()).abs().mean()
     dummy_metrics["RMSE"] = ((each_true - each_true.mean()) ** 2).mean() ** 0.5
 
-    df_out[col] = dummy_metrics | {Key.model_name.label: col}
+    df_out[col] = dummy_metrics | {model_name_col: col}
 
 
 # %%
@@ -228,7 +229,6 @@ meta_cols = [
     Key.model_type.label,
     Key.targets.label,
     date_added_col,
-    Key.model_name.label,
 ]
 show_cols = [*f"F1,DAF,Prec,Acc,TPR,TNR,MAE,RMSE,{R2_col}".split(","), *meta_cols]
 
@@ -242,14 +242,13 @@ for (label, df_met), show_non_compliant in itertools.product(
 ):
     # abbreviate long column names
     df_met = df_met.rename(index={"R2": R2_col, "Precision": "Prec", "Accuracy": "Acc"})
-    df_met.index.name = "Model"
     # only keep columns we want to show
-    df_table = df_met.T.filter(show_cols)
-    df_table = df_table.set_index(Key.model_name.label)
-    df_table.index.name = None
+    df_table = df_met.T.filter([model_name_col, *show_cols])
 
     if make_uip_megnet_comparison:
-        df_table = df_table.filter(regex="MEGNet|CHGNet|M3GNet")  # |Dummy
+        df_table = df_table[
+            df_table.index.str.contains("MEGNet|CHGNet|M3GNet")
+        ]  # |Dummy
         label += "-uip-megnet-combos"
         if "M3GNet→MEGNet" not in df_table:
             print(
@@ -277,12 +276,33 @@ for (label, df_met), show_non_compliant in itertools.product(
             cmap="viridis_r", subset=list(lower_is_better & {*df_table}), axis="index"
         )
     )
-    # add up/down arrows to indicate which metrics are better when higher/lower
-    arrow_suffix = dict.fromkeys(higher_is_better, " ↑") | dict.fromkeys(
-        lower_is_better, " ↓"
-    )
+
+    def tooltip_label(col: str) -> str:
+        # add up/down arrows to indicate which metrics are better when higher/lower
+        arrow_suffix = dict.fromkeys(higher_is_better, " ↑") | dict.fromkeys(
+            lower_is_better, " ↓"
+        )
+
+        tooltips_titles = {
+            R2_col: "coefficient of determination",
+            "DAF": "discovery acceleration factor",
+            "Prec": "precision",
+            "Acc": "accuracy",
+            "TPR": "true positive rate",
+            "TNR": "true negative rate",
+            "MAE": "mean absolute error",
+            "RMSE": "root mean squared error",
+            "F1": "harmonic mean of precision and recall",
+        }
+
+        label = f"{col}{arrow_suffix.get(col, '')}"
+        if col in tooltips_titles:
+            title = tooltips_titles[col]
+            return f"<span {title=}>{label}</span>"
+        return label
+
     styler.relabel_index(
-        [f"{col}{arrow_suffix.get(col, '')}" for col in df_table], axis="columns"
+        [tooltip_label(col) for col in df_table], axis="columns"
     ).set_uuid("")
 
     # export model metrics as styled HTML table and Svelte component
@@ -297,6 +317,10 @@ for (label, df_met), show_non_compliant in itertools.product(
     table::-webkit-scrollbar {
         display: none;  /* Safari and Chrome */
     }"""
+    styler.set_sticky(axis="index")
+    # Hide the original index since it's the same content same as model_name_col except
+    # model_name_col also has HTML title attributes for hover tooltips
+    styler.hide(axis="index")
     df_to_html_table(
         styler,
         file_path=f"{SITE_FIGS}/metrics-table{label}.svelte",
@@ -306,11 +330,7 @@ for (label, df_met), show_non_compliant in itertools.product(
         sortable=True,
     )
     suffix = "" if show_non_compliant else "-only-compliant"
-    non_compliant_idx = [  # get HTML strings of non-compliant models in styler.index
-        idx
-        for idx in styler.index
-        if any(f">{model_name}<" in idx for model_name in non_compliant_models)
-    ]
+    non_compliant_idx = [*set(styler.index) & set(non_compliant_models)]
     try:
         for pdf_path in (PDF_FIGS, f"{ROOT}/site/static/figs"):
             df_to_pdf(
@@ -320,7 +340,6 @@ for (label, df_met), show_non_compliant in itertools.product(
     except (ImportError, RuntimeError) as exc:
         print(f"df_to_pdf failed: {exc}")
 
-    styler.set_sticky()
     display(styler.set_caption(df_met.attrs.get("title")))
 
 
