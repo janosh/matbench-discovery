@@ -7,7 +7,7 @@ import pymatviz as pmv
 from aviary.wren.utils import get_prototype_from_protostructure
 from IPython.display import display
 from pymatviz.enums import Key
-from pymatviz.io import df_to_html_table, df_to_pdf, save_fig
+from pymatviz.io import df_to_html, df_to_pdf, save_fig
 from pymatviz.powerups import add_identity_line
 from pymatviz.ptable import ptable_heatmap_plotly
 from pymatviz.utils import PLOTLY, bin_df_cols
@@ -77,7 +77,7 @@ styler = df_proto_counts.head(10).style.background_gradient(cmap="viridis")
 styler.set_caption(f"Top 10 {proto_col} in {len(df_bad)} {model} failures")
 display(styler)
 img_name = f"proto-counts-{model_low}-failures"
-df_to_html_table(styler, file_path=f"{SITE_FIGS}/{img_name}.svelte")
+df_to_html(styler, file_path=f"{SITE_FIGS}/{img_name}.svelte")
 df_to_pdf(styler, f"{PDF_FIGS}/{img_name}.pdf")
 
 
