@@ -276,12 +276,33 @@ for (label, df_met), show_non_compliant in itertools.product(
             cmap="viridis_r", subset=list(lower_is_better & {*df_table}), axis="index"
         )
     )
-    # add up/down arrows to indicate which metrics are better when higher/lower
-    arrow_suffix = dict.fromkeys(higher_is_better, " ↑") | dict.fromkeys(
-        lower_is_better, " ↓"
-    )
+
+    def tooltip_label(col: str) -> str:
+        # add up/down arrows to indicate which metrics are better when higher/lower
+        arrow_suffix = dict.fromkeys(higher_is_better, " ↑") | dict.fromkeys(
+            lower_is_better, " ↓"
+        )
+
+        tooltips_titles = {
+            R2_col: "coefficient of determination",
+            "DAF": "discovery acceleration factor",
+            "Prec": "precision",
+            "Acc": "accuracy",
+            "TPR": "true positive rate",
+            "TNR": "true negative rate",
+            "MAE": "mean absolute error",
+            "RMSE": "root mean squared error",
+            "F1": "harmonic mean of precision and recall",
+        }
+
+        label = f"{col}{arrow_suffix.get(col, '')}"
+        if col in tooltips_titles:
+            title = tooltips_titles[col]
+            return f"<span {title=}>{label}</span>"
+        return label
+
     styler.relabel_index(
-        [f"{col}{arrow_suffix.get(col, '')}" for col in df_table], axis="columns"
+        [tooltip_label(col) for col in df_table], axis="columns"
     ).set_uuid("")
 
     # export model metrics as styled HTML table and Svelte component
