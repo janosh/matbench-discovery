@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import yaml
 from pymatviz.enums import Key, eV_per_atom
-from pymatviz.io import df_to_html_table, df_to_pdf
+from pymatviz.io import df_to_html, df_to_pdf
 from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
 
@@ -335,7 +335,7 @@ for (label, df_met), show_non_compliant in itertools.product(
     # Hide the original index since it's the same content same as model_name_col except
     # model_name_col also has HTML title attributes for hover tooltips
     styler.hide(axis="index")
-    df_to_html_table(
+    df_to_html(
         styler,
         file_path=f"{SITE_FIGS}/metrics-table{label}.svelte",
         inline_props="class='metrics'",
