@@ -58,6 +58,7 @@ eV_per_atom = pmv.html_tag(  # noqa: N816
 class MbdKey(LabelEnum):
     """Keys used to access dataframes columns."""
 
+    dft_energy = "uncorrected_energy", "DFT Energy"
     e_form_dft = (
         "e_form_per_atom_mp2020_corrected",
         f"DFT E<sub>form</sub> {eV_per_atom}",
@@ -68,16 +69,19 @@ class MbdKey(LabelEnum):
     )
     e_form_wbm = "e_form_per_atom_wbm", f"WBM E<sub>form</sub> {eV_per_atom}"
     each_true = "e_above_hull_mp2020_corrected_ppd_mp", "E<sub>MP hull dist</sub>"
+    each_wbm = "e_above_hull_wbm", "E<sub>WBM hull dist</sub>"
     each_mean_models = "each_mean_models", "E<sub>hull dist</sub> mean of models"
     each_err_models = "each_err_models", "E<sub>hull dist</sub> mean error of models"
     model_std_each = "each_std_models", "Std. dev. over models"
+    openness = "openness", "Openness"
+
     init_wyckoff = (
         "wyckoff_spglib_initial_structure",
         "Aflow-Wyckoff Label Initial Structure",
     )
-    openness = "openness", "Openness"
-    dft_energy = "uncorrected_energy", "DFT Energy"
-    each_wbm = "e_above_hull_wbm", "E<sub>WBM hull dist</sub>"
+    international_spg_name = "international_spg_name", "International space group name"
+    spg_num_diff = "spg_num_diff", "Difference in space group number"
+    n_sym_ops_diff = "n_sym_ops_diff", "Difference in number of symmetry operations"
 
 
 @unique

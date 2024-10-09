@@ -1,10 +1,15 @@
-"""Perturb atomic coordinates of a pymatgen structure.
+"""Perturb atomic coordinates of a pymatgen structure and analyze symmetry."""
 
-Used for CGCNN+P training set augmentation.
-"""
+import warnings
 
 import numpy as np
+import pandas as pd
+import spglib
+from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Structure
+from pymatviz.enums import Key
+
+from matbench_discovery.enums import MbdKey
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-12-02"
@@ -35,6 +40,87 @@ def perturb_structure(struct: Structure, gamma: float = 1.5) -> Structure:
         site.to_unit_cell(in_place=True)
 
     return perturbed
+
+
+def analyze_symmetry(structures: dict[str, Structure]) -> pd.DataFrame:
+    """Analyze symmetry of a dictionary of structures using spglib.
+
+    Args:
+        structures (dict[str, Structure]): Map material IDs to pymatgen Structures
+
+    Returns:
+        pd.DataFrame: DataFrame containing symmetry information for each structure
+    """
+    sym_key_map = {
+        "number": Key.spg_num,
+        "hall_number": Key.hall_num,
+        "international": MbdKey.international_spg_name,
+        "hall": Key.hall_symbol,
+        "choice": Key.choice_symbol,
+        "pointgroup": Key.point_group,
+        "wyckoffs": Key.wyckoff_symbols,
+    }
+
+    results: dict[str, dict[str, str | int | list[str]]] = {}
+    for mat_id, struct in structures.items():
+        cell = (struct.lattice.matrix, struct.frac_coords, struct.atomic_numbers)
+        with warnings.catch_warnings():
+            warnings.simplefilter(action="ignore", category=spglib.spglib.SpglibError)
+            sym_data: spglib.SpglibDataset = spglib.get_symmetry_dataset(cell)
+
+        sym_info = {
+            new_key: getattr(sym_data, old_key)
+            for old_key, new_key in sym_key_map.items()
+        }
+        sym_info[Key.n_rot_ops] = len(sym_data.rotations)
+        sym_info[Key.n_trans_ops] = len(sym_data.translations)
+        sym_info[Key.n_sym_ops] = sym_info[Key.n_rot_ops] + sym_info[Key.n_trans_ops]
+
+        results[mat_id] = sym_info
+
+    df_sym = pd.DataFrame(results).T
+    df_sym.index.name = Key.mat_id
+    return df_sym
+
+
+def pred_vs_ref_struct_symmetry(
+    df_sym_pred: pd.DataFrame,
+    df_sym_ref: pd.DataFrame,
+    pred_structs: dict[str, Structure],
+    ref_structs: dict[str, Structure],
+) -> pd.DataFrame:
+    """Get RMSD and compare symmetry between ML and DFT reference structures.
+
+    Modifies the df_sym_pred DataFrame in place by adding columns for symmetry
+    differences and RMSDs.
+
+    Args:
+        df_sym_pred (pd.DataFrame): symmetry information for ML model as returned by
+            analyze_symmetry.
+        df_sym_ref (pd.DataFrame): symmetry information for DFT reference as returned by
+            analyze_symmetry.
+        pred_structs (dict[str, Structure]): Map material IDs to ML-relaxed structures
+        ref_structs (dict[str, Structure]): Map material IDs to reference structures
+
+    Returns:
+        pd.DataFrame: with added columns for symmetry differences
+    """
+    # Calculate differences
+    df_sym_pred[MbdKey.spg_num_diff] = (
+        df_sym_pred[Key.spg_num] - df_sym_ref[Key.spg_num]
+    )
+    df_sym_pred[MbdKey.n_sym_ops_diff] = (
+        df_sym_pred[Key.n_sym_ops] - df_sym_ref[Key.n_sym_ops]
+    )
+
+    structure_matcher = StructureMatcher()
+    common_ids = set(pred_structs) & set(ref_structs)
+    for mat_id in common_ids:
+        df_sym_pred.loc[mat_id, (Key.rmsd, Key.max_pair_dist)] = (
+            structure_matcher.get_rms_dist(pred_structs[mat_id], ref_structs[mat_id])
+        )
+
+    return df_sym_pred
 
 
 if __name__ == "__main__":
