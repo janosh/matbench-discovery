@@ -119,7 +119,6 @@ isort.split-on-trailing-comma = false
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["D", "FBT001", "FBT002", "S101"]
 "matbench_discovery/plots.py" = ["ERA001"]    # allow commented out code
-"matbench_discovery/preds.py" = ["ERA001"]    # allow commented out code
 "scripts/*" = ["D", "ERA001"]
 "models/*" = ["D", "ERA001"]
 "data/*" = ["ERA001", "S101"]

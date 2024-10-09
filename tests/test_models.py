@@ -4,8 +4,8 @@ from glob import glob
 import pytest
 
 from matbench_discovery import ROOT, __version__
-from matbench_discovery.models import MODEL_DIRS, MODEL_METADATA, model_is_compliant
-from matbench_discovery.preds import Model
+from matbench_discovery.data import Model
+from matbench_discovery.models import MODEL_DIRS, MODEL_METADATA
 
 
 def parse_version(v: str) -> tuple[int, ...]:
