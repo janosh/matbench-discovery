@@ -19,10 +19,9 @@ from sklearn.metrics import r2_score
 from tqdm import tqdm
 
 from matbench_discovery import timestamp, today
-from matbench_discovery.data import DataFiles, df_wbm
+from matbench_discovery.data import DataFiles, Model, df_wbm
 from matbench_discovery.enums import MbdKey, Task
 from matbench_discovery.plots import wandb_scatter
-from matbench_discovery.preds import Model
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
