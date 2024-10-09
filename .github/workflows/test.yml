@@ -20,7 +20,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-    uses: janosh/workflows/.github/workflows/pytest-release.yml@main
+    uses: janosh/workflows/.github/workflows/pytest.yml@main
     with:
       os: ${{ matrix.os }}
       python-version: "3.11"
