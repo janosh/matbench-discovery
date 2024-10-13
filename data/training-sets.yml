@@ -36,3 +36,8 @@ Alex:
   url: https://alexandria.icams.rub.de
   n_structures: 30_497_628
   n_materials: 3_100_000
+
+OMat24:
+  title: OMat24
+  url: https://huggingface.co/datasets/fairchem/OMAT24
+  n_structures: 100_824_585
