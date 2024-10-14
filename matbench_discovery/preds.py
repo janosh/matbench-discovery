@@ -19,7 +19,7 @@ __author__ = "Janosh Riebesell"
 __date__ = "2023-02-04"
 
 
-# ruff: noqa: E501 (ignore long lines in class Model)
+# ruff: noqa: E501 (ignore long lines in this class)
 class Model(Files, base_dir=f"{ROOT}/models"):
     """Data files provided by Matbench Discovery.
     See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
@@ -77,11 +77,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     orb_mptrj = "orb/orbff-mptrj-only-v1-20240827.csv.gz", "orb/orb-mptrj.yml", "ORB MPtrj"  # fmt: skip
 
     # fairchem
-    eqV2_31M_dens_mp = (
-        "fairchem/eqV2-31M-dens-mp.csv.gz",
-        "fairchem/eqV2-31M-dens-mp.yml",
-        "EqV2-31M-DeNS-MP",
-    )
+    eqv2_31m_dens_mp = "fairchem/eqV2-31M-dens-mp.csv.gz", "fairchem/eqV2-31M-dens-mp.yml", "EqV2-31M-DeNS-MP"  # fmt: skip
 
     # --- Model Combos
     # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
