@@ -12,6 +12,7 @@ import pandas as pd
 import torch
 import typer
 import wandb
+from ase import Atoms
 from ase.filters import FrechetCellFilter, UnitCellFilter
 from ase.optimize import BFGS, FIRE, LBFGS
 from fairchem.core import OCPCalculator
@@ -35,22 +36,19 @@ DATABASE_PATH = {
     Task.IS2RE: str(BASE_PATH / "WBM_IS2RE.aselmdb"),
 }
 
-FILTER_CLS = {
-    "frechet": FrechetCellFilter,
-    "unit": UnitCellFilter,
-}
+FILTER_CLS = {"frechet": FrechetCellFilter, "unit": UnitCellFilter}
 OPTIM_CLS = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": BFGS}
 
 
 class AseDBSubset(Subset):
-    def get_atoms(self, idx: int) -> "Atoms":
+    def get_atoms(self, idx: int) -> Atoms:
         return self.dataset.get_atoms(self.indices[idx])
 
 
 class RelaxJob(Checkpointable):
-    """Submitit checkpointable to handle pre-emptions gracefully"""
+    """Submitit checkpointable MLFF relax job to handle preemptions gracefully"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.relax_results: dict[str, dict[str, Any]] = {}
 
     def __call__(
@@ -60,17 +58,18 @@ class RelaxJob(Checkpointable):
         out_path: Path,
         model_name: str,
         job_name: str,
+        *,
         task_type: Task = Task.IS2RE,
         optimizer: Literal["FIRE", "LBFGS", "BFGS"] = "FIRE",
         cell_filter: Literal["frechet", "unit"] | None = "frechet",
         force_max: float = 0.02,
         max_steps: int = 500,
-        optimizer_params: dict | None = None,
+        optimizer_params: dict[str, Any] | None = None,
         device: Literal["cuda", "cpu"] = "cuda",
         use_amp: bool = True,
         num_jobs: int = 1,
         debug: bool = False,
-    ):
+    ) -> None:
         run_name = f"{job_name}-{job_number}"
         out_path = out_path / f"{model_name}-{today}-{job_number:>03}.json.gz"
 
@@ -142,17 +141,17 @@ class RelaxJob(Checkpointable):
         dataset: AseDBDataset | AseDBSubset,
         calculator: OCPCalculator,
         optimizer: Literal["FIRE", "LBFGS", "BFGS"],
-        cell_filter: Literal["frechet", "unit"],
+        cell_filter: Literal["frechet", "unit"] | None,
         force_max: float,
         max_steps: int,
-        optimizer_params: dict,
-    ):
+        optimizer_params: dict[str, Any],
+    ) -> None:
         """Run WBM relaxations using an ASE optimizer."""
-        filter_cls = FILTER_CLS.get(cell_filter)
+        filter_cls = FILTER_CLS.get(cell_filter or "")
         optim_cls = OPTIM_CLS[optimizer]
 
-        for i in trange(len(dataset), desc="Relaxing with ASE"):
-            atoms = dataset.get_atoms(i)
+        for idx in trange(len(dataset), desc="Relaxing with ASE"):
+            atoms = dataset.get_atoms(idx)
             material_id = atoms.info["sid"]
             if material_id in self.relax_results:
                 logging.info(f"Structure {material_id} has already been relaxed.")
@@ -161,15 +160,15 @@ class RelaxJob(Checkpointable):
                 atoms.calc = calculator
 
                 if filter_cls is not None:
-                    optimizer = optim_cls(
+                    optim_inst = optim_cls(
                         filter_cls(atoms), logfile="/dev/null", **optimizer_params
                     )
                 else:
-                    optimizer = optim_cls(
+                    optim_inst = optim_cls(
                         atoms, logfile="/dev/null", **optimizer_params
                     )
 
-                optimizer.run(fmax=force_max, steps=max_steps)
+                optim_inst.run(fmax=force_max, steps=max_steps)
 
                 energy = atoms.get_potential_energy()
                 structure = AseAtomsAdaptor.get_structure(atoms)
@@ -178,8 +177,8 @@ class RelaxJob(Checkpointable):
                     "structure": structure,
                     "energy": energy,
                 }
-            except Exception as exc:
-                logging.exception(f"Failed to relax {material_id}: {exc!r}")
+            except Exception:
+                logging.exception(f"Failed to relax {material_id}")
                 continue
 
 
@@ -187,6 +186,7 @@ def run_relax(
     checkpoint_path: Annotated[Path, typer.Option()],
     out_path: Annotated[Path, typer.Option(help="Output path to write results files")],
     model_name: Annotated[str, typer.Option(help="Name given to model")],
+    *,
     optimizer: Annotated[
         str, typer.Option(help="Optimizer for relaxations: 'FIRE', 'BFGS', 'LBFGS'")
     ] = "LBFGS",
@@ -200,7 +200,8 @@ def run_relax(
         int, typer.Option(help="max number of relaxation steps")
     ] = 500,
     optimizer_params: Annotated[
-        str, typer.Option(help="Optimizer parameters as a json string dictionary")
+        str | None,
+        typer.Option(help="Optimizer parameters as a json string dictionary"),
     ] = None,
     device: Annotated[str, typer.Option(help="Device to use torch")] = "cuda"
     if torch.cuda.is_available()
@@ -212,7 +213,7 @@ def run_relax(
     slurm_partition: Annotated[str, typer.Option(help="Slurm partition")] = "NAME",
     slurm_timeout: Annotated[int, typer.Option(help="slurm time out in hours")] = 8,
     debug: Annotated[bool, typer.Option(help="debug mode, run only one job")] = False,
-):
+) -> None:
     setup_logging()
     task_type = Task.IS2RE
     job_name = f"{model_name}-wbm-{task_type}-{optimizer}"

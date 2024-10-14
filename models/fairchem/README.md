@@ -1,13 +1,13 @@
 # FAIRChem models
 
-Model checkpoints for the two models submitted and additional models trained are avaiable [here](https://huggingface.co/fairchem/OMAT24)
+Model checkpoints for the two models submitted and additional models trained are available [here](https://huggingface.co/fairchem/OMAT24)
 
-The OMat24 training and validation dataset splits used to pretrain non-compliant models can be downloaded [here](https://fair-chem.github.io/core/datasets/omat24.html)
+The OMat24 training and validation dataset splits used to pre-train non-compliant models can be downloaded [here](https://fair-chem.github.io/core/datasets/omat24.html)
 The OMat24 train and val splits are fully compatible with the Matbench-Discovery test set.
 
-1.  The splits do not contain any structure that has a protostructure label present in the initial or relaxed structures of the WBM dataset.
-2.  The splits do not include any structure that was generated starting from an Alexandria relaxed structure with protostructure lable in the intitial or relaxed structures of the
-    WBM datset.
+1. The splits do not contain any structure that has a protostructure label present in the initial or relaxed structures of the WBM dataset.
+2. The splits do not include any structure that was generated starting from an Alexandria relaxed structure with protostructure label in the initial or relaxed structures of the
+   WBM dataset.
 
 The code and training config files necessary to train and evaluate the models is available in the official [FAIRChem repo](https://github.com/FAIR-Chem/fairchem)
 
