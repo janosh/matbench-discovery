@@ -1,50 +1,45 @@
 """Test FAIRChem models for matbench-discovery"""
 
-import os
-from pathlib import Path
-from importlib.metadata import version
-from typing import Any, Literal, Annotated
-import logging
-from functools import partial
 import json
-
-import typer
-import wandb
+import logging
+import os
+from importlib.metadata import version
+from pathlib import Path
+from typing import Annotated, Any, Literal
 
 import numpy as np
 import pandas as pd
 import torch
-from torch.utils.data import Subset, DataLoader
-from submitit import AutoExecutor
-from submitit.helpers import Checkpointable
-
-from tqdm import tqdm, trange
-
+import typer
+import wandb
 from ase.filters import FrechetCellFilter, UnitCellFilter
-from ase.optimize import FIRE, LBFGS, BFGS
+from ase.optimize import BFGS, FIRE, LBFGS
+from fairchem.core import OCPCalculator
+from fairchem.core.common.utils import setup_logging
+from fairchem.core.datasets import AseDBDataset
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
+from submitit import AutoExecutor
+from submitit.helpers import Checkpointable
+from torch.utils.data import Subset
+from tqdm import trange
 
-from matbench_discovery import ROOT, timestamp, today
-from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
+from matbench_discovery import timestamp, today
+from matbench_discovery.data import as_dict_handler, df_wbm
 from matbench_discovery.enums import MbdKey, Task
 from matbench_discovery.plots import wandb_scatter
-
-from fairchem.core import OCPCalculator
-from fairchem.core.datasets import AseDBDataset
-from fairchem.core.common.utils import setup_logging
 
 BASE_PATH = Path("PATH/TO/DBS")
 DATABASE_PATH = {
     Task.RS2RE: str(BASE_PATH / "WBM_RS2RE.aselmdb"),
-    Task.IS2RE: str(BASE_PATH / "WBM_IS2RE.aselmdb")
+    Task.IS2RE: str(BASE_PATH / "WBM_IS2RE.aselmdb"),
 }
 
 FILTER_CLS = {
     "frechet": FrechetCellFilter,
     "unit": UnitCellFilter,
 }
-OPTIM_CLS = {"FIRE": FIRE, "LBFGS": LBFGS, 'BFGS': BFGS}
+OPTIM_CLS = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": BFGS}
 
 
 class AseDBSubset(Subset):
@@ -81,7 +76,9 @@ class RelaxJob(Checkpointable):
 
         logging.info(f"Starting ASE relaxation job {run_name}.")
 
-        calc = OCPCalculator(checkpoint_path=checkpoint_path, cpu=device == "cpu", seed=0)
+        calc = OCPCalculator(
+            checkpoint_path=checkpoint_path, cpu=device == "cpu", seed=0
+        )
         if use_amp is False:  # disable the scaler
             calc.trainer.scaler = None
 
@@ -98,7 +95,9 @@ class RelaxJob(Checkpointable):
         optimizer_params = optimizer_params or {}
         run_params = {
             "data_path": data_path,
-            "versions": {dep: version(dep) for dep in ("fairchem-core", "numpy", "torch")},
+            "versions": {
+                dep: version(dep) for dep in ("fairchem-core", "numpy", "torch")
+            },
             Key.task_type: task_type,
             "max_steps": max_steps,
             "force_max": force_max,
@@ -107,7 +106,7 @@ class RelaxJob(Checkpointable):
             "model_name": model_name,
             "optimizer": optimizer,
             "filter": cell_filter,
-            "optimizer_params": optimizer_params
+            "optimizer_params": optimizer_params,
         }
         wandb.init(project="matbench-discovery", config=run_params, name=run_name)
 
@@ -133,7 +132,9 @@ class RelaxJob(Checkpointable):
         )
 
         title = f"FAIRChem {model_name} {task_type} ({len(df_out):,})"
-        wandb_scatter(table, fields=dict(x=MbdKey.dft_energy, y=e_pred_col), title=title)
+        wandb_scatter(
+            table, fields=dict(x=MbdKey.dft_energy, y=e_pred_col), title=title
+        )
         wandb.log_artifact(out_path, type=f"fairchem-{model_name}-wbm-{task_type}")
 
     def _ase_relax(
@@ -160,9 +161,13 @@ class RelaxJob(Checkpointable):
                 atoms.calc = calculator
 
                 if filter_cls is not None:
-                    optimizer = optim_cls(filter_cls(atoms), logfile="/dev/null", **optimizer_params)
+                    optimizer = optim_cls(
+                        filter_cls(atoms), logfile="/dev/null", **optimizer_params
+                    )
                 else:
-                    optimizer = optim_cls(atoms, logfile="/dev/null", **optimizer_params)
+                    optimizer = optim_cls(
+                        atoms, logfile="/dev/null", **optimizer_params
+                    )
 
                 optimizer.run(fmax=force_max, steps=max_steps)
 
@@ -174,7 +179,7 @@ class RelaxJob(Checkpointable):
                     "energy": energy,
                 }
             except Exception as exc:
-                logging.error(f"Failed to relax {material_id}: {exc!r}")
+                logging.exception(f"Failed to relax {material_id}: {exc!r}")
                 continue
 
 
@@ -182,14 +187,28 @@ def run_relax(
     checkpoint_path: Annotated[Path, typer.Option()],
     out_path: Annotated[Path, typer.Option(help="Output path to write results files")],
     model_name: Annotated[str, typer.Option(help="Name given to model")],
-    optimizer: Annotated[str, typer.Option(help="Optimizer for relaxations: 'FIRE', 'BFGS', 'LBFGS'")] = "LBFGS",
-    cell_filter: Annotated[str | None, typer.Option(help="Filter for cell relaxation")] = None,
-    force_max: Annotated[float, typer.Option(help="Force relaxation convergence threshold")] = 0.02,
-    max_steps: Annotated[int, typer.Option(help="max number of relaxation steps")] = 500,
-    optimizer_params: Annotated[str, typer.Option(help="Optimizer parameters as a json string dictionary")] = None,
-    device: Annotated[str, typer.Option(help="Device to use torch")] =  "cuda" if torch.cuda.is_available() else "cpu",
+    optimizer: Annotated[
+        str, typer.Option(help="Optimizer for relaxations: 'FIRE', 'BFGS', 'LBFGS'")
+    ] = "LBFGS",
+    cell_filter: Annotated[
+        str | None, typer.Option(help="Filter for cell relaxation")
+    ] = None,
+    force_max: Annotated[
+        float, typer.Option(help="Force relaxation convergence threshold")
+    ] = 0.02,
+    max_steps: Annotated[
+        int, typer.Option(help="max number of relaxation steps")
+    ] = 500,
+    optimizer_params: Annotated[
+        str, typer.Option(help="Optimizer parameters as a json string dictionary")
+    ] = None,
+    device: Annotated[str, typer.Option(help="Device to use torch")] = "cuda"
+    if torch.cuda.is_available()
+    else "cpu",
     use_amp: Annotated[bool, typer.Option(help="Use automatic mixed precision")] = True,
-    num_jobs: Annotated[int, typer.Option(help="Number of slurm tasks to submit")] = 512,
+    num_jobs: Annotated[
+        int, typer.Option(help="Number of slurm tasks to submit")
+    ] = 512,
     slurm_partition: Annotated[str, typer.Option(help="Slurm partition")] = "NAME",
     slurm_timeout: Annotated[int, typer.Option(help="slurm time out in hours")] = 8,
     debug: Annotated[bool, typer.Option(help="debug mode, run only one job")] = False,
@@ -199,7 +218,9 @@ def run_relax(
     job_name = f"{model_name}-wbm-{task_type}-{optimizer}"
 
     os.makedirs(out_path / model_name, exist_ok=True)
-    executor = AutoExecutor(folder=out_path /  model_name / "slurm_logs" / "%j", slurm_max_num_timeout=3)
+    executor = AutoExecutor(
+        folder=out_path / model_name / "slurm_logs" / "%j", slurm_max_num_timeout=3
+    )
     executor.update_parameters(
         name=job_name,
         timeout_min=60 * slurm_timeout,
@@ -209,15 +230,27 @@ def run_relax(
         gpus_per_node=1,
         tasks_per_node=1,
         nodes=1,
-        slurm_array_parallelism=num_jobs
+        slurm_array_parallelism=num_jobs,
     )
     out_path = out_path / model_name / timestamp
     os.makedirs(out_path)
 
     optimizer_params = {} if optimizer_params is None else json.loads(optimizer_params)
     args = (
-        checkpoint_path, out_path, model_name, job_name, task_type, optimizer, cell_filter, force_max,
-        max_steps, optimizer_params, device, use_amp, num_jobs, debug
+        checkpoint_path,
+        out_path,
+        model_name,
+        job_name,
+        task_type,
+        optimizer,
+        cell_filter,
+        force_max,
+        max_steps,
+        optimizer_params,
+        device,
+        use_amp,
+        num_jobs,
+        debug,
     )
     if debug:
         job = executor.submit(RelaxJob(), 1, *args)
