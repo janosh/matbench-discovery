@@ -66,28 +66,32 @@
   background-color: #d2e21b;
   color: #000000;
 }
-#T__row3_col1, #T__row3_col6, #T__row7_col9 {
-  background-color: #95d840;
+#T__row3_col1, #T__row3_col6, #T__row6_col5 {
+  background-color: #98d83e;
   color: #000000;
 }
-#T__row3_col2, #T__row3_col3 {
+#T__row3_col2 {
   background-color: #5ac864;
+  color: #000000;
+}
+#T__row3_col3, #T__row5_col7 {
+  background-color: #5cc863;
   color: #000000;
 }
 #T__row3_col4 {
   background-color: #9bd93c;
   color: #000000;
 }
-#T__row3_col7 {
-  background-color: #90d743;
+#T__row3_col7, #T__row6_col8 {
+  background-color: #9dd93b;
   color: #000000;
 }
-#T__row3_col8 {
-  background-color: #c2df23;
+#T__row3_col8, #T__row4_col8, #T__row5_col9 {
+  background-color: #cae11f;
   color: #000000;
 }
-#T__row3_col9 {
-  background-color: #dde318;
+#T__row3_col9, #T__row4_col9 {
+  background-color: #e2e418;
   color: #000000;
 }
 #T__row4_col1 {
@@ -118,14 +122,6 @@
   background-color: #8bd646;
   color: #000000;
 }
-#T__row4_col8, #T__row5_col9 {
-  background-color: #cae11f;
-  color: #000000;
-}
-#T__row4_col9 {
-  background-color: #e2e418;
-  color: #000000;
-}
 #T__row5_col1 {
   background-color: #4ac16d;
   color: #000000;
@@ -150,10 +146,6 @@
   background-color: #3aba76;
   color: #f1f1f1;
 }
-#T__row5_col7 {
-  background-color: #5cc863;
-  color: #000000;
-}
 #T__row5_col8 {
   background-color: #a2da37;
   color: #000000;
@@ -174,17 +166,9 @@
   background-color: #23a983;
   color: #f1f1f1;
 }
-#T__row6_col5 {
-  background-color: #98d83e;
-  color: #000000;
-}
 #T__row6_col6, #T__row10_col5 {
   background-color: #21a685;
   color: #f1f1f1;
-}
-#T__row6_col8 {
-  background-color: #9dd93b;
-  color: #000000;
 }
 #T__row7_col1 {
   background-color: #1fa287;
@@ -212,6 +196,10 @@
 }
 #T__row7_col8 {
   background-color: #60ca60;
+  color: #000000;
+}
+#T__row7_col9 {
+  background-color: #95d840;
   color: #000000;
 }
 #T__row8_col1 {
@@ -434,11 +422,11 @@
       <th id="T__level0_col1" class="col_heading level0 col1" ><span title='harmonic mean of precision and recall'>F1 ↑</span></th>
       <th id="T__level0_col2" class="col_heading level0 col2" ><span title='discovery acceleration factor'>DAF ↑</span></th>
       <th id="T__level0_col3" class="col_heading level0 col3" ><span title='precision'>Prec ↑</span></th>
-      <th id="T__level0_col4" class="col_heading level0 col4" ><span title='accuracy'>Acc ↑</span></th>
+      <th id="T__level0_col4" class="col_heading level0 col4" ><span title='accuracy in predicting thermodynamic stability'>Acc ↑</span></th>
       <th id="T__level0_col5" class="col_heading level0 col5" ><span title='true positive rate'>TPR ↑</span></th>
       <th id="T__level0_col6" class="col_heading level0 col6" ><span title='true negative rate'>TNR ↑</span></th>
-      <th id="T__level0_col7" class="col_heading level0 col7" ><span title='mean absolute error'>MAE ↓</span></th>
-      <th id="T__level0_col8" class="col_heading level0 col8" ><span title='root mean squared error'>RMSE ↓</span></th>
+      <th id="T__level0_col7" class="col_heading level0 col7" ><span title="mean absolute error of<br>predicted convex hull distance <span style='font-size: 0.8em; font-weight: lighter;'>(eV/atom)</span>">MAE ↓</span></th>
+      <th id="T__level0_col8" class="col_heading level0 col8" ><span title="root mean squared error of<br>predicted convex hull distance <span style='font-size: 0.8em; font-weight: lighter;'>(eV/atom)</span>">RMSE ↓</span></th>
       <th id="T__level0_col9" class="col_heading level0 col9" ><span title='coefficient of determination'>R<sup>2</sup> ↑</span></th>
     </tr>
   </thead>
@@ -481,15 +469,15 @@
     </tr>
     <tr>
       <td id="T__row3_col0" class="data row3 col0" ><span title="Version: v2" data-model-key="orb-mptrj">ORB MPtrj</span></td>
-      <td id="T__row3_col1" class="data row3 col1" >0.754</td>
-      <td id="T__row3_col2" class="data row3 col2" >4.179</td>
-      <td id="T__row3_col3" class="data row3 col3" >0.717</td>
+      <td id="T__row3_col1" class="data row3 col1" >0.755</td>
+      <td id="T__row3_col2" class="data row3 col2" >4.188</td>
+      <td id="T__row3_col3" class="data row3 col3" >0.719</td>
       <td id="T__row3_col4" class="data row3 col4" >0.911</td>
-      <td id="T__row3_col5" class="data row3 col5" >0.794</td>
-      <td id="T__row3_col6" class="data row3 col6" >0.935</td>
-      <td id="T__row3_col7" class="data row3 col7" >0.045</td>
-      <td id="T__row3_col8" class="data row3 col8" >0.092</td>
-      <td id="T__row3_col9" class="data row3 col9" >0.737</td>
+      <td id="T__row3_col5" class="data row3 col5" >0.795</td>
+      <td id="T__row3_col6" class="data row3 col6" >0.936</td>
+      <td id="T__row3_col7" class="data row3 col7" >0.043</td>
+      <td id="T__row3_col8" class="data row3 col8" >0.090</td>
+      <td id="T__row3_col9" class="data row3 col9" >0.752</td>
     </tr>
     <tr>
       <td id="T__row4_col0" class="data row4 col0" ><span title="Version: v0.9.1_w_cutoff" data-model-key="sevennet">SevenNet</span></td>
