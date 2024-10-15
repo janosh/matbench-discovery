@@ -1,8 +1,8 @@
 model_name: ORB
-model_version: v1
-matbench_discovery_version: 1.2.0
-date_added: "2024-09-02" # required
-date_published: "2024-09-02" # Update when paper published
+model_version: v2
+matbench_discovery_version: 1.3.1
+date_added: "2024-10-11" # required
+date_published: "2024-10-11" # Update when paper published
 authors: # required (only name, other keys are optional)
   - name: Mark Neumann
     affiliation: Orbital Materials
