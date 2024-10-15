@@ -26,7 +26,7 @@ authors: # required (only name, other keys are optional)
     affiliation: Orbital Materials
 
 repo: https://github.com/orbital-materials/orb-models
-url: "#" # placeholder
+url: https://orbitalmaterials.com/post/technical-blog-introducing-the-orb-ai-based-interatomic-potential
 doi: "#" # placeholder
 paper: "#" # placeholder
 
