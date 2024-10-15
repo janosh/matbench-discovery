@@ -18,9 +18,9 @@ For more information on the models, please refer to our [Github Repository][`orb
 
 ## **ORB**: `orb-v2` - Full dataset pretraining, MPtrj + Alexandria finetuning
 
-| Item                 | Link/Url                                                                                         |
-| -------------------- | ------------------------------------------------------------------------------------------------ |
-| Results CSV          | [orbff-v2-20241011.csv.gz](./orbff-v2-20241011.csv.gz)                                           |
+| Item                 | Link/Url                                                                                       |
+| -------------------- | ---------------------------------------------------------------------------------------------- |
+| Results CSV          | [orbff-v2-20241011.csv.gz](./orbff-v2-20241011.csv.gz)                                         |
 | Public Model Weights | https://storage.googleapis.com/orbitalmaterials-public-models/forcefields/orb-v2-20241011.ckpt |
 
 ```txt
@@ -45,9 +45,9 @@ R2              0.808497     0.896680       0.824233
 
 ## **ORB MPtrj**: `orb-v2-mptrj-only` - MPTraj pretraining, MPTraj finetuning
 
-| Item                 | Link/URL                                                                                                     |
-| -------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Results CSV          | [orbff-mptrj-only-v2-20241014.csv.gz](./orbff-mptrj-only-v2-20241014.csv.gz)                                 |
+| Item                 | Link/URL                                                                                                   |
+| -------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Results CSV          | [orbff-mptrj-only-v2-20241014.csv.gz](./orbff-mptrj-only-v2-20241014.csv.gz)                               |
 | Public Model Weights | https://storage.googleapis.com/orbitalmaterials-public-models/forcefields/orb-mptraj-only-v2-20241014.ckpt |
 
 ```txt
@@ -69,7 +69,6 @@ MAE             0.043234     0.037052       0.044555
 RMSE            0.090746     0.097382       0.090975
 R2              0.747388     0.801666       0.755931
 ```
-
 
 ## V1 Models
 
