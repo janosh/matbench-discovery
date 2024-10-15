@@ -22,8 +22,20 @@
   font-weight: normal;
   padding: 3pt;
 }
-#T__row0_col1, #T__row0_col2, #T__row0_col3, #T__row0_col4, #T__row0_col5, #T__row0_col6, #T__row0_col7, #T__row1_col1, #T__row1_col2, #T__row1_col3, #T__row1_col4, #T__row1_col5, #T__row1_col6, #T__row1_col7 {
+#T__row0_col1, #T__row0_col2, #T__row0_col3, #T__row0_col4, #T__row0_col5, #T__row0_col6, #T__row0_col7, #T__row1_col5 {
   background-color: #fde725;
+  color: #000000;
+}
+#T__row1_col1, #T__row1_col7 {
+  background-color: #fbe723;
+  color: #000000;
+}
+#T__row1_col2, #T__row1_col3, #T__row1_col6 {
+  background-color: #f8e621;
+  color: #000000;
+}
+#T__row1_col4 {
+  background-color: #f6e620;
   color: #000000;
 }
 #T__row2_col1 {
@@ -34,12 +46,8 @@
   background-color: #dfe318;
   color: #000000;
 }
-#T__row2_col4, #T__row3_col5 {
+#T__row2_col4, #T__row2_col6, #T__row3_col5 {
   background-color: #d2e21b;
-  color: #000000;
-}
-#T__row2_col6 {
-  background-color: #d0e11c;
   color: #000000;
 }
 #T__row2_col7, #T__row3_col1 {
@@ -54,8 +62,8 @@
   background-color: #cae11f;
   color: #000000;
 }
-#T__row3_col6 {
-  background-color: #b5de2b;
+#T__row3_col6, #T__row4_col5 {
+  background-color: #b8de29;
   color: #000000;
 }
 #T__row4_col1 {
@@ -74,15 +82,11 @@
   background-color: #a2da37;
   color: #000000;
 }
-#T__row4_col5 {
-  background-color: #b8de29;
+#T__row4_col6 {
+  background-color: #90d743;
   color: #000000;
 }
-#T__row4_col6, #T__row7_col7 {
-  background-color: #8ed645;
-  color: #000000;
-}
-#T__row5_col1, #T__row5_col6 {
+#T__row5_col1 {
   background-color: #c5e021;
   color: #000000;
 }
@@ -100,6 +104,10 @@
 }
 #T__row5_col5 {
   background-color: #a5db36;
+  color: #000000;
+}
+#T__row5_col6 {
+  background-color: #c8e020;
   color: #000000;
 }
 #T__row5_col7 {
@@ -127,7 +135,7 @@
   color: #000000;
 }
 #T__row6_col6 {
-  background-color: #4ac16d;
+  background-color: #4cc26c;
   color: #000000;
 }
 #T__row6_col7 {
@@ -155,14 +163,18 @@
   color: #000000;
 }
 #T__row7_col6 {
-  background-color: #54c568;
+  background-color: #56c667;
+  color: #000000;
+}
+#T__row7_col7 {
+  background-color: #8ed645;
   color: #000000;
 }
 #T__row8_col2 {
   background-color: #1f998a;
   color: #f1f1f1;
 }
-#T__row8_col3, #T__row9_col6 {
+#T__row8_col3, #T__row9_col6, #T__row10_col7 {
   background-color: #1f978b;
   color: #f1f1f1;
 }
@@ -170,7 +182,7 @@
   background-color: #2e6f8e;
   color: #f1f1f1;
 }
-#T__row8_col5, #T__row9_col3, #T__row10_col7 {
+#T__row8_col5, #T__row9_col3 {
   background-color: #1f968b;
   color: #f1f1f1;
 }
@@ -223,7 +235,7 @@
   color: #f1f1f1;
 }
 #T__row10_col6 {
-  background-color: #2a788e;
+  background-color: #29798e;
   color: #f1f1f1;
 }
 #T__row11_col1 {
@@ -368,14 +380,14 @@
       <td id="T__row0_col7" class="data row0 col7" >0.906</td>
     </tr>
     <tr>
-      <td id="T__row1_col0" class="data row1 col0" ><span title="Version: v1" class="non-compliant" data-model-key="orb">ORB</span></td>
-      <td id="T__row1_col1" class="data row1 col1" >0.988</td>
-      <td id="T__row1_col2" class="data row1 col2" >6.390</td>
-      <td id="T__row1_col3" class="data row1 col3" >0.977</td>
-      <td id="T__row1_col4" class="data row1 col4" >0.977</td>
+      <td id="T__row1_col0" class="data row1 col0" ><span title="Version: v2" class="non-compliant" data-model-key="orb">ORB</span></td>
+      <td id="T__row1_col1" class="data row1 col1" >0.985</td>
+      <td id="T__row1_col2" class="data row1 col2" >6.348</td>
+      <td id="T__row1_col3" class="data row1 col3" >0.970</td>
+      <td id="T__row1_col4" class="data row1 col4" >0.970</td>
       <td id="T__row1_col5" class="data row1 col5" >0.019</td>
-      <td id="T__row1_col6" class="data row1 col6" >0.064</td>
-      <td id="T__row1_col7" class="data row1 col7" >0.908</td>
+      <td id="T__row1_col6" class="data row1 col6" >0.068</td>
+      <td id="T__row1_col7" class="data row1 col7" >0.897</td>
     </tr>
     <tr>
       <td id="T__row2_col0" class="data row2 col0" ><span title="Version: n/a" class="non-compliant" data-model-key="gnome">GNoME</span></td>
@@ -388,7 +400,7 @@
       <td id="T__row2_col7" class="data row2 col7" >0.836</td>
     </tr>
     <tr>
-      <td id="T__row3_col0" class="data row3 col0" ><span title="Version: v1" data-model-key="orb-mptrj">ORB MPtrj</span></td>
+      <td id="T__row3_col0" class="data row3 col0" ><span title="Version: v2" data-model-key="orb-mptrj">ORB MPtrj</span></td>
       <td id="T__row3_col1" class="data row3 col1" >0.963</td>
       <td id="T__row3_col2" class="data row3 col2" >6.079</td>
       <td id="T__row3_col3" class="data row3 col3" >0.929</td>

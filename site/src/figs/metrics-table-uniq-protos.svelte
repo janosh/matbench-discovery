@@ -22,92 +22,96 @@
   font-weight: normal;
   padding: 3pt;
 }
-#T__row0_col1, #T__row0_col2, #T__row0_col3, #T__row0_col4, #T__row0_col6, #T__row0_col8, #T__row0_col9, #T__row1_col5, #T__row1_col7, #T__row1_col9 {
+#T__row0_col1, #T__row0_col2, #T__row0_col3, #T__row0_col4, #T__row0_col6, #T__row0_col8, #T__row0_col9, #T__row1_col5, #T__row1_col7 {
   background-color: #fde725;
   color: #000000;
 }
-#T__row0_col5, #T__row3_col5, #T__row4_col5 {
-  background-color: #d8e219;
+#T__row0_col5, #T__row1_col4, #T__row2_col9 {
+  background-color: #efe51c;
   color: #000000;
 }
-#T__row0_col7, #T__row1_col6 {
-  background-color: #e5e419;
+#T__row0_col7, #T__row1_col8 {
+  background-color: #f4e61e;
   color: #000000;
 }
-#T__row1_col1, #T__row1_col4 {
-  background-color: #f6e620;
+#T__row1_col1 {
+  background-color: #ece51b;
   color: #000000;
 }
 #T__row1_col2, #T__row1_col3 {
-  background-color: #cde11d;
+  background-color: #cae11f;
   color: #000000;
 }
-#T__row1_col8 {
-  background-color: #fbe723;
+#T__row1_col6 {
+  background-color: #e5e419;
   color: #000000;
 }
-#T__row2_col1 {
-  background-color: #dae319;
+#T__row1_col9 {
+  background-color: #f8e621;
+  color: #000000;
+}
+#T__row2_col1, #T__row2_col7 {
+  background-color: #d0e11c;
   color: #000000;
 }
 #T__row2_col2, #T__row2_col3 {
-  background-color: #bddf26;
+  background-color: #bade28;
   color: #000000;
 }
-#T__row2_col4, #T__row2_col9 {
-  background-color: #f1e51d;
+#T__row2_col4 {
+  background-color: #eae51a;
   color: #000000;
 }
 #T__row2_col5 {
   background-color: #d2e21b;
   color: #000000;
 }
-#T__row2_col6, #T__row3_col9 {
+#T__row2_col6, #T__row2_col8, #T__row4_col9 {
   background-color: #dde318;
   color: #000000;
 }
-#T__row2_col7 {
-  background-color: #d0e11c;
-  color: #000000;
-}
-#T__row2_col8 {
-  background-color: #e7e419;
-  color: #000000;
-}
-#T__row3_col1, #T__row6_col8 {
-  background-color: #98d83e;
+#T__row3_col1 {
+  background-color: #8ed645;
   color: #000000;
 }
 #T__row3_col2, #T__row3_col3 {
-  background-color: #54c568;
+  background-color: #52c569;
   color: #000000;
 }
 #T__row3_col4 {
-  background-color: #a5db36;
+  background-color: #9dd93b;
+  color: #000000;
+}
+#T__row3_col5, #T__row3_col9, #T__row4_col5 {
+  background-color: #d8e219;
   color: #000000;
 }
 #T__row3_col6, #T__row6_col5 {
   background-color: #95d840;
   color: #000000;
 }
-#T__row3_col7, #T__row7_col9 {
+#T__row3_col7 {
   background-color: #93d741;
   color: #000000;
 }
-#T__row3_col8, #T__row5_col5 {
-  background-color: #c0df25;
+#T__row3_col8 {
+  background-color: #b8de29;
   color: #000000;
 }
 #T__row4_col1 {
-  background-color: #75d054;
+  background-color: #6ccd5a;
   color: #000000;
 }
-#T__row4_col2, #T__row4_col3 {
+#T__row4_col2 {
   background-color: #2eb37c;
   color: #f1f1f1;
 }
+#T__row4_col3 {
+  background-color: #2db27d;
+  color: #f1f1f1;
+}
 #T__row4_col4 {
-  background-color: #7fd34e;
+  background-color: #77d153;
   color: #000000;
 }
 #T__row4_col6 {
@@ -118,25 +122,25 @@
   background-color: #86d549;
   color: #000000;
 }
-#T__row4_col8, #T__row5_col9, #T__row7_col5 {
-  background-color: #c8e020;
+#T__row4_col8, #T__row5_col5, #T__row6_col9 {
+  background-color: #c0df25;
   color: #000000;
 }
-#T__row4_col9 {
-  background-color: #e2e418;
-  color: #000000;
-}
-#T__row5_col1 {
-  background-color: #48c16e;
+#T__row5_col1, #T__row6_col7 {
+  background-color: #42be71;
   color: #f1f1f1;
 }
-#T__row5_col2, #T__row5_col3 {
+#T__row5_col2, #T__row7_col1 {
   background-color: #1e9d89;
   color: #f1f1f1;
 }
+#T__row5_col3, #T__row8_col1 {
+  background-color: #1e9c89;
+  color: #f1f1f1;
+}
 #T__row5_col4 {
-  background-color: #4cc26c;
-  color: #000000;
+  background-color: #48c16e;
+  color: #f1f1f1;
 }
 #T__row5_col6 {
   background-color: #3bbb75;
@@ -147,50 +151,42 @@
   color: #000000;
 }
 #T__row5_col8 {
-  background-color: #a0da39;
+  background-color: #98d83e;
   color: #000000;
 }
-#T__row6_col1 {
-  background-color: #28ae80;
+#T__row5_col9 {
+  background-color: #c5e021;
+  color: #000000;
+}
+#T__row6_col1, #T__row6_col4 {
+  background-color: #25ac82;
   color: #f1f1f1;
 }
-#T__row6_col2, #T__row6_col3, #T__row10_col1 {
-  background-color: #23898e;
-  color: #f1f1f1;
-}
-#T__row6_col4 {
-  background-color: #27ad81;
+#T__row6_col2, #T__row6_col3, #T__row9_col1 {
+  background-color: #23888e;
   color: #f1f1f1;
 }
 #T__row6_col6 {
   background-color: #22a785;
   color: #f1f1f1;
 }
-#T__row6_col7 {
-  background-color: #42be71;
-  color: #f1f1f1;
-}
-#T__row6_col9 {
-  background-color: #c5e021;
+#T__row6_col8, #T__row7_col9 {
+  background-color: #90d743;
   color: #000000;
 }
-#T__row7_col1, #T__row9_col5 {
-  background-color: #1fa088;
-  color: #f1f1f1;
-}
-#T__row7_col2 {
+#T__row7_col2, #T__row7_col3 {
   background-color: #2c718e;
   color: #f1f1f1;
 }
-#T__row7_col3, #T__row11_col6 {
-  background-color: #2c728e;
+#T__row7_col4, #T__row14_col5 {
+  background-color: #228d8d;
   color: #f1f1f1;
 }
-#T__row7_col4 {
-  background-color: #218f8d;
-  color: #f1f1f1;
+#T__row7_col5 {
+  background-color: #c8e020;
+  color: #000000;
 }
-#T__row7_col6, #T__row12_col1, #T__row12_col9 {
+#T__row7_col6 {
   background-color: #297b8e;
   color: #f1f1f1;
 }
@@ -199,19 +195,19 @@
   color: #f1f1f1;
 }
 #T__row7_col8 {
-  background-color: #5cc863;
+  background-color: #56c667;
   color: #000000;
 }
-#T__row8_col1, #T__row10_col6 {
-  background-color: #1f9f88;
-  color: #f1f1f1;
-}
-#T__row8_col2, #T__row8_col3, #T__row11_col9 {
+#T__row8_col2 {
   background-color: #26828e;
   color: #f1f1f1;
 }
+#T__row8_col3, #T__row11_col9 {
+  background-color: #26818e;
+  color: #f1f1f1;
+}
 #T__row8_col4 {
-  background-color: #21a685;
+  background-color: #20a486;
   color: #f1f1f1;
 }
 #T__row8_col5 {
@@ -227,15 +223,11 @@
   color: #f1f1f1;
 }
 #T__row8_col8, #T__row10_col4 {
-  background-color: #20938c;
+  background-color: #20928c;
   color: #f1f1f1;
 }
 #T__row8_col9 {
-  background-color: #2ab07f;
-  color: #f1f1f1;
-}
-#T__row9_col1 {
-  background-color: #228b8d;
+  background-color: #29af7f;
   color: #f1f1f1;
 }
 #T__row9_col2, #T__row9_col3 {
@@ -243,14 +235,18 @@
   color: #f1f1f1;
 }
 #T__row9_col4 {
-  background-color: #1f9a8a;
+  background-color: #1f988b;
+  color: #f1f1f1;
+}
+#T__row9_col5 {
+  background-color: #1fa088;
   color: #f1f1f1;
 }
 #T__row9_col6 {
   background-color: #23a983;
   color: #f1f1f1;
 }
-#T__row9_col7 {
+#T__row9_col7, #T__row13_col4 {
   background-color: #46337f;
   color: #f1f1f1;
 }
@@ -258,12 +254,24 @@
   background-color: #443b84;
   color: #f1f1f1;
 }
-#T__row9_col9, #T__row12_col2 {
-  background-color: #3b528b;
+#T__row9_col9, #T__row12_col2, #T__row12_col3 {
+  background-color: #3b518b;
   color: #f1f1f1;
 }
-#T__row10_col2, #T__row10_col3 {
+#T__row10_col1 {
+  background-color: #24878e;
+  color: #f1f1f1;
+}
+#T__row10_col2 {
   background-color: #2d718e;
+  color: #f1f1f1;
+}
+#T__row10_col3 {
+  background-color: #2d708e;
+  color: #f1f1f1;
+}
+#T__row10_col6 {
+  background-color: #1f9f88;
   color: #f1f1f1;
 }
 #T__row10_col7 {
@@ -275,7 +283,7 @@
   color: #f1f1f1;
 }
 #T__row11_col1 {
-  background-color: #24878e;
+  background-color: #25858e;
   color: #f1f1f1;
 }
 #T__row11_col2, #T__row11_col3, #T__row12_col7 {
@@ -283,27 +291,31 @@
   color: #f1f1f1;
 }
 #T__row11_col4 {
-  background-color: #29798e;
+  background-color: #2a778e;
   color: #f1f1f1;
 }
 #T__row11_col5 {
   background-color: #58c765;
   color: #000000;
 }
+#T__row11_col6 {
+  background-color: #2c728e;
+  color: #f1f1f1;
+}
 #T__row11_col7 {
   background-color: #365c8d;
   color: #f1f1f1;
 }
 #T__row11_col8 {
-  background-color: #31678e;
+  background-color: #31668e;
   color: #f1f1f1;
 }
-#T__row12_col3 {
-  background-color: #3b518b;
+#T__row12_col1 {
+  background-color: #29798e;
   color: #f1f1f1;
 }
-#T__row12_col4, #T__row15_col6 {
-  background-color: #39558c;
+#T__row12_col4 {
+  background-color: #3a548c;
   color: #f1f1f1;
 }
 #T__row12_col5, #T__row13_col5 {
@@ -315,55 +327,55 @@
   color: #f1f1f1;
 }
 #T__row12_col8 {
-  background-color: #34618d;
+  background-color: #34608d;
+  color: #f1f1f1;
+}
+#T__row12_col9 {
+  background-color: #297a8e;
   color: #f1f1f1;
 }
 #T__row13_col1 {
-  background-color: #2f6c8e;
+  background-color: #306a8e;
   color: #f1f1f1;
 }
-#T__row13_col2, #T__row14_col9 {
-  background-color: #424186;
-  color: #f1f1f1;
-}
-#T__row13_col3 {
+#T__row13_col2, #T__row13_col3 {
   background-color: #424086;
-  color: #f1f1f1;
-}
-#T__row13_col4 {
-  background-color: #463480;
   color: #f1f1f1;
 }
 #T__row13_col7 {
   background-color: #3c508b;
   color: #f1f1f1;
 }
-#T__row13_col8 {
-  background-color: #277f8e;
+#T__row13_col8, #T__row15_col9 {
+  background-color: #277e8e;
   color: #f1f1f1;
 }
 #T__row13_col9 {
-  background-color: #1f988b;
+  background-color: #1f978b;
   color: #f1f1f1;
 }
 #T__row14_col1 {
-  background-color: #3f4889;
+  background-color: #3f4788;
   color: #f1f1f1;
 }
 #T__row14_col2, #T__row14_col3 {
   background-color: #482979;
   color: #f1f1f1;
 }
-#T__row14_col5 {
-  background-color: #228d8d;
-  color: #f1f1f1;
-}
 #T__row14_col8 {
   background-color: #472f7d;
   color: #f1f1f1;
 }
+#T__row14_col9 {
+  background-color: #424186;
+  color: #f1f1f1;
+}
 #T__row15_col4 {
   background-color: #48186a;
+  color: #f1f1f1;
+}
+#T__row15_col6 {
+  background-color: #39558c;
   color: #f1f1f1;
 }
 #T__row15_col7 {
@@ -371,11 +383,7 @@
   color: #f1f1f1;
 }
 #T__row15_col8 {
-  background-color: #32648e;
-  color: #f1f1f1;
-}
-#T__row15_col9 {
-  background-color: #277e8e;
+  background-color: #33638d;
   color: #f1f1f1;
 }
 #T_ :is(td, th):nth-child(9) { border-left: 1px solid white; }
@@ -412,20 +420,20 @@
   </thead>
   <tbody>
     <tr>
-      <td id="T__row0_col0" class="data row0 col0" ><span title="Version: v1" class="non-compliant" data-model-key="orb">ORB</span></td>
-      <td id="T__row0_col1" class="data row0 col1" >0.867</td>
-      <td id="T__row0_col2" class="data row0 col2" >6.020</td>
-      <td id="T__row0_col3" class="data row0 col3" >0.920</td>
-      <td id="T__row0_col4" class="data row0 col4" >0.961</td>
-      <td id="T__row0_col5" class="data row0 col5" >0.819</td>
+      <td id="T__row0_col0" class="data row0 col0" ><span title="Version: v2" class="non-compliant" data-model-key="orb">ORB</span></td>
+      <td id="T__row0_col1" class="data row0 col1" >0.880</td>
+      <td id="T__row0_col2" class="data row0 col2" >6.041</td>
+      <td id="T__row0_col3" class="data row0 col3" >0.924</td>
+      <td id="T__row0_col4" class="data row0 col4" >0.965</td>
+      <td id="T__row0_col5" class="data row0 col5" >0.841</td>
       <td id="T__row0_col6" class="data row0 col6" >0.987</td>
-      <td id="T__row0_col7" class="data row0 col7" >0.031</td>
-      <td id="T__row0_col8" class="data row0 col8" >0.079</td>
-      <td id="T__row0_col9" class="data row0 col9" >0.816</td>
+      <td id="T__row0_col7" class="data row0 col7" >0.028</td>
+      <td id="T__row0_col8" class="data row0 col8" >0.077</td>
+      <td id="T__row0_col9" class="data row0 col9" >0.824</td>
       <td id="T__row0_col10" class="data row0 col10" ><span title='3,245,923 materials in training set (32,078,023 structures counting all DFT relaxation frames per material)&#013;&bull; MPtrj: 145.9K materials (1.6M structures)&#013;&bull; Alexandria: 3.1M materials (30.5M structures)' data-sort-value=3245923>3M <small>(32.1M)</small> (<a href='https://figshare.com/articles/dataset/23713842' target='_blank' rel='noopener noreferrer'>MPtrj</a>+<a href='https://alexandria.icams.rub.de' target='_blank' rel='noopener noreferrer'>Alex</a>)</span></td>
       <td id="T__row0_col11" class="data row0 col11" ><span title='25,161,727 trainable model parameters' data-sort-value="25161727">25.2M</span></td>
       <td id="T__row0_col12" class="data row0 col12" ><span title="Energy Forces Stress">EFS</span></td>
-      <td id="T__row0_col13" class="data row0 col13" ><span title='Monday, 02 September 2024'>2024-09-02</span></td>
+      <td id="T__row0_col13" class="data row0 col13" ><span title='Friday, 11 October 2024'>2024-10-11</span></td>
     </tr>
     <tr>
       <td id="T__row1_col0" class="data row1 col0" ><span title="Version: n/a" class="non-compliant" data-model-key="mattersim">MatterSim</span></td>
@@ -460,7 +468,7 @@
       <td id="T__row2_col13" class="data row2 col13" ><span title='Saturday, 03 February 2024'>2024-02-03</span></td>
     </tr>
     <tr>
-      <td id="T__row3_col0" class="data row3 col0" ><span title="Version: v1" data-model-key="orb-mptrj">ORB MPtrj</span></td>
+      <td id="T__row3_col0" class="data row3 col0" ><span title="Version: v2" data-model-key="orb-mptrj">ORB MPtrj</span></td>
       <td id="T__row3_col1" class="data row3 col1" >0.763</td>
       <td id="T__row3_col2" class="data row3 col2" >4.679</td>
       <td id="T__row3_col3" class="data row3 col3" >0.715</td>
@@ -473,7 +481,7 @@
       <td id="T__row3_col10" class="data row3 col10" ><span title='145,923 materials in training set (1,580,395 structures counting all DFT relaxation frames per material)' data-sort-value=145923>146K <small>(1.6M)</small> (<a href='https://figshare.com/articles/dataset/23713842' target='_blank' rel='noopener noreferrer'>MPtrj</a>)</span></td>
       <td id="T__row3_col11" class="data row3 col11" ><span title='25,161,727 trainable model parameters' data-sort-value="25161727">25.2M</span></td>
       <td id="T__row3_col12" class="data row3 col12" ><span title="Energy Forces Stress">EFS</span></td>
-      <td id="T__row3_col13" class="data row3 col13" ><span title='Monday, 02 September 2024'>2024-09-02</span></td>
+      <td id="T__row3_col13" class="data row3 col13" ><span title='Monday, 14 October 2024'>2024-10-14</span></td>
     </tr>
     <tr>
       <td id="T__row4_col0" class="data row4 col0" ><span title="Version: v0.9.1_w_cutoff" data-model-key="sevennet">SevenNet</span></td>
