@@ -1,8 +1,8 @@
 model_name: ORB
-model_version: v1
-matbench_discovery_version: 1.2.0
-date_added: "2024-09-02" # required
-date_published: "2024-09-02" # Update when paper published
+model_version: v2
+matbench_discovery_version: 1.3.1
+date_added: "2024-10-11" # required
+date_published: "2024-10-11" # Update when paper published
 authors: # required (only name, other keys are optional)
   - name: Mark Neumann
     affiliation: Orbital Materials
@@ -26,7 +26,7 @@ authors: # required (only name, other keys are optional)
     affiliation: Orbital Materials
 
 repo: https://github.com/orbital-materials/orb-models
-url: "#" # placeholder
+url: https://orbitalmaterials.com/post/technical-blog-introducing-the-orb-ai-based-interatomic-potential
 doi: "#" # placeholder
 paper: "#" # placeholder
 
@@ -59,11 +59,11 @@ hyperparams:
   max_num_neighbors: 20
 
 requirements: # strongly recommended
-  orb-models: "0.1"
+  orb-models: "0.4.0"
   pynanoflann: "pynanoflann@git+https://github.com/dwastberg/pynanoflann#egg=af434039ae14bedcbb838a7808924d6689274168"
 
 training_set: [MPtrj, Alex]
 
-notes: # notes can have any key, be multiline and support markdown.
-  description: |
+notes:
+  Description: |
     ORB is a pretrained model for atomic simulations. ORB uses a pretrained diffusion model backbone which is fine-tuned on MPtrj + Alexandria.

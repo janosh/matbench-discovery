@@ -22,60 +22,52 @@
   font-weight: normal;
   padding: 3pt;
 }
-#T__row0_col1, #T__row0_col2, #T__row0_col3, #T__row0_col4, #T__row0_col6, #T__row0_col9, #T__row1_col5, #T__row1_col7, #T__row1_col8, #T__row1_col9 {
+#T__row0_col1, #T__row0_col2, #T__row0_col3, #T__row0_col4, #T__row0_col6, #T__row0_col8, #T__row0_col9, #T__row1_col5, #T__row1_col7, #T__row1_col9 {
   background-color: #fde725;
   color: #000000;
 }
-#T__row0_col5, #T__row2_col5, #T__row3_col5 {
-  background-color: #d5e21a;
+#T__row0_col5, #T__row2_col8 {
+  background-color: #eae51a;
   color: #000000;
 }
-#T__row0_col7 {
-  background-color: #e2e418;
+#T__row0_col7, #T__row2_col9 {
+  background-color: #f4e61e;
   color: #000000;
 }
-#T__row0_col8 {
-  background-color: #fbe723;
-  color: #000000;
-}
-#T__row1_col1 {
-  background-color: #f1e51d;
+#T__row1_col1, #T__row1_col4, #T__row2_col4 {
+  background-color: #e5e419;
   color: #000000;
 }
 #T__row1_col2, #T__row1_col3 {
-  background-color: #bddf26;
+  background-color: #bade28;
   color: #000000;
 }
-#T__row1_col4, #T__row2_col4 {
-  background-color: #ece51b;
+#T__row1_col6, #T__row2_col6 {
+  background-color: #d8e219;
   color: #000000;
 }
-#T__row1_col6, #T__row2_col6, #T__row4_col5 {
-  background-color: #dae319;
+#T__row1_col8 {
+  background-color: #fbe723;
   color: #000000;
 }
 #T__row2_col1 {
-  background-color: #dde318;
+  background-color: #d0e11c;
   color: #000000;
 }
 #T__row2_col2, #T__row2_col3 {
-  background-color: #b8de29;
+  background-color: #b5de2b;
+  color: #000000;
+}
+#T__row2_col5, #T__row3_col5 {
+  background-color: #d5e21a;
   color: #000000;
 }
 #T__row2_col7 {
   background-color: #d2e21b;
   color: #000000;
 }
-#T__row2_col8 {
-  background-color: #efe51c;
-  color: #000000;
-}
-#T__row2_col9 {
-  background-color: #f4e61e;
-  color: #000000;
-}
-#T__row3_col1, #T__row3_col4, #T__row6_col8 {
-  background-color: #a2da37;
+#T__row3_col1, #T__row3_col6, #T__row6_col5 {
+  background-color: #98d83e;
   color: #000000;
 }
 #T__row3_col2 {
@@ -86,32 +78,40 @@
   background-color: #5cc863;
   color: #000000;
 }
-#T__row3_col6, #T__row6_col5, #T__row7_col9 {
-  background-color: #98d83e;
+#T__row3_col4 {
+  background-color: #9bd93c;
   color: #000000;
 }
-#T__row3_col7 {
-  background-color: #90d743;
+#T__row3_col7, #T__row6_col8 {
+  background-color: #9dd93b;
   color: #000000;
 }
-#T__row3_col8, #T__row5_col5 {
-  background-color: #c5e021;
+#T__row3_col8, #T__row4_col8, #T__row5_col9 {
+  background-color: #cae11f;
   color: #000000;
 }
-#T__row3_col9 {
-  background-color: #dfe318;
+#T__row3_col9, #T__row4_col9 {
+  background-color: #e2e418;
   color: #000000;
 }
 #T__row4_col1 {
-  background-color: #7fd34e;
+  background-color: #75d054;
   color: #000000;
 }
-#T__row4_col2, #T__row4_col3 {
+#T__row4_col2 {
+  background-color: #31b57b;
+  color: #f1f1f1;
+}
+#T__row4_col3 {
   background-color: #32b67a;
   color: #f1f1f1;
 }
 #T__row4_col4 {
-  background-color: #7ad151;
+  background-color: #73d056;
+  color: #000000;
+}
+#T__row4_col5 {
+  background-color: #dae319;
   color: #000000;
 }
 #T__row4_col6, #T__row12_col5 {
@@ -122,68 +122,56 @@
   background-color: #8bd646;
   color: #000000;
 }
-#T__row4_col8 {
-  background-color: #d0e11c;
+#T__row5_col1 {
+  background-color: #4ac16d;
   color: #000000;
 }
-#T__row4_col9 {
-  background-color: #e5e419;
-  color: #000000;
+#T__row5_col2 {
+  background-color: #1f9f88;
+  color: #f1f1f1;
 }
-#T__row5_col1, #T__row11_col5 {
-  background-color: #52c569;
-  color: #000000;
-}
-#T__row5_col2, #T__row5_col3 {
+#T__row5_col3 {
   background-color: #1fa088;
   color: #f1f1f1;
 }
-#T__row5_col4 {
-  background-color: #48c16e;
+#T__row5_col4, #T__row6_col7 {
+  background-color: #42be71;
   color: #f1f1f1;
+}
+#T__row5_col5, #T__row6_col9 {
+  background-color: #c5e021;
+  color: #000000;
 }
 #T__row5_col6 {
   background-color: #3aba76;
   color: #f1f1f1;
 }
 #T__row5_col8 {
-  background-color: #a5db36;
-  color: #000000;
-}
-#T__row5_col9, #T__row7_col5 {
-  background-color: #cde11d;
+  background-color: #a2da37;
   color: #000000;
 }
 #T__row6_col1 {
-  background-color: #2db27d;
+  background-color: #29af7f;
   color: #f1f1f1;
 }
-#T__row6_col2 {
+#T__row6_col2, #T__row7_col4, #T__row10_col1, #T__row11_col1 {
+  background-color: #238a8d;
+  color: #f1f1f1;
+}
+#T__row6_col3, #T__row9_col1 {
   background-color: #228b8d;
   color: #f1f1f1;
 }
-#T__row6_col3, #T__row7_col4 {
-  background-color: #228c8d;
-  color: #f1f1f1;
-}
 #T__row6_col4 {
-  background-color: #25ab82;
+  background-color: #23a983;
   color: #f1f1f1;
 }
 #T__row6_col6, #T__row10_col5 {
   background-color: #21a685;
   color: #f1f1f1;
 }
-#T__row6_col7 {
-  background-color: #42be71;
-  color: #f1f1f1;
-}
-#T__row6_col9 {
-  background-color: #c8e020;
-  color: #000000;
-}
 #T__row7_col1 {
-  background-color: #21a585;
+  background-color: #1fa287;
   color: #f1f1f1;
 }
 #T__row7_col2, #T__row10_col3 {
@@ -194,32 +182,40 @@
   background-color: #2b758e;
   color: #f1f1f1;
 }
+#T__row7_col5 {
+  background-color: #cde11d;
+  color: #000000;
+}
 #T__row7_col6 {
-  background-color: #297b8e;
+  background-color: #297a8e;
   color: #f1f1f1;
 }
-#T__row7_col7 {
+#T__row7_col7, #T__row9_col6 {
   background-color: #22a884;
   color: #f1f1f1;
 }
 #T__row7_col8 {
-  background-color: #63cb5f;
+  background-color: #60ca60;
   color: #000000;
 }
-#T__row8_col1, #T__row9_col5, #T__row10_col6 {
-  background-color: #1fa188;
+#T__row7_col9 {
+  background-color: #95d840;
+  color: #000000;
+}
+#T__row8_col1 {
+  background-color: #1f9e89;
   color: #f1f1f1;
 }
 #T__row8_col2 {
-  background-color: #25848e;
+  background-color: #25838e;
   color: #f1f1f1;
 }
 #T__row8_col3, #T__row11_col9 {
-  background-color: #25858e;
+  background-color: #25848e;
   color: #f1f1f1;
 }
-#T__row8_col4 {
-  background-color: #1fa287;
+#T__row8_col4, #T__row9_col5, #T__row10_col6 {
+  background-color: #1fa188;
   color: #f1f1f1;
 }
 #T__row8_col5 {
@@ -230,32 +226,28 @@
   background-color: #25ac82;
   color: #f1f1f1;
 }
-#T__row8_col7 {
+#T__row8_col7, #T__row12_col1 {
   background-color: #277f8e;
   color: #f1f1f1;
 }
 #T__row8_col8 {
-  background-color: #21918c;
+  background-color: #21908d;
   color: #f1f1f1;
 }
 #T__row8_col9 {
-  background-color: #28ae80;
+  background-color: #27ad81;
   color: #f1f1f1;
 }
-#T__row9_col1 {
-  background-color: #218e8d;
+#T__row9_col2 {
+  background-color: #2a778e;
   color: #f1f1f1;
 }
-#T__row9_col2, #T__row9_col3, #T__row11_col4, #T__row11_col6 {
+#T__row9_col3, #T__row11_col6 {
   background-color: #2a788e;
   color: #f1f1f1;
 }
 #T__row9_col4 {
-  background-color: #1f948c;
-  color: #f1f1f1;
-}
-#T__row9_col6 {
-  background-color: #23a983;
+  background-color: #20938c;
   color: #f1f1f1;
 }
 #T__row9_col7 {
@@ -270,16 +262,12 @@
   background-color: #3c4f8a;
   color: #f1f1f1;
 }
-#T__row10_col1, #T__row11_col1 {
-  background-color: #228d8d;
-  color: #f1f1f1;
-}
 #T__row10_col2 {
   background-color: #2c738e;
   color: #f1f1f1;
 }
 #T__row10_col4 {
-  background-color: #21908d;
+  background-color: #218e8d;
   color: #f1f1f1;
 }
 #T__row10_col7, #T__row15_col4 {
@@ -298,32 +286,40 @@
   background-color: #31678e;
   color: #f1f1f1;
 }
+#T__row11_col4 {
+  background-color: #2a768e;
+  color: #f1f1f1;
+}
+#T__row11_col5 {
+  background-color: #52c569;
+  color: #000000;
+}
 #T__row11_col7 {
   background-color: #365c8d;
   color: #f1f1f1;
 }
 #T__row11_col8 {
-  background-color: #306a8e;
+  background-color: #30698e;
   color: #f1f1f1;
 }
-#T__row12_col1 {
-  background-color: #26828e;
-  color: #f1f1f1;
-}
-#T__row12_col2 {
+#T__row12_col2, #T__row12_col4 {
   background-color: #39558c;
   color: #f1f1f1;
 }
-#T__row12_col3, #T__row12_col4 {
+#T__row12_col3 {
   background-color: #39568c;
   color: #f1f1f1;
 }
-#T__row12_col6, #T__row13_col7 {
-  background-color: #3d4e8a;
+#T__row12_col6 {
+  background-color: #3d4d8a;
   color: #f1f1f1;
 }
-#T__row12_col7, #T__row12_col8 {
+#T__row12_col7 {
   background-color: #33638d;
+  color: #f1f1f1;
+}
+#T__row12_col8 {
+  background-color: #33628d;
   color: #f1f1f1;
 }
 #T__row12_col9 {
@@ -331,11 +327,11 @@
   color: #f1f1f1;
 }
 #T__row13_col1 {
-  background-color: #2c718e;
+  background-color: #2d708e;
   color: #f1f1f1;
 }
 #T__row13_col2 {
-  background-color: #414287;
+  background-color: #424186;
   color: #f1f1f1;
 }
 #T__row13_col3 {
@@ -343,12 +339,16 @@
   color: #f1f1f1;
 }
 #T__row13_col4 {
-  background-color: #472e7c;
+  background-color: #472d7b;
   color: #f1f1f1;
 }
 #T__row13_col5 {
   background-color: #77d153;
   color: #000000;
+}
+#T__row13_col7 {
+  background-color: #3d4e8a;
+  color: #f1f1f1;
 }
 #T__row13_col8 {
   background-color: #27808e;
@@ -359,7 +359,7 @@
   color: #f1f1f1;
 }
 #T__row14_col1 {
-  background-color: #3e4c8a;
+  background-color: #3e4a89;
   color: #f1f1f1;
 }
 #T__row14_col2 {
@@ -379,11 +379,11 @@
   color: #f1f1f1;
 }
 #T__row14_col8 {
-  background-color: #453581;
+  background-color: #463480;
   color: #f1f1f1;
 }
 #T__row14_col9 {
-  background-color: #3f4889;
+  background-color: #3f4788;
   color: #f1f1f1;
 }
 #T__row15_col6 {
@@ -422,26 +422,26 @@
       <th id="T__level0_col1" class="col_heading level0 col1" ><span title='harmonic mean of precision and recall'>F1 ↑</span></th>
       <th id="T__level0_col2" class="col_heading level0 col2" ><span title='discovery acceleration factor'>DAF ↑</span></th>
       <th id="T__level0_col3" class="col_heading level0 col3" ><span title='precision'>Prec ↑</span></th>
-      <th id="T__level0_col4" class="col_heading level0 col4" ><span title='accuracy'>Acc ↑</span></th>
+      <th id="T__level0_col4" class="col_heading level0 col4" ><span title='accuracy in predicting thermodynamic stability'>Acc ↑</span></th>
       <th id="T__level0_col5" class="col_heading level0 col5" ><span title='true positive rate'>TPR ↑</span></th>
       <th id="T__level0_col6" class="col_heading level0 col6" ><span title='true negative rate'>TNR ↑</span></th>
-      <th id="T__level0_col7" class="col_heading level0 col7" ><span title='mean absolute error'>MAE ↓</span></th>
-      <th id="T__level0_col8" class="col_heading level0 col8" ><span title='root mean squared error'>RMSE ↓</span></th>
+      <th id="T__level0_col7" class="col_heading level0 col7" ><span title="mean absolute error of<br>predicted convex hull distance <span style='font-size: 0.8em; font-weight: lighter;'>(eV/atom)</span>">MAE ↓</span></th>
+      <th id="T__level0_col8" class="col_heading level0 col8" ><span title="root mean squared error of<br>predicted convex hull distance <span style='font-size: 0.8em; font-weight: lighter;'>(eV/atom)</span>">RMSE ↓</span></th>
       <th id="T__level0_col9" class="col_heading level0 col9" ><span title='coefficient of determination'>R<sup>2</sup> ↑</span></th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td id="T__row0_col0" class="data row0 col0" ><span title="Version: v1" class="non-compliant" data-model-key="orb">ORB</span></td>
-      <td id="T__row0_col1" class="data row0 col1" >0.845</td>
-      <td id="T__row0_col2" class="data row0 col2" >5.263</td>
-      <td id="T__row0_col3" class="data row0 col3" >0.903</td>
-      <td id="T__row0_col4" class="data row0 col4" >0.950</td>
-      <td id="T__row0_col5" class="data row0 col5" >0.794</td>
-      <td id="T__row0_col6" class="data row0 col6" >0.982</td>
-      <td id="T__row0_col7" class="data row0 col7" >0.031</td>
-      <td id="T__row0_col8" class="data row0 col8" >0.080</td>
-      <td id="T__row0_col9" class="data row0 col9" >0.804</td>
+      <td id="T__row0_col0" class="data row0 col0" ><span title="Version: v2" class="non-compliant" data-model-key="orb">ORB</span></td>
+      <td id="T__row0_col1" class="data row0 col1" >0.858</td>
+      <td id="T__row0_col2" class="data row0 col2" >5.281</td>
+      <td id="T__row0_col3" class="data row0 col3" >0.906</td>
+      <td id="T__row0_col4" class="data row0 col4" >0.954</td>
+      <td id="T__row0_col5" class="data row0 col5" >0.815</td>
+      <td id="T__row0_col6" class="data row0 col6" >0.983</td>
+      <td id="T__row0_col7" class="data row0 col7" >0.028</td>
+      <td id="T__row0_col8" class="data row0 col8" >0.078</td>
+      <td id="T__row0_col9" class="data row0 col9" >0.814</td>
     </tr>
     <tr>
       <td id="T__row1_col0" class="data row1 col0" ><span title="Version: n/a" class="non-compliant" data-model-key="mattersim">MatterSim</span></td>
@@ -468,16 +468,16 @@
       <td id="T__row2_col9" class="data row2 col9" >0.786</td>
     </tr>
     <tr>
-      <td id="T__row3_col0" class="data row3 col0" ><span title="Version: v1" data-model-key="orb-mptrj">ORB MPtrj</span></td>
-      <td id="T__row3_col1" class="data row3 col1" >0.754</td>
-      <td id="T__row3_col2" class="data row3 col2" >4.179</td>
-      <td id="T__row3_col3" class="data row3 col3" >0.717</td>
+      <td id="T__row3_col0" class="data row3 col0" ><span title="Version: v2" data-model-key="orb-mptrj">ORB MPtrj</span></td>
+      <td id="T__row3_col1" class="data row3 col1" >0.755</td>
+      <td id="T__row3_col2" class="data row3 col2" >4.188</td>
+      <td id="T__row3_col3" class="data row3 col3" >0.719</td>
       <td id="T__row3_col4" class="data row3 col4" >0.911</td>
-      <td id="T__row3_col5" class="data row3 col5" >0.794</td>
-      <td id="T__row3_col6" class="data row3 col6" >0.935</td>
-      <td id="T__row3_col7" class="data row3 col7" >0.045</td>
-      <td id="T__row3_col8" class="data row3 col8" >0.092</td>
-      <td id="T__row3_col9" class="data row3 col9" >0.737</td>
+      <td id="T__row3_col5" class="data row3 col5" >0.795</td>
+      <td id="T__row3_col6" class="data row3 col6" >0.936</td>
+      <td id="T__row3_col7" class="data row3 col7" >0.043</td>
+      <td id="T__row3_col8" class="data row3 col8" >0.090</td>
+      <td id="T__row3_col9" class="data row3 col9" >0.752</td>
     </tr>
     <tr>
       <td id="T__row4_col0" class="data row4 col0" ><span title="Version: v0.9.1_w_cutoff" data-model-key="sevennet">SevenNet</span></td>

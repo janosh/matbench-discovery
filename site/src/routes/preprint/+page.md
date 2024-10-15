@@ -27,6 +27,7 @@
   import RollingMaeVsHullDistWbmBatchesM3gnet from '$figs/rolling-mae-vs-hull-dist-wbm-batches-m3gnet.svelte'
   import RollingMaeVsHullDistWbmBatchesMace from '$figs/rolling-mae-vs-hull-dist-wbm-batches-mace.svelte'
   import RollingMaeVsHullDistWbmBatchesMatterSim from '$figs/rolling-mae-vs-hull-dist-wbm-batches-mattersim.svelte'
+  import RollingMaeVsHullDistWbmBatchesOrb from '$figs/rolling-mae-vs-hull-dist-wbm-batches-orb.svelte'
   import RollingMaeVsHullDistWbmBatchesMegnet from '$figs/rolling-mae-vs-hull-dist-wbm-batches-megnet.svelte'
   import RollingMaeVsHullDistWbmBatchesSevenNet from '$figs/rolling-mae-vs-hull-dist-wbm-batches-sevennet.svelte'
   import RollingMaeVsHullDistWbmBatchesVoronoiRf from '$figs/rolling-mae-vs-hull-dist-wbm-batches-voronoi-rf.svelte'
@@ -540,6 +541,7 @@ As a reminder, the WBM test set was generated in 5 successive batches, each step
 {@const style=`aspect-ratio: 1.3;`}
 
   <div style="display: grid; grid-template-columns: 1fr 1fr; margin: 0 -1em 0 -4em;">
+    <RollingMaeVsHullDistWbmBatchesOrb {style} />
     <RollingMaeVsHullDistWbmBatchesMatterSim {style} />
     <RollingMaeVsHullDistWbmBatchesGnome {style} />
     <RollingMaeVsHullDistWbmBatchesSevenNet {style} />

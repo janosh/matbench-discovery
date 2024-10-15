@@ -7,7 +7,7 @@ from glob import glob
 import numpy as np
 import pandas as pd
 import yaml
-from pymatviz.enums import Key
+from pymatviz.enums import Key, eV_per_atom
 from pymatviz.io import df_to_html_table, df_to_pdf
 from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
@@ -53,127 +53,136 @@ with open(f"{DATA_DIR}/training-sets.yml") as file:
 for model in df_metrics:
     model_name = name_map.get(model, model)
     model_metadata = MODEL_METADATA.get(model_name, {})
-    model_key = model_metadata.get("model_key", model_name)
+    try:
+        model_key = model_metadata.get("model_key", model_name)
 
-    date_added = model_metadata.get("date_added", "")
-    # long format date for tooltip, e.g. Monday, 28 November 2022
-    title = f"{date.fromisoformat(date_added):%A, %d %B %Y}"
-    df_metrics_uniq_protos.loc[date_added_col, model] = (
-        f"<span {title=}>{date_added}</span>"
-    )
-
-    # Update targets column with full label in tooltip
-    model_targets = model_metadata.get(Key.targets, "")
-    targets_label = Targets[model_targets].label
-    df_metrics_uniq_protos.loc[Key.targets.label, model] = (
-        f'<span title="{targets_label}">{model_targets}</span>'
-    )
-
-    # Add model version as hover tooltip to model name
-    model_version = model_metadata.get("model_version", "")
-    compliant_css_cls = "non-compliant" if model in non_compliant_models else ""
-    attrs = {
-        "title": f"Version: {model_version}",
-        "class": compliant_css_cls,
-        "data-model-key": model_key,
-    }
-    html_attr_str = " ".join(f'{k}="{v}"' for k, v in attrs.items() if v)
-    df_metrics_uniq_protos.loc[model_name_col, model] = (
-        f"<span {html_attr_str}>{model}</span>"
-    )
-
-    if training_sets := model_metadata.get("training_set"):
-        if isinstance(training_sets, dict | str):
-            training_sets = [training_sets]
-
-        n_structs_total = n_materials_total = 0
-        dataset_urls, dataset_tooltip_lines = {}, []
-
-        for train_set in training_sets:
-            if isinstance(train_set, str) and train_set not in TRAINING_SETS:
-                raise ValueError(f"Unknown training set {train_set=} for {model=}")
-            key = train_set if isinstance(train_set, str) else ""
-            dataset_info = TRAINING_SETS.get(key, train_set)
-            n_structs = dataset_info["n_structures"]
-            n_materials = dataset_info.get("n_materials", n_structs)
-
-            n_structs_total += n_structs
-            n_materials_total += n_materials
-
-            title = dataset_info.get("title", key)
-            dataset_urls[key or title] = dataset_info.get("url", "")
-
-            if n_materials != n_structs:
-                dataset_tooltip_lines += [
-                    f"{title}: {si_fmt(n_materials)} materials ({si_fmt(n_structs)} "
-                    "structures)"
-                ]
-            else:
-                dataset_tooltip_lines += [f"{title}: {si_fmt(n_materials)} materials"]
-
-        dataset_links = []
-        for key, href in dataset_urls.items():
-            if href:
-                dataset_links += [
-                    f"<a {href=} target='_blank' rel='noopener noreferrer'>{key}</a>"
-                ]
-            else:
-                dataset_links += [key]
-        dataset_str = "+".join(dataset_links)
-        new_line = "&#013;"  # line break that works in title attribute
-        dataset_tooltip = (
-            f"{new_line}&bull; ".join(["", *dataset_tooltip_lines])
-            if len(dataset_tooltip_lines) > 1
-            else ""
+        date_added = model_metadata.get("date_added", "")
+        # long format date for tooltip, e.g. Monday, 28 November 2022
+        title = f"{date.fromisoformat(date_added):%A, %d %B %Y}"
+        df_metrics_uniq_protos.loc[date_added_col, model] = (
+            f"<span {title=}>{date_added}</span>"
         )
 
-        title = (
-            f"{n_materials_total:,} materials in training set{new_line}"
-            f"{dataset_tooltip}"
-        )
-        train_size_str = (
-            f"<span {title=} data-sort-value={n_materials_total}>"
-            f"{si_fmt(n_materials_total, fmt='.0f')} ({dataset_str})</span>"
+        # Update targets column with full label in tooltip
+        model_targets = model_metadata.get(Key.targets, "")
+        targets_label = Targets[model_targets].label
+        df_metrics_uniq_protos.loc[Key.targets.label, model] = (
+            f'<span title="{targets_label}">{model_targets}</span>'
         )
 
-        if n_materials_total != n_structs_total:
+        # Add model version as hover tooltip to model name
+        model_version = model_metadata.get("model_version", "")
+        compliant_css_cls = "non-compliant" if model in non_compliant_models else ""
+        attrs = {
+            "title": f"Version: {model_version}",
+            "class": compliant_css_cls,
+            "data-model-key": model_key,
+        }
+        html_attr_str = " ".join(f'{k}="{v}"' for k, v in attrs.items() if v)
+        df_metrics_uniq_protos.loc[model_name_col, model] = (
+            f"<span {html_attr_str}>{model}</span>"
+        )
+
+        if training_sets := model_metadata.get("training_set"):
+            if isinstance(training_sets, dict | str):
+                training_sets = [training_sets]
+
+            n_structs_total = n_materials_total = 0
+            dataset_urls, dataset_tooltip_lines = {}, []
+
+            for train_set in training_sets:
+                if isinstance(train_set, str) and train_set not in TRAINING_SETS:
+                    raise ValueError(f"Unknown training set {train_set=} for {model=}")
+                key = train_set if isinstance(train_set, str) else ""
+                dataset_info = TRAINING_SETS.get(key, train_set)
+                n_structs = dataset_info["n_structures"]
+                n_materials = dataset_info.get("n_materials", n_structs)
+
+                n_structs_total += n_structs
+                n_materials_total += n_materials
+
+                title = dataset_info.get("title", key)
+                dataset_urls[key or title] = dataset_info.get("url", "")
+
+                if n_materials != n_structs:
+                    dataset_tooltip_lines += [
+                        f"{title}: {si_fmt(n_materials)} materials "
+                        f"({si_fmt(n_structs)} structures)"
+                    ]
+                else:
+                    dataset_tooltip_lines += [
+                        f"{title}: {si_fmt(n_materials)} materials"
+                    ]
+
+            dataset_links = []
+            for key, href in dataset_urls.items():
+                if href:
+                    rel = "noopener noreferrer"
+                    dataset_links += [f"<a {href=} target='_blank' {rel=}>{key}</a>"]
+                else:
+                    dataset_links += [key]
+            dataset_str = "+".join(dataset_links)
+            new_line = "&#013;"  # line break that works in title attribute
+            dataset_tooltip = (
+                f"{new_line}&bull; ".join(["", *dataset_tooltip_lines])
+                if len(dataset_tooltip_lines) > 1
+                else ""
+            )
+
             title = (
-                f"{n_materials_total:,} materials in training set ({n_structs_total:,} "
-                f"structures counting all DFT relaxation frames per material)"
+                f"{n_materials_total:,} materials in training set{new_line}"
                 f"{dataset_tooltip}"
             )
             train_size_str = (
                 f"<span {title=} data-sort-value={n_materials_total}>"
-                f"{si_fmt(n_materials_total, fmt='.0f')}"
-                f" <small>({si_fmt(n_structs_total, fmt='.1f')})</small>"
-                f" ({dataset_str})</span>"
+                f"{si_fmt(n_materials_total, fmt='.0f')} ({dataset_str})</span>"
             )
 
-        df_metrics_uniq_protos.loc[Key.train_set.label, model] = train_size_str
-    elif model == "Dummy":
-        continue
-    else:
-        raise ValueError(
-            f"Unknown {training_sets=} for {model=}\nwith {model_metadata=}"
+            if n_materials_total != n_structs_total:
+                title = (
+                    f"{n_materials_total:,} materials in training set "
+                    f"({n_structs_total:,} structures counting all DFT relaxation "
+                    f"frames per material){dataset_tooltip}"
+                )
+                train_size_str = (
+                    f"<span {title=} data-sort-value={n_materials_total}>"
+                    f"{si_fmt(n_materials_total, fmt='.0f')}"
+                    f" <small>({si_fmt(n_structs_total, fmt='.1f')})</small>"
+                    f" ({dataset_str})</span>"
+                )
+
+            df_metrics_uniq_protos.loc[Key.train_set.label, model] = train_size_str
+        elif model == "Dummy":
+            continue
+        else:
+            raise ValueError(
+                f"Unknown {training_sets=} for {model=}\nwith {model_metadata=}"
+            )
+
+        model_params = model_metadata.get(Key.model_params, 0)
+        n_estimators = model_metadata.get(Key.n_estimators, -1)
+        title = f"{n_estimators:,} models in ensemble"
+        n_estimators_str = (
+            f" <small {title=}>(N={n_estimators})</small>" if n_estimators > 1 else ""
         )
 
-    model_params = model_metadata.get(Key.model_params, 0)
-    n_estimators = model_metadata.get(Key.n_estimators, -1)
-    title = f"{n_estimators:,} models in ensemble"
-    n_estimators_str = (
-        f" <small {title=}>(N={n_estimators})</small>" if n_estimators > 1 else ""
-    )
+        title = f"{model_params:,} trainable model parameters"
+        formatted_params = si_fmt(model_params)
+        df_metrics_uniq_protos.loc[
+            Key.model_params.label.replace("eter", ""), model
+        ] = (
+            f'<span {title=} data-sort-value="{model_params}">{formatted_params}'
+            f"</span>{n_estimators_str}"
+        )
 
-    title = f"{model_params:,} trainable model parameters"
-    formatted_params = si_fmt(model_params)
-    df_metrics_uniq_protos.loc[Key.model_params.label.replace("eter", ""), model] = (
-        f'<span {title=} data-sort-value="{model_params}">{formatted_params}'
-        f"</span>{n_estimators_str}"
-    )
-
-    for key in (MbdKey.openness, Key.train_task, Key.test_task):
-        default = {MbdKey.openness: Open.OSOD}.get(key, pd.NA)
-        df_metrics_uniq_protos.loc[key.label, model] = model_metadata.get(key, default)
+        for key in (MbdKey.openness, Key.train_task, Key.test_task):
+            default = {MbdKey.openness: Open.OSOD}.get(key, pd.NA)
+            df_metrics_uniq_protos.loc[key.label, model] = model_metadata.get(
+                key, default
+            )
+    except Exception as exc:
+        exc.add_note(f"{model=} with {model_metadata=}")
+        raise
 
 # assign this col to all tables
 for df in (df_metrics, df_metrics_10k, df_metrics_uniq_protos):
@@ -287,11 +296,11 @@ for (label, df_met), show_non_compliant in itertools.product(
             R2_col: "coefficient of determination",
             "DAF": "discovery acceleration factor",
             "Prec": "precision",
-            "Acc": "accuracy",
+            "Acc": "accuracy in predicting thermodynamic stability",
             "TPR": "true positive rate",
             "TNR": "true negative rate",
-            "MAE": "mean absolute error",
-            "RMSE": "root mean squared error",
+            "MAE": f"mean absolute error of<br>predicted convex hull distance {eV_per_atom}",  # noqa: E501
+            "RMSE": f"root mean squared error of<br>predicted convex hull distance {eV_per_atom}",  # noqa: E501
             "F1": "harmonic mean of precision and recall",
         }
 

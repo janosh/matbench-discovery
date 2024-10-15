@@ -43,8 +43,15 @@ for model in models:
         show_dummy_mae=False,
         with_sem=False,
     )
+    # if error is low, move legend to the top left
+    leg_y = 1 if df_err.max().max() < 0.1 else 0.02
+    y_anchor = "top" if leg_y == 1 else "bottom"
     fig.layout.legend.update(
-        title=f"<b>{model}</b>", x=0.02, y=0.02, bgcolor="rgba(0,0,0,0)"
+        title=f"<b>{model}</b>",
+        x=0.02,
+        y=leg_y,
+        bgcolor="rgba(0,0,0,0)",
+        yanchor=y_anchor,
     )
     fig.layout.margin.update(l=10, r=10, b=10, t=10)
     fig.layout.update(hovermode="x unified", hoverlabel_bgcolor="black")
