@@ -42,18 +42,9 @@ for df in (df_each_err, df_preds):
 
 
 # %% project average model error onto periodic table
-frac_comp_col = "fractional composition"
-df_wbm[frac_comp_col] = [
-    Composition(comp).fractional_composition for comp in tqdm(df_wbm[Key.formula])
-]
-
-df_frac_comp = pd.DataFrame(comp.as_dict() for comp in df_wbm[frac_comp_col]).set_index(
-    df_wbm.index
-)
-if any(df_frac_comp.sum(axis=1).round(6) != 1):
-    raise ValueError("Sum of fractional compositions is not 1")
-
-# df_frac_comp = df_frac_comp.dropna(axis=1, thresh=100)  # remove Xe with only 1 entry
+df_comp = pd.DataFrame(
+    Composition(comp).as_dict() for comp in df_wbm[Key.formula]
+).set_index(df_wbm.index)
 
 
 # %% compute number of samples per element in training set
@@ -69,7 +60,7 @@ df_elem_err.index.name = "symbol"
 # %% plot number of structures containing each element in MP and WBM
 for label, srs in (
     ("MP", df_elem_err[train_count_col]),
-    ("WBM", df_frac_comp.where(pd.isna, 1).sum()),
+    ("WBM", df_comp.where(pd.isna, 1).sum()),
 ):
     title = f"Number of {label} structures containing each element"
     srs = srs.sort_values().copy()
@@ -82,7 +73,7 @@ for label, srs in (
 # %% plot structure counts for each element in MP and WBM in a grouped bar chart
 df_struct_counts = pd.DataFrame(index=df_elem_err.index)
 df_struct_counts["MP"] = df_elem_err[train_count_col]
-df_struct_counts["WBM"] = df_frac_comp.where(pd.isna, 1).sum()
+df_struct_counts["WBM"] = df_comp.where(pd.isna, 1).sum()
 min_count = 10  # only show elements with at least 10 structures
 df_struct_counts = df_struct_counts[df_struct_counts.sum(axis=1) > min_count]
 normalized = False
@@ -112,7 +103,7 @@ pmv.save_fig(fig, f"{SITE_FIGS}/bar-element-counts-mp+wbm-{normalized=}.svelte")
 # %% compute std dev of DFT hull dist for each element in test set
 test_set_std_col = "Test set standard deviation"
 df_elem_err[test_set_std_col] = (
-    df_frac_comp.where(pd.isna, 1) * df_wbm[MbdKey.each_true].to_numpy()[:, None]
+    df_comp.where(pd.isna, 1) * df_wbm[MbdKey.each_true].to_numpy()[:, None]
 ).std()
 
 
@@ -128,9 +119,7 @@ normalized = True
 cs_range = (0, 0.5)  # same range for all plots
 # cs_range = (None, None)  # different range for each plot
 for model in (*df_metrics, MbdKey.each_err_models):
-    df_elem_err[model] = (
-        df_frac_comp * df_each_err[model].abs().to_numpy()[:, None]
-    ).mean()
+    df_elem_err[model] = (df_comp * df_each_err[model].abs().to_numpy()[:, None]).mean()
     # don't change series values in place, would change the df
     per_elem_err = df_elem_err[model].copy(deep=True)
     per_elem_err.name = f"{model} (eV/atom)"
@@ -267,7 +256,7 @@ pmv.save_fig(fig, f"{SITE_FIGS}/each-error-vs-least-prevalent-element-in-struct.
 # %% plot histogram of model errors for each element
 model = Model.mace.label
 fig_ptable_each_errors = pmv.ptable_hists(
-    df_frac_comp * (df_each_err[model].to_numpy()[:, None]),
+    df_comp * (df_each_err[model].to_numpy()[:, None]),
     log=True,
     cbar_title=f"{model} convex hull distance errors (eV/atom)",
     cbar_title_kwargs=dict(fontsize=16),

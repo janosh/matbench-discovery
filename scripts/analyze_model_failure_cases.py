@@ -196,21 +196,14 @@ for col in ("All models false neg", "All models false pos"):
 
 # %% map abs EACH model errors onto elements in structure weighted by composition
 # fraction and average over all test set structures
-frac_comp_col = "fractional composition"
-df_wbm[frac_comp_col] = [
-    Composition(comp).fractional_composition for comp in tqdm(df_wbm[Key.formula])
-]
-
-df_frac_comp = pd.json_normalize(
-    [comp.as_dict() for comp in df_wbm[frac_comp_col]]
+df_comp = pd.json_normalize(
+    [Composition(comp).as_dict() for comp in tqdm(df_wbm[Key.formula])]
 ).set_index(df_wbm.index)
-if any(df_frac_comp.sum(axis=1).round(6) != 1):
-    raise ValueError("Sum of fractional compositions is not 1")
 
 # bar plot showing number of structures in MP containing each element
-(len(df_frac_comp) - df_frac_comp.isna().sum()).sort_values().plot.bar(backend=PLOTLY)
+(len(df_comp) - df_comp.isna().sum()).sort_values().plot.bar(backend=PLOTLY)
 
-# df_frac_comp = df_frac_comp.dropna(axis=1, thresh=100)  # remove Xe with only 1 entry
+# df_comp = df_comp.dropna(axis=1, thresh=100)  # remove Xe with only 1 entry
 
 
 # %% TODO investigate if structures with largest mean error across all models error can
