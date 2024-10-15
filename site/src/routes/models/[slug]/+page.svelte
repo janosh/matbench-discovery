@@ -263,6 +263,29 @@
       </section>
     {/if}
 
+    {#if model.notes}
+      <section class="notes">
+        {#each Object.entries(model.notes) as [key, note]}
+          <h2>{key}</h2>
+          {#if typeof note === `string`}
+            <p>{@html note}</p>
+          {:else if Array.isArray(note)}
+            <ol>
+              {#each note as val}
+                <li>{@html val}</li>
+              {/each}
+            </ol>
+          {:else}
+            <ul>
+              {#each Object.entries(note) as [key, val]}
+                <li><strong>{key}:</strong> {val}</li>
+              {/each}
+            </ul>
+          {/if}
+        {/each}
+      </section>
+    {/if}
+
     {#if model.hyperparams}
       <section class="hyperparams">
         <h2>Hyperparameters</h2>
@@ -288,30 +311,6 @@
             </li>
           {/each}
         </ul>
-      </section>
-    {/if}
-
-    {#if model.notes}
-      <section class="notes">
-        <h2>Notes</h2>
-        {#each Object.entries(model.notes) as [key, note]}
-          <h3>{key}</h3>
-          {#if typeof note === `string`}
-            <p>{@html note}</p>
-          {:else if Array.isArray(note)}
-            <ol>
-              {#each note as val}
-                <li>{@html val}</li>
-              {/each}
-            </ol>
-          {:else}
-            <ul>
-              {#each Object.entries(note) as [key, val]}
-                <li><strong>{key}:</strong> {val}</li>
-              {/each}
-            </ul>
-          {/if}
-        {/each}
       </section>
     {/if}
   </div>

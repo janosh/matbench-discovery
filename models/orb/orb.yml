@@ -64,6 +64,6 @@ requirements: # strongly recommended
 
 training_set: [MPtrj, Alex]
 
-notes: # notes can have any key, be multiline and support markdown.
-  description: |
+notes:
+  Description: |
     ORB is a pretrained model for atomic simulations. ORB uses a pretrained diffusion model backbone which is fine-tuned on MPtrj + Alexandria.

@@ -64,6 +64,6 @@ requirements: # strongly recommended
 
 training_set: MPtrj
 
-notes: # notes can have any key, be multiline and support markdown.
-  description: |
+notes:
+  Description: |
     ORB is a pretrained model for atomic simulations. This model is pretrained and fine-tuned on MPtrj only.
