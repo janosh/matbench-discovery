@@ -45,9 +45,9 @@ R2              0.808497     0.896680       0.824233
 
 ## **ORB MPtrj**: `orb-v2-mptrj-only` - MPTrj pretraining, MPTrj finetuning
 
-| Item                 | Link/URL                                                                                                  |
-| -------------------- | --------------------------------------------------------------------------------------------------------- |
-| Results CSV          | [orbff-mptrj-only-v2-20241014.csv.gz](./orbff-mptrj-only-v2-20241014.csv.gz)                              |
+| Item                 | Link/URL                                                                                                   |
+| -------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Results CSV          | [orbff-mptrj-only-v2-20241014.csv.gz](./orbff-mptrj-only-v2-20241014.csv.gz)                               |
 | Public Model Weights | https://storage.googleapis.com/orbitalmaterials-public-models/forcefields/orb-mptraj-only-v2-20241014.ckpt |
 
 ```txt
@@ -107,9 +107,9 @@ R2              0.798803     0.907903       0.815941
 
 ## **ORB MPtrj**: `orb-v1-mptrj-only` - MPTrj pretraining, MPTrj finetuning
 
-| Item                 | Link/URL                                                                                                    |
-| -------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Results CSV          | [orbff-mptrj-only-v1-20240827.csv.gz](./orbff-mptrj-only-v1-20240827.csv.gz)                                |
+| Item                 | Link/URL                                                                                                     |
+| -------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Results CSV          | [orbff-mptrj-only-v1-20240827.csv.gz](./orbff-mptrj-only-v1-20240827.csv.gz)                                 |
 | Public Model Weights | https://storage.googleapis.com/orbitalmaterials-public-models/forcefields/orbff-mptraj-only-v1-20230827.ckpt |
 
 ```txt
