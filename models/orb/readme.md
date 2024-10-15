@@ -12,7 +12,7 @@ _Note: The models in the benchmark submissions are not trained with the D3 dispe
 
 - **ORB**: `orb-v2` - This is our full model, pretrained as a de-noising model on a wide variety of collected crystal structures. It is then finetuned using [`MPtrj`](https://figshare.com/articles/dataset/23713842) and [`Alexandria`](https://alexandria.icams.rub.de/) jointly.
 
-- **ORB MPtrj**: `orb-v2-mptrj-only` - This is our model which fits the data requirements of the Matbench Discovery benchmark - namely that it is trained only on the MPtrj dataset. This model uses the full MPTraj dataset for both the pretraining steps and the finetuning steps. It uses no other data sources.
+- **ORB MPtrj**: `orb-v2-mptrj-only` - This is our model which fits the data requirements of the Matbench Discovery benchmark - namely that it is trained only on the MPtrj dataset. This model uses the full MPTrj dataset for both the pretraining steps and the finetuning steps. It uses no other data sources.
 
 For more information on the models, please refer to our [Github Repository][`orb-models`]. We are working on a more complete technical report which will be available soon.
 
@@ -43,12 +43,12 @@ RMSE            0.079011     0.068514       0.077203
 R2              0.808497     0.896680       0.824233
 ```
 
-## **ORB MPtrj**: `orb-v2-mptrj-only` - MPTraj pretraining, MPTraj finetuning
+## **ORB MPtrj**: `orb-v2-mptrj-only` - MPTrj pretraining, MPTrj finetuning
 
-| Item                 | Link/URL                                                                                                   |
-| -------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Results CSV          | [orbff-mptrj-only-v2-20241014.csv.gz](./orbff-mptrj-only-v2-20241014.csv.gz)                               |
-| Public Model Weights | https://storage.googleapis.com/orbitalmaterials-public-models/forcefields/orb-mptraj-only-v2-20241014.ckpt |
+| Item                 | Link/URL                                                                                                  |
+| -------------------- | --------------------------------------------------------------------------------------------------------- |
+| Results CSV          | [orbff-mptrj-only-v2-20241014.csv.gz](./orbff-mptrj-only-v2-20241014.csv.gz)                              |
+| Public Model Weights | https://storage.googleapis.com/orbitalmaterials-public-models/forcefields/orb-mptrj-only-v2-20241014.ckpt |
 
 ```txt
                      orb          10k         unique
@@ -74,7 +74,7 @@ R2              0.747388     0.801666       0.755931
 
 - **ORB**: `orb-v1` - This is our full model, pretrained as a de-noising model on a wide variety of collected crystal structures. It is then finetuned using [`MPtrj`](https://figshare.com/articles/dataset/23713842) and [`Alexandria`](https://alexandria.icams.rub.de/) jointly.
 
-- **ORB MPtrj**: `orb-v1-mptrj-only` - This is our model which fits the data requirements of the Matbench Discovery benchmark - namely that it is trained only on the MPtrj dataset. This model uses the full MPTraj dataset for both the pretraining steps and the finetuning steps. It uses no other data sources.
+- **ORB MPtrj**: `orb-v1-mptrj-only` - This is our model which fits the data requirements of the Matbench Discovery benchmark - namely that it is trained only on the MPtrj dataset. This model uses the full MPTrj dataset for both the pretraining steps and the finetuning steps. It uses no other data sources.
 
 For more information on the models, please refer to our [Github Repository][`orb-models`]. We are working on a more complete technical report which will be available soon.
 
@@ -105,12 +105,12 @@ RMSE            0.080986     0.064470       0.079003
 R2              0.798803     0.907903       0.815941
 ```
 
-## **ORB MPtrj**: `orb-v1-mptrj-only` - MPTraj pretraining, MPTraj finetuning
+## **ORB MPtrj**: `orb-v1-mptrj-only` - MPTrj pretraining, MPTrj finetuning
 
-| Item                 | Link/URL                                                                                                     |
-| -------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Results CSV          | [orbff-mptrj-only-v1-20240827.csv.gz](./orbff-mptrj-only-v1-20240827.csv.gz)                                 |
-| Public Model Weights | https://storage.googleapis.com/orbitalmaterials-public-models/forcefields/orbff-mptraj-only-v1-20230827.ckpt |
+| Item                 | Link/URL                                                                                                    |
+| -------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Results CSV          | [orbff-mptrj-only-v1-20240827.csv.gz](./orbff-mptrj-only-v1-20240827.csv.gz)                                |
+| Public Model Weights | https://storage.googleapis.com/orbitalmaterials-public-models/forcefields/orbff-mptrj-only-v1-20230827.ckpt |
 
 ```txt
                      orb          10k         unique
