@@ -73,8 +73,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     mattersim = "mattersim/mattersim-wbm-IS2RE.csv.gz", "mattersim/mattersim.yml", "MatterSim"  # fmt: skip
 
     # ORB
-    orb = "orb/orbff-v1-20240827.csv.gz", "orb/orb.yml", "ORB"
-    orb_mptrj = "orb/orbff-mptrj-only-v1-20240827.csv.gz", "orb/orb-mptrj.yml", "ORB MPtrj"  # fmt: skip
+    orb = "orb/orbff-v2-20241011.csv.gz", "orb/orb.yml", "ORB"
+    orb_mptrj = "orb/orbff-mptrj-only-v2-20241014.csv.gz", "orb/orb-mptrj.yml", "ORB MPtrj"  # fmt: skip
 
     # fairchem
     eqv2_31m_dens_mp = "fairchem/eqV2-31M-dens-mp.csv.gz", "fairchem/eqV2-31M-dens-mp.yml", "EqV2-31M-DeNS-MP"  # fmt: skip
