@@ -10,6 +10,7 @@ The OMat24 train and val splits are fully compatible with the Matbench-Discovery
    WBM dataset.
 
 We processed the following datasets for finetuning as follows
+
 1. MPTrj - We use uncorrected energies and removed all structures with atoms at least 12 Angstroms apart.
 2. sAlex - We removed all trajectories from the Alexandria 3D PBE dataset if any structure had a structure prototype that is in the set of all structure prototypes for all WBM initial and final structures.
    We then filterned the remaining trajectories by removing all structures with energy > 0 eV, forces norm > 50 eV/A, absolute stress > 80GPa. Finally we subsampled each trajectory by taking structures with energies
