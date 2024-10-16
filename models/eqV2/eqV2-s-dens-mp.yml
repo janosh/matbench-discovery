@@ -1,7 +1,8 @@
 model_name: eqV2 DeNS
-model_version: 0
+model_version: v0
 matbench_discovery_version: 1.3.1
-date_added: "2024-10-16"
+date_added: "2024-10-17"
+date_published: "2024-10-17"
 authors:
   - name: Luis Barroso-Luque
     affiliation: FAIR Meta
@@ -30,7 +31,8 @@ authors:
     corresponding: true
 
 repo: https://github.com/FAIR-Chem/fairchem
-preprint: https://arxiv.org/abs/
+doi: # add
+paper: https://arxiv.org/abs/ # TODO update
 url: https://huggingface.co/fairchem/OMAT24
 pypi: https://pypi.org/project/fairchem-core
 
@@ -45,7 +47,7 @@ train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS
 model_type: UIP
-model_params: 0 #TODO add this based on submission
+model_params: 31_207_434
 n_estimators: 1
 
 training_set: MPtrj
@@ -54,4 +56,4 @@ hyperparams:
   max_force: 0.02
   max_steps: 500
   ase_optimizer: FIRE
-  train_config: #TODO add URL
+  # train_config: #TODO add URL
