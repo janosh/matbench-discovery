@@ -85,10 +85,3 @@ notes:
     Denoising Non-Equilibrium Structures (DeNS) uses a denoising generalized to structures with non-zero forces by enconding forces to obtain a well-posed denoising problem.
   Training: |
     Training was done from scratch using MPTrj only and a 50% probablity for denoising training structures.
-trained_by:
-  name: Luis Barroso-Luque
-  affiliation: FAIR Meta
-  name: Muhammed Shuaibi
-  affiliation: FAIR Meta
-  name: Brandon M. Wood
-  affiliation: FAIR Meta
