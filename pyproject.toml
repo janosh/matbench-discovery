@@ -91,6 +91,7 @@ ignore = [
   "EM101",
   "EM102",
   "FIX002",
+  "G004",    # logging uses f-string
   "INP001",
   "ISC001",
   "N806",    # non-lowercase-variable-in-function
