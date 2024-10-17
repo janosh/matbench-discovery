@@ -61,7 +61,7 @@ hyperparams:
     energy: 20
     forces: 20
     stress: 5
-    dens:   10
+    dens: 10
   dens_probability: 0.5
   noise_std: 0.1
   optimizer: AdamW
