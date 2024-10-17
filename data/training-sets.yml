@@ -41,3 +41,9 @@ OMat24:
   title: OMat24
   url: https://huggingface.co/datasets/fairchem/OMAT24
   n_structures: 100_824_585
+
+sAlex:
+  title: subsampled Alex
+  url: https://huggingface.co/datasets/fairchem/OMAT24
+  n_materials: 3_227_606
+  n_structures: 10_447_765
