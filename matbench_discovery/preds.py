@@ -77,7 +77,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     orb_mptrj = "orb/orbff-mptrj-only-v2-20241014.csv.gz", "orb/orb-mptrj.yml", "ORB MPtrj"  # fmt: skip
 
     # fairchem
-    eqv2_31m_dens_mp = "fairchem/eqV2-31M-dens-mp.csv.gz", "fairchem/eqV2-31M-dens-mp.yml", "EqV2-31M-DeNS-MP"  # fmt: skip
+    eqv2_s_dens = "eqV2/eqV2-s-dens-mp.csv.gz", "eqV2/eqV2-s-dens-mp.yml", "eqV2 DeNS"  # fmt: skip
+    eqv2_m = "eqV2/eqV2-m-omat-mp-salex.csv.gz", "eqV2/eqV2-m-omat-mp-salex.yml", "eqV2"  # fmt: skip
 
     # --- Model Combos
     # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
