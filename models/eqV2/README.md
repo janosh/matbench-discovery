@@ -26,7 +26,7 @@ The sAlex training and validation dataset splits used for fine-tuning are also a
 
 The code and training config files necessary to train and evaluate the models is available in the official [FAIRChem repo](https://github.com/FAIR-Chem/fairchem)
 
-- Currently the functionality to reproduce training results and run relaxations with stress enabled is on this [branch](https://github.com/FAIR-Chem/fairchem/tree/stress-relaxations), which will be merged into the main codebase in the coming weeks.
+- Currently the functionality to reproduce training results and run relaxations with stress enabled is on this [branch](https://github.com/FAIR-Chem/fairchem/tree/omat24). We will be merging the functionality to the the main codebase in the coming weeks.
 
 Additional information about the datasets and models can be found in our pre-print:
 
