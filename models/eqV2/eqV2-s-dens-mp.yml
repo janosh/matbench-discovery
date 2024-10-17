@@ -1,5 +1,5 @@
 model_name: eqV2 DeNS
-model_version: v0
+model_version: v2024.10.17
 matbench_discovery_version: 1.3.1
 date_added: "2024-10-17"
 date_published: "2024-10-17"
@@ -31,8 +31,8 @@ authors:
     corresponding: true
 
 repo: https://github.com/FAIR-Chem/fairchem
-doi: https://doi.org/ # add
-paper: https://arxiv.org/abs/ # TODO update
+doi: https://doi.org/10.48550/arXiv.2410.12771
+paper: https://arxiv.org/abs/2410.12771
 url: https://huggingface.co/fairchem/OMAT24
 pypi: https://pypi.org/project/fairchem-core
 
@@ -56,4 +56,39 @@ hyperparams:
   max_force: 0.02
   max_steps: 500
   ase_optimizer: FIRE
-  # train_config: #TODO add URL
+  loss: MAE
+  loss_weights:
+    energy: 20
+    forces: 20
+    stress: 5
+    dens:   10
+  dens_probability: 0.5
+  noise_std: 0.1
+  optimizer: AdamW
+  learning_rate_schedule: Cosine
+  warmup_epochs: 0.1
+  warmup_factor: 0.2
+  max_learning_rate: 0.0002
+  min_learning_rate_factor: 0.01
+  grad_clip_threshold: 100
+  ema_decay: 0.999
+  weight_decay: 0.001
+  dropout_rate: 0.1
+  stochastic_depth: 0.1
+  batch_size: 512
+  epochs: 150
+  # train_config_url: #TODO add URL
+
+notes:
+  Description: |
+    EquiformerV2 is an equivariant transformer that uses graph attention, attention re-normalization, and seperable S^2 activations and layer normalization.
+    Denoising Non-Equilibrium Structures (DeNS) uses a denoising generalized to structures with non-zero forces by enconding forces to obtain a well-posed denoising problem.
+  Training: |
+    Training was done from scratch using MPTrj only and a 50% probablity for denoising training structures.
+trained_by:
+  name: Luis Barroso-Luque
+  affiliation: FAIR Meta
+  name: Muhammed Shuaibi
+  affiliation: FAIR Meta
+  name: Brandon M. Wood
+  affiliation: FAIR Meta
