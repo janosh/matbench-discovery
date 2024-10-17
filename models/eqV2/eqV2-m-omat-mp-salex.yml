@@ -78,6 +78,6 @@ hyperparams:
 
 notes:
   Description: |
-    EquiformerV2 is an equivariant transformer that graph attention, attention re-normalization, and seperable S^2 activations and layer normalization.
+    EquiformerV2 is an equivariant transformer that uses graph attention, attention re-normalization, and separable S^2 activations and layer normalization.
   Training: |
     Training was done by fine-tuning a model pretrained for 2 epochs on the OMat24 dataset.
