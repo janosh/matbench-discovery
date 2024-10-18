@@ -19,11 +19,13 @@ for model_dir in MODEL_DIRS:
             f"expected 1 metadata file, got {metadata_files=} in {model_dir=}"
         )
     for metadata_file in metadata_files:
-        if metadata_file.endswith("aborted.yml"):
-            continue
         # make sure all required keys are non-empty
         with open(metadata_file) as yml_file:
             model_data = yaml.full_load(yml_file)
+
+        # skip models that aren't completed
+        if model_data.get("status", "complete") != "complete":
+            continue
 
         model_data["model_dir"] = model_dir
         # YAML file name serves as model key and must match Model enum attribute

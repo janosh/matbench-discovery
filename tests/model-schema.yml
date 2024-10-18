@@ -134,6 +134,9 @@ properties:
     enum: [OSOD, OSCD, CSOD, CSCD]
   pred_col:
     type: string
+  status:
+    type: string
+    enum: [aborted, complete]
 
 required:
   - authors

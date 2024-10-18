@@ -69,4 +69,5 @@ export interface ModelMetadata {
   targets: 'E' | 'EF' | 'EFS' | 'EFSM'
   openness?: 'OSOD' | 'OSCD' | 'CSOD' | 'CSCD'
   pred_col: string
+  status?: 'aborted' | 'complete'
 }

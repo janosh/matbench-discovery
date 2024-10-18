@@ -47,3 +47,4 @@ trained_for_benchmark: true
 # for hyperparams, see alignn-config.json
 
 training_set: [MPtrj]
+status: aborted
