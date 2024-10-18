@@ -1,8 +1,10 @@
 import os
 from glob import glob
 
+import pytest
+
 from matbench_discovery import ROOT, __version__
-from matbench_discovery.models import MODEL_DIRS, MODEL_METADATA
+from matbench_discovery.models import MODEL_DIRS, MODEL_METADATA, model_is_compliant
 from matbench_discovery.preds import Model
 
 
@@ -85,3 +87,20 @@ def test_model_enum() -> None:
         model_yaml_path = f"{ROOT}/models/{model_key.url}"
         assert os.path.isfile(model_key.path)
         assert os.path.isfile(model_yaml_path) or model_key.url is None
+
+
+@pytest.mark.parametrize(
+    "model_key, is_compliant",
+    [
+        (Model.megnet, True),
+        (Model.eqv2_m, False),
+        (Model.eqv2_s_dens, True),
+        (Model.orb, False),
+        (Model.wrenformer, True),
+        (Model.voronoi_rf, True),
+        (Model.gnome, False),
+        (Model.mattersim, False),
+    ],
+)
+def test_model_is_compliant(model_key: Model, is_compliant: bool) -> None:
+    assert model_is_compliant(MODEL_METADATA[model_key.label]) is is_compliant

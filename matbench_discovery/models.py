@@ -6,7 +6,7 @@ from typing import Any
 import yaml
 
 from matbench_discovery import ROOT
-from matbench_discovery.enums import ModelType
+from matbench_discovery.enums import ModelType, Open
 
 # ignore underscore-prefixed directories for WIP model submissions
 MODEL_DIRS = glob(f"{ROOT}/models/[!_]*/")
@@ -35,3 +35,21 @@ for model_dir in MODEL_DIRS:
         except ValueError as exc:
             exc.add_note(f"{metadata_file=}")
             raise
+
+
+def model_is_compliant(meta: dict[str, Any]) -> bool:
+    """Check if model complies with benchmark restrictions on allowed training sets and
+    open model code and weights.
+
+    Args:
+        meta: model metadata dictionary
+
+    Returns:
+        bool: True if model is compliant
+    """
+    openness = meta.get("openness", Open.OSOD)
+    if openness != Open.OSOD:
+        return False
+    training_set = meta.get("training_set")
+    training_set = {*training_set} if isinstance(training_set, list) else {training_set}
+    return training_set <= {"MP 2022", "MPtrj", "MPF", "MP Graphs"}

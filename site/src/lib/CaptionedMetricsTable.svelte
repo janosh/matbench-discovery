@@ -72,4 +72,10 @@
     padding: 0 6pt;
     border-radius: 4pt;
   }
+  figure :global(:is(th, td)) {
+    max-width: 12em;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+  }
 </style>
