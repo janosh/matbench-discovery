@@ -54,22 +54,19 @@ properties:
   training_set:
     oneOf:
       - type: string
-        enum: [MP 2022, MPtrj, MPF, MP Graphs, GNoME, MatterSim, Alex]
+        enum: &training_sets
+          - MP 2022
+          - MPtrj
+          - MPF
+          - MP Graphs
+          - GNoME
+          - MatterSim
+          - Alex
+          - OMat24
+          - sAlex
       - type: array
         items:
-          enum: [MP 2022, MPtrj, MPF, MP Graphs, GNoME, MatterSim, Alex]
-      - type: object
-        properties:
-          title:
-            type: string
-          url:
-            type: string
-            format: uri
-          n_structures:
-            type: number
-          n_materials:
-            type: number
-        required: [title, url, n_structures]
+          enum: *training_sets
   hyperparams:
     type: object
     properties:

@@ -15,7 +15,6 @@
     TableInset,
   } from 'elementari'
   import { CopyButton, Tooltip } from 'svelte-zoo'
-  import Mace from './mace.md'
 
   export let data
   $: model = data.model
@@ -112,7 +111,7 @@
         <Icon icon="academicons:doi" inline /> DOI
       </a>
       <a
-        href={`${pkg.repository}/blob/-/models/${model.dirname.split('/').pop()}`}
+        href={`${pkg.repository}/blob/-/models/${model.dirname?.split('/').pop()}`}
         target="_blank"
         rel="noopener noreferrer"
       >
@@ -140,7 +139,9 @@
       {/await}
     {/each}
     {#if $page.params.slug == `mace`}
-      <Mace />
+      {#await import(`./mace.md`) then Mace}
+        <Mace.default />
+      {/await}
     {/if}
 
     <ColorScaleSelect bind:selected={color_scale} />

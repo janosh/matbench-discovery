@@ -16,7 +16,7 @@ from matbench_discovery import DATA_DIR, PDF_FIGS, ROOT, SCRIPTS, SITE_FIGS
 from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.enums import MbdKey, Open, Targets
 from matbench_discovery.metrics import stable_metrics
-from matbench_discovery.models import MODEL_METADATA
+from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 from matbench_discovery.preds import df_metrics, df_metrics_10k, df_metrics_uniq_protos
 
 try:
@@ -40,10 +40,7 @@ df_metrics_uniq_protos.loc[Key.train_set.label] = ""
 df_metrics_uniq_protos.loc[date_added_col] = ""
 
 non_compliant_models = [
-    key
-    for key, meta in MODEL_METADATA.items()
-    if meta.get("openness", Open.OSOD)
-    != Open.OSOD  # TODO add `or uses_extra_training_data`
+    key for key, meta in MODEL_METADATA.items() if not model_is_compliant(meta)
 ]
 
 with open(f"{DATA_DIR}/training-sets.yml") as file:
@@ -292,15 +289,19 @@ for (label, df_met), show_non_compliant in itertools.product(
             lower_is_better, " ↓"
         )
 
+        clf_suffix = (
+            "of classifying thermodynamic stability (i.e. above/below 0K convex hull)"
+        )
+        reg_suffix = f"of predicting the convex hull distance {eV_per_atom}"
         tooltips_titles = {
             R2_col: "coefficient of determination",
             "DAF": "discovery acceleration factor",
-            "Prec": "precision",
-            "Acc": "accuracy in predicting thermodynamic stability",
-            "TPR": "true positive rate",
-            "TNR": "true negative rate",
-            "MAE": f"mean absolute error of<br>predicted convex hull distance {eV_per_atom}",  # noqa: E501
-            "RMSE": f"root mean squared error of<br>predicted convex hull distance {eV_per_atom}",  # noqa: E501
+            "Prec": f"precision {clf_suffix}",
+            "Acc": f"accuracy {clf_suffix}",
+            "TPR": f"true positive rate {clf_suffix}",
+            "TNR": f"true negative rate {clf_suffix}",
+            "MAE": f"mean absolute error of predicted {reg_suffix}",
+            "RMSE": f"root mean squared error of predicted {reg_suffix}",
             "F1": "harmonic mean of precision and recall",
         }
 
@@ -346,7 +347,7 @@ for (label, df_met), show_non_compliant in itertools.product(
                 styler.hide([] if show_non_compliant else non_compliant_idx),
                 f"{pdf_path}/metrics-table{label}{suffix}.pdf",
             )
-    except (ImportError, RuntimeError) as exc:
+    except (ImportError, RuntimeError, OSError) as exc:
         print(f"df_to_pdf failed: {exc}")
 
     display(styler.set_caption(df_met.attrs.get("title")))
