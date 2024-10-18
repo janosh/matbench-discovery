@@ -91,7 +91,7 @@ model_type: UIP
 model_params: 182_000_000
 n_estimators: 1
 
-training_set: MatterSim
+training_set: [MatterSim]
 
 hyperparams:
   optimizer: AdamW

@@ -42,7 +42,7 @@ model_params: 4_026_753 # pre-trained 'mp_e_form_alignn' and our custom MBD chec
 n_estimators: 1
 
 # model trained from specifically for MBD
-training_set: MP 2022
+training_set: [MP 2022]
 # model pre-trained by NIST (not shown in MBD since performed worse)
 # training_set:
 #   title: MP Graphs

@@ -50,7 +50,7 @@ model_type: UIP
 model_params: 31_207_434
 n_estimators: 1
 
-training_set: MPtrj
+training_set: [MPtrj]
 
 hyperparams:
   max_force: 0.02

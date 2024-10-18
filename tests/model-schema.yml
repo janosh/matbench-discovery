@@ -52,21 +52,18 @@ properties:
   trained_for_benchmark:
     type: boolean
   training_set:
-    oneOf:
-      - type: string
-        enum: &training_sets
-          - MP 2022
-          - MPtrj
-          - MPF
-          - MP Graphs
-          - GNoME
-          - MatterSim
-          - Alex
-          - OMat24
-          - sAlex
-      - type: array
-        items:
-          enum: *training_sets
+    type: array
+    items:
+      enum: &training_sets
+        - MP 2022
+        - MPtrj
+        - MPF
+        - MP Graphs
+        - GNoME
+        - MatterSim
+        - Alex
+        - OMat24
+        - sAlex
   hyperparams:
     type: object
     properties:
@@ -137,6 +134,9 @@ properties:
     enum: [OSOD, OSCD, CSOD, CSCD]
   pred_col:
     type: string
+  status:
+    type: string
+    enum: [aborted, complete]
 
 required:
   - authors
