@@ -36,4 +36,15 @@ Additional information about the datasets and models can be found in [our pre-pr
   journal={arXiv preprint arXiv:2410.12771},
   year={2024}
 }
+@article{schmidt_2023_machine,
+  title={Machine-Learning-Assisted Determination of the Global Zero-Temperature Phase Diagram of Materials},
+  author={Schmidt, Jonathan and Hoffmann, Noah and Wang, Hai-Chen and Borlido, Pedro and Carri{\c{c}}o, Pedro JMA and Cerqueira, Tiago FT and Botti, Silvana and Marques, Miguel AL},
+  journal={Advanced Materials},
+  volume={35},
+  number={22},
+  pages={2210788},
+  year={2023},
+  url={https://onlinelibrary.wiley.com/doi/full/10.1002/adma.202210788},
+  publisher={Wiley Online Library}
+}
 ```
