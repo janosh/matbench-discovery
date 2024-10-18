@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ModelStatLabel, ModelStats } from '$lib'
-  import { ModelCard } from '$lib'
+  import { model_is_compliant, ModelCard } from '$lib'
   import { lower_is_better } from '$root/scripts/metrics-which-is-better.yml'
   import Icon from '@iconify/svelte'
   import { interpolateCividis as cividis } from 'd3-scale-chromatic'
@@ -20,7 +20,7 @@
   const min_models: number = 2
 
   $: models = data.models
-    .filter((model) => show_non_compliant || (model.openness ?? `OSOD`) == `OSOD`)
+    .filter((model) => show_non_compliant || model_is_compliant(model))
     .sort((model_1, model_2) => {
       const [val_1, val_2] = [model_1[sort_by], model_2[sort_by]]
       if (typeof val_1 == `string`) {
