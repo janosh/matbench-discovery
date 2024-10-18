@@ -38,7 +38,17 @@ export interface ModelMetadata {
     [k: string]: string
   }
   trained_for_benchmark: boolean
-  training_set: ('MP 2022' | 'MPtrj' | 'MPF' | 'MP Graphs' | 'GNoME' | 'MatterSim' | 'Alex' | 'OMat24' | 'sAlex')[]
+  training_set: (
+    | 'MP 2022'
+    | 'MPtrj'
+    | 'MPF'
+    | 'MP Graphs'
+    | 'GNoME'
+    | 'MatterSim'
+    | 'Alex'
+    | 'OMat24'
+    | 'sAlex'
+  )[]
   hyperparams?: {
     max_force?: number
     max_steps?: number
