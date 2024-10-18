@@ -69,5 +69,5 @@ for model, which_energy in itertools.product(df_metrics, (use_e_form, use_each))
     pmv.powerups.add_identity_line(fig)
     fig.show()
 
-    img_name = f"{which_energy}-parity-{model.lower()}"
+    img_name = f"{which_energy}-parity-{model.lower().replace(' ', '-')}"
     pmv.save_fig(fig, f"{parity_scatter_out_dir}/{img_name}.svelte")

@@ -9,16 +9,20 @@ export const load = async ({ params }) => {
     import: `default`,
   }) as Record<string, ModelData>
 
+  const all_metadata = Object.fromEntries(
+    Object.entries(files).map(([path, metadata]) => [
+      metadata.model_name.replaceAll(` `, `-`).toLowerCase(),
+      { ...metadata, dirname: dirname(path) },
+    ]),
+  )
+
   // merge performance metrics and static model metadata
-  const [path, metadata] = Object.entries(files).filter(([key]) =>
-    key.endsWith(`${params.slug}.yml`),
-  )[0] as [string, ModelData]
+  const metadata = all_metadata[params.slug]
 
   if (!metadata) {
-    throw `Failed to load model metadata for ${params.slug}`
+    throw `Failed to load model metadata for ${params.slug}, available: ${Object.keys(all_metadata)}`
   }
 
-  metadata.dirname = dirname(path)
   const { model_name } = metadata
 
   // parse markdown notes to html with mdsvex

@@ -36,3 +36,16 @@ Alex:
   url: https://alexandria.icams.rub.de
   n_structures: 30_497_628
   n_materials: 3_100_000
+
+OMat24:
+  title: OMat24
+  url: https://huggingface.co/datasets/fairchem/OMAT24
+  # this is the number of Alexandria materials that was sampled from, but according to Luis unclear if all were indeed sampled so this is an upper bound
+  n_materials: 3_227_606
+  n_structures: 100_824_585
+
+sAlex:
+  title: subsampled Alex
+  url: https://huggingface.co/datasets/fairchem/OMAT24
+  n_materials: 3_227_606
+  n_structures: 10_447_765

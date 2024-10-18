@@ -91,10 +91,7 @@ model_type: UIP
 model_params: 182_000_000
 n_estimators: 1
 
-training_set:
-  title: MatterSim # TODO is this the correct name for the training set?
-  url: https://doi.org/10.48550/arXiv.2405.04967
-  n_structures: 17_000_000
+training_set: MatterSim
 
 hyperparams:
   optimizer: AdamW
