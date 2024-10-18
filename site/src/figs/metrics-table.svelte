@@ -488,7 +488,7 @@
       <td id="T__row0_col9" class="data row0 col9" >0.842</td>
     </tr>
     <tr>
-      <td id="T__row1_col0" class="data row1 col0" ><span title="Version: v2" data-model-key="orb">ORB</span></td>
+      <td id="T__row1_col0" class="data row1 col0" ><span title="Version: v2" class="non-compliant" data-model-key="orb">ORB</span></td>
       <td id="T__row1_col1" class="data row1 col1" >0.858</td>
       <td id="T__row1_col2" class="data row1 col2" >5.281</td>
       <td id="T__row1_col3" class="data row1 col3" >0.906</td>
@@ -500,7 +500,7 @@
       <td id="T__row1_col9" class="data row1 col9" >0.814</td>
     </tr>
     <tr>
-      <td id="T__row2_col0" class="data row2 col0" ><span title="Version: n/a" data-model-key="mattersim">MatterSim</span></td>
+      <td id="T__row2_col0" class="data row2 col0" ><span title="Version: n/a" class="non-compliant" data-model-key="mattersim">MatterSim</span></td>
       <td id="T__row2_col1" class="data row2 col1" >0.832</td>
       <td id="T__row2_col2" class="data row2 col2" >4.838</td>
       <td id="T__row2_col3" class="data row2 col3" >0.830</td>
@@ -512,7 +512,7 @@
       <td id="T__row2_col9" class="data row2 col9" >0.809</td>
     </tr>
     <tr>
-      <td id="T__row3_col0" class="data row3 col0" ><span title="Version: n/a" data-model-key="gnome">GNoME</span></td>
+      <td id="T__row3_col0" class="data row3 col0" ><span title="Version: n/a" class="non-compliant" data-model-key="gnome">GNoME</span></td>
       <td id="T__row3_col1" class="data row3 col1" >0.810</td>
       <td id="T__row3_col2" class="data row3 col2" >4.810</td>
       <td id="T__row3_col3" class="data row3 col3" >0.825</td>

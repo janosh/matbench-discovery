@@ -456,7 +456,7 @@
       <td id="T__row0_col13" class="data row0 col13" ><span title='Friday, 18 October 2024'>2024-10-18</span></td>
     </tr>
     <tr>
-      <td id="T__row1_col0" class="data row1 col0" ><span title="Version: v2" data-model-key="orb">ORB</span></td>
+      <td id="T__row1_col0" class="data row1 col0" ><span title="Version: v2" class="non-compliant" data-model-key="orb">ORB</span></td>
       <td id="T__row1_col1" class="data row1 col1" >0.880</td>
       <td id="T__row1_col2" class="data row1 col2" >6.041</td>
       <td id="T__row1_col3" class="data row1 col3" >0.924</td>
@@ -472,7 +472,7 @@
       <td id="T__row1_col13" class="data row1 col13" ><span title='Friday, 11 October 2024'>2024-10-11</span></td>
     </tr>
     <tr>
-      <td id="T__row2_col0" class="data row2 col0" ><span title="Version: n/a" data-model-key="mattersim">MatterSim</span></td>
+      <td id="T__row2_col0" class="data row2 col0" ><span title="Version: n/a" class="non-compliant" data-model-key="mattersim">MatterSim</span></td>
       <td id="T__row2_col1" class="data row2 col1" >0.859</td>
       <td id="T__row2_col2" class="data row2 col2" >5.646</td>
       <td id="T__row2_col3" class="data row2 col3" >0.863</td>
@@ -488,7 +488,7 @@
       <td id="T__row2_col13" class="data row2 col13" ><span title='Sunday, 16 June 2024'>2024-06-16</span></td>
     </tr>
     <tr>
-      <td id="T__row3_col0" class="data row3 col0" ><span title="Version: n/a" data-model-key="gnome">GNoME</span></td>
+      <td id="T__row3_col0" class="data row3 col0" ><span title="Version: n/a" class="non-compliant" data-model-key="gnome">GNoME</span></td>
       <td id="T__row3_col1" class="data row3 col1" >0.829</td>
       <td id="T__row3_col2" class="data row3 col2" >5.523</td>
       <td id="T__row3_col3" class="data row3 col3" >0.844</td>
