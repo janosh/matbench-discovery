@@ -13,11 +13,7 @@ export * from './types'
 export function model_is_compliant(metadata: ModelMetadata): boolean {
   if ((metadata.openness ?? `OSOD`) != `OSOD`) return false
 
-  const training_set = Array.isArray(metadata.training_set)
-    ? metadata.training_set
-    : [metadata.training_set]
-
   const allowed_sets = [`MP 2022`, `MPtrj`, `MPF`, `MP Graphs`]
-  console.log(training_set)
-  return training_set.every((itm) => allowed_sets.includes(itm))
+
+  return metadata.training_set.every((itm) => allowed_sets.includes(itm))
 }

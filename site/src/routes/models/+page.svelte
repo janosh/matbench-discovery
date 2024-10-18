@@ -36,6 +36,7 @@
         throw `Unexpected type '${val_1}' encountered sorting by key '${sort_by}'`
       }
     })
+
   const stats: ModelStatLabel[] = [
     { key: `Accuracy` },
     { key: `DAF`, tooltip: `Discovery Acceleration Factor` },

@@ -32,7 +32,7 @@ model_type: GNN
 model_params: 128_450
 n_estimators: 10
 
-training_set: MP 2022
+training_set: [MP 2022]
 
 notes:
   Description: |

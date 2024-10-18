@@ -15,7 +15,10 @@ export const load = async () => {
 
   // merge computed and static model metadata
   const models = Object.entries(files)
-    .filter(([key]) => key.match(/models\/(.+)\/\1.*\.yml/))
+    .filter(
+      // ignore models that aren't completed
+      ([_key, metadata]) => (metadata?.status ?? `complete`) == `complete`,
+    )
     .map(([key, metadata]) => {
       const { model_name } = metadata
       const stats = model_stats[model_name] as ModelData

@@ -19,11 +19,13 @@ for model_dir in MODEL_DIRS:
             f"expected 1 metadata file, got {metadata_files=} in {model_dir=}"
         )
     for metadata_file in metadata_files:
-        if metadata_file.endswith("aborted.yml"):
-            continue
         # make sure all required keys are non-empty
         with open(metadata_file) as yml_file:
             model_data = yaml.full_load(yml_file)
+
+        # skip models that aren't completed
+        if model_data.get("status", "complete") != "complete":
+            continue
 
         model_data["model_dir"] = model_dir
         # YAML file name serves as model key and must match Model enum attribute
@@ -37,19 +39,22 @@ for model_dir in MODEL_DIRS:
             raise
 
 
-def model_is_compliant(meta: dict[str, Any]) -> bool:
+def model_is_compliant(metadata: dict[str, str | list[str]]) -> bool:
     """Check if model complies with benchmark restrictions on allowed training sets and
     open model code and weights.
 
     Args:
-        meta: model metadata dictionary
+        metadata: model metadata dictionary
 
     Returns:
         bool: True if model is compliant
     """
-    openness = meta.get("openness", Open.OSOD)
+    openness = metadata.get("openness", Open.OSOD)
     if openness != Open.OSOD:
         return False
-    training_set = meta.get("training_set")
-    training_set = {*training_set} if isinstance(training_set, list) else {training_set}
-    return training_set <= {"MP 2022", "MPtrj", "MPF", "MP Graphs"}
+    train_sets = metadata.get("training_set")
+
+    if not isinstance(train_sets, list):
+        raise TypeError(f"expected list of training sets, got {train_sets=}")
+
+    return set(train_sets) <= {"MP 2022", "MPtrj", "MPF", "MP Graphs"}

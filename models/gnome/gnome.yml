@@ -42,7 +42,7 @@ model_type: UIP
 model_params: 16_240_000
 n_estimators: 1
 
-training_set: GNoME
+training_set: [GNoME]
 
 hyperparams:
   optimizer: Adam

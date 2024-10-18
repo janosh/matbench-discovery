@@ -205,6 +205,9 @@
     text-align: center;
     border-radius: 5pt;
   }
+  h2 a {
+    color: inherit;
+  }
   button {
     background: none;
     padding: 0;
