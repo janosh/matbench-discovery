@@ -46,4 +46,4 @@ model_type: UIP
 trained_for_benchmark: true
 # for hyperparams, see alignn-config.json
 
-training_set: MPtrj
+training_set: [MPtrj]
