@@ -41,8 +41,14 @@ requirements:
   scikit-learn: 1.2.2
   torch: 1.9.0+cu111
 
+pred_col: e_form_per_atom_alignn_ff
+targets: EFS_C
+train_task: S2EFS
+test_task: IS2RE
 openness: OSOD
 model_type: UIP
+n_estimators: 1
+model_params: 0 # paper doesn't mention and no longer able to load model checkpoint to count parameters
 trained_for_benchmark: true
 # for hyperparams, see alignn-config.json
 

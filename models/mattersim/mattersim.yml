@@ -86,7 +86,7 @@ openness: CSCD
 trained_for_benchmark: false
 train_task: S2EFS
 test_task: IS2RE-SR
-targets: EFS
+targets: EFS_D
 model_type: UIP
 model_params: 182_000_000
 n_estimators: 1
