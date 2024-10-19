@@ -76,7 +76,7 @@ export interface ModelMetadata {
   train_task: 'RP2RE' | 'RS2RE' | 'S2E' | 'S2RE' | 'S2EF' | 'S2EFS' | 'S2EFSM'
   test_task: 'IP2E' | 'IS2E' | 'IS2RE' | 'IS2RE-SR' | 'IS2RE-BO'
   model_type: 'GNN' | 'UIP' | 'BO-GNN' | 'Fingerprint' | 'Transformer' | 'RF'
-  targets: 'E' | 'EF' | 'EFS' | 'EFSM'
+  targets: 'E' | 'EF_C' | 'EF_D' | 'EFS_C' | 'EFS_D' | 'EFS_CM' | 'EFS_DM'
   openness?: 'OSOD' | 'OSCD' | 'CSOD' | 'CSCD'
   pred_col: string
   status?: 'aborted' | 'complete'

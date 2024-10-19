@@ -45,7 +45,7 @@ openness: OSOD
 trained_for_benchmark: true
 train_task: S2EFS
 test_task: IS2RE-SR
-targets: EFS
+targets: EFS_D
 model_type: UIP
 model_params: 86_589_068
 n_estimators: 1
