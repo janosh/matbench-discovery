@@ -48,6 +48,8 @@ with open(f"{DATA_DIR}/training-sets.yml") as file:
 
 # add model metadata to df_metrics(_10k, _uniq_protos)
 for model in df_metrics:
+    if model == "Dummy":
+        continue
     model_name = name_map.get(model, model)
     model_metadata = MODEL_METADATA.get(model_name, {})
     try:
@@ -61,10 +63,12 @@ for model in df_metrics:
         )
 
         # Update targets column with full label in tooltip
-        model_targets = model_metadata.get(Key.targets, "")
-        targets_label = Targets[model_targets].label
+        model_targets = Targets[model_metadata[Key.targets]]
+        tar_label = model_targets.label.replace(
+            "<sub>", "<sub style='font-size: 0.8em;'>"
+        )
         df_metrics_uniq_protos.loc[Key.targets.label, model] = (
-            f'<span title="{targets_label}">{model_targets}</span>'
+            f'<span title="{model_targets.description}">{tar_label}</span>'
         )
 
         # Add model version as hover tooltip to model name

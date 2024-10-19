@@ -110,10 +110,13 @@ class Task(LabelEnum):
 class Targets(LabelEnum):
     """Thermodynamic stability prediction task types."""
 
-    E = "E", "Energy"
-    EF = "EF", "Energy Forces"
-    EFS = "EFS", "Energy Forces Stress"
-    EFSM = "EFSM", "Energy Forces Stress Magmoms"
+    E = "E", "E"
+    EF_C = "EF_C", "EF<sub>C</sub>", "Energy with conservative Forces"
+    EF_D = "EF_D", "EF<sub>D</sub>", "Energy with direct Forces"
+    EFS_C = "EFS_C", "EFS<sub>C</sub>", "Energy with conservative Forces and Stress"
+    EFS_D = "EFS_D", "EFS<sub>D</sub>", "Energy with direct Forces and Stress"
+    EFS_CM = "EFS_CM", "EFS<sub>C</sub>M", "Energy with conservative Forces and Stress; plus Magmoms"  # fmt: skip  # noqa: E501
+    EFS_DM = "EFS_DM", "EFS<sub>D</sub>M", "Energy with direct Forces and Stress; plus Magmoms"  # fmt: skip  # noqa: E501
 
 
 @unique

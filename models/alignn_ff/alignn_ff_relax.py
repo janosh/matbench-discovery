@@ -34,7 +34,7 @@ out_path = (
     f"{out_dir}/{'alignn-relaxed-structs' if task_id == 0 else f'{task_id=}'}.json.gz"
 )
 
-if not (0 < task_id <= n_splits):
+if not (0 <= task_id <= n_splits):
     raise SystemExit(f"Invalid {task_id=}")
 if os.path.isfile(out_path):
     raise SystemExit(f"{out_path = } already exists, exiting")
