@@ -19,6 +19,7 @@
   "devDependencies": {
     "@iconify/svelte": "^4.0.2",
     "@rollup/plugin-yaml": "^4.1.2",
+    "@stylistic/eslint-plugin": "^2.9.0",
     "@sveltejs/adapter-static": "^3.0.5",
     "@sveltejs/kit": "^2.6.1",
     "@sveltejs/vite-plugin-svelte": "^3.1.2",

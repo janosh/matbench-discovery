@@ -429,8 +429,8 @@
       <th id="T__level0_col4" class="col_heading level0 col4" ><span title='accuracy of classifying thermodynamic stability (i.e. above/below 0K convex hull)'>Acc ↑</span></th>
       <th id="T__level0_col5" class="col_heading level0 col5" ><span title='true positive rate of classifying thermodynamic stability (i.e. above/below 0K convex hull)'>TPR ↑</span></th>
       <th id="T__level0_col6" class="col_heading level0 col6" ><span title='true negative rate of classifying thermodynamic stability (i.e. above/below 0K convex hull)'>TNR ↑</span></th>
-      <th id="T__level0_col7" class="col_heading level0 col7" ><span title="mean absolute error of predicted of predicting the convex hull distance <span style='font-size: 0.8em; font-weight: lighter;'>(eV/atom)</span>">MAE ↓</span></th>
-      <th id="T__level0_col8" class="col_heading level0 col8" ><span title="root mean squared error of predicted of predicting the convex hull distance <span style='font-size: 0.8em; font-weight: lighter;'>(eV/atom)</span>">RMSE ↓</span></th>
+      <th id="T__level0_col7" class="col_heading level0 col7" ><span title="mean absolute error of predicting the convex hull distance <span style='font-size: 0.8em; font-weight: lighter;'>(eV/atom)</span>">MAE ↓</span></th>
+      <th id="T__level0_col8" class="col_heading level0 col8" ><span title="root mean squared error of predicting the convex hull distance <span style='font-size: 0.8em; font-weight: lighter;'>(eV/atom)</span>">RMSE ↓</span></th>
       <th id="T__level0_col9" class="col_heading level0 col9" ><span title='coefficient of determination'>R<sup>2</sup> ↑</span></th>
       <th id="T__level0_col10" class="col_heading level0 col10" >Training Set</th>
       <th id="T__level0_col11" class="col_heading level0 col11" >Model Params</th>

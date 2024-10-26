@@ -109,8 +109,4 @@ export default {
       $figs: `src/figs`,
     },
   },
-
-  vitePlugin: {
-    inspector: true,
-  },
 }
