@@ -298,15 +298,15 @@ for (label, df_met), show_non_compliant in itertools.product(
         )
         reg_suffix = f"of predicting the convex hull distance {eV_per_atom}"
         tooltips_titles = {
-            R2_col: "coefficient of determination",
-            "DAF": "discovery acceleration factor",
-            "Prec": f"precision {clf_suffix}",
             "Acc": f"accuracy {clf_suffix}",
-            "TPR": f"true positive rate {clf_suffix}",
-            "TNR": f"true negative rate {clf_suffix}",
-            "MAE": f"mean absolute error of predicted {reg_suffix}",
-            "RMSE": f"root mean squared error of predicted {reg_suffix}",
+            "DAF": "discovery acceleration factor",
             "F1": "harmonic mean of precision and recall",
+            "Prec": f"precision {clf_suffix}",
+            "TNR": f"true negative rate {clf_suffix}",
+            "TPR": f"true positive rate {clf_suffix}",
+            R2_col: "coefficient of determination",
+            "MAE": f"mean absolute error {reg_suffix}",
+            "RMSE": f"root mean squared error {reg_suffix}",
         }
 
         label = f"{col}{arrow_suffix.get(col, '')}"

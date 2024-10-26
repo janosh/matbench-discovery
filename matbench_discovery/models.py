@@ -52,9 +52,12 @@ def model_is_compliant(metadata: dict[str, str | list[str]]) -> bool:
     openness = metadata.get("openness", Open.OSOD)
     if openness != Open.OSOD:
         return False
-    train_sets = metadata.get("training_set")
+    training_sets = metadata.get("training_set")
 
-    if not isinstance(train_sets, list):
-        raise TypeError(f"expected list of training sets, got {train_sets=}")
+    if not isinstance(training_sets, list):
+        model_name = metadata.get("model_name")
+        raise TypeError(
+            f"{model_name}: expected list of training sets, got {training_sets=}"
+        )
 
-    return set(train_sets) <= {"MP 2022", "MPtrj", "MPF", "MP Graphs"}
+    return set(training_sets) <= {"MP 2022", "MPtrj", "MPF", "MP Graphs"}

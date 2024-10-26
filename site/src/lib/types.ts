@@ -41,7 +41,7 @@ export type Author = {
 }
 
 // used in citation.cff
-export type CffAuthor = Omit<Author, 'name'> & {
+export type CffAuthor = Omit<Author, `name`> & {
   'family-names': string
   'given-names': string
   affil_key: string
@@ -74,7 +74,7 @@ export type Citation = {
 }
 
 export type TrainingSet =
-  | ('MP 2022' | 'MPtrj' | 'MPF' | 'MP Graphs' | 'GNoME' | 'MatterSim' | 'Alex')
+  | (`MP 2022` | `MPtrj` | `MPF` | `MP Graphs` | `GNoME` | `MatterSim` | `Alex`)
   | {
       title: string
       url: string
