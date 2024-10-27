@@ -309,7 +309,7 @@ for (label, df_met), show_non_compliant in itertools.product(
             R2_col: "coefficient of determination",
             "MAE": f"mean absolute error {reg_suffix}",
             "RMSE": f"root mean squared error {reg_suffix}",
-            "SRME": "symmetric relative mean error in predicted phonon mode "
+            "SRME[κ]": "symmetric relative mean error in predicted phonon mode "
             "contributions to thermal conductivity κ",
         }
 

@@ -299,7 +299,7 @@ df_each_err[MbdKey.each_err_models] = df_preds[MbdKey.each_err_models] = (
 # received by private communication from @MSimoncelli on 2024-10-27
 # model predictions on a per-phonon-mode and per-material basis for thermal conductivity
 # contributions coming soon
-model_kappa_srme = {
+model_kappa_srme_map = {
     "eqV2 S": 1.772,
     Model.eqv2_s_dens.label: 1.665,
     Model.orb.label: 1.732,
@@ -311,4 +311,4 @@ model_kappa_srme = {
 }
 
 for df in (df_metrics, df_metrics_uniq_protos):
-    df.loc["SRME"] = model_kappa_srme
+    df.loc["SRME[κ]"] = model_kappa_srme_map

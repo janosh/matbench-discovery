@@ -23,6 +23,12 @@
     .filter((model) => show_non_compliant || model_is_compliant(model))
     .sort((model_1, model_2) => {
       const [val_1, val_2] = [model_1[sort_by], model_2[sort_by]]
+
+      // Handle null values by sorting last
+      if (val_1 === null && val_2 === null) return 0
+      if (val_1 === null) return 1
+      if (val_2 === null) return -1
+
       if (typeof val_1 == `string`) {
         return sort_factor * val_1.localeCompare(val_2)
       } else if (typeof val_1 == `number` && typeof val_2 == `number`) {
@@ -48,6 +54,10 @@
     { key: `TNR`, tooltip: `True Negative Rate` },
     { key: `TPR`, tooltip: `True Positive Rate` },
     { key: `Run Time (h)`, label: `Run time`, unit: `h` },
+    {
+      key: `SRME[κ]`,
+      tooltip: `symmetric relative mean error in predicted phonon mode contributions to thermal conductivity κ`,
+    },
   ]
 
   export const snapshot: Snapshot = {
@@ -84,7 +94,14 @@
   <ul>
     {#each [{ key: `model_name`, label: `Model Name` }, ...stats] as { key, label, tooltip }}
       <li class:active={key == sort_by}>
-        <button id={key} on:click={() => (sort_by = key)} style="font-size: large;">
+        <button
+          id={key}
+          on:click={() => {
+            sort_by = key
+            order = lower_is_better.includes(key) ? `asc` : `desc`
+          }}
+          style="font-size: large;"
+        >
           {@html label ?? key}
         </button>
         {#if tooltip}

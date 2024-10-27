@@ -20,10 +20,10 @@ export type ModelStats = {
   GPUs: number // number of GPUs used
   CPUs: number // number of CPUs used
   slurm_jobs: number // number of SLURM jobs used
-  SRME: number // symmetric relative mean error
+  'SRME[κ]': number // symmetric relative mean error for thermal conductivity
 }
 
-// [key, label?, unit?]
+// how to pretty print a model stat key on the website
 export type ModelStatLabel = {
   key: keyof ModelStats
   label?: string
