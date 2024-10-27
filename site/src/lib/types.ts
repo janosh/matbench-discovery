@@ -4,8 +4,8 @@ export type ModelData = ModelMetadata & ModelStats & { dirname: string }
 // dirname comes from: models/{dirname}/{model_name}.yml
 
 export type ModelStats = {
-  MAE: number
-  RMSE: number
+  MAE: number // mean absolute error
+  RMSE: number // root mean squared error
   R2: number
   Precision: number
   Recall: number
@@ -14,12 +14,13 @@ export type ModelStats = {
   missing_percent: number
   Accuracy: number
   'Run Time (h)': number
-  TPR: number
-  TNR: number
-  DAF: number
-  GPUs: number
-  CPUs: number
-  slurm_jobs: number
+  TPR: number // true positive rate
+  TNR: number // true negative rate
+  DAF: number // discovery acceleration factor
+  GPUs: number // number of GPUs used
+  CPUs: number // number of CPUs used
+  slurm_jobs: number // number of SLURM jobs used
+  SRME: number // symmetric relative mean error
 }
 
 // [key, label?, unit?]

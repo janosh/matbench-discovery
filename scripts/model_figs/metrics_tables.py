@@ -62,13 +62,15 @@ for model in df_metrics:
             f"<span {title=}>{date_added}</span>"
         )
 
-        # Update targets column with full label in tooltip
+        # Update targets column with full label in tooltip and data attribute
         model_targets = Targets[model_metadata[Key.targets]]
         tar_label = model_targets.label.replace(
             "<sub>", "<sub style='font-size: 0.8em;'>"
         )
         df_metrics_uniq_protos.loc[Key.targets.label, model] = (
-            f'<span title="{model_targets.description}">{tar_label}</span>'
+            f'<span title="{model_targets.description}" '
+            f'data-targets="{model_metadata[Key.targets]}">'
+            f"{tar_label}</span>"
         )
 
         # Add model version as hover tooltip to model name
@@ -240,7 +242,7 @@ meta_cols = [
     Key.targets.label,
     date_added_col,
 ]
-show_cols = [*f"F1,DAF,Prec,Acc,TPR,TNR,MAE,RMSE,{R2_col}".split(","), *meta_cols]
+show_cols = [*f"F1,SRME,DAF,Prec,Acc,TPR,TNR,MAE,RMSE,{R2_col}".split(","), *meta_cols]
 
 for (label, df_met), show_non_compliant in itertools.product(
     (
@@ -307,6 +309,8 @@ for (label, df_met), show_non_compliant in itertools.product(
             R2_col: "coefficient of determination",
             "MAE": f"mean absolute error {reg_suffix}",
             "RMSE": f"root mean squared error {reg_suffix}",
+            "SRME": "symmetric relative mean error in predicted phonon mode "
+            "contributions to thermal conductivity κ",
         }
 
         label = f"{col}{arrow_suffix.get(col, '')}"

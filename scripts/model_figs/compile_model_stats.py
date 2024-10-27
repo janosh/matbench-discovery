@@ -141,7 +141,7 @@ for label, df_tmp in stats_dict.items():
     df_tmp.drop(columns=["Dummy", "Model"], errors="ignore").round(3).to_json(
         f"{SITE_LIB}/model-stats{label}.json", orient="index"
     )
-    stats_dict[label] = df_tmp
+    stats_dict[label] = df_tmp  # save concatenated dataframe for plotting below
 
 df_stats = stats_dict[""]
 
