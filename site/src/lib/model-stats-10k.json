@@ -28,7 +28,7 @@
     "missing_preds": 2,
     "missing_percent": "0.00%"
   },
-  "eqV2": {
+  "eqV2 M": {
     "F1": 0.988,
     "DAF": 6.382,
     "Precision": 0.976,
@@ -86,7 +86,7 @@
     "missing_preds": 2,
     "missing_percent": "0.00%"
   },
-  "eqV2 DeNS": {
+  "eqV2 S DeNS": {
     "F1": 0.983,
     "DAF": 6.326,
     "Precision": 0.967,

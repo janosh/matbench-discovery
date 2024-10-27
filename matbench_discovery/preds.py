@@ -77,8 +77,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     orb_mptrj = "orb/orbff-mptrj-only-v2-20241014.csv.gz", "orb/orb-mptrj.yml", "ORB MPtrj"  # fmt: skip
 
     # fairchem
-    eqv2_s_dens = "eqV2/eqV2-s-dens-mp.csv.gz", "eqV2/eqV2-s-dens-mp.yml", "eqV2 DeNS"  # fmt: skip
-    eqv2_m = "eqV2/eqV2-m-omat-mp-salex.csv.gz", "eqV2/eqV2-m-omat-mp-salex.yml", "eqV2"  # fmt: skip
+    eqv2_s_dens = "eqV2/eqV2-s-dens-mp.csv.gz", "eqV2/eqV2-s-dens-mp.yml", "eqV2 S DeNS"  # fmt: skip
+    eqv2_m = "eqV2/eqV2-m-omat-mp-salex.csv.gz", "eqV2/eqV2-m-omat-mp-salex.yml", "eqV2 M"  # fmt: skip
 
     # --- Model Combos
     # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
@@ -297,9 +297,11 @@ df_each_err[MbdKey.each_err_models] = df_preds[MbdKey.each_err_models] = (
 )
 
 # received by private communication from @MSimoncelli on 2024-10-27
-# per-phonon-mode and per-material model predictions for thermal conductivity contributions coming soon
+# model predictions on a per-phonon-mode and per-material basis for thermal conductivity
+# contributions coming soon
 model_kappa_srme = {
-    Model.eqv2_s_dens.label: 1.772,
+    "eqV2 S": 1.772,
+    Model.eqv2_s_dens.label: 1.665,
     Model.orb.label: 1.732,
     Model.orb_mptrj.label: 1.725,
     Model.sevennet.label: 0.767,

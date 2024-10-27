@@ -396,7 +396,7 @@
       <td id="T__row0_col7" class="data row0 col7" >0.906</td>
     </tr>
     <tr>
-      <td id="T__row1_col0" class="data row1 col0" ><span title="Version: v2024.10.18" class="non-compliant" data-model-key="eqV2-m-omat-mp-salex">eqV2</span></td>
+      <td id="T__row1_col0" class="data row1 col0" ><span title="Version: v2024.10.18" class="non-compliant" data-model-key="eqV2-m-omat-mp-salex">eqV2 M</span></td>
       <td id="T__row1_col1" class="data row1 col1" >0.988</td>
       <td id="T__row1_col2" class="data row1 col2" >6.382</td>
       <td id="T__row1_col3" class="data row1 col3" >0.976</td>
@@ -416,7 +416,7 @@
       <td id="T__row2_col7" class="data row2 col7" >0.897</td>
     </tr>
     <tr>
-      <td id="T__row3_col0" class="data row3 col0" ><span title="Version: v2024.10.18" data-model-key="eqV2-s-dens-mp">eqV2 DeNS</span></td>
+      <td id="T__row3_col0" class="data row3 col0" ><span title="Version: v2024.10.18" data-model-key="eqV2-s-dens-mp">eqV2 S DeNS</span></td>
       <td id="T__row3_col1" class="data row3 col1" >0.983</td>
       <td id="T__row3_col2" class="data row3 col2" >6.326</td>
       <td id="T__row3_col3" class="data row3 col3" >0.967</td>

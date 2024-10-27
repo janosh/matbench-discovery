@@ -1,5 +1,5 @@
 {
-  "eqV2": {
+  "eqV2 M": {
     "F1": 0.896,
     "DAF": 5.243,
     "Precision": 0.9,
@@ -115,7 +115,7 @@
     "missing_preds": 1744,
     "missing_percent": "0.68%"
   },
-  "eqV2 DeNS": {
+  "eqV2 S DeNS": {
     "F1": 0.798,
     "DAF": 4.362,
     "Precision": 0.748,

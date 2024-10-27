@@ -42,8 +42,8 @@
   background-color: #dde318;
   color: #000000;
 }
-#T__row1_col2 {
-  background-color: #470e61;
+#T__row1_col2, #T__row13_col9, #T__row13_col10, #T__row15_col7, #T__row16_col5, #T__row16_col8, #T__row17_col1, #T__row17_col3, #T__row17_col4, #T__row17_col6 {
+  background-color: #440154;
   color: #f1f1f1;
 }
 #T__row1_col5, #T__row3_col10, #T__row4_col10 {
@@ -98,7 +98,7 @@
   background-color: #addc30;
   color: #000000;
 }
-#T__row3_col3, #T__row3_col4 {
+#T__row3_col3, #T__row3_col4, #T__row6_col2 {
   background-color: #b5de2b;
   color: #000000;
 }
@@ -114,8 +114,8 @@
   background-color: #a2da37;
   color: #000000;
 }
-#T__row4_col2, #T__row13_col9, #T__row13_col10, #T__row15_col7, #T__row16_col5, #T__row16_col8, #T__row17_col1, #T__row17_col3, #T__row17_col4, #T__row17_col6 {
-  background-color: #440154;
+#T__row4_col2 {
+  background-color: #481769;
   color: #f1f1f1;
 }
 #T__row4_col3, #T__row4_col4 {
@@ -139,7 +139,7 @@
   color: #000000;
 }
 #T__row5_col2 {
-  background-color: #471063;
+  background-color: #440256;
   color: #f1f1f1;
 }
 #T__row5_col3 {
@@ -160,10 +160,6 @@
 }
 #T__row5_col8 {
   background-color: #81d34d;
-  color: #000000;
-}
-#T__row6_col2 {
-  background-color: #b8de29;
   color: #000000;
 }
 #T__row6_col3 {
@@ -222,8 +218,8 @@
   background-color: #22a785;
   color: #f1f1f1;
 }
-#T__row8_col2, #T__row13_col8 {
-  background-color: #471365;
+#T__row8_col2 {
+  background-color: #450559;
   color: #f1f1f1;
 }
 #T__row8_col3, #T__row10_col9, #T__row13_col5 {
@@ -251,7 +247,7 @@
   color: #f1f1f1;
 }
 #T__row9_col2 {
-  background-color: #32648e;
+  background-color: #355e8d;
   color: #f1f1f1;
 }
 #T__row9_col3, #T__row13_col4 {
@@ -372,6 +368,10 @@
 }
 #T__row13_col6 {
   background-color: #1f998a;
+  color: #f1f1f1;
+}
+#T__row13_col8 {
+  background-color: #471365;
   color: #f1f1f1;
 }
 #T__row14_col3 {
@@ -497,7 +497,7 @@
   </thead>
   <tbody>
     <tr>
-      <td id="T__row0_col0" class="data row0 col0" ><span title="Version: v2024.10.18" class="non-compliant" data-model-key="eqV2-m-omat-mp-salex">eqV2</span></td>
+      <td id="T__row0_col0" class="data row0 col0" ><span title="Version: v2024.10.18" class="non-compliant" data-model-key="eqV2-m-omat-mp-salex">eqV2 M</span></td>
       <td id="T__row0_col1" class="data row0 col1" >0.896</td>
       <td id="T__row0_col2" class="data row0 col2" ></td>
       <td id="T__row0_col3" class="data row0 col3" >5.243</td>
@@ -549,9 +549,9 @@
       <td id="T__row3_col10" class="data row3 col10" >0.786</td>
     </tr>
     <tr>
-      <td id="T__row4_col0" class="data row4 col0" ><span title="Version: v2024.10.18" data-model-key="eqV2-s-dens-mp">eqV2 DeNS</span></td>
+      <td id="T__row4_col0" class="data row4 col0" ><span title="Version: v2024.10.18" data-model-key="eqV2-s-dens-mp">eqV2 S DeNS</span></td>
       <td id="T__row4_col1" class="data row4 col1" >0.798</td>
-      <td id="T__row4_col2" class="data row4 col2" >1.772</td>
+      <td id="T__row4_col2" class="data row4 col2" >1.665</td>
       <td id="T__row4_col3" class="data row4 col3" >4.362</td>
       <td id="T__row4_col4" class="data row4 col4" >0.748</td>
       <td id="T__row4_col5" class="data row4 col5" >0.927</td>
