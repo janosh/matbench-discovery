@@ -3,11 +3,13 @@ pymatgen EntryLikes.
 """
 
 import itertools
+import warnings
 from collections.abc import Sequence
+from typing import Any
 
 import pandas as pd
 from pymatgen.analysis.phase_diagram import Entry, PDEntry
-from pymatgen.core import Composition
+from pymatgen.core import Composition, Structure
 from pymatgen.entries.computed_entries import ComputedEntry
 from pymatgen.util.typing import EntryLike
 from tqdm import tqdm
@@ -80,10 +82,71 @@ mp_elemental_ref_energies = {
 }
 
 
-def get_e_form_per_atom(
-    entry: EntryLike,
-    elemental_ref_energies: dict[str, float] = mp_elemental_ref_energies,
+def calc_energy_from_e_refs(
+    struct_or_entry: EntryLike | Structure | Composition | str,
+    ref_energies: dict[str, float],
+    total_energy: float | None = None,
 ) -> float:
+    """Calculate energy per atom relative to reference states (e.g., for formation or
+    cohesive energy calculations).
+
+    Args:
+        struct_or_entry (EntryLike | Structure | Composition | str): Either:
+            - A pymatgen Entry (PDEntry, ComputedEntry, etc.) or entry dict containing
+              'energy' and 'composition' keys
+            - A Structure or Composition object or formula string (must also provide
+              total_energy)
+        ref_energies (dict[str, float]): Dictionary of reference energies per atom.
+            For formation energy: elemental reference energies (e.g.
+            mp_elemental_ref_energies).
+            For cohesive energy: isolated atom reference energies
+        total_energy (float | None): Total energy of the structure/composition. Required
+            if struct_or_entry is not an Entry or entry dict. Ignored otherwise.
+
+    Returns:
+        float: Energy per atom relative to references (e.g., formation or cohesive
+        energy) in the same units as input energies.
+
+    Raises:
+        TypeError: If input types are invalid
+        ValueError: If missing reference energies for some elements
+    """
+    if isinstance(struct_or_entry, dict):  # entry dict case
+        energy = struct_or_entry["energy"]
+        comp = Composition(struct_or_entry["composition"])
+    # Entry/ComputedEntry/ComputedStructureEntry instance case
+    elif isinstance(struct_or_entry, Entry):
+        energy = struct_or_entry.energy
+        comp = struct_or_entry.composition
+    else:  # Structure/Composition/formula case
+        if total_energy is None:
+            raise ValueError("total_energy can't be None when 1st arg is not an Entry")
+        energy = total_energy
+
+        if isinstance(struct_or_entry, str):
+            comp = Composition(struct_or_entry)
+        elif isinstance(struct_or_entry, Structure):
+            comp = struct_or_entry.composition
+        elif isinstance(struct_or_entry, Composition):
+            comp = struct_or_entry
+        else:
+            cls_name = type(struct_or_entry).__name__
+            raise TypeError(
+                "Expected Entry, Structure, Composition or formula string, "
+                f"got {cls_name}"
+            )
+
+    # Check that we have all needed reference energies
+    if missing_refs := set(map(str, comp)) - set(ref_energies):
+        raise ValueError(f"Missing reference energies for elements: {missing_refs}")
+
+    # Calculate reference energy
+    e_ref = sum(ref_energies[str(el)] * amt for el, amt in comp.items())
+
+    return (energy - e_ref) / comp.num_atoms
+
+
+def get_e_form_per_atom(*args: Any, **kwargs: Any) -> float:  # noqa: D417
     """Get formation energy for a phase diagram entry (1st arg, composition + absolute
     energy) and a dict mapping elements to per-atom reference energies (2nd arg).
 
@@ -103,29 +166,17 @@ def get_e_form_per_atom(
     Raises:
         TypeError: If entry is not a pymatgen Entry or dict.
     """
-    if isinstance(entry, dict):
-        energy, comp = entry["energy"], entry["composition"]
-        if isinstance(comp, str | dict):
-            comp = Composition(comp)
-    elif isinstance(entry, Entry):
-        energy = entry.energy
-        comp = entry.composition
+    warnings.warn(
+        "get_e_form_per_atom is deprecated. Use calc_energy_from_e_refs instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    if len(args) >= 2:
+        ref_energies = args[1]
+        args = (args[0], *args[2:])
     else:
-        raise TypeError(
-            f"{entry=} must be Entry (or subclass like ComputedEntry) or dict"
-        )
-
-    try:
-        e_refs = {str(el): elemental_ref_energies[str(el)] for el in comp}
-
-        for key, ref_entry in e_refs.items():
-            if isinstance(ref_entry, dict):
-                e_refs[key] = PDEntry.from_dict(ref_entry)
-
-        e_form = energy - sum(comp[el] * e_refs[str(el)] for el in comp)
-
-        return e_form / comp.num_atoms
-
-    except (TypeError, Exception) as exc:
-        exc.add_note(f"Failed to compute formation energy for {comp=}")
-        raise
+        if entry := kwargs.pop("entry"):
+            args = (entry, *args)
+        ref_energies = kwargs.pop("elemental_ref_energies", mp_elemental_ref_energies)
+    kwargs.setdefault("ref_energies", ref_energies)
+    return calc_energy_from_e_refs(*args, **kwargs)
