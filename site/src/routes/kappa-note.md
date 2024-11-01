@@ -1,6 +1,7 @@
 > ⚠️ We are working on extending Matbench Discovery to thermal conductivity prediction via modeling of anharmonic phonons.
 > Both presentation and results are work in progress.
-> More detailed analysis and a new combined metric incorporating both F1 and symmetric relative mean error (SRME) in predicting thermal conductivity κ to follow in coming weeks.
+> A new combined metric incorporating both F1 and symmetric relative mean error (SRME) in predicting thermal conductivity κ to follow in coming weeks.
+> Near-term efforts are also focused on scaling up a secret test set from ~100 to ~1000 chemically and symmetrically diverse crystal structures to make overfitting on this new task harder.
 > Because it tests the 2nd and 3rd order derivatives of the potential energy surface (PES) and higher derivatives expose even subtle discontinuities in the PES, we believe this to be a stricter and more robust metric for measuring both the utility of ML force fields and the physical accuracy of the PES encoded by a model.
 > We invite early feedback on this benchmark extension via [GitHub Discussions](https://github.com/janosh/matbench-discovery/discussions).
 >
