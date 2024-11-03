@@ -21,6 +21,7 @@ import requests
 import yaml
 from ase import Atoms
 from pymatviz.enums import Key
+from ruamel.yaml import YAML
 from tqdm import tqdm
 
 from matbench_discovery import DATA_DIR, ROOT, pkg_is_editable
@@ -36,6 +37,12 @@ DEFAULT_CACHE_DIR = os.getenv(
     "MATBENCH_DISCOVERY_CACHE_DIR",
     DATA_DIR if pkg_is_editable else os.path.expanduser("~/.cache/matbench-discovery"),
 )
+
+
+round_trip_yaml = YAML()
+round_trip_yaml.preserve_quotes = True
+round_trip_yaml.width = 1000
+round_trip_yaml.indent(mapping=2, sequence=4, offset=2)
 
 
 def as_dict_handler(obj: Any) -> dict[str, Any] | None:
