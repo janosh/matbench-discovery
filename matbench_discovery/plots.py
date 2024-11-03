@@ -623,13 +623,13 @@ def cumulative_metrics(
     """
     dfs: dict[str, pd.DataFrame] = defaultdict(pd.DataFrame)
 
-    # largest number of materials predicted stable by any model, determines x-axis range
-    n_max_pred_stable_per_model = (df_preds <= stability_threshold).sum(axis=0)
-    n_max_pred_stable = n_max_pred_stable_per_model.max()
+    # number of materials predicted stable by each model
+    n_pred_stable_per_model = (df_preds <= stability_threshold).sum(axis=0)
+    n_max_pred_stable = n_pred_stable_per_model.max()  # determines x-axis range
     # use log2-spaced sampling to get higher sampling density at equal file size for
     # start of the discovery campaign where model performance fluctuates more
     log_xs = np.logspace(0, np.log2(n_max_pred_stable - 1), n_points, base=2)
-    allowed_xs = np.sort(np.append(log_xs, n_max_pred_stable_per_model.to_numpy()))
+    allowed_xs = np.sort(np.append(log_xs, n_pred_stable_per_model.to_numpy()))
     for metric in metrics:
         dfs[metric].index = allowed_xs
 
