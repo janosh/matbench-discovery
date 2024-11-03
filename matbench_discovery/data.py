@@ -409,10 +409,12 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     mattersim = "mattersim/mattersim-wbm-IS2RE.csv.gz", "mattersim/mattersim.yml", "MatterSim"  # fmt: skip
 
     # ORB
-    orb_v1 = "orb/orbff-v1-20240827.csv.gz", "orb/orb.yml", "ORB"
-    orb_mptrj_v1 = "orb/orbff-mptrj-only-v1-20240827.csv.gz", "orb/orb-mptrj.yml", "ORB MPtrj"  # fmt: skip
-    orb = "orb/orb-v2-20241014.csv.gz", "orb/orb.yml", "ORB"
-    orb_mptrj = "orb/orb-mptrj-only-v2-20241014.csv.gz", "orb/orb-mptrj.yml", "ORB MPtrj"  # fmt: skip
+    orb = "orb/orbff-v2-20241011.csv.gz", "orb/orb.yml", "ORB"
+    orb_mptrj = "orb/orbff-mptrj-only-v2-20241014.csv.gz", "orb/orb-mptrj.yml", "ORB MPtrj"  # fmt: skip
+
+    # fairchem
+    eqv2_s_dens = "eqV2/eqV2-s-dens-mp.csv.gz", "eqV2/eqV2-s-dens-mp.yml", "eqV2 DeNS"  # fmt: skip
+    eqv2_m = "eqV2/eqV2-m-omat-mp-salex.csv.gz", "eqV2/eqV2-m-omat-mp-salex.yml", "eqV2"  # fmt: skip
 
     # --- Model Combos
     # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction

@@ -5,7 +5,7 @@ import pytest
 
 from matbench_discovery import ROOT, __version__
 from matbench_discovery.data import Model
-from matbench_discovery.models import MODEL_DIRS, MODEL_METADATA
+from matbench_discovery.models import MODEL_DIRS, MODEL_METADATA, model_is_compliant
 
 
 def parse_version(v: str) -> tuple[int, ...]:

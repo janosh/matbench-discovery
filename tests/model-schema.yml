@@ -185,7 +185,7 @@ properties:
               missing_preds:
                 type: number
               missing_percent:
-                type: number
+                type: string
           most_stable_10k: *discovery_metrics
           unique_prototypes: *discovery_metrics
 
