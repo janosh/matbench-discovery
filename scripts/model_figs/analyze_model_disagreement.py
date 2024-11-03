@@ -3,8 +3,6 @@ models can pinpoint DFT calculation gone wrong.
 """
 
 # %%
-import sys
-
 import pandas as pd
 import pymatviz as pmv
 from pymatviz.enums import Key
@@ -93,8 +91,7 @@ df_cse = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path).set_index(Key.m
 
 
 # %% CTK structure viewer
-is_jupyter = "ipykernel" in sys.modules
-if is_jupyter:  # only run this in Jupyter Notebook
+if pmv.IS_IPYTHON:  # only run this in Jupyter Notebook
     from crystal_toolkit.helpers.utils import hook_up_fig_with_struct_viewer
 
     app = hook_up_fig_with_struct_viewer(
@@ -104,4 +101,4 @@ if is_jupyter:  # only run this in Jupyter Notebook
         # validate_id requires material_id to be hover_name
         validate_id=lambda mat_id: mat_id.startswith(("wbm-", "mp-", "mvc-")),
     )
-    app.run(port=8000)
+    app.run()
