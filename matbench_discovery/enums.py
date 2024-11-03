@@ -82,6 +82,7 @@ class MbdKey(LabelEnum):
     international_spg_name = "international_spg_name", "International space group name"
     spg_num_diff = "spg_num_diff", "Difference in space group number"
     n_sym_ops_diff = "n_sym_ops_diff", "Difference in number of symmetry operations"
+    structure_rmsd_vs_dft = "structure_rmsd_vs_dft", "RMSD of structure to DFT"
 
 
 @unique

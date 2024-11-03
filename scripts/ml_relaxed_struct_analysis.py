@@ -17,15 +17,16 @@ from matbench_discovery.structure import analyze_symmetry, pred_vs_ref_struct_sy
 
 init_spg_col = "init_spg_num"
 dft_spg_col = "dft_spg_num"
-sym_data_col = "symmetry_data"
 n_sym_ops_col = "n_sym_ops"
 n_rot_ops_col = "n_rot_ops"
 n_trans_ops_col = "n_trans_ops"
+model_lvl, sym_prop_lvl = "model", "symmetry_property"
 df_wbm[init_spg_col] = df_wbm[MbdKey.init_wyckoff].str.split("_").str[2].astype(int)
 df_wbm[dft_spg_col] = df_wbm["wyckoff_spglib"].str.split("_").str[2].astype(int)
 module_dir = os.path.dirname(__file__)
 
-debug_mode: int = 1000  # limit the number of structures loaded per model to this number
+# limit the number of structures loaded per model to this number, 0 for no limit
+debug_mode: int = 0
 
 retained = (df_wbm[init_spg_col] == df_wbm[dft_spg_col]).sum()
 
@@ -34,7 +35,7 @@ print(
     f"{retained:,} / {len(df_wbm):,} ({retained/len(df_wbm):.2%})"
 )
 
-csv_path = f"{ROOT}/data/2024-10-08-all-models-symmetry-analysis.csv.gz"
+csv_path = f"{ROOT}/data/2024-10-10-all-models-symmetry-analysis.csv.gz"
 if os.path.isfile(csv_path):
     df_sym_all = pd.read_csv(csv_path, header=[0, 1], index_col=0)
 
@@ -65,9 +66,9 @@ for model in Model:
     df_model = pd.read_json(json_path).set_index(Key.mat_id)
     if debug_mode:
         df_model = df_model.head(debug_mode)
-    dfs_model_structs[model.label] = df_model
-    n_structs = len(dfs_model_structs[model.label])
-    print(f"Loaded {n_structs:,} structures for {model.label}")
+    dfs_model_structs[model.name] = df_model
+    n_structs = len(dfs_model_structs[model.name])
+    print(f"Loaded {n_structs:,} structures for {model.name}")
 
 
 # %% Perform symmetry analysis for all model-relaxed structures
@@ -100,13 +101,12 @@ for model_name in {*dfs_sym_all} - {Key.dft}:
     dfs_sym_all[model_name] = pred_vs_ref_struct_symmetry(
         dfs_sym_all[model_name],
         dfs_sym_all[Key.dft],
-        df_structs[model_name],
+        df_structs[model_name].to_dict(),
         dft_structs,
     )
 
 
 # %% Combine all dataframes
-model_lvl, sym_prop_lvl = "model", "symmetry_property"
 df_sym_all = pd.concat(dfs_sym_all, axis="columns", names=[model_lvl, sym_prop_lvl])
 df_sym_all = df_sym_all.convert_dtypes()
 
@@ -118,7 +118,9 @@ df_sym_all.to_csv(csv_path)
 
 # %% Plot violin plot of RMSD vs DFT
 fig_rmsd = px.violin(
-    df_sym_all.xs(Key.rmsd, level=sym_prop_lvl, axis="columns").round(3).dropna(),
+    df_sym_all.xs(MbdKey.structure_rmsd_vs_dft, level=sym_prop_lvl, axis="columns")
+    .round(3)
+    .dropna(),
     orientation="h",
     color="model",
     box=True,
@@ -132,29 +134,25 @@ fig_rmsd.update_traces(orientation="h", side="positive", width=1.8)
 
 # add annotation for mean for each model
 for model, srs_rmsd in df_sym_all.xs(
-    Key.rmsd, level=sym_prop_lvl, axis="columns"
+    MbdKey.structure_rmsd_vs_dft, level=sym_prop_lvl, axis="columns"
 ).items():
     mean_rmsd = srs_rmsd.mean()
     model_color = next(
         (trace["marker"]["color"] for trace in fig_rmsd.data if trace["name"] == model),
         "black",
     )
-    # percentiles = [0.5, 0.95]
-    for label, value, offset in [
-        ("Mean", mean_rmsd, 40),
-        # ("90th percentile", srs_rmsd.quantile(0.95), 25),
-    ]:
-        fig_rmsd.add_annotation(
-            x=value,
-            y=model,
-            text=f"{label}: {value:.3f}",
-            ax=offset,
-            ay=-offset,
-            font=dict(size=12, color=model_color),
-        )
+    fig_rmsd.add_annotation(
+        x=mean_rmsd,
+        y=model,
+        text=f"Mean: {mean_rmsd:.3f}",
+        ax=0,
+        ay=-60,
+        font=dict(size=12, color=model_color),
+        arrowcolor=model_color,
+    )
 
-fig_rmsd.layout.height = 600
-fig_rmsd.layout.legend.update(x=1, y=1, xanchor="right", yanchor="top")
+fig_rmsd.layout.height = len(fig_rmsd.data) * 100
+fig_rmsd.layout.showlegend = False
 fig_rmsd.show()
 
 pmv.save_fig(fig_rmsd, f"{module_dir}/{today}-rmsd-violin.pdf")

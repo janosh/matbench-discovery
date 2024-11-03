@@ -42,11 +42,14 @@ def perturb_structure(struct: Structure, gamma: float = 1.5) -> Structure:
     return perturbed
 
 
-def analyze_symmetry(structures: dict[str, Structure]) -> pd.DataFrame:
+def analyze_symmetry(
+    structures: dict[str, Structure], *, pbar: bool = True
+) -> pd.DataFrame:
     """Analyze symmetry of a dictionary of structures using spglib.
 
     Args:
         structures (dict[str, Structure]): Map material IDs to pymatgen Structures
+        pbar (bool, optional): Whether to show progress bar. Defaults to True.
 
     Returns:
         pd.DataFrame: DataFrame containing symmetry information for each structure
@@ -62,7 +65,14 @@ def analyze_symmetry(structures: dict[str, Structure]) -> pd.DataFrame:
     }
 
     results: dict[str, dict[str, str | int | list[str]]] = {}
-    for mat_id, struct in structures.items():
+    iterator = structures
+    if pbar:
+        from tqdm.auto import tqdm
+
+        iterator = tqdm(iterator, desc="Analyzing symmetry", leave=False)
+
+    for mat_id in iterator:
+        struct = structures[mat_id]
         cell = (struct.lattice.matrix, struct.frac_coords, struct.atomic_numbers)
         with warnings.catch_warnings():
             warnings.simplefilter(action="ignore", category=spglib.spglib.SpglibError)
@@ -114,9 +124,9 @@ def pred_vs_ref_struct_symmetry(
     )
 
     structure_matcher = StructureMatcher()
-    common_ids = set(pred_structs) & set(ref_structs)
-    for mat_id in common_ids:
-        df_sym_pred.loc[mat_id, (Key.rmsd, Key.max_pair_dist)] = (
+    shared_ids = set(pred_structs) & set(ref_structs)
+    for mat_id in shared_ids:
+        df_sym_pred.loc[mat_id, (MbdKey.structure_rmsd_vs_dft, Key.max_pair_dist)] = (
             structure_matcher.get_rms_dist(pred_structs[mat_id], ref_structs[mat_id])
         )
 
