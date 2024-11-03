@@ -661,8 +661,7 @@ def cumulative_metrics(
 
         n_pred_pos = n_pred_pos_cum.iloc[-1]
         model_range = np.arange(n_pred_pos) + 1  # xs for interpolation
-        xs_model = allowed_xs[allowed_xs < n_pred_pos - 1]  # xs for plotting
-        xs_model = np.append(xs_model, n_pred_pos)
+        xs_model = allowed_xs[allowed_xs <= n_pred_pos]  # xs for plotting
 
         cubic_interpolate = functools.partial(scipy.interpolate.interp1d, kind="cubic")
 
