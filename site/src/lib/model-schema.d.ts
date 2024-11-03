@@ -80,4 +80,69 @@ export interface ModelMetadata {
   openness?: 'OSOD' | 'OSCD' | 'CSOD' | 'CSCD'
   pred_col: string
   status?: 'aborted' | 'complete'
+  metrics?: {
+    discovery?: {
+      additionalProperties?: never
+      full_test_set?: {
+        F1?: number
+        DAF?: number
+        Precision?: number
+        Recall?: number
+        Accuracy?: number
+        TPR?: number
+        FPR?: number
+        TNR?: number
+        FNR?: number
+        TP?: number
+        FP?: number
+        TN?: number
+        FN?: number
+        MAE?: number
+        RMSE?: number
+        R2?: number
+        missing_preds?: number
+        missing_percent?: number
+      }
+      most_stable_10k?: {
+        F1?: number
+        DAF?: number
+        Precision?: number
+        Recall?: number
+        Accuracy?: number
+        TPR?: number
+        FPR?: number
+        TNR?: number
+        FNR?: number
+        TP?: number
+        FP?: number
+        TN?: number
+        FN?: number
+        MAE?: number
+        RMSE?: number
+        R2?: number
+        missing_preds?: number
+        missing_percent?: number
+      }
+      unique_prototypes?: {
+        F1?: number
+        DAF?: number
+        Precision?: number
+        Recall?: number
+        Accuracy?: number
+        TPR?: number
+        FPR?: number
+        TNR?: number
+        FNR?: number
+        TP?: number
+        FP?: number
+        TN?: number
+        FN?: number
+        MAE?: number
+        RMSE?: number
+        R2?: number
+        missing_preds?: number
+        missing_percent?: number
+      }
+    }
+  }
 }
