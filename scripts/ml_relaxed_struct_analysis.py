@@ -18,8 +18,6 @@ from matbench_discovery.structure import analyze_symmetry, pred_vs_ref_struct_sy
 init_spg_col = "init_spg_num"
 dft_spg_col = "dft_spg_num"
 n_sym_ops_col = "n_sym_ops"
-n_rot_ops_col = "n_rot_ops"
-n_trans_ops_col = "n_trans_ops"
 model_lvl, sym_prop_lvl = "model", "symmetry_property"
 df_wbm[init_spg_col] = df_wbm[MbdKey.init_wyckoff].str.split("_").str[2].astype(int)
 df_wbm[dft_spg_col] = df_wbm["wyckoff_spglib"].str.split("_").str[2].astype(int)

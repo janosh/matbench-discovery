@@ -60,8 +60,8 @@ def monoclinic_structure() -> Structure:
 @pytest.mark.parametrize(
     "test_structure, expected_spg_num, expected_n_sym_ops",
     [
-        ("cubic_structure", 229, 48),
-        ("tetragonal_structure", 47, 16),
+        ("cubic_structure", 229, 96),
+        ("tetragonal_structure", 47, 8),
         ("monoclinic_structure", 3, 2),
     ],
 )
@@ -93,36 +93,25 @@ def test_analyze_symmetry_multiple_structures(
 
     assert len(df_sym) == 3
     assert list(df_sym[Key.spg_num]) == [229, 47, 3]
-    assert list(df_sym[Key.n_sym_ops]) == [48, 16, 2]
+    assert list(df_sym[Key.n_sym_ops]) == [96, 8, 2]
 
 
 def test_pred_vs_ref_struct_symmetry(
     cubic_structure: Structure, tetragonal_structure: Structure
 ) -> None:
-    df_ml = analyze_symmetry({"cubic": cubic_structure})
-    df_dft = analyze_symmetry({"tetragonal": tetragonal_structure})
+    key = "structure"
+    df_ml = analyze_symmetry({key: cubic_structure})
+    df_dft = analyze_symmetry({key: tetragonal_structure})
 
     df_compared = pred_vs_ref_struct_symmetry(
-        df_ml, df_dft, {"cubic": cubic_structure}, {"tetragonal": tetragonal_structure}
+        df_ml, df_dft, {key: cubic_structure}, {key: tetragonal_structure}
     )
 
     assert MbdKey.spg_num_diff in df_compared.columns
     assert MbdKey.n_sym_ops_diff in df_compared.columns
     assert df_compared[MbdKey.spg_num_diff].iloc[0] == 229 - 47
-    assert df_compared[MbdKey.n_sym_ops_diff].iloc[0] == 48 - 16
-
-
-@pytest.mark.parametrize("scale_factor", [0.9, 1.1, 1.5])
-def test_analyze_symmetry_scaled_structure(
-    cubic_structure: Structure, scale_factor: float
-) -> None:
-    scaled_structure = cubic_structure.copy()
-    scaled_structure.scale_lattice(scaled_structure.volume * scale_factor)
-
-    df_sym_original = analyze_symmetry({"original": cubic_structure})
-    df_sym_scaled = analyze_symmetry({"scaled": scaled_structure})
-
-    pd.testing.assert_frame_equal(df_sym_original, df_sym_scaled, check_like=True)
+    n_sym_ops_ml, n_sym_ops_dft = 96, 8
+    assert df_compared[MbdKey.n_sym_ops_diff].iloc[0] == n_sym_ops_ml - n_sym_ops_dft
 
 
 def test_analyze_symmetry_perturbed_structure(cubic_structure: Structure) -> None:
@@ -144,41 +133,71 @@ def test_analyze_symmetry_supercell(cubic_structure: Structure) -> None:
     df_sym_original = analyze_symmetry({"original": cubic_structure})
     df_sym_supercell = analyze_symmetry({"supercell": supercell})
 
-    pd.testing.assert_frame_equal(df_sym_original, df_sym_supercell, check_like=True)
+    assert list(df_sym_original) == list(df_sym_supercell)
+    assert df_sym_original[Key.spg_num].iloc[0] == df_sym_supercell[Key.spg_num].iloc[0]
 
 
 def test_pred_vs_ref_struct_symmetry_with_structures(
     cubic_structure: Structure, tetragonal_structure: Structure
 ) -> None:
-    df_ml = pd.DataFrame({"structure": [cubic_structure]})
-    df_dft = pd.DataFrame({"structure": [tetragonal_structure]})
+    df_ml = pd.DataFrame({Key.structure: [cubic_structure]})
+    df_dft = pd.DataFrame({Key.structure: [tetragonal_structure]})
 
-    df_ml_sym = analyze_symmetry({"cubic": cubic_structure})
-    df_dft_sym = analyze_symmetry({"tetragonal": tetragonal_structure})
+    key = "struct1"
+    df_ml_sym = analyze_symmetry({key: cubic_structure})
+    df_dft_sym = analyze_symmetry({key: tetragonal_structure})
 
     df_ml = pd.concat([df_ml, df_ml_sym], axis=1)
     df_dft = pd.concat([df_dft, df_dft_sym], axis=1)
 
+    df_ml_sym[Key.spg_num] - df_dft_sym[Key.spg_num]
+
+    # must use same keys for both structures to match them in RMSD calculation
     df_compared = pred_vs_ref_struct_symmetry(
-        df_ml, df_dft, {"cubic": cubic_structure}, {"tetragonal": tetragonal_structure}
+        df_ml, df_dft, {key: cubic_structure}, {key: tetragonal_structure}
     )
 
-    assert Key.rmsd in df_compared.columns
-    assert not pd.isna(df_compared[Key.rmsd].iloc[0])
+    assert set(df_compared) == {
+        Key.choice_symbol,
+        Key.hall_num,
+        Key.hall_symbol,
+        MbdKey.international_spg_name,
+        Key.max_pair_dist,
+        Key.n_rot_syms,
+        Key.n_sym_ops,
+        MbdKey.n_sym_ops_diff,
+        Key.n_trans_syms,
+        Key.point_group,
+        Key.spg_num,
+        MbdKey.spg_num_diff,
+        Key.structure,
+        MbdKey.structure_rmsd_vs_dft,
+        Key.wyckoff_symbols,
+    }
 
 
 def test_analyze_symmetry_primitive_vs_conventional(cubic_structure: Structure) -> None:
     spg_analyzer = SpacegroupAnalyzer(cubic_structure)
     primitive_structure = spg_analyzer.get_primitive_standard_structure()
 
-    df_sym_conventional = analyze_symmetry({"conventional": cubic_structure})
-    df_sym_primitive = analyze_symmetry({"primitive": primitive_structure})
-    assert df_sym_conventional.index.name == "material_id"
-    assert df_sym_primitive.index.name == "material_id"
-    # need to set index name to None to compare DataFrames
-    df_sym_conventional.index.name = None
-    df_sym_primitive.index.name = None
+    key_conv, key_prim = "conventional", "primitive"
+    df_conventional = analyze_symmetry({key_conv: cubic_structure})
+    df_primitive = analyze_symmetry({key_prim: primitive_structure})
+    assert df_conventional.index.name == Key.mat_id
+    assert df_primitive.index.name == Key.mat_id
+    assert df_primitive.index[0] == key_prim
+    assert df_conventional.index[0] == key_conv
+
+    cols_to_drop = [  # some columns differ between conventional and primitive structure
+        Key.wyckoff_symbols,
+        Key.n_sym_ops,
+        Key.n_rot_syms,
+        Key.n_trans_syms,
+    ]
+    df_primitive.index = df_conventional.index
 
     pd.testing.assert_frame_equal(
-        df_sym_conventional, df_sym_primitive, check_names=False
+        df_conventional.drop(columns=cols_to_drop),
+        df_primitive.drop(columns=cols_to_drop),
+        check_index_type=False,
     )

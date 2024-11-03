@@ -103,6 +103,7 @@ ignore = [
   "PT006",   # pytest-parametrize-names-wrong-type
   "PTH",
   "S108",
+  "S112",    # try/except continue: consider logging the exception
   "S310",
   "S311",
   "S603",    # subprocess-without-shell-equals-true

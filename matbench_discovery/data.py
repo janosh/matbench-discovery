@@ -135,19 +135,26 @@ def ase_atoms_from_zip(
     return atoms_list
 
 
-def ase_atoms_to_zip(atoms_list: list[Atoms], zip_filename: str | Path) -> None:
-    """Write a list of ASE Atoms to a ZIP archive with each Atoms object as a separate
+def ase_atoms_to_zip(
+    atoms_list: list[Atoms] | dict[str, Atoms], zip_filename: str | Path
+) -> None:
+    """Write ASE Atoms objects to a ZIP archive with each Atoms object as a separate
     extXYZ file, grouped by mat_id.
 
     Args:
-        atoms_list (list[Atoms]): List of ASE Atoms objects.
-        zip_filename (str | Path): Path to the ZIP file.
+        atoms_list (list[Atoms] | dict[str, Atoms]): Either a list of ASE Atoms objects
+            (which should have a 'material_id' in their Atoms.info dictionary) or a
+            dictionary mapping material IDs to Atoms objects.
+        zip_filename (str | Path): Path to the ZIP file to write.
     """
     # Group atoms by mat_id to avoid overwriting files with the same name
     atoms_by_id = defaultdict(list)
-    for atoms in atoms_list:
-        mat_id = atoms.info.get(Key.mat_id, f"no-id-{atoms.get_chemical_formula()}")
-        atoms_by_id[mat_id].append(atoms)
+
+    if not isinstance(atoms_list, dict):
+        # If input is a list, get material ID from atoms.info falling back to formula if missing
+        for atoms in atoms_list:
+            mat_id = atoms.info.get(Key.mat_id, f"no-id-{atoms.get_chemical_formula()}")
+            atoms_by_id[mat_id].append(atoms)
 
     # Write grouped atoms to the ZIP archive
     with zipfile.ZipFile(

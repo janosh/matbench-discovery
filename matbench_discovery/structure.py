@@ -71,8 +71,8 @@ def analyze_symmetry(
 
         iterator = tqdm(iterator, desc="Analyzing symmetry", leave=False)
 
-    for mat_id in iterator:
-        struct = structures[mat_id]
+    for struct_key in iterator:
+        struct = structures[struct_key]
         cell = (struct.lattice.matrix, struct.frac_coords, struct.atomic_numbers)
         with warnings.catch_warnings():
             warnings.simplefilter(action="ignore", category=spglib.spglib.SpglibError)
@@ -82,11 +82,13 @@ def analyze_symmetry(
             new_key: getattr(sym_data, old_key)
             for old_key, new_key in sym_key_map.items()
         }
-        sym_info[Key.n_rot_ops] = len(sym_data.rotations)
-        sym_info[Key.n_trans_ops] = len(sym_data.translations)
-        sym_info[Key.n_sym_ops] = sym_info[Key.n_rot_ops] + sym_info[Key.n_trans_ops]
+        sym_info[Key.n_sym_ops] = len(
+            sym_data.rotations
+        )  # Each rotation has an associated translation
+        sym_info[Key.n_rot_syms] = len(sym_data.rotations)
+        sym_info[Key.n_trans_syms] = len(sym_data.translations)
 
-        results[mat_id] = sym_info
+        results[struct_key] = sym_info
 
     df_sym = pd.DataFrame(results).T
     df_sym.index.name = Key.mat_id
@@ -115,22 +117,28 @@ def pred_vs_ref_struct_symmetry(
     Returns:
         pd.DataFrame: with added columns for symmetry differences
     """
+    df_result = df_sym_pred.copy()
+
     # Calculate differences
-    df_sym_pred[MbdKey.spg_num_diff] = (
-        df_sym_pred[Key.spg_num] - df_sym_ref[Key.spg_num]
-    )
-    df_sym_pred[MbdKey.n_sym_ops_diff] = (
+    df_result[MbdKey.spg_num_diff] = df_sym_pred[Key.spg_num] - df_sym_ref[Key.spg_num]
+    df_result[MbdKey.n_sym_ops_diff] = (
         df_sym_pred[Key.n_sym_ops] - df_sym_ref[Key.n_sym_ops]
     )
 
     structure_matcher = StructureMatcher()
     shared_ids = set(pred_structs) & set(ref_structs)
-    for mat_id in shared_ids:
-        df_sym_pred.loc[mat_id, (MbdKey.structure_rmsd_vs_dft, Key.max_pair_dist)] = (
-            structure_matcher.get_rms_dist(pred_structs[mat_id], ref_structs[mat_id])
-        )
 
-    return df_sym_pred
+    # Initialize RMSD column
+    df_result[MbdKey.structure_rmsd_vs_dft] = None
+
+    for mat_id in shared_ids:
+        rmsd, max_dist = structure_matcher.get_rms_dist(
+            pred_structs[mat_id], ref_structs[mat_id]
+        ) or (None, None)
+        df_result.loc[mat_id, MbdKey.structure_rmsd_vs_dft] = rmsd
+        df_result.loc[mat_id, Key.max_pair_dist] = max_dist
+
+    return df_result
 
 
 if __name__ == "__main__":
