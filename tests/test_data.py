@@ -122,7 +122,7 @@ def test_ase_atoms_from_zip_with_filename_to_info(tmp_path: Path) -> None:
 
 def test_ase_atoms_from_zip_empty_file(tmp_path: Path) -> None:
     empty_zip = tmp_path / "empty.zip"
-    with zipfile.ZipFile(empty_zip, "w"):
+    with zipfile.ZipFile(empty_zip, mode="w"):
         pass
     read_atoms = ase_atoms_from_zip(empty_zip)
     assert len(read_atoms) == 0
@@ -130,7 +130,7 @@ def test_ase_atoms_from_zip_empty_file(tmp_path: Path) -> None:
 
 def test_ase_atoms_from_zip_invalid_file(tmp_path: Path) -> None:
     invalid_zip = tmp_path / "invalid.zip"
-    with open(invalid_zip, "w") as file:
+    with open(invalid_zip, mode="w") as file:
         file.write("This is not a zip file")
     with pytest.raises(zipfile.BadZipFile):
         ase_atoms_from_zip(invalid_zip)

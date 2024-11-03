@@ -36,5 +36,5 @@ for path in glob(f"{out_path}/*.md"):
         'src="https://img.shields.io/badge/-source-cccccc?style=flat-square"',
         'src="https://img.shields.io/badge/source-blue?style=flat" alt="source link"',
     )
-    with open(path, "w") as file:
+    with open(path, mode="w") as file:
         file.write(text)

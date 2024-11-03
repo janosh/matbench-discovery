@@ -130,7 +130,7 @@ for model in Model:
     with open(yaml_path) as file:
         model_metadata = round_trip_yaml.load(file)
     model_metadata["run_time"] = df_model_cost.loc[model.label, time_col]
-    with open(yaml_path, "w") as file:
+    with open(yaml_path, mode="w") as file:
         round_trip_yaml.dump(model_metadata, file)
 
 

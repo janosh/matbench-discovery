@@ -123,7 +123,7 @@ for material_id in tqdm(structures, desc="Relaxing", disable=None):
         )
         optimizer.set_bounds()
         # reason for /dev/null: https://github.com/materialsvirtuallab/maml/issues/469
-        with open(os.devnull, "w") as devnull, contextlib.redirect_stdout(devnull):
+        with open(os.devnull, mode="w") as devnull, contextlib.redirect_stdout(devnull):
             optimizer.optimize(**optimize_kwargs)
 
         struct_bowsr, energy_bowsr = optimizer.get_optimized_structure_and_energy()
