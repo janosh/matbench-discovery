@@ -628,11 +628,10 @@ def cumulative_metrics(
     n_max_pred_stable = n_max_pred_stable_per_model.max()
     # use log2-spaced sampling to get higher sampling density at equal file size for
     # start of the discovery campaign where model performance fluctuates more
-    longest_xs = np.logspace(0, np.log2(n_max_pred_stable - 1), n_points, base=2)
+    log_xs = np.logspace(0, np.log2(n_max_pred_stable - 1), n_points, base=2)
+    allowed_xs = np.sort(np.append(log_xs, n_max_pred_stable_per_model.to_numpy()))
     for metric in metrics:
-        dfs[metric].index = np.append(
-            longest_xs, n_max_pred_stable_per_model.to_numpy()
-        )
+        dfs[metric].index = allowed_xs
 
     valid_metrics = {"Precision", "Recall", "F1", "MAE", "RMSE"}
     if invalid_metrics := set(metrics) - valid_metrics:
@@ -662,7 +661,7 @@ def cumulative_metrics(
 
         n_pred_pos = n_pred_pos_cum.iloc[-1]
         model_range = np.arange(n_pred_pos) + 1  # xs for interpolation
-        xs_model = longest_xs[longest_xs < n_pred_pos - 1]  # xs for plotting
+        xs_model = allowed_xs[allowed_xs < n_pred_pos - 1]  # xs for plotting
         xs_model = np.append(xs_model, n_pred_pos)
 
         cubic_interpolate = functools.partial(scipy.interpolate.interp1d, kind="cubic")
