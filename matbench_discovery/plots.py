@@ -624,12 +624,15 @@ def cumulative_metrics(
     dfs: dict[str, pd.DataFrame] = defaultdict(pd.DataFrame)
 
     # largest number of materials predicted stable by any model, determines x-axis range
-    n_max_pred_stable = (df_preds < stability_threshold).sum().max()
+    n_max_pred_stable_per_model = (df_preds <= stability_threshold).sum(axis=0)
+    n_max_pred_stable = n_max_pred_stable_per_model.max()
     # use log2-spaced sampling to get higher sampling density at equal file size for
     # start of the discovery campaign where model performance fluctuates more
     longest_xs = np.logspace(0, np.log2(n_max_pred_stable - 1), n_points, base=2)
     for metric in metrics:
-        dfs[metric].index = longest_xs
+        dfs[metric].index = np.append(
+            longest_xs, n_max_pred_stable_per_model.to_numpy()
+        )
 
     valid_metrics = {"Precision", "Recall", "F1", "MAE", "RMSE"}
     if invalid_metrics := set(metrics) - valid_metrics:
@@ -642,48 +645,52 @@ def cumulative_metrics(
         # sort targets by model ranking
         each_true = e_above_hull_true.loc[each_pred.index]
 
-        true_pos_cum, false_neg_cum, false_pos_cum, _true_neg_cum = map(
+        n_true_pos_cum, n_false_neg_cum, n_false_pos_cum, _n_true_neg_cum = map(
             np.cumsum,
             classify_stable(
                 each_true, each_pred, stability_threshold=stability_threshold
             ),
         )
 
-        # precision aka positive predictive value (PPV)
-        n_total_pos = true_pos_cum.iloc[-1] + false_neg_cum.iloc[-1]
-        precision_cum = true_pos_cum / (true_pos_cum + false_pos_cum)
-        recall_cum = true_pos_cum / n_total_pos  # aka true_pos_rate aka sensitivity
+        n_total_pos_cum = n_true_pos_cum + n_false_neg_cum
+        # n_total_neg_cum = n_true_neg_cum + n_false_pos_cum
+        n_pred_pos_cum = n_true_pos_cum + n_false_pos_cum
 
-        n_pred_stable = sum(each_pred <= stability_threshold)
-        model_range = np.arange(n_pred_stable)  # xs for interpolation
-        xs_model = longest_xs[longest_xs < n_pred_stable - 1]  # xs for plotting
+        # prevalence_cum = n_total_pos_cum / (n_total_pos_cum + n_total_neg_cum)
+        precision_cum = n_true_pos_cum / n_pred_pos_cum  # model's discovery rate
+        recall_cum = n_true_pos_cum / n_total_pos_cum.iloc[-1]
+
+        n_pred_pos = n_pred_pos_cum.iloc[-1]
+        model_range = np.arange(n_pred_pos) + 1  # xs for interpolation
+        xs_model = longest_xs[longest_xs < n_pred_pos - 1]  # xs for plotting
+        xs_model = np.append(xs_model, n_pred_pos)
 
         cubic_interpolate = functools.partial(scipy.interpolate.interp1d, kind="cubic")
 
         if "Precision" in metrics:
-            prec_interp = cubic_interpolate(model_range, precision_cum[:n_pred_stable])
-            dfs["Precision"][model_name] = dict(zip(xs_model, prec_interp(xs_model)))
+            prec_interp = cubic_interpolate(model_range, precision_cum[:n_pred_pos])
+            dfs["Precision"].loc[xs_model, model_name] = prec_interp(xs_model)
 
         if "Recall" in metrics:
-            recall_interp = cubic_interpolate(model_range, recall_cum[:n_pred_stable])
-            dfs["Recall"][model_name] = dict(zip(xs_model, recall_interp(xs_model)))
+            recall_interp = cubic_interpolate(model_range, recall_cum[:n_pred_pos])
+            dfs["Recall"].loc[xs_model, model_name] = recall_interp(xs_model)
 
         if "F1" in metrics:
             f1_cum = 2 * (precision_cum * recall_cum) / (precision_cum + recall_cum)
-            f1_interp = cubic_interpolate(model_range, f1_cum[:n_pred_stable])
-            dfs["F1"][model_name] = dict(zip(xs_model, f1_interp(xs_model)))
+            f1_interp = cubic_interpolate(model_range, f1_cum[:n_pred_pos])
+            dfs["F1"].loc[xs_model, model_name] = f1_interp(xs_model)
 
         cum_counts = np.arange(1, len(each_true) + 1)
         if "MAE" in metrics:
             cum_errors = (each_true - each_pred).abs().cumsum()
             mae_cum = cum_errors / cum_counts
-            mae_interp = cubic_interpolate(model_range, mae_cum[:n_pred_stable])
-            dfs["MAE"][model_name] = dict(zip(xs_model, mae_interp(xs_model)))
+            mae_interp = cubic_interpolate(model_range, mae_cum[:n_pred_pos])
+            dfs["MAE"].loc[xs_model, model_name] = mae_interp(xs_model)
 
         if "RMSE" in metrics:
             rmse_cum = (((each_true - each_pred) ** 2).cumsum() / cum_counts) ** 0.5
-            rmse_interp = cubic_interpolate(model_range, rmse_cum[:n_pred_stable])
-            dfs["RMSE"][model_name] = dict(zip(xs_model, rmse_interp(xs_model)))
+            rmse_interp = cubic_interpolate(model_range, rmse_cum[:n_pred_pos])
+            dfs["RMSE"].loc[xs_model, model_name] = rmse_interp(xs_model)
 
     for key, df_i in dfs.items():
         # will be used as facet_col in plotly to split different metrics into subplots
@@ -707,7 +714,9 @@ def cumulative_metrics(
             linewidth=3, markevery=[-1], marker="x", markersize=14, markeredgewidth=2.5
         )
 
-        for metric, ax in zip(metrics, axs.flat if len(metrics) > 1 else [axs]):
+        for metric, ax in zip(
+            metrics, axs.flat if len(metrics) > 1 else [axs], strict=True
+        ):
             # select every n-th row of df so that 1000 rows are left for increased
             # plotting speed and reduced file size
             # falls back on every row if df has less than 1000 rows
