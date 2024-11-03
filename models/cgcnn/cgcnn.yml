@@ -40,3 +40,63 @@ notes:
     ![Illustration of the crystal graph convolutional neural networks](https://researchgate.net/profile/Tian-Xie-11/publication/320726915/figure/fig1/AS:635258345119746@1528468800829/Illustration-of-the-crystal-graph-convolutional-neural-networks-a-Construction-of-the.png)
     Aviary CGCNN model is based on the original implementation in https://github.com/txie-93/cgcnn.
   Long: CGCNN was among the first to show that just like in other areas of ML, given large enough training sets, neural networks can learn embeddings that reliably outperform all human-engineered structure features directly from the data.
+
+metrics:
+  discovery:
+    full_test_set:
+      F1: 0.51
+      DAF: 2.631
+      Precision: 0.451
+      Recall: 0.587
+      Accuracy: 0.807
+      TPR: 0.587
+      FPR: 0.148
+      TNR: 0.852
+      FNR: 0.413
+      TP: 25895.0
+      FP: 31474.0
+      TN: 181397.0
+      FN: 18197.0
+      MAE: 0.135
+      RMSE: 0.229
+      R2: -0.624
+      missing_preds: 4
+      missing_percent: 0.00%
+    most_stable_10k:
+      F1: 0.745
+      DAF: 3.88
+      Precision: 0.593
+      Recall: 1.0
+      Accuracy: 0.593
+      TPR: 1.0
+      FPR: 1.0
+      TNR: 0.0
+      FNR: 0.0
+      TP: 5931.0
+      FP: 4069.0
+      TN: 0.0
+      FN: 0.0
+      MAE: 0.165
+      RMSE: 0.23
+      R2: 0.181
+      missing_preds: 0
+      missing_percent: 0.00%
+    unique_prototypes:
+      F1: 0.507
+      DAF: 2.855
+      Precision: 0.436
+      Recall: 0.605
+      Accuracy: 0.818
+      TPR: 0.605
+      FPR: 0.143
+      TNR: 0.857
+      FNR: 0.395
+      TP: 20191.0
+      FP: 26073.0
+      TN: 156041.0
+      FN: 13183.0
+      MAE: 0.138
+      RMSE: 0.233
+      R2: -0.603
+      missing_preds: 2
+      missing_percent: 0.00%

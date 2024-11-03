@@ -84,6 +84,10 @@ class MbdKey(LabelEnum):
     n_sym_ops_diff = "n_sym_ops_diff", "Difference in number of symmetry operations"
     structure_rmsd_vs_dft = "structure_rmsd_vs_dft", "RMSD of structure to DFT"
 
+    # keep in sync with model-schema.yml
+    missing_preds = "missing_preds", "Missing predictions"
+    missing_percent = "missing_percent", "Missing predictions (percent)"
+
 
 @unique
 class Task(LabelEnum):
@@ -151,8 +155,8 @@ class TestSubset(LabelEnum):
     """Which subset of the test data to use for evaluation."""
 
     uniq_protos = "uniq_protos", "Unique Structure Prototypes"
-    ten_k_most_stable = "10k_most_stable", "10k Most Stable"
-    full = "full", "Full Test Set"
+    most_stable_10k = "most_stable_10k", "10k Most Stable Materials"
+    full_test_set = "full_test_set", "Full Test Set"
 
 
 class Quantity(LabelEnum):

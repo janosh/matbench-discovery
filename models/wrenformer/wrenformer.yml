@@ -45,3 +45,63 @@ notes:
     A ML–powered materials discovery workflow using Wrenformer's Wyckoff string inputs to predict formation energies for candidate materials in an enumerated library of Wyckoff representations (shapes are used to denote different Wyckoff positions and colors to denote different element types). Predicted formation energies are then compared against the known convex hull of stability. Structures satisfying the required symmetries are relaxed for materials predicted to be stable.
 
   Long: It builds on [Roost](https://doi.org/10.1038/s41467-020-19964-7) and [Wren](https://doi.org/10.1126/sciadv.abn4117), by being a fast structure-free model that is still able to distinguish polymorphs through symmetry.
+
+metrics:
+  discovery:
+    full_test_set:
+      F1: 0.479
+      DAF: 2.13
+      Precision: 0.365
+      Recall: 0.693
+      Accuracy: 0.741
+      TPR: 0.693
+      FPR: 0.249
+      TNR: 0.751
+      FNR: 0.307
+      TP: 30566.0
+      FP: 53076.0
+      TN: 159795.0
+      FN: 13526.0
+      MAE: 0.105
+      RMSE: 0.182
+      R2: -0.02
+      missing_preds: 7
+      missing_percent: 0.00%
+    most_stable_10k:
+      F1: 0.721
+      DAF: 3.691
+      Precision: 0.564
+      Recall: 1.0
+      Accuracy: 0.564
+      TPR: 1.0
+      FPR: 1.0
+      TNR: 0.0
+      FNR: 0.0
+      TP: 5642.0
+      FP: 4358.0
+      TN: 0.0
+      FN: 0.0
+      MAE: 0.182
+      RMSE: 0.239
+      R2: 0.138
+      missing_preds: 0
+      missing_percent: 0.00%
+    unique_prototypes:
+      F1: 0.466
+      DAF: 2.256
+      Precision: 0.345
+      Recall: 0.719
+      Accuracy: 0.745
+      TPR: 0.719
+      FPR: 0.25
+      TNR: 0.75
+      FNR: 0.281
+      TP: 23992.0
+      FP: 45575.0
+      TN: 136539.0
+      FN: 9382.0
+      MAE: 0.11
+      RMSE: 0.186
+      R2: -0.018
+      missing_preds: 5
+      missing_percent: 0.00%

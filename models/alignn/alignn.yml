@@ -43,6 +43,66 @@ n_estimators: 1
 
 # model trained from specifically for MBD
 training_set: [MP 2022]
+
+metrics:
+  discovery:
+    full_test_set:
+      F1: 0.565
+      DAF: 2.921
+      Precision: 0.501
+      Recall: 0.649
+      Accuracy: 0.829
+      TPR: 0.649
+      FPR: 0.134
+      TNR: 0.866
+      FNR: 0.351
+      TP: 28598.0
+      FP: 28464.0
+      TN: 184407.0
+      FN: 15494.0
+      MAE: 0.092
+      RMSE: 0.154
+      R2: 0.274
+      missing_preds: 1
+      missing_percent: 0.00%
+    most_stable_10k:
+      F1: 0.748
+      DAF: 3.905
+      Precision: 0.597
+      Recall: 1.0
+      Accuracy: 0.597
+      TPR: 1.0
+      FPR: 1.0
+      TNR: 0.0
+      FNR: 0.0
+      TP: 5969.0
+      FP: 4031.0
+      TN: 0.0
+      FN: 0.0
+      MAE: 0.176
+      RMSE: 0.247
+      R2: 0.081
+      missing_preds: 0
+      missing_percent: 0.00%
+    unique_prototypes:
+      F1: 0.567
+      DAF: 3.206
+      Precision: 0.49
+      Recall: 0.672
+      Accuracy: 0.841
+      TPR: 0.672
+      FPR: 0.128
+      TNR: 0.872
+      FNR: 0.328
+      TP: 22436.0
+      FP: 23346.0
+      TN: 158768.0
+      FN: 10938.0
+      MAE: 0.093
+      RMSE: 0.154
+      R2: 0.297
+      missing_preds: 0
+      missing_percent: 0.00%
 # model pre-trained by NIST (not shown in MBD since performed worse)
 # training_set:
 #   title: MP Graphs

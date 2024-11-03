@@ -13,7 +13,7 @@ __author__ = "Janosh Riebesell"
 __date__ = "2023-05-25"
 
 
-test_subset = globals().get("test_subset", TestSubset.full)
+test_subset = globals().get("test_subset", TestSubset.full_test_set)
 
 if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(Key.uniq_proto)

@@ -27,7 +27,7 @@ __date__ = "2024-09-07"
 EnergyType = Literal["e-form", "each"]
 use_e_form, use_each = get_args(EnergyType)
 
-test_subset = globals().get("test_subset", TestSubset.full)
+test_subset = globals().get("test_subset", TestSubset.full_test_set)
 if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(Key.uniq_proto)
     df_metrics = df_metrics_uniq_protos

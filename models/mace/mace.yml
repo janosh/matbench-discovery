@@ -64,3 +64,63 @@ notes:
   Description: |
     MACE is a higher-order equivariant message-passing neural network for fast and accurate force fields.
   Training: Using pre-trained 'medium' model released with paper.
+
+metrics:
+  discovery:
+    full_test_set:
+      F1: 0.668
+      DAF: 3.4
+      Precision: 0.583
+      Recall: 0.781
+      Accuracy: 0.867
+      TPR: 0.781
+      FPR: 0.115
+      TNR: 0.885
+      FNR: 0.219
+      TP: 34420.0
+      FP: 24576.0
+      TN: 188295.0
+      FN: 9672.0
+      MAE: 0.055
+      RMSE: 0.099
+      R2: 0.698
+      missing_preds: 38
+      missing_percent: 0.01%
+    most_stable_10k:
+      F1: 0.888
+      DAF: 5.221
+      Precision: 0.798
+      Recall: 1.0
+      Accuracy: 0.798
+      TPR: 1.0
+      FPR: 1.0
+      TNR: 0.0
+      FNR: 0.0
+      TP: 7982.0
+      FP: 2018.0
+      TN: 0.0
+      FN: 0.0
+      MAE: 0.087
+      RMSE: 0.165
+      R2: 0.508
+      missing_preds: 0
+      missing_percent: 0.00%
+    unique_prototypes:
+      F1: 0.669
+      DAF: 3.777
+      Precision: 0.577
+      Recall: 0.796
+      Accuracy: 0.878
+      TPR: 0.796
+      FPR: 0.107
+      TNR: 0.893
+      FNR: 0.204
+      TP: 26582.0
+      FP: 19457.0
+      TN: 162657.0
+      FN: 6792.0
+      MAE: 0.057
+      RMSE: 0.101
+      R2: 0.697
+      missing_preds: 34
+      missing_percent: 0.02%

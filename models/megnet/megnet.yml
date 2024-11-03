@@ -51,3 +51,63 @@ training_set: [MP Graphs]
 notes:
   Description: MatErials Graph Network is another GNN for material properties of relaxed structure which showed that learned element embeddings encode periodic chemical trends and can be transfer-learned from large data sets (formation energies) to predictions on small data properties (band gaps, elastic moduli).
   Training: Using pre-trained model released with paper. Was only trained on `MP-crystals-2018.6.1` dataset [available on Figshare](https://figshare.com/articles/Graphs_of_materials_project/7451351).
+
+metrics:
+  discovery:
+    full_test_set:
+      F1: 0.513
+      DAF: 2.699
+      Precision: 0.463
+      Recall: 0.574
+      Accuracy: 0.813
+      TPR: 0.574
+      FPR: 0.138
+      TNR: 0.862
+      FNR: 0.426
+      TP: 25311.0
+      FP: 29342.0
+      TN: 183529.0
+      FN: 18781.0
+      MAE: 0.128
+      RMSE: 0.204
+      R2: -0.277
+      missing_preds: 1
+      missing_percent: 0.00%
+    most_stable_10k:
+      F1: 0.632
+      DAF: 3.022
+      Precision: 0.462
+      Recall: 1.0
+      Accuracy: 0.462
+      TPR: 1.0
+      FPR: 1.0
+      TNR: 0.0
+      FNR: 0.0
+      TP: 4620.0
+      FP: 5380.0
+      TN: 0.0
+      FN: 0.0
+      MAE: 0.304
+      RMSE: 0.336
+      R2: -0.908
+      missing_preds: 0
+      missing_percent: 0.00%
+    unique_prototypes:
+      F1: 0.51
+      DAF: 2.959
+      Precision: 0.452
+      Recall: 0.585
+      Accuracy: 0.826
+      TPR: 0.585
+      FPR: 0.13
+      TNR: 0.87
+      FNR: 0.415
+      TP: 19537.0
+      FP: 23651.0
+      TN: 158463.0
+      FN: 13837.0
+      MAE: 0.13
+      RMSE: 0.206
+      R2: -0.248
+      missing_preds: 0
+      missing_percent: 0.00%

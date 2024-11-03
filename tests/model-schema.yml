@@ -137,6 +137,57 @@ properties:
   status:
     type: string
     enum: [aborted, complete]
+  metrics:
+    type: object
+    additionalProperties: false
+    properties:
+      discovery:
+        additionalProperties: false
+        type: object
+        properties:
+          additionalProperties: false
+          full_test_set: &discovery_metrics
+            type: object
+            additionalProperties: false
+            properties:
+              F1:
+                type: number
+              DAF:
+                type: number
+              Precision:
+                type: number
+              Recall:
+                type: number
+              Accuracy:
+                type: number
+              TPR:
+                type: number
+              FPR:
+                type: number
+              TNR:
+                type: number
+              FNR:
+                type: number
+              TP:
+                type: number
+              FP:
+                type: number
+              TN:
+                type: number
+              FN:
+                type: number
+              MAE:
+                type: number
+              RMSE:
+                type: number
+              R2:
+                type: number
+              missing_preds:
+                type: number
+              missing_percent:
+                type: number
+          most_stable_10k: *discovery_metrics
+          unique_prototypes: *discovery_metrics
 
 required:
   - authors
