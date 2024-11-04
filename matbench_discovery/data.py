@@ -39,9 +39,9 @@ DEFAULT_CACHE_DIR = os.getenv(
 )
 
 
-round_trip_yaml = YAML()
+round_trip_yaml = YAML()  # round-trippable YAML for updating model metadata files
 round_trip_yaml.preserve_quotes = True
-round_trip_yaml.width = 1000
+round_trip_yaml.width = 1000  # avoid changing line wrapping
 round_trip_yaml.indent(mapping=2, sequence=4, offset=2)
 
 
@@ -136,35 +136,40 @@ def ase_atoms_from_zip(
 
 
 def ase_atoms_to_zip(
-    atoms_list: list[Atoms] | dict[str, Atoms], zip_filename: str | Path
+    atoms_set: list[Atoms] | dict[str, Atoms], zip_filename: str | Path
 ) -> None:
     """Write ASE Atoms objects to a ZIP archive with each Atoms object as a separate
     extXYZ file, grouped by mat_id.
 
     Args:
-        atoms_list (list[Atoms] | dict[str, Atoms]): Either a list of ASE Atoms objects
+        atoms_set (list[Atoms] | dict[str, Atoms]): Either a list of ASE Atoms objects
             (which should have a 'material_id' in their Atoms.info dictionary) or a
             dictionary mapping material IDs to Atoms objects.
         zip_filename (str | Path): Path to the ZIP file to write.
     """
     # Group atoms by mat_id to avoid overwriting files with the same name
-    atoms_by_id = defaultdict(list)
 
-    if not isinstance(atoms_list, dict):
+    if isinstance(atoms_set, dict):
+        atoms_dict = atoms_set
+    else:
+        atoms_dict = defaultdict(list)
+
         # If input is a list, get material ID from atoms.info falling back to formula if missing
-        for atoms in atoms_list:
+        for atoms in atoms_set:
             mat_id = atoms.info.get(Key.mat_id, f"no-id-{atoms.get_chemical_formula()}")
-            atoms_by_id[mat_id].append(atoms)
+            atoms_dict[mat_id] += [atoms]
 
     # Write grouped atoms to the ZIP archive
     with zipfile.ZipFile(
         zip_filename, mode="w", compression=zipfile.ZIP_DEFLATED
     ) as zip_file:
-        for mat_id, grouped_atoms in tqdm(
-            atoms_by_id.items(), desc=f"Writing ASE Atoms to {zip_filename=}"
+        for mat_id, atoms_or_list in tqdm(
+            atoms_dict.items(), desc=f"Writing ASE Atoms to {zip_filename=}"
         ):
             buffer = io.StringIO()  # string buffer to write the extxyz content
-            for atoms in grouped_atoms:
+            for atoms in (
+                atoms_or_list if isinstance(atoms_or_list, list) else [atoms_or_list]
+            ):
                 ase.io.write(
                     buffer, atoms, format="extxyz", append=True, write_info=True
                 )

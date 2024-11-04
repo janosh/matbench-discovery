@@ -72,7 +72,11 @@ def test_glob_to_df(pattern: str, tmp_path: Path, df_mixed: pd.DataFrame) -> Non
         glob_to_df("foo")
 
 
-def test_atoms_zip_round_trip(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "dummy_atoms",
+    [dummy_atoms, {"atoms1": atoms1, "atoms2": atoms2}],
+)
+def test_atoms_zip_round_trip(tmp_path: Path, dummy_atoms: dict[str, Atoms]) -> None:
     # Write atoms to a temporary ZIP file
     zip_path = tmp_path / "test_structures.zip"
     ase_atoms_to_zip(dummy_atoms, zip_path)
@@ -83,7 +87,8 @@ def test_atoms_zip_round_trip(tmp_path: Path) -> None:
     # Check that we got the same number of Atoms objects back
     assert len(read_atoms) == len(dummy_atoms)
 
-    for original, read in zip(dummy_atoms, read_atoms):
+    orig_atoms = dummy_atoms.values() if isinstance(dummy_atoms, dict) else dummy_atoms
+    for original, read in zip(orig_atoms, read_atoms):
         # Check basic Atoms properties
         assert original.get_chemical_formula() == read.get_chemical_formula()
         assert np.allclose(original.get_positions(), read.get_positions())

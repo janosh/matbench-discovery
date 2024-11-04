@@ -101,12 +101,15 @@ dfs_sym_all[Key.dft] = analyze_symmetry(dft_structs)
 
 
 # %% Compare symmetry with DFT reference
-for model_name in {*dfs_sym_all} - {Key.dft}:
+n_models = len({*dfs_sym_all} - {Key.dft})
+
+for idx, model_name in enumerate({*dfs_sym_all} - {Key.dft}):
     dfs_sym_all[model_name] = pred_vs_ref_struct_symmetry(
         dfs_sym_all[model_name],
         dfs_sym_all[Key.dft],
         df_structs[model_name].dropna().to_dict(),
         dft_structs,
+        pbar=dict(desc=f"{idx+1}/{n_models} Comparing DFT vs {model_name} symmetries"),
     )
 
 
