@@ -22,7 +22,6 @@ requirements:
   numpy: 1.24.0
   pandas: 1.5.1
 
-pred_col: e_form_per_atom_mp2020_corrected_pred_ens
 openness: OSOD
 trained_for_benchmark: true
 train_task: RS2RE
@@ -43,6 +42,8 @@ notes:
 
 metrics:
   discovery:
+    pred_file: models/cgcnn/2023-01-26-cgcnn-ens=10-wbm-IS2RE.csv.gz
+    pred_col: e_form_per_atom_mp2020_corrected_pred_ens
     full_test_set:
       F1: 0.51
       DAF: 2.631

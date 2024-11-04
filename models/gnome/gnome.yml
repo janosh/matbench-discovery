@@ -32,7 +32,6 @@ requirements:
   numpy: 1.26.2
   pymatgen: 2023.11.12
 
-pred_col: e_gnome_after_relax
 openness: OSCD
 trained_for_benchmark: false
 train_task: S2EFS
@@ -60,6 +59,8 @@ notes:
 
 metrics:
   discovery:
+    pred_file: models/gnome/2023-11-01-gnome-preds-50076332.csv.gz
+    pred_col: e_gnome_after_relax
     full_test_set:
       F1: 0.81
       DAF: 4.81

@@ -24,7 +24,6 @@ requirements:
   numpy: 1.24.0
   pandas: 1.5.1
 
-pred_col: e_form_per_atom_m3gnet
 openness: OSOD
 trained_for_benchmark: false
 train_task: S2EFS
@@ -50,6 +49,8 @@ notes:
 
 metrics:
   discovery:
+    pred_file: models/m3gnet/2023-12-28-m3gnet-wbm-IS2RE.csv.gz
+    pred_col: e_form_per_atom_m3gnet
     full_test_set:
       F1: 0.576
       DAF: 2.647

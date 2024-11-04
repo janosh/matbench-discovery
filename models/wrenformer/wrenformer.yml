@@ -26,7 +26,6 @@ requirements:
   numpy: 1.24.0
   pandas: 1.5.1
 
-pred_col: e_form_per_atom_wrenformer_pred_ens
 openness: OSOD
 trained_for_benchmark: true
 train_task: RP2RE
@@ -48,6 +47,8 @@ notes:
 
 metrics:
   discovery:
+    pred_file: models/wrenformer/2022-11-15-wrenformer-ens=10-IS2RE-preds.csv.gz
+    pred_col: e_form_per_atom_wrenformer_pred_ens
     full_test_set:
       F1: 0.479
       DAF: 2.13

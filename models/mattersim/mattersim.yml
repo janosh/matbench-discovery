@@ -81,7 +81,6 @@ requirements:
   numpy: 1.26.2
   pymatgen: 2024.5.1
 
-pred_col: e_form_per_atom_mattersim
 openness: CSCD
 trained_for_benchmark: false
 train_task: S2EFS
@@ -121,6 +120,8 @@ notes:
 
 metrics:
   discovery:
+    pred_file: models/mattersim/2024-06-16-mattersim-wbm-IS2RE.csv.gz
+    pred_col: e_form_per_atom_mattersim
     full_test_set:
       F1: 0.832
       DAF: 4.838

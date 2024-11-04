@@ -28,7 +28,6 @@ requirements:
   numpy: 1.24.0
   pandas: 1.5.1
 
-pred_col: e_form_per_atom_bowsr_megnet
 openness: OSOD
 trained_for_benchmark: false
 train_task: RS2RE
@@ -57,6 +56,8 @@ notes:
 
 metrics:
   discovery:
+    pred_file: models/bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv.gz
+    pred_col: e_form_per_atom_bowsr_megnet
     full_test_set:
       F1: 0.437
       DAF: 1.836

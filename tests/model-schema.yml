@@ -132,8 +132,6 @@ properties:
   openness:
     type: string
     enum: [OSOD, OSCD, CSOD, CSCD]
-  pred_col:
-    type: string
   status:
     type: string
     enum: [aborted, complete]
@@ -146,6 +144,10 @@ properties:
         type: object
         properties:
           additionalProperties: false
+          pred_file:
+            type: string
+          pred_col:
+            type: string
           full_test_set: &discovery_metrics
             type: object
             additionalProperties: false
@@ -201,7 +203,6 @@ required:
   - model_version
   - n_estimators
   - paper
-  - pred_col
   - repo
   - requirements
   - targets

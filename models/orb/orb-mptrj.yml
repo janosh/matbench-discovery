@@ -30,7 +30,6 @@ url: https://orbitalmaterials.com/post/technical-blog-introducing-the-orb-ai-bas
 doi: "#" # placeholder
 paper: "#" # placeholder
 
-pred_col: e_form_per_atom_orb
 openness: OSOD
 trained_for_benchmark: true
 train_task: S2EFS
@@ -70,6 +69,8 @@ notes:
 
 metrics:
   discovery:
+    pred_file: models/orb/orbff-mptrj-only-v2-20241014.csv.gz
+    pred_col: e_form_per_atom_orb
     full_test_set:
       F1: 0.755
       DAF: 4.188

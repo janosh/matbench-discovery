@@ -41,7 +41,6 @@ requirements:
   scikit-learn: 1.2.2
   torch: 1.9.0+cu111
 
-pred_col: e_form_per_atom_alignn_ff
 targets: EFS_C
 train_task: S2EFS
 test_task: IS2RE
@@ -54,3 +53,8 @@ trained_for_benchmark: true
 
 training_set: [MPtrj]
 status: aborted
+
+metrics:
+  discovery:
+    pred_file: models/alignn_ff/2023-07-11-alignn-ff-wbm-IS2RE.csv.gz
+    pred_col: e_form_per_atom_alignn_ff

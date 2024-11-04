@@ -21,6 +21,7 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from tqdm import tqdm
 
+from matbench_discovery import today
 from matbench_discovery.data import DataFiles
 from matbench_discovery.energy import get_e_form_per_atom
 
@@ -170,5 +171,5 @@ if __name__ == "__main__":
         init_wbm_atoms_list, backbone="graphormer"
     )
     parse_relaxed_atoms_list_as_df(relaxed_wbm_atoms_list).to_csv(
-        "mattersim-wbm-IS2RE.csv.gz"
+        f"{today}-mattersim-wbm-IS2RE.csv.gz"
     )

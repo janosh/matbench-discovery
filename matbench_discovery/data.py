@@ -413,7 +413,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     gnome = "gnome/2023-11-01-gnome-preds-50076332.csv.gz", "gnome/gnome.yml", "GNoME"
 
     # MatterSim
-    mattersim = "mattersim/mattersim-wbm-IS2RE.csv.gz", "mattersim/mattersim.yml", "MatterSim"  # fmt: skip
+    mattersim = "mattersim/2024-06-16-mattersim-wbm-IS2RE.csv.gz", "mattersim/mattersim.yml", "MatterSim"  # fmt: skip
 
     # ORB
     orb = "orb/orbff-v2-20241011.csv.gz", "orb/orb.yml", "ORB"

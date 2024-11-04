@@ -25,7 +25,6 @@ requirements:
   numpy: 1.24.0
   pandas: 1.5.1
 
-pred_col: e_form_per_atom_voronoi_rf
 openness: OSOD
 trained_for_benchmark: true
 train_task: RS2RE
@@ -43,6 +42,8 @@ notes:
 
 metrics:
   discovery:
+    pred_file: models/voronoi_rf/2022-11-27-train-test/e-form-preds-IS2RE.csv.gz
+    pred_col: e_form_per_atom_voronoi_rf
     full_test_set:
       F1: 0.344
       DAF: 1.509

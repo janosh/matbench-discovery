@@ -78,11 +78,12 @@ export interface ModelMetadata {
   model_type: 'GNN' | 'UIP' | 'BO-GNN' | 'Fingerprint' | 'Transformer' | 'RF'
   targets: 'E' | 'EF_C' | 'EF_D' | 'EFS_C' | 'EFS_D' | 'EFS_CM' | 'EFS_DM'
   openness?: 'OSOD' | 'OSCD' | 'CSOD' | 'CSCD'
-  pred_col: string
   status?: 'aborted' | 'complete'
   metrics?: {
     discovery?: {
       additionalProperties?: never
+      pred_file?: string
+      pred_col?: string
       full_test_set?: {
         F1?: number
         DAF?: number
@@ -101,7 +102,7 @@ export interface ModelMetadata {
         RMSE?: number
         R2?: number
         missing_preds?: number
-        missing_percent?: number
+        missing_percent?: string
       }
       most_stable_10k?: {
         F1?: number
@@ -121,7 +122,7 @@ export interface ModelMetadata {
         RMSE?: number
         R2?: number
         missing_preds?: number
-        missing_percent?: number
+        missing_percent?: string
       }
       unique_prototypes?: {
         F1?: number
@@ -141,7 +142,7 @@ export interface ModelMetadata {
         RMSE?: number
         R2?: number
         missing_preds?: number
-        missing_percent?: number
+        missing_percent?: string
       }
     }
   }
