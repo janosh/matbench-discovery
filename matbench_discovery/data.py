@@ -493,11 +493,13 @@ def load_df_wbm_with_preds(
             # Get prediction column name from metadata
             model_key = getattr(Model, model_name)
             model_label = model_key.label
-            model_yaml_path = f"{ROOT}/models/{model_key.url}"
+            model_yaml_path = f"{Model.base_dir}/{model_key.url}"
             with open(model_yaml_path) as file:
                 model_data = yaml.safe_load(file)
 
-            pred_col = model_data.get("pred_col")
+            pred_col = (
+                model_data.get("metrics", {}).get("discovery", {}).get("pred_col")
+            )
             if not pred_col:
                 raise ValueError(
                     f"pred_col not specified for {model_name} in {model_yaml_path!r}"
