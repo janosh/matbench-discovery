@@ -143,7 +143,6 @@ def pred_vs_ref_struct_symmetry(
         pbar_kwargs = pbar if isinstance(pbar, dict) else {}
         shared_ids = tqdm(
             shared_ids,
-            desc="Calculating RMSD",
             **dict(leave=False, desc="Calculating RMSD") | pbar_kwargs,
         )
 

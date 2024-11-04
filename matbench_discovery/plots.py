@@ -629,7 +629,7 @@ def cumulative_metrics(
     # use log2-spaced sampling to get higher sampling density at equal file size for
     # start of the discovery campaign where model performance fluctuates more
     log_xs = np.logspace(0, np.log2(n_max_pred_stable - 1), n_points, base=2)
-    allowed_xs = np.sort(np.append(log_xs, n_pred_stable_per_model.to_numpy()))
+    allowed_xs = np.sort([*log_xs, *n_pred_stable_per_model])
     for metric in metrics:
         dfs[metric].index = allowed_xs
 
@@ -713,7 +713,7 @@ def cumulative_metrics(
         )
 
         for metric, ax in zip(
-            metrics, axs.flat if len(metrics) > 1 else [axs], strict=True
+            metrics, axs.flat if len(metrics) > 1 else [axs], strict=False
         ):
             # select every n-th row of df so that 1000 rows are left for increased
             # plotting speed and reduced file size
