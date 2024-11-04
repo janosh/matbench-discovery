@@ -1,9 +1,9 @@
 model_name: ORB
 model_version: v2
 matbench_discovery_version: 1.3.1
-date_added: "2024-10-11" # required
-date_published: "2024-10-11" # Update when paper published
-authors: # required (only name, other keys are optional)
+date_added: "2024-10-11"
+date_published: "2024-10-29"
+authors:
   - name: Mark Neumann
     affiliation: Orbital Materials
     email: mark@orbitalmaterials.com
@@ -27,8 +27,8 @@ authors: # required (only name, other keys are optional)
 
 repo: https://github.com/orbital-materials/orb-models
 url: https://orbitalmaterials.com/post/technical-blog-introducing-the-orb-ai-based-interatomic-potential
-doi: "#" # placeholder
-paper: "#" # placeholder
+doi: https://doi.org/10.48550/arXiv.2410.22570
+paper: https://arxiv.org/abs/2410.22570
 
 pred_col: e_form_per_atom_orb
 openness: OSCD
