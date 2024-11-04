@@ -8,6 +8,7 @@ import spglib
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Structure
 from pymatviz.enums import Key
+from tqdm import tqdm
 
 from matbench_discovery.enums import MbdKey
 
@@ -43,13 +44,14 @@ def perturb_structure(struct: Structure, gamma: float = 1.5) -> Structure:
 
 
 def analyze_symmetry(
-    structures: dict[str, Structure], *, pbar: bool = True
+    structures: dict[str, Structure], *, pbar: bool | dict[str, str] = True
 ) -> pd.DataFrame:
     """Analyze symmetry of a dictionary of structures using spglib.
 
     Args:
         structures (dict[str, Structure]): Map material IDs to pymatgen Structures
-        pbar (bool, optional): Whether to show progress bar. Defaults to True.
+        pbar (bool | dict[str, str], optional): Whether to show progress bar.
+            Defaults to True.
 
     Returns:
         pd.DataFrame: DataFrame containing symmetry information for each structure
@@ -65,14 +67,16 @@ def analyze_symmetry(
     }
 
     results: dict[str, dict[str, str | int | list[str]]] = {}
-    iterator = structures
+    iterator = structures.items()
     if pbar:
-        from tqdm.auto import tqdm
+        pbar_kwargs = pbar if isinstance(pbar, dict) else {}
+        iterator = tqdm(
+            iterator,
+            total=len(structures),
+            **dict(leave=False, desc="Analyzing symmetry") | pbar_kwargs,
+        )
 
-        iterator = tqdm(iterator, desc="Analyzing symmetry", leave=False)
-
-    for struct_key in iterator:
-        struct = structures[struct_key]
+    for struct_key, struct in iterator:
         cell = (struct.lattice.matrix, struct.frac_coords, struct.atomic_numbers)
         with warnings.catch_warnings():
             warnings.simplefilter(action="ignore", category=spglib.spglib.SpglibError)
@@ -100,6 +104,8 @@ def pred_vs_ref_struct_symmetry(
     df_sym_ref: pd.DataFrame,
     pred_structs: dict[str, Structure],
     ref_structs: dict[str, Structure],
+    *,
+    pbar: bool | dict[str, str] = True,
 ) -> pd.DataFrame:
     """Get RMSD and compare symmetry between ML and DFT reference structures.
 
@@ -113,6 +119,8 @@ def pred_vs_ref_struct_symmetry(
             analyze_symmetry.
         pred_structs (dict[str, Structure]): Map material IDs to ML-relaxed structures
         ref_structs (dict[str, Structure]): Map material IDs to reference structures
+        pbar (bool | dict[str, str], optional): Whether to show progress bar.
+            Defaults to True.
 
     Returns:
         pd.DataFrame: with added columns for symmetry differences
@@ -130,6 +138,14 @@ def pred_vs_ref_struct_symmetry(
 
     # Initialize RMSD column
     df_result[MbdKey.structure_rmsd_vs_dft] = None
+
+    if pbar:
+        pbar_kwargs = pbar if isinstance(pbar, dict) else {}
+        shared_ids = tqdm(
+            shared_ids,
+            desc="Calculating RMSD",
+            **dict(leave=False, desc="Calculating RMSD") | pbar_kwargs,
+        )
 
     for mat_id in shared_ids:
         rmsd, max_dist = structure_matcher.get_rms_dist(
