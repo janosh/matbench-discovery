@@ -25,7 +25,6 @@ requirements:
   numpy: 1.24.0
   pandas: 1.5.1
 
-pred_col: e_form_per_atom_voronoi_rf
 openness: OSOD
 trained_for_benchmark: true
 train_task: RS2RE
@@ -40,3 +39,66 @@ training_set: [MP 2022]
 notes:
   Description: A random forest trained to map the combo of composition-based Magpie features and structure-based relaxation-invariant Voronoi tessellation features (bond angles, coordination numbers, ...) to DFT formation energies.
   Long: This is an old model that predates most deep learning for materials but significantly improved over Coulomb matrix and partial radial distribution function methods. It therefore serves as a good baseline model to see what modern ML buys us.
+
+metrics:
+  geo_opt: not applicable
+  discovery:
+    pred_file: models/voronoi_rf/2022-11-27-train-test/e-form-preds-IS2RE.csv.gz
+    pred_col: e_form_per_atom_voronoi_rf
+    full_test_set:
+      F1: 0.344
+      DAF: 1.509
+      Precision: 0.259
+      Recall: 0.511
+      Accuracy: 0.665
+      TPR: 0.511
+      FPR: 0.303
+      TNR: 0.697
+      FNR: 0.489
+      TP: 22517.0
+      FP: 64431.0
+      TN: 148440.0
+      FN: 21575.0
+      MAE: 0.141
+      RMSE: 0.206
+      R2: -0.316
+      missing_preds: 19
+      missing_percent: 0.01%
+    most_stable_10k:
+      F1: 0.551
+      DAF: 2.487
+      Precision: 0.38
+      Recall: 1.0
+      Accuracy: 0.38
+      TPR: 1.0
+      FPR: 1.0
+      TNR: 0.0
+      FNR: 0.0
+      TP: 3802.0
+      FP: 6198.0
+      TN: 0.0
+      FN: 0.0
+      MAE: 0.349
+      RMSE: 0.417
+      R2: -1.012
+      missing_preds: 0
+      missing_percent: 0.00%
+    unique_prototypes:
+      F1: 0.333
+      DAF: 1.579
+      Precision: 0.241
+      Recall: 0.535
+      Accuracy: 0.668
+      TPR: 0.535
+      FPR: 0.308
+      TNR: 0.692
+      FNR: 0.465
+      TP: 17854.0
+      FP: 56122.0
+      TN: 125992.0
+      FN: 15520.0
+      MAE: 0.148
+      RMSE: 0.212
+      R2: -0.329
+      missing_preds: 2
+      missing_percent: 0.00%

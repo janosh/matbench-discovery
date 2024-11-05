@@ -26,7 +26,7 @@ n_cols = 3
 n_rows = math.ceil(len(models) / n_cols)
 
 
-test_subset = globals().get("test_subset", TestSubset.full)
+test_subset = globals().get("test_subset", TestSubset.uniq_protos)
 
 if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(Key.uniq_proto)

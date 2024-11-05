@@ -9,9 +9,10 @@ from pymatviz.enums import Key
 from pymatviz.utils import MATPLOTLIB, PLOTLY
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, today
+from matbench_discovery.data import Model
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
-from matbench_discovery.preds import Model, df_each_pred, df_preds
+from matbench_discovery.preds import df_each_pred, df_preds
 from matbench_discovery.preds import models as all_models
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
@@ -23,7 +24,7 @@ df_err, df_std = None, None  # variables to cache rolling MAE and std
 models = globals().get("models", all_models)
 
 
-test_subset = globals().get("test_subset", TestSubset.full)
+test_subset = globals().get("test_subset", TestSubset.uniq_protos)
 
 if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(Key.uniq_proto)

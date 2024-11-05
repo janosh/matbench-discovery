@@ -1,6 +1,7 @@
 # %%
 import itertools
 import subprocess
+from collections.abc import Sequence
 from datetime import date
 from glob import glob
 
@@ -8,7 +9,7 @@ import numpy as np
 import pandas as pd
 import yaml
 from pymatviz.enums import Key, eV_per_atom
-from pymatviz.io import df_to_html_table, df_to_pdf
+from pymatviz.io import df_to_html, df_to_pdf
 from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
 
@@ -17,7 +18,6 @@ from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.enums import MbdKey, Open, Targets
 from matbench_discovery.metrics import stable_metrics
 from matbench_discovery.models import MODEL_METADATA, model_is_compliant
-from matbench_discovery.preds import df_metrics, df_metrics_10k, df_metrics_uniq_protos
 
 try:
     from IPython.display import display
@@ -28,6 +28,47 @@ __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
 
 
+# %% Create discovery metrics dataframes from MODEL_METADATA
+def get_metrics_df(nested_keys: Sequence[str]) -> pd.DataFrame:
+    """Extract metrics from MODEL_METADATA into a DataFrame.
+    Returns a DataFrame with models as rows and metrics as columns."""
+    metrics_dict = {}
+    for model_name, metadata in MODEL_METADATA.items():
+        combined_metrics: dict[str, float] = {}
+        for nested_key in nested_keys:
+            metrics = metadata.get("metrics", {})
+            for sub_key in nested_key.split("."):
+                metrics = metrics.get(sub_key, {})
+            combined_metrics |= metrics
+        if combined_metrics:
+            metrics_dict[model_name] = combined_metrics
+
+    # Return DataFrame with models as rows instead of columns
+    return pd.DataFrame.from_dict(metrics_dict, orient="index")
+
+
+# Create DataFrames with models as rows
+df_metrics = get_metrics_df(["discovery.full_test_set"]).sort_values(
+    by=Key.f1, ascending=False
+)
+df_metrics_10k = get_metrics_df(["discovery.most_stable_10k"]).sort_values(
+    by=Key.f1, ascending=False
+)
+df_metrics_uniq_protos = get_metrics_df(
+    ["discovery.unique_prototypes", "structure"]
+).sort_values(by=Key.f1, ascending=False)
+df_metrics_uniq_protos = df_metrics_uniq_protos.drop(
+    columns=[MbdKey.missing_preds, MbdKey.missing_percent]
+)
+
+for df, title in (
+    (df_metrics, "Metrics for Full Test Set"),
+    (df_metrics_10k, "Metrics for 10k Most Stable Predictions"),
+    (df_metrics_uniq_protos, "Metrics for unique non-MP prototypes"),
+):
+    df.attrs["title"] = title
+
+
 # %%
 name_map = {
     "MEGNet RS2RE": "MEGNet",
@@ -36,8 +77,6 @@ name_map = {
 }
 date_added_col = "Date Added"
 model_name_col = "Model"
-df_metrics_uniq_protos.loc[Key.train_set.label] = ""
-df_metrics_uniq_protos.loc[date_added_col] = ""
 
 non_compliant_models = [
     key for key, meta in MODEL_METADATA.items() if not model_is_compliant(meta)
@@ -46,8 +85,8 @@ non_compliant_models = [
 with open(f"{DATA_DIR}/training-sets.yml") as file:
     TRAINING_SETS = yaml.safe_load(file)
 
-# add model metadata to df_metrics(_10k, _uniq_protos)
-for model in df_metrics:
+# Add model metadata to df_metrics(_10k, _uniq_protos)
+for model in df_metrics_uniq_protos.index:
     if model == "Dummy":
         continue
     model_name = name_map.get(model, model)
@@ -58,7 +97,7 @@ for model in df_metrics:
         date_added = model_metadata.get("date_added", "")
         # long format date for tooltip, e.g. Monday, 28 November 2022
         title = f"{date.fromisoformat(date_added):%A, %d %B %Y}"
-        df_metrics_uniq_protos.loc[date_added_col, model] = (
+        df_metrics_uniq_protos.loc[model, date_added_col] = (
             f"<span {title=}>{date_added}</span>"
         )
 
@@ -67,10 +106,9 @@ for model in df_metrics:
         tar_label = model_targets.label.replace(
             "<sub>", "<sub style='font-size: 0.8em;'>"
         )
-        df_metrics_uniq_protos.loc[Key.targets.label, model] = (
+        df_metrics_uniq_protos.loc[model, Key.targets.label] = (
             f'<span title="{model_targets.description}" '
-            f'data-targets="{model_metadata[Key.targets]}">'
-            f"{tar_label}</span>"
+            f'data-targets="{model_metadata[Key.targets]}">{tar_label}</span>'
         )
 
         # Add model version as hover tooltip to model name
@@ -82,7 +120,7 @@ for model in df_metrics:
             "data-model-key": model_key,
         }
         html_attr_str = " ".join(f'{k}="{v}"' for k, v in attrs.items() if v)
-        df_metrics_uniq_protos.loc[model_name_col, model] = (
+        df_metrics_uniq_protos.loc[model, model_name_col] = (
             f"<span {html_attr_str}>{model}</span>"
         )
 
@@ -154,7 +192,7 @@ for model in df_metrics:
                     f" ({dataset_str})</span>"
                 )
 
-            df_metrics_uniq_protos.loc[Key.train_set.label, model] = train_size_str
+            df_metrics_uniq_protos.loc[model, Key.train_set.label] = train_size_str
         elif model == "Dummy":
             continue
         else:
@@ -172,7 +210,7 @@ for model in df_metrics:
         title = f"{model_params:,} trainable model parameters"
         formatted_params = si_fmt(model_params)
         df_metrics_uniq_protos.loc[
-            Key.model_params.label.replace("eter", ""), model
+            model, Key.model_params.label.replace("eter", "")
         ] = (
             f'<span {title=} data-sort-value="{model_params}">{formatted_params}'
             f"</span>{n_estimators_str}"
@@ -180,7 +218,7 @@ for model in df_metrics:
 
         for key in (MbdKey.openness, Key.train_task, Key.test_task):
             default = {MbdKey.openness: Open.OSOD}.get(key, pd.NA)
-            df_metrics_uniq_protos.loc[key.label, model] = model_metadata.get(
+            df_metrics_uniq_protos.loc[model, key.label] = model_metadata.get(
                 key, default
             )
     except Exception as exc:
@@ -189,7 +227,7 @@ for model in df_metrics:
 
 # assign this col to all tables
 for df in (df_metrics, df_metrics_10k, df_metrics_uniq_protos):
-    df.loc[model_name_col] = df_metrics_uniq_protos.loc[model_name_col]
+    df[model_name_col] = df_metrics_uniq_protos[model_name_col]
 
 
 # %% add dummy classifier results to df_metrics(_10k, _uniq_protos)
@@ -218,7 +256,7 @@ for df_in, df_out, col in (
     dummy_metrics["MAE"] = (each_true - each_true.mean()).abs().mean()
     dummy_metrics["RMSE"] = ((each_true - each_true.mean()) ** 2).mean() ** 0.5
 
-    df_out[col] = dummy_metrics | {model_name_col: col}
+    df_out.loc[col] = dummy_metrics | {model_name_col: col}
 
 
 # %%
@@ -253,9 +291,11 @@ for (label, df_met), show_non_compliant in itertools.product(
     (True, False),
 ):
     # abbreviate long column names
-    df_met = df_met.rename(index={"R2": R2_col, "Precision": "Prec", "Accuracy": "Acc"})
+    df_met = df_met.rename(
+        columns={"R2": R2_col, "Precision": "Prec", "Accuracy": "Acc"}
+    )
     # only keep columns we want to show
-    df_table = df_met.T.filter([model_name_col, *show_cols])
+    df_table = df_met.filter([model_name_col, *show_cols])
 
     if make_uip_megnet_comparison:
         df_table = df_table[
@@ -276,9 +316,7 @@ for (label, df_met), show_non_compliant in itertools.product(
 
     styler = (
         df_table.style.format(
-            # render integers without decimal places
-            dict.fromkeys("TP FN FP TN".split(), "{:,.0f}"),
-            precision=3,  # render floats with 2 decimals
+            dict.fromkeys(df_table.select_dtypes(float), "{:.3g}"),
             na_rep="",  # render NaNs as empty string
         )
         .background_gradient(
@@ -339,7 +377,7 @@ for (label, df_met), show_non_compliant in itertools.product(
     # Hide the original index since it's the same content same as model_name_col except
     # model_name_col also has HTML title attributes for hover tooltips
     styler.hide(axis="index")
-    df_to_html_table(
+    df_to_html(
         styler,
         file_path=f"{SITE_FIGS}/metrics-table{label}.svelte",
         inline_props="class='metrics'",
@@ -358,11 +396,11 @@ for (label, df_met), show_non_compliant in itertools.product(
     except (ImportError, RuntimeError, OSError) as exc:
         print(f"df_to_pdf failed: {exc}")
 
-    display(styler.set_caption(df_met.attrs.get("title")))
+    display(styler.set_caption(df_met.attrs["title"]))
 
 
 try:
-    # convert PDFs in site/static/figs to SVGs
+    # convert PDFs in site/static/figs to SVGs (needed for "download as SVG" button)
     for pdf_path in glob(f"{ROOT}/site/static/figs/metrics-table*.pdf"):
         subprocess.run(
             ["pdf2svg", pdf_path, pdf_path.replace(".pdf", ".svg")], check=False

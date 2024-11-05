@@ -131,3 +131,22 @@ MAE             0.044745     0.040998       0.046230
 RMSE            0.093426     0.102950       0.093919
 R2              0.732243     0.780546       0.739879
 ```
+
+## ORB-relaxed structures
+
+ORB-relaxed structures can be downloaded from:
+
+```bash
+~ $ gsutil ls gs://orbitalmaterials-public-models/matbench-evals/
+gs://orbitalmaterials-public-models/matbench-evals/
+gs://orbitalmaterials-public-models/matbench-evals/orb-mptraj-only-v2-20241014.json.gz
+gs://orbitalmaterials-public-models/matbench-evals/orb-v2-20241011.json.gz
+gs://orbitalmaterials-public-models/matbench-evals/orbff-mptraj-only-v1-20240827.json.gz
+gs://orbitalmaterials-public-models/matbench-evals/orbff-v1-20240827.json.gz
+```
+
+E.g. to download structures for a specific model, run:
+
+```bash
+gsutil cp gs://orbitalmaterials-public-models/matbench-evals/orb-mptraj-only-v2-20241014.json.gz matbench-discovery/models/orb/
+```

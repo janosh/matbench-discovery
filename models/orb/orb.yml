@@ -1,17 +1,17 @@
 model_name: ORB
 model_version: v2
 matbench_discovery_version: 1.3.1
-date_added: "2024-10-11" # required
-date_published: "2024-10-11" # Update when paper published
-authors: # required (only name, other keys are optional)
+date_added: "2024-10-11"
+date_published: "2024-10-29"
+authors:
   - name: Mark Neumann
     affiliation: Orbital Materials
     email: mark@orbitalmaterials.com
-    corresponding: True
+    corresponding: true
   - name: Jonathan Godwin
     affiliation: Orbital Materials
     email: jonathan@orbitalmaterials.com
-    corresponding: True
+    corresponding: true
   - name: James Gin-Pollock
     affiliation: Orbital Materials
   - name: Zhiyi Li
@@ -27,10 +27,9 @@ authors: # required (only name, other keys are optional)
 
 repo: https://github.com/orbital-materials/orb-models
 url: https://orbitalmaterials.com/post/technical-blog-introducing-the-orb-ai-based-interatomic-potential
-doi: "#" # placeholder
-paper: "#" # placeholder
+doi: https://doi.org/10.48550/arXiv.2410.22570
+paper: https://arxiv.org/abs/2410.22570
 
-pred_col: e_form_per_atom_orb
 openness: OSCD
 trained_for_benchmark: false
 train_task: S2EFS
@@ -67,3 +66,68 @@ training_set: [MPtrj, Alex]
 notes:
   Description: |
     ORB is a pretrained model for atomic simulations. ORB uses a pretrained diffusion model backbone which is fine-tuned on MPtrj + Alexandria.
+
+metrics:
+  geo_opt:
+    pred_file: models/orb/orb-v2-20241011.json.gz
+    pred_col: orb_structure
+  discovery:
+    pred_file: models/orb/orbff-v2-20241011.csv.gz
+    pred_col: e_form_per_atom_orb
+    full_test_set:
+      F1: 0.858
+      DAF: 5.281
+      Precision: 0.906
+      Recall: 0.815
+      Accuracy: 0.954
+      TPR: 0.815
+      FPR: 0.017
+      TNR: 0.983
+      FNR: 0.185
+      TP: 35949.0
+      FP: 3725.0
+      TN: 209146.0
+      FN: 8143.0
+      MAE: 0.028
+      RMSE: 0.078
+      R2: 0.814
+      missing_preds: 2
+      missing_percent: 0.00%
+    most_stable_10k:
+      F1: 0.985
+      DAF: 6.348
+      Precision: 0.97
+      Recall: 1.0
+      Accuracy: 0.97
+      TPR: 1.0
+      FPR: 1.0
+      TNR: 0.0
+      FNR: 0.0
+      TP: 9704.0
+      FP: 296.0
+      TN: 0.0
+      FN: 0.0
+      MAE: 0.019
+      RMSE: 0.068
+      R2: 0.897
+      missing_preds: 0
+      missing_percent: 0.00%
+    unique_prototypes:
+      F1: 0.88
+      DAF: 6.041
+      Precision: 0.924
+      Recall: 0.841
+      Accuracy: 0.965
+      TPR: 0.841
+      FPR: 0.013
+      TNR: 0.987
+      FNR: 0.159
+      TP: 28055.0
+      FP: 2323.0
+      TN: 179791.0
+      FN: 5319.0
+      MAE: 0.028
+      RMSE: 0.077
+      R2: 0.824
+      missing_preds: 0
+      missing_percent: 0.00%

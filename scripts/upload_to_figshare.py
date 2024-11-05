@@ -167,7 +167,7 @@ def main(pyproject: dict[str, Any], urls_json_path: str) -> int:
                 "download": "https://figshare.com/ndownloader/files/41619375",
             },
         }
-        with open(urls_json_path, "w") as file:
+        with open(urls_json_path, mode="w") as file:
             json.dump(figshare_urls, file)
     except Exception as exc:  # prompt to delete article if something went wrong
         if file_path := str(locals().get("file_path", "")):

@@ -39,7 +39,6 @@ requirements:
   pymatgen: 2022.10.22
   numpy: 1.24.0
 
-pred_col: e_form_per_atom_chgnet
 openness: OSOD
 trained_for_benchmark: false
 train_task: S2EFSM
@@ -60,3 +59,68 @@ notes:
     ![CHGNet Pipeline](https://user-images.githubusercontent.com/30958850/222924937-1d09bbce-ee18-4b19-8061-ec689cd15887.svg)
   Training: Using pre-trained model with 400,438 params released with paper. The MPtrj data set used to train CHGNet was pulled in September 2022 from the at-the-time latest [v2021.11.10 MP release](https://docs.materialsproject.org/changes/database-versions#v2021.11.10) (see [description for construction of MPtrj](https://github.com/CederGroupHub/chgnet/blob/7c21a9488/examples/QueryMPtrj.md)). The CHGNet authors' MPtrj data set has since been used to train other models like [MACE-MP](https://arxiv.org/abs/2401.00096) and [Equiformer v1/2](https://github.com/pbenner/equitrain).
   Corrections: Unlike e.g. [M3GNet](/models/m3gnet) which predicts raw DFT energies, CHGNet targets include MP2020 corrections. Hence no need to correct again.
+
+metrics:
+  geo_opt:
+    pred_file: models/chgnet/2023-12-21-chgnet-0.3.0-wbm-IS2RE.json.gz
+    pred_col: chgnet_structure
+  discovery:
+    pred_file: models/chgnet/2023-12-21-chgnet-0.3.0-wbm-IS2RE.csv.gz
+    pred_col: e_form_per_atom_chgnet
+    full_test_set:
+      F1: 0.612
+      DAF: 3.038
+      Precision: 0.521
+      Recall: 0.74
+      Accuracy: 0.839
+      TPR: 0.74
+      FPR: 0.141
+      TNR: 0.859
+      FNR: 0.26
+      TP: 32642.0
+      FP: 29979.0
+      TN: 182892.0
+      FN: 11450.0
+      MAE: 0.061
+      RMSE: 0.1
+      R2: 0.69
+      missing_preds: 2
+      missing_percent: 0.00%
+    most_stable_10k:
+      F1: 0.92
+      DAF: 5.567
+      Precision: 0.851
+      Recall: 1.0
+      Accuracy: 0.851
+      TPR: 1.0
+      FPR: 1.0
+      TNR: 0.0
+      FNR: 0.0
+      TP: 8511.0
+      FP: 1489.0
+      TN: 0.0
+      FN: 0.0
+      MAE: 0.063
+      RMSE: 0.095
+      R2: 0.816
+      missing_preds: 0
+      missing_percent: 0.00%
+    unique_prototypes:
+      F1: 0.613
+      DAF: 3.361
+      Precision: 0.514
+      Recall: 0.758
+      Accuracy: 0.851
+      TPR: 0.758
+      FPR: 0.132
+      TNR: 0.868
+      FNR: 0.242
+      TP: 25313.0
+      FP: 23955.0
+      TN: 158159.0
+      FN: 8061.0
+      MAE: 0.063
+      RMSE: 0.103
+      R2: 0.689
+      missing_preds: 0
+      missing_percent: 0.00%

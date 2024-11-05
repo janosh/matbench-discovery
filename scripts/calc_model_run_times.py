@@ -16,15 +16,9 @@ import wandb.apis.public
 from pymatviz.utils import PLOTLY
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, SITE_FIGS, SITE_LIB, WANDB_PATH
-from matbench_discovery.preds import (
-    df_metrics,
-    df_metrics_10k,
-    df_metrics_uniq_protos,
-    df_preds,
-    model_styles,
-)
-from matbench_discovery.preds import models as all_models
+from matbench_discovery import SITE_FIGS, WANDB_PATH
+from matbench_discovery.data import Model, round_trip_yaml
+from matbench_discovery.preds import model_styles
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
@@ -117,38 +111,32 @@ test_stats["CGCNN+P"] = {}
 
 
 # %%
-stats_dict = {
-    "": df_metrics,
-    "-10k": df_metrics_10k,
-    "-uniq-protos": df_metrics_uniq_protos,
-}
-for label, df_tmp in stats_dict.items():
-    df_train_stats = pd.DataFrame(train_stats).add_prefix("Train ", axis="index")
-    df_test_stats = pd.DataFrame(test_stats).add_prefix("Test ", axis="index")
-    df_tmp = pd.concat([df_tmp, df_train_stats, df_test_stats]).T
+df_train_stats = pd.DataFrame(train_stats).add_prefix("Train ", axis="index")
+df_test_stats = pd.DataFrame(test_stats).add_prefix("Test ", axis="index")
+df_model_cost = pd.concat([df_train_stats, df_test_stats]).T
 
-    df_tmp[time_col] = df_tmp.filter(like=time_col).sum(axis="columns")
+# sum over train and test run times
+df_model_cost[time_col] = df_model_cost.filter(like=time_col).sum(axis="columns")
 
-    # write model metrics to json for website use
-    df_tmp["missing_preds"] = df_preds[all_models].isna().sum()
-    df_tmp["missing_percent"] = [
-        f"{x / len(df_preds):.2%}" for x in df_tmp.missing_preds
-    ]
+df_model_cost.attrs["All Models Run Time"] = df_model_cost[time_col].sum()
 
-    df_tmp.attrs["All Models Run Time"] = df_tmp[time_col].sum()
+# write stats for different data subsets to JSON
 
-    # write stats for different data subsets to JSON
-    df_tmp.drop(columns=["Dummy", "Model"], errors="ignore").round(3).to_json(
-        f"{SITE_LIB}/model-stats{label}.json", orient="index"
-    )
-    stats_dict[label] = df_tmp  # save concatenated dataframe for plotting below
+for model in Model:
+    if model.label not in df_model_cost.index:
+        continue
+    yaml_path = f"{Model.base_dir}/{model.url}"
 
-df_stats = stats_dict[""]
+    with open(yaml_path) as file:
+        model_metadata = round_trip_yaml.load(file)
+    model_metadata["run_time"] = df_model_cost.loc[model.label, time_col]
+    with open(yaml_path, mode="w") as file:
+        round_trip_yaml.dump(model_metadata, file)
 
 
 # %%
 df_time = (
-    df_stats.sort_index()
+    df_model_cost.sort_index()
     .filter(like=time_col)
     .round(1)
     # maybe remove BOWSR since it used so much more compute time than the other models
@@ -177,7 +165,7 @@ fig = px.pie(
     showlegend=False,
 )
 fig.layout.margin.update(l=0, r=0, t=0, b=0)
-title = f"Total CPU+GPU<br>time used:<br>{df_stats[time_col].sum():.1f} h"
+title = f"Total CPU+GPU<br>time used:<br>{df_model_cost[time_col].sum():.1f} h"
 fig.add_annotation(text=title, font=dict(size=15), x=0.5, y=0.5, showarrow=False)
 pie_path = f"{SITE_FIGS}/model-run-times-pie.svelte"
 # pmv.save_fig(fig, pie_path)
@@ -216,7 +204,7 @@ fig = df_melt.dropna().plot.bar(
 # reduce bar width
 fig.update_traces(width=0.8)
 
-title = f"All models: {df_stats[time_col].sum():.0f} h"
+title = f"All models: {df_model_cost[time_col].sum():.0f} h"
 fig.layout.legend.update(title=title, orientation="h", xanchor="center", x=0.4, y=1.2)
 fig.layout.xaxis.title = ""
 fig.layout.margin.update(l=0, r=0, t=0, b=0)
@@ -237,4 +225,4 @@ pdf_fig.add_annotation(
     xref="paper",
     yref="paper",
 )
-pmv.save_fig(pdf_fig, f"{PDF_FIGS}/model-run-times-bar.pdf", height=300, width=800)
+# pmv.save_fig(pdf_fig, f"{PDF_FIGS}/model-run-times-bar.pdf", height=300, width=800)
