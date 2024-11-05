@@ -76,7 +76,9 @@ def test_glob_to_df(pattern: str, tmp_path: Path, df_mixed: pd.DataFrame) -> Non
     "dummy_atoms",
     [dummy_atoms, {"atoms1": atoms1, "atoms2": atoms2}],
 )
-def test_atoms_zip_round_trip(tmp_path: Path, dummy_atoms: dict[str, Atoms]) -> None:
+def test_atoms_zip_round_trip(
+    tmp_path: Path, dummy_atoms: dict[str, Atoms] | list[Atoms]
+) -> None:
     # Write atoms to a temporary ZIP file
     zip_path = tmp_path / "test_structures.zip"
     ase_atoms_to_zip(dummy_atoms, zip_path)
