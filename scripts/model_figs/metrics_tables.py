@@ -384,7 +384,7 @@ for (label, df_met), show_non_compliant in itertools.product(
     if kappa_srme_col in df_table:
         kappa_srme_col_idx = styler.columns.get_loc(kappa_srme_col) + 1
     else:
-        kappa_srme_col_idx = ""
+        kappa_srme_col_idx = 0
 
     # https://stackoverflow.com/a/38994837
     hide_scroll_bar = """
