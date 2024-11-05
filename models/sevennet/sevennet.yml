@@ -18,7 +18,7 @@ authors: # required (only name, other keys are optional)
     affiliation: Seoul National University, Korea Institute for Advanced Study
     email: hansw@snu.ac.kr
     orcid: https://orcid.org/0000-0003-3958-0922
-    corresponding: True
+    corresponding: true
 trained_by:
   - name: Saerom Choi
     affiliation: Samsung Advanced Institute of Technology, Seoul National University
@@ -29,7 +29,6 @@ doi: https://doi.org/10.1021/acs.jctc.4c00190
 paper: https://arxiv.org/abs/2402.03789
 pypi: https://pypi.org/project/sevenn
 
-pred_col: e_form_per_atom_sevennet
 openness: OSOD
 trained_for_benchmark: false
 train_task: S2EFS
@@ -70,3 +69,68 @@ notes:
   Description: |
     SevenNet is a graph neural network interatomic potential package that supports parallel molecular dynamics simulations.
     In the SevenNet-0 model, based on the NequIP architecture, the tensor product in the self-connection layer, which includes numerous element-specific parameters, is replaced by a linear (or self-interaction) layer, this reduces the number of parameters from 16_240_000 (c.f. GNoME) to 842_440.
+
+metrics:
+  geo_opt:
+    pred_file: null # TODO find .json.gz file, I had it somewhere!
+    pred_col: null
+  discovery:
+    pred_file: models/sevennet/2024-07-11-sevennet-preds.csv.gz
+    pred_col: e_form_per_atom_sevennet
+    full_test_set:
+      F1: 0.719
+      DAF: 3.804
+      Precision: 0.653
+      Recall: 0.8
+      Accuracy: 0.893
+      TPR: 0.8
+      FPR: 0.088
+      TNR: 0.912
+      FNR: 0.2
+      TP: 35259.0
+      FP: 18765.0
+      TN: 194106.0
+      FN: 8833.0
+      MAE: 0.046
+      RMSE: 0.09
+      R2: 0.75
+      missing_preds: 3
+      missing_percent: 0.00%
+    most_stable_10k:
+      F1: 0.945
+      DAF: 5.857
+      Precision: 0.895
+      Recall: 1.0
+      Accuracy: 0.895
+      TPR: 1.0
+      FPR: 1.0
+      TNR: 0.0
+      FNR: 0.0
+      TP: 8954.0
+      FP: 1046.0
+      TN: 0.0
+      FN: 0.0
+      MAE: 0.054
+      RMSE: 0.124
+      R2: 0.7
+      missing_preds: 0
+      missing_percent: 0.00%
+    unique_prototypes:
+      F1: 0.724
+      DAF: 4.252
+      Precision: 0.65
+      Recall: 0.818
+      Accuracy: 0.904
+      TPR: 0.818
+      FPR: 0.081
+      TNR: 0.919
+      FNR: 0.182
+      TP: 27304.0
+      FP: 14703.0
+      TN: 167411.0
+      FN: 6070.0
+      MAE: 0.048
+      RMSE: 0.092
+      R2: 0.75
+      missing_preds: 0
+      missing_percent: 0.00%

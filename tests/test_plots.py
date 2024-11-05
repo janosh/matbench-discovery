@@ -7,6 +7,7 @@ import pytest
 from pymatviz.enums import Key
 from pymatviz.utils import BACKENDS, MATPLOTLIB, PLOTLY
 
+from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.plots import (
     Backend,
@@ -16,7 +17,6 @@ from matbench_discovery.plots import (
     plotly_markers,
     rolling_mae_vs_hull_dist,
 )
-from matbench_discovery.preds import load_df_wbm_with_preds
 
 AxLine = Literal["x", "y", "xy", ""]
 models = ["MEGNet", "CGCNN", "Voronoi RF"]

@@ -3,7 +3,7 @@ from crystal_toolkit.helpers.utils import hook_up_fig_with_struct_viewer
 from pymatviz.enums import Key
 from pymatviz.utils import PLOTLY
 
-from matbench_discovery.preds import Model
+from matbench_discovery.data import Model
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-07"
@@ -67,4 +67,4 @@ app = hook_up_fig_with_struct_viewer(
     # validate_id requires material_id to be hover_name
     validate_id=lambda mat_id: mat_id.startswith(("wbm-", "mp-", "mvc-")),
 )
-app.run(debug=True, port=8000)
+app.run()

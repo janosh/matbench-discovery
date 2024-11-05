@@ -14,9 +14,8 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import timestamp, today
-from matbench_discovery.data import DataFiles, as_dict_handler
+from matbench_discovery.data import DataFiles, Model, as_dict_handler
 from matbench_discovery.enums import Task
-from matbench_discovery.preds import Model
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
@@ -124,7 +123,7 @@ for material_id in tqdm(structures, desc="Relaxing", disable=None):
         )
         optimizer.set_bounds()
         # reason for /dev/null: https://github.com/materialsvirtuallab/maml/issues/469
-        with open(os.devnull, "w") as devnull, contextlib.redirect_stdout(devnull):
+        with open(os.devnull, mode="w") as devnull, contextlib.redirect_stdout(devnull):
             optimizer.optimize(**optimize_kwargs)
 
         struct_bowsr, energy_bowsr = optimizer.get_optimized_structure_and_energy()

@@ -1,6 +1,7 @@
 import type { ModelMetadata } from './model-schema.d.ts'
 
-export type ModelData = ModelMetadata & ModelStats & { dirname: string }
+export type ModelData = ModelMetadata &
+  ModelStats & { dirname: string; metadata_file: string }
 // dirname comes from: models/{dirname}/{model_name}.yml
 
 export type ModelStats = {

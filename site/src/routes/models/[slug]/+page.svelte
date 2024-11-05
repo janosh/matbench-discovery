@@ -2,7 +2,7 @@
   import { dev } from '$app/environment'
   import { page } from '$app/stores'
   import per_elem_each_errors from '$figs/per-element-each-errors.json'
-  import { PtableInset } from '$lib'
+  import { MODEL_METADATA, PtableInset } from '$lib'
   import TRAINING_SETS from '$root/data/training-sets.yml'
   import pkg from '$site/package.json'
   import Icon from '@iconify/svelte'
@@ -16,8 +16,8 @@
   } from 'elementari'
   import { CopyButton, Tooltip } from 'svelte-zoo'
 
-  export let data
-  $: model = data.model
+  $: model_key = $page.params.slug.replaceAll(`-`, ` `).toLowerCase()
+  $: model = MODEL_METADATA.find((model) => model.model_name.toLowerCase() == model_key)
   let color_scale: string[] = [`Viridis`]
   let active_element: ChemicalElement | null = null
 
@@ -26,7 +26,7 @@
     return (
       (new Date().getTime() - new Date(dateString).getTime()) /
       (1000 * 60 * 60 * 24)
-    ).toLocaleString('en-US', { maximumFractionDigits: 0 })
+    ).toLocaleString(`en-US`, { maximumFractionDigits: 0 })
   }
 
   export const snapshot = {
@@ -88,7 +88,7 @@
       {/if}
       {#if model.pypi}
         <code>
-          pip install {model.pypi.split('/').pop()}
+          pip install {model.pypi.split(`/`).pop()}
           <!-- TODO add custom CopyButton labels to remove text -->
           <CopyButton />
         </code>
@@ -111,7 +111,7 @@
         <Icon icon="academicons:doi" inline /> DOI
       </a>
       <a
-        href={`${pkg.repository}/blob/-/models/${model.dirname?.split('/').pop()}`}
+        href={`${pkg.repository}/blob/-/models/${model.dirname?.split(`/`).pop()}`}
         target="_blank"
         rel="noopener noreferrer"
       >
@@ -124,7 +124,7 @@
       {/if}
     </section>
 
-    {#each [['e-form', 'Formation Energies'], ['each', 'Convex Hull Distance']] as [which_energy, title]}
+    {#each [[`e-form`, `Formation Energies`], [`each`, `Convex Hull Distance`]] as [which_energy, title]}
       {#await import(`$figs/energy-parity/${which_energy}-parity-${model.model_name.toLowerCase().replaceAll(` `, `-`)}.svelte`) then ParityPlot}
         <!-- negative margin-bottom corrects for display: none plot title -->
         <h3 style="margin-bottom: -2em;">
@@ -230,7 +230,7 @@
     <section class="model-info">
       <h2>Model Info</h2>
       <ul>
-        {#each [['Model Version', model.model_version], ['Model Type', model.model_type], ['Targets', model.targets], ['Openness', model.openness], ['Train Task', model.train_task], ['Test Task', model.test_task], ['Trained for Benchmark', model.trained_for_benchmark ? `Yes` : `No`]] as [key, value]}
+        {#each [[`Model Version`, model.model_version], [`Model Type`, model.model_type], [`Targets`, model.targets], [`Openness`, model.openness], [`Train Task`, model.train_task], [`Test Task`, model.test_task], [`Trained for Benchmark`, model.trained_for_benchmark ? `Yes` : `No`]] as [key, value]}
           <li>
             {key}
             <strong>{value}</strong>

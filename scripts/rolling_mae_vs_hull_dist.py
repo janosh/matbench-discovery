@@ -6,9 +6,10 @@ from pymatviz.enums import Key
 from pymatviz.utils import MATPLOTLIB, PLOTLY
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery.data import Model
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
-from matbench_discovery.preds import Model, df_each_pred, df_metrics, df_wbm
+from matbench_discovery.preds import df_each_pred, df_metrics, df_wbm
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"

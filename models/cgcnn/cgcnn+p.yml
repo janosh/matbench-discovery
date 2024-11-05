@@ -26,7 +26,6 @@ requirements:
   numpy: 1.24.0
   pandas: 1.5.1
 
-pred_col: e_form_per_atom_cgcnn_pred_ens
 openness: OSOD
 trained_for_benchmark: true
 train_task: S2RE
@@ -46,3 +45,66 @@ notes:
     This work proposes simple structure perturbations to augment CGCNN's training data of relaxed structures with randomly perturbed ones resembling unrelaxed structures that are mapped to the same DFT final energy during training.
     ![Step function PES](https://media.springernature.com/full/springer-static/image/art%3A10.1038%2Fs41524-022-00891-8/MediaObjects/41524_2022_891_Fig1_HTML.png?as=webp)
   Long: The model is essentially taught the potential energy surface (PES) is a step-function that maps each valley to its local minimum. The expectation is that during testing on unrelaxed structures, the model will predict the energy of the nearest basin in the PES. The authors confirm this by demonstrating a lowering of the energy error on unrelaxed structures.
+
+metrics:
+  geo_opt: not applicable
+  discovery:
+    pred_file: models/cgcnn/2023-02-05-cgcnn-perturb=5-wbm-IS2RE.csv.gz
+    pred_col: e_form_per_atom_cgcnn_pred_ens
+    full_test_set:
+      F1: 0.51
+      DAF: 2.398
+      Precision: 0.411
+      Recall: 0.67
+      Accuracy: 0.779
+      TPR: 0.67
+      FPR: 0.199
+      TNR: 0.801
+      FNR: 0.33
+      TP: 29557.0
+      FP: 42281.0
+      TN: 170590.0
+      FN: 14535.0
+      MAE: 0.108
+      RMSE: 0.178
+      R2: 0.027
+      missing_preds: 4
+      missing_percent: 0.00%
+    most_stable_10k:
+      F1: 0.736
+      DAF: 3.813
+      Precision: 0.583
+      Recall: 1.0
+      Accuracy: 0.583
+      TPR: 1.0
+      FPR: 1.0
+      TNR: 0.0
+      FNR: 0.0
+      TP: 5829.0
+      FP: 4171.0
+      TN: 0.0
+      FN: 0.0
+      MAE: 0.2
+      RMSE: 0.275
+      R2: -0.076
+      missing_preds: 0
+      missing_percent: 0.00%
+    unique_prototypes:
+      F1: 0.5
+      DAF: 2.563
+      Precision: 0.392
+      Recall: 0.693
+      Accuracy: 0.786
+      TPR: 0.693
+      FPR: 0.197
+      TNR: 0.803
+      FNR: 0.307
+      TP: 23117.0
+      FP: 35893.0
+      TN: 146221.0
+      FN: 10257.0
+      MAE: 0.113
+      RMSE: 0.182
+      R2: 0.019
+      missing_preds: 2
+      missing_percent: 0.00%
