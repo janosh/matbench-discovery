@@ -60,7 +60,7 @@
         >Show energy-only models <Tooltip max_width="10em">
           <span slot="tip">
             Models that only predict energy (E) perform worse<br /> and can't be evaluated
-            on force-modeling tasks such as SRME[κ]
+            on force-modeling tasks such as κ<sub>SRME</sub>
           </span>
           <Icon icon="octicon:info-16" inline style="padding: 0 3pt;" />
         </Tooltip>&ensp;</Toggle

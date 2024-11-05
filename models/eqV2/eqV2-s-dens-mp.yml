@@ -85,6 +85,8 @@ notes:
     Training was done from scratch using MPTrj only and a 50% probability for denoising training structures.
 
 metrics:
+  phonons:
+    κ_SRME: 1.665 # eqV2 S without denoising (no DeNS) achieves slightly worse κ_SRME=1.772
   geo_opt:
     pred_file: null # authors will share model-relaxed structures soon
     pred_col: null

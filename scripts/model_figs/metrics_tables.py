@@ -32,19 +32,27 @@ __date__ = "2022-11-28"
 def get_metrics_df(nested_keys: Sequence[str]) -> pd.DataFrame:
     """Extract metrics from MODEL_METADATA into a DataFrame.
     Returns a DataFrame with models as rows and metrics as columns."""
-    metrics_dict = {}
+    out_dict = {}
     for model_name, metadata in MODEL_METADATA.items():
-        combined_metrics: dict[str, float] = {}
-        for nested_key in nested_keys:
-            metrics = metadata.get("metrics", {})
-            for sub_key in nested_key.split("."):
-                metrics = metrics.get(sub_key, {})
-            combined_metrics |= metrics
-        if combined_metrics:
-            metrics_dict[model_name] = combined_metrics
+        metrics = None
+        try:
+            combined_metrics: dict[str, float] = {}
+            for nested_key in nested_keys:
+                metrics = metadata.get("metrics", {})
+                for sub_key in nested_key.split("."):
+                    metrics = metrics.get(sub_key, {})
+                if not isinstance(metrics, dict):
+                    break
+                combined_metrics |= metrics
+            if combined_metrics:
+                out_dict[model_name] = combined_metrics
+
+        except Exception as exc:
+            exc.add_note(f"{model_name=} with {metrics=}")
+            raise
 
     # Return DataFrame with models as rows instead of columns
-    return pd.DataFrame.from_dict(metrics_dict, orient="index")
+    return pd.DataFrame.from_dict(out_dict, orient="index")
 
 
 # Create DataFrames with models as rows
@@ -55,7 +63,7 @@ df_metrics_10k = get_metrics_df(["discovery.most_stable_10k"]).sort_values(
     by=Key.f1, ascending=False
 )
 df_metrics_uniq_protos = get_metrics_df(
-    ["discovery.unique_prototypes", "structure"]
+    ["discovery.unique_prototypes", "phonons"]
 ).sort_values(by=Key.f1, ascending=False)
 df_metrics_uniq_protos = df_metrics_uniq_protos.drop(
     columns=[MbdKey.missing_preds, MbdKey.missing_percent]
@@ -264,8 +272,9 @@ with open(f"{SCRIPTS}/metrics-which-is-better.yml") as file:
     better = yaml.safe_load(file)
 
 R2_col = "R<sup>2</sup>"
+kappa_srme_col = "κ<sub>SRME</sub>"
 higher_is_better = {*better["higher_is_better"]} - {"R2"} | {R2_col}
-lower_is_better = {*better["lower_is_better"]}
+lower_is_better = {*better["lower_is_better"]} | {kappa_srme_col}
 
 # if True, make metrics-table-megnet-uip-combos.(svelte|pdf) for SI
 # if False, make metrics-table.(svelte|pdf) for main text
@@ -280,7 +289,10 @@ meta_cols = [
     Key.targets.label,
     date_added_col,
 ]
-show_cols = [*f"F1,SRME,DAF,Prec,Acc,TPR,TNR,MAE,RMSE,{R2_col}".split(","), *meta_cols]
+show_cols = [
+    *f"F1,DAF,Prec,Acc,TPR,TNR,MAE,RMSE,{R2_col},{kappa_srme_col}".split(","),
+    *meta_cols,
+]
 
 for (label, df_met), show_non_compliant in itertools.product(
     (
@@ -292,7 +304,12 @@ for (label, df_met), show_non_compliant in itertools.product(
 ):
     # abbreviate long column names
     df_met = df_met.rename(
-        columns={"R2": R2_col, "Precision": "Prec", "Accuracy": "Acc"}
+        columns={
+            "R2": R2_col,
+            "Precision": "Prec",
+            "Accuracy": "Acc",
+            "κ_SRME": kappa_srme_col,
+        }
     )
     # only keep columns we want to show
     df_table = df_met.filter([model_name_col, *show_cols])
@@ -347,8 +364,8 @@ for (label, df_met), show_non_compliant in itertools.product(
             R2_col: "coefficient of determination",
             "MAE": f"mean absolute error {reg_suffix}",
             "RMSE": f"root mean squared error {reg_suffix}",
-            "SRME[κ]": "symmetric relative mean error in predicted phonon mode "
-            "contributions to thermal conductivity κ",
+            "κ<sub>SRME</sub>": "symmetric relative mean error in predicted phonon "
+            "mode contributions to thermal conductivity κ",
         }
 
         label = f"{col}{arrow_suffix.get(col, '')}"

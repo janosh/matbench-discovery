@@ -68,6 +68,8 @@ notes:
     ORB is a pretrained model for atomic simulations. This model is pretrained and fine-tuned on MPtrj only.
 
 metrics:
+  phonons:
+    κ_SRME: 1.725
   geo_opt:
     pred_file: models/orb/orb-mptrj-only-v2-20241014.json.gz
     pred_col: orb_structure

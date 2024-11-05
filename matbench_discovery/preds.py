@@ -125,23 +125,6 @@ df_each_err[MbdKey.each_err_models] = df_preds[MbdKey.each_err_models] = (
     df_each_err.abs().mean(axis=1)
 )
 
-# received by private communication from @MSimoncelli on 2024-10-27
-# model predictions on a per-phonon-mode and per-material basis for thermal conductivity
-# contributions coming soon
-model_kappa_srme_map = {
-    "eqV2 S": 1.772,
-    Model.eqv2_s_dens.label: 1.665,
-    Model.orb.label: 1.732,
-    Model.orb_mptrj.label: 1.725,
-    Model.sevennet.label: 0.767,
-    Model.mace.label: 0.647,
-    Model.chgnet.label: 1.717,
-    Model.m3gnet.label: 1.412,
-}
-
-for df in (df_metrics, df_metrics_uniq_protos):
-    df.loc["SRME[κ]"] = model_kappa_srme_map
-
 
 def write_discovery_metrics_to_yaml(model: Model) -> None:
     """Write materials discovery metrics to model YAML metadata files."""

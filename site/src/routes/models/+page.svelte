@@ -55,7 +55,7 @@
     { key: `TPR`, tooltip: `True Positive Rate` },
     { key: `Run Time (h)`, label: `Run time`, unit: `h` },
     {
-      key: `SRME[κ]`,
+      key: `κ<sub>SRME</sub>`,
       tooltip: `symmetric relative mean error in predicted phonon mode contributions to thermal conductivity κ`,
     },
   ]
