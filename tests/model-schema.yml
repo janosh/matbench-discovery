@@ -139,6 +139,17 @@ properties:
     type: object
     additionalProperties: false
     properties:
+      geo_opt:
+        oneOf:
+          - type: object
+            additionalProperties: false
+            properties:
+              pred_file:
+                type: [string, "null"]
+              pred_col:
+                type: [string, "null"]
+          - type: string
+            enum: [not applicable]
       discovery:
         additionalProperties: false
         type: object

@@ -58,6 +58,9 @@ notes:
   Missing Preds: According to the authors, the 1734 missing WBM predictions are mostly due out-of-memory (OOM) errors. The model was evaluated on A100s but without neighbor lists. The plan is to backfill the missing predictions once H100s are available or neighbor list implementation goes live.
 
 metrics:
+  geo_opt:
+    pred_file: null # not (yet) shared by authors
+    pred_col: null
   discovery:
     pred_file: models/gnome/2023-11-01-gnome-preds-50076332.csv.gz
     pred_col: e_gnome_after_relax

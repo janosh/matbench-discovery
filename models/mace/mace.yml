@@ -65,6 +65,9 @@ notes:
   Training: Using pre-trained 'medium' model released with paper.
 
 metrics:
+  geo_opt:
+    pred_file: models/mace/2023-12-11-mace-wbm-IS2RE-FIRE.json.gz
+    pred_col: mace_structure
   discovery:
     pred_file: models/mace/2023-12-11-mace-wbm-IS2RE-FIRE.csv.gz
     pred_col: e_form_per_atom_mace

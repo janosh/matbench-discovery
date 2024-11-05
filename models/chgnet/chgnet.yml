@@ -61,6 +61,9 @@ notes:
   Corrections: Unlike e.g. [M3GNet](/models/m3gnet) which predicts raw DFT energies, CHGNet targets include MP2020 corrections. Hence no need to correct again.
 
 metrics:
+  geo_opt:
+    pred_file: models/chgnet/2023-12-21-chgnet-0.3.0-wbm-IS2RE.json.gz
+    pred_col: chgnet_structure
   discovery:
     pred_file: models/chgnet/2023-12-21-chgnet-0.3.0-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_chgnet

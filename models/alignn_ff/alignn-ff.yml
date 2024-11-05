@@ -55,6 +55,9 @@ training_set: [MPtrj]
 status: aborted
 
 metrics:
+  geo_opt:
+    pred_file: null # not available, model was aborted
+    pred_col: null
   discovery:
     pred_file: models/alignn_ff/2023-07-11-alignn-ff-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_alignn_ff

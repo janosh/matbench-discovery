@@ -46,6 +46,7 @@ notes:
   Long: It builds on [Roost](https://doi.org/10.1038/s41467-020-19964-7) and [Wren](https://doi.org/10.1126/sciadv.abn4117), by being a fast structure-free model that is still able to distinguish polymorphs through symmetry.
 
 metrics:
+  geo_opt: not applicable
   discovery:
     pred_file: models/wrenformer/2022-11-15-wrenformer-ens=10-IS2RE-preds.csv.gz
     pred_col: e_form_per_atom_wrenformer_pred_ens

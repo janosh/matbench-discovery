@@ -44,6 +44,7 @@ n_estimators: 1
 training_set: [MP 2022]
 
 metrics:
+  geo_opt: not applicable
   discovery:
     pred_file: models/alignn/2023-06-02-alignn-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_alignn

@@ -80,6 +80,12 @@ export interface ModelMetadata {
   openness?: 'OSOD' | 'OSCD' | 'CSOD' | 'CSCD'
   status?: 'aborted' | 'complete'
   metrics?: {
+    geo_opt?:
+      | {
+          pred_file?: string | null
+          pred_col?: string | null
+        }
+      | 'not applicable'
     discovery?: {
       additionalProperties?: never
       pred_file?: string

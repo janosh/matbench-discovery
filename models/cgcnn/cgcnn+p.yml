@@ -47,6 +47,7 @@ notes:
   Long: The model is essentially taught the potential energy surface (PES) is a step-function that maps each valley to its local minimum. The expectation is that during testing on unrelaxed structures, the model will predict the energy of the nearest basin in the PES. The authors confirm this by demonstrating a lowering of the energy error on unrelaxed structures.
 
 metrics:
+  geo_opt: not applicable
   discovery:
     pred_file: models/cgcnn/2023-02-05-cgcnn-perturb=5-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_cgcnn_pred_ens

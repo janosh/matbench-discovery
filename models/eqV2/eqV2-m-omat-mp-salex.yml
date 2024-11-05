@@ -83,6 +83,9 @@ notes:
     Training was done by fine-tuning a model pretrained for 2 epochs on the OMat24 dataset.
 
 metrics:
+  geo_opt:
+    pred_file: null # authors will share model-relaxed structures soon
+    pred_col: null
   discovery:
     pred_file: models/eqV2/eqV2-m-omat-mp-salex.csv.gz
     pred_col: e_form_per_atom_eqV2-86M-omat-mp-salex

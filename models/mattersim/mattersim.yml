@@ -119,6 +119,9 @@ notes:
     - newly generated structures and MD trajectories
 
 metrics:
+  geo_opt:
+    pred_file: null # not (yet) shared by authors
+    pred_col: null
   discovery:
     pred_file: models/mattersim/2024-06-16-mattersim-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_mattersim

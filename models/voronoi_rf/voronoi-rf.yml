@@ -41,6 +41,7 @@ notes:
   Long: This is an old model that predates most deep learning for materials but significantly improved over Coulomb matrix and partial radial distribution function methods. It therefore serves as a good baseline model to see what modern ML buys us.
 
 metrics:
+  geo_opt: not applicable
   discovery:
     pred_file: models/voronoi_rf/2022-11-27-train-test/e-form-preds-IS2RE.csv.gz
     pred_col: e_form_per_atom_voronoi_rf

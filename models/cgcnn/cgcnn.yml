@@ -41,6 +41,7 @@ notes:
   Long: CGCNN was among the first to show that just like in other areas of ML, given large enough training sets, neural networks can learn embeddings that reliably outperform all human-engineered structure features directly from the data.
 
 metrics:
+  geo_opt: not applicable
   discovery:
     pred_file: models/cgcnn/2023-01-26-cgcnn-ens=10-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_mp2020_corrected_pred_ens
