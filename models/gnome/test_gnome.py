@@ -1,8 +1,9 @@
 # %%
 import pymatviz as pmv
 
+from matbench_discovery.data import Model
 from matbench_discovery.enums import MbdKey
-from matbench_discovery.preds import Model, df_preds
+from matbench_discovery.preds import df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2024-02-03"

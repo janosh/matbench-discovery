@@ -24,7 +24,6 @@ requirements:
   numpy: 1.24.0
   pandas: 1.5.1
 
-pred_col: e_form_per_atom_m3gnet
 openness: OSOD
 trained_for_benchmark: false
 train_task: S2EFS
@@ -47,3 +46,65 @@ notes:
   Long: It thereby learns to emulate structure relaxation, MD simulations and property prediction of materials across diverse chemical spaces.
   Training: Using pre-trained model released with paper. Was only trained on initial, middle and final frames of a subset of 62,783 MP relaxation trajectories in the 2018 database release (see [related issue](https://github.com/materialsvirtuallab/m3gnet/issues/20#issuecomment-1207087219)).
   Testing: We also tried combining M3GNet with MEGNet where M3GNet is used to relax initial structures which are then passed to MEGNet to predict the formation energy.
+
+metrics:
+  discovery:
+    pred_file: models/m3gnet/2023-12-28-m3gnet-wbm-IS2RE.csv.gz
+    pred_col: e_form_per_atom_m3gnet
+    full_test_set:
+      F1: 0.576
+      DAF: 2.647
+      Precision: 0.454
+      Recall: 0.788
+      Accuracy: 0.802
+      TPR: 0.788
+      FPR: 0.196
+      TNR: 0.804
+      FNR: 0.212
+      TP: 34731.0
+      FP: 41738.0
+      TN: 171133.0
+      FN: 9361.0
+      MAE: 0.072
+      RMSE: 0.115
+      R2: 0.588
+      missing_preds: 355
+      missing_percent: 0.14%
+    most_stable_10k:
+      F1: 0.868
+      DAF: 5.02
+      Precision: 0.767
+      Recall: 1.0
+      Accuracy: 0.767
+      TPR: 1.0
+      FPR: 1.0
+      TNR: 0.0
+      FNR: 0.0
+      TP: 7674.0
+      FP: 2326.0
+      TN: 0.0
+      FN: 0.0
+      MAE: 0.101
+      RMSE: 0.158
+      R2: 0.551
+      missing_preds: 0
+      missing_percent: 0.00%
+    unique_prototypes:
+      F1: 0.569
+      DAF: 2.882
+      Precision: 0.441
+      Recall: 0.803
+      Accuracy: 0.813
+      TPR: 0.803
+      FPR: 0.187
+      TNR: 0.813
+      FNR: 0.197
+      TP: 26797.0
+      FP: 34034.0
+      TN: 148080.0
+      FN: 6577.0
+      MAE: 0.075
+      RMSE: 0.118
+      R2: 0.585
+      missing_preds: 299
+      missing_percent: 0.14%

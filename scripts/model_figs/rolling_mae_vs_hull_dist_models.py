@@ -28,7 +28,7 @@ df_err, df_std = None, None  # variables to cache rolling MAE and std
 # %%
 backend: Final = PLOTLY
 
-test_subset = globals().get("test_subset", TestSubset.full)
+test_subset = globals().get("test_subset", TestSubset.uniq_protos)
 
 if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(Key.uniq_proto)

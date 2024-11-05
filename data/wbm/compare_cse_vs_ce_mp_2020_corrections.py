@@ -131,7 +131,7 @@ cse_mp2020, cse_legacy = cses[idx].copy(), cses[idx].copy()
 ce_mp2020, ce_legacy = ces[idx].copy(), ces[idx].copy()
 
 
-with gzip.open(f"{ROOT}/tmp/cse-wbm-2-34803.json.zip", "w") as file:
+with gzip.open(f"{ROOT}/tmp/cse-wbm-2-34803.json.zip", mode="w") as file:
     file.write(cse_mp2020.to_json().encode("utf-8"))
 
 with gzip.open(f"{ROOT}/tmp/cse-wbm-2-34803.json.zip") as file:

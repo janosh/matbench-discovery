@@ -6,7 +6,7 @@
   export let ref_selector: string = `a.ref[href^='#']`
   export let found_on_page: Reference[] = references
   export let n_authors: number = 1
-  export let first_name_mode: 'initial' | 'full' | 'none' = `none`
+  export let first_name_mode: `initial` | `full` | `none` = `none`
 
   function filter_refs() {
     const ref_links = document.querySelectorAll<HTMLAnchorElement>(ref_selector)

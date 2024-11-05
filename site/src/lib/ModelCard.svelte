@@ -8,21 +8,23 @@
   import { Tooltip } from 'svelte-zoo'
   import { fade, slide } from 'svelte/transition'
 
-  export let data: ModelData
+  export let model: ModelData
   export let stats: ModelStatLabel[] // [key, label, unit][]
   export let sort_by: keyof ModelData
   export let show_details: boolean = false
   export let style: string | null = null
   export let metrics_style: string | null = null
 
-  $: ({ model_name, missing_preds, missing_percent } = data)
-  $: ({ model_params, hyperparams, notes = {}, training_set, n_estimators } = data)
+  $: ({ model_name } = model)
+  $: ({ model_params, hyperparams, notes = {}, training_set, n_estimators } = model)
+  $: discovery_metrics = model.metrics?.discovery?.full_test_set ?? {}
+  $: ({ missing_preds, missing_percent } = discovery_metrics)
 
   $: links = [
-    [data.repo, `Repo`, `octicon:mark-github`],
-    [data.paper, `Paper`, `ion:ios-paper`],
-    [data.url, `Docs`, `ion:ios-globe`],
-    [`${repository}/blob/-/models/${data.dirname}`, `Files`, `octicon:file-directory`],
+    [model.repo, `Repo`, `octicon:mark-github`],
+    [model.paper, `Paper`, `ion:ios-paper`],
+    [model.url, `Docs`, `ion:ios-globe`],
+    [`${repository}/blob/-/models/${model.dirname}`, `Files`, `octicon:file-directory`],
   ]
   const target = { target: `_blank`, rel: `noopener` }
   $: model_slug = model_name?.toLowerCase().replaceAll(` `, `-`) ?? ``
@@ -50,12 +52,12 @@
 <p>
   <span title="Date added">
     <Icon icon="ion:ios-calendar" inline />
-    Added {data.date_added}
+    Added {model.date_added}
   </span>
-  {#if data.date_published}
+  {#if model.date_published}
     <span title="Date published">
       <Icon icon="ri:calendar-check-line" inline />
-      Published {data.date_published}
+      Published {model.date_published}
     </span>
   {/if}
   <span>
@@ -119,16 +121,16 @@
     <section transition:slide={{ duration: 200 }}>
       <h3>Authors</h3>
       <ul>
-        {#each data.authors as author (author.name)}
+        {#each model.authors as author (author.name)}
           <li>
             <AuthorBrief {author} />
           </li>
         {/each}
       </ul>
-      {#if data.trained_by}
+      {#if model.trained_by}
         <h3>Trained By</h3>
         <ul>
-          {#each data.trained_by as author (author.name)}
+          {#each model.trained_by as author (author.name)}
             <li>
               <AuthorBrief {author} />
             </li>
@@ -142,7 +144,7 @@
     >
       <h3>Package versions</h3>
       <ul>
-        {#each Object.entries(data.requirements ?? {}) as [name, version]}
+        {#each Object.entries(model.requirements ?? {}) as [name, version]}
           {@const [href, link_text] = version.startsWith(`http`)
             ? // version.split(`/`).at(-1) assumes final part after / of URL is the package version, as is the case for GitHub releases
               [version, version.split(`/`).at(-1)]
@@ -159,10 +161,10 @@
   <h3>Metrics</h3>
   <ul>
     <!-- hide run time if value is 0 (i.e. not available) -->
-    {#each stats.filter(({ key }) => key != `Run Time (h)` || data[key] > 0) as { key, label, unit }}
+    {#each stats.filter(({ key }) => key != `Run Time (h)` || discovery_metrics[key] > 0) as { key, label, unit }}
       <li class:active={sort_by == key}>
         <label for={key}>{@html label ?? key}</label>
-        <strong>{pretty_num(data[key])} <small>{unit ?? ``}</small></strong>
+        <strong>{pretty_num(discovery_metrics[key])} <small>{unit ?? ``}</small></strong>
       </li>
     {/each}
   </ul>

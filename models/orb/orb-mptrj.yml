@@ -7,11 +7,11 @@ authors:
   - name: Mark Neumann
     affiliation: Orbital Materials
     email: mark@orbitalmaterials.com
-    corresponding: True
+    corresponding: true
   - name: Jonathan Godwin
     affiliation: Orbital Materials
     email: jonathan@orbitalmaterials.com
-    corresponding: True
+    corresponding: true
   - name: James Gin-Pollock
     affiliation: Orbital Materials
   - name: Zhiyi Li
@@ -30,7 +30,6 @@ url: https://orbitalmaterials.com/post/technical-blog-introducing-the-orb-ai-bas
 doi: https://doi.org/10.48550/arXiv.2410.22570
 paper: https://arxiv.org/abs/2410.22570
 
-pred_col: e_form_per_atom_orb
 openness: OSOD
 trained_for_benchmark: true
 train_task: S2EFS
@@ -67,3 +66,68 @@ training_set: [MPtrj]
 notes:
   Description: |
     ORB is a pretrained model for atomic simulations. This model is pretrained and fine-tuned on MPtrj only.
+
+metrics:
+  geo_opt:
+    pred_file: models/orb/orb-mptrj-only-v2-20241014.json.gz
+    pred_col: orb_structure
+  discovery:
+    pred_file: models/orb/orbff-mptrj-only-v2-20241014.csv.gz
+    pred_col: e_form_per_atom_orb
+    full_test_set:
+      F1: 0.755
+      DAF: 4.188
+      Precision: 0.719
+      Recall: 0.795
+      Accuracy: 0.911
+      TPR: 0.795
+      FPR: 0.064
+      TNR: 0.936
+      FNR: 0.205
+      TP: 35047.0
+      FP: 13729.0
+      TN: 199142.0
+      FN: 9045.0
+      MAE: 0.043
+      RMSE: 0.09
+      R2: 0.752
+      missing_preds: 2
+      missing_percent: 0.00%
+    most_stable_10k:
+      F1: 0.971
+      DAF: 6.173
+      Precision: 0.944
+      Recall: 1.0
+      Accuracy: 0.944
+      TPR: 1.0
+      FPR: 1.0
+      TNR: 0.0
+      FNR: 0.0
+      TP: 9437.0
+      FP: 563.0
+      TN: 0.0
+      FN: 0.0
+      MAE: 0.037
+      RMSE: 0.098
+      R2: 0.801
+      missing_preds: 0
+      missing_percent: 0.00%
+    unique_prototypes:
+      F1: 0.765
+      DAF: 4.702
+      Precision: 0.719
+      Recall: 0.817
+      Accuracy: 0.922
+      TPR: 0.817
+      FPR: 0.059
+      TNR: 0.941
+      FNR: 0.183
+      TP: 27276.0
+      FP: 10668.0
+      TN: 171446.0
+      FN: 6098.0
+      MAE: 0.045
+      RMSE: 0.091
+      R2: 0.756
+      missing_preds: 0
+      missing_percent: 0.00%

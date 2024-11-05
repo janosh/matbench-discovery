@@ -39,8 +39,6 @@ pypi: https://pypi.org/project/fairchem-core
 requirements:
   fairchem-core: 1.2.1
 
-pred_col: e_form_per_atom_eqV2-31M-dens-MP-p5
-
 openness: OSOD
 trained_for_benchmark: true
 train_task: S2EFS
@@ -85,3 +83,68 @@ notes:
     Denoising Non-Equilibrium Structures (DeNS) uses a denoising generalized to structures with non-zero forces by encoding forces to obtain a well-posed denoising problem.
   Training: |
     Training was done from scratch using MPTrj only and a 50% probability for denoising training structures.
+
+metrics:
+  geo_opt:
+    pred_file: null # authors will share model-relaxed structures soon
+    pred_col: null
+  discovery:
+    pred_file: models/eqV2/eqV2-s-dens-mp.csv.gz
+    pred_col: e_form_per_atom_eqV2-31M-dens-MP-p5
+    full_test_set:
+      F1: 0.798
+      DAF: 4.362
+      Precision: 0.748
+      Recall: 0.855
+      Accuracy: 0.927
+      TPR: 0.855
+      FPR: 0.059
+      TNR: 0.941
+      FNR: 0.145
+      TP: 37687.0
+      FP: 12665.0
+      TN: 200206.0
+      FN: 6405.0
+      MAE: 0.035
+      RMSE: 0.084
+      R2: 0.785
+      missing_preds: 351
+      missing_percent: 0.14%
+    most_stable_10k:
+      F1: 0.983
+      DAF: 6.326
+      Precision: 0.967
+      Recall: 1.0
+      Accuracy: 0.967
+      TPR: 1.0
+      FPR: 1.0
+      TNR: 0.0
+      FNR: 0.0
+      TP: 9670.0
+      FP: 330.0
+      TN: 0.0
+      FN: 0.0
+      MAE: 0.031
+      RMSE: 0.091
+      R2: 0.823
+      missing_preds: 0
+      missing_percent: 0.00%
+    unique_prototypes:
+      F1: 0.815
+      DAF: 5.042
+      Precision: 0.771
+      Recall: 0.864
+      Accuracy: 0.941
+      TPR: 0.864
+      FPR: 0.047
+      TNR: 0.953
+      FNR: 0.136
+      TP: 28842.0
+      FP: 8576.0
+      TN: 173538.0
+      FN: 4532.0
+      MAE: 0.036
+      RMSE: 0.085
+      R2: 0.788
+      missing_preds: 309
+      missing_percent: 0.14%

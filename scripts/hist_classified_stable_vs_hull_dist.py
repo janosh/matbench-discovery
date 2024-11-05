@@ -11,7 +11,7 @@ import pymatviz as pmv
 from pymatviz.utils import PLOTLY
 
 from matbench_discovery import PDF_FIGS
-from matbench_discovery.data import df_wbm
+from matbench_discovery.data import Model, df_wbm
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist
 from matbench_discovery.preds import df_each_pred
@@ -21,9 +21,7 @@ __date__ = "2022-06-18"
 
 
 # %%
-# model_name = "Wrenformer"
-model_name = "CHGNet"
-# model_name = "CGCNN+P"
+model_name = Model.mace.label
 which_energy: Final = "pred"
 df_each_pred[MbdKey.each_true] = df_wbm[MbdKey.each_true]
 backend: Final = PLOTLY

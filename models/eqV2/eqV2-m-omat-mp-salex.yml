@@ -39,8 +39,6 @@ pypi: https://pypi.org/project/fairchem-core
 requirements:
   fairchem-core: 1.2.1
 
-pred_col: e_form_per_atom_eqV2-86M-omat-mp-salex
-
 openness: OSOD
 trained_for_benchmark: true
 train_task: S2EFS
@@ -83,3 +81,68 @@ notes:
     EquiformerV2 is an equivariant transformer that uses graph attention, attention re-normalization, and separable S^2 activations and layer normalization.
   Training: |
     Training was done by fine-tuning a model pretrained for 2 epochs on the OMat24 dataset.
+
+metrics:
+  geo_opt:
+    pred_file: null # authors will share model-relaxed structures soon
+    pred_col: null
+  discovery:
+    pred_file: models/eqV2/eqV2-m-omat-mp-salex.csv.gz
+    pred_col: e_form_per_atom_eqV2-86M-omat-mp-salex
+    full_test_set:
+      F1: 0.896
+      DAF: 5.243
+      Precision: 0.9
+      Recall: 0.893
+      Accuracy: 0.965
+      TPR: 0.893
+      FPR: 0.021
+      TNR: 0.979
+      FNR: 0.107
+      TP: 39379.0
+      FP: 4393.0
+      TN: 208478.0
+      FN: 4713.0
+      MAE: 0.02
+      RMSE: 0.071
+      R2: 0.842
+      missing_preds: 2
+      missing_percent: 0.00%
+    most_stable_10k:
+      F1: 0.988
+      DAF: 6.382
+      Precision: 0.976
+      Recall: 1.0
+      Accuracy: 0.976
+      TPR: 1.0
+      FPR: 1.0
+      TNR: 0.0
+      FNR: 0.0
+      TP: 9756.0
+      FP: 244.0
+      TN: 0.0
+      FN: 0.0
+      MAE: 0.015
+      RMSE: 0.066
+      R2: 0.904
+      missing_preds: 0
+      missing_percent: 0.00%
+    unique_prototypes:
+      F1: 0.917
+      DAF: 6.047
+      Precision: 0.924
+      Recall: 0.91
+      Accuracy: 0.975
+      TPR: 0.91
+      FPR: 0.014
+      TNR: 0.986
+      FNR: 0.09
+      TP: 30372.0
+      FP: 2481.0
+      TN: 179633.0
+      FN: 3002.0
+      MAE: 0.02
+      RMSE: 0.072
+      R2: 0.848
+      missing_preds: 0
+      missing_percent: 0.00%

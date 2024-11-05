@@ -14,6 +14,7 @@ from pymatviz.enums import Key
 from pymatviz.utils import MATPLOTLIB, PLOTLY
 
 from matbench_discovery import PDF_FIGS
+from matbench_discovery.data import Model
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist
 from matbench_discovery.preds import df_preds
@@ -23,7 +24,7 @@ __date__ = "2022-08-25"
 
 
 # %%
-model_name = "M3GNet"
+model_name = Model.mace.label
 which_energy: Final = "true"
 backend: Final = MATPLOTLIB
 df_preds[Key.each_pred] = (

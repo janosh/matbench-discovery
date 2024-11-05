@@ -10,8 +10,8 @@
 
   onMount(() => {
     // convert model names into clickable links to /models/<model_key>
-    for (const cell of document.querySelectorAll('span[data-model-key]')) {
-      const model_key = cell.getAttribute('data-model-key')
+    for (const cell of document.querySelectorAll(`span[data-model-key]`)) {
+      const model_key = cell.getAttribute(`data-model-key`)
       cell.innerHTML = `<a href="/models/${model_key}">${cell.innerHTML}</a>`
     }
   })
@@ -21,8 +21,8 @@
   <MetricsTable />
   <div class="downloads">
     Download table as
-    {#each ['PDF', 'SVG'] as file_ext}
-      {@const suffix = show_non_compliant ? '' : '-only-compliant'}
+    {#each [`PDF`, `SVG`] as file_ext}
+      {@const suffix = show_non_compliant ? `` : `-only-compliant`}
       <a href="/figs/metrics-table-uniq-protos{suffix}.{file_ext.toLowerCase()}" download>
         {file_ext}</a
       >

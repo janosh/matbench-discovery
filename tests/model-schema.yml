@@ -132,11 +132,75 @@ properties:
   openness:
     type: string
     enum: [OSOD, OSCD, CSOD, CSCD]
-  pred_col:
-    type: string
   status:
     type: string
     enum: [aborted, complete]
+  metrics:
+    type: object
+    additionalProperties: false
+    properties:
+      geo_opt:
+        oneOf:
+          - type: object
+            additionalProperties: false
+            properties:
+              pred_file:
+                type: [string, "null"]
+              pred_col:
+                type: [string, "null"]
+          - type: string
+            enum: [not applicable]
+      discovery:
+        additionalProperties: false
+        type: object
+        properties:
+          additionalProperties: false
+          pred_file:
+            type: string
+          pred_col:
+            type: string
+          full_test_set: &discovery_metrics
+            type: object
+            additionalProperties: false
+            properties:
+              F1:
+                type: number
+              DAF:
+                type: number
+              Precision:
+                type: number
+              Recall:
+                type: number
+              Accuracy:
+                type: number
+              TPR:
+                type: number
+              FPR:
+                type: number
+              TNR:
+                type: number
+              FNR:
+                type: number
+              TP:
+                type: number
+              FP:
+                type: number
+              TN:
+                type: number
+              FN:
+                type: number
+              MAE:
+                type: number
+              RMSE:
+                type: number
+              R2:
+                type: number
+              missing_preds:
+                type: number
+              missing_percent:
+                type: string
+          most_stable_10k: *discovery_metrics
+          unique_prototypes: *discovery_metrics
 
 required:
   - authors
@@ -150,7 +214,6 @@ required:
   - model_version
   - n_estimators
   - paper
-  - pred_col
   - repo
   - requirements
   - targets

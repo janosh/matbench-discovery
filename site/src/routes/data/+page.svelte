@@ -130,9 +130,6 @@
 </p>
 
 <style>
-  h3 {
-    margin: 1em 0 0.5em;
-  }
   label {
     display: flex;
     gap: 1ex;

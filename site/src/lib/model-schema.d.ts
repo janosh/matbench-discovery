@@ -78,6 +78,78 @@ export interface ModelMetadata {
   model_type: 'GNN' | 'UIP' | 'BO-GNN' | 'Fingerprint' | 'Transformer' | 'RF'
   targets: 'E' | 'EF_C' | 'EF_D' | 'EFS_C' | 'EFS_D' | 'EFS_CM' | 'EFS_DM'
   openness?: 'OSOD' | 'OSCD' | 'CSOD' | 'CSCD'
-  pred_col: string
   status?: 'aborted' | 'complete'
+  metrics?: {
+    geo_opt?:
+      | {
+          pred_file?: string | null
+          pred_col?: string | null
+        }
+      | 'not applicable'
+    discovery?: {
+      additionalProperties?: never
+      pred_file?: string
+      pred_col?: string
+      full_test_set?: {
+        F1?: number
+        DAF?: number
+        Precision?: number
+        Recall?: number
+        Accuracy?: number
+        TPR?: number
+        FPR?: number
+        TNR?: number
+        FNR?: number
+        TP?: number
+        FP?: number
+        TN?: number
+        FN?: number
+        MAE?: number
+        RMSE?: number
+        R2?: number
+        missing_preds?: number
+        missing_percent?: string
+      }
+      most_stable_10k?: {
+        F1?: number
+        DAF?: number
+        Precision?: number
+        Recall?: number
+        Accuracy?: number
+        TPR?: number
+        FPR?: number
+        TNR?: number
+        FNR?: number
+        TP?: number
+        FP?: number
+        TN?: number
+        FN?: number
+        MAE?: number
+        RMSE?: number
+        R2?: number
+        missing_preds?: number
+        missing_percent?: string
+      }
+      unique_prototypes?: {
+        F1?: number
+        DAF?: number
+        Precision?: number
+        Recall?: number
+        Accuracy?: number
+        TPR?: number
+        FPR?: number
+        TNR?: number
+        FNR?: number
+        TP?: number
+        FP?: number
+        TN?: number
+        FN?: number
+        MAE?: number
+        RMSE?: number
+        R2?: number
+        missing_preds?: number
+        missing_percent?: string
+      }
+    }
+  }
 }
