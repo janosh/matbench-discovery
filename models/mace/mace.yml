@@ -65,6 +65,8 @@ notes:
   Training: Using pre-trained 'medium' model released with paper.
 
 metrics:
+  phonons:
+    κ_SRME: 0.647
   geo_opt:
     pred_file: models/mace/2023-12-11-mace-wbm-IS2RE-FIRE.json.gz
     pred_col: mace_structure

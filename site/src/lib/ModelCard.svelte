@@ -9,7 +9,7 @@
   import { fade, slide } from 'svelte/transition'
 
   export let model: ModelData
-  export let stats: ModelStatLabel[] // [key, label, unit][]
+  export let stats: ModelStatLabel[]
   export let sort_by: keyof ModelData
   export let show_details: boolean = false
   export let style: string | null = null

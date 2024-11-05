@@ -139,6 +139,15 @@ properties:
     type: object
     additionalProperties: false
     properties:
+      phonons:
+        oneOf:
+          - type: object
+            additionalProperties: false
+            properties:
+              κ_SRME:
+                type: number
+          - type: string
+            enum: [not applicable, not available]
       geo_opt:
         oneOf:
           - type: object
@@ -149,7 +158,7 @@ properties:
               pred_col:
                 type: [string, "null"]
           - type: string
-            enum: [not applicable]
+            enum: [not applicable, not available]
       discovery:
         additionalProperties: false
         type: object

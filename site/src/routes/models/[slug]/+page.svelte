@@ -16,8 +16,10 @@
   } from 'elementari'
   import { CopyButton, Tooltip } from 'svelte-zoo'
 
-  $: model_key = $page.params.slug.replaceAll(`-`, ` `).toLowerCase()
-  $: model = MODEL_METADATA.find((model) => model.model_name.toLowerCase() == model_key)
+  $: model_key = $page.params.slug
+  $: model = MODEL_METADATA.find(
+    (model) => model.model_name.toLowerCase().replaceAll(` `, `-`) == model_key,
+  )
   let color_scale: string[] = [`Viridis`]
   let active_element: ChemicalElement | null = null
 

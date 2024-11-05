@@ -71,6 +71,8 @@ notes:
     In the SevenNet-0 model, based on the NequIP architecture, the tensor product in the self-connection layer, which includes numerous element-specific parameters, is replaced by a linear (or self-interaction) layer, this reduces the number of parameters from 16_240_000 (c.f. GNoME) to 842_440.
 
 metrics:
+  phonons:
+    κ_SRME: 0.767
   geo_opt:
     pred_file: null # TODO find .json.gz file, I had it somewhere!
     pred_col: null

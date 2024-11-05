@@ -52,6 +52,7 @@ notes:
   Training: Using pre-trained model released with paper. Was only trained on `MP-crystals-2018.6.1` dataset [available on Figshare](https://figshare.com/articles/Graphs_of_materials_project/7451351).
 
 metrics:
+  phonons: not applicable # model doesn't predict forces
   geo_opt: not applicable
   discovery:
     pred_file: models/megnet/2022-11-18-megnet-wbm-IS2RE.csv.gz
