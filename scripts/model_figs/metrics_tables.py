@@ -1,5 +1,6 @@
 # %%
 import itertools
+import os
 import subprocess
 from collections.abc import Sequence
 from datetime import date
@@ -379,9 +380,12 @@ for (label, df_met), show_non_compliant in itertools.product(
     ).set_uuid("")
 
     # export model metrics as styled HTML table and Svelte component
-    # get index of MAE column
-    mae_col_idx = styler.columns.get_loc("MAE")
-    col_selector = f"#T_ :is(td, th):nth-child({mae_col_idx + 2})"
+    mae_col_idx = styler.columns.get_loc("MAE") + 1
+    if kappa_srme_col in df_table:
+        kappa_srme_col_idx = styler.columns.get_loc(kappa_srme_col) + 1
+    else:
+        kappa_srme_col_idx = ""
+
     # https://stackoverflow.com/a/38994837
     hide_scroll_bar = """
     table {
@@ -399,12 +403,15 @@ for (label, df_met), show_non_compliant in itertools.product(
         file_path=f"{SITE_FIGS}/metrics-table{label}.svelte",
         inline_props="class='metrics'",
         # draw line between classification and regression metrics
-        styles=f"{col_selector} {{ border-left: 1px solid white; }}{hide_scroll_bar}",
+        styles=f"#T_ :is(td, th):is(:nth-child({mae_col_idx}), "
+        f":nth-child({kappa_srme_col_idx})) {{ border-left: 1px solid white; }}"
+        f"{hide_scroll_bar}",
         sortable=True,
     )
     suffix = "" if show_non_compliant else "-only-compliant"
     non_compliant_idx = [*set(styler.index) & set(non_compliant_models)]
     try:
+        os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = "/opt/homebrew/lib"
         for pdf_path in (PDF_FIGS, f"{ROOT}/site/static/figs"):
             df_to_pdf(
                 styler.hide([] if show_non_compliant else non_compliant_idx),

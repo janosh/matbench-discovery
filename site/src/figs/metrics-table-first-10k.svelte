@@ -358,7 +358,7 @@
   background-color: #1fa088;
   color: #f1f1f1;
 }
-#T_ :is(td, th):nth-child(7) { border-left: 1px solid white; }
+#T_ :is(td, th):is(:nth-child(6), :nth-child(None)) { border-left: 1px solid white; }
     table {
         scrollbar-width: none;  /* Firefox */
     }
