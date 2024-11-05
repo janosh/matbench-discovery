@@ -1,5 +1,6 @@
 # %%
 import itertools
+import os
 import subprocess
 from collections.abc import Sequence
 from datetime import date
@@ -32,19 +33,27 @@ __date__ = "2022-11-28"
 def get_metrics_df(nested_keys: Sequence[str]) -> pd.DataFrame:
     """Extract metrics from MODEL_METADATA into a DataFrame.
     Returns a DataFrame with models as rows and metrics as columns."""
-    metrics_dict = {}
+    out_dict = {}
     for model_name, metadata in MODEL_METADATA.items():
-        combined_metrics: dict[str, float] = {}
-        for nested_key in nested_keys:
-            metrics = metadata.get("metrics", {})
-            for sub_key in nested_key.split("."):
-                metrics = metrics.get(sub_key, {})
-            combined_metrics |= metrics
-        if combined_metrics:
-            metrics_dict[model_name] = combined_metrics
+        metrics = None
+        try:
+            combined_metrics: dict[str, float] = {}
+            for nested_key in nested_keys:
+                metrics = metadata.get("metrics", {})
+                for sub_key in nested_key.split("."):
+                    metrics = metrics.get(sub_key, {})
+                if not isinstance(metrics, dict):
+                    break
+                combined_metrics |= metrics
+            if combined_metrics:
+                out_dict[model_name] = combined_metrics
+
+        except Exception as exc:
+            exc.add_note(f"{model_name=} with {metrics=}")
+            raise
 
     # Return DataFrame with models as rows instead of columns
-    return pd.DataFrame.from_dict(metrics_dict, orient="index")
+    return pd.DataFrame.from_dict(out_dict, orient="index")
 
 
 # Create DataFrames with models as rows
@@ -55,7 +64,7 @@ df_metrics_10k = get_metrics_df(["discovery.most_stable_10k"]).sort_values(
     by=Key.f1, ascending=False
 )
 df_metrics_uniq_protos = get_metrics_df(
-    ["discovery.unique_prototypes", "structure"]
+    ["discovery.unique_prototypes", "phonons"]
 ).sort_values(by=Key.f1, ascending=False)
 df_metrics_uniq_protos = df_metrics_uniq_protos.drop(
     columns=[MbdKey.missing_preds, MbdKey.missing_percent]
@@ -101,13 +110,14 @@ for model in df_metrics_uniq_protos.index:
             f"<span {title=}>{date_added}</span>"
         )
 
-        # Update targets column with full label in tooltip
+        # Update targets column with full label in tooltip and data attribute
         model_targets = Targets[model_metadata[Key.targets]]
         tar_label = model_targets.label.replace(
             "<sub>", "<sub style='font-size: 0.8em;'>"
         )
         df_metrics_uniq_protos.loc[model, Key.targets.label] = (
-            f'<span title="{model_targets.description}">{tar_label}</span>'
+            f'<span title="{model_targets.description}" '
+            f'data-targets="{model_metadata[Key.targets]}">{tar_label}</span>'
         )
 
         # Add model version as hover tooltip to model name
@@ -263,8 +273,9 @@ with open(f"{SCRIPTS}/metrics-which-is-better.yml") as file:
     better = yaml.safe_load(file)
 
 R2_col = "R<sup>2</sup>"
+kappa_srme_col = "κ<sub>SRME</sub>"
 higher_is_better = {*better["higher_is_better"]} - {"R2"} | {R2_col}
-lower_is_better = {*better["lower_is_better"]}
+lower_is_better = {*better["lower_is_better"]} | {kappa_srme_col}
 
 # if True, make metrics-table-megnet-uip-combos.(svelte|pdf) for SI
 # if False, make metrics-table.(svelte|pdf) for main text
@@ -279,7 +290,10 @@ meta_cols = [
     Key.targets.label,
     date_added_col,
 ]
-show_cols = [*f"F1,DAF,Prec,Acc,TPR,TNR,MAE,RMSE,{R2_col}".split(","), *meta_cols]
+show_cols = [
+    *f"F1,DAF,Prec,Acc,TPR,TNR,MAE,RMSE,{R2_col},{kappa_srme_col}".split(","),
+    *meta_cols,
+]
 
 for (label, df_met), show_non_compliant in itertools.product(
     (
@@ -291,7 +305,12 @@ for (label, df_met), show_non_compliant in itertools.product(
 ):
     # abbreviate long column names
     df_met = df_met.rename(
-        columns={"R2": R2_col, "Precision": "Prec", "Accuracy": "Acc"}
+        columns={
+            "R2": R2_col,
+            "Precision": "Prec",
+            "Accuracy": "Acc",
+            "κ_SRME": kappa_srme_col,
+        }
     )
     # only keep columns we want to show
     df_table = df_met.filter([model_name_col, *show_cols])
@@ -346,6 +365,8 @@ for (label, df_met), show_non_compliant in itertools.product(
             R2_col: "coefficient of determination",
             "MAE": f"mean absolute error {reg_suffix}",
             "RMSE": f"root mean squared error {reg_suffix}",
+            "κ<sub>SRME</sub>": "symmetric relative mean error in predicted phonon "
+            "mode contributions to thermal conductivity κ",
         }
 
         label = f"{col}{arrow_suffix.get(col, '')}"
@@ -359,9 +380,12 @@ for (label, df_met), show_non_compliant in itertools.product(
     ).set_uuid("")
 
     # export model metrics as styled HTML table and Svelte component
-    # get index of MAE column
-    mae_col_idx = styler.columns.get_loc("MAE")
-    col_selector = f"#T_ :is(td, th):nth-child({mae_col_idx + 2})"
+    mae_col_idx = styler.columns.get_loc("MAE") + 1
+    if kappa_srme_col in df_table:
+        kappa_srme_col_idx = styler.columns.get_loc(kappa_srme_col) + 1
+    else:
+        kappa_srme_col_idx = 0
+
     # https://stackoverflow.com/a/38994837
     hide_scroll_bar = """
     table {
@@ -379,12 +403,15 @@ for (label, df_met), show_non_compliant in itertools.product(
         file_path=f"{SITE_FIGS}/metrics-table{label}.svelte",
         inline_props="class='metrics'",
         # draw line between classification and regression metrics
-        styles=f"{col_selector} {{ border-left: 1px solid white; }}{hide_scroll_bar}",
+        styles=f"#T_ :is(td, th):is(:nth-child({mae_col_idx}), "
+        f":nth-child({kappa_srme_col_idx})) {{ border-left: 1px solid white; }}"
+        f"{hide_scroll_bar}",
         sortable=True,
     )
     suffix = "" if show_non_compliant else "-only-compliant"
     non_compliant_idx = [*set(styler.index) & set(non_compliant_models)]
     try:
+        os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = "/opt/homebrew/lib"
         for pdf_path in (PDF_FIGS, f"{ROOT}/site/static/figs"):
             df_to_pdf(
                 styler.hide([] if show_non_compliant else non_compliant_idx),

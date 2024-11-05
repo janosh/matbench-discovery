@@ -1,3 +1,3 @@
 higher_is_better:
   [Acc, Accuracy, AUC, DAF, F1, Prec, Precision, R2, Recall, TN, TNR, TP, TPR]
-lower_is_better: [MAE, RMSE, FPR, FNR, FP, FN]
+lower_is_better: [MAE, RMSE, FPR, FNR, FP, FN, κ_SRME]

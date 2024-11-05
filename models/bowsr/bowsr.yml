@@ -55,6 +55,7 @@ notes:
   Training: Uses same version of MEGNet as standalone MEGNet.
 
 metrics:
+  phonons: not applicable # model doesn't predict forces
   geo_opt:
     pred_file: models/bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.json.gz
     pred_col: structure_bowsr_megnet

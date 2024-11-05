@@ -4,8 +4,8 @@
 
 Two equiformerV2 models submitted:
 
-1. **eqV2 DeNS** - A compliant model trained on MPTrj only
-2. **eqV2** - A non-compliant model pretrained with the OMat24 dataset and finetuned with MPTrj + sAlex
+1. **eqV2 S DeNS** - A compliant model trained on MPTrj only
+2. **eqV2 M** - A non-compliant model pretrained with the OMat24 dataset and finetuned with MPTrj + sAlex
 
 Model checkpoints for the two models submitted and additional models of different size are available [here](https://huggingface.co/fairchem/OMAT24).
 

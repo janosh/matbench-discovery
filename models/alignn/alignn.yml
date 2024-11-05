@@ -44,7 +44,8 @@ n_estimators: 1
 training_set: [MP 2022]
 
 metrics:
-  geo_opt: not applicable
+  phonons: not available # model doesn't predict forces
+  geo_opt: not available
   discovery:
     pred_file: models/alignn/2023-06-02-alignn-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_alignn
