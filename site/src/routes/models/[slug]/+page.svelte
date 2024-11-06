@@ -1,9 +1,9 @@
 <script lang="ts">
   import { dev } from '$app/environment'
   import { page } from '$app/stores'
+  import TRAINING_SETS from '$data/training-sets.yml'
   import per_elem_each_errors from '$figs/per-element-each-errors.json'
   import { MODEL_METADATA, PtableInset } from '$lib'
-  import TRAINING_SETS from '$root/data/training-sets.yml'
   import pkg from '$site/package.json'
   import Icon from '@iconify/svelte'
   import type { ChemicalElement } from 'elementari'

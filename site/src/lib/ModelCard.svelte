@@ -1,7 +1,7 @@
 <script lang="ts">
+  import TRAINING_SETS from '$data/training-sets.yml'
   import type { ModelData, ModelStatLabel } from '$lib'
   import { AuthorBrief } from '$lib'
-  import TRAINING_SETS from '$root/data/training-sets.yml'
   import { repository } from '$site/package.json'
   import Icon from '@iconify/svelte'
   import { pretty_num } from 'elementari'
