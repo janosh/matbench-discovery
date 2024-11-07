@@ -17,9 +17,7 @@
   import { CopyButton, Tooltip } from 'svelte-zoo'
 
   $: model_key = $page.params.slug
-  $: model = MODEL_METADATA.find(
-    (model) => model.model_name.toLowerCase().replaceAll(` `, `-`) == model_key,
-  )
+  $: model = MODEL_METADATA.find((model) => model.model_key == model_key)
   let color_scale: string[] = [`Viridis`]
   let active_element: ChemicalElement | null = null
 
@@ -127,7 +125,7 @@
     </section>
 
     {#each [[`e-form`, `Formation Energies`], [`each`, `Convex Hull Distance`]] as [which_energy, title]}
-      {#await import(`$figs/energy-parity/${which_energy}-parity-${model.model_name.toLowerCase().replaceAll(` `, `-`)}.svelte`) then ParityPlot}
+      {#await import(`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`) then ParityPlot}
         <!-- negative margin-bottom corrects for display: none plot title -->
         <h3 style="margin-bottom: -2em;">
           DFT vs ML {title}

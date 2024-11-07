@@ -7,6 +7,7 @@
 
 export interface ModelMetadata {
   model_name: string
+  model_key?: string
   model_version: string
   matbench_discovery_version: string
   date_added: string

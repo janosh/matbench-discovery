@@ -10,13 +10,15 @@
   export let higherIsBetter: Set<string> = new Set()
   export let lowerIsBetter: Set<string> = new Set()
 
-  function getBackgroundColor(value: number, col: string): string {
+  function cell_bg_color(value: number, col: string): string {
     const values = data.map((d) => d[col])
+    const range = [min(values) ?? 0, max(values) ?? 1]
+    if (lowerIsBetter.has(col)) {
+      range.reverse()
+    }
     const colorScale = scaleSequential()
-      .domain([min(values) ?? 0, max(values) ?? 1])
-      .interpolator(
-        lowerIsBetter.has(col) ? d3sc.interpolateViridis : d3sc.interpolateViridis,
-      )
+      .domain(range)
+      .interpolator(d3sc.interpolateViridis)
 
     return colorScale(value)
   }
@@ -66,15 +68,13 @@
     <tbody>
       {#each data as row}
         <tr>
-          {#each columns as col}
+          {#each columns as col, idx}
             {@const val = row[col]}
             <td
               data-col={col}
               data-sort-value={val}
-              class:sticky-col={col === `Model`}
-              style:background-color={typeof val === `number`
-                ? getBackgroundColor(val, col)
-                : undefined}
+              class:sticky-col={idx == 0}
+              style:background-color={cell_bg_color(val, col)}
               use:choose_bw_for_contrast_action
               title={val?.toString() ?? ``}
             >
@@ -106,7 +106,7 @@
 
   th,
   td {
-    padding: 1pt 5pt;
+    padding: 1pt 3pt;
     text-align: left;
     border: none;
     white-space: nowrap;
@@ -116,7 +116,7 @@
   }
 
   th {
-    background: #1a1a1a;
+    background: var(--night);
     position: sticky;
     top: 0;
     z-index: 1;
@@ -125,8 +125,11 @@
   .sticky-col {
     position: sticky;
     left: 0;
-    background: #1a1a1a;
+    background: var(--night);
     z-index: 2;
+  }
+  tr:nth-child(odd) td.sticky-col {
+    background: rgb(15, 14, 14);
   }
 
   .arrow {

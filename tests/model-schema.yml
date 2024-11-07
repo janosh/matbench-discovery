@@ -3,6 +3,8 @@ type: object
 properties:
   model_name:
     type: string
+  model_key:
+    type: string
   model_version:
     type: string
   matbench_discovery_version:

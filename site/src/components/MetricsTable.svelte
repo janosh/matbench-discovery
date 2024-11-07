@@ -19,7 +19,7 @@
 
   const lowerIsBetter = new Set([`MAE`, `RMSE`, `κ<sub>SRME</sub>`])
 
-  const metaColumns = [`Training Set`, `Params`, `Model Type`, `Targets`, `Date Added`]
+  const metaColumns = [`Training Set`, `Params`, `Targets`, `Date Added`]
 
   const show_cols = [
     `Model`,
@@ -39,7 +39,7 @@
   function format_train_set(model_training_sets: string[]) {
     let [total_structs, total_materials] = [0, 0]
     const data_urls: Record<string, string> = {}
-    const tooltipLines: string[] = []
+    const tooltip: string[] = []
 
     for (const train_set of model_training_sets) {
       if (!(train_set in TRAINING_SETS)) {
@@ -57,11 +57,11 @@
       data_urls[train_set || title] = training_set_info.url || ``
 
       if (n_materials !== n_structs) {
-        tooltipLines.push(
+        tooltip.push(
           `${title}: ${si_fmt(n_materials)} materials (${si_fmt(n_structs)} structures)`,
         )
       } else {
-        tooltipLines.push(`${title}: ${si_fmt(n_materials)} materials`)
+        tooltip.push(`${title}: ${si_fmt(n_materials)} materials`)
       }
     }
 
@@ -75,10 +75,10 @@
     const data_str = data_links.join(`+`)
     const new_line = `&#013;` // line break that works in title attribute
     const dataset_tooltip =
-      tooltipLines.length > 1 ? `${new_line}• ${tooltipLines.join(new_line + `• `)}` : ``
+      tooltip.length > 1 ? `${new_line}• ${tooltip.join(new_line + `• `)}` : ``
 
     let title = `${pretty_num(total_materials)} materials in training set${new_line}${dataset_tooltip}`
-    let trainSizeStr = `<span title="${title}" data-sort-value="${total_materials}">${si_fmt(total_materials)} (${data_str})</span>`
+    let train_size_str = `<span title="${title}" data-sort-value="${total_materials}">${si_fmt(total_materials)} (${data_str})</span>`
 
     if (total_materials !== total_structs) {
       title =
@@ -86,13 +86,23 @@
         `(${pretty_num(total_structs)} structures counting all DFT relaxation ` +
         `frames per material)${dataset_tooltip}`
 
-      trainSizeStr =
+      train_size_str =
         `<span title="${title}" data-sort-value="${total_materials}">` +
         `${si_fmt(total_materials)} <small>(${si_fmt(total_structs)})</small> ` +
         `(${data_str})</span>`
     }
 
-    return trainSizeStr
+    return train_size_str
+  }
+
+  const Targets = {
+    E: `Energy`,
+    EF_C: `Energy with conservative forces`,
+    EF_D: `Energy with direct forces`,
+    EFS_C: `Energy with conservative forces and stress`,
+    EFS_D: `Energy with direct forces and stress`,
+    EFS_CM: `Energy with conservative forces, stress, and Magmoms`,
+    EFS_DM: `Energy with direct forces, stress, and magmoms`,
   }
 
   const long_date = (date: string): string =>
@@ -107,9 +117,12 @@
   $: metrics_data = MODEL_METADATA.map((model) => {
     const disc_metrics = model.metrics?.discovery?.[discovery_set]
 
+    const targets = model.targets.replace(/_(.)/g, `<sub>$1</sub>`)
+    const targets_str = `<span title="${Targets[model.targets]}">${targets}</span>`
+
     // rename metric keys to pretty labels
     return {
-      Model: `<span title="Version: ${model.model_version}">${model.model_name}</span>`,
+      Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}">${model.model_name}</a>`,
       F1: disc_metrics?.F1,
       DAF: disc_metrics?.DAF,
       Prec: disc_metrics?.Precision,
@@ -122,7 +135,7 @@
       'κ<sub>SRME</sub>': model.metrics?.phonons?.κ_SRME,
       'Training Set': format_train_set(model.training_set),
       Params: `<span title="${pretty_num(model.model_params, `,`)}">${pretty_num(model.model_params)}</span>`,
-      Targets: model.targets.replace(/_(.)/g, `<sub>$1</sub>`),
+      Targets: targets_str,
       'Date Added': `<span title="${long_date(model.date_added)}">${model.date_added}</span>`,
     }
   }).sort((a, b) => (b.F1 ?? 0) - (a.F1 ?? 0)) // Sort by F1 score descending

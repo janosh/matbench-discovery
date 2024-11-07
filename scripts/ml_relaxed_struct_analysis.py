@@ -361,3 +361,6 @@ if __name__ == "__main__":
         )
         fig.show()
         pmv.save_fig(fig, f"{SITE_FIGS}/spg-sankey-{model.replace('_', '-')}.svelte")
+
+
+# TODO look at this metrics https://github.com/FAIR-Chem/fairchem/blob/6329e922a42c2082bfbbbf63d40ce6e0b65eafdd/src/fairchem/core/modules/evaluator.py#L318

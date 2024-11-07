@@ -15,7 +15,7 @@
   export let style: string | null = null
   export let metrics_style: string | null = null
 
-  $: ({ model_name } = model)
+  $: ({ model_name, model_key } = model)
   $: ({ model_params, hyperparams, notes = {}, training_set, n_estimators } = model)
   $: discovery_metrics = model.metrics?.discovery?.full_test_set ?? {}
   $: ({ missing_preds, missing_percent } = discovery_metrics)
@@ -27,12 +27,11 @@
     [`${repository}/blob/-/models/${model.dirname}`, `Files`, `octicon:file-directory`],
   ]
   const target = { target: `_blank`, rel: `noopener` }
-  $: model_slug = model_name?.toLowerCase().replaceAll(` `, `-`) ?? ``
   $: n_model_params = pretty_num(model_params, `.3~s`)
 </script>
 
-<h2 id={model_slug} {style}>
-  <a href="/models/{model_slug}">{model_name}</a>
+<h2 id={model_key} {style}>
+  <a href="/models/{model_key}">{model_name}</a>
   <button
     on:click={() => (show_details = !show_details)}
     title="{show_details ? `Hide` : `Show`} authors and package versions"

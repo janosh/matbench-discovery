@@ -1,4 +1,5 @@
 model_name: BOWSR
+model_key: bowsr
 model_version: 2022.9.20
 matbench_discovery_version: 1.0.0
 date_added: "2022-11-17"
