@@ -9,15 +9,18 @@ import pymatviz as pmv
 from IPython.display import display
 from pymatgen.core import Structure
 from pymatviz.enums import Key, Task
+from pymatviz.utils import si_fmt
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, SITE_FIGS, today
 from matbench_discovery.data import DataFiles, Model, df_wbm, round_trip_yaml
 from matbench_discovery.enums import MbdKey
+from matbench_discovery.models import MODEL_METADATA
 from matbench_discovery.structure import analyze_symmetry, pred_vs_ref_struct_symmetry
 
 init_spg_col = "init_spg_num"
 dft_spg_col = "dft_spg_num"
+n_structs_col = "n_structs"
 model_lvl, sym_prop_lvl = "model", "symmetry_property"
 df_wbm[init_spg_col] = df_wbm[MbdKey.init_wyckoff].str.split("_").str[2].astype(int)
 df_wbm[dft_spg_col] = df_wbm[Key.wyckoff_spglib].str.split("_").str[2].astype(int)
@@ -33,9 +36,11 @@ print(
     f"{retained:,} / {len(df_wbm):,} ({retained/len(df_wbm):.2%})"
 )
 
-csv_path = f"{ROOT}/data/2024-10-10-all-models-symmetry-analysis.csv.gz"
-if os.path.isfile(csv_path):
-    df_sym_all = pd.read_csv(csv_path, header=[0, 1], index_col=0)
+csv_path = f"{ROOT}/data/2024-11-07-all-models-symmetry-analysis.csv.gz"
+df_sym_all = pd.read_csv(csv_path, header=[0, 1], index_col=0)
+
+models = df_sym_all.columns.levels[0]
+print(f"{len(models)=}: {', '.join(models)}")
 
 
 # %%
@@ -49,23 +54,32 @@ if debug_mode:
 dfs_model_structs: dict[str, pd.DataFrame] = {}
 
 # pbar = tqdm(Model, desc="Loading model structures")
-for model in Model:
-    json_path = str(model).replace(".csv.gz", ".json.gz")
-    if not os.path.isfile(json_path):
+for model_name, model_metadata in MODEL_METADATA.items():
+    if model_name in df_sym_all:
+        print(f"{model_name} already analyzed")
+        continue
+    geo_opt_metrics = model_metadata.get("metrics", {}).get("geo_opt", {})
+    if geo_opt_metrics in ("not applicable", "not available"):
+        continue
+    ml_relaxed_structs_path = f"{ROOT}/{geo_opt_metrics.get("pred_file")}"
+    if not ml_relaxed_structs_path:
+        continue
+    if not os.path.isfile(ml_relaxed_structs_path):
+        print(f"{model_name}-relaxed structures not found")
         continue
 
     if (
-        model.name in dfs_model_structs
+        model_name in dfs_model_structs
         # reload df_model if debug_mode changed
-        and len(dfs_model_structs[model.name]) == debug_mode
+        and (len(dfs_model_structs[model_name]) == debug_mode or debug_mode == 0)
     ):
         continue
-    df_model = pd.read_json(json_path).set_index(Key.mat_id)
+    df_model = pd.read_json(ml_relaxed_structs_path).set_index(Key.mat_id)
     if debug_mode:
         df_model = df_model.head(debug_mode)
-    dfs_model_structs[model.name] = df_model
-    n_structs_for_model = len(dfs_model_structs[model.name])
-    print(f"Loaded {n_structs_for_model:,} structures for {model.name}")
+    dfs_model_structs[model_name] = df_model
+    n_structs_for_model = len(dfs_model_structs[model_name])
+    print(f"Loaded {n_structs_for_model:,} structures for {model_name}")
 
 
 # %% Perform symmetry analysis for all model-relaxed structures
@@ -94,12 +108,14 @@ for model_name in tqdm(dfs_model_structs, desc="Analyzing model structures"):
         pbar=dict(desc=f"Analyzing {model_name} symmetries"),
     )
 
-# Analyze DFT structures
+
+# %% Analyze DFT structures
 dft_structs = {
     mat_id: Structure.from_dict(cse[Key.structure])
     for mat_id, cse in df_wbm_structs[Key.cse].items()
 }
-dfs_sym_all[Key.dft] = analyze_symmetry(dft_structs)
+if Key.dft.label not in df_sym_all:
+    dfs_sym_all[Key.dft.label] = analyze_symmetry(dft_structs)
 
 
 # %% Compare symmetry with DFT reference
@@ -108,7 +124,7 @@ n_models = len({*dfs_sym_all} - {Key.dft})
 for idx, model_name in enumerate({*dfs_sym_all} - {Key.dft}):
     dfs_sym_all[model_name] = pred_vs_ref_struct_symmetry(
         dfs_sym_all[model_name],
-        dfs_sym_all[Key.dft],
+        df_sym_all[Key.dft.label],
         df_structs[model_name].dropna().to_dict(),
         dft_structs,
         pbar=dict(desc=f"{idx+1}/{n_models} Comparing DFT vs {model_name} symmetries"),
@@ -116,12 +132,14 @@ for idx, model_name in enumerate({*dfs_sym_all} - {Key.dft}):
 
 
 # %% Combine all dataframes
-df_sym_all = pd.concat(dfs_sym_all, axis="columns", names=[model_lvl, sym_prop_lvl])
+df_sym_all = df_sym_all.join(
+    pd.concat(dfs_sym_all, axis="columns", names=[model_lvl, sym_prop_lvl])
+)
 df_sym_all = df_sym_all.convert_dtypes()
 
 
 # %% Save results to CSV
-csv_path = f"{ROOT}/data/{today}-all-models-symmetry-analysis.csv.gz"
+csv_path = f"{ROOT}/data/{today}-all-models-symmetry-analysis.csv.xz"
 df_sym_all.to_csv(csv_path)
 
 
@@ -211,12 +229,13 @@ pmv.save_fig(fig_sym_ops, f"{module_dir}/{today}-sym-ops-violin.pdf")
 
 # %% violin plot of number of symmetry operations in ML-relaxed structures vs DFT
 fig_sym_ops_diff = px.violin(
-    df_sym_all.drop(Key.dft, level=model_lvl, axis="columns")
+    df_sym_all.drop(Key.dft.label, level=model_lvl, axis="columns")
     .xs(MbdKey.n_sym_ops_diff, level=sym_prop_lvl, axis="columns")
     .reset_index(),
     orientation="h",
     color="model",
     hover_name=Key.mat_id,
+    spanmode="hard",
 )
 title = "Difference in number of symmetry operations in ML vs DFT-relaxed structures"
 fig_sym_ops_diff.layout.title = dict(text=title, x=0.5)
@@ -226,7 +245,7 @@ fig_sym_ops_diff.layout.margin.t = 50
 fig_sym_ops_diff.update_traces(orientation="h", side="positive", width=1.8)
 
 fig_sym_ops_diff.show()
-pmv.save_fig(fig_sym_ops_diff, f"{module_dir}/{today}-sym-ops-diff-violin.pdf")
+pmv.save_fig(fig_sym_ops_diff, f"{module_dir}/{today}-sym-ops-diff-violin.svelte")
 
 
 # %%
@@ -240,79 +259,86 @@ def analyze_symmetry_changes(df_sym_all: pd.DataFrame) -> pd.DataFrame:
     results: dict[str, dict[str, float]] = {}
 
     for model in df_sym_all.columns.levels[0]:
-        if model == Key.dft:  # don't compare DFT to itself
+        if model == Key.dft.label:  # don't compare DFT to itself
             continue
+        try:
+            spg_diff = df_sym_all[model][MbdKey.spg_num_diff]
+            n_sym_ops_diff = df_sym_all[model][MbdKey.n_sym_ops_diff]
+            total = len(spg_diff.dropna())
 
-        spg_diff = df_sym_all[model][MbdKey.spg_num_diff]
-        n_sym_ops_diff = df_sym_all[model][MbdKey.n_sym_ops_diff]
-        total = len(spg_diff.dropna())
+            # Count cases where spacegroup changed
+            changed_mask = spg_diff != 0
+            # Among changed cases, count whether symmetry increased or decreased
+            sym_decreased = (n_sym_ops_diff < 0) & changed_mask
+            sym_increased = (n_sym_ops_diff > 0) & changed_mask
+            sym_matched = ~changed_mask
 
-        # Count cases where spacegroup changed
-        changed_mask = spg_diff != 0
-        # Among changed cases, count whether symmetry increased or decreased
-        sym_decreased = (n_sym_ops_diff < 0) & changed_mask
-        sym_increased = (n_sym_ops_diff > 0) & changed_mask
-        sym_matched = ~changed_mask
-
-        results[model] = {
-            str(Key.symmetry_decrease): float(sym_decreased.sum() / total),
-            str(Key.symmetry_match): float(sym_matched.sum() / total),
-            str(Key.symmetry_increase): float(sym_increased.sum() / total),
-        }
+            results[model] = {
+                str(Key.symmetry_decrease): float(sym_decreased.sum() / total),
+                str(Key.symmetry_match): float(sym_matched.sum() / total),
+                str(Key.symmetry_increase): float(sym_increased.sum() / total),
+                n_structs_col: total,
+            }
+        except KeyError as exc:
+            exc.add_note(
+                f"Missing data for {model}, available columns={list(df_sym_all[model])}"
+            )
+            raise
 
     return pd.DataFrame(results).T
 
 
-def write_symmetry_metrics_to_yaml(model: Model) -> None:
-    """Write symmetry metrics to model YAML metadata files."""
+# %% Print summary of symmetry changes
+df_sym_changes = analyze_symmetry_changes(df_sym_all).convert_dtypes()
+display(
+    df_sym_changes.round(3)
+    .rename(columns=lambda col: col.removeprefix("symmetry_"))
+    .style.format(lambda x: f"{x:.1%}" if isinstance(x, float) else si_fmt(x))
+    .background_gradient(cmap="Oranges", subset="decrease")
+    .background_gradient(cmap="Greens", subset="match")
+    .background_gradient(cmap="Blues", subset="increase")
+    .set_caption("Symmetry changes vs DFT")
+)
+
+
+# %%
+def write_geo_opt_metrics_to_yaml(model: Model) -> None:
+    """Write geometry optimization metrics to model YAML metadata files."""
     df_rmsd = df_sym_all.xs(
         MbdKey.structure_rmsd_vs_dft, level=sym_prop_lvl, axis="columns"
-    )
-    if model.name not in df_rmsd:
-        print(f"No RMSD column for {model.name}")
+    ).round(4)
+    if model.label not in df_rmsd:
+        print(f"No RMSD column for {model.label}")
         return
 
     # Calculate RMSD
-    rmsd = float(df_rmsd[model.name].mean(axis=0).round(3))
+    rmsd = float(df_rmsd[model.label].mean(axis=0).round(4))
 
     # Calculate symmetry change statistics
-    df_sym_changes = analyze_symmetry_changes(df_sym_all)
-    if model.name not in df_sym_changes.index:
-        print(f"No symmetry data for {model.name}")
+    if model.label not in df_sym_changes.index:
+        print(f"No symmetry data for {model.label}")
         return
 
-    sym_changes = df_sym_changes.loc[model.name].round(3).to_dict()
+    sym_changes = df_sym_changes.round(4).loc[model.label].to_dict()
 
     # Combine metrics
-    symmetry_metrics = {str(Key.rmsd): rmsd, str(Key.symmetry_change): sym_changes}
+    geo_opt_metrics = {str(Key.rmsd): rmsd} | sym_changes
 
     yaml_path = f"{Model.base_dir}/{model.url}"
     with open(yaml_path) as file:  # Load existing metadata
         model_metadata = round_trip_yaml.load(file)
 
-    model_metadata.setdefault("metrics", {})[Task.geo_opt] = symmetry_metrics
+    all_metrics = model_metadata.setdefault("metrics", {})
+    all_metrics.setdefault(Task.geo_opt, {}).update(geo_opt_metrics)
 
     with open(yaml_path, mode="w") as file:  # Write back to file
         round_trip_yaml.dump(model_metadata, file)
 
 
-# %% Print summary of symmetry changes
-df_sym_changes = analyze_symmetry_changes(df_sym_all)
-print("\nSymmetry changes vs DFT (as fraction of total structures):")
-
-display(
-    df_sym_changes.round(3)
-    .rename(columns=lambda col: col.removeprefix("symmetry_"))
-    .style.format("{:.1%}")
-    .background_gradient(cmap="Oranges")
-    .background_gradient(cmap="Greens", subset="match")
-)
-
-
 # %%
 if __name__ == "__main__":
     for model in Model:
-        write_symmetry_metrics_to_yaml(model)
+        write_geo_opt_metrics_to_yaml(model)
 
     # %% plot ML vs DFT relaxed spacegroup correspondence as sankey diagrams
     df_spg = df_sym_all.xs(Key.spg_num, level=sym_prop_lvl, axis="columns")

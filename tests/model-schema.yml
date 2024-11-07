@@ -157,6 +157,16 @@ properties:
                 type: [string, "null"]
               pred_col:
                 type: [string, "null"]
+              rmsd:
+                type: number
+              symmetry_decrease:
+                type: number
+              symmetry_match:
+                type: number
+              symmetry_increase:
+                type: number
+              n_structs:
+                type: number
           - type: string
             enum: [not applicable, not available]
       discovery:

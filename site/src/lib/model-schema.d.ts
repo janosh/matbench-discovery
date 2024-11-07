@@ -89,6 +89,11 @@ export interface ModelMetadata {
       | {
           pred_file?: string | null
           pred_col?: string | null
+          rmsd?: number
+          symmetry_decrease?: number
+          symmetry_match?: number
+          symmetry_increase?: number
+          n_structs?: number
         }
       | ('not applicable' | 'not available')
     discovery?: {

@@ -60,13 +60,6 @@
   "prettier": {
     "semi": false,
     "singleQuote": true,
-    "overrides": [
-      {
-        "files": "*.svelte",
-        "options": {
-          "printWidth": 90
-        }
-      }
-    ]
+    "printWidth": 90
   }
 }

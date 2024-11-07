@@ -70,6 +70,11 @@ metrics:
   geo_opt:
     pred_file: models/mace/2023-12-11-mace-wbm-IS2RE-FIRE.json.gz
     pred_col: mace_structure
+    rmsd: 0.0194
+    symmetry_decrease: 0.035
+    symmetry_match: 0.7361
+    symmetry_increase: 0.2243
+    n_structs: 243070.0
   discovery:
     pred_file: models/mace/2023-12-11-mace-wbm-IS2RE-FIRE.csv.gz
     pred_col: e_form_per_atom_mace

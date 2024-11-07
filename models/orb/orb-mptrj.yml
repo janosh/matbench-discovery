@@ -45,7 +45,10 @@ hyperparams:
   ase_optimizer: FIRE
   optimizer: Adam
   loss: MAE
-  loss_weights: { energy: 10.0, force: 1.0, stress: 1.0 }
+  loss_weights:
+    energy: 10.0
+    force: 1.0
+    stress: 1.0
   batch_size: 300 # (avg, as batch size is dynamic)
   initial_learning_rate: 0.0003
   learning_rate_schedule: CosineAnnealingLR(T_max=100)
@@ -73,6 +76,11 @@ metrics:
   geo_opt:
     pred_file: models/orb/orb-mptrj-only-v2-20241014.json.gz
     pred_col: orb_structure
+    rmsd: 0.0185
+    symmetry_decrease: 0.8594
+    symmetry_match: 0.1397
+    symmetry_increase: 0.0007
+    n_structs: 256963.0
   discovery:
     pred_file: models/orb/orbff-mptrj-only-v2-20241014.csv.gz
     pred_col: e_form_per_atom_orb

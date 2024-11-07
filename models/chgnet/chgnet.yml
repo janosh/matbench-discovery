@@ -66,6 +66,11 @@ metrics:
   geo_opt:
     pred_file: models/chgnet/2023-12-21-chgnet-0.3.0-wbm-IS2RE.json.gz
     pred_col: chgnet_structure
+    rmsd: 0.0216
+    symmetry_decrease: 0.2526
+    symmetry_match: 0.5833
+    symmetry_increase: 0.1525
+    n_structs: 250779.0
   discovery:
     pred_file: models/chgnet/2023-12-21-chgnet-0.3.0-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_chgnet
