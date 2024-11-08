@@ -12,7 +12,7 @@ from matbench_discovery.energy import get_e_form_per_atom, mp_elemental_ref_ener
 
 e_form_7net_col = "e_form_per_atom_sevennet"
 results = "./results"
-pot_name = "sevennet"
+pot_name = "sevennet-0"
 out_path = f"{results}/{pot_name}"
 files = sorted(glob(f"{results}/{pot_name}-*.json.gz"))
 

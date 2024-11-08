@@ -405,7 +405,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     megnet = "megnet/2022-11-18-megnet-wbm-IS2RE.csv.gz", "megnet/megnet.yml", "MEGNet"
 
     # SevenNet trained on MPtrj
-    sevennet = "sevennet/2024-07-11-sevennet-preds.csv.gz", "sevennet/sevennet.yml", "SevenNet"  # fmt: skip
+    sevennet = "sevennet/2024-07-11-sevennet-0-preds.csv.gz", "sevennet/sevennet.yml", "SevenNet"  # fmt: skip
 
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest
     voronoi_rf = "voronoi_rf/2022-11-27-train-test/e-form-preds-IS2RE.csv.gz", "voronoi_rf/voronoi-rf.yml", "Voronoi RF"  # fmt: skip

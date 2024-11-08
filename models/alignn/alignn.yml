@@ -1,4 +1,5 @@
 model_name: ALIGNN
+model_key: alignn
 model_version: 2023.01.10
 matbench_discovery_version: 1.0.0
 date_added: "2023-06-02"

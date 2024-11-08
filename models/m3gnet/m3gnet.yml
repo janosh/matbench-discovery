@@ -1,4 +1,5 @@
 model_name: M3GNet
+model_key: m3gnet
 model_version: v2022.9.20
 matbench_discovery_version: 1.0.0
 date_added: "2022-09-20"
@@ -37,7 +38,10 @@ hyperparams:
   batch_size: 32
   learning_rate: 1e-3
   optimizer: Adam
-  loss_weights: { energy: 1, force: 1, stress: 0.1 }
+  loss_weights:
+    energy: 1
+    force: 1
+    stress: 0.1
 
 training_set: [MPF]
 
@@ -53,6 +57,11 @@ metrics:
   geo_opt:
     pred_file: models/m3gnet/2023-06-01-m3gnet-manual-sampling-wbm-IS2RE.json.gz
     pred_col: m3gnet_structure
+    rmsd: 0.0217
+    symmetry_decrease: 0.0652
+    symmetry_match: 0.7488
+    symmetry_increase: 0.1804
+    n_structs: 256963.0
   discovery:
     pred_file: models/m3gnet/2023-12-28-m3gnet-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_m3gnet

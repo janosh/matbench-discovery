@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from pymatgen.core import Lattice, Structure
+from pymatgen.core import Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatviz.enums import Key
 
@@ -27,42 +27,12 @@ def test_perturb_structure(dummy_struct: Structure, gamma: float) -> None:
     )
 
 
-@pytest.fixture
-def cubic_structure() -> Structure:
-    lattice = Lattice.cubic(4.2)
-    return Structure(lattice, ["Si", "Si"], [[0, 0, 0], [0.5, 0.5, 0.5]])
-
-
-@pytest.fixture
-def tetragonal_structure() -> Structure:
-    lattice = Lattice.tetragonal(a=4.0, c=6.0)
-    return Structure(
-        lattice, ["Ti", "O", "O"], [[0, 0, 0], [0.5, 0.5, 0], [0, 0.5, 0.5]]
-    )
-
-
-@pytest.fixture
-def monoclinic_structure() -> Structure:
-    lattice = Lattice.monoclinic(a=5.0, b=4.0, c=6.0, beta=100)
-    return Structure(
-        lattice,
-        ["P", "O", "O", "O", "O"],
-        [
-            [0, 0, 0],
-            [0.25, 0.25, 0.25],
-            [0.75, 0.75, 0.25],
-            [0.25, 0.75, 0.75],
-            [0.75, 0.25, 0.75],
-        ],
-    )
-
-
 @pytest.mark.parametrize(
     "test_structure, expected_spg_num, expected_n_sym_ops",
     [
-        ("cubic_structure", 229, 96),
-        ("tetragonal_structure", 47, 8),
-        ("monoclinic_structure", 3, 2),
+        ("cubic_struct", 229, 96),
+        ("tetragonal_struct", 47, 8),
+        ("monoclinic_struct", 3, 2),
     ],
 )
 def test_analyze_symmetry(
@@ -80,14 +50,14 @@ def test_analyze_symmetry(
 
 
 def test_analyze_symmetry_multiple_structures(
-    cubic_structure: Structure,
-    tetragonal_structure: Structure,
-    monoclinic_structure: Structure,
+    cubic_struct: Structure,
+    tetragonal_struct: Structure,
+    monoclinic_struct: Structure,
 ) -> None:
     structures = {
-        "cubic": cubic_structure,
-        "tetragonal": tetragonal_structure,
-        "monoclinic": monoclinic_structure,
+        "cubic": cubic_struct,
+        "tetragonal": tetragonal_struct,
+        "monoclinic": monoclinic_struct,
     }
     df_sym = analyze_symmetry(structures)
 
@@ -97,14 +67,14 @@ def test_analyze_symmetry_multiple_structures(
 
 
 def test_pred_vs_ref_struct_symmetry(
-    cubic_structure: Structure, tetragonal_structure: Structure
+    cubic_struct: Structure, tetragonal_struct: Structure
 ) -> None:
     key = "structure"
-    df_ml = analyze_symmetry({key: cubic_structure})
-    df_dft = analyze_symmetry({key: tetragonal_structure})
+    df_ml = analyze_symmetry({key: cubic_struct})
+    df_dft = analyze_symmetry({key: tetragonal_struct})
 
     df_compared = pred_vs_ref_struct_symmetry(
-        df_ml, df_dft, {key: cubic_structure}, {key: tetragonal_structure}
+        df_ml, df_dft, {key: cubic_struct}, {key: tetragonal_struct}
     )
 
     assert MbdKey.spg_num_diff in df_compared.columns
@@ -114,10 +84,10 @@ def test_pred_vs_ref_struct_symmetry(
     assert df_compared[MbdKey.n_sym_ops_diff].iloc[0] == n_sym_ops_ml - n_sym_ops_dft
 
 
-def test_analyze_symmetry_perturbed_structure(cubic_structure: Structure) -> None:
-    perturbed_structure = perturb_structure(cubic_structure, gamma=1.5)
+def test_analyze_symmetry_perturbed_structure(cubic_struct: Structure) -> None:
+    perturbed_structure = perturb_structure(cubic_struct, gamma=1.5)
 
-    df_sym_original = analyze_symmetry({"original": cubic_structure})
+    df_sym_original = analyze_symmetry({"original": cubic_struct})
     df_sym_perturbed = analyze_symmetry({"perturbed": perturbed_structure})
 
     assert not df_sym_original.equals(df_sym_perturbed)
@@ -127,10 +97,10 @@ def test_analyze_symmetry_perturbed_structure(cubic_structure: Structure) -> Non
     )
 
 
-def test_analyze_symmetry_supercell(cubic_structure: Structure) -> None:
-    supercell = cubic_structure * (2, 2, 2)
+def test_analyze_symmetry_supercell(cubic_struct: Structure) -> None:
+    supercell = cubic_struct * (2, 2, 2)
 
-    df_sym_original = analyze_symmetry({"original": cubic_structure})
+    df_sym_original = analyze_symmetry({"original": cubic_struct})
     df_sym_supercell = analyze_symmetry({"supercell": supercell})
 
     assert list(df_sym_original) == list(df_sym_supercell)
@@ -138,14 +108,14 @@ def test_analyze_symmetry_supercell(cubic_structure: Structure) -> None:
 
 
 def test_pred_vs_ref_struct_symmetry_with_structures(
-    cubic_structure: Structure, tetragonal_structure: Structure
+    cubic_struct: Structure, tetragonal_struct: Structure
 ) -> None:
-    df_ml = pd.DataFrame({Key.structure: [cubic_structure]})
-    df_dft = pd.DataFrame({Key.structure: [tetragonal_structure]})
+    df_ml = pd.DataFrame({Key.structure: [cubic_struct]})
+    df_dft = pd.DataFrame({Key.structure: [tetragonal_struct]})
 
     key = "struct1"
-    df_ml_sym = analyze_symmetry({key: cubic_structure})
-    df_dft_sym = analyze_symmetry({key: tetragonal_structure})
+    df_ml_sym = analyze_symmetry({key: cubic_struct})
+    df_dft_sym = analyze_symmetry({key: tetragonal_struct})
 
     df_ml = pd.concat([df_ml, df_ml_sym], axis=1)
     df_dft = pd.concat([df_dft, df_dft_sym], axis=1)
@@ -154,7 +124,7 @@ def test_pred_vs_ref_struct_symmetry_with_structures(
 
     # must use same keys for both structures to match them in RMSD calculation
     df_compared = pred_vs_ref_struct_symmetry(
-        df_ml, df_dft, {key: cubic_structure}, {key: tetragonal_structure}
+        df_ml, df_dft, {key: cubic_struct}, {key: tetragonal_struct}
     )
 
     assert set(df_compared) == {
@@ -176,17 +146,17 @@ def test_pred_vs_ref_struct_symmetry_with_structures(
     }
 
 
-def test_analyze_symmetry_primitive_vs_conventional(cubic_structure: Structure) -> None:
-    spg_analyzer = SpacegroupAnalyzer(cubic_structure)
+def test_analyze_symmetry_primitive_vs_conventional(cubic_struct: Structure) -> None:
+    spg_analyzer = SpacegroupAnalyzer(cubic_struct)
     primitive_structure = spg_analyzer.get_primitive_standard_structure()
 
-    key_conv, key_prim = "conventional", "primitive"
-    df_conventional = analyze_symmetry({key_conv: cubic_structure})
-    df_primitive = analyze_symmetry({key_prim: primitive_structure})
+    conventional_key, primitive_key = "conventional", "primitive"
+    df_conventional = analyze_symmetry({conventional_key: cubic_struct})
+    df_primitive = analyze_symmetry({primitive_key: primitive_structure})
     assert df_conventional.index.name == Key.mat_id
     assert df_primitive.index.name == Key.mat_id
-    assert df_primitive.index[0] == key_prim
-    assert df_conventional.index[0] == key_conv
+    assert df_primitive.index[0] == primitive_key
+    assert df_conventional.index[0] == conventional_key
 
     cols_to_drop = [  # some columns differ between conventional and primitive structure
         Key.wyckoff_symbols,
