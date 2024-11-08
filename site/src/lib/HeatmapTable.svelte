@@ -2,7 +2,7 @@
   import { max, min } from 'd3-array'
   import { scaleSequential } from 'd3-scale'
   import * as d3sc from 'd3-scale-chromatic'
-  import { choose_bw_for_contrast } from 'elementari/labels'
+  import { choose_bw_for_contrast, pretty_num } from 'elementari/labels'
   import { titles_as_tooltips } from 'svelte-zoo/actions'
   import { flip } from 'svelte/animate'
   import { writable } from 'svelte/store'
@@ -12,6 +12,8 @@
   export let higher_is_better: string[] = []
   export let lower_is_better: string[] = []
   export let sep_lines: number[] = []
+  export let sticky_cols: number[] = [0] // default to sticky first column
+  export let format: Record<string, string> = {}
 
   const sort_state = writable({ column: ``, ascending: true })
   function sort_rows(column: string) {
@@ -89,13 +91,16 @@
             <td
               data-col={column}
               data-sort-value={val}
-              class:sticky-col={idx == 0}
+              class:sticky-col={sticky_cols.includes(idx)}
               class:sep-line={sep_lines.includes(idx)}
               style:background-color={color.bg}
               style:color={color.text}
-              title={val?.toString() ?? ``}
             >
-              {@html val?.toString() ?? ``}
+              {#if typeof val === `number` && format[column]}
+                {@html pretty_num(val, format[column])}
+              {:else}
+                {@html val}
+              {/if}
             </td>
           {/each}
         </tr>

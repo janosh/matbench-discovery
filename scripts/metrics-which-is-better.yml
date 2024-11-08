@@ -1,3 +1,13 @@
-higher_is_better:
-  [Acc, Accuracy, AUC, DAF, F1, Prec, Precision, R2, Recall, TN, TNR, TP, TPR]
-lower_is_better: [MAE, RMSE, FPR, FNR, FP, FN, κ_SRME]
+discovery:
+  higher_is_better:
+    [Acc, Accuracy, AUC, DAF, F1, Prec, Precision, R2, Recall, TN, TNR, TP, TPR]
+  lower_is_better: [MAE, RMSE, FPR, FNR, FP, FN]
+
+geo_opt:
+  higher_is_better: [Match]
+  # unclear if lower symmetry increase is really better, could be model actually found a higher symmetry lower-energy structure than DFT optimizer
+  lower_is_better: [RMSD, Decrease, Increase]
+
+phonons:
+  lower_is_better: [κ_SRME]
+  higher_is_better: []
