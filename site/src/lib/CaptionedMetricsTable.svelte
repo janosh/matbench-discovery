@@ -1,5 +1,5 @@
 <script lang="ts">
-  import MetricsTable from '$figs/metrics-table-uniq-protos.svelte'
+  import { DiscoveryMetricsTable } from '$lib'
   import { pretty_num } from 'elementari'
   import { onMount } from 'svelte'
 
@@ -23,7 +23,7 @@
   class:hide-non-compliant={!show_non_compliant}
   class:hide-energy-only={!show_energy_only}
 >
-  <MetricsTable />
+  <DiscoveryMetricsTable {show_non_compliant} {show_energy_only} />
   <div class="downloads">
     Download table as
     {#each [`PDF`, `SVG`] as file_ext}

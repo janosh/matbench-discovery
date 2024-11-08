@@ -23,6 +23,8 @@
     "@sveltejs/adapter-static": "^3.0.6",
     "@sveltejs/kit": "^2.7.4",
     "@sveltejs/vite-plugin-svelte": "^3.1.2",
+    "d3-array": "^3.2.4",
+    "d3-scale": "^4.0.2",
     "d3-scale-chromatic": "^3.1.0",
     "elementari": "^0.2.3",
     "eslint": "^9.14.0",
@@ -49,7 +51,6 @@
     "svelte-toc": "^0.5.9",
     "svelte-zoo": "^0.4.13",
     "svelte2tsx": "^0.7.22",
-    "tippy.js": "^6.3.7",
     "tslib": "^2.8.1",
     "typescript": "5.6.3",
     "typescript-eslint": "^8.12.2",
@@ -59,13 +60,6 @@
   "prettier": {
     "semi": false,
     "singleQuote": true,
-    "overrides": [
-      {
-        "files": "*.svelte",
-        "options": {
-          "printWidth": 90
-        }
-      }
-    ]
+    "printWidth": 90
   }
 }

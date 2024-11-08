@@ -1,9 +1,9 @@
 <script lang="ts">
   import { dev } from '$app/environment'
   import { page } from '$app/stores'
+  import TRAINING_SETS from '$data/training-sets.yml'
   import per_elem_each_errors from '$figs/per-element-each-errors.json'
   import { MODEL_METADATA, PtableInset } from '$lib'
-  import TRAINING_SETS from '$root/data/training-sets.yml'
   import pkg from '$site/package.json'
   import Icon from '@iconify/svelte'
   import type { ChemicalElement } from 'elementari'
@@ -17,9 +17,7 @@
   import { CopyButton, Tooltip } from 'svelte-zoo'
 
   $: model_key = $page.params.slug
-  $: model = MODEL_METADATA.find(
-    (model) => model.model_name.toLowerCase().replaceAll(` `, `-`) == model_key,
-  )
+  $: model = MODEL_METADATA.find((model) => model.model_key == model_key)
   let color_scale: string[] = [`Viridis`]
   let active_element: ChemicalElement | null = null
 
@@ -127,7 +125,7 @@
     </section>
 
     {#each [[`e-form`, `Formation Energies`], [`each`, `Convex Hull Distance`]] as [which_energy, title]}
-      {#await import(`$figs/energy-parity/${which_energy}-parity-${model.model_name.toLowerCase().replaceAll(` `, `-`)}.svelte`) then ParityPlot}
+      {#await import(`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`) then ParityPlot}
         <!-- negative margin-bottom corrects for display: none plot title -->
         <h3 style="margin-bottom: -2em;">
           DFT vs ML {title}

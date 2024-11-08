@@ -1,4 +1,5 @@
 model_name: CGCNN
+model_key: cgcnn
 model_version: v0.1.0 # the aviary version
 matbench_discovery_version: 1.0.0
 date_added: "2022-12-28"

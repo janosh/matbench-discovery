@@ -136,7 +136,7 @@ table.metrics :is(td, th) {
   padding: 2pt 4pt !important;
 }
 tbody tr:nth-child(odd) {
-  background: black;
+  background: rgba(0, 0, 0, 0.5);
 }
 
 h1 {

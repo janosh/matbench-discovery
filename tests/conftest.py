@@ -16,6 +16,30 @@ def dummy_struct() -> Structure:
 
 
 @pytest.fixture
+def cubic_struct() -> Structure:
+    lattice = Lattice.cubic(4.2)
+    return Structure(lattice, ["Si", "Si"], [[0, 0, 0], [0.5, 0.5, 0.5]])
+
+
+@pytest.fixture
+def tetragonal_struct() -> Structure:
+    lattice = Lattice.tetragonal(a=4, c=6)
+    coords = [[0, 0, 0], [0.5, 0.5, 0], [0, 0.5, 0.5]]
+    return Structure(lattice, ["Ti", "O", "O"], coords)
+
+
+@pytest.fixture
+def monoclinic_struct() -> Structure:
+    lattice = Lattice.monoclinic(a=5, b=4, c=6, beta=100)
+    x1 = [0, 0, 0]
+    x2 = [0.25, 0.25, 0.25]
+    x3 = [0.75, 0.75, 0.25]
+    x4 = [0.25, 0.75, 0.75]
+    x5 = [0.75, 0.25, 0.75]
+    return Structure(lattice, ["P", "O", "O", "O", "O"], [x1, x2, x3, x4, x5])
+
+
+@pytest.fixture
 def df_float() -> pd.DataFrame:
     rng = np.random.default_rng(0)
 

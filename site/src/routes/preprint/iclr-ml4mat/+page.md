@@ -1,6 +1,6 @@
 <script>
   import { repository as repo } from '$site/package.json'
-  import MetricsTable from '$figs/metrics-table.svelte'
+  import { DiscoveryMetricsTable } from '$lib'
   import CumulativePrecisionRecall from '$figs/cumulative-precision-recall.svelte'
   import RollingMaeVsHullDistModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'
   import { browser } from '$app/environment'
@@ -106,7 +106,7 @@ Our initial benchmark release includes 8 models.
 
 ## Results
 
-<MetricsTable />
+<DiscoveryMetricsTable show_non_compliant show_energy_only hide_cols={[`κ<sub>SRME</sub>`]} discovery_set="full_test_set" />
 
 > @label:fig:metrics-table Regression and classification metrics for all models tested on our benchmark. The heat map ranges from yellow (best) to blue (worst) performance. DAF = discovery acceleration factor (see text), TPR = true positive rate, TNR = true negative rate, MAE = mean absolute error, RMSE = root mean squared error
 

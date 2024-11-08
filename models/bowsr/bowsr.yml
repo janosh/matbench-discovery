@@ -1,4 +1,5 @@
 model_name: BOWSR
+model_key: bowsr
 model_version: 2022.9.20
 matbench_discovery_version: 1.0.0
 date_added: "2022-11-17"
@@ -59,6 +60,11 @@ metrics:
   geo_opt:
     pred_file: models/bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.json.gz
     pred_col: structure_bowsr_megnet
+    rmsd: 0.043
+    symmetry_decrease: 0.0037
+    symmetry_match: 0.5271
+    symmetry_increase: 0.4671
+    n_structs: 250779.0
   discovery:
     pred_file: models/bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_bowsr_megnet

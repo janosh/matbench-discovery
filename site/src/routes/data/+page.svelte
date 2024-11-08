@@ -1,5 +1,6 @@
 <script lang="ts">
   import { browser } from '$app/environment'
+  import DataReadme from '$data/wbm/readme.md'
   import FormEnergyHist from '$figs/hist-wbm-e-form-per-atom.svelte'
   import HistWbmHullDist from '$figs/hist-wbm-hull-dist.svelte'
   import MPtrjNSitesHist from '$figs/mp-trj-n-sites-hist.svelte'
@@ -7,7 +8,6 @@
   import SpacegroupSunburstMp from '$figs/spacegroup-sunburst-mp.svelte'
   import SpacegroupSunburstWbm from '$figs/spacegroup-sunburst-wbm.svelte'
   import { PtableHeatmap } from '$lib'
-  import DataReadme from '$root/data/wbm/readme.md'
   import { ColorScaleSelect } from 'elementari'
   import Select from 'svelte-multiselect'
   import type { Snapshot } from './$types'

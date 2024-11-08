@@ -1,4 +1,5 @@
 model_name: SevenNet
+model_key: sevennet
 model_version: v0.9.1_w_cutoff # 2024-07-11
 matbench_discovery_version: 1.1.2 # required
 date_added: "2024-07-13" # required
@@ -44,7 +45,10 @@ hyperparams:
   ase_optimizer: FIRE
   optimizer: Adam
   loss: Huber - delta=0.01
-  loss_weights: { energy: 1.0, force: 1.0, stress: 0.01 }
+  loss_weights:
+    energy: 1.0
+    force: 1.0
+    stress: 0.01
   batch_size: 4096 # 32 (gpus) * 128 (batch per gpu) = 4096 (total batch size)
   initial_learning_rate: 0.010
   learning_rate_schedule: LinearLR - start_factor=1.0, total_iters=600, end_factor=0.0001
@@ -74,10 +78,15 @@ metrics:
   phonons:
     κ_SRME: 0.767
   geo_opt:
-    pred_file: null # TODO find .json.gz file, I had it somewhere!
-    pred_col: null
+    pred_file: models/sevennet/2024-07-11-sevennet-0-relaxed-structures.json.gz
+    pred_col: sevennet_structure
+    rmsd: 0.0193
+    symmetry_decrease: 0.3557
+    symmetry_match: 0.4535
+    symmetry_increase: 0.1446
+    n_structs: 256963.0
   discovery:
-    pred_file: models/sevennet/2024-07-11-sevennet-preds.csv.gz
+    pred_file: models/sevennet/2024-07-11-sevennet-0-preds.csv.gz
     pred_col: e_form_per_atom_sevennet
     full_test_set:
       F1: 0.719

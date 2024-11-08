@@ -34,8 +34,8 @@ if test_subset == TestSubset.uniq_protos:
 
 
 # %% parity plot of actual vs predicted e_form_per_atom
-parity_scatter_out_dir = f"{SITE_FIGS}/energy-parity"
-os.makedirs(parity_scatter_out_dir, exist_ok=True)
+parity_scatters_dir = f"{SITE_FIGS}/energy-parity"
+os.makedirs(parity_scatters_dir, exist_ok=True)
 
 for model, which_energy in itertools.product(df_metrics, (use_e_form, use_each)):
     if which_energy == use_each:
@@ -70,4 +70,4 @@ for model, which_energy in itertools.product(df_metrics, (use_e_form, use_each))
     fig.show()
 
     img_name = f"{which_energy}-parity-{model.lower().replace(' ', '-')}"
-    pmv.save_fig(fig, f"{parity_scatter_out_dir}/{img_name}.svelte")
+    pmv.save_fig(fig, f"{parity_scatters_dir}/{img_name}.svelte")

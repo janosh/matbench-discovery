@@ -27,8 +27,7 @@
 
   <div slot="best-report">
     {#if best_model}
-      {@const { model_name, F1, R2, DAF, repo, paper } = best_model}
-      {@const model_key = model_name.replaceAll(` `, `-`).toLowerCase()}
+      {@const { model_name, model_key, F1, R2, DAF, repo, paper } = best_model}
       <a href="/models/{model_key}">{model_name}</a> (<a href={paper}>paper</a>,
       <a href={repo}>code</a>) achieves the highest F1 score of {F1}, R<sup>2</sup> of {R2}
       and a discovery acceleration factor (DAF) of {DAF}

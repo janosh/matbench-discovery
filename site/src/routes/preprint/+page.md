@@ -10,9 +10,7 @@
   import HistClfPredHullDistModels from '$figs/hist-clf-pred-hull-dist-models-9x2.svelte'
   import HullDistParityWrenformerFailures from '$figs/hull-dist-parity-wrenformer-failures.svelte'
   import LargestErrorScatterSelect from './largest-error-scatter-select.svelte'
-  import MetricsTableUniqProtos from '$figs/metrics-table-uniq-protos.svelte'
-  import MetricsTable from '$figs/metrics-table.svelte'
-  import MetricsTableFirst10k from '$figs/metrics-table-first-10k.svelte'
+  import { DiscoveryMetricsTable } from '$lib'
   import MetricsTableMegnetUipCombos from '$figs/metrics-table-uip-megnet-combos.svelte'
   import RocModels from '$figs/roc-models.svelte'
   import RollingMaeVsHullDistModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'
@@ -251,7 +249,7 @@ To test a wide variety of methodologies proposed for learning the potential ener
 ## Results
 
 {#if mounted}
-<MetricsTableUniqProtos />
+<DiscoveryMetricsTable show_non_compliant={false} show_energy_only hide_cols={[`κ<sub>SRME</sub>`]} />
 {/if}
 
 > @label:tab:metrics-table-uniq-protos Classification and regression metrics for all models tested on our benchmark ranked by F1 score.
@@ -435,7 +433,7 @@ While prototypes are non-trivial to match, thus potentially introducing bias int
 Prototypes were matched based on an Aflow-style [@hicks_aflow_2021] Wyckoff representation as implemented in `aviary.wren.utils.get_protostructure_label_from_spglib` [@goodall_rapid_2022]. This string encodes the crystal's prototype and is invariant to relaxation (unless the system changes spacegroup during relaxation, usually by gaining symmetry) and will count structures with different lattice parameters as duplicates if both are expected to relax to the same ground state.
 
 {#if mounted}
-<MetricsTable />
+<DiscoveryMetricsTable show_non_compliant={false} show_energy_only hide_cols={[`κ<sub>SRME</sub>`]} discovery_set="full_test_set" metadata_cols={[]} sep_lines={[]} />
 {/if}
 
 > @label:tab:metrics-table Same as @tab:metrics-table-uniq-protos but computed for all 257k structures in the WBM test set, no duplicate prototypes excluded.
@@ -451,7 +449,7 @@ In concrete terms, this means in a discovery campaign that validates 10 k model 
 We emphasize that in light of the significant resulting increase in stability hit rate, these models are well worth integrating into future materials searches.
 
 {#if mounted}
-<MetricsTableFirst10k />
+<DiscoveryMetricsTable show_non_compliant={false} show_energy_only hide_cols={[`κ<sub>SRME</sub>`, `TNR`, `TPR`]} discovery_set="most_stable_10k" metadata_cols={[]} sep_lines={[]} />
 {/if}
 
 > @label:tab:metrics-table-first-10k Stability prediction metrics for the 10k materials predicted to be most stable by each model.

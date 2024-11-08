@@ -162,7 +162,7 @@
 
 <!-- link to ALL model pages with hidden links for the crawler -->
 {#each MODEL_METADATA as model}
-  <a href="/models/{model.model_name.toLowerCase().replaceAll(` `, `-`)}" hidden>
+  <a href="/models/{model.model_key}" hidden>
     {model.model_name}
   </a>
 {/each}

@@ -10,11 +10,11 @@ import numpy as np
 import pandas as pd
 import yaml
 from pymatviz.enums import Key, eV_per_atom
-from pymatviz.io import df_to_html, df_to_pdf
+from pymatviz.io import df_to_pdf
 from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
 
-from matbench_discovery import DATA_DIR, PDF_FIGS, ROOT, SCRIPTS, SITE_FIGS
+from matbench_discovery import DATA_DIR, PDF_FIGS, ROOT, SCRIPTS
 from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.enums import MbdKey, Open, Targets
 from matbench_discovery.metrics import stable_metrics
@@ -398,16 +398,6 @@ for (label, df_met), show_non_compliant in itertools.product(
     # Hide the original index since it's the same content same as model_name_col except
     # model_name_col also has HTML title attributes for hover tooltips
     styler.hide(axis="index")
-    df_to_html(
-        styler,
-        file_path=f"{SITE_FIGS}/metrics-table{label}.svelte",
-        inline_props="class='metrics'",
-        # draw line between classification and regression metrics
-        styles=f"#T_ :is(td, th):is(:nth-child({mae_col_idx}), "
-        f":nth-child({kappa_srme_col_idx})) {{ border-left: 1px solid white; }}"
-        f"{hide_scroll_bar}",
-        sortable=True,
-    )
     suffix = "" if show_non_compliant else "-only-compliant"
     non_compliant_idx = [*set(styler.index) & set(non_compliant_models)]
     try:
