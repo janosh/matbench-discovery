@@ -109,6 +109,8 @@
     overflow-x: auto;
     max-width: 100%;
     scrollbar-width: none;
+    width: max-content;
+    margin: auto;
   }
 
   .table-container::-webkit-scrollbar {

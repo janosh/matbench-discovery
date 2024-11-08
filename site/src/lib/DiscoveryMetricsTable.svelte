@@ -1,18 +1,19 @@
 <script lang="ts">
-  import { HeatmapTable, MODEL_METADATA, TRAINING_SETS } from '$lib'
-  import { si_fmt } from '$lib/utils'
+  import { HeatmapTable, MODEL_METADATA, TRAINING_SETS, model_is_compliant } from '$lib'
   import {
     higher_is_better,
     lower_is_better,
   } from '$root/scripts/metrics-which-is-better.yml'
   import { pretty_num } from 'elementari'
 
-  export let discovery_set: `full` | `most_stable_10k` | `unique_prototypes` =
+  export let discovery_set: `full_test_set` | `most_stable_10k` | `unique_prototypes` =
     `unique_prototypes`
-
-  const metadata_col = [`Training Set`, `Params`, `Targets`, `Date Added`]
-
-  const show_cols = [
+  export let show_non_compliant: boolean = false
+  export let show_energy_only: boolean = false
+  export let show_metadata: boolean = true
+  export let metadata_cols = [`Training Set`, `Params`, `Targets`, `Date Added`]
+  export let hide_cols: string[] = []
+  export let show_cols = [
     `Model`,
     `F1`,
     `DAF`,
@@ -24,8 +25,9 @@
     `RMSE`,
     `R<sup>2</sup>`,
     `κ<sub>SRME</sub>`,
-    ...(discovery_set === `unique_prototypes` ? metadata_col : []),
-  ]
+    ...(show_metadata ? metadata_cols : []),
+  ].filter((col) => !hide_cols.includes(col))
+  export let sep_lines: number[] = [6, 9]
 
   function format_train_set(model_training_sets: string[]) {
     let [total_structs, total_materials] = [0, 0]
@@ -49,10 +51,10 @@
 
       if (n_materials !== n_structs) {
         tooltip.push(
-          `${title}: ${si_fmt(n_materials)} materials (${si_fmt(n_structs)} structures)`,
+          `${title}: ${pretty_num(n_materials, `,`)} materials (${pretty_num(n_structs, `,`)} structures)`,
         )
       } else {
-        tooltip.push(`${title}: ${si_fmt(n_materials)} materials`)
+        tooltip.push(`${title}: ${pretty_num(n_materials, `,`)} materials`)
       }
     }
 
@@ -68,18 +70,18 @@
     const dataset_tooltip =
       tooltip.length > 1 ? `${new_line}• ${tooltip.join(new_line + `• `)}` : ``
 
-    let title = `${pretty_num(total_materials)} materials in training set${new_line}${dataset_tooltip}`
-    let train_size_str = `<span title="${title}" data-sort-value="${total_materials}">${si_fmt(total_materials)} (${data_str})</span>`
+    let title = `${pretty_num(total_materials, `,`)} materials in training set${new_line}${dataset_tooltip}`
+    let train_size_str = `<span title="${title}" data-sort-value="${total_materials}">${pretty_num(total_materials)} (${data_str})</span>`
 
     if (total_materials !== total_structs) {
       title =
-        `${pretty_num(total_materials)} materials in training set ` +
-        `(${pretty_num(total_structs)} structures counting all DFT relaxation ` +
+        `${pretty_num(total_materials, `,`)} materials in training set ` +
+        `(${pretty_num(total_structs, `,`)} structures counting all DFT relaxation ` +
         `frames per material)${dataset_tooltip}`
 
       train_size_str =
         `<span title="${title}" data-sort-value="${total_materials}">` +
-        `${si_fmt(total_materials)} <small>(${si_fmt(total_structs)})</small> ` +
+        `${pretty_num(total_materials)} <small>(${pretty_num(total_structs)})</small> ` +
         `(${data_str})</span>`
     }
 
@@ -105,31 +107,37 @@
     })
 
   // Transform MODEL_METADATA into table data format
-  $: metrics_data = MODEL_METADATA.map((model) => {
-    const disc_metrics = model.metrics?.discovery?.[discovery_set]
+  $: metrics_data = MODEL_METADATA.filter(
+    (model) =>
+      (show_energy_only || model.targets != `E`) &&
+      (show_non_compliant || model_is_compliant(model)),
+  )
+    .map((model) => {
+      const disc_metrics = model.metrics?.discovery?.[discovery_set]
 
-    const targets = model.targets.replace(/_(.)/g, `<sub>$1</sub>`)
-    const targets_str = `<span title="${Targets[model.targets]}">${targets}</span>`
+      const targets = model.targets.replace(/_(.)/g, `<sub>$1</sub>`)
+      const targets_str = `<span title="${Targets[model.targets]}">${targets}</span>`
 
-    // rename metric keys to pretty labels
-    return {
-      Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}">${model.model_name}</a>`,
-      F1: disc_metrics?.F1,
-      DAF: disc_metrics?.DAF,
-      Prec: disc_metrics?.Precision,
-      Acc: disc_metrics?.Accuracy,
-      TPR: disc_metrics?.TPR,
-      TNR: disc_metrics?.TNR,
-      MAE: disc_metrics?.MAE,
-      RMSE: disc_metrics?.RMSE,
-      'R<sup>2</sup>': disc_metrics?.R2,
-      'κ<sub>SRME</sub>': model.metrics?.phonons?.κ_SRME,
-      'Training Set': format_train_set(model.training_set),
-      Params: `<span title="${pretty_num(model.model_params, `,`)}">${pretty_num(model.model_params)}</span>`,
-      Targets: targets_str,
-      'Date Added': `<span title="${long_date(model.date_added)}">${model.date_added}</span>`,
-    }
-  }).sort((a, b) => (b.F1 ?? 0) - (a.F1 ?? 0)) // Sort by F1 score descending
+      // rename metric keys to pretty labels
+      return {
+        Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}">${model.model_name}</a>`,
+        F1: disc_metrics?.F1,
+        DAF: disc_metrics?.DAF,
+        Prec: disc_metrics?.Precision,
+        Acc: disc_metrics?.Accuracy,
+        TPR: disc_metrics?.TPR,
+        TNR: disc_metrics?.TNR,
+        MAE: disc_metrics?.MAE,
+        RMSE: disc_metrics?.RMSE,
+        'R<sup>2</sup>': disc_metrics?.R2,
+        'κ<sub>SRME</sub>': model.metrics?.phonons?.κ_SRME,
+        'Training Set': format_train_set(model.training_set),
+        Params: `<span title="${pretty_num(model.model_params, `,`)} trainable model parameters">${pretty_num(model.model_params)}</span>`,
+        Targets: targets_str,
+        'Date Added': `<span title="${long_date(model.date_added)}">${model.date_added}</span>`,
+      }
+    })
+    .sort((a, b) => (b.F1 ?? 0) - (a.F1 ?? 0)) // Sort by F1 score descending
 </script>
 
 <HeatmapTable
@@ -137,5 +145,5 @@
   columns={show_cols}
   {higher_is_better}
   {lower_is_better}
-  sep_lines={[6, 9]}
+  {sep_lines}
 />

@@ -150,13 +150,13 @@ def test_analyze_symmetry_primitive_vs_conventional(cubic_struct: Structure) -> 
     spg_analyzer = SpacegroupAnalyzer(cubic_struct)
     primitive_structure = spg_analyzer.get_primitive_standard_structure()
 
-    key_conv, key_prim = "conventional", "primitive"
-    df_conventional = analyze_symmetry({key_conv: cubic_struct})
-    df_primitive = analyze_symmetry({key_prim: primitive_structure})
+    conventional_key, primitive_key = "conventional", "primitive"
+    df_conventional = analyze_symmetry({conventional_key: cubic_struct})
+    df_primitive = analyze_symmetry({primitive_key: primitive_structure})
     assert df_conventional.index.name == Key.mat_id
     assert df_primitive.index.name == Key.mat_id
-    assert df_primitive.index[0] == key_prim
-    assert df_conventional.index[0] == key_conv
+    assert df_primitive.index[0] == primitive_key
+    assert df_conventional.index[0] == conventional_key
 
     cols_to_drop = [  # some columns differ between conventional and primitive structure
         Key.wyckoff_symbols,
