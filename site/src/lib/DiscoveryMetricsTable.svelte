@@ -1,25 +1,16 @@
 <script lang="ts">
-  import { MODEL_METADATA, TRAINING_SETS } from '$lib'
+  import { HeatmapTable, MODEL_METADATA, TRAINING_SETS } from '$lib'
   import { si_fmt } from '$lib/utils'
+  import {
+    higher_is_better,
+    lower_is_better,
+  } from '$root/scripts/metrics-which-is-better.yml'
   import { pretty_num } from 'elementari'
-  import HeatmapTable from './HeatmapTable.svelte'
 
   export let discovery_set: `full` | `most_stable_10k` | `unique_prototypes` =
     `unique_prototypes`
 
-  const higherIsBetter = new Set([
-    `F1`,
-    `DAF`,
-    `Prec`,
-    `Acc`,
-    `TPR`,
-    `TNR`,
-    `R<sup>2</sup>`,
-  ])
-
-  const lowerIsBetter = new Set([`MAE`, `RMSE`, `κ<sub>SRME</sub>`])
-
-  const metaColumns = [`Training Set`, `Params`, `Targets`, `Date Added`]
+  const metadata_col = [`Training Set`, `Params`, `Targets`, `Date Added`]
 
   const show_cols = [
     `Model`,
@@ -33,7 +24,7 @@
     `RMSE`,
     `R<sup>2</sup>`,
     `κ<sub>SRME</sub>`,
-    ...(discovery_set === `unique_prototypes` ? metaColumns : []),
+    ...(discovery_set === `unique_prototypes` ? metadata_col : []),
   ]
 
   function format_train_set(model_training_sets: string[]) {
@@ -141,4 +132,10 @@
   }).sort((a, b) => (b.F1 ?? 0) - (a.F1 ?? 0)) // Sort by F1 score descending
 </script>
 
-<HeatmapTable data={metrics_data} columns={show_cols} {higherIsBetter} {lowerIsBetter} />
+<HeatmapTable
+  data={metrics_data}
+  columns={show_cols}
+  {higher_is_better}
+  {lower_is_better}
+  sep_lines={[6, 9]}
+/>

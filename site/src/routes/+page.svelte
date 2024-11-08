@@ -1,11 +1,15 @@
 <script lang="ts">
   import type { ModelData } from '$lib'
-  import { CaptionedMetricsTable, model_is_compliant, MODEL_METADATA } from '$lib'
+  import {
+    CaptionedMetricsTable,
+    DiscoveryMetricsTable,
+    model_is_compliant,
+    MODEL_METADATA,
+  } from '$lib'
   import Readme from '$root/readme.md'
   import KappaNote from '$site/src/routes/kappa-note.md'
   import Icon from '@iconify/svelte'
   import { Toggle, Tooltip } from 'svelte-zoo'
-  import MetricsTable from '../components/MetricsTable.svelte'
 
   let show_non_compliant = false
   let show_energy_only = false
@@ -39,7 +43,7 @@
 
   <div slot="metrics-table" style="display: grid; gap: 1ex; place-items: center;">
     <KappaNote />
-    <MetricsTable />
+    <DiscoveryMetricsTable />
     <div style="display: flex; gap: 1em; align-items: center;">
       <Toggle bind:checked={show_non_compliant}
         >Show non-compliant models <Tooltip max_width="10em">
