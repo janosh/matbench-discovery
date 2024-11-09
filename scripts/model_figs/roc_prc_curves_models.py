@@ -13,7 +13,12 @@ from tqdm import tqdm
 from matbench_discovery import PDF_FIGS, SITE_FIGS, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots
 from matbench_discovery.enums import MbdKey, TestSubset
-from matbench_discovery.preds import df_each_pred, df_preds, model_styles, models
+from matbench_discovery.preds.discovery import (
+    df_each_pred,
+    df_preds,
+    model_styles,
+    models,
+)
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-01-30"

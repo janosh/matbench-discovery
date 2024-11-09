@@ -6,7 +6,7 @@ from pymatviz.enums import Key
 
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import MbdKey
-from matbench_discovery.preds import (
+from matbench_discovery.preds.discovery import (
     Model,
     df_each_err,
     df_each_pred,

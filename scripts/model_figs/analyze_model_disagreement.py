@@ -12,7 +12,7 @@ from pymatviz.utils import PLOTLY
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.data import DataFiles
 from matbench_discovery.enums import MbdKey, TestSubset
-from matbench_discovery.preds import df_preds
+from matbench_discovery.preds.discovery import df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-15"

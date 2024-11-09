@@ -12,7 +12,7 @@ from pymatviz.enums import Key
 from matbench_discovery import PDF_FIGS
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DataFiles, Model, df_wbm
-from matbench_discovery.preds import df_preds
+from matbench_discovery.preds.discovery import df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-06"

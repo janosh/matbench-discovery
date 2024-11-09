@@ -15,7 +15,7 @@ from tqdm import tqdm
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import MbdKey, TestSubset
-from matbench_discovery.preds import (
+from matbench_discovery.preds.discovery import (
     Model,
     df_each_err,
     df_metrics,

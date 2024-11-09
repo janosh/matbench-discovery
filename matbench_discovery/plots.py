@@ -545,7 +545,7 @@ def rolling_mae_vs_hull_dist(
         )
         fig.add_shape(type="rect", x0=x0, y0=y0, x1=x0 - window, y1=y0 + 0.006)
 
-        from matbench_discovery.preds import model_styles
+        from matbench_discovery.preds.discovery import model_styles
 
         for idx, trace in enumerate(fig.data):
             if style := model_styles.get(trace.name):
