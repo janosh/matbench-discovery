@@ -68,8 +68,10 @@ def test_glob_to_df(pattern: str, tmp_path: Path, df_mixed: pd.DataFrame) -> Non
     assert df_out.shape == df_mixed.shape
     assert list(df_out) == list(df_mixed)
 
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(ValueError, match="Unsupported file extension in pattern='foo'"):
         glob_to_df("foo")
+    with pytest.raises(FileNotFoundError, match="No files matching glob pattern="):
+        glob_to_df("foo.csv")
 
 
 @pytest.mark.parametrize(

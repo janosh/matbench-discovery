@@ -324,14 +324,13 @@ def write_geo_opt_metrics_to_yaml(model: Model) -> None:
     # Combine metrics
     geo_opt_metrics = {str(Key.rmsd): rmsd} | sym_changes
 
-    yaml_path = f"{Model.base_dir}/{model.url}"
-    with open(yaml_path) as file:  # Load existing metadata
+    with open(model.yaml_path) as file:  # Load existing metadata
         model_metadata = round_trip_yaml.load(file)
 
     all_metrics = model_metadata.setdefault("metrics", {})
     all_metrics.setdefault(Task.geo_opt, {}).update(geo_opt_metrics)
 
-    with open(yaml_path, mode="w") as file:  # Write back to file
+    with open(model.yaml_path, mode="w") as file:  # Write back to file
         round_trip_yaml.dump(model_metadata, file)
 
 

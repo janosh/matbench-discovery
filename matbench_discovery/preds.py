@@ -128,8 +128,6 @@ df_each_err[MbdKey.each_err_models] = df_preds[MbdKey.each_err_models] = (
 
 def write_discovery_metrics_to_yaml(model: Model) -> None:
     """Write materials discovery metrics to model YAML metadata files."""
-    yaml_path = f"{Model.base_dir}/{model.url}"
-
     full_metrics = df_metrics[model.label].to_dict()
     metrics_10k_most_stable = df_metrics_10k[model.label].to_dict()
     metrics_unique_protos = df_metrics_uniq_protos[model.label].to_dict()
@@ -158,13 +156,13 @@ def write_discovery_metrics_to_yaml(model: Model) -> None:
     }
 
     # Add or update discovery metrics
-    with open(yaml_path) as file:
+    with open(model.yaml_path) as file:
         model_metadata = round_trip_yaml.load(file)
 
     model_metadata.setdefault("metrics", {})["discovery"] = discovery_metrics
 
     # Write back to file
-    with open(yaml_path, mode="w") as file:
+    with open(model.yaml_path, mode="w") as file:
         round_trip_yaml.dump(model_metadata, file)
 
 

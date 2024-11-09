@@ -125,12 +125,11 @@ df_model_cost.attrs["All Models Run Time"] = df_model_cost[time_col].sum()
 for model in Model:
     if model.label not in df_model_cost.index:
         continue
-    yaml_path = f"{Model.base_dir}/{model.url}"
 
-    with open(yaml_path) as file:
+    with open(model.yaml_path) as file:
         model_metadata = round_trip_yaml.load(file)
     model_metadata["run_time"] = df_model_cost.loc[model.label, time_col]
-    with open(yaml_path, mode="w") as file:
+    with open(model.yaml_path, mode="w") as file:
         round_trip_yaml.dump(model_metadata, file)
 
 
