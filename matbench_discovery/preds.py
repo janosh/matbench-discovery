@@ -11,7 +11,7 @@ from matbench_discovery.data import (
     round_trip_yaml,
 )
 from matbench_discovery.enums import MbdKey, TestSubset
-from matbench_discovery.metrics import stable_metrics
+from matbench_discovery.metrics.discovery import stable_metrics
 from matbench_discovery.plots import plotly_colors, plotly_line_styles, plotly_markers
 
 __author__ = "Janosh Riebesell"

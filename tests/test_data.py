@@ -11,6 +11,8 @@ from pymatgen.core import Lattice, Structure
 from pymatviz.enums import Key
 
 from matbench_discovery.data import (
+    DataFiles,
+    Model,
     as_dict_handler,
     ase_atoms_from_zip,
     ase_atoms_to_zip,
@@ -167,3 +169,51 @@ def test_ase_atoms_from_zip_with_limit(tmp_path: Path) -> None:
     # Test with limit greater than the number of structures
     read_atoms = ase_atoms_from_zip(zip_path, limit=10)
     assert len(read_atoms) == 2
+
+
+def test_data_files() -> None:
+    """Test DataFiles enum functionality."""
+    # Test that paths are constructed correctly
+    assert DataFiles.mp_energies.name == "mp_energies"
+    assert (
+        DataFiles.mp_energies.url == "https://figshare.com/ndownloader/files/49083124"
+    )
+    assert DataFiles.mp_energies.rel_path == "mp/2023-01-10-mp-energies.csv.gz"
+
+    # Test that multiple files exist and have correct attributes
+    assert DataFiles.wbm_summary.rel_path == "wbm/2023-12-13-wbm-summary.csv.gz"
+    assert (
+        DataFiles.wbm_summary.url == "https://figshare.com/ndownloader/files/44225498"
+    )
+
+
+def test_model() -> None:
+    """Test Model enum functionality."""
+    # Test basic model attributes
+    assert Model.alignn.name == "alignn"
+    assert Model.alignn.rel_path == "alignn/alignn.yml"
+    assert Model.alignn.url is None
+    assert Model.alignn.label == "ALIGNN"
+
+    # Test metadata property
+    metadata = Model.alignn.metadata
+    assert isinstance(metadata, dict)
+
+    # Test yaml_path property
+    assert Model.alignn.yaml_path.endswith("alignn/alignn.yml")
+
+    # Test error handling for missing paths
+    with pytest.raises(
+        AttributeError,
+        match="'Model' object has no attribute 'bad_path'",
+    ):
+        _ = Model.alignn.bad_path
+
+    with pytest.raises(
+        AttributeError, match="type object 'Model' has no attribute 'bad_model'"
+    ):
+        _ = Model.bad_model
+
+    # Test Model metrics property
+    metrics = Model.alignn.metrics
+    assert isinstance(metrics, dict)

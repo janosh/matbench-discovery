@@ -8,12 +8,13 @@ import plotly.express as px
 import pymatviz as pmv
 from IPython.display import display
 from pymatgen.core import Structure
-from pymatviz.enums import Key, Task
+from pymatviz.enums import Key
 from pymatviz.utils import si_fmt
 from tqdm import tqdm
 
+import matbench_discovery.metrics.geo_opt as go_metrics
 from matbench_discovery import ROOT, SITE_FIGS, today
-from matbench_discovery.data import DataFiles, Model, df_wbm, round_trip_yaml
+from matbench_discovery.data import DataFiles, Model, df_wbm
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.models import MODEL_METADATA
 from matbench_discovery.structure import analyze_symmetry, pred_vs_ref_struct_symmetry
@@ -21,7 +22,6 @@ from matbench_discovery.structure import analyze_symmetry, pred_vs_ref_struct_sy
 init_spg_col = "init_spg_num"
 dft_spg_col = "dft_spg_num"
 n_structs_col = "n_structs"
-model_lvl, sym_prop_lvl = "model", "symmetry_property"
 df_wbm[init_spg_col] = df_wbm[MbdKey.init_wyckoff].str.split("_").str[2].astype(int)
 df_wbm[dft_spg_col] = df_wbm[Key.wyckoff_spglib].str.split("_").str[2].astype(int)
 module_dir = os.path.dirname(__file__)
@@ -133,7 +133,7 @@ for idx, model_name in enumerate({*dfs_sym_all} - {Key.dft}):
 
 # %% Combine all dataframes
 df_sym_all = df_sym_all.join(
-    pd.concat(dfs_sym_all, axis="columns", names=[model_lvl, sym_prop_lvl])
+    pd.concat(dfs_sym_all, axis="columns", names=[Key.model, MbdKey.sym_prop])
 )
 df_sym_all = df_sym_all.convert_dtypes()
 
@@ -145,7 +145,7 @@ df_sym_all.to_csv(csv_path)
 
 # %% Plot violin plot of RMSD vs DFT
 fig_rmsd = px.violin(
-    df_sym_all.xs(MbdKey.structure_rmsd_vs_dft, level=sym_prop_lvl, axis="columns")
+    df_sym_all.xs(MbdKey.structure_rmsd_vs_dft, level=MbdKey.sym_prop, axis="columns")
     .round(3)
     .dropna(),
     orientation="h",
@@ -161,7 +161,7 @@ fig_rmsd.update_traces(orientation="h", side="positive", width=1.8)
 
 # add annotation for mean for each model
 for model, srs_rmsd in df_sym_all.xs(
-    MbdKey.structure_rmsd_vs_dft, level=sym_prop_lvl, axis="columns"
+    MbdKey.structure_rmsd_vs_dft, level=MbdKey.sym_prop, axis="columns"
 ).items():
     mean_rmsd = srs_rmsd.mean()
     model_color = next(
@@ -187,7 +187,7 @@ pmv.save_fig(fig_rmsd, f"{module_dir}/{today}-rmsd-violin.pdf")
 
 # %% calculate number of model spacegroups agreeing with DFT-relaxed spacegroup
 avg_spg_diff = (
-    df_sym_all.xs(MbdKey.spg_num_diff, level=sym_prop_lvl, axis="columns")
+    df_sym_all.xs(MbdKey.spg_num_diff, level=MbdKey.sym_prop, axis="columns")
     .mean(axis=0)
     .round(1)
 )
@@ -196,7 +196,7 @@ print(f"Average spacegroup number difference vs DFT for each model: {avg_spg_dif
 
 # %% violin plot of spacegroup number diff vs DFT
 fig_sym = px.violin(
-    df_sym_all.xs(MbdKey.spg_num_diff, level=sym_prop_lvl, axis="columns"),
+    df_sym_all.xs(MbdKey.spg_num_diff, level=MbdKey.sym_prop, axis="columns"),
     title="Spacegroup Number Diff vs DFT",
     orientation="h",
     color="model",
@@ -213,7 +213,7 @@ pmv.save_fig(fig_sym, f"{module_dir}/{today}-sym-violin.pdf")
 
 # %% violin plot of number of symmetry operations in ML-relaxed structures
 fig_sym_ops = px.violin(
-    df_sym_all.xs(Key.n_sym_ops, level=sym_prop_lvl, axis="columns"),
+    df_sym_all.xs(Key.n_sym_ops, level=MbdKey.sym_prop, axis="columns"),
     title="Number of Symmetry Operations in ML-relaxed Structures",
     orientation="h",
     color="model",
@@ -229,8 +229,8 @@ pmv.save_fig(fig_sym_ops, f"{module_dir}/{today}-sym-ops-violin.pdf")
 
 # %% violin plot of number of symmetry operations in ML-relaxed structures vs DFT
 fig_sym_ops_diff = px.violin(
-    df_sym_all.drop(Key.dft.label, level=model_lvl, axis="columns")
-    .xs(MbdKey.n_sym_ops_diff, level=sym_prop_lvl, axis="columns")
+    df_sym_all.drop(Key.dft.label, level=Key.model, axis="columns")
+    .xs(MbdKey.n_sym_ops_diff, level=MbdKey.sym_prop, axis="columns")
     .reset_index(),
     orientation="h",
     color="model",
@@ -248,48 +248,8 @@ fig_sym_ops_diff.show()
 pmv.save_fig(fig_sym_ops_diff, f"{module_dir}/{today}-sym-ops-diff-violin.svelte")
 
 
-# %%
-def analyze_symmetry_changes(df_sym_all: pd.DataFrame) -> pd.DataFrame:
-    """Analyze how often each model's predicted structure has different symmetry vs DFT.
-
-    Returns:
-        pd.DataFrame: DataFrame with columns for fraction of structures where symmetry
-            decreased, matched, or increased vs DFT.
-    """
-    results: dict[str, dict[str, float]] = {}
-
-    for model in df_sym_all.columns.levels[0]:
-        if model == Key.dft.label:  # don't compare DFT to itself
-            continue
-        try:
-            spg_diff = df_sym_all[model][MbdKey.spg_num_diff]
-            n_sym_ops_diff = df_sym_all[model][MbdKey.n_sym_ops_diff]
-            total = len(spg_diff.dropna())
-
-            # Count cases where spacegroup changed
-            changed_mask = spg_diff != 0
-            # Among changed cases, count whether symmetry increased or decreased
-            sym_decreased = (n_sym_ops_diff < 0) & changed_mask
-            sym_increased = (n_sym_ops_diff > 0) & changed_mask
-            sym_matched = ~changed_mask
-
-            results[model] = {
-                str(Key.symmetry_decrease): float(sym_decreased.sum() / total),
-                str(Key.symmetry_match): float(sym_matched.sum() / total),
-                str(Key.symmetry_increase): float(sym_increased.sum() / total),
-                n_structs_col: total,
-            }
-        except KeyError as exc:
-            exc.add_note(
-                f"Missing data for {model}, available columns={list(df_sym_all[model])}"
-            )
-            raise
-
-    return pd.DataFrame(results).T
-
-
 # %% Print summary of symmetry changes
-df_sym_changes = analyze_symmetry_changes(df_sym_all).convert_dtypes()
+df_sym_changes = go_metrics.analyze_symmetry_changes(df_sym_all).convert_dtypes()
 display(
     df_sym_changes.round(3)
     .rename(columns=lambda col: col.removeprefix("symmetry_"))
@@ -302,45 +262,11 @@ display(
 
 
 # %%
-def write_geo_opt_metrics_to_yaml(model: Model) -> None:
-    """Write geometry optimization metrics to model YAML metadata files."""
-    df_rmsd = df_sym_all.xs(
-        MbdKey.structure_rmsd_vs_dft, level=sym_prop_lvl, axis="columns"
-    ).round(4)
-    if model.label not in df_rmsd:
-        print(f"No RMSD column for {model.label}")
-        return
-
-    # Calculate RMSD
-    rmsd = float(df_rmsd[model.label].mean(axis=0).round(4))
-
-    # Calculate symmetry change statistics
-    if model.label not in df_sym_changes.index:
-        print(f"No symmetry data for {model.label}")
-        return
-
-    sym_changes = df_sym_changes.round(4).loc[model.label].to_dict()
-
-    # Combine metrics
-    geo_opt_metrics = {str(Key.rmsd): rmsd} | sym_changes
-
-    with open(model.yaml_path) as file:  # Load existing metadata
-        model_metadata = round_trip_yaml.load(file)
-
-    all_metrics = model_metadata.setdefault("metrics", {})
-    all_metrics.setdefault(Task.geo_opt, {}).update(geo_opt_metrics)
-
-    with open(model.yaml_path, mode="w") as file:  # Write back to file
-        round_trip_yaml.dump(model_metadata, file)
-
-
-# %%
 if __name__ == "__main__":
-    for model in Model:
-        write_geo_opt_metrics_to_yaml(model)
+    go_metrics.write_geo_opt_metrics_to_yaml(df_sym_all, df_sym_changes)
 
     # %% plot ML vs DFT relaxed spacegroup correspondence as sankey diagrams
-    df_spg = df_sym_all.xs(Key.spg_num, level=sym_prop_lvl, axis="columns")
+    df_spg = df_sym_all.xs(Key.spg_num, level=MbdKey.sym_prop, axis="columns")
     for model in {*df_spg} - {Key.dft}:
         # get most common pairs of DFT/Model spacegroups
         common_dft_spgs, common_model_spgs = zip(

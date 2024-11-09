@@ -276,6 +276,11 @@ class Files(StrEnum, metaclass=MetaFiles):
         """Label associated with the file URL."""
         return self._label  # type: ignore[attr-defined]
 
+    @classmethod
+    def from_label(cls, label: str) -> Self:
+        """Get Model enum member from pretty model name."""
+        return next(attr for attr in cls if attr.label == label)
+
 
 class DataFiles(Files):
     """Enum of data files with associated file directories and URLs."""
@@ -460,21 +465,27 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         return f"{ROOT}/{rel_path}"
 
     @functools.cached_property
-    def geo_opt_path(self) -> str:
+    def geo_opt_path(self) -> str | None:
         """File path associated with the file URL if it exists, otherwise
         download the file first, then return the path.
         """
-        rel_path = self.metrics.get("geo_opt", {}).get("pred_file")
+        geo_opt_metrics = self.metrics.get("geo_opt", {})
+        if geo_opt_metrics in ("not available", "not applicable"):
+            return None
+        rel_path = geo_opt_metrics.get("pred_file")
         if not rel_path:
             raise ValueError(f"{rel_path} not found in {self.rel_path!r}")
         return f"{ROOT}/{rel_path}"
 
     @functools.cached_property
-    def phonons_path(self) -> str:
+    def phonons_path(self) -> str | None:
         """File path associated with the file URL if it exists, otherwise
         download the file first, then return the path.
         """
-        rel_path = self.metrics.get("phonons", {}).get("pred_file")
+        phonons_metrics = self.metrics.get("phonons", {})
+        if phonons_metrics in ("not available", "not applicable"):
+            return None
+        rel_path = phonons_metrics.get("pred_file")
         if not rel_path:
             raise ValueError(f"{rel_path} not found in {self.rel_path!r}")
         return f"{ROOT}/{rel_path}"

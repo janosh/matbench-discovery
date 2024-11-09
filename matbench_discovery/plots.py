@@ -21,7 +21,7 @@ from pymatviz.utils import MATPLOTLIB, PLOTLY, Backend
 from tqdm import tqdm
 
 from matbench_discovery import STABILITY_THRESHOLD
-from matbench_discovery.metrics import classify_stable
+from matbench_discovery.metrics.discovery import classify_stable
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-05"

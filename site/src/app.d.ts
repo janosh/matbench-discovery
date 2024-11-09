@@ -37,11 +37,11 @@ declare module '*element-counts.json' {
 } // element counts for different datasets
 
 declare module '*metrics-which-is-better.yml' {
-  type better_obj = {
+  type which_better = {
     higher_is_better: string[]
     lower_is_better: string[]
   }
-  export const geo_opt: better_obj
-  export const discovery: better_obj
-  export const phonons: better_obj
-} // which metrics are better higher or lower
+  export const geo_opt: which_better
+  export const discovery: which_better
+  export const phonons: which_better
+}

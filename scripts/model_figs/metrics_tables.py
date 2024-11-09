@@ -17,7 +17,7 @@ from sklearn.dummy import DummyClassifier
 from matbench_discovery import DATA_DIR, PDF_FIGS, ROOT, SCRIPTS
 from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.enums import MbdKey, Open, Targets
-from matbench_discovery.metrics import stable_metrics
+from matbench_discovery.metrics.discovery import stable_metrics
 from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 
 try:
