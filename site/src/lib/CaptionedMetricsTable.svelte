@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { DiscoveryMetricsTable, GeoOptMetricsTable } from '$lib'
+  import { DiscoveryMetricsTable } from '$lib'
   import { pretty_num } from 'elementari'
   import { onMount } from 'svelte'
 
@@ -24,7 +24,6 @@
   class:hide-energy-only={!show_energy_only}
 >
   <DiscoveryMetricsTable {show_non_compliant} {show_energy_only} />
-  <GeoOptMetricsTable {show_non_compliant} />
   <div class="downloads">
     Download table as
     {#each [`PDF`, `SVG`] as file_ext}

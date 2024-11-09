@@ -16,6 +16,11 @@
   export let format: Record<string, string> = {}
 
   const sort_state = writable({ column: ``, ascending: true })
+
+  $: clean_data = data.filter((row) =>
+    Object.values(row).every((val) => val !== undefined),
+  )
+
   function sort_rows(column: string) {
     if ($sort_state.column !== column) {
       $sort_state = {
@@ -26,7 +31,7 @@
       $sort_state.ascending = !$sort_state.ascending
     }
 
-    data = [...data].sort((row1, row2) => {
+    clean_data = clean_data.sort((row1, row2) => {
       const val1 = row1[column]
       const val2 = row2[column]
 
@@ -40,7 +45,7 @@
   }
 
   function calc_color(value: number | string | undefined, col: string) {
-    const values = data.map((row) => row[col])
+    const values = clean_data.map((row) => row[col])
     const range = [min(values) ?? 0, max(values) ?? 1]
     if (lower_is_better.includes(col)) {
       range.reverse()
@@ -83,7 +88,7 @@
       </tr>
     </thead>
     <tbody>
-      {#each data as row (JSON.stringify(row))}
+      {#each clean_data as row (JSON.stringify(row))}
         <tr animate:flip={{ duration: 500 }}>
           {#each columns as column, idx}
             {@const val = row[column]}

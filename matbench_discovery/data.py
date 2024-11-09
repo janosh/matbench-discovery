@@ -3,6 +3,7 @@
 https://figshare.com/articles/dataset/22715158
 """
 
+import functools
 import io
 import os
 import sys
@@ -220,7 +221,6 @@ class MetaFiles(EnumMeta):
         obj._base_dir = base_dir  # noqa: SLF001
         return obj
 
-    # Improvement 2: Add type annotation for cls
     @property
     def member_map(cls: type[T]) -> dict[str, "Files"]:  # type: ignore[misc]
         """Map of member names to member objects."""
@@ -434,24 +434,24 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv.gz", None, "M3GNet→MEGNet"
     # megnet_rs2re = "megnet/2023-08-23-megnet-wbm-RS2RE.csv.gz", None, "MEGNet RS2RE"
 
-    @property
+    @functools.cached_property
     def metadata(self) -> dict[str, Any]:
         """Metadata associated with the model."""
         yaml_path = f"{type(self).base_dir}/{self.rel_path}"
         with open(yaml_path) as file:
             return yaml.safe_load(file)
 
-    @property
+    @functools.cached_property
     def metrics(self) -> dict[str, Any]:
         """Metrics associated with the model."""
         return self.metadata.get("metrics", {})
 
-    @property
+    @functools.cached_property
     def yaml_path(self) -> str:
         """YAML file path associated with the model."""
         return f"{type(self).base_dir}/{self.rel_path}"
 
-    @property
+    @functools.cached_property
     def discovery_path(self) -> str:
         """Prediction file path associated with the model."""
         rel_path = self.metrics.get("discovery", {}).get("pred_file")
@@ -459,7 +459,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
             raise ValueError(f"{rel_path} not found in {self.rel_path!r}")
         return f"{ROOT}/{rel_path}"
 
-    @property
+    @functools.cached_property
     def geo_opt_path(self) -> str:
         """File path associated with the file URL if it exists, otherwise
         download the file first, then return the path.
@@ -469,7 +469,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
             raise ValueError(f"{rel_path} not found in {self.rel_path!r}")
         return f"{ROOT}/{rel_path}"
 
-    @property
+    @functools.cached_property
     def phonons_path(self) -> str:
         """File path associated with the file URL if it exists, otherwise
         download the file first, then return the path.

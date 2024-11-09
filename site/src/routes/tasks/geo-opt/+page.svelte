@@ -1,5 +1,6 @@
 <script lang="ts">
   import { browser } from '$app/environment'
+  import { GeoOptMetricsTable } from '$lib'
   import type { SvelteComponent } from 'svelte'
   import SankeyReadme from './sankey-readme.md'
 
@@ -8,6 +9,8 @@
     import: `default`,
   }) as Record<string, typeof SvelteComponent>
 </script>
+
+<GeoOptMetricsTable show_non_compliant />
 
 <SankeyReadme />
 
