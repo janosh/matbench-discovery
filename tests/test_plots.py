@@ -1,6 +1,5 @@
 from typing import Literal
 
-import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.graph_objects as go
 import pytest
@@ -22,7 +21,7 @@ df_wbm = load_df_wbm_with_preds(models=models, nrows=100)
 
 
 @pytest.mark.parametrize(
-    "project_end_point,stability_threshold",
+    "stability_threshold",
     [(0), (-0.05), (0.1)],
 )
 @pytest.mark.parametrize(
@@ -99,8 +98,6 @@ def test_hist_classified_stable_vs_hull_dist(
     x_lim: tuple[float, float],
     which_energy: Literal["true", "pred"],
 ) -> None:
-    ax = plt.figure().gca()  # new figure ensures test functions use different axes
-
     df_wbm[Key.each_pred] = (
         df_wbm[MbdKey.each_true] + df_wbm[models[0]] - df_wbm[MbdKey.e_form_dft]
     )
@@ -109,7 +106,6 @@ def test_hist_classified_stable_vs_hull_dist(
         df_wbm,
         each_true_col=MbdKey.each_true,
         each_pred_col=Key.each_pred,
-        ax=ax,
         stability_threshold=stability_threshold,
         x_lim=x_lim,
         which_energy=which_energy,
@@ -126,3 +122,7 @@ def test_plotly_markers_line_styles() -> None:
     assert {*map(type, plotly_line_styles)} == {str}
     assert "longdashdot" in plotly_line_styles
     assert "circle" in plotly_markers
+
+
+if __name__ == "__main__":
+    pytest.main(["-vv", __file__])
