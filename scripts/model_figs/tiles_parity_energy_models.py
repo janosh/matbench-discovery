@@ -16,6 +16,7 @@ from sklearn.metrics import r2_score
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.enums import MbdKey, TestSubset
+from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 from matbench_discovery.plots import clf_colors
 from matbench_discovery.preds.discovery import (
     df_metrics,
@@ -31,8 +32,7 @@ legend = dict(x=1, y=0, xanchor="right", yanchor="bottom", title=None)
 # toggle between formation energy and energy above convex hull
 EnergyType = Literal["e-form", "each"]
 use_e_form, use_each = get_args(EnergyType)
-# which_energy: EnergyType = globals().get("which_energy", use_each)
-which_energy = use_each
+which_energy: EnergyType = globals().get("which_energy", use_each)
 if which_energy == use_each:
     e_pred_col = Key.each_pred
     e_true_col = MbdKey.each_true
@@ -91,91 +91,47 @@ legend_order = list(df_metrics.T.MAE.sort_values().index)
 # ]
 
 
-# %% parity plot of actual vs predicted e_form_per_atom
-fig = px.scatter(
-    df_bin,
-    x=MbdKey.e_form_dft,
-    y=Key.e_form_pred,
-    color=facet_col,
-    hover_data=hover_cols,
-    hover_name=df_preds.index.name,
-    opacity=0.7,
-    category_orders={facet_col: legend_order},
-)
-
-for trace in fig.data:
-    # initially hide all traces, let users select which models to compare
-    trace.visible = "legendonly"
-    model = trace.name
-    if model not in df_preds:
-        print(f"Unexpected {model=}, not in {models=}")
-        continue
-    MAE, R2 = df_metrics[model][["MAE", "R2"]]
-    trace.name = f"{model} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
-
-fig.layout.legend.update(legend)
-pmv.powerups.add_identity_line(fig)
-fig.show()
-
-img_name = f"{SITE_FIGS}/e-form-parity-models"
-# pmv.save_fig(fig, f"{img_path}.svelte")
-
-
-# %% parity plot of actual vs predicted e_above_hull
-fig = px.scatter(
-    df_bin,
-    x=e_true_col,
-    y=e_pred_col,
-    color=facet_col,
-    hover_data=hover_cols,
-    hover_name=df_preds.index.name,
-    opacity=0.7,
-    category_orders={facet_col: legend_order},
-)
-
-for trace in fig.data:
-    trace.visible = "legendonly"
-    model = trace.name
-    if model not in df_preds:
-        print(f"Unexpected {model=}, not in {models=}")
-        continue
-    MAE, R2 = df_metrics[model][["MAE", "R2"]]
-    trace.name = f"{model} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
-
-fig.layout.legend.update(legend)
-pmv.powerups.add_identity_line(fig)
-fig.show()
-
-img_name = f"{SITE_FIGS}/e-above-hull-parity-models"
-# pmv.save_fig(fig, f"{img_path}.svelte")
-
-
 # %% parity plot of DFT vs predicted hull distance with each model in separate subplot
+show_non_compliant = globals().get("show_non_compliant", False)
+models_to_plot = [
+    model
+    for model in models
+    if show_non_compliant or model_is_compliant(MODEL_METADATA[model])
+]
+
 log_bin_cnt_col = f"log {bin_cnt_col}"
 df_bin[log_bin_cnt_col] = np.log1p(df_bin[bin_cnt_col]).round(2)
 
-n_cols = 2
-n_rows = math.ceil(len(models) / n_cols)
+n_cols = 3
+use_full_rows = globals().get("use_full_rows", True)
+if use_full_rows:
+    # drop last models that don't fit in last row
+    n_rows = len(models_to_plot) // n_cols
+    models_to_plot = models_to_plot[: n_rows * n_cols]
+else:
+    n_rows = math.ceil(len(models) / n_cols)
 
 fig = px.scatter(
-    df_bin,
+    df_bin.query(f"{facet_col} in {models_to_plot}"),
     x=e_true_col,
     y=e_pred_col,
     facet_col=facet_col,
     facet_col_wrap=n_cols,
     color=log_bin_cnt_col,
-    facet_col_spacing=0.02,
+    facet_col_spacing=0.03,
     facet_row_spacing=0.04,
     hover_data=hover_cols,
     hover_name=df_preds.index.name,
     # color=clf_col,
     # color_discrete_map=clf_color_map,
     # opacity=0.4,
-    range_x=(domain := (-4, 7) if which_energy == use_each else (-6, 6)),
+    range_x=(domain := (-4, 7) if which_energy == use_each else (-5, 5)),
     range_y=domain,
-    category_orders={facet_col: legend_order},
+    category_orders={facet_col: sorted(models_to_plot, key=legend_order.index)},
     # pick from https://plotly.com/python/builtin-colorscales
     color_continuous_scale="agsunset",
+    width=280 * n_cols,
+    height=230 * n_rows,
 )
 # decrease marker size
 fig.update_traces(marker=dict(size=2))
@@ -184,9 +140,6 @@ tick_vals = [1, 10, 100, 1000, 10_000]
 fig.layout.coloraxis.colorbar.update(
     tickvals=np.log1p(tick_vals), ticktext=list(map(str, tick_vals))
 )
-
-x_title = fig.layout.xaxis.title.text  # used in annotations below
-y_title = fig.layout.yaxis.title.text
 
 # iterate over subplots and set new title
 for idx, anno in enumerate(fig.layout.annotations, start=1):
@@ -208,10 +161,6 @@ for idx, anno in enumerate(fig.layout.annotations, start=1):
 
     sub_title = f"{model} · {MAE=:.2f} · R<sup>2</sup>={R2:.2f}"
     fig.layout.annotations[idx - 1].text = sub_title
-
-    # remove subplot x and y axis titles
-    fig.layout[f"xaxis{idx}"].title.text = ""
-    fig.layout[f"yaxis{idx}"].title.text = ""
 
 # add transparent rectangle with TN, TP, FN, FP labels in each quadrant
 if e_true_col == MbdKey.each_true:
@@ -264,13 +213,22 @@ fig.layout.legend.update(
 )
 
 # fig.update_layout(yaxis=dict(scaleanchor="x", scaleratio=1))
+# Create shared x and y axis titles
+x_title = fig.layout.xaxis.title.text  # used in annotations below
+y_title = fig.layout.yaxis.title.text
+
+for i in range(1, n_rows + 1):
+    for j in range(1, n_cols + 1):
+        fig.update_xaxes(title_text="", row=i, col=j)
+        fig.update_yaxes(title_text="", row=i, col=j)
 
 axis_titles = dict(xref="paper", yref="paper", showarrow=False, font_size=16)
 portrait = n_rows > n_cols
 fig.add_annotation(  # x-axis title
     x=0.5,
-    y=-0.06 if portrait else -0.18,
+    y=-0.09 if portrait else -0.18,
     text=x_title,
+    borderpad=5,
     **axis_titles,
 )
 fig.add_annotation(  # y-axis title
@@ -278,20 +236,27 @@ fig.add_annotation(  # y-axis title
     y=0.5,
     text=y_title,
     textangle=-90,
+    borderpad=5,
     **axis_titles,
 )
 
-fig.layout.update(height=230 * n_rows)
-fig.layout.coloraxis.colorbar.update(orientation="h", thickness=9, len=0.5, y=1.02)
-# fig.layout.width = 1100
+# place the colorbar above the subplots
+fig.layout.coloraxis.colorbar.update(
+    x=0.5, y=1.03, thickness=11, len=0.8, orientation="h"
+)
+
+# standardize the margins and template
 fig.layout.margin.update(l=60, r=10, t=0 if portrait else 10, b=60 if portrait else 10)
 fig.update_xaxes(matches=None)
 fig.update_yaxes(matches=None)
+fig.layout.template = "pymatviz_white"
 fig.show()
 
 
 # %%
-fig_name = f"{which_energy}-parity-models-{n_rows}x{n_cols}"
-pmv.save_fig(fig, f"{SITE_FIGS}/{fig_name}.svelte")
-fig.layout.update(width=280 * n_cols)
+fig_name = (
+    f"{which_energy}-parity-models-{n_rows}x{n_cols}"
+    f"{'-only-compliant' if not show_non_compliant else ''}"
+)
+pmv.save_fig(fig, f"{SITE_FIGS}/{fig_name}.svg")
 pmv.save_fig(fig, f"{PDF_FIGS}/{fig_name}.pdf")

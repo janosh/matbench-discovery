@@ -7,12 +7,13 @@ import pandas as pd
 import pymatviz as pmv
 from pymatviz.enums import Key
 from pymatviz.utils import PLOTLY
-from sklearn.metrics import auc, precision_recall_curve, roc_curve
+from sklearn.metrics import auc, roc_curve
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots
 from matbench_discovery.enums import MbdKey, TestSubset
+from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 from matbench_discovery.preds.discovery import (
     df_each_pred,
     df_preds,
@@ -37,11 +38,19 @@ if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(Key.uniq_proto)
     df_each_pred = df_each_pred.loc[df_preds.index]
 
+show_non_compliant = globals().get("show_non_compliant", False)
+models_to_plot = [
+    model
+    for model in models
+    if show_non_compliant or model_is_compliant(MODEL_METADATA[model])
+]
+df_each_pred = df_each_pred[models_to_plot]
+
 
 # %%
 df_roc = pd.DataFrame()
 
-for model in (pbar := tqdm(models, desc="Calculating ROC curves")):
+for model in (pbar := tqdm(models_to_plot, desc="Calculating ROC curves")):
     pbar.set_postfix_str(model)
 
     na_mask = df_preds[MbdKey.each_true].isna() | df_each_pred[model].isna()
@@ -100,7 +109,14 @@ for trace in fig.data:
 
 
 if not facet_plot:
-    fig.layout.legend.update(x=1, y=0, xanchor="right", title=None)
+    fig.layout.legend.update(
+        x=1,
+        y=0,
+        xanchor="right",
+        title=None,
+        bgcolor="rgba(0,0,0,0)",  # Transparent background
+    )
+
 fig.layout.coloraxis.colorbar.update(thickness=14, title_side="right")
 if n_cols == 2:
     fig.layout.coloraxis.colorbar.update(
@@ -108,78 +124,20 @@ if n_cols == 2:
     )
 
 fig.add_shape(type="line", x0=0, y0=0, x1=1, y1=1, line=line, row="all", col="all")
-fig.add_annotation(text="No skill", x=0.5, y=0.5, showarrow=False, yshift=-10)
+fig.add_annotation(
+    text="No skill", x=0.5, y=0.5, showarrow=False, yshift=10, textangle=-45
+)
 # allow scrolling and zooming each subplot individually
 fig.update_xaxes(matches=None)
 fig.layout.margin.update(l=0, r=0, b=0, t=20, pad=0)
 fig.update_yaxes(matches=None)
 fig.show()
-img_name = f"roc-models{f'-{n_rows}x{n_cols}' if facet_plot else ''}"
+img_name = (
+    f"roc-models{f'-{n_rows}x{n_cols}' if facet_plot else ''}"
+    f"{'-only-compliant' if not show_non_compliant else ''}"
+)
 
 
 # %%
 pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=500, height=500)
-
-
-# %%
-df_prc = pd.DataFrame()
-prec_col, recall_col = "Precision", "Recall"
-
-for model in (pbar := tqdm(list(df_each_pred), desc="Calculating ROC curves")):
-    pbar.set_postfix_str(model)
-    na_mask = df_preds[MbdKey.each_true].isna() | df_each_pred[model].isna()
-    y_true = (df_preds[~na_mask][MbdKey.each_true] <= STABILITY_THRESHOLD).astype(int)
-    y_pred = df_each_pred[model][~na_mask]
-    prec, recall, thresholds = precision_recall_curve(y_true, y_pred, pos_label=0)
-    dct = {
-        prec_col: prec[:-1],
-        recall_col: recall[:-1],
-        color_col: thresholds,
-        facet_col: model,
-    }
-    df_prc = pd.concat([df_prc, pd.DataFrame(dct).round(3)])
-
-
-# %%
-n_cols = 3
-n_rows = math.ceil(len(models) / n_cols)
-
-fig = df_prc.iloc[:: len(df_roc) // 500 or 1].plot.scatter(
-    x=recall_col,
-    y=prec_col,
-    facet_col=facet_col,
-    facet_col_wrap=n_cols,
-    facet_row_spacing=0.04,
-    facet_col_spacing=0.04,
-    backend=PLOTLY,
-    height=150 * len(df_roc[facet_col].unique()),
-    color=color_col,
-    range_x=(0, 1),
-    range_y=(0.5, 1),
-    range_color=(-0.5, 1),
-    hover_name=facet_col,
-    hover_data={facet_col: False},
-)
-
-for anno in fig.layout.annotations:
-    anno.text = anno.text.split("=", 1)[1]  # remove Model= from subplot titles
-
-fig.layout.coloraxis.colorbar.update(
-    x=0.5, y=1.03, thickness=11, len=0.8, orientation="h"
-)
-fig.add_hline(y=0.5, line=line)
-fig.add_annotation(
-    text="No skill", x=0, y=0.5, showarrow=False, xanchor="left", xshift=10, yshift=10
-)
-# allow scrolling and zooming each subplot individually
-fig.update_xaxes(matches=None)
-fig.update_yaxes(matches=None)
-fig.show()
-
-
-# %%
-pmv.save_fig(fig, f"{SITE_FIGS}/prc-models-{n_rows}x{n_cols}.svelte")
-pmv.save_fig(fig, f"{PDF_FIGS}/prc-models-{n_rows}x{n_cols}.pdf")
-fig.update_yaxes(matches=None)
-fig.show()

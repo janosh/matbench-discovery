@@ -291,7 +291,8 @@ meta_cols = [
     date_added_col,
 ]
 show_cols = [
-    *f"F1,DAF,Prec,Acc,TPR,TNR,MAE,RMSE,{R2_col},{kappa_srme_col}".split(","),
+    *f"F1,DAF,Prec,Acc,TPR,TNR,MAE,RMSE,{R2_col}".split(","),
+    # kappa_srme_col,
     *meta_cols,
 ]
 
