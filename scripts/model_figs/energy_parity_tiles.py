@@ -1,6 +1,6 @@
-"""parity plot of actual vs predicted e_above_hull and e_form_per_atom for all
-models. First 2 plots put all models in single figure with selectable traces.
-Last plot is split into 2x3 subplots, one for each model.
+"""Parity plot of actual vs predicted e_above_hull and e_form_per_atom for all
+models. Unlike energy_parity_traces.py, this script splits each model into a
+separate subplot.
 """
 
 # %%
