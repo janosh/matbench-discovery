@@ -174,11 +174,6 @@ print(f"{wbm_pbc_diffs_mean / m3gnet_pbc_diffs_mean=:.3}")
 
 
 # %%
-# plt_fig = df_m3gnet_is2re.plot.scatter(
-#     x="e_m3gnet_per_atom_rs2re", y="e_m3gnet_per_atom_is2re"
-# )
-# df_m3gnet_is2re.filter(like="m3gnet_energy").hist(bins=100)
-
 df_m3gnet_is2re["m3gnet_energy_rs2re"] = df_m3gnet_rs2re.m3gnet_energy
 
 for task_type in ["is2re", "rs2re"]:

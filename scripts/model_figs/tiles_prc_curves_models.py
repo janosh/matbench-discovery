@@ -44,7 +44,6 @@ df_each_pred = df_each_pred[models_to_plot]
 
 # %%
 df_prc = pd.DataFrame()
-prec_col, recall_col = "Precision", "Recall"
 
 n_cols = 3
 use_full_rows = globals().get("use_full_rows", True)
@@ -62,8 +61,8 @@ for model in (pbar := tqdm(models_to_plot, desc="Calculating ROC curves")):
     y_pred = df_each_pred[model][~na_mask]
     prec, recall, thresholds = precision_recall_curve(y_true, y_pred, pos_label=0)
     dct = {
-        prec_col: prec[:-1],
-        recall_col: recall[:-1],
+        Key.precision: prec[:-1],
+        Key.recall: recall[:-1],
         color_col: thresholds,
         facet_col: model,
     }
@@ -72,8 +71,8 @@ for model in (pbar := tqdm(models_to_plot, desc="Calculating ROC curves")):
 
 # %%
 fig = df_prc.iloc[:: len(df_prc) // 500 or 1].plot.scatter(
-    x=recall_col,
-    y=prec_col,
+    x=Key.recall,
+    y=Key.precision,
     facet_col=facet_col,
     facet_col_wrap=n_cols,
     facet_col_spacing=0.04,
@@ -90,32 +89,23 @@ fig = df_prc.iloc[:: len(df_prc) // 500 or 1].plot.scatter(
 for anno in fig.layout.annotations:
     anno.text = anno.text.split("=", 1)[1]  # remove Model= from subplot titles
 
-# Create shared x and y axis titles
-x_title = fig.layout.xaxis.title.text  # used in annotations below
-y_title = fig.layout.yaxis.title.text
-
-for i in range(1, n_rows + 1):
-    for j in range(1, n_cols + 1):
-        fig.update_xaxes(title_text="", row=i, col=j)
-        fig.update_yaxes(title_text="", row=i, col=j)
-
 axis_titles = dict(xref="paper", yref="paper", showarrow=False, font_size=16)
 portrait = n_rows > n_cols
 fig.add_annotation(  # x-axis title
     x=0.5,
     y=0,
     yshift=-50,
-    text=x_title,
-    borderpad=5,
+    text=Key.recall.label,
+    borderpad=4,
     **axis_titles,
 )
 fig.add_annotation(  # y-axis title
     x=0,
     xshift=-70,
     y=0.5,
-    text=y_title,
+    text=Key.precision.label,
     textangle=-90,
-    borderpad=5,
+    borderpad=4,
     **axis_titles,
 )
 
@@ -125,13 +115,11 @@ fig.layout.coloraxis.colorbar.update(
 )
 
 # set the shared y and x axis ranges to (0, 1), and (0.8, 1)
-fig.update_xaxes(range=[0, 1])
-fig.update_yaxes(range=[0.8, 1])
+fig.update_xaxes(title="", range=[0, 1], matches=None)
+fig.update_yaxes(title="", range=[0.8, 1], matches=None)
 
 # standardize the margins and template
 fig.layout.margin.update(l=60, r=10, t=0 if portrait else 10, b=60 if portrait else 10)
-fig.update_xaxes(matches=None)
-fig.update_yaxes(matches=None)
 fig.layout.template = "pymatviz_white"
 
 fig.show()

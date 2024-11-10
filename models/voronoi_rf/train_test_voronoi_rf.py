@@ -103,8 +103,7 @@ print(f"train set NaNs: {n_nans:,} / {len(df_train):,} = {n_nans / len(df_train)
 df_train = df_train.dropna(subset=[*feature_names, Key.form_energy])
 
 
-# %%
-# SimpleImputer for the failed structures
+# %% SimpleImputer for the failed structures
 model = Pipeline([("imputer", SimpleImputer()), ("model", random_forest)])
 
 

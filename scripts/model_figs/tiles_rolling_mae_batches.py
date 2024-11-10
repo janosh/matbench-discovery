@@ -49,8 +49,7 @@ else:
     n_rows = math.ceil(len(models) / n_cols)
 
 
-# %%
-# Create subplots with one row per column in the DataFrame
+# %% Create subplots with one row per column in the DataFrame
 fig = make_subplots(
     rows=n_rows,
     cols=n_cols,
@@ -98,8 +97,7 @@ for i, model in enumerate(models_to_plot):
         fig.add_trace(trace, row=row + 1, col=col + 1)
 
 
-# %%
-# Update font size for each individual subplot title
+# %% Update font size for each individual subplot title
 for annotation in fig.layout.annotations:
     annotation.font.size = 12  # Adjust to your desired font size
 

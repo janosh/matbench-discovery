@@ -97,8 +97,7 @@ fig.layout.update(height=230 * n_rows)
 fig.layout.update(width=280 * n_cols)
 
 
-# %%
-# create shared x and y axis titles
+# %% create shared x and y axis titles
 x_title = fig.layout.xaxis.title.text  # used in annotations below
 y_title = fig.layout.yaxis.title.text
 
