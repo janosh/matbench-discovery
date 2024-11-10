@@ -70,7 +70,7 @@
       <Tooltip
         text="This result used a model ensemble with {n_estimators} members with {n_model_params} parameters each."
       >
-        <Icon icon="ion:information-circle" inline />
+        &nbsp;<Icon icon="octicon:info-24" inline />
       </Tooltip>
     </span>
   {/if}
@@ -86,7 +86,7 @@
         max_width="20em"
         min_width="20em"
       >
-        <Icon icon="ion:information-circle" inline />
+        &nbsp;<Icon icon="octicon:info-24" inline />
       </Tooltip>
     {/if}
   </span>
@@ -185,16 +185,6 @@
             {value}
           {/if}
         </li>
-      {/each}
-    </ul>
-  </section>
-{/if}
-{#if notes && show_details}
-  <section>
-    <h3>Notes</h3>
-    <ul>
-      {#each [`Description`, `Training`].filter((key) => key in (notes ?? {})) as key}
-        <li>{@html notes[key]}</li>
       {/each}
     </ul>
   </section>

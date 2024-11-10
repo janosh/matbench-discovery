@@ -1,6 +1,19 @@
 discovery:
   higher_is_better:
-    [Acc, Accuracy, AUC, DAF, F1, Prec, Precision, R2, Recall, TN, TNR, TP, TPR]
+    - Acc
+    - Accuracy
+    - AUC
+    - DAF
+    - F1
+    - Prec
+    - Precision
+    - R2
+    - R<sup>2</sup> # need both R2 and HTML version for different parts of the code
+    - Recall
+    - TN
+    - TNR
+    - TP
+    - TPR
   lower_is_better: [MAE, RMSE, FPR, FNR, FP, FN]
 
 geo_opt:
@@ -9,5 +22,5 @@ geo_opt:
   lower_is_better: [RMSD, Decrease, Increase]
 
 phonons:
-  lower_is_better: [κ_SRME]
+  lower_is_better: [κ_SRME, κ<sub>SRME</sub>]
   higher_is_better: []

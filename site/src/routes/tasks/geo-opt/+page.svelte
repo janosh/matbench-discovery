@@ -17,15 +17,16 @@
 {#if browser}
   <ul>
     {#each Object.entries(plots) as [name, Plot]}
-      <Plot {name} style="width: 100%; max-height: 300px;" />
+      <Plot {name} style="width: 100%; place-self: center;" />
     {/each}
   </ul>
 {/if}
 
 <style>
   ul {
+    padding: 0;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 7em;
+    gap: 3em 2em;
   }
 </style>

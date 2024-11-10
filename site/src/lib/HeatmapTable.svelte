@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from '@iconify/svelte'
   import { max, min } from 'd3-array'
   import { scaleSequential } from 'd3-scale'
   import * as d3sc from 'd3-scale-chromatic'
@@ -7,7 +8,9 @@
   import { flip } from 'svelte/animate'
   import { writable } from 'svelte/store'
 
-  export let data: Record<string, Record<string, unknown>>[] = []
+  type TableData = Record<string, string | number | undefined>[]
+
+  export let data: TableData
   export let columns: string[] = []
   export let higher_is_better: string[] = []
   export let lower_is_better: string[] = []
@@ -65,9 +68,19 @@
   <table use:titles_as_tooltips>
     <thead>
       <tr>
-        {#each columns as col}
-          <th on:click={() => sort_rows(col)}>
+        {#each columns as col, col_idx}
+          <th
+            on:click={() => sort_rows(col)}
+            class:sep-line={sep_lines.includes(col_idx)}
+          >
             {@html col}
+            {#if col_idx == 0}
+              <span
+                title="Click on numerical column headers to sort the table rows by their values"
+              >
+                <Icon icon="octicon:info-16" inline />
+              </span>
+            {/if}
             {#if higher_is_better.includes(col) || lower_is_better.includes(col)}
               {#if $sort_state.column === col}
                 <span style="font-size: 0.8em;">
@@ -90,14 +103,14 @@
     <tbody>
       {#each clean_data as row (JSON.stringify(row))}
         <tr animate:flip={{ duration: 500 }}>
-          {#each columns as column, idx}
+          {#each columns as column, col_idx}
             {@const val = row[column]}
             {@const color = calc_color(val, column)}
             <td
               data-col={column}
               data-sort-value={val}
-              class:sticky-col={sticky_cols.includes(idx)}
-              class:sep-line={sep_lines.includes(idx)}
+              class:sticky-col={sticky_cols.includes(col_idx)}
+              class:sep-line={sep_lines.includes(col_idx)}
               style:background-color={color.bg}
               style:color={color.text}
             >
@@ -119,7 +132,6 @@
     overflow-x: auto;
     max-width: 100%;
     scrollbar-width: none;
-    width: max-content;
     margin: auto;
   }
 
@@ -139,7 +151,6 @@
     text-align: left;
     border: none;
     white-space: nowrap;
-    max-width: 300px;
     overflow: hidden;
     text-overflow: ellipsis;
   }
@@ -147,10 +158,7 @@
   th {
     background: var(--night);
     position: sticky;
-    top: 0;
-    z-index: 1;
     cursor: pointer;
-    user-select: none;
   }
 
   th:hover {

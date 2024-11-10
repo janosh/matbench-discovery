@@ -43,7 +43,8 @@
         'Date Added': `<span title="${long_date(model.date_added)}">${model.date_added}</span>`,
       }
     })
-    .sort((row1, row2) => (row1?.RMSD ?? 0) - (row2?.RMSD ?? 0)) // Sort by RMSD ascending
+    // Sort by Match descending
+    .sort((row1, row2) => (row2?.Match ?? 0) - (row1?.Match ?? 0))
 </script>
 
 <HeatmapTable
