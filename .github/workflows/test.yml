@@ -43,7 +43,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install package and dependencies
-        run: pip install -e .
+        run: pip install -e .[plots]
 
       - name: Run script
         run: python ${{ matrix.script }}
