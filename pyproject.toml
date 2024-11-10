@@ -48,7 +48,7 @@ Repo = "https://github.com/janosh/matbench-discovery"
 Package = "https://pypi.org/project/matbench-discovery"
 
 [project.optional-dependencies]
-test = ["pytest-cov>=5", "pytest>=8.1"]
+test = ["pytest-cov>=5", "pytest>=8.1", "kaleido"]
 # how to specify git deps: https://stackoverflow.com/a/73572379
 running-models = [
   # aviary commented-out since dep on git repo raises "Invalid value for requires_dist"
