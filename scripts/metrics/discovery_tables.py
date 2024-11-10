@@ -270,12 +270,12 @@ for df_in, df_out, col in (
 
 # %%
 with open(f"{SCRIPTS}/metrics-which-is-better.yml") as file:
-    discovery_rank_order = yaml.safe_load(file)["discovery"]
+    discovery_better = yaml.safe_load(file)["discovery"]
 
 R2_col = "R<sup>2</sup>"
 kappa_srme_col = "κ<sub>SRME</sub>"
-higher_is_better = {*discovery_rank_order["higher_is_better"]} - {"R2"} | {R2_col}
-lower_is_better = {*discovery_rank_order["lower_is_better"]} | {kappa_srme_col}
+higher_is_better = {*discovery_better["higher_is_better"]} - {"R2"} | {R2_col}
+lower_is_better = {*discovery_better["lower_is_better"]} | {kappa_srme_col}
 
 # if True, make metrics-table-megnet-uip-combos.(svelte|pdf) for SI
 # if False, make metrics-table.(svelte|pdf) for main text
