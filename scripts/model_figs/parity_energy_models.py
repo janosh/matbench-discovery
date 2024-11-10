@@ -17,7 +17,11 @@ from sklearn.metrics import r2_score
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.plots import clf_colors
-from matbench_discovery.preds import df_metrics, df_metrics_uniq_protos, df_preds
+from matbench_discovery.preds.discovery import (
+    df_metrics,
+    df_metrics_uniq_protos,
+    df_preds,
+)
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"

@@ -1,9 +1,6 @@
 <script lang="ts">
   import { HeatmapTable, MODEL_METADATA, TRAINING_SETS, model_is_compliant } from '$lib'
-  import {
-    higher_is_better,
-    lower_is_better,
-  } from '$root/scripts/metrics-which-is-better.yml'
+  import { discovery, phonons } from '$root/scripts/metrics-which-is-better.yml'
   import { pretty_num } from 'elementari'
 
   export let discovery_set: `full_test_set` | `most_stable_10k` | `unique_prototypes` =
@@ -137,13 +134,13 @@
         'Date Added': `<span title="${long_date(model.date_added)}">${model.date_added}</span>`,
       }
     })
-    .sort((a, b) => (b.F1 ?? 0) - (a.F1 ?? 0)) // Sort by F1 score descending
+    .sort((row1, row2) => (row2.F1 ?? 0) - (row1.F1 ?? 0)) // Sort by F1 score descending
 </script>
 
 <HeatmapTable
   data={metrics_data}
   columns={show_cols}
-  {higher_is_better}
-  {lower_is_better}
+  higher_is_better={[...discovery.higher_is_better, ...phonons.higher_is_better]}
+  lower_is_better={[...discovery.lower_is_better, ...phonons.lower_is_better]}
   {sep_lines}
 />

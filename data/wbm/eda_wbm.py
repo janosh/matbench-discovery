@@ -19,7 +19,7 @@ from matbench_discovery import plots as plots
 from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.energy import mp_elem_ref_entries
 from matbench_discovery.enums import MbdKey
-from matbench_discovery.preds import df_each_err
+from matbench_discovery.preds.discovery import df_each_err
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-30"

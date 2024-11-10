@@ -3,7 +3,7 @@ from glob import glob
 
 import pytest
 
-from matbench_discovery import ROOT, __version__
+from matbench_discovery import __version__
 from matbench_discovery.data import Model
 from matbench_discovery.models import MODEL_DIRS, MODEL_METADATA, model_is_compliant
 
@@ -83,10 +83,9 @@ def test_model_dirs_have_test_scripts() -> None:
 
 
 def test_model_enum() -> None:
-    for model_key in Model:
-        model_yaml_path = f"{ROOT}/models/{model_key.url}"
-        assert os.path.isfile(model_key.path)
-        assert os.path.isfile(model_yaml_path) or model_key.url is None
+    for model in Model:
+        assert os.path.isfile(model.discovery_path)
+        assert os.path.isfile(model.yaml_path)
 
 
 @pytest.mark.parametrize(

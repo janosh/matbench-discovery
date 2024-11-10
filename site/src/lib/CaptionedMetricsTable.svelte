@@ -40,8 +40,9 @@
     training set size. <code>(N=x)</code> in the Model Params column shows the number of
     estimators if an ensemble was used. DAF = Discovery Acceleration Factor measures how
     many more stable materials a model finds compared to random selection from the test
-    set. The WBM test set has a 16.7% rate of stable crystals, meaning the max possible
-    DAF is
+    set. The unique structure prototypes in the WBM test set have a
+    <code>{pretty_num(n_wbm_stable_uniq_protos / n_wbm_uniq_protos, `.1%`)}</code> rate of
+    stable crystals, meaning the max possible DAF is
     <code
       >({pretty_num(n_wbm_stable_uniq_protos)} / {pretty_num(n_wbm_uniq_protos)})^−1 ≈
       {pretty_num(n_wbm_uniq_protos / n_wbm_stable_uniq_protos)}</code

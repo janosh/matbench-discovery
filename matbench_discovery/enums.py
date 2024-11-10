@@ -83,6 +83,7 @@ class MbdKey(LabelEnum):
     spg_num_diff = "spg_num_diff", "Difference in space group number"
     n_sym_ops_diff = "n_sym_ops_diff", "Difference in number of symmetry operations"
     structure_rmsd_vs_dft = "structure_rmsd_vs_dft", "RMSD of structure to DFT"
+    sym_prop = "symmetry_property", "Symmetry property"
 
     # keep in sync with model-schema.yml
     missing_preds = "missing_preds", "Missing predictions"

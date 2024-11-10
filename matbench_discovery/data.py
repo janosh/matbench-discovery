@@ -3,6 +3,7 @@
 https://figshare.com/articles/dataset/22715158
 """
 
+import functools
 import io
 import os
 import sys
@@ -78,8 +79,15 @@ def glob_to_df(
 
     Raises:
         FileNotFoundError: If no files match the glob pattern.
+        ValueError: If reader is None and the file extension is unrecognized.
     """
-    reader = reader or pd.read_csv if ".csv" in pattern.lower() else pd.read_json
+    if reader is None:
+        if ".csv" in pattern.lower():
+            reader = pd.read_csv
+        elif ".json" in pattern.lower():
+            reader = pd.read_json
+        else:
+            raise ValueError(f"Unsupported file extension in {pattern=}")
 
     # prefix pattern with ROOT if not absolute path
     files = glob(pattern)
@@ -213,20 +221,14 @@ class MetaFiles(EnumMeta):
         obj._base_dir = base_dir  # noqa: SLF001
         return obj
 
-    # Improvement 2: Add type annotation for cls
     @property
     def member_map(cls: type[T]) -> dict[str, "Files"]:  # type: ignore[misc]
         """Map of member names to member objects."""
         return cls._member_map_  # type: ignore[return-value]
 
     @property
-    def label_map(cls: type[T]) -> dict[str, str]:  # type: ignore[misc]
-        """Map of member names to member labels."""
-        return {k: v.label for k, v in cls.member_map.items()}
-
-    @property
     def base_dir(cls) -> str:
-        """Return the base directory of the file URL."""
+        """Base directory of the file URL."""
         return cls._base_dir
 
 
@@ -260,43 +262,24 @@ class Files(StrEnum, metaclass=MetaFiles):
         return f"{type(self).__name__}.{self.name}"
 
     @property
-    def path(self) -> str:
-        """Return the file path associated with the file URL if it exists, otherwise
-        download the file first, then return the path.
-        """
-        key, url, rel_path = self.name, self._url, self._rel_path  # type: ignore[attr-defined]
-        abs_path = f"{type(self).base_dir}/{rel_path}"
-        if not os.path.isfile(abs_path):
-            is_ipython = hasattr(__builtins__, "__IPYTHON__")
-            # default to 'y' if not in interactive session, and user can't answer
-            answer = (
-                input(
-                    f"{abs_path!r} associated with {key=} does not exist. Download it "
-                    "now? This will cache the file for future use. [y/n] "
-                )
-                if is_ipython or sys.stdin.isatty()
-                else "y"
-            )
-            if answer.lower().strip() == "y":
-                if not is_ipython:
-                    print(f"Downloading {key!r} from {url} to {abs_path} for caching")
-                download_file(abs_path, url)
-        return abs_path
-
-    @property
     def url(self) -> str:
-        """Return the URL associated with the file URL."""
+        """Url associated with the file URL."""
         return self._url  # type: ignore[attr-defined]
 
     @property
     def rel_path(self) -> str:
-        """Return the relative path of the file associated with the file URL."""
+        """Relative path of the file associated with the file URL."""
         return self._rel_path  # type: ignore[attr-defined]
 
     @property
     def label(self) -> str:
-        """Return the label associated with the file URL."""
+        """Label associated with the file URL."""
         return self._label  # type: ignore[attr-defined]
+
+    @classmethod
+    def from_label(cls, label: str) -> Self:
+        """Get Model enum member from pretty model name."""
+        return next(attr for attr in cls if attr.label == label)
 
 
 class DataFiles(Files):
@@ -361,6 +344,30 @@ class DataFiles(Files):
         "https://figshare.com/ndownloader/files/41619375",
     )
 
+    @property
+    def path(self) -> str:
+        """File path associated with the file URL if it exists, otherwise
+        download the file first, then return the path.
+        """
+        key, url, rel_path = self.name, self._url, self._rel_path  # type: ignore[attr-defined]
+        abs_path = f"{type(self).base_dir}/{rel_path}"
+        if not os.path.isfile(abs_path):
+            is_ipython = hasattr(__builtins__, "__IPYTHON__")
+            # default to 'y' if not in interactive session, and user can't answer
+            answer = (
+                input(
+                    f"{abs_path!r} associated with {key=} does not exist. Download it "
+                    "now? This will cache the file for future use. [y/n] "
+                )
+                if is_ipython or sys.stdin.isatty()
+                else "y"
+            )
+            if answer.lower().strip() == "y":
+                if not is_ipython:
+                    print(f"Downloading {key!r} from {url} to {abs_path} for caching")
+                download_file(abs_path, url)
+        return abs_path
+
 
 df_wbm = pd.read_csv(DataFiles.wbm_summary.path)
 # str() around Key.mat_id added for https://github.com/janosh/matbench-discovery/issues/81
@@ -373,60 +380,57 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
     """
 
-    alignn = "alignn/2023-06-02-alignn-wbm-IS2RE.csv.gz", "alignn/alignn.yml", "ALIGNN"
-    # alignn_pretrained = "alignn/2023-06-03-mp-e-form-alignn-wbm-IS2RE.csv.gz", "alignn/alignn.yml", "ALIGNN Pretrained"
-    # alignn_ff = "alignn_ff/2023-07-11-alignn-ff-wbm-IS2RE.csv.gz", "alignn/alignn-ff.yml", "ALIGNN FF"
+    alignn = "alignn/alignn.yml", None, "ALIGNN"
+    # alignn_pretrained = "alignn/alignn.yml", None, "ALIGNN Pretrained"
+    # alignn_ff = "alignn/alignn-ff.yml", None, "ALIGNN FF"
 
     # BOWSR optimizer coupled with original megnet
-    bowsr_megnet = "bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv.gz", "bowsr/bowsr.yml", "BOWSR"  # fmt: skip
+    bowsr_megnet = "bowsr/bowsr.yml", None, "BOWSR"
 
     # default CHGNet model from publication with 400,438 params
-    chgnet = "chgnet/2023-12-21-chgnet-0.3.0-wbm-IS2RE.csv.gz", "chgnet/chgnet.yml", "CHGNet"  # fmt: skip
-    # chgnet_no_relax = "chgnet/2023-12-05-chgnet-0.3.0-wbm-IS2RE-no-relax.csv.gz", None, "CHGNet No Relax"
+    chgnet = "chgnet/chgnet.yml", None, "CHGNet"
+    # chgnet_no_relax = None, "CHGNet No Relax"
 
     # CGCNN 10-member ensemble
-    cgcnn = "cgcnn/2023-01-26-cgcnn-ens=10-wbm-IS2RE.csv.gz", "cgcnn/cgcnn.yml", "CGCNN"
+    cgcnn = "cgcnn/cgcnn.yml", None, "CGCNN"
 
     # CGCNN 10-member ensemble with 5-fold training set perturbations
-    cgcnn_p = "cgcnn/2023-02-05-cgcnn-perturb=5-wbm-IS2RE.csv.gz", "cgcnn/cgcnn+p.yml", "CGCNN+P"  # fmt: skip
+    cgcnn_p = "cgcnn/cgcnn+p.yml", None, "CGCNN+P"
 
     # original M3GNet straight from publication, not re-trained
-    m3gnet = "m3gnet/2023-12-28-m3gnet-wbm-IS2RE.csv.gz", "m3gnet/m3gnet.yml", "M3GNet"
-    # m3gnet_direct = "m3gnet/2023-05-30-m3gnet-direct-wbm-IS2RE.csv.gz", None, "M3GNet DIRECT"
-    # m3gnet_ms = "m3gnet/2023-06-01-m3gnet-manual-sampling-wbm-IS2RE.csv.gz", None, "M3GNet MS"
+    m3gnet = "m3gnet/m3gnet.yml", None, "M3GNet"
+    # m3gnet_direct = None, "M3GNet DIRECT"
+    # m3gnet_ms = None, "M3GNet MS"
 
-    # MACE-MP as published in https://arxiv.org/abs/2401.00096 trained on MPtrj
-    mace = "mace/2023-12-11-mace-wbm-IS2RE-FIRE.csv.gz", "mace/mace.yml", "MACE"
-    # mace_alex = "mace/2024-08-09-mace-wbm-IS2RE-FIRE.csv.gz", None, "MACE Alex"
-    # https://github.com/ACEsuit/mace-mp/releases/tag/mace_mp_0b
-    # mace_0b = "mace/2024-07-20-mace-wbm-IS2RE-FIRE.csv.gz", None, "MACE 0b"
+    # MACE-MP-0 medium as published in https://arxiv.org/abs/2401.00096 trained on MPtrj
+    mace = "mace/mace.yml", None, "MACE"
 
     # original MEGNet straight from publication, not re-trained
-    megnet = "megnet/2022-11-18-megnet-wbm-IS2RE.csv.gz", "megnet/megnet.yml", "MEGNet"
+    megnet = "megnet/megnet.yml", None, "MEGNet"
 
     # SevenNet trained on MPtrj
-    sevennet = "sevennet/2024-07-11-sevennet-0-preds.csv.gz", "sevennet/sevennet.yml", "SevenNet"  # fmt: skip
+    sevennet = "sevennet/sevennet.yml", None, "SevenNet"
 
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest
-    voronoi_rf = "voronoi_rf/2022-11-27-train-test/e-form-preds-IS2RE.csv.gz", "voronoi_rf/voronoi-rf.yml", "Voronoi RF"  # fmt: skip
+    voronoi_rf = "voronoi_rf/voronoi-rf.yml", None, "Voronoi RF"
 
     # wrenformer 10-member ensemble
-    wrenformer = "wrenformer/2022-11-15-wrenformer-ens=10-IS2RE-preds.csv.gz", "wrenformer/wrenformer.yml", "Wrenformer"  # fmt: skip
+    wrenformer = "wrenformer/wrenformer.yml", None, "Wrenformer"
 
     # --- Proprietary Models
     # GNoME
-    gnome = "gnome/2023-11-01-gnome-preds-50076332.csv.gz", "gnome/gnome.yml", "GNoME"
+    gnome = "gnome/gnome.yml", None, "GNoME"
 
     # MatterSim
-    mattersim = "mattersim/2024-06-16-mattersim-wbm-IS2RE.csv.gz", "mattersim/mattersim.yml", "MatterSim"  # fmt: skip
+    mattersim = "mattersim/mattersim.yml", None, "MatterSim"
 
     # ORB
-    orb = "orb/orbff-v2-20241011.csv.gz", "orb/orb.yml", "ORB"
-    orb_mptrj = "orb/orbff-mptrj-only-v2-20241014.csv.gz", "orb/orb-mptrj.yml", "ORB MPtrj"  # fmt: skip
+    orb = "orb/orb.yml", None, "ORB"
+    orb_mptrj = "orb/orb-mptrj.yml", None, "ORB MPtrj"
 
     # fairchem
-    eqv2_s_dens = "eqV2/eqV2-s-dens-mp.csv.gz", "eqV2/eqV2-s-dens-mp.yml", "eqV2 S DeNS"  # fmt: skip
-    eqv2_m = "eqV2/eqV2-m-omat-mp-salex.csv.gz", "eqV2/eqV2-m-omat-mp-salex.yml", "eqV2 M"  # fmt: skip
+    eqv2_s_dens = "eqV2/eqV2-s-dens-mp.yml", None, "eqV2 S DeNS"
+    eqv2_m = "eqV2/eqV2-m-omat-mp-salex.yml", None, "eqV2 M"
 
     # --- Model Combos
     # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
@@ -435,8 +439,59 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv.gz", None, "M3GNet→MEGNet"
     # megnet_rs2re = "megnet/2023-08-23-megnet-wbm-RS2RE.csv.gz", None, "MEGNet RS2RE"
 
+    @functools.cached_property
+    def metadata(self) -> dict[str, Any]:
+        """Metadata associated with the model."""
+        yaml_path = f"{type(self).base_dir}/{self.rel_path}"
+        with open(yaml_path) as file:
+            return yaml.safe_load(file)
 
-px.defaults.labels |= Model.label_map
+    @functools.cached_property
+    def metrics(self) -> dict[str, Any]:
+        """Metrics associated with the model."""
+        return self.metadata.get("metrics", {})
+
+    @functools.cached_property
+    def yaml_path(self) -> str:
+        """YAML file path associated with the model."""
+        return f"{type(self).base_dir}/{self.rel_path}"
+
+    @functools.cached_property
+    def discovery_path(self) -> str:
+        """Prediction file path associated with the model."""
+        rel_path = self.metrics.get("discovery", {}).get("pred_file")
+        if not rel_path:
+            raise ValueError(f"{rel_path} not found in {self.rel_path!r}")
+        return f"{ROOT}/{rel_path}"
+
+    @functools.cached_property
+    def geo_opt_path(self) -> str | None:
+        """File path associated with the file URL if it exists, otherwise
+        download the file first, then return the path.
+        """
+        geo_opt_metrics = self.metrics.get("geo_opt", {})
+        if geo_opt_metrics in ("not available", "not applicable"):
+            return None
+        rel_path = geo_opt_metrics.get("pred_file")
+        if not rel_path:
+            raise ValueError(f"{rel_path} not found in {self.rel_path!r}")
+        return f"{ROOT}/{rel_path}"
+
+    @functools.cached_property
+    def phonons_path(self) -> str | None:
+        """File path associated with the file URL if it exists, otherwise
+        download the file first, then return the path.
+        """
+        phonons_metrics = self.metrics.get("phonons", {})
+        if phonons_metrics in ("not available", "not applicable"):
+            return None
+        rel_path = phonons_metrics.get("pred_file")
+        if not rel_path:
+            raise ValueError(f"{rel_path} not found in {self.rel_path!r}")
+        return f"{ROOT}/{rel_path}"
+
+
+px.defaults.labels |= {k: v.label for k, v in Model.member_map.items()}
 
 
 def load_df_wbm_with_preds(
@@ -477,7 +532,7 @@ def load_df_wbm_with_preds(
     valid_models = {model.name for model in Model}
     if models == ():
         models = tuple(valid_models)
-    inv_label_map = {v: k for k, v in Model.label_map.items()}
+    inv_label_map = {v.label: k for k, v in Model.member_map.items()}
     # map pretty model names back to Model enum keys
     models = {inv_label_map.get(model, model) for model in models}
     if unknown_models := ", ".join(models - valid_models):
@@ -492,14 +547,12 @@ def load_df_wbm_with_preds(
         prog_bar = tqdm(models, disable=not pbar, desc="Loading preds")
         for model_name in prog_bar:
             prog_bar.set_postfix_str(model_name)
-            pred_file = Model[model_name]
-            df_preds = glob_to_df(pred_file.path, pbar=False, **kwargs)
+            model = Model[model_name]
+            df_preds = glob_to_df(model.discovery_path, pbar=False, **kwargs)
 
             # Get prediction column name from metadata
-            model_key = getattr(Model, model_name)
-            model_label = model_key.label
-            model_yaml_path = f"{Model.base_dir}/{model_key.url}"
-            with open(model_yaml_path) as file:
+            model = Model[model_name]
+            with open(model.yaml_path) as file:
                 model_data = yaml.safe_load(file)
 
             pred_col = (
@@ -507,22 +560,22 @@ def load_df_wbm_with_preds(
             )
             if not pred_col:
                 raise ValueError(
-                    f"pred_col not specified for {model_name} in {model_yaml_path!r}"
+                    f"pred_col not specified for {model_name} in {model.yaml_path!r}"
                 )
 
             if pred_col not in df_preds:
-                raise ValueError(f"{pred_col=} not found in {pred_file.path}")
+                raise ValueError(f"{pred_col=} not found in {model.discovery_path}")
 
-            df_out[model_label] = df_preds.set_index(id_col)[pred_col]
+            df_out[model.label] = df_preds.set_index(id_col)[pred_col]
             if max_error_threshold is not None:
                 if max_error_threshold < 0:
                     raise ValueError("max_error_threshold must be a positive number")
                 # Apply centralized model prediction cleaning criterion (see doc string)
                 bad_mask = (
-                    abs(df_out[model_label] - df_out[MbdKey.e_form_dft])
+                    abs(df_out[model.label] - df_out[MbdKey.e_form_dft])
                 ) > max_error_threshold
-                df_out.loc[bad_mask, model_label] = pd.NA
-                n_preds, n_bad = len(df_out[model_label].dropna()), sum(bad_mask)
+                df_out.loc[bad_mask, model.label] = pd.NA
+                n_preds, n_bad = len(df_out[model.label].dropna()), sum(bad_mask)
                 if n_bad > 0:
                     print(
                         f"{n_bad:,} of {n_preds:,} unrealistic preds for {model_name}"
