@@ -3,10 +3,12 @@
 # %%
 import os
 
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import pymatviz as pmv
 from IPython.display import display
+from plotly import graph_objects as go
 from pymatgen.core import Structure
 from pymatviz.enums import Key
 from pymatviz.utils import si_fmt
@@ -21,7 +23,6 @@ from matbench_discovery.structure import analyze_symmetry, pred_vs_ref_struct_sy
 
 init_spg_col = "init_spg_num"
 dft_spg_col = "dft_spg_num"
-n_structs_col = "n_structs"
 df_wbm[init_spg_col] = df_wbm[MbdKey.init_wyckoff].str.split("_").str[2].astype(int)
 df_wbm[dft_spg_col] = df_wbm[Key.wyckoff_spglib].str.split("_").str[2].astype(int)
 module_dir = os.path.dirname(__file__)
@@ -40,7 +41,7 @@ csv_path = f"{ROOT}/data/2024-11-07-all-models-symmetry-analysis.csv.gz"
 df_sym_all = pd.read_csv(csv_path, header=[0, 1], index_col=0)
 
 models = df_sym_all.columns.levels[0]
-print(f"{len(models)=}: {', '.join(models)}")
+print(f"\n{len(models)=}: {', '.join(models)}")
 
 
 # %%
@@ -261,6 +262,62 @@ display(
 )
 
 
+# %% Plot cumulative distribution of RMSD vs DFT
+fig_rmsd_cdf = go.Figure()
+x_max = 0.05
+
+models = df_sym_changes.index
+
+# Calculate and plot CDF for each model
+for model in models:
+    rmsd_vals = df_sym_all.xs(
+        MbdKey.structure_rmsd_vs_dft, level=MbdKey.sym_prop, axis="columns"
+    )[model].dropna()
+
+    # Calculate CDF
+    sorted_rmsds = np.sort(rmsd_vals)
+    cumulative = np.arange(1, len(sorted_rmsds) + 1) / len(sorted_rmsds)
+
+    # Sample 200 points evenly across the range
+    n_points = 200
+    indices = np.linspace(0, len(sorted_rmsds) - 1, n_points, dtype=int)
+    sampled_rmsds = sorted_rmsds[indices]
+    sampled_cumulative = cumulative[indices]
+
+    # calculate AUC only up to x_max
+    AUC = (
+        np.trapezoid(
+            sampled_cumulative[sampled_rmsds <= x_max],
+            sampled_rmsds[sampled_rmsds <= x_max],
+        )
+    ) / x_max
+    # Add CDF line for this model
+    fig_rmsd_cdf.add_scatter(
+        x=sampled_rmsds,
+        y=sampled_cumulative,
+        name=f"{model} · {AUC=:.3}",
+        mode="lines",
+        hovertemplate=f"<b>{model}</b><br>RMSD: %{{x:.3f}} Å<br>Cumulative: %{{y:.1%}}"
+        "<extra></extra>",
+    )
+
+# sort by AUC
+fig_rmsd_cdf.data = sorted(
+    fig_rmsd_cdf.data, key=lambda trace: -float(trace["name"].split("AUC=")[1])
+)
+
+fig_rmsd_cdf.layout.xaxis.update(title="RMSD (Å)", range=[0, x_max])
+fig_rmsd_cdf.layout.yaxis.update(title="Cumulative", tickformat=".0%", range=[0, 1])
+fig_rmsd_cdf.layout.legend = dict(y=0, xanchor="right", x=1)
+
+pmv.save_fig(fig_rmsd_cdf, f"{SITE_FIGS}/struct-rmsd-cdf-models.svelte")
+
+title = "Cumulative Distribution of RMSD vs DFT-relaxed structures"
+fig_rmsd_cdf.layout.title = dict(text=title, x=0.5)
+fig_rmsd_cdf.layout.margin.t = 40
+fig_rmsd_cdf.show()
+
+
 # %%
 if __name__ == "__main__":
     go_metrics.write_geo_opt_metrics_to_yaml(df_sym_all, df_sym_changes)
@@ -288,4 +345,5 @@ if __name__ == "__main__":
         pmv.save_fig(fig, f"{SITE_FIGS}/spg-sankey-{model.replace('_', '-')}.svelte")
 
 
-# TODO look at this metrics https://github.com/FAIR-Chem/fairchem/blob/6329e922a42c2082bfbbbf63d40ce6e0b65eafdd/src/fairchem/core/modules/evaluator.py#L318
+# TODO maybe add average_distance_within_threshold metric
+# https://github.com/FAIR-Chem/fairchem/blob/6329e922/src/fairchem/core/modules/evaluator.py#L318
