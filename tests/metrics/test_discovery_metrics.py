@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 from pymatviz.enums import Key
 
-from matbench_discovery.metrics import classify_stable, stable_metrics
+from matbench_discovery.metrics.discovery import classify_stable, stable_metrics
 
 
 @pytest.mark.parametrize(

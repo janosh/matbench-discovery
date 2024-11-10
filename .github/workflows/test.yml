@@ -31,7 +31,7 @@ jobs:
       fail-fast: false
       matrix:
         script:
-          - scripts/model_figs/metrics_tables.py
+          - scripts/metrics/discovery_tables.py
           - scripts/model_figs/rolling_mae_vs_hull_dist_models.py
           - scripts/model_figs/cumulative_metrics.py
           - scripts/rolling_mae_vs_hull_dist.py

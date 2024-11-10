@@ -12,7 +12,7 @@ from pymatviz.enums import Key
 from matbench_discovery import PDF_FIGS
 from matbench_discovery import plots as plots
 from matbench_discovery.data import DataFiles, Model, df_wbm
-from matbench_discovery.preds import df_preds
+from matbench_discovery.preds.discovery import df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-06"
@@ -21,7 +21,7 @@ module_dir = os.path.dirname(__file__)
 
 
 # %%
-df_chgnet = df_chgnet_v030 = pd.read_csv(Model.chgnet.path)
+df_chgnet = df_chgnet_v030 = pd.read_csv(Model.chgnet.discovery_path)
 df_chgnet_v020 = pd.read_csv(
     f"{module_dir}/2023-03-06-chgnet-0.2.0-wbm-IS2RE.csv.gz", index_col=Key.mat_id
 )

@@ -14,7 +14,7 @@ from matbench_discovery import PDF_FIGS
 from matbench_discovery.data import Model, df_wbm
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist
-from matbench_discovery.preds import df_each_pred
+from matbench_discovery.preds.discovery import df_each_pred
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"

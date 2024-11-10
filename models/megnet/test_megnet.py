@@ -54,8 +54,8 @@ slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
 data_path = {
     Task.IS2RE: DataFiles.wbm_initial_structures.path,
     Task.RS2RE: DataFiles.wbm_computed_structure_entries.path,
-    "chgnet_structure": Model.chgnet.path.replace(".csv.gz", ".json.gz"),
-    "m3gnet_structure": Model.m3gnet.path.replace(".csv.gz", ".json.gz"),
+    "chgnet_structure": Model.chgnet.geo_opt_path,
+    "m3gnet_structure": Model.m3gnet.geo_opt_path,
 }[task_type]
 print(f"\nJob {job_name} started {timestamp}")
 print(f"{data_path=}")
@@ -127,9 +127,7 @@ if task_type != Task.IS2RE:
 
 df_megnet.add_suffix(f"_{task_type.lower()}").round(4).to_csv(out_path)
 
-# df_megnet = pd.read_csv(
-#     f"{ROOT}/models/{Model.megnet.path}"
-# ).set_index(Key.mat_id)
+# df_megnet = pd.read_csv(Model.megnet.discovery_path).set_index(Key.mat_id)
 
 
 # %% compare MEGNet predictions with old and new MP corrections

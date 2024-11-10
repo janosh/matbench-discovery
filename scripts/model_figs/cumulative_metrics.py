@@ -16,7 +16,12 @@ from pymatviz.utils import MATPLOTLIB, PLOTLY
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.plots import cumulative_metrics
-from matbench_discovery.preds import df_each_pred, df_preds, model_styles, models
+from matbench_discovery.preds.discovery import (
+    df_each_pred,
+    df_preds,
+    model_styles,
+    models,
+)
 
 __author__ = "Janosh Riebesell, Rhys Goodall"
 __date__ = "2022-12-04"

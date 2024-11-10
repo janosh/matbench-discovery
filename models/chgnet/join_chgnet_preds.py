@@ -14,7 +14,7 @@ from tqdm import tqdm
 from matbench_discovery.data import as_dict_handler
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.enums import MbdKey, Task
-from matbench_discovery.preds import df_preds
+from matbench_discovery.preds.discovery import df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-01"

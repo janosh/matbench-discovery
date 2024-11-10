@@ -15,7 +15,7 @@ from pymatviz.utils import PLOTLY, bin_df_cols
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.data import DataFiles, Model, df_wbm
 from matbench_discovery.enums import MbdKey
-from matbench_discovery.preds import df_each_pred, df_preds
+from matbench_discovery.preds.discovery import df_each_pred, df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-20"

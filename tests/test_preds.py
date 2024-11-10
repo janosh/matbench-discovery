@@ -6,7 +6,7 @@ from pymatviz.enums import Key
 
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import MbdKey
-from matbench_discovery.preds import (
+from matbench_discovery.preds.discovery import (
     Model,
     df_each_err,
     df_each_pred,
@@ -57,7 +57,7 @@ def test_df_each_err() -> None:
     )
 
 
-@pytest.mark.parametrize("models", [[], ["Wrenformer"]])
+@pytest.mark.parametrize("models", [[], ["wrenformer"]])
 @pytest.mark.parametrize("max_error_threshold", [None, 5.0, 1.0])
 def test_load_df_wbm_with_preds(
     models: list[str], max_error_threshold: float | None
@@ -68,21 +68,22 @@ def test_load_df_wbm_with_preds(
     assert len(df_wbm_with_preds) == len(df_wbm)
 
     assert list(df_wbm_with_preds) == list(df_wbm) + [
-        Model.label_map.get(model, model) for model in models
+        Model[model].label for model in models
     ]
     assert df_wbm_with_preds.index.name == Key.mat_id
 
     for model_name in models:
-        assert model_name in df_wbm_with_preds
+        model = Model[model_name]
+        assert model.label in df_wbm_with_preds
         if max_error_threshold is not None:
             # Check if predictions exceeding the threshold are filtered out
             error = abs(
-                df_wbm_with_preds[model_name] - df_wbm_with_preds[MbdKey.e_form_dft]
+                df_wbm_with_preds[model.label] - df_wbm_with_preds[MbdKey.e_form_dft]
             )
             assert np.all(error[~error.isna()] <= max_error_threshold)
         else:
             # If no threshold is set, all predictions should be present
-            assert df_wbm_with_preds[model_name].isna().sum() == 0
+            assert df_wbm_with_preds[model.label].isna().sum() == 0
 
 
 def test_load_df_wbm_max_error_threshold() -> None:
@@ -109,10 +110,8 @@ def test_load_df_wbm_with_preds_raises() -> None:
 
 def test_pred_files() -> None:
     assert len(Model) >= 6
-    assert all(
-        file.path.endswith((".csv", ".csv.gz", ".json", ".json.gz")) for file in Model
-    )
     for model in Model:
-        path = model.path
-        msg = f"Missing preds file for {model=}, expected at {path=}"
-        assert os.path.isfile(path), msg
+        assert model.discovery_path.endswith(".csv.gz")
+        assert os.path.isfile(
+            model.discovery_path
+        ), f"{model=} missing discovery pred file, expected at {model.discovery_path}"

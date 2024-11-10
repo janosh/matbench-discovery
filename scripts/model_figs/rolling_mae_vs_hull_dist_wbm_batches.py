@@ -12,8 +12,8 @@ from matbench_discovery import PDF_FIGS, SITE_FIGS, today
 from matbench_discovery.data import Model
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
-from matbench_discovery.preds import df_each_pred, df_preds
-from matbench_discovery.preds import models as all_models
+from matbench_discovery.preds.discovery import df_each_pred, df_preds
+from matbench_discovery.preds.discovery import models as all_models
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"

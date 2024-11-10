@@ -7,7 +7,7 @@ from pymatviz.enums import Key
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.enums import Quantity, TestSubset
-from matbench_discovery.preds import df_each_err, df_preds, models
+from matbench_discovery.preds.discovery import df_each_err, df_preds, models
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-05-25"

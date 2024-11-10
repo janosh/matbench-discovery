@@ -13,7 +13,7 @@ from pymatviz.enums import Key
 
 from matbench_discovery import SITE_FIGS
 from matbench_discovery.enums import MbdKey, TestSubset
-from matbench_discovery.preds import (
+from matbench_discovery.preds.discovery import (
     df_each_pred,
     df_metrics,
     df_metrics_uniq_protos,

@@ -6,9 +6,12 @@ from collections.abc import Sequence
 
 import numpy as np
 import pandas as pd
+from pymatviz.enums import Key
 from sklearn.metrics import r2_score
 
 from matbench_discovery import STABILITY_THRESHOLD
+from matbench_discovery.data import Model, df_wbm, round_trip_yaml
+from matbench_discovery.enums import MbdKey, TestSubset
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-01"
@@ -146,3 +149,52 @@ def stable_metrics(
         RMSE=((each_true - each_pred) ** 2).mean() ** 0.5,
         R2=r2_score(each_true, each_pred),
     )
+
+
+def write_discovery_metrics_to_yaml(
+    model: Model,
+    df_metrics: pd.DataFrame,
+    df_metrics_10k: pd.DataFrame,
+    df_metrics_uniq_protos: pd.DataFrame,
+    df_preds: pd.DataFrame,
+) -> None:
+    """Write materials discovery metrics to model YAML metadata files."""
+    full_metrics = df_metrics[model.label].to_dict()
+    metrics_10k_most_stable = df_metrics_10k[model.label].to_dict()
+    metrics_unique_protos = df_metrics_uniq_protos[model.label].to_dict()
+
+    df_uniq_proto_preds = df_preds[df_wbm[Key.uniq_proto]]
+
+    each_pred_uniq_proto = (
+        df_uniq_proto_preds[MbdKey.each_true]
+        + df_uniq_proto_preds[model.label]
+        - df_uniq_proto_preds[MbdKey.e_form_dft]
+    )
+    most_stable_10k_idx = each_pred_uniq_proto.nsmallest(10_000).index
+
+    # calculate number of missing predictions for each test subset
+    for metrics, df_tmp in (
+        (full_metrics, df_preds),
+        (metrics_10k_most_stable, df_preds.loc[most_stable_10k_idx]),
+        (metrics_unique_protos, df_preds.query(Key.uniq_proto)),
+    ):
+        metrics[MbdKey.missing_preds] = int(df_tmp[model.label].isna().sum())
+        metrics[MbdKey.missing_percent] = (
+            f"{metrics[MbdKey.missing_preds] / len(df_tmp):.2%}"
+        )
+
+    discovery_metrics = {
+        TestSubset.full_test_set: full_metrics,
+        TestSubset.most_stable_10k: metrics_10k_most_stable,
+        TestSubset.uniq_protos: metrics_unique_protos,
+    }
+
+    # Add or update discovery metrics
+    with open(model.yaml_path) as file:
+        model_metadata = round_trip_yaml.load(file)
+
+    model_metadata.setdefault("metrics", {})["discovery"] = discovery_metrics
+
+    # Write back to file
+    with open(model.yaml_path, mode="w") as file:
+        round_trip_yaml.dump(model_metadata, file)

@@ -14,7 +14,11 @@ from pymatviz.utils import MATPLOTLIB, PLOTLY
 from matbench_discovery import PDF_FIGS, SITE_FIGS, today
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist, plt
-from matbench_discovery.preds import df_metrics, df_metrics_uniq_protos, df_preds
+from matbench_discovery.preds.discovery import (
+    df_metrics,
+    df_metrics_uniq_protos,
+    df_preds,
+)
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-12-01"
