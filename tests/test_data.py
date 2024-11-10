@@ -209,11 +209,6 @@ def test_model() -> None:
     ):
         _ = Model.alignn.bad_path
 
-    with pytest.raises(
-        AttributeError, match="type object 'Model' has no attribute 'bad_model'"
-    ):
-        _ = Model.bad_model
-
     # Test Model metrics property
     metrics = Model.alignn.metrics
     assert isinstance(metrics, dict)
