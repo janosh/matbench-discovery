@@ -135,14 +135,12 @@
     margin: auto;
   }
 
-  .table-container::-webkit-scrollbar {
-    display: none;
+  /* https://stackoverflow.com/a/38994837 */
+  .table-container {
+    scrollbar-width: none; /* Firefox */
   }
-
-  table {
-    border-collapse: collapse;
-    width: 100%;
-    font-size: 0.9rem;
+  .table-container::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
   }
 
   th,
