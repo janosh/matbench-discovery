@@ -22,12 +22,15 @@
   </figcaption>
 </figure>
 
-<figure>
-  <StructRmsdCdfModels />
-  <figcaption>
-    Cumulative distribution of RMSD comparing ML vs DFT-relaxed structures for each model.
-  </figcaption>
-</figure>
+{#if browser}
+  <figure>
+    <StructRmsdCdfModels />
+    <figcaption>
+      Cumulative distribution of RMSD comparing ML vs DFT-relaxed structures for each
+      model.
+    </figcaption>
+  </figure>
+{/if}
 
 <SankeyReadme />
 

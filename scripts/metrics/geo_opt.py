@@ -4,22 +4,18 @@
 import os
 
 import numpy as np
-import pandas as pd
 import plotly.express as px
 import pymatviz as pmv
 from IPython.display import display
 from plotly import graph_objects as go
-from pymatgen.core import Structure
 from pymatviz.enums import Key
 from pymatviz.utils import si_fmt
-from tqdm import tqdm
 
 import matbench_discovery.metrics.geo_opt as go_metrics
-from matbench_discovery import ROOT, SITE_FIGS, today
-from matbench_discovery.data import DataFiles, Model, df_wbm
+from matbench_discovery import SITE_FIGS, today
+from matbench_discovery.data import Model, df_wbm
 from matbench_discovery.enums import MbdKey
-from matbench_discovery.models import MODEL_METADATA
-from matbench_discovery.structure import analyze_symmetry, pred_vs_ref_struct_symmetry
+from matbench_discovery.preds.geo_opt import df_sym
 
 init_spg_col = "init_spg_num"
 dft_spg_col = "dft_spg_num"
@@ -37,116 +33,13 @@ print(
     f"{retained:,} / {len(df_wbm):,} ({retained/len(df_wbm):.2%})"
 )
 
-csv_path = f"{ROOT}/data/2024-11-07-all-models-symmetry-analysis.csv.gz"
-df_sym_all = pd.read_csv(csv_path, header=[0, 1], index_col=0)
-
-models = df_sym_all.columns.levels[0]
+models = df_sym.columns.levels[0]
 print(f"\n{len(models)=}: {', '.join(models)}")
-
-
-# %%
-df_wbm_structs = pd.read_json(DataFiles.wbm_computed_structure_entries.path)
-df_wbm_structs = df_wbm_structs.set_index(Key.mat_id)
-if debug_mode:
-    df_wbm_structs = df_wbm_structs.head(debug_mode)
-
-
-# %% Load all available model-relaxed structures for all models
-dfs_model_structs: dict[str, pd.DataFrame] = {}
-
-# pbar = tqdm(Model, desc="Loading model structures")
-for model_name, model_metadata in MODEL_METADATA.items():
-    if model_name in df_sym_all:
-        print(f"{model_name} already analyzed")
-        continue
-    geo_opt_metrics = model_metadata.get("metrics", {}).get("geo_opt", {})
-    if geo_opt_metrics in ("not applicable", "not available"):
-        continue
-    ml_relaxed_structs_path = f"{ROOT}/{geo_opt_metrics.get("pred_file")}"
-    if not ml_relaxed_structs_path:
-        continue
-    if not os.path.isfile(ml_relaxed_structs_path):
-        print(f"{model_name}-relaxed structures not found")
-        continue
-
-    if (
-        model_name in dfs_model_structs
-        # reload df_model if debug_mode changed
-        and (len(dfs_model_structs[model_name]) == debug_mode or debug_mode == 0)
-    ):
-        continue
-    df_model = pd.read_json(ml_relaxed_structs_path).set_index(Key.mat_id)
-    if debug_mode:
-        df_model = df_model.head(debug_mode)
-    dfs_model_structs[model_name] = df_model
-    n_structs_for_model = len(dfs_model_structs[model_name])
-    print(f"Loaded {n_structs_for_model:,} structures for {model_name}")
-
-
-# %% Perform symmetry analysis for all model-relaxed structures
-dfs_sym_all: dict[str, pd.DataFrame] = {}
-df_structs = pd.DataFrame()
-
-for model_name in tqdm(dfs_model_structs, desc="Analyzing model structures"):
-    n_structs_for_model = len(dfs_model_structs[model_name].dropna())
-    n_structs_analyzed = len(dfs_sym_all.get(model_name, []))
-    if n_structs_analyzed / n_structs_for_model > 0.97:
-        # skip model if >97% of its structures already analyzed
-        continue  # accounts for structures failing symmetry analysis
-
-    df_model = dfs_model_structs[model_name]
-    try:
-        struct_col = next(col for col in df_model if Key.structure in col)
-    except StopIteration:
-        print(f"No structure column found for {model_name}")
-        continue
-    df_structs[model_name] = {
-        mat_id: Structure.from_dict(struct_dict)
-        for mat_id, struct_dict in df_model[struct_col].items()
-    }
-    dfs_sym_all[model_name] = analyze_symmetry(
-        df_structs[model_name].dropna().to_dict(),
-        pbar=dict(desc=f"Analyzing {model_name} symmetries"),
-    )
-
-
-# %% Analyze DFT structures
-dft_structs = {
-    mat_id: Structure.from_dict(cse[Key.structure])
-    for mat_id, cse in df_wbm_structs[Key.cse].items()
-}
-if Key.dft.label not in df_sym_all:
-    dfs_sym_all[Key.dft.label] = analyze_symmetry(dft_structs)
-
-
-# %% Compare symmetry with DFT reference
-n_models = len({*dfs_sym_all} - {Key.dft})
-
-for idx, model_name in enumerate({*dfs_sym_all} - {Key.dft}):
-    dfs_sym_all[model_name] = pred_vs_ref_struct_symmetry(
-        dfs_sym_all[model_name],
-        df_sym_all[Key.dft.label],
-        df_structs[model_name].dropna().to_dict(),
-        dft_structs,
-        pbar=dict(desc=f"{idx+1}/{n_models} Comparing DFT vs {model_name} symmetries"),
-    )
-
-
-# %% Combine all dataframes
-df_sym_all = df_sym_all.join(
-    pd.concat(dfs_sym_all, axis="columns", names=[Key.model, MbdKey.sym_prop])
-)
-df_sym_all = df_sym_all.convert_dtypes()
-
-
-# %% Save results to CSV
-csv_path = f"{ROOT}/data/{today}-all-models-symmetry-analysis.csv.xz"
-df_sym_all.to_csv(csv_path)
 
 
 # %% Plot violin plot of RMSD vs DFT
 fig_rmsd = px.violin(
-    df_sym_all.xs(MbdKey.structure_rmsd_vs_dft, level=MbdKey.sym_prop, axis="columns")
+    df_sym.xs(MbdKey.structure_rmsd_vs_dft, level=MbdKey.sym_prop, axis="columns")
     .round(3)
     .dropna(),
     orientation="h",
@@ -161,7 +54,7 @@ fig_rmsd.layout.margin.t = 50
 fig_rmsd.update_traces(orientation="h", side="positive", width=1.8)
 
 # add annotation for mean for each model
-for model, srs_rmsd in df_sym_all.xs(
+for model, srs_rmsd in df_sym.xs(
     MbdKey.structure_rmsd_vs_dft, level=MbdKey.sym_prop, axis="columns"
 ).items():
     mean_rmsd = srs_rmsd.mean()
@@ -188,7 +81,7 @@ pmv.save_fig(fig_rmsd, f"{module_dir}/{today}-rmsd-violin.pdf")
 
 # %% calculate number of model spacegroups agreeing with DFT-relaxed spacegroup
 avg_spg_diff = (
-    df_sym_all.xs(MbdKey.spg_num_diff, level=MbdKey.sym_prop, axis="columns")
+    df_sym.xs(MbdKey.spg_num_diff, level=MbdKey.sym_prop, axis="columns")
     .mean(axis=0)
     .round(1)
 )
@@ -197,7 +90,7 @@ print(f"Average spacegroup number difference vs DFT for each model: {avg_spg_dif
 
 # %% violin plot of spacegroup number diff vs DFT
 fig_sym = px.violin(
-    df_sym_all.xs(MbdKey.spg_num_diff, level=MbdKey.sym_prop, axis="columns"),
+    df_sym.xs(MbdKey.spg_num_diff, level=MbdKey.sym_prop, axis="columns"),
     title="Spacegroup Number Diff vs DFT",
     orientation="h",
     color="model",
@@ -214,7 +107,7 @@ pmv.save_fig(fig_sym, f"{module_dir}/{today}-sym-violin.pdf")
 
 # %% violin plot of number of symmetry operations in ML-relaxed structures
 fig_sym_ops = px.violin(
-    df_sym_all.xs(Key.n_sym_ops, level=MbdKey.sym_prop, axis="columns"),
+    df_sym.xs(Key.n_sym_ops, level=MbdKey.sym_prop, axis="columns"),
     title="Number of Symmetry Operations in ML-relaxed Structures",
     orientation="h",
     color="model",
@@ -230,7 +123,7 @@ pmv.save_fig(fig_sym_ops, f"{module_dir}/{today}-sym-ops-violin.pdf")
 
 # %% violin plot of number of symmetry operations in ML-relaxed structures vs DFT
 fig_sym_ops_diff = px.violin(
-    df_sym_all.drop(Key.dft.label, level=Key.model, axis="columns")
+    df_sym.drop(Key.dft.label, level=Key.model, axis="columns")
     .xs(MbdKey.n_sym_ops_diff, level=MbdKey.sym_prop, axis="columns")
     .reset_index(),
     orientation="h",
@@ -250,7 +143,7 @@ pmv.save_fig(fig_sym_ops_diff, f"{module_dir}/{today}-sym-ops-diff-violin.svelte
 
 
 # %% Print summary of symmetry changes
-df_sym_changes = go_metrics.analyze_symmetry_changes(df_sym_all).convert_dtypes()
+df_sym_changes = go_metrics.analyze_symmetry_changes(df_sym).convert_dtypes()
 display(
     df_sym_changes.round(3)
     .rename(columns=lambda col: col.removeprefix("symmetry_"))
@@ -270,7 +163,7 @@ models = df_sym_changes.index
 
 # Calculate and plot CDF for each model
 for model in models:
-    rmsd_vals = df_sym_all.xs(
+    rmsd_vals = df_sym.xs(
         MbdKey.structure_rmsd_vs_dft, level=MbdKey.sym_prop, axis="columns"
     )[model].dropna()
 
@@ -320,10 +213,10 @@ fig_rmsd_cdf.show()
 
 # %%
 if __name__ == "__main__":
-    go_metrics.write_geo_opt_metrics_to_yaml(df_sym_all, df_sym_changes)
+    go_metrics.write_geo_opt_metrics_to_yaml(df_sym, df_sym_changes)
 
     # %% plot ML vs DFT relaxed spacegroup correspondence as sankey diagrams
-    df_spg = df_sym_all.xs(Key.spg_num, level=MbdKey.sym_prop, axis="columns")
+    df_spg = df_sym.xs(Key.spg_num, level=MbdKey.sym_prop, axis="columns")
     for model in {*df_spg} - {Key.dft}:
         # get most common pairs of DFT/Model spacegroups
         common_dft_spgs, common_model_spgs = zip(
