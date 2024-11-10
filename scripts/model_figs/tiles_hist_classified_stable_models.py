@@ -58,7 +58,7 @@ kwds = dict(
     facet_col=facet_col,
     facet_col_wrap=n_cols,
     category_orders={facet_col: models_to_plot},
-    facet_col_spacing=0.03,
+    facet_col_spacing=0.04,
     facet_row_spacing=0.04,
 )
 
@@ -96,36 +96,35 @@ for anno in fig.layout.annotations:
 fig.layout.update(height=230 * n_rows)
 fig.layout.update(width=280 * n_cols)
 
+
+# %%
 # create shared x and y axis titles
 x_title = fig.layout.xaxis.title.text  # used in annotations below
 y_title = fig.layout.yaxis.title.text
 
-for i in range(1, n_rows + 1):
-    for j in range(1, n_cols + 1):
-        fig.update_xaxes(title_text="", row=i, col=j)
-        fig.update_yaxes(title_text="", row=i, col=j)
+# set the shared y and x axis ranges
+fig.update_yaxes(range=[0, 9_000], title_text=None)
+fig.update_xaxes(range=[-0.4, 0.4], title_text=None)
 
 axis_titles = dict(xref="paper", yref="paper", showarrow=False, font_size=16)
 portrait = n_rows > n_cols
 fig.add_annotation(  # x-axis title
     x=0.5,
-    y=-0.09 if portrait else -0.18,
+    y=0,
+    yshift=-50,
     text=x_title,
     borderpad=5,
     **axis_titles,
 )
 fig.add_annotation(  # y-axis title
-    x=-0.09 if portrait else -0.07,
+    x=0,
+    xshift=-70,
     y=0.5,
     text=y_title,
     textangle=-90,
     borderpad=5,
     **axis_titles,
 )
-
-# set the shared y and x axis ranges
-fig.update_yaxes(range=[0, 9_000], title_text=None)
-fig.update_yaxes(range=[-0.4, 0.4], title_text=None)
 
 # place the legend above the subplots
 fig.layout.legend.update(

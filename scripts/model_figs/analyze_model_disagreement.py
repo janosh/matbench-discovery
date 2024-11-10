@@ -95,7 +95,7 @@ for material_cls, pattern in material_classes.items():
     # for horizontal colorbar
     # yanchor="bottom", y=1, xanchor="center", x=0.5, orientation="h", thickness=12
     fig.layout.coloraxis.colorbar.update(title_side="right", thickness=14)
-    fig.layout.margin.update(l=0, r=30, b=0, t=0)
+    fig.layout.margin.update(l=60, r=10, t=30, b=60)
     add_identity_line(fig)
     label = {"all": "structures"}.get(material_cls, material_cls)
     # fig.layout.title.update(

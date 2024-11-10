@@ -118,7 +118,7 @@ fig = px.scatter(
     facet_col=facet_col,
     facet_col_wrap=n_cols,
     color=log_bin_cnt_col,
-    facet_col_spacing=0.03,
+    facet_col_spacing=0.04,
     facet_row_spacing=0.04,
     hover_data=hover_cols,
     hover_name=df_preds.index.name,
@@ -226,13 +226,15 @@ axis_titles = dict(xref="paper", yref="paper", showarrow=False, font_size=16)
 portrait = n_rows > n_cols
 fig.add_annotation(  # x-axis title
     x=0.5,
-    y=-0.09 if portrait else -0.18,
+    y=0,
+    yshift=-50,
     text=x_title,
     borderpad=5,
     **axis_titles,
 )
 fig.add_annotation(  # y-axis title
-    x=-0.09 if portrait else -0.07,
+    x=0,
+    xshift=-70,
     y=0.5,
     text=y_title,
     textangle=-90,

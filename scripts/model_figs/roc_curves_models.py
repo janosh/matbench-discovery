@@ -70,11 +70,12 @@ for model in (pbar := tqdm(models_to_plot, desc="Calculating ROC curves")):
 # %%
 facet_plot = False
 kwds = dict(
-    height=150 * len(df_roc[facet_col].unique()),
+    width=700,
+    height=400,
     color=color_col,
     facet_col=facet_col,
     range_color=(-0.5, 0.5),
-    facet_col_spacing=0.03,
+    facet_col_spacing=0.04,
     facet_row_spacing=0.1,
 )
 
@@ -108,14 +109,15 @@ for trace in fig.data:
         trace.marker = dict(color=color, symbol=marker, size=4)
 
 
-if not facet_plot:
-    fig.layout.legend.update(
-        x=1,
-        y=0,
-        xanchor="right",
-        title=None,
-        bgcolor="rgba(0,0,0,0)",  # Transparent background
-    )
+fig.layout.legend.update(title=None)
+# if not facet_plot:
+#     fig.layout.legend.update(
+#         x=1,
+#         y=0,
+#         xanchor="right",
+#         title=None,
+#         bgcolor="rgba(0,0,0,0)",  # Transparent background
+#     )
 
 fig.layout.coloraxis.colorbar.update(thickness=14, title_side="right")
 if n_cols == 2:
@@ -140,4 +142,4 @@ img_name = (
 
 # %%
 pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
-pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=500, height=500)
+pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

@@ -60,7 +60,7 @@ x_label = "Number of screened materials"
 for key in filter(lambda key: key.startswith("yaxis"), fig.layout):
     fig.layout[key].range = range_y
 
-fig.layout.margin.update(l=0, r=0, t=30, b=50)
+fig.layout.margin.update(l=60, r=10, t=30, b=60)
 # use annotation for x-axis label
 fig.add_annotation(
     **dict(x=0.5, y=-0.15, xref="paper", yref="paper"),
@@ -70,14 +70,10 @@ fig.add_annotation(
 )
 fig.update_traces(line=dict(width=3))
 fig.layout.legend.update(bgcolor="rgba(0,0,0,0)")
-# fig.layout.legend.update(
-#     orientation="h", yanchor="bottom", y=1.1, xanchor="center", x=0.5
-# )
-if "MAE" in metrics:
-    fig.layout.legend.update(traceorder="reversed")
 
 if metrics == ("MAE",):
-    fig.layout.legend.update(y=1, x=1, xanchor="right", yanchor="top")
+    fig.layout.legend.update(traceorder="reversed")
+    # fig.layout.legend.update(y=1, x=1, xanchor="right", yanchor="top")
 
 if len(metrics) * len(models_to_plot) * (2 if endpoint_markers else 1) != len(fig.data):
     raise ValueError(

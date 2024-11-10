@@ -58,7 +58,7 @@ fig = make_subplots(
     shared_xaxes=True,
     shared_yaxes=True,
     vertical_spacing=0.04,
-    horizontal_spacing=0.03,
+    horizontal_spacing=0.04,
 )
 # Update title font size for all subplot titles
 fig.layout.update(height=230 * n_rows)
@@ -137,13 +137,15 @@ axis_titles = dict(xref="paper", yref="paper", showarrow=False, font_size=16)
 portrait = n_rows > n_cols
 fig.add_annotation(  # x-axis title
     x=0.5,
-    y=-0.09 if portrait else -0.18,
+    y=0,
+    yshift=-50,
     text=x_title,
     borderpad=5,
     **axis_titles,
 )
 fig.add_annotation(  # y-axis title
-    x=-0.09 if portrait else -0.07,
+    x=0,
+    xshift=-70,
     y=0.5,
     text=y_title,
     textangle=-90,

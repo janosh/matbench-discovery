@@ -481,7 +481,7 @@ def cumulative_metrics(
     endpoint_markers: bool = True,
     n_points: int = 100,
     col_width: float = 500,
-    height: float = 500,
+    height: float = 400,
     **kwargs: Any,
 ) -> tuple[plt.Figure | go.Figure, pd.DataFrame]:
     """Create 2 subplots side-by-side with cumulative precision and recall curves for
@@ -618,7 +618,7 @@ def cumulative_metrics(
     # before annotating. This is a limitation of plotly.
     # See https://github.com/plotly/plotly.py/issues/4858
     # Calculate text angle based on data range
-    fig.update_layout(width=col_width * n_cols, height=height)
+    fig.update_layout(width=col_width * len(metrics), height=height)
 
     line_kwds = dict(dash="dash", width=0.5)
     for idx, anno in enumerate(fig.layout.annotations):
