@@ -93,25 +93,19 @@ for anno in fig.layout.annotations:
     anno.text = f"{model_name} · {F1=:.2f} · {FPR=:.2f} · {FNR=:.2f} · {DAF=:.2f}"
 
 # set the figure size based on the number of rows and columns
-fig.layout.update(height=230 * n_rows)
-fig.layout.update(width=280 * n_cols)
-
-
-# %% create shared x and y axis titles
-x_title = fig.layout.xaxis.title.text  # used in annotations below
-y_title = fig.layout.yaxis.title.text
+fig.layout.height = 230 * n_rows
+fig.layout.width = 280 * n_cols
 
 # set the shared y and x axis ranges
-fig.update_yaxes(range=[0, 9_000], title_text=None)
-fig.update_xaxes(range=[-0.4, 0.4], title_text=None)
+fig.update_yaxes(range=[0, 9_000], title_text=None, matches=None)
+fig.update_xaxes(range=[-0.4, 0.4], title_text=None, matches=None)
 
 axis_titles = dict(xref="paper", yref="paper", showarrow=False, font_size=16)
-portrait = n_rows > n_cols
 fig.add_annotation(  # x-axis title
     x=0.5,
     y=0,
     yshift=-50,
-    text=x_title,
+    text=MbdKey.each_true.label,
     borderpad=5,
     **axis_titles,
 )
@@ -119,7 +113,7 @@ fig.add_annotation(  # y-axis title
     x=0,
     xshift=-70,
     y=0.5,
-    text=y_title,
+    text=Key.each_pred.label,
     textangle=-90,
     borderpad=5,
     **axis_titles,
@@ -131,9 +125,8 @@ fig.layout.legend.update(
 )
 
 # standardize the margins and template
+portrait = n_rows > n_cols
 fig.layout.margin.update(l=60, r=10, t=0 if portrait else 10, b=60 if portrait else 10)
-fig.update_xaxes(matches=None)
-fig.update_yaxes(matches=None)
 fig.layout.template = "pymatviz_white"
 
 # for trace in fig.data:

@@ -132,7 +132,6 @@ for i in range(1, n_rows + 1):
         fig.update_yaxes(title_text="", row=i, col=j)
 
 axis_titles = dict(xref="paper", yref="paper", showarrow=False, font_size=16)
-portrait = n_rows > n_cols
 fig.add_annotation(  # x-axis title
     x=0.5,
     y=0,
@@ -152,6 +151,7 @@ fig.add_annotation(  # y-axis title
 )
 
 # standardize the margins and template
+portrait = n_rows > n_cols
 fig.layout.margin.update(l=60, r=10, t=0 if portrait else 10, b=60 if portrait else 10)
 fig.update_xaxes(matches=None)
 fig.update_yaxes(matches=None)

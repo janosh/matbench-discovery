@@ -90,7 +90,6 @@ for anno in fig.layout.annotations:
     anno.text = anno.text.split("=", 1)[1]  # remove Model= from subplot titles
 
 axis_titles = dict(xref="paper", yref="paper", showarrow=False, font_size=16)
-portrait = n_rows > n_cols
 fig.add_annotation(  # x-axis title
     x=0.5,
     y=0,
@@ -119,6 +118,7 @@ fig.update_xaxes(title="", range=[0, 1], matches=None)
 fig.update_yaxes(title="", range=[0.8, 1], matches=None)
 
 # standardize the margins and template
+portrait = n_rows > n_cols
 fig.layout.margin.update(l=60, r=10, t=0 if portrait else 10, b=60 if portrait else 10)
 fig.layout.template = "pymatviz_white"
 

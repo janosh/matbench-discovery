@@ -200,11 +200,6 @@ if e_true_col == MbdKey.each_true:
             col="all",
         )
 
-# enable grid
-fig.update_layout(xaxis=dict(showgrid=True), yaxis=dict(showgrid=True))
-
-fig.update_xaxes(nticks=8)
-fig.update_yaxes(nticks=8)
 pmv.powerups.add_identity_line(fig)
 
 # remove legend title and place legend centered above subplots, increase marker size
@@ -214,21 +209,13 @@ fig.layout.legend.update(
 
 # fig.update_layout(yaxis=dict(scaleanchor="x", scaleratio=1))
 # Create shared x and y axis titles
-x_title = fig.layout.xaxis.title.text  # used in annotations below
-y_title = fig.layout.yaxis.title.text
-
-for i in range(1, n_rows + 1):
-    for j in range(1, n_cols + 1):
-        fig.update_xaxes(title_text="", row=i, col=j)
-        fig.update_yaxes(title_text="", row=i, col=j)
 
 axis_titles = dict(xref="paper", yref="paper", showarrow=False, font_size=16)
-portrait = n_rows > n_cols
 fig.add_annotation(  # x-axis title
     x=0.5,
     y=0,
     yshift=-50,
-    text=x_title,
+    text=e_true_col.label,
     borderpad=5,
     **axis_titles,
 )
@@ -236,7 +223,7 @@ fig.add_annotation(  # y-axis title
     x=0,
     xshift=-70,
     y=0.5,
-    text=y_title,
+    text=e_pred_col.label,
     textangle=-90,
     borderpad=5,
     **axis_titles,
@@ -248,9 +235,12 @@ fig.layout.coloraxis.colorbar.update(
 )
 
 # standardize the margins and template
+portrait = n_rows > n_cols
 fig.layout.margin.update(l=60, r=10, t=0 if portrait else 10, b=60 if portrait else 10)
-fig.update_xaxes(matches=None)
-fig.update_yaxes(matches=None)
+
+axes_kwargs = dict(matches=None, title_text="", showgrid=True, nticks=8)
+fig.update_xaxes(**axes_kwargs)
+fig.update_yaxes(**axes_kwargs)
 fig.layout.template = "pymatviz_white"
 fig.show()
 
