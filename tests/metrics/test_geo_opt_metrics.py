@@ -128,7 +128,7 @@ sym_changes_cols = [
             # df_sym_changes data
             model1_sym_changes := dict(zip(sym_changes_cols, [0.33, 0.33, 0.34, 3])),
             # expected yaml content
-            {"metrics": {"geo_opt": {**model1_sym_changes, Key.rmsd: 0.2}}},
+            {"metrics": {"geo_opt": model1_sym_changes | {Key.rmsd: 0.2}}},
         ),
         # Test case 2: Edge case with NaN values
         (
@@ -138,7 +138,7 @@ sym_changes_cols = [
                 (model2, MbdKey.n_sym_ops_diff): [np.nan, np.nan],
             },
             model2_sym_changes := dict(zip(sym_changes_cols, [0.0, 0.0, 0.0, 0])),
-            {"metrics": {"geo_opt": {**model2_sym_changes, Key.rmsd: float("nan")}}},
+            {"metrics": {"geo_opt": model2_sym_changes | {Key.rmsd: float("nan")}}},
         ),
         # Test case 3: Empty data
         (
@@ -148,7 +148,7 @@ sym_changes_cols = [
                 (model3, MbdKey.n_sym_ops_diff): [],
             },
             model3_sym_changes := dict(zip(sym_changes_cols, [0.0, 0.0, 0.0, 0])),
-            {"metrics": {"geo_opt": {**model3_sym_changes, Key.rmsd: float("nan")}}},
+            {"metrics": {"geo_opt": model3_sym_changes | {Key.rmsd: float("nan")}}},
         ),
     ],
 )

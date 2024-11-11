@@ -75,7 +75,6 @@ material_classes = (
 )
 n_structs, fig = 200, None
 
-# TODO this includes compliant and non-complaint models
 for material_cls, pattern in material_classes.items():
     df_subset = df_preds[df_preds[Key.formula].str.match(pattern)]
     df_plot = df_subset.nlargest(n_structs, MbdKey.each_err_models).round(2)

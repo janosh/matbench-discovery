@@ -41,12 +41,12 @@ for show_non_compliant in (False, True):
                 for which_energy in ("each", "e-form"):
                     runpy.run_path(
                         file,
-                        init_globals={**init_globals, "which_energy": which_energy},
+                        init_globals=init_globals | {"which_energy": which_energy},
                     )
             elif file.endswith("cumulative_metrics.py"):
                 for metrics in (("MAE",), ("Precision", "Recall")):
                     runpy.run_path(
-                        file, init_globals={**init_globals, "metrics": metrics}
+                        file, init_globals=init_globals | {"metrics": metrics}
                     )
             else:
                 runpy.run_path(file, init_globals=init_globals)
