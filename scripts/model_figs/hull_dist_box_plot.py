@@ -61,7 +61,8 @@ fig.show()
 
 
 # %%
-img_name = f"box-hull-dist-errors{'-only-compliant' if not show_non_compliant else ''}"
+img_suffix = "" if show_non_compliant else "-only-compliant"
+img_name = f"box-hull-dist-errors{img_suffix}"
 pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 fig.layout.showlegend = False
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

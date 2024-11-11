@@ -50,13 +50,10 @@ del df_each_err
 # while some points lie on a horizontal line of constant error, more follow the identity
 # line showing models are biased to predict low energies likely as a result of training
 # on MP which is highly low-energy enriched.
-# also possible models failed to learn whatever physics makes these materials highly
-# unstable
-
-split_out_classes = False
-material_classes = (
-    {
-        "all": r".*",
+# also possible models failed to learn whatever physics makes these materials unstable
+material_classes = {"all": r".*"}
+if split_out_classes := False:
+    material_classes |= {
         "lanthanides": r".*(La|Ce|Pr|Nd|Pm|Sm|Eu|Gd|Tb|Dy|Ho|Er|Tm|Yb|Lu)\d.*",
         "actinides": r".*(Ac|Th|Pa|U|Np|Pu|Am|Cm|Bk|Cf|Es|Fm|Md|No|Lr)\d.*",
         "oxides": r".*O\d.*",
@@ -70,9 +67,6 @@ material_classes = (
         "hydrides": r".*H\d.*",
         "oxynitrides": r".*[ON]\d.*",
     }
-    if split_out_classes
-    else {"all": r".*"}
-)
 n_structs, fig = 200, None
 
 for material_cls, pattern in material_classes.items():
@@ -97,11 +91,12 @@ for material_cls, pattern in material_classes.items():
     fig.layout.margin.update(l=60, r=10, t=30, b=60)
     add_identity_line(fig)
     label = {"all": "structures"}.get(material_cls, material_cls)
-    # fig.layout.title.update(
-    #     text=f"{n_structs} {material_cls} with largest hull distance errors<br>"
-    #     "colored by model disagreement, sized by number of sites",
-    #     x=0.5,
+    # title = (
+    #     f"{n_structs} {material_cls} with largest hull distance errors<br>"
+    #     "colored by model disagreement, sized by number of sites"
     # )
+    # fig.layout.title.update(text=title, x=0.5)
+
     # size markers by square root of structure site count
     fig.data[0].marker.size = df_plot["n_sites"] ** 0.5 * 3
     # tried setting error_y=model_std_col but looks bad
@@ -109,10 +104,8 @@ for material_cls, pattern in material_classes.items():
     #     error_y=dict(color="rgba(255,255,255,0.2)", width=3, thickness=2)
     # )
     fig.show()
-    img_name = (
-        f"scatter-largest-errors-models-mean-vs-true-hull-dist-{material_cls}"
-        f"{'-only-compliant' if not show_non_compliant else ''}"
-    )
+    img_suffix = "" if show_non_compliant else "-only-compliant"
+    img_name = f"scatter-largest-errors-models-mean-vs-true-hull-dist-{material_cls}{img_suffix}"  # noqa: E501
     pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
     pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=600, height=300)
 

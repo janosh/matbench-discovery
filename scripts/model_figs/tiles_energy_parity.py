@@ -256,9 +256,7 @@ fig.show()
 
 
 # %%
-fig_name = (
-    f"{which_energy}-parity-models-{n_rows}x{n_cols}"
-    f"{'-only-compliant' if not show_non_compliant else ''}"
-)
-pmv.save_fig(fig, f"{SITE_FIGS}/{fig_name}.svg")
-pmv.save_fig(fig, f"{PDF_FIGS}/{fig_name}.pdf")
+img_suffix = "" if show_non_compliant else "-only-compliant"
+img_name = f"{which_energy}-parity-models-{n_rows}x{n_cols}{img_suffix}"
+pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svg")
+pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

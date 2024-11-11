@@ -134,10 +134,8 @@ fig.update_xaxes(matches=None)
 fig.layout.margin.update(l=0, r=0, b=0, t=20, pad=0)
 fig.update_yaxes(matches=None)
 fig.show()
-img_name = (
-    f"roc-models{f'-{n_rows}x{n_cols}' if facet_plot else ''}"
-    f"{'-only-compliant' if not show_non_compliant else ''}"
-)
+img_suffix = "" if show_non_compliant else "-only-compliant"
+img_name = f"roc-models{f'-{n_rows}x{n_cols}' if facet_plot else ''}{img_suffix}"
 
 
 # %%

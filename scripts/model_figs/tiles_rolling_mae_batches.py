@@ -161,9 +161,7 @@ fig.show()
 
 
 # %%
-img_path = (
-    f"tile-rolling-mae-batches-{n_rows}x{n_cols}"
-    f"{'-only-compliant' if not show_non_compliant else ''}"
-)
-pmv.save_fig(fig, f"{SITE_FIGS}/{img_path}.svelte")
-pmv.save_fig(fig, f"{PDF_FIGS}/{img_path}.pdf")
+img_suffix = "" if show_non_compliant else "-only-compliant"
+img_name = f"tile-rolling-mae-batches-{n_rows}x{n_cols}{img_suffix}"
+pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
+pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

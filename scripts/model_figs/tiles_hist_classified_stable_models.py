@@ -146,9 +146,7 @@ fig.show()
 
 
 # %%
-img_name = (
-    f"hist-clf-{which_energy}-hull-dist-models-{n_rows}x{n_cols}"
-    f"{'-only-compliant' if not show_non_compliant else ''}"
-)
+img_suffix = "" if show_non_compliant else "-only-compliant"
+img_name = f"hist-clf-{which_energy}-hull-dist-models-{n_rows}x{n_cols}{img_suffix}"
 pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
