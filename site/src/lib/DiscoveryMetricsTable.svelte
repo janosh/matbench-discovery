@@ -8,22 +8,39 @@
   export let show_non_compliant: boolean = false
   export let show_energy_only: boolean = false
   export let show_metadata: boolean = true
-  export let metadata_cols = [`Training Set`, `Params`, `Targets`, `Date Added`]
+  export let metadata_cols = [
+    { label: `Training Set` },
+    { label: `Params` },
+    { label: `Targets` },
+    { label: `Date Added` },
+  ]
   export let hide_cols: string[] = []
-  export let show_cols = [
-    `Model`,
-    `F1`,
-    `DAF`,
-    `Prec`,
-    `Acc`,
-    `TPR`,
-    `TNR`,
-    `MAE`,
-    `RMSE`,
-    `R<sup>2</sup>`,
-    `κ<sub>SRME</sub>`,
+  export let columns = [
+    { label: `Model` },
+    { label: `F1`, tooltip: `harmonic mean of precision and recall` },
+    { label: `DAF`, tooltip: `discovery acceleration factor` },
+    { label: `Prec`, tooltip: `precision of classifying thermodynamic stability` },
+    { label: `Acc`, tooltip: `accuracy of classifying thermodynamic stability` },
+    {
+      label: `TPR`,
+      tooltip: `true positive rate of classifying thermodynamic stability`,
+    },
+    {
+      label: `TNR`,
+      tooltip: `true negative rate of classifying thermodynamic stability`,
+    },
+    {
+      label: `MAE`,
+      tooltip: `mean absolute error of predicting the convex hull distance`,
+    },
+    { label: `RMSE` },
+    { label: `R<sup>2</sup>`, tooltip: `coefficient of determination` },
+    {
+      label: `κ<sub>SRME</sub>`,
+      tooltip: `symmetric relative mean error in predicted phonon mode contributions to thermal conductivity κ`,
+    },
     ...(show_metadata ? metadata_cols : []),
-  ].filter((col) => !hide_cols.includes(col))
+  ].filter((col) => !hide_cols.includes(col.label))
   export let sep_lines: number[] = [6, 9]
 
   function format_train_set(model_training_sets: string[]) {
@@ -139,7 +156,7 @@
 
 <HeatmapTable
   data={metrics_data}
-  columns={show_cols}
+  {columns}
   higher_is_better={[...discovery.higher_is_better, ...phonons.higher_is_better]}
   lower_is_better={[...discovery.lower_is_better, ...phonons.lower_is_better]}
   {sep_lines}

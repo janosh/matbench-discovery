@@ -11,12 +11,14 @@
   type TableData = Record<string, string | number | undefined>[]
 
   export let data: TableData
-  export let columns: string[] = []
+  export let columns: { label: string; tooltip?: string }[] = []
   export let higher_is_better: string[] = []
   export let lower_is_better: string[] = []
   export let sep_lines: number[] = []
   export let sticky_cols: number[] = [0] // default to sticky first column
   export let format: Record<string, string> = {}
+  // set to empty string to hide hint
+  export let sort_hint: string = `Click on numerical column headers to sort the table rows by their values`
 
   const sort_state = writable({ column: ``, ascending: true })
 
@@ -68,32 +70,25 @@
   <table use:titles_as_tooltips>
     <thead>
       <tr>
-        {#each columns as col, col_idx}
+        {#each columns as { label, tooltip = null }, col_idx}
           <th
-            on:click={() => sort_rows(col)}
+            on:click={() => sort_rows(label)}
             class:sep-line={sep_lines.includes(col_idx)}
+            title={tooltip}
           >
-            {@html col}
-            {#if col_idx == 0}
-              <span
-                title="Click on numerical column headers to sort the table rows by their values"
-              >
+            {@html label}
+            {#if col_idx == 0 && sort_hint}
+              <span title={sort_hint}>
                 <Icon icon="octicon:info-16" inline />
               </span>
             {/if}
-            {#if higher_is_better.includes(col) || lower_is_better.includes(col)}
-              {#if $sort_state.column === col}
-                <span style="font-size: 0.8em;">
-                  {$sort_state.ascending ? `↑` : `↓`}
-                </span>
-              {:else}
-                <span style="font-size: 0.8em; opacity: 0.5;">
-                  {higher_is_better.includes(col) ? `↓` : `↑`}
-                </span>
-              {/if}
-            {:else if $sort_state.column === col}
+            {#if $sort_state.column === label}
               <span style="font-size: 0.8em;">
                 {$sort_state.ascending ? `↑` : `↓`}
+              </span>
+            {:else if higher_is_better.includes(label) || lower_is_better.includes(label)}
+              <span style="font-size: 0.8em;">
+                {higher_is_better.includes(label) ? `↓` : `↑`}
               </span>
             {/if}
           </th>
@@ -103,19 +98,19 @@
     <tbody>
       {#each clean_data as row (JSON.stringify(row))}
         <tr animate:flip={{ duration: 500 }}>
-          {#each columns as column, col_idx}
-            {@const val = row[column]}
-            {@const color = calc_color(val, column)}
+          {#each columns as { label }, col_idx}
+            {@const val = row[label]}
+            {@const color = calc_color(val, label)}
             <td
-              data-col={column}
+              data-col={label}
               data-sort-value={val}
               class:sticky-col={sticky_cols.includes(col_idx)}
               class:sep-line={sep_lines.includes(col_idx)}
               style:background-color={color.bg}
               style:color={color.text}
             >
-              {#if typeof val === `number` && format[column]}
-                {@html pretty_num(val, format[column])}
+              {#if typeof val === `number` && format[label]}
+                {@html pretty_num(val, format[label])}
               {:else}
                 {@html val}
               {/if}
