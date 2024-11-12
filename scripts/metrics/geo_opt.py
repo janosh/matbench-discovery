@@ -155,7 +155,7 @@ fig_sym_ops_diff = make_subplots(
     rows=len(models_by_std),
     cols=1,
     subplot_titles=[f"{model} (σ={std:.3})" for model, std in models_by_std],  # noqa: RUF001
-    vertical_spacing=0.04,
+    vertical_spacing=0.05,
     shared_xaxes=True,  # Share x-axes across subplots
 )
 
@@ -176,7 +176,7 @@ for idx, (model, _std) in enumerate(models_by_std, start=1):
         name=model,
         showlegend=False,
         width=1,
-        hovertemplate="Diff: %{x}<br>Count: %{y}<extra></extra>",
+        hovertemplate="Diff: %{x:,}<br>Count: %{y:,}<extra></extra>",
         row=idx,
         col=1,
     )
@@ -185,6 +185,7 @@ fig_sym_ops_diff.layout.height = 170 * len(models_by_std)
 
 x_title = "N<sub>sym ops,ML</sub> - N<sub>sym ops,DFT</sub>"
 fig_sym_ops_diff.update_xaxes(title=x_title, row=len(models_by_std))
+fig_sym_ops_diff.update_xaxes(nticks=10, showticklabels=True)
 
 # log transform y-axis
 fig_sym_ops_diff.update_yaxes(type="log")

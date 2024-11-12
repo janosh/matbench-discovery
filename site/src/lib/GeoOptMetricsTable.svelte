@@ -4,9 +4,8 @@
 
   export let show_non_compliant: boolean = false
   export let show_metadata: boolean = true
-  export let metadata_cols: string[] = []
-  export let hide_cols: string[] = []
-  export let columns: { label: string; tooltip?: string }[] = [
+  export let metadata_cols: { label: string; tooltip?: string }[] = []
+  export let columns: { label: string; tooltip?: string; style?: string }[] = [
     { label: `Model` },
     {
       label: `RMSD`,
@@ -26,7 +25,7 @@
     },
     // { label: `n_structs` },
     ...(show_metadata ? metadata_cols : []),
-  ].filter((col) => !hide_cols.includes(col.label))
+  ]
 
   const long_date = (date: string): string =>
     new Date(date).toLocaleDateString(undefined, {
@@ -73,6 +72,7 @@
     'σ<sub>dec</sub>': `.1%`,
     'σ<sub>inc</sub>': `.1%`,
   }}
+  {...$$restProps}
 />
 
 <style>

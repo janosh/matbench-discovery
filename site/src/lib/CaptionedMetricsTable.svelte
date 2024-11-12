@@ -4,7 +4,6 @@
   import { onMount } from 'svelte'
 
   export let show_non_compliant = false
-  export let show_energy_only = false // new prop for toggling energy-only models
 
   let n_wbm_stable_uniq_protos = 32_942
   let n_wbm_uniq_protos = 215_488
@@ -18,12 +17,8 @@
   })
 </script>
 
-<figure
-  {...$$props}
-  class:hide-non-compliant={!show_non_compliant}
-  class:hide-energy-only={!show_energy_only}
->
-  <DiscoveryMetricsTable {show_non_compliant} {show_energy_only} />
+<figure {...$$props}>
+  <DiscoveryMetricsTable {show_non_compliant} {...$$restProps} />
   <div class="downloads">
     Download table as
     {#each [`PDF`, `SVG`] as file_ext}
@@ -63,16 +58,6 @@
     padding: 2pt 6pt;
     background-color: rgba(255, 255, 255, 0.07);
   }
-  /* hide rows where any cell has a class of non-compliant */
-  figure.hide-non-compliant :global(tr:has(.non-compliant)) {
-    display: none;
-  }
-
-  /* hide rows where the targets cell has data-targets="E" */
-  figure.hide-energy-only :global(tr:has([data-targets='E'])) {
-    display: none;
-  }
-
   div.downloads {
     display: flex;
     gap: 1ex;

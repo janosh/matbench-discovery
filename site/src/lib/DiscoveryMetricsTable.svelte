@@ -14,8 +14,7 @@
     { label: `Targets` },
     { label: `Date Added` },
   ]
-  export let hide_cols: string[] = []
-  export let columns = [
+  export let columns: { label: string; tooltip?: string; style?: string }[] = [
     { label: `Model` },
     { label: `F1`, tooltip: `harmonic mean of precision and recall` },
     { label: `DAF`, tooltip: `discovery acceleration factor` },
@@ -32,16 +31,17 @@
     {
       label: `MAE`,
       tooltip: `mean absolute error of predicting the convex hull distance`,
+      style: `border-left: 1px solid black;`,
     },
     { label: `RMSE` },
     { label: `R<sup>2</sup>`, tooltip: `coefficient of determination` },
     {
       label: `κ<sub>SRME</sub>`,
       tooltip: `symmetric relative mean error in predicted phonon mode contributions to thermal conductivity κ`,
+      style: `border-left: 1px solid black;`,
     },
     ...(show_metadata ? metadata_cols : []),
-  ].filter((col) => !hide_cols.includes(col.label))
-  export let sep_lines: number[] = [6, 9]
+  ]
 
   function format_train_set(model_training_sets: string[]) {
     let [total_structs, total_materials] = [0, 0]
@@ -159,5 +159,5 @@
   {columns}
   higher_is_better={[...discovery.higher_is_better, ...phonons.higher_is_better]}
   lower_is_better={[...discovery.lower_is_better, ...phonons.lower_is_better]}
-  {sep_lines}
+  {...$$restProps}
 />
