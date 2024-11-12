@@ -51,7 +51,6 @@
     display: grid;
     gap: 1ex;
     overflow: scroll;
-    max-width: 90vw; /* enable horizontal scrolling on smaller screens */
   }
   figcaption {
     font-size: 0.9em;
@@ -68,11 +67,5 @@
     background-color: rgba(255, 255, 255, 0.1);
     padding: 0 6pt;
     border-radius: 4pt;
-  }
-  figure :global(:is(th, td)) {
-    max-width: 12em;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    white-space: nowrap;
   }
 </style>

@@ -13,8 +13,9 @@ import torch
 import typer
 import wandb
 from ase import Atoms
-from ase.filters import FrechetCellFilter, UnitCellFilter
+from ase.filters import Filter, FrechetCellFilter, UnitCellFilter
 from ase.optimize import BFGS, FIRE, LBFGS
+from ase.optimize.optimize import Optimizer
 from fairchem.core import OCPCalculator
 from fairchem.core.common.utils import setup_logging
 from fairchem.core.datasets import AseDBDataset
@@ -36,8 +37,8 @@ DATABASE_PATH = {
     Task.IS2RE: str(BASE_PATH / "WBM_IS2RE.aselmdb"),
 }
 
-FILTER_CLS = {"frechet": FrechetCellFilter, "unit": UnitCellFilter}
-OPTIM_CLS = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": BFGS}
+FILTER_CLS: dict[str, Filter] = {"frechet": FrechetCellFilter, "unit": UnitCellFilter}
+OPTIM_CLS: dict[str, Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": BFGS}
 
 
 class AseDBSubset(Subset):
@@ -160,13 +161,8 @@ class RelaxJob(Checkpointable):
                 atoms.calc = calculator
 
                 if filter_cls is not None:
-                    optim_inst = optim_cls(
-                        filter_cls(atoms), logfile="/dev/null", **optimizer_params
-                    )
-                else:
-                    optim_inst = optim_cls(
-                        atoms, logfile="/dev/null", **optimizer_params
-                    )
+                    atoms = filter_cls(atoms)
+                optim_inst = optim_cls(atoms, logfile="/dev/null", **optimizer_params)
 
                 optim_inst.run(fmax=force_max, steps=max_steps)
 
