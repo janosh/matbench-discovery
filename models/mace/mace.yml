@@ -46,7 +46,7 @@ openness: OSOD
 trained_for_benchmark: true
 train_task: S2EFS
 test_task: IS2RE-SR
-targets: EFS_C
+targets: EFS_G
 model_type: UIP
 # model_params: 2_026_624 # 2023-09-03-mace-yuan-mptrj-slower-14-lr-13_run-3
 # model_params: 15_847_440 # 2023-10-29-mace-pbenner-mptrj-no-conditional-loss
