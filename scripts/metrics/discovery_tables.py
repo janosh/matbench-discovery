@@ -338,6 +338,7 @@ for (label, df_met), show_non_compliant in itertools.product(
 
     styler = df_table.style.format(
         dict.fromkeys(df_table.select_dtypes(float), "{:.3g}"),
+        # dict.fromkeys(df_table.select_dtypes(float), "{:,.3f}"),  # use for manuscript
         na_rep="",  # render NaNs as empty string
     )
     styler = styler.background_gradient(

@@ -34,11 +34,11 @@ exceptions = []  # Collect exceptions here
 
 for show_non_compliant in (False, True):
     for file in (pbar := tqdm(scripts)):
-        pbar.set_description(file)
+        pbar.set_postfix_str(file)
         init_globals = {"show_non_compliant": show_non_compliant}
         try:
-            if file.endswith("parity_energy_models.py"):
-                for which_energy in ("each", "e-form"):
+            if file.endswith("tiles_energy_parity.py"):
+                for which_energy in ("e-form", "each"):
                     runpy.run_path(
                         file,
                         init_globals=init_globals | {"which_energy": which_energy},

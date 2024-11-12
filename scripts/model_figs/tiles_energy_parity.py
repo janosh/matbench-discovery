@@ -125,7 +125,7 @@ fig = px.scatter(
     # color=clf_col,
     # color_discrete_map=clf_color_map,
     # opacity=0.4,
-    range_x=(domain := (-4, 7) if which_energy == use_each else (-5, 5)),
+    range_x=(domain := (-4, 4) if which_energy == use_each else (-5, 3)),
     range_y=domain,
     category_orders={facet_col: sorted(models_to_plot, key=legend_order.index)},
     # pick from https://plotly.com/python/builtin-colorscales
@@ -163,42 +163,44 @@ for idx, anno in enumerate(fig.layout.annotations, start=1):
     fig.layout.annotations[idx - 1].text = sub_title
 
 # add transparent rectangle with TN, TP, FN, FP labels in each quadrant
+annotate_quadrants = True
 if e_true_col == MbdKey.each_true:
     # add dashed quadrant separators
     fig.add_vline(x=0, line=dict(width=0.5, dash="dash"))
     fig.add_hline(y=0, line=dict(width=0.5, dash="dash"))
 
-    for sign_x, sign_y, label, color in (
-        (-1, -1, "TP", clf_colors[0]),
-        (-1, 1, "FN", clf_colors[1]),
-        (1, -1, "FP", clf_colors[2]),
-        (1, 1, "TN", clf_colors[3]),
-    ):
-        # instead of coloring points in each quadrant, we can add a transparent
-        # background to each quadrant (looks worse maybe than coloring points)
-        # fig.add_shape(
-        #     type="rect",
-        #     x0=0,
-        #     y0=0,
-        #     x1=sign_x * 100,
-        #     y1=sign_y * 100,
-        #     fillcolor=color,
-        #     opacity=0.2,
-        #     layer="below",
-        #     row="all",
-        #     col="all",
-        # )
-        fig.add_annotation(
-            x=(domain[0] if sign_x < 0 else domain[1]),
-            y=(domain[0] if sign_y < 0 else domain[1]),
-            xshift=-20 * sign_x,
-            yshift=-15 * sign_y,
-            text=label,
-            showarrow=False,
-            font=dict(size=14, color=color),
-            row="all",
-            col="all",
-        )
+    if annotate_quadrants:
+        for sign_x, sign_y, label, color in (
+            (-1, -1, "TP", clf_colors[0]),
+            (-1, 1, "FN", clf_colors[1]),
+            (1, -1, "FP", clf_colors[2]),
+            (1, 1, "TN", clf_colors[3]),
+        ):
+            # instead of coloring points in each quadrant, we can add a transparent
+            # background to each quadrant (looks worse maybe than coloring points)
+            fig.add_shape(
+                type="rect",
+                x0=0,
+                y0=0,
+                x1=sign_x * 100,
+                y1=sign_y * 100,
+                fillcolor=color,
+                opacity=0.05,
+                layer="below",
+                row="all",
+                col="all",
+            )
+            fig.add_annotation(
+                x=(domain[0] if sign_x < 0 else domain[1]),
+                y=(domain[0] if sign_y < 0 else domain[1]),
+                xshift=-20 * sign_x,
+                yshift=-15 * sign_y if sign_x != sign_y else -70 * sign_y,
+                text=label,
+                showarrow=False,
+                font=dict(size=14, color=color),
+                row="all",
+                col="all",
+            )
 
 pmv.powerups.add_identity_line(fig)
 
@@ -239,8 +241,8 @@ portrait = n_rows > n_cols
 fig.layout.margin.update(l=60, r=10, t=0 if portrait else 10, b=60 if portrait else 10)
 
 axes_kwargs = dict(matches=None, title_text="", showgrid=True, nticks=8)
-fig.update_xaxes(**axes_kwargs)
-fig.update_yaxes(**axes_kwargs)
+fig.update_xaxes(**axes_kwargs, range=domain)
+fig.update_yaxes(**axes_kwargs, range=domain)
 fig.layout.template = "pymatviz_white"
 fig.show()
 

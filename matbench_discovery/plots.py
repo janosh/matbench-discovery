@@ -636,13 +636,7 @@ def cumulative_metrics(
                 line=line_kwds,
             )
 
-            # Calculate text angle based on data range
-            dev_fig = fig.full_figure_for_development(warn=False)
-            x_max = dev_fig.layout.xaxis.range[1]
-            y_max = dev_fig.layout.yaxis.range[1]
-            dx = n_stable / x_max
-            dy = 1 / y_max
-            textangle = -math.degrees(math.atan2(dy, dx))
+            textangle = -math.degrees(math.atan2(n_max_pred_stable, n_stable))
 
             # annotate optimal recall line
             fig.add_annotation(
