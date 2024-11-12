@@ -11,17 +11,19 @@
   type TableData = Record<string, string | number | undefined>[]
 
   export let data: TableData
-  export let columns: string[] = []
+  export let columns: { label: string; tooltip?: string; style?: string }[] = []
   export let higher_is_better: string[] = []
   export let lower_is_better: string[] = []
-  export let sep_lines: number[] = []
   export let sticky_cols: number[] = [0] // default to sticky first column
+  export let hide_cols: string[] = [] // just the column labels
   export let format: Record<string, string> = {}
+  // set to empty string to hide hint
+  export let sort_hint: string = `Click on numerical column headers to sort the table rows by their values`
 
   const sort_state = writable({ column: ``, ascending: true })
 
   $: clean_data = data.filter((row) =>
-    Object.values(row).every((val) => val !== undefined),
+    Object.values(row).some((val) => val !== undefined),
   )
 
   function sort_rows(column: string) {
@@ -62,38 +64,29 @@
 
     return { bg, text }
   }
+
+  $: visible_columns = columns.filter((col) => !hide_cols.includes(col.label))
 </script>
 
 <div class="table-container">
   <table use:titles_as_tooltips>
     <thead>
       <tr>
-        {#each columns as col, col_idx}
-          <th
-            on:click={() => sort_rows(col)}
-            class:sep-line={sep_lines.includes(col_idx)}
-          >
-            {@html col}
-            {#if col_idx == 0}
-              <span
-                title="Click on numerical column headers to sort the table rows by their values"
-              >
+        {#each visible_columns as { label, tooltip = null, style = null }, col_idx}
+          <th on:click={() => sort_rows(label)} title={tooltip} {style}>
+            {@html label}
+            {#if col_idx == 0 && sort_hint}
+              <span title={sort_hint}>
                 <Icon icon="octicon:info-16" inline />
               </span>
             {/if}
-            {#if higher_is_better.includes(col) || lower_is_better.includes(col)}
-              {#if $sort_state.column === col}
-                <span style="font-size: 0.8em;">
-                  {$sort_state.ascending ? `↑` : `↓`}
-                </span>
-              {:else}
-                <span style="font-size: 0.8em; opacity: 0.5;">
-                  {higher_is_better.includes(col) ? `↓` : `↑`}
-                </span>
-              {/if}
-            {:else if $sort_state.column === col}
+            {#if $sort_state.column === label}
               <span style="font-size: 0.8em;">
                 {$sort_state.ascending ? `↑` : `↓`}
+              </span>
+            {:else if higher_is_better.includes(label) || lower_is_better.includes(label)}
+              <span style="font-size: 0.8em;">
+                {higher_is_better.includes(label) ? `↓` : `↑`}
               </span>
             {/if}
           </th>
@@ -103,19 +96,19 @@
     <tbody>
       {#each clean_data as row (JSON.stringify(row))}
         <tr animate:flip={{ duration: 500 }}>
-          {#each columns as column, col_idx}
-            {@const val = row[column]}
-            {@const color = calc_color(val, column)}
+          {#each visible_columns as { label, style = null }, col_idx}
+            {@const val = row[label]}
+            {@const color = calc_color(val, label)}
             <td
-              data-col={column}
+              data-col={label}
               data-sort-value={val}
               class:sticky-col={sticky_cols.includes(col_idx)}
-              class:sep-line={sep_lines.includes(col_idx)}
               style:background-color={color.bg}
               style:color={color.text}
+              {style}
             >
-              {#if typeof val === `number` && format[column]}
-                {@html pretty_num(val, format[column])}
+              {#if typeof val === `number` && format[label]}
+                {@html pretty_num(val, format[label])}
               {:else}
                 {@html val}
               {/if}
@@ -161,10 +154,6 @@
 
   th:hover {
     background: var(--night-lighter, #2a2a2a);
-  }
-
-  .sep-line {
-    border-right: 1px solid black;
   }
 
   .sticky-col {
