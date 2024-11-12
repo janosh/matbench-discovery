@@ -9,10 +9,10 @@
   export let show_energy_only: boolean = false
   export let show_metadata: boolean = true
   export let metadata_cols = [
-    { label: `Training Set` },
-    { label: `Params` },
-    { label: `Targets` },
-    { label: `Date Added` },
+    { label: `Training Set`, tooltip: `Size of and link to model training set` },
+    { label: `Params`, tooltip: `Number of trainable model parameters` },
+    { label: `Targets`, tooltip: `Target property used to train the model` },
+    { label: `Date Added`, tooltip: `Submission date to the leaderboard` },
   ]
   export let columns: { label: string; tooltip?: string; style?: string }[] = [
     { label: `Model` },

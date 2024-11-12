@@ -20,8 +20,8 @@
     TNR: false,
     MAE: true,
     RMSE: false,
-    'R²': true,
-    κ: true,
+    'R<sup>2</sup>': true,
+    'κ<sub>SRME</sub>': true,
     'Training Set': true,
     Params: true,
     Targets: true,
@@ -95,7 +95,7 @@
           {#each Object.keys(visible_cols) as col}
             <label>
               <input type="checkbox" bind:checked={visible_cols[col]} />
-              {col}
+              {@html col}
             </label>
           {/each}
         </div>
@@ -130,5 +130,8 @@
   .column-toggles label {
     display: flex;
     gap: 2pt;
+  }
+  .column-toggles label :global(:is(sub, sup)) {
+    transform: translate(-1pt, 6pt);
   }
 </style>
