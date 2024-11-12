@@ -49,15 +49,15 @@ export const MODEL_METADATA = Object.entries(model_metadata_files)
 // parse markdown notes to html with remark/rehype
 for (const { model_name, notes } of MODEL_METADATA) {
   if (!notes) continue
+
   for (const [key, note] of Object.entries(notes)) {
     const out = unified()
       .use(remarkParse)
       .use(remarkRehype)
       .use(rehypeStringify)
       .processSync(note as string)
-    if (!out) {
-      console.trace(`Failed to compile model note ${model_name}/${key}`)
-      // remove outer p tags
-    } else notes[key] = out
+
+    if (out?.value) notes[key] = out.value
+    else console.trace(`Failed to compile model note ${model_name}/${key}`)
   }
 }
