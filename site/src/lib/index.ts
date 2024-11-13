@@ -58,6 +58,6 @@ for (const { model_name, notes } of MODEL_METADATA) {
       .processSync(note as string)
 
     if (out?.value) notes[key] = out.value
-    else console.trace(`Failed to compile model note ${model_name}/${key}`)
+    else console.trace(`Failed to compile  ${model_name} note with ${key}\n`)
   }
 }

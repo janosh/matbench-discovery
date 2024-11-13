@@ -22,9 +22,8 @@
 
   const sort_state = writable({ column: ``, ascending: true })
 
-  $: clean_data = data.filter((row) =>
-    Object.values(row).some((val) => val !== undefined),
-  )
+  $: clean_data =
+    data?.filter?.((row) => Object.values(row).some((val) => val !== undefined)) ?? []
 
   function sort_rows(column: string) {
     if ($sort_state.column !== column) {
@@ -126,6 +125,7 @@
     max-width: 100%;
     scrollbar-width: none;
     margin: auto;
+    font-size: var(--heatmap-font-size, 0.9em);
   }
 
   /* https://stackoverflow.com/a/38994837 */
@@ -138,36 +138,36 @@
 
   th,
   td {
-    padding: 1pt 3pt;
-    text-align: left;
-    border: none;
+    padding: var(--heatmap-cell-padding, 1pt 3pt);
+    text-align: var(--heatmap-text-align, left);
+    border: var(--heatmap-cell-border, none);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   th {
-    background: var(--night);
+    background: var(--heatmap-header-bg, var(--night));
     position: sticky;
     cursor: pointer;
   }
 
   th:hover {
-    background: var(--night-lighter, #2a2a2a);
+    background: var(--heatmap-header-hover-bg, var(--night-lighter, #2a2a2a));
   }
 
   .sticky-col {
     position: sticky;
     left: 0;
-    background: var(--night);
+    background: var(--heatmap-header-bg, var(--night));
     z-index: 2;
   }
   tr:nth-child(odd) td.sticky-col {
-    background: rgb(15, 14, 14);
+    background: var(--heatmap-row-odd-bg, rgb(15, 14, 14));
   }
 
   tbody tr:hover {
-    filter: brightness(1.1);
+    filter: var(--heatmap-row-hover-filter, brightness(1.1));
   }
 
   td[data-sort-value] {

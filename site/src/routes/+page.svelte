@@ -62,8 +62,8 @@
   <div slot="metrics-table" style="display: grid; gap: 1ex; place-items: center;">
     <KappaNote />
     <div style="display: flex; gap: 1em; align-items: center; flex-wrap: wrap;">
-      <Toggle bind:checked={show_non_compliant}
-        >Show non-compliant models <Tooltip max_width="10em">
+      <Toggle bind:checked={show_non_compliant} style="gap: 3pt;">
+        Show non-compliant models <Tooltip max_width="10em">
           <span slot="tip">
             Models can be non-compliant for multiple reasons<br />
             - closed source (model implementation and/or train/test code)<br />
@@ -78,8 +78,8 @@
           <Icon icon="octicon:info-16" inline style="padding: 0 3pt;" />
         </Tooltip>&ensp;</Toggle
       >
-      <Toggle bind:checked={show_energy_only}
-        >Show energy-only models <Tooltip max_width="10em">
+      <Toggle bind:checked={show_energy_only} style="gap: 3pt;">
+        Show energy-only models <Tooltip max_width="10em">
           <span slot="tip">
             Models that only predict energy (E) perform worse<br /> and can't be evaluated
             on force-modeling tasks such as κ<sub>SRME</sub>
