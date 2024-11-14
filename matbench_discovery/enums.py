@@ -121,11 +121,11 @@ class Targets(LabelEnum):
     """Thermodynamic stability prediction task types."""
 
     E = "E", "Energy"
-    EF_C = "EF_C", "EF<sub>C</sub>", "Energy with conservative Forces"
+    EF_G = "EF_G", "EF<sub>G</sub>", "Energy with gradient-based Forces"
     EF_D = "EF_D", "EF<sub>D</sub>", "Energy with direct Forces"
-    EFS_C = "EFS_C", "EFS<sub>C</sub>", "Energy with conservative Forces and Stress"
+    EFS_G = "EFS_G", "EFS<sub>G</sub>", "Energy with gradient-based Forces and Stress"
     EFS_D = "EFS_D", "EFS<sub>D</sub>", "Energy with direct Forces and Stress"
-    EFS_CM = "EFS_CM", "EFS<sub>C</sub>M", "Energy with conservative Forces and Stress; plus Magmoms"  # fmt: skip  # noqa: E501
+    EFS_GM = "EFS_GM", "EFS<sub>G</sub>M", "Energy with gradient-based Forces and Stress; plus Magmoms"  # fmt: skip  # noqa: E501
     EFS_DM = "EFS_DM", "EFS<sub>D</sub>M", "Energy with direct Forces and Stress; plus Magmoms"  # fmt: skip  # noqa: E501
 
 

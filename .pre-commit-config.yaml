@@ -2,7 +2,7 @@ ci:
   autoupdate_schedule: quarterly
   skip: [pyright, eslint]
 
-default_stages: [commit]
+default_stages: [pre-commit]
 
 default_install_hook_types: [pre-commit, commit-msg]
 
@@ -40,7 +40,7 @@ repos:
     rev: v2.3.0
     hooks:
       - id: codespell
-        stages: [commit, commit-msg]
+        stages: [pre-commit, commit-msg]
         exclude_types: [csv, json, svg]
         exclude: ^(.+references.yaml|site/src/figs/.+)$
         args: [--ignore-words-list, "nd,te,fpr", --check-filenames]

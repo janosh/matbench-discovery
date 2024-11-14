@@ -24,20 +24,46 @@ Dash.run = lambda *_args, **_kwargs: None
 # subtract __file__ to prevent this file from calling itself
 scripts = set(glob(f"{module_dir}/*.py")) - {__file__}
 
+singel_model_scripts = set(glob(f"{module_dir}/single_model_*.py"))
+
+scripts -= singel_model_scripts
+
 
 # %%
-for file in (pbar := tqdm(scripts)):
-    pbar.set_description(file)
-    try:
-        if file.endswith("parity_energy_models.py"):
-            for which_energy in ("each", "e-form"):
-                runpy.run_path(file, init_globals={"which_energy": which_energy})
-        elif file.endswith("cumulative_metrics.py"):
-            for metrics in (("MAE",), ("Precision", "Recall")):
-                runpy.run_path(file, init_globals={"metrics": metrics})
-        elif file.endswith("rolling_mae_vs_hull_dist_wbm_batches.py"):
-            runpy.run_path(file, init_globals={"models": ("CHGNet", "MACE")})
-        else:
+exceptions = []  # Collect exceptions here
+
+for show_non_compliant in (False, True):
+    for file in (pbar := tqdm(scripts)):
+        pbar.set_postfix_str(file)
+        init_globals = {"show_non_compliant": show_non_compliant}
+        try:
+            if file.endswith("tiles_energy_parity.py"):
+                for which_energy in ("e-form", "each"):
+                    runpy.run_path(
+                        file,
+                        init_globals=init_globals | {"which_energy": which_energy},
+                    )
+            elif file.endswith("cumulative_metrics.py"):
+                for metrics in (("MAE",), ("Precision", "Recall")):
+                    runpy.run_path(
+                        file, init_globals=init_globals | {"metrics": metrics}
+                    )
+            else:
+                runpy.run_path(file, init_globals=init_globals)
+        except Exception as exc:
+            exceptions.append((file, exc))  # Append file and exception
+
+# Raise a combined exception if any errors were collected
+if exceptions:
+    error_messages = "\n".join([f"{file!r} failed: {exc}" for file, exc in exceptions])
+    raise RuntimeError(f"The following errors occurred:\n{error_messages}")
+
+
+# %%
+if False:
+    for file in (pbar := tqdm(singel_model_scripts)):
+        pbar.set_description(file)
+        try:
             runpy.run_path(file)
-    except Exception as exc:
-        print(f"{file!r} failed: {exc}")
+        except Exception as exc:
+            print(f"{file!r} failed: {exc}")

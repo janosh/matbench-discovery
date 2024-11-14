@@ -15,6 +15,11 @@ on:
         default: tests
         description: Only run tests or release a new version of pymatgen to PyPI after tests pass.
 
+concurrency:
+  # Cancel only on same PR number
+  group: ${{ github.workflow }}-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   tests:
     strategy:
@@ -32,11 +37,7 @@ jobs:
       matrix:
         script:
           - scripts/metrics/discovery_tables.py
-          - scripts/model_figs/rolling_mae_vs_hull_dist_models.py
-          - scripts/model_figs/cumulative_metrics.py
-          - scripts/rolling_mae_vs_hull_dist.py
-          - scripts/hist_classified_stable_vs_hull_dist.py
-          - scripts/model_figs/hist_classified_stable_vs_hull_dist_models.py
+          - scripts/model_figs/run_all.py
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -47,7 +48,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install package and dependencies
-        run: pip install -e .
+        run: pip install -e .[plots]
 
       - name: Run script
         run: python ${{ matrix.script }}
