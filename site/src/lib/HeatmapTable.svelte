@@ -19,6 +19,7 @@
   export let format: Record<string, string> = {}
   // set to empty string to hide hint
   export let sort_hint: string = `Click on numerical column headers to sort the table rows by their values`
+  export let style: string | null = null
 
   const sort_state = writable({ column: ``, ascending: true })
 
@@ -67,7 +68,7 @@
   $: visible_columns = columns.filter((col) => !hide_cols.includes(col.label))
 </script>
 
-<div class="table-container">
+<div class="table-container" {style}>
   <table use:titles_as_tooltips>
     <thead>
       <tr>
