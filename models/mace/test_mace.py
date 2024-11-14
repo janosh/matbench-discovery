@@ -127,7 +127,7 @@ filter_cls: Callable[[Atoms], Atoms] = {
     "frechet": FrechetCellFilter,
     "exp": ExpCellFilter,
 }[ase_filter]
-optim_cls: Callable[..., Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
+optim_cls: Optimizer = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
 for atoms in tqdm(deepcopy(atoms_list), desc="Relaxing"):
     mat_id = atoms.info[Key.mat_id]

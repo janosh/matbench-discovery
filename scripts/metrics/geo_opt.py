@@ -8,6 +8,7 @@ import plotly.express as px
 import pymatviz as pmv
 from IPython.display import display
 from plotly import graph_objects as go
+from plotly.subplots import make_subplots
 from pymatviz.enums import Key
 from pymatviz.utils import si_fmt
 
@@ -129,7 +130,6 @@ fig_sym_ops_diff = px.violin(
     orientation="h",
     color="model",
     hover_name=Key.mat_id,
-    spanmode="hard",
 )
 title = "Difference in number of symmetry operations in ML vs DFT-relaxed structures"
 fig_sym_ops_diff.layout.title = dict(text=title, x=0.5)
@@ -140,6 +140,62 @@ fig_sym_ops_diff.update_traces(orientation="h", side="positive", width=1.8)
 
 fig_sym_ops_diff.show()
 pmv.save_fig(fig_sym_ops_diff, f"{module_dir}/{today}-sym-ops-diff-violin.svelte")
+
+
+# %% bar plot of number of symmetry operations in ML-relaxed structures vs DFT
+df_sym_ops_diff = df_sym.drop(Key.dft.label, level=Key.model, axis="columns").xs(
+    MbdKey.n_sym_ops_diff, level=MbdKey.sym_prop, axis="columns"
+)
+
+# Create subplot figure with one row per model
+# sort model subplots by std dev
+models_by_std = sorted(df_sym_ops_diff.std().items(), key=lambda itm: itm[1])
+
+fig_sym_ops_diff = make_subplots(
+    rows=len(models_by_std),
+    cols=1,
+    subplot_titles=[f"{model} (σ={std:.3})" for model, std in models_by_std],  # noqa: RUF001
+    vertical_spacing=0.05,
+    shared_xaxes=True,  # Share x-axes across subplots
+)
+
+
+for idx, (model, _std) in enumerate(models_by_std, start=1):
+    value_counts = df_sym_ops_diff[model].value_counts()
+
+    # Create color scale based on count values
+    max_height_diff = value_counts.to_numpy().max() - value_counts.to_numpy().min()
+    rel_bar_heights = (value_counts.to_numpy() - value_counts.to_numpy().min()) / (
+        max_height_diff
+    )
+    bar_colors = px.colors.sample_colorscale("agsunset", rel_bar_heights)
+    fig_sym_ops_diff.add_bar(
+        x=value_counts.index,
+        y=value_counts.values,
+        marker_color=bar_colors,
+        name=model,
+        showlegend=False,
+        width=1,
+        hovertemplate="Diff: %{x:,}<br>Count: %{y:,}<extra></extra>",
+        row=idx,
+        col=1,
+    )
+
+fig_sym_ops_diff.layout.height = 170 * len(models_by_std)
+
+x_title = "N<sub>sym ops,ML</sub> - N<sub>sym ops,DFT</sub>"
+fig_sym_ops_diff.update_xaxes(title=x_title, row=len(models_by_std))
+fig_sym_ops_diff.update_xaxes(nticks=10, showticklabels=True)
+
+# log transform y-axis
+fig_sym_ops_diff.update_yaxes(type="log")
+fig_sym_ops_diff.layout.margin.t = 20
+pmv.save_fig(fig_sym_ops_diff, f"{SITE_FIGS}/sym-ops-diff-bar.svelte")
+
+title = "Difference in number of symmetry operations of ML vs DFT-relaxed structures"
+fig_sym_ops_diff.layout.title = dict(text=title, x=0.5)
+fig_sym_ops_diff.layout.margin.t = 60
+fig_sym_ops_diff.show()
 
 
 # %% Print summary of symmetry changes

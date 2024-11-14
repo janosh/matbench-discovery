@@ -433,7 +433,7 @@ While prototypes are non-trivial to match, thus potentially introducing bias int
 Prototypes were matched based on an Aflow-style [@hicks_aflow_2021] Wyckoff representation as implemented in `aviary.wren.utils.get_protostructure_label_from_spglib` [@goodall_rapid_2022]. This string encodes the crystal's prototype and is invariant to relaxation (unless the system changes spacegroup during relaxation, usually by gaining symmetry) and will count structures with different lattice parameters as duplicates if both are expected to relax to the same ground state.
 
 {#if mounted}
-<DiscoveryMetricsTable show_non_compliant={false} show_energy_only hide_cols={[`κ<sub>SRME</sub>`]} discovery_set="full_test_set" metadata_cols={[]} sep_lines={[]} />
+<DiscoveryMetricsTable show_non_compliant={false} show_energy_only hide_cols={[`κ<sub>SRME</sub>`]} discovery_set="full_test_set" metadata_cols={[]} />
 {/if}
 
 > @label:tab:metrics-table Same as @tab:metrics-table-uniq-protos but computed for all 257k structures in the WBM test set, no duplicate prototypes excluded.
@@ -449,7 +449,7 @@ In concrete terms, this means in a discovery campaign that validates 10 k model 
 We emphasize that in light of the significant resulting increase in stability hit rate, these models are well worth integrating into future materials searches.
 
 {#if mounted}
-<DiscoveryMetricsTable show_non_compliant={false} show_energy_only hide_cols={[`κ<sub>SRME</sub>`, `TNR`, `TPR`]} discovery_set="most_stable_10k" metadata_cols={[]} sep_lines={[]} />
+<DiscoveryMetricsTable show_non_compliant={false} show_energy_only hide_cols={[`κ<sub>SRME</sub>`, `TNR`, `TPR`]} discovery_set="most_stable_10k" metadata_cols={[]} />
 {/if}
 
 > @label:tab:metrics-table-first-10k Stability prediction metrics for the 10k materials predicted to be most stable by each model.

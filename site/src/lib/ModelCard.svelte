@@ -76,9 +76,11 @@
   {/if}
   <span>
     <Icon icon="fluent:missing-metadata-24-regular" inline />
-    Missing preds:
-    {pretty_num(missing_preds, `,.0f`)}
-    <small>({missing_percent})</small>
+    {#if missing_preds}
+      Missing preds:
+      {pretty_num(missing_preds, `,.0f`)}
+      <small>({missing_percent})</small>
+    {/if}
     {#if notes?.missing_preds}
       <Tooltip
         text={notes.missing_preds ?? ``}

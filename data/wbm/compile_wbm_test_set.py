@@ -407,8 +407,7 @@ for fname, cols in (
     df_wbm[cols].reset_index().to_json(f"{WBM_DIR}/{today}-wbm-{fname}.json.bz2")
 
 
-# %%
-# df_summary and df_wbm formulas differ because summary formulas are reduced while
+# %% df_summary and df_wbm formulas differ because summary formulas are reduced while
 # df_wbm formulas are not (e.g. Ac6 U2 vs Ac3 U1 in summary). unreduced is more
 # informative so we use it.
 assert sum(df_summary[Key.formula] != df_wbm.formula_from_cse) == 114_273

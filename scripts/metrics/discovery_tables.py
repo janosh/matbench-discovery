@@ -291,7 +291,8 @@ meta_cols = [
     date_added_col,
 ]
 show_cols = [
-    *f"F1,DAF,Prec,Acc,TPR,TNR,MAE,RMSE,{R2_col},{kappa_srme_col}".split(","),
+    *f"F1,DAF,Prec,Acc,TPR,TNR,MAE,RMSE,{R2_col}".split(","),
+    kappa_srme_col,
     *meta_cols,
 ]
 
@@ -314,6 +315,9 @@ for (label, df_met), show_non_compliant in itertools.product(
     )
     # only keep columns we want to show
     df_table = df_met.filter([model_name_col, *show_cols])
+    # hide models that are not compliant if show_non_compliant is False
+    if not show_non_compliant:
+        df_table = df_table.drop(non_compliant_models)
 
     if make_uip_megnet_comparison:
         df_table = df_table[
@@ -332,17 +336,15 @@ for (label, df_met), show_non_compliant in itertools.product(
     if label != "-uniq-protos":  # only show training size and model type once
         df_table = df_table.drop(meta_cols, axis="columns", errors="ignore")
 
-    styler = (
-        df_table.style.format(
-            dict.fromkeys(df_table.select_dtypes(float), "{:.3g}"),
-            na_rep="",  # render NaNs as empty string
-        )
-        .background_gradient(
-            cmap="viridis", subset=list(higher_is_better & {*df_table}), axis="index"
-        )
-        .background_gradient(  # reverse color map if lower=better
-            cmap="viridis_r", subset=list(lower_is_better & {*df_table}), axis="index"
-        )
+    styler = df_table.style.format(
+        dict.fromkeys(df_table.select_dtypes(float), "{:.3g}"),
+        # dict.fromkeys(df_table.select_dtypes(float), "{:,.3f}"),  # use for manuscript
+        na_rep="",  # render NaNs as empty string
+    )
+    styler = styler.background_gradient(
+        cmap="viridis", subset=list(higher_is_better & {*df_table}), axis="index"
+    ).background_gradient(  # reverse color map if lower=better
+        cmap="viridis_r", subset=list(lower_is_better & {*df_table}), axis="index"
     )
 
     def tooltip_label(col: str) -> str:
@@ -403,10 +405,7 @@ for (label, df_met), show_non_compliant in itertools.product(
     try:
         os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = "/opt/homebrew/lib"
         for pdf_path in (PDF_FIGS, f"{ROOT}/site/static/figs"):
-            df_to_pdf(
-                styler.hide([] if show_non_compliant else non_compliant_idx),
-                f"{pdf_path}/metrics-table{label}{suffix}.pdf",
-            )
+            df_to_pdf(styler, f"{pdf_path}/metrics-table{label}{suffix}.pdf")
     except (ImportError, RuntimeError, OSError) as exc:
         print(f"df_to_pdf failed: {exc}")
 
@@ -424,14 +423,3 @@ try:
     subprocess.run(["svgo", "--multipass", f"{ROOT}/site/static/figs"], check=False)
 except FileNotFoundError:  # skip in CI where pdf2svg and svgo not installed
     pass
-
-
-# %% PNG metrics table unused
-if False:
-    try:
-        import dataframe_image
-
-        png_metrics = f"{PDF_FIGS}/metrics-table.png"
-        dataframe_image.export(styler, png_metrics, dpi=300)
-    except ImportError:
-        print("dataframe_image not installed, skipping png export")

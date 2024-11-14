@@ -36,6 +36,8 @@
 </script>
 
 {#if model}
+  {@const { missing_preds, missing_percent } =
+    model.metrics?.discovery?.unique_prototypes ?? {}}
   <div class="model-detail">
     <h1 style="font-size: 2.5em;">{model.model_name}</h1>
 
@@ -67,7 +69,7 @@
       </div>
       <div>
         <Icon icon="eos-icons:neural-network" inline />
-        <Tooltip text={model.model_params.toLocaleString()}>
+        <Tooltip text="{model.model_params.toLocaleString()} trainable parameters">
           <span>{pretty_num(model.model_params, `.3~s`)} parameters</span>
         </Tooltip>
       </div>
@@ -77,12 +79,14 @@
           <span>Ensemble {model.n_estimators} models</span>
         </div>
       {/if}
-      {#if model.missing_preds}
+      {#if missing_preds != undefined}
         <div>
           <Icon icon="fluent:missing-metadata-24-regular" inline />
           <span>
-            Missing preds: {pretty_num(model.missing_preds, `,.0f`)}
-            <small> ({model.missing_percent})</small>
+            Missing preds: {pretty_num(missing_preds, `,.0f`)}
+            {#if missing_preds != 0}
+              <small> ({missing_percent})</small>
+            {/if}
           </span>
         </div>
       {/if}

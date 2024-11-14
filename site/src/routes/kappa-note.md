@@ -8,6 +8,6 @@
 > For details on the modeling task and evaluation method, refer to [arXiv:2408.00755](https://arxiv.org/abs/2408.00755).
 > The only difference between the procedure presented by [Póta](https://tcm.phy.cam.ac.uk/profiles/bp443/), [Ahlawat](https://tcm.phy.cam.ac.uk/profiles/pa483), [Csányi](https://eng.cam.ac.uk/profiles/gc121), and [Simoncelli](https://tcm.phy.cam.ac.uk/profiles/ms2855), and the results shown here is the relaxation protocol has been updated and unified for all models.
 > It is now a sequential cell relax followed by a site relax (changing atom positions only). Each relaxation stage has a maximum number of 300 steps with [`FrechetCellFilter`](https://gitlab.com/ase/ase/-/blob/e65782af/ase/filters.py#L495) and a force threshold of `fmax=1e-4` (eV/Å). To preserve crystal symmetry, unit-cell angles are not allowed to change. This unified protocol gives the same κ<sub>SRME</sub> reported in [arXiv:2408.00755](https://arxiv.org/abs/2408.00755) for all models except M3GNet which improves to a slightly lower error with the new procedure (1.469 → 1.412).
-> The code to reproduce the full κ<sub>SRME</sub> evaluation on new models is published in https://github.com/MPA2suite/autoWTE.
+> The code to reproduce the full κ<sub>SRME</sub> evaluation on new models is published in https://github.com/MPA2suite/k_SRME.
 >
 > This is still WIP with near-term efforts focused on scaling up the test set from ~100 to ~1000 chemically and symmetrically diverse crystal structures to make overfitting on this new task harder (though we believe it is hard already).

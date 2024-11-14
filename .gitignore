@@ -18,19 +18,16 @@ models/**/checkpoints
 data/**/*.extxyz*
 data/**/*.json*
 data/**/*.zip*
+paper/figs/*.pdf*
 !data/**/*umap-projections.csv.bz2
-
-# Checkpoints
-*.pth.tar
-*.pt
 
 # slurm + Weights and Biases logs
 wandb/
-*slurm-*.log
+models/**/*slurm-*.log
 
-# generated docs
+# auto-generated docs
 site/src/routes/api/*.md
 
 # temporary ignore rules
-2023-02-05-ens=10-perturb=5
+models/cgcnn/2023-02-05-ens=10-perturb=5
 data/mp/mptrj-gga-ggapu/*
