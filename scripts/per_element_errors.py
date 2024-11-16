@@ -9,7 +9,7 @@ import plotly.express as px
 import pymatviz as pmv
 from pymatgen.core import Composition, Element
 from pymatviz.enums import Key
-from pymatviz.utils import PLOTLY, bin_df_cols, df_ptable
+from pymatviz.utils import PLOTLY, bin_df_cols, df_ptable, si_fmt
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS
@@ -255,15 +255,24 @@ pmv.save_fig(fig, f"{SITE_FIGS}/each-error-vs-least-prevalent-element-in-struct.
 
 # %% plot histogram of model errors for each element
 model = Model.mace.label
-fig_ptable_each_errors = pmv.ptable_hists(
-    df_comp * (df_each_err[model].to_numpy()[:, None]),
-    log=True,
-    cbar_title=f"{model} convex hull distance errors (eV/atom)",
-    cbar_title_kwargs=dict(fontsize=16),
-    x_range=(-0.5, 0.5),
-    symbol_pos=(0.1, 0.8),
-    colormap="viridis",
+df_each_err_elems = df_comp * (df_each_err[model].to_numpy()[:, None])
+df_each_err_elems = df_each_err_elems.drop(columns="Xe")
+n_samples_per_elem = (len(df_comp) - df_each_err_elems.isna().sum()).map(
+    lambda x: si_fmt(x, fmt=".0f")
 )
+
+fig_ptable_each_errors = pmv.ptable_hists_plotly(
+    df_each_err_elems,
+    anno_text=n_samples_per_elem,
+    bins=100,
+    subplot_kwargs=dict(shared_yaxes=False),
+    log=False,
+    colorbar=dict(title=f"{model} convex hull distance errors (eV/atom)"),
+    x_range=(-0.5, 0.5),
+    colorscale="Viridis",
+)
+
+fig_ptable_each_errors.show()
 
 
 # %%
