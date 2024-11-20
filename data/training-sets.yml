@@ -30,6 +30,8 @@ MatterSim:
   title: MatterSim
   url: https://doi.org/10.48550/arXiv.2405.04967
   n_structures: 17_000_000
+  temperature_range: 0-5000 K
+  pressure_range: 0-1000 GPa
 
 Alex:
   title: Alexandria

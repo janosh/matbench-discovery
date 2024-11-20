@@ -36,7 +36,7 @@ else:
         geo_opt_metrics = model_metadata.get("metrics", {}).get("geo_opt", {})
         if geo_opt_metrics in ("not applicable", "not available"):
             continue
-        ml_relaxed_structs_path = f"{ROOT}/{geo_opt_metrics.get("pred_file")}"
+        ml_relaxed_structs_path = f"{ROOT}/{geo_opt_metrics.get('pred_file')}"
         if not ml_relaxed_structs_path:
             continue
         if not os.path.isfile(ml_relaxed_structs_path):

@@ -64,12 +64,11 @@ export interface ModelMetadata {
   }
   notes?: {
     Description?: string
-    Training?:
-      | string
-      | {
-          [k: string]: string
-        }
+    Training?: string
     'Missing Preds'?: string
+    html?: {
+      [k: string]: unknown
+    }
     [k: string]: unknown
   }
   model_params: number

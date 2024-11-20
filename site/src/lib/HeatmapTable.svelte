@@ -18,7 +18,7 @@
   export let hide_cols: string[] = [] // just the column labels
   export let format: Record<string, string> = {}
   // set to empty string to hide hint
-  export let sort_hint: string = `Click on numerical column headers to sort the table rows by their values`
+  export let sort_hint: string = `Click on column headers to sort table rows`
   export let style: string | null = null
 
   const sort_state = writable({ column: ``, ascending: true })
@@ -109,6 +109,8 @@
             >
               {#if typeof val === `number` && format[label]}
                 {@html pretty_num(val, format[label])}
+              {:else if [undefined, null].includes(val)}
+                <span title="not available">n/a</span>
               {:else}
                 {@html val}
               {/if}
