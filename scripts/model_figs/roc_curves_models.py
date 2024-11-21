@@ -6,7 +6,7 @@ import math
 import pandas as pd
 import pymatviz as pmv
 from pymatviz.enums import Key
-from pymatviz.utils import PLOTLY
+from pymatviz.typing import PLOTLY
 from sklearn.metrics import auc, roc_curve
 from tqdm import tqdm
 

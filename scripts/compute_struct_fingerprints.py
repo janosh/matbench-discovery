@@ -13,7 +13,7 @@ from matminer.featurizers.site import CrystalNNFingerprint
 from matminer.featurizers.structure import SiteStatsFingerprint
 from pymatgen.core import Structure
 from pymatviz.enums import Key
-from pymatviz.utils import PLOTLY
+from pymatviz.typing import PLOTLY
 from tqdm import tqdm
 
 from matbench_discovery import DATA_DIR, timestamp

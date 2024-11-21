@@ -93,13 +93,12 @@ properties:
       Description:
         type: string
       Training:
-        oneOf:
-          - type: string
-          - type: object
-            additionalProperties:
-              type: string
+        type: string
       Missing Preds:
         type: string
+      html:
+        type: object
+        additionalProperties: true
     additionalProperties: true
   model_params:
     type: number

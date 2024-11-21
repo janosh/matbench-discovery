@@ -268,9 +268,9 @@
       </section>
     {/if}
 
-    {#if model.notes}
+    {#if model.notes?.html}
       <section class="notes">
-        {#each Object.entries(model.notes) as [key, note]}
+        {#each Object.entries(model.notes.html) as [key, note]}
           <h2>{key}</h2>
           {#if typeof note === `string`}
             <p>{@html note}</p>

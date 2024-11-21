@@ -9,7 +9,8 @@ import plotly.express as px
 import pymatviz as pmv
 from pymatgen.core import Composition, Element
 from pymatviz.enums import Key
-from pymatviz.utils import PLOTLY, bin_df_cols, df_ptable, si_fmt
+from pymatviz.typing import PLOTLY
+from pymatviz.utils import bin_df_cols, df_ptable, si_fmt
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS
