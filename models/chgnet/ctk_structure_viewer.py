@@ -1,7 +1,7 @@
 import pandas as pd
 from crystal_toolkit.helpers.utils import hook_up_fig_with_struct_viewer
 from pymatviz.enums import Key
-from pymatviz.utils import PLOTLY
+from pymatviz.typing import PLOTLY
 
 from matbench_discovery.data import Model
 

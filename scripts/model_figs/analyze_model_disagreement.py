@@ -7,7 +7,7 @@ import pandas as pd
 import pymatviz as pmv
 from pymatviz.enums import Key
 from pymatviz.powerups import add_identity_line
-from pymatviz.utils import PLOTLY
+from pymatviz.typing import PLOTLY
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.enums import MbdKey, TestSubset

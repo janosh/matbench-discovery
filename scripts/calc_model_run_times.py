@@ -13,7 +13,7 @@ import pymatviz as pmv
 import requests
 import wandb
 import wandb.apis.public
-from pymatviz.utils import PLOTLY
+from pymatviz.typing import PLOTLY
 from tqdm import tqdm
 
 from matbench_discovery import SITE_FIGS, WANDB_PATH

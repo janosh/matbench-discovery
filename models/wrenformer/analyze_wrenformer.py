@@ -10,7 +10,8 @@ from pymatviz.enums import Key
 from pymatviz.io import df_to_html, df_to_pdf, save_fig
 from pymatviz.powerups import add_identity_line
 from pymatviz.ptable import ptable_heatmap_plotly
-from pymatviz.utils import PLOTLY, bin_df_cols
+from pymatviz.typing import PLOTLY
+from pymatviz.utils import bin_df_cols
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.data import DataFiles, Model, df_wbm
