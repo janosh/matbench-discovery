@@ -1,7 +1,8 @@
 # %%
-import json
 import os
 import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
+
 from collections.abc import Callable
 from copy import deepcopy
 from importlib.metadata import version
@@ -16,18 +17,24 @@ from ase.optimize.optimize import Optimizer
 from pymatgen.core.trajectory import Trajectory
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
-from tensorpotential.calculator import grace_fm
 from tqdm import tqdm
+import json
+from matbench_discovery import ROOT, timestamp, today
+from matbench_discovery.data import (
+    DataFiles,
+    as_dict_handler,
+    ase_atoms_from_zip,
+    df_wbm,
+)
+from matbench_discovery.enums import MbdKey, Task
+from matbench_discovery.plots import wandb_scatter
+from matbench_discovery.slurm import slurm_submit
 
-from matbench_discovery import timestamp, today
-from matbench_discovery.data import DataFiles, as_dict_handler, ase_atoms_from_zip
-from matbench_discovery.enums import Task
+
+from tensorpotential.calculator import grace_fm
 
 __author__ = "Yury Lysogorskiy"
 __date__ = "2024-11-21"
-
-warnings.filterwarnings("ignore", category=FutureWarning)
-
 
 # %%
 model_name = "MP_GRACE_2L_r6_11Nov2024"
@@ -36,13 +43,11 @@ smoke_test = False
 task_type = Task.IS2RE
 module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
-slurm_array_task_count = int(
-    os.getenv("SLURM_ARRAY_TASK_COUNT", "1")
-)  # will be set to the number of tasks in the job array.
+slurm_array_task_count = int(os.getenv("SLURM_ARRAY_TASK_COUNT", "1")) # will be set to the number of tasks in the job array.
 ase_optimizer = "FIRE"
 job_name = f"{model_name}-wbm-{task_type}-{ase_optimizer}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
-device = "gpu"
+device = "cpu"
 # whether to record intermediate structures into pymatgen Trajectory
 record_traj = False  # has no effect if relax_cell is False
 
@@ -57,16 +62,11 @@ os.makedirs(out_dir, exist_ok=True)
 #     slurm_flags="--ntasks=1 --cpus-per-task=1 --partition high-priority",
 # )
 
-slurm_vars = {k: v for k, v in os.environ.items() if k.startswith("SLURM_")}
-
+slurm_vars = {k:v for k,v in os.environ.items() if k.startswith("SLURM_")}
 
 # %%
-slurm_array_task_id = int(
-    os.getenv("SLURM_ARRAY_TASK_ID", "0")
-)  #  will be set to the job array index value.
-slurm_array_job_id = os.getenv(
-    "SLURM_ARRAY_JOB_ID", "debug"
-)  #  will be set to the first job ID of the array.
+slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0")) #  will be set to the job array index value.
+slurm_array_job_id = os.getenv("SLURM_ARRAY_JOB_ID", "debug") #  will be set to the first job ID of the array.
 
 out_path = f"{out_dir}/{slurm_array_job_id}-{slurm_array_task_id:>03}.json.gz"
 
@@ -79,7 +79,6 @@ print(f"{slurm_array_task_count=}")
 print(f"{slurm_vars=}")
 print(f"{out_dir=}")
 
-
 # %%
 data_path = {
     Task.RS2RE: DataFiles.wbm_relaxed_atoms.path,
@@ -91,13 +90,11 @@ max_steps = 500
 force_max = 0.05  # Run until the forces are smaller than this in eV/A
 checkpoint = "11Nov2024"
 dtype = "float64"
-calc = grace_fm(
-    model=model_name, pad_neighbors_fraction=0.05, pad_atoms_number=2, min_dist=0.5
-)
+calc = grace_fm(model=model_name)
 
 print(f"Read data from {data_path}")
 atoms_list: list[Atoms] = ase_atoms_from_zip(data_path)
-atoms_list = np.array(atoms_list, dtype="object")
+atoms_list=np.array(atoms_list, dtype='object')
 
 if slurm_array_job_id == "debug":
     if smoke_test:
@@ -105,17 +102,13 @@ if slurm_array_job_id == "debug":
     else:
         pass
 elif slurm_array_task_count > 1:
-    atoms_list = np.array_split(atoms_list, slurm_array_task_count)[
-        slurm_array_task_id - 1
-    ]
+    atoms_list = np.array_split(atoms_list, slurm_array_task_count)[slurm_array_task_id - 1]
 
 
 # %%
 run_params = {
     "data_path": data_path,
-    "versions": {
-        dep: version(dep) for dep in ("tensorpotential", "numpy", "tensorflow", "ase")
-    },
+    "versions": {dep: version(dep) for dep in ("tensorpotential", "numpy", "tensorflow", "ase")},
     "checkpoint": checkpoint,
     Key.task_type: task_type,
     "n_structures": len(atoms_list),
@@ -133,12 +126,7 @@ run_params = {
 
 run_name = f"{job_name}-{slurm_array_task_id}"
 
-with open(
-    os.path.join(
-        out_dir, f"run_data_{slurm_array_task_id}-{slurm_array_task_count}.json"
-    ),
-    "w",
-) as f:
+with open(os.path.join(out_dir,f"run_data_{slurm_array_task_id}-{slurm_array_task_count}.json"),"w") as f:
     json.dump(run_params, f)
 
 # wandb.init(project="matbench-discovery", name=run_name, config=run_params)
@@ -198,3 +186,5 @@ df_out = pd.DataFrame(relax_results).T.add_prefix("grace2l_r6_")
 df_out.index.name = Key.mat_id
 if not smoke_test:
     df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
+
+
