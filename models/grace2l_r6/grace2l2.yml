@@ -1,0 +1,61 @@
+model_name: GRACE2_r6
+model_version: MP_GRACE_2L_r6_11Nov2024
+matbench_discovery_version: 1.0.0
+date_added: "2024-11-21"
+date_published: "2024-11-21"
+authors:
+  - name: Anton Bochkarev
+    affiliation: ICAMS, Ruhr University BOchum
+    email: anton.bochkarev@rub.de
+    #orcid: https://orcid.org/0000-0001-6915-9851
+  - name: Yury Lysogorskiy
+    affiliation: ICAMS, Ruhr University BOchum
+    email: yury.lysogorskiy@rub.de
+    #orcid: https://orcid.org/0000-0001-6915-9851
+  - name: Ralf Drauzt
+    affiliation: ICAMS, Ruhr University BOchum
+    email: ralf.drautz@rub.de
+    #orcid: https://orcid.org/0000-0001-6915-9851
+trained_by:
+  - name: Yury Lysogorskiy
+    affiliation: ICAMS, Ruhr University BOchum
+    email: yury.lysogorskiy@rub.de
+    #orcid: https://orcid.org/0000-0001-6915-9851
+ 
+repo: https://github.com/ICAMS/grace-tensorpotential
+doi: https://doi.org/10.48550/arXiv.2401.00096
+paper: https://arxiv.org/abs/2401.00096
+url: 
+
+requirements:
+  tensorpotentual: 0.4.4
+  tensorflow: 2.16.2
+  ase: 3.23.0
+  pymatgen: 2023.7.14
+  numpy: 1.26.4
+
+pred_col: e_form_per_atom_pred
+openness: OSOD
+trained_for_benchmark: true
+train_task: S2EF
+test_task: IS2RE-SR
+targets: EFS
+model_type: UIP
+model_params: 15_688_656 
+n_estimators: 1
+
+training_set:
+  title: MPTrj
+  url: https://figshare.com/articles/dataset/23713842
+  n_structures: 1_580_395
+  n_materials: 145_923
+
+hyperparams:
+  max_force: 0.03
+  max_steps: 300
+  ase_optimizer: BFGS
+
+notes:
+  description: |
+    GRACE
+  training: Training

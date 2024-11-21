@@ -126,7 +126,7 @@ def ase_atoms_from_zip(
     atoms_list = []
     with zipfile.ZipFile(zip_filename) as zip_file:
         desc = f"Reading ASE Atoms from {zip_filename=}"
-        for filename in tqdm(zip_file.namelist()[:limit], desc=desc):
+        for filename in tqdm(zip_file.namelist()[:limit], desc=desc, mininterval=5):
             if not file_filter(filename):
                 continue
             with zip_file.open(filename) as file:
