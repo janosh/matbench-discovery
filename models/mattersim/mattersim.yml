@@ -103,18 +103,15 @@ hyperparams:
 
 notes:
   Description: Graphormer is a general-purpose deep learning backbone for molecular modeling.
-  Training:
-    desc: MatterSim was trained on a large, closed dataset covering diverse combinations of 89 elements across many temperature and pressure.
-    temperature_range: 0-5000 K
-    pressure_range: 0-1000 GPa
-  Tested Applications:
+  Training: MatterSim was trained on a large, closed dataset covering diverse combinations of 89 elements across many temperatures and pressures.
+  Tested Applications: |
     - Energy, force, stress prediction
     - Molecular dynamics simulations
     - Phonons
     - Mechanical properties
     - Free energy and phase diagrams
     - Materials discovery
-  Training Data Sources:
+  Training Data Sources: |
     - Materials Project
     - Alexandria dataset
     - newly generated structures and MD trajectories

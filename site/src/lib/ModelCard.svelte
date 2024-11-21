@@ -81,9 +81,9 @@
       {pretty_num(missing_preds, `,.0f`)}
       <small>({missing_percent})</small>
     {/if}
-    {#if notes?.missing_preds}
+    {#if notes.html?.missing_preds}
       <Tooltip
-        text={notes.missing_preds ?? ``}
+        text={notes.html.missing_preds ?? ``}
         tip_style="font-size: 9pt;"
         max_width="20em"
         min_width="20em"

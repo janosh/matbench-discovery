@@ -12,7 +12,8 @@ import pymatviz as pmv
 from matplotlib.colors import SymLogNorm
 from pymatgen.core import Composition, Structure
 from pymatviz.enums import Key
-from pymatviz.utils import PLOTLY, si_fmt_int
+from pymatviz.typing import PLOTLY
+from pymatviz.utils import si_fmt_int
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots

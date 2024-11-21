@@ -16,7 +16,7 @@ import scipy.stats
 import wandb
 from plotly.validators.scatter.line import DashValidator
 from plotly.validators.scatter.marker import SymbolValidator
-from pymatviz.utils import PLOTLY
+from pymatviz.typing import PLOTLY
 from tqdm import tqdm
 
 from matbench_discovery import STABILITY_THRESHOLD

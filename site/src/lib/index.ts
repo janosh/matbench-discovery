@@ -42,22 +42,26 @@ export const MODEL_METADATA = Object.entries(model_metadata_files)
     return {
       ...metadata,
       dirname: key.split(`/`)[2],
-      metadata_file: key.replace(/^../, ``),
+      metadata_file: key.replace(/^..\//, ``),
     }
   }) as ModelData[]
 
 // parse markdown notes to html with remark/rehype
-for (const { model_name, notes } of MODEL_METADATA) {
+for (const { notes, metadata_file } of MODEL_METADATA) {
   if (!notes) continue
+  if (!notes.html) notes.html = {}
 
   for (const [key, note] of Object.entries(notes)) {
+    // skip if note was already parsed to HTML or is not a string
+    if (typeof note !== `string` || key in notes.html) continue
+
     const out = unified()
       .use(remarkParse)
       .use(remarkRehype)
       .use(rehypeStringify)
-      .processSync(note as string)
+      .processSync(note)
 
-    if (out?.value) notes[key] = out.value
-    else console.trace(`Failed to compile  ${model_name} note with ${key}\n`)
+    if (out?.value) notes.html[key] = out.value
+    else console.error(`${metadata_file}: Failed to compile note '${key}'\n`)
   }
 }

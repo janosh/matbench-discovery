@@ -13,7 +13,7 @@ import plotly.graph_objs as go
 import pymatviz as pmv
 from pymatgen.core import Composition, Structure
 from pymatviz.enums import Key
-from pymatviz.utils import PLOTLY
+from pymatviz.typing import PLOTLY
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR
