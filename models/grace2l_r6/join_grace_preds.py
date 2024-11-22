@@ -1,23 +1,19 @@
-import pandas as pd
 import glob
-
-from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
-from matbench_discovery.energy import get_e_form_per_atom, calc_energy_from_e_refs
-from matbench_discovery.enums import MbdKey, Task
-
-from pymatgen.entries.computed_entries import ComputedEntry
-
 import os
 
+import pandas as pd
+from pymatgen.entries.computed_entries import ComputedEntry
 from pymatviz.enums import Key
-
 from tqdm import tqdm
 
+from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
+from matbench_discovery.energy import calc_energy_from_e_refs
+from matbench_discovery.enums import MbdKey, Task
 
 __author__ = "Yury Lysogorskiy"
 __date__ = "2024-11-22"
 
-energy_column="grace2l_r6_energy"
+energy_column = "grace2l_r6_energy"
 e_form_grace_col = "e_form_per_atom_grace"
 struct_col = "grace2l_r6_structure"
 
@@ -26,10 +22,9 @@ module_dir = os.path.dirname(__file__)
 task_type = Task.IS2RE
 date = "2024-11-21"
 glob_pattern = "2024-11-21-MP_GRACE_2L_r6_11Nov2024-wbm-IS2RE-FIRE/production-*.json.gz"
-file_paths=glob.glob(glob_pattern)
+file_paths = glob.glob(glob_pattern)
 
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
-
 
 
 mp_elem_ref_entries = (
@@ -43,38 +38,46 @@ mp_elemental_ref_energies = {
 }
 
 
-
-dfs=[]
+dfs = []
 for fn in file_paths:
     print(fn)
-    df=pd.read_json(fn)
+    df = pd.read_json(fn)
     dfs.append(df)
 
 
 def get_id_tuple(s):
-    splt=s.split("-")
-    return int(splt[1]),int(splt[2])
+    splt = s.split("-")
+    return int(splt[1]), int(splt[2])
 
 
-tot_df=pd.concat(dfs)
+tot_df = pd.concat(dfs)
 
-tot_df['id_tuple']=tot_df['material_id'].map(get_id_tuple)
-tot_df=tot_df.sort_values("id_tuple").reset_index(drop=True).drop(columns=["id_tuple", struct_col])
+tot_df["id_tuple"] = tot_df["material_id"].map(get_id_tuple)
+tot_df = (
+    tot_df.sort_values("id_tuple")
+    .reset_index(drop=True)
+    .drop(columns=["id_tuple", struct_col])
+)
 
 df_grace = tot_df.set_index("material_id")
 df_grace[Key.formula] = df_wbm[Key.formula]
 
 
 print("Calculating formation energies")
-e_form_list=[]
+e_form_list = []
 for _, row in tqdm(df_grace.iterrows(), total=len(df_grace)):
-    e_form = calc_energy_from_e_refs(row['formula'], ref_energies=mp_elemental_ref_energies, total_energy=row[energy_column] )
+    e_form = calc_energy_from_e_refs(
+        row["formula"],
+        ref_energies=mp_elemental_ref_energies,
+        total_energy=row[energy_column],
+    )
     e_form_list.append(e_form)
 
 
-df_grace[e_form_grace_col] = e_form_list    
+df_grace[e_form_grace_col] = e_form_list
 
 df_wbm[[*df_grace]] = df_grace
+
 
 # %%
 bad_mask = abs(df_wbm[e_form_grace_col] - df_wbm[MbdKey.e_form_dft]) > 5
