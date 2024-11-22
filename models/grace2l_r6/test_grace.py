@@ -47,7 +47,7 @@ slurm_array_task_count = int(os.getenv("SLURM_ARRAY_TASK_COUNT", "1")) # will be
 ase_optimizer = "FIRE"
 job_name = f"{model_name}-wbm-{task_type}-{ase_optimizer}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
-device = "cpu"
+device = "gpu"
 # whether to record intermediate structures into pymatgen Trajectory
 record_traj = False  # has no effect if relax_cell is False
 
@@ -90,7 +90,9 @@ max_steps = 500
 force_max = 0.05  # Run until the forces are smaller than this in eV/A
 checkpoint = "11Nov2024"
 dtype = "float64"
-calc = grace_fm(model=model_name)
+calc = grace_fm(model=model_name, pad_neighbors_fraction = 0.05,
+                     pad_atoms_number = 2,
+                     min_dist=0.5)
 
 print(f"Read data from {data_path}")
 atoms_list: list[Atoms] = ase_atoms_from_zip(data_path)

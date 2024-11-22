@@ -25,7 +25,7 @@ trained_by:
 repo: https://github.com/ICAMS/grace-tensorpotential
 doi: https://doi.org/10.48550/arXiv.2401.00096
 paper: https://arxiv.org/abs/2401.00096
-url: 
+url: https://gracemaker.readthedocs.io/en/latest/gracemaker/foundation/
 
 requirements:
   tensorpotentual: 0.4.4
@@ -34,26 +34,23 @@ requirements:
   pymatgen: 2023.7.14
   numpy: 1.26.4
 
-pred_col: e_form_per_atom_pred
+#pred_col: e_form_per_atom_pred
 openness: OSOD
 trained_for_benchmark: true
 train_task: S2EF
 test_task: IS2RE-SR
 targets: EFS
 model_type: UIP
-model_params: 15_688_656 
+model_params: 15_346_704
 n_estimators: 1
 
-training_set:
-  title: MPTrj
-  url: https://figshare.com/articles/dataset/23713842
-  n_structures: 1_580_395
-  n_materials: 145_923
+training_set: [MPTrj]
+
 
 hyperparams:
   max_force: 0.03
   max_steps: 300
-  ase_optimizer: BFGS
+  ase_optimizer: FIRE
 
 notes:
   description: |
