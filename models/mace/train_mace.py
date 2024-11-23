@@ -18,7 +18,6 @@ which in our testing performed significantly worse than
 import ast
 import json
 import os
-from pathlib import Path
 from typing import Any
 
 import mace
@@ -689,23 +688,23 @@ def main(**kwargs: Any) -> None:
             device=device,
             distributed=args.distributed,
         )
-        print("\n" + str(table))
+        print(f"\n{table}")
 
         if rank == 0:
             # Save entire model
             if swa_eval:
-                model_path = Path(args.checkpoints_dir) / (tag + "_swa.model")
+                model_path = f"{args.checkpoints_dir}/{tag}_swa.model"
             else:
-                model_path = Path(args.checkpoints_dir) / (tag + ".model")
+                model_path = f"{args.checkpoints_dir}/{tag}.model"
             print(f"Saving model to {model_path}")
             if args.save_cpu:
                 model = model.to("cpu")
             torch.save(model, model_path)
 
             if swa_eval:
-                torch.save(model, Path(args.model_dir) / (args.name + "_swa.model"))
+                torch.save(model, f"{args.model_dir}/{args.name}_swa.model")
             else:
-                torch.save(model, Path(args.model_dir) / (args.name + ".model"))
+                torch.save(model, f"{args.model_dir}/{args.name}.model")
 
         if args.distributed:
             torch.distributed.barrier()

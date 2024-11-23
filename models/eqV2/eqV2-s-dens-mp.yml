@@ -89,8 +89,8 @@ metrics:
   phonons:
     κ_SRME: 1.665 # eqV2 S without denoising (no DeNS) achieves slightly worse κ_SRME=1.772
   geo_opt:
-    pred_file: null # authors will share model-relaxed structures soon
-    pred_col: null
+    pred_file: models/eqV2/eqV2-31M-dens-mp-p5.json.gz
+    pred_col: eqV2-31M-dens-MP-p5_structure
   discovery:
     pred_file: models/eqV2/eqV2-s-dens-mp.csv.gz
     pred_col: e_form_per_atom_eqV2-31M-dens-MP-p5

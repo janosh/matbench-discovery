@@ -1,11 +1,11 @@
 """Functions to calculate and save geometry optimization metrics."""
 
+# %%
 import os
 
 import pandas as pd
 from pymatgen.core import Structure
 from pymatviz.enums import Key
-from tqdm import tqdm
 
 from matbench_discovery import ROOT, today
 from matbench_discovery.data import DataFiles
@@ -16,10 +16,11 @@ from matbench_discovery.structure import analyze_symmetry, pred_vs_ref_struct_sy
 debug_mode: int = 0
 csv_path = f"{ROOT}/data/2024-11-07-all-models-symmetry-analysis.csv.gz"
 
+
+# %%
 if os.path.isfile(csv_path):
     df_sym = pd.read_csv(csv_path, header=[0, 1], index_col=0)
 else:
-    # %%
     df_sym = pd.DataFrame()
     df_wbm_structs = pd.read_json(DataFiles.wbm_computed_structure_entries.path)
     df_wbm_structs = df_wbm_structs.set_index(Key.mat_id)
@@ -31,7 +32,7 @@ else:
 
     for model_name, model_metadata in MODEL_METADATA.items():
         if model_name in df_sym:
-            print(f"{model_name} already analyzed")
+            print(f"- {model_name} already analyzed")
             continue
         geo_opt_metrics = model_metadata.get("metrics", {}).get("geo_opt", {})
         if geo_opt_metrics in ("not applicable", "not available"):
@@ -40,7 +41,7 @@ else:
         if not ml_relaxed_structs_path:
             continue
         if not os.path.isfile(ml_relaxed_structs_path):
-            print(f"{model_name}-relaxed structures not found")
+            print(f"⚠️ {model_name}-relaxed structures not found")
             continue
 
         if (
@@ -54,20 +55,19 @@ else:
             df_model = df_model.head(debug_mode)
         dfs_model_structs[model_name] = df_model
         n_structs_for_model = len(dfs_model_structs[model_name])
-        print(f"Loaded {n_structs_for_model:,} structures for {model_name}")
+        print(f"+ Loaded {n_structs_for_model:,} structures for {model_name}")
 
     # %% Perform symmetry analysis for all model-relaxed structures
     dfs_sym_all: dict[str, pd.DataFrame] = {}
     df_structs = pd.DataFrame()
 
-    for model_name in tqdm(dfs_model_structs, desc="Analyzing model structures"):
-        n_structs_for_model = len(dfs_model_structs[model_name].dropna())
+    for model_name, df_model in dfs_model_structs.items():
+        n_structs_for_model = len(df_model.dropna())
         n_structs_analyzed = len(dfs_sym_all.get(model_name, []))
         if n_structs_analyzed / n_structs_for_model > 0.97:
             # skip model if >97% of its structures already analyzed
             continue  # accounts for structures failing symmetry analysis
 
-        df_model = dfs_model_structs[model_name]
         try:
             struct_col = next(col for col in df_model if Key.structure in col)
         except StopIteration:
@@ -111,5 +111,5 @@ else:
     df_sym = df_sym.convert_dtypes()
 
     # %% Save results to CSV
-    csv_path = f"{ROOT}/data/{today}-all-models-symmetry-analysis.csv.xz"
+    csv_path = f"{ROOT}/data/{today}-all-models-symmetry-analysis.csv.gz"
     df_sym.to_csv(csv_path)

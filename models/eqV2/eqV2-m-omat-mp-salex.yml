@@ -85,8 +85,8 @@ notes:
 
 metrics:
   geo_opt:
-    pred_file: null # authors will share model-relaxed structures soon
-    pred_col: null
+    pred_file: models/eqV2/eqV2-86M-omat-salex-mp.json.gz
+    pred_col: eqV2-86M-omat-mp-salex_structure
   discovery:
     pred_file: models/eqV2/eqV2-m-omat-mp-salex.csv.gz
     pred_col: e_form_per_atom_eqV2-86M-omat-mp-salex

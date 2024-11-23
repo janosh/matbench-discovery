@@ -73,7 +73,7 @@ def analyze_symmetry(
         iterator = tqdm(
             iterator,
             total=len(structures),
-            **dict(leave=False, desc="Analyzing symmetry") | pbar_kwargs,
+            **dict(desc="Analyzing symmetry") | pbar_kwargs,
         )
 
     for struct_key, struct in iterator:
