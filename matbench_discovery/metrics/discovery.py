@@ -178,22 +178,24 @@ def write_discovery_metrics_to_yaml(
         (metrics_10k_most_stable, df_preds.loc[most_stable_10k_idx]),
         (metrics_unique_protos, df_preds.query(Key.uniq_proto)),
     ):
-        metrics[MbdKey.missing_preds] = int(df_tmp[model.label].isna().sum())
-        metrics[MbdKey.missing_percent] = (
-            f"{metrics[MbdKey.missing_preds] / len(df_tmp):.2%}"
+        metrics[str(MbdKey.missing_preds)] = int(df_tmp[model.label].isna().sum())
+        metrics[str(MbdKey.missing_percent)] = (
+            f"{metrics[str(MbdKey.missing_preds)] / len(df_tmp):.2%}"
         )
 
     discovery_metrics = {
-        TestSubset.full_test_set: full_metrics,
-        TestSubset.most_stable_10k: metrics_10k_most_stable,
-        TestSubset.uniq_protos: metrics_unique_protos,
+        str(TestSubset.full_test_set): full_metrics,
+        str(TestSubset.most_stable_10k): metrics_10k_most_stable,
+        str(TestSubset.uniq_protos): metrics_unique_protos,
     }
 
     # Add or update discovery metrics
     with open(model.yaml_path) as file:
         model_metadata = round_trip_yaml.load(file)
 
-    model_metadata.setdefault("metrics", {})["discovery"] = discovery_metrics
+    model_metadata.setdefault("metrics", {}).setdefault("discovery", {}).update(
+        discovery_metrics
+    )
 
     # Write back to file
     with open(model.yaml_path, mode="w") as file:
