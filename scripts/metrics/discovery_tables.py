@@ -104,7 +104,7 @@ for model in df_metrics_uniq_protos.index:
     model_name = name_map.get(model, model)
     model_metadata = MODEL_METADATA.get(model_name, {})
     try:
-        model_key = model_metadata.get("model_key", model_name)
+        model_key = model_metadata["model_key"]
 
         date_added = model_metadata.get("date_added", "")
         # long format date for tooltip, e.g. Monday, 28 November 2022

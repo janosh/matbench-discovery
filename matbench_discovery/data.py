@@ -278,7 +278,7 @@ class Files(StrEnum, metaclass=MetaFiles):
 
     @classmethod
     def from_label(cls, label: str) -> Self:
-        """Get Model enum member from pretty model name."""
+        """Get enum member from pretty label."""
         return next(attr for attr in cls if attr.label == label)
 
 
@@ -380,85 +380,90 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
     """
 
-    alignn = "alignn/alignn.yml", None, "ALIGNN"
-    # alignn_pretrained = "alignn/alignn.yml", None, "ALIGNN Pretrained"
-    # alignn_ff = "alignn/alignn-ff.yml", None, "ALIGNN FF"
+    alignn = "alignn/alignn.yml"
+    # alignn_pretrained = "alignn/alignn.yml"
+    # alignn_ff = "alignn/alignn-ff.yml"
 
     # BOWSR optimizer coupled with original megnet
-    bowsr_megnet = "bowsr/bowsr.yml", None, "BOWSR"
+    bowsr_megnet = "bowsr/bowsr.yml"
 
     # default CHGNet model from publication with 400,438 params
-    chgnet = "chgnet/chgnet.yml", None, "CHGNet"
+    chgnet = "chgnet/chgnet.yml"
     # chgnet_no_relax = None, "CHGNet No Relax"
 
     # CGCNN 10-member ensemble
-    cgcnn = "cgcnn/cgcnn.yml", None, "CGCNN"
+    cgcnn = "cgcnn/cgcnn.yml"
 
     # CGCNN 10-member ensemble with 5-fold training set perturbations
-    cgcnn_p = "cgcnn/cgcnn+p.yml", None, "CGCNN+P"
+    cgcnn_p = "cgcnn/cgcnn+p.yml"
 
     # original M3GNet straight from publication, not re-trained
-    m3gnet = "m3gnet/m3gnet.yml", None, "M3GNet"
+    m3gnet = "m3gnet/m3gnet.yml"
     # m3gnet_direct = None, "M3GNet DIRECT"
     # m3gnet_ms = None, "M3GNet MS"
 
     # MACE-MP-0 medium as published in https://arxiv.org/abs/2401.00096 trained on MPtrj
-    mace = "mace/mace.yml", None, "MACE"
+    mace = "mace/mace.yml"
 
     # original MEGNet straight from publication, not re-trained
-    megnet = "megnet/megnet.yml", None, "MEGNet"
+    megnet = "megnet/megnet.yml"
 
     # SevenNet trained on MPtrj
-    sevennet = "sevennet/sevennet.yml", None, "SevenNet"
+    sevennet = "sevennet/sevennet.yml"
 
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest
-    voronoi_rf = "voronoi_rf/voronoi-rf.yml", None, "Voronoi RF"
+    voronoi_rf = "voronoi_rf/voronoi-rf.yml"
 
     # wrenformer 10-member ensemble
-    wrenformer = "wrenformer/wrenformer.yml", None, "Wrenformer"
+    wrenformer = "wrenformer/wrenformer.yml"
 
     # --- Proprietary Models
     # GNoME
-    gnome = "gnome/gnome.yml", None, "GNoME"
+    gnome = "gnome/gnome.yml"
 
     # MatterSim
-    mattersim = "mattersim/mattersim.yml", None, "MatterSim"
+    mattersim = "mattersim/mattersim.yml"
 
     # ORB
-    orb = "orb/orb.yml", None, "ORB"
-    orb_mptrj = "orb/orb-mptrj.yml", None, "ORB MPtrj"
+    orb = "orb/orb.yml"
+    orb_mptrj = "orb/orb-mptrj.yml"
 
     # fairchem
-    eqv2_s_dens = "eqV2/eqV2-s-dens-mp.yml", None, "eqV2 S DeNS"
-    eqv2_m = "eqV2/eqV2-m-omat-mp-salex.yml", None, "eqV2 M"
+    eqv2_s_dens = "eqV2/eqV2-s-dens-mp.yml"
+    eqv2_m = "eqV2/eqV2-m-omat-mp-salex.yml"
 
-    grace2l_r6 = "grace2l_r6/grace2l2.yml", None, "GRACE2L-R6"
+    grace2l_r6 = "grace2l_r6/grace2l2.yml"
 
     # --- Model Combos
     # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
-    # chgnet_megnet = "chgnet/2023-03-06-chgnet-0.2.0-wbm-IS2RE.csv.gz", None, "CHGNet→MEGNet"
+    # chgnet_megnet = "chgnet/2023-03-06-chgnet-0.2.0-wbm-IS2RE.csv.gz"
     # # M3GNet-relaxed structures fed into MEGNet for formation energy prediction
-    # m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv.gz", None, "M3GNet→MEGNet"
-    # megnet_rs2re = "megnet/2023-08-23-megnet-wbm-RS2RE.csv.gz", None, "MEGNet RS2RE"
+    # m3gnet_megnet = "m3gnet/2022-10-31-m3gnet-wbm-IS2RE.csv.gz"
+    # megnet_rs2re = "megnet/2023-08-23-megnet-wbm-RS2RE.csv.gz"
 
-    @functools.cached_property
+    @functools.cached_property  # cache to avoid re-reading same file multiple times
     def metadata(self) -> dict[str, Any]:
         """Metadata associated with the model."""
         yaml_path = f"{type(self).base_dir}/{self.rel_path}"
         with open(yaml_path) as file:
             return yaml.safe_load(file)
 
-    @functools.cached_property
+    @property
+    def label(self) -> str:
+        """Pretty label associated with the model."""
+        return self.metadata["model_name"]
+
+    @property
     def metrics(self) -> dict[str, Any]:
         """Metrics associated with the model."""
         return self.metadata.get("metrics", {})
 
-    @functools.cached_property
+    @property
     def yaml_path(self) -> str:
         """YAML file path associated with the model."""
         return f"{type(self).base_dir}/{self.rel_path}"
 
-    @functools.cached_property
+    @property
     def discovery_path(self) -> str:
         """Prediction file path associated with the model."""
         rel_path = self.metrics.get("discovery", {}).get("pred_file")
@@ -468,7 +473,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
             )
         return f"{ROOT}/{rel_path}"
 
-    @functools.cached_property
+    @property
     def geo_opt_path(self) -> str | None:
         """File path associated with the file URL if it exists, otherwise
         download the file first, then return the path.
@@ -483,7 +488,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
             )
         return f"{ROOT}/{rel_path}"
 
-    @functools.cached_property
+    @property
     def phonons_path(self) -> str | None:
         """File path associated with the file URL if it exists, otherwise
         download the file first, then return the path.
