@@ -2,12 +2,11 @@ import glob
 import os
 
 import pandas as pd
-from pymatgen.entries.computed_entries import ComputedEntry
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
-from matbench_discovery.energy import calc_energy_from_e_refs
+from matbench_discovery.data import as_dict_handler, df_wbm
+from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 from matbench_discovery.enums import MbdKey, Task
 
 __author__ = "Yury Lysogorskiy"
@@ -27,32 +26,16 @@ file_paths = glob.glob(glob_pattern)
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
 
-mp_elem_ref_entries = (
-    pd.read_json(DataFiles.mp_elemental_ref_entries.path, typ="series")
-    .map(ComputedEntry.from_dict)
-    .to_dict()
-)
-
-mp_elemental_ref_energies = {
-    elem: round(entry.energy_per_atom, 4) for elem, entry in mp_elem_ref_entries.items()
-}
-
-
-dfs = []
+dfs: list[pd.DataFrame] = []
 for fn in file_paths:
     print(fn)
-    df = pd.read_json(fn)
-    dfs.append(df)
-
-
-def get_id_tuple(s):
-    splt = s.split("-")
-    return int(splt[1]), int(splt[2])
+    dfs.append(pd.read_json(fn))
 
 
 tot_df = pd.concat(dfs)
-
-tot_df["id_tuple"] = tot_df["material_id"].map(get_id_tuple)
+tot_df["id_tuple"] = (
+    tot_df["material_id"].str.split("-").map(lambda x: (int(x[1]), int(x[2])))
+)
 tot_df = (
     tot_df.sort_values("id_tuple")
     .reset_index(drop=True)

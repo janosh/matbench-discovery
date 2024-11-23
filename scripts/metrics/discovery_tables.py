@@ -32,7 +32,10 @@ __date__ = "2022-11-28"
 # %% Create discovery metrics dataframes from MODEL_METADATA
 def get_metrics_df(nested_keys: Sequence[str]) -> pd.DataFrame:
     """Extract metrics from MODEL_METADATA into a DataFrame.
-    Returns a DataFrame with models as rows and metrics as columns."""
+    Returns a DataFrame with models as rows and metrics as columns. To calculate and
+    write discovery metrics into the model YAML files in the first place, run
+    python matbench_discovery/preds/discovery.py model1 model2 ...
+    where the model names are Model enum values."""
     out_dict = {}
     for model_name, metadata in MODEL_METADATA.items():
         metrics = None

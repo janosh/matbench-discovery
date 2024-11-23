@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 ## this script is for imitation of SLURM tasks array on local machine with multiple GPUs
 export TF_CPP_MIN_LOG_LEVEL=3
 

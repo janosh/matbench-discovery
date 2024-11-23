@@ -7,34 +7,29 @@ authors:
   - name: Anton Bochkarev
     affiliation: ICAMS, Ruhr University BOchum
     email: anton.bochkarev@rub.de
-    #orcid: https://orcid.org/0000-0001-6915-9851
   - name: Yury Lysogorskiy
     affiliation: ICAMS, Ruhr University BOchum
     email: yury.lysogorskiy@rub.de
-    #orcid: https://orcid.org/0000-0001-6915-9851
   - name: Ralf Drauzt
     affiliation: ICAMS, Ruhr University BOchum
     email: ralf.drautz@rub.de
-    #orcid: https://orcid.org/0000-0001-6915-9851
 trained_by:
   - name: Yury Lysogorskiy
     affiliation: ICAMS, Ruhr University BOchum
     email: yury.lysogorskiy@rub.de
-    #orcid: https://orcid.org/0000-0001-6915-9851
 
 repo: https://github.com/ICAMS/grace-tensorpotential
-doi: https://doi.org/10.48550/arXiv.2401.00096
-paper: https://arxiv.org/abs/2401.00096
+doi: https://doi.org/10.1103/PhysRevX.14.021036
+paper: https://journals.aps.org/prx/abstract/10.1103/PhysRevX.14.021036
 url: https://gracemaker.readthedocs.io/en/latest/gracemaker/foundation/
 
 requirements:
-  tensorpotentual: 0.4.4
+  tensorpotential: 0.4.4
   tensorflow: 2.16.2
   ase: 3.23.0
   pymatgen: 2023.7.14
   numpy: 1.26.4
 
-#pred_col: e_form_per_atom_pred
 openness: OSOD
 trained_for_benchmark: true
 train_task: S2EF
@@ -51,7 +46,7 @@ hyperparams:
   max_steps: 300
   ase_optimizer: FIRE
 
-notes:
-  description: |
-    GRACE
-  training: Training
+metrics:
+  discovery:
+    pred_file: models/grace2l_r6/2024-11-21-MP_GRACE_2L_r6_11Nov2024-wbm-IS2RE-FIRE.csv.gz
+    pred_col: e_form_per_atom_grace

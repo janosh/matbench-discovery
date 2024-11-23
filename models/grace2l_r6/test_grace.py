@@ -1,10 +1,7 @@
 # %%
+import json
 import os
 import warnings
-
-warnings.filterwarnings("ignore", category=FutureWarning)
-
-import json
 from collections.abc import Callable
 from copy import deepcopy
 from importlib.metadata import version
@@ -28,6 +25,8 @@ from matbench_discovery.enums import Task
 
 __author__ = "Yury Lysogorskiy"
 __date__ = "2024-11-21"
+
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 
 # %%
