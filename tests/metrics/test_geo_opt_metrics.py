@@ -96,15 +96,13 @@ def test_analyze_symmetry_changes_parametrized(
 @pytest.fixture
 def df_sym_changes() -> pd.DataFrame:
     """Create a DataFrame with symmetry change statistics."""
-    return pd.DataFrame(
-        {
-            Key.symmetry_decrease: [0.2, 0.3],
-            Key.symmetry_match: [0.5, 0.4],
-            Key.symmetry_increase: [0.3, 0.3],
-            Key.n_structs: [100, 100],
-        },
-        index=["model1", "model2"],
-    )
+    data = {
+        Key.symmetry_decrease: [0.2, 0.3],
+        Key.symmetry_match: [0.5, 0.4],
+        Key.symmetry_increase: [0.3, 0.3],
+        Key.n_structs: [100, 100],
+    }
+    return pd.DataFrame(data, index=["model1", "model2"])
 
 
 sym_changes_cols = [

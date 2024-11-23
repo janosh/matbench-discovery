@@ -25,6 +25,10 @@ paper/figs/*.pdf*
 wandb/
 models/**/*slurm-*.log
 
+# model checkpoints
+models/**/*.model
+models/**/*.pt
+
 # auto-generated docs
 site/src/routes/api/*.md
 
