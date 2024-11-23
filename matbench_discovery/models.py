@@ -29,7 +29,11 @@ for model_dir in MODEL_DIRS:
 
         model_data["model_dir"] = model_dir
         # YAML file name serves as model key and must match Model enum attribute
-        model_data["model_key"] = metadata_file.split("/")[-1].split(".yml")[0]
+        yaml_filename = metadata_file.split("/")[-1]
+        model_key = model_data["model_key"]
+        if model_key != yaml_filename.rsplit(".yml", 1)[0]:
+            print(f"recommended that {model_key=} matches {yaml_filename=}")
+
         MODEL_METADATA[model_data["model_name"]] = model_data
 
         try:
