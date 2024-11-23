@@ -23,14 +23,11 @@ Dash.run = lambda *_args, **_kwargs: None
 
 # subtract __file__ to prevent this file from calling itself
 scripts = set(glob(f"{module_dir}/*.py")) - {__file__}
-
-singel_model_scripts = set(glob(f"{module_dir}/single_model_*.py"))
-
-scripts -= singel_model_scripts
+scripts -= set(glob(f"{module_dir}/single_model_*.py"))  # ignore single-model scripts
 
 
 # %%
-exceptions = []  # Collect exceptions here
+exceptions: dict[str, Exception] = {}  # Collect exceptions here
 
 for show_non_compliant in (False, True):
     for file in (pbar := tqdm(scripts)):
@@ -51,19 +48,11 @@ for show_non_compliant in (False, True):
             else:
                 runpy.run_path(file, init_globals=init_globals)
         except Exception as exc:
-            exceptions.append((file, exc))  # Append file and exception
+            exceptions[file] = exc
 
 # Raise a combined exception if any errors were collected
 if exceptions:
-    error_messages = "\n".join([f"{file!r} failed: {exc}" for file, exc in exceptions])
+    error_messages = "\n".join(
+        f"{file!r} failed: {exc!r}" for file, exc in exceptions.items()
+    )
     raise RuntimeError(f"The following errors occurred:\n{error_messages}")
-
-
-# %%
-if False:
-    for file in (pbar := tqdm(singel_model_scripts)):
-        pbar.set_description(file)
-        try:
-            runpy.run_path(file)
-        except Exception as exc:
-            print(f"{file!r} failed: {exc}")

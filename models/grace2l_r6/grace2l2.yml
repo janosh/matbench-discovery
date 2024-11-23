@@ -1,4 +1,4 @@
-model_name: GRACE2_r6
+model_name: GRACE2L-R6
 model_key: grace2l_r6
 model_version: MP_GRACE_2L_r6_11Nov2024
 matbench_discovery_version: 1.0.0
