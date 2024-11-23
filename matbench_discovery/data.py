@@ -463,7 +463,9 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         """Prediction file path associated with the model."""
         rel_path = self.metrics.get("discovery", {}).get("pred_file")
         if not rel_path:
-            raise ValueError(f"{rel_path} not found in {self.rel_path!r}")
+            raise ValueError(
+                f"metrics.discovery.pred_file not found in {self.rel_path!r}"
+            )
         return f"{ROOT}/{rel_path}"
 
     @functools.cached_property
@@ -476,7 +478,9 @@ class Model(Files, base_dir=f"{ROOT}/models"):
             return None
         rel_path = geo_opt_metrics.get("pred_file")
         if not rel_path:
-            raise ValueError(f"{rel_path} not found in {self.rel_path!r}")
+            raise ValueError(
+                f"metrics.geo_opt.pred_file not found in {self.rel_path!r}"
+            )
         return f"{ROOT}/{rel_path}"
 
     @functools.cached_property
@@ -489,7 +493,9 @@ class Model(Files, base_dir=f"{ROOT}/models"):
             return None
         rel_path = phonons_metrics.get("pred_file")
         if not rel_path:
-            raise ValueError(f"{rel_path} not found in {self.rel_path!r}")
+            raise ValueError(
+                f"metrics.phonons.pred_file not found in {self.rel_path!r}"
+            )
         return f"{ROOT}/{rel_path}"
 
 
@@ -566,7 +572,10 @@ def load_df_wbm_with_preds(
                 )
 
             if pred_col not in df_preds:
-                raise ValueError(f"{pred_col=} not found in {model.discovery_path}")
+                raise ValueError(
+                    f"{pred_col=} set in {model.yaml_path!r}:metrics.discovery.pred_col "
+                    f"not found in {model.discovery_path}"
+                )
 
             df_out[model.label] = df_preds.set_index(id_col)[pred_col]
             if max_error_threshold is not None:
