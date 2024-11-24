@@ -2,57 +2,31 @@
   import { name, repository as repo, homepage } from "$site/package.json"
   import figshare_urls from "$pkg/figshare/1.0.0.json"
   import { Tooltip } from 'svelte-zoo'
-
-  const ppd_doc_url = `https://github.com/materialsproject/pymatgen/blob/v2023.5.10/pymatgen/analysis/phase_diagram.py#L1480-L1814`
-  const ppd_link = `<a href=${ppd_doc_url}>PatchedPhaseDiagram</a>`
-  const cse_doc_url = `https://github.com/materialsproject/pymatgen/blob/v2023.5.10/pymatgen/entries/computed_entries.py#L579-L722`
-
-  const mp_trj_link = `<a href="https://figshare.com/articles/dataset/23713842">MPtrj</a>`
-  const descriptions = {
-    alignn_checkpoint: `ALIGNN model trained on <code>mp_computed_structure_entries</code>`,
-    mp_computed_structure_entries:
-      `JSON-Serialized MP <a href=${cse_doc_url}>ComputedStructureEntries</a> containing DFT relaxed structures and corresponding final energies`,
-    mp_elemental_ref_entries: `Minimum energy ComputedEntry for each element in MP`,
-    mp_energies: `Materials Project formation energies and energies above convex hull`,
-    mp_patched_phase_diagram:
-      `${ppd_link} constructed from all MP ComputedStructureEntries`,
-    wbm_computed_structure_entries: `WBM <a href=${cse_doc_url}>ComputedStructureEntries</a> containing DFT relaxed structures and corresponding final energies`,
-    wbm_relaxed_atoms: `WBM relaxed structures as ASE Atoms in extended XYZ format`,
-    wbm_initial_structures: `Unrelaxed WBM structures`,
-    wbm_initial_atoms: `Unrelaxed WBM structures as ASE Atoms in extended XYZ format`,
-    wbm_cses_plus_init_structs: `Both unrelaxed and DFT-relaxed WBM structures, the latter stored with their final VASP energies as <a href=${cse_doc_url}>ComputedStructureEntry</a>`,
-    wbm_summary:
-      `Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more.`,
-    mp_trj_extxyz: `${mp_trj_link} converted to <code>ase</code>-compatible extended XYZ format and compressed (11.3 to 1.6 GB)`,
-    all_mp_tasks: `Complete copy of the MP database on 2023-03-16 (release <a href="https://docs.materialsproject.org/changes/database-versions#v2022.10.28">v2022.10.28</a>)`,
-  }
-  const desc_keys = Object.keys(descriptions).sort()
-  const figshare_keys = Object.keys(figshare_urls.files).sort()
-  const missing = figshare_keys.filter((key) => !desc_keys.includes(key))
-  if (missing.length > 0) {
-    throw `descriptions must contain all figshare_urls keys, missing=${missing}`
-  }
+  import { data_files } from '$lib'
 </script>
 
 # How to contribute
 
 ## 🔨 &thinsp; Installation
 
-To download the training and test sets for this benchmark, we recommend installing our [PyPI package](https://pypi.org/project/{name}):
+Clone the repo and make the `matbench_discovery` package importable in your Python environment:
 
 ```zsh
-pip install matbench-discovery
+git clone https://github.com/janosh/matbench-discovery --depth 1
+pip install -e ./matbench-discovery
 ```
+
+There's also a [PyPI package](https://pypi.org/project/{name}) for faster installation if you don't need the latest code changes (unlikely if you're planning to submit a model since the benchmark is under active development).
 
 ## 📙 &thinsp; Usage
 
-When you access an attribute of the `DATA_FILES` class, it automatically downloads and caches the corresponding data file. For example:
+When you access an attribute of the `DataFiles` class, it automatically downloads and caches the corresponding data file. For example:
 
 ```py
-from matbench_discovery.data import DATA_FILES, load
+from matbench_discovery.data import DataFiles, load
 
 # available data files
-assert sorted(DATA_FILES) == [
+assert sorted(DataFiles) == [
     "mp_computed_structure_entries",
     "mp_elemental_ref_entries",
     "mp_energies",
@@ -63,7 +37,7 @@ assert sorted(DATA_FILES) == [
     "wbm_summary",
 ]
 
-# 1st arg can be any DATA_FILES key
+# 1st arg can be any DataFiles key
 # version defaults to latest, set a specific version like 1.0.0 to avoid breaking changes
 df_wbm = load("wbm_summary", version="1.0.0")
 
@@ -121,7 +95,7 @@ You can download all Matbench Discovery data files from <a href={figshare_urls.a
   {#each Object.entries(figshare_urls.files) as [key, [href, file_name]]}
     <li style="margin-top: 1ex;">
     <strong>{key}</strong> (<a {href}>{file_name}</a>)<br/>
-      {@html descriptions[key]}
+      {@html data_files[key].html}
     </li>
   {/each}
 </ol>
@@ -195,7 +169,7 @@ git checkout -b model-name-you-want-to-add
 
 Tip: `--depth 1` only clones the latest commit, not the full `git history` which is faster if a repo contains large data files that changed over time.
 
-### Step 2: Commit model preds, script and metadata
+### Step 2: Commit model predictions, train/test scripts and metadata
 
 Create a new folder
 
@@ -216,7 +190,7 @@ matbench-discovery-root
         └── train_<model_name>.py  # optional
 ```
 
-You can include arbitrary other supporting files like metadata and model features (below 10MB to keep `git clone` time low) if they are needed to run the model or help others reproduce your results. For larger files, please upload to [Figshare](https://figshare.com) or similar and link them somewhere in your files.
+You can include arbitrary other supporting files like metadata and model features (below 10MB total to keep `git clone` time low) if they are needed to run the model or help others reproduce your results. For larger files, please upload to [Figshare](https://figshare.com) or similar and share the link in your PR description.
 
 ### Step 3: Open a PR to the [Matbench Discovery repo]({repo})
 
