@@ -183,7 +183,7 @@ def test_data_files() -> None:
     # Test that multiple files exist and have correct attributes
     assert DataFiles.wbm_summary.rel_path == "wbm/2023-12-13-wbm-summary.csv.gz"
     assert (
-        DataFiles.wbm_summary.url == "https://figshare.com/ndownloader/files/44225498"
+        DataFiles.wbm_summary.url == "https://figshare.com/ndownloader/files/40344472"
     )
 
 

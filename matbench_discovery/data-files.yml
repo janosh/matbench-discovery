@@ -1,0 +1,76 @@
+all_mp_tasks:
+  url: https://figshare.com/ndownloader/files/43350447
+  path: mp/2023-03-16-all-mp-tasks.json.gz
+  description: Complete copy of the Materials Project database on 2023-03-16 (14 GB) (release [v2022.10.28](https://docs.materialsproject.org/changes/database-versions#v2022.10.28))
+
+alignn_checkpoint:
+  url: https://figshare.com/ndownloader/files/40344436
+  path: mp/2023-02-07-alignn-checkpoint.pth
+  description: ALIGNN model trained on `mp_computed_structure_entries`
+
+mp_computed_structure_entries:
+  url: https://figshare.com/ndownloader/files/40344436
+  path: mp/2023-02-07-mp-computed-structure-entries.json.gz
+  description: JSON-Serialized `pymatgen` [`ComputedStructureEntries`] containing all Materials Project DFT-relaxed structures and corresponding final energies as of 2023-02-07
+
+mp_elemental_ref_entries:
+  url: https://figshare.com/ndownloader/files/40387775
+  path: mp/2023-02-07-mp-elemental-reference-entries.json.gz
+  description: Minimum energy `ComputedEntry` for each element in MP
+
+mp_energies:
+  url: https://figshare.com/ndownloader/files/49083124
+  path: mp/2023-01-10-mp-energies.csv.gz
+  description: Materials Project formation energies and energies above convex hull in eV/atom as a fast-to-load CSV file
+
+mp_patched_phase_diagram:
+  url: https://figshare.com/ndownloader/files/48241624
+  path: mp/2023-02-07-ppd-mp.pkl.gz
+  description: "[`PatchedPhaseDiagram`] constructed from all MP `pymatgen` `ComputedStructureEntries`"
+
+mp_trj:
+  title: Materials Project Trajectory (MPtrj) Dataset
+  url: https://figshare.com/ndownloader/files/43302033
+  figshare: https://figshare.com/articles/dataset/23713842
+  path: mp/2023-11-22-mp-trj.extxyz.zip
+  description: 1,580,395 pymatgen Structures along with 1,580,395 energies, 7,944,833 magnetic moments, 49,295,660 forces, and 14,223,555 stresses. Originally created to train CHGNet and later used by many other machine learning force fields.
+
+mp_trj_extxyz:
+  url: https://figshare.com/ndownloader/files/49034296
+  path: mp/2024-09-03-mp-trj.extxyz.zip
+  description: ~1.6 M Materials Project DFT relaxation frames (subsampled to reduce redundancy and faulty data) converted to `ase`-compatible extended XYZ format including energies (eV), forces (eV/Å) and stress (eV/Å³).
+
+wbm_computed_structure_entries:
+  url: https://figshare.com/ndownloader/files/40344463
+  path: wbm/2022-10-19-wbm-computed-structure-entries.json.bz2
+  description: JSON-Serialized `pymatgen` [`ComputedStructureEntries`] containing all WBM DFT-relaxed structures and corresponding final energies
+
+wbm_relaxed_atoms:
+  url: https://figshare.com/ndownloader/files/48169600
+  path: wbm/2024-08-04-wbm-relaxed-atoms.extxyz.zip
+  description: WBM relaxed structures as `ase` Atoms in extended XYZ format
+
+wbm_initial_structures:
+  url: https://figshare.com/ndownloader/files/40344466
+  path: wbm/2022-10-19-wbm-init-structs.json.bz2
+  description: Unrelaxed WBM structures in `pymatgen` `Structure` format
+
+wbm_initial_atoms:
+  url: https://figshare.com/ndownloader/files/48169597
+  path: wbm/2024-08-04-wbm-initial-atoms.extxyz.zip
+  description: Unrelaxed WBM structures as `ase` Atoms in extended XYZ format
+
+wbm_cses_plus_init_structs:
+  url: https://figshare.com/ndownloader/files/40344469
+  path: wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2
+  description: Both unrelaxed and DFT-relaxed WBM structures, the latter stored with their final VASP energies as `pymatgen` [`ComputedStructureEntries`]
+
+wbm_summary:
+  url: https://figshare.com/ndownloader/files/40344472
+  path: wbm/2023-12-13-wbm-summary.csv.gz
+  description: Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more.
+
+_links: |
+  [`PatchedPhaseDiagram`]: https://github.com/materialsproject/pymatgen/blob/v2023.5.10/pymatgen/analysis/phase_diagram.py#L1480-L1814
+  [`ComputedStructureEntries`]: https://github.com/materialsproject/pymatgen/blob/v2023.5.10/pymatgen/entries/computed_entries.py#L579-L722
+  [mbd-figshare]: https://figshare.com/articles/dataset/22715158
