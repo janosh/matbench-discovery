@@ -127,7 +127,7 @@
       (show_non_compliant || model_is_compliant(model)),
   )
     .map((model) => {
-      const disc_metrics = model.metrics?.discovery?.[discovery_set]
+      const metrics = model.metrics?.discovery?.[discovery_set]
 
       const targets = model.targets.replace(/_(.)/g, `<sub>$1</sub>`)
       const targets_str = `<span title="${Targets[model.targets]}">${targets}</span>`
@@ -135,15 +135,15 @@
       // rename metric keys to pretty labels
       return {
         Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}">${model.model_name}</a>`,
-        F1: disc_metrics?.F1,
-        DAF: disc_metrics?.DAF,
-        Prec: disc_metrics?.Precision,
-        Acc: disc_metrics?.Accuracy,
-        TPR: disc_metrics?.TPR,
-        TNR: disc_metrics?.TNR,
-        MAE: disc_metrics?.MAE,
-        RMSE: disc_metrics?.RMSE,
-        'R<sup>2</sup>': disc_metrics?.R2,
+        F1: metrics?.F1,
+        DAF: metrics?.DAF,
+        Prec: metrics?.Precision,
+        Acc: metrics?.Accuracy,
+        TPR: metrics?.TPR,
+        TNR: metrics?.TNR,
+        MAE: metrics?.MAE,
+        RMSE: metrics?.RMSE,
+        'R<sup>2</sup>': metrics?.R2,
         'κ<sub>SRME</sub>': model.metrics?.phonons?.κ_SRME,
         'Training Set': format_train_set(model.training_set),
         Params: `<span title="${pretty_num(model.model_params, `,`)} trainable model parameters">${pretty_num(model.model_params)}</span>`,

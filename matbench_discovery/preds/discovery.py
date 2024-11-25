@@ -1,5 +1,7 @@
 """Centralize data-loading and computing metrics for plotting scripts."""
 
+import sys
+
 import pandas as pd
 from pymatviz.enums import Key
 
@@ -125,7 +127,8 @@ df_each_err[MbdKey.each_err_models] = df_preds[MbdKey.each_err_models] = (
 
 
 if __name__ == "__main__":
-    for model in Model:
+    models_to_write = sys.argv[1:] or Model
+    for model in models_to_write:
         write_discovery_metrics_to_yaml(
-            model, df_metrics, df_metrics_10k, df_metrics_uniq_protos, df_preds
+            Model[model], df_metrics, df_metrics_10k, df_metrics_uniq_protos, df_preds
         )
