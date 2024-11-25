@@ -51,6 +51,9 @@ hyperparams:
 metrics:
   phonons:
     κ_SRME: 0.525 # https://github.com/MPA2suite/k_SRME/pull/11/files
+  geo_opt:
+    pred_file: models/grace2l_r6/GRACE_2L_r6_11Nov2024_relaxed_structures.json.gz
+    pred_col: grace2l_r6_structure
   discovery:
     pred_file: models/grace2l_r6/2024-11-21-MP_GRACE_2L_r6_11Nov2024-wbm-IS2RE-FIRE.csv.gz
     pred_col: e_form_per_atom_grace
