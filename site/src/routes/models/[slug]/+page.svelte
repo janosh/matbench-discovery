@@ -33,6 +33,10 @@
     capture: () => ({ color_scale }),
     restore: (values) => ({ color_scale } = values),
   }
+
+  $: if (model && !(model?.model_name in per_elem_each_errors)) {
+    throw new Error(`No per-element errors found for ${model.model_name}`)
+  }
 </script>
 
 {#if model}
@@ -129,6 +133,7 @@
     </section>
 
     {#each [[`e-form`, `Formation Energies`], [`each`, `Convex Hull Distance`]] as [which_energy, title]}
+      {`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`}
       {#await import(`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`) then ParityPlot}
         <!-- negative margin-bottom corrects for display: none plot title -->
         <h3 style="margin-bottom: -2em;">
@@ -142,6 +147,7 @@
         {/if}
       {/await}
     {/each}
+
     {#if $page.params.slug == `mace`}
       {#await import(`./mace.md`) then Mace}
         <Mace.default />
@@ -150,29 +156,32 @@
 
     <ColorScaleSelect bind:selected={color_scale} />
 
-    <h3>Convex hull distance prediction errors projected onto elements</h3>
-    <PeriodicTable
-      heatmap_values={per_elem_each_errors[model.model_name]}
-      color_scale={color_scale[0]}
-      bind:active_element
-      tile_props={{ precision: `0.2` }}
-      show_photo={false}
-    >
-      <TableInset slot="inset" style="align-content: center;">
-        <PtableInset
-          element={active_element}
-          elem_counts={per_elem_each_errors[model.model_name]}
-          show_percent={false}
-          unit="<small style='font-weight: lighter;'>eV / atom</small>"
-        />
-        <ColorBar
-          text_side="top"
-          color_scale={color_scale[0]}
-          tick_labels={5}
-          style="width: 85%; margin: 0 2em;"
-        />
-      </TableInset>
-    </PeriodicTable>
+    {#if model.model_name in per_elem_each_errors}
+      {@const heatmap_values = per_elem_each_errors?.[model.model_name]}
+      <h3>Convex hull distance prediction errors projected onto elements</h3>
+      <PeriodicTable
+        {heatmap_values}
+        color_scale={color_scale[0]}
+        bind:active_element
+        tile_props={{ precision: `0.2` }}
+        show_photo={false}
+      >
+        <TableInset slot="inset" style="align-content: center;">
+          <PtableInset
+            element={active_element}
+            elem_counts={heatmap_values}
+            show_percent={false}
+            unit="<small style='font-weight: lighter;'>eV / atom</small>"
+          />
+          <ColorBar
+            text_side="top"
+            color_scale={color_scale[0]}
+            tick_labels={5}
+            style="width: 85%; margin: 0 2em;"
+          />
+        </TableInset>
+      </PeriodicTable>
+    {/if}
 
     <section class="authors">
       <h2>Authors</h2>

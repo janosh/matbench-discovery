@@ -1,0 +1,116 @@
+model_name: GRACE-2L (r6)
+model_key: grace2l-r6
+model_version: MP_GRACE_2L_r6_11Nov2024
+matbench_discovery_version: 1.0.0
+date_added: "2024-11-21"
+date_published: "2024-11-21"
+authors:
+  - name: Anton Bochkarev
+    affiliation: ICAMS, Ruhr University BOchum
+    email: anton.bochkarev@rub.de
+  - name: Yury Lysogorskiy
+    affiliation: ICAMS, Ruhr University BOchum
+    email: yury.lysogorskiy@rub.de
+  - name: Ralf Drauzt
+    affiliation: ICAMS, Ruhr University BOchum
+    email: ralf.drautz@rub.de
+trained_by:
+  - name: Yury Lysogorskiy
+    affiliation: ICAMS, Ruhr University BOchum
+    email: yury.lysogorskiy@rub.de
+
+repo: https://github.com/ICAMS/grace-tensorpotential
+doi: https://doi.org/10.1103/PhysRevX.14.021036
+paper: https://journals.aps.org/prx/abstract/10.1103/PhysRevX.14.021036
+url: https://gracemaker.readthedocs.io/en/latest/gracemaker/foundation/
+
+requirements:
+  tensorpotential: 0.4.4
+  tensorflow: 2.16.2
+  ase: 3.23.0
+  pymatgen: 2023.7.14
+  numpy: 1.26.4
+
+openness: OSOD
+trained_for_benchmark: true
+train_task: S2EF
+test_task: IS2RE-SR
+targets: EFS_G
+model_type: UIP
+model_params: 15_346_704
+n_estimators: 1
+
+training_set: [MPtrj]
+
+hyperparams:
+  max_force: 0.03
+  max_steps: 300
+  ase_optimizer: FIRE
+  radial_cutoff: 6.0
+
+metrics:
+  phonons:
+    κ_SRME: 0.525 # https://github.com/MPA2suite/k_SRME/pull/11/files
+  geo_opt:
+    pred_file: models/grace2l_r6/GRACE_2L_r6_11Nov2024_relaxed_structures.json.gz
+    pred_col: grace2l_r6_structure
+  discovery:
+    pred_file: models/grace2l_r6/2024-11-21-MP_GRACE_2L_r6_11Nov2024-wbm-IS2RE-FIRE.csv.gz
+    pred_col: e_form_per_atom_grace
+    full_test_set:
+      F1: 0.687
+      DAF: 3.714
+      Precision: 0.637
+      Recall: 0.746
+      Accuracy: 0.884
+      TPR: 0.746
+      FPR: 0.088
+      TNR: 0.912
+      FNR: 0.254
+      TP: 32880.0
+      FP: 18721.0
+      TN: 194150.0
+      FN: 11212.0
+      MAE: 0.05
+      RMSE: 0.092
+      R2: 0.74
+      missing_preds: 128
+      missing_percent: 0.05%
+    most_stable_10k:
+      F1: 0.914
+      DAF: 5.503
+      Precision: 0.841
+      Recall: 1.0
+      Accuracy: 0.841
+      TPR: 1.0
+      FPR: 1.0
+      TNR: 0.0
+      FNR: 0.0
+      TP: 8413.0
+      FP: 1587.0
+      TN: 0.0
+      FN: 0.0
+      MAE: 0.065
+      RMSE: 0.133
+      R2: 0.641
+      missing_preds: 0
+      missing_percent: 0.00%
+    unique_prototypes:
+      F1: 0.691
+      DAF: 4.163
+      Precision: 0.636
+      Recall: 0.757
+      Accuracy: 0.896
+      TPR: 0.757
+      FPR: 0.079
+      TNR: 0.921
+      FNR: 0.243
+      TP: 25255.0
+      FP: 14425.0
+      TN: 167689.0
+      FN: 8119.0
+      MAE: 0.052
+      RMSE: 0.094
+      R2: 0.741
+      missing_preds: 110
+      missing_percent: 0.05%
