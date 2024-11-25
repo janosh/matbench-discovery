@@ -1,10 +1,3 @@
-<script>
-  import { name, repository as repo, homepage } from "$site/package.json"
-  import figshare_urls from "$pkg/figshare/1.0.0.json"
-  import { Tooltip } from 'svelte-zoo'
-  import { data_files } from '$lib'
-</script>
-
 # How to contribute
 
 ## 🔨 &thinsp; Installation
@@ -16,7 +9,7 @@ git clone https://github.com/janosh/matbench-discovery --depth 1
 pip install -e ./matbench-discovery
 ```
 
-There's also a [PyPI package](https://pypi.org/project/{name}) for faster installation if you don't need the latest code changes (unlikely if you're planning to submit a model since the benchmark is under active development).
+There's also a [PyPI package](https://pypi.org/project/matbench-discovery) for faster installation if you don't need the latest code changes (unlikely if you're planning to submit a model since the benchmark is under active development).
 
 ## 📙 &thinsp; Usage
 
@@ -89,16 +82,9 @@ assert tuple(df_wbm) == [
 
 ## 📥 &thinsp; Direct Download
 
-You can download all Matbench Discovery data files from <a href={figshare_urls.article}>this Figshare article</a>:
+You can download all Matbench Discovery data files from [this Figshare article](https://figshare.com/articles/dataset/23713842).
 
-<ol>
-  {#each Object.entries(figshare_urls.files) as [key, [href, file_name]]}
-    <li style="margin-top: 1ex;">
-    <strong>{key}</strong> (<a {href}>{file_name}</a>)<br/>
-      {@html data_files[key].html}
-    </li>
-  {/each}
-</ol>
+<slot name="data-files" />
 
 To train an interatomic potential, we recommend the [**MPtrj dataset**](https://figshare.com/articles/dataset/23713842) which was created to train [CHGNet](https://www.nature.com/articles/s42256-023-00716-3). With thanks to [Bowen Deng](https://scholar.google.com/citations?user=PRPXA0QAAAAJ) for cleaning and releasing this dataset. It was created from the [2021.11.10](https://docs.materialsproject.org/changes/database-versions#v2021.11.10) release of Materials Project and therefore constitutes a slightly smaller but valid subset of the allowed [2022.10.28](https://docs.materialsproject.org/changes/database-versions#v2022.10.28) MP release that is our training set.
 
@@ -106,60 +92,52 @@ To train an interatomic potential, we recommend the [**MPtrj dataset**](https://
 
 ## ✨ &thinsp; How to submit a new model
 
-To submit a new model to this benchmark and add it to our leaderboard, please create a pull request to the [`main` branch]({repo}) that includes at least these 3 required files:
+To submit a new model to this benchmark and add it to our leaderboard, please create a pull request to the [`main` branch][repo] that includes at least these 3 required files:
 
-1. `<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz`: Your model's energy predictions for all ~250k WBM compounds as compressed JSON or CSV. The recommended way to create this file is with `pandas.DataFrame.to_{json|csv}('<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz')`. JSON is preferred over CSV if your model not only predicts energies (floats) but also objects like relaxed structures. See e.g. [M3GNet]({repo}/blob/-/models/m3gnet/test_m3gnet.py) and [CHGNet]({repo}/blob/-/models/chgnet/test_chgnet.py) test scripts.
+1. `<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz`: Your model's energy predictions for all ~250k WBM compounds as compressed JSON or CSV. The recommended way to create this file is with `pandas.DataFrame.to_{json|csv}('<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz')`. JSON is preferred over CSV if your model not only predicts energies (floats) but also objects like relaxed structures. See e.g. [M3GNet](https://github.com/janosh/matbench-discovery/blob/-/models/m3gnet/test_m3gnet.py) and [CHGNet](https://github.com/janosh/matbench-discovery/blob/-/models/chgnet/test_chgnet.py) test scripts.
    For machine learning force field (MLFF) submissions, you additionally upload the relaxed structures and forces from your model's geometry optimization to Figshare or a similar platform and include the download link in your PR description and the YAML metadata file. This file should include:
 
    - The final relaxed structures (as ASE `Atoms` or pymatgen `Structures`)
-   - Forces (eV/Å), stress (eV/Å³) and volume (Å³) at each relaxation step
+   - Energies (eV), forces (eV/Å), stress (eV/Å³) and volume (Å³) at each relaxation step
 
    Recording the model-relaxed structures enables additional analysis of root mean squared displacement (RMSD) and symmetry breaking with respect to DFT relaxed structures. Having the forces and stresses at each step also allows analyzing any pathological behavior for structures were relaxation failed or went haywire.
 
    Example of how to record these quantities for a single structure with ASE:
 
    ```python
-    from collections import defaultdict
-
-    import pandas as pd
-    from ase.atoms import Atoms
-    from ase.optimize import FIRE
-    from mace.calculators import mace_mp
-
-
-    trajectory = defaultdict(list)
-    batio3 = Atoms(
-        "BaTiO3",
-        scaled_positions=[
-            (0, 0, 0),
-            (0.5, 0.5, 0.5),
-            (0.5, 0, 0.5),
-            (0, 0.5, 0.5),
-            (0.5, 0.5, 0),
-        ],
-        cell=[4] * 3,
-    )
-    batio3.calc = mace_mp(model_name="medium", default_dtype="float64")
-
-
-    def callback() -> None:
-        """Record energy, forces, stress and volume at each step."""
-        trajectory["energy"] += [batio3.get_potential_energy()]
-        trajectory["forces"] += [batio3.get_forces()]
-        trajectory["stress"] += [batio3.get_stress()]
-        trajectory["volume"] += [batio3.get_volume()]
-        # Optionally save structure at each step
-        trajectory["atoms"] += [batio3.copy()]
-
-
-    opt = FIRE(batio3)
-    opt.attach(callback) # register callback
-    opt.run(fmax=0.01, steps=500)  # optimize geometry
-
-    # Save final structure and trajectory data
-    df_traj = pd.DataFrame(trajectory)
-    df_traj.index.name = "step"
-    df_traj.to_csv("trajectory.csv.gz")
+   from collections import defaultdict
+   import pandas as pd
+   from ase.atoms import Atoms
+   from ase.optimize import FIRE
+   from mace.calculators import mace_mp
+   trajectory = defaultdict(list)
+   batio3 = Atoms(
+       "BaTiO3",
+       scaled_positions=[
+           (0, 0, 0),
+           (0.5, 0.5, 0.5),
+           (0.5, 0, 0.5),
+           (0, 0.5, 0.5),
+           (0.5, 0.5, 0),
+       ],
+       cell=[4] * 3,
+   )
+   batio3.calc = mace_mp(model_name="medium", default_dtype="float64")
+   def callback() -> None:
+       """Record energy, forces, stress and volume at each step."""
+       trajectory["energy"] += [batio3.get_potential_energy()]
+       trajectory["forces"] += [batio3.get_forces()]
+       trajectory["stress"] += [batio3.get_stress()]
+       trajectory["volume"] += [batio3.get_volume()]
+       # Optionally save structure at each step
+       trajectory["atoms"] += [batio3.copy()]
+   opt = FIRE(batio3)
+   opt.attach(callback) # register callback
+   opt.run(fmax=0.01, steps=500)  # optimize geometry
+   # Save final structure and trajectory data
+   df_traj = pd.DataFrame(trajectory)
+   df_traj.index.name = "step"
+   df_traj.to_csv("trajectory.csv.gz")
    ```
 
 1. `test_<model_name>.(py|ipynb)`: The Python script or Jupyter notebook that generated the energy predictions. Ideally, this file should have comments explaining at a high level what the code is doing and how the model works so others can understand and reproduce your results. If the model deployed on this benchmark was trained specifically for this purpose (i.e. if you wrote any training/fine-tuning code while preparing your PR), please also include it as `train_<model_name>.(py|ipynb)`.
@@ -210,7 +188,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 
    Arbitrary other keys can be added as needed. The above keys will be schema-validated with `pre-commit` (if installed) with errors for missing keys.
 
-Please see any of the subdirectories in [`models/`]({repo}/blob/-/models) for example submissions. More detailed step-by-step instructions below.
+Please see any of the subdirectories in [`models/`](https://github.com/janosh/matbench-discovery/bob/-/models) for example submissions. More detailed step-by-step instructions below.
 
 ### Step 1: Clone the repo
 
@@ -245,7 +223,7 @@ matbench-discovery-root
 
 You can include arbitrary other supporting files like metadata and model features (below 10MB total to keep `git clone` time low) if they are needed to run the model or help others reproduce your results. For larger files, please upload to [Figshare](https://figshare.com) or similar and share the link in your PR description.
 
-### Step 3: Open a PR to the [Matbench Discovery repo]({repo})
+### Step 3: Open a PR to the [Matbench Discovery repo][repo]
 
 Commit your files to the repo on a branch called `<model_name>` and create a pull request (PR) to the Matbench repository.
 
@@ -266,8 +244,10 @@ And you're done! Once tests pass and the PR is merged, your model will be added 
 - the exact code in the script that launched the run, and
 - which versions of dependencies were installed in the environment your model ran in.
 
-This information can be useful for others looking to reproduce your results or compare their model to yours i.t.o. computational cost. We therefore strongly recommend tracking all runs that went into a model submission with WandB so that the runs can be copied over to our WandB project at <https://wandb.ai/janosh/matbench-discovery> for everyone to inspect. This also allows us to include your model in more detailed analysis (see [SI]({homepage}/preprint#supplementary-information).
+This information can be useful for others looking to reproduce your results or compare their model to yours i.t.o. computational cost. We therefore strongly recommend tracking all runs that went into a model submission with WandB so that the runs can be copied over to our WandB project at <https://wandb.ai/janosh/matbench-discovery> for everyone to inspect. This also allows us to include your model in more detailed analysis (see [SI](https://matbench-discovery.materialsproject.org/preprint#supplementary-information)).
 
 ## 😵‍💫 &thinsp; Troubleshooting
 
-Having problems? Please [open an issue on GitHub]({repo}/issues). We're happy to help! 😊
+Having problems? Please [open an issue on GitHub](https://github.com/janosh/matbench-discovery/issues). We're happy to help! 😊
+
+[repo]: https://github.com/janosh/matbench-discovery
