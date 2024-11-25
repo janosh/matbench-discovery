@@ -1,4 +1,4 @@
-import { default as data_files } from '$root/data/data-files.yml'
+import { default as data_files } from '$pkg/data-files.yml'
 import rehypeStringify from 'rehype-stringify'
 import remarkParse from 'remark-parse'
 import remarkRehype from 'remark-rehype'

@@ -31,6 +31,7 @@ mp_patched_phase_diagram:
 mp_trj:
   title: Materials Project Trajectory (MPtrj) Dataset
   url: https://figshare.com/ndownloader/files/43302033
+  figshare: https://figshare.com/articles/dataset/23713842
   path: mp/2023-11-22-mp-trj.extxyz.zip
   description: 1,580,395 pymatgen Structures along with 1,580,395 energies, 7,944,833 magnetic moments, 49,295,660 forces, and 14,223,555 stresses. Originally created to train CHGNet and later used by many other machine learning force fields.
 

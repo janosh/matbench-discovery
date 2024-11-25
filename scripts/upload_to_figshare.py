@@ -8,16 +8,14 @@ Found notebook in docs: https://help.figshare.com/article/how-to-use-the-figshar
 import hashlib
 import json
 import os
-import sys
 import tomllib  # needs python 3.11
 from typing import Any
 
 import requests
-from requests.exceptions import HTTPError
 from tqdm import tqdm
 
 from matbench_discovery import DATA_DIR, PKG_DIR, ROOT
-from matbench_discovery.data import DataFiles
+from matbench_discovery.data import DataFiles, round_trip_yaml
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-04-27"
@@ -56,7 +54,7 @@ def make_request(
             data = json.loads(response.content)
         except ValueError:
             data = response.content
-    except HTTPError as exc:
+    except requests.HTTPError as exc:
         exc.add_note(f"body={response.content.decode()}")
         raise
 
@@ -113,7 +111,7 @@ def upload_file_to_figshare(article_id: int, file_path: str) -> int:
     return file_info["id"]
 
 
-def main(pyproject: dict[str, Any], urls_json_path: str) -> int:
+def main(pyproject: dict[str, Any], yaml_path: str) -> int:
     """Main function to upload all files in FILE_PATHS to the same Figshare article."""
     pkg_name, version = pyproject["name"], pyproject["version"]
     # category IDs can be found at https://api.figshare.com/v2/categories
@@ -145,30 +143,45 @@ def main(pyproject: dict[str, Any], urls_json_path: str) -> int:
     }
     try:
         article_id = create_article(metadata)
-        uploaded_files: dict[str, tuple[str, str]] = {}
+        uploaded_files: dict[str, dict[str, str]] = {}
+
+        existing_data: dict[str, dict[str, str]] = {}
+        if os.path.isfile(yaml_path):  # Load existing YAML data if available
+            with open(yaml_path) as file:
+                existing_data = round_trip_yaml.load(file)
+
         pbar = tqdm(DataFiles, desc="Uploading to Figshare")
         for key in pbar:
             pbar.set_postfix(file=key)
             file_path = f"{DATA_DIR}/{key.rel_path}"
             file_id = upload_file_to_figshare(article_id, file_path)
             file_url = f"https://figshare.com/ndownloader/files/{file_id}"
-            uploaded_files[key] = (file_url, file_path.split("/")[-1])
+
+            # Create new entry while preserving existing description if available
+            uploaded_files[key] = {
+                "url": file_url,
+                "path": key.rel_path,
+                "description": existing_data.get(key, {}).get(
+                    "description", "Description needed"
+                ),
+            }
 
         print("\nUploaded files:")
-        for file_path, (file_url, _) in uploaded_files.items():
-            print(f"{file_path}: {file_url}")
+        for key, file_info in uploaded_files.items():
+            print(f"{key}: {file_info['url']}")
 
-        # write uploaded file keys mapped to their URLs to JSON
-        figshare_urls = {
-            "files": uploaded_files,
-            "article": f"https://figshare.com/articles/dataset/{article_id}",
-            "mptrj": {
-                "article": "https://figshare.com/articles/dataset/23713842",
-                "download": "https://figshare.com/ndownloader/files/41619375",
-            },
-        }
-        with open(urls_json_path, mode="w") as file:
-            json.dump(figshare_urls, file)
+        # Manually copy MPtrj (special case since separate Figshare article from
+        # Matbench Discovery)
+        if mp_trj := existing_data.get("mp_trj"):
+            uploaded_files["mp_trj"] = mp_trj
+
+        # Preserve _links section from existing data or use default
+        if _links := existing_data.get("_links"):
+            uploaded_files["_links"] = _links
+
+        with open(yaml_path, mode="w") as file:
+            round_trip_yaml.dump(uploaded_files, file)
+
     except Exception as exc:  # prompt to delete article if something went wrong
         if file_path := str(locals().get("file_path", "")):
             exc.add_note(f"{file_path=}")
@@ -185,13 +198,6 @@ if __name__ == "__main__":
     with open(f"{ROOT}/pyproject.toml", "rb") as toml_file:
         pyproject = tomllib.load(toml_file)["project"]
 
-    figshare_urls_json_path = f"{PKG_DIR}/figshare/{pyproject['version']}.json"
-    if os.path.isfile(figshare_urls_json_path):
-        print(
-            f"{figshare_urls_json_path!r} already exists, exiting early. Increment the "
-            "version in pyproject.toml before publishing a new set of data files to "
-            "figshare. Else existing file will be overwritten.",
-            file=sys.stderr,
-        )
+    figshare_yaml_path = f"{PKG_DIR}/data-files.yml"
     # upload all data files to figshare with current pyproject.toml version
-    main(pyproject, figshare_urls_json_path)
+    main(pyproject, figshare_yaml_path)

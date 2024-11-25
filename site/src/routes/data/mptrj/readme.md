@@ -1,10 +1,10 @@
 <script>
-  import figshare_urls from '$pkg/figshare/1.0.0.json'
+  import { data_files } from '$lib'
 </script>
 
 # MPtrj Target Distributions
 
-The MPtrj training set for universal potentials <a href={figshare_urls.mptrj.article}>available on figshare</a>
+The MPtrj training set for universal potentials <a href={data_files.mp_trj.figshare}>available on figshare</a>
 contains
 
 - 1,580,395 structures

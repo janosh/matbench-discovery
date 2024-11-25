@@ -26,7 +26,7 @@ from pymatviz.enums import Key
 from ruamel.yaml import YAML
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR, ROOT, pkg_is_editable
+from matbench_discovery import DATA_DIR, PKG_DIR, ROOT, pkg_is_editable
 from matbench_discovery.enums import MbdKey, TestSubset
 
 # ruff: noqa: T201
@@ -312,7 +312,7 @@ class DataFiles(Files):
     @functools.cached_property
     def yaml(self) -> dict[str, dict[str, str]]:
         """YAML data associated with the file."""
-        yaml_path = f"{type(self).base_dir}/data-files.yml"
+        yaml_path = f"{PKG_DIR}/data-files.yml"
         with open(yaml_path) as file:
             return yaml.safe_load(file)
 
