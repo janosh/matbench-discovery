@@ -1,3 +1,4 @@
+import { default as data_files } from '$pkg/data-files.yml'
 import rehypeStringify from 'rehype-stringify'
 import remarkParse from 'remark-parse'
 import remarkRehype from 'remark-rehype'
@@ -18,6 +19,7 @@ export { default as PtableHeatmap } from './PtableHeatmap.svelte'
 export { default as PtableInset } from './PtableInset.svelte'
 export { default as References } from './References.svelte'
 export * from './types'
+export { data_files }
 
 export function model_is_compliant(metadata: ModelMetadata): boolean {
   if ((metadata.openness ?? `OSOD`) != `OSOD`) return false
@@ -46,6 +48,11 @@ export const MODEL_METADATA = Object.entries(model_metadata_files)
     }
   }) as ModelData[]
 
+const md_parser = unified().use(remarkParse).use(remarkRehype).use(rehypeStringify)
+function md_to_html(md: string): Uint8Array | string {
+  return md_parser.processSync(md)?.value
+}
+
 // parse markdown notes to html with remark/rehype
 for (const { notes, metadata_file } of MODEL_METADATA) {
   if (!notes) continue
@@ -55,13 +62,15 @@ for (const { notes, metadata_file } of MODEL_METADATA) {
     // skip if note was already parsed to HTML or is not a string
     if (typeof note !== `string` || key in notes.html) continue
 
-    const out = unified()
-      .use(remarkParse)
-      .use(remarkRehype)
-      .use(rehypeStringify)
-      .processSync(note)
+    const html_note = md_to_html(note)
 
-    if (out?.value) notes.html[key] = out.value
+    if (html_note) notes.html[key] = html_note
     else console.error(`${metadata_file}: Failed to compile note '${key}'\n`)
   }
+}
+
+for (const key of Object.keys(data_files).filter((key) => !key.startsWith(`_`))) {
+  data_files[key].html = md_to_html(
+    data_files[key].description + `\n\n${data_files._links}`,
+  )
 }

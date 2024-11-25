@@ -3,6 +3,7 @@
 https://figshare.com/articles/dataset/22715158
 """
 
+import builtins
 import functools
 import io
 import os
@@ -25,7 +26,7 @@ from pymatviz.enums import Key
 from ruamel.yaml import YAML
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR, ROOT, pkg_is_editable
+from matbench_discovery import DATA_DIR, PKG_DIR, ROOT, pkg_is_editable
 from matbench_discovery.enums import MbdKey, TestSubset
 
 # ruff: noqa: T201
@@ -228,7 +229,7 @@ class MetaFiles(EnumMeta):
 
     @property
     def base_dir(cls) -> str:
-        """Base directory of the file URL."""
+        """Base directory of the file."""
         return cls._base_dir
 
 
@@ -286,73 +287,58 @@ class DataFiles(Files):
     """Enum of data files with associated file directories and URLs."""
 
     mp_computed_structure_entries = (
-        "mp/2023-02-07-mp-computed-structure-entries.json.gz",
-        "https://figshare.com/ndownloader/files/40344436",
+        "mp/2023-02-07-mp-computed-structure-entries.json.gz"
     )
-    mp_elemental_ref_entries = (
-        "mp/2023-02-07-mp-elemental-reference-entries.json.gz",
-        "https://figshare.com/ndownloader/files/40387775",
-    )
-    mp_energies = (
-        "mp/2023-01-10-mp-energies.csv.gz",
-        "https://figshare.com/ndownloader/files/49083124",
-    )
-    mp_patched_phase_diagram = (
-        "mp/2023-02-07-ppd-mp.pkl.gz",
-        "https://figshare.com/ndownloader/files/48241624",
-    )
-    mp_trj_extxyz = (
-        "mp/2024-09-03-mp-trj.extxyz.zip",
-        "https://figshare.com/ndownloader/files/49034296",
-    )
+    mp_elemental_ref_entries = "mp/2023-02-07-mp-elemental-reference-entries.json.gz"
+    mp_energies = "mp/2023-01-10-mp-energies.csv.gz"
+    mp_patched_phase_diagram = "mp/2023-02-07-ppd-mp.pkl.gz"
+    mp_trj_extxyz = "mp/2024-09-03-mp-trj.extxyz.zip"
     # snapshot of every task (calculation) in MP as of 2023-03-16 (14 GB)
-    all_mp_tasks = (
-        "mp/2023-03-16-all-mp-tasks.zip",
-        "https://figshare.com/ndownloader/files/43350447",
-    )
+    all_mp_tasks = "mp/2023-03-16-all-mp-tasks.zip"
 
     wbm_computed_structure_entries = (
-        "wbm/2022-10-19-wbm-computed-structure-entries.json.bz2",
-        "https://figshare.com/ndownloader/files/40344463",
+        "wbm/2022-10-19-wbm-computed-structure-entries.json.bz2"
     )
-    wbm_relaxed_atoms = (
-        "wbm/2024-08-04-wbm-relaxed-atoms.extxyz.zip",
-        "https://figshare.com/ndownloader/files/48169600",
-    )
-    wbm_initial_structures = (
-        "wbm/2022-10-19-wbm-init-structs.json.bz2",
-        "https://figshare.com/ndownloader/files/40344466",
-    )
-    wbm_initial_atoms = (
-        "wbm/2024-08-04-wbm-initial-atoms.extxyz.zip",
-        "https://figshare.com/ndownloader/files/48169597",
-    )
+    wbm_relaxed_atoms = "wbm/2024-08-04-wbm-relaxed-atoms.extxyz.zip"
+    wbm_initial_structures = "wbm/2022-10-19-wbm-init-structs.json.bz2"
+    wbm_initial_atoms = "wbm/2024-08-04-wbm-initial-atoms.extxyz.zip"
     wbm_cses_plus_init_structs = (
-        "wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2",
-        "https://figshare.com/ndownloader/files/40344469",
+        "wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
     )
-    wbm_summary = (
-        "wbm/2023-12-13-wbm-summary.csv.gz",
-        "https://figshare.com/ndownloader/files/44225498",
-    )
-    alignn_checkpoint = (
-        "2023-06-02-pbenner-best-alignn-model.pth.zip",
-        "https://figshare.com/ndownloader/files/41233560",
-    )
-    mp_trj = (
-        "mp/2022-09-16-mp-trj.json",
-        "https://figshare.com/ndownloader/files/41619375",
-    )
+    wbm_summary = "wbm/2023-12-13-wbm-summary.csv.gz"
+    alignn_checkpoint = "2023-06-02-pbenner-best-alignn-model.pth.zip"
+    mp_trj = "mp/2022-09-16-mp-trj.json"
+
+    @functools.cached_property
+    def yaml(self) -> dict[str, dict[str, str]]:
+        """YAML data associated with the file."""
+        yaml_path = f"{PKG_DIR}/data-files.yml"
+        with open(yaml_path) as file:
+            return yaml.safe_load(file)
+
+    @property
+    def url(self) -> str:
+        """URL associated with the file."""
+        return self.yaml[self.name]["url"]
+
+    @property
+    def description(self) -> str:
+        """Description associated with the file."""
+        return self.yaml[self.name]["description"]
 
     @property
     def path(self) -> str:
         """File path associated with the file URL if it exists, otherwise
         download the file first, then return the path.
         """
-        key, url, rel_path = self.name, self._url, self._rel_path  # type: ignore[attr-defined]
+        key, rel_path = self.name, self._rel_path  # type: ignore[attr-defined]
+
+        if rel_path not in self.yaml[key]["path"]:
+            raise ValueError(f"{rel_path=} does not match {self.yaml[key]['path']}")
+
         abs_path = f"{type(self).base_dir}/{rel_path}"
         if not os.path.isfile(abs_path):
-            is_ipython = hasattr(__builtins__, "__IPYTHON__")
+            is_ipython = hasattr(builtins, "__IPYTHON__")
             # default to 'y' if not in interactive session, and user can't answer
             answer = (
                 input(
@@ -364,8 +350,10 @@ class DataFiles(Files):
             )
             if answer.lower().strip() == "y":
                 if not is_ipython:
-                    print(f"Downloading {key!r} from {url} to {abs_path} for caching")
-                download_file(abs_path, url)
+                    print(
+                        f"Downloading {key!r} from {self.url} to {abs_path} for caching"
+                    )
+                download_file(abs_path, self.url)
         return abs_path
 
 

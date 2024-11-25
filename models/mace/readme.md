@@ -8,7 +8,7 @@ On 2023-10-29 Philipp Benner shared a much larger 16M parameter MACE he trained 
 
 As of 2024-02-06 we have used the 4.7M parameter checkpoint [`2023-12-03-mace-128-L1.model`](https://figshare.com/ndownloader/files/42374052) trained by Yuan Chiang on the [MPtrj dataset](https://figshare.com/articles/dataset/23713842) for the leaderboard. This model was trained for the `MACE-MP-0` collaboration ([see manuscript](https://arxiv.org/abs/2401.00096)).
 
-#### Training
+### Training
 
 The current "2023-12-03-mace-128-L1" model was trained using the MACE CLI with the training command recorded [here](https://github.com/ACEsuit/mace-mp/blob/main/mace_mp_0/2023-12-03-mace-128-L1.sh) in the `mace_mp_0` [repository](https://github.com/ACEsuit/mace-mp/tree/main).
 
