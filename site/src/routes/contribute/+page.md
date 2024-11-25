@@ -109,6 +109,59 @@ To train an interatomic potential, we recommend the [**MPtrj dataset**](https://
 To submit a new model to this benchmark and add it to our leaderboard, please create a pull request to the [`main` branch]({repo}) that includes at least these 3 required files:
 
 1. `<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz`: Your model's energy predictions for all ~250k WBM compounds as compressed JSON or CSV. The recommended way to create this file is with `pandas.DataFrame.to_{json|csv}('<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz')`. JSON is preferred over CSV if your model not only predicts energies (floats) but also objects like relaxed structures. See e.g. [M3GNet]({repo}/blob/-/models/m3gnet/test_m3gnet.py) and [CHGNet]({repo}/blob/-/models/chgnet/test_chgnet.py) test scripts.
+   For machine learning force field (MLFF) submissions, you additionally upload the relaxed structures and forces from your model's geometry optimization to Figshare or a similar platform and include the download link in your PR description and the YAML metadata file. This file should include:
+
+   - The final relaxed structures (as ASE `Atoms` or pymatgen `Structures`)
+   - Forces (eV/Å), stress (eV/Å³) and volume (Å³) at each relaxation step
+
+   Recording the model-relaxed structures enables additional analysis of root mean squared displacement (RMSD) and symmetry breaking with respect to DFT relaxed structures. Having the forces and stresses at each step also allows analyzing any pathological behavior for structures were relaxation failed or went haywire.
+
+   Example of how to record these quantities for a single structure with ASE:
+
+   ```python
+    from collections import defaultdict
+
+    import pandas as pd
+    from ase.atoms import Atoms
+    from ase.optimize import FIRE
+    from mace.calculators import mace_mp
+
+
+    trajectory = defaultdict(list)
+    batio3 = Atoms(
+        "BaTiO3",
+        scaled_positions=[
+            (0, 0, 0),
+            (0.5, 0.5, 0.5),
+            (0.5, 0, 0.5),
+            (0, 0.5, 0.5),
+            (0.5, 0.5, 0),
+        ],
+        cell=[4] * 3,
+    )
+    batio3.calc = mace_mp(model_name="medium", default_dtype="float64")
+
+
+    def callback() -> None:
+        """Record energy, forces, stress and volume at each step."""
+        trajectory["energy"] += [batio3.get_potential_energy()]
+        trajectory["forces"] += [batio3.get_forces()]
+        trajectory["stress"] += [batio3.get_stress()]
+        trajectory["volume"] += [batio3.get_volume()]
+        # Optionally save structure at each step
+        trajectory["atoms"] += [batio3.copy()]
+
+
+    opt = FIRE(batio3)
+    opt.attach(callback) # register callback
+    opt.run(fmax=0.01, steps=500)  # optimize geometry
+
+    # Save final structure and trajectory data
+    df_traj = pd.DataFrame(trajectory)
+    df_traj.index.name = "step"
+    df_traj.to_csv("trajectory.csv.gz")
+   ```
+
 1. `test_<model_name>.(py|ipynb)`: The Python script or Jupyter notebook that generated the energy predictions. Ideally, this file should have comments explaining at a high level what the code is doing and how the model works so others can understand and reproduce your results. If the model deployed on this benchmark was trained specifically for this purpose (i.e. if you wrote any training/fine-tuning code while preparing your PR), please also include it as `train_<model_name>.(py|ipynb)`.
 1. `<model_name.yml>`: A file to record all relevant metadata of your algorithm like model name and version, authors, package requirements, links to publications, notes, etc. Here's a template:
 
