@@ -1,8 +1,8 @@
-# How to contribute
+# How to submit new models to Matbench Discovery
 
 ## 🔨 &thinsp; Installation
 
-Clone the repo and make the `matbench_discovery` package importable in your Python environment:
+Clone the repo and install `matbench_discovery` into your Python environment:
 
 ```zsh
 git clone https://github.com/janosh/matbench-discovery --depth 1
@@ -144,7 +144,8 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 1. `<model_name.yml>`: A file to record all relevant metadata of your algorithm like model name and version, authors, package requirements, links to publications, notes, etc. Here's a template:
 
    ```yml
-   model_name: My fancy model # required (this must match the model's label which is the 3rg in the matbench_discovery.preds.Model enum)
+   model_name: My new model # required (this must match the model's label which is the 3rd arg in the matbench_discovery.preds.Model enum)
+   model_key: my-new-model # this should match the name of the YAML file and determines the URL /models/<model_key> on which details of the model are displayed on the website
    model_version: 1.0.0 # required
    matbench_discovery_version: 1.0 # required
    date_added: "2023-01-01" # required
@@ -166,24 +167,26 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    url: https://<model-docs-or-similar>.org
    doi: https://doi.org/10.5281/zenodo.0000000
    preprint: https://arxiv.org/abs/xxxx.xxxxx
-   pred_col: e_form_per_atom_mp2020_corrected_<model_name> # required
 
    requirements: # strongly recommended
      torch: 1.13.0
      torch-geometric: 2.0.9
      ...
 
-   training_set: # can be a single key or list of keys (see data/training-sets.yml)
-     # or a single or list of dicts with keys title, url, n_structures, n_materials
-     title: MPtrj
-     url: https://figshare.com/articles/dataset/23713842
-     n_structures: 1_580_395
-     n_materials: 145_923
+   training_set: [MPtrj] # list of keys from data/training-sets.yml
 
    notes: # notes can have any key, be multiline and support markdown.
      description: This is how my model works...
      steps: |
       Optional *free-form* [markdown](example.com) notes.
+
+   metrics:
+     discovery:
+        pred_file: /models/<model_dir>/<yyyy-mm-dd>-<model_name>-wbm-IS2RE.csv.gz # should contain the models energy predictions for the WBM test set
+        pred_col: e_form_per_atom_<model_name>
+     geo_opt: # only applicable if the model performed structure relaxation
+        pred_file: /models/<model_dir>/<yyyy-mm-dd>-<model_name>-wbm-IS2RE.json.gz # should contain the models relaxed structures as ASE Atoms or pymatgen Structures, and forces/stresses at each relaxation step
+        pred_col: e_form_per_atom_<model_name>
    ```
 
    Arbitrary other keys can be added as needed. The above keys will be schema-validated with `pre-commit` (if installed) with errors for missing keys.
@@ -236,7 +239,7 @@ And you're done! Once tests pass and the PR is merged, your model will be added 
 
 ### Step 4 (optional): Copy WandB runs into our project
 
-[Weights and Biases](https://wandb.ai) is a great tool for logging training and test runs of ML models. It's free, (partly) [open source](https://github.com/wandb/wandb) and offers a [special plan for academics](https://wandb.ai/site/research). It auto-collects metadata like
+[Weights and Biases](https://wandb.ai) is a tool for logging training and test runs of ML models. It's free, (partly) [open source](https://github.com/wandb/wandb) and offers a [special plan for academics](https://wandb.ai/site/research). It auto-collects metadata like
 
 - what hardware the model is running on
 - and for how long,
