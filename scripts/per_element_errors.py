@@ -27,6 +27,10 @@ from matbench_discovery.preds.discovery import (
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-15"
 
+test_set_std_col = "Test set standard deviation"
+elem_col = "Element"
+size_col = "group"
+
 
 # %%
 test_subset = globals().get("test_subset", TestSubset.uniq_protos)
@@ -42,7 +46,7 @@ for df in (df_each_err, df_preds):
     df[MbdKey.each_err_models] = df_each_err.abs().mean(axis=1)
 
 
-# %% project average model error onto periodic table
+# project average model error onto periodic table
 df_comp = pd.DataFrame(
     Composition(comp).as_dict() for comp in df_wbm[Key.formula]
 ).set_index(df_wbm.index)
@@ -56,6 +60,42 @@ df_elem_err = pd.read_json(counts_path, typ="series")
 train_count_col = "MP Occurrences"
 df_elem_err = df_elem_err.reset_index(name=train_count_col).set_index("index")
 df_elem_err.index.name = "symbol"
+
+# compute std dev of DFT hull dist for each element in test set
+df_elem_err[test_set_std_col] = (
+    df_comp.where(pd.isna, 1) * df_wbm[MbdKey.each_true].to_numpy()[:, None]
+).std()
+
+
+# %%
+normalized = True
+cs_range = (0, 0.5)  # same range for all plots
+# cs_range = (None, None)  # different range for each plot
+for model in (*df_metrics, MbdKey.each_err_models):
+    df_elem_err[model] = (df_comp * df_each_err[model].abs().to_numpy()[:, None]).mean()
+    # don't change series values in place, would change the df
+    per_elem_err = df_elem_err[model].copy(deep=True)
+    per_elem_err.name = f"{model} (eV/atom)"
+    if normalized:
+        per_elem_err /= df_elem_err[test_set_std_col]
+        per_elem_err.name = f"{model} (normalized by test set std)"
+    fig = pmv.ptable_heatmap_plotly(
+        per_elem_err, fmt=".2f", colorscale="Inferno", cscale_range=cs_range
+    )
+    fig.show()
+
+
+# %%
+expected_cols = {
+    *"ALIGNN, BOWSR, CGCNN, CGCNN+P, CHGNet, M3GNet, MEGNet, "
+    f"{train_count_col}, {MbdKey.each_err_models}, {test_set_std_col}, Voronoi RF, "
+    "Wrenformer".split(", ")
+}
+if missing_cols := expected_cols - {*df_elem_err}:
+    raise ValueError(f"{missing_cols=} not in {df_elem_err.columns=}")
+if any(df_elem_err.isna().sum() > 35):
+    raise ValueError("Too many NaNs in df_elem_err")
+df_elem_err.round(4).to_json(f"{SITE_FIGS}/per-element-each-errors.json")
 
 
 # %% plot number of structures containing each element in MP and WBM
@@ -101,13 +141,6 @@ fig.show()
 pmv.save_fig(fig, f"{SITE_FIGS}/bar-element-counts-mp+wbm-{normalized=}.svelte")
 
 
-# %% compute std dev of DFT hull dist for each element in test set
-test_set_std_col = "Test set standard deviation"
-df_elem_err[test_set_std_col] = (
-    df_comp.where(pd.isna, 1) * df_wbm[MbdKey.each_true].to_numpy()[:, None]
-).std()
-
-
 # %% plot per-element std dev of DFT hull dist
 fig = pmv.ptable_heatmap_plotly(
     df_elem_err[test_set_std_col], fmt=".2f", colorscale="Inferno"
@@ -115,41 +148,9 @@ fig = pmv.ptable_heatmap_plotly(
 fig.show()
 
 
-# %%
-normalized = True
-cs_range = (0, 0.5)  # same range for all plots
-# cs_range = (None, None)  # different range for each plot
-for model in (*df_metrics, MbdKey.each_err_models):
-    df_elem_err[model] = (df_comp * df_each_err[model].abs().to_numpy()[:, None]).mean()
-    # don't change series values in place, would change the df
-    per_elem_err = df_elem_err[model].copy(deep=True)
-    per_elem_err.name = f"{model} (eV/atom)"
-    if normalized:
-        per_elem_err /= df_elem_err[test_set_std_col]
-        per_elem_err.name = f"{model} (normalized by test set std)"
-    fig = pmv.ptable_heatmap_plotly(
-        per_elem_err, fmt=".2f", colorscale="Inferno", cscale_range=cs_range
-    )
-    fig.show()
-
-
-# %%
-expected_cols = {
-    *"ALIGNN, BOWSR, CGCNN, CGCNN+P, CHGNet, M3GNet, MEGNet, "
-    f"{train_count_col}, {MbdKey.each_err_models}, {test_set_std_col}, Voronoi RF, "
-    "Wrenformer".split(", ")
-}
-if missing_cols := expected_cols - {*df_elem_err}:
-    raise ValueError(f"{missing_cols=} not in {df_elem_err.columns=}")
-if any(df_elem_err.isna().sum() > 35):
-    raise ValueError("Too many NaNs in df_elem_err")
-df_elem_err.round(4).to_json(f"{SITE_FIGS}/per-element-each-errors.json")
-
-
 # %% scatter plot error by element against prevalence in training set
 # for checking correlation and R2 of elemental prevalence in MP training data vs.
 # model error
-elem_col = "Element"
 df_elem_err[elem_col] = [Element(el).long_name for el in df_elem_err.index]
 
 df_melt = df_elem_err.melt(
@@ -158,7 +159,7 @@ df_melt = df_elem_err.melt(
     var_name=(clr_col := "Model"),
     ignore_index=False,
 )
-size_col = "group"
+
 df_melt[size_col] = df_ptable[size_col].fillna(0)
 fig = df_melt.plot.scatter(
     x=train_count_col,

@@ -1,5 +1,5 @@
-model_name: GRACE2L-R6
-model_key: grace2l_r6
+model_name: GRACE-2L (r6)
+model_key: grace2l-r6
 model_version: MP_GRACE_2L_r6_11Nov2024
 matbench_discovery_version: 1.0.0
 date_added: "2024-11-21"
@@ -46,6 +46,7 @@ hyperparams:
   max_force: 0.03
   max_steps: 300
   ase_optimizer: FIRE
+  radial_cutoff: 6.0
 
 metrics:
   phonons:
