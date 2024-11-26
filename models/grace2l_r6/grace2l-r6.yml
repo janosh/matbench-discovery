@@ -6,17 +6,17 @@ date_added: "2024-11-21"
 date_published: "2024-11-21"
 authors:
   - name: Anton Bochkarev
-    affiliation: ICAMS, Ruhr University BOchum
+    affiliation: ICAMS, Ruhr University Bochum
     email: anton.bochkarev@rub.de
   - name: Yury Lysogorskiy
-    affiliation: ICAMS, Ruhr University BOchum
+    affiliation: ICAMS, Ruhr University Bochum
     email: yury.lysogorskiy@rub.de
-  - name: Ralf Drauzt
-    affiliation: ICAMS, Ruhr University BOchum
+  - name: Ralf Drautz
+    affiliation: ICAMS, Ruhr University Bochum
     email: ralf.drautz@rub.de
 trained_by:
   - name: Yury Lysogorskiy
-    affiliation: ICAMS, Ruhr University BOchum
+    affiliation: ICAMS, Ruhr University Bochum
     email: yury.lysogorskiy@rub.de
 
 repo: https://github.com/ICAMS/grace-tensorpotential

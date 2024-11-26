@@ -31,6 +31,20 @@ declare module '*model-schema.yml' {
   export const ModelMetadata: import('$lib/model-schema').ModelMetadata
 } // model metadata schema
 
+declare module '*data-files.yml' {
+  type DataFile = {
+    url: string
+    path: string
+    description: string
+    html?: string // auto-generated after ESM import in lib/index.ts
+    figshare?: string
+  }
+  type DataFiles = {
+    [K in string]: K extends `_links` ? string : DataFile
+  }
+  export const data_files: DataFiles
+}
+
 declare module '*element-counts.json' {
   const map: Record<string, number>
   export default map
