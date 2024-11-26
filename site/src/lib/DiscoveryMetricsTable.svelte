@@ -102,13 +102,13 @@
     return train_size_str
   }
 
-  const Targets = {
+  const targets_tooltips = {
     E: `Energy`,
-    EF_C: `Energy with conservative forces`,
+    EF_G: `Energy with gradient-based forces`,
     EF_D: `Energy with direct forces`,
-    EFS_C: `Energy with conservative forces and stress`,
+    EFS_G: `Energy with gradient-based forces and stress`,
     EFS_D: `Energy with direct forces and stress`,
-    EFS_CM: `Energy with conservative forces, stress, and Magmoms`,
+    EFS_GM: `Energy with gradient-based forces, stress, and magmoms`,
     EFS_DM: `Energy with direct forces, stress, and magmoms`,
   }
 
@@ -130,7 +130,7 @@
       const metrics = model.metrics?.discovery?.[discovery_set]
 
       const targets = model.targets.replace(/_(.)/g, `<sub>$1</sub>`)
-      const targets_str = `<span title="${Targets[model.targets]}">${targets}</span>`
+      const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
 
       // rename metric keys to pretty labels
       return {
