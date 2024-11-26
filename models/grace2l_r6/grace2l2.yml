@@ -21,7 +21,7 @@ trained_by:
     affiliation: ICAMS, Ruhr University BOchum
     email: yury.lysogorskiy@rub.de
     #orcid: https://orcid.org/0000-0001-6915-9851
- 
+
 repo: https://github.com/ICAMS/grace-tensorpotential
 doi: https://doi.org/10.48550/arXiv.2401.00096
 paper: https://arxiv.org/abs/2401.00096
@@ -45,7 +45,6 @@ model_params: 15_346_704
 n_estimators: 1
 
 training_set: [MPTrj]
-
 
 hyperparams:
   max_force: 0.03
