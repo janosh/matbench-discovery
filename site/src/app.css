@@ -54,7 +54,10 @@ main {
   margin: auto;
   margin-bottom: 3em;
   width: 100%;
+}
+main > * {
   max-width: var(--main-max-width);
+  margin: auto;
 }
 @media (max-width: 60em) {
   main {

@@ -44,23 +44,10 @@
 </script>
 
 <Readme>
-  <span slot="model-count">
-    {MODEL_METADATA.filter((md) => show_non_compliant || model_is_compliant(md)).length}
-  </span>
-
-  <div slot="best-report">
-    {#if best_model}
-      {@const { model_name, model_key, F1, R2, DAF, repo, paper } = best_model}
-      <a href="/models/{model_key}">{model_name}</a> (<a href={paper}>paper</a>,
-      <a href={repo}>code</a>) achieves the highest F1 score of {F1}, R<sup>2</sup> of {R2}
-      and a discovery acceleration factor (DAF) of {DAF}
-      (i.e. a ~{Number(DAF).toFixed(1)}x higher rate of stable structures compared to
-      dummy discovery in the already enriched test set containing 16% stable materials).
-    {/if}
-  </div>
-
-  <div slot="metrics-table" style="display: grid; gap: 1ex; place-items: center;">
-    <KappaNote />
+  <div
+    slot="metrics-table"
+    style="display: grid; gap: 1ex; place-items: center; margin: 5em auto 2em;"
+  >
     <div style="display: flex; gap: 1em; align-items: center; flex-wrap: wrap;">
       <Toggle bind:checked={show_non_compliant} style="gap: 3pt;">
         Show non-compliant models <Tooltip max_width="10em">
@@ -105,9 +92,26 @@
       {show_non_compliant}
       {show_energy_only}
       hide_cols={hidden_cols}
+      style="max-width: 90vw !important;"
     />
   </div>
+
+  <span slot="model-count">
+    {MODEL_METADATA.filter((md) => show_non_compliant || model_is_compliant(md)).length}
+  </span>
+
+  <div slot="best-report">
+    {#if best_model}
+      {@const { model_name, model_key, F1, R2, DAF, repo, paper } = best_model}
+      <a href="/models/{model_key}">{model_name}</a> (<a href={paper}>paper</a>,
+      <a href={repo}>code</a>) achieves the highest F1 score of {F1}, R<sup>2</sup> of {R2}
+      and a discovery acceleration factor (DAF) of {DAF}
+      (i.e. a ~{Number(DAF).toFixed(1)}x higher rate of stable structures compared to
+      dummy discovery in the already enriched test set containing 16% stable materials).
+    {/if}
+  </div>
 </Readme>
+<KappaNote />
 
 <style>
   details {
