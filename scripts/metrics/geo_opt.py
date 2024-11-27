@@ -4,6 +4,7 @@
 import os
 
 import numpy as np
+import pandas as pd
 import plotly.express as px
 import pymatviz as pmv
 from IPython.display import display
@@ -13,16 +14,21 @@ from pymatviz.enums import Key
 from pymatviz.utils import si_fmt
 
 import matbench_discovery.metrics.geo_opt as go_metrics
-from matbench_discovery import SITE_FIGS, today
+from matbench_discovery import ROOT, SITE_FIGS, today
 from matbench_discovery.data import Model, df_wbm
 from matbench_discovery.enums import MbdKey
-from matbench_discovery.preds.geo_opt import df_sym
 
 init_spg_col = "init_spg_num"
 dft_spg_col = "dft_spg_num"
 df_wbm[init_spg_col] = df_wbm[MbdKey.init_wyckoff].str.split("_").str[2].astype(int)
 df_wbm[dft_spg_col] = df_wbm[Key.wyckoff_spglib].str.split("_").str[2].astype(int)
 module_dir = os.path.dirname(__file__)
+
+
+# %%
+csv_path = f"{ROOT}/data/2024-11-26-all-models-symmetry-analysis.csv.gz"
+df_sym = pd.read_csv(csv_path, header=[0, 1], index_col=0)
+
 
 # limit the number of structures loaded per model to this number, 0 for no limit
 debug_mode: int = 0

@@ -93,7 +93,7 @@ export interface ModelMetadata {
           symmetry_decrease?: number
           symmetry_match?: number
           symmetry_increase?: number
-          n_structs?: number
+          n_structures?: number
         }
       | ('not applicable' | 'not available')
     discovery?: {

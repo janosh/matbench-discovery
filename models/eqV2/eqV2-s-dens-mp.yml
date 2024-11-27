@@ -89,8 +89,11 @@ metrics:
   phonons:
     κ_SRME: 1.665 # eqV2 S without denoising (no DeNS) achieves slightly worse κ_SRME=1.772
   geo_opt:
-    pred_file: models/eqV2/eqV2-31M-dens-mp-p5.json.gz
-    pred_col: eqV2-31M-dens-MP-p5_structure
+    rmsd: 0.0138 # Å
+    symmetry_decrease: 0.8611 # fraction
+    symmetry_match: 0.1382 # fraction
+    symmetry_increase: 0.0005 # fraction
+    n_structures: 256614.0 # count
   discovery:
     pred_file: models/eqV2/eqV2-s-dens-mp.csv.gz
     pred_col: e_form_per_atom_eqV2-31M-dens-MP-p5

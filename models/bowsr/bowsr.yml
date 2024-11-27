@@ -58,13 +58,11 @@ notes:
 metrics:
   phonons: not applicable # model doesn't predict forces
   geo_opt:
-    pred_file: models/bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.json.gz
-    pred_col: structure_bowsr_megnet
-    rmsd: 0.043
-    symmetry_decrease: 0.0037
-    symmetry_match: 0.5271
-    symmetry_increase: 0.4671
-    n_structs: 250779.0
+    rmsd: 0.043 # Å
+    symmetry_decrease: 0.0037 # fraction
+    symmetry_match: 0.5271 # fraction
+    symmetry_increase: 0.4671 # fraction
+    n_structures: 250779.0 # count
   discovery:
     pred_file: models/bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_bowsr_megnet

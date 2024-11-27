@@ -2,6 +2,7 @@
 
 import pandas as pd
 from pymatviz.enums import Key, Task
+from ruamel.yaml.comments import CommentedMap
 
 from matbench_discovery.data import Model, round_trip_yaml
 from matbench_discovery.enums import MbdKey
@@ -32,18 +33,26 @@ def write_geo_opt_metrics_to_yaml(
         if model.label not in df_sym_changes.index:
             print(f"No symmetry data for {model.label}")
             return
-
         sym_changes = df_sym_changes.round(4).loc[model.label].to_dict()
-
         # Combine metrics
-        geo_opt_metrics = {str(Key.rmsd): rmsd} | sym_changes
-
         with open(model.yaml_path) as file:  # Load existing metadata
             model_metadata = round_trip_yaml.load(file)
 
-        print(f"{model.yaml_path=}")
         all_metrics = model_metadata.setdefault("metrics", {})
-        all_metrics.setdefault(Task.geo_opt, {}).update(geo_opt_metrics)
+        geo_opt_metrics = CommentedMap() | all_metrics.setdefault(Task.geo_opt, {})
+        geo_opt_metrics |= {str(Key.rmsd): rmsd} | sym_changes
+        eol_comments = dict.fromkeys(sym_changes, "fraction") | {
+            Key.rmsd: "Å",
+            Key.n_structs: "count",
+        }
+        for key, value in geo_opt_metrics.items():
+            if not isinstance(value, float):
+                continue
+            geo_opt_metrics.yaml_add_eol_comment(
+                eol_comments.get(key, "unitless"), key, column=0
+            )
+
+        all_metrics[Task.geo_opt] = geo_opt_metrics
 
         with open(model.yaml_path, mode="w") as file:  # Write back to file
             round_trip_yaml.dump(model_metadata, file)

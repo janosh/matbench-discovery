@@ -54,6 +54,11 @@ metrics:
   geo_opt:
     pred_file: models/grace2l_r6/GRACE_2L_r6_11Nov2024_relaxed_structures.json.gz
     pred_col: grace2l_r6_structure
+    rmsd: 0.0186 # Å
+    symmetry_decrease: 0.0355 # fraction
+    symmetry_match: 0.7315 # fraction
+    symmetry_increase: 0.2285 # fraction
+    n_structures: 256862.0 # count
   discovery:
     pred_file: models/grace2l_r6/2024-11-21-MP_GRACE_2L_r6_11Nov2024-wbm-IS2RE-FIRE.csv.gz
     pred_col: e_form_per_atom_grace

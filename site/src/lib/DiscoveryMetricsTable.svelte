@@ -2,6 +2,7 @@
   import { HeatmapTable, MODEL_METADATA, TRAINING_SETS, model_is_compliant } from '$lib'
   import { discovery, phonons } from '$root/scripts/metrics-which-is-better.yml'
   import { pretty_num } from 'elementari'
+  import type { ModelData } from './types.ts'
 
   export let discovery_set: `full_test_set` | `most_stable_10k` | `unique_prototypes` =
     `unique_prototypes`
@@ -102,7 +103,7 @@
     return train_size_str
   }
 
-  const targets_tooltips = {
+  const targets_tooltips: Record<ModelData[`targets`], string> = {
     E: `Energy`,
     EF_G: `Energy with gradient-based forces`,
     EF_D: `Energy with direct forces`,

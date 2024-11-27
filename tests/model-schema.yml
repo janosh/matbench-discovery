@@ -166,7 +166,7 @@ properties:
                 type: number
               symmetry_increase:
                 type: number
-              n_structs:
+              n_structures:
                 type: number
           - type: string
             enum: [not applicable, not available]

@@ -52,7 +52,7 @@
         'σ<sub>match</sub>': geo_opt.symmetry_match,
         'σ<sub>dec</sub>': geo_opt.symmetry_decrease,
         'σ<sub>inc</sub>': geo_opt.symmetry_increase,
-        'N<sub>structs</sub>': pretty_num(geo_opt.n_structs),
+        'N<sub>structs</sub>': pretty_num(geo_opt.n_structures),
       }
     })
 </script>

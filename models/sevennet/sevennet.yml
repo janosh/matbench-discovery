@@ -78,13 +78,11 @@ metrics:
   phonons:
     κ_SRME: 0.767
   geo_opt:
-    pred_file: models/sevennet/2024-07-11-sevennet-0-relaxed-structures.json.gz
-    pred_col: sevennet_structure
-    rmsd: 0.0193
-    symmetry_decrease: 0.3557
-    symmetry_match: 0.4535
-    symmetry_increase: 0.1446
-    n_structs: 256963.0
+    rmsd: 0.0193 # Å
+    symmetry_decrease: 0.3557 # fraction
+    symmetry_match: 0.4535 # fraction
+    symmetry_increase: 0.1446 # fraction
+    n_structures: 256963.0 # count
   discovery:
     pred_file: models/sevennet/2024-07-11-sevennet-0-preds.csv.gz
     pred_col: e_form_per_atom_sevennet

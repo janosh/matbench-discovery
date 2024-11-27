@@ -55,13 +55,11 @@ metrics:
   phonons:
     κ_SRME: 1.412
   geo_opt:
-    pred_file: models/m3gnet/2023-06-01-m3gnet-manual-sampling-wbm-IS2RE.json.gz
-    pred_col: m3gnet_structure
-    rmsd: 0.0217
-    symmetry_decrease: 0.0652
-    symmetry_match: 0.7488
-    symmetry_increase: 0.1804
-    n_structs: 256963.0
+    rmsd: 0.0217 # Å
+    symmetry_decrease: 0.0652 # fraction
+    symmetry_match: 0.7488 # fraction
+    symmetry_increase: 0.1804 # fraction
+    n_structures: 256963.0 # count
   discovery:
     pred_file: models/m3gnet/2023-12-28-m3gnet-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_m3gnet
