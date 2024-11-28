@@ -39,18 +39,18 @@ def write_geo_opt_metrics_to_yaml(
             model_metadata = round_trip_yaml.load(file)
 
         all_metrics = model_metadata.setdefault("metrics", {})
-        geo_opt_metrics = CommentedMap() | all_metrics.setdefault(Task.geo_opt, {})
-        geo_opt_metrics |= {str(Key.rmsd): rmsd} | sym_changes
-        eol_comments = dict.fromkeys(sym_changes, "fraction") | {
+        new_metrics = {str(Key.rmsd): rmsd, **sym_changes}
+        geo_opt_metrics = CommentedMap(
+            all_metrics.setdefault(Task.geo_opt, {}) | new_metrics
+        )
+        metric_units = dict.fromkeys(sym_changes, "fraction") | {
             Key.rmsd: "Å",
             Key.n_structs: "count",
         }
-        for key, value in geo_opt_metrics.items():
-            if not isinstance(value, float):
-                continue
-            geo_opt_metrics.yaml_add_eol_comment(
-                eol_comments.get(key, "unitless"), key, column=0
-            )
+        # Add units as YAML end-of-line comments
+        for key in new_metrics:
+            if unit := metric_units.get(key):
+                geo_opt_metrics.yaml_add_eol_comment(unit, key)
 
         all_metrics[Task.geo_opt] = geo_opt_metrics
 

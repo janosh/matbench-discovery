@@ -87,59 +87,59 @@ metrics:
     pred_file: models/sevennet/2024-07-11-sevennet-0-preds.csv.gz
     pred_col: e_form_per_atom_sevennet
     full_test_set:
-      F1: 0.719
-      DAF: 3.804
-      Precision: 0.653
-      Recall: 0.8
-      Accuracy: 0.893
-      TPR: 0.8
-      FPR: 0.088
-      TNR: 0.912
-      FNR: 0.2
-      TP: 35259.0
-      FP: 18765.0
-      TN: 194106.0
-      FN: 8833.0
-      MAE: 0.046
-      RMSE: 0.09
-      R2: 0.75
-      missing_preds: 3
-      missing_percent: 0.00%
+      F1: 0.719 # fraction
+      DAF: 3.804 # dimensionless
+      Precision: 0.653 # fraction
+      Recall: 0.8 # fraction
+      Accuracy: 0.893 # fraction
+      TPR: 0.8 # fraction
+      FPR: 0.088 # fraction
+      TNR: 0.912 # fraction
+      FNR: 0.2 # fraction
+      TP: 35259.0 # count
+      FP: 18765.0 # count
+      TN: 194106.0 # count
+      FN: 8833.0 # count
+      MAE: 0.046 # eV/atom
+      RMSE: 0.09 # eV/atom
+      R2: 0.75 # dimensionless
+      missing_preds: 3 # count
+      missing_percent: 0.00% # fraction
     most_stable_10k:
-      F1: 0.945
-      DAF: 5.857
-      Precision: 0.895
-      Recall: 1.0
-      Accuracy: 0.895
-      TPR: 1.0
-      FPR: 1.0
-      TNR: 0.0
-      FNR: 0.0
-      TP: 8954.0
-      FP: 1046.0
-      TN: 0.0
-      FN: 0.0
-      MAE: 0.054
-      RMSE: 0.124
-      R2: 0.7
-      missing_preds: 0
-      missing_percent: 0.00%
+      F1: 0.945 # fraction
+      DAF: 5.857 # dimensionless
+      Precision: 0.895 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.895 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 8954.0 # count
+      FP: 1046.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.054 # eV/atom
+      RMSE: 0.124 # eV/atom
+      R2: 0.7 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
     unique_prototypes:
-      F1: 0.724
-      DAF: 4.252
-      Precision: 0.65
-      Recall: 0.818
-      Accuracy: 0.904
-      TPR: 0.818
-      FPR: 0.081
-      TNR: 0.919
-      FNR: 0.182
-      TP: 27304.0
-      FP: 14703.0
-      TN: 167411.0
-      FN: 6070.0
-      MAE: 0.048
-      RMSE: 0.092
-      R2: 0.75
-      missing_preds: 0
-      missing_percent: 0.00%
+      F1: 0.724 # fraction
+      DAF: 4.252 # dimensionless
+      Precision: 0.65 # fraction
+      Recall: 0.818 # fraction
+      Accuracy: 0.904 # fraction
+      TPR: 0.818 # fraction
+      FPR: 0.081 # fraction
+      TNR: 0.919 # fraction
+      FNR: 0.182 # fraction
+      TP: 27304.0 # count
+      FP: 14703.0 # count
+      TN: 167411.0 # count
+      FN: 6070.0 # count
+      MAE: 0.048 # eV/atom
+      RMSE: 0.092 # eV/atom
+      R2: 0.75 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction

@@ -1,7 +1,16 @@
+"""This script can still be used to create the materials discovery metrics tables
+locally but is no longer relevant for the online leaderboard which directly reads
+metrics from the model YAML files and constructs the table on the fly.
+
+It is still useful for creating the PDF and SVG versions of the table for download from
+the site.
+"""
+
 # %%
 import itertools
 import os
 import subprocess
+import sys
 from collections.abc import Sequence
 from datetime import date
 from glob import glob
@@ -9,15 +18,16 @@ from glob import glob
 import numpy as np
 import pandas as pd
 import yaml
+from pymatviz import IS_IPYTHON
 from pymatviz.enums import Key, eV_per_atom
 from pymatviz.io import df_to_pdf
 from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
 
+import matbench_discovery.metrics.discovery as disc_metrics
 from matbench_discovery import DATA_DIR, PDF_FIGS, ROOT, SCRIPTS
-from matbench_discovery.data import DataFiles, df_wbm
+from matbench_discovery.data import DataFiles, Model, df_wbm
 from matbench_discovery.enums import MbdKey, Open, Targets
-from matbench_discovery.metrics.discovery import stable_metrics
 from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 
 try:
@@ -27,6 +37,26 @@ except ImportError:
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
+
+
+# %%
+if __name__ == "__main__":
+    import matbench_discovery.preds.discovery as preds
+
+    models_to_write = [
+        Model[model] for model in sys.argv[1:] if hasattr(Model, model)
+    ] or Model
+    metric_dfs = (
+        preds.df_metrics,
+        preds.df_metrics_10k,
+        preds.df_metrics_uniq_protos,
+        preds.df_preds,
+    )
+    for model in models_to_write:
+        disc_metrics.write_discovery_metrics_to_yaml(model, *metric_dfs)
+
+    if not IS_IPYTHON:
+        raise SystemExit(0)
 
 
 # %% Create discovery metrics dataframes from MODEL_METADATA
@@ -257,7 +287,7 @@ for df_in, df_out, col in (
     dummy_clf_preds = dummy_clf.predict(np.zeros(len(df_in)))
 
     each_true = df_in[MbdKey.each_true]
-    dummy_metrics = stable_metrics(
+    dummy_metrics = disc_metrics.stable_metrics(
         each_true, np.array([1, -1])[dummy_clf_preds.astype(int)], fillna=True
     )
 

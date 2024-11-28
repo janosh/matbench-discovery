@@ -7,6 +7,7 @@ from collections.abc import Sequence
 import numpy as np
 import pandas as pd
 from pymatviz.enums import Key
+from ruamel.yaml.comments import CommentedMap
 from sklearn.metrics import r2_score
 
 from matbench_discovery import STABILITY_THRESHOLD
@@ -159,7 +160,7 @@ def write_discovery_metrics_to_yaml(
     df_preds: pd.DataFrame,
 ) -> None:
     """Write materials discovery metrics to model YAML metadata files."""
-    full_metrics = df_metrics[model.label].to_dict()
+    metrics_full_test_set = df_metrics[model.label].to_dict()
     metrics_10k_most_stable = df_metrics_10k[model.label].to_dict()
     metrics_unique_protos = df_metrics_uniq_protos[model.label].to_dict()
 
@@ -174,7 +175,7 @@ def write_discovery_metrics_to_yaml(
 
     # calculate number of missing predictions for each test subset
     for metrics, df_tmp in (
-        (full_metrics, df_preds),
+        (metrics_full_test_set, df_preds),
         (metrics_10k_most_stable, df_preds.loc[most_stable_10k_idx]),
         (metrics_unique_protos, df_preds.query(Key.uniq_proto)),
     ):
@@ -183,19 +184,52 @@ def write_discovery_metrics_to_yaml(
             f"{metrics[str(MbdKey.missing_preds)] / len(df_tmp):.2%}"
         )
 
-    discovery_metrics = {
-        str(TestSubset.full_test_set): full_metrics,
-        str(TestSubset.most_stable_10k): metrics_10k_most_stable,
-        str(TestSubset.uniq_protos): metrics_unique_protos,
+    new_metrics = {
+        str(key): CommentedMap(metrics)
+        for key, metrics in (
+            (TestSubset.full_test_set, metrics_full_test_set),
+            (TestSubset.most_stable_10k, metrics_10k_most_stable),
+            (TestSubset.uniq_protos, metrics_unique_protos),
+        )
     }
 
     # Add or update discovery metrics
     with open(model.yaml_path) as file:
         model_metadata = round_trip_yaml.load(file)
 
-    model_metadata.setdefault("metrics", {}).setdefault("discovery", {}).update(
-        discovery_metrics
-    )
+    all_metrics = model_metadata.setdefault("metrics", {})
+    discovery_metrics = all_metrics.setdefault("discovery", {})
+    discovery_metrics |= new_metrics
+
+    metric_units = {
+        "MAE": "eV/atom",
+        "RMSE": "eV/atom",
+        "R2": "dimensionless",
+        "DAF": "dimensionless",
+        "Precision": "fraction",
+        "Recall": "fraction",
+        "Accuracy": "fraction",
+        "F1": "fraction",
+        "TPR": "fraction",
+        "FPR": "fraction",
+        "TNR": "fraction",
+        "FNR": "fraction",
+        str(MbdKey.missing_percent): "fraction",
+        str(MbdKey.missing_preds): "count",
+        "TP": "count",
+        "FP": "count",
+        "TN": "count",
+        "FN": "count",
+    }
+
+    # Add units as YAML end-of-line comments for each test subset
+    for key in new_metrics:
+        subset_dict: CommentedMap = discovery_metrics[key]
+        for key in subset_dict:
+            if unit := metric_units.get(key):
+                subset_dict.yaml_add_eol_comment(unit, key)
+
+    all_metrics["discovery"] = discovery_metrics
 
     # Write back to file
     with open(model.yaml_path, mode="w") as file:

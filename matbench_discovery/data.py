@@ -548,7 +548,10 @@ def load_df_wbm_with_preds(
         prog_bar = tqdm(models, disable=not pbar, desc="Loading preds")
         for model_name in prog_bar:
             prog_bar.set_postfix_str(model_name)
+
+            # use getattr(name) in case model_name is already a Model enum
             model = Model[getattr(model_name, "name", model_name)]
+
             df_preds = glob_to_df(model.discovery_path, pbar=False, **kwargs)
 
             with open(model.yaml_path) as file:
