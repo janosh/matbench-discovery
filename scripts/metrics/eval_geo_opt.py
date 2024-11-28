@@ -26,7 +26,7 @@ module_dir = os.path.dirname(__file__)
 
 
 # %%
-csv_path = f"{ROOT}/data/2024-11-26-all-models-symmetry-analysis.csv.gz"
+csv_path = f"{ROOT}/data/2024-11-26-all-models-geo-opt-analysis.csv.gz"
 df_sym = pd.read_csv(csv_path, header=[0, 1], index_col=0)
 
 
