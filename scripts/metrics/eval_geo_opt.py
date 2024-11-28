@@ -1,4 +1,5 @@
-"""Analyze symmetry retention across models."""
+"""Evaluate ML vs DFT-relaxed structure similarity and symmetry retention for different
+MLFFs."""
 
 # %%
 import os
@@ -26,10 +27,10 @@ module_dir = os.path.dirname(__file__)
 
 
 # %%
-csv_path = f"{ROOT}/data/2024-11-26-all-models-geo-opt-analysis.csv.gz"
-df_sym = pd.read_csv(csv_path, header=[0, 1], index_col=0)
+csv_path = f"{ROOT}/data/2024-11-28-all-models-geo-opt-analysis.csv.gz"
+df_go = pd.read_csv(csv_path, header=[0, 1], index_col=0)
 
-df_sym_changes = go_metrics.analyze_symmetry_changes(df_sym).convert_dtypes()
+df_go_metrics = go_metrics.calc_geo_opt_metrics(df_go).convert_dtypes()
 
 
 # limit the number of structures loaded per model to this number, 0 for no limit
@@ -42,12 +43,12 @@ print(
     f"{retained:,} / {len(df_wbm):,} ({retained/len(df_wbm):.2%})"
 )
 
-models = df_sym.columns.levels[0]
+models = df_go.columns.levels[0]
 print(f"\n{len(models)=}: {', '.join(models)}")
 
 
 # %% Plot violin plot of RMSD vs DFT
-df_rmsd = df_sym.xs(MbdKey.structure_rmsd_vs_dft, level=MbdKey.sym_prop, axis="columns")
+df_rmsd = df_go.xs(MbdKey.structure_rmsd_vs_dft, level=MbdKey.sym_prop, axis="columns")
 
 fig_rmsd = px.violin(
     df_rmsd.round(3).dropna(),
@@ -61,7 +62,7 @@ fig_rmsd.layout.yaxis.title = "RMSD (Å)"
 fig_rmsd.update_traces(orientation="h", side="positive", width=1.8)
 
 # add annotation for mean for each model
-for model, srs_rmsd in df_sym.xs(
+for model, srs_rmsd in df_go.xs(
     MbdKey.structure_rmsd_vs_dft, level=MbdKey.sym_prop, axis="columns"
 ).items():
     mean_rmsd = srs_rmsd.mean()
@@ -92,7 +93,7 @@ fig_rmsd.show()
 
 # %% calculate number of model spacegroups agreeing with DFT-relaxed spacegroup
 avg_spg_diff = (
-    df_sym.xs(MbdKey.spg_num_diff, level=MbdKey.sym_prop, axis="columns")
+    df_go.xs(MbdKey.spg_num_diff, level=MbdKey.sym_prop, axis="columns")
     .mean(axis=0)
     .round(1)
 )
@@ -101,7 +102,7 @@ print(f"Average spacegroup number difference vs DFT for each model: {avg_spg_dif
 
 # %% violin plot of spacegroup number diff vs DFT
 fig_sym = px.violin(
-    df_sym.xs(MbdKey.spg_num_diff, level=MbdKey.sym_prop, axis="columns"),
+    df_go.xs(MbdKey.spg_num_diff, level=MbdKey.sym_prop, axis="columns"),
     title="Spacegroup Number Diff vs DFT",
     orientation="h",
     color="model",
@@ -118,7 +119,7 @@ pmv.save_fig(fig_sym, f"{module_dir}/{today}-sym-violin.pdf")
 
 # %% violin plot of number of symmetry operations in ML-relaxed structures
 fig_sym_ops = px.violin(
-    df_sym.xs(Key.n_sym_ops, level=MbdKey.sym_prop, axis="columns"),
+    df_go.xs(Key.n_sym_ops, level=MbdKey.sym_prop, axis="columns"),
     title="Number of Symmetry Operations in ML-relaxed Structures",
     orientation="h",
     color="model",
@@ -134,7 +135,7 @@ pmv.save_fig(fig_sym_ops, f"{module_dir}/{today}-sym-ops-violin.pdf")
 
 # %% violin plot of number of symmetry operations in ML-relaxed structures vs DFT
 fig_sym_ops_diff = px.violin(
-    df_sym.drop(Key.dft.label, level=Key.model, axis="columns")
+    df_go.drop(Key.dft.label, level=Key.model, axis="columns")
     .xs(MbdKey.n_sym_ops_diff, level=MbdKey.sym_prop, axis="columns")
     .reset_index(),
     orientation="h",
@@ -153,7 +154,7 @@ pmv.save_fig(fig_sym_ops_diff, f"{module_dir}/{today}-sym-ops-diff-violin.svelte
 
 
 # %% bar plot of number of symmetry operations in ML-relaxed structures vs DFT
-df_sym_ops_diff = df_sym.drop(Key.dft.label, level=Key.model, axis="columns").xs(
+df_sym_ops_diff = df_go.drop(Key.dft.label, level=Key.model, axis="columns").xs(
     MbdKey.n_sym_ops_diff, level=MbdKey.sym_prop, axis="columns"
 )
 
@@ -210,7 +211,7 @@ fig_sym_ops_diff.show()
 
 # %% Print summary of symmetry changes
 display(
-    df_sym_changes.round(3)
+    df_go_metrics.round(3)
     .rename(columns=lambda col: col.removeprefix("symmetry_"))
     .style.format(lambda x: f"{x:.1%}" if isinstance(x, float) else si_fmt(x))
     .background_gradient(cmap="Oranges", subset="decrease")
@@ -224,11 +225,11 @@ display(
 fig_rmsd_cdf = go.Figure()
 x_max = 0.05
 
-models = df_sym_changes.index
+models = df_go_metrics.index
 
 # Calculate and plot CDF for each model
 for model in models:
-    rmsd_vals = df_sym.xs(
+    rmsd_vals = df_go.xs(
         MbdKey.structure_rmsd_vs_dft, level=MbdKey.sym_prop, axis="columns"
     )[model].dropna()
 
@@ -278,10 +279,10 @@ fig_rmsd_cdf.show()
 
 # %%
 if __name__ == "__main__":
-    go_metrics.write_geo_opt_metrics_to_yaml(df_sym, df_sym_changes)
+    go_metrics.write_geo_opt_metrics_to_yaml(df_go_metrics)
 
     # %% plot ML vs DFT relaxed spacegroup correspondence as sankey diagrams
-    df_spg = df_sym.xs(Key.spg_num, level=MbdKey.sym_prop, axis="columns")
+    df_spg = df_go.xs(Key.spg_num, level=MbdKey.sym_prop, axis="columns")
     for model_label in {*df_spg} - {Key.dft.label}:
         # get most common pairs of DFT/Model spacegroups
         model = Model.from_label(model_label)
