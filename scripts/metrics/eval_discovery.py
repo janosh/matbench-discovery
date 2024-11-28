@@ -25,7 +25,7 @@ from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
 
 import matbench_discovery.metrics.discovery as disc_metrics
-from matbench_discovery import DATA_DIR, PDF_FIGS, ROOT, SCRIPTS
+from matbench_discovery import DATA_DIR, PDF_FIGS, PKG_DIR, ROOT
 from matbench_discovery.data import DataFiles, Model, df_wbm
 from matbench_discovery.enums import MbdKey, Open, Targets
 from matbench_discovery.models import MODEL_METADATA, model_is_compliant
@@ -302,7 +302,7 @@ for df_in, df_out, col in (
 
 
 # %%
-with open(f"{SCRIPTS}/metrics-which-is-better.yml") as file:
+with open(f"{PKG_DIR}/metrics-which-is-better.yml") as file:
     discovery_better = yaml.safe_load(file)["discovery"]
 
 R2_col = "R<sup>2</sup>"

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { HeatmapTable, MODEL_METADATA, model_is_compliant } from '$lib'
-  import { geo_opt } from '$root/scripts/metrics-which-is-better.yml'
+  import { geo_opt } from '$pkg/metrics-which-is-better.yml'
   import { pretty_num } from 'elementari'
 
   export let show_non_compliant: boolean = false

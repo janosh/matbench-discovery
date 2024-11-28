@@ -1,6 +1,6 @@
 <script lang="ts">
   import { HeatmapTable, MODEL_METADATA, TRAINING_SETS, model_is_compliant } from '$lib'
-  import { discovery, phonons } from '$root/scripts/metrics-which-is-better.yml'
+  import { discovery, phonons } from '$pkg/metrics-which-is-better.yml'
   import { pretty_num } from 'elementari'
   import type { ModelData } from './types.ts'
 
