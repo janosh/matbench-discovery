@@ -434,12 +434,22 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         """Metadata associated with the model."""
         yaml_path = f"{type(self).base_dir}/{self.rel_path}"
         with open(yaml_path) as file:
-            return yaml.safe_load(file)
+            data = yaml.safe_load(file)
+
+        if not isinstance(data, dict):
+            raise TypeError(f"{yaml_path!r} does not contain valid YAML metadata")
+
+        return data
 
     @property
     def label(self) -> str:
         """Pretty label associated with the model."""
         return self.metadata["model_name"]
+
+    @property
+    def key(self) -> str:
+        """Key associated with the file URL."""
+        return self.metadata["model_key"]
 
     @property
     def metrics(self) -> dict[str, Any]:

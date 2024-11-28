@@ -18,7 +18,7 @@
 </script>
 
 <figure {...$$restProps}>
-  <DiscoveryMetricsTable {show_non_compliant} {...$$restProps} />
+  <DiscoveryMetricsTable {show_non_compliant} {...$$restProps} style="width: 100%;" />
   <div class="downloads">
     Download table as
     {#each [`PDF`, `SVG`] as file_ext}
@@ -50,15 +50,11 @@
     margin: 0;
     display: grid;
     gap: 1ex;
-    overflow: scroll;
   }
   figcaption {
     font-size: 0.9em;
     padding: 2pt 6pt;
     background-color: rgba(255, 255, 255, 0.06);
-    max-inline-size: var(--max-content-width);
-    margin-inline: auto;
-    box-sizing: border-box;
   }
   div.downloads {
     display: flex;

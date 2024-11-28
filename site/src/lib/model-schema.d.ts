@@ -87,9 +87,10 @@ export interface ModelMetadata {
       | ('not applicable' | 'not available')
     geo_opt?:
       | {
-          pred_file?: string | null
-          pred_col?: string | null
+          pred_file: string | null
+          pred_col: string | null
           rmsd?: number
+          n_sym_ops_mae?: number
           symmetry_decrease?: number
           symmetry_match?: number
           symmetry_increase?: number

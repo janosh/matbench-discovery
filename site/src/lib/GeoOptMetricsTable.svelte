@@ -25,8 +25,12 @@
       tooltip: `Fraction of structures where the number of symmetry operations increased after ML relaxation`,
     },
     {
+      label: `N<sub>ops,MAE</sub>`,
+      tooltip: `Mean absolute error of number of symmetry operations in DFT and ML-relaxed structures`,
+    },
+    {
       label: `N<sub>structs</sub>`,
-      tooltip: `Number of structures relaxed by each model and used for these metrics`,
+      tooltip: `Number of structures relaxed by each model and used to compute these metrics`,
     },
     ...(show_metadata ? metadata_cols : []),
   ]
@@ -52,7 +56,11 @@
         'σ<sub>match</sub>': geo_opt.symmetry_match,
         'σ<sub>dec</sub>': geo_opt.symmetry_decrease,
         'σ<sub>inc</sub>': geo_opt.symmetry_increase,
-        'N<sub>structs</sub>': pretty_num(geo_opt.n_structures),
+        'N<sub>ops,MAE</sub>': geo_opt.n_sym_ops_mae,
+        'N<sub>structs</sub>': `<span title="${model.model_name} relaxed ${pretty_num(
+          geo_opt.n_structures,
+          `,`,
+        )} structures">${pretty_num(geo_opt.n_structures)}</span>`,
       }
     })
 </script>
@@ -67,6 +75,7 @@
     'σ<sub>match</sub>': `.1%`,
     'σ<sub>dec</sub>': `.1%`,
     'σ<sub>inc</sub>': `.1%`,
+    'N<sub>ops,MAE</sub>': `.3f`,
   }}
   {...$$restProps}
 />

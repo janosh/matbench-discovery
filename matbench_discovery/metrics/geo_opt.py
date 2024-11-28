@@ -1,5 +1,6 @@
 """Functions to calculate and save geometry optimization metrics."""
 
+import numpy as np
 import pandas as pd
 from pymatviz.enums import Key, Task
 from ruamel.yaml.comments import CommentedMap
@@ -27,7 +28,15 @@ def write_geo_opt_metrics_to_yaml(
             return
 
         # Calculate RMSD
-        rmsd = round(float(df_rmsd[model.label].mean(axis=0)), 4)
+        rmsd = df_rmsd[model.label].mean(axis=0)
+
+        # Add symmetric mean error calculation for number of symmetry operations
+        sym_ops_diff = df_sym.drop(Key.dft.label, level=Key.model, axis="columns")[
+            model.label
+        ][MbdKey.n_sym_ops_diff]
+
+        # Calculate symmetric mean error for each model
+        sym_ops_mae = np.mean(np.abs(sym_ops_diff))
 
         # Calculate symmetry change statistics
         if model.label not in df_sym_changes.index:
@@ -39,7 +48,11 @@ def write_geo_opt_metrics_to_yaml(
             model_metadata = round_trip_yaml.load(file)
 
         all_metrics = model_metadata.setdefault("metrics", {})
-        new_metrics = {str(Key.rmsd): rmsd, **sym_changes}
+        new_metrics = {
+            str(Key.rmsd): float(round(rmsd, 4)),
+            str(Key.n_sym_ops_mae): float(round(sym_ops_mae, 4)),
+            **sym_changes,
+        }
         geo_opt_metrics = CommentedMap(
             all_metrics.setdefault(Task.geo_opt, {}) | new_metrics
         )
@@ -50,7 +63,7 @@ def write_geo_opt_metrics_to_yaml(
         # Add units as YAML end-of-line comments
         for key in new_metrics:
             if unit := metric_units.get(key):
-                geo_opt_metrics.yaml_add_eol_comment(unit, key)
+                geo_opt_metrics.yaml_add_eol_comment(unit, key, column=1)
 
         all_metrics[Task.geo_opt] = geo_opt_metrics
 
