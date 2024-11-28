@@ -7,7 +7,7 @@ from pymatviz.enums import Key
 
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.metrics.geo_opt import (
-    analyze_symmetry_changes,
+    calc_geo_opt_metrics,
     write_geo_opt_metrics_to_yaml,
 )
 
@@ -15,8 +15,8 @@ model1, model2, model3 = "model1", "model2", "model3"
 
 
 @pytest.fixture
-def df_sym() -> pd.DataFrame:
-    """Create a multi-index DataFrame simulating symmetry data."""
+def df_geo_opt() -> pd.DataFrame:
+    """Create a multi-index DataFrame simulating geometry optimization data."""
 
     data = {
         (model1, MbdKey.structure_rmsd_vs_dft): [0.1, 0.2, 0.3],
@@ -32,9 +32,9 @@ def df_sym() -> pd.DataFrame:
     return pd.DataFrame(data)
 
 
-def test_analyze_symmetry_changes(df_sym: pd.DataFrame) -> None:
-    """Test analyze_symmetry_changes with multiple models."""
-    results = analyze_symmetry_changes(df_sym)
+def test_calc_geo_opt_metrics(df_geo_opt: pd.DataFrame) -> None:
+    """Test calc_geo_opt_metrics with multiple models."""
+    results = calc_geo_opt_metrics(df_geo_opt)
 
     # Check results for model1
     sym_change_cols = [Key.symmetry_decrease, Key.symmetry_match, Key.symmetry_increase]
@@ -66,16 +66,16 @@ def test_analyze_symmetry_changes(df_sym: pd.DataFrame) -> None:
         ([0, np.nan, 1], [0, np.nan, 2], 0.0, 0.5, 0.5),
     ],
 )
-def test_analyze_symmetry_changes_parametrized(
+def test_calc_geo_opt_metrics_parametrized(
     spg_diffs: list[float],
     n_sym_ops_diffs: list[float],
     expected_decrease: float,
     expected_match: float,
     expected_increase: float,
 ) -> None:
-    """Test analyze_symmetry_changes with various symmetry difference patterns."""
+    """Test calc_geo_opt_metrics with various symmetry difference patterns."""
     model = "test_model"
-    df_sym = pd.DataFrame(
+    df_geo_opt = pd.DataFrame(
         {
             (model, MbdKey.structure_rmsd_vs_dft): [0.1] * len(spg_diffs),
             (model, MbdKey.spg_num_diff): spg_diffs,
@@ -83,7 +83,7 @@ def test_analyze_symmetry_changes_parametrized(
         }
     )
 
-    results = analyze_symmetry_changes(df_sym)
+    results = calc_geo_opt_metrics(df_geo_opt)
 
     assert results.loc[model, Key.symmetry_decrease] == pytest.approx(expected_decrease)
     assert results.loc[model, Key.symmetry_match] == pytest.approx(expected_match)
@@ -114,55 +114,68 @@ sym_changes_cols = [
 
 
 @pytest.mark.parametrize(
-    "df_sym_data, df_sym_changes_data, expected_yaml",
+    "df_metrics_data, expected_yaml",
     [
         # Test case 1: Normal case with valid metrics
         (
-            {  # df_sym data
-                (model1, MbdKey.structure_rmsd_vs_dft): [0.1, 0.2, 0.3],
-                (model1, MbdKey.spg_num_diff): [0, 1, -1],
-                (model1, MbdKey.n_sym_ops_diff): [0, 2, -2],
+            {  # df_metrics data
+                model1: {
+                    MbdKey.structure_rmsd_vs_dft: 0.2,
+                    Key.n_sym_ops_mae: 2.0,
+                    Key.symmetry_decrease: 0.33,
+                    Key.symmetry_match: 0.33,
+                    Key.symmetry_increase: 0.34,
+                    Key.n_structs: 3,
+                }
             },
-            # df_sym_changes data
-            model1_sym_changes := dict(zip(sym_changes_cols, [0.33, 0.33, 0.34, 3])),
             # expected yaml content
-            {"metrics": {"geo_opt": model1_sym_changes | {Key.rmsd: 0.2}}},
+            {
+                "metrics": {
+                    "geo_opt": {
+                        Key.rmsd: 0.2,
+                        Key.n_sym_ops_mae: 2.0,
+                        Key.symmetry_decrease: 0.33,
+                        Key.symmetry_match: 0.33,
+                        Key.symmetry_increase: 0.34,
+                        Key.n_structs: 3,
+                    }
+                }
+            },
         ),
         # Test case 2: Edge case with NaN values
         (
             {
-                (model2, MbdKey.structure_rmsd_vs_dft): [np.nan, np.nan],
-                (model2, MbdKey.spg_num_diff): [np.nan, np.nan],
-                (model2, MbdKey.n_sym_ops_diff): [np.nan, np.nan],
+                model2: {
+                    MbdKey.structure_rmsd_vs_dft: float("nan"),
+                    Key.n_sym_ops_mae: float("nan"),
+                    Key.symmetry_decrease: 0.0,
+                    Key.symmetry_match: 0.0,
+                    Key.symmetry_increase: 0.0,
+                    Key.n_structs: 0,
+                }
             },
-            model2_sym_changes := dict(zip(sym_changes_cols, [0.0, 0.0, 0.0, 0])),
-            {"metrics": {"geo_opt": model2_sym_changes | {Key.rmsd: float("nan")}}},
-        ),
-        # Test case 3: Empty data
-        (
             {
-                (model3, MbdKey.structure_rmsd_vs_dft): [],
-                (model3, MbdKey.spg_num_diff): [],
-                (model3, MbdKey.n_sym_ops_diff): [],
+                "metrics": {
+                    "geo_opt": {
+                        Key.rmsd: float("nan"),
+                        Key.n_sym_ops_mae: float("nan"),
+                        Key.symmetry_decrease: 0.0,
+                        Key.symmetry_match: 0.0,
+                        Key.symmetry_increase: 0.0,
+                        Key.n_structs: 0,
+                    }
+                }
             },
-            model3_sym_changes := dict(zip(sym_changes_cols, [0.0, 0.0, 0.0, 0])),
-            {"metrics": {"geo_opt": model3_sym_changes | {Key.rmsd: float("nan")}}},
         ),
     ],
 )
 def test_write_geo_opt_metrics_to_yaml(
-    df_sym_data: dict[tuple[str, MbdKey], list[float]],
-    df_sym_changes_data: dict[str, list[float]],
+    df_metrics_data: dict[str, dict[str | MbdKey, float]],
     expected_yaml: dict[str, dict[str, dict[str, float | int]]],
 ) -> None:
     """Test saving geometry optimization metrics to YAML files with edge cases."""
-    # Create test DataFrames
-    df_sym = pd.DataFrame(df_sym_data)
-    # Set the column names for the MultiIndex
-    df_sym.columns.names = ["model", MbdKey.sym_prop]
-
-    model_name = df_sym.columns.levels[0][0]
-    df_sym_changes = pd.DataFrame([df_sym_changes_data], index=[model_name])
+    # Create test DataFrame
+    df_metrics = pd.DataFrame.from_dict(df_metrics_data, orient="index")
 
     # Mock the Model class and file operations
     with (
@@ -170,6 +183,7 @@ def test_write_geo_opt_metrics_to_yaml(
         patch("builtins.open", mock_open()) as mock_file,
     ):
         # Configure mock model
+        model_name = next(iter(df_metrics_data))
         mock_model.from_label.return_value.label = model_name
         mock_model.from_label.return_value.yaml_path = f"mock_path/{model_name}.yml"
 
@@ -179,7 +193,7 @@ def test_write_geo_opt_metrics_to_yaml(
             mock_yaml.load.return_value = {}
 
             # Call the function
-            write_geo_opt_metrics_to_yaml(df_sym, df_sym_changes)
+            write_geo_opt_metrics_to_yaml(df_metrics)
 
             # Verify YAML dump was called with expected content
             actual_yaml = mock_yaml.dump.call_args[0][0]
