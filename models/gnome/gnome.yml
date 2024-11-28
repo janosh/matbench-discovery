@@ -66,59 +66,59 @@ metrics:
     pred_file: models/gnome/2023-11-01-gnome-preds-50076332.csv.gz
     pred_col: e_gnome_after_relax
     full_test_set:
-      F1: 0.81
-      DAF: 4.81
-      Precision: 0.825
-      Recall: 0.796
-      Accuracy: 0.942
-      TPR: 0.796
-      FPR: 0.035
-      TNR: 0.965
-      FNR: 0.204
-      TP: 35082.0
-      FP: 7421.0
-      TN: 205450.0
-      FN: 9010.0
-      MAE: 0.034
-      RMSE: 0.083
-      R2: 0.786
-      missing_preds: 1744
-      missing_percent: 0.68%
+      F1: 0.81 # fraction
+      DAF: 4.81 # dimensionless
+      Precision: 0.825 # fraction
+      Recall: 0.796 # fraction
+      Accuracy: 0.942 # fraction
+      TPR: 0.796 # fraction
+      FPR: 0.035 # fraction
+      TNR: 0.965 # fraction
+      FNR: 0.204 # fraction
+      TP: 35082.0 # count
+      FP: 7421.0 # count
+      TN: 205450.0 # count
+      FN: 9010.0 # count
+      MAE: 0.034 # eV/atom
+      RMSE: 0.083 # eV/atom
+      R2: 0.786 # dimensionless
+      missing_preds: 1744 # count
+      missing_percent: 0.68% # fraction
     most_stable_10k:
-      F1: 0.967
-      DAF: 6.127
-      Precision: 0.937
-      Recall: 1.0
-      Accuracy: 0.937
-      TPR: 1.0
-      FPR: 1.0
-      TNR: 0.0
-      FNR: 0.0
-      TP: 9366.0
-      FP: 634.0
-      TN: 0.0
-      FN: 0.0
-      MAE: 0.035
-      RMSE: 0.089
-      R2: 0.836
-      missing_preds: 0
-      missing_percent: 0.00%
+      F1: 0.967 # fraction
+      DAF: 6.127 # dimensionless
+      Precision: 0.937 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.937 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9366.0 # count
+      FP: 634.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.035 # eV/atom
+      RMSE: 0.089 # eV/atom
+      R2: 0.836 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
     unique_prototypes:
-      F1: 0.829
-      DAF: 5.523
-      Precision: 0.844
-      Recall: 0.814
-      Accuracy: 0.955
-      TPR: 0.814
-      FPR: 0.028
-      TNR: 0.972
-      FNR: 0.186
-      TP: 27178.0
-      FP: 5009.0
-      TN: 177105.0
-      FN: 6196.0
-      MAE: 0.035
-      RMSE: 0.085
-      R2: 0.785
-      missing_preds: 1517
-      missing_percent: 0.70%
+      F1: 0.829 # fraction
+      DAF: 5.523 # dimensionless
+      Precision: 0.844 # fraction
+      Recall: 0.814 # fraction
+      Accuracy: 0.955 # fraction
+      TPR: 0.814 # fraction
+      FPR: 0.028 # fraction
+      TNR: 0.972 # fraction
+      FNR: 0.186 # fraction
+      TP: 27178.0 # count
+      FP: 5009.0 # count
+      TN: 177105.0 # count
+      FN: 6196.0 # count
+      MAE: 0.035 # eV/atom
+      RMSE: 0.085 # eV/atom
+      R2: 0.785 # dimensionless
+      missing_preds: 1517 # count
+      missing_percent: 0.70% # fraction

@@ -32,13 +32,15 @@
 
 <h1>Too Much Information</h1>
 
-Stuff that didn't make the cut into the main page describing the WBM test set.
+<p>Stuff that didn't make the cut into the main page describing the WBM test set.</p>
 
 <h2>WBM Element Counts for <code>{filter}</code></h2>
 
-Filter WBM element counts by composition<strong>arity</strong> (how many elements in the
-formula) or <strong>batch index</strong> (which iteration of elemental substitution the
-structure was generated in).
+<p>
+  Filter WBM element counts by composition<strong>arity</strong> (how many elements in the
+  formula) or <strong>batch index</strong> (which iteration of elemental substitution the structure
+  was generated in).
+</p>
 
 <ColorScaleSelect bind:selected={color_scale} />
 

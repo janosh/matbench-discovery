@@ -1,6 +1,6 @@
 <script lang="ts">
   import { HeatmapTable, MODEL_METADATA, model_is_compliant } from '$lib'
-  import { geo_opt } from '$root/scripts/metrics-which-is-better.yml'
+  import { geo_opt } from '$pkg/metrics-which-is-better.yml'
   import { pretty_num } from 'elementari'
 
   export let show_non_compliant: boolean = false
@@ -52,7 +52,7 @@
         'σ<sub>match</sub>': geo_opt.symmetry_match,
         'σ<sub>dec</sub>': geo_opt.symmetry_decrease,
         'σ<sub>inc</sub>': geo_opt.symmetry_increase,
-        'N<sub>structs</sub>': pretty_num(geo_opt.n_structs),
+        'N<sub>structs</sub>': pretty_num(geo_opt.n_structures),
       }
     })
 </script>

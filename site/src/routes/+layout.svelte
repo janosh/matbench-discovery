@@ -74,19 +74,23 @@
 
 <GitHubCorner href={repository} />
 
+<Nav
+  routes={[[`/home`, `/`], ...routes.filter((route) => route != `/changelog`)]}
+  style="padding: 0 var(--main-padding);"
+/>
+
 <main>
-  <Nav routes={[[`/home`, `/`], ...routes.filter((route) => route != `/changelog`)]} />
-
   <slot />
-
-  <PrevNext
-    items={[`/`, ...routes]}
-    current="/{url?.split(`/`)[1]}"
-    style="margin: 4em auto 1em; max-width: 60em;"
-  >
-    <a slot="next" let:item={href} {href} class="link">{href} &rarr;</a>
-    <a slot="prev" let:item={href} {href} class="link">&larr; {href}</a>
-  </PrevNext>
 </main>
+
+<!-- TODO fix box sizing making padding eat into max width on desktop -->
+<PrevNext
+  items={[`/`, ...routes]}
+  current="/{url?.split(`/`)[1]}"
+  style="padding: 0 var(--main-padding); width: 100%; max-width: var(--main-max-width); box-sizing: border-box;"
+>
+  <a slot="next" let:item={href} {href} class="link">{href} &rarr;</a>
+  <a slot="prev" let:item={href} {href} class="link">&larr; {href}</a>
+</PrevNext>
 
 <Footer />

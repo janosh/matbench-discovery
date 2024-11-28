@@ -29,7 +29,8 @@
   --sms-active-color: var(--blue);
 
   /* can be increased on pages without much text like /models */
-  --main-max-width: 50em;
+  --main-max-width: 50rem;
+  --main-padding: 3rex;
 }
 html {
   scroll-behavior: smooth;
@@ -40,6 +41,7 @@ body {
   color: var(--text-color);
   line-height: 1.5;
   margin: 0;
+  /* 2024-11-28 maybe remove, prevents unintended horizontal scrolling but maybe breaks mobile layout */
 }
 body > div {
   display: flex;
@@ -47,19 +49,14 @@ body > div {
   flex-direction: column;
 }
 main {
-  padding: 1ex;
+  padding: var(--main-padding);
   flex: 1;
   container-type: inline-size;
   box-sizing: border-box;
-  margin: auto;
   margin-bottom: 3em;
   width: 100%;
-  max-width: var(--main-max-width);
-}
-@media (max-width: 60em) {
-  main {
-    padding: 2em;
-  }
+  margin-inline: auto;
+  max-inline-size: var(--main-max-width);
 }
 button {
   color: var(--text-color);
@@ -110,14 +107,14 @@ ul {
   padding-left: 1em;
 }
 :is(ul, ol) > li > p {
-  margin: 1ex 0;
+  margin-block: 1ex;
 }
 label {
   cursor: pointer;
 }
 img {
   max-width: 100%;
-  margin: 1em auto;
+  margin-block: 1em;
 }
 
 table {

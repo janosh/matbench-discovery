@@ -497,7 +497,7 @@ px.defaults.labels |= {k: v.label for k, v in Model.member_map.items()}
 
 def load_df_wbm_with_preds(
     *,
-    models: Sequence[str] = (),
+    models: Sequence[str | Model] = (),
     pbar: bool = True,
     id_col: str = Key.mat_id,
     subset: pd.Index | Sequence[str] | Literal[TestSubset.uniq_protos] | None = None,
@@ -548,11 +548,12 @@ def load_df_wbm_with_preds(
         prog_bar = tqdm(models, disable=not pbar, desc="Loading preds")
         for model_name in prog_bar:
             prog_bar.set_postfix_str(model_name)
-            model = Model[model_name]
+
+            # use getattr(name) in case model_name is already a Model enum
+            model = Model[getattr(model_name, "name", model_name)]
+
             df_preds = glob_to_df(model.discovery_path, pbar=False, **kwargs)
 
-            # Get prediction column name from metadata
-            model = Model[model_name]
             with open(model.yaml_path) as file:
                 model_data = yaml.safe_load(file)
 

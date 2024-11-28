@@ -17,7 +17,7 @@
   })
 </script>
 
-<figure {...$$props}>
+<figure {...$$restProps}>
   <DiscoveryMetricsTable {show_non_compliant} {...$$restProps} />
   <div class="downloads">
     Download table as
@@ -55,13 +55,16 @@
   figcaption {
     font-size: 0.9em;
     padding: 2pt 6pt;
-    background-color: rgba(255, 255, 255, 0.07);
+    background-color: rgba(255, 255, 255, 0.06);
+    max-inline-size: var(--max-content-width);
+    margin-inline: auto;
+    box-sizing: border-box;
   }
   div.downloads {
     display: flex;
     gap: 1ex;
     justify-content: center;
-    margin: 1ex 0;
+    margin-block: 1ex;
   }
   div.downloads a {
     background-color: rgba(255, 255, 255, 0.1);
