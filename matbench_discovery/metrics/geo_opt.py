@@ -75,22 +75,42 @@ def write_geo_opt_metrics_to_yaml(df_metrics: pd.DataFrame) -> None:
             round_trip_yaml.dump(model_metadata, file)
 
 
-def analyze_symmetry_changes(df_sym: pd.DataFrame) -> pd.DataFrame:
-    """Analyze how often each model's predicted structure has different symmetry vs DFT.
+def calc_geo_opt_metrics(df_geo_opt: pd.DataFrame) -> pd.DataFrame:
+    """Calculate geometry optimization metrics for each model.
+
+    Args:
+        df_geo_opt (pd.DataFrame): DataFrame with geometry optimization metrics for all
+            models and DFT reference. Must have a 2-level column MultiIndex with levels
+            [model_name, property]. Required properties are:
+            - structure_rmsd_vs_dft: RMSD between predicted and DFT structures
+            - n_sym_ops_diff: Difference in number of symmetry operations vs DFT
+            - spg_num_diff: Difference in space group number vs DFT
 
     Returns:
-        pd.DataFrame: DataFrame with columns for fraction of structures where symmetry
-            decreased, matched, or increased vs DFT.
+        pd.DataFrame: DataFrame with geometry optimization metrics. Shape = (n_models,
+        n_metrics). Columns include:
+        - structure_rmsd_vs_dft: Mean RMSD between predicted and DFT structures
+        - n_sym_ops_mae: Mean absolute error in number of symmetry operations
+        - symmetry_decrease: Fraction of structures with decreased symmetry
+        - symmetry_match: Fraction of structures with matching symmetry
+        - symmetry_increase: Fraction of structures with increased symmetry
+        - n_structs: Number of structures evaluated
     """
     results: dict[str, dict[str, float]] = {}
 
-    for model in df_sym.columns.levels[0]:
-        if model == Key.dft.label:  # don't compare DFT to itself
-            continue
+    for model in set(df_geo_opt.columns.levels[0]) - {Key.dft.label}:
         try:
-            spg_diff = df_sym[model][MbdKey.spg_num_diff]
-            n_sym_ops_diff = df_sym[model][MbdKey.n_sym_ops_diff]
+            # Get relevant columns for this model
+            spg_diff = df_geo_opt[model][MbdKey.spg_num_diff]
+            n_sym_ops_diff = df_geo_opt[model][MbdKey.n_sym_ops_diff]
+            rmsd = df_geo_opt[model][MbdKey.structure_rmsd_vs_dft]
+
+            # Count total number of structures (excluding NaN values)
             total = len(spg_diff.dropna())
+
+            # Calculate RMSD and MAE metrics
+            mean_rmsd = rmsd.mean()
+            sym_ops_mae = n_sym_ops_diff.abs().mean()
 
             # Count cases where spacegroup changed
             changed_mask = spg_diff != 0
@@ -100,6 +120,8 @@ def analyze_symmetry_changes(df_sym: pd.DataFrame) -> pd.DataFrame:
             sym_matched = ~changed_mask
 
             results[model] = {
+                str(MbdKey.structure_rmsd_vs_dft): float(mean_rmsd),
+                str(Key.n_sym_ops_mae): float(sym_ops_mae),
                 str(Key.symmetry_decrease): float(sym_decreased.sum() / total),
                 str(Key.symmetry_match): float(sym_matched.sum() / total),
                 str(Key.symmetry_increase): float(sym_increased.sum() / total),
@@ -107,7 +129,7 @@ def analyze_symmetry_changes(df_sym: pd.DataFrame) -> pd.DataFrame:
             }
         except KeyError as exc:
             exc.add_note(
-                f"Missing data for {model}, available columns={list(df_sym[model])}"
+                f"Missing data for {model}, available columns={list(df_geo_opt[model])}"
             )
             raise
 
