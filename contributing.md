@@ -110,34 +110,33 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    from ase.atoms import Atoms
    from ase.optimize import FIRE
    from mace.calculators import mace_mp
+
    trajectory = defaultdict(list)
    batio3 = Atoms(
        "BaTiO3",
        scaled_positions=[
-           (0, 0, 0),
-           (0.5, 0.5, 0.5),
-           (0.5, 0, 0.5),
-           (0, 0.5, 0.5),
-           (0.5, 0.5, 0),
+           (0, 0, 0), (0.5, 0.5, 0.5), (0.5, 0, 0.5), (0, 0.5, 0.5), (0.5, 0.5, 0)
        ],
        cell=[4] * 3,
    )
    batio3.calc = mace_mp(model_name="medium", default_dtype="float64")
+
    def callback() -> None:
        """Record energy, forces, stress and volume at each step."""
        trajectory["energy"] += [batio3.get_potential_energy()]
        trajectory["forces"] += [batio3.get_forces()]
        trajectory["stress"] += [batio3.get_stress()]
        trajectory["volume"] += [batio3.get_volume()]
-       # Optionally save structure at each step
+       # Optionally save structure at each step (results in much larger files)
        trajectory["atoms"] += [batio3.copy()]
+
    opt = FIRE(batio3)
    opt.attach(callback) # register callback
    opt.run(fmax=0.01, steps=500)  # optimize geometry
-   # Save final structure and trajectory data
+
    df_traj = pd.DataFrame(trajectory)
    df_traj.index.name = "step"
-   df_traj.to_csv("trajectory.csv.gz")
+   df_traj.to_csv("trajectory.csv.gz")  # Save final structure and trajectory data
    ```
 
 1. `test_<model_name>.(py|ipynb)`: The Python script or Jupyter notebook that generated the energy predictions. Ideally, this file should have comments explaining at a high level what the code is doing and how the model works so others can understand and reproduce your results. If the model deployed on this benchmark was trained specifically for this purpose (i.e. if you wrote any training/fine-tuning code while preparing your PR), please also include it as `train_<model_name>.(py|ipynb)`.

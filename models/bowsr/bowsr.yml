@@ -60,68 +60,69 @@ metrics:
   geo_opt:
     pred_file: models/bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.json.gz
     pred_col: structure_bowsr_megnet
-    rmsd: 0.043
-    symmetry_decrease: 0.0037
-    symmetry_match: 0.5271
-    symmetry_increase: 0.4671
-    n_structs: 250779.0
+    rmsd: 0.043 # Å
+    symmetry_decrease: 0.0037 # fraction
+    symmetry_match: 0.5271 # fraction
+    symmetry_increase: 0.4671 # fraction
+    n_sym_ops_mae: 29.4778
+    n_structures: 250779.0 # count
   discovery:
     pred_file: models/bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_bowsr_megnet
     full_test_set:
-      F1: 0.437
-      DAF: 1.836
-      Precision: 0.315
-      Recall: 0.711
-      Accuracy: 0.702
-      TPR: 0.711
-      FPR: 0.32
-      TNR: 0.68
-      FNR: 0.289
-      TP: 31347.0
-      FP: 68139.0
-      TN: 144732.0
-      FN: 12745.0
-      MAE: 0.114
-      RMSE: 0.164
-      R2: 0.142
-      missing_preds: 6185
-      missing_percent: 2.41%
+      F1: 0.437 # fraction
+      DAF: 1.836 # dimensionless
+      Precision: 0.315 # fraction
+      Recall: 0.711 # fraction
+      Accuracy: 0.702 # fraction
+      TPR: 0.711 # fraction
+      FPR: 0.32 # fraction
+      TNR: 0.68 # fraction
+      FNR: 0.289 # fraction
+      TP: 31347.0 # count
+      FP: 68139.0 # count
+      TN: 144732.0 # count
+      FN: 12745.0 # count
+      MAE: 0.114 # eV/atom
+      RMSE: 0.164 # eV/atom
+      R2: 0.142 # dimensionless
+      missing_preds: 6185 # count
+      missing_percent: 2.41% # fraction
     most_stable_10k:
-      F1: 0.664
-      DAF: 3.252
-      Precision: 0.497
-      Recall: 1.0
-      Accuracy: 0.497
-      TPR: 1.0
-      FPR: 1.0
-      TNR: 0.0
-      FNR: 0.0
-      TP: 4971.0
-      FP: 5029.0
-      TN: 0.0
-      FN: 0.0
-      MAE: 0.259
-      RMSE: 0.32
-      R2: -1.172
-      missing_preds: 0
-      missing_percent: 0.00%
+      F1: 0.664 # fraction
+      DAF: 3.252 # dimensionless
+      Precision: 0.497 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.497 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 4971.0 # count
+      FP: 5029.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.259 # eV/atom
+      RMSE: 0.32 # eV/atom
+      R2: -1.172 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
     unique_prototypes:
-      F1: 0.423
-      DAF: 1.964
-      Precision: 0.3
-      Recall: 0.718
-      Accuracy: 0.712
-      TPR: 0.718
-      FPR: 0.307
-      TNR: 0.693
-      FNR: 0.282
-      TP: 23963.0
-      FP: 55843.0
-      TN: 126271.0
-      FN: 9411.0
-      MAE: 0.118
-      RMSE: 0.167
-      R2: 0.151
-      missing_preds: 4484
-      missing_percent: 2.08%
+      F1: 0.423 # fraction
+      DAF: 1.964 # dimensionless
+      Precision: 0.3 # fraction
+      Recall: 0.718 # fraction
+      Accuracy: 0.712 # fraction
+      TPR: 0.718 # fraction
+      FPR: 0.307 # fraction
+      TNR: 0.693 # fraction
+      FNR: 0.282 # fraction
+      TP: 23963.0 # count
+      FP: 55843.0 # count
+      TN: 126271.0 # count
+      FN: 9411.0 # count
+      MAE: 0.118 # eV/atom
+      RMSE: 0.167 # eV/atom
+      R2: 0.151 # dimensionless
+      missing_preds: 4484 # count
+      missing_percent: 2.08% # fraction

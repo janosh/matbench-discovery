@@ -91,63 +91,69 @@ metrics:
   geo_opt:
     pred_file: models/eqV2/eqV2-31M-dens-mp-p5.json.gz
     pred_col: eqV2-31M-dens-MP-p5_structure
+    rmsd: 0.0138 # Å
+    n_sym_ops_mae: 10.0558
+    symmetry_decrease: 0.8611 # fraction
+    symmetry_match: 0.1382 # fraction
+    symmetry_increase: 0.0005 # fraction
+    n_structures: 256614.0 # count
   discovery:
     pred_file: models/eqV2/eqV2-s-dens-mp.csv.gz
     pred_col: e_form_per_atom_eqV2-31M-dens-MP-p5
     full_test_set:
-      F1: 0.798
-      DAF: 4.362
-      Precision: 0.748
-      Recall: 0.855
-      Accuracy: 0.927
-      TPR: 0.855
-      FPR: 0.059
-      TNR: 0.941
-      FNR: 0.145
-      TP: 37687.0
-      FP: 12665.0
-      TN: 200206.0
-      FN: 6405.0
-      MAE: 0.035
-      RMSE: 0.084
-      R2: 0.785
-      missing_preds: 351
-      missing_percent: 0.14%
+      F1: 0.798 # fraction
+      DAF: 4.362 # dimensionless
+      Precision: 0.748 # fraction
+      Recall: 0.855 # fraction
+      Accuracy: 0.927 # fraction
+      TPR: 0.855 # fraction
+      FPR: 0.059 # fraction
+      TNR: 0.941 # fraction
+      FNR: 0.145 # fraction
+      TP: 37687.0 # count
+      FP: 12665.0 # count
+      TN: 200206.0 # count
+      FN: 6405.0 # count
+      MAE: 0.035 # eV/atom
+      RMSE: 0.084 # eV/atom
+      R2: 0.785 # dimensionless
+      missing_preds: 351 # count
+      missing_percent: 0.14% # fraction
     most_stable_10k:
-      F1: 0.983
-      DAF: 6.326
-      Precision: 0.967
-      Recall: 1.0
-      Accuracy: 0.967
-      TPR: 1.0
-      FPR: 1.0
-      TNR: 0.0
-      FNR: 0.0
-      TP: 9670.0
-      FP: 330.0
-      TN: 0.0
-      FN: 0.0
-      MAE: 0.031
-      RMSE: 0.091
-      R2: 0.823
-      missing_preds: 0
-      missing_percent: 0.00%
+      F1: 0.983 # fraction
+      DAF: 6.326 # dimensionless
+      Precision: 0.967 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.967 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9670.0 # count
+      FP: 330.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.031 # eV/atom
+      RMSE: 0.091 # eV/atom
+      R2: 0.823 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
     unique_prototypes:
-      F1: 0.815
-      DAF: 5.042
-      Precision: 0.771
-      Recall: 0.864
-      Accuracy: 0.941
-      TPR: 0.864
-      FPR: 0.047
-      TNR: 0.953
-      FNR: 0.136
-      TP: 28842.0
-      FP: 8576.0
-      TN: 173538.0
-      FN: 4532.0
-      MAE: 0.036
-      RMSE: 0.085
-      R2: 0.788
-      missing_preds: 309
-      missing_percent: 0.14%
+      F1: 0.815 # fraction
+      DAF: 5.042 # dimensionless
+      Precision: 0.771 # fraction
+      Recall: 0.864 # fraction
+      Accuracy: 0.941 # fraction
+      TPR: 0.864 # fraction
+      FPR: 0.047 # fraction
+      TNR: 0.953 # fraction
+      FNR: 0.136 # fraction
+      TP: 28842.0 # count
+      FP: 8576.0 # count
+      TN: 173538.0 # count
+      FN: 4532.0 # count
+      MAE: 0.036 # eV/atom
+      RMSE: 0.085 # eV/atom
+      R2: 0.788 # dimensionless
+      missing_preds: 309 # count
+      missing_percent: 0.14% # fraction

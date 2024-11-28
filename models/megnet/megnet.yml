@@ -59,59 +59,59 @@ metrics:
     pred_file: models/megnet/2022-11-18-megnet-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_megnet
     full_test_set:
-      F1: 0.513
-      DAF: 2.699
-      Precision: 0.463
-      Recall: 0.574
-      Accuracy: 0.813
-      TPR: 0.574
-      FPR: 0.138
-      TNR: 0.862
-      FNR: 0.426
-      TP: 25311.0
-      FP: 29342.0
-      TN: 183529.0
-      FN: 18781.0
-      MAE: 0.128
-      RMSE: 0.204
-      R2: -0.277
-      missing_preds: 1
-      missing_percent: 0.00%
+      F1: 0.513 # fraction
+      DAF: 2.699 # dimensionless
+      Precision: 0.463 # fraction
+      Recall: 0.574 # fraction
+      Accuracy: 0.813 # fraction
+      TPR: 0.574 # fraction
+      FPR: 0.138 # fraction
+      TNR: 0.862 # fraction
+      FNR: 0.426 # fraction
+      TP: 25311.0 # count
+      FP: 29342.0 # count
+      TN: 183529.0 # count
+      FN: 18781.0 # count
+      MAE: 0.128 # eV/atom
+      RMSE: 0.204 # eV/atom
+      R2: -0.277 # dimensionless
+      missing_preds: 1 # count
+      missing_percent: 0.00% # fraction
     most_stable_10k:
-      F1: 0.632
-      DAF: 3.022
-      Precision: 0.462
-      Recall: 1.0
-      Accuracy: 0.462
-      TPR: 1.0
-      FPR: 1.0
-      TNR: 0.0
-      FNR: 0.0
-      TP: 4620.0
-      FP: 5380.0
-      TN: 0.0
-      FN: 0.0
-      MAE: 0.304
-      RMSE: 0.336
-      R2: -0.908
-      missing_preds: 0
-      missing_percent: 0.00%
+      F1: 0.632 # fraction
+      DAF: 3.022 # dimensionless
+      Precision: 0.462 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.462 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 4620.0 # count
+      FP: 5380.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.304 # eV/atom
+      RMSE: 0.336 # eV/atom
+      R2: -0.908 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
     unique_prototypes:
-      F1: 0.51
-      DAF: 2.959
-      Precision: 0.452
-      Recall: 0.585
-      Accuracy: 0.826
-      TPR: 0.585
-      FPR: 0.13
-      TNR: 0.87
-      FNR: 0.415
-      TP: 19537.0
-      FP: 23651.0
-      TN: 158463.0
-      FN: 13837.0
-      MAE: 0.13
-      RMSE: 0.206
-      R2: -0.248
-      missing_preds: 0
-      missing_percent: 0.00%
+      F1: 0.51 # fraction
+      DAF: 2.959 # dimensionless
+      Precision: 0.452 # fraction
+      Recall: 0.585 # fraction
+      Accuracy: 0.826 # fraction
+      TPR: 0.585 # fraction
+      FPR: 0.13 # fraction
+      TNR: 0.87 # fraction
+      FNR: 0.415 # fraction
+      TP: 19537.0 # count
+      FP: 23651.0 # count
+      TN: 158463.0 # count
+      FN: 13837.0 # count
+      MAE: 0.13 # eV/atom
+      RMSE: 0.206 # eV/atom
+      R2: -0.248 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction

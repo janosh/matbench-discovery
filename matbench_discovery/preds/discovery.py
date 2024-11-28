@@ -1,17 +1,12 @@
 """Centralize data-loading and computing metrics for plotting scripts."""
 
-import sys
-
 import pandas as pd
 from pymatviz.enums import Key
 
 from matbench_discovery import STABILITY_THRESHOLD
 from matbench_discovery.data import Model, df_wbm, load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey
-from matbench_discovery.metrics.discovery import (
-    stable_metrics,
-    write_discovery_metrics_to_yaml,
-)
+from matbench_discovery.metrics.discovery import stable_metrics
 from matbench_discovery.plots import plotly_colors, plotly_line_styles, plotly_markers
 
 __author__ = "Janosh Riebesell"
@@ -124,11 +119,3 @@ for model in models:
 df_each_err[MbdKey.each_err_models] = df_preds[MbdKey.each_err_models] = (
     df_each_err.abs().mean(axis=1)
 )
-
-
-if __name__ == "__main__":
-    models_to_write = sys.argv[1:] or Model
-    for model in models_to_write:
-        write_discovery_metrics_to_yaml(
-            Model[model], df_metrics, df_metrics_10k, df_metrics_uniq_protos, df_preds
-        )

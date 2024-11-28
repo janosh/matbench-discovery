@@ -153,6 +153,7 @@ properties:
         oneOf:
           - type: object
             additionalProperties: false
+            required: [pred_file, pred_col]
             properties:
               pred_file:
                 type: [string, "null"]
@@ -160,13 +161,15 @@ properties:
                 type: [string, "null"]
               rmsd:
                 type: number
+              n_sym_ops_mae:
+                type: number
               symmetry_decrease:
                 type: number
               symmetry_match:
                 type: number
               symmetry_increase:
                 type: number
-              n_structs:
+              n_structures:
                 type: number
           - type: string
             enum: [not applicable, not available]
