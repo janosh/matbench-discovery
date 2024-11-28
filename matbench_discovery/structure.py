@@ -44,7 +44,11 @@ def perturb_structure(struct: Structure, gamma: float = 1.5) -> Structure:
 
 
 def analyze_symmetry(
-    structures: dict[str, Structure], *, pbar: bool | dict[str, str] = True
+    structures: dict[str, Structure],
+    *,
+    pbar: bool | dict[str, str] = True,
+    symprec: float = 1e-2,
+    angle_tolerance: float = -1,
 ) -> pd.DataFrame:
     """Analyze symmetry of a dictionary of structures using spglib.
 
@@ -52,6 +56,10 @@ def analyze_symmetry(
         structures (dict[str, Structure]): Map material IDs to pymatgen Structures
         pbar (bool | dict[str, str], optional): Whether to show progress bar.
             Defaults to True.
+        symprec (float, optional): Symmetry precision of spglib.get_symmetry_dataset.
+            Defaults to 1e-2.
+        angle_tolerance (float, optional): Angle tol. of spglib.get_symmetry_dataset.
+            Defaults to -1.
 
     Returns:
         pd.DataFrame: DataFrame containing symmetry information for each structure
@@ -78,21 +86,29 @@ def analyze_symmetry(
 
     for struct_key, struct in iterator:
         cell = (struct.lattice.matrix, struct.frac_coords, struct.atomic_numbers)
+        # spglib 2.5.0 issues lots of warnings:
+        # - get_bravais_exact_positions_and_lattice failed
+        # - ssm_get_exact_positions failed
         with warnings.catch_warnings():
             warnings.simplefilter(action="ignore", category=spglib.spglib.SpglibError)
-            sym_data: spglib.SpglibDataset = spglib.get_symmetry_dataset(cell)
+            sym_data = spglib.get_symmetry_dataset(
+                cell, symprec=symprec, angle_tolerance=angle_tolerance
+            )
+
+        if sym_data is None:
+            raise ValueError(f"spglib returned None for {struct_key}\n{struct}")
 
         sym_info = {
             new_key: getattr(sym_data, old_key)
             for old_key, new_key in sym_key_map.items()
+        } | {
+            Key.n_sym_ops: len(sym_data.rotations),
+            Key.n_rot_syms: len(sym_data.rotations),
+            Key.n_trans_syms: len(sym_data.translations),
         }
-        sym_info[Key.n_sym_ops] = len(
-            sym_data.rotations
-        )  # Each rotation has an associated translation
-        sym_info[Key.n_rot_syms] = len(sym_data.rotations)
-        sym_info[Key.n_trans_syms] = len(sym_data.translations)
-
-        results[struct_key] = sym_info
+        results[struct_key] = sym_info | dict(
+            symprec=symprec, angle_tolerance=angle_tolerance
+        )
 
     df_sym = pd.DataFrame(results).T
     df_sym.index.name = Key.mat_id
@@ -154,26 +170,3 @@ def pred_vs_ref_struct_symmetry(
         df_result.loc[mat_id, Key.max_pair_dist] = max_dist
 
     return df_result
-
-
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-
-    gamma = 1.5
-    samples = np.array([rng.weibull(gamma) for _ in range(10_000)])
-    mean = samples.mean()
-
-    # reproduces the dist in https://www.nature.com/articles/s41524-022-00891-8#Fig5
-    ax = plt.hist(samples, bins=100)
-    # add vertical line at the mean
-    plt.axvline(mean, color="gray", linestyle="dashed", linewidth=1)
-    # annotate the mean line
-    plt.annotate(
-        f"{mean=:.2f}",
-        xy=(mean, 1),
-        # use ax coords for y
-        xycoords=("data", "axes fraction"),
-        # add text offset
-        xytext=(10, -20),
-        textcoords="offset points",
-    )
