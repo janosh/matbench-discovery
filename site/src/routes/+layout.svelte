@@ -83,7 +83,6 @@
   <slot />
 </main>
 
-<!-- TODO fix box sizing making padding eat into max width on desktop -->
 <PrevNext
   items={[`/`, ...routes]}
   current="/{url?.split(`/`)[1]}"

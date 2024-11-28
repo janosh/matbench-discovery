@@ -29,6 +29,8 @@ module_dir = os.path.dirname(__file__)
 csv_path = f"{ROOT}/data/2024-11-26-all-models-geo-opt-analysis.csv.gz"
 df_sym = pd.read_csv(csv_path, header=[0, 1], index_col=0)
 
+df_sym_changes = go_metrics.analyze_symmetry_changes(df_sym).convert_dtypes()
+
 
 # limit the number of structures loaded per model to this number, 0 for no limit
 debug_mode: int = 0
@@ -45,19 +47,17 @@ print(f"\n{len(models)=}: {', '.join(models)}")
 
 
 # %% Plot violin plot of RMSD vs DFT
+df_rmsd = df_sym.xs(MbdKey.structure_rmsd_vs_dft, level=MbdKey.sym_prop, axis="columns")
+
 fig_rmsd = px.violin(
-    df_sym.xs(MbdKey.structure_rmsd_vs_dft, level=MbdKey.sym_prop, axis="columns")
-    .round(3)
-    .dropna(),
+    df_rmsd.round(3).dropna(),
     orientation="h",
     color="model",
     box=True,
+    points=False,
 )
-title = "RMSD of ML-relaxed structures vs DFT-relaxed structures"
-fig_rmsd.layout.title = dict(text=title, x=0.5)
 fig_rmsd.layout.xaxis.title = "Model"
 fig_rmsd.layout.yaxis.title = "RMSD (Å)"
-fig_rmsd.layout.margin.t = 50
 fig_rmsd.update_traces(orientation="h", side="positive", width=1.8)
 
 # add annotation for mean for each model
@@ -73,7 +73,7 @@ for model, srs_rmsd in df_sym.xs(
         x=mean_rmsd,
         y=model,
         text=f"Mean: {mean_rmsd:.3f}",
-        ax=0,
+        ax=40,
         ay=-60,
         font=dict(size=12, color=model_color),
         arrowcolor=model_color,
@@ -81,9 +81,13 @@ for model, srs_rmsd in df_sym.xs(
 
 fig_rmsd.layout.height = len(fig_rmsd.data) * 100
 fig_rmsd.layout.showlegend = False
-fig_rmsd.show()
 
 pmv.save_fig(fig_rmsd, f"{module_dir}/{today}-rmsd-violin.pdf")
+
+title = "RMSD of ML-relaxed structures vs DFT-relaxed structures"
+fig_rmsd.layout.title = dict(text=title, x=0.5)
+fig_rmsd.layout.margin.t = 50
+fig_rmsd.show()
 
 
 # %% calculate number of model spacegroups agreeing with DFT-relaxed spacegroup
@@ -205,7 +209,6 @@ fig_sym_ops_diff.show()
 
 
 # %% Print summary of symmetry changes
-df_sym_changes = go_metrics.analyze_symmetry_changes(df_sym).convert_dtypes()
 display(
     df_sym_changes.round(3)
     .rename(columns=lambda col: col.removeprefix("symmetry_"))
@@ -279,25 +282,22 @@ if __name__ == "__main__":
 
     # %% plot ML vs DFT relaxed spacegroup correspondence as sankey diagrams
     df_spg = df_sym.xs(Key.spg_num, level=MbdKey.sym_prop, axis="columns")
-    for model in {*df_spg} - {Key.dft}:
+    for model_label in {*df_spg} - {Key.dft.label}:
         # get most common pairs of DFT/Model spacegroups
+        model = Model.from_label(model_label)
         common_dft_spgs, common_model_spgs = zip(
-            *df_spg[[Key.dft, model]].value_counts().head(10).index
+            *df_spg[[Key.dft.label, model_label]].value_counts().head(10).index
         )
-        model_label = getattr(Model, model).label
-        df_spg_common = (
-            df_spg.query(f"dft in {common_dft_spgs} and {model} in {common_model_spgs}")
-            .sort_values(by=Key.dft)
-            .rename(columns={model: model_label, Key.dft: Key.dft.label})
-        )
+        df_spg_common = df_spg.query(
+            f"`DFT` in {common_dft_spgs} and `{model_label}` in {common_model_spgs}"
+        ).sort_values(by=Key.dft.label)
 
         fig = pmv.sankey_from_2_df_cols(
             df_spg_common.reset_index(),
             [Key.dft.label, model_label],
-            label_standoff=35,
         )
         fig.show()
-        pmv.save_fig(fig, f"{SITE_FIGS}/spg-sankey-{model.replace('_', '-')}.svelte")
+        pmv.save_fig(fig, f"{SITE_FIGS}/spg-sankey-{model.key}.svelte")
 
 
 # TODO maybe add average_distance_within_threshold metric
