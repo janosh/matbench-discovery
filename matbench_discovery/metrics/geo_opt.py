@@ -1,6 +1,5 @@
 """Functions to calculate and save geometry optimization metrics."""
 
-import numpy as np
 import pandas as pd
 from pymatviz.enums import Key, Task
 from ruamel.yaml.comments import CommentedMap
@@ -9,57 +8,61 @@ from matbench_discovery.data import Model, round_trip_yaml
 from matbench_discovery.enums import MbdKey
 
 
-def write_geo_opt_metrics_to_yaml(
-    df_sym: pd.DataFrame, df_sym_changes: pd.DataFrame
-) -> None:
-    """Write geometry optimization metrics to model YAML metadata files."""
-    for model_name in df_sym.columns.levels[0]:
+def write_geo_opt_metrics_to_yaml(df_metrics: pd.DataFrame) -> None:
+    """Write geometry optimization metrics to model YAML metadata files.
+
+    Args:
+        df_metrics (pd.DataFrame): DataFrame with all geometry optimization metrics.
+            Index = model names, columns = metric names including:
+            - structure_rmsd_vs_dft: RMSD between predicted and DFT structures
+            - n_sym_ops_mae: Mean absolute error in number of symmetry operations
+            - symmetry_decrease: Fraction of structures with decreased symmetry
+            - symmetry_match: Fraction of structures with matching symmetry
+            - symmetry_increase: Fraction of structures with increased symmetry
+            - n_structs: Number of structures evaluated
+    """
+    for model_name in df_metrics.index:
         try:
             model = Model.from_label(model_name)
         except StopIteration:
-            print(f"Skipping {model_name}")
+            print(f"Skipping unknown {model_name=}")
             continue
 
-        df_rmsd = df_sym.xs(
-            MbdKey.structure_rmsd_vs_dft, level=MbdKey.sym_prop, axis="columns"
-        ).round(4)
-        if model.label not in df_rmsd:
-            print(f"No RMSD column for {model.label}")
-            return
-
-        # Calculate RMSD
-        rmsd = df_rmsd[model.label].mean(axis=0)
-
-        # Add symmetric mean error calculation for number of symmetry operations
-        sym_ops_diff = df_sym.drop(Key.dft.label, level=Key.model, axis="columns")[
-            model.label
-        ][MbdKey.n_sym_ops_diff]
-
-        # Calculate symmetric mean error for each model
-        sym_ops_mae = np.mean(np.abs(sym_ops_diff))
-
-        # Calculate symmetry change statistics
-        if model.label not in df_sym_changes.index:
-            print(f"No symmetry data for {model.label}")
-            return
-        sym_changes = df_sym_changes.round(4).loc[model.label].to_dict()
-        # Combine metrics
-        with open(model.yaml_path) as file:  # Load existing metadata
+        # Load existing metadata
+        with open(model.yaml_path) as file:
             model_metadata = round_trip_yaml.load(file)
 
         all_metrics = model_metadata.setdefault("metrics", {})
+
+        # Get metrics for this model
+        model_metrics = df_metrics.loc[model_name]
         new_metrics = {
-            str(Key.rmsd): float(round(rmsd, 4)),
-            str(Key.n_sym_ops_mae): float(round(sym_ops_mae, 4)),
-            **sym_changes,
+            str(Key.rmsd): float(round(model_metrics[MbdKey.structure_rmsd_vs_dft], 4)),
+            str(Key.n_sym_ops_mae): float(round(model_metrics[Key.n_sym_ops_mae], 4)),
+            str(Key.symmetry_decrease): float(
+                round(model_metrics[Key.symmetry_decrease], 4)
+            ),
+            str(Key.symmetry_match): float(round(model_metrics[Key.symmetry_match], 4)),
+            str(Key.symmetry_increase): float(
+                round(model_metrics[Key.symmetry_increase], 4)
+            ),
+            str(Key.n_structs): int(model_metrics[Key.n_structs]),
         }
+
         geo_opt_metrics = CommentedMap(
             all_metrics.setdefault(Task.geo_opt, {}) | new_metrics
         )
-        metric_units = dict.fromkeys(sym_changes, "fraction") | {
+
+        # Define units for metrics
+        metric_units = {
             Key.rmsd: "Å",
+            Key.n_sym_ops_mae: "count",
+            Key.symmetry_decrease: "fraction",
+            Key.symmetry_match: "fraction",
+            Key.symmetry_increase: "fraction",
             Key.n_structs: "count",
         }
+
         # Add units as YAML end-of-line comments
         for key in new_metrics:
             if unit := metric_units.get(key):
@@ -67,7 +70,8 @@ def write_geo_opt_metrics_to_yaml(
 
         all_metrics[Task.geo_opt] = geo_opt_metrics
 
-        with open(model.yaml_path, mode="w") as file:  # Write back to file
+        # Write back to file
+        with open(model.yaml_path, mode="w") as file:
             round_trip_yaml.dump(model_metadata, file)
 
 
