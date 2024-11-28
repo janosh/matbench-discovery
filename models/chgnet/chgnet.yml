@@ -71,8 +71,8 @@ metrics:
     symmetry_decrease: 0.2526 # fraction
     symmetry_match: 0.5833 # fraction
     symmetry_increase: 0.1525 # fraction
-    n_sym_ops_mae: 3.2731
-    n_structures: 250779.0 # count
+    n_sym_ops_mae: 3.2731 # unitless
+    n_structures: 250779 # count
   discovery:
     pred_file: models/chgnet/2023-12-21-chgnet-0.3.0-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_chgnet

@@ -56,7 +56,7 @@ def write_geo_opt_metrics_to_yaml(df_metrics: pd.DataFrame) -> None:
         # Define units for metrics
         metric_units = {
             Key.rmsd: "Å",
-            Key.n_sym_ops_mae: "count",
+            Key.n_sym_ops_mae: "unitless",
             Key.symmetry_decrease: "fraction",
             Key.symmetry_match: "fraction",
             Key.symmetry_increase: "fraction",

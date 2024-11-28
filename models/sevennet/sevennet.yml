@@ -84,8 +84,8 @@ metrics:
     symmetry_decrease: 0.3557 # fraction
     symmetry_match: 0.4535 # fraction
     symmetry_increase: 0.1446 # fraction
-    n_sym_ops_mae: 2.5921
-    n_structures: 256963.0 # count
+    n_sym_ops_mae: 2.5921 # unitless
+    n_structures: 256963 # count
   discovery:
     pred_file: models/sevennet/2024-07-11-sevennet-0-preds.csv.gz
     pred_col: e_form_per_atom_sevennet

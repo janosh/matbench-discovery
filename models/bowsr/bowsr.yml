@@ -64,8 +64,8 @@ metrics:
     symmetry_decrease: 0.0037 # fraction
     symmetry_match: 0.5271 # fraction
     symmetry_increase: 0.4671 # fraction
-    n_sym_ops_mae: 29.4778
-    n_structures: 250779.0 # count
+    n_sym_ops_mae: 29.4778 # unitless
+    n_structures: 250779 # count
   discovery:
     pred_file: models/bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_bowsr_megnet

@@ -61,8 +61,8 @@ metrics:
     symmetry_decrease: 0.0652 # fraction
     symmetry_match: 0.7488 # fraction
     symmetry_increase: 0.1804 # fraction
-    n_sym_ops_mae: 1.7751
-    n_structures: 256963.0 # count
+    n_sym_ops_mae: 1.7751 # unitless
+    n_structures: 256963 # count
   discovery:
     pred_file: models/m3gnet/2023-12-28-m3gnet-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_m3gnet

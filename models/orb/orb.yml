@@ -81,8 +81,8 @@ metrics:
     symmetry_decrease: 0.8473 # fraction
     symmetry_match: 0.1494 # fraction
     symmetry_increase: 0.0031 # fraction
-    n_sym_ops_mae: 9.8834
-    n_structures: 256963.0 # count
+    n_sym_ops_mae: 9.8834 # unitless
+    n_structures: 256963 # count
   discovery:
     pred_file: models/orb/orbff-v2-20241011.csv.gz
     pred_col: e_form_per_atom_orb

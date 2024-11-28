@@ -76,8 +76,8 @@ metrics:
     symmetry_decrease: 0.035 # fraction
     symmetry_match: 0.7361 # fraction
     symmetry_increase: 0.2243 # fraction
-    n_sym_ops_mae: 1.8584
-    n_structures: 243070.0 # count
+    n_sym_ops_mae: 1.8584 # unitless
+    n_structures: 243070 # count
   discovery:
     pred_file: models/mace/2023-12-11-mace-wbm-IS2RE-FIRE.csv.gz
     pred_col: e_form_per_atom_mace
