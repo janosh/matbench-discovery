@@ -50,7 +50,8 @@
       {
         group: format_symprec(symprec),
         label: `σ<sub>inc</sub>`,
-        tooltip: `Fraction of structures where the number of symmetry operations increased after ML relaxation (symprec=${symprec}Å)`,
+        tooltip: `Fraction of structures where the number of symmetry operations increased after ML relaxation (symprec=${symprec}Å). Not colored because it's high or low is good or bad. Could be models find higher symmetry lower-energy structures than DFT optimizer.`,
+        color_scale: null,
       },
       {
         group: format_symprec(symprec),
@@ -132,7 +133,7 @@
         [`σ<sub>match</sub> (${format_symprec(symprec)})`]: `.1%`,
         [`σ<sub>dec</sub> (${format_symprec(symprec)})`]: `.1%`,
         [`σ<sub>inc</sub> (${format_symprec(symprec)})`]: `.1%`,
-        [`N<sub>ops,MAE</sub> (${format_symprec(symprec)})`]: `.3f`,
+        [`N<sub>ops,MAE</sub> (${format_symprec(symprec)})`]: `.3`,
       }),
       {},
     ),

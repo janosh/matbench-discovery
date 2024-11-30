@@ -114,38 +114,38 @@ sym_changes_cols = [
 
 
 @pytest.mark.parametrize(
-    "df_metrics_data, expected_yaml",
+    ("df_metrics_data", "expected_yaml", "symprec"),
     [
-        # Test case 1: Normal case with valid metrics
         (
-            {  # df_metrics data
-                model1: {
-                    MbdKey.structure_rmsd_vs_dft: 0.2,
-                    Key.n_sym_ops_mae: 2.0,
-                    Key.symmetry_decrease: 0.33,
-                    Key.symmetry_match: 0.33,
-                    Key.symmetry_increase: 0.34,
-                    Key.n_structs: 3,
+            {
+                "model1": {
+                    MbdKey.structure_rmsd_vs_dft: 0.1,
+                    Key.n_sym_ops_mae: 0.2,
+                    Key.symmetry_decrease: 0.3,
+                    Key.symmetry_match: 0.4,
+                    Key.symmetry_increase: 0.0,
+                    Key.n_structs: 0,
                 }
             },
-            # expected yaml content
             {
                 "metrics": {
                     "geo_opt": {
-                        Key.rmsd: 0.2,
-                        Key.n_sym_ops_mae: 2.0,
-                        Key.symmetry_decrease: 0.33,
-                        Key.symmetry_match: 0.33,
-                        Key.symmetry_increase: 0.34,
-                        Key.n_structs: 3,
+                        "symprec=0.01": {
+                            Key.rmsd: 0.1,
+                            Key.n_sym_ops_mae: 0.2,
+                            Key.symmetry_decrease: 0.3,
+                            Key.symmetry_match: 0.4,
+                            Key.symmetry_increase: 0.0,
+                            Key.n_structs: 0,
+                        }
                     }
                 }
             },
+            1e-2,
         ),
-        # Test case 2: Edge case with NaN values
         (
             {
-                model2: {
+                "model2": {
                     MbdKey.structure_rmsd_vs_dft: float("nan"),
                     Key.n_sym_ops_mae: float("nan"),
                     Key.symmetry_decrease: 0.0,
@@ -157,21 +157,25 @@ sym_changes_cols = [
             {
                 "metrics": {
                     "geo_opt": {
-                        Key.rmsd: float("nan"),
-                        Key.n_sym_ops_mae: float("nan"),
-                        Key.symmetry_decrease: 0.0,
-                        Key.symmetry_match: 0.0,
-                        Key.symmetry_increase: 0.0,
-                        Key.n_structs: 0,
+                        "symprec=0.01": {
+                            Key.rmsd: float("nan"),
+                            Key.n_sym_ops_mae: float("nan"),
+                            Key.symmetry_decrease: 0.0,
+                            Key.symmetry_match: 0.0,
+                            Key.symmetry_increase: 0.0,
+                            Key.n_structs: 0,
+                        }
                     }
                 }
             },
+            1e-2,
         ),
     ],
 )
 def test_write_geo_opt_metrics_to_yaml(
-    df_metrics_data: dict[str, dict[str | MbdKey, float]],
-    expected_yaml: dict[str, dict[str, dict[str, float | int]]],
+    df_metrics_data: dict[str, dict[str, dict[str, dict[str | MbdKey, float]]]],
+    expected_yaml: dict[str, dict[str, dict[str, dict[str | MbdKey, float]]]],
+    symprec: float,
 ) -> None:
     """Test saving geometry optimization metrics to YAML files with edge cases."""
     # Create test DataFrame
@@ -193,14 +197,14 @@ def test_write_geo_opt_metrics_to_yaml(
             mock_yaml.load.return_value = {}
 
             # Call the function
-            write_geo_opt_metrics_to_yaml(df_metrics)
+            write_geo_opt_metrics_to_yaml(df_metrics, symprec)
 
             # Verify YAML dump was called with expected content
             actual_yaml = mock_yaml.dump.call_args[0][0]
 
             # Compare metrics while handling NaN values
-            for key, value in actual_yaml["metrics"]["geo_opt"].items():
-                expected_value = expected_yaml["metrics"]["geo_opt"][key]
+            for key, value in actual_yaml["metrics"]["geo_opt"][f"{symprec=}"].items():
+                expected_value = expected_yaml["metrics"]["geo_opt"][f"{symprec=}"][key]
                 if isinstance(value, float) and np.isnan(value):
                     assert np.isnan(expected_value)
                 else:

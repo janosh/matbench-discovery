@@ -16,6 +16,7 @@
     label: string
     tooltip?: string
     style?: string
+    color_scale?: keyof typeof d3sc
   }[] = []
   export let higher_is_better: string[] = []
   export let lower_is_better: string[] = []
@@ -65,6 +66,9 @@
     value: number | string | undefined,
     col: { group?: string; label: string },
   ) {
+    if (col.color_scale === null || typeof value !== `number`)
+      return { bg: null, text: null }
+
     const col_id = get_col_id(col)
     const values = clean_data.map((row) => row[col_id])
     const range = [min(values) ?? 0, max(values) ?? 1]
@@ -72,9 +76,11 @@
       range.reverse()
     }
 
-    const color_scale = scaleSequential()
-      .domain(range)
-      .interpolator(d3sc.interpolateViridis)
+    // Use custom color scale if specified, otherwise fall back to viridis
+    const scale_name = col.color_scale || `interpolateViridis`
+    const interpolator = d3sc[scale_name] || d3sc.interpolateViridis
+
+    const color_scale = scaleSequential().domain(range).interpolator(interpolator)
 
     const bg = color_scale(value)
     const text = choose_bw_for_contrast(null, bg)

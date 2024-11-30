@@ -5,7 +5,7 @@
   import { repository } from '$site/package.json'
   import { CmdPalette } from 'svelte-multiselect'
   import Toc from 'svelte-toc'
-  import { CopyButton, GitHubCorner, PrevNext } from 'svelte-zoo'
+  import { CopyButton, GitHubCorner } from 'svelte-zoo'
   import '../app.css'
 
   const routes = Object.keys(import.meta.glob(`./*/+page.{svelte,md}`)).map(
@@ -82,14 +82,5 @@
 <main>
   <slot />
 </main>
-
-<PrevNext
-  items={[`/`, ...routes]}
-  current="/{url?.split(`/`)[1]}"
-  style="padding: 0 var(--main-padding); width: 100%; max-width: var(--main-max-width); box-sizing: border-box;"
->
-  <a slot="next" let:item={href} {href} class="link">{href} &rarr;</a>
-  <a slot="prev" let:item={href} {href} class="link">&larr; {href}</a>
-</PrevNext>
 
 <Footer />

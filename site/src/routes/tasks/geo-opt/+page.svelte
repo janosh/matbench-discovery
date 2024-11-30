@@ -22,8 +22,10 @@
 <GeoOptReadme>
   <GeoOptMetricsTable show_non_compliant slot="geo-opt-metrics-table" />
   <span slot="min-relaxed-structures">{pretty_num(min_relaxed_structures)}</span>
-  <StructRmsdCdfModels slot="struct-rmsd-cdf-models" />
-  <SymOpsDiffBar slot="sym-ops-diff-bar" />
+  {#if browser}
+    <StructRmsdCdfModels slot="struct-rmsd-cdf-models" />
+    <SymOpsDiffBar slot="sym-ops-diff-bar" />
+  {/if}
 </GeoOptReadme>
 
 {#if browser}
