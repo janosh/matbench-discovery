@@ -11,19 +11,7 @@
   type TableData = Record<string, string | number | undefined>[]
 
   export let data: TableData
-  export let columns: {
-    group?: string
-    label: string
-    tooltip?: string
-    style?: string
-    color_scale?: keyof typeof d3sc
-  }[] = []
-  export let higher_is_better: string[] = []
-  export let lower_is_better: string[] = []
-  export let sticky_cols: number[] = [0] // default to sticky first column
-  export let hide_cols: string[] = [] // just the column labels
-  export let format: Record<string, string> = {}
-  // set to empty string to hide hint
+  export let columns: HeatmapColumn[] = []
   export let sort_hint: string = `Click on column headers to sort table rows`
   export let style: string | null = null
 
@@ -43,7 +31,7 @@
     if ($sort_state.column !== col_id) {
       $sort_state = {
         column: col_id,
-        ascending: lower_is_better.includes(col_id),
+        ascending: col?.better === `lower`,
       }
     } else {
       $sort_state.ascending = !$sort_state.ascending
@@ -64,7 +52,7 @@
 
   function calc_color(
     value: number | string | undefined,
-    col: { group?: string; label: string },
+    col: { group?: string; label: string; better?: `higher` | `lower` | null },
   ) {
     if (col.color_scale === null || typeof value !== `number`)
       return { bg: null, text: null }
@@ -72,7 +60,7 @@
     const col_id = get_col_id(col)
     const values = clean_data.map((row) => row[col_id])
     const range = [min(values) ?? 0, max(values) ?? 1]
-    if (lower_is_better.includes(col_id)) {
+    if (col.better === `lower`) {
       range.reverse()
     }
 
@@ -88,15 +76,19 @@
     return { bg, text }
   }
 
-  $: visible_columns = columns.filter((col) => !hide_cols.includes(col.label))
+  $: visible_columns = columns.filter((col) => !col.hidden)
 
-  const sort_indicator = (col: { group?: string; label: string }) => {
+  const sort_indicator = (col: {
+    group?: string
+    label: string
+    better?: `higher` | `lower` | null
+  }) => {
     const col_id = get_col_id(col)
     if ($sort_state.column === col_id) {
       return `<span style="font-size: 0.8em;">${$sort_state.ascending ? `↑` : `↓`}</span>`
-    } else if (higher_is_better.includes(col_id) || lower_is_better.includes(col_id)) {
+    } else if (col.better) {
       return `<span style="font-size: 0.8em;">${
-        higher_is_better.includes(col_id) ? `↑` : `↓`
+        col.better === `higher` ? `↑` : `↓`
       }</span>`
     }
     return ``
@@ -140,19 +132,19 @@
     <tbody>
       {#each clean_data as row (JSON.stringify(row))}
         <tr animate:flip={{ duration: 500 }}>
-          {#each visible_columns as col, col_idx}
+          {#each visible_columns as col}
             {@const val = row[get_col_id(col)]}
             {@const color = calc_color(val, col)}
             <td
               data-col={col.label}
               data-sort-value={val}
-              class:sticky-col={sticky_cols.includes(col_idx)}
+              class:sticky-col={col.sticky}
               style:background-color={color.bg}
               style:color={color.text}
               style={col.style}
             >
-              {#if typeof val === `number` && format[get_col_id(col)]}
-                {@html pretty_num(val, format[get_col_id(col)])}
+              {#if typeof val === `number` && col.format}
+                {@html pretty_num(val, col.format)}
               {:else if [undefined, null].includes(val)}
                 <span title="not available">n/a</span>
               {:else}

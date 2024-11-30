@@ -1,3 +1,4 @@
+import * as d3sc from 'd3-scale-chromatic'
 import type { ModelMetadata } from './model-schema.d.ts'
 
 export type ModelData = ModelMetadata &
@@ -84,3 +85,15 @@ export type TrainingSet =
       n_materials?: number
       [k: string]: unknown
     }
+
+export type HeatmapColumn = {
+  label: string // column header label
+  group?: string // group header label
+  tooltip?: string // hover tooltip
+  style?: string // CSS rules
+  better?: `higher` | `lower` | null // sort direction
+  color_scale?: keyof typeof d3sc // d3-scale-chromatic color scale name
+  format?: string // d3-format string
+  sticky?: boolean // sticky column
+  hidden?: boolean // hide column
+}
