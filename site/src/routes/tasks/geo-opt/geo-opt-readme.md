@@ -1,10 +1,10 @@
 # MLFF Geometry Optimization Analysis
 
-All plots/metrics below evaluate the quality of MLFF relaxations for the 257k crystal structures in the [WBM test set](https://nature.com/articles/s41524-020-00481-6). Not all models were able to relax all structures (user/cluster error may explain some failures) but every model was evaluated on at least 240k relaxations.
+All plots/metrics below evaluate the quality of MLFF relaxations for the 257k crystal structures in the [WBM test set](https://nature.com/articles/s41524-020-00481-6). Not all models were able to relax all structures (user/cluster error may explain some failures) but every model was evaluated on at least <slot name="min-relaxed-structures"/> relaxations.
 
 <slot name="geo-opt-metrics-table"/>
 
-> σ<sub>match</sub> / σ<sub>dec</sub> / σ<sub>inc</sub> denote the fraction of structures that retain, increase, or decrease the symmetry of the DFT-relaxed structure during MLFF relaxation. The match criterion is for the ML ground state to have identical spacegroup as DFT. For σ<sub>dec</sub> / σ<sub>inc</sub>, ML relaxation increased / decreased the set of symmetry operations on a structure. Note that the symmetry metrics are sensitive to the `symprec` value passed to `spglib`. We use the default of `1e-5`. See the [`spglib` docs](https://spglib.readthedocs.io/en/latest/variable.html#symprec) and [paper](https://arxiv.org/html/1808.01590v2) for more details.
+> σ<sub>match</sub> / σ<sub>dec</sub> / σ<sub>inc</sub> denote the fraction of structures that retain, increase, or decrease the symmetry of the DFT-relaxed structure during MLFF relaxation. The match criterion is for the ML ground state to have identical spacegroup as DFT. For σ<sub>dec</sub> / σ<sub>inc</sub>, ML relaxation increased / decreased the set of symmetry operations on a structure. Note that the symmetry metrics are sensitive to the `symprec` value passed to `spglib` so we show results for multiple values. See the [`spglib` docs](https://spglib.readthedocs.io/en/latest/variable.html#symprec) and [paper](https://arxiv.org/html/1808.01590v2) for details.
 
 <hr />
 

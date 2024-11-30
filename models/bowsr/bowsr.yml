@@ -60,12 +60,20 @@ metrics:
   geo_opt:
     pred_file: models/bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.json.gz
     pred_col: structure_bowsr_megnet
-    rmsd: 0.043 # Å
-    symmetry_decrease: 0.0037 # fraction
-    symmetry_match: 0.5271 # fraction
-    symmetry_increase: 0.4671 # fraction
-    n_sym_ops_mae: 29.4778
-    n_structures: 250779.0 # count
+    symprec=1e-5:
+      rmsd: 0.043 # Å
+      symmetry_decrease: 0.0037 # fraction
+      symmetry_match: 0.5271 # fraction
+      symmetry_increase: 0.4671 # fraction
+      n_sym_ops_mae: 29.4778 # unitless
+      n_structures: 250779 # count
+    symprec=1e-2:
+      rmsd: 0.043 # Å
+      n_sym_ops_mae: 25.4771 # unitless
+      symmetry_decrease: 0.0618 # fraction
+      symmetry_match: 0.795 # fraction
+      symmetry_increase: 0.1307 # fraction
+      n_structures: 250430 # count
   discovery:
     pred_file: models/bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_bowsr_megnet

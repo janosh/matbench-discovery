@@ -184,7 +184,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
         pred_file: /models/<model_dir>/<yyyy-mm-dd>-<model_name>-wbm-IS2RE.csv.gz # should contain the models energy predictions for the WBM test set
         pred_col: e_form_per_atom_<model_name>
      geo_opt: # only applicable if the model performed structure relaxation
-        pred_file: /models/<model_dir>/<yyyy-mm-dd>-<model_name>-wbm-IS2RE.json.gz # should contain the models relaxed structures as ASE Atoms or pymatgen Structures, and forces/stresses at each relaxation step
+        pred_file: /models/<model_dir>/<yyyy-mm-dd>-<model_name>-wbm-IS2RE.json.gz # should contain the models relaxed structures as ASE Atoms or pymatgen Structures, and separate columns for material_id and energies/forces/stresses at each relaxation step
         pred_col: e_form_per_atom_<model_name>
    ```
 
