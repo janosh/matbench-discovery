@@ -90,7 +90,7 @@ def analyze_symmetry(
         # - get_bravais_exact_positions_and_lattice failed
         # - ssm_get_exact_positions failed
         with warnings.catch_warnings():
-            warnings.simplefilter(action="ignore", category=spglib.spglib.SpglibError)
+            warnings.filterwarnings(action="ignore", module="spglib")
             sym_data = spglib.get_symmetry_dataset(
                 cell, symprec=symprec, angle_tolerance=angle_tolerance
             )

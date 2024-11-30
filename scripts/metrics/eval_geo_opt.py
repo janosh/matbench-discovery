@@ -19,6 +19,7 @@ from matbench_discovery import ROOT, SITE_FIGS, today
 from matbench_discovery.data import Model, df_wbm
 from matbench_discovery.enums import MbdKey
 
+symprec = 1e-2
 init_spg_col = "init_spg_num"
 dft_spg_col = "dft_spg_num"
 df_wbm[init_spg_col] = df_wbm[MbdKey.init_wyckoff].str.split("_").str[2].astype(int)
@@ -27,14 +28,11 @@ module_dir = os.path.dirname(__file__)
 
 
 # %%
-csv_path = f"{ROOT}/data/2024-11-28-all-models-geo-opt-analysis.csv.gz"
+csv_path = f"{ROOT}/data/2024-11-29-all-models-geo-opt-analysis-{symprec=}.csv.gz"
 df_go = pd.read_csv(csv_path, header=[0, 1], index_col=0)
 
 df_go_metrics = go_metrics.calc_geo_opt_metrics(df_go).convert_dtypes()
 
-
-# limit the number of structures loaded per model to this number, 0 for no limit
-debug_mode: int = 0
 
 retained = (df_wbm[init_spg_col] == df_wbm[dft_spg_col]).sum()
 
@@ -44,7 +42,14 @@ print(
 )
 
 models = df_go.columns.levels[0]
-print(f"\n{len(models)=}: {', '.join(models)}")
+
+
+# %%
+display(
+    df_go_metrics.style.set_caption(f"Symmetry changes vs DFT for {len(models)} models")
+    .background_gradient(cmap="RdBu")
+    .format(precision=3)
+)
 
 
 # %% Plot violin plot of RMSD vs DFT
@@ -279,7 +284,7 @@ fig_rmsd_cdf.show()
 
 # %%
 if __name__ == "__main__":
-    go_metrics.write_geo_opt_metrics_to_yaml(df_go_metrics)
+    go_metrics.write_geo_opt_metrics_to_yaml(df_go_metrics, symprec)
 
     # %% plot ML vs DFT relaxed spacegroup correspondence as sankey diagrams
     df_spg = df_go.xs(Key.spg_num, level=MbdKey.sym_prop, axis="columns")

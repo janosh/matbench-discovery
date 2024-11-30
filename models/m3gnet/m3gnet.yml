@@ -57,12 +57,20 @@ metrics:
   geo_opt:
     pred_file: models/m3gnet/2023-06-01-m3gnet-manual-sampling-wbm-IS2RE.json.gz
     pred_col: m3gnet_structure
-    rmsd: 0.0217 # Å
-    symmetry_decrease: 0.0652 # fraction
-    symmetry_match: 0.7488 # fraction
-    symmetry_increase: 0.1804 # fraction
-    n_sym_ops_mae: 1.7751 # unitless
-    n_structures: 256963 # count
+    symprec=1e-5:
+      rmsd: 0.0217 # Å
+      n_sym_ops_mae: 1.7751 # unitless
+      symmetry_decrease: 0.0652 # fraction
+      symmetry_match: 0.7488 # fraction
+      symmetry_increase: 0.1804 # fraction
+      n_structures: 256963 # count
+    symprec=1e-2:
+      rmsd: 0.0217 # Å
+      n_sym_ops_mae: 2.0111 # unitless
+      symmetry_decrease: 0.0719 # fraction
+      symmetry_match: 0.7933 # fraction
+      symmetry_increase: 0.1278 # fraction
+      n_structures: 256614 # count
   discovery:
     pred_file: models/m3gnet/2023-12-28-m3gnet-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_m3gnet

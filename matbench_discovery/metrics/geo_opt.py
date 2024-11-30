@@ -8,7 +8,7 @@ from matbench_discovery.data import Model, round_trip_yaml
 from matbench_discovery.enums import MbdKey
 
 
-def write_geo_opt_metrics_to_yaml(df_metrics: pd.DataFrame) -> None:
+def write_geo_opt_metrics_to_yaml(df_metrics: pd.DataFrame, symprec: float) -> None:
     """Write geometry optimization metrics to model YAML metadata files.
 
     Args:
@@ -20,6 +20,8 @@ def write_geo_opt_metrics_to_yaml(df_metrics: pd.DataFrame) -> None:
             - symmetry_match: Fraction of structures with matching symmetry
             - symmetry_increase: Fraction of structures with increased symmetry
             - n_structs: Number of structures evaluated
+        symprec (float): spglib symmetry precision for comparing ML and DFT relaxed
+            structures.
     """
     for model_name in df_metrics.index:
         try:
@@ -49,9 +51,11 @@ def write_geo_opt_metrics_to_yaml(df_metrics: pd.DataFrame) -> None:
             str(Key.n_structs): int(model_metrics[Key.n_structs]),
         }
 
-        geo_opt_metrics = CommentedMap(
-            all_metrics.setdefault(Task.geo_opt, {}) | new_metrics
+        geo_opt_metrics = CommentedMap(all_metrics.setdefault(Task.geo_opt, {}))
+        metrics_for_symprec = CommentedMap(
+            geo_opt_metrics.setdefault(f"{symprec=}", {})
         )
+        metrics_for_symprec.update(new_metrics)
 
         # Define units for metrics
         metric_units = {
@@ -66,8 +70,9 @@ def write_geo_opt_metrics_to_yaml(df_metrics: pd.DataFrame) -> None:
         # Add units as YAML end-of-line comments
         for key in new_metrics:
             if unit := metric_units.get(key):
-                geo_opt_metrics.yaml_add_eol_comment(unit, key, column=1)
+                metrics_for_symprec.yaml_add_eol_comment(unit, key, column=1)
 
+        geo_opt_metrics[f"{symprec=}"] = metrics_for_symprec
         all_metrics[Task.geo_opt] = geo_opt_metrics
 
         # Write back to file
