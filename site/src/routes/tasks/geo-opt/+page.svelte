@@ -2,20 +2,30 @@
   import { browser } from '$app/environment'
   import StructRmsdCdfModels from '$figs/struct-rmsd-cdf-models.svelte'
   import SymOpsDiffBar from '$figs/sym-ops-diff-bar.svelte'
-  import { GeoOptMetricsTable } from '$lib'
+  import { GeoOptMetricsTable, MODEL_METADATA } from '$lib'
   import type { SvelteComponent } from 'svelte'
   import GeoOptReadme from './geo-opt-readme.md'
+  import { pretty_num } from 'elementari'
 
   const plots = import.meta.glob(`$figs/spg-sankey-*.svelte`, {
     eager: true,
     import: `default`,
   }) as Record<string, typeof SvelteComponent>
+
+  const min_relaxed_structures = MODEL_METADATA.reduce(
+    (acc, model) =>
+      Math.min(acc, model.metrics?.geo_opt[`symprec=1e-2`]?.n_structures ?? Infinity),
+    Infinity,
+  )
 </script>
 
 <GeoOptReadme>
   <GeoOptMetricsTable show_non_compliant slot="geo-opt-metrics-table" />
-  <StructRmsdCdfModels slot="struct-rmsd-cdf-models" />
-  <SymOpsDiffBar slot="sym-ops-diff-bar" />
+  <span slot="min-relaxed-structures">{pretty_num(min_relaxed_structures)}</span>
+  {#if browser}
+    <StructRmsdCdfModels slot="struct-rmsd-cdf-models" />
+    <SymOpsDiffBar slot="sym-ops-diff-bar" />
+  {/if}
 </GeoOptReadme>
 
 {#if browser}

@@ -11,7 +11,13 @@
   type TableData = Record<string, string | number | undefined>[]
 
   export let data: TableData
-  export let columns: { label: string; tooltip?: string; style?: string }[] = []
+  export let columns: {
+    group?: string
+    label: string
+    tooltip?: string
+    style?: string
+    color_scale?: keyof typeof d3sc
+  }[] = []
   export let higher_is_better: string[] = []
   export let lower_is_better: string[] = []
   export let sticky_cols: number[] = [0] // default to sticky first column
@@ -26,19 +32,26 @@
   $: clean_data =
     data?.filter?.((row) => Object.values(row).some((val) => val !== undefined)) ?? []
 
+  // Helper to make column IDs (needed since column labels in different groups can be repeated)
+  const get_col_id = (col: { group?: string; label: string }) =>
+    col.group ? `${col.label} (${col.group})` : col.label
+
   function sort_rows(column: string) {
-    if ($sort_state.column !== column) {
+    const col = columns.find((c) => c.label === column)
+    const col_id = get_col_id(col)
+
+    if ($sort_state.column !== col_id) {
       $sort_state = {
-        column,
-        ascending: lower_is_better.includes(column),
+        column: col_id,
+        ascending: lower_is_better.includes(col_id),
       }
     } else {
       $sort_state.ascending = !$sort_state.ascending
     }
 
     clean_data = clean_data.sort((row1, row2) => {
-      const val1 = row1[column]
-      const val2 = row2[column]
+      const val1 = row1[col_id]
+      const val2 = row2[col_id]
 
       if (val1 === val2) return 0
       if (val1 === null || val1 === undefined) return 1
@@ -49,44 +62,75 @@
     })
   }
 
-  function calc_color(value: number | string | undefined, col: string) {
-    const values = clean_data.map((row) => row[col])
+  function calc_color(
+    value: number | string | undefined,
+    col: { group?: string; label: string },
+  ) {
+    if (col.color_scale === null || typeof value !== `number`)
+      return { bg: null, text: null }
+
+    const col_id = get_col_id(col)
+    const values = clean_data.map((row) => row[col_id])
     const range = [min(values) ?? 0, max(values) ?? 1]
-    if (lower_is_better.includes(col)) {
+    if (lower_is_better.includes(col_id)) {
       range.reverse()
     }
-    const colorScale = scaleSequential()
-      .domain(range)
-      .interpolator(d3sc.interpolateViridis)
 
-    const bg = colorScale(value)
+    // Use custom color scale if specified, otherwise fall back to viridis
+    const scale_name = col.color_scale || `interpolateViridis`
+    const interpolator = d3sc[scale_name] || d3sc.interpolateViridis
+
+    const color_scale = scaleSequential().domain(range).interpolator(interpolator)
+
+    const bg = color_scale(value)
     const text = choose_bw_for_contrast(null, bg)
 
     return { bg, text }
   }
 
   $: visible_columns = columns.filter((col) => !hide_cols.includes(col.label))
+
+  const sort_indicator = (col: { group?: string; label: string }) => {
+    const col_id = get_col_id(col)
+    if ($sort_state.column === col_id) {
+      return `<span style="font-size: 0.8em;">${$sort_state.ascending ? `↑` : `↓`}</span>`
+    } else if (higher_is_better.includes(col_id) || lower_is_better.includes(col_id)) {
+      return `<span style="font-size: 0.8em;">${
+        higher_is_better.includes(col_id) ? `↑` : `↓`
+      }</span>`
+    }
+    return ``
+  }
 </script>
 
 <div class="table-container" {style}>
   <table use:titles_as_tooltips>
     <thead>
+      <!-- Don't add a table row for group headers if there are none -->
+      {#if visible_columns.some((col) => col.group)}
+        <!-- First level headers -->
+        <tr class="group-header">
+          {#each visible_columns as col}
+            {#if !col.group}
+              <th />
+            {:else}
+              {@const group_cols = visible_columns.filter((c) => c.group === col.group)}
+              {#if columns.indexOf(col) === columns.findIndex((c) => c.group === col.group)}
+                <th colspan={group_cols.length}>{@html col.group}</th>
+              {/if}
+            {/if}
+          {/each}
+        </tr>
+      {/if}
+      <!-- Second level headers -->
       <tr>
-        {#each visible_columns as { label, tooltip = null, style = null }, col_idx}
-          <th on:click={() => sort_rows(label)} title={tooltip} {style}>
-            {@html label}
+        {#each visible_columns as col, col_idx}
+          <th on:click={() => sort_rows(col.label)} style={col.style}>
+            {@html col.label}
+            {@html sort_indicator(col)}
             {#if col_idx == 0 && sort_hint}
               <span title={sort_hint}>
                 <Icon icon="octicon:info-16" inline />
-              </span>
-            {/if}
-            {#if $sort_state.column === label}
-              <span style="font-size: 0.8em;">
-                {$sort_state.ascending ? `↑` : `↓`}
-              </span>
-            {:else if higher_is_better.includes(label) || lower_is_better.includes(label)}
-              <span style="font-size: 0.8em;">
-                {higher_is_better.includes(label) ? `↓` : `↑`}
               </span>
             {/if}
           </th>
@@ -96,19 +140,19 @@
     <tbody>
       {#each clean_data as row (JSON.stringify(row))}
         <tr animate:flip={{ duration: 500 }}>
-          {#each visible_columns as { label, style = null }, col_idx}
-            {@const val = row[label]}
-            {@const color = calc_color(val, label)}
+          {#each visible_columns as col, col_idx}
+            {@const val = row[get_col_id(col)]}
+            {@const color = calc_color(val, col)}
             <td
-              data-col={label}
+              data-col={col.label}
               data-sort-value={val}
               class:sticky-col={sticky_cols.includes(col_idx)}
               style:background-color={color.bg}
               style:color={color.text}
-              {style}
+              style={col.style}
             >
-              {#if typeof val === `number` && format[label]}
-                {@html pretty_num(val, format[label])}
+              {#if typeof val === `number` && format[get_col_id(col)]}
+                {@html pretty_num(val, format[get_col_id(col)])}
               {:else if [undefined, null].includes(val)}
                 <span title="not available">n/a</span>
               {:else}
@@ -175,5 +219,10 @@
 
   td[data-sort-value] {
     cursor: default;
+  }
+
+  .group-header th {
+    border-bottom: 1px solid black;
+    text-align: center;
   }
 </style>

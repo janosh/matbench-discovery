@@ -143,6 +143,8 @@ def test_pred_vs_ref_struct_symmetry_with_structures(
         Key.structure,
         MbdKey.structure_rmsd_vs_dft,
         Key.wyckoff_symbols,
+        Key.symprec,
+        Key.angle_tolerance,
     }
 
 

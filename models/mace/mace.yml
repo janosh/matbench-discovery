@@ -72,12 +72,20 @@ metrics:
   geo_opt:
     pred_file: models/mace/2023-12-11-mace-wbm-IS2RE-FIRE.json.gz
     pred_col: mace_structure
-    rmsd: 0.0194 # Å
-    symmetry_decrease: 0.035 # fraction
-    symmetry_match: 0.7361 # fraction
-    symmetry_increase: 0.2243 # fraction
-    n_sym_ops_mae: 1.8584
-    n_structures: 243070.0 # count
+    symprec=1e-5:
+      rmsd: 0.0194 # Å
+      n_sym_ops_mae: 1.8584 # unitless
+      symmetry_decrease: 0.035 # fraction
+      symmetry_match: 0.7361 # fraction
+      symmetry_increase: 0.2243 # fraction
+      n_structures: 243070 # count
+    symprec=1e-2:
+      rmsd: 0.0197 # Å
+      n_sym_ops_mae: 1.8961 # unitless
+      symmetry_decrease: 0.0602 # fraction
+      symmetry_match: 0.7977 # fraction
+      symmetry_increase: 0.1353 # fraction
+      n_structures: 249034 # count
   discovery:
     pred_file: models/mace/2023-12-11-mace-wbm-IS2RE-FIRE.csv.gz
     pred_col: e_form_per_atom_mace

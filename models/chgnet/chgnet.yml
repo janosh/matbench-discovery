@@ -67,12 +67,20 @@ metrics:
   geo_opt:
     pred_file: models/chgnet/2023-12-21-chgnet-0.3.0-wbm-IS2RE.json.gz
     pred_col: chgnet_structure
-    rmsd: 0.0216 # Å
-    symmetry_decrease: 0.2526 # fraction
-    symmetry_match: 0.5833 # fraction
-    symmetry_increase: 0.1525 # fraction
-    n_sym_ops_mae: 3.2731
-    n_structures: 250779.0 # count
+    symprec=1e-5:
+      rmsd: 0.0216 # Å
+      symmetry_decrease: 0.2526 # fraction
+      symmetry_match: 0.5833 # fraction
+      symmetry_increase: 0.1525 # fraction
+      n_sym_ops_mae: 3.2731 # unitless
+      n_structures: 250779 # count
+    symprec=1e-2:
+      rmsd: 0.0218 # Å
+      n_sym_ops_mae: 2.0622 # unitless
+      symmetry_decrease: 0.0937 # fraction
+      symmetry_match: 0.7799 # fraction
+      symmetry_increase: 0.118 # fraction
+      n_structures: 256614 # count
   discovery:
     pred_file: models/chgnet/2023-12-21-chgnet-0.3.0-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_chgnet

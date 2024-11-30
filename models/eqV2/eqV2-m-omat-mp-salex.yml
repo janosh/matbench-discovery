@@ -87,12 +87,20 @@ metrics:
   geo_opt:
     pred_file: models/eqV2/eqV2-86M-omat-salex-mp.json.gz
     pred_col: eqV2-86M-omat-mp-salex_structure
-    rmsd: 0.0138 # Å
-    n_sym_ops_mae: 10.0558
-    symmetry_decrease: 0.8611 # fraction
-    symmetry_match: 0.1382 # fraction
-    symmetry_increase: 0.0005 # fraction
-    n_structures: 256614.0 # count
+    symprec=1e-5:
+      rmsd: 0.0138 # Å
+      n_sym_ops_mae: 10.0558 # unitless
+      symmetry_decrease: 0.8611 # fraction
+      symmetry_match: 0.1382 # fraction
+      symmetry_increase: 0.0005 # fraction
+      n_structures: 256614 # count
+    symprec=1e-2:
+      rmsd: 0.0112 # Å
+      n_sym_ops_mae: 2.077 # unitless
+      symmetry_decrease: 0.1321 # fraction
+      symmetry_match: 0.7474 # fraction
+      symmetry_increase: 0.1077 # fraction
+      n_structures: 256614 # count
   discovery:
     pred_file: models/eqV2/eqV2-m-omat-mp-salex.csv.gz
     pred_col: e_form_per_atom_eqV2-86M-omat-mp-salex

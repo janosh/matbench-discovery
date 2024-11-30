@@ -77,12 +77,20 @@ metrics:
   geo_opt:
     pred_file: models/orb/orb-mptrj-only-v2-20241014.json.gz
     pred_col: orb_structure
-    rmsd: 0.0185 # Å
-    symmetry_decrease: 0.8594 # fraction
-    symmetry_match: 0.1397 # fraction
-    symmetry_increase: 0.0007 # fraction
-    n_sym_ops_mae: 10.036
-    n_structures: 256963.0 # count
+    symprec=1e-5:
+      rmsd: 0.0185 # Å
+      n_sym_ops_mae: 10.036 # unitless
+      symmetry_decrease: 0.8594 # fraction
+      symmetry_match: 0.1397 # fraction
+      symmetry_increase: 0.0007 # fraction
+      n_structures: 256963 # count
+    symprec=1e-2:
+      rmsd: 0.0185 # Å
+      n_sym_ops_mae: 6.1283 # unitless
+      symmetry_decrease: 0.586 # fraction
+      symmetry_match: 0.3716 # fraction
+      symmetry_increase: 0.0332 # fraction
+      n_structures: 256614 # count
   discovery:
     pred_file: models/orb/orbff-mptrj-only-v2-20241014.csv.gz
     pred_col: e_form_per_atom_orb

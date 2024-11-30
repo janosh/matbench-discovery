@@ -159,18 +159,24 @@ properties:
                 type: [string, "null"]
               pred_col:
                 type: [string, "null"]
-              rmsd:
-                type: number
-              n_sym_ops_mae:
-                type: number
-              symmetry_decrease:
-                type: number
-              symmetry_match:
-                type: number
-              symmetry_increase:
-                type: number
-              n_structures:
-                type: number
+              symprec=1e-5: &symprec_metrics
+                type: object
+                additionalProperties: false
+                properties:
+                  rmsd:
+                    type: number
+                  n_sym_ops_mae:
+                    type: number
+                  symmetry_decrease:
+                    type: number
+                  symmetry_match:
+                    type: number
+                  symmetry_increase:
+                    type: number
+                  n_structures:
+                    type: number
+              symprec=1e-3: *symprec_metrics
+              symprec=1e-2: *symprec_metrics
           - type: string
             enum: [not applicable, not available]
       discovery:

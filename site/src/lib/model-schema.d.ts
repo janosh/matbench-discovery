@@ -89,12 +89,30 @@ export interface ModelMetadata {
       | {
           pred_file: string | null
           pred_col: string | null
-          rmsd?: number
-          n_sym_ops_mae?: number
-          symmetry_decrease?: number
-          symmetry_match?: number
-          symmetry_increase?: number
-          n_structures?: number
+          'symprec=1e-5'?: {
+            rmsd?: number
+            n_sym_ops_mae?: number
+            symmetry_decrease?: number
+            symmetry_match?: number
+            symmetry_increase?: number
+            n_structures?: number
+          }
+          'symprec=1e-3'?: {
+            rmsd?: number
+            n_sym_ops_mae?: number
+            symmetry_decrease?: number
+            symmetry_match?: number
+            symmetry_increase?: number
+            n_structures?: number
+          }
+          'symprec=1e-2'?: {
+            rmsd?: number
+            n_sym_ops_mae?: number
+            symmetry_decrease?: number
+            symmetry_match?: number
+            symmetry_increase?: number
+            n_structures?: number
+          }
         }
       | ('not applicable' | 'not available')
     discovery?: {
