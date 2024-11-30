@@ -1,8 +1,13 @@
 <script lang="ts">
-  import { HeatmapTable, MODEL_METADATA, TRAINING_SETS, model_is_compliant } from '$lib'
-  import { discovery, phonons } from '$pkg/metrics-which-is-better.yml'
+  import {
+    HeatmapTable,
+    MODEL_METADATA,
+    TRAINING_SETS,
+    model_is_compliant,
+    get_metric_rank_order,
+  } from '$lib'
   import { pretty_num } from 'elementari'
-  import type { ModelData } from './types.ts'
+  import type { ModelData, HeatmapColumn } from './types.ts'
 
   export let discovery_set: `full_test_set` | `most_stable_10k` | `unique_prototypes` =
     `unique_prototypes`
@@ -15,8 +20,8 @@
     { label: `Targets`, tooltip: `Target property used to train the model` },
     { label: `Date Added`, tooltip: `Submission date to the leaderboard` },
   ]
-  export let columns: { label: string; tooltip?: string; style?: string }[] = [
-    { label: `Model` },
+  export let columns: HeatmapColumn[] = [
+    { label: `Model`, sticky: true },
     { label: `F1`, tooltip: `Harmonic mean of precision and recall` },
     { label: `DAF`, tooltip: `Discovery acceleration factor` },
     { label: `Prec`, tooltip: `Precision of classifying thermodynamic stability` },
@@ -45,7 +50,7 @@
       style: `border-left: 1px solid black;`,
     },
     ...(show_metadata ? metadata_cols : []),
-  ]
+  ].map((col) => ({ ...col, better: col.better ?? get_metric_rank_order(col.label) }))
 
   function format_train_set(model_training_sets: string[]) {
     let [total_structs, total_materials] = [0, 0]
@@ -158,10 +163,4 @@
     .sort((row1, row2) => (row2.F1 ?? 0) - (row1.F1 ?? 0)) // Sort by F1 score descending
 </script>
 
-<HeatmapTable
-  data={metrics_data}
-  {columns}
-  higher_is_better={[...discovery.higher_is_better, ...phonons.higher_is_better]}
-  lower_is_better={[...discovery.lower_is_better, ...phonons.lower_is_better]}
-  {...$$restProps}
-/>
+<HeatmapTable data={metrics_data} {columns} {...$$restProps} />

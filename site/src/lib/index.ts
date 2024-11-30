@@ -1,4 +1,5 @@
 import { default as data_files } from '$pkg/data-files.yml'
+import which_is_better from '$pkg/metrics-which-is-better.yml'
 import rehypeStringify from 'rehype-stringify'
 import remarkParse from 'remark-parse'
 import remarkRehype from 'remark-rehype'
@@ -73,4 +74,16 @@ for (const key of Object.keys(data_files).filter((key) => !key.startsWith(`_`)))
   data_files[key].html = md_to_html(
     data_files[key].description + `\n\n${data_files._links}`,
   )
+}
+
+export const all_higher_better = Object.values(which_is_better).flatMap(
+  (model_task) => model_task.higher_is_better,
+)
+export const all_lower_better = Object.values(which_is_better).flatMap(
+  (model_task) => model_task.lower_is_better,
+)
+export function get_metric_rank_order(metric: string) {
+  if (all_higher_better.includes(metric)) return `higher`
+  if (all_lower_better.includes(metric)) return `lower`
+  return null
 }

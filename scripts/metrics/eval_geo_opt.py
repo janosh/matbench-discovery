@@ -15,7 +15,7 @@ from pymatviz.enums import Key
 from pymatviz.utils import si_fmt
 
 import matbench_discovery.metrics.geo_opt as go_metrics
-from matbench_discovery import ROOT, SITE_FIGS, today
+from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, today
 from matbench_discovery.data import Model, df_wbm
 from matbench_discovery.enums import MbdKey
 
@@ -25,6 +25,7 @@ dft_spg_col = "dft_spg_num"
 df_wbm[init_spg_col] = df_wbm[MbdKey.init_wyckoff].str.split("_").str[2].astype(int)
 df_wbm[dft_spg_col] = df_wbm[Key.wyckoff_spglib].str.split("_").str[2].astype(int)
 module_dir = os.path.dirname(__file__)
+model_lvl, metric_lvl = "model", "metric"
 
 
 # %%
@@ -53,7 +54,7 @@ display(
 
 
 # %% Plot violin plot of RMSD vs DFT
-df_rmsd = df_go.xs(MbdKey.structure_rmsd_vs_dft, level=MbdKey.sym_prop, axis="columns")
+df_rmsd = df_go.xs(MbdKey.structure_rmsd_vs_dft, level=metric_lvl, axis="columns")
 
 fig_rmsd = px.violin(
     df_rmsd.round(3).dropna(),
@@ -68,7 +69,7 @@ fig_rmsd.update_traces(orientation="h", side="positive", width=1.8)
 
 # add annotation for mean for each model
 for model, srs_rmsd in df_go.xs(
-    MbdKey.structure_rmsd_vs_dft, level=MbdKey.sym_prop, axis="columns"
+    MbdKey.structure_rmsd_vs_dft, level=metric_lvl, axis="columns"
 ).items():
     mean_rmsd = srs_rmsd.mean()
     model_color = next(
@@ -98,7 +99,7 @@ fig_rmsd.show()
 
 # %% calculate number of model spacegroups agreeing with DFT-relaxed spacegroup
 avg_spg_diff = (
-    df_go.xs(MbdKey.spg_num_diff, level=MbdKey.sym_prop, axis="columns")
+    df_go.xs(MbdKey.spg_num_diff, level=metric_lvl, axis="columns")
     .mean(axis=0)
     .round(1)
 )
@@ -107,7 +108,7 @@ print(f"Average spacegroup number difference vs DFT for each model: {avg_spg_dif
 
 # %% violin plot of spacegroup number diff vs DFT
 fig_sym = px.violin(
-    df_go.xs(MbdKey.spg_num_diff, level=MbdKey.sym_prop, axis="columns"),
+    df_go.xs(MbdKey.spg_num_diff, level=metric_lvl, axis="columns"),
     title="Spacegroup Number Diff vs DFT",
     orientation="h",
     color="model",
@@ -124,7 +125,7 @@ pmv.save_fig(fig_sym, f"{module_dir}/{today}-sym-violin.pdf")
 
 # %% violin plot of number of symmetry operations in ML-relaxed structures
 fig_sym_ops = px.violin(
-    df_go.xs(Key.n_sym_ops, level=MbdKey.sym_prop, axis="columns"),
+    df_go.xs(Key.n_sym_ops, level=metric_lvl, axis="columns"),
     title="Number of Symmetry Operations in ML-relaxed Structures",
     orientation="h",
     color="model",
@@ -141,7 +142,7 @@ pmv.save_fig(fig_sym_ops, f"{module_dir}/{today}-sym-ops-violin.pdf")
 # %% violin plot of number of symmetry operations in ML-relaxed structures vs DFT
 fig_sym_ops_diff = px.violin(
     df_go.drop(Key.dft.label, level=Key.model, axis="columns")
-    .xs(MbdKey.n_sym_ops_diff, level=MbdKey.sym_prop, axis="columns")
+    .xs(MbdKey.n_sym_ops_diff, level=metric_lvl, axis="columns")
     .reset_index(),
     orientation="h",
     color="model",
@@ -160,7 +161,7 @@ pmv.save_fig(fig_sym_ops_diff, f"{module_dir}/{today}-sym-ops-diff-violin.svelte
 
 # %% bar plot of number of symmetry operations in ML-relaxed structures vs DFT
 df_sym_ops_diff = df_go.drop(Key.dft.label, level=Key.model, axis="columns").xs(
-    MbdKey.n_sym_ops_diff, level=MbdKey.sym_prop, axis="columns"
+    MbdKey.n_sym_ops_diff, level=metric_lvl, axis="columns"
 )
 
 # Create subplot figure with one row per model
@@ -235,7 +236,7 @@ models = df_go_metrics.index
 # Calculate and plot CDF for each model
 for model in models:
     rmsd_vals = df_go.xs(
-        MbdKey.structure_rmsd_vs_dft, level=MbdKey.sym_prop, axis="columns"
+        MbdKey.structure_rmsd_vs_dft, level=metric_lvl, axis="columns"
     )[model].dropna()
 
     # Calculate CDF
@@ -287,7 +288,7 @@ if __name__ == "__main__":
     go_metrics.write_geo_opt_metrics_to_yaml(df_go_metrics, symprec)
 
     # %% plot ML vs DFT relaxed spacegroup correspondence as sankey diagrams
-    df_spg = df_go.xs(Key.spg_num, level=MbdKey.sym_prop, axis="columns")
+    df_spg = df_go.xs(Key.spg_num, level=metric_lvl, axis="columns").convert_dtypes()
     for model_label in {*df_spg} - {Key.dft.label}:
         # get most common pairs of DFT/Model spacegroups
         model = Model.from_label(model_label)
@@ -304,6 +305,7 @@ if __name__ == "__main__":
         )
         fig.show()
         pmv.save_fig(fig, f"{SITE_FIGS}/spg-sankey-{model.key}.svelte")
+        pmv.save_fig(fig, f"{PDF_FIGS}/spg-sankey-{model.key}.pdf")
 
 
 # TODO maybe add average_distance_within_threshold metric

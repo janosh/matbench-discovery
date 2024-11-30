@@ -1,7 +1,12 @@
 <script lang="ts">
-  import { HeatmapTable, MODEL_METADATA, model_is_compliant } from '$lib'
-  import { geo_opt } from '$pkg/metrics-which-is-better.yml'
+  import {
+    HeatmapTable,
+    MODEL_METADATA,
+    model_is_compliant,
+    get_metric_rank_order,
+  } from '$lib'
   import { pretty_num } from 'elementari'
+  import type { HeatmapColumn } from './types.ts'
 
   export let show_non_compliant: boolean = false
   export let show_metadata: boolean = true
@@ -27,12 +32,14 @@
   const sep_line_style = `border-left: 1px solid black`
 
   // Create columns for each symprec value
+  let columns: HeatmapColumn[]
   $: columns = [
-    { label: `Model` },
+    { label: `Model`, sticky: true },
     {
       label: `RMSD`,
       tooltip: `Root mean squared displacement (in Å) of ML vs DFT relaxed atomic positions as calculated by pymatgen StructureMatcher`,
       style: sep_line_style,
+      format: `.3f`,
     },
     // Symmetry match columns
     ...symprec_values.flatMap((symprec) => [
@@ -41,22 +48,26 @@
         label: `σ<sub>match</sub>`,
         tooltip: `Fraction of structures where ML and DFT ground state have matching spacegroup (symprec=${symprec}Å)`,
         style: sep_line_style,
+        format: `.1%`,
       },
       {
         group: format_symprec(symprec),
         label: `σ<sub>dec</sub>`,
         tooltip: `Fraction of structures where the number of symmetry operations decreased after ML relaxation (symprec=${symprec}Å)`,
+        format: `.1%`,
       },
       {
         group: format_symprec(symprec),
         label: `σ<sub>inc</sub>`,
         tooltip: `Fraction of structures where the number of symmetry operations increased after ML relaxation (symprec=${symprec}Å). Not colored because it's high or low is good or bad. Could be models find higher symmetry lower-energy structures than DFT optimizer.`,
         color_scale: null,
+        format: `.1%`,
       },
       {
         group: format_symprec(symprec),
         label: `N<sub>ops,MAE</sub>`,
         tooltip: `Mean absolute error of number of symmetry operations in DFT and ML-relaxed structures (symprec=${symprec}Å)`,
+        format: `.3`,
       },
     ]),
     {
@@ -65,21 +76,7 @@
       style: sep_line_style,
     },
     ...(show_metadata ? metadata_cols : []),
-  ]
-
-  // Create arrays of metric IDs for better/worse
-  $: higher_is_better = symprec_values.flatMap((symprec) =>
-    geo_opt.higher_is_better.map((metric) => `${metric} (${format_symprec(symprec)})`),
-  )
-
-  $: lower_is_better = [
-    ...geo_opt.lower_is_better.filter((metric) => !metric.includes(`(`)),
-    ...symprec_values.flatMap((symprec) =>
-      geo_opt.lower_is_better
-        .filter((metric) => metric.includes(`<`))
-        .map((metric) => `${metric} (${format_symprec(symprec)})`),
-    ),
-  ]
+  ].map((col) => ({ ...col, better: col.better ?? get_metric_rank_order(col.label) }))
 
   // Transform MODEL_METADATA into table data format
   $: metrics_data = MODEL_METADATA.filter(
@@ -123,31 +120,9 @@
         )} structures">${pretty_num(geo_opt[`symprec=${symprec_values[0]}`].n_structures)}</span>`,
       }
     })
-
-  // Update format object
-  $: format = {
-    RMSD: `.3f`,
-    ...symprec_values.reduce(
-      (acc, symprec) => ({
-        ...acc,
-        [`σ<sub>match</sub> (${format_symprec(symprec)})`]: `.1%`,
-        [`σ<sub>dec</sub> (${format_symprec(symprec)})`]: `.1%`,
-        [`σ<sub>inc</sub> (${format_symprec(symprec)})`]: `.1%`,
-        [`N<sub>ops,MAE</sub> (${format_symprec(symprec)})`]: `.3`,
-      }),
-      {},
-    ),
-  }
 </script>
 
-<HeatmapTable
-  data={metrics_data}
-  {columns}
-  {higher_is_better}
-  {lower_is_better}
-  {format}
-  {...$$restProps}
-/>
+<HeatmapTable data={metrics_data} {columns} {...$$restProps} />
 
 <style>
   :global(.heatmap-table td:not(:first-child)) {
