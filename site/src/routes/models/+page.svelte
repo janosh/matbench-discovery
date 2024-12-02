@@ -96,6 +96,7 @@
     best models
     <RadioButtons bind:selected={order} options={[`asc`, `desc`]} /> by:
   </span>
+
   <ul>
     {#each [{ key: `model_name`, label: `Model Name` }, ...stats] as { key, label, tooltip }}
       <li class:active={key == sort_by}>
@@ -129,7 +130,8 @@
     worst
   </legend>
 
-  <ol>
+  <!-- TODO find better horizontal scroll fix -->
+  <ol style="overflow-x: hidden;">
     {#each models.slice(0, Math.max(min_models, show_n_best)) as model (model.model_name)}
       <li
         animate:flip={{ duration: 400 }}
@@ -186,7 +188,7 @@
     flex-wrap: wrap;
     gap: 9pt;
     margin: 2.5ex auto 3ex;
-    place-content: center;
+    /* place-content: center; TODO should uncomment but adds spurious horizontal scrolling */
   }
   ul > li button {
     transition: all 0.2s;

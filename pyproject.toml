@@ -83,8 +83,6 @@ output-format = "concise"
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-  "ANN101",
-  "ANN102",
   "ANN401",
   "B905",    # zip without explicit strict
   "BLE001",
