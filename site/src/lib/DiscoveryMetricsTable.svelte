@@ -14,13 +14,16 @@
   export let show_non_compliant: boolean = false
   export let show_energy_only: boolean = false
   export let show_metadata: boolean = true
+  export let hide_cols: string[] = []
   export let metadata_cols = [
     { label: `Training Set`, tooltip: `Size of and link to model training set` },
     { label: `Params`, tooltip: `Number of trainable model parameters` },
     { label: `Targets`, tooltip: `Target property used to train the model` },
     { label: `Date Added`, tooltip: `Submission date to the leaderboard` },
   ]
-  export let columns: HeatmapColumn[] = [
+
+  let columns: HeatmapColumn[]
+  $: columns = [
     { label: `Model`, sticky: true },
     { label: `F1`, tooltip: `Harmonic mean of precision and recall` },
     { label: `DAF`, tooltip: `Discovery acceleration factor` },
@@ -50,7 +53,11 @@
       style: `border-left: 1px solid black;`,
     },
     ...(show_metadata ? metadata_cols : []),
-  ].map((col) => ({ ...col, better: col.better ?? get_metric_rank_order(col.label) }))
+  ].map((col) => ({
+    ...col,
+    better: col.better ?? get_metric_rank_order(col.label),
+    hidden: hide_cols.includes(col.label) || col.hidden,
+  }))
 
   function format_train_set(model_training_sets: string[]) {
     let [total_structs, total_materials] = [0, 0]

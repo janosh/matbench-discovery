@@ -4,6 +4,7 @@ file containing all models."""
 # %%
 import gc
 import os
+from typing import Final
 
 import pandas as pd
 from pymatgen.core import Structure
@@ -14,8 +15,8 @@ from matbench_discovery.data import DataFiles
 from matbench_discovery.models import MODEL_METADATA
 from matbench_discovery.structure import analyze_symmetry, pred_vs_ref_struct_symmetry
 
-debug_mode: int = 0
-symprec: float = 1e-2
+debug_mode: Final[int] = 0
+symprec: Final[float] = 1e-2
 
 csv_path = f"{ROOT}/data/2024-11-29-all-models-geo-opt-analysis-{symprec=}.csv.gz"
 if os.path.isfile(csv_path):

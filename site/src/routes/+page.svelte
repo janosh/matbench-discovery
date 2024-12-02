@@ -38,7 +38,7 @@
   }, {} as ModelData)
 
   // Get array of hidden columns
-  $: hidden_cols = Object.entries(visible_cols)
+  $: hide_cols = Object.entries(visible_cols)
     .filter(([_, visible]) => !visible)
     .map(([col]) => col)
 </script>
@@ -47,13 +47,14 @@
   <CaptionedMetricsTable
     {show_non_compliant}
     {show_energy_only}
-    hide_cols={hidden_cols}
+    {hide_cols}
     style="margin-top: 4em;"
     slot="metrics-table"
   />
+  <!-- TODO: find better layout fix than overflow-x: scroll -->
   <div
     slot="table-controls"
-    style="display: grid; gap: 1ex; place-items: center; margin: 2em auto;"
+    style="display: grid; gap: 1ex; place-items: center; margin: 2em auto; overflow-x: scroll;"
   >
     <div style="display: flex; gap: 1em; align-items: center; flex-wrap: wrap;">
       <Toggle bind:checked={show_non_compliant} style="gap: 3pt;">

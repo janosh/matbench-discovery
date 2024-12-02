@@ -142,11 +142,12 @@
               style:background-color={color.bg}
               style:color={color.text}
               style={col.style}
+              title={[undefined, null].includes(val) ? `not available` : null}
             >
               {#if typeof val === `number` && col.format}
-                {@html pretty_num(val, col.format)}
+                {pretty_num(val, col.format)}
               {:else if [undefined, null].includes(val)}
-                <span title="not available">n/a</span>
+                n/a
               {:else}
                 {@html val}
               {/if}
