@@ -10,7 +10,7 @@
   let show_energy_only: boolean = false
 
   // Default column visibility
-  let visible_cols = {
+  let visible_cols: Record<keyof ModelData['metrics'], boolean> = {
     Model: true,
     F1: true,
     DAF: true,

@@ -1,6 +1,10 @@
 # MLFF Geometry Optimization Analysis
 
+> Disclaimer: There is a caveat to the structure similarity analysis  below. The WBM test set was generated using the `MPRelaxSet` which applies [`ISYM=2`](https://vasp.at/wiki/index.php/ISIF). This fixes the structure's symmetry. The MLFFs by contrast use the FIRE or LBFGS optimizers with no symmetry constraints. They may therefore in some cases relax to lower energy states with different symmetry. This is not a mistake of the model and so higher σ<sub>match</sub> (the percentage of structures with matching ML and DFT spacegroups) is not necessarily indicative of a better model. Thanks to Alex Ganose for pointing this out! Undiscovered lower energy structures in the relatively well-explored chemical systems covered by WBM and MP are not expected to be a common occurrence. Hence we believe this analysis still provides some signal so we left it on this secluded page.
+
 All plots/metrics below evaluate the quality of MLFF relaxations for the 257k crystal structures in the [WBM test set](https://nature.com/articles/s41524-020-00481-6). Not all models were able to relax all structures (user/cluster error may explain some failures) but every model was evaluated on at least <slot name="min-relaxed-structures"/> relaxations.
+
+Symmetry detection was performed with the excellent Rust library [`moyopy`](https://github.com/janosh/moyopy), a ~4x faster successor to the already outstanding [`spglib`](https://spglib.readthedocs.io).
 
 <slot name="geo-opt-metrics-table"/>
 
