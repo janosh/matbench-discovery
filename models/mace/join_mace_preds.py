@@ -22,14 +22,16 @@ __date__ = "2023-03-01"
 
 
 # %%
+energy_column = "mace_energy"
+e_form_mace_col = "e_form_per_atom_mace"
+struct_col = "mace_structure"
+
 module_dir = os.path.dirname(__file__)
 task_type = Task.IS2RE
-e_form_mace_col = "e_form_per_atom_mace"
 date = "2024-07-20"
 glob_pattern = f"{date}-mace-wbm-{task_type}*/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
-struct_col = "mace_structure"
 
 dfs: dict[str, pd.DataFrame] = {}
 
@@ -77,12 +79,21 @@ if len(processed) != len(df_mace):
 
 # %% compute corrected formation energies
 df_mace[Key.formula] = df_wbm[Key.formula]
-df_mace[e_form_mace_col] = [
-    get_e_form_per_atom(dict(energy=cse.energy, composition=formula))
-    for formula, cse in tqdm(
-        df_mace.set_index(Key.formula)[Key.cse].items(), total=len(df_mace)
+
+print("Calculating formation energies")
+
+e_form_list = []
+for _, row in tqdm(df_mace.iterrows(), total=len(df_mace)):
+    e_form = calc_energy_from_e_refs(
+        row["formula"],
+        ref_energies=mp_elemental_ref_energies,
+        total_energy=row[energy_column],
     )
-]
+    e_form_list.append(e_form)
+
+
+df_mace[e_form_mace_col] = e_form_list
+
 df_wbm[[*df_mace]] = df_mace
 
 
