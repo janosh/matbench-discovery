@@ -1,0 +1,72 @@
+model:
+  chemical_species: auto
+  cutoff: 5.0
+  channel: 128
+  is_parity: False
+  lmax: 2
+  num_convolution_layer: 5
+  irreps_manual:
+    - 128x0e
+    - 128x0e+64x1e+32x2e
+    - 128x0e+64x1e+32x2e
+    - 128x0e+64x1e+32x2e
+    - 128x0e+64x1e+32x2e
+    - 128x0e
+
+  weight_nn_hidden_neurons: [64, 64]
+  radial_basis:
+    radial_basis_name: bessel
+    bessel_basis_num: 8
+  cutoff_function:
+    cutoff_function_name: XPLOR
+    cutoff_on: 4.5
+
+  act_gate: { "e": silu, "o": tanh }
+  act_scalar: { "e": silu, "o": tanh }
+
+  conv_denominator: avg_num_neigh
+  train_shift_scale: False
+  train_denominator: False
+  self_connection_type: linear
+train:
+  train_shuffle: False
+  random_seed: 1
+  is_train_stress: True
+  epoch: 600
+
+  loss: Huber
+  loss_param:
+    delta: 0.01
+
+  optimizer: adam
+  optim_param:
+    lr: 0.01
+  scheduler: linearlr
+  scheduler_param:
+    start_factor: 1.0
+    total_iters: 600
+    end_factor: 0.0001
+
+  force_loss_weight: 1.00
+  stress_loss_weight: 0.01
+
+  error_record:
+    - [Energy, MAE]
+    - [Force, MAE]
+    - [Stress, MAE]
+    - [TotalLoss, None]
+
+  per_epoch: 10
+  # continue:
+  #    checkpoint: './checkpoint_best.pth'
+  #    reset_optimizer: False
+  #    reset_scheduler: False
+data:
+  data_shuffle: False
+  batch_size: 128 # per GPU batch size, as the model trained with 32 GPUs, the effective batch size equals 4096.
+  scale: per_atom_energy_std
+  shift: elemwise_reference_energies
+
+  save_by_train_valid: False
+  load_dataset_path: [train.sevenn_data]
+  load_validset_path: [valid.sevenn_data]
