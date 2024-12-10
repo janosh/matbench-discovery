@@ -1,0 +1,155 @@
+model_name: SevenNet
+model_key: sevennet
+model_version: v0.10.3 # 2024-07-11
+matbench_discovery_version: 1.1.2 # required
+date_added: "2024-12-10" # required
+date_published: "2024-02-06"
+authors: # required (only name, other keys are optional)
+  - name: Yutack Park
+    affiliation: Seoul National University
+    email: parkyutack@snu.ac.kr
+    orcid: https://orcid.org/0009-0008-8690-935X
+  - name: Jaesun Kim
+    affiliation: Seoul National University
+    orcid: https://orcid.org/0009-0000-6646-1318
+  - name: Seungwoo Hwang
+    affiliation: Seoul National University
+    orcid: https://orcid.org/0000-0002-1523-8340
+  - name: Seungwu Han
+    affiliation: Seoul National University, Korea Institute for Advanced Study
+    email: hansw@snu.ac.kr
+    orcid: https://orcid.org/0000-0003-3958-0922
+    corresponding: true
+trained_by:
+  - name: Saerom Choi
+    affiliation: Samsung Advanced Institute of Technology, Seoul National University
+    orcid: https://orcid.org/0009-0004-2240-5428
+repo: https://github.com/MDIL-SNU/SevenNet # required
+url: https://github.com/MDIL-SNU/SevenNet/blob/main/sevenn/pretrained_potentials/SevenNet_l3i5
+doi: https://doi.org/10.1021/acs.jctc.4c00190
+paper: https://arxiv.org/abs/2402.03789
+pypi: https://pypi.org/project/sevenn
+
+openness: OSOD
+trained_for_benchmark: false
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+model_type: UIP
+model_params: 1_171_144
+n_estimators: 1
+
+hyperparams:
+  max_force: 0.05
+  max_steps: 500
+  ase_optimizer: FIRE
+  optimizer: Adam
+  loss: Huber - delta=0.01
+  loss_weights:
+    energy: 1.0
+    force: 1.0
+    stress: 0.01
+  batch_size: 1024 # 32 (gpus) * 32 (batch per gpu) = 1024 (total batch size)
+  initial_learning_rate: 0.010
+  learning_rate_schedule: LinearLR - start_factor=1.0, total_iters=600, end_factor=0.0001
+  epochs: 600
+  n_layers: 5
+  n_features: 128 l=0 scalars, 64 l=1 vectors, 32 l=2 tensors, 32 l=3 tensors
+  n_radial_bessel_basis: 8
+  radial_cutoff: 5.0 # Å
+  sph_harmonics_l_max: 3
+
+requirements:
+  torch: 2.2.1
+  torch-geometric: 2.5.2
+  ase: 3.22.1
+  pymatgen: 2024.6.10
+  numpy: 1.26.4
+
+training_set: [MPtrj]
+
+notes:
+  Description: |
+    SevenNet is a graph neural network interatomic potential package that supports parallel molecular dynamics simulations.
+    In the SevenNet-l3i5 model, based on the NequIP architecture, the self-connection layer is replaced by a linear (or self-interaction) layer removing numerous element-dependent parameters. Compared to the SevenNet-0, which uses spherical harmonics up to l=2, SevenNet-l3i5 employs l=3 resulting in higher accuracy.
+
+metrics:
+  phonons:
+    κ_SRME: 0.550  # !UPDATED
+  geo_opt:
+    pred_file: models/sevennet/2024-07-11-sevennet-0-relaxed-structures.json.gz
+    pred_col: sevennet_structure
+    symprec=1e-5:
+      rmsd: 0.0193 # Å
+      n_sym_ops_mae: 2.5921 # unitless
+      symmetry_decrease: 0.3557 # fraction
+      symmetry_match: 0.4535 # fraction
+      symmetry_increase: 0.1446 # fraction
+      n_structures: 256963 # count
+    symprec=1e-2:
+      rmsd: 0.0193 # Å
+      n_sym_ops_mae: 1.9558 # unitless
+      symmetry_decrease: 0.0831 # fraction
+      symmetry_match: 0.7823 # fraction
+      symmetry_increase: 0.1262 # fraction
+      n_structures: 256614 # count
+  discovery:
+    pred_file: models/sevennet/2024-12-10-sevennet-l3l5-preds.csv.gz  # !UPDATED
+    pred_col: e_form_per_atom_sevennet_l3i5  # !UPDATED
+    full_test_set:
+      F1: 0.719 # fraction
+      DAF: 3.804 # dimensionless
+      Precision: 0.653 # fraction
+      Recall: 0.8 # fraction
+      Accuracy: 0.893 # fraction
+      TPR: 0.8 # fraction
+      FPR: 0.088 # fraction
+      TNR: 0.912 # fraction
+      FNR: 0.2 # fraction
+      TP: 35259.0 # count
+      FP: 18765.0 # count
+      TN: 194106.0 # count
+      FN: 8833.0 # count
+      MAE: 0.046 # eV/atom
+      RMSE: 0.09 # eV/atom
+      R2: 0.75 # dimensionless
+      missing_preds: 3 # count
+      missing_percent: 0.00% # fraction
+    most_stable_10k:
+      F1: 0.945 # fraction
+      DAF: 5.857 # dimensionless
+      Precision: 0.895 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.895 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 8954.0 # count
+      FP: 1046.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.054 # eV/atom
+      RMSE: 0.124 # eV/atom
+      R2: 0.7 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
+    unique_prototypes:
+      F1: 0.724 # fraction
+      DAF: 4.252 # dimensionless
+      Precision: 0.65 # fraction
+      Recall: 0.818 # fraction
+      Accuracy: 0.904 # fraction
+      TPR: 0.818 # fraction
+      FPR: 0.081 # fraction
+      TNR: 0.919 # fraction
+      FNR: 0.182 # fraction
+      TP: 27304.0 # count
+      FP: 14703.0 # count
+      TN: 167411.0 # count
+      FN: 6070.0 # count
+      MAE: 0.048 # eV/atom
+      RMSE: 0.092 # eV/atom
+      R2: 0.75 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
