@@ -95,7 +95,7 @@ metrics:
       n_structures: 256614 # count
   discovery:
     pred_file: models/sevennet/2024-12-10-sevennet-l3l5-preds.csv.gz  # !UPDATED
-    pred_col: e_form_per_atom_sevennet_l3i5  # !UPDATED
+    pred_col: e_form_per_atom_sevennet
     full_test_set:
       F1: 0.719 # fraction
       DAF: 3.804 # dimensionless
