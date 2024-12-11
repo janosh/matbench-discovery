@@ -4,7 +4,7 @@
 
 All plots/metrics below evaluate the quality of MLFF relaxations for the 257k crystal structures in the [WBM test set](https://nature.com/articles/s41524-020-00481-6). Not all models were able to relax all structures (user/cluster error may explain some failures) but every model was evaluated on at least <slot name="min-relaxed-structures"/> relaxations.
 
-Symmetry detection was performed with the excellent Rust library [`moyopy`](https://github.com/janosh/moyopy), a ~4x faster successor to the already outstanding [`spglib`](https://spglib.readthedocs.io).
+Symmetry detection was performed with the excellent Rust library [`moyopy`](https://github.com/spglib/moyo), a ~4x faster successor to the already outstanding [`spglib`](https://spglib.readthedocs.io).
 
 <slot name="geo-opt-metrics-table"/>
 
