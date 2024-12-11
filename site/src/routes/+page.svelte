@@ -47,7 +47,7 @@
 
 <svelte:body
   on:click={(event) => {
-    if (!event.target.closest(`.column-toggles`)) {
+    if (!event.target?.closest(`.column-toggles`)) {
       column_panel_open = false
     }
   }}
@@ -150,7 +150,7 @@
   .column-menu {
     position: absolute;
     right: 0;
-    top: 70%;
+    top: calc(100% + 4pt);
     background: #1c1c1c;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 4pt;

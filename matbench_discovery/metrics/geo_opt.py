@@ -20,8 +20,7 @@ def write_geo_opt_metrics_to_yaml(df_metrics: pd.DataFrame, symprec: float) -> N
             - symmetry_match: Fraction of structures with matching symmetry
             - symmetry_increase: Fraction of structures with increased symmetry
             - n_structs: Number of structures evaluated
-        symprec (float): spglib symmetry precision for comparing ML and DFT relaxed
-            structures.
+        symprec (float): symmetry precision for comparing ML and DFT relaxed structures.
     """
     for model_name in df_metrics.index:
         try:

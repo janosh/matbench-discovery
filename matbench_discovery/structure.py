@@ -1,10 +1,7 @@
 """Perturb atomic coordinates of a pymatgen structure and analyze symmetry."""
 
-import warnings
-
 import numpy as np
 import pandas as pd
-import spglib
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Structure
 from pymatviz.enums import Key
@@ -50,16 +47,14 @@ def analyze_symmetry(
     symprec: float = 1e-2,
     angle_tolerance: float | None = None,
 ) -> pd.DataFrame:
-    """Analyze symmetry of a dictionary of structures using spglib.
+    """Analyze symmetry of a dictionary of structures using moyopy.
 
     Args:
         structures (dict[str, Structure]): Map material IDs to pymatgen Structures
         pbar (bool | dict[str, str], optional): Whether to show progress bar.
             Defaults to True.
-        symprec (float, optional): Symmetry precision of spglib.get_symmetry_dataset.
-            Defaults to 1e-2.
-        angle_tolerance (float, optional): Angle tol. of spglib.get_symmetry_dataset.
-            Defaults to -1.
+        symprec (float, optional): Symmetry precision of moyopy. Defaults to 1e-2.
+        angle_tolerance (float, optional): Angle tol. of moyopy. Defaults to -1.
 
     Returns:
         pd.DataFrame: DataFrame containing symmetry information for each structure
@@ -93,7 +88,9 @@ def analyze_symmetry(
         )
 
         if sym_data is None:
-            raise ValueError(f"spglib returned None for {struct_key}\n{struct}")
+            raise ValueError(
+                f"moyopy symmetry detection returned None for {struct_key}\n{struct}"
+            )
 
         sym_ops = sym_data.operations
 
