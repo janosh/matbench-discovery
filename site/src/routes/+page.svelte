@@ -61,10 +61,9 @@
     style="margin-top: 4em;"
     slot="metrics-table"
   />
-  <!-- TODO: find better layout fix than overflow-x: scroll -->
   <div slot="table-controls">
     <Toggle bind:checked={show_non_compliant} style="gap: 3pt;">
-      Show non-compliant models <Tooltip max_width="10em">
+      Show non-compliant models <Tooltip max_width="20em">
         <span slot="tip">
           Models can be non-compliant for multiple reasons<br />
           - closed source (model implementation and/or train/test code)<br />
@@ -80,7 +79,7 @@
       </Tooltip>&ensp;</Toggle
     >
     <Toggle bind:checked={show_energy_only} style="gap: 3pt;">
-      Show energy-only models <Tooltip max_width="10em">
+      Show energy-only models <Tooltip max_width="20em">
         <span slot="tip">
           Models that only predict energy (E) perform worse<br /> and can't be evaluated
           on force-modeling tasks such as κ<sub>SRME</sub>
