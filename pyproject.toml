@@ -35,7 +35,6 @@ dependencies = [
   "ruamel.yaml>=0.18.6",
   "scikit-learn>=1.5",
   "scipy>=1.13",
-  "seaborn>=0.13",
   "tqdm>=4.66",
   "wandb>=0.17",
 ]

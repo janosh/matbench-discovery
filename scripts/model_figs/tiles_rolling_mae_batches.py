@@ -7,7 +7,6 @@ import math
 
 import pymatviz as pmv
 from plotly.subplots import make_subplots
-from pymatviz.enums import Key
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.enums import MbdKey, TestSubset
@@ -29,7 +28,7 @@ save_individual_figs = globals().get("save_individual_figs", True)
 test_subset = globals().get("test_subset", TestSubset.uniq_protos)
 
 if test_subset == TestSubset.uniq_protos:
-    df_preds = df_preds.query(Key.uniq_proto)
+    df_preds = df_preds.query(MbdKey.uniq_proto)
     df_each_pred = df_each_pred.loc[df_preds.index]
 
 show_non_compliant = globals().get("show_non_compliant", False)

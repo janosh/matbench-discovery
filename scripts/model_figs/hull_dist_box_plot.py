@@ -1,10 +1,9 @@
 # %%
 import plotly.graph_objects as go
 import pymatviz as pmv
-from pymatviz.enums import Key
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
-from matbench_discovery.enums import Quantity, TestSubset
+from matbench_discovery.enums import MbdKey, Quantity, TestSubset
 from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 from matbench_discovery.preds.discovery import df_each_err, df_preds, models
 
@@ -15,7 +14,7 @@ __date__ = "2023-05-25"
 test_subset = globals().get("test_subset", TestSubset.uniq_protos)
 
 if test_subset == TestSubset.uniq_protos:
-    df_preds = df_preds.query(Key.uniq_proto)
+    df_preds = df_preds.query(MbdKey.uniq_proto)
     df_each_err = df_each_err.loc[df_preds.index]
 
 

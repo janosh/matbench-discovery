@@ -93,14 +93,17 @@ def analyze_symmetry(
             )
 
         sym_ops = sym_data.operations
+        hall_symbol_entry = moyopy.HallSymbolEntry(hall_number=sym_data.hall_number)
 
         sym_info = {
             new_key: getattr(sym_data, old_key)
             for old_key, new_key in sym_key_map.items()
         } | {
-            Key.n_sym_ops: sym_ops.num_operations(),
+            Key.n_sym_ops: sym_ops.num_operations,
             Key.n_rot_syms: len(sym_ops.rotations),
             Key.n_trans_syms: len(sym_ops.translations),
+            Key.hall_symbol: hall_symbol_entry.hm_short,
+            Key.hall_num: hall_symbol_entry.hall_number,
         }
         results[struct_key] = sym_info | dict(
             symprec=symprec, angle_tolerance=angle_tolerance
