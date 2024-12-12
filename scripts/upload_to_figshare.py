@@ -77,7 +77,7 @@ def get_file_hash_and_size(
     """
     md5 = hashlib.md5()  # noqa: S324
     size = 0
-    with open(file_name, "rb") as file:
+    with open(file_name, mode="rb") as file:
         while data := file.read(chunk_size):
             size += len(data)
             md5.update(data)
@@ -96,7 +96,7 @@ def upload_file_to_figshare(article_id: int, file_path: str) -> int:
     # Upload parts
     url = file_info["upload_url"]
     result = make_request("GET", url)
-    with open(file_path, "rb") as file:
+    with open(file_path, mode="rb") as file:
         for part in tqdm(result["parts"], desc=file_path):
             # Upload part
             u_data = file_info.copy()
@@ -195,7 +195,7 @@ def main(pyproject: dict[str, Any], yaml_path: str) -> int:
 
 
 if __name__ == "__main__":
-    with open(f"{ROOT}/pyproject.toml", "rb") as toml_file:
+    with open(f"{ROOT}/pyproject.toml", mode="rb") as toml_file:
         pyproject = tomllib.load(toml_file)["project"]
 
     figshare_yaml_path = f"{PKG_DIR}/data-files.yml"

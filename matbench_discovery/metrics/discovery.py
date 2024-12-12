@@ -6,7 +6,6 @@ from collections.abc import Sequence
 
 import numpy as np
 import pandas as pd
-from pymatviz.enums import Key
 from ruamel.yaml.comments import CommentedMap
 from sklearn.metrics import r2_score
 
@@ -164,7 +163,7 @@ def write_discovery_metrics_to_yaml(
     metrics_10k_most_stable = df_metrics_10k[model.label].to_dict()
     metrics_unique_protos = df_metrics_uniq_protos[model.label].to_dict()
 
-    df_uniq_proto_preds = df_preds[df_wbm[Key.uniq_proto]]
+    df_uniq_proto_preds = df_preds[df_wbm[MbdKey.uniq_proto]]
 
     each_pred_uniq_proto = (
         df_uniq_proto_preds[MbdKey.each_true]
@@ -177,7 +176,7 @@ def write_discovery_metrics_to_yaml(
     for metrics, df_tmp in (
         (metrics_full_test_set, df_preds),
         (metrics_10k_most_stable, df_preds.loc[most_stable_10k_idx]),
-        (metrics_unique_protos, df_preds.query(Key.uniq_proto)),
+        (metrics_unique_protos, df_preds.query(MbdKey.uniq_proto)),
     ):
         metrics[str(MbdKey.missing_preds)] = int(df_tmp[model.label].isna().sum())
         metrics[str(MbdKey.missing_percent)] = (
