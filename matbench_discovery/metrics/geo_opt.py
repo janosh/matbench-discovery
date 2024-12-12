@@ -49,11 +49,10 @@ def write_geo_opt_metrics_to_yaml(df_metrics: pd.DataFrame, symprec: float) -> N
             ),
             str(Key.n_structs): int(model_metrics[Key.n_structs]),
         }
+        symprec_key = f"{symprec=}".replace("e-0", "e-")
 
         geo_opt_metrics = CommentedMap(all_metrics.setdefault(Task.geo_opt, {}))
-        metrics_for_symprec = CommentedMap(
-            geo_opt_metrics.setdefault(f"{symprec=}", {})
-        )
+        metrics_for_symprec = CommentedMap(geo_opt_metrics.setdefault(symprec_key, {}))
         metrics_for_symprec.update(new_metrics)
 
         # Define units for metrics
@@ -71,7 +70,7 @@ def write_geo_opt_metrics_to_yaml(df_metrics: pd.DataFrame, symprec: float) -> N
             if unit := metric_units.get(key):
                 metrics_for_symprec.yaml_add_eol_comment(unit, key, column=1)
 
-        geo_opt_metrics[f"{symprec=}"] = metrics_for_symprec
+        geo_opt_metrics[symprec_key] = metrics_for_symprec
         all_metrics[Task.geo_opt] = geo_opt_metrics
 
         # Write back to file
