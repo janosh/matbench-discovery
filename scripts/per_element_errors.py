@@ -36,7 +36,7 @@ size_col = "group"
 test_subset = globals().get("test_subset", TestSubset.uniq_protos)
 
 if test_subset == TestSubset.uniq_protos:
-    df_preds = df_preds.query(Key.uniq_proto)
+    df_preds = df_preds.query(MbdKey.uniq_proto)
     df_each_err = df_each_err.loc[df_preds.index]
     df_metrics = df_metrics_uniq_protos
     df_wbm = df_wbm.loc[df_preds.index]

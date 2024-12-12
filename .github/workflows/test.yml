@@ -29,6 +29,7 @@ jobs:
     with:
       os: ${{ matrix.os }}
       python-version: "3.11"
+      install-cmd: pip install -e .[test,symmetry]
 
   scripts:
     runs-on: ubuntu-latest

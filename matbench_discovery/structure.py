@@ -1,10 +1,7 @@
 """Perturb atomic coordinates of a pymatgen structure and analyze symmetry."""
 
-import warnings
-
 import numpy as np
 import pandas as pd
-import spglib
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Structure
 from pymatviz.enums import Key
@@ -48,29 +45,26 @@ def analyze_symmetry(
     *,
     pbar: bool | dict[str, str] = True,
     symprec: float = 1e-2,
-    angle_tolerance: float = -1,
+    angle_tolerance: float | None = None,
 ) -> pd.DataFrame:
-    """Analyze symmetry of a dictionary of structures using spglib.
+    """Analyze symmetry of a dictionary of structures using moyopy.
 
     Args:
         structures (dict[str, Structure]): Map material IDs to pymatgen Structures
         pbar (bool | dict[str, str], optional): Whether to show progress bar.
             Defaults to True.
-        symprec (float, optional): Symmetry precision of spglib.get_symmetry_dataset.
-            Defaults to 1e-2.
-        angle_tolerance (float, optional): Angle tol. of spglib.get_symmetry_dataset.
-            Defaults to -1.
+        symprec (float, optional): Symmetry precision of moyopy. Defaults to 1e-2.
+        angle_tolerance (float, optional): Angle tol. of moyopy. Defaults to -1.
 
     Returns:
         pd.DataFrame: DataFrame containing symmetry information for each structure
     """
+    import moyopy
+
     sym_key_map = {
         "number": Key.spg_num,
         "hall_number": Key.hall_num,
-        "international": MbdKey.international_spg_name,
-        "hall": Key.hall_symbol,
-        "choice": Key.choice_symbol,
-        "pointgroup": Key.point_group,
+        "site_symmetry_symbols": MbdKey.international_spg_name,
         "wyckoffs": Key.wyckoff_symbols,
     }
 
@@ -85,26 +79,31 @@ def analyze_symmetry(
         )
 
     for struct_key, struct in iterator:
-        cell = (struct.lattice.matrix, struct.frac_coords, struct.atomic_numbers)
-        # spglib 2.5.0 issues lots of warnings:
-        # - get_bravais_exact_positions_and_lattice failed
-        # - ssm_get_exact_positions failed
-        with warnings.catch_warnings():
-            warnings.filterwarnings(action="ignore", module="spglib")
-            sym_data = spglib.get_symmetry_dataset(
-                cell, symprec=symprec, angle_tolerance=angle_tolerance
-            )
+        cell = moyopy.Cell(
+            struct.lattice.matrix, struct.frac_coords, struct.atomic_numbers
+        )
+
+        sym_data = moyopy.MoyoDataset(
+            cell, symprec=symprec, angle_tolerance=angle_tolerance
+        )
 
         if sym_data is None:
-            raise ValueError(f"spglib returned None for {struct_key}\n{struct}")
+            raise ValueError(
+                f"moyopy symmetry detection returned None for {struct_key}\n{struct}"
+            )
+
+        sym_ops = sym_data.operations
+        hall_symbol_entry = moyopy.HallSymbolEntry(hall_number=sym_data.hall_number)
 
         sym_info = {
             new_key: getattr(sym_data, old_key)
             for old_key, new_key in sym_key_map.items()
         } | {
-            Key.n_sym_ops: len(sym_data.rotations),
-            Key.n_rot_syms: len(sym_data.rotations),
-            Key.n_trans_syms: len(sym_data.translations),
+            Key.n_sym_ops: sym_ops.num_operations,
+            Key.n_rot_syms: len(sym_ops.rotations),
+            Key.n_trans_syms: len(sym_ops.translations),
+            Key.hall_symbol: hall_symbol_entry.hm_short,
+            Key.hall_num: hall_symbol_entry.hall_number,
         }
         results[struct_key] = sym_info | dict(
             symprec=symprec, angle_tolerance=angle_tolerance

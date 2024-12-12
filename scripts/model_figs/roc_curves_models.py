@@ -2,7 +2,6 @@
 
 # %%
 import pymatviz as pmv
-from pymatviz.enums import Key
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots
@@ -17,7 +16,7 @@ __date__ = "2023-01-30"
 test_subset = globals().get("test_subset", TestSubset.uniq_protos)
 
 if test_subset == TestSubset.uniq_protos:
-    df_preds = df_preds.query(Key.uniq_proto)
+    df_preds = df_preds.query(MbdKey.uniq_proto)
     df_each_pred = df_each_pred.loc[df_preds.index]
 
 show_non_compliant = globals().get("show_non_compliant", False)
