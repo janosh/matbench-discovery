@@ -4,7 +4,7 @@ The **WBM dataset** was published in [Predicting stable crystalline compounds us
 
 The resulting novel structures were relaxed using MP-compatible VASP inputs (i.e. using `pymatgen`'s [`MPRelaxSet`](https://github.com/materialsproject/pymatgen/blob/c4998d92525921c3da0aec0f94ed1429c6786c42/pymatgen/io/vasp/MPRelaxSet.yaml)) and identical POTCARs in an attempt to create a database of Materials Project compatible novel crystals. Any degradation in model performance from training to test set should therefore largely be a result of extrapolation error rather than covariate shift in the underlying data.
 
-The authors performed 5 rounds of elemental substitution in total, each time relaxing all generated structures and adding those found to lie on the convex hull back to the source pool. In total, ~20k or close to 10% were found to lie on the Materials Project convex hull.
+The authors performed 5 rounds of element substitution starting from structures on the Materials Project convex hull, each time relaxing all generated structures and adding those found to lie on the convex hull back to the pool of parent structures for the next iteration of element substitution. In total, ~20k or close to 10% were found to lie on the Materials Project convex hull.
 
 Since repeated substitutions should - on average - increase chemical dissimilarity, the 5 iterations of this data-generation process are a unique and compelling feature as they allow testing on successively more out-of-distribution (OOD) data slices. We can check how model performance degrades when asked to predict structures increasingly more dissimilar from the training set (which is restricted to the [MP v2022.10.28](https://docs.materialsproject.org/changes/database-versions#v2022.10.28) database release (or earlier) for all models in this benchmark).
 
@@ -38,12 +38,12 @@ Invoking the script `python compile_wbm_test_set.py` will auto-download and rege
 
 please [raise an issue](https://github.com/janosh/matbench-discovery/issues).
 
-The number of materials in each step before and after processing are:
+The number of materials in each iteration of element substitution before and after processing are:
 
-| step   | 1      | 2      | 3      | 4      | 5      | total   |
-| ------ | ------ | ------ | ------ | ------ | ------ | ------- |
-| before | 61,848 | 52,800 | 79,205 | 40,328 | 23,308 | 257,487 |
-| after  | 61,466 | 52,755 | 79,160 | 40,314 | 23,268 | 256,963 |
+| step       | 1      | 2      | 3      | 4      | 5      | total   |
+| ---------- | ------ | ------ | ------ | ------ | ------ | ------- |
+| **before** | 61,848 | 52,800 | 79,205 | 40,328 | 23,308 | 257,487 |
+| **after**  | 61,466 | 52,755 | 79,160 | 40,314 | 23,268 | 256,963 |
 
 ### Prototype Analysis
 
@@ -62,12 +62,12 @@ The next filter was to drop all but the lowest energy structure for each unique 
 The WBM prototypes were determined for the relaxed structures. This choice avoids inflating the metrics due to duplicates arising from different initial prototypes that fall into the same basin of attraction during relaxation.
 In total 41,475 candidates can be removed from the WBM dataset if using this approach.
 
-The number of materials in each step before and after prototype filtering are:
+The number of materials in each iteration of element substitution before and after prototype filtering are:
 
-| step   | 1      | 2      | 3      | 4      | 5      | total   |
-| ------ | ------ | ------ | ------ | ------ | ------ | ------- |
-| before | 61,466 | 52,755 | 79,160 | 40,314 | 23,268 | 256,963 |
-| after  | 54,209 | 45,979 | 66,528 | 34,531 | 14,241 | 215,488 |
+| step       | 1      | 2      | 3      | 4      | 5      | total   |
+| ---------- | ------ | ------ | ------ | ------ | ------ | ------- |
+| **before** | 61,466 | 52,755 | 79,160 | 40,314 | 23,268 | 256,963 |
+| **after**  | 54,209 | 45,979 | 66,528 | 34,531 | 14,241 | 215,488 |
 
 [`get_protostructure_label_from_spglib`]: https://github.com/CompRhys/aviary/blob/a8da6c468a2407fd14687de327fe181c5de0169f/aviary/wren/utils.py#L140
 [`aviary`]: https://github.com/CompRhys/aviary

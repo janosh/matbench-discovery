@@ -670,15 +670,15 @@ mask_dupe_protos = df_summary.sort_values(by=[Key.wyckoff, MbdKey.each_wbm]).dup
 assert sum(mask_proto_in_mp) == 11_175, f"{sum(mask_proto_in_mp)=:_}"
 assert sum(mask_dupe_protos) == 32_784, f"{sum(mask_dupe_protos)=:_}"
 
-df_summary[Key.uniq_proto] = ~(mask_proto_in_mp | mask_dupe_protos)
-assert dict(df_summary[Key.uniq_proto].value_counts()) == {
+df_summary[MbdKey.uniq_proto] = ~(mask_proto_in_mp | mask_dupe_protos)
+assert dict(df_summary[MbdKey.uniq_proto].value_counts()) == {
     True: 215_488,
     False: 41_475,
 }
 
 first_uniq_proto_wbm_ids = ["wbm-1-7", "wbm-1-8", "wbm-1-15", "wbm-1-20", "wbm-1-33"]
 assert (
-    list(df_summary.query(f"~{Key.uniq_proto}").head(5).index)
+    list(df_summary.query(f"~{MbdKey.uniq_proto}").head(5).index)
     == first_uniq_proto_wbm_ids
 )
 

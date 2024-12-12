@@ -13,5 +13,13 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true
-  }
+  },
+  "exclude": [
+    "node_modules/*",
+    ".svelte-kit/*",
+    "build/*",
+    "dist/*",
+    "static/*",
+    "**/figs/*"
+  ]
 }

@@ -58,7 +58,7 @@ all_counts = (
 print(f"{STABILITY_THRESHOLD=}")
 for df, label in (
     (df_wbm, "full WBM"),
-    (df_wbm.query(Key.uniq_proto), "WBM unique prototypes"),
+    (df_wbm.query(MbdKey.uniq_proto), "WBM unique prototypes"),
 ):
     n_stable = sum(df[MbdKey.each_true] <= STABILITY_THRESHOLD)
     stable_rate = n_stable / len(df)

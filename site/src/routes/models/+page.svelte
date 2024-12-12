@@ -130,8 +130,7 @@
     worst
   </legend>
 
-  <!-- TODO find better horizontal scroll fix -->
-  <ol style="overflow-x: hidden;">
+  <ol>
     {#each models.slice(0, Math.max(min_models, show_n_best)) as model (model.model_name)}
       <li
         animate:flip={{ duration: 400 }}
@@ -188,7 +187,7 @@
     flex-wrap: wrap;
     gap: 9pt;
     margin: 2.5ex auto 3ex;
-    /* place-content: center; TODO should uncomment but adds spurious horizontal scrolling */
+    place-content: center;
   }
   ul > li button {
     transition: all 0.2s;

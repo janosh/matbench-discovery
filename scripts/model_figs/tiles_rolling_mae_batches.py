@@ -7,7 +7,6 @@ import math
 
 import pymatviz as pmv
 from plotly.subplots import make_subplots
-from pymatviz.enums import Key
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.enums import MbdKey, TestSubset
@@ -29,7 +28,7 @@ save_individual_figs = globals().get("save_individual_figs", True)
 test_subset = globals().get("test_subset", TestSubset.uniq_protos)
 
 if test_subset == TestSubset.uniq_protos:
-    df_preds = df_preds.query(Key.uniq_proto)
+    df_preds = df_preds.query(MbdKey.uniq_proto)
     df_each_pred = df_each_pred.loc[df_preds.index]
 
 show_non_compliant = globals().get("show_non_compliant", False)
@@ -65,7 +64,7 @@ fig.layout.update(width=280 * n_cols)
 
 subfig = None
 for i, model in enumerate(models_to_plot):
-    df_pivot = df_each_pred.pivot(columns=batch_col, values=model)  # noqa: PD010
+    df_pivot = df_each_pred.pivot(columns=batch_col, values=model)
 
     subfig, df_err, df_std = rolling_mae_vs_hull_dist(
         e_above_hull_true=df_preds[MbdKey.each_true],

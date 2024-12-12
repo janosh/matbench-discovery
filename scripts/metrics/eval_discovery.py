@@ -280,7 +280,7 @@ for df_in, df_out, col in (
     # "Dummy" for df_metrics_10k is still for the full test set, not dummy metrics on
     # only first 10k most stable predictions
     (df_wbm, df_metrics_10k, "Dummy"),
-    (df_wbm.query(Key.uniq_proto), df_metrics_uniq_protos, "Dummy"),
+    (df_wbm.query(MbdKey.uniq_proto), df_metrics_uniq_protos, "Dummy"),
 ):
     dummy_clf = DummyClassifier(strategy="stratified", random_state=0)
     dummy_clf.fit(np.zeros_like(df_mp[Key.each]), df_mp[Key.each] == 0)
@@ -293,7 +293,7 @@ for df_in, df_out, col in (
 
     # important: regression metrics from dummy_clf are meaningless, we overwrite them
     # with correct values here. don't remove!
-    dummy_metrics[Key.daf] = 1
+    dummy_metrics[Key.daf.symbol] = 1
     dummy_metrics["R2"] = 0
     dummy_metrics["MAE"] = (each_true - each_true.mean()).abs().mean()
     dummy_metrics["RMSE"] = ((each_true - each_true.mean()) ** 2).mean() ** 0.5

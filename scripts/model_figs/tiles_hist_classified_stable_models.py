@@ -28,7 +28,7 @@ __date__ = "2022-12-01"
 test_subset = globals().get("test_subset", TestSubset.uniq_protos)
 
 if test_subset == TestSubset.uniq_protos:
-    df_preds = df_preds.query(Key.uniq_proto)
+    df_preds = df_preds.query(MbdKey.uniq_proto)
     df_metrics = df_metrics_uniq_protos
 
 show_non_compliant = globals().get("show_non_compliant", False)

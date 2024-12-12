@@ -104,4 +104,4 @@ def test_stable_metrics() -> None:
         n_true_pos + n_false_pos + n_false_neg + n_true_neg
     )
     precision = n_true_pos / (n_true_pos + n_false_pos)
-    assert metrics[Key.daf] == precision / dummy_hit_rate
+    assert metrics[Key.daf.symbol] == precision / dummy_hit_rate

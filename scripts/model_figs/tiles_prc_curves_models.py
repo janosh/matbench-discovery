@@ -30,7 +30,7 @@ n_rows = math.ceil(len(models) / n_cols)
 test_subset = globals().get("test_subset", TestSubset.uniq_protos)
 
 if test_subset == TestSubset.uniq_protos:
-    df_preds = df_preds.query(Key.uniq_proto)
+    df_preds = df_preds.query(MbdKey.uniq_proto)
     df_each_pred = df_each_pred.loc[df_preds.index]
 
 show_non_compliant = globals().get("show_non_compliant", False)

@@ -128,7 +128,6 @@ def test_pred_vs_ref_struct_symmetry_with_structures(
     )
 
     assert set(df_compared) == {
-        Key.choice_symbol,
         Key.hall_num,
         Key.hall_symbol,
         MbdKey.international_spg_name,
@@ -137,7 +136,6 @@ def test_pred_vs_ref_struct_symmetry_with_structures(
         Key.n_sym_ops,
         MbdKey.n_sym_ops_diff,
         Key.n_trans_syms,
-        Key.point_group,
         Key.spg_num,
         MbdKey.spg_num_diff,
         Key.structure,
@@ -153,18 +151,23 @@ def test_analyze_symmetry_primitive_vs_conventional(cubic_struct: Structure) -> 
     primitive_structure = spg_analyzer.get_primitive_standard_structure()
 
     conventional_key, primitive_key = "conventional", "primitive"
+    int_spg_key = "international_spg_name"
     df_conventional = analyze_symmetry({conventional_key: cubic_struct})
     df_primitive = analyze_symmetry({primitive_key: primitive_structure})
     assert df_conventional.index.name == Key.mat_id
     assert df_primitive.index.name == Key.mat_id
     assert df_primitive.index[0] == primitive_key
     assert df_conventional.index[0] == conventional_key
+    assert df_conventional.index[0] == conventional_key
+    assert df_conventional[int_spg_key].iloc[0] == ["m-3m", "m-3m"]
+    assert df_primitive[int_spg_key].iloc[0] == ["m-3m"]
 
     cols_to_drop = [  # some columns differ between conventional and primitive structure
         Key.wyckoff_symbols,
         Key.n_sym_ops,
         Key.n_rot_syms,
         Key.n_trans_syms,
+        int_spg_key,
     ]
     df_primitive.index = df_conventional.index
 

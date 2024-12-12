@@ -34,7 +34,7 @@ for df, title in (
 
 full_prevalence = (df_wbm[MbdKey.each_true] <= STABILITY_THRESHOLD).mean()
 uniq_proto_prevalence = (
-    df_wbm.query(Key.uniq_proto)[MbdKey.each_true] <= STABILITY_THRESHOLD
+    df_wbm.query(MbdKey.uniq_proto)[MbdKey.each_true] <= STABILITY_THRESHOLD
 ).mean()
 
 for model in Model:
@@ -46,7 +46,7 @@ for model in Model:
         df_preds[MbdKey.each_true], each_pred, fillna=True
     )
 
-    df_uniq_proto_preds = df_preds[df_wbm[Key.uniq_proto]]
+    df_uniq_proto_preds = df_preds[df_wbm[MbdKey.uniq_proto]]
 
     each_pred_uniq_proto = (
         df_uniq_proto_preds[MbdKey.each_true]
@@ -56,7 +56,7 @@ for model in Model:
     df_metrics_uniq_protos[model_name] = stable_metrics(
         df_uniq_proto_preds[MbdKey.each_true], each_pred_uniq_proto, fillna=True
     )
-    df_metrics_uniq_protos.loc[Key.daf, model_name] = (
+    df_metrics_uniq_protos.loc[Key.daf.symbol, model_name] = (
         df_metrics_uniq_protos[model_name]["Precision"] / uniq_proto_prevalence
     )
 
@@ -67,7 +67,7 @@ for model in Model:
         most_stable_10k,
         fillna=True,
     )
-    df_metrics_10k.loc[Key.daf, model_name] = (
+    df_metrics_10k.loc[Key.daf.symbol, model_name] = (
         df_metrics_10k[model_name]["Precision"] / uniq_proto_prevalence
     )
 

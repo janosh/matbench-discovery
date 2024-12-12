@@ -20,7 +20,7 @@ __date__ = "2023-02-15"
 test_subset = globals().get("test_subset", TestSubset.uniq_protos)
 
 if test_subset == TestSubset.uniq_protos:
-    df_preds = df_preds.query(Key.uniq_proto)
+    df_preds = df_preds.query(MbdKey.uniq_proto)
 
 show_non_compliant = globals().get("show_non_compliant", False)
 models_to_plot = [

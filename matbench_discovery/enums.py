@@ -89,6 +89,10 @@ class MbdKey(LabelEnum):
     missing_preds = "missing_preds", "Missing predictions"
     missing_percent = "missing_percent", "Missing predictions (percent)"
 
+    aflow_prototype = "aflow_prototype"
+    canonical_proto = "canonical_proto"
+    uniq_proto = "unique_prototype"
+
 
 @unique
 class Task(LabelEnum):

@@ -10,7 +10,7 @@
   let show_energy_only: boolean = false
 
   // Default column visibility
-  let visible_cols = {
+  let visible_cols: Record<string, boolean> = {
     Model: true,
     F1: true,
     DAF: true,
@@ -41,7 +41,17 @@
   $: hide_cols = Object.entries(visible_cols)
     .filter(([_, visible]) => !visible)
     .map(([col]) => col)
+
+  let column_panel_open: boolean = false
 </script>
+
+<svelte:body
+  on:click={(event) => {
+    if (!event.target?.closest(`.column-toggles`)) {
+      column_panel_open = false
+    }
+  }}
+/>
 
 <Readme>
   <CaptionedMetricsTable
@@ -51,51 +61,46 @@
     style="margin-top: 4em;"
     slot="metrics-table"
   />
-  <!-- TODO: find better layout fix than overflow-x: scroll -->
-  <div
-    slot="table-controls"
-    style="display: grid; gap: 1ex; place-items: center; margin: 2em auto; overflow-x: scroll;"
-  >
-    <div style="display: flex; gap: 1em; align-items: center; flex-wrap: wrap;">
-      <Toggle bind:checked={show_non_compliant} style="gap: 3pt;">
-        Show non-compliant models <Tooltip max_width="10em">
-          <span slot="tip">
-            Models can be non-compliant for multiple reasons<br />
-            - closed source (model implementation and/or train/test code)<br />
-            - closed weights<br />
-            - trained on more than the permissible training set (<a
-              href="https://docs.materialsproject.org/changes/database-versions#v2022.10.28"
-              >MP v2022.10.28 release</a
-            >)<br />
-            We still show these models behind a toggle as we expect them<br /> to nonetheless
-            provide helpful signals for developing future models.
-          </span>
-          <Icon icon="octicon:info-16" inline style="padding: 0 3pt;" />
-        </Tooltip>&ensp;</Toggle
-      >
-      <Toggle bind:checked={show_energy_only} style="gap: 3pt;">
-        Show energy-only models <Tooltip max_width="10em">
-          <span slot="tip">
-            Models that only predict energy (E) perform worse<br /> and can't be evaluated
-            on force-modeling tasks such as κ<sub>SRME</sub>
-          </span>
-          <Icon icon="octicon:info-16" inline style="padding: 0 3pt;" />
-        </Tooltip>&ensp;</Toggle
-      >
+  <div slot="table-controls">
+    <Toggle bind:checked={show_non_compliant} style="gap: 3pt;">
+      Show non-compliant models <Tooltip max_width="20em">
+        <span slot="tip">
+          Models can be non-compliant for multiple reasons<br />
+          - closed source (model implementation and/or train/test code)<br />
+          - closed weights<br />
+          - trained on more than the permissible training set (<a
+            href="https://docs.materialsproject.org/changes/database-versions#v2022.10.28"
+            >MP v2022.10.28 release</a
+          >)<br />
+          We still show these models behind a toggle as we expect them<br /> to nonetheless
+          provide helpful signals for developing future models.
+        </span>
+        <Icon icon="octicon:info-16" inline style="padding: 0 3pt;" />
+      </Tooltip>&ensp;</Toggle
+    >
+    <Toggle bind:checked={show_energy_only} style="gap: 3pt;">
+      Show energy-only models <Tooltip max_width="20em">
+        <span slot="tip">
+          Models that only predict energy (E) perform worse<br /> and can't be evaluated
+          on force-modeling tasks such as κ<sub>SRME</sub>
+        </span>
+        <Icon icon="octicon:info-16" inline style="padding: 0 3pt;" />
+      </Tooltip>&ensp;</Toggle
+    >
 
-      <details>
-        <summary>Columns</summary>
-
-        <div class="column-toggles">
-          {#each Object.keys(visible_cols) as col}
-            <label>
-              <input type="checkbox" bind:checked={visible_cols[col]} />
-              {@html col}
-            </label>
-          {/each}
-        </div>
-      </details>
-    </div>
+    <details class="column-toggles" bind:open={column_panel_open}>
+      <summary>
+        Columns <Icon icon="octicon:columns-16" inline />
+      </summary>
+      <div class="column-menu">
+        {#each Object.keys(visible_cols) as col}
+          <label>
+            <input type="checkbox" bind:checked={visible_cols[col]} />
+            {@html col}
+          </label>
+        {/each}
+      </div>
+    </details>
   </div>
 
   <span slot="model-count">
@@ -116,28 +121,55 @@
 <KappaNote />
 
 <style>
-  details {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 0 4pt;
-    border-radius: 4px;
-  }
-  summary {
-    cursor: pointer;
-  }
-  summary:hover {
-    color: #fff;
-  }
-  .column-toggles {
+  div[slot='table-controls'] {
     display: flex;
     flex-wrap: wrap;
-    gap: 1pt 8pt;
-    padding: 2pt 0 2pt 0;
+    gap: 1em;
+    place-content: center;
+    margin: 2em auto;
+    max-width: 500px;
   }
-  .column-toggles label {
+  .column-toggles {
+    position: relative;
+  }
+  .column-toggles summary {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2pt 6pt;
+    border-radius: 4pt;
+    cursor: pointer;
     display: flex;
-    gap: 2pt;
+    align-items: center;
+    gap: 4px;
   }
-  .column-toggles label :global(:is(sub, sup)) {
-    transform: translate(-1pt, 6pt);
+  .column-toggles summary:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+  .column-toggles summary::-webkit-details-marker {
+    display: none;
+  }
+  .column-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 4pt);
+    background: #1c1c1c;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4pt;
+    padding: 0 4pt;
+    min-width: 150px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+  .column-menu label {
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .column-menu label:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .column-menu :global(:is(sub, sup)) {
+    transform: translate(-3pt, 6pt);
+    font-size: 0.7em;
   }
 </style>

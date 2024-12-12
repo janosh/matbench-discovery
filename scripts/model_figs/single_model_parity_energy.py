@@ -29,7 +29,7 @@ use_e_form, use_each = get_args(EnergyType)
 
 test_subset = globals().get("test_subset", TestSubset.uniq_protos)
 if test_subset == TestSubset.uniq_protos:
-    df_preds = df_preds.query(Key.uniq_proto)
+    df_preds = df_preds.query(MbdKey.uniq_proto)
     df_metrics = df_metrics_uniq_protos
 
 

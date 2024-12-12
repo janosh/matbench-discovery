@@ -600,7 +600,7 @@ def load_df_wbm_with_preds(
         raise
 
     if subset == TestSubset.uniq_protos:
-        df_out = df_out.query(Key.uniq_proto)
+        df_out = df_out.query(MbdKey.uniq_proto)
     elif subset is not None:
         df_out = df_out.loc[subset]
 

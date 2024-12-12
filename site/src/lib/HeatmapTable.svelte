@@ -108,7 +108,7 @@
             {:else}
               {@const group_cols = visible_columns.filter((c) => c.group === col.group)}
               {#if columns.indexOf(col) === columns.findIndex((c) => c.group === col.group)}
-                <th colspan={group_cols.length}>{@html col.group}</th>
+                <th title={col.tooltip} colspan={group_cols.length}>{@html col.group}</th>
               {/if}
             {/if}
           {/each}
@@ -117,7 +117,7 @@
       <!-- Second level headers -->
       <tr>
         {#each visible_columns as col, col_idx}
-          <th on:click={() => sort_rows(col.label)} style={col.style}>
+          <th title={col.tooltip} on:click={() => sort_rows(col.label)} style={col.style}>
             {@html col.label}
             {@html sort_indicator(col)}
             {#if col_idx == 0 && sort_hint}
