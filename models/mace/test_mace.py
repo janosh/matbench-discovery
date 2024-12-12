@@ -85,6 +85,7 @@ mace_calc = mace_mp(model=model_name, device=device, default_dtype=dtype)
 
 print(f"Read data from {data_path}")
 atoms_list: list[Atoms] = ase_atoms_from_zip(data_path)
+atoms_list = np.array(atoms_list, dtype="object")
 
 if slurm_array_job_id == "debug":
     if smoke_test:
