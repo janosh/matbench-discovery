@@ -87,7 +87,7 @@ for _, row in tqdm(df_mace.iterrows(), total=len(df_mace)):
     e_form = calc_energy_from_e_refs(
         row["formula"],
         ref_energies=mp_elemental_ref_energies,
-        total_energy=row[energy_column],
+        total_energy=row[Key.cse].energy,
     )
     e_form_list.append(e_form)
 
