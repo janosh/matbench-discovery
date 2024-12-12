@@ -55,9 +55,9 @@ def join_predictions(
         Key.mat_id
     )
 
-    df_cse[Key.cse] = [
+    df_cse[Key.computed_structure_entry] = [
         ComputedStructureEntry.from_dict(dct)
-        for dct in tqdm(df_cse[Key.cse], desc="Creating pmg CSEs")
+        for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Creating pmg CSEs")
     ]
 
     # transfer fairchem energies and relaxed structures WBM CSEs since MP2020 energy
@@ -68,17 +68,17 @@ def join_predictions(
     ):
         mat_id, struct_dict, pred_energy, *_ = row
         mlip_struct = Structure.from_dict(struct_dict)
-        cse = df_cse.loc[mat_id, Key.cse]
+        cse = df_cse.loc[mat_id, Key.computed_structure_entry]
         # cse._energy is the uncorrected energy
         cse._energy = pred_energy  # noqa: SLF001
         cse._structure = mlip_struct  # noqa: SLF001
-        df_fairchem.loc[mat_id, Key.cse] = cse
+        df_fairchem.loc[mat_id, Key.computed_structure_entry] = cse
 
     # apply corrections for models that were not trained on MP corrected energies
     if apply_mp_corrections is True:
         # apply energy corrections
         processed = MaterialsProject2020Compatibility().process_entries(
-            df_fairchem[Key.cse], verbose=True, clean=True
+            df_fairchem[Key.computed_structure_entry], verbose=True, clean=True
         )
         if len(processed) != len(df_fairchem):
             raise ValueError(
@@ -90,7 +90,7 @@ def join_predictions(
     df_fairchem[e_form_fairchem_col] = [
         get_e_form_per_atom(dict(energy=cse.energy, composition=formula))
         for formula, cse in tqdm(
-            df_fairchem.set_index(Key.formula)[Key.cse].items(),
+            df_fairchem.set_index(Key.formula)[Key.computed_structure_entry].items(),
             total=len(df_fairchem),
             desc="Computing formation energies",
         )
@@ -105,7 +105,9 @@ def join_predictions(
     out_path = Path(out_path)
 
     df_fairchem.select_dtypes("number").to_csv(out_path / f"{model_name}.csv.gz")
-    df_bad = df_fairchem[bad_mask].drop(columns=[Key.cse, struct_col])
+    df_bad = df_fairchem[bad_mask].drop(
+        columns=[Key.computed_structure_entry, struct_col]
+    )
     df_bad[MbdKey.e_form_dft] = df_wbm[MbdKey.e_form_dft]
     df_bad.to_csv(f"{out_path}-bad.csv")
 

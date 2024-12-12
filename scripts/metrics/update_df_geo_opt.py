@@ -35,7 +35,7 @@ if debug_mode:
 # %% Analyze DFT structures if not already done
 dft_structs = locals().get("dft_structs") or {
     mat_id: Structure.from_dict(cse[Key.structure])
-    for mat_id, cse in df_wbm_structs[Key.cse].items()
+    for mat_id, cse in df_wbm_structs[Key.computed_structure_entry].items()
 }
 if Key.dft.label in df_go:
     dft_analysis = df_go[Key.dft.label]
@@ -75,7 +75,7 @@ for idx, (model_label, model_metadata) in enumerate(MODEL_METADATA.items()):
     try:
         struct_col = next(col for col in df_model if Key.structure in col)
     except StopIteration:
-        print(f"No structure column found for {model_label}")
+        print(f"⚠️ No structure column found for {model_label}")
         continue
 
     # Convert structures
