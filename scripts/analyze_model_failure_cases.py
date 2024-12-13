@@ -45,7 +45,9 @@ for good_or_bad, init_or_final in itertools.product(
 ):
     fig, axs = plt.subplots(n_rows, n_cols, figsize=(4 * n_cols, 3 * n_rows))
     n_structs = len(axs.flat)
-    struct_col = {"initial": Key.init_struct, "final": Key.cse}[init_or_final]
+    struct_col = {"initial": Key.init_struct, "final": Key.computed_structure_entry}[
+        init_or_final
+    ]
 
     errors = {
         "best": df_each_err[MbdKey.each_err_models].nsmallest(n_structs),

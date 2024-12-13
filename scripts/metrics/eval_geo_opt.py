@@ -1,5 +1,9 @@
 """Evaluate ML vs DFT-relaxed structure similarity and symmetry retention for different
-MLFFs."""
+MLFFs.
+
+TODO maybe add average_distance_within_threshold metric
+https://github.com/FAIR-Chem/fairchem/blob/6329e922/src/fairchem/core/modules/evaluator.py#L318
+"""
 
 # %%
 import os
@@ -29,25 +33,46 @@ model_lvl, metric_lvl = "model", "metric"
 
 
 # %%
-csv_path = f"{ROOT}/data/2024-11-29-all-models-geo-opt-analysis-{symprec=}.csv.gz"
+csv_path = f"{ROOT}/data/2024-11-29-all-models-geo-opt-analysis-{symprec=:.0e}.csv.gz"
+csv_path = csv_path.replace("e-0", "e-")
 df_go = pd.read_csv(csv_path, header=[0, 1], index_col=0)
+models = df_go.columns.levels[0]
 
 df_go_metrics = go_metrics.calc_geo_opt_metrics(df_go).convert_dtypes()
 
+go_metrics.write_geo_opt_metrics_to_yaml(df_go_metrics, symprec)
 
-retained = (df_wbm[init_spg_col] == df_wbm[dft_spg_col]).sum()
 
-print(
-    f"DFT-relaxed structures that retained initial structure's spacegroup: "
-    f"{retained:,} / {len(df_wbm):,} ({retained/len(df_wbm):.2%})"
-)
+# %% plot ML vs DFT relaxed spacegroup correspondence as sankey diagrams
+df_spg = df_go.xs(Key.spg_num, level=metric_lvl, axis="columns").convert_dtypes()
+for model_label in {*df_spg} - {Key.dft.label}:
+    # get most common pairs of DFT/Model spacegroups
+    model = Model.from_label(model_label)
+    common_dft_spgs, common_model_spgs = zip(
+        *df_spg[[Key.dft.label, model_label]].value_counts().head(10).index
+    )
+    df_spg_common = df_spg.query(
+        f"`DFT` in {common_dft_spgs} and `{model_label}` in {common_model_spgs}"
+    ).sort_values(by=Key.dft.label)
 
-models = df_go.columns.levels[0]
+    fig = pmv.sankey_from_2_df_cols(
+        df_spg_common.reset_index(),
+        [Key.dft.label, model_label],
+    )
+    fig.show()
+    pmv.save_fig(fig, f"{SITE_FIGS}/spg-sankey-{model.key}-{symprec=}.svelte")
+    pmv.save_fig(fig, f"{PDF_FIGS}/spg-sankey-{model.key}-{symprec=}.pdf")
 
 
 # %%
+retained = (df_wbm[init_spg_col] == df_wbm[dft_spg_col]).sum()
+print(
+    f"DFT-relaxed structures that retained initial structure's spacegroup:\n"
+    f"{retained:,} / {len(df_wbm):,} ({retained/len(df_wbm):.2%})"
+)
 display(
-    df_go_metrics.style.set_caption(f"Symmetry changes vs DFT for {len(models)} models")
+    df_go_metrics.rename(columns={k.name: k.symbol for k in Key})
+    .style.set_caption(f"<b>Symmetry changes vs DFT ({len(models)} models)</b><br><br>")
     .background_gradient(cmap="RdBu")
     .format(precision=3)
 )
@@ -281,32 +306,3 @@ title = "Cumulative Distribution of RMSD vs DFT-relaxed structures"
 fig_rmsd_cdf.layout.title = dict(text=title, x=0.5)
 fig_rmsd_cdf.layout.margin.t = 40
 fig_rmsd_cdf.show()
-
-
-# %%
-if __name__ == "__main__":
-    go_metrics.write_geo_opt_metrics_to_yaml(df_go_metrics, symprec)
-
-    # %% plot ML vs DFT relaxed spacegroup correspondence as sankey diagrams
-    df_spg = df_go.xs(Key.spg_num, level=metric_lvl, axis="columns").convert_dtypes()
-    for model_label in {*df_spg} - {Key.dft.label}:
-        # get most common pairs of DFT/Model spacegroups
-        model = Model.from_label(model_label)
-        common_dft_spgs, common_model_spgs = zip(
-            *df_spg[[Key.dft.label, model_label]].value_counts().head(10).index
-        )
-        df_spg_common = df_spg.query(
-            f"`DFT` in {common_dft_spgs} and `{model_label}` in {common_model_spgs}"
-        ).sort_values(by=Key.dft.label)
-
-        fig = pmv.sankey_from_2_df_cols(
-            df_spg_common.reset_index(),
-            [Key.dft.label, model_label],
-        )
-        fig.show()
-        pmv.save_fig(fig, f"{SITE_FIGS}/spg-sankey-{model.key}.svelte")
-        pmv.save_fig(fig, f"{PDF_FIGS}/spg-sankey-{model.key}.pdf")
-
-
-# TODO maybe add average_distance_within_threshold metric
-# https://github.com/FAIR-Chem/fairchem/blob/6329e922/src/fairchem/core/modules/evaluator.py#L318

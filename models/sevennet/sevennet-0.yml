@@ -1,5 +1,5 @@
-model_name: SevenNet
-model_key: sevennet
+model_name: SevenNet-0
+model_key: sevennet-0
 model_version: v0.9.1_w_cutoff # 2024-07-11
 matbench_discovery_version: 1.1.2 # required
 date_added: "2024-07-13" # required
@@ -78,7 +78,7 @@ metrics:
   phonons:
     κ_SRME: 0.767
   geo_opt:
-    pred_file: models/sevennet/2024-07-11-sevennet-0-relaxed-structures.json.gz
+    pred_file: models/sevennet/sevennet-0/2024-07-11-sevennet-0-relaxed-structures.json.gz
     pred_col: sevennet_structure
     symprec=1e-5:
       rmsd: 0.0193 # Å
@@ -95,7 +95,7 @@ metrics:
       symmetry_increase: 0.1262 # fraction
       n_structures: 256614 # count
   discovery:
-    pred_file: models/sevennet/2024-07-11-sevennet-0-preds.csv.gz
+    pred_file: models/sevennet/sevennet-0/2024-07-11-sevennet-0-preds.csv.gz
     pred_col: e_form_per_atom_sevennet
     full_test_set:
       F1: 0.719 # fraction

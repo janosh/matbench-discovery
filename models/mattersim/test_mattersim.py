@@ -110,8 +110,9 @@ def parse_relaxed_atoms_list_as_df(
     wbm_cse_paths = DataFiles.wbm_computed_structure_entries.path
     df_cse = pd.read_json(wbm_cse_paths).set_index(Key.mat_id)
 
-    df_cse[Key.cse] = [
-        ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_cse[Key.cse])
+    df_cse[Key.computed_structure_entry] = [
+        ComputedStructureEntry.from_dict(dct)
+        for dct in tqdm(df_cse[Key.computed_structure_entry])
     ]
 
     print(f"Found {len(df_cse):,} CSEs in {wbm_cse_paths=}")
@@ -123,7 +124,7 @@ def parse_relaxed_atoms_list_as_df(
         mat_id = atoms.info["material_id"]
         converged = atoms.info["converged"]
 
-        cse = df_cse.loc[mat_id, Key.cse]
+        cse = df_cse.loc[mat_id, Key.computed_structure_entry]
         cse._energy = energy  # noqa: SLF001
         cse._structure = structure  # noqa: SLF001
 

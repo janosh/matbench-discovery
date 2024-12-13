@@ -80,7 +80,7 @@ df_in = pd.read_json(data_path).set_index(Key.mat_id)
 
 df_in[target_col] = df_wbm[target_col]
 if task_type == Task.RS2RE:
-    df_in[input_col] = [cse["structure"] for cse in df_in[Key.cse]]
+    df_in[input_col] = [cse["structure"] for cse in df_in[Key.computed_structure_entry]]
 if input_col not in df_in:
     raise KeyError(f"{input_col!s} not in {df_in.columns=}")
 

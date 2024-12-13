@@ -74,7 +74,7 @@ init_fp_col = "initial_site_stats_fingerprint"
 final_fp_col = "final_site_stats_fingerprint"
 for struct_col, fp_col in (
     (Key.init_struct, init_fp_col),
-    (Key.cse, final_fp_col),
+    (Key.computed_structure_entry, final_fp_col),
     ("entry", final_fp_col),
 ):
     if struct_col not in df_in:

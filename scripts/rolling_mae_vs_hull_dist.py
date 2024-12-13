@@ -22,7 +22,7 @@ fig, df_err, df_std = rolling_mae_vs_hull_dist(
     e_above_hull_preds={model: df_each_pred[model]},
 )
 
-MAE, DAF, F1 = df_metrics[model][["MAE", Key.daf, "F1"]]
+MAE, DAF, F1 = df_metrics[model][["MAE", Key.daf.symbol, "F1"]]
 title = f"{model} · {MAE=:.2f} · {DAF=:.2f} · {F1=:.2f}"
 fig.update_layout(title=dict(text=title, x=0.5))
 fig.show()

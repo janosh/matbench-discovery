@@ -225,9 +225,11 @@ for json_path in cse_step_paths:
 
 
 # %%
-df_wbm[Key.cse] = np.concatenate([*dfs_wbm_cses.values()]).squeeze()
+df_wbm[Key.computed_structure_entry] = np.concatenate(
+    [*dfs_wbm_cses.values()]
+).squeeze()
 
-for mat_id, cse in df_wbm[Key.cse].items():
+for mat_id, cse in df_wbm[Key.computed_structure_entry].items():
     # needed to ensure MaterialsProjectCompatibility can process the entries
     cse["parameters"]["run_type"] = (
         "GGA+U" if cse["parameters"]["is_hubbard"] else "GGA"
@@ -236,7 +238,7 @@ for mat_id, cse in df_wbm[Key.cse].items():
     assert cse["entry_id"].startswith("wbm-")
 
 assert pd.Series(
-    cse["parameters"]["run_type"] for cse in tqdm(df_wbm[Key.cse])
+    cse["parameters"]["run_type"] for cse in tqdm(df_wbm[Key.computed_structure_entry])
 ).value_counts().to_dict() == {"GGA": 248481, "GGA+U": 9008}
 
 # make sure only 2 materials have missing initial structures with expected IDs
@@ -248,7 +250,8 @@ df_wbm = df_wbm.drop(index=nan_init_structs_ids)
 
 # %% get composition from CSEs
 df_wbm["composition_from_cse"] = [
-    ComputedStructureEntry.from_dict(cse).composition for cse in tqdm(df_wbm[Key.cse])
+    ComputedStructureEntry.from_dict(cse).composition
+    for cse in tqdm(df_wbm[Key.computed_structure_entry])
 ]
 
 df_wbm["composition_from_final_struct"] = [
@@ -274,7 +277,9 @@ df_wbm.pop("composition_from_final_struct")  # not needed anymore
 n_samples = 1000
 for _mat_id, row in tqdm(df_wbm.sample(n_samples).iterrows(), total=n_samples):
     struct_final = Structure.from_dict(row.final_structure)
-    struct_from_cse = Structure.from_dict(row[Key.cse]["structure"])
+    struct_from_cse = Structure.from_dict(
+        row[Key.computed_structure_entry]["structure"]
+    )
     assert struct_final.matches(struct_from_cse), f"structure mismatch for {row.Index=}"
 
     # and check initial and final compositions match
@@ -374,7 +379,7 @@ assert sum(df_summary.index != df_wbm.index) == 0
 
 # update ComputedStructureEntry entry_ids to match material_ids
 updated_ids: list[str] = []
-for mat_id, cse in df_wbm[Key.cse].items():
+for mat_id, cse in df_wbm[Key.computed_structure_entry].items():
     entry_id = cse["entry_id"]
     if mat_id != entry_id:
         print(f"{mat_id=} != {entry_id=}, updating entry_id to mat_id")
@@ -396,11 +401,11 @@ df_summary[Key.formula] = df_summary.pop("alph_formula")
 
 # %% write initial structures and computed structure entries to compressed json
 for fname, cols in (
-    ("computed-structure-entries", [Key.cse]),
+    ("computed-structure-entries", [Key.computed_structure_entry]),
     ("init-structs", [Key.init_struct]),
     (
         "computed-structure-entries+init-structs",
-        [Key.init_struct, Key.cse],
+        [Key.init_struct, Key.computed_structure_entry],
     ),
 ):
     cols = ["formula_from_cse", *cols]
@@ -417,9 +422,9 @@ df_summary[Key.formula] = df_wbm.formula_from_cse
 
 
 # fix bad energy which is 0 in df_summary but a more realistic -63.68 in CSE
-df_summary.loc["wbm-2-18689", MbdKey.dft_energy] = df_wbm.loc["wbm-2-18689"][Key.cse][
-    "energy"
-]
+df_summary.loc["wbm-2-18689", MbdKey.dft_energy] = df_wbm.loc["wbm-2-18689"][
+    Key.computed_structure_entry
+]["energy"]
 
 # NOTE careful with ComputedEntries as object vs as dicts, the meaning of keys changes:
 # for example cse.energy == cse.uncorrected_energy + cse.correction
@@ -428,7 +433,7 @@ df_summary.loc["wbm-2-18689", MbdKey.dft_energy] = df_wbm.loc["wbm-2-18689"][Key
 
 # %% scatter plot summary energies vs CSE energies
 df_summary[f"{MbdKey.dft_energy}_from_cse"] = [
-    cse["energy"] for cse in tqdm(df_wbm[Key.cse])
+    cse["energy"] for cse in tqdm(df_wbm[Key.computed_structure_entry])
 ]
 
 # check CSE and summary energies are consistent, only exceeding 0.1 eV difference twice
@@ -507,16 +512,22 @@ assert len(df_summary) == len(df_wbm) == 257_487 - 502 - 22
 
 
 # %%
-for mat_id, cse in df_wbm[Key.cse].items():
+for mat_id, cse in df_wbm[Key.computed_structure_entry].items():
     assert mat_id == cse["entry_id"], f"{mat_id} != {cse['entry_id']}"
 
-df_wbm[Key.cse] = [
-    ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_wbm[Key.cse])
+df_wbm[Key.computed_structure_entry] = [
+    ComputedStructureEntry.from_dict(dct)
+    for dct in tqdm(df_wbm[Key.computed_structure_entry])
 ]
 # raw WBM ComputedStructureEntries have no energy corrections applied:
-assert all(cse.uncorrected_energy == cse.energy for cse in df_wbm[Key.cse])
+assert all(
+    cse.uncorrected_energy == cse.energy for cse in df_wbm[Key.computed_structure_entry]
+)
 # summary and CSE n_sites match
-assert all(df_summary.n_sites == [len(cse.structure) for cse in df_wbm[Key.cse]])
+assert all(
+    df_summary.n_sites
+    == [len(cse.structure) for cse in df_wbm[Key.computed_structure_entry]]
+)
 
 
 # entries are corrected in-place by default so we apply legacy corrections first
@@ -525,7 +536,7 @@ assert all(df_summary.n_sites == [len(cse.structure) for cse in df_wbm[Key.cse]]
 # like MEGNet that were trained on MP release prior to new corrections by subtracting
 # old corrections and adding the new ones
 entries_old_corr = MaterialsProjectCompatibility().process_entries(
-    df_wbm[Key.cse], clean=True, verbose=True
+    df_wbm[Key.computed_structure_entry], clean=True, verbose=True
 )
 assert len(entries_old_corr) == 76_390, f"{len(entries_old_corr)=}, expected 76,390"
 
@@ -534,16 +545,18 @@ assert n_old_corrected == 99_000, f"{n_old_corrected=:,} expected 100,930"
 
 # extract legacy MP energy corrections to df_megnet
 df_wbm["e_correction_per_atom_mp_legacy"] = [
-    cse.correction_per_atom for cse in df_wbm[Key.cse]
+    cse.correction_per_atom for cse in df_wbm[Key.computed_structure_entry]
 ]
 
 # clean up legacy corrections and apply new corrections
 entries_new_corr = MaterialsProject2020Compatibility(
     strict_anions="no_check"
-).process_entries(df_wbm[Key.cse], clean=True, verbose=True)
+).process_entries(df_wbm[Key.computed_structure_entry], clean=True, verbose=True)
 assert len(entries_new_corr) == len(df_wbm), f"{len(entries_new_corr)=} {len(df_wbm)=}"
 
-n_corrected = sum(cse.uncorrected_energy != cse.energy for cse in df_wbm[Key.cse])
+n_corrected = sum(
+    cse.uncorrected_energy != cse.energy for cse in df_wbm[Key.computed_structure_entry]
+)
 # TODO 2024-08-07 n_corrected used to be 100,930, may have changed as a result of the
 # new strict_anions kwarg added in https://github.com/materialsproject/pymatgen/pull/3803
 # but strict_anions="no_check" which is meant to restore the pre-3803 behavior now
@@ -552,7 +565,7 @@ n_corrected = sum(cse.uncorrected_energy != cse.energy for cse in df_wbm[Key.cse
 assert n_corrected == 99_000, f"{n_corrected=:,} expected 100,930"
 
 df_summary["e_correction_per_atom_mp2020"] = [
-    cse.correction_per_atom for cse in df_wbm[Key.cse]
+    cse.correction_per_atom for cse in df_wbm[Key.computed_structure_entry]
 ]
 
 avg_energy_corr = df_summary.e_correction_per_atom_mp2020.mean().round(4)
@@ -571,7 +584,9 @@ with gzip.open(DataFiles.mp_patched_phase_diagram.path, mode="rb") as zip_file:
 if MbdKey.each_true in df_summary:
     raise KeyError(f"{MbdKey.each_true!s} already in {df_summary.columns=}")
 
-for mat_id, cse in tqdm(df_wbm[Key.cse].items(), total=len(df_wbm)):
+for mat_id, cse in tqdm(
+    df_wbm[Key.computed_structure_entry].items(), total=len(df_wbm)
+):
     assert mat_id == cse.entry_id, f"{mat_id=} != {cse.entry_id=}"
     assert cse.entry_id in df_summary.index, f"{cse.entry_id=} not in df_summary"
 
@@ -585,7 +600,11 @@ for mat_id, cse in tqdm(df_wbm[Key.cse].items(), total=len(df_wbm)):
 assert sum(df_wbm.index != df_summary.index) == 0
 
 for row in tqdm(df_wbm.itertuples(), total=len(df_wbm), desc="ML energies to CSEs"):
-    mat_id, cse, formula = row.Index, row[Key.cse], row.formula_from_cse
+    mat_id, cse, formula = (
+        row.Index,
+        row[Key.computed_structure_entry],
+        row.formula_from_cse,
+    )
     assert mat_id == cse.entry_id, f"{mat_id=} != {cse.entry_id=}"
     assert mat_id in df_summary.index, f"{mat_id=} not in df_summary"
 
@@ -628,7 +647,7 @@ try:
             continue
 
         try:
-            cse = df_wbm.loc[idx, Key.cse]
+            cse = df_wbm.loc[idx, Key.computed_structure_entry]
             struct = Structure.from_dict(cse["structure"])
             df_summary.loc[idx, Key.wyckoff] = get_protostructure_label_from_spglib(
                 struct
@@ -670,15 +689,15 @@ mask_dupe_protos = df_summary.sort_values(by=[Key.wyckoff, MbdKey.each_wbm]).dup
 assert sum(mask_proto_in_mp) == 11_175, f"{sum(mask_proto_in_mp)=:_}"
 assert sum(mask_dupe_protos) == 32_784, f"{sum(mask_dupe_protos)=:_}"
 
-df_summary[Key.uniq_proto] = ~(mask_proto_in_mp | mask_dupe_protos)
-assert dict(df_summary[Key.uniq_proto].value_counts()) == {
+df_summary[MbdKey.uniq_proto] = ~(mask_proto_in_mp | mask_dupe_protos)
+assert dict(df_summary[MbdKey.uniq_proto].value_counts()) == {
     True: 215_488,
     False: 41_475,
 }
 
 first_uniq_proto_wbm_ids = ["wbm-1-7", "wbm-1-8", "wbm-1-15", "wbm-1-20", "wbm-1-33"]
 assert (
-    list(df_summary.query(f"~{Key.uniq_proto}").head(5).index)
+    list(df_summary.query(f"~{MbdKey.uniq_proto}").head(5).index)
     == first_uniq_proto_wbm_ids
 )
 
@@ -694,6 +713,7 @@ if False:
         Key.mat_id
     )
 
-    df_wbm[Key.cse] = [
-        ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_wbm[Key.cse])
+    df_wbm[Key.computed_structure_entry] = [
+        ComputedStructureEntry.from_dict(dct)
+        for dct in tqdm(df_wbm[Key.computed_structure_entry])
     ]

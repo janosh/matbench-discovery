@@ -26,9 +26,14 @@ df_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_index(
     Key.mat_id
 )
 
-cses = [ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_cse[Key.cse])]
+cses = [
+    ComputedStructureEntry.from_dict(dct)
+    for dct in tqdm(df_cse[Key.computed_structure_entry])
+]
 
-ces = [ComputedEntry.from_dict(dct) for dct in tqdm(df_cse[Key.cse])]
+ces = [
+    ComputedEntry.from_dict(dct) for dct in tqdm(df_cse[Key.computed_structure_entry])
+]
 
 
 # %%

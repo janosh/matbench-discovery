@@ -109,7 +109,7 @@ relax_results: dict[str, dict[str, Any]] = {}
 input_col = {Task.IS2RE: Key.init_struct, Task.RS2RE: Key.final_struct}[task_type]
 
 if task_type == Task.RS2RE:
-    df_in[input_col] = [cse["structure"] for cse in df_in[Key.cse]]
+    df_in[input_col] = [cse["structure"] for cse in df_in[Key.computed_structure_entry]]
 
 structures = df_in[input_col].map(Structure.from_dict).to_dict()
 
