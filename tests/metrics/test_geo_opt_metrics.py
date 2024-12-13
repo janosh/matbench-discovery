@@ -131,7 +131,7 @@ sym_changes_cols = [
             {
                 "metrics": {
                     "geo_opt": {
-                        "symprec=0.01": {
+                        "symprec=1e-2": {
                             Key.rmsd: 0.1,
                             Key.n_sym_ops_mae: 0.2,
                             Key.symmetry_decrease: 0.3,
@@ -158,7 +158,7 @@ sym_changes_cols = [
             {
                 "metrics": {
                     "geo_opt": {
-                        "symprec=0.01": {
+                        "symprec=1e-2": {
                             Key.rmsd: float("nan"),
                             Key.n_sym_ops_mae: float("nan"),
                             Key.symmetry_decrease: 0.0,
@@ -181,6 +181,7 @@ def test_write_geo_opt_metrics_to_yaml(
     """Test saving geometry optimization metrics to YAML files with edge cases."""
     # Create test DataFrame
     df_metrics = pd.DataFrame.from_dict(df_metrics_data, orient="index")
+    symprec_key = f"{symprec=:.0e}".replace("e-0", "e-")
 
     # Mock the Model class and file operations
     with (
@@ -204,8 +205,8 @@ def test_write_geo_opt_metrics_to_yaml(
             actual_yaml = mock_yaml.dump.call_args[0][0]
 
             # Compare metrics while handling NaN values
-            for key, value in actual_yaml["metrics"]["geo_opt"][f"{symprec=}"].items():
-                expected_value = expected_yaml["metrics"]["geo_opt"][f"{symprec=}"][key]
+            for key, value in actual_yaml["metrics"]["geo_opt"][symprec_key].items():
+                expected_value = expected_yaml["metrics"]["geo_opt"][symprec_key][key]
                 if isinstance(value, float) and np.isnan(value):
                     assert np.isnan(expected_value)
                 else:
