@@ -47,9 +47,9 @@ def write_geo_opt_metrics_to_yaml(df_metrics: pd.DataFrame, symprec: float) -> N
             str(Key.symmetry_increase): float(
                 round(model_metrics[Key.symmetry_increase], 4)
             ),
-            str(Key.n_structs): int(model_metrics[Key.n_structs]),
+            str(Key.n_structures): int(model_metrics[Key.n_structures]),
         }
-        symprec_key = f"{symprec=}".replace("e-0", "e-")
+        symprec_key = f"{symprec=:.0e}".replace("e-0", "e-")
 
         geo_opt_metrics = CommentedMap(all_metrics.setdefault(Task.geo_opt, {}))
         metrics_for_symprec = CommentedMap(geo_opt_metrics.setdefault(symprec_key, {}))
@@ -62,7 +62,7 @@ def write_geo_opt_metrics_to_yaml(df_metrics: pd.DataFrame, symprec: float) -> N
             Key.symmetry_decrease: "fraction",
             Key.symmetry_match: "fraction",
             Key.symmetry_increase: "fraction",
-            Key.n_structs: "count",
+            Key.n_structures: "count",
         }
 
         # Add units as YAML end-of-line comments
@@ -128,7 +128,7 @@ def calc_geo_opt_metrics(df_geo_opt: pd.DataFrame) -> pd.DataFrame:
                 str(Key.symmetry_decrease): float(sym_decreased.sum() / total),
                 str(Key.symmetry_match): float(sym_matched.sum() / total),
                 str(Key.symmetry_increase): float(sym_increased.sum() / total),
-                str(Key.n_structs): total,
+                str(Key.n_structures): total,
             }
         except KeyError as exc:
             exc.add_note(

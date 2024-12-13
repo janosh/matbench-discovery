@@ -16,12 +16,16 @@ from matbench_discovery.models import MODEL_METADATA
 from matbench_discovery.structure import analyze_symmetry, pred_vs_ref_struct_symmetry
 
 debug_mode: Final[int] = 0
-symprec: Final[float] = 1e-2
+symprec: Final[float] = 1e-5
 
 csv_path = f"{ROOT}/data/2024-11-29-all-models-geo-opt-analysis-{symprec=}.csv.gz"
+csv_path = csv_path.replace("e-0", "e-")
+
 if os.path.isfile(csv_path):
+    print(f"Loading existing CSV file {csv_path}")
     df_go = pd.read_csv(csv_path, index_col=0, header=[0, 1])
 else:
+    print(f"Creating new dataframe to be saved as {csv_path}")
     df_go = pd.DataFrame(columns=pd.MultiIndex(levels=[[], []], codes=[[], []]))
 
 
