@@ -39,11 +39,11 @@ def test_calc_geo_opt_metrics(df_geo_opt: pd.DataFrame) -> None:
     # Check results for model1
     sym_change_cols = [Key.symmetry_decrease, Key.symmetry_match, Key.symmetry_increase]
     assert results.loc[model1, sym_change_cols].to_list() == [1 / 3, 1 / 3, 1 / 3]
-    assert results.loc[model1, Key.n_structs] == 3
+    assert results.loc[model1, Key.n_structures] == 3
 
     # Check results for model2
     assert results.loc[model2, sym_change_cols].to_list() == [1 / 3, 1 / 3, 1 / 3]
-    assert results.loc[model2, Key.n_structs] == 3
+    assert results.loc[model2, Key.n_structures] == 3
 
     # Check that DFT is not included in results
     assert Key.dft.label not in results.index
@@ -89,7 +89,8 @@ def test_calc_geo_opt_metrics_parametrized(
     assert results.loc[model, Key.symmetry_match] == pytest.approx(expected_match)
     assert results.loc[model, Key.symmetry_increase] == pytest.approx(expected_increase)
     assert (
-        results.loc[model, Key.n_structs] == len(spg_diffs) - np.isnan(spg_diffs).sum()
+        results.loc[model, Key.n_structures]
+        == len(spg_diffs) - np.isnan(spg_diffs).sum()
     )
 
 
@@ -100,7 +101,7 @@ def df_sym_changes() -> pd.DataFrame:
         Key.symmetry_decrease: [0.2, 0.3],
         Key.symmetry_match: [0.5, 0.4],
         Key.symmetry_increase: [0.3, 0.3],
-        Key.n_structs: [100, 100],
+        Key.n_structures: [100, 100],
     }
     return pd.DataFrame(data, index=["model1", "model2"])
 
@@ -109,7 +110,7 @@ sym_changes_cols = [
     Key.symmetry_decrease,
     Key.symmetry_match,
     Key.symmetry_increase,
-    Key.n_structs,
+    Key.n_structures,
 ]
 
 
@@ -124,19 +125,19 @@ sym_changes_cols = [
                     Key.symmetry_decrease: 0.3,
                     Key.symmetry_match: 0.4,
                     Key.symmetry_increase: 0.0,
-                    Key.n_structs: 0,
+                    Key.n_structures: 0,
                 }
             },
             {
                 "metrics": {
                     "geo_opt": {
-                        "symprec=0.01": {
+                        "symprec=1e-2": {
                             Key.rmsd: 0.1,
                             Key.n_sym_ops_mae: 0.2,
                             Key.symmetry_decrease: 0.3,
                             Key.symmetry_match: 0.4,
                             Key.symmetry_increase: 0.0,
-                            Key.n_structs: 0,
+                            Key.n_structures: 0,
                         }
                     }
                 }
@@ -151,19 +152,19 @@ sym_changes_cols = [
                     Key.symmetry_decrease: 0.0,
                     Key.symmetry_match: 0.0,
                     Key.symmetry_increase: 0.0,
-                    Key.n_structs: 0,
+                    Key.n_structures: 0,
                 }
             },
             {
                 "metrics": {
                     "geo_opt": {
-                        "symprec=0.01": {
+                        "symprec=1e-2": {
                             Key.rmsd: float("nan"),
                             Key.n_sym_ops_mae: float("nan"),
                             Key.symmetry_decrease: 0.0,
                             Key.symmetry_match: 0.0,
                             Key.symmetry_increase: 0.0,
-                            Key.n_structs: 0,
+                            Key.n_structures: 0,
                         }
                     }
                 }
@@ -180,6 +181,7 @@ def test_write_geo_opt_metrics_to_yaml(
     """Test saving geometry optimization metrics to YAML files with edge cases."""
     # Create test DataFrame
     df_metrics = pd.DataFrame.from_dict(df_metrics_data, orient="index")
+    symprec_key = f"{symprec=:.0e}".replace("e-0", "e-")
 
     # Mock the Model class and file operations
     with (
@@ -203,8 +205,8 @@ def test_write_geo_opt_metrics_to_yaml(
             actual_yaml = mock_yaml.dump.call_args[0][0]
 
             # Compare metrics while handling NaN values
-            for key, value in actual_yaml["metrics"]["geo_opt"][f"{symprec=}"].items():
-                expected_value = expected_yaml["metrics"]["geo_opt"][f"{symprec=}"][key]
+            for key, value in actual_yaml["metrics"]["geo_opt"][symprec_key].items():
+                expected_value = expected_yaml["metrics"]["geo_opt"][symprec_key][key]
                 if isinstance(value, float) and np.isnan(value):
                     assert np.isnan(expected_value)
                 else:

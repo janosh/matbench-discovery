@@ -371,7 +371,9 @@ df_wbm_structs = df_wbm_structs.set_index(Key.mat_id)
 # %%
 for wbm_id in df_sym_change.index:
     init_struct = Structure.from_dict(df_wbm_structs.loc[wbm_id][Key.init_struct])
-    final_struct = Structure.from_dict(df_wbm_structs.loc[wbm_id][Key.cse]["structure"])
+    final_struct = Structure.from_dict(
+        df_wbm_structs.loc[wbm_id][Key.computed_structure_entry]["structure"]
+    )
     init_struct.properties[Key.mat_id] = f"{wbm_id}-init"
     final_struct.properties[Key.mat_id] = f"{wbm_id}-final"
 
@@ -381,7 +383,9 @@ for wbm_id in df_sym_change.index:
 # %% export initial and final structures with symmetry change to CIF
 wbm_id = df_sym_change.index[0]
 
-struct = Structure.from_dict(df_wbm_structs.loc[wbm_id][Key.cse]["structure"])
+struct = Structure.from_dict(
+    df_wbm_structs.loc[wbm_id][Key.computed_structure_entry]["structure"]
+)
 struct.to(f"{module_dir}/{wbm_id}.cif")
 struct.to(f"{module_dir}/{wbm_id}.json")
 

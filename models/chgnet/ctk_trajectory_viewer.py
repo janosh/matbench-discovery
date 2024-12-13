@@ -35,7 +35,9 @@ df_cse = pd.read_json(f"{module_dir}/wbm-chgnet-bad-relax.json.gz").set_index(
 material_id = "wbm-1-7168"
 init_struct = Structure.from_dict(df_cse[Key.init_struct].loc[material_id])
 
-final_struct = Structure.from_dict(df_cse[Key.cse].loc[material_id]["structure"])
+final_struct = Structure.from_dict(
+    df_cse[Key.computed_structure_entry].loc[material_id]["structure"]
+)
 
 init_spg = init_struct.get_space_group_info()
 final_spg = final_struct.get_space_group_info()

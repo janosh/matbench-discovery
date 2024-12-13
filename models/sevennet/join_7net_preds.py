@@ -31,8 +31,9 @@ if len(df_7net) != len(df_wbm):  # make sure there is no missing structure
 df_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_index(
     Key.mat_id
 )
-df_cse[Key.cse] = [
-    ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_cse[Key.cse])
+df_cse[Key.computed_structure_entry] = [
+    ComputedStructureEntry.from_dict(dct)
+    for dct in tqdm(df_cse[Key.computed_structure_entry])
 ]
 
 # As SevenNet-0 (11July2024) is trained on 'uncorrected energy' of MPtrj,
@@ -45,15 +46,15 @@ cse: ComputedStructureEntry
 for row in tqdm(df_7net.itertuples(), total=len(df_7net), desc="ML energies to CSEs"):
     mat_id, struct_dict, energy, *_ = row
     mlip_struct = Structure.from_dict(struct_dict)
-    cse = df_cse.loc[mat_id, Key.cse]
+    cse = df_cse.loc[mat_id, Key.computed_structure_entry]
     cse._energy = energy  # cse._energy is the uncorrected energy from MPtrj dataset (or vasp raw)  # noqa: E501, SLF001
     cse._structure = mlip_struct  # noqa: SLF001
-    df_7net.loc[mat_id, Key.cse] = cse
+    df_7net.loc[mat_id, Key.computed_structure_entry] = cse
 
 
 orig_len = len(df_7net)
 MaterialsProject2020Compatibility().process_entries(  # change in-place
-    df_7net[Key.cse], verbose=True, clean=True
+    df_7net[Key.computed_structure_entry], verbose=True, clean=True
 )
 if len(df_7net) != orig_len:
     raise ValueError("Some structures were removed during energy correction")
@@ -67,7 +68,8 @@ df_7net[e_form_7net_col] = [
         dict(energy=cse.energy, composition=formula), mp_elemental_ref_energies
     )
     for formula, cse in tqdm(
-        df_7net.set_index(Key.formula)[Key.cse].items(), total=len(df_7net)
+        df_7net.set_index(Key.formula)[Key.computed_structure_entry].items(),
+        total=len(df_7net),
     )
 ]
 df_7net = df_7net.round(4)

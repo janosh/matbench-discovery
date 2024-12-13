@@ -397,7 +397,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     megnet = "megnet/megnet.yml"
 
     # SevenNet trained on MPtrj
-    sevennet = "sevennet/sevennet.yml"
+    sevennet_0 = "sevennet/sevennet-0.yml"
+    sevennet_l3i5 = "sevennet/sevennet-l3i5.yml"
 
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest
     voronoi_rf = "voronoi_rf/voronoi-rf.yml"

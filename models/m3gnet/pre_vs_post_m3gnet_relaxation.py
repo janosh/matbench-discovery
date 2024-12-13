@@ -53,7 +53,7 @@ df_m3gnet_is2re[df_m3gnet_lattice.columns] = df_m3gnet_lattice.to_numpy()
 
 # %% spread WBM initial and final lattice params into separate columns
 df_wbm_final_lattice = pd.json_normalize(
-    df_wbm[Key.cse].map(lambda cse: cse["structure"]["lattice"])
+    df_wbm[Key.computed_structure_entry].map(lambda cse: cse["structure"]["lattice"])
 ).add_prefix("final_wbm_")
 df_wbm["final_wbm_volume"] = df_wbm_final_lattice.final_wbm_volume.to_numpy()
 

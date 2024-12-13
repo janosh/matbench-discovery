@@ -23,7 +23,7 @@ from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, today
 from matbench_discovery.data import Model, df_wbm
 from matbench_discovery.enums import MbdKey
 
-symprec = 1e-5
+symprec = 1e-2
 init_spg_col = "init_spg_num"
 dft_spg_col = "dft_spg_num"
 df_wbm[init_spg_col] = df_wbm[MbdKey.init_wyckoff].str.split("_").str[2].astype(int)
@@ -33,11 +33,8 @@ model_lvl, metric_lvl = "model", "metric"
 
 
 # %%
-csv_path = (
-    f"{ROOT}/data/2024-11-29-all-models-geo-opt-analysis-{symprec=}.csv.gz".replace(
-        "e-0", "e-"
-    )
-)
+csv_path = f"{ROOT}/data/2024-11-29-all-models-geo-opt-analysis-{symprec=:.0e}.csv.gz"
+csv_path = csv_path.replace("e-0", "e-")
 df_go = pd.read_csv(csv_path, header=[0, 1], index_col=0)
 models = df_go.columns.levels[0]
 

@@ -20,12 +20,12 @@ from matbench_discovery.data import DataFiles, as_dict_handler, ase_atoms_from_z
 from matbench_discovery.enums import Task
 
 __author__ = "Yutack Park"
-__date__ = "2024-06-25"
+__date__ = "2024-12-10"  # 2024-06-25 for SevenNet-0
 
 
 # %% this config is editable
 smoke_test = True
-model_name = "7net-0"
+model_name = "sevennet-l3i5"  # was sevennet-0 before 2024-12-10, nothing else changed
 task_type = Task.IS2RE
 job_name = f"{model_name}-wbm-{task_type}"
 ase_optimizer = "FIRE"

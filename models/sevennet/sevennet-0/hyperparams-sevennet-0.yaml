@@ -28,6 +28,7 @@ model:
   train_shift_scale: False
   train_denominator: False
   self_connection_type: linear
+
 train:
   train_shuffle: False
   random_seed: 1
@@ -61,6 +62,7 @@ train:
   #    checkpoint: './checkpoint_best.pth'
   #    reset_optimizer: False
   #    reset_scheduler: False
+
 data:
   data_shuffle: False
   batch_size: 128 # per GPU batch size, as the model trained with 32 GPUs, the effective batch size equals 4096.

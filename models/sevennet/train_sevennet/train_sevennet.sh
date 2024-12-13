@@ -3,7 +3,8 @@
 train_extxyz="./train.extxyz"  # Path to the training extxyz file
 valid_extxyz="./valid.extxyz"  # Path to the validation extxyz file
 
-train_yaml="./pre_train.yaml"  # Path to the training script
+# train_yaml="./hyperparams-sevennet-0.yaml"  # Path to training config for SevenNet-0
+train_yaml="./hyperparams-sevennet-l3i5.yaml"  # Path to training config for SevenNet-l3i5
 
 n_graph_build_cores=4  # Number of CPU cores for data preprocessing
 
@@ -22,7 +23,7 @@ if ! command -v sevenn >/dev/null 2>&1; then
 fi
 
 for required in $train_extxyz $valid_extxyz; do
-    if [ ! -f $required ]; then
+    if [ ! -f "$required" ]; then
         echo "No such file ${required}, training requires *.extxyz files as dataset."
         exit 1
     fi
@@ -32,7 +33,7 @@ cutoff=$(grep 'cutoff:' $train_yaml | awk '{print $2}')
 
 # Build training graph data if it doesn't exist
 if [ ! -f train.sevenn_data ]; then
-    sevenn_graph_build -f ase -n $n_graph_build_cores -o train.sevenn_data $train_extxyz $cutoff
+    sevenn_graph_build -f ase -n $n_graph_build_cores -o train.sevenn_data $train_extxyz "$cutoff"
     mv graph_build_log train_graph_build.log
 else
     echo "train.sevenn_data already exists, skipping graph build."
@@ -40,7 +41,7 @@ fi
 
 # Build validation graph data if it doesn't exist
 if [ ! -f valid.sevenn_data ]; then
-    sevenn_graph_build -f ase -n $n_graph_build_cores -o valid.sevenn_data $valid_extxyz $cutoff
+    sevenn_graph_build -f ase -n $n_graph_build_cores -o valid.sevenn_data $valid_extxyz "$cutoff"
     mv graph_build_log valid_graph_build.log
 else
     echo "valid.sevenn_data already exists, skipping graph build."
@@ -48,8 +49,8 @@ fi
 
 
 if [ 1 -eq $n_gpus ] && [ 1 -eq $n_nodes ]; then
-    sevenn pre_train.yaml -s
+    sevenn $train_yaml -s
 else
     # multi GPU training
-    torchrun --standalone --nnodes=$n_nodes --nproc_per_node $n_gpus --no_python sevenn pre_train.yaml -d -s
+    torchrun --standalone --nnodes=$n_nodes --nproc_per_node $n_gpus --no_python sevenn $train_yaml -d -s
 fi

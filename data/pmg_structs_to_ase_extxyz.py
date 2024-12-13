@@ -71,7 +71,9 @@ df_wbm_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_ind
 )
 
 wbm_cse_atoms_list: list[Atoms] = []
-for mat_id, cse_dict in tqdm(df_wbm_cse[Key.cse].items(), desc="WBM CSE"):
+for mat_id, cse_dict in tqdm(
+    df_wbm_cse[Key.computed_structure_entry].items(), desc="WBM CSE"
+):
     struct = Structure.from_dict(cse_dict[Key.structure])
     struct.properties[Key.mat_id] = mat_id
     struct.properties[Key.energy] = cse_dict[Key.energy]

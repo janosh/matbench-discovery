@@ -67,7 +67,7 @@ if slurm_array_task_count > 1:
 if data_name == "mp":  # extract structure dicts from ComputedStructureEntry
     struct_dicts = [cse["structure"] for cse in df_in.entry]
 elif data_name == "wbm" and input_col == Key.final_struct:
-    struct_dicts = [cse["structure"] for cse in df_in[Key.cse]]
+    struct_dicts = [cse["structure"] for cse in df_in[Key.computed_structure_entry]]
 elif data_name == "wbm" and input_col == Key.init_struct:
     struct_dicts = df_in[Key.init_struct]
 else:

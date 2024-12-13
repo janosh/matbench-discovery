@@ -59,9 +59,9 @@ def main(
             Key.mat_id
         )
 
-        df_cse[Key.cse] = [
+        df_cse[Key.computed_structure_entry] = [
             ComputedStructureEntry.from_dict(dct)
-            for dct in tqdm(df_cse[Key.cse], desc="Loading CSEs")
+            for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Loading CSEs")
         ]
 
         # transfer predicted energies and relaxed structures WBM CSEs since
@@ -74,15 +74,15 @@ def main(
             mat_id, struct_dict, orb_energy, *_ = row
             mlip_struct = Structure.from_dict(struct_dict)
             df_orb.loc[mat_id, STRUCT_COL] = mlip_struct
-            cse = df_cse.loc[mat_id, Key.cse]
+            cse = df_cse.loc[mat_id, Key.computed_structure_entry]
             # cse._energy is the uncorrected energy
             cse._energy = orb_energy  # noqa: SLF001
             cse._structure = mlip_struct  # noqa: SLF001
-            df_orb.loc[mat_id, Key.cse] = cse
+            df_orb.loc[mat_id, Key.computed_structure_entry] = cse
 
         # apply energy corrections inplace
         processed = MaterialsProject2020Compatibility().process_entries(
-            df_orb[Key.cse], verbose=True, clean=True
+            df_orb[Key.computed_structure_entry], verbose=True, clean=True
         )
         if len(processed) != len(df_orb):
             raise ValueError(
@@ -94,7 +94,8 @@ def main(
         df_orb[FORMATION_ENERGY_COL] = [
             get_e_form_per_atom(dict(energy=cse.energy, composition=formula))
             for formula, cse in tqdm(
-                df_orb.set_index(Key.formula)[Key.cse].items(), total=len(df_orb)
+                df_orb.set_index(Key.formula)[Key.computed_structure_entry].items(),
+                total=len(df_orb),
             )
         ]
 
@@ -124,7 +125,9 @@ def main(
     df_orb[~bad_mask].select_dtypes("number").to_csv(f"{out_path}-no-bad.csv.gz")
     df_orb.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
 
-    df_bad = df_orb[bad_mask].drop(columns=[Key.cse, STRUCT_COL], errors="ignore")
+    df_bad = df_orb[bad_mask].drop(
+        columns=[Key.computed_structure_entry, STRUCT_COL], errors="ignore"
+    )
     df_bad[MbdKey.e_form_dft] = df_wbm[MbdKey.e_form_dft]
     df_bad.to_csv(f"{out_path}-bad.csv")
 
