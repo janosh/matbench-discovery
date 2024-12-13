@@ -16,12 +16,16 @@ from matbench_discovery.models import MODEL_METADATA
 from matbench_discovery.structure import analyze_symmetry, pred_vs_ref_struct_symmetry
 
 debug_mode: Final[int] = 0
-symprec: Final[float] = 1e-2
+symprec: Final[float] = 1e-5
 
 csv_path = f"{ROOT}/data/2024-11-29-all-models-geo-opt-analysis-{symprec=}.csv.gz"
+csv_path = csv_path.replace("e-0", "e-")
+
 if os.path.isfile(csv_path):
+    print(f"Loading existing CSV file {csv_path}")
     df_go = pd.read_csv(csv_path, index_col=0, header=[0, 1])
 else:
+    print(f"Creating new dataframe to be saved as {csv_path}")
     df_go = pd.DataFrame(columns=pd.MultiIndex(levels=[[], []], codes=[[], []]))
 
 
@@ -35,7 +39,7 @@ if debug_mode:
 # %% Analyze DFT structures if not already done
 dft_structs = locals().get("dft_structs") or {
     mat_id: Structure.from_dict(cse[Key.structure])
-    for mat_id, cse in df_wbm_structs[Key.cse].items()
+    for mat_id, cse in df_wbm_structs[Key.computed_structure_entry].items()
 }
 if Key.dft.label in df_go:
     dft_analysis = df_go[Key.dft.label]
@@ -75,7 +79,7 @@ for idx, (model_label, model_metadata) in enumerate(MODEL_METADATA.items()):
     try:
         struct_col = next(col for col in df_model if Key.structure in col)
     except StopIteration:
-        print(f"No structure column found for {model_label}")
+        print(f"⚠️ No structure column found for {model_label}")
         continue
 
     # Convert structures

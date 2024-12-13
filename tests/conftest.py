@@ -63,5 +63,5 @@ def df_with_pmg_objects(dummy_struct: Structure) -> pd.DataFrame:
     df_dummy[Key.volume] = [x.volume for x in df_dummy.structure]
     df_dummy[Key.structure] = [x.as_dict() for x in df_dummy.structure]
     cse_dict = ComputedStructureEntry(dummy_struct, 0).as_dict()
-    df_dummy[Key.cse] = [cse_dict] * len(df_dummy)
+    df_dummy[Key.computed_structure_entry] = [cse_dict] * len(df_dummy)
     return df_dummy
