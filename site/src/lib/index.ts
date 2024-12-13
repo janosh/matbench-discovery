@@ -8,7 +8,6 @@ import type { ModelMetadata } from './model-schema'
 import type { ModelData } from './types'
 
 export { default as TRAINING_SETS } from '$data/training-sets.yml'
-export { default as CaptionedMetricsTable } from './CaptionedMetricsTable.svelte'
 export { default as DiscoveryMetricsTable } from './DiscoveryMetricsTable.svelte'
 export { default as Footer } from './Footer.svelte'
 export { default as GeoOptMetricsTable } from './GeoOptMetricsTable.svelte'
