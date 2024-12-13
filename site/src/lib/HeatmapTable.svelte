@@ -7,6 +7,7 @@
   import { titles_as_tooltips } from 'svelte-zoo/actions'
   import { flip } from 'svelte/animate'
   import { writable } from 'svelte/store'
+  import type { HeatmapColumn } from './types'
 
   type TableData = Record<string, string | number | undefined>[]
 
@@ -117,7 +118,12 @@
       <!-- Second level headers -->
       <tr>
         {#each visible_columns as col, col_idx}
-          <th title={col.tooltip} on:click={() => sort_rows(col.label)} style={col.style}>
+          <th
+            title={col.tooltip}
+            on:click={() => sort_rows(col.label)}
+            style={col.style}
+            class:sticky-col={col.sticky}
+          >
             {@html col.label}
             {@html sort_indicator(col)}
             {#if col_idx == 0 && sort_hint}

@@ -12,6 +12,7 @@ import pymatviz as pmv
 from pymatviz.enums import Key
 
 from matbench_discovery import SITE_FIGS
+from matbench_discovery.data import Model
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.preds.discovery import (
     df_each_pred,
@@ -26,6 +27,7 @@ __date__ = "2024-09-07"
 # toggle between formation energy and energy above convex hull
 EnergyType = Literal["e-form", "each"]
 use_e_form, use_each = get_args(EnergyType)
+update_existing: bool = False
 
 test_subset = globals().get("test_subset", TestSubset.uniq_protos)
 if test_subset == TestSubset.uniq_protos:
@@ -37,7 +39,13 @@ if test_subset == TestSubset.uniq_protos:
 parity_scatters_dir = f"{SITE_FIGS}/energy-parity"
 os.makedirs(parity_scatters_dir, exist_ok=True)
 
-for model, which_energy in itertools.product(df_metrics, (use_e_form, use_each)):
+for model_name, which_energy in itertools.product(df_metrics, (use_e_form, use_each)):
+    model_key = Model.from_label(model_name).key
+    img_name = f"{which_energy}-parity-{model_name.lower().replace(' ', '-')}"
+    img_path = f"{parity_scatters_dir}/{img_name}.svelte"
+    if os.path.isfile(img_path) and not update_existing:
+        continue
+
     if which_energy == use_each:
         df_in = df_each_pred.copy()
         df_in[MbdKey.each_true] = df_preds[MbdKey.each_true]
@@ -50,8 +58,8 @@ for model, which_energy in itertools.product(df_metrics, (use_e_form, use_each))
     else:
         raise ValueError(f"Unexpected {which_energy=}")
 
-    e_pred_col = f"{model} {e_true_col.label.replace('DFT ', '')}"
-    df_in = df_in.rename(columns={model: e_pred_col})
+    e_pred_col = f"{model_name} {e_true_col.label.replace('DFT ', '')}"
+    df_in = df_in.rename(columns={model_name: e_pred_col})
 
     fig = pmv.density_scatter_plotly(
         df=df_in.reset_index(drop=True),
@@ -63,11 +71,12 @@ for model, which_energy in itertools.product(df_metrics, (use_e_form, use_each))
         color_continuous_scale="agsunset",
     )
 
-    fig.layout.title.update(text=f"{model} {which_energy}", x=0.5)
+    # reduce colorbar size
+    fig.data[0].marker.colorbar.update(thickness=0.02)
+
+    fig.layout.title.update(text=f"{model_name} {which_energy}", x=0.5)
     fig.layout.margin.update(l=0, r=0, t=50, b=0)
 
     pmv.powerups.add_identity_line(fig)
     fig.show()
-
-    img_name = f"{which_energy}-parity-{model.lower().replace(' ', '-')}"
-    pmv.save_fig(fig, f"{parity_scatters_dir}/{img_name}.svelte")
+    pmv.save_fig(fig, img_path)
