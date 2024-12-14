@@ -30,6 +30,7 @@
     Params: true,
     Targets: true,
     'Date Added': true,
+    'E<sub>MBD</sub>': true,
   }
 
   $: best_model = MODEL_METADATA.reduce((best, md: ModelData) => {
@@ -63,6 +64,8 @@
     },
   }
   let discovery_set: keyof typeof discovery_set_labels = `unique_prototypes`
+
+  let f1_weight = 0.5
 </script>
 
 <svelte:body
@@ -92,6 +95,7 @@
       {hide_cols}
       {show_energy_only}
       {discovery_set}
+      {f1_weight}
       style="width: 100%;"
     />
     <div class="downloads">
