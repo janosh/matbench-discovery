@@ -82,12 +82,7 @@
       <small>({missing_percent})</small>
     {/if}
     {#if notes.html?.missing_preds}
-      <Tooltip
-        text={notes.html.missing_preds ?? ``}
-        tip_style="font-size: 9pt;"
-        max_width="20em"
-        min_width="20em"
-      >
+      <Tooltip text={notes.html.missing_preds ?? ``} tip_style="font-size: 9pt;">
         &nbsp;<Icon icon="octicon:info-24" inline />
       </Tooltip>
     {/if}

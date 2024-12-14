@@ -206,7 +206,7 @@
     position: sticky;
     left: 0;
     background: var(--heatmap-header-bg, var(--night));
-    z-index: 2;
+    z-index: 1;
   }
   tr:nth-child(odd) td.sticky-col {
     background: var(--heatmap-row-odd-bg, rgb(15, 14, 14));

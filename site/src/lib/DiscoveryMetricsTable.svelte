@@ -3,11 +3,11 @@
     HeatmapTable,
     MODEL_METADATA,
     TRAINING_SETS,
-    model_is_compliant,
     get_metric_rank_order,
+    model_is_compliant,
   } from '$lib'
   import { pretty_num } from 'elementari'
-  import type { ModelData, HeatmapColumn } from './types.ts'
+  import type { HeatmapColumn, ModelData } from './types.ts'
 
   export let discovery_set: `full_test_set` | `most_stable_10k` | `unique_prototypes` =
     `unique_prototypes`
