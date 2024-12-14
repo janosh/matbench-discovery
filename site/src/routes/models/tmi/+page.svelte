@@ -20,12 +20,14 @@ Stuff that didn't make the cut into the&nbsp;<a href="/models">model page</a>.
 
 <h2>Does error correlate with element prevalence in training set?</h2>
 
-Answer: not much. You might (or might not) expect the more examples of structures
-containing a certain element models have seen in the training set, the smaller their
-average error on test set structures containing that element. That's not what we see in
-this plot. E<sub>above hull</sub> is all over the place as a function of elemental
-training set prevalence. Could be because the error is dominated by the least abundant
-element in composition or the model errors are more dependent on geometry than chemistry.
+Answer: not much. You might expect the more examples of structures containing a certain
+element models have seen in the training set, the smaller their average error on test set
+structures containing that element. That's not what we see in this plot. E<sub
+  >above hull</sub
+>
+is all over the place as a function of elemental training set prevalence. Could be because
+the error is dominated by the least abundant element in composition or the model errors
+are more dependent on geometry than chemistry.
 
 {#if browser}
   <ElementPrevalenceVsErr style="margin: 2em 0;" />
