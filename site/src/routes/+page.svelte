@@ -47,6 +47,22 @@
     .map(([col]) => col)
 
   let column_panel_open: boolean = false
+
+  const discovery_set_labels = {
+    full_test_set: {
+      title: `Full Test Set`,
+      tooltip: `Metrics computed on the full test set including duplicate structure prototypes`,
+    },
+    unique_prototypes: {
+      title: `Unique Prototypes`,
+      tooltip: `Metrics computed only on unique structure prototypes`,
+    },
+    most_stable_10k: {
+      title: `10k Most Stable`,
+      tooltip: `Metrics computed on the 10k structures predicted to be most stable (different for each model)`,
+    },
+  }
+  let discovery_set: keyof typeof discovery_set_labels = `unique_prototypes`
 </script>
 
 <svelte:body
@@ -59,10 +75,23 @@
 
 <Readme>
   <figure style="margin-top: 4em;" slot="metrics-table">
+    <div class="discovery-set-toggle">
+      {#each Object.entries(discovery_set_labels) as [key, { title, tooltip }]}
+        <Tooltip text={tooltip} tip_style="z-index: 2; font-size: 0.8em;" max_width="3em">
+          <button
+            class:active={discovery_set === key}
+            on:click={() => (discovery_set = key)}
+          >
+            {title}
+          </button>
+        </Tooltip>
+      {/each}
+    </div>
     <DiscoveryMetricsTable
       {show_non_compliant}
       {hide_cols}
       {show_energy_only}
+      {discovery_set}
       style="width: 100%;"
     />
     <div class="downloads">
@@ -95,7 +124,7 @@
         </Tooltip>&ensp;</Toggle
       >
       <Toggle bind:checked={show_energy_only} style="gap: 3pt;">
-        Show energy-only models <Tooltip max_width="20em">
+        Show energy-only models <Tooltip max_width="12em">
           <span slot="tip">
             Models that only predict energy (E) perform worse<br /> and can't be evaluated
             on force-modeling tasks such as κ<sub>SRME</sub>
@@ -162,6 +191,24 @@
     font-size: 0.9em;
     padding: 2pt 6pt;
     background-color: rgba(255, 255, 255, 0.06);
+  }
+  .discovery-set-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5pt;
+    margin-bottom: 5pt;
+  }
+  .discovery-set-toggle button {
+    padding: 4px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: transparent;
+  }
+  .discovery-set-toggle button:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .discovery-set-toggle button.active {
+    background: rgba(255, 255, 255, 0.1);
   }
   div.downloads {
     display: flex;
