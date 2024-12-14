@@ -6,7 +6,6 @@
   import CumulativeMae from '$figs/cumulative-mae.svelte'
   import CumulativePrecisionRecall from '$figs/cumulative-precision-recall.svelte'
   import EachParityModels from '$figs/each-parity-models-9x2.svelte'
-  import ElementPrevalenceVsError from '$figs/element-prevalence-vs-error.svelte'
   import HistClfPredHullDistModels from '$figs/hist-clf-pred-hull-dist-models-9x2.svelte'
   import HullDistParityWrenformerFailures from '$figs/hull-dist-parity-wrenformer-failures.svelte'
   import LargestErrorScatterSelect from './largest-error-scatter-select.svelte'
