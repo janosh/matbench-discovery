@@ -29,6 +29,6 @@ If you'd like to refer to Matbench Discovery in a publication, please cite the [
 
 We welcome new models additions to the leaderboard through GitHub PRs. See the [contributing guide](https://janosh.github.io/matbench-discovery/contribute) for details and ask support questions via [GitHub discussion](https://github.com/janosh/matbench-discovery/discussions).
 
-For detailed results and analysis, check out the [preprint](https://janosh.github.io/matbench-discovery/preprint).
+For detailed results and analysis, check out the [preprint](https://arxiv.org/abs/2308.14920).
 
 > Disclaimer: We evaluate how accurately ML models predict solid-state thermodynamic stability. Although this is an important aspect of high-throughput materials discovery, the ranking cannot give a complete picture of a model's general applicability to materials. A high ranking does not constitute endorsement by the Materials Project.

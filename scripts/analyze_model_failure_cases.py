@@ -107,7 +107,7 @@ fig.layout.yaxis.title = "Count"
 
 fig.show()
 
-# pmv.save_fig(fig, f"{FIGS}/hist-largest-each-errors-fp-diff-models.svelte")
+# pmv.save_fig(fig, f"{SITE_FIGS}/hist-largest-each-errors-fp-diff-models.svelte")
 
 
 # %%

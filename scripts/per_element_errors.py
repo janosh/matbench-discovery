@@ -183,7 +183,7 @@ fig.layout.title.update(xanchor="center", x=0.5)
 fig.layout.legend.update(x=1, y=1, xanchor="right", yanchor="top", title="")
 fig.show()
 
-# pmv.save_fig(fig, f"{FIGS}/element-prevalence-vs-error.svelte")
+pmv.save_fig(fig, f"{SITE_FIGS}/element-prevalence-vs-error.svelte")
 pmv.save_fig(fig, f"{PDF_FIGS}/element-prevalence-vs-error.pdf")
 
 

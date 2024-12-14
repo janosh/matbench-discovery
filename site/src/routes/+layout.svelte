@@ -24,8 +24,6 @@
     '/api': `API docs for the Matbench Discovery PyPI package.`,
     '/contribute': `Steps for contributing a new model to the benchmark.`,
     '/models': `Details on each model sortable by metrics.`,
-    '/preprint': `The preprint released with the Matbench Discovery benchmark.`,
-    '/preprint/iclr-ml4mat': `Extended abstract submitted to the ICLR ML4Materials workshop.`,
   }[url ?? ``]
   if (url && !description) console.warn(`No description for url=${url}`)
   $: title = url == `/` ? `` : `${url} • `
@@ -75,7 +73,11 @@
 <GitHubCorner href={repository} />
 
 <Nav
-  routes={[[`/home`, `/`], ...routes.filter((route) => route != `/changelog`)]}
+  routes={[
+    [`/home`, `/`],
+    ...routes.filter((route) => route != `/changelog`),
+    [`/preprint`, `https://arxiv.org/abs/2308.14920`],
+  ]}
   style="padding: 0 var(--main-padding);"
 />
 
