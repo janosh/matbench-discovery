@@ -3,6 +3,7 @@
   import { DiscoveryMetricsTable, model_is_compliant, MODEL_METADATA } from '$lib'
   import Readme from '$root/readme.md'
   import KappaNote from '$site/src/routes/kappa-note.md'
+  import LandingPageFigs from '$site/src/routes/landing-page-figs.md'
   import Icon from '@iconify/svelte'
   import { pretty_num } from 'elementari'
   import { Toggle, Tooltip } from 'svelte-zoo'
@@ -77,7 +78,7 @@
   <figure style="margin-top: 4em;" slot="metrics-table">
     <div class="discovery-set-toggle">
       {#each Object.entries(discovery_set_labels) as [key, { title, tooltip }]}
-        <Tooltip text={tooltip} tip_style="z-index: 2; font-size: 0.8em;" max_width="3em">
+        <Tooltip text={tooltip} tip_style="z-index: 2; font-size: 0.8em;">
           <button
             class:active={discovery_set === key}
             on:click={() => (discovery_set = key)}
@@ -180,6 +181,8 @@
   </div>
 </Readme>
 <KappaNote />
+
+<LandingPageFigs />
 
 <style>
   figure {
