@@ -47,7 +47,7 @@ export default {
         const route = file.filename.split(`site/src/routes/`)[1]?.split(`/`)[0]
         if (!route) return
 
-        if ([`paper`, `preprint`, `si`].some((key) => route.startsWith(key))) {
+        if ([`landing-page-figs`].some((key) => route.startsWith(key))) {
           let fig_index = []
           let ref_index = []
 

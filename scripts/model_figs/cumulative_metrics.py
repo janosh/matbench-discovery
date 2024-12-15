@@ -59,7 +59,7 @@ x_label = "Number of screened materials"
 for key in filter(lambda key: key.startswith("yaxis"), fig.layout):
     fig.layout[key].range = range_y
 
-fig.layout.margin.update(l=60, r=10, t=30, b=60)
+fig.layout.margin.update(l=0, r=0, t=20, b=0)
 # use annotation for x-axis label
 fig.add_annotation(
     **dict(x=0.5, y=-0.15, xref="paper", yref="paper"),
