@@ -33,7 +33,7 @@ from matbench_discovery.plots import wandb_scatter
 from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
-__date__ = "2023-03-01"
+__date__ = "2024-12-09"
 
 
 # %%
@@ -48,8 +48,11 @@ out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
 device = "cuda" if torch.cuda.is_available() else "cpu"
 # whether to record intermediate structures into pymatgen Trajectory
 record_traj = True  # has no effect if relax_cell is False
-model_name = "https://github.com/ACEsuit/mace-mp/releases/download/mace_mp_0b/mace_agnesi_medium.model"
-# model_name = "https://tinyurl.com/5yyxdm76"
+model_name = {
+    "MACE-MPAlex 0 (2024-12-09)": "mace-alex-main-branch",
+    "MACE MP 0 medium (2023-03-01)": "https://tinyurl.com/5yyxdm76",
+}["MACE-MPAlex 0 (2024-12-09)"]
+
 ase_filter: Literal["frechet", "exp"] = "frechet"
 
 slurm_vars = slurm_submit(
@@ -81,10 +84,10 @@ max_steps = 500
 force_max = 0.05  # Run until the forces are smaller than this in eV/A
 checkpoint = f"{ROOT}/models/mace/checkpoints/{model_name}.model"
 dtype = "float64"
-mace_calc = mace_mp(model=model_name, device=device, default_dtype=dtype)
+mace_calc = mace_mp(model=checkpoint, device=device, default_dtype=dtype)
 
 print(f"Read data from {data_path}")
-atoms_list: list[Atoms] = ase_atoms_from_zip(data_path)
+atoms_list: list[Atoms] = np.array(ase_atoms_from_zip(data_path), dtype=object)
 
 if slurm_array_job_id == "debug":
     if smoke_test:
