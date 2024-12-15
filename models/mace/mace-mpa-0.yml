@@ -63,8 +63,22 @@ notes:
 metrics:
   phonons:
   geo_opt:
-    pred_file: null
-    pred_col: null
+    pred_file: models/mace/mace-mpa-0/2024-12-09-mace-wbm-IS2RE-FIRE.json.gz
+    pred_col: mace_structure
+    symprec=1e-2:
+      rmsd: 0.0142 # Å
+      n_sym_ops_mae: 1.807 # unitless
+      symmetry_decrease: 0.0555 # fraction
+      symmetry_match: 0.8144 # fraction
+      symmetry_increase: 0.1231 # fraction
+      n_structures: 256963 # count
+    symprec=1e-5:
+      rmsd: 0.0142 # Å
+      n_sym_ops_mae: 1.8808 # unitless
+      symmetry_decrease: 0.0328 # fraction
+      symmetry_match: 0.7324 # fraction
+      symmetry_increase: 0.2306 # fraction
+      n_structures: 256963 # count
   discovery:
     pred_file: models/mace/mace-mpa-0/2024-12-09-mace-wbm-IS2RE-FIRE.csv.gz
     pred_col: e_form_per_atom_mace
