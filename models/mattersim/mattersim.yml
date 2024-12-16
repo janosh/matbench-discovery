@@ -1,8 +1,8 @@
-model_name: MatterSim
+model_name: MatterSimV1
 model_key: mattersim
-model_version: n/a
+model_version: 1.0.0
 matbench_discovery_version: 1.0.0
-date_added: "2024-06-16"
+date_added: "2024-12-16"
 date_published: "2024-05-08"
 authors:
   - name: Han Yang
@@ -73,7 +73,7 @@ authors:
     affiliation: Microsoft Research AI for Science
     email: zihenglu@microsoft.com
     orcid: https://orcid.org/0000-0003-2239-8526
-repo: https://github.com/microsoft/Graphormer
+repo: https://github.com/microsoft/mattersim
 doi: https://doi.org/10.48550/arXiv.2405.04967
 paper: https://arxiv.org/abs/2405.04967
 
@@ -88,21 +88,21 @@ train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_D
 model_type: UIP
-model_params: 182_000_000
+model_params: 4_549_142
 n_estimators: 1
 
 training_set: [MatterSim]
 
-hyperparams:
-  optimizer: AdamW
-  learning_rate: 2e-4 # initial value, linearly decayed to 0
-  batch_size: 256
-  n_layers: 5
-  n_features: 128 l=0 scalars, 64 l=1 vectors, 32 l=2 tensors
-  radial_cutoff: 5.0 # Å
+# hyperparams:
+#   optimizer: AdamW
+#   learning_rate: 2e-4 # initial value, linearly decayed to 0
+#   batch_size: 256
+#   n_layers: 5
+#   n_features: 128 l=0 scalars, 64 l=1 vectors, 32 l=2 tensors
+#   radial_cutoff: 5.0 # Å
 
 notes:
-  Description: Graphormer is a general-purpose deep learning backbone for molecular modeling.
+  Description: This is an open source version of MatterSim V1 based on M3GNet architecture.
   Training: MatterSim was trained on a large, closed dataset covering diverse combinations of 89 elements across many temperatures and pressures.
   Tested Applications: |
     - Energy, force, stress prediction
@@ -118,65 +118,66 @@ notes:
 
 metrics:
   geo_opt:
-    pred_file: null # not (yet) shared by authors
-    pred_col: null
+    pred_file: # not (yet) shared by authors
+    pred_col:
   discovery:
-    pred_file: models/mattersim/2024-06-16-mattersim-wbm-IS2RE.csv.gz
+    # pred_file: models/mattersim/2024-06-16-mattersim-wbm-IS2RE.csv.gz
+    pred_file: models/mattersim/2024-12-16-MatterSim-V1-5M-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_mattersim
     full_test_set:
-      F1: 0.832 # fraction
-      DAF: 4.838 # dimensionless
-      Precision: 0.83 # fraction
-      Recall: 0.834 # fraction
-      Accuracy: 0.942 # fraction
-      TPR: 0.834 # fraction
-      FPR: 0.035 # fraction
-      TNR: 0.965 # fraction
-      FNR: 0.166 # fraction
-      TP: 36754.0 # count
-      FP: 7516.0 # count
-      TN: 205355.0 # count
-      FN: 7338.0 # count
-      MAE: 0.026 # eV/atom
-      RMSE: 0.079 # eV/atom
-      R2: 0.809 # dimensionless
+      F1: 0.838 # fraction
+      DAF: 5.123 # dimensionless
+      Precision: 0.879 # fraction
+      Recall: 0.801 # fraction
+      Accuracy: 0.947 # fraction
+      TPR: 0.801 # fraction
+      FPR: 0.023 # fraction
+      TNR: 0.977 # fraction
+      FNR: 0.199 # fraction
+      TP: 35309.0 # count
+      FP: 4858.0 # count
+      TN: 208013.0 # count
+      FN: 8783.0 # count
+      MAE: 0.024 # eV/atom
+      RMSE: 0.069 # eV/atom
+      R2: 0.854 # dimensionless
       missing_preds: 2 # count
       missing_percent: 0.00% # fraction
     most_stable_10k:
-      F1: 0.989 # fraction
-      DAF: 6.401 # dimensionless
-      Precision: 0.978 # fraction
+      F1: 0.984 # fraction
+      DAF: 6.339 # dimensionless
+      Precision: 0.969 # fraction
       Recall: 1.0 # fraction
-      Accuracy: 0.978 # fraction
+      Accuracy: 0.969 # fraction
       TPR: 1.0 # fraction
       FPR: 1.0 # fraction
       TNR: 0.0 # fraction
       FNR: 0.0 # fraction
-      TP: 9785.0 # count
-      FP: 215.0 # count
+      TP: 9691.0 # count
+      FP: 309.0 # count
       TN: 0.0 # count
       FN: 0.0 # count
-      MAE: 0.02 # eV/atom
-      RMSE: 0.065 # eV/atom
-      R2: 0.906 # dimensionless
+      MAE: 0.022 # eV/atom
+      RMSE: 0.078 # eV/atom
+      R2: 0.869 # dimensionless
       missing_preds: 0 # count
       missing_percent: 0.00% # fraction
     unique_prototypes:
-      F1: 0.859 # fraction
-      DAF: 5.646 # dimensionless
-      Precision: 0.863 # fraction
-      Recall: 0.856 # fraction
-      Accuracy: 0.957 # fraction
-      TPR: 0.856 # fraction
-      FPR: 0.025 # fraction
-      TNR: 0.975 # fraction
-      FNR: 0.144 # fraction
-      TP: 28562.0 # count
-      FP: 4531.0 # count
-      TN: 177583.0 # count
-      FN: 4812.0 # count
-      MAE: 0.026 # eV/atom
-      RMSE: 0.08 # eV/atom
-      R2: 0.812 # dimensionless
+      F1: 0.862 # fraction
+      DAF: 5.852 # dimensionless
+      Precision: 0.895 # fraction
+      Recall: 0.831 # fraction
+      Accuracy: 0.959 # fraction
+      TPR: 0.831 # fraction
+      FPR: 0.018 # fraction
+      TNR: 0.982 # fraction
+      FNR: 0.169 # fraction
+      TP: 27750.0 # count
+      FP: 3268.0 # count
+      TN: 178846.0 # count
+      FN: 5624.0 # count
+      MAE: 0.024 # eV/atom
+      RMSE: 0.068 # eV/atom
+      R2: 0.863 # dimensionless
       missing_preds: 0 # count
       missing_percent: 0.00% # fraction
