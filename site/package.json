@@ -14,6 +14,7 @@
     "preview": "vite preview",
     "serve": "vite build && vite preview",
     "check": "svelte-check",
+    "test": "vitest",
     "changelog": "npx auto-changelog --output ../changelog.md --hide-credit --commit-limit false"
   },
   "devDependencies": {
@@ -32,6 +33,7 @@
     "hastscript": "^9.0.0",
     "highlight.js": "^11.10.0",
     "js-yaml": "^4.1.0",
+    "jsdom": "^25.0.1",
     "json-schema-to-typescript": "^15.0.3",
     "katex": "^0.16.15",
     "mdsvex": "^0.12.3",
@@ -55,7 +57,8 @@
     "typescript": "5.7.2",
     "typescript-eslint": "^8.18.0",
     "unified": "^11.0.5",
-    "vite": "^5.4.10"
+    "vite": "^5.4.10",
+    "vitest": "^2.1.8"
   },
   "prettier": {
     "semi": false,
