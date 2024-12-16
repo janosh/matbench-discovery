@@ -1,5 +1,5 @@
-model_name: MACE
-model_key: mace
+model_name: MACE-MP 0
+model_key: mace-mp-0
 model_version: v0.3.5
 matbench_discovery_version: 1.0.0
 date_added: "2023-07-14"
@@ -64,13 +64,13 @@ hyperparams:
 notes:
   Description: |
     MACE is a higher-order equivariant message-passing neural network for fast and accurate force fields.
-  Training: Using pre-trained 'medium' model released with paper.
+  Training: The Matbench Discovery submission uses the same MPtrj-trained 'medium' checkpoint used for all analysis in the MACE-MP preprint.
 
 metrics:
   phonons:
     κ_SRME: 0.647
   geo_opt:
-    pred_file: models/mace/2023-12-11-mace-wbm-IS2RE-FIRE.json.gz
+    pred_file: models/mace/mace-mp-0/2023-12-11-mace-mp-0-wbm-IS2RE-FIRE.json.gz
     pred_col: mace_structure
     symprec=1e-5:
       rmsd: 0.0194 # Å
@@ -87,7 +87,7 @@ metrics:
       symmetry_increase: 0.1353 # fraction
       n_structures: 249034 # count
   discovery:
-    pred_file: models/mace/2023-12-11-mace-wbm-IS2RE-FIRE.csv.gz
+    pred_file: models/mace/mace-mp-0/2023-12-11-mace-mp-0-wbm-IS2RE-FIRE.csv.gz
     pred_col: e_form_per_atom_mace
     full_test_set:
       F1: 0.668 # fraction
