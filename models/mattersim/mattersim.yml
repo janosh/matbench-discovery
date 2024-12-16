@@ -1,4 +1,4 @@
-model_name: MatterSimV1
+model_name: MatterSim-V1
 model_key: mattersim
 model_version: 1.0.0
 matbench_discovery_version: 1.0.0
@@ -94,13 +94,13 @@ n_estimators: 1
 
 training_set: [MatterSim]
 
-# hyperparams:
-#   optimizer: AdamW
-#   learning_rate: 2e-4 # initial value, linearly decayed to 0
-#   batch_size: 256
-#   n_layers: 5
-#   n_features: 128 l=0 scalars, 64 l=1 vectors, 32 l=2 tensors
-#   radial_cutoff: 5.0 # Å
+hyperparams:
+  optimizer: AdamW
+  learning_rate: 5e-4 # initial value, linearly decayed to 0
+  seed: 42
+  batch_size: 128
+  units: 256
+  radial_cutoff: 5.0 # Å
 
 notes:
   Description: This is an open source version of MatterSim V1 based on M3GNet architecture.
