@@ -1,6 +1,6 @@
-model_name: MatterSim-V1
-model_key: mattersim
-model_version: 1.0.0
+model_name: MatterSim-v1
+model_key: mattersim-v1
+model_version: v1.0.0
 matbench_discovery_version: 1.0.0
 date_added: "2024-12-16"
 date_published: "2024-05-08"
@@ -118,12 +118,15 @@ notes:
     - newly generated structures and MD trajectories
 
 metrics:
+  phonons: # https://github.com/MPA2suite/k_SRME/pull/13
+    κ_SRME: 0.574 # dimensionless
   geo_opt:
     pred_file: # not (yet) shared by authors
     pred_col:
   discovery:
-    # pred_file: models/mattersim/2024-06-16-mattersim-wbm-IS2RE.csv.gz
-    pred_file: models/mattersim/2024-12-16-MatterSim-V1-5M-wbm-IS2RE.csv.gz
+    pred_file: models/mattersim/2024-12-16-mattersim-v1-5M-wbm-IS2RE.csv.gz
+    # the original Graphormer-based replaced the M3GNet-based MatterSim on the leaderboard
+    # pred_file: models/mattersim/2024-06-16-mattersim-graphormer-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_mattersim
     full_test_set:
       F1: 0.838 # fraction
