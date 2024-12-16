@@ -13,4 +13,12 @@ export default {
   preview: {
     port: 3000,
   },
+
+  test: {
+    environment: `jsdom`,
+    css: true,
+    coverage: {
+      reporter: [`text`, `json-summary`],
+    },
+  },
 } satisfies UserConfig

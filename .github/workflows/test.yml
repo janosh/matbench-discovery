@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  tests:
+  pytest:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
@@ -30,6 +30,12 @@ jobs:
       os: ${{ matrix.os }}
       python-version: "3.11"
       install-cmd: pip install -e .[test,symmetry]
+
+  vitest:
+    uses: janosh/workflows/.github/workflows/npm-test.yml@main
+    with:
+      working-directory: site
+      install-e2e: ""
 
   scripts:
     runs-on: ubuntu-latest
