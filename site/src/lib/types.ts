@@ -22,7 +22,7 @@ export type ModelStats = {
   GPUs: number // number of GPUs used
   CPUs: number // number of CPUs used
   slurm_jobs: number // number of SLURM jobs used
-  κ_SRME: number // symmetric relative mean error for thermal conductivity
+  'κ<sub>SRME</sub>': number // symmetric relative mean error for thermal conductivity
 }
 
 // how to pretty print a model stat key on the website
