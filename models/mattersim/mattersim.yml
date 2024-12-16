@@ -81,6 +81,7 @@ requirements:
   Graphormer: v1
   numpy: 1.26.2
   pymatgen: 2024.5.1
+  python: ">=3.9"
 
 openness: CSCD
 trained_for_benchmark: false
