@@ -127,7 +127,7 @@ fig.layout.legend.update(
 # standardize the margins and template
 portrait = n_rows > n_cols
 fig.layout.margin.update(l=60, r=10, t=0 if portrait else 10, b=60 if portrait else 10)
-fig.layout.template = "pymatviz_white"
+# fig.layout.template = "pymatviz_white"
 
 # for trace in fig.data:
 #     # no need to store all 250k x values in plot, leads to 1.7 MB file,

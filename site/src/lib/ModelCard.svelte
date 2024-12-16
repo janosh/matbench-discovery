@@ -17,8 +17,12 @@
 
   $: ({ model_name, model_key } = model)
   $: ({ model_params, hyperparams, notes = {}, training_set, n_estimators } = model)
-  $: discovery_metrics = model.metrics?.discovery?.full_test_set ?? {}
-  $: ({ missing_preds, missing_percent } = discovery_metrics)
+  $: all_metrics = {
+    ...(model.metrics?.discovery?.full_test_set ?? {}),
+    ...(typeof model.metrics?.phonons == `object` ? model.metrics?.phonons : {}),
+  }
+
+  $: ({ missing_preds, missing_percent } = all_metrics)
 
   $: links = [
     [model.repo, `Repo`, `octicon:mark-github`],
@@ -157,14 +161,15 @@
   <h3>Metrics</h3>
   <ul>
     <!-- hide run time if value is 0 (i.e. not available) -->
-    {#each stats.filter(({ key }) => key != `Run Time (h)` || discovery_metrics[key] > 0) as { key, label, unit }}
+    {#each stats as { key, label, unit }}
       <li class:active={sort_by == key}>
         <label for={key}>{@html label ?? key}</label>
-        <strong>{pretty_num(discovery_metrics[key])} <small>{unit ?? ``}</small></strong>
+        <strong>{pretty_num(all_metrics[key])} <small>{unit ?? ``}</small></strong>
       </li>
     {/each}
   </ul>
 </section>
+
 {#if hyperparams && show_details}
   <section>
     <h3>Hyperparameters</h3>

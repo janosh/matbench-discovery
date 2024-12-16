@@ -11,7 +11,7 @@
   import type { Snapshot } from './$types'
 
   let sort_by: keyof ModelStats | `model_name` = `F1`
-  let show_non_compliant: boolean = false
+  let show_non_compliant: boolean = true
   let show_details: boolean = false
   let order: `asc` | `desc` = `desc`
   let show_n_best: number = MODEL_METADATA.length // show only best models
@@ -25,9 +25,9 @@
     const [val_1, val_2] = [metrics_1[sort_by], metrics_2[sort_by]]
 
     // Handle null values by sorting last
-    if (val_1 === null && val_2 === null) return 0
-    if (val_1 === null) return 1
-    if (val_2 === null) return -1
+    if (val_1 == null && val_2 == null) return 0
+    if (val_1 == null) return 1
+    if (val_2 == null) return -1
 
     if (typeof val_1 == `string`) {
       return sort_factor * val_1.localeCompare(val_2)
@@ -53,9 +53,9 @@
     { key: `RMSE`, unit: `eV / atom`, tooltip: `Root Mean Squared Error` },
     { key: `TNR`, tooltip: `True Negative Rate` },
     { key: `TPR`, tooltip: `True Positive Rate` },
-    { key: `Run Time (h)`, label: `Run time`, unit: `h` },
     {
-      key: `κ<sub>SRME</sub>`,
+      key: `κ_SRME`,
+      label: `κ<sub>SRME</sub>`,
       tooltip: `symmetric relative mean error in predicted phonon mode contributions to thermal conductivity κ`,
     },
   ]
@@ -67,10 +67,14 @@
 
   $: sort_factor = { asc: -1, desc: 1 }[order]
   $: min_val = Math.min(
-    ...models.map((model) => model.metrics?.discovery?.full_test_set[sort_by] as number),
+    ...models
+      .map((model) => model.metrics?.discovery?.full_test_set?.[sort_by])
+      .filter((val) => typeof val === `number`),
   )
   $: max_val = Math.max(
-    ...models.map((model) => model.metrics?.discovery?.full_test_set[sort_by] as number),
+    ...models
+      .map((model) => model.metrics?.discovery?.full_test_set?.[sort_by])
+      .filter((val) => typeof val === `number`),
   )
   $: if (discovery.lower_is_better.includes(sort_by))
     [min_val, max_val] = [max_val, min_val]
@@ -111,13 +115,10 @@
           {@html label ?? key}
         </button>
         {#if tooltip}
-          <Tooltip
-            text={tooltip}
-            tip_style="white-space: nowrap; font-size: 9pt;"
-            max_width="20em"
-            style="position: absolute; transform: translate(-45%, -45%); color: gray;"
-          >
-            <Icon icon="octicon:info-16" title="Info" height="9pt" />
+          <Tooltip text={tooltip} max_width="20em">
+            <span style="position: absolute; top: -1ex; left: -4pt; color: gray;">
+              <Icon icon="octicon:info-16" aria-label="Info" height="9.5pt" />
+            </span>
           </Tooltip>
         {/if}
       </li>
@@ -143,26 +144,17 @@
           {sort_by}
           bind:show_details
           style="background-color: {bg_color(
-            model.metrics?.discovery?.unique_prototypes[sort_by],
+            model.metrics?.discovery?.unique_prototypes?.[sort_by],
             min_val,
             max_val,
           )};"
         />
-        <!-- maybe show this text in a tooltip: This model was not trained on the
-        canonical training set. It's results should not be seen as a one-to-one
-        comparison to the other models but rather proof of concept of what is possible. -->
-        <!-- {#if model.training_set}
-          <strong class="train-set">
-            <Icon icon="ion:ios-warning" inline />
-            Custom training set: {model.training_set.title}
-          </strong>
-        {/if} -->
       </li>
     {/each}
   </ol>
 </div>
 
-<!-- link to ALL model pages with hidden links for the crawler -->
+<!-- link to ALL model pages with hidden links for the SvelteKit crawler -->
 {#each MODEL_METADATA as model}
   <a href="/models/{model.model_key}" hidden>
     {model.model_name}

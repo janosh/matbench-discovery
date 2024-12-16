@@ -14,7 +14,7 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
-from matbench_discovery.energy import get_e_form_per_atom
+from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 from matbench_discovery.enums import MbdKey, Task
 
 __author__ = "Janosh Riebesell"
@@ -24,11 +24,12 @@ __date__ = "2023-03-01"
 # %%
 module_dir = os.path.dirname(__file__)
 task_type = Task.IS2RE
-e_form_mace_col = "e_form_per_atom_mace"
-date = "2024-07-20"
+date = "2024-12-09"
 glob_pattern = f"{date}-mace-wbm-{task_type}*/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
+
+e_form_mace_col = "e_form_per_atom_mace"
 struct_col = "mace_structure"
 
 dfs: dict[str, pd.DataFrame] = {}
@@ -78,13 +79,18 @@ if len(processed) != len(df_mace):
 
 # %% compute corrected formation energies
 df_mace[Key.formula] = df_wbm[Key.formula]
-df_mace[e_form_mace_col] = [
-    get_e_form_per_atom(dict(energy=cse.energy, composition=formula))
-    for formula, cse in tqdm(
-        df_mace.set_index(Key.formula)[Key.computed_structure_entry].items(),
-        total=len(df_mace),
+
+print("Calculating formation energies")
+e_form_list: dict[str, float] = {}
+for mat_id, row in tqdm(df_mace.iterrows(), total=len(df_mace)):
+    e_form = calc_energy_from_e_refs(
+        row["formula"],
+        ref_energies=mp_elemental_ref_energies,
+        total_energy=row[Key.computed_structure_entry].energy,
     )
-]
+    e_form_list[mat_id] = e_form
+
+df_mace[e_form_mace_col] = e_form_list
 df_wbm[[*df_mace]] = df_mace
 
 

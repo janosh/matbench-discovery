@@ -243,12 +243,12 @@ fig.layout.margin.update(l=60, r=10, t=0 if portrait else 10, b=60 if portrait e
 axes_kwargs = dict(matches=None, title_text="", showgrid=True, nticks=8)
 fig.update_xaxes(**axes_kwargs, range=domain)
 fig.update_yaxes(**axes_kwargs, range=domain)
-fig.layout.template = "pymatviz_white"
+# fig.layout.template = "pymatviz_white"
 fig.show()
 
 
 # %%
 img_suffix = "" if show_non_compliant else "-only-compliant"
 img_name = f"{which_energy}-parity-models-{n_rows}x{n_cols}{img_suffix}"
-pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svg")
+pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
