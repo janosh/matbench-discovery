@@ -62,6 +62,7 @@ notes:
 
 metrics:
   phonons:
+    κ_SRME: 0.412
   geo_opt:
     pred_file: models/mace/mace-mpa-0/2024-12-09-mace-wbm-IS2RE-FIRE.json.gz
     pred_col: mace_structure
