@@ -391,7 +391,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # m3gnet_ms = None, "M3GNet MS"
 
     # MACE-MP-0 medium as published in https://arxiv.org/abs/2401.00096 trained on MPtrj
-    mace = "mace/mace.yml"
+    mace = "mace/mace-mp-0.yml"
+    mace_mpa_0 = "mace/mace-mpa-0.yml"  # trained on MPtrj and Alexandria
 
     # original MEGNet straight from publication, not re-trained
     megnet = "megnet/megnet.yml"

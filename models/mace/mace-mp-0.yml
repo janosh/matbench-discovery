@@ -1,0 +1,148 @@
+model_name: MACE-MP-0
+model_key: mace-mp-0
+model_version: v0.3.5
+matbench_discovery_version: 1.0.0
+date_added: "2023-07-14"
+date_published: "2022-05-13"
+authors:
+  - name: Ilyes Batatia
+    affiliation: University of Cambridge
+    email: ilyes.batatia@ens-paris-saclay.fr
+    orcid: https://orcid.org/0000-0001-6915-9851
+  - name: David P Kovacs
+    affiliation: University of Cambridge
+    orcid: https://orcid.org/0000-0002-0854-2635
+  - name: Gregor Simm
+    affiliation: University of Cambridge
+    orcid: https://orcid.org/0000-0001-6815-352X
+  - name: Christoph Ortner
+    affiliation: University of Cambridge
+    orcid: https://orcid.org/0000-0003-1498-8120
+  - name: Gabor Csanyi
+    affiliation: University of Cambridge
+    orcid: https://orcid.org/0000-0002-8180-2034
+trained_by:
+  - name: Philipp Benner
+    affiliation: German Federal Institute of Materials Research and Testing (BAM)
+    orcid: https://orcid.org/0000-0002-0912-8137
+    github: https://github.com/pbenner
+  - name: Yuan Chiang
+    affiliation: Lawrence Berkeley National Laboratory
+    orcid: https://orcid.org/0000-0002-4017-7084
+    github: https://github.com/chiang-yuan
+repo: https://github.com/ACEsuit/mace
+doi: https://doi.org/10.48550/arXiv.2401.00096
+paper: https://arxiv.org/abs/2401.00096
+pypi: https://pypi.org/project/mace-torch
+
+requirements:
+  mace-torch: 0.3.3
+  torch: 2.0.1
+  ase: 3.22.1
+  pymatgen: 2023.7.14
+  numpy: 1.25.0
+
+openness: OSOD
+trained_for_benchmark: true
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+model_type: UIP
+# model_params: 2_026_624 # 2023-09-03-mace-yuan-mptrj-slower-14-lr-13_run-3
+# model_params: 15_847_440 # 2023-10-29-mace-pbenner-mptrj-no-conditional-loss
+model_params: 4_688_656 # 2023-12-03-mace-128-L1: https://tinyurl.com/y7uhwpje
+n_estimators: 1
+
+training_set: [MPtrj]
+
+hyperparams:
+  max_force: 0.05
+  max_steps: 500
+  ase_optimizer: FIRE
+  radial_cutoff: 6.0
+
+notes:
+  Description: |
+    MACE is a higher-order equivariant message-passing neural network for fast and accurate force fields.
+  Training: The Matbench Discovery submission uses the same MPtrj-trained 'medium' checkpoint used for all analysis in the MACE-MP preprint.
+
+metrics:
+  phonons:
+    κ_SRME: 0.647
+  geo_opt:
+    pred_file: models/mace/mace-mp-0/2023-12-11-mace-mp-0-wbm-IS2RE-FIRE.json.gz
+    pred_col: mace_structure
+    symprec=1e-5:
+      rmsd: 0.0194 # Å
+      n_sym_ops_mae: 1.8584 # unitless
+      symmetry_decrease: 0.035 # fraction
+      symmetry_match: 0.7361 # fraction
+      symmetry_increase: 0.2243 # fraction
+      n_structures: 243070 # count
+    symprec=1e-2:
+      rmsd: 0.0197 # Å
+      n_sym_ops_mae: 1.8961 # unitless
+      symmetry_decrease: 0.0602 # fraction
+      symmetry_match: 0.7977 # fraction
+      symmetry_increase: 0.1353 # fraction
+      n_structures: 249034 # count
+  discovery:
+    pred_file: models/mace/mace-mp-0/2023-12-11-mace-mp-0-wbm-IS2RE-FIRE.csv.gz
+    pred_col: e_form_per_atom_mace
+    full_test_set:
+      F1: 0.668 # fraction
+      DAF: 3.4 # dimensionless
+      Precision: 0.583 # fraction
+      Recall: 0.781 # fraction
+      Accuracy: 0.867 # fraction
+      TPR: 0.781 # fraction
+      FPR: 0.115 # fraction
+      TNR: 0.885 # fraction
+      FNR: 0.219 # fraction
+      TP: 34420.0 # count
+      FP: 24576.0 # count
+      TN: 188295.0 # count
+      FN: 9672.0 # count
+      MAE: 0.055 # eV/atom
+      RMSE: 0.099 # eV/atom
+      R2: 0.698 # dimensionless
+      missing_preds: 38 # count
+      missing_percent: 0.01% # fraction
+    most_stable_10k:
+      F1: 0.888 # fraction
+      DAF: 5.221 # dimensionless
+      Precision: 0.798 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.798 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 7982.0 # count
+      FP: 2018.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.087 # eV/atom
+      RMSE: 0.165 # eV/atom
+      R2: 0.508 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
+    unique_prototypes:
+      F1: 0.669 # fraction
+      DAF: 3.777 # dimensionless
+      Precision: 0.577 # fraction
+      Recall: 0.796 # fraction
+      Accuracy: 0.878 # fraction
+      TPR: 0.796 # fraction
+      FPR: 0.107 # fraction
+      TNR: 0.893 # fraction
+      FNR: 0.204 # fraction
+      TP: 26582.0 # count
+      FP: 19457.0 # count
+      TN: 162657.0 # count
+      FN: 6792.0 # count
+      MAE: 0.057 # eV/atom
+      RMSE: 0.101 # eV/atom
+      R2: 0.697 # dimensionless
+      missing_preds: 34 # count
+      missing_percent: 0.02% # fraction
