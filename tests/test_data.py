@@ -6,6 +6,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import pytest
+import requests
 from ase import Atoms
 from pymatgen.core import Lattice, Structure
 from pymatviz.enums import Key
@@ -183,7 +184,7 @@ def test_data_files() -> None:
     # Test that multiple files exist and have correct attributes
     assert DataFiles.wbm_summary.rel_path == "wbm/2023-12-13-wbm-summary.csv.gz"
     assert (
-        DataFiles.wbm_summary.url == "https://figshare.com/ndownloader/files/40344472"
+        DataFiles.wbm_summary.url == "https://figshare.com/ndownloader/files/44225498"
     )
 
 
@@ -212,3 +213,18 @@ def test_model() -> None:
     # Test Model metrics property
     metrics = Model.alignn.metrics
     assert isinstance(metrics, dict)
+
+
+@pytest.mark.parametrize("data_file", DataFiles)
+def test_data_files_urls(data_file: DataFiles) -> None:
+    """Test that each URL in data-files.yml is a valid Figshare download URL."""
+
+    name, url = data_file.name, data_file.url
+    # check that URL is a figshare download
+    assert (
+        "figshare.com/ndownloader/files/" in url
+    ), f"URL for {name} is not a Figshare download URL: {url}"
+
+    # check that the URL is valid by sending a head request
+    response = requests.head(url, allow_redirects=True, timeout=5)
+    assert response.status_code in {200, 403}, f"Invalid URL for {name}: {url}"

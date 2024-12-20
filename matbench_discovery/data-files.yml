@@ -66,7 +66,7 @@ wbm_cses_plus_init_structs:
   description: Both unrelaxed and DFT-relaxed WBM structures, the latter stored with their final VASP energies as `pymatgen` [`ComputedStructureEntries`]
 
 wbm_summary:
-  url: https://figshare.com/ndownloader/files/40344472
+  url: https://figshare.com/ndownloader/files/44225498
   path: wbm/2023-12-13-wbm-summary.csv.gz
   description: Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more.
 
