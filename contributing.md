@@ -2,11 +2,11 @@
 
 ## 🔨 &thinsp; Installation
 
-Clone the repo and install `matbench_discovery` into your Python environment:
+Clone the repo and install `matbench_discovery` into your Python environment (`--config-settings editable-mode=compat` helps the VS Code Python extension resolve `matbench_discovery` imports):
 
 ```zsh
 git clone https://github.com/janosh/matbench-discovery --depth 1
-pip install -e ./matbench-discovery
+pip install -e ./matbench-discovery --config-settings editable-mode=compat
 ```
 
 There's also a [PyPI package](https://pypi.org/project/matbench-discovery) for faster installation if you don't need the latest code changes (unlikely if you're planning to submit a model since the benchmark is under active development).
