@@ -13,6 +13,7 @@ from collections import defaultdict
 from collections.abc import Callable, Sequence
 from enum import EnumMeta, StrEnum, _EnumDict
 from glob import glob
+from importlib.resources import files
 from pathlib import Path
 from typing import Any, Literal, Self, TypeVar
 
@@ -363,7 +364,7 @@ df_wbm.index = df_wbm[str(Key.mat_id)]
 
 
 # ruff: noqa: E501, ERA001 (ignore long lines in class Model)
-class Model(Files, base_dir=f"{ROOT}/models"):
+class Model(Files, base_dir=str(files("matbench_discovery").joinpath("models"))):
     """Data files provided by Matbench Discovery.
     See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
     """
