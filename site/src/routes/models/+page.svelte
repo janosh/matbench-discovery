@@ -131,7 +131,7 @@
     worst
   </legend>
 
-  <ol>
+  <ol class="models">
     {#each models.slice(0, Math.max(min_models, show_n_best)) as model (model.model_name)}
       <li
         animate:flip={{ duration: 400 }}
