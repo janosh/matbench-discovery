@@ -4,8 +4,8 @@
 
   export let show_tips: boolean = false
   export let tips_title = `Usage Tips`
-  export let dialog: HTMLDialogElement
-  export let btn: HTMLButtonElement
+  export let dialog: HTMLDialogElement | null = null
+  export let btn: HTMLButtonElement | null = null
 
   function close_if_outside_click(event: MouseEvent) {
     const is_outside = dialog && !dialog.contains(event.target as Node)
