@@ -412,7 +412,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     gnome = "gnome/gnome.yml"
 
     # MatterSim
-    mattersim = "mattersim/mattersim.yml"
+    mattersim = "mattersim/mattersim-v1.yml"
 
     # ORB
     orb = "orb/orb.yml"
