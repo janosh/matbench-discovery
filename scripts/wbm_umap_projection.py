@@ -12,7 +12,6 @@ https://www.nature.com/articles/s41524-023-01012-9
 # %%
 import os
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pymatviz as pmv
@@ -189,18 +188,20 @@ df_umap = pd.read_csv(umap_out_path).set_index("wbm_step")
 umap_cols = list(df_umap)
 if umap_cols != ["UMAP 1", "UMAP 2"]:
     raise ValueError(f"Unexpected {umap_cols=}")
-min_step, max_step = df_umap.index.min(), df_umap.index.max()
-ax = df_umap.plot.scatter(
-    *umap_cols, c=df_umap.index, cmap="Spectral", s=5, figsize=(6, 4), colorbar=False
+
+fig = df_umap.plot.scatter(
+    x="UMAP 1",
+    y="UMAP 2",
+    color=df_umap.index.astype(str).str.replace("0", "MP original structures"),
+    backend="plotly",
+    template="pymatviz_white",
 )
-cbar = ax.figure.colorbar(
-    ax.collections[0],
-    boundaries=np.arange(min_step, max_step + 2) - 0.5,
-    ticks=range(min_step, max_step + 1),
+fig.layout.legend.update(
+    title="WBM step:", orientation="h", y=1.1, itemsizing="constant"
 )
-cbar.ax.set_title("WBM step (0 = MP)", rotation=90, y=0.5, x=3, va="center")
+fig.show()
 
 
 # %%
-plt.tight_layout()
-pmv.save_fig(ax, f"{PDF_FIGS}/wbm-final-struct-matminer-features-2d-umap.png", dpi=300)
+img_path = f"{PDF_FIGS}/wbm-final-struct-matminer-features-2d-umap.png"
+pmv.save_fig(fig, img_path, scale=3)
