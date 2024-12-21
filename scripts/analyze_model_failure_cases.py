@@ -6,7 +6,6 @@ Might point to deficiencies in the data or models architecture.
 # %%
 import itertools
 
-import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objs as go
@@ -38,39 +37,48 @@ fp_diff_col = "site_stats_fingerprint_init_final_norm_diff"
 df_cse = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path).set_index(Key.mat_id)
 
 
-# %% plot the highest and lowest error structures before and after relaxation
-n_rows, n_cols = 5, 4
+# %% plot highest and lowest error structures before and after relaxation with Plotly
+n_structs = 6
+
 for good_or_bad, init_or_final in itertools.product(
     ("best", "worst"), ("initial", "final")
 ):
-    fig, axs = plt.subplots(n_rows, n_cols, figsize=(4 * n_cols, 3 * n_rows))
-    n_structs = len(axs.flat)
-    struct_col = {"initial": Key.init_struct, "final": Key.computed_structure_entry}[
-        init_or_final
-    ]
+    struct_col = {
+        "initial": "initial_structure",
+        "final": Key.computed_structure_entry,
+    }[init_or_final]
 
     errors = {
         "best": df_each_err[MbdKey.each_err_models].nsmallest(n_structs),
         "worst": df_each_err[MbdKey.each_err_models].nlargest(n_structs),
     }[good_or_bad]
+
+    structures: dict[str, Structure] = {}
+    for idx, (mat_id, error) in enumerate(errors.items()):
+        struct = Structure.from_dict(
+            df_cse[Key.computed_structure_entry]
+            .loc[mat_id]
+            .get("structure", df_cse[Key.computed_structure_entry].loc[mat_id])
+        )
+        title = (
+            f"{idx + 1}. {struct.reduced_formula}<br>"
+            f"spg={struct.get_space_group_info()[1]}<br>"
+            f"{mat_id} err={error:.2f}"
+        )
+        structures[title] = struct
+
+    fig = pmv.structure_3d_plotly(structures, n_cols=2)
+
     title = (
         f"{good_or_bad.title()} {len(errors)} {init_or_final} structures (across "
-        f"{len(list(df_each_pred))} models)\nErrors in (ev/atom)"
+        f"{len(list(df_each_pred))} models)<br>Errors in (ev/atom)"
     )
-    fig.suptitle(title, fontsize=20, fontweight="bold", y=1.05)
+    fig.layout.title.update(text=f"<b>{title}</b>", x=0.5)
+    fig.layout.margin = dict(t=40, b=0, l=0, r=0)
 
-    for idx, (mat_id, error) in enumerate(errors.items(), start=1):
-        struct = df_cse[struct_col].loc[mat_id]
-        if "structure" in struct:
-            struct = struct["structure"]
-        struct = Structure.from_dict(struct)
-        ax = pmv.structure_2d(struct, ax=axs.flat[idx - 1])
-        _, spg_num = struct.get_space_group_info()
-        formula = struct.composition.reduced_formula
-        ax_title = f"{idx}. {formula} (spg={spg_num})\n{mat_id} {error=:.2f}"
-        ax.set_title(ax_title, fontweight="bold")
-    out_path = f"{PDF_FIGS}/{good_or_bad}-{len(errors)}-structures-{init_or_final}.webp"
-    # fig.savefig(out_path, dpi=300)
+    out_path = f"{PDF_FIGS}/{good_or_bad}-{len(errors)}-structures-{init_or_final}"
+    # pmv.save_fig(fig, f"{out_path}.pdf")
+    fig.show()
 
 
 # %%

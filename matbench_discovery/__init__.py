@@ -6,7 +6,6 @@ import warnings
 from datetime import UTC, datetime
 from importlib.metadata import Distribution, version
 
-import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.io as pio
 import pymatviz  # noqa: F401 # needed for pymatviz_dark template
@@ -73,12 +72,4 @@ px.defaults.template = "pymatviz_dark+mbd_global"
 # https://github.com/plotly/Kaleido/issues/122#issuecomment-994906924
 # when seeing MathJax "loading" message in exported PDFs,
 # use pio.kaleido.scope.mathjax = None
-
-
-plt.rc("font", size=14)
-plt.rc("legend", fontsize=16, title_fontsize=16)
-plt.rc("axes", titlesize=16, labelsize=16)
-plt.rc("savefig", bbox="tight", dpi=200)
-plt.rc("figure", dpi=200, titlesize=16)
-plt.rcParams["figure.constrained_layout.use"] = True
 # --- end global plot settings

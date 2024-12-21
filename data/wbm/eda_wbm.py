@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import pymatviz as pmv
-from matplotlib.colors import SymLogNorm
 from pymatgen.core import Composition, Structure
 from pymatviz.enums import Key
 from pymatviz.typing import PLOTLY
@@ -71,24 +70,18 @@ for df, label in (
 
 # %%
 for dataset, count_mode, elem_counts in all_counts:
-    filename = f"{dataset}-element-counts-by-{count_mode}"
-    elem_counts.to_json(f"{data_page}/{filename}.json")
+    img_name = f"{dataset}-element-counts-by-{count_mode}"
+    elem_counts.to_json(f"{data_page}/{img_name}.json")
 
-    title = f"Number of {dataset.upper()} structures containing each element"
-    fig = pmv.ptable_heatmap_plotly(elem_counts, font_size=10, fmt=",.0f")
-    fig.layout.title.update(text=title, x=0.4, y=0.9)
-    fig.show()
-
-    # saving matplotlib heatmap to PDF mostly for historical reasons, could also use
-    # pmv.ptable_heatmap_plotly
-    ax_elem_counts = pmv.ptable_heatmap(
-        elem_counts,
-        cbar_title=f"{dataset.upper()} Element Count",
-        log=(log := SymLogNorm(linthresh=100)),
+    colorbar_title = f"Number of {dataset.upper()} structures containing each element"
+    fig_elem_counts = pmv.ptable_heatmap_plotly(
+        elem_counts, log=(log := True), colorbar=dict(title=colorbar_title)
     )
+    fig_elem_counts.show()
+
     if log:
-        filename += "-symlog" if isinstance(log, SymLogNorm) else "-log"
-    pmv.save_fig(ax_elem_counts, f"{PDF_FIGS}/{filename}.pdf")
+        img_name += "-log"
+    # pmv.save_fig(fig_elem_counts, f"{PDF_FIGS}/{filename}.pdf")
 
 
 # %% ratio of WBM to MP counts

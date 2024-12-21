@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import pymatviz as pmv
-from matplotlib.colors import SymLogNorm
 from pymatgen.core import Composition
 from pymatgen.core.tensors import Tensor
 from pymatviz.enums import Key
@@ -243,42 +242,39 @@ trj_elem_counts = pd.read_json(
 
 excl_elems = "He Ne Ar Kr Xe".split() if (excl_noble := False) else ()
 
-ax_ptable = pmv.ptable_heatmap(  # matplotlib version looks better for SI
+fig = pmv.ptable_heatmap_plotly(
     trj_elem_counts,
-    # zero_color="#efefef",
-    log=(log := SymLogNorm(linthresh=10_000)),
     exclude_elements=excl_elems,  # drop noble gases
-    # cbar_range=None if excl_noble else (10_000, None),
-    show_values=(show_vals := True),
-    # label_font_size=17 if show_vals else 25,
-    # value_font_size=14,
-    cbar_title="MPtrj Element Counts",
+    log=(log := True),
+    colorbar=dict(title="MPtrj Element Counts"),
 )
 
 img_name = f"mp-trj-element-counts-by-{count_mode}"
-if log:
-    img_name += "-symlog" if isinstance(log, SymLogNorm) else "-log"
 if excl_noble:
     img_name += "-excl-noble"
-pmv.save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
+if log:
+    img_name += "-log"
+pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
+fig.show()
 
 
 # %%
 normalized = True
-ax_ptable = pmv.ptable_heatmap_ratio(
-    trj_elem_counts / (len(df_mp_trj) if normalized else 1),
-    mp_occu_counts / (len(df_mp) if normalized else 1),
-    zero_color="#efefef",
-    fmt=".2f",
-    not_in_denominator=None,
-    not_in_numerator=None,
-    not_in_either=None,
+fig = pmv.ptable_heatmap_plotly(
+    {
+        elem: (trj_count / 1_580_395) / (mp_count / len(df_mp))
+        for elem, trj_count in trj_elem_counts.items()
+        if elem in mp_occu_counts
+        for mp_count in [mp_occu_counts[elem]]  # clever way to get mp_count in scope
+    },
+    colorbar=dict(title="MPtrj/MP Element Count Ratio"),
 )
 
 img_name = "mp-trj-mp-ratio-element-counts-by-occurrence"
 if normalized:
     img_name += "-normalized"
-pmv.save_fig(ax_ptable, f"{PDF_FIGS}/{img_name}.pdf")
+pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")
+fig.show()
 
 
 # %% plot formation energy per atom distribution
