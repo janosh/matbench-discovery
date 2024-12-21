@@ -63,7 +63,7 @@ running-models = [
 plots = ["dash>=2.18"]
 fetch-wbm-data = ["gdown>=5.1"]
 make-wbm-umap = ["umap-learn>=0.5.5"]
-symmetry = ["moyopy>=0.2.1"]
+symmetry = ["moyopy>=0.2.2"]
 
 [tool.setuptools.packages.find]
 include = ["matbench_discovery*"]
