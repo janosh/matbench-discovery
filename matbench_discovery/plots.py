@@ -6,7 +6,6 @@ from collections import defaultdict
 from collections.abc import Sequence
 from typing import Any, Literal
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -52,7 +51,7 @@ def hist_classified_stable_vs_hull_dist(
     rolling_acc: float | None = 0.02,
     clf_labels: Sequence[str] = clf_labels,
     **kwargs: Any,
-) -> plt.Axes | go.Figure:
+) -> go.Figure:
     """Histogram of the energy difference (either according to DFT ground truth - the
     default - or the model predicted energy) to the convex hull for materials in the
     WBM data set. The histogram is broken down into true positives, false negatives,
@@ -81,8 +80,7 @@ def hist_classified_stable_vs_hull_dist(
         clf_labels (list[str], optional): Labels for the four classification categories.
             Defaults to ["True Positive", "False Negative", "False Positive", "True
             Negative"].
-        kwargs: Additional keyword arguments passed to the ax.hist() or px.histogram()
-            depending on backend.
+        kwargs: Additional keyword arguments passed to the px.histogram() function.
 
     Returns:
         tuple[plt.Axes, dict[str, float]]: plot axes and classification metrics
@@ -216,7 +214,7 @@ def rolling_mae_vs_hull_dist(
     pbar: bool = True,
     legend_loc: Literal["figure", "below"] = "figure",
     **kwargs: Any,
-) -> plt.Axes | go.Figure:
+) -> tuple[go.Figure, pd.DataFrame, pd.DataFrame]:
     r"""Rolling mean absolute error as the energy to the convex hull is varied. A scale
     bar is shown for the windowing period of 40 meV per atom used when calculating the
     rolling MAE. The standard error in the mean is shaded around each curve. The
@@ -239,12 +237,8 @@ def rolling_mae_vs_hull_dist(
             smaller). Defaults to 0.002.
         x_lim (tuple[float, float], optional): x-axis range. Defaults to (-0.2, 0.3).
         y_lim (tuple[float, float], optional): y-axis range. Defaults to (0.0, 0.14).
-        backend ('matplotlib' | 'plotly'], optional): Which plotting engine to use.
-            Changes the return type. Defaults to 'plotly'.
-        x_label (str, optional): x-axis label. Defaults to "$E_\mathrm{above\ MP\ hull}$
-            (eV/atom)" for matplotlib and "E<sub>above MP hull</sub> (eV/atom)" for
-            plotly.
-        y_label (str, optional): y-axis label. Defaults to "rolling MAE (eV/atom)".
+        x_label (str, optional): Defaults to "E<sub>above MP hull</sub> (eV/atom)".
+        y_label (str, optional): Defaults to "rolling MAE (eV/atom)".
         just_plot_line (bool, optional): If True, plot only the rolling MAE, no shapes
             and annotations. Also won't plot the standard error in the mean. Defaults
             to False.
@@ -266,11 +260,9 @@ def rolling_mae_vs_hull_dist(
         **kwargs: Additional keyword arguments to pass to df.plot().
 
     Returns:
-        tuple[plt.Axes | go.Figure, pd.DataFrame, pd.DataFrame]: matplotlib Axes or
-        plotly
-            Figure depending on backend, followed by two dataframes containing the
-            rolling error for each column in e_above_hull_errors and the rolling
-            standard error in the mean.
+        tuple[go.Figure, pd.DataFrame, pd.DataFrame]: plotly Figure, followed by two
+            dataframes containing the rolling error for each column in
+            e_above_hull_errors and the rolling standard error in the mean.
     """
     bins = np.arange(*x_lim, bin_width)
     models = list(e_above_hull_preds)
@@ -483,7 +475,7 @@ def cumulative_metrics(
     col_width: float = 500,
     height: float = 400,
     **kwargs: Any,
-) -> tuple[plt.Figure | go.Figure, pd.DataFrame]:
+) -> tuple[go.Figure, pd.DataFrame]:
     """Create 2 subplots side-by-side with cumulative precision and recall curves for
     all models starting with materials predicted most stable, adding the next material,
     recomputing the cumulative metrics, adding the next most stable material and so on
@@ -518,8 +510,8 @@ def cumulative_metrics(
         **kwargs: Keyword arguments passed to df.plot().
 
     Returns:
-        tuple[plt.Figure | go.Figure, pd.DataFrame]: The matplotlib/plotly figure and
-            dataframe of cumulative metrics for each model.
+        tuple[go.Figure, pd.DataFrame]: The plotly Figure and dataframe of cumulative
+            metrics for each model.
 
     Raises:
         ValueError: If metrics are not a subset of ("Precision", "Recall", "F1", "MAE",
