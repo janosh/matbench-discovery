@@ -1,5 +1,4 @@
 # %%
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pymatviz as pmv
@@ -11,28 +10,30 @@ __author__ = "Janosh Riebesell"
 __date__ = "2022-12-02"
 
 rng = np.random.default_rng(0)
+pmv.set_plotly_template("pymatviz_dark")
 
 
 # %%
-ax = pd.Series(rng.weibull(1.5, 100_000)).hist(bins=100)
+fig = pd.Series(rng.weibull(1.5, 100_000)).hist(bins=100, backend="plotly")
 title = "Distribution of perturbation magnitudes"
-ax.set(xlabel="magnitude of perturbation", ylabel="count", title=title)
+fig.layout.update(xaxis_title="Perturbation Magnitude", title=title)
+fig.show()
 
 
 # %%
 struct = Structure(
     lattice=Lattice.cubic(5),
-    species=("Fe", "O"),
+    species=("Fe", "Fe"),
     coords=((0, 0, 0), (0.5, 0.5, 0.5)),
 )
 
-ax = pmv.structure_2d(struct)
-ax.set(title=f"Original structure: {struct.formula}")
-ax.set_aspect("equal")
+fig = pmv.structure_2d_plotly(struct)
+fig.layout.update(title=f"Original structure: {struct.formula}")
+fig.show()
 
 
 # %%
-fig, axs = plt.subplots(3, 4, figsize=(12, 10))
-for idx, ax in enumerate(axs.flat, start=1):
-    pmv.structure_2d(perturb_structure(struct), ax=ax)
-    ax.set(title=f"perturbation {idx}")
+pmv.structure_2d_plotly(
+    [perturb_structure(struct) for _ in range(12)],
+    subplot_title=lambda _struct, idx: f"perturbation {idx}",
+)
