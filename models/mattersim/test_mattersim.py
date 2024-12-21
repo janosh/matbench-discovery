@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING
 import pandas as pd
 from ase.constraints import ExpCellFilter
 from ase.optimize import FIRE
+from mattersim.forcefield import MatterSimCalculator
 from pymatgen.core import Structure
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedStructureEntry
@@ -26,24 +27,10 @@ from matbench_discovery.data import DataFiles
 from matbench_discovery.energy import get_e_form_per_atom
 
 if TYPE_CHECKING:
-    from typing import Literal
-
     import ase
-    from ase.calculators.singlepoint import SinglePointCalculator
 
 __author__ = "Han Yang"
-__date__ = "2024-06-19"
-
-
-def dummy_mattersim_calculator(
-    backbone: Literal["m3gnet", "graphormer"] = "m3gnet",
-) -> SinglePointCalculator:
-    """
-    This is a dummy function that makes a MatterSim calculator
-    """
-    print(backbone)
-    calc: SinglePointCalculator = None
-    return calc
+__date__ = "2024-12-16"
 
 
 def convert_wbm_to_atoms_list() -> list[ase.Atoms]:
@@ -51,9 +38,7 @@ def convert_wbm_to_atoms_list() -> list[ase.Atoms]:
     This function reads the initial structures from the
     WBM dataset and converts them to ASE atoms objects
     """
-    with bz2.open(
-        "/path/to/initial/wbm/structures/2022-10-19-wbm-init-structs.json.bz2"
-    ) as fh:
+    with bz2.open("/path/to/2022-10-19-wbm-init-structs.json.bz2") as fh:
         data_initial = json.loads(fh.read().decode("utf-8"))
 
     atoms_list_initial = []
@@ -68,14 +53,13 @@ def convert_wbm_to_atoms_list() -> list[ase.Atoms]:
 
 def relax_atoms_list(
     atoms_list: list[ase.Atoms],
-    fmax: float = 0.01,
+    fmax: float = 0.02,
     steps: int = 500,
-    backbone: Literal["m3gnet", "graphormer"] = "m3gnet",
 ) -> list[ase.Atoms]:
     """
     This function relax the atoms.
     """
-    calc_m3gnet = dummy_mattersim_calculator(backbone="m3gnet")
+    calc_m3gnet = MatterSimCalculator(load_path="mattersim-v1.0.0-5m.pth")
 
     relaxed_atoms_list = []
 
@@ -88,13 +72,6 @@ def relax_atoms_list(
             atoms.info["converged"] = False
         else:
             atoms.info["converged"] = True
-
-        if backbone == "graphormer":
-            # Please note that we only re-calculate the
-            # energy in the case of MatterSim(graphormer).
-            # The structure relaxation is always done with MatterSim(m3gnet).
-            calc = dummy_mattersim_calculator(backbone="graphormer")
-            atoms.set_calculator(calc)
 
         relaxed_atoms_list.append(atoms)
 
@@ -168,9 +145,7 @@ def parse_relaxed_atoms_list_as_df(
 
 if __name__ == "__main__":
     init_wbm_atoms_list = convert_wbm_to_atoms_list()
-    relaxed_wbm_atoms_list = relax_atoms_list(
-        init_wbm_atoms_list, backbone="graphormer"
-    )
+    relaxed_wbm_atoms_list = relax_atoms_list(init_wbm_atoms_list)
     parse_relaxed_atoms_list_as_df(relaxed_wbm_atoms_list).to_csv(
-        f"{today}-mattersim-wbm-IS2RE.csv.gz"
+        f"{today}-MatterSim-V1-5M-wbm-IS2RE.csv.gz"
     )
