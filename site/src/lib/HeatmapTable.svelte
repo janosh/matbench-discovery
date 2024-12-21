@@ -22,7 +22,7 @@
     data?.filter?.((row) => Object.values(row).some((val) => val !== undefined)) ?? []
 
   // Helper to make column IDs (needed since column labels in different groups can be repeated)
-  const get_col_id = (col: { group?: string; label: string }) =>
+  const get_col_id = (col: HeatmapColumn) =>
     col.group ? `${col.label} (${col.group})` : col.label
 
   function sort_rows(column: string) {
@@ -51,10 +51,7 @@
     })
   }
 
-  function calc_color(
-    value: number | string | undefined,
-    col: { group?: string; label: string; better?: `higher` | `lower` | null },
-  ) {
+  function calc_color(value: number | string | undefined, col: HeatmapColumn) {
     if (col.color_scale === null || typeof value !== `number`)
       return { bg: null, text: null }
 
@@ -79,15 +76,19 @@
 
   $: visible_columns = columns.filter((col) => !col.hidden)
 
-  const sort_indicator = (col: {
-    group?: string
-    label: string
-    better?: `higher` | `lower` | null
-  }) => {
+  const sort_indicator = (
+    col: HeatmapColumn,
+    sort_state: { column: string; ascending: boolean },
+  ) => {
     const col_id = get_col_id(col)
-    if ($sort_state.column === col_id) {
-      return `<span style="font-size: 0.8em;">${$sort_state.ascending ? `↑` : `↓`}</span>`
+    if (sort_state.column === col_id) {
+      // When column is sorted, show ↓ for ascending (smaller values at top)
+      // and ↑ for descending (larger values at top)
+      return `<span style="font-size: 0.8em;">${sort_state.ascending ? `↓` : `↑`}</span>`
     } else if (col.better) {
+      // When column is not sorted, show arrow indicating which values are better:
+      // ↑ for higher-is-better metrics
+      // ↓ for lower-is-better metrics
       return `<span style="font-size: 0.8em;">${
         col.better === `higher` ? `↑` : `↓`
       }</span>`
@@ -125,7 +126,7 @@
             class:sticky-col={col.sticky}
           >
             {@html col.label}
-            {@html sort_indicator(col)}
+            {@html sort_indicator(col, $sort_state)}
             {#if col_idx == 0 && sort_hint}
               <span title={sort_hint}>
                 <Icon icon="octicon:info-16" inline />
