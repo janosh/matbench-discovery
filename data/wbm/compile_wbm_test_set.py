@@ -27,7 +27,7 @@ from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR, today
 from matbench_discovery.data import DataFiles
-from matbench_discovery.energy import get_e_form_per_atom
+from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 from matbench_discovery.enums import MbdKey
 
 try:
@@ -242,10 +242,13 @@ assert pd.Series(
 ).value_counts().to_dict() == {"GGA": 248481, "GGA+U": 9008}
 
 # make sure only 2 materials have missing initial structures with expected IDs
-nan_init_structs_ids = ["wbm-5-23166", "wbm-5-23294"]
-assert list(df_wbm.query("initial_structure.isna()").index) == nan_init_structs_ids
+expected_ids_with_no_init_structs = ["wbm-5-23166", "wbm-5-23294"]
+actual_ids_with_no_structs = list(df_wbm.query(f"{Key.init_struct}.isna()").index)
+assert (
+    actual_ids_with_no_structs == expected_ids_with_no_init_structs
+), f"{actual_ids_with_no_structs=}\n{expected_ids_with_no_init_structs=}"
 # drop the two materials with missing initial structures
-df_wbm = df_wbm.drop(index=nan_init_structs_ids)
+df_wbm = df_wbm.drop(index=expected_ids_with_no_init_structs)
 
 
 # %% get composition from CSEs
@@ -276,7 +279,7 @@ df_wbm.pop("composition_from_final_struct")  # not needed anymore
 # %% randomly sample structures and ensure they match between CSE and final structure
 n_samples = 1000
 for _mat_id, row in tqdm(df_wbm.sample(n_samples).iterrows(), total=n_samples):
-    struct_final = Structure.from_dict(row.final_structure)
+    struct_final = Structure.from_dict(row[Key.final_struct])
     struct_from_cse = Structure.from_dict(
         row[Key.computed_structure_entry]["structure"]
     )
@@ -329,7 +332,9 @@ no_id_mask = df_summary.index.isna()
 assert sum(no_id_mask) == 6, f"{sum(no_id_mask)=}"
 # the 'None' materials have 0 volume, energy, n_sites, bandgap, etc.
 assert all(df_summary[no_id_mask].drop(columns=[Key.formula]) == 0)
-assert len(df_summary.query("volume > 0")) == len(df_wbm) + len(nan_init_structs_ids)
+assert len(df_summary.query("volume > 0")) == len(df_wbm) + len(
+    expected_ids_with_no_init_structs
+)
 # make sure dropping materials with 0 volume removes exactly 6 materials, the same ones
 # listed in bad_struct_ids above
 assert all(
@@ -339,7 +344,7 @@ assert all(
 
 df_summary.index = df_summary.index.map(increment_wbm_material_id)  # format IDs
 # drop materials with id=NaN and missing initial structures
-df_summary = df_summary.drop(index=[*nan_init_structs_ids, float("NaN")])
+df_summary = df_summary.drop(index=[*expected_ids_with_no_init_structs, float("NaN")])
 
 # the 8403 material IDs in step 3 with final number larger than any of the ones in
 # bad_struct_ids are now misaligned between df_summary and df_wbm
@@ -443,8 +448,8 @@ diff_e_cse_e_summary = (
 assert diff_e_cse_e_summary.max() < 0.15
 assert sum(diff_e_cse_e_summary > 0.1) == 2
 
-pmv.density_scatter(
-    df_summary[MbdKey.dft_energy], df_summary.uncorrected_energy_from_cse
+pmv.density_scatter_plotly(
+    df_summary, x=MbdKey.dft_energy, y="uncorrected_energy_from_cse"
 )
 
 
@@ -538,10 +543,10 @@ assert all(
 entries_old_corr = MaterialsProjectCompatibility().process_entries(
     df_wbm[Key.computed_structure_entry], clean=True, verbose=True
 )
-assert len(entries_old_corr) == 76_390, f"{len(entries_old_corr)=}, expected 76,390"
+assert len(entries_old_corr) == 256_963, f"{len(entries_old_corr)=:,}, expected 256,963"
 
 n_old_corrected = sum(cse.uncorrected_energy != cse.energy for cse in entries_old_corr)
-assert n_old_corrected == 99_000, f"{n_old_corrected=:,} expected 100,930"
+assert n_old_corrected == 39_591, f"{n_old_corrected=:,} expected 39,591"
 
 # extract legacy MP energy corrections to df_megnet
 df_wbm["e_correction_per_atom_mp_legacy"] = [
@@ -562,7 +567,7 @@ n_corrected = sum(
 # but strict_anions="no_check" which is meant to restore the pre-3803 behavior now
 # results in 99_000 corrected entries, which is closest one to the old number compared
 # to the other strict_anions options "require_exact" and "require_bound"
-assert n_corrected == 99_000, f"{n_corrected=:,} expected 100,930"
+assert n_corrected == 99_000, f"{n_corrected=:,}, expected 99k"
 
 df_summary["e_correction_per_atom_mp2020"] = [
     cse.correction_per_atom for cse in df_wbm[Key.computed_structure_entry]
@@ -599,17 +604,15 @@ for mat_id, cse in tqdm(
 # first make sure source and target dfs have matching indices
 assert sum(df_wbm.index != df_summary.index) == 0
 
-for row in tqdm(df_wbm.itertuples(), total=len(df_wbm), desc="ML energies to CSEs"):
-    mat_id, cse, formula = (
-        row.Index,
-        row[Key.computed_structure_entry],
-        row.formula_from_cse,
-    )
+for mat_id, row in tqdm(
+    df_wbm.iterrows(), total=len(df_wbm), desc="ML energies to CSEs"
+):
+    cse, formula = row[Key.computed_structure_entry], row.formula_from_cse
     assert mat_id == cse.entry_id, f"{mat_id=} != {cse.entry_id=}"
     assert mat_id in df_summary.index, f"{mat_id=} not in df_summary"
 
     entry_like = dict(composition=formula, energy=cse.uncorrected_energy)
-    e_form = get_e_form_per_atom(entry_like)
+    e_form = calc_energy_from_e_refs(entry_like, ref_energies=mp_elemental_ref_energies)
     e_form_ppd = ppd_mp.get_form_energy_per_atom(cse) - cse.correction_per_atom
 
     # make sure the PPD.get_e_form_per_atom() and standalone get_e_form_per_atom()
@@ -681,11 +684,11 @@ except KeyError:
 df_mp = pd.read_csv(DataFiles.mp_energies.path, index_col=0)
 
 # mask WBM materials with matching prototype in MP
-mask_proto_in_mp = df_summary[Key.wyckoff].isin(df_mp[Key.wyckoff])
+mask_proto_in_mp = df_summary[MbdKey.init_wyckoff].isin(df_mp["wyckoff_spglib"])
 # mask duplicate prototypes in WBM (keeping the lowest energy one)
-mask_dupe_protos = df_summary.sort_values(by=[Key.wyckoff, MbdKey.each_wbm]).duplicated(
-    subset=Key.wyckoff, keep="first"
-)
+mask_dupe_protos = df_summary.sort_values(
+    by=[MbdKey.init_wyckoff, MbdKey.each_wbm]
+).duplicated(subset=MbdKey.init_wyckoff, keep="first")
 assert sum(mask_proto_in_mp) == 11_175, f"{sum(mask_proto_in_mp)=:_}"
 assert sum(mask_dupe_protos) == 32_784, f"{sum(mask_dupe_protos)=:_}"
 
