@@ -175,7 +175,7 @@ def get_e_form_per_atom(*args: Any, **kwargs: Any) -> float:  # noqa: D417
         ref_energies = args[1]
         args = (args[0], *args[2:])
     else:
-        if entry := kwargs.pop("entry"):
+        if entry := kwargs.pop("entry", None):
             args = (entry, *args)
         ref_energies = kwargs.pop("elemental_ref_energies", mp_elemental_ref_energies)
     kwargs.setdefault("ref_energies", ref_energies)

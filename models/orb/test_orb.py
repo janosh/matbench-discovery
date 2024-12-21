@@ -21,13 +21,13 @@ from matbench_discovery.enums import MbdKey, Task
 from matbench_discovery.plots import wandb_scatter
 
 """
-pip install git+https://github.com/janosh/matbench-discovery.git@5c8601a
+pip install git+https://github.com/janosh/matbench-discovery@5c8601a
 
 # Required for valid data paths.
-git clone https://github.com/janosh/matbench-discovery.git
+git clone https://github.com/janosh/matbench-discovery
 git checkout 5c8601a
 cd matbench-discovery
-pip install -e .
+pip install -e . --config-settings editable-mode=compat
 """
 
 
