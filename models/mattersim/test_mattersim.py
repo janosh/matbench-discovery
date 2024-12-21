@@ -7,15 +7,13 @@ the codes that may disclose any usage information of MatterSim.
 
 from __future__ import annotations
 
-import bz2
-import json
 from typing import TYPE_CHECKING
 
+import numpy as np
 import pandas as pd
 from ase.constraints import ExpCellFilter
 from ase.optimize import FIRE
 from mattersim.forcefield import MatterSimCalculator
-from pymatgen.core import Structure
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatgen.io.ase import AseAtomsAdaptor
@@ -23,7 +21,7 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import today
-from matbench_discovery.data import DataFiles
+from matbench_discovery.data import DataFiles, ase_atoms_from_zip
 from matbench_discovery.energy import get_e_form_per_atom
 
 if TYPE_CHECKING:
@@ -31,24 +29,6 @@ if TYPE_CHECKING:
 
 __author__ = "Han Yang"
 __date__ = "2024-12-16"
-
-
-def convert_wbm_to_atoms_list() -> list[ase.Atoms]:
-    """
-    This function reads the initial structures from the
-    WBM dataset and converts them to ASE atoms objects
-    """
-    with bz2.open("/path/to/2022-10-19-wbm-init-structs.json.bz2") as fh:
-        data_initial = json.loads(fh.read().decode("utf-8"))
-
-    atoms_list_initial = []
-    for key, structure_dict in tqdm(data_initial["initial_structure"].items()):
-        structure = Structure.from_dict(structure_dict)
-        atoms = AseAtomsAdaptor.get_atoms(structure)
-        atoms.info["material_id"] = data_initial["material_id"][key]
-        atoms_list_initial.append(atoms)
-
-    return atoms_list_initial
 
 
 def relax_atoms_list(
@@ -144,7 +124,9 @@ def parse_relaxed_atoms_list_as_df(
 
 
 if __name__ == "__main__":
-    init_wbm_atoms_list = convert_wbm_to_atoms_list()
+    init_wbm_atoms_list: list[ase.Atoms] = np.array(
+        ase_atoms_from_zip(DataFiles.wbm_initial_atoms.path), dtype=object
+    )
     relaxed_wbm_atoms_list = relax_atoms_list(init_wbm_atoms_list)
     parse_relaxed_atoms_list_as_df(relaxed_wbm_atoms_list).to_csv(
         f"{today}-MatterSim-V1-5M-wbm-IS2RE.csv.gz"
