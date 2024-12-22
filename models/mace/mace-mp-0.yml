@@ -30,10 +30,12 @@ trained_by:
     affiliation: Lawrence Berkeley National Laboratory
     orcid: https://orcid.org/0000-0002-4017-7084
     github: https://github.com/chiang-yuan
+
 repo: https://github.com/ACEsuit/mace
 doi: https://doi.org/10.48550/arXiv.2401.00096
 paper: https://arxiv.org/abs/2401.00096
 pypi: https://pypi.org/project/mace-torch
+pr_url: https://github.com/janosh/matbench-discovery/pull/48
 
 requirements:
   mace-torch: 0.3.3

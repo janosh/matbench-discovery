@@ -16,9 +16,7 @@ authors:
     affiliation: University of Cambridge
     email: re344@cam.ac.uk
     orcid: https://orcid.org/0000-0001-6397-0002
-repo: https://github.com/CompRhys/aviary
-doi: https://doi.org/10.1126/sciadv.abn4117
-paper: https://arxiv.org/abs/2106.11132
+
 requirements:
   aviary: https://github.com/CompRhys/aviary/releases/tag/v0.1.0
   torch: 1.11.0
@@ -26,6 +24,11 @@ requirements:
   pymatgen: 2022.10.22
   numpy: 1.24.0
   pandas: 1.5.1
+
+repo: https://github.com/CompRhys/aviary
+doi: https://doi.org/10.1126/sciadv.abn4117
+paper: https://arxiv.org/abs/2106.11132
+pr_url: https://github.com/janosh/matbench-discovery/pull/85
 
 openness: OSOD
 trained_for_benchmark: true

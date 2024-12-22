@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ModelData } from '$lib'
-  import { DiscoveryMetricsTable, model_is_compliant, MODEL_METADATA } from '$lib'
+  import { MetricsTable, model_is_compliant, MODEL_METADATA } from '$lib'
   import Readme from '$root/readme.md'
   import KappaNote from '$site/src/routes/kappa-note.md'
   import LandingPageFigs from '$site/src/routes/landing-page-figs.md'
@@ -88,7 +88,7 @@
         </Tooltip>
       {/each}
     </div>
-    <DiscoveryMetricsTable
+    <MetricsTable
       {show_non_compliant}
       {hide_cols}
       {show_energy_only}

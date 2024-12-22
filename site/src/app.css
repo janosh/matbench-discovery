@@ -129,9 +129,6 @@ table :is(td, th) {
   border: 1px solid gray;
   padding: 2pt 4pt;
 }
-table.metrics :is(td, th) {
-  padding: 2pt 4pt !important;
-}
 tbody tr:nth-child(odd) {
   background: rgba(0, 0, 0, 0.5);
 }

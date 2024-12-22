@@ -31,6 +31,7 @@ export interface ModelMetadata {
   paper: string
   url?: string
   pypi?: string
+  pr_url: string
   requirements: {
     /**
      * This interface was referenced by `undefined`'s JSON-Schema definition

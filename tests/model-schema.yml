@@ -46,6 +46,7 @@ properties:
   paper: *url
   url: *url
   pypi: *url
+  pr_url: *url
   requirements:
     type: object
     patternProperties:
@@ -243,6 +244,7 @@ required:
   - model_version
   - n_estimators
   - paper
+  - pr_url
   - repo
   - requirements
   - targets

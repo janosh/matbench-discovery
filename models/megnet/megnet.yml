@@ -26,6 +26,7 @@ url: https://materialsvirtuallab.github.io/megnet
 doi: https://doi.org/10.1021/acs.chemmater.9b01294
 paper: https://arxiv.org/abs/1812.05055
 pypi: https://pypi.org/project/megnet
+pr_url: https://github.com/janosh/matbench-discovery/pull/85
 
 requirements:
   megnet: 1.3.2

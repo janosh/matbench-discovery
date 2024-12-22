@@ -7,7 +7,7 @@
     model_is_compliant,
   } from '$lib'
   import { pretty_num } from 'elementari'
-  import type { HeatmapColumn, ModelData } from './types.ts'
+  import type { HeatmapColumn, ModelData } from './types.js'
 
   export let discovery_set: `full_test_set` | `most_stable_10k` | `unique_prototypes` =
     `unique_prototypes`
@@ -20,6 +20,10 @@
     { label: `Params`, tooltip: `Number of trainable model parameters` },
     { label: `Targets`, tooltip: `Target property used to train the model` },
     { label: `Date Added`, tooltip: `Submission date to the leaderboard` },
+    {
+      label: `Links`,
+      tooltip: `Model resources: paper, code repository and submission pull request`,
+    },
   ]
 
   let columns: HeatmapColumn[]
@@ -165,6 +169,16 @@
         Params: `<span title="${pretty_num(model.model_params, `,`)} trainable model parameters">${pretty_num(model.model_params)}</span>`,
         Targets: targets_str,
         'Date Added': `<span title="${long_date(model.date_added)}">${model.date_added}</span>`,
+        Links: [
+          model.paper &&
+            `<a href="${model.paper}" target="_blank" rel="noopener noreferrer" title="Paper">📄</a>`,
+          model.repo &&
+            `<a href="${model.repo}" target="_blank" rel="noopener noreferrer" title="Code repository">📦</a>`,
+          model.pr_url &&
+            `<a href="${model.pr_url}" target="_blank" rel="noopener noreferrer" title="Pull Request">🔗</a>`,
+        ]
+          .filter(Boolean)
+          .join(` `),
       }
     })
     .sort((row1, row2) => (row2.F1 ?? 0) - (row1.F1 ?? 0)) // Sort by F1 score descending

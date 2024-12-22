@@ -18,6 +18,7 @@ repo: https://github.com/janosh/matbench-discovery
 doi: https://doi.org/10.1103/PhysRevB.96.024104
 paper: https://doi.org/10.1103/PhysRevB.96.024104
 pypi: https://pypi.org/project/scikit-learn
+pr_url: https://github.com/janosh/matbench-discovery/commit/f28cc6d
 
 requirements:
   matminer: 0.8.0

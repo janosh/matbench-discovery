@@ -21,6 +21,7 @@ url: https://materialsvirtuallab.github.io/maml
 doi: https://doi.org/10.1016/j.mattod.2021.08.012
 paper: https://arxiv.org/abs/2104.10242
 pypi: https://pypi.org/project/maml
+pr_url: https://github.com/janosh/matbench-discovery/pull/85
 
 requirements:
   maml: 2022.9.20

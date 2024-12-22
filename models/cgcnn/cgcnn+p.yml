@@ -19,6 +19,7 @@ authors:
 repo: https://github.com/JasonGibsonUfl/Augmented_CGCNN
 doi: https://doi.org/10.1038/s41524-022-00891-8
 paper: https://arxiv.org/abs/2202.13947
+pr_url: https://github.com/janosh/matbench-discovery/pull/85
 
 requirements:
   aviary: https://github.com/CompRhys/aviary/releases/tag/v0.1.0

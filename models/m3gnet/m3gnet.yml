@@ -18,6 +18,7 @@ url: https://materialsvirtuallab.github.io/m3gnet
 doi: https://doi.org/10.1038/s43588-022-00349-3
 paper: https://arxiv.org/abs/2202.02450
 pypi: https://pypi.org/project/matgl
+pr_url: https://github.com/janosh/matbench-discovery/pull/85
 
 requirements:
   m3gnet: 0.1.0

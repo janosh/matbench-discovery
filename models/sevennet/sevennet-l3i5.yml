@@ -29,6 +29,7 @@ url: https://github.com/MDIL-SNU/SevenNet/blob/main/sevenn/pretrained_potentials
 doi: https://doi.org/10.1021/acs.jctc.4c00190
 paper: https://arxiv.org/abs/2402.03789
 pypi: https://pypi.org/project/sevenn
+pr_url: https://github.com/janosh/matbench-discovery/pull/172
 
 openness: OSOD
 trained_for_benchmark: false

@@ -22,7 +22,8 @@ trained_by:
 repo: https://github.com/ICAMS/grace-tensorpotential
 doi: https://doi.org/10.1103/PhysRevX.14.021036
 paper: https://journals.aps.org/prx/abstract/10.1103/PhysRevX.14.021036
-url: https://gracemaker.readthedocs.io/en/latest/gracemaker/foundation/
+url: https://gracemaker.readthedocs.io/en/latest/gracemaker/foundation
+pr_url: https://github.com/janosh/matbench-discovery/pull/160
 
 requirements:
   tensorpotential: 0.4.4
