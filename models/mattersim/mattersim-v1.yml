@@ -76,6 +76,7 @@ authors:
 repo: https://github.com/microsoft/mattersim
 doi: https://doi.org/10.48550/arXiv.2405.04967
 paper: https://arxiv.org/abs/2405.04967
+pr_url: https://github.com/janosh/matbench-discovery/pull/178
 
 requirements:
   Graphormer: v1

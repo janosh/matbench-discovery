@@ -33,6 +33,7 @@ repo: https://github.com/CederGroupHub/chgnet
 doi: https://doi.org/10.48550/arXiv.2302.14231
 paper: https://arxiv.org/abs/2302.14231
 pypi: https://pypi.org/project/chgnet
+pr_url: https://github.com/janosh/matbench-discovery/pull/85
 
 requirements:
   torch: 1.11.0

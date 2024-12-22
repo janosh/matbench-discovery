@@ -40,6 +40,7 @@ targets: E
 model_params: 4_026_753 # pre-trained 'mp_e_form_alignn' and our custom MBD checkpoint have the same size
 # for other hyperparams, see alignn-config.json
 n_estimators: 1
+pr_url: https://github.com/janosh/matbench-discovery/pull/85
 
 # model trained from specifically for MBD
 training_set: [MP 2022]

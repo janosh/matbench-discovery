@@ -30,6 +30,7 @@ repo: https://github.com/orbital-materials/orb-models
 url: https://orbitalmaterials.com/post/technical-blog-introducing-the-orb-ai-based-interatomic-potential
 doi: https://doi.org/10.48550/arXiv.2410.22570
 paper: https://arxiv.org/abs/2410.22570
+pr_url: https://github.com/janosh/matbench-discovery/pull/133
 
 openness: OSCD
 trained_for_benchmark: false

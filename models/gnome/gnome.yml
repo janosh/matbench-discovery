@@ -24,6 +24,7 @@ authors:
 repo: https://github.com/google-deepmind/materials_discovery
 doi: https://doi.org/10.1038/s41586-023-06735-9
 paper: https://nature.com/articles/s41586-023-06735-9
+pr_url: https://github.com/janosh/matbench-discovery/pull/84
 
 requirements:
   e3nn-jax: 0.20.3

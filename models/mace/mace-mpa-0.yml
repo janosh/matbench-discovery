@@ -31,10 +31,12 @@ trained_by:
     affiliation: University of Cambridge
     email: ilyes.batatia@ens-paris-saclay.fr
     orcid: https://orcid.org/0000-0001-6915-9851
+
 repo: https://github.com/ACEsuit/mace
 doi: https://doi.org/10.48550/arXiv.2401.00096
 paper: https://arxiv.org/abs/2401.00096
 pypi: https://pypi.org/project/mace-torch
+pr_url: https://github.com/janosh/matbench-discovery/pull/175
 
 requirements:
   mace-torch: 0.3.9

@@ -15,6 +15,7 @@ authors:
 repo: https://github.com/CompRhys/aviary
 doi: https://doi.org/10.1103/PhysRevLett.120.145301
 paper: https://arxiv.org/abs/1710.10324
+pr_url: https://github.com/janosh/matbench-discovery/pull/85
 
 requirements:
   aviary: https://github.com/CompRhys/aviary/releases/tag/v0.1.0
