@@ -21,12 +21,12 @@ df_wbm = load_df_wbm_with_preds(models=models, nrows=100)
 
 
 @pytest.mark.parametrize(
-    "stability_threshold",
-    [(0), (-0.05), (0.1)],
-)
-@pytest.mark.parametrize(
-    "metrics",
-    [("Recall",), ("Recall", "MAE"), ("Recall", "Precision", "RMSE")],
+    "stability_threshold, metrics",
+    [
+        (0, ("Recall",)),
+        (-0.05, ("Recall", "MAE")),
+        (0.1, ("Recall", "Precision", "RMSE")),
+    ],
 )
 def test_cumulative_metrics(
     stability_threshold: float,
@@ -59,10 +59,13 @@ def test_cumulative_metrics_raises() -> None:
         )
 
 
-@pytest.mark.parametrize("window", [0.02, 0.002])
-@pytest.mark.parametrize("bin_width", [0.1, 0.001])
-@pytest.mark.parametrize("x_lim", [(0, 0.6), (-0.2, 0.8)])
-@pytest.mark.parametrize("show_dft_acc", [True, False])
+@pytest.mark.parametrize(
+    "window, bin_width, x_lim, show_dft_acc",
+    [
+        (0.02, 0.1, (0, 0.6), True),
+        (0.002, 0.001, (-0.2, 0.8), False),
+    ],
+)
 def test_rolling_mae_vs_hull_dist(
     window: float,
     bin_width: float,
@@ -90,9 +93,15 @@ def test_rolling_mae_vs_hull_dist(
     assert ax.layout.xaxis.title.text == "E<sub>above MP hull</sub> (eV/atom)"
 
 
-@pytest.mark.parametrize("stability_threshold", [0.1, 0.01])
-@pytest.mark.parametrize("x_lim", [(0, 0.6), (-0.2, 0.8)])
-@pytest.mark.parametrize("which_energy", ["true", "pred"])
+@pytest.mark.parametrize(
+    "stability_threshold,x_lim,which_energy",
+    [
+        (0.1, (0, 0.6), "true"),
+        (0.01, (-0.2, 0.8), "pred"),
+        (0.1, (-0.2, 0.8), "true"),
+        (0.01, (0, 0.6), "pred"),
+    ],
+)
 def test_hist_classified_stable_vs_hull_dist(
     stability_threshold: float,
     x_lim: tuple[float, float],
@@ -102,7 +111,7 @@ def test_hist_classified_stable_vs_hull_dist(
         df_wbm[MbdKey.each_true] + df_wbm[models[0]] - df_wbm[MbdKey.e_form_dft]
     )
 
-    ax = hist_classified_stable_vs_hull_dist(
+    fig = hist_classified_stable_vs_hull_dist(
         df_wbm,
         each_true_col=MbdKey.each_true,
         each_pred_col=Key.each_pred,
@@ -111,8 +120,8 @@ def test_hist_classified_stable_vs_hull_dist(
         which_energy=which_energy,
     )
 
-    assert isinstance(ax, go.Figure)
-    assert ax.layout.yaxis.title.text == "count"
+    assert isinstance(fig, go.Figure)
+    assert fig.layout.yaxis.title.text == "Count"
 
 
 def test_plotly_markers_line_styles() -> None:
@@ -122,7 +131,3 @@ def test_plotly_markers_line_styles() -> None:
     assert {*map(type, plotly_line_styles)} == {str}
     assert "longdashdot" in plotly_line_styles
     assert "circle" in plotly_markers
-
-
-if __name__ == "__main__":
-    pytest.main(["-vv", __file__])

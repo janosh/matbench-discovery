@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 import pymatviz as pmv
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
-from matbench_discovery.enums import MbdKey, Quantity, TestSubset
+from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 from matbench_discovery.preds.discovery import df_each_err, df_preds, models
 
@@ -28,7 +28,7 @@ models_to_plot = [
 ]
 
 fig = go.Figure()
-fig.layout.yaxis.title = Quantity.e_above_hull_error
+fig.layout.yaxis.title = MbdKey.e_above_hull_error
 fig.layout.margin = dict(l=0, r=0, b=0, t=0)
 
 # Get the default Plotly colors that will be used for the boxes
