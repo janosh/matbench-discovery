@@ -16,10 +16,13 @@
   } from 'elementari'
   import { CopyButton, Tooltip } from 'svelte-zoo'
 
-  $: model_key = $page.params.slug
-  $: model = MODEL_METADATA.find((model) => model.model_key == model_key)
-  let color_scale: string[] = [`Viridis`]
-  let active_element: ChemicalElement | null = null
+  export let model_key: string | null = null
+  export let color_scale: string[] = [`Viridis`]
+  export let active_element: ChemicalElement | null = null
+
+  $: model = MODEL_METADATA.find(
+    (model) => model.model_key == (model_key ?? $page.params.slug),
+  )
 
   // TODO make this dynamic (static n_days_ago from time of last site build is misleading)
   function n_days_ago(dateString: string): string {
@@ -401,11 +404,11 @@
     text-overflow: ellipsis;
   }
 
-  /* hide plotly titles */
   div.model-detail :not(section.notes) :global(h3) {
     text-align: center;
     margin: 2em auto 0;
   }
+  /* hide plotly titles */
   div.model-detail :global(svg g.infolayer g.g-gtitle) {
     display: none;
   }

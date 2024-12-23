@@ -250,7 +250,7 @@
     background: #1c1c1c;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 4pt;
-    padding: 0 4pt;
+    padding: 3pt 5pt;
     min-width: 150px;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -260,6 +260,10 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    margin: 1px 2px;
+    border-radius: 3px;
+    line-height: 1.3em;
+    height: 1.3em;
   }
   .column-menu label:hover {
     background: rgba(255, 255, 255, 0.1);

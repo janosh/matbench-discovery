@@ -12,14 +12,13 @@ from pymatviz.enums import Key
 from pymatviz.powerups import add_identity_line
 from sklearn.metrics import r2_score
 
-from matbench_discovery import ROOT, SITE_FIGS, plots
+from matbench_discovery import ROOT, SITE_FIGS
 from matbench_discovery.data import DataFiles
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-06-18"
 
 module_dir = os.path.dirname(__file__)
-del plots  # https://github.com/PyCQA/pyflakes/issues/366
 
 
 # %%

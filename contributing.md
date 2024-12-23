@@ -13,32 +13,18 @@ There's also a [PyPI package](https://pypi.org/project/matbench-discovery) for f
 
 ## 📙 &thinsp; Usage
 
-When you access an attribute of the `DataFiles` class, it automatically downloads and caches the corresponding data file. For example:
+When you access attributes of the `DataFiles` class, it automatically downloads and caches the corresponding data files. For example:
 
 ```py
-from matbench_discovery.data import DataFiles, load
+from matbench_discovery.data import DataFiles, ase_atoms_from_zip
+import pandas as pd
 
-# available data files
-assert sorted(DataFiles) == [
-    "mp_computed_structure_entries",
-    "mp_elemental_ref_entries",
-    "mp_energies",
-    "mp_patched_phase_diagram",
-    "wbm_computed_structure_entries",
-    "wbm_cses_plus_init_structs",
-    "wbm_initial_structures",
-    "wbm_summary",
-]
-
-# 1st arg can be any DataFiles key
-# version defaults to latest, set a specific version like 1.0.0 to avoid breaking changes
-df_wbm = load("wbm_summary", version="1.0.0")
-
-# test set size
-assert df_wbm.shape == (256_963, 15)
-
+df_wbm = pd.read_csv(DataFiles.wbm_summary.path)
+# confirm test set size
+assert df_wbm.shape == (256_963, 18)
 # available columns in WBM summary data
-assert tuple(df_wbm) == [
+assert tuple(df_wbm) == (
+    "material_id",
     "formula",
     "n_sites",
     "volume",
@@ -46,7 +32,6 @@ assert tuple(df_wbm) == [
     "e_form_per_atom_wbm",
     "e_above_hull_wbm",
     "bandgap_pbe",
-    "wyckoff_spglib",
     "wyckoff_spglib_initial_structure",
     "uncorrected_energy_from_cse",
     "e_correction_per_atom_mp2020",
@@ -55,7 +40,16 @@ assert tuple(df_wbm) == [
     "e_form_per_atom_mp2020_corrected",
     "e_above_hull_mp2020_corrected_ppd_mp",
     "site_stats_fingerprint_init_final_norm_diff",
-]
+    "wyckoff_spglib",
+    "unique_prototype"
+)
+
+# WBM initial structures in pymatgen JSON format
+df_init_structs = pd.read_json(DataFiles.wbm_initial_structures.path)
+assert tuple(df_init_structs) == ("material_id", "formula_from_cse", "initial_structure")
+# WBM initial structures as ASE Atoms
+wbm_init_atoms = ase_atoms_from_zip(DataFiles.wbm_initial_structures.path)
+assert len(wbm_init_atoms) == 256_963
 ```
 
 `"wbm-summary"` columns:
@@ -94,7 +88,7 @@ To train an interatomic potential, we recommend the [**MPtrj dataset**](https://
 
 To submit a new model to this benchmark and add it to our leaderboard, please create a pull request to the [`main` branch][repo] that includes at least these 3 required files:
 
-1. `<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz`: Your model's energy predictions for all ~250k WBM compounds as compressed JSON or CSV. The recommended way to create this file is with `pandas.DataFrame.to_{json|csv}('<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz')`. JSON is preferred over CSV if your model not only predicts energies (floats) but also objects like relaxed structures. See e.g. [M3GNet](https://github.com/janosh/matbench-discovery/blob/-/models/m3gnet/test_m3gnet.py) and [CHGNet](https://github.com/janosh/matbench-discovery/blob/-/models/chgnet/test_chgnet.py) test scripts.
+1. `<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz`: Your model's energy predictions for all ~250k WBM compounds as compressed JSON or CSV. The recommended way to create this file is with `pandas.DataFrame.to_{json|csv}("<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz")`. JSON is preferred over CSV if your model not only predicts energies (floats) but also objects like relaxed structures. See e.g. [M3GNet](https://github.com/janosh/matbench-discovery/blob/-/models/m3gnet/test_m3gnet.py) and [CHGNet](https://github.com/janosh/matbench-discovery/blob/-/models/chgnet/test_chgnet.py) test scripts.
    For machine learning force field (MLFF) submissions, you additionally upload the relaxed structures and forces from your model's geometry optimization to Figshare or a similar platform and include the download link in your PR description and the YAML metadata file. This file should include:
 
    - The final relaxed structures (as ASE `Atoms` or pymatgen `Structures`)

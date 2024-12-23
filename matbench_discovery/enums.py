@@ -28,26 +28,6 @@ class LabelEnum(StrEnum):
         """Make description read-only."""
         return self.__dict__["desc"]
 
-    @classmethod
-    def key_val_dict(cls) -> dict[str, str]:
-        """Map of keys to values."""
-        return {key: str(val) for key, val in cls.__members__.items()}
-
-    @classmethod
-    def val_label_dict(cls) -> dict[str, str | None]:
-        """Map of values to labels."""
-        return {str(val): val.label for val in cls.__members__.values()}
-
-    @classmethod
-    def val_desc_dict(cls) -> dict[str, str | None]:
-        """Map of values to descriptions."""
-        return {str(val): val.description for val in cls.__members__.values()}
-
-    @classmethod
-    def label_desc_dict(cls) -> dict[str | None, str | None]:
-        """Map of labels to descriptions."""
-        return {str(val.label): val.description for val in cls.__members__.values()}
-
 
 eV_per_atom = pmv.html_tag(  # noqa: N816
     "(eV/atom)", tag="span", style="font-size: 0.8em; font-weight: lighter;"
@@ -74,6 +54,7 @@ class MbdKey(LabelEnum):
     each_err_models = "each_err_models", "E<sub>hull dist</sub> mean error of models"
     model_std_each = "each_std_models", "Std. dev. over models"
     openness = "openness", "Openness"
+    e_above_hull_error = f"Error in E<sub>hull dist</sub> {eV_per_atom}"
 
     init_wyckoff = (
         "wyckoff_spglib_initial_structure",
@@ -162,29 +143,3 @@ class TestSubset(LabelEnum):
     uniq_protos = "unique_prototypes", "Unique Structure Prototypes"
     most_stable_10k = "most_stable_10k", "10k Most Stable Materials"
     full_test_set = "full_test_set", "Full Test Set"
-
-
-class Quantity(LabelEnum):
-    """Quantity labels for plots."""
-
-    n_atoms = "Atom Count"
-    n_elems = "Element Count"
-    crystal_sys = "Crystal system"
-    spg_num = "Space group"
-    n_wyckoff = "Number of Wyckoff positions"
-    n_sites = "Number of atoms"
-    energy_per_atom = f"Energy {eV_per_atom}"
-    e_form = f"DFT E<sub>form</sub> {eV_per_atom}"
-    e_above_hull = f"E<sub>hull dist</sub> {eV_per_atom}"
-    e_above_hull_mp2020_corrected_ppd_mp = f"DFT E<sub>hull dist</sub> {eV_per_atom}"
-    e_above_hull_pred = f"Predicted E<sub>hull dist</sub> {eV_per_atom}"
-    e_above_hull_mp = f"E<sub>above MP hull</sub> {eV_per_atom}"
-    e_above_hull_error = f"Error in E<sub>hull dist</sub> {eV_per_atom}"
-    vol_diff = "Volume difference (A^3)"
-    e_form_per_atom_mp2020_corrected = f"DFT E<sub>form</sub> {eV_per_atom}"
-    e_form_per_atom_pred = f"Predicted E<sub>form</sub> {eV_per_atom}"
-    material_id = "Material ID"
-    band_gap = "Band gap (eV)"
-    formula = "Formula"
-    stress = "σ (eV/Å³)"  # noqa: RUF001
-    stress_trace = "1/3 Tr(σ) (eV/Å³)"  # noqa: RUF001
