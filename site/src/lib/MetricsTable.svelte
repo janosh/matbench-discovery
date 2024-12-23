@@ -7,7 +7,8 @@
     model_is_compliant,
   } from '$lib'
   import { pretty_num } from 'elementari'
-  import type { HeatmapColumn, ModelData } from './types.js'
+  import { METADATA_COLS, METRICS_COLS } from './metrics'
+  import type { HeatmapColumn, ModelData } from './types'
 
   export let discovery_set: `full_test_set` | `most_stable_10k` | `unique_prototypes` =
     `unique_prototypes`
@@ -15,49 +16,10 @@
   export let show_energy_only: boolean = false
   export let show_metadata: boolean = true
   export let hide_cols: string[] = []
-  export let metadata_cols = [
-    { label: `Training Set`, tooltip: `Size of and link to model training set` },
-    { label: `Params`, tooltip: `Number of trainable model parameters` },
-    { label: `Targets`, tooltip: `Target property used to train the model` },
-    { label: `Date Added`, tooltip: `Submission date to the leaderboard` },
-    {
-      label: `Links`,
-      tooltip: `Model resources: paper, code repository and submission pull request`,
-    },
-  ]
+  export let metadata_cols = METADATA_COLS
 
   let columns: HeatmapColumn[]
-  $: columns = [
-    { label: `Model`, sticky: true },
-    { label: `F1`, tooltip: `Harmonic mean of precision and recall` },
-    { label: `DAF`, tooltip: `Discovery acceleration factor` },
-    { label: `Prec`, tooltip: `Precision of classifying thermodynamic stability` },
-    { label: `Acc`, tooltip: `Accuracy of classifying thermodynamic stability` },
-    {
-      label: `TPR`,
-      tooltip: `True positive rate of classifying thermodynamic stability`,
-    },
-    {
-      label: `TNR`,
-      tooltip: `True negative rate of classifying thermodynamic stability`,
-    },
-    {
-      label: `MAE`,
-      tooltip: `Mean absolute error of predicting the convex hull distance`,
-      style: `border-left: 1px solid black;`,
-    },
-    {
-      label: `RMSE`,
-      tooltip: `Root mean squared error of predicting the convex hull distance`,
-    },
-    { label: `R<sup>2</sup>`, tooltip: `Coefficient of determination` },
-    {
-      label: `κ<sub>SRME</sub>`,
-      tooltip: `Symmetric relative mean error in predicted phonon mode contributions to thermal conductivity κ`,
-      style: `border-left: 1px solid black;`,
-    },
-    ...(show_metadata ? metadata_cols : []),
-  ].map((col) => ({
+  $: columns = [...METRICS_COLS, ...(show_metadata ? metadata_cols : [])].map((col) => ({
     ...col,
     better: col.better ?? get_metric_rank_order(col.label),
     hidden: hide_cols.includes(col.label) || col.hidden,
@@ -170,8 +132,8 @@
         Targets: targets_str,
         'Date Added': `<span title="${long_date(model.date_added)}">${model.date_added}</span>`,
         Links: [
-          model.paper &&
-            `<a href="${model.paper}" target="_blank" rel="noopener noreferrer" title="Paper">📄</a>`,
+          (model.paper || model.doi) &&
+            `<a href="${model.paper || model.doi}" target="_blank" rel="noopener noreferrer" title="Paper">📄</a>`,
           model.repo &&
             `<a href="${model.repo}" target="_blank" rel="noopener noreferrer" title="Code repository">📦</a>`,
           model.pr_url &&

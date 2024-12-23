@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { ModelData } from '$lib'
   import { MetricsTable, model_is_compliant, MODEL_METADATA } from '$lib'
+  import { METADATA_COLS, METRICS_COLS } from '$lib/metrics'
   import Readme from '$root/readme.md'
   import KappaNote from '$site/src/routes/kappa-note.md'
   import LandingPageFigs from '$site/src/routes/landing-page-figs.md'
@@ -16,21 +17,12 @@
 
   // Default column visibility
   let visible_cols: Record<string, boolean> = {
-    Model: true,
-    F1: true,
-    DAF: true,
-    Prec: true,
-    Acc: true,
+    ...Object.fromEntries(
+      [...METRICS_COLS, ...METADATA_COLS].map((col) => [col.label, true]),
+    ),
     TPR: false,
     TNR: false,
-    MAE: true,
     RMSE: false,
-    'R<sup>2</sup>': true,
-    'κ<sub>SRME</sub>': true,
-    'Training Set': true,
-    Params: true,
-    Targets: true,
-    'Date Added': true,
   }
 
   $: best_model = MODEL_METADATA.reduce((best, md: ModelData) => {
