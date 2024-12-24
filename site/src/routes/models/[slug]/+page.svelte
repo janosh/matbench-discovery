@@ -1,9 +1,8 @@
 <script lang="ts">
   import { dev } from '$app/environment'
-  import { page } from '$app/stores'
   import TRAINING_SETS from '$data/training-sets.yml'
   import per_elem_each_errors from '$figs/per-element-each-errors.json'
-  import { MODEL_METADATA, PtableInset } from '$lib'
+  import { PtableInset } from '$lib'
   import pkg from '$site/package.json'
   import Icon from '@iconify/svelte'
   import type { ChemicalElement } from 'elementari'
@@ -16,13 +15,11 @@
   } from 'elementari'
   import { CopyButton, Tooltip } from 'svelte-zoo'
 
-  export let model_key: string | null = null
+  export let data
   export let color_scale: string[] = [`Viridis`]
   export let active_element: ChemicalElement | null = null
 
-  $: model = MODEL_METADATA.find(
-    (model) => model.model_key == (model_key ?? $page.params.slug),
-  )
+  $: model = data.model
 
   // TODO make this dynamic (static n_days_ago from time of last site build is misleading)
   function n_days_ago(dateString: string): string {
@@ -35,10 +32,6 @@
   export const snapshot = {
     capture: () => ({ color_scale }),
     restore: (values) => ({ color_scale } = values),
-  }
-
-  $: if (model && !(model?.model_name in per_elem_each_errors)) {
-    throw new Error(`No per-element errors found for ${model.model_name}`)
   }
 </script>
 
@@ -135,28 +128,24 @@
       {/if}
     </section>
 
-    {#each [[`e-form`, `Formation Energies`], [`each`, `Convex Hull Distance`]] as [which_energy, title]}
-      {`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`}
-      {#await import(`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`) then ParityPlot}
-        <!-- negative margin-bottom corrects for display: none plot title -->
-        <h3 style="margin-bottom: -2em;">
-          DFT vs ML {title}
-        </h3>
-        <svelte:component this={ParityPlot.default} height="500" />
-      {:catch error}
-        {#if dev}
-          <p>Failed to load plot:</p>
-          <pre>{error}</pre>
-        {/if}
-      {/await}
-    {/each}
-
-    {#if $page.params.slug == `mace`}
-      {#await import(`./mace.md`) then Mace}
-        <Mace.default />
-      {/await}
+    <!-- check if Plotly undefined needed for model-page.test.ts since vitest with JSDOM doesn't mock some Browser APIs that Plotly needs -->
+    {#if typeof globalThis.Plotly != `undefined`}
+      {#each [[`e-form`, `Formation Energies`], [`each`, `Convex Hull Distance`]] as [which_energy, title]}
+        {`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`}
+        {#await import(`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`) then ParityPlot}
+          <!-- negative margin-bottom corrects for display: none plot title -->
+          <h3 style="margin-bottom: -2em;">
+            DFT vs ML {title}
+          </h3>
+          <svelte:component this={ParityPlot.default} height="500" />
+        {:catch error}
+          {#if dev}
+            <p>Failed to load plot:</p>
+            <pre>{error}</pre>
+          {/if}
+        {/await}
+      {/each}
     {/if}
-
     <ColorScaleSelect bind:selected={color_scale} />
 
     {#if model.model_name in per_elem_each_errors}
