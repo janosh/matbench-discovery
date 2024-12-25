@@ -1,6 +1,7 @@
 # package install
 *.egg-info
 dist
+build
 
 # cache
 __pycache__
@@ -14,7 +15,6 @@ __pycache__
 data/**/raw
 data/**/tsne
 !data/mp/2023-02-07-mp-elemental-reference-entries.json.gz
-models/**/checkpoints
 data/**/*.extxyz*
 data/**/*.json*
 data/**/*.zip*
@@ -34,7 +34,6 @@ models/**/*.tgz
 site/src/routes/api/*.md
 
 # temporary ignore rules
-models/cgcnn/2023-02-05-ens=10-perturb=5
 data/mp/mptrj-gga-ggapu/*
 
 # large files

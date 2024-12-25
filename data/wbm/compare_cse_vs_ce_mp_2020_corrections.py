@@ -1,13 +1,12 @@
-"""NOTE MaterialsProject2020Compatibility takes structural information into account when
-correcting energies (for oxides and sulfides only). Always use
-ComputedStructureEntry, not ComputedEntry when applying energy corrections.
+"""MaterialsProject2020Compatibility takes structural information into account when
+correcting energies (for oxides and sulfides only). Always pass
+ComputedStructureEntry, not ComputedEntry when calling process_entries.
 """
 
 # %%
 import gzip
 import json
 
-import matplotlib.pyplot as plt
 import pandas as pd
 import pymatviz as pmv
 from pymatgen.entries.compatibility import (
@@ -28,11 +27,17 @@ df_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_index(
 
 cses = [
     ComputedStructureEntry.from_dict(dct)
-    for dct in tqdm(df_cse[Key.computed_structure_entry])
+    for dct in tqdm(
+        df_cse[Key.computed_structure_entry],
+        desc="Loading ComputedStructureEntries",
+    )
 ]
 
 ces = [
-    ComputedEntry.from_dict(dct) for dct in tqdm(df_cse[Key.computed_structure_entry])
+    ComputedEntry.from_dict(dct)
+    for dct in tqdm(
+        df_cse[Key.computed_structure_entry], desc="Loading ComputedEntries"
+    )
 ]
 
 
@@ -43,10 +48,14 @@ processed = MaterialsProject2020Compatibility().process_entries(ces, verbose=Tru
 assert len(processed) == len(df_cse)
 
 df_wbm["e_form_per_atom_mp2020_from_ce"] = [
-    get_e_form_per_atom(entry) for entry in tqdm(ces)
+    get_e_form_per_atom(entry)
+    for entry in tqdm(ces, desc="Calculating formation energies from ComputedEntries")
 ]
 df_wbm["e_form_per_atom_mp2020_from_cse"] = [
-    get_e_form_per_atom(entry) for entry in tqdm(cses)
+    get_e_form_per_atom(entry)
+    for entry in tqdm(
+        cses, desc="Calculating formation energies from ComputedStructureEntries"
+    )
 ]
 
 df_wbm["mp2020_cse_correction_per_atom"] = [
@@ -79,7 +88,8 @@ df_wbm["anion"] = None
 df_wbm["anion"][df_wbm[Key.chem_sys].astype(str).str.contains("'O'")] = "oxide"
 df_wbm["anion"][df_wbm[Key.chem_sys].astype(str).str.contains("'S'")] = "sulfide"
 
-assert dict(df_wbm.anion.value_counts()) == {"oxide": 26984, "sulfide": 10606}
+anion_counts = dict(df_wbm.anion.value_counts())
+assert anion_counts == {"oxide": 26_984, "sulfide": 10_596}, f"{anion_counts=}"
 
 df_ce_ne_cse = df_wbm.query(
     "abs(e_form_per_atom_mp2020_from_cse - e_form_per_atom_mp2020_from_ce) > 1e-4"
@@ -87,42 +97,37 @@ df_ce_ne_cse = df_wbm.query(
 
 
 # %%
-ax = plt.gca()
-for key, df_anion in df_ce_ne_cse.groupby("anion"):
-    ax = df_anion.plot.scatter(
-        ax=ax,
-        x="mp2020_cse_correction_per_atom",
-        y="mp2020_ce_correction_per_atom",
-        label=f"{key} ({len(df_anion):,})",
-        color=dict(oxide="orange", sulfide="teal").get(key, "blue"),
-        title=f"CSE vs CE corrections for ({len(df_ce_ne_cse):,} / {len(df_wbm):,} = "
-        f"{len(df_ce_ne_cse) / len(df_wbm):.1%})\n outliers of largest difference",
+for x_col, y_col, title in (
+    ("mp2020_cse_correction_per_atom", "mp2020_ce_correction_per_atom", "correction"),
+    ("e_form_per_atom_mp2020_from_cse", "e_form_per_atom_mp2020_from_ce", "e-form"),
+):
+    fig = df_ce_ne_cse.plot.scatter(
+        x=x_col,
+        y=y_col,
+        color="anion",
+        color_discrete_map={"oxide": "orange", "sulfide": "teal"},
+        hover_data=[Key.formula],
+        backend="plotly",
     )
+    title = f"CSE vs CE {title}<br>({len(df_ce_ne_cse):,} / {len(df_wbm):,} "
+    title += f"= {len(df_ce_ne_cse) / len(df_wbm):.1%})"
+    fig.layout.title.update(text=title, x=0.5, font=dict(size=16))
+    fig.layout.margin.t = 40
+    fig.layout.legend.update(x=0, title=None)
 
-ax.axline((0, 0), slope=1, color="gray", linestyle="dashed", zorder=-1)
+    pmv.powerups.add_identity_line(fig)
 
-pmv.save_fig(ax, f"{ROOT}/tmp/{today}-ce-vs-cse-corrections-outliers.pdf")
+    # Update legend labels with counts
+    for trace in fig.data:
+        anion = trace.name
+        count = len(df_ce_ne_cse[df_ce_ne_cse.anion == anion])
+        trace.name = f"{anion} ({count:,})"
 
-
-# %%
-ax = plt.gca()
-for key, df_anion in df_ce_ne_cse.groupby("anion"):
-    ax = df_anion.plot.scatter(
-        ax=ax,
-        x="e_form_per_atom_mp2020_from_cse",
-        y="e_form_per_atom_mp2020_from_ce",
-        label=f"{key} ({len(df_anion):,})",
-        color=dict(oxide="orange", sulfide="teal").get(key, "blue"),
-        title=f"Outliers in formation energy from CSE vs CE ({len(df_ce_ne_cse):,}"
-        f" / {len(df_wbm):,} = {len(df_ce_ne_cse) / len(df_wbm):.1%})",
-    )
-
-ax.axline((0, 0), slope=1, color="gray", linestyle="dashed", zorder=-1)
-
-# insight: all materials for which ComputedEntry and ComputedStructureEntry give
-# different formation energies are oxides or sulfides for which MP 2020 compat takes
-# into account structural information to make more accurate corrections.
-pmv.save_fig(ax, f"{ROOT}/tmp/{today}-ce-vs-cse-e-form-outliers.pdf")
+    # insight: all materials for which ComputedEntry and ComputedStructureEntry give
+    # different formation energies are oxides or sulfides for which MP 2020 compat takes
+    # into account structural information to make more accurate corrections.
+    pmv.save_fig(fig, f"{ROOT}/tmp/{today}-ce-vs-cse-{title}-outliers.pdf")
+    fig.show()
 
 
 # %% below code resulted in

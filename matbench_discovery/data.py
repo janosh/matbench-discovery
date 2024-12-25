@@ -223,11 +223,6 @@ class MetaFiles(EnumMeta):
         return obj
 
     @property
-    def member_map(cls: type[T]) -> dict[str, "Files"]:  # type: ignore[misc]
-        """Map of member names to member objects."""
-        return cls._member_map_  # type: ignore[return-value]
-
-    @property
     def base_dir(cls) -> str:
         """Base directory of the file."""
         return cls._base_dir
@@ -504,7 +499,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         return f"{ROOT}/{rel_path}"
 
 
-px.defaults.labels |= {k: v.label for k, v in Model.member_map.items()}
+# render model keys as labels in plotly axes and legends
+px.defaults.labels |= {k.name: k.label for k in Model}
 
 
 def load_df_wbm_with_preds(
@@ -545,7 +541,7 @@ def load_df_wbm_with_preds(
     valid_models = {model.name for model in Model}
     if models == ():
         models = tuple(valid_models)
-    inv_label_map = {v.label: k for k, v in Model.member_map.items()}
+    inv_label_map = {key.label: key.name for key in Model}
     # map pretty model names back to Model enum keys
     models = {inv_label_map.get(model, model) for model in models}
     if unknown_models := ", ".join(models - valid_models):
