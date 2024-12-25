@@ -19,7 +19,7 @@ pkg_is_editable = json.loads(direct_url).get("dir_info", {}).get("editable", Fal
 
 PKG_DIR = os.path.dirname(__file__)
 # repo root directory if editable install, else the pkg directory
-ROOT = os.path.dirname(PKG_DIR) if pkg_is_editable else PKG_DIR
+ROOT = os.path.dirname(PKG_DIR)
 DATA_DIR = f"{ROOT}/data"  # directory to store raw data
 SITE_FIGS = f"{ROOT}/site/src/figs"  # directory for interactive figures
 # directory to write model analysis for website

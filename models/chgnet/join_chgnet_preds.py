@@ -64,7 +64,7 @@ df_preds[e_form_chgnet_col] = df_chgnet[e_form_chgnet_col]
 
 
 # %%
-ax = pmv.density_scatter_plotly(
+pmv.density_scatter_plotly(
     df=df_preds,
     x=MbdKey.e_form_dft,
     y=e_form_chgnet_col,
