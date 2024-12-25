@@ -24,17 +24,17 @@ notes:
 
 metrics:
   discovery:
-     pred_file: /models/alchembert/2024-12-25-alchembert-wbm-IS2RE.csv.gz
-     pred_col: e_form_per_atom_alchembert
-     full_test_set:
-       F1: 0.4103
-       Precision: 0.2961
-       Recall: 0.6679
-       Accuracy: 0.6800
-       TP: 28604
-       TN: 146150
-       FP: 67988
-       FN: 14221
-       MAE: 0.1190
-       RMSE: 0.1767
-       R2: 0.0416
+    pred_file: /models/alchembert/2024-12-25-alchembert-wbm-IS2RE.csv.gz
+    pred_col: e_form_per_atom_alchembert
+    full_test_set:
+      F1: 0.4103
+      Precision: 0.2961
+      Recall: 0.6679
+      Accuracy: 0.6800
+      TP: 28604
+      TN: 146150
+      FP: 67988
+      FN: 14221
+      MAE: 0.1190
+      RMSE: 0.1767
+      R2: 0.0416
