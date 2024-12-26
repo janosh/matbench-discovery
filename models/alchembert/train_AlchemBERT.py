@@ -37,33 +37,32 @@ test_pad_cased_path = "test_nl_pad_cased_inputs.json"
 
 # %%
 class MyDataset(Dataset):
-    def __init__(self, input_ids, attention_mask, labels):
+    def __init__(self, input_ids: torch.Tensor, attention_mask: torch.Tensor, labels: torch.Tensor) -> None:
         self.input_ids = input_ids
         self.attention_mask = attention_mask
         self.labels = labels
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.labels)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         return self.input_ids[index], self.attention_mask[index], self.labels[index]
 
 
 # %%
 class MatBert(l.LightningModule):
-    def __init__(self, b_path):
-        super(MatBert, self).__init__()
+    def __init__(self, b_path: str) -> None:
+        super().__init__()
         self.bert = BertModel.from_pretrained(b_path, output_hidden_states=True)
         self.config = BertConfig.from_pretrained(bert_path)
         self.linear = nn.Linear(self.config.hidden_size, 1)
 
-    def forward(self, input_ids, attention_mask):
+    def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
         outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
         cls_representation = outputs.last_hidden_state[:, 0, :]
-        y = self.linear(cls_representation).squeeze(-1)
-        return y
+        return self.linear(cls_representation).squeeze(-1)
 
-    def training_step(self, batch):
+    def training_step(self, batch: tuple[torch.Tensor, torch.Tensor, torch.Tensor]) -> torch.Tensor:
         input_ids, attention_mask, y = batch
         input_ids.cuda()
         attention_mask.cuda()
@@ -73,7 +72,7 @@ class MatBert(l.LightningModule):
         self.log('train_mse_loss', loss, on_epoch=True, sync_dist=True)
         return loss
 
-    def validation_step(self, batch):
+    def validation_step(self, batch: tuple[torch.Tensor, torch.Tensor, torch.Tensor]) -> dict[str, torch.Tensor]:
         input_ids, attention_mask, y = batch
         input_ids.cuda()
         attention_mask.cuda()
@@ -84,29 +83,27 @@ class MatBert(l.LightningModule):
         self.log("val_MAE", mae, on_epoch=True, sync_dist=True)
         return {'val_loss': loss, 'val_MAE': mae}
 
-    def predict_step(self, batch):
+    def predict_step(self, batch: tuple[torch.Tensor, torch.Tensor, torch.Tensor]) -> torch.Tensor:
         input_ids, attention_mask, y = batch
-        prediction = self(input_ids, attention_mask)
-        return prediction
+        return self(input_ids, attention_mask)
 
-    def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=l_r)
-        return optimizer
+    def configure_optimizers(self) -> torch.optim.Optimizer:
+        return torch.optim.Adam(self.parameters(), lr=l_r)
 
 
 # %% data
-def main():
+def main() -> None:
 
     if os.path.exists(train_pad_cased_path):
         print(f"file {train_pad_cased_path} exists")
         train_inputs = pd.read_json(train_pad_cased_path)
-        train_outputs = get_train_data(only_y=True)
+        train_outputs = get_train_data()
 
         input_ids = torch.tensor(train_inputs['input_ids'])
         attention_mask = torch.tensor(train_inputs['attention_mask'])
         train_outputs = torch.tensor(train_outputs.values)
     else:
-        warnings.warn("file doesn't exist", UserWarning)
+        warnings.warn("file doesn't exist", UserWarning, stacklevel=2)
         sys.exit()
 
     dataset = MyDataset(input_ids, attention_mask, train_outputs)

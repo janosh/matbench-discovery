@@ -2,44 +2,24 @@ from fire import Fire
 import lightning as l
 import torch
 from torch.utils.data import DataLoader
-from pymatgen.core import Structure
-import json
 import pandas as pd
 from train_AlchemBERT import MatBert, MyDataset
-from train_AlchemBERT import epoch, task
+from train_AlchemBERT import task
 
 torch.manual_seed(42)
 
-def get_test_data(only_y=False):
-    id_col = "material_id"
-    input_col = "initial_structure"
+
+def get_test_data() -> pd.Series:
     target_col = "e_form_per_atom_mp2020_corrected"
-    data_path = "2022-10-19-wbm-init-structs.json"
     df_wbm = pd.read_csv("2022-10-19-wbm-summary.csv")
-    if only_y is False:
-        df_in = pd.read_json(data_path).set_index(id_col)
-        X = pd.Series([Structure.from_dict(x) for x in df_in[input_col]], index=df_in.index)
-        y = pd.Series(df_wbm[target_col])
-        return X[y.index], y
-    else:
-        y = pd.Series(df_wbm[target_col])
-        return y
+    return pd.Series(df_wbm[target_col])
 
 
-def get_train_data(only_y=False):
+def get_train_data() -> pd.Series:
     target_col = "formation_energy_per_atom"
-    input_col = "structure"
     id_col = "material_id"
-    if only_y is False:
-        df_cse = pd.read_json("2023-02-07-mp-computed-structure-entries.json").set_index(id_col)
-        df_eng = pd.read_csv("2023-01-10-mp-energies.csv").set_index(id_col)
-        X = pd.Series([Structure.from_dict(cse[input_col]) for cse in df_cse.entry], index=df_cse.index)
-        y = pd.Series(df_eng[target_col], index=df_eng.index)
-        return X[y.index], y
-    else:
-        df_eng = pd.read_csv("2023-01-10-mp-energies.csv").set_index(id_col)
-        y = pd.Series(df_eng[target_col], index=df_eng.index)
-        return y
+    df_eng = pd.read_csv("2023-01-10-mp-energies.csv").set_index(id_col)
+    return pd.Series(df_eng[target_col], index=df_eng.index)
 
 
 bert_path = 'bert-base-cased'
@@ -50,14 +30,14 @@ test_pad_cased_path = f"test_{task}_pad_cased_inputs.json"
 # %%
 
 def main(
-    best_epoch,
-    val_mae
-):
+    best_epoch: int,
+    val_mae: float
+) -> None:
 
     best_model = f"epoch={best_epoch}_val_MAE={val_mae}_best_model.ckpt"
     best_model_path = f"checkpoints/model_epoch5000_{task}/{best_model}"
     test_inputs = pd.read_json(test_pad_cased_path)
-    test_outputs = get_test_data(only_y=True)
+    test_outputs = get_test_data()
 
     best_model = torch.load(best_model_path, weights_only=True)
     model = MatBert(bert_path)
