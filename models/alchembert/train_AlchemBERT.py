@@ -1,17 +1,17 @@
-from fire import Fire
-import lightning as l
-from transformers import BertModel
-import torch.nn as nn
-import torch
-import warnings
-from torch.utils.data import DataLoader, Dataset, random_split
-from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
-import torch.nn.functional as f
-from transformers import BertConfig
-from test_AlchemBERT import get_train_data
-import sys
-import pandas as pd
 import os
+import sys
+import warnings
+
+import lightning as l
+import pandas as pd
+import torch
+import torch.nn as nn
+import torch.nn.functional as f
+from fire import Fire
+from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
+from test_AlchemBERT import get_train_data
+from torch.utils.data import DataLoader, Dataset, random_split
+from transformers import BertConfig, BertModel
 
 seed = 42
 torch.manual_seed(seed)
@@ -29,7 +29,7 @@ save_top_k = 1
 l_r = 1e-5
 
 task = "nl"
-bert_path = 'bert-base-cased'
+bert_path = "bert-base-cased"
 
 train_pad_cased_path = "train_nl_pad_cased_inputs.json"
 test_pad_cased_path = "test_nl_pad_cased_inputs.json"
@@ -69,7 +69,7 @@ class MatBert(l.LightningModule):
         y.cuda()
         y_hat = self(input_ids, attention_mask)
         loss = f.mse_loss(y_hat.float(), y.float())
-        self.log('train_mse_loss', loss, on_epoch=True, sync_dist=True)
+        self.log("train_mse_loss", loss, on_epoch=True, sync_dist=True)
         return loss
 
     def validation_step(self, batch: tuple[torch.Tensor, torch.Tensor, torch.Tensor]) -> dict[str, torch.Tensor]:
@@ -79,9 +79,9 @@ class MatBert(l.LightningModule):
         y.cuda()
         y_hat = self(input_ids, attention_mask)
         loss = nn.functional.mse_loss(y_hat.float(), y.float())
-        mae = torch.mean(torch.absolute(y_hat-y))
+        mae = torch.mean(torch.absolute(y_hat - y))
         self.log("val_MAE", mae, on_epoch=True, sync_dist=True)
-        return {'val_loss': loss, 'val_MAE': mae}
+        return {"val_loss": loss, "val_MAE": mae}
 
     def predict_step(self, batch: tuple[torch.Tensor, torch.Tensor, torch.Tensor]) -> torch.Tensor:
         input_ids, attention_mask, y = batch
@@ -92,15 +92,19 @@ class MatBert(l.LightningModule):
 
 
 # %% data
+<<<<<<< HEAD
 def main() -> None:
 
+=======
+def main():
+>>>>>>> 3116a85f1752bbbfdfb2c345a6c82431de92decc
     if os.path.exists(train_pad_cased_path):
         print(f"file {train_pad_cased_path} exists")
         train_inputs = pd.read_json(train_pad_cased_path)
         train_outputs = get_train_data()
 
-        input_ids = torch.tensor(train_inputs['input_ids'])
-        attention_mask = torch.tensor(train_inputs['attention_mask'])
+        input_ids = torch.tensor(train_inputs["input_ids"])
+        attention_mask = torch.tensor(train_inputs["attention_mask"])
         train_outputs = torch.tensor(train_outputs.values)
     else:
         warnings.warn("file doesn't exist", UserWarning, stacklevel=2)
@@ -109,38 +113,39 @@ def main() -> None:
     dataset = MyDataset(input_ids, attention_mask, train_outputs)
     train_set, val_set = random_split(dataset, [0.9, 0.1])
 
-    train_loader = DataLoader(train_set, batch_size=train_batch_size, shuffle=True, num_workers=2)
-    val_loader = DataLoader(val_set, batch_size=val_batch_size, shuffle=False, num_workers=2)
+    train_loader = DataLoader(
+        train_set, batch_size=train_batch_size, shuffle=True, num_workers=2
+    )
+    val_loader = DataLoader(
+        val_set, batch_size=val_batch_size, shuffle=False, num_workers=2
+    )
 
     # %% train
 
     model = MatBert(bert_path)
     model.cuda()
     early_stopping = EarlyStopping(
-        monitor="val_MAE",
-        patience=patience,
-        verbose=True,
-        mode="min"
+        monitor="val_MAE", patience=patience, verbose=True, mode="min"
     )
     check_point = ModelCheckpoint(
         monitor="val_MAE",
         save_top_k=save_top_k,
         dirpath=f"checkpoints/model_epoch{epoch}_{task}",
         filename="{epoch}_{val_MAE:.4f}_best_model",
-        mode="min"
+        mode="min",
     )
     trainer = l.Trainer(
         max_epochs=epoch,
-        accelerator='gpu',
+        accelerator="gpu",
         callbacks=[check_point, early_stopping],
         log_every_n_steps=log_every_n_steps,
         devices=-1,
-        strategy='ddp_find_unused_parameters_true'
+        strategy="ddp_find_unused_parameters_true",
     )
     model.train()
     trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=val_loader)
 
 
 # %%
-if __name__ == '__main__':
+if __name__ == "__main__":
     Fire(main)
