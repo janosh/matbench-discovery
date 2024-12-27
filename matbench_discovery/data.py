@@ -275,7 +275,10 @@ class Files(StrEnum, metaclass=MetaFiles):
     @classmethod
     def from_label(cls, label: str) -> Self:
         """Get enum member from pretty label."""
-        return next(attr for attr in cls if attr.label == label)
+        file = next((attr for attr in cls if attr.label == label), None)
+        if file is None:
+            raise ValueError(f"{label=} not found in {cls.__name__}")
+        return file
 
 
 class DataFiles(Files):

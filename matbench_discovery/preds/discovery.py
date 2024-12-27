@@ -15,9 +15,6 @@ __date__ = "2023-02-04"
 
 # load WBM summary dataframe with all models' formation energy predictions (eV/atom)
 df_preds = load_df_wbm_with_preds().round(3)
-# for combo in [("CHGNet", "M3GNet")]:
-#     df_preds[" + ".join(combo)] = df_preds[combo].mean(axis=1)  # noqa: ERA001
-#     Model[" + ".join(combo)] = "combo"  # noqa: ERA001
 
 
 df_metrics = pd.DataFrame()

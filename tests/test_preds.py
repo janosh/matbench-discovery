@@ -1,9 +1,5 @@
 import os
 
-import numpy as np
-import pytest
-from pymatviz.enums import Key
-
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.preds.discovery import (
@@ -11,7 +7,6 @@ from matbench_discovery.preds.discovery import (
     df_each_err,
     df_each_pred,
     df_metrics,
-    load_df_wbm_with_preds,
 )
 
 
@@ -57,61 +52,11 @@ def test_df_each_err() -> None:
     )
 
 
-@pytest.mark.parametrize("models", [[], ["wrenformer"]])
-@pytest.mark.parametrize("max_error_threshold", [None, 5.0, 1.0])
-def test_load_df_wbm_with_preds(
-    models: list[str], max_error_threshold: float | None
-) -> None:
-    df_wbm_with_preds = load_df_wbm_with_preds(
-        models=models, max_error_threshold=max_error_threshold
-    )
-    assert len(df_wbm_with_preds) == len(df_wbm)
-
-    assert list(df_wbm_with_preds) == list(df_wbm) + [
-        Model[model].label for model in models
-    ]
-    assert df_wbm_with_preds.index.name == Key.mat_id
-
-    for model_name in models:
-        model = Model[model_name]
-        assert model.label in df_wbm_with_preds
-        if max_error_threshold is not None:
-            # Check if predictions exceeding the threshold are filtered out
-            error = abs(
-                df_wbm_with_preds[model.label] - df_wbm_with_preds[MbdKey.e_form_dft]
-            )
-            assert np.all(error[~error.isna()] <= max_error_threshold)
-        else:
-            # If no threshold is set, all predictions should be present
-            assert df_wbm_with_preds[model.label].isna().sum() == 0
-
-
-def test_load_df_wbm_max_error_threshold() -> None:
-    models = {Model.mace.label: 38}  # num missing preds for default max_error_threshold
-    df_no_thresh = load_df_wbm_with_preds(models=list(models))
-    df_high_thresh = load_df_wbm_with_preds(models=list(models), max_error_threshold=10)
-    df_low_thresh = load_df_wbm_with_preds(models=list(models), max_error_threshold=0.1)
-
-    for model, n_missing in models.items():
-        assert df_no_thresh[model].isna().sum() == n_missing
-        assert df_high_thresh[model].isna().sum() <= df_no_thresh[model].isna().sum()
-        assert df_high_thresh[model].isna().sum() <= df_low_thresh[model].isna().sum()
-
-
-def test_load_df_wbm_with_preds_raises() -> None:
-    with pytest.raises(ValueError, match="unknown_models='foo'"):
-        load_df_wbm_with_preds(models=["foo"])
-
-    with pytest.raises(
-        ValueError, match="max_error_threshold must be a positive number"
-    ):
-        load_df_wbm_with_preds(max_error_threshold=-1.0)
-
-
 def test_pred_files() -> None:
     assert len(Model) >= 6
     for model in Model:
-        assert model.discovery_path.endswith(".csv.gz")
+        pred_path = model.discovery_path
+        assert pred_path.endswith(".csv.gz")
         assert os.path.isfile(
-            model.discovery_path
-        ), f"{model=} missing discovery pred file, expected at {model.discovery_path}"
+            pred_path
+        ), f"discovery pred file for {model=} not found, expected at {pred_path}"
