@@ -2,6 +2,7 @@ import os
 import zipfile
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -11,15 +12,19 @@ from ase import Atoms
 from pymatgen.core import Lattice, Structure
 from pymatviz.enums import Key
 
+from matbench_discovery import DATA_DIR
 from matbench_discovery.data import (
     DataFiles,
+    Files,
     Model,
     as_dict_handler,
     ase_atoms_from_zip,
     ase_atoms_to_zip,
     df_wbm,
     glob_to_df,
+    load_df_wbm_with_preds,
 )
+from matbench_discovery.enums import MbdKey, TestSubset
 
 structure = Structure(
     lattice=Lattice.cubic(5),
@@ -172,9 +177,28 @@ def test_ase_atoms_from_zip_with_limit(tmp_path: Path) -> None:
     assert len(read_atoms) == 2
 
 
+def test_files() -> None:
+    """Test error handling in Files enum."""
+
+    assert Files.base_dir == DATA_DIR
+
+    # Test custom base_dir
+    class SubFiles(Files, base_dir="foo"):
+        pass
+
+    assert SubFiles.base_dir == "foo"
+
+    # Test invalid label lookup
+    label = "invalid-label"
+    with pytest.raises(ValueError, match=f"{label=} not found in Files"):
+        Files.from_label(label)
+
+
 def test_data_files() -> None:
     """Test DataFiles enum functionality."""
     # Test that paths are constructed correctly
+    assert str(DataFiles.mp_energies) == f"{DATA_DIR}/mp/2023-01-10-mp-energies.csv.gz"
+    assert repr(DataFiles.mp_energies) == "DataFiles.mp_energies"
     assert DataFiles.mp_energies.name == "mp_energies"
     assert (
         DataFiles.mp_energies.url == "https://figshare.com/ndownloader/files/49083124"
@@ -183,6 +207,7 @@ def test_data_files() -> None:
 
     # Test that multiple files exist and have correct attributes
     assert DataFiles.wbm_summary.rel_path == "wbm/2023-12-13-wbm-summary.csv.gz"
+    assert DataFiles.wbm_summary.path == f"{DATA_DIR}/wbm/2023-12-13-wbm-summary.csv.gz"
     assert (
         DataFiles.wbm_summary.url == "https://figshare.com/ndownloader/files/44225498"
     )
@@ -228,3 +253,106 @@ def test_data_files_urls(data_file: DataFiles) -> None:
     # check that the URL is valid by sending a head request
     response = requests.head(url, allow_redirects=True, timeout=5)
     assert response.status_code in {200, 403}, f"Invalid URL for {name}: {url}"
+
+
+def test_download_file(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
+    """Test download_file function."""
+
+    from matbench_discovery.data import download_file
+
+    url = "https://example.com/test.txt"
+    test_content = b"test content"
+    dest_path = tmp_path / "test.txt"
+
+    # Mock successful request
+    mock_response = requests.Response()
+    mock_response.status_code = 200
+    mock_response._content = test_content  # noqa: SLF001
+
+    with patch("requests.get", return_value=mock_response):
+        download_file(str(dest_path), url)
+        assert dest_path.read_bytes() == test_content
+
+    # Mock failed request
+    mock_response = requests.Response()
+    mock_response.status_code = 404
+    mock_response._content = b"Not found"  # noqa: SLF001
+
+    with patch("requests.get", return_value=mock_response):
+        download_file(str(dest_path), url)  # Should print error but not raise
+
+    stdout, stderr = capsys.readouterr()
+    assert f"Error downloading {url=}" in stdout
+    assert stderr == ""
+
+
+@pytest.mark.parametrize("models", [[], ["wrenformer"]])
+@pytest.mark.parametrize("max_error_threshold", [None, 5.0, 1.0])
+def test_load_df_wbm_with_preds(
+    models: list[str], max_error_threshold: float | None
+) -> None:
+    df_wbm_with_preds = load_df_wbm_with_preds(
+        models=models, max_error_threshold=max_error_threshold
+    )
+    assert len(df_wbm_with_preds) == len(df_wbm)
+
+    assert list(df_wbm_with_preds) == list(df_wbm) + [
+        Model[model].label for model in models
+    ]
+    assert df_wbm_with_preds.index.name == Key.mat_id
+
+    for model_name in models:
+        model = Model[model_name]
+        assert model.label in df_wbm_with_preds
+        if max_error_threshold is not None:
+            # Check if predictions exceeding the threshold are filtered out
+            error = abs(
+                df_wbm_with_preds[model.label] - df_wbm_with_preds[MbdKey.e_form_dft]
+            )
+            assert np.all(error[~error.isna()] <= max_error_threshold)
+        else:
+            # If no threshold is set, all predictions should be present
+            assert df_wbm_with_preds[model.label].isna().sum() == 0
+
+
+def test_load_df_wbm_max_error_threshold() -> None:
+    models = {Model.mace.label: 38}  # num missing preds for default max_error_threshold
+    df_no_thresh = load_df_wbm_with_preds(models=list(models))
+    df_high_thresh = load_df_wbm_with_preds(models=list(models), max_error_threshold=10)
+    df_low_thresh = load_df_wbm_with_preds(models=list(models), max_error_threshold=0.1)
+
+    for model, n_missing in models.items():
+        assert df_no_thresh[model].isna().sum() == n_missing
+        assert df_high_thresh[model].isna().sum() <= df_no_thresh[model].isna().sum()
+        assert df_high_thresh[model].isna().sum() <= df_low_thresh[model].isna().sum()
+
+
+def test_load_df_wbm_with_preds_errors(df_float: pd.DataFrame) -> None:
+    """Test error handling in load_df_wbm_with_preds function."""
+
+    # Test invalid model name
+    with pytest.raises(ValueError, match="expected subset of"):
+        load_df_wbm_with_preds(models=["InvalidModel"])
+
+    # Test negative error threshold
+    with pytest.raises(
+        ValueError, match="max_error_threshold must be a positive number"
+    ):
+        load_df_wbm_with_preds(max_error_threshold=-1)
+
+    # Test pred_col not in predictions file
+    with (
+        patch("pandas.read_csv", return_value=df_float),
+        pytest.raises(ValueError, match="pred_col.*not found in"),
+    ):
+        load_df_wbm_with_preds(models=["alignn"])
+
+
+@pytest.mark.parametrize(
+    "subset",
+    ["unique_prototypes", TestSubset.uniq_protos, ["wbm-1-1", "wbm-1-2"], None],
+)
+def test_load_df_wbm_with_preds_subset(subset: Any) -> None:
+    """Test subset handling in load_df_wbm_with_preds."""
+    df_wbm = load_df_wbm_with_preds(subset=subset)
+    assert isinstance(df_wbm, pd.DataFrame)

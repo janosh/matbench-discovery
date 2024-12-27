@@ -39,7 +39,7 @@ for model_dir in MODEL_DIRS:
         try:
             ModelType(model_data.get("model_type"))  # check if model_type is valid
         except ValueError as exc:
-            exc.add_note(f"{metadata_file=}")
+            exc.add_note(f"{metadata_file=}\nPick from {', '.join(ModelType)}")
             raise
 
 

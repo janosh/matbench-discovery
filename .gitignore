@@ -2,6 +2,7 @@
 *.egg-info
 dist
 build
+.coverage*
 
 # cache
 __pycache__
@@ -32,9 +33,6 @@ models/**/*.tgz
 
 # auto-generated docs
 site/src/routes/api/*.md
-
-# temporary ignore rules
-data/mp/mptrj-gga-ggapu/*
 
 # large files
 data/*-models-geo-opt-analysis-symprec=*.csv.gz
