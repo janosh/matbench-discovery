@@ -1,0 +1,61 @@
+model_name: AlchemBERT
+model_key: alchembert
+model_version: 1.0.0
+matbench_discovery_version: 1.0.0
+date_added: "2024-12-25"
+date_published: "2024-12-11"
+authors:
+  - name: Xiaotong Liu
+    affiliation: Beijing Information Science and Technology University
+    email: liuxiaotong@bistu.edu.cn
+  - name: Yuhang Wang
+    affiliation: Beijing Information Science and Technology University
+    email: 2024020669@bistu.edu.cn
+repo: https://gitee.com/liuxiaotong15/alchemBERT
+doi: https://doi.org/10.26434/chemrxiv-2024-r4dnl
+paper: https://chemrxiv.org/engage/chemrxiv/article-details/67540a28085116a133a62b85
+pr_url: https://github.com/janosh/matbench-discovery/pull/186
+targets: E
+train_task: RS2RE
+test_task: IS2RE
+trained_for_benchmark: true
+
+requirements:
+  torch: 2.5.1
+  lightning: 2.4.0
+  transformers: 4.46.3
+  pymatgen: 2024.11.13
+
+model_type: Transformer
+model_params: 110_000_000
+n_estimators: 1
+
+training_set: [MP 2022]
+
+notes:
+  description: We tested BERT on IS2RE task of Matbench Discovery.
+
+metrics:
+  discovery:
+    pred_file: /models/alchembert/2024-12-25-alchembert-wbm-IS2RE.csv.gz
+    pred_col: e_form_per_atom_alchembert
+    full_test_set:
+      MAE: 0.1190
+      RMSE: 0.1767
+      R2: 0.0416
+      DAF: 1.7768
+      Precision: 0.2961
+      Recall: 0.6679
+      Accuracy: 0.6800
+      F1: 0.4103
+      TPR: 0.6679
+      FPR: 0.3174
+      TNR: 0.6825
+      FNR: 0.3320
+      missing_percent: 0.00%,
+      missing_preds: 0
+      TP: 28604
+      FP: 67988
+      TN: 146150
+      FN: 14221
+
