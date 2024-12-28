@@ -5,7 +5,6 @@ from fire import Fire
 from torch.utils.data import DataLoader
 from train_AlchemBERT import MatBert, MyDataset, task
 
-
 torch.manual_seed(42)
 
 
@@ -28,12 +27,7 @@ test_pad_cased_path = f"test_{task}_pad_cased_inputs.json"
 
 
 # %%
-
-def main(
-    best_epoch: int,
-    val_mae: float
-) -> None:
-
+def main(best_epoch: int, val_mae: float) -> None:
     best_model = f"epoch={best_epoch}_val_MAE={val_mae}_best_model.ckpt"
     best_model_path = f"checkpoints/model_epoch5000_{task}/{best_model}"
     test_inputs = pd.read_json(test_pad_cased_path)

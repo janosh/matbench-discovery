@@ -37,7 +37,12 @@ test_pad_cased_path = "test_nl_pad_cased_inputs.json"
 
 # %%
 class MyDataset(Dataset):
-    def __init__(self, input_ids: torch.Tensor, attention_mask: torch.Tensor, labels: torch.Tensor) -> None:
+    def __init__(
+        self,
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
+        labels: torch.Tensor,
+    ) -> None:
         self.input_ids = input_ids
         self.attention_mask = attention_mask
         self.labels = labels
@@ -45,7 +50,9 @@ class MyDataset(Dataset):
     def __len__(self) -> int:
         return len(self.labels)
 
-    def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def __getitem__(
+        self, index: int
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         return self.input_ids[index], self.attention_mask[index], self.labels[index]
 
 
@@ -57,12 +64,16 @@ class MatBert(l.LightningModule):
         self.config = BertConfig.from_pretrained(bert_path)
         self.linear = nn.Linear(self.config.hidden_size, 1)
 
-    def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, input_ids: torch.Tensor, attention_mask: torch.Tensor
+    ) -> torch.Tensor:
         outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
         cls_representation = outputs.last_hidden_state[:, 0, :]
         return self.linear(cls_representation).squeeze(-1)
 
-    def training_step(self, batch: tuple[torch.Tensor, torch.Tensor, torch.Tensor]) -> torch.Tensor:
+    def training_step(
+        self, batch: tuple[torch.Tensor, torch.Tensor, torch.Tensor]
+    ) -> torch.Tensor:
         input_ids, attention_mask, y = batch
         input_ids.cuda()
         attention_mask.cuda()
@@ -72,7 +83,9 @@ class MatBert(l.LightningModule):
         self.log("train_mse_loss", loss, on_epoch=True, sync_dist=True)
         return loss
 
-    def validation_step(self, batch: tuple[torch.Tensor, torch.Tensor, torch.Tensor]) -> dict[str, torch.Tensor]:
+    def validation_step(
+        self, batch: tuple[torch.Tensor, torch.Tensor, torch.Tensor]
+    ) -> dict[str, torch.Tensor]:
         input_ids, attention_mask, y = batch
         input_ids.cuda()
         attention_mask.cuda()
@@ -83,7 +96,9 @@ class MatBert(l.LightningModule):
         self.log("val_MAE", mae, on_epoch=True, sync_dist=True)
         return {"val_loss": loss, "val_MAE": mae}
 
-    def predict_step(self, batch: tuple[torch.Tensor, torch.Tensor, torch.Tensor]) -> torch.Tensor:
+    def predict_step(
+        self, batch: tuple[torch.Tensor, torch.Tensor, torch.Tensor]
+    ) -> torch.Tensor:
         input_ids, attention_mask, y = batch
         return self(input_ids, attention_mask)
 
@@ -93,7 +108,6 @@ class MatBert(l.LightningModule):
 
 # %% data
 def main() -> None:
-
     if os.path.exists(train_pad_cased_path):
         print(f"file {train_pad_cased_path} exists")
         train_inputs = pd.read_json(train_pad_cased_path)
