@@ -151,13 +151,15 @@
               style={col.style}
               title={[undefined, null].includes(val) ? `not available` : null}
             >
-              {#if typeof val === `number` && col.format}
-                {pretty_num(val, col.format)}
-              {:else if [undefined, null].includes(val)}
-                n/a
-              {:else}
-                {@html val}
-              {/if}
+              <slot name="cell" {row} {col} {val}>
+                {#if typeof val === `number` && col.format}
+                  {pretty_num(val, col.format)}
+                {:else if [undefined, null].includes(val)}
+                  n/a
+                {:else}
+                  {@html val}
+                {/if}
+              </slot>
             </td>
           {/each}
         </tr>

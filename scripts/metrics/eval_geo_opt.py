@@ -68,7 +68,7 @@ for model_label in {*df_spg} - {Key.dft.label}:
 retained = (df_wbm[init_spg_col] == df_wbm[dft_spg_col]).sum()
 print(
     f"DFT-relaxed structures that retained initial structure's spacegroup:\n"
-    f"{retained:,} / {len(df_wbm):,} ({retained/len(df_wbm):.2%})"
+    f"{retained:,} / {len(df_wbm):,} ({retained / len(df_wbm):.2%})"
 )
 display(
     df_go_metrics.rename(columns={k.name: k.symbol for k in Key})

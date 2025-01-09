@@ -1,9 +1,12 @@
 :root {
   --night: #061e25;
   --blue: cornflowerblue;
+  --link-color: var(--blue);
   --text-color: rgb(208, 208, 208);
+  --dark-bg: #0d1a1d;
+  --light-bg: #08303b;
 
-  --toc-mobile-bg: #0d1a1d;
+  --toc-mobile-bg: var(--dark-bg);
   --toc-mobile-shadow: 0 0 1em 0 black;
   --toc-padding: 1em 0;
   --toc-title-padding: 0 0 0 3pt;
@@ -22,7 +25,7 @@
   --zoo-tooltip-bg: rgb(2, 17, 30);
 
   --sms-margin: 1em auto;
-  --sms-options-bg: rgb(50, 48, 66);
+  --sms-options-bg: var(--light-bg);
   --sms-max-width: 23em;
   --sms-border: 0.1px solid gray;
   --sms-focus-border: 0.1px solid white;
@@ -67,7 +70,7 @@ button {
   padding: 2pt 4pt;
 }
 a {
-  color: var(--blue);
+  color: var(--link-color);
   text-decoration: none;
   transition: 0.2s;
 }

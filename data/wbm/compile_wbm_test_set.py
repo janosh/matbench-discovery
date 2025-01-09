@@ -124,9 +124,9 @@ for json_path in json_paths:
         # df.index = [f"step_3_{idx + 1}" for idx in range(len(df))]
 
     step_len = step_lens[step - 1]
-    assert (
-        len(df_wbm_step) == step_len
-    ), f"bad len for {step=}: {len(df_wbm_step)} != {step_len}"
+    assert len(df_wbm_step) == step_len, (
+        f"bad len for {step=}: {len(df_wbm_step)} != {step_len}"
+    )
     dfs_wbm_structs[step] = df_wbm_step
 
 
@@ -244,9 +244,9 @@ assert pd.Series(
 # make sure only 2 materials have missing initial structures with expected IDs
 expected_ids_with_no_init_structs = ["wbm-5-23166", "wbm-5-23294"]
 actual_ids_with_no_structs = list(df_wbm.query(f"{Key.init_struct}.isna()").index)
-assert (
-    actual_ids_with_no_structs == expected_ids_with_no_init_structs
-), f"{actual_ids_with_no_structs=}\n{expected_ids_with_no_init_structs=}"
+assert actual_ids_with_no_structs == expected_ids_with_no_init_structs, (
+    f"{actual_ids_with_no_structs=}\n{expected_ids_with_no_init_structs=}"
+)
 # drop the two materials with missing initial structures
 df_wbm = df_wbm.drop(index=expected_ids_with_no_init_structs)
 
@@ -287,9 +287,9 @@ for _mat_id, row in tqdm(df_wbm.sample(n_samples).iterrows(), total=n_samples):
 
     # and check initial and final compositions match
     struct_init = Structure.from_dict(row[Key.init_struct])
-    assert (
-        struct_init.composition == struct_final.composition
-    ), f"composition mismatch for {row.Index=}"
+    assert struct_init.composition == struct_final.composition, (
+        f"composition mismatch for {row.Index=}"
+    )
 
 
 # %% extract alphabetical formula from CSEs (will be used as ground-truth formulas since
@@ -617,9 +617,9 @@ for mat_id, row in tqdm(
 
     # make sure the PPD.get_e_form_per_atom() and standalone get_e_form_per_atom()
     # method of calculating formation energy agree
-    assert (
-        abs(e_form - e_form_ppd) < 1e-4
-    ), f"{mat_id}: {e_form=:.3} != {e_form_ppd=:.3} (diff={e_form - e_form_ppd:.3}))"
+    assert abs(e_form - e_form_ppd) < 1e-4, (
+        f"{mat_id}: {e_form=:.3} != {e_form_ppd=:.3} (diff={e_form - e_form_ppd:.3}))"
+    )
     df_summary.loc[cse.entry_id, MbdKey.e_form_raw] = e_form
 
 

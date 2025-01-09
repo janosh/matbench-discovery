@@ -258,7 +258,7 @@ def run_relax(
             for job_number in range(num_jobs):
                 job = executor.submit(RelaxJob(), job_number, *args)
                 jobs.append(job)
-        logging.info(f"Submitted {len(jobs)} jobs: {jobs[0].job_id.split("_")[0]}")
+        logging.info(f"Submitted {len(jobs)} jobs: {jobs[0].job_id.split('_')[0]}")
 
 
 if __name__ == "__main__":

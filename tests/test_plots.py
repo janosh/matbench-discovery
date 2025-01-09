@@ -83,9 +83,9 @@ def test_rolling_mae_vs_hull_dist(
 
     assert isinstance(df_err, pd.DataFrame)
     assert isinstance(df_std, pd.DataFrame)
-    assert (
-        list(df_err) == list(df_std) == models
-    ), f"expected {list(df_err)} == {list(df_std)} == {models}"
+    assert list(df_err) == list(df_std) == models, (
+        f"expected {list(df_err)} == {list(df_std)} == {models}"
+    )
 
     expected_ylabel = "Rolling MAE (eV/atom)"
     assert isinstance(ax, go.Figure)
