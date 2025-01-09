@@ -50,12 +50,16 @@ declare module '*element-counts.json' {
   export default map
 } // element counts for different datasets
 
-declare module '*metrics-which-is-better.yml' {
-  type which_better = {
-    higher_is_better: string[]
-    lower_is_better: string[]
+declare module '*modeling-tasks.yml' {
+  type ModelingTask = {
+    label: string
+    description: string
+    metrics: {
+      higher_is_better: string[]
+      lower_is_better: string[]
+    }
   }
-  export const geo_opt: which_better
-  export const discovery: which_better
-  export const phonons: which_better
+  export const geo_opt: ModelingTask
+  export const discovery: ModelingTask
+  export const phonons: ModelingTask
 }

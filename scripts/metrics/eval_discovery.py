@@ -91,14 +91,14 @@ def get_metrics_df(nested_keys: Sequence[str]) -> pd.DataFrame:
 
 # Create DataFrames with models as rows
 df_metrics = get_metrics_df(["discovery.full_test_set"]).sort_values(
-    by=Key.f1, ascending=False
+    by=Key.f1.upper(), ascending=False
 )
 df_metrics_10k = get_metrics_df(["discovery.most_stable_10k"]).sort_values(
-    by=Key.f1, ascending=False
+    by=Key.f1.upper(), ascending=False
 )
 df_metrics_uniq_protos = get_metrics_df(
     ["discovery.unique_prototypes", "phonons"]
-).sort_values(by=Key.f1, ascending=False)
+).sort_values(by=Key.f1.upper(), ascending=False)
 df_metrics_uniq_protos = df_metrics_uniq_protos.drop(
     columns=[MbdKey.missing_preds, MbdKey.missing_percent]
 )
@@ -283,7 +283,9 @@ for df_in, df_out, col in (
     (df_wbm.query(MbdKey.uniq_proto), df_metrics_uniq_protos, "Dummy"),
 ):
     dummy_clf = DummyClassifier(strategy="stratified", random_state=0)
-    dummy_clf.fit(np.zeros_like(df_mp[Key.each]), df_mp[Key.each] == 0)
+    dummy_clf.fit(
+        np.zeros_like(df_mp["energy_above_hull"]), df_mp["energy_above_hull"] == 0
+    )
     dummy_clf_preds = dummy_clf.predict(np.zeros(len(df_in)))
 
     each_true = df_in[MbdKey.each_true]
@@ -302,13 +304,13 @@ for df_in, df_out, col in (
 
 
 # %%
-with open(f"{PKG_DIR}/metrics-which-is-better.yml") as file:
-    discovery_better = yaml.safe_load(file)["discovery"]
+with open(f"{PKG_DIR}/modeling-tasks.yml") as file:
+    discovery_metrics = yaml.safe_load(file)["discovery"]["metrics"]
 
 R2_col = "R<sup>2</sup>"
 kappa_srme_col = "κ<sub>SRME</sub>"
-higher_is_better = {*discovery_better["higher_is_better"]} - {"R2"} | {R2_col}
-lower_is_better = {*discovery_better["lower_is_better"]} | {kappa_srme_col}
+higher_is_better = {*discovery_metrics["higher_is_better"]} - {"R2"} | {R2_col}
+lower_is_better = {*discovery_metrics["lower_is_better"]} | {kappa_srme_col}
 
 # if True, make metrics-table-megnet-uip-combos.(svelte|pdf) for SI
 # if False, make metrics-table.(svelte|pdf) for main text

@@ -246,9 +246,9 @@ def test_data_files_urls(data_file: DataFiles) -> None:
 
     name, url = data_file.name, data_file.url
     # check that URL is a figshare download
-    assert (
-        "figshare.com/ndownloader/files/" in url
-    ), f"URL for {name} is not a Figshare download URL: {url}"
+    assert "figshare.com/ndownloader/files/" in url, (
+        f"URL for {name} is not a Figshare download URL: {url}"
+    )
 
     # check that the URL is valid by sending a head request
     response = requests.head(url, allow_redirects=True, timeout=5)

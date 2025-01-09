@@ -55,12 +55,12 @@ def test_model_dirs_have_metadata() -> None:
 
         # make sure all keys are valid
         for name in model_name if isinstance(model_name, list) else [model_name]:
-            assert (
-                3 <= len(name) < 50
-            ), f"Invalid {name=} not between 3 and 50 characters"
-        assert (
-            1 < len(model_version) < 30
-        ), f"Invalid {model_version=} not between 1 and 30 characters"
+            assert 3 <= len(name) < 50, (
+                f"Invalid {name=} not between 3 and 50 characters"
+            )
+        assert 1 < len(model_version) < 30, (
+            f"Invalid {model_version=} not between 1 and 30 characters"
+        )
         # TODO increase max allowed version when updating package
         assert (
             parse_version("1.0.0")
@@ -70,9 +70,9 @@ def test_model_dirs_have_metadata() -> None:
         assert isinstance(date_added, str), f"Invalid {date_added=} not a string"
         assert isinstance(authors, list)
         assert 1 < len(authors) < 30, f"{len(authors)=} not between 1 and 30"
-        assert repo.startswith(
-            "https://"
-        ), f"Invalid {repo=} not starting with https://"
+        assert repo.startswith("https://"), (
+            f"Invalid {repo=} not starting with https://"
+        )
 
 
 def test_model_dirs_have_test_scripts() -> None:

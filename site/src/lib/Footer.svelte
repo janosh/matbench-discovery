@@ -78,7 +78,7 @@
     opacity: 0;
     position: fixed;
     top: 40%;
-    background: var(--sms-options-bg);
+    background: var(--light-bg);
     color: var(--text-color);
     display: grid;
     border: none;

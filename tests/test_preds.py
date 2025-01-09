@@ -57,6 +57,6 @@ def test_pred_files() -> None:
     for model in Model:
         pred_path = model.discovery_path
         assert pred_path.endswith(".csv.gz")
-        assert os.path.isfile(
-            pred_path
-        ), f"discovery pred file for {model=} not found, expected at {pred_path}"
+        assert os.path.isfile(pred_path), (
+            f"discovery pred file for {model=} not found, expected at {pred_path}"
+        )

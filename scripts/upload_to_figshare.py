@@ -123,7 +123,7 @@ def main(pyproject: dict[str, Any], yaml_path: str) -> int:
 
     DESCRIPTION = f"""
     These are the v{version} data files for Matbench Discovery,
-    {pyproject['description'].lower()}. It contains relaxed structures of the MP
+    {pyproject["description"].lower()}. It contains relaxed structures of the MP
     training set, initial+relaxed structures of the WBM test set, plus several
     checkpoints  for models trained on this data specifically for this benchmark.
 
