@@ -83,12 +83,15 @@ export interface ModelMetadata {
   metrics?: {
     phonons?:
       | {
+          pred_file?: string | null
+          pred_file_url?: string | null
           κ_SRME?: number
         }
       | ('not applicable' | 'not available')
     geo_opt?:
       | {
           pred_file: string | null
+          pred_file_url: string | null
           pred_col: string | null
           'symprec=1e-5'?: {
             rmsd?: number
@@ -118,8 +121,9 @@ export interface ModelMetadata {
       | ('not applicable' | 'not available')
     discovery?: {
       additionalProperties?: never
-      pred_file?: string
-      pred_col?: string
+      pred_file: string
+      pred_file_url: string
+      pred_col: string
       full_test_set?: {
         F1?: number
         DAF?: number

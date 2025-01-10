@@ -80,6 +80,7 @@ metrics:
     κ_SRME: 0.550
   geo_opt:
     pred_file: models/sevennet/sevennet-l3i5/sevennet-l3i5-structures.json.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607421
     pred_col: sevennet_structures
     symprec=1e-5:
       rmsd: 0.0182 # Å
@@ -97,6 +98,7 @@ metrics:
       n_structures: 256614 # count
   discovery:
     pred_file: models/sevennet/sevennet-l3i5/2024-12-10-sevennet-l3l5-preds.csv.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607292
     pred_col: e_form_per_atom_chgTot_l3i5
     full_test_set:
       F1: 0.751 # fraction

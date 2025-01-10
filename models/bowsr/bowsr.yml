@@ -61,6 +61,7 @@ metrics:
   phonons: not applicable # model doesn't predict forces
   geo_opt:
     pred_file: models/bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.json.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607409
     pred_col: structure_bowsr_megnet
     symprec=1e-5:
       rmsd: 0.043 # Å
@@ -78,6 +79,7 @@ metrics:
       n_structures: 250430 # count
   discovery:
     pred_file: models/bowsr/2023-01-23-bowsr-megnet-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607265
     pred_col: e_form_per_atom_bowsr_megnet
     full_test_set:
       F1: 0.437 # fraction

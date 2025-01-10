@@ -72,6 +72,7 @@ metrics:
     κ_SRME: 0.412
   geo_opt:
     pred_file: models/mace/mace-mpa-0/2024-12-09-mace-mpa-0-wbm-IS2RE-FIRE.json.gz
+    pred_file_url:
     pred_col: mace_structure
     symprec=1e-2:
       rmsd: 0.0142 # Å
@@ -89,6 +90,7 @@ metrics:
       n_structures: 256963 # count
   discovery:
     pred_file: models/mace/mace-mpa-0/2024-12-09-mace-mpa-0-wbm-IS2RE-FIRE.csv.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607283
     pred_col: e_form_per_atom_mace
     full_test_set:
       F1: 0.836 # fraction

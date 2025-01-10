@@ -146,6 +146,10 @@ properties:
           - type: object
             additionalProperties: false
             properties:
+              pred_file:
+                type: [string, "null"]
+              pred_file_url:
+                type: [string, "null"]
               κ_SRME:
                 type: number
           - type: string
@@ -154,9 +158,11 @@ properties:
         oneOf:
           - type: object
             additionalProperties: false
-            required: [pred_file, pred_col]
+            required: [pred_file, pred_col, pred_file_url]
             properties:
               pred_file:
+                type: [string, "null"]
+              pred_file_url:
                 type: [string, "null"]
               pred_col:
                 type: [string, "null"]
@@ -182,10 +188,13 @@ properties:
             enum: [not applicable, not available]
       discovery:
         additionalProperties: false
+        required: [pred_file, pred_col, pred_file_url]
         type: object
         properties:
           additionalProperties: false
           pred_file:
+            type: string
+          pred_file_url:
             type: string
           pred_col:
             type: string
