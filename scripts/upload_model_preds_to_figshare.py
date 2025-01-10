@@ -110,12 +110,7 @@ def get_article_metadata(task: str) -> dict[str, Sequence[object]]:
         Task description: {task_info["description"]}
 
         For more information about the benchmark and models, visit:
-        https://matbench-discovery.materialsproject.org
-
-        Files are organized using keywords:
-        - By model: "model:<model_name>" (e.g. "model:mace-mp-0")
-        - By task: "task:{task}"
-        You can use these keywords to filter files in the Figshare UI.
+        https://github.com/janosh/matbench-discovery.
         """.strip(),
         "defined_type": "dataset",
         "tags": [
