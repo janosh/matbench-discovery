@@ -77,6 +77,7 @@ metrics:
     κ_SRME: 1.725
   geo_opt:
     pred_file: models/orb/orb-mptrj-only-v2-20241014.json.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607427
     pred_col: orb_structure
     symprec=1e-5:
       rmsd: 0.0185 # Å
@@ -94,6 +95,7 @@ metrics:
       n_structures: 256614 # count
   discovery:
     pred_file: models/orb/orbff-mptrj-only-v2-20241014.csv.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607310
     pred_col: e_form_per_atom_orb
     full_test_set:
       F1: 0.755 # fraction

@@ -20,7 +20,7 @@
   export let metadata_cols = METADATA_COLS
 
   let show_pred_files_modal = false
-  let active_files: { name: string; path: string }[] = []
+  let active_files: { name: string; url: string }[] = []
   let active_model_name = ``
   let pred_file_modal: HTMLDialogElement | null = null
   let columns: HeatmapColumn[]
@@ -100,22 +100,16 @@
   }
 
   function get_pred_files(model: ModelData) {
-    const files: { name: string; path: string }[] = []
-    const raw_file_repo_url = `https://github.com/janosh/matbench-discovery/raw/main`
+    const files: { name: string; url: string }[] = []
 
     function find_pred_files(obj: object, parent_key = ``) {
       if (!obj || typeof obj !== `object`) return
 
       for (const [key, val] of Object.entries(obj)) {
-        if (
-          [`pred_file`, `pred_file_url`].includes(key) &&
-          val &&
-          typeof val === `string`
-        ) {
+        if (key == `pred_file_url` && val && typeof val === `string`) {
           // Get parent key without _pred_file suffix for label lookup
           const pretty_label = modeling_tasks[parent_key]?.label || parent_key
-          const path = val.startsWith(`http`) ? val : `${raw_file_repo_url}/${val}`
-          files.push({ name: pretty_label, path })
+          files.push({ name: pretty_label, url: val })
         } else if (typeof val === `object`) {
           find_pred_files(val, key)
         }
@@ -236,7 +230,7 @@
       {#each active_files as file}
         <li>
           <a
-            href={file.path}
+            href={file.url}
             target="_blank"
             rel="noopener noreferrer"
             on:click={() => (show_pred_files_modal = false)}

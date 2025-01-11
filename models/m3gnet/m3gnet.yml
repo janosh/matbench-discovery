@@ -58,6 +58,7 @@ metrics:
     κ_SRME: 1.412
   geo_opt:
     pred_file: models/m3gnet/2023-06-01-m3gnet-manual-sampling-wbm-IS2RE.json.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607415
     pred_col: m3gnet_structure
     symprec=1e-5:
       rmsd: 0.0217 # Å
@@ -75,6 +76,7 @@ metrics:
       n_structures: 256614 # count
   discovery:
     pred_file: models/m3gnet/2023-12-28-m3gnet-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607277
     pred_col: e_form_per_atom_m3gnet
     full_test_set:
       F1: 0.576 # fraction

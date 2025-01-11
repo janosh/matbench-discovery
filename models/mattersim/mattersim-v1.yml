@@ -124,11 +124,13 @@ metrics:
     κ_SRME: 0.574 # dimensionless
   geo_opt:
     pred_file: https://figshare.com/s/7604486e7e97b5a0014d
+    pred_file_url:
     pred_col:
   discovery:
     pred_file: models/mattersim/2024-12-16-mattersim-v1-5M-wbm-IS2RE.csv.gz
     # the original Graphormer-based replaced the M3GNet-based MatterSim on the leaderboard
     # pred_file: models/mattersim/2024-06-16-mattersim-graphormer-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607304
     pred_col: e_form_per_atom_mattersim
     full_test_set:
       F1: 0.838 # fraction
