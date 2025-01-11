@@ -81,6 +81,7 @@ metrics:
     κ_SRME: 0.767
   geo_opt:
     pred_file: models/sevennet/sevennet-0/2024-07-11-sevennet-0-relaxed-structures.json.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607418
     pred_col: sevennet_structure
     symprec=1e-5:
       rmsd: 0.0193 # Å
@@ -98,6 +99,7 @@ metrics:
       n_structures: 256614 # count
   discovery:
     pred_file: models/sevennet/sevennet-0/2024-07-11-sevennet-0-preds.csv.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607289
     pred_col: e_form_per_atom_sevennet
     full_test_set:
       F1: 0.719 # fraction

@@ -87,6 +87,7 @@ notes:
 metrics:
   geo_opt:
     pred_file: models/eqV2/eqV2-86M-omat-salex-mp.json.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607436
     pred_col: eqV2-86M-omat-mp-salex_structure
     symprec=1e-5:
       rmsd: 0.0138 # Å
@@ -104,6 +105,7 @@ metrics:
       n_structures: 256614 # count
   discovery:
     pred_file: models/eqV2/eqV2-m-omat-mp-salex.csv.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607316
     pred_col: e_form_per_atom_eqV2-86M-omat-mp-salex
     full_test_set:
       F1: 0.896 # fraction

@@ -91,6 +91,7 @@ metrics:
     κ_SRME: 1.665 # eqV2 S without denoising (no DeNS) achieves slightly worse κ_SRME=1.772
   geo_opt:
     pred_file: models/eqV2/eqV2-31M-dens-mp-p5.json.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607433
     pred_col: eqV2-31M-dens-MP-p5_structure
     symprec=1e-5:
       rmsd: 0.0138 # Å
@@ -108,6 +109,7 @@ metrics:
       n_structures: 256614 # count
   discovery:
     pred_file: models/eqV2/eqV2-s-dens-mp.csv.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607313
     pred_col: e_form_per_atom_eqV2-31M-dens-MP-p5
     full_test_set:
       F1: 0.798 # fraction

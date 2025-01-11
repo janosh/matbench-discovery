@@ -51,6 +51,7 @@ metrics:
   geo_opt: not available
   discovery:
     pred_file: models/alignn/2023-06-02-alignn-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607262
     pred_col: e_form_per_atom_alignn
     full_test_set:
       F1: 0.565 # fraction

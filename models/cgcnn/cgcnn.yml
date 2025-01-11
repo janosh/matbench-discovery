@@ -48,6 +48,7 @@ metrics:
   geo_opt: not applicable
   discovery:
     pred_file: models/cgcnn/2023-01-26-cgcnn-ens=10-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607271
     pred_col: e_form_per_atom_mp2020_corrected_pred_ens
     full_test_set:
       F1: 0.51 # fraction

@@ -54,6 +54,7 @@ metrics:
     κ_SRME: 0.525 # https://github.com/MPA2suite/k_SRME/pull/11/files
   geo_opt:
     pred_file: models/grace2l_r6/GRACE_2L_r6_11Nov2024_relaxed_structures.json.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607439
     pred_col: grace2l_r6_structure
     symprec=1e-5:
       rmsd: 0.0186 # Å
@@ -71,6 +72,7 @@ metrics:
       n_structures: 256513 # count
   discovery:
     pred_file: models/grace2l_r6/2024-11-21-MP_GRACE_2L_r6_11Nov2024-wbm-IS2RE-FIRE.csv.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607319
     pred_col: e_form_per_atom_grace
     full_test_set:
       F1: 0.687 # fraction

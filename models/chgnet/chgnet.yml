@@ -68,6 +68,7 @@ metrics:
     κ_SRME: 1.717
   geo_opt:
     pred_file: models/chgnet/2023-12-21-chgnet-0.3.0-wbm-IS2RE.json.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607412
     pred_col: chgnet_structure
     symprec=1e-5:
       rmsd: 0.0216 # Å
@@ -85,6 +86,7 @@ metrics:
       n_structures: 256614 # count
   discovery:
     pred_file: models/chgnet/2023-12-21-chgnet-0.3.0-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607268
     pred_col: e_form_per_atom_chgnet
     full_test_set:
       F1: 0.612 # fraction
