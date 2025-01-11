@@ -4,9 +4,9 @@
     MODEL_METADATA,
     TRAINING_SETS,
     get_metric_rank_order,
+    get_pred_file_urls,
     model_is_compliant,
   } from '$lib'
-  import modeling_tasks from '$pkg/modeling-tasks.yml'
   import { pretty_num } from 'elementari'
   import { METADATA_COLS, METRICS_COLS } from './metrics'
   import type { HeatmapColumn, ModelData } from './types'
@@ -99,27 +99,6 @@
     EFS_DM: `Energy with direct forces, stress, and magmoms`,
   }
 
-  function get_pred_files(model: ModelData) {
-    const files: { name: string; url: string }[] = []
-
-    function find_pred_files(obj: object, parent_key = ``) {
-      if (!obj || typeof obj !== `object`) return
-
-      for (const [key, val] of Object.entries(obj)) {
-        if (key == `pred_file_url` && val && typeof val === `string`) {
-          // Get parent key without _pred_file suffix for label lookup
-          const pretty_label = modeling_tasks[parent_key]?.label || parent_key
-          files.push({ name: pretty_label, url: val })
-        } else if (typeof val === `object`) {
-          find_pred_files(val, key)
-        }
-      }
-    }
-
-    find_pred_files(model.metrics)
-    return files
-  }
-
   const long_date = (date: string): string =>
     new Date(date).toLocaleDateString(undefined, {
       weekday: `long`,
@@ -161,7 +140,7 @@
           paper: model.paper || model.doi,
           repo: model.repo,
           pr_url: model.pr_url,
-          pred_files: { files: get_pred_files(model), name: model.model_name },
+          pred_files: { files: get_pred_file_urls(model), name: model.model_name },
         },
       }
     })

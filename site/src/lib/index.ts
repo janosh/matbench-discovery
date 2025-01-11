@@ -4,7 +4,6 @@ import rehypeStringify from 'rehype-stringify'
 import remarkParse from 'remark-parse'
 import remarkRehype from 'remark-rehype'
 import { unified } from 'unified'
-import type { ModelMetadata } from './model-schema'
 import type { ModelData } from './types'
 
 export { default as TRAINING_SETS } from '$data/training-sets.yml'
@@ -21,12 +20,12 @@ export { default as References } from './References.svelte'
 export * from './types'
 export { data_files }
 
-export function model_is_compliant(metadata: ModelMetadata): boolean {
-  if ((metadata.openness ?? `OSOD`) != `OSOD`) return false
+export function model_is_compliant(model: ModelData): boolean {
+  if ((model.openness ?? `OSOD`) != `OSOD`) return false
 
   const allowed_sets = [`MP 2022`, `MPtrj`, `MPF`, `MP Graphs`]
 
-  return metadata.training_set.every((itm) => allowed_sets.includes(itm))
+  return model.training_set.every((itm) => allowed_sets.includes(itm))
 }
 
 const model_metadata_files = import.meta.glob(`$root/models/[^_]**/[^_]*.yml`, {
@@ -85,4 +84,26 @@ export function get_metric_rank_order(metric: string) {
   if (all_higher_better.includes(metric)) return `higher`
   if (all_lower_better.includes(metric)) return `lower`
   return null
+}
+
+export function get_pred_file_urls(model: ModelData) {
+  // get all pred_file_url from model.metrics
+  const files: { name: string; url: string }[] = []
+
+  function find_pred_files(obj: object, parent_key = ``) {
+    if (!obj || typeof obj !== `object`) return
+
+    for (const [key, val] of Object.entries(obj)) {
+      if (key == `pred_file_url` && val && typeof val === `string`) {
+        // Get parent key without _pred_file suffix for label lookup
+        const pretty_label = modeling_tasks[parent_key]?.label || parent_key
+        files.push({ name: pretty_label, url: val })
+      } else if (typeof val === `object`) {
+        find_pred_files(val, key)
+      }
+    }
+  }
+
+  find_pred_files(model.metrics)
+  return files
 }

@@ -98,7 +98,7 @@
     />
     <ColorBar
       text="{current_model[0]} ({normalized ? `normalized` : `eV/atom`})"
-      text_side="top"
+      label_side="top"
       color_scale={color_scale[0]}
       tick_labels={5}
       range={cs_range}

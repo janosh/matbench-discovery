@@ -1,7 +1,7 @@
 import { HeatmapTable } from '$lib'
+import type { HeatmapColumn } from '$lib/types'
 import { tick } from 'svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
-import type { HeatmapColumn } from '../src/lib/types'
 
 describe(`HeatmapTable`, () => {
   const sample_data = [
