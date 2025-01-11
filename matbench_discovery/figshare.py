@@ -11,11 +11,14 @@ from tqdm import tqdm
 
 from matbench_discovery import ROOT
 
-with open(f"{ROOT}/site/.env") as file:
-    # TOKEN: length 128, alphanumeric (e.g. 271431c6a94ff7...)
-    TOKEN = file.read().split("figshare_token=")[1].split("\n")[0]
-
+ENV_PATH = f"{ROOT}/site/.env"
 BASE_URL = "https://api.figshare.com/v2"
+
+FIGSHARE_TOKEN = os.getenv("FIGSHARE_TOKEN")
+if not FIGSHARE_TOKEN and os.path.isfile(ENV_PATH):
+    with open(ENV_PATH) as file:
+        # TOKEN: length 128, alphanumeric (e.g. 271431c6a94ff7...)
+        FIGSHARE_TOKEN = file.read().split("figshare_token=")[1].split("\n")[0]
 
 
 def make_request(
@@ -35,7 +38,7 @@ def make_request(
     Raises:
         HTTPError: If the request fails. Error will contain the response body.
     """
-    headers = {"Authorization": f"token {TOKEN}"}
+    headers = {"Authorization": f"token {FIGSHARE_TOKEN}"}
     if data is not None and not binary:
         data = json.dumps(data)
     response = requests.request(method, url, headers=headers, data=data, timeout=10)
