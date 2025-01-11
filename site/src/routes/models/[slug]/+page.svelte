@@ -2,7 +2,7 @@
   import { dev } from '$app/environment'
   import TRAINING_SETS from '$data/training-sets.yml'
   import per_elem_each_errors from '$figs/per-element-each-errors.json'
-  import { PtableInset } from '$lib'
+  import { get_pred_file_urls, PtableInset } from '$lib'
   import pkg from '$site/package.json'
   import Icon from '@iconify/svelte'
   import type { ChemicalElement } from 'elementari'
@@ -20,6 +20,20 @@
   export let active_element: ChemicalElement | null = null
 
   $: model = data.model
+
+  let pred_files_details: HTMLDetailsElement | undefined
+
+  function handle_click_outside(event: MouseEvent) {
+    const target = event.target
+    // If click is outside the details element, close it
+    if (
+      pred_files_details &&
+      target instanceof Node &&
+      !pred_files_details.contains(target)
+    ) {
+      pred_files_details.open = false
+    }
+  }
 
   // TODO make this dynamic (static n_days_ago from time of last site build is misleading)
   function n_days_ago(dateString: string): string {
@@ -126,12 +140,45 @@
           <Icon icon="simple-icons:pypi" inline /> PyPI
         </a>
       {/if}
+      {#if model.pr_url}
+        <a href={model.pr_url} target="_blank" rel="noopener noreferrer">
+          <Icon icon="octicon:git-pull-request" inline /> PR
+        </a>
+      {/if}
+      {#if model.metrics}
+        {@const pred_files = get_pred_file_urls(model)}
+        {#if pred_files.length > 0}
+          <details
+            class="pred-files"
+            bind:this={pred_files_details}
+            on:toggle={(event) => {
+              if (event.target.open) {
+                // Add click outside listener when opening
+                window.addEventListener(`click`, handle_click_outside)
+              } else {
+                // Remove listener when closing
+                window.removeEventListener(`click`, handle_click_outside)
+              }
+            }}
+          >
+            <summary>
+              <Icon icon="octicon:graph" inline /> Predictions
+            </summary>
+            <div class="dropdown">
+              {#each pred_files as { name, url }}
+                <a href={url} target="_blank" rel="noopener noreferrer">
+                  {name}
+                </a>
+              {/each}
+            </div>
+          </details>
+        {/if}
+      {/if}
     </section>
 
     <!-- check if Plotly undefined needed for model-page.test.ts since vitest with JSDOM doesn't mock some Browser APIs that Plotly needs -->
     {#if typeof globalThis.Plotly != `undefined`}
       {#each [[`e-form`, `Formation Energies`], [`each`, `Convex Hull Distance`]] as [which_energy, title]}
-        {`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`}
         {#await import(`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`) then ParityPlot}
           <!-- negative margin-bottom corrects for display: none plot title -->
           <h3 style="margin-bottom: -2em;">
@@ -166,7 +213,7 @@
             unit="<small style='font-weight: lighter;'>eV / atom</small>"
           />
           <ColorBar
-            text_side="top"
+            label_side="top"
             color_scale={color_scale[0]}
             tick_labels={5}
             style="width: 85%; margin: 0 2em;"
@@ -176,7 +223,7 @@
     {/if}
 
     <section class="authors">
-      <h2>Authors</h2>
+      <h2>Model Authors</h2>
       <ol>
         {#each model.authors as author}
           <li>
@@ -367,7 +414,7 @@
     margin: 2em auto;
   }
 
-  .links a {
+  .links :is(a, summary) {
     display: inline-flex;
     align-items: center;
     gap: 5px;
@@ -376,6 +423,27 @@
     border-radius: 5px;
     text-decoration: none;
     color: lightgray;
+  }
+
+  .links details {
+    position: relative;
+    cursor: pointer;
+  }
+  .links .dropdown {
+    position: absolute;
+    margin-top: 5px;
+    background-color: var(--light-bg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    z-index: 3;
+    min-width: max-content;
+  }
+  .links .dropdown a {
+    display: block;
+    background: none;
+  }
+  .links .dropdown a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
   }
 
   li {
