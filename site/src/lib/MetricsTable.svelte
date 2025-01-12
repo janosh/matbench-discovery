@@ -8,6 +8,7 @@
     model_is_compliant,
   } from '$lib'
   import { pretty_num } from 'elementari'
+  import { click_outside } from 'svelte-zoo/actions'
   import { METADATA_COLS, METRICS_COLS } from './metrics'
   import type { HeatmapColumn, ModelData } from './types'
 
@@ -19,7 +20,6 @@
   export let hide_cols: string[] = []
   export let metadata_cols = METADATA_COLS
 
-  let show_pred_files_modal = false
   let active_files: { name: string; url: string }[] = []
   let active_model_name = ``
   let pred_file_modal: HTMLDialogElement | null = null
@@ -149,8 +149,8 @@
 
 <svelte:window
   on:keydown={(event) => {
-    if (event.key === `Escape` && show_pred_files_modal) {
-      show_pred_files_modal = false
+    if (event.key === `Escape` && pred_file_modal?.open) {
+      pred_file_modal.open = false
       event.preventDefault()
     }
   }}
@@ -181,7 +181,8 @@
           class="pred-files-btn"
           title="Download model prediction files"
           on:click={() => {
-            show_pred_files_modal = true
+            if (!pred_file_modal) return
+            pred_file_modal.open = true
             active_files = links.pred_files.files
             active_model_name = links.pred_files.name
           }}
@@ -195,11 +196,20 @@
   </svelte:fragment>
 </HeatmapTable>
 
-<dialog bind:this={pred_file_modal} open={show_pred_files_modal}>
+<dialog
+  bind:this={pred_file_modal}
+  use:click_outside={{
+    callback: () => {
+      if (pred_file_modal?.open) pred_file_modal.open = false
+    },
+  }}
+>
   <div class="modal-content">
     <button
       class="close-btn"
-      on:click={() => (show_pred_files_modal = false)}
+      on:click={() => {
+        if (pred_file_modal?.open) pred_file_modal.open = false
+      }}
       title="Close (or click escape)"
     >
       ×
@@ -208,12 +218,7 @@
     <ol class="pred-files-list">
       {#each active_files as file}
         <li>
-          <a
-            href={file.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            on:click={() => (show_pred_files_modal = false)}
-          >
+          <a href={file.url} target="_blank" rel="noopener noreferrer">
             {file.name}
           </a>
         </li>
