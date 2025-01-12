@@ -14,26 +14,13 @@
     TableInset,
   } from 'elementari'
   import { CopyButton, Tooltip } from 'svelte-zoo'
+  import { click_outside } from 'svelte-zoo/actions'
 
   export let data
   export let color_scale: string[] = [`Viridis`]
   export let active_element: ChemicalElement | null = null
 
   $: model = data.model
-
-  let pred_files_details: HTMLDetailsElement | undefined
-
-  function handle_click_outside(event: MouseEvent) {
-    const target = event.target
-    // If click is outside the details element, close it
-    if (
-      pred_files_details &&
-      target instanceof Node &&
-      !pred_files_details.contains(target)
-    ) {
-      pred_files_details.open = false
-    }
-  }
 
   // TODO make this dynamic (static n_days_ago from time of last site build is misleading)
   function n_days_ago(dateString: string): string {
@@ -150,15 +137,10 @@
         {#if pred_files.length > 0}
           <details
             class="pred-files"
-            bind:this={pred_files_details}
-            on:toggle={(event) => {
-              if (event.target.open) {
-                // Add click outside listener when opening
-                window.addEventListener(`click`, handle_click_outside)
-              } else {
-                // Remove listener when closing
-                window.removeEventListener(`click`, handle_click_outside)
-              }
+            use:click_outside={{
+              callback: (node) => {
+                if (node.open) node.open = false
+              },
             }}
           >
             <summary>

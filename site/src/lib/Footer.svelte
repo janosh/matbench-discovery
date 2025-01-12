@@ -1,26 +1,20 @@
 <script lang="ts">
   import { repository } from '$site/package.json'
   import Icon from '@iconify/svelte'
+  import { click_outside } from 'svelte-zoo/actions'
 
-  export let show_tips: boolean = false
   export let tips_title = `Usage Tips`
   export let dialog: HTMLDialogElement | null = null
   export let btn: HTMLButtonElement | null = null
 
-  function close_if_outside_click(event: MouseEvent) {
-    const is_outside = dialog && !dialog.contains(event.target as Node)
-    if (show_tips && is_outside && !btn.contains(event.target as Node)) {
-      show_tips = false
-    }
-  }
-
   function toggle(event: KeyboardEvent) {
-    if (event.key == `Escape`) show_tips = false
-    if (event.key == `j` && event.metaKey) show_tips = !show_tips
+    if (!dialog) return
+    if (event.key == `Escape`) dialog.open = false
+    if (event.key == `j` && event.metaKey) dialog.open = !dialog.open
   }
 </script>
 
-<svelte:window on:click={close_if_outside_click} on:keydown={toggle} />
+<svelte:window on:keydown={toggle} />
 
 <footer>
   <nav>
@@ -28,7 +22,9 @@
     <a href="mailto:janosh.riebesell@gmail.com?subject=Matbench Discovery">Contact</a>
     <a href="/changelog">Changelog</a>
     <button
-      on:click={() => (show_tips = true)}
+      on:click={() => {
+        if (dialog) dialog.open = true
+      }}
       bind:this={btn}
       title={tips_title}
       style="padding: 0; transform: scale(1.2);"
@@ -40,7 +36,14 @@
   &ensp;Matbench Discovery (2023)
 </footer>
 
-<dialog bind:this={dialog} open={show_tips}>
+<dialog
+  bind:this={dialog}
+  use:click_outside={{
+    callback: (node) => {
+      if (node.open) node.open = false
+    },
+  }}
+>
   <h3>{tips_title}</h3>
   <p title="For keyboard-only site navigation">
     <kbd>cmd</kbd> + <kbd>k</kbd> to bring up a nav palette.

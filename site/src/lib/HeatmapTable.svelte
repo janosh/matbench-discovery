@@ -106,7 +106,7 @@
         <tr class="group-header">
           {#each visible_columns as col}
             {#if !col.group}
-              <th />
+              <th></th>
             {:else}
               {@const group_cols = visible_columns.filter((c) => c.group === col.group)}
               {#if columns.indexOf(col) === columns.findIndex((c) => c.group === col.group)}
