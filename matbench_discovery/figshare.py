@@ -55,17 +55,22 @@ def make_request(
     return data
 
 
-def create_article(metadata: Mapping[str, Sequence[object]]) -> int:
+def create_article(
+    metadata: Mapping[str, Sequence[object]], *, verbose: bool = True
+) -> int:
     """Create a new Figshare article with given metadata and return the article ID.
 
     Args:
         metadata (dict): Article metadata including title, description, etc.
+        verbose (bool, optional): Whether to print the article URL and title.
+            Defaults to True.
 
     Returns:
         int: The ID of the created article.
     """
     result = make_request("POST", f"{BASE_URL}/account/articles", data=metadata)
-    print(f"Created article: {result['location']} with title {metadata['title']}\n")
+    if verbose:
+        print(f"Created article: {result['location']} with title {metadata['title']}\n")
     result = make_request("GET", result["location"])
     return result["id"]
 
@@ -77,7 +82,7 @@ def get_file_hash_and_size(
 
     Args:
         file_name (str): Path to the file.
-        chunk_size (int, optional): Size of chunks to read. Defaults to 10MB.
+        chunk_size (int, optional): Size of chunks to read in bytes. Defaults to 10MB.
 
     Returns:
         tuple[str, int]: MD5 hash and file size in bytes.

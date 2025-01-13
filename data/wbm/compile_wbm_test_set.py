@@ -57,7 +57,7 @@ os.makedirs(f"{WBM_DIR}/raw", exist_ok=True)
 for step, file_id in google_drive_ids.items():
     file_path = f"{WBM_DIR}/raw/wbm-structures-step-{step}.json.bz2"
 
-    if os.path.exists(file_path):
+    if os.path.isfile(file_path):
         print(f"{file_path} already exists, skipping")
         continue
 
@@ -68,7 +68,7 @@ for step, file_id in google_drive_ids.items():
 # %%
 summary_path = f"{WBM_DIR}/raw/wbm-summary.txt"
 
-if not os.path.exists(summary_path):
+if not os.path.isfile(summary_path):
     summary_id_file = "1639IFUG7poaDE2uB6aISUOi65ooBwCIg"
     summary_url = f"https://drive.google.com/u/0/uc?id={summary_id_file}"
     gdown.download(summary_url, summary_path)
@@ -181,7 +181,7 @@ for filename in (
     *(f"step_{step}.json.bz2" for step in range(1, 6)),
 ):
     file_path = f"{WBM_DIR}/raw/wbm-cse-{filename.lower().replace('_', '-')}"
-    if os.path.exists(file_path):
+    if os.path.isfile(file_path):
         print(f"{file_path} already exists, skipping")
         continue
 

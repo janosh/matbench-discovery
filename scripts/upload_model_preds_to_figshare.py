@@ -31,8 +31,8 @@ with open(f"{PKG_DIR}/modeling-tasks.yml") as file:
 # Maps modeling tasks to their Figshare article IDs. New figshare articles will be
 # created if the ID is None. Be sure to paste the new article ID into the
 # FIGSHARE_ARTICLE_IDS dict below! It'll be printed by this script.
-ARTICLE_URL_PREFIX = "https://figshare.com/articles/dataset"
-FIGSHARE_ARTICLE_IDS = {
+ARTICLE_URL_PREFIX: Final = "https://figshare.com/articles/dataset"
+FIGSHARE_ARTICLE_IDS: Final[dict[str, int | None]] = {
     "discovery": 28187990,
     "geo_opt": 28187999,
     "phonons": None,
