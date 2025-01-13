@@ -14,7 +14,7 @@
     TableInset,
   } from 'elementari'
   import { CopyButton, Tooltip } from 'svelte-zoo'
-  import { click_outside } from 'svelte-zoo/actions'
+  import { click_outside, titles_as_tooltips } from 'svelte-zoo/actions'
 
   export let data
   export let color_scale: string[] = [`Viridis`]
@@ -101,34 +101,72 @@
     </section>
 
     <section class="links">
-      <a href={model.repo} target="_blank" rel="noopener noreferrer">
+      <a
+        href={model.repo}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="View source code repository"
+        use:titles_as_tooltips
+      >
         <Icon icon="octicon:mark-github" inline /> Repo
       </a>
-      <a href={model.paper} target="_blank" rel="noopener noreferrer">
+      <a
+        href={model.paper}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Read model paper"
+        use:titles_as_tooltips
+      >
         <Icon icon="ion:ios-paper" inline /> Paper
       </a>
       {#if model.url}
-        <a href={model.url} target="_blank" rel="noopener noreferrer">
+        <a
+          href={model.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="View model documentation"
+          use:titles_as_tooltips
+        >
           <Icon icon="ion:ios-globe" inline /> Docs
         </a>
       {/if}
-      <a href={model.doi} target="_blank" rel="noopener noreferrer">
+      <a
+        href={model.doi}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Digital Object Identifier"
+        use:titles_as_tooltips
+      >
         <Icon icon="academicons:doi" inline /> DOI
       </a>
       <a
         href={`${pkg.repository}/blob/-/models/${model.dirname?.split(`/`).pop()}`}
         target="_blank"
         rel="noopener noreferrer"
+        title="Browse model submission files"
+        use:titles_as_tooltips
       >
         <Icon icon="octicon:file-directory" inline /> Files
       </a>
       {#if model.pypi}
-        <a href={model.pypi} target="_blank" rel="noopener noreferrer">
+        <a
+          href={model.pypi}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Python package on PyPI"
+          use:titles_as_tooltips
+        >
           <Icon icon="simple-icons:pypi" inline /> PyPI
         </a>
       {/if}
       {#if model.pr_url}
-        <a href={model.pr_url} target="_blank" rel="noopener noreferrer">
+        <a
+          href={model.pr_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="View pull request"
+          use:titles_as_tooltips
+        >
           <Icon icon="octicon:git-pull-request" inline /> PR
         </a>
       {/if}
@@ -143,7 +181,7 @@
               },
             }}
           >
-            <summary>
+            <summary title="Download model prediction files" use:titles_as_tooltips>
               <Icon icon="octicon:graph" inline /> Predictions
             </summary>
             <div class="dropdown">

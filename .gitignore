@@ -24,7 +24,7 @@ paper/figs/*.pdf*
 
 # slurm + Weights and Biases logs
 wandb/
-models/**/*slurm-*.log
+models/**/*.log
 
 # model checkpoints
 models/**/*.model

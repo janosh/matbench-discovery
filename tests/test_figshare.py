@@ -1,7 +1,8 @@
 """Unit tests for Figshare API helper functions."""
 
+from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
@@ -33,13 +34,20 @@ def test_make_request(content: bytes, expected: Any, binary: bool) -> None:
 
 
 @pytest.mark.parametrize(
-    "error_content",
-    [b"Not found", b'{"error": "Invalid token"}', b""],
+    "error_content,status_code",
+    [
+        (b"Not found", 404),
+        (b'{"error": "Invalid token"}', 401),
+        (b"", 500),
+        (b'{"message": "Rate limit exceeded"}', 429),
+    ],
 )
-def test_make_request_errors(error_content: bytes) -> None:
-    """Test make_request error handling."""
-    mock_response = MagicMock(content=error_content)
-    mock_response.raise_for_status.side_effect = requests.HTTPError()
+def test_make_request_errors(error_content: bytes, status_code: int) -> None:
+    """Test make_request error handling with various HTTP error codes."""
+    mock_response = MagicMock(content=error_content, status_code=status_code)
+    mock_response.raise_for_status.side_effect = requests.HTTPError(
+        response=mock_response
+    )
 
     with (
         patch("requests.request", return_value=mock_response),
@@ -55,19 +63,20 @@ def test_make_request_errors(error_content: bytes) -> None:
     [
         ({"title": "Test Article"}, 12345),
         ({"title": "Test", "description": "Desc"}, 67890),
+        ({"title": "Test", "tags": ["tag1", "tag2"]}, 11111),
+        ({"title": "Test", "categories": [1, 2], "keywords": ["key"]}, 22222),
     ],
 )
 def test_create_article_variants(
-    metadata: dict[str, str], article_id: int, capsys: pytest.CaptureFixture
+    metadata: dict[str, Any], article_id: int, capsys: pytest.CaptureFixture
 ) -> None:
-    """Test article creation with different metadata."""
+    """Test article creation with different metadata combinations."""
     with patch(
         "matbench_discovery.figshare.make_request",
         side_effect=[{"location": "loc"}, {"id": article_id}],
     ):
-        assert create_article(metadata) == article_id
+        assert create_article(metadata, verbose=True) == article_id
 
-        # Check printed output
         stdout, stderr = capsys.readouterr()
         assert stdout == f"Created article: loc with title {metadata['title']}\n\n"
         assert stderr == ""
@@ -79,35 +88,33 @@ def test_create_article_variants(
         (b"test data", 9, "eb733a00c0c9d336e65691a37ab54293"),
         (b"", 0, "d41d8cd98f00b204e9800998ecf8427e"),  # Empty
         (b"hello world", 11, "5eb63bbbe01eeed093cb22bb8f5acdc3"),  # Regular
+        (b"a" * 1000, 1000, "cabe45dcc9ae5b66ba86600cca6b8ba8"),  # Large
     ],
 )
 def test_get_file_hash_and_size_variants(
-    test_data: bytes, expected_size: int, expected_md5: str
+    test_data: bytes,
+    expected_size: int,
+    expected_md5: str,
+    tmp_path: Path,
 ) -> None:
     """Test file hash and size calculation with different file contents."""
-    with patch("builtins.open", mock_open(read_data=test_data)):
-        md5, size = get_file_hash_and_size("test_file")
-        assert size == expected_size
-        assert md5 == expected_md5
+    test_file = tmp_path / "test_file"
+    test_file.write_bytes(test_data)
+
+    md5, size = get_file_hash_and_size(str(test_file))
+    assert size == expected_size
+    assert md5 == expected_md5
 
 
-def test_get_file_hash_and_size_large_file() -> None:
+def test_get_file_hash_and_size_large_file(tmp_path: Path) -> None:
     """Test hash and size calculation for large files using chunked reading."""
     chunks = [b"chunk1", b"chunk2", b"chunk3"]
-    mock_file = MagicMock(
-        __enter__=MagicMock(
-            return_value=MagicMock(read=MagicMock(side_effect=[*chunks, b""]))
-        )
-    )
+    test_file = tmp_path / "large_file"
+    test_file.write_bytes(b"".join(chunks))
 
-    with patch("builtins.open", return_value=mock_file):
-        md5, size = get_file_hash_and_size("test_file", chunk_size=5)
-        assert size == sum(len(chunk) for chunk in chunks)
-        assert md5 == "2aca0a9378723b1bed59975523ed50cd"
-
-        read_calls = mock_file.__enter__().read.call_args_list
-        assert all(call.args[0] == 5 for call in read_calls)
-        assert len(read_calls) == len(chunks) + 1  # +1 for EOF check
+    md5, size = get_file_hash_and_size(str(test_file), chunk_size=5)
+    assert size == sum(len(chunk) for chunk in chunks)
+    assert md5 == "2aca0a9378723b1bed59975523ed50cd"
 
 
 @pytest.mark.parametrize(
@@ -119,10 +126,19 @@ def test_get_file_hash_and_size_large_file() -> None:
             {"partNo": 2, "startOffset": 5, "endOffset": 9},
         ],
         [{"partNo": 1, "startOffset": 0, "endOffset": 0}],  # Empty file
+        [  # Many small parts
+            {"partNo": idx + 1, "startOffset": idx * 2, "endOffset": (idx + 1) * 2 - 1}
+            for idx in range(50)
+        ],
     ],
 )
-def test_upload_file_to_figshare_variants(file_parts: list[dict[str, int]]) -> None:
+def test_upload_file_to_figshare_variants(
+    file_parts: list[dict[str, int]], tmp_path: Path
+) -> None:
     """Test file upload with different file parts configurations."""
+    test_file = tmp_path / "upload_test_file"
+    test_file.write_bytes(b"test data")
+
     mock_responses = {
         "POST": {"location": "file_location"},
         "GET": {"id": 67890, "upload_url": "upload_url", "parts": file_parts},
@@ -135,15 +151,7 @@ def test_upload_file_to_figshare_variants(file_parts: list[dict[str, int]]) -> N
             return {"parts": file_parts}
         return mock_responses[method]
 
-    with (
-        patch(
-            "matbench_discovery.figshare.make_request",
-            side_effect=mock_make_request,
-        ),
-        patch(
-            "matbench_discovery.figshare.get_file_hash_and_size",
-            return_value=("hash", 10),
-        ),
-        patch("builtins.open", mock_open(read_data=b"test data")),
+    with patch(
+        "matbench_discovery.figshare.make_request", side_effect=mock_make_request
     ):
-        assert upload_file_to_figshare(12345, "test_file") == 67890
+        assert upload_file_to_figshare(12345, str(test_file)) == 67890

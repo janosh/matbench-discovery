@@ -137,9 +137,9 @@
         Targets: targets_str,
         'Date Added': `<span title="${long_date(model.date_added)}">${model.date_added}</span>`,
         Links: {
-          paper: model.paper || model.doi,
-          repo: model.repo,
-          pr_url: model.pr_url,
+          paper: { url: model.paper || model.doi, title: `Read model paper`, icon: `📄` },
+          repo: { url: model.repo, title: `View source code`, icon: `📦` },
+          pr_url: { url: model.pr_url, title: `View pull request`, icon: `🔗` },
           pred_files: { files: get_pred_file_urls(model), name: model.model_name },
         },
       }
@@ -160,22 +160,13 @@
   <svelte:fragment slot="cell" let:col let:val>
     {#if col.label === `Links` && val}
       {@const links = val}
-      {#if links.paper}
-        <a href={links.paper} target="_blank" rel="noopener noreferrer" title="Paper"
-          >📄</a
-        >
-      {/if}
-      {#if links.repo}
-        <a href={links.repo} target="_blank" rel="noopener noreferrer" title="Code">📦</a>
-      {/if}
-      {#if links.pr_url}
-        <a
-          href={links.pr_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Pull Request">🔗</a
-        >
-      {/if}
+      {#each [links.paper, links.repo, links.pr_url] as link}
+        {#if link?.url}
+          <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title}>
+            {link.icon}
+          </a>
+        {/if}
+      {/each}
       {#if links.pred_files}
         <button
           class="pred-files-btn"
