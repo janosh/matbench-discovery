@@ -4,15 +4,35 @@ import hashlib
 import json
 import os
 from collections.abc import Mapping, Sequence
-from typing import Any
+from typing import Any, Final
 
 import requests
 from tqdm import tqdm
 
 from matbench_discovery import ROOT
 
-ENV_PATH = f"{ROOT}/site/.env"
-BASE_URL = "https://api.figshare.com/v2"
+ENV_PATH: Final[str] = f"{ROOT}/site/.env"
+BASE_URL: Final[str] = "https://api.figshare.com/v2"
+
+# Maps modeling tasks to their Figshare article IDs. New figshare articles will be
+# created if the ID is None. Be sure to paste the new article ID into the
+# ARTICLE_IDS dict below! It'll be printed by this script.
+ARTICLE_URL_PREFIX: Final = "https://figshare.com/articles/dataset"
+DOWNLOAD_URL_PREFIX: Final = "https://figshare.com/ndownloader/files"
+ARTICLE_IDS: Final[dict[str, int | None]] = {
+    "model_preds_discovery": 28187990,
+    "model_preds_geo_opt": 28187999,
+    "model_preds_phonons": None,
+    "data_files": 22715158,
+}
+
+# category IDs can be found at https://api.figshare.com/v2/categories
+CATEGORIES: Final[dict[int, str]] = {
+    25162: "Structure and dynamics of materials",
+    25144: "Inorganic materials (incl. nanomaterials)",
+    25186: "Cheminformatics and Quantitative Structure-Activity Relationships",
+}
+
 
 FIGSHARE_TOKEN = os.getenv("FIGSHARE_TOKEN")
 if not FIGSHARE_TOKEN and os.path.isfile(ENV_PATH):
@@ -96,7 +116,7 @@ def get_file_hash_and_size(
     return md5.hexdigest(), size
 
 
-def upload_file_to_figshare(article_id: int, file_path: str) -> int:
+def upload_file(article_id: int, file_path: str) -> int:
     """Upload a file to Figshare and return the file ID.
 
     Args:
@@ -129,3 +149,50 @@ def upload_file_to_figshare(article_id: int, file_path: str) -> int:
     # Complete upload
     make_request("POST", f"{endpoint}/{file_info['id']}")
     return file_info["id"]
+
+
+def article_exists(article_id: int | str) -> bool:
+    """Check if a Figshare article exists and is accessible.
+
+    Args:
+        article_id (int | str): The ID or URL of the article to check.
+
+    Returns:
+        bool: True if the article exists and is accessible, False otherwise.
+    """
+    article_url = (
+        f"{BASE_URL}/account/articles/{article_id}"
+        if isinstance(article_id, int)
+        else article_id
+    )
+    try:
+        make_request("GET", article_url)
+    except requests.HTTPError as exc:
+        if exc.response.status_code == 404:
+            return False
+        exc.add_note(f"{article_url=}")
+        raise
+    else:
+        return True
+
+
+def list_article_files(article_id: int) -> list[dict[str, Any]]:
+    """Get a list of files in a Figshare article.
+
+    Args:
+        article_id (int): ID of the article to list files from.
+
+    Returns:
+        list[dict[str, Any]]: List of file information dictionaries. Each dictionary
+            contains keys like 'name', 'id', 'size', 'computed_md5', etc.
+            Empty list if article doesn't exist.
+
+    Raises:
+        requests.HTTPError: If the request fails for any reason other than 404.
+    """
+    try:
+        return make_request("GET", f"{BASE_URL}/account/articles/{article_id}/files")
+    except requests.HTTPError as exc:
+        if exc.response.status_code == 404:
+            return []
+        raise

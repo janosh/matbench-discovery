@@ -290,6 +290,7 @@ class DataFiles(Files):
     mp_elemental_ref_entries = "mp/2023-02-07-mp-elemental-reference-entries.json.gz"
     mp_energies = "mp/2023-01-10-mp-energies.csv.gz"
     mp_patched_phase_diagram = "mp/2023-02-07-ppd-mp.pkl.gz"
+    mp_trj_json_gz = "mp/2022-09-16-mp-trj.json.gz"
     mp_trj_extxyz = "mp/2024-09-03-mp-trj.extxyz.zip"
     # snapshot of every task (calculation) in MP as of 2023-03-16 (14 GB)
     all_mp_tasks = "mp/2023-03-16-all-mp-tasks.zip"
@@ -305,14 +306,20 @@ class DataFiles(Files):
     )
     wbm_summary = "wbm/2023-12-13-wbm-summary.csv.gz"
     alignn_checkpoint = "2023-06-02-pbenner-best-alignn-model.pth.zip"
-    mp_trj = "mp/2022-09-16-mp-trj.json"
+    phonondb_pbe_structures = "phonons/2024-11-09-phononDB-PBE-103-structures.extxyz"
 
     @functools.cached_property
     def yaml(self) -> dict[str, dict[str, str]]:
         """YAML data associated with the file."""
         yaml_path = f"{PKG_DIR}/data-files.yml"
+
         with open(yaml_path) as file:
-            return yaml.safe_load(file)
+            yaml_data = yaml.safe_load(file)
+
+        if self.name not in yaml_data:
+            raise ValueError(f"{self.name=} not found in {yaml_path}")
+
+        return yaml_data
 
     @property
     def url(self) -> str:

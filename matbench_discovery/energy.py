@@ -76,7 +76,7 @@ mp_elem_ref_entries = (
 )
 
 # tested to agree with TRI's MP reference energies
-# https://github.com/TRI-AMDD/CAMD/blob/1c965cba636531e542f4821a555b98b2d81ed034/camd/utils/data.py#L134
+# https://github.com/TRI-AMDD/CAMD/blob/1c965cba636/camd/utils/data.py#L134
 mp_elemental_ref_energies = {
     elem: entry.energy_per_atom for elem, entry in mp_elem_ref_entries.items()
 }
