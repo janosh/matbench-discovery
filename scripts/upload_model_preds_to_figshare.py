@@ -1,4 +1,5 @@
-"""Upload model prediction files from all models to a Figshare article.
+"""Upload model prediction files for different modeling tasks and different models to
+Figshare articles via API.
 
 This script creates/updates a Figshare article containing model predictions from all
 models in the Matbench Discovery benchmark. This includes both energy predictions and
@@ -8,6 +9,7 @@ ML-relaxed structures.
 import argparse
 import hashlib
 import os
+import tomllib
 from collections.abc import Sequence
 from typing import Final
 
@@ -15,28 +17,16 @@ import requests
 import yaml
 from tqdm import tqdm
 
+import matbench_discovery.figshare as figshare
 from matbench_discovery import PKG_DIR, ROOT
 from matbench_discovery.data import Model, round_trip_yaml
-from matbench_discovery.figshare import (
-    BASE_URL,
-    create_article,
-    make_request,
-    upload_file_to_figshare,
-)
 from matbench_discovery.models import MODEL_METADATA
 
 with open(f"{PKG_DIR}/modeling-tasks.yml") as file:
     MODELING_TASKS: Final = yaml.safe_load(file)
 
-# Maps modeling tasks to their Figshare article IDs. New figshare articles will be
-# created if the ID is None. Be sure to paste the new article ID into the
-# FIGSHARE_ARTICLE_IDS dict below! It'll be printed by this script.
-ARTICLE_URL_PREFIX: Final = "https://figshare.com/articles/dataset"
-FIGSHARE_ARTICLE_IDS: Final[dict[str, int | None]] = {
-    "discovery": 28187990,
-    "geo_opt": 28187999,
-    "phonons": None,
-}
+with open(f"{ROOT}/pyproject.toml", mode="rb") as toml_file:
+    pyproject = tomllib.load(toml_file)["project"]
 
 
 def get_file_hash_and_size(
@@ -55,7 +45,9 @@ def get_file_hash_and_size(
 def get_existing_files(article_id: int) -> dict[str, tuple[int, str]]:
     """Get a mapping of filenames to (file_id, md5) for files already in the article."""
     try:
-        files = make_request("GET", f"{BASE_URL}/account/articles/{article_id}/files")
+        files = figshare.make_request(
+            "GET", f"{figshare.BASE_URL}/account/articles/{article_id}/files"
+        )
         return {file["name"]: (file["id"], file["computed_md5"]) for file in files}
     except requests.HTTPError as exc:
         if exc.response.status_code == 404:
@@ -113,17 +105,8 @@ def get_article_metadata(task: str) -> dict[str, Sequence[object]]:
         https://github.com/janosh/matbench-discovery.
         """.strip(),
         "defined_type": "dataset",
-        "tags": [
-            "materials-science",
-            "machine-learning",
-            "crystal-structure-prediction",
-            f"task-{task}",
-        ],
-        "categories": [
-            25162,  # Structure and dynamics of materials
-            25144,  # Inorganic materials (incl. nanomaterials)
-            25186,  # Cheminformatics and Quantitative Structure-Activity Relationships
-        ],
+        "tags": [*pyproject["keywords"], f"task-{task}"],
+        "categories": list(figshare.CATEGORIES),
     }
 
 
@@ -131,19 +114,15 @@ def update_one_modeling_task_article(
     task: str, models: list[str], *, dry_run: bool = False
 ) -> None:
     """Update or create a Figshare article for a modeling task."""
-    article_id = FIGSHARE_ARTICLE_IDS[task]
+    article_id = figshare.ARTICLE_IDS[f"model_preds_{task}"]
 
     if article_id is not None:
         # Check if article exists and is accessible
-        try:
-            make_request("GET", f"{BASE_URL}/account/articles/{article_id}")
+        if figshare.article_exists(article_id):
             print(f"\nFound existing article for {task} task with ID {article_id}")
-        except requests.HTTPError as exc:
-            if exc.response.status_code == 404:
-                print(f"\nArticle {article_id} for {task} task not found")
-                article_id = None
-            else:
-                raise
+        else:
+            print(f"\nArticle {article_id} for {task} task not found")
+            article_id = None
 
     if article_id is None:
         if dry_run:
@@ -151,13 +130,13 @@ def update_one_modeling_task_article(
             article_id = 0
         else:
             metadata = get_article_metadata(task)
-            article_id = create_article(metadata)
+            article_id = figshare.create_article(metadata)
             print(
                 f"\n⚠️ Created new Figshare article for {task=} with {article_id=}"
                 f"\nUpdate FIGSHARE_ARTICLE_IDS in {__file__} with this ID!"
             )
 
-    article_url = f"{ARTICLE_URL_PREFIX}/{article_id}"
+    article_url = f"{figshare.ARTICLE_URL_PREFIX}/{article_id}"
     print(f"Updating article with ID {article_id} at {article_url}")
 
     if dry_run:
@@ -171,7 +150,7 @@ def update_one_modeling_task_article(
 
     pbar = tqdm(models)
     for model_name in pbar:
-        model = getattr(Model, model_name)
+        model: Model = getattr(Model, model_name)
         if not os.path.isfile(model.yaml_path):
             print(
                 f"Warning: missing model metadata file {model.yaml_path}, skipping..."
@@ -208,7 +187,7 @@ def update_one_modeling_task_article(
         if filename in existing_files:
             file_id, stored_hash = existing_files[filename]
             if file_hash == stored_hash:
-                file_url = f"https://figshare.com/ndownloader/files/{file_id}"
+                file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
                 uploaded_files[filename] = file_url
                 # Update model metadata if URL not present
                 if "pred_file_url" not in metric_data:
@@ -220,8 +199,8 @@ def update_one_modeling_task_article(
         if dry_run:
             file_url = "DRY_RUN_URL"
         else:
-            file_id = upload_file_to_figshare(article_id, file_path)
-            file_url = f"https://figshare.com/ndownloader/files/{file_id}"
+            file_id = figshare.upload_file(article_id, file_path)
+            file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
 
         uploaded_files[filename] = file_url
         new_files[filename] = file_url
@@ -232,7 +211,7 @@ def update_one_modeling_task_article(
 
         # Save updated model metadata if changed
         if model_updated and not dry_run:
-            with open(model.yaml_path, "w") as file:
+            with open(model.yaml_path, mode="w") as file:
                 round_trip_yaml.dump(model_data, file)
 
     print(f"\nTotal files: {len(uploaded_files)}")
@@ -255,19 +234,20 @@ def main(args: Sequence[str] | None = None) -> int:
     parsed_args = parse_args(args)
     models_to_update = parsed_args.models or sorted(MODEL_METADATA)
     tasks_to_update = parsed_args.tasks
+    if dry_run := parsed_args.dry_run:
+        print("\nDry run mode - no files will be uploaded")
     print(f"Updating {len(models_to_update)} models: {', '.join(models_to_update)}")
     print(f"Updating {len(tasks_to_update)} tasks: {', '.join(tasks_to_update)}")
 
     for task in tasks_to_update:
         try:
-            update_one_modeling_task_article(
-                task, models_to_update, dry_run=parsed_args.dry_run
-            )
+            update_one_modeling_task_article(task, models_to_update, dry_run=dry_run)
         except Exception as exc:  # prompt to delete article if something went wrong
-            msg = f"Upload failed for {task=}"
-            if model_name := locals().get("model_name", ""):
-                msg += f" and {model_name=}"
-            exc.add_note(msg)
+            state = {
+                key: locals().get(key)
+                for key in ("task", "model_name", "models_to_update", "tasks_to_update")
+            }
+            exc.add_note(f"Upload failed with {state=}")
             raise
 
     return 0

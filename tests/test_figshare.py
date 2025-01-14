@@ -7,12 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from matbench_discovery.figshare import (
-    create_article,
-    get_file_hash_and_size,
-    make_request,
-    upload_file_to_figshare,
-)
+import matbench_discovery.figshare as figshare
 
 
 @pytest.mark.parametrize(
@@ -30,7 +25,7 @@ def test_make_request(content: bytes, expected: Any, binary: bool) -> None:
     mock_response = MagicMock(content=content)
 
     with patch("requests.request", return_value=mock_response):
-        assert make_request("GET", "test_url", binary=binary) == expected
+        assert figshare.make_request("GET", "test_url", binary=binary) == expected
 
 
 @pytest.mark.parametrize(
@@ -49,13 +44,42 @@ def test_make_request_errors(error_content: bytes, status_code: int) -> None:
         response=mock_response
     )
 
+    err_msg = f"body={error_content.decode()}"
     with (
         patch("requests.request", return_value=mock_response),
-        pytest.raises(requests.HTTPError) as exc_info,
+        pytest.raises(requests.HTTPError, match=err_msg),
     ):
-        make_request("GET", "test_url")
+        figshare.make_request("GET", "test_url")
 
-    assert f"body={error_content.decode()}" in str(exc_info.value.__notes__)
+
+@pytest.mark.parametrize("status_code,expected", [(200, True), (404, False)])
+def test_article_exists(status_code: int, expected: bool) -> None:
+    """Test true and false case for article_exists."""
+    mock_response = MagicMock(content=b'{"id": 12345}')
+    if status_code != 200:
+        mock_response.raise_for_status.side_effect = requests.HTTPError(
+            response=MagicMock(status_code=status_code)
+        )
+
+    with patch("requests.request", return_value=mock_response):
+        assert figshare.article_exists(12345) == expected
+
+
+# Various error codes that should raise exceptions
+@pytest.mark.parametrize("status_code", [401, 403, 500, 503])
+def test_article_exists_errors(status_code: int) -> None:
+    """Test article_exists raises exceptions for non-404 errors."""
+    mock_response = MagicMock()
+    mock_response.raise_for_status.side_effect = requests.HTTPError(
+        response=MagicMock(status_code=status_code)
+    )
+
+    err_msg = "article_url='https://api.figshare.com/v2/account/articles/12345'"
+    with (
+        patch("requests.request", return_value=mock_response),
+        pytest.raises(requests.HTTPError, match=err_msg),
+    ):
+        figshare.article_exists(12345)
 
 
 @pytest.mark.parametrize(
@@ -75,7 +99,7 @@ def test_create_article_variants(
         "matbench_discovery.figshare.make_request",
         side_effect=[{"location": "loc"}, {"id": article_id}],
     ):
-        assert create_article(metadata, verbose=True) == article_id
+        assert figshare.create_article(metadata, verbose=True) == article_id
 
         stdout, stderr = capsys.readouterr()
         assert stdout == f"Created article: loc with title {metadata['title']}\n\n"
@@ -101,7 +125,7 @@ def test_get_file_hash_and_size_variants(
     test_file = tmp_path / "test_file"
     test_file.write_bytes(test_data)
 
-    md5, size = get_file_hash_and_size(str(test_file))
+    md5, size = figshare.get_file_hash_and_size(str(test_file))
     assert size == expected_size
     assert md5 == expected_md5
 
@@ -112,7 +136,7 @@ def test_get_file_hash_and_size_large_file(tmp_path: Path) -> None:
     test_file = tmp_path / "large_file"
     test_file.write_bytes(b"".join(chunks))
 
-    md5, size = get_file_hash_and_size(str(test_file), chunk_size=5)
+    md5, size = figshare.get_file_hash_and_size(str(test_file), chunk_size=5)
     assert size == sum(len(chunk) for chunk in chunks)
     assert md5 == "2aca0a9378723b1bed59975523ed50cd"
 
@@ -154,4 +178,44 @@ def test_upload_file_to_figshare_variants(
     with patch(
         "matbench_discovery.figshare.make_request", side_effect=mock_make_request
     ):
-        assert upload_file_to_figshare(12345, str(test_file)) == 67890
+        assert figshare.upload_file(12345, str(test_file)) == 67890
+
+
+DUMMY_FILES = [
+    {"name": "file1.txt", "id": 1, "md5": "abc123", "size": 100, "status": "ok"},
+    {"name": "file2.txt", "id": 2, "md5": "def456", "size": 200, "status": "ok"},
+]
+
+
+@pytest.mark.parametrize("files", [[], DUMMY_FILES])  # Empty and non-empty
+def test_list_article_files(files: list[dict[str, Any]]) -> None:
+    """Test list_article_files with various file configurations."""
+    with patch("matbench_discovery.figshare.make_request", return_value=files):
+        assert figshare.list_article_files(12345) == files
+
+
+def test_list_article_files_errors(capsys: pytest.CaptureFixture) -> None:
+    """Test list_article_files HTTP error handling."""
+    mock_response = MagicMock()
+    mock_response.raise_for_status.side_effect = requests.HTTPError(
+        response=MagicMock(status_code=404)
+    )
+
+    with patch("requests.request", return_value=mock_response):
+        # should return empty list for 404 errors
+        assert figshare.list_article_files(12345) == []
+
+    stdout, stderr = capsys.readouterr()
+    assert stdout == stderr == ""
+
+    for status_code in (401, 403, 500, 503):
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = requests.HTTPError(
+            response=MagicMock(status_code=status_code)
+        )
+
+        with (
+            patch("requests.request", return_value=mock_response),
+            pytest.raises(requests.HTTPError, match="\nbody="),
+        ):
+            figshare.list_article_files(12345)

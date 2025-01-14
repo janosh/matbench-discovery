@@ -12,7 +12,7 @@ The decision to abort testing ALIGNN FF was made after weeks of work due to ongo
 
 ## Fine-tuning
 
-We attempted fine-tuning the [`alignnff_wt10` checkpoint](https://github.com/usnistgov/alignn/blob/461b35fe6e5ed7ade7cbf9b345773e941371ecfc/alignn/ff/alignnff_wt10/best_model.pt).
+We attempted fine-tuning the [`alignnff_wt10` checkpoint](https://github.com/usnistgov/alignn/blob/461b35fe/alignn/ff/alignnff_wt10/best_model.pt).
 
 The patch `alignn-ff-2023.07.05.patch` fixes the following issue:
 

@@ -4,7 +4,7 @@
 
 # MPtrj Target Distributions
 
-The MPtrj training set for universal potentials <a href={data_files.mp_trj.figshare}>available on figshare</a>
+The MPtrj training set for universal potentials <a href={data_files.mp_trj_json_gz.figshare}>available on figshare</a>
 contains
 
 - 1,580,395 structures

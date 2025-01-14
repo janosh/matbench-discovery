@@ -6,13 +6,15 @@ authors = [{ name = "Janosh Riebesell", email = "janosh.riebesell@gmail.com" }]
 readme = "readme.md"
 license = { file = "license" }
 keywords = [
-  "Bayesian optimization",
-  "convex hull",
-  "high-throughput search",
-  "inorganic crystal stability",
+  "force field",
+  "geometry optimization",
+  "high-throughput crystal structure stability prediction",
   "interatomic potential",
+  "lattice vibrations",
   "machine learning",
   "materials discovery",
+  "phonons",
+  "thermal conductivity",
 ]
 classifiers = [
   "Intended Audience :: Science/Research",

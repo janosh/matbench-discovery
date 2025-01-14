@@ -28,7 +28,7 @@ __date__ = "2023-08-10"
 
 # %% convert MPtrj pymatgen Structure to ASE Atoms with Structure.properties mapped
 # to Atoms.info
-with gzip.open(DataFiles.mp_trj.path, mode="rt") as file:
+with gzip.open(DataFiles.mp_trj_json_gz.path, mode="rt") as file:
     mptrj_data = json.load(file)
 
 mptrj_atoms_list: list[Atoms] = []

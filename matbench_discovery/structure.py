@@ -61,13 +61,6 @@ def analyze_symmetry(
     """
     import moyopy
 
-    sym_key_map = {
-        "number": Key.spg_num,
-        "hall_number": Key.hall_num,
-        "site_symmetry_symbols": MbdKey.international_spg_name,
-        "wyckoffs": Key.wyckoff_symbols,
-    }
-
     results: dict[str, dict[str, str | int | list[str]]] = {}
     iterator = structures.items()
     if pbar:
@@ -79,12 +72,12 @@ def analyze_symmetry(
         )
 
     for struct_key, struct in iterator:
-        cell = moyopy.Cell(
+        moyo_cell = moyopy.Cell(
             struct.lattice.matrix, struct.frac_coords, struct.atomic_numbers
         )
 
         sym_data = moyopy.MoyoDataset(
-            cell, symprec=symprec, angle_tolerance=angle_tolerance
+            moyo_cell, symprec=symprec, angle_tolerance=angle_tolerance
         )
 
         if sym_data is None:
@@ -96,9 +89,10 @@ def analyze_symmetry(
         hall_symbol_entry = moyopy.HallSymbolEntry(hall_number=sym_data.hall_number)
 
         sym_info = {
-            new_key: getattr(sym_data, old_key)
-            for old_key, new_key in sym_key_map.items()
-        } | {
+            Key.spg_num: sym_data.number,
+            Key.hall_num: sym_data.hall_number,
+            MbdKey.international_spg_name: sym_data.site_symmetry_symbols,
+            Key.wyckoff_symbols: sym_data.wyckoffs,
             Key.n_sym_ops: sym_ops.num_operations,
             Key.n_rot_syms: len(sym_ops.rotations),
             Key.n_trans_syms: len(sym_ops.translations),
