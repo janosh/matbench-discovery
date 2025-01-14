@@ -176,3 +176,40 @@ def test_analyze_symmetry_primitive_vs_conventional(cubic_struct: Structure) -> 
         df_primitive.drop(columns=cols_to_drop),
         check_index_type=False,
     )
+
+
+def test_analyze_symmetry_with_ase_atoms(cubic_struct: Structure) -> None:
+    """Test analyze_symmetry with ASE Atoms objects."""
+    from ase import Atoms
+    from ase.spacegroup import crystal
+
+    # Create an ASE Atoms object (simple cubic Cu)
+    a = 3.6
+    atoms = crystal("Cu", [(0, 0, 0)], spacegroup=225, cellpar=[a, a, a, 90, 90, 90])
+    assert isinstance(atoms, Atoms)
+
+    # Test with both Structure and Atoms
+    df_ase = analyze_symmetry({"ase": atoms})
+
+    assert len(df_ase) == 1
+    assert df_ase.index.name == Key.mat_id
+    assert isinstance(df_ase[Key.spg_num].iloc[0], int)
+    assert isinstance(df_ase[Key.n_sym_ops].iloc[0], int)
+
+    # Test mixed dictionary of Structure and Atoms
+    df_mixed = analyze_symmetry({"pmg": cubic_struct, "ase": atoms})
+    assert len(df_mixed) == 2
+    assert df_mixed.index.tolist() == ["pmg", "ase"]
+    assert all(isinstance(x, int) for x in df_mixed[Key.spg_num])
+    assert all(isinstance(x, int) for x in df_mixed[Key.n_sym_ops])
+
+    # should give same results for Structure and equivalent Atoms
+    cubic_atoms = cubic_struct.to_ase_atoms()
+
+    df_struct = analyze_symmetry({"struct": cubic_struct})
+    df_atoms = analyze_symmetry({"atoms": cubic_atoms})
+
+    # Reset index to avoid index name mismatch in frame comparison
+    df_struct.index = df_atoms.index
+
+    pd.testing.assert_frame_equal(df_struct, df_atoms)
