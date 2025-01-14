@@ -1,5 +1,5 @@
 model_name: EScAIP # required (this must match the model's label which is the 3rd arg in the matbench_discovery.preds.Model enum)
-model_key: EScAIP # this should match the name of the YAML file and determines the URL /models/<model_key> on which details of the model are displayed on the website
+model_key: escaip # this should match the name of the YAML file and determines the URL /models/<model_key> on which details of the model are displayed on the website
 model_version: 1.0.0 # required
 matbench_discovery_version: 1.0 # required
 date_added: "2025-01-14" # required
@@ -8,12 +8,10 @@ authors: # required (only name, other keys are optional)
     affiliation: University of California, Berkeley
     email: ericqu@berkeley.edu
     url: https://ericqu.site
-    role: Model
   - name: Aditi S. Krishnapriyan
     affiliation: University of California, Berkeley
     email: aditik1@berkeley.edu
     url: https://a1k12.github.io/
-    role: Model
     corresponding: true
 repo: https://github.com/ASK-Berkeley/EScAIP
 url: https://github.com/ASK-Berkeley/EScAIP

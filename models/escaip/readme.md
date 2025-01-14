@@ -1,8 +1,8 @@
 # EScAIP: Efficiently Scaled Attention Interatomic Potential
 
-EScAIP is an NNIP architecture designed to be scalable and efficient. EScAIP leverages a novel multi-head self-attention mechanism within graph neural networks, applied at the neighbor level, to enhance expressivity while maintaining computational efficiency. We submitted the model trained on MPTrj, without using denoising objectives.
+EScAIP is an NNIP architecture designed to be scalable and efficient. It leverages a novel multi-head self-attention mechanism within graph neural networks, to enhance expressivity while maintaining computational efficiency. We submitted the model trained on MPTrj, without using denoising objectives.
 
-The code and checkpoints can be found in [out repo](https://github.com/ASK-Berkeley/EScAIP). Our model is heavily based on [FAIRChem](https://github.com/FAIR-Chem/fairchem). All testing and evaluation scripts follows the FAIRChem settings ([ref](models/eqV2)).
+The code and checkpoints can be found in [our repo](https://github.com/ASK-Berkeley/EScAIP). Our model is heavily based on [FAIRChem](https://github.com/FAIR-Chem/fairchem). All testing and evaluation scripts follows the FAIRChem settings ([ref](/models/eqV2)).
 
 ```bib
 @inproceedings{
