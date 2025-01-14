@@ -11,6 +11,7 @@
   import { ColorScaleSelect } from 'elementari'
   import Select from 'svelte-multiselect'
   import type { Snapshot } from './$types'
+  import DataFilesDirectDownload from './data-files-direct-download.md'
   import MpElementalReferenceEnergies from './mp-elemental-reference-energies.md'
   import MPtrjElemCountsPtable from './mptrj/MPtrjElemCountsPtable.svelte'
 
@@ -39,6 +40,8 @@
     restore: (values) => ({ color_scale, log, count_mode } = values),
   }
 </script>
+
+<DataFilesDirectDownload />
 
 <DataReadme>
   <svelte:fragment slot="hist-e-form-per-atom">

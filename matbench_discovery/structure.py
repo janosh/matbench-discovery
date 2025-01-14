@@ -50,31 +50,38 @@ def analyze_symmetry(
     """Analyze symmetry of a dictionary of structures using moyopy.
 
     Args:
-        structures (dict[str, Structure]): Map material IDs to pymatgen Structures
+        structures (dict[str, Structure | Atoms]): Map of material IDs to pymatgen
+            Structures or ASE Atoms objects
         pbar (bool | dict[str, str], optional): Whether to show progress bar.
             Defaults to True.
         symprec (float, optional): Symmetry precision of moyopy. Defaults to 1e-2.
-        angle_tolerance (float, optional): Angle tol. of moyopy. Defaults to -1.
+        angle_tolerance (float, optional): Angle tolerance of moyopy (in radians unlike
+            spglib which uses degrees!). Defaults to None.
 
     Returns:
         pd.DataFrame: DataFrame containing symmetry information for each structure
     """
     import moyopy
+    from moyopy.interface import MoyoAdapter
 
     results: dict[str, dict[str, str | int | list[str]]] = {}
     iterator = structures.items()
     if pbar:
         pbar_kwargs = pbar if isinstance(pbar, dict) else {}
-        iterator = tqdm(
-            iterator,
-            total=len(structures),
-            **dict(desc="Analyzing symmetry") | pbar_kwargs,
-        )
+        pbar_kwargs.setdefault("desc", "Analyzing symmetry")
+        iterator = tqdm(iterator, total=len(structures), **pbar_kwargs)
 
     for struct_key, struct in iterator:
-        moyo_cell = moyopy.Cell(
-            struct.lattice.matrix, struct.frac_coords, struct.atomic_numbers
-        )
+        structure_type = type(struct).__name__
+        adaptor = {
+            "Structure": MoyoAdapter.from_structure,
+            "Atoms": MoyoAdapter.from_atoms,
+            "MSONAtoms": MoyoAdapter.from_atoms,
+        }.get(structure_type)
+        if adaptor is None:
+            raise ValueError(f"Unsupported {structure_type=}")
+
+        moyo_cell = adaptor(struct)
 
         sym_data = moyopy.MoyoDataset(
             moyo_cell, symprec=symprec, angle_tolerance=angle_tolerance
