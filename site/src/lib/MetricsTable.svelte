@@ -20,8 +20,7 @@
   export let hide_cols: string[] = []
   export let metadata_cols = METADATA_COLS
 
-  let active_files: { name: string; url: string }[] = []
-  let active_model_name = ``
+  let active_files: { name: string; url: string; model?: string }[] = []
   let pred_file_modal: HTMLDialogElement | null = null
   let columns: HeatmapColumn[]
   $: columns = [...METRICS_COLS, ...(show_metadata ? metadata_cols : [])].map((col) => ({
@@ -116,7 +115,7 @@
     .map((model) => {
       const metrics = model.metrics?.discovery?.[discovery_set]
 
-      const targets = model.targets.replace(/_(.)/g, `<sub>$1</sub>`)
+      const targets = model.targets?.replace(/_(.)/g, `<sub>$1</sub>`)
       const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
 
       // rename metric keys to pretty labels
@@ -139,8 +138,8 @@
         Links: {
           paper: { url: model.paper || model.doi, title: `Read model paper`, icon: `📄` },
           repo: { url: model.repo, title: `View source code`, icon: `📦` },
-          pr_url: { url: model.pr_url, title: `View pull request`, icon: `🔗` },
-          pred_files: { files: get_pred_file_urls(model), name: model.model_name },
+          pr: { url: model.pr_url, title: `View pull request`, icon: `🔗` },
+          pred_files: get_pred_file_urls(model),
         },
       }
     })
@@ -160,27 +159,30 @@
   <svelte:fragment slot="cell" let:col let:val>
     {#if col.label === `Links` && val}
       {@const links = val}
-      {#each [links.paper, links.repo, links.pr_url] as link}
+      {#each [links.paper, links.repo, links.pr] as link}
         {#if link?.url}
           <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title}>
             {link.icon}
           </a>
         {/if}
       {/each}
-      {#if links.pred_files}
+      {#if Object.values(links.pred_files).some((file) => file?.url)}
         <button
           class="pred-files-btn"
           title="Download model prediction files"
           on:click={() => {
             if (!pred_file_modal) return
             pred_file_modal.open = true
-            active_files = links.pred_files.files
-            active_model_name = links.pred_files.name
+            active_files = links.pred_files
           }}
         >
           📊
         </button>
       {/if}
+    {:else if typeof val === `number` && col.format}
+      {pretty_num(val, col.format)}
+    {:else if [undefined, null].includes(val)}
+      n/a
     {:else}
       {@html val}
     {/if}
@@ -205,7 +207,7 @@
     >
       ×
     </button>
-    <h3>Download prediction files for {active_model_name}</h3>
+    <h3>Download prediction files for {active_files[0]?.model}</h3>
     <ol class="pred-files-list">
       {#each active_files as file}
         <li>
