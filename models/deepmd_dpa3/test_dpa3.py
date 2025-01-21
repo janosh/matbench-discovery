@@ -6,12 +6,11 @@ from __future__ import annotations
 
 import pickle
 from pathlib import Path
-from typing import Any
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from ase import Atoms
     import numpy as np
+    from ase import Atoms
 import pandas as pd
 from ase.constraints import ExpCellFilter
 from ase.optimize import FIRE
