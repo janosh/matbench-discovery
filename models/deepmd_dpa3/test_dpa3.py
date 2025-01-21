@@ -1,4 +1,6 @@
-# Theoritically, one can use the test code of sevennet or mace to test a DP model. For convinience, we used dflow to orchestrate the tests, below are the core functions.
+# Theoritically, one can use the test code of sevennet or mace to test a DP model. 
+# For convinience, we used dflow to orchestrate the tests.
+# Below are the core functions.
 
 from __future__ import annotations
 
@@ -6,12 +8,12 @@ import pickle
 from pathlib import Path
 from typing import Any
 
-import ase
+from ase import Atoms
 import numpy as np
 import pandas as pd
 from ase.constraints import ExpCellFilter
 from ase.optimize import FIRE
-from deepmd.calculator import DP as DPCalculator
+from deepmd.calculator import DP
 from pymatgen.core.structure import Molecule, Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 from tqdm import tqdm
@@ -43,10 +45,10 @@ class Relaxer:
         model: str | Path,
         optimizer: str | None = "FIRE",
         relax_cell: bool | None = True,
-    ):
+    ) -> None:
         if isinstance(model, Path):
             try:
-                self.calculator = DPCalculator(model)
+                self.calculator = DP(model)
             except Exception as e:
                 raise ValueError(f"DP calculator load failed: {e}")
         else:
@@ -56,7 +58,7 @@ class Relaxer:
         self.relax_cell = relax_cell
         self.ase_adaptor = AseAtomsAdaptor()
 
-    def relax(self, atoms, fmax: float, steps: int, traj_file: str = None):
+    def relax(self, atoms: Atoms, fmax: float, steps: int, traj_file: str = None):
         if isinstance(atoms, (Structure, Molecule)):
             atoms = self.ase_adaptor.get_atoms(atoms)
 
@@ -84,7 +86,7 @@ class TrajectoryObserver:
     intermediate structures
     """
 
-    def __init__(self, atoms: ase.Atoms):
+    def __init__(self, atoms: Atoms) -> None:
         """
         Args:
             atoms (Atoms): the structure to observe
@@ -96,7 +98,7 @@ class TrajectoryObserver:
         self.atom_positions: list[np.ndarray] = []
         self.cells: list[np.ndarray] = []
 
-    def __call__(self):
+    def __call__(self) -> None:
         """
         The logic for saving the properties of an Atoms during the relaxation
         Returns:
@@ -167,7 +169,7 @@ def relax_run(
     return df_out
 
 
-def relax_structures(inputs: list[str], model: Path) -> {res}:
+def relax_structures(inputs: list[str], model: Path) -> dict[str, Path]:
     relaxer = Relaxer(model=model, optimizer="FIRE")
 
     ret_df = relax_run(inputs, model="dp", relaxer=relaxer, fmax=0.05, steps=500)
