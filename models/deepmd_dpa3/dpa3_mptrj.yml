@@ -3,6 +3,7 @@ model_key: dp
 model_version: v0.1 # 2025-01-10
 matbench_discovery_version: 1.3.1 # required
 date_added: "2025-01-10" # required
+date_published: "2025-01-10" # required
 authors: # required (only name, other keys are optional)
   - name: Duo Zhang
     affiliation: AI for Science Institute, Beijing
@@ -27,6 +28,9 @@ trained_by:
     orcid: https://orcid.org/0000-0001-9591-2659
 repo: https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha # required
 url: https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha
+doi: https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha # to be released soon
+paper: https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha # to be released soon
+pr_url: https://github.com/janosh/matbench-discovery/pull/192
 trained_for_benchmark: true # required
 
 train_task: S2EFS
@@ -86,6 +90,7 @@ notes:
 metrics:
   discovery:
     pred_file: models/deepmd_dpa3/2025-01-10-dpa3-mptrj-pred.csv.gz
+    pred_file_url: https://bohrium-api.dp.tech/ds-dl/matbench-submit-dpa3-mptrj-relaxed-bf04-v1.zip
     pred_col: e_form_per_atom_dp
     full_test_set:
       F1: 0.757 # fraction
