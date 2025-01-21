@@ -5,6 +5,7 @@ from __future__ import annotations
 import pickle
 from pathlib import Path
 
+from typing import Any, Optional
 import ase
 import numpy as np
 import pandas as pd
@@ -40,8 +41,8 @@ class Relaxer:
     def __init__(
         self,
         model: str | Path,
-        optimizer: str | None = "FIRE",
-        relax_cell: bool | None = True,
+        optimizer: Optional[str] = "FIRE",
+        relax_cell: Optional[bool] = True,
     ):
         if isinstance(model, Path):
             try:
@@ -111,10 +112,9 @@ class TrajectoryObserver:
         calculate the energy, here we just use the potential energy
         Returns:
         """
-        energy = self.atoms.get_potential_energy()
-        return energy
+        return self.atoms.get_potential_energy()
 
-    def save(self, filename: str):
+    def save(self, filename: str) -> None:
         """
         Save the trajectory to file
         Args:
@@ -137,7 +137,7 @@ class TrajectoryObserver:
 
 def relax_run(
     fpth: str, model: str, relaxer: Relaxer, fmax: float = 0.05, steps: int = 500
-):
+) -> pd.DataFrame:
     task_type = Task.IS2RE
 
     df_in = pd.read_json(fpth)
@@ -167,7 +167,7 @@ def relax_run(
     return df_out
 
 
-def relax_structures(inputs, model) -> {res}:
+def relax_structures(inputs:list[str], model:Path) -> {res}:
     relaxer = Relaxer(model=model, optimizer="FIRE")
 
     ret_df = relax_run(inputs, model="dp", relaxer=relaxer, fmax=0.05, steps=500)
