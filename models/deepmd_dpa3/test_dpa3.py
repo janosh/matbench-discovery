@@ -22,11 +22,6 @@ from tqdm import tqdm
 from matbench_discovery.data import as_dict_handler
 from matbench_discovery.enums import Task
 
-OPTIMIZERS = {
-    "FIRE": FIRE,
-}
-
-
 class Relaxer:
     """Wrapper for ase.Atoms
 
@@ -34,28 +29,22 @@ class Relaxer:
     ----------
     model: Path
         DP model, a path to the freezed model is needed.
-    optimizer: str
-        The optimizer from ASE, supports `FIRE`,
-    relax_cell: bool
-        Whether to relax cell with `ExpCellFilter`.
     """
 
     def __init__(
         self,
         model: Path,
-        optimizer: str | None = "FIRE",
-        relax_cell: bool | None = True,
+        
     ) -> None:
         if isinstance(model, Path):
             try:
                 self.calculator = DP(model)
             except Exception as e:
-                raise ValueError(f"DP calculator load failed: {e}")
+                print(f"DP calculator load failed: {e}")
         else:
             raise NotImplementedError("Only DP calculators are supported.")
 
-        self.optimizer = OPTIMIZERS[optimizer]
-        self.relax_cell = relax_cell
+        self.optimizer = FIRE
         self.ase_adaptor = AseAtomsAdaptor()
 
     def relax(
@@ -64,10 +53,9 @@ class Relaxer:
         if isinstance(atoms, Structure) or isinstance(atoms, Molecule):
             atoms = self.ase_adaptor.get_atoms(atoms)
 
-        atoms.set_calculator(self.calculator)
+        atoms.calc = self.calculator
         obs = TrajectoryObserver(atoms)
-        if self.relax_cell:
-            atoms = ExpCellFilter(atoms)
+        atoms = ExpCellFilter(atoms)
         opt = self.optimizer(atoms)
         opt.attach(obs)
         opt.run(fmax=fmax, steps=steps)
@@ -171,10 +159,10 @@ def relax_run(
     return df_out
 
 
-def relax_structures(input: str, model: Path) -> dict[str, Path]:
+def relax_structures(input_dir: str, model: Path) -> dict[str, Path]:
     relaxer = Relaxer(model=model, optimizer="FIRE")
 
-    ret_df = relax_run(input, model="dp", relaxer=relaxer, fmax=0.05, steps=500)
+    ret_df = relax_run(input_dir, model="dp", relaxer=relaxer, fmax=0.05, steps=500)
     ret_df.reset_index().to_json("out.json.gz", default_handler=as_dict_handler)
     return {"res": Path("out.json.gz")}
 
