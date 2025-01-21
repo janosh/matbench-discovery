@@ -51,7 +51,7 @@ class Relaxer:
     def relax(
         self, atoms: Atoms, fmax: float, steps: int, traj_file: str | None = None
     ) -> dict[str, Any]:
-        if isinstance(atoms, (Structure,Molecule)):
+        if isinstance(atoms, (Structure, Molecule)):
             atoms = self.ase_adaptor.get_atoms(atoms)
 
         atoms.calc = self.calculator
