@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pickle
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -19,7 +19,8 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from tqdm import tqdm
 
 from matbench_discovery.data import as_dict_handler
-from matbench_discovery.enums import Key, Task
+from matbench_discovery.enums import Task
+from pymatviz.enums import Key
 
 OPTIMIZERS = {
     "FIRE": FIRE,
@@ -58,8 +59,8 @@ class Relaxer:
         self.ase_adaptor = AseAtomsAdaptor()
 
     def relax(
-        self, atoms: Atoms, fmax: float, steps: int, traj_file: str = None
-    ) -> dict:
+        self, atoms: Atoms, fmax: float, steps: int, traj_file: Optional[str] = None
+    ) -> dict[str, Any]:
         if isinstance(atoms, Structure) or isinstance(atoms, Molecule):
             atoms = self.ase_adaptor.get_atoms(atoms)
 
@@ -170,10 +171,10 @@ def relax_run(
     return df_out
 
 
-def relax_structures(inputs: list[str], model: Path) -> dict[str, Path]:
+def relax_structures(input: str, model: Path) -> dict[str, Path]:
     relaxer = Relaxer(model=model, optimizer="FIRE")
 
-    ret_df = relax_run(inputs, model="dp", relaxer=relaxer, fmax=0.05, steps=500)
+    ret_df = relax_run(input, model="dp", relaxer=relaxer, fmax=0.05, steps=500)
     ret_df.reset_index().to_json("out.json.gz", default_handler=as_dict_handler)
     return {"res": Path("out.json.gz")}
 
@@ -222,4 +223,6 @@ if __name__ == "__main__":
         "./data/wbm_data_39.json",
     ]
 
-    relax_structures(input_dirs, Path("./2025-01-10-dpa3-openlam.pth"))
+    # this actually runs in parallel on multiple Nodes, orchestrated by dflow
+    for input_dir in input_dirs:
+        relax_structures(input_dir, Path("./2025-01-10-dpa3-openlam.pth"))
