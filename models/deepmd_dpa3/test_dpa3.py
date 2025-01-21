@@ -22,6 +22,7 @@ from tqdm import tqdm
 from matbench_discovery.data import as_dict_handler
 from matbench_discovery.enums import Task
 
+
 class Relaxer:
     """Wrapper for ase.Atoms
 
@@ -34,7 +35,6 @@ class Relaxer:
     def __init__(
         self,
         model: Path,
-        
     ) -> None:
         if isinstance(model, Path):
             try:
