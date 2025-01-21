@@ -31,9 +31,8 @@ class Relaxer:
 
     Parameters:
     ----------
-    model: Union[Path, str]
-        Indicates which calculator to use during relaxation, `mace` will call default MACE-medium model,
-        for DP model, a path to the freezed model is needed.
+    model: Path
+        DP model, a path to the freezed model is needed.
     optimizer: str
         The optimizer from ASE, supports `FIRE`,
     relax_cell: bool
@@ -42,7 +41,7 @@ class Relaxer:
 
     def __init__(
         self,
-        model: str | Path,
+        model: Path,
         optimizer: str | None = "FIRE",
         relax_cell: bool | None = True,
     ) -> None:
@@ -58,8 +57,8 @@ class Relaxer:
         self.relax_cell = relax_cell
         self.ase_adaptor = AseAtomsAdaptor()
 
-    def relax(self, atoms: Atoms, fmax: float, steps: int, traj_file: str = None):
-        if isinstance(atoms, (Structure, Molecule)):
+    def relax(self, atoms: Atoms, fmax: float, steps: int, traj_file: str = None) -> dict:
+        if isinstance(atoms, Structure) or isinstance(atoms, Molecule):
             atoms = self.ase_adaptor.get_atoms(atoms)
 
         atoms.set_calculator(self.calculator)
