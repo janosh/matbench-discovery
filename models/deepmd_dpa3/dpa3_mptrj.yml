@@ -27,6 +27,7 @@ trained_by:
     orcid: https://orcid.org/0000-0001-9591-2659
 repo: https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha # required
 url: https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha
+trained_for_benchmark: true # required
 
 train_task: S2EFS
 test_task: IS2RE-SR
