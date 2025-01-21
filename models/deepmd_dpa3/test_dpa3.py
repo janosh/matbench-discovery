@@ -1,5 +1,5 @@
-# Theoritically, one can use the test code of sevennet or mace to test a DP model.
-# For convinience, we used dflow to orchestrate the tests.
+# Theoretically, one can use the test code of sevennet or mace to test a DP model.
+# For convenience, we used dflow to orchestrate the tests.
 # Below are the core functions.
 
 from __future__ import annotations
