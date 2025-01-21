@@ -95,10 +95,10 @@ training_set: [OMat24, MPtrj, sAlex, Alex] # need to update to OpenLAM
 
 notes:
   Description: |
-    DPA3 is an advanced graph neural network based interatomic potential that facilitates large-scale molecular dynamics simulations.
-    Developed as a foundational large atomic model (LAM) within the DeePMD-kit framework (available at https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha),
-    DPA3 is designed to handle datasets from diverse disciplines together, including various chemical and materials systems, enabling multi-task training across different domains.
-    Through its sophisticated model design, DPA3 achieves excellent fitting and in/out-of-domain generalization accuracy, while maintaining energy conservation and second-order continuity.
+    DPA3 is an advanced interatomic potential leveraging the message passing architecture, implemented within the DeePMD-kit framework, available at GitHub(https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha). 
+    Designed as a large atomic model (LAM), DPA3 is tailored to integrate and simultaneously train on datasets from various disciplines, encompassing diverse chemical and materials systems across different research domains. 
+    Its model design ensures exceptional fitting accuracy and robust generalization both within and beyond the training domain. 
+    Furthermore, DPA3 maintains energy conservation and respects the physical symmetries of the potential energy surface, making it a dependable tool for a wide range of scientific applications.
 metrics:
   discovery:
     pred_file: models/deepmd_dpa3/2025-01-10-dpa3-openlam-preds.csv.gz
