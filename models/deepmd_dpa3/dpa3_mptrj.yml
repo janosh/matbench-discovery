@@ -67,7 +67,6 @@ hyperparams:
   batch_size: 64 # 16 (gpus) * 4 (batch per gpu) = 64 (total batch size)
   epochs: 160 # round1 80 + round2 80
 
-
 requirements:
   torch: 2.3.1
   torch-geometric: 2.5.2
@@ -79,9 +78,9 @@ training_set: [MPtrj]
 
 notes:
   Description: |
-    DPA3 is an advanced graph neural network based interatomic potential that facilitates large-scale molecular dynamics simulations. 
-    Developed as a foundational large atomic model (LAM) within the DeePMD-kit framework (available at https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha), 
-    DPA3 is designed to handle datasets from diverse disciplines together, including various chemical and materials systems, enabling multi-task training across different domains. 
+    DPA3 is an advanced graph neural network based interatomic potential that facilitates large-scale molecular dynamics simulations.
+    Developed as a foundational large atomic model (LAM) within the DeePMD-kit framework (available at https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha),
+    DPA3 is designed to handle datasets from diverse disciplines together, including various chemical and materials systems, enabling multi-task training across different domains.
     Through its sophisticated model design, DPA3 achieves excellent fitting and in/out-of-domain generalization accuracy, while maintaining energy conservation and second-order continuity.
 metrics:
   discovery:

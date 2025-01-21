@@ -2,23 +2,21 @@
 
 from __future__ import annotations
 
-from matbench_discovery.enums import Key, Task
-import ase
-from pymatgen.io.ase import AseAtomsAdaptor
-import numpy as np
-from pymatgen.core.structure import Molecule, Structure
-from deepmd.calculator import DP as DPCalculator
-from ase.optimize import FIRE
-
-import torch
-from ase.constraints import ExpCellFilter
 import pickle
-from typing import Optional, Union
 from pathlib import Path
 
+import ase
+import numpy as np
 import pandas as pd
+from ase.constraints import ExpCellFilter
+from ase.optimize import FIRE
+from deepmd.calculator import DP as DPCalculator
+from pymatgen.core.structure import Molecule, Structure
+from pymatgen.io.ase import AseAtomsAdaptor
 from tqdm import tqdm
+
 from matbench_discovery.data import as_dict_handler
+from matbench_discovery.enums import Key, Task
 
 OPTIMIZERS = {
     "FIRE": FIRE,
@@ -34,16 +32,16 @@ class Relaxer:
         Indicates which calculator to use during relaxation, `mace` will call default MACE-medium model,
         for DP model, a path to the freezed model is needed.
     optimizer: str
-        The optimizer from ASE, supports `FIRE`, 
+        The optimizer from ASE, supports `FIRE`,
     relax_cell: bool
         Whether to relax cell with `ExpCellFilter`.
     """
 
     def __init__(
         self,
-        model: Union[str, Path],
-        optimizer: Optional[str] = "FIRE",
-        relax_cell: Optional[bool] = True,
+        model: str | Path,
+        optimizer: str | None = "FIRE",
+        relax_cell: bool | None = True,
     ):
         if isinstance(model, Path):
             try:
@@ -51,10 +49,7 @@ class Relaxer:
             except Exception as e:
                 raise ValueError(f"DP calculator load failed: {e}")
         else:
-            raise NotImplementedError(
-                "Only DP calculators are supported."
-            )
-
+            raise NotImplementedError("Only DP calculators are supported.")
 
         self.optimizer = OPTIMIZERS[optimizer]
         self.relax_cell = relax_cell
@@ -80,6 +75,7 @@ class Relaxer:
             "final_structure": self.ase_adaptor.get_structure(atoms).as_dict(),
             "trajectory": obs,
         }
+
 
 class TrajectoryObserver:
     """
@@ -138,7 +134,10 @@ class TrajectoryObserver:
                 f,
             )
 
-def relax_run(fpth: str, model: str, relaxer: Relaxer, fmax: float = 0.05, steps: int = 500):
+
+def relax_run(
+    fpth: str, model: str, relaxer: Relaxer, fmax: float = 0.05, steps: int = 500
+):
     task_type = Task.IS2RE
 
     df_in = pd.read_json(fpth)
@@ -167,15 +166,8 @@ def relax_run(fpth: str, model: str, relaxer: Relaxer, fmax: float = 0.05, steps
     df_out.index.name = Key.mat_id
     return df_out
 
-import os
-from pathlib import Path
-from dflow import Step, Workflow, upload_artifact
-from dflow.plugins.dispatcher import DispatcherExecutor
-from dflow.python import OP, Artifact, PythonOPTemplate, Slices
 
-
-def relax_structures(inputs, model) -> {"res"}:
-    
+def relax_structures(inputs, model) -> {res}:
     relaxer = Relaxer(model=model, optimizer="FIRE")
 
     ret_df = relax_run(inputs, model="dp", relaxer=relaxer, fmax=0.05, steps=500)
@@ -184,16 +176,47 @@ def relax_structures(inputs, model) -> {"res"}:
 
 
 if __name__ == "__main__":
-    input_dirs = ["./data/wbm_data_0.json", "./data/wbm_data_1.json", "./data/wbm_data_2.json", "./data/wbm_data_3.json", "./data/wbm_data_4.json", "./data/wbm_data_5.json",
-                "./data/wbm_data_6.json", "./data/wbm_data_7.json", "./data/wbm_data_8.json", "./data/wbm_data_9.json", "./data/wbm_data_10.json", "./data/wbm_data_11.json",
-                "./data/wbm_data_12.json", "./data/wbm_data_13.json", "./data/wbm_data_14.json", "./data/wbm_data_15.json", "./data/wbm_data_16.json", "./data/wbm_data_17.json",
-                "./data/wbm_data_18.json", "./data/wbm_data_19.json", "./data/wbm_data_20.json", "./data/wbm_data_21.json", "./data/wbm_data_22.json", "./data/wbm_data_23.json",
-                "./data/wbm_data_24.json","./data/wbm_data_25.json","./data/wbm_data_26.json",
-                 "./data/wbm_data_27.json","./data/wbm_data_28.json", "./data/wbm_data_29.json",
-                 "./data/wbm_data_30.json","./data/wbm_data_31.json","./data/wbm_data_32.json",
-                 "./data/wbm_data_33.json","./data/wbm_data_34.json","./data/wbm_data_35.json",
-                 "./data/wbm_data_36.json","./data/wbm_data_37.json",
-                 "./data/wbm_data_38.json","./data/wbm_data_39.json"]
+    input_dirs = [
+        "./data/wbm_data_0.json",
+        "./data/wbm_data_1.json",
+        "./data/wbm_data_2.json",
+        "./data/wbm_data_3.json",
+        "./data/wbm_data_4.json",
+        "./data/wbm_data_5.json",
+        "./data/wbm_data_6.json",
+        "./data/wbm_data_7.json",
+        "./data/wbm_data_8.json",
+        "./data/wbm_data_9.json",
+        "./data/wbm_data_10.json",
+        "./data/wbm_data_11.json",
+        "./data/wbm_data_12.json",
+        "./data/wbm_data_13.json",
+        "./data/wbm_data_14.json",
+        "./data/wbm_data_15.json",
+        "./data/wbm_data_16.json",
+        "./data/wbm_data_17.json",
+        "./data/wbm_data_18.json",
+        "./data/wbm_data_19.json",
+        "./data/wbm_data_20.json",
+        "./data/wbm_data_21.json",
+        "./data/wbm_data_22.json",
+        "./data/wbm_data_23.json",
+        "./data/wbm_data_24.json",
+        "./data/wbm_data_25.json",
+        "./data/wbm_data_26.json",
+        "./data/wbm_data_27.json",
+        "./data/wbm_data_28.json",
+        "./data/wbm_data_29.json",
+        "./data/wbm_data_30.json",
+        "./data/wbm_data_31.json",
+        "./data/wbm_data_32.json",
+        "./data/wbm_data_33.json",
+        "./data/wbm_data_34.json",
+        "./data/wbm_data_35.json",
+        "./data/wbm_data_36.json",
+        "./data/wbm_data_37.json",
+        "./data/wbm_data_38.json",
+        "./data/wbm_data_39.json",
+    ]
 
     relax_structures(input_dirs, Path("./2025-01-10-dpa3-openlam.pth"))
-
