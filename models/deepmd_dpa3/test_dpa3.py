@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pickle
 from pathlib import Path
+from typing import Any
 
-from typing import Any, Optional
 import ase
 import numpy as np
 import pandas as pd
@@ -41,8 +41,8 @@ class Relaxer:
     def __init__(
         self,
         model: str | Path,
-        optimizer: Optional[str] = "FIRE",
-        relax_cell: Optional[bool] = True,
+        optimizer: str | None = "FIRE",
+        relax_cell: bool | None = True,
     ):
         if isinstance(model, Path):
             try:
@@ -167,7 +167,7 @@ def relax_run(
     return df_out
 
 
-def relax_structures(inputs:list[str], model:Path) -> {res}:
+def relax_structures(inputs: list[str], model: Path) -> {res}:
     relaxer = Relaxer(model=model, optimizer="FIRE")
 
     ret_df = relax_run(inputs, model="dp", relaxer=relaxer, fmax=0.05, steps=500)
