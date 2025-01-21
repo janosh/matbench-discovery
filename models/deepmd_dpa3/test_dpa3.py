@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pickle
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -16,11 +16,11 @@ from ase.optimize import FIRE
 from deepmd.calculator import DP
 from pymatgen.core.structure import Molecule, Structure
 from pymatgen.io.ase import AseAtomsAdaptor
+from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery.data import as_dict_handler
 from matbench_discovery.enums import Task
-from pymatviz.enums import Key
 
 OPTIMIZERS = {
     "FIRE": FIRE,
@@ -59,7 +59,7 @@ class Relaxer:
         self.ase_adaptor = AseAtomsAdaptor()
 
     def relax(
-        self, atoms: Atoms, fmax: float, steps: int, traj_file: Optional[str] = None
+        self, atoms: Atoms, fmax: float, steps: int, traj_file: str | None = None
     ) -> dict[str, Any]:
         if isinstance(atoms, Structure) or isinstance(atoms, Molecule):
             atoms = self.ase_adaptor.get_atoms(atoms)
