@@ -7,10 +7,12 @@ from __future__ import annotations
 import pickle
 from pathlib import Path
 from typing import Any
+from typing import TYPE_CHECKING
 
-import numpy as np
+if TYPE_CHECKING:
+    from ase import Atoms
+    import numpy as np
 import pandas as pd
-from ase import Atoms
 from ase.constraints import ExpCellFilter
 from ase.optimize import FIRE
 from deepmd.calculator import DP
@@ -160,7 +162,7 @@ def relax_run(
 
 
 def relax_structures(input_dir: str, model: Path) -> dict[str, Path]:
-    relaxer = Relaxer(model=model, optimizer="FIRE")
+    relaxer = Relaxer(model=model)
 
     ret_df = relax_run(input_dir, model="dp", relaxer=relaxer, fmax=0.05, steps=500)
     ret_df.reset_index().to_json("out.json.gz", default_handler=as_dict_handler)
