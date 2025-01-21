@@ -1,4 +1,4 @@
-# Theoritically, one can use the test code of sevennet or mace to test a DP model. 
+# Theoritically, one can use the test code of sevennet or mace to test a DP model.
 # For convinience, we used dflow to orchestrate the tests.
 # Below are the core functions.
 
@@ -8,9 +8,9 @@ import pickle
 from pathlib import Path
 from typing import Any
 
-from ase import Atoms
 import numpy as np
 import pandas as pd
+from ase import Atoms
 from ase.constraints import ExpCellFilter
 from ase.optimize import FIRE
 from deepmd.calculator import DP
