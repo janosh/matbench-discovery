@@ -57,7 +57,9 @@ class Relaxer:
         self.relax_cell = relax_cell
         self.ase_adaptor = AseAtomsAdaptor()
 
-    def relax(self, atoms: Atoms, fmax: float, steps: int, traj_file: str = None) -> dict:
+    def relax(
+        self, atoms: Atoms, fmax: float, steps: int, traj_file: str = None
+    ) -> dict:
         if isinstance(atoms, Structure) or isinstance(atoms, Molecule):
             atoms = self.ase_adaptor.get_atoms(atoms)
 
