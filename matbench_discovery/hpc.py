@@ -5,7 +5,10 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from collections.abc import Sequence
+from collections.abc import Sequence, Sized
+from typing import TypeVar
+
+import numpy as np
 
 # taken from https://slurm.schedmd.com/job_array.html#env_vars, lower-cased and
 # and removed the SLURM_ prefix
@@ -14,6 +17,8 @@ SLURM_KEYS = (
     "submit_host job_partition job_user job_account tasks_per_node job_qos"
 ).split()
 SLURM_SUBMIT_KEY = "slurm-submit"
+
+HasLen = TypeVar("HasLen", bound=Sized)
 
 
 def _get_calling_file_path(frame: int = 1) -> str:
@@ -132,3 +137,89 @@ def slurm_submit(
 
     # after sbatch submission, exit with slurm exit code
     raise SystemExit(result.returncode)
+
+
+def chunk_by_lens(
+    inputs: Sequence[HasLen],
+    *,  # force keyword-only arguments
+    n_chunks: int | None = None,
+    chunk_size: int | None = None,
+    report: bool = True,
+) -> list[list[HasLen]]:
+    """Make a balanced partition. That is, split a list of pymatgen Structures or
+    ASE Atoms or anything with len() into chunks with roughly equal total length.
+
+    This is useful for distributing workload evenly among workers, since computational
+    cost often scales with the number of atoms in a structure.
+
+    Args:
+        inputs (Sequence[T]): List of objects with len() to split into chunks
+        n_chunks (int, optional): Number of chunks to create. Defaults to None.
+        chunk_size (int, optional): Target size for each chunk. Defaults to None.
+            Only one of n_chunks or chunk_size can be specified.
+        report (bool, optional): If True, print statistics about the chunk sizes.
+
+    Returns:
+        list[list[T]]: Each sublist contains objects and the sum of len() of objects
+            in each chunk is roughly equal.
+
+    Example:
+        >>> from ase.build import bulk
+        >>> structures = [bulk("Cu") * (i, i, 1) for i in range(1, 5)]
+        >>> # Split into 2 chunks
+        >>> chunks = chunk_by_lens(structures, n_chunks=2)
+        >>> [sum(len(atoms) for atoms in chunk) for chunk in chunks]
+        [14, 16]  # roughly equal total atom counts
+        >>> # Or split into chunks of ~10 atoms each
+        >>> chunks = chunk_by_lens(structures, chunk_size=10)
+        >>> [sum(len(atoms) for atoms in chunk) for chunk in chunks]
+        [12, 10, 8]  # roughly equal total atom counts
+
+    Raises:
+        ValueError: If neither or both n_chunks and chunk_size are specified.
+    """
+    if len(inputs) == 0:
+        return []
+
+    if n_chunks is not None and chunk_size is not None:
+        raise ValueError("Cannot specify both n_chunks and chunk_size")
+
+    # Get number of atoms in each structure
+    lens = np.array([len(obj) for obj in inputs])
+    total_size = lens.sum()
+
+    if chunk_size:
+        # Calculate n_chunks based on chunk_size
+        n_chunks = max(1, int(np.ceil(total_size / chunk_size)))
+    elif n_chunks:
+        # n_chunks is specified
+        if n_chunks < 1:
+            raise ValueError("n_chunks must be >= 1")
+        n_chunks = min(n_chunks, len(inputs))
+    else:
+        raise ValueError("n_chunks or chunk_size must be positive integer")
+
+    # Sort structures by size (largest first) to help achieve better balance
+    sort_idx = np.argsort(lens)[::-1]
+    sorted_inputs = [inputs[i] for i in sort_idx]
+
+    chunks: list[list[HasLen]] = [[] for _ in range(n_chunks)]
+    chunk_sizes = np.zeros(n_chunks)
+
+    # Assign each structure to the chunk with the smallest current total
+    for sized_obj in sorted_inputs:
+        smallest_chunk = np.argmin(chunk_sizes)
+        chunks[smallest_chunk].append(sized_obj)
+        chunk_sizes[smallest_chunk] += len(sized_obj)
+
+    if report:
+        # Print statistics about the chunk sizes
+        mean, std = chunk_sizes.mean(), chunk_sizes.std()
+        cls_name = type(inputs[0]).__name__
+        print(
+            f"Split {len(inputs):,} structures into {n_chunks:,} chunks:\n"
+            f"Mean sum(len({cls_name})) per chunk: {mean:,.1f} ± {std:,.1f}, "
+            f"min: {chunk_sizes.min():,.0f}, max: {chunk_sizes.max():,.0f}"
+        )
+
+    return chunks

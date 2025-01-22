@@ -63,7 +63,7 @@ fig.layout.update(height=230 * n_rows)
 fig.layout.update(width=280 * n_cols)
 
 subfig = None
-for i, model in enumerate(models_to_plot):
+for idx, model in enumerate(models_to_plot):
     df_pivot = df_each_pred.pivot(columns=batch_col, values=model)
 
     subfig, df_err, df_std = rolling_mae_vs_hull_dist(
@@ -90,7 +90,7 @@ for i, model in enumerate(models_to_plot):
         pmv.save_fig(subfig, f"{SITE_FIGS}/{img_path}.svelte")
         pmv.save_fig(subfig, f"{PDF_FIGS}/{img_path}.pdf", width=500, height=330)
 
-    row, col = divmod(i, n_cols)
+    row, col = divmod(idx, n_cols)
 
     for trace in subfig.data:
         fig.add_trace(trace, row=row + 1, col=col + 1)
@@ -125,10 +125,10 @@ if subfig is not None:
 else:
     raise ValueError("x_title and y_title are not defined")
 
-for i in range(1, n_rows + 1):
+for idx in range(1, n_rows + 1):
     for j in range(1, n_cols + 1):
-        fig.update_xaxes(title_text="", row=i, col=j)
-        fig.update_yaxes(title_text="", row=i, col=j)
+        fig.update_xaxes(title_text="", row=idx, col=j)
+        fig.update_yaxes(title_text="", row=idx, col=j)
 
 axis_titles = dict(xref="paper", yref="paper", showarrow=False, font_size=16)
 fig.add_annotation(  # x-axis title
