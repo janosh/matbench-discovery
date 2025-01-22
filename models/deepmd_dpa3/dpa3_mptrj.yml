@@ -88,6 +88,8 @@ notes:
     Its model design ensures exceptional fitting accuracy and robust generalization both within and beyond the training domain.
     Furthermore, DPA3 maintains energy conservation and respects the physical symmetries of the potential energy surface, making it a dependable tool for a wide range of scientific applications.
 metrics:
+  phonons:
+    κ_SRME: 0.964
   discovery:
     pred_file: models/deepmd_dpa3/2025-01-10-dpa3-mptrj-pred.csv.gz
     pred_file_url: https://bohrium-api.dp.tech/ds-dl/matbench-submit-dpa3-mptrj-relaxed-bf04-v1.zip
