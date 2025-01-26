@@ -2,17 +2,27 @@ import os
 from glob import glob
 
 import pytest
+import yaml
 
-from matbench_discovery import __version__
+from matbench_discovery import DATA_DIR, __version__
 from matbench_discovery.data import Model
 from matbench_discovery.models import MODEL_DIRS, MODEL_METADATA, model_is_compliant
 
+with open(f"{DATA_DIR}/training-sets.yml") as file:
+    TRAINING_SETS = yaml.safe_load(file)
 
-def parse_version(v: str) -> tuple[int, ...]:
-    return tuple(map(int, v.split(".")))
+OPEN_DATASETS = {
+    dataset["title"] for dataset in TRAINING_SETS.values() if dataset["open"]
+}
+
+
+def parse_version(version: str) -> tuple[int, ...]:
+    """Parse version string into tuple of integers."""
+    return tuple(map(int, version.split(".")))
 
 
 def test_model_dirs_have_metadata() -> None:
+    """Test that all model directories have required metadata."""
     required = {
         "authors": list,  # dict with name, affiliation, orcid?, email?
         "date_added": str,
@@ -33,14 +43,27 @@ def test_model_dirs_have_metadata() -> None:
         model_dir = metadata["model_dir"]
         for key, expected in required.items():
             assert key in metadata, f"Required {key=} missing in {model_dir}"
-            actual_val = metadata[key]
+
             if key == "training_set":
+                training_sets = metadata[key]
                 # allow either string key or dict
-                assert isinstance(actual_val, dict | str | list)
-            if (isinstance(expected, dict) and key != "training_set") or (
-                key == "training_set" and isinstance(actual_val, dict)
-            ):
-                missing_keys = {*expected} - {*actual_val}  # type: ignore[misc]
+                assert isinstance(training_sets, list)
+                assert set(training_sets) <= {*TRAINING_SETS}, (
+                    f"Invalid training set: {training_sets}"
+                )
+                # Check if model was trained only on open datasets
+                openness = metadata["openness"].endswith("OD")
+                if set(training_sets) <= OPEN_DATASETS and not openness:
+                    # if so, check that the model is marked as OD (open data)
+                    raise ValueError(
+                        f"{model_name} was only trained on open datasets but is "
+                        f"marked as {metadata['openness']}. Should be marked as "
+                        "OD."
+                    )
+
+            actual_val = metadata[key]
+            if isinstance(expected, dict) and key != "training_set":
+                missing_keys = {*expected} - {*actual_val}
                 assert not missing_keys, f"{missing_keys=} under {key=} in {model_dir}"
                 continue
 

@@ -81,6 +81,7 @@ export type TrainingSet =
   | {
       title: string
       url: string
+      download_url: string
       n_structures: number
       n_materials?: number
       [k: string]: unknown
