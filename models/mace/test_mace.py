@@ -3,12 +3,11 @@ import os
 from collections.abc import Callable
 from copy import deepcopy
 from importlib.metadata import version
-from typing import Any, Literal
+from typing import Any, Final, Literal
 
 import numpy as np
 import pandas as pd
 import plotly.express as px
-import torch
 import wandb
 from ase import Atoms
 from ase.filters import ExpCellFilter, FrechetCellFilter
@@ -21,7 +20,7 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery import ROOT, timestamp, today
+from matbench_discovery import hpc, timestamp, today
 from matbench_discovery.data import (
     DataFiles,
     as_dict_handler,
@@ -29,7 +28,6 @@ from matbench_discovery.data import (
     df_wbm,
 )
 from matbench_discovery.enums import MbdKey, Task
-from matbench_discovery.hpc import slurm_submit
 from matbench_discovery.plots import wandb_scatter
 
 __author__ = "Janosh Riebesell"
@@ -37,30 +35,42 @@ __date__ = "2024-12-09"
 
 
 # %%
-smoke_test = True
+smoke_test = False
+if smoke_test:
+    print(f"Warning: {smoke_test=}, will not write relaxed structures to disk!")
 task_type = Task.IS2RE
 module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
-slurm_array_task_count = 100
+slurm_array_task_count = 200
 ase_optimizer = "FIRE"
-job_name = f"mace-wbm-{task_type}-{ase_optimizer}"
-out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
-device = "cuda" if torch.cuda.is_available() else "cpu"
+# device = "cuda" if torch.cuda.is_available() else "cpu"
+device = "cpu"
 # whether to record intermediate structures into pymatgen Trajectory
 record_traj = True  # has no effect if relax_cell is False
-model_name = {
-    "MACE-MPAlex 0 (2024-12-09)": "mace-alex-main-branch",
-    "MACE MP 0 medium (2023-03-01)": "https://tinyurl.com/5yyxdm76",
-}["MACE-MPAlex 0 (2024-12-09)"]
+model_name = os.getenv("MACE_MODEL_NAME", "mace-omat-0-medium")
+job_name = f"{model_name}-wbm-{task_type}-{ase_optimizer}"
+out_dir = f"{module_dir}/{today}-{job_name}"
+os.makedirs(out_dir, exist_ok=True)
+checkpoint_urls: Final[set[str]] = {
+    "https://github.com/ACEsuit/mace-mp/releases/download/mace_omat_0/mace-omat-0-medium.model",
+    "https://github.com/ACEsuit/mace-mp/releases/download/mace_mp_0b3/mace-mp-0b3-medium.model",
+    "https://github.com/ACEsuit/mace-mp/releases/download/mace_mpa_0/mace-mpa-0-medium.model",
+    "https://github.com/ACEsuit/mace-mp/releases/download/mace_mp_0/2023-12-03-mace-128-L1_epoch-199.model",
+}
+checkpoint = {url.split("/")[-1].rsplit(".model")[0]: url for url in checkpoint_urls}[
+    model_name
+]
+print(f"{model_name=}")
 
 ase_filter: Literal["frechet", "exp"] = "frechet"
 
-slurm_vars = slurm_submit(
+slurm_vars = hpc.slurm_submit(
     job_name=job_name,
     out_dir=out_dir,
     array=f"1-{slurm_array_task_count}",
     # slurm_flags="--qos shared --constraint gpu --gpus 1",
     slurm_flags="--ntasks=1 --cpus-per-task=1 --partition high-priority",
+    submit_as_temp_file=False,
 )
 
 
@@ -82,7 +92,6 @@ print(f"\nJob {job_name} started {timestamp}")
 e_pred_col = "mace_energy"
 max_steps = 500
 force_max = 0.05  # Run until the forces are smaller than this in eV/A
-checkpoint = f"{ROOT}/models/mace/checkpoints/{model_name}.model"
 dtype = "float64"
 mace_calc = mace_mp(model=checkpoint, device=device, default_dtype=dtype)
 
@@ -95,7 +104,7 @@ if slurm_array_job_id == "debug":
     else:
         pass
 elif slurm_array_task_count > 1:
-    atoms_list = np.array_split(atoms_list, slurm_array_task_count)[
+    atoms_list = hpc.chunk_by_lens(atoms_list, n_chunks=slurm_array_task_count)[
         slurm_array_task_id - 1
     ]
 
@@ -180,38 +189,39 @@ if not smoke_test:
 
 
 # %%
-energy_series = df_out["mace_trajectory"].map(
-    lambda x: [d["energy"] / len(x.species) for d in x.frame_properties]
-)
+if Key.trajectory in df_out:
+    energy_series = df_out[Key.trajectory].map(
+        lambda x: [d["energy"] / len(x.species) for d in x.frame_properties]
+    )
 
-# Create a DataFrame from the Series
-df_energies = pd.DataFrame(energy_series.tolist()).T
-df_energies.columns = df_out.index
-df_energies["Step"] = df_energies.index
+    # Create a DataFrame from the Series
+    df_energies = pd.DataFrame(energy_series.tolist()).T
+    df_energies.columns = df_out.index
+    df_energies["Step"] = df_energies.index
 
-# Melt the DataFrame to long format
-df_melted = df_energies.melt(
-    id_vars=["Step"], var_name="Trajectory", value_name="Energy"
-)
+    # Melt the DataFrame to long format
+    df_melted = df_energies.melt(
+        id_vars=["Step"], var_name="Trajectory", value_name="Energy"
+    )
 
-# Create the line plot
-fig = px.line(
-    df_melted,
-    x="Step",
-    y="Energy",
-    color="Trajectory",
-    title="Trajectory Energies",
-    labels={"Step": "Optimization Step", "Energy": "Energy"},
-    line_group="Trajectory",
-)
+    # Create the line plot
+    fig = px.line(
+        df_melted,
+        x="Step",
+        y="Energy",
+        color="Trajectory",
+        title="Trajectory Energies",
+        labels={"Step": "Optimization Step", "Energy": "Energy"},
+        line_group="Trajectory",
+    )
 
-# Customize the layout if needed
-fig.update_layout(
-    xaxis_title="Optimization Step", yaxis_title="Energy", legend_title="Trajectory"
-)
+    # Customize the layout if needed
+    fig.update_layout(
+        xaxis_title="Optimization Step", yaxis_title="Energy", legend_title="Trajectory"
+    )
 
-# Show the plot
-fig.show()
+    # Show the plot
+    fig.show()
 
 
 # %%
