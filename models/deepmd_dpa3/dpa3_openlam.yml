@@ -33,6 +33,7 @@ paper: https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha # to be releas
 pr_url: https://github.com/janosh/matbench-discovery/pull/192
 trained_for_benchmark: true # required
 
+openness: OSCD
 train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_G
@@ -109,7 +110,7 @@ metrics:
     full_test_set:
       F1: 0.862 # fraction
       DAF: 5.013 # dimensionless
-      Precision: 0.860 # fraction
+      Precision: 0.86 # fraction
       Recall: 0.865 # fraction
       Accuracy: 0.953 # fraction
       TPR: 0.865 # fraction
@@ -117,13 +118,13 @@ metrics:
       TNR: 0.971 # fraction
       FNR: 0.135 # fraction
       TP: 38130.0 # count
-      FP: 6198.0 # count
-      TN: 206673.0 # count
+      FP: 6197.0 # count
+      TN: 206674.0 # count
       FN: 5962.0 # count
       MAE: 0.023 # eV/atom
-      RMSE: 0.068 # eV/atom
-      R2: 0.857 # dimensionless
-      missing_preds: 0 # count
+      RMSE: 0.067 # eV/atom
+      R2: 0.863 # dimensionless
+      missing_preds: 2 # count
       missing_percent: 0.00% # fraction
     most_stable_10k:
       F1: 0.987 # fraction
@@ -140,14 +141,14 @@ metrics:
       TN: 0.0 # count
       FN: 0.0 # count
       MAE: 0.019 # eV/atom
-      RMSE: 0.065 # eV/atom
-      R2: 0.904 # dimensionless
+      RMSE: 0.066 # eV/atom
+      R2: 0.905 # dimensionless
       missing_preds: 0 # count
       missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.883 # fraction
       DAF: 5.754 # dimensionless
-      Precision: 0.880 # fraction
+      Precision: 0.88 # fraction
       Recall: 0.885 # fraction
       Accuracy: 0.963 # fraction
       TPR: 0.885 # fraction

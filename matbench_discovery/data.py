@@ -390,6 +390,10 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # CGCNN 10-member ensemble with 5-fold training set perturbations
     cgcnn_p = "cgcnn/cgcnn+p.yml"
 
+    # DeepMD-DPA3 models
+    dpa3_mptrj = "deepmd_dpa3/dpa3_mptrj.yml"
+    dpa3_openlam = "deepmd_dpa3/dpa3_openlam.yml"
+
     # original M3GNet straight from publication, not re-trained
     m3gnet = "m3gnet/m3gnet.yml"
     # m3gnet_direct = None, "M3GNet DIRECT"

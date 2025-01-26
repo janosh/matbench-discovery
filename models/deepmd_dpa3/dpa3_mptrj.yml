@@ -33,6 +33,7 @@ paper: https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha # to be releas
 pr_url: https://github.com/janosh/matbench-discovery/pull/192
 trained_for_benchmark: true # required
 
+openness: OSOD
 train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_G
@@ -96,8 +97,8 @@ metrics:
     pred_col: e_form_per_atom_dp
     full_test_set:
       F1: 0.757 # fraction
-      DAF: 4.130 # dimensionless
-      Precision: 0.708 # fraction
+      DAF: 4.13 # dimensionless
+      Precision: 0.709 # fraction
       Recall: 0.812 # fraction
       Accuracy: 0.911 # fraction
       TPR: 0.812 # fraction
@@ -105,17 +106,17 @@ metrics:
       TNR: 0.931 # fraction
       FNR: 0.188 # fraction
       TP: 35812.0 # count
-      FP: 14721.0 # count
-      TN: 198150.0 # count
+      FP: 14718.0 # count
+      TN: 198153.0 # count
       FN: 8280.0 # count
-      MAE: 0.040 # eV/atom
-      RMSE: 0.085 # eV/atom
-      R2: 0.776 # dimensionless
-      missing_preds: 10 # count
-      missing_percent: 0.00% # fraction
+      MAE: 0.04 # eV/atom
+      RMSE: 0.082 # eV/atom
+      R2: 0.793 # dimensionless
+      missing_preds: 14 # count
+      missing_percent: 0.01% # fraction
     most_stable_10k:
       F1: 0.971 # fraction
-      DAF: 6.172 # dimensionless
+      DAF: 6.174 # dimensionless
       Precision: 0.944 # fraction
       Recall: 1.0 # fraction
       Accuracy: 0.944 # fraction
@@ -123,13 +124,13 @@ metrics:
       FPR: 1.0 # fraction
       TNR: 0.0 # fraction
       FNR: 0.0 # fraction
-      TP: 9436.0 # count
-      FP: 564.0 # count
+      TP: 9438.0 # count
+      FP: 562.0 # count
       TN: 0.0 # count
       FN: 0.0 # count
-      MAE: 0.039 # eV/atom
-      RMSE: 0.128 # eV/atom
-      R2: 0.649 # dimensionless
+      MAE: 0.038 # eV/atom
+      RMSE: 0.084 # eV/atom
+      R2: 0.849 # dimensionless
       missing_preds: 0 # count
       missing_percent: 0.00% # fraction
     unique_prototypes:
@@ -143,11 +144,11 @@ metrics:
       TNR: 0.938 # fraction
       FNR: 0.172 # fraction
       TP: 27630.0 # count
-      FP: 11207.0 # count
-      TN: 170907.0 # count
+      FP: 11205.0 # count
+      TN: 170909.0 # count
       FN: 5744.0 # count
       MAE: 0.042 # eV/atom
-      RMSE: 0.085 # eV/atom
-      R2: 0.785 # dimensionless
-      missing_preds: 9 # count
-      missing_percent: 0.00% # fraction
+      RMSE: 0.083 # eV/atom
+      R2: 0.798 # dimensionless
+      missing_preds: 11 # count
+      missing_percent: 0.01% # fraction
