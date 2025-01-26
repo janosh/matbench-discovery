@@ -22,8 +22,8 @@ from tqdm import tqdm
 from matbench_discovery import timestamp, today
 from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
 from matbench_discovery.enums import MbdKey, Task
+from matbench_discovery.hpc import slurm_submit
 from matbench_discovery.plots import wandb_scatter
-from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-01"

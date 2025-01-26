@@ -31,6 +31,9 @@ models/**/*.model
 models/**/*.pt
 models/**/*.tgz
 
+# WIP model submissions
+models/_*
+
 # auto-generated docs
 site/src/routes/api/*.md
 

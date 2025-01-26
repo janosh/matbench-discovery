@@ -18,8 +18,8 @@ from pymatviz.enums import Key
 from matbench_discovery import WANDB_PATH, today
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import MbdKey, Task
+from matbench_discovery.hpc import slurm_submit
 from matbench_discovery.plots import wandb_scatter
-from matbench_discovery.slurm import slurm_submit
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-15"
