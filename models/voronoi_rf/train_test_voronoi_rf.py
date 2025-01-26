@@ -16,8 +16,8 @@ from sklearn.pipeline import Pipeline
 from matbench_discovery import ROOT, today
 from matbench_discovery.data import DataFiles, df_wbm, glob_to_df
 from matbench_discovery.enums import MbdKey, Task
+from matbench_discovery.hpc import slurm_submit
 from matbench_discovery.plots import wandb_scatter
-from matbench_discovery.slurm import slurm_submit
 
 sys.path.append(f"{ROOT}/models")
 

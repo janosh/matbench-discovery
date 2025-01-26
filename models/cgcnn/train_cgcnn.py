@@ -14,7 +14,7 @@ from tqdm import tqdm, trange
 
 from matbench_discovery import WANDB_PATH, timestamp, today
 from matbench_discovery.data import DataFiles
-from matbench_discovery.slurm import slurm_submit
+from matbench_discovery.hpc import slurm_submit
 from matbench_discovery.structure import perturb_structure
 
 """

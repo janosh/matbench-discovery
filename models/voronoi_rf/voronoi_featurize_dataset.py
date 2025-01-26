@@ -16,7 +16,7 @@ from tqdm import tqdm
 
 from matbench_discovery import ROOT, today
 from matbench_discovery.data import DataFiles
-from matbench_discovery.slurm import slurm_submit
+from matbench_discovery.hpc import slurm_submit
 
 sys.path.append(f"{ROOT}/models")
 

@@ -51,7 +51,18 @@ today = timestamp.split("@")[0]
 # > No electronegativity for Ne. Setting to NaN. This has no physical meaning
 # and MaterialsProject2020Compatibility to get formation energies
 # > Failed to guess oxidation states for Entry
-warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
+warnings.filterwarnings(
+    action="ignore",
+    category=UserWarning,
+    module="pymatgen",
+    message="No electronegativity for",
+)
+warnings.filterwarnings("ignore", category=FutureWarning, message="torch.load")
+warnings.filterwarnings(
+    "ignore",
+    category=RuntimeWarning,
+    message="logm result may be inaccurate, approximate err",
+)
 
 
 # --- start global plot settings
