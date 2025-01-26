@@ -24,7 +24,7 @@ pr_url: https://github.com/janosh/matbench-discovery/pull/191
 requirements:
   fairchem-core: 1.2.1
 
-openness: OSCD
+openness: OSOD
 trained_for_benchmark: false
 train_task: S2EFS
 test_task: IS2RE-SR
