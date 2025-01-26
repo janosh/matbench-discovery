@@ -26,10 +26,9 @@ from pymatviz.enums import Key
 from ruamel.yaml import YAML
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR, PKG_DIR, ROOT, pkg_is_editable
+from matbench_discovery import DATA_DIR, PKG_DIR, ROOT
 from matbench_discovery.enums import MbdKey, TestSubset
 
-# ruff: noqa: T201
 T = TypeVar("T", bound="Files")
 
 # repo URL to raw files on GitHub
@@ -37,7 +36,10 @@ RAW_REPO_URL = "https://github.com/janosh/matbench-discovery/raw"
 # directory to cache downloaded data files
 DEFAULT_CACHE_DIR = os.getenv(
     "MATBENCH_DISCOVERY_CACHE_DIR",
-    DATA_DIR if pkg_is_editable else os.path.expanduser("~/.cache/matbench-discovery"),
+    DATA_DIR  # use DATA_DIR to locally cache data files if full repo was cloned
+    if os.path.isdir(DATA_DIR)
+    # use ~/.cache if matbench-discovery was installed from PyPI
+    else os.path.expanduser("~/.cache/matbench-discovery"),
 )
 
 
@@ -306,7 +308,10 @@ class DataFiles(Files):
     )
     wbm_summary = "wbm/2023-12-13-wbm-summary.csv.gz"
     alignn_checkpoint = "2023-06-02-pbenner-best-alignn-model.pth.zip"
-    phonondb_pbe_structures = "phonons/2024-11-09-phononDB-PBE-103-structures.extxyz"
+    phonondb_pbe_103_structures = (
+        "phonons/2024-11-09-phononDB-PBE-103-structures.extxyz"
+    )
+    phonondb_pbe_103_kappa_nac = "phonons/2024-11-09-kappas-phononDB-PBE-noNAC.json.gz"
 
     @functools.cached_property
     def yaml(self) -> dict[str, dict[str, str]]:
@@ -324,7 +329,10 @@ class DataFiles(Files):
     @property
     def url(self) -> str:
         """URL associated with the file."""
-        return self.yaml[self.name]["url"]
+        url = self.yaml[self.name].get("url")
+        if url is None:
+            raise ValueError(f"{self.name!r} does not have a URL")
+        return url
 
     @property
     def description(self) -> str:

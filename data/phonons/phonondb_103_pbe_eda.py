@@ -20,7 +20,7 @@ __date__ = "2025-01-14"
 
 
 # %%
-atoms_list = ase.io.read(DataFiles.phonondb_pbe_structures.path, index=":")
+atoms_list = ase.io.read(DataFiles.phonondb_pbe_103_structures.path, index=":")
 
 
 # %% visually inspect first 12 structures

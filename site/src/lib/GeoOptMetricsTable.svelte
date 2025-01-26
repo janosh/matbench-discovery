@@ -2,8 +2,8 @@
   import {
     HeatmapTable,
     MODEL_METADATA,
-    model_is_compliant,
     get_metric_rank_order,
+    model_is_compliant,
   } from '$lib'
   import { pretty_num } from 'elementari'
   import type { HeatmapColumn } from './types.ts'
@@ -123,9 +123,3 @@
 </script>
 
 <HeatmapTable data={metrics_data} {columns} {...$$restProps} />
-
-<style>
-  :global(.heatmap-table td:not(:first-child)) {
-    text-align: right;
-  }
-</style>

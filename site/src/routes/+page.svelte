@@ -48,7 +48,8 @@
     },
     unique_prototypes: {
       title: `Unique Prototypes`,
-      tooltip: `Metrics computed only on unique structure prototypes`,
+      tooltip: `Metrics computed only on ~215k unique structure prototypes in WBM determined by matching Aflow-style prototype strings.`,
+      link: `https://github.com/janosh/matbench-discovery/blob/fd1dda6c/data/wbm/compile_wbm_test_set.py#L632-L705`,
     },
     most_stable_10k: {
       title: `10k Most Stable`,
@@ -69,13 +70,18 @@
 <Readme>
   <figure style="margin-top: 4em;" slot="metrics-table">
     <div class="discovery-set-toggle">
-      {#each Object.entries(discovery_set_labels) as [key, { title, tooltip }]}
+      {#each Object.entries(discovery_set_labels) as [key, { title, tooltip, link }]}
         <Tooltip text={tooltip} tip_style="z-index: 2; font-size: 0.8em;">
           <button
             class:active={discovery_set === key}
             on:click={() => (discovery_set = key)}
           >
             {title}
+            {#if link}
+              <a href={link} target="_blank">
+                <Icon icon="octicon:info" inline />
+              </a>
+            {/if}
           </button>
         </Tooltip>
       {/each}
