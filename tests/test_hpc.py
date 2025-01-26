@@ -56,7 +56,9 @@ def test_empty_input() -> None:
 def test_invalid_n_chunks() -> None:
     """Test chunking with invalid number of chunks."""
     structures = [bulk("Cu")] * 3
-    with pytest.raises(ValueError, match="n_chunks must be >= 1"):
+    with pytest.raises(
+        ValueError, match="n_chunks or chunk_size must be positive integer"
+    ):
         hpc.chunk_by_lens(structures, n_chunks=0)
 
 
@@ -73,7 +75,9 @@ def test_n_chunks_larger_than_inputs() -> None:
 def test_missing_chunk_params() -> None:
     """Test that error is raised when neither n_chunks nor chunk_size is specified."""
     structures = [bulk("Cu")] * 3
-    with pytest.raises(ValueError, match="Must specify either n_chunks or chunk_size"):
+    with pytest.raises(
+        ValueError, match="n_chunks or chunk_size must be positive integer"
+    ):
         hpc.chunk_by_lens(structures)
 
 
