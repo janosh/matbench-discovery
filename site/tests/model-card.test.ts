@@ -82,7 +82,7 @@ describe(`ModelCard`, () => {
       const training_set_key = model.training_set[0]
       const training_set_info = TRAINING_SETS[training_set_key]
 
-      expect(training_set_links[0].href).toBe(training_set_info.url)
+      expect(training_set_links[0].href).toBe(training_set_info.download_url)
 
       // Use pretty_num to match the actual formatted output
       const formatted_structures = pretty_num(training_set_info.n_structures)

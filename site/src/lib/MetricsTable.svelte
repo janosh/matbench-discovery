@@ -48,7 +48,7 @@
       total_materials += n_materials
 
       const title = training_set_info.title || train_set
-      data_urls[train_set || title] = training_set_info.url || ``
+      data_urls[train_set || title] = training_set_info.download_url || ``
 
       if (n_materials !== n_structs) {
         tooltip.push(
