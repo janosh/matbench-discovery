@@ -48,9 +48,9 @@ def test_model_dirs_have_metadata() -> None:
                 training_sets = metadata[key]
                 # allow either string key or dict
                 assert isinstance(training_sets, list)
-                assert set(training_sets) <= {
-                    dataset["title"] for dataset in TRAINING_SETS.values()
-                }, f"Invalid training set: {training_sets}"
+                assert set(training_sets) <= {*TRAINING_SETS}, (
+                    f"Invalid training set: {training_sets}"
+                )
                 # Check if model was trained only on open datasets
                 openness = metadata["openness"].endswith("OD")
                 if set(training_sets) <= OPEN_DATASETS and not openness:

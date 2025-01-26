@@ -329,7 +329,10 @@ class DataFiles(Files):
     @property
     def url(self) -> str:
         """URL associated with the file."""
-        return self.yaml[self.name]["url"]
+        url = self.yaml[self.name].get("url")
+        if url is None:
+            raise ValueError(f"{self.name!r} does not have a URL")
+        return url
 
     @property
     def description(self) -> str:
