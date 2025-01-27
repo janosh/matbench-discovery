@@ -14,8 +14,22 @@ __author__ = "Janosh Riebesell"
 __date__ = "2023-04-27"
 
 
-def main(yaml_path: str, article_id: int | None, pyproject: dict[str, Any]) -> int:
-    """Main function to upload all files in FILE_PATHS to the same Figshare article."""
+def main(
+    yaml_path: str,
+    article_id: int | None,
+    pyproject: dict[str, Any],
+    max_file_size: int = 500 * 1024**2,  # in bytes, files larger than this should
+    # be uploaded manually to avoid timeouts
+) -> int:
+    """Keep Data Files Figshare article in sync with data-files.yml file.
+
+    Args:
+        yaml_path (str): Path to the YAML file containing the data files.
+        article_id (int | None): ID of the Figshare article to update. If None, a new
+            article will be created.
+        pyproject (dict[str, Any]): Dictionary containing the project metadata.
+        max_file_size (int): Maximum file size in bytes to be uploaded automatically.
+    """
     if article_id is not None:
         # Check if article exists and is accessible
         if figshare.article_exists(article_id):
@@ -59,10 +73,10 @@ def main(yaml_path: str, article_id: int | None, pyproject: dict[str, Any]) -> i
 
     try:
         # Load existing YAML data if available
-        existing_data: dict[str, dict[str, str]] = {}
+        existing_yaml: dict[str, dict[str, str]] = {}
         if os.path.isfile(yaml_path):
             with open(yaml_path) as file:
-                existing_data = round_trip_yaml.load(file)
+                existing_yaml = round_trip_yaml.load(file)
 
         # Get existing files from Figshare to avoid re-uploading unchanged files
         existing_files = figshare.list_article_files(article_id)
@@ -72,8 +86,9 @@ def main(yaml_path: str, article_id: int | None, pyproject: dict[str, Any]) -> i
         files_by_name = {file["name"]: file for file in existing_files}
 
         # copy existing_data to preserve all existing entries
-        files_in_article: dict[str, dict[str, str]] = existing_data.copy()
-        newly_uploaded_files: dict[str, str] = {}
+        files_in_article: dict[str, dict[str, str]] = existing_yaml.copy()
+        updated_files: dict[str, str] = {}  # files that were re-uploaded
+        new_files: dict[str, str] = {}  # files that didn't exist before
 
         pbar = tqdm(DataFiles)
         for data_file in pbar:
@@ -85,7 +100,7 @@ def main(yaml_path: str, article_id: int | None, pyproject: dict[str, Any]) -> i
                 continue
 
             # Get existing data or create new entry (make copy to not modify original)
-            file_data = existing_data.get(data_file.name, {}).copy()
+            file_data = existing_yaml.get(data_file.name, {}).copy()
 
             # Only set defaults for new entries
             if not file_data:
@@ -94,6 +109,16 @@ def main(yaml_path: str, article_id: int | None, pyproject: dict[str, Any]) -> i
 
             # Check if file needs to be uploaded
             filename = os.path.basename(file_path)
+            file_size = os.path.getsize(file_path)
+
+            if file_size > max_file_size:
+                print(
+                    f"\n⚠️  Skipping {filename} ({file_size / 1024**2:.1f} MB)"
+                    f"\nFile exceeds {max_file_size / 1024**2:.0f} MB limit. "
+                    "Please upload manually at "
+                    f"https://figshare.com/account/articles/{article_id}"
+                )
+                continue
 
             # Use stored MD5 if available, otherwise compute it
             if "md5" not in file_data:
@@ -115,14 +140,25 @@ def main(yaml_path: str, article_id: int | None, pyproject: dict[str, Any]) -> i
 
             file_data["url"] = file_url
             files_in_article[data_file.name] = file_data
-            newly_uploaded_files[data_file.name] = file_url
 
-        if newly_uploaded_files:
-            print("\nNewly added/updated files:")
-            for idx, (data_file, url) in enumerate(newly_uploaded_files.items()):
-                print(f"{idx + 1}. {data_file}: {url}")
+            # Track whether file is new or updated
+            if data_file.name in existing_yaml:
+                updated_files[data_file.name] = file_url
+            else:
+                new_files[data_file.name] = file_url
+
+        if new_files or updated_files:
+            if new_files:
+                print("\nNewly added files:")
+                for idx, (data_file, url) in enumerate(new_files.items(), start=1):
+                    print(f"{idx}. {data_file}: {url}")
+
+            if updated_files:
+                print("\nUpdated files:")
+                for idx, (data_file, url) in enumerate(updated_files.items(), start=1):
+                    print(f"{idx}. {data_file}: {url}")
         else:
-            print("\nNo new files added or updated.")
+            print("\nNo files were added or updated.")
 
         # Write updated YAML file
         with open(yaml_path, mode="w") as file:
