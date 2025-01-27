@@ -74,6 +74,21 @@ class MbdKey(LabelEnum):
     canonical_proto = "canonical_proto"
     uniq_proto = "unique_prototype"
 
+    # Thermal conductivity related keys
+    kappa_tot_rta = (
+        "kappa_tot_rta",
+        "Total thermal conductivity (relaxation time approximation)",
+    )
+    kappa_tot_avg = "kappa_tot_avg", "Average total thermal conductivity"
+    kappa_p_rta = "kappa_p_rta", "Particle-like thermal conductivity (RTA)"
+    kappa_c = "kappa_c", "Thermal conductivity correction"
+    mode_kappa_tot = "mode_kappa_tot", "Mode-resolved total thermal conductivity"
+    mode_kappa_tot_avg = (
+        "mode_kappa_tot_avg",
+        "Mode-resolved average thermal conductivity",
+    )
+    true_kappa_tot_avg = "true_kappa_tot_avg", "True average total thermal conductivity"
+
 
 @unique
 class Task(LabelEnum):
