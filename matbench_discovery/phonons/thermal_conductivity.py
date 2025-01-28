@@ -285,10 +285,12 @@ def calculate_mode_kappa_tot(
     Returns:
         np.ndarray: Total mode kappa
     """
-    mode_kappa_c_per_mode = 2 * (  # None equiv to np.newaxis
-        (mode_kappa_coherence * heat_capacity[:, :, :, None, None])
-        / (heat_capacity[:, :, :, None, None] + heat_capacity[:, :, None, :, None])
-    ).sum(axis=2)
+    # Temporarily silence divide warnings since we handle NaN values below
+    with np.errstate(divide="ignore", invalid="ignore"):
+        mode_kappa_c_per_mode = 2 * (  # None equiv to np.newaxis
+            (mode_kappa_coherence * heat_capacity[:, :, :, None, None])
+            / (heat_capacity[:, :, :, None, None] + heat_capacity[:, :, None, :, None])
+        ).sum(axis=2)
 
     mode_kappa_c_per_mode[np.isnan(mode_kappa_c_per_mode)] = 0
 
