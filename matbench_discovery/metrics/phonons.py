@@ -48,14 +48,12 @@ def calc_kappa_metrics_from_dfs(
     cols_to_remove = [Key.srd, Key.sre, Key.srme, MbdKey.true_kappa_tot_avg]
     df_pred = df_pred.drop(columns=cols_to_remove, errors="ignore")
 
-    if MbdKey.kappa_tot_avg not in df_pred:
-        df_pred[MbdKey.kappa_tot_avg] = df_pred[MbdKey.kappa_tot_rta].map(
-            calculate_kappa_avg
-        )
-    if MbdKey.mode_kappa_tot_avg not in df_pred:
-        df_pred[MbdKey.mode_kappa_tot_avg] = df_pred[MbdKey.mode_kappa_tot].map(
-            calculate_kappa_avg
-        )
+    df_pred[MbdKey.kappa_tot_avg] = df_pred[MbdKey.kappa_tot_rta].map(
+        calculate_kappa_avg
+    )
+    df_pred[MbdKey.mode_kappa_tot_avg] = df_pred[MbdKey.mode_kappa_tot].map(
+        calculate_kappa_avg
+    )
 
     df_pred[Key.srd] = (
         2
@@ -101,17 +99,15 @@ def calculate_kappa_avg(kappa: np.ndarray) -> np.ndarray:
     """
     if np.any(pd.isna(kappa)):
         return np.nan
-    _kappa = np.asarray(kappa)
+    kappa = np.asarray(kappa)
 
     try:
-        kappa_avg = _kappa[..., :3].mean(axis=-1)
+        return kappa[..., :3].mean(axis=-1)
     except Exception:
         warnings.warn(
             f"Failed to calculate kappa_avg: {traceback.format_exc()}", stacklevel=2
         )
         return np.nan
-
-    return kappa_avg
 
 
 def calc_kappa_srme_dataframes(
@@ -145,19 +141,19 @@ def calc_kappa_srme_dataframes(
 
         # NOTE code below just until before return used to be wrapped in try/except in
         # which case SRME=2 was set for the failing material
-        if row_pred.get(Key.has_imag_ph_modes, None) in ("True", True):
-            srme_list += [2]
+        if row_pred.get(Key.has_imag_ph_modes) is True:
+            srme_list.append(2)
             continue
         if relaxed_space_group_number := row_pred.get(Key.final_spg_num):
             if initial_space_group_number := row_pred.get(Key.init_spg_num):
                 if relaxed_space_group_number != initial_space_group_number:
-                    srme_list += [2]
+                    srme_list.append(2)
                     continue
             elif relaxed_space_group_number != row_true.get(Key.spg_num):
-                srme_list += [2]
+                srme_list.append(2)
                 continue
         result = calc_kappa_srme(row_pred, row_true)
-        srme_list += [result[0]]  # append the first temperature SRME
+        srme_list.append(result[0])  # append the first temperature's SRME
 
     return srme_list
 
@@ -199,24 +195,8 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
     if np.any(pd.isna(kappas_true[MbdKey.kappa_tot_avg])):
         return [2]  # np.nan
 
-    if MbdKey.mode_kappa_tot_avg in kappas_pred:
-        mode_kappa_tot_avg_pred = np.asarray(kappas_pred[MbdKey.mode_kappa_tot_avg])
-    elif MbdKey.mode_kappa_tot in kappas_pred:
-        mode_kappa_tot_avg_pred = calculate_kappa_avg(
-            kappas_pred[MbdKey.mode_kappa_tot]
-        )
-    else:
-        raise ValueError("No mode-resolved conductivities found in kappas_pred")
-
-    if MbdKey.mode_kappa_tot_avg in kappas_true:
-        mode_kappa_tot_avg_true = np.asarray(kappas_true[MbdKey.mode_kappa_tot_avg])
-    elif MbdKey.mode_kappa_tot in kappas_true:
-        mode_kappa_tot_avg_true = calculate_kappa_avg(
-            kappas_true[MbdKey.mode_kappa_tot]
-        )
-    else:
-        raise ValueError("No mode-resolved conductivities found in kappas_true")
-
+    mode_kappa_tot_avg_pred = calculate_kappa_avg(kappas_pred[MbdKey.kappa_tot_rta])
+    mode_kappa_tot_avg_true = calculate_kappa_avg(kappas_true[MbdKey.kappa_tot_avg])
     # calculating microscopic error for all temperatures
     microscopic_error = (
         np.abs(
