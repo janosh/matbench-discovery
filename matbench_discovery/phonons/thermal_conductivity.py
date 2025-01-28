@@ -77,17 +77,17 @@ def calculate_fc3_set(
     Returns:
         np.ndarray: Array of forces for each displacement
     """
-    print(f"Computing FC3 force set in {ph3.unitcell.formula}.")
-
-    forces = []
+    forces: list[np.ndarray] = []
     n_atoms = len(ph3.supercell)
 
-    cell = f"FC3 calculation: {ph3.unitcell.formula}"
-    for supercell in tqdm(
-        ph3.supercells_with_displacements, desc=cell, **pbar_kwargs or {}
-    ):
+    desc = f"FC3 calculation: {ph3.unitcell.formula}"
+    task_idx = (pbar_kwargs or {}).get("position")
+    if task_idx:
+        desc = f"{task_idx}. {desc}"
+    displacements = ph3.supercells_with_displacements
+    for supercell in tqdm(displacements, desc=desc, **pbar_kwargs or {}):
         if supercell is None:
-            force = np.zeros((n_atoms, 3))
+            forces += [np.zeros((n_atoms, 3))]
         else:
             atoms = Atoms(
                 supercell.symbols,
@@ -96,8 +96,7 @@ def calculate_fc3_set(
                 pbc=True,
             )
             atoms.calc = calculator
-            force = atoms.get_forces()
-        forces += [force]
+            forces += [atoms.get_forces()]
 
     force_set = np.array(forces)
     ph3.forces = force_set
