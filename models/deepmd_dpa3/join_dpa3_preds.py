@@ -1,3 +1,10 @@
+"""Join DPA3 predictions from multiple files and compute formation energies.
+
+This script combines DPA3 model predictions from multiple JSON files, applies MP2020
+energy corrections, and computes formation energies using MP elemental references.
+"""
+
+import os
 from glob import glob
 
 import pandas as pd
@@ -11,11 +18,11 @@ from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom, mp_elemental_ref_energies
 
 e_form_dp_col = "e_form_per_atom_dp"
-
 results = "./results"
-pot_name = "dpa3"
-out_path = f"{pot_name}"
-files = sorted(glob(f"{results}/{pot_name}-*.json.gz"))
+model_name = "dpa3"
+module_dir = os.path.dirname(__file__)
+out_path = f"{module_dir}/{model_name}"
+files = sorted(glob(f"{results}/{model_name}-*.json.gz"))
 
 dfs = {}
 for file_path in tqdm(files):
@@ -75,5 +82,5 @@ df_dpa3[e_form_dp_col] = [
 ]
 df_dpa3 = df_dpa3.round(4)
 
-df_dpa3.select_dtypes("number").to_csv(f"{out_path}.csv.gz")  # save csv storable
+df_dpa3.select_dtypes("number").to_csv(f"{out_path}.csv.gz")  # save CSV storable
 # df_dpa3.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
