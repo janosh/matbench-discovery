@@ -396,8 +396,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     cgcnn_p = "cgcnn/cgcnn+p.yml"
 
     # DeepMD-DPA3 models
-    dpa3_mptrj = "deepmd_dpa3/dpa3_mptrj.yml"
-    dpa3_openlam = "deepmd_dpa3/dpa3_openlam.yml"
+    dpa3_v1_mptrj = "deepmd_dpa3/dpa3-v1-mptrj.yml"
+    dpa3_v1_openlam = "deepmd_dpa3/dpa3-v1-openlam.yml"
 
     # original M3GNet straight from publication, not re-trained
     m3gnet = "m3gnet/m3gnet.yml"

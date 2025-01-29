@@ -18,12 +18,12 @@
 ### How to install
 
 ```bash
- pip install git+https://github.com/deepmodeling/deepmd-kit.git@dpa3-alpha
+pip install git+https://github.com/deepmodeling/deepmd-kit.git@dpa3-alpha
 ```
 
 ### How to use
 
-```python
+```py
 from ase import Atoms
 from deepmd.calculator import DP
 
@@ -84,8 +84,8 @@ print(water.get_forces())
 
 `2025-01-10-dpa3-openlam-preds.csv`
 
-```
-				Full-set	   Unique		10K
+```txt
+    Full-set    Unique  10K
 F1              0.862475       0.882521     0.986829
 DAF             5.013020       5.754306     6.371359
 Precision       0.860179       0.879670     0.974000
@@ -102,15 +102,14 @@ FN           5962.000000    3825.000000     0.000000
 MAE             0.022586       0.022863     0.019195
 RMSE            0.068285       0.066564     0.065646
 R2              0.856962       0.869338     0.904534
-
 ```
 
 ### dpa3-mptrj
 
 `2025-01-10-dpa3-mptrj-pred.csv`
 
-```
-				Full-set	   Unique		10K
+```txt
+    Full-set    Unique  10K
 F1              0.756925       0.765257     0.970982
 DAF             4.130135       4.653807     6.172499
 Precision       0.708685       0.711435     0.943600
@@ -127,19 +126,16 @@ FN           8280.000000    5744.000000     0.000000
 MAE             0.040306       0.041887     0.039272
 RMSE            0.085373       0.085351     0.127715
 R2              0.776398       0.785159     0.648685
-
 ```
 
 Note: When calculating `R2` for `dpa3-mptrj`, we manually set the following outliers to nan: `wbm-1-20399`, `wbm-3-36393`.
 
 ### Relaxed Structure
 
-```
+```sh
 # dpa3-openlam
-
 wget https://bohrium-api.dp.tech/ds-dl/matbench-submit-dpa3-relaxed-2ayv-v1.zip
 
 # dpa3-mptrj
 wget https://bohrium-api.dp.tech/ds-dl/matbench-submit-dpa3-mptrj-relaxed-bf04-v1.zip
-
 ```

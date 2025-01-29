@@ -40,9 +40,6 @@ df_go = pd.read_csv(csv_path, header=[0, 1], index_col=0)
 models = df_go.columns.levels[0]
 
 df_go_metrics = go_metrics.calc_geo_opt_metrics(df_go).convert_dtypes()
-df_go_metrics.rename(index=lambda s: s.replace("MACE", "MACE-MP-0"))
-
-Model.from_label("MACE-MP-0")
 
 go_metrics.write_geo_opt_metrics_to_yaml(df_go_metrics, symprec)
 

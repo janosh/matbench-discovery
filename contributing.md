@@ -25,7 +25,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 
    Example of how to record these quantities for a single structure with ASE:
 
-   ```python
+   ```py
    from collections import defaultdict
    import pandas as pd
    from ase.atoms import Atoms
@@ -66,10 +66,10 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    ```yml
    model_name: My new model # required (this must match the model's label which is the 3rd arg in the matbench_discovery.preds.Model enum)
    model_key: my-new-model # this should match the name of the YAML file and determines the URL /models/<model_key> on which details of the model are displayed on the website
-   model_version: 1.0.0 # required
-   matbench_discovery_version: 1.0 # required
-   date_added: "2023-01-01" # required
-   authors: # required (only name, other keys are optional)
+   model_version: 1.0.0
+   matbench_discovery_version: 1.0
+   date_added: "2023-01-01"
+   authors:
      - name: John Doe
        affiliation: Some University, Some National Lab
        email: john-doe@uni.edu
@@ -83,7 +83,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
        url: uni.edu/jane-doe
        orcid: https://orcid.org/0000-xxxx-yyyy-zzzz
        role: Model
-   repo: https://github.com/<user>/<repo> # required
+   repo: https://github.com/<user>/<repo>
    url: https://<model-docs-or-similar>.org
    doi: https://doi.org/10.5281/zenodo.0000000
    preprint: https://arxiv.org/abs/xxxx.xxxxx

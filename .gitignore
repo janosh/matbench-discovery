@@ -21,7 +21,6 @@ data/**/*.json*
 data/**/*.zip*
 paper/figs/*.pdf*
 !data/**/*umap-projections.csv.bz2
-!models/deepmd_dpa3/*json.gz
 
 # slurm + Weights and Biases logs
 wandb/
