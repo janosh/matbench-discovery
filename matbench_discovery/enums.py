@@ -60,6 +60,7 @@ class MbdKey(LabelEnum):
         "wyckoff_spglib_initial_structure",
         "Aflow-Wyckoff Label Initial Structure",
     )
+    wyckoff_spglib = "wyckoff_spglib", "Aflow-Wyckoff Label"
     international_spg_name = "international_spg_name", "International space group name"
     spg_num_diff = "spg_num_diff", "Difference in space group number"
     n_sym_ops_diff = "n_sym_ops_diff", "Difference in number of symmetry operations"

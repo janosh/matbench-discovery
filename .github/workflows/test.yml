@@ -29,7 +29,8 @@ jobs:
     with:
       os: ${{ matrix.os }}
       python-version: "3.11"
-      install-cmd: pip install -e .[test,symmetry]
+      # TODO remove main branch install of pymatviz after next release
+      install-cmd: pip install -e .[test,symmetry] && pip install git+https://github.com/janosh/pymatviz
 
   vitest:
     uses: janosh/workflows/.github/workflows/npm-test.yml@main
