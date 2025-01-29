@@ -4,7 +4,7 @@ file containing all models."""
 # %%
 import gc
 import os
-from typing import Final
+from typing import Any, Final
 
 import pandas as pd
 from pymatgen.core import Structure
@@ -60,19 +60,38 @@ for idx, (model_label, model_metadata) in enumerate(MODEL_METADATA.items()):
         print(f"{prog_str} {model_label} already analyzed")
         continue
 
-    geo_opt_metrics = model_metadata.get("metrics", {}).get("geo_opt", {})
+    geo_opt_metrics: dict[str, Any] = model_metadata.get("metrics", {}).get(
+        "geo_opt", {}
+    )
 
     # skip models that don't support geometry optimization
     if geo_opt_metrics in ("not applicable", "not available"):
         continue
 
-    ml_relaxed_structs_path = f"{ROOT}/{geo_opt_metrics.get('pred_file')}"
-    if not ml_relaxed_structs_path or not os.path.isfile(ml_relaxed_structs_path):
-        print(f"⚠️ {model_label}-relaxed structures not found")
+    if not (geo_opt_file := geo_opt_metrics.get("pred_file")):
+        print(f"⚠️ {model_label} has no relaxed structures file")
+        continue
+
+    if not os.path.isfile(ml_relaxed_structs_path := f"{ROOT}/{geo_opt_file}"):
+        print(
+            f"⚠️ {model_label}-relaxed structures not found, expected "
+            f"at {ml_relaxed_structs_path}"
+        )
         continue
 
     # Load model structures
-    df_model = pd.read_json(ml_relaxed_structs_path).set_index(Key.mat_id)
+    try:
+        if ml_relaxed_structs_path.endswith((".json", ".json.gz", ".json.xz")):
+            df_model = pd.read_json(ml_relaxed_structs_path).set_index(Key.mat_id)
+        else:
+            raise ValueError(
+                "Relaxed structure analysis currently only supports pymatgen JSON, "
+                f"got {ml_relaxed_structs_path}"
+            )
+    except Exception as exc:
+        exc.add_note(f"{model_label=} {ml_relaxed_structs_path=}")
+        raise
+
     if debug_mode:
         df_model = df_model.head(debug_mode)
 

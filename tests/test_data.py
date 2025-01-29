@@ -316,7 +316,8 @@ def test_load_df_wbm_with_preds(
 
 
 def test_load_df_wbm_max_error_threshold() -> None:
-    models = {Model.mace.label: 38}  # num missing preds for default max_error_threshold
+    # number of missing preds for default max_error_threshold
+    models = {Model.mace_mp_0.label: 38}
     df_no_thresh = load_df_wbm_with_preds(models=list(models))
     df_high_thresh = load_df_wbm_with_preds(models=list(models), max_error_threshold=10)
     df_low_thresh = load_df_wbm_with_preds(models=list(models), max_error_threshold=0.1)

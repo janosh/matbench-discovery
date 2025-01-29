@@ -123,8 +123,8 @@ metrics:
   phonons: # https://github.com/MPA2suite/k_SRME/pull/13
     κ_SRME: 0.574 # dimensionless
   geo_opt:
-    pred_file: https://figshare.com/s/7604486e7e97b5a0014d
-    pred_file_url:
+    pred_file:
+    pred_file_url: https://figshare.com/s/7604486e7e97b5a0014d
     pred_col:
   discovery:
     pred_file: models/mattersim/2024-12-16-mattersim-v1-5M-wbm-IS2RE.csv.gz

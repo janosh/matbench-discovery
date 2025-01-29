@@ -20,7 +20,7 @@ __date__ = "2022-06-18"
 
 
 # %%
-model_name = Model.mace.label
+model_name = Model.mace_mp_0.label
 which_energy: Final = "pred"
 df_each_pred[MbdKey.each_true] = df_wbm[MbdKey.each_true]
 

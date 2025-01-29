@@ -141,5 +141,5 @@ fig.layout.legend.update(legend)
 pmv.powerups.add_identity_line(fig)
 fig.show()
 
-img_name = f"{SITE_FIGS}/e-above-hull-parity-models"
+img_path = f"{SITE_FIGS}/e-above-hull-parity-models"
 # pmv.save_fig(fig, f"{img_path}.svelte")
