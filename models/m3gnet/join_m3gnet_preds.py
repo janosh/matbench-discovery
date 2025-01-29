@@ -47,9 +47,9 @@ df_m3gnet = pd.concat(dfs.values()).round(4)
 
 
 # %%
-df_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_index(
-    Key.mat_id
-)
+wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
+df_cse = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
+
 df_cse[Key.computed_structure_entry] = [
     ComputedStructureEntry.from_dict(dct)
     for dct in tqdm(df_cse[Key.computed_structure_entry])

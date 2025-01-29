@@ -74,9 +74,8 @@ with gzip.open(f"{module_dir}/{today}-ppd-mp.pkl.gz", mode="wb") as zip_file:
 
 
 # %% build phase diagram with both MP entries + WBM entries
-df_wbm = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_index(
-    Key.mat_id
-)
+wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
+df_wbm = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
 
 # using ComputedStructureEntry vs ComputedEntry here is important as CSEs receive
 # more accurate energy corrections that take into account peroxide/superoxide nature

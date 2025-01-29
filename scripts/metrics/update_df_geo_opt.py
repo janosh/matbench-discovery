@@ -30,7 +30,8 @@ else:
 
 
 # %% Load WBM reference structures
-df_wbm_structs = pd.read_json(DataFiles.wbm_computed_structure_entries.path)
+wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
+df_wbm_structs = pd.read_json(wbm_cse_path)
 df_wbm_structs = df_wbm_structs.set_index(Key.mat_id)
 if debug_mode:
     df_wbm_structs = df_wbm_structs.head(debug_mode)
