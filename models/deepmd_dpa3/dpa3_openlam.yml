@@ -1,5 +1,5 @@
 model_name: DPA3-1-OpenLAM
-model_key: dp
+model_key: dpa3-1-openlam
 model_version: v0.1 # 2025-01-10
 matbench_discovery_version: 1.3.1 # required
 date_added: "2025-01-10" # required

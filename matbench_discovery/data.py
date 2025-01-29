@@ -277,7 +277,12 @@ class Files(StrEnum, metaclass=MetaFiles):
         """Get enum member from pretty label."""
         file = next((attr for attr in cls if attr.label == label), None)
         if file is None:
-            raise ValueError(f"{label=} not found in {cls.__name__}")
+            import difflib
+
+            similar_labels = difflib.get_close_matches(label, [k.label for k in cls])
+            raise ValueError(
+                f"{label=} not found in {cls.__name__}. Did you mean one of {similar_labels}?"
+            )
         return file
 
 
@@ -400,7 +405,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # m3gnet_ms = None, "M3GNet MS"
 
     # MACE-MP-0 medium as published in https://arxiv.org/abs/2401.00096 trained on MPtrj
-    mace = "mace/mace-mp-0.yml"
+    mace_mp_0 = "mace/mace-mp-0.yml"
     mace_mpa_0 = "mace/mace-mpa-0.yml"  # trained on MPtrj and Alexandria
 
     # original MEGNet straight from publication, not re-trained
