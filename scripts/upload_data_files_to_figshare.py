@@ -50,7 +50,7 @@ def main(
     structures of the WBM test set, both in pymatgen.Structure and ase.Atoms format.
 
     For a description of each file, see
-    https://matbench-discovery.materialsproject.org/contribute#--direct-download.
+    https://matbench-discovery.materialsproject.org/data#--direct-download.
 
     The original MPtrj training set containing 1.3M structures with their energies,
     forces, stresses and (partial) magmoms is available at https://figshare.com/articles/dataset/23713842.
