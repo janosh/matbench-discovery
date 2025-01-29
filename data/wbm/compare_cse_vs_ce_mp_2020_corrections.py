@@ -21,9 +21,8 @@ from matbench_discovery import ROOT, today
 from matbench_discovery.data import DataFiles, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
 
-df_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_index(
-    Key.mat_id
-)
+wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
+df_cse = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
 
 cses = [
     ComputedStructureEntry.from_dict(dct)

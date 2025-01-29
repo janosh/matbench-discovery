@@ -55,9 +55,8 @@ def main(
     from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
 
     if correct_energies:
-        df_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_index(
-            Key.mat_id
-        )
+        wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
+        df_cse = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
 
         df_cse[Key.computed_structure_entry] = [
             ComputedStructureEntry.from_dict(dct)

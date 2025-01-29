@@ -3,7 +3,7 @@
 > A new more holistic metric combining F1 and κ<sub>SRME</sub>, the symmetric relative mean error in predicting thermal conductivity κ, is under development.
 > Near-term efforts are focused on scaling up a secret test set from ~100 to ~1000 chemically and symmetrically diverse crystal structures to make overfitting on this new task harder.
 > Because it tests the 2nd and 3rd order derivatives of the potential energy surface (PES) and higher derivatives expose even subtle discontinuities in the PES, we believe this to be a stricter and more robust metric for measuring both the utility of ML force fields and the physical accuracy of the PES encoded by an MLFF. It is also interesting because thermal conductivity measurements offer a direct path for benchmarking future MLFFs against experimental data, the highest quality ground truth.
-> We invite early feedback on this benchmark extension via [GitHub Discussions](https://github.com/janosh/matbench-discovery/discussions).
+> We invite early feedback on this benchmark extension via [GitHub Discussions](https://github.com/janosh/matbench-discovery/discussions/193).
 >
 > For details on the modeling task and evaluation method, refer to [arXiv:2408.00755](https://arxiv.org/abs/2408.00755).
 > The only difference between the procedure presented by [Póta](https://tcm.phy.cam.ac.uk/profiles/bp443/), [Ahlawat](https://tcm.phy.cam.ac.uk/profiles/pa483), [Csányi](https://eng.cam.ac.uk/profiles/gc121), and [Simoncelli](https://tcm.phy.cam.ac.uk/profiles/ms2855), and the results shown here is the relaxation protocol has been updated and unified for all models.
