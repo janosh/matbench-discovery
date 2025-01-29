@@ -69,7 +69,7 @@ def parse_relaxed_atoms_list_as_df(
 
     df_cse[Key.computed_structure_entry] = [
         ComputedStructureEntry.from_dict(dct)
-        for dct in tqdm(df_cse[Key.computed_structure_entry])
+        for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
     ]
 
     print(f"Found {len(df_cse):,} CSEs in {wbm_cse_paths=}")

@@ -56,7 +56,7 @@ def join_predictions(
 
     df_cse[Key.computed_structure_entry] = [
         ComputedStructureEntry.from_dict(dct)
-        for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Creating pmg CSEs")
+        for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
     ]
 
     # transfer fairchem energies and relaxed structures WBM CSEs since MP2020 energy

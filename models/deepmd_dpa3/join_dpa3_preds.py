@@ -41,7 +41,7 @@ df_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_index(
 )
 df_cse[Key.computed_structure_entry] = [
     ComputedStructureEntry.from_dict(dct)
-    for dct in tqdm(df_cse[Key.computed_structure_entry])
+    for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
 ]
 
 # As DPA3 is trained on 'uncorrected energy' of MPtrj,
