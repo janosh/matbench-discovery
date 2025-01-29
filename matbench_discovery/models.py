@@ -14,10 +14,6 @@ MODEL_METADATA: dict[str, dict[str, Any]] = {}
 
 for model_dir in MODEL_DIRS:
     metadata_files = glob(f"{model_dir}*.yml")
-    if not 1 <= len(metadata_files) <= 2:
-        raise RuntimeError(
-            f"expected 1 metadata file, got {metadata_files=} in {model_dir=}"
-        )
     for metadata_file in metadata_files:
         # make sure all required keys are non-empty
         with open(metadata_file) as yml_file:

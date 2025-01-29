@@ -33,7 +33,7 @@ df_cse = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
 
 df_cse[Key.computed_structure_entry] = [
     ComputedStructureEntry.from_dict(dct)
-    for dct in tqdm(df_cse[Key.computed_structure_entry])
+    for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
 ]
 
 # As SevenNet-0 (11July2024) is trained on 'uncorrected energy' of MPtrj,

@@ -60,7 +60,7 @@ def main(
 
         df_cse[Key.computed_structure_entry] = [
             ComputedStructureEntry.from_dict(dct)
-            for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Loading CSEs")
+            for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
         ]
 
         # transfer predicted energies and relaxed structures WBM CSEs since
