@@ -82,7 +82,10 @@ class MbdKey(LabelEnum):
     kappa_tot_avg = "kappa_tot_avg", "Average total thermal conductivity"
     kappa_p_rta = "kappa_p_rta", "Particle-like thermal conductivity (RTA)"
     kappa_c = "kappa_c", "Thermal conductivity correction"
-    mode_kappa_tot = "mode_kappa_tot", "Mode-resolved total thermal conductivity"
+    mode_kappa_tot_rta = (
+        "mode_kappa_tot_rta",
+        "Mode-resolved total thermal conductivity (RTA)",
+    )
     mode_kappa_tot_avg = (
         "mode_kappa_tot_avg",
         "Mode-resolved average thermal conductivity",

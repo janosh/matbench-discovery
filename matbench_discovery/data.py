@@ -311,7 +311,9 @@ class DataFiles(Files):
     phonondb_pbe_103_structures = (
         "phonons/2024-11-09-phononDB-PBE-103-structures.extxyz"
     )
-    phonondb_pbe_103_kappa_nac = "phonons/2024-11-09-kappas-phononDB-PBE-noNAC.json.gz"
+    phonondb_pbe_103_kappa_no_nac = (
+        "phonons/2024-11-09-kappas-phononDB-PBE-noNAC.json.gz"
+    )
 
     @functools.cached_property
     def yaml(self) -> dict[str, dict[str, str]]:

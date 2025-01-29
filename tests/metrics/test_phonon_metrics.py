@@ -17,7 +17,7 @@ def df_pred() -> pd.DataFrame:
     data = {
         MbdKey.kappa_tot_rta: [np.diag([1, 2, 3]), 2 * np.eye(3)],
         MbdKey.kappa_tot_avg: [2, 2],  # average of diagonal elements
-        MbdKey.mode_kappa_tot: [np.diag([0.5, 1, 1.5]), np.eye(3)],
+        MbdKey.mode_kappa_tot_rta: [np.diag([0.5, 1, 1.5]), np.eye(3)],
         Key.mode_weights: [np.array([1]), np.array([1])],
         Key.has_imag_ph_modes: [False, False],
         Key.final_spg_num: [1, 1],
@@ -32,7 +32,7 @@ def df_true() -> pd.DataFrame:
     data = {
         MbdKey.kappa_tot_rta: [np.diag([1, 2, 3]), np.diag([2, 2, 2])],
         MbdKey.kappa_tot_avg: [2, 2],
-        MbdKey.mode_kappa_tot: [np.diag([0.5, 1, 1.5]), np.eye(3)],
+        MbdKey.mode_kappa_tot_rta: [np.diag([0.5, 1, 1.5]), np.eye(3)],
         Key.mode_weights: [np.array([1]), np.array([1])],
     }
     return pd.DataFrame(data)
@@ -46,7 +46,7 @@ def df_minimal() -> pd.DataFrame:
             MbdKey.kappa_tot_rta: [np.eye(3)],
             MbdKey.kappa_tot_avg: [1.0],
             Key.mode_weights: [np.array([1])],
-            MbdKey.mode_kappa_tot: [np.eye(3)],
+            MbdKey.mode_kappa_tot_rta: [np.eye(3)],
         }
     )
 
@@ -58,7 +58,7 @@ def series_single_temp() -> pd.Series:
         {
             MbdKey.kappa_tot_avg: np.array([2.0]),
             MbdKey.kappa_tot_rta: 2 * np.eye(3),
-            MbdKey.mode_kappa_tot: np.eye(3),
+            MbdKey.mode_kappa_tot_rta: np.eye(3),
             Key.mode_weights: np.array([1.0]),
         }
     )
@@ -72,7 +72,7 @@ def series_multi_temp() -> pd.Series:
         {
             MbdKey.kappa_tot_avg: np.array([2.0, 1.5, 1.0]),
             MbdKey.kappa_tot_rta: np.array([2 * np.eye(3), 1.5 * np.eye(3), np.eye(3)]),
-            MbdKey.mode_kappa_tot: np.array(
+            MbdKey.mode_kappa_tot_rta: np.array(
                 [np.eye(3), 0.75 * np.eye(3), 0.5 * np.eye(3)]
             ),
             Key.mode_weights: np.ones(len(temps)),
@@ -132,26 +132,26 @@ def test_calculate_kappa_avg_edge_cases() -> None:
         (
             {
                 MbdKey.kappa_tot_avg: [1, 2],
-                MbdKey.mode_kappa_tot: [np.ones((1, 3, 3))] * 2,
+                MbdKey.mode_kappa_tot_rta: [np.ones((1, 3, 3))] * 2,
             },
             {
                 MbdKey.kappa_tot_avg: [1, 2],
-                MbdKey.mode_kappa_tot: [np.ones((1, 3, 3))] * 2,
+                MbdKey.mode_kappa_tot_rta: [np.ones((1, 3, 3))] * 2,
             },
-            [0, 0],
-            [0, 0],
+            [0, -2 / 3],
+            [0, 2 / 3],
         ),
         (
             {
                 MbdKey.kappa_tot_avg: [2, 4],
-                MbdKey.mode_kappa_tot: [np.ones((1, 3, 3)) * 2] * 2,
+                MbdKey.mode_kappa_tot_rta: [np.ones((1, 3, 3)) * 2] * 2,
             },
             {
                 MbdKey.kappa_tot_avg: [1, 2],
-                MbdKey.mode_kappa_tot: [np.ones((1, 3, 3))] * 2,
+                MbdKey.mode_kappa_tot_rta: [np.ones((1, 3, 3))] * 2,
             },
-            [2 / 3, 2 / 3],  # (2-1)/1.5, (4-2)/3
-            [2 / 3, 2 / 3],
+            [0, -2 / 3],
+            [0, 2 / 3],
         ),
     ],
 )
@@ -194,7 +194,7 @@ def test_calc_kappa_metrics_from_dfs_parametrized(
         (
             {
                 MbdKey.kappa_tot_avg: np.array([0]),
-                MbdKey.mode_kappa_tot: np.zeros((1, 3, 3)),
+                MbdKey.mode_kappa_tot_rta: np.zeros((1, 3, 3)),
             },
             6,  # SRME for zero conductivity case
         ),
@@ -208,7 +208,7 @@ def test_calc_kappa_srme_error_cases(
         {
             MbdKey.kappa_tot_avg: np.array([1]),
             MbdKey.kappa_tot_rta: np.ones((3, 3)),
-            MbdKey.mode_kappa_tot: np.ones((1, 3, 3)),
+            MbdKey.mode_kappa_tot_rta: np.ones((1, 3, 3)),
             Key.mode_weights: np.array([1]),
             Key.has_imag_ph_modes: False,
             Key.final_spg_num: 1,
@@ -219,7 +219,7 @@ def test_calc_kappa_srme_error_cases(
         {
             MbdKey.kappa_tot_avg: np.array([1]),
             MbdKey.kappa_tot_rta: np.ones((3, 3)),
-            MbdKey.mode_kappa_tot: np.ones((1, 3, 3)),
+            MbdKey.mode_kappa_tot_rta: np.ones((1, 3, 3)),
             Key.mode_weights: np.array([1]),
         }
     )
@@ -236,8 +236,8 @@ def test_calc_kappa_srme_error_cases(
     "temperatures,expected_length",
     [
         ([100.0], 1),
-        ([100.0, 200.0], 2),
-        ([100.0, 200.0, 300.0], 3),
+        ([100, 200.0], 2),
+        ([100, 200, 300.0], 3),
     ],
 )
 def test_calc_kappa_srme_temperature_handling_parametrized(
@@ -248,7 +248,7 @@ def test_calc_kappa_srme_temperature_handling_parametrized(
         {
             MbdKey.kappa_tot_avg: np.array(temperatures),
             MbdKey.kappa_tot_rta: np.stack([np.eye(3)] * len(temperatures)),
-            MbdKey.mode_kappa_tot: np.stack(
+            MbdKey.mode_kappa_tot_rta: np.stack(
                 [np.eye(3).reshape(1, 3, 3)] * len(temperatures)
             ),
             Key.mode_weights: np.ones(len(temperatures)),
@@ -291,7 +291,7 @@ def test_calc_kappa_srme_single_material() -> None:
         {
             MbdKey.kappa_tot_avg: np.array([2.0]),
             MbdKey.kappa_tot_rta: 2 * np.eye(3),
-            MbdKey.mode_kappa_tot: np.eye(3),
+            MbdKey.mode_kappa_tot_rta: np.eye(3),
             Key.mode_weights: np.array([1.0]),
         }
     )
@@ -302,7 +302,7 @@ def test_calc_kappa_srme_single_material() -> None:
 
     # Test with different values
     ml_data[MbdKey.kappa_tot_avg] = np.array([3.0])
-    ml_data[MbdKey.mode_kappa_tot] = [1.5 * np.eye(3)]
+    ml_data[MbdKey.mode_kappa_tot_rta] = [1.5 * np.eye(3)]
     kappa_srmes = phonon_metrics.calc_kappa_srme(ml_data, dft_data)
     assert kappa_srmes[0] > 0  # Should be non-zero for different values
 
@@ -314,7 +314,7 @@ def test_calc_kappa_srme_temperature_handling() -> None:
         {
             MbdKey.kappa_tot_avg: np.array([2, 1.5]),  # Two temperatures
             MbdKey.kappa_tot_rta: np.array([2 * np.eye(3), 1.5 * np.eye(3)]),
-            MbdKey.mode_kappa_tot: np.array([np.eye(3), 0.75 * np.eye(3)]),
+            MbdKey.mode_kappa_tot_rta: np.array([np.eye(3), 0.75 * np.eye(3)]),
             Key.mode_weights: np.array([1, 1]),
         }
     )
@@ -322,7 +322,7 @@ def test_calc_kappa_srme_temperature_handling() -> None:
         {
             MbdKey.kappa_tot_avg: np.array([2, 1.5]),
             MbdKey.kappa_tot_rta: np.array([2 * np.eye(3), 1.5 * np.eye(3)]),
-            MbdKey.mode_kappa_tot: np.array([np.eye(3), 0.75 * np.eye(3)]),
+            MbdKey.mode_kappa_tot_rta: np.array([np.eye(3), 0.75 * np.eye(3)]),
             Key.mode_weights: np.array([1, 1]),
         }
     )
@@ -339,7 +339,7 @@ def test_calc_kappa_metrics_with_different_values(
     df_pred_copy = df_pred.copy()
     df_pred_copy[MbdKey.kappa_tot_avg] = [4, 4]  # Double the original values
     df_pred_copy[MbdKey.kappa_tot_rta] = [2 * np.diag([1, 2, 3]), 4 * np.eye(3)]
-    df_pred_copy[MbdKey.mode_kappa_tot] = [2 * np.diag([1, 2, 3]), 4 * np.eye(3)]
+    df_pred_copy[MbdKey.mode_kappa_tot_rta] = [2 * np.diag([1, 2, 3]), 4 * np.eye(3)]
 
     df_out = phonon_metrics.calc_kappa_metrics_from_dfs(df_pred_copy, df_true)
     assert df_out.shape == (2, 11)
@@ -357,13 +357,13 @@ def test_calc_kappa_metrics_with_different_values(
         Key.init_spg_num,
         MbdKey.kappa_tot_avg,
         MbdKey.kappa_tot_rta,
-        MbdKey.mode_kappa_tot_avg,
+        MbdKey.mode_kappa_tot_rta,
         Key.mode_weights,
         Key.srd,
         MbdKey.true_kappa_tot_avg,
     }
-    assert df_out[Key.sre].mean() == pytest.approx(2 / 3)
-    assert df_out[Key.srme].mean() == pytest.approx(1 / 4)
+    assert df_out[Key.sre].mean() == pytest.approx(0.7)
+    assert df_out[Key.srme].mean() == pytest.approx(0.4875)
 
 
 def test_calc_kappa_metrics_from_dfs_missing_columns(
@@ -387,7 +387,7 @@ def test_calc_kappa_srme_temperature_dependence(series_multi_temp: pd.Series) ->
     dft_data = series_multi_temp.copy()
     dft_data[MbdKey.kappa_tot_avg] /= 2  # Make DFT values half of ML predictions
     dft_data[MbdKey.kappa_tot_rta] /= 2
-    dft_data[MbdKey.mode_kappa_tot] /= 2
+    dft_data[MbdKey.mode_kappa_tot_rta] /= 2
 
     kappa_srmes = phonon_metrics.calc_kappa_srme(ml_data, dft_data)
     assert len(kappa_srmes) == len(ml_data[Key.mode_weights])

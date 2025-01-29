@@ -147,7 +147,7 @@ def test_calculate_conductivity(
         Key.mode_weights,
         Key.q_points,
         Key.ph_freqs,
-        MbdKey.mode_kappa_tot,
+        MbdKey.mode_kappa_tot_rta,
     }
     assert set(kappa_dict) >= required_keys
     assert all(isinstance(val, np.ndarray) for val in kappa_dict.values())
@@ -162,7 +162,7 @@ def test_calculate_mode_kappa_tot() -> None:
     )  # (T, q-points, bands, bands, xyz)
     heat_capacity = NP_RNG.random((2, 3, 3))  # (T, q-points, bands)
 
-    result = ltc.calculate_mode_kappa_tot(
+    result = ltc.calc_mode_kappa_tot(
         mode_kappa_p_rta, mode_kappa_coherence, heat_capacity
     )
     assert isinstance(result, np.ndarray)

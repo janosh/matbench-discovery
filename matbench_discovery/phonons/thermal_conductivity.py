@@ -3,6 +3,9 @@
 Code is adapted from https://github.com/MPA2suite/k_SRME/blob/6ff4c867/k_srme/conductivity.py.
 All credit to Balázs Póta, Paramvir Ahlawat, Gábor Csányi, Michele Simoncelli. See
 https://arxiv.org/abs/2408.00755 for details.
+It was ported to this repo in https://github.com/janosh/matbench-discovery/pull/196 to
+implement parallelization across input structures which allows scaling thermal
+conductivity metric to larger test sets.
 """
 
 import warnings
@@ -246,7 +249,7 @@ def calculate_conductivity(
         Key.q_points: deepcopy(kappa.qpoints),
         Key.ph_freqs: deepcopy(kappa.frequencies),
     }
-    mode_kappa_total = kappa_dict[MbdKey.mode_kappa_tot] = calculate_mode_kappa_tot(
+    mode_kappa_total = kappa_dict[MbdKey.mode_kappa_tot_rta] = calc_mode_kappa_tot(
         deepcopy(kappa.mode_kappa_P_RTA[0]),
         deepcopy(kappa.mode_kappa_C[0]),
         deepcopy(kappa.mode_heat_capacities),
@@ -267,7 +270,7 @@ def calculate_conductivity(
     return ph3, kappa_dict, kappa
 
 
-def calculate_mode_kappa_tot(
+def calc_mode_kappa_tot(
     mode_kappa_p_rta: np.ndarray,
     mode_kappa_coherence: np.ndarray,
     heat_capacity: np.ndarray,
