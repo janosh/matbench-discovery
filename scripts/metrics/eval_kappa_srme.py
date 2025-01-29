@@ -11,7 +11,7 @@ from matbench_discovery.metrics import phonons
 
 model_name = "mace-omat-0-medium"
 in_folder = f"2025-01-28-{model_name}-phononDB-LTC-FIRE_2SR_force0.0001_sym1e-05"
-model_dir = Model.mace.yaml_path.rsplit("/", 1)[0]
+model_dir = Model.mace_mpa_0.yaml_path.rsplit("/", 1)[0]
 in_path = f"{model_dir}/{in_folder}/kappa.json.gz"
 
 df_ml = pd.read_json(in_path).set_index(Key.mat_id)
