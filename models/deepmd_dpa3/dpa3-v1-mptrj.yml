@@ -94,7 +94,7 @@ metrics:
     κ_SRME: 0.964
   geo_opt:
     pred_file: models/deepmd_dpa3/2025-01-29-dpa3-mptrj-v1-wbm-geo-opt.json.gz
-    pred_col: dpa3_v1_mptrj_structures
+    pred_col: dp_structure
     pred_file_url:
   discovery:
     pred_file: models/deepmd_dpa3/2025-01-10-dpa3-mptrj-discovery.csv.gz

@@ -106,7 +106,7 @@ metrics:
     κ_SRME: 0.741
   geo_opt:
     pred_file: models/deepmd_dpa3/2025-01-10-dpa3-openlam-v1-wbm-geo-opt.json.gz
-    pred_col: dpa3_v1_openlam_structures
+    pred_col: dp_structure
     pred_file_url:
   discovery:
     pred_file: models/deepmd_dpa3/2025-01-10-dpa3-openlam-discovery.csv.gz
