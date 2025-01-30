@@ -1,3 +1,6 @@
+"""Run this script to add/update geometry optimization analysis for new models to individual
+CSV files in each model's directory."""
+
 # How to submit new models to Matbench Discovery
 
 ## 🔨 &thinsp; Installation
@@ -15,13 +18,28 @@ There's also a [PyPI package](https://pypi.org/project/matbench-discovery) for f
 
 To submit a new model to this benchmark and add it to our leaderboard, please create a pull request to the [`main` branch][repo] that includes at least these 3 required files:
 
-1. `<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz`: Your model's energy predictions for all ~250k WBM compounds as compressed JSON or CSV. The recommended way to create this file is with `pandas.DataFrame.to_{json|csv}("<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz")`. JSON is preferred over CSV if your model not only predicts energies (floats) but also objects like relaxed structures. See e.g. [M3GNet](https://github.com/janosh/matbench-discovery/blob/-/models/m3gnet/test_m3gnet.py) and [CHGNet](https://github.com/janosh/matbench-discovery/blob/-/models/chgnet/test_chgnet.py) test scripts.
-   For machine learning force field (MLFF) submissions, you additionally upload the relaxed structures and forces from your model's geometry optimization to Figshare or a similar platform and include the download link in your PR description and the YAML metadata file. This file should include:
+1. `<yyyy-mm-dd>-<model_name>-preds.csv.gz`: Your model's energy predictions for all ~250k WBM compounds as compressed CSV. The recommended way to create this file is with `pandas.DataFrame.to_csv("<yyyy-mm-dd>-<model_name>-wbm-IS2RE.csv.gz")`. See e.g. [`test_mace_discovery`](https://github.com/janosh/matbench-discovery/blob/-/models/mace/test_mace_discovery.py) for code that generates this file.
 
-   - The final relaxed structures (as ASE `Atoms` or pymatgen `Structures`)
-   - Energies (eV), forces (eV/Å), stress (eV/Å³) and volume (Å³) at each relaxation step
+   ### Sharing Model Prediction Files
 
-   Recording the model-relaxed structures enables additional analysis of root mean squared displacement (RMSD) and symmetry breaking with respect to DFT relaxed structures. Having the forces and stresses at each step also allows analyzing any pathological behavior for structures were relaxation failed or went haywire.
+   You should share your model's predictions through a cloud storage service (e.g. Figshare, Zenodo, Google Drive, Dropbox, AWS, etc.) and include the download links in your PR description. Your cloud storage directory should contain:
+
+   1. `<yyyy-mm-dd>-<model_name>-wbm-geo-opt.json.gz`: The model's relaxed structures as compressed JSON containing:
+
+      - Final relaxed structures (as ASE `Atoms` or pymatgen `Structures`)
+      - Final energies (eV), forces (eV/Å), stress (eV/Å³) and volume (Å³)
+      - Material IDs matching the WBM test set
+
+   2. `<yyyy-mm-dd>-<model_name>-wbm-IS2RE.csv.gz`: A compressed CSV file with:
+
+      - Material IDs matching the WBM test set
+      - Final formation energies per atom (eV/atom)
+
+   3. `<yyyy-mm-dd>-<model_name>-wbm-kappa.json.gz`: A compressed JSON file with:
+      - Material IDs matching the WBM test set
+      - Predicted thermal conductivity (κ) values (W/mK)
+
+   Having the forces and stresses at each relaxation step also allows analyzing any pathological behavior for structures where relaxation failed or went haywire.
 
    Example of how to record these quantities for a single structure with ASE:
 
@@ -60,7 +78,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    df_traj.to_csv("trajectory.csv.gz")  # Save final structure and trajectory data
    ```
 
-1. `test_<model_name>.(py|ipynb)`: The Python script or Jupyter notebook that generated the energy predictions. Ideally, this file should have comments explaining at a high level what the code is doing and how the model works so others can understand and reproduce your results. If the model deployed on this benchmark was trained specifically for this purpose (i.e. if you wrote any training/fine-tuning code while preparing your PR), please also include it as `train_<model_name>.(py|ipynb)`.
+1. `test_<model_name>_discovery.(py|ipynb)`: The Python script that generated the WBM final energy predictions given the initial (unrelaxed) DFT structures. Ideally, this file should have comments explaining at a high level what the code is doing and how the model works so others can understand and reproduce your results. If the model deployed on this benchmark was trained specifically for this purpose (i.e. if you wrote any training/fine-tuning code while preparing your PR), please also include it as `train_<model_name>.(py|ipynb)`.
 1. `<model_name.yml>`: A file to record all relevant metadata of your algorithm like model name and version, authors, package requirements, links to publications, notes, etc. Here's a template:
 
    ```yml
@@ -138,7 +156,7 @@ matbench-discovery-root
 └── models
     └── <model_name>
         ├── <model_name>.yml
-        ├── <yyyy-mm-dd>-<model_name>-preds.(json|csv).gz
+        ├── <yyyy-mm-dd>-<model_name>-preds.csv.gz
         ├── test_<model_name>.py
         ├── readme.md  # optional
         └── train_<model_name>.py  # optional
