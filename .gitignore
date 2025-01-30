@@ -30,6 +30,7 @@ models/**/*.log
 models/**/*.model
 models/**/*.pt
 models/**/*.tgz
+models/**/*.csv*
 
 # WIP model submissions
 models/_*

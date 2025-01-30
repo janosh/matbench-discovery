@@ -66,7 +66,7 @@ metrics:
     pred_file_url:
     pred_col:
   discovery:
-    pred_file: models/gnome/2023-11-01-gnome-preds-50076332.csv.gz
+    pred_file: models/gnome/2023-11-01-gnome-50076332-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/ndownloader/files/51607301
     pred_col: e_gnome_after_relax
     full_test_set:

@@ -102,14 +102,14 @@ notes:
     Furthermore, DPA3 maintains energy conservation and respects the physical symmetries of the potential energy surface, making it a dependable tool for a wide range of scientific applications.
 metrics:
   phonons:
-    pred_file: models/deepmd_dpa3/2025-01-10-dpa3-openlam-kappa.json.gz
+    pred_file: models/deepmd_dpa3/dpa3-v1-openlam/2025-01-10-kappa-103.json.gz
     κ_SRME: 0.741
   geo_opt:
-    pred_file: models/deepmd_dpa3/2025-01-10-dpa3-openlam-v1-wbm-geo-opt.json.gz
+    pred_file: models/deepmd_dpa3/dpa3-v1-openlam/2025-01-10-wbm-geo-opt.json.gz
     pred_col: dp_structure
     pred_file_url:
   discovery:
-    pred_file: models/deepmd_dpa3/2025-01-10-dpa3-openlam-discovery.csv.gz
+    pred_file: models/deepmd_dpa3/dpa3-v1-openlam/2025-01-10-wbm-IS2RE.csv.gz
     pred_file_url: https://bohrium-api.dp.tech/ds-dl/matbench-submit-dpa3-relaxed-2ayv-v1.zip
     pred_col: e_form_per_atom_dp
     full_test_set:

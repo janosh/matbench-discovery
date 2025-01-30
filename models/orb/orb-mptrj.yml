@@ -76,7 +76,7 @@ metrics:
   phonons:
     κ_SRME: 1.725
   geo_opt:
-    pred_file: models/orb/orb-mptrj-only-v2-20241014.json.gz
+    pred_file: models/orb/orbff-mptrj-v2/2024-10-14-wbm-geo-opt.json.gz
     pred_file_url: https://figshare.com/ndownloader/files/51607427
     pred_col: orb_structure
     symprec=1e-5:
@@ -86,6 +86,7 @@ metrics:
       symmetry_match: 0.1397 # fraction
       symmetry_increase: 0.0007 # fraction
       n_structures: 256963 # count
+      analysis_file: models/orb/orbff-mptrj-v2/2024-10-14-wbm-geo-opt-symprec=1e-5.csv.gz
     symprec=1e-2:
       rmsd: 0.0185 # Å
       n_sym_ops_mae: 6.1283 # unitless
@@ -93,8 +94,9 @@ metrics:
       symmetry_match: 0.3716 # fraction
       symmetry_increase: 0.0332 # fraction
       n_structures: 256614 # count
+      analysis_file: models/orb/orbff-mptrj-v2/2024-10-14-wbm-geo-opt-symprec=1e-2.csv.gz
   discovery:
-    pred_file: models/orb/orbff-mptrj-only-v2-20241014.csv.gz
+    pred_file: models/orb/orbff-mptrj-v2/2024-10-14-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/ndownloader/files/51607310
     pred_col: e_form_per_atom_orb
     full_test_set:

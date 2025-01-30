@@ -53,7 +53,7 @@ metrics:
   phonons:
     κ_SRME: 0.525 # https://github.com/MPA2suite/k_SRME/pull/11/files
   geo_opt:
-    pred_file: models/grace2l_r6/GRACE_2L_r6_11Nov2024_relaxed_structures.json.gz
+    pred_file: models/grace2l_r6/2024-11-11-GRACE_2L_r6_relaxed_structures.json.gz
     pred_file_url: https://figshare.com/ndownloader/files/51607439
     pred_col: grace2l_r6_structure
     symprec=1e-5:
@@ -63,6 +63,7 @@ metrics:
       symmetry_match: 0.7315 # fraction
       symmetry_increase: 0.2285 # fraction
       n_structures: 256862 # count
+      analysis_file: models/grace2l_r6/2024-11-11-GRACE_2L_r6_relaxed_structures-symprec=1e-5.csv.gz
     symprec=1e-2:
       rmsd: 0.0186 # Å
       n_sym_ops_mae: 1.8982 # unitless
@@ -70,8 +71,9 @@ metrics:
       symmetry_match: 0.7976 # fraction
       symmetry_increase: 0.1363 # fraction
       n_structures: 256513 # count
+      analysis_file: models/grace2l_r6/2024-11-11-GRACE_2L_r6_relaxed_structures-symprec=1e-2.csv.gz
   discovery:
-    pred_file: models/grace2l_r6/2024-11-21-MP_GRACE_2L_r6_11Nov2024-wbm-IS2RE-FIRE.csv.gz
+    pred_file: models/grace2l_r6/2024-11-11-MP_GRACE_2L_r6-wbm-IS2RE-FIRE.csv.gz
     pred_file_url: https://figshare.com/ndownloader/files/51607319
     pred_col: e_form_per_atom_grace
     full_test_set:
