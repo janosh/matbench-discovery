@@ -68,7 +68,7 @@ metrics:
     κ_SRME: 1.717
   geo_opt:
     pred_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-geo-opt.json.gz
-    pred_file_url: https://figshare.com/ndownloader/files/51607412
+    pred_file_url: https://figshare.com/ndownloader/files/52061999
     pred_col: chgnet_structure
     symprec=1e-5:
       rmsd: 0.0216 # Å
@@ -78,6 +78,7 @@ metrics:
       n_sym_ops_mae: 3.2731 # unitless
       n_structures: 250779 # count
       analysis_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-geo-opt-symprec=1e-5.csv.gz
+      analysis_file_url: https://figshare.com/ndownloader/files/52062005
     symprec=1e-2:
       rmsd: 0.0218 # Å
       n_sym_ops_mae: 2.0622 # unitless
@@ -86,9 +87,10 @@ metrics:
       symmetry_increase: 0.118 # fraction
       n_structures: 256614 # count
       analysis_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-geo-opt-symprec=1e-2.csv.gz
+      analysis_file_url: https://figshare.com/ndownloader/files/52062008
   discovery:
     pred_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/ndownloader/files/51607268
+    pred_file_url: https://figshare.com/ndownloader/files/52057526
     pred_col: e_form_per_atom_chgnet
     full_test_set:
       F1: 0.612 # fraction

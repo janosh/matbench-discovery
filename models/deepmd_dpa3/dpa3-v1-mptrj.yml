@@ -91,14 +91,18 @@ notes:
 metrics:
   phonons:
     pred_file: models/deepmd_dpa3/dpa3-v1-mptrj/2025-01-10-kappa-103.json.gz
+    pred_file_url: https://figshare.com/ndownloader/files/52057901
     κ_SRME: 0.964
   geo_opt:
-    pred_file: models/deepmd_dpa3/dpa3-v1-mptrj/2025-01-10-v1-wbm-geo-opt.json.gz
+    pred_file: models/deepmd_dpa3/dpa3-v1-mptrj/2025-01-10-wbm-geo-opt.json.gz
     pred_col: dp_structure
     pred_file_url:
+    symprec=1e-5:
+      analysis_file: models/deepmd_dpa3/dpa3-v1-mptrj/2025-01-10-wbm-geo-opt-symprec=1e-5.csv.gz
+      analysis_file_url: https://figshare.com/ndownloader/files/52059431
   discovery:
     pred_file: models/deepmd_dpa3/dpa3-v1-mptrj/2025-01-10-wbm-IS2RE.csv.gz
-    pred_file_url: https://bohrium-api.dp.tech/ds-dl/matbench-submit-dpa3-mptrj-relaxed-bf04-v1.zip
+    pred_file_url: https://figshare.com/ndownloader/files/52057529
     pred_col: e_form_per_atom_dp
     full_test_set:
       F1: 0.757 # fraction

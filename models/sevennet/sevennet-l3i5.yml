@@ -80,7 +80,7 @@ metrics:
     κ_SRME: 0.550
   geo_opt:
     pred_file: models/sevennet/sevennet-l3i5/2024-12-10-wbm-geo-opt.json.gz
-    pred_file_url: https://figshare.com/ndownloader/files/51607421
+    pred_file_url: https://figshare.com/ndownloader/files/52062056
     pred_col: sevennet_structures
     symprec=1e-5:
       rmsd: 0.0182 # Å
@@ -90,6 +90,7 @@ metrics:
       symmetry_increase: 0.1498 # fraction
       n_structures: 256963 # count
       analysis_file: models/sevennet/sevennet-l3i5/2024-12-10-wbm-geo-opt-symprec=1e-5.csv.gz
+      analysis_file_url: https://figshare.com/ndownloader/files/52062170
     symprec=1e-2:
       rmsd: 0.0182 # Å
       n_sym_ops_mae: 1.9727 # unitless
@@ -98,9 +99,10 @@ metrics:
       symmetry_increase: 0.1294 # fraction
       n_structures: 256614 # count
       analysis_file: models/sevennet/sevennet-l3i5/2024-12-10-wbm-geo-opt-symprec=1e-2.csv.gz
+      analysis_file_url: https://figshare.com/ndownloader/files/52062173
   discovery:
     pred_file: models/sevennet/sevennet-l3i5/2024-12-10-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/ndownloader/files/51607292
+    pred_file_url: https://figshare.com/ndownloader/files/52057547
     pred_col: e_form_per_atom_chgTot_l3i5
     full_test_set:
       F1: 0.751 # fraction

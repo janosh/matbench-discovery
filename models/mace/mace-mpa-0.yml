@@ -92,7 +92,7 @@ metrics:
       analysis_file: TODO add analysis file
   discovery:
     pred_file: models/mace/mace-mpa-0/2024-12-09-wbm-IS2RE-FIRE.csv.gz
-    pred_file_url: https://figshare.com/ndownloader/files/51607283
+    pred_file_url: https://figshare.com/ndownloader/files/52057541
     pred_col: e_form_per_atom_mace
     full_test_set:
       F1: 0.836 # fraction
