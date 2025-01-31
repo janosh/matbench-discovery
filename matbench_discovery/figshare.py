@@ -123,7 +123,7 @@ def upload_file(article_id: int, file_path: str, file_name: str = "") -> int:
         article_id (int): ID of the article to upload to.
         file_path (str): Path to the file to upload.
         file_name (str, optional): Name as it will appear in Figshare. Defaults to the
-            file path relative to repo's root dir: file_path.removeprefix(f"{ROOT}/").
+            file path relative to repo's root dir: file_path.removeprefix(ROOT).
 
     Returns:
         int: The ID of the uploaded file.
