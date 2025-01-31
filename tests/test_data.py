@@ -1,4 +1,5 @@
 import os
+import sys
 import zipfile
 from pathlib import Path
 from typing import Any
@@ -78,7 +79,15 @@ def test_glob_to_df(pattern: str, tmp_path: Path, df_mixed: pd.DataFrame) -> Non
 
     with pytest.raises(ValueError, match="Unsupported file extension in pattern='foo'"):
         glob_to_df("foo")
-    with pytest.raises(FileNotFoundError, match="No files matching glob pattern="):
+
+    # Mock sys.modules without pytest to test file not found error
+    mock_modules = dict(sys.modules)
+    mock_modules.pop("pytest", None)  # remove pytest since glob_to_df returns mock data
+    # if if finds pytest imported
+    with (
+        patch("sys.modules", mock_modules),
+        pytest.raises(FileNotFoundError, match="No files matching glob pattern="),
+    ):
         glob_to_df("foo.csv")
 
 

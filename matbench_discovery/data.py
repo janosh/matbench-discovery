@@ -84,22 +84,6 @@ def glob_to_df(
         FileNotFoundError: If no files match the glob pattern.
         ValueError: If reader is None and the file extension is unrecognized.
     """
-    # load mocked model predictions in CI or test environments (just first 500 lines
-    # from MACE-MPA-0 WBM energy preds)
-    if "pytest" in sys.modules or os.environ.get("CI"):
-        df_mock = pd.read_csv(f"{TEST_FILES}/mock-wbm-energy-preds.csv.gz")
-        # .set_index( "material_id" )
-        # make sure pred_cols for all models are present in df_mock
-        for model in Model:
-            with open(model.yaml_path) as file:
-                model_data = yaml.safe_load(file)
-
-            pred_col = (
-                model_data.get("metrics", {}).get("discovery", {}).get("pred_col")
-            )
-            df_mock[pred_col] = df_mock["e_form_per_atom"]
-        return df_mock
-
     if reader is None:
         if ".csv" in pattern.lower():
             reader = pd.read_csv
@@ -108,9 +92,24 @@ def glob_to_df(
         else:
             raise ValueError(f"Unsupported file extension in {pattern=}")
 
-    # prefix pattern with ROOT if not absolute path
     files = glob(pattern)
+
     if len(files) == 0:
+        # load mocked model predictions when running pytest (just first 500 lines
+        # from MACE-MPA-0 WBM energy preds)
+        if "pytest" in sys.modules:
+            df_mock = pd.read_csv(f"{TEST_FILES}/mock-wbm-energy-preds.csv.gz")
+            # .set_index( "material_id" )
+            # make sure pred_cols for all models are present in df_mock
+            for model in Model:
+                with open(model.yaml_path) as file:
+                    model_data = yaml.safe_load(file)
+
+                pred_col = (
+                    model_data.get("metrics", {}).get("discovery", {}).get("pred_col")
+                )
+                df_mock[pred_col] = df_mock["e_form_per_atom"]
+            return df_mock
         raise FileNotFoundError(f"No files matching glob {pattern=}")
 
     sub_dfs = {}  # used to join slurm job array results into single df
