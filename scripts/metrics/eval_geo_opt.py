@@ -7,6 +7,7 @@ https://github.com/FAIR-Chem/fairchem/blob/6329e922/src/fairchem/core/modules/ev
 """
 
 # %%
+import importlib
 import os
 
 import numpy as np
@@ -19,33 +20,68 @@ from plotly.subplots import make_subplots
 from pymatviz.enums import Key
 from pymatviz.utils import si_fmt
 
-import matbench_discovery.metrics.geo_opt as go_metrics
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, today
 from matbench_discovery.data import Model, df_wbm
 from matbench_discovery.enums import MbdKey
+from matbench_discovery.metrics import geo_opt
+from matbench_discovery.models import MODEL_METADATA
 
-symprec = 1e-2
+symprec = 1e-5
+module_dir = os.path.dirname(__file__)
+model_lvl, metric_lvl = "model", "metric"
+symprec_str = f"symprec={symprec:.0e}".replace("e-0", "e-")
+moyo_version = importlib.metadata.version("moyopy")
+dft_analysis_file = (
+    f"{ROOT}/data/wbm/dft-geo-opt-{symprec_str}-moyo={moyo_version}.csv.gz"
+)
+df_dft_analysis = pd.read_csv(dft_analysis_file, index_col=0)
+
 init_spg_col = "init_spg_num"
 dft_spg_col = "dft_spg_num"
 df_wbm[init_spg_col] = df_wbm[MbdKey.init_wyckoff].str.split("_").str[2].astype(int)
 df_wbm[dft_spg_col] = df_wbm[MbdKey.wyckoff_spglib].str.split("_").str[2].astype(int)
-module_dir = os.path.dirname(__file__)
-model_lvl, metric_lvl = "model", "metric"
 
 
-# %%
-csv_path = f"{ROOT}/data/2024-11-29-all-models-geo-opt-analysis-{symprec=:.0e}.csv.gz"
-csv_path = csv_path.replace("e-0", "e-")
-df_go = pd.read_csv(csv_path, header=[0, 1], index_col=0)
-models = df_go.columns.levels[0]
+# %% Load all model data
+model_data: dict[str, pd.DataFrame] = {}
+model_metrics: dict[str, dict[str, float]] = {}
+for model_label, model_metadata in MODEL_METADATA.items():
+    metrics = model_metadata.get("metrics", {}).get("geo_opt", {})
+    if not isinstance(metrics, dict) or not (pred_file := metrics.get("pred_file")):
+        continue
 
-df_go_metrics = go_metrics.calc_geo_opt_metrics(df_go).convert_dtypes()
+    symprec_metrics = metrics.get(symprec_str, {})
+    if not (analysis_file := symprec_metrics.get("analysis_file")):
+        print(f"Warning: {model_label} has no analysis file for {symprec_str}")
+        continue
 
-go_metrics.write_geo_opt_metrics_to_yaml(df_go_metrics, symprec)
+    analysis_path = f"{ROOT}/{analysis_file}"
+    if not os.path.isfile(analysis_path):
+        print(f"Warning: {model_label} analysis file not found at {analysis_path}")
+        continue
+
+    print(
+        f"Found {model_label} analysis file:\n➤ {analysis_path.split('/models/')[-1]}"
+    )
+    df_model = pd.read_csv(analysis_path, index_col=0)
+    model_data[model_label] = df_model
+    model_metrics[model_label] = geo_opt.calc_geo_opt_metrics(df_model)
+
+print(f"Loaded {len(model_data)=} models, joined with DFT data into df_all")
+
+df_all = pd.concat(
+    model_data | {Key.dft.label: df_dft_analysis},
+    axis="columns",
+    names=["model", "metric"],
+)
+del model_data
+
+df_geo_metrics = pd.DataFrame(model_metrics).convert_dtypes().T
+models = df_geo_metrics.index
 
 
 # %% plot ML vs DFT relaxed spacegroup correspondence as sankey diagrams
-df_spg = df_go.xs(Key.spg_num, level=metric_lvl, axis="columns").convert_dtypes()
+df_spg = df_all.xs(Key.spg_num, level=metric_lvl, axis="columns").convert_dtypes()
 for model_label in {*df_spg} - {Key.dft.label}:
     # get most common pairs of DFT/Model spacegroups
     model = Model.from_label(model_label)
@@ -72,7 +108,7 @@ print(
     f"{retained:,} / {len(df_wbm):,} ({retained / len(df_wbm):.2%})"
 )
 display(
-    df_go_metrics.rename(columns={k.name: k.symbol for k in Key})
+    df_geo_metrics.rename(columns={k.name: k.symbol for k in Key if k.symbol})
     .style.set_caption(f"<b>Symmetry changes vs DFT ({len(models)} models)</b><br><br>")
     .background_gradient(cmap="RdBu")
     .format(precision=3)
@@ -80,7 +116,7 @@ display(
 
 
 # %% Plot violin plot of RMSD vs DFT
-df_rmsd = df_go.xs(MbdKey.structure_rmsd_vs_dft, level=metric_lvl, axis="columns")
+df_rmsd = df_all.xs(MbdKey.structure_rmsd_vs_dft, level=metric_lvl, axis="columns")
 
 fig_rmsd = px.violin(
     df_rmsd.round(3).dropna(),
@@ -94,7 +130,7 @@ fig_rmsd.layout.yaxis.title = "RMSD (Å)"
 fig_rmsd.update_traces(orientation="h", side="positive", width=1.8)
 
 # add annotation for mean for each model
-for model, srs_rmsd in df_go.xs(
+for model, srs_rmsd in df_all.xs(
     MbdKey.structure_rmsd_vs_dft, level=metric_lvl, axis="columns"
 ).items():
     mean_rmsd = srs_rmsd.mean()
@@ -115,7 +151,7 @@ for model, srs_rmsd in df_go.xs(
 fig_rmsd.layout.height = len(fig_rmsd.data) * 100
 fig_rmsd.layout.showlegend = False
 
-pmv.save_fig(fig_rmsd, f"{module_dir}/{today}-rmsd-violin.pdf")
+# pmv.save_fig(fig_rmsd, f"{module_dir}/{today}-rmsd-violin.pdf")
 
 title = "RMSD of ML-relaxed structures vs DFT-relaxed structures"
 fig_rmsd.layout.title = dict(text=title, x=0.5)
@@ -125,7 +161,7 @@ fig_rmsd.show()
 
 # %% calculate number of model spacegroups agreeing with DFT-relaxed spacegroup
 avg_spg_diff = (
-    df_go.xs(MbdKey.spg_num_diff, level=metric_lvl, axis="columns")
+    df_all.xs(MbdKey.spg_num_diff, level=metric_lvl, axis="columns")
     .mean(axis=0)
     .round(1)
 )
@@ -134,7 +170,7 @@ print(f"Average spacegroup number difference vs DFT for each model: {avg_spg_dif
 
 # %% violin plot of spacegroup number diff vs DFT
 fig_sym = px.violin(
-    df_go.xs(MbdKey.spg_num_diff, level=metric_lvl, axis="columns"),
+    df_all.xs(MbdKey.spg_num_diff, level=metric_lvl, axis="columns"),
     title="Spacegroup Number Diff vs DFT",
     orientation="h",
     color="model",
@@ -151,7 +187,7 @@ pmv.save_fig(fig_sym, f"{module_dir}/{today}-sym-violin.pdf")
 
 # %% violin plot of number of symmetry operations in ML-relaxed structures
 fig_sym_ops = px.violin(
-    df_go.xs(Key.n_sym_ops, level=metric_lvl, axis="columns"),
+    df_all.xs(Key.n_sym_ops, level=metric_lvl, axis="columns"),
     title="Number of Symmetry Operations in ML-relaxed Structures",
     orientation="h",
     color="model",
@@ -167,7 +203,7 @@ pmv.save_fig(fig_sym_ops, f"{module_dir}/{today}-sym-ops-violin.pdf")
 
 # %% violin plot of number of symmetry operations in ML-relaxed structures vs DFT
 fig_sym_ops_diff = px.violin(
-    df_go.drop(Key.dft.label, level=Key.model, axis="columns")
+    df_all.drop(Key.dft.label, level=Key.model, axis="columns")
     .xs(MbdKey.n_sym_ops_diff, level=metric_lvl, axis="columns")
     .reset_index(),
     orientation="h",
@@ -186,7 +222,7 @@ pmv.save_fig(fig_sym_ops_diff, f"{module_dir}/{today}-sym-ops-diff-violin.svelte
 
 
 # %% bar plot of number of symmetry operations in ML-relaxed structures vs DFT
-df_sym_ops_diff = df_go.drop(Key.dft.label, level=Key.model, axis="columns").xs(
+df_sym_ops_diff = df_all.drop(Key.dft.label, level=Key.model, axis="columns").xs(
     MbdKey.n_sym_ops_diff, level=metric_lvl, axis="columns"
 )
 
@@ -243,7 +279,7 @@ fig_sym_ops_diff.show()
 
 # %% Print summary of symmetry changes
 display(
-    df_go_metrics.round(3)
+    df_geo_metrics.round(3)
     .rename(columns=lambda col: col.removeprefix("symmetry_"))
     .style.format(lambda x: f"{x:.1%}" if isinstance(x, float) else si_fmt(x))
     .background_gradient(cmap="Oranges", subset="decrease")
@@ -257,11 +293,9 @@ display(
 fig_rmsd_cdf = go.Figure()
 x_max = 0.05
 
-models = df_go_metrics.index
-
 # Calculate and plot CDF for each model
 for model in models:
-    rmsd_vals = df_go.xs(
+    rmsd_vals = df_all.xs(
         MbdKey.structure_rmsd_vs_dft, level=metric_lvl, axis="columns"
     )[model].dropna()
 
@@ -294,7 +328,7 @@ for model in models:
 
 # sort by AUC
 fig_rmsd_cdf.data = sorted(
-    fig_rmsd_cdf.data, key=lambda trace: -float(trace["name"].split("AUC=")[1])
+    fig_rmsd_cdf.data, key=lambda trace: -float(trace.name.split("AUC=")[1])
 )
 
 fig_rmsd_cdf.layout.xaxis.update(title="RMSD (Å)", range=[0, x_max])
