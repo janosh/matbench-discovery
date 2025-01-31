@@ -97,7 +97,7 @@ def glob_to_df(
     if len(files) == 0:
         # load mocked model predictions when running pytest (just first 500 lines
         # from MACE-MPA-0 WBM energy preds)
-        if "pytest" in sys.modules:
+        if "pytest" in sys.modules or "CI" in os.environ:
             df_mock = pd.read_csv(f"{TEST_FILES}/mock-wbm-energy-preds.csv.gz")
             # .set_index( "material_id" )
             # make sure pred_cols for all models are present in df_mock
