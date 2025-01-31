@@ -102,32 +102,27 @@ def main(
             # Get existing data or create new entry (make copy to not modify original)
             file_data = existing_yaml.get(data_file.name, {}).copy()
 
-            # Only set defaults for new entries
-            if not file_data:
-                file_data["path"] = data_file.rel_path
-                file_data["description"] = "Description needed"
+            # Set defaults for new entries
+            file_data.setdefault("path", data_file.rel_path)
+            file_data.setdefault("description", "Description needed")
 
             # Check if file needs to be uploaded
-            filename = os.path.basename(file_path)
-            file_size = os.path.getsize(file_path)
+            file_name = os.path.basename(file_path)
+            # Use stored MD5 if available, else use newly computed
+            file_hash, file_size = figshare.get_file_hash_and_size(file_path)
+            file_hash = file_data.setdefault("md5", file_hash)
 
             if file_size > max_file_size:
                 print(
-                    f"\n⚠️  Skipping {filename} ({file_size / 1024**2:.1f} MB)"
+                    f"\n⚠️  Skipping {file_name} ({file_size / 1024**2:.1f} MB)"
                     f"\nFile exceeds {max_file_size / 1024**2:.0f} MB limit. "
                     "Please upload manually at "
                     f"https://figshare.com/account/articles/{article_id}"
                 )
                 continue
 
-            # Use stored MD5 if available, otherwise compute it
-            if "md5" not in file_data:
-                file_hash, _ = figshare.get_file_hash_and_size(file_path)
-                file_data["md5"] = file_hash
-            file_hash = file_data["md5"]
-
             if (
-                existing_file := files_by_name.get(filename)
+                existing_file := files_by_name.get(file_name)
             ) and file_hash == existing_file["computed_md5"]:
                 file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{existing_file['id']}"
                 file_data["url"] = file_url
@@ -135,7 +130,9 @@ def main(
                 continue
 
             # Upload new or modified file
-            file_id = figshare.upload_file(article_id, file_path)
+            file_id = figshare.upload_file(
+                article_id, file_path, file_name=data_file.rel_path
+            )
             file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
 
             file_data["url"] = file_url

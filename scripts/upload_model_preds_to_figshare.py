@@ -2,18 +2,16 @@
 Figshare articles via API.
 
 This script creates/updates a Figshare article containing model predictions from all
-models in the Matbench Discovery benchmark. This includes both energy predictions and
-ML-relaxed structures.
+models in the Matbench Discovery benchmark. This includes both energy predictions,
+ML-relaxed structures, and symmetry analysis files.
 """
 
 import argparse
-import hashlib
 import os
 import tomllib
 from collections.abc import Sequence
-from typing import Final
+from typing import Any, Final
 
-import requests
 import yaml
 from tqdm import tqdm
 
@@ -27,32 +25,6 @@ with open(f"{PKG_DIR}/modeling-tasks.yml") as file:
 
 with open(f"{ROOT}/pyproject.toml", mode="rb") as toml_file:
     pyproject = tomllib.load(toml_file)["project"]
-
-
-def get_file_hash_and_size(
-    file_name: str, chunk_size: int = 10_000_000
-) -> tuple[str, int]:
-    """Get the md5 hash and size of a file."""
-    md5 = hashlib.md5()  # noqa: S324
-    size = 0
-    with open(file_name, mode="rb") as file:
-        while data := file.read(chunk_size):
-            size += len(data)
-            md5.update(data)
-    return md5.hexdigest(), size
-
-
-def get_existing_files(article_id: int) -> dict[str, tuple[int, str]]:
-    """Get a mapping of filenames to (file_id, md5) for files already in the article."""
-    try:
-        files = figshare.make_request(
-            "GET", f"{figshare.BASE_URL}/account/articles/{article_id}/files"
-        )
-        return {file["name"]: (file["id"], file["computed_md5"]) for file in files}
-    except requests.HTTPError as exc:
-        if exc.response.status_code == 404:
-            return {}
-        raise
 
 
 def parse_args(args: Sequence[str] | None = None) -> argparse.Namespace:
@@ -75,9 +47,9 @@ def parse_args(args: Sequence[str] | None = None) -> argparse.Namespace:
         "--tasks",
         nargs="+",
         choices=list(MODELING_TASKS),
-        default=["discovery"],
+        default=list(MODELING_TASKS),
         help=(
-            "Space-separated list of modeling tasks to update. Defaults to 'discovery'."
+            "Space-separated list of modeling tasks to update. Defaults to all tasks."
         ),
     )
     parser.add_argument(
@@ -119,14 +91,14 @@ def update_one_modeling_task_article(
     if article_id is not None:
         # Check if article exists and is accessible
         if figshare.article_exists(article_id):
-            print(f"\nFound existing article for {task} task with ID {article_id}")
+            print(f"\nFound existing article for {task=} with ID {article_id}")
         else:
-            print(f"\nArticle {article_id} for {task} task not found")
+            print(f"\nArticle {article_id} for {task=} not found")
             article_id = None
 
     if article_id is None:
         if dry_run:
-            print(f"\nWould create new article for {task} task")
+            print(f"\nWould create new article for {task=}")
             article_id = 0
         else:
             metadata = get_article_metadata(task)
@@ -137,19 +109,20 @@ def update_one_modeling_task_article(
             )
 
     article_url = f"{figshare.ARTICLE_URL_PREFIX}/{article_id}"
-    print(f"Updating article with ID {article_id} at {article_url}")
+    print(f"Now updating article at {article_url}")
 
     if dry_run:
         print("\nDry run mode - no files will be uploaded")
 
-    existing_files = get_existing_files(article_id)
-    print(f"Found {len(existing_files)} existing files")
+    existing_files = figshare.get_existing_files(article_id)
+    print(f"Found {len(existing_files)} existing files:")
+    for idx, (file_name, file_data) in enumerate(existing_files.items(), start=1):
+        print(f"{idx}. {file_name}: {file_data.get('id')}")
 
-    uploaded_files: dict[str, str] = {}
-    new_files: dict[str, str] = {}
+    updated_files: dict[str, str] = {}  # files that were re-uploaded
+    new_files: dict[str, str] = {}  # files that didn't exist before
 
-    pbar = tqdm(models)
-    for model_name in pbar:
+    for model_name in tqdm(models):
         model: Model = getattr(Model, model_name)
         if not os.path.isfile(model.yaml_path):
             print(
@@ -165,68 +138,96 @@ def update_one_modeling_task_article(
         if not isinstance(metric_data, dict):
             continue
 
-        pred_file = metric_data.get("pred_file")
-        if not pred_file:
-            continue
+        # Recursively find all keys ending in _file in the metric_data dictionary
+        def find_file_keys(data: dict[str, Any], prefix: str = "") -> dict[str, str]:
+            """Find all keys ending in _file and their values in a nested dictionary."""
+            result: dict[str, str] = {}
+            for key, value in data.items():
+                full_key = f"{prefix}.{key}" if prefix else key
+                if isinstance(value, dict):
+                    result |= find_file_keys(value, full_key)
+                elif isinstance(value, str) and key.endswith("_file"):
+                    result[full_key] = value
+            return result
 
-        if not os.path.isfile(f"{ROOT}/{pred_file}"):
-            print(
-                f"Warning: {task} predictions for {model_name} not "
-                f"found, expected at {pred_file}"
-            )
-            continue
-
-        pbar.set_description(f"Processing {model_name}")
-        model_updated = False
-
-        filename = os.path.basename(pred_file)
-        file_path = f"{ROOT}/{pred_file}"
-
-        # Check if file already exists and has same hash
-        file_hash, _ = get_file_hash_and_size(file_path)
-        if filename in existing_files:
-            file_id, stored_hash = existing_files[filename]
-            if file_hash == stored_hash:
-                file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
-                uploaded_files[filename] = file_url
-                # Update model metadata if URL not present
-                if "pred_file_url" not in metric_data:
-                    metric_data["pred_file_url"] = file_url
-                    model_updated = True
+        for key_path, rel_file_path in find_file_keys(metric_data).items():
+            file_path = f"{ROOT}/{rel_file_path}"
+            if not os.path.isfile(file_path):
+                print(
+                    f"Warning: {task} file for {model_name} not found, "
+                    f"expected at {file_path}"
+                )
                 continue
 
-        # Upload new or modified file
-        if dry_run:
-            file_url = "DRY_RUN_URL"
-        else:
-            file_id = figshare.upload_file(article_id, file_path)
-            file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
+            # Check if file already exists and has same hash
+            file_hash, _ = figshare.get_file_hash_and_size(file_path)
+            filename = file_path.removeprefix(f"{ROOT}/")
 
-        uploaded_files[filename] = file_url
-        new_files[filename] = file_url
-
-        # Update model metadata
-        metric_data["pred_file_url"] = file_url
-        model_updated = True
+            if filename in existing_files:
+                file_id, md5_hash = (
+                    existing_files[filename][key] for key in ("id", "computed_md5")
+                )
+                if file_hash == md5_hash:
+                    file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
+                    # Update model metadata if URL not present
+                    url_key = f"{key_path[:-5]}_url"  # replace _file with _url
+                    if url_key not in metric_data:
+                        *parts, last = url_key.split(".")
+                        target = metric_data
+                        for part in parts:
+                            target = target[part]
+                        target[last] = file_url
+                else:
+                    # Upload modified file
+                    if not dry_run:
+                        file_id = figshare.upload_file(
+                            article_id,
+                            file_path,
+                            file_name=filename,
+                        )
+                        file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
+                        updated_files[filename] = file_url
+                        *parts, last = key_path[:-5].split(".")
+                        target = metric_data
+                        for part in parts:
+                            target = target[part]
+                        target[f"{last}_url"] = file_url
+            else:
+                # Upload new file
+                if not dry_run:
+                    file_id = figshare.upload_file(
+                        article_id,
+                        file_path,
+                        file_name=filename,
+                    )
+                    file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
+                    new_files[filename] = file_url
+                    *parts, last = key_path[:-5].split(".")
+                    target = metric_data
+                    for part in parts:
+                        target = target[part]
+                    target[f"{last}_url"] = file_url
 
         # Save updated model metadata if changed
-        if model_updated and not dry_run:
+        if not dry_run:
             with open(model.yaml_path, mode="w") as file:
                 round_trip_yaml.dump(model_data, file)
 
-    print(f"\nTotal files: {len(uploaded_files)}")
     print(f"Newly added: {len(new_files)}")
+    print(f"Updated: {len(updated_files)}")
 
-    print("\nAll uploaded files:")
-    for filename, url in uploaded_files.items():
-        print(f"{filename}: {url}")
+    if new_files or updated_files:
+        if new_files:
+            print("\nNewly added files:")
+            for idx, (filename, url) in enumerate(new_files.items(), start=1):
+                print(f"{idx}. {filename}: {url}")
 
-    if new_files:
-        print("\nNewly added files:")
-        for filename, url in new_files.items():
-            print(f"{filename}: {url}")
+        if updated_files:
+            print("\nUpdated files:")
+            for idx, (filename, url) in enumerate(updated_files.items(), start=1):
+                print(f"{idx}. {filename}: {url}")
     else:
-        print("\nNo new files were added.")
+        print("\nNo files were added or updated.")
 
 
 def main(args: Sequence[str] | None = None) -> int:
