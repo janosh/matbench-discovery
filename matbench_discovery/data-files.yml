@@ -82,6 +82,18 @@ wbm_summary:
   description: Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more.
   md5: fb23d85dab61fab001b92cb0ac4f8f3d
 
+wbm_dft_geo_opt_symprec_1e_2:
+  url: https://figshare.com/ndownloader/files/52066799
+  path: data/wbm/dft-geo-opt-symprec=1e-2-moyo=0.3.1.csv.gz
+  description: WBM DFT-relaxed crystal symmetries as determined by moyopy==0.3.1 with symprec=1e-2.
+  md5:
+
+wbm_dft_geo_opt_symprec_1e_5:
+  url: https://figshare.com/ndownloader/files/52066796
+  path: data/wbm/dft-geo-opt-symprec=1e-5-moyo=0.3.1.csv.gz
+  description: WBM DFT-relaxed crystal symmetries as determined by moyopy==0.3.1 with symprec=1e-5.
+  md5:
+
 phonondb_pbe_103_structures:
   url: https://figshare.com/ndownloader/files/51680888
   path: phonons/2024-11-09-phononDB-PBE-103-structures.extxyz

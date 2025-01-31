@@ -169,6 +169,7 @@ properties:
               symprec=1e-5: &symprec_metrics
                 type: object
                 additionalProperties: false
+                required: [analysis_file]
                 properties:
                   rmsd:
                     type: number
@@ -182,6 +183,10 @@ properties:
                     type: number
                   n_structures:
                     type: number
+                  analysis_file:
+                    type: string
+                  analysis_file_url:
+                    type: string
               symprec=1e-3: *symprec_metrics
               symprec=1e-2: *symprec_metrics
           - type: string

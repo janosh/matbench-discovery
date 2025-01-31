@@ -1,4 +1,5 @@
 import os
+import sys
 import zipfile
 from pathlib import Path
 from typing import Any
@@ -67,7 +68,12 @@ def test_df_wbm() -> None:
 
 
 @pytest.mark.parametrize("pattern", ["*df.csv", "*df.json"])
-def test_glob_to_df(pattern: str, tmp_path: Path, df_mixed: pd.DataFrame) -> None:
+def test_glob_to_df(
+    pattern: str,
+    tmp_path: Path,
+    df_mixed: pd.DataFrame,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     os.makedirs(f"{tmp_path}", exist_ok=True)
     df_mixed.to_csv(f"{tmp_path}/dummy_df.csv", index=False)
     df_mixed.to_json(f"{tmp_path}/dummy_df.json")
@@ -78,7 +84,17 @@ def test_glob_to_df(pattern: str, tmp_path: Path, df_mixed: pd.DataFrame) -> Non
 
     with pytest.raises(ValueError, match="Unsupported file extension in pattern='foo'"):
         glob_to_df("foo")
-    with pytest.raises(FileNotFoundError, match="No files matching glob pattern="):
+
+    # Mock sys.modules without pytest to test file not found error
+    mock_modules = dict(sys.modules)
+    mock_modules.pop("pytest", None)  # remove pytest since glob_to_df returns mock data
+    # if if finds pytest imported
+    # also remove CI from os.environ
+    monkeypatch.delenv("CI", raising=False)
+    with (
+        patch("sys.modules", mock_modules),
+        pytest.raises(FileNotFoundError, match="No files matching glob pattern="),
+    ):
         glob_to_df("foo.csv")
 
 
@@ -286,6 +302,11 @@ def test_download_file(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
     assert stderr == ""
 
 
+@pytest.mark.skipif(
+    "CI" in os.environ,
+    reason="CI uses mock data so don't check length against on-the-fly "
+    "downloaded actual df_wbm",
+)
 @pytest.mark.parametrize("models", [[], ["wrenformer"]])
 @pytest.mark.parametrize("max_error_threshold", [None, 5.0, 1.0])
 def test_load_df_wbm_with_preds(
@@ -315,9 +336,13 @@ def test_load_df_wbm_with_preds(
             assert df_wbm_with_preds[model.label].isna().sum() == 0
 
 
+@pytest.mark.skipif(
+    "CI" in os.environ, reason="CI uses mock data where other error thresholds apply"
+)
 def test_load_df_wbm_max_error_threshold() -> None:
-    # number of missing preds for default max_error_threshold
-    models = {Model.mace_mp_0.label: 38}
+    models: dict[str, int] = {  # map model to number of max allowed missing preds
+        Model.mace_mp_0.label: 38  # before error is raised
+    }
     df_no_thresh = load_df_wbm_with_preds(models=list(models))
     df_high_thresh = load_df_wbm_with_preds(models=list(models), max_error_threshold=10)
     df_low_thresh = load_df_wbm_with_preds(models=list(models), max_error_threshold=0.1)

@@ -47,7 +47,8 @@ jobs:
       matrix:
         script:
           - scripts/metrics/eval_discovery.py
-          - scripts/model_figs/run_all.py
+          # TODO run_all.py was commented out during removal of WBM energy preds from version control. consider partially reinstating with on-the-fly downloaded or mock WBM energy preds
+          # - scripts/model_figs/run_all.py
     steps:
       - name: Check out repository
         uses: actions/checkout@v4

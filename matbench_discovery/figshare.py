@@ -65,14 +65,14 @@ def make_request(
     try:
         response.raise_for_status()
         try:
-            data = json.loads(response.content)
+            result = json.loads(response.content)
         except ValueError:
-            data = response.content
+            result = response.content
     except requests.HTTPError as exc:
         exc.add_note(f"body={response.content.decode()}")
         raise
 
-    return data
+    return result
 
 
 def create_article(
@@ -116,19 +116,22 @@ def get_file_hash_and_size(
     return md5.hexdigest(), size
 
 
-def upload_file(article_id: int, file_path: str) -> int:
+def upload_file(article_id: int, file_path: str, file_name: str = "") -> int:
     """Upload a file to Figshare and return the file ID.
 
     Args:
         article_id (int): ID of the article to upload to.
         file_path (str): Path to the file to upload.
+        file_name (str, optional): Name as it will appear in Figshare. Defaults to the
+            file path relative to repo's root dir: file_path.removeprefix(ROOT).
 
     Returns:
         int: The ID of the uploaded file.
     """
     # Initiate new upload
     md5, size = get_file_hash_and_size(file_path)
-    data = dict(name=os.path.basename(file_path), md5=md5, size=size)
+    file_name = file_name or file_path.removeprefix(f"{ROOT}/")
+    data = dict(name=file_name, md5=md5, size=size)
     endpoint = f"{BASE_URL}/account/articles/{article_id}/files"
     result = make_request("POST", endpoint, data=data)
     file_info = make_request("GET", result["location"])
@@ -195,4 +198,17 @@ def list_article_files(article_id: int) -> list[dict[str, Any]]:
     except requests.HTTPError as exc:
         if exc.response.status_code == 404:
             return []
+        raise
+
+
+def get_existing_files(article_id: int) -> dict[str, dict[str, Any]]:
+    """Get a mapping of filenames to dict with file details (usually id and md5 hash)
+    for files already in the article.
+    """
+    try:
+        files = make_request("GET", f"{BASE_URL}/account/articles/{article_id}/files")
+        return {file.pop("name"): file for file in files}
+    except requests.HTTPError as exc:
+        if exc.response.status_code == 404:
+            return {}
         raise
