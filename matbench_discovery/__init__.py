@@ -16,6 +16,7 @@ __version__ = "1.3.1"
 PKG_DIR = os.path.dirname(__file__)  # Python package directory
 ROOT = os.path.dirname(PKG_DIR)  # repo root directory
 DATA_DIR = f"{ROOT}/data"  # directory to store raw data
+TEST_FILES = f"{ROOT}/tests/files"  # directory to store test data
 SITE_FIGS = f"{ROOT}/site/src/figs"  # directory for interactive figures
 # directory to write model analysis for website
 SITE_LIB = f"{ROOT}/site/src/lib"

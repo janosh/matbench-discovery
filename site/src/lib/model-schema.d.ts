@@ -100,6 +100,8 @@ export interface ModelMetadata {
             symmetry_match?: number
             symmetry_increase?: number
             n_structures?: number
+            analysis_file: string
+            analysis_file_url?: string
           }
           'symprec=1e-3'?: {
             rmsd?: number
@@ -108,6 +110,8 @@ export interface ModelMetadata {
             symmetry_match?: number
             symmetry_increase?: number
             n_structures?: number
+            analysis_file: string
+            analysis_file_url?: string
           }
           'symprec=1e-2'?: {
             rmsd?: number
@@ -116,6 +120,8 @@ export interface ModelMetadata {
             symmetry_match?: number
             symmetry_increase?: number
             n_structures?: number
+            analysis_file: string
+            analysis_file_url?: string
           }
         }
       | ('not applicable' | 'not available')
