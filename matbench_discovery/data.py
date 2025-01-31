@@ -335,6 +335,8 @@ class DataFiles(Files):
     phonondb_pbe_103_kappa_no_nac = (
         "phonons/2024-11-09-kappas-phononDB-PBE-noNAC.json.gz"
     )
+    wbm_dft_geo_opt_symprec_1e_2 = "data/wbm/dft-geo-opt-symprec=1e-2-moyo=0.3.1.csv.gz"
+    wbm_dft_geo_opt_symprec_1e_5 = "data/wbm/dft-geo-opt-symprec=1e-5-moyo=0.3.1.csv.gz"
 
     @functools.cached_property
     def yaml(self) -> dict[str, dict[str, str]]:
