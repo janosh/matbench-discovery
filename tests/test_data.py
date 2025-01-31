@@ -305,7 +305,7 @@ def test_download_file(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
 @pytest.mark.skipif(
     "CI" in os.environ,
     reason="CI uses mock data so don't check length against on-the-fly "
-    "downloaded df_wbm",
+    "downloaded actual df_wbm",
 )
 @pytest.mark.parametrize("models", [[], ["wrenformer"]])
 @pytest.mark.parametrize("max_error_threshold", [None, 5.0, 1.0])
@@ -336,6 +336,9 @@ def test_load_df_wbm_with_preds(
             assert df_wbm_with_preds[model.label].isna().sum() == 0
 
 
+@pytest.mark.skipif(
+    "CI" in os.environ, reason="CI uses mock data where other error thresholds apply"
+)
 def test_load_df_wbm_max_error_threshold() -> None:
     models: dict[str, int] = {  # map model to number of max allowed missing preds
         Model.mace_mp_0.label: 38  # before error is raised
