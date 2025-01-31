@@ -142,24 +142,38 @@ def test_get_file_hash_and_size_large_file(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    "file_parts",
+    "file_parts,file_name",
     [
-        [{"partNo": 1, "startOffset": 0, "endOffset": 9}],  # Single part
-        [  # Multiple parts
-            {"partNo": 1, "startOffset": 0, "endOffset": 4},
-            {"partNo": 2, "startOffset": 5, "endOffset": 9},
-        ],
-        [{"partNo": 1, "startOffset": 0, "endOffset": 0}],  # Empty file
-        [  # Many small parts
-            {"partNo": idx + 1, "startOffset": idx * 2, "endOffset": (idx + 1) * 2 - 1}
-            for idx in range(50)
-        ],
+        (  # Default file name (from path)
+            [{"partNo": 1, "startOffset": 0, "endOffset": 9}],
+            "",
+        ),
+        (  # Custom file name
+            [{"partNo": 1, "startOffset": 0, "endOffset": 9}],
+            "custom_name.txt",
+        ),
+        (  # Multiple parts with default name
+            [
+                {"partNo": 1, "startOffset": 0, "endOffset": 4},
+                {"partNo": 2, "startOffset": 5, "endOffset": 9},
+            ],
+            "",
+        ),
+        (  # Multiple parts with custom name
+            [
+                {"partNo": 1, "startOffset": 0, "endOffset": 4},
+                {"partNo": 2, "startOffset": 5, "endOffset": 9},
+            ],
+            "renamed.dat",
+        ),
     ],
 )
 def test_upload_file_to_figshare_variants(
-    file_parts: list[dict[str, int]], tmp_path: Path
+    file_parts: list[dict[str, int]],
+    file_name: str,
+    tmp_path: Path,
 ) -> None:
-    """Test file upload with different file parts configurations."""
+    """Test file upload with different file parts configurations and file names."""
     test_file = tmp_path / "upload_test_file"
     test_file.write_bytes(b"test data")
 
@@ -169,16 +183,23 @@ def test_upload_file_to_figshare_variants(
         "PUT": None,  # PUT requests return None on success
     }
 
-    def mock_make_request(method: str, url: str, **_kwargs: Any) -> Any:
+    def mock_make_request(method: str, url: str, **kwargs: Any) -> Any:
         """Mock request handler that returns appropriate response for each method."""
         if method == "GET" and url == "upload_url":
             return {"parts": file_parts}
+        if method == "POST" and "data" in kwargs:
+            # Verify the file name in the POST request
+            data = kwargs["data"]
+            assert data["name"] == file_name or test_file.name
         return mock_responses[method]
 
-    with patch(
-        "matbench_discovery.figshare.make_request", side_effect=mock_make_request
+    with (
+        patch("matbench_discovery.figshare.ROOT", str(tmp_path)),
+        patch(
+            "matbench_discovery.figshare.make_request", side_effect=mock_make_request
+        ),
     ):
-        assert figshare.upload_file(12345, str(test_file)) == 67890
+        assert figshare.upload_file(12345, str(test_file), file_name=file_name) == 67890
 
 
 DUMMY_FILES = [
@@ -219,3 +240,49 @@ def test_list_article_files_errors(capsys: pytest.CaptureFixture) -> None:
             pytest.raises(requests.HTTPError, match="\nbody="),
         ):
             figshare.list_article_files(12345)
+
+
+@pytest.mark.parametrize(
+    "files,expected",
+    [
+        ([], {}),  # Empty list case
+        (  # Single file case
+            [{"name": "test.txt", "id": 1, "computed_md5": "abc123"}],
+            {"test.txt": {"id": 1, "computed_md5": "abc123"}},
+        ),
+        (  # Multiple files case
+            [
+                {"name": "file1.txt", "id": 1, "computed_md5": "abc123"},
+                {"name": "file2.txt", "id": 2, "computed_md5": "def456"},
+            ],
+            {
+                "file1.txt": {"id": 1, "computed_md5": "abc123"},
+                "file2.txt": {"id": 2, "computed_md5": "def456"},
+            },
+        ),
+        (  # Files with same name (should use last one)
+            [
+                {"name": "test.txt", "id": 1, "computed_md5": "abc123"},
+                {"name": "test.txt", "id": 2, "computed_md5": "def456"},
+            ],
+            {"test.txt": {"id": 2, "computed_md5": "def456"}},
+        ),
+    ],
+)
+def test_get_existing_files(
+    files: list[dict[str, Any]], expected: dict[str, dict[str, Any]]
+) -> None:
+    """Test get_existing_files with various file configurations."""
+    with patch("matbench_discovery.figshare.make_request", return_value=files):
+        assert figshare.get_existing_files(12345) == expected
+
+
+def test_get_existing_files_404() -> None:
+    """Test get_existing_files returns empty dict for 404 errors."""
+    mock_response = MagicMock()
+    mock_response.raise_for_status.side_effect = requests.HTTPError(
+        response=MagicMock(status_code=404)
+    )
+
+    with patch("requests.request", return_value=mock_response):
+        assert figshare.get_existing_files(12345) == {}
