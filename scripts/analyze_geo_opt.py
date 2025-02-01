@@ -19,7 +19,7 @@ from matbench_discovery import ROOT
 from matbench_discovery.data import DataFiles, Model
 from matbench_discovery.metrics import geo_opt
 from matbench_discovery.models import MODEL_METADATA
-from matbench_discovery.structure import analyze_symmetry, pred_vs_ref_struct_symmetry
+from matbench_discovery.structure import symmetry
 
 # activate debug mode by setting to any number > 0, only that many structures will be
 # analyzed
@@ -47,7 +47,7 @@ if debug_mode:
 if os.path.isfile(dft_csv_path):
     dft_analysis = pd.read_csv(dft_csv_path)
 else:
-    dft_analysis = analyze_symmetry(
+    dft_analysis = symmetry.get_sym_info_from_structs(
         dft_structs,
         pbar=dict(desc=f"Getting DFT symmetries {symprec=}"),
         symprec=symprec,
@@ -119,14 +119,14 @@ for idx, (model_label, model_metadata) in enumerate(MODEL_METADATA.items()):
     }
 
     # Analyze symmetry
-    model_analysis = analyze_symmetry(
+    model_analysis = symmetry.get_sym_info_from_structs(
         model_structs,
         pbar=dict(desc=f"{prog_str} Analyzing {model_label} symmetries"),
         symprec=symprec,
     )
 
     # Compare with DFT reference
-    df_ml_geo_analysis = pred_vs_ref_struct_symmetry(
+    df_ml_geo_analysis = symmetry.pred_vs_ref_struct_symmetry(
         model_analysis,
         dft_analysis,
         model_structs,

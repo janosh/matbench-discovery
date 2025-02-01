@@ -1,6 +1,5 @@
-"""Perturb atomic coordinates of a pymatgen structure and analyze symmetry."""
+"""Functions to analyze symmetry of sets of structures."""
 
-import numpy as np
 import pandas as pd
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Structure
@@ -9,45 +8,16 @@ from tqdm import tqdm
 
 from matbench_discovery.enums import MbdKey
 
-__author__ = "Janosh Riebesell"
-__date__ = "2022-12-02"
 
-rng = np.random.default_rng(0)  # ensure reproducible structure perturbations
-
-
-def perturb_structure(struct: Structure, gamma: float = 1.5) -> Structure:
-    """Perturb the atomic coordinates of a pymatgen structure. Used for CGCNN+P
-    training set augmentation.
-
-    Not identical but very similar to the perturbation method used in
-    https://nature.com/articles/s41524-022-00891-8#Fig5.
-
-    Args:
-        struct (Structure): pymatgen structure to be perturbed
-        gamma (float, optional): Weibull distribution parameter. Defaults to 1.5.
-
-    Returns:
-        Structure: Perturbed structure
-    """
-    perturbed = struct.copy()
-    for site in perturbed:
-        magnitude = rng.weibull(gamma)
-        vec = rng.normal(3)  # TODO maybe make func recursive to deal with 0-vector
-        vec /= np.linalg.norm(vec)  # unit vector
-        site.coords += vec * magnitude
-        site.to_unit_cell(in_place=True)
-
-    return perturbed
-
-
-def analyze_symmetry(
+def get_sym_info_from_structs(
     structures: dict[str, Structure],
     *,
     pbar: bool | dict[str, str] = True,
     symprec: float = 1e-2,
     angle_tolerance: float | None = None,
 ) -> pd.DataFrame:
-    """Analyze symmetry of a dictionary of structures using moyopy.
+    """Compile DataFrame of high-level symmetry information for a dictionary of
+    structures.
 
     Args:
         structures (dict[str, Structure | Atoms]): Map of material IDs to pymatgen
@@ -72,16 +42,7 @@ def analyze_symmetry(
         iterator = tqdm(iterator, total=len(structures), **pbar_kwargs)
 
     for struct_key, struct in iterator:
-        structure_type = type(struct).__name__
-        adaptor = {
-            "Structure": MoyoAdapter.from_structure,
-            "Atoms": MoyoAdapter.from_atoms,
-            "MSONAtoms": MoyoAdapter.from_atoms,
-        }.get(structure_type)
-        if adaptor is None:
-            raise ValueError(f"Unsupported {structure_type=}")
-
-        moyo_cell = adaptor(struct)
+        moyo_cell = MoyoAdapter.from_py_obj(struct)
 
         sym_data = moyopy.MoyoDataset(
             moyo_cell, symprec=symprec, angle_tolerance=angle_tolerance
