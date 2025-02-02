@@ -34,9 +34,7 @@ ZnO_wurtzite = Structure(
     ],
 )
 CaF2_fluorite = Structure(
-        lattice=Lattice.from_parameters(
-        a=3.9, b=3.9, c=3.9, alpha=60, beta=60, gamma=60
-    )
+    lattice=Lattice.from_parameters(a=3.9, b=3.9, c=3.9, alpha=60, beta=60, gamma=60),
     species=["Ca", "F", "F"],
     coords=[[0, 0, 0], [0.25, 0.25, 0.25], [0.75, 0.75, 0.75]],
 )
@@ -87,10 +85,7 @@ TEST_CASES: Final[tuple[tuple[Structure, str], ...]] = (
         "AlFe3",
         # prev with spglib: AB3_cF32_225_a_bc:Al-Fe
     ),
-    (
-        SrTiO3_perovskite,
-        "A3BC_cP5_221_c_a_b:O-Sr-Ti",  # prev with spglib: AB3C_cP5_221_a_c_b:O-Sr-Ti
-    ),
+    (SrTiO3_perovskite, "A3BC_cP5_221_c_a_b:O-Sr-Ti"),
     (esseneite, "ABC6D2_mC40_15_e_e_3f_f:Ca-Fe-O-Si"),
 )
 
