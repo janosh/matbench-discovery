@@ -95,3 +95,22 @@ def test_get_protostructure_label(struct: Structure, label: str) -> None:
     """Check that moyopy gives correct protostructure label for simple cases."""
     moyopy_label = prototype.get_protostructure_label(struct)
     assert moyopy_label == label, f"{moyopy_label=} != {label}"
+
+
+def test_get_protostructure_label_with_ase_atoms() -> None:
+    """Test that get_protostructure_label() works with ASE Atoms input."""
+    from pymatgen.io.ase import AseAtomsAdaptor
+
+    # Convert NaCl structure to ASE Atoms
+    NaCl_atoms = AseAtomsAdaptor.get_atoms(NaCl)
+    # Get prototype label for both Structure and Atoms versions
+    struct_label = prototype.get_protostructure_label(NaCl)
+    atoms_label = prototype.get_protostructure_label(NaCl_atoms)
+
+    # Check that both give the same result
+    assert atoms_label == struct_label == "AB_cF8_225_a_b:Cl-Na"
+
+    # Test with a more complex structure
+    SrTiO3_atoms = AseAtomsAdaptor.get_atoms(SrTiO3_perovskite)
+    atoms_label = prototype.get_protostructure_label(SrTiO3_atoms)
+    assert atoms_label == "A3BC_cP5_221_c_a_b:O-Sr-Ti"

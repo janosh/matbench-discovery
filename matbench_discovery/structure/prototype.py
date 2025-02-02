@@ -9,6 +9,7 @@ import os
 import string
 from typing import Final
 
+import ase
 import moyopy
 import yaml
 from pymatgen.core import Composition, Structure
@@ -116,12 +117,12 @@ def canonicalize_wyckoffs(element_wyckoffs: str, spg_num: int) -> str:
 
 
 def get_protostructure_label(
-    struct: Structure, *, symprec: float = 0.1, raise_errors: bool = False
+    struct: Structure | ase.Atoms, *, symprec: float = 0.1, raise_errors: bool = False
 ) -> str | None:
     """Get AFLOW-style proto-structure label using Moyopy for symmetry detection.
 
     Args:
-        struct (Structure): pymatgen Structure object.
+        struct (Structure | ase.Atoms): pymatgen Structure object or ase.Atoms object.
         symprec (float): Initial symmetry precision for Moyopy. Defaults to 0.1.
         raise_errors (bool): Whether to raise ValueError for failing structures or
             return the error message as string instead of the prototype label. Defaults
@@ -134,7 +135,12 @@ def get_protostructure_label(
     """
     import moyopy.interface
 
-    moyo_cell = moyopy.interface.MoyoAdapter.from_structure(struct)
+    if isinstance(struct, ase.Atoms):
+        from pymatgen.io.ase import AseAtomsAdaptor
+
+        struct = AseAtomsAdaptor.get_structure(struct)
+
+    moyo_cell = moyopy.interface.MoyoAdapter.from_py_obj(struct)
     symmetry_data = moyopy.MoyoDataset(moyo_cell, symprec=symprec)
     spg_num = symmetry_data.number
 
@@ -190,11 +196,10 @@ def get_protostructure_label(
 
     # Verify multiplicities match composition
     observed_formula = Composition(element_dict).reduced_formula
-    expected_formula = struct.composition.reduced_formula
-    if observed_formula != expected_formula:
+    if observed_formula != struct.reduced_formula:
         err_msg = (
             f"Invalid WP multiplicities - {prototype_label}, expected "
-            f"{observed_formula} to be {expected_formula}"
+            f"{observed_formula} to be {struct.reduced_formula}"
         )
         if raise_errors:
             raise ValueError(err_msg)
