@@ -3,9 +3,6 @@
 import numpy as np
 from pymatgen.core import Structure
 
-__author__ = "Janosh Riebesell"
-__date__ = "2022-12-02"
-
 rng = np.random.default_rng(seed=0)  # ensure reproducible structure perturbations
 
 

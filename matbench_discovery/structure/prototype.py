@@ -13,9 +13,6 @@ import moyopy
 import yaml
 from pymatgen.core import Composition, Structure
 
-__author__ = "Janosh Riebesell"
-__date__ = "2022-12-02"
-
 module_dir = os.path.dirname(__file__)
 
 with gzip.open(
@@ -144,7 +141,7 @@ def get_protostructure_label(
     # Group sites by orbit
     orbit_groups: dict[int, list[int]] = {}
 
-    for idx, orbit_id in enumerate(moyo_data.orbits):
+    for idx, orbit_id in enumerate(symmetry_data.orbits):
         if orbit_id not in orbit_groups:
             orbit_groups[orbit_id] = []
         orbit_groups[orbit_id].append(idx)
