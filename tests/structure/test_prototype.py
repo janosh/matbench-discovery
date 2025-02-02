@@ -34,7 +34,9 @@ ZnO_wurtzite = Structure(
     ],
 )
 CaF2_fluorite = Structure(
-    lattice=[[5.46, 0, 0], [0, 5.46, 0], [0, 0, 5.46]],
+        lattice=Lattice.from_parameters(
+        a=3.9, b=3.9, c=3.9, alpha=60, beta=60, gamma=60
+    )
     species=["Ca", "F", "F"],
     coords=[[0, 0, 0], [0.25, 0.25, 0.25], [0.75, 0.75, 0.75]],
 )
