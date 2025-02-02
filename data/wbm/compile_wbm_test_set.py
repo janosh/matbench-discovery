@@ -29,6 +29,7 @@ from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR, today
 from matbench_discovery.data import DataFiles
 from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 from matbench_discovery.enums import MbdKey
+from matbench_discovery.structure import prototype
 
 try:
     import gdown
@@ -629,41 +630,34 @@ df_summary[MbdKey.e_form_raw.replace("uncorrected", "mp2020_corrected")] = (
 
 
 # %%
-try:
-    from aviary.wren.utils import get_protostructure_label_from_spglib
+# from initial structures
+for idx in tqdm(df_wbm.index):
+    if not pd.isna(df_summary.loc[idx].get(MbdKey.init_wyckoff)):
+        continue  # Aflow label already computed
+    try:
+        struct = Structure.from_dict(df_wbm.loc[idx, Key.init_struct])
+        df_summary.loc[idx, f"{Key.protostructure}_moyo_init"] = (
+            prototype.get_protostructure_label(struct)
+        )
+    except Exception as exc:
+        print(f"{idx=} {exc=}")
 
-    # from initial structures
-    for idx in tqdm(df_wbm.index):
-        if not pd.isna(df_summary.loc[idx].get(MbdKey.init_wyckoff)):
-            continue  # Aflow label already computed
-        try:
-            struct = Structure.from_dict(df_wbm.loc[idx, Key.init_struct])
-            df_summary.loc[idx, MbdKey.init_wyckoff] = (
-                get_protostructure_label_from_spglib(struct)
-            )
-        except Exception as exc:
-            print(f"{idx=} {exc=}")
+# from relaxed structures
+for idx in tqdm(df_wbm.index):
+    if not pd.isna(df_summary.loc[idx].get(Key.wyckoff)):
+        continue
 
-    # from relaxed structures
-    for idx in tqdm(df_wbm.index):
-        if not pd.isna(df_summary.loc[idx].get(Key.wyckoff)):
-            continue
+    try:
+        cse = df_wbm.loc[idx, Key.computed_structure_entry]
+        struct = Structure.from_dict(cse["structure"])
+        df_summary.loc[idx, f"{Key.protostructure}_moyo_relaxed"] = (
+            prototype.get_protostructure_label(struct)
+        )
+    except Exception as exc:
+        print(f"{idx=} {exc=}")
 
-        try:
-            cse = df_wbm.loc[idx, Key.computed_structure_entry]
-            struct = Structure.from_dict(cse["structure"])
-            df_summary.loc[idx, Key.wyckoff] = get_protostructure_label_from_spglib(
-                struct
-            )
-        except Exception as exc:
-            print(f"{idx=} {exc=}")
-
-    assert df_summary[MbdKey.init_wyckoff].isna().sum() == 0
-    assert df_summary[Key.wyckoff].isna().sum() == 0
-except ImportError:
-    print("aviary not installed, skipping Wyckoff label generation")
-except Exception as exception:
-    print(f"Generating Aflow labels raised {exception=}")
+assert df_summary[MbdKey.init_wyckoff].isna().sum() == 0
+assert df_summary[Key.wyckoff].isna().sum() == 0
 
 
 # %%

@@ -310,7 +310,7 @@ class DataFiles(Files):
         "mp/2023-02-07-mp-computed-structure-entries.json.gz"
     )
     mp_elemental_ref_entries = "mp/2023-02-07-mp-elemental-reference-entries.json.gz"
-    mp_energies = "mp/2023-01-10-mp-energies.csv.gz"
+    mp_energies = "mp/2025-02-01-mp-energies.csv.gz"
     mp_patched_phase_diagram = "mp/2023-02-07-ppd-mp.pkl.gz"
     mp_trj_json_gz = "mp/2022-09-16-mp-trj.json.gz"
     mp_trj_extxyz = "mp/2024-09-03-mp-trj.extxyz.zip"
