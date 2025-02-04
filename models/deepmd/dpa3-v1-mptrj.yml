@@ -88,20 +88,22 @@ notes:
     Designed as a large atomic model (LAM), DPA3 is tailored to integrate and simultaneously train on datasets from various disciplines, encompassing diverse chemical and materials systems across different research domains.
     Its model design ensures exceptional fitting accuracy and robust generalization both within and beyond the training domain.
     Furthermore, DPA3 maintains energy conservation and respects the physical symmetries of the potential energy surface, making it a dependable tool for a wide range of scientific applications.
+
 metrics:
   phonons:
-    pred_file: models/deepmd_dpa3/dpa3-v1-mptrj/2025-01-10-kappa-103.json.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52057901
-    κ_SRME: 0.964
+    kappa_103:
+      κ_SRME: 0.964
+      pred_file: models/deepmd/dpa3-v1-mptrj/2025-01-10-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/ndownloader/files/52134860
   geo_opt:
-    pred_file: models/deepmd_dpa3/dpa3-v1-mptrj/2025-01-10-wbm-geo-opt.json.gz
+    pred_file: models/deepmd/dpa3-v1-mptrj/2025-01-10-wbm-geo-opt.json.gz
     pred_col: dp_structure
-    pred_file_url:
+    pred_file_url: https://figshare.com/ndownloader/files/52134974
     symprec=1e-5:
-      analysis_file: models/deepmd_dpa3/dpa3-v1-mptrj/2025-01-10-wbm-geo-opt-symprec=1e-5.csv.gz
+      analysis_file: models/deepmd/dpa3-v1-mptrj/2025-01-10-wbm-geo-opt-symprec=1e-5.csv.gz
       analysis_file_url: https://figshare.com/ndownloader/files/52059431
   discovery:
-    pred_file: models/deepmd_dpa3/dpa3-v1-mptrj/2025-01-10-wbm-IS2RE.csv.gz
+    pred_file: models/deepmd/dpa3-v1-mptrj/2025-01-10-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/ndownloader/files/52057529
     pred_col: e_form_per_atom_dp
     full_test_set:

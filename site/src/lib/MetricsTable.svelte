@@ -131,7 +131,7 @@
         MAE: metrics?.MAE,
         RMSE: metrics?.RMSE,
         'R<sup>2</sup>': metrics?.R2,
-        'κ<sub>SRME</sub>': model.metrics?.phonons?.κ_SRME,
+        'κ<sub>SRME</sub>': model.metrics?.phonons?.kappa_103?.κ_SRME,
         'Training Set': format_train_set(model.training_set),
         Params: `<span title="${pretty_num(model.model_params, `,`)} trainable model parameters">${pretty_num(model.model_params)}</span>`,
         Targets: targets_str,

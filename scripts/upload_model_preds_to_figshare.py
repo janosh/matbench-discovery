@@ -170,7 +170,7 @@ def update_one_modeling_task_article(
                 if file_hash == md5_hash:
                     file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
                     # Update model metadata if URL not present
-                    url_key = f"{key_path[:-5]}_url"  # replace _file with _url
+                    url_key = f"{key_path}_url"  # append _url to YAML key
                     if url_key not in metric_data:
                         *parts, last = url_key.split(".")
                         target = metric_data
@@ -187,7 +187,7 @@ def update_one_modeling_task_article(
                         )
                         file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
                         updated_files[filename] = file_url
-                        *parts, last = key_path[:-5].split(".")
+                        *parts, last = key_path.split(".")
                         target = metric_data
                         for part in parts:
                             target = target[part]
@@ -202,7 +202,7 @@ def update_one_modeling_task_article(
                     )
                     file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
                     new_files[filename] = file_url
-                    *parts, last = key_path[:-5].split(".")
+                    *parts, last = key_path.split(".")
                     target = metric_data
                     for part in parts:
                         target = target[part]

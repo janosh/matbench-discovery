@@ -146,30 +146,51 @@ properties:
           - type: object
             additionalProperties: false
             properties:
-              pred_file:
-                type: [string, "null"]
-              pred_file_url:
-                type: [string, "null"]
-              κ_SRME:
-                type: number
+              kappa_103:
+                type: object
+                additionalProperties: false
+                required: ["κ_SRME"]
+                properties:
+                  κ_SRME:
+                    type: number
+                    description: Symmetric Relative Mean Error for thermal conductivity predictions
+                  pred_file:
+                    type: [string, "null"]
+                    description: Path to the predictions file containing thermal conductivity results
+                  pred_file_url:
+                    type: [string, "null"]
+                    format: uri
+                    pattern: "^https?://"
+                    description: URL to download the predictions file
+                allOf:
+                  - if:
+                      properties:
+                        pred_file: { type: string }
+                      required: [pred_file]
+                    then:
+                      required: [pred_file_url]
+                      properties:
+                        pred_file_url:
+                          { type: string, format: uri, pattern: "^https?://" }
           - type: string
             enum: [not applicable, not available]
       geo_opt:
         oneOf:
           - type: object
             additionalProperties: false
-            required: [pred_file, pred_col, pred_file_url]
+            required: [pred_col]
             properties:
               pred_file:
                 type: [string, "null"]
               pred_file_url:
                 type: [string, "null"]
+                format: uri
+                pattern: "^https?://"
               pred_col:
-                type: [string, "null"]
+                type: string
               symprec=1e-5: &symprec_metrics
                 type: object
                 additionalProperties: false
-                required: [analysis_file]
                 properties:
                   rmsd:
                     type: number
@@ -184,23 +205,46 @@ properties:
                   n_structures:
                     type: number
                   analysis_file:
-                    type: string
+                    type: [string, "null"]
                   analysis_file_url:
-                    type: string
+                    type: [string, "null"]
+                    format: uri
+                    pattern: "^https?://"
+                allOf:
+                  - if:
+                      properties:
+                        analysis_file: { type: string }
+                      required: [analysis_file]
+                    then:
+                      required: [analysis_file_url]
+                      properties:
+                        analysis_file_url:
+                          { type: string, format: uri, pattern: "^https?://" }
               symprec=1e-3: *symprec_metrics
               symprec=1e-2: *symprec_metrics
+            allOf:
+              - if:
+                  properties:
+                    pred_file: { type: string }
+                  required: [pred_file]
+                then:
+                  required: [pred_file_url]
+                  properties:
+                    pred_file_url:
+                      { type: string, format: uri, pattern: "^https?://" }
           - type: string
             enum: [not applicable, not available]
       discovery:
         additionalProperties: false
-        required: [pred_file, pred_col, pred_file_url]
+        required: [pred_col]
         type: object
         properties:
-          additionalProperties: false
           pred_file:
-            type: string
+            type: [string, "null"]
           pred_file_url:
-            type: string
+            type: [string, "null"]
+            format: uri
+            pattern: "^https?://"
           pred_col:
             type: string
           full_test_set: &discovery_metrics
@@ -245,6 +289,16 @@ properties:
                 type: string
           most_stable_10k: *discovery_metrics
           unique_prototypes: *discovery_metrics
+        allOf:
+          - if:
+              properties:
+                pred_file: { type: string }
+              required: [pred_file]
+            then:
+              required: [pred_file_url]
+              properties:
+                pred_file_url:
+                  { type: string, format: uri, pattern: "^https?://" }
 
 required:
   - authors

@@ -77,7 +77,10 @@ notes:
 
 metrics:
   phonons:
-    κ_SRME: 0.550
+    kappa_103:
+      κ_SRME: 0.550
+      pred_file: models/sevennet/sevennet-l3i5/2024-12-10-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/ndownloader/files/52134881
   geo_opt:
     pred_file: models/sevennet/sevennet-l3i5/2024-12-10-wbm-geo-opt.json.gz
     pred_file_url: https://figshare.com/ndownloader/files/52062056

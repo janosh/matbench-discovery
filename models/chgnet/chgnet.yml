@@ -65,7 +65,10 @@ notes:
 
 metrics:
   phonons:
-    κ_SRME: 1.717
+    kappa_103:
+      κ_SRME: 1.717
+      pred_file: models/chgnet/chgnet-0.3.0/2024-11-09-kappa-103-FIRE-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/ndownloader/files/52134857
   geo_opt:
     pred_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-geo-opt.json.gz
     pred_file_url: https://figshare.com/ndownloader/files/52061999

@@ -423,8 +423,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     cgcnn_p = "cgcnn/cgcnn+p.yml"
 
     # DeepMD-DPA3 models
-    dpa3_v1_mptrj = "deepmd_dpa3/dpa3-v1-mptrj.yml"
-    dpa3_v1_openlam = "deepmd_dpa3/dpa3-v1-openlam.yml"
+    dpa3_v1_mptrj = "deepmd/dpa3-v1-mptrj.yml"
+    dpa3_v1_openlam = "deepmd/dpa3-v1-openlam.yml"
 
     # original M3GNet straight from publication, not re-trained
     m3gnet = "m3gnet/m3gnet.yml"
@@ -453,7 +453,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     gnome = "gnome/gnome.yml"
 
     # MatterSim
-    mattersim = "mattersim/mattersim-v1.yml"
+    mattersim_v1_5m = "mattersim/mattersim-v1-5m.yml"
 
     # ORB
     orb = "orb/orb.yml"
@@ -530,17 +530,17 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         return f"{ROOT}/{rel_path}"
 
     @property
-    def phonons_path(self) -> str | None:
+    def kappa_103_path(self) -> str | None:
         """File path associated with the file URL if it exists, otherwise
         download the file first, then return the path.
         """
         phonons_metrics = self.metrics.get("phonons", {})
         if phonons_metrics in ("not available", "not applicable"):
             return None
-        rel_path = phonons_metrics.get("pred_file")
+        rel_path = phonons_metrics.get("kappa_103", {}).get("pred_file")
         if not rel_path:
             raise ValueError(
-                f"metrics.phonons.pred_file not found in {self.rel_path!r}"
+                f"metrics.phonons.kappa_103.pred_file not found in {self.rel_path!r}"
             )
         return f"{ROOT}/{rel_path}"
 

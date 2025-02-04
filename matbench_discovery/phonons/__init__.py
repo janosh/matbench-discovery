@@ -1,7 +1,16 @@
 """This package contains phonon-related functionality."""
 
+from typing import Final
+
 import numpy as np
 import pandas as pd
+
+# q-point mesh (which phonon modes to sample) based on international space group number
+spg_num_q_mesh_map: Final[dict[int, tuple[int, int, int]]] = {
+    225: (19, 19, 19),  # rocksalt
+    186: (19, 19, 15),  # wurtzite
+    216: (19, 19, 19),  # zincblende
+}
 
 
 def check_imaginary_freqs(frequencies: np.ndarray, threshold: float = -0.01) -> bool:

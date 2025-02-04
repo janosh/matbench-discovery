@@ -61,10 +61,8 @@ notes:
   Missing Preds: According to the authors, the 1734 missing WBM predictions are mostly due out-of-memory (OOM) errors. The model was evaluated on A100s but without neighbor lists. The plan is to backfill the missing predictions once H100s are available or neighbor list implementation goes live.
 
 metrics:
-  geo_opt:
-    pred_file: # not (yet) shared by authors
-    pred_file_url:
-    pred_col:
+  phonons: not available # model is closed source, original GnoME submission predates phonon tasks and DeepMind did not resubmit later
+  geo_opt: not available # author's declined to share model-relaxed structures and can't be reproduced without model access
   discovery:
     pred_file: models/gnome/2023-11-01-gnome-50076332-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/ndownloader/files/52057556
