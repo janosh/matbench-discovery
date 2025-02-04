@@ -31,6 +31,7 @@ from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
 
 if TYPE_CHECKING:
+    from ase.filters import Filter
     from ase.optimize.optimize import Optimizer
 
 module_dir = os.path.dirname(__file__)
@@ -43,6 +44,7 @@ module_dir = os.path.dirname(__file__)
 def calc_kappa_for_structure(
     *,  # force keyword-only arguments
     atoms: Atoms,
+    displacement_distance: float,
     checkpoint: str,
     temperatures: list[float],
     ase_optimizer: str,
@@ -60,7 +62,8 @@ def calc_kappa_for_structure(
     """Predict ML kappa for single structure with ray.
 
     Args:
-        atoms (Atoms): Input structure
+        atoms (Atoms): ASE Atoms object with fc2_supercell, fc3_supercell,
+            q_point_mesh keys in its info dict.
         calc (Calculator): ASE calculator
         temperatures (list[float]): Which temperatures to calculate kappa at in Kelvin
         ase_optimizer (str): ASE optimizer to use
@@ -88,21 +91,20 @@ def calc_kappa_for_structure(
     # Create a deep copy of the atoms object to avoid ray read-only issues
     atoms = atoms.copy()
     # Ensure arrays are writable
-    atoms.arrays = {k: v.copy() for k, v in atoms.arrays.items()}
+    atoms.arrays = {key: val.copy() for key, val in atoms.arrays.items()}
 
     mat_id = atoms.info[Key.mat_id]
     init_info = deepcopy(atoms.info)
     mat_name = atoms.info["name"]
-    info_dict = {
+    info_dict: dict[str, Any] = {
         "name": mat_name,
         "errors": [],
         "error_traceback": [],
     }
 
-    filter_cls: type[ExpCellFilter | FrechetCellFilter] = {
-        "frechet": FrechetCellFilter,
-        "exp": ExpCellFilter,
-    }[ase_filter]
+    filter_cls: Filter = {"frechet": FrechetCellFilter, "exp": ExpCellFilter}[
+        ase_filter
+    ]
 
     optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
@@ -124,7 +126,7 @@ def calc_kappa_for_structure(
                 filtered_atoms = filter_cls(atoms)
 
             optimizer = optim_cls(
-                filtered_atoms, logfile=f"{out_dir}/relax_{task_id}.log"
+                filtered_atoms, logfile=f"{out_dir}/relaxations/{task_id}.log"
             )
             optimizer.run(fmax=force_max, steps=max_steps)
 
@@ -148,13 +150,20 @@ def calc_kappa_for_structure(
     except Exception as exc:
         warnings.warn(f"Failed to relax {mat_name=}, {mat_id=}: {exc!r}", stacklevel=2)
         traceback.print_exc()
-        info_dict["errors"].append(f"RelaxError: {exc!r}")
-        info_dict["error_traceback"].append(traceback.format_exc())
+        info_dict["errors"] += [f"RelaxError: {exc!r}"]
+        info_dict["error_traceback"] += [traceback.format_exc()]
         return mat_id, info_dict | relax_dict, None
 
     # Calculation of force sets
     try:
-        ph3 = ltc.init_phono3py(atoms, symprec=symprec)
+        ph3 = ltc.init_phono3py(
+            atoms,
+            fc2_supercell=atoms.info["fc2_supercell"],
+            fc3_supercell=atoms.info["fc3_supercell"],
+            q_point_mesh=atoms.info["q_point_mesh"],
+            displacement_distance=displacement_distance,
+            symprec=symprec,
+        )
 
         ph3, fc2_set, freqs = ltc.get_fc2_and_freqs(
             ph3, calculator=calc, pbar_kwargs={"disable": True}
@@ -186,8 +195,8 @@ def calc_kappa_for_structure(
     except Exception as exc:
         warnings.warn(f"Failed to calculate force sets {mat_id}: {exc!r}", stacklevel=2)
         traceback.print_exc()
-        info_dict["errors"].append(f"ForceConstantError: {exc!r}")
-        info_dict["error_traceback"].append(traceback.format_exc())
+        info_dict["errors"] += [f"ForceConstantError: {exc!r}"]
+        info_dict["error_traceback"] += [traceback.format_exc()]
         return mat_id, info_dict | relax_dict, force_results
 
     # Calculation of conductivity
@@ -195,7 +204,6 @@ def calc_kappa_for_structure(
         ph3, kappa_dict, _cond = ltc.calculate_conductivity(
             ph3, temperatures=temperatures
         )
-        print(f"{kappa_dict=}")
         return mat_id, info_dict | relax_dict | freqs_dict | kappa_dict, force_results
 
     except Exception as exc:
@@ -203,8 +211,8 @@ def calc_kappa_for_structure(
             f"Failed to calculate conductivity {mat_id}: {exc!r}", stacklevel=2
         )
         traceback.print_exc()
-        info_dict["errors"].append(f"ConductivityError: {exc!r}")
-        info_dict["error_traceback"].append(traceback.format_exc())
+        info_dict["errors"] += [f"ConductivityError: {exc!r}"]
+        info_dict["error_traceback"] += [traceback.format_exc()]
         return mat_id, info_dict | relax_dict | freqs_dict, force_results
 
 
@@ -216,7 +224,7 @@ def main() -> None:
     ase_optimizer: Literal["FIRE", "LBFGS", "BFGS"] = "FIRE"
     ase_filter: Literal["frechet", "exp"] = "frechet"
     max_steps = 300
-    force_max = 1e-4  # Run until the forces are smaller than this in eV/A
+    fmax = 1e-4  # Run until the forces are smaller than this in eV/A
 
     # Symmetry parameters
     symprec = 1e-5  # symmetry precision for enforcing relaxation and conductivity calcs
@@ -272,7 +280,11 @@ def main() -> None:
     checkpoint = f"https://github.com/ACEsuit/mace-mp/releases/download/mace_omat_0/{model_name}.model"
 
     task_type = "LTC"  # lattice thermal conductivity
-    job_name = f"phononDB-{task_type}-{ase_optimizer}_force{force_max}_sym{symprec}"
+    displacement_distance = 0.01
+    job_name = (
+        f"phononDB-{task_type}-{ase_optimizer}-dist={displacement_distance}-"
+        f"{fmax=}-{symprec=}"
+    )
     out_dir = os.getenv(
         "SBATCH_OUTPUT", f"{module_dir}/{model_name}/{today}-{job_name}"
     )
@@ -289,7 +301,7 @@ def main() -> None:
         ase_optimizer=ase_optimizer,
         ase_filter=ase_filter,
         max_steps=max_steps,
-        force_max=force_max,
+        force_max=fmax,
         symprec=symprec,
         enforce_relax_symm=enforce_relax_symm,
         conductivity_broken_symm=conductivity_broken_symm,
@@ -307,13 +319,13 @@ def main() -> None:
     futures = [
         calc_kappa_for_structure.remote(
             atoms=atoms,
-            # calc=calc,
+            displacement_distance=displacement_distance,
             checkpoint=checkpoint,
             temperatures=temperatures,
             ase_optimizer=ase_optimizer,
             ase_filter=ase_filter,
             max_steps=max_steps,
-            force_max=force_max,
+            force_max=fmax,
             symprec=symprec,
             enforce_relax_symm=enforce_relax_symm,
             conductivity_broken_symm=conductivity_broken_symm,
