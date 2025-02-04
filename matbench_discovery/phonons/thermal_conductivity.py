@@ -9,6 +9,7 @@ conductivity metric to larger test sets.
 """
 
 import warnings
+from collections.abc import Sequence
 from copy import deepcopy
 from typing import Any
 
@@ -108,17 +109,25 @@ def calculate_fc3_set(
 
 def init_phono3py(
     atoms: Atoms,
-    symprec: float = 1e-5,
+    *,
+    fc2_supercell: np.ndarray,
+    fc3_supercell: np.ndarray,
+    q_point_mesh: tuple[int, int, int] = (20, 20, 20),
     displacement_distance: float = 0.03,
+    symprec: float = 1e-5,
     **kwargs: Any,
 ) -> Phono3py:
     """Initialize Phono3py object from ASE Atoms.
 
     Args:
         atoms (Atoms): ASE Atoms object to initialize from.
-        symprec (float): Symmetry precision for finding space group. Defaults to 1e-5.
+        fc2_supercell (np.ndarray): Supercell matrix for 2nd order force constants.
+        fc3_supercell (np.ndarray): Supercell matrix for 3rd order force constants.
+        q_point_mesh (tuple[int, int, int]): Mesh size for q-point sampling. Defaults
+            to (20, 20, 20).
         displacement_distance (float): Displacement distance for force calculations.
             Defaults to 0.03.
+        symprec (float): Symmetry precision for finding space group. Defaults to 1e-5.
         **kwargs (Any): Passed to Phono3py constructor.
 
     Returns:
@@ -127,21 +136,16 @@ def init_phono3py(
     Raises:
         ValueError: If required metadata is missing from atoms.info
     """
-    formula = atoms.get_chemical_formula(mode="metal")
-    for key in ("fc2_supercell", "fc3_supercell", "q_mesh"):
-        if key not in atoms.info:
-            raise ValueError(f"{formula} {key=} not found in {atoms.info=}")
-
     unit_cell = PhonopyAtoms(atoms.symbols, cell=atoms.cell, positions=atoms.positions)
     ph3 = Phono3py(
         unitcell=unit_cell,
-        supercell_matrix=atoms.info["fc3_supercell"],
-        phonon_supercell_matrix=atoms.info["fc2_supercell"],
+        supercell_matrix=fc3_supercell,
+        phonon_supercell_matrix=fc2_supercell,
         primitive_matrix="auto",
         symprec=symprec,
         **kwargs,
     )
-    ph3.mesh_numbers = atoms.info["q_mesh"]
+    ph3.mesh_numbers = q_point_mesh
 
     ph3.generate_displacements(distance=displacement_distance)
 
@@ -207,7 +211,7 @@ def load_force_sets(
 
 def calculate_conductivity(
     ph3: Phono3py,
-    temperatures: list[float],
+    temperatures: Sequence[float],
     boundary_mfp: float = 1e6,
     mode_kappa_thresh: float = 1e-6,
     **kwargs: Any,
