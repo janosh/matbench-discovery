@@ -74,11 +74,13 @@ df_in = pd.read_json(data_path).set_index(Key.mat_id)
 if slurm_array_task_count > 1:
     df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
 
-checkpoint = None
 if model_type == "direct":
     checkpoint = f"{ROOT}/models/{model_name}/2023-05-26-DI-DFTstrictF10-TTRS-128U-442E"
-if model_type == "ms":
+elif model_type == "manual-sampling":
     checkpoint = f"{ROOT}/models/{model_name}/2023-05-26-MS-DFTstrictF10-128U-154E"
+else:
+    raise ValueError(f"{model_type=} not supported")
+
 relax_results: dict[str, dict[str, Any]] = {}
 m3gnet = Relaxer(potential=checkpoint)  # load pre-trained M3GNet model
 

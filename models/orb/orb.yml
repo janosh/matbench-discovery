@@ -74,7 +74,10 @@ notes:
 
 metrics:
   phonons:
-    κ_SRME: 1.732
+    kappa_103:
+      κ_SRME: 1.732
+      pred_file: models/orb/orbff-v2/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/ndownloader/files/52134887
   geo_opt:
     pred_file: models/orb/orbff-v2/2024-10-11-wbm-geo-opt.json.gz
     pred_file_url: https://figshare.com/ndownloader/files/52062194
