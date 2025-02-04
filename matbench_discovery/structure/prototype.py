@@ -10,7 +10,6 @@ import string
 from typing import Final
 
 import ase
-import moyopy
 import yaml
 from pymatgen.core import Composition, Structure
 
@@ -33,18 +32,6 @@ crys_sys_letters: Final[dict[str, str]] = {
     "Hexagonal": "h",
     "Cubic": "c",
 }
-
-
-def get_pearson_symbol(moyo_data: moyopy.MoyoDataset) -> str:
-    """Get the Pearson symbol for the structure from a MoyoDataset."""
-    hall_entry = moyopy.HallSymbolEntry(hall_number=moyo_data.hall_number)
-    spg_sym = hall_entry.hm_short
-    # Get centering from first letter of space group symbol, handle special case for
-    # C-centered
-    centering = "C" if spg_sym[0] in ("A", "B", "C", "S") else spg_sym[0]
-    n_sites = len(moyo_data.std_cell.numbers)
-    crys_sys = str(moyo_data.crystal_system)
-    return f"{crys_sys_letters[crys_sys]}{centering}{n_sites}"
 
 
 def get_prototype_formula(composition: Composition, amt_tol: float = 1e-8) -> str:
@@ -190,7 +177,7 @@ def get_protostructure_label(
     # Build prototype label
     prototype_label = (
         f"{get_prototype_formula(struct.composition)}_"
-        f"{get_pearson_symbol(symmetry_data)}_"
+        f"{symmetry_data.pearson_symbol}_"
         f"{spg_num}_{all_wyckoffs}:{struct.chemical_system}"
     )
 
