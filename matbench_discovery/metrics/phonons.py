@@ -53,9 +53,6 @@ def calc_kappa_metrics_from_dfs(
         - DFT_kappa_tot_avg: Reference DFT conductivity values
     """
     # Remove precomputed columns
-    cols_to_remove = [Key.srd, Key.sre, Key.srme, MbdKey.true_kappa_tot_avg]
-    df_pred = df_pred.drop(columns=cols_to_remove, errors="ignore")
-
     df_pred[MbdKey.kappa_tot_avg] = df_pred[MbdKey.kappa_tot_rta].map(
         calculate_kappa_avg
     )
@@ -102,7 +99,7 @@ def calculate_kappa_avg(kappa: np.ndarray) -> np.ndarray:
         any NaN values or if the calculation fails. For multiple temperatures,
         returns an array of averages.
     """
-    if np.any(np.isnan(kappa)):
+    if np.any(pd.isna(kappa)):
         return np.array([np.nan])
     try:
         return np.asarray(kappa)[..., :3].mean(axis=-1)
@@ -222,7 +219,7 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
                 f"Neither mode_kappa_tot_avg, mode_kappa_tot nor individual kappa\n"
                 f"components found in {label}, got\n{keys}"
             )
-        mode_kappa_tot_avgs[label] = kappas
+        mode_kappa_tot_avgs[label] = np.asarray(kappas)
 
     # calculating microscopic error for all temperatures
     microscopic_error = (
