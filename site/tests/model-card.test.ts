@@ -108,7 +108,7 @@ describe(`ModelCard`, () => {
       expect(f1_metric?.classList.contains(`active`)).toBe(true)
 
       const kappa_metric = Array.from(metrics).find((m) => m.textContent?.includes(`κ`))
-      const kappa_value = model.metrics?.phonons?.κ_SRME
+      const kappa_value = model.metrics?.phonons?.kappa_103?.κ_SRME
       expect(kappa_metric?.querySelector(`strong`)?.textContent?.trim()).toBe(
         `${kappa_value} W/mK`,
       )
