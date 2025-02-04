@@ -128,7 +128,7 @@ def test_model_enum() -> None:
         (Model.wrenformer, True),
         (Model.voronoi_rf, True),
         (Model.gnome, False),
-        (Model.mattersim, False),
+        (Model.mattersim_v1_5m, False),
     ],
 )
 def test_model_is_compliant(model_key: Model, is_compliant: bool) -> None:

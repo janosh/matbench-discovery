@@ -243,6 +243,9 @@ def test_model() -> None:
 
     # Test yaml_path property
     assert Model.alignn.yaml_path.endswith("alignn/alignn.yml")
+    assert Model.grace2l_r6.kappa_103_path.endswith(
+        "2024-11-20-kappa-103-FIRE-fmax=1e-4-symprec=1e-5.json.gz"
+    )
 
     # Test error handling for missing paths
     with pytest.raises(

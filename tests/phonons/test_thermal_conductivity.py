@@ -15,6 +15,7 @@ from matbench_discovery.phonons import thermal_conductivity as ltc
 from matbench_discovery.phonons.thermal_conductivity import calculate_fc2_set
 
 NP_RNG = np.random.default_rng(seed=0)
+init_keys = ("fc2_supercell", "fc3_supercell", "q_point_mesh")
 
 
 @pytest.fixture
@@ -23,14 +24,15 @@ def test_atoms() -> Atoms:
     atoms = bulk("Al", "fcc", a=4.05)
     atoms.info["fc2_supercell"] = 2 * np.eye(3)
     atoms.info["fc3_supercell"] = np.eye(3)
-    atoms.info["q_mesh"] = [2, 2, 2]
+    atoms.info["q_point_mesh"] = [2, 2, 2]
     return atoms
 
 
 @pytest.fixture
 def test_ph3(test_atoms: Atoms) -> Phono3py:
     """Create a test Phono3py object."""
-    return ltc.init_phono3py(test_atoms)
+    keys = ("fc2_supercell", "fc3_supercell", "q_point_mesh")
+    return ltc.init_phono3py(test_atoms, **{key: test_atoms.info[key] for key in keys})
 
 
 @pytest.fixture
@@ -41,17 +43,54 @@ def test_calculator() -> EMT:
 
 def test_init_phono3py(test_atoms: Atoms) -> None:
     """Test initialization of Phono3py object."""
-    ph3 = ltc.init_phono3py(test_atoms)
+    fc2_supercell = test_atoms.info["fc2_supercell"]
+    fc3_supercell = test_atoms.info["fc3_supercell"]
+    q_point_mesh = test_atoms.info["q_point_mesh"]
+    ph3 = ltc.init_phono3py(
+        test_atoms,
+        fc2_supercell=fc2_supercell,
+        fc3_supercell=fc3_supercell,
+        q_point_mesh=q_point_mesh,
+    )
     assert isinstance(ph3, Phono3py)
     assert list(ph3.mesh_numbers) == [2, 2, 2]
     assert ph3.supercell_matrix.tolist() == np.eye(3).tolist()
+    # Check that both supercells were created correctly
+    assert np.allclose(ph3.phonon_supercell_matrix, fc2_supercell)
+    assert np.allclose(ph3.supercell_matrix, fc3_supercell)
+    # Verify supercell sizes
+    assert len(ph3.phonon_supercell) == len(test_atoms) * 8  # 2x2x2 supercell
+    assert len(ph3.supercell) == len(test_atoms)  # 1x1x1 supercell
 
 
-def test_init_phono3py_missing_info(test_atoms: Atoms) -> None:
-    """Test initialization with missing metadata."""
-    test_atoms.info.pop("fc2_supercell")
-    with pytest.raises(ValueError, match="fc2_supercell.*not found"):
-        ltc.init_phono3py(test_atoms)
+def test_init_phono3py_custom_mesh_and_displacement(test_atoms: Atoms) -> None:
+    """Test initialization with custom mesh and displacement distance."""
+    # Test custom mesh
+    custom_mesh = (4, 4, 4)
+    ph3 = ltc.init_phono3py(
+        test_atoms,
+        fc2_supercell=test_atoms.info["fc2_supercell"],
+        fc3_supercell=test_atoms.info["fc3_supercell"],
+        q_point_mesh=custom_mesh,
+    )
+    assert tuple(ph3.mesh_numbers) == custom_mesh
+    # Phono3py automatically initializes mesh when setting mesh_numbers
+    assert len(ph3.grid.addresses) == 89
+
+    custom_displacement = 0.05
+    ph3 = ltc.init_phono3py(
+        test_atoms,
+        fc2_supercell=test_atoms.info["fc2_supercell"],
+        fc3_supercell=test_atoms.info["fc3_supercell"],
+        q_point_mesh=test_atoms.info["q_point_mesh"],
+        displacement_distance=custom_displacement,
+    )
+    # Check that displacements were generated with the custom distance
+    displacements = ph3.displacements
+    # Phono3py generates displacements of exactly the specified magnitude
+    disp_magnitudes = np.linalg.norm(displacements, axis=-1)
+    non_zero_disps = disp_magnitudes[disp_magnitudes > 0]
+    np.testing.assert_allclose(non_zero_disps, custom_displacement)
 
 
 def test_calculate_fc2_set(test_ph3: Phono3py, test_calculator: EMT) -> None:
@@ -242,7 +281,7 @@ def test_calculate_fc2_set_null_supercell() -> None:
     calc = MockCalculator(np.zeros((2, 3)))
     force_set = calculate_fc2_set(ph3, calc, pbar_kwargs={"disable": True})
 
-    # Test that ones are used for null supercell case
+    # Test that zeros are used for null supercell case
     np.testing.assert_allclose(force_set, np.zeros((2, len(ph3.phonon_supercell), 3)))
 
     # Verify shape is correct even with null supercell

@@ -51,7 +51,10 @@ hyperparams:
 
 metrics:
   phonons:
-    κ_SRME: 0.525 # https://github.com/MPA2suite/k_SRME/pull/11/files
+    kappa_103:
+      κ_SRME: 0.525 # https://github.com/MPA2suite/k_SRME/pull/11/files
+      pred_file: models/grace/grace2l_r6/2024-11-20-kappa-103-FIRE-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/ndownloader/files/52134896
   geo_opt:
     pred_file: models/grace/grace2l_r6/2024-11-11-relaxed-structures.json.gz
     pred_file_url: https://figshare.com/ndownloader/files/52062590

@@ -85,6 +85,11 @@ notes:
     Training was done by fine-tuning a model pretrained for 2 epochs on the OMat24 dataset.
 
 metrics:
+  phonons:
+    kappa_103:
+      κ_SRME: 1.717
+      pred_file: models/eqV2/eqV2-m-omat-mp-salex/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/ndownloader/files/52134893
   geo_opt:
     pred_file: models/eqV2/eqV2-m-omat-mp-salex/2024-10-18-wbm-geo-opt.json.gz
     pred_file_url: https://figshare.com/ndownloader/files/51607436
