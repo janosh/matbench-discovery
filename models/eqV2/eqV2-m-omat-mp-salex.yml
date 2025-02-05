@@ -76,7 +76,6 @@ hyperparams:
   stochastic_depth: 0.1
   batch_size: 256
   epochs: 16
-  # train_config_url: #TODO add URL
 
 notes:
   Description: |

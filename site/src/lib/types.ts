@@ -98,3 +98,10 @@ export type HeatmapColumn = {
   sticky?: boolean // sticky column
   hidden?: boolean // hide column
 }
+
+export const DISCOVERY_SETS = [
+  `full_test_set`,
+  `unique_prototypes`,
+  `most_stable_10k`,
+] as const
+export type DiscoverySet = (typeof DISCOVERY_SETS)[number]

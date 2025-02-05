@@ -65,12 +65,16 @@ def test_init_phono3py(test_atoms: Atoms) -> None:
 
 def test_init_phono3py_custom_mesh_and_displacement(test_atoms: Atoms) -> None:
     """Test initialization with custom mesh and displacement distance."""
+    fc2_supercell = test_atoms.info["fc2_supercell"]
+    fc3_supercell = test_atoms.info["fc3_supercell"]
+    q_point_mesh = test_atoms.info["q_point_mesh"]
+
     # Test custom mesh
     custom_mesh = (4, 4, 4)
     ph3 = ltc.init_phono3py(
         test_atoms,
-        fc2_supercell=test_atoms.info["fc2_supercell"],
-        fc3_supercell=test_atoms.info["fc3_supercell"],
+        fc2_supercell=fc2_supercell,
+        fc3_supercell=fc3_supercell,
         q_point_mesh=custom_mesh,
     )
     assert tuple(ph3.mesh_numbers) == custom_mesh
@@ -80,15 +84,13 @@ def test_init_phono3py_custom_mesh_and_displacement(test_atoms: Atoms) -> None:
     custom_displacement = 0.05
     ph3 = ltc.init_phono3py(
         test_atoms,
-        fc2_supercell=test_atoms.info["fc2_supercell"],
-        fc3_supercell=test_atoms.info["fc3_supercell"],
-        q_point_mesh=test_atoms.info["q_point_mesh"],
+        fc2_supercell=fc2_supercell,
+        fc3_supercell=fc3_supercell,
+        q_point_mesh=q_point_mesh,
         displacement_distance=custom_displacement,
     )
     # Check that displacements were generated with the custom distance
-    displacements = ph3.displacements
-    # Phono3py generates displacements of exactly the specified magnitude
-    disp_magnitudes = np.linalg.norm(displacements, axis=-1)
+    disp_magnitudes = np.linalg.norm(ph3.displacements, axis=-1)
     non_zero_disps = disp_magnitudes[disp_magnitudes > 0]
     np.testing.assert_allclose(non_zero_disps, custom_displacement)
 

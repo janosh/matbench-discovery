@@ -228,8 +228,8 @@ def calculate_conductivity(
         **kwargs (Any): Passed to Phono3py.run_thermal_conductivity().
 
     Returns:
-        tuple[Phono3py, dict[str, np.ndarray], Any]: Tuple of (Phono3py object,
-            conductivity dict, conductivity object)
+        tuple[Phono3py, dict[str, np.ndarray], Any]: (Phono3py object, conductivity
+            dict, conductivity object)
     """
     ph3.init_phph_interaction(symmetrize_fc3q=False)
 
@@ -290,7 +290,8 @@ def calc_mode_kappa_tot(
             (T, q-points, bands)
 
     Returns:
-        np.ndarray: Total mode kappa
+        np.ndarray: Total (particle-like + wave-like) thermal conductivity per phonon
+            mode with shape (T, q-points, bands)
     """
     # Temporarily silence divide warnings since we handle NaN values below
     with np.errstate(divide="ignore", invalid="ignore"):
