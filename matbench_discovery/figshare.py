@@ -22,7 +22,7 @@ DOWNLOAD_URL_PREFIX: Final = "https://figshare.com/ndownloader/files"
 ARTICLE_IDS: Final[dict[str, int | None]] = {
     "model_preds_discovery": 28187990,
     "model_preds_geo_opt": 28187999,
-    "model_preds_phonons": None,
+    "model_preds_phonons": 28347251,
     "data_files": 22715158,
 }
 
