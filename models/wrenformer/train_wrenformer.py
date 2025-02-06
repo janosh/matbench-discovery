@@ -10,6 +10,7 @@ from pymatviz.enums import Key
 
 from matbench_discovery import WANDB_PATH, timestamp, today
 from matbench_discovery.data import DataFiles
+from matbench_discovery.enums import MbdKey
 from matbench_discovery.hpc import slurm_submit
 
 __author__ = "Janosh Riebesell"
@@ -51,8 +52,8 @@ df_data = pd.read_csv(data_path).set_index(Key.mat_id, drop=False)
 
 if target_col not in df_data:
     raise TypeError(f"{target_col!s} not in {df_data.columns=}")
-if Key.wyckoff not in df_data:
-    raise TypeError(f"{Key.wyckoff!s} not in {df_data.columns=}")
+if MbdKey.wyckoff_spglib not in df_data:
+    raise TypeError(f"{MbdKey.wyckoff_spglib!s} not in {df_data.columns=}")
 train_df, test_df = df_train_test_split(df_data, test_size=0.05)
 
 run_params = dict(
@@ -74,7 +75,7 @@ train_wrenformer(
     # folds=(ensemble_size, slurm_array_task_id),
     epochs=epochs,
     checkpoint="wandb",  # None | 'local' | 'wandb',
-    input_col=Key.wyckoff,
+    input_col=MbdKey.wyckoff_spglib,
     learning_rate=learning_rate,
     batch_size=batch_size,
     wandb_path=WANDB_PATH,
