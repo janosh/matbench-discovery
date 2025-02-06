@@ -435,6 +435,12 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     dpa3_v1_mptrj = "deepmd/dpa3-v1-mptrj.yml"
     dpa3_v1_openlam = "deepmd/dpa3-v1-openlam.yml"
 
+    # EScAIP - https://arxiv.org/abs/2410.24169v1
+    escaip = "escaip/escaip.yml"
+
+    # GrACE
+    grace2l_r6 = "grace/grace2l-r6.yml"
+
     # original M3GNet straight from publication, not re-trained
     m3gnet = "m3gnet/m3gnet.yml"
     # m3gnet_direct = None, "M3GNet DIRECT"
@@ -471,8 +477,6 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # fairchem
     eqv2_s_dens = "eqV2/eqV2-s-dens-mp.yml"
     eqv2_m = "eqV2/eqV2-m-omat-mp-salex.yml"
-
-    grace2l_r6 = "grace/grace2l-r6.yml"
 
     # --- Model Combos
     # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
