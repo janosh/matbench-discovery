@@ -5,9 +5,13 @@ export TF_CPP_MIN_LOG_LEVEL=3
 
 THREADS=4  # number of threads for OMP, MKL, NUMEXPR etc. To share resources on single machine
 
-export NGPU=4  # Set the total number of GPUs here
+# Define the list of available GPUs
+GPUS=(0 1 2 3)  # Set the specific GPU IDs you want to use here
+NGPU=${#GPUS[@]} # Calculate the number of GPUs based on the array length
 
-model_name="MP_GRACE_2L_r6_11Nov2024" # just for information, model name is hardcoded in 1_test_srme.py
+#model_name="MP_GRACE_2L_r6_11Nov2024" # just for information, model name is hardcoded in 1_test_srme.py
+model_name="GRACE-1L-OAM_2Feb25"
+#model_name="GRACE_2L_OAM_28Jan25"
 
 export MODEL_NAME="${model_name}"
 echo "MODEL_NAME=${MODEL_NAME}"
@@ -40,6 +44,11 @@ echo "SLURM_ARRAY_TASK_COUNT=${SLURM_ARRAY_TASK_COUNT}"
 echo "Running test_grace.py"
 for task_id in $(seq 0 $((SLURM_ARRAY_TASK_COUNT-1)))
 do
-  CUDA_VISIBLE_DEVICES=$((task_id % NGPU)) SLURM_ARRAY_TASK_ID=${task_id}  python test_grace.py > "out-${task_id}.txt" 2>&1 &
+  # Calculate the GPU index using the modulo operator (%)
+  gpu_index=$((task_id % NGPU))
+  # Get the actual GPU ID from the GPUS array
+  gpu_id=${GPUS[$gpu_index]}
+  
+  CUDA_VISIBLE_DEVICES=$gpu_id SLURM_ARRAY_TASK_ID=${task_id}  python test_grace_discovery.py "${MODEL_NAME}" > "out-${task_id}.txt" 2>&1 &
 done
 wait

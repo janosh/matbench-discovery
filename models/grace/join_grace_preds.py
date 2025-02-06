@@ -1,5 +1,6 @@
 import glob
 import os
+import argparse  # Import the argparse module
 
 import pandas as pd
 from pymatviz.enums import Key
@@ -10,70 +11,91 @@ from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_
 from matbench_discovery.enums import MbdKey, Task
 
 __author__ = "Yury Lysogorskiy"
-__date__ = "2024-11-22"
+__date__ = "2025-02-06"
 
-energy_column = "grace2l_r6_energy"
-e_form_grace_col = "e_form_per_atom_grace"
-struct_col = "grace2l_r6_structure"
+
+energy_column = "grace_energy"  # or your actual column name.
+e_form_grace_col = "e_form_per_atom_grace"  # or your desired name
+struct_col = "grace_structure"
 
 
 module_dir = os.path.dirname(__file__)
-task_type = Task.IS2RE
-date = "2024-11-21"
-glob_pattern = "2024-11-21-MP_GRACE_2L_r6_11Nov2024-wbm-IS2RE-FIRE/production-*.json.gz"
-file_paths = glob.glob(glob_pattern)
-
-print(f"Found {len(file_paths):,} files for {glob_pattern = }")
+task_type = Task.IS2RE  # or Task.RS2RE, depending on what you processed
 
 
-dfs: list[pd.DataFrame] = []
-for fn in file_paths:
-    print(fn)
-    dfs.append(pd.read_json(fn))
+def process_results(path: str):
+    """
+    Processes relaxation results from a given path.
 
+    Args:
+        path (str): The path to the directory containing the .json.gz files.
+    """
+    glob_pattern = os.path.join(path, "production-*.json.gz")
+    file_paths = glob.glob(glob_pattern)
 
-tot_df = pd.concat(dfs)
-tot_df["id_tuple"] = (
-    tot_df["material_id"].str.split("-").map(lambda x: (int(x[1]), int(x[2])))
-)
-tot_df = (
-    tot_df.sort_values("id_tuple")
-    .reset_index(drop=True)
-    .drop(columns=["id_tuple", struct_col])
-)
+    print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
-df_grace = tot_df.set_index("material_id")
-df_grace[Key.formula] = df_wbm[Key.formula]
+    if not file_paths:
+        print(f"No files found matching {glob_pattern}. Exiting.")
+        return  # Exit if no files are found
 
+    dfs: list[pd.DataFrame] = []
+    for fn in file_paths:
+        print(fn)
+        try:
+            dfs.append(pd.read_json(fn))
+        except Exception as e:
+            print(f"Error reading {fn}: {e}") # Print any errors during file reading.
+            continue # Continue to the next file
 
-print("Calculating formation energies")
-e_form_list = []
-for _, row in tqdm(df_grace.iterrows(), total=len(df_grace)):
-    e_form = calc_energy_from_e_refs(
-        row["formula"],
-        ref_energies=mp_elemental_ref_energies,
-        total_energy=row[energy_column],
+    tot_df = pd.concat(dfs)
+    tot_df["id_tuple"] = (
+        tot_df["material_id"].str.split("-").map(lambda x: (int(x[1]), int(x[2])))
     )
-    e_form_list.append(e_form)
+    tot_df = (
+        tot_df.sort_values("id_tuple")
+        .reset_index(drop=True)
+        .drop(columns=["id_tuple", struct_col])
+    )
+
+    df_grace = tot_df.set_index("material_id")
+    df_grace[Key.formula] = df_wbm[Key.formula]
 
 
-df_grace[e_form_grace_col] = e_form_list
-
-df_wbm[[*df_grace]] = df_grace
-
-
-# %%
-bad_mask = abs(df_wbm[e_form_grace_col] - df_wbm[MbdKey.e_form_dft]) > 5
-n_preds = len(df_wbm[e_form_grace_col].dropna())
-print(f"{sum(bad_mask)=} is {sum(bad_mask) / len(df_wbm):.2%} of {n_preds:,}")
-out_path = file_paths[0].rsplit("/", 1)[0]
-
-df_grace = df_grace.round(4)
-df_grace.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
+    print("Calculating formation energies")
+    e_form_list = []
+    for _, row in tqdm(df_grace.iterrows(), total=len(df_grace)):
+        e_form = calc_energy_from_e_refs(
+            row["formula"],
+            ref_energies=mp_elemental_ref_energies,
+            total_energy=row[energy_column],
+        )
+        e_form_list.append(e_form)
 
 
-df_grace.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
+    df_grace[e_form_grace_col] = e_form_list
 
-df_bad = df_grace[bad_mask].copy()
-df_bad[MbdKey.e_form_dft] = df_wbm[MbdKey.e_form_dft]
-df_bad.to_csv(f"{out_path}-bad.csv")
+    df_wbm[[*df_grace]] = df_grace
+
+
+    # %%
+    bad_mask = abs(df_wbm[e_form_grace_col] - df_wbm[MbdKey.e_form_dft]) > 5
+    n_preds = len(df_wbm[e_form_grace_col].dropna())
+    print(f"{sum(bad_mask)=} is {sum(bad_mask) / len(df_wbm):.2%} of {n_preds:,}")
+    out_path = file_paths[0].rsplit("/", 1)[0]  # Get directory from first file path.
+
+    df_grace = df_grace.round(4)
+    df_grace.select_dtypes("number").to_csv(f"{out_path}/{model_name}_{date}.csv.gz") #added model and date
+    df_grace.reset_index().to_json(f"{out_path}/{model_name}_{date}.json.gz", default_handler=as_dict_handler) #added model and date
+    df_bad = df_grace[bad_mask].copy()
+    df_bad[MbdKey.e_form_dft] = df_wbm[MbdKey.e_form_dft]
+    df_bad.to_csv(f"{out_path}/{model_name}_{date}_bad.csv") #added model and date
+
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Process relaxation results.")
+    parser.add_argument("path", type=str, help="Path to the directory with relaxation results.")
+
+    args = parser.parse_args()
+    process_results(args.path)
