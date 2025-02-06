@@ -41,7 +41,7 @@ train_task: S2EF
 test_task: IS2RE-SR
 targets: EFS_G
 model_type: UIP
-model_params: 12_597_516
+model_params: 3_447_148
 n_estimators: 1
 
 training_set: [OMat24, sAlex, MPtrj]
@@ -80,7 +80,7 @@ metrics:
     #   n_structures: 256513 # count
     #   analysis_file: models/grace/grace2l_r6/2024-11-11-relaxed-structures-symprec=1e-2.csv.gz
     #   analysis_file_url: https://figshare.com/ndownloader/files/52062650
-  # discovery:
+  discovery:
   #   pred_file: TODO
   #   pred_file_url: TODO
   #   pred_col: e_form_per_atom_grace
