@@ -1,6 +1,7 @@
 import glob
 import os
 import argparse  # Import the argparse module
+import re
 
 import pandas as pd
 from pymatviz.enums import Key
@@ -23,6 +24,25 @@ module_dir = os.path.dirname(__file__)
 task_type = Task.IS2RE  # or Task.RS2RE, depending on what you processed
 
 
+def split_string(input_string):
+    """
+    Splits the input string into date and model name.
+
+    Args:
+        input_string: The string to split.
+
+    Returns:
+        A tuple containing the date string and the model name string,
+        or (None, None) if the string doesn't match the expected pattern.
+    """
+    match = re.match(r"^(\d{4}-\d{2}-\d{2})-(.*)-wbm.*", input_string)
+    if match:
+        date_str = match.group(1)
+        model_name = match.group(2)
+        return date_str, model_name
+    else:
+        return None, None
+
 def process_results(path: str):
     """
     Processes relaxation results from a given path.
@@ -30,6 +50,10 @@ def process_results(path: str):
     Args:
         path (str): The path to the directory containing the .json.gz files.
     """
+    date, model_name = split_string(path)
+    print("date:",date)
+    print("model_name:", model_name)
+
     glob_pattern = os.path.join(path, "production-*.json.gz")
     file_paths = glob.glob(glob_pattern)
 
