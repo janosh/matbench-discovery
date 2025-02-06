@@ -185,7 +185,7 @@ for model in df_metrics_uniq_protos.index:
                 n_materials_total += n_materials
 
                 title = dataset_info.get("title", key)
-                dataset_urls[key or title] = dataset_info.get("url", "")
+                dataset_urls[key or title] = dataset_info.get("download_url", "")
 
                 if n_materials != n_structs:
                     dataset_tooltip_lines += [

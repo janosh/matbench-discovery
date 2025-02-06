@@ -50,41 +50,41 @@ def analyze_symmetry(
     """Analyze symmetry of a dictionary of structures using moyopy.
 
     Args:
-        structures (dict[str, Structure]): Map material IDs to pymatgen Structures
+        structures (dict[str, Structure | Atoms]): Map of material IDs to pymatgen
+            Structures or ASE Atoms objects
         pbar (bool | dict[str, str], optional): Whether to show progress bar.
             Defaults to True.
         symprec (float, optional): Symmetry precision of moyopy. Defaults to 1e-2.
-        angle_tolerance (float, optional): Angle tol. of moyopy. Defaults to -1.
+        angle_tolerance (float, optional): Angle tolerance of moyopy (in radians unlike
+            spglib which uses degrees!). Defaults to None.
 
     Returns:
         pd.DataFrame: DataFrame containing symmetry information for each structure
     """
     import moyopy
-
-    sym_key_map = {
-        "number": Key.spg_num,
-        "hall_number": Key.hall_num,
-        "site_symmetry_symbols": MbdKey.international_spg_name,
-        "wyckoffs": Key.wyckoff_symbols,
-    }
+    from moyopy.interface import MoyoAdapter
 
     results: dict[str, dict[str, str | int | list[str]]] = {}
     iterator = structures.items()
     if pbar:
         pbar_kwargs = pbar if isinstance(pbar, dict) else {}
-        iterator = tqdm(
-            iterator,
-            total=len(structures),
-            **dict(desc="Analyzing symmetry") | pbar_kwargs,
-        )
+        pbar_kwargs.setdefault("desc", "Analyzing symmetry")
+        iterator = tqdm(iterator, total=len(structures), **pbar_kwargs)
 
     for struct_key, struct in iterator:
-        cell = moyopy.Cell(
-            struct.lattice.matrix, struct.frac_coords, struct.atomic_numbers
-        )
+        structure_type = type(struct).__name__
+        adaptor = {
+            "Structure": MoyoAdapter.from_structure,
+            "Atoms": MoyoAdapter.from_atoms,
+            "MSONAtoms": MoyoAdapter.from_atoms,
+        }.get(structure_type)
+        if adaptor is None:
+            raise ValueError(f"Unsupported {structure_type=}")
+
+        moyo_cell = adaptor(struct)
 
         sym_data = moyopy.MoyoDataset(
-            cell, symprec=symprec, angle_tolerance=angle_tolerance
+            moyo_cell, symprec=symprec, angle_tolerance=angle_tolerance
         )
 
         if sym_data is None:
@@ -96,9 +96,10 @@ def analyze_symmetry(
         hall_symbol_entry = moyopy.HallSymbolEntry(hall_number=sym_data.hall_number)
 
         sym_info = {
-            new_key: getattr(sym_data, old_key)
-            for old_key, new_key in sym_key_map.items()
-        } | {
+            Key.spg_num: sym_data.number,
+            Key.hall_num: sym_data.hall_number,
+            MbdKey.international_spg_name: sym_data.site_symmetry_symbols,
+            Key.wyckoff_symbols: sym_data.wyckoffs,
             Key.n_sym_ops: sym_ops.num_operations,
             Key.n_rot_syms: len(sym_ops.rotations),
             Key.n_trans_syms: len(sym_ops.translations),

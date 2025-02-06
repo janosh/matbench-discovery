@@ -27,7 +27,7 @@
     "d3-array": "^3.2.4",
     "d3-scale": "^4.0.2",
     "d3-scale-chromatic": "^3.1.0",
-    "elementari": "^0.2.3",
+    "elementari": "^0.2.5",
     "eslint": "^9.18.0",
     "eslint-plugin-svelte": "^2.46.1",
     "hastscript": "^9.0.0",

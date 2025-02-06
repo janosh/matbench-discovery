@@ -44,7 +44,7 @@ from torch.optim.swa_utils import SWALR, AveragedModel
 from torch_ema import ExponentialMovingAverage
 
 from matbench_discovery import WANDB_PATH, today
-from matbench_discovery.slurm import slurm_submit
+from matbench_discovery.hpc import slurm_submit
 
 __author__ = "Yuan Chiang, Ilyes Batatia, Gregor Simm, David Kovacs"
 __date__ = "2023-09-18"

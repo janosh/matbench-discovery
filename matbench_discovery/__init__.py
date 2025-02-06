@@ -1,10 +1,8 @@
 """Global variables used all across the matbench_discovery package."""
 
-import json
 import os
 import warnings
 from datetime import UTC, datetime
-from importlib.metadata import Distribution, version
 
 import plotly.express as px
 import plotly.io as pio
@@ -13,14 +11,12 @@ import pymatviz as pmv  # needed for pymatviz_dark template
 from matbench_discovery.enums import MbdKey
 
 PKG_NAME = "matbench-discovery"
-__version__ = version(PKG_NAME)
-direct_url = Distribution.from_name(PKG_NAME).read_text("direct_url.json") or "{}"
-pkg_is_editable = json.loads(direct_url).get("dir_info", {}).get("editable", False)
+__version__ = "1.3.1"
 
-PKG_DIR = os.path.dirname(__file__)
-# repo root directory if editable install, else the pkg directory
-ROOT = os.path.dirname(PKG_DIR)
+PKG_DIR = os.path.dirname(__file__)  # Python package directory
+ROOT = os.path.dirname(PKG_DIR)  # repo root directory
 DATA_DIR = f"{ROOT}/data"  # directory to store raw data
+TEST_FILES = f"{ROOT}/tests/files"  # directory to store test data
 SITE_FIGS = f"{ROOT}/site/src/figs"  # directory for interactive figures
 # directory to write model analysis for website
 SITE_LIB = f"{ROOT}/site/src/lib"
@@ -51,7 +47,15 @@ today = timestamp.split("@")[0]
 # > No electronegativity for Ne. Setting to NaN. This has no physical meaning
 # and MaterialsProject2020Compatibility to get formation energies
 # > Failed to guess oxidation states for Entry
-warnings.filterwarnings(action="ignore", category=UserWarning, module="pymatgen")
+for msg, category, module in {
+    ("No electronegativity for", UserWarning, "pymatgen"),
+    ("Failed to guess oxidation states for Entry", UserWarning, "pymatgen"),
+    ("torch.load", FutureWarning, ""),
+    ("logm result may be inaccurate, approximate err", RuntimeWarning, ""),
+}:
+    warnings.filterwarnings(
+        action="ignore", category=category, module=module, message=msg
+    )
 
 
 # --- start global plot settings

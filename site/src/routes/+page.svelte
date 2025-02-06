@@ -1,6 +1,11 @@
 <script lang="ts">
   import type { ModelData } from '$lib'
-  import { MetricsTable, model_is_compliant, MODEL_METADATA } from '$lib'
+  import {
+    MetricsTable,
+    model_is_compliant,
+    MODEL_METADATA,
+    TableColumnToggleMenu,
+  } from '$lib'
   import { METADATA_COLS, METRICS_COLS } from '$lib/metrics'
   import Readme from '$root/readme.md'
   import KappaNote from '$site/src/routes/kappa-note.md'
@@ -48,7 +53,8 @@
     },
     unique_prototypes: {
       title: `Unique Prototypes`,
-      tooltip: `Metrics computed only on unique structure prototypes`,
+      tooltip: `Metrics computed only on ~215k unique structure prototypes in WBM determined by matching Aflow-style prototype strings.`,
+      link: `https://github.com/janosh/matbench-discovery/blob/fd1dda6c/data/wbm/compile_wbm_test_set.py#L632-L705`,
     },
     most_stable_10k: {
       title: `10k Most Stable`,
@@ -58,28 +64,26 @@
   let discovery_set: keyof typeof discovery_set_labels = `unique_prototypes`
 </script>
 
-<svelte:body
-  on:click={(event) => {
-    if (!event.target?.closest(`.column-toggles`)) {
-      column_panel_open = false
-    }
-  }}
-/>
-
 <Readme>
   <figure style="margin-top: 4em;" slot="metrics-table">
     <div class="discovery-set-toggle">
-      {#each Object.entries(discovery_set_labels) as [key, { title, tooltip }]}
+      {#each Object.entries(discovery_set_labels) as [key, { title, tooltip, link }]}
         <Tooltip text={tooltip} tip_style="z-index: 2; font-size: 0.8em;">
           <button
             class:active={discovery_set === key}
             on:click={() => (discovery_set = key)}
           >
             {title}
+            {#if link}
+              <a href={link} target="_blank">
+                <Icon icon="octicon:info" inline />
+              </a>
+            {/if}
           </button>
         </Tooltip>
       {/each}
     </div>
+
     <MetricsTable
       {show_non_compliant}
       {hide_cols}
@@ -87,6 +91,7 @@
       {discovery_set}
       style="width: 100%;"
     />
+
     <div class="downloads">
       Download table as
       {#each [`PDF`, `SVG`] as file_ext}
@@ -126,20 +131,9 @@
         </Tooltip>&ensp;</Toggle
       >
 
-      <details class="column-toggles" bind:open={column_panel_open}>
-        <summary>
-          Columns <Icon icon="octicon:columns-16" inline />
-        </summary>
-        <div class="column-menu">
-          {#each Object.keys(visible_cols) as col}
-            <label>
-              <input type="checkbox" bind:checked={visible_cols[col]} />
-              {@html col}
-            </label>
-          {/each}
-        </div>
-      </details>
+      <TableColumnToggleMenu bind:visible_cols bind:column_panel_open />
     </div>
+
     <figcaption>
       Training size is the number of materials used to train the model. For models trained
       on DFT relaxations, we show the number of distinct frames in parentheses. In cases
@@ -163,8 +157,8 @@
 
   <div slot="best-report">
     {#if best_model}
-      {@const { model_name, model_key, repo, paper, metrics } = best_model}
-      {@const { F1, R2, DAF } = metrics?.discovery[discovery_set] ?? {}}
+      {@const { model_name, model_key, repo, paper, metrics = {} } = best_model}
+      {@const { F1, R2, DAF } = metrics?.discovery?.[discovery_set] ?? {}}
 
       <a href="/models/{model_key}">{model_name}</a> (<a href={paper}>paper</a>,
       <a href={repo}>code</a>) achieves the highest F1 score of {F1}, R<sup>2</sup> of {R2}
@@ -224,49 +218,6 @@
     gap: 5pt;
     place-content: center;
     margin: 3pt auto;
-  }
-  .column-toggles {
-    position: relative;
-  }
-  .column-toggles summary {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 2pt 6pt;
-    border-radius: 4pt;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .column-toggles summary:hover {
-    background: rgba(255, 255, 255, 0.15);
-  }
-  .column-toggles summary::-webkit-details-marker {
-    display: none;
-  }
-  .column-menu {
-    position: absolute;
-    right: 0;
-    top: calc(100% + 4pt);
-    background: #1c1c1c;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 4pt;
-    padding: 3pt 5pt;
-    min-width: 150px;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  }
-  .column-menu label {
-    display: inline-block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin: 1px 2px;
-    border-radius: 3px;
-    line-height: 1.3em;
-    height: 1.3em;
-  }
-  .column-menu label:hover {
-    background: rgba(255, 255, 255, 0.1);
   }
   :is(figure[slot='metrics-table'], .column-menu) :global(:is(sub, sup)) {
     transform: translate(-3pt, 6pt);

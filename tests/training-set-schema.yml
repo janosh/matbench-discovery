@@ -1,0 +1,34 @@
+"$schema": http://json-schema.org/draft-07/schema#
+type: object
+patternProperties:
+  "^[a-zA-Z0-9 ]+$": # allow alphanumeric names with spaces
+    type: object
+    additionalProperties: false
+    required:
+      - title
+      - url
+      - n_structures
+      - open
+    properties:
+      title:
+        type: string
+      url:
+        type: string
+        format: uri
+      download_url:
+        type: string
+        format: uri
+      n_structures:
+        type: integer
+        minimum: 1
+      n_materials:
+        type: integer
+        minimum: 1
+      temperature_range:
+        type: string
+        pattern: "^\\d+-\\d+ K$" # e.g. "0-5000 K"
+      pressure_range:
+        type: string
+        pattern: "^\\d+-\\d+ GPa$" # e.g. "0-1000 GPa"
+      open:
+        type: boolean

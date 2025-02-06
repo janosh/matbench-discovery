@@ -23,7 +23,7 @@ __date__ = "2022-08-25"
 
 
 # %%
-model_name = Model.mace.label
+model_name = Model.mace_mp_0.label
 which_energy: Final = "true"
 df_preds[Key.each_pred] = (
     df_preds[MbdKey.each_true] + df_preds[model_name] - df_preds[MbdKey.e_form_dft]

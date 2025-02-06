@@ -2,7 +2,7 @@
 
 The **WBM dataset** was published in [Predicting stable crystalline compounds using chemical similarity][wbm paper] (nat comp mat, Jan 2021). The authors generated 257,487 structures through single-element substitutions on Materials Project (MP) source structures. The replacement element was chosen based on chemical similarity determined by a matrix data-mined from the [Inorganic Crystal Structure Database (ICSD)](https://icsd.products.fiz-karlsruhe.de).
 
-The resulting novel structures were relaxed using MP-compatible VASP inputs (i.e. using `pymatgen`'s [`MPRelaxSet`](https://github.com/materialsproject/pymatgen/blob/c4998d92525921c3da0aec0f94ed1429c6786c42/pymatgen/io/vasp/MPRelaxSet.yaml)) and identical POTCARs in an attempt to create a database of Materials Project compatible novel crystals. Any degradation in model performance from training to test set should therefore largely be a result of extrapolation error rather than covariate shift in the underlying data.
+The resulting novel structures were relaxed using MP-compatible VASP inputs (i.e. using `pymatgen`'s [`MPRelaxSet`](https://github.com/materialsproject/pymatgen/blob/c4998d92/pymatgen/io/vasp/MPRelaxSet.yaml)) and identical POTCARs in an attempt to create a database of Materials Project compatible novel crystals. Any degradation in model performance from training to test set should therefore largely be a result of extrapolation error rather than covariate shift in the underlying data.
 
 The authors performed 5 rounds of element substitution starting from structures on the Materials Project convex hull, each time relaxing all generated structures and adding those found to lie on the convex hull back to the pool of parent structures for the next iteration of element substitution. In total, ~20k or close to 10% were found to lie on the Materials Project convex hull.
 
@@ -19,7 +19,7 @@ Each iteration has varying numbers of materials which are counted by the 2nd int
 The full set of processing steps used to curate the WBM test set from the raw data files (downloaded from [URLs listed below](#--links-to-wbm-files)) can be found in [`data/wbm/compile_wbm_test_set.py`](https://github.com/janosh/matbench-discovery/blob/-/data/wbm/compile_wbm_test_set.py). Processing steps taken:
 
 - re-format material IDs: `step_1-0->wbm-1-1`, `step_1-1->wbm-1-2`, ...
-- correctly align initial structures to DFT-relaxed [`ComputedStructureEntries`](https://github.com/materialsproject/pymatgen/blob/02a4ca8aa0277b5f6db11f4de4fdbba129de70a5/pymatgen/entries/computed_entries.py#L536) (the initial structure files had 6 extra structures inserted towards the end of step 3 which had no corresponding IDs in the summary file)
+- correctly align initial structures to DFT-relaxed [`ComputedStructureEntries`](https://github.com/materialsproject/pymatgen/blob/02a4ca8aa/pymatgen/entries/computed_entries.py#L536) (the initial structure files had 6 extra structures inserted towards the end of step 3 which had no corresponding IDs in the summary file)
 - remove 6 pathological structures (with 0 volume)
 - remove formation energy outliers below -5 and above 5 eV/atom (502 and 22 crystals respectively out of 257,487 total, including an anomaly of 500 structures at exactly -10 eV/atom)
 
@@ -29,7 +29,7 @@ The full set of processing steps used to curate the WBM test set from the raw da
     <img src="./figs/hist-wbm-e-form-per-atom.svg" alt="WBM formation energy histogram indicating outlier cutoffs">
   </slot>
 
-- apply the [`MaterialsProject2020Compatibility`](https://github.com/materialsproject/pymatgen/blob/02a4ca8aa0277b5f6db11f4de4fdbba129de70a5/pymatgen/entries/compatibility.py#L823) energy correction scheme to the formation energies
+- apply the [`MaterialsProject2020Compatibility`](https://github.com/materialsproject/pymatgen/blob/02a4ca8aa/pymatgen/entries/compatibility.py#L823) energy correction scheme to the formation energies
 - compute energy to the Materials Project convex hull constructed from all MP `ComputedStructureEntries` queried on 2023-02-07 ([database release 2022.10.28](https://docs.materialsproject.org/changes/database-versions#v2022.10.28))
 
 Invoking the script `python compile_wbm_test_set.py` will auto-download and regenerate the WBM test set files from scratch. If you find
@@ -70,9 +70,9 @@ The number of materials in each iteration of element substitution before and aft
 | **before** | 61,466 | 52,755 | 79,160 | 40,314 | 23,268 | 256,963 |
 | **after**  | 54,209 | 45,979 | 66,528 | 34,531 | 14,241 | 215,488 |
 
-[`get_protostructure_label_from_spglib`]: https://github.com/CompRhys/aviary/blob/a8da6c468a2407fd14687de327fe181c5de0169f/aviary/wren/utils.py#L140
+[`get_protostructure_label_from_spglib`]: https://github.com/CompRhys/aviary/blob/a8da6c46/aviary/wren/utils.py#L140
 [`aviary`]: https://github.com/CompRhys/aviary
-[`compile_wbm_test_set.py`]: https://github.com/janosh/matbench-discovery/blob/eec1e22c69bc1b0183d7f9138f9e60d1ae733e09/data/wbm/compile_wbm_test_set.py#L587
+[`compile_wbm_test_set.py`]: https://github.com/janosh/matbench-discovery/blob/eec1e22c6/data/wbm/compile_wbm_test_set.py#L587
 
 ## 🔗 &thinsp; Links to WBM Files
 

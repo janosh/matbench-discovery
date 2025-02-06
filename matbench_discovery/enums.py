@@ -60,6 +60,7 @@ class MbdKey(LabelEnum):
         "wyckoff_spglib_initial_structure",
         "Aflow-Wyckoff Label Initial Structure",
     )
+    wyckoff_spglib = "wyckoff_spglib", "Aflow-Wyckoff Label"
     international_spg_name = "international_spg_name", "International space group name"
     spg_num_diff = "spg_num_diff", "Difference in space group number"
     n_sym_ops_diff = "n_sym_ops_diff", "Difference in number of symmetry operations"
@@ -73,6 +74,24 @@ class MbdKey(LabelEnum):
     aflow_prototype = "aflow_prototype"
     canonical_proto = "canonical_proto"
     uniq_proto = "unique_prototype"
+
+    # Thermal conductivity related keys
+    kappa_tot_rta = (
+        "kappa_tot_rta",
+        "Total thermal conductivity (relaxation time approximation)",
+    )
+    kappa_tot_avg = "kappa_tot_avg", "Average total thermal conductivity"
+    kappa_p_rta = "kappa_p_rta", "Particle-like thermal conductivity (RTA)"
+    kappa_c = "kappa_c", "Thermal conductivity correction"
+    mode_kappa_tot_rta = (
+        "mode_kappa_tot_rta",
+        "Mode-resolved total thermal conductivity (RTA)",
+    )
+    mode_kappa_tot_avg = (
+        "mode_kappa_tot_avg",
+        "Mode-resolved average thermal conductivity",
+    )
+    true_kappa_tot_avg = "true_kappa_tot_avg", "True average total thermal conductivity"
 
 
 @unique

@@ -26,10 +26,9 @@ from pymatviz.enums import Key
 from ruamel.yaml import YAML
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR, PKG_DIR, ROOT, pkg_is_editable
+from matbench_discovery import DATA_DIR, PKG_DIR, ROOT, TEST_FILES
 from matbench_discovery.enums import MbdKey, TestSubset
 
-# ruff: noqa: T201
 T = TypeVar("T", bound="Files")
 
 # repo URL to raw files on GitHub
@@ -37,7 +36,10 @@ RAW_REPO_URL = "https://github.com/janosh/matbench-discovery/raw"
 # directory to cache downloaded data files
 DEFAULT_CACHE_DIR = os.getenv(
     "MATBENCH_DISCOVERY_CACHE_DIR",
-    DATA_DIR if pkg_is_editable else os.path.expanduser("~/.cache/matbench-discovery"),
+    DATA_DIR  # use DATA_DIR to locally cache data files if full repo was cloned
+    if os.path.isdir(DATA_DIR)
+    # use ~/.cache if matbench-discovery was installed from PyPI
+    else os.path.expanduser("~/.cache/matbench-discovery"),
 )
 
 
@@ -90,9 +92,24 @@ def glob_to_df(
         else:
             raise ValueError(f"Unsupported file extension in {pattern=}")
 
-    # prefix pattern with ROOT if not absolute path
     files = glob(pattern)
+
     if len(files) == 0:
+        # load mocked model predictions when running pytest (just first 500 lines
+        # from MACE-MPA-0 WBM energy preds)
+        if "pytest" in sys.modules or "CI" in os.environ:
+            df_mock = pd.read_csv(f"{TEST_FILES}/mock-wbm-energy-preds.csv.gz")
+            # .set_index( "material_id" )
+            # make sure pred_cols for all models are present in df_mock
+            for model in Model:
+                with open(model.yaml_path) as file:
+                    model_data = yaml.safe_load(file)
+
+                pred_col = (
+                    model_data.get("metrics", {}).get("discovery", {}).get("pred_col")
+                )
+                df_mock[pred_col] = df_mock["e_form_per_atom"]
+            return df_mock
         raise FileNotFoundError(f"No files matching glob {pattern=}")
 
     sub_dfs = {}  # used to join slurm job array results into single df
@@ -277,7 +294,12 @@ class Files(StrEnum, metaclass=MetaFiles):
         """Get enum member from pretty label."""
         file = next((attr for attr in cls if attr.label == label), None)
         if file is None:
-            raise ValueError(f"{label=} not found in {cls.__name__}")
+            import difflib
+
+            similar_labels = difflib.get_close_matches(label, [k.label for k in cls])
+            raise ValueError(
+                f"{label=} not found in {cls.__name__}. Did you mean one of {similar_labels}?"
+            )
         return file
 
 
@@ -290,6 +312,7 @@ class DataFiles(Files):
     mp_elemental_ref_entries = "mp/2023-02-07-mp-elemental-reference-entries.json.gz"
     mp_energies = "mp/2023-01-10-mp-energies.csv.gz"
     mp_patched_phase_diagram = "mp/2023-02-07-ppd-mp.pkl.gz"
+    mp_trj_json_gz = "mp/2022-09-16-mp-trj.json.gz"
     mp_trj_extxyz = "mp/2024-09-03-mp-trj.extxyz.zip"
     # snapshot of every task (calculation) in MP as of 2023-03-16 (14 GB)
     all_mp_tasks = "mp/2023-03-16-all-mp-tasks.zip"
@@ -305,19 +328,35 @@ class DataFiles(Files):
     )
     wbm_summary = "wbm/2023-12-13-wbm-summary.csv.gz"
     alignn_checkpoint = "2023-06-02-pbenner-best-alignn-model.pth.zip"
-    mp_trj = "mp/2022-09-16-mp-trj.json"
+    phonondb_pbe_103_structures = (
+        "phonons/2024-11-09-phononDB-PBE-103-structures.extxyz"
+    )
+    phonondb_pbe_103_kappa_no_nac = (
+        "phonons/2024-11-09-kappas-phononDB-PBE-noNAC.json.gz"
+    )
+    wbm_dft_geo_opt_symprec_1e_2 = "data/wbm/dft-geo-opt-symprec=1e-2-moyo=0.3.1.csv.gz"
+    wbm_dft_geo_opt_symprec_1e_5 = "data/wbm/dft-geo-opt-symprec=1e-5-moyo=0.3.1.csv.gz"
 
     @functools.cached_property
     def yaml(self) -> dict[str, dict[str, str]]:
         """YAML data associated with the file."""
         yaml_path = f"{PKG_DIR}/data-files.yml"
+
         with open(yaml_path) as file:
-            return yaml.safe_load(file)
+            yaml_data = yaml.safe_load(file)
+
+        if self.name not in yaml_data:
+            raise ValueError(f"{self.name=} not found in {yaml_path}")
+
+        return yaml_data
 
     @property
     def url(self) -> str:
         """URL associated with the file."""
-        return self.yaml[self.name]["url"]
+        url = self.yaml[self.name].get("url")
+        if url is None:
+            raise ValueError(f"{self.name!r} does not have a URL")
+        return url
 
     @property
     def description(self) -> str:
@@ -383,7 +422,15 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # CGCNN 10-member ensemble with 5-fold training set perturbations
     cgcnn_p = "cgcnn/cgcnn+p.yml"
 
+    # DeepMD-DPA3 models
+    dpa3_v1_mptrj = "deepmd/dpa3-v1-mptrj.yml"
+    dpa3_v1_openlam = "deepmd/dpa3-v1-openlam.yml"
+
+    # EScAIP - https://arxiv.org/abs/2410.24169v1
     escaip = "escaip/escaip.yml"
+
+    # GrACE
+    grace2l_r6 = "grace/grace2l-r6.yml"
 
     # original M3GNet straight from publication, not re-trained
     m3gnet = "m3gnet/m3gnet.yml"
@@ -391,7 +438,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # m3gnet_ms = None, "M3GNet MS"
 
     # MACE-MP-0 medium as published in https://arxiv.org/abs/2401.00096 trained on MPtrj
-    mace = "mace/mace-mp-0.yml"
+    mace_mp_0 = "mace/mace-mp-0.yml"
     mace_mpa_0 = "mace/mace-mpa-0.yml"  # trained on MPtrj and Alexandria
 
     # original MEGNet straight from publication, not re-trained
@@ -412,7 +459,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     gnome = "gnome/gnome.yml"
 
     # MatterSim
-    mattersim = "mattersim/mattersim-v1.yml"
+    mattersim_v1_5m = "mattersim/mattersim-v1-5m.yml"
 
     # ORB
     orb = "orb/orb.yml"
@@ -421,8 +468,6 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # fairchem
     eqv2_s_dens = "eqV2/eqV2-s-dens-mp.yml"
     eqv2_m = "eqV2/eqV2-m-omat-mp-salex.yml"
-
-    grace2l_r6 = "grace2l_r6/grace2l-r6.yml"
 
     # --- Model Combos
     # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
@@ -489,17 +534,17 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         return f"{ROOT}/{rel_path}"
 
     @property
-    def phonons_path(self) -> str | None:
+    def kappa_103_path(self) -> str | None:
         """File path associated with the file URL if it exists, otherwise
         download the file first, then return the path.
         """
         phonons_metrics = self.metrics.get("phonons", {})
         if phonons_metrics in ("not available", "not applicable"):
             return None
-        rel_path = phonons_metrics.get("pred_file")
+        rel_path = phonons_metrics.get("kappa_103", {}).get("pred_file")
         if not rel_path:
             raise ValueError(
-                f"metrics.phonons.pred_file not found in {self.rel_path!r}"
+                f"metrics.phonons.kappa_103.pred_file not found in {self.rel_path!r}"
             )
         return f"{ROOT}/{rel_path}"
 

@@ -256,7 +256,7 @@ pmv.save_fig(fig, f"{SITE_FIGS}/each-error-vs-least-prevalent-element-in-struct.
 
 
 # %% plot histogram of model errors for each element
-model = Model.mace.label
+model = Model.mace_mp_0.label
 df_each_err_elems = df_comp * (df_each_err[model].to_numpy()[:, None])
 df_each_err_elems = df_each_err_elems.drop(columns="Xe")
 n_samples_per_elem = (len(df_comp) - df_each_err_elems.isna().sum()).map(

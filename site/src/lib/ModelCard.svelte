@@ -19,7 +19,9 @@
   $: ({ model_params, hyperparams, notes = {}, training_set, n_estimators } = model)
   $: all_metrics = {
     ...(model.metrics?.discovery?.full_test_set ?? {}),
-    ...(typeof model.metrics?.phonons == `object` ? model.metrics?.phonons : {}),
+    ...(typeof model.metrics?.phonons == `object`
+      ? model.metrics?.phonons.kappa_103
+      : {}),
   }
 
   $: ({ missing_preds, missing_percent } = all_metrics)

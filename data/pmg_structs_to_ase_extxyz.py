@@ -28,7 +28,7 @@ __date__ = "2023-08-10"
 
 # %% convert MPtrj pymatgen Structure to ASE Atoms with Structure.properties mapped
 # to Atoms.info
-with gzip.open(DataFiles.mp_trj.path, mode="rt") as file:
+with gzip.open(DataFiles.mp_trj_json_gz.path, mode="rt") as file:
     mptrj_data = json.load(file)
 
 mptrj_atoms_list: list[Atoms] = []
@@ -66,9 +66,8 @@ ase_atoms_to_zip(wbm_init_atoms_list, f"{WBM_DIR}/{today}-wbm-initial-atoms.extx
 
 # %% convert WBM ComputedStructureEntries to ASE Atoms (material ID and energy included
 # in Atoms.info)
-df_wbm_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_index(
-    Key.mat_id
-)
+wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
+df_wbm_cse = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
 
 wbm_cse_atoms_list: list[Atoms] = []
 for mat_id, cse_dict in tqdm(
