@@ -293,7 +293,9 @@ fig.show()
 
 
 # %%
-df_wbm[Key.spg_num] = df_wbm[MbdKey.init_wyckoff].str.split("_").str[2].astype(int)
+df_wbm[Key.spg_num] = (
+    df_wbm[MbdKey.init_wyckoff_spglib].str.split("_").str[2].astype(int)
+)
 df_mp[Key.spg_num] = df_mp[f"{Key.wyckoff}_spglib"].str.split("_").str[2].astype(int)
 
 
@@ -350,7 +352,7 @@ pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=450, height=280)
 
 # %% find large structures that changed symmetry during relaxation
 df_sym_change = (
-    df_wbm.query(f"{MbdKey.init_wyckoff} != {Key.wyckoff}_spglib")
+    df_wbm.query(f"{MbdKey.init_wyckoff_spglib} != {MbdKey.wyckoff_spglib}")
     .filter(regex="wyckoff|sites")
     .nlargest(10, Key.n_sites)
 )

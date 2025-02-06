@@ -634,11 +634,11 @@ try:
 
     # from initial structures
     for idx in tqdm(df_wbm.index):
-        if not pd.isna(df_summary.loc[idx].get(MbdKey.init_wyckoff)):
+        if not pd.isna(df_summary.loc[idx].get(MbdKey.init_wyckoff_spglib)):
             continue  # Aflow label already computed
         try:
             struct = Structure.from_dict(df_wbm.loc[idx, Key.init_struct])
-            df_summary.loc[idx, MbdKey.init_wyckoff] = (
+            df_summary.loc[idx, MbdKey.init_wyckoff_spglib] = (
                 get_protostructure_label_from_spglib(struct)
             )
         except Exception as exc:
@@ -646,7 +646,7 @@ try:
 
     # from relaxed structures
     for idx in tqdm(df_wbm.index):
-        if not pd.isna(df_summary.loc[idx].get(Key.wyckoff)):
+        if not pd.isna(df_summary.loc[idx].get(MbdKey.wyckoff_spglib)):
             continue
 
         try:
@@ -658,8 +658,8 @@ try:
         except Exception as exc:
             print(f"{idx=} {exc=}")
 
-    assert df_summary[MbdKey.init_wyckoff].isna().sum() == 0
-    assert df_summary[Key.wyckoff].isna().sum() == 0
+    assert df_summary[MbdKey.init_wyckoff_spglib].isna().sum() == 0
+    assert df_summary[MbdKey.wyckoff_spglib].isna().sum() == 0
 except ImportError:
     print("aviary not installed, skipping Wyckoff label generation")
 except Exception as exception:
@@ -684,11 +684,13 @@ except KeyError:
 df_mp = pd.read_csv(DataFiles.mp_energies.path, index_col=0)
 
 # mask WBM materials with matching prototype in MP
-mask_proto_in_mp = df_summary[MbdKey.init_wyckoff].isin(df_mp["wyckoff_spglib"])
+mask_proto_in_mp = df_summary[MbdKey.init_wyckoff_spglib].isin(
+    df_mp[MbdKey.wyckoff_spglib]
+)
 # mask duplicate prototypes in WBM (keeping the lowest energy one)
 mask_dupe_protos = df_summary.sort_values(
-    by=[MbdKey.init_wyckoff, MbdKey.each_wbm]
-).duplicated(subset=MbdKey.init_wyckoff, keep="first")
+    by=[MbdKey.init_wyckoff_spglib, MbdKey.each_wbm]
+).duplicated(subset=MbdKey.init_wyckoff_spglib, keep="first")
 assert sum(mask_proto_in_mp) == 11_175, f"{sum(mask_proto_in_mp)=:_}"
 assert sum(mask_dupe_protos) == 32_784, f"{sum(mask_dupe_protos)=:_}"
 

@@ -41,12 +41,12 @@ slurm_vars = slurm_submit(
 
 
 # %%
-df_wbm_clean = df_wbm.dropna(subset=MbdKey.init_wyckoff)
+df_wbm_clean = df_wbm.dropna(subset=MbdKey.init_wyckoff_spglib)
 
 if MbdKey.e_form_dft not in df_wbm_clean:
     raise KeyError(f"{MbdKey.e_form_dft!s} not in {df_wbm_clean.columns=}")
-if Key.wyckoff not in df_wbm_clean:
-    raise KeyError(f"{Key.wyckoff!s} not in {df_wbm_clean.columns=}")
+if MbdKey.wyckoff_spglib not in df_wbm_clean:
+    raise KeyError(f"{MbdKey.wyckoff_spglib!s} not in {df_wbm_clean.columns=}")
 
 
 # %%

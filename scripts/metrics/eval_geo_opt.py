@@ -38,8 +38,12 @@ df_dft_analysis = pd.read_csv(dft_analysis_file, index_col=0)
 
 init_spg_col = "init_spg_num"
 dft_spg_col = "dft_spg_num"
-df_wbm[init_spg_col] = df_wbm[MbdKey.init_wyckoff].str.split("_").str[2].astype(int)
+df_wbm[init_spg_col] = (
+    df_wbm[MbdKey.init_wyckoff_spglib].str.split("_").str[2].astype(int)
+)
 df_wbm[dft_spg_col] = df_wbm[MbdKey.wyckoff_spglib].str.split("_").str[2].astype(int)
+module_dir = os.path.dirname(__file__)
+model_lvl, metric_lvl = "model", "metric"
 
 
 # %% Load all model data

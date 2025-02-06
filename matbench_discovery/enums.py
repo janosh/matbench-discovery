@@ -56,11 +56,14 @@ class MbdKey(LabelEnum):
     openness = "openness", "Openness"
     e_above_hull_error = f"Error in E<sub>hull dist</sub> {eV_per_atom}"
 
-    init_wyckoff = (
+    init_wyckoff_spglib = (
         "wyckoff_spglib_initial_structure",
-        "Aflow-Wyckoff Label Initial Structure",
+        "Protostructure Label for Initial Structure using spglib",
     )
-    wyckoff_spglib = "wyckoff_spglib", "Aflow-Wyckoff Label"
+    wyckoff_spglib = (
+        "wyckoff_spglib",
+        "Protostructure Label for Relaxed Structure using spglib",
+    )
     international_spg_name = "international_spg_name", "International space group name"
     spg_num_diff = "spg_num_diff", "Difference in space group number"
     n_sym_ops_diff = "n_sym_ops_diff", "Difference in number of symmetry operations"

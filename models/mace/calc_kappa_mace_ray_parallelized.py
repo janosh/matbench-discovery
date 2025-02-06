@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 
 import ase.io
 import pandas as pd
-import pymatviz
 import ray
 import torch
 from ase import Atoms
@@ -110,10 +109,7 @@ def calc_kappa_for_structure(
     optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
     # Initialize variables that might be needed in error handling
-    relax_dict = {
-        "max_stress": None,
-        "reached_max_steps": False,
-    }
+    relax_dict = {"max_stress": None, "reached_max_steps": False}
     force_results = None
 
     # Relaxation
@@ -126,9 +122,8 @@ def calc_kappa_for_structure(
             else:
                 filtered_atoms = filter_cls(atoms)
 
-            optimizer = optim_cls(
-                filtered_atoms, logfile=f"{out_dir}/relaxations/{task_id}.log"
-            )
+            os.makedirs(relax_dir := f"{out_dir}/relaxations", exist_ok=True)
+            optimizer = optim_cls(filtered_atoms, logfile=f"{relax_dir}/{task_id}.log")
             optimizer.run(fmax=force_max, steps=max_steps)
 
             reached_max_steps = optimizer.step == max_steps
@@ -244,7 +239,7 @@ if ray_address:
     ray.init(
         address=ray_address,
         runtime_env={
-            "py_modules": [matbench_discovery, pymatviz],
+            "py_modules": [matbench_discovery],
             # "working_dir": PKG_DIR,  # add matbench-discovery root to PYTHONPATH
             "uv": [
                 # "mace-torch",
@@ -255,7 +250,7 @@ if ray_address:
                 "phono3py",
                 "ase",
                 "moyopy",
-                # "pymatviz",
+                "pymatviz",
             ],
         },
     )
@@ -276,12 +271,8 @@ print(f"Object store memory: {obj_store_mem / 1e9:.1f} GB")
 model_name = "mace-omat-0-medium"
 checkpoint = f"https://github.com/ACEsuit/mace-mp/releases/download/mace_omat_0/{model_name}.model"
 
-task_type = "LTC"  # lattice thermal conductivity
 displacement_distance = 0.01
-job_name = (
-    f"phononDB-{task_type}-{ase_optimizer}-dist={displacement_distance}-"
-    f"{fmax=}-{symprec=}"
-)
+job_name = f"kappa-103-{ase_optimizer}-dist={displacement_distance}-{fmax=}-{symprec=}"
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{model_name}/{today}-{job_name}")
 os.makedirs(out_dir, exist_ok=True)
 
@@ -300,7 +291,6 @@ remote_params = dict(
     symprec=symprec,
     enforce_relax_symm=enforce_relax_symm,
     conductivity_broken_symm=conductivity_broken_symm,
-    task_type=task_type,
     temperatures=temperatures,
     out_dir=out_dir,
 )
