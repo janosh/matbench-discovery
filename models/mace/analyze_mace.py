@@ -23,7 +23,9 @@ e_form_mace_col = "e_form_per_atom_mace"
 df_mace = pd.read_csv(Model.mace_mp_0.discovery_path).set_index(Key.mat_id)
 df_mace[list(df_wbm)] = df_wbm
 
-df_mace[Key.spg_num] = df_wbm[MbdKey.init_wyckoff].str.split("_").str[2].astype(int)
+df_mace[Key.spg_num] = (
+    df_wbm[MbdKey.init_wyckoff_spglib].str.split("_").str[2].astype(int)
+)
 
 
 # %%

@@ -88,7 +88,7 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 1.665 # eqV2 S without denoising (no DeNS) achieves slightly worse κ_SRME=1.772
+      κ_SRME: 1.676 # eqV2 S without denoising (no DeNS) achieves slightly worse κ_SRME=1.772
       pred_file: models/eqV2/eqV2-s-dens-mp/2024-11-08-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/ndownloader/files/52151558
   geo_opt:
