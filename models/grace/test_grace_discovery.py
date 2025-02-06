@@ -33,7 +33,6 @@ __date__ = "2025-02-06"
 
 
 # %%
-
 def main(model_name: str):  # Added function and argument
     """
     Main function to run the relaxation with the given model name.
@@ -65,7 +64,6 @@ def main(model_name: str):  # Added function and argument
 
     slurm_vars = {k: v for k, v in os.environ.items() if k.startswith("SLURM_")}
 
-
     # %%
     slurm_array_task_id = int(
         os.getenv("SLURM_ARRAY_TASK_ID", "0")
@@ -84,7 +82,6 @@ def main(model_name: str):  # Added function and argument
     print(f"{slurm_array_task_count=}")
     print(f"{slurm_vars=}")
     print(f"{out_dir=}")
-
 
     # %%
     data_path = {
@@ -115,12 +112,12 @@ def main(model_name: str):  # Added function and argument
             slurm_array_task_id - 1
         ]
 
-
     # %%
     run_params = {
         "data_path": data_path,
         "versions": {
-            dep: version(dep) for dep in ("tensorpotential", "numpy", "tensorflow", "ase")
+            dep: version(dep)
+            for dep in ("tensorpotential", "numpy", "tensorflow", "ase")
         },
         "checkpoint": checkpoint,
         Key.task_type: task_type,
@@ -149,7 +146,6 @@ def main(model_name: str):  # Added function and argument
 
     # wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
-
     # %% time
     relax_results: dict[str, dict[str, Any]] = {}
     filter_cls: Callable[[Atoms], Atoms] = {
@@ -174,7 +170,9 @@ def main(model_name: str):  # Added function and argument
                     # attach observer functions to the optimizer
                     optimizer.attach(lambda: coords.append(atoms.get_positions()))  # noqa: B023
                     optimizer.attach(lambda: lattices.append(atoms.get_cell()))  # noqa: B023
-                    optimizer.attach(lambda: energies.append(atoms.get_potential_energy()))  # noqa: B023
+                    optimizer.attach(
+                        lambda: energies.append(atoms.get_potential_energy())
+                    )  # noqa: B023
 
                 optimizer.run(fmax=force_max, steps=max_steps)
             energy = atoms.get_potential_energy()  # relaxed energy
@@ -198,7 +196,6 @@ def main(model_name: str):  # Added function and argument
             print(f"Failed to relax {mat_id}: {exc!r}")
             continue
 
-
     # %%
     df_out = pd.DataFrame(relax_results).T.add_prefix("grace_")
     df_out.index.name = Key.mat_id
@@ -206,9 +203,10 @@ def main(model_name: str):  # Added function and argument
         df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
 
 
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run relaxation with a specified model.")
+    parser = argparse.ArgumentParser(
+        description="Run relaxation with a specified model."
+    )
     parser.add_argument("model_name", type=str, help="The name of the model to use.")
     args = parser.parse_args()
 

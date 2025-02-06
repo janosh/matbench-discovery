@@ -26,7 +26,7 @@ THREADS=4  # number of threads for OMP, MKL, NUMEXPR etc. To share resources on 
 GPUS=(0 1 2 3)  # Set the specific GPU IDs you want to use here
 NGPU=${#GPUS[@]} # Calculate the number of GPUs based on the array length
 
-#model_name="MP_GRACE_2L_r6_11Nov2024" 
+#model_name="MP_GRACE_2L_r6_11Nov2024"
 #model_name="GRACE-1L-OAM_2Feb25"
 model_name="GRACE_2L_OAM_28Jan25"
 
@@ -65,7 +65,7 @@ do
   gpu_index=$((task_id % NGPU))
   # Get the actual GPU ID from the GPUS array
   gpu_id=${GPUS[$gpu_index]}
-  
+
   CUDA_VISIBLE_DEVICES=$gpu_id SLURM_ARRAY_TASK_ID=${task_id}  python test_grace_discovery.py "${MODEL_NAME}" > "out-${task_id}.txt" 2>&1 &
 done
 wait

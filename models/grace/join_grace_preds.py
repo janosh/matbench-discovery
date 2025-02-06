@@ -1,6 +1,6 @@
+import argparse  # Import the argparse module
 import glob
 import os
-import argparse  # Import the argparse module
 import re
 
 import pandas as pd
@@ -40,8 +40,8 @@ def split_string(input_string):
         date_str = match.group(1)
         model_name = match.group(2)
         return date_str, model_name
-    else:
-        return None, None
+    return None, None
+
 
 def process_results(path: str):
     """
@@ -51,14 +51,13 @@ def process_results(path: str):
         path (str): The path to the directory containing the .json.gz files.
     """
     date, model_name = split_string(path)
-    print("date:",date)
+    print("date:", date)
     print("model_name:", model_name)
 
     glob_pattern = os.path.join(path, "production-*.json.gz")
     file_paths = glob.glob(glob_pattern)
 
     out_path = file_paths[0].rsplit("/", 1)[0]  # Get directory from first file path.
-
 
     print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
@@ -72,22 +71,19 @@ def process_results(path: str):
         try:
             dfs.append(pd.read_json(fn))
         except Exception as e:
-            print(f"Error reading {fn}: {e}") # Print any errors during file reading.
-            continue # Continue to the next file
+            print(f"Error reading {fn}: {e}")  # Print any errors during file reading.
+            continue  # Continue to the next file
 
     tot_df = pd.concat(dfs)
     tot_df["id_tuple"] = (
         tot_df["material_id"].str.split("-").map(lambda x: (int(x[1]), int(x[2])))
     )
     tot_df = (
-        tot_df.sort_values("id_tuple")
-        .reset_index(drop=True)
-        .drop(columns=["id_tuple"])
+        tot_df.sort_values("id_tuple").reset_index(drop=True).drop(columns=["id_tuple"])
     )
 
-    df_grace = tot_df.set_index("material_id")#.drop(columns=[struct_col])
+    df_grace = tot_df.set_index("material_id")  # .drop(columns=[struct_col])
     df_grace[Key.formula] = df_wbm[Key.formula]
-
 
     print("Calculating formation energies")
     e_form_list = []
@@ -99,18 +95,17 @@ def process_results(path: str):
         )
         e_form_list.append(e_form)
 
-
     df_grace[e_form_grace_col] = e_form_list
 
     # save relaxed structures
-    print("df_grace.columns=",df_grace.columns)
-    df_grace.to_json(f"{out_path}/{model_name}_{date}-wbm-IS2RE-FIRE.json.gz", default_handler=as_dict_handler) #added model and date
-    df_grace=df_grace.drop(columns=[struct_col])
-
-
+    print("df_grace.columns=", df_grace.columns)
+    df_grace.to_json(
+        f"{out_path}/{model_name}_{date}-wbm-IS2RE-FIRE.json.gz",
+        default_handler=as_dict_handler,
+    )  # added model and date
+    df_grace = df_grace.drop(columns=[struct_col])
 
     df_wbm[[*df_grace]] = df_grace
-
 
     # %%
     bad_mask = abs(df_wbm[e_form_grace_col] - df_wbm[MbdKey.e_form_dft]) > 5
@@ -118,17 +113,22 @@ def process_results(path: str):
     print(f"{sum(bad_mask)=} is {sum(bad_mask) / len(df_wbm):.2%} of {n_preds:,}")
 
     df_grace = df_grace.round(4)
-    df_grace.select_dtypes("number").to_csv(f"{out_path}/{model_name}_{date}.csv.gz") #added model and date
-    df_grace.reset_index().to_json(f"{out_path}/{model_name}_{date}.json.gz", default_handler=as_dict_handler) #added model and date
+    df_grace.select_dtypes("number").to_csv(
+        f"{out_path}/{model_name}_{date}.csv.gz"
+    )  # added model and date
+    df_grace.reset_index().to_json(
+        f"{out_path}/{model_name}_{date}.json.gz", default_handler=as_dict_handler
+    )  # added model and date
     df_bad = df_grace[bad_mask].copy()
     df_bad[MbdKey.e_form_dft] = df_wbm[MbdKey.e_form_dft]
-    df_bad.to_csv(f"{out_path}/{model_name}_{date}_bad.csv") #added model and date
-
+    df_bad.to_csv(f"{out_path}/{model_name}_{date}_bad.csv")  # added model and date
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process relaxation results.")
-    parser.add_argument("path", type=str, help="Path to the directory with relaxation results.")
+    parser.add_argument(
+        "path", type=str, help="Path to the directory with relaxation results."
+    )
 
     args = parser.parse_args()
     process_results(args.path)
