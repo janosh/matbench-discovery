@@ -57,6 +57,9 @@ def process_results(path: str):
     glob_pattern = os.path.join(path, "production-*.json.gz")
     file_paths = glob.glob(glob_pattern)
 
+    out_path = file_paths[0].rsplit("/", 1)[0]  # Get directory from first file path.
+
+
     print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
     if not file_paths:
@@ -79,10 +82,10 @@ def process_results(path: str):
     tot_df = (
         tot_df.sort_values("id_tuple")
         .reset_index(drop=True)
-        .drop(columns=["id_tuple", struct_col])
+        .drop(columns=["id_tuple"])
     )
 
-    df_grace = tot_df.set_index("material_id")
+    df_grace = tot_df.set_index("material_id")#.drop(columns=[struct_col])
     df_grace[Key.formula] = df_wbm[Key.formula]
 
 
@@ -99,6 +102,13 @@ def process_results(path: str):
 
     df_grace[e_form_grace_col] = e_form_list
 
+    # save relaxed structures
+    print("df_grace.columns=",df_grace.columns)
+    df_grace.to_json(f"{out_path}/{model_name}_{date}-wbm-IS2RE-FIRE.json.gz", default_handler=as_dict_handler) #added model and date
+    df_grace=df_grace.drop(columns=[struct_col])
+
+
+
     df_wbm[[*df_grace]] = df_grace
 
 
@@ -106,7 +116,6 @@ def process_results(path: str):
     bad_mask = abs(df_wbm[e_form_grace_col] - df_wbm[MbdKey.e_form_dft]) > 5
     n_preds = len(df_wbm[e_form_grace_col].dropna())
     print(f"{sum(bad_mask)=} is {sum(bad_mask) / len(df_wbm):.2%} of {n_preds:,}")
-    out_path = file_paths[0].rsplit("/", 1)[0]  # Get directory from first file path.
 
     df_grace = df_grace.round(4)
     df_grace.select_dtypes("number").to_csv(f"{out_path}/{model_name}_{date}.csv.gz") #added model and date
