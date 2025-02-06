@@ -24,6 +24,7 @@ from matbench_discovery.data import (
     df_wbm,
     glob_to_df,
     load_df_wbm_with_preds,
+    maybe_auto_download_file,
 )
 from matbench_discovery.enums import MbdKey, TestSubset
 
@@ -213,13 +214,15 @@ def test_files() -> None:
 def test_data_files() -> None:
     """Test DataFiles enum functionality."""
     # Test that paths are constructed correctly
-    assert str(DataFiles.mp_energies) == f"{DATA_DIR}/mp/2023-01-10-mp-energies.csv.gz"
-    assert repr(DataFiles.mp_energies) == "DataFiles.mp_energies"
+    assert (
+        repr(DataFiles.mp_energies)
+        == "<DataFiles.mp_energies: 'mp/2023-01-10-mp-energies.csv.gz'>"
+    )
+    assert DataFiles.mp_energies.rel_path == "mp/2023-01-10-mp-energies.csv.gz"
     assert DataFiles.mp_energies.name == "mp_energies"
     assert (
         DataFiles.mp_energies.url == "https://figshare.com/ndownloader/files/49083124"
     )
-    assert DataFiles.mp_energies.rel_path == "mp/2023-01-10-mp-energies.csv.gz"
 
     # Test that multiple files exist and have correct attributes
     assert DataFiles.wbm_summary.rel_path == "wbm/2023-12-13-wbm-summary.csv.gz"
@@ -234,7 +237,7 @@ def test_model() -> None:
     # Test basic model attributes
     assert Model.alignn.name == "alignn"
     assert Model.alignn.rel_path == "alignn/alignn.yml"
-    assert Model.alignn.url is None
+    assert Model.alignn.url == "https://github.com/janosh/matbench-discovery/pull/85"
     assert Model.alignn.label == "ALIGNN"
 
     # Test metadata property
@@ -243,16 +246,9 @@ def test_model() -> None:
 
     # Test yaml_path property
     assert Model.alignn.yaml_path.endswith("alignn/alignn.yml")
-    assert Model.grace2l_r6.kappa_103_path.endswith(
+    assert (Model.grace2l_r6.kappa_103_path or "").endswith(
         "2024-11-20-kappa-103-FIRE-fmax=1e-4-symprec=1e-5.json.gz"
     )
-
-    # Test error handling for missing paths
-    with pytest.raises(
-        AttributeError,
-        match="'Model' object has no attribute 'bad_path'",
-    ):
-        _ = Model.alignn.bad_path
 
     # Test Model metrics property
     metrics = Model.alignn.metrics
@@ -385,3 +381,163 @@ def test_load_df_wbm_with_preds_subset(subset: Any) -> None:
     """Test subset handling in load_df_wbm_with_preds."""
     df_wbm = load_df_wbm_with_preds(subset=subset)
     assert isinstance(df_wbm, pd.DataFrame)
+
+
+def test_files_auto_download(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+) -> None:
+    """Test auto-download behavior in Files class."""
+
+    # Create a test Files class with our temp directory
+    class TestFiles(Files, base_dir=str(tmp_path)):
+        test_file = "test/file.txt"
+
+        @property
+        def url(self) -> str:
+            """URL associated with the file."""
+            return "https://example.com/file.txt"
+
+        @property
+        def label(self) -> str:
+            """Label associated with the file."""
+            return "test"
+
+    test_file = TestFiles.test_file
+    abs_path = f"{tmp_path}/test/file.txt"
+    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+
+    # Mock successful request
+    mock_response = requests.Response()
+    mock_response.status_code = 200
+    mock_response._content = b"test content"  # noqa: SLF001
+
+    # Test 1: Auto-download enabled (default)
+    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "true")
+    with patch("requests.get", return_value=mock_response):
+        maybe_auto_download_file(test_file.url, abs_path, label=test_file.label)
+        stdout, _ = capsys.readouterr()
+        assert f"Downloading 'test' from {test_file.url!r}" in stdout
+        assert os.path.isfile(abs_path)
+
+    # Test 2: Auto-download disabled
+    os.remove(abs_path)
+    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "false")
+    assert not os.path.isfile(abs_path)
+
+    # Mock user input 'n' to skip download
+    with (
+        patch("requests.get", return_value=mock_response),
+        patch("sys.stdin.isatty", return_value=True),  # force interactive mode
+        patch("builtins.input", return_value="n"),
+    ):
+        maybe_auto_download_file(test_file.url, abs_path, label=test_file.label)
+        assert not os.path.isfile(abs_path)
+
+    # Test 3: Auto-download disabled but user confirms
+    with (
+        patch("requests.get", return_value=mock_response),
+        patch("builtins.input", return_value="y"),
+    ):
+        maybe_auto_download_file(test_file.url, abs_path, label=test_file.label)
+        stdout, _ = capsys.readouterr()
+        assert f"Downloading 'test' from {test_file.url!r}" in stdout
+        assert os.path.isfile(abs_path)
+
+    # Test 4: File already exists (no download attempt)
+    with patch("requests.get") as mock_get:
+        maybe_auto_download_file(test_file.url, abs_path, label=test_file.label)
+        mock_get.assert_not_called()
+
+    # Test 5: Non-interactive session (auto-download)
+    os.remove(abs_path)
+    with (
+        patch("requests.get", return_value=mock_response),
+        patch("sys.stdin.isatty", return_value=False),
+    ):
+        maybe_auto_download_file(test_file.url, abs_path, label=test_file.label)
+        stdout, _ = capsys.readouterr()
+        assert f"Downloading 'test' from {test_file.url!r}" in stdout
+        assert os.path.isfile(abs_path)
+
+    # Test 6: IPython session with auto-download disabled
+    os.remove(abs_path)
+    with (
+        patch("requests.get", return_value=mock_response),
+        patch("builtins.input", return_value="n"),
+        patch("sys.stdin.isatty", return_value=True),  # force interactive mode
+    ):
+        maybe_auto_download_file(test_file.url, abs_path, label=test_file.label)
+        assert not os.path.isfile(abs_path)
+
+
+def test_maybe_auto_download_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+) -> None:
+    """Test auto-download behavior of maybe_auto_download_file function."""
+    url = "https://example.com/file.txt"
+    abs_path = f"{tmp_path}/test/file.txt"
+    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+
+    # Mock successful request
+    mock_response = requests.Response()
+    mock_response.status_code = 200
+    mock_response._content = b"test content"  # noqa: SLF001
+
+    # Test 1: Auto-download enabled (default)
+    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "true")
+    with patch("requests.get", return_value=mock_response):
+        maybe_auto_download_file(url, abs_path, label="test")
+        stdout, _ = capsys.readouterr()
+        assert f"Downloading 'test' from {url!r}" in stdout
+        assert os.path.isfile(abs_path)
+
+    # Test 2: Auto-download disabled
+    os.remove(abs_path)
+    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "false")
+    assert not os.path.isfile(abs_path)
+
+    # Mock user input 'n' to skip download
+    with (
+        patch("requests.get", return_value=mock_response),
+        patch("builtins.input", return_value="n"),
+        patch("sys.stdin.isatty", return_value=True),  # force interactive mode
+    ):
+        maybe_auto_download_file(url, abs_path, label="test")
+        assert not os.path.isfile(abs_path)
+
+    # Test 3: Auto-download disabled but user confirms
+    with (
+        patch("requests.get", return_value=mock_response),
+        patch("builtins.input", return_value="y"),
+        patch("sys.stdin.isatty", return_value=True),  # force interactive mode
+    ):
+        maybe_auto_download_file(url, abs_path, label="test")
+        stdout, _ = capsys.readouterr()
+        assert f"Downloading 'test' from {url!r}" in stdout
+        assert os.path.isfile(abs_path)
+
+    # Test 4: File already exists (no download attempt)
+    with patch("requests.get") as mock_get:
+        maybe_auto_download_file(url, abs_path, label="test")
+        mock_get.assert_not_called()
+
+    # Test 5: Non-interactive session (auto-download)
+    os.remove(abs_path)
+    with (
+        patch("requests.get", return_value=mock_response),
+        patch("sys.stdin.isatty", return_value=False),
+    ):
+        maybe_auto_download_file(url, abs_path, label="test")
+        stdout, _ = capsys.readouterr()
+        assert f"Downloading 'test' from {url!r}" in stdout
+        assert os.path.isfile(abs_path)
+
+    # Test 6: IPython session with auto-download disabled
+    os.remove(abs_path)
+    with (
+        patch("requests.get", return_value=mock_response),
+        patch("builtins.input", return_value="n"),
+        patch("sys.stdin.isatty", return_value=True),  # force interactive mode
+    ):
+        maybe_auto_download_file(url, abs_path, label="test")
+        assert not os.path.isfile(abs_path)

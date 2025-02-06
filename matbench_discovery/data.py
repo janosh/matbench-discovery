@@ -1,13 +1,22 @@
 """Download, cache and hydrate data files from the Matbench Discovery Figshare article.
 
 https://figshare.com/articles/dataset/22715158
+
+Environment Variables:
+    MBD_AUTO_DOWNLOAD_FILES: Controls whether to auto-download missing data files.
+        Defaults to "true". Set to "false" to be prompted before downloading.
+        This affects both model prediction files and dataset files.
+    MBD_CACHE_DIR: Directory to cache downloaded data files.
+        Defaults to DATA_DIR if the full repo was cloned, otherwise ~/.cache/matbench-discovery.
 """
 
+import abc
 import builtins
 import functools
 import io
 import os
 import sys
+import traceback
 import zipfile
 from collections import defaultdict
 from collections.abc import Callable, Sequence
@@ -35,13 +44,12 @@ T = TypeVar("T", bound="Files")
 RAW_REPO_URL = "https://github.com/janosh/matbench-discovery/raw"
 # directory to cache downloaded data files
 DEFAULT_CACHE_DIR = os.getenv(
-    "MATBENCH_DISCOVERY_CACHE_DIR",
+    "MBD_CACHE_DIR",
     DATA_DIR  # use DATA_DIR to locally cache data files if full repo was cloned
     if os.path.isdir(DATA_DIR)
     # use ~/.cache if matbench-discovery was installed from PyPI
     else os.path.expanduser("~/.cache/matbench-discovery"),
 )
-
 
 round_trip_yaml = YAML()  # round-trippable YAML for updating model metadata files
 round_trip_yaml.preserve_quotes = True
@@ -205,7 +213,9 @@ def ase_atoms_to_zip(
 
 
 def download_file(file_path: str, url: str) -> None:
-    """Download the file from the given URL to the given file path."""
+    """Download the file from the given URL to the given file path.
+    Prints rather than raises if the file cannot be downloaded.
+    """
     file_dir = os.path.dirname(file_path)
     os.makedirs(file_dir, exist_ok=True)
     try:
@@ -215,8 +225,31 @@ def download_file(file_path: str, url: str) -> None:
 
         with open(file_path, "wb") as file:
             file.write(response.content)
-    except requests.exceptions.RequestException as exc:
-        print(f"Error downloading {url=}\nto {file_path=}.\n{exc!s}")
+    except requests.exceptions.RequestException:
+        print(f"Error downloading {url=}\nto {file_path=}.\n{traceback.format_exc()}")
+
+
+def maybe_auto_download_file(url: str, abs_path: str, label: str | None = None) -> None:
+    """Download file if it doesn't exist and user confirms or auto-download is enabled."""
+    if os.path.isfile(abs_path):
+        return
+
+    # whether to auto-download model prediction files without prompting
+    auto_download_files = os.getenv("MBD_AUTO_DOWNLOAD_FILES", "true").lower() == "true"
+
+    is_ipython = hasattr(builtins, "__IPYTHON__")
+    # default to 'y' if auto-download is enabled or not in interactive session (TTY or iPython)
+    answer = (
+        "y"
+        if auto_download_files or not (is_ipython or sys.stdin.isatty())
+        else input(
+            f"{abs_path!r} associated with {label=} does not exist. Download it "
+            "now? This will cache the file for future use. [y/n] "
+        )
+    )
+    if answer.lower().strip() == "y":
+        print(f"Downloading {label!r} from {url!r} to {abs_path!r}")
+        download_file(abs_path, url)
 
 
 class MetaFiles(EnumMeta):
@@ -248,46 +281,20 @@ class MetaFiles(EnumMeta):
 class Files(StrEnum, metaclass=MetaFiles):
     """Enum of data files with associated file directories and URLs."""
 
-    def __new__(
-        cls, file_path: str, url: str | None = None, label: str | None = None
-    ) -> Self:
-        """Create a new member of the FileUrls enum with a given URL where to load the
-        file from and directory where to save it to.
-        """
-        obj = str.__new__(cls)
-        obj._value_ = file_path.split("/")[-1]  # use file name as enum value
-
-        obj._rel_path = file_path  # type: ignore[attr-defined] # noqa: SLF001
-        obj._url = url  # type: ignore[attr-defined] # noqa: SLF001
-        obj._label = label  # type: ignore[attr-defined] # noqa: SLF001
-
-        return obj
-
-    def __str__(self) -> str:
-        """File path associated with the file URL. Use str(DataFiles.some_key) if you
-        want the absolute file path without auto-downloading the file if it doesn't
-        exist yet, e.g. for use in script that generates the file in the first place.
-        """
-        return f"{type(self).base_dir}/{self._rel_path}"  # type: ignore[attr-defined]
-
-    def __repr__(self) -> str:
-        """Return enum attribute's string representation."""
-        return f"{type(self).__name__}.{self.name}"
-
     @property
+    @abc.abstractmethod
     def url(self) -> str:
-        """Url associated with the file URL."""
-        return self._url  # type: ignore[attr-defined]
+        """URL associated with the file."""
 
     @property
     def rel_path(self) -> str:
-        """Relative path of the file associated with the file URL."""
-        return self._rel_path  # type: ignore[attr-defined]
+        """Path of the file relative to the repo's ROOT directory."""
+        return self.value
 
     @property
+    @abc.abstractmethod
     def label(self) -> str:
-        """Label associated with the file URL."""
-        return self._label  # type: ignore[attr-defined]
+        """Label associated with the file."""
 
     @classmethod
     def from_label(cls, label: str) -> Self:
@@ -359,6 +366,11 @@ class DataFiles(Files):
         return url
 
     @property
+    def label(self) -> str:
+        """No pretty label for DataFiles, use name instead."""
+        return self.name
+
+    @property
     def description(self) -> str:
         """Description associated with the file."""
         return self.yaml[self.name]["description"]
@@ -368,7 +380,7 @@ class DataFiles(Files):
         """File path associated with the file URL if it exists, otherwise
         download the file first, then return the path.
         """
-        key, rel_path = self.name, self._rel_path  # type: ignore[attr-defined]
+        key, rel_path = self.name, self.rel_path
 
         if rel_path not in self.yaml[key]["path"]:
             raise ValueError(f"{rel_path=} does not match {self.yaml[key]['path']}")
@@ -386,10 +398,7 @@ class DataFiles(Files):
                 else "y"
             )
             if answer.lower().strip() == "y":
-                if not is_ipython:
-                    print(
-                        f"Downloading {key!r} from {self.url} to {abs_path} for caching"
-                    )
+                print(f"Downloading {key!r} from {self.url} to {abs_path}")
                 download_file(abs_path, self.url)
         return abs_path
 
@@ -490,6 +499,11 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         return self.metadata["model_name"]
 
     @property
+    def url(self) -> str:
+        """Pull request URL in which the model was originally added to the repo."""
+        return self.metadata["pr_url"]
+
+    @property
     def key(self) -> str:
         """Key associated with the file URL."""
         return self.metadata["model_key"]
@@ -508,11 +522,14 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     def discovery_path(self) -> str:
         """Prediction file path associated with the model."""
         rel_path = self.metrics.get("discovery", {}).get("pred_file")
+        file_url = self.metrics.get("discovery", {}).get("pred_file_url")
         if not rel_path:
             raise ValueError(
                 f"metrics.discovery.pred_file not found in {self.rel_path!r}"
             )
-        return f"{ROOT}/{rel_path}"
+        abs_path = f"{ROOT}/{rel_path}"
+        maybe_auto_download_file(file_url, abs_path, label=self.label)
+        return abs_path
 
     @property
     def geo_opt_path(self) -> str | None:
@@ -523,11 +540,14 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         if geo_opt_metrics in ("not available", "not applicable"):
             return None
         rel_path = geo_opt_metrics.get("pred_file")
+        file_url = geo_opt_metrics.get("pred_file_url")
         if not rel_path:
             raise ValueError(
                 f"metrics.geo_opt.pred_file not found in {self.rel_path!r}"
             )
-        return f"{ROOT}/{rel_path}"
+        abs_path = f"{ROOT}/{rel_path}"
+        maybe_auto_download_file(file_url, abs_path, label=self.label)
+        return abs_path
 
     @property
     def kappa_103_path(self) -> str | None:
@@ -538,11 +558,14 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         if phonons_metrics in ("not available", "not applicable"):
             return None
         rel_path = phonons_metrics.get("kappa_103", {}).get("pred_file")
+        file_url = phonons_metrics.get("kappa_103", {}).get("pred_file_url")
         if not rel_path:
             raise ValueError(
                 f"metrics.phonons.kappa_103.pred_file not found in {self.rel_path!r}"
             )
-        return f"{ROOT}/{rel_path}"
+        abs_path = f"{ROOT}/{rel_path}"
+        maybe_auto_download_file(file_url, abs_path, label=self.label)
+        return abs_path
 
 
 # render model keys as labels in plotly axes and legends
