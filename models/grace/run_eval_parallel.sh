@@ -1,5 +1,22 @@
 #!/bin/bash
 
+########## HOW-TO ############
+#
+# STAGE 1
+# 1. set GPUS to list of avilable GPUs
+# 2. set model_name=....
+# 3. adjust SLURM_ARRAY_TASK_COUNT= if needed
+# 4. run locally or submit to the queue
+#
+# STAGE 2
+# python join_grace_preds.py  2025-02-06-GRACE-1L-OAM_2Feb25-wbm-IS2RE-FIRE  # or other path
+#
+# STAGE 3
+# upload large files to fileshare, commit models' YAML files
+################################
+
+
+
 ## this script is for imitation of SLURM tasks array on local machine with multiple GPUs
 export TF_CPP_MIN_LOG_LEVEL=3
 
@@ -9,9 +26,9 @@ THREADS=4  # number of threads for OMP, MKL, NUMEXPR etc. To share resources on 
 GPUS=(0 1 2 3)  # Set the specific GPU IDs you want to use here
 NGPU=${#GPUS[@]} # Calculate the number of GPUs based on the array length
 
-#model_name="MP_GRACE_2L_r6_11Nov2024" # just for information, model name is hardcoded in 1_test_srme.py
-model_name="GRACE-1L-OAM_2Feb25"
-#model_name="GRACE_2L_OAM_28Jan25"
+#model_name="MP_GRACE_2L_r6_11Nov2024" 
+#model_name="GRACE-1L-OAM_2Feb25"
+model_name="GRACE_2L_OAM_28Jan25"
 
 export MODEL_NAME="${model_name}"
 echo "MODEL_NAME=${MODEL_NAME}"

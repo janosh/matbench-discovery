@@ -33,7 +33,6 @@ __date__ = "2025-02-06"
 
 
 # %%
-# model_name = "MP_GRACE_2L_r6_11Nov2024"  # REMOVE this hardcoded line
 
 def main(model_name: str):  # Added function and argument
     """
