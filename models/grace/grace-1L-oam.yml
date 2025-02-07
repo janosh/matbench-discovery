@@ -57,14 +57,28 @@ metrics:
     kappa_103:
       κ_SRME: 0.516 # https://github.com/MPA2suite/k_SRME/pull/20
       pred_file: models/grace/grace-1L-oam/2025-02-02-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url:
+      pred_file_url: https://figshare.com/ndownloader/files/52204910
   geo_opt:
     pred_file: models/grace/grace-1L-oam/2025-02-02-wbm-geo-opt.json.gz
-    pred_file_url:
+    pred_file_url: https://figshare.com/ndownloader/files/52204904
     struct_col: grace_structure
+    symprec=1e-5:
+      rmsd: 0.0139 # Å
+      n_sym_ops_mae: 1.8528 # unitless
+      symmetry_decrease: 0.0329 # fraction
+      symmetry_match: 0.7336 # fraction
+      symmetry_increase: 0.2292 # fraction
+      n_structures: 256963 # count
+    symprec=1e-2:
+      rmsd: 0.0139 # Å
+      n_sym_ops_mae: 1.8157 # unitless
+      symmetry_decrease: 0.0576 # fraction
+      symmetry_match: 0.814 # fraction
+      symmetry_increase: 0.1216 # fraction
+      n_structures: 256963 # count
   discovery:
     pred_file: models/grace/grace-1L-oam/2025-02-02-wbm-IS2RE.csv.gz
-    pred_file_url:
+    pred_file_url: https://figshare.com/ndownloader/files/52204898
     pred_col: e_form_per_atom_grace
     full_test_set:
       F1: 0.808 # fraction
