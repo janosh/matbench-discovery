@@ -4,10 +4,13 @@ import re
 from glob import glob
 
 import pandas as pd
+from pymatgen.core import Structure
+from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
+from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery.data import as_dict_handler, df_wbm
+from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
 from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 from matbench_discovery.enums import MbdKey, Task
 
@@ -15,8 +18,8 @@ __author__ = "Yury Lysogorskiy"
 __date__ = "2025-02-06"
 
 
-energy_column = "grace_energy"  # or your actual column name.
-e_form_grace_col = "e_form_per_atom_grace"  # or your desired name
+energy_col = "grace_energy"
+e_form_grace_col = "e_form_per_atom_grace"
 struct_col = "grace_structure"
 
 
@@ -42,7 +45,7 @@ def process_results(path: str) -> None:
     glob_pattern = f"{path}/production-*.json.gz"
     file_paths = glob(glob_pattern)
 
-    out_path = file_paths[0].rsplit("/", 1)[0]  # Get directory from first file path.
+    out_dir = file_paths[0].rsplit("/", 1)[0]
 
     print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
@@ -68,27 +71,67 @@ def process_results(path: str) -> None:
     )
 
     df_grace = tot_df.set_index("material_id")  # .drop(columns=[struct_col])
-    df_grace[Key.formula] = df_wbm[Key.formula]
 
-    print("Calculating formation energies")
-    e_form_list = []
-    for _, row in tqdm(df_grace.iterrows(), total=len(df_grace)):
-        e_form = calc_energy_from_e_refs(
-            row["formula"],
-            ref_energies=mp_elemental_ref_energies,
-            total_energy=row[energy_column],
+    # Create ComputedStructureEntry objects with GRACE energies and structures
+    wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
+    df_cse = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
+
+    df_cse[Key.computed_structure_entry] = [
+        ComputedStructureEntry.from_dict(dct)
+        for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
+    ]
+
+    # %% transfer ML energies and relaxed structures WBM CSEs since MP2020 energy
+    # corrections applied below are structure-dependent (for oxides and sulfides)
+    cse: ComputedStructureEntry
+    for row in tqdm(
+        df_grace.itertuples(), total=len(df_grace), desc="ML energies to CSEs"
+    ):
+        mat_id, struct_dict, grace_energy, *_ = row
+        mlip_struct = Structure.from_dict(struct_dict)
+        cse = df_cse.loc[mat_id, Key.computed_structure_entry]
+        cse._energy = grace_energy  # noqa: SLF001 cse._energy is the uncorrected energy
+        cse._structure = mlip_struct  # noqa: SLF001
+        df_grace.loc[mat_id, Key.computed_structure_entry] = cse
+
+    # Apply MP2020 energy corrections
+    print("Applying MP2020 energy corrections")
+    processed = MaterialsProject2020Compatibility().process_entries(
+        df_grace[Key.computed_structure_entry], verbose=True, clean=True
+    )
+    if len(processed) != len(df_grace):
+        raise ValueError(
+            f"not all entries processed: {len(processed)=} {len(df_grace)=}"
         )
-        e_form_list.append(e_form)
 
-    df_grace[e_form_grace_col] = e_form_list
+    df_grace[e_form_grace_col] = [
+        calc_energy_from_e_refs(
+            dict(
+                composition=row["formula"],
+                energy=row[Key.computed_structure_entry].energy,  # use corrected energy
+            ),
+            ref_energies=mp_elemental_ref_energies,
+        )
+        for _, row in tqdm(df_grace.iterrows(), total=len(df_grace))
+    ]
+
+    df_grace["e_form_per_atom_grace_uncorrected"] = [
+        calc_energy_from_e_refs(
+            dict(energy=energy, composition=formula),
+            ref_energies=mp_elemental_ref_energies,
+        )
+        for energy, formula in tqdm(
+            zip(df_grace[energy_col], df_grace["formula"]),
+            total=len(df_grace),
+        )
+    ]
 
     # save relaxed structures
-    print("df_grace.columns=", df_grace.columns)
     df_grace.to_json(
-        f"{out_path}/{model_name}_{date}-wbm-IS2RE-FIRE.json.gz",
+        f"{out_dir}/{model_name}_{date}-wbm-IS2RE-FIRE.json.gz",
         default_handler=as_dict_handler,
-    )  # added model and date
-    df_grace = df_grace.drop(columns=[struct_col])
+    )
+    df_grace = df_grace.drop(columns=[struct_col, Key.computed_structure_entry])
 
     df_wbm[[*df_grace]] = df_grace
 
@@ -98,15 +141,13 @@ def process_results(path: str) -> None:
     print(f"{sum(bad_mask)=} is {sum(bad_mask) / len(df_wbm):.2%} of {n_preds:,}")
 
     df_grace = df_grace.round(4)
-    df_grace.select_dtypes("number").to_csv(
-        f"{out_path}/{model_name}_{date}.csv.gz"
-    )  # added model and date
+    df_grace.select_dtypes("number").to_csv(f"{out_dir}/{model_name}_{date}.csv.gz")
     df_grace.reset_index().to_json(
-        f"{out_path}/{model_name}_{date}.json.gz", default_handler=as_dict_handler
-    )  # added model and date
+        f"{out_dir}/{model_name}_{date}.json.gz", default_handler=as_dict_handler
+    )
     df_bad = df_grace[bad_mask].copy()
     df_bad[MbdKey.e_form_dft] = df_wbm[MbdKey.e_form_dft]
-    df_bad.to_csv(f"{out_path}/{model_name}_{date}_bad.csv")  # added model and date
+    df_bad.to_csv(f"{out_dir}/{model_name}_{date}_bad.csv")
 
 
 if __name__ == "__main__":
