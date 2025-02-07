@@ -1,0 +1,68 @@
+model_name: GRACE-2L-OAM
+model_key: grace-2L-oam
+model_version: GRACE_2L_OAM_28Jan25
+matbench_discovery_version: 1.2.0
+date_added: "2025-02-06"
+date_published: "2025-02-06"
+authors:
+  - name: Anton Bochkarev
+    affiliation: ICAMS, Ruhr University Bochum
+    email: anton.bochkarev@rub.de
+  - name: Yury Lysogorskiy
+    affiliation: ICAMS, Ruhr University Bochum
+    email: yury.lysogorskiy@rub.de
+  - name: Ralf Drautz
+    affiliation: ICAMS, Ruhr University Bochum
+    email: ralf.drautz@rub.de
+trained_by:
+  - name: Yury Lysogorskiy
+    affiliation: ICAMS, Ruhr University Bochum
+    email: yury.lysogorskiy@rub.de
+  - name: Anton Bochkarev
+    affiliation: ICAMS, Ruhr University Bochum
+    email: anton.bochkarev@rub.de
+
+repo: https://github.com/ICAMS/grace-tensorpotential
+doi: https://doi.org/10.1103/PhysRevX.14.021036
+paper: https://journals.aps.org/prx/abstract/10.1103/PhysRevX.14.021036
+url: https://gracemaker.readthedocs.io/en/latest/gracemaker/foundation
+pr_url: https://github.com/janosh/matbench-discovery/pull/202
+
+requirements:
+  tensorpotential: 0.4.5
+  tensorflow: 2.16.2
+  ase: 3.23.0
+  pymatgen: 2023.7.14
+  numpy: 1.26.4
+
+openness: OSOD
+trained_for_benchmark: true
+train_task: S2EF
+test_task: IS2RE-SR
+targets: EFS_G
+model_type: UIP
+model_params: 12_597_516
+n_estimators: 1
+
+training_set: [OMat24, sAlex, MPtrj]
+
+hyperparams:
+  max_force: 0.03
+  max_steps: 500
+  ase_optimizer: FIRE
+  radial_cutoff: 6.0
+
+metrics:
+  phonons:
+    kappa_103:
+      κ_SRME: 0.294 # https://github.com/MPA2suite/k_SRME/pull/20
+      pred_file: models/grace/grace-2L-oam/2025-01-28-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url:
+  geo_opt:
+    pred_file: models/grace/grace-2L-oam/2025-01-28-wbm-geo-opt.json.gz
+    pred_file_url:
+    struct_col: grace_structure
+  discovery:
+    pred_file: models/grace/grace-2L-oam/2025-01-28-wbm-IS2RE.csv.gz
+    pred_file_url:
+    pred_col: e_form_per_atom_grace
