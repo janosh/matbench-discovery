@@ -66,3 +66,60 @@ metrics:
     pred_file: models/grace/grace-2L-oam/2025-01-28-wbm-IS2RE.csv.gz
     pred_file_url:
     pred_col: e_form_per_atom_grace
+    full_test_set:
+      F1: 0.861 # fraction
+      DAF: 5.046 # dimensionless
+      Precision: 0.866 # fraction
+      Recall: 0.856 # fraction
+      Accuracy: 0.953 # fraction
+      TPR: 0.856 # fraction
+      FPR: 0.027 # fraction
+      TNR: 0.973 # fraction
+      FNR: 0.144 # fraction
+      TP: 37754.0 # count
+      FP: 5846.0 # count
+      TN: 207025.0 # count
+      FN: 6338.0 # count
+      MAE: 0.023 # eV/atom
+      RMSE: 0.068 # eV/atom
+      R2: 0.856 # dimensionless
+      missing_preds: 2 # count
+      missing_percent: 0.00% # fraction
+    most_stable_10k:
+      F1: 0.985 # fraction
+      DAF: 6.352 # dimensionless
+      Precision: 0.971 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.971 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9711.0 # count
+      FP: 289.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.022 # eV/atom
+      RMSE: 0.081 # eV/atom
+      R2: 0.861 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
+    unique_prototypes:
+      F1: 0.88 # fraction
+      DAF: 5.774 # dimensionless
+      Precision: 0.883 # fraction
+      Recall: 0.878 # fraction
+      Accuracy: 0.963 # fraction
+      TPR: 0.878 # fraction
+      FPR: 0.021 # fraction
+      TNR: 0.979 # fraction
+      FNR: 0.122 # fraction
+      TP: 29313.0 # count
+      FP: 3898.0 # count
+      TN: 178216.0 # count
+      FN: 4061.0 # count
+      MAE: 0.023 # eV/atom
+      RMSE: 0.068 # eV/atom
+      R2: 0.862 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
