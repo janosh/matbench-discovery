@@ -72,7 +72,7 @@ metrics:
   geo_opt:
     pred_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-geo-opt.json.gz
     pred_file_url: https://figshare.com/ndownloader/files/52061999
-    pred_col: chgnet_structure
+    struct_col: chgnet_structure
     symprec=1e-5:
       rmsd: 0.0216 # Å
       symmetry_decrease: 0.2526 # fraction

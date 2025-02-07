@@ -128,7 +128,7 @@ metrics:
   geo_opt:
     pred_file: models/mattersim/mattersim-v1-5M/2024-12-19-wbm-geo-opt.json.gz
     pred_file_url: https://figshare.com/ndownloader/files/52062176
-    pred_col: mattersim_structure
+    struct_col: mattersim_structure
   discovery:
     pred_file: models/mattersim/mattersim-v1-5M/2024-12-16-wbm-IS2RE.csv.gz
     # the original Graphormer-based replaced the M3GNet-based MatterSim on the leaderboard

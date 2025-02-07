@@ -43,7 +43,7 @@ def perturb_structure(struct: Structure, gamma: float = 1.5) -> Structure:
 def analyze_symmetry(
     structures: dict[str, Structure],
     *,
-    pbar: bool | dict[str, str] = True,
+    pbar: bool | dict[str, str | float | bool] = True,
     symprec: float = 1e-2,
     angle_tolerance: float | None = None,
 ) -> pd.DataFrame:
@@ -52,8 +52,8 @@ def analyze_symmetry(
     Args:
         structures (dict[str, Structure | Atoms]): Map of material IDs to pymatgen
             Structures or ASE Atoms objects
-        pbar (bool | dict[str, str], optional): Whether to show progress bar.
-            Defaults to True.
+        pbar (bool | dict[str, str | float | bool], optional): Whether to show progress
+            bar. Defaults to True.
         symprec (float, optional): Symmetry precision of moyopy. Defaults to 1e-2.
         angle_tolerance (float, optional): Angle tolerance of moyopy (in radians unlike
             spglib which uses degrees!). Defaults to None.
@@ -121,7 +121,7 @@ def pred_vs_ref_struct_symmetry(
     pred_structs: dict[str, Structure],
     ref_structs: dict[str, Structure],
     *,
-    pbar: bool | dict[str, str] = True,
+    pbar: bool | dict[str, str | float | bool] = True,
 ) -> pd.DataFrame:
     """Get RMSD and compare symmetry between ML and DFT reference structures.
 
@@ -135,12 +135,17 @@ def pred_vs_ref_struct_symmetry(
             analyze_symmetry.
         pred_structs (dict[str, Structure]): Map material IDs to ML-relaxed structures
         ref_structs (dict[str, Structure]): Map material IDs to reference structures
-        pbar (bool | dict[str, str], optional): Whether to show progress bar.
-            Defaults to True.
+        pbar (bool | dict[str, str | float | bool], optional): Whether to show progress
+            bar. Defaults to True.
 
     Returns:
         pd.DataFrame: with added columns for symmetry differences
     """
+    if df_sym_ref.index.name != Key.mat_id:
+        raise ValueError(f"{df_sym_ref.index.name=} must be {Key.mat_id!s}")
+    if df_sym_pred.index.name != Key.mat_id:
+        raise ValueError(f"{df_sym_pred.index.name=} must be {Key.mat_id!s}")
+
     df_result = df_sym_pred.copy()
 
     # Calculate differences
@@ -150,7 +155,10 @@ def pred_vs_ref_struct_symmetry(
     )
 
     structure_matcher = StructureMatcher()
-    shared_ids = set(pred_structs) & set(ref_structs)
+    ref_ids, pred_ids = set(ref_structs), set(pred_structs)
+    shared_ids = ref_ids & pred_ids
+    if len(shared_ids) == 0:
+        raise ValueError(f"No shared IDs between:\n{pred_ids=}\n{ref_ids=}")
 
     # Initialize RMSD column
     df_result[MbdKey.structure_rmsd_vs_dft] = None

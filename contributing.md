@@ -18,24 +18,30 @@ There's also a [PyPI package](https://pypi.org/project/matbench-discovery) for f
 
 To submit a new model to this benchmark and add it to our leaderboard, please create a pull request to the [`main` branch][repo] that includes at least these 3 required files:
 
-1. `<yyyy-mm-dd>-<model_name>-preds.csv.gz`: Your model's energy predictions for all ~250k WBM compounds as compressed CSV. The recommended way to create this file is with `pandas.DataFrame.to_csv("<yyyy-mm-dd>-<model_name>-wbm-IS2RE.csv.gz")`. See e.g. [`test_mace_discovery`](https://github.com/janosh/matbench-discovery/blob/-/models/mace/test_mace_discovery.py) for code that generates this file.
+1. `<yyyy-mm-dd>-<model_name>-preds.csv.gz`: Your model's energy predictions for all ~250k WBM compounds as compressed CSV. The recommended way to create this file is with `pandas.DataFrame.to_csv("<yyyy-mm-dd>-wbm-IS2RE.csv.gz")`. See e.g. [`test_mace_discovery`](https://github.com/janosh/matbench-discovery/blob/-/models/mace/test_mace_discovery.py) for code that generates this file.
 
    ### Sharing Model Prediction Files
 
-   You should share your model's predictions through a cloud storage service (e.g. Figshare, Zenodo, Google Drive, Dropbox, AWS, etc.) and include the download links in your PR description. Your cloud storage directory should contain:
+   You should share your model's predictions through a cloud storage service (e.g. Figshare, Zenodo, Google Drive, Dropbox, AWS, etc.) and include the download links in your PR description. Your cloud storage directory should contain files with the following naming convention: `<arch-name>/<model-variant>/<yyyy-mm-dd>-<eval-task>.{csv.gz|json.gz}`. For example, a in the case of MACE-MP-0, the file paths would be:
 
-   1. `<yyyy-mm-dd>-<model_name>-wbm-geo-opt.json.gz`: The model's relaxed structures as compressed JSON containing:
+   - geometry optimization: `mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE.json.gz`
+   - discovery: `mace/mace-mp-0/2023-12-11-wbm-IS2RE.csv.gz`
+   - phonons: `mace/mace-mp-0/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz`
+
+   The files should contain the following information:
+
+   1. `<arch-name>/<model-variant>/<yyyy-mm-dd>-wbm-geo-opt-<optimizer>.json.gz`: The model's relaxed structures as compressed JSON containing:
 
       - Final relaxed structures (as ASE `Atoms` or pymatgen `Structures`)
       - Final energies (eV), forces (eV/Å), stress (eV/Å³) and volume (Å³)
       - Material IDs matching the WBM test set
 
-   2. `<yyyy-mm-dd>-<model_name>-wbm-IS2RE.csv.gz`: A compressed CSV file with:
+   2. `<arch-name>/<model-variant>/<yyyy-mm-dd>-wbm-IS2RE.csv.gz`: A compressed CSV file with:
 
       - Material IDs matching the WBM test set
       - Final formation energies per atom (eV/atom)
 
-   3. `<yyyy-mm-dd>-<model_name>-wbm-kappa.json.gz`: A compressed JSON file with:
+   3. `<arch-name>/<model-variant>/<yyyy-mm-dd>-kappa-103-<values-of-dist|fmax|symprec>.json.gz`: A compressed JSON file with:
       - Material IDs matching the WBM test set
       - Predicted thermal conductivity (κ) values (W/mK)
 
@@ -78,7 +84,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    df_traj.to_csv("trajectory.csv.gz")  # Save final structure and trajectory data
    ```
 
-1. `test_<model_name>_discovery.(py|ipynb)`: The Python script that generated the WBM final energy predictions given the initial (unrelaxed) DFT structures. Ideally, this file should have comments explaining at a high level what the code is doing and how the model works so others can understand and reproduce your results. If the model deployed on this benchmark was trained specifically for this purpose (i.e. if you wrote any training/fine-tuning code while preparing your PR), please also include it as `train_<model_name>.(py|ipynb)`.
+1. `test_<model_name>_discovery.py`: The Python script that generated the WBM final energy predictions given the initial (unrelaxed) DFT structures. Ideally, this file should have comments explaining at a high level what the code is doing and how the model works so others can understand and reproduce your results. If the model deployed on this benchmark was trained specifically for this purpose (i.e. if you wrote any training/fine-tuning code while preparing your PR), please also include it as `train_<model_name>.py`.
 1. `<model_name.yml>`: A file to record all relevant metadata of your algorithm like model name and version, authors, package requirements, links to publications, notes, etc. Here's a template:
 
    ```yml

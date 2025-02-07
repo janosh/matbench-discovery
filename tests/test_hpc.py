@@ -319,8 +319,8 @@ def test_slurm_submit(
 
     expected_py_file_path = py_file_path or __file__
     if submit_as_temp_file:
-        expected_py_file_path = os.path.join(
-            "/tmp/slurm_job_123", os.path.basename(expected_py_file_path)
+        expected_py_file_path = (
+            f"/tmp/slurm_job_123/{os.path.basename(expected_py_file_path)}"
         )
         assert mock_copy2.called
         assert mock_copy2.call_args[0][0] == (py_file_path or __file__)
