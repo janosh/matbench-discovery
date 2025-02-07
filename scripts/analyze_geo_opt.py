@@ -71,6 +71,7 @@ else:
 moyo_version = f"moyo={importlib.metadata.version('moyopy')}"
 moyo_version = "moyo=0.3.1"
 
+
 # %% Load WBM reference structures (this takes a while)
 print("Loading WBM reference structures...")
 wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
@@ -82,6 +83,7 @@ dft_structs: dict[str, Structure] = {
 
 if debug_mode:
     df_wbm_structs = df_wbm_structs.head(debug_mode)
+
 
 # %% Process DFT structures for each symprec value
 dft_analysis_dict = {}
@@ -98,6 +100,7 @@ for symprec in symprec_values:
             symprec=symprec,
         )
         dft_analysis_dict[symprec].to_csv(dft_csv_path)
+
 
 # %% Process each model sequentially
 for idx, model_name in enumerate(model_names):
