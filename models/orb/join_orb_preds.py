@@ -1,4 +1,4 @@
-import glob
+from glob import glob
 
 import pandas as pd
 import typer
@@ -35,7 +35,7 @@ def main(
     - {predictions_dir}/{prefix}.json.gz (all predictions as JSON)
     - {predictions_dir}/{prefix}-bad.csv (predictions with large errors)
     """
-    file_paths = sorted(glob.glob(f"{predictions_dir}/{glob_pattern}"))
+    file_paths = sorted(glob(f"{predictions_dir}/{glob_pattern}"))
 
     print(f"Found {len(file_paths):,} files for {glob_pattern = }")
     dfs: dict[str, pd.DataFrame] = {}

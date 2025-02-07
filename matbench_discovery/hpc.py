@@ -88,7 +88,7 @@ def slurm_submit(
     # Copy the file to a temporary directory if submit_as_temp_file is True
     if submit_as_temp_file and SLURM_SUBMIT_KEY in sys.argv:
         temp_dir = tempfile.mkdtemp(prefix="slurm_job_")
-        temp_file_path = os.path.join(temp_dir, os.path.basename(py_file_path))
+        temp_file_path = f"{temp_dir}/{os.path.basename(py_file_path)}"
         shutil.copy2(py_file_path, temp_file_path)
         py_file_path = temp_file_path
 

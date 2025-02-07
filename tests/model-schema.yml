@@ -178,7 +178,7 @@ properties:
         oneOf:
           - type: object
             additionalProperties: false
-            required: [pred_col]
+            required: [struct_col]
             properties:
               pred_file:
                 type: [string, "null"]
@@ -186,7 +186,7 @@ properties:
                 type: [string, "null"]
                 format: uri
                 pattern: "^https?://"
-              pred_col:
+              struct_col:
                 type: string
               symprec=1e-5: &symprec_metrics
                 type: object

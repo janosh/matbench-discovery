@@ -62,7 +62,7 @@ metrics:
   geo_opt:
     pred_file: models/m3gnet/m3gnet-tf-manual-sampling/2023-06-01-wbm-geo-opt.json.gz
     pred_file_url: https://figshare.com/ndownloader/files/52062011
-    pred_col: m3gnet_structure
+    struct_col: m3gnet_structure
     symprec=1e-5:
       rmsd: 0.0217 # Å
       n_sym_ops_mae: 1.7751 # unitless

@@ -94,7 +94,7 @@ metrics:
   geo_opt:
     pred_file: models/eqV2/eqV2-s-dens-mp/2024-10-18-wbm-geo-opt.json.gz
     pred_file_url: https://figshare.com/ndownloader/files/52062392
-    pred_col: eqV2-31M-dens-MP-p5_structure
+    struct_col: eqV2-31M-dens-MP-p5_structure
     symprec=1e-5:
       rmsd: 0.0138 # Å
       n_sym_ops_mae: 10.0558 # unitless

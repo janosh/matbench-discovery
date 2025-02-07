@@ -81,7 +81,7 @@ metrics:
   geo_opt:
     pred_file: models/orb/orbff-v2/2024-10-11-wbm-geo-opt.json.gz
     pred_file_url: https://figshare.com/ndownloader/files/52062194
-    pred_col: orb_structure
+    struct_col: orb_structure
     symprec=1e-5:
       rmsd: 0.016 # Å
       n_sym_ops_mae: 9.8834 # unitless
