@@ -6,6 +6,7 @@ Last plot is split into 2x3 subplots, one for each model.
 # %%
 import itertools
 import os
+import sys
 from typing import Literal, get_args
 
 import pymatviz as pmv
@@ -34,14 +35,19 @@ if test_subset == TestSubset.uniq_protos:
     df_preds = df_preds.query(MbdKey.uniq_proto)
     df_metrics = df_metrics_uniq_protos
 
+# Get list of models from command line args, fall back to all models if none specified
+models_to_update = sys.argv[1:] if len(sys.argv) > 1 else df_metrics
+
 
 # %% parity plot of actual vs predicted e_form_per_atom
 parity_scatters_dir = f"{SITE_FIGS}/energy-parity"
 os.makedirs(parity_scatters_dir, exist_ok=True)
 
-for model_name, which_energy in itertools.product(df_metrics, (use_e_form, use_each)):
-    model_key = Model.from_label(model_name).key
-    img_name = f"{which_energy}-parity-{model_name.lower().replace(' ', '-')}"
+for model_name, which_energy in itertools.product(
+    models_to_update, (use_e_form, use_each)
+):
+    model = Model[model_name]
+    img_name = f"{which_energy}-parity-{model.key.lower().replace(' ', '-')}"
     img_path = f"{parity_scatters_dir}/{img_name}.svelte"
     if os.path.isfile(img_path) and not update_existing:
         continue
@@ -59,7 +65,7 @@ for model_name, which_energy in itertools.product(df_metrics, (use_e_form, use_e
         raise ValueError(f"Unexpected {which_energy=}")
 
     e_pred_col = f"{model_name} {e_true_col.label.replace('DFT ', '')}"
-    df_in = df_in.rename(columns={model_name: e_pred_col})
+    df_in = df_in.rename(columns={model.label: e_pred_col})
 
     fig = pmv.density_scatter_plotly(
         df=df_in.reset_index(drop=True),
