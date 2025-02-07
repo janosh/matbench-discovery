@@ -3,7 +3,7 @@
 ########## HOW-TO ############
 #
 # STAGE 1
-# 1. set GPUS to list of avilable GPUs
+# 1. set GPUS to list of available GPUs
 # 2. set model_name=....
 # 3. adjust SLURM_ARRAY_TASK_COUNT= if needed
 # 4. run locally or submit to the queue
