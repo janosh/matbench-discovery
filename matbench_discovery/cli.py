@@ -4,8 +4,7 @@ import argparse
 
 from pymatviz.enums import Key
 
-from matbench_discovery.data import Model
-from matbench_discovery.enums import TestSubset
+from matbench_discovery.enums import Model, TestSubset
 
 cli_parser = argparse.ArgumentParser(
     description="CLI flags for plotting and analysis scripts."

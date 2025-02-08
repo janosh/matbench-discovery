@@ -21,8 +21,8 @@ from pymatviz.enums import Key
 from pymatviz.utils import si_fmt
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, today
-from matbench_discovery.data import Model, df_wbm
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.data import df_wbm
+from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.metrics import geo_opt
 from matbench_discovery.models import MODEL_METADATA
 

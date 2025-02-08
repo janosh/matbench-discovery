@@ -10,8 +10,8 @@ from ruamel.yaml.comments import CommentedMap
 from sklearn.metrics import r2_score
 
 from matbench_discovery import STABILITY_THRESHOLD
-from matbench_discovery.data import Model, df_wbm, round_trip_yaml
-from matbench_discovery.enums import MbdKey, TestSubset
+from matbench_discovery.data import df_wbm, round_trip_yaml
+from matbench_discovery.enums import MbdKey, Model, TestSubset
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-01"

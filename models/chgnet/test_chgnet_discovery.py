@@ -20,8 +20,8 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import timestamp, today
-from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
-from matbench_discovery.enums import MbdKey, Task
+from matbench_discovery.data import as_dict_handler, df_wbm
+from matbench_discovery.enums import DataFiles, MbdKey, Task
 from matbench_discovery.hpc import slurm_submit
 from matbench_discovery.plots import wandb_scatter
 

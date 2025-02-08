@@ -19,8 +19,8 @@ from sklearn.metrics import r2_score
 from tqdm import tqdm
 
 from matbench_discovery import timestamp, today
-from matbench_discovery.data import DataFiles, Model, df_wbm
-from matbench_discovery.enums import MbdKey, Task
+from matbench_discovery.data import df_wbm
+from matbench_discovery.enums import DataFiles, MbdKey, Model, Task
 from matbench_discovery.hpc import slurm_submit
 from matbench_discovery.plots import wandb_scatter
 

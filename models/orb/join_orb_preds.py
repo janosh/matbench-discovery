@@ -9,7 +9,7 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery.energy import get_e_form_per_atom
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import DataFiles, MbdKey
 
 app = typer.Typer(pretty_exceptions_enable=False, no_args_is_help=True)
 FORMATION_ENERGY_COL = "e_form_per_atom_orb"
@@ -52,7 +52,7 @@ def main(
     # This is inside the script because accessing the variables causes a download
     # to be triggered if they are not present, meaning it's better to only load them
     # if the script is actually going to be run.
-    from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
+    from matbench_discovery.data import as_dict_handler, df_wbm
 
     if correct_energies:
         wbm_cse_path = DataFiles.wbm_computed_structure_entries.path

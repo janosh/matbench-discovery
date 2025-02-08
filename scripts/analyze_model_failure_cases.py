@@ -16,8 +16,8 @@ from pymatviz.typing import PLOTLY
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR
-from matbench_discovery.data import DataFiles, df_wbm
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.data import df_wbm
+from matbench_discovery.enums import DataFiles, MbdKey
 from matbench_discovery.metrics.discovery import classify_stable
 from matbench_discovery.preds.discovery import (
     df_each_err,

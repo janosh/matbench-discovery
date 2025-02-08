@@ -7,8 +7,7 @@ import pytest
 from pymatviz.enums import Key
 
 from matbench_discovery.cli import cli_args, cli_parser
-from matbench_discovery.data import Model
-from matbench_discovery.enums import TestSubset
+from matbench_discovery.enums import Model, TestSubset
 
 
 @pytest.mark.parametrize(

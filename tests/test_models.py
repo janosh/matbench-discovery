@@ -5,7 +5,7 @@ import pytest
 import yaml
 
 from matbench_discovery import DATA_DIR, __version__
-from matbench_discovery.data import Model
+from matbench_discovery.enums import Model
 from matbench_discovery.models import MODEL_DIRS, MODEL_METADATA, model_is_compliant
 
 with open(f"{DATA_DIR}/training-sets.yml") as file:

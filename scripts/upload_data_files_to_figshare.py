@@ -8,7 +8,8 @@ from tqdm import tqdm
 
 import matbench_discovery.figshare as figshare
 from matbench_discovery import DATA_DIR, PKG_DIR, ROOT
-from matbench_discovery.data import DataFiles, round_trip_yaml
+from matbench_discovery.data import round_trip_yaml
+from matbench_discovery.enums import DataFiles
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-04-27"

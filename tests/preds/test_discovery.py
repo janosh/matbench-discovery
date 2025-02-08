@@ -3,8 +3,8 @@ from typing import Any
 import pandas as pd
 import pytest
 
-from matbench_discovery.data import Model, df_wbm
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.data import df_wbm
+from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.preds import discovery
 
 

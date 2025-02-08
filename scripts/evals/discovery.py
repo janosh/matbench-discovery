@@ -26,8 +26,8 @@ from sklearn.dummy import DummyClassifier
 
 import matbench_discovery.metrics.discovery as disc_metrics
 from matbench_discovery import DATA_DIR, PDF_FIGS, PKG_DIR, ROOT
-from matbench_discovery.data import DataFiles, Model, df_wbm
-from matbench_discovery.enums import MbdKey, Open, Targets
+from matbench_discovery.data import df_wbm
+from matbench_discovery.enums import DataFiles, MbdKey, Model, Open, Targets
 from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 
 try:

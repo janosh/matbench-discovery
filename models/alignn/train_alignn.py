@@ -18,7 +18,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from matbench_discovery import today
-from matbench_discovery.data import DataFiles
+from matbench_discovery.enums import DataFiles
 from matbench_discovery.hpc import slurm_submit
 
 __author__ = "Philipp Benner, Janosh Riebesell"

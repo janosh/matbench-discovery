@@ -14,7 +14,7 @@ from pymatgen.entries.computed_entries import ComputedEntry
 from pymatgen.util.typing import EntryLike
 from tqdm import tqdm
 
-from matbench_discovery.data import DataFiles
+from matbench_discovery.enums import DataFiles
 
 
 def get_elemental_ref_entries(
