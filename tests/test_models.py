@@ -114,8 +114,7 @@ def test_model_enum() -> None:
 
     # Test model properties that don't depend on file existence
     assert Model.mace_mp_0.label == "MACE-MP-0"
-    assert Model.mace_mp_0.name == "mace_mp_0"
-    assert Model.mace_mp_0.value == "mace/mace-mp-0.yml"
+    assert Model.mace_mp_0.name == Model.mace_mp_0.value == "mace_mp_0"
 
 
 @pytest.mark.parametrize(

@@ -214,10 +214,7 @@ def test_files() -> None:
 def test_data_files() -> None:
     """Test DataFiles enum functionality."""
     # Test that paths are constructed correctly
-    assert (
-        repr(DataFiles.mp_energies)
-        == "<DataFiles.mp_energies: 'mp/2023-01-10-mp-energies.csv.gz'>"
-    )
+    assert repr(DataFiles.mp_energies) == "<DataFiles.mp_energies: 'mp_energies'>"
     assert DataFiles.mp_energies.rel_path == "mp/2023-01-10-mp-energies.csv.gz"
     assert DataFiles.mp_energies.name == "mp_energies"
     assert (

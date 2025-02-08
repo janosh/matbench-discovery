@@ -20,10 +20,10 @@ import traceback
 import zipfile
 from collections import defaultdict
 from collections.abc import Callable, Sequence
-from enum import EnumMeta, StrEnum, _EnumDict
+from enum import EnumMeta, StrEnum, _EnumDict, auto
 from glob import glob
 from pathlib import Path
-from typing import Any, Literal, Self, TypeVar
+from typing import Any, Self, TypeVar
 
 import ase.io
 import pandas as pd
@@ -281,20 +281,29 @@ class MetaFiles(EnumMeta):
 class Files(StrEnum, metaclass=MetaFiles):
     """Enum of data files with associated file directories and URLs."""
 
+    def __new__(cls, val: str, file_path: str) -> Self:
+        """Create a new member of the FileUrls enum with a given URL where to load the
+        file from and directory where to save it to.
+        """
+        obj = str.__new__(cls)
+        obj._value_ = val
+        obj.__dict__ |= dict(file_path=file_path)
+        return obj
+
     @property
     @abc.abstractmethod
     def url(self) -> str:
         """URL associated with the file."""
 
     @property
-    def rel_path(self) -> str:
-        """Path of the file relative to the repo's ROOT directory."""
-        return self.value
-
-    @property
     @abc.abstractmethod
     def label(self) -> str:
         """Label associated with the file."""
+
+    @property
+    def rel_path(self) -> str:
+        """Path of the file relative to the repo's ROOT directory."""
+        return self.__dict__["file_path"]
 
     @classmethod
     def from_label(cls, label: str) -> Self:
@@ -314,35 +323,49 @@ class DataFiles(Files):
     """Enum of data files with associated file directories and URLs."""
 
     mp_computed_structure_entries = (
-        "mp/2023-02-07-mp-computed-structure-entries.json.gz"
+        auto(),
+        ("mp/2023-02-07-mp-computed-structure-entries.json.gz"),
     )
-    mp_elemental_ref_entries = "mp/2023-02-07-mp-elemental-reference-entries.json.gz"
-    mp_energies = "mp/2023-01-10-mp-energies.csv.gz"
-    mp_patched_phase_diagram = "mp/2023-02-07-ppd-mp.pkl.gz"
-    mp_trj_json_gz = "mp/2022-09-16-mp-trj.json.gz"
-    mp_trj_extxyz = "mp/2024-09-03-mp-trj.extxyz.zip"
+    mp_elemental_ref_entries = (
+        auto(),
+        "mp/2023-02-07-mp-elemental-reference-entries.json.gz",
+    )
+    mp_energies = auto(), "mp/2023-01-10-mp-energies.csv.gz"
+    mp_patched_phase_diagram = auto(), "mp/2023-02-07-ppd-mp.pkl.gz"
+    mp_trj_json_gz = auto(), "mp/2022-09-16-mp-trj.json.gz"
+    mp_trj_extxyz = auto(), "mp/2024-09-03-mp-trj.extxyz.zip"
     # snapshot of every task (calculation) in MP as of 2023-03-16 (14 GB)
-    all_mp_tasks = "mp/2023-03-16-all-mp-tasks.zip"
+    all_mp_tasks = auto(), "mp/2023-03-16-all-mp-tasks.zip"
 
     wbm_computed_structure_entries = (
-        "wbm/2022-10-19-wbm-computed-structure-entries.json.bz2"
+        auto(),
+        ("wbm/2022-10-19-wbm-computed-structure-entries.json.bz2"),
     )
-    wbm_relaxed_atoms = "wbm/2024-08-04-wbm-relaxed-atoms.extxyz.zip"
-    wbm_initial_structures = "wbm/2022-10-19-wbm-init-structs.json.bz2"
-    wbm_initial_atoms = "wbm/2024-08-04-wbm-initial-atoms.extxyz.zip"
+    wbm_relaxed_atoms = auto(), "wbm/2024-08-04-wbm-relaxed-atoms.extxyz.zip"
+    wbm_initial_structures = auto(), "wbm/2022-10-19-wbm-init-structs.json.bz2"
+    wbm_initial_atoms = auto(), "wbm/2024-08-04-wbm-initial-atoms.extxyz.zip"
     wbm_cses_plus_init_structs = (
-        "wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"
+        auto(),
+        ("wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"),
     )
-    wbm_summary = "wbm/2023-12-13-wbm-summary.csv.gz"
-    alignn_checkpoint = "2023-06-02-pbenner-best-alignn-model.pth.zip"
+    wbm_summary = auto(), "wbm/2023-12-13-wbm-summary.csv.gz"
+    alignn_checkpoint = auto(), "2023-06-02-pbenner-best-alignn-model.pth.zip"
     phonondb_pbe_103_structures = (
-        "phonons/2024-11-09-phononDB-PBE-103-structures.extxyz"
+        auto(),
+        ("phonons/2024-11-09-phononDB-PBE-103-structures.extxyz"),
     )
     phonondb_pbe_103_kappa_no_nac = (
-        "phonons/2024-11-09-kappas-phononDB-PBE-noNAC.json.gz"
+        auto(),
+        ("phonons/2024-11-09-kappas-phononDB-PBE-noNAC.json.gz"),
     )
-    wbm_dft_geo_opt_symprec_1e_2 = "data/wbm/dft-geo-opt-symprec=1e-2-moyo=0.3.1.csv.gz"
-    wbm_dft_geo_opt_symprec_1e_5 = "data/wbm/dft-geo-opt-symprec=1e-5-moyo=0.3.1.csv.gz"
+    wbm_dft_geo_opt_symprec_1e_2 = (
+        auto(),
+        "data/wbm/dft-geo-opt-symprec=1e-2-moyo=0.3.1.csv.gz",
+    )
+    wbm_dft_geo_opt_symprec_1e_5 = (
+        auto(),
+        "data/wbm/dft-geo-opt-symprec=1e-5-moyo=0.3.1.csv.gz",
+    )
 
     @functools.cached_property
     def yaml(self) -> dict[str, dict[str, str]]:
@@ -414,67 +437,66 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
     """
 
-    alignn = "alignn/alignn.yml"
-    # alignn_pretrained = "alignn/alignn.yml"
-    # alignn_ff = "alignn/alignn-ff.yml"
+    alignn = auto(), "alignn/alignn.yml"
+    # alignn_pretrained = auto(), "alignn/alignn.yml"
+    # alignn_ff = auto(), "alignn/alignn-ff.yml"
 
     # BOWSR optimizer coupled with original megnet
-    bowsr_megnet = "bowsr/bowsr.yml"
+    bowsr_megnet = auto(), "bowsr/bowsr.yml"
 
     # default CHGNet model from publication with 400,438 params
-    chgnet = "chgnet/chgnet.yml"
-    # chgnet_no_relax = None, "CHGNet No Relax"
+    chgnet = auto(), "chgnet/chgnet.yml"
+    # chgnet_no_relax = auto(), None, "CHGNet No Relax"
 
     # CGCNN 10-member ensemble
-    cgcnn = "cgcnn/cgcnn.yml"
+    cgcnn = auto(), "cgcnn/cgcnn.yml"
 
     # CGCNN 10-member ensemble with 5-fold training set perturbations
-    cgcnn_p = "cgcnn/cgcnn+p.yml"
+    cgcnn_p = auto(), "cgcnn/cgcnn+p.yml"
 
     # DeepMD-DPA3 models
-    dpa3_v1_mptrj = "deepmd/dpa3-v1-mptrj.yml"
-    dpa3_v1_openlam = "deepmd/dpa3-v1-openlam.yml"
+    dpa3_v1_mptrj = auto(), "deepmd/dpa3-v1-mptrj.yml"
+    dpa3_v1_openlam = auto(), "deepmd/dpa3-v1-openlam.yml"
 
     # original M3GNet straight from publication, not re-trained
-    m3gnet = "m3gnet/m3gnet.yml"
-    # m3gnet_direct = None, "M3GNet DIRECT"
-    # m3gnet_ms = None, "M3GNet MS"
+    m3gnet = auto(), "m3gnet/m3gnet.yml"
+    # m3gnet_direct = auto(), None, "M3GNet DIRECT"
+    # m3gnet_ms = auto(), None, "M3GNet MS"
 
     # MACE-MP-0 medium as published in https://arxiv.org/abs/2401.00096 trained on MPtrj
-    mace_mp_0 = "mace/mace-mp-0.yml"
-    mace_mpa_0 = "mace/mace-mpa-0.yml"  # trained on MPtrj and Alexandria
+    mace_mp_0 = auto(), "mace/mace-mp-0.yml"
+    mace_mpa_0 = auto(), "mace/mace-mpa-0.yml"  # trained on MPtrj and Alexandria
 
     # original MEGNet straight from publication, not re-trained
-    megnet = "megnet/megnet.yml"
+    megnet = auto(), "megnet/megnet.yml"
 
     # SevenNet trained on MPtrj
-    sevennet_0 = "sevennet/sevennet-0.yml"
-    sevennet_l3i5 = "sevennet/sevennet-l3i5.yml"
+    sevennet_0 = auto(), "sevennet/sevennet-0.yml"
+    sevennet_l3i5 = auto(), "sevennet/sevennet-l3i5.yml"
 
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest
-    voronoi_rf = "voronoi_rf/voronoi-rf.yml"
+    voronoi_rf = auto(), "voronoi_rf/voronoi-rf.yml"
 
     # wrenformer 10-member ensemble
-    wrenformer = "wrenformer/wrenformer.yml"
+    wrenformer = auto(), "wrenformer/wrenformer.yml"
 
-    # --- Proprietary Models
     # GNoME
-    gnome = "gnome/gnome.yml"
+    gnome = auto(), "gnome/gnome.yml"
 
     # MatterSim
-    mattersim_v1_5m = "mattersim/mattersim-v1-5m.yml"
+    mattersim_v1_5m = auto(), "mattersim/mattersim-v1-5m.yml"
 
     # ORB
-    orb = "orb/orb.yml"
-    orb_mptrj = "orb/orb-mptrj.yml"
+    orb = auto(), "orb/orb.yml"
+    orb_mptrj = auto(), "orb/orb-mptrj.yml"
 
     # fairchem
-    eqv2_s_dens = "eqV2/eqV2-s-dens-mp.yml"
-    eqv2_m = "eqV2/eqV2-m-omat-mp-salex.yml"
+    eqv2_s_dens = auto(), "eqV2/eqV2-s-dens-mp.yml"
+    eqv2_m = auto(), "eqV2/eqV2-m-omat-mp-salex.yml"
 
-    grace_2l_mptrj = "grace/grace-2L-mptrj.yml"
-    grace_2l_oam = "grace/grace-2L-oam.yml"
-    grace_1l_oam = "grace/grace-1L-oam.yml"
+    grace_2l_mptrj = auto(), "grace/grace-2L-mptrj.yml"
+    grace_2l_oam = auto(), "grace/grace-2L-oam.yml"
+    grace_1l_oam = auto(), "grace/grace-1L-oam.yml"
 
     # --- Model Combos
     # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
@@ -579,7 +601,7 @@ def load_df_wbm_with_preds(
     models: Sequence[str | Model] = (),
     pbar: bool = True,
     id_col: str = Key.mat_id,
-    subset: pd.Index | Sequence[str] | Literal[TestSubset.uniq_protos] | None = None,
+    subset: pd.Index | Sequence[str] | TestSubset | None = None,
     max_error_threshold: float | None = 5.0,
     **kwargs: Any,
 ) -> pd.DataFrame:
@@ -614,8 +636,8 @@ def load_df_wbm_with_preds(
         models = tuple(valid_models)
     inv_label_map = {key.label: key.name for key in Model}
     # map pretty model names back to Model enum keys
-    models = {inv_label_map.get(model, model) for model in models}
-    if unknown_models := ", ".join(models - valid_models):
+    models = [inv_label_map.get(model, model) for model in models]
+    if unknown_models := ", ".join(set(models) - valid_models):
         raise ValueError(f"{unknown_models=}, expected subset of {valid_models}")
 
     model_name: str = ""

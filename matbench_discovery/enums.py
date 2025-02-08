@@ -5,6 +5,8 @@ from typing import Self
 
 import pymatviz as pmv
 
+eV_per_atom = pmv.enums.eV_per_atom  # noqa: N816
+
 
 class LabelEnum(StrEnum):
     """StrEnum with optional label and description attributes plus dict() methods."""
@@ -29,11 +31,6 @@ class LabelEnum(StrEnum):
         return self.__dict__["desc"]
 
 
-eV_per_atom = pmv.html_tag(  # noqa: N816
-    "(eV/atom)", tag="span", style="font-size: 0.8em; font-weight: lighter;"
-)
-
-
 @unique
 class MbdKey(LabelEnum):
     """Keys used to access dataframes columns."""
@@ -54,7 +51,10 @@ class MbdKey(LabelEnum):
     each_err_models = "each_err_models", "E<sub>hull dist</sub> mean error of models"
     model_std_each = "each_std_models", "Std. dev. over models"
     openness = "openness", "Openness"
-    e_above_hull_error = f"Error in E<sub>hull dist</sub> {eV_per_atom}"
+    e_above_hull_error = (
+        "e_above_hull_error",
+        f"Error in E<sub>hull dist</sub> {eV_per_atom}",
+    )
 
     init_wyckoff_spglib = (
         "wyckoff_spglib_initial_structure",
@@ -74,9 +74,9 @@ class MbdKey(LabelEnum):
     missing_preds = "missing_preds", "Missing predictions"
     missing_percent = "missing_percent", "Missing predictions (percent)"
 
-    aflow_prototype = "aflow_prototype"
-    canonical_proto = "canonical_proto"
-    uniq_proto = "unique_prototype"
+    aflow_prototype = "aflow_prototype", "Aflow prototype"
+    canonical_proto = "canonical_proto", "Canonical prototype"
+    uniq_proto = "unique_prototype", "Unique prototype"
 
     # Thermal conductivity related keys
     kappa_tot_rta = (
