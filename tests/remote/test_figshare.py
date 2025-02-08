@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-import matbench_discovery.figshare as figshare
+import matbench_discovery.remote.figshare as figshare
 
 
 @pytest.mark.parametrize(
@@ -96,7 +96,7 @@ def test_create_article_variants(
 ) -> None:
     """Test article creation with different metadata combinations."""
     with patch(
-        "matbench_discovery.figshare.make_request",
+        "matbench_discovery.remote.figshare.make_request",
         side_effect=[{"location": "loc"}, {"id": article_id}],
     ):
         assert figshare.create_article(metadata, verbose=True) == article_id
@@ -194,9 +194,10 @@ def test_upload_file_to_figshare_variants(
         return mock_responses[method]
 
     with (
-        patch("matbench_discovery.figshare.ROOT", str(tmp_path)),
+        patch("matbench_discovery.remote.figshare.ROOT", str(tmp_path)),
         patch(
-            "matbench_discovery.figshare.make_request", side_effect=mock_make_request
+            "matbench_discovery.remote.figshare.make_request",
+            side_effect=mock_make_request,
         ),
     ):
         assert figshare.upload_file(12345, str(test_file), file_name=file_name) == 67890
@@ -211,7 +212,7 @@ DUMMY_FILES = [
 @pytest.mark.parametrize("files", [[], DUMMY_FILES])  # Empty and non-empty
 def test_list_article_files(files: list[dict[str, Any]]) -> None:
     """Test list_article_files with various file configurations."""
-    with patch("matbench_discovery.figshare.make_request", return_value=files):
+    with patch("matbench_discovery.remote.figshare.make_request", return_value=files):
         assert figshare.list_article_files(12345) == files
 
 
@@ -273,7 +274,7 @@ def test_get_existing_files(
     files: list[dict[str, Any]], expected: dict[str, dict[str, Any]]
 ) -> None:
     """Test get_existing_files with various file configurations."""
-    with patch("matbench_discovery.figshare.make_request", return_value=files):
+    with patch("matbench_discovery.remote.figshare.make_request", return_value=files):
         assert figshare.get_existing_files(12345) == expected
 
 

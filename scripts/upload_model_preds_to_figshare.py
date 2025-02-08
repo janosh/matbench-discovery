@@ -15,7 +15,7 @@ from typing import Any, Final
 import yaml
 from tqdm import tqdm
 
-import matbench_discovery.figshare as figshare
+import matbench_discovery.remote.figshare as figshare
 from matbench_discovery import PKG_DIR, ROOT
 from matbench_discovery.data import round_trip_yaml
 from matbench_discovery.enums import Model
