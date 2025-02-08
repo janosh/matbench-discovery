@@ -13,6 +13,7 @@ import pymatviz as pmv
 import yaml
 
 from matbench_discovery import DEFAULT_CACHE_DIR, PKG_DIR, ROOT
+from matbench_discovery.remote.fetch import download_file, maybe_auto_download_file
 
 eV_per_atom = pmv.enums.eV_per_atom  # noqa: N816
 T = TypeVar("T", bound="Files")
@@ -358,8 +359,6 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     @property
     def discovery_path(self) -> str:
         """Prediction file path associated with the model."""
-        from matbench_discovery.data import maybe_auto_download_file
-
         rel_path = self.metrics.get("discovery", {}).get("pred_file")
         file_url = self.metrics.get("discovery", {}).get("pred_file_url")
         if not rel_path:
@@ -375,8 +374,6 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         """File path associated with the file URL if it exists, otherwise
         download the file first, then return the path.
         """
-        from matbench_discovery.data import maybe_auto_download_file
-
         geo_opt_metrics = self.metrics.get("geo_opt", {})
         if geo_opt_metrics in ("not available", "not applicable"):
             return None
@@ -395,8 +392,6 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         """File path associated with the file URL if it exists, otherwise
         download the file first, then return the path.
         """
-        from matbench_discovery.data import maybe_auto_download_file
-
         phonons_metrics = self.metrics.get("phonons", {})
         if phonons_metrics in ("not available", "not applicable"):
             return None
@@ -495,8 +490,6 @@ class DataFiles(Files):
         """File path associated with the file URL if it exists, otherwise
         download the file first, then return the path.
         """
-        from matbench_discovery.data import download_file
-
         key, rel_path = self.name, self.rel_path
 
         if rel_path not in self.yaml[key]["path"]:

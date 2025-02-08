@@ -9,7 +9,6 @@ import pytest
 import requests
 
 from matbench_discovery import DATA_DIR
-from matbench_discovery.data import maybe_auto_download_file
 from matbench_discovery.enums import (
     DataFiles,
     Files,
@@ -20,6 +19,7 @@ from matbench_discovery.enums import (
     Task,
     TestSubset,
 )
+from matbench_discovery.remote.fetch import maybe_auto_download_file
 
 
 def test_mbd_key() -> None:
