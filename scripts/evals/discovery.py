@@ -11,7 +11,6 @@ import itertools
 import os
 import subprocess
 import sys
-from collections.abc import Sequence
 from datetime import date
 from glob import glob
 
@@ -24,10 +23,10 @@ from pymatviz.io import df_to_pdf
 from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
 
-import matbench_discovery.metrics.discovery as disc_metrics
 from matbench_discovery import DATA_DIR, PDF_FIGS, PKG_DIR, ROOT
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import DataFiles, MbdKey, Model, Open, Targets
+from matbench_discovery.metrics import discovery
 from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 
 try:
@@ -47,68 +46,16 @@ if __name__ == "__main__":
         Model[model] for model in sys.argv[1:] if hasattr(Model, model)
     ] or Model
     metric_dfs = (
-        preds.df_metrics,
-        preds.df_metrics_10k,
-        preds.df_metrics_uniq_protos,
+        discovery.df_metrics,
+        discovery.df_metrics_10k,
+        discovery.df_metrics_uniq_protos,
         preds.df_preds,
     )
     for model in models_to_write:
-        disc_metrics.write_discovery_metrics_to_yaml(model, *metric_dfs)
+        discovery.write_discovery_metrics_to_yaml(model, *metric_dfs)
 
     if not IS_IPYTHON:
         raise SystemExit(0)
-
-
-# %% Create discovery metrics dataframes from MODEL_METADATA
-def get_metrics_df(nested_keys: Sequence[str]) -> pd.DataFrame:
-    """Extract metrics from MODEL_METADATA into a DataFrame.
-    Returns a DataFrame with models as rows and metrics as columns. To calculate and
-    write discovery metrics into the model YAML files in the first place, run
-    python matbench_discovery/preds/discovery.py model1 model2 ...
-    where the model names are Model enum values."""
-    out_dict = {}
-    for model_name, metadata in MODEL_METADATA.items():
-        metrics = None
-        try:
-            combined_metrics: dict[str, float] = {}
-            for nested_key in nested_keys:
-                metrics = metadata.get("metrics", {})
-                for sub_key in nested_key.split("."):
-                    metrics = metrics.get(sub_key, {})
-                if not isinstance(metrics, dict):
-                    break
-                combined_metrics |= metrics
-            if combined_metrics:
-                out_dict[model_name] = combined_metrics
-
-        except Exception as exc:
-            exc.add_note(f"{model_name=} with {metrics=}")
-            raise
-
-    # Return DataFrame with models as rows instead of columns
-    return pd.DataFrame.from_dict(out_dict, orient="index")
-
-
-# Create DataFrames with models as rows
-df_metrics = get_metrics_df(["discovery.full_test_set"]).sort_values(
-    by=Key.f1.upper(), ascending=False
-)
-df_metrics_10k = get_metrics_df(["discovery.most_stable_10k"]).sort_values(
-    by=Key.f1.upper(), ascending=False
-)
-df_metrics_uniq_protos = get_metrics_df(
-    ["discovery.unique_prototypes", "phonons"]
-).sort_values(by=Key.f1.upper(), ascending=False)
-df_metrics_uniq_protos = df_metrics_uniq_protos.drop(
-    columns=[MbdKey.missing_preds, MbdKey.missing_percent]
-)
-
-for df, title in (
-    (df_metrics, "Metrics for Full Test Set"),
-    (df_metrics_10k, "Metrics for 10k Most Stable Predictions"),
-    (df_metrics_uniq_protos, "Metrics for unique non-MP prototypes"),
-):
-    df.attrs["title"] = title
 
 
 # %%
@@ -128,7 +75,7 @@ with open(f"{DATA_DIR}/training-sets.yml") as file:
     TRAINING_SETS = yaml.safe_load(file)
 
 # Add model metadata to df_metrics(_10k, _uniq_protos)
-for model in df_metrics_uniq_protos.index:
+for model in discovery.df_metrics_uniq_protos.index:
     if model == "Dummy":
         continue
     model_name = name_map.get(model, model)
@@ -139,7 +86,7 @@ for model in df_metrics_uniq_protos.index:
         date_added = model_metadata.get("date_added", "")
         # long format date for tooltip, e.g. Monday, 28 November 2022
         title = f"{date.fromisoformat(date_added):%A, %d %B %Y}"
-        df_metrics_uniq_protos.loc[model, date_added_col] = (
+        discovery.df_metrics_uniq_protos.loc[model, date_added_col] = (
             f"<span {title=}>{date_added}</span>"
         )
 
@@ -148,7 +95,7 @@ for model in df_metrics_uniq_protos.index:
         tar_label = model_targets.label.replace(
             "<sub>", "<sub style='font-size: 0.8em;'>"
         )
-        df_metrics_uniq_protos.loc[model, Key.targets.label] = (
+        discovery.df_metrics_uniq_protos.loc[model, Key.targets.label] = (
             f'<span title="{model_targets.description}" '
             f'data-targets="{model_metadata[Key.targets]}">{tar_label}</span>'
         )
@@ -162,7 +109,7 @@ for model in df_metrics_uniq_protos.index:
             "data-model-key": model_key,
         }
         html_attr_str = " ".join(f'{k}="{v}"' for k, v in attrs.items() if v)
-        df_metrics_uniq_protos.loc[model, model_name_col] = (
+        discovery.df_metrics_uniq_protos.loc[model, model_name_col] = (
             f"<span {html_attr_str}>{model}</span>"
         )
 
@@ -234,7 +181,9 @@ for model in df_metrics_uniq_protos.index:
                     f" ({dataset_str})</span>"
                 )
 
-            df_metrics_uniq_protos.loc[model, Key.train_set.label] = train_size_str
+            discovery.df_metrics_uniq_protos.loc[model, Key.train_set.label] = (
+                train_size_str
+            )
         elif model == "Dummy":
             continue
         else:
@@ -251,7 +200,7 @@ for model in df_metrics_uniq_protos.index:
 
         title = f"{model_params:,} trainable model parameters"
         formatted_params = si_fmt(model_params)
-        df_metrics_uniq_protos.loc[
+        discovery.df_metrics_uniq_protos.loc[
             model, Key.model_params.label.replace("eter", "")
         ] = (
             f'<span {title=} data-sort-value="{model_params}">{formatted_params}'
@@ -260,7 +209,7 @@ for model in df_metrics_uniq_protos.index:
 
         for key in (MbdKey.openness, Key.train_task, Key.test_task):
             default = {MbdKey.openness: Open.OSOD}.get(key, pd.NA)
-            df_metrics_uniq_protos.loc[model, key.label] = model_metadata.get(
+            discovery.df_metrics_uniq_protos.loc[model, key.label] = model_metadata.get(
                 key, default
             )
     except Exception as exc:
@@ -268,19 +217,23 @@ for model in df_metrics_uniq_protos.index:
         raise
 
 # assign this col to all tables
-for df in (df_metrics, df_metrics_10k, df_metrics_uniq_protos):
-    df[model_name_col] = df_metrics_uniq_protos[model_name_col]
+for df in (
+    discovery.df_metrics,
+    discovery.df_metrics_10k,
+    discovery.df_metrics_uniq_protos,
+):
+    df[model_name_col] = discovery.df_metrics_uniq_protos[model_name_col]
 
 
-# %% add dummy classifier results to df_metrics(_10k, _uniq_protos)
+# %% add dummy classifier results to discovery.df_metrics(_10k, _uniq_protos)
 df_mp = pd.read_csv(DataFiles.mp_energies.path, index_col=0)
 
 for df_in, df_out, col in (
-    (df_wbm, df_metrics, "Dummy"),
+    (df_wbm, discovery.df_metrics, "Dummy"),
     # "Dummy" for df_metrics_10k is still for the full test set, not dummy metrics on
     # only first 10k most stable predictions
-    (df_wbm, df_metrics_10k, "Dummy"),
-    (df_wbm.query(MbdKey.uniq_proto), df_metrics_uniq_protos, "Dummy"),
+    (df_wbm, discovery.df_metrics_10k, "Dummy"),
+    (df_wbm.query(MbdKey.uniq_proto), discovery.df_metrics_uniq_protos, "Dummy"),
 ):
     dummy_clf = DummyClassifier(strategy="stratified", random_state=0)
     dummy_clf.fit(
@@ -289,7 +242,7 @@ for df_in, df_out, col in (
     dummy_clf_preds = dummy_clf.predict(np.zeros(len(df_in)))
 
     each_true = df_in[MbdKey.each_true]
-    dummy_metrics = disc_metrics.stable_metrics(
+    dummy_metrics = discovery.stable_metrics(
         each_true, np.array([1, -1])[dummy_clf_preds.astype(int)], fillna=True
     )
 
@@ -333,9 +286,9 @@ show_cols = [
 
 for (label, df_met), show_non_compliant in itertools.product(
     (
-        ("", df_metrics),
-        ("-first-10k", df_metrics_10k),
-        ("-uniq-protos", df_metrics_uniq_protos),
+        ("", discovery.df_metrics),
+        ("-first-10k", discovery.df_metrics_10k),
+        ("-uniq-protos", discovery.df_metrics_uniq_protos),
     ),
     (True, False),
 ):

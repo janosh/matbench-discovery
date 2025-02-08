@@ -12,29 +12,22 @@ from pymatviz.enums import Key
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.cli import cli_args
+from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey, TestSubset
+from matbench_discovery.metrics.discovery import dfs_metrics
 from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist
-from matbench_discovery.preds.discovery import (
-    df_metrics,
-    df_metrics_uniq_protos,
-    df_preds,
-)
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-12-01"
 
-models_to_plot = cli_args.models
-test_subset = globals().get("test_subset", TestSubset.uniq_protos)
-
-if test_subset == TestSubset.uniq_protos:
-    df_preds = df_preds.query(MbdKey.uniq_proto)
-    df_metrics = df_metrics_uniq_protos
 models_to_plot = [
     model
-    for model in models_to_plot
+    for model in cli_args.models
     if cli_args.show_non_compliant or model_is_compliant(MODEL_METADATA[model.label])
 ]
+test_subset = globals().get("test_subset", TestSubset.uniq_protos)
+df_preds = load_df_wbm_with_preds(models=models_to_plot, subset=test_subset)
 
 
 # %%
@@ -85,7 +78,9 @@ for anno in fig.layout.annotations:
     model_name = anno.text = anno.text.split("=", 1).pop()
     if model_name not in [m.label for m in models_to_plot] or not show_metrics:
         continue
-    F1, FPR, FNR, DAF = (df_metrics[model_name][x] for x in "F1 FPR FNR DAF".split())
+    F1, FPR, FNR, DAF = (
+        dfs_metrics[test_subset][model_name][x] for x in "F1 FPR FNR DAF".split()
+    )
     anno.text = f"{model_name} · {F1=:.2f} · {FPR=:.2f} · {FNR=:.2f} · {DAF=:.2f}"
 
 # set the figure size based on the number of rows and columns

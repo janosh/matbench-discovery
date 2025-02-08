@@ -6,12 +6,14 @@ from collections.abc import Sequence
 
 import numpy as np
 import pandas as pd
+from pymatviz.enums import Key
 from ruamel.yaml.comments import CommentedMap
 from sklearn.metrics import r2_score
 
 from matbench_discovery import STABILITY_THRESHOLD
 from matbench_discovery.data import df_wbm, round_trip_yaml
 from matbench_discovery.enums import MbdKey, Model, TestSubset
+from matbench_discovery.metrics import metrics_df_from_yaml
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-01"
@@ -233,3 +235,38 @@ def write_discovery_metrics_to_yaml(
     # Write back to file
     with open(model.yaml_path, mode="w") as file:
         round_trip_yaml.dump(model_metadata, file)
+
+
+# Create DataFrames with models as rows
+df_metrics = (
+    metrics_df_from_yaml(["discovery.full_test_set"])
+    .sort_values(by=Key.f1.upper(), ascending=False)
+    .T
+)
+df_metrics_10k = (
+    metrics_df_from_yaml(["discovery.most_stable_10k"])
+    .sort_values(by=Key.f1.upper(), ascending=False)
+    .T
+)
+df_metrics_uniq_protos = (
+    metrics_df_from_yaml(["discovery.unique_prototypes", "phonons"])
+    .sort_values(by=Key.f1.upper(), ascending=False)
+    .T
+)
+df_metrics_uniq_protos = df_metrics_uniq_protos.drop(
+    index=[MbdKey.missing_preds, MbdKey.missing_percent]
+)
+
+for df, title in (
+    (df_metrics, "Metrics for Full Test Set"),
+    (df_metrics_10k, "Metrics for 10k Most Stable Predictions"),
+    (df_metrics_uniq_protos, "Metrics for unique non-MP prototypes"),
+):
+    df.attrs["title"] = title
+
+
+dfs_metrics: dict[TestSubset, pd.DataFrame] = {
+    TestSubset.full_test_set: df_metrics,
+    TestSubset.uniq_protos: df_metrics_uniq_protos,
+    TestSubset.most_stable_10k: df_metrics_10k,
+}

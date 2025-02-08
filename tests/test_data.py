@@ -63,6 +63,9 @@ def test_df_wbm() -> None:
     assert df_wbm.index.name == Key.mat_id
     assert set(df_wbm) > {Key.formula, Key.mat_id, Key.bandgap_pbe}
 
+    for col in (MbdKey.e_form_dft, MbdKey.each_true):
+        assert col in df_wbm, f"{col=} not in {list(df_wbm)=}"
+
 
 @pytest.mark.parametrize("pattern", ["*df.csv", "*df.json"])
 def test_glob_to_df(
