@@ -26,7 +26,7 @@ from pymatgen.core import Structure
 from pymatviz.enums import Key
 
 from matbench_discovery import ROOT
-from matbench_discovery.data import DataFiles, Model
+from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.metrics import geo_opt
 from matbench_discovery.models import MODEL_METADATA
 from matbench_discovery.structure import analyze_symmetry, pred_vs_ref_struct_symmetry

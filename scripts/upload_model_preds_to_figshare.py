@@ -17,7 +17,8 @@ from tqdm import tqdm
 
 import matbench_discovery.figshare as figshare
 from matbench_discovery import PKG_DIR, ROOT
-from matbench_discovery.data import Model, round_trip_yaml
+from matbench_discovery.data import round_trip_yaml
+from matbench_discovery.enums import Model
 from matbench_discovery.models import MODEL_METADATA
 
 with open(f"{PKG_DIR}/modeling-tasks.yml") as file:

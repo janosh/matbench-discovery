@@ -25,7 +25,7 @@ from tqdm import tqdm
 
 import matbench_discovery
 from matbench_discovery import today
-from matbench_discovery.data import DataFiles
+from matbench_discovery.enums import DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
 

@@ -14,7 +14,7 @@ import moyopy
 import moyopy.interface
 import pymatviz as pmv
 
-from matbench_discovery.data import DataFiles
+from matbench_discovery.enums import DataFiles
 
 __date__ = "2025-01-14"
 

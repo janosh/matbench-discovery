@@ -30,25 +30,25 @@ scripts -= set(glob(f"{module_dir}/single_model_*.py"))  # ignore single-model s
 exceptions: dict[str, Exception] = {}  # Collect exceptions here
 
 for show_non_compliant in (False, True):
-    for file in (pbar := tqdm(scripts)):
-        pbar.set_postfix_str(file)
+    for script_path in (pbar := tqdm(scripts)):
+        pbar.set_postfix_str(script_path)
         init_globals = {"show_non_compliant": show_non_compliant}
         try:
-            if file.endswith("tiles_energy_parity.py"):
+            if script_path.endswith("tiles_energy_parity.py"):
                 for which_energy in ("e-form", "each"):
                     runpy.run_path(
-                        file,
+                        script_path,
                         init_globals=init_globals | {"which_energy": which_energy},
                     )
-            elif file.endswith("cumulative_metrics.py"):
+            elif script_path.endswith("cumulative_metrics.py"):
                 for metrics in (("MAE",), ("Precision", "Recall")):
                     runpy.run_path(
-                        file, init_globals=init_globals | {"metrics": metrics}
+                        script_path, init_globals=init_globals | {"metrics": metrics}
                     )
             else:
-                runpy.run_path(file, init_globals=init_globals)
+                runpy.run_path(script_path, init_globals=init_globals)
         except Exception as exc:
-            exceptions[file] = exc
+            exceptions[script_path] = exc
 
 # Raise a combined exception if any errors were collected
 if exceptions:

@@ -21,7 +21,7 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, PDF_FIGS, WBM_DIR
-from matbench_discovery.data import DataFiles
+from matbench_discovery.enums import DataFiles
 
 __author__ = "Philipp Benner, Janosh Riebesell"
 __date__ = "2023-11-28"

@@ -14,8 +14,8 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from matbench_discovery import CHECKPOINT_DIR, WANDB_PATH, WBM_DIR, today
-from matbench_discovery.data import DataFiles, df_wbm
-from matbench_discovery.enums import MbdKey, Task
+from matbench_discovery.data import df_wbm
+from matbench_discovery.enums import DataFiles, MbdKey, Task
 from matbench_discovery.hpc import slurm_submit
 from matbench_discovery.plots import wandb_scatter
 

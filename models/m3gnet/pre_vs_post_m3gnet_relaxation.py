@@ -13,7 +13,7 @@ from pymatviz.powerups import add_identity_line
 from sklearn.metrics import r2_score
 
 from matbench_discovery import ROOT, SITE_FIGS
-from matbench_discovery.data import DataFiles
+from matbench_discovery.enums import DataFiles
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-06-18"

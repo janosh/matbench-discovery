@@ -14,8 +14,9 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery.data import DataFiles, df_wbm
+from matbench_discovery.data import df_wbm
 from matbench_discovery.energy import get_e_form_per_atom, mp_elemental_ref_energies
+from matbench_discovery.enums import DataFiles
 
 e_form_dp_col = "e_form_per_atom_dp"
 results = "./results"

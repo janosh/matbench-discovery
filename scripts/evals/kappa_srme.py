@@ -8,7 +8,7 @@ import os
 import pandas as pd
 from pymatviz.enums import Key
 
-from matbench_discovery.data import DataFiles, Model
+from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.metrics import phonons
 
 for model in Model:

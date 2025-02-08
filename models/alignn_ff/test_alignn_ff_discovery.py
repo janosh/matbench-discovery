@@ -18,8 +18,8 @@ from sklearn.metrics import r2_score
 from tqdm import tqdm
 
 from matbench_discovery import today
-from matbench_discovery.data import DataFiles, df_wbm
-from matbench_discovery.enums import MbdKey, Task
+from matbench_discovery.data import df_wbm
+from matbench_discovery.enums import DataFiles, MbdKey, Task
 from matbench_discovery.plots import wandb_scatter
 
 __author__ = "Philipp Benner, Janosh Riebesell"

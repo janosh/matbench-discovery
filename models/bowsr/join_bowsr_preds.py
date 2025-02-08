@@ -7,8 +7,7 @@ import pymatviz
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery.data import DataFiles, Model
-from matbench_discovery.enums import Task
+from matbench_discovery.enums import DataFiles, Model, Task
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-09-22"

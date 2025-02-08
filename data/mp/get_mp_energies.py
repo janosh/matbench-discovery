@@ -16,8 +16,7 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import STABILITY_THRESHOLD, today
-from matbench_discovery.data import DataFiles
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import DataFiles, MbdKey
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-01-10"

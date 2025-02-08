@@ -16,9 +16,9 @@ from pymatviz.utils import si_fmt_int
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots
-from matbench_discovery.data import DataFiles, df_wbm
+from matbench_discovery.data import df_wbm
 from matbench_discovery.energy import mp_elem_ref_entries
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import DataFiles, MbdKey
 from matbench_discovery.preds.discovery import df_each_err
 
 __author__ = "Janosh Riebesell"

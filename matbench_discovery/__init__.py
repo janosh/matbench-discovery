@@ -6,9 +6,7 @@ from datetime import UTC, datetime
 
 import plotly.express as px
 import plotly.io as pio
-import pymatviz as pmv  # needed for pymatviz_dark template
-
-from matbench_discovery.enums import MbdKey
+import pymatviz as pmv  # needed for pymatviz_dark template  # noqa: F401
 
 PKG_NAME = "matbench-discovery"
 __version__ = "1.3.1"
@@ -22,6 +20,15 @@ SITE_FIGS = f"{ROOT}/site/src/figs"  # directory for interactive figures
 SITE_LIB = f"{ROOT}/site/src/lib"
 SCRIPTS = f"{ROOT}/scripts"  # model and date analysis scripts
 PDF_FIGS = f"{ROOT}/paper/figs"  # directory for light-themed PDF figures
+
+# directory to cache downloaded data files
+DEFAULT_CACHE_DIR = os.getenv(
+    "MBD_CACHE_DIR",
+    DATA_DIR  # use DATA_DIR to locally cache data files if full repo was cloned
+    if os.path.isdir(DATA_DIR)
+    # use ~/.cache if matbench-discovery was installed from PyPI
+    else os.path.expanduser("~/.cache/matbench-discovery"),
+)
 
 for directory in (SITE_FIGS, SITE_LIB, PDF_FIGS):
     os.makedirs(directory, exist_ok=True)
@@ -59,8 +66,6 @@ for msg, category, module in {
 
 
 # --- start global plot settings
-px.defaults.labels |= {key.name: key.label for key in (*MbdKey, *pmv.enums.Key)}
-
 global_layout = dict(
     paper_bgcolor="rgba(0,0,0,0)",
     font_size=13,

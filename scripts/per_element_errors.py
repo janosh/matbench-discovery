@@ -14,42 +14,35 @@ from pymatviz.utils import bin_df_cols, df_ptable, si_fmt
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS
-from matbench_discovery.data import df_wbm
+from matbench_discovery.cli import cli_args
+from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey, TestSubset
-from matbench_discovery.preds.discovery import (
-    Model,
-    df_each_err,
-    df_metrics,
-    df_metrics_uniq_protos,
-    df_preds,
-)
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-15"
 
 test_set_std_col = "Test set standard deviation"
-elem_col = "Element"
-size_col = "group"
+elem_col, size_col = "Element", "group"
 
 
 # %%
 test_subset = globals().get("test_subset", TestSubset.uniq_protos)
+models_to_plot = cli_args.models
 
-if test_subset == TestSubset.uniq_protos:
-    df_preds = df_preds.query(MbdKey.uniq_proto)
-    df_each_err = df_each_err.loc[df_preds.index]
-    df_metrics = df_metrics_uniq_protos
-    df_wbm = df_wbm.loc[df_preds.index]
+# Load predictions for specified models
+df_preds = load_df_wbm_with_preds(
+    models=models_to_plot, subset=cli_args.test_subset
+).round(3)
 
-
-for df in (df_each_err, df_preds):
-    df[MbdKey.each_err_models] = df_each_err.abs().mean(axis=1)
-
+# Calculate errors for each model
+df_each_err = pd.DataFrame(index=df_preds.index)
+for model in models_to_plot:
+    df_each_err[model.label] = df_preds[model.label] - df_preds[MbdKey.e_form_dft]
 
 # project average model error onto periodic table
 df_comp = pd.DataFrame(
-    Composition(comp).as_dict() for comp in df_wbm[Key.formula]
-).set_index(df_wbm.index)
+    Composition(comp).as_dict() for comp in df_preds[Key.formula]
+).set_index(df_preds.index)
 
 
 # %% compute number of samples per element in training set
@@ -63,7 +56,7 @@ df_elem_err.index.name = "symbol"
 
 # compute std dev of DFT hull dist for each element in test set
 df_elem_err[test_set_std_col] = (
-    df_comp.where(pd.isna, 1) * df_wbm[MbdKey.each_true].to_numpy()[:, None]
+    df_comp.where(pd.isna, 1) * df_preds[MbdKey.each_true].to_numpy()[:, None]
 ).std()
 
 
@@ -71,14 +64,16 @@ df_elem_err[test_set_std_col] = (
 normalized = True
 cs_range = (0, 0.5)  # same range for all plots
 # cs_range = (None, None)  # different range for each plot
-for model in (*df_metrics, MbdKey.each_err_models):
-    df_elem_err[model] = (df_comp * df_each_err[model].abs().to_numpy()[:, None]).mean()
+for model in models_to_plot:
+    df_elem_err[model.label] = (
+        df_comp * df_each_err[model.label].abs().to_numpy()[:, None]
+    ).mean()
     # don't change series values in place, would change the df
-    per_elem_err = df_elem_err[model].copy(deep=True)
-    per_elem_err.name = f"{model} (eV/atom)"
+    per_elem_err = df_elem_err[model.label].copy(deep=True)
+    per_elem_err.name = f"{model.label} (eV/atom)"
     if normalized:
         per_elem_err /= df_elem_err[test_set_std_col]
-        per_elem_err.name = f"{model} (normalized by test set std)"
+        per_elem_err.name = f"{model.label} (normalized by test set std)"
     fig = pmv.ptable_heatmap_plotly(
         per_elem_err, fmt=".2f", colorscale="Inferno", cscale_range=cs_range
     )
@@ -87,9 +82,9 @@ for model in (*df_metrics, MbdKey.each_err_models):
 
 # %%
 expected_cols = {
-    *"ALIGNN, BOWSR, CGCNN, CGCNN+P, CHGNet, M3GNet, MEGNet, "
-    f"{train_count_col}, {MbdKey.each_err_models}, {test_set_std_col}, Voronoi RF, "
-    "Wrenformer".split(", ")
+    *[model.label for model in models_to_plot],
+    train_count_col,
+    test_set_std_col,
 }
 if missing_cols := expected_cols - {*df_elem_err}:
     raise ValueError(f"{missing_cols=} not in {df_elem_err.columns=}")
@@ -120,7 +115,7 @@ df_struct_counts = df_struct_counts[df_struct_counts.sum(axis=1) > min_count]
 normalized = False
 if normalized:
     df_struct_counts["MP"] /= len(df_preds) / 100
-    df_struct_counts["WBM"] /= len(df_wbm) / 100
+    df_struct_counts["WBM"] /= len(df_preds) / 100
 y_col = "percent" if normalized else "count"
 
 df_melt = df_struct_counts.reset_index().melt(
@@ -175,24 +170,22 @@ fig = df_melt.plot.scatter(
     hover_data={val_col: ":.2f", train_count_col: ":,.0f"},
 )
 for trace in fig.data:
-    if trace.name in ("CHGNet", "Voronoi RF", MbdKey.each_err_models):
-        continue
     trace.visible = "legendonly"
 fig.update_traces(textposition="top center")  # place text above scatter points
 fig.layout.title.update(xanchor="center", x=0.5)
 fig.layout.legend.update(x=1, y=1, xanchor="right", yanchor="top", title="")
 fig.show()
 
-pmv.save_fig(fig, f"{SITE_FIGS}/element-prevalence-vs-error.svelte")
-pmv.save_fig(fig, f"{PDF_FIGS}/element-prevalence-vs-error.pdf")
+# pmv.save_fig(fig, f"{SITE_FIGS}/element-prevalence-vs-error.svelte")
+# pmv.save_fig(fig, f"{PDF_FIGS}/element-prevalence-vs-error.pdf")
 
 
 # %% plot EACH errors against least prevalent element in structure (by occurrence in
 # MP training set). this seems to correlate more with model error
-n_examp_for_rarest_elem_col = "Examples for rarest element in structure"
-df_wbm[n_examp_for_rarest_elem_col] = [
+n_of_rarest_elem_col = "Examples for rarest element in structure"
+df_preds[n_of_rarest_elem_col] = [
     df_elem_err[train_count_col].loc[list(map(str, Composition(formula)))].min()
-    for formula in tqdm(df_wbm[Key.formula])
+    for formula in tqdm(df_preds[Key.formula])
 ]
 
 
@@ -203,19 +196,19 @@ df_melt = (
     .melt(var_name="Model", value_name=Key.each_pred, id_vars=Key.mat_id)
     .set_index(Key.mat_id)
 )
-df_melt[n_examp_for_rarest_elem_col] = df_wbm[n_examp_for_rarest_elem_col]
+df_melt[n_of_rarest_elem_col] = df_preds[n_of_rarest_elem_col]
 
 df_bin = bin_df_cols(
-    df_melt, [n_examp_for_rarest_elem_col, Key.each_pred], group_by_cols=["Model"]
+    df_melt, [n_of_rarest_elem_col, Key.each_pred], group_by_cols=["Model"]
 )
 df_bin = df_bin.reset_index().set_index(Key.mat_id)
-df_bin[Key.formula] = df_wbm[Key.formula]
+df_bin[Key.formula] = df_preds[Key.formula]
 
 
 # %%
 fig = px.scatter(
     df_bin.reset_index(),
-    x=n_examp_for_rarest_elem_col,
+    x=n_of_rarest_elem_col,
     y=Key.each_pred,
     color="Model",
     facet_col="Model",
@@ -256,7 +249,7 @@ pmv.save_fig(fig, f"{SITE_FIGS}/each-error-vs-least-prevalent-element-in-struct.
 
 
 # %% plot histogram of model errors for each element
-model = Model.mace_mp_0.label
+model = models_to_plot[0].label
 df_each_err_elems = df_comp * (df_each_err[model].to_numpy()[:, None])
 df_each_err_elems = df_each_err_elems.drop(columns="Xe")
 n_samples_per_elem = (len(df_comp) - df_each_err_elems.isna().sum()).map(

@@ -16,7 +16,8 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, WBM_DIR, today
-from matbench_discovery.data import DataFiles, ase_atoms_to_zip
+from matbench_discovery.data import ase_atoms_to_zip
+from matbench_discovery.enums import DataFiles
 
 __author__ = "Yuan Chiang, Janosh Riebesell"
 __date__ = "2023-08-10"

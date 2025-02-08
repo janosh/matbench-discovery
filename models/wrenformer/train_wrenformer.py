@@ -9,8 +9,7 @@ from aviary.train import df_train_test_split, train_wrenformer
 from pymatviz.enums import Key
 
 from matbench_discovery import WANDB_PATH, timestamp, today
-from matbench_discovery.data import DataFiles
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import DataFiles, MbdKey
 from matbench_discovery.hpc import slurm_submit
 
 __author__ = "Janosh Riebesell"

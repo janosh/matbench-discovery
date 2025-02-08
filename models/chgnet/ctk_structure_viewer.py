@@ -3,7 +3,7 @@ from crystal_toolkit.helpers.utils import hook_up_fig_with_struct_viewer
 from pymatviz.enums import Key
 from pymatviz.typing import PLOTLY
 
-from matbench_discovery.data import Model
+from matbench_discovery.enums import Model
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-07"

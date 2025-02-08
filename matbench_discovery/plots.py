@@ -19,6 +19,7 @@ from pymatviz.typing import PLOTLY
 from tqdm import tqdm
 
 from matbench_discovery import STABILITY_THRESHOLD
+from matbench_discovery.enums import Model
 from matbench_discovery.metrics.discovery import classify_stable
 
 __author__ = "Janosh Riebesell"
@@ -31,6 +32,12 @@ plotly_colors = px.colors.qualitative.Plotly
 # repeat line styles/colors as many as times as needed to match number of markers
 plotly_line_styles *= len(plotly_markers) // len(plotly_line_styles)
 plotly_colors *= len(plotly_markers) // len(plotly_colors)
+
+# used for consistent markers, line styles and colors for a given model across plots
+model_labels = [m.label for m in Model]
+model_styles = dict(
+    zip(model_labels, zip(plotly_line_styles, plotly_markers, plotly_colors))
+)
 
 
 # color list https://plotly.com/python-api-reference/generated/plotly.graph_objects.layout
@@ -437,8 +444,6 @@ def rolling_mae_vs_hull_dist(
         yanchor=y_anchor,
     )
 
-    from matbench_discovery.preds.discovery import model_styles
-
     for idx, trace in enumerate(fig.data):
         if style := model_styles.get(trace.name):
             ls, _marker, color = style
@@ -643,8 +648,6 @@ def cumulative_metrics(
             )
 
     if endpoint_markers:
-        from matbench_discovery.preds.discovery import model_styles
-
         for trace in fig.data:
             if line_style := model_styles.get(trace.name):
                 ls, _marker, color = line_style

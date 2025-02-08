@@ -20,8 +20,8 @@ from tensorpotential.calculator import grace_fm
 from tqdm import tqdm
 
 from matbench_discovery import timestamp, today
-from matbench_discovery.data import DataFiles, as_dict_handler, ase_atoms_from_zip
-from matbench_discovery.enums import Task
+from matbench_discovery.data import as_dict_handler, ase_atoms_from_zip
+from matbench_discovery.enums import DataFiles, Task
 
 __author__ = "Yury Lysogorskiy"
 __date__ = "2025-02-06"
