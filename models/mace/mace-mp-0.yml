@@ -77,7 +77,7 @@ metrics:
   geo_opt:
     pred_file: models/mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE.json.gz
     pred_file_url: https://figshare.com/ndownloader/files/52062020
-    pred_col: mace_structure
+    struct_col: mace_structure
     symprec=1e-5:
       rmsd: 0.0194 # Å
       n_sym_ops_mae: 1.8584 # unitless

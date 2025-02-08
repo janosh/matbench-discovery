@@ -103,6 +103,10 @@ def test_pred_vs_ref_struct_symmetry_with_structures(
     df_ml = pd.concat([df_ml, df_ml_sym], axis=1)
     df_dft = pd.concat([df_dft, df_dft_sym], axis=1)
 
+    # Set index name to material_id for both DataFrames
+    df_ml.index.name = Key.mat_id
+    df_dft.index.name = Key.mat_id
+
     df_ml_sym[Key.spg_num] - df_dft_sym[Key.spg_num]
 
     # must use same keys for both structures to match them in RMSD calculation

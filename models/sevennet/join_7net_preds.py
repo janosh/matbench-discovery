@@ -7,8 +7,9 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
+from matbench_discovery.data import as_dict_handler, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom, mp_elemental_ref_energies
+from matbench_discovery.enums import DataFiles
 
 e_form_7net_col = "e_form_per_atom_sevennet"
 results = "./results"

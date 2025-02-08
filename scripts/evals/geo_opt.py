@@ -21,8 +21,8 @@ from pymatviz.enums import Key
 from pymatviz.utils import si_fmt
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, today
-from matbench_discovery.data import Model, df_wbm
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.data import df_wbm
+from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.metrics import geo_opt
 from matbench_discovery.models import MODEL_METADATA
 
@@ -38,8 +38,12 @@ df_dft_analysis = pd.read_csv(dft_analysis_file, index_col=0)
 
 init_spg_col = "init_spg_num"
 dft_spg_col = "dft_spg_num"
-df_wbm[init_spg_col] = df_wbm[MbdKey.init_wyckoff].str.split("_").str[2].astype(int)
+df_wbm[init_spg_col] = (
+    df_wbm[MbdKey.init_wyckoff_spglib].str.split("_").str[2].astype(int)
+)
 df_wbm[dft_spg_col] = df_wbm[MbdKey.wyckoff_spglib].str.split("_").str[2].astype(int)
+module_dir = os.path.dirname(__file__)
+model_lvl, metric_lvl = "model", "metric"
 
 
 # %% Load all model data

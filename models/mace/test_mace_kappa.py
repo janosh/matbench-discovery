@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 
 import ase.io
 import pandas as pd
-import pymatviz
 import ray
 import torch
 from ase import Atoms
@@ -26,7 +25,7 @@ from tqdm import tqdm
 
 import matbench_discovery
 from matbench_discovery import today
-from matbench_discovery.data import DataFiles
+from matbench_discovery.enums import DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
 
@@ -64,7 +63,8 @@ def calc_kappa_for_structure(
     Args:
         atoms (Atoms): ASE Atoms object with fc2_supercell, fc3_supercell,
             q_point_mesh keys in its info dict.
-        calc (Calculator): ASE calculator
+        displacement_distance (float): Displacement distance for phono3py
+        checkpoint (str): File path or download URL to model checkpoint
         temperatures (list[float]): Which temperatures to calculate kappa at in Kelvin
         ase_optimizer (str): ASE optimizer to use
         ase_filter (str): ASE filter to use
@@ -109,10 +109,7 @@ def calc_kappa_for_structure(
     optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
     # Initialize variables that might be needed in error handling
-    relax_dict = {
-        "max_stress": None,
-        "reached_max_steps": False,
-    }
+    relax_dict = {"max_stress": None, "reached_max_steps": False}
     force_results = None
 
     # Relaxation
@@ -125,9 +122,8 @@ def calc_kappa_for_structure(
             else:
                 filtered_atoms = filter_cls(atoms)
 
-            optimizer = optim_cls(
-                filtered_atoms, logfile=f"{out_dir}/relaxations/{task_id}.log"
-            )
+            os.makedirs(relax_dir := f"{out_dir}/relaxations", exist_ok=True)
+            optimizer = optim_cls(filtered_atoms, logfile=f"{relax_dir}/{task_id}.log")
             optimizer.run(fmax=force_max, steps=max_steps)
 
             reached_max_steps = optimizer.step == max_steps
@@ -216,149 +212,123 @@ def calc_kappa_for_structure(
         return mat_id, info_dict | relax_dict | freqs_dict, force_results
 
 
-def main() -> None:
-    """Main function to run kappa predictions."""
-    # Model parameters
+# Relaxation parameters
+ase_optimizer: Literal["FIRE", "LBFGS", "BFGS"] = "FIRE"
+ase_filter: Literal["frechet", "exp"] = "frechet"
+max_steps = 300
+fmax = 1e-4  # Run until the forces are smaller than this in eV/A
 
-    # Relaxation parameters
-    ase_optimizer: Literal["FIRE", "LBFGS", "BFGS"] = "FIRE"
-    ase_filter: Literal["frechet", "exp"] = "frechet"
-    max_steps = 300
-    fmax = 1e-4  # Run until the forces are smaller than this in eV/A
+# Symmetry parameters
+symprec = 1e-5  # symmetry precision for enforcing relaxation and conductivity calcs
+enforce_relax_symm = True  # Enforce symmetry with during relaxation if broken
+# Conductivity to be calculated if symmetry group changed during relaxation
+conductivity_broken_symm = False
+save_forces = True  # Save force sets to file
+temperatures: list[float] = [300]
 
-    # Symmetry parameters
-    symprec = 1e-5  # symmetry precision for enforcing relaxation and conductivity calcs
-    enforce_relax_symm = True  # Enforce symmetry with during relaxation if broken
-    # Conductivity to be calculated if symmetry group changed during relaxation
-    conductivity_broken_symm = False
-    save_forces = True  # Save force sets to file
-    temperatures: list[float] = [300]
+# Initialize Ray (point this at the head node of the cluster)
+ray_ip: Final[str] = {
+    "lambda-staging-with-ray-2.40": "100.82.154.22",
+}.get(os.getenv("RAY_IP_KEY", "")) or "100.82.154.22"
+ray_address = os.getenv("RAY_ADDRESS", f"ray://{ray_ip}:10001")
+print(f"{ray_address=}")
 
-    # Initialize Ray (point this at the head node of the cluster)
-    ray_ip: Final[str] = {
-        "lambda-staging-with-ray-2.40": "100.82.154.22",
-    }.get(os.getenv("RAY_IP_KEY", "")) or "100.82.154.22"
-    ray_address = os.getenv("RAY_ADDRESS", f"ray://{ray_ip}:10001")
-    print(f"{ray_address=}")
-
-    # Ray initialization
-    if ray_address:
-        # Connect to existing Ray cluster
-        ray.init(
-            address=ray_address,
-            runtime_env={
-                "py_modules": [matbench_discovery, pymatviz],
-                # "working_dir": PKG_DIR,  # add matbench-discovery root to PYTHONPATH
-                "uv": [
-                    # "mace-torch",
-                    "git+https://github.com/janosh/mace",
-                    # "cuequivariance-ops-torch-cu12",
-                    # "cuequivariance-torch",
-                    # "cuequivariance",
-                    "phono3py",
-                    "ase",
-                    "moyopy",
-                    # "pymatviz",
-                ],
-            },
-        )
-    else:
-        # Start Ray locally with optimized settings for M3 Max
-        ray.init(
-            num_cpus=8,  # Use 8/14 cores (leaving some for system + efficiency cores)
-            num_gpus=1,  # M3 Max GPU will be treated as 1 GPU
-        )
-
-    print(f"\nConnected to Ray cluster: {ray.cluster_resources()}")
-    ray_resources = ray.available_resources()
-    ray_mem = ray_resources.get("memory", 0) / 1e9
-    print(f"Available memory: {ray_mem:.1f} GB")
-    obj_store_mem = ray_resources.get("object_store_memory", 0)
-    print(f"Object store memory: {obj_store_mem / 1e9:.1f} GB")
-
-    model_name = "mace-omat-0-medium"
-    checkpoint = f"https://github.com/ACEsuit/mace-mp/releases/download/mace_omat_0/{model_name}.model"
-
-    task_type = "LTC"  # lattice thermal conductivity
-    displacement_distance = 0.01
-    job_name = (
-        f"phononDB-{task_type}-{ase_optimizer}-dist={displacement_distance}-"
-        f"{fmax=}-{symprec=}"
+# Ray initialization
+if ray_address:
+    # Connect to existing Ray cluster
+    ray.init(
+        address=ray_address,
+        runtime_env={
+            "py_modules": [matbench_discovery],
+            # "working_dir": PKG_DIR,  # add matbench-discovery root to PYTHONPATH
+            "uv": [
+                # "mace-torch",
+                "git+https://github.com/janosh/mace",
+                # "cuequivariance-ops-torch-cu12",
+                # "cuequivariance-torch",
+                # "cuequivariance",
+                "phono3py",
+                "ase",
+                "moyopy",
+                "pymatviz",
+            ],
+        },
     )
-    out_dir = os.getenv(
-        "SBATCH_OUTPUT", f"{module_dir}/{model_name}/{today}-{job_name}"
-    )
-    os.makedirs(out_dir, exist_ok=True)
-
-    timestamp = f"{datetime.now().astimezone():%Y-%m-%d@%H-%M-%S}"
-    print(f"\nJob {job_name} with {model_name} started {timestamp}")
-
-    atoms_list = ase.io.read(DataFiles.phonondb_pbe_103_structures.path, index=":")
-    # Save run parameters
-    run_params = dict(
-        model_name=model_name,
-        checkpoint=checkpoint,
-        ase_optimizer=ase_optimizer,
-        ase_filter=ase_filter,
-        max_steps=max_steps,
-        force_max=fmax,
-        symprec=symprec,
-        enforce_relax_symm=enforce_relax_symm,
-        conductivity_broken_symm=conductivity_broken_symm,
-        task_type=task_type,
-        struct_data_path=DataFiles.phonondb_pbe_103_structures.path,
-        n_structures=len(atoms_list),
-        versions={dep: version(dep) for dep in ("numpy", "torch", "ray")},
-        temperatures=temperatures,
+else:
+    # Start Ray locally with optimized settings for M3 Max
+    ray.init(
+        num_cpus=8,  # Use 8/14 cores (leaving some for system + efficiency cores)
+        num_gpus=1,  # M3 Max GPU will be treated as 1 GPU
     )
 
-    with open(f"{out_dir}/run_params.json", mode="w") as file:
-        json.dump(run_params, file, indent=4)
+print(f"\nConnected to Ray cluster: {ray.cluster_resources()}")
+ray_resources = ray.available_resources()
+ray_mem = ray_resources.get("memory", 0) / 1e9
+print(f"Available memory: {ray_mem:.1f} GB")
+obj_store_mem = ray_resources.get("object_store_memory", 0)
+print(f"Object store memory: {obj_store_mem / 1e9:.1f} GB")
 
-    # Process structures in parallel
-    futures = [
-        calc_kappa_for_structure.remote(
-            atoms=atoms,
-            displacement_distance=displacement_distance,
-            checkpoint=checkpoint,
-            temperatures=temperatures,
-            ase_optimizer=ase_optimizer,
-            ase_filter=ase_filter,
-            max_steps=max_steps,
-            force_max=fmax,
-            symprec=symprec,
-            enforce_relax_symm=enforce_relax_symm,
-            conductivity_broken_symm=conductivity_broken_symm,
-            save_forces=save_forces,
-            out_dir=out_dir,
-            task_id=idx,
-        )
-        for idx, atoms in enumerate(atoms_list[:])
-    ]
+model_name = "mace-omat-0-medium"
+checkpoint = f"https://github.com/ACEsuit/mace-mp/releases/download/mace_omat_0/{model_name}.model"
 
-    # Process results as they complete
-    kappa_results: dict[str, dict[str, Any]] = {}
-    force_results: dict[str, dict[str, Any]] = {}
+displacement_distance = 0.01
+job_name = f"kappa-103-{ase_optimizer}-dist={displacement_distance}-{fmax=}-{symprec=}"
+out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{model_name}/{today}-{job_name}")
+os.makedirs(out_dir, exist_ok=True)
 
-    for future in tqdm(futures, desc=f"Predicting kappa with {model_name}"):
-        mat_id, result_dict, force_dict = ray.get(future)
-        kappa_results[mat_id] = result_dict
-        if force_dict is not None:
-            force_results[mat_id] = force_dict
+timestamp = f"{datetime.now().astimezone():%Y-%m-%d@%H-%M-%S}"
+print(f"\nJob {job_name} with {model_name} started {timestamp}")
 
-        # Save intermediate results
-        df_kappa = pd.DataFrame(kappa_results).T
-        df_kappa.index.name = Key.mat_id
-        df_kappa.reset_index().to_json(f"{out_dir}/kappa.json.gz")
+atoms_list = ase.io.read(DataFiles.phonondb_pbe_103_structures.path, index=":")
+# Save run parameters
+remote_params = dict(
+    model_name=model_name,
+    checkpoint=checkpoint,
+    ase_optimizer=ase_optimizer,
+    ase_filter=ase_filter,
+    max_steps=max_steps,
+    force_max=fmax,
+    symprec=symprec,
+    enforce_relax_symm=enforce_relax_symm,
+    conductivity_broken_symm=conductivity_broken_symm,
+    temperatures=temperatures,
+    out_dir=out_dir,
+)
+run_params = dict(
+    **remote_params,
+    n_structures=len(atoms_list),
+    struct_data_path=DataFiles.phonondb_pbe_103_structures.path,
+    versions={dep: version(dep) for dep in ("numpy", "torch", "ray")},
+)
 
-        if save_forces:
-            df_force = pd.DataFrame(force_results).T
-            df_force = pd.concat([df_kappa, df_force], axis=1)
-            df_force.index.name = Key.mat_id
-            df_force.reset_index().to_json(f"{out_dir}/force-sets.json.gz")
+with open(f"{out_dir}/run_params.json", mode="w") as file:
+    json.dump(run_params, file, indent=4)
 
-    print(f"\nResults saved to {out_dir!r}")
+# Process structures in parallel
+futures = [
+    calc_kappa_for_structure.remote(atoms=atoms, **remote_params, task_id=idx)
+    for idx, atoms in enumerate(atoms_list[:])
+]
 
+# Process results as they complete
+kappa_results: dict[str, dict[str, Any]] = {}
+force_results: dict[str, dict[str, Any]] = {}
 
-if __name__ == "__main__":
-    main()
+for future in tqdm(futures, desc=f"Predicting kappa with {model_name}"):
+    mat_id, result_dict, force_dict = ray.get(future)
+    kappa_results[mat_id] = result_dict
+    if force_dict is not None:
+        force_results[mat_id] = force_dict
+
+    # Save intermediate results
+    df_kappa = pd.DataFrame(kappa_results).T
+    df_kappa.index.name = Key.mat_id
+    df_kappa.reset_index().to_json(f"{out_dir}/kappa.json.gz")
+
+    if save_forces:
+        df_force = pd.DataFrame(force_results).T
+        df_force = pd.concat([df_kappa, df_force], axis=1)
+        df_force.index.name = Key.mat_id
+        df_force.reset_index().to_json(f"{out_dir}/force-sets.json.gz")
+
+print(f"\nResults saved to {out_dir!r}")

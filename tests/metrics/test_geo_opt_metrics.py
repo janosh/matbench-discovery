@@ -5,8 +5,7 @@ import pandas as pd
 import pytest
 from pymatviz.enums import Key
 
-from matbench_discovery.data import Model
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.metrics.geo_opt import (
     calc_geo_opt_metrics,
     write_geo_opt_metrics_to_yaml,

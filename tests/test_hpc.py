@@ -11,7 +11,8 @@ from ase.build import bulk
 from pymatgen.core import Lattice, Structure
 
 from matbench_discovery import hpc
-from matbench_discovery.data import DataFiles, ase_atoms_from_zip
+from matbench_discovery.data import ase_atoms_from_zip
+from matbench_discovery.enums import DataFiles
 
 
 def make_ase_atoms(n_atoms: int) -> Atoms:
@@ -319,8 +320,8 @@ def test_slurm_submit(
 
     expected_py_file_path = py_file_path or __file__
     if submit_as_temp_file:
-        expected_py_file_path = os.path.join(
-            "/tmp/slurm_job_123", os.path.basename(expected_py_file_path)
+        expected_py_file_path = (
+            f"/tmp/slurm_job_123/{os.path.basename(expected_py_file_path)}"
         )
         assert mock_copy2.called
         assert mock_copy2.call_args[0][0] == (py_file_path or __file__)

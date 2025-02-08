@@ -92,7 +92,7 @@ requirements:
   pymatgen: 2024.6.10
   numpy: 1.26.4
 
-training_set: [OMat24, MPtrj, sAlex, Alex] # need to update to OpenLAM
+training_set: [OMat24, MPtrj, sAlex] # need to update to OpenLAM
 
 notes:
   Description: |
@@ -109,7 +109,7 @@ metrics:
       pred_file_url: https://figshare.com/ndownloader/files/52134863
   geo_opt:
     pred_file: models/deepmd/dpa3-v1-openlam/2025-01-10-wbm-geo-opt.json.gz
-    pred_col: dp_structure
+    struct_col: dp_structure
     pred_file_url: https://figshare.com/ndownloader/files/52135358
     symprec=1e-5:
       analysis_file: models/deepmd/dpa3-v1-openlam/2025-01-10-wbm-geo-opt-symprec=1e-5.csv.gz

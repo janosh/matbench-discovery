@@ -19,8 +19,8 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, timestamp, today
-from matbench_discovery.data import DataFiles, as_dict_handler
-from matbench_discovery.enums import Task
+from matbench_discovery.data import as_dict_handler
+from matbench_discovery.enums import DataFiles, Task
 from matbench_discovery.hpc import slurm_submit
 
 __author__ = "Janosh Riebesell"

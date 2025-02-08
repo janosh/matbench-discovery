@@ -77,7 +77,6 @@ hyperparams:
   stochastic_depth: 0.1
   batch_size: 512
   epochs: 150
-  # train_config_url: #TODO add URL
 
 notes:
   Description: |
@@ -89,13 +88,13 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 1.665 # eqV2 S without denoising (no DeNS) achieves slightly worse κ_SRME=1.772
-      pred_file: TODO find this file or regenerate it
-      pred_file_url: https://figshare.com/TODO add this URL
+      κ_SRME: 1.676 # eqV2 S without denoising (no DeNS) achieves slightly worse κ_SRME=1.772
+      pred_file: models/eqV2/eqV2-s-dens-mp/2024-11-08-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/ndownloader/files/52151558
   geo_opt:
     pred_file: models/eqV2/eqV2-s-dens-mp/2024-10-18-wbm-geo-opt.json.gz
     pred_file_url: https://figshare.com/ndownloader/files/52062392
-    pred_col: eqV2-31M-dens-MP-p5_structure
+    struct_col: eqV2-31M-dens-MP-p5_structure
     symprec=1e-5:
       rmsd: 0.0138 # Å
       n_sym_ops_mae: 10.0558 # unitless

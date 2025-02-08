@@ -17,8 +17,9 @@ from pymatviz.typing import PLOTLY
 from tqdm import tqdm
 
 from matbench_discovery import SITE_FIGS, WANDB_PATH
-from matbench_discovery.data import Model, round_trip_yaml
-from matbench_discovery.preds.discovery import model_styles
+from matbench_discovery.data import round_trip_yaml
+from matbench_discovery.enums import Model
+from matbench_discovery.plots import model_styles
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"

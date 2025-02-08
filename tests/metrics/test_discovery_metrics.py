@@ -5,6 +5,8 @@ import pandas as pd
 import pytest
 from pymatviz.enums import Key
 
+from matbench_discovery.enums import Model
+from matbench_discovery.metrics import discovery
 from matbench_discovery.metrics.discovery import classify_stable, stable_metrics
 
 
@@ -105,3 +107,18 @@ def test_stable_metrics() -> None:
     )
     precision = n_true_pos / (n_true_pos + n_false_pos)
     assert metrics[Key.daf.symbol] == precision / dummy_hit_rate
+
+
+def test_df_discovery_metrics() -> None:
+    missing_cols = {*discovery.df_metrics} - {model.label for model in Model}
+    assert missing_cols == set(), f"{missing_cols=}"
+    assert discovery.df_metrics.T.MAE.between(0, 0.2).all(), (
+        f"unexpected {discovery.df_metrics.T.MAE=}"
+    )
+    assert discovery.df_metrics.T.R2.between(-1.5, 1).all(), (
+        f"unexpected {discovery.df_metrics.T.R2=}"
+    )
+    assert discovery.df_metrics.T.RMSE.between(0, 0.3).all(), (
+        f"unexpected {discovery.df_metrics.T.RMSE=}"
+    )
+    assert discovery.df_metrics.T.isna().sum().sum() == 0, "NaNs in metrics"

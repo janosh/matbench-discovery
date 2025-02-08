@@ -19,8 +19,8 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, ROOT, today
-from matbench_discovery.data import DataFiles
 from matbench_discovery.energy import get_e_form_per_atom, get_elemental_ref_entries
+from matbench_discovery.enums import DataFiles
 
 module_dir = os.path.dirname(__file__)
 

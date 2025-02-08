@@ -76,7 +76,6 @@ hyperparams:
   stochastic_depth: 0.1
   batch_size: 256
   epochs: 16
-  # train_config_url: #TODO add URL
 
 notes:
   Description: |
@@ -87,13 +86,13 @@ notes:
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 1.717
+      κ_SRME: 1.771
       pred_file: models/eqV2/eqV2-m-omat-mp-salex/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/ndownloader/files/52134893
   geo_opt:
     pred_file: models/eqV2/eqV2-m-omat-mp-salex/2024-10-18-wbm-geo-opt.json.gz
     pred_file_url: https://figshare.com/ndownloader/files/51607436
-    pred_col: eqV2-86M-omat-mp-salex_structure
+    struct_col: eqV2-86M-omat-mp-salex_structure
     symprec=1e-5:
       rmsd: 0.0138 # Å
       n_sym_ops_mae: 10.0558 # unitless

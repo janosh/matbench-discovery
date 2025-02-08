@@ -4,8 +4,8 @@ import pandas as pd
 from pymatviz.enums import Key, Task
 from ruamel.yaml.comments import CommentedMap
 
-from matbench_discovery.data import Model, round_trip_yaml
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.data import round_trip_yaml
+from matbench_discovery.enums import MbdKey, Model
 
 
 def write_geo_opt_metrics_to_yaml(
@@ -69,7 +69,7 @@ def write_geo_opt_metrics_to_yaml(
         round_trip_yaml.dump(model_metadata, file)
 
 
-def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> pd.DataFrame:
+def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:
     """Calculate geometry optimization metrics for a single model.
 
     Args:
@@ -81,14 +81,13 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> pd.DataFrame:
         model_name (str): Name of the model being analyzed.
 
     Returns:
-        pd.DataFrame: DataFrame with geometry optimization metrics.
-        Shape = (1, n_metrics). Columns include:
-        - structure_rmsd_vs_dft: Mean RMSD between predicted and DFT structures
-        - n_sym_ops_mae: Mean absolute error in number of symmetry operations
-        - symmetry_decrease: Fraction of structures with decreased symmetry
-        - symmetry_match: Fraction of structures with matching symmetry
-        - symmetry_increase: Fraction of structures with increased symmetry
-        - n_structs: Number of structures evaluated
+        dict[str, float]: Geometry optimization metrics with keys:
+            - structure_rmsd_vs_dft: Mean RMSD between predicted and DFT structures
+            - n_sym_ops_mae: Mean absolute error in number of symmetry operations
+            - symmetry_decrease: Fraction of structures with decreased symmetry
+            - symmetry_match: Fraction of structures with matching symmetry
+            - symmetry_increase: Fraction of structures with increased symmetry
+            - n_structs: Number of structures evaluated
     """
     # Get relevant columns
     spg_diff = df_model_analysis[MbdKey.spg_num_diff]
@@ -96,7 +95,7 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> pd.DataFrame:
     rmsd = df_model_analysis[MbdKey.structure_rmsd_vs_dft]
 
     # Count total number of structures (excluding NaN values)
-    total = len(spg_diff.dropna())
+    n_structs = len(spg_diff.dropna())
 
     # Calculate RMSD and MAE metrics
     mean_rmsd = rmsd.mean()
@@ -112,8 +111,8 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> pd.DataFrame:
     return {
         str(MbdKey.structure_rmsd_vs_dft): float(mean_rmsd),
         str(Key.n_sym_ops_mae): float(sym_ops_mae),
-        str(Key.symmetry_decrease): float(sym_decreased.sum() / total),
-        str(Key.symmetry_match): float(sym_matched.sum() / total),
-        str(Key.symmetry_increase): float(sym_increased.sum() / total),
-        str(Key.n_structures): total,
+        str(Key.symmetry_decrease): float(sym_decreased.sum() / n_structs),
+        str(Key.symmetry_match): float(sym_matched.sum() / n_structs),
+        str(Key.symmetry_increase): float(sym_increased.sum() / n_structs),
+        str(Key.n_structures): n_structs,
     }
