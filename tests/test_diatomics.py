@@ -56,7 +56,7 @@ def test_atomic_number_to_symbol_conversion(
     calculator = EMT()
     results: dict[str, dict[str, list[float | list[list[float]]]]] = {}
 
-    results = calc_diatomic_curve(pairs, calculator, "test", distances, results)  # type: ignore[arg-type]
+    results = calc_diatomic_curve(pairs, calculator, "test", distances, results)
 
     assert expected_formula in results
     assert "energies" in results[expected_formula]

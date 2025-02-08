@@ -47,7 +47,7 @@ def generate_diatomics(
 
 
 def calc_diatomic_curve(
-    pairs: list[tuple[str | int, str | int]],
+    pairs: Sequence[tuple[str | int, str | int]],
     calculator: Calculator,
     model_name: str,
     distances: Sequence[float],

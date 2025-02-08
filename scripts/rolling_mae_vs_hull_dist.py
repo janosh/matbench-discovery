@@ -5,9 +5,11 @@ import pymatviz as pmv
 from pymatviz.enums import Key
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import MbdKey, Model
+from matbench_discovery.metrics.discovery import df_metrics
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
-from matbench_discovery.preds.discovery import df_each_pred, df_metrics, df_wbm
+from matbench_discovery.preds.discovery import df_each_pred
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"

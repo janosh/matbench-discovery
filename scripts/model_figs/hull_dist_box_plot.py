@@ -4,9 +4,10 @@ import plotly.graph_objects as go
 import pymatviz as pmv
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery.cli import cli_args
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.models import MODEL_METADATA, model_is_compliant
-from matbench_discovery.preds.discovery import df_each_err, df_preds, models
+from matbench_discovery.preds.discovery import df_each_err, df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-05-25"
@@ -22,9 +23,9 @@ if test_subset == TestSubset.uniq_protos:
 # %%
 show_non_compliant = globals().get("show_non_compliant", False)
 models_to_plot = [
-    model
-    for model in models
-    if show_non_compliant or model_is_compliant(MODEL_METADATA[model])
+    model.label
+    for model in cli_args.models
+    if show_non_compliant or model_is_compliant(MODEL_METADATA[model.label])
 ]
 
 fig = go.Figure()
