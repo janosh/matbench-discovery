@@ -4,8 +4,8 @@ import pandas as pd
 from pymatviz.enums import Key, Task
 from ruamel.yaml.comments import CommentedMap
 
-from matbench_discovery.data import Model, round_trip_yaml
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.data import round_trip_yaml
+from matbench_discovery.enums import MbdKey, Model
 
 
 def write_geo_opt_metrics_to_yaml(

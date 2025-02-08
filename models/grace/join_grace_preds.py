@@ -10,9 +10,9 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
+from matbench_discovery.data import as_dict_handler, df_wbm
 from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
-from matbench_discovery.enums import MbdKey, Task
+from matbench_discovery.enums import DataFiles, MbdKey, Task
 
 __author__ = "Yury Lysogorskiy"
 __date__ = "2025-02-06"

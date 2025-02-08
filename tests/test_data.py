@@ -13,11 +13,7 @@ from ase import Atoms
 from pymatgen.core import Lattice, Structure
 from pymatviz.enums import Key
 
-from matbench_discovery import DATA_DIR
 from matbench_discovery.data import (
-    DataFiles,
-    Files,
-    Model,
     as_dict_handler,
     ase_atoms_from_zip,
     ase_atoms_to_zip,
@@ -26,7 +22,7 @@ from matbench_discovery.data import (
     load_df_wbm_with_preds,
     maybe_auto_download_file,
 )
-from matbench_discovery.enums import MbdKey, TestSubset
+from matbench_discovery.enums import MbdKey, Model, TestSubset
 
 structure = Structure(
     lattice=Lattice.cubic(5),
@@ -66,6 +62,9 @@ def test_df_wbm() -> None:
     assert df_wbm.shape == (256_963, 18)
     assert df_wbm.index.name == Key.mat_id
     assert set(df_wbm) > {Key.formula, Key.mat_id, Key.bandgap_pbe}
+
+    for col in (MbdKey.e_form_dft, MbdKey.each_true):
+        assert col in df_wbm, f"{col=} not in {list(df_wbm)=}"
 
 
 @pytest.mark.parametrize("pattern", ["*df.csv", "*df.json"])
@@ -194,82 +193,6 @@ def test_ase_atoms_from_zip_with_limit(tmp_path: Path) -> None:
     assert len(read_atoms) == 2
 
 
-def test_files() -> None:
-    """Test error handling in Files enum."""
-
-    assert Files.base_dir == DATA_DIR
-
-    # Test custom base_dir
-    class SubFiles(Files, base_dir="foo"):
-        pass
-
-    assert SubFiles.base_dir == "foo"
-
-    # Test invalid label lookup
-    label = "invalid-label"
-    with pytest.raises(ValueError, match=f"{label=} not found in Files"):
-        Files.from_label(label)
-
-
-def test_data_files() -> None:
-    """Test DataFiles enum functionality."""
-    # Test that paths are constructed correctly
-    assert (
-        repr(DataFiles.mp_energies)
-        == "<DataFiles.mp_energies: 'mp/2023-01-10-mp-energies.csv.gz'>"
-    )
-    assert DataFiles.mp_energies.rel_path == "mp/2023-01-10-mp-energies.csv.gz"
-    assert DataFiles.mp_energies.name == "mp_energies"
-    assert (
-        DataFiles.mp_energies.url == "https://figshare.com/ndownloader/files/49083124"
-    )
-
-    # Test that multiple files exist and have correct attributes
-    assert DataFiles.wbm_summary.rel_path == "wbm/2023-12-13-wbm-summary.csv.gz"
-    assert DataFiles.wbm_summary.path == f"{DATA_DIR}/wbm/2023-12-13-wbm-summary.csv.gz"
-    assert (
-        DataFiles.wbm_summary.url == "https://figshare.com/ndownloader/files/44225498"
-    )
-
-
-def test_model() -> None:
-    """Test Model enum functionality."""
-    # Test basic model attributes
-    assert Model.alignn.name == "alignn"
-    assert Model.alignn.rel_path == "alignn/alignn.yml"
-    assert Model.alignn.url == "https://github.com/janosh/matbench-discovery/pull/85"
-    assert Model.alignn.label == "ALIGNN"
-
-    # Test metadata property
-    metadata = Model.alignn.metadata
-    assert isinstance(metadata, dict)
-
-    # Test yaml_path property
-    assert Model.alignn.yaml_path.endswith("alignn/alignn.yml")
-    assert (Model.grace_2l_mptrj.kappa_103_path or "").endswith(
-        "2024-11-20-kappa-103-FIRE-fmax=1e-4-symprec=1e-5.json.gz"
-    )
-
-    # Test Model metrics property
-    metrics = Model.alignn.metrics
-    assert isinstance(metrics, dict)
-
-
-@pytest.mark.parametrize("data_file", DataFiles)
-def test_data_files_urls(data_file: DataFiles) -> None:
-    """Test that each URL in data-files.yml is a valid Figshare download URL."""
-
-    name, url = data_file.name, data_file.url
-    # check that URL is a figshare download
-    assert "figshare.com/ndownloader/files/" in url, (
-        f"URL for {name} is not a Figshare download URL: {url}"
-    )
-
-    # check that the URL is valid by sending a head request
-    response = requests.head(url, allow_redirects=True, timeout=5)
-    assert response.status_code in {200, 403}, f"Invalid URL for {name}: {url}"
-
-
 def test_download_file(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
     """Test download_file function."""
 
@@ -381,93 +304,6 @@ def test_load_df_wbm_with_preds_subset(subset: Any) -> None:
     """Test subset handling in load_df_wbm_with_preds."""
     df_wbm = load_df_wbm_with_preds(subset=subset)
     assert isinstance(df_wbm, pd.DataFrame)
-
-
-def test_files_auto_download(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
-) -> None:
-    """Test auto-download behavior in Files class."""
-
-    # Create a test Files class with our temp directory
-    class TestFiles(Files, base_dir=str(tmp_path)):
-        test_file = "test/file.txt"
-
-        @property
-        def url(self) -> str:
-            """URL associated with the file."""
-            return "https://example.com/file.txt"
-
-        @property
-        def label(self) -> str:
-            """Label associated with the file."""
-            return "test"
-
-    test_file = TestFiles.test_file
-    abs_path = f"{tmp_path}/test/file.txt"
-    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
-
-    # Mock successful request
-    mock_response = requests.Response()
-    mock_response.status_code = 200
-    mock_response._content = b"test content"  # noqa: SLF001
-
-    # Test 1: Auto-download enabled (default)
-    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "true")
-    with patch("requests.get", return_value=mock_response):
-        maybe_auto_download_file(test_file.url, abs_path, label=test_file.label)
-        stdout, _ = capsys.readouterr()
-        assert f"Downloading 'test' from {test_file.url!r}" in stdout
-        assert os.path.isfile(abs_path)
-
-    # Test 2: Auto-download disabled
-    os.remove(abs_path)
-    monkeypatch.setenv("MBD_AUTO_DOWNLOAD_FILES", "false")
-    assert not os.path.isfile(abs_path)
-
-    # Mock user input 'n' to skip download
-    with (
-        patch("requests.get", return_value=mock_response),
-        patch("sys.stdin.isatty", return_value=True),  # force interactive mode
-        patch("builtins.input", return_value="n"),
-    ):
-        maybe_auto_download_file(test_file.url, abs_path, label=test_file.label)
-        assert not os.path.isfile(abs_path)
-
-    # Test 3: Auto-download disabled but user confirms
-    with (
-        patch("requests.get", return_value=mock_response),
-        patch("builtins.input", return_value="y"),
-    ):
-        maybe_auto_download_file(test_file.url, abs_path, label=test_file.label)
-        stdout, _ = capsys.readouterr()
-        assert f"Downloading 'test' from {test_file.url!r}" in stdout
-        assert os.path.isfile(abs_path)
-
-    # Test 4: File already exists (no download attempt)
-    with patch("requests.get") as mock_get:
-        maybe_auto_download_file(test_file.url, abs_path, label=test_file.label)
-        mock_get.assert_not_called()
-
-    # Test 5: Non-interactive session (auto-download)
-    os.remove(abs_path)
-    with (
-        patch("requests.get", return_value=mock_response),
-        patch("sys.stdin.isatty", return_value=False),
-    ):
-        maybe_auto_download_file(test_file.url, abs_path, label=test_file.label)
-        stdout, _ = capsys.readouterr()
-        assert f"Downloading 'test' from {test_file.url!r}" in stdout
-        assert os.path.isfile(abs_path)
-
-    # Test 6: IPython session with auto-download disabled
-    os.remove(abs_path)
-    with (
-        patch("requests.get", return_value=mock_response),
-        patch("builtins.input", return_value="n"),
-        patch("sys.stdin.isatty", return_value=True),  # force interactive mode
-    ):
-        maybe_auto_download_file(test_file.url, abs_path, label=test_file.label)
-        assert not os.path.isfile(abs_path)
 
 
 def test_maybe_auto_download_file(

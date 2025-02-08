@@ -11,7 +11,8 @@ from ase.build import bulk
 from pymatgen.core import Lattice, Structure
 
 from matbench_discovery import hpc
-from matbench_discovery.data import DataFiles, ase_atoms_from_zip
+from matbench_discovery.data import ase_atoms_from_zip
+from matbench_discovery.enums import DataFiles
 
 
 def make_ase_atoms(n_atoms: int) -> Atoms:

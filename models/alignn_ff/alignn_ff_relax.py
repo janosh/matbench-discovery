@@ -9,8 +9,8 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import today
-from matbench_discovery.data import DataFiles, df_wbm
-from matbench_discovery.enums import MbdKey, Task
+from matbench_discovery.data import df_wbm
+from matbench_discovery.enums import DataFiles, MbdKey, Task
 
 __author__ = "Janosh Riebesell, Philipp Benner"
 __date__ = "2023-07-11"

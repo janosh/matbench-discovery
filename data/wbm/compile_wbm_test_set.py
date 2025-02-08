@@ -26,9 +26,8 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR, today
-from matbench_discovery.data import DataFiles
 from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import DataFiles, MbdKey
 
 try:
     import gdown
