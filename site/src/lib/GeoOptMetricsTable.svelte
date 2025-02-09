@@ -158,6 +158,10 @@
           </a>
         {/if}
       {/each}
+    {:else if typeof val === `number` && col.format}
+      {pretty_num(val, col.format)}
+    {:else if [undefined, null].includes(val)}
+      n/a
     {:else}
       {@html val}
     {/if}
