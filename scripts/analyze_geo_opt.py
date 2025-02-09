@@ -33,7 +33,7 @@ from matbench_discovery.structure import symmetry
 
 
 def analyze_model_symprec(
-    model_name: str,
+    model: Model,
     symprec: float,
     df_dft_analysis: pd.DataFrame,
     dft_structs: dict[str, Structure],
@@ -42,7 +42,6 @@ def analyze_model_symprec(
     pbar_pos: int = 0,  # tqdm progress bar position
 ) -> None:
     """Analyze a single model for a single symprec value."""
-    model = Model[model_name]
     model_metadata = MODEL_METADATA[model.label]
 
     geo_opt_metrics: dict[str, Any] = model_metadata.get("metrics", {}).get(
@@ -146,9 +145,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--models",
-        nargs="+",
-        default=["all"],
-        help="Model names to analyze. Use 'all' to analyze all models.",
+        nargs="*",
+        type=Model,  # type: ignore[arg-type]
+        choices=Model,
+        default=list(Model),
+        help="Models to analyze. If none specified, analyzes all models.",
     )
     parser.add_argument(
         "--symprec",
@@ -177,16 +178,7 @@ if __name__ == "__main__":
     symprec_values: Final[Sequence[float]] = args.symprec
 
     # Get list of models to analyze
-    if "all" in args.models:
-        model_names = [model.name for model in Model]
-    else:
-        model_names = args.models
-        # Validate model names
-        valid_models = {model.name for model in Model}
-        for model_name in model_names:
-            if model_name not in valid_models:
-                raise ValueError(f"Invalid {model_name=}, valid models: {valid_models}")
-
+    model_names = args.models
     moyo_version = f"moyo={importlib.metadata.version('moyopy')}"
 
     # %% Load WBM reference structures (this takes a while)

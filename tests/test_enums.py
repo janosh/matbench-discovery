@@ -264,7 +264,7 @@ def test_model_enum() -> None:
     # Test basic model attributes
     assert Model.alignn.name == "alignn"
     assert Model.alignn.rel_path == "alignn/alignn.yml"
-    assert Model.alignn.url == "https://github.com/janosh/matbench-discovery/pull/85"
+    assert Model.alignn.pr_url == "https://github.com/janosh/matbench-discovery/pull/85"
     assert Model.alignn.label == "ALIGNN"
 
     # Test metadata property
