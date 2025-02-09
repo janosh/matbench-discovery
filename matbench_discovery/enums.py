@@ -343,7 +343,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         return self.metadata["model_name"]
 
     @property
-    def url(self) -> str:
+    def pr_url(self) -> str:
         """Pull request URL in which the model was originally added to the repo."""
         return self.metadata["pr_url"]
 

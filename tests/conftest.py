@@ -41,14 +41,14 @@ def monoclinic_struct() -> Structure:
 
 @pytest.fixture
 def df_float() -> pd.DataFrame:
-    rng = np.random.default_rng(0)
+    rng = np.random.default_rng(seed=0)
 
     return pd.DataFrame(rng.normal(size=(10, 5)), columns=[*"ABCDE"])
 
 
 @pytest.fixture
 def df_mixed() -> pd.DataFrame:
-    rng = np.random.default_rng(0)
+    rng = np.random.default_rng(seed=0)
 
     floats = rng.random(size=10)
     bools = rng.choice([True, False], size=10)

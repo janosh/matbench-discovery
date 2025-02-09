@@ -21,6 +21,7 @@ __date__ = "2024-09-07"
 # toggle between formation energy and energy above convex hull
 update_existing: bool = cli_args.update_existing
 models_to_plot = cli_args.models  # get model list from CLI, defaults to all models
+energy_labels = {Key.e_form: "Formation Energy", Key.each: "Convex Hull Distance"}
 
 # Load predictions for specified models
 df_preds = load_df_wbm_with_preds(
@@ -57,6 +58,7 @@ for model, which_energy in itertools.product(models_to_plot, (Key.e_form, Key.ea
 
     e_pred_col = f"{model.label} {e_true_col.label.replace('DFT ', '')}"
     df_in = df_in.rename(columns={model.label: e_pred_col})
+    n_points = len(df_in.dropna(subset=[e_true_col, e_pred_col]))
 
     fig = pmv.density_scatter_plotly(
         df=df_in.reset_index(drop=True),
@@ -66,14 +68,29 @@ for model, which_energy in itertools.product(models_to_plot, (Key.e_form, Key.ea
         hover_name=Key.mat_id,
         opacity=0.7,
         color_continuous_scale="agsunset",
+        colorbar_kwargs=dict(orientation="h", thickness=15, x=0.3, y=0.8, len=0.5),
+        stats=dict(
+            prefix=f"N={n_points:,}<br>",
+            x=0.99,
+            xanchor="right",
+            y=0.07,
+            font_color="black",
+        ),
+        best_fit_line=dict(annotate_params=dict(y=0.01, font_size=16, x=0.99)),
+    )
+    fig.layout.xaxis.title.update(
+        text=f"PBE {energy_labels[which_energy]} (eV/atom)", font_size=16
+    )
+    fig.layout.yaxis.title.update(
+        text=f"{model.label} {energy_labels[which_energy]} (eV/atom)", font_size=16
     )
 
-    # reduce colorbar size
-    fig.data[0].marker.colorbar.update(thickness=0.02)
+    fig.layout.coloraxis.colorbar.update(
+        title="Point Density", title_side="bottom", tickangle=0
+    )
+    pmv.powerups.add_identity_line(fig)
+    # fig.layout.update(width=600, height=400)
 
     fig.layout.title.update(text=f"{model.label} {which_energy}", x=0.5)
     fig.layout.margin.update(l=0, r=0, t=50, b=0)
-
-    pmv.powerups.add_identity_line(fig)
     fig.show()
-    pmv.save_fig(fig, img_path)

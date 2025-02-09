@@ -22,10 +22,10 @@ mp_elemental_ref_entries:
   md5: 6e93b6f38d6e27d6c811d3cafb23a070
 
 mp_energies:
-  url: https://figshare.com/ndownloader/files/49083124
-  path: mp/2023-01-10-mp-energies.csv.gz
-  description: Materials Project formation energies and energies above convex hull in eV/atom as a fast-to-load CSV file
-  md5: 888579e287c8417e2202330c40e1367f
+  url: https://figshare.com/ndownloader/files/52080797
+  path: mp/2025-02-01-mp-energies.csv.gz
+  description: Materials Project formation energies and energies above convex hull in eV/atom as a fast-to-load CSV file.
+  md5: 7eb0c49fc169ba92783f2f6d0d19d741
 
 mp_patched_phase_diagram:
   url: https://figshare.com/ndownloader/files/48241624
