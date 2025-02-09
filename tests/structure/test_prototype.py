@@ -70,21 +70,10 @@ TEST_CASES: Final[tuple[tuple[Structure, str], ...]] = (
     (NaCl, "AB_cF8_225_a_b:Cl-Na"),
     (CsCl, "AB_cP2_221_a_b:Cl-Cs"),
     (ZnO_zincblende, "AB_cF8_216_a_c:O-Zn"),
-    (
-        ZnO_wurtzite,
-        "AB_hP4_186_2b_2b:O-Zn",  # prev with spglib: AB_hP4_186_b_b:O-Zn
-    ),
-    (
-        CaF2_fluorite,
-        "AB2_hR9_166_a_c:Ca-F",  # prev with spglib: AB2_cF12_225_a_c:Ca-F
-    ),
+    (ZnO_wurtzite, "AB_hP4_186_b_b:O-Zn"),
+    (CaF2_fluorite, "AB2_cF12_225_a_c:Ca-F"),
     (Cu3Au, "AB3_cP4_221_a_c:Au-Cu"),
-    (
-        Fe3Al_DO3,
-        "Invalid WP multiplicities - AB3_tP4_115_2a_2c4g:Al-Fe, expected AlFe5 to be "
-        "AlFe3",
-        # prev with spglib: AB3_cF32_225_a_bc:Al-Fe
-    ),
+    (Fe3Al_DO3, "AB3_tP4_115_a_cg:Al-Fe"),  # prev with spglib: AB3_cF32_225_a_bc:Al-Fe
     (SrTiO3_perovskite, "A3BC_cP5_221_c_a_b:O-Sr-Ti"),
     (esseneite, "ABC6D2_mC40_15_e_e_3f_f:Ca-Fe-O-Si"),
 )
