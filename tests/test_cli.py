@@ -14,11 +14,11 @@ from matbench_discovery.enums import Model, TestSubset
     "args, expected",
     [
         ([], {"models": list(Model), "test_subset": TestSubset.uniq_protos}),
-        (["--models", "chgnet"], {"models": [Model.chgnet]}),
+        (["--models", "chgnet"], {"models": [Model.chgnet_030]}),
         (
             ["--models", "chgnet", "m3gnet", "--test-subset", "most_stable_10k"],
             {
-                "models": [Model.chgnet, Model.m3gnet],
+                "models": [Model.chgnet_030, Model.m3gnet_ms],
                 "test_subset": TestSubset.most_stable_10k,
             },
         ),
@@ -58,7 +58,7 @@ def test_cli_parser_jupyter_compat() -> None:
     with patch.object(sys, "argv", ["script.py", *jupyter_args]):
         args, unknown = cli_parser.parse_known_args()
         # Our args should be parsed correctly
-        assert args.models == [Model.chgnet]
+        assert args.models == [Model.chgnet_030]
         # Jupyter args should be preserved but ignored
         assert set(unknown) == {"--f=/path/to/kernel.json", "--ip=127.0.0.1"}
 

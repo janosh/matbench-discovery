@@ -17,7 +17,7 @@ from pymatviz.enums import Key
 
 from matbench_discovery import WANDB_PATH, today
 from matbench_discovery.data import df_wbm
-from matbench_discovery.enums import MbdKey, Task
+from matbench_discovery.enums import MbdKey, Model, Task
 from matbench_discovery.hpc import slurm_submit
 from matbench_discovery.plots import wandb_scatter
 
@@ -27,9 +27,10 @@ __date__ = "2022-08-15"
 
 task_type = Task.IS2RE
 debug = "slurm-submit" in sys.argv
-job_name = f"test-wrenformer-wbm-{task_type}"
+model_name = f"{Model.wrenformer}-ens=10"
+job_name = f"{model_name}/{today}-wbm-{task_type}"
 module_dir = os.path.dirname(__file__)
-out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
+out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}")
 
 slurm_vars = slurm_submit(
     job_name=job_name,

@@ -19,7 +19,7 @@ from tqdm import tqdm
 
 from matbench_discovery import today
 from matbench_discovery.data import df_wbm
-from matbench_discovery.enums import DataFiles, MbdKey, Task
+from matbench_discovery.enums import DataFiles, MbdKey, Model, Task
 from matbench_discovery.plots import wandb_scatter
 
 __author__ = "Philipp Benner, Janosh Riebesell"
@@ -33,10 +33,9 @@ n_splits = 100
 # model_name = "mp_e_form_alignnn"  # pre-trained by NIST
 task_type = Task.IS2RE
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model_name = f"alignn-ff-wbm-{task_type}"
-job_name = f"{model_name}-relaxed-wbm-{task_type}"
-out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
-in_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
+model_name = f"{Model.alignn}-ff"
+job_name = f"{model_name}/{today}-wbm-{task_type}"
+out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}")
 
 
 if model_name in all_models:  # load pre-trained model
@@ -101,14 +100,7 @@ df_wbm[pred_col] = e_form_preds
 df_wbm[pred_col] -= df_wbm.e_correction_per_atom_mp_legacy
 df_wbm[pred_col] += df_wbm.e_correction_per_atom_mp2020
 
-if model_name in all_models:
-    df_wbm[pred_col].round(4).to_csv(
-        f"{module_dir}/{today}-{model_name}-relaxed-wbm-IS2RE.csv.gz"
-    )
-else:
-    df_wbm[pred_col].round(4).to_csv(
-        f"{module_dir}/{today}-alignn-relaxed-wbm-IS2RE.csv.gz"
-    )
+df_wbm[pred_col].round(4).to_csv(f"{out_dir}/wbm-IS2RE.csv.gz")
 
 
 # %%

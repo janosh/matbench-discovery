@@ -29,8 +29,8 @@ __date__ = "2022-11-14"
 
 task_type = Task.RS2RE
 module_dir = os.path.dirname(__file__)
-job_name = f"megnet-wbm-{task_type}"
-out_path = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}.csv.gz")
+job_name = f"{today}-{Model.megnet}-wbm-{task_type}"
+out_path = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}.csv.gz")
 slurm_array_task_count = 1
 
 if os.path.isfile(out_path):
@@ -54,8 +54,8 @@ slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
 data_path = {
     Task.IS2RE: DataFiles.wbm_initial_structures.path,
     Task.RS2RE: DataFiles.wbm_computed_structure_entries.path,
-    "chgnet_structure": Model.chgnet.geo_opt_path,
-    "m3gnet_structure": Model.m3gnet.geo_opt_path,
+    "chgnet_structure": Model.chgnet_030.geo_opt_path,
+    "m3gnet_structure": Model.m3gnet_ms.geo_opt_path,
 }[task_type]
 print(f"\nJob {job_name} started {timestamp}")
 print(f"{data_path=}")
