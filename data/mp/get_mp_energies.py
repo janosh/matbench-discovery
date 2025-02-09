@@ -1,5 +1,7 @@
 """Download all MP formation and above hull energies on 2023-01-10.
 
+The main purpose of this script is produce the file at DataFiles.mp_energies.path.
+
 Related EDA of MP formation energies:
 https://github.com/janosh/pymatviz/blob/-/examples/mp_bimodal_e_form.ipynb
 """
@@ -9,14 +11,14 @@ import os
 
 import pandas as pd
 import pymatviz as pmv
-from aviary.wren.utils import get_protostructure_label_from_spglib
 from mp_api.client import MPRester
 from pymatgen.core import Structure
 from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import STABILITY_THRESHOLD, today
-from matbench_discovery.enums import DataFiles, MbdKey
+from matbench_discovery.data import DataFiles
+from matbench_discovery.structure import prototype
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-01-10"
@@ -63,16 +65,18 @@ df_cse = pd.read_json(DataFiles.mp_computed_structure_entries.path).set_index(
 )
 
 df_cse[Key.structure] = [
-    Structure.from_dict(cse[Key.structure]) for cse in tqdm(df_cse.entry)
+    Structure.from_dict(cse[Key.structure])
+    for cse in tqdm(df_cse.entry, desc="Hydrating structures")
 ]
-df_cse[MbdKey.wyckoff_spglib] = [
-    get_protostructure_label_from_spglib(struct) for struct in tqdm(df_cse.structure)
+df_cse[f"{Key.protostructure}_moyo"] = [
+    prototype.get_protostructure_label(struct)
+    for struct in tqdm(df_cse.structure, desc="Calculating proto-structure labels")
 ]
 # make sure symmetry detection succeeded for all structures
-assert df_cse[MbdKey.wyckoff_spglib].str.startswith("invalid").sum() == 0
-df_mp[MbdKey.wyckoff_spglib] = df_cse[MbdKey.wyckoff_spglib]
+assert df_cse[f"{Key.protostructure}_moyo"].str.startswith("invalid").sum() == 0
+df_mp[f"{Key.protostructure}_moyo"] = df_cse[f"{Key.protostructure}_moyo"]
 
-spg_nums = df_mp[MbdKey.wyckoff_spglib].str.split("_").str[2].astype(int)
+spg_nums = df_mp[f"{Key.protostructure}_moyo"].str.split("_").str[2].astype(int)
 # make sure all our spacegroup numbers match MP's
 assert (spg_nums.sort_index() == df_spg["number"].sort_index()).all()
 

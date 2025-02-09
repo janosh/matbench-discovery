@@ -6,10 +6,7 @@ from pymatgen.core import Lattice, Structure
 
 from matbench_discovery.structure import perturb_structure
 
-__author__ = "Janosh Riebesell"
-__date__ = "2022-12-02"
-
-rng = np.random.default_rng(0)
+rng = np.random.default_rng(seed=0)
 pmv.set_plotly_template("pymatviz_dark")
 
 

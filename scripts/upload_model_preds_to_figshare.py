@@ -19,7 +19,6 @@ import matbench_discovery.remote.figshare as figshare
 from matbench_discovery import PKG_DIR, ROOT
 from matbench_discovery.data import round_trip_yaml
 from matbench_discovery.enums import Model
-from matbench_discovery.models import MODEL_METADATA
 
 with open(f"{PKG_DIR}/modeling-tasks.yml") as file:
     MODELING_TASKS: Final = yaml.safe_load(file)
@@ -36,13 +35,11 @@ def parse_args(args: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--models",
-        nargs="+",
-        default=[m.name for m in Model],
-        choices=[m.name for m in Model],
-        help=(
-            "Space-separated list of model names to update. If not provided, all "
-            "models will be updated."
-        ),
+        nargs="*",
+        type=Model,  # type: ignore[arg-type]
+        choices=Model,
+        default=list(Model),
+        help="Models to analyze. If none specified, analyzes all models.",
     )
     parser.add_argument(
         "--tasks",
@@ -84,7 +81,7 @@ def get_article_metadata(task: str) -> dict[str, Sequence[object]]:
 
 
 def update_one_modeling_task_article(
-    task: str, models: list[str], *, dry_run: bool = False
+    task: str, models: list[Model], *, dry_run: bool = False
 ) -> None:
     """Update or create a Figshare article for a modeling task."""
     article_id = figshare.ARTICLE_IDS[f"model_preds_{task}"]
@@ -123,8 +120,7 @@ def update_one_modeling_task_article(
     updated_files: dict[str, str] = {}  # files that were re-uploaded
     new_files: dict[str, str] = {}  # files that didn't exist before
 
-    for model_name in tqdm(models):
-        model: Model = getattr(Model, model_name)
+    for model in tqdm(models):
         if not os.path.isfile(model.yaml_path):
             print(
                 f"Warning: missing model metadata file {model.yaml_path}, skipping..."
@@ -155,7 +151,7 @@ def update_one_modeling_task_article(
             file_path = f"{ROOT}/{rel_file_path}"
             if not os.path.isfile(file_path):
                 print(
-                    f"Warning: {task} file for {model_name} not found, "
+                    f"Warning: {task} file for {model.name} not found, "
                     f"expected at {file_path}"
                 )
                 continue
@@ -234,7 +230,7 @@ def update_one_modeling_task_article(
 def main(args: Sequence[str] | None = None) -> int:
     """Main function to upload model prediction files to Figshare."""
     parsed_args = parse_args(args)
-    models_to_update = parsed_args.models or sorted(MODEL_METADATA)
+    models_to_update = parsed_args.models
     tasks_to_update = parsed_args.tasks
     if dry_run := parsed_args.dry_run:
         print("\nDry run mode - no files will be uploaded")

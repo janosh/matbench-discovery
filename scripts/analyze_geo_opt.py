@@ -29,11 +29,11 @@ from matbench_discovery import ROOT
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.metrics import geo_opt
 from matbench_discovery.models import MODEL_METADATA
-from matbench_discovery.structure import analyze_symmetry, pred_vs_ref_struct_symmetry
+from matbench_discovery.structure import symmetry
 
 
 def analyze_model_symprec(
-    model_name: str,
+    model: Model,
     symprec: float,
     df_dft_analysis: pd.DataFrame,
     dft_structs: dict[str, Structure],
@@ -42,7 +42,6 @@ def analyze_model_symprec(
     pbar_pos: int = 0,  # tqdm progress bar position
 ) -> None:
     """Analyze a single model for a single symprec value."""
-    model = Model[model_name]
     model_metadata = MODEL_METADATA[model.label]
 
     geo_opt_metrics: dict[str, Any] = model_metadata.get("metrics", {}).get(
@@ -115,7 +114,7 @@ def analyze_model_symprec(
 
     # Analyze symmetry for current symprec
     pbar_desc = f"Process {pbar_pos}: Analyzing {model.label} for {symprec=}"
-    df_model_analysis = analyze_symmetry(
+    df_model_analysis = symmetry.get_sym_info_from_structs(
         model_structs,
         pbar=dict(desc=pbar_desc, position=pbar_pos, leave=True),
         symprec=symprec,
@@ -124,7 +123,7 @@ def analyze_model_symprec(
     # Compare with DFT reference
     pbar_desc = f"Process {pbar_pos}:Comparing DFT vs {model.label} for {symprec=}"
     # break here
-    df_ml_geo_analysis = pred_vs_ref_struct_symmetry(
+    df_ml_geo_analysis = symmetry.pred_vs_ref_struct_symmetry(
         df_model_analysis,
         df_dft_analysis,
         model_structs,
@@ -146,9 +145,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--models",
-        nargs="+",
-        default=["all"],
-        help="Model names to analyze. Use 'all' to analyze all models.",
+        nargs="*",
+        type=Model,  # type: ignore[arg-type]
+        choices=Model,
+        default=list(Model),
+        help="Models to analyze. If none specified, analyzes all models.",
     )
     parser.add_argument(
         "--symprec",
@@ -177,16 +178,7 @@ if __name__ == "__main__":
     symprec_values: Final[Sequence[float]] = args.symprec
 
     # Get list of models to analyze
-    if "all" in args.models:
-        model_names = [model.name for model in Model]
-    else:
-        model_names = args.models
-        # Validate model names
-        valid_models = {model.name for model in Model}
-        for model_name in model_names:
-            if model_name not in valid_models:
-                raise ValueError(f"Invalid {model_name=}, valid models: {valid_models}")
-
+    model_names = args.models
     moyo_version = f"moyo={importlib.metadata.version('moyopy')}"
 
     # %% Load WBM reference structures (this takes a while)
@@ -213,7 +205,7 @@ if __name__ == "__main__":
         if os.path.isfile(dft_csv_path):
             dft_analysis_dict[symprec] = pd.read_csv(dft_csv_path).set_index(Key.mat_id)
         else:
-            dft_analysis_dict[symprec] = analyze_symmetry(
+            dft_analysis_dict[symprec] = symmetry.get_sym_info_from_structs(
                 dft_structs,
                 pbar=dict(desc=f"Getting DFT symmetries {symprec=}"),
                 symprec=symprec,
