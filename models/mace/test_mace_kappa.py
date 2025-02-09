@@ -272,8 +272,10 @@ model_name = "mace-omat-0-medium"
 checkpoint = f"https://github.com/ACEsuit/mace-mp/releases/download/mace_omat_0/{model_name}.model"
 
 displacement_distance = 0.01
-job_name = f"kappa-103-{ase_optimizer}-dist={displacement_distance}-{fmax=}-{symprec=}"
-out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{model_name}/{today}-{job_name}")
+job_name = (
+    f"{today}-kappa-103-{ase_optimizer}-dist={displacement_distance}-{fmax=}-{symprec=}"
+)
+out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{model_name}/{job_name}")
 os.makedirs(out_dir, exist_ok=True)
 
 timestamp = f"{datetime.now().astimezone():%Y-%m-%d@%H-%M-%S}"

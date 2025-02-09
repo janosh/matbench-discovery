@@ -18,7 +18,7 @@ from tqdm import tqdm
 
 from matbench_discovery import today
 from matbench_discovery.data import df_wbm
-from matbench_discovery.enums import DataFiles, MbdKey, Task
+from matbench_discovery.enums import DataFiles, MbdKey, Model, Task
 from matbench_discovery.hpc import slurm_submit
 from matbench_discovery.plots import wandb_scatter
 
@@ -30,13 +30,13 @@ module_dir = os.path.dirname(__file__)
 
 # %%
 # model_name = "mp_e_form_alignn"  # pre-trained by NIST (not used for MBD submission)
-model_name = DataFiles.alignn_checkpoint.path  # trained by Philipp Benner
+model_name = Model.alignn  # trained by Philipp Benner
 task_type = Task.IS2RE
 target_col = MbdKey.e_form_dft
 input_col = Key.init_struct
 device = "cuda" if torch.cuda.is_available() else "cpu"
-job_name = f"{model_name}-wbm-{task_type}"
-out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
+job_name = f"{model_name}/{today}-wbm-{task_type}"
+out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}")
 
 
 if model_name in all_models:  # load pre-trained model

@@ -1,3 +1,9 @@
+"""
+Download WandB checkpoints for an ensemble of CGCNN models trained on all MP
+formation energies, then make predictions on some dataset, prints ensemble metrics and
+saves predictions to CSV.
+"""
+
 # %%
 import os
 from importlib.metadata import version
@@ -15,24 +21,20 @@ from tqdm import tqdm
 
 from matbench_discovery import CHECKPOINT_DIR, WANDB_PATH, WBM_DIR, today
 from matbench_discovery.data import df_wbm
-from matbench_discovery.enums import DataFiles, MbdKey, Task
+from matbench_discovery.enums import DataFiles, MbdKey, Model, Task
 from matbench_discovery.hpc import slurm_submit
 from matbench_discovery.plots import wandb_scatter
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-15"
 
-"""
-Download WandB checkpoints for an ensemble of CGCNN models trained on all MP
-formation energies, then make predictions on some dataset, prints ensemble metrics and
-saves predictions to CSV.
-"""
 
 task_type = Task.IS2RE
 debug = False
-job_name = f"test-cgcnn-wbm-{task_type}"
+model_name = Model.cgcnn  # or Model.cgcnn_p
+job_name = f"{model_name}/{today}-wbm-{task_type}"
 module_dir = os.path.dirname(__file__)
-out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
+out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}")
 
 slurm_vars = slurm_submit(
     job_name=job_name,
