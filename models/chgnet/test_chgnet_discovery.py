@@ -21,7 +21,7 @@ from tqdm import tqdm
 
 from matbench_discovery import timestamp, today
 from matbench_discovery.data import as_dict_handler, df_wbm
-from matbench_discovery.enums import DataFiles, MbdKey, Task
+from matbench_discovery.enums import DataFiles, MbdKey, Model, Task
 from matbench_discovery.hpc import slurm_submit
 from matbench_discovery.plots import wandb_scatter
 
@@ -33,9 +33,9 @@ module_dir = os.path.dirname(__file__)
 # set large job array size for smaller data splits and faster testing/debugging
 slurm_array_task_count = 50
 device = "cuda" if torch.cuda.is_available() else "cpu"
-chgnet = StructOptimizer(use_device=device)  # load default pre-trained CHGNnet model
-job_name = f"chgnet-{chgnet.version}-wbm-{task_type}"
-out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
+chgnet = StructOptimizer(use_device=device)  # load default pre-trained CHGNet model
+job_name = f"{Model.chgnet_030}/{today}-wbm-{task_type}"
+out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}")
 
 slurm_vars = slurm_submit(
     job_name=job_name,

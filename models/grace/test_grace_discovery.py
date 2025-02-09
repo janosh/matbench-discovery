@@ -21,7 +21,7 @@ from tqdm import tqdm
 
 from matbench_discovery import timestamp, today
 from matbench_discovery.data import as_dict_handler, ase_atoms_from_zip
-from matbench_discovery.enums import DataFiles, Task
+from matbench_discovery.enums import DataFiles, Model, Task
 
 __author__ = "Yury Lysogorskiy"
 __date__ = "2025-02-06"
@@ -31,7 +31,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 
 # %%
-model_name = "GRACE-2L-OAM"
+model_name = Model.grace_2l_oam
 smoke_test = False
 task_type = Task.IS2RE
 module_dir = os.path.dirname(__file__)
@@ -40,8 +40,8 @@ slurm_array_task_count = int(
     os.getenv("SLURM_ARRAY_TASK_COUNT", "1")
 )  # will be set to the number of tasks in the job array.
 ase_optimizer = "FIRE"
-job_name = f"{model_name}-wbm-{task_type}-{ase_optimizer}"
-out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
+job_name = f"{model_name}/{today}-wbm-{task_type}-{ase_optimizer}"
+out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}")
 device = "gpu"
 # whether to record intermediate structures into pymatgen Trajectory
 record_traj = False  # has no effect if relax_cell is False

@@ -1,3 +1,13 @@
+"""
+pip install git+https://github.com/janosh/matbench-discovery@5c8601a
+
+# Required for valid data paths.
+git clone https://github.com/janosh/matbench-discovery
+git checkout 5c8601a
+cd matbench-discovery
+pip install -e . --config-settings editable-mode=compat
+"""
+
 import os
 from pathlib import Path
 from typing import Any
@@ -19,17 +29,6 @@ from tqdm import tqdm
 from matbench_discovery import today
 from matbench_discovery.enums import DataFiles, MbdKey, Task
 from matbench_discovery.plots import wandb_scatter
-
-"""
-pip install git+https://github.com/janosh/matbench-discovery@5c8601a
-
-# Required for valid data paths.
-git clone https://github.com/janosh/matbench-discovery
-git checkout 5c8601a
-cd matbench-discovery
-pip install -e . --config-settings editable-mode=compat
-"""
-
 
 torch.set_float32_matmul_precision("high")
 

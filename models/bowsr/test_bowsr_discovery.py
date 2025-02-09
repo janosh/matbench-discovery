@@ -1,3 +1,8 @@
+"""To slurm submit this file: python path/to/file.py slurm-submit
+Requires MEGNet and MAML installation: pip install megnet maml
+https://github.com/materialsvirtuallab/maml
+"""
+
 # %%
 import contextlib
 import os
@@ -21,11 +26,6 @@ from matbench_discovery.hpc import slurm_submit
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-15"
 
-"""
-To slurm submit this file: python path/to/file.py slurm-submit
-Requires MEGNet and MAML installation: pip install megnet maml
-https://github.com/materialsvirtuallab/maml
-"""
 
 task_type = Task.IS2RE
 module_dir = os.path.dirname(__file__)
@@ -34,9 +34,9 @@ slurm_array_task_count = 500
 # see https://stackoverflow.com/a/55431306 for how to change array throttling
 # post submission
 slurm_max_parallel = 100
-energy_model = Model.megnet.label.lower()
-job_name = f"bowsr-{energy_model}-wbm-{task_type}"
-out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
+energy_model = Model.megnet
+job_name = f"bowsr-{energy_model}/{today}-wbm-{task_type}"
+out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}")
 
 data_path = {
     Task.IS2RE: DataFiles.wbm_initial_structures.path,

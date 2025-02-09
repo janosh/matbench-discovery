@@ -72,7 +72,7 @@ class RelaxJob(Checkpointable):
         debug: bool = False,
     ) -> None:
         run_name = f"{job_name}-{job_number}"
-        out_path = out_path / f"{model_name}-{today}-{job_number:>03}.json.gz"
+        out_path = out_path / model_name / f"{today}-{job_number:>03}.json.gz"
 
         logging.info(f"Starting ASE relaxation job {run_name}.")
 
@@ -212,7 +212,7 @@ def run_relax(
 ) -> None:
     setup_logging()
     task_type = Task.IS2RE
-    job_name = f"{model_name}-wbm-{task_type}-{optimizer}"
+    job_name = f"{model_name}/wbm-{task_type}-{optimizer}"
 
     os.makedirs(out_path / model_name, exist_ok=True)
     executor = AutoExecutor(

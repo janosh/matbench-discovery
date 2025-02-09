@@ -21,4 +21,4 @@ Replace `/path/to/` with the actual path to the patch file.
 The directory contains the following files, which must be executed in the given order to reproduce the results:
 
 1. [`train_alignn.py`](train_alignn.py): Train an ALIGNN model on all 154k MP computed structure entries. The resulting model checkpoint is saved to the `out_dir` variable in that script and also uploaded to `wandb` from where it is publicly available for 3rd party reproducibility.
-1. [`test_alignn.py`](test_alignn.py): Test a trained ALIGNN model on the WBM data. Generated `2023-06-03-mp-e-form-alignn-wbm-IS2RE.csv.gz`.
+1. [`test_alignn_discovery.py`](test_alignn_discovery.py): Test a trained ALIGNN model on the WBM data. Generated `2023-06-03-mp-e-form-alignn-wbm-IS2RE.csv.gz`.

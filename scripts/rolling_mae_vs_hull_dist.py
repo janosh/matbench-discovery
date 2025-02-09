@@ -16,7 +16,7 @@ __date__ = "2022-06-18"
 
 
 # %%
-model = Model.chgnet.label
+model = Model.chgnet_030.label
 
 fig, df_err, df_std = rolling_mae_vs_hull_dist(
     e_above_hull_true=df_wbm[MbdKey.each_true],

@@ -216,6 +216,14 @@ class Files(StrEnum, metaclass=MetaFiles):
         obj.__dict__ |= dict(file_path=file_path)
         return obj
 
+    def __repr__(self) -> str:
+        """String representation of the file."""
+        return f"{type(self).__name__}.{self.name}"
+
+    def __str__(self) -> str:
+        """String representation of the file."""
+        return self.name
+
     @property
     @abc.abstractmethod
     def url(self) -> str:
@@ -252,15 +260,13 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     """
 
     alignn = auto(), "alignn/alignn.yml"
-    # alignn_pretrained = auto(), "alignn/alignn.yml"
     # alignn_ff = auto(), "alignn/alignn-ff.yml"
 
     # BOWSR optimizer coupled with original megnet
     bowsr_megnet = auto(), "bowsr/bowsr.yml"
 
     # default CHGNet model from publication with 400,438 params
-    chgnet = auto(), "chgnet/chgnet.yml"
-    # chgnet_no_relax = auto(), None, "CHGNet No Relax"
+    chgnet_030 = auto(), "chgnet/chgnet-0.3.0.yml"
 
     # CGCNN 10-member ensemble
     cgcnn = auto(), "cgcnn/cgcnn.yml"
@@ -273,9 +279,9 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     dpa3_v1_openlam = auto(), "deepmd/dpa3-v1-openlam.yml"
 
     # original M3GNet straight from publication, not re-trained
-    m3gnet = auto(), "m3gnet/m3gnet.yml"
-    # m3gnet_direct = auto(), None, "M3GNet DIRECT"
-    # m3gnet_ms = auto(), None, "M3GNet MS"
+    m3gnet_ms = auto(), "m3gnet/m3gnet.yml"
+    # m3gnet_direct = auto(), "M3GNet DIRECT"
+    # m3gnet_ms = auto(), "M3GNet MS"
 
     # MACE-MP-0 medium as published in https://arxiv.org/abs/2401.00096 trained on MPtrj
     mace_mp_0 = auto(), "mace/mace-mp-0.yml"

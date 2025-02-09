@@ -22,7 +22,7 @@ from tqdm import tqdm
 
 from matbench_discovery import hpc, timestamp, today
 from matbench_discovery.data import as_dict_handler, ase_atoms_from_zip, df_wbm
-from matbench_discovery.enums import DataFiles, MbdKey, Task
+from matbench_discovery.enums import DataFiles, MbdKey, Model, Task
 from matbench_discovery.plots import wandb_scatter
 
 __author__ = "Janosh Riebesell"
@@ -42,9 +42,9 @@ ase_optimizer = "FIRE"
 device = "cpu"
 # whether to record intermediate structures into pymatgen Trajectory
 record_traj = True  # has no effect if relax_cell is False
-model_name = os.getenv("MACE_MODEL_NAME", "mace-omat-0-medium")
-job_name = f"{model_name}-wbm-{task_type}-{ase_optimizer}"
-out_dir = f"{module_dir}/{today}-{job_name}"
+model_name = os.getenv("MODEL_NAME", Model.mace_mp_0)
+job_name = f"{model_name}/{today}-wbm-{task_type}-{ase_optimizer}"
+out_dir = f"{module_dir}/{job_name}"
 os.makedirs(out_dir, exist_ok=True)
 checkpoint_urls: Final[set[str]] = {
     "https://github.com/ACEsuit/mace-mp/releases/download/mace_omat_0/mace-omat-0-medium.model",

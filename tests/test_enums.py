@@ -142,9 +142,14 @@ def test_files_enum() -> None:
 
     # Test custom base_dir
     class SubFiles(Files, base_dir="foo"):
-        pass
+        test_file = auto(), "test/file.txt"
 
     assert SubFiles.base_dir == "foo"
+
+    # Test __repr__ and __str__ methods
+    test_file = SubFiles.test_file
+    assert repr(test_file) == "SubFiles.test_file"
+    assert str(test_file) == "test_file"
 
     # Test invalid label lookup
     label = "invalid-label"
@@ -154,8 +159,11 @@ def test_files_enum() -> None:
 
 def test_data_files_enum() -> None:
     """Test DataFiles enum functionality."""
+    # Test __repr__ and __str__ for DataFiles
+    assert repr(DataFiles.mp_energies) == "DataFiles.mp_energies"
+    assert str(DataFiles.mp_energies) == "mp_energies"
+
     # Test that paths are constructed correctly
-    assert repr(DataFiles.mp_energies) == "<DataFiles.mp_energies: 'mp_energies'>"
     assert DataFiles.mp_energies.rel_path == "mp/2023-01-10-mp-energies.csv.gz"
     assert DataFiles.mp_energies.name == "mp_energies"
     assert (
@@ -264,6 +272,10 @@ def test_model_enum() -> None:
     assert Model.alignn.rel_path == "alignn/alignn.yml"
     assert Model.alignn.url == "https://github.com/janosh/matbench-discovery/pull/85"
     assert Model.alignn.label == "ALIGNN"
+
+    # Test __repr__ and __str__ for Model
+    assert repr(Model.alignn) == "Model.alignn"
+    assert str(Model.alignn) == "alignn"
 
     # Test metadata property
     metadata = Model.alignn.metadata

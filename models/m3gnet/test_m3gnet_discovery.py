@@ -20,7 +20,7 @@ from tqdm import tqdm
 
 from matbench_discovery import ROOT, timestamp, today
 from matbench_discovery.data import as_dict_handler
-from matbench_discovery.enums import DataFiles, Task
+from matbench_discovery.enums import DataFiles, Model, Task
 from matbench_discovery.hpc import slurm_submit
 
 __author__ = "Janosh Riebesell"
@@ -28,14 +28,16 @@ __date__ = "2022-08-15"
 
 task_type = Task.IS2RE
 module_dir = os.path.dirname(__file__)
-model_name = "m3gnet"
+model_name = Model.m3gnet_ms
 # direct: DIRECT cluster sampling, ms: manual sampling
-model_type: Literal["orig", "direct", "manual-sampling"] = "orig"
+model_type: Literal[
+    "tf-manual-sampling", "tf-direct-sampling", "matgl-direct-sampling"
+] = "tf-manual-sampling"
 # set large job array size for smaller data splits and faster testing/debugging
 slurm_array_task_count = 50
 record_traj = False
-job_name = f"{model_name}-{model_type}-wbm-{task_type}"
-out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
+job_name = f"{model_type}/{today}-wbm-{task_type}"
+out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}")
 
 slurm_vars = slurm_submit(
     job_name=job_name,
@@ -74,10 +76,15 @@ df_in = pd.read_json(data_path).set_index(Key.mat_id)
 if slurm_array_task_count > 1:
     df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
 
-if model_type == "direct":
+if model_type == "tf-direct-sampling":
     checkpoint = f"{ROOT}/models/{model_name}/2023-05-26-DI-DFTstrictF10-TTRS-128U-442E"
-elif model_type == "manual-sampling":
+elif model_type == "tf-manual-sampling":
     checkpoint = f"{ROOT}/models/{model_name}/2023-05-26-MS-DFTstrictF10-128U-154E"
+elif model_type == "matgl-direct-sampling":
+    raise NotImplementedError(
+        "this script supported MatGL at one point but wasn't checked into version "
+        "control, feel free to submit PR that adds matGL support"
+    )
 else:
     raise ValueError(f"{model_type=} not supported")
 
