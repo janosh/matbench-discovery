@@ -73,7 +73,7 @@ TEST_CASES: Final[tuple[tuple[Structure, str], ...]] = (
     (ZnO_wurtzite, "AB_hP4_186_b_b:O-Zn"),
     (CaF2_fluorite, "AB2_cF12_225_a_c:Ca-F"),
     (Cu3Au, "AB3_cP4_221_a_c:Au-Cu"),
-    (Fe3Al_DO3, "AB3_tP4_115_a_cg:Al-Fe"),  # prev with spglib: AB3_cF32_225_a_bc:Al-Fe
+    (Fe3Al_DO3, "AB3_tP4_115_a_cg:Al-Fe"),
     (SrTiO3_perovskite, "A3BC_cP5_221_c_a_b:O-Sr-Ti"),
     (esseneite, "ABC6D2_mC40_15_e_e_3f_f:Ca-Fe-O-Si"),
 )
