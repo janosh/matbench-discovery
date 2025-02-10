@@ -59,6 +59,7 @@ metrics:
   geo_opt: not applicable
   discovery:
     pred_file: models/megnet/2022-11-18-megnet-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/ndownloader/files/51607286
     pred_col: e_form_per_atom_megnet
     full_test_set:
       F1: 0.513 # fraction

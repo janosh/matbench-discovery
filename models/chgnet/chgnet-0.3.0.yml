@@ -1,0 +1,154 @@
+model_name: CHGNet
+model_key: chgnet
+model_version: v0.3.0
+matbench_discovery_version: 1.0.0
+date_added: "2023-03-03"
+date_published: "2023-03-01"
+authors:
+  - name: Bowen Deng
+    affiliation: UC Berkeley
+    orcid: https://orcid.org/0000-0002-5720-5299
+  - name: Peichen Zhong
+    affiliation: UC Berkeley
+    orcid: https://orcid.org/0000-0003-1921-1628
+    email: zhongpc@berkeley.edu
+  - name: KyuJung Jun
+    affiliation: UC Berkeley
+    orcid: https://orcid.org/0000-0003-1974-028X
+  - name: Janosh Riebesell
+    affiliation: University of Cambridge, Lawrence Berkeley National Laboratory
+    email: janosh.riebesell@gmail.com
+    orcid: https://orcid.org/0000-0001-5233-3462
+  - name: Kevin Han
+    affiliation: UC Berkeley
+    orcid: https://orcid.org/0000-0002-4028-2108
+  - name: Christopher J. Bartel
+    affiliation: University of Minnesota
+    orcid: https://orcid.org/0000-0002-5198-5036
+  - name: Gerbrand Ceder
+    affiliation: UC Berkeley
+    orcid: https://orcid.org/0000-0001-9275-3605
+    email: gceder@berkeley.edu
+
+repo: https://github.com/CederGroupHub/chgnet
+doi: https://doi.org/10.48550/arXiv.2302.14231
+paper: https://arxiv.org/abs/2302.14231
+pypi: https://pypi.org/project/chgnet
+pr_url: https://github.com/janosh/matbench-discovery/pull/85
+
+requirements:
+  torch: 1.11.0
+  ase: 3.22.0
+  pymatgen: 2022.10.22
+  numpy: 1.24.0
+
+openness: OSOD
+trained_for_benchmark: false
+train_task: S2EFSM
+test_task: IS2RE-SR
+targets: EFS_GM
+model_type: UIP
+model_params: 412_525
+n_estimators: 1
+
+training_set: [MPtrj]
+
+hyperparams:
+  max_steps: 2000
+
+notes:
+  Description: |
+    The Crystal Hamiltonian Graph Neural Network (CHGNet) is a universal GNN-based interatomic potential trained on energies, forces, stresses and magnetic moments from the MP trajectory dataset containing ∼1.5 million inorganic structures.
+    ![CHGNet Pipeline](https://user-images.githubusercontent.com/30958850/222924937-1d09bbce-ee18-4b19-8061-ec689cd15887.svg)
+  Training: Using pre-trained model with 400,438 params released with paper. The MPtrj data set used to train CHGNet was pulled in September 2022 from the at-the-time latest [v2021.11.10 MP release](https://docs.materialsproject.org/changes/database-versions#v2021.11.10) (see [description for construction of MPtrj](https://github.com/CederGroupHub/chgnet/blob/7c21a9488/examples/QueryMPtrj.md)). The CHGNet authors' MPtrj data set has since been used to train other models like [MACE-MP](https://arxiv.org/abs/2401.00096) and [Equiformer v1/2](https://github.com/pbenner/equitrain).
+  Corrections: Unlike e.g. [M3GNet](/models/m3gnet) which predicts raw DFT energies, CHGNet targets include MP2020 corrections. Hence no need to correct again.
+
+metrics:
+  phonons:
+    kappa_103:
+      κ_SRME: 1.717
+      pred_file: models/chgnet/chgnet-0.3.0/2024-11-09-kappa-103-FIRE-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/ndownloader/files/52134857
+  geo_opt:
+    pred_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-geo-opt.json.gz
+    pred_file_url: https://figshare.com/ndownloader/files/52061999
+    struct_col: chgnet_structure
+    symprec=1e-5:
+      rmsd: 0.0216 # Å
+      symmetry_decrease: 0.2526 # fraction
+      symmetry_match: 0.5833 # fraction
+      symmetry_increase: 0.1525 # fraction
+      n_sym_ops_mae: 3.2731 # unitless
+      n_structures: 250779 # count
+      analysis_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-geo-opt-symprec=1e-5.csv.gz
+      analysis_file_url: https://figshare.com/ndownloader/files/52062005
+    symprec=1e-2:
+      rmsd: 0.0218 # Å
+      n_sym_ops_mae: 2.0622 # unitless
+      symmetry_decrease: 0.0937 # fraction
+      symmetry_match: 0.7799 # fraction
+      symmetry_increase: 0.118 # fraction
+      n_structures: 256614 # count
+      analysis_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-geo-opt-symprec=1e-2.csv.gz
+      analysis_file_url: https://figshare.com/ndownloader/files/52062008
+  discovery:
+    pred_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/ndownloader/files/52057526
+    pred_col: e_form_per_atom_chgnet
+    full_test_set:
+      F1: 0.612 # fraction
+      DAF: 3.038 # dimensionless
+      Precision: 0.521 # fraction
+      Recall: 0.74 # fraction
+      Accuracy: 0.839 # fraction
+      TPR: 0.74 # fraction
+      FPR: 0.141 # fraction
+      TNR: 0.859 # fraction
+      FNR: 0.26 # fraction
+      TP: 32642.0 # count
+      FP: 29979.0 # count
+      TN: 182892.0 # count
+      FN: 11450.0 # count
+      MAE: 0.061 # eV/atom
+      RMSE: 0.1 # eV/atom
+      R2: 0.69 # dimensionless
+      missing_preds: 2 # count
+      missing_percent: 0.00% # fraction
+    most_stable_10k:
+      F1: 0.92 # fraction
+      DAF: 5.567 # dimensionless
+      Precision: 0.851 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.851 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 8511.0 # count
+      FP: 1489.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.063 # eV/atom
+      RMSE: 0.095 # eV/atom
+      R2: 0.816 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
+    unique_prototypes:
+      F1: 0.613 # fraction
+      DAF: 3.361 # dimensionless
+      Precision: 0.514 # fraction
+      Recall: 0.758 # fraction
+      Accuracy: 0.851 # fraction
+      TPR: 0.758 # fraction
+      FPR: 0.132 # fraction
+      TNR: 0.868 # fraction
+      FNR: 0.242 # fraction
+      TP: 25313.0 # count
+      FP: 23955.0 # count
+      TN: 158159.0 # count
+      FN: 8061.0 # count
+      MAE: 0.063 # eV/atom
+      RMSE: 0.103 # eV/atom
+      R2: 0.689 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction

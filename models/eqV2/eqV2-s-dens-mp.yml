@@ -47,7 +47,7 @@ train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_D
 model_type: UIP
-model_params: 31_207_434
+model_params: 31_207_434 # 31M
 n_estimators: 1
 
 training_set: [MPtrj]
@@ -77,7 +77,6 @@ hyperparams:
   stochastic_depth: 0.1
   batch_size: 512
   epochs: 150
-  # train_config_url: #TODO add URL
 
 notes:
   Description: |
@@ -88,10 +87,14 @@ notes:
 
 metrics:
   phonons:
-    κ_SRME: 1.665 # eqV2 S without denoising (no DeNS) achieves slightly worse κ_SRME=1.772
+    kappa_103:
+      κ_SRME: 1.676 # eqV2 S without denoising (no DeNS) achieves slightly worse κ_SRME=1.772
+      pred_file: models/eqV2/eqV2-s-dens-mp/2024-11-08-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/ndownloader/files/52151558
   geo_opt:
-    pred_file: models/eqV2/eqV2-31M-dens-mp-p5.json.gz
-    pred_col: eqV2-31M-dens-MP-p5_structure
+    pred_file: models/eqV2/eqV2-s-dens-mp/2024-10-18-wbm-geo-opt.json.gz
+    pred_file_url: https://figshare.com/ndownloader/files/52062392
+    struct_col: eqV2-31M-dens-MP-p5_structure
     symprec=1e-5:
       rmsd: 0.0138 # Å
       n_sym_ops_mae: 10.0558 # unitless
@@ -99,6 +102,8 @@ metrics:
       symmetry_match: 0.1382 # fraction
       symmetry_increase: 0.0005 # fraction
       n_structures: 256614 # count
+      analysis_file: models/eqV2/eqV2-s-dens-mp/2024-10-18-wbm-geo-opt-symprec=1e-5.csv.gz
+      analysis_file_url: https://figshare.com/ndownloader/files/52062569
     symprec=1e-2:
       rmsd: 0.0138 # Å
       n_sym_ops_mae: 3.9922 # unitless
@@ -106,8 +111,11 @@ metrics:
       symmetry_match: 0.5027 # fraction
       symmetry_increase: 0.0631 # fraction
       n_structures: 256614 # count
+      analysis_file: models/eqV2/eqV2-s-dens-mp/2024-10-18-wbm-geo-opt-symprec=1e-2.csv.gz
+      analysis_file_url: https://figshare.com/ndownloader/files/52062578
   discovery:
-    pred_file: models/eqV2/eqV2-s-dens-mp.csv.gz
+    pred_file: models/eqV2/eqV2-s-dens-mp/2024-10-18-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/ndownloader/files/52057568
     pred_col: e_form_per_atom_eqV2-31M-dens-MP-p5
     full_test_set:
       F1: 0.798 # fraction

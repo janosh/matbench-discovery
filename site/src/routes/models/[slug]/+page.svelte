@@ -2,7 +2,7 @@
   import { dev } from '$app/environment'
   import TRAINING_SETS from '$data/training-sets.yml'
   import per_elem_each_errors from '$figs/per-element-each-errors.json'
-  import { PtableInset } from '$lib'
+  import { get_pred_file_urls, PtableInset } from '$lib'
   import pkg from '$site/package.json'
   import Icon from '@iconify/svelte'
   import type { ChemicalElement } from 'elementari'
@@ -14,6 +14,7 @@
     TableInset,
   } from 'elementari'
   import { CopyButton, Tooltip } from 'svelte-zoo'
+  import { click_outside, titles_as_tooltips } from 'svelte-zoo/actions'
 
   export let data
   export let color_scale: string[] = [`Viridis`]
@@ -100,38 +101,104 @@
     </section>
 
     <section class="links">
-      <a href={model.repo} target="_blank" rel="noopener noreferrer">
+      <a
+        href={model.repo}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="View source code repository"
+        use:titles_as_tooltips
+      >
         <Icon icon="octicon:mark-github" inline /> Repo
       </a>
-      <a href={model.paper} target="_blank" rel="noopener noreferrer">
+      <a
+        href={model.paper}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Read model paper"
+        use:titles_as_tooltips
+      >
         <Icon icon="ion:ios-paper" inline /> Paper
       </a>
       {#if model.url}
-        <a href={model.url} target="_blank" rel="noopener noreferrer">
+        <a
+          href={model.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="View model documentation"
+          use:titles_as_tooltips
+        >
           <Icon icon="ion:ios-globe" inline /> Docs
         </a>
       {/if}
-      <a href={model.doi} target="_blank" rel="noopener noreferrer">
+      <a
+        href={model.doi}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Digital Object Identifier"
+        use:titles_as_tooltips
+      >
         <Icon icon="academicons:doi" inline /> DOI
       </a>
       <a
         href={`${pkg.repository}/blob/-/models/${model.dirname?.split(`/`).pop()}`}
         target="_blank"
         rel="noopener noreferrer"
+        title="Browse model submission files"
+        use:titles_as_tooltips
       >
         <Icon icon="octicon:file-directory" inline /> Files
       </a>
       {#if model.pypi}
-        <a href={model.pypi} target="_blank" rel="noopener noreferrer">
+        <a
+          href={model.pypi}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Python package on PyPI"
+          use:titles_as_tooltips
+        >
           <Icon icon="simple-icons:pypi" inline /> PyPI
         </a>
+      {/if}
+      {#if model.pr_url}
+        <a
+          href={model.pr_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="View pull request"
+          use:titles_as_tooltips
+        >
+          <Icon icon="octicon:git-pull-request" inline /> PR
+        </a>
+      {/if}
+      {#if model.metrics}
+        {@const pred_files = get_pred_file_urls(model)}
+        {#if pred_files.length > 0}
+          <details
+            class="pred-files"
+            use:click_outside={{
+              callback: (node) => {
+                if (node.open) node.open = false
+              },
+            }}
+          >
+            <summary title="Download model prediction files" use:titles_as_tooltips>
+              <Icon icon="octicon:graph" inline /> Predictions
+            </summary>
+            <div class="dropdown">
+              {#each pred_files as { name, url }}
+                <a href={url} target="_blank" rel="noopener noreferrer">
+                  {name}
+                </a>
+              {/each}
+            </div>
+          </details>
+        {/if}
       {/if}
     </section>
 
     <!-- check if Plotly undefined needed for model-page.test.ts since vitest with JSDOM doesn't mock some Browser APIs that Plotly needs -->
     {#if typeof globalThis.Plotly != `undefined`}
       {#each [[`e-form`, `Formation Energies`], [`each`, `Convex Hull Distance`]] as [which_energy, title]}
-        {`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`}
         {#await import(`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`) then ParityPlot}
           <!-- negative margin-bottom corrects for display: none plot title -->
           <h3 style="margin-bottom: -2em;">
@@ -166,7 +233,7 @@
             unit="<small style='font-weight: lighter;'>eV / atom</small>"
           />
           <ColorBar
-            text_side="top"
+            label_side="top"
             color_scale={color_scale[0]}
             tick_labels={5}
             style="width: 85%; margin: 0 2em;"
@@ -176,7 +243,7 @@
     {/if}
 
     <section class="authors">
-      <h2>Authors</h2>
+      <h2>Model Authors</h2>
       <ol>
         {#each model.authors as author}
           <li>
@@ -367,7 +434,7 @@
     margin: 2em auto;
   }
 
-  .links a {
+  .links :is(a, summary) {
     display: inline-flex;
     align-items: center;
     gap: 5px;
@@ -376,6 +443,27 @@
     border-radius: 5px;
     text-decoration: none;
     color: lightgray;
+  }
+
+  .links details {
+    position: relative;
+    cursor: pointer;
+  }
+  .links .dropdown {
+    position: absolute;
+    margin-top: 5px;
+    background-color: var(--light-bg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    z-index: 3;
+    min-width: max-content;
+  }
+  .links .dropdown a {
+    display: block;
+    background: none;
+  }
+  .links .dropdown a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
   }
 
   li {

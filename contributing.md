@@ -1,3 +1,6 @@
+"""Run this script to add/update geometry optimization analysis for new models to individual
+CSV files in each model's directory."""
+
 # How to submit new models to Matbench Discovery
 
 ## 🔨 &thinsp; Installation
@@ -11,94 +14,42 @@ pip install -e ./matbench-discovery --config-settings editable-mode=compat
 
 There's also a [PyPI package](https://pypi.org/project/matbench-discovery) for faster installation if you don't need the latest code changes (unlikely if you're planning to submit a model since the benchmark is under active development).
 
-## 📙 &thinsp; Usage
-
-When you access attributes of the `DataFiles` class, it automatically downloads and caches the corresponding data files. For example:
-
-```py
-from matbench_discovery.data import DataFiles, ase_atoms_from_zip
-import pandas as pd
-
-df_wbm = pd.read_csv(DataFiles.wbm_summary.path)
-# confirm test set size
-assert df_wbm.shape == (256_963, 18)
-# available columns in WBM summary data
-assert tuple(df_wbm) == (
-    "material_id",
-    "formula",
-    "n_sites",
-    "volume",
-    "uncorrected_energy",
-    "e_form_per_atom_wbm",
-    "e_above_hull_wbm",
-    "bandgap_pbe",
-    "wyckoff_spglib_initial_structure",
-    "uncorrected_energy_from_cse",
-    "e_correction_per_atom_mp2020",
-    "e_correction_per_atom_mp_legacy",
-    "e_form_per_atom_uncorrected",
-    "e_form_per_atom_mp2020_corrected",
-    "e_above_hull_mp2020_corrected_ppd_mp",
-    "site_stats_fingerprint_init_final_norm_diff",
-    "wyckoff_spglib",
-    "unique_prototype"
-)
-
-# WBM initial structures in pymatgen JSON format
-df_init_structs = pd.read_json(DataFiles.wbm_initial_structures.path)
-assert tuple(df_init_structs) == ("material_id", "formula_from_cse", "initial_structure")
-# WBM initial structures as ASE Atoms
-wbm_init_atoms = ase_atoms_from_zip(DataFiles.wbm_initial_structures.path)
-assert len(wbm_init_atoms) == 256_963
-```
-
-`"wbm-summary"` columns:
-
-1. **`formula`**: A compound's unreduced alphabetical formula
-1. **`n_sites`**: Number of sites in the structure's unit cell
-1. **`volume`**: Relaxed structure volume in cubic Angstrom
-1. **`uncorrected_energy`**: Raw VASP-computed energy
-1. **`e_form_per_atom_wbm`**: Original formation energy per atom from [WBM paper]
-1. **`e_above_hull_wbm`**: Original energy above the convex hull in (eV/atom) from [WBM paper]
-1. **`wyckoff_spglib`**: Aflow label strings built from spacegroup and Wyckoff positions of the DFT-relaxed structure as computed by [spglib](https://spglib.readthedocs.io/en/stable/api/python-api/spglib/spglib.html#spglib.get_symmetry_dataset).
-1. **`wyckoff_spglib_initial_structure`**: Same as `wyckoff_spglib` but computed from the initial structure.
-1. **`bandgap_pbe`**: PBE-level DFT band gap from [WBM paper]
-1. **`uncorrected_energy_from_cse`**: Uncorrected DFT energy stored in `ComputedStructureEntries`. Should be the same as `uncorrected_energy`. There are 2 cases where the absolute difference reported in the summary file and in the computed structure entries exceeds 0.1 eV (`wbm-2-3218`, `wbm-1-56320`) which we attribute to rounding errors.
-1. **`e_form_per_atom_uncorrected`**: Uncorrected DFT formation energy per atom in eV/atom.
-1. **`e_form_per_atom_mp2020_corrected`**: Matbench Discovery takes these as ground truth for the formation energy. The result of applying the [MP2020 energy corrections][`MaterialsProject2020Compatibility`] (latest correction scheme at time of release) to `e_form_per_atom_uncorrected`.
-1. **`e_correction_per_atom_mp2020`**: [`MaterialsProject2020Compatibility`] energy corrections in eV/atom.
-1. **`e_correction_per_atom_mp_legacy`**: Legacy [`MaterialsProjectCompatibility`] energy corrections in eV/atom. Having both old and new corrections allows updating predictions from older models like MEGNet that were trained on MP formation energies treated with the old correction scheme.
-1. **`e_above_hull_mp2020_corrected_ppd_mp`**: Energy above hull distances in eV/atom after applying the MP2020 correction scheme. The convex hull in question is the one spanned by all ~145k Materials Project `ComputedStructureEntries`. Matbench Discovery takes these as ground truth for material stability. Any value above 0 is assumed to be an unstable/metastable material.
-1. **`site_stats_fingerprint_init_final_norm_diff`**: The norm of the difference between the initial and final site fingerprints. This is a volume-independent measure of how much the structure changed during DFT relaxation. Uses the `matminer` [`SiteStatsFingerprint`](https://github.com/hackingmaterials/matminer/blob/33bf112009b67b108f1008b8cc7398061b3e6db2/matminer/featurizers/structure/sites.py#L21-L33) (v0.8.0).
-
-[`MaterialsProject2020Compatibility`]: https://github.com/materialsproject/pymatgen/blob/02a4ca8aa0277b5f6db11f4de4fdbba129de70a5/pymatgen/entries/compatibility.py#L823
-[`MaterialsProjectCompatibility`]: https://github.com/materialsproject/pymatgen/blob/02a4ca8aa0277b5f6db11f4de4fdbba129de70a5/pymatgen/entries/compatibility.py#L766
-
-## 📥 &thinsp; Direct Download
-
-You can download all Matbench Discovery data files from [this Figshare article](https://figshare.com/articles/dataset/23713842).
-
-<slot name="data-files" />
-
-To train an interatomic potential, we recommend the [**MPtrj dataset**](https://figshare.com/articles/dataset/23713842) which was created to train [CHGNet](https://www.nature.com/articles/s42256-023-00716-3). With thanks to [Bowen Deng](https://scholar.google.com/citations?user=PRPXA0QAAAAJ) for cleaning and releasing this dataset. It was created from the [2021.11.10](https://docs.materialsproject.org/changes/database-versions#v2021.11.10) release of Materials Project and therefore constitutes a slightly smaller but valid subset of the allowed [2022.10.28](https://docs.materialsproject.org/changes/database-versions#v2022.10.28) MP release that is our training set.
-
-[wbm paper]: https://nature.com/articles/s41524-020-00481-6
-
 ## ✨ &thinsp; How to submit a new model
 
 To submit a new model to this benchmark and add it to our leaderboard, please create a pull request to the [`main` branch][repo] that includes at least these 3 required files:
 
-1. `<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz`: Your model's energy predictions for all ~250k WBM compounds as compressed JSON or CSV. The recommended way to create this file is with `pandas.DataFrame.to_{json|csv}("<yyyy-mm-dd>-<model_name>-preds.(json|csv).gz")`. JSON is preferred over CSV if your model not only predicts energies (floats) but also objects like relaxed structures. See e.g. [M3GNet](https://github.com/janosh/matbench-discovery/blob/-/models/m3gnet/test_m3gnet.py) and [CHGNet](https://github.com/janosh/matbench-discovery/blob/-/models/chgnet/test_chgnet.py) test scripts.
-   For machine learning force field (MLFF) submissions, you additionally upload the relaxed structures and forces from your model's geometry optimization to Figshare or a similar platform and include the download link in your PR description and the YAML metadata file. This file should include:
+1. `<yyyy-mm-dd>-<model_name>-preds.csv.gz`: Your model's energy predictions for all ~250k WBM compounds as compressed CSV. The recommended way to create this file is with `pandas.DataFrame.to_csv("<yyyy-mm-dd>-wbm-IS2RE.csv.gz")`. See e.g. [`test_mace_discovery`](https://github.com/janosh/matbench-discovery/blob/-/models/mace/test_mace_discovery.py) for code that generates this file.
 
-   - The final relaxed structures (as ASE `Atoms` or pymatgen `Structures`)
-   - Energies (eV), forces (eV/Å), stress (eV/Å³) and volume (Å³) at each relaxation step
+   ### Sharing Model Prediction Files
 
-   Recording the model-relaxed structures enables additional analysis of root mean squared displacement (RMSD) and symmetry breaking with respect to DFT relaxed structures. Having the forces and stresses at each step also allows analyzing any pathological behavior for structures were relaxation failed or went haywire.
+   You should share your model's predictions through a cloud storage service (e.g. Figshare, Zenodo, Google Drive, Dropbox, AWS, etc.) and include the download links in your PR description. Your cloud storage directory should contain files with the following naming convention: `<arch-name>/<model-variant>/<yyyy-mm-dd>-<eval-task>.{csv.gz|json.gz}`. For example, a in the case of MACE-MP-0, the file paths would be:
+
+   - geometry optimization: `mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE.json.gz`
+   - discovery: `mace/mace-mp-0/2023-12-11-wbm-IS2RE.csv.gz`
+   - phonons: `mace/mace-mp-0/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz`
+
+   The files should contain the following information:
+
+   1. `<arch-name>/<model-variant>/<yyyy-mm-dd>-wbm-geo-opt-<optimizer>.json.gz`: The model's relaxed structures as compressed JSON containing:
+
+      - Final relaxed structures (as ASE `Atoms` or pymatgen `Structures`)
+      - Final energies (eV), forces (eV/Å), stress (eV/Å³) and volume (Å³)
+      - Material IDs matching the WBM test set
+
+   2. `<arch-name>/<model-variant>/<yyyy-mm-dd>-wbm-IS2RE.csv.gz`: A compressed CSV file with:
+
+      - Material IDs matching the WBM test set
+      - Final formation energies per atom (eV/atom)
+
+   3. `<arch-name>/<model-variant>/<yyyy-mm-dd>-kappa-103-<values-of-dist|fmax|symprec>.json.gz`: A compressed JSON file with:
+      - Material IDs matching the WBM test set
+      - Predicted thermal conductivity (κ) values (W/mK)
+
+   Having the forces and stresses at each relaxation step also allows analyzing any pathological behavior for structures where relaxation failed or went haywire.
 
    Example of how to record these quantities for a single structure with ASE:
 
-   ```python
+   ```py
    from collections import defaultdict
    import pandas as pd
    from ase.atoms import Atoms
@@ -133,16 +84,16 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    df_traj.to_csv("trajectory.csv.gz")  # Save final structure and trajectory data
    ```
 
-1. `test_<model_name>.(py|ipynb)`: The Python script or Jupyter notebook that generated the energy predictions. Ideally, this file should have comments explaining at a high level what the code is doing and how the model works so others can understand and reproduce your results. If the model deployed on this benchmark was trained specifically for this purpose (i.e. if you wrote any training/fine-tuning code while preparing your PR), please also include it as `train_<model_name>.(py|ipynb)`.
+1. `test_<model_name>_discovery.py`: The Python script that generated the WBM final energy predictions given the initial (unrelaxed) DFT structures. Ideally, this file should have comments explaining at a high level what the code is doing and how the model works so others can understand and reproduce your results. If the model deployed on this benchmark was trained specifically for this purpose (i.e. if you wrote any training/fine-tuning code while preparing your PR), please also include it as `train_<model_name>.py`.
 1. `<model_name.yml>`: A file to record all relevant metadata of your algorithm like model name and version, authors, package requirements, links to publications, notes, etc. Here's a template:
 
    ```yml
    model_name: My new model # required (this must match the model's label which is the 3rd arg in the matbench_discovery.preds.Model enum)
    model_key: my-new-model # this should match the name of the YAML file and determines the URL /models/<model_key> on which details of the model are displayed on the website
-   model_version: 1.0.0 # required
-   matbench_discovery_version: 1.0 # required
-   date_added: "2023-01-01" # required
-   authors: # required (only name, other keys are optional)
+   model_version: 1.0.0
+   matbench_discovery_version: 1.0
+   date_added: "2023-01-01"
+   authors:
      - name: John Doe
        affiliation: Some University, Some National Lab
        email: john-doe@uni.edu
@@ -156,7 +107,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
        url: uni.edu/jane-doe
        orcid: https://orcid.org/0000-xxxx-yyyy-zzzz
        role: Model
-   repo: https://github.com/<user>/<repo> # required
+   repo: https://github.com/<user>/<repo>
    url: https://<model-docs-or-similar>.org
    doi: https://doi.org/10.5281/zenodo.0000000
    preprint: https://arxiv.org/abs/xxxx.xxxxx
@@ -211,7 +162,7 @@ matbench-discovery-root
 └── models
     └── <model_name>
         ├── <model_name>.yml
-        ├── <yyyy-mm-dd>-<model_name>-preds.(json|csv).gz
+        ├── <yyyy-mm-dd>-<model_name>-preds.csv.gz
         ├── test_<model_name>.py
         ├── readme.md  # optional
         └── train_<model_name>.py  # optional

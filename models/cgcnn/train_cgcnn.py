@@ -1,3 +1,5 @@
+"""Train a CGCNN ensemble on target_col of data_path."""
+
 # %%
 import os
 from importlib.metadata import version
@@ -13,13 +15,9 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm, trange
 
 from matbench_discovery import WANDB_PATH, timestamp, today
-from matbench_discovery.data import DataFiles
-from matbench_discovery.slurm import slurm_submit
+from matbench_discovery.enums import DataFiles
+from matbench_discovery.hpc import slurm_submit
 from matbench_discovery.structure import perturb_structure
-
-"""
-Train a CGCNN ensemble on target_col of data_path.
-"""
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-06-13"
@@ -32,12 +30,12 @@ input_col = Key.structure
 # 0 for no perturbation, n>1 means train on n perturbations of each crystal
 # in the training set all assigned the same original target energy
 n_perturb = 0
-job_name = f"train-cgcnn-robust-{n_perturb=}"
+job_name = f"{today}-train-cgcnn-robust-{n_perturb=}"
 print(f"{job_name=}")
 robust = "robust" in job_name.lower()
 ensemble_size = 10
 module_dir = os.path.dirname(__file__)
-out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
+out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}")
 
 slurm_vars = slurm_submit(
     job_name=job_name,

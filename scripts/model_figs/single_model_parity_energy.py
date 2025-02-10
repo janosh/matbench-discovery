@@ -6,60 +6,59 @@ Last plot is split into 2x3 subplots, one for each model.
 # %%
 import itertools
 import os
-from typing import Literal, get_args
 
 import pymatviz as pmv
 from pymatviz.enums import Key
 
 from matbench_discovery import SITE_FIGS
-from matbench_discovery.data import Model
-from matbench_discovery.enums import MbdKey, TestSubset
-from matbench_discovery.preds.discovery import (
-    df_each_pred,
-    df_metrics,
-    df_metrics_uniq_protos,
-    df_preds,
-)
+from matbench_discovery.cli import cli_args
+from matbench_discovery.data import load_df_wbm_with_preds
+from matbench_discovery.enums import MbdKey
 
 __author__ = "Janosh Riebesell"
 __date__ = "2024-09-07"
 
 # toggle between formation energy and energy above convex hull
-EnergyType = Literal["e-form", "each"]
-use_e_form, use_each = get_args(EnergyType)
-update_existing: bool = False
+update_existing: bool = cli_args.update_existing
+models_to_plot = cli_args.models  # get model list from CLI, defaults to all models
+energy_labels = {Key.e_form: "Formation Energy", Key.each: "Convex Hull Distance"}
 
-test_subset = globals().get("test_subset", TestSubset.uniq_protos)
-if test_subset == TestSubset.uniq_protos:
-    df_preds = df_preds.query(MbdKey.uniq_proto)
-    df_metrics = df_metrics_uniq_protos
+# Load predictions for specified models
+df_preds = load_df_wbm_with_preds(
+    models=models_to_plot, subset=cli_args.test_subset
+).round(3)
 
 
 # %% parity plot of actual vs predicted e_form_per_atom
 parity_scatters_dir = f"{SITE_FIGS}/energy-parity"
 os.makedirs(parity_scatters_dir, exist_ok=True)
 
-for model_name, which_energy in itertools.product(df_metrics, (use_e_form, use_each)):
-    model_key = Model.from_label(model_name).key
-    img_name = f"{which_energy}-parity-{model_name.lower().replace(' ', '-')}"
+for model, which_energy in itertools.product(models_to_plot, (Key.e_form, Key.each)):
+    img_name = f"{which_energy}-parity-{model.key.lower().replace(' ', '-')}"
     img_path = f"{parity_scatters_dir}/{img_name}.svelte"
     if os.path.isfile(img_path) and not update_existing:
+        print(f"{img_path} already exists, skipping")
         continue
 
-    if which_energy == use_each:
-        df_in = df_each_pred.copy()
-        df_in[MbdKey.each_true] = df_preds[MbdKey.each_true]
-        df_in[Key.formula] = df_preds[Key.formula]
-        df_in[Key.mat_id] = df_preds[Key.mat_id]
+    if which_energy == Key.each:
+        # Calculate EACH prediction for this model
+        each_pred = (
+            df_preds[MbdKey.each_true]
+            + df_preds[model.label]
+            - df_preds[MbdKey.e_form_dft]
+        )
+        df_in = df_preds[[Key.formula, Key.mat_id, MbdKey.each_true]].copy()
+        df_in[model.label] = each_pred
         e_true_col = MbdKey.each_true
-    elif which_energy == use_e_form:
-        df_in = df_preds
+    elif which_energy == Key.e_form:
+        df_in = df_preds[[Key.formula, Key.mat_id, MbdKey.e_form_dft, model.label]]
         e_true_col = MbdKey.e_form_dft
     else:
         raise ValueError(f"Unexpected {which_energy=}")
 
-    e_pred_col = f"{model_name} {e_true_col.label.replace('DFT ', '')}"
-    df_in = df_in.rename(columns={model_name: e_pred_col})
+    e_pred_col = f"{model.label} {e_true_col.label.replace('DFT ', '')}"
+    df_in = df_in.rename(columns={model.label: e_pred_col})
+    n_points = len(df_in.dropna(subset=[e_true_col, e_pred_col]))
 
     fig = pmv.density_scatter_plotly(
         df=df_in.reset_index(drop=True),
@@ -69,14 +68,29 @@ for model_name, which_energy in itertools.product(df_metrics, (use_e_form, use_e
         hover_name=Key.mat_id,
         opacity=0.7,
         color_continuous_scale="agsunset",
+        colorbar_kwargs=dict(orientation="h", thickness=15, x=0.3, y=0.8, len=0.5),
+        stats=dict(
+            prefix=f"N={n_points:,}<br>",
+            x=0.99,
+            xanchor="right",
+            y=0.07,
+            font_color="black",
+        ),
+        best_fit_line=dict(annotate_params=dict(y=0.01, font_size=16, x=0.99)),
+    )
+    fig.layout.xaxis.title.update(
+        text=f"PBE {energy_labels[which_energy]} (eV/atom)", font_size=16
+    )
+    fig.layout.yaxis.title.update(
+        text=f"{model.label} {energy_labels[which_energy]} (eV/atom)", font_size=16
     )
 
-    # reduce colorbar size
-    fig.data[0].marker.colorbar.update(thickness=0.02)
-
-    fig.layout.title.update(text=f"{model_name} {which_energy}", x=0.5)
-    fig.layout.margin.update(l=0, r=0, t=50, b=0)
-
+    fig.layout.coloraxis.colorbar.update(
+        title="Point Density", title_side="bottom", tickangle=0
+    )
     pmv.powerups.add_identity_line(fig)
+    # fig.layout.update(width=600, height=400)
+
+    fig.layout.title.update(text=f"{model.label} {which_energy}", x=0.5)
+    fig.layout.margin.update(l=0, r=0, t=50, b=0)
     fig.show()
-    pmv.save_fig(fig, img_path)

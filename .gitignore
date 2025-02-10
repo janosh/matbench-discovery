@@ -20,16 +20,22 @@ data/**/*.extxyz*
 data/**/*.json*
 data/**/*.zip*
 paper/figs/*.pdf*
+data/wbm/*symprec=*.csv*
 !data/**/*umap-projections.csv.bz2
 
 # slurm + Weights and Biases logs
 wandb/
-models/**/*slurm-*.log
+models/**/*.log
 
-# model checkpoints
+# model checkpoints and prediction files
 models/**/*.model
 models/**/*.pt
 models/**/*.tgz
+models/**/*.csv*
+models/**/*.json*
+
+# WIP model submissions
+models/_*
 
 # auto-generated docs
 site/src/routes/api/*.md

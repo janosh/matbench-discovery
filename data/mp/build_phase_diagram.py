@@ -19,8 +19,8 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, ROOT, today
-from matbench_discovery.data import DataFiles
 from matbench_discovery.energy import get_e_form_per_atom, get_elemental_ref_entries
+from matbench_discovery.enums import DataFiles
 
 module_dir = os.path.dirname(__file__)
 
@@ -74,9 +74,8 @@ with gzip.open(f"{module_dir}/{today}-ppd-mp.pkl.gz", mode="wb") as zip_file:
 
 
 # %% build phase diagram with both MP entries + WBM entries
-df_wbm = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_index(
-    Key.mat_id
-)
+wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
+df_wbm = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
 
 # using ComputedStructureEntry vs ComputedEntry here is important as CSEs receive
 # more accurate energy corrections that take into account peroxide/superoxide nature

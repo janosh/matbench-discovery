@@ -4,9 +4,11 @@
     MODEL_METADATA,
     TRAINING_SETS,
     get_metric_rank_order,
+    get_pred_file_urls,
     model_is_compliant,
   } from '$lib'
   import { pretty_num } from 'elementari'
+  import { click_outside } from 'svelte-zoo/actions'
   import { METADATA_COLS, METRICS_COLS } from './metrics'
   import type { HeatmapColumn, ModelData } from './types'
 
@@ -18,11 +20,14 @@
   export let hide_cols: string[] = []
   export let metadata_cols = METADATA_COLS
 
+  let active_files: { name: string; url: string }[] = []
+  let active_model_name = ``
+  let pred_file_modal: HTMLDialogElement | null = null
   let columns: HeatmapColumn[]
   $: columns = [...METRICS_COLS, ...(show_metadata ? metadata_cols : [])].map((col) => ({
     ...col,
     better: col.better ?? get_metric_rank_order(col.label),
-    hidden: hide_cols.includes(col.label) || col.hidden,
+    hidden: hide_cols?.includes(col.label) || col.hidden,
   }))
 
   function format_train_set(model_training_sets: string[]) {
@@ -43,7 +48,7 @@
       total_materials += n_materials
 
       const title = training_set_info.title || train_set
-      data_urls[train_set || title] = training_set_info.url || ``
+      data_urls[train_set || title] = training_set_info.download_url || ``
 
       if (n_materials !== n_structs) {
         tooltip.push(
@@ -126,24 +131,142 @@
         MAE: metrics?.MAE,
         RMSE: metrics?.RMSE,
         'R<sup>2</sup>': metrics?.R2,
-        'κ<sub>SRME</sub>': model.metrics?.phonons?.κ_SRME,
+        'κ<sub>SRME</sub>': model.metrics?.phonons?.kappa_103?.κ_SRME,
         'Training Set': format_train_set(model.training_set),
         Params: `<span title="${pretty_num(model.model_params, `,`)} trainable model parameters">${pretty_num(model.model_params)}</span>`,
         Targets: targets_str,
         'Date Added': `<span title="${long_date(model.date_added)}">${model.date_added}</span>`,
-        Links: [
-          (model.paper || model.doi) &&
-            `<a href="${model.paper || model.doi}" target="_blank" rel="noopener noreferrer" title="Paper">📄</a>`,
-          model.repo &&
-            `<a href="${model.repo}" target="_blank" rel="noopener noreferrer" title="Code repository">📦</a>`,
-          model.pr_url &&
-            `<a href="${model.pr_url}" target="_blank" rel="noopener noreferrer" title="Pull Request">🔗</a>`,
-        ]
-          .filter(Boolean)
-          .join(` `),
+        Links: {
+          paper: { url: model.paper || model.doi, title: `Read model paper`, icon: `📄` },
+          repo: { url: model.repo, title: `View source code`, icon: `📦` },
+          pr_url: { url: model.pr_url, title: `View pull request`, icon: `🔗` },
+          pred_files: { files: get_pred_file_urls(model), name: model.model_name },
+        },
       }
     })
-    .sort((row1, row2) => (row2.F1 ?? 0) - (row1.F1 ?? 0)) // Sort by F1 score descending
+    .sort((row1, row2) => (row2.F1 ?? 0) - (row1.F1 ?? 0))
 </script>
 
-<HeatmapTable data={metrics_data} {columns} {...$$restProps} />
+<svelte:window
+  on:keydown={(event) => {
+    if (event.key === `Escape` && pred_file_modal?.open) {
+      pred_file_modal.open = false
+      event.preventDefault()
+    }
+  }}
+/>
+
+<HeatmapTable data={metrics_data} {columns} {...$$restProps}>
+  <svelte:fragment slot="cell" let:col let:val>
+    {#if col.label === `Links` && val}
+      {@const links = val}
+      {#each [links.paper, links.repo, links.pr_url] as link}
+        {#if link?.url}
+          <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title}>
+            {link.icon}
+          </a>
+        {/if}
+      {/each}
+      {#if links.pred_files}
+        <button
+          class="pred-files-btn"
+          title="Download model prediction files"
+          on:click={() => {
+            if (!pred_file_modal) return
+            pred_file_modal.open = true
+            active_files = links.pred_files.files
+            active_model_name = links.pred_files.name
+          }}
+        >
+          📊
+        </button>
+      {/if}
+    {:else if typeof val === `number` && col.format}
+      {pretty_num(val, col.format)}
+    {:else if [undefined, null].includes(val)}
+      n/a
+    {:else}
+      {@html val}
+    {/if}
+  </svelte:fragment>
+</HeatmapTable>
+
+<dialog
+  bind:this={pred_file_modal}
+  use:click_outside={{
+    callback: () => {
+      if (pred_file_modal?.open) pred_file_modal.open = false
+    },
+  }}
+>
+  <div class="modal-content">
+    <button
+      class="close-btn"
+      on:click={() => {
+        if (pred_file_modal?.open) pred_file_modal.open = false
+      }}
+      title="Close (or click escape)"
+    >
+      ×
+    </button>
+    <h3>Download prediction files for {active_model_name}</h3>
+    <ol class="pred-files-list">
+      {#each active_files as file}
+        <li>
+          <a href={file.url} target="_blank" rel="noopener noreferrer">
+            {file.name}
+          </a>
+        </li>
+      {/each}
+    </ol>
+  </div>
+</dialog>
+
+<style>
+  dialog {
+    visibility: hidden;
+    opacity: 0;
+    background: var(--light-bg);
+    color: var(--text-color);
+    border: none;
+    border-radius: 5pt;
+    padding: 0;
+    max-width: min(90vw, 500px);
+  }
+
+  dialog[open] {
+    visibility: visible;
+    opacity: 1;
+    z-index: 2;
+  }
+
+  .pred-files-btn {
+    background: none;
+    padding: 0;
+  }
+
+  .modal-content {
+    padding: 1em;
+  }
+
+  .modal-content h3 {
+    margin: 0 0 1ex;
+  }
+
+  .pred-files-list {
+    margin: 0;
+    padding: 0 1em;
+  }
+
+  .close-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: none;
+    cursor: pointer;
+    font-size: 24px;
+  }
+  .close-btn:hover {
+    color: var(--link-color);
+  }
+</style>

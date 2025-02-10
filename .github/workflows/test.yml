@@ -29,7 +29,10 @@ jobs:
     with:
       os: ${{ matrix.os }}
       python-version: "3.11"
-      install-cmd: pip install -e .[test,symmetry]
+      # TODO remove main branch install of pymatviz after next release
+      install-cmd: |
+        pip install git+https://github.com/janosh/pymatviz
+        pip install -e .[test,symmetry]
 
   vitest:
     uses: janosh/workflows/.github/workflows/npm-test.yml@main
@@ -43,8 +46,9 @@ jobs:
       fail-fast: false
       matrix:
         script:
-          - scripts/metrics/eval_discovery.py
-          - scripts/model_figs/run_all.py
+          - scripts/evals/discovery.py
+          # TODO run_all.py was commented out during removal of WBM energy preds from version control. consider partially reinstating with on-the-fly downloaded or mock WBM energy preds
+          # - scripts/model_figs/run_all.py
     steps:
       - name: Check out repository
         uses: actions/checkout@v4

@@ -15,8 +15,8 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, today
-from matbench_discovery.data import DataFiles
-from matbench_discovery.slurm import slurm_submit
+from matbench_discovery.enums import DataFiles
+from matbench_discovery.hpc import slurm_submit
 
 sys.path.append(f"{ROOT}/models")
 
@@ -35,9 +35,9 @@ data_path = {
 
 input_col = Key.init_struct  # or Key.final_struct
 debug = "slurm-submit" in sys.argv
-job_name = f"voronoi-features-{data_name}"
+job_name = f"{today}-voronoi-features-{data_name}"
 module_dir = os.path.dirname(__file__)
-out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}")
+out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}")
 slurm_array_task_count = 50
 
 

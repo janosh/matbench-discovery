@@ -14,9 +14,9 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
+from matbench_discovery.data import as_dict_handler, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import DataFiles, MbdKey
 
 
 def join_predictions(
@@ -51,13 +51,12 @@ def join_predictions(
 
     df_fairchem = pd.concat(dfs.values()).round(4)
 
-    df_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_index(
-        Key.mat_id
-    )
+    wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
+    df_cse = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
 
     df_cse[Key.computed_structure_entry] = [
         ComputedStructureEntry.from_dict(dct)
-        for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Creating pmg CSEs")
+        for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
     ]
 
     # transfer fairchem energies and relaxed structures WBM CSEs since MP2020 energy

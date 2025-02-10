@@ -44,7 +44,7 @@ from torch.optim.swa_utils import SWALR, AveragedModel
 from torch_ema import ExponentialMovingAverage
 
 from matbench_discovery import WANDB_PATH, today
-from matbench_discovery.slurm import slurm_submit
+from matbench_discovery.hpc import slurm_submit
 
 __author__ = "Yuan Chiang, Ilyes Batatia, Gregor Simm, David Kovacs"
 __date__ = "2023-09-18"
@@ -53,10 +53,10 @@ __date__ = "2023-09-18"
 module_dir = os.path.dirname(__file__)
 
 slurm_vars = slurm_submit(
-    job_name=(job_name := "train-mace-mptrj"),
+    job_name=(job_name := f"{today}-train-mace-mptrj"),
     account="matgen",
     time="7-00:00:00",
-    out_dir=os.getenv("SBATCH_OUTPUT", f"{module_dir}/{today}-{job_name}"),
+    out_dir=os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}"),
     slurm_flags="""
         -q preempt
         -C gpu

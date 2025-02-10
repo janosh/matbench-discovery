@@ -1,10 +1,10 @@
 model_name: SevenNet-0
 model_key: sevennet-0
 model_version: v0.9.1_w_cutoff # 2024-07-11
-matbench_discovery_version: 1.1.2 # required
-date_added: "2024-07-13" # required
+matbench_discovery_version: 1.1.2
+date_added: "2024-07-13"
 date_published: "2024-02-06"
-authors: # required (only name, other keys are optional)
+authors:
   - name: Yutack Park
     affiliation: Seoul National University
     email: parkyutack@snu.ac.kr
@@ -25,7 +25,7 @@ trained_by:
     affiliation: Samsung Advanced Institute of Technology, Seoul National University
     orcid: https://orcid.org/0009-0004-2240-5428
 
-repo: https://github.com/MDIL-SNU/SevenNet # required
+repo: https://github.com/MDIL-SNU/SevenNet
 url: https://github.com/MDIL-SNU/SevenNet/tree/afb56e10b6/sevenn/pretrained_potentials/SevenNet_0__11July2024
 doi: https://doi.org/10.1021/acs.jctc.4c00190
 paper: https://arxiv.org/abs/2402.03789
@@ -78,10 +78,14 @@ notes:
 
 metrics:
   phonons:
-    κ_SRME: 0.767
+    kappa_103:
+      κ_SRME: 0.767
+      pred_file: models/sevennet/sevennet-0/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/ndownloader/files/52134878
   geo_opt:
-    pred_file: models/sevennet/sevennet-0/2024-07-11-sevennet-0-relaxed-structures.json.gz
-    pred_col: sevennet_structure
+    pred_file: models/sevennet/sevennet-0/2024-07-11-wbm-geo-opt.json.gz
+    pred_file_url: https://figshare.com/ndownloader/files/52062035
+    struct_col: sevennet_structure
     symprec=1e-5:
       rmsd: 0.0193 # Å
       n_sym_ops_mae: 2.5921 # unitless
@@ -89,6 +93,8 @@ metrics:
       symmetry_match: 0.4535 # fraction
       symmetry_increase: 0.1446 # fraction
       n_structures: 256963 # count
+      analysis_file: models/sevennet/sevennet-0/2024-07-11-wbm-geo-opt-symprec=1e-5.csv.gz
+      analysis_file_url: https://figshare.com/ndownloader/files/52062041
     symprec=1e-2:
       rmsd: 0.0193 # Å
       n_sym_ops_mae: 1.9558 # unitless
@@ -96,8 +102,11 @@ metrics:
       symmetry_match: 0.7823 # fraction
       symmetry_increase: 0.1262 # fraction
       n_structures: 256614 # count
+      analysis_file: models/sevennet/sevennet-0/2024-07-11-wbm-geo-opt-symprec=1e-2.csv.gz
+      analysis_file_url: https://figshare.com/ndownloader/files/52062050
   discovery:
-    pred_file: models/sevennet/sevennet-0/2024-07-11-sevennet-0-preds.csv.gz
+    pred_file: models/sevennet/sevennet-0/2024-07-11-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/ndownloader/files/52057544
     pred_col: e_form_per_atom_sevennet
     full_test_set:
       F1: 0.719 # fraction

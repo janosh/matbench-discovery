@@ -29,6 +29,7 @@ from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR, today
 from matbench_discovery.data import DataFiles
 from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 from matbench_discovery.enums import MbdKey
+from matbench_discovery.structure import prototype
 
 try:
     import gdown
@@ -57,7 +58,7 @@ os.makedirs(f"{WBM_DIR}/raw", exist_ok=True)
 for step, file_id in google_drive_ids.items():
     file_path = f"{WBM_DIR}/raw/wbm-structures-step-{step}.json.bz2"
 
-    if os.path.exists(file_path):
+    if os.path.isfile(file_path):
         print(f"{file_path} already exists, skipping")
         continue
 
@@ -68,7 +69,7 @@ for step, file_id in google_drive_ids.items():
 # %%
 summary_path = f"{WBM_DIR}/raw/wbm-summary.txt"
 
-if not os.path.exists(summary_path):
+if not os.path.isfile(summary_path):
     summary_id_file = "1639IFUG7poaDE2uB6aISUOi65ooBwCIg"
     summary_url = f"https://drive.google.com/u/0/uc?id={summary_id_file}"
     gdown.download(summary_url, summary_path)
@@ -124,9 +125,9 @@ for json_path in json_paths:
         # df.index = [f"step_3_{idx + 1}" for idx in range(len(df))]
 
     step_len = step_lens[step - 1]
-    assert (
-        len(df_wbm_step) == step_len
-    ), f"bad len for {step=}: {len(df_wbm_step)} != {step_len}"
+    assert len(df_wbm_step) == step_len, (
+        f"bad len for {step=}: {len(df_wbm_step)} != {step_len}"
+    )
     dfs_wbm_structs[step] = df_wbm_step
 
 
@@ -181,7 +182,7 @@ for filename in (
     *(f"step_{step}.json.bz2" for step in range(1, 6)),
 ):
     file_path = f"{WBM_DIR}/raw/wbm-cse-{filename.lower().replace('_', '-')}"
-    if os.path.exists(file_path):
+    if os.path.isfile(file_path):
         print(f"{file_path} already exists, skipping")
         continue
 
@@ -244,9 +245,9 @@ assert pd.Series(
 # make sure only 2 materials have missing initial structures with expected IDs
 expected_ids_with_no_init_structs = ["wbm-5-23166", "wbm-5-23294"]
 actual_ids_with_no_structs = list(df_wbm.query(f"{Key.init_struct}.isna()").index)
-assert (
-    actual_ids_with_no_structs == expected_ids_with_no_init_structs
-), f"{actual_ids_with_no_structs=}\n{expected_ids_with_no_init_structs=}"
+assert actual_ids_with_no_structs == expected_ids_with_no_init_structs, (
+    f"{actual_ids_with_no_structs=}\n{expected_ids_with_no_init_structs=}"
+)
 # drop the two materials with missing initial structures
 df_wbm = df_wbm.drop(index=expected_ids_with_no_init_structs)
 
@@ -287,9 +288,9 @@ for _mat_id, row in tqdm(df_wbm.sample(n_samples).iterrows(), total=n_samples):
 
     # and check initial and final compositions match
     struct_init = Structure.from_dict(row[Key.init_struct])
-    assert (
-        struct_init.composition == struct_final.composition
-    ), f"composition mismatch for {row.Index=}"
+    assert struct_init.composition == struct_final.composition, (
+        f"composition mismatch for {row.Index=}"
+    )
 
 
 # %% extract alphabetical formula from CSEs (will be used as ground-truth formulas since
@@ -617,9 +618,9 @@ for mat_id, row in tqdm(
 
     # make sure the PPD.get_e_form_per_atom() and standalone get_e_form_per_atom()
     # method of calculating formation energy agree
-    assert (
-        abs(e_form - e_form_ppd) < 1e-4
-    ), f"{mat_id}: {e_form=:.3} != {e_form_ppd=:.3} (diff={e_form - e_form_ppd:.3}))"
+    assert abs(e_form - e_form_ppd) < 1e-4, (
+        f"{mat_id}: {e_form=:.3} != {e_form_ppd=:.3} (diff={e_form - e_form_ppd:.3}))"
+    )
     df_summary.loc[cse.entry_id, MbdKey.e_form_raw] = e_form
 
 
@@ -629,41 +630,34 @@ df_summary[MbdKey.e_form_raw.replace("uncorrected", "mp2020_corrected")] = (
 
 
 # %%
-try:
-    from aviary.wren.utils import get_protostructure_label_from_spglib
+# from initial structures
+for idx in tqdm(df_wbm.index):
+    if not pd.isna(df_summary.loc[idx].get(MbdKey.init_wyckoff_spglib)):
+        continue  # Aflow label already computed
+    try:
+        struct = Structure.from_dict(df_wbm.loc[idx, Key.init_struct])
+        df_summary.loc[idx, f"{Key.protostructure}_moyo_init"] = (
+            prototype.get_protostructure_label(struct)
+        )
+    except Exception as exc:
+        print(f"{idx=} {exc=}")
 
-    # from initial structures
-    for idx in tqdm(df_wbm.index):
-        if not pd.isna(df_summary.loc[idx].get(MbdKey.init_wyckoff)):
-            continue  # Aflow label already computed
-        try:
-            struct = Structure.from_dict(df_wbm.loc[idx, Key.init_struct])
-            df_summary.loc[idx, MbdKey.init_wyckoff] = (
-                get_protostructure_label_from_spglib(struct)
-            )
-        except Exception as exc:
-            print(f"{idx=} {exc=}")
+# from relaxed structures
+for idx in tqdm(df_wbm.index):
+    if not pd.isna(df_summary.loc[idx].get(Key.wyckoff)):
+        continue
 
-    # from relaxed structures
-    for idx in tqdm(df_wbm.index):
-        if not pd.isna(df_summary.loc[idx].get(Key.wyckoff)):
-            continue
+    try:
+        cse = df_wbm.loc[idx, Key.computed_structure_entry]
+        struct = Structure.from_dict(cse["structure"])
+        df_summary.loc[idx, f"{Key.protostructure}_moyo_relaxed"] = (
+            prototype.get_protostructure_label(struct)
+        )
+    except Exception as exc:
+        print(f"{idx=} {exc=}")
 
-        try:
-            cse = df_wbm.loc[idx, Key.computed_structure_entry]
-            struct = Structure.from_dict(cse["structure"])
-            df_summary.loc[idx, Key.wyckoff] = get_protostructure_label_from_spglib(
-                struct
-            )
-        except Exception as exc:
-            print(f"{idx=} {exc=}")
-
-    assert df_summary[MbdKey.init_wyckoff].isna().sum() == 0
-    assert df_summary[Key.wyckoff].isna().sum() == 0
-except ImportError:
-    print("aviary not installed, skipping Wyckoff label generation")
-except Exception as exception:
-    print(f"Generating Aflow labels raised {exception=}")
+assert df_summary[MbdKey.init_wyckoff_spglib].isna().sum() == 0
+assert df_summary[Key.wyckoff].isna().sum() == 0
 
 
 # %%
@@ -684,11 +678,13 @@ except KeyError:
 df_mp = pd.read_csv(DataFiles.mp_energies.path, index_col=0)
 
 # mask WBM materials with matching prototype in MP
-mask_proto_in_mp = df_summary[MbdKey.init_wyckoff].isin(df_mp["wyckoff_spglib"])
+mask_proto_in_mp = df_summary[MbdKey.init_wyckoff_spglib].isin(
+    df_mp[MbdKey.wyckoff_spglib]
+)
 # mask duplicate prototypes in WBM (keeping the lowest energy one)
 mask_dupe_protos = df_summary.sort_values(
-    by=[MbdKey.init_wyckoff, MbdKey.each_wbm]
-).duplicated(subset=MbdKey.init_wyckoff, keep="first")
+    by=[MbdKey.init_wyckoff_spglib, MbdKey.each_wbm]
+).duplicated(subset=MbdKey.init_wyckoff_spglib, keep="first")
 assert sum(mask_proto_in_mp) == 11_175, f"{sum(mask_proto_in_mp)=:_}"
 assert sum(mask_dupe_protos) == 32_784, f"{sum(mask_dupe_protos)=:_}"
 

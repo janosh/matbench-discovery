@@ -12,7 +12,7 @@ The decision to abort testing ALIGNN FF was made after weeks of work due to ongo
 
 ## Fine-tuning
 
-We attempted fine-tuning the [`alignnff_wt10` checkpoint](https://github.com/usnistgov/alignn/blob/461b35fe6e5ed7ade7cbf9b345773e941371ecfc/alignn/ff/alignnff_wt10/best_model.pt).
+We attempted fine-tuning the [`alignnff_wt10` checkpoint](https://github.com/usnistgov/alignn/blob/461b35fe/alignn/ff/alignnff_wt10/best_model.pt).
 
 The patch `alignn-ff-2023.07.05.patch` fixes the following issue:
 
@@ -35,5 +35,5 @@ OSError: [Errno 24] Too many open files
 
 ## Scripts
 
-1. `alignn_ff_relax.py`: Relax WBM test set structures. Set the variable `n_splits` to the number of GPU compute nodes. On each compute node, set the environment variable `TASK_ID` to a value in the range 1-`n_splits`. Set the variable `n_processes_per_task` to the number of processes on a single node. For 48 CPU cores with 4 GPUs a good setting is to use 10 processes.
-2. `test_alignn_ff.py`: Read the relaxed structures from `alignn_ff_relax.py` and make formation energy predictions. Set the variable `n_splits` accordingly.
+1. [`alignn_ff_relax.py`](alignn_ff_relax.py): Relax WBM test set structures. Set the variable `n_splits` to the number of GPU compute nodes. On each compute node, set the environment variable `TASK_ID` to a value in the range 1-`n_splits`. Set the variable `n_processes_per_task` to the number of processes on a single node. For 48 CPU cores with 4 GPUs a good setting is to use 10 processes.
+2. [`test_alignn_ff_discovery.py`](test_alignn_ff_discovery.py): Read the relaxed structures from `alignn_ff_relax.py` and make formation energy predictions. Set the variable `n_splits` accordingly.

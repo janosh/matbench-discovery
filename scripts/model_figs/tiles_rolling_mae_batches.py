@@ -9,11 +9,11 @@ import pymatviz as pmv
 from plotly.subplots import make_subplots
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery.cli import cli_args
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
 from matbench_discovery.preds.discovery import df_each_pred, df_preds
-from matbench_discovery.preds.discovery import models as all_models
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
@@ -21,7 +21,6 @@ __date__ = "2022-06-18"
 batch_col = "batch_idx"
 df_each_pred[batch_col] = "Batch " + df_each_pred.index.str.split("-").str[1]
 df_err, df_std = None, None  # variables to cache rolling MAE and std
-models = globals().get("models", all_models)
 
 
 save_individual_figs = globals().get("save_individual_figs", True)
@@ -33,9 +32,9 @@ if test_subset == TestSubset.uniq_protos:
 
 show_non_compliant = globals().get("show_non_compliant", False)
 models_to_plot = [
-    model
-    for model in models
-    if show_non_compliant or model_is_compliant(MODEL_METADATA[model])
+    model.label
+    for model in cli_args.models
+    if show_non_compliant or model_is_compliant(MODEL_METADATA[model.label])
 ]
 
 n_cols = 3
@@ -45,7 +44,7 @@ if use_full_rows:
     n_rows = len(models_to_plot) // n_cols
     models_to_plot = models_to_plot[: n_rows * n_cols]
 else:
-    n_rows = math.ceil(len(models) / n_cols)
+    n_rows = math.ceil(len(models_to_plot) / n_cols)
 
 
 # %% Create subplots with one row per column in the DataFrame
@@ -63,7 +62,7 @@ fig.layout.update(height=230 * n_rows)
 fig.layout.update(width=280 * n_cols)
 
 subfig = None
-for i, model in enumerate(models_to_plot):
+for idx, model in enumerate(models_to_plot):
     df_pivot = df_each_pred.pivot(columns=batch_col, values=model)
 
     subfig, df_err, df_std = rolling_mae_vs_hull_dist(
@@ -90,7 +89,7 @@ for i, model in enumerate(models_to_plot):
         pmv.save_fig(subfig, f"{SITE_FIGS}/{img_path}.svelte")
         pmv.save_fig(subfig, f"{PDF_FIGS}/{img_path}.pdf", width=500, height=330)
 
-    row, col = divmod(i, n_cols)
+    row, col = divmod(idx, n_cols)
 
     for trace in subfig.data:
         fig.add_trace(trace, row=row + 1, col=col + 1)
@@ -125,10 +124,10 @@ if subfig is not None:
 else:
     raise ValueError("x_title and y_title are not defined")
 
-for i in range(1, n_rows + 1):
+for idx in range(1, n_rows + 1):
     for j in range(1, n_cols + 1):
-        fig.update_xaxes(title_text="", row=i, col=j)
-        fig.update_yaxes(title_text="", row=i, col=j)
+        fig.update_xaxes(title_text="", row=idx, col=j)
+        fig.update_yaxes(title_text="", row=idx, col=j)
 
 axis_titles = dict(xref="paper", yref="paper", showarrow=False, font_size=16)
 fig.add_annotation(  # x-axis title

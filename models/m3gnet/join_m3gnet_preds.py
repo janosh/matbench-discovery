@@ -14,9 +14,9 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery.data import DataFiles, as_dict_handler
+from matbench_discovery.data import as_dict_handler
 from matbench_discovery.energy import get_e_form_per_atom
-from matbench_discovery.enums import Task
+from matbench_discovery.enums import DataFiles, Task
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-08-16"
@@ -47,12 +47,12 @@ df_m3gnet = pd.concat(dfs.values()).round(4)
 
 
 # %%
-df_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_index(
-    Key.mat_id
-)
+wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
+df_cse = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
+
 df_cse[Key.computed_structure_entry] = [
     ComputedStructureEntry.from_dict(dct)
-    for dct in tqdm(df_cse[Key.computed_structure_entry])
+    for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
 ]
 
 

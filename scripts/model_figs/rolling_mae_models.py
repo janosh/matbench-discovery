@@ -5,10 +5,11 @@ import numpy as np
 import pymatviz as pmv
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery.cli import cli_args
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
-from matbench_discovery.preds.discovery import df_each_pred, df_preds, models
+from matbench_discovery.preds.discovery import df_each_pred, df_preds
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
@@ -25,9 +26,9 @@ if test_subset == TestSubset.uniq_protos:
 
 show_non_compliant = globals().get("show_non_compliant", False)
 models_to_plot = [
-    model
-    for model in models
-    if show_non_compliant or model_is_compliant(MODEL_METADATA[model])
+    model.label
+    for model in cli_args.models
+    if show_non_compliant or model_is_compliant(MODEL_METADATA[model.label])
 ]
 
 fig, df_err, df_std = rolling_mae_vs_hull_dist(

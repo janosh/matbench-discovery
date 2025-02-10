@@ -83,103 +83,18 @@ export interface ModelMetadata {
   metrics?: {
     phonons?:
       | {
-          κ_SRME?: number
+          kappa_103?: {
+            [k: string]: unknown
+          }
         }
       | ('not applicable' | 'not available')
     geo_opt?:
       | {
-          pred_file: string | null
-          pred_col: string | null
-          'symprec=1e-5'?: {
-            rmsd?: number
-            n_sym_ops_mae?: number
-            symmetry_decrease?: number
-            symmetry_match?: number
-            symmetry_increase?: number
-            n_structures?: number
-          }
-          'symprec=1e-3'?: {
-            rmsd?: number
-            n_sym_ops_mae?: number
-            symmetry_decrease?: number
-            symmetry_match?: number
-            symmetry_increase?: number
-            n_structures?: number
-          }
-          'symprec=1e-2'?: {
-            rmsd?: number
-            n_sym_ops_mae?: number
-            symmetry_decrease?: number
-            symmetry_match?: number
-            symmetry_increase?: number
-            n_structures?: number
-          }
+          [k: string]: unknown
         }
       | ('not applicable' | 'not available')
     discovery?: {
-      additionalProperties?: never
-      pred_file?: string
-      pred_col?: string
-      full_test_set?: {
-        F1?: number
-        DAF?: number
-        Precision?: number
-        Recall?: number
-        Accuracy?: number
-        TPR?: number
-        FPR?: number
-        TNR?: number
-        FNR?: number
-        TP?: number
-        FP?: number
-        TN?: number
-        FN?: number
-        MAE?: number
-        RMSE?: number
-        R2?: number
-        missing_preds?: number
-        missing_percent?: string
-      }
-      most_stable_10k?: {
-        F1?: number
-        DAF?: number
-        Precision?: number
-        Recall?: number
-        Accuracy?: number
-        TPR?: number
-        FPR?: number
-        TNR?: number
-        FNR?: number
-        TP?: number
-        FP?: number
-        TN?: number
-        FN?: number
-        MAE?: number
-        RMSE?: number
-        R2?: number
-        missing_preds?: number
-        missing_percent?: string
-      }
-      unique_prototypes?: {
-        F1?: number
-        DAF?: number
-        Precision?: number
-        Recall?: number
-        Accuracy?: number
-        TPR?: number
-        FPR?: number
-        TNR?: number
-        FNR?: number
-        TP?: number
-        FP?: number
-        TN?: number
-        FN?: number
-        MAE?: number
-        RMSE?: number
-        R2?: number
-        missing_preds?: number
-        missing_percent?: string
-      }
+      [k: string]: unknown
     }
   }
 }

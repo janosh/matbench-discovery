@@ -106,7 +106,7 @@
         <tr class="group-header">
           {#each visible_columns as col}
             {#if !col.group}
-              <th />
+              <th></th>
             {:else}
               {@const group_cols = visible_columns.filter((c) => c.group === col.group)}
               {#if columns.indexOf(col) === columns.findIndex((c) => c.group === col.group)}
@@ -151,13 +151,15 @@
               style={col.style}
               title={[undefined, null].includes(val) ? `not available` : null}
             >
-              {#if typeof val === `number` && col.format}
-                {pretty_num(val, col.format)}
-              {:else if [undefined, null].includes(val)}
-                n/a
-              {:else}
-                {@html val}
-              {/if}
+              <slot name="cell" {row} {col} {val}>
+                {#if typeof val === `number` && col.format}
+                  {pretty_num(val, col.format)}
+                {:else if [undefined, null].includes(val)}
+                  n/a
+                {:else}
+                  {@html val}
+                {/if}
+              </slot>
             </td>
           {/each}
         </tr>

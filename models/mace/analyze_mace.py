@@ -9,8 +9,8 @@ from pymatviz.enums import Key
 
 from matbench_discovery import SITE_FIGS
 from matbench_discovery import plots as plots
-from matbench_discovery.data import Model, df_wbm
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.data import df_wbm
+from matbench_discovery.enums import MbdKey, Model
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-07-23"
@@ -20,10 +20,12 @@ e_form_mace_col = "e_form_per_atom_mace"
 
 
 # %%
-df_mace = pd.read_csv(Model.mace.discovery_path).set_index(Key.mat_id)
+df_mace = pd.read_csv(Model.mace_mp_0.discovery_path).set_index(Key.mat_id)
 df_mace[list(df_wbm)] = df_wbm
 
-df_mace[Key.spg_num] = df_wbm[MbdKey.init_wyckoff].str.split("_").str[2].astype(int)
+df_mace[Key.spg_num] = (
+    df_wbm[MbdKey.init_wyckoff_spglib].str.split("_").str[2].astype(int)
+)
 
 
 # %%

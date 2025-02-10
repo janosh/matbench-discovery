@@ -14,8 +14,8 @@ from pymatviz.typing import PLOTLY
 from pymatviz.utils import bin_df_cols
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
-from matbench_discovery.data import DataFiles, Model, df_wbm
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.data import df_wbm
+from matbench_discovery.enums import DataFiles, MbdKey, Model
 from matbench_discovery.preds.discovery import df_each_pred, df_preds
 
 __author__ = "Janosh Riebesell"
@@ -32,15 +32,17 @@ bad_ids = df_each_pred.query(
     f"{model} > {min_each_pred} & {MbdKey.each_true} < {min_each_pred}"
 ).index
 
-df_wbm[Key.spg_num] = df_wbm[MbdKey.init_wyckoff].str.split("_").str[2].astype(int)
+df_wbm[Key.spg_num] = (
+    df_wbm[MbdKey.init_wyckoff_spglib].str.split("_").str[2].astype(int)
+)
 df_bad = df_wbm.loc[bad_ids]
 title = f"{len(df_bad)} {model} preds<br>with {max_each_true=}, {min_each_pred=}"
 
 
 # %%
 df_mp = pd.read_csv(DataFiles.mp_energies.path).set_index(Key.mat_id)
-df_mp[Key.spg_num] = df_mp[Key.wyckoff].str.split("_").str[2].astype(int)
-df_mp["isopointal_proto_from_aflow"] = df_mp[Key.wyckoff].map(
+df_mp[Key.spg_num] = df_mp[MbdKey.wyckoff_spglib].str.split("_").str[2].astype(int)
+df_mp["isopointal_proto_from_aflow"] = df_mp[MbdKey.wyckoff_spglib].map(
     get_prototype_from_protostructure
 )
 df_mp.isopointal_proto_from_aflow.value_counts().head(12)
@@ -57,7 +59,7 @@ fig.show()
 # %%
 proto_col = "Isopointal Prototypes"
 df_proto_counts = (
-    df_bad[MbdKey.init_wyckoff]
+    df_bad[MbdKey.init_wyckoff_spglib]
     .map(get_prototype_from_protostructure)
     .value_counts()
     .to_frame()

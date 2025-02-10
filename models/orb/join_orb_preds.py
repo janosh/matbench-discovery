@@ -1,4 +1,4 @@
-import glob
+from glob import glob
 
 import pandas as pd
 import typer
@@ -9,7 +9,7 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery.energy import get_e_form_per_atom
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import DataFiles, MbdKey
 
 app = typer.Typer(pretty_exceptions_enable=False, no_args_is_help=True)
 FORMATION_ENERGY_COL = "e_form_per_atom_orb"
@@ -35,7 +35,7 @@ def main(
     - {predictions_dir}/{prefix}.json.gz (all predictions as JSON)
     - {predictions_dir}/{prefix}-bad.csv (predictions with large errors)
     """
-    file_paths = sorted(glob.glob(f"{predictions_dir}/{glob_pattern}"))
+    file_paths = sorted(glob(f"{predictions_dir}/{glob_pattern}"))
 
     print(f"Found {len(file_paths):,} files for {glob_pattern = }")
     dfs: dict[str, pd.DataFrame] = {}
@@ -52,16 +52,15 @@ def main(
     # This is inside the script because accessing the variables causes a download
     # to be triggered if they are not present, meaning it's better to only load them
     # if the script is actually going to be run.
-    from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
+    from matbench_discovery.data import as_dict_handler, df_wbm
 
     if correct_energies:
-        df_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_index(
-            Key.mat_id
-        )
+        wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
+        df_cse = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
 
         df_cse[Key.computed_structure_entry] = [
             ComputedStructureEntry.from_dict(dct)
-            for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Loading CSEs")
+            for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
         ]
 
         # transfer predicted energies and relaxed structures WBM CSEs since

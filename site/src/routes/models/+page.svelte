@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { ModelStatLabel, ModelStats } from '$lib'
   import { model_is_compliant, MODEL_METADATA, ModelCard } from '$lib'
-  import { discovery } from '$pkg/metrics-which-is-better.yml'
+  import { discovery } from '$pkg/modeling-tasks.yml'
   import Icon from '@iconify/svelte'
   import { interpolateCividis as cividis } from 'd3-scale-chromatic'
   import { ColorBar } from 'elementari'
@@ -76,9 +76,9 @@
       .map((model) => model.metrics?.discovery?.full_test_set?.[sort_by])
       .filter((val) => typeof val === `number`),
   )
-  $: if (discovery.lower_is_better.includes(sort_by))
+  $: if (discovery.metrics.lower_is_better.includes(sort_by))
     [min_val, max_val] = [max_val, min_val]
-  $: order = discovery.lower_is_better.includes(sort_by) ? `asc` : `desc`
+  $: order = discovery.metrics.lower_is_better.includes(sort_by) ? `asc` : `desc`
 
   function bg_color(val: number, min: number, max: number) {
     return cividis(1 - (val - min) / (max - min)).replace(`)`, `, 0.5)`)
@@ -108,7 +108,7 @@
           id={key}
           on:click={() => {
             sort_by = key
-            order = discovery.lower_is_better.includes(key) ? `asc` : `desc`
+            order = discovery.metrics.lower_is_better.includes(key) ? `asc` : `desc`
           }}
           style="font-size: large;"
         >

@@ -1,7 +1,7 @@
 import { HeatmapTable } from '$lib'
+import type { HeatmapColumn } from '$lib/types'
 import { tick } from 'svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
-import type { HeatmapColumn } from '../src/lib/types'
 
 describe(`HeatmapTable`, () => {
   const sample_data = [
@@ -90,7 +90,8 @@ describe(`HeatmapTable`, () => {
         props: { data: sample_data, columns: sample_columns },
       })
 
-      document.body.querySelectorAll(`th`)[1].click() // Sort by Score
+      const score_header = document.body.querySelectorAll(`th`)[1]
+      score_header.click() // Sort by Score
       await tick()
 
       component.$set({ data: [{ Model: `D`, Score: 0.65 }, ...sample_data] })
@@ -103,10 +104,10 @@ describe(`HeatmapTable`, () => {
     })
   })
 
-  it(`handles formatting, colors, and styles`, () => {
+  it(`handles formatting and styles`, () => {
     const columns: HeatmapColumn[] = [
-      { label: `Num`, format: `.1%`, style: `background: rgb(255, 0, 0)` },
-      { label: `Val`, better: `higher`, color_scale: `interpolateViridis` },
+      { label: `Num`, format: `.1%` },
+      { label: `Val`, better: `higher` },
     ]
     const data = [
       { Num: 0.123, Val: 0 },
@@ -119,18 +120,17 @@ describe(`HeatmapTable`, () => {
     })
 
     // Check number formatting
-    expect(document.querySelector(`td[data-col="Num"]`)?.textContent).toBe(`12.3%`)
+    const num_cell = document.querySelector(`td[data-col="Num"]`)
+    if (!num_cell) throw `Num cell not found`
+    expect(num_cell.textContent?.trim()).toBe(`12.3%`)
+    expect(getComputedStyle(num_cell).backgroundColor).toBe(`rgb(68, 1, 84)`)
 
-    // Check custom styles
-    const styled_cell = document.querySelector(`td[data-col="Num"]`)!
-    expect(getComputedStyle(styled_cell).backgroundColor).toBe(`rgb(68, 1, 84)`)
-
-    // Check color scaling
+    // Check value cells have different background colors
     const val_cells = document.querySelectorAll(`td[data-col="Val"]`)
     const backgrounds = Array.from(val_cells).map(
       (cell) => getComputedStyle(cell).backgroundColor,
     )
-    expect(new Set(backgrounds).size).toBe(2) // Should have different colors
+    expect(backgrounds).toEqual([`rgb(68, 1, 84)`, `rgb(253, 231, 37)`])
   })
 
   it(`handles accessibility features`, () => {
@@ -143,11 +143,26 @@ describe(`HeatmapTable`, () => {
       },
     })
 
-    const header = document.body.querySelector(`th`)!
-    expect(header.getAttribute(`title`) || header.getAttribute(`data-title`)).toBe(
+    const header = document.body.querySelector(`th`)
+    expect(header?.getAttribute(`title`) || header?.getAttribute(`data-title`)).toBe(
       `Description`,
     )
-    expect(header.querySelector(`[title="Click to sort"]`)).toBeDefined()
-    expect(header.classList.contains(`sticky-col`)).toBe(true)
+    expect(header?.querySelector(`[title="Click to sort"]`)).toBeDefined()
+    expect(header?.classList.contains(`sticky-col`)).toBe(true)
+  })
+
+  it(`handles undefined and null values`, () => {
+    const data = [{ Model: `Empty Model`, Score: undefined, Value: undefined }]
+
+    new HeatmapTable({
+      target: document.body,
+      props: { data, columns: sample_columns },
+    })
+
+    const cells = document.body.querySelectorAll(`td`)
+    expect(cells).toHaveLength(3)
+    expect(cells[0].textContent?.trim()).toBe(`Empty Model`)
+    expect(cells[1].textContent?.trim()).toBe(`n/a`)
+    expect(cells[2].textContent?.trim()).toBe(`n/a`)
   })
 })

@@ -10,8 +10,8 @@ from typing import Final
 import pymatviz as pmv
 
 from matbench_discovery import PDF_FIGS
-from matbench_discovery.data import Model, df_wbm
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.data import df_wbm
+from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist
 from matbench_discovery.preds.discovery import df_each_pred
 
@@ -20,7 +20,7 @@ __date__ = "2022-06-18"
 
 
 # %%
-model_name = Model.mace.label
+model_name = Model.mace_mp_0.label
 which_energy: Final = "pred"
 df_each_pred[MbdKey.each_true] = df_wbm[MbdKey.each_true]
 

@@ -2,6 +2,7 @@ all_mp_tasks:
   url: https://figshare.com/ndownloader/files/43350447
   path: mp/2023-03-16-all-mp-tasks.json.gz
   description: Complete copy of the Materials Project database on 2023-03-16 (14 GB) (release [v2022.10.28](https://docs.materialsproject.org/changes/database-versions#v2022.10.28))
+  md5: e301824b358fb5cecfb5e1f769f025dd
 
 alignn_checkpoint:
   url: https://figshare.com/ndownloader/files/40344436
@@ -12,23 +13,27 @@ mp_computed_structure_entries:
   url: https://figshare.com/ndownloader/files/40344436
   path: mp/2023-02-07-mp-computed-structure-entries.json.gz
   description: JSON-Serialized `pymatgen` [`ComputedStructureEntries`] containing all Materials Project DFT-relaxed structures and corresponding final energies as of 2023-02-07
+  md5: 76fc748db6b175bb80de4c276d27c235
 
 mp_elemental_ref_entries:
   url: https://figshare.com/ndownloader/files/40387775
   path: mp/2023-02-07-mp-elemental-reference-entries.json.gz
   description: Minimum energy `ComputedEntry` for each element in MP
+  md5: 6e93b6f38d6e27d6c811d3cafb23a070
 
 mp_energies:
-  url: https://figshare.com/ndownloader/files/49083124
-  path: mp/2023-01-10-mp-energies.csv.gz
-  description: Materials Project formation energies and energies above convex hull in eV/atom as a fast-to-load CSV file
+  url: https://figshare.com/ndownloader/files/52080797
+  path: mp/2025-02-01-mp-energies.csv.gz
+  description: Materials Project formation energies and energies above convex hull in eV/atom as a fast-to-load CSV file.
+  md5: 7eb0c49fc169ba92783f2f6d0d19d741
 
 mp_patched_phase_diagram:
   url: https://figshare.com/ndownloader/files/48241624
   path: mp/2023-02-07-ppd-mp.pkl.gz
   description: "[`PatchedPhaseDiagram`] constructed from all MP `pymatgen` `ComputedStructureEntries`"
+  md5: 60d19d691fa1d338aa496a40a9641bef
 
-mp_trj:
+mp_trj_json_gz:
   title: Materials Project Trajectory (MPtrj) Dataset
   url: https://figshare.com/ndownloader/files/43302033
   figshare: https://figshare.com/articles/dataset/23713842
@@ -39,36 +44,67 @@ mp_trj_extxyz:
   url: https://figshare.com/ndownloader/files/49034296
   path: mp/2024-09-03-mp-trj.extxyz.zip
   description: ~1.6 M Materials Project DFT relaxation frames (subsampled to reduce redundancy and faulty data) converted to `ase`-compatible extended XYZ format including energies (eV), forces (eV/Å) and stress (eV/Å³).
+  md5: 7f433171e4e5f2ef9304dccd42d5488f
 
 wbm_computed_structure_entries:
   url: https://figshare.com/ndownloader/files/40344463
   path: wbm/2022-10-19-wbm-computed-structure-entries.json.bz2
   description: JSON-Serialized `pymatgen` [`ComputedStructureEntries`] containing all WBM DFT-relaxed structures and corresponding final energies
+  md5: 481959b65f28150ae6ee7297ddeba538
 
 wbm_relaxed_atoms:
   url: https://figshare.com/ndownloader/files/48169600
   path: wbm/2024-08-04-wbm-relaxed-atoms.extxyz.zip
   description: WBM relaxed structures as `ase` Atoms in extended XYZ format
+  md5: 4726643ac0dfbab69a4284454c891e68
 
 wbm_initial_structures:
   url: https://figshare.com/ndownloader/files/40344466
   path: wbm/2022-10-19-wbm-init-structs.json.bz2
   description: Unrelaxed WBM structures in `pymatgen` `Structure` format
+  md5: ff2c40a3a7bf65468852b67f0dbc67df
 
 wbm_initial_atoms:
   url: https://figshare.com/ndownloader/files/48169597
   path: wbm/2024-08-04-wbm-initial-atoms.extxyz.zip
   description: Unrelaxed WBM structures as `ase` Atoms in extended XYZ format
+  md5: 2a292211ca6acb30ed8416178d644098
 
 wbm_cses_plus_init_structs:
   url: https://figshare.com/ndownloader/files/40344469
   path: wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2
   description: Both unrelaxed and DFT-relaxed WBM structures, the latter stored with their final VASP energies as `pymatgen` [`ComputedStructureEntries`]
+  md5: eaabe984d070156cc50a8a075cd5e315
 
 wbm_summary:
   url: https://figshare.com/ndownloader/files/44225498
   path: wbm/2023-12-13-wbm-summary.csv.gz
   description: Computed material properties only, no structures. Available properties are VASP energy, formation energy, energy above the convex hull, volume, band gap, number of sites per unit cell, and more.
+  md5: fb23d85dab61fab001b92cb0ac4f8f3d
+
+wbm_dft_geo_opt_symprec_1e_2:
+  url: https://figshare.com/ndownloader/files/52066799
+  path: data/wbm/dft-geo-opt-symprec=1e-2-moyo=0.3.1.csv.gz
+  description: WBM DFT-relaxed crystal symmetries as determined by moyopy==0.3.1 with symprec=1e-2.
+  md5:
+
+wbm_dft_geo_opt_symprec_1e_5:
+  url: https://figshare.com/ndownloader/files/52066796
+  path: data/wbm/dft-geo-opt-symprec=1e-5-moyo=0.3.1.csv.gz
+  description: WBM DFT-relaxed crystal symmetries as determined by moyopy==0.3.1 with symprec=1e-5.
+  md5:
+
+phonondb_pbe_103_structures:
+  url: https://figshare.com/ndownloader/files/52179965
+  path: phonons/2024-11-09-phononDB-PBE-103-structures.extxyz
+  description: 103 phononDB structures run by Togo with PBE settings received in private communication. See https://github.com/atztogo/phonondb/blob/bba206/README.md#url-links-to-phono3py-finite-displacement-method-inputs-of-103-compounds-on-mdr-at-nims-pbe for details.
+  md5: a396d4c517fa6d57defeffc6c83f0118
+
+phonondb_pbe_103_kappa_no_nac:
+  url: https://figshare.com/ndownloader/files/52014656
+  path: phonons/2024-11-09-kappas-phononDB-PBE-noNAC.json.gz
+  description: 103 phononDB structures run by Togo with PBE settings received in private communication. See https://github.com/atztogo/phonondb/blob/bba206/README.md#url-links-to-phono3py-finite-displacement-method-inputs-of-103-compounds-on-mdr-at-nims-pbe for details.
+  md5: a396d4c517fa6d57defeffc6c83f0118
 
 _links: |
   [`PatchedPhaseDiagram`]: https://github.com/materialsproject/pymatgen/blob/v2023.5.10/pymatgen/analysis/phase_diagram.py#L1480-L1814

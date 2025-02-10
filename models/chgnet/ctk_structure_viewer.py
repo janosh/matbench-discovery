@@ -3,7 +3,7 @@ from crystal_toolkit.helpers.utils import hook_up_fig_with_struct_viewer
 from pymatviz.enums import Key
 from pymatviz.typing import PLOTLY
 
-from matbench_discovery.data import Model
+from matbench_discovery.enums import Model
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-07"
@@ -18,14 +18,14 @@ Then open http://localhost:8000 in your browser.
 e_form_2000 = "e_form_per_atom_chgnet_2000"
 e_form_500 = "e_form_per_atom_chgnet_500"
 
-df_chgnet = pd.read_json(Model.chgnet.geo_opt_path)
+df_chgnet = pd.read_json(Model.chgnet_030.geo_opt_path)
 df_chgnet = df_chgnet.set_index(Key.mat_id)
 
-df_chgnet_2000 = pd.read_csv(Model.chgnet.discovery_path)
+df_chgnet_2000 = pd.read_csv(Model.chgnet_030.discovery_path)
 df_chgnet_2000 = df_chgnet_2000.set_index(Key.mat_id).add_suffix("_2000")
 df_chgnet[list(df_chgnet_2000)] = df_chgnet_2000
 
-df_chgnet_500 = pd.read_csv(Model.chgnet.discovery_path.replace("-06", "-04"))
+df_chgnet_500 = pd.read_csv(Model.chgnet_030.discovery_path.replace("-06", "-04"))
 df_chgnet_500 = df_chgnet_500.set_index(Key.mat_id).add_suffix("_500")
 df_chgnet[list(df_chgnet_500)] = df_chgnet_500
 

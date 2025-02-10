@@ -1,30 +1,39 @@
 MP 2022:
   title: MP v2022.10.28
-  url: https://figshare.com/ndownloader/files/40344436
+  url: https://docs.materialsproject.org/changes/database-versions#v2022.10.28
+  download_url: https://figshare.com/ndownloader/files/40344436
   n_structures: 154_719
+  open: true
 
 MPtrj:
   title: MPtrj
   url: https://figshare.com/articles/dataset/23713842
+  download_url: https://figshare.com/ndownloader/files/41619375
   n_structures: 1_580_395
   n_materials: 145_923
+  open: true
 
 MPF:
   title: MPF.2021.2.8
   url: https://figshare.com/articles/dataset/19470599
+  download_url: https://figshare.com/ndownloader/articles/19470599/versions/3
   n_structures: 188_349
   n_materials: 62_783
+  open: true
 
 MP Graphs:
   title: Graphs of MP 2019
   url: https://figshare.com/articles/dataset/8097992
+  download_url: https://figshare.com/ndownloader/articles/8097992/versions/2
   n_structures: 133_420
+  open: true
 
 GNoME:
   title: GNoME
   url: https://doi.org/10.1038/s41586-023-06735-9
   n_structures: 89_000_000
   n_materials: 6_000_000
+  open: false
 
 MatterSim:
   title: MatterSim
@@ -32,12 +41,15 @@ MatterSim:
   n_structures: 17_000_000
   temperature_range: 0-5000 K
   pressure_range: 0-1000 GPa
+  open: false
 
 Alex:
   title: Alexandria
   url: https://alexandria.icams.rub.de
+  download_url: https://alexandria.icams.rub.de/data/pbe # too large for single download, split into subfiles
   n_structures: 30_497_628
   n_materials: 3_100_000
+  open: true
 
 OMat24:
   title: OMat24
@@ -45,9 +57,20 @@ OMat24:
   # this is the number of Alexandria materials that was sampled from, but according to Luis unclear if all were indeed sampled so this is an upper bound
   n_materials: 3_227_606
   n_structures: 100_824_585
+  open: true
 
 sAlex:
-  title: subsampled Alexandria
+  title: subsampled Alexandria Training Set
   url: https://huggingface.co/datasets/fairchem/OMAT24#salex-dataset
+  download_url: https://dl.fbaipublicfiles.com/opencatalystproject/data/omat/241018/sAlex/train.tar.gz
   n_materials: 3_227_606
   n_structures: 10_447_765
+  open: true
+
+sAlex Validation:
+  title: subsampled Alexandria Validation Set
+  url: https://huggingface.co/datasets/fairchem/OMAT24#salex-dataset
+  download_url: https://dl.fbaipublicfiles.com/opencatalystproject/data/omat/241018/sAlex/val.tar.gz
+  n_materials: 170_905 # approximate value! TODO confirm this
+  n_structures: 553_218
+  open: true

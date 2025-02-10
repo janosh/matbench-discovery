@@ -2,7 +2,7 @@
 
 # %%
 import os
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any, Literal
 
 import numpy as np
@@ -11,9 +11,9 @@ from pymatgen.core import Composition
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery import DATA_DIR, timestamp
-from matbench_discovery.data import DataFiles
-from matbench_discovery.slurm import slurm_submit
+from matbench_discovery import DATA_DIR
+from matbench_discovery.enums import DataFiles
+from matbench_discovery.hpc import slurm_submit
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-28"
@@ -41,8 +41,8 @@ data_path = {"wbm": DataFiles.wbm_summary.path, "mp": DataFiles.mp_energies.path
 print(f"{data_path=}")
 print(f"{out_dim=}")
 print(f"{projection_type=}")
-start_time = datetime.now(tz=UTC)
-print(f"job {job_name} started at {timestamp}")
+start_time = datetime.now().astimezone()
+print(f"job {job_name} started at {start_time}")
 df_in = pd.read_csv(data_path, na_filter=False).set_index(Key.mat_id)
 
 
@@ -94,7 +94,7 @@ out_path = f"{out_dir}/one-hot-{one_hot_dim}-composition-{out_dim}d.csv.gz"
 df_in[out_cols].to_csv(out_path)
 
 print(f"Wrote projections to {out_path!r}")
-end_time = datetime.now(tz=UTC)
+end_time = datetime.now().astimezone()
 print(
     f"Job finished at {end_time:%Y-%m-%d %H:%M:%S} and took "
     f"{(end_time - start_time).seconds} sec"
