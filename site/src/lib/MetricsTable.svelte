@@ -5,7 +5,6 @@
     TRAINING_SETS,
     get_metric_rank_order,
     get_pred_file_urls,
-    model_is_compliant,
   } from '$lib'
   import { pretty_num } from 'elementari'
   import { click_outside } from 'svelte-zoo/actions'
@@ -14,8 +13,7 @@
 
   export let discovery_set: `full_test_set` | `most_stable_10k` | `unique_prototypes` =
     `unique_prototypes`
-  export let show_non_compliant: boolean = false
-  export let show_energy_only: boolean = false
+  export let model_filter: string[] | ((model: ModelData) => boolean) = () => true
   export let show_metadata: boolean = true
   export let hide_cols: string[] = []
   export let metadata_cols = METADATA_COLS
@@ -110,8 +108,10 @@
   // Transform MODEL_METADATA into table data format
   $: metrics_data = MODEL_METADATA.filter(
     (model) =>
-      (show_energy_only || model.targets != `E`) &&
-      (show_non_compliant || model_is_compliant(model)),
+      (typeof model_filter === `function`
+        ? model_filter(model)
+        : model_filter.includes(model.model_name)) &&
+      model.metrics?.discovery?.[discovery_set],
   )
     .map((model) => {
       const metrics = model.metrics?.discovery?.[discovery_set]

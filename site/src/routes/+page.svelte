@@ -85,9 +85,10 @@
     </div>
 
     <MetricsTable
-      {show_non_compliant}
       {hide_cols}
-      {show_energy_only}
+      model_filter={(model) =>
+        (show_energy_only || model.targets != `E`) &&
+        (show_non_compliant || model_is_compliant(model))}
       {discovery_set}
       style="width: 100%;"
     />

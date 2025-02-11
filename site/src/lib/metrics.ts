@@ -1,6 +1,7 @@
 import type { HeatmapColumn } from './types'
 
 export const METADATA_COLS: HeatmapColumn[] = [
+  { label: `Model`, sticky: true },
   { label: `Training Set`, tooltip: `Size of and link to model training set` },
   { label: `Params`, tooltip: `Number of trainable model parameters` },
   { label: `Targets`, tooltip: `Target property used to train the model` },
@@ -12,7 +13,6 @@ export const METADATA_COLS: HeatmapColumn[] = [
 ]
 
 export const METRICS_COLS: HeatmapColumn[] = [
-  { label: `Model`, sticky: true },
   { label: `F1`, tooltip: `Harmonic mean of precision and recall` },
   { label: `DAF`, tooltip: `Discovery acceleration factor` },
   { label: `Prec`, tooltip: `Precision of classifying thermodynamic stability` },
