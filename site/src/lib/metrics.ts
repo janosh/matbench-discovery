@@ -1,4 +1,4 @@
-import type { HeatmapColumn } from './types'
+import type { DiscoverySet, HeatmapColumn } from './types'
 
 export const METADATA_COLS: HeatmapColumn[] = [
   { label: `Model`, sticky: true },
@@ -41,3 +41,22 @@ export const METRICS_COLS: HeatmapColumn[] = [
     style: `border-left: 1px solid black;`,
   },
 ]
+
+export const DISCOVERY_SET_LABELS: Record<
+  DiscoverySet,
+  { title: string; tooltip: string; link?: string }
+> = {
+  full_test_set: {
+    title: `Full Test Set`,
+    tooltip: `Metrics computed on the full test set including duplicate structure prototypes`,
+  },
+  unique_prototypes: {
+    title: `Unique Prototypes`,
+    tooltip: `Metrics computed only on ~215k unique structure prototypes in WBM determined by matching Aflow-style prototype strings.`,
+    link: `https://github.com/janosh/matbench-discovery/blob/fd1dda6c/data/wbm/compile_wbm_test_set.py#L632-L705`,
+  },
+  most_stable_10k: {
+    title: `10k Most Stable`,
+    tooltip: `Metrics computed on the 10k structures predicted to be most stable (different for each model)`,
+  },
+}

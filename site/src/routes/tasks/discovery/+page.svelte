@@ -5,7 +5,7 @@
     MODEL_METADATA,
     TableColumnToggleMenu,
   } from '$lib'
-  import { METADATA_COLS, METRICS_COLS } from '$lib/metrics'
+  import { DISCOVERY_SET_LABELS, METADATA_COLS, METRICS_COLS } from '$lib/metrics'
   import type { DiscoverySet } from '$lib/types'
   import Icon from '@iconify/svelte'
   import { Tooltip } from 'svelte-zoo'
@@ -13,30 +13,11 @@
 
   // Default column visibility
   let visible_cols: Record<string, boolean> = {
-    ...Object.fromEntries(
-      [...METRICS_COLS, ...METADATA_COLS].map((col) => [col.label, true]),
-    ),
-    'κ<sub>SRME</sub>': false,
+    ...Object.fromEntries([...METRICS_COLS].map((col) => [col.label, false])),
+    ...Object.fromEntries([...METADATA_COLS].map((col) => [col.label, true])),
+    'κ<sub>SRME</sub>': true,
   }
 
-  const discovery_set_labels: Record<
-    DiscoverySet,
-    { title: string; tooltip: string; link?: string }
-  > = {
-    full_test_set: {
-      title: `Full Test Set`,
-      tooltip: `Metrics computed on the full test set including duplicate structure prototypes`,
-    },
-    unique_prototypes: {
-      title: `Unique Prototypes`,
-      tooltip: `Metrics computed only on ~215k unique structure prototypes in WBM determined by matching Aflow-style prototype strings.`,
-      link: `https://github.com/janosh/matbench-discovery/blob/fd1dda6c/data/wbm/compile_wbm_test_set.py#L632-L705`,
-    },
-    most_stable_10k: {
-      title: `10k Most Stable`,
-      tooltip: `Metrics computed on the 10k structures predicted to be most stable (different for each model)`,
-    },
-  }
   let discovery_set: DiscoverySet = `unique_prototypes`
 
   let f1_tooltip_point: { x: number; y: number } | null = null
@@ -60,7 +41,7 @@
     class="discovery-set-toggle"
     use:click_outside={{ callback: () => (column_panel_open = false) }}
   >
-    {#each Object.entries(discovery_set_labels) as [key, { title, tooltip, link }]}
+    {#each Object.entries(DISCOVERY_SET_LABELS) as [key, { title, tooltip, link }]}
       <Tooltip text={tooltip} tip_style="z-index: 2; font-size: 0.8em;">
         <button
           class:active={discovery_set === key}

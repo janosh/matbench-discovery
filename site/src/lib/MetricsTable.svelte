@@ -9,10 +9,9 @@
   import { pretty_num } from 'elementari'
   import { click_outside } from 'svelte-zoo/actions'
   import { METADATA_COLS, METRICS_COLS } from './metrics'
-  import type { HeatmapColumn, ModelData } from './types'
+  import type { DiscoverySet, HeatmapColumn, ModelData } from './types'
 
-  export let discovery_set: `full_test_set` | `most_stable_10k` | `unique_prototypes` =
-    `unique_prototypes`
+  export let discovery_set: DiscoverySet = `unique_prototypes`
   export let model_filter: string[] | ((model: ModelData) => boolean) = () => true
   export let show_metadata: boolean = true
   export let hide_cols: string[] = []
