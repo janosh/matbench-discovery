@@ -9,6 +9,13 @@
   export let tooltip_point: { x: number; y: number } | null = null
   export let hovered: boolean = false
   export let style: string = ``
+  export let date_range: [Date | null, Date | null] = [null, null]
+  export let model_filter: (model: ModelData) => boolean = () => true
+
+  // Add date range state
+  const now = new Date()
+  const ms_per_day = 24 * 60 * 60 * 1000
+  const n_days_ago = new Date(now.getTime() - 180 * ms_per_day)
 
   // access nested values using a dotted path string
   function get_nested_val(obj: ModelMetadata, path: string) {
@@ -16,11 +23,20 @@
   }
 
   // Filter out models where the metric is undefined and sort by date
+  // Also filter by date range
   $: filtered_models = models
-    .filter((model) => ![null, undefined].includes(get_nested_val(model.metrics, metric)))
-    .sort((a, b) => {
-      const date_a = new Date(a.date_added ?? 0)
-      const date_b = new Date(b.date_added ?? 0)
+    .filter((model) => {
+      const model_date = new Date(model.date_added ?? 0)
+      return (
+        get_nested_val(model.metrics, metric) &&
+        model_date >= (date_range[0] ?? n_days_ago) &&
+        model_date <= (date_range[1] ?? now) &&
+        model_filter(model)
+      )
+    })
+    .sort((model1, model2) => {
+      const date_a = new Date(model1.date_added ?? 0)
+      const date_b = new Date(model2.date_added ?? 0)
       return date_a.getTime() - date_b.getTime()
     })
 
@@ -45,10 +61,11 @@
   {y}
   x_format="%b %y"
   {y_label}
-  {...$$props}
   bind:tooltip_point
   bind:hovered
   {style}
+  y_lim={[0, 2]}
+  {...$$restProps}
 >
   <div slot="tooltip" let:x_formatted let:y_formatted style="min-width: 10em;">
     {#if active_model}

@@ -6,7 +6,8 @@
     MODEL_METADATA,
     TableColumnToggleMenu,
   } from '$lib'
-  import { METADATA_COLS, METRICS_COLS } from '$lib/metrics'
+  import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/metrics'
+  import type { DiscoverySet } from '$lib/types'
   import Readme from '$root/readme.md'
   import KappaNote from '$site/src/routes/kappa-note.md'
   import LandingPageFigs from '$site/src/routes/landing-page-figs.md'
@@ -23,7 +24,7 @@
   // Default column visibility
   let visible_cols: Record<string, boolean> = {
     ...Object.fromEntries(
-      [...METRICS_COLS, ...METADATA_COLS].map((col) => [col.label, true]),
+      [...ALL_METRICS, ...METADATA_COLS].map((col) => [col.label, true]),
     ),
     TPR: false,
     TNR: false,
@@ -39,35 +40,15 @@
     return best
   }, {} as ModelData)
 
-  // Get array of hidden columns
-  $: hide_cols = Object.entries(visible_cols)
-    .filter(([_, visible]) => !visible)
-    .map(([col]) => col)
-
   let column_panel_open: boolean = false
 
-  const discovery_set_labels = {
-    full_test_set: {
-      title: `Full Test Set`,
-      tooltip: `Metrics computed on the full test set including duplicate structure prototypes`,
-    },
-    unique_prototypes: {
-      title: `Unique Prototypes`,
-      tooltip: `Metrics computed only on ~215k unique structure prototypes in WBM determined by matching Aflow-style prototype strings.`,
-      link: `https://github.com/janosh/matbench-discovery/blob/fd1dda6c/data/wbm/compile_wbm_test_set.py#L632-L705`,
-    },
-    most_stable_10k: {
-      title: `10k Most Stable`,
-      tooltip: `Metrics computed on the 10k structures predicted to be most stable (different for each model)`,
-    },
-  }
-  let discovery_set: keyof typeof discovery_set_labels = `unique_prototypes`
+  let discovery_set: DiscoverySet = `unique_prototypes`
 </script>
 
 <Readme>
   <figure style="margin-top: 4em;" slot="metrics-table">
     <div class="discovery-set-toggle">
-      {#each Object.entries(discovery_set_labels) as [key, { title, tooltip, link }]}
+      {#each Object.entries(DISCOVERY_SET_LABELS) as [key, { title, tooltip, link }]}
         <Tooltip text={tooltip} tip_style="z-index: 2; font-size: 0.8em;">
           <button
             class:active={discovery_set === key}
@@ -85,9 +66,10 @@
     </div>
 
     <MetricsTable
-      {show_non_compliant}
-      {hide_cols}
-      {show_energy_only}
+      col_filter={(col) => visible_cols[col.label] ?? true}
+      model_filter={(model) =>
+        (show_energy_only || model.targets != `E`) &&
+        (show_non_compliant || model_is_compliant(model))}
       {discovery_set}
       style="width: 100%;"
     />

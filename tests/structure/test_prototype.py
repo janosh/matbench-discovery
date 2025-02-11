@@ -66,6 +66,13 @@ esseneite = Structure.from_file(f"{TEST_FILES}/structures/esseneite.cif.gz")
 
 # TODO figure out who is right, moyopy or spglib, in cases where they differ (marked
 # below, tracked in https://github.com/CompRhys/aviary/pull/96)
+C20Cd8H14N4O4S_oP800 = Structure.from_file(
+    f"{TEST_FILES}/structures/A20BC14D8E5F2_oP800_61_40c_2c_28c_16c_10c_4c@C-Cd-H-N-O-S.POSCAR.xz"
+)
+BaTiO3_perovskite = Structure.from_file(
+    f"{TEST_FILES}/structures/AB3C_cP5_221_a_c_b@Ba-O-Ti.POSCAR.xz"
+)
+
 TEST_CASES: Final[tuple[tuple[Structure, str], ...]] = (
     (NaCl, "AB_cF8_225_a_b:Cl-Na"),
     (CsCl, "AB_cP2_221_a_b:Cl-Cs"),
@@ -76,6 +83,8 @@ TEST_CASES: Final[tuple[tuple[Structure, str], ...]] = (
     (Fe3Al_DO3, "AB3_tP4_115_a_cg:Al-Fe"),
     (SrTiO3_perovskite, "A3BC_cP5_221_c_a_b:O-Sr-Ti"),
     (esseneite, "ABC6D2_mC40_15_e_e_3f_f:Ca-Fe-O-Si"),
+    (C20Cd8H14N4O4S_oP800, "A20BC14D8E5F2_oP800_61_40c_2c_28c_16c_10c_4c:C-Cd-H-N-O-S"),
+    (BaTiO3_perovskite, "AB3C_cP5_221_a_c_b:Ba-O-Ti"),
 )
 
 
