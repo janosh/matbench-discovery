@@ -4,8 +4,6 @@
   import type { HeatmapColumn } from './types.ts'
 
   export let show_non_compliant: boolean = false
-  export let show_metadata: boolean = true
-  export let metadata_cols: HeatmapColumn[] = []
 
   // Get all unique symprec values from MODEL_METADATA
   $: symprec_values = [
@@ -83,7 +81,6 @@
       tooltip: `Number of structures relaxed by each model and used to compute these metrics`,
       style: sep_line_style,
     },
-    ...(show_metadata ? metadata_cols : []),
     {
       label: `Links`,
       tooltip: `Links to model resources`,

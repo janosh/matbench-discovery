@@ -12,7 +12,7 @@ export const METADATA_COLS: HeatmapColumn[] = [
   },
 ]
 
-export const METRICS_COLS: HeatmapColumn[] = [
+export const DISCOVERY_METRICS: HeatmapColumn[] = [
   { label: `F1`, tooltip: `Harmonic mean of precision and recall` },
   { label: `DAF`, tooltip: `Discovery acceleration factor` },
   { label: `Prec`, tooltip: `Precision of classifying thermodynamic stability` },
@@ -35,12 +35,17 @@ export const METRICS_COLS: HeatmapColumn[] = [
     tooltip: `Root mean squared error of predicting the convex hull distance`,
   },
   { label: `R<sup>2</sup>`, tooltip: `Coefficient of determination` },
+]
+
+export const PHONON_METRICS: HeatmapColumn[] = [
   {
     label: `κ<sub>SRME</sub>`,
     tooltip: `Symmetric relative mean error in predicted phonon mode contributions to thermal conductivity κ`,
     style: `border-left: 1px solid black;`,
   },
 ]
+
+export const ALL_METRICS: HeatmapColumn[] = [...DISCOVERY_METRICS, ...PHONON_METRICS]
 
 export const DISCOVERY_SET_LABELS: Record<
   DiscoverySet,

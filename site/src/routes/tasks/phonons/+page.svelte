@@ -6,32 +6,27 @@
     TableColumnToggleMenu,
     type ModelData,
   } from '$lib'
-  import { METADATA_COLS, METRICS_COLS } from '$lib/metrics'
+  import { ALL_METRICS, METADATA_COLS, PHONON_METRICS } from '$lib/metrics'
 
   // Default column visibility
   let visible_cols: Record<string, boolean> = {
-    // Hide all metrics
-    ...Object.fromEntries([...METRICS_COLS].map((col) => [col.label, false])),
+    // Hide other metrics
+    ...Object.fromEntries([...ALL_METRICS].map((col) => [col.label, false])),
     // Show all metadata
     ...Object.fromEntries([...METADATA_COLS].map((col) => [col.label, true])),
-    // Show kappa_SRME
-    'κ<sub>SRME</sub>': true,
+    // Show phonon metrics
+    ...Object.fromEntries([...PHONON_METRICS].map((col) => [col.label, true])),
   }
 
   const model_has_kappa_103 = (model: ModelData) =>
     typeof model?.metrics?.phonons?.kappa_103?.κ_SRME === `number`
-
-  // Get array of hidden columns
-  $: hide_cols = Object.entries(visible_cols)
-    .filter(([_, visible]) => !visible)
-    .map(([col]) => col)
 </script>
 
 <h1>MLFF Phonon Modeling Metrics</h1>
 
 <figure>
   <MetricsTable
-    {hide_cols}
+    col_filter={(col) => visible_cols[col.label] ?? true}
     model_filter={model_has_kappa_103}
     sort_hint=""
     style="width: 100%;"

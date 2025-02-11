@@ -12,10 +12,7 @@ describe(`MetricsTable`, () => {
       target: document.body,
       props: {
         discovery_set: `unique_prototypes`,
-        show_non_compliant: false,
-        show_energy_only: false,
-        show_metadata: true,
-        hide_cols: [],
+        col_filter: () => true,
       },
     })
 
@@ -48,11 +45,12 @@ describe(`MetricsTable`, () => {
   })
 
   it(`toggles metadata columns`, async () => {
+    const metadata_cols = [`Training Set`, `Params`, `Targets`, `Date Added`, `Links`]
     const component = new MetricsTable({
       target: document.body,
       props: {
         discovery_set: `unique_prototypes`,
-        show_metadata: true,
+        col_filter: (_col) => true, // show all columns initially
       },
     })
 
@@ -60,14 +58,15 @@ describe(`MetricsTable`, () => {
     let header_texts = [...document.body.querySelectorAll(`th`)].map((h) =>
       h.textContent?.trim(),
     )
-    const metadata_cols = [`Training Set`, `Params`, `Targets`, `Date Added`, `Links`]
     expect(header_texts).toEqual(expect.arrayContaining(metadata_cols))
 
     // Hide metadata columns
-    await component.$set({ show_metadata: false })
+    await component.$set({
+      col_filter: (col) => !metadata_cols.includes(col.label),
+    })
     await tick()
 
-    // Check none of the metadata columns are hidden
+    // Check metadata columns are hidden
     header_texts = [...document.body.querySelectorAll(`th`)].map((h) =>
       h.textContent?.trim(),
     )
@@ -82,12 +81,12 @@ describe(`MetricsTable`, () => {
     }
   })
 
-  it(`hides specified columns`, async () => {
+  it(`filters specified columns`, async () => {
     new MetricsTable({
       target: document.body,
       props: {
         discovery_set: `unique_prototypes`,
-        hide_cols: [`F1`, `DAF`],
+        col_filter: (col) => ![`F1`, `DAF`].includes(col.label),
       },
     })
 
@@ -109,18 +108,18 @@ describe(`MetricsTable`, () => {
       target: document.body,
       props: {
         discovery_set: `unique_prototypes`,
-        show_non_compliant: false,
+        model_filter: () => false, // initially show no models
       },
     })
 
     const initial_rows = document.body.querySelectorAll(`tbody tr`).length
-    expect(initial_rows).toBeGreaterThan(7)
+    expect(initial_rows).toBe(0)
 
-    await component.$set({ show_non_compliant: true })
+    await component.$set({ model_filter: () => true }) // now show all models
     await tick()
 
     const rows_with_non_compliant = document.body.querySelectorAll(`tbody tr`).length
-    expect(rows_with_non_compliant).toBeGreaterThan(initial_rows)
+    expect(rows_with_non_compliant).toBeGreaterThan(0)
   })
 
   it(`opens and closes prediction files modal`, async () => {

@@ -6,7 +6,7 @@
     MODEL_METADATA,
     TableColumnToggleMenu,
   } from '$lib'
-  import { DISCOVERY_SET_LABELS, METADATA_COLS, METRICS_COLS } from '$lib/metrics'
+  import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/metrics'
   import type { DiscoverySet } from '$lib/types'
   import Readme from '$root/readme.md'
   import KappaNote from '$site/src/routes/kappa-note.md'
@@ -24,7 +24,7 @@
   // Default column visibility
   let visible_cols: Record<string, boolean> = {
     ...Object.fromEntries(
-      [...METRICS_COLS, ...METADATA_COLS].map((col) => [col.label, true]),
+      [...ALL_METRICS, ...METADATA_COLS].map((col) => [col.label, true]),
     ),
     TPR: false,
     TNR: false,
@@ -39,11 +39,6 @@
     }
     return best
   }, {} as ModelData)
-
-  // Get array of hidden columns
-  $: hide_cols = Object.entries(visible_cols)
-    .filter(([_, visible]) => !visible)
-    .map(([col]) => col)
 
   let column_panel_open: boolean = false
 
@@ -71,7 +66,7 @@
     </div>
 
     <MetricsTable
-      {hide_cols}
+      col_filter={(col) => visible_cols[col.label] ?? true}
       model_filter={(model) =>
         (show_energy_only || model.targets != `E`) &&
         (show_non_compliant || model_is_compliant(model))}

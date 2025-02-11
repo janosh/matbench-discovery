@@ -5,7 +5,7 @@
     MODEL_METADATA,
     TableColumnToggleMenu,
   } from '$lib'
-  import { DISCOVERY_SET_LABELS, METADATA_COLS, METRICS_COLS } from '$lib/metrics'
+  import { DISCOVERY_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/metrics'
   import type { DiscoverySet } from '$lib/types'
   import Icon from '@iconify/svelte'
   import { Tooltip } from 'svelte-zoo'
@@ -13,13 +13,13 @@
 
   // Default column visibility
   let visible_cols: Record<string, boolean> = {
-    ...Object.fromEntries([...METRICS_COLS].map((col) => [col.label, false])),
-    ...Object.fromEntries([...METADATA_COLS].map((col) => [col.label, true])),
-    'κ<sub>SRME</sub>': true,
+    ...Object.fromEntries(
+      [...DISCOVERY_METRICS, ...METADATA_COLS].map((col) => [col.label, true]),
+    ),
+    'κ<sub>SRME</sub>': false,
   }
 
   let discovery_set: DiscoverySet = `unique_prototypes`
-
   let f1_tooltip_point: { x: number; y: number } | null = null
   let hovered = false
   let column_panel_open: boolean = false
@@ -27,11 +27,6 @@
   $: filtered_models = Object.values(MODEL_METADATA).filter(
     (md) => md.metrics?.discovery?.[discovery_set]?.F1 != null,
   )
-
-  // Get array of hidden columns
-  $: hide_cols = Object.entries(visible_cols)
-    .filter(([_, visible]) => !visible)
-    .map(([col]) => col)
 </script>
 
 <h1>Crystal Stability Prediction Metrics</h1>
@@ -58,7 +53,11 @@
     {/each}
   </div>
 
-  <MetricsTable {hide_cols} {discovery_set} style="width: 100%;" />
+  <MetricsTable
+    col_filter={(col) => visible_cols[col.label] ?? true}
+    {discovery_set}
+    style="width: 100%;"
+  />
 
   <div class="table-controls">
     <TableColumnToggleMenu bind:visible_cols bind:column_panel_open />
