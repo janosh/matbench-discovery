@@ -5,30 +5,29 @@
     TRAINING_SETS,
     get_metric_rank_order,
     get_pred_file_urls,
-    model_is_compliant,
   } from '$lib'
   import { pretty_num } from 'elementari'
   import { click_outside } from 'svelte-zoo/actions'
-  import { METADATA_COLS, METRICS_COLS } from './metrics'
-  import type { HeatmapColumn, ModelData } from './types'
+  import { ALL_METRICS, METADATA_COLS } from './metrics'
+  import type { DiscoverySet, HeatmapColumn, ModelData } from './types'
 
-  export let discovery_set: `full_test_set` | `most_stable_10k` | `unique_prototypes` =
-    `unique_prototypes`
-  export let show_non_compliant: boolean = false
-  export let show_energy_only: boolean = false
-  export let show_metadata: boolean = true
-  export let hide_cols: string[] = []
-  export let metadata_cols = METADATA_COLS
+  export let discovery_set: DiscoverySet = `unique_prototypes`
+  export let model_filter: string[] | ((model: ModelData) => boolean) = () => true
+  export let col_filter: (col: HeatmapColumn) => boolean = () => true
 
   let active_files: { name: string; url: string }[] = []
   let active_model_name = ``
   let pred_file_modal: HTMLDialogElement | null = null
   let columns: HeatmapColumn[]
-  $: columns = [...METRICS_COLS, ...(show_metadata ? metadata_cols : [])].map((col) => ({
-    ...col,
-    better: col.better ?? get_metric_rank_order(col.label),
-    hidden: hide_cols?.includes(col.label) || col.hidden,
-  }))
+
+  $: columns = [...ALL_METRICS, ...METADATA_COLS]
+    .map((col) => ({
+      ...col,
+      better: col.better ?? get_metric_rank_order(col.label),
+      hidden: !col_filter(col),
+    }))
+    // Ensure Model column comes first
+    .sort((col1, _col2) => (col1.label === `Model` ? -1 : 1))
 
   function format_train_set(model_training_sets: string[]) {
     let [total_structs, total_materials] = [0, 0]
@@ -110,8 +109,10 @@
   // Transform MODEL_METADATA into table data format
   $: metrics_data = MODEL_METADATA.filter(
     (model) =>
-      (show_energy_only || model.targets != `E`) &&
-      (show_non_compliant || model_is_compliant(model)),
+      (typeof model_filter === `function`
+        ? model_filter(model)
+        : model_filter.includes(model.model_name)) &&
+      model.metrics?.discovery?.[discovery_set],
   )
     .map((model) => {
       const metrics = model.metrics?.discovery?.[discovery_set]
