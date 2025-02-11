@@ -59,6 +59,7 @@ class MyDataset(Dataset):
 
 
 # %%
+
 class MatBert(lightning.LightningModule):
     def __init__(self, b_path: str) -> None:
         super().__init__()

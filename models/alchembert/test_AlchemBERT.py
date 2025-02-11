@@ -8,6 +8,7 @@ from train_AlchemBERT import MatBert, MyDataset, task, bert_path, get_test_data
 
 torch.manual_seed(42)
 
+
 predictions_path = "2024-12-25-alchembert-wbm-IS2RE.csv.gz"
 test_pad_cased_path = f"test_{task}_pad_cased_inputs.json"
 
@@ -31,6 +32,7 @@ def main(
 
     # %% test
     trainer = lightning.Trainer(accelerator="gpu", devices=[0])
+
     test_input_ids = torch.tensor(test_inputs["input_ids"])
     test_attention_mask = torch.tensor(test_inputs["attention_mask"])
     test_outputs = torch.tensor(test_outputs.values)
