@@ -8,8 +8,8 @@ from matbench_discovery.data import round_trip_yaml
 from matbench_discovery.enums import MbdKey, Model
 
 
-def write_geo_opt_metrics_to_yaml(
-    df_geo_opt: pd.DataFrame, model: Model, symprec: float
+def write_metrics_to_yaml(
+    df_geo_opt: pd.DataFrame, model: Model, symprec: float, analysis_file_path: str
 ) -> None:
     """Write geometry optimization metrics to model YAML metadata files.
 
@@ -24,6 +24,7 @@ def write_geo_opt_metrics_to_yaml(
             - n_structs: Number of structures evaluated
         model (Model): Instance of Model enum that was analyzed in df_geo_opt.
         symprec (float): symmetry precision for comparing ML and DFT relaxed structures.
+        analysis_file_path (str): Path to the CSV file containing the analysis results.
     """
     # Load existing metadata
     with open(model.yaml_path) as file:
@@ -39,6 +40,8 @@ def write_geo_opt_metrics_to_yaml(
         str(Key.symmetry_match): float(round(df_geo_opt[Key.symmetry_match], 4)),
         str(Key.symmetry_increase): float(round(df_geo_opt[Key.symmetry_increase], 4)),
         str(Key.n_structures): int(df_geo_opt[Key.n_structures]),
+        "analysis_file": analysis_file_path,
+        "analysis_file_url": None,  # to be filled after uploading to figshare
     }
     symprec_key = f"{symprec=:.0e}".replace("e-0", "e-")
 

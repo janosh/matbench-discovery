@@ -138,7 +138,7 @@ def analyze_model_symprec(
     # Calculate metrics and write to YAML
     df_metrics = geo_opt.calc_geo_opt_metrics(df_ml_geo_analysis)
     print(f"\nCalculated metrics: {df_metrics}")  # Debug print
-    geo_opt.write_geo_opt_metrics_to_yaml(df_metrics, model, symprec)
+    geo_opt.write_metrics_to_yaml(df_metrics, model, symprec, geo_opt_csv_path)
 
 
 if __name__ == "__main__":

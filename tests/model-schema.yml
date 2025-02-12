@@ -1,4 +1,203 @@
 "$schema": http://json-schema.org/draft-07/schema#
+
+definitions:
+  # Shared URL schema for all HTTP(S) URLs
+  http_url:
+    type: string
+    format: uri
+    pattern: "^https?://"
+
+  # Shared schema for prediction files
+  pred_files:
+    type: object
+    additionalProperties: false
+    properties:
+      pred_file:
+        type: [string, "null"]
+      pred_file_url:
+        type: [string, "null"]
+        $ref: "#/definitions/http_url"
+    allOf:
+      - if:
+          properties:
+            pred_file: { type: string }
+          required: [pred_file]
+        then:
+          required: [pred_file_url]
+          properties:
+            pred_file_url:
+              $ref: "#/definitions/http_url"
+
+  # Define a shared schema for authors and trained_by
+  person:
+    type: object
+    additionalProperties: false
+    properties:
+      name:
+        type: string
+      affiliation:
+        type: string
+      email:
+        type: string
+        format: email
+      url: &url
+        type: string
+        format: uri
+      orcid: *url
+      github: *url
+      corresponding:
+        type: boolean
+    required: [name]
+
+  PhononMetrics:
+    type: object
+    additionalProperties: false
+    properties:
+      kappa_103:
+        type: object
+        additionalProperties: false
+        required: ["κ_SRME"]
+        properties:
+          κ_SRME:
+            type: number
+          pred_file:
+            type: [string, "null"]
+          pred_file_url:
+            type: [string, "null"]
+            $ref: "#/definitions/http_url"
+        allOf:
+          - if:
+              properties:
+                pred_file: { type: string }
+              required: [pred_file]
+            then:
+              required: [pred_file_url]
+              properties:
+                pred_file_url:
+                  $ref: "#/definitions/http_url"
+
+  GeoOptMetrics:
+    type: object
+    additionalProperties: false
+    required: [struct_col]
+    properties:
+      struct_col:
+        type: string
+      pred_file:
+        type: [string, "null"]
+      pred_file_url:
+        type: [string, "null"]
+        $ref: "#/definitions/http_url"
+      symprec=1e-5: &symprec_metrics
+        type: object
+        additionalProperties: false
+        required:
+          - rmsd
+          - n_sym_ops_mae
+          - symmetry_decrease
+          - symmetry_match
+          - symmetry_increase
+          - n_structures
+        properties:
+          rmsd:
+            type: number
+          n_sym_ops_mae:
+            type: number
+          symmetry_decrease:
+            type: number
+          symmetry_match:
+            type: number
+          symmetry_increase:
+            type: number
+          n_structures:
+            type: number
+          analysis_file:
+            type: [string, "null"]
+          analysis_file_url:
+            type: [string, "null"]
+            $ref: "#/definitions/http_url"
+      symprec=1e-2: *symprec_metrics
+    allOf:
+      - if:
+          properties:
+            pred_file: { type: string }
+          required: [pred_file]
+        then:
+          required: [pred_file_url]
+          properties:
+            pred_file_url:
+              $ref: "#/definitions/http_url"
+
+  DiscoveryMetricsSet:
+    type: object
+    additionalProperties: false
+    properties:
+      F1:
+        type: number
+      DAF:
+        type: number
+      Precision:
+        type: number
+      Recall:
+        type: number
+      Accuracy:
+        type: number
+      TPR:
+        type: number
+      FPR:
+        type: number
+      TNR:
+        type: number
+      FNR:
+        type: number
+      TP:
+        type: number
+      FP:
+        type: number
+      TN:
+        type: number
+      FN:
+        type: number
+      MAE:
+        type: number
+      RMSE:
+        type: number
+      R2:
+        type: number
+      missing_preds:
+        type: number
+      missing_percent:
+        type: string
+
+  DiscoveryMetrics:
+    type: object
+    additionalProperties: false
+    required: [pred_col]
+    properties:
+      pred_col:
+        type: string
+      pred_file:
+        type: [string, "null"]
+      pred_file_url:
+        type: [string, "null"]
+        $ref: "#/definitions/http_url"
+      full_test_set:
+        $ref: "#/definitions/DiscoveryMetricsSet"
+      most_stable_10k:
+        $ref: "#/definitions/DiscoveryMetricsSet"
+      unique_prototypes:
+        $ref: "#/definitions/DiscoveryMetricsSet"
+    allOf:
+      - if:
+          properties:
+            pred_file: { type: string }
+          required: [pred_file]
+        then:
+          required: [pred_file_url]
+          properties:
+            pred_file_url:
+              $ref: "#/definitions/http_url"
+
 type: object
 properties:
   model_name:
@@ -16,31 +215,11 @@ properties:
   authors:
     type: array
     items:
-      type: object
-      properties:
-        name:
-          type: string
-        affiliation:
-          type: string
-        email:
-          type: string
-          format: email
-        orcid: &url
-          type: string
-          format: uri
-      required: [name]
+      $ref: "#/definitions/person"
   trained_by:
     type: array
     items:
-      type: object
-      properties:
-        name:
-          type: string
-        affiliation:
-          type: string
-        orcid: *url
-        github: *url
-      required: [name]
+      $ref: "#/definitions/person"
   repo: *url
   doi: *url
   paper: *url
@@ -69,6 +248,7 @@ properties:
         - sAlex
   hyperparams:
     type: object
+    additionalProperties: true
     properties:
       max_force:
         type: number
@@ -143,162 +323,16 @@ properties:
     properties:
       phonons:
         oneOf:
-          - type: object
-            additionalProperties: false
-            properties:
-              kappa_103:
-                type: object
-                additionalProperties: false
-                required: ["κ_SRME"]
-                properties:
-                  κ_SRME:
-                    type: number
-                    description: Symmetric Relative Mean Error for thermal conductivity predictions
-                  pred_file:
-                    type: [string, "null"]
-                    description: Path to the predictions file containing thermal conductivity results
-                  pred_file_url:
-                    type: [string, "null"]
-                    format: uri
-                    pattern: "^https?://"
-                    description: URL to download the predictions file
-                allOf:
-                  - if:
-                      properties:
-                        pred_file: { type: string }
-                      required: [pred_file]
-                    then:
-                      required: [pred_file_url]
-                      properties:
-                        pred_file_url:
-                          { type: string, format: uri, pattern: "^https?://" }
+          - $ref: "#/definitions/PhononMetrics"
           - type: string
             enum: [not applicable, not available]
       geo_opt:
         oneOf:
-          - type: object
-            additionalProperties: false
-            required: [struct_col]
-            properties:
-              pred_file:
-                type: [string, "null"]
-              pred_file_url:
-                type: [string, "null"]
-                format: uri
-                pattern: "^https?://"
-              struct_col:
-                type: string
-              symprec=1e-5: &symprec_metrics
-                type: object
-                additionalProperties: false
-                properties:
-                  rmsd:
-                    type: number
-                  n_sym_ops_mae:
-                    type: number
-                  symmetry_decrease:
-                    type: number
-                  symmetry_match:
-                    type: number
-                  symmetry_increase:
-                    type: number
-                  n_structures:
-                    type: number
-                  analysis_file:
-                    type: [string, "null"]
-                  analysis_file_url:
-                    type: [string, "null"]
-                    format: uri
-                    pattern: "^https?://"
-                allOf:
-                  - if:
-                      properties:
-                        analysis_file: { type: string }
-                      required: [analysis_file]
-                    then:
-                      required: [analysis_file_url]
-                      properties:
-                        analysis_file_url:
-                          { type: string, format: uri, pattern: "^https?://" }
-              symprec=1e-3: *symprec_metrics
-              symprec=1e-2: *symprec_metrics
-            allOf:
-              - if:
-                  properties:
-                    pred_file: { type: string }
-                  required: [pred_file]
-                then:
-                  required: [pred_file_url]
-                  properties:
-                    pred_file_url:
-                      { type: string, format: uri, pattern: "^https?://" }
+          - $ref: "#/definitions/GeoOptMetrics"
           - type: string
             enum: [not applicable, not available]
       discovery:
-        additionalProperties: false
-        required: [pred_col]
-        type: object
-        properties:
-          pred_file:
-            type: [string, "null"]
-          pred_file_url:
-            type: [string, "null"]
-            format: uri
-            pattern: "^https?://"
-          pred_col:
-            type: string
-          full_test_set: &discovery_metrics
-            type: object
-            additionalProperties: false
-            properties:
-              F1:
-                type: number
-              DAF:
-                type: number
-              Precision:
-                type: number
-              Recall:
-                type: number
-              Accuracy:
-                type: number
-              TPR:
-                type: number
-              FPR:
-                type: number
-              TNR:
-                type: number
-              FNR:
-                type: number
-              TP:
-                type: number
-              FP:
-                type: number
-              TN:
-                type: number
-              FN:
-                type: number
-              MAE:
-                type: number
-              RMSE:
-                type: number
-              R2:
-                type: number
-              missing_preds:
-                type: number
-              missing_percent:
-                type: string
-          most_stable_10k: *discovery_metrics
-          unique_prototypes: *discovery_metrics
-        allOf:
-          - if:
-              properties:
-                pred_file: { type: string }
-              required: [pred_file]
-            then:
-              required: [pred_file_url]
-              properties:
-                pred_file_url:
-                  { type: string, format: uri, pattern: "^https?://" }
+        $ref: "#/definitions/DiscoveryMetrics"
 
 required:
   - authors
@@ -320,5 +354,5 @@ required:
   - train_task
   - trained_for_benchmark
   - training_set
-# disallow properties not in the schema
+
 additionalProperties: false

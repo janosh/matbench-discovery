@@ -97,11 +97,26 @@ metrics:
       pred_file_url: https://figshare.com/ndownloader/files/52134860
   geo_opt:
     pred_file: models/deepmd/dpa3-v1-mptrj/2025-01-10-wbm-geo-opt.json.gz
-    struct_col: dp_structure
+    struct_col: dpa2_structure
     pred_file_url: https://figshare.com/ndownloader/files/52134974
     symprec=1e-5:
-      analysis_file: models/deepmd/dpa3-v1-mptrj/2025-01-10-wbm-geo-opt-symprec=1e-5.csv.gz
-      analysis_file_url: https://figshare.com/ndownloader/files/52059431
+      analysis_file: models/deepmd/dpa3-v1-mptrj/2025-01-10-wbm-geo-opt-symprec=1e-5-moyo=0.3.3.csv.gz
+      analysis_file_url: https://figshare.com/ndownloader/files/52291967
+      rmsd: 0.0172 # Å
+      n_sym_ops_mae: 2.1671 # unitless
+      symmetry_decrease: 0.0804 # fraction
+      symmetry_match: 0.7128 # fraction
+      symmetry_increase: 0.2001 # fraction
+      n_structures: 256955 # count
+    symprec=1e-2:
+      analysis_file: models/deepmd/dpa3-v1-mptrj/2025-01-10-wbm-geo-opt-symprec=1e-2-moyo=0.3.3.csv.gz
+      analysis_file_url: https://figshare.com/ndownloader/files/52291970
+      rmsd: 0.0172 # Å
+      n_sym_ops_mae: 1.992 # unitless
+      symmetry_decrease: 0.0609 # fraction
+      symmetry_match: 0.8034 # fraction
+      symmetry_increase: 0.1282 # fraction
+      n_structures: 256955 # count
   discovery:
     pred_file: models/deepmd/dpa3-v1-mptrj/2025-01-10-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/ndownloader/files/52057529

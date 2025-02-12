@@ -7,7 +7,7 @@ import { compile as json_to_ts } from 'json-schema-to-typescript'
 // i.e. use json-schema-to-typescript to auto-convert YAML schema to TypeScript interface
 const model_metadata_ts = await json_to_ts(model_schema, `ModelMetadata`, {
   style: prettier_config,
+  bannerComment: `// This file is auto-generated from model-schema.yml. Do not edit directly.`,
 })
-// prettier format model_md_type
 const dts_out_file = `src/lib/model-schema.d.ts`
 fs.writeFileSync(dts_out_file, model_metadata_ts)
