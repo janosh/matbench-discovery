@@ -4,6 +4,7 @@ import pandas as pd
 from pymatviz.enums import Key, Task
 from ruamel.yaml.comments import CommentedMap
 
+from matbench_discovery import ROOT
 from matbench_discovery.data import round_trip_yaml
 from matbench_discovery.enums import MbdKey, Model
 
@@ -31,6 +32,9 @@ def write_metrics_to_yaml(
         model_metadata = round_trip_yaml.load(file)
 
     all_metrics = model_metadata.setdefault("metrics", {})
+
+    # Convert absolute path to relative path if needed
+    analysis_file_path = analysis_file_path.removeprefix(ROOT)
 
     # Get metrics for this model
     new_metrics = {

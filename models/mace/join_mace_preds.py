@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 from matbench_discovery.data import as_dict_handler, df_wbm
 from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
-from matbench_discovery.enums import DataFiles, MbdKey, Task
+from matbench_discovery.enums import DataFiles, MbdKey, Model, Task
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-01"
@@ -23,9 +23,10 @@ __date__ = "2023-03-01"
 
 # %%
 module_dir = os.path.dirname(__file__)
+model_name = Model.mace_mpa_0
 task_type = Task.IS2RE
-date = "2024-12-09"
-glob_pattern = f"{date}-mace-wbm-{task_type}*/*.json.gz"
+date = "2025-01-30"
+glob_pattern = f"{model_name}/{date}-wbm-{task_type}*/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
