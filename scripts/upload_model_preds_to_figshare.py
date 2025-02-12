@@ -10,7 +10,7 @@ import argparse
 import os
 import tomllib
 from collections.abc import Sequence
-from typing import Any, Final
+from typing import Any, Final, Literal
 
 import yaml
 from tqdm import tqdm
@@ -46,15 +46,19 @@ def parse_args(args: Sequence[str] | None = None) -> argparse.Namespace:
         nargs="+",
         choices=list(MODELING_TASKS),
         default=list(MODELING_TASKS),
-        help=(
-            "Space-separated list of modeling tasks to update. Defaults to all tasks."
-        ),
+        help="Space-separated list of modeling tasks to update. Defaults to all tasks.",
     )
     parser.add_argument(
         "-n",
         "--dry-run",
         action="store_true",
         help="Print what would be uploaded without actually uploading",
+    )
+    parser.add_argument(
+        "--file-type",
+        choices=["all", "analysis", "pred"],
+        default="all",
+        help="Type of files to upload: analysis, pred or all (default)",
     )
 
     return parser.parse_args(args)
@@ -80,8 +84,19 @@ def get_article_metadata(task: str) -> dict[str, Sequence[object]]:
     }
 
 
+def should_process_file(
+    key: str, file_type: Literal["all", "analysis", "pred"]
+) -> bool:
+    """Filter files by type."""
+    return file_type == "all" or key.endswith(f"{file_type}_file")
+
+
 def update_one_modeling_task_article(
-    task: str, models: list[Model], *, dry_run: bool = False
+    task: str,
+    models: list[Model],
+    *,
+    dry_run: bool = False,
+    file_type: Literal["all", "analysis", "pred"] = "all",
 ) -> None:
     """Update or create a Figshare article for a modeling task."""
     article_id = figshare.ARTICLE_IDS[f"model_preds_{task}"]
@@ -143,7 +158,11 @@ def update_one_modeling_task_article(
                 full_key = f"{prefix}.{key}" if prefix else key
                 if isinstance(value, dict):
                     result |= find_file_keys(value, full_key)
-                elif isinstance(value, str) and key.endswith("_file"):
+                elif (
+                    isinstance(value, str)
+                    and key.endswith("_file")
+                    and should_process_file(key, file_type)
+                ):
                     result[full_key] = value
             return result
 
@@ -236,10 +255,13 @@ def main(args: Sequence[str] | None = None) -> int:
         print("\nDry run mode - no files will be uploaded")
     print(f"Updating {len(models_to_update)} models: {', '.join(models_to_update)}")
     print(f"Updating {len(tasks_to_update)} tasks: {', '.join(tasks_to_update)}")
+    print(f"File type filter: {parsed_args.file_type}")
 
     for task in tasks_to_update:
         try:
-            update_one_modeling_task_article(task, models_to_update, dry_run=dry_run)
+            update_one_modeling_task_article(
+                task, models_to_update, dry_run=dry_run, file_type=parsed_args.file_type
+            )
         except Exception as exc:  # prompt to delete article if something went wrong
             state = {
                 key: locals().get(key)
