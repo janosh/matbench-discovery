@@ -1,5 +1,5 @@
 model_name: CHGNet
-model_key: chgnet
+model_key: chgnet-030
 model_version: v0.3.0
 matbench_discovery_version: 1.0.0
 date_added: "2023-03-03"
