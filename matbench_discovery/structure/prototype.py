@@ -15,9 +15,7 @@ from pymatgen.core import Composition, Structure
 
 module_dir = os.path.dirname(__file__)
 
-with gzip.open(
-    f"{module_dir}/wyckoff-position-multiplicities.yaml.gz", "rb"
-) as gz_file:
+with gzip.open(f"{module_dir}/wyckoff-position-multiplicities.yaml.gz") as gz_file:
     wyckoff_multiplicity_dict = yaml.safe_load(gz_file)
 
 with gzip.open(f"{module_dir}/wyckoff-position-relabelings.yaml.gz") as gz_file:
@@ -47,7 +45,7 @@ def get_prototype_formula(composition: Composition, amt_tol: float = 1e-8) -> st
         str: anonymized formula where the species are in alphabetical order
     """
     reduced = composition.element_composition
-    if all(x == int(x) for x in composition.values()):
+    if all(elem_amount == int(elem_amount) for elem_amount in composition.values()):
         gcd = math.gcd(*map(int, composition.values()))
         reduced /= gcd
 
@@ -143,7 +141,7 @@ def get_protostructure_label(
     element_dict: dict[str, int] = {}
     element_wyckoffs: list[str] = []
 
-    equivalent_wyckoff_labels = [
+    equivalent_wyckoff_labels: list[tuple[str, int, str]] = [
         (
             struct.species[orbit[0]].symbol,
             len(orbit),

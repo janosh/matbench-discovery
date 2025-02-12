@@ -173,6 +173,8 @@ class Open(LabelEnum):
 class TestSubset(LabelEnum):
     """Which subset of the test data to use for evaluation."""
 
+    __test__ = False  # stop pytest from thinking this is a unit test
+
     uniq_protos = "unique_prototypes", "Unique Structure Prototypes"
     most_stable_10k = "most_stable_10k", "10k Most Stable Materials"
     full_test_set = "full_test_set", "Full Test Set"
@@ -312,7 +314,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
 
     # fairchem
     eqv2_s_dens = auto(), "eqV2/eqV2-s-dens-mp.yml"
-    eqv2_m = auto(), "eqV2/eqV2-m-omat-mp-salex.yml"
+    eqv2_m = auto(), "eqV2/eqV2-m-omat-salex-mp.yml"
 
     grace_2l_mptrj = auto(), "grace/grace-2L-mptrj.yml"
     grace_2l_oam = auto(), "grace/grace-2L-oam.yml"

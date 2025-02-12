@@ -2,12 +2,15 @@
 
 import os
 import sys
+import warnings
 from enum import auto
 from pathlib import Path
+from typing import Any
 from unittest.mock import patch
 
 import pytest
 import requests
+import requests.adapters
 
 from matbench_discovery import DATA_DIR
 from matbench_discovery.enums import (
@@ -295,3 +298,98 @@ def test_model_enum() -> None:
     metrics = Model.alignn.metrics
     assert isinstance(metrics, dict)
     assert {*metrics} >= {"discovery", "geo_opt", "phonons"}
+
+
+def get_urls_from_dict(
+    dct: dict[str, Any], parent_key: str = ""
+) -> list[tuple[str, str]]:
+    """Recursively find all keys ending in _url in a nested dictionary.
+    Returns list of tuples with (dotted.path.to.key, url_value).
+    """
+    urls = []
+    for key, val in dct.items():
+        current_key = f"{parent_key}.{key}" if parent_key else key
+
+        if key.endswith("_url") and isinstance(val, str):
+            urls.append((current_key, val))
+        elif isinstance(val, dict):
+            urls.extend(get_urls_from_dict(val, current_key))
+
+    return urls
+
+
+def check_url(session: requests.Session, url: str, desc: str) -> None:
+    """Check if a URL is valid."""
+    http_status = None
+    try:
+        response = session.head(url, allow_redirects=True)
+        http_status = response.status_code
+        assert http_status in {200, 403, 429}
+        if http_status == 429:
+            assert "Too Many Requests" in response.reason, f"{response.reason=}"
+            warnings.warn(f"{response.reason=}", stacklevel=2)
+    except (requests.RequestException, AssertionError) as exc:
+        exc.add_note(f"Failed to validate\n{url}\n{desc}, {http_status=}")
+        raise
+
+
+def test_model_prediction_urls() -> None:
+    """Test that all model prediction file URLs are valid."""
+    import asyncio
+    import concurrent.futures
+    import multiprocessing as mp
+
+    tasks: dict[str, str] = {}
+    for model in Model:
+        if model.name == Model.mace_mpa_0.name:
+            continue
+
+        # Check model PR URL
+        tasks[model.pr_url] = model.name
+
+        # Check all URLs in metrics
+        metrics = model.metrics
+        if not metrics:
+            continue
+
+        for key_path, url in get_urls_from_dict(metrics):
+            tasks[url] = f"{model.name}.{key_path}"
+
+    # Create session with connection pooling and adaptive settings
+    session = requests.Session()
+    session.headers["User-Agent"] = "unit test"
+
+    # Determine optimal pool size based on system resources and environment
+    # Use min of CPU count and number of tasks to avoid over-allocation
+    n_workers = min(len(tasks), mp.cpu_count())
+
+    # Configure connection pooling with adaptive settings
+    adapter = requests.adapters.HTTPAdapter(
+        pool_connections=n_workers,
+        pool_maxsize=n_workers * 2,  # Allow some room for growth
+        max_retries=0,  # We handle retries at a higher level
+        pool_block=False,  # don't block main thread waiting for connections
+    )
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+
+    # Create event loop for async execution
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    async def check_urls_async() -> None:
+        """Check URLs concurrently using asyncio and thread pool."""
+        # Use ThreadPoolExecutor for I/O-bound HTTP requests
+        with concurrent.futures.ThreadPoolExecutor(max_workers=n_workers) as executor:
+            futures = [  # Create futures for all URL checks
+                loop.run_in_executor(executor, check_url, *(session, url, desc))
+                for url, desc in tasks.items()
+            ]
+            # Wait for all futures to complete
+            await asyncio.gather(*futures)
+
+    try:
+        # Run the async checks
+        loop.run_until_complete(check_urls_async())
+    finally:
+        loop.close()
