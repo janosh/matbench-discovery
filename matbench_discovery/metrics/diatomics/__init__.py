@@ -1,4 +1,10 @@
-"""Metrics for analyzing diatomic potential energy curves."""
+"""Metrics for analyzing diatomic potential energy curves.
+
+Big props to Tamas Stenczel and Yuan Chiang who spearheaded this type of PES
+smoothness analysis in https://github.com/stenczelt/MACE-MP-work for the MACE-MP
+paper https://arxiv.org/abs/2401.00096 (see fig. 56) and MLIP Arena
+https://huggingface.co/spaces/atomind/mlip-arena, respectively.
+"""
 
 import inspect
 from collections.abc import Callable, Mapping, Sequence
