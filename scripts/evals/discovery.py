@@ -25,7 +25,7 @@ from sklearn.dummy import DummyClassifier
 
 from matbench_discovery import DATA_DIR, PDF_FIGS, PKG_DIR, ROOT
 from matbench_discovery.data import df_wbm
-from matbench_discovery.enums import DataFiles, MbdKey, Model, Open, Targets
+from matbench_discovery.enums import DataFiles, MbdKey, Model, Open, Targets, TestSubset
 from matbench_discovery.metrics import discovery
 from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 
@@ -42,17 +42,30 @@ __date__ = "2022-11-28"
 if __name__ == "__main__":
     import matbench_discovery.preds.discovery as preds
 
+    uniq_protos_idx = df_wbm.query(MbdKey.uniq_proto).index
+
     models_to_write = [
         Model[model] for model in sys.argv[1:] if hasattr(Model, model)
     ] or Model
-    metric_dfs = (
-        discovery.df_metrics,
-        discovery.df_metrics_10k,
-        discovery.df_metrics_uniq_protos,
-        preds.df_preds,
-    )
     for model in models_to_write:
-        discovery.write_discovery_metrics_to_yaml(model, *metric_dfs)
+        model_preds = preds.df_preds[model.label]
+        for test_subset, (metrics, subset_idx) in {
+            TestSubset.full_test_set: (
+                preds.df_metrics[model.label].to_dict(),
+                slice(None),
+            ),
+            TestSubset.uniq_protos: (
+                preds.df_metrics_uniq_protos[model.label].to_dict(),
+                uniq_protos_idx,
+            ),
+            TestSubset.most_stable_10k: (
+                preds.df_metrics_10k[model.label].to_dict(),
+                model_preds.loc[uniq_protos_idx].nsmallest(10_000).index,
+            ),
+        }.items():
+            discovery.write_metrics_to_yaml(
+                model, metrics, model_preds.loc[subset_idx], test_subset
+            )
 
     if not IS_IPYTHON:
         raise SystemExit(0)

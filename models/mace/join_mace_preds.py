@@ -23,7 +23,7 @@ __date__ = "2023-03-01"
 
 # %%
 module_dir = os.path.dirname(__file__)
-model_name = Model.mace_mpa_0
+model_name = Model.mace_mpa_0.key
 task_type = Task.IS2RE
 date = "2025-01-30"
 glob_pattern = f"{model_name}/{date}-wbm-{task_type}*/*.json.gz"

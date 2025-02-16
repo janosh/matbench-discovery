@@ -11,6 +11,7 @@ import pytest
 from ase import Atoms
 from pymatgen.core import Lattice, Structure
 from pymatviz.enums import Key
+from ruamel.yaml.comments import CommentedMap
 
 from matbench_discovery.data import (
     as_dict_handler,
@@ -19,6 +20,8 @@ from matbench_discovery.data import (
     df_wbm,
     glob_to_df,
     load_df_wbm_with_preds,
+    round_trip_yaml,
+    update_yaml_at_path,
 )
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 
@@ -271,3 +274,65 @@ def test_load_df_wbm_with_preds_subset(subset: Any) -> None:
     """Test subset handling in load_df_wbm_with_preds."""
     df_wbm = load_df_wbm_with_preds(subset=subset)
     assert isinstance(df_wbm, pd.DataFrame)
+
+
+def test_update_yaml_at_path(tmp_path: Path) -> None:
+    """Test updating YAML files at specific paths."""
+    test_file = f"{tmp_path}/test.yml"
+
+    # Test case 1: Basic update at root level
+    initial_data = {"metrics": {"discovery": {"mae": 0.1}}}
+    with open(test_file, mode="w") as file:
+        round_trip_yaml.dump(initial_data, file)
+
+    updated_yaml = update_yaml_at_path(
+        test_file, "metrics.discovery", {"mae": 0.2, "rmse": 0.3}
+    )
+    assert updated_yaml["metrics"]["discovery"] == {"mae": 0.2, "rmse": 0.3}
+
+    # Test case 2: Create new nested path
+    updated_yaml = update_yaml_at_path(
+        test_file, "metrics.new.nested.path", {"value": 42}
+    )
+    assert updated_yaml["metrics"]["new"]["nested"]["path"] == {"value": 42}
+
+    # Test case 3: Update with comments
+    yaml_with_comments = """
+metrics:
+    discovery:  # Discovery metrics
+        mae: 0.1  # Mean absolute error
+        rmse: 0.2  # Root mean squared error
+"""
+    with open(test_file, mode="w") as file:
+        file.write(yaml_with_comments)
+
+    updated_yaml = update_yaml_at_path(
+        test_file, "metrics.discovery", {"mae": 0.3, "rmse": 0.4}
+    )
+    assert updated_yaml["metrics"]["discovery"] == {"mae": 0.3, "rmse": 0.4}
+
+    # Verify comments are preserved in the file
+    with open(test_file) as file:
+        content = file.read()
+    assert "# Discovery metrics" in content
+
+    # Test case 4: Update with CommentedMap
+    commented_data = CommentedMap({"value": 1})
+    commented_data.yaml_add_eol_comment("A comment", "value")
+    updated_yaml = update_yaml_at_path(test_file, "new.path", commented_data)
+
+    # Verify the data structure
+    assert updated_yaml["new"]["path"]["value"] == 1
+    # Verify comments in the file
+    with open(test_file) as file:
+        content = file.read()
+    assert "value: 1  # A comment" in content
+
+    # Test case 5: Error cases
+    with pytest.raises(FileNotFoundError):
+        update_yaml_at_path("non-existent.yml", "path", {"data": 1})
+
+    # Test bad paths
+    for path in ("metrics..discovery", "metrics..", "metrics.discovery..", "."):
+        with pytest.raises(ValueError, match="Invalid dotted path"):
+            update_yaml_at_path(test_file, path, {"data": 1})
