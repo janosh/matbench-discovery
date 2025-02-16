@@ -8,11 +8,33 @@ import pytest
 
 from matbench_discovery import ROOT
 from matbench_discovery.metrics import diatomics
+from matbench_discovery.metrics.diatomics import DiatomicCurve
 from matbench_discovery.metrics.diatomics.energy import (
     calc_curvature_smoothness,
     calc_second_deriv_smoothness,
     calc_total_variation_smoothness,
 )
+
+
+@pytest.fixture
+def test_data() -> tuple[dict[str, DiatomicCurve], dict[str, DiatomicCurve]]:
+    """Create test data for diatomic curves.
+
+    Returns:
+        tuple[dict[str, DiatomicCurve], dict[str, DiatomicCurve]]: Reference and
+            predicted curves for each element.
+    """
+    # Simple test case: H2 molecule with slightly different curves
+    xs = np.linspace(0.5, 5.0, 100)
+    # Reference: Simple Morse potential
+    y_ref = 5 * (1 - np.exp(-2 * (xs - 1.5))) ** 2 - 5
+    # Prediction: Slightly perturbed Morse potential
+    y_pred = 5.2 * (1 - np.exp(-2.1 * (xs - 1.48))) ** 2 - 5.1
+
+    ref_curves = {"H": (xs, y_ref)}
+    pred_curves = {"H": (xs, y_pred)}
+
+    return ref_curves, pred_curves
 
 
 def test_curve_diff_auc(
@@ -314,18 +336,9 @@ def test_smoothness_exact_values(
 @pytest.mark.parametrize(
     "metric_func",
     [
-        pytest.param(
-            calc_second_deriv_smoothness,
-            id="second_deriv",
-        ),
-        pytest.param(
-            calc_total_variation_smoothness,
-            id="total_variation",
-        ),
-        pytest.param(
-            calc_curvature_smoothness,
-            id="curvature",
-        ),
+        calc_second_deriv_smoothness,
+        calc_total_variation_smoothness,
+        calc_curvature_smoothness,
     ],
 )
 def test_smoothness_ordering(
