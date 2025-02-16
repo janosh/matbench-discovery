@@ -52,7 +52,7 @@ def calc_diatomic_curve_metrics(
         dict[str, dict[str, float]]: Dictionary mapping element symbols to metrics dict
             with keys being the metric names and values being the metric values.
     """
-    results = {}
+    results: dict[str, dict[str, float]] = {}
 
     # Map metric keys to their functions
     metric_functions: dict[str, Callable[..., float]] = {
