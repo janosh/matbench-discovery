@@ -128,7 +128,6 @@ isort.split-on-trailing-comma = false
 "scripts/*" = ["D", "ERA001"]
 "models/*" = ["D", "ERA001"]
 "data/*" = ["ERA001", "S101"]
-"**/__init__.py" = ["F401"]
 
 [tool.mypy]
 check_untyped_defs = true

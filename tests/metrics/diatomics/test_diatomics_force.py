@@ -8,14 +8,16 @@ from matbench_discovery.enums import MbdKey
 from matbench_discovery.metrics import diatomics
 from matbench_discovery.metrics.diatomics import DiatomicCurve
 
+# (ref_curves: {element: (seps, energies)}, pred_curves: {element: (seps, energies)})
+PredRefCurves = tuple[dict[str, DiatomicCurve], dict[str, DiatomicCurve]]
+
 
 @pytest.fixture
-def test_data() -> tuple[dict[str, DiatomicCurve], dict[str, DiatomicCurve]]:
+def test_data() -> PredRefCurves:
     """Create test data for diatomic curves.
 
     Returns:
-        tuple[dict[str, DiatomicCurve], dict[str, DiatomicCurve]]: Reference and
-            predicted curves for each element.
+        TestCurves: Reference and predicted curves for each element.
     """
     # Simple test case: H2 molecule with slightly different curves
     xs = np.linspace(0.5, 5.0, 100)
@@ -30,12 +32,7 @@ def test_data() -> tuple[dict[str, DiatomicCurve], dict[str, DiatomicCurve]]:
     return ref_curves, pred_curves
 
 
-def test_force_flips(
-    test_data: tuple[
-        dict[str, tuple[np.ndarray, np.ndarray]],
-        dict[str, tuple[np.ndarray, np.ndarray]],
-    ],
-) -> None:
+def test_force_flips(test_data: PredRefCurves) -> None:
     """Test force flips calculation."""
     _, pred_curves = test_data
     x_pred, y_pred = pred_curves["H"]
@@ -49,12 +46,7 @@ def test_force_flips(
     assert flips_strict >= flips  # Stricter threshold should find more flips
 
 
-def test_force_total_variation(
-    test_data: tuple[
-        dict[str, tuple[np.ndarray, np.ndarray]],
-        dict[str, tuple[np.ndarray, np.ndarray]],
-    ],
-) -> None:
+def test_force_total_variation(test_data: PredRefCurves) -> None:
     """Test force total variation calculation."""
     _, pred_curves = test_data
     x_pred, y_pred = pred_curves["H"]
@@ -65,28 +57,18 @@ def test_force_total_variation(
     assert total_var >= 0  # Total variation should be non-negative
 
 
-def test_force_jump(
-    test_data: tuple[
-        dict[str, tuple[np.ndarray, np.ndarray]],
-        dict[str, tuple[np.ndarray, np.ndarray]],
-    ],
-) -> None:
+def test_force_jump(test_data: PredRefCurves) -> None:
     """Test force jump calculation."""
     _, pred_curves = test_data
     x_pred, y_pred = pred_curves["H"]
 
     # Test with default parameters
-    fjump = diatomics.calc_force_jump(x_pred, y_pred)
-    assert isinstance(fjump, float)
-    assert fjump >= 0  # Force jump should be non-negative
+    f_jump = diatomics.calc_force_jump(x_pred, y_pred)
+    assert isinstance(f_jump, float)
+    assert f_jump >= 0  # Force jump should be non-negative
 
 
-def test_diatomic_curve_metrics(
-    test_data: tuple[
-        dict[str, tuple[np.ndarray, np.ndarray]],
-        dict[str, tuple[np.ndarray, np.ndarray]],
-    ],
-) -> None:
+def test_diatomic_curve_metrics(test_data: PredRefCurves) -> None:
     """Test full metrics calculation pipeline."""
     ref_curves, pred_curves = test_data
 
@@ -95,7 +77,7 @@ def test_diatomic_curve_metrics(
     assert isinstance(metrics, dict)
     assert "H" in metrics
     metric_keys = [*metrics["H"]]
-    for metric in [
+    assert set(metric_keys) >= {
         MbdKey.norm_auc,
         MbdKey.smoothness,
         MbdKey.tortuosity,
@@ -103,28 +85,25 @@ def test_diatomic_curve_metrics(
         MbdKey.energy_jump,
         MbdKey.energy_diff_flips,
         MbdKey.energy_grad_norm_max,
-    ]:
-        assert metric in metric_keys, f"{metric=} not in {metric_keys=}"
+    }
 
     # Test with force curves
     metrics_with_forces = diatomics.calc_diatomic_curve_metrics(
         ref_curves, pred_curves, pred_force_curves=pred_curves
     )
-    force_metric_keys = [*metrics_with_forces["H"]]
-    for metric in [
+    force_metric_keys = set(metrics_with_forces["H"])
+    assert force_metric_keys >= {
         MbdKey.force_total_variation,
         MbdKey.force_jump,
-    ]:
-        assert metric in force_metric_keys, f"{metric=} not in {force_metric_keys=}"
+        MbdKey.force_flips,
+    }
 
     # Test with custom parameters
     custom_metrics: dict[str, dict[str, Any]] = {
         MbdKey.norm_auc: {"seps_range": (1.0, 4.0)},
     }
     custom_results = diatomics.calc_diatomic_curve_metrics(
-        ref_curves,
-        pred_curves,
-        metrics=custom_metrics,
+        ref_curves, pred_curves, metrics=custom_metrics
     )
     assert isinstance(custom_results, dict)
     assert "H" in custom_results

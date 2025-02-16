@@ -15,14 +15,16 @@ from matbench_discovery.metrics.diatomics.energy import (
     calc_total_variation_smoothness,
 )
 
+# (ref_curves: {element: (seps, energies)}, pred_curves: {element: (seps, energies)})
+PredRefCurves = tuple[dict[str, DiatomicCurve], dict[str, DiatomicCurve]]
+
 
 @pytest.fixture
-def test_data() -> tuple[dict[str, DiatomicCurve], dict[str, DiatomicCurve]]:
+def test_data() -> PredRefCurves:
     """Create test data for diatomic curves.
 
     Returns:
-        tuple[dict[str, DiatomicCurve], dict[str, DiatomicCurve]]: Reference and
-            predicted curves for each element.
+        PredRefCurves: Reference and predicted curves for each element.
     """
     # Simple test case: H2 molecule with slightly different curves
     xs = np.linspace(0.5, 5.0, 100)
@@ -37,12 +39,7 @@ def test_data() -> tuple[dict[str, DiatomicCurve], dict[str, DiatomicCurve]]:
     return ref_curves, pred_curves
 
 
-def test_curve_diff_auc(
-    test_data: tuple[
-        dict[str, tuple[np.ndarray, np.ndarray]],
-        dict[str, tuple[np.ndarray, np.ndarray]],
-    ],
-) -> None:
+def test_curve_diff_auc(test_data: PredRefCurves) -> None:
     """Test AUC difference calculation."""
     ref_curves, pred_curves = test_data
     x_ref, y_ref = ref_curves["H"]
@@ -62,12 +59,7 @@ def test_curve_diff_auc(
     assert auc_unnorm > auc  # Unnormalized AUC should be larger than normalized
 
 
-def test_tortuosity(
-    test_data: tuple[
-        dict[str, tuple[np.ndarray, np.ndarray]],
-        dict[str, tuple[np.ndarray, np.ndarray]],
-    ],
-) -> None:
+def test_tortuosity(test_data: PredRefCurves) -> None:
     """Test tortuosity calculation."""
     _, pred_curves = test_data
     x_pred, y_pred = pred_curves["H"]
@@ -78,12 +70,7 @@ def test_tortuosity(
     assert tort >= 1.0  # Tortuosity should be at least 1 (arc length ≥ direct distance)
 
 
-def test_conservation_deviation(
-    test_data: tuple[
-        dict[str, tuple[np.ndarray, np.ndarray]],
-        dict[str, tuple[np.ndarray, np.ndarray]],
-    ],
-) -> None:
+def test_conservation_deviation(test_data: PredRefCurves) -> None:
     """Test conservation deviation calculation."""
     _, pred_curves = test_data
     x_pred, y_pred = pred_curves["H"]
@@ -101,28 +88,18 @@ def test_conservation_deviation(
     assert dev == pytest.approx(dev_unsorted)
 
 
-def test_energy_jump(
-    test_data: tuple[
-        dict[str, tuple[np.ndarray, np.ndarray]],
-        dict[str, tuple[np.ndarray, np.ndarray]],
-    ],
-) -> None:
+def test_energy_jump(test_data: PredRefCurves) -> None:
     """Test energy jump calculation."""
     _, pred_curves = test_data
     x_pred, y_pred = pred_curves["H"]
 
     # Test with default parameters
-    ejump = diatomics.calc_energy_jump(x_pred, y_pred)
-    assert isinstance(ejump, float)
-    assert ejump >= 0  # Energy jump should be non-negative
+    e_jump = diatomics.calc_energy_jump(x_pred, y_pred)
+    assert isinstance(e_jump, float)
+    assert e_jump >= 0  # Energy jump should be non-negative
 
 
-def test_energy_diff_flips(
-    test_data: tuple[
-        dict[str, tuple[np.ndarray, np.ndarray]],
-        dict[str, tuple[np.ndarray, np.ndarray]],
-    ],
-) -> None:
+def test_energy_diff_flips(test_data: PredRefCurves) -> None:
     """Test energy difference flips calculation."""
     _, pred_curves = test_data
     x_pred, y_pred = pred_curves["H"]
@@ -132,12 +109,7 @@ def test_energy_diff_flips(
     assert n_flips == 1
 
 
-def test_energy_grad_norm_max(
-    test_data: tuple[
-        dict[str, tuple[np.ndarray, np.ndarray]],
-        dict[str, tuple[np.ndarray, np.ndarray]],
-    ],
-) -> None:
+def test_energy_grad_norm_max(test_data: PredRefCurves) -> None:
     """Test energy gradient norm maximum calculation."""
     _, pred_curves = test_data
     x_pred, y_pred = pred_curves["H"]
@@ -242,24 +214,24 @@ def test_edge_cases() -> None:
 
     # Test with NaN values
     y_nan = np.array([1.0, np.nan, 3.0, 4.0, 5.0])
-    with pytest.raises(ValueError, match="Input contains NaN"):
+    with pytest.raises(ValueError, match="Input contains NaN values: x=0, y=1"):
         diatomics.calc_curve_diff_auc(xs, ys, xs, y_nan)
 
     # Test with infinite values
     y_inf = np.array([1.0, np.inf, 3.0, 4.0, 5.0])
-    with pytest.raises(ValueError, match="Input contains infinite values"):
+    with pytest.raises(ValueError, match="Input contains infinite values: x=0, y=1"):
         diatomics.calc_curve_diff_auc(xs, ys, xs, y_inf)
 
     # Test with single point
     x_single = np.array([1.0])
     y_single = np.array([1.0])
-    with pytest.raises(ValueError, match="Input must have at least 2 points"):
+    with pytest.raises(ValueError, match="Input must have at least 2 points, got 1"):
         diatomics.calc_curve_diff_auc(x_single, y_single, x_single, y_single)
 
     # Test with duplicate x values
     x_dup = np.array([1.0, 1.0, 2.0, 3.0, 4.0])
     y_dup = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
-    with pytest.raises(ValueError, match="Input contains duplicate x values"):
+    with pytest.raises(ValueError, match="Input contains 1 duplicate x values"):
         diatomics.calc_curve_diff_auc(x_dup, y_dup, x_dup, y_dup)
 
     # Test with mismatched array sizes
@@ -277,12 +249,11 @@ def test_edge_cases() -> None:
 
 # Test data for smoothness metrics
 @pytest.fixture
-def smoothness_test_data() -> dict[str, tuple[np.ndarray, np.ndarray]]:
+def smoothness_test_data() -> dict[str, DiatomicCurve]:
     """Create test data for smoothness metrics.
 
     Returns:
-        dict[str, tuple[np.ndarray, np.ndarray]]: Dictionary mapping curve names to
-            (x, y) tuples.
+        dict[str, DiatomicCurve]: Map of curve names to DiatomicCurve tuples.
     """
     x = np.linspace(0.1, 1.0, 1000)
     x_lj = np.linspace(0.3, 3.0, 1000)  # special range for LJ potential

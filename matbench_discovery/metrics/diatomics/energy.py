@@ -25,13 +25,16 @@ def _validate_curve_input(
     if x.size != y.size:
         raise ValueError(f"x and y must have same size, got {x.size} and {y.size}")
     if x.size < 2:
-        raise ValueError("Input must have at least 2 points")
-    if np.any(np.isnan(x)) or np.any(np.isnan(y)):
-        raise ValueError("Input contains NaN")
-    if np.any(np.isinf(x)) or np.any(np.isinf(y)):
-        raise ValueError("Input contains infinite values")
+        raise ValueError(f"Input must have at least 2 points, got {x.size}")
+    n_x_nan, n_y_nan = np.sum(np.isnan(x)), np.sum(np.isnan(y))
+    if n_x_nan or n_y_nan:
+        raise ValueError(f"Input contains NaN values: x={n_x_nan}, y={n_y_nan}")
+    n_x_inf, n_y_inf = np.sum(np.isinf(x)), np.sum(np.isinf(y))
+    if n_x_inf or n_y_inf:
+        raise ValueError(f"Input contains infinite values: x={n_x_inf}, y={n_y_inf}")
     if len(np.unique(x)) != len(x):
-        raise ValueError("Input contains duplicate x values")
+        n_x_dup = np.sum(np.diff(x) == 0)
+        raise ValueError(f"Input contains {n_x_dup} duplicate x values")
 
     # Sort by x values
     sort_idx = np.argsort(x)
@@ -279,9 +282,9 @@ def calc_energy_jump(seps: Sequence[float], energies: Sequence[float]) -> float:
     ediff_sign = ediff_sign[mask]
     ediff_flip = np.diff(ediff_sign) != 0
 
-    ejump = np.abs(ediff[:-1][ediff_flip]).sum() + np.abs(ediff[1:][ediff_flip]).sum()
+    e_jump = np.abs(ediff[:-1][ediff_flip]).sum() + np.abs(ediff[1:][ediff_flip]).sum()
 
-    return float(ejump)
+    return float(e_jump)
 
 
 def calc_conservation_deviation(

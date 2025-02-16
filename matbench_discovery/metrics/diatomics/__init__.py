@@ -4,6 +4,7 @@ import inspect
 from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
+# ruff: noqa: F401 (don't flag convenience imports above)
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.metrics.diatomics import energy, force
 from matbench_discovery.metrics.diatomics.energy import (
