@@ -107,6 +107,20 @@ class MbdKey(LabelEnum):
     )
     true_kappa_tot_avg = "true_kappa_tot_avg", "True average total thermal conductivity"
 
+    # Diatomic curve metrics
+    norm_auc = "norm_auc", "Norm. AUC (unitless)"
+    smoothness = "smoothness", "Smoothness (eV/Å²)"
+    tortuosity = "tortuosity", "Tortuosity (unitless)"
+    force_flips = "force_flips", "Force Flips (count)"
+    conservation = "conservation", "Conservation (eV/Å)"
+    energy_jump = "energy_jump", "Energy Jump (eV)"
+    energy_diff_flips = "energy_diff_flips", "Energy Diff Flips (count)"
+    energy_grad_norm_max = "energy_grad_norm_max", "Energy Grad Norm Max (eV/Å)"
+    force_total_variation = "force_total_variation", "Force Total Variation (eV/Å)"
+    force_jump = "force_jump", "Force Jump (eV/Å)"
+    energy_mae_vs_ref = "energy_mae_vs_ref", "Energy MAE vs Reference (eV)"
+    force_mae_vs_ref = "force_mae_vs_ref", "Force MAE vs Reference (eV/Å)"
+
 
 @unique
 class Task(LabelEnum):
