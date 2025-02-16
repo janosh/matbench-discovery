@@ -321,11 +321,11 @@ def update_yaml_at_path(
         update_yaml_at_path(
             "models/mace/mace-mp-0.yml",
             "metrics.discovery",
-            {"mae": 0.1, "rmse": 0.2},
+            dict(mae=0.1, rmse=0.2),
         )
     """
-    # check for valid dotted path
-    if not re.match(r"^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*$", dotted_path):
+    # raise on repeated or trailing dots in dotted path
+    if not re.match(r"^[a-zA-Z0-9-+=_]+(\.[a-zA-Z0-9-+=_]+)*$", dotted_path):
         raise ValueError(f"Invalid dotted path: {dotted_path}")
 
     with open(file_path) as file:
