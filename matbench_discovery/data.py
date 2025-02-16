@@ -13,6 +13,7 @@ Environment Variables:
 
 import io
 import os
+import re
 import sys
 import zipfile
 from collections import defaultdict
@@ -299,3 +300,54 @@ def load_df_wbm_with_preds(
         df_out = df_out.loc[subset]
 
     return df_out
+
+
+def update_yaml_at_path(
+    file_path: str | Path,
+    dotted_path: str,
+    data: dict[str, Any],
+) -> dict[str, Any]:
+    """Update a YAML file at a specific dotted path with new data.
+
+    Args:
+        file_path (str | Path): Path to YAML file to update
+        dotted_path (str): Dotted path to update (e.g. 'metrics.discovery')
+        data (dict[str, Any]): Data to write at the specified path
+
+    Returns:
+        dict[str, Any]: The complete updated YAML data written to file.
+
+    Example:
+        update_yaml_at_path(
+            "models/mace/mace-mp-0.yml",
+            "metrics.discovery",
+            {"mae": 0.1, "rmse": 0.2},
+        )
+    """
+    # check for valid dotted path
+    if not re.match(r"^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*$", dotted_path):
+        raise ValueError(f"Invalid dotted path: {dotted_path}")
+
+    with open(file_path) as file:
+        yaml_data = round_trip_yaml.load(file)
+
+    # Navigate to the correct nested level
+    current = yaml_data
+    *parts, last = dotted_path.split(".")
+
+    for part in parts:
+        if part not in current:
+            current[part] = {}
+        current = current[part]
+
+    # Update the data at the final level
+    if last not in current:
+        current[last] = {}
+    # Replace the entire section to preserve comments
+    current[last] = data
+
+    # Write back to file
+    with open(file_path, mode="w") as file:
+        round_trip_yaml.dump(yaml_data, file)
+
+    return yaml_data
