@@ -31,7 +31,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 
 # %%
-model_name = Model.grace_2l_oam
+model_name = Model.grace_2l_oam.key
 smoke_test = False
 task_type = Task.IS2RE
 module_dir = os.path.dirname(__file__)

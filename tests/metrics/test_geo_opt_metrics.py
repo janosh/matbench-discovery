@@ -153,7 +153,7 @@ def test_write_geo_opt_metrics_to_yaml(
         mock_model.from_label.return_value.yaml_path = "mock_path/test_model.yml"
 
         # Mock the YAML operations
-        with patch("matbench_discovery.metrics.geo_opt.round_trip_yaml") as mock_yaml:
+        with patch("matbench_discovery.data.round_trip_yaml") as mock_yaml:
             # Configure mock YAML load to return empty dict
             mock_yaml.load.return_value = {}
 
