@@ -1,43 +1,33 @@
 """Functions to calculate and save geometry optimization metrics."""
 
 import pandas as pd
-from pymatviz.enums import Key, Task
+from pymatviz.enums import Key
 from ruamel.yaml.comments import CommentedMap
 
 from matbench_discovery import ROOT
-from matbench_discovery.data import round_trip_yaml
+from matbench_discovery.data import update_yaml_at_path
 from matbench_discovery.enums import MbdKey, Model
 
 
 def write_metrics_to_yaml(
-    df_geo_opt: pd.DataFrame, model: Model, symprec: float, analysis_file_path: str
+    df_geo_opt: pd.DataFrame,
+    model: Model,
+    symprec: float,
+    analysis_file_path: str,
 ) -> None:
-    """Write geometry optimization metrics to model YAML metadata files.
+    """Write geometric optimization metrics to model's YAML file.
 
     Args:
-        df_geo_opt (pd.DataFrame): DataFrame with geometry optimization metrics as
-            columns, including:
-            - structure_rmsd_vs_dft: RMSD between predicted and DFT structures
-            - n_sym_ops_mae: Mean absolute error in number of symmetry operations
-            - symmetry_decrease: Fraction of structures with decreased symmetry
-            - symmetry_match: Fraction of structures with matching symmetry
-            - symmetry_increase: Fraction of structures with increased symmetry
-            - n_structs: Number of structures evaluated
-        model (Model): Instance of Model enum that was analyzed in df_geo_opt.
-        symprec (float): symmetry precision for comparing ML and DFT relaxed structures.
-        analysis_file_path (str): Path to the CSV file containing the analysis results.
+        df_geo_opt (pd.DataFrame): Geometric optimization metrics
+        model (Model): Model to write metrics for
+        symprec (float): Symmetry precision used for analysis
+        analysis_file_path (str): Path to analysis file
     """
-    # Load existing metadata
-    with open(model.yaml_path) as file:
-        model_metadata = round_trip_yaml.load(file)
-
-    all_metrics = model_metadata.setdefault("metrics", {})
-
     # Convert absolute path to relative path if needed
-    analysis_file_path = analysis_file_path.removeprefix(ROOT)
+    analysis_file_path = analysis_file_path.removeprefix(f"{ROOT}/")
 
     # Get metrics for this model
-    new_metrics = {
+    metrics_for_symprec = {
         str(Key.rmsd): float(round(df_geo_opt[MbdKey.structure_rmsd_vs_dft], 4)),
         str(Key.n_sym_ops_mae): float(round(df_geo_opt[Key.n_sym_ops_mae], 4)),
         str(Key.symmetry_decrease): float(round(df_geo_opt[Key.symmetry_decrease], 4)),
@@ -47,11 +37,8 @@ def write_metrics_to_yaml(
         "analysis_file": analysis_file_path,
         "analysis_file_url": None,  # to be filled after uploading to figshare
     }
+    metrics_for_symprec = CommentedMap(metrics_for_symprec)
     symprec_key = f"{symprec=:.0e}".replace("e-0", "e-")
-
-    geo_opt_metrics = CommentedMap(all_metrics.setdefault(Task.geo_opt, {}))
-    metrics_for_symprec = CommentedMap(geo_opt_metrics.setdefault(symprec_key, {}))
-    metrics_for_symprec.update(new_metrics)
 
     # Define units for metrics
     metric_units = {
@@ -62,18 +49,14 @@ def write_metrics_to_yaml(
         Key.symmetry_increase: "fraction",
         Key.n_structures: "count",
     }
-
     # Add units as YAML end-of-line comments
-    for key in new_metrics:
+    for key in metrics_for_symprec:
         if unit := metric_units.get(key):
             metrics_for_symprec.yaml_add_eol_comment(unit, key, column=1)
 
-    geo_opt_metrics[symprec_key] = metrics_for_symprec
-    all_metrics[Task.geo_opt] = geo_opt_metrics
-
-    # Write back to file
-    with open(model.yaml_path, mode="w") as file:
-        round_trip_yaml.dump(model_metadata, file)
+    update_yaml_at_path(
+        model.yaml_path, f"metrics.geo_opt.{symprec_key}", metrics_for_symprec
+    )
 
 
 def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:
