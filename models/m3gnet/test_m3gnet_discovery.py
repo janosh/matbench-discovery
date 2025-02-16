@@ -28,7 +28,7 @@ __date__ = "2022-08-15"
 
 task_type = Task.IS2RE
 module_dir = os.path.dirname(__file__)
-model_name = Model.m3gnet_ms
+model_name = Model.m3gnet_ms.key
 # direct: DIRECT cluster sampling, ms: manual sampling
 model_type: Literal[
     "tf-manual-sampling", "tf-direct-sampling", "matgl-direct-sampling"
