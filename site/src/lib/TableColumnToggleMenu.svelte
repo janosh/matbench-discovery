@@ -1,9 +1,14 @@
 <script lang="ts">
-  import Icon from '@iconify/svelte'
+  import 'iconify-icon'
   import { click_outside } from 'svelte-zoo/actions'
 
-  export let visible_cols: Record<string, boolean>
-  export let column_panel_open: boolean = false
+  interface Props {
+    visible_cols: Record<string, boolean>
+    column_panel_open?: boolean
+  }
+
+  let { visible_cols = $bindable({}), column_panel_open = $bindable(false) }: Props =
+    $props()
 </script>
 
 <details
@@ -12,7 +17,7 @@
   use:click_outside={{ callback: () => (column_panel_open = false) }}
 >
   <summary>
-    Columns <Icon icon="octicon:columns-16" inline />
+    Columns <iconify-icon icon="octicon:columns-16" inline></iconify-icon>
   </summary>
   <div class="column-menu">
     {#each Object.keys(visible_cols) as col}

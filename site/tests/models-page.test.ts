@@ -1,11 +1,10 @@
-import { tick } from 'svelte'
+import { mount, tick } from 'svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
 import Page from '../src/routes/models/+page.svelte'
 
 describe(`Models Page`, () => {
   beforeEach(() => {
-    document.body.innerHTML = ``
-    new Page({ target: document.body })
+    mount(Page, { target: document.body })
   })
 
   it(`renders leaderboard heading and description`, () => {

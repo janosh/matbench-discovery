@@ -1,14 +1,18 @@
 <script lang="ts">
   import { page } from '$app/stores'
 
-  export let routes: (string | [string, string])[]
-  export let style: string | null = null
+  interface Props {
+    routes: (string | [string, string])[];
+    style?: string | null;
+  }
 
-  $: is_current = (path: string) => {
+  let { routes, style = null }: Props = $props();
+
+  let is_current = $derived((path: string) => {
     if (path === $page.url.pathname) return `page`
     if (path !== `/` && $page.url.pathname.includes(path)) return `page`
     return undefined
-  }
+  })
 </script>
 
 <nav {style}>

@@ -1,5 +1,5 @@
-import { tick } from 'svelte'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { mount, tick } from 'svelte'
+import { describe, expect, it } from 'vitest'
 import TableColumnToggleMenu from '../src/lib/TableColumnToggleMenu.svelte'
 
 describe(`TableColumnToggleMenu`, () => {
@@ -9,12 +9,8 @@ describe(`TableColumnToggleMenu`, () => {
     'Column 3': true,
   }
 
-  beforeEach(() => {
-    document.body.innerHTML = ``
-  })
-
   it(`renders correctly with initial state`, () => {
-    new TableColumnToggleMenu({
+    mount(TableColumnToggleMenu, {
       target: document.body,
       props: { visible_cols, column_panel_open: false },
     })
@@ -37,7 +33,7 @@ describe(`TableColumnToggleMenu`, () => {
   })
 
   it(`toggles column visibility when checkbox clicked`, async () => {
-    new TableColumnToggleMenu({
+    mount(TableColumnToggleMenu, {
       target: document.body,
       props: { visible_cols, column_panel_open: false },
     })
@@ -51,12 +47,17 @@ describe(`TableColumnToggleMenu`, () => {
   })
 
   it(`opens and closes panel`, async () => {
-    new TableColumnToggleMenu({
+    mount(TableColumnToggleMenu, {
       target: document.body,
       props: { visible_cols, column_panel_open: true },
     })
 
     const details = document.body.querySelector(`details`)
+    expect(details?.open).toBe(false)
+
+    // Click to open panel
+    details?.click()
+    await tick()
     expect(details?.open).toBe(true)
 
     // Click outside to close panel (click_outside action)
@@ -71,7 +72,7 @@ describe(`TableColumnToggleMenu`, () => {
       'Column with <sup>superscript</sup>': false,
     }
 
-    new TableColumnToggleMenu({
+    mount(TableColumnToggleMenu, {
       target: document.body,
       props: { visible_cols: html_cols, column_panel_open: false },
     })

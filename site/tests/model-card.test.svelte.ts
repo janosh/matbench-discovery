@@ -1,8 +1,8 @@
 import { MODEL_METADATA, ModelCard, TRAINING_SETS } from '$lib'
 import type { ModelStatLabel } from '$lib/types'
 import { pretty_num } from 'elementari'
-import { tick } from 'svelte'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { mount, tick } from 'svelte'
+import { describe, expect, it } from 'vitest'
 
 describe(`ModelCard`, () => {
   // Get a real model from MODEL_METADATA
@@ -15,13 +15,9 @@ describe(`ModelCard`, () => {
     { key: `κ_SRME`, label: `κ SRME`, unit: `W/mK` },
   ]
 
-  beforeEach(() => {
-    document.body.innerHTML = ``
-  })
-
   describe(`Basic Rendering`, () => {
     it(`renders model header and basic info`, () => {
-      new ModelCard({
+      mount(ModelCard, {
         target: document.body,
         props: { model, stats, sort_by: `F1` },
       })
@@ -49,7 +45,7 @@ describe(`ModelCard`, () => {
         url: undefined,
       }
 
-      new ModelCard({
+      mount(ModelCard, {
         target: document.body,
         props: { model: minimal_model, stats, sort_by: `F1` },
       })
@@ -64,7 +60,7 @@ describe(`ModelCard`, () => {
   // and adjust expectations based on actual model data...
 
   it(`handles training set display`, () => {
-    new ModelCard({
+    mount(ModelCard, {
       target: document.body,
       props: { model, stats, sort_by: `F1` },
     })
@@ -92,7 +88,7 @@ describe(`ModelCard`, () => {
 
   describe(`Metrics Display`, () => {
     it(`displays metrics with correct formatting`, () => {
-      new ModelCard({
+      mount(ModelCard, {
         target: document.body,
         props: { model, stats, sort_by: `F1` },
       })
@@ -117,7 +113,7 @@ describe(`ModelCard`, () => {
     it(`handles missing metrics`, () => {
       const model_without_metrics = { ...model, metrics: undefined }
 
-      new ModelCard({
+      mount(ModelCard, {
         target: document.body,
         props: { model: model_without_metrics, stats, sort_by: `F1` },
       })
@@ -129,16 +125,17 @@ describe(`ModelCard`, () => {
 
   describe(`Expandable Details`, () => {
     it(`toggles details section visibility`, async () => {
-      const card = new ModelCard({
+      let show_details = $state(false)
+      mount(ModelCard, {
         target: document.body,
-        props: { model, stats, sort_by: `F1`, show_details: false },
+        props: { model, stats, sort_by: `F1`, show_details },
       })
 
       // Initially only metrics section should be visible
       const initial_sections = document.body.querySelectorAll(`section:not(.metrics) h3`)
       expect(initial_sections).toHaveLength(0)
 
-      card.$set({ show_details: true })
+      show_details = true
       await tick()
 
       const sections = document.body.querySelectorAll(`section h3`)
@@ -151,7 +148,7 @@ describe(`ModelCard`, () => {
     })
 
     it(`displays authors and package versions correctly`, async () => {
-      new ModelCard({
+      mount(ModelCard, {
         target: document.body,
         props: { model, stats, sort_by: `F1`, show_details: true },
       })
@@ -173,7 +170,7 @@ describe(`ModelCard`, () => {
     })
 
     it(`formats hyperparameters correctly`, async () => {
-      new ModelCard({
+      mount(ModelCard, {
         target: document.body,
         props: { model, stats, sort_by: `F1`, show_details: true },
       })

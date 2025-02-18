@@ -25,9 +25,7 @@ The full set of processing steps used to curate the WBM test set from the raw da
 
   > WBM Formation energy distribution. 524 materials outside dashed lines were discarded.
 
-  <slot name="hist-e-form-per-atom">
-    <img src="./figs/hist-wbm-e-form-per-atom.svg" alt="WBM formation energy histogram indicating outlier cutoffs">
-  </slot>
+  <slot name="hist-e-form-per-atom" />
 
 - apply the [`MaterialsProject2020Compatibility`](https://github.com/materialsproject/pymatgen/blob/02a4ca8aa/pymatgen/entries/compatibility.py#L823) energy correction scheme to the formation energies
 - compute energy to the Materials Project convex hull constructed from all MP `ComputedStructureEntries` queried on 2023-02-07 ([database release 2022.10.28](https://docs.materialsproject.org/changes/database-versions#v2022.10.28))
@@ -113,9 +111,7 @@ The number of stable materials (according to the MP convex hull which is spanned
 
 > Note: [According to the WBM authors](https://www.nature.com/articles/s41524-020-00481-6#Sec2), the stability rate w.r.t. to the more complete hull constructed from the combined train and test set (MP + WBM) for the first 3 rounds of elemental substitution is 18,479 out of 189,981 crystals ($\approx$ 9.7%), indicating that many WBM structures are stable w.r.t. MP but not stable w.r.t. each other. One could build an active learning benchmark out of this dataset where a well-calibrated model should initially predict with a ~16.7 stability rate but converge towards 9.7% as it is retrained on more and more chunks of the WBM test set.
 
-<slot name="hist-wbm-hull-dist">
-  <img src="./figs/hist-wbm-hull-dist.svg" alt="WBM energy above MP convex hull distribution">
-</slot>
+<slot name="hist_wbm_hull_dist" />
 
 ## 🧪 &thinsp; Chemical Diversity
 
@@ -125,24 +121,20 @@ The WBM test set and even more so the MP training set are heavily oxide dominate
 
 The WBM test set consists of 256,963 WBM `ComputedStructureEntries`
 
-<slot name="wbm-elements-heatmap">
-  <img src="./figs/wbm-elements.svg" alt="Periodic table log heatmap of WBM elements">
-</slot>
+<slot name="wbm_elements_heatmap" />
 
 ### MP
 
 The MP training set consists of 154,719 `ComputedStructureEntries`
 
-<slot name="mp-elements-heatmap">
-  <img src="./figs/mp-elements.svg" alt="Periodic table log heatmap of MP elements">
-</slot>
+<slot name="mp_elements_heatmap" />
 
 ### MPtrj
 
-<slot name="mp-trj-elements-heatmap" />
+<slot name="mp_trj_elements_heatmap" />
 
 ## 📊 &thinsp; Symmetry Statistics
 
 These sunburst diagrams show the spacegroup distribution of MP on the left and WBM on the right. Both have good coverage of all 7 crystal systems, the only exception being triclinic crystals which are just 1% of WBM but well represented in MP (15%). The 3 largest systems in MP are monoclinic, orthorhombic and triclinic vs orthorhombic, tetragonal and cubic in WBM. So WBM structures have overall higher symmetry which can benefit some models more than others. Wrenformer in particular uses symmetries as a coarse-grained description of the underlying structure. Its representations basically degrades to composition only on symmetry-less P1 structures. Given this spacegroup distribution, it should fare well on the WBM test set. The fact that Wrenformer is still outperformed by all interatomic potentials and some single-shot GNNs indicates the underlying methodology is unable to compete.
 
-<slot name="spacegroup-sunbursts" />
+<slot name="spacegroup_sunbursts" />

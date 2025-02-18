@@ -1,24 +1,34 @@
 <script lang="ts">
   import type { Author } from '$lib'
-  import Icon from '@iconify/svelte'
 
-  export let author: Author
+  interface Props {
+    author: Author
+  }
+  let { author }: Props = $props()
 </script>
 
 {#if author}
   {@const { name, email, orcid, affiliation, url, github } = author}
   <span title={affiliation}>{name}</span>
   {#if email}
-    <a href="mailto:{email}"><Icon icon="ion:ios-mail" inline /></a>
+    <a aria-label="Email" href="mailto:{email}">
+      <iconify-icon icon="ion:ios-mail" inline></iconify-icon>
+    </a>
   {/if}
   {#if orcid}
-    <a href={orcid}><Icon icon="fa-brands:orcid" inline /></a>
+    <a aria-label="ORCID" href={orcid}>
+      <iconify-icon icon="fa-brands:orcid" inline></iconify-icon>
+    </a>
   {/if}
   {#if url}
-    <a href={url}><Icon icon="ion:ios-globe" inline /></a>
+    <a aria-label="Website" href={url}>
+      <iconify-icon icon="ion:ios-globe" inline></iconify-icon>
+    </a>
   {/if}
   {#if github}
-    <a href={github}><Icon icon="octicon:mark-github" inline /></a>
+    <a aria-label="GitHub" href={github}>
+      <iconify-icon icon="octicon:mark-github" inline></iconify-icon>
+    </a>
   {/if}
 {/if}
 
