@@ -1,7 +1,7 @@
 import { HeatmapTable } from '$lib'
 import type { HeatmapColumn } from '$lib/types'
-import { tick } from 'svelte'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { mount, tick } from 'svelte'
+import { describe, expect, it } from 'vitest'
 
 describe(`HeatmapTable`, () => {
   const sample_data = [
@@ -16,13 +16,9 @@ describe(`HeatmapTable`, () => {
     { label: `Value`, better: `lower` },
   ]
 
-  beforeEach(() => {
-    document.body.innerHTML = ``
-  })
-
   it(`renders table with correct structure and handles hidden columns`, () => {
     const columns = [...sample_columns, { label: `Hidden`, hidden: true }]
-    new HeatmapTable({
+    mount(HeatmapTable, {
       target: document.body,
       props: { data: sample_data, columns },
     })
@@ -38,16 +34,19 @@ describe(`HeatmapTable`, () => {
   })
 
   it(`handles empty data and filters undefined rows`, async () => {
-    const data_with_empty = [{ Model: undefined, Score: undefined }, ...sample_data]
+    const data_with_empty = $state([
+      { Model: undefined, Score: undefined },
+      ...sample_data,
+    ])
 
-    const table = new HeatmapTable({
+    mount(HeatmapTable, {
       target: document.body,
       props: { data: data_with_empty, columns: sample_columns },
     })
 
     expect(document.body.querySelectorAll(`tbody tr`)).toHaveLength(3)
 
-    table.$set({ data: [] })
+    data_with_empty = []
     await tick()
     expect(document.body.querySelectorAll(`tbody tr`)).toHaveLength(0)
   })
@@ -60,7 +59,7 @@ describe(`HeatmapTable`, () => {
         { Model: `C`, Score: 0.75, Value: 300 },
       ]
 
-      new HeatmapTable({
+      mount(HeatmapTable, {
         target: document.body,
         props: { data, columns: sample_columns },
       })
@@ -85,7 +84,7 @@ describe(`HeatmapTable`, () => {
     })
 
     it(`maintains sort state on data updates`, async () => {
-      const component = new HeatmapTable({
+      const component = mount(HeatmapTable, {
         target: document.body,
         props: { data: sample_data, columns: sample_columns },
       })
@@ -114,7 +113,7 @@ describe(`HeatmapTable`, () => {
       { Num: 1.234, Val: 100 },
     ]
 
-    new HeatmapTable({
+    mount(HeatmapTable, {
       target: document.body,
       props: { data, columns },
     })
@@ -134,7 +133,7 @@ describe(`HeatmapTable`, () => {
   })
 
   it(`handles accessibility features`, () => {
-    new HeatmapTable({
+    mount(HeatmapTable, {
       target: document.body,
       props: {
         data: sample_data,
@@ -154,7 +153,7 @@ describe(`HeatmapTable`, () => {
   it(`handles undefined and null values`, () => {
     const data = [{ Model: `Empty Model`, Score: undefined, Value: undefined }]
 
-    new HeatmapTable({
+    mount(HeatmapTable, {
       target: document.body,
       props: { data, columns: sample_columns },
     })

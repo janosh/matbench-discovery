@@ -1,11 +1,10 @@
-import { tick } from 'svelte'
+import { mount, tick } from 'svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
 import Page from '../src/routes/+page.svelte'
 
 describe(`Landing Page`, () => {
   beforeEach(() => {
-    document.body.innerHTML = ``
-    new Page({ target: document.body })
+    mount(Page, { target: document.body })
   })
 
   it(`renders discovery set toggle buttons`, () => {
@@ -51,20 +50,22 @@ describe(`Landing Page`, () => {
   })
 
   it(`toggles non-compliant models`, async () => {
-    const toggle = document.body.querySelector(`input[type="checkbox"]`)
+    const toggle = document.body.querySelector(
+      `.table-controls label input[type="checkbox"]`,
+    )
     expect(toggle).toBeDefined()
 
     // Should be unchecked by default
     expect(toggle?.checked).toBe(false)
     // get number of table rows
-    const n_compliant_models = document.body.querySelectorAll(`tbody tr`).length
+    const n_models_on_load = document.body.querySelectorAll(`tbody tr`).length
 
     // Click to show non-compliant models
     toggle?.click()
     expect(toggle?.checked).toBe(true)
     await tick()
     const n_all_models = document.body.querySelectorAll(`tbody tr`).length
-    expect(n_all_models).toBeGreaterThan(n_compliant_models)
+    expect(n_all_models).toBeGreaterThan(n_models_on_load)
   })
 
   it(`updates column visibility when toggling checkboxes`, async () => {
@@ -98,7 +99,7 @@ describe(`Landing Page`, () => {
   })
 
   it(`displays best model information`, () => {
-    const best_model_info = document.body.querySelector(`[slot="best-report"]`)
+    const best_model_info = document.body.querySelector(`#best-report`)
     expect(best_model_info?.textContent).toMatch(/highest F1 score/)
     expect(best_model_info?.textContent).toMatch(/discovery acceleration factor/)
   })
@@ -113,7 +114,7 @@ describe(`Landing Page`, () => {
   })
 
   it(`displays valid metric values`, () => {
-    const best_model_info = document.body.querySelector(`[slot="best-report"]`)
+    const best_model_info = document.body.querySelector(`#best-report`)
     const text = best_model_info?.textContent || ``
 
     // Extract F1 and DAF values using regex

@@ -13,13 +13,13 @@
 
 </h4>
 
-<slot name="metrics-table" />
+<slot name="metrics_table" />
 
 Matbench Discovery is an [interactive leaderboard](https://janosh.github.io/matbench-discovery/models) and associated [PyPI package](https://pypi.org/project/matbench-discovery) which rank ML models on a task designed to simulate high-throughput discovery of new stable inorganic crystals as well as predicting some of their properties.
 
-We've tested <slot name="model-count" /> models covering multiple methodologies including graph neural network (GNN) interatomic potentials, GNN one-shot predictors, iterative Bayesian optimizers and random forests with shallow-learning structure fingerprints.
+We've tested <slot name="model_count" /> models covering multiple methodologies including graph neural network (GNN) interatomic potentials, GNN one-shot predictors, iterative Bayesian optimizers and random forests with shallow-learning structure fingerprints.
 
-<slot name="best-report" />
+<slot name="best_report" />
 
 Our results show that ML models have become robust enough to deploy them as triaging steps to more effectively allocate compute in high-throughput DFT relaxations. This work provides valuable insights for anyone looking to build large-scale materials databases.
 

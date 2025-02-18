@@ -1,9 +1,9 @@
 <script lang="ts">
   import { page } from '$app/stores'
   import { homepage, name } from '$site/package.json'
-  import Icon from '@iconify/svelte'
+  import 'iconify-icon'
 
-  let online: boolean
+  let online: boolean = $state(true)
 </script>
 
 <svelte:head>
@@ -23,8 +23,9 @@
   {#if online === false}
     Looks like you're offline. If you think your connection is fine, check the
     <a href="https://githubstatus.com">GitHub status page</a>
-    as this site is hosted by &thinsp;<Icon icon="octicon:mark-github" inline />&thinsp;
-    GitHub Pages.
+    as this site is hosted by &thinsp;<iconify-icon icon="octicon:mark-github" inline
+    ></iconify-icon>
+    &thinsp;GitHub Pages.
   {/if}
 
   <p>

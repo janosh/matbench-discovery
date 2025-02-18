@@ -7,25 +7,27 @@
   } from '$lib'
   import { DISCOVERY_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/metrics'
   import type { DiscoverySet } from '$lib/types'
-  import Icon from '@iconify/svelte'
+  import 'iconify-icon'
   import { Tooltip } from 'svelte-zoo'
   import { click_outside } from 'svelte-zoo/actions'
 
   // Default column visibility
-  let visible_cols: Record<string, boolean> = {
+  let visible_cols: Record<string, boolean> = $state({
     ...Object.fromEntries(
       [...DISCOVERY_METRICS, ...METADATA_COLS].map((col) => [col.label, true]),
     ),
     'κ<sub>SRME</sub>': false,
-  }
+  })
 
-  let discovery_set: DiscoverySet = `unique_prototypes`
-  let f1_tooltip_point: { x: number; y: number } | null = null
-  let hovered = false
-  let column_panel_open: boolean = false
+  let discovery_set: DiscoverySet = $state(`unique_prototypes`)
+  let f1_tooltip_point: { x: number; y: number } | null = $state(null)
+  let hovered = $state(false)
+  let column_panel_open: boolean = $state(false)
 
-  $: filtered_models = Object.values(MODEL_METADATA).filter(
-    (md) => md.metrics?.discovery?.[discovery_set]?.F1 != null,
+  let filtered_models = $derived(
+    Object.values(MODEL_METADATA).filter(
+      (md) => md.metrics?.discovery?.[discovery_set]?.F1 != null,
+    ),
   )
 </script>
 
@@ -40,12 +42,17 @@
       <Tooltip text={tooltip} tip_style="z-index: 2; font-size: 0.8em;">
         <button
           class:active={discovery_set === key}
-          on:click={() => (discovery_set = key)}
+          onclick={() => (discovery_set = key)}
         >
           {title}
           {#if link}
-            <a href={link} target="_blank" rel="noopener noreferrer">
-              <Icon icon="octicon:info" inline />
+            <a
+              href={link}
+              aria-label="Open in new tab"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <iconify-icon icon="octicon:info" inline></iconify-icon>
             </a>
           {/if}
         </button>

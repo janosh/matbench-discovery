@@ -10,149 +10,168 @@
   import type { DiscoverySet } from '$lib/types'
   import Readme from '$root/readme.md'
   import KappaNote from '$site/src/routes/kappa-note.md'
-  import LandingPageFigs from '$site/src/routes/landing-page-figs.md'
-  import Icon from '@iconify/svelte'
   import { pretty_num } from 'elementari'
+  import 'iconify-icon'
   import { Toggle, Tooltip } from 'svelte-zoo'
 
   let n_wbm_stable_uniq_protos = 32_942
   let n_wbm_uniq_protos = 215_488
 
-  let show_non_compliant: boolean = false
-  let show_energy_only: boolean = false
+  let show_non_compliant: boolean = $state(false)
+  let show_energy_only: boolean = $state(false)
 
   // Default column visibility
-  let visible_cols: Record<string, boolean> = {
+  let visible_cols: Record<string, boolean> = $state({
     ...Object.fromEntries(
       [...ALL_METRICS, ...METADATA_COLS].map((col) => [col.label, true]),
     ),
     TPR: false,
     TNR: false,
     RMSE: false,
-  }
+  })
 
-  $: best_model = MODEL_METADATA.reduce((best, md: ModelData) => {
-    const best_F1 = best.metrics?.discovery?.full_test_set?.F1 ?? 0
-    const md_F1 = md.metrics?.discovery?.full_test_set?.F1 ?? 0
-    if ((!best_F1 || md_F1 > best_F1) && (show_non_compliant || model_is_compliant(md))) {
-      return md
-    }
-    return best
-  }, {} as ModelData)
+  let best_model = $derived(
+    MODEL_METADATA.reduce((best, md: ModelData) => {
+      const best_F1 = best.metrics?.discovery?.full_test_set?.F1 ?? 0
+      const md_F1 = md.metrics?.discovery?.full_test_set?.F1 ?? 0
+      if (
+        (!best_F1 || md_F1 > best_F1) &&
+        (show_non_compliant || model_is_compliant(md))
+      ) {
+        return md
+      }
+      return best
+    }, {} as ModelData),
+  )
 
-  let column_panel_open: boolean = false
-
-  let discovery_set: DiscoverySet = `unique_prototypes`
+  let column_panel_open: boolean = $state(false)
+  let discovery_set: DiscoverySet = $state(`unique_prototypes`)
 </script>
 
 <Readme>
-  <figure style="margin-top: 4em;" slot="metrics-table">
-    <div class="discovery-set-toggle">
-      {#each Object.entries(DISCOVERY_SET_LABELS) as [key, { title, tooltip, link }]}
-        <Tooltip text={tooltip} tip_style="z-index: 2; font-size: 0.8em;">
-          <button
-            class:active={discovery_set === key}
-            on:click={() => (discovery_set = key)}
+  {#snippet metrics_table()}
+    <figure style="margin-top: 4em;" id="metrics-table">
+      <div class="discovery-set-toggle">
+        {#each Object.entries(DISCOVERY_SET_LABELS) as [key, { title, tooltip, link }]}
+          <Tooltip text={tooltip} tip_style="z-index: 2; font-size: 0.8em;">
+            <button
+              class:active={discovery_set === key}
+              onclick={() => (discovery_set = key)}
+            >
+              {title}
+              {#if link}
+                <a
+                  href={link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Info"
+                >
+                  <iconify-icon icon="octicon:info" inline></iconify-icon>
+                </a>
+              {/if}
+            </button>
+          </Tooltip>
+        {/each}
+      </div>
+
+      <MetricsTable
+        col_filter={(col) => visible_cols[col.label] ?? true}
+        model_filter={(model) =>
+          (show_energy_only || model.targets != `E`) &&
+          (show_non_compliant || model_is_compliant(model))}
+        {discovery_set}
+        style="width: 100%;"
+      />
+
+      <div class="downloads">
+        Download table as
+        {#each [`PDF`, `SVG`] as file_ext}
+          {@const suffix = show_non_compliant ? `` : `-only-compliant`}
+          <a
+            href="/figs/metrics-table-uniq-protos{suffix}.{file_ext.toLowerCase()}"
+            download
           >
-            {title}
-            {#if link}
-              <a href={link} target="_blank" rel="noopener noreferrer">
-                <Icon icon="octicon:info" inline />
-              </a>
-            {/if}
-          </button>
-        </Tooltip>
-      {/each}
-    </div>
-
-    <MetricsTable
-      col_filter={(col) => visible_cols[col.label] ?? true}
-      model_filter={(model) =>
-        (show_energy_only || model.targets != `E`) &&
-        (show_non_compliant || model_is_compliant(model))}
-      {discovery_set}
-      style="width: 100%;"
-    />
-
-    <div class="downloads">
-      Download table as
-      {#each [`PDF`, `SVG`] as file_ext}
-        {@const suffix = show_non_compliant ? `` : `-only-compliant`}
-        <a
-          href="/figs/metrics-table-uniq-protos{suffix}.{file_ext.toLowerCase()}"
-          download
+            {file_ext}
+          </a>
+        {/each}
+      </div>
+      <div class="table-controls">
+        <Toggle bind:checked={show_non_compliant} style="gap: 3pt;">
+          Show non-compliant models <Tooltip max_width="20em">
+            {#snippet tip()}
+              <span>
+                Models can be non-compliant for multiple reasons<br />
+                - closed source (model implementation and/or train/test code)<br />
+                - closed weights<br />
+                - trained on more than the permissible training set (<a
+                  href="https://docs.materialsproject.org/changes/database-versions#v2022.10.28"
+                  >MP v2022.10.28 release</a
+                >)<br />
+                We still show these models behind a toggle as we expect them<br /> to nonetheless
+                provide helpful signals for developing future models.
+              </span>
+            {/snippet}
+            <iconify-icon icon="octicon:info-16" inline style="padding: 0 3pt;"
+            ></iconify-icon>
+          </Tooltip>&ensp;</Toggle
         >
-          {file_ext}
-        </a>
-      {/each}
-    </div>
-    <div class="table-controls">
-      <Toggle bind:checked={show_non_compliant} style="gap: 3pt;">
-        Show non-compliant models <Tooltip max_width="20em">
-          <span slot="tip">
-            Models can be non-compliant for multiple reasons<br />
-            - closed source (model implementation and/or train/test code)<br />
-            - closed weights<br />
-            - trained on more than the permissible training set (<a
-              href="https://docs.materialsproject.org/changes/database-versions#v2022.10.28"
-              >MP v2022.10.28 release</a
-            >)<br />
-            We still show these models behind a toggle as we expect them<br /> to nonetheless
-            provide helpful signals for developing future models.
-          </span>
-          <Icon icon="octicon:info-16" inline style="padding: 0 3pt;" />
-        </Tooltip>&ensp;</Toggle
-      >
-      <Toggle bind:checked={show_energy_only} style="gap: 3pt;">
-        Show energy-only models <Tooltip max_width="12em">
-          <span slot="tip">
-            Models that only predict energy (E) perform worse<br /> and can't be evaluated
-            on force-modeling tasks such as κ<sub>SRME</sub>
-          </span>
-          <Icon icon="octicon:info-16" inline style="padding: 0 3pt;" />
-        </Tooltip>&ensp;</Toggle
-      >
+        <Toggle bind:checked={show_energy_only} style="gap: 3pt;">
+          Show energy-only models <Tooltip max_width="12em">
+            {#snippet tip()}
+              <span>
+                Models that only predict energy (E) perform worse<br /> and can't be
+                evaluated on force-modeling tasks such as κ<sub>SRME</sub>
+              </span>
+            {/snippet}
+            <iconify-icon icon="octicon:info-16" inline style="padding: 0 3pt;"
+            ></iconify-icon>
+          </Tooltip>&ensp;</Toggle
+        >
 
-      <TableColumnToggleMenu bind:visible_cols bind:column_panel_open />
-    </div>
+        <TableColumnToggleMenu bind:visible_cols bind:column_panel_open />
+      </div>
 
-    <figcaption>
-      Training size is the number of materials used to train the model. For models trained
-      on DFT relaxations, we show the number of distinct frames in parentheses. In cases
-      where only the number of frames is known, we report the number of frames as the
-      training set size. <code>(N=x)</code> in the Model Params column shows the number of
-      estimators if an ensemble was used. DAF = Discovery Acceleration Factor measures how
-      many more stable materials a model finds compared to random selection from the test
-      set. The unique structure prototypes in the WBM test set have a
-      <code>{pretty_num(n_wbm_stable_uniq_protos / n_wbm_uniq_protos, `.1%`)}</code> rate
-      of stable crystals, meaning the max possible DAF is
-      <code
-        >({pretty_num(n_wbm_stable_uniq_protos)} / {pretty_num(n_wbm_uniq_protos)})^−1 ≈
-        {pretty_num(n_wbm_uniq_protos / n_wbm_stable_uniq_protos)}</code
-      >.
-    </figcaption>
-  </figure>
+      <figcaption>
+        Training size is the number of materials used to train the model. For models
+        trained on DFT relaxations, we show the number of distinct frames in parentheses.
+        In cases where only the number of frames is known, we report the number of frames
+        as the training set size. <code>(N=x)</code> in the Model Params column shows the
+        number of estimators if an ensemble was used. DAF = Discovery Acceleration Factor
+        measures how many more stable materials a model finds compared to random selection
+        from the test set. The unique structure prototypes in the WBM test set have a
+        <code>{pretty_num(n_wbm_stable_uniq_protos / n_wbm_uniq_protos, `.1%`)}</code>
+        rate of stable crystals, meaning the max possible DAF is
+        <code
+          >({pretty_num(n_wbm_stable_uniq_protos)} / {pretty_num(n_wbm_uniq_protos)})^−1 ≈
+          {pretty_num(n_wbm_uniq_protos / n_wbm_stable_uniq_protos)}</code
+        >.
+      </figcaption>
+    </figure>
+  {/snippet}
 
-  <span slot="model-count">
+  {#snippet model_count()}
     {MODEL_METADATA.filter((md) => show_non_compliant || model_is_compliant(md)).length}
-  </span>
+  {/snippet}
 
-  <div slot="best-report">
+  {#snippet best_report()}
     {#if best_model}
       {@const { model_name, model_key, repo, paper, metrics = {} } = best_model}
       {@const { F1, R2, DAF } = metrics?.discovery?.[discovery_set] ?? {}}
-
-      <a href="/models/{model_key}">{model_name}</a> (<a href={paper}>paper</a>,
-      <a href={repo}>code</a>) achieves the highest F1 score of {F1}, R<sup>2</sup> of {R2}
-      and a discovery acceleration factor (DAF) of {DAF}
-      (i.e. a ~{Number(DAF).toFixed(1)}x higher rate of stable structures compared to
-      dummy discovery in the already enriched test set containing 16% stable materials).
+      <span id="best-report">
+        <a href="/models/{model_key}">{model_name}</a> (<a href={paper}>paper</a>,
+        <a href={repo}>code</a>) achieves the highest F1 score of {F1}, R<sup>2</sup> of {R2}
+        and a discovery acceleration factor (DAF) of {DAF}
+        (i.e. a ~{Number(DAF).toFixed(1)}x higher rate of stable structures compared to
+        dummy discovery in the already enriched test set containing 16% stable materials).
+      </span>
     {/if}
-  </div>
+  {/snippet}
 </Readme>
 <KappaNote />
 
-<LandingPageFigs />
+{#await import(`$site/src/routes/landing-page-figs.md`) then LandingPageFigs}
+  <LandingPageFigs.default />
+{/await}
 
 <style>
   figure {
@@ -201,8 +220,7 @@
     place-content: center;
     margin: 3pt auto;
   }
-  :is(figure[slot='metrics-table'], .column-menu) :global(:is(sub, sup)) {
-    transform: translate(-3pt, 6pt);
+  figure#metrics-table :global(:is(sub, sup)) {
     font-size: 0.7em;
   }
 </style>
