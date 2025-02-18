@@ -1,6 +1,6 @@
 <script lang="ts">
   import { repository } from '$site/package.json'
-  import Icon from '@iconify/svelte'
+  import 'iconify-icon'
   import { click_outside } from 'svelte-zoo/actions'
 
   interface Props {
@@ -34,9 +34,10 @@
       }}
       bind:this={btn}
       title={tips_title}
+      aria-label={tips_title}
       style="padding: 0; transform: scale(1.2);"
     >
-      <Icon icon="mdi:lightbulb-on-outline" inline />
+      <iconify-icon icon="mdi:lightbulb-on-outline" inline></iconify-icon>
     </button>
   </nav>
   <img src="/favicon.svg" alt="Logo" width="30px" style="vertical-align: middle;" />

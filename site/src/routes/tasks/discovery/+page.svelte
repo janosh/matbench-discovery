@@ -7,7 +7,7 @@
   } from '$lib'
   import { DISCOVERY_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/metrics'
   import type { DiscoverySet } from '$lib/types'
-  import Icon from '@iconify/svelte'
+  import 'iconify-icon'
   import { Tooltip } from 'svelte-zoo'
   import { click_outside } from 'svelte-zoo/actions'
 
@@ -24,9 +24,11 @@
   let hovered = $state(false)
   let column_panel_open: boolean = $state(false)
 
-  let filtered_models = $derived(Object.values(MODEL_METADATA).filter(
-    (md) => md.metrics?.discovery?.[discovery_set]?.F1 != null,
-  ))
+  let filtered_models = $derived(
+    Object.values(MODEL_METADATA).filter(
+      (md) => md.metrics?.discovery?.[discovery_set]?.F1 != null,
+    ),
+  )
 </script>
 
 <h1>Crystal Stability Prediction Metrics</h1>
@@ -44,8 +46,13 @@
         >
           {title}
           {#if link}
-            <a href={link} target="_blank" rel="noopener noreferrer">
-              <Icon icon="octicon:info" inline />
+            <a
+              href={link}
+              aria-label="Open in new tab"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <iconify-icon icon="octicon:info" inline></iconify-icon>
             </a>
           {/if}
         </button>

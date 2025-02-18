@@ -2,9 +2,9 @@
   import type { ModelStatLabel, ModelStats } from '$lib'
   import { model_is_compliant, MODEL_METADATA, ModelCard } from '$lib'
   import { discovery } from '$pkg/modeling-tasks.yml'
-  import Icon from '@iconify/svelte'
   import { interpolateCividis as cividis } from 'd3-scale-chromatic'
   import { ColorBar } from 'elementari'
+  import 'iconify-icon'
   import { RadioButtons, Toggle, Tooltip } from 'svelte-zoo'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
@@ -117,7 +117,8 @@
         {#if tooltip}
           <Tooltip text={tooltip} max_width="20em">
             <span style="position: absolute; top: -1ex; left: -4pt; color: gray;">
-              <Icon icon="octicon:info-16" aria-label="Info" height="9.5pt" />
+              <iconify-icon icon="octicon:info-16" aria-label="Info" height="9.5pt"
+              ></iconify-icon>
             </span>
           </Tooltip>
         {/if}

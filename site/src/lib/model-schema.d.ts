@@ -62,15 +62,15 @@ export interface ModelMetadata {
   }
   trained_for_benchmark: boolean
   training_set: (
-    | `MP 2022`
-    | `MPtrj`
-    | `MPF`
-    | `MP Graphs`
-    | `GNoME`
-    | `MatterSim`
-    | `Alex`
-    | `OMat24`
-    | `sAlex`
+    | 'MP 2022'
+    | 'MPtrj'
+    | 'MPF'
+    | 'MP Graphs'
+    | 'GNoME'
+    | 'MatterSim'
+    | 'Alex'
+    | 'OMat24'
+    | 'sAlex'
   )[]
   hyperparams?: {
     max_force?: number
@@ -95,15 +95,15 @@ export interface ModelMetadata {
   }
   model_params: number
   n_estimators: number
-  train_task: `RP2RE` | `RS2RE` | `S2E` | `S2RE` | `S2EF` | `S2EFS` | `S2EFSM`
-  test_task: `IP2E` | `IS2E` | `IS2RE` | `IS2RE-SR` | `IS2RE-BO`
-  model_type: `GNN` | `UIP` | `BO-GNN` | `Fingerprint` | `Transformer` | `RF`
-  targets: `E` | `EF_G` | `EF_D` | `EFS_G` | `EFS_D` | `EFS_GM` | `EFS_DM`
-  openness?: `OSOD` | `OSCD` | `CSOD` | `CSCD`
-  status?: `aborted` | `complete`
+  train_task: 'RP2RE' | 'RS2RE' | 'S2E' | 'S2RE' | 'S2EF' | 'S2EFS' | 'S2EFSM'
+  test_task: 'IP2E' | 'IS2E' | 'IS2RE' | 'IS2RE-SR' | 'IS2RE-BO'
+  model_type: 'GNN' | 'UIP' | 'BO-GNN' | 'Fingerprint' | 'Transformer' | 'RF'
+  targets: 'E' | 'EF_G' | 'EF_D' | 'EFS_G' | 'EFS_D' | 'EFS_GM' | 'EFS_DM'
+  openness?: 'OSOD' | 'OSCD' | 'CSOD' | 'CSCD'
+  status?: 'aborted' | 'complete'
   metrics?: {
-    phonons?: PhononMetrics | (`not applicable` | `not available`)
-    geo_opt?: GeoOptMetrics | (`not applicable` | `not available`)
+    phonons?: PhononMetrics | ('not applicable' | 'not available')
+    geo_opt?: GeoOptMetrics | ('not applicable' | 'not available')
     discovery?: DiscoveryMetrics
   }
 }

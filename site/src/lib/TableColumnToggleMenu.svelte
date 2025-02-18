@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Icon from '@iconify/svelte'
+  import 'iconify-icon'
   import { click_outside } from 'svelte-zoo/actions'
 
   interface Props {
@@ -17,7 +17,7 @@
   use:click_outside={{ callback: () => (column_panel_open = false) }}
 >
   <summary>
-    Columns <Icon icon="octicon:columns-16" inline />
+    Columns <iconify-icon icon="octicon:columns-16" inline></iconify-icon>
   </summary>
   <div class="column-menu">
     {#each Object.keys(visible_cols) as col}

@@ -18,7 +18,6 @@
     "changelog": "npx auto-changelog --output ../changelog.md --hide-credit --commit-limit false"
   },
   "devDependencies": {
-    "@iconify/svelte": "^4.2.0",
     "@rollup/plugin-yaml": "^4.1.2",
     "@stylistic/eslint-plugin": "^3.1.0",
     "@sveltejs/adapter-static": "^3.0.8",
@@ -31,6 +30,7 @@
     "eslint": "^9.20.1",
     "eslint-plugin-svelte": "^2.46.1",
     "hastscript": "^9.0.0",
+    "iconify-icon": "^2.3.0",
     "js-yaml": "^4.1.0",
     "jsdom": "^26.0.0",
     "json-schema-to-typescript": "^15.0.4",

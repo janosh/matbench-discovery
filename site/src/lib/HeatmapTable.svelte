@@ -1,9 +1,9 @@
 <script lang="ts">
-  import Icon from '@iconify/svelte'
   import { max, min } from 'd3-array'
   import { scaleSequential } from 'd3-scale'
   import * as d3sc from 'd3-scale-chromatic'
   import { choose_bw_for_contrast, pretty_num } from 'elementari/labels'
+  import 'iconify-icon'
   import type { Snippet } from 'svelte'
   import { titles_as_tooltips } from 'svelte-zoo/actions'
   import { flip } from 'svelte/animate'
@@ -146,7 +146,7 @@
             {@html sort_indicator(col, $sort_state)}
             {#if col_idx == 0 && sort_hint}
               <span title={sort_hint}>
-                <Icon icon="octicon:info-16" inline />
+                <iconify-icon icon="octicon:info-16" inline></iconify-icon>
               </span>
             {/if}
           </th>

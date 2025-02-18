@@ -4,7 +4,6 @@
   import per_elem_each_errors from '$figs/per-element-each-errors.json'
   import { get_pred_file_urls, PtableInset } from '$lib'
   import pkg from '$site/package.json'
-  import Icon from '@iconify/svelte'
   import type { ChemicalElement } from 'elementari'
   import {
     ColorBar,
@@ -13,6 +12,7 @@
     pretty_num,
     TableInset,
   } from 'elementari'
+  import 'iconify-icon'
   import { CopyButton, Tooltip } from 'svelte-zoo'
   import { click_outside, titles_as_tooltips } from 'svelte-zoo/actions'
 
@@ -64,32 +64,32 @@
         {/if}
       </div>
       <div>
-        <Icon icon="ion:ios-calendar" inline />
+        <iconify-icon icon="ion:ios-calendar" inline></iconify-icon>
         <Tooltip text="{n_days_ago(model.date_added)} days ago">
           <span>Added: {model.date_added}</span>
         </Tooltip>
       </div>
       <div>
-        <Icon icon="ri:calendar-check-line" inline />
+        <iconify-icon icon="ri:calendar-check-line" inline></iconify-icon>
         <Tooltip text="{n_days_ago(model.date_published)} days ago">
           <span>Published: {model.date_published}</span>
         </Tooltip>
       </div>
       <div>
-        <Icon icon="eos-icons:neural-network" inline />
+        <iconify-icon icon="eos-icons:neural-network" inline></iconify-icon>
         <Tooltip text="{model.model_params.toLocaleString()} trainable parameters">
           <span>{pretty_num(model.model_params, `.3~s`)} parameters</span>
         </Tooltip>
       </div>
       {#if model.n_estimators > 1}
         <div>
-          <Icon icon="material-symbols:forest" inline />
+          <iconify-icon icon="material-symbols:forest" inline></iconify-icon>
           <span>Ensemble {model.n_estimators} models</span>
         </div>
       {/if}
       {#if missing_preds != undefined}
         <div>
-          <Icon icon="fluent:missing-metadata-24-regular" inline />
+          <iconify-icon icon="fluent:missing-metadata-24-regular" inline></iconify-icon>
           <span>
             Missing preds: {pretty_num(missing_preds, `,.0f`)}
             {#if missing_preds != 0}
@@ -115,7 +115,7 @@
         title="View source code repository"
         use:titles_as_tooltips
       >
-        <Icon icon="octicon:mark-github" inline /> Repo
+        <iconify-icon icon="octicon:mark-github" inline></iconify-icon> Repo
       </a>
       <a
         href={model.paper}
@@ -124,7 +124,7 @@
         title="Read model paper"
         use:titles_as_tooltips
       >
-        <Icon icon="ion:ios-paper" inline /> Paper
+        <iconify-icon icon="ion:ios-paper" inline></iconify-icon> Paper
       </a>
       {#if model.url}
         <a
@@ -134,7 +134,7 @@
           title="View model documentation"
           use:titles_as_tooltips
         >
-          <Icon icon="ion:ios-globe" inline /> Docs
+          <iconify-icon icon="ion:ios-globe" inline></iconify-icon> Docs
         </a>
       {/if}
       <a
@@ -144,7 +144,7 @@
         title="Digital Object Identifier"
         use:titles_as_tooltips
       >
-        <Icon icon="academicons:doi" inline /> DOI
+        <iconify-icon icon="academicons:doi" inline></iconify-icon> DOI
       </a>
       <a
         href={`${pkg.repository}/blob/-/models/${model.dirname?.split(`/`).pop()}`}
@@ -153,7 +153,7 @@
         title="Browse model submission files"
         use:titles_as_tooltips
       >
-        <Icon icon="octicon:file-directory" inline /> Files
+        <iconify-icon icon="octicon:file-directory" inline></iconify-icon> Files
       </a>
       {#if model.pypi}
         <a
@@ -163,7 +163,7 @@
           title="Python package on PyPI"
           use:titles_as_tooltips
         >
-          <Icon icon="simple-icons:pypi" inline /> PyPI
+          <iconify-icon icon="simple-icons:pypi" inline></iconify-icon> PyPI
         </a>
       {/if}
       {#if model.pr_url}
@@ -174,7 +174,7 @@
           title="View pull request"
           use:titles_as_tooltips
         >
-          <Icon icon="octicon:git-pull-request" inline /> PR
+          <iconify-icon icon="octicon:git-pull-request" inline></iconify-icon> PR
         </a>
       {/if}
       {#if model.metrics}
@@ -189,7 +189,7 @@
             }}
           >
             <summary title="Download model prediction files" use:titles_as_tooltips>
-              <Icon icon="octicon:graph" inline /> Predictions
+              <iconify-icon icon="octicon:graph" inline></iconify-icon> Predictions
             </summary>
             <div class="dropdown">
               {#each pred_files as { name, url }}
@@ -259,19 +259,25 @@
             <span>{author.name}</span>
             {#if author.affiliation}<span class="affiliation">({author.affiliation})</span
               >{/if}
-            {#if author.email}<a href="mailto:{author.email}">
-                <Icon icon="mdi:email" inline />
+            {#if author.email}<a href="mailto:{author.email}" aria-label="Email">
+                <iconify-icon icon="mdi:email" inline></iconify-icon>
               </a>{/if}
             {#if author.github}<a
                 href={author.github}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="GitHub"
               >
-                <Icon icon="simple-icons:github" inline />
+                <iconify-icon icon="simple-icons:github" inline></iconify-icon>
               </a>{/if}
             {#if author.orcid}
-              <a href={author.orcid} target="_blank" rel="noopener noreferrer">
-                <Icon icon="simple-icons:orcid" inline />
+              <a
+                href={author.orcid}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="ORCID"
+              >
+                <iconify-icon icon="simple-icons:orcid" inline></iconify-icon>
               </a>{/if}
           </li>
         {/each}
@@ -292,15 +298,17 @@
                   href={trainer.orcid}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="ORCID"
                 >
-                  <Icon icon="simple-icons:orcid" inline />
+                  <iconify-icon icon="simple-icons:orcid" inline></iconify-icon>
                 </a>{/if}
               {#if trainer.github}<a
                   href={trainer.github}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="GitHub"
                 >
-                  <Icon icon="simple-icons:github" inline />
+                  <iconify-icon icon="simple-icons:github" inline></iconify-icon>
                 </a>{/if}
             </li>
           {/each}

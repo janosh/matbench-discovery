@@ -10,8 +10,8 @@
   import type { DiscoverySet } from '$lib/types'
   import Readme from '$root/readme.md'
   import KappaNote from '$site/src/routes/kappa-note.md'
-  import Icon from '@iconify/svelte'
   import { pretty_num } from 'elementari'
+  import 'iconify-icon'
   import { Toggle, Tooltip } from 'svelte-zoo'
 
   let n_wbm_stable_uniq_protos = 32_942
@@ -60,8 +60,13 @@
             >
               {title}
               {#if link}
-                <a href={link} target="_blank" rel="noopener noreferrer">
-                  <Icon icon="octicon:info" inline />
+                <a
+                  href={link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Info"
+                >
+                  <iconify-icon icon="octicon:info" inline></iconify-icon>
                 </a>
               {/if}
             </button>
@@ -106,7 +111,8 @@
                 provide helpful signals for developing future models.
               </span>
             {/snippet}
-            <Icon icon="octicon:info-16" inline style="padding: 0 3pt;" />
+            <iconify-icon icon="octicon:info-16" inline style="padding: 0 3pt;"
+            ></iconify-icon>
           </Tooltip>&ensp;</Toggle
         >
         <Toggle bind:checked={show_energy_only} style="gap: 3pt;">
@@ -117,7 +123,8 @@
                 evaluated on force-modeling tasks such as κ<sub>SRME</sub>
               </span>
             {/snippet}
-            <Icon icon="octicon:info-16" inline style="padding: 0 3pt;" />
+            <iconify-icon icon="octicon:info-16" inline style="padding: 0 3pt;"
+            ></iconify-icon>
           </Tooltip>&ensp;</Toggle
         >
 

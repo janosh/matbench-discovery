@@ -3,8 +3,8 @@
   import type { ModelData, ModelStatLabel } from '$lib'
   import { AuthorBrief } from '$lib'
   import { repository } from '$site/package.json'
-  import Icon from '@iconify/svelte'
   import { pretty_num } from 'elementari'
+  import 'iconify-icon'
   import { Tooltip } from 'svelte-zoo'
   import { fade, slide } from 'svelte/transition'
 
@@ -60,45 +60,46 @@
     title="{show_details ? `Hide` : `Show`} authors and package versions"
   >
     <!-- change between expand/collapse icon -->
-    <Icon icon={show_details ? `ion:ios-arrow-up` : `ion:ios-arrow-down`} inline />
+    <iconify-icon icon={show_details ? `ion:ios-arrow-up` : `ion:ios-arrow-down`} inline
+    ></iconify-icon>
   </button>
 </h2>
 <nav>
   {#each links.filter(([href]) => href) as [href, title, icon]}
     <span>
-      <Icon {icon} inline />
+      <iconify-icon {icon} inline></iconify-icon>
       <a {href} {...target}>{title}</a>
     </span>
   {/each}
 </nav>
 <p>
   <span title="Date added">
-    <Icon icon="ion:ios-calendar" inline />
+    <iconify-icon icon="ion:ios-calendar" inline></iconify-icon>
     Added {model.date_added}
   </span>
   {#if model.date_published}
     <span title="Date published">
-      <Icon icon="ri:calendar-check-line" inline />
+      <iconify-icon icon="ri:calendar-check-line" inline></iconify-icon>
       Published {model.date_published}
     </span>
   {/if}
   <span>
-    <Icon icon="eos-icons:neural-network" inline />
+    <iconify-icon icon="eos-icons:neural-network" inline></iconify-icon>
     {n_model_params} params
   </span>
   {#if n_estimators > 1}
     <span>
-      <Icon icon="material-symbols:forest" inline />
+      <iconify-icon icon="material-symbols:forest" inline></iconify-icon>
       Ensemble of {n_estimators > 1 ? `${n_estimators}` : ``}
       <Tooltip
         text="This result used a model ensemble with {n_estimators} members with {n_model_params} parameters each."
       >
-        &nbsp;<Icon icon="octicon:info-24" inline />
+        &nbsp;<iconify-icon icon="octicon:info-24" inline></iconify-icon>
       </Tooltip>
     </span>
   {/if}
   <span>
-    <Icon icon="fluent:missing-metadata-24-regular" inline />
+    <iconify-icon icon="fluent:missing-metadata-24-regular" inline></iconify-icon>
     {#if missing_preds}
       Missing preds:
       {pretty_num(missing_preds, `,.0f`)}
@@ -106,14 +107,14 @@
     {/if}
     {#if notes.html?.missing_preds}
       <Tooltip text={notes.html.missing_preds ?? ``} tip_style="font-size: 9pt;">
-        &nbsp;<Icon icon="octicon:info-24" inline />
+        &nbsp;<iconify-icon icon="octicon:info-24" inline></iconify-icon>
       </Tooltip>
     {/if}
   </span>
   {#if training_set}
     {@const training_sets = Array.isArray(training_set) ? training_set : [training_set]}
     <span style="grid-column: span 2;">
-      <Icon icon="mdi:database" inline />
+      <iconify-icon icon="mdi:database" inline></iconify-icon>
       Training set:
       {#each training_sets as training_set_or_key, idx}
         {#if idx > 0}
