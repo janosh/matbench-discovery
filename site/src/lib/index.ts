@@ -7,6 +7,7 @@ import { unified } from 'unified'
 import type { ModelData } from './types'
 
 export { default as TRAINING_SETS } from '$data/training-sets.yml'
+export { default as DiatomicCurve } from './DiatomicCurve.svelte'
 export { default as Footer } from './Footer.svelte'
 export { default as GeoOptMetricsTable } from './GeoOptMetricsTable.svelte'
 export { default as HeatmapTable } from './HeatmapTable.svelte'
