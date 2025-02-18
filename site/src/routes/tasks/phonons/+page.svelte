@@ -9,14 +9,14 @@
   import { ALL_METRICS, METADATA_COLS, PHONON_METRICS } from '$lib/metrics'
 
   // Default column visibility
-  let visible_cols: Record<string, boolean> = {
+  let visible_cols: Record<string, boolean> = $state({
     // Hide other metrics
     ...Object.fromEntries([...ALL_METRICS].map((col) => [col.label, false])),
     // Show all metadata
     ...Object.fromEntries([...METADATA_COLS].map((col) => [col.label, true])),
     // Show phonon metrics
     ...Object.fromEntries([...PHONON_METRICS].map((col) => [col.label, true])),
-  }
+  })
 
   const model_has_kappa_103 = (model: ModelData) =>
     typeof model?.metrics?.phonons?.kappa_103?.κ_SRME === `number`

@@ -2,7 +2,10 @@
   import type { Author } from '$lib'
   import Icon from '@iconify/svelte'
 
-  export let author: Author
+  interface Props {
+    author: Author
+  }
+  let { author }: Props = $props()
 </script>
 
 {#if author}

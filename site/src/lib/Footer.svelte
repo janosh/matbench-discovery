@@ -3,9 +3,16 @@
   import Icon from '@iconify/svelte'
   import { click_outside } from 'svelte-zoo/actions'
 
-  export let tips_title = `Usage Tips`
-  export let dialog: HTMLDialogElement | null = null
-  export let btn: HTMLButtonElement | null = null
+  interface Props {
+    tips_title?: string
+    dialog?: HTMLDialogElement | null
+    btn?: HTMLButtonElement | null
+  }
+  let {
+    tips_title = `Usage Tips`,
+    dialog = $bindable(null),
+    btn = $bindable(null),
+  }: Props = $props()
 
   function toggle(event: KeyboardEvent) {
     if (!dialog) return
@@ -14,7 +21,7 @@
   }
 </script>
 
-<svelte:window on:keydown={toggle} />
+<svelte:window onkeydown={toggle} />
 
 <footer>
   <nav>
@@ -22,7 +29,7 @@
     <a href="mailto:janosh.riebesell@gmail.com?subject=Matbench Discovery">Contact</a>
     <a href="/changelog">Changelog</a>
     <button
-      on:click={() => {
+      onclick={() => {
         if (dialog) dialog.open = true
       }}
       bind:this={btn}
@@ -93,7 +100,7 @@
     visibility: visible;
     opacity: 1;
   }
-  dialog > :is(p, h3) {
+  dialog > :is(:global(p, h3)) {
     margin: 0;
   }
 </style>

@@ -2,8 +2,13 @@
   import Icon from '@iconify/svelte'
   import { click_outside } from 'svelte-zoo/actions'
 
-  export let visible_cols: Record<string, boolean>
-  export let column_panel_open: boolean = false
+  interface Props {
+    visible_cols: Record<string, boolean>
+    column_panel_open?: boolean
+  }
+
+  let { visible_cols = $bindable({}), column_panel_open = $bindable(false) }: Props =
+    $props()
 </script>
 
 <details

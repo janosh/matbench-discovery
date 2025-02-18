@@ -8,38 +8,55 @@
   import { Tooltip } from 'svelte-zoo'
   import { fade, slide } from 'svelte/transition'
 
-  export let model: ModelData
-  export let stats: ModelStatLabel[]
-  export let sort_by: keyof ModelData
-  export let show_details: boolean = false
-  export let style: string | null = null
-  export let metrics_style: string | null = null
+  interface Props {
+    model: ModelData
+    stats: ModelStatLabel[]
+    sort_by: keyof ModelData
+    show_details?: boolean
+    style?: string | null
+    metrics_style?: string | null
+  }
 
-  $: ({ model_name, model_key } = model)
-  $: ({ model_params, hyperparams, notes = {}, training_set, n_estimators } = model)
-  $: all_metrics = {
+  let {
+    model,
+    stats,
+    sort_by,
+    show_details = $bindable(false),
+    style = null,
+    metrics_style = null,
+  }: Props = $props()
+
+  let { model_name, model_key } = $derived(model)
+  let {
+    model_params,
+    hyperparams,
+    notes = {},
+    training_set,
+    n_estimators,
+  } = $derived(model)
+  let all_metrics = $derived({
     ...(model.metrics?.discovery?.full_test_set ?? {}),
     ...(typeof model.metrics?.phonons == `object`
       ? model.metrics?.phonons.kappa_103
       : {}),
-  }
+  })
 
-  $: ({ missing_preds, missing_percent } = all_metrics)
+  let { missing_preds, missing_percent } = $derived(all_metrics)
 
-  $: links = [
+  let links = $derived([
     [model.repo, `Repo`, `octicon:mark-github`],
     [model.paper, `Paper`, `ion:ios-paper`],
     [model.url, `Docs`, `ion:ios-globe`],
     [`${repository}/blob/-/models/${model.dirname}`, `Files`, `octicon:file-directory`],
-  ]
+  ])
   const target = { target: `_blank`, rel: `noopener` }
-  $: n_model_params = pretty_num(model_params, `.3~s`)
+  let n_model_params = $derived(pretty_num(model_params, `.3~s`))
 </script>
 
 <h2 id={model_key} {style}>
   <a href="/models/{model_key}">{model_name}</a>
   <button
-    on:click={() => (show_details = !show_details)}
+    onclick={() => (show_details = !show_details)}
     title="{show_details ? `Hide` : `Show`} authors and package versions"
   >
     <!-- change between expand/collapse icon -->

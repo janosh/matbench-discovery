@@ -16,11 +16,17 @@
   import { CopyButton, Tooltip } from 'svelte-zoo'
   import { click_outside, titles_as_tooltips } from 'svelte-zoo/actions'
 
-  export let data
-  export let color_scale: string[] = [`Viridis`]
-  export let active_element: ChemicalElement | null = null
+  interface Props {
+    data
+    color_scale?: string[]
+    active_element?: ChemicalElement | null
+  }
 
-  $: model = data.model
+  let {
+    data,
+    color_scale = $bindable([`Viridis`]),
+    active_element = $bindable(null),
+  }: Props = $props()
 
   // TODO make this dynamic (static n_days_ago from time of last site build is misleading)
   function n_days_ago(dateString: string): string {
@@ -36,7 +42,8 @@
   }
 </script>
 
-{#if model}
+{#if data.model}
+  {@const model = data.model}
   {@const { missing_preds, missing_percent } =
     model.metrics?.discovery?.unique_prototypes ?? {}}
   <div class="model-detail">
@@ -204,7 +211,7 @@
           <h3 style="margin-bottom: -2em;">
             DFT vs ML {title}
           </h3>
-          <svelte:component this={ParityPlot.default} height="500" />
+          <ParityPlot.default height="500" />
         {:catch error}
           {#if dev}
             <p>Failed to load plot:</p>
@@ -225,20 +232,22 @@
         tile_props={{ precision: `0.2` }}
         show_photo={false}
       >
-        <TableInset slot="inset" style="align-content: center;">
-          <PtableInset
-            element={active_element}
-            elem_counts={heatmap_values}
-            show_percent={false}
-            unit="<small style='font-weight: lighter;'>eV / atom</small>"
-          />
-          <ColorBar
-            label_side="top"
-            color_scale={color_scale[0]}
-            tick_labels={5}
-            style="width: 85%; margin: 0 2em;"
-          />
-        </TableInset>
+        {#snippet inset()}
+          <TableInset style="align-content: center;">
+            <PtableInset
+              element={active_element}
+              elem_counts={heatmap_values}
+              show_percent={false}
+              unit="<small style='font-weight: lighter;'>eV / atom</small>"
+            />
+            <ColorBar
+              label_side="top"
+              color_scale={color_scale[0]}
+              tick_labels={5}
+              style="width: 85%; margin: 0 2em;"
+            />
+          </TableInset>
+        {/snippet}
       </PeriodicTable>
     {/if}
 
@@ -323,12 +332,16 @@
           <p>
             <a href={url} target="_blank" rel="noopener noreferrer">{title}</a>:
             <Tooltip text={n_structures.toLocaleString()}>
-              <strong slot="trigger">{pretty_num(n_structures)}</strong>
+              {#snippet trigger()}
+                <strong>{pretty_num(n_structures)}</strong>
+              {/snippet}
             </Tooltip>
             structures
             {#if n_materials}
               <Tooltip text={n_materials.toLocaleString()}>
-                from <strong slot="trigger">{pretty_n_mat}</strong> materials
+                from {#snippet trigger()}
+                  <strong>{pretty_n_mat}</strong>
+                {/snippet} materials
               </Tooltip>
             {/if}
           </p>
@@ -395,16 +408,13 @@
   section {
     margin-bottom: 1em;
   }
-
   h2 {
     margin: 1em auto 0;
     padding: 0;
   }
-
   h3 {
     margin: 1em 0;
   }
-
   section:is(.deps, .model-info) ul {
     display: flex;
     flex-wrap: wrap;
@@ -424,7 +434,6 @@
     display: block;
     font-weight: bold;
   }
-
   .meta-info,
   .links {
     display: flex;
@@ -433,7 +442,6 @@
     place-content: center;
     margin: 2em auto;
   }
-
   .links :is(a, summary) {
     display: inline-flex;
     align-items: center;
@@ -444,7 +452,6 @@
     text-decoration: none;
     color: lightgray;
   }
-
   .links details {
     position: relative;
     cursor: pointer;
@@ -465,22 +472,18 @@
   .links .dropdown a:hover {
     background-color: rgba(255, 255, 255, 0.1);
   }
-
   li {
     margin: 1ex 0;
   }
-
   .affiliation {
     font-style: italic;
     color: gray;
   }
-
   ul li {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
   }
-
   div.model-detail :not(section.notes) :global(h3) {
     text-align: center;
     margin: 2em auto 0;
