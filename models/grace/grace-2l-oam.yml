@@ -1,5 +1,5 @@
 model_name: GRACE-2L-OAM
-model_key: grace-2L-oam
+model_key: grace-2l-oam
 model_version: GRACE_2L_OAM_28Jan25
 matbench_discovery_version: 1.2.0
 date_added: "2025-02-06"
