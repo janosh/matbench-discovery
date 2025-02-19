@@ -56,10 +56,10 @@ metrics:
   phonons:
     kappa_103:
       κ_SRME: 0.294 # https://github.com/MPA2suite/k_SRME/pull/20
-      pred_file: models/grace/grace-2L-oam/2025-01-28-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file: models/grace/grace-2l-oam/2025-01-28-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/ndownloader/files/52204916
   geo_opt:
-    pred_file: models/grace/grace-2L-oam/2025-01-28-wbm-geo-opt.json.gz
+    pred_file: models/grace/grace-2l-oam/2025-01-28-wbm-geo-opt.json.gz
     pred_file_url: https://figshare.com/ndownloader/files/52204907
     struct_col: grace_structure
     symprec=1e-5:
@@ -77,7 +77,7 @@ metrics:
       symmetry_increase: 0.1209 # fraction
       n_structures: 256963 # count
   discovery:
-    pred_file: models/grace/grace-2L-oam/2025-01-28-wbm-IS2RE.csv.gz
+    pred_file: models/grace/grace-2l-oam/2025-01-28-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/ndownloader/files/52204901
     pred_col: e_form_per_atom_grace
     full_test_set:
@@ -138,5 +138,5 @@ metrics:
       missing_preds: 0 # count
       missing_percent: 0.00% # fraction
   diatomics:
-    pred_file: models/grace/grace-2L-oam/2025-02-19-diatomics.json.gz
+    pred_file: models/grace/grace-2l-oam/2025-02-19-diatomics.json.gz
     pred_file_url: https://figshare.com/ndownloader/files/52467527

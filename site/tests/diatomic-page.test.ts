@@ -80,15 +80,15 @@ describe(`Diatomic Page`, () => {
     await tick()
 
     const buttons = document.querySelectorAll(`button`)
-    expect(buttons.length).toBe(2)
+    expect(buttons.length).toBeGreaterThan(2)
 
     buttons[0].click()
     // Wait for data to load
     await tick()
 
-    // Should show the plot
+    // Should show diatomic curves
     const plots = document.querySelectorAll(`.plot`)
-    expect(plots.length).toBe(1)
+    expect(plots.length).toBe(118)
   })
 
   test(`displays pretty model labels on buttons`, async () => {

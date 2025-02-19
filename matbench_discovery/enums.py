@@ -330,9 +330,9 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     eqv2_s_dens = auto(), "eqV2/eqV2-s-dens-mp.yml"
     eqv2_m = auto(), "eqV2/eqV2-m-omat-salex-mp.yml"
 
-    grace_2l_mptrj = auto(), "grace/grace-2L-mptrj.yml"
-    grace_2l_oam = auto(), "grace/grace-2L-oam.yml"
-    grace_1l_oam = auto(), "grace/grace-1L-oam.yml"
+    grace_2l_mptrj = auto(), "grace/grace-2l-mptrj.yml"
+    grace_2l_oam = auto(), "grace/grace-2l-oam.yml"
+    grace_1l_oam = auto(), "grace/grace-1l-oam.yml"
 
     # --- Model Combos
     # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
