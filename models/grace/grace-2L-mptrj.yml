@@ -1,4 +1,4 @@
-model_name: GRACE-2L (r6)
+model_name: GRACE-2L-MPtrj
 model_key: grace-2L-mptrj
 model_version: MP_GRACE_2L_r6_11Nov2024
 matbench_discovery_version: 1.0.0
@@ -138,3 +138,6 @@ metrics:
       R2: 0.741 # dimensionless
       missing_preds: 110 # count
       missing_percent: 0.05% # fraction
+  diatomics:
+    pred_file: models/grace/grace-2L-mptrj/2025-02-19-diatomics.json.gz
+    pred_file_url: https://figshare.com/ndownloader/files/52467524

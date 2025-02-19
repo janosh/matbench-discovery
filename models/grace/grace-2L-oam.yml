@@ -137,3 +137,6 @@ metrics:
       R2: 0.862 # dimensionless
       missing_preds: 0 # count
       missing_percent: 0.00% # fraction
+  diatomics:
+    pred_file: models/grace/grace-2L-oam/2025-02-19-diatomics.json.gz
+    pred_file_url: https://figshare.com/ndownloader/files/52467527
