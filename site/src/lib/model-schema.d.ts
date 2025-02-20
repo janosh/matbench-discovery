@@ -37,6 +37,12 @@ export type DiscoveryMetrics = {
   most_stable_10k?: DiscoveryMetricsSet
   unique_prototypes?: DiscoveryMetricsSet
 }
+export type DiatomicsMetrics = {
+  [k: string]: unknown
+} & {
+  pred_file?: string | null
+  pred_file_url?: string
+}
 
 export interface ModelMetadata {
   model_name: string
@@ -105,6 +111,7 @@ export interface ModelMetadata {
     phonons?: PhononMetrics | (`not applicable` | `not available`)
     geo_opt?: GeoOptMetrics | (`not applicable` | `not available`)
     discovery?: DiscoveryMetrics
+    diatomics?: DiatomicsMetrics | (`not applicable` | `not available`)
   }
 }
 export interface Person {
