@@ -3,7 +3,7 @@
   import { elem_symbols } from 'elementari'
 
   let { data } = $props()
-  let { diatomic_models, diatomic_curves, errors } = data ?? {}
+  let { diatomic_models = [], diatomic_curves = {}, errors = {} } = data ?? {}
 
   // Define a sequence of colors to use for models
   const colors = [
@@ -56,7 +56,14 @@
   }
 </script>
 
-<h1>Diatomic Energy Curves</h1>
+<h1>Diatomics</h1>
+
+<blockquote>
+  Disclaimer: Take the results on this page with a grain of salt. They are still being
+  checked for correctness.
+</blockquote>
+
+<h2>Diatomic Energy Curves</h2>
 
 <div class="controls">
   <div class="plot-controls">
@@ -89,7 +96,7 @@
 </div>
 
 <div class="grid" style="--plot-width: {plot_width}px">
-  {#each homo_diatomic_formulas as formula}
+  {#each homo_diatomic_formulas.filter( (formula) => [...selected_models].some((model) => diatomic_curves[model]?.[humu_nuc_key]?.[formula]?.energies?.length > 0), ) as formula}
     <DiatomicCurve
       {formula}
       curves={[...selected_models]

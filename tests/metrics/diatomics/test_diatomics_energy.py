@@ -1,6 +1,7 @@
 """Test diatomic curve metrics calculation functions."""
 
 import json
+import re
 from collections.abc import Callable
 
 import numpy as np
@@ -225,35 +226,41 @@ def test_simple_cases() -> None:
 
 def test_edge_cases() -> None:
     """Test metrics with edge cases."""
-    xs = np.array([1, 2, 3, 4, 5])
-    ys = np.array([1, 2, 3, 4, 5])
+    xs = np.arange(5)
+    ys = np.arange(5)
 
     # Test with NaN values
     y_nan = np.array([1, np.nan, 3, 4, 5])
-    with pytest.raises(ValueError, match="Input contains NaN values: x=0, y=1"):
+    with pytest.raises(
+        ValueError, match="Input contains NaN values: n_x_nan=0, n_y_nan=1"
+    ):
         diatomics.calc_curve_diff_auc(xs, ys, xs, y_nan)
 
     # Test with infinite values
     y_inf = np.array([1, np.inf, 3, 4, 5])
-    with pytest.raises(ValueError, match="Input contains infinite values: x=0, y=1"):
+    with pytest.raises(
+        ValueError, match="Input contains infinite values: n_x_inf=0, n_y_inf=1"
+    ):
         diatomics.calc_curve_diff_auc(xs, ys, xs, y_inf)
 
     # Test with single point
     x_single = np.array([1])
     y_single = np.array([1])
-    with pytest.raises(ValueError, match="Input must have at least 2 points, got 1"):
+    with pytest.raises(
+        ValueError, match=re.escape("Input must have at least 2 points, got len(xs)=1")
+    ):
         diatomics.calc_curve_diff_auc(x_single, y_single, x_single, y_single)
 
     # Test with duplicate x values
     x_dup = np.array([1, 1, 2, 3, 4])
     y_dup = np.array([1, 2, 3, 4, 5])
-    with pytest.raises(ValueError, match="Input contains 1 duplicate x values"):
+    with pytest.raises(ValueError, match="xs contains 1 duplicates"):
         diatomics.calc_curve_diff_auc(x_dup, y_dup, x_dup, y_dup)
 
     # Test with mismatched array sizes
     x_short = np.array([1, 2, 3])
     y_long = np.array([1, 2, 3, 4, 5])
-    with pytest.raises(ValueError, match="x and y must have same size"):
+    with pytest.raises(ValueError, match=re.escape("len(xs)=3 != len(ys)=5")):
         diatomics.calc_curve_diff_auc(x_short, y_long, x_short, y_long)
 
     # Test with unsorted x values (should work, sorting is handled internally)

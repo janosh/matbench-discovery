@@ -27,16 +27,15 @@ def _validate_diatomic_curve(
         raise ValueError(f"{len(xs)=} != {len(ys)=}")
     if len(xs) < 2:
         raise ValueError(f"Input must have at least 2 points, got {len(xs)=}")
-    n_x_nan, n_y_nan = np.sum(np.isnan(xs)), np.sum(np.isnan(ys))
+    n_x_nan, n_y_nan = int(sum(np.isnan(xs))), int(sum(np.isnan(ys)))
     if n_x_nan or n_y_nan:
-        raise ValueError(f"{n_x_nan=}, {n_y_nan=}")
-    n_x_inf, n_y_inf = np.sum(np.isinf(xs)), np.sum(np.isinf(ys))
+        raise ValueError(f"Input contains NaN values: {n_x_nan=}, {n_y_nan=}")
+    n_x_inf, n_y_inf = int(sum(np.isinf(xs))), int(sum(np.isinf(ys)))
     if n_x_inf or n_y_inf:
-        raise ValueError(f"{n_x_inf=}, {n_y_inf=}")
+        raise ValueError(f"Input contains infinite values: {n_x_inf=}, {n_y_inf=}")
     if len(np.unique(xs)) != len(xs):
-        n_x_dup = np.sum(np.diff(xs) == 0)
-        dupe_vals = np.unique(xs[np.diff(xs) == 0])
-        raise ValueError(f"xs contains {n_x_dup} duplicate values: {dupe_vals=}")
+        n_x_dup = sum(np.diff(xs) == 0)
+        raise ValueError(f"xs contains {n_x_dup} duplicates")
 
     # Sort by x values
     sort_idx = np.argsort(xs)
@@ -184,8 +183,9 @@ def calc_curvature_smoothness(
 def calc_tortuosity(seps: Sequence[float], energies: Sequence[float]) -> float:
     """Calculate tortuosity of a potential energy curve as the ratio between total
     variation in energy and the sum of absolute energy differences between shortest
-    separation distance rmin, equilibrium distance req, and longest separation distance
-    rmax. This is essentially the arc-chord ratio projected in the energy dimension.
+    separation distance r_min, equilibrium distance r_eq, and longest separation
+    distance r_max. This is essentially the arc-chord ratio projected in the energy
+    dimension.
 
     A perfect Lennard-Jones potential or any potential with a single repulsion-
     attraction transition or pure repulsion will have tortuosity equal to 1. True PECs
