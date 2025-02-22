@@ -7,12 +7,12 @@ import numpy as np
 
 
 def _validate_diatomic_curve(
-    dists: Sequence[float], ys: Sequence[Any]
+    xs: Sequence[float], ys: Sequence[Any]
 ) -> tuple[np.ndarray, np.ndarray]:
     """Validate curve input data.
 
     Args:
-        dists (Sequence[float]): interatomic distances
+        xs (Sequence[float]): interatomic distances
         ys (Sequence[Any]): Energies or forces
 
     Returns:
@@ -21,25 +21,26 @@ def _validate_diatomic_curve(
     Raises:
         ValueError: If input data is invalid
     """
-    dists, ys = map(np.asarray, (dists, ys))
+    xs, ys = map(np.asarray, (xs, ys))
 
-    if len(dists) != len(ys):
-        raise ValueError(f"x and y must have same size, got {len(dists)} and {len(ys)}")
-    if len(dists) < 2:
-        raise ValueError(f"Input must have at least 2 points, got {len(dists)}")
-    n_x_nan, n_y_nan = np.sum(np.isnan(dists)), np.sum(np.isnan(ys))
+    if len(xs) != len(ys):
+        raise ValueError(f"{len(xs)=} != {len(ys)=}")
+    if len(xs) < 2:
+        raise ValueError(f"Input must have at least 2 points, got {len(xs)=}")
+    n_x_nan, n_y_nan = np.sum(np.isnan(xs)), np.sum(np.isnan(ys))
     if n_x_nan or n_y_nan:
-        raise ValueError(f"Input contains NaN values: x={n_x_nan}, y={n_y_nan}")
-    n_x_inf, n_y_inf = np.sum(np.isinf(dists)), np.sum(np.isinf(ys))
+        raise ValueError(f"{n_x_nan=}, {n_y_nan=}")
+    n_x_inf, n_y_inf = np.sum(np.isinf(xs)), np.sum(np.isinf(ys))
     if n_x_inf or n_y_inf:
-        raise ValueError(f"Input contains infinite values: x={n_x_inf}, y={n_y_inf}")
-    if len(np.unique(dists)) != len(dists):
-        n_x_dup = np.sum(np.diff(dists) == 0)
-        raise ValueError(f"Input contains {n_x_dup} duplicate x values")
+        raise ValueError(f"{n_x_inf=}, {n_y_inf=}")
+    if len(np.unique(xs)) != len(xs):
+        n_x_dup = np.sum(np.diff(xs) == 0)
+        dupe_vals = np.unique(xs[np.diff(xs) == 0])
+        raise ValueError(f"xs contains {n_x_dup} duplicate values: {dupe_vals=}")
 
     # Sort by x values
-    sort_idx = np.argsort(dists)
-    return dists[sort_idx], ys[sort_idx]
+    sort_idx = np.argsort(xs)
+    return xs[sort_idx], ys[sort_idx]
 
 
 def calc_curve_diff_auc(

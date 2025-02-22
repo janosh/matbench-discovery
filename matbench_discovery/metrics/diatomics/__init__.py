@@ -11,7 +11,8 @@ from typing import Any, Self
 
 import numpy as np
 
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.data import update_yaml_at_path
+from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.metrics.diatomics import energy, force  # noqa: F401
 from matbench_discovery.metrics.diatomics.energy import (
     calc_curve_diff_auc,
@@ -69,12 +70,14 @@ class DiatomicCurves:
         dists = data["distances"] = np.asarray(data["distances"])
         for key in {"homo-nuclear", "hetero-nuclear"} & set(data):
             data[key.replace("-", "_")] = {
-                k: DiatomicCurve(**v, distances=dists) for k, v in data.pop(key).items()
+                formula: DiatomicCurve(**dct, distances=dists)
+                for formula, dct in data.pop(key).items()
+                if len(dct["energies"]) > 0
             }
         return cls(**data)
 
 
-def calc_diatomic_curve_metrics(
+def calc_diatomic_metrics(
     ref_curves: DiatomicCurves | None,
     pred_curves: DiatomicCurves,
     metrics: dict[str, dict[str, Any]] | None = None,
@@ -115,7 +118,7 @@ def calc_diatomic_curve_metrics(
                 raise ValueError(
                     "Reference and predicted distances must be the same. If goal is "
                     "to interpolate predicted curves to reference distances, do so "
-                    "before passing to calc_diatomic_curve_metrics."
+                    "before passing to calc_diatomic_metrics."
                 )
 
             # Energy metrics that need both curves
@@ -199,3 +202,27 @@ def calc_diatomic_curve_metrics(
         results[elem_symbol] = elem_metrics
 
     return results
+
+
+def write_metrics_to_yaml(model: Model, metrics: dict[str, dict[str, float]]) -> None:
+    """Write diatomic metrics to model YAML file.
+
+    Args:
+        model (Model): Model to write metrics for.
+        metrics (dict[str, dict[str, float]]): Map of element symbols to dicts of
+            metric values.
+    """
+    if not metrics:
+        print(f"No valid metrics for {model.name}, skipping")
+        return
+
+    # Calculate mean metrics across all elements
+    mean_metrics = {
+        str(metric): float(
+            f"{np.mean([elem_metrics[metric] for elem_metrics in metrics.values()]):.4}"
+        )
+        for metric in next(iter(metrics.values()))
+    }
+
+    update_yaml_at_path(model.yaml_path, "metrics.diatomics", mean_metrics)
+    print(f"Wrote metrics to {model.yaml_path}")

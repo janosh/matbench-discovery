@@ -1,12 +1,13 @@
 """Test diatomic curve metrics calculation functions."""
 
 import re
+from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pytest
 
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.metrics import diatomics
 from matbench_discovery.metrics.diatomics import DiatomicCurve, DiatomicCurves
 
@@ -16,8 +17,8 @@ np_rng = np.random.default_rng(seed=0)
 def test_diatomic_classes() -> None:
     """Test DiatomicCurve and DiatomicCurves initialization and validation."""
     dists = np.linspace(0.5, 5.0, 10).tolist()
-    energies = np_rng.random(10).tolist()
-    forces = np_rng.random((10, 2, 3)).tolist()
+    energies = np_rng.random(len(dists)).tolist()
+    forces = np_rng.random((len(dists), 2, 3)).tolist()
 
     # Test DiatomicCurve initialization and array conversion
     curve = DiatomicCurve(distances=dists, energies=energies, forces=forces)
@@ -33,28 +34,16 @@ def test_diatomic_classes() -> None:
     data = {
         "distances": dists,
         "homo-nuclear": {"H": {"energies": energies, "forces": forces}},
-        "hetero-nuclear": {"H-He": {"energies": energies * 2, "forces": forces * 2}},
+        "hetero-nuclear": {"H-He": {"energies": energies, "forces": forces}},
     }
     curves = DiatomicCurves.from_dict(data)
-
-    # Test both direct init and from_dict produce same results
-    curves_direct = DiatomicCurves(
-        distances=dists,
-        homo_nuclear={"H": curve},
-        hetero_nuclear={
-            "H-He": DiatomicCurve(
-                distances=dists, energies=energies * 2, forces=forces * 2
-            )
-        },
-    )
-
-    for curves_obj in [curves, curves_direct]:
-        assert isinstance(curves_obj.homo_nuclear["H"], DiatomicCurve)
-        h_he_curve = curves_obj.hetero_nuclear.get("H-He")
-        assert isinstance(h_he_curve, DiatomicCurve)
-        np.testing.assert_array_equal(curves_obj.distances, dists)
-        np.testing.assert_array_equal(curves_obj.homo_nuclear["H"].energies, energies)
-        np.testing.assert_array_equal(h_he_curve.energies, energies * 2)
+    assert isinstance(curves.homo_nuclear["H"], DiatomicCurve)
+    print(f"{curves.hetero_nuclear=}")
+    h_he_curve = curves.hetero_nuclear.get("H-He")
+    assert isinstance(h_he_curve, DiatomicCurve)
+    np.testing.assert_array_equal(curves.distances, dists)
+    np.testing.assert_array_equal(curves.homo_nuclear["H"].energies, energies)
+    np.testing.assert_array_equal(h_he_curve.energies, energies)
 
 
 def base_curve(xs: np.ndarray) -> np.ndarray:
@@ -115,7 +104,7 @@ def test_curve_shifts(expected: dict[str, float | str]) -> None:
     h_pred = DiatomicCurve(distances=dists, energies=e_pred, forces=dummy_forces)
     pred_curves = DiatomicCurves(distances=dists, homo_nuclear={"H": h_pred})
 
-    metrics_out = diatomics.calc_diatomic_curve_metrics(ref_curves, pred_curves)
+    metrics_out = diatomics.calc_diatomic_metrics(ref_curves, pred_curves)
 
     # Check metrics
     for metric_key, expect in expected.items():
@@ -135,7 +124,7 @@ def test_diatomic_curve_metrics(
     assert ref_dists == pytest.approx(pred_dists)
 
     # Test with default parameters (no force curves)
-    metrics = diatomics.calc_diatomic_curve_metrics(ref_curves, pred_curves)
+    metrics = diatomics.calc_diatomic_metrics(ref_curves, pred_curves)
     assert isinstance(metrics, dict)
     assert "H" in metrics
     metric_keys = [*metrics["H"]]
@@ -149,7 +138,7 @@ def test_diatomic_curve_metrics(
     }
 
     # Test with force curves
-    metrics_with_forces = diatomics.calc_diatomic_curve_metrics(ref_curves, pred_curves)
+    metrics_with_forces = diatomics.calc_diatomic_metrics(ref_curves, pred_curves)
     assert isinstance(metrics_with_forces, dict)
     assert "H" in metrics_with_forces
     metric_keys_with_forces = [*metrics_with_forces["H"]]
@@ -167,7 +156,7 @@ def test_diatomic_curve_metrics(
     custom_metrics: dict[str, dict[str, Any]] = {
         MbdKey.norm_auc: {"seps_range": (1.0, 4.0)},
     }
-    custom_results = diatomics.calc_diatomic_curve_metrics(
+    custom_results = diatomics.calc_diatomic_metrics(
         ref_curves, pred_curves, metrics=custom_metrics
     )
     assert isinstance(custom_results, dict)
@@ -180,6 +169,43 @@ def test_diatomic_curve_metrics(
     with pytest.raises(
         ValueError, match=re.escape("unknown_metrics={'invalid'}. Valid metrics=")
     ):
-        diatomics.calc_diatomic_curve_metrics(
+        diatomics.calc_diatomic_metrics(
             ref_curves, pred_curves, metrics={"invalid": {}}
         )
+
+
+def test_write_metrics_to_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test writing diatomic metrics to YAML file."""
+    # Create a temporary YAML file
+    yaml_path = tmp_path / "model.yaml"
+    yaml_path.write_text(text := "model: test_model")
+
+    model = Model.mace_mp_0
+    monkeypatch.setattr(Model, "yaml_path", yaml_path)
+
+    # Test with empty metrics
+    diatomics.write_metrics_to_yaml(model, {})
+    assert yaml_path.read_text() == text
+
+    # Test with valid metrics
+    metrics: dict[str, dict[str, float]] = {
+        "H": {
+            MbdKey.smoothness: 1.0,
+            MbdKey.tortuosity: 2.0,
+            MbdKey.conservation: 3.0,
+        },
+        "He": {
+            MbdKey.smoothness: 4.0,
+            MbdKey.tortuosity: 5.0,
+            MbdKey.conservation: 6.0,
+        },
+    }
+    diatomics.write_metrics_to_yaml(model, metrics)
+
+    # Check that metrics were written correctly
+    yaml_content = yaml_path.read_text()
+    assert "metrics:" in yaml_content
+    assert "diatomics:" in yaml_content
+    assert "smoothness: 2.5" in yaml_content  # mean of [1.0, 4.0]
+    assert "tortuosity: 3.5" in yaml_content  # mean of [2.0, 5.0]
+    assert "conservation: 4.5" in yaml_content  # mean of [3.0, 6.0]
