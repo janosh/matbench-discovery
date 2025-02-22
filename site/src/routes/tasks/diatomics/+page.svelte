@@ -3,7 +3,7 @@
   import { elem_symbols } from 'elementari'
 
   let { data } = $props()
-  let { diatomic_models, diatomic_curves, errors } = data
+  let { diatomic_models, diatomic_curves, errors } = data ?? {}
 
   // Define a sequence of colors to use for models
   const colors = [

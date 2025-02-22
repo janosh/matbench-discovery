@@ -6,7 +6,7 @@ paper https://arxiv.org/abs/2401.00096 (see fig. 56) and MLIP Arena
 https://huggingface.co/spaces/atomind/mlip-arena, respectively.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Self
 
 import numpy as np
@@ -61,7 +61,7 @@ class DiatomicCurves:
 
     distances: np.ndarray  # shape (n_distances,)
     homo_nuclear: dict[str, DiatomicCurve]
-    hetero_nuclear: dict[str, DiatomicCurve] | None = None
+    hetero_nuclear: dict[str, DiatomicCurve] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:

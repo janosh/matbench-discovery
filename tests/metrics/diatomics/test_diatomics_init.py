@@ -10,6 +10,52 @@ from matbench_discovery.enums import MbdKey
 from matbench_discovery.metrics import diatomics
 from matbench_discovery.metrics.diatomics import DiatomicCurve, DiatomicCurves
 
+np_rng = np.random.default_rng(seed=0)
+
+
+def test_diatomic_classes() -> None:
+    """Test DiatomicCurve and DiatomicCurves initialization and validation."""
+    dists = np.linspace(0.5, 5.0, 10).tolist()
+    energies = np_rng.random(10).tolist()
+    forces = np_rng.random((10, 2, 3)).tolist()
+
+    # Test DiatomicCurve initialization and array conversion
+    curve = DiatomicCurve(distances=dists, energies=energies, forces=forces)
+    assert {*map(type, (curve.distances, curve.energies, curve.forces))} == {np.ndarray}
+    for orig, processed in [
+        (curve.distances, dists),
+        (curve.energies, energies),
+        (curve.forces, forces),
+    ]:
+        np.testing.assert_array_equal(orig, processed)
+
+    # Test DiatomicCurves initialization and from_dict
+    data = {
+        "distances": dists,
+        "homo-nuclear": {"H": {"energies": energies, "forces": forces}},
+        "hetero-nuclear": {"H-He": {"energies": energies * 2, "forces": forces * 2}},
+    }
+    curves = DiatomicCurves.from_dict(data)
+
+    # Test both direct init and from_dict produce same results
+    curves_direct = DiatomicCurves(
+        distances=dists,
+        homo_nuclear={"H": curve},
+        hetero_nuclear={
+            "H-He": DiatomicCurve(
+                distances=dists, energies=energies * 2, forces=forces * 2
+            )
+        },
+    )
+
+    for curves_obj in [curves, curves_direct]:
+        assert isinstance(curves_obj.homo_nuclear["H"], DiatomicCurve)
+        h_he_curve = curves_obj.hetero_nuclear.get("H-He")
+        assert isinstance(h_he_curve, DiatomicCurve)
+        np.testing.assert_array_equal(curves_obj.distances, dists)
+        np.testing.assert_array_equal(curves_obj.homo_nuclear["H"].energies, energies)
+        np.testing.assert_array_equal(h_he_curve.energies, energies * 2)
+
 
 def base_curve(xs: np.ndarray) -> np.ndarray:
     """Simple Morse potential."""
