@@ -27,14 +27,14 @@ def _validate_diatomic_curve(
         raise ValueError(f"{len(xs)=} != {len(ys)=}")
     if len(xs) < 2:
         raise ValueError(f"Input must have at least 2 points, got {len(xs)=}")
-    n_x_nan, n_y_nan = int(sum(np.isnan(xs))), int(sum(np.isnan(ys)))
+    n_x_nan, n_y_nan = int(np.isnan(xs).sum()), int(np.isnan(ys).sum())
     if n_x_nan or n_y_nan:
         raise ValueError(f"Input contains NaN values: {n_x_nan=}, {n_y_nan=}")
-    n_x_inf, n_y_inf = int(sum(np.isinf(xs))), int(sum(np.isinf(ys)))
+    n_x_inf, n_y_inf = int(np.isinf(xs).sum()), int(np.isinf(ys).sum())
     if n_x_inf or n_y_inf:
         raise ValueError(f"Input contains infinite values: {n_x_inf=}, {n_y_inf=}")
     if len(np.unique(xs)) != len(xs):
-        n_x_dup = sum(np.diff(xs) == 0)
+        n_x_dup = int((np.diff(xs) == 0).sum())
         raise ValueError(f"xs contains {n_x_dup} duplicates")
 
     # Sort by x values

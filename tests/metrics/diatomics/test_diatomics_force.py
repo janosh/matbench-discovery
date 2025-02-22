@@ -1,5 +1,7 @@
 """Test force-based metrics for diatomic curves."""
 
+import re
+
 import numpy as np
 import pytest
 
@@ -117,11 +119,11 @@ def test_invalid_inputs() -> None:
         diatomics.calc_conservation_deviation(np.array([np.inf, 2]), energies, forces)
 
     # Test with duplicate x values
-    with pytest.raises(ValueError, match="Input contains 1 duplicate x values"):
+    with pytest.raises(ValueError, match="xs contains 1 duplicates"):
         diatomics.calc_conservation_deviation(np.array([1, 1]), energies, forces)
 
     # Test with mismatched array sizes
-    with pytest.raises(ValueError, match="x and y must have same size"):
+    with pytest.raises(ValueError, match=re.escape("len(xs)=2 != len(ys)=1")):
         diatomics.calc_conservation_deviation(seps, np.array([0]), forces)
 
     # Test with single point
