@@ -118,8 +118,9 @@ class MbdKey(LabelEnum):
     energy_grad_norm_max = "energy_grad_norm_max", "Energy Grad Norm Max (eV/Å)"
     force_total_variation = "force_total_variation", "Force Total Variation (eV/Å)"
     force_jump = "force_jump", "Force Jump (eV/Å)"
-    energy_mae_vs_ref = "energy_mae_vs_ref", "Energy MAE vs Reference (eV)"
-    force_mae_vs_ref = "force_mae_vs_ref", "Force MAE vs Reference (eV/Å)"
+    energy_mae = "energy_mae", "Energy MAE vs Reference (eV)"
+    force_mae = "force_mae", "Force MAE (eV/Å)"
+    force_conservation = "force_conservation", "Force Conservation (eV/Å)"
 
 
 @unique
@@ -330,9 +331,9 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     eqv2_s_dens = auto(), "eqV2/eqV2-s-dens-mp.yml"
     eqv2_m = auto(), "eqV2/eqV2-m-omat-salex-mp.yml"
 
-    grace_2l_mptrj = auto(), "grace/grace-2L-mptrj.yml"
-    grace_2l_oam = auto(), "grace/grace-2L-oam.yml"
-    grace_1l_oam = auto(), "grace/grace-1L-oam.yml"
+    grace_2l_mptrj = auto(), "grace/grace-2l-mptrj.yml"
+    grace_2l_oam = auto(), "grace/grace-2l-oam.yml"
+    grace_1l_oam = auto(), "grace/grace-1l-oam.yml"
 
     # --- Model Combos
     # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction

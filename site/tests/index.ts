@@ -30,3 +30,10 @@ export function doc_query<T extends HTMLElement>(selector: string): T {
 
 // mock matchMedia browser API
 window.matchMedia = vi.fn()
+
+// ResizeObserver mock
+globalThis.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}

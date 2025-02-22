@@ -343,7 +343,9 @@ def update_yaml_at_path(
     # Update the data at the final level
     if last not in current:
         current[last] = {}
-    # Replace the entire section to preserve comments
+    for key, val in current[last].items():
+        data.setdefault(key, val)
+    # Replace the entire current[last] section to preserve comments
     current[last] = data
 
     # Write back to file

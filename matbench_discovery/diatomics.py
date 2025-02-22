@@ -75,20 +75,25 @@ def calc_diatomic_curve(
         elem1 = atom_num_symbol_map.get(z1, z1)
         elem2 = atom_num_symbol_map.get(z2, z2)
         formula = f"{elem1}-{elem2}"
+        ef_dict = results.setdefault(formula, {"energies": [], "forces": []})
 
-        # Initialize formula dict if not present
-        if formula not in results:
-            results[formula] = {"energies": [], "forces": []}
-        elif len(results[formula].get("energies", [])) == len(distances):
+        len_e, len_f = len(ef_dict.get("energies", [])), len(ef_dict.get("forces", []))
+        # skip if we have results for this formula and they match expected length
+        if len_e == len_f == len(distances):
             continue
 
         pbar.set_description(
             f"{idx}/{len(pairs)} {formula} diatomic curve with {model_name}"
         )
 
+        # reset ef_dict in case we had prior results
         results[formula] |= {"energies": [], "forces": []}
-        for atoms in generate_diatomics(elem1, elem2, distances):
-            results[formula]["energies"] += [calculator.get_potential_energy(atoms)]
-            results[formula]["forces"] += [calculator.get_forces(atoms).tolist()]
+        try:
+            for atoms in generate_diatomics(elem1, elem2, distances):
+                results[formula]["energies"] += [calculator.get_potential_energy(atoms)]
+                results[formula]["forces"] += [calculator.get_forces(atoms).tolist()]
+        except Exception as exc:
+            print(f"{idx}/{len(pairs)} {formula} failed: {exc}")
+            continue
 
     return results

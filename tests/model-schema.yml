@@ -198,6 +198,48 @@ definitions:
             pred_file_url:
               $ref: "#/definitions/http_url"
 
+  DiatomicsMetrics:
+    type: object
+    additionalProperties: false
+    properties:
+      pred_file:
+        type: [string, "null"]
+      pred_file_url:
+        type: [string, "null"]
+        $ref: "#/definitions/http_url"
+      smoothness:
+        type: number
+      tortuosity:
+        type: number
+      conservation:
+        type: number
+      energy_diff_flips:
+        type: number
+      energy_grad_norm_max:
+        type: number
+      energy_jump:
+        type: number
+      force_mae:
+        type: number
+      force_flips:
+        type: number
+      force_total_variation:
+        type: number
+      force_jump:
+        type: number
+      force_conservation:
+        type: number
+    allOf:
+      - if:
+          properties:
+            pred_file: { type: string }
+          required: [pred_file]
+        then:
+          required: [pred_file_url]
+          properties:
+            pred_file_url:
+              $ref: "#/definitions/http_url"
+
 type: object
 properties:
   model_name:
@@ -333,6 +375,11 @@ properties:
             enum: [not applicable, not available]
       discovery:
         $ref: "#/definitions/DiscoveryMetrics"
+      diatomics:
+        oneOf:
+          - $ref: "#/definitions/DiatomicsMetrics"
+          - type: string
+            enum: [not applicable, not available]
 
 required:
   - authors

@@ -192,3 +192,6 @@ metrics:
       R2: 0.863 # dimensionless
       missing_preds: 0 # count
       missing_percent: 0.00% # fraction
+  diatomics:
+    pred_file: models/mattersim/mattersim-v1-5M/2025-02-19-diatomics.json.gz
+    pred_file_url: https://figshare.com/ndownloader/files/52468178
