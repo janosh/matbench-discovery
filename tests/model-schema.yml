@@ -207,6 +207,28 @@ definitions:
       pred_file_url:
         type: [string, "null"]
         $ref: "#/definitions/http_url"
+      smoothness:
+        type: number
+      tortuosity:
+        type: number
+      conservation:
+        type: number
+      energy_diff_flips:
+        type: number
+      energy_grad_norm_max:
+        type: number
+      energy_jump:
+        type: number
+      force_mae:
+        type: number
+      force_flips:
+        type: number
+      force_total_variation:
+        type: number
+      force_jump:
+        type: number
+      force_conservation:
+        type: number
     allOf:
       - if:
           properties:

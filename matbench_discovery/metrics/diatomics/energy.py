@@ -1,18 +1,19 @@
 """Energy-based metrics for diatomic curves."""
 
 from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 
 
-def _validate_curve_input(
-    x: Sequence[float], y: Sequence[float]
+def _validate_diatomic_curve(
+    dists: Sequence[float], ys: Sequence[Any]
 ) -> tuple[np.ndarray, np.ndarray]:
     """Validate curve input data.
 
     Args:
-        x (Sequence[float]): x values
-        y (Sequence[float]): y values
+        dists (Sequence[float]): interatomic distances
+        ys (Sequence[Any]): Energies or forces
 
     Returns:
         tuple[np.ndarray, np.ndarray]: Validated and sorted x and y arrays
@@ -20,25 +21,25 @@ def _validate_curve_input(
     Raises:
         ValueError: If input data is invalid
     """
-    x, y = map(np.asarray, (x, y))
+    dists, ys = map(np.asarray, (dists, ys))
 
-    if x.size != y.size:
-        raise ValueError(f"x and y must have same size, got {x.size} and {y.size}")
-    if x.size < 2:
-        raise ValueError(f"Input must have at least 2 points, got {x.size}")
-    n_x_nan, n_y_nan = np.sum(np.isnan(x)), np.sum(np.isnan(y))
+    if len(dists) != len(ys):
+        raise ValueError(f"x and y must have same size, got {len(dists)} and {len(ys)}")
+    if len(dists) < 2:
+        raise ValueError(f"Input must have at least 2 points, got {len(dists)}")
+    n_x_nan, n_y_nan = np.sum(np.isnan(dists)), np.sum(np.isnan(ys))
     if n_x_nan or n_y_nan:
         raise ValueError(f"Input contains NaN values: x={n_x_nan}, y={n_y_nan}")
-    n_x_inf, n_y_inf = np.sum(np.isinf(x)), np.sum(np.isinf(y))
+    n_x_inf, n_y_inf = np.sum(np.isinf(dists)), np.sum(np.isinf(ys))
     if n_x_inf or n_y_inf:
         raise ValueError(f"Input contains infinite values: x={n_x_inf}, y={n_y_inf}")
-    if len(np.unique(x)) != len(x):
-        n_x_dup = np.sum(np.diff(x) == 0)
+    if len(np.unique(dists)) != len(dists):
+        n_x_dup = np.sum(np.diff(dists) == 0)
         raise ValueError(f"Input contains {n_x_dup} duplicate x values")
 
     # Sort by x values
-    sort_idx = np.argsort(x)
-    return x[sort_idx], y[sort_idx]
+    sort_idx = np.argsort(dists)
+    return dists[sort_idx], ys[sort_idx]
 
 
 def calc_curve_diff_auc(
@@ -68,8 +69,8 @@ def calc_curve_diff_auc(
             If normalize=True, returns unitless value, otherwise in eV·Å.
     """
     # Validate and sort both curves
-    seps_ref, e_ref = _validate_curve_input(seps_ref, e_ref)
-    seps_pred, e_pred = _validate_curve_input(seps_pred, e_pred)
+    seps_ref, e_ref = _validate_diatomic_curve(seps_ref, e_ref)
+    seps_pred, e_pred = _validate_diatomic_curve(seps_pred, e_pred)
 
     # Get data range bounds
     data_min = max(seps_ref.min(), seps_pred.min())
@@ -96,16 +97,15 @@ def calc_curve_diff_auc(
 
     if normalize:
         # Get bounding box area of reference curve
-        seps_range = seps_ref.max() - seps_ref.min()
-        e_range = e_ref.max() - e_ref.min()
+        seps_range, e_range = np.ptp(seps_ref), np.ptp(e_ref)
         box_area = seps_range * e_range
-        # Normalize AUC by bounding box area
-        auc = auc / box_area if box_area > 0 else float("inf")
+        if box_area > 0:  # If reference curve is flat, don't normalize
+            auc = auc / box_area
 
     return float(auc)
 
 
-def calc_energy_mae_vs_ref(
+def calc_energy_mae(
     seps_ref: Sequence[float],
     e_ref: Sequence[float],
     seps_pred: Sequence[float],
@@ -124,8 +124,8 @@ def calc_energy_mae_vs_ref(
         float: Mean absolute error between the curves (eV).
     """
     # Validate and sort both curves
-    seps_ref, e_ref = _validate_curve_input(seps_ref, e_ref)
-    seps_pred, e_pred = _validate_curve_input(seps_pred, e_pred)
+    seps_ref, e_ref = _validate_diatomic_curve(seps_ref, e_ref)
+    seps_pred, e_pred = _validate_diatomic_curve(seps_pred, e_pred)
 
     # Get data range bounds
     data_min = max(seps_ref.min(), seps_pred.min())
@@ -285,27 +285,3 @@ def calc_energy_jump(seps: Sequence[float], energies: Sequence[float]) -> float:
     e_jump = np.abs(ediff[:-1][ediff_flip]).sum() + np.abs(ediff[1:][ediff_flip]).sum()
 
     return float(e_jump)
-
-
-def calc_conservation_deviation(
-    seps: Sequence[float], energies: Sequence[float]
-) -> float:
-    """Calculate mean absolute deviation between forces and -dE/dr.
-
-    Args:
-        seps (Sequence[float]): Interatomic distances in Å.
-        energies (Sequence[float]): Energies in eV.
-
-    Returns:
-        float: Mean absolute deviation between forces and -dE/dr in eV/Å.
-    """
-    seps, energies = _validate_curve_input(seps, energies)
-
-    # Calculate forces as -dE/dr using central differences
-    forces = -np.gradient(energies, seps)
-
-    # Calculate energy gradient using central differences
-    energy_grad = np.gradient(energies, seps)
-
-    # Calculate mean absolute deviation between forces and -dE/dr
-    return float(np.mean(np.abs(forces + energy_grad)))

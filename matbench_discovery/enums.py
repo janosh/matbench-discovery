@@ -118,8 +118,9 @@ class MbdKey(LabelEnum):
     energy_grad_norm_max = "energy_grad_norm_max", "Energy Grad Norm Max (eV/Å)"
     force_total_variation = "force_total_variation", "Force Total Variation (eV/Å)"
     force_jump = "force_jump", "Force Jump (eV/Å)"
-    energy_mae_vs_ref = "energy_mae_vs_ref", "Energy MAE vs Reference (eV)"
-    force_mae_vs_ref = "force_mae_vs_ref", "Force MAE vs Reference (eV/Å)"
+    energy_mae = "energy_mae", "Energy MAE vs Reference (eV)"
+    force_mae = "force_mae", "Force MAE (eV/Å)"
+    force_conservation = "force_conservation", "Force Conservation (eV/Å)"
 
 
 @unique

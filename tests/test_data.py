@@ -299,9 +299,9 @@ def test_update_yaml_at_path(tmp_path: Path) -> None:
     # Test case 3: Update with comments
     yaml_with_comments = """
 metrics:
-    discovery:  # Discovery metrics
-        mae: 0.1  # Mean absolute error
-        rmse: 0.2  # Root mean squared error
+  discovery:  # Discovery metrics
+    mae: 0.1  # Mean absolute error
+    rmse: 0.2  # Root mean squared error
 """
     with open(test_file, mode="w") as file:
         file.write(yaml_with_comments)
@@ -314,7 +314,7 @@ metrics:
     # Verify comments are preserved in the file
     with open(test_file) as file:
         content = file.read()
-    assert "# Discovery metrics" in content
+    assert "discovery:  # Discovery metrics\n    mae: 0.3" in content, f"{content=}"
 
     # Test case 4: Update with CommentedMap
     commented_data = CommentedMap({"value": 1})
@@ -326,7 +326,10 @@ metrics:
     # Verify comments in the file
     with open(test_file) as file:
         content = file.read()
-    assert "value: 1  # A comment" in content
+    # check that old content is still there
+    assert "discovery:  # Discovery metrics\n    mae: 0.3" in content, f"{content=}"
+    # check new content was added
+    assert "value: 1  # A comment" in content, f"{content=}"
 
     # Test case 5: Error cases
     with pytest.raises(FileNotFoundError):

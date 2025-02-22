@@ -6,128 +6,195 @@ paper https://arxiv.org/abs/2401.00096 (see fig. 56) and MLIP Arena
 https://huggingface.co/spaces/atomind/mlip-arena, respectively.
 """
 
-import inspect
-from collections.abc import Callable, Mapping, Sequence
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, Self
 
-# ruff: noqa: F401 (don't flag convenience imports above)
+import numpy as np
+
 from matbench_discovery.enums import MbdKey
-from matbench_discovery.metrics.diatomics import energy, force
+from matbench_discovery.metrics.diatomics import energy, force  # noqa: F401
 from matbench_discovery.metrics.diatomics.energy import (
-    calc_conservation_deviation,
     calc_curve_diff_auc,
     calc_energy_diff_flips,
     calc_energy_grad_norm_max,
     calc_energy_jump,
-    calc_energy_mae_vs_ref,
+    calc_energy_mae,
     calc_second_deriv_smoothness,
     calc_tortuosity,
 )
 from matbench_discovery.metrics.diatomics.force import (
+    calc_conservation_deviation,
     calc_force_flips,
     calc_force_jump,
-    calc_force_mae_vs_ref,
+    calc_force_mae,
     calc_force_total_variation,
 )
 
-# Type alias for a curve represented as a tuple of x and y values
-DiatomicCurve = tuple[Sequence[float], Sequence[float]]
-# Type alias for a dictionary mapping element symbols to curves
-DiatomicCurves = Mapping[str, DiatomicCurve]
+
+@dataclass
+class DiatomicCurve:
+    """Energies and forces for a single diatomic molecule at multiple distances."""
+
+    distances: np.ndarray  # shape (n_distances,)
+    energies: np.ndarray  # shape (n_distances,)
+    forces: np.ndarray  # shape (n_distances, n_atoms, 3)
+
+    def __post_init__(self) -> None:
+        """Convert inputs to numpy arrays."""
+        self.energies = np.asarray(self.energies)
+        self.forces = np.asarray(self.forces)
+        self.distances = np.asarray(self.distances)
+
+
+@dataclass
+class DiatomicCurves:
+    """Container for diatomic potential energy curves and forces of multiple
+    element pairs.
+
+    Attributes:
+        distances (np.ndarray): Interatomic distances in Å.
+        homo_nuclear (dict[str, DiatomicCurve]): Map of element pairs
+            (e.g. "H-H") to their DiatomicCurve (energies and forces).
+        hetero_nuclear (dict[str, DiatomicCurve] | None): Optional map of element pairs
+            (e.g. "H-He") to their DiatomicCurve.
+    """
+
+    distances: np.ndarray  # shape (n_distances,)
+    homo_nuclear: dict[str, DiatomicCurve]
+    hetero_nuclear: dict[str, DiatomicCurve] | None = None
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create DiatomicCurves from a dictionary loaded from JSON."""
+        dists = data["distances"] = np.asarray(data["distances"])
+        for key in {"homo-nuclear", "hetero-nuclear"} & set(data):
+            data[key.replace("-", "_")] = {
+                k: DiatomicCurve(**v, distances=dists) for k, v in data.pop(key).items()
+            }
+        return cls(**data)
 
 
 def calc_diatomic_curve_metrics(
-    ref_curves: DiatomicCurves,
+    ref_curves: DiatomicCurves | None,
     pred_curves: DiatomicCurves,
-    pred_force_curves: DiatomicCurves | None = None,
     metrics: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, dict[str, float]]:
     """Calculate diatomic curve metrics comparing predicted curves to reference curves.
 
     Args:
-        ref_curves (DiatomicCurves): Reference energy curves for each element.
+        ref_curves (DiatomicCurves | None): Reference energy curves for each element.
+            If None, only metrics that don't require reference data will be calculated.
         pred_curves (DiatomicCurves): Predicted energy curves for each element.
-        pred_force_curves (DiatomicCurves | None): Predicted force curves for each
-            element. Required for force-based metrics.
-        metrics (dict[str, dict[str, Any]] | None): Dictionary mapping metric names to
+        metrics (dict[str, dict[str, Any]] | None): Map of metric names to
             dictionaries of keyword arguments for each metric function. If None, uses
             all metrics with default parameters. To use a subset of metrics, provide
             a dictionary with those metric names as keys and their keyword arguments
             as values. Empty dictionaries will use default parameters.
 
     Returns:
-        dict[str, dict[str, float]]: Dictionary mapping element symbols to metrics dict
-            with keys being the metric names and values being the metric values.
+        dict[str, dict[str, float]]: Map of element symbols to metric dicts with keys
+            being the metric names and values being the metric values.
     """
+    if unknown_metrics := set(metrics or {}) - set(MbdKey):
+        raise ValueError(f"{unknown_metrics=}. Valid metrics=")
+
     results: dict[str, dict[str, float]] = {}
-
-    # Map metric keys to their functions
-    metric_functions: dict[str, Callable[..., float]] = {
-        # Energy metrics that need both curves
-        MbdKey.norm_auc: energy.calc_curve_diff_auc,
-        MbdKey.energy_mae_vs_ref: energy.calc_energy_mae_vs_ref,
-        # Energy metrics that need only predicted curve
-        MbdKey.smoothness: energy.calc_second_deriv_smoothness,
-        MbdKey.tortuosity: energy.calc_tortuosity,
-        MbdKey.conservation: energy.calc_conservation_deviation,
-        MbdKey.energy_diff_flips: energy.calc_energy_diff_flips,
-        MbdKey.energy_grad_norm_max: energy.calc_energy_grad_norm_max,
-        MbdKey.energy_jump: energy.calc_energy_jump,
-        # Force metrics that need both curves
-        MbdKey.force_mae_vs_ref: force.calc_force_mae_vs_ref,
-        # Force metrics that need only predicted curve
-        MbdKey.force_flips: force.calc_force_flips,
-        MbdKey.force_total_variation: force.calc_force_total_variation,
-        MbdKey.force_jump: force.calc_force_jump,
-    }
-
-    # If no metrics specified, use all metrics with default parameters
     metrics = (metrics or {}).copy()
 
-    if unknown_metrics := set(metrics) - set(metric_functions):
-        raise ValueError(
-            f"{unknown_metrics=}. Valid metrics={', '.join(metric_functions)}"
-        )
-
-    for key in metric_functions:
+    # Initialize empty kwargs for each metric if not provided
+    for key in MbdKey:
         metrics.setdefault(key, {})
 
-    # Remove force-based metrics if no force curves provided
-    if pred_force_curves is None:
-        metrics = {
-            name: kwargs
-            for name, kwargs in metrics.items()
-            if not name.startswith("force_")
-        }
-
-    for elem_symbol, ref_curve in ref_curves.items():
-        if elem_symbol not in pred_curves:
-            continue
-
-        pred_curve = pred_curves[elem_symbol]
+    for elem_symbol, pred_data in pred_curves.homo_nuclear.items():
         elem_metrics: dict[str, float] = {}
+        distances = pred_curves.distances
 
-        for name, func_kwargs in metrics.items():
-            metric_func = metric_functions[name]
-            param_set = set(inspect.signature(metric_func).parameters)
-            needs_ref_curve = any("_ref" in param for param in param_set)
-            is_force_metric = name.startswith("force_")
-
-            # Handle force metrics
-            if is_force_metric:
-                if pred_force_curves is None or elem_symbol not in pred_force_curves:
-                    continue
-                curve_to_use = pred_force_curves[elem_symbol]
-            else:  # energy metrics
-                curve_to_use = pred_curve
-
-            # Call metric function with appropriate arguments
-            if needs_ref_curve:
-                elem_metrics[name] = metric_func(
-                    *ref_curve, *curve_to_use, **func_kwargs
+        # Skip reference-requiring metrics if no reference curves provided
+        if ref_curves and (ref_data := ref_curves.homo_nuclear.get(elem_symbol)):
+            if not np.array_equal(distances, ref_curves.distances):
+                raise ValueError(
+                    "Reference and predicted distances must be the same. If goal is "
+                    "to interpolate predicted curves to reference distances, do so "
+                    "before passing to calc_diatomic_curve_metrics."
                 )
-            else:
-                elem_metrics[name] = metric_func(*curve_to_use, **func_kwargs)
+
+            # Energy metrics that need both curves
+            if MbdKey.norm_auc in metrics:
+                elem_metrics[MbdKey.norm_auc] = calc_curve_diff_auc(
+                    distances,
+                    ref_data.energies,
+                    distances,
+                    pred_data.energies,
+                    **metrics[MbdKey.norm_auc],
+                )
+
+            if MbdKey.energy_mae in metrics:
+                elem_metrics[MbdKey.energy_mae] = calc_energy_mae(
+                    distances,
+                    ref_data.energies,
+                    distances,
+                    pred_data.energies,
+                    **metrics[MbdKey.energy_mae],
+                )
+
+            if MbdKey.force_mae in metrics:
+                elem_metrics[MbdKey.force_mae] = calc_force_mae(
+                    distances,
+                    ref_data.forces,
+                    distances,
+                    pred_data.forces,
+                    **metrics[MbdKey.force_mae],
+                )
+
+        # Energy metrics that need only predicted curve
+        if MbdKey.smoothness in metrics:
+            elem_metrics[MbdKey.smoothness] = calc_second_deriv_smoothness(
+                distances, pred_data.energies, **metrics[MbdKey.smoothness]
+            )
+
+        if MbdKey.tortuosity in metrics:
+            elem_metrics[MbdKey.tortuosity] = calc_tortuosity(
+                distances, pred_data.energies, **metrics[MbdKey.tortuosity]
+            )
+
+        if MbdKey.energy_diff_flips in metrics:
+            elem_metrics[MbdKey.energy_diff_flips] = calc_energy_diff_flips(
+                distances, pred_data.energies, **metrics[MbdKey.energy_diff_flips]
+            )
+
+        if MbdKey.energy_grad_norm_max in metrics:
+            elem_metrics[MbdKey.energy_grad_norm_max] = calc_energy_grad_norm_max(
+                distances, pred_data.energies, **metrics[MbdKey.energy_grad_norm_max]
+            )
+
+        if MbdKey.energy_jump in metrics:
+            elem_metrics[MbdKey.energy_jump] = calc_energy_jump(
+                distances, pred_data.energies, **metrics[MbdKey.energy_jump]
+            )
+
+        # Force metrics that need only predicted curve
+        if MbdKey.conservation in metrics:
+            elem_metrics[MbdKey.conservation] = calc_conservation_deviation(
+                distances,
+                pred_data.energies,
+                pred_data.forces,
+                **metrics[MbdKey.conservation],
+            )
+
+        if MbdKey.force_flips in metrics:
+            elem_metrics[MbdKey.force_flips] = calc_force_flips(
+                distances, pred_data.forces, **metrics[MbdKey.force_flips]
+            )
+
+        if MbdKey.force_total_variation in metrics:
+            elem_metrics[MbdKey.force_total_variation] = calc_force_total_variation(
+                distances, pred_data.forces, **metrics[MbdKey.force_total_variation]
+            )
+
+        if MbdKey.force_jump in metrics:
+            elem_metrics[MbdKey.force_jump] = calc_force_jump(
+                distances, pred_data.forces, **metrics[MbdKey.force_jump]
+            )
 
         results[elem_symbol] = elem_metrics
 
