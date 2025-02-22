@@ -37,3 +37,10 @@ phonons:
   metrics:
     lower_is_better: [κ_SRME, κ<sub>SRME</sub>]
     higher_is_better: []
+
+diatomics:
+  label: Diatomics
+  description: Predict potential energy curves for diatomic molecules.
+  metrics:
+    higher_is_better: []
+    lower_is_better: []

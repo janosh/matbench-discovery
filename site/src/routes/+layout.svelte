@@ -32,6 +32,9 @@
       '/api': `API docs for the Matbench Discovery PyPI package.`,
       '/contribute': `Steps for contributing a new model to the benchmark.`,
       '/models': `Details on each model sortable by metrics.`,
+      '/tasks/diatomics': `Metrics and analysis of predicting diatomic energies.`,
+      '/tasks/phonons': `Metrics and analysis of predicting phonon modes and frequencies.`,
+      '/tasks/geo-opt': `Metrics and analysis of predicting ground state geometries.`,
     }[url ?? ``],
   )
   $effect(() => {

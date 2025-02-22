@@ -1,5 +1,5 @@
-model_name: GRACE-2L (r6)
-model_key: grace-2L-mptrj
+model_name: GRACE-2L-MPtrj
+model_key: grace-2l-mptrj
 model_version: MP_GRACE_2L_r6_11Nov2024
 matbench_discovery_version: 1.0.0
 date_added: "2024-11-21"
@@ -53,10 +53,10 @@ metrics:
   phonons:
     kappa_103:
       κ_SRME: 0.525 # https://github.com/MPA2suite/k_SRME/pull/11/files
-      pred_file: models/grace/grace-2L-mptrj/2024-11-20-kappa-103-FIRE-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file: models/grace/grace-2l-mptrj/2024-11-20-kappa-103-FIRE-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/ndownloader/files/52134896
   geo_opt:
-    pred_file: models/grace/grace-2L-mptrj/2024-11-11-relaxed-structures.json.gz
+    pred_file: models/grace/grace-2l-mptrj/2024-11-11-relaxed-structures.json.gz
     pred_file_url: https://figshare.com/ndownloader/files/52062590
     struct_col: grace-2L-mp_structure
     symprec=1e-5:
@@ -66,7 +66,7 @@ metrics:
       symmetry_match: 0.7315 # fraction
       symmetry_increase: 0.2285 # fraction
       n_structures: 256862 # count
-      analysis_file: models/grace/grace-2L-mptrj/2024-11-11-relaxed-structures-symprec=1e-5.csv.gz
+      analysis_file: models/grace/grace-2l-mptrj/2024-11-11-relaxed-structures-symprec=1e-5.csv.gz
       analysis_file_url: https://figshare.com/ndownloader/files/52062641
     symprec=1e-2:
       rmsd: 0.0186 # Å
@@ -75,10 +75,10 @@ metrics:
       symmetry_match: 0.7976 # fraction
       symmetry_increase: 0.1363 # fraction
       n_structures: 256513 # count
-      analysis_file: models/grace/grace-2L-mptrj/2024-11-11-relaxed-structures-symprec=1e-2.csv.gz
+      analysis_file: models/grace/grace-2l-mptrj/2024-11-11-relaxed-structures-symprec=1e-2.csv.gz
       analysis_file_url: https://figshare.com/ndownloader/files/52062650
   discovery:
-    pred_file: models/grace/grace-2L-mptrj/2024-11-11-wbm-IS2RE-FIRE.csv.gz
+    pred_file: models/grace/grace-2l-mptrj/2024-11-11-wbm-IS2RE-FIRE.csv.gz
     pred_file_url: https://figshare.com/ndownloader/files/52057577
     pred_col: e_form_per_atom_grace
     full_test_set:
@@ -138,3 +138,6 @@ metrics:
       R2: 0.741 # dimensionless
       missing_preds: 110 # count
       missing_percent: 0.05% # fraction
+  diatomics:
+    pred_file: models/grace/grace-2l-mptrj/2025-02-19-diatomics.json.gz
+    pred_file_url: https://figshare.com/ndownloader/files/52467524

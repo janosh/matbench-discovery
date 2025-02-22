@@ -157,3 +157,6 @@ metrics:
       R2: 0.697 # dimensionless
       missing_preds: 34 # count
       missing_percent: 0.02% # fraction
+  diatomics:
+    pred_file: models/mace/mace-mp-0/2025-02-13-diatomics.json.gz
+    pred_file_url: https://figshare.com/ndownloader/files/52449434
