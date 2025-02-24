@@ -7,13 +7,15 @@ import numpy as np
 
 
 def _validate_diatomic_curve(
-    xs: Sequence[float], ys: Sequence[Any]
+    xs: Sequence[float], ys: Sequence[Any], *, normalize_energy: bool = False
 ) -> tuple[np.ndarray, np.ndarray]:
     """Validate curve input data.
 
     Args:
         xs (Sequence[float]): interatomic distances
         ys (Sequence[Any]): Energies or forces
+        normalize_energy (bool): Whether to shift energies to zero at largest separation
+            distance (far field). Only applies when ys are energies, not forces.
 
     Returns:
         tuple[np.ndarray, np.ndarray]: Validated and sorted x and y arrays
@@ -37,9 +39,15 @@ def _validate_diatomic_curve(
         n_x_dup = int((np.diff(xs) == 0).sum())
         raise ValueError(f"xs contains {n_x_dup} duplicates")
 
-    # Sort by x values
-    sort_idx = np.argsort(xs)
-    return xs[sort_idx], ys[sort_idx]
+    sort_idx = np.argsort(xs)[::-1]
+    xs = xs[sort_idx]
+    ys = ys[sort_idx]
+
+    # If these are energies (rank 1 array), normalize to zero at far field
+    if normalize_energy and ys.ndim == 1:
+        ys = ys - ys[0]  # shift to zero at largest separation
+
+    return xs, ys
 
 
 def calc_curve_diff_auc(
@@ -69,8 +77,10 @@ def calc_curve_diff_auc(
             If normalize=True, returns unitless value, otherwise in eV·Å.
     """
     # Validate and sort both curves
-    seps_ref, e_ref = _validate_diatomic_curve(seps_ref, e_ref)
-    seps_pred, e_pred = _validate_diatomic_curve(seps_pred, e_pred)
+    seps_ref, e_ref = _validate_diatomic_curve(seps_ref, e_ref, normalize_energy=False)
+    seps_pred, e_pred = _validate_diatomic_curve(
+        seps_pred, e_pred, normalize_energy=False
+    )
 
     # Get data range bounds
     data_min = max(seps_ref.min(), seps_pred.min())
@@ -124,8 +134,10 @@ def calc_energy_mae(
         float: Mean absolute error between the curves (eV).
     """
     # Validate and sort both curves
-    seps_ref, e_ref = _validate_diatomic_curve(seps_ref, e_ref)
-    seps_pred, e_pred = _validate_diatomic_curve(seps_pred, e_pred)
+    seps_ref, e_ref = _validate_diatomic_curve(seps_ref, e_ref, normalize_energy=False)
+    seps_pred, e_pred = _validate_diatomic_curve(
+        seps_pred, e_pred, normalize_energy=False
+    )
 
     # Get data range bounds
     data_min = max(seps_ref.min(), seps_pred.min())
@@ -199,23 +211,21 @@ def calc_tortuosity(seps: Sequence[float], energies: Sequence[float]) -> float:
     Returns:
         float: tortuosity value (ratio of total variation to direct energy difference).
     """
-    seps, energies = map(np.asarray, (seps, energies))
-    # Sort in descending order to match MLIP Arena
-    sort_idx = np.argsort(seps)[::-1]
-    energies = energies[sort_idx]
+    # Validate and sort with energy normalization
+    _, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
 
     # Total variation in energy (sum of absolute differences)
     tv_energy = np.sum(np.abs(np.diff(energies)))
 
     # Get minimum energy and endpoint energies
     e_min = np.min(energies)  # minimum energy (equilibrium point)
-    e_first = energies[0]  # energy at shortest distance
-    e_last = energies[-1]  # energy at longest distance
+    # energy at largest distance (should be 0 after normalization)
+    e_first = energies[0]
+    e_last = energies[-1]  # energy at shortest distance
 
     # Sum of energy differences from minimum to endpoints
     direct_energy_diff = abs(e_first - e_min) + abs(e_last - e_min)
 
-    # Calculate tortuosity
     return float(tv_energy / direct_energy_diff)
 
 
@@ -229,9 +239,7 @@ def calc_energy_diff_flips(seps: Sequence[float], energies: Sequence[float]) -> 
     Returns:
         float: Number of energy difference sign flips.
     """
-    seps, energies = map(np.asarray, (seps, energies))
-    sort_idx = np.argsort(seps)[::-1]  # sort in descending order
-    energies = energies[sort_idx]
+    seps, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
 
     ediff = np.diff(energies)
     ediff[np.abs(ediff) < 1e-3] = 0  # 1meV threshold
@@ -253,10 +261,7 @@ def calc_energy_grad_norm_max(
     Returns:
         float: Maximum absolute value of energy gradient.
     """
-    seps, energies = map(np.asarray, (seps, energies))
-    sort_idx = np.argsort(seps)[::-1]  # sort in descending order
-    seps = seps[sort_idx]
-    energies = energies[sort_idx]
+    seps, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
     return float(np.max(np.abs(np.gradient(energies, seps))))
 
 
@@ -271,9 +276,7 @@ def calc_energy_jump(seps: Sequence[float], energies: Sequence[float]) -> float:
     Returns:
         float: Sum of absolute energy differences at flip points.
     """
-    seps, energies = map(np.asarray, (seps, energies))
-    sort_idx = np.argsort(seps)[::-1]  # sort in descending order
-    energies = energies[sort_idx]
+    seps, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
 
     ediff = np.diff(energies)
     ediff[np.abs(ediff) < 1e-3] = 0  # 1meV threshold

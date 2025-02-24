@@ -28,8 +28,10 @@ def calc_force_mae(
         float: Mean absolute error between the curves (eV/Å).
     """
     # Validate and sort both curves
-    seps_ref, f_ref = _validate_diatomic_curve(seps_ref, f_ref)
-    seps_pred, f_pred = _validate_diatomic_curve(seps_pred, f_pred)
+    seps_ref, f_ref = _validate_diatomic_curve(seps_ref, f_ref, normalize_energy=False)
+    seps_pred, f_pred = _validate_diatomic_curve(
+        seps_pred, f_pred, normalize_energy=False
+    )
 
     # Get data range bounds
     data_min = max(seps_ref.min(), seps_pred.min())
@@ -60,7 +62,7 @@ def calc_force_flips(
     seps: Sequence[float],
     forces: np.ndarray,
     threshold: float = 1e-2,  # 10meV/A threshold as in reference code
-) -> int:
+) -> float:
     """Calculate number of (unphysical) force direction changes.
 
     Args:
@@ -70,23 +72,21 @@ def calc_force_flips(
             considered zero. Defaults to 1e-2 (10 meV/Å).
 
     Returns:
-        int: Number of force direction changes.
+        float: Number of force direction changes.
     """
-    seps = np.asarray(seps)
-    # Use x-component of force on first atom
-    forces_x = forces[:, 0, 0]
+    # Sort by separations in descending order
+    _, forces = _validate_diatomic_curve(seps, forces, normalize_energy=False)
 
-    # Round forces near zero (avoid numerical sensitivity)
-    rounded_fs = np.copy(forces_x)
+    fs = forces[:, 0, 0]
+
+    rounded_fs = np.copy(fs)
     rounded_fs[np.abs(rounded_fs) < threshold] = 0
     fs_sign = np.sign(rounded_fs)
-
-    # Mask out zero values
     mask = fs_sign != 0
+    rounded_fs = rounded_fs[mask]
     fs_sign = fs_sign[mask]
-
-    # Count sign changes
-    return int(np.sum(np.diff(fs_sign) != 0))
+    f_flip = np.diff(fs_sign) != 0
+    return float(np.sum(f_flip))
 
 
 def calc_force_total_variation(seps: Sequence[float], forces: np.ndarray) -> float:
@@ -147,7 +147,7 @@ def calc_conservation_deviation(
         float: Mean absolute deviation between forces and -dE/dr.
     """
     _sorted_seps, energies = _validate_diatomic_curve(seps, energies)
-    seps, forces = _validate_diatomic_curve(seps, forces)
+    seps, forces = _validate_diatomic_curve(seps, forces, normalize_energy=False)
 
     # Calculate energy gradient using central differences
     energy_grad = np.gradient(energies, seps)

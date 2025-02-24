@@ -204,25 +204,28 @@ def calc_diatomic_metrics(
     return results
 
 
-def write_metrics_to_yaml(model: Model, metrics: dict[str, dict[str, float]]) -> None:
+def write_metrics_to_yaml(
+    model: Model, metrics: dict[str, dict[str, float]]
+) -> dict[str, float]:
     """Write diatomic metrics to model YAML file.
 
     Args:
         model (Model): Model to write metrics for.
         metrics (dict[str, dict[str, float]]): Map of element symbols to dicts of
             metric values.
-    """
-    if not metrics:
-        print(f"No valid metrics for {model.name}, skipping")
-        return
 
+    Returns:
+        dict[str, dict[str, float]]: Mean metrics across all elements.
+    """
     # Calculate mean metrics across all elements
     mean_metrics = {
         str(metric): float(
             f"{np.mean([elem_metrics[metric] for elem_metrics in metrics.values()]):.4}"
         )
-        for metric in next(iter(metrics.values()))
+        for metric in next(iter(metrics.values()), {})
     }
 
-    update_yaml_at_path(model.yaml_path, "metrics.diatomics", mean_metrics)
-    print(f"Wrote metrics to {model.yaml_path}")
+    if mean_metrics:
+        update_yaml_at_path(model.yaml_path, "metrics.diatomics", mean_metrics)
+        print(f"Wrote {model.label} diatomic metrics to {model.yaml_path}")
+    return mean_metrics
