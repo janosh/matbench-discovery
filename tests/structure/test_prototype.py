@@ -64,8 +64,8 @@ SrTiO3_perovskite = Structure(
 )
 esseneite = Structure.from_file(f"{TEST_FILES}/structures/esseneite.cif.gz")
 
-# TODO figure out who is right, moyopy or spglib, in cases where they differ (marked
-# below, tracked in https://github.com/CompRhys/aviary/pull/96)
+# Labels from moyopy==0.3.1 and spglib==2.5.0 differed for a few cases which were
+# tracked and one by one resolved in https://github.com/CompRhys/aviary/pull/96
 C20Cd8H14N4O4S_oP800 = Structure.from_file(
     f"{TEST_FILES}/structures/A20BC14D8E5F2_oP800_61_40c_2c_28c_16c_10c_4c@C-Cd-H-N-O-S.POSCAR.xz"
 )
