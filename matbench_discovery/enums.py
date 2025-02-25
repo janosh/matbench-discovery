@@ -276,6 +276,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
     """
 
+    alchembert = auto(), "alchembert/alchembert.yml"
+
     alignn = auto(), "alignn/alignn.yml"
     # alignn_ff = auto(), "alignn/alignn-ff.yml"
 
