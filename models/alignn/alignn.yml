@@ -43,14 +43,14 @@ model_params: 4_026_753 # pre-trained 'mp_e_form_alignn' and our custom MBD chec
 n_estimators: 1
 pr_url: https://github.com/janosh/matbench-discovery/pull/85
 
-# model trained from specifically for MBD
+# model trained on Materials Project energies specifically for this submission
 training_set: [MP 2022]
 
 metrics:
-  phonons: not available # model doesn't predict forces
-  geo_opt: not available
+  phonons: not applicable # reason: ALIGNN does not predict forces
+  geo_opt: not applicable # reason: ALIGNN does not predict forces
   discovery:
-    pred_file: models/alignn/2023-06-02-alignn-wbm-IS2RE.csv.gz
+    pred_file: models/alignn/alignn-mp22/2023-06-02-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/ndownloader/files/51607262
     pred_col: e_form_per_atom_alignn
     full_test_set:

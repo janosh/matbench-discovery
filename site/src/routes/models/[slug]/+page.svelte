@@ -4,7 +4,6 @@
   import per_elem_each_errors from '$figs/per-element-each-errors.json'
   import { get_pred_file_urls, PtableInset } from '$lib'
   import pkg from '$site/package.json'
-  import Icon from '@iconify/svelte'
   import type { ChemicalElement } from 'elementari'
   import {
     ColorBar,
@@ -13,14 +12,21 @@
     pretty_num,
     TableInset,
   } from 'elementari'
+  import 'iconify-icon'
   import { CopyButton, Tooltip } from 'svelte-zoo'
   import { click_outside, titles_as_tooltips } from 'svelte-zoo/actions'
 
-  export let data
-  export let color_scale: string[] = [`Viridis`]
-  export let active_element: ChemicalElement | null = null
+  interface Props {
+    data
+    color_scale?: string[]
+    active_element?: ChemicalElement | null
+  }
 
-  $: model = data.model
+  let {
+    data,
+    color_scale = $bindable([`Viridis`]),
+    active_element = $bindable(null),
+  }: Props = $props()
 
   // TODO make this dynamic (static n_days_ago from time of last site build is misleading)
   function n_days_ago(dateString: string): string {
@@ -36,7 +42,8 @@
   }
 </script>
 
-{#if model}
+{#if data.model}
+  {@const model = data.model}
   {@const { missing_preds, missing_percent } =
     model.metrics?.discovery?.unique_prototypes ?? {}}
   <div class="model-detail">
@@ -57,32 +64,32 @@
         {/if}
       </div>
       <div>
-        <Icon icon="ion:ios-calendar" inline />
+        <iconify-icon icon="ion:ios-calendar" inline></iconify-icon>
         <Tooltip text="{n_days_ago(model.date_added)} days ago">
           <span>Added: {model.date_added}</span>
         </Tooltip>
       </div>
       <div>
-        <Icon icon="ri:calendar-check-line" inline />
+        <iconify-icon icon="ri:calendar-check-line" inline></iconify-icon>
         <Tooltip text="{n_days_ago(model.date_published)} days ago">
           <span>Published: {model.date_published}</span>
         </Tooltip>
       </div>
       <div>
-        <Icon icon="eos-icons:neural-network" inline />
+        <iconify-icon icon="eos-icons:neural-network" inline></iconify-icon>
         <Tooltip text="{model.model_params.toLocaleString()} trainable parameters">
           <span>{pretty_num(model.model_params, `.3~s`)} parameters</span>
         </Tooltip>
       </div>
       {#if model.n_estimators > 1}
         <div>
-          <Icon icon="material-symbols:forest" inline />
+          <iconify-icon icon="material-symbols:forest" inline></iconify-icon>
           <span>Ensemble {model.n_estimators} models</span>
         </div>
       {/if}
       {#if missing_preds != undefined}
         <div>
-          <Icon icon="fluent:missing-metadata-24-regular" inline />
+          <iconify-icon icon="fluent:missing-metadata-24-regular" inline></iconify-icon>
           <span>
             Missing preds: {pretty_num(missing_preds, `,.0f`)}
             {#if missing_preds != 0}
@@ -108,7 +115,7 @@
         title="View source code repository"
         use:titles_as_tooltips
       >
-        <Icon icon="octicon:mark-github" inline /> Repo
+        <iconify-icon icon="octicon:mark-github" inline></iconify-icon> Repo
       </a>
       <a
         href={model.paper}
@@ -117,7 +124,7 @@
         title="Read model paper"
         use:titles_as_tooltips
       >
-        <Icon icon="ion:ios-paper" inline /> Paper
+        <iconify-icon icon="ion:ios-paper" inline></iconify-icon> Paper
       </a>
       {#if model.url}
         <a
@@ -127,7 +134,7 @@
           title="View model documentation"
           use:titles_as_tooltips
         >
-          <Icon icon="ion:ios-globe" inline /> Docs
+          <iconify-icon icon="ion:ios-globe" inline></iconify-icon> Docs
         </a>
       {/if}
       <a
@@ -137,7 +144,7 @@
         title="Digital Object Identifier"
         use:titles_as_tooltips
       >
-        <Icon icon="academicons:doi" inline /> DOI
+        <iconify-icon icon="academicons:doi" inline></iconify-icon> DOI
       </a>
       <a
         href={`${pkg.repository}/blob/-/models/${model.dirname?.split(`/`).pop()}`}
@@ -146,7 +153,7 @@
         title="Browse model submission files"
         use:titles_as_tooltips
       >
-        <Icon icon="octicon:file-directory" inline /> Files
+        <iconify-icon icon="octicon:file-directory" inline></iconify-icon> Files
       </a>
       {#if model.pypi}
         <a
@@ -156,7 +163,7 @@
           title="Python package on PyPI"
           use:titles_as_tooltips
         >
-          <Icon icon="simple-icons:pypi" inline /> PyPI
+          <iconify-icon icon="simple-icons:pypi" inline></iconify-icon> PyPI
         </a>
       {/if}
       {#if model.pr_url}
@@ -167,7 +174,7 @@
           title="View pull request"
           use:titles_as_tooltips
         >
-          <Icon icon="octicon:git-pull-request" inline /> PR
+          <iconify-icon icon="octicon:git-pull-request" inline></iconify-icon> PR
         </a>
       {/if}
       {#if model.metrics}
@@ -182,7 +189,7 @@
             }}
           >
             <summary title="Download model prediction files" use:titles_as_tooltips>
-              <Icon icon="octicon:graph" inline /> Predictions
+              <iconify-icon icon="octicon:graph" inline></iconify-icon> Predictions
             </summary>
             <div class="dropdown">
               {#each pred_files as { name, url }}
@@ -204,7 +211,7 @@
           <h3 style="margin-bottom: -2em;">
             DFT vs ML {title}
           </h3>
-          <svelte:component this={ParityPlot.default} height="500" />
+          <ParityPlot.default height="500" />
         {:catch error}
           {#if dev}
             <p>Failed to load plot:</p>
@@ -225,20 +232,22 @@
         tile_props={{ precision: `0.2` }}
         show_photo={false}
       >
-        <TableInset slot="inset" style="align-content: center;">
-          <PtableInset
-            element={active_element}
-            elem_counts={heatmap_values}
-            show_percent={false}
-            unit="<small style='font-weight: lighter;'>eV / atom</small>"
-          />
-          <ColorBar
-            label_side="top"
-            color_scale={color_scale[0]}
-            tick_labels={5}
-            style="width: 85%; margin: 0 2em;"
-          />
-        </TableInset>
+        {#snippet inset()}
+          <TableInset style="align-content: center;">
+            <PtableInset
+              element={active_element}
+              elem_counts={heatmap_values}
+              show_percent={false}
+              unit="<small style='font-weight: lighter;'>eV / atom</small>"
+            />
+            <ColorBar
+              label_side="top"
+              color_scale={color_scale[0]}
+              tick_labels={5}
+              style="width: 85%; margin: 0 2em;"
+            />
+          </TableInset>
+        {/snippet}
       </PeriodicTable>
     {/if}
 
@@ -250,19 +259,25 @@
             <span>{author.name}</span>
             {#if author.affiliation}<span class="affiliation">({author.affiliation})</span
               >{/if}
-            {#if author.email}<a href="mailto:{author.email}">
-                <Icon icon="mdi:email" inline />
+            {#if author.email}<a href="mailto:{author.email}" aria-label="Email">
+                <iconify-icon icon="mdi:email" inline></iconify-icon>
               </a>{/if}
             {#if author.github}<a
                 href={author.github}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="GitHub"
               >
-                <Icon icon="simple-icons:github" inline />
+                <iconify-icon icon="simple-icons:github" inline></iconify-icon>
               </a>{/if}
             {#if author.orcid}
-              <a href={author.orcid} target="_blank" rel="noopener noreferrer">
-                <Icon icon="simple-icons:orcid" inline />
+              <a
+                href={author.orcid}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="ORCID"
+              >
+                <iconify-icon icon="simple-icons:orcid" inline></iconify-icon>
               </a>{/if}
           </li>
         {/each}
@@ -283,15 +298,17 @@
                   href={trainer.orcid}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="ORCID"
                 >
-                  <Icon icon="simple-icons:orcid" inline />
+                  <iconify-icon icon="simple-icons:orcid" inline></iconify-icon>
                 </a>{/if}
               {#if trainer.github}<a
                   href={trainer.github}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="GitHub"
                 >
-                  <Icon icon="simple-icons:github" inline />
+                  <iconify-icon icon="simple-icons:github" inline></iconify-icon>
                 </a>{/if}
             </li>
           {/each}
@@ -323,12 +340,16 @@
           <p>
             <a href={url} target="_blank" rel="noopener noreferrer">{title}</a>:
             <Tooltip text={n_structures.toLocaleString()}>
-              <strong slot="trigger">{pretty_num(n_structures)}</strong>
+              {#snippet trigger()}
+                <strong>{pretty_num(n_structures)}</strong>
+              {/snippet}
             </Tooltip>
             structures
             {#if n_materials}
               <Tooltip text={n_materials.toLocaleString()}>
-                from <strong slot="trigger">{pretty_n_mat}</strong> materials
+                from {#snippet trigger()}
+                  <strong>{pretty_n_mat}</strong>
+                {/snippet} materials
               </Tooltip>
             {/if}
           </p>
@@ -395,16 +416,13 @@
   section {
     margin-bottom: 1em;
   }
-
   h2 {
     margin: 1em auto 0;
     padding: 0;
   }
-
   h3 {
     margin: 1em 0;
   }
-
   section:is(.deps, .model-info) ul {
     display: flex;
     flex-wrap: wrap;
@@ -424,7 +442,6 @@
     display: block;
     font-weight: bold;
   }
-
   .meta-info,
   .links {
     display: flex;
@@ -433,7 +450,6 @@
     place-content: center;
     margin: 2em auto;
   }
-
   .links :is(a, summary) {
     display: inline-flex;
     align-items: center;
@@ -444,7 +460,6 @@
     text-decoration: none;
     color: lightgray;
   }
-
   .links details {
     position: relative;
     cursor: pointer;
@@ -465,22 +480,18 @@
   .links .dropdown a:hover {
     background-color: rgba(255, 255, 255, 0.1);
   }
-
   li {
     margin: 1ex 0;
   }
-
   .affiliation {
     font-style: italic;
     color: gray;
   }
-
   ul li {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
   }
-
   div.model-detail :not(section.notes) :global(h3) {
     text-align: center;
     margin: 2em auto 0;

@@ -9,11 +9,11 @@ import pymatviz as pmv
 from plotly.subplots import make_subplots
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery.cli import cli_args
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
 from matbench_discovery.preds.discovery import df_each_pred, df_preds
-from matbench_discovery.preds.discovery import models as all_models
 
 __author__ = "Rhys Goodall, Janosh Riebesell"
 __date__ = "2022-06-18"
@@ -21,7 +21,6 @@ __date__ = "2022-06-18"
 batch_col = "batch_idx"
 df_each_pred[batch_col] = "Batch " + df_each_pred.index.str.split("-").str[1]
 df_err, df_std = None, None  # variables to cache rolling MAE and std
-models = globals().get("models", all_models)
 
 
 save_individual_figs = globals().get("save_individual_figs", True)
@@ -33,9 +32,9 @@ if test_subset == TestSubset.uniq_protos:
 
 show_non_compliant = globals().get("show_non_compliant", False)
 models_to_plot = [
-    model
-    for model in models
-    if show_non_compliant or model_is_compliant(MODEL_METADATA[model])
+    model.label
+    for model in cli_args.models
+    if show_non_compliant or model_is_compliant(MODEL_METADATA[model.label])
 ]
 
 n_cols = 3
@@ -45,7 +44,7 @@ if use_full_rows:
     n_rows = len(models_to_plot) // n_cols
     models_to_plot = models_to_plot[: n_rows * n_cols]
 else:
-    n_rows = math.ceil(len(models) / n_cols)
+    n_rows = math.ceil(len(models_to_plot) / n_cols)
 
 
 # %% Create subplots with one row per column in the DataFrame

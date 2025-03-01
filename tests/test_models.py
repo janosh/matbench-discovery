@@ -5,7 +5,7 @@ import pytest
 import yaml
 
 from matbench_discovery import DATA_DIR, __version__
-from matbench_discovery.data import Model
+from matbench_discovery.enums import Model
 from matbench_discovery.models import MODEL_DIRS, MODEL_METADATA, model_is_compliant
 
 with open(f"{DATA_DIR}/training-sets.yml") as file:
@@ -114,8 +114,7 @@ def test_model_enum() -> None:
 
     # Test model properties that don't depend on file existence
     assert Model.mace_mp_0.label == "MACE-MP-0"
-    assert Model.mace_mp_0.name == "mace_mp_0"
-    assert Model.mace_mp_0.value == "mace-mp-0.yml"
+    assert Model.mace_mp_0.name == Model.mace_mp_0.value == "mace_mp_0"
 
 
 @pytest.mark.parametrize(

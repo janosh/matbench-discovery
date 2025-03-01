@@ -8,24 +8,22 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
-import requests
 from ase import Atoms
 from pymatgen.core import Lattice, Structure
 from pymatviz.enums import Key
+from ruamel.yaml.comments import CommentedMap
 
-from matbench_discovery import DATA_DIR
 from matbench_discovery.data import (
-    DataFiles,
-    Files,
-    Model,
     as_dict_handler,
     ase_atoms_from_zip,
     ase_atoms_to_zip,
     df_wbm,
     glob_to_df,
     load_df_wbm_with_preds,
+    round_trip_yaml,
+    update_yaml_at_path,
 )
-from matbench_discovery.enums import MbdKey, TestSubset
+from matbench_discovery.enums import MbdKey, Model, TestSubset
 
 structure = Structure(
     lattice=Lattice.cubic(5),
@@ -65,6 +63,9 @@ def test_df_wbm() -> None:
     assert df_wbm.shape == (256_963, 18)
     assert df_wbm.index.name == Key.mat_id
     assert set(df_wbm) > {Key.formula, Key.mat_id, Key.bandgap_pbe}
+
+    for col in (MbdKey.e_form_dft, MbdKey.each_true):
+        assert col in df_wbm, f"{col=} not in {list(df_wbm)=}"
 
 
 @pytest.mark.parametrize("pattern", ["*df.csv", "*df.json"])
@@ -193,118 +194,6 @@ def test_ase_atoms_from_zip_with_limit(tmp_path: Path) -> None:
     assert len(read_atoms) == 2
 
 
-def test_files() -> None:
-    """Test error handling in Files enum."""
-
-    assert Files.base_dir == DATA_DIR
-
-    # Test custom base_dir
-    class SubFiles(Files, base_dir="foo"):
-        pass
-
-    assert SubFiles.base_dir == "foo"
-
-    # Test invalid label lookup
-    label = "invalid-label"
-    with pytest.raises(ValueError, match=f"{label=} not found in Files"):
-        Files.from_label(label)
-
-
-def test_data_files() -> None:
-    """Test DataFiles enum functionality."""
-    # Test that paths are constructed correctly
-    assert str(DataFiles.mp_energies) == f"{DATA_DIR}/mp/2023-01-10-mp-energies.csv.gz"
-    assert repr(DataFiles.mp_energies) == "DataFiles.mp_energies"
-    assert DataFiles.mp_energies.name == "mp_energies"
-    assert (
-        DataFiles.mp_energies.url == "https://figshare.com/ndownloader/files/49083124"
-    )
-    assert DataFiles.mp_energies.rel_path == "mp/2023-01-10-mp-energies.csv.gz"
-
-    # Test that multiple files exist and have correct attributes
-    assert DataFiles.wbm_summary.rel_path == "wbm/2023-12-13-wbm-summary.csv.gz"
-    assert DataFiles.wbm_summary.path == f"{DATA_DIR}/wbm/2023-12-13-wbm-summary.csv.gz"
-    assert (
-        DataFiles.wbm_summary.url == "https://figshare.com/ndownloader/files/44225498"
-    )
-
-
-def test_model() -> None:
-    """Test Model enum functionality."""
-    # Test basic model attributes
-    assert Model.alignn.name == "alignn"
-    assert Model.alignn.rel_path == "alignn/alignn.yml"
-    assert Model.alignn.url is None
-    assert Model.alignn.label == "ALIGNN"
-
-    # Test metadata property
-    metadata = Model.alignn.metadata
-    assert isinstance(metadata, dict)
-
-    # Test yaml_path property
-    assert Model.alignn.yaml_path.endswith("alignn/alignn.yml")
-    assert Model.grace2l_r6.kappa_103_path.endswith(
-        "2024-11-20-kappa-103-FIRE-fmax=1e-4-symprec=1e-5.json.gz"
-    )
-
-    # Test error handling for missing paths
-    with pytest.raises(
-        AttributeError,
-        match="'Model' object has no attribute 'bad_path'",
-    ):
-        _ = Model.alignn.bad_path
-
-    # Test Model metrics property
-    metrics = Model.alignn.metrics
-    assert isinstance(metrics, dict)
-
-
-@pytest.mark.parametrize("data_file", DataFiles)
-def test_data_files_urls(data_file: DataFiles) -> None:
-    """Test that each URL in data-files.yml is a valid Figshare download URL."""
-
-    name, url = data_file.name, data_file.url
-    # check that URL is a figshare download
-    assert "figshare.com/ndownloader/files/" in url, (
-        f"URL for {name} is not a Figshare download URL: {url}"
-    )
-
-    # check that the URL is valid by sending a head request
-    response = requests.head(url, allow_redirects=True, timeout=5)
-    assert response.status_code in {200, 403}, f"Invalid URL for {name}: {url}"
-
-
-def test_download_file(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
-    """Test download_file function."""
-
-    from matbench_discovery.data import download_file
-
-    url = "https://example.com/test.txt"
-    test_content = b"test content"
-    dest_path = tmp_path / "test.txt"
-
-    # Mock successful request
-    mock_response = requests.Response()
-    mock_response.status_code = 200
-    mock_response._content = test_content  # noqa: SLF001
-
-    with patch("requests.get", return_value=mock_response):
-        download_file(str(dest_path), url)
-        assert dest_path.read_bytes() == test_content
-
-    # Mock failed request
-    mock_response = requests.Response()
-    mock_response.status_code = 404
-    mock_response._content = b"Not found"  # noqa: SLF001
-
-    with patch("requests.get", return_value=mock_response):
-        download_file(str(dest_path), url)  # Should print error but not raise
-
-    stdout, stderr = capsys.readouterr()
-    assert f"Error downloading {url=}" in stdout
-    assert stderr == ""
-
-
 @pytest.mark.skipif(
     "CI" in os.environ,
     reason="CI uses mock data so don't check length against on-the-fly "
@@ -385,3 +274,68 @@ def test_load_df_wbm_with_preds_subset(subset: Any) -> None:
     """Test subset handling in load_df_wbm_with_preds."""
     df_wbm = load_df_wbm_with_preds(subset=subset)
     assert isinstance(df_wbm, pd.DataFrame)
+
+
+def test_update_yaml_at_path(tmp_path: Path) -> None:
+    """Test updating YAML files at specific paths."""
+    test_file = f"{tmp_path}/test.yml"
+
+    # Test case 1: Basic update at root level
+    initial_data = {"metrics": {"discovery": {"mae": 0.1}}}
+    with open(test_file, mode="w") as file:
+        round_trip_yaml.dump(initial_data, file)
+
+    updated_yaml = update_yaml_at_path(
+        test_file, "metrics.discovery", {"mae": 0.2, "rmse": 0.3}
+    )
+    assert updated_yaml["metrics"]["discovery"] == {"mae": 0.2, "rmse": 0.3}
+
+    # Test case 2: Create new nested path
+    updated_yaml = update_yaml_at_path(
+        test_file, "metrics.new.nested.path", {"value": 42}
+    )
+    assert updated_yaml["metrics"]["new"]["nested"]["path"] == {"value": 42}
+
+    # Test case 3: Update with comments
+    yaml_with_comments = """
+metrics:
+  discovery:  # Discovery metrics
+    mae: 0.1  # Mean absolute error
+    rmse: 0.2  # Root mean squared error
+"""
+    with open(test_file, mode="w") as file:
+        file.write(yaml_with_comments)
+
+    updated_yaml = update_yaml_at_path(
+        test_file, "metrics.discovery", {"mae": 0.3, "rmse": 0.4}
+    )
+    assert updated_yaml["metrics"]["discovery"] == {"mae": 0.3, "rmse": 0.4}
+
+    # Verify comments are preserved in the file
+    with open(test_file) as file:
+        content = file.read()
+    assert "discovery:  # Discovery metrics\n    mae: 0.3" in content, f"{content=}"
+
+    # Test case 4: Update with CommentedMap
+    commented_data = CommentedMap({"value": 1})
+    commented_data.yaml_add_eol_comment("A comment", "value")
+    updated_yaml = update_yaml_at_path(test_file, "new.path", commented_data)
+
+    # Verify the data structure
+    assert updated_yaml["new"]["path"]["value"] == 1
+    # Verify comments in the file
+    with open(test_file) as file:
+        content = file.read()
+    # check that old content is still there
+    assert "discovery:  # Discovery metrics\n    mae: 0.3" in content, f"{content=}"
+    # check new content was added
+    assert "value: 1  # A comment" in content, f"{content=}"
+
+    # Test case 5: Error cases
+    with pytest.raises(FileNotFoundError):
+        update_yaml_at_path("non-existent.yml", "path", {"data": 1})
+
+    # Test bad paths
+    for path in ("metrics..discovery", "metrics..", "metrics.discovery..", "."):
+        with pytest.raises(ValueError, match="Invalid dotted path"):
+            update_yaml_at_path(test_file, path, {"data": 1})

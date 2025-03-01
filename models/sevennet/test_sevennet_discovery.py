@@ -16,8 +16,8 @@ from sevenn.sevennet_calculator import SevenNetCalculator
 from tqdm import tqdm
 
 from matbench_discovery import WBM_DIR, timestamp
-from matbench_discovery.data import DataFiles, as_dict_handler, ase_atoms_from_zip
-from matbench_discovery.enums import Task
+from matbench_discovery.data import as_dict_handler, ase_atoms_from_zip
+from matbench_discovery.enums import DataFiles, Task
 
 __author__ = "Yutack Park"
 __date__ = "2024-12-10"  # 2024-06-25 for SevenNet-0

@@ -23,17 +23,27 @@
     },
   )
 
-  let log = false // log color scale
-  let color_scale = [`Viridis`]
+  let log = $state(false) // log color scale
+  let color_scale = $state([`Viridis`])
   const count_modes = [`occurrence`, `composition`]
-  let count_mode = count_modes[0]
+  let count_mode = $state(count_modes[0])
 
-  $: mp_elem_counts = elem_counts[`./mp-element-counts-by-${count_mode}.json`]
-  $: if (!mp_elem_counts) throw `No MP data for count mode ${count_mode}!`
-  $: mp_trj_elem_counts = elem_counts[`./mp-trj-element-counts-by-${count_mode}.json`]
-  $: if (!mp_trj_elem_counts) throw `No MPtrj data for count mode ${count_mode}!`
-  $: wbm_elem_counts = elem_counts[`./wbm-element-counts-by-${count_mode}.json`]
-  $: if (!wbm_elem_counts) throw `No WBM data for count mode ${count_mode}!`
+  let mp_elem_counts = $derived(elem_counts[`./mp-element-counts-by-${count_mode}.json`])
+  $effect.pre(() => {
+    if (!mp_elem_counts) throw `No MP data for count mode ${count_mode}!`
+  })
+  let mp_trj_elem_counts = $derived(
+    elem_counts[`./mp-trj-element-counts-by-${count_mode}.json`],
+  )
+  $effect.pre(() => {
+    if (!mp_trj_elem_counts) throw `No MPtrj data for count mode ${count_mode}!`
+  })
+  let wbm_elem_counts = $derived(
+    elem_counts[`./wbm-element-counts-by-${count_mode}.json`],
+  )
+  $effect.pre(() => {
+    if (!wbm_elem_counts) throw `No WBM data for count mode ${count_mode}!`
+  })
 
   export const snapshot: Snapshot = {
     capture: () => ({ color_scale, log, count_mode }),
@@ -44,12 +54,13 @@
 <DataFilesDirectDownload />
 
 <DataReadme>
-  <svelte:fragment slot="hist-e-form-per-atom">
+  {#snippet hist_e_form_per_atom()}
     {#if browser}
       <FormEnergyHist />
     {/if}
-  </svelte:fragment>
-  <svelte:fragment slot="wbm-elements-heatmap">
+  {/snippet}
+
+  {#snippet wbm_elements_heatmap()}
     <label
       for="count-mode"
       style="display: inline-block; transform: translate(10cqw, 5ex);">Count Mode</label
@@ -75,36 +86,33 @@
       color_bar_props={{ label: `WBM element counts by ${count_mode}` }}
       {log}
     />
-  </svelte:fragment>
+  {/snippet}
 
-  <svelte:fragment slot="mp-elements-heatmap">
+  {#snippet mp_elements_heatmap()}
     <PtableHeatmap
       heatmap_values={mp_elem_counts}
       color_scale={color_scale[0]}
       color_bar_props={{ label: `MP element counts by ${count_mode}` }}
       {log}
     />
-  </svelte:fragment>
+  {/snippet}
 
-  <svelte:fragment slot="mp-trj-elements-heatmap">
+  {#snippet mp_trj_elements_heatmap()}
     <MPtrjElemCountsPtable {count_mode} {log} color_scale={color_scale[0]} />
-  </svelte:fragment>
+  {/snippet}
 
-  <svelte:fragment slot="hist-wbm-hull-dist">
+  {#snippet hist_wbm_hull_dist()}
     {#if browser}
       <HistWbmHullDist />
     {/if}
-  </svelte:fragment>
+  {/snippet}
 
-  <div
-    style="display: flex; gap: 1em; justify-content: space-around; flex-wrap: wrap;"
-    slot="spacegroup-sunbursts"
-  >
+  {#snippet spacegroup_sunbursts()}
     {#if browser}
       <SpacegroupSunburstMp />
       <SpacegroupSunburstWbm />
     {/if}
-  </div>
+  {/snippet}
 </DataReadme>
 
 <MpElementalReferenceEnergies />

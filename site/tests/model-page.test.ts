@@ -1,5 +1,6 @@
 import { MODEL_METADATA } from '$lib'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { mount } from 'svelte'
+import { describe, expect, it } from 'vitest'
 import ModelPage from '../src/routes/models/[slug]/+page.svelte'
 
 const model_keys = MODEL_METADATA.map((m) => m.model_key)
@@ -8,13 +9,9 @@ const test_model = MODEL_METADATA.find((m) => m.model_key === model_key)
 if (!test_model) throw `missing test model`
 
 describe(`Model Detail Page`, () => {
-  beforeEach(() => {
-    document.body.innerHTML = ``
-  })
-
   it(`renders model details correctly`, async () => {
     // First verify test model exists
-    new ModelPage({ target: document.body, props: { data: { model: test_model } } })
+    mount(ModelPage, { target: document.body, props: { data: { model: test_model } } })
 
     // Check basic model info
     expect(document.querySelector(`h1`)?.textContent).toBe(test_model.model_name)

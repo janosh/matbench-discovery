@@ -2,16 +2,31 @@
   import type { ChemicalElement } from 'elementari'
   import { pretty_num } from 'elementari'
 
-  export let element: ChemicalElement
-  export let elem_counts: number[] | Record<string, number>
-  export let style: string | null = null
-  export let show_percent: boolean = true
-  export let unit: string = ``
+  interface Props {
+    element: ChemicalElement
+    elem_counts: number[] | Record<string, number>
+    style?: string | null
+    show_percent?: boolean
+    unit?: string
+  }
 
-  $: value = elem_counts[element?.symbol] ?? elem_counts[element?.number - 1] ?? null
-  $: total = (
-    Array.isArray(elem_counts) ? elem_counts : Object.values(elem_counts)
-  ).reduce((a, b) => a + b, 0)
+  let {
+    element,
+    elem_counts,
+    style = null,
+    show_percent = true,
+    unit = ``,
+  }: Props = $props()
+
+  let value = $derived(
+    elem_counts[element?.symbol] ?? elem_counts[element?.number - 1] ?? null,
+  )
+  let total = $derived(
+    (Array.isArray(elem_counts) ? elem_counts : Object.values(elem_counts)).reduce(
+      (total, count) => total + count,
+      0,
+    ),
+  )
 </script>
 
 <strong {style}>

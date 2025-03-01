@@ -2,46 +2,20 @@
   import type { ModelStatLabel, ModelStats } from '$lib'
   import { model_is_compliant, MODEL_METADATA, ModelCard } from '$lib'
   import { discovery } from '$pkg/modeling-tasks.yml'
-  import Icon from '@iconify/svelte'
   import { interpolateCividis as cividis } from 'd3-scale-chromatic'
   import { ColorBar } from 'elementari'
+  import 'iconify-icon'
   import { RadioButtons, Toggle, Tooltip } from 'svelte-zoo'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
   import type { Snapshot } from './$types'
 
-  let sort_by: keyof ModelStats | `model_name` = `F1`
-  let show_non_compliant: boolean = true
-  let show_details: boolean = false
-  let order: `asc` | `desc` = `desc`
-  let show_n_best: number = MODEL_METADATA.length // show only best models
+  let sort_by: keyof ModelStats | `model_name` = $state(`F1`)
+  let show_non_compliant: boolean = $state(true)
+  let show_details: boolean = $state(false)
+  let order: `asc` | `desc` = $state(`desc`)
+  let show_n_best: number = $state(MODEL_METADATA.length) // show only best models
   const min_models: number = 2
-
-  $: models = MODEL_METADATA.filter(
-    (model) => show_non_compliant || model_is_compliant(model),
-  ).sort((model_1, model_2) => {
-    const metrics_1 = model_1.metrics?.discovery?.full_test_set ?? {}
-    const metrics_2 = model_2.metrics?.discovery?.full_test_set ?? {}
-    const [val_1, val_2] = [metrics_1[sort_by], metrics_2[sort_by]]
-
-    // Handle null values by sorting last
-    if (val_1 == null && val_2 == null) return 0
-    if (val_1 == null) return 1
-    if (val_2 == null) return -1
-
-    if (typeof val_1 == `string`) {
-      return sort_factor * val_1.localeCompare(val_2)
-    } else if (typeof val_1 == `number` && typeof val_2 == `number`) {
-      // interpret runt_time==0 as infinity
-      if (sort_by == `Run Time (h)`) {
-        if (val_1 == 0) return -sort_factor
-        if (val_2 == 0) return sort_factor
-      }
-      return sort_factor * (val_2 - val_1)
-    } else {
-      throw `Unexpected type '${val_1}' encountered sorting by key '${sort_by}'`
-    }
-  })
 
   const stats: ModelStatLabel[] = [
     { key: `Accuracy` },
@@ -65,24 +39,50 @@
     restore: (values) => ({ show_details, sort_by, order, show_n_best } = values),
   }
 
-  $: sort_factor = { asc: -1, desc: 1 }[order]
-  $: min_val = Math.min(
-    ...models
-      .map((model) => model.metrics?.discovery?.full_test_set?.[sort_by])
-      .filter((val) => typeof val === `number`),
-  )
-  $: max_val = Math.max(
-    ...models
-      .map((model) => model.metrics?.discovery?.full_test_set?.[sort_by])
-      .filter((val) => typeof val === `number`),
-  )
-  $: if (discovery.metrics.lower_is_better.includes(sort_by))
-    [min_val, max_val] = [max_val, min_val]
-  $: order = discovery.metrics.lower_is_better.includes(sort_by) ? `asc` : `desc`
-
   function bg_color(val: number, min: number, max: number) {
     return cividis(1 - (val - min) / (max - min)).replace(`)`, `, 0.5)`)
   }
+  $effect(() => {
+    order = discovery.metrics.lower_is_better.includes(sort_by) ? `asc` : `desc`
+  })
+  let sort_factor = $derived({ asc: -1, desc: 1 }[order])
+  let models = $derived(
+    MODEL_METADATA.filter(
+      (model) => show_non_compliant || model_is_compliant(model),
+    ).sort((model_1, model_2) => {
+      const metrics_1 = model_1.metrics?.discovery?.full_test_set ?? {}
+      const metrics_2 = model_2.metrics?.discovery?.full_test_set ?? {}
+      const [val_1, val_2] = [metrics_1[sort_by], metrics_2[sort_by]]
+
+      // Handle null values by sorting last
+      if (val_1 == null && val_2 == null) return 0
+      if (val_1 == null) return 1
+      if (val_2 == null) return -1
+
+      if (typeof val_1 == `string`) {
+        return sort_factor * val_1.localeCompare(val_2)
+      } else if (typeof val_1 == `number` && typeof val_2 == `number`) {
+        // interpret runt_time==0 as infinity
+        if (sort_by == `Run Time (h)`) {
+          if (val_1 == 0) return -sort_factor
+          if (val_2 == 0) return sort_factor
+        }
+        return sort_factor * (val_2 - val_1)
+      } else {
+        throw `Unexpected type '${val_1}' encountered sorting by key '${sort_by}'`
+      }
+    }),
+  )
+  let [min_val, max_val] = $derived.by(() => {
+    const vals = models
+      .map((model) => model.metrics?.discovery?.full_test_set?.[sort_by])
+      .filter((val) => typeof val === `number`)
+
+    const lower_better = discovery.metrics.lower_is_better.includes(sort_by)
+    return lower_better
+      ? [Math.max(...vals), Math.min(...vals)]
+      : [Math.min(...vals), Math.max(...vals)]
+  })
 </script>
 
 <div style="display: grid;">
@@ -106,7 +106,7 @@
       <li class:active={key == sort_by}>
         <button
           id={key}
-          on:click={() => {
+          onclick={() => {
             sort_by = key
             order = discovery.metrics.lower_is_better.includes(key) ? `asc` : `desc`
           }}
@@ -117,7 +117,8 @@
         {#if tooltip}
           <Tooltip text={tooltip} max_width="20em">
             <span style="position: absolute; top: -1ex; left: -4pt; color: gray;">
-              <Icon icon="octicon:info-16" aria-label="Info" height="9.5pt" />
+              <iconify-icon icon="octicon:info-16" aria-label="Info" height="9.5pt"
+              ></iconify-icon>
             </span>
           </Tooltip>
         {/if}

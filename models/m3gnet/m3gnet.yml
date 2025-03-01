@@ -7,12 +7,13 @@ date_published: "2022-02-05"
 authors:
   - name: Chi Chen
     affiliation: UC San Diego
-    role: Model
     orcid: https://orcid.org/0000-0001-8008-7043
+    github: https://github.com/chc273
   - name: Shyue Ping Ong
     affiliation: UC San Diego
     orcid: https://orcid.org/0000-0001-5726-2587
     email: ongsp@ucsd.edu
+    github: https://github.com/shyuep
 
 repo: https://github.com/materialsvirtuallab/m3gnet
 url: https://materialsvirtuallab.github.io/m3gnet
@@ -62,7 +63,7 @@ metrics:
   geo_opt:
     pred_file: models/m3gnet/m3gnet-tf-manual-sampling/2023-06-01-wbm-geo-opt.json.gz
     pred_file_url: https://figshare.com/ndownloader/files/52062011
-    pred_col: m3gnet_structure
+    struct_col: m3gnet_structure
     symprec=1e-5:
       rmsd: 0.0217 # Å
       n_sym_ops_mae: 1.7751 # unitless

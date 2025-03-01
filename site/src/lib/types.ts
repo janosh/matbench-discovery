@@ -105,3 +105,9 @@ export const DISCOVERY_SETS = [
   `most_stable_10k`,
 ] as const
 export type DiscoverySet = (typeof DISCOVERY_SETS)[number]
+
+export type DiatomicsCurves = {
+  distances: number[]
+  'homo-nuclear': Record<string, { energies: number[]; forces: number[][] }>
+  'hetero-nuclear'?: Record<string, { energies: number[]; forces: number[][] }>
+}

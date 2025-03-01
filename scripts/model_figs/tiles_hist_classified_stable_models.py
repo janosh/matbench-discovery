@@ -11,43 +11,33 @@ import pymatviz as pmv
 from pymatviz.enums import Key
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery.cli import cli_args
+from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey, TestSubset
+from matbench_discovery.metrics.discovery import dfs_metrics
 from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist
-from matbench_discovery.preds.discovery import (
-    df_metrics,
-    df_metrics_uniq_protos,
-    df_preds,
-    models,
-)
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-12-01"
 
-
-test_subset = globals().get("test_subset", TestSubset.uniq_protos)
-
-if test_subset == TestSubset.uniq_protos:
-    df_preds = df_preds.query(MbdKey.uniq_proto)
-    df_metrics = df_metrics_uniq_protos
-
-show_non_compliant = globals().get("show_non_compliant", False)
 models_to_plot = [
     model
-    for model in models
-    if show_non_compliant or model_is_compliant(MODEL_METADATA[model])
+    for model in cli_args.models
+    if cli_args.show_non_compliant or model_is_compliant(MODEL_METADATA[model.label])
 ]
+test_subset = globals().get("test_subset", TestSubset.uniq_protos)
+df_preds = load_df_wbm_with_preds(models=models_to_plot, subset=test_subset)
 
 
 # %%
 n_cols = 3
-use_full_rows = globals().get("use_full_rows", True)
-if use_full_rows:
+if cli_args.use_full_rows:
     # drop last models that don't fit in last row
     n_rows = len(models_to_plot) // n_cols
     models_to_plot = models_to_plot[: n_rows * n_cols]
 else:
-    n_rows = math.ceil(len(models) / n_cols)
+    n_rows = math.ceil(len(models_to_plot) / n_cols)
 
 hover_cols = (df_preds.index.name, MbdKey.e_form_dft, MbdKey.each_true, Key.formula)
 facet_col = "Model"
@@ -57,14 +47,14 @@ which_energy: Final = "pred"
 kwds = dict(
     facet_col=facet_col,
     facet_col_wrap=n_cols,
-    category_orders={facet_col: models_to_plot},
+    category_orders={facet_col: [m.label for m in models_to_plot]},
     facet_col_spacing=0.04,
     facet_row_spacing=0.04,
 )
 
 df_melt = df_preds.melt(
     id_vars=hover_cols,
-    value_vars=models_to_plot,
+    value_vars=[model.label for model in models_to_plot],
     var_name=facet_col,
     value_name=Key.e_form_pred,
 )
@@ -83,13 +73,14 @@ fig = hist_classified_stable_vs_hull_dist(
     **kwds,  # type: ignore[arg-type]
 )
 
-# TODO add line showing the true hull distance histogram on each subplot
 show_metrics = False
 for anno in fig.layout.annotations:
     model_name = anno.text = anno.text.split("=", 1).pop()
-    if model_name not in models_to_plot or not show_metrics:
+    if model_name not in [m.label for m in models_to_plot] or not show_metrics:
         continue
-    F1, FPR, FNR, DAF = (df_metrics[model_name][x] for x in "F1 FPR FNR DAF".split())
+    F1, FPR, FNR, DAF = (
+        dfs_metrics[test_subset][model_name][x] for x in "F1 FPR FNR DAF".split()
+    )
     anno.text = f"{model_name} · {F1=:.2f} · {FPR=:.2f} · {FNR=:.2f} · {DAF=:.2f}"
 
 # set the figure size based on the number of rows and columns
@@ -127,19 +118,12 @@ fig.layout.legend.update(
 # standardize the margins and template
 portrait = n_rows > n_cols
 fig.layout.margin.update(l=60, r=10, t=0 if portrait else 10, b=60 if portrait else 10)
-# fig.layout.template = "pymatviz_white"
 
-# for trace in fig.data:
-#     # no need to store all 250k x values in plot, leads to 1.7 MB file,
-#     # subsample every 10th point is enough to see the distribution
-#     trace.x = trace.x[::10]
-
-# increase height of figure
 fig.show()
 
 
 # %%
-img_suffix = "" if show_non_compliant else "-only-compliant"
+img_suffix = "" if cli_args.show_non_compliant else "-only-compliant"
 img_name = f"hist-clf-{which_energy}-hull-dist-models-{n_rows}x{n_cols}{img_suffix}"
 pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

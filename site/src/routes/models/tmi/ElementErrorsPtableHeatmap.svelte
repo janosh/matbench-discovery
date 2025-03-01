@@ -1,35 +1,44 @@
 <script lang="ts">
   import per_elem_each_errors from '$figs/per-element-each-errors.json'
-  import { PtableInset } from '$lib'
+  import { MODEL_METADATA, PtableInset } from '$lib'
   import type { ChemicalElement } from 'elementari'
   import { ColorBar, ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
   import Select from 'svelte-multiselect'
 
-  export let color_scale: string[] = [`Viridis`]
-  export let active_element: ChemicalElement | null = null
-  export let models: string[] = Object.keys(per_elem_each_errors)
-  // must be string[] instead of string for svelte-multiselect to be correctly restored by snapshot
-  export let current_model: string[] = [models[2]]
-  export let manual_cbar_max: boolean = false
-  export let normalized: boolean = true
-  export let cbar_max: number | null = 0.3
+  interface Props {
+    color_scale?: string[]
+    active_element?: ChemicalElement | null
+    models?: string[]
+    // must be string[] instead of string for svelte-multiselect to be correctly restored by snapshot
+    current_model?: string[]
+    manual_cbar_max?: boolean
+    normalized?: boolean
+    cbar_max?: number | null
+  }
+
+  let {
+    color_scale = $bindable([`Viridis`]),
+    active_element = $bindable(null),
+    models = $bindable(MODEL_METADATA.map((m) => m.model_name)),
+    current_model = $bindable([models[2]]),
+    manual_cbar_max = $bindable(false),
+    normalized = $bindable(true),
+    cbar_max = $bindable(0.3),
+  }: Props = $props()
 
   const test_set_std_key = `Test set standard deviation`
 
-  // remove test_set_std_key from models
-  $: models = models.filter((model) => model !== test_set_std_key)
-
   const test_set_std = per_elem_each_errors[test_set_std_key]
 
-  $: heatmap_values = Object.entries(per_elem_each_errors[current_model[0]]).map(
-    ([key, val]) => {
+  let heatmap_values = $derived(
+    Object.entries(per_elem_each_errors[current_model[0]]).map(([key, val]) => {
       const denom = normalized ? test_set_std[key] : 1
       if (denom) return val / denom
       return null
-    },
+    }),
   )
-  $: current_data_max = Math.max(...heatmap_values)
-  $: cs_range = [0, manual_cbar_max ? cbar_max : current_data_max]
+  let current_data_max = $derived(Math.max(...heatmap_values))
+  let cs_range = $derived([0, manual_cbar_max ? cbar_max : current_data_max])
 
   export const snapshot = {
     capture: () => ({
@@ -89,22 +98,24 @@
   tile_props={{ precision: `0.2` }}
   show_photo={false}
 >
-  <TableInset slot="inset" style="align-content: center;">
-    <PtableInset
-      element={active_element}
-      elem_counts={heatmap_values}
-      show_percent={false}
-      unit="<small style='font-weight: lighter;'>eV / atom</small>"
-    />
-    <ColorBar
-      text="{current_model[0]} ({normalized ? `normalized` : `eV/atom`})"
-      label_side="top"
-      color_scale={color_scale[0]}
-      tick_labels={5}
-      range={cs_range}
-      style="width: 85%; margin: 0 2em;"
-    />
-  </TableInset>
+  {#snippet inset()}
+    <TableInset style="align-content: center;">
+      <PtableInset
+        element={active_element}
+        elem_counts={heatmap_values}
+        show_percent={false}
+        unit="<small style='font-weight: lighter;'>eV / atom</small>"
+      />
+      <ColorBar
+        text="{current_model[0]} ({normalized ? `normalized` : `eV/atom`})"
+        label_side="top"
+        color_scale={color_scale[0]}
+        tick_labels={5}
+        range={cs_range}
+        style="width: 85%; margin: 0 2em;"
+      />
+    </TableInset>
+  {/snippet}
 </PeriodicTable>
 
 <style>

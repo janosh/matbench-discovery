@@ -10,36 +10,37 @@ from pymatviz.powerups import add_identity_line
 from pymatviz.typing import PLOTLY
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
+from matbench_discovery.cli import cli_args
+from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.models import MODEL_METADATA, model_is_compliant
-from matbench_discovery.preds.discovery import df_preds, models
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-15"
 
 test_subset = globals().get("test_subset", TestSubset.uniq_protos)
 
-if test_subset == TestSubset.uniq_protos:
-    df_preds = df_preds.query(MbdKey.uniq_proto)
 
 show_non_compliant = globals().get("show_non_compliant", False)
 models_to_plot = [
     model
-    for model in models
-    if show_non_compliant or model_is_compliant(MODEL_METADATA[model])
+    for model in cli_args.models
+    if show_non_compliant or model_is_compliant(MODEL_METADATA[model.label])
 ]
+df_preds = load_df_wbm_with_preds(models=models_to_plot, subset=test_subset)
+model_labels = [model.label for model in models_to_plot]
 
 
 # %%
 df_preds[MbdKey.each_mean_models] = (
-    df_preds[models_to_plot].mean(axis=1)
+    df_preds[model_labels].mean(axis=1)
     + df_preds[MbdKey.each_true]
     - df_preds[MbdKey.e_form_dft]
 )
-df_preds[MbdKey.model_std_each] = df_preds[models_to_plot].std(axis=1)
+df_preds[MbdKey.model_std_each] = df_preds[model_labels].std(axis=1)
 
 df_each_err = pd.DataFrame()
-for model in models_to_plot:
+for model in model_labels:
     df_each_err[model] = df_preds[model] - df_preds[MbdKey.e_form_dft]
 
 df_preds[MbdKey.each_err_models] = df_each_err.abs().mean(axis=1)

@@ -17,7 +17,7 @@ from pymatviz.typing import PLOTLY
 from tqdm import tqdm
 
 from matbench_discovery import DATA_DIR, timestamp
-from matbench_discovery.data import DataFiles
+from matbench_discovery.enums import DataFiles
 from matbench_discovery.hpc import slurm_submit
 
 __author__ = "Janosh Riebesell"

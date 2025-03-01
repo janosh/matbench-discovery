@@ -1,86 +1,67 @@
 <script lang="ts">
-  import { MetricsTable, model_is_compliant, MODEL_METADATA } from '$lib'
-  import { METADATA_COLS, METRICS_COLS } from '$lib/metrics'
-  import MetricScatter from '$lib/MetricScatter.svelte'
-  import ColumnToggle from '$site/src/lib/TableColumnToggleMenu.svelte'
-  import Icon from '@iconify/svelte'
-  import { Toggle, Tooltip } from 'svelte-zoo'
-
-  let show_non_compliant: boolean = false
-  let show_energy_only: boolean = false
+  import {
+    MetricScatter,
+    MetricsTable,
+    MODEL_METADATA,
+    TableColumnToggleMenu,
+    type ModelData,
+  } from '$lib'
+  import { ALL_METRICS, METADATA_COLS, PHONON_METRICS } from '$lib/metrics'
 
   // Default column visibility
-  let visible_cols: Record<string, boolean> = {
-    ...Object.fromEntries([...METRICS_COLS].map((col) => [col.label, false])),
+  let visible_cols: Record<string, boolean> = $state({
+    // Hide other metrics
+    ...Object.fromEntries([...ALL_METRICS].map((col) => [col.label, false])),
+    // Show all metadata
     ...Object.fromEntries([...METADATA_COLS].map((col) => [col.label, true])),
-    'κ<sub>SRME</sub>': true,
-  }
+    // Show phonon metrics
+    ...Object.fromEntries([...PHONON_METRICS].map((col) => [col.label, true])),
+  })
 
-  let kappa_tooltip_point: { x: number; y: number } | null = null
-  let hovered = false
-  let column_panel_open: boolean = false
-
-  $: filtered_models = Object.values(MODEL_METADATA).filter(
-    (md) => show_non_compliant || model_is_compliant(md),
-  )
-
-  // Get array of hidden columns
-  $: hide_cols = Object.entries(visible_cols)
-    .filter(([_, visible]) => !visible)
-    .map(([col]) => col)
+  const model_has_kappa_103 = (model: ModelData) =>
+    typeof model?.metrics?.phonons?.kappa_103?.κ_SRME === `number`
 </script>
 
 <h1>MLFF Phonon Modeling Metrics</h1>
 
 <figure>
   <MetricsTable
-    {show_non_compliant}
-    {hide_cols}
-    {show_energy_only}
+    col_filter={(col) => visible_cols[col.label] ?? true}
+    model_filter={model_has_kappa_103}
+    sort_hint=""
     style="width: 100%;"
   />
 
   <div class="table-controls">
-    <Toggle bind:checked={show_non_compliant} style="gap: 3pt;">
-      Show non-compliant models <Tooltip max_width="20em">
-        <span slot="tip">
-          Models can be non-compliant for multiple reasons<br />
-          - closed source (model implementation and/or train/test code)<br />
-          - closed weights<br />
-          - trained on more than the permissible training set (<a
-            href="https://docs.materialsproject.org/changes/database-versions#v2022.10.28"
-            >MP v2022.10.28 release</a
-          >)<br />
-          We still show these models behind a toggle as we expect them<br /> to nonetheless
-          provide helpful signals for developing future models.
-        </span>
-        <Icon icon="octicon:info-16" inline style="padding: 0 3pt;" />
-      </Tooltip>&ensp;</Toggle
-    >
-    <Toggle bind:checked={show_energy_only} style="gap: 3pt;">
-      Show energy-only models <Tooltip max_width="12em">
-        <span slot="tip">
-          Models that only predict energy (E) perform worse<br /> and can't be evaluated
-          on force-modeling tasks such as κ<sub>SRME</sub>
-        </span>
-        <Icon icon="octicon:info-16" inline style="padding: 0 3pt;" />
-      </Tooltip>&ensp;</Toggle
-    >
-
-    <ColumnToggle bind:visible_cols bind:column_panel_open />
+    <TableColumnToggleMenu bind:visible_cols />
   </div>
 
+  <h3>κ<sub>SRME</sub> for 103 PhononDB structures over time</h3>
+  <p>
+    κ<sub>SRME</sub> ranges from 0 to 2, the lower the better. This metric was introduced
+    in
+    <a href="https://arxiv.org/abs/2408.00755v4">arXiv:2408.00755v4</a>. This modeling
+    task would not have been possible without the
+    <a href="https://github.com/materialsproject/PhononDB">PhononDB</a>
+    and the help of Atsushi Togo who kindly shared the
+    <a
+      href="https://github.com/atztogo/phonondb/blob/main/README.md#url-links-to-phono3py-finite-displacement-method-inputs-of-103-compounds-on-mdr-at-nims-pbe"
+      >PBE reference data for the 103 MP structures</a
+    > that form the test set for this task.
+  </p>
   <MetricScatter
-    models={filtered_models}
+    models={MODEL_METADATA}
+    model_filter={model_has_kappa_103}
     metric="phonons.kappa_103.κ_SRME"
     y_label="kappa SRME (lower better)"
-    bind:tooltip_point={kappa_tooltip_point}
-    bind:hovered
     style="margin: 2em 0;"
   />
 </figure>
 
 <style>
+  h3 {
+    text-align: center;
+  }
   figure {
     margin: 0;
     display: grid;

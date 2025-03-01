@@ -62,7 +62,7 @@ metrics:
   geo_opt:
     pred_file: models/bowsr/bowsr-megnet/2023-01-23-wbm-geo-opt.json.gz
     pred_file_url: https://figshare.com/ndownloader/files/52061984
-    pred_col: structure_bowsr_megnet
+    struct_col: structure_bowsr_megnet
     symprec=1e-5:
       rmsd: 0.043 # Å
       symmetry_decrease: 0.0037 # fraction

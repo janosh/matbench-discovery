@@ -14,12 +14,13 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery.data import DataFiles, df_wbm
+from matbench_discovery.data import df_wbm
 from matbench_discovery.energy import get_e_form_per_atom, mp_elemental_ref_energies
+from matbench_discovery.enums import DataFiles, Model
 
 e_form_dp_col = "e_form_per_atom_dp"
 results = "./results"
-model_name = "dpa3"
+model_name = Model.dpa3_v1_mptrj  # or Model.dpa3_v1_openlam
 module_dir = os.path.dirname(__file__)
 out_path = f"{module_dir}/{model_name}"
 files = sorted(glob(f"{results}/{model_name}-*.json.gz"))

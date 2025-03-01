@@ -16,9 +16,9 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, PDF_FIGS, ROOT, SITE_FIGS
-from matbench_discovery.data import DataFiles, ase_atoms_from_zip, df_wbm
+from matbench_discovery.data import ase_atoms_from_zip, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import DataFiles, MbdKey
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-11-22"

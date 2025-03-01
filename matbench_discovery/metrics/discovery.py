@@ -6,12 +6,12 @@ from collections.abc import Sequence
 
 import numpy as np
 import pandas as pd
-from ruamel.yaml.comments import CommentedMap
+from pymatviz.enums import Key
 from sklearn.metrics import r2_score
 
 from matbench_discovery import STABILITY_THRESHOLD
-from matbench_discovery.data import Model, df_wbm, round_trip_yaml
-from matbench_discovery.enums import MbdKey, TestSubset
+from matbench_discovery.enums import MbdKey, Model, TestSubset
+from matbench_discovery.metrics import metrics_df_from_yaml
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-01"
@@ -151,55 +151,30 @@ def stable_metrics(
     )
 
 
-def write_discovery_metrics_to_yaml(
+def write_metrics_to_yaml(
     model: Model,
-    df_metrics: pd.DataFrame,
-    df_metrics_10k: pd.DataFrame,
-    df_metrics_uniq_protos: pd.DataFrame,
-    df_preds: pd.DataFrame,
+    metrics: dict[str, str | float],
+    df_model_preds: pd.Series,
+    test_subset: TestSubset,
 ) -> None:
-    """Write materials discovery metrics to model YAML metadata files."""
-    metrics_full_test_set = df_metrics[model.label].to_dict()
-    metrics_10k_most_stable = df_metrics_10k[model.label].to_dict()
-    metrics_unique_protos = df_metrics_uniq_protos[model.label].to_dict()
+    """Write discovery metrics to model's YAML file.
 
-    df_uniq_proto_preds = df_preds[df_wbm[MbdKey.uniq_proto]]
+    Args:
+        model (Model): Model to write metrics for
+        metrics (dict[str, float]): Metrics for this model and test subset
+        df_model_preds (pd.Series): Model predictions for this test subset
+        test_subset (TestSubset): Which test subset these metrics are for
+    """
+    from ruamel.yaml.comments import CommentedMap
 
-    each_pred_uniq_proto = (
-        df_uniq_proto_preds[MbdKey.each_true]
-        + df_uniq_proto_preds[model.label]
-        - df_uniq_proto_preds[MbdKey.e_form_dft]
-    )
-    most_stable_10k_idx = each_pred_uniq_proto.nsmallest(10_000).index
+    from matbench_discovery.data import update_yaml_at_path
 
-    # calculate number of missing predictions for each test subset
-    for metrics, df_tmp in (
-        (metrics_full_test_set, df_preds),
-        (metrics_10k_most_stable, df_preds.loc[most_stable_10k_idx]),
-        (metrics_unique_protos, df_preds.query(MbdKey.uniq_proto)),
-    ):
-        metrics[str(MbdKey.missing_preds)] = int(df_tmp[model.label].isna().sum())
-        metrics[str(MbdKey.missing_percent)] = (
-            f"{metrics[str(MbdKey.missing_preds)] / len(df_tmp):.2%}"
-        )
+    # calculate number of missing predictions
+    n_missing = int(df_model_preds.isna().sum())
+    metrics[str(MbdKey.missing_preds)] = n_missing
+    metrics[str(MbdKey.missing_percent)] = f"{n_missing / len(df_model_preds):.2%}"
 
-    new_metrics = {
-        str(key): CommentedMap(metrics)
-        for key, metrics in (
-            (TestSubset.full_test_set, metrics_full_test_set),
-            (TestSubset.most_stable_10k, metrics_10k_most_stable),
-            (TestSubset.uniq_protos, metrics_unique_protos),
-        )
-    }
-
-    # Add or update discovery metrics
-    with open(model.yaml_path) as file:
-        model_metadata = round_trip_yaml.load(file)
-
-    all_metrics = model_metadata.setdefault("metrics", {})
-    discovery_metrics = all_metrics.setdefault("discovery", {})
-    discovery_metrics |= new_metrics
-
+    # Define metric units for end-of-line comments
     metric_units = {
         "MAE": "eV/atom",
         "RMSE": "eV/atom",
@@ -221,15 +196,48 @@ def write_discovery_metrics_to_yaml(
         "FN": "count",
     }
 
-    # Add units as YAML end-of-line comments for each test subset
-    for key in new_metrics:
-        subset_dict: CommentedMap = discovery_metrics[key]
-        for key in subset_dict:
-            if unit := metric_units.get(key):
-                subset_dict.yaml_add_eol_comment(unit, key)
-
-    all_metrics["discovery"] = discovery_metrics
+    # Create CommentedMap and add units as end-of-line comments
+    commented_metrics = CommentedMap(metrics)
+    for key in metrics:
+        if unit := metric_units.get(key):
+            commented_metrics.yaml_add_eol_comment(unit, key, column=1)
 
     # Write back to file
-    with open(model.yaml_path, mode="w") as file:
-        round_trip_yaml.dump(model_metadata, file)
+    update_yaml_at_path(
+        model.yaml_path, f"metrics.discovery.{test_subset}", commented_metrics
+    )
+
+
+# Create DataFrames with models as rows
+df_metrics = (
+    metrics_df_from_yaml(["discovery.full_test_set"])
+    .sort_values(by=Key.f1.upper(), ascending=False)
+    .T
+)
+df_metrics_10k = (
+    metrics_df_from_yaml(["discovery.most_stable_10k"])
+    .sort_values(by=Key.f1.upper(), ascending=False)
+    .T
+)
+df_metrics_uniq_protos = (
+    metrics_df_from_yaml(["discovery.unique_prototypes", "phonons"])
+    .sort_values(by=Key.f1.upper(), ascending=False)
+    .T
+)
+df_metrics_uniq_protos = df_metrics_uniq_protos.drop(
+    index=[MbdKey.missing_preds, MbdKey.missing_percent]
+)
+
+for df, title in (
+    (df_metrics, "Metrics for Full Test Set"),
+    (df_metrics_10k, "Metrics for 10k Most Stable Predictions"),
+    (df_metrics_uniq_protos, "Metrics for unique non-MP prototypes"),
+):
+    df.attrs["title"] = title
+
+
+dfs_metrics: dict[TestSubset, pd.DataFrame] = {
+    TestSubset.full_test_set: df_metrics,
+    TestSubset.uniq_protos: df_metrics_uniq_protos,
+    TestSubset.most_stable_10k: df_metrics_10k,
+}

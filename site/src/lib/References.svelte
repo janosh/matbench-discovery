@@ -1,19 +1,28 @@
 <script lang="ts">
   import type { Reference } from '$lib'
-  import { beforeUpdate } from 'svelte'
 
-  export let references: Reference[]
-  export let ref_selector: string = `a.ref[href^='#']`
-  export let found_on_page: Reference[] = references
-  export let n_authors: number = 1
-  export let first_name_mode: `initial` | `full` | `none` = `none`
+  interface Props {
+    references: Reference[]
+    ref_selector?: string
+    found_on_page?: Reference[]
+    n_authors?: number
+    first_name_mode?: `initial` | `full` | `none`
+  }
+
+  let {
+    references,
+    ref_selector = `a.ref[href^='#']`,
+    found_on_page = $bindable(references),
+    n_authors = 1,
+    first_name_mode = `none`,
+  }: Props = $props()
 
   function filter_refs() {
     const ref_links = document.querySelectorAll<HTMLAnchorElement>(ref_selector)
     const hashes = Array.from(ref_links).map((ref) => ref.hash)
     found_on_page = references.filter((ref) => hashes.includes(`#${ref.id}`))
   }
-  beforeUpdate(filter_refs)
+  $effect.pre(filter_refs)
 </script>
 
 {#key found_on_page}
