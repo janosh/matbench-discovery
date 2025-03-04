@@ -172,21 +172,22 @@
   {#snippet cell({ col, val })}
     {#if col.label === `Links` && val}
       {@const links = val}
-      {#each [links.paper, links.repo, links.pr] as link}
+      {#each [links.paper, links.repo, links.pr_url] as link}
         {#if link?.url}
           <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title}>
             {link.icon}
           </a>
         {/if}
       {/each}
-      {#if Object.values(links.pred_files).some((file) => file?.url)}
+      {#if links.pred_files}
         <button
           class="pred-files-btn"
           title="Download model prediction files"
           onclick={() => {
             if (!pred_file_modal) return
             pred_file_modal.open = true
-            active_files = links.pred_files
+            active_files = links.pred_files.files
+            active_model_name = links.pred_files.name
           }}
         >
           📊
@@ -220,7 +221,7 @@
     >
       ×
     </button>
-    <h3>Download prediction files for {active_files[0]?.model}</h3>
+    <h3>Download prediction files for {active_model_name}</h3>
     <ol class="pred-files-list">
       {#each active_files as file}
         <li>

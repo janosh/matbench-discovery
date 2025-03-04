@@ -91,7 +91,7 @@ export function get_metric_rank_order(metric: string) {
 
 export function get_pred_file_urls(model: ModelData) {
   // get all pred_file_url from model.metrics
-  const files: { name: string; url: string; model?: string }[] = []
+  const files: { name: string; url: string }[] = []
 
   function find_pred_files(obj: object, parent_key = ``) {
     if (!obj || typeof obj !== `object`) return
@@ -100,7 +100,7 @@ export function get_pred_file_urls(model: ModelData) {
       if (key == `pred_file_url` && val && typeof val === `string`) {
         // Get parent key without _pred_file suffix for label lookup
         const pretty_label = modeling_tasks[parent_key]?.label || parent_key
-        files.push({ name: pretty_label, url: val, model: model.model_name })
+        files.push({ name: pretty_label, url: val })
       } else if (typeof val === `object`) {
         find_pred_files(val, key)
       }
