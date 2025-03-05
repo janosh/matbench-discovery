@@ -40,14 +40,17 @@ trained_by:
 
 repo: https://github.com/zmyybc/AlphaNet
 url: https://github.com/zmyybc/AlphaNet
+pr_url: https://github.com/janosh/matbench-discovery/pull/216
 paper: https://arxiv.org/abs/2501.07155
-
+doi: 10.48550/arXiv.2501.07155
 openness: OSOD
 train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_G
 model_type: UIP
-model_params: 16.2 M
+model_params: 16,234,332
+trained_for_benchmark: true
+n_estimators: 1
 
 hyperparams:
   max_force: 0.05
@@ -86,6 +89,7 @@ notes:
 metrics:
   phonons:
     kappa_103:
+      κ_SRME: 1.310
       pred_file: models/alphanet/2025-03-04-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz #find a lots of imag freqs, will look into this in the future
       pred_file_url: https://ndownloader.figshare.com/files/52777394
   geo_opt:
