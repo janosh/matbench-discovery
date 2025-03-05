@@ -11,7 +11,7 @@ from matbench_discovery.data import as_dict_handler, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom, mp_elemental_ref_energies
 from matbench_discovery.enums import DataFiles
 
-e_form_Anet_col = "e_form_per_atom_alphanet"
+e_form_Anet_col = "e_form_per_atom_alphanet" # noqa: N816
 results = "./res_relax"
 pot_name = "alphanet"
 out_path = f"{results}/{pot_name}"
@@ -24,7 +24,7 @@ for file_path in tqdm(files):
     df_i = pd.read_json(file_path).set_index(Key.mat_id)
     dfs[file_path] = df_i
 
-df_Anet = pd.concat(dfs.values()).round(4)
+df_Anet = pd.concat(dfs.values()).round(4) # noqa: N816
 
 if len(df_Anet) != len(df_wbm):  # make sure there is no missing structure
     raise ValueError("Missing structures in SevenNet results")
@@ -45,8 +45,8 @@ for row in tqdm(df_Anet.itertuples(), total=len(df_Anet), desc="ML energies to C
     mat_id, struct_dict, energy, *_ = row
     mlip_struct = Structure.from_dict(struct_dict)
     cse = df_cse.loc[mat_id, Key.computed_structure_entry]
-    cse._energy = energy
-    cse._structure = mlip_struct
+    cse._energy = energy # noqa: SLF001
+    cse._structure = mlip_struct # noqa: SLF001
     df_Anet.loc[mat_id, Key.computed_structure_entry] = cse
 
 
@@ -70,7 +70,7 @@ df_Anet[e_form_Anet_col] = [
         total=len(df_Anet),
     )
 ]
-df_Anet = df_Anet.round(4)
+df_Anet = df_Anet.round(4) # noqa: N816
 
 df_Anet.select_dtypes("number").to_csv(f"{out_path}.csv.gz")  # save csv storable
 df_Anet.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
