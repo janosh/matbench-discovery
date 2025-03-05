@@ -48,7 +48,7 @@ train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_G
 model_type: UIP
-model_params: 16,234,332
+model_params: 16234332
 trained_for_benchmark: true
 n_estimators: 1
 
@@ -62,7 +62,7 @@ hyperparams:
     energy: 4.0
     force: 100.0
     stress: 10
-  batch_size: 128(8 per device)
+  batch_size: 128 #(8 per device)
   initial_learning_rate: 0.0002
   learning_rate_schedule: CosineAnealing(Tmax=200, lr_min = 1e-6)
   epochs: 200
