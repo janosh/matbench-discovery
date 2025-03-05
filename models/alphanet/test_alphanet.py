@@ -1,4 +1,3 @@
-
 import os
 from collections.abc import Callable
 from typing import Any, Literal
@@ -20,8 +19,6 @@ from tqdm import tqdm
 from matbench_discovery import timestamp
 from matbench_discovery.data import as_dict_handler
 from matbench_discovery.enums import Task
-
-
 
 smoke_test = False
 model_name = "alphanet"
