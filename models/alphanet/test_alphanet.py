@@ -1,4 +1,4 @@
-## Borrowed from sevennet
+# %% Borrowed from sevennet
 
 import os
 from collections.abc import Callable
