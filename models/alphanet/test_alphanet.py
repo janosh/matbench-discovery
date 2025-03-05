@@ -1,6 +1,7 @@
 import os
 from collections.abc import Callable
 from typing import Any, Literal
+
 import pandas as pd
 import torch
 from alphanet.config import All_Config
@@ -14,6 +15,7 @@ from ase.optimize.optimize import Optimizer
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from tqdm import tqdm
+
 from matbench_discovery import timestamp
 from matbench_discovery.data import as_dict_handler
 from matbench_discovery.enums import Task
