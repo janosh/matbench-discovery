@@ -26,7 +26,7 @@ from matbench_discovery.enums import Task
 
 # %% this config is editable
 smoke_test = False
-model_name = "alphanet"  
+model_name = "alphanet"
 config = All_Config().from_json("./mp.json")
 model = AlphaNetWrapper(config.model)
 model.load_state_dict( torch.load('./mp-0225-2.ckpt', map_location=torch.device('cuda')))
@@ -38,7 +38,6 @@ ase_filter: Literal["frechet", "exp"] = "frechet"
 
 max_steps = 500
 force_max = 0.05  # Run until the forces are smaller than this in eV/A
-
 
 
 # %%
@@ -72,7 +71,7 @@ for atoms in tqdm(atoms_list, desc="Relaxing"):
         atoms.calc = A_calc
         if max_steps > 0:
             atoms = filter_cls(atoms)
-            
+
             optimizer = optim_cls(atoms, logfile="/dev/null")
             optimizer.run(fmax=force_max, steps=max_steps)
         energy = atoms.get_potential_energy()  # relaxed energy
@@ -81,7 +80,7 @@ for atoms in tqdm(atoms_list, desc="Relaxing"):
         relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
     except Exception as exc:
         print(f"Failed to relax {mat_id}: {exec!r}")
-    
+
 
 df_out = pd.DataFrame(relax_results).T.add_prefix("alphanet_")
 df_out.index.name = Key.mat_id

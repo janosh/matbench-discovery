@@ -37,6 +37,7 @@ df_cse[Key.computed_structure_entry] = [
     for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
 ]
 
+
 # %% transfer energies and relaxed structures WBM CSEs since MP2020 energy
 # corrections applied below are structure-dependent (for oxides and sulfides)
 cse: ComputedStructureEntry
@@ -44,13 +45,13 @@ for row in tqdm(df_Anet.itertuples(), total=len(df_Anet), desc="ML energies to C
     mat_id, struct_dict, energy, *_ = row
     mlip_struct = Structure.from_dict(struct_dict)
     cse = df_cse.loc[mat_id, Key.computed_structure_entry]
-    cse._energy = energy  
-    cse._structure = mlip_struct  
+    cse._energy = energy
+    cse._structure = mlip_struct
     df_Anet.loc[mat_id, Key.computed_structure_entry] = cse
 
 
 orig_len = len(df_Anet)
-MaterialsProject2020Compatibility().process_entries(  
+MaterialsProject2020Compatibility().process_entries(
     df_Anet[Key.computed_structure_entry], verbose=True, clean=True
 )
 if len(df_Anet) != orig_len:

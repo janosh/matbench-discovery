@@ -42,7 +42,6 @@ repo: https://github.com/zmyybc/AlphaNet
 url: https://github.com/zmyybc/AlphaNet
 paper: https://arxiv.org/abs/2501.07155
 
-
 openness: OSOD
 train_task: S2EFS
 test_task: IS2RE-SR
@@ -69,7 +68,6 @@ hyperparams:
   n_radial_guassian_basis: 256
   n_heads: 24
   radial_cutoff: 6.0 # Å
-  
 
 requirements:
   torch: 2.5.1
@@ -98,4 +96,3 @@ metrics:
     pred_file: models/alphanet/2025-03-04-wbm-IS2RE.csv.gz
     pred_file_url: https://ndownloader.figshare.com/files/52776632
     pred_col: e_form_per_atom_alphanet
-    
