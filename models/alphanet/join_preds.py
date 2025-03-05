@@ -38,7 +38,6 @@ df_cse[Key.computed_structure_entry] = [
 ]
 
 
-# %% transfer energies and relaxed structures WBM CSEs since MP2020 energy
 # corrections applied below are structure-dependent (for oxides and sulfides)
 cse: ComputedStructureEntry
 for row in tqdm(df_Anet.itertuples(), total=len(df_Anet), desc="ML energies to CSEs"):
