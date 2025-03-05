@@ -64,8 +64,8 @@ optim_cls: Optimizer = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
 
 for atoms in tqdm(atoms_list, desc="Relaxing"):
-        mat_id = atoms.info[Key.mat_id]
-        if mat_id in relax_results:
+    mat_id = atoms.info[Key.mat_id]
+    if mat_id in relax_results:
           continue
     try:
         atoms.calc = A_calc
