@@ -1,7 +1,6 @@
 import os
 from collections.abc import Callable
 from typing import Any, Literal
-
 import pandas as pd
 import torch
 from alphanet.config import All_Config
@@ -15,7 +14,6 @@ from ase.optimize.optimize import Optimizer
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from tqdm import tqdm
-
 from matbench_discovery import timestamp
 from matbench_discovery.data import as_dict_handler
 from matbench_discovery.enums import Task
@@ -73,10 +71,8 @@ for atoms in tqdm(atoms_list, desc="Relaxing"):
     except Exception:
         print(f"Failed to relax {mat_id}: {exec!r}")
 
-
 df_out = pd.DataFrame(relax_results).T.add_prefix("alphanet_")
 df_out.index.name = Key.mat_id
-
 
 if not smoke_test:
     df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
