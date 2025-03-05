@@ -40,12 +40,12 @@ force_max = 0.05  # Run until the forces are smaller than this in eV/A
 
 
 # %%
-id = 1  # we split initial structures into several parts
+idx = 1  # we split initial structures into several parts
 
 os.makedirs(out_dir := "./res_relax", exist_ok=True)
-out_path = f"{out_dir}/{model_name}-{id:>03}.json.gz"
+out_path = f"{out_dir}/{model_name}-{idx:>03}.json.gz"
 
-data_path = f"./split_relax/part_{id}.extxyz"
+data_path = f"./split_relax/part_{idx}.extxyz"
 print(f"\nJob {job_name!r} running {timestamp}", flush=True)
 print(f"{data_path=}", flush=True)
 
