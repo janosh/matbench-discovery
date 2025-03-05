@@ -1,4 +1,4 @@
-# %% Borrowed from sevennet
+
 import os
 from collections.abc import Callable
 from typing import Any, Literal
@@ -22,7 +22,7 @@ from matbench_discovery.data import as_dict_handler
 from matbench_discovery.enums import Task
 
 
-# %% this config is editable
+
 smoke_test = False
 model_name = "alphanet"
 config = All_Config().from_json("./mp.json")
@@ -37,8 +37,6 @@ ase_filter: Literal["frechet", "exp"] = "frechet"
 max_steps = 500
 force_max = 0.05  # Run until the forces are smaller than this in eV/A
 
-
-# %%
 idx = 1  # we split initial structures into several parts
 
 os.makedirs(out_dir := "./res_relax", exist_ok=True)
@@ -59,7 +57,6 @@ filter_cls: Callable[[Atoms], Atoms] = {
     "exp": ExpCellFilter,
 }[ase_filter]
 optim_cls: Optimizer = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
-
 
 for atoms in tqdm(atoms_list, desc="Relaxing"):
     mat_id = atoms.info[Key.mat_id]
