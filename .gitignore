@@ -12,6 +12,7 @@ __pycache__
 *.json.gz
 *.json.bz2
 *.csv.bz2
+*.csv.gz
 *.pkl.gz
 data/**/raw
 data/**/tsne

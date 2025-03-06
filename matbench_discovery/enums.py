@@ -451,7 +451,8 @@ class DataFiles(Files):
         auto(),
         "mp/2023-02-07-mp-elemental-reference-entries.json.gz",
     )
-    mp_energies = auto(), "mp/2023-01-10-mp-energies.csv.gz"
+    # TODO: was this updated or just renamed to 2025-02-01 from 2023-01-10?
+    mp_energies = auto(), "mp/2025-02-01-mp-energies.csv.gz"
     mp_patched_phase_diagram = auto(), "mp/2023-02-07-ppd-mp.pkl.gz"
     mp_trj_json_gz = auto(), "mp/2022-09-16-mp-trj.json.gz"
     mp_trj_extxyz = auto(), "mp/2024-09-03-mp-trj.extxyz.zip"
