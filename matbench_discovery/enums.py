@@ -276,7 +276,15 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
     """
 
+    # alphanet: https://arxiv.org/abs/2501.07155
+    alphanet_mptrj = auto(), "alphanet/alphanet-mptrj.yml"
+
+    # alignn with global pooling: https://arxiv.org/abs/2106.01829
     alignn = auto(), "alignn/alignn.yml"
+
+    # alignn-ff with local pooling: https://arxiv.org/abs/2209.05554
+    # Commented out because the model trained did not achieve expected
+    # performance, suggesting potential issues with training process.
     # alignn_ff = auto(), "alignn/alignn-ff.yml"
 
     # BOWSR optimizer coupled with original megnet
@@ -295,6 +303,19 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     dpa3_v1_mptrj = auto(), "deepmd/dpa3-v1-mptrj.yml"
     dpa3_v1_openlam = auto(), "deepmd/dpa3-v1-openlam.yml"
 
+    # fairchem
+    eqv2_s_dens = auto(), "eqV2/eqV2-s-dens-mp.yml"
+    eqv2_m = auto(), "eqV2/eqV2-m-omat-salex-mp.yml"
+
+    # GRACE: https://arxiv.org/abs/2311.16326v2
+    grace_2l_mptrj = auto(), "grace/grace-2l-mptrj.yml"
+    grace_2l_oam = auto(), "grace/grace-2l-oam.yml"
+    grace_1l_oam = auto(), "grace/grace-1l-oam.yml"
+
+    # GNoME - Nequip architecture trained on propertary google data. Weights
+    # are not shared with the public.
+    gnome = auto(), "gnome/gnome.yml"
+
     # original M3GNet straight from publication, not re-trained
     m3gnet_ms = auto(), "m3gnet/m3gnet.yml"
     # m3gnet_direct = auto(), "M3GNet DIRECT"
@@ -304,8 +325,16 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     mace_mp_0 = auto(), "mace/mace-mp-0.yml"
     mace_mpa_0 = auto(), "mace/mace-mpa-0.yml"  # trained on MPtrj and Alexandria
 
+    # MatterSim - M3gNet architecture trained on propertary MSFT data. Weights
+    # are open-sourced.
+    mattersim_v1_5m = auto(), "mattersim/mattersim-v1-5m.yml"
+
     # original MEGNet straight from publication, not re-trained
     megnet = auto(), "megnet/megnet.yml"
+
+    # ORB
+    orb = auto(), "orb/orb.yml"
+    orb_mptrj = auto(), "orb/orb-mptrj.yml"
 
     # SevenNet trained on MPtrj
     sevennet_0 = auto(), "sevennet/sevennet-0.yml"
@@ -316,24 +345,6 @@ class Model(Files, base_dir=f"{ROOT}/models"):
 
     # wrenformer 10-member ensemble
     wrenformer = auto(), "wrenformer/wrenformer.yml"
-
-    # GNoME
-    gnome = auto(), "gnome/gnome.yml"
-
-    # MatterSim
-    mattersim_v1_5m = auto(), "mattersim/mattersim-v1-5m.yml"
-
-    # ORB
-    orb = auto(), "orb/orb.yml"
-    orb_mptrj = auto(), "orb/orb-mptrj.yml"
-
-    # fairchem
-    eqv2_s_dens = auto(), "eqV2/eqV2-s-dens-mp.yml"
-    eqv2_m = auto(), "eqV2/eqV2-m-omat-salex-mp.yml"
-
-    grace_2l_mptrj = auto(), "grace/grace-2l-mptrj.yml"
-    grace_2l_oam = auto(), "grace/grace-2l-oam.yml"
-    grace_1l_oam = auto(), "grace/grace-1l-oam.yml"
 
     # --- Model Combos
     # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction

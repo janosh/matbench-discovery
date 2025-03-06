@@ -100,3 +100,60 @@ metrics:
     pred_file: models/alphanet/2025-03-04-wbm-IS2RE.csv.gz
     pred_file_url: https://ndownloader.figshare.com/files/52776632
     pred_col: e_form_per_atom_alphanet
+    full_test_set:
+      F1: 0.789 # fraction
+      DAF: 4.312 # dimensionless
+      Precision: 0.74 # fraction
+      Recall: 0.846 # fraction
+      Accuracy: 0.923 # fraction
+      TPR: 0.846 # fraction
+      FPR: 0.062 # fraction
+      TNR: 0.938 # fraction
+      FNR: 0.154 # fraction
+      TP: 37311.0 # count
+      FP: 13119.0 # count
+      TN: 199752.0 # count
+      FN: 6781.0 # count
+      MAE: 0.04 # eV/atom
+      RMSE: 0.091 # eV/atom
+      R2: 0.747 # dimensionless
+      missing_preds: 2 # count
+      missing_percent: 0.00% # fraction
+    unique_prototypes:
+      F1: 0.799 # fraction
+      DAF: 4.863 # dimensionless
+      Precision: 0.743 # fraction
+      Recall: 0.864 # fraction
+      Accuracy: 0.933 # fraction
+      TPR: 0.864 # fraction
+      FPR: 0.055 # fraction
+      TNR: 0.945 # fraction
+      FNR: 0.136 # fraction
+      TP: 28831.0 # count
+      FP: 9949.0 # count
+      TN: 172165.0 # count
+      FN: 4543.0 # count
+      MAE: 0.041 # eV/atom
+      RMSE: 0.093 # eV/atom
+      R2: 0.745 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
+    most_stable_10k:
+      F1: 0.96 # fraction
+      DAF: 6.042 # dimensionless
+      Precision: 0.924 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.924 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9237.0 # count
+      FP: 763.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.045 # eV/atom
+      RMSE: 0.115 # eV/atom
+      R2: 0.746 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
