@@ -35,10 +35,10 @@ from matbench_discovery.structure import symmetry
 def analyze_model_symprec(
     model: Model,
     symprec: float,
+    moyo_version: str,
     df_dft_analysis: pd.DataFrame,
     dft_structs: dict[str, Structure],
     debug_mode: int = 0,
-    moyo_version: str = "moyo=0.3.1",
     pbar_pos: int = 0,  # tqdm progress bar position
 ) -> None:
     """Analyze a single model for a single symprec value."""
@@ -170,7 +170,7 @@ if __name__ == "__main__":
         default=max(1, mp.cpu_count() - 1),
         help="Number of processes to use. Defaults to number of model-symprec combos.",
     )
-    args = parser.parse_args()
+    args, _unknown = parser.parse_known_args()
 
     # set to > 0 to activate debug mode, only that many structures will be analyzed
     debug_mode: Final[int] = args.debug
@@ -178,7 +178,6 @@ if __name__ == "__main__":
     symprec_values: Final[Sequence[float]] = args.symprec
 
     # Get list of models to analyze
-    model_names = args.models
     moyo_version = f"moyo={importlib.metadata.version('moyopy')}"
 
     # %% Load WBM reference structures (this takes a while)
@@ -213,7 +212,7 @@ if __name__ == "__main__":
             dft_analysis_dict[symprec].to_csv(dft_csv_path)
 
     # Create list of all model-symprec combinations
-    tasks = list(itertools.product(model_names, symprec_values))
+    tasks = list(itertools.product(args.models, symprec_values))
     n_workers = min(len(tasks), args.workers)
 
     # %% Process model-symprec combinations in parallel
@@ -227,10 +226,10 @@ if __name__ == "__main__":
                 analyze_model_symprec,
                 model_name,
                 symprec,
+                moyo_version,
                 dft_analysis_dict[symprec],
                 dft_structs,
                 debug_mode,
-                moyo_version,
                 pbar_pos=idx,  # assign unique position to each task's progress bar
             )
             for idx, (model_name, symprec) in enumerate(tasks)

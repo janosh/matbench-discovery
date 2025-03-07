@@ -61,7 +61,7 @@ def parse_args(args: Sequence[str] | None = None) -> argparse.Namespace:
         help="Type of files to upload: analysis, pred or all (default)",
     )
 
-    return parser.parse_args(args)
+    return parser.parse_known_args(args)[0]
 
 
 def get_article_metadata(task: str) -> dict[str, Sequence[object]]:

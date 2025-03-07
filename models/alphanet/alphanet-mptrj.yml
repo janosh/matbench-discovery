@@ -94,8 +94,26 @@ metrics:
       pred_file_url: https://ndownloader.figshare.com/files/52777394
   geo_opt:
     pred_file: models/alphanet/2025-03-04-wbm-geo-opt-Fire.json.gz
-    pred_file_url: https://ndownloader.figshare.com/files/52776623
+    pred_file_url: https://figshare.com/ndownloader/files/52858202
     struct_col: alphanet_structure
+    symprec=1e-5:
+      rmsd: 0.0227 # Å
+      n_sym_ops_mae: 10.1098 # unitless
+      symmetry_decrease: 0.8597 # fraction
+      symmetry_match: 0.1376 # fraction
+      symmetry_increase: 0.0024 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/alphanet/2025-03-04-wbm-geo-opt-Fire-symprec=1e-5-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/ndownloader/files/52858205
+    symprec=1e-2:
+      rmsd: 0.0227 # Å
+      n_sym_ops_mae: 8.1732 # unitless
+      symmetry_decrease: 0.5768 # fraction
+      symmetry_match: 0.3712 # fraction
+      symmetry_increase: 0.0419 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/alphanet/2025-03-04-wbm-geo-opt-Fire-symprec=1e-2-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/ndownloader/files/52858208
   discovery:
     pred_file: models/alphanet/2025-03-04-wbm-IS2RE.csv.gz
     pred_file_url: https://ndownloader.figshare.com/files/52776632

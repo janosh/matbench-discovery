@@ -48,11 +48,6 @@ def get_sym_info_from_structs(
             moyo_cell, symprec=symprec, angle_tolerance=angle_tolerance
         )
 
-        if sym_data is None:
-            raise ValueError(
-                f"moyopy symmetry detection returned None for {struct_key}\n{struct}"
-            )
-
         sym_ops = sym_data.operations
         hall_symbol_entry = moyopy.HallSymbolEntry(hall_number=sym_data.hall_number)
 
