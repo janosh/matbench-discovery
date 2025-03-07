@@ -1,3 +1,4 @@
+import os
 from glob import glob
 
 import pandas as pd
@@ -12,7 +13,8 @@ from matbench_discovery.energy import get_e_form_per_atom, mp_elemental_ref_ener
 from matbench_discovery.enums import DataFiles
 
 e_form_Anet_col = "e_form_per_atom_alphanet"  # noqa: N816
-results = "./res_relax"
+module_dir = os.path.dirname(__file__)
+results = f"{module_dir}/res_relax"
 pot_name = "alphanet"
 out_path = f"{results}/{pot_name}"
 files = sorted(glob(f"{results}/{pot_name}-*.json.gz"))

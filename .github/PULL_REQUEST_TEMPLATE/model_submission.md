@@ -12,7 +12,7 @@ Please check the following items before submitting your PR:
 - [ ] I have uploaded the model-relaxed structures file to Figshare or another cloud storage service (`<yyyy-mm-dd>-wbm-IS2RE-FIRE.json.gz`).
 - [ ] I have uploaded the phonon predictions to Figshare or another cloud storage service (`<yyyy-mm-dd>-kappa-103-FIRE-<values-of-dist|fmax|symprec>.gz`).
 - [ ] I have included a YAML metadata file (`models/<arch_name>/<model_variant>.yml`) with model details and the urls to the Figshare files. If not using Figshare I have included the urls to the cloud storage service in the description of the PR.
-- [ ] I have included the test script (`test_<arch_name>_<task>.py` for `task` in `discovery`, `phonons`) that generated the prediction files.
+- [ ] I have included the test script (`test_<arch_name>_<task>.py` for `task` in `discovery`, `kappa`, `diatomics`) that generated the prediction files.
 
 ## Additional Information (Optional)
 
