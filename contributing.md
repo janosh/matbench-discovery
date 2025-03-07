@@ -93,6 +93,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    model_version: 1.0.0
    matbench_discovery_version: 1.0
    date_added: "2023-01-01"
+   date_published: "2022-12-05"
    authors:
      - name: John Doe
        affiliation: Some University, Some National Lab
@@ -112,6 +113,22 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    doi: https://doi.org/10.5281/zenodo.0000000
    preprint: https://arxiv.org/abs/xxxx.xxxxx
 
+   openness: OSOD # see `Open` enum in matbench_discovery/enums.py
+   train_task: S2EFS # see `Task` enum in matbench_discovery/enums.py
+   test_task: IS2RE-SR # see `Task` enum in matbench_discovery/enums.py
+   targets: EFS_G # see `Targets` enum in matbench_discovery/enums.py
+   model_type: UIP # see `ModelType` enum in matbench_discovery/enums.py
+   model_params: 3000000
+   trained_for_benchmark: true
+   n_estimators: 1
+
+   hyperparams: # strongly recommended to list relaxation hyperparams
+      max_force: 0.05
+      max_steps: 500
+      ase_optimizer: FIRE
+      optimizer: Adam
+      ... # additional hyperparameters describing training
+
    requirements: # strongly recommended
      torch: 1.13.0
      torch-geometric: 2.0.9
@@ -125,11 +142,16 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
       Optional *free-form* [markdown](example.com) notes.
 
    metrics:
-     discovery:
-        pred_file: models/<model_dir>/<yyyy-mm-dd>-<model_name>-wbm-IS2RE.csv.gz # should contain the models energy predictions for the WBM test set
-        pred_col: e_form_per_atom_<model_name>
+     phonons:
+         pred_file: models/alphanet/2025-03-04-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz #find a lots of imag freqs, will look into this in the future
+         pred_file_url: https://ndownloader.figshare.com/files/52777394
      geo_opt: # only applicable if the model performed structure relaxation
         pred_file: models/<model_dir>/<yyyy-mm-dd>-<model_name>-wbm-IS2RE.json.gz # should contain the models relaxed structures as ASE Atoms or pymatgen Structures, and separate columns for material_id and energies/forces/stresses at each relaxation step
+        pred_file_url: https://ndownloader.figshare.com/files/<zenodo_id>
+        struct_col: <column_name_of_material_ids_in_relaxed_structures>
+     discovery:
+        pred_file: models/<model_dir>/<yyyy-mm-dd>-<model_name>-wbm-IS2RE.csv.gz # should contain the models energy predictions for the WBM test set
+        pred_file_url: https://ndownloader.figshare.com/files/<zenodo_id>
         pred_col: e_form_per_atom_<model_name>
    ```
 
@@ -147,7 +169,7 @@ git checkout -b model-name-you-want-to-add
 
 Tip: `--depth 1` only clones the latest commit, not the full `git history` which is faster if a repo contains large data files that changed over time.
 
-### Step 2: Commit model predictions, train/test scripts and metadata
+### Step 2: Commit model metadata and train/test scripts to the repo
 
 Create a new folder
 
@@ -162,7 +184,6 @@ matbench-discovery-root
 └── models
     └── <model_name>
         ├── <model_name>.yml
-        ├── <yyyy-mm-dd>-<model_name>-preds.csv.gz
         ├── test_<model_name>.py
         ├── readme.md  # optional
         └── train_<model_name>.py  # optional
@@ -170,7 +191,13 @@ matbench-discovery-root
 
 You can include arbitrary other supporting files like metadata and model features (below 10MB total to keep `git clone` time low) if they are needed to run the model or help others reproduce your results. For larger files, please upload to [Figshare](https://figshare.com) or similar and share the link in your PR description.
 
-### Step 3: Open a PR to the [Matbench Discovery repo][repo]
+Add the model to the `Model` Enum in `matbench_discovery/enums.py` pointing to the correct metadata file.
+
+### Step 3: Upload results files to Zenodo
+
+Upload the files for the predictions, optimized geometries and phonons to Zenodo and share the links in your PR description.
+
+### Step 4: Open a PR to the [Matbench Discovery repo][repo]
 
 Commit your files to the repo on a branch called `<model_name>` and create a pull request (PR) to the Matbench repository.
 
@@ -181,7 +208,7 @@ git commit -m 'add <model_name> to Matbench Discovery leaderboard'
 
 And you're done! Once tests pass and the PR is merged, your model will be added to the leaderboard! 🎉
 
-### Step 4 (optional): Copy WandB runs into our project
+### Step 5 (optional): Copy WandB runs into our project
 
 [Weights and Biases](https://wandb.ai) is a tool for logging training and test runs of ML models. It's free, (partly) [open source](https://github.com/wandb/wandb) and offers a [special plan for academics](https://wandb.ai/site/research). It auto-collects metadata like
 
