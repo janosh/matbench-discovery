@@ -15,7 +15,7 @@ There's also a [PyPI package](https://pypi.org/project/matbench-discovery) for f
 
 To submit a new model to this benchmark and add it to our leaderboard, please create a pull request to the [`main` branch][repo] that includes the 3 required items:
 
-1. You should share your model's predictions through a cloud storage service (we strongly recommend [Figshare](https://figshare.com)) and include the download links in your PR description. Your cloud storage directory should contain files in a compressed format with the following naming convention: `<arch-name>/<model-variant>/<yyyy-mm-dd>-<eval-task>.{csv.gz|json.gz}`. For example, a in the case of MACE-MP-0, the file paths would be:
+1. You should share your model's predictions through a cloud storage service (we recommend [Figshare](https://figshare.com)) and include the download links in your PR description. Your cloud storage directory should contain files in a compressed format with the following naming convention: `<arch-name>/<model-variant>/<yyyy-mm-dd>-<eval-task>.{csv.gz|json.gz}`. For example, a in the case of MACE-MP-0, the file paths would be:
 
    - geometry optimization: `mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE.json.gz`
    - discovery: `mace/mace-mp-0/2023-12-11-wbm-IS2RE.csv.gz`
@@ -186,7 +186,7 @@ matbench-discovery-root
 
 You can include arbitrary other supporting files like metadata and model features (below 10MB total to keep `git clone` time low) if they are needed to run the model or help others reproduce your results. For larger files, please upload to [Figshare](https://figshare.com) or similar and share the link in your PR description.
 
-Add the model to the `Model` Enum in `matbench_discovery/enums.py` pointing to the correct metadata file.
+Add the model to the `Model` enum in [`matbench_discovery/enums.py`](https://github.com/janosh/matbench-discovery/blob/57d0d0c8a14cd3/matbench_discovery/enums.py#L274) pointing to the correct metadata file.
 
 ### Step 3: Upload results files to Zenodo
 

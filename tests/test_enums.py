@@ -168,7 +168,7 @@ def test_data_files_enum() -> None:
     assert str(DataFiles.mp_energies) == "mp_energies"
 
     # Test that paths are constructed correctly
-    assert DataFiles.mp_energies.rel_path == "mp/2023-01-10-mp-energies.csv.gz"
+    assert DataFiles.mp_energies.rel_path == "mp/2025-02-01-mp-energies.csv.gz"
     assert DataFiles.mp_energies.name == "mp_energies"
     assert DataFiles.mp_energies.url.startswith(
         "https://figshare.com/ndownloader/files/"

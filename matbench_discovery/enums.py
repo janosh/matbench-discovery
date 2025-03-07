@@ -283,8 +283,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     alignn = auto(), "alignn/alignn.yml"
 
     # alignn-ff with local pooling: https://arxiv.org/abs/2209.05554
-    # Commented out because the model trained did not achieve expected
-    # performance, suggesting potential issues with training process.
+    # Commented out because the model could not be evaluated due to OOM errors
+    # see models/alignn_ff/readme.md
     # alignn_ff = auto(), "alignn/alignn-ff.yml"
 
     # BOWSR optimizer coupled with original megnet
@@ -451,7 +451,8 @@ class DataFiles(Files):
         auto(),
         "mp/2023-02-07-mp-elemental-reference-entries.json.gz",
     )
-    # TODO: was this updated or just renamed to 2025-02-01 from 2023-01-10?
+    # this file was originally generated on 2023-01-10, but was updated on 2025-02-01
+    # to include moyopy-powered symmetry analysis of MP ground state structures
     mp_energies = auto(), "mp/2025-02-01-mp-energies.csv.gz"
     mp_patched_phase_diagram = auto(), "mp/2023-02-07-ppd-mp.pkl.gz"
     mp_trj_json_gz = auto(), "mp/2022-09-16-mp-trj.json.gz"
