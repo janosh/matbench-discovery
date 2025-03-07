@@ -34,7 +34,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
       - Material IDs matching the WBM test set
       - Final formation energies per atom (eV/atom)
 
-   3. `<arch-name>/<model-variant>/<yyyy-mm-dd>-kappa-103-<values-of-dist|fmax|symprec>.json.gz`: A compressed JSON file with:
+   3. `<arch-name>/<model-variant>/<yyyy-mm-dd>-kappa-103-FIRE-<values-of-dist|fmax|symprec>.json.gz`: A compressed JSON file with:
       - Material IDs matching the WBM test set
       - Predicted thermal conductivity (κ) values (W/mK)
 

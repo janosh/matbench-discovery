@@ -42,7 +42,7 @@ repo: https://github.com/zmyybc/AlphaNet
 url: https://github.com/zmyybc/AlphaNet
 pr_url: https://github.com/janosh/matbench-discovery/pull/216
 paper: https://arxiv.org/abs/2501.07155
-doi: 10.48550/arXiv.2501.07155
+doi: https://doi.org/10.48550/arXiv.2501.07155
 openness: OSOD
 train_task: S2EFS
 test_task: IS2RE-SR
@@ -90,10 +90,10 @@ metrics:
   phonons:
     kappa_103:
       κ_SRME: 1.310
-      pred_file: models/alphanet/2025-03-04-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz #find a lots of imag freqs, will look into this in the future
+      pred_file: models/alphanet/2025-03-04-kappa-103-fire-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz #find a lots of imag freqs, will look into this in the future
       pred_file_url: https://ndownloader.figshare.com/files/52777394
   geo_opt:
-    pred_file: models/alphanet/2025-03-04-wbm-geo-opt-Fire.json.gz
+    pred_file: models/alphanet/2025-03-04-wbm-geo-opt-fire.json.gz
     pred_file_url: https://figshare.com/ndownloader/files/52858202
     struct_col: alphanet_structure
     symprec=1e-5:
@@ -103,7 +103,7 @@ metrics:
       symmetry_match: 0.1376 # fraction
       symmetry_increase: 0.0024 # fraction
       n_structures: 256963 # count
-      analysis_file: models/alphanet/2025-03-04-wbm-geo-opt-Fire-symprec=1e-5-moyo=0.4.2.csv.gz
+      analysis_file: models/alphanet/2025-03-04-wbm-geo-opt-fire-symprec=1e-5-moyo=0.4.2.csv.gz
       analysis_file_url: https://figshare.com/ndownloader/files/52858205
     symprec=1e-2:
       rmsd: 0.0227 # Å
@@ -112,7 +112,7 @@ metrics:
       symmetry_match: 0.3712 # fraction
       symmetry_increase: 0.0419 # fraction
       n_structures: 256963 # count
-      analysis_file: models/alphanet/2025-03-04-wbm-geo-opt-Fire-symprec=1e-2-moyo=0.4.2.csv.gz
+      analysis_file: models/alphanet/2025-03-04-wbm-geo-opt-fire-symprec=1e-2-moyo=0.4.2.csv.gz
       analysis_file_url: https://figshare.com/ndownloader/files/52858208
   discovery:
     pred_file: models/alphanet/2025-03-04-wbm-IS2RE.csv.gz

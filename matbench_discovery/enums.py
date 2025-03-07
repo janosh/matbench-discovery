@@ -276,7 +276,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
     """
 
-    # alphanet: https://arxiv.org/abs/2501.07155
+    # AlphaNet: https://arxiv.org/abs/2501.07155
     alphanet_mptrj = auto(), "alphanet/alphanet-mptrj.yml"
 
     # alignn with global pooling: https://arxiv.org/abs/2106.01829
@@ -303,7 +303,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     dpa3_v1_mptrj = auto(), "deepmd/dpa3-v1-mptrj.yml"
     dpa3_v1_openlam = auto(), "deepmd/dpa3-v1-openlam.yml"
 
-    # fairchem
+    # FAIR-Chem
     eqv2_s_dens = auto(), "eqV2/eqV2-s-dens-mp.yml"
     eqv2_m = auto(), "eqV2/eqV2-m-omat-salex-mp.yml"
 
@@ -312,8 +312,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     grace_2l_oam = auto(), "grace/grace-2l-oam.yml"
     grace_1l_oam = auto(), "grace/grace-1l-oam.yml"
 
-    # GNoME - Nequip architecture trained on propertary google data. Weights
-    # are not shared with the public.
+    # GNoME - Nequip architecture trained on Google's proprietary data. Weights
+    # are not publicly available and so these results cannot be reproduced.
     gnome = auto(), "gnome/gnome.yml"
 
     # original M3GNet straight from publication, not re-trained
