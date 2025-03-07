@@ -180,8 +180,8 @@ if __name__ == "__main__":
     # Get list of models to analyze
     moyo_version = f"moyo={importlib.metadata.version('moyopy')}"
 
-    # %% Load WBM reference structures (this takes a while)
-    print("Loading WBM reference structures...")
+    # %%
+    print("Loading WBM PBE structures...")
     wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
     df_wbm_structs: pd.DataFrame = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
 
