@@ -143,7 +143,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 
    metrics:
      phonons:
-         pred_file: models/alphanet/2025-03-04-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz #find a lots of imag freqs, will look into this in the future
+         pred_file: models/alphanet/2025-03-04-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
          pred_file_url: https://ndownloader.figshare.com/files/52777394
      geo_opt: # only applicable if the model performed structure relaxation
         pred_file: models/<model_dir>/<yyyy-mm-dd>-<model_name>-wbm-IS2RE.json.gz # should contain the models relaxed structures as ASE Atoms or pymatgen Structures, and separate columns for material_id and energies/forces/stresses at each relaxation step
