@@ -45,6 +45,7 @@ hyperparams:
   max_force: 0.05
   max_steps: 500
   ase_optimizer: FIRE
+  cell_filter: ExpCellFilter
   n_layers: 6
   e_rcut: 6.0
   a_rcut: 4.0

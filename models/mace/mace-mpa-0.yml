@@ -60,6 +60,7 @@ hyperparams:
   max_force: 0.05
   max_steps: 500
   ase_optimizer: FIRE
+  cell_filter: FrechetCellFilter
   radial_cutoff: 6.0
 
 notes:
