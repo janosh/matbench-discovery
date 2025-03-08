@@ -212,7 +212,7 @@ class MetaFiles(EnumMeta):
     ) -> "MetaFiles":
         """Create new Files enum with given base directory."""
         obj = super().__new__(cls, name, bases, namespace, **kwargs)
-        obj._base_dir = base_dir  # noqa: SLF001
+        obj._base_dir = base_dir
         return obj
 
     @property
