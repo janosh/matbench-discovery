@@ -8,7 +8,7 @@ pip install -e ./chgnet.
 # %%
 import os
 from importlib.metadata import version
-from typing import Any, Literal
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -65,7 +65,6 @@ data_path = {
 print(f"\nJob {job_name} started {timestamp}")
 print(f"{data_path=}")
 e_pred_col = "chgnet_energy"
-ase_filter: Literal["FrechetCellFilter", "ExpCellFilter"] = "FrechetCellFilter"
 max_steps = 500
 fmax = 0.05
 
@@ -108,7 +107,7 @@ for material_id in tqdm(structures, desc="Relaxing"):
             steps=max_steps,
             fmax=fmax,
             relax_cell=max_steps > 0,
-            ase_filter=ase_filter,
+            cell_filter="FrechetCellFilter",
         )
         relax_results[material_id] = {
             e_pred_col: relax_result["trajectory"].energies[-1]

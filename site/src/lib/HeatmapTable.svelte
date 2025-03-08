@@ -10,7 +10,7 @@
   import { writable } from 'svelte/store'
   import type { HeatmapColumn } from './types'
 
-  type CellVal = string | number | undefined
+  type CellVal = string | number | undefined | null
   type RowData = Record<string, CellVal>
   type TableData = RowData[]
 
@@ -44,12 +44,14 @@
 
   function sort_rows(column: string) {
     const col = columns.find((c) => c.label === column)
+    if (!col) return // Skip if column not found
+
     const col_id = get_col_id(col)
 
     if ($sort_state.column !== col_id) {
       $sort_state = {
         column: col_id,
-        ascending: col?.better === `lower`,
+        ascending: col.better === `lower`,
       }
     } else {
       $sort_state.ascending = !$sort_state.ascending

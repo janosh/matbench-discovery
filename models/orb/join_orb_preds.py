@@ -28,12 +28,9 @@ def main(
     energy corrections to the ORB predictions and computes the corrected
     formation energies.
 
-    This script produces 4 files:
+    This script produces 2 files:
     - {predictions_dir}/{prefix}.csv.gz (all predictions)
-    - {predictions_dir}/{prefix}-no-bad.csv.gz
-      (all predictions except ones with large errors)
     - {predictions_dir}/{prefix}.json.gz (all predictions as JSON)
-    - {predictions_dir}/{prefix}-bad.csv (predictions with large errors)
     """
     file_paths = sorted(glob(f"{predictions_dir}/{glob_pattern}"))
 
@@ -109,7 +106,7 @@ def main(
 
     df_wbm[[*df_orb]] = df_orb
 
-    bad_mask = (df_wbm[FORMATION_ENERGY_COL] - df_wbm[MbdKey.e_form_dft]) < -5
+    bad_mask = abs(df_wbm[FORMATION_ENERGY_COL] - df_wbm[MbdKey.e_form_dft]) > 5
     print(f"{sum(bad_mask)=}")
 
     # e.g orbFF-v1-2024-07-11-shard-001.json.gz -> orbFF-v1-2024-07-11
@@ -121,14 +118,7 @@ def main(
 
     df_orb = df_orb.round(4)
     df_orb.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
-    df_orb[~bad_mask].select_dtypes("number").to_csv(f"{out_path}-no-bad.csv.gz")
     df_orb.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
-
-    df_bad = df_orb[bad_mask].drop(
-        columns=[Key.computed_structure_entry, STRUCT_COL], errors="ignore"
-    )
-    df_bad[MbdKey.e_form_dft] = df_wbm[MbdKey.e_form_dft]
-    df_bad.to_csv(f"{out_path}-bad.csv")
 
 
 if __name__ == "__main__":

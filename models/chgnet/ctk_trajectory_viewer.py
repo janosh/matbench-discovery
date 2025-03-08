@@ -26,17 +26,16 @@ module_dir = os.path.dirname(__file__)
 
 
 # %%
-df_cse = pd.read_json(f"{module_dir}/wbm-chgnet-bad-relax.json.gz").set_index(
-    Key.mat_id
-)
+df_geo_opt = pd.read_json(f"{module_dir}/wbm-chgnet-bad-relax.json.gz")
+df_geo_opt = df_geo_opt.set_index(Key.mat_id)
 
 
 # %%
 material_id = "wbm-1-7168"
-init_struct = Structure.from_dict(df_cse[Key.init_struct].loc[material_id])
+init_struct = Structure.from_dict(df_geo_opt[Key.init_struct].loc[material_id])
 
 final_struct = Structure.from_dict(
-    df_cse[Key.computed_structure_entry].loc[material_id]["structure"]
+    df_geo_opt[Key.computed_structure_entry].loc[material_id]["structure"]
 )
 
 init_spg = init_struct.get_space_group_info()
