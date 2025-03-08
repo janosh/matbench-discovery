@@ -1,14 +1,12 @@
 import os
-from collections.abc import Callable
-from typing import Any, Literal
+from typing import Any
 
 import pandas as pd
 import torch
 from alphanet.config import All_Config
 from alphanet.infer.calc import AlphaNetCalculator
 from alphanet.models.model import AlphaNetWrapper
-from ase import Atoms
-from ase.filters import ExpCellFilter, FrechetCellFilter
+from ase.filters import FrechetCellFilter
 from ase.io import read
 from ase.optimize import FIRE, LBFGS
 from ase.optimize.optimize import Optimizer
@@ -29,7 +27,6 @@ task_type = Task.IS2RE
 job_name = f"{model_name}-wbm-{task_type}"
 ase_optimizer = "FIRE"
 device = "cuda" if torch.cuda.is_available() else "cpu"
-ase_filter: Literal["frechet", "exp"] = "frechet"
 
 max_steps = 500
 force_max = 0.05  # Run until the forces are smaller than this in eV/A
@@ -48,11 +45,6 @@ A_calc = AlphaNetCalculator(model=model, device="cuda")
 print(f"Read data from {data_path}")
 atoms_list = read(data_path, index=":", format="extxyz")
 relax_results: dict[str, dict[str, Any]] = {}
-
-filter_cls: Callable[[Atoms], Atoms] = {
-    "frechet": FrechetCellFilter,
-    "exp": ExpCellFilter,
-}[ase_filter]
 optim_cls: Optimizer = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
 for atoms in tqdm(atoms_list, desc="Relaxing"):
@@ -62,12 +54,12 @@ for atoms in tqdm(atoms_list, desc="Relaxing"):
     try:
         atoms.calc = A_calc
         if max_steps > 0:
-            atoms = filter_cls(atoms)
+            atoms = FrechetCellFilter(atoms)
 
             optimizer = optim_cls(atoms, logfile="/dev/null")
             optimizer.run(fmax=force_max, steps=max_steps)
         energy = atoms.get_potential_energy()  # relaxed energy
-        # if max_steps > 0, atoms is wrapped by filter_cls, so extract with getattr
+        # if max_steps > 0, atoms is wrapped by FrechetCellFilter, so need to getattr
         relaxed_struct = AseAtomsAdaptor.get_structure(getattr(atoms, "atoms", atoms))
         relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
     except Exception:

@@ -76,18 +76,12 @@ n_struct = min(12, len(df_diff))  # 3 rows x 4 cols = 12 structures
 struct_col = Key.init_struct
 
 # Get first n_struct structures from df_cse
-structures = [
-    Structure.from_dict(row[struct_col])
-    for row in df_cse.loc[df_diff.index].iloc[:n_struct].itertuples()
-]
-
-fig = pmv.structure_2d_plotly(
-    {
-        f"{idx + 1}. {struct.reduced_formula} (spg={struct.get_space_group_info()[1]})"
-        for idx, struct in enumerate(structures)
-    },
-    n_cols=4,
-)
+structures = {
+    f"{idx} {(struct := Structure.from_dict(row[struct_col])).reduced_formula} "
+    f"(spg={struct.get_space_group_info()[1]})": struct
+    for idx, row in df_cse.loc[df_diff.index].iloc[:n_struct].iterrows()
+}
+fig = pmv.structure_2d_plotly(structures, n_cols=4)
 fig.layout.title.update(text=f"<b>{n_struct} {struct_col} {title}</b>")
 
 pmv.save_fig(fig, f"{PDF_FIGS}/chgnet-bad-relax-structures.pdf")

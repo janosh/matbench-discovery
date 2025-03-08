@@ -1,5 +1,4 @@
-"""
-Get MatterSim predictions on WBM dataset
+"""Get MatterSim predictions on WBM dataset
 
 Please note this script does not run because we removed
 the codes that may disclose any usage information of MatterSim.
@@ -11,7 +10,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
-from ase.constraints import ExpCellFilter
+from ase.filters import FrechetCellFilter
 from ase.optimize import FIRE
 from mattersim.forcefield import MatterSimCalculator
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
@@ -37,16 +36,14 @@ def relax_atoms_list(
     fmax: float = 0.02,
     steps: int = 500,
 ) -> list[ase.Atoms]:
-    """
-    This function relax the atoms.
-    """
+    """This function relax the atoms."""
     calc_m3gnet = MatterSimCalculator(load_path="mattersim-v1.0.0-5m.pth")
 
     relaxed_atoms_list = []
 
     for atoms in atoms_list:
         atoms.set_calculator(calc_m3gnet)
-        ecf = ExpCellFilter(atoms)
+        ecf = FrechetCellFilter(atoms)
         opt = FIRE(ecf)
         opt.run(fmax=fmax, steps=steps)
         if opt.get_number_of_steps() == steps:

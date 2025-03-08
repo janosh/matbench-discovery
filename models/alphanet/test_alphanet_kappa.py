@@ -44,7 +44,6 @@ calc = AlphaNetCalculator(model=model, device="cuda")
 
 # Relaxation parameters
 ase_optimizer: Literal["FIRE", "LBFGS", "BFGS"] = "FIRE"
-ase_filter: Literal["frechet", "exp"] = "frechet"
 max_steps = 300
 force_max = 1e-4  # Run until the forces are smaller than this in eV/A
 
@@ -84,7 +83,7 @@ run_params = {
     "dtype": dtype,
     "versions": {dep: version(dep) for dep in ("numpy", "torch", "matbench_discovery")},
     "ase_optimizer": ase_optimizer,
-    "ase_filter": ase_filter,
+    "cell_filter": "FrechetCellFilter",
     "max_steps": max_steps,
     "force_max": force_max,
     "symprec": symprec,
@@ -98,8 +97,8 @@ run_params = {
     "n_structures": len(atoms_list),
 }
 
-with open(f"{out_dir}/run_params.json", "w") as f:
-    json.dump(run_params, f, indent=4)
+with open(f"{out_dir}/run_params.json", mode="w") as file:
+    json.dump(run_params, file, indent=4)
 
 # Set up the relaxation and force set calculation
 optim_cls: Callable[..., Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]

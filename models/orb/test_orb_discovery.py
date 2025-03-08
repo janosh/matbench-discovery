@@ -1,5 +1,4 @@
-"""
-pip install git+https://github.com/janosh/matbench-discovery@5c8601a
+"""pip install git+https://github.com/janosh/matbench-discovery@5c8601a
 
 # Required for valid data paths.
 git clone https://github.com/janosh/matbench-discovery
@@ -17,7 +16,7 @@ import pandas as pd
 import torch
 import typer
 import wandb
-from ase.filters import ExpCellFilter, FrechetCellFilter
+from ase.filters import FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
 from orb_models.forcefield.calculator import ORBCalculator
 from orb_models.forcefield.pretrained import ORB_PRETRAINED_MODELS
@@ -34,16 +33,7 @@ torch.set_float32_matmul_precision("high")
 
 app = typer.Typer(pretty_exceptions_enable=False, no_args_is_help=True)
 
-FILTERS = {
-    "frechet": FrechetCellFilter,
-    "exp": ExpCellFilter,
-}
-
-OPTIMIZERS = {
-    "FIRE": FIRE,
-    "LBFGS": LBFGS,
-}
-
+OPTIMIZERS = {"FIRE": FIRE, "LBFGS": LBFGS}
 PREDICTED_ENERGY_COL = "orb_energy"
 
 
@@ -51,7 +41,7 @@ PREDICTED_ENERGY_COL = "orb_energy"
 def main(
     model_name: str = "orb-v1",  # Or orb-v1-mptrj-only
     ase_optimizer: str = typer.Option("FIRE", help="ASE optimizer to use"),
-    ase_filter: str = typer.Option("frechet", help="ASE filter to use"),
+    cell_filter: str = typer.Option("frechet", help="ASE filter to use"),
     device: str = typer.Option(
         "cuda" if torch.cuda.is_available() else "cpu", help="Device to use"
     ),
@@ -122,7 +112,7 @@ def main(
         "ase_optimizer": ase_optimizer,
         "device": device,
         "model_name": model_name,
-        "ase_filter": ase_filter,
+        "cell_filter": cell_filter,
         "shard": shard,
         "total_shards": total_shards,
     }
@@ -141,8 +131,6 @@ def main(
         df_in = df_in.head(limit)
 
     structs = df_in[input_col].map(Structure.from_dict).to_dict()
-    filter_cls = FILTERS[ase_filter]
-
     for material_id in tqdm(structs, desc="Relaxing"):
         if material_id in relax_results:
             continue
@@ -151,7 +139,7 @@ def main(
             atoms.calc = orb_calc
 
             if cell_opt:
-                atoms = filter_cls(atoms)
+                atoms = FrechetCellFilter(atoms)
             optim_cls = OPTIMIZERS[ase_optimizer]
             optimizer = optim_cls(atoms, logfile="/dev/null")
 

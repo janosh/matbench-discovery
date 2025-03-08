@@ -1,16 +1,15 @@
 # %%
 import os
-from collections.abc import Callable
 from copy import deepcopy
 from importlib.metadata import version
-from typing import Any, Final, Literal
+from typing import Any, Final
 
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import wandb
 from ase import Atoms
-from ase.filters import ExpCellFilter, FrechetCellFilter
+from ase.filters import FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
 from ase.optimize.optimize import Optimizer
 from mace.calculators import mace_mp
@@ -56,8 +55,6 @@ checkpoint = {url.split("/")[-1].rsplit(".model")[0]: url for url in checkpoint_
     model_name
 ]
 print(f"{model_name=}")
-
-ase_filter: Literal["frechet", "exp"] = "frechet"
 
 slurm_vars = hpc.slurm_submit(
     job_name=job_name,
@@ -120,7 +117,7 @@ run_params = {
     Key.model_params: count_parameters(mace_calc.models[0]),
     "model_name": model_name,
     "dtype": dtype,
-    "ase_filter": ase_filter,
+    "cell_filter": "FrechetCellFilter",
 }
 
 run_name = f"{job_name}-{slurm_array_task_id}"
@@ -130,10 +127,6 @@ wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 # %% time
 relax_results: dict[str, dict[str, Any]] = {}
-filter_cls: Callable[[Atoms], Atoms] = {
-    "frechet": FrechetCellFilter,
-    "exp": ExpCellFilter,
-}[ase_filter]
 optim_cls: Optimizer = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
 for atoms in tqdm(deepcopy(atoms_list), desc="Relaxing"):
@@ -143,7 +136,7 @@ for atoms in tqdm(deepcopy(atoms_list), desc="Relaxing"):
     try:
         atoms.calc = mace_calc
         if max_steps > 0:
-            filtered_atoms = filter_cls(atoms)
+            filtered_atoms = FrechetCellFilter(atoms)
             optimizer = optim_cls(filtered_atoms, logfile="/dev/null")
 
             if record_traj:
@@ -155,7 +148,7 @@ for atoms in tqdm(deepcopy(atoms_list), desc="Relaxing"):
 
             optimizer.run(fmax=force_max, steps=max_steps)
         energy = atoms.get_potential_energy()  # relaxed energy
-        # if max_steps > 0, atoms is wrapped by filter_cls, so extract with getattr
+        # if max_steps > 0, atoms is wrapped by FrechetCellFilter, so need to getattr
         relaxed_struct = AseAtomsAdaptor.get_structure(atoms)
         relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
 

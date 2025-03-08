@@ -17,7 +17,7 @@ import ray
 import torch
 from ase import Atoms
 from ase.constraints import FixSymmetry
-from ase.filters import ExpCellFilter, FrechetCellFilter
+from ase.filters import FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
 from mace.calculators import mace_mp
 from pymatviz.enums import Key
@@ -30,7 +30,6 @@ from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
 
 if TYPE_CHECKING:
-    from ase.filters import Filter
     from ase.optimize.optimize import Optimizer
 
 module_dir = os.path.dirname(__file__)
@@ -47,7 +46,6 @@ def calc_kappa_for_structure(
     checkpoint: str,
     temperatures: list[float],
     ase_optimizer: str,
-    ase_filter: str,
     max_steps: int,
     force_max: float,
     symprec: float,
@@ -67,7 +65,6 @@ def calc_kappa_for_structure(
         checkpoint (str): File path or download URL to model checkpoint
         temperatures (list[float]): Which temperatures to calculate kappa at in Kelvin
         ase_optimizer (str): ASE optimizer to use
-        ase_filter (str): ASE filter to use
         max_steps (int): Maximum number of optimization steps
         force_max (float): Maximum force tolerance
         symprec (float): Symmetry precision
@@ -101,11 +98,6 @@ def calc_kappa_for_structure(
         "errors": [],
         "error_traceback": [],
     }
-
-    filter_cls: Filter = {"frechet": FrechetCellFilter, "exp": ExpCellFilter}[
-        ase_filter
-    ]
-
     optim_cls: type[Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 
     # Initialize variables that might be needed in error handling
@@ -118,9 +110,9 @@ def calc_kappa_for_structure(
         if max_steps > 0:
             if enforce_relax_symm:
                 atoms.set_constraint(FixSymmetry(atoms))
-                filtered_atoms = filter_cls(atoms, mask=[True] * 3 + [False] * 3)
+                filtered_atoms = FrechetCellFilter(atoms, mask=[True] * 3 + [False] * 3)
             else:
-                filtered_atoms = filter_cls(atoms)
+                filtered_atoms = FrechetCellFilter(atoms)
 
             os.makedirs(relax_dir := f"{out_dir}/relaxations", exist_ok=True)
             optimizer = optim_cls(filtered_atoms, logfile=f"{relax_dir}/{task_id}.log")
@@ -214,7 +206,6 @@ def calc_kappa_for_structure(
 
 # Relaxation parameters
 ase_optimizer: Literal["FIRE", "LBFGS", "BFGS"] = "FIRE"
-ase_filter: Literal["frechet", "exp"] = "frechet"
 max_steps = 300
 fmax = 1e-4  # Run until the forces are smaller than this in eV/A
 
@@ -287,7 +278,6 @@ remote_params = dict(
     model_name=model_name,
     checkpoint=checkpoint,
     ase_optimizer=ase_optimizer,
-    ase_filter=ase_filter,
     max_steps=max_steps,
     force_max=fmax,
     symprec=symprec,
