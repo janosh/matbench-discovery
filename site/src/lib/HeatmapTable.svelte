@@ -121,7 +121,7 @@
       {#if visible_columns.some((col) => col.group)}
         <!-- First level headers -->
         <tr class="group-header">
-          {#each visible_columns as col}
+          {#each visible_columns as col (col.label)}
             {#if !col.group}
               <th></th>
             {:else}
@@ -135,7 +135,7 @@
       {/if}
       <!-- Second level headers -->
       <tr>
-        {#each visible_columns as col, col_idx}
+        {#each visible_columns as col, col_idx (col.label)}
           <th
             title={col.tooltip}
             onclick={() => sort_rows(col.label)}
@@ -156,7 +156,7 @@
     <tbody>
       {#each clean_data as row (JSON.stringify(row))}
         <tr animate:flip={{ duration: 500 }}>
-          {#each visible_columns as col}
+          {#each visible_columns as col (col.label)}
             {@const val = row[get_col_id(col)]}
             {@const color = calc_color(val, col)}
             <td
