@@ -17,7 +17,7 @@ import pandas as pd
 import torch
 import typer
 import wandb
-from ase.filters import ExpCellFilter, FrechetCellFilter
+from ase.filters import FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
 from orb_models.forcefield.calculator import ORBCalculator
 from orb_models.forcefield.pretrained import ORB_PRETRAINED_MODELS
@@ -34,16 +34,7 @@ torch.set_float32_matmul_precision("high")
 
 app = typer.Typer(pretty_exceptions_enable=False, no_args_is_help=True)
 
-FILTERS = {
-    "frechet": FrechetCellFilter,
-    "exp": ExpCellFilter,
-}
-
-OPTIMIZERS = {
-    "FIRE": FIRE,
-    "LBFGS": LBFGS,
-}
-
+OPTIMIZERS = {"FIRE": FIRE, "LBFGS": LBFGS}
 PREDICTED_ENERGY_COL = "orb_energy"
 
 
@@ -141,8 +132,6 @@ def main(
         df_in = df_in.head(limit)
 
     structs = df_in[input_col].map(Structure.from_dict).to_dict()
-    filter_cls = FILTERS[ase_filter]
-
     for material_id in tqdm(structs, desc="Relaxing"):
         if material_id in relax_results:
             continue
@@ -151,7 +140,7 @@ def main(
             atoms.calc = orb_calc
 
             if cell_opt:
-                atoms = filter_cls(atoms)
+                atoms = FrechetCellFilter(atoms)
             optim_cls = OPTIMIZERS[ase_optimizer]
             optimizer = optim_cls(atoms, logfile="/dev/null")
 

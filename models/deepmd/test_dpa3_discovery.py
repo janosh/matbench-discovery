@@ -1,5 +1,4 @@
-"""
-Theoretically, one can use the test code of SevenNet or MACE to test a DP model.
+"""Theoretically, one can use the test code of SevenNet or MACE to test a DP model.
 For convenience, we used dflow to orchestrate the tests.
 Below are the core functions.
 """
@@ -12,7 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import pandas as pd
-from ase.constraints import ExpCellFilter
+from ase.filters import FrechetCellFilter
 from ase.optimize import FIRE
 from deepmd.calculator import DP
 from pymatgen.core.structure import Molecule, Structure
@@ -63,14 +62,14 @@ class Relaxer:
 
         atoms.calc = self.calculator
         obs = TrajectoryObserver(atoms)
-        atoms = ExpCellFilter(atoms)
+        atoms = FrechetCellFilter(atoms)
         opt = self.optimizer(atoms)
         opt.attach(obs)
         opt.run(fmax=fmax, steps=steps)
         obs()
         if traj_file is not None:
             obs.save(traj_file)
-        if isinstance(atoms, ExpCellFilter):
+        if isinstance(atoms, FrechetCellFilter):
             atoms = atoms.atoms
         return {
             "final_structure": self.ase_adaptor.get_structure(atoms).as_dict(),
@@ -79,8 +78,7 @@ class Relaxer:
 
 
 class TrajectoryObserver:
-    """
-    Trajectory observer is a hook in the relaxation process that saves the
+    """Trajectory observer is a hook in the relaxation process that saves the
     intermediate structures
     """
 
