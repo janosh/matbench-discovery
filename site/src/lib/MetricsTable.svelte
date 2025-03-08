@@ -29,11 +29,18 @@
   let pred_file_modal: HTMLDialogElement | null = $state(null)
   let columns: HeatmapColumn[] = $derived(
     [...ALL_METRICS, ...METADATA_COLS]
-      .map((col) => ({
-        ...col,
-        better: col.better ?? get_metric_rank_order(col.label),
-        hidden: !col_filter(col),
-      }))
+      .map((col) => {
+        const better = col.better ?? get_metric_rank_order(col.label)
+
+        // append better=higher/lower to tooltip if applicable
+        let tooltip = col.tooltip || ``
+        if (better === `higher` || better === `lower`) {
+          tooltip = tooltip ?
+            `${tooltip} (${better}=better)` :
+            `${better}=better`
+        }
+        return { ...col, better, tooltip, hidden: !col_filter(col) }
+      })
       // Ensure Model column comes first
       .sort((col1, _col2) => (col1.label === `Model` ? -1 : 1)),
   )

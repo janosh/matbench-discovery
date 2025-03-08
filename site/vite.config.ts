@@ -17,7 +17,6 @@ export default defineConfig(({ mode }) => ({
   test: {
     environment: `jsdom`,
     css: true,
-    globals: true,
     coverage: {
       reporter: [`text`, `json-summary`],
     },

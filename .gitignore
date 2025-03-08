@@ -11,7 +11,7 @@ __pycache__
 *.pth.tar
 *.json.gz
 *.json.bz2
-*.csv.bz2
+*.csv.*
 *.pkl.gz
 data/**/raw
 data/**/tsne

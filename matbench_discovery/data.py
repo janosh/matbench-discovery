@@ -113,15 +113,17 @@ def glob_to_df(
 def ase_atoms_from_zip(
     zip_filename: str | Path,
     *,
-    file_filter: Callable[[str], bool] = lambda fname: fname.endswith(".extxyz"),
+    file_filter: Callable[[str, int], bool] = lambda filename, _idx: filename.endswith(
+        ".extxyz"
+    ),
     filename_to_info: bool = False,
-    limit: int | None = None,
+    limit: int | slice | None = None,
 ) -> list[Atoms]:
     """Read ASE Atoms objects from a ZIP file containing extXYZ files.
 
     Args:
         zip_filename (str): Path to the ZIP file.
-        file_filter (Callable[[str], bool], optional): Function to check if a file
+        file_filter (Callable[[str, int], bool], optional): Function to check if a file
             should be read. Defaults to lambda fname: fname.endswith(".extxyz").
         filename_to_info (bool, optional): If True, assign filename to Atoms.info.
             Defaults to False.
@@ -134,8 +136,13 @@ def ase_atoms_from_zip(
     atoms_list = []
     with zipfile.ZipFile(zip_filename) as zip_file:
         desc = f"Reading ASE Atoms from {zip_filename=}"
-        for filename in tqdm(zip_file.namelist()[:limit], desc=desc, mininterval=5):
-            if not file_filter(filename):
+        filenames = zip_file.namelist()
+        if limit is not None:
+            slice_lim = slice(limit) if isinstance(limit, int) else limit
+            filenames = filenames[slice_lim]
+
+        for idx, filename in tqdm(enumerate(filenames), desc=desc, mininterval=5):
+            if not file_filter(filename, idx):
                 continue
             with zip_file.open(filename) as file:
                 content = io.TextIOWrapper(file, encoding="utf-8").read()
