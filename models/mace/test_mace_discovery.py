@@ -117,7 +117,7 @@ run_params = {
     Key.model_params: count_parameters(mace_calc.models[0]),
     "model_name": model_name,
     "dtype": dtype,
-    "ase_filter": "FrechetCellFilter",
+    "cell_filter": "FrechetCellFilter",
 }
 
 run_name = f"{job_name}-{slurm_array_task_id}"

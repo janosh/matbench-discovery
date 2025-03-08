@@ -83,7 +83,7 @@ run_params = {
     "dtype": dtype,
     "versions": {dep: version(dep) for dep in ("numpy", "torch", "matbench_discovery")},
     "ase_optimizer": ase_optimizer,
-    "ase_filter": "FrechetCellFilter",
+    "cell_filter": "FrechetCellFilter",
     "max_steps": max_steps,
     "force_max": force_max,
     "symprec": symprec,

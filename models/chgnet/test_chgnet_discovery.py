@@ -107,7 +107,7 @@ for material_id in tqdm(structures, desc="Relaxing"):
             steps=max_steps,
             fmax=fmax,
             relax_cell=max_steps > 0,
-            ase_filter="FrechetCellFilter",
+            cell_filter="FrechetCellFilter",
         )
         relax_results[material_id] = {
             e_pred_col: relax_result["trajectory"].energies[-1]

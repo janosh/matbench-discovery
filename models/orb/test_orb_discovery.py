@@ -1,5 +1,4 @@
-"""
-pip install git+https://github.com/janosh/matbench-discovery@5c8601a
+"""pip install git+https://github.com/janosh/matbench-discovery@5c8601a
 
 # Required for valid data paths.
 git clone https://github.com/janosh/matbench-discovery
@@ -42,7 +41,7 @@ PREDICTED_ENERGY_COL = "orb_energy"
 def main(
     model_name: str = "orb-v1",  # Or orb-v1-mptrj-only
     ase_optimizer: str = typer.Option("FIRE", help="ASE optimizer to use"),
-    ase_filter: str = typer.Option("frechet", help="ASE filter to use"),
+    cell_filter: str = typer.Option("frechet", help="ASE filter to use"),
     device: str = typer.Option(
         "cuda" if torch.cuda.is_available() else "cpu", help="Device to use"
     ),
@@ -113,7 +112,7 @@ def main(
         "ase_optimizer": ase_optimizer,
         "device": device,
         "model_name": model_name,
-        "ase_filter": ase_filter,
+        "cell_filter": cell_filter,
         "shard": shard,
         "total_shards": total_shards,
     }
