@@ -156,5 +156,5 @@ if __name__ == "__main__":
         "path", type=str, help="Path to the directory with relaxation results."
     )
 
-    args = parser.parse_args()
+    args, _unknown = parser.parse_known_args()
     process_results(args.path)

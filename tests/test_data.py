@@ -140,7 +140,9 @@ def test_atoms_zip_round_trip(
 def test_ase_atoms_from_zip_with_file_filter(tmp_path: Path) -> None:
     zip_path = tmp_path / "test_structures.zip"
     ase_atoms_to_zip(dummy_atoms, zip_path)
-    read_atoms = ase_atoms_from_zip(zip_path, file_filter=lambda name: "1" in name)
+    read_atoms = ase_atoms_from_zip(
+        zip_path, file_filter=lambda name, _idx: "1" in name
+    )
     assert len(read_atoms) == 1
     assert read_atoms[0].get_chemical_formula() == "H2O"
 
@@ -192,6 +194,53 @@ def test_ase_atoms_from_zip_with_limit(tmp_path: Path) -> None:
     # Test with limit greater than the number of structures
     read_atoms = ase_atoms_from_zip(zip_path, limit=10)
     assert len(read_atoms) == 2
+
+
+@pytest.mark.parametrize(
+    "slice_limit, expected_formulas, expected_count",
+    [
+        (slice(1, 3), ["N2", "O2"], 2),
+        (slice(None, 2), ["H2", "N2"], 2),
+        (slice(3, None), ["F2", "Cl2"], 2),
+        (slice(0, None, 2), ["H2", "O2", "Cl2"], 3),
+        (slice(None, None, -1), ["Cl2", "F2", "O2", "N2", "H2"], 5),
+        (slice(5, 5), [], 0),
+        (slice(10, 20), [], 0),
+    ],
+)
+def test_ase_atoms_from_zip_with_slice_limit(
+    tmp_path: Path,
+    slice_limit: slice,
+    expected_formulas: list[str],
+    expected_count: int,
+) -> None:
+    """Test ase_atoms_from_zip with slice objects for the limit parameter."""
+    # Create a zip file with more structures for better slice testing
+    more_atoms = [
+        Atoms("H2", positions=[[0, 0, 0], [0, 0, 1]], cell=[4, 4, 4]),
+        Atoms("N2", positions=[[0, 0, 0], [0, 0, 1.1]], cell=[4, 4, 4]),
+        Atoms("O2", positions=[[0, 0, 0], [0, 0, 1.2]], cell=[4, 4, 4]),
+        Atoms("F2", positions=[[0, 0, 0], [0, 0, 1.4]], cell=[4, 4, 4]),
+        Atoms("Cl2", positions=[[0, 0, 0], [0, 0, 2.0]], cell=[5, 5, 5]),
+    ]
+
+    # Add material IDs to each structure
+    for idx, atoms in enumerate(more_atoms):
+        atoms.info[Key.mat_id] = f"slice_test_{idx}"
+
+    zip_path = tmp_path / "slice_test_structures.zip"
+    ase_atoms_to_zip(more_atoms, zip_path)
+
+    # Test with the parametrized slice
+    read_atoms = ase_atoms_from_zip(zip_path, limit=slice_limit)
+
+    # Check the number of structures returned
+    assert len(read_atoms) == expected_count
+
+    # Check the chemical formulas of the returned structures
+    for idx, formula in enumerate(expected_formulas):
+        if idx < len(read_atoms):
+            assert read_atoms[idx].get_chemical_formula() == formula
 
 
 @pytest.mark.skipif(

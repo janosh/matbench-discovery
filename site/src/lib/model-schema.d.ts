@@ -42,6 +42,17 @@ export type DiatomicsMetrics = {
 } & {
   pred_file?: string | null
   pred_file_url?: string
+  smoothness?: number
+  tortuosity?: number
+  conservation?: number
+  energy_diff_flips?: number
+  energy_grad_norm_max?: number
+  energy_jump?: number
+  force_mae?: number
+  force_flips?: number
+  force_total_variation?: number
+  force_jump?: number
+  force_conservation?: number
 }
 
 export interface ModelMetadata {
