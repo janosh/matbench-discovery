@@ -175,3 +175,6 @@ metrics:
       R2: 0.746 # dimensionless
       missing_preds: 0 # count
       missing_percent: 0.00% # fraction
+  diatomics:
+    pred_file: models/alphanet/2025-03-08-diatomics.json.gz
+    pred_file_url: https://figshare.com/ndownloader/files/52868972
