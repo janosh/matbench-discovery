@@ -23,24 +23,7 @@ from matbench_discovery.diatomics import calc_diatomic_curve, homo_nuc
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 
 
-def save_results(json_path: str, results: dict) -> None:
-    """Save model results to disk in gzipped JSON format.
-
-    Args:
-        json_path (str): Path to save results to.
-        results (dict): Dictionary containing model predictions.
-    """
-    out_dir = os.path.dirname(json_path)
-    os.makedirs(out_dir, exist_ok=True)
-    print(f"Saving results to {json_path}")
-
-    with gzip.open(json_path, mode="wt") as file:
-        json.dump(results, file, indent=2, default=lambda x: x.tolist())
-
-
-# %%
-# EDITABLE CONFIG
-
+# %% editable config
 model_name = "alphanet"
 model_variant = "alphanet-mptrj-v0"
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -55,8 +38,7 @@ json_path = f"{ROOT}/models/{model_name}/{model_variant}/{today}-diatomics.json.
 existing_paths = glob(json_path.replace(today, "*-*-*"))
 if existing_paths:
     print(f"Skipping {model_name}/{model_variant}\n{existing_paths=}")
-    exit()
-
+    raise SystemExit
 
 # distances in Angstrom
 distances = np.linspace(0.1, 6, 100)
@@ -67,6 +49,7 @@ atomic_nums = range(1, 93)
 # generate list of homonuclear pairs [(1, 1), (2, 2), ...]
 homo_nuclear_pairs = [(z, z) for z in atomic_nums]
 
+# results structure: model_name->homo_nuc->distances: list[float], energies: list[float]
 results: defaultdict[str, dict[str, Any]] = defaultdict(
     lambda: {homo_nuc: {}, "distances": distances}
 )
@@ -79,4 +62,10 @@ calc_diatomic_curve(
     distances=distances,
     results=results[model_variant][homo_nuc],
 )
-save_results(json_path, results[model_variant])
+
+out_dir = os.path.dirname(json_path)
+os.makedirs(out_dir, exist_ok=True)
+print(f"Saving results to {json_path}")
+
+with gzip.open(json_path, mode="wt") as file:
+    json.dump(results, file, indent=2, default=lambda x: x.tolist())
