@@ -38,7 +38,7 @@ describe(`DiatomicCurve`, () => {
   })
 
   test(`applies correct styling`, async () => {
-    const style = `background: #f0f0f0;`
+    const style = `background: rgb(240, 240, 240);`
     mount(DiatomicCurve, {
       target: document.body,
       props: { formula: `H₂`, curves: sample_curves, style },
