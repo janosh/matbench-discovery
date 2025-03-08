@@ -91,7 +91,7 @@ metrics:
     kappa_103:
       κ_SRME: 1.310
       pred_file: models/alphanet/2025-03-04-kappa-103-fire-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz #find a lots of imag freqs, will look into this in the future
-      pred_file_url: https://ndownloader.figshare.com/files/52777394
+      pred_file_url: https://figshare.com/ndownloader/files/52869011
   geo_opt:
     pred_file: models/alphanet/2025-03-04-wbm-geo-opt-fire.json.gz
     pred_file_url: https://figshare.com/ndownloader/files/52858202
@@ -116,7 +116,7 @@ metrics:
       analysis_file_url: https://figshare.com/ndownloader/files/52858208
   discovery:
     pred_file: models/alphanet/2025-03-04-wbm-IS2RE.csv.gz
-    pred_file_url: https://ndownloader.figshare.com/files/52776632
+    pred_file_url: https://figshare.com/ndownloader/files/52869026
     pred_col: e_form_per_atom_alphanet
     full_test_set:
       F1: 0.789 # fraction
