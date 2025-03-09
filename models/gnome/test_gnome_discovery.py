@@ -1,3 +1,6 @@
+"""Only a placeholder script to inspect the model predictions. No way to reproduce
+results since DeepMind did not release the model weights."""
+
 # %%
 import pymatviz as pmv
 

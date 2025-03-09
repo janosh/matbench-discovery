@@ -7,6 +7,7 @@ import pymatviz as pmv
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.cli import cli_args
 from matbench_discovery.enums import MbdKey, TestSubset
+from matbench_discovery.metrics.discovery import dfs_metrics
 from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
 from matbench_discovery.preds.discovery import df_each_pred, df_preds
@@ -30,27 +31,31 @@ models_to_plot = [
     for model in cli_args.models
     if show_non_compliant or model_is_compliant(MODEL_METADATA[model.label])
 ]
+model_ranking = (
+    dfs_metrics[test_subset][models_to_plot].sort_values(by="MAE", axis=1).columns[::-1]
+)
 
 fig, df_err, df_std = rolling_mae_vs_hull_dist(
     e_above_hull_true=df_preds[MbdKey.each_true],
-    e_above_hull_preds=df_each_pred[models_to_plot],
+    e_above_hull_preds=df_each_pred[models_to_plot][model_ranking],
     with_sem=False,
     df_rolling_err=df_err,
     df_err_std=df_std,
     show_dummy_mae=False,
-    width=500,
-    height=500,
     legend_loc="below",
+    y_lim=(0, 0.1),
 )
 
-show_n_best_models = None
-for trace in fig.data:
-    model = trace.name.split(" MAE=")[0]
-    if show_n_best_models and model in models_to_plot[show_n_best_models:]:
-        trace.visible = "legendonly"  # show only top models by default
 
-rng = np.random.default_rng()
-small_noise = rng.random(len(df_preds)) * 1e-12
+# Show only the top N models by default
+show_n_best_models = 6
+for trace in fig.data:
+    trace.visible = (
+        True if trace.name in model_ranking[-show_n_best_models:] else "legendonly"
+    )
+
+# add negligible noise to prevent strange binning artifacts in the marginal plot
+small_noise = np.random.default_rng(seed=0).random(len(df_preds)) * 1e-12
 counts, bins = np.histogram(
     df_preds[MbdKey.each_true] + small_noise,
     bins=200,  # match the histogram clf plots.
@@ -65,7 +70,10 @@ fig.data[-1].marker.color = "rgba(0, 150, 200, 1)"
 fig.layout.update(
     yaxis1=dict(domain=[0, 0.75]),  # main yaxis
     yaxis2=dict(  # marginal yaxis
-        domain=[0.8, 1], tickformat="s", tickvals=[*range(0, 100_000, 2000)]
+        domain=[0.8, 1],
+        tickformat="s",
+        tickvals=[*range(0, 100_000, 2_000)],
+        range=[0, 8_000],
     ),
 )
 fig.show()

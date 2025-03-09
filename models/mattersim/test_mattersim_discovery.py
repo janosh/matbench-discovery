@@ -32,9 +32,7 @@ __date__ = "2024-12-16"
 
 
 def relax_atoms_list(
-    atoms_list: list[ase.Atoms],
-    fmax: float = 0.02,
-    steps: int = 500,
+    atoms_list: list[ase.Atoms], fmax: float = 0.02, steps: int = 500
 ) -> list[ase.Atoms]:
     """This function relax the atoms."""
     calc_m3gnet = MatterSimCalculator(load_path="mattersim-v1.0.0-5m.pth")
