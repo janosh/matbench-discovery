@@ -6,6 +6,7 @@ import pymatviz as pmv
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.cli import cli_args
 from matbench_discovery.enums import MbdKey, TestSubset
+from matbench_discovery.metrics.discovery import dfs_metrics
 from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 from matbench_discovery.preds.discovery import df_each_err, df_preds
 
@@ -23,11 +24,14 @@ if test_subset == TestSubset.uniq_protos:
 # %%
 show_non_compliant = globals().get("show_non_compliant", False)
 models_to_plot = [
-    model.label
+    model
     for model in cli_args.models
     if show_non_compliant or model_is_compliant(MODEL_METADATA[model.label])
 ]
-
+models_to_plot = sorted(
+    models_to_plot,
+    key=lambda model: dfs_metrics[test_subset][model.label][pmv.enums.Key.mae.symbol],
+)
 fig = go.Figure()
 fig.layout.yaxis.title = MbdKey.e_above_hull_error
 fig.layout.margin = dict(l=0, r=0, b=0, t=0)
@@ -36,11 +40,20 @@ fig.layout.margin = dict(l=0, r=0, b=0, t=0)
 color_seq = px.colors.qualitative.Plotly
 
 for idx, model in enumerate(models_to_plot):
-    ys = [df_each_err[model].quantile(quant) for quant in (0.05, 0.25, 0.5, 0.75, 0.95)]
+    ys = [
+        df_each_err[model.label].quantile(quant)
+        for quant in (0.05, 0.25, 0.5, 0.75, 0.95)
+    ]
 
     # Use the same color for both box and label
     color = color_seq[idx % len(color_seq)]
-    fig.add_box(y=ys, name=model, width=0.8, marker_color=color)
+    fig.add_box(
+        y=ys,
+        name=model.label,
+        width=0.8,
+        marker_color=color,
+        hoverinfo="y",
+    )
 
     # annotate median with numeric value
     median = ys[2]
@@ -51,18 +64,18 @@ for idx, model in enumerate(models_to_plot):
 fig.layout.showlegend = False
 # use line breaks to offset every other x-label and color them
 x_labels_with_offset = [
-    f"{'<br>' * (idx % 3)}<span style='color: {color_seq[idx % len(color_seq)]}'>"
-    f"{label}</span>"
-    for idx, label in enumerate(models_to_plot)
+    f"<span style='color: {color_seq[idx % len(color_seq)]}'>{model.label}</span>"
+    for idx, model in enumerate(models_to_plot)
 ]
 
 # prevent x-labels from rotating
 fig.layout.xaxis.range = [-0.7, len(models_to_plot) - 0.3]
 fig.layout.xaxis.update(
-    tickangle=0,
-    tickvals=models_to_plot,
+    # tickangle=0,
+    tickvals=[*range(len(models_to_plot))],
     ticktext=x_labels_with_offset,
 )
+fig.layout.yaxis.update(title=MbdKey.e_above_hull_error.label, tickformat=".3")
 fig.show()
 
 

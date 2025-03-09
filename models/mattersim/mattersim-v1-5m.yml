@@ -98,6 +98,8 @@ training_set: [MatterSim]
 
 hyperparams:
   optimizer: AdamW
+  ase_optimizer: FIRE
+  cell_filter: ExpCellFilter
   learning_rate: 5e-4 # initial value, linearly decayed to 0
   seed: 42
   batch_size: 128
