@@ -78,10 +78,10 @@ metrics:
     kappa_103:
       κ_SRME: 1.732
       pred_file: models/orb/orbff-v2/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/ndownloader/files/52134887
+      pred_file_url: https://figshare.com/files/52134887
   geo_opt:
     pred_file: models/orb/orbff-v2/2024-10-11-wbm-geo-opt.json.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52062194
+    pred_file_url: https://figshare.com/files/52062194
     struct_col: orb_structure
     symprec=1e-5:
       rmsd: 0.016 # Å
@@ -91,7 +91,7 @@ metrics:
       symmetry_increase: 0.0031 # fraction
       n_structures: 256963 # count
       analysis_file: models/orb/orbff-v2/2024-10-11-wbm-geo-opt-symprec=1e-5.csv.gz
-      analysis_file_url: https://figshare.com/ndownloader/files/52062287
+      analysis_file_url: https://figshare.com/files/52062287
     symprec=1e-2:
       rmsd: 0.016 # Å
       n_sym_ops_mae: 5.5556 # unitless
@@ -100,10 +100,10 @@ metrics:
       symmetry_increase: 0.0401 # fraction
       n_structures: 256614 # count
       analysis_file: models/orb/orbff-v2/2024-10-11-wbm-geo-opt-symprec=1e-2.csv.gz
-      analysis_file_url: https://figshare.com/ndownloader/files/52062299
+      analysis_file_url: https://figshare.com/files/52062299
   discovery:
     pred_file: models/orb/orbff-v2/2024-10-11-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52057562
+    pred_file_url: https://figshare.com/files/52057562
     pred_col: e_form_per_atom_orb
     full_test_set:
       F1: 0.858 # fraction

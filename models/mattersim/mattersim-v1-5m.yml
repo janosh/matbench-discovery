@@ -126,16 +126,16 @@ metrics:
     kappa_103: # https://github.com/MPA2suite/k_SRME/pull/13
       κ_SRME: 0.574 # dimensionless
       pred_file: models/mattersim/mattersim-v1-5m/2024-12-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/ndownloader/files/52134884
+      pred_file_url: https://figshare.com/files/52134884
   geo_opt:
     pred_file: models/mattersim/mattersim-v1-5M/2024-12-19-wbm-geo-opt.json.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52062176
+    pred_file_url: https://figshare.com/files/52062176
     struct_col: mattersim-v1-5m_structure
   discovery:
     pred_file: models/mattersim/mattersim-v1-5M/2024-12-16-wbm-IS2RE.csv.gz
     # the original Graphormer-based replaced the M3GNet-based MatterSim on the leaderboard
     # pred_file: models/mattersim/2024-06-16-mattersim-graphormer-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52057559
+    pred_file_url: https://figshare.com/files/52057559
     pred_col: e_form_per_atom_mattersim
     full_test_set:
       F1: 0.838 # fraction
@@ -196,4 +196,4 @@ metrics:
       missing_percent: 0.00% # fraction
   diatomics:
     pred_file: models/mattersim/mattersim-v1-5M/2025-02-19-diatomics.json.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52468178
+    pred_file_url: https://figshare.com/files/52468178

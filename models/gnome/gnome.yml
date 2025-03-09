@@ -65,7 +65,7 @@ metrics:
   geo_opt: not available # author's declined to share model-relaxed structures and can't be reproduced without model access
   discovery:
     pred_file: models/gnome/2023-11-01-gnome-50076332-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52057556
+    pred_file_url: https://figshare.com/files/52057556
     pred_col: e_gnome_after_relax
     full_test_set:
       F1: 0.81 # fraction

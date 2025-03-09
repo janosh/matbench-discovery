@@ -91,10 +91,10 @@ metrics:
     kappa_103:
       κ_SRME: 1.676 # eqV2 S without denoising (no DeNS) achieves slightly worse κ_SRME=1.772
       pred_file: models/eqV2/eqV2-s-dens-mp/2024-11-08-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/ndownloader/files/52151558
+      pred_file_url: https://figshare.com/files/52151558
   geo_opt:
     pred_file: models/eqV2/eqV2-s-dens-mp/2024-10-18-wbm-geo-opt.json.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52062392
+    pred_file_url: https://figshare.com/files/52062392
     struct_col: eqV2-31M-dens-MP-p5_structure
     symprec=1e-5:
       rmsd: 0.0138 # Å
@@ -104,7 +104,7 @@ metrics:
       symmetry_increase: 0.0005 # fraction
       n_structures: 256614 # count
       analysis_file: models/eqV2/eqV2-s-dens-mp/2024-10-18-wbm-geo-opt-symprec=1e-5.csv.gz
-      analysis_file_url: https://figshare.com/ndownloader/files/52062569
+      analysis_file_url: https://figshare.com/files/52062569
     symprec=1e-2:
       rmsd: 0.0138 # Å
       n_sym_ops_mae: 3.9922 # unitless
@@ -113,10 +113,10 @@ metrics:
       symmetry_increase: 0.0631 # fraction
       n_structures: 256614 # count
       analysis_file: models/eqV2/eqV2-s-dens-mp/2024-10-18-wbm-geo-opt-symprec=1e-2.csv.gz
-      analysis_file_url: https://figshare.com/ndownloader/files/52062578
+      analysis_file_url: https://figshare.com/files/52062578
   discovery:
     pred_file: models/eqV2/eqV2-s-dens-mp/2024-10-18-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52057568
+    pred_file_url: https://figshare.com/files/52057568
     pred_col: e_form_per_atom_eqV2-31M-dens-MP-p5
     full_test_set:
       F1: 0.798 # fraction

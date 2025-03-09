@@ -47,7 +47,7 @@ metrics:
   geo_opt: not applicable
   discovery:
     pred_file: models/voronoi_rf/2022-11-27-train-test/e-form-preds-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52057550
+    pred_file_url: https://figshare.com/files/52057550
     pred_col: e_form_per_atom_voronoi_rf
     full_test_set:
       F1: 0.344 # fraction
