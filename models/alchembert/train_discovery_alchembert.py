@@ -6,10 +6,13 @@ import lightning
 import pandas as pd
 import torch
 import torch.nn as nn
-import torch.nn.functional as f
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
+from pymatviz.enums import Key
+from torch.nn import functional
 from torch.utils.data import DataLoader, Dataset, random_split
 from transformers import BertConfig, BertModel
+
+from matbench_discovery.enums import DataFiles, MbdKey
 
 seed = 42
 torch.manual_seed(seed)
@@ -19,7 +22,7 @@ if torch.cuda.is_available():
 max_length = 512
 train_batch_size = 32
 val_batch_size = 32
-epoch = 5000
+epoch = 5_000
 patience = 200
 log_every_n_steps = 50
 save_top_k = 1
@@ -33,15 +36,14 @@ test_pad_cased_path = "test_nl_pad_cased_inputs.json"
 
 
 def get_test_data() -> pd.Series:
-    target_col = "e_form_per_atom_mp2020_corrected"
-    df_wbm = pd.read_csv("2022-10-19-wbm-summary.csv")
+    target_col = MbdKey.e_form_dft
+    df_wbm = pd.read_csv(DataFiles.wbm_summary.path).set_index(Key.mat_id)
     return pd.Series(df_wbm[target_col])
 
 
 def get_train_data() -> pd.Series:
     target_col = "formation_energy_per_atom"
-    id_col = "material_id"
-    df_eng = pd.read_csv("2023-01-10-mp-energies.csv").set_index(id_col)
+    df_eng = pd.read_csv(DataFiles.mp_energies.path).set_index(Key.mat_id)
     return pd.Series(df_eng[target_col], index=df_eng.index)
 
 
@@ -89,7 +91,7 @@ class MatBert(lightning.LightningModule):
         attention_mask.cuda()
         y.cuda()
         y_hat = self(input_ids, attention_mask)
-        loss = f.mse_loss(y_hat.float(), y.float())
+        loss = functional.mse_loss(y_hat.float(), y.float())
         self.log("train_mse_loss", loss, on_epoch=True, sync_dist=True)
         return loss
 

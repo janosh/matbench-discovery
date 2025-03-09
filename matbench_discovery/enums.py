@@ -170,7 +170,7 @@ class ModelType(LabelEnum):
     UIP = "UIP", "Universal Interatomic Potential"
     BO_GNN = "BO-GNN", "GNN in a Bayesian Optimization Loop"
     Fingerprint = "Fingerprint", "Models with Structural Fingerprint Features"  # ex. RF
-    Transformer = "Transformer", "Transformer-Based Models"  # ex. Wrenformer
+    Transformer = "Transformer", "Transformer-Based Models"  # Wrenformer, AlchemBERT
     RF = "RF", "Random Forest"
 
 

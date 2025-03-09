@@ -34,67 +34,67 @@ n_estimators: 1
 training_set: [MP 2022]
 
 notes:
-  description: We tested BERT on IS2RE task of Matbench Discovery.
+  description: We tested BERT on the IS2RE task of Matbench Discovery.
 
 metrics:
   discovery:
-    pred_file: /models/alchembert/2025-2-7-alchembert-wbm-IS2RE.csv.gz
+    pred_file: models/alchembert/2024-12-25-alchembert-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/ndownloader/files/52256267
     pred_col: e_form_per_atom_alchembert
     full_test_set:
-      F1: 0.436
-      DAF: 1.900
-      Precision: 0.326
-      Recall: 0.656
-      Accuracy: 0.708
-      TPR: 0.656
-      FPR: 0.281
-      TNR: 0.719
-      FNR: 0.344
-      TP: 28937.0
-      FP: 59830.0
-      TN: 153041.0
-      FN: 15155.0
-      MAE: 0.111
-      RMSE: 0.171
-      R2: 0.102
-      missing_percent: 0.00%,
-      missing_preds: 0
+      F1: 0.415 # fraction
+      DAF: 1.758 # dimensionless
+      Precision: 0.302 # fraction
+      Recall: 0.664 # fraction
+      Accuracy: 0.679 # fraction
+      TPR: 0.664 # fraction
+      FPR: 0.318 # fraction
+      TNR: 0.682 # fraction
+      FNR: 0.336 # fraction
+      TP: 29281.0 # count
+      FP: 67772.0 # count
+      TN: 145099.0 # count
+      FN: 14811.0 # count
+      MAE: 0.119 # eV/atom
+      RMSE: 0.176 # eV/atom
+      R2: 0.042 # dimensionless
+      missing_preds: 2 # count
+      missing_percent: 0.00% # fraction
     most_stable_10k:
-      F1: 0.603
-      DAF: 2.821
-      Precision: 0.431
-      Recall: 1.0
-      Accuracy: 0.431
-      TPR: 1.0
-      FPR: 1.0
-      TNR: 0.0
-      FNR: 0.0
-      TP: 4313.0
-      FP: 5687.0
-      TN: 0.0
-      FN: 0.0
-      MAE: 0.272
-      RMSE: 0.334
-      R2: -0.470
-      missing_percent: 0.00%,
-      missing_preds: 0
+      F1: 0.6 # fraction
+      DAF: 2.803 # dimensionless
+      Precision: 0.428 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.428 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 4285.0 # count
+      FP: 5715.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.285 # eV/atom
+      RMSE: 0.349 # eV/atom
+      R2: -0.599 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
     unique_prototypes:
-      F1: 0.421
-      DAF: 2.001
-      Precision: 0.306
-      Recall: 0.673
-      Accuracy: 0.713
-      TPR: 0.673
-      FPR: 0.280
-      TNR: 0.720
-      FNR: 0.327
-      TP: 22473.0
-      FP: 50988.0
-      TN: 131126.0
-      FN: 10901.0
-      MAE: 0.117
-      RMSE: 0.175
-      R2: 0.096
-      missing_percent: 0.00%,
-      missing_preds: 0
+      F1: 0.399 # fraction
+      DAF: 1.848 # dimensionless
+      Precision: 0.283 # fraction
+      Recall: 0.68 # fraction
+      Accuracy: 0.683 # fraction
+      TPR: 0.68 # fraction
+      FPR: 0.317 # fraction
+      TNR: 0.683 # fraction
+      FNR: 0.32 # fraction
+      TP: 22707.0 # count
+      FP: 57649.0 # count
+      TN: 124465.0 # count
+      FN: 10667.0 # count
+      MAE: 0.125 # eV/atom
+      RMSE: 0.182 # eV/atom
+      R2: 0.023 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction

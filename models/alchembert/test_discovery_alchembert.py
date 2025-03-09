@@ -2,13 +2,16 @@ import lightning
 import pandas as pd
 import torch
 from fire import Fire
+from pymatviz.enums import Key
 from torch.utils.data import DataLoader
 from train_AlchemBERT import MatBert, MyDataset, bert_path, get_test_data, task
 
-torch.manual_seed(42)
+from matbench_discovery.enums import DataFiles
+
+torch.manual_seed(seed=42)
 
 
-predictions_path = "2024-12-25-alchembert-wbm-IS2RE.csv.gz"
+preds_path = "2024-12-25-alchembert-wbm-IS2RE.csv.gz"
 test_pad_cased_path = f"test_{task}_pad_cased_inputs.json"
 
 
@@ -35,14 +38,11 @@ def main(best_epoch: int, val_mae: float) -> None:
     predictions = trainer.predict(model, test_loader)
 
     predictions = [tensor.cpu().item() for tensor in predictions]
-    results = {"e_form_per_atom_alchembert": predictions}
-    results = pd.DataFrame(results)
-    wbm = pd.read_csv("2022-10-19-wbm-summary.csv")
-    material_id = wbm["material_id"]
-    results = pd.concat([material_id, results], axis=1)
-    print(results)
-    results.to_csv(predictions_path, index=False, compression="gzip")
-    print(predictions_path)
+    df_preds = pd.DataFrame({"e_form_per_atom_alchembert": predictions})
+    df_wbm = pd.read_csv(DataFiles.wbm_summary.path).set_index(Key.mat_id)
+    df_preds = pd.concat([df_wbm.index, df_preds], axis=1)
+    df_preds.to_csv(preds_path)
+    print(f"Results saved to {preds_path}")
 
 
 # %%
