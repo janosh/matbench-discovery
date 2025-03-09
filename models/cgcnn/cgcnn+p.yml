@@ -54,7 +54,7 @@ metrics:
   geo_opt: not applicable
   discovery:
     pred_file: models/cgcnn/2023-02-05-cgcnn-perturb=5-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/ndownloader/files/51607274
+    pred_file_url: https://figshare.com/files/51607274
     pred_col: e_form_per_atom_cgcnn_pred_ens
     full_test_set:
       F1: 0.51 # fraction

@@ -92,10 +92,10 @@ metrics:
     kappa_103:
       κ_SRME: 1.310
       pred_file: models/alphanet/2025-03-04-kappa-103-fire-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz #find a lots of imag freqs, will look into this in the future
-      pred_file_url: https://figshare.com/ndownloader/files/52869011
+      pred_file_url: https://figshare.com/files/52869011
   geo_opt:
     pred_file: models/alphanet/2025-03-04-wbm-geo-opt-fire.json.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52858202
+    pred_file_url: https://figshare.com/files/52858202
     struct_col: alphanet_structure
     symprec=1e-5:
       rmsd: 0.0227 # Å
@@ -105,7 +105,7 @@ metrics:
       symmetry_increase: 0.0024 # fraction
       n_structures: 256963 # count
       analysis_file: models/alphanet/2025-03-04-wbm-geo-opt-fire-symprec=1e-5-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/ndownloader/files/52858205
+      analysis_file_url: https://figshare.com/files/52858205
     symprec=1e-2:
       rmsd: 0.0227 # Å
       n_sym_ops_mae: 8.1732 # unitless
@@ -114,10 +114,10 @@ metrics:
       symmetry_increase: 0.0419 # fraction
       n_structures: 256963 # count
       analysis_file: models/alphanet/2025-03-04-wbm-geo-opt-fire-symprec=1e-2-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/ndownloader/files/52858208
+      analysis_file_url: https://figshare.com/files/52858208
   discovery:
     pred_file: models/alphanet/2025-03-04-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52869026
+    pred_file_url: https://figshare.com/files/52869026
     pred_col: e_form_per_atom_alphanet
     full_test_set:
       F1: 0.789 # fraction
@@ -178,4 +178,4 @@ metrics:
       missing_percent: 0.00% # fraction
   diatomics:
     pred_file: models/alphanet/2025-03-08-diatomics.json.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52868972
+    pred_file_url: https://figshare.com/files/52868972

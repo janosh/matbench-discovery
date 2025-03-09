@@ -73,10 +73,10 @@ metrics:
     kappa_103:
       κ_SRME: 0.412
       pred_file: models/mace/mace-mpa-0/2024-11-25-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/ndownloader/files/52134875
+      pred_file_url: https://figshare.com/files/52134875
   geo_opt:
     pred_file: models/mace/mace-mpa-0/2025-01-30-wbm-IS2RE-FIRE.json.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52305026
+    pred_file_url: https://figshare.com/files/52305026
     struct_col: mace_structure
     symprec=1e-2:
       rmsd: 0.0143 # Å
@@ -86,7 +86,7 @@ metrics:
       symmetry_increase: 0.1231 # fraction
       n_structures: 256963 # count
       analysis_file: models/mace/mace-mpa-0/2025-01-30-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.3.3.csv.gz
-      analysis_file_url: https://figshare.com/ndownloader/files/52305101
+      analysis_file_url: https://figshare.com/files/52305101
     symprec=1e-5:
       rmsd: 0.0143 # Å
       n_sym_ops_mae: 1.8808 # unitless
@@ -95,10 +95,10 @@ metrics:
       symmetry_increase: 0.2305 # fraction
       n_structures: 256963 # count
       analysis_file: models/mace/mace-mpa-0/2025-01-30-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.3.3.csv.gz
-      analysis_file_url: https://figshare.com/ndownloader/files/52305104
+      analysis_file_url: https://figshare.com/files/52305104
   discovery:
     pred_file: models/mace/mace-mpa-0/2024-12-09-wbm-IS2RE-FIRE.csv.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52057541
+    pred_file_url: https://figshare.com/files/52057541
     pred_col: e_form_per_atom_mace
     full_test_set:
       F1: 0.836 # fraction
@@ -159,4 +159,4 @@ metrics:
       missing_percent: 0.00% # fraction
   diatomics:
     pred_file: models/mace/mace-mpa-0/2025-02-13-diatomics.json.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52449437
+    pred_file_url: https://figshare.com/files/52449437

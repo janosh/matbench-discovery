@@ -61,10 +61,10 @@ metrics:
     kappa_103:
       κ_SRME: 1.412
       pred_file: models/m3gnet/m3gnet-matgl-mp-2021-2-8-pes/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/ndownloader/files/52134866
+      pred_file_url: https://figshare.com/files/52134866
   geo_opt:
     pred_file: models/m3gnet/m3gnet-tf-manual-sampling/2023-06-01-wbm-geo-opt.json.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52062011
+    pred_file_url: https://figshare.com/files/52062011
     struct_col: m3gnet_structure
     symprec=1e-5:
       rmsd: 0.0217 # Å
@@ -74,7 +74,7 @@ metrics:
       symmetry_increase: 0.1804 # fraction
       n_structures: 256963 # count
       analysis_file: models/m3gnet/m3gnet-tf-manual-sampling/2023-06-01-wbm-geo-opt-symprec=1e-5.csv.gz
-      analysis_file_url: https://figshare.com/ndownloader/files/52062014
+      analysis_file_url: https://figshare.com/files/52062014
     symprec=1e-2:
       rmsd: 0.0217 # Å
       n_sym_ops_mae: 2.0111 # unitless
@@ -83,10 +83,10 @@ metrics:
       symmetry_increase: 0.1278 # fraction
       n_structures: 256614 # count
       analysis_file: models/m3gnet/m3gnet-tf-manual-sampling/2023-06-01-wbm-geo-opt-symprec=1e-2.csv.gz
-      analysis_file_url: https://figshare.com/ndownloader/files/52062017
+      analysis_file_url: https://figshare.com/files/52062017
   discovery:
     pred_file: models/m3gnet/m3gnet-tf-manual-sampling/2023-12-28-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52057535
+    pred_file_url: https://figshare.com/files/52057535
     pred_col: e_form_per_atom_m3gnet
     full_test_set:
       F1: 0.576 # fraction

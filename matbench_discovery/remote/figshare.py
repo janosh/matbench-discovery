@@ -18,7 +18,7 @@ BASE_URL: Final[str] = "https://api.figshare.com/v2"
 # created if the ID is None. Be sure to paste the new article ID into the
 # ARTICLE_IDS dict below! It'll be printed by this script.
 ARTICLE_URL_PREFIX: Final = "https://figshare.com/articles/dataset"
-DOWNLOAD_URL_PREFIX: Final = "https://figshare.com/ndownloader/files"
+DOWNLOAD_URL_PREFIX: Final = "https://figshare.com/files"
 ARTICLE_IDS: Final[dict[str, int | None]] = {
     "model_preds_discovery": 28187990,
     "model_preds_geo_opt": 28187999,

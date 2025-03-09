@@ -54,7 +54,7 @@ metrics:
   geo_opt: not applicable
   discovery:
     pred_file: models/wrenformer/wrenformer-ens=10/2022-11-15-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52057553
+    pred_file_url: https://figshare.com/files/52057553
     pred_col: e_form_per_atom_wrenformer_pred_ens
     full_test_set:
       F1: 0.479 # fraction

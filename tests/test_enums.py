@@ -170,16 +170,12 @@ def test_data_files_enum() -> None:
     # Test that paths are constructed correctly
     assert DataFiles.mp_energies.rel_path == "mp/2025-02-01-mp-energies.csv.gz"
     assert DataFiles.mp_energies.name == "mp_energies"
-    assert DataFiles.mp_energies.url.startswith(
-        "https://figshare.com/ndownloader/files/"
-    )
+    assert DataFiles.mp_energies.url.startswith("https://figshare.com/files/")
 
     # Test that multiple files exist and have correct attributes
     assert DataFiles.wbm_summary.rel_path == "wbm/2023-12-13-wbm-summary.csv.gz"
     assert DataFiles.wbm_summary.path == f"{DATA_DIR}/wbm/2023-12-13-wbm-summary.csv.gz"
-    assert DataFiles.wbm_summary.url.startswith(
-        "https://figshare.com/ndownloader/files/"
-    )
+    assert DataFiles.wbm_summary.url.startswith("https://figshare.com/files/")
 
 
 @pytest.mark.parametrize("data_file", DataFiles)
@@ -190,7 +186,7 @@ def test_data_files_enum_urls(
 
     name, url = data_file.name, data_file.url
     # check that URL is a figshare download
-    assert "figshare.com/ndownloader/files/" in url, (
+    assert "figshare.com/files/" in url, (
         f"URL for {name} is not a Figshare download URL: {url}"
     )
 
@@ -329,7 +325,7 @@ def check_url(session: requests.Session, url: str, desc: str) -> None:
             assert "Too Many Requests" in response.reason, f"{response.reason=}"
             warnings.warn(f"{response.reason=}", stacklevel=2)
     except (requests.RequestException, AssertionError) as exc:
-        exc.add_note(f"Failed to validate\n{url}\n{desc}, {http_status=}")
+        exc.add_note(f"Failed to validate\n{url}\n{desc}\n{http_status=}")
         raise
 
 

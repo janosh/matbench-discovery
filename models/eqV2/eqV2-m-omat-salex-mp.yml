@@ -89,10 +89,10 @@ metrics:
     kappa_103:
       κ_SRME: 1.771
       pred_file: models/eqV2/eqV2-m-omat-salex-mp/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/ndownloader/files/52134893
+      pred_file_url: https://figshare.com/files/52134893
   geo_opt:
     pred_file: models/eqV2/eqV2-m-omat-salex-mp/2024-10-18-wbm-geo-opt.json.gz
-    pred_file_url: https://figshare.com/ndownloader/files/51607436
+    pred_file_url: https://figshare.com/files/51607436
     struct_col: eqV2-86M-omat-mp-salex_structure
     symprec=1e-5:
       rmsd: 0.0138 # Å
@@ -102,7 +102,7 @@ metrics:
       symmetry_increase: 0.0005 # fraction
       n_structures: 256614 # count
       analysis_file: models/eqV2/eqV2-m-omat-salex-mp/2024-10-18-wbm-geo-opt-symprec=1e-5.csv.gz
-      analysis_file_url: https://figshare.com/ndownloader/files/52302437
+      analysis_file_url: https://figshare.com/files/52302437
     symprec=1e-2:
       rmsd: 0.0112 # Å
       n_sym_ops_mae: 2.077 # unitless
@@ -111,10 +111,10 @@ metrics:
       symmetry_increase: 0.1077 # fraction
       n_structures: 256614 # count
       analysis_file: models/eqV2/eqV2-m-omat-salex-mp/2024-10-18-wbm-geo-opt-symprec=1e-2.csv.gz
-      analysis_file_url: https://figshare.com/ndownloader/files/52302443
+      analysis_file_url: https://figshare.com/files/52302443
   discovery:
     pred_file: models/eqV2/eqV2-m-omat-salex-mp/2024-10-18-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52057571
+    pred_file_url: https://figshare.com/files/52057571
     pred_col: e_form_per_atom_eqV2-86M-omat-mp-salex
     full_test_set:
       F1: 0.896 # fraction

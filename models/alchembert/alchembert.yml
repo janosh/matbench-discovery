@@ -39,7 +39,7 @@ notes:
 metrics:
   discovery:
     pred_file: models/alchembert/2025-2-7-alchembert-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52874099
+    pred_file_url: https://figshare.com/files/52874099
     pred_col: e_form_per_atom_alchembert
     full_test_set:
       F1: 0.436 # fraction
