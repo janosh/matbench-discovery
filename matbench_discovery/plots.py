@@ -263,7 +263,7 @@ def rolling_mae_vs_hull_dist(
             predicting the target mean.
         pbar (bool, optional): If True, show a progress bar during rolling MAE
             calculation. Defaults to True.
-        legend_loc (Literal["figure", "below"], optional): Location of the legend.
+        legend_loc ("figure" | "below", optional): Location of the legend.
         **kwargs: Additional keyword arguments to pass to df.plot().
 
     Returns:
@@ -348,13 +348,8 @@ def rolling_mae_vs_hull_dist(
         # if error is low, move legend to the top left
         leg_y = 1 if y_anchor == "top" else 0.02
         fig.layout.legend.update(
-            title="",
-            x=0.02,
-            y=leg_y,
-            bgcolor="rgba(0,0,0,0)",
-            yanchor=y_anchor,
+            title="", x=0.02, y=leg_y, bgcolor="rgba(0,0,0,0)", yanchor=y_anchor
         )
-
     elif legend_loc == "below":
         fig.layout.legend.update(
             title="",
