@@ -12,10 +12,12 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery.data import df_wbm
+from matbench_discovery.enums import Model
 
 # Path to the tar.gz archive
 module_dir = os.path.dirname(__file__)
-tgz_path = f"{module_dir}/2024-12-19-wbm-relax-traj-mattersim-v1-5M.tgz"
+model_key = Model.mattersim_v1_5m.key
+tgz_path = f"{module_dir}/{model_key}/2024-12-19-wbm-relax-traj.tgz"
 
 # Dictionary to store structures
 structures_dict: dict[str, dict[str, Any]] = {}
@@ -53,11 +55,16 @@ with tarfile.open(tgz_path, "r:gz") as tar:
         # Store in dictionary with material_id as key
         structures_dict[mat_id] = structure.as_dict()
 
+
 # Save to compressed JSON
-pmg_json_path = "mattersim-v1-5M-relaxed-structures.json.gz"
-pd.Series(structures_dict).to_json(pmg_json_path)
+pmg_json_path = f"{module_dir}/{model_key}/2024-12-19-wbm-geo-opt.json.gz"
+df_structs = pd.Series(structures_dict).to_frame()
+df_structs.index.name = Key.mat_id
+df_structs.columns = [f"{model_key}_{Key.structure}"]
+df_structs.reset_index().to_json(pmg_json_path)
+print(f"Saved {len(df_structs):,} structures to {pmg_json_path}")
 
 
 # %% reload from disk
-srs_relaxed = pd.read_json(pmg_json_path, typ="series")
-print(f"{len(srs_relaxed)=:,}")
+df_from_disk = pd.read_json(pmg_json_path, typ="series").to_frame()
+print(f"{len(df_from_disk)=:,}")

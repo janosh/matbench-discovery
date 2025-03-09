@@ -287,3 +287,107 @@ def test_get_existing_files_404() -> None:
 
     with patch("requests.request", return_value=mock_response):
         assert figshare.get_existing_files(12345) == {}
+
+
+@pytest.mark.parametrize(
+    "status_code,expected_result",
+    [
+        (204, True),  # Success case
+        (200, True),  # Alternative success case
+    ],
+)
+def test_delete_file_success(status_code: int, expected_result: bool) -> None:
+    """Test delete_file function with successful deletion."""
+    _mock_response = MagicMock(status_code=status_code)
+
+    with patch(
+        "matbench_discovery.remote.figshare.make_request", return_value=None
+    ) as mock_make_request:
+        result = figshare.delete_file(12345, 67890)
+        assert result == expected_result
+        mock_make_request.assert_called_once_with(
+            "DELETE", f"{figshare.BASE_URL}/account/articles/12345/files/67890"
+        )
+
+
+def test_delete_file_error() -> None:
+    """Test delete_file function with error during deletion."""
+    with patch(
+        "matbench_discovery.remote.figshare.make_request",
+        side_effect=Exception("API Error"),
+    ) as mock_request:
+        assert figshare.delete_file(12345, 67890) is False
+        mock_request.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "force_reupload,file_exists,expected_upload,expected_delete",
+    [
+        (False, False, True, False),  # File doesn't exist, should upload
+        (False, True, False, False),  # File exists, shouldn't upload or delete
+        (True, False, True, False),  # File doesn't exist, should upload, no delete
+        (
+            True,
+            True,
+            True,
+            True,
+        ),  # File exists, force reupload, should delete and upload
+    ],
+)
+def test_upload_file_if_needed(
+    force_reupload: bool,
+    file_exists: bool,
+    expected_upload: bool,
+    expected_delete: bool,
+    tmp_path: Path,
+) -> None:
+    """Test upload_file_if_needed with various combinations of parameters."""
+    test_file = tmp_path / "test_file.txt"
+    test_file.write_text("test content")
+    file_id = 67890 if file_exists else None
+
+    mock_delete = MagicMock(return_value=True)
+    mock_upload = MagicMock(return_value=12345)
+
+    with patch.multiple(
+        "matbench_discovery.remote.figshare",
+        get_file_hash_and_size=MagicMock(return_value=("test_hash", 12)),
+        file_exists_with_same_hash=MagicMock(return_value=(file_exists, file_id)),
+        delete_file=mock_delete,
+        upload_file=mock_upload,
+    ):
+        result_id, was_uploaded = figshare.upload_file_if_needed(
+            54321, str(test_file), force_reupload=force_reupload
+        )
+
+        # Verify expected behavior
+        assert mock_delete.called == expected_delete
+        assert mock_upload.called == expected_upload
+        assert was_uploaded == expected_upload
+        assert result_id == (12345 if expected_upload else file_id)
+
+
+def test_upload_file_if_needed_delete_failure(tmp_path: Path) -> None:
+    """Test upload_file_if_needed when delete fails but force_reupload is True."""
+    test_file = tmp_path / "test_file.txt"
+    test_file.write_text("test content")
+
+    mock_delete = MagicMock(return_value=False)
+    mock_upload = MagicMock()
+
+    with patch.multiple(
+        "matbench_discovery.remote.figshare",
+        get_file_hash_and_size=MagicMock(return_value=("test_hash", 12)),
+        file_exists_with_same_hash=MagicMock(return_value=(True, 67890)),
+        delete_file=mock_delete,
+        upload_file=mock_upload,
+    ):
+        result_id, was_uploaded = figshare.upload_file_if_needed(
+            54321, str(test_file), force_reupload=True
+        )
+
+        # Verify expected behavior
+        assert mock_delete.called
+        assert not mock_upload.called
+        assert not was_uploaded
+        assert result_id == 67890

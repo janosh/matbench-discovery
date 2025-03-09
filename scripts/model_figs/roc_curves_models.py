@@ -8,7 +8,7 @@ from matbench_discovery import plots as plots
 from matbench_discovery.cli import cli_args
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.models import MODEL_METADATA, model_is_compliant
-from matbench_discovery.preds.discovery import df_each_pred, df_preds
+from matbench_discovery.preds.discovery import df_each_pred, df_metrics, df_preds
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-01-30"
@@ -26,7 +26,6 @@ models_to_plot = [
     for model in cli_args.models
     if show_non_compliant or model_is_compliant(MODEL_METADATA[model.label])
 ]
-df_each_pred = df_each_pred[models_to_plot]
 
 
 # %% Convert E_(hull dist) continuous targets to binary classification labels
@@ -34,14 +33,30 @@ binary_targets = (df_preds[MbdKey.each_true] > STABILITY_THRESHOLD).astype(int)
 
 fig = pmv.roc_curve_plotly(
     targets=binary_targets,
-    probs_positive={col: (df_each_pred[col].to_numpy()) for col in df_each_pred},
+    probs_positive={
+        col: (df_each_pred[col].to_numpy()) for col in df_each_pred[models_to_plot]
+    },
 )
-fig.show()
+# Show only the top N models by default
+show_n_best_models = 10
+best_models = (
+    df_metrics[models_to_plot].loc["F1"].sort_values().index[-show_n_best_models:]
+)
+for trace in fig.data:
+    trace.visible = (
+        True
+        if any(
+            (trace.name or "").startswith((model_name, "No skill"))
+            for model_name in best_models
+        )
+        else "legendonly"
+    )
 
-img_suffix = "" if show_non_compliant else "-only-compliant"
-img_name = f"roc-models{img_suffix}"
+fig.show()
 
 
 # %%
+img_suffix = "" if show_non_compliant else "-only-compliant"
+img_name = f"roc-models{img_suffix}"
 pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
 pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf")

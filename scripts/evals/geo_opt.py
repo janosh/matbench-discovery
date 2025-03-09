@@ -7,7 +7,7 @@ https://github.com/FAIR-Chem/fairchem/blob/6329e922/src/fairchem/core/modules/ev
 """
 
 # %%
-import importlib
+import importlib.metadata
 import os
 
 import numpy as np
