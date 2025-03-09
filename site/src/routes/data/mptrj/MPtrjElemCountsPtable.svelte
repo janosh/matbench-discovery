@@ -1,15 +1,21 @@
 <script lang="ts">
   import { data_files, PtableHeatmap } from '$lib'
+  import type { ComponentProps } from 'svelte'
 
-  export let log = false // log color scale
-  export let count_mode = `occurrence`
+  interface Props extends ComponentProps<typeof PtableHeatmap> {
+    count_mode?: string
+  }
+
+  let { count_mode = `occurrence`, ...rest }: Props = $props()
 
   const elem_counts = import.meta.glob(`../mp-trj-element-counts-by-*.json`, {
     eager: true,
     import: `default`,
   })
 
-  $: mp_trj_elem_counts = elem_counts[`../mp-trj-element-counts-by-${count_mode}.json`]
+  let mp_trj_elem_counts = $derived(
+    elem_counts[`../mp-trj-element-counts-by-${count_mode}.json`],
+  )
 </script>
 
 <p>
@@ -20,7 +26,6 @@
 
 <PtableHeatmap
   heatmap_values={mp_trj_elem_counts}
-  {log}
-  {...$$restProps}
+  {...rest}
   color_bar_props={{ label: `MPtrj element counts by ${count_mode}` }}
 />

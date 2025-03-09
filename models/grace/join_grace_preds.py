@@ -28,14 +28,12 @@ task_type = Task.IS2RE  # or Task.RS2RE, depending on what you processed
 
 
 def process_results(path: str) -> None:
-    """
-    Processes relaxation results from a given path.
+    """Processes relaxation results from a given path.
 
     Args:
         path (str): The path to the directory containing the .json.gz files from each
             job in the job array.
     """
-
     if match := re.match(r"^(\d{4}-\d{2}-\d{2})-(.*)-wbm.*", path):
         date, model_name = match[0], match[1]
         print(f"{date=} {model_name=}")
@@ -126,28 +124,18 @@ def process_results(path: str) -> None:
         )
     ]
 
-    # save relaxed structures
+    # save relaxed structures and final energies
+    out_path = f"{out_dir}/{model_name}/{date}"
     df_grace.to_json(
-        f"{out_dir}/{model_name}_{date}-wbm-IS2RE-FIRE.json.gz",
-        default_handler=as_dict_handler,
+        f"{out_path}-wbm-IS2RE-FIRE.json.gz", default_handler=as_dict_handler
     )
-    df_grace = df_grace.drop(columns=[struct_col, Key.computed_structure_entry])
+    df_grace = df_grace.round(4)
+    df_grace.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
 
     df_wbm[[*df_grace]] = df_grace
-
-    # %%
     bad_mask = abs(df_wbm[e_form_grace_col] - df_wbm[MbdKey.e_form_dft]) > 5
     n_preds = len(df_wbm[e_form_grace_col].dropna())
     print(f"{sum(bad_mask)=} is {sum(bad_mask) / len(df_wbm):.2%} of {n_preds:,}")
-
-    df_grace = df_grace.round(4)
-    df_grace.select_dtypes("number").to_csv(f"{out_dir}/{model_name}_{date}.csv.gz")
-    df_grace.reset_index().to_json(
-        f"{out_dir}/{model_name}_{date}.json.gz", default_handler=as_dict_handler
-    )
-    df_bad = df_grace[bad_mask].copy()
-    df_bad[MbdKey.e_form_dft] = df_wbm[MbdKey.e_form_dft]
-    df_bad.to_csv(f"{out_dir}/{model_name}_{date}_bad.csv")
 
 
 if __name__ == "__main__":
@@ -156,5 +144,5 @@ if __name__ == "__main__":
         "path", type=str, help="Path to the directory with relaxation results."
     )
 
-    args = parser.parse_args()
+    args, _unknown = parser.parse_known_args()
     process_results(args.path)

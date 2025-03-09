@@ -7,6 +7,7 @@ import { unified } from 'unified'
 import type { ModelData } from './types'
 
 export { default as TRAINING_SETS } from '$data/training-sets.yml'
+export { default as DiatomicCurve } from './DiatomicCurve.svelte'
 export { default as Footer } from './Footer.svelte'
 export { default as GeoOptMetricsTable } from './GeoOptMetricsTable.svelte'
 export { default as HeatmapTable } from './HeatmapTable.svelte'
@@ -30,13 +31,13 @@ export function model_is_compliant(model: ModelData): boolean {
   return model.training_set.every((itm) => allowed_sets.includes(itm))
 }
 
-const model_metadata_files = import.meta.glob(`$root/models/[^_]**/[^_]*.yml`, {
+export const MODEL_METADATA_PATHS = import.meta.glob(`$root/models/[^_]**/[^_]*.yml`, {
   eager: true,
   import: `default`,
 }) as Record<string, ModelData>
 
 // merge computed and static model metadata
-export const MODEL_METADATA = Object.entries(model_metadata_files)
+export const MODEL_METADATA = Object.entries(MODEL_METADATA_PATHS)
   .filter(
     // ignore models that aren't completed
     ([_key, metadata]) => (metadata?.status ?? `complete`) == `complete`,

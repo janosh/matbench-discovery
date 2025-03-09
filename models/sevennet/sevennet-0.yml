@@ -45,6 +45,7 @@ hyperparams:
   max_force: 0.05
   max_steps: 500
   ase_optimizer: FIRE
+  cell_filter: FrechetCellFilter
   optimizer: Adam
   loss: Huber - delta=0.01
   loss_weights:

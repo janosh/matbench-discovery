@@ -36,20 +36,11 @@ def test_classify_stable(
 
 def test_stable_metrics() -> None:
     metrics = stable_metrics(np.arange(-1, 1, 0.1), np.arange(1, -1, -0.1), fillna=True)
-    for key, val in dict(
-        DAF=0,
-        Precision=0,
-        Recall=0,
-        Accuracy=0,
-        TPR=0,
-        FPR=1,
-        TNR=0,
-        FNR=1,
-        MAE=0.999,
-        RMSE=1.157,
-        R2=-3.030,
-    ).items():
-        assert metrics[key] == pytest.approx(val, abs=1e-3), f"{key=}"
+    expected = dict(
+        DAF=0.0, Precision=0, Recall=0, Accuracy=0, TPR=0, FPR=1, TNR=0, FNR=1
+    )
+    expected |= dict(MAE=0.999, RMSE=1.157, R2=-3.030)
+    assert {k: metrics[k] for k in expected} == pytest.approx(expected, abs=1e-3)
 
     assert math.isnan(metrics["F1"])
 

@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 from matbench_discovery.data import as_dict_handler, df_wbm
 from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
-from matbench_discovery.enums import DataFiles, MbdKey, Task
+from matbench_discovery.enums import DataFiles, MbdKey, Model, Task
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-01"
@@ -23,9 +23,10 @@ __date__ = "2023-03-01"
 
 # %%
 module_dir = os.path.dirname(__file__)
+model_name = Model.mace_mpa_0.key
 task_type = Task.IS2RE
-date = "2024-12-09"
-glob_pattern = f"{date}-mace-wbm-{task_type}*/*.json.gz"
+date = "2025-01-30"
+glob_pattern = f"{model_name}/{date}-wbm-{task_type}*/*.json.gz"
 file_paths = sorted(glob(f"{module_dir}/{glob_pattern}"))
 print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
@@ -100,13 +101,7 @@ print(f"{sum(bad_mask)=} is {sum(bad_mask) / len(df_wbm):.2%} of {n_preds:,}")
 out_path = file_paths[0].rsplit("/", 1)[0]
 df_mace = df_mace.round(4)
 df_mace.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
-
-df_bad = df_mace[bad_mask].drop(columns=[Key.computed_structure_entry, struct_col])
-df_bad[MbdKey.e_form_dft] = df_wbm[MbdKey.e_form_dft]
-df_bad.to_csv(f"{out_path}-bad.csv")
-
 df_mace.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
-
 
 # in_path = f"{module_dir}/2024-07-20-mace-wbm-IS2RE-FIRE"
 # df_mace = pd.read_csv(f"{in_path}.csv.gz").set_index(Key.mat_id)

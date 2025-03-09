@@ -3,7 +3,6 @@ into single file.
 """
 
 from glob import glob
-from pathlib import Path
 from typing import Annotated
 
 import pandas as pd
@@ -33,10 +32,9 @@ def join_predictions(
     ] = False,
 ) -> None:
     """Calculate formation energy per atom, apply MP corrections and write single
-    results file."""
+    results file.
+    """
     e_form_fairchem_col = f"e_form_per_atom_{model_name}"
-    struct_col = f"{model_name}_structure"
-
     glob_pattern = f"{model_name}*.json.gz"
     file_paths = sorted(glob(f"{input_path}/{glob_pattern}"))
 
@@ -101,17 +99,9 @@ def join_predictions(
     print(f"{sum(bad_mask)=} is {sum(bad_mask) / len(df_wbm):.2%} of {n_preds:,}")
     df_fairchem = df_fairchem.round(4)
 
-    out_path = Path(out_path)
-
-    df_fairchem.select_dtypes("number").to_csv(out_path / f"{model_name}.csv.gz")
-    df_bad = df_fairchem[bad_mask].drop(
-        columns=[Key.computed_structure_entry, struct_col]
-    )
-    df_bad[MbdKey.e_form_dft] = df_wbm[MbdKey.e_form_dft]
-    df_bad.to_csv(f"{out_path}-bad.csv")
-
+    df_fairchem.select_dtypes("number").to_csv(f"{out_path}/{model_name}.csv.gz")
     df_fairchem.reset_index().to_json(
-        out_path / f"{model_name}.json.gz", default_handler=as_dict_handler
+        f"{out_path}/{model_name}.json.gz", default_handler=as_dict_handler
     )
 
 

@@ -7,12 +7,13 @@ date_published: "2022-02-05"
 authors:
   - name: Chi Chen
     affiliation: UC San Diego
-    role: Model
     orcid: https://orcid.org/0000-0001-8008-7043
+    github: https://github.com/chc273
   - name: Shyue Ping Ong
     affiliation: UC San Diego
     orcid: https://orcid.org/0000-0001-5726-2587
     email: ongsp@ucsd.edu
+    github: https://github.com/shyuep
 
 repo: https://github.com/materialsvirtuallab/m3gnet
 url: https://materialsvirtuallab.github.io/m3gnet
@@ -40,6 +41,8 @@ hyperparams:
   batch_size: 32
   learning_rate: 1e-3
   optimizer: Adam
+  ase_optimizer: FIRE
+  cell_filter: ExpCellFilter # see https://github.com/materialsvirtuallab/m3gnet/blob/3a8b14dfd/m3gnet/models/_dynamics.py#L122
   loss_weights:
     energy: 1
     force: 1

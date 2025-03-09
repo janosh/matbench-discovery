@@ -1,8 +1,8 @@
 import yaml from '@rollup/plugin-yaml'
 import { sveltekit } from '@sveltejs/kit/vite'
-import type { UserConfig } from 'vite'
+import { defineConfig } from 'vite'
 
-export default {
+export default defineConfig(({ mode }) => ({
   plugins: [sveltekit(), yaml({ extensions: [`.yml`, `.yaml`, `.cff`] })],
 
   server: {
@@ -20,5 +20,10 @@ export default {
     coverage: {
       reporter: [`text`, `json-summary`],
     },
+    setupFiles: `tests/index.ts`,
   },
-} satisfies UserConfig
+
+  resolve: {
+    conditions: mode === `test` ? [`browser`] : [],
+  },
+}))

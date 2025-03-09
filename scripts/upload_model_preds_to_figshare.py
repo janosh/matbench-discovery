@@ -10,7 +10,7 @@ import argparse
 import os
 import tomllib
 from collections.abc import Sequence
-from typing import Any, Final
+from typing import Any, Final, Literal
 
 import yaml
 from tqdm import tqdm
@@ -46,9 +46,7 @@ def parse_args(args: Sequence[str] | None = None) -> argparse.Namespace:
         nargs="+",
         choices=list(MODELING_TASKS),
         default=list(MODELING_TASKS),
-        help=(
-            "Space-separated list of modeling tasks to update. Defaults to all tasks."
-        ),
+        help="Space-separated list of modeling tasks to update. Defaults to all tasks.",
     )
     parser.add_argument(
         "-n",
@@ -56,8 +54,19 @@ def parse_args(args: Sequence[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Print what would be uploaded without actually uploading",
     )
+    parser.add_argument(
+        "--file-type",
+        choices=["all", "analysis", "pred"],
+        default="all",
+        help="Type of files to upload: analysis, pred or all (default)",
+    )
+    parser.add_argument(
+        "--force-reupload",
+        action="store_true",
+        help="Force reupload of files even if they already exist with the same hash",
+    )
 
-    return parser.parse_args(args)
+    return parser.parse_known_args(args)[0]
 
 
 def get_article_metadata(task: str) -> dict[str, Sequence[object]]:
@@ -80,8 +89,20 @@ def get_article_metadata(task: str) -> dict[str, Sequence[object]]:
     }
 
 
+def should_process_file(
+    key: str, file_type: Literal["all", "analysis", "pred"]
+) -> bool:
+    """Filter files by type."""
+    return file_type == "all" or key.endswith(f"{file_type}_file")
+
+
 def update_one_modeling_task_article(
-    task: str, models: list[Model], *, dry_run: bool = False
+    task: str,
+    models: list[Model],
+    *,
+    dry_run: bool = False,
+    file_type: Literal["all", "analysis", "pred"] = "all",
+    force_reupload: bool = False,
 ) -> None:
     """Update or create a Figshare article for a modeling task."""
     article_id = figshare.ARTICLE_IDS[f"model_preds_{task}"]
@@ -117,6 +138,8 @@ def update_one_modeling_task_article(
     for idx, (file_name, file_data) in enumerate(existing_files.items(), start=1):
         print(f"{idx}. {file_name}: {file_data.get('id')}")
 
+    # files that were skipped because they already exist
+    skipped_files: dict[str, str] = {}
     updated_files: dict[str, str] = {}  # files that were re-uploaded
     new_files: dict[str, str] = {}  # files that didn't exist before
 
@@ -143,7 +166,11 @@ def update_one_modeling_task_article(
                 full_key = f"{prefix}.{key}" if prefix else key
                 if isinstance(value, dict):
                     result |= find_file_keys(value, full_key)
-                elif isinstance(value, str) and key.endswith("_file"):
+                elif (
+                    isinstance(value, str)
+                    and key.endswith("_file")
+                    and should_process_file(key, file_type)
+                ):
                     result[full_key] = value
             return result
 
@@ -156,16 +183,19 @@ def update_one_modeling_task_article(
                 )
                 continue
 
-            # Check if file already exists and has same hash
-            file_hash, _ = figshare.get_file_hash_and_size(file_path)
             filename = file_path.removeprefix(f"{ROOT}/")
 
-            if filename in existing_files:
-                file_id, md5_hash = (
-                    existing_files[filename][key] for key in ("id", "computed_md5")
+            # Skip upload if force_reupload is False and file exists with same hash
+            if not force_reupload and not dry_run:
+                file_hash, _ = figshare.get_file_hash_and_size(file_path)
+                exists, file_id = figshare.file_exists_with_same_hash(
+                    article_id, filename, file_hash
                 )
-                if file_hash == md5_hash:
+
+                if exists and file_id is not None:
                     file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
+                    skipped_files[filename] = file_url
+
                     # Update model metadata if URL not present
                     url_key = f"{key_path}_url"  # append _url to YAML key
                     if url_key not in metric_data:
@@ -174,36 +204,30 @@ def update_one_modeling_task_article(
                         for part in parts:
                             target = target[part]
                         target[last] = file_url
+
+                    continue
+
+            # Upload file if it doesn't exist or force_reupload is True
+            if not dry_run:
+                file_id, was_uploaded = figshare.upload_file_if_needed(
+                    article_id,
+                    file_path,
+                    file_name=filename,
+                    force_reupload=force_reupload,
+                )
+                file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
+
+                if filename in existing_files:
+                    updated_files[filename] = file_url
                 else:
-                    # Upload modified file
-                    if not dry_run:
-                        file_id = figshare.upload_file(
-                            article_id,
-                            file_path,
-                            file_name=filename,
-                        )
-                        file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
-                        updated_files[filename] = file_url
-                        *parts, last = key_path.split(".")
-                        target = metric_data
-                        for part in parts:
-                            target = target[part]
-                        target[f"{last}_url"] = file_url
-            else:
-                # Upload new file
-                if not dry_run:
-                    file_id = figshare.upload_file(
-                        article_id,
-                        file_path,
-                        file_name=filename,
-                    )
-                    file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
                     new_files[filename] = file_url
-                    *parts, last = key_path.split(".")
-                    target = metric_data
-                    for part in parts:
-                        target = target[part]
-                    target[f"{last}_url"] = file_url
+
+                # Update model metadata with URL
+                *parts, last = key_path.split(".")
+                target = metric_data
+                for part in parts:
+                    target = target[part]
+                target[f"{last}_url"] = file_url
 
         # Save updated model metadata if changed
         if not dry_run:
@@ -212,8 +236,9 @@ def update_one_modeling_task_article(
 
     print(f"Newly added: {len(new_files)}")
     print(f"Updated: {len(updated_files)}")
+    print(f"Skipped (already exists with same hash): {len(skipped_files)}")
 
-    if new_files or updated_files:
+    if new_files or updated_files or skipped_files:
         if new_files:
             print("\nNewly added files:")
             for idx, (filename, url) in enumerate(new_files.items(), start=1):
@@ -222,6 +247,11 @@ def update_one_modeling_task_article(
         if updated_files:
             print("\nUpdated files:")
             for idx, (filename, url) in enumerate(updated_files.items(), start=1):
+                print(f"{idx}. {filename}: {url}")
+
+        if skipped_files:
+            print("\nSkipped files (already exist with same hash):")
+            for idx, (filename, url) in enumerate(skipped_files.items(), start=1):
                 print(f"{idx}. {filename}: {url}")
     else:
         print("\nNo files were added or updated.")
@@ -236,10 +266,19 @@ def main(args: Sequence[str] | None = None) -> int:
         print("\nDry run mode - no files will be uploaded")
     print(f"Updating {len(models_to_update)} models: {', '.join(models_to_update)}")
     print(f"Updating {len(tasks_to_update)} tasks: {', '.join(tasks_to_update)}")
+    print(f"File type filter: {parsed_args.file_type}")
+    if parsed_args.force_reupload:
+        print("Force reupload: True - will reupload files even if they already exist")
 
     for task in tasks_to_update:
         try:
-            update_one_modeling_task_article(task, models_to_update, dry_run=dry_run)
+            update_one_modeling_task_article(
+                task,
+                models_to_update,
+                dry_run=dry_run,
+                file_type=parsed_args.file_type,
+                force_reupload=parsed_args.force_reupload,
+            )
         except Exception as exc:  # prompt to delete article if something went wrong
             state = {
                 key: locals().get(key)

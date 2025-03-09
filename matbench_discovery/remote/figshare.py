@@ -23,6 +23,7 @@ ARTICLE_IDS: Final[dict[str, int | None]] = {
     "model_preds_discovery": 28187990,
     "model_preds_geo_opt": 28187999,
     "model_preds_phonons": 28347251,
+    "model_preds_diatomics": 28437344,  # created 2024-02-13
     "data_files": 22715158,
 }
 
@@ -65,14 +66,12 @@ def make_request(
     try:
         response.raise_for_status()
         try:
-            result = json.loads(response.content)
+            return json.loads(response.content)
         except ValueError:
-            result = response.content
+            return response.content
     except requests.HTTPError as exc:
         exc.add_note(f"body={response.content.decode()}")
         raise
-
-    return result
 
 
 def create_article(
@@ -212,3 +211,93 @@ def get_existing_files(article_id: int) -> dict[str, dict[str, Any]]:
         if exc.response.status_code == 404:
             return {}
         raise
+
+
+def file_exists_with_same_hash(
+    article_id: int, file_name: str, file_hash: str
+) -> tuple[bool, int | None]:
+    """Check if a file with the same name and hash already exists in the article.
+
+    Args:
+        article_id (int): ID of the article to check.
+        file_name (str): Name of the file to check.
+        file_hash (str): MD5 hash of the file to check.
+
+    Returns:
+        tuple[bool, int | None]: A tuple containing:
+            - bool: True if a file with the same name and hash exists, False otherwise.
+            - int | None: The file ID if it exists, None otherwise.
+    """
+    existing_files = get_existing_files(article_id)
+    if file_name in existing_files:
+        existing_file = existing_files[file_name]
+        if existing_file.get("computed_md5") == file_hash:
+            return True, existing_file.get("id")
+    return False, None
+
+
+def delete_file(article_id: int, file_id: int) -> bool:
+    """Delete a file from a Figshare article.
+
+    Args:
+        article_id (int): ID of the article containing the file.
+        file_id (int): ID of the file to delete.
+
+    Returns:
+        bool: True if the file was successfully deleted, False otherwise.
+    """
+    url = f"{BASE_URL}/account/articles/{article_id}/files/{file_id}"
+    try:
+        make_request("DELETE", url)  # should return None
+        print(f"Successfully deleted file with ID {file_id} from article {article_id}")
+        return True  # noqa: TRY300
+    except Exception as exc:
+        print(f"Failed to delete file with ID {file_id}: {exc}")
+        return False
+
+
+def upload_file_if_needed(
+    article_id: int,
+    file_path: str,
+    file_name: str = "",
+    *,
+    force_reupload: bool = False,
+) -> tuple[int, bool]:
+    """Upload a file to Figshare if it doesn't already exist with the same hash.
+
+    Args:
+        article_id (int): ID of the article to upload to.
+        file_path (str): Path to the file to upload.
+        file_name (str, optional): Name as it will appear in Figshare. Defaults to the
+            file path relative to repo's root dir: file_path.removeprefix(ROOT).
+        force_reupload (bool, optional): If True, delete and reupload the file even if
+            it already exists with the same hash. Defaults to False.
+
+    Returns:
+        tuple[int, bool]: A tuple containing:
+            - int: The file ID.
+            - bool: True if the file was uploaded, False if it already existed.
+    """
+    file_name = file_name or file_path.removeprefix(f"{ROOT}/")
+    file_hash, _ = get_file_hash_and_size(file_path)
+
+    # Check if file already exists with same hash
+    exists, file_id = file_exists_with_same_hash(article_id, file_name, file_hash)
+
+    if exists and file_id is not None:
+        if force_reupload:
+            print(
+                f"{file_name=} exists but force_reupload=True, deleting and reuploading"
+            )
+            if delete_file(article_id, file_id):
+                # Upload the file after successful deletion
+                file_id = upload_file(article_id, file_path, file_name)
+                return file_id, True
+            print(f"Failed to delete existing file {file_name}, skipping upload")
+            return file_id, False
+        print(f"File {file_name} already exists with same hash, skipping upload")
+        return file_id, False
+
+    # Upload the file
+    file_id = upload_file(article_id, file_path, file_name)
+    return file_id, True

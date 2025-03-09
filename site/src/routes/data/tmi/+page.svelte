@@ -7,10 +7,10 @@
   import { ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
   import { RadioButtons, Toggle } from 'svelte-zoo'
 
-  const elem_counts = import.meta.glob(`../wbm-element-counts-*=*.json`, {
+  const elem_counts = $state(import.meta.glob(`../wbm-element-counts-*=*.json`, {
     eager: true,
     import: `default`,
-  })
+  }))
   for (const key of Object.keys(elem_counts)) {
     const new_key = key?.split(`-`).at(-1)?.split(`.`)[0] as string
     elem_counts[new_key] = elem_counts[key]
@@ -18,12 +18,12 @@
 
   let arity_keys = Object.keys(elem_counts).filter((k) => k.startsWith(`arity=`))
   let batch_keys = Object.keys(elem_counts).filter((k) => k.startsWith(`batch=`))
-  let log = false // log color scale
-  let filter = arity_keys[0]
-  let color_scale = [`Viridis`]
-  let active_element: ChemicalElement
-  $: active_counts = elem_counts[filter]
-  let normalized_bar_counts: boolean = false
+  let log = $state(false) // log color scale
+  let filter = $state(arity_keys[0])
+  let color_scale = $state([`Viridis`])
+  let active_element: ChemicalElement = $state()
+  let active_counts = $derived(elem_counts[filter])
+  let normalized_bar_counts: boolean = $state(false)
 
   const style = `display: flex; place-items: center; place-content: center;`
 
@@ -48,17 +48,21 @@
   <span>
     composition arity
     <RadioButtons style={radio_style} options={arity_keys} bind:selected={filter}>
-      <strong slot="option" let:option let:active class:active>
-        {option?.split(`=`)[1]}</strong
-      >
+      {#snippet option({ option, active })}
+            <strong    class:active>
+          {option?.split(`=`)[1]}</strong
+        >
+          {/snippet}
     </RadioButtons>
   </span>
   <span>
     batch index
     <RadioButtons style={radio_style} options={batch_keys} bind:selected={filter}>
-      <strong slot="option" let:option let:active class:active>
-        {option?.split(`=`)[1]}</strong
-      >
+      {#snippet option({ option, active })}
+            <strong    class:active>
+          {option?.split(`=`)[1]}</strong
+        >
+          {/snippet}
     </RadioButtons>
   </span>
 </form>
@@ -70,10 +74,12 @@
   bind:active_element
   show_photo={false}
 >
-  <TableInset slot="inset">
-    <PtableInset element={active_element} elem_counts={active_counts} />
-    <span {style}>Log color scale<Toggle bind:checked={log} /></span>
-  </TableInset>
+  {#snippet inset()}
+    <TableInset >
+      <PtableInset element={active_element} elem_counts={active_counts} />
+      <span {style}>Log color scale<Toggle bind:checked={log} /></span>
+    </TableInset>
+  {/snippet}
 </PeriodicTable>
 
 <h2>Element Counts</h2>

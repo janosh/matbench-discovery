@@ -2,15 +2,14 @@
 import json
 import os
 import warnings
-from collections.abc import Callable
 from copy import deepcopy
 from importlib.metadata import version
-from typing import Any, Literal
+from typing import Any
 
 import numpy as np
 import pandas as pd
 from ase import Atoms
-from ase.filters import ExpCellFilter, FrechetCellFilter
+from ase.filters import FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
 from ase.optimize.optimize import Optimizer
 from pymatgen.core.trajectory import Trajectory
@@ -31,7 +30,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 
 # %%
-model_name = Model.grace_2l_oam
+model_name = Model.grace_2l_oam.key
 smoke_test = False
 task_type = Task.IS2RE
 module_dir = os.path.dirname(__file__)
@@ -45,8 +44,6 @@ out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}")
 device = "gpu"
 # whether to record intermediate structures into pymatgen Trajectory
 record_traj = False  # has no effect if relax_cell is False
-
-ase_filter: Literal["frechet", "exp"] = "frechet"
 os.makedirs(out_dir, exist_ok=True)
 
 
@@ -114,7 +111,7 @@ run_params = {
     # Key.model_params: count_parameters(calc.models[0]),
     "model_name": model_name,  # Use passed model_name
     "dtype": dtype,
-    "ase_filter": ase_filter,
+    "cell_filter": "FrechetCellFilter",
 }
 
 run_name = f"{job_name}-{slurm_array_task_id}"
@@ -129,10 +126,6 @@ with open(
 
 # %% time
 relax_results: dict[str, dict[str, Any]] = {}
-filter_cls: Callable[[Atoms], Atoms] = {
-    "frechet": FrechetCellFilter,
-    "exp": ExpCellFilter,
-}[ase_filter]
 optim_cls: Optimizer = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
 atoms_list = sorted(atoms_list, key=lambda at: len(at))
 # print(atoms_list)
@@ -143,7 +136,7 @@ for atoms in tqdm(deepcopy(atoms_list), desc="Relaxing", mininterval=5):
     try:
         atoms.calc = calc
         if max_steps > 0:
-            filtered_atoms = filter_cls(atoms)
+            filtered_atoms = FrechetCellFilter(atoms)
             optimizer = optim_cls(filtered_atoms, logfile="/dev/null")
 
             if record_traj:
@@ -157,7 +150,7 @@ for atoms in tqdm(deepcopy(atoms_list), desc="Relaxing", mininterval=5):
 
             optimizer.run(fmax=force_max, steps=max_steps)
         energy = atoms.get_potential_energy()  # relaxed energy
-        # if max_steps > 0, atoms is wrapped by filter_cls, so extract with getattr
+        # if max_steps > 0, atoms is wrapped by FrechetCellFilter, so need to getattr
         relaxed_struct = AseAtomsAdaptor.get_structure(atoms)
         relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
 

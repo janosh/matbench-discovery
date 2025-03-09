@@ -1,25 +1,42 @@
 <script lang="ts">
-  import Icon from '@iconify/svelte'
   import { max, min } from 'd3-array'
   import { scaleSequential } from 'd3-scale'
   import * as d3sc from 'd3-scale-chromatic'
   import { choose_bw_for_contrast, pretty_num } from 'elementari/labels'
+  import 'iconify-icon'
+  import type { Snippet } from 'svelte'
   import { titles_as_tooltips } from 'svelte-zoo/actions'
   import { flip } from 'svelte/animate'
   import { writable } from 'svelte/store'
   import type { HeatmapColumn } from './types'
 
-  type TableData = Record<string, string | number | undefined>[]
+  type CellVal = string | number | undefined | null
+  type RowData = Record<string, CellVal>
+  type TableData = RowData[]
 
-  export let data: TableData
-  export let columns: HeatmapColumn[] = []
-  export let sort_hint: string = `Click on column headers to sort table rows`
-  export let style: string | null = null
+  interface Props {
+    data: TableData
+    columns?: HeatmapColumn[]
+    sort_hint?: string
+    style?: string | null
+    cell?: Snippet<[{ row: RowData; col: HeatmapColumn; val: CellVal }]>
+  }
+
+  let {
+    data,
+    columns = [],
+    sort_hint = `Click on column headers to sort table rows`,
+    style = null,
+    cell,
+  }: Props = $props()
 
   const sort_state = writable({ column: ``, ascending: true })
 
-  $: clean_data =
-    data?.filter?.((row) => Object.values(row).some((val) => val !== undefined)) ?? []
+  let clean_data = $state(data)
+  $effect(() => {
+    clean_data =
+      data?.filter?.((row) => Object.values(row).some((val) => val !== undefined)) ?? []
+  })
 
   // Helper to make column IDs (needed since column labels in different groups can be repeated)
   const get_col_id = (col: HeatmapColumn) =>
@@ -27,12 +44,14 @@
 
   function sort_rows(column: string) {
     const col = columns.find((c) => c.label === column)
+    if (!col) return // Skip if column not found
+
     const col_id = get_col_id(col)
 
     if ($sort_state.column !== col_id) {
       $sort_state = {
         column: col_id,
-        ascending: col?.better === `lower`,
+        ascending: col.better === `lower`,
       }
     } else {
       $sort_state.ascending = !$sort_state.ascending
@@ -74,7 +93,7 @@
     return { bg, text }
   }
 
-  $: visible_columns = columns.filter((col) => !col.hidden)
+  let visible_columns = $derived(columns.filter((col) => !col.hidden))
 
   const sort_indicator = (
     col: HeatmapColumn,
@@ -121,7 +140,7 @@
         {#each visible_columns as col, col_idx}
           <th
             title={col.tooltip}
-            on:click={() => sort_rows(col.label)}
+            onclick={() => sort_rows(col.label)}
             style={col.style}
             class:sticky-col={col.sticky}
           >
@@ -129,7 +148,7 @@
             {@html sort_indicator(col, $sort_state)}
             {#if col_idx == 0 && sort_hint}
               <span title={sort_hint}>
-                <Icon icon="octicon:info-16" inline />
+                <iconify-icon icon="octicon:info-16" inline></iconify-icon>
               </span>
             {/if}
           </th>
@@ -151,15 +170,15 @@
               style={col.style}
               title={[undefined, null].includes(val) ? `not available` : null}
             >
-              <slot name="cell" {row} {col} {val}>
-                {#if typeof val === `number` && col.format}
-                  {pretty_num(val, col.format)}
-                {:else if [undefined, null].includes(val)}
-                  n/a
-                {:else}
-                  {@html val}
-                {/if}
-              </slot>
+              {#if cell}
+                {@render cell({ row, col, val })}
+              {:else if typeof val === `number` && col.format}
+                {pretty_num(val, col.format)}
+              {:else if [undefined, null].includes(val)}
+                n/a
+              {:else}
+                {@html val}
+              {/if}
             </td>
           {/each}
         </tr>

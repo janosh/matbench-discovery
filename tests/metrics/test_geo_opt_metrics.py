@@ -6,10 +6,7 @@ import pytest
 from pymatviz.enums import Key
 
 from matbench_discovery.enums import MbdKey, Model
-from matbench_discovery.metrics.geo_opt import (
-    calc_geo_opt_metrics,
-    write_geo_opt_metrics_to_yaml,
-)
+from matbench_discovery.metrics import geo_opt
 
 
 @pytest.fixture
@@ -26,7 +23,7 @@ def df_geo_opt() -> pd.DataFrame:
 
 def test_calc_geo_opt_metrics(df_geo_opt: pd.DataFrame) -> None:
     """Test calc_geo_opt_metrics with a single model."""
-    results = calc_geo_opt_metrics(df_geo_opt)
+    results = geo_opt.calc_geo_opt_metrics(df_geo_opt)
 
     # Check symmetry change metrics
     assert results[str(Key.symmetry_decrease)] == pytest.approx(1 / 3)
@@ -68,7 +65,7 @@ def test_calc_geo_opt_metrics_parametrized(
         }
     )
 
-    results = calc_geo_opt_metrics(df_geo_opt)
+    results = geo_opt.calc_geo_opt_metrics(df_geo_opt)
 
     assert results[str(Key.symmetry_decrease)] == pytest.approx(expected_decrease)
     assert results[str(Key.symmetry_match)] == pytest.approx(expected_match)
@@ -77,7 +74,7 @@ def test_calc_geo_opt_metrics_parametrized(
 
 
 @pytest.mark.parametrize(
-    ("metrics_data", "expected_yaml", "symprec"),
+    ("metrics_data", "expected_yaml", "symprec", "analysis_file_path"),
     [
         (
             {
@@ -98,11 +95,14 @@ def test_calc_geo_opt_metrics_parametrized(
                             Key.symmetry_match: 0.4,
                             Key.symmetry_increase: 0.0,
                             Key.n_structures: 0,
+                            "analysis_file": "test/path/analysis.csv.gz",
+                            "analysis_file_url": None,
                         }
                     }
                 }
             },
             1e-2,
+            "test/path/analysis.csv.gz",
         ),
         (
             {
@@ -123,11 +123,14 @@ def test_calc_geo_opt_metrics_parametrized(
                             Key.symmetry_match: 0.0,
                             Key.symmetry_increase: 0.0,
                             Key.n_structures: 0,
+                            "analysis_file": "test/path/analysis-nan.csv.gz",
+                            "analysis_file_url": None,
                         }
                     }
                 }
             },
             1e-2,
+            "test/path/analysis-nan.csv.gz",
         ),
     ],
 )
@@ -135,6 +138,7 @@ def test_write_geo_opt_metrics_to_yaml(
     metrics_data: dict[str | MbdKey, float],
     expected_yaml: dict[str, dict[str, dict[str, dict[str | MbdKey, float]]]],
     symprec: float,
+    analysis_file_path: str,
 ) -> None:
     """Test saving geometry optimization metrics to YAML files with edge cases."""
     symprec_key = f"{symprec=:.0e}".replace("e-0", "e-")
@@ -149,12 +153,14 @@ def test_write_geo_opt_metrics_to_yaml(
         mock_model.from_label.return_value.yaml_path = "mock_path/test_model.yml"
 
         # Mock the YAML operations
-        with patch("matbench_discovery.metrics.geo_opt.round_trip_yaml") as mock_yaml:
+        with patch("matbench_discovery.data.round_trip_yaml") as mock_yaml:
             # Configure mock YAML load to return empty dict
             mock_yaml.load.return_value = {}
 
             # Call the function
-            write_geo_opt_metrics_to_yaml(metrics_data, Model.alignn, symprec)
+            geo_opt.write_metrics_to_yaml(
+                metrics_data, Model.alignn, symprec, analysis_file_path
+            )
 
             # Verify YAML dump was called with expected content
             actual_yaml = mock_yaml.dump.call_args[0][0]

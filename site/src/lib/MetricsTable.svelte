@@ -1,34 +1,49 @@
 <script lang="ts">
   import {
-    HeatmapTable,
-    MODEL_METADATA,
-    TRAINING_SETS,
-    get_metric_rank_order,
-    get_pred_file_urls,
-    model_is_compliant,
+      HeatmapTable,
+      MODEL_METADATA,
+      TRAINING_SETS,
+      get_metric_rank_order,
+      get_pred_file_urls,
   } from '$lib'
   import { pretty_num } from 'elementari'
   import { click_outside } from 'svelte-zoo/actions'
-  import { METADATA_COLS, METRICS_COLS } from './metrics'
-  import type { HeatmapColumn, ModelData } from './types'
+  import { ALL_METRICS, METADATA_COLS } from './metrics'
+  import type { DiscoverySet, HeatmapColumn, ModelData } from './types'
 
-  export let discovery_set: `full_test_set` | `most_stable_10k` | `unique_prototypes` =
-    `unique_prototypes`
-  export let show_non_compliant: boolean = false
-  export let show_energy_only: boolean = false
-  export let show_metadata: boolean = true
-  export let hide_cols: string[] = []
-  export let metadata_cols = METADATA_COLS
+  interface Props {
+    discovery_set?: DiscoverySet
+    model_filter?: (model: ModelData) => boolean
+    col_filter?: (col: HeatmapColumn) => boolean
+    [key: string]: unknown
+  }
+  let {
+    discovery_set = `unique_prototypes`,
+    model_filter = () => true,
+    col_filter = () => true,
+    ...rest
+  }: Props = $props()
 
-  let active_files: { name: string; url: string }[] = []
-  let active_model_name = ``
-  let pred_file_modal: HTMLDialogElement | null = null
-  let columns: HeatmapColumn[]
-  $: columns = [...METRICS_COLS, ...(show_metadata ? metadata_cols : [])].map((col) => ({
-    ...col,
-    better: col.better ?? get_metric_rank_order(col.label),
-    hidden: hide_cols?.includes(col.label) || col.hidden,
-  }))
+  let active_files: { name: string; url: string }[] = $state([])
+  let active_model_name = $state(``)
+  let pred_file_modal: HTMLDialogElement | null = $state(null)
+  let columns: HeatmapColumn[] = $derived(
+    [...ALL_METRICS, ...METADATA_COLS]
+      .map((col) => {
+        const better = col.better ?? get_metric_rank_order(col.label)
+
+        // append better=higher/lower to tooltip if applicable
+        let tooltip = col.tooltip || ``
+        if (better === `higher` || better === `lower`) {
+          tooltip = tooltip ?
+            `${tooltip} (${better}=better)` :
+            `${better}=better`
+        }
+        return { ...col, better, tooltip, hidden: !col_filter(col) }
+      })
+      // Ensure Model column comes first
+      .sort((col1, _col2) => (col1.label === `Model` ? -1 : 1)),
+  )
 
   function format_train_set(model_training_sets: string[]) {
     let [total_structs, total_materials] = [0, 0]
@@ -108,47 +123,51 @@
     })
 
   // Transform MODEL_METADATA into table data format
-  $: metrics_data = MODEL_METADATA.filter(
-    (model) =>
-      (show_energy_only || model.targets != `E`) &&
-      (show_non_compliant || model_is_compliant(model)),
+  let metrics_data = $derived(
+    MODEL_METADATA.filter(
+      (model) => model_filter(model) && model.metrics?.discovery?.[discovery_set],
+    )
+      .map((model) => {
+        const metrics = model.metrics?.discovery?.[discovery_set]
+
+        const targets = model.targets.replace(/_(.)/g, `<sub>$1</sub>`)
+        const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
+
+        // rename metric keys to pretty labels
+        return {
+          Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}">${model.model_name}</a>`,
+          F1: metrics?.F1,
+          DAF: metrics?.DAF,
+          Prec: metrics?.Precision,
+          Acc: metrics?.Accuracy,
+          TPR: metrics?.TPR,
+          TNR: metrics?.TNR,
+          MAE: metrics?.MAE,
+          RMSE: metrics?.RMSE,
+          'R<sup>2</sup>': metrics?.R2,
+          'κ<sub>SRME</sub>': model.metrics?.phonons?.kappa_103?.κ_SRME,
+          'Training Set': format_train_set(model.training_set),
+          Params: `<span title="${pretty_num(model.model_params, `,`)} trainable model parameters">${pretty_num(model.model_params)}</span>`,
+          Targets: targets_str,
+          'Date Added': `<span title="${long_date(model.date_added)}">${model.date_added}</span>`,
+          Links: {
+            paper: {
+              url: model.paper || model.doi,
+              title: `Read model paper`,
+              icon: `📄`,
+            },
+            repo: { url: model.repo, title: `View source code`, icon: `📦` },
+            pr_url: { url: model.pr_url, title: `View pull request`, icon: `🔗` },
+            pred_files: { files: get_pred_file_urls(model), name: model.model_name },
+          },
+        }
+      })
+      .sort((row1, row2) => (row2.F1 ?? 0) - (row1.F1 ?? 0)),
   )
-    .map((model) => {
-      const metrics = model.metrics?.discovery?.[discovery_set]
-
-      const targets = model.targets.replace(/_(.)/g, `<sub>$1</sub>`)
-      const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
-
-      // rename metric keys to pretty labels
-      return {
-        Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}">${model.model_name}</a>`,
-        F1: metrics?.F1,
-        DAF: metrics?.DAF,
-        Prec: metrics?.Precision,
-        Acc: metrics?.Accuracy,
-        TPR: metrics?.TPR,
-        TNR: metrics?.TNR,
-        MAE: metrics?.MAE,
-        RMSE: metrics?.RMSE,
-        'R<sup>2</sup>': metrics?.R2,
-        'κ<sub>SRME</sub>': model.metrics?.phonons?.kappa_103?.κ_SRME,
-        'Training Set': format_train_set(model.training_set),
-        Params: `<span title="${pretty_num(model.model_params, `,`)} trainable model parameters">${pretty_num(model.model_params)}</span>`,
-        Targets: targets_str,
-        'Date Added': `<span title="${long_date(model.date_added)}">${model.date_added}</span>`,
-        Links: {
-          paper: { url: model.paper || model.doi, title: `Read model paper`, icon: `📄` },
-          repo: { url: model.repo, title: `View source code`, icon: `📦` },
-          pr_url: { url: model.pr_url, title: `View pull request`, icon: `🔗` },
-          pred_files: { files: get_pred_file_urls(model), name: model.model_name },
-        },
-      }
-    })
-    .sort((row1, row2) => (row2.F1 ?? 0) - (row1.F1 ?? 0))
 </script>
 
 <svelte:window
-  on:keydown={(event) => {
+  onkeydown={(event) => {
     if (event.key === `Escape` && pred_file_modal?.open) {
       pred_file_modal.open = false
       event.preventDefault()
@@ -156,8 +175,8 @@
   }}
 />
 
-<HeatmapTable data={metrics_data} {columns} {...$$restProps}>
-  <svelte:fragment slot="cell" let:col let:val>
+<HeatmapTable data={metrics_data} {columns} {...rest}>
+  {#snippet cell({ col, val })}
     {#if col.label === `Links` && val}
       {@const links = val}
       {#each [links.paper, links.repo, links.pr_url] as link}
@@ -171,7 +190,7 @@
         <button
           class="pred-files-btn"
           title="Download model prediction files"
-          on:click={() => {
+          onclick={() => {
             if (!pred_file_modal) return
             pred_file_modal.open = true
             active_files = links.pred_files.files
@@ -188,7 +207,7 @@
     {:else}
       {@html val}
     {/if}
-  </svelte:fragment>
+  {/snippet}
 </HeatmapTable>
 
 <dialog
@@ -202,7 +221,7 @@
   <div class="modal-content">
     <button
       class="close-btn"
-      on:click={() => {
+      onclick={() => {
         if (pred_file_modal?.open) pred_file_modal.open = false
       }}
       title="Close (or click escape)"

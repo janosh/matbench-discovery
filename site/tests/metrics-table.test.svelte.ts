@@ -1,21 +1,15 @@
 import MetricsTable from '$lib/MetricsTable.svelte'
-import { tick } from 'svelte'
-import { beforeEach, describe, expect, it } from 'vitest'
+import type { HeatmapColumn, ModelData } from '$lib/types'
+import { mount, tick } from 'svelte'
+import { describe, expect, it } from 'vitest'
 
 describe(`MetricsTable`, () => {
-  beforeEach(() => {
-    document.body.innerHTML = ``
-  })
-
   it(`renders with default props`, () => {
-    new MetricsTable({
+    mount(MetricsTable, {
       target: document.body,
       props: {
         discovery_set: `unique_prototypes`,
-        show_non_compliant: false,
-        show_energy_only: false,
-        show_metadata: true,
-        hide_cols: [],
+        col_filter: () => true,
       },
     })
 
@@ -48,26 +42,24 @@ describe(`MetricsTable`, () => {
   })
 
   it(`toggles metadata columns`, async () => {
-    const component = new MetricsTable({
+    const metadata_cols = [`Training Set`, `Params`, `Targets`, `Date Added`, `Links`]
+    let col_filter = $state((_col: HeatmapColumn) => true) // show all columns initially
+    mount(MetricsTable, {
       target: document.body,
-      props: {
-        discovery_set: `unique_prototypes`,
-        show_metadata: true,
-      },
+      props: { discovery_set: `unique_prototypes`, col_filter },
     })
 
     // Check metadata columns are visible
     let header_texts = [...document.body.querySelectorAll(`th`)].map((h) =>
       h.textContent?.trim(),
     )
-    const metadata_cols = [`Training Set`, `Params`, `Targets`, `Date Added`, `Links`]
     expect(header_texts).toEqual(expect.arrayContaining(metadata_cols))
 
     // Hide metadata columns
-    await component.$set({ show_metadata: false })
+    col_filter = (col) => !metadata_cols.includes(col.label)
     await tick()
 
-    // Check none of the metadata columns are hidden
+    // Check metadata columns are hidden
     header_texts = [...document.body.querySelectorAll(`th`)].map((h) =>
       h.textContent?.trim(),
     )
@@ -82,12 +74,12 @@ describe(`MetricsTable`, () => {
     }
   })
 
-  it(`hides specified columns`, async () => {
-    new MetricsTable({
+  it(`filters specified columns`, async () => {
+    mount(MetricsTable, {
       target: document.body,
       props: {
         discovery_set: `unique_prototypes`,
-        hide_cols: [`F1`, `DAF`],
+        col_filter: (col) => ![`F1`, `DAF`].includes(col.label),
       },
     })
 
@@ -105,26 +97,24 @@ describe(`MetricsTable`, () => {
   })
 
   it(`filters non-compliant models`, async () => {
-    const component = new MetricsTable({
+    let model_filter = $state(() => false) // initially show no models
+    mount(MetricsTable, {
       target: document.body,
-      props: {
-        discovery_set: `unique_prototypes`,
-        show_non_compliant: false,
-      },
+      props: { discovery_set: `unique_prototypes`, model_filter },
     })
 
     const initial_rows = document.body.querySelectorAll(`tbody tr`).length
-    expect(initial_rows).toBeGreaterThan(7)
+    expect(initial_rows).toBe(0)
 
-    await component.$set({ show_non_compliant: true })
+    model_filter = () => true // now show all models
     await tick()
 
     const rows_with_non_compliant = document.body.querySelectorAll(`tbody tr`).length
-    expect(rows_with_non_compliant).toBeGreaterThan(initial_rows)
+    expect(rows_with_non_compliant).toBeGreaterThan(0)
   })
 
   it(`opens and closes prediction files modal`, async () => {
-    new MetricsTable({
+    mount(MetricsTable, {
       target: document.body,
       props: {
         discovery_set: `unique_prototypes`,
@@ -163,5 +153,91 @@ describe(`MetricsTable`, () => {
     window.dispatchEvent(new KeyboardEvent(`keydown`, { key: `Escape` }))
     await tick()
     expect(modal?.open).toBe(false)
+  })
+
+  it.each([
+    {
+      name: `sticky columns only`,
+      col_filter: (col: HeatmapColumn) => col.sticky === true,
+      expected_headers: [`Model`],
+    },
+    {
+      name: `specific columns`,
+      col_filter: (col: HeatmapColumn) => [`Model`, `F1`].includes(col.label),
+      expected_headers: [`Model`, `F1`],
+    },
+    {
+      name: `Model always first`,
+      col_filter: (col: HeatmapColumn) => [`F1`, `Model`, `DAF`].includes(col.label),
+      expected_headers: [`Model`, `F1`, `DAF`],
+    },
+  ])(`handles col_filter: $name`, async ({ col_filter, expected_headers }) => {
+    mount(MetricsTable, {
+      target: document.body,
+      props: { discovery_set: `unique_prototypes`, col_filter },
+    })
+
+    const headers = [...document.body.querySelectorAll(`th`)]
+    expect(headers.length).toBe(expected_headers.length)
+    expect(headers.map((h) => h.textContent?.split(` `)[0])).toEqual(expected_headers)
+  })
+
+  it.each([
+    {
+      model_filter: (model: ModelData) => model.model_name.includes(`CHG`),
+      col_filter: (col: HeatmapColumn) => col.label === `Model` || col.label === `F1`,
+      expected_model_match: `CHG`,
+      expected_headers: [`Model`, `F1`],
+    },
+    {
+      model_filter: (model: ModelData) => model.model_name.includes(`MACE`),
+      col_filter: (col: HeatmapColumn) => [`Model`, `DAF`].includes(col.label),
+      expected_model_match: `MACE`,
+      expected_headers: [`Model`, `DAF`],
+    },
+  ])(
+    `combines filters: $expected_model_match models with $expected_headers`,
+    async ({ model_filter, col_filter, expected_model_match, expected_headers }) => {
+      mount(MetricsTable, {
+        target: document.body,
+        props: { discovery_set: `unique_prototypes`, model_filter, col_filter },
+      })
+
+      const headers = [...document.body.querySelectorAll(`th`)]
+      expect(headers.map((h) => h.textContent?.split(` `)[0])).toEqual(expected_headers)
+
+      const rows = document.body.querySelectorAll(`tbody tr`)
+      rows.forEach((row) => {
+        const model_cell = row.querySelector(`td`)
+        expect(model_cell?.textContent).toContain(expected_model_match)
+      })
+    },
+  )
+
+  it(`updates table when col_filter changes`, async () => {
+    let col_filter = $state((col: HeatmapColumn) => [`Model`, `F1`].includes(col.label))
+    mount(MetricsTable, {
+      target: document.body,
+      props: {
+        discovery_set: `unique_prototypes`,
+        col_filter,
+      },
+    })
+
+    // Initially should show only Model and F1
+    let headers = document.body.querySelectorAll(`th`)
+    expect(headers.length).toBe(2)
+
+    // Add DAF column
+    col_filter = (col) => [`Model`, `F1`, `DAF`].includes(col.label)
+    await tick()
+
+    headers = document.body.querySelectorAll(`th`)
+    expect(headers.length).toBe(3)
+    expect([...headers].map((h) => h.textContent?.split(` `)[0])).toEqual([
+      `Model`,
+      `F1`,
+      `DAF`,
+    ])
   })
 })

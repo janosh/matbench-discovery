@@ -1,5 +1,5 @@
 model_name: CHGNet
-model_key: chgnet
+model_key: chgnet-0.3.0
 model_version: v0.3.0
 matbench_discovery_version: 1.0.0
 date_added: "2023-03-03"
@@ -54,7 +54,9 @@ n_estimators: 1
 training_set: [MPtrj]
 
 hyperparams:
-  max_steps: 2000
+  ase_optimizer: FIRE
+  cell_filter: FrechetCellFilter
+  max_steps: 500
 
 notes:
   Description: |

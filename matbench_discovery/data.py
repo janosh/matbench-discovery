@@ -13,6 +13,7 @@ Environment Variables:
 
 import io
 import os
+import re
 import sys
 import zipfile
 from collections import defaultdict
@@ -112,15 +113,17 @@ def glob_to_df(
 def ase_atoms_from_zip(
     zip_filename: str | Path,
     *,
-    file_filter: Callable[[str], bool] = lambda fname: fname.endswith(".extxyz"),
+    file_filter: Callable[[str, int], bool] = lambda filename, _idx: filename.endswith(
+        ".extxyz"
+    ),
     filename_to_info: bool = False,
-    limit: int | None = None,
+    limit: int | slice | None = None,
 ) -> list[Atoms]:
     """Read ASE Atoms objects from a ZIP file containing extXYZ files.
 
     Args:
         zip_filename (str): Path to the ZIP file.
-        file_filter (Callable[[str], bool], optional): Function to check if a file
+        file_filter (Callable[[str, int], bool], optional): Function to check if a file
             should be read. Defaults to lambda fname: fname.endswith(".extxyz").
         filename_to_info (bool, optional): If True, assign filename to Atoms.info.
             Defaults to False.
@@ -133,8 +136,13 @@ def ase_atoms_from_zip(
     atoms_list = []
     with zipfile.ZipFile(zip_filename) as zip_file:
         desc = f"Reading ASE Atoms from {zip_filename=}"
-        for filename in tqdm(zip_file.namelist()[:limit], desc=desc, mininterval=5):
-            if not file_filter(filename):
+        filenames = zip_file.namelist()
+        if limit is not None:
+            slice_lim = slice(limit) if isinstance(limit, int) else limit
+            filenames = filenames[slice_lim]
+
+        for idx, filename in tqdm(enumerate(filenames), desc=desc, mininterval=5):
+            if not file_filter(filename, idx):
                 continue
             with zip_file.open(filename) as file:
                 content = io.TextIOWrapper(file, encoding="utf-8").read()
@@ -299,3 +307,56 @@ def load_df_wbm_with_preds(
         df_out = df_out.loc[subset]
 
     return df_out
+
+
+def update_yaml_at_path(
+    file_path: str | Path,
+    dotted_path: str,
+    data: dict[str, Any],
+) -> dict[str, Any]:
+    """Update a YAML file at a specific dotted path with new data.
+
+    Args:
+        file_path (str | Path): Path to YAML file to update
+        dotted_path (str): Dotted path to update (e.g. 'metrics.discovery')
+        data (dict[str, Any]): Data to write at the specified path
+
+    Returns:
+        dict[str, Any]: The complete updated YAML data written to file.
+
+    Example:
+        update_yaml_at_path(
+            "models/mace/mace-mp-0.yml",
+            "metrics.discovery",
+            dict(mae=0.1, rmse=0.2),
+        )
+    """
+    # raise on repeated or trailing dots in dotted path
+    if not re.match(r"^[a-zA-Z0-9-+=_]+(\.[a-zA-Z0-9-+=_]+)*$", dotted_path):
+        raise ValueError(f"Invalid dotted path: {dotted_path}")
+
+    with open(file_path) as file:
+        yaml_data = round_trip_yaml.load(file)
+
+    # Navigate to the correct nested level
+    current = yaml_data
+    *parts, last = dotted_path.split(".")
+
+    for part in parts:
+        if part not in current:
+            current[part] = {}
+        current = current[part]
+
+    # Update the data at the final level
+    if last not in current:
+        current[last] = {}
+    for key, val in current[last].items():
+        data.setdefault(key, val)
+    # Replace the entire current[last] section to preserve comments
+    current[last] = data
+
+    # Write back to file
+    with open(file_path, mode="w") as file:
+        round_trip_yaml.dump(yaml_data, file)
+
+    return yaml_data

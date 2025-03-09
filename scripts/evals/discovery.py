@@ -25,7 +25,7 @@ from sklearn.dummy import DummyClassifier
 
 from matbench_discovery import DATA_DIR, PDF_FIGS, PKG_DIR, ROOT
 from matbench_discovery.data import df_wbm
-from matbench_discovery.enums import DataFiles, MbdKey, Model, Open, Targets
+from matbench_discovery.enums import DataFiles, MbdKey, Model, Open, Targets, TestSubset
 from matbench_discovery.metrics import discovery
 from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 
@@ -42,17 +42,30 @@ __date__ = "2022-11-28"
 if __name__ == "__main__":
     import matbench_discovery.preds.discovery as preds
 
+    uniq_protos_idx = df_wbm.query(MbdKey.uniq_proto).index
+
     models_to_write = [
         Model[model] for model in sys.argv[1:] if hasattr(Model, model)
     ] or Model
-    metric_dfs = (
-        discovery.df_metrics,
-        discovery.df_metrics_10k,
-        discovery.df_metrics_uniq_protos,
-        preds.df_preds,
-    )
     for model in models_to_write:
-        discovery.write_discovery_metrics_to_yaml(model, *metric_dfs)
+        model_preds = preds.df_preds[model.label]
+        for test_subset, (metrics, subset_idx) in {
+            TestSubset.full_test_set: (
+                preds.df_metrics[model.label].to_dict(),
+                slice(None),
+            ),
+            TestSubset.uniq_protos: (
+                preds.df_metrics_uniq_protos[model.label].to_dict(),
+                uniq_protos_idx,
+            ),
+            TestSubset.most_stable_10k: (
+                preds.df_metrics_10k[model.label].to_dict(),
+                model_preds.loc[uniq_protos_idx].nsmallest(10_000).index,
+            ),
+        }.items():
+            discovery.write_metrics_to_yaml(
+                model, metrics, model_preds.loc[subset_idx], test_subset
+            )
 
     if not IS_IPYTHON:
         raise SystemExit(0)
@@ -75,7 +88,8 @@ with open(f"{DATA_DIR}/training-sets.yml") as file:
     TRAINING_SETS = yaml.safe_load(file)
 
 # Add model metadata to df_metrics(_10k, _uniq_protos)
-for model in discovery.df_metrics_uniq_protos.index:
+models = discovery.df_metrics_uniq_protos.columns
+for model in models:
     if model == "Dummy":
         continue
     model_name = name_map.get(model, model)
@@ -86,7 +100,7 @@ for model in discovery.df_metrics_uniq_protos.index:
         date_added = model_metadata.get("date_added", "")
         # long format date for tooltip, e.g. Monday, 28 November 2022
         title = f"{date.fromisoformat(date_added):%A, %d %B %Y}"
-        discovery.df_metrics_uniq_protos.loc[model, date_added_col] = (
+        discovery.df_metrics_uniq_protos.loc[date_added_col, model] = (
             f"<span {title=}>{date_added}</span>"
         )
 
@@ -95,7 +109,7 @@ for model in discovery.df_metrics_uniq_protos.index:
         tar_label = model_targets.label.replace(
             "<sub>", "<sub style='font-size: 0.8em;'>"
         )
-        discovery.df_metrics_uniq_protos.loc[model, Key.targets.label] = (
+        discovery.df_metrics_uniq_protos.loc[Key.targets.label, model] = (
             f'<span title="{model_targets.description}" '
             f'data-targets="{model_metadata[Key.targets]}">{tar_label}</span>'
         )
@@ -109,7 +123,7 @@ for model in discovery.df_metrics_uniq_protos.index:
             "data-model-key": model_key,
         }
         html_attr_str = " ".join(f'{k}="{v}"' for k, v in attrs.items() if v)
-        discovery.df_metrics_uniq_protos.loc[model, model_name_col] = (
+        discovery.df_metrics_uniq_protos.loc[model_name_col, model] = (
             f"<span {html_attr_str}>{model}</span>"
         )
 
@@ -181,7 +195,7 @@ for model in discovery.df_metrics_uniq_protos.index:
                     f" ({dataset_str})</span>"
                 )
 
-            discovery.df_metrics_uniq_protos.loc[model, Key.train_set.label] = (
+            discovery.df_metrics_uniq_protos.loc[Key.train_set.label, model] = (
                 train_size_str
             )
         elif model == "Dummy":
@@ -201,7 +215,7 @@ for model in discovery.df_metrics_uniq_protos.index:
         title = f"{model_params:,} trainable model parameters"
         formatted_params = si_fmt(model_params)
         discovery.df_metrics_uniq_protos.loc[
-            model, Key.model_params.label.replace("eter", "")
+            Key.model_params.label.replace("eter", ""), model
         ] = (
             f'<span {title=} data-sort-value="{model_params}">{formatted_params}'
             f"</span>{n_estimators_str}"
@@ -209,7 +223,7 @@ for model in discovery.df_metrics_uniq_protos.index:
 
         for key in (MbdKey.openness, Key.train_task, Key.test_task):
             default = {MbdKey.openness: Open.OSOD}.get(key, pd.NA)
-            discovery.df_metrics_uniq_protos.loc[model, key.label] = model_metadata.get(
+            discovery.df_metrics_uniq_protos.loc[key.label, model] = model_metadata.get(
                 key, default
             )
     except Exception as exc:
@@ -222,7 +236,7 @@ for df in (
     discovery.df_metrics_10k,
     discovery.df_metrics_uniq_protos,
 ):
-    df[model_name_col] = discovery.df_metrics_uniq_protos[model_name_col]
+    df.loc[model_name_col, :] = discovery.df_metrics_uniq_protos.loc[model_name_col, :]
 
 
 # %% add dummy classifier results to discovery.df_metrics(_10k, _uniq_protos)
@@ -253,7 +267,7 @@ for df_in, df_out, col in (
     dummy_metrics["MAE"] = (each_true - each_true.mean()).abs().mean()
     dummy_metrics["RMSE"] = ((each_true - each_true.mean()) ** 2).mean() ** 0.5
 
-    df_out.loc[col] = dummy_metrics | {model_name_col: col}
+    df_out.loc[:, col] = dummy_metrics | {model_name_col: col}
 
 
 # %%
@@ -292,6 +306,12 @@ for (label, df_met), show_non_compliant in itertools.product(
     ),
     (True, False),
 ):
+    df_met = df_met.copy().T.rename_axis(index=model_name_col)
+    if "kappa_103" in df_met:
+        df_kappa = pd.json_normalize(df_met["kappa_103"])
+        df_kappa.index = df_met.index
+        df_met["κ_SRME"] = df_kappa["κ_SRME"]
+
     # abbreviate long column names
     df_met = df_met.rename(
         columns={
@@ -303,6 +323,7 @@ for (label, df_met), show_non_compliant in itertools.product(
     )
     # only keep columns we want to show
     df_table = df_met.filter([model_name_col, *show_cols])
+    df_table = df_table.convert_dtypes()
     # hide models that are not compliant if show_non_compliant is False
     if not show_non_compliant:
         df_table = df_table.drop(non_compliant_models)
@@ -325,8 +346,7 @@ for (label, df_met), show_non_compliant in itertools.product(
         df_table = df_table.drop(meta_cols, axis="columns", errors="ignore")
 
     styler = df_table.style.format(
-        dict.fromkeys(df_table.select_dtypes(float), "{:.3g}"),
-        # dict.fromkeys(df_table.select_dtypes(float), "{:,.3f}"),  # use for manuscript
+        dict.fromkeys(df_table.select_dtypes(float), "{:,.3f}"),  # use for manuscript
         na_rep="",  # render NaNs as empty string
     )
     styler = styler.background_gradient(

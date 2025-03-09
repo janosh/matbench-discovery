@@ -3,30 +3,44 @@
   import { page } from '$app/stores'
   import { Footer, Nav } from '$lib'
   import { repository } from '$site/package.json'
+  import type { Snippet } from 'svelte'
   import { CmdPalette } from 'svelte-multiselect'
   import Toc from 'svelte-toc'
   import { CopyButton, GitHubCorner } from 'svelte-zoo'
   import '../app.css'
 
+  interface Props {
+    children?: Snippet
+  }
+
+  let { children }: Props = $props()
+
   const routes = Object.keys(import.meta.glob(`./*/+page.{svelte,md}`)).map(
     (filename) => `/` + filename.split(`/`)[1],
   )
 
-  $: url = $page.url.pathname
-  $: headingSelector = `main :is(${
-    { '/api': `h1, ` }[url] ?? ``
-  }h2, h3, h4):not(.toc-exclude)`
+  let url = $derived($page.url.pathname)
+  let headingSelector = $derived(
+    `main :is(${{ '/api': `h1, ` }[url] ?? ``}h2, h3, h4):not(.toc-exclude)`,
+  )
 
-  $: description = {
-    '/': `Benchmarking machine learning energy models for materials discovery.`,
-    '/data': `Details about provenance, chemistry and energies in the benchmark's train and test set.`,
-    '/data/tmi': `Too much information on the benchmark's data.`,
-    '/api': `API docs for the Matbench Discovery PyPI package.`,
-    '/contribute': `Steps for contributing a new model to the benchmark.`,
-    '/models': `Details on each model sortable by metrics.`,
-  }[url ?? ``]
-  if (url && !description) console.warn(`No description for url=${url}`)
-  $: title = url == `/` ? `` : `${url} • `
+  let description = $derived(
+    {
+      '/': `Benchmarking machine learning energy models for materials discovery.`,
+      '/data': `Details about provenance, chemistry and energies in the benchmark's train and test set.`,
+      '/data/tmi': `Too much information on the benchmark's data.`,
+      '/api': `API docs for the Matbench Discovery PyPI package.`,
+      '/contribute': `Steps for contributing a new model to the benchmark.`,
+      '/models': `Details on each model sortable by metrics.`,
+      '/tasks/diatomics': `Metrics and analysis of predicting diatomic energies.`,
+      '/tasks/phonons': `Metrics and analysis of predicting phonon modes and frequencies.`,
+      '/tasks/geo-opt': `Metrics and analysis of predicting ground state geometries.`,
+    }[url ?? ``],
+  )
+  $effect(() => {
+    if (url && !description) console.warn(`No description for url=${url}`)
+  })
+  let title = $derived(url == `/` ? `` : `${url} • `)
 
   const actions = Object.keys(import.meta.glob(`./**/+page.{svelte,md}`)).map(
     (filename) => {
@@ -82,7 +96,7 @@
 />
 
 <main>
-  <slot />
+  {@render children?.()}
 </main>
 
 <Footer />
