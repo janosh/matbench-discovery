@@ -65,7 +65,7 @@
   </button>
 </h2>
 <nav>
-  {#each links.filter(([href]) => href) as [href, title, icon]}
+  {#each links.filter(([href]) => href) as [href, title, icon] (href)}
     <span>
       <iconify-icon {icon} inline></iconify-icon>
       <a {href} {...target}>{title}</a>
@@ -116,14 +116,14 @@
     <span style="grid-column: span 2;">
       <iconify-icon icon="mdi:database" inline></iconify-icon>
       Training set:
-      {#each training_sets as training_set_or_key, idx}
+      {#each training_sets as train_set_or_key, idx (train_set_or_key)}
         {#if idx > 0}
           &nbsp;+&nbsp;
         {/if}
         {@const training_set =
-          typeof training_set_or_key == `string`
-            ? TRAINING_SETS[training_set_or_key]
-            : training_set_or_key}
+          typeof train_set_or_key == `string`
+            ? TRAINING_SETS[train_set_or_key]
+            : train_set_or_key}
         {@const { n_structures, url, title, n_materials } = training_set}
         {@const pretty_n_mat =
           typeof n_materials == `number` ? pretty_num(n_materials) : n_materials}
@@ -164,7 +164,7 @@
     >
       <h3>Package versions</h3>
       <ul>
-        {#each Object.entries(model.requirements ?? {}) as [name, version]}
+        {#each Object.entries(model.requirements ?? {}) as [name, version] (name)}
           {@const [href, link_text] = version.startsWith(`http`)
             ? // version.split(`/`).at(-1) assumes final part after / of URL is the package version, as is the case for GitHub releases
               [version, version.split(`/`).at(-1)]
@@ -181,7 +181,7 @@
   <h3>Metrics</h3>
   <ul>
     <!-- hide run time if value is 0 (i.e. not available) -->
-    {#each stats as { key, label, unit }}
+    {#each stats as { key, label, unit } (key)}
       <li class:active={sort_by == key}>
         <label for={key}>{@html label ?? key}</label>
         <strong>{pretty_num(all_metrics[key])} <small>{unit ?? ``}</small></strong>
@@ -194,17 +194,17 @@
   <section>
     <h3>Hyperparameters</h3>
     <ul>
-      {#each Object.entries(hyperparams) as [key, value]}
+      {#each Object.entries(hyperparams) as [key, val] (key)}
         <li>
           {key}:
-          {#if typeof value == `object`}
+          {#if typeof val == `object`}
             <ul>
-              {#each Object.entries(value) as [k, v]}
-                <li><code>{k} = {v}</code></li>
+              {#each Object.entries(val) as [sub_key, sub_val] (sub_key)}
+                <li><code>{sub_key} = {sub_val}</code></li>
               {/each}
             </ul>
           {:else}
-            {value}
+            {val}
           {/if}
         </li>
       {/each}

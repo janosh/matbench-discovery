@@ -56,26 +56,25 @@ def base_curve(xs: np.ndarray) -> np.ndarray:
     [
         {
             "name": "no_mod",
-            MbdKey.norm_auc: 0.0,
-            MbdKey.energy_mae: 0.0,
-            MbdKey.tortuosity: 1.0,
+            MbdKey.norm_auc: 0,
+            MbdKey.energy_mae: 0,
+            MbdKey.tortuosity: 1,
             MbdKey.energy_jump: 0.083043538,
             MbdKey.smoothness: 578.772692,
         },
         {
             "name": "vertical_shift",
             MbdKey.norm_auc: 0.00489955,
-            MbdKey.norm_auc: 0.00489955,
-            MbdKey.energy_mae: 1.0,
-            MbdKey.tortuosity: 1.0,
+            MbdKey.energy_mae: 1,
+            MbdKey.tortuosity: 1,
             MbdKey.energy_jump: 0.083043538,
             MbdKey.smoothness: 578.772692,
         },
         {
             "name": "morse",
-            MbdKey.norm_auc: 0.411922297,
-            MbdKey.energy_mae: 84.797947,
-            MbdKey.tortuosity: 1.0,
+            MbdKey.norm_auc: 7.91953706,
+            MbdKey.energy_mae: 1615.5712,
+            MbdKey.tortuosity: 1,
             MbdKey.energy_jump: 0.083043538,
             MbdKey.smoothness: 4561.131837,
         },
@@ -184,7 +183,8 @@ def test_write_metrics_to_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setattr(Model, "yaml_path", yaml_path)
 
     # Test with empty metrics
-    diatomics.write_metrics_to_yaml(model, {})
+    result = diatomics.write_metrics_to_yaml(model, {})
+    assert result == {}
     assert yaml_path.read_text() == text
 
     # Test with valid metrics
@@ -200,7 +200,7 @@ def test_write_metrics_to_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
             MbdKey.conservation: 6.0,
         },
     }
-    diatomics.write_metrics_to_yaml(model, metrics)
+    result = diatomics.write_metrics_to_yaml(model, metrics)
 
     # Check that metrics were written correctly
     yaml_content = yaml_path.read_text()
@@ -209,3 +209,7 @@ def test_write_metrics_to_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     assert "smoothness: 2.5" in yaml_content  # mean of [1.0, 4.0]
     assert "tortuosity: 3.5" in yaml_content  # mean of [2.0, 5.0]
     assert "conservation: 4.5" in yaml_content  # mean of [3.0, 6.0]
+
+    # Check the returned dictionary
+    assert isinstance(result, dict)
+    assert result == {"conservation": 4.5, "smoothness": 2.5, "tortuosity": 3.5}

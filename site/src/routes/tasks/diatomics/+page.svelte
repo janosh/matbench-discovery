@@ -44,6 +44,11 @@
 
   // Start with pre-loaded models selected
   let selected_models = $state(new Set(Object.keys(diatomic_curves)))
+  let diatomics_to_render = $derived( // only render diatomics where at least one model has data
+    homo_diatomic_formulas.filter((formula) =>
+      [...selected_models].some((model) => diatomic_curves[model]?.[humu_nuc_key]?.[formula]?.energies?.length > 0),
+    ),
+  )
 
   function toggle_model(model: ModelData) {
     const { model_name } = model
@@ -80,7 +85,7 @@
   </div>
 
   <div class="model-toggles">
-    {#each diatomic_models as model}
+    {#each diatomic_models as model (model.model_name)}
       {@const error = errors[model.model_name]}
       <button
         class:selected={selected_models.has(model.model_name)}
@@ -96,7 +101,7 @@
 </div>
 
 <div class="grid" style="--plot-width: {plot_width}px">
-  {#each homo_diatomic_formulas.filter( (formula) => [...selected_models].some((model) => diatomic_curves[model]?.[humu_nuc_key]?.[formula]?.energies?.length > 0), ) as formula}
+  {#each diatomics_to_render as formula (formula)}
     <DiatomicCurve
       {formula}
       curves={[...selected_models]

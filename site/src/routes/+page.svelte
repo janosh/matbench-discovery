@@ -1,10 +1,10 @@
 <script lang="ts">
   import type { ModelData } from '$lib'
   import {
-    MetricsTable,
-    model_is_compliant,
-    MODEL_METADATA,
-    TableColumnToggleMenu,
+      MetricsTable,
+      model_is_compliant,
+      MODEL_METADATA,
+      TableColumnToggleMenu,
   } from '$lib'
   import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/metrics'
   import type { DiscoverySet } from '$lib/types'
@@ -52,7 +52,7 @@
   {#snippet metrics_table()}
     <figure style="margin-top: 4em;" id="metrics-table">
       <div class="discovery-set-toggle">
-        {#each Object.entries(DISCOVERY_SET_LABELS) as [key, { title, tooltip, link }]}
+        {#each Object.entries(DISCOVERY_SET_LABELS) as [key, { title, tooltip, link }] (key)}
           <Tooltip text={tooltip} tip_style="z-index: 2; font-size: 0.8em;">
             <button
               class:active={discovery_set === key}
@@ -85,7 +85,7 @@
 
       <div class="downloads">
         Download table as
-        {#each [`PDF`, `SVG`] as file_ext}
+        {#each [`PDF`, `SVG`] as file_ext (file_ext)}
           {@const suffix = show_non_compliant ? `` : `-only-compliant`}
           <a
             href="/figs/metrics-table-uniq-protos{suffix}.{file_ext.toLowerCase()}"

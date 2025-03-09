@@ -6,11 +6,11 @@
   import pkg from '$site/package.json'
   import type { ChemicalElement } from 'elementari'
   import {
-    ColorBar,
-    ColorScaleSelect,
-    PeriodicTable,
-    pretty_num,
-    TableInset,
+      ColorBar,
+      ColorScaleSelect,
+      PeriodicTable,
+      pretty_num,
+      TableInset,
   } from 'elementari'
   import 'iconify-icon'
   import { CopyButton, Tooltip } from 'svelte-zoo'
@@ -192,7 +192,7 @@
               <iconify-icon icon="octicon:graph" inline></iconify-icon> Predictions
             </summary>
             <div class="dropdown">
-              {#each pred_files as { name, url }}
+              {#each pred_files as { name, url } (url)}
                 <a href={url} target="_blank" rel="noopener noreferrer">
                   {name}
                 </a>
@@ -205,7 +205,7 @@
 
     <!-- check if Plotly undefined needed for model-page.test.ts since vitest with JSDOM doesn't mock some Browser APIs that Plotly needs -->
     {#if typeof globalThis.Plotly != `undefined`}
-      {#each [[`e-form`, `Formation Energies`], [`each`, `Convex Hull Distance`]] as [which_energy, title]}
+      {#each [[`e-form`, `Formation Energies`], [`each`, `Convex Hull Distance`]] as [which_energy, title] (which_energy)}
         {#await import(`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`) then ParityPlot}
           <!-- negative margin-bottom corrects for display: none plot title -->
           <h3 style="margin-bottom: -2em;">
@@ -254,7 +254,7 @@
     <section class="authors">
       <h2>Model Authors</h2>
       <ol>
-        {#each model.authors as author}
+        {#each model.authors as author (author.name)}
           <li>
             <span>{author.name}</span>
             {#if author.affiliation}<span class="affiliation">({author.affiliation})</span
@@ -288,7 +288,7 @@
       <section class="trained-by">
         <h2>Trained By</h2>
         <ol>
-          {#each model.trained_by as trainer}
+          {#each model.trained_by as trainer (trainer.name)}
             <li>
               <span>{trainer.name}</span>
               {#if trainer.affiliation}<span class="affiliation"
@@ -319,7 +319,7 @@
     <section class="model-info">
       <h2>Model Info</h2>
       <ul>
-        {#each [[`Model Version`, model.model_version], [`Model Type`, model.model_type], [`Targets`, model.targets], [`Openness`, model.openness], [`Train Task`, model.train_task], [`Test Task`, model.test_task], [`Trained for Benchmark`, model.trained_for_benchmark ? `Yes` : `No`]] as [key, value]}
+        {#each [[`Model Version`, model.model_version], [`Model Type`, model.model_type], [`Targets`, model.targets], [`Openness`, model.openness], [`Train Task`, model.train_task], [`Test Task`, model.test_task], [`Trained for Benchmark`, model.trained_for_benchmark ? `Yes` : `No`]] as [key, value] (key)}
           <li>
             {key}
             <strong>{value}</strong>
@@ -331,7 +331,7 @@
     {#if model.training_set}
       <h2>Training Set</h2>
       <section class="training-set">
-        {#each Array.isArray(model.training_set) ? model.training_set : [model.training_set] as train_set}
+        {#each Array.isArray(model.training_set) ? model.training_set : [model.training_set] as train_set (train_set)}
           {@const train_set_info =
             typeof train_set == `string` ? TRAINING_SETS[train_set] : train_set}
           {@const { n_structures, url, title, n_materials } = train_set_info}
@@ -359,19 +359,19 @@
 
     {#if model.notes?.html}
       <section class="notes">
-        {#each Object.entries(model.notes.html) as [key, note]}
+        {#each Object.entries(model.notes.html) as [key, note] (key)}
           <h2>{key}</h2>
           {#if typeof note === `string`}
             <p>{@html note}</p>
           {:else if Array.isArray(note)}
             <ol>
-              {#each note as val}
+              {#each note as val (val)}
                 <li>{@html val}</li>
               {/each}
             </ol>
           {:else}
             <ul>
-              {#each Object.entries(note) as [key, val]}
+              {#each Object.entries(note) as [key, val] (key)}
                 <li><strong>{key}:</strong> {val}</li>
               {/each}
             </ul>
@@ -384,7 +384,7 @@
       <section class="hyperparams">
         <h2>Hyperparameters</h2>
         <ul>
-          {#each Object.entries(model.hyperparams) as [key, value]}
+          {#each Object.entries(model.hyperparams) as [key, value] (key)}
             <li><strong>{key}:</strong> <code>{JSON.stringify(value)}</code></li>
           {/each}
         </ul>
@@ -395,7 +395,7 @@
       <section class="deps">
         <h2>Dependencies</h2>
         <ul>
-          {#each Object.entries(model.requirements) as [pkg, version]}
+          {#each Object.entries(model.requirements) as [pkg, version] (pkg)}
             {@const href = version.startsWith(`http`)
               ? version
               : `https://pypi.org/project/${pkg}/${version}`}

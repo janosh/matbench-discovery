@@ -102,7 +102,7 @@
   </span>
 
   <ul>
-    {#each [{ key: `model_name`, label: `Model Name` }, ...stats] as { key, label, tooltip }}
+    {#each [{ key: `model_name`, label: `Model Name` }, ...stats] as { key, label, tooltip } (key)}
       <li class:active={key == sort_by}>
         <button
           id={key}
@@ -156,7 +156,7 @@
 </div>
 
 <!-- link to ALL model pages with hidden links for the SvelteKit crawler -->
-{#each MODEL_METADATA as model}
+{#each MODEL_METADATA as model (model.model_name)}
   <a href="/models/{model.model_key}" hidden>
     {model.model_name}
   </a>

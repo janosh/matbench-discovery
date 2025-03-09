@@ -20,7 +20,7 @@
     Columns <iconify-icon icon="octicon:columns-16" inline></iconify-icon>
   </summary>
   <div class="column-menu">
-    {#each Object.keys(visible_cols) as col}
+    {#each Object.keys(visible_cols) as col (col)}
       <label>
         <input type="checkbox" bind:checked={visible_cols[col]} />
         {@html col}

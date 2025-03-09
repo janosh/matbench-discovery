@@ -21,7 +21,7 @@
 
 {#if browser}
   <ul>
-    {#each Object.entries(plots) as [name, Plot]}
+    {#each Object.entries(plots) as [name, Plot] (name)}
       {@const title = name.split(`mp-trj-`)[1].split(`-hist.svelte`)[0]}
       <h2>{title_map[title] ?? title}</h2>
       <Plot {title} style="width: 100%; max-width: 700px; max-height: 400px;" />
