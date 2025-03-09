@@ -170,7 +170,7 @@ class ModelType(LabelEnum):
     UIP = "UIP", "Universal Interatomic Potential"
     BO_GNN = "BO-GNN", "GNN in a Bayesian Optimization Loop"
     Fingerprint = "Fingerprint", "Models with Structural Fingerprint Features"  # ex. RF
-    Transformer = "Transformer", "Transformer-Based Models"  # ex. Wrenformer
+    Transformer = "Transformer", "Transformer-Based Models"  # Wrenformer, AlchemBERT
     RF = "RF", "Random Forest"
 
 
@@ -275,6 +275,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     """Data files provided by Matbench Discovery.
     See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
     """
+
+    alchembert = auto(), "alchembert/alchembert.yml"
 
     # AlphaNet: https://arxiv.org/abs/2501.07155
     alphanet_mptrj = auto(), "alphanet/alphanet-mptrj.yml"
