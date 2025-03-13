@@ -8,17 +8,15 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import torch
-import wandb
 from matris.model import StructOptimizer
 from pymatgen.core import Structure
 from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import timestamp, today
-from matbench_discovery.data import as_dict_handler, df_wbm
-from matbench_discovery.enums import DataFiles, MbdKey, Model, Task
+from matbench_discovery.data import as_dict_handler
+from matbench_discovery.enums import DataFiles, Model, Task
 from matbench_discovery.hpc import slurm_submit
-
 
 task_type = Task.IS2RE
 module_dir = os.path.dirname(__file__)
@@ -33,10 +31,11 @@ slurm_vars = slurm_submit(
     out_dir=out_dir,
     account="matgen",
     time="47:55:0",
-    partition="a800", 
+    partition="a800",
     array=f"1-{slurm_array_task_count}",
     slurm_flags="--job-name Test --nodes 1 --nodelist g07 --gres gpu:1 --cpus-per-task 1",
 )
+
 
 # %%
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))
@@ -76,6 +75,7 @@ run_params = {
 }
 
 run_name = f"{job_name}-{slurm_array_task_id}"
+
 
 # %%
 relax_results: dict[str, dict[str, Any]] = {}

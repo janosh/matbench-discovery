@@ -329,7 +329,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
 
     # MatRIS-v0.5.0-MPtrj
     matris_v050_mptrj = auto(), "matris/matris-v050-mptrj.yml"
-    
+
     # MatterSim - M3gNet architecture trained on propertary MSFT data. Weights
     # are open-sourced.
     mattersim_v1_5m = auto(), "mattersim/mattersim-v1-5m.yml"

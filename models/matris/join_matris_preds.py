@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from matbench_discovery.data import as_dict_handler
 from matbench_discovery.energy import get_e_form_per_atom
-from matbench_discovery.enums import MbdKey, Task, Model
+from matbench_discovery.enums import MbdKey, Model, Task
 from matbench_discovery.preds.discovery import df_preds
 
 
@@ -66,7 +66,8 @@ ax = pmv.density_scatter_plotly(
     template="pymatviz_white",
 )
 
-#ax.write_html(f"matris_v050.html")
+# ax.write_html(f"matris_v050.html")
+
 
 # %%
 out_path = file_paths[0].rsplit("/", 1)[0]
