@@ -358,7 +358,7 @@ properties:
     enum: [OSOD, OSCD, CSOD, CSCD]
   status:
     type: string
-    enum: [aborted, complete]
+    enum: [aborted, complete, deprecated, pending]
   metrics:
     type: object
     additionalProperties: false
