@@ -12,22 +12,20 @@ from typing import Any, Literal
 
 import pandas as pd
 import torch
-from ase import Atoms
 from ase.constraints import FixSymmetry
 from ase.filters import FrechetCellFilter
 from ase.io import read
 from ase.optimize import FIRE, LBFGS
 from ase.optimize.optimize import Optimizer
+from matris.model.dynamics import MatRISCalculator
 from moyopy import MoyoDataset
 from moyopy.interface import MoyoAdapter
 from pymatviz.enums import Key
 from tqdm import tqdm
-import moyopy
 
 from matbench_discovery.enums import DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
-from matris.model.dynamics import MatRISCalculator
 
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 
@@ -38,7 +36,7 @@ calc = MatRISCalculator(use_device=device)
 # Relaxation parameters
 ase_optimizer: Literal["FIRE", "LBFGS", "BFGS"] = "FIRE"
 max_steps = 300
-force_max = 1e-4 
+force_max = 1e-4
 symprec = 1e-5
 enforce_relax_symm = True
 conductivity_broken_symm = False
@@ -127,7 +125,7 @@ for atoms in tqdm_bar:
                 filtered_atoms, logfile=f"{out_dir}/relax_{mat_id}.log"
             )
             optimizer.run(fmax=force_max, steps=max_steps)
-            
+
             reached_max_steps = optimizer.nsteps >= max_steps
             if reached_max_steps:
                 print(f"Material {mat_desc=} reached {max_steps=} during relaxation.")
