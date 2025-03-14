@@ -139,9 +139,9 @@ def update_one_modeling_task_article(
         print(f"{idx}. {file_name}: {file_data.get('id')}")
 
     # files that were skipped because they already exist
-    skipped_files: dict[str, str] = {}
-    updated_files: dict[str, str] = {}  # files that were re-uploaded
-    new_files: dict[str, str] = {}  # files that didn't exist before
+    skipped_files: dict[str, tuple[str, Model]] = {}  # filename -> (url, model)
+    updated_files: dict[str, tuple[str, Model]] = {}  # files that were re-uploaded
+    new_files: dict[str, tuple[str, Model]] = {}  # files that didn't exist before
 
     for model in tqdm(models):
         if not os.path.isfile(model.yaml_path):
@@ -194,7 +194,7 @@ def update_one_modeling_task_article(
 
                 if exists and file_id is not None:
                     file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
-                    skipped_files[filename] = file_url
+                    skipped_files[filename] = (file_url, model)
 
                     # Update model metadata if URL not present
                     url_key = f"{key_path}_url"  # append _url to YAML key
@@ -218,9 +218,9 @@ def update_one_modeling_task_article(
                 file_url = f"{figshare.DOWNLOAD_URL_PREFIX}/{file_id}"
 
                 if filename in existing_files:
-                    updated_files[filename] = file_url
+                    updated_files[filename] = (file_url, model)
                 else:
-                    new_files[filename] = file_url
+                    new_files[filename] = (file_url, model)
 
                 # Update model metadata with URL
                 *parts, last = key_path.split(".")
@@ -234,25 +234,33 @@ def update_one_modeling_task_article(
             with open(model.yaml_path, mode="w") as file:
                 round_trip_yaml.dump(model_data, file)
 
-    print(f"Newly added: {len(new_files)}")
-    print(f"Updated: {len(updated_files)}")
+    # Extract unique models from the file dictionaries
+    new_models = {model.name for _, model in new_files.values()}
+    updated_models = {model.name for _, model in updated_files.values()}
+
+    print(f"Newly added: {len(new_files)} [{', '.join(new_models)}]")
+    print(f"Updated: {len(updated_files)} [{', '.join(updated_models)}]")
     print(f"Skipped (already exists with same hash): {len(skipped_files)}")
 
     if new_files or updated_files or skipped_files:
         if new_files:
             print("\nNewly added files:")
-            for idx, (filename, url) in enumerate(new_files.items(), start=1):
-                print(f"{idx}. {filename}: {url}")
+            for idx, (filename, (url, model)) in enumerate(new_files.items(), start=1):
+                print(f"{idx}. {model.name} {filename}: {url}")
 
         if updated_files:
             print("\nUpdated files:")
-            for idx, (filename, url) in enumerate(updated_files.items(), start=1):
-                print(f"{idx}. {filename}: {url}")
+            for idx, (filename, (url, model)) in enumerate(
+                updated_files.items(), start=1
+            ):
+                print(f"{idx}. {model.name} {filename}: {url}")
 
         if skipped_files:
             print("\nSkipped files (already exist with same hash):")
-            for idx, (filename, url) in enumerate(skipped_files.items(), start=1):
-                print(f"{idx}. {filename}: {url}")
+            for idx, (filename, (url, model)) in enumerate(
+                skipped_files.items(), start=1
+            ):
+                print(f"{idx}. {model.name} {filename}: {url}")
     else:
         print("\nNo files were added or updated.")
 
