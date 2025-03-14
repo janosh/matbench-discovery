@@ -41,7 +41,7 @@ if existing_paths:
     raise SystemExit
 
 # distances in Angstrom
-distances = np.linspace(0.1, 6, 100)
+distances = np.logspace(1, -1, 40)
 
 # only consider elements up to atomic number 10 (Ne) for now
 atomic_nums = range(1, 93)
