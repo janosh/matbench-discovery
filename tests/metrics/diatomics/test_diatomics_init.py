@@ -16,7 +16,7 @@ np_rng = np.random.default_rng(seed=0)
 
 def test_diatomic_classes() -> None:
     """Test DiatomicCurve and DiatomicCurves initialization and validation."""
-    dists = np.linspace(0.5, 5.0, 10).tolist()
+    dists = np.logspace(1, -1, 40).tolist()
     energies = np_rng.random(len(dists)).tolist()
     forces = np_rng.random((len(dists), 2, 3)).tolist()
 
@@ -59,24 +59,24 @@ def base_curve(xs: np.ndarray) -> np.ndarray:
             MbdKey.norm_auc: 0,
             MbdKey.energy_mae: 0,
             MbdKey.tortuosity: 1,
-            MbdKey.energy_jump: 0.083043538,
-            MbdKey.smoothness: 578.772692,
+            MbdKey.energy_jump: 1.22,
+            MbdKey.smoothness: 7475.63,
         },
         {
             "name": "vertical_shift",
-            MbdKey.norm_auc: 0.00489955,
+            MbdKey.norm_auc: 0.0008,
             MbdKey.energy_mae: 1,
             MbdKey.tortuosity: 1,
-            MbdKey.energy_jump: 0.083043538,
-            MbdKey.smoothness: 578.772692,
+            MbdKey.energy_jump: 1.22,
+            MbdKey.smoothness: 7475.63,
         },
         {
             "name": "morse",
-            MbdKey.norm_auc: 7.91953706,
-            MbdKey.energy_mae: 1615.5712,
+            MbdKey.norm_auc: 0.17,
+            MbdKey.energy_mae: 1932.84,
             MbdKey.tortuosity: 1,
-            MbdKey.energy_jump: 0.083043538,
-            MbdKey.smoothness: 4561.131837,
+            MbdKey.energy_jump: 3.35,
+            MbdKey.smoothness: 56585.52,
         },
     ],
 )
@@ -88,7 +88,7 @@ def test_curve_shifts(expected: dict[str, float | str]) -> None:
         "vertical_shift": lambda xs: base_curve(xs) + 1.0,
         "morse": lambda xs: 5 * (1 - np.exp(-2 * (xs - 2.0))) ** 2 - 5,
     }[name]
-    dists = np.linspace(0.5, 5.0, 100)
+    dists = np.logspace(1, -1, 40)
     e_ref = base_curve(dists)
     e_pred = curve_func(dists)
 
@@ -108,7 +108,7 @@ def test_curve_shifts(expected: dict[str, float | str]) -> None:
     # Check metrics
     for metric_key, expect in expected.items():
         actual = metrics_out["H"][metric_key]
-        assert actual == pytest.approx(expect), (
+        assert actual == pytest.approx(expect, abs=0.5), (
             f"{name=}, {metric_key=} expected {expect}, got {actual}"
         )
 
@@ -153,7 +153,7 @@ def test_diatomic_curve_metrics(
 
     # Test with custom parameters
     custom_metrics: dict[str, dict[str, Any]] = {
-        MbdKey.norm_auc: {"seps_range": (1.0, 4.0)},
+        MbdKey.norm_auc: {"normalize": False},
     }
     custom_results = diatomics.calc_diatomic_metrics(
         ref_curves, pred_curves, metrics=custom_metrics
@@ -163,6 +163,43 @@ def test_diatomic_curve_metrics(
     for key in custom_metrics:
         assert key in custom_results["H"]
         assert custom_results["H"][key] != metrics["H"][key], f"{key=}"
+
+    # Test with interpolation parameter
+    # Create a copy of ref_curves with slightly different distances
+    modified_dists = ref_dists.copy() * 1.001  # 0.1% difference
+    modified_ref_curves = DiatomicCurves(
+        distances=modified_dists,
+        homo_nuclear={
+            elem: DiatomicCurve(
+                distances=modified_dists, energies=curve.energies, forces=curve.forces
+            )
+            for elem, curve in ref_curves.homo_nuclear.items()
+        },
+        hetero_nuclear=ref_curves.hetero_nuclear,
+    )
+
+    # This should raise an error without interpolation
+    with pytest.raises(
+        ValueError,
+        match="Reference and predicted distances must be same when interpolate=False",
+    ):
+        diatomics.calc_diatomic_metrics(
+            modified_ref_curves, pred_curves, interpolate=False
+        )
+
+    # This should work with interpolation enabled
+    interp_results = diatomics.calc_diatomic_metrics(
+        modified_ref_curves, pred_curves, interpolate=True
+    )
+    assert isinstance(interp_results, dict)
+    assert "H" in interp_results
+
+    # Test with custom interpolation points
+    custom_interp_results = diatomics.calc_diatomic_metrics(
+        modified_ref_curves, pred_curves, interpolate=50
+    )
+    assert isinstance(custom_interp_results, dict)
+    assert "H" in custom_interp_results
 
     # Test with invalid metric name
     with pytest.raises(

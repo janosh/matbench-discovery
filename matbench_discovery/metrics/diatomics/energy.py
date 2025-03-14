@@ -58,6 +58,7 @@ def calc_curve_diff_auc(
     *,
     seps_range: tuple[float | None, float | None] = (None, None),
     normalize: bool = True,
+    interpolate: bool | int = False,
 ) -> float:
     """Calculate the absolute area under the curve of the difference between two curves.
     Handles different x-samplings by interpolating to a common grid.
@@ -71,6 +72,9 @@ def calc_curve_diff_auc(
             interatomic distances to consider. Can be None to auto-set based on data
             range. If tuple is None, uses intersection of both curves' x-ranges.
         normalize (bool): Whether to normalize by reference curve's bounding box area.
+        interpolate (bool | int): If False (default), uses the provided points directly.
+            If True, uses 100 points for interpolation.
+            If an integer, uses that many points for interpolation.
 
     Returns:
         float: Absolute area under the curve of the difference between the curves.
@@ -81,6 +85,13 @@ def calc_curve_diff_auc(
     seps_pred, e_pred = _validate_diatomic_curve(
         seps_pred, e_pred, normalize_energy=False
     )
+
+    # Check if interpolation is needed
+    if not interpolate and not np.array_equal(seps_ref, seps_pred):
+        raise ValueError(
+            f"Reference and predicted distances must be same when {interpolate=}\n"
+            f"{seps_ref=}, {seps_pred=}"
+        )
 
     # Get data range bounds
     data_min = max(seps_ref.min(), seps_pred.min())
@@ -94,16 +105,22 @@ def calc_curve_diff_auc(
     if seps_min >= seps_max:
         raise ValueError(f"Invalid range: {seps_min=} >= {seps_max=}")
 
-    # Create a fine grid for interpolation
-    seps_interp = np.linspace(seps_min, seps_max, 1000)
+    if interpolate:
+        # Create grid for interpolation
+        n_points = 100 if interpolate is True else interpolate
+        seps_interp = np.linspace(seps_min, seps_max, n_points)
 
-    # Interpolate both curves to the common grid
-    e_ref_interp = np.interp(seps_interp, seps_ref, e_ref)
-    e_pred_interp = np.interp(seps_interp, seps_pred, e_pred)
+        # Interpolate both curves to the common grid
+        e_ref_interp = np.interp(seps_interp, seps_ref, e_ref)
+        e_pred_interp = np.interp(seps_interp, seps_pred, e_pred)
 
-    # Calculate absolute difference and integrate
-    diff = np.abs(e_ref_interp - e_pred_interp)
-    auc = np.trapezoid(diff, seps_interp)
+        # Calculate absolute difference and integrate
+        diff = np.abs(e_ref_interp - e_pred_interp)
+        auc = np.trapezoid(diff, seps_interp)
+    else:
+        # If no interpolation, calculate directly
+        diff = np.abs(e_ref - e_pred)
+        auc = np.trapezoid(diff, seps_ref)
 
     if normalize:
         # Get bounding box area of reference curve
@@ -112,7 +129,8 @@ def calc_curve_diff_auc(
         if box_area > 0:  # If reference curve is flat, don't normalize
             auc = auc / box_area
 
-    return float(auc)
+    # Ensure AUC is always positive
+    return float(abs(auc))
 
 
 def calc_energy_mae(
@@ -120,6 +138,8 @@ def calc_energy_mae(
     e_ref: Sequence[float],
     seps_pred: Sequence[float],
     e_pred: Sequence[float],
+    *,
+    interpolate: bool | int = False,
 ) -> float:
     """Calculate mean absolute error between two energy curves.
     Handles different x-samplings by interpolating to a common grid.
@@ -129,6 +149,9 @@ def calc_energy_mae(
         e_ref (Sequence[float]): Reference potential energies (eV)
         seps_pred (Sequence[float]): Predicted interatomic distances (Å)
         e_pred (Sequence[float]): Predicted potential energies (eV)
+        interpolate (bool | int): If False (default), uses the provided points directly.
+            If True, uses 100 points for interpolation.
+            If an integer, uses that many points for interpolation.
 
     Returns:
         float: Mean absolute error between the curves (eV).
@@ -139,19 +162,30 @@ def calc_energy_mae(
         seps_pred, e_pred, normalize_energy=False
     )
 
+    # Check if interpolation is needed
+    if not interpolate and not np.array_equal(seps_ref, seps_pred):
+        raise ValueError(
+            f"Reference and predicted distances must be same when {interpolate=}\n"
+            f"{seps_ref=}, {seps_pred=}"
+        )
+
     # Get data range bounds
     data_min = max(seps_ref.min(), seps_pred.min())
     data_max = min(seps_ref.max(), seps_pred.max())
 
-    # Create a fine grid for interpolation
-    seps_interp = np.linspace(data_min, data_max, 1000)
+    if interpolate:
+        # Create grid for interpolation
+        n_points = 100 if interpolate is True else interpolate
+        seps_interp = np.linspace(data_min, data_max, n_points)
 
-    # Interpolate both curves to the common grid
-    e_ref_interp = np.interp(seps_interp, seps_ref, e_ref)
-    e_pred_interp = np.interp(seps_interp, seps_pred, e_pred)
+        # Interpolate both curves to the common grid
+        e_ref_interp = np.interp(seps_interp, seps_ref, e_ref)
+        e_pred_interp = np.interp(seps_interp, seps_pred, e_pred)
 
-    # Calculate MAE
-    return float(np.mean(np.abs(e_ref_interp - e_pred_interp)))
+        # Calculate MAE on interpolated data
+        return float(np.mean(np.abs(e_ref_interp - e_pred_interp)))
+    # If no interpolation, calculate MAE directly
+    return float(np.mean(np.abs(e_ref - e_pred)))
 
 
 def calc_second_deriv_smoothness(
