@@ -97,7 +97,7 @@ def test_calc_diatomic_curve_energy_trend() -> None:
     """Test that energy follows expected trend with distance."""
     calculator = EMT()
     # Test with a range of distances around the equilibrium bond length for Cu2
-    distances = np.linspace(2.0, 5.0, 10)  # Cu-Cu has larger equilibrium distance
+    distances = np.logspace(1, -1, 40)  # Cu-Cu has larger equilibrium distance
     pairs = [("Cu", "Cu")]
     results: dict[str, dict[str, list[float | list[list[float]]]]] = {}
 

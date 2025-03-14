@@ -36,7 +36,7 @@
 
 {#if browser}
   <ul>
-    {#each Object.entries(plots) as [name, Plot]}
+    {#each Object.entries(plots) as [name, Plot] (name)}
       <Plot {name} style="width: 100%; place-self: center;" />
     {/each}
   </ul>

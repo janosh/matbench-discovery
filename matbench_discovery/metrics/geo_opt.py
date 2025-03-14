@@ -14,7 +14,7 @@ def write_metrics_to_yaml(
     model: Model,
     symprec: float,
     analysis_file_path: str,
-) -> None:
+) -> dict[str, str | float]:
     """Write geometric optimization metrics to model's YAML file.
 
     Args:
@@ -22,6 +22,10 @@ def write_metrics_to_yaml(
         model (Model): Model to write metrics for
         symprec (float): Symmetry precision used for analysis
         analysis_file_path (str): Path to analysis file
+
+    Returns:
+        dict[str, str | float]: Geometric optimization metrics for this model and
+            symmetry precision.
     """
     # Convert absolute path to relative path if needed
     analysis_file_path = analysis_file_path.removeprefix(f"{ROOT}/")
@@ -57,6 +61,7 @@ def write_metrics_to_yaml(
     update_yaml_at_path(
         model.yaml_path, f"metrics.geo_opt.{symprec_key}", metrics_for_symprec
     )
+    return metrics_for_symprec
 
 
 def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:

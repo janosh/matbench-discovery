@@ -179,10 +179,10 @@
   {#snippet cell({ col, val })}
     {#if col.label === `Links` && val}
       {@const links = val}
-      {#each [links.paper, links.repo, links.pr_url] as link}
-        {#if link?.url}
-          <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title}>
-            {link.icon}
+      {#each [links.paper, links.repo, links.pr_url] as {title, url, icon} (title + url)}
+        {#if url}
+          <a href={url} target="_blank" rel="noopener noreferrer" title={title}>
+            {icon}
           </a>
         {/if}
       {/each}
@@ -230,10 +230,10 @@
     </button>
     <h3>Download prediction files for {active_model_name}</h3>
     <ol class="pred-files-list">
-      {#each active_files as file}
+      {#each active_files as {name, url} (name + url)}
         <li>
-          <a href={file.url} target="_blank" rel="noopener noreferrer">
-            {file.name}
+          <a href={url} target="_blank" rel="noopener noreferrer">
+            {name}
           </a>
         </li>
       {/each}

@@ -6,18 +6,26 @@ import subprocess
 import sys
 import tempfile
 from collections.abc import Sequence, Sized
-from typing import TypeVar
+from typing import Final, TypeVar
 
 import numpy as np
 
 # taken from https://slurm.schedmd.com/job_array.html#env_vars, lower-cased and
 # and removed the SLURM_ prefix
-SLURM_KEYS = (
-    "job_id array_job_id array_task_id array_task_count mem_per_node nodelist"
-    "submit_host job_partition job_user job_account tasks_per_node job_qos"
-).split()
-SLURM_SUBMIT_KEY = "slurm-submit"
-
+SLURM_KEYS: Final[tuple[str, ...]] = (
+    "job_id",
+    "array_job_id",
+    "array_task_id",
+    "array_task_count",
+    "mem_per_node",
+    "nodelistsubmit_host",
+    "job_partition",
+    "job_user",
+    "job_account",
+    "tasks_per_node",
+    "job_qos",
+)
+SLURM_SUBMIT_KEY: Final[str] = "slurm-submit"
 HasLen = TypeVar("HasLen", bound=Sized)
 
 

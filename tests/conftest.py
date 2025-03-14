@@ -77,7 +77,7 @@ def pred_ref_diatomic_curves() -> tuple[DiatomicCurves, DiatomicCurves]:
         TestCurves: Reference and predicted curves for each element.
     """
     # Simple test case: H2 molecule with slightly different curves
-    distances = np.linspace(0.5, 5.0, 100)
+    distances = np.logspace(1, -1, 40)
     # Reference: Simple Morse potential
     e_h_ref = 5 * (1 - np.exp(-2 * (distances - 1.5))) ** 2 - 5
     e_he_ref = 4 * (1 - np.exp(-2 * (distances - 1.5))) ** 2 - 4

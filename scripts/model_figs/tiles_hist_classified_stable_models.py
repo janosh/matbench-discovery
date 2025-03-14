@@ -87,7 +87,7 @@ for anno in fig.layout.annotations:
     ):
         continue
     F1, FPR, FNR, DAF = (
-        dfs_metrics[test_subset][model_name][x] for x in "F1 FPR FNR DAF".split()
+        dfs_metrics[test_subset][model_name][x] for x in ("F1", "FPR", "FNR", "DAF")
     )
     # anno.text = f"{model_name} · {F1=:.2f} · {FPR=:.2f} · {FNR=:.2f} · {DAF=:.2f}"
     anno.text = f"{model_name} · {F1=:.2f}"

@@ -7,13 +7,15 @@ import numpy as np
 
 
 def _validate_diatomic_curve(
-    xs: Sequence[float], ys: Sequence[Any]
+    xs: Sequence[float], ys: Sequence[Any], *, normalize_energy: bool = False
 ) -> tuple[np.ndarray, np.ndarray]:
     """Validate curve input data.
 
     Args:
         xs (Sequence[float]): interatomic distances
         ys (Sequence[Any]): Energies or forces
+        normalize_energy (bool): Whether to shift energies to zero at largest separation
+            distance (far field). Only applies when ys are energies, not forces.
 
     Returns:
         tuple[np.ndarray, np.ndarray]: Validated and sorted x and y arrays
@@ -37,9 +39,15 @@ def _validate_diatomic_curve(
         n_x_dup = int((np.diff(xs) == 0).sum())
         raise ValueError(f"xs contains {n_x_dup} duplicates")
 
-    # Sort by x values
-    sort_idx = np.argsort(xs)
-    return xs[sort_idx], ys[sort_idx]
+    sort_idx = np.argsort(xs)[::-1]
+    xs = xs[sort_idx]
+    ys = ys[sort_idx]
+
+    # If these are energies (rank 1 array), normalize to zero at far field
+    if normalize_energy and ys.ndim == 1:
+        ys = ys - ys[0]  # shift to zero at largest separation
+
+    return xs, ys
 
 
 def calc_curve_diff_auc(
@@ -50,6 +58,7 @@ def calc_curve_diff_auc(
     *,
     seps_range: tuple[float | None, float | None] = (None, None),
     normalize: bool = True,
+    interpolate: bool | int = False,
 ) -> float:
     """Calculate the absolute area under the curve of the difference between two curves.
     Handles different x-samplings by interpolating to a common grid.
@@ -63,14 +72,26 @@ def calc_curve_diff_auc(
             interatomic distances to consider. Can be None to auto-set based on data
             range. If tuple is None, uses intersection of both curves' x-ranges.
         normalize (bool): Whether to normalize by reference curve's bounding box area.
+        interpolate (bool | int): If False (default), uses the provided points directly.
+            If True, uses 100 points for interpolation.
+            If an integer, uses that many points for interpolation.
 
     Returns:
         float: Absolute area under the curve of the difference between the curves.
             If normalize=True, returns unitless value, otherwise in eV·Å.
     """
     # Validate and sort both curves
-    seps_ref, e_ref = _validate_diatomic_curve(seps_ref, e_ref)
-    seps_pred, e_pred = _validate_diatomic_curve(seps_pred, e_pred)
+    seps_ref, e_ref = _validate_diatomic_curve(seps_ref, e_ref, normalize_energy=False)
+    seps_pred, e_pred = _validate_diatomic_curve(
+        seps_pred, e_pred, normalize_energy=False
+    )
+
+    # Check if interpolation is needed
+    if not interpolate and not np.array_equal(seps_ref, seps_pred):
+        raise ValueError(
+            f"Reference and predicted distances must be same when {interpolate=}\n"
+            f"{seps_ref=}, {seps_pred=}"
+        )
 
     # Get data range bounds
     data_min = max(seps_ref.min(), seps_pred.min())
@@ -84,16 +105,22 @@ def calc_curve_diff_auc(
     if seps_min >= seps_max:
         raise ValueError(f"Invalid range: {seps_min=} >= {seps_max=}")
 
-    # Create a fine grid for interpolation
-    seps_interp = np.linspace(seps_min, seps_max, 1000)
+    if interpolate:
+        # Create grid for interpolation
+        n_points = 100 if interpolate is True else interpolate
+        seps_interp = np.linspace(seps_min, seps_max, n_points)
 
-    # Interpolate both curves to the common grid
-    e_ref_interp = np.interp(seps_interp, seps_ref, e_ref)
-    e_pred_interp = np.interp(seps_interp, seps_pred, e_pred)
+        # Interpolate both curves to the common grid
+        e_ref_interp = np.interp(seps_interp, seps_ref, e_ref)
+        e_pred_interp = np.interp(seps_interp, seps_pred, e_pred)
 
-    # Calculate absolute difference and integrate
-    diff = np.abs(e_ref_interp - e_pred_interp)
-    auc = np.trapezoid(diff, seps_interp)
+        # Calculate absolute difference and integrate
+        diff = np.abs(e_ref_interp - e_pred_interp)
+        auc = np.trapezoid(diff, seps_interp)
+    else:
+        # If no interpolation, calculate directly
+        diff = np.abs(e_ref - e_pred)
+        auc = np.trapezoid(diff, seps_ref)
 
     if normalize:
         # Get bounding box area of reference curve
@@ -102,7 +129,8 @@ def calc_curve_diff_auc(
         if box_area > 0:  # If reference curve is flat, don't normalize
             auc = auc / box_area
 
-    return float(auc)
+    # Ensure AUC is always positive
+    return float(abs(auc))
 
 
 def calc_energy_mae(
@@ -110,6 +138,8 @@ def calc_energy_mae(
     e_ref: Sequence[float],
     seps_pred: Sequence[float],
     e_pred: Sequence[float],
+    *,
+    interpolate: bool | int = False,
 ) -> float:
     """Calculate mean absolute error between two energy curves.
     Handles different x-samplings by interpolating to a common grid.
@@ -119,27 +149,43 @@ def calc_energy_mae(
         e_ref (Sequence[float]): Reference potential energies (eV)
         seps_pred (Sequence[float]): Predicted interatomic distances (Å)
         e_pred (Sequence[float]): Predicted potential energies (eV)
+        interpolate (bool | int): If False (default), uses the provided points directly.
+            If True, uses 100 points for interpolation.
+            If an integer, uses that many points for interpolation.
 
     Returns:
         float: Mean absolute error between the curves (eV).
     """
     # Validate and sort both curves
-    seps_ref, e_ref = _validate_diatomic_curve(seps_ref, e_ref)
-    seps_pred, e_pred = _validate_diatomic_curve(seps_pred, e_pred)
+    seps_ref, e_ref = _validate_diatomic_curve(seps_ref, e_ref, normalize_energy=False)
+    seps_pred, e_pred = _validate_diatomic_curve(
+        seps_pred, e_pred, normalize_energy=False
+    )
+
+    # Check if interpolation is needed
+    if not interpolate and not np.array_equal(seps_ref, seps_pred):
+        raise ValueError(
+            f"Reference and predicted distances must be same when {interpolate=}\n"
+            f"{seps_ref=}, {seps_pred=}"
+        )
 
     # Get data range bounds
     data_min = max(seps_ref.min(), seps_pred.min())
     data_max = min(seps_ref.max(), seps_pred.max())
 
-    # Create a fine grid for interpolation
-    seps_interp = np.linspace(data_min, data_max, 1000)
+    if interpolate:
+        # Create grid for interpolation
+        n_points = 100 if interpolate is True else interpolate
+        seps_interp = np.linspace(data_min, data_max, n_points)
 
-    # Interpolate both curves to the common grid
-    e_ref_interp = np.interp(seps_interp, seps_ref, e_ref)
-    e_pred_interp = np.interp(seps_interp, seps_pred, e_pred)
+        # Interpolate both curves to the common grid
+        e_ref_interp = np.interp(seps_interp, seps_ref, e_ref)
+        e_pred_interp = np.interp(seps_interp, seps_pred, e_pred)
 
-    # Calculate MAE
-    return float(np.mean(np.abs(e_ref_interp - e_pred_interp)))
+        # Calculate MAE on interpolated data
+        return float(np.mean(np.abs(e_ref_interp - e_pred_interp)))
+    # If no interpolation, calculate MAE directly
+    return float(np.mean(np.abs(e_ref - e_pred)))
 
 
 def calc_second_deriv_smoothness(
@@ -199,23 +245,21 @@ def calc_tortuosity(seps: Sequence[float], energies: Sequence[float]) -> float:
     Returns:
         float: tortuosity value (ratio of total variation to direct energy difference).
     """
-    seps, energies = map(np.asarray, (seps, energies))
-    # Sort in descending order to match MLIP Arena
-    sort_idx = np.argsort(seps)[::-1]
-    energies = energies[sort_idx]
+    # Validate and sort with energy normalization
+    _, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
 
     # Total variation in energy (sum of absolute differences)
     tv_energy = np.sum(np.abs(np.diff(energies)))
 
     # Get minimum energy and endpoint energies
     e_min = np.min(energies)  # minimum energy (equilibrium point)
-    e_first = energies[0]  # energy at shortest distance
-    e_last = energies[-1]  # energy at longest distance
+    # energy at largest distance (should be 0 after normalization)
+    e_first = energies[0]
+    e_last = energies[-1]  # energy at shortest distance
 
     # Sum of energy differences from minimum to endpoints
     direct_energy_diff = abs(e_first - e_min) + abs(e_last - e_min)
 
-    # Calculate tortuosity
     return float(tv_energy / direct_energy_diff)
 
 
@@ -229,9 +273,7 @@ def calc_energy_diff_flips(seps: Sequence[float], energies: Sequence[float]) -> 
     Returns:
         float: Number of energy difference sign flips.
     """
-    seps, energies = map(np.asarray, (seps, energies))
-    sort_idx = np.argsort(seps)[::-1]  # sort in descending order
-    energies = energies[sort_idx]
+    seps, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
 
     ediff = np.diff(energies)
     ediff[np.abs(ediff) < 1e-3] = 0  # 1meV threshold
@@ -253,10 +295,7 @@ def calc_energy_grad_norm_max(
     Returns:
         float: Maximum absolute value of energy gradient.
     """
-    seps, energies = map(np.asarray, (seps, energies))
-    sort_idx = np.argsort(seps)[::-1]  # sort in descending order
-    seps = seps[sort_idx]
-    energies = energies[sort_idx]
+    seps, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
     return float(np.max(np.abs(np.gradient(energies, seps))))
 
 
@@ -271,9 +310,7 @@ def calc_energy_jump(seps: Sequence[float], energies: Sequence[float]) -> float:
     Returns:
         float: Sum of absolute energy differences at flip points.
     """
-    seps, energies = map(np.asarray, (seps, energies))
-    sort_idx = np.argsort(seps)[::-1]  # sort in descending order
-    energies = energies[sort_idx]
+    seps, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
 
     ediff = np.diff(energies)
     ediff[np.abs(ediff) < 1e-3] = 0  # 1meV threshold

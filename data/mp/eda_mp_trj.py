@@ -240,7 +240,7 @@ trj_elem_counts = pd.read_json(
     f"{data_page}/mp-trj-element-counts-by-{count_mode}.json", typ="series"
 )
 
-excl_elems = "He Ne Ar Kr Xe".split() if (excl_noble := False) else ()
+excl_elems = ("He", "Ne", "Ar", "Kr", "Xe") if (excl_noble := False) else ()
 
 fig = pmv.ptable_heatmap_plotly(
     trj_elem_counts,

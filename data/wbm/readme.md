@@ -55,9 +55,9 @@ This approach has the downside that it can be quite expensive to compute, especi
 We adopt the procedure of determining the prototype of each crystal by looking at the Wyckoff positions of the different elements.
 This approach is a middle ground between the two approaches mentioned above in terms of cost, number of hyperparameters and ability to distinguish polymorphs.
 
-We used [`get_protostructure_label_from_spglib`] from the [`aviary`] package in [`compile_wbm_test_set.py`] to get prototype labels in a modified aflow format for each structure.
+We used [`get_protostructure_label`] importable from `matbench_discovery.structure.prototype` in [`compile_wbm_test_set.py`] to get prototype labels in a modified Aflow format for each structure.
 Having determined the prototypes for both the MP and WBM datasets, we first removed any structures in the WBM dataset that had the same prototype as any structure in the MP dataset.
-The next filter was to drop all but the lowest energy structure for each unique prototype remaining in the WBM dataset.
+The next filter was to drop all but the lowest energy structure for each unique prototype label remaining in the WBM dataset.
 The WBM prototypes were determined for the relaxed structures. This choice avoids inflating the metrics due to duplicates arising from different initial prototypes that fall into the same basin of attraction during relaxation.
 In total 41,475 candidates can be removed from the WBM dataset if using this approach.
 
@@ -68,8 +68,7 @@ The number of materials in each iteration of element substitution before and aft
 | **before** | 61,466 | 52,755 | 79,160 | 40,314 | 23,268 | 256,963 |
 | **after**  | 54,209 | 45,979 | 66,528 | 34,531 | 14,241 | 215,488 |
 
-[`get_protostructure_label_from_spglib`]: https://github.com/CompRhys/aviary/blob/a8da6c46/aviary/wren/utils.py#L140
-[`aviary`]: https://github.com/CompRhys/aviary
+[`get_protostructure_label`]: https://github.com/janosh/matbench-discovery/blob/26d3a19073d/matbench_discovery/structure/prototype.py#L104-L193
 [`compile_wbm_test_set.py`]: https://github.com/janosh/matbench-discovery/blob/eec1e22c6/data/wbm/compile_wbm_test_set.py#L587
 
 ## 🔗 &thinsp; Links to WBM Files

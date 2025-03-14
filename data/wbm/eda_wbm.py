@@ -90,7 +90,7 @@ ax_ptable = pmv.ptable_heatmap_ratio(
     wbm_occu_counts / (len(df_wbm) if normalized else 1),
     mp_occu_counts / (len(df_mp) if normalized else 1),
     zero_color="#efefef",
-    exclude_elements="Xe Th Pa U Np Pu".split(),
+    exclude_elements=("Xe", "Th", "Pa", "U", "Np", "Pu"),
 )
 img_name = "wbm-mp-ratio-element-counts-by-occurrence"
 if normalized:

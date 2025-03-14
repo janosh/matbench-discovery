@@ -6,6 +6,7 @@ import gzip
 import itertools
 import math
 import os
+import re
 import string
 from typing import Final
 
@@ -191,3 +192,36 @@ def get_protostructure_label(
         return err_msg
 
     return prototype_label
+
+
+def count_wyckoff_positions(protostructure_label: str) -> int:
+    """Count number of Wyckoff positions in an Aflow-style protostructure label.
+
+    Adapted from https://github.com/CompRhys/aviary/blob/181e2b2b2/aviary/wren/utils.py#L472.
+
+    Args:
+        protostructure_label (str): label constructed as `aflow_label:chemsys` where
+            aflow_label is an AFLOW-style prototype label chemsys is the alphabetically
+            sorted chemical system.
+
+    Returns:
+        int: number of distinct Wyckoff positions in protostructure_label
+
+    Raises:
+        ValueError: On invalid protostructure labels
+    """
+    aflow_label, *_chem_sys = protostructure_label.split(":")  # remove chemical system
+    # discard prototype formula and spg symbol and spg number
+    parts = aflow_label.split("_", maxsplit=3)
+    if len(parts) < 4:
+        raise ValueError("Invalid protostructure label: missing required parts")
+
+    # throw Wyckoff positions for all elements together
+    wyk_letters = parts[-1].replace("_", "")
+    if not wyk_letters.strip():
+        raise ValueError("Invalid protostructure label: empty Wyckoff positions")
+
+    wyk_list = re.split("[A-z]", wyk_letters)[:-1]  # split on every letter
+
+    # count 1 for letters without prefix
+    return sum(1 if len(x) == 0 else int(x) for x in wyk_list)

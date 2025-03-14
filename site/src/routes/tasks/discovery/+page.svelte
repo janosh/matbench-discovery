@@ -1,9 +1,9 @@
 <script lang="ts">
   import {
-    MetricScatter,
-    MetricsTable,
-    MODEL_METADATA,
-    TableColumnToggleMenu,
+      MetricScatter,
+      MetricsTable,
+      MODEL_METADATA,
+      TableColumnToggleMenu,
   } from '$lib'
   import { DISCOVERY_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/metrics'
   import type { DiscoverySet } from '$lib/types'
@@ -38,7 +38,7 @@
     class="discovery-set-toggle"
     use:click_outside={{ callback: () => (column_panel_open = false) }}
   >
-    {#each Object.entries(DISCOVERY_SET_LABELS) as [key, { title, tooltip, link }]}
+    {#each Object.entries(DISCOVERY_SET_LABELS) as [key, { title, tooltip, link }] (key)}
       <Tooltip text={tooltip} tip_style="z-index: 2; font-size: 0.8em;">
         <button
           class:active={discovery_set === key}
