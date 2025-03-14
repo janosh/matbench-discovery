@@ -33,7 +33,8 @@ slurm_vars = slurm_submit(
     time="47:55:0",
     partition="a800",
     array=f"1-{slurm_array_task_count}",
-    slurm_flags="--job-name Test --nodes 1 --nodelist g07 --gres gpu:1 --cpus-per-task 1",
+    slurm_flags="--job-name Test --nodes 1 --nodelist g07 --gres gpu:1 "
+    "--cpus-per-task 1",
 )
 
 
