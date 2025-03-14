@@ -84,10 +84,10 @@ metrics:
     kappa_103:
       κ_SRME: 0.861
       pred_file: models/matris/matris-0.5.0-mptrj/2025-03-12-kappa-103-fire-dist=0.01-fmax1e-4-symprec1e-5.json.gz
-      pred_file_url: https://figshare.com/files/52962263
+      pred_file_url: https://figshare.com/files/53000390
   geo_opt:
     pred_file: models/matris/matris-0.5.0-mptrj/2025-03-12-wbm-geo-opt.json.gz
-    pred_file_url: https://figshare.com/files/52970030
+    pred_file_url: https://figshare.com/files/53000177
     struct_col: matris_structure
     symprec=1e-5:
       rmsd: 0.0156 # Å
@@ -97,7 +97,7 @@ metrics:
       symmetry_increase: 0.0619 # fraction
       n_structures: 256959 # count
       analysis_file: models/matris/matris-0.5.0-mptrj/2025-03-12-wbm-geo-opt-symprec=1e-5.csv.gz
-      analysis_file_url: https://figshare.com/files/52969799
+      analysis_file_url: https://figshare.com/files/53000384
     symprec=1e-2:
       rmsd: 0.0156 # Å
       n_sym_ops_mae: 2.0591 # unitless
@@ -106,10 +106,10 @@ metrics:
       symmetry_increase: 0.1091 # fraction
       n_structures: 256959 # count
       analysis_file: models/matris/matris-0.5.0-mptrj/2025-03-12-wbm-geo-opt-symprec=1e-2.csv.gz
-      analysis_file_url: https://figshare.com/files/52969778
+      analysis_file_url: https://figshare.com/files/53000387
   discovery:
     pred_file: models/matris/matris-0.5.0-mptrj/2025-03-12-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/52969736
+    pred_file_url: https://figshare.com/files/53000174
     pred_col: e_form_per_atom_matris_mp
     full_test_set:
       F1: 0.798 # fraction
