@@ -1,4 +1,4 @@
-model_name: MatRIS-v050-MPtrj
+model_name: MatRIS v0.5.0 MPtrj
 model_key: matris-v050-mptrj
 model_version: v0.5.0
 matbench_discovery_version: 1.3.1
@@ -33,9 +33,10 @@ trained_by:
     orcid: https://orcid.org/0009-0004-6801-7033
 
 repo: https://github.com/HPC-AI-Team/MatRIS
-url: https://github.com/HPC-AI-Team/MatRIS # to be released soon
-doi: https://github.com/HPC-AI-Team/MatRIS # to be released soon
-preprint: https://github.com/HPC-AI-Team/MatRIS # to be released soon
+url: "" # to be released soon
+doi: "" # to be released soon
+paper: "" # to be released soon
+pr_url: https://github.com/janosh/matbench-discovery/pull/220
 
 openness: OSOD
 train_task: S2EFSM
