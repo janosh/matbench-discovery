@@ -302,8 +302,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     cgcnn_p = auto(), "cgcnn/cgcnn+p.yml"
 
     # DeepMD-DPA3 models
-    dpa3_v1_mptrj = auto(), "deepmd/dpa3-v1-mptrj.yml"
-    dpa3_v1_openlam = auto(), "deepmd/dpa3-v1-openlam.yml"
+    dpa3_v2_mptrj = auto(), "deepmd/dpa3-v2-mptrj.yml"
+    dpa3_v2_openlam = auto(), "deepmd/dpa3-v2-openlam.yml"
 
     # FAIR-Chem
     eqv2_s_dens = auto(), "eqV2/eqV2-s-dens-mp.yml"

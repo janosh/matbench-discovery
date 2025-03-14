@@ -1,0 +1,165 @@
+model_name: DPA3-v2-OpenLAM
+model_key: dpa3-v2-openlam
+model_version: v0.2 # 2025-03-14
+matbench_discovery_version: 1.3.1
+date_added: "2025-03-14"
+date_published: "2025-03-14"
+authors:
+  - name: Duo Zhang
+    affiliation: AI for Science Institute, Beijing
+    orcid: https://orcid.org/0000-0001-9591-2659
+  - name: Anyang Peng
+    affiliation: AI for Science Institute, Beijing
+    orcid: https://orcid.org/0000-0002-0630-2187
+  - name: Chun Cai
+    affiliation: AI for Science Institute, Beijing
+    orcid: https://orcid.org/0000-0001-6242-0439
+  - name: Linfeng Zhang
+    affiliation: AI for Science Institute, Beijing; DP Technology
+    email: linfeng.zhang.zlf@gmail.com
+    corresponding: true
+  - name: Han Wang
+    affiliation: Laboratory of Computational Physics, Institute of Applied Physics and Computational Mathematics
+    email: wang_han@iapcm.ac.cn
+    corresponding: true
+trained_by:
+  - name: Anyang Peng
+    affiliation: AI for Science Institute, Beijing
+    orcid: https://orcid.org/0000-0002-0630-2187
+repo: https://github.com/deepmodeling/deepmd-kit/tree/devel
+url: https://github.com/deepmodeling/deepmd-kit/tree/devel
+doi: https://github.com/deepmodeling/deepmd-kit/tree/devel # to be released soon
+paper: https://github.com/deepmodeling/deepmd-kit/tree/devel # to be released soon
+pr_url: https://github.com/janosh/matbench-discovery/pull/222
+trained_for_benchmark: true
+
+openness: OSCD
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+model_type: UIP
+model_params: 7_021_990
+n_estimators: 1
+
+hyperparams:
+  max_force: 0.05
+  max_steps: 500
+  ase_optimizer: FIRE
+  cell_filter: ExpCellFilter
+  n_layers: 9
+  e_rcut: 6.0
+  a_rcut: 4.0
+  n_dim: 256
+  e_dim: 128
+  a_dim: 32
+  optimizer: Adam
+  pretrain:
+    loss: MSE
+    loss_weights:
+      energy: 0.02 -> 1
+      force: 1000 -> 100
+      virial: 0.02 -> 1
+    initial_learning_rate: 0.001
+    learning_rate_schedule: ExpLR - start_lr=0.001, decay_steps=5000, stop_lr=0.00001
+    training_steps: 1600000
+    batch_size: 960 # 120 (gpus) * 8 (batch per gpu) = 960 (total batch size)
+    epochs: 9.4
+  finetune:
+    loss: Huber
+    loss_weights:
+      energy: 30
+      force: 1
+      virial: 2.5
+    initial_learning_rate: 0.0001
+    learning_rate_schedule: ExpLR - start_lr=0.0001, decay_steps=5000, stop_lr=0.000006
+    training_steps: 2000000
+    batch_size: 256 # 32 (gpus) * 8 (batch per gpu) = 256 (total batch size)
+    epochs: 45
+
+requirements:
+  torch: 2.3.1
+  torch-geometric: 2.5.2
+  ase: 3.23.0
+  pymatgen: 2024.6.10
+  numpy: 1.26.4
+
+training_set: [OMat24, MPtrj, sAlex] # need to update to OpenLAM
+
+notes:
+  Description: |
+    DPA3 is an advanced interatomic potential leveraging the message passing architecture, implemented within the DeePMD-kit framework, available at GitHub(https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha).
+    Designed as a large atomic model (LAM), DPA3 is tailored to integrate and simultaneously train on datasets from various disciplines, encompassing diverse chemical and materials systems across different research domains.
+    Its model design ensures exceptional fitting accuracy and robust generalization both within and beyond the training domain.
+    Furthermore, DPA3 maintains energy conservation and respects the physical symmetries of the potential energy surface, making it a dependable tool for a wide range of scientific applications.
+
+metrics:
+  phonons:
+    kappa_103:
+      κ_SRME: 0.687
+      pred_file: models/deepmd/dpa3-v2-openlam/2025-03-14-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/files/52988756
+  geo_opt:
+    pred_file: models/deepmd/dpa3-v2-openlam/2025-03-14-wbm-geo-opt.json.gz
+    struct_col: dp_structure
+    pred_file_url: https://figshare.com/files/52988759
+  discovery:
+    pred_file: models/deepmd/dpa3-v2-openlam/2025-03-14-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/52988753
+    pred_col: e_form_per_atom_dp
+    full_test_set:
+      F1: 0.869 # fraction
+      DAF: 4.977 # dimensionless
+      Precision: 0.854 # fraction
+      Recall: 0.885 # fraction
+      Accuracy: 0.954 # fraction
+      TPR: 0.885 # fraction
+      FPR: 0.031 # fraction
+      TNR: 0.969 # fraction
+      FNR: 0.115 # fraction
+      TP: 39030.0 # count
+      FP: 6676.0 # count
+      TN: 206195.0 # count
+      FN: 5062.0 # count
+      MAE: 0.022 # eV/atom
+      RMSE: 0.068 # eV/atom
+      R2: 0.857 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
+    most_stable_10k:
+      F1: 0.986 # fraction
+      DAF: 6.367 # dimensionless
+      Precision: 0.973 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.973 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9733.0 # count
+      FP: 267.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.018 # eV/atom
+      RMSE: 0.063 # eV/atom
+      R2: 0.913 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
+    unique_prototypes:
+      F1: 0.890 # fraction
+      DAF: 5.747 # dimensionless
+      Precision: 0.879 # fraction
+      Recall: 0.902 # fraction
+      Accuracy: 0.965 # fraction
+      TPR: 0.902 # fraction
+      FPR: 0.023 # fraction
+      TNR: 0.977 # fraction
+      FNR: 0.098 # fraction
+      TP: 30118.0 # count
+      FP: 4163.0 # count
+      TN: 177951.0 # count
+      FN: 3256.0 # count
+      MAE: 0.022 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.869 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
