@@ -65,7 +65,7 @@
   </button>
 </h2>
 <nav>
-  {#each links.filter(([href]) => href) as [href, title, icon] (href)}
+  {#each links.filter(([href]) => href) as [href, title, icon] (title)}
     <span>
       <iconify-icon {icon} inline></iconify-icon>
       <a {href} {...target}>{title}</a>
