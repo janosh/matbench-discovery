@@ -1,7 +1,6 @@
 """Test FAIRChem models for matbench-discovery"""
 
 import json
-import logging
 import os
 from importlib.metadata import version
 from pathlib import Path
@@ -74,7 +73,7 @@ class RelaxJob(Checkpointable):
         run_name = f"{job_name}-{job_number}"
         out_path = out_path / model_name / f"{today}-{job_number:>03}.json.gz"
 
-        logging.info(f"Starting ASE relaxation job {run_name}.")
+        print(f"Starting ASE relaxation job {run_name}.")
 
         calc = OCPCalculator(
             checkpoint_path=checkpoint_path, cpu=device == "cpu", seed=0
@@ -155,7 +154,7 @@ class RelaxJob(Checkpointable):
             atoms = dataset.get_atoms(idx)
             material_id = atoms.info["sid"]
             if material_id in self.relax_results:
-                logging.info(f"Structure {material_id} has already been relaxed.")
+                print(f"Structure {material_id} has already been relaxed.")
                 continue
             try:
                 atoms.calc = calculator
@@ -174,7 +173,7 @@ class RelaxJob(Checkpointable):
                     "energy": energy,
                 }
             except Exception:
-                logging.exception(f"Failed to relax {material_id}")
+                print(f"Failed to relax {material_id}")
                 continue
 
 
@@ -251,14 +250,14 @@ def run_relax(
     )
     if debug:
         job = executor.submit(RelaxJob(), 1, *args)
-        logging.info(f"Submitted one debug job: {job.job_id}")
+        print(f"Submitted one debug job: {job.job_id}")
     else:
         jobs = []
         with executor.batch():
             for job_number in range(num_jobs):
                 job = executor.submit(RelaxJob(), job_number, *args)
                 jobs.append(job)
-        logging.info(f"Submitted {len(jobs)} jobs: {jobs[0].job_id.split('_')[0]}")
+        print(f"Submitted {len(jobs)} jobs: {jobs[0].job_id.split('_')[0]}")
 
 
 if __name__ == "__main__":

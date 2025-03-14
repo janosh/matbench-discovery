@@ -506,8 +506,8 @@ assert len(df_summary) == len(df_wbm) == 257_487
 query_str = f"{-e_form_cutoff} < {MbdKey.e_form_wbm} < {e_form_cutoff}"
 dropped_ids = sorted(set(df_summary.index) - set(df_summary.query(query_str).index))
 assert len(dropped_ids) == 502 + 22
-assert dropped_ids[:3] == "wbm-1-12142 wbm-1-12143 wbm-1-12144".split()
-assert dropped_ids[-3:] == "wbm-5-9121 wbm-5-9211 wbm-5-934".split()
+assert dropped_ids[:3] == ["wbm-1-12142", "wbm-1-12143", "wbm-1-12144"]
+assert dropped_ids[-3:] == ["wbm-5-9121", "wbm-5-9211", "wbm-5-934"]
 
 df_summary = df_summary.query(query_str)
 df_wbm = df_wbm.loc[df_summary.index]
