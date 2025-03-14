@@ -25,7 +25,9 @@ __date__ = "2025-03-14"  # 2024-06-25 for SevenNet-0
 
 # %% this config is editable
 smoke_test = True
-model_name = "sevennet-mf-ompa"  # was sevennet-0 before 2024-12-10, nothing else changed
+model_name = (
+    "sevennet-mf-ompa"  # was sevennet-0 before 2024-12-10, nothing else changed
+)
 modal = "mpa"  # MPtrj + sAlex Modal (PBE52) is used to evaluating Matbench
 task_type = Task.IS2RE
 job_name = f"{model_name}-wbm-{task_type}"
