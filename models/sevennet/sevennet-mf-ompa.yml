@@ -36,7 +36,7 @@ trained_by:
     orcid: https://orcid.org/0009-0000-6646-1318
 
 repo: https://github.com/MDIL-SNU/SevenNet
-url: https://figshare.com/ndownloader/files/52975859
+url: https://figshare.com/files/52975859
 doi: https://doi.org/10.1021/jacs.4c14455
 paper: https://arxiv.org/abs/2409.07947
 pypi: https://pypi.org/project/sevenn
@@ -96,14 +96,14 @@ metrics:
     kappa_103:
       κ_SRME: 0.317
       pred_file: models/sevennet/sevennet-mf-ompa/2025-03-11-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/ndownloader/files/52984310
+      pred_file_url: https://figshare.com/files/52984310
   geo_opt:
     pred_file: models/sevennet/sevennet-mf-ompa/2025-03-11-wbm-geo-opt-FIRE.json.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52983491
+    pred_file_url: https://figshare.com/files/52983491
     struct_col: sevennet_structure
   discovery:
     pred_file: models/sevennet/sevennet-mf-ompa/2025-03-11-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/ndownloader/files/52983488
+    pred_file_url: https://figshare.com/files/52983488
     pred_col: e_form_per_atom_sevennet
     unique_prototypes:
       F1: 0.900584
