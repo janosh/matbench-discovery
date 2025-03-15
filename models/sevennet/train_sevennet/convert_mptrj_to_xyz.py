@@ -13,7 +13,7 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 # Convert stress from kBar to eV/A^3 and use ASE sign convention
-kbar_to_evpa3 = -0.1 / ase.units.GPa
+kbar_to_evpa3 = -0.1 * ase.units.GPa
 filename = "MPtrj_2022.9_full.json"
 train_ratio, val_ratio, test_ratio = 0.9, 0.1, 0.0
 

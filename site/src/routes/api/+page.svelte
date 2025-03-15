@@ -1,6 +1,6 @@
 <h1 class="toc-exclude">API</h1>
 
-{#each Object.values(import.meta.glob( `./*.md`, { eager: true, import: `default` }, )) as MdFile (MdFile.name)}
+{#each Object.entries(import.meta.glob( `./*.md`, { eager: true }, )) as [path, {default: MdFile}] (path)}
   <MdFile />
 {/each}
 

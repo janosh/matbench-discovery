@@ -344,8 +344,9 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     orb_mptrj = auto(), "orb/orb-mptrj.yml"
 
     # SevenNet trained on MPtrj
-    sevennet_0 = auto(), "sevennet/sevennet-0.yml"
+    # sevennet_0 = auto(), "sevennet/sevennet-0.yml"
     sevennet_l3i5 = auto(), "sevennet/sevennet-l3i5.yml"
+    sevennet_mf_ompa = auto(), "sevennet/sevennet-mf-ompa.yml"
 
     # Magpie composition+Voronoi tessellation structure features + sklearn random forest
     voronoi_rf = auto(), "voronoi_rf/voronoi-rf.yml"
