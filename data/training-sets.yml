@@ -74,3 +74,13 @@ sAlex Validation:
   n_materials: 170_905 # approximate value! TODO confirm this
   n_structures: 553_218
   open: true
+
+OpenLAM:
+  title: OpenLAM dataset v1
+  # This dataset integrates multidisciplinary DFT data sourced from Deep Modeling community (https://deepmodeling.com)
+  # and other open repositories to pretrain large atomic models (LAMs),
+  # while intentionally excluding overlap with WBM benchmark systems (e.g., Alex3D structures).
+  url: https://aissquare.com/datasets/detail?pageType=datasets&name=LAMBench-TrainingSet-v1&id=308
+  download_url: https://aissquare.com/datasets/detail?pageType=datasets&name=LAMBench-TrainingSet-v1&id=308 # will be combined for downloading soon
+  n_structures: 162_507_178
+  open: true
