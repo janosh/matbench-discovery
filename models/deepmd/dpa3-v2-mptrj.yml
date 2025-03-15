@@ -99,10 +99,28 @@ metrics:
   geo_opt:
     pred_file: models/deepmd/dpa3-v2-mptrj/2025-03-14-wbm-geo-opt.json.gz
     struct_col: dp_structure
-    pred_file_url: https://figshare.com/files/52988747
+    pred_file_url: https://figshare.com/files/53018849
+    symprec=1e-2:
+      rmsd: 0.0164 # Å
+      n_sym_ops_mae: 1.968 # unitless
+      symmetry_decrease: 0.0601 # fraction
+      symmetry_match: 0.8052 # fraction
+      symmetry_increase: 0.1273 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/deepmd/dpa3-v2-mptrj/2025-03-14-wbm-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/53019278
+    symprec=1e-5:
+      rmsd: 0.0164 # Å
+      n_sym_ops_mae: 2.1461 # unitless
+      symmetry_decrease: 0.0766 # fraction
+      symmetry_match: 0.7154 # fraction
+      symmetry_increase: 0.2014 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/deepmd/dpa3-v2-mptrj/2025-03-14-wbm-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/53019281
   discovery:
     pred_file: models/deepmd/dpa3-v2-mptrj/2025-03-14-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/52988741
+    pred_file_url: https://figshare.com/files/53018801
     pred_col: e_form_per_atom_dp
     full_test_set:
       F1: 0.774 # fraction
