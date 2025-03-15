@@ -27,6 +27,33 @@ with open(f"{ROOT}/pyproject.toml", mode="rb") as toml_file:
     pyproject = tomllib.load(toml_file)["project"]
 
 
+def process_exclusion_prefixes(items: list[str], all_items: list[str]) -> list[str]:
+    """Process items with exclusion prefixes (!) and return the final list.
+
+    Args:
+        items: List of items, some of which may be prefixed with '!' for exclusion
+        all_items: Complete list of all possible items
+
+    Returns:
+        List of items after processing exclusions
+    """
+    include_items, exclude_items = [], []
+    for item in items:
+        if isinstance(item, str) and item.startswith("!"):
+            exclude_items.append(item.removeprefix("!"))
+        else:
+            include_items.append(item)
+
+    # If there are explicit inclusions, use those
+    # Otherwise, start with all items and remove exclusions
+    result = include_items or all_items.copy()
+    for item in exclude_items:
+        if item in result:
+            result.remove(item)
+
+    return result
+
+
 def parse_args(args: Sequence[str] | None = None) -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
@@ -36,17 +63,20 @@ def parse_args(args: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--models",
         nargs="*",
-        type=Model,  # type: ignore[arg-type]
-        choices=Model,
-        default=list(Model),
-        help="Models to analyze. If none specified, analyzes all models.",
+        type=str,  # Changed from Model to str to handle exclusion prefixes
+        default=[model.name for model in Model],  # Use model names as strings
+        help="Models to analyze. If none specified, analyzes all models. "
+        "Prefix with '!' to exclude. Note: exclamation mark needs to be "
+        "backslash-escaped in shell.",
     )
     parser.add_argument(
         "--tasks",
         nargs="+",
-        choices=list(MODELING_TASKS),
+        type=str,  # Changed from direct choices to str to handle exclusion prefixes
         default=list(MODELING_TASKS),
-        help="Space-separated list of modeling tasks to update. Defaults to all tasks.",
+        help="Space-separated list of modeling tasks to update. Defaults to all tasks. "
+        "Prefix with '!' to exclude. Note: exclamation mark needs to be "
+        "backslash-escaped in shell.",
     )
     parser.add_argument(
         "-n",
@@ -66,7 +96,20 @@ def parse_args(args: Sequence[str] | None = None) -> argparse.Namespace:
         help="Force reupload of files even if they already exist with the same hash",
     )
 
-    return parser.parse_known_args(args)[0]
+    parsed_args = parser.parse_known_args(args)[0]
+
+    # Process exclusion prefixes for tasks
+    all_tasks = list(MODELING_TASKS)
+    parsed_args.tasks = process_exclusion_prefixes(parsed_args.tasks, all_tasks)
+
+    # Process exclusion prefixes for models and convert strings to Model enum
+    all_models = [model.name for model in Model]
+    processed_models = process_exclusion_prefixes(parsed_args.models, all_models)
+
+    # Convert string model names to Model enum instances
+    parsed_args.models = [Model[model] for model in processed_models]
+
+    return parsed_args
 
 
 def get_article_metadata(task: str) -> dict[str, Sequence[object]]:
@@ -272,7 +315,10 @@ def main(args: Sequence[str] | None = None) -> int:
     tasks_to_update = parsed_args.tasks
     if dry_run := parsed_args.dry_run:
         print("\nDry run mode - no files will be uploaded")
-    print(f"Updating {len(models_to_update)} models: {', '.join(models_to_update)}")
+    print(
+        f"Updating {len(models_to_update)} models: "
+        f"{', '.join(model.name for model in models_to_update)}"
+    )
     print(f"Updating {len(tasks_to_update)} tasks: {', '.join(tasks_to_update)}")
     print(f"File type filter: {parsed_args.file_type}")
     if parsed_args.force_reupload:

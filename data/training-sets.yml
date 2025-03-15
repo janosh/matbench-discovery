@@ -54,7 +54,8 @@ Alex:
 OMat24:
   title: OMat24
   url: https://huggingface.co/datasets/fairchem/OMAT24#omat24-dataset
-  # this is the number of Alexandria materials that was sampled from, but according to Luis unclear if all were indeed sampled so this is an upper bound
+  # this is the number of Alexandria materials that was sampled from, but according to Luis unclear
+  # if all were indeed picked so this is an upper bound on the number of materials
   n_materials: 3_227_606
   n_structures: 100_824_585
   open: true
@@ -74,3 +75,14 @@ sAlex Validation:
   n_materials: 170_905 # approximate value! TODO confirm this
   n_structures: 553_218
   open: true
+
+OpenLAM:
+  title: OpenLAM dataset v1
+  url: https://aissquare.com/datasets/detail?pageType=datasets&name=LAMBench-TrainingSet-v1&id=308
+  download_url: https://aissquare.com/datasets/detail?pageType=datasets&name=LAMBench-TrainingSet-v1&id=308 # will be combined for downloading soon
+  n_structures: 162_507_178
+  open: true
+  description: |
+    This dataset integrates multidisciplinary DFT data sourced from Deep Modeling community (https://deepmodeling.com)
+    and other open repositories to pre-train large atomic models (LAMs),
+    while intentionally excluding overlap with WBM benchmark systems (e.g., Alex3D structures).
