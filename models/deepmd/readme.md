@@ -5,20 +5,20 @@
 - dpa3-openlam：model pretrained on the `OpenLAM` datasest, and finetuned with `MPtraj` & `Sub-Alex` datasets.
 
   ```bash
-  wget https://bohrium-api.dp.tech/ds-dl/dpa3openlam-74ng-v3.zip
+  wget https://figshare.com/files/52989059
   ```
 
 - dpa3-mptrj：model trained only on the `MPtraj` dataset.
 
   ```bash
-  wget https://bohrium-api.dp.tech/ds-dl/matbench-submit-DPA3mptraj-ictz-v2.zip
+  wget https://figshare.com/files/52989056
 
   ```
 
 ### How to install
 
 ```bash
-pip install git+https://github.com/deepmodeling/deepmd-kit.git@dpa3-alpha
+pip install git+https://github.com/deepmodeling/deepmd-kit.git@devel
 ```
 
 ### How to use
@@ -31,7 +31,7 @@ water = Atoms(
    "H2O",
    positions=[(0.7601, 1.9270, 1), (1.9575, 1, 1), (1.0, 1.0, 1.0)],
    cell=[100, 100, 100],
-   calculator=DP(model="2025-01-10-dpa3-mptrj.pth"),
+   calculator=DP(model="2025-03-14-dpa3-mptrj.pth"),
 )
 
 print(water.get_potential_energy())
@@ -86,22 +86,22 @@ print(water.get_forces())
 
 ```txt
     Full-set    Unique  10K
-F1              0.862475       0.882521     0.986829
-DAF             5.013020       5.754306     6.371359
-Precision       0.860179       0.879670     0.974000
-Recall          0.864783       0.885390     1.000000
-Accuracy        0.952678       0.963492     0.974000
-TPR             0.864783       0.885390     1.000000
-FPR             0.029116       0.022195     1.000000
-TNR             0.970884       0.977805     0.000000
-FNR             0.135217       0.114610     0.000000
-TP          38130.000000   29549.000000  9740.000000
-FP           6198.000000    4042.000000   260.000000
-TN         206673.000000  178072.000000     0.000000
-FN           5962.000000    3825.000000     0.000000
-MAE             0.022586       0.022863     0.019195
-RMSE            0.068285       0.066564     0.065646
-R2              0.856962       0.869338     0.904534
+F1              0.869284       0.890341     0.986469
+DAF             4.976639       5.747061     6.366780
+Precision       0.853936       0.878562     0.973300
+Recall          0.885195       0.902439     1.000000
+Accuracy        0.954320       0.965571     0.973300
+TPR             0.885195       0.902439     1.000000
+FPR             0.031362       0.022859     1.000000
+TNR             0.968638       0.977141     0.000000
+FNR             0.114805       0.097561     0.000000
+TP          39030.000000   30118.000000  9733.000000
+FP           6676.000000    4163.000000   267.000000
+TN         206195.000000  177951.000000     0.000000
+FN           5062.000000    3256.000000     0.000000
+MAE             0.021902       0.022137     0.018143
+RMSE            0.068287       0.066571     0.062670
+R2              0.856952       0.869308     0.912547
 ```
 
 ### dpa3-mptrj
@@ -110,32 +110,30 @@ R2              0.856962       0.869338     0.904534
 
 ```txt
     Full-set    Unique  10K
-F1              0.756925       0.765257     0.970982
-DAF             4.130135       4.653807     6.172499
-Precision       0.708685       0.711435     0.943600
-Recall          0.812211       0.827890     1.000000
-Accuracy        0.910524       0.921375     0.943600
-TPR             0.812211       0.827890     1.000000
-FPR             0.069155       0.061538     1.000000
-TNR             0.930845       0.938462     0.000000
-FNR             0.187789       0.172110     0.000000
-TP          35812.000000   27630.000000  9436.000000
-FP          14721.000000   11207.000000   564.000000
-TN         198150.000000  170907.000000     0.000000
-FN           8280.000000    5744.000000     0.000000
-MAE             0.040306       0.041887     0.039272
-RMSE            0.085373       0.085351     0.127715
-R2              0.776398       0.785159     0.648685
+F1              0.774286       0.785753     0.979592
+DAF             4.249362       4.822293     6.279779
+Precision       0.729143       0.737192     0.960000
+Recall          0.825388       0.841164     1.000000
+Accuracy        0.917428       0.928957     0.960000
+TPR             0.825388       0.841164     1.000000
+FPR             0.063508       0.054955     1.000000
+TNR             0.936492       0.945045     0.000000
+FNR             0.174612       0.158836     0.000000
+TP          36393.000000   28073.000000  9600.000000
+FP          13519.000000   10008.000000   400.000000
+TN         199352.000000  172106.000000     0.000000
+FN           7699.000000    5301.000000     0.000000
+MAE             0.037755       0.039197     0.032419
+RMSE            0.081581       0.081490     0.078476
+R2              0.795834       0.804168     0.865694
 ```
-
-Note: When calculating `R2` for `dpa3-mptrj`, we manually set the following outliers to nan: `wbm-1-20399`, `wbm-3-36393`.
 
 ### Relaxed Structure
 
 ```sh
 # dpa3-openlam
-wget https://bohrium-api.dp.tech/ds-dl/matbench-submit-dpa3-relaxed-2ayv-v1.zip
+wget https://figshare.com/files/52988759
 
 # dpa3-mptrj
-wget https://bohrium-api.dp.tech/ds-dl/matbench-submit-dpa3-mptrj-relaxed-bf04-v1.zip
+wget https://figshare.com/files/52988747
 ```

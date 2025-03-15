@@ -32,3 +32,6 @@ patternProperties:
         pattern: "^\\d+-\\d+ GPa$" # e.g. "0-1000 GPa"
       open:
         type: boolean
+      description:
+        type: string
+        format: markdown

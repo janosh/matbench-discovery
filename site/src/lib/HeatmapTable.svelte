@@ -123,13 +123,14 @@
       {#if visible_columns.some((col) => col.group)}
         <!-- First level headers -->
         <tr class="group-header">
-          {#each visible_columns as col (col.label)}
-            {#if !col.group}
+          {#each visible_columns as {label, group, tooltip} (label + group)}
+            {#if !group}
               <th></th>
             {:else}
-              {@const group_cols = visible_columns.filter((c) => c.group === col.group)}
-              {#if columns.indexOf(col) === columns.findIndex((c) => c.group === col.group)}
-                <th title={col.tooltip} colspan={group_cols.length}>{@html col.group}</th>
+              {@const group_cols = visible_columns.filter((c) => c.group === group)}
+              <!-- Only render the group header once for each group by checking if this is the first column of this group -->
+              {#if columns.findIndex((c) => c.label === label) === columns.findIndex((c) => c.group === group)}
+                <th title={tooltip} colspan={group_cols.length}>{@html group}</th>
               {/if}
             {/if}
           {/each}
@@ -137,7 +138,7 @@
       {/if}
       <!-- Second level headers -->
       <tr>
-        {#each visible_columns as col, col_idx (col.label)}
+        {#each visible_columns as col, col_idx (col.label + col.group)}
           <th
             title={col.tooltip}
             onclick={() => sort_rows(col.label)}
@@ -158,7 +159,7 @@
     <tbody>
       {#each clean_data as row (JSON.stringify(row))}
         <tr animate:flip={{ duration: 500 }}>
-          {#each visible_columns as col (col.label)}
+          {#each visible_columns as col (col.label + col.group)}
             {@const val = row[get_col_id(col)]}
             {@const color = calc_color(val, col)}
             <td
