@@ -12,6 +12,8 @@ def calc_force_mae(
     f_ref: np.ndarray,
     seps_pred: Sequence[float],
     f_pred: np.ndarray,
+    *,
+    interpolate: bool | int = False,
 ) -> float:
     """Calculate mean absolute error between two force curves.
     Handles different x-samplings by interpolating to a common grid.
@@ -23,26 +25,36 @@ def calc_force_mae(
         seps_pred (Sequence[float]): Predicted interatomic distances (Å)
         f_pred (np.ndarray): Predicted forces of shape
             (n_distances, n_atoms, 3)
+        interpolate (bool | int): If False (default), uses the provided points directly.
+            If True, uses 100 points for interpolation.
+            If an integer, uses that many points for interpolation.
 
     Returns:
         float: Mean absolute error between the curves (eV/Å).
     """
     # Validate and sort both curves
-    seps_ref, f_ref = _validate_diatomic_curve(seps_ref, f_ref)
-    seps_pred, f_pred = _validate_diatomic_curve(seps_pred, f_pred)
+    seps_ref, f_ref = _validate_diatomic_curve(seps_ref, f_ref, normalize_energy=False)
+    seps_pred, f_pred = _validate_diatomic_curve(
+        seps_pred, f_pred, normalize_energy=False
+    )
 
-    # Get data range bounds
-    data_min = max(seps_ref.min(), seps_pred.min())
-    data_max = min(seps_ref.max(), seps_pred.max())
+    # Check if interpolation is needed
+    if not interpolate:
+        # If no interpolation is needed and distances match, calculate MAE directly
+        if np.array_equal(seps_ref, seps_pred):
+            return float(np.mean(np.abs(f_ref - f_pred)))
+        raise ValueError(
+            f"Reference and predicted distances must be same when {interpolate=}\n"
+            f"{seps_ref=}, {seps_pred=}"
+        )
 
-    # Create a fine grid for interpolation
-    seps_interp = np.linspace(data_min, data_max, 1000)
-
-    # Initialize interpolated arrays
-    f_ref_interp = np.zeros((len(seps_interp), *f_ref.shape[1:]))
-    f_pred_interp = np.zeros((len(seps_interp), *f_pred.shape[1:]))
+    # Create grid for interpolation
+    n_points = 100 if interpolate is True else interpolate
+    seps_interp = np.logspace(1, -1, n_points)
 
     # Interpolate each component separately
+    f_ref_interp = np.zeros((len(seps_interp), *f_ref.shape[1:]))
+    f_pred_interp = np.zeros((len(seps_interp), *f_pred.shape[1:]))
     for atom_idx in range(f_ref.shape[1]):
         for dim in range(3):
             f_ref_interp[:, atom_idx, dim] = np.interp(
@@ -60,7 +72,7 @@ def calc_force_flips(
     seps: Sequence[float],
     forces: np.ndarray,
     threshold: float = 1e-2,  # 10meV/A threshold as in reference code
-) -> int:
+) -> float:
     """Calculate number of (unphysical) force direction changes.
 
     Args:
@@ -70,23 +82,21 @@ def calc_force_flips(
             considered zero. Defaults to 1e-2 (10 meV/Å).
 
     Returns:
-        int: Number of force direction changes.
+        float: Number of force direction changes.
     """
-    seps = np.asarray(seps)
-    # Use x-component of force on first atom
-    forces_x = forces[:, 0, 0]
+    # Sort by separations in descending order
+    _, forces = _validate_diatomic_curve(seps, forces, normalize_energy=False)
 
-    # Round forces near zero (avoid numerical sensitivity)
-    rounded_fs = np.copy(forces_x)
+    fs = forces[:, 0, 0]
+
+    rounded_fs = np.copy(fs)
     rounded_fs[np.abs(rounded_fs) < threshold] = 0
     fs_sign = np.sign(rounded_fs)
-
-    # Mask out zero values
     mask = fs_sign != 0
+    rounded_fs = rounded_fs[mask]
     fs_sign = fs_sign[mask]
-
-    # Count sign changes
-    return int(np.sum(np.diff(fs_sign) != 0))
+    f_flip = np.diff(fs_sign) != 0
+    return float(np.sum(f_flip))
 
 
 def calc_force_total_variation(seps: Sequence[float], forces: np.ndarray) -> float:
@@ -134,6 +144,8 @@ def calc_conservation_deviation(
     seps: Sequence[float],
     energies: Sequence[float],
     forces: np.ndarray,  # shape (n_distances, n_atoms, 3)
+    *,
+    interpolate: bool | int = False,
 ) -> float:
     """Calculate mean absolute deviation between forces and -dE/dr.
 
@@ -142,13 +154,36 @@ def calc_conservation_deviation(
         energies (Sequence[float]): Energies in eV.
         forces (np.ndarray): Forces acting on atoms at each separation of shape
             (n_distances, n_atoms, 3).
+        interpolate (bool | int): If False (default), uses the provided points directly.
+            If True, uses 100 points for interpolation.
+            If an integer, uses that many points for interpolation.
 
     Returns:
         float: Mean absolute deviation between forces and -dE/dr.
     """
     _sorted_seps, energies = _validate_diatomic_curve(seps, energies)
-    seps, forces = _validate_diatomic_curve(seps, forces)
+    seps, forces = _validate_diatomic_curve(seps, forces, normalize_energy=False)
 
+    if interpolate:
+        # Create grid for interpolation
+        n_points = 100 if interpolate is True else interpolate
+        seps_interp = np.linspace(seps.min(), seps.max(), n_points)
+
+        # Interpolate energies
+        energies_interp = np.interp(seps_interp, seps, energies)
+
+        # Interpolate forces (only x-component for simplicity)
+        forces_interp = np.zeros((len(seps_interp), forces.shape[1], forces.shape[2]))
+        for atom_idx in range(forces.shape[1]):
+            for dim in range(forces.shape[2]):
+                forces_interp[:, atom_idx, dim] = np.interp(
+                    seps_interp, seps, forces[:, atom_idx, dim]
+                )
+
+        # Calculate energy gradient using central differences on interpolated data
+        energy_grad = np.gradient(energies_interp, seps_interp)
+        # Compare forces with energy gradient
+        return float(np.mean(np.abs(forces_interp + energy_grad.reshape(-1, 1, 1))))
     # Calculate energy gradient using central differences
     energy_grad = np.gradient(energies, seps)
 

@@ -16,7 +16,7 @@
 </script>
 
 <nav {style}>
-  {#each routes as route, idx}
+  {#each routes as route, idx (route)}
     {@const [title, href] = Array.isArray(route) ? route : [route, route]}
     {#if idx > 0}<strong>&bull;</strong>{/if}
     <a {href} aria-current={is_current(href)} class="link">{title}</a>

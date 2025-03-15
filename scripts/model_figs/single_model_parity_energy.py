@@ -21,7 +21,7 @@ __date__ = "2024-09-07"
 # toggle between formation energy and energy above convex hull
 update_existing: bool = cli_args.update_existing
 models_to_plot = cli_args.models  # get model list from CLI, defaults to all models
-energy_labels = {Key.e_form: "Formation Energy", Key.each: "Convex Hull Distance"}
+energy_labels = {Key.e_form: "E<sub>form</sub>", Key.each: "E<sub>hull dist</sub>"}
 
 # Load predictions for specified models
 df_preds = load_df_wbm_with_preds(
@@ -94,3 +94,4 @@ for model, which_energy in itertools.product(models_to_plot, (Key.e_form, Key.ea
     fig.layout.title.update(text=f"{model.label} {which_energy}", x=0.5)
     fig.layout.margin.update(l=0, r=0, t=50, b=0)
     fig.show()
+    pmv.save_fig(fig, img_path)

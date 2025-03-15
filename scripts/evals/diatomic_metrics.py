@@ -37,4 +37,7 @@ for model in Model:
     metrics = diatomics.calc_diatomic_metrics(ref_curves=None, pred_curves=pred_curves)
 
     # Write metrics to YAML
-    diatomics.write_metrics_to_yaml(model, metrics)
+    mean_metrics = diatomics.write_metrics_to_yaml(model, metrics)
+    print(f"{model.name}:")
+    for metric, val in mean_metrics.items():
+        print(f"  {metric}: {val:.5}")

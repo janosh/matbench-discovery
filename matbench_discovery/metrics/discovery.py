@@ -156,14 +156,17 @@ def write_metrics_to_yaml(
     metrics: dict[str, str | float],
     df_model_preds: pd.Series,
     test_subset: TestSubset,
-) -> None:
+) -> dict[str, str | float]:
     """Write discovery metrics to model's YAML file.
 
     Args:
-        model (Model): Model to write metrics for
-        metrics (dict[str, float]): Metrics for this model and test subset
-        df_model_preds (pd.Series): Model predictions for this test subset
-        test_subset (TestSubset): Which test subset these metrics are for
+        model (Model): Model to write metrics for.
+        metrics (dict[str, float]): Metrics for this model and test subset.
+        df_model_preds (pd.Series): Model predictions for this test subset.
+        test_subset (TestSubset): Which test subset these metrics are for.
+
+    Returns:
+        dict[str, str | float]: Discovery metrics for this model and test subset.
     """
     from ruamel.yaml.comments import CommentedMap
 
@@ -206,6 +209,8 @@ def write_metrics_to_yaml(
     update_yaml_at_path(
         model.yaml_path, f"metrics.discovery.{test_subset}", commented_metrics
     )
+
+    return commented_metrics
 
 
 # Create DataFrames with models as rows
