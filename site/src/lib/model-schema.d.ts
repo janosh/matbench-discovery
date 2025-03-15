@@ -88,6 +88,7 @@ export interface ModelMetadata {
     | `Alex`
     | `OMat24`
     | `sAlex`
+    | `OpenLAM`
   )[]
   hyperparams?: {
     max_force?: number
@@ -117,7 +118,7 @@ export interface ModelMetadata {
   model_type: `GNN` | `UIP` | `BO-GNN` | `Fingerprint` | `Transformer` | `RF`
   targets: `E` | `EF_G` | `EF_D` | `EFS_G` | `EFS_D` | `EFS_GM` | `EFS_DM`
   openness?: `OSOD` | `OSCD` | `CSOD` | `CSCD`
-  status?: `aborted` | `complete` | `deprecated` | `pending`
+  status?: `aborted` | `complete` | `deprecated` | `pending` | `superseded`
   metrics?: {
     phonons?: PhononMetrics | (`not applicable` | `not available`)
     geo_opt?: GeoOptMetrics | (`not applicable` | `not available`)

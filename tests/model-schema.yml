@@ -288,6 +288,7 @@ properties:
         - Alex
         - OMat24
         - sAlex
+        - OpenLAM
   hyperparams:
     type: object
     additionalProperties: true
@@ -358,7 +359,12 @@ properties:
     enum: [OSOD, OSCD, CSOD, CSCD]
   status:
     type: string
-    enum: [aborted, complete, deprecated, pending]
+    enum: [aborted, complete, deprecated, pending, superseded]
+    # pending: model is in review or awaiting further data/details from authors
+    # superseded: model is superseded by a newer model
+    # deprecated: model is deprecated and should not be used e.g. because serious bugs were found
+    # aborted: model was aborted before testing could be completed due e.g. to OOM/stability issues
+    # complete: model has been tested and all metrics are available (the default if no status is specified)
   metrics:
     type: object
     additionalProperties: false

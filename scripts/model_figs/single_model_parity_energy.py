@@ -79,18 +79,13 @@ for model, which_energy in itertools.product(models_to_plot, (Key.e_form, Key.ea
         ),
         best_fit_line=dict(annotate_params=dict(y=0.01, font_size=16, x=0.99)),
     )
-    fig.layout.xaxis.title.update(
-        text=f"PBE {energy_labels[which_energy]} (eV/atom)", font_size=16
-    )
-    fig.layout.yaxis.title.update(
-        text=f"{model.label} {energy_labels[which_energy]} (eV/atom)", font_size=16
-    )
-
+    x_title = f"PBE {energy_labels[which_energy]} (eV/atom)"
+    fig.layout.xaxis.title.update(text=x_title, font_size=16)
+    y_title = f"{model.label} {energy_labels[which_energy]} (eV/atom)"
+    fig.layout.yaxis.title.update(text=y_title, font_size=16)
     fig.layout.coloraxis.colorbar.update(
         title="Point Density", title_side="bottom", tickangle=0
     )
-    pmv.powerups.add_identity_line(fig)
-    # fig.layout.update(width=600, height=400)
 
     fig.layout.title.update(text=f"{model.label} {which_energy}", x=0.5)
     fig.layout.margin.update(l=0, r=0, t=50, b=0)

@@ -35,6 +35,7 @@
       tooltip: `Root mean squared displacement (in Å) of ML vs DFT relaxed atomic positions as calculated by pymatgen StructureMatcher`,
       style: sep_line_style,
       format: `.3f`,
+      better: `lower`,
     },
   ]
 
