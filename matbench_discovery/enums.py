@@ -307,9 +307,12 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # dpa3_v1_mptrj = auto(), "deepmd/dpa3-v1-mptrj.yml"
     # dpa3_v1_openlam = auto(), "deepmd/dpa3-v1-openlam.yml"
 
-    # FAIR-Chem
+    # EquiformerV2 + DENS
     eqv2_s_dens = auto(), "eqV2/eqV2-s-dens-mp.yml"
     eqv2_m = auto(), "eqV2/eqV2-m-omat-salex-mp.yml"
+
+    # EScAIP - https://arxiv.org/abs/2410.24169v1
+    escaip = auto(), "escaip/escaip.yml"
 
     # GRACE: https://arxiv.org/abs/2311.16326v2
     grace_2l_mptrj = auto(), "grace/grace-2l-mptrj.yml"

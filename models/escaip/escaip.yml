@@ -1,0 +1,125 @@
+model_name: EScAIP MPtrj
+model_key: escaip
+model_version: 1.0.0
+matbench_discovery_version: 1.0.0
+date_added: "2025-01-14"
+date_published: "2024-09-25"
+authors:
+  - name: Eric Qu
+    affiliation: University of California, Berkeley
+    email: ericqu@berkeley.edu
+    url: https://ericqu.site
+  - name: Aditi S. Krishnapriyan
+    affiliation: University of California, Berkeley
+    email: aditik1@berkeley.edu
+    url: https://a1k12.github.io/
+    corresponding: true
+
+repo: https://github.com/ASK-Berkeley/EScAIP
+doi: https://doi.org/10.48550/arXiv.2410.24169
+url: https://github.com/ASK-Berkeley/EScAIP
+paper: https://openreview.net/forum?id=Y4mBaZu4vy
+pr_url: https://github.com/janosh/matbench-discovery/pull/191
+
+requirements:
+  fairchem-core: 1.2.1
+
+openness: OSOD
+trained_for_benchmark: false
+train_task: S2EFS
+test_task: IS2RE-SR
+model_type: UIP
+targets: EFS_D
+n_estimators: 1
+model_params: 45_000_000
+
+training_set: [MPtrj]
+
+hyperparams: # see: https://github.com/ASK-Berkeley/EScAIP/blob/179dca93a988f10230bb21d7e4795b1756a9b210/configs/s2ef/MPTrj/EScAIP_hydra/L6_H16_512_.yml
+  optimizer: AdamW
+  learning_rate: 0.00001 # decayed with a cosine annealing schedule
+  training_epochs: 150 # 100 + 50 where the energy coefficient was increased
+  loss: MAE
+  loss_weights:
+    energy: 5
+    forces: 20 # an additional cosine similarity loss is added to the forces
+    stress_iso: 5
+    stress_aniso: 5
+  max_radial_cutoff: 12.0
+  max_neighbors: 20
+  num_layers: 6
+  num_heads: 16
+  element_hidden_features: 128
+  max_force: 0.02
+  max_steps: 500
+  ase_optimizer: FIRE
+
+notes:
+  details: This checkpoint was trained without denoising objectives.
+  description: |
+    Scaling has been a critical factor in improving model performance and generalization across various fields of machine learning. It involves how a model's performance changes with increases in model size or input data, as well as how efficiently computational resources are utilized to support this growth. Despite successes in scaling other types of machine learning models, the study of scaling in Neural Network Interatomic Potentials (NNIPs) remains limited. NNIPs act as surrogate models for ab initio quantum mechanical calculations, predicting the energy and forces between atoms in molecules and materials based on atomic configurations. The dominant paradigm in this field is to incorporate numerous physical domain constraints into the model, such as symmetry constraints like rotational equivariance. We contend that these increasingly complex domain constraints inhibit the scaling ability of NNIPs, and such strategies are likely to cause model performance to plateau in the long run. In this work, we take an alternative approach and start by systematically studying NNIP scaling properties and strategies. Our findings indicate that scaling the model through attention mechanisms is both efficient and improves model expressivity. These insights motivate us to develop an NNIP architecture designed for scalability: the Efficiently Scaled Attention Interatomic Potential (EScAIP). EScAIP leverages a novel multi-head self-attention formulation within graph neural networks, applying attention at the neighbor-level representations. Implemented with highly-optimized attention GPU kernels, EScAIP achieves substantial gains in efficiency - at least 10x speed up in inference time, 5x less in memory usage - compared to existing NNIP models. EScAIP also achieves state-of-the-art performance on a wide range of datasets including catalysts (OC20 and OC22), molecules (SPICE), and materials (MPTrj). We emphasize that our approach should be thought of as a philosophy rather than a specific model, representing a proof-of-concept towards developing general-purpose NNIPs that achieve better expressivity through scaling, and continue to scale efficiently with increased computational resources and training data.
+
+metrics:
+  phonons: not available
+  geo_opt: not available
+  discovery:
+    pred_file_url: https://figshare.com/files/53020031
+    pred_file: models/EScAIP/2025-1-14-EScAIP-preds.csv.gz # should contain the models energy predictions for the WBM test set
+    pred_col: EScAIP_e_form_per_atom
+    full_test_set:
+      F1: 0.778 # fraction
+      DAF: 4.223 # dimensionless
+      Precision: 0.725 # fraction
+      Recall: 0.841 # fraction
+      Accuracy: 0.918 # fraction
+      TPR: 0.841 # fraction
+      FPR: 0.066 # fraction
+      TNR: 0.934 # fraction
+      FNR: 0.159 # fraction
+      TP: 37082.0 # count
+      FP: 14093.0 # count
+      TN: 198778.0 # count
+      FN: 7010.0 # count
+      MAE: 0.038 # eV/atom
+      RMSE: 0.083 # eV/atom
+      R2: 0.789 # dimensionless
+      missing_preds: 2 # count
+      missing_percent: 0.00% # fraction
+    most_stable_10k:
+      F1: 0.959 # fraction
+      DAF: 6.029 # dimensionless
+      Precision: 0.922 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.922 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9217.0 # count
+      FP: 783.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.066 # eV/atom
+      RMSE: 0.104 # eV/atom
+      R2: 0.78 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
+    unique_prototypes:
+      F1: 0.784 # fraction
+      DAF: 4.766 # dimensionless
+      Precision: 0.729 # fraction
+      Recall: 0.849 # fraction
+      Accuracy: 0.928 # fraction
+      TPR: 0.849 # fraction
+      FPR: 0.058 # fraction
+      TNR: 0.942 # fraction
+      FNR: 0.151 # fraction
+      TP: 28331.0 # count
+      FP: 10553.0 # count
+      TN: 171561.0 # count
+      FN: 5043.0 # count
+      MAE: 0.038 # eV/atom
+      RMSE: 0.084 # eV/atom
+      R2: 0.792 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
