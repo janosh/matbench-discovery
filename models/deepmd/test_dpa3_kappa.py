@@ -34,7 +34,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 model_name = "dpa3"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 dtype = "float32"
-calc = DP("./2025-03-14-dpa3-openlam.pth")
+calc = DP(model="./2025-03-14-dpa3-openlam.pth")
 
 # Relaxation parameters
 ase_optimizer: Literal["FIRE", "LBFGS", "BFGS"] = "FIRE"
