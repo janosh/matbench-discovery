@@ -12,13 +12,13 @@ from typing import Any, Literal
 
 import pandas as pd
 import torch
-from deepmd.calculator import DP
 from ase import Atoms
 from ase.constraints import FixSymmetry
 from ase.filters import FrechetCellFilter
 from ase.io import read
 from ase.optimize import FIRE, LBFGS
 from ase.optimize.optimize import Optimizer
+from deepmd.calculator import DP
 from moyopy import MoyoDataset
 from moyopy.interface import MoyoAdapter
 from pymatviz.enums import Key
