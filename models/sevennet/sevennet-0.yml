@@ -71,7 +71,7 @@ requirements:
   numpy: 1.26.4
 
 training_set: [MPtrj]
-status: deprecated
+status: superseded
 
 notes:
   Description: |
