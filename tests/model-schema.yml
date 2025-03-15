@@ -288,6 +288,7 @@ properties:
         - Alex
         - OMat24
         - sAlex
+        - OpenLAM
   hyperparams:
     type: object
     additionalProperties: true
