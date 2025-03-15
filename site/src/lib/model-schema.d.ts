@@ -88,7 +88,7 @@ export interface ModelMetadata {
     | `Alex`
     | `OMat24`
     | `sAlex`
-      | `OpenLAM`
+    | `OpenLAM`
   )[]
   hyperparams?: {
     max_force?: number
