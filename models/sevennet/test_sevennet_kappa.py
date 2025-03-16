@@ -1,4 +1,3 @@
-# type: ignore
 import json
 import os
 import traceback
