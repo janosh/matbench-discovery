@@ -20,6 +20,7 @@ from matbench_discovery.diatomics import calc_diatomic_curve, homo_nuc
 
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 
+
 # %% editable config
 model_name = "sevennet"
 model_variant = "sevennet-mf-ompa"  # choose 7net model variant to eval
