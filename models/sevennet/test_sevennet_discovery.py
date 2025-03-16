@@ -40,6 +40,7 @@ calculator_kwargs = {
 }[model_variant]
 calculator_kwargs["device"] = device
 
+
 # %% this config is editable
 smoke_test = True
 model_name = model_variant
@@ -53,6 +54,7 @@ max_steps = 800 if model_variant == "sevennet-mf-ompa" else 500
 force_max = 0.02 if model_variant == "sevennet-mf-ompa" else 0.05
 
 slurm_array_task_count = 32
+
 
 # %%
 slurm_array_task_id = int(os.getenv("SLURM_ARRAY_TASK_ID", "0"))

@@ -1,4 +1,4 @@
-#type: ignore
+# type: ignore
 import json
 import os
 import traceback
@@ -19,13 +19,12 @@ from ase.optimize.optimize import Optimizer
 from moyopy import MoyoDataset
 from moyopy.interface import MoyoAdapter
 from pymatviz.enums import Key
+from sevenn.calculator import SevenNetCalculator
 from tqdm import tqdm
 
 from matbench_discovery.enums import DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
-
-from sevenn.calculator import SevenNetCalculator
 
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 
@@ -45,7 +44,7 @@ calc = SevenNetCalculator(**calculator_kwargs)
 # Relaxation parameters. These params are for reproducing 7net-mf-ompa.
 ase_optimizer: Literal["FIRE", "LBFGS", "BFGS"] = "FIRE"
 max_steps = 300
-force_max = 1e-4 
+force_max = 1e-4
 symprec = 1e-5
 enforce_relax_symm = True
 conductivity_broken_symm = False
@@ -223,9 +222,7 @@ for atoms in tqdm_bar:
         continue
 
     try:  # Calculate thermal conductivity
-        ph3, kappa_dict, _ = ltc.calculate_conductivity(
-            ph3, temperatures=temperatures
-        )
+        ph3, kappa_dict, _ = ltc.calculate_conductivity(ph3, temperatures=temperatures)
         print(f"Calculated kappa for {mat_id}: {kappa_dict}")
     except Exception as exc:
         warnings.warn(
@@ -249,5 +246,3 @@ if save_forces:
     df_force = pd.DataFrame(force_results).T
     df_force.index.name = Key.mat_id
     df_force.reset_index().to_json(force_out_path)
-
-
