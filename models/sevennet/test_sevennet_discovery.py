@@ -20,19 +20,38 @@ from matbench_discovery.data import as_dict_handler, ase_atoms_from_zip
 from matbench_discovery.enums import DataFiles, Task
 
 __author__ = "Yutack Park"
-__date__ = "2024-12-10"  # 2024-06-25 for SevenNet-0
+__date__ = "2025-03-14"
+
+"""History
+2024-06-25: SevenNet-0, first version
+2024-12-10: SevenNet-l3i5
+2025-03-14: SevenNet-mf-ompa. Different variants can be selected.
+"""
+
+
+model_name = "sevennet"
+model_variant = "sevennet-mf-ompa"  # choose 7net model variant to eval
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+calculator_kwargs = {
+    "sevennet-0": {"model": "7net-0"},
+    "sevennet-l3i5": {"model": "7net-l3i5"},
+    "sevennet-mf-ompa": {"model": "7net-mf-ompa", "modal": "mpa"},
+}[model_variant]
+calculator_kwargs["device"] = device
 
 
 # %% this config is editable
 smoke_test = True
-model_name = "sevennet-l3i5"  # was sevennet-0 before 2024-12-10, nothing else changed
+model_name = model_variant
 task_type = Task.IS2RE
 job_name = f"{model_name}-wbm-{task_type}"
 ase_optimizer = "FIRE"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-max_steps = 500
-force_max = 0.05  # Run until the forces are smaller than this in eV/A
+# They gives almost the same results. These values are for reproducibility.
+max_steps = 800 if model_variant == "sevennet-mf-ompa" else 500
+force_max = 0.02 if model_variant == "sevennet-mf-ompa" else 0.05
 
 slurm_array_task_count = 32
 

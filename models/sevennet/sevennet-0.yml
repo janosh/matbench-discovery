@@ -71,6 +71,7 @@ requirements:
   numpy: 1.26.4
 
 training_set: [MPtrj]
+status: superseded
 
 notes:
   Description: |
