@@ -111,3 +111,21 @@ export type DiatomicsCurves = {
   'homo-nuclear': Record<string, { energies: number[]; forces: number[][] }>
   'hetero-nuclear'?: Record<string, { energies: number[]; forces: number[][] }>
 }
+
+// MetricWeight defines weights for each component of the combined score
+export interface MetricWeight {
+  metric: string // ID of the metric (F1, RMSD, kappa_SRME)
+  value: number // Weight value between 0-1
+  display: string // Display name (can include HTML)
+  description: string // Description of the metric
+}
+
+export interface CombinedMetricConfig {
+  weights: MetricWeight[]
+  name: string
+  description: string
+}
+
+export type CellVal = string | number | undefined | null
+export type RowData = Record<string, CellVal>
+export type TableData = RowData[]

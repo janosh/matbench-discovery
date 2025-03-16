@@ -1,49 +1,119 @@
 <script lang="ts">
   import {
-      HeatmapTable,
-      MODEL_METADATA,
-      TRAINING_SETS,
-      get_metric_rank_order,
-      get_pred_file_urls,
+    HeatmapTable,
+    MODEL_METADATA,
+    TRAINING_SETS,
+    get_metric_rank_order,
+    get_pred_file_urls,
+    model_is_compliant,
   } from '$lib'
   import { pretty_num } from 'elementari'
   import { click_outside } from 'svelte-zoo/actions'
-  import { ALL_METRICS, METADATA_COLS } from './metrics'
-  import type { DiscoverySet, HeatmapColumn, ModelData } from './types'
+  import TableControls from './TableControls.svelte'
+  import {
+    ALL_METRICS,
+    DEFAULT_COMBINED_METRIC_CONFIG,
+    METADATA_COLS,
+    calculate_combined_score,
+  } from './metrics'
+  import type {
+    CombinedMetricConfig,
+    DiscoverySet,
+    HeatmapColumn,
+    ModelData,
+  } from './types'
 
   interface Props {
     discovery_set?: DiscoverySet
     model_filter?: (model: ModelData) => boolean
     col_filter?: (col: HeatmapColumn) => boolean
+    show_energy_only?: boolean
+    show_noncompliant?: boolean
+    config?: CombinedMetricConfig
     [key: string]: unknown
   }
   let {
     discovery_set = `unique_prototypes`,
     model_filter = () => true,
     col_filter = () => true,
+    show_energy_only = false,
+    show_noncompliant = false,
+    config = DEFAULT_COMBINED_METRIC_CONFIG,
     ...rest
   }: Props = $props()
 
   let active_files: { name: string; url: string }[] = $state([])
   let active_model_name = $state(``)
   let pred_file_modal: HTMLDialogElement | null = $state(null)
-  let columns: HeatmapColumn[] = $derived(
-    [...ALL_METRICS, ...METADATA_COLS]
-      .map((col) => {
-        const better = col.better ?? get_metric_rank_order(col.label)
 
-        // append better=higher/lower to tooltip if applicable
-        let tooltip = col.tooltip || ``
-        if (better === `higher` || better === `lower`) {
-          tooltip = tooltip ?
-            `${tooltip} (${better}=better)` :
-            `${better}=better`
-        }
-        return { ...col, better, tooltip, hidden: !col_filter(col) }
+  // Make metric_config reactive with $state to properly handle updates
+  let metric_config = $state({ ...config })
+
+  // Update metric_config when config prop changes
+  $effect(() => {
+    metric_config = { ...config }
+  })
+
+  // Type definition for the Link structure in row data
+  interface LinkData {
+    paper: { url: string; title: string; icon: string }
+    repo: { url: string; title: string; icon: string }
+    pr_url: { url: string; title: string; icon: string }
+    pred_files: { files: { name: string; url: string }[]; name: string }
+  }
+
+  // Generate tooltip for combined score that shows current weights
+  function generate_combined_score_tooltip(): string {
+    const weights = metric_config.weights
+      .map((w) => `${w.display}: ${(w.value * 100).toFixed(0)}%`)
+      .join(`, `)
+
+    return `Combined Performance Score weighted as: ${weights}`
+  }
+
+  // Define CPS column with tooltip
+  let combined_score_column: HeatmapColumn = {
+    label: `CPS`,
+    tooltip: generate_combined_score_tooltip(),
+    style: `border-right: 1px solid black;`,
+    format: `.3f`,
+    better: `higher`,
+  }
+
+  // Initialize columns
+  function initialize_columns(): HeatmapColumn[] {
+    // Add combined score column at the beginning
+    return (
+      [combined_score_column, ...ALL_METRICS, ...METADATA_COLS]
+        .map((col) => {
+          const better = col.better ?? get_metric_rank_order(col.label)
+
+          // append better=higher/lower to tooltip if applicable
+          let tooltip = col.tooltip || ``
+          if (better === `higher` || better === `lower`) {
+            tooltip = tooltip ? `${tooltip} (${better}=better)` : `${better}=better`
+          }
+          return { ...col, better, tooltip, hidden: !col_filter(col) } as HeatmapColumn
+        })
+        // Ensure Model column comes first
+        .sort((col1, _col2) => (col1.label === `Model` ? -1 : 1))
+    )
+  }
+
+  let columns = $state(initialize_columns())
+
+  // Simple approach for column visibility
+  let visible_cols = $state<Record<string, boolean>>({})
+
+  // Initialize visible columns
+  $effect(() => {
+    // Only initialize once when columns are available
+    if (columns.length > 0 && Object.keys(visible_cols).length === 0) {
+      columns.forEach((col) => {
+        visible_cols[col.label] = !col.hidden
       })
-      // Ensure Model column comes first
-      .sort((col1, _col2) => (col1.label === `Model` ? -1 : 1)),
-  )
+    }
+  })
 
   function format_train_set(model_training_sets: string[]) {
     let [total_structs, total_materials] = [0, 0]
@@ -122,48 +192,181 @@
       day: `numeric`,
     })
 
-  // Transform MODEL_METADATA into table data format
-  let metrics_data = $derived(
-    MODEL_METADATA.filter(
-      (model) => model_filter(model) && model.metrics?.discovery?.[discovery_set],
+  // Helper to safely access nested geo_opt metrics
+  function get_geo_opt_property<T>(
+    geo_opt: unknown,
+    symprec: string,
+    property: string,
+  ): T | undefined {
+    if (!geo_opt || typeof geo_opt !== `object`) return undefined
+
+    const symprec_key = `symprec=${symprec}`
+    const metrics = geo_opt[symprec_key as keyof typeof geo_opt]
+
+    if (!metrics || typeof metrics !== `object`) return undefined
+
+    return metrics[property as keyof typeof metrics] as T
+  }
+
+  // Check if a model is energy-only (has no force or stress predictions)
+  function is_energy_only_model(model: ModelData): boolean {
+    return model.targets === `E`
+  }
+
+  // Check if a model is noncompliant (doesn't follow submission guidelines)
+  function is_noncompliant_model(model: ModelData): boolean {
+    return !model_is_compliant(model)
+  }
+
+  // Create a combined filter function that respects all filtering conditions
+  function create_combined_filter(
+    show_energy: boolean,
+    show_noncomp: boolean,
+  ): (model: ModelData) => boolean {
+    return (model: ModelData) => {
+      // Apply the user-provided model_filter first
+      if (!model_filter(model)) {
+        return false
+      }
+
+      // Filter energy-only models if not shown
+      const is_energy = is_energy_only_model(model)
+      if (is_energy && !show_energy) {
+        return false
+      }
+
+      // Filter noncompliant models if not shown
+      const is_noncomp = is_noncompliant_model(model)
+      if (is_noncomp && !show_noncomp) {
+        return false
+      }
+
+      return true
+    }
+  }
+
+  // Function to calculate metrics_data with combined score - no caching
+  function calculate_metrics_data(config: CombinedMetricConfig) {
+    // Get the current filter with current state values
+    const current_filter = create_combined_filter(show_energy_only, show_noncompliant)
+
+    // Perform the calculation
+    return (
+      MODEL_METADATA.filter(
+        (model) => current_filter(model) && model.metrics?.discovery?.[discovery_set],
+      )
+        .map((model) => {
+          const metrics = model.metrics?.discovery?.[discovery_set]
+
+          // Get RMSD from geo_opt metrics if available, using the first symprec value
+          const geo_opt_metrics = model.metrics?.geo_opt
+          let rmsd = undefined
+          if (geo_opt_metrics && typeof geo_opt_metrics === `object`) {
+            // Try to find the first symprec key and get its RMSD
+            const symprec_keys = Object.keys(geo_opt_metrics).filter((k) =>
+              k.startsWith(`symprec=`),
+            )
+            if (symprec_keys.length > 0) {
+              const symprec_key = symprec_keys[0]
+              rmsd = get_geo_opt_property<number>(
+                geo_opt_metrics,
+                symprec_key.replace(`symprec=`, ``),
+                `rmsd`,
+              )
+            }
+          }
+
+          // Get kappa from phonon metrics
+          const phonons = model.metrics?.phonons
+          const kappa =
+            phonons && typeof phonons === `object` && `kappa_103` in phonons
+              ? phonons.kappa_103?.κ_SRME
+              : undefined
+
+          // Calculate combined score
+          const combined_score = calculate_combined_score(
+            metrics?.F1,
+            rmsd,
+            kappa,
+            config,
+          )
+
+          const targets = model.targets.replace(/_(.)/g, `<sub>$1</sub>`)
+          const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
+
+          return {
+            Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}">${model.model_name}</a>`,
+            CPS: combined_score,
+            F1: metrics?.F1,
+            DAF: metrics?.DAF,
+            Prec: metrics?.Precision,
+            Acc: metrics?.Accuracy,
+            TPR: metrics?.TPR,
+            TNR: metrics?.TNR,
+            MAE: metrics?.MAE,
+            RMSE: metrics?.RMSE,
+            'R<sup>2</sup>': metrics?.R2,
+            'κ<sub>SRME</sub>': kappa,
+            RMSD: rmsd,
+            'Training Set': format_train_set(model.training_set),
+            Params: `<span title="${pretty_num(model.model_params, `,`)} trainable model parameters">${pretty_num(model.model_params)}</span>`,
+            Targets: targets_str,
+            'Date Added': `<span title="${long_date(model.date_added)}">${model.date_added}</span>`,
+            // Add Links as a special property
+            Links: {
+              paper: {
+                url: model.paper || model.doi,
+                title: `Read model paper`,
+                icon: `📄`,
+              },
+              repo: { url: model.repo, title: `View source code`, icon: `📦` },
+              pr_url: { url: model.pr_url, title: `View pull request`, icon: `🔗` },
+              pred_files: { files: get_pred_file_urls(model), name: model.model_name },
+            } as LinkData,
+          }
+        })
+        // Sort by combined score (descending)
+        .sort((row1, row2) => {
+          // Handle NaN values (they should be sorted to the bottom)
+          const score1 = row1[`CPS`]
+          const score2 = row2[`CPS`]
+
+          if (isNaN(score1) && isNaN(score2)) return 0
+          if (isNaN(score1)) return 1
+          if (isNaN(score2)) return -1
+
+          return score2 - score1
+        })
     )
-      .map((model) => {
-        const metrics = model.metrics?.discovery?.[discovery_set]
+  }
 
-        const targets = model.targets.replace(/_(.)/g, `<sub>$1</sub>`)
-        const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
+  // Make metrics_data explicitly reactive with $state
+  let metrics_data = $state()
 
-        // rename metric keys to pretty labels
-        return {
-          Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}">${model.model_name}</a>`,
-          F1: metrics?.F1,
-          DAF: metrics?.DAF,
-          Prec: metrics?.Precision,
-          Acc: metrics?.Accuracy,
-          TPR: metrics?.TPR,
-          TNR: metrics?.TNR,
-          MAE: metrics?.MAE,
-          RMSE: metrics?.RMSE,
-          'R<sup>2</sup>': metrics?.R2,
-          'κ<sub>SRME</sub>': model.metrics?.phonons?.kappa_103?.κ_SRME,
-          'Training Set': format_train_set(model.training_set),
-          Params: `<span title="${pretty_num(model.model_params, `,`)} trainable model parameters">${pretty_num(model.model_params)}</span>`,
-          Targets: targets_str,
-          'Date Added': `<span title="${long_date(model.date_added)}">${model.date_added}</span>`,
-          Links: {
-            paper: {
-              url: model.paper || model.doi,
-              title: `Read model paper`,
-              icon: `📄`,
-            },
-            repo: { url: model.repo, title: `View source code`, icon: `📦` },
-            pr_url: { url: model.pr_url, title: `View pull request`, icon: `🔗` },
-            pred_files: { files: get_pred_file_urls(model), name: model.model_name },
-          },
-        }
-      })
-      .sort((row1, row2) => (row2.F1 ?? 0) - (row1.F1 ?? 0)),
-  )
+  // Make sure metrics_data is recalculated whenever filter settings, props, or metric_config changes
+  $effect(() => {
+    // When metric_config or filters change, recalculate metrics data
+    metrics_data = calculate_metrics_data(metric_config)
+
+    // Update the CPS tooltip
+    combined_score_column = {
+      ...combined_score_column,
+      tooltip: generate_combined_score_tooltip(),
+    }
+
+    // Re-create columns with the updated tooltip
+    columns = initialize_columns()
+  })
+
+  // Handle changes to filter options (energy-only and noncompliant models)
+  function handle_filter_change(show_energy: boolean, show_noncomp: boolean) {
+    // Update the props directly
+    show_energy_only = show_energy
+    show_noncompliant = show_noncomp
+
+    // Force immediate recalculation
+    metrics_data = calculate_metrics_data(metric_config)
+  }
 </script>
 
 <svelte:window
@@ -175,14 +378,42 @@
   }}
 />
 
-<HeatmapTable data={metrics_data} {columns} {...rest}>
+<HeatmapTable
+  data={metrics_data}
+  {columns}
+  initial_sort_column="CPS"
+  initial_sort_direction="desc"
+  sort_hint="Click on column headers to sort table rows"
+  {...rest}
+>
+  {#snippet controls()}
+    <TableControls
+      config={metric_config}
+      {show_energy_only}
+      {show_noncompliant}
+      bind:visible_cols
+      on_filter_change={(show_energy, show_noncomp) => {
+        handle_filter_change(show_energy, show_noncomp)
+      }}
+      on_col_change={(column, visible) => {
+        // Update hidden state in columns
+        columns = columns.map((col) => {
+          if (col.label === column) {
+            return { ...col, hidden: !visible }
+          }
+          return col
+        })
+      }}
+    />
+  {/snippet}
+
   {#snippet cell({ col, val })}
-    {#if col.label === `Links` && val}
-      {@const links = val}
-      {#each [links.paper, links.repo, links.pr_url] as {title, url, icon} (title + url)}
-        {#if url}
-          <a href={url} target="_blank" rel="noopener noreferrer" title={title}>
-            {icon}
+    {#if col.label === `Links` && val && typeof val === `object` && `paper` in val}
+      {@const links = val as LinkData}
+      {#each [links.paper, links.repo, links.pr_url] as link (link?.title + link?.url)}
+        {#if link?.url}
+          <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title}>
+            {link.icon}
           </a>
         {/if}
       {/each}
@@ -202,7 +433,7 @@
       {/if}
     {:else if typeof val === `number` && col.format}
       {pretty_num(val, col.format)}
-    {:else if [undefined, null].includes(val)}
+    {:else if val === undefined || val === null}
       n/a
     {:else}
       {@html val}
@@ -230,7 +461,7 @@
     </button>
     <h3>Download prediction files for {active_model_name}</h3>
     <ol class="pred-files-list">
-      {#each active_files as {name, url} (name + url)}
+      {#each active_files as { name, url } (name + url)}
         <li>
           <a href={url} target="_blank" rel="noopener noreferrer">
             {name}
@@ -242,6 +473,13 @@
 </dialog>
 
 <style>
+  /* Make the table protrude into page margins */
+  :global(.heatmap-table-container) {
+    margin-left: calc((100vw - var(--main-width, 60ch)) / -8) !important;
+    margin-right: calc((100vw - var(--main-width, 60ch)) / -8) !important;
+    width: auto !important;
+  }
+
   dialog {
     visibility: hidden;
     opacity: 0;

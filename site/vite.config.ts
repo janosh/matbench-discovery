@@ -21,6 +21,8 @@ export default defineConfig(({ mode }) => ({
       reporter: [`text`, `json-summary`],
     },
     setupFiles: `tests/index.ts`,
+    dir: `tests`,
+    include: [`**/*.test.ts`, `**/*.test.svelte.ts`],
   },
 
   resolve: {

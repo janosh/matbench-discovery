@@ -1,0 +1,416 @@
+<script lang="ts">
+  import { onMount } from 'svelte'
+  import type { MetricWeight } from './types'
+
+  // Define props interface
+  interface Props {
+    weights: MetricWeight[]
+    size?: number
+    onchange?: (new_weights: MetricWeight[]) => void | undefined
+  }
+
+  // Use $props() instead of export let
+  let { weights = [], size = 200, onchange = undefined }: Props = $props()
+
+  // State for the draggable point
+  let is_dragging = $state(false)
+  let point = $state({ x: 0, y: 0 })
+  let svg_element: SVGSVGElement
+  let radius = size / 2
+  let center = { x: radius, y: radius }
+
+  // Colors for the axes and areas
+  const colors = [
+    `rgba(255, 99, 132, 0.7)`, // red for F1
+    `rgba(255, 206, 86, 0.7)`, // yellow for kappa
+    `rgba(54, 162, 235, 0.7)`, // blue for RMSD
+  ]
+
+  // Compute axes points coordinates
+  let axis_points = $derived(
+    weights.map((_, idx) => {
+      const angle = (2 * Math.PI * idx) / weights.length
+      return {
+        x: center.x + Math.cos(angle) * radius * 0.8,
+        y: center.y + Math.sin(angle) * radius * 0.8,
+      }
+    }),
+  )
+
+  // Initialize point position from weights
+  $effect(() => {
+    update_point_from_weights(weights)
+  })
+
+  function update_point_from_weights(current_weights: MetricWeight[]) {
+    if (!current_weights || current_weights.length < 3) return
+
+    // For 3 axes, we can use barycentric coordinates
+    const points = axis_points
+
+    // Calculate weighted position
+    let { x, y } = center
+    for (let idx = 0; idx < current_weights.length; idx++) {
+      const weight = current_weights[idx].value
+      x += (points[idx].x - center.x) * weight
+      y += (points[idx].y - center.y) * weight
+    }
+    // Update the point with new coordinates
+    point = { x, y }
+  }
+
+  function update_weights_from_point() {
+    // Calculate weights using barycentric coordinates for triangular space
+    if (weights.length !== 3) {
+      console.error(`This implementation only supports exactly 3 metrics`)
+      return
+    }
+
+    // Implementation for a 3-point spider diagram
+    // Calculate barycentric coordinates of the point relative to the triangle
+
+    // First convert to triangle coordinates
+    const triangle_area = calc_triangle_area(
+      axis_points[0],
+      axis_points[1],
+      axis_points[2],
+    )
+    // Calculate areas of sub-triangles
+    const area1 = calc_triangle_area(point, axis_points[1], axis_points[2])
+    const area2 = calc_triangle_area(point, axis_points[0], axis_points[2])
+    const area3 = calc_triangle_area(point, axis_points[0], axis_points[1])
+
+    // Calculate normalized barycentric weights
+    let new_values = [area1 / triangle_area, area2 / triangle_area, area3 / triangle_area]
+
+    // Handle center point specially - equal weights
+    const dist_from_center = Math.sqrt(
+      Math.pow(point.x - center.x, 2) + Math.pow(point.y - center.y, 2),
+    )
+
+    // If very close to center, use equal weights
+    if (dist_from_center < radius * 0.05) {
+      new_values = [1 / 3, 1 / 3, 1 / 3]
+    }
+
+    // Update weights
+    const new_weights = weights.map((w, idx) => ({
+      ...w,
+      value: new_values[idx],
+    }))
+
+    // Notify parent component
+    onchange?.(new_weights)
+  }
+
+  // Helper to calculate triangle area using cross product
+  function calc_triangle_area(
+    p1: { x: number; y: number },
+    p2: { x: number; y: number },
+    p3: { x: number; y: number },
+  ) {
+    return Math.abs(
+      (p1.x * (p2.y - p3.y) + p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y)) / 2,
+    )
+  }
+
+  // Handle click on SVG to jump to position
+  function handle_svg_click(event: MouseEvent) {
+    // Get click coordinates relative to SVG
+    const target = event.currentTarget as SVGSVGElement
+    const svg_rect = target.getBoundingClientRect()
+    const click_x = event.clientX - svg_rect.left
+    const click_y = event.clientY - svg_rect.top
+
+    // Check if click is inside the triangle
+    if (
+      is_point_in_triangle(
+        { x: click_x, y: click_y },
+        axis_points[0],
+        axis_points[1],
+        axis_points[2],
+      )
+    ) {
+      // Update the draggable point position
+      point = { x: click_x, y: click_y }
+
+      // Update weights based on new position
+      update_weights_from_point()
+
+      // Notify parent component
+      onchange?.(weights)
+    }
+  }
+
+  // Move point to a position with triangle constraints
+  function move_point_to_position(x: number, y: number) {
+    if (
+      weights.length === 3 &&
+      is_point_in_triangle({ x, y }, axis_points[0], axis_points[1], axis_points[2])
+    ) {
+      point = { x, y }
+    } else {
+      // If outside the triangle, constrain to the closest point on the triangle
+      const closest_point = get_closest_point_on_triangle(
+        { x, y },
+        axis_points[0],
+        axis_points[1],
+        axis_points[2],
+      )
+      point = closest_point
+    }
+
+    update_weights_from_point()
+  }
+
+  // Handle dragging
+  function start_drag(event: MouseEvent | TouchEvent) {
+    event.preventDefault()
+    is_dragging = true
+
+    // Add global event listeners
+    window.addEventListener(`mousemove`, handle_drag)
+    window.addEventListener(`touchmove`, handle_drag, { passive: false })
+    window.addEventListener(`mouseup`, end_drag)
+    window.addEventListener(`touchend`, end_drag)
+  }
+
+  function handle_drag(event: MouseEvent | TouchEvent) {
+    if (!is_dragging) return
+    event.preventDefault()
+
+    // Get SVG coordinates
+    const rect = svg_element.getBoundingClientRect()
+
+    // Get position depending on event type
+    let client_x: number, client_y: number
+
+    if (event instanceof MouseEvent) {
+      client_x = event.clientX
+      client_y = event.clientY
+    } else {
+      client_x = event.touches[0].clientX
+      client_y = event.touches[0].clientY
+    }
+
+    const x = client_x - rect.left
+    const y = client_y - rect.top
+
+    // Use common positioning logic
+    move_point_to_position(x, y)
+  }
+
+  // Helper to check if a point is inside a triangle
+  function is_point_in_triangle(
+    p: { x: number; y: number },
+    a: { x: number; y: number },
+    b: { x: number; y: number },
+    c: { x: number; y: number },
+  ) {
+    // Compute barycentric coordinates
+    const denominator = (b.y - c.y) * (a.x - c.x) + (c.x - b.x) * (a.y - c.y)
+    const alpha = ((b.y - c.y) * (p.x - c.x) + (c.x - b.x) * (p.y - c.y)) / denominator
+    const beta = ((c.y - a.y) * (p.x - c.x) + (a.x - c.x) * (p.y - c.y)) / denominator
+    const gamma = 1 - alpha - beta
+
+    // If all coordinates are between 0 and 1, point is inside
+    return alpha >= 0 && beta >= 0 && gamma >= 0 && alpha <= 1 && beta <= 1 && gamma <= 1
+  }
+
+  // Helper to find closest point on triangle
+  function get_closest_point_on_triangle(
+    p: { x: number; y: number },
+    a: { x: number; y: number },
+    b: { x: number; y: number },
+    c: { x: number; y: number },
+  ) {
+    // First, find the closest point on each edge
+    const ab = closest_point_on_line(p, a, b)
+    const bc = closest_point_on_line(p, b, c)
+    const ca = closest_point_on_line(p, c, a)
+
+    // Then, find which of those points is closest to p
+    const dist_ab = Math.pow(ab.x - p.x, 2) + Math.pow(ab.y - p.y, 2)
+    const dist_bc = Math.pow(bc.x - p.x, 2) + Math.pow(bc.y - p.y, 2)
+    const dist_ca = Math.pow(ca.x - p.x, 2) + Math.pow(ca.y - p.y, 2)
+
+    if (dist_ab <= dist_bc && dist_ab <= dist_ca) {
+      return ab
+    } else if (dist_bc <= dist_ab && dist_bc <= dist_ca) {
+      return bc
+    } else {
+      return ca
+    }
+  }
+
+  // Helper to find closest point on a line segment
+  function closest_point_on_line(
+    p: { x: number; y: number },
+    a: { x: number; y: number },
+    b: { x: number; y: number },
+  ) {
+    const atob = { x: b.x - a.x, y: b.y - a.y }
+    const atop = { x: p.x - a.x, y: p.y - a.y }
+    const len = atob.x * atob.x + atob.y * atob.y
+    let dot = atop.x * atob.x + atop.y * atob.y
+    const t = Math.max(0, Math.min(1, dot / len))
+
+    return {
+      x: a.x + atob.x * t,
+      y: a.y + atob.y * t,
+    }
+  }
+
+  function end_drag() {
+    is_dragging = false
+    window.removeEventListener(`mousemove`, handle_drag)
+    window.removeEventListener(`touchmove`, handle_drag)
+    window.removeEventListener(`mouseup`, end_drag)
+    window.removeEventListener(`touchend`, end_drag)
+  }
+
+  onMount(() => {
+    update_point_from_weights(weights)
+  })
+</script>
+
+<div class="radar-chart-container">
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+  <svg
+    bind:this={svg_element}
+    width={size}
+    height={size}
+    viewBox={`0 0 ${size} ${size}`}
+    onclick={handle_svg_click}
+    role="img"
+    aria-label="Radar chart for adjusting metric weights"
+  >
+    <!-- Axes -->
+    {#each weights as weight, i}
+      {@const angle = (2 * Math.PI * i) / weights.length}
+      {@const x = center.x + Math.cos(angle) * radius * 0.8}
+      {@const y = center.y + Math.sin(angle) * radius * 0.8}
+
+      <line
+        x1={center.x}
+        y1={center.y}
+        x2={x}
+        y2={y}
+        stroke="rgba(255, 255, 255, 0.4)"
+        stroke-width="1"
+      />
+
+      <!-- Axis labels -->
+      {@const labelX = center.x + Math.cos(angle) * radius * 0.9}
+      {@const labelY = center.y + Math.sin(angle) * radius * 0.9}
+      <text
+        x={labelX}
+        y={labelY}
+        text-anchor="middle"
+        dominant-baseline="middle"
+        font-size="12"
+        fill="white"
+      >
+        {@html weight.display}
+      </text>
+    {/each}
+
+    <!-- Triangle area -->
+    {#if weights.length === 3}
+      <path
+        d={`M ${axis_points[0].x} ${axis_points[0].y} L ${axis_points[1].x} ${axis_points[1].y} L ${axis_points[2].x} ${axis_points[2].y} Z`}
+        fill="rgba(255, 255, 255, 0.1)"
+        stroke="rgba(255, 255, 255, 0.3)"
+        stroke-width="1"
+      />
+    {/if}
+
+    <!-- Background circular grid -->
+    {#each [0.2, 0.4, 0.6, 0.8] as gridRadius}
+      <circle
+        cx={center.x}
+        cy={center.y}
+        r={radius * gridRadius}
+        fill="none"
+        stroke="rgba(255, 255, 255, 0.1)"
+        stroke-width="1"
+      />
+    {/each}
+
+    <!-- Colored areas for each metric -->
+    {#if weights.length === 3}
+      <path
+        d={`M ${center.x} ${center.y} L ${axis_points[0].x} ${axis_points[0].y} L ${point.x} ${point.y} Z`}
+        fill={colors[0]}
+        stroke="none"
+        opacity="0.5"
+      />
+      <path
+        d={`M ${center.x} ${center.y} L ${axis_points[1].x} ${axis_points[1].y} L ${point.x} ${point.y} Z`}
+        fill={colors[1]}
+        stroke="none"
+        opacity="0.5"
+      />
+      <path
+        d={`M ${center.x} ${center.y} L ${axis_points[2].x} ${axis_points[2].y} L ${point.x} ${point.y} Z`}
+        fill={colors[2]}
+        stroke="none"
+        opacity="0.5"
+      />
+    {/if}
+
+    <!-- svelte-ignore a11y_interactive_supports_focus -->
+    <!-- Draggable knob -->
+    <circle
+      cx={point.x}
+      cy={point.y}
+      r="8"
+      fill="white"
+      stroke="black"
+      stroke-width="2"
+      style="cursor: move;"
+      onmousedown={start_drag}
+      ontouchstart={start_drag}
+      role="button"
+      aria-label="Drag to adjust weight balance"
+    />
+  </svg>
+
+  <!-- Weight percentages display -->
+  <div class="weight-display">
+    {#each weights as weight, idx}
+      <div class="weight-item" style="color: {colors[idx]}">
+        <span class="weight-name">{@html weight.display}</span>
+        <span class="weight-value">{(weight.value * 100).toFixed(0)}%</span>
+      </div>
+    {/each}
+  </div>
+</div>
+
+<style>
+  .radar-chart-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5em;
+  }
+
+  svg {
+    touch-action: none; /* Prevents default touch behaviors */
+    cursor: pointer; /* Show pointer cursor to hint clickability */
+  }
+  .weight-display {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    margin-top: 0.3em;
+  }
+  .weight-item {
+    display: flex;
+    flex-direction: column;
+    place-items: center;
+    font-size: 0.8em;
+    font-weight: bold;
+  }
+</style>
