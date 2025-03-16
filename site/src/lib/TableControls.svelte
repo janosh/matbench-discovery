@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { TableColumnToggleMenu } from '$lib'
   import { Tooltip } from 'svelte-zoo'
 
   // Props for this component
@@ -7,7 +8,6 @@
     show_noncompliant?: boolean
     visible_cols?: Record<string, boolean>
     on_filter_change?: (show_energy: boolean, show_noncomp: boolean) => void | undefined
-    on_col_change?: (column: string, visible: boolean) => void | undefined
   }
 
   // Extract props with defaults
@@ -16,7 +16,6 @@
     show_noncompliant = $bindable(false),
     visible_cols = $bindable({}),
     on_filter_change = undefined,
-    on_col_change = undefined,
   }: Props = $props()
 
   // Column panel state
@@ -39,15 +38,6 @@
     // Update both local state and call callback
     show_energy_only = checked
     on_filter_change?.(checked, show_noncompliant)
-  }
-
-  // Handle column visibility changes
-  function handle_column_change(column: string, visible: boolean) {
-    // Update local state
-    visible_cols[column] = visible
-
-    // Call callback
-    on_col_change?.(column, visible)
   }
 </script>
 
@@ -89,23 +79,7 @@
     </Tooltip>
   </label>
 
-  <details class="column-toggles" bind:open={column_panel_open}>
-    <summary>
-      Columns <span class="column-icon">⊞</span>
-    </summary>
-    <div class="column-menu">
-      {#each Object.keys(visible_cols) as col (col)}
-        <label>
-          <input
-            type="checkbox"
-            checked={visible_cols[col]}
-            onchange={(e) => handle_column_change(col, e.currentTarget.checked)}
-          />
-          {@html col}
-        </label>
-      {/each}
-    </div>
-  </details>
+  <TableColumnToggleMenu bind:visible_cols bind:column_panel_open />
 </div>
 
 <style>
@@ -114,63 +88,6 @@
     align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
-  }
-
-  .column-toggles {
-    position: relative;
-    display: inline-block;
-  }
-
-  .column-toggles summary {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 2pt 6pt;
-    border-radius: 4pt;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    white-space: nowrap;
-  }
-
-  .column-toggles summary:hover {
-    background: rgba(255, 255, 255, 0.15);
-  }
-
-  .column-toggles summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .column-icon {
-    font-size: 0.9em;
-  }
-
-  .column-menu {
-    position: absolute;
-    right: 0;
-    top: calc(100% + 4pt);
-    background: #1c1c1c;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 4pt;
-    padding: 3pt 5pt;
-    min-width: 150px;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    z-index: 10;
-  }
-
-  .column-menu label {
-    display: inline-block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin: 1px 2px;
-    border-radius: 3px;
-    line-height: 1.3em;
-    height: 1.3em;
-  }
-
-  .column-menu label:hover {
-    background: rgba(255, 255, 255, 0.1);
   }
 
   .info-icon-small {

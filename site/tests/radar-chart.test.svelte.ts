@@ -1,4 +1,4 @@
-import RadarChart from '$lib/RadarChart.svelte'
+import { RadarChart } from '$lib'
 import type { MetricWeight } from '$lib/types'
 import { mount, tick } from 'svelte'
 import { describe, expect, it, vi } from 'vitest'

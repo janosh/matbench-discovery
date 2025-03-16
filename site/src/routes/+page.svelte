@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { DiscoverySet, ModelData } from '$lib'
-  import { MetricsTable, model_is_compliant, MODEL_METADATA } from '$lib'
+  import { MetricsTable, model_is_compliant, MODEL_METADATA, RadarChart } from '$lib'
   import {
     ALL_METRICS,
     DEFAULT_COMBINED_METRIC_CONFIG,
@@ -10,7 +10,6 @@
     METADATA_COLS,
     RMSD_DEFAULT_WEIGHT,
   } from '$lib/metrics'
-  import RadarChart from '$lib/RadarChart.svelte'
   import Readme from '$root/readme.md'
   import KappaNote from '$site/src/routes/kappa-note.md'
   import { pretty_num } from 'elementari'

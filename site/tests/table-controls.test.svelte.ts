@@ -1,5 +1,5 @@
+import { TableControls } from '$lib'
 import { DEFAULT_COMBINED_METRIC_CONFIG } from '$lib/metrics'
-import TableControls from '$lib/TableControls.svelte'
 import type { CombinedMetricConfig } from '$lib/types'
 import { mount, tick } from 'svelte'
 import { describe, expect, it, vi } from 'vitest'

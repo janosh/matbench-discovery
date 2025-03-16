@@ -3,13 +3,13 @@
     HeatmapTable,
     MODEL_METADATA,
     TRAINING_SETS,
+    TableControls,
     get_metric_rank_order,
     get_pred_file_urls,
     model_is_compliant,
   } from '$lib'
   import { pretty_num } from 'elementari'
   import { click_outside } from 'svelte-zoo/actions'
-  import TableControls from './TableControls.svelte'
   import {
     ALL_METRICS,
     DEFAULT_COMBINED_METRIC_CONFIG,
@@ -77,30 +77,27 @@
     better: `higher`,
   }
 
-  // Initialize columns
-  function initialize_columns(): HeatmapColumn[] {
-    // Add combined score column at the beginning
-    return (
-      [combined_score_column, ...ALL_METRICS, ...METADATA_COLS]
-        .map((col) => {
-          const better = col.better ?? get_metric_rank_order(col.label)
-
-          // append better=higher/lower to tooltip if applicable
-          let tooltip = col.tooltip || ``
-          if (better === `higher` || better === `lower`) {
-            tooltip = tooltip ? `${tooltip} (${better}=better)` : `${better}=better`
-          }
-          return { ...col, better, tooltip, hidden: !col_filter(col) } as HeatmapColumn
-        })
-        // Ensure Model column comes first
-        .sort((col1, _col2) => (col1.label === `Model` ? -1 : 1))
-    )
-  }
-
-  let columns = $state(initialize_columns())
-
   // Simple approach for column visibility
   let visible_cols = $state<Record<string, boolean>>({})
+  let columns = $derived(
+    // Use col_filter, combined_score_column, and visible_cols as dependencies
+    [combined_score_column, ...ALL_METRICS, ...METADATA_COLS]
+      .map((col) => {
+        const better = col.better ?? get_metric_rank_order(col.label)
+
+        // append better=higher/lower to tooltip if applicable
+        let tooltip = col.tooltip || ``
+        if (better === `higher` || better === `lower`) {
+          tooltip = tooltip ? `${tooltip} (${better}=better)` : `${better}=better`
+        }
+        // Use visible_cols if available, otherwise use col_filter
+        const hidden =
+          col.label in visible_cols ? !visible_cols[col.label] : !col_filter(col)
+        return { ...col, better, tooltip, hidden } as HeatmapColumn
+      })
+      // Ensure Model column comes first
+      .sort((col1, _col2) => (col1.label === `Model` ? -1 : 1)),
+  )
 
   // Initialize visible columns
   $effect(() => {
@@ -340,7 +337,7 @@
   // Make metrics_data explicitly reactive with $state
   let metrics_data = $state()
 
-  // Make sure metrics_data is recalculated whenever filter settings, props, or metric_config changes
+  // Make metrics_data is recalculated whenever filter settings, props, or metric_config changes
   $effect(() => {
     // When metric_config or filters change, recalculate metrics data
     metrics_data = calculate_metrics_data(metric_config)
@@ -350,9 +347,6 @@
       ...combined_score_column,
       tooltip: get_combined_score_tooltip(),
     }
-
-    // Re-create columns with the updated tooltip
-    columns = initialize_columns()
   })
 
   // Handle changes to filter options (energy-only and noncompliant models)
@@ -393,13 +387,8 @@
         handle_filter_change(show_energy, show_noncomp)
       }}
       on_col_change={(column, visible) => {
-        // Update hidden state in columns
-        columns = columns.map((col) => {
-          if (col.label === column) {
-            return { ...col, hidden: !visible }
-          }
-          return col
-        })
+        // Update visible_cols state instead of columns
+        visible_cols[column] = visible
       }}
     />
   {/snippet}

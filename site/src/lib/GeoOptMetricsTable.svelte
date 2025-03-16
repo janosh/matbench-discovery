@@ -157,7 +157,7 @@
   {#snippet cell({ col, val })}
     {#if col.label === `Links` && val}
       {@const links = val}
-      {#each links.files as { url: href, title, icon } (href)}
+      {#each links.files as { url: href, title, icon } (title + href)}
         {#if href}
           <a {href} {title} target="_blank" rel="noopener noreferrer">
             {@html icon}
