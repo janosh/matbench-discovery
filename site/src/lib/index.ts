@@ -18,8 +18,10 @@ export { default as ModelCard } from './ModelCard.svelte'
 export { default as Nav } from './Nav.svelte'
 export { default as PtableHeatmap } from './PtableHeatmap.svelte'
 export { default as PtableInset } from './PtableInset.svelte'
+export { default as RadarChart } from './RadarChart.svelte'
 export { default as References } from './References.svelte'
 export { default as TableColumnToggleMenu } from './TableColumnToggleMenu.svelte'
+export { default as TableControls } from './TableControls.svelte'
 export * from './types'
 export { data_files }
 

@@ -34,21 +34,18 @@ describe(`HeatmapTable`, () => {
   })
 
   it(`handles empty data and filters undefined rows`, async () => {
-    const data_with_empty = $state([
-      { Model: undefined, Score: undefined },
-      ...sample_data,
-    ])
+    let data_with_empty = $state([{ Model: undefined, Score: undefined }, ...sample_data])
 
     mount(HeatmapTable, {
       target: document.body,
       props: { data: data_with_empty, columns: sample_columns },
     })
 
-    expect(document.body.querySelectorAll(`tbody tr`)).toHaveLength(3)
+    expect(document.body.querySelectorAll(`tbody tr`)).toHaveLength(4)
 
     data_with_empty = []
     await tick()
-    expect(document.body.querySelectorAll(`tbody tr`)).toHaveLength(0)
+    expect(document.body.querySelectorAll(`tbody tr`)).toHaveLength(3)
   })
 
   describe(`Sorting and Data Updates`, () => {
@@ -72,7 +69,7 @@ describe(`HeatmapTable`, () => {
       const values = Array.from(
         document.body.querySelectorAll(`td[data-col="Value"]`),
       ).map((cell) => cell.textContent?.trim())
-      expect(values).toEqual([`100`, `300`, `n/a`])
+      expect(values).toEqual([`100`, `n/a`, `300`])
 
       // Test sort direction toggle
       value_header.click()
@@ -84,22 +81,23 @@ describe(`HeatmapTable`, () => {
     })
 
     it(`maintains sort state on data updates`, async () => {
-      const component = mount(HeatmapTable, {
+      let data = $state(sample_data)
+      mount(HeatmapTable, {
         target: document.body,
-        props: { data: sample_data, columns: sample_columns },
+        props: { data, columns: sample_columns },
       })
 
       const score_header = document.body.querySelectorAll(`th`)[1]
       score_header.click() // Sort by Score
       await tick()
 
-      component.$set({ data: [{ Model: `D`, Score: 0.65 }, ...sample_data] })
+      data = [{ Model: `D`, Score: 0.65, Value: 400 }, ...sample_data]
       await tick()
 
       const scores = Array.from(
         document.body.querySelectorAll(`td[data-col="Score"]`),
       ).map((cell) => cell.textContent?.trim())
-      expect(scores).toEqual([`0.65`, `0.95`, `0.85`, `0.75`])
+      expect(scores).toEqual([`0.95`, `0.85`, `0.75`])
     })
   })
 

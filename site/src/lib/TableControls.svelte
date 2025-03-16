@@ -1,0 +1,114 @@
+<script lang="ts">
+  import { TableColumnToggleMenu } from '$lib'
+  import { Tooltip } from 'svelte-zoo'
+
+  // Props for this component
+  interface Props {
+    show_energy_only?: boolean
+    show_noncompliant?: boolean
+    visible_cols?: Record<string, boolean>
+    on_filter_change?: (show_energy: boolean, show_noncomp: boolean) => void | undefined
+  }
+
+  // Extract props with defaults
+  let {
+    show_energy_only = $bindable(false),
+    show_noncompliant = $bindable(false),
+    visible_cols = $bindable({}),
+    on_filter_change = undefined,
+  }: Props = $props()
+
+  // Column panel state
+  let column_panel_open = $state(false)
+
+  // Handle filter checkbox changes
+  function handle_noncompliant_change(event: Event) {
+    const target = event.target as HTMLInputElement
+    const checked = target.checked
+
+    // Update both local state and call callback
+    show_noncompliant = checked
+    on_filter_change?.(show_energy_only, checked)
+  }
+
+  function handle_energy_only_change(event: Event) {
+    const target = event.target as HTMLInputElement
+    const checked = target.checked
+
+    // Update both local state and call callback
+    show_energy_only = checked
+    on_filter_change?.(checked, show_noncompliant)
+  }
+</script>
+
+<div class="table-controls">
+  <label class="filter-option">
+    <input
+      type="checkbox"
+      checked={show_noncompliant}
+      onchange={handle_noncompliant_change}
+    />
+    <span>Non-compliant models</span>
+    <Tooltip>
+      <span class="info-icon-small">ⓘ</span>
+      {#snippet tip()}
+        <span>
+          Models can be non-compliant for multiple reasons:<br />
+          - closed source (model implementation and/or train/test code)<br />
+          - closed weights<br />
+          - trained on more than the permissible training set (<a
+            href="https://docs.materialsproject.org/changes/database-versions#v2022.10.28"
+            >MP v2022.10.28 release</a
+          >)<br />
+          We still show these models behind a toggle as we expect them<br /> to nonetheless
+          provide helpful signals for developing future models.
+        </span>
+      {/snippet}
+    </Tooltip>
+  </label>
+
+  <label class="filter-option">
+    <input
+      type="checkbox"
+      checked={show_energy_only}
+      onchange={handle_energy_only_change}
+    />
+    <span>Energy-only models</span>
+    <Tooltip text="Include models that only predict energy (no forces or stress)">
+      <span class="info-icon-small">ⓘ</span>
+    </Tooltip>
+  </label>
+
+  <TableColumnToggleMenu bind:visible_cols bind:column_panel_open />
+</div>
+
+<style>
+  .table-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .info-icon-small {
+    font-size: 0.8em;
+    margin-left: 0.2em;
+    opacity: 0.7;
+    cursor: help;
+  }
+
+  .filter-option {
+    display: flex;
+    align-items: center;
+    font-size: 0.85em;
+    gap: 0.3em;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  /* Fix for sub and sup tags */
+  :global(sub),
+  :global(sup) {
+    font-size: 0.7em;
+  }
+</style>

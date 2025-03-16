@@ -1,24 +1,30 @@
 <script lang="ts">
-  import type { ModelData } from '$lib'
+  import type { DiscoverySet, ModelData } from '$lib'
+  import { MetricsTable, model_is_compliant, MODEL_METADATA, RadarChart } from '$lib'
   import {
-      MetricsTable,
-      model_is_compliant,
-      MODEL_METADATA,
-      TableColumnToggleMenu,
-  } from '$lib'
-  import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/metrics'
-  import type { DiscoverySet } from '$lib/types'
+    ALL_METRICS,
+    DEFAULT_COMBINED_METRIC_CONFIG,
+    DISCOVERY_SET_LABELS,
+    F1_DEFAULT_WEIGHT,
+    KAPPA_DEFAULT_WEIGHT,
+    METADATA_COLS,
+    RMSD_DEFAULT_WEIGHT,
+  } from '$lib/metrics'
   import Readme from '$root/readme.md'
   import KappaNote from '$site/src/routes/kappa-note.md'
   import { pretty_num } from 'elementari'
   import 'iconify-icon'
-  import { Toggle, Tooltip } from 'svelte-zoo'
+  import { Tooltip } from 'svelte-zoo'
 
   let n_wbm_stable_uniq_protos = 32_942
   let n_wbm_uniq_protos = 215_488
 
   let show_non_compliant: boolean = $state(false)
   let show_energy_only: boolean = $state(false)
+  let show_combined_controls: boolean = $state(true)
+
+  // State for the radar chart
+  let metric_config = $state({ ...DEFAULT_COMBINED_METRIC_CONFIG })
 
   // Default column visibility
   let visible_cols: Record<string, boolean> = $state({
@@ -44,8 +50,36 @@
     }, {} as ModelData),
   )
 
-  let column_panel_open: boolean = $state(false)
   let discovery_set: DiscoverySet = $state(`unique_prototypes`)
+
+  // Reset to default weights (50% F1, 40% kappa, 10% RMSD)
+  function reset_weights() {
+    // Create a new array with updated values
+    const new_weights = [...metric_config.weights]
+
+    // Find the indices of each metric using the correct metric names
+    const f1_index = new_weights.findIndex((w) => w.metric === `F1`)
+    const kappa_index = new_weights.findIndex((w) => w.metric === `kappa_SRME`)
+    const rmsd_index = new_weights.findIndex((w) => w.metric === `RMSD`)
+
+    if (f1_index >= 0 && kappa_index >= 0 && rmsd_index >= 0) {
+      // Set the desired weight distribution
+      new_weights[f1_index].value = F1_DEFAULT_WEIGHT
+      new_weights[kappa_index].value = KAPPA_DEFAULT_WEIGHT
+      new_weights[rmsd_index].value = RMSD_DEFAULT_WEIGHT
+
+      // Create a completely new config object to force reactivity
+      metric_config = {
+        ...metric_config,
+        weights: new_weights.map((w) => ({ ...w })), // Deep clone weights
+      }
+    } else {
+      console.error(`Couldn't find expected metrics in weights array`, {
+        weights: metric_config.weights,
+        expected: [`F1`, `kappa_SRME`, `RMSD`],
+      })
+    }
+  }
 </script>
 
 <Readme>
@@ -56,7 +90,7 @@
           <Tooltip text={tooltip} tip_style="z-index: 2; font-size: 0.8em;">
             <button
               class:active={discovery_set === key}
-              onclick={() => (discovery_set = key)}
+              onclick={() => (discovery_set = key as DiscoverySet)}
             >
               {title}
               {#if link}
@@ -76,10 +110,12 @@
 
       <MetricsTable
         col_filter={(col) => visible_cols[col.label] ?? true}
-        model_filter={(model) =>
-          (show_energy_only || model.targets != `E`) &&
-          (show_non_compliant || model_is_compliant(model))}
+        model_filter={() => true}
         {discovery_set}
+        {show_combined_controls}
+        {show_energy_only}
+        show_noncompliant={show_non_compliant}
+        config={metric_config}
         style="width: 100%;"
       />
 
@@ -95,56 +131,60 @@
           </a>
         {/each}
       </div>
-      <div class="table-controls">
-        <Toggle bind:checked={show_non_compliant} style="gap: 3pt;">
-          Show non-compliant models <Tooltip max_width="20em">
-            {#snippet tip()}
-              <span>
-                Models can be non-compliant for multiple reasons<br />
-                - closed source (model implementation and/or train/test code)<br />
-                - closed weights<br />
-                - trained on more than the permissible training set (<a
-                  href="https://docs.materialsproject.org/changes/database-versions#v2022.10.28"
-                  >MP v2022.10.28 release</a
-                >)<br />
-                We still show these models behind a toggle as we expect them<br /> to nonetheless
-                provide helpful signals for developing future models.
-              </span>
-            {/snippet}
-            <iconify-icon icon="octicon:info-16" inline style="padding: 0 3pt;"
-            ></iconify-icon>
-          </Tooltip>&ensp;</Toggle
-        >
-        <Toggle bind:checked={show_energy_only} style="gap: 3pt;">
-          Show energy-only models <Tooltip max_width="12em">
-            {#snippet tip()}
-              <span>
-                Models that only predict energy (E) perform worse<br /> and can't be
-                evaluated on force-modeling tasks such as κ<sub>SRME</sub>
-              </span>
-            {/snippet}
-            <iconify-icon icon="octicon:info-16" inline style="padding: 0 3pt;"
-            ></iconify-icon>
-          </Tooltip>&ensp;</Toggle
-        >
 
-        <TableColumnToggleMenu bind:visible_cols bind:column_panel_open />
-      </div>
+      <!-- Radar Chart and Caption Container -->
+      <figcaption class="caption-radar-container">
+        <div
+          style="flex: 1; background-color: var(--light-bg); padding: 0.2em 0.5em; border-radius: 4px;"
+        >
+          The <strong>CPS</strong> (Combined Performance Score) is a metric that weights
+          discovery performance (F1), geometry optimization quality (RMSD), and thermal
+          conductivity prediction accuracy (κ<sub>SRME</sub>). Use the radar chart to
+          adjust the importance of each metric component.
+          <br /><br />
+          Training size is the number of materials used to train the model. For models trained
+          on DFT relaxations, we show the number of distinct frames in parentheses. In cases
+          where only the number of frames is known, we report the number of frames as the training
+          set size. <code>(N=x)</code> in the Model Params column shows the number of
+          estimators if an ensemble was used. DAF = Discovery Acceleration Factor measures
+          how many more stable materials a model finds compared to random selection from
+          the test set. The unique structure prototypes in the WBM test set have a
+          <code>{pretty_num(n_wbm_stable_uniq_protos / n_wbm_uniq_protos, `.1%`)}</code>
+          rate of stable crystals, meaning the max possible DAF is
+          <code
+            >({pretty_num(n_wbm_stable_uniq_protos)} / {pretty_num(n_wbm_uniq_protos)})^−1
+            ≈
+            {pretty_num(n_wbm_uniq_protos / n_wbm_stable_uniq_protos)}</code
+          >.
+        </div>
 
-      <figcaption>
-        Training size is the number of materials used to train the model. For models
-        trained on DFT relaxations, we show the number of distinct frames in parentheses.
-        In cases where only the number of frames is known, we report the number of frames
-        as the training set size. <code>(N=x)</code> in the Model Params column shows the
-        number of estimators if an ensemble was used. DAF = Discovery Acceleration Factor
-        measures how many more stable materials a model finds compared to random selection
-        from the test set. The unique structure prototypes in the WBM test set have a
-        <code>{pretty_num(n_wbm_stable_uniq_protos / n_wbm_uniq_protos, `.1%`)}</code>
-        rate of stable crystals, meaning the max possible DAF is
-        <code
-          >({pretty_num(n_wbm_stable_uniq_protos)} / {pretty_num(n_wbm_uniq_protos)})^−1 ≈
-          {pretty_num(n_wbm_uniq_protos / n_wbm_stable_uniq_protos)}</code
-        >.
+        <!-- Radar Chart for Weight Controls -->
+        <div class="radar-container">
+          <div class="radar-header">
+            <span class="metric-name">{metric_config.name}</span>
+            <Tooltip text={metric_config.description}>
+              <span class="info-icon">ⓘ</span>
+            </Tooltip>
+
+            <button
+              class="action-button"
+              onclick={() => reset_weights()}
+              title="Reset to default weights"
+            >
+              Reset
+            </button>
+          </div>
+          <RadarChart
+            weights={metric_config.weights}
+            onchange={(weights) => {
+              metric_config = {
+                ...metric_config,
+                weights: weights.map((w) => ({ ...w })),
+              }
+            }}
+            size={260}
+          />
+        </div>
       </figcaption>
     </figure>
   {/snippet}
@@ -213,13 +253,56 @@
     padding: 0 6pt;
     border-radius: 4pt;
   }
-  div.table-controls {
+
+  /* Caption Radar Container Styles */
+  figcaption.caption-radar-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 5pt;
-    place-content: center;
-    margin: 3pt auto;
+    align-items: flex-start;
+    gap: 1em;
+    background-color: transparent;
   }
+
+  .radar-container {
+    width: fit-content;
+    flex: 0 0 auto;
+    max-width: 100%;
+    background: var(--light-bg);
+    border-radius: 4px;
+    padding: 0.2em 0.5em;
+    box-sizing: border-box;
+  }
+
+  .radar-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .metric-name {
+    font-weight: 600;
+    margin-right: 0.3em;
+  }
+
+  .info-icon {
+    opacity: 0.7;
+    cursor: help;
+  }
+
+  .action-button {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+    cursor: pointer;
+    padding: 0.15em 0.35em;
+    font-size: 0.8em;
+    margin-left: auto;
+  }
+
+  .action-button:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
   figure#metrics-table :global(:is(sub, sup)) {
     font-size: 0.7em;
   }

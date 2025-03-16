@@ -1,9 +1,9 @@
 <script lang="ts">
   import {
-      MetricScatter,
-      MetricsTable,
-      MODEL_METADATA,
-      TableColumnToggleMenu,
+    MetricScatter,
+    MetricsTable,
+    MODEL_METADATA,
+    TableColumnToggleMenu,
   } from '$lib'
   import { DISCOVERY_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/metrics'
   import type { DiscoverySet } from '$lib/types'

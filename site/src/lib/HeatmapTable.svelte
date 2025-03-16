@@ -8,11 +8,7 @@
   import { titles_as_tooltips } from 'svelte-zoo/actions'
   import { flip } from 'svelte/animate'
   import { writable } from 'svelte/store'
-  import type { HeatmapColumn } from './types'
-
-  type CellVal = string | number | undefined | null
-  type RowData = Record<string, CellVal>
-  type TableData = RowData[]
+  import type { CellVal, HeatmapColumn, RowData, TableData } from './types'
 
   interface Props {
     data: TableData
@@ -20,6 +16,10 @@
     sort_hint?: string
     style?: string | null
     cell?: Snippet<[{ row: RowData; col: HeatmapColumn; val: CellVal }]>
+    controls?: Snippet
+    initial_sort_column?: string
+    initial_sort_direction?: `asc` | `desc`
+    fixed_header?: boolean
   }
 
   let {
@@ -28,9 +28,19 @@
     sort_hint = `Click on column headers to sort table rows`,
     style = null,
     cell,
+    controls,
+    initial_sort_column,
+    initial_sort_direction,
+    fixed_header = false,
   }: Props = $props()
 
-  const sort_state = writable({ column: ``, ascending: true })
+  // Add container reference for binding
+  let container: HTMLDivElement
+
+  const sort_state = writable({
+    column: initial_sort_column || ``,
+    ascending: initial_sort_direction !== `desc`,
+  })
 
   let clean_data = $state(data)
   $effect(() => {
@@ -70,13 +80,27 @@
     })
   }
 
-  function calc_color(value: number | string | undefined, col: HeatmapColumn) {
-    if (col.color_scale === null || typeof value !== `number`)
+  function calc_color(value: number | string | undefined | null, col: HeatmapColumn) {
+    // Skip color calculation for null values or if color_scale is null
+    if (
+      value === null ||
+      value === undefined ||
+      col.color_scale === null ||
+      typeof value !== `number`
+    ) {
       return { bg: null, text: null }
+    }
 
     const col_id = get_col_id(col)
-    const values = clean_data.map((row) => row[col_id])
-    const range = [min(values) ?? 0, max(values) ?? 1]
+    const numericValues = clean_data
+      .map((row) => row[col_id])
+      .filter((val): val is number => typeof val === `number`) // Type guard to ensure we only get numbers
+
+    if (numericValues.length === 0) {
+      return { bg: null, text: null }
+    }
+
+    const range = [min(numericValues) ?? 0, max(numericValues) ?? 1]
     if (col.better === `lower`) {
       range.reverse()
     }
@@ -116,14 +140,28 @@
   }
 </script>
 
-<div class="table-container" {style}>
-  <table use:titles_as_tooltips>
+<!-- Table header with sort hint and controls side by side -->
+<div class="table-header">
+  {#if Object.keys($sort_state).length && sort_hint}
+    <div class="sort-hint">{sort_hint}</div>
+  {/if}
+
+  <!-- Add controls rendering here -->
+  {#if controls}
+    <div class="controls-container">
+      {@render controls()}
+    </div>
+  {/if}
+</div>
+
+<div bind:this={container} class="table-container" {style}>
+  <table use:titles_as_tooltips class:fixed-header={fixed_header} class="heatmap">
     <thead>
       <!-- Don't add a table row for group headers if there are none -->
       {#if visible_columns.some((col) => col.group)}
         <!-- First level headers -->
         <tr class="group-header">
-          {#each visible_columns as {label, group, tooltip} (label + group)}
+          {#each visible_columns as { label, group, tooltip } (label + group)}
             {#if !group}
               <th></th>
             {:else}
@@ -169,13 +207,13 @@
               style:background-color={color.bg}
               style:color={color.text}
               style={col.style}
-              title={[undefined, null].includes(val) ? `not available` : null}
+              title={typeof val === `undefined` || val === null ? `not available` : null}
             >
               {#if cell}
                 {@render cell({ row, col, val })}
               {:else if typeof val === `number` && col.format}
                 {pretty_num(val, col.format)}
-              {:else if [undefined, null].includes(val)}
+              {:else if val === undefined || val === null}
                 n/a
               {:else}
                 {@html val}
@@ -191,15 +229,11 @@
 <style>
   .table-container {
     overflow-x: auto;
-    max-width: 100%;
-    scrollbar-width: none;
     margin: auto;
     font-size: var(--heatmap-font-size, 0.9em);
-  }
-
-  /* https://stackoverflow.com/a/38994837 */
-  .table-container {
+    /* https://stackoverflow.com/a/38994837 */
     scrollbar-width: none; /* Firefox */
+    max-width: 90vw;
   }
   .table-container::-webkit-scrollbar {
     display: none; /* Safari and Chrome */
@@ -246,5 +280,29 @@
   .group-header th {
     border-bottom: 1px solid black;
     text-align: center;
+  }
+
+  /* Styles for the table header with sort hint and controls */
+  .table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .sort-hint {
+    font-size: 0.85em;
+    color: var(--text-muted, #aaa);
+    margin: 0;
+  }
+
+  .controls-container {
+    display: inline-flex;
+    align-items: center;
+    margin-left: auto;
   }
 </style>
