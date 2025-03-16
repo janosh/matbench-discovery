@@ -118,7 +118,7 @@ export const DEFAULT_COMBINED_METRIC_CONFIG: CombinedMetricConfig = {
     },
     {
       metric: `RMSD`,
-      display: `<span style="white-space:nowrap">RMSD</span>`,
+      display: `RMSD`,
       description: `Root mean square displacement for crystal structure optimization`,
       value: RMSD_DEFAULT_WEIGHT,
     },

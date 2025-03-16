@@ -302,11 +302,11 @@
       />
 
       <!-- Axis labels -->
-      {@const labelX = center.x + Math.cos(angle) * radius * 0.9}
-      {@const labelY = center.y + Math.sin(angle) * radius * 0.9}
+      {@const label_x = center.x + Math.cos(angle) * radius * 0.9}
+      {@const label_y = center.y + Math.sin(angle) * radius * 0.9}
       <text
-        x={labelX}
-        y={labelY}
+        x={label_x}
+        y={label_y}
         text-anchor="middle"
         dominant-baseline="middle"
         font-size="12"

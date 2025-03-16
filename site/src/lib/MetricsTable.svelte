@@ -63,18 +63,15 @@
   }
 
   // Generate tooltip for combined score that shows current weights
-  function generate_combined_score_tooltip(): string {
-    const weights = metric_config.weights
-      .map((w) => `${w.display}: ${(w.value * 100).toFixed(0)}%`)
-      .join(`, `)
-
-    return `Combined Performance Score weighted as: ${weights}`
+  function get_combined_score_tooltip(): string {
+    const weights = metric_config.weights.map((w) => w.display).join(`, `)
+    return `Combined Performance Score = weighted average of ${weights}`
   }
 
   // Define CPS column with tooltip
   let combined_score_column: HeatmapColumn = {
     label: `CPS`,
-    tooltip: generate_combined_score_tooltip(),
+    tooltip: get_combined_score_tooltip(),
     style: `border-right: 1px solid black;`,
     format: `.3f`,
     better: `higher`,
@@ -351,7 +348,7 @@
     // Update the CPS tooltip
     combined_score_column = {
       ...combined_score_column,
-      tooltip: generate_combined_score_tooltip(),
+      tooltip: get_combined_score_tooltip(),
     }
 
     // Re-create columns with the updated tooltip
