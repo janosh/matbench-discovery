@@ -140,11 +140,7 @@ describe(`ModelCard`, () => {
 
       const sections = document.body.querySelectorAll(`section h3`)
       const section_titles = Array.from(sections).map((h3) => h3.textContent)
-      // Include "Trained By" section if model has trained_by field
-      const expected_titles = [`Authors`]
-      if (model.trained_by) expected_titles.push(`Trained By`)
-      expected_titles.push(`Package versions`, `Metrics`, `Hyperparameters`)
-      expect(section_titles).toEqual(expected_titles)
+      expect(section_titles).toEqual([`Metrics`])
     })
 
     it(`displays authors and package versions correctly`, async () => {

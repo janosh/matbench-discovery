@@ -59,6 +59,7 @@
     min-width: 150px;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    z-index: 1; /* needed to ensure column toggle menu is above HeatmapTable header row */
   }
   .column-menu label {
     display: inline-block;
