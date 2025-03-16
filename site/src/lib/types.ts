@@ -116,7 +116,7 @@ export type DiatomicsCurves = {
 export interface MetricWeight {
   metric: string // ID of the metric (F1, RMSD, kappa_SRME)
   value: number // Weight value between 0-1
-  display: string // Display name (can include HTML)
+  label: string // Display name (can include HTML)
   description: string // Description of the metric
 }
 

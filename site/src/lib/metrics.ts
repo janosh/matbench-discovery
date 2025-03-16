@@ -106,19 +106,19 @@ export const DEFAULT_COMBINED_METRIC_CONFIG: CombinedMetricConfig = {
   weights: [
     {
       metric: `F1`,
-      display: `F1`,
+      label: `F1`,
       description: `F1 score for stable/unstable material classification (discovery task)`,
       value: F1_DEFAULT_WEIGHT,
     },
     {
       metric: `kappa_SRME`,
-      display: `κ<sub>SRME</sub>`,
+      label: `κ<sub>SRME</sub>`,
       description: `Symmetric relative mean error for thermal conductivity prediction (lower is better)`,
       value: KAPPA_DEFAULT_WEIGHT,
     },
     {
       metric: `RMSD`,
-      display: `RMSD`,
+      label: `RMSD`,
       description: `Root mean square displacement for crystal structure optimization`,
       value: RMSD_DEFAULT_WEIGHT,
     },

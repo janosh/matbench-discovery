@@ -64,7 +64,7 @@
 
   // Generate tooltip for combined score that shows current weights
   function get_combined_score_tooltip(): string {
-    const weights = metric_config.weights.map((w) => w.display).join(`, `)
+    const weights = metric_config.weights.map((w) => w.label).join(`, `)
     return `Combined Performance Score = weighted average of ${weights}`
   }
 

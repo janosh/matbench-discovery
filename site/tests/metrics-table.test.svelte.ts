@@ -302,19 +302,19 @@ describe(`MetricsTable`, () => {
       weights: [
         {
           metric: `F1`,
-          display: `F1`,
+          label: `F1`,
           description: `F1 score for stable/unstable material classification`,
           value: 0.8, // Higher weight to F1
         },
         {
           metric: `kappa_SRME`,
-          display: `κ<sub>SRME</sub>`,
+          label: `κ<sub>SRME</sub>`,
           description: `Symmetric relative mean error for thermal conductivity prediction`,
           value: 0.1, // Lower weight to kappa
         },
         {
           metric: `RMSD`,
-          display: `RMSD`,
+          label: `RMSD`,
           description: `Root mean square displacement for crystal structure optimization`,
           value: 0.1, // Same weight to RMSD
         },

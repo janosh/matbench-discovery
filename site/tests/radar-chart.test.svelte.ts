@@ -17,19 +17,19 @@ describe(`RadarChart`, () => {
   const sample_weights: MetricWeight[] = [
     {
       metric: `f1`,
-      display: `F1`,
+      label: `F1`,
       description: `F1 score for model performance`,
       value: 0.5,
     },
     {
       metric: `rmsd`,
-      display: `RMSD`,
+      label: `RMSD`,
       description: `Root mean square displacement`,
       value: 0.3,
     },
     {
       metric: `kappa_SRME`,
-      display: `κ<sub>SRME</sub>`,
+      label: `κ<sub>SRME</sub>`,
       description: `Symmetric relative mean error for thermal conductivity`,
       value: 0.2,
     },

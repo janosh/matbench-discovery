@@ -94,8 +94,8 @@
     }
 
     // Update weights
-    const new_weights = weights.map((w, idx) => ({
-      ...w,
+    const new_weights = weights.map((wt, idx) => ({
+      ...wt,
       value: new_values[idx],
     }))
 
@@ -312,7 +312,18 @@
         font-size="12"
         fill="white"
       >
-        {@html weight.display}
+        <!-- Handle subscripts and superscripts manually since <sub> and <sup> are not supported in SVG -->
+        {#if weight.label.includes(`<sub>`)}
+          {@const parts = weight.label.split(/<sub>|<\/sub>/)}
+          {parts[0]}
+          <tspan baseline-shift="sub" font-size="8">{parts[1]}</tspan>
+        {:else if weight.label.includes(`<sup>`)}
+          {@const parts = weight.label.split(/<sup>|<\/sup>/)}
+          {parts[0]}
+          <tspan baseline-shift="super" font-size="8">{parts[1]}</tspan>
+        {:else}
+          {@html weight.label}
+        {/if}
       </text>
     {/each}
 
@@ -341,19 +352,22 @@
     <!-- Colored areas for each metric -->
     {#if weights.length === 3}
       <path
-        d={`M ${center.x} ${center.y} L ${axis_points[0].x} ${axis_points[0].y} L ${point.x} ${point.y} Z`}
+        d="M {center.x} {center.y} L {axis_points[0].x} {axis_points[0]
+          .y} L {point.x} {point.y} Z"
         fill={colors[0]}
         stroke="none"
         opacity="0.5"
       />
       <path
-        d={`M ${center.x} ${center.y} L ${axis_points[1].x} ${axis_points[1].y} L ${point.x} ${point.y} Z`}
+        d="M {center.x} {center.y} L {axis_points[1].x} {axis_points[1]
+          .y} L {point.x} {point.y} Z"
         fill={colors[1]}
         stroke="none"
         opacity="0.5"
       />
       <path
-        d={`M ${center.x} ${center.y} L ${axis_points[2].x} ${axis_points[2].y} L ${point.x} ${point.y} Z`}
+        d="M {center.x} {center.y} L {axis_points[2].x} {axis_points[2]
+          .y} L {point.x} {point.y} Z"
         fill={colors[2]}
         stroke="none"
         opacity="0.5"
@@ -381,7 +395,7 @@
   <div class="weight-display">
     {#each weights as weight, idx}
       <div class="weight-item" style="color: {colors[idx]}">
-        <span class="weight-name">{@html weight.display}</span>
+        <span class="weight-name">{@html weight.label}</span>
         <span class="weight-value">{(weight.value * 100).toFixed(0)}%</span>
       </div>
     {/each}
@@ -395,7 +409,6 @@
     align-items: center;
     padding: 0.5em;
   }
-
   svg {
     touch-action: none; /* Prevents default touch behaviors */
     cursor: pointer; /* Show pointer cursor to hint clickability */
