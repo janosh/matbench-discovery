@@ -184,7 +184,6 @@ class MBDRunner:
             atoms = dataset.get_atoms(i)
             material_id = atoms.info["sid"]
             if material_id in self.relax_results:
-                logging.info(f"Structure {material_id} has already been relaxed.")
                 continue
             try:
                 atoms.calc = calculator

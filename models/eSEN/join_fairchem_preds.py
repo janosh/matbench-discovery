@@ -22,9 +22,6 @@ def join_predictions(
     input_path: Annotated[
         str, typer.Option(help="Input path with predicted relaxed energy files.")
     ],
-    out_path: Annotated[
-        str, typer.Option(help="Output path to write predicted formation energies.")
-    ],
     *,
     model_name: Annotated[str, typer.Option(help="Model name used for predictions")],
     apply_mp_corrections: Annotated[
@@ -34,7 +31,7 @@ def join_predictions(
     """Calculate formation energy per atom, apply MP corrections and write single
     results file.
     """
-    e_form_fairchem_col = "pred_e_form_per_atom"
+    e_form_fairchem_col = "pred_e_form_per_atom_esen"
     glob_pattern = f"{model_name}*.json.gz"
     file_paths = sorted(glob(f"{input_path}/{glob_pattern}"))
 
@@ -73,7 +70,7 @@ def join_predictions(
         mat_id, struct_dict, pred_energy, *_ = row
         mlip_struct = Structure.from_dict(struct_dict)
         cse = df_cse.loc[mat_id, Key.computed_structure_entry]
-        cse._energy = pred_energy  # cse._energy is the uncorrected energy
+        cse._energy = pred_energy  # noqa: SLF001
         cse._structure = mlip_struct  # noqa: SLF001
         df_fairchem.loc[mat_id, Key.computed_structure_entry] = cse
 
@@ -90,7 +87,7 @@ def join_predictions(
 
     # %% compute corrected formation energies
     df_fairchem[Key.formula] = df_wbm[Key.formula]
-    df_fairchem["pred_e_form_per_atom"] = [
+    df_fairchem[e_form_fairchem_col] = [
         get_e_form_per_atom(dict(energy=cse.energy, composition=formula))
         for formula, cse in tqdm(
             df_fairchem.set_index(Key.formula)[Key.computed_structure_entry].items(),
@@ -101,8 +98,8 @@ def join_predictions(
     df_wbm[[*df_fairchem]] = df_fairchem
 
     # %%
-    bad_mask = abs(df_wbm["pred_e_form_per_atom"] - df_wbm[MbdKey.e_form_dft]) > 5
-    n_preds = len(df_wbm["pred_e_form_per_atom"].dropna())
+    bad_mask = abs(df_wbm[e_form_fairchem_col] - df_wbm[MbdKey.e_form_dft]) > 5
+    n_preds = len(df_wbm[e_form_fairchem_col].dropna())
     print(f"{sum(bad_mask)=} is {sum(bad_mask) / len(df_wbm):.2%} of {n_preds:,}")
     df_fairchem = df_fairchem.round(4)
 
