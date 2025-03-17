@@ -310,6 +310,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # FAIR-Chem
     eqv2_s_dens = auto(), "eqV2/eqV2-s-dens-mp.yml"
     eqv2_m = auto(), "eqV2/eqV2-m-omat-salex-mp.yml"
+    esen_30m_mp = auto(), "eSEN/esen-30m-mp.yml"
+    esen_30m_oam = auto(), "eSEN/esen-30m-oam.yml"
 
     # GRACE: https://arxiv.org/abs/2311.16326v2
     grace_2l_mptrj = auto(), "grace/grace-2l-mptrj.yml"
