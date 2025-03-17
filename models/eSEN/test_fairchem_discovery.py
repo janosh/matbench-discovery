@@ -7,7 +7,6 @@ LICENSE file in the root directory of this source tree.
 
 from __future__ import annotations
 
-import logging
 import random
 from importlib.metadata import version
 from pathlib import Path
