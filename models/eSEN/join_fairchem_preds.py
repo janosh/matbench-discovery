@@ -73,9 +73,7 @@ def join_predictions(
         mat_id, struct_dict, pred_energy, *_ = row
         mlip_struct = Structure.from_dict(struct_dict)
         cse = df_cse.loc[mat_id, Key.computed_structure_entry]
-        cse._energy = (
-            pred_energy  # cse._energy is the uncorrected energy  # noqa: SLF001
-        )
+        cse._energy = pred_energy  # cse._energy is the uncorrected energy
         cse._structure = mlip_struct  # noqa: SLF001
         df_fairchem.loc[mat_id, Key.computed_structure_entry] = cse
 
