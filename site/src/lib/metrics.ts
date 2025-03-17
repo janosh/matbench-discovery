@@ -102,7 +102,7 @@ export const [F1_DEFAULT_WEIGHT, RMSD_DEFAULT_WEIGHT, KAPPA_DEFAULT_WEIGHT] = [
 
 export const DEFAULT_COMBINED_METRIC_CONFIG: CombinedMetricConfig = {
   name: `CPS`,
-  description: `Combined Performance Score weighting discovery, structure optimization, and phonon performance`,
+  description: `Combined Performance Score weighting discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>)`,
   weights: [
     {
       metric: `F1`,
@@ -131,14 +131,14 @@ function normalize_f1(value: number | undefined): number {
   return value // Already in [0,1] range
 }
 
-// RMSD is lower=better, with current models in the range of ~0.02-0.25 Å
+// RMSD is lower=better, with current models in the range of ~0.01-0.25 Å
 // We invert this so that better performance = higher score
 function normalize_rmsd(value: number | undefined): number {
   if (value === undefined || isNaN(value)) return 0
 
   // Fixed reference points for RMSD (in Å)
   const excellent = 0 // Perfect performance (atoms in exact correct positions)
-  const baseline = 0.3 // in Å, a reasonable baseline for poor performance given worst performing model at time of writing is AlphaNet-MPTrj at 0.0227 Å
+  const baseline = 0.03 // baseline for poor performance given worst performing model at time of writing is AlphaNet-MPTrj at 0.0227 Å
 
   // Linear interpolation between fixed points with clamping
   // Inverse mapping since lower RMSD is better
@@ -157,26 +157,19 @@ function normalize_kappa_srme(value: number | undefined): number {
   return Math.max(0, 1 - value / 2)
 }
 
-/**
- * Calculate a combined score using normalized metrics weighted by importance factors.
- * This uses fixed normalization reference points to ensure score stability when new models are added.
- *
- * Normalization reference points:
- * - F1: Already in [0,1] range, higher is better
- * - RMSD: 0.0Å (perfect) to 0.25Å (baseline), lower is better
- * - κ_SRME: Range [0,2] linearly mapped to [1,0], lower is better
- *
- * @param f1 F1 score for discovery
- * @param rmsd Root mean square displacement in Å
- * @param kappa Symmetric relative mean error for thermal conductivity
- * @param config Configuration with weights for each metric
- * @returns Combined score between 0-1, or NaN if any weighted metric is missing
- */
+// Calculate a combined score using normalized metrics weighted by importance factors.
+// This uses fixed normalization reference points to ensure score stability when new models are added.
+
+// Normalization reference points:
+// - F1 score for discovery already in [0,1] range, higher is better
+// - RMSD Root mean square displacement in range 0Å (perfect) to 0.03Å (baseline), lower is better
+// - κ_SRME symmetric relative mean error for lattice thermal conductivity,
+//    range [0,2] linearly mapped to [1,0], lower is better
 export function calculate_combined_score(
   f1: number | undefined,
   rmsd: number | undefined,
   kappa: number | undefined,
-  config: CombinedMetricConfig,
+  config: CombinedMetricConfig, // weights for each metric
 ): number {
   // Find weights from config by metric names
   const f1_weight =

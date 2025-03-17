@@ -162,8 +162,11 @@
         <div class="radar-container">
           <div class="radar-header">
             <span class="metric-name">{metric_config.name}</span>
-            <Tooltip text={metric_config.description}>
+            <Tooltip>
               <span class="info-icon">ⓘ</span>
+              {#snippet tip()}
+                {@html metric_config.description}
+              {/snippet}
             </Tooltip>
 
             <button
@@ -269,19 +272,15 @@
     max-width: 100%;
     background: var(--light-bg);
     border-radius: 4px;
-    padding: 0.2em 0.5em;
+    padding: 0.1em 0.3em;
     box-sizing: border-box;
   }
 
   .radar-header {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-  }
-
-  .metric-name {
-    font-weight: 600;
-    margin-right: 0.3em;
+    gap: 6pt;
+    font-weight: bold;
   }
 
   .info-icon {
