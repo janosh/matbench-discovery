@@ -147,14 +147,10 @@ describe(`Landing Page`, () => {
     const axis_lines = document.body.querySelectorAll(`.radar-container svg line`)
     expect(axis_lines).toHaveLength(3)
 
-    // Check for weight display section
-    const weight_displays = document.body.querySelectorAll(`.weight-item`)
-    expect(weight_displays).toHaveLength(3)
-
-    // Check the default weight percentages
-    const weight_values = Array.from(document.body.querySelectorAll(`.weight-value`)).map(
-      (el) => el.textContent,
-    )
+    // Check the default weight percentages in SVG tspan elements
+    const weight_values = Array.from(
+      document.body.querySelectorAll(`.radar-container svg tspan:last-child`),
+    ).map((el) => el.textContent)
 
     // Should show the default weights (50%, 40%, 10%)
     expect(weight_values).toEqual([`50%`, `40%`, `10%`])
