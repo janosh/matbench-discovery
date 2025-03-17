@@ -34,7 +34,7 @@ def join_predictions(
     """Calculate formation energy per atom, apply MP corrections and write single
     results file.
     """
-    e_form_fairchem_col = f"pred_e_form_per_atom"
+    e_form_fairchem_col = "pred_e_form_per_atom"
     glob_pattern = f"{model_name}*.json.gz"
     file_paths = sorted(glob(f"{input_path}/{glob_pattern}"))
 
@@ -47,29 +47,35 @@ def join_predictions(
             continue
         dfs[file_path] = pd.read_json(file_path).set_index(Key.mat_id)
 
-
     dfs: dict[str, pd.DataFrame] = {}
     for file_path in tqdm(file_paths, desc="Loading prediction files"):
         if file_path in dfs:
             continue
         dfs[file_path] = pd.read_json(file_path).set_index(Key.mat_id)
-    
+
     df_fairchem = pd.concat(dfs.values()).round(4)
 
     # %%
-    df_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_index(Key.mat_id)
+    df_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_index(
+        Key.mat_id
+    )
     df_cse[Key.computed_structure_entry] = [
-        ComputedStructureEntry.from_dict(dct) for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Creating pmg CSEs")
+        ComputedStructureEntry.from_dict(dct)
+        for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Creating pmg CSEs")
     ]
 
     # %% transfer fairchem energies and relaxed structures WBM CSEs since MP2020 energy
     # corrections applied below are structure-dependent (for oxides and sulfides)
     cse: ComputedStructureEntry
-    for row in tqdm(df_fairchem.itertuples(), total=len(df_fairchem), desc="ML energies to CSEs"):
+    for row in tqdm(
+        df_fairchem.itertuples(), total=len(df_fairchem), desc="ML energies to CSEs"
+    ):
         mat_id, struct_dict, pred_energy, *_ = row
         mlip_struct = Structure.from_dict(struct_dict)
         cse = df_cse.loc[mat_id, Key.computed_structure_entry]
-        cse._energy = pred_energy  # cse._energy is the uncorrected energy  # noqa: SLF001
+        cse._energy = (
+            pred_energy  # cse._energy is the uncorrected energy  # noqa: SLF001
+        )
         cse._structure = mlip_struct  # noqa: SLF001
         df_fairchem.loc[mat_id, Key.computed_structure_entry] = cse
 
@@ -80,15 +86,18 @@ def join_predictions(
             df_fairchem[Key.computed_structure_entry], verbose=True, clean=True
         )
         if len(processed) != len(df_fairchem):
-            raise ValueError(f"not all entries processed: {len(processed)=} {len(df_fairchem)=}")
-        
+            raise ValueError(
+                f"not all entries processed: {len(processed)=} {len(df_fairchem)=}"
+            )
+
     # %% compute corrected formation energies
     df_fairchem[Key.formula] = df_wbm[Key.formula]
     df_fairchem["pred_e_form_per_atom"] = [
         get_e_form_per_atom(dict(energy=cse.energy, composition=formula))
         for formula, cse in tqdm(
-            df_fairchem.set_index(Key.formula)[Key.computed_structure_entry].items(), total=len(df_fairchem),
-            desc="Computing formation energies"
+            df_fairchem.set_index(Key.formula)[Key.computed_structure_entry].items(),
+            total=len(df_fairchem),
+            desc="Computing formation energies",
         )
     ]
     df_wbm[[*df_fairchem]] = df_fairchem
@@ -100,14 +109,15 @@ def join_predictions(
     df_fairchem = df_fairchem.round(4)
 
     df_fairchem.select_dtypes("number").to_csv(f"{model_name}.csv.gz")
-            
-    df_bad = df_fairchem[bad_mask].drop(columns=[Key.computed_structure_entry, "pred_structure"])
+
+    df_bad = df_fairchem[bad_mask].drop(
+        columns=[Key.computed_structure_entry, "pred_structure"]
+    )
     df_bad[MbdKey.e_form_dft] = df_wbm[MbdKey.e_form_dft]
     df_bad.to_csv("bad.csv")
 
     df_fairchem.reset_index().to_json(
-        f"{model_name}.json.gz", 
-        default_handler=as_dict_handler
+        f"{model_name}.json.gz", default_handler=as_dict_handler
     )
 
 

@@ -4,61 +4,60 @@ Copyright (c) Meta Platforms, Inc. and its affiliates.
 This source code is licensed under the MIT license found in the
 LICENSE file in the root directory of this source tree.
 """
+
 from __future__ import annotations
+
 import glob
-from pathlib import Path
-from copy import deepcopy
-import time
 import json
-
-import warnings
-from typing import Any
-import traceback
-
 import random
-import numpy as np
-import torch
-import pandas as pd
-from tqdm import tqdm
+import time
+import traceback
+import warnings
+from copy import deepcopy
+from pathlib import Path
+from typing import Any
 
-from ase.io import read
+import numpy as np
+import pandas as pd
+import torch
 from ase.constraints import FixSymmetry
 from ase.filters import FrechetCellFilter
+from ase.io import read
 from ase.optimize import FIRE
-
+from fairchem.core import OCPCalculator
 from k_srme import (
-    aseatoms2str, 
-    two_stage_relax, 
-    glob2df, 
-    ID, 
-    STRUCTURES, 
-    NO_TILT_MASK, 
-    DFT_NONAC_REF
+    DFT_NONAC_REF,
+    ID,
+    NO_TILT_MASK,
+    STRUCTURES,
+    aseatoms2str,
+    glob2df,
+    two_stage_relax,
 )
 from k_srme.benchmark import get_metrics, process_benchmark_descriptors
-from k_srme.utils import symm_name_map, get_spacegroup_number, check_imaginary_freqs
 from k_srme.conductivity import (
-    init_phono3py,
+    calculate_conductivity,
     get_fc2_and_freqs,
     get_fc3,
-    calculate_conductivity,
+    init_phono3py,
 )
-
+from k_srme.utils import check_imaginary_freqs, get_spacegroup_number, symm_name_map
 from pymatviz.enums import Key
+from tqdm import tqdm
+
 from matbench_discovery.enums import MbdKey
 
-from fairchem.core import OCPCalculator
 
 def seed_everywhere(seed):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-    
+
+
 class kSRMERunner:
-    
     def __init__(
-        self, 
+        self,
         seed,
         model_dir,
         save_name,
@@ -72,7 +71,7 @@ class kSRMERunner:
         self.identifier = identifier
         self.atom_disp = atom_disp
         self.num_jobs = num_jobs
-    
+
     def run(self, job_number=0) -> None:
         if_two_stage_relax = True  # Use two-stage relaxation enforcing symmetries
         max_steps = 300
@@ -84,24 +83,28 @@ class kSRMERunner:
         save_forces = False  # Save force sets to
         filter_cls = FrechetCellFilter
         optim_cls = FIRE
-        
+
         seed_everywhere(self.seed)
-        
+
         model_ckpt = str(Path(self.model_dir) / "checkpoint.pt")
         calculator = OCPCalculator(checkpoint_path=model_ckpt, cpu=False, seed=0)
         calculator.trainer.scaler = None
-        
+
         force_results: dict[str, dict[str, Any]] = {}
         kappa_results: dict[str, dict[str, Any]] = {}
         atoms_list = read(STRUCTURES, format="extxyz", index=":")
-        
-        if self.num_jobs > 0:
-            atoms_list = atoms_list[job_number::self.num_jobs]
-                
-        tqdm_bar = tqdm(atoms_list, desc="Conductivity calculation: ", disable=not prog_bar)
 
-        test_metrics = {}            
-        save_dir = Path(self.model_dir) / self.save_name / f'{self.identifier}_{self.seed}'
+        if self.num_jobs > 0:
+            atoms_list = atoms_list[job_number :: self.num_jobs]
+
+        tqdm_bar = tqdm(
+            atoms_list, desc="Conductivity calculation: ", disable=not prog_bar
+        )
+
+        test_metrics = {}
+        save_dir = (
+            Path(self.model_dir) / self.save_name / f"{self.identifier}_{self.seed}"
+        )
         (save_dir).mkdir(parents=True, exist_ok=True)
 
         start_time = time.time()
@@ -145,7 +148,9 @@ class kSRMERunner:
 
                         # maximum residual stress component in for xx,yy,zz and xy,yz,xz components separately
                         # result is a array of 2 elements
-                        max_stress = atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
+                        max_stress = (
+                            atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
+                        )
 
                         atoms.calc = None
                         atoms.constraints = None
@@ -188,7 +193,12 @@ class kSRMERunner:
 
             # Calculation of force sets
             try:
-                ph3 = init_phono3py(atoms, log=False, symprec=symprec, displacement_distance=self.atom_disp)
+                ph3 = init_phono3py(
+                    atoms,
+                    log=False,
+                    symprec=symprec,
+                    displacement_distance=self.atom_disp,
+                )
 
                 ph3, fc2_set, freqs = get_fc2_and_freqs(
                     ph3,
@@ -202,7 +212,7 @@ class kSRMERunner:
 
                 # if conductivity condition is met, calculate fc3
                 ltc_condition = not imaginary_freqs and (
-                    not relax_dict["broken_symmetry"] or conductivity_broken_symm #pylint: disable=E0606
+                    not relax_dict["broken_symmetry"] or conductivity_broken_symm  # pylint: disable=E0606
                 )
 
                 if ltc_condition:
@@ -221,7 +231,9 @@ class kSRMERunner:
 
                 if not ltc_condition:
                     kappa_results[mat_id] = info_dict | relax_dict | freqs_dict
-                    warnings.warn(f"Material {mat_desc}, {mat_id} has imaginary frequencies.")
+                    warnings.warn(
+                        f"Material {mat_desc}, {mat_id} has imaginary frequencies."
+                    )
                     continue
 
             except Exception as exc:
@@ -247,50 +259,63 @@ class kSRMERunner:
             kappa_results[mat_id] = info_dict | relax_dict | freqs_dict | kappa_dict
 
         elapsed = time.time() - start_time
-        test_metrics['running_time'] = elapsed
-        
+        test_metrics["running_time"] = elapsed
+
         df_kappa = pd.DataFrame(kappa_results).T
         df_kappa.index.name = ID
-        df_kappa.reset_index().to_json(save_dir / f"conductivity_{self.num_jobs}-{job_number}.json.gz")
-        
+        df_kappa.reset_index().to_json(
+            save_dir / f"conductivity_{self.num_jobs}-{job_number}.json.gz"
+        )
+
         # compute metrics
         pattern = str(save_dir / "conductivity_*-*.json.gz")
         file_list = list(glob.glob(pattern))
         if len(file_list) == self.num_jobs:
             df_mlp_results = glob2df(pattern, max_files=None).set_index(ID)
-    
+
             # df_mlp_results = df_kappa.set_index(ID)
             df_dft_results = pd.read_json(DFT_NONAC_REF).set_index(ID)
-            
+
             # assert len(df_mlp_results) == len(df_dft_results)
-            
-            df_mlp_filtered = df_mlp_results[df_mlp_results.index.isin(df_dft_results.index)]
+
+            df_mlp_filtered = df_mlp_results[
+                df_mlp_results.index.isin(df_dft_results.index)
+            ]
             df_mlp_filtered = df_mlp_filtered.reindex(df_dft_results.index)
-            df_mlp_processed = process_benchmark_descriptors(df_mlp_filtered, df_dft_results)
+            df_mlp_processed = process_benchmark_descriptors(
+                df_mlp_filtered, df_dft_results
+            )
             mSRE, mSRME, rmseSRE, rmseSRME = get_metrics(df_mlp_filtered)
 
-            test_metrics['mSRE'] = mSRE
-            test_metrics['mSRME'] = mSRME
-            test_metrics['rmseSRE'] = rmseSRE
-            test_metrics['rmseSRME'] = rmseSRME
+            test_metrics["mSRE"] = mSRE
+            test_metrics["mSRME"] = mSRME
+            test_metrics["rmseSRE"] = rmseSRE
+            test_metrics["rmseSRME"] = rmseSRME
 
             df_mlp_processed.round(5)
             df_mlp_processed.index.name = ID
             df_mlp_processed.reset_index().to_json(str(save_dir / "k_srme.json.gz"))
 
-            with open(save_dir / 'test_metrics.json', 'w', encoding='utf-8') as f:
+            with open(save_dir / "test_metrics.json", "w", encoding="utf-8") as f:
                 json.dump(test_metrics, f, ensure_ascii=False, indent=4)
-                
-            df_mlp_processed = df_mlp_processed.rename(columns={
-                'mp_id': Key.mat_id,
-                'sre': Key.sre,
-                "srme": Key.srme,
-                "weights": Key.mode_weights,
-                "kappa_P_RTA": MbdKey.kappa_p_rta,
-                "kappa_C": MbdKey.kappa_c,
-                "kappa_TOT_RTA": MbdKey.kappa_tot_rta,
-                "kappa_TOT_ave": MbdKey.kappa_tot_avg,
-                "mode_kappa_TOT_ave": MbdKey.mode_kappa_tot_avg,
-            })
-            
-            df_mlp_processed.to_json(str(save_dir / f"2025-03-17-kappa-103-FIRE-dist={self.atom_disp}-fmax=1e-4-symprec=1e-5.json.gz"))
+
+            df_mlp_processed = df_mlp_processed.rename(
+                columns={
+                    "mp_id": Key.mat_id,
+                    "sre": Key.sre,
+                    "srme": Key.srme,
+                    "weights": Key.mode_weights,
+                    "kappa_P_RTA": MbdKey.kappa_p_rta,
+                    "kappa_C": MbdKey.kappa_c,
+                    "kappa_TOT_RTA": MbdKey.kappa_tot_rta,
+                    "kappa_TOT_ave": MbdKey.kappa_tot_avg,
+                    "mode_kappa_TOT_ave": MbdKey.mode_kappa_tot_avg,
+                }
+            )
+
+            df_mlp_processed.to_json(
+                str(
+                    save_dir
+                    / f"2025-03-17-kappa-103-FIRE-dist={self.atom_disp}-fmax=1e-4-symprec=1e-5.json.gz"
+                )
+            )
