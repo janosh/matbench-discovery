@@ -12,12 +12,10 @@ import json
 import random
 import time
 import traceback
-import warnings
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import pandas as pd
 import torch
 from ase.constraints import FixSymmetry
@@ -48,22 +46,21 @@ from tqdm import tqdm
 from matbench_discovery.enums import MbdKey
 
 
-def seed_everywhere(seed):
+def seed_everywhere(seed: int) -> None:
     random.seed(seed)
-    np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
 
-class kSRMERunner:
+class SRMERunner:
     def __init__(
         self,
-        seed,
-        model_dir,
-        save_name,
-        identifier,
-        atom_disp,
-        num_jobs,
+        seed: int,
+        model_dir: str,
+        save_name: str,
+        identifier: str,
+        atom_disp: str,
+        num_jobs: int,
     ) -> None:
         self.seed = seed
         self.model_dir = model_dir
@@ -72,7 +69,7 @@ class kSRMERunner:
         self.atom_disp = atom_disp
         self.num_jobs = num_jobs
 
-    def run(self, job_number=0) -> None:
+    def run(self, job_number: int = 0) -> None:
         if_two_stage_relax = True  # Use two-stage relaxation enforcing symmetries
         max_steps = 300
         force_max = 1e-4  # Run until the forces are smaller than this in eV/A
@@ -143,11 +140,9 @@ class kSRMERunner:
                         if optimizer.step == max_steps:
                             reached_max_steps = True
                             print(
-                                f"Material {mat_desc=}, {mat_id=} reached max step {max_steps=} during relaxation."
+                                f"{mat_desc=}, {mat_id=} reached max step {max_steps=}"
                             )
 
-                        # maximum residual stress component in for xx,yy,zz and xy,yz,xz components separately
-                        # result is a array of 2 elements
                         max_stress = (
                             atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
                         )
@@ -184,7 +179,6 @@ class kSRMERunner:
                         atoms.calc = None
 
             except Exception as exc:
-                warnings.warn(f"Failed to relax {mat_name=}, {mat_id=}: {exc!r}")
                 traceback.print_exc()
                 info_dict["errors"].append(f"RelaxError: {exc!r}")
                 info_dict["error_traceback"].append(traceback.format_exc())
@@ -231,13 +225,9 @@ class kSRMERunner:
 
                 if not ltc_condition:
                     kappa_results[mat_id] = info_dict | relax_dict | freqs_dict
-                    warnings.warn(
-                        f"Material {mat_desc}, {mat_id} has imaginary frequencies."
-                    )
                     continue
 
             except Exception as exc:
-                warnings.warn(f"Failed to calculate force sets {mat_id}: {exc!r}")
                 traceback.print_exc()
                 info_dict["errors"].append(f"ForceConstantError: {exc!r}")
                 info_dict["error_traceback"].append(traceback.format_exc())
@@ -249,7 +239,6 @@ class kSRMERunner:
                 ph3, kappa_dict = calculate_conductivity(ph3, log=False)
 
             except Exception as exc:
-                warnings.warn(f"Failed to calculate conductivity {mat_id}: {exc!r}")
                 traceback.print_exc()
                 info_dict["errors"].append(f"ConductivityError: {exc!r}")
                 info_dict["error_traceback"].append(traceback.format_exc())
@@ -313,9 +302,4 @@ class kSRMERunner:
                 }
             )
 
-            df_mlp_processed.to_json(
-                str(
-                    save_dir
-                    / f"2025-03-17-kappa-103-FIRE-dist={self.atom_disp}-fmax=1e-4-symprec=1e-5.json.gz"
-                )
-            )
+            df_mlp_processed.to_json(str(save_dir / "kappa-103-FIRE.json.gz"))

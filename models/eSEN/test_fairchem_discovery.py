@@ -11,11 +11,12 @@ import logging
 import random
 from importlib.metadata import version
 from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 import pandas as pd
 import torch
+import wandb
 from ase.filters import FrechetCellFilter, UnitCellFilter
 from ase.optimize import BFGS, FIRE, LBFGS
 from fairchem.core import OCPCalculator
@@ -32,15 +33,17 @@ from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.enums import MbdKey
 
+if TYPE_CHECKING:
+    from ase import Atoms
+
 
 class AseDBSubset(Subset):
     def get_atoms(self, idx: int) -> Atoms:
         return self.dataset.get_atoms(self.indices[idx])
 
 
-def seed_everywhere(seed):
+def seed_everywhere(seed: int) -> None:
     random.seed(seed)
-    np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
@@ -65,13 +68,11 @@ class MBDRunner:
 
     def __init__(
         self,
-        seed,
-        model_dir,
-        save_name,
-        identifier,
-        elementrefs_path=None,
-        # MBD
-        task_type="is2re",
+        seed: int,
+        model_dir: str,
+        save_name: str,
+        identifier: str,
+        task_type: str = "is2re",
         optimizer: Literal["FIRE", "LBFGS", "BFGS"] = "FIRE",
         cell_filter: Literal["frechet", "unit"] | None = "frechet",
         force_max: float = 0.02,
@@ -81,15 +82,11 @@ class MBDRunner:
         batch_size: int = 1,
         num_jobs: int = 1,
         num_workers: int = 0,
-        debug: bool = False,
-        apply_mp_corrections: bool = True,
-        apply_omat_corrections: bool = False,
     ) -> None:
         self.seed = seed
         self.model_dir = model_dir
         self.save_name = save_name
         self.identifier = identifier
-        self.elementrefs_path = elementrefs_path
 
         self.task_type = task_type
         self.optimizer = optimizer
@@ -102,12 +99,8 @@ class MBDRunner:
 
         self.num_jobs = num_jobs
         self.num_workers = num_workers
-        self.debug = debug
 
-        self.apply_mp_corrections = apply_mp_corrections
-        self.apply_omat_corrections = apply_omat_corrections
-
-    def run(self, job_number=0) -> None:
+    def run(self, job_number: int = 0) -> None:
         self.relax_results = {}
 
         save_dir = (
@@ -125,10 +118,7 @@ class MBDRunner:
         data_path = DATABASE_PATH[self.task_type]
         dataset = AseDBDataset(dict(src=data_path))
 
-        if self.debug:
-            indices = np.arange(10)
-            dataset = AseDBSubset(dataset, indices)
-        elif self.num_jobs > 1:
+        if self.num_jobs > 1:
             indices = np.array_split(range(len(dataset)), self.num_jobs)[job_number]
             dataset = AseDBSubset(dataset, indices)
 
@@ -147,6 +137,9 @@ class MBDRunner:
             "filter": self.cell_filter,
             "optimizer_params": self.optimizer_params,
         }
+        wandb.init(
+            project="matbench-discovery", config=run_params, name=f"{self.identifier}"
+        )
 
         self._ase_relax(
             dataset=dataset,
@@ -168,7 +161,7 @@ class MBDRunner:
         df_wbm[e_pred_col] = df_out[e_pred_col]
 
         # join prediction
-        file_paths = sorted(list(self.save_dir.glob(f"{self.identifier}_*.json.gz")))
+        file_paths = list(self.save_dir.glob(f"{self.identifier}_*.json.gz"))
         num_job_finished = len(file_paths)
         if num_job_finished == self.num_jobs:
             self.join_prediction(file_paths)
@@ -182,7 +175,7 @@ class MBDRunner:
         force_max: float,
         max_steps: int,
         optimizer_params: dict,
-    ):
+    ) -> None:
         """Run WBM relaxations using an ASE optimizer."""
         filter_cls = FILTER_CLS.get(cell_filter)
         optim_cls = OPTIM_CLS[optimizer]
@@ -214,11 +207,10 @@ class MBDRunner:
                     "pred_structure": structure,
                     "pred_energy": energy,
                 }
-            except Exception as exc:
-                logging.exception(f"Failed to relax {material_id}: {exc!r}")
+            except Exception:
                 continue
 
-    def join_prediction(self, file_paths: list[str] = None):
+    def join_prediction(self, file_paths: list[str] | None = None) -> None:
         dfs: dict[str, pd.DataFrame] = {}
         for file_path in tqdm(file_paths, desc="Loading prediction files"):
             if file_path in dfs:
@@ -238,7 +230,6 @@ class MBDRunner:
             )
         ]
 
-        # %% transfer fairchem energies and relaxed structures WBM CSEs since MP2020 energy
         # corrections applied below are structure-dependent (for oxides and sulfides)
         cse: ComputedStructureEntry
         for row in tqdm(
@@ -247,33 +238,18 @@ class MBDRunner:
             mat_id, struct_dict, pred_energy, *_ = row
             mlip_struct = Structure.from_dict(struct_dict)
             cse = df_cse.loc[mat_id, Key.computed_structure_entry]
-            cse._energy = (
-                pred_energy  # cse._energy is the uncorrected energy  # noqa: SLF001
-            )
+            cse._energy = pred_energy  # noqa: SLF001
             cse._structure = mlip_struct  # noqa: SLF001
             df_fairchem.loc[mat_id, Key.computed_structure_entry] = cse
 
-        # %% apply corrections for models that were not trained on MP corrected energies
-        if self.apply_mp_corrections:
-            # %% apply energy corrections
-            processed = MaterialsProject2020Compatibility().process_entries(
-                df_fairchem[Key.computed_structure_entry], verbose=True, clean=True
+        # %% apply energy corrections
+        processed = MaterialsProject2020Compatibility().process_entries(
+            df_fairchem[Key.computed_structure_entry], verbose=True, clean=True
+        )
+        if len(processed) != len(df_fairchem):
+            raise ValueError(
+                f"not all entries processed: {len(processed)=} {len(df_fairchem)=}"
             )
-            if len(processed) != len(df_fairchem):
-                raise ValueError(
-                    f"not all entries processed: {len(processed)=} {len(df_fairchem)=}"
-                )
-        if self.apply_omat_corrections:
-            # %% apply energy corrections
-            processed = MaterialsProject2020Compatibility(
-                config_file="/checkpoint/lbluque/matbench-discovery/notebooks/OMatCompatibility.yaml"
-            ).process_entries(
-                df_fairchem[Key.computed_structure_entry], verbose=True, clean=True
-            )
-            if len(processed) != len(df_fairchem):
-                raise ValueError(
-                    f"not all entries processed: {len(processed)=} {len(df_fairchem)=}"
-                )
 
         # %% compute corrected formation energies
         df_fairchem[Key.formula] = df_wbm[Key.formula]
