@@ -63,12 +63,30 @@ metrics:
   phonons:
     kappa_103:
       pred_file: models/eSEN/esen-30m-mp/2025-03-17-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/files/53054300
+      pred_file_url: https://figshare.com/files/53054705
   geo_opt:
     pred_file: models/eSEN/esen-30m-mp/2025-03-17-wbm-geo-opt.json.gz
-    pred_file_url: https://figshare.com/files/53054375
+    pred_file_url: https://figshare.com/files/53054693
     struct_col: pred_structure_esen
+    symprec=1e-5:
+      rmsd: 0.0142 # Å
+      n_sym_ops_mae: 3.3144 # unitless
+      symmetry_decrease: 0.4281 # fraction
+      symmetry_match: 0.3859 # fraction
+      symmetry_increase: 0.1282 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/eSEN/esen-30m-mp/2025-03-17-wbm-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/53054696
+    symprec=1e-2:
+      rmsd: 0.0142 # Å
+      n_sym_ops_mae: 2.521 # unitless
+      symmetry_decrease: 0.2604 # fraction
+      symmetry_match: 0.6106 # fraction
+      symmetry_increase: 0.098 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/eSEN/esen-30m-mp/2025-03-17-wbm-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/53054699
   discovery:
     pred_file: models/eSEN/esen-30m-mp/2025-03-17-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/53054366
+    pred_file_url: https://figshare.com/files/53054669
     pred_col: pred_e_form_per_atom_esen
