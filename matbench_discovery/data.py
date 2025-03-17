@@ -214,6 +214,7 @@ def load_df_wbm_with_preds(
     id_col: str = Key.mat_id,
     subset: pd.Index | Sequence[str] | TestSubset | None = None,
     max_error_threshold: float | None = 5.0,
+    raise_on_missing_models: bool = True,
     **kwargs: Any,
 ) -> pd.DataFrame:
     """Load WBM summary dataframe with model predictions from disk.
@@ -234,6 +235,8 @@ def load_df_wbm_with_preds(
             a practitioner doing a prospective discovery effort. Predictions exceeding
             this threshold will be ignored in all downstream calculations of metrics.
             Defaults to 5 eV/atom.
+        raise_on_missing_models (bool, optional): Whether to raise an exception if any
+            models are not found. Defaults to True.
         **kwargs: Keyword arguments passed to glob_to_df().
 
     Raises:
@@ -256,9 +259,10 @@ def load_df_wbm_with_preds(
 
     df_out = df_wbm.copy()
 
-    try:
-        prog_bar = tqdm(models, disable=not pbar, desc="Loading preds")
-        for model_name in prog_bar:
+    prog_bar = tqdm(models, disable=not pbar, desc="Loading preds")
+    missing_model_exceptions = []
+    for model_name in prog_bar:
+        try:
             prog_bar.set_postfix_str(model_name)
 
             # use getattr(name) in case model_name is already a Model enum
@@ -297,9 +301,14 @@ def load_df_wbm_with_preds(
                     print(
                         f"{n_bad:,} of {n_preds:,} unrealistic preds for {model_name}"
                     )
-    except Exception as exc:
-        exc.add_note(f"Failed to load {model_name=}")
-        raise
+        except Exception as exc:
+            exc.add_note(f"Failed to load {model_name=}")
+            missing_model_exceptions.append(exc)
+
+    if missing_model_exceptions and raise_on_missing_models:
+        raise ExceptionGroup(
+            "Failed to load some models", missing_model_exceptions
+        ) from missing_model_exceptions[0]
 
     if subset == TestSubset.uniq_protos:
         df_out = df_out.query(MbdKey.uniq_proto)
