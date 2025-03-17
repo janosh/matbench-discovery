@@ -102,7 +102,7 @@ export const [F1_DEFAULT_WEIGHT, RMSD_DEFAULT_WEIGHT, KAPPA_DEFAULT_WEIGHT] = [
 
 export const DEFAULT_COMBINED_METRIC_CONFIG: CombinedMetricConfig = {
   name: `CPS`,
-  description: `Combined Performance Score weighting discovery, structure optimization, and phonon performance`,
+  description: `Combined Performance Score weighting discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>)`,
   weights: [
     {
       metric: `F1`,

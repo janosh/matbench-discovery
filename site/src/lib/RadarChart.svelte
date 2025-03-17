@@ -287,10 +287,14 @@
     aria-label="Radar chart for adjusting metric weights"
   >
     <!-- Axes -->
-    {#each weights as weight, i}
-      {@const angle = (2 * Math.PI * i) / weights.length}
+    {#each weights as weight, idx}
+      {@const angle = (2 * Math.PI * idx) / weights.length}
       {@const x = center.x + Math.cos(angle) * radius * 0.8}
       {@const y = center.y + Math.sin(angle) * radius * 0.8}
+      {@const label_radius = idx === 2 ? radius * 1.0 : radius * 0.9}
+      {@const label_x = center.x + Math.cos(angle) * label_radius}
+      {@const label_y = center.y + Math.sin(angle) * label_radius}
+      {@const spacing = idx === 1 ? `1.5em` : `1.2em`}
 
       <line
         x1={center.x}
@@ -302,28 +306,29 @@
       />
 
       <!-- Axis labels -->
-      {@const label_x = center.x + Math.cos(angle) * radius * 0.9}
-      {@const label_y = center.y + Math.sin(angle) * radius * 0.9}
       <text
         x={label_x}
         y={label_y}
         text-anchor="middle"
         dominant-baseline="middle"
-        font-size="12"
-        fill="white"
+        font-size="14"
+        fill={colors[idx]}
       >
         <!-- Handle subscripts and superscripts manually since <sub> and <sup> are not supported in SVG -->
         {#if weight.label.includes(`<sub>`)}
           {@const parts = weight.label.split(/<sub>|<\/sub>/)}
           {parts[0]}
-          <tspan baseline-shift="sub" font-size="8">{parts[1]}</tspan>
+          <tspan baseline-shift="sub" font-size="10">{parts[1]}</tspan>
         {:else if weight.label.includes(`<sup>`)}
           {@const parts = weight.label.split(/<sup>|<\/sup>/)}
           {parts[0]}
-          <tspan baseline-shift="super" font-size="8">{parts[1]}</tspan>
+          <tspan baseline-shift="super" font-size="10">{parts[1]}</tspan>
         {:else}
           {@html weight.label}
         {/if}
+        <tspan dy={spacing} x={label_x} font-size="12" font-weight="bold"
+          >{(weight.value * 100).toFixed(0)}%</tspan
+        >
       </text>
     {/each}
 
@@ -390,16 +395,6 @@
       aria-label="Drag to adjust weight balance"
     />
   </svg>
-
-  <!-- Weight percentages display -->
-  <div class="weight-display">
-    {#each weights as weight, idx}
-      <div class="weight-item" style="color: {colors[idx]}">
-        <span class="weight-name">{@html weight.label}</span>
-        <span class="weight-value">{(weight.value * 100).toFixed(0)}%</span>
-      </div>
-    {/each}
-  </div>
 </div>
 
 <style>
@@ -407,23 +402,11 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0.5em;
+    padding: 0.2em;
+    margin: 0;
   }
   svg {
     touch-action: none; /* Prevents default touch behaviors */
     cursor: pointer; /* Show pointer cursor to hint clickability */
-  }
-  .weight-display {
-    display: flex;
-    justify-content: space-around;
-    width: 100%;
-    margin-top: 0.3em;
-  }
-  .weight-item {
-    display: flex;
-    flex-direction: column;
-    place-items: center;
-    font-size: 0.8em;
-    font-weight: bold;
   }
 </style>
