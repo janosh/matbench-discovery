@@ -37,7 +37,7 @@ requirements:
   fairchem-core: 1.7.0
 
 openness: OSOD
-trained_for_benchmark: true
+trained_for_benchmark: false
 train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_G
