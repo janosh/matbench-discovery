@@ -304,6 +304,11 @@ def update_one_modeling_task_article(
                 skipped_files.items(), start=1
             ):
                 print(f"{idx}. {model.name} {filename}: {url}")
+
+        # Publish the article if any new files were added and it's not a dry run
+        if (new_files or updated_files) and not dry_run:
+            print("\nNew or updated files were added. Publishing the article...")
+            figshare.publish_article(article_id)
     else:
         print("\nNo files were added or updated.")
 

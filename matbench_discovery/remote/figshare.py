@@ -301,3 +301,26 @@ def upload_file_if_needed(
     # Upload the file
     file_id = upload_file(article_id, file_path, file_name)
     return file_id, True
+
+
+def publish_article(article_id: int, *, verbose: bool = True) -> bool:
+    """Publish a Figshare article, making it publicly available.
+
+    Args:
+        article_id (int): ID of the article to publish.
+        verbose (bool, optional): Whether to print status messages. Defaults to True.
+
+    Returns:
+        bool: True if the article was successfully published.
+    """
+    post_url = f"{BASE_URL}/account/articles/{article_id}/publish"
+    try:
+        make_request("POST", post_url)
+        if verbose:
+            article_url = f"{ARTICLE_URL_PREFIX}/{article_id}"
+            print(f"Successfully published article {article_id} at {article_url}")
+    except Exception as exc:
+        if verbose:
+            print(f"Failed to publish article {article_id}: {exc}")
+        return False
+    return True

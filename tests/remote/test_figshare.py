@@ -391,3 +391,56 @@ def test_upload_file_if_needed_delete_failure(tmp_path: Path) -> None:
         assert not mock_upload.called
         assert not was_uploaded
         assert result_id == 67890
+
+
+@pytest.mark.parametrize(
+    "success,verbose",
+    [
+        (True, True),  # Successful publish with verbose output
+        (True, False),  # Successful publish without verbose output
+        (False, True),  # Failed publish with verbose output
+        (False, False),  # Failed publish without verbose output
+    ],
+)
+def test_publish_article(
+    success: bool, verbose: bool, capsys: pytest.CaptureFixture
+) -> None:
+    """Test publish_article function with different combinations of parameters."""
+    article_id = 12345
+
+    if success:
+        # Mock successful publish
+        with patch(
+            "matbench_discovery.remote.figshare.make_request"
+        ) as mock_make_request:
+            result = figshare.publish_article(article_id, verbose=verbose)
+
+            mock_make_request.assert_called_once_with(
+                "POST", f"{figshare.BASE_URL}/account/articles/{article_id}/publish"
+            )
+            assert result is True
+    else:
+        # Mock failed publish
+        with patch(
+            "matbench_discovery.remote.figshare.make_request",
+            side_effect=Exception("API Error"),
+        ) as mock_request:
+            result = figshare.publish_article(article_id, verbose=verbose)
+
+            mock_request.assert_called_once()
+            assert result is False
+
+    # Check the captured output based on verbose setting
+    stdout, stderr = capsys.readouterr()
+    assert stderr == ""
+
+    if verbose and success:
+        assert (
+            f"Successfully published article {article_id} at "
+            f"{figshare.ARTICLE_URL_PREFIX}/{article_id}" in stdout
+        )
+    elif verbose and not success:
+        assert f"Failed to publish article {article_id}" in stdout
+    else:
+        # If not verbose, there should be no output
+        assert stdout == ""
