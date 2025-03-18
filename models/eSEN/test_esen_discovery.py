@@ -10,7 +10,7 @@ from __future__ import annotations
 import random
 from importlib.metadata import version
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -143,7 +143,7 @@ class MBDRunner:
         self._ase_relax(
             dataset=dataset,
             calculator=calc,
-            optimizer=self.optimizer,
+            optimizer_cls=self.optimizer,
             cell_filter=self.cell_filter,
             force_max=self.force_max,
             max_steps=self.max_steps,
@@ -169,15 +169,15 @@ class MBDRunner:
         self,
         dataset: AseDBDataset | AseDBSubset,
         calculator: OCPCalculator,
-        optimizer: Literal["FIRE", "LBFGS", "BFGS"],
+        optimizer_cls: Literal["FIRE", "LBFGS", "BFGS"],
         cell_filter: Literal["frechet", "unit"],
         force_max: float,
         max_steps: int,
-        optimizer_params: dict,
+        optimizer_params: dict[str, Any],
     ) -> None:
         """Run WBM relaxations using an ASE optimizer."""
         filter_cls = FILTER_CLS.get(cell_filter)
-        optim_cls = OPTIM_CLS[optimizer]
+        optim_cls = OPTIM_CLS[optimizer_cls]
 
         for i in trange(len(dataset), desc="Relaxing with ASE"):
             atoms = dataset.get_atoms(i)
@@ -196,7 +196,7 @@ class MBDRunner:
                         atoms, logfile="/dev/null", **optimizer_params
                     )
 
-                optimizer.run(fmax=force_max, steps=max_steps) # type: ignore
+                optimizer.run(fmax=force_max, steps=max_steps)
 
                 energy = atoms.get_potential_energy()
                 structure = AseAtomsAdaptor.get_structure(atoms)
