@@ -109,20 +109,17 @@ tqdm_bar = tqdm(atoms_list, desc="Conductivity calculation: ", disable=not prog_
 for atoms in tqdm_bar:
     mat_id = atoms.info.get(Key.mat_id, f"id-{len(kappa_results)}")
     init_info = deepcopy(atoms.info)
-    mat_name = atoms.info.get("name", "unknown")
-
+    formula = atoms.info.get("name", "unknown")
     spg_num = MoyoDataset(MoyoAdapter.from_atoms(atoms)).number
-    mat_desc = f"{mat_name}-{spg_num}"
-
     info_dict = {
-        "desc": mat_desc,
-        "name": mat_name,
-        "initial_space_group_number": spg_num,
+        Key.desc: mat_id,
+        Key.formula: formula,
+        Key.spg_num: spg_num,
         "errors": [],
         "error_traceback": [],
     }
 
-    tqdm_bar.set_postfix_str(mat_desc, refresh=True)
+    tqdm_bar.set_postfix_str(mat_id, refresh=True)
 
     # Initialize relax_dict to avoid "possibly unbound" errors
     relax_dict = {
@@ -148,7 +145,7 @@ for atoms in tqdm_bar:
 
             reached_max_steps = optimizer.step >= max_steps
             if reached_max_steps:
-                print(f"Material {mat_desc=} reached {max_steps=} during relaxation.")
+                print(f"Material {mat_id=} reached {max_steps=} during relaxation.")
 
             max_stress = atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
             atoms.calc = None
@@ -166,7 +163,7 @@ for atoms in tqdm_bar:
             }
 
     except Exception as exc:
-        warnings.warn(f"Failed to relax {mat_name=}, {mat_id=}: {exc!r}", stacklevel=2)
+        warnings.warn(f"Failed to relax {formula=}, {mat_id=}: {exc!r}", stacklevel=2)
         traceback.print_exc()
         info_dict["errors"].append(f"RelaxError: {exc!r}")
         info_dict["error_traceback"].append(traceback.format_exc())
@@ -221,8 +218,7 @@ for atoms in tqdm_bar:
         if not ltc_condition:
             kappa_results[mat_id] = info_dict | relax_dict | freqs_dict
             warnings.warn(
-                f"Material {mat_desc} imaginary frequencies or broken symmetry.",
-                stacklevel=2,
+                f"{mat_id=} has imaginary frequencies or broken symmetry", stacklevel=2
             )
             continue
 
