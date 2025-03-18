@@ -436,8 +436,11 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         """File path associated with the file URL if it exists, otherwise
         download the file first, then return the path.
         """
-        phonons_metrics = self.metrics.get("phonons", {})
-        if phonons_metrics in ("not available", "not applicable"):
+        phonons_metrics = self.metrics.get("phonons")
+        if phonons_metrics is None or phonons_metrics in (
+            "not available",
+            "not applicable",
+        ):
             return None
         rel_path = phonons_metrics.get("kappa_103", {}).get("pred_file")
         file_url = phonons_metrics.get("kappa_103", {}).get("pred_file_url")

@@ -407,40 +407,124 @@ def test_publish_article(
 ) -> None:
     """Test publish_article function with different combinations of parameters."""
     article_id = 12345
+    err_msg = "Test error"
 
-    if success:
-        # Mock successful publish
-        with patch(
-            "matbench_discovery.remote.figshare.make_request"
-        ) as mock_make_request:
-            result = figshare.publish_article(article_id, verbose=verbose)
+    def mock_make_request_side_effect(*_args: Any, **_kwargs: Any) -> Any:
+        """Either return successful result or raise exception based on success param."""
+        if success:
+            return  # Successful response for POST
+        raise Exception(err_msg)  # noqa: TRY002
 
-            mock_make_request.assert_called_once_with(
-                "POST", f"{figshare.BASE_URL}/account/articles/{article_id}/publish"
+    with patch(
+        "matbench_discovery.remote.figshare.make_request",
+        side_effect=mock_make_request_side_effect,
+    ):
+        assert figshare.publish_article(article_id, verbose=verbose) is success
+
+        stdout, _ = capsys.readouterr()
+        if success and verbose:
+            expected_url = f"{figshare.ARTICLE_URL_PREFIX}/{article_id}"
+            assert (
+                f"Successfully published article {article_id} at {expected_url}"
+                in stdout
             )
-            assert result is True
-    else:
-        # Mock failed publish
-        with patch(
-            "matbench_discovery.remote.figshare.make_request",
-            side_effect=Exception("API Error"),
-        ) as mock_request:
-            result = figshare.publish_article(article_id, verbose=verbose)
+        elif not success and verbose:
+            assert f"Failed to publish article {article_id}: {err_msg}" in stdout
+        else:
+            assert stdout == ""
 
-            mock_request.assert_called_once()
-            assert result is False
 
-    # Check the captured output based on verbose setting
-    stdout, stderr = capsys.readouterr()
-    assert stderr == ""
+@pytest.mark.parametrize(
+    "filename,existing_files,expected_similar,threshold",
+    [
+        # Empty files case
+        ("models/model1/ver1/file-kappa-103.json.gz", {}, [], 0.7),
+        # Different model family - no match
+        (
+            "models/model1/ver1/file-kappa-103.json.gz",
+            {"models/model2/ver1/file-kappa-103.json.gz": {"id": 123}},
+            [],
+            0.7,
+        ),
+        # Different task type - no match
+        (
+            "models/model1/ver1/file-kappa-103.json.gz",
+            {"models/model1/ver1/file-phonon-50.json.gz": {"id": 123}},
+            [],
+            0.7,
+        ),
+        # Different subfolder - no match
+        (
+            "models/model1/ver1/file-kappa-103.json.gz",
+            {"models/model1/ver2/file-kappa-103.json.gz": {"id": 123}},
+            [],
+            0.7,
+        ),
+        # High similarity, same task - match
+        (
+            "models/model1/ver1/file-kappa-103-v1.json.gz",
+            {"models/model1/ver1/file-kappa-103-v2.json.gz": {"id": 123}},
+            [("models/model1/ver1/file-kappa-103-v2.json.gz", 123)],
+            0.7,
+        ),
+        # Multiple matches
+        (
+            "models/model1/ver1/file-kappa-103.json.gz",
+            {
+                "models/model1/ver1/file1-kappa-103.json.gz": {"id": 123},
+                "models/model1/ver1/file2-kappa-103.json.gz": {"id": 456},
+                "models/model2/ver1/file-kappa-103.json.gz": {"id": 789},
+            },
+            [
+                ("models/model1/ver1/file1-kappa-103.json.gz", 123),
+                ("models/model1/ver1/file2-kappa-103.json.gz", 456),
+            ],
+            0.7,
+        ),
+        # Higher threshold excludes matches
+        (
+            "models/model1/ver1/file-kappa-103.json.gz",
+            {"models/model1/ver1/similar-kappa-103.json.gz": {"id": 123}},
+            [],
+            0.95,
+        ),
+    ],
+)
+def test_find_similar_files(
+    filename: str,
+    existing_files: dict[str, dict[str, Any]],
+    expected_similar: list[tuple[str, int]],
+    threshold: float,
+) -> None:
+    """Test find_similar_files with various scenarios."""
+    with (
+        patch("difflib.SequenceMatcher") as mock_matcher,
+        patch(
+            "matbench_discovery.remote.figshare._extract_task_type"
+        ) as mock_extract_task_type,
+    ):
+        # Configure similarity values
+        mock_seq_matcher = MagicMock()
+        mock_seq_matcher.ratio.return_value = 0.8  # Default high similarity
 
-    if verbose and success:
-        assert (
-            f"Successfully published article {article_id} at "
-            f"{figshare.ARTICLE_URL_PREFIX}/{article_id}" in stdout
+        # For high threshold test
+        if threshold > 0.9:
+            mock_seq_matcher.ratio.return_value = 0.9  # Not enough for 0.95
+
+        mock_matcher.return_value = mock_seq_matcher
+
+        # Configure task type extraction
+        def extract_task(filename: str) -> str:
+            for task in ["kappa", "phonon", "discovery", "geo"]:
+                if task in filename:
+                    return task
+            return ""
+
+        mock_extract_task_type.side_effect = extract_task
+
+        # Run test
+        result = sorted(
+            figshare.find_similar_files(filename, existing_files, threshold),
+            key=lambda x: x[0],
         )
-    elif verbose and not success:
-        assert f"Failed to publish article {article_id}" in stdout
-    else:
-        # If not verbose, there should be no output
-        assert stdout == ""
+        assert result == sorted(expected_similar, key=lambda x: x[0])

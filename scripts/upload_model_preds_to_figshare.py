@@ -146,6 +146,7 @@ def update_one_modeling_task_article(
     dry_run: bool = False,
     file_type: Literal["all", "analysis", "pred"] = "all",
     force_reupload: bool = False,
+    interactive: bool = True,
 ) -> None:
     """Update or create a Figshare article for a modeling task."""
     article_id = figshare.ARTICLE_IDS[f"model_preds_{task}"]
@@ -185,6 +186,7 @@ def update_one_modeling_task_article(
     skipped_files: dict[str, tuple[str, Model]] = {}  # filename -> (url, model)
     updated_files: dict[str, tuple[str, Model]] = {}  # files that were re-uploaded
     new_files: dict[str, tuple[str, Model]] = {}  # files that didn't exist before
+    deleted_files: dict[str, int] = {}  # filename -> id (files that were deleted)
 
     for model in tqdm(models):
         if not os.path.isfile(model.yaml_path):
@@ -228,7 +230,7 @@ def update_one_modeling_task_article(
 
             filename = file_path.removeprefix(f"{ROOT}/")
 
-            # Skip upload if force_reupload is False and file exists with same hash
+            # First check if the exact same file already exists
             if not force_reupload and not dry_run:
                 file_hash, _ = figshare.get_file_hash_and_size(file_path)
                 exists, file_id = figshare.file_exists_with_same_hash(
@@ -249,6 +251,28 @@ def update_one_modeling_task_article(
                         target[last] = file_url
 
                     continue
+
+            # Check for similar files that should be deleted
+            similar_files = figshare.find_similar_files(filename, existing_files)
+            if similar_files and not dry_run:
+                print(f"\nFound similar files for {filename}:")
+                for idx, (similar_name, similar_id) in enumerate(
+                    similar_files, start=1
+                ):
+                    print(f"{idx}. {similar_name} (ID: {similar_id})")
+
+                # Ask for user confirmation to delete similar files
+                if interactive:
+                    confirm = input("Delete these files before uploading? [y/N] ")
+                    if confirm.lower() == "y":
+                        for similar_name, similar_id in similar_files:
+                            if similar_id is not None and figshare.delete_file(
+                                article_id, similar_id
+                            ):
+                                deleted_files[similar_name] = similar_id
+                                print(f"Deleted similar file: {similar_name}")
+                else:
+                    print("Skipping deletion of similar files (non-interactive mode)")
 
             # Upload file if it doesn't exist or force_reupload is True
             if not dry_run:
@@ -284,8 +308,14 @@ def update_one_modeling_task_article(
     print(f"Newly added: {len(new_files)} [{', '.join(new_models)}]")
     print(f"Updated: {len(updated_files)} [{', '.join(updated_models)}]")
     print(f"Skipped (already exists with same hash): {len(skipped_files)}")
+    print(f"Deleted: {len(deleted_files)}")
 
-    if new_files or updated_files or skipped_files:
+    if new_files or updated_files or skipped_files or deleted_files:
+        if deleted_files:
+            print("\nDeleted files:")
+            for idx, (filename, file_id) in enumerate(deleted_files.items(), start=1):
+                print(f"{idx}. {filename}: {file_id}")
+
         if new_files:
             print("\nNewly added files:")
             for idx, (filename, (url, model)) in enumerate(new_files.items(), start=1):
@@ -337,6 +367,7 @@ def main(args: Sequence[str] | None = None) -> int:
                 dry_run=dry_run,
                 file_type=parsed_args.file_type,
                 force_reupload=parsed_args.force_reupload,
+                interactive=True,
             )
         except Exception as exc:  # prompt to delete article if something went wrong
             state = {
