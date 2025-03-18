@@ -9,7 +9,6 @@ import os
 import pickle
 
 import pandas as pd
-import pymatviz
 import pymatviz as pmv
 from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
 from pymatgen.entries.compatibility import MaterialsProject2020Compatibility
@@ -124,7 +123,7 @@ df_mp[e_form_us] = [
 
 
 # make sure get_form_energy_per_atom() reproduces MP formation energies
-ax = pymatviz.density_scatter(df_mp[Key.form_energy], df_mp[e_form_us])
+ax = pmv.density_scatter_plotly(df_mp[Key.form_energy], df_mp[e_form_us])
 ax.set(
     title="MP Formation Energy Comparison",
     xlabel="MP Formation Energy (eV/atom)",

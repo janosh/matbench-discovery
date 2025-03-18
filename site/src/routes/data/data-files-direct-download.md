@@ -39,7 +39,7 @@ assert tuple(df_wbm) == (
 df_init_structs = pd.read_json(DataFiles.wbm_initial_structures.path)
 assert tuple(df_init_structs) == ("material_id", "formula_from_cse", "initial_structure")
 # WBM initial structures as ASE Atoms
-wbm_init_atoms = ase_atoms_from_zip(DataFiles.wbm_initial_structures.path)
+wbm_init_atoms = ase_atoms_from_zip(DataFiles.wbm_initial_atoms.path)
 assert len(wbm_init_atoms) == 256_963
 ```
 

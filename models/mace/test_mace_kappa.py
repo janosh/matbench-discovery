@@ -90,11 +90,11 @@ def calc_kappa_for_structure(
     # Ensure arrays are writable
     atoms.arrays = {key: val.copy() for key, val in atoms.arrays.items()}
 
-    mat_id = atoms.info[Key.mat_id]
+    mat_id = atoms.info.get(Key.mat_id, f"id-{len(kappa_results)}")
     init_info = deepcopy(atoms.info)
-    mat_name = atoms.info["name"]
+    formula = atoms.info["name"]
     info_dict: dict[str, Any] = {
-        "name": mat_name,
+        Key.formula: formula,
         "errors": [],
         "error_traceback": [],
     }
@@ -136,7 +136,7 @@ def calc_kappa_for_structure(
             }
 
     except Exception as exc:
-        warnings.warn(f"Failed to relax {mat_name=}, {mat_id=}: {exc!r}", stacklevel=2)
+        warnings.warn(f"Failed to relax {formula=}, {mat_id=}: {exc!r}", stacklevel=2)
         traceback.print_exc()
         info_dict["errors"] += [f"RelaxError: {exc!r}"]
         info_dict["error_traceback"] += [traceback.format_exc()]

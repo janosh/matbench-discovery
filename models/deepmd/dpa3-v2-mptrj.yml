@@ -124,7 +124,7 @@ metrics:
     pred_col: e_form_per_atom_dp
     full_test_set:
       F1: 0.774 # fraction
-      DAF: 4.25 # dimensionless
+      DAF: 4.249 # dimensionless
       Precision: 0.729 # fraction
       Recall: 0.825 # fraction
       Accuracy: 0.917 # fraction
@@ -133,20 +133,20 @@ metrics:
       TNR: 0.936 # fraction
       FNR: 0.175 # fraction
       TP: 36393.0 # count
-      FP: 13519.0 # count
-      TN: 199352.0 # count
+      FP: 13518.0 # count
+      TN: 199353.0 # count
       FN: 7699.0 # count
       MAE: 0.038 # eV/atom
-      RMSE: 0.082 # eV/atom
-      R2: 0.796 # dimensionless
-      missing_preds: 0 # count
+      RMSE: 0.08 # eV/atom
+      R2: 0.801 # dimensionless
+      missing_preds: 2 # count
       missing_percent: 0.00% # fraction
     most_stable_10k:
-      F1: 0.980 # fraction
-      DAF: 6.280 # dimensionless
-      Precision: 0.960 # fraction
+      F1: 0.98 # fraction
+      DAF: 6.28 # dimensionless
+      Precision: 0.96 # fraction
       Recall: 1.0 # fraction
-      Accuracy: 0.960 # fraction
+      Accuracy: 0.96 # fraction
       TPR: 1.0 # fraction
       FPR: 1.0 # fraction
       TNR: 0.0 # fraction
@@ -162,7 +162,7 @@ metrics:
       missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.786 # fraction
-      DAF: 4.760 # dimensionless
+      DAF: 4.822 # dimensionless
       Precision: 0.737 # fraction
       Recall: 0.841 # fraction
       Accuracy: 0.929 # fraction
