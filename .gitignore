@@ -42,3 +42,4 @@ site/src/routes/api/*.md
 
 # large files
 data/*-models-geo-opt-analysis-symprec=*.csv.gz
+.cursor

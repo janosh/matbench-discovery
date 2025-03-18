@@ -1,0 +1,150 @@
+model_name: eSEN-30M-OAM
+model_key: esen-30m-oam
+model_version: v2025.03.17
+matbench_discovery_version: 1.3.1
+date_added: "2025-03-17"
+date_published: "2025-03-17"
+authors:
+  - name: Xiang Fu
+    affiliation: FAIR at Meta
+    email: xiangfu@meta.com
+    orcid: https://orcid.org/0000-0001-7480-6312
+    github: https://github.com/kyonofx
+    corresponding: true
+  - name: Brandon M. Wood
+    affiliation: FAIR at Meta
+  - name: Luis Barroso-Luque
+    affiliation: FAIR at Meta
+  - name: Daniel S. Levine
+    affiliation: FAIR at Meta
+  - name: Meng Gao
+    affiliation: FAIR at Meta
+  - name: Misko Dzamba
+    affiliation: FAIR at Meta
+  - name: C. Lawrence Zitnick
+    affiliation: FAIR at Meta
+    email: zitnick@meta.com
+    corresponding: true
+
+repo: https://github.com/FAIR-Chem/fairchem
+doi: https://doi.org/10.48550/arXiv.2502.12147
+paper: https://arxiv.org/abs/2502.12147
+url: https://huggingface.co/fairchem/eSEN
+pypi: https://pypi.org/project/fairchem-core
+pr_url: https://github.com/janosh/matbench-discovery/pull/226
+
+requirements:
+  fairchem-core: 1.7.0
+
+openness: OSOD
+trained_for_benchmark: false
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+model_type: UIP
+model_params: 30_161_153
+n_estimators: 1
+
+training_set: [OMat24, MPtrj, sAlex]
+
+hyperparams:
+  max_force: 0.02
+  max_steps: 500
+  ase_optimizer: FIRE
+  cell_filter: FrechetCellFilter
+
+notes:
+  Description: |
+    equivariant Smooth Energy Network (eSEN), described in https://arxiv.org/abs/2502.12147.
+  Training: |
+    Training was done by: (1) 2-epoch direct pre-training on OMat24; (2) 2-epoch conservative fine-tuning on OMat24; (3) 1-epoch conservative fine-tuning on MPTrj+sAlex.
+
+metrics:
+  phonons:
+    kappa_103:
+      κ_SRME: 0.1704
+      pred_file: models/eSEN/eSEN-30m-oam/2025-03-18-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/files/53090219
+  geo_opt:
+    pred_file: models/eSEN/eSEN-30m-oam/2025-03-17-wbm-geo-opt.json.gz
+    pred_file_url: https://figshare.com/files/53054672
+    struct_col: pred_structure_esen
+    symprec=1e-2:
+      rmsd: 0.0096 # Å
+      n_sym_ops_mae: 2.1015 # unitless
+      symmetry_decrease: 0.1616 # fraction
+      symmetry_match: 0.7103 # fraction
+      symmetry_increase: 0.1085 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/eSEN/eSEN-30m-oam/2025-03-17-wbm-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/53054687
+    symprec=1e-5:
+      rmsd: 0.0096 # Å
+      n_sym_ops_mae: 4.1631 # unitless
+      symmetry_decrease: 0.4739 # fraction
+      symmetry_match: 0.3636 # fraction
+      symmetry_increase: 0.1188 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/eSEN/eSEN-30m-oam/2025-03-17-wbm-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/53054378
+  discovery:
+    pred_file: models/eSEN/eSEN-30m-oam/2025-03-17-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/53054369
+    pred_col: pred_e_form_per_atom_esen
+    full_test_set:
+      F1: 0.902 # fraction
+      DAF: 5.281 # dimensionless
+      Precision: 0.906 # fraction
+      Recall: 0.899 # fraction
+      Accuracy: 0.967 # fraction
+      TPR: 0.899 # fraction
+      FPR: 0.019 # fraction
+      TNR: 0.981 # fraction
+      FNR: 0.101 # fraction
+      TP: 39628.0 # count
+      FP: 4100.0 # count
+      TN: 208771.0 # count
+      FN: 4464.0 # count
+      MAE: 0.018 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.86 # dimensionless
+      missing_preds: 2 # count
+      missing_percent: 0.00% # fraction
+    unique_prototypes:
+      F1: 0.925 # fraction
+      DAF: 6.069 # dimensionless
+      Precision: 0.928 # fraction
+      Recall: 0.923 # fraction
+      Accuracy: 0.977 # fraction
+      TPR: 0.923 # fraction
+      FPR: 0.013 # fraction
+      TNR: 0.987 # fraction
+      FNR: 0.077 # fraction
+      TP: 30809.0 # count
+      FP: 2397.0 # count
+      TN: 179717.0 # count
+      FN: 2565.0 # count
+      MAE: 0.018 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.866 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
+    most_stable_10k:
+      F1: 0.985 # fraction
+      DAF: 6.35 # dimensionless
+      Precision: 0.971 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.971 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9708.0 # count
+      FP: 292.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.016 # eV/atom
+      RMSE: 0.068 # eV/atom
+      R2: 0.898 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction

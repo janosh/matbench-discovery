@@ -135,13 +135,13 @@ metrics:
       TNR: 0.969 # fraction
       FNR: 0.115 # fraction
       TP: 39030.0 # count
-      FP: 6676.0 # count
-      TN: 206195.0 # count
+      FP: 6675.0 # count
+      TN: 206196.0 # count
       FN: 5062.0 # count
       MAE: 0.022 # eV/atom
-      RMSE: 0.068 # eV/atom
-      R2: 0.857 # dimensionless
-      missing_preds: 0 # count
+      RMSE: 0.067 # eV/atom
+      R2: 0.863 # dimensionless
+      missing_preds: 2 # count
       missing_percent: 0.00% # fraction
     most_stable_10k:
       F1: 0.986 # fraction
@@ -163,11 +163,11 @@ metrics:
       missing_preds: 0 # count
       missing_percent: 0.00% # fraction
     unique_prototypes:
-      F1: 0.890 # fraction
+      F1: 0.89 # fraction
       DAF: 5.747 # dimensionless
       Precision: 0.879 # fraction
       Recall: 0.902 # fraction
-      Accuracy: 0.965 # fraction
+      Accuracy: 0.966 # fraction
       TPR: 0.902 # fraction
       FPR: 0.023 # fraction
       TNR: 0.977 # fraction
