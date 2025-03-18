@@ -127,7 +127,6 @@ class KappaSRMERunner:
             formula = atoms.info.get("name", "unknown")
             spg_num = MoyoDataset(MoyoAdapter.from_atoms(atoms)).number
             info_dict = {
-                Key.mat_id: mat_id,
                 Key.formula: formula,
                 Key.spg_num: spg_num,
                 "errors": [],
@@ -303,7 +302,7 @@ class KappaSRMERunner:
                     warnings.warn(f"Failed to read {file_path}: {exc!r}", stacklevel=2)
 
             if all_dfs:
-                combined_df = pd.concat(all_dfs)
+                combined_df = pd.concat(all_dfs).reset_index()
                 combined_df.to_json(save_dir / "kappa-103-FIRE.json.gz")
                 print(
                     f"Combined results saved to {save_dir / 'kappa-103-FIRE.json.gz'}"
