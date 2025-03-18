@@ -63,7 +63,7 @@ metrics:
   phonons:
     kappa_103:
       pred_file: models/eSEN/esen-30m-mp/2025-03-17-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/files/53054705
+      pred_file_url: https://figshare.com/files/53054300
   geo_opt:
     pred_file: models/eSEN/esen-30m-mp/2025-03-17-wbm-geo-opt.json.gz
     pred_file_url: https://figshare.com/files/53054693
