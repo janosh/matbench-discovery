@@ -10,7 +10,7 @@ from __future__ import annotations
 import random
 from importlib.metadata import version
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, Any
 
 import numpy as np
 import pandas as pd
@@ -76,7 +76,7 @@ class MBDRunner:
         cell_filter: Literal["frechet", "unit"] = "frechet",
         force_max: float = 0.02,
         max_steps: int = 500,
-        optimizer_params: dict | None = None,
+        optimizer_params: dict[str, Any] | None = None,
         device: Literal["cuda", "cpu"] = "cuda",
         batch_size: int = 1,
         num_jobs: int = 1,
@@ -100,7 +100,7 @@ class MBDRunner:
         self.num_workers = num_workers
 
     def run(self, job_number: int = 0) -> None:
-        self.relax_results: dict = {}
+        self.relax_results: dict[str, Any] = {}
 
         save_dir = (
             Path(self.model_dir) / self.save_name / f"{self.identifier}_{self.seed}"
@@ -196,7 +196,7 @@ class MBDRunner:
                         atoms, logfile="/dev/null", **optimizer_params
                     )
 
-                optimizer.run(fmax=force_max, steps=max_steps)
+                optimizer.run(fmax=force_max, steps=max_steps) # type: ignore
 
                 energy = atoms.get_potential_energy()
                 structure = AseAtomsAdaptor.get_structure(atoms)
@@ -208,7 +208,7 @@ class MBDRunner:
             except Exception:
                 continue
 
-    def join_prediction(self, file_paths: list[str] | None = None) -> None:
+    def join_prediction(self, file_paths: list[Path] | None = None) -> None:
         dfs: dict[str, pd.DataFrame] = {}
         for file_path in tqdm(file_paths, desc="Loading prediction files"):
             if file_path in dfs:
