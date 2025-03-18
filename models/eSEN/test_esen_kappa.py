@@ -12,7 +12,10 @@ import json
 import random
 import time
 import traceback
+import warnings
 from copy import deepcopy
+from datetime import datetime
+from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
@@ -23,27 +26,16 @@ from ase.filters import FrechetCellFilter
 from ase.io import read
 from ase.optimize import FIRE
 from fairchem.core import OCPCalculator
-from k_srme import (
-    DFT_NONAC_REF,
-    ID,
-    NO_TILT_MASK,
-    STRUCTURES,
-    aseatoms2str,
-    glob2df,
-    two_stage_relax,
-)
-from k_srme.benchmark import get_metrics, process_benchmark_descriptors
-from k_srme.conductivity import (
-    calculate_conductivity,
-    get_fc2_and_freqs,
-    get_fc3,
-    init_phono3py,
-)
-from k_srme.utils import check_imaginary_freqs, get_spacegroup_number, symm_name_map
+from moyopy import MoyoDataset
+from moyopy.interface import MoyoAdapter
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import DataFiles
+from matbench_discovery.phonons import check_imaginary_freqs
+from matbench_discovery.phonons import thermal_conductivity as ltc
+
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 
 
 def seed_everywhere(seed: int) -> None:
@@ -52,14 +44,14 @@ def seed_everywhere(seed: int) -> None:
     torch.cuda.manual_seed_all(seed)
 
 
-class SRMERunner:
+class KappaSRMERunner:
     def __init__(
         self,
         seed: int,
         model_dir: str,
         save_name: str,
         identifier: str,
-        atom_disp: str,
+        atom_disp: float,
         num_jobs: int,
     ) -> None:
         self.seed = seed
@@ -70,26 +62,28 @@ class SRMERunner:
         self.num_jobs = num_jobs
 
     def run(self, job_number: int = 0) -> None:
-        if_two_stage_relax = True  # Use two-stage relaxation enforcing symmetries
+        # Relaxation parameters
         max_steps = 300
         force_max = 1e-4  # Run until the forces are smaller than this in eV/A
         symprec = 1e-5
         enforce_relax_symm = True
         conductivity_broken_symm = False
         prog_bar = True
-        save_forces = False  # Save force sets to
-        filter_cls = FrechetCellFilter
-        optim_cls = FIRE
+        save_forces = False  # Save force sets to file
+        temperatures = [300]  # Temperatures to calculate conductivity at in Kelvin
 
         seed_everywhere(self.seed)
 
+        # Setup model and calculator
         model_ckpt = str(Path(self.model_dir) / "checkpoint.pt")
         calculator = OCPCalculator(checkpoint_path=model_ckpt, cpu=False, seed=0)
         calculator.trainer.scaler = None
 
         force_results: dict[str, dict[str, Any]] = {}
         kappa_results: dict[str, dict[str, Any]] = {}
-        atoms_list = read(STRUCTURES, format="extxyz", index=":")
+        atoms_list = read(
+            DataFiles.phonondb_pbe_103_structures.path, format="extxyz", index=":"
+        )
 
         if self.num_jobs > 0:
             atoms_list = atoms_list[job_number :: self.num_jobs]
@@ -104,119 +98,138 @@ class SRMERunner:
         )
         (save_dir).mkdir(parents=True, exist_ok=True)
 
+        # Log run parameters
+        timestamp = f"{datetime.now().astimezone():%Y-%m-%d %H:%M:%S}"
+        run_params = {
+            "timestamp": timestamp,
+            "model_dir": str(self.model_dir),
+            "device": "cuda" if torch.cuda.is_available() else "cpu",
+            "versions": {
+                dep: version(dep) for dep in ("numpy", "torch", "matbench_discovery")
+            },
+            "optimizer": "FIRE",
+            "max_steps": max_steps,
+            "force_max": force_max,
+            "symprec": symprec,
+            "enforce_relax_symm": enforce_relax_symm,
+            "conductivity_broken_symm": conductivity_broken_symm,
+            "temperatures": temperatures,
+            "displacement_distance": self.atom_disp,
+            "n_structures": len(atoms_list),
+        }
+        with open(save_dir / "run_params.json", mode="w") as file:
+            json.dump(run_params, file, indent=4)
+
         start_time = time.time()
         for atoms in tqdm_bar:
-            mat_id = atoms.info[ID]
+            mat_id = atoms.info.get(Key.mat_id, f"id-{len(kappa_results)}")
             init_info = deepcopy(atoms.info)
-            mat_name = atoms.info["name"]
-            mat_desc = f"{mat_name}-{symm_name_map[atoms.info['symm.no']]}"
+            formula = atoms.info.get("name", "unknown")
+            spg_num = MoyoDataset(MoyoAdapter.from_atoms(atoms)).number
             info_dict = {
-                "desc": mat_desc,
-                "name": mat_name,
-                "initial_space_group_number": atoms.info["symm.no"],
+                Key.mat_id: mat_id,
+                Key.formula: formula,
+                Key.spg_num: spg_num,
                 "errors": [],
                 "error_traceback": [],
             }
 
-            tqdm_bar.set_postfix_str(mat_desc, refresh=True)
+            tqdm_bar.set_postfix_str(mat_id, refresh=True)
 
-            # Relaxation
+            # Initialize relax_dict to avoid "possibly unbound" errors
+            relax_dict = {
+                "max_stress": None,
+                "reached_max_steps": False,
+                "broken_symmetry": False,
+            }
+
+            # Relaxation - using standard approach from other scripts
             try:
                 atoms.calc = calculator
                 if max_steps > 0:
-                    if not if_two_stage_relax:
-                        if enforce_relax_symm:
-                            atoms.set_constraint(FixSymmetry(atoms))
-                            filtered_atoms = filter_cls(atoms, mask=NO_TILT_MASK)
-                        else:
-                            filtered_atoms = filter_cls(atoms)
+                    if enforce_relax_symm:
+                        atoms.set_constraint(FixSymmetry(atoms))
 
-                        optimizer = optim_cls(
-                            filtered_atoms, logfile=save_dir / f"relax_{job_number}.log"
-                        )
-                        optimizer.run(fmax=force_max, steps=max_steps)
+                    # Use standard mask for no-tilt constraint
+                    filtered_atoms = FrechetCellFilter(
+                        atoms, mask=[True] * 3 + [False] * 3
+                    )
 
-                        reached_max_steps = False
-                        if optimizer.step == max_steps:
-                            reached_max_steps = True
-                            print(
-                                f"{mat_desc=}, {mat_id=} reached max step {max_steps=}"
-                            )
+                    optimizer = FIRE(
+                        filtered_atoms, logfile=save_dir / f"relax_{mat_id}.log"
+                    )
+                    optimizer.run(fmax=force_max, steps=max_steps)
 
-                        max_stress = (
-                            atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
-                        )
+                    reached_max_steps = optimizer.step >= max_steps
+                    if reached_max_steps:
+                        print(f"{mat_id=} reached {max_steps=} during relaxation.")
 
-                        atoms.calc = None
-                        atoms.constraints = None
-                        atoms.info = init_info | atoms.info
+                    max_stress = (
+                        atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
+                    )
+                    atoms.calc = None
+                    atoms.constraints = None
+                    atoms.info = init_info | atoms.info
 
-                        symm_no = get_spacegroup_number(atoms, symprec=symprec)
-
-                        relax_dict = {
-                            "structure": aseatoms2str(atoms),
-                            "max_stress": max_stress,
-                            "reached_max_steps": reached_max_steps,
-                            "relaxed_space_group_number": symm_no,
-                            "broken_symmetry": symm_no
-                            != init_info["initial_space_group_number"],
-                        }
-
-                    else:
-                        atoms, relax_dict = two_stage_relax(
-                            atoms,
-                            fmax_stage1=force_max,
-                            fmax_stage2=force_max,
-                            steps_stage1=max_steps,
-                            steps_stage2=max_steps,
-                            Optimizer=optim_cls,
-                            Filter=filter_cls,
-                            allow_tilt=False,
-                            log=save_dir / f"relax_{job_number}.log",
-                            enforce_symmetry=enforce_relax_symm,
-                        )
-
-                        atoms.calc = None
+                    # Check if symmetry was broken during relaxation
+                    relaxed_spg = MoyoDataset(MoyoAdapter.from_atoms(atoms)).number
+                    broken_symmetry = spg_num != relaxed_spg
+                    relax_dict = {
+                        "max_stress": max_stress,
+                        "reached_max_steps": reached_max_steps,
+                        "relaxed_space_group_number": relaxed_spg,
+                        "broken_symmetry": broken_symmetry,
+                    }
 
             except Exception as exc:
+                warnings.warn(
+                    f"Failed to relax {formula=}, {mat_id=}: {exc!r}", stacklevel=2
+                )
                 traceback.print_exc()
                 info_dict["errors"].append(f"RelaxError: {exc!r}")
                 info_dict["error_traceback"].append(traceback.format_exc())
-                kappa_results[mat_id] = info_dict
+                kappa_results[mat_id] = info_dict | relax_dict
                 continue
 
             # Calculation of force sets
             try:
-                ph3 = init_phono3py(
+                # Initialize phono3py with the relaxed structure
+                ph3 = ltc.init_phono3py(
                     atoms,
-                    log=False,
-                    symprec=symprec,
+                    fc2_supercell=atoms.info.get("fc2_supercell", [2, 2, 2]),
+                    fc3_supercell=atoms.info.get("fc3_supercell", [2, 2, 2]),
+                    q_point_mesh=atoms.info.get("q_point_mesh", [10, 10, 10]),
                     displacement_distance=self.atom_disp,
+                    symprec=symprec,
                 )
 
-                ph3, fc2_set, freqs = get_fc2_and_freqs(
+                # Calculate force constants and frequencies
+                ph3, fc2_set, freqs = ltc.get_fc2_and_freqs(
                     ph3,
                     calculator=calculator,
-                    log=False,
                     pbar_kwargs={"leave": False, "disable": not prog_bar},
                 )
 
-                imaginary_freqs = check_imaginary_freqs(freqs)
-                freqs_dict = {"imaginary_freqs": imaginary_freqs, "frequencies": freqs}
+                # Check for imaginary frequencies
+                has_imaginary_freqs = check_imaginary_freqs(freqs)
+                freqs_dict = {
+                    Key.has_imag_ph_modes: has_imaginary_freqs,
+                    Key.ph_freqs: freqs,
+                }
 
-                # if conductivity condition is met, calculate fc3
-                ltc_condition = not imaginary_freqs and (
-                    not relax_dict["broken_symmetry"] or conductivity_broken_symm  # pylint: disable=E0606
+                # If conductivity condition is met, calculate fc3
+                ltc_condition = not has_imaginary_freqs and (
+                    not relax_dict["broken_symmetry"] or conductivity_broken_symm
                 )
 
-                if ltc_condition:
-                    ph3, fc3_set = get_fc3(
+                if ltc_condition:  # Calculate third-order force constants
+                    print(f"Calculating FC3 for {mat_id}")
+                    fc3_set = ltc.calculate_fc3_set(
                         ph3,
                         calculator=calculator,
-                        log=False,
                         pbar_kwargs={"leave": False, "disable": not prog_bar},
                     )
-
+                    ph3.produce_fc3(symmetrize_fc3r=True)
                 else:
                     fc3_set = []
 
@@ -225,20 +238,31 @@ class SRMERunner:
 
                 if not ltc_condition:
                     kappa_results[mat_id] = info_dict | relax_dict | freqs_dict
+                    warnings.warn(
+                        f"{mat_id=} has imaginary frequencies or broken symmetry",
+                        stacklevel=2,
+                    )
                     continue
 
             except Exception as exc:
+                warnings.warn(
+                    f"Failed to calculate force sets {mat_id}: {exc!r}", stacklevel=2
+                )
                 traceback.print_exc()
                 info_dict["errors"].append(f"ForceConstantError: {exc!r}")
                 info_dict["error_traceback"].append(traceback.format_exc())
                 kappa_results[mat_id] = info_dict | relax_dict
                 continue
 
-            # Calculation of conductivity
-            try:
-                ph3, kappa_dict = calculate_conductivity(ph3, log=False)
-
+            try:  # Calculate thermal conductivity
+                ph3, kappa_dict, _cond = ltc.calculate_conductivity(
+                    ph3, temperatures=temperatures
+                )
+                print(f"Calculated kappa for {mat_id}: {kappa_dict}")
             except Exception as exc:
+                warnings.warn(
+                    f"Failed to calculate conductivity {mat_id}: {exc!r}", stacklevel=2
+                )
                 traceback.print_exc()
                 info_dict["errors"].append(f"ConductivityError: {exc!r}")
                 info_dict["error_traceback"].append(traceback.format_exc())
@@ -250,56 +274,42 @@ class SRMERunner:
         elapsed = time.time() - start_time
         test_metrics["running_time"] = elapsed
 
+        # Save results
         df_kappa = pd.DataFrame(kappa_results).T
-        df_kappa.index.name = ID
-        df_kappa.reset_index().to_json(
-            save_dir / f"conductivity_{self.num_jobs}-{job_number}.json.gz"
-        )
+        df_kappa.index.name = Key.mat_id
+        json_path = f"{save_dir}/conductivity_{self.num_jobs}-{job_number}.json.gz"
+        df_kappa.reset_index().to_json(json_path)
+        print(f"Saved kappa results to {json_path}")
 
-        # compute metrics
+        if save_forces:
+            force_out_path = (
+                save_dir / f"force_sets_{self.num_jobs}-{job_number}.json.gz"
+            )
+            df_force = pd.DataFrame(force_results).T
+            df_force.index.name = Key.mat_id
+            df_force.reset_index().to_json(force_out_path)
+            print(f"Saved force results to {force_out_path}")
+
+        # Compute metrics if we've collected all results
         pattern = str(save_dir / "conductivity_*-*.json.gz")
         file_list = list(glob.glob(pattern))
         if len(file_list) == self.num_jobs:
-            df_mlp_results = glob2df(pattern, max_files=None).set_index(ID)
+            # Load all results
+            all_dfs = []
+            for file_path in file_list:
+                try:
+                    all_dfs.append(pd.read_json(file_path))
+                except Exception as exc:
+                    warnings.warn(f"Failed to read {file_path}: {exc!r}", stacklevel=2)
 
-            # df_mlp_results = df_kappa.set_index(ID)
-            df_dft_results = pd.read_json(DFT_NONAC_REF).set_index(ID)
+            if all_dfs:
+                combined_df = pd.concat(all_dfs)
+                combined_df.to_json(save_dir / "kappa-103-FIRE.json.gz")
+                print(
+                    f"Combined results saved to {save_dir / 'kappa-103-FIRE.json.gz'}"
+                )
 
-            # assert len(df_mlp_results) == len(df_dft_results)
-
-            df_mlp_filtered = df_mlp_results[
-                df_mlp_results.index.isin(df_dft_results.index)
-            ]
-            df_mlp_filtered = df_mlp_filtered.reindex(df_dft_results.index)
-            df_mlp_processed = process_benchmark_descriptors(
-                df_mlp_filtered, df_dft_results
-            )
-            mSRE, mSRME, rmseSRE, rmseSRME = get_metrics(df_mlp_filtered)
-
-            test_metrics["mSRE"] = mSRE
-            test_metrics["mSRME"] = mSRME
-            test_metrics["rmseSRE"] = rmseSRE
-            test_metrics["rmseSRME"] = rmseSRME
-
-            df_mlp_processed.round(5)
-            df_mlp_processed.index.name = ID
-            df_mlp_processed.reset_index().to_json(str(save_dir / "k_srme.json.gz"))
-
-            with open(save_dir / "test_metrics.json", "w", encoding="utf-8") as f:
-                json.dump(test_metrics, f, ensure_ascii=False, indent=4)
-
-            df_mlp_processed = df_mlp_processed.rename(
-                columns={
-                    "mp_id": Key.mat_id,
-                    "sre": Key.sre,
-                    "srme": Key.srme,
-                    "weights": Key.mode_weights,
-                    "kappa_P_RTA": MbdKey.kappa_p_rta,
-                    "kappa_C": MbdKey.kappa_c,
-                    "kappa_TOT_RTA": MbdKey.kappa_tot_rta,
-                    "kappa_TOT_ave": MbdKey.kappa_tot_avg,
-                    "mode_kappa_TOT_ave": MbdKey.mode_kappa_tot_avg,
-                }
-            )
-
-            df_mlp_processed.to_json(str(save_dir / "kappa-103-FIRE.json.gz"))
+                with open(
+                    save_dir / "test_metrics.json", mode="w", encoding="utf-8"
+                ) as file:
+                    json.dump(test_metrics, file, ensure_ascii=False, indent=4)

@@ -53,10 +53,7 @@ DATABASE_PATH = {
     "is2re": str(BASE_PATH / "WBM_IS2RE.aselmdb"),
 }
 
-FILTER_CLS = {
-    "frechet": FrechetCellFilter,
-    "unit": UnitCellFilter,
-}
+FILTER_CLS = {"frechet": FrechetCellFilter, "unit": UnitCellFilter}
 OPTIM_CLS = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": BFGS}
 
 
