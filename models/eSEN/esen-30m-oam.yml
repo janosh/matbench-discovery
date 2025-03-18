@@ -85,10 +85,10 @@ metrics:
       symmetry_increase: 0.1188 # fraction
       n_structures: 256963 # count
       analysis_file: models/eSEN/esen-30m-oam/2025-03-17-wbm-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53054690
+      analysis_file_url: https://figshare.com/files/53054378
   discovery:
     pred_file: models/eSEN/esen-30m-oam/2025-03-17-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/53054666
+    pred_file_url: https://figshare.com/files/53054369
     pred_col: pred_e_form_per_atom_esen
     full_test_set:
       F1: 0.902 # fraction

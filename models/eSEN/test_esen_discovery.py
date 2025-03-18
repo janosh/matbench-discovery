@@ -73,7 +73,7 @@ class MBDRunner:
         identifier: str,
         task_type: str = "is2re",
         optimizer: Literal["FIRE", "LBFGS", "BFGS"] = "FIRE",
-        cell_filter: Literal["frechet", "unit"] | None = "frechet",
+        cell_filter: Literal["frechet", "unit"] = "frechet",
         force_max: float = 0.02,
         max_steps: int = 500,
         optimizer_params: dict | None = None,
@@ -100,7 +100,7 @@ class MBDRunner:
         self.num_workers = num_workers
 
     def run(self, job_number: int = 0) -> None:
-        self.relax_results = {}
+        self.relax_results: dict = {}
 
         save_dir = (
             Path(self.model_dir) / self.save_name / f"{self.identifier}_{self.seed}"
