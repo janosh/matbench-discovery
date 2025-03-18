@@ -10,7 +10,7 @@ from __future__ import annotations
 import random
 from importlib.metadata import version
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -196,7 +196,7 @@ class MBDRunner:
                         atoms, logfile="/dev/null", **optimizer_params
                     )
 
-                optimizer.run(fmax=force_max, steps=max_steps) # type: ignore
+                optimizer.run(fmax=force_max, steps=max_steps)  # type: ignore
 
                 energy = atoms.get_potential_energy()
                 structure = AseAtomsAdaptor.get_structure(atoms)
