@@ -5,10 +5,14 @@ export const METADATA_COLS: HeatmapColumn[] = [
   { label: `Training Set`, tooltip: `Size of and link to model training set` },
   { label: `Params`, tooltip: `Number of trainable model parameters` },
   { label: `Targets`, tooltip: `Target property used to train the model` },
-  { label: `Date Added`, tooltip: `Submission date to the leaderboard` },
+  {
+    label: `Date Added`,
+    tooltip: `Submission date to the leaderboard`,
+  },
   {
     label: `Links`,
     tooltip: `Model resources: paper, code repository and submission pull request`,
+    sortable: false,
   },
 ]
 

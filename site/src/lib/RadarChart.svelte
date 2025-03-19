@@ -8,8 +8,6 @@
     size?: number
     onchange?: (new_weights: MetricWeight[]) => void | undefined
   }
-
-  // Use $props() instead of export let
   let { weights = [], size = 200, onchange = undefined }: Props = $props()
 
   // State for the draggable point
@@ -19,7 +17,6 @@
   let radius = size / 2
   let center = { x: radius, y: radius }
 
-  // Colors for the axes and areas
   const colors = [
     `rgba(255, 99, 132, 0.7)`, // red for F1
     `rgba(255, 206, 86, 0.7)`, // yellow for kappa
@@ -70,15 +67,12 @@
     // Calculate barycentric coordinates of the point relative to the triangle
 
     // First convert to triangle coordinates
-    const triangle_area = calc_triangle_area(
-      axis_points[0],
-      axis_points[1],
-      axis_points[2],
-    )
+    const [a, b, c] = axis_points
+    const triangle_area = calc_triangle_area(a, b, c)
     // Calculate areas of sub-triangles
-    const area1 = calc_triangle_area(point, axis_points[1], axis_points[2])
-    const area2 = calc_triangle_area(point, axis_points[0], axis_points[2])
-    const area3 = calc_triangle_area(point, axis_points[0], axis_points[1])
+    const area1 = calc_triangle_area(point, b, c)
+    const area2 = calc_triangle_area(point, a, c)
+    const area3 = calc_triangle_area(point, a, b)
 
     // Calculate normalized barycentric weights
     let new_values = [area1 / triangle_area, area2 / triangle_area, area3 / triangle_area]
@@ -123,44 +117,28 @@
     const click_y = event.clientY - svg_rect.top
 
     // Check if click is inside the triangle
-    if (
-      is_point_in_triangle(
-        { x: click_x, y: click_y },
-        axis_points[0],
-        axis_points[1],
-        axis_points[2],
-      )
-    ) {
+    const [a, b, c] = axis_points
+    if (is_point_in_triangle({ x: click_x, y: click_y }, a, b, c)) {
       // Update the draggable point position
       point = { x: click_x, y: click_y }
 
-      // Update weights based on new position
+      // on click, immediately update weights based on new position
       update_weights_from_point()
-
-      // Notify parent component
-      onchange?.(weights)
     }
   }
 
   // Move point to a position with triangle constraints
+  // during dragging, don't update weights - only move the point visually
+  // this prevents table rerendering during drag which causes the viewport to scroll (terrible UX)
   function move_point_to_position(x: number, y: number) {
-    if (
-      weights.length === 3 &&
-      is_point_in_triangle({ x, y }, axis_points[0], axis_points[1], axis_points[2])
-    ) {
+    const [a, b, c] = axis_points
+    if (weights.length === 3 && is_point_in_triangle({ x, y }, a, b, c)) {
       point = { x, y }
     } else {
       // If outside the triangle, constrain to the closest point on the triangle
-      const closest_point = get_closest_point_on_triangle(
-        { x, y },
-        axis_points[0],
-        axis_points[1],
-        axis_points[2],
-      )
+      const closest_point = get_closest_point_on_triangle({ x, y }, a, b, c)
       point = closest_point
     }
-
-    update_weights_from_point()
   }
 
   // Handle dragging
@@ -196,7 +174,7 @@
     const x = client_x - rect.left
     const y = client_y - rect.top
 
-    // Use common positioning logic
+    // update point position during drag
     move_point_to_position(x, y)
   }
 
@@ -343,11 +321,11 @@
     {/if}
 
     <!-- Background circular grid -->
-    {#each [0.2, 0.4, 0.6, 0.8] as gridRadius}
+    {#each [0.2, 0.4, 0.6, 0.8] as grid_radius}
       <circle
         cx={center.x}
         cy={center.y}
-        r={radius * gridRadius}
+        r={radius * grid_radius}
         fill="none"
         stroke="rgba(255, 255, 255, 0.1)"
         stroke-width="1"
@@ -356,23 +334,24 @@
 
     <!-- Colored areas for each metric -->
     {#if weights.length === 3}
+      {@const { x, y } = center}
+      {@const { x: x0, y: y0 } = axis_points[0]}
+      {@const { x: x1, y: y1 } = axis_points[1]}
+      {@const { x: x2, y: y2 } = axis_points[2]}
       <path
-        d="M {center.x} {center.y} L {axis_points[0].x} {axis_points[0]
-          .y} L {point.x} {point.y} Z"
+        d={`M ${x} ${y} L ${x0} ${y0} L ${point.x} ${point.y} Z`}
         fill={colors[0]}
         stroke="none"
         opacity="0.5"
       />
       <path
-        d="M {center.x} {center.y} L {axis_points[1].x} {axis_points[1]
-          .y} L {point.x} {point.y} Z"
+        d="M {x} {y} L {x1} {y1} L {point.x} {point.y} Z"
         fill={colors[1]}
         stroke="none"
         opacity="0.5"
       />
       <path
-        d="M {center.x} {center.y} L {axis_points[2].x} {axis_points[2]
-          .y} L {point.x} {point.y} Z"
+        d="M {x} {y} L {x2} {y2} L {point.x} {point.y} Z"
         fill={colors[2]}
         stroke="none"
         opacity="0.5"

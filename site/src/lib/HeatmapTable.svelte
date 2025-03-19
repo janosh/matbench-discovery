@@ -56,6 +56,9 @@
     const col = columns.find((c) => c.label === column)
     if (!col) return // Skip if column not found
 
+    // Skip sorting if column is explicitly marked as not sortable
+    if (col.sortable === false) return
+
     const col_id = get_col_id(col)
 
     if ($sort_state.column !== col_id) {
@@ -76,11 +79,33 @@
       if (val2 === null || val2 === undefined) return -1
 
       const modifier = $sort_state.ascending ? 1 : -1
+
+      // Check if values are HTML strings with data-sort-value attributes
+      if (typeof val1 === `string` && typeof val2 === `string`) {
+        const sort_val1_match = val1.match(/data-sort-value="([^"]*)"/)
+        const sort_val2_match = val2.match(/data-sort-value="([^"]*)"/)
+
+        if (sort_val1_match && sort_val2_match) {
+          const sort_val1 = sort_val1_match[1]
+          const sort_val2 = sort_val2_match[1]
+
+          // Try to convert to numbers if possible
+          const num_val1 = Number(sort_val1)
+          const num_val2 = Number(sort_val2)
+
+          if (!isNaN(num_val1) && !isNaN(num_val2)) {
+            return num_val1 < num_val2 ? -1 * modifier : 1 * modifier
+          }
+
+          return sort_val1 < sort_val2 ? -1 * modifier : 1 * modifier
+        }
+      }
+
       return val1 < val2 ? -1 * modifier : 1 * modifier
     })
   }
 
-  function calc_color(value: number | string | undefined | null, col: HeatmapColumn) {
+  function calc_color(value: CellVal, col: HeatmapColumn) {
     // Skip color calculation for null values or if color_scale is null
     if (
       value === null ||
@@ -182,6 +207,7 @@
             onclick={() => sort_rows(col.label)}
             style={col.style}
             class:sticky-col={col.sticky}
+            class:not-sortable={col.sortable === false}
           >
             {@html col.label}
             {@html sort_indicator(col, $sort_state)}
@@ -304,5 +330,9 @@
     display: inline-flex;
     align-items: center;
     margin-left: auto;
+  }
+
+  .not-sortable {
+    cursor: default;
   }
 </style>

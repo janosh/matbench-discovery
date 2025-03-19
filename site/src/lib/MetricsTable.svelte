@@ -21,6 +21,7 @@
     DiscoverySet,
     HeatmapColumn,
     ModelData,
+    TableData,
   } from './types'
 
   interface Props {
@@ -274,7 +275,7 @@
           const phonons = model.metrics?.phonons
           const kappa =
             phonons && typeof phonons === `object` && `kappa_103` in phonons
-              ? phonons.kappa_103?.κ_SRME
+              ? (phonons.kappa_103?.κ_SRME as number | undefined)
               : undefined
 
           // Calculate combined score
@@ -303,9 +304,9 @@
             'κ<sub>SRME</sub>': kappa,
             RMSD: rmsd,
             'Training Set': format_train_set(model.training_set),
-            Params: `<span title="${pretty_num(model.model_params, `,`)} trainable model parameters">${pretty_num(model.model_params)}</span>`,
+            Params: `<span title="${pretty_num(model.model_params, `,`)} trainable model parameters" data-sort-value="${model.model_params}">${pretty_num(model.model_params)}</span>`,
             Targets: targets_str,
-            'Date Added': `<span title="${long_date(model.date_added)}">${model.date_added}</span>`,
+            'Date Added': `<span title="${long_date(model.date_added)}" data-sort-value="${new Date(model.date_added).getTime()}">${model.date_added}</span>`,
             // Add Links as a special property
             Links: {
               paper: {
@@ -335,7 +336,7 @@
   }
 
   // Make metrics_data explicitly reactive with $state
-  let metrics_data = $state()
+  let metrics_data = $state<TableData>([])
 
   // Make metrics_data is recalculated whenever filter settings, props, or metric_config changes
   $effect(() => {
@@ -386,7 +387,7 @@
       on_filter_change={(show_energy, show_noncomp) => {
         handle_filter_change(show_energy, show_noncomp)
       }}
-      on_col_change={(column, visible) => {
+      on_col_change={(column: string, visible: boolean) => {
         // Update visible_cols state instead of columns
         visible_cols[column] = visible
       }}

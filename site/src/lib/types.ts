@@ -97,6 +97,7 @@ export type HeatmapColumn = {
   format?: string // d3-format string
   sticky?: boolean // sticky column
   hidden?: boolean // hide column
+  sortable?: boolean // whether column is sortable, defaults to true
 }
 
 export const DISCOVERY_SETS = [
@@ -126,6 +127,6 @@ export interface CombinedMetricConfig {
   description: string
 }
 
-export type CellVal = string | number | undefined | null
+export type CellVal = string | number | undefined | null | Record<string, unknown>
 export type RowData = Record<string, CellVal>
 export type TableData = RowData[]

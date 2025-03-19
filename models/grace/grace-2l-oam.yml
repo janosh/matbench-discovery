@@ -58,7 +58,7 @@ metrics:
     kappa_103:
       κ_SRME: 0.294 # https://github.com/MPA2suite/k_SRME/pull/20
       pred_file: models/grace/grace-2l-oam/2025-01-28-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/files/52204916
+      pred_file_url: https://figshare.com/files/53090594
   geo_opt:
     pred_file: models/grace/grace-2l-oam/2025-01-28-wbm-geo-opt.json.gz
     pred_file_url: https://figshare.com/files/52204907

@@ -1,10 +1,11 @@
 """Helper functions for uploading files to Figshare via their API."""
 
+import difflib
 import hashlib
 import json
 import os
 from collections.abc import Mapping, Sequence
-from typing import Any, Final
+from typing import Any, Final, cast
 
 import requests
 from tqdm import tqdm
@@ -236,6 +237,70 @@ def file_exists_with_same_hash(
     return False, None
 
 
+def find_similar_files(
+    filename: str,
+    existing_files: dict[str, dict[str, Any]],
+    similarity_threshold: float = 0.7,
+) -> list[tuple[str, int]]:
+    """Find similar files using string similarity.
+
+    Files must have same model family/subfolder, exceed similarity threshold,
+    and have matching task types (kappa/phonon/discovery/geo) if present.
+
+    Args:
+        filename: File being uploaded
+        existing_files: Existing files dictionary
+        similarity_threshold: Min similarity ratio (0-1), default 0.7
+
+    Returns:
+        List of (name, id) tuples for similar files
+    """
+    parts = filename.split("/")
+    if len(parts) < 3:
+        return []
+
+    model_family, model_subfolder, base_filename = parts[1], parts[2], parts[-1]
+    task_type = _extract_task_type(base_filename)
+
+    similar_files: list[tuple[str, int]] = []
+    for existing_name, file_data in existing_files.items():
+        existing_parts = existing_name.split("/")
+
+        # Skip if not enough parts or different model family/subfolder
+        if (
+            len(existing_parts) < 3
+            or existing_parts[1] != model_family
+            or existing_parts[2] != model_subfolder
+        ):
+            continue
+
+        existing_basename = existing_parts[-1]
+        existing_task_type = _extract_task_type(existing_basename)
+
+        # Skip if different task types
+        if task_type and existing_task_type and task_type != existing_task_type:
+            continue
+
+        # Check similarity
+        similarity = difflib.SequenceMatcher(
+            None, base_filename, existing_basename
+        ).ratio()
+        if similarity >= similarity_threshold:
+            file_id = cast("int", file_data.get("id"))
+            similar_files.append((existing_name, file_id))
+
+    return similar_files
+
+
+def _extract_task_type(filename: str) -> str:
+    """Extract task type (kappa, phonon, discovery, geo) from filename."""
+    task_types = ["kappa", "phonon", "discovery", "geo"]
+    parts = filename.split("-")
+    return next(
+        (task for part in parts for task in task_types if part.startswith(task)), ""
+    )
+
+
 def delete_file(article_id: int, file_id: int) -> bool:
     """Delete a file from a Figshare article.
 
@@ -301,3 +366,26 @@ def upload_file_if_needed(
     # Upload the file
     file_id = upload_file(article_id, file_path, file_name)
     return file_id, True
+
+
+def publish_article(article_id: int, *, verbose: bool = True) -> bool:
+    """Publish a Figshare article, making it publicly available.
+
+    Args:
+        article_id (int): ID of the article to publish.
+        verbose (bool, optional): Whether to print status messages. Defaults to True.
+
+    Returns:
+        bool: True if the article was successfully published.
+    """
+    post_url = f"{BASE_URL}/account/articles/{article_id}/publish"
+    try:
+        make_request("POST", post_url)
+        if verbose:
+            article_url = f"{ARTICLE_URL_PREFIX}/{article_id}"
+            print(f"Successfully published article {article_id} at {article_url}")
+    except Exception as exc:
+        if verbose:
+            print(f"Failed to publish article {article_id}: {exc}")
+        return False
+    return True
