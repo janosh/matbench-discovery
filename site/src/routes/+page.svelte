@@ -10,6 +10,7 @@
     METADATA_COLS,
     RMSD_DEFAULT_WEIGHT,
   } from '$lib/metrics'
+  import { copy_pdf_conversion_cmd, generate_svg } from '$lib/svg-export'
   import Readme from '$root/readme.md'
   import KappaNote from '$site/src/routes/kappa-note.md'
   import { pretty_num } from 'elementari'
@@ -121,15 +122,32 @@
 
       <div class="downloads">
         Download table as
-        {#each [`PDF`, `SVG`] as file_ext (file_ext)}
-          {@const suffix = show_non_compliant ? `` : `-only-compliant`}
-          <a
-            href="/figs/metrics-table-uniq-protos{suffix}.{file_ext.toLowerCase()}"
-            download
-          >
-            {file_ext}
-          </a>
-        {/each}
+        <button
+          class="download-btn"
+          onclick={() =>
+            generate_svg({
+              show_non_compliant,
+              discovery_set,
+            })}
+        >
+          SVG
+        </button>
+
+        <Tooltip>
+          <button class="download-btn" onclick={copy_pdf_conversion_cmd}> PDF </button>
+          {#snippet tip()}
+            <div class="tooltip-content">
+              <span>Downloads SVG and copies PDF conversion command to clipboard.</span>
+              <span>Run in terminal:</span>
+              <pre><code
+                  ># Install pdf2svg:
+# Linux: sudo apt-get install pdf2svg
+# macOS: brew install pdf2svg
+pdf2svg filename.&#123;svg,pdf&#125;</code
+                ></pre>
+            </div>
+          {/snippet}
+        </Tooltip>
       </div>
 
       <!-- Radar Chart and Caption Container -->
@@ -251,10 +269,11 @@
     justify-content: center;
     margin-block: 1ex;
   }
-  div.downloads a {
+  div.downloads .download-btn {
     background-color: rgba(255, 255, 255, 0.1);
     padding: 0 6pt;
     border-radius: 4pt;
+    font: inherit;
   }
 
   /* Caption Radar Container Styles */

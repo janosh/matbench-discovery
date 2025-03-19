@@ -127,6 +127,20 @@ export interface CombinedMetricConfig {
   description: string
 }
 
-export type CellVal = string | number | undefined | null | Record<string, unknown>
+// Links data structure used for model resource links
+export interface LinkData {
+  paper: { url: string; title: string; icon: string }
+  repo: { url: string; title: string; icon: string }
+  pr_url: { url: string; title: string; icon: string }
+  pred_files: { files: { name: string; url: string }[]; name: string }
+}
+
+export type CellVal =
+  | string
+  | number
+  | undefined
+  | null
+  | Record<string, unknown>
+  | LinkData
 export type RowData = Record<string, CellVal>
 export type TableData = RowData[]
