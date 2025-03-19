@@ -1,11 +1,5 @@
 <script lang="ts">
-  import {
-    MetricScatter,
-    MetricsTable,
-    MODEL_METADATA,
-    TableColumnToggleMenu,
-    type ModelData,
-  } from '$lib'
+  import { MetricScatter, MetricsTable, MODEL_METADATA, type ModelData } from '$lib'
   import { ALL_METRICS, METADATA_COLS, PHONON_METRICS } from '$lib/metrics'
 
   // Default column visibility
@@ -31,10 +25,6 @@
     sort_hint=""
     style="width: 100%;"
   />
-
-  <div class="table-controls">
-    <TableColumnToggleMenu bind:visible_cols />
-  </div>
 
   <h3>κ<sub>SRME</sub> for 103 PhononDB structures over time</h3>
   <p>
@@ -66,12 +56,5 @@
     margin: 0;
     display: grid;
     gap: 1ex;
-  }
-  div.table-controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5pt;
-    place-content: center;
-    margin: 3pt auto;
   }
 </style>
