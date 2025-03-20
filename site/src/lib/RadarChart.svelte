@@ -259,7 +259,7 @@
     bind:this={svg_element}
     width={size}
     height={size}
-    viewBox={`0 0 ${size} ${size}`}
+    viewBox="0 0 {size} {size}"
     onclick={handle_svg_click}
     role="img"
     aria-label="Radar chart for adjusting metric weights"
@@ -313,7 +313,8 @@
     <!-- Triangle area -->
     {#if weights.length === 3}
       <path
-        d={`M ${axis_points[0].x} ${axis_points[0].y} L ${axis_points[1].x} ${axis_points[1].y} L ${axis_points[2].x} ${axis_points[2].y} Z`}
+        d="M {axis_points[0].x} {axis_points[0].y} L {axis_points[1].x} {axis_points[1]
+          .y} L {axis_points[2].x} {axis_points[2].y} Z"
         fill="rgba(255, 255, 255, 0.1)"
         stroke="rgba(255, 255, 255, 0.3)"
         stroke-width="1"
@@ -334,28 +335,15 @@
 
     <!-- Colored areas for each metric -->
     {#if weights.length === 3}
-      {@const { x, y } = center}
-      {@const { x: x0, y: y0 } = axis_points[0]}
-      {@const { x: x1, y: y1 } = axis_points[1]}
-      {@const { x: x2, y: y2 } = axis_points[2]}
-      <path
-        d={`M ${x} ${y} L ${x0} ${y0} L ${point.x} ${point.y} Z`}
-        fill={colors[0]}
-        stroke="none"
-        opacity="0.5"
-      />
-      <path
-        d="M {x} {y} L {x1} {y1} L {point.x} {point.y} Z"
-        fill={colors[1]}
-        stroke="none"
-        opacity="0.5"
-      />
-      <path
-        d="M {x} {y} L {x2} {y2} L {point.x} {point.y} Z"
-        fill={colors[2]}
-        stroke="none"
-        opacity="0.5"
-      />
+      {@const [{ x, y }, { x: px, y: py }] = [center, point]}
+      {#each axis_points as { x: x0, y: y0 }, idx}
+        <path
+          d="M {x} {y} L {x0} {y0} L {px} {py} Z"
+          fill={colors[idx]}
+          stroke="none"
+          opacity="0.5"
+        />
+      {/each}
     {/if}
 
     <!-- svelte-ignore a11y_interactive_supports_focus -->

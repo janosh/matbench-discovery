@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { DiscoverySet, ModelData } from '$lib'
   import { MetricsTable, model_is_compliant, MODEL_METADATA, RadarChart } from '$lib'
+  import { generate_png, generate_svg, handle_export } from '$lib/html-to-img'
   import {
     ALL_METRICS,
     DEFAULT_COMBINED_METRIC_CONFIG,
@@ -22,6 +23,7 @@
   let show_non_compliant: boolean = $state(false)
   let show_energy_only: boolean = $state(false)
   let show_combined_controls: boolean = $state(true)
+  let export_error: string | null = $state(null)
 
   // State for the radar chart
   let metric_config = $state({ ...DEFAULT_COMBINED_METRIC_CONFIG })
@@ -121,15 +123,22 @@
 
       <div class="downloads">
         Download table as
-        {#each [`PDF`, `SVG`] as file_ext (file_ext)}
-          {@const suffix = show_non_compliant ? `` : `-only-compliant`}
-          <a
-            href="/figs/metrics-table-uniq-protos{suffix}.{file_ext.toLowerCase()}"
-            download
+        {#each [[`SVG`, generate_svg], [`PNG`, generate_png]] as const as [label, generate_fn]}
+          <button
+            class="download-btn"
+            onclick={handle_export(generate_fn, label, export_error, {
+              show_non_compliant,
+              discovery_set,
+            })}
           >
-            {file_ext}
-          </a>
+            {label}
+          </button>
         {/each}
+        {#if export_error}
+          <div class="export-error">
+            {export_error}
+          </div>
+        {/if}
       </div>
 
       <!-- Radar Chart and Caption Container -->
@@ -171,7 +180,7 @@
 
             <button
               class="action-button"
-              onclick={() => reset_weights()}
+              onclick={reset_weights}
               title="Reset to default weights"
             >
               Reset
@@ -247,14 +256,25 @@
   }
   div.downloads {
     display: flex;
+    flex-wrap: wrap;
     gap: 1ex;
     justify-content: center;
     margin-block: 1ex;
+    align-items: center;
   }
-  div.downloads a {
+  div.downloads .download-btn {
     background-color: rgba(255, 255, 255, 0.1);
     padding: 0 6pt;
     border-radius: 4pt;
+    font: inherit;
+  }
+  div.export-error {
+    color: #ff6b6b;
+    margin-top: 0.5em;
+    flex-basis: 100%;
+  }
+  div.export-error iconify-icon {
+    color: #ff6b6b;
   }
 
   /* Caption Radar Container Styles */

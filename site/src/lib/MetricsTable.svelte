@@ -20,6 +20,7 @@
     CombinedMetricConfig,
     DiscoverySet,
     HeatmapColumn,
+    LinkData,
     ModelData,
     TableData,
   } from './types'
@@ -54,14 +55,6 @@
   $effect(() => {
     metric_config = { ...config }
   })
-
-  // Type definition for the Link structure in row data
-  interface LinkData {
-    paper: { url: string; title: string; icon: string }
-    repo: { url: string; title: string; icon: string }
-    pr_url: { url: string; title: string; icon: string }
-    pred_files: { files: { name: string; url: string }[]; name: string }
-  }
 
   // Generate tooltip for combined score that shows current weights
   function get_combined_score_tooltip(): string {
@@ -128,7 +121,7 @@
       total_materials += n_materials
 
       const title = training_set_info.title || train_set
-      data_urls[train_set || title] = training_set_info.download_url || ``
+      data_urls[train_set || title] = training_set_info.url || ``
 
       if (n_materials !== n_structs) {
         tooltip.push(
@@ -380,16 +373,11 @@
 >
   {#snippet controls()}
     <TableControls
-      config={metric_config}
       {show_energy_only}
       {show_noncompliant}
       bind:visible_cols
       on_filter_change={(show_energy, show_noncomp) => {
         handle_filter_change(show_energy, show_noncomp)
-      }}
-      on_col_change={(column: string, visible: boolean) => {
-        // Update visible_cols state instead of columns
-        visible_cols[column] = visible
       }}
     />
   {/snippet}
