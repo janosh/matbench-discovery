@@ -97,7 +97,7 @@ metrics:
     pred_file_url: https://figshare.com/files/52062392
     struct_col: eqV2-31M-dens-MP-p5_structure
     symprec=1e-5:
-      rmsd: 0.0138 # Å
+      rmsd: 0.0138 # unitless
       n_sym_ops_mae: 10.0558 # unitless
       symmetry_decrease: 0.8611 # fraction
       symmetry_match: 0.1382 # fraction
@@ -106,7 +106,7 @@ metrics:
       analysis_file: models/eqV2/eqV2-s-dens-mp/2024-10-18-wbm-geo-opt-symprec=1e-5.csv.gz
       analysis_file_url: https://figshare.com/files/52062569
     symprec=1e-2:
-      rmsd: 0.0138 # Å
+      rmsd: 0.0138 # unitless
       n_sym_ops_mae: 3.9922 # unitless
       symmetry_decrease: 0.4074 # fraction
       symmetry_match: 0.5027 # fraction

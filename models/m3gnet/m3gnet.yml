@@ -67,7 +67,7 @@ metrics:
     pred_file_url: https://figshare.com/files/52062011
     struct_col: m3gnet_structure
     symprec=1e-5:
-      rmsd: 0.0217 # Å
+      rmsd: 0.0217 # unitless
       n_sym_ops_mae: 1.7751 # unitless
       symmetry_decrease: 0.0652 # fraction
       symmetry_match: 0.7488 # fraction
@@ -76,7 +76,7 @@ metrics:
       analysis_file: models/m3gnet/m3gnet-tf-manual-sampling/2023-06-01-wbm-geo-opt-symprec=1e-5.csv.gz
       analysis_file_url: https://figshare.com/files/52062014
     symprec=1e-2:
-      rmsd: 0.0217 # Å
+      rmsd: 0.0217 # unitless
       n_sym_ops_mae: 2.0111 # unitless
       symmetry_decrease: 0.0719 # fraction
       symmetry_match: 0.7933 # fraction
