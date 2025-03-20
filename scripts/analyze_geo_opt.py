@@ -4,6 +4,10 @@ individual CSV files (one per symprec value) in a model's directory.
 Output files will have the same name as the input file containing the model's relaxed
 structures, but with the symprec value appended to the filename.
 
+Note: StructureMatcher is configured with stol=1.0 and scale=False for exact matching.
+RMSD values are normalized (unitless) and NaN values are filled with 1.0 (the stol
+value) to properly account for structures that couldn't be matched.
+
 Example usage:
     python scripts/analyze_geo_opt.py --models mace_mp_0 m3gnet --symprec 1e-2 1e-5
     python scripts/analyze_geo_opt.py --debug 10  # only analyze first 10 structures
@@ -26,13 +30,13 @@ from pymatgen.core import Structure
 from pymatviz.enums import Key
 
 from matbench_discovery import ROOT
-from matbench_discovery.enums import DataFiles, Model
+from matbench_discovery.enums import DataFiles, MbdKey, Model
 from matbench_discovery.metrics import geo_opt
 from matbench_discovery.models import MODEL_METADATA
 from matbench_discovery.structure import symmetry
 
 
-def analyze_model_symprec(
+def analyze_ml_relaxed_structs(
     model: Model,
     symprec: float,
     moyo_version: str,
@@ -64,7 +68,7 @@ def analyze_model_symprec(
         )
         return
 
-    # Load model structures
+    # Load ML-relaxed structures
     try:
         if ml_relaxed_structs_path.endswith((".json", ".json.gz", ".json.xz")):
             df_ml_structs = pd.read_json(ml_relaxed_structs_path)
@@ -98,7 +102,7 @@ def analyze_model_symprec(
         )
         return
 
-    # Convert structures
+    # Hydrate ML-relaxed structures
     model_structs = {
         mat_id: Structure.from_dict(struct_dict)
         for mat_id, struct_dict in df_ml_structs[struct_col].items()
@@ -120,12 +124,27 @@ def analyze_model_symprec(
         symprec=symprec,
     )
 
-    # Compare with DFT reference
-    pbar_desc = f"Process {pbar_pos}:Comparing DFT vs {model.label} for {symprec=}"
-    # break here
-    df_ml_geo_analysis = symmetry.pred_vs_ref_struct_symmetry(
-        df_model_analysis,
-        df_dft_analysis,
+    # Verify index names for symmetry comparison
+    if df_dft_analysis.index.name != Key.mat_id:
+        raise ValueError(f"{df_dft_analysis.index.name=} must be {Key.mat_id!s}")
+    if df_model_analysis.index.name != Key.mat_id:
+        raise ValueError(f"{df_model_analysis.index.name=} must be {Key.mat_id!s}")
+
+    # Compare symmetry with DFT reference (inline code that was in compare_symmetry)
+    df_result = df_model_analysis.copy()
+
+    # Calculate symmetry differences
+    df_result[MbdKey.spg_num_diff] = (
+        df_model_analysis[Key.spg_num] - df_dft_analysis[Key.spg_num]
+    )
+    df_result[MbdKey.n_sym_ops_diff] = (
+        df_model_analysis[Key.n_sym_ops] - df_dft_analysis[Key.n_sym_ops]
+    )
+
+    # Calculate structure distances against DFT reference
+    pbar_desc = f"Process {pbar_pos}: Comparing DFT vs {model.label} for {symprec=}"
+    df_ml_geo_analysis = symmetry.calc_structure_distances(
+        df_result,
         model_structs,
         dft_structs,
         pbar=dict(desc=pbar_desc, position=pbar_pos, leave=True),
@@ -223,7 +242,7 @@ if __name__ == "__main__":
     with ProcessPoolExecutor(max_workers=n_workers) as executor:
         futures = [
             executor.submit(
-                analyze_model_symprec,
+                analyze_ml_relaxed_structs,
                 model_name,
                 symprec,
                 moyo_version,

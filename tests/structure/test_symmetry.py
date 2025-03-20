@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from pymatgen.core import Structure
+from pymatgen.core import Lattice, Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatviz.enums import Key
 
@@ -50,12 +50,19 @@ def test_analyze_symmetry_multiple_structures(
 def test_pred_vs_ref_struct_symmetry(
     cubic_struct: Structure, tetragonal_struct: Structure
 ) -> None:
+    """Test comparing structures with the inlined symmetry comparison approach."""
     key = "structure"
     df_ml = symmetry.get_sym_info_from_structs({key: cubic_struct})
     df_dft = symmetry.get_sym_info_from_structs({key: tetragonal_struct})
 
-    df_compared = symmetry.pred_vs_ref_struct_symmetry(
-        df_ml, df_dft, {key: cubic_struct}, {key: tetragonal_struct}
+    # Inline the functionality that was in compare_symmetry
+    df_compared = df_ml.copy()
+    df_compared[MbdKey.spg_num_diff] = df_ml[Key.spg_num] - df_dft[Key.spg_num]
+    df_compared[MbdKey.n_sym_ops_diff] = df_ml[Key.n_sym_ops] - df_dft[Key.n_sym_ops]
+
+    # Then calculate structure distances
+    df_compared = symmetry.calc_structure_distances(
+        df_compared, {key: cubic_struct}, {key: tetragonal_struct}
     )
 
     assert MbdKey.spg_num_diff in df_compared.columns
@@ -63,6 +70,7 @@ def test_pred_vs_ref_struct_symmetry(
     assert df_compared[MbdKey.spg_num_diff].iloc[0] == 229 - 47
     n_sym_ops_ml, n_sym_ops_dft = 96, 8
     assert df_compared[MbdKey.n_sym_ops_diff].iloc[0] == n_sym_ops_ml - n_sym_ops_dft
+    assert MbdKey.structure_rmsd_vs_dft in df_compared.columns
 
 
 def test_analyze_symmetry_perturbed_structure(cubic_struct: Structure) -> None:
@@ -107,11 +115,14 @@ def test_pred_vs_ref_struct_symmetry_with_structures(
     df_ml.index.name = Key.mat_id
     df_dft.index.name = Key.mat_id
 
-    df_ml_sym[Key.spg_num] - df_dft_sym[Key.spg_num]
+    # Inline the functionality that was in compare_symmetry
+    df_compared = df_ml.copy()
+    df_compared[MbdKey.spg_num_diff] = df_ml[Key.spg_num] - df_dft[Key.spg_num]
+    df_compared[MbdKey.n_sym_ops_diff] = df_ml[Key.n_sym_ops] - df_dft[Key.n_sym_ops]
 
-    # must use same keys for both structures to match them in RMSD calculation
-    df_compared = symmetry.pred_vs_ref_struct_symmetry(
-        df_ml, df_dft, {key: cubic_struct}, {key: tetragonal_struct}
+    # Calculate structure distances
+    df_compared = symmetry.calc_structure_distances(
+        df_compared, {key: cubic_struct}, {key: tetragonal_struct}
     )
 
     assert set(df_compared) == {
@@ -204,3 +215,32 @@ def test_analyze_symmetry_with_ase_atoms(cubic_struct: Structure) -> None:
     df_struct.index = df_atoms.index
 
     pd.testing.assert_frame_equal(df_struct, df_atoms)
+
+
+def test_calc_structure_distances(cubic_struct: Structure) -> None:
+    key = "struct1"
+    df_ml_sym = symmetry.get_sym_info_from_structs({key: cubic_struct})
+
+    slightly_perturbed = perturb_structure(cubic_struct, gamma=0.1)
+    # Test structure distance calculation with structures that can be matched
+    df_distances = symmetry.calc_structure_distances(
+        df_ml_sym, {key: cubic_struct}, {key: slightly_perturbed}
+    )
+
+    assert MbdKey.structure_rmsd_vs_dft in df_distances.columns
+    assert Key.max_pair_dist in df_distances.columns
+    assert df_distances[MbdKey.structure_rmsd_vs_dft].iloc[0] is not None
+
+
+def test_calc_structure_distances_with_mismatched_ids() -> None:
+    """Test that ValueError is raised when there are no shared IDs."""
+    df_result = pd.DataFrame({"test": [1]})
+    df_result.index.name = Key.mat_id
+    df_result.index = ["id1"]
+
+    # Different IDs for pred and ref structures
+    pred_structs = {"id1": Structure(Lattice.cubic(1.0), ["H"], [[0, 0, 0]])}
+    ref_structs = {"id2": Structure(Lattice.cubic(1.0), ["H"], [[0, 0, 0]])}
+
+    with pytest.raises(ValueError, match="No shared IDs between"):
+        symmetry.calc_structure_distances(df_result, pred_structs, ref_structs)
