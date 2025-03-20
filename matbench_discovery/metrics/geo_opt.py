@@ -46,7 +46,7 @@ def write_metrics_to_yaml(
 
     # Define units for metrics
     metric_units = {
-        Key.rmsd: "Å",
+        Key.rmsd: "unitless",
         Key.n_sym_ops_mae: "unitless",
         Key.symmetry_decrease: "fraction",
         Key.symmetry_match: "fraction",
@@ -93,7 +93,9 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:
     n_structs = len(spg_diff.dropna())
 
     # Calculate RMSD and MAE metrics
-    mean_rmsd = rmsd.mean()
+    # Fill NaN values with 1.0 (the stol value we set in StructureMatcher) for
+    # structures that couldn't be matched
+    mean_rmsd = rmsd.fillna(1.0).mean()
     sym_ops_mae = n_sym_ops_diff.abs().mean()
 
     # Count cases where spacegroup changed
