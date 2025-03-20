@@ -11,7 +11,6 @@ class MockXMLSerializer {
 describe(`SVG Export Functionality`, () => {
   // Create minimal mocks needed for testing
   const mock_click = vi.fn()
-  const mock_write_text = vi.fn().mockResolvedValue(undefined)
 
   // Create spies at the describe level to be used in multiple tests
   let create_element_spy: MockInstance
@@ -39,12 +38,6 @@ describe(`SVG Export Functionality`, () => {
       writable: true,
     })
 
-    // Mock clipboard API
-    Object.defineProperty(navigator, `clipboard`, {
-      value: { writeText: mock_write_text },
-      configurable: true,
-    })
-
     // Mock document.querySelector to return a simple table
     vi.spyOn(document, `querySelector`).mockImplementation((_selector: string) => {
       return {
@@ -57,17 +50,13 @@ describe(`SVG Export Functionality`, () => {
         cloneNode: () => ({
           style: {},
           querySelectorAll: () => [],
+          getBoundingClientRect: () => ({ height: 300, width: 500 }),
         }),
       } as unknown as Element
     })
 
     // Mock XMLSerializer
     window.XMLSerializer = MockXMLSerializer as unknown as typeof XMLSerializer
-
-    // Mock getElementById for PDF button
-    vi.spyOn(document, `getElementById`).mockReturnValue({
-      textContent: `PDF`,
-    } as unknown as HTMLElement)
 
     // Mock globals needed by the +page.svelte component
     vi.stubGlobal(`discovery_set`, `unique_prototypes`)
@@ -87,7 +76,7 @@ describe(`SVG Export Functionality`, () => {
     }
 
     // Import the function dynamically after mocks are set up
-    const module = await import(`$lib/svg-export`)
+    const module = await import(`$lib/html-to-img`)
 
     // Mock the module function to return our prepared result AND call our document.createElement
     vi.spyOn(module, `generate_svg`).mockImplementation(async () => {
@@ -119,62 +108,44 @@ describe(`SVG Export Functionality`, () => {
     expect(result?.filename).toContain(today)
   })
 
-  it(`copies PDF conversion command after SVG download`, async () => {
-    // Mock return values
-    const today = new Date().toISOString().split(`T`)[0]
-    const svg_filename = `metrics-table-unique-prototypes-only-compliant-${today}.svg`
-    const pdf_filename = svg_filename.replace(`.svg`, `.pdf`)
-    const command = `# Install pdf2svg:
-# Linux: sudo apt-get install pdf2svg
-# macOS: brew install pdf2svg
-pdf2svg ${svg_filename.replace(`.svg`, ``)}.{svg,pdf}`
-
-    const mock_pdf_result = {
-      command,
-      svg_filename,
-      pdf_filename,
+  it(`generates PNG with date in filename`, async () => {
+    // Mock module's result
+    const mock_png_result = {
+      filename: `metrics-table-unique-prototypes-only-compliant-${new Date().toISOString().split(`T`)[0]}.png`,
+      url: `mock-url`,
     }
 
     // Import the function dynamically after mocks are set up
-    const module = await import(`$lib/svg-export`)
+    const module = await import(`$lib/html-to-img`)
 
-    // Mock the module function to simulate creating an anchor element
-    vi.spyOn(module, `copy_pdf_conversion_cmd`).mockImplementation(async () => {
+    // Mock the module function to return our prepared result
+    vi.spyOn(module, `generate_png`).mockImplementation(async () => {
       // Simulate the function creating and clicking an anchor
       const a = document.createElement(`a`)
       a.click()
-      // Simulate clipboard write
-      await navigator.clipboard.writeText(command)
-      return mock_pdf_result
+      return mock_png_result
     })
 
-    const copy_pdf_command = module.copy_pdf_conversion_cmd
+    const generate_png = module.generate_png
 
-    // Call the function
-    const result = await copy_pdf_command()
+    const result = await generate_png({
+      show_non_compliant: false,
+      discovery_set: `unique_prototypes`,
+    })
 
-    // Check that SVG was generated (anchor created and clicked)
+    // Check that anchor was created and clicked
     expect(create_element_spy).toHaveBeenCalledWith(`a`)
     expect(mock_click).toHaveBeenCalledTimes(1)
 
-    // Check clipboard write was called
-    expect(mock_write_text).toHaveBeenCalledTimes(1)
-    expect(mock_write_text).toHaveBeenCalledWith(command)
-
     // Assertions for result object
     expect(result).toBeTruthy()
-    expect(result?.command).toBe(command)
-    expect(result?.svg_filename).toContain(`.svg`)
-    expect(result?.pdf_filename).toContain(`.pdf`)
+    expect(result?.filename).toContain(`metrics-table-unique-prototypes-only-compliant`)
+    expect(result?.filename).toContain(`.png`)
+    expect(result?.url).toBe(`mock-url`)
 
-    // PDF filename should be SVG filename with extension changed
-    expect(result?.pdf_filename).toBe(result?.svg_filename.replace(`.svg`, `.pdf`))
-
-    // Verify date in filename
-    expect(result?.svg_filename).toContain(
-      `metrics-table-unique-prototypes-only-compliant`,
-    )
-    expect(result?.svg_filename).toContain(today)
+    // Verify date format in filename (YYYY-MM-DD)
+    const today = new Date().toISOString().split(`T`)[0]
+    expect(result?.filename).toContain(today)
   })
 
   it(`verifies filenames use param-case formatting`, async () => {
@@ -184,41 +155,42 @@ pdf2svg ${svg_filename.replace(`.svg`, ``)}.{svg,pdf}`
     // Mock return values with param-case
     const today = new Date().toISOString().split(`T`)[0]
     const svg_filename = `metrics-table-unique-prototypes-only-compliant-${today}.svg`
-    const pdf_filename = svg_filename.replace(`.svg`, `.pdf`)
+    const png_filename = `metrics-table-unique-prototypes-only-compliant-${today}.png`
 
     const mock_svg_result = {
       filename: svg_filename,
       url: `mock-url`,
     }
 
-    const mock_pdf_result = {
-      command: `pdf2svg ${svg_filename.replace(`.svg`, ``)}.{svg,pdf}`,
-      svg_filename,
-      pdf_filename,
+    const mock_png_result = {
+      filename: png_filename,
+      url: `mock-url`,
     }
 
     // Import the module
-    const svg_module = await import(`$lib/svg-export`)
+    const svg_module = await import(`$lib/html-to-img`)
 
     // Mock the module functions with appropriate types
     vi.spyOn(svg_module, `generate_svg`).mockResolvedValue(mock_svg_result)
-    vi.spyOn(svg_module, `copy_pdf_conversion_cmd`).mockResolvedValue(mock_pdf_result)
+    vi.spyOn(svg_module, `generate_png`).mockResolvedValue(mock_png_result)
 
     // Test SVG filename
-    const result = await svg_module.generate_svg({
+    const svg_result = await svg_module.generate_svg({
       show_non_compliant: false,
       discovery_set: `unique_prototypes`,
     })
 
     // Verify param-case is used (dashes not underscores)
-    expect(result?.filename).toContain(`unique-prototypes`)
-    expect(result?.filename).not.toContain(`unique_prototypes`)
+    expect(svg_result?.filename).toContain(`unique-prototypes`)
+    expect(svg_result?.filename).not.toContain(`unique_prototypes`)
 
-    // Test PDF filename via command
-    const pdf_result = await svg_module.copy_pdf_conversion_cmd()
+    // Test PNG filename
+    const png_result = await svg_module.generate_png({
+      show_non_compliant: false,
+      discovery_set: `unique_prototypes`,
+    })
 
-    expect(pdf_result?.svg_filename).toContain(`unique-prototypes`)
-    expect(pdf_result?.pdf_filename).toContain(`unique-prototypes`)
-    expect(pdf_result?.svg_filename).not.toContain(`unique_prototypes`)
+    expect(png_result?.filename).toContain(`unique-prototypes`)
+    expect(png_result?.filename).not.toContain(`unique_prototypes`)
   })
 })

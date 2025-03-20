@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { DiscoverySet, ModelData } from '$lib'
   import { MetricsTable, model_is_compliant, MODEL_METADATA, RadarChart } from '$lib'
+  import { generate_png, generate_svg, handle_export } from '$lib/html-to-img'
   import {
     ALL_METRICS,
     DEFAULT_COMBINED_METRIC_CONFIG,
@@ -10,7 +11,6 @@
     METADATA_COLS,
     RMSD_DEFAULT_WEIGHT,
   } from '$lib/metrics'
-  import { copy_pdf_conversion_cmd, generate_svg } from '$lib/svg-export'
   import Readme from '$root/readme.md'
   import KappaNote from '$site/src/routes/kappa-note.md'
   import { pretty_num } from 'elementari'
@@ -23,6 +23,7 @@
   let show_non_compliant: boolean = $state(false)
   let show_energy_only: boolean = $state(false)
   let show_combined_controls: boolean = $state(true)
+  let export_error: string | null = $state(null)
 
   // State for the radar chart
   let metric_config = $state({ ...DEFAULT_COMBINED_METRIC_CONFIG })
@@ -122,32 +123,22 @@
 
       <div class="downloads">
         Download table as
-        <button
-          class="download-btn"
-          onclick={() =>
-            generate_svg({
+        {#each [[`SVG`, generate_svg], [`PNG`, generate_png]] as const as [label, generate_fn]}
+          <button
+            class="download-btn"
+            onclick={handle_export(generate_fn, label, export_error, {
               show_non_compliant,
               discovery_set,
             })}
-        >
-          SVG
-        </button>
-
-        <Tooltip>
-          <button class="download-btn" onclick={copy_pdf_conversion_cmd}> PDF </button>
-          {#snippet tip()}
-            <div class="tooltip-content">
-              <span>Downloads SVG and copies PDF conversion command to clipboard.</span>
-              <span>Run in terminal:</span>
-              <pre><code
-                  ># Install pdf2svg:
-# Linux: sudo apt-get install pdf2svg
-# macOS: brew install pdf2svg
-pdf2svg filename.&#123;svg,pdf&#125;</code
-                ></pre>
-            </div>
-          {/snippet}
-        </Tooltip>
+          >
+            {label}
+          </button>
+        {/each}
+        {#if export_error}
+          <div class="export-error">
+            {export_error}
+          </div>
+        {/if}
       </div>
 
       <!-- Radar Chart and Caption Container -->
@@ -189,7 +180,7 @@ pdf2svg filename.&#123;svg,pdf&#125;</code
 
             <button
               class="action-button"
-              onclick={() => reset_weights()}
+              onclick={reset_weights}
               title="Reset to default weights"
             >
               Reset
@@ -265,15 +256,25 @@ pdf2svg filename.&#123;svg,pdf&#125;</code
   }
   div.downloads {
     display: flex;
+    flex-wrap: wrap;
     gap: 1ex;
     justify-content: center;
     margin-block: 1ex;
+    align-items: center;
   }
   div.downloads .download-btn {
     background-color: rgba(255, 255, 255, 0.1);
     padding: 0 6pt;
     border-radius: 4pt;
     font: inherit;
+  }
+  div.export-error {
+    color: #ff6b6b;
+    margin-top: 0.5em;
+    flex-basis: 100%;
+  }
+  div.export-error iconify-icon {
+    color: #ff6b6b;
   }
 
   /* Caption Radar Container Styles */
