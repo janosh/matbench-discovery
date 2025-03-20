@@ -8,22 +8,18 @@ the site.
 
 # %%
 import itertools
-import os
-import subprocess
 import sys
 from datetime import date
-from glob import glob
 
 import numpy as np
 import pandas as pd
 import yaml
 from pymatviz import IS_IPYTHON
 from pymatviz.enums import Key, eV_per_atom
-from pymatviz.io import df_to_pdf
 from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
 
-from matbench_discovery import DATA_DIR, PDF_FIGS, PKG_DIR, ROOT
+from matbench_discovery import DATA_DIR, PKG_DIR
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import DataFiles, MbdKey, Model, Open, Targets, TestSubset
 from matbench_discovery.metrics import discovery
@@ -410,24 +406,4 @@ for (label, df_met), show_non_compliant in itertools.product(
     styler.hide(axis="index")
     suffix = "" if show_non_compliant else "-only-compliant"
     non_compliant_idx = [*set(styler.index) & set(non_compliant_models)]
-    try:
-        os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = "/opt/homebrew/lib"
-        for pdf_path in (PDF_FIGS, f"{ROOT}/site/static/figs"):
-            df_to_pdf(styler, f"{pdf_path}/metrics-table{label}{suffix}.pdf")
-    except (ImportError, RuntimeError, OSError) as exc:
-        print(f"df_to_pdf failed: {exc}")
-
     display(styler.set_caption(df_met.attrs["title"]))
-
-
-try:
-    # convert PDFs in site/static/figs to SVGs (needed for "download as SVG" button)
-    for pdf_path in glob(f"{ROOT}/site/static/figs/metrics-table*.pdf"):
-        subprocess.run(
-            ["pdf2svg", pdf_path, pdf_path.replace(".pdf", ".svg")], check=False
-        )
-
-    # svgo compress SVGs
-    subprocess.run(["svgo", "--multipass", f"{ROOT}/site/static/figs"], check=False)
-except FileNotFoundError:  # skip in CI where pdf2svg and svgo not installed
-    pass

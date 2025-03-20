@@ -105,12 +105,17 @@ describe(`Landing Page`, () => {
   })
 
   it(`renders table downloads section`, () => {
-    const download_links = document.body.querySelectorAll(`.downloads a`)
-    expect(download_links).toHaveLength(2)
+    // Check that the download buttons section exists
+    const download_section = document.body.querySelector(`.downloads`)
+    expect(download_section).not.toBeNull()
 
-    const [pdf_link, svg_link] = download_links
-    expect(pdf_link.getAttribute(`href`)).toMatch(/\.pdf$/)
-    expect(svg_link.getAttribute(`href`)).toMatch(/\.svg$/)
+    // Check that it contains SVG, PNG buttons
+    const download_buttons = download_section?.querySelectorAll(`.download-btn`)
+    expect(download_buttons?.length).toBe(2)
+
+    const buttons = Array.from(download_buttons).map((btn) => btn.textContent?.trim())
+    expect(buttons).toContain(`SVG`)
+    expect(buttons).toContain(`PNG`)
   })
 
   it(`displays valid metric values`, () => {

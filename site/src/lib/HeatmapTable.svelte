@@ -117,15 +117,15 @@
     }
 
     const col_id = get_col_id(col)
-    const numericValues = clean_data
+    const numeric_vals = clean_data
       .map((row) => row[col_id])
       .filter((val): val is number => typeof val === `number`) // Type guard to ensure we only get numbers
 
-    if (numericValues.length === 0) {
+    if (numeric_vals.length === 0) {
       return { bg: null, text: null }
     }
 
-    const range = [min(numericValues) ?? 0, max(numericValues) ?? 1]
+    const range = [min(numeric_vals) ?? 0, max(numeric_vals) ?? 1]
     if (col.better === `lower`) {
       range.reverse()
     }
@@ -180,7 +180,11 @@
 </div>
 
 <div bind:this={container} class="table-container" {style}>
-  <table use:titles_as_tooltips class:fixed-header={fixed_header} class="heatmap">
+  <table
+    use:titles_as_tooltips
+    class:fixed-header={fixed_header}
+    class="heatmap heatmap-table"
+  >
     <thead>
       <!-- Don't add a table row for group headers if there are none -->
       {#if visible_columns.some((col) => col.group)}

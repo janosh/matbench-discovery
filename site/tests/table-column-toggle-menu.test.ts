@@ -1,6 +1,6 @@
+import { TableColumnToggleMenu } from '$lib'
 import { mount, tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
-import TableColumnToggleMenu from '../src/lib/TableColumnToggleMenu.svelte'
 
 describe(`TableColumnToggleMenu`, () => {
   const visible_cols = {
