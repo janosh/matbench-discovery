@@ -93,27 +93,19 @@ metrics:
       pred_file: models/eqV2/eqV2-s-dens-mp/2024-11-08-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/52151558
   geo_opt:
-    pred_file: models/eqV2/eqV2-s-dens-mp/2024-10-18-wbm-geo-opt.json.gz
-    pred_file_url: https://figshare.com/files/52062392
+    pred_file: models/eqV2/eqV2-s-dens-mp/2024-10-18-wbm-geo-opt.jsonl.gz
+    pred_file_url: https://figshare.com/files/53153468
     struct_col: eqV2-31M-dens-MP-p5_structure
-    symprec=1e-5:
-      rmsd: 0.0138 # unitless
-      n_sym_ops_mae: 10.0558 # unitless
-      symmetry_decrease: 0.8611 # fraction
-      symmetry_match: 0.1382 # fraction
-      symmetry_increase: 0.0005 # fraction
-      n_structures: 256614 # count
-      analysis_file: models/eqV2/eqV2-s-dens-mp/2024-10-18-wbm-geo-opt-symprec=1e-5.csv.gz
-      analysis_file_url: https://figshare.com/files/52062569
-    symprec=1e-2:
-      rmsd: 0.0138 # unitless
-      n_sym_ops_mae: 3.9922 # unitless
-      symmetry_decrease: 0.4074 # fraction
-      symmetry_match: 0.5027 # fraction
-      symmetry_increase: 0.0631 # fraction
-      n_structures: 256614 # count
-      analysis_file: models/eqV2/eqV2-s-dens-mp/2024-10-18-wbm-geo-opt-symprec=1e-2.csv.gz
-      analysis_file_url: https://figshare.com/files/52062578
+    analysis_file: models/eqV2/eqV2-s-dens-mp/2024-10-18-wbm-geo-opt-moyo=0.4.2.csv.gz
+    n_structures: 256963
+    symmetry:
+      symprec=1e-5:
+        n_sym_ops_mae: 19.01 # unitless
+        symmetry_decrease: 0.946 # fraction
+        symmetry_match: 0.048 # fraction
+        symmetry_increase: 0.004 # fraction
+    distance:
+      rmsd: 0.0369 # unitless
   discovery:
     pred_file: models/eqV2/eqV2-s-dens-mp/2024-10-18-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/52057568

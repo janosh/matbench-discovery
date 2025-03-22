@@ -113,24 +113,6 @@ metrics:
     pred_file: models/deepmd/dpa3-v1-openlam/2025-01-10-wbm-geo-opt.json.gz
     struct_col: dp_structure
     pred_file_url: https://figshare.com/files/52135358
-    symprec=1e-5:
-      analysis_file: models/deepmd/dpa3-v1-openlam/2025-01-10-wbm-geo-opt-symprec=1e-5-moyo=0.3.3.csv.gz
-      analysis_file_url: https://figshare.com/files/52291973
-      rmsd: 0.0128 # unitless
-      n_sym_ops_mae: 2.1477 # unitless
-      symmetry_decrease: 0.0657 # fraction
-      symmetry_match: 0.7188 # fraction
-      symmetry_increase: 0.2094 # fraction
-      n_structures: 256963 # count
-    symprec=1e-2:
-      analysis_file: models/deepmd/dpa3-v1-openlam/2025-01-10-wbm-geo-opt-symprec=1e-2-moyo=0.3.3.csv.gz
-      analysis_file_url: https://figshare.com/files/52291976
-      rmsd: 0.0128 # unitless
-      n_sym_ops_mae: 1.8912 # unitless
-      symmetry_decrease: 0.0515 # fraction
-      symmetry_match: 0.8097 # fraction
-      symmetry_increase: 0.1314 # fraction
-      n_structures: 256963 # count
   discovery:
     pred_file: models/deepmd/dpa3-v1-openlam/2025-01-10-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/52057532

@@ -99,27 +99,19 @@ metrics:
       pred_file: models/deepmd/dpa3-v2-openlam/2025-03-14-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/53090585
   geo_opt:
-    pred_file: models/deepmd/dpa3-v2-openlam/2025-03-14-wbm-geo-opt.json.gz
+    pred_file: models/deepmd/dpa3-v2-openlam/2025-03-14-wbm-geo-opt.jsonl.gz
     struct_col: dp_structure
-    pred_file_url: https://figshare.com/files/53018852
-    symprec=1e-5:
-      rmsd: 0.0127 # unitless
-      n_sym_ops_mae: 2.1607 # unitless
-      symmetry_decrease: 0.0654 # fraction
-      symmetry_match: 0.719 # fraction
-      symmetry_increase: 0.2095 # fraction
-      n_structures: 256963 # count
-      analysis_file: models/deepmd/dpa3-v2-openlam/2025-03-14-wbm-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53019284
-    symprec=1e-2:
-      rmsd: 0.0127 # unitless
-      n_sym_ops_mae: 1.8814 # unitless
-      symmetry_decrease: 0.0511 # fraction
-      symmetry_match: 0.81 # fraction
-      symmetry_increase: 0.1316 # fraction
-      n_structures: 256963 # count
-      analysis_file: models/deepmd/dpa3-v2-openlam/2025-03-14-wbm-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53019287
+    pred_file_url: https://figshare.com/files/53153465
+    analysis_file: models/deepmd/dpa3-v2-openlam/2025-03-14-wbm-geo-opt-moyo=0.4.2.csv.gz
+    n_structures: 256963
+    symmetry:
+      symprec=1e-5:
+        n_sym_ops_mae: 7.938 # unitless
+        symmetry_decrease: 0.228 # fraction
+        symmetry_match: 0.594 # fraction
+        symmetry_increase: 0.174 # fraction
+    distance:
+      rmsd: 0.0302 # unitless
   discovery:
     pred_file: models/deepmd/dpa3-v2-openlam/2025-03-14-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/53018804

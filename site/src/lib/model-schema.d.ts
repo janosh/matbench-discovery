@@ -6,25 +6,25 @@ export type GeoOptMetrics = {
   struct_col: string
   pred_file?: string | null
   pred_file_url?: string
-  'symprec=1e-5'?: {
-    rmsd: number
-    n_sym_ops_mae: number
-    symmetry_decrease: number
-    symmetry_match: number
-    symmetry_increase: number
-    n_structures: number
-    analysis_file?: string | null
-    analysis_file_url?: string
+  analysis_file?: string | null
+  analysis_file_url?: string
+  n_structures?: number
+  symmetry?: {
+    'symprec=1e-5'?: {
+      n_sym_ops_mae: number
+      symmetry_decrease: number
+      symmetry_match: number
+      symmetry_increase: number
+    }
+    'symprec=1e-2'?: {
+      n_sym_ops_mae: number
+      symmetry_decrease: number
+      symmetry_match: number
+      symmetry_increase: number
+    }
   }
-  'symprec=1e-2'?: {
+  distance?: {
     rmsd: number
-    n_sym_ops_mae: number
-    symmetry_decrease: number
-    symmetry_match: number
-    symmetry_increase: number
-    n_structures: number
-    analysis_file?: string | null
-    analysis_file_url?: string
   }
 }
 export type DiscoveryMetrics = {
