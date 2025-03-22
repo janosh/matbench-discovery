@@ -67,7 +67,6 @@ metrics:
     pred_file_url: https://figshare.com/files/52062011
     struct_col: m3gnet_structure
     analysis_file: models/m3gnet/m3gnet-tf-manual-sampling/2023-06-01-wbm-geo-opt-moyo=0.4.2.csv.gz
-    n_structures: 5
     distance:
       rmsd: 0.0627 # unitless
     symmetry:

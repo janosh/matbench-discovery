@@ -93,8 +93,6 @@ definitions:
       analysis_file_url:
         type: [string, "null"]
         $ref: "#/definitions/http_url"
-      n_structures:
-        type: integer
       symmetry:
         type: object
         additionalProperties: false

@@ -69,22 +69,21 @@ metrics:
     pred_file: models/eSEN/eSEN-30m-mp/2025-03-17-wbm-geo-opt.jsonl.gz
     pred_file_url: https://figshare.com/files/53153474
     struct_col: pred_structure_esen
-    analysis_file: models/eSEN/eSEN-30m-mp/2025-03-17-wbm-geo-opt-moyo=0.4.2.csv.gz
+    analysis_file: models/eSEN/eSEN-30m-mp/2025-03-17-wbm-geo-opt-moyo=0.4.2-n=256963.csv.gz
     analysis_file_url: https://figshare.com/files/53054375
-    n_structures: 256963
     symmetry:
-      symprec=1e-5:
-        n_sym_ops_mae: 8.602 # unitless
-        symmetry_decrease: 0.288 # fraction
-        symmetry_match: 0.448 # fraction
-        symmetry_increase: 0.186 # fraction
       symprec=1e-2:
-        n_sym_ops_mae: 2.521
-        symmetry_decrease: 0.2604
-        symmetry_match: 0.6106
-        symmetry_increase: 0.098
+        n_sym_ops_mae: 2.521 # unitless
+        symmetry_decrease: 0.2604 # fraction
+        symmetry_match: 0.6106 # fraction
+        symmetry_increase: 0.098 # fraction
+      symprec=1e-5:
+        n_sym_ops_mae: 3.3144 # unitless
+        symmetry_decrease: 0.4281 # fraction
+        symmetry_match: 0.3859 # fraction
+        symmetry_increase: 0.1282 # fraction
     distance:
-      rmsd: 0.0261 # unitless
+      rmsd: 0.0752 # unitless
   discovery:
     pred_file: models/eSEN/eSEN-30m-mp/2025-03-17-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/53054366

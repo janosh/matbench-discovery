@@ -100,16 +100,15 @@ metrics:
     pred_file: models/deepmd/dpa3-v2-mptrj/2025-03-14-wbm-geo-opt.jsonl.gz
     struct_col: dp_structure
     pred_file_url: https://figshare.com/files/53153462
-    analysis_file: models/deepmd/dpa3-v2-mptrj/2025-03-14-wbm-geo-opt-moyo=0.4.2.csv.gz
-    n_structures: 256963
+    analysis_file: models/deepmd/dpa3-v2-mptrj/2025-03-14-wbm-geo-opt-moyo=0.4.2-n=256963.csv.gz
     symmetry:
       symprec=1e-5:
-        n_sym_ops_mae: 7.522 # unitless
-        symmetry_decrease: 0.234 # fraction
-        symmetry_match: 0.6 # fraction
-        symmetry_increase: 0.164 # fraction
+        n_sym_ops_mae: 2.1461 # unitless
+        symmetry_decrease: 0.0766 # fraction
+        symmetry_match: 0.7154 # fraction
+        symmetry_increase: 0.2014 # fraction
     distance:
-      rmsd: 0.0394 # unitless
+      rmsd: 0.0823 # unitless
   discovery:
     pred_file: models/deepmd/dpa3-v2-mptrj/2025-03-14-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/53018801

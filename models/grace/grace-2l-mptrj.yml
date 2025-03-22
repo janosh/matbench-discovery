@@ -62,7 +62,6 @@ metrics:
     struct_col: grace2l_r6_structure
     analysis_file: models/grace/grace-2l-mptrj/2024-11-11-relaxed-structures-5.csv.gz-combined.csv.gz
     analysis_file_url: https://figshare.com/files/52062650
-    n_structures: 256862 # count
     symmetry:
       symprec=1e-5:
         n_sym_ops_mae: 1.8703

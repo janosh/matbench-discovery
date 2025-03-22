@@ -85,7 +85,6 @@ metrics:
     struct_col: orb_structure
     analysis_file: models/orb/orbff-mptrj-v2/2024-10-14-wbm-geo-opt-moyo=0.4.2.csv.gz
     analysis_file_url: https://figshare.com/files/52062389
-    n_structures: 256963
     symmetry:
       symprec=1e-5:
         n_sym_ops_mae: 19.312 # unitless

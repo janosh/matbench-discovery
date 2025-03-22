@@ -76,7 +76,6 @@ metrics:
     pred_file_url: https://figshare.com/files/53153459
     struct_col: chgnet_structure
     analysis_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-geo-opt-moyo=0.4.2-n=256963.csv.gz
-    n_structures: 256963
     symmetry:
       symprec=1e-5:
         n_sym_ops_mae: 3.0863 # unitless

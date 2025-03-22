@@ -63,16 +63,15 @@ metrics:
     pred_file: models/bowsr/bowsr-megnet/2023-01-23-wbm-geo-opt.jsonl.gz
     pred_file_url: https://figshare.com/files/53153456
     struct_col: structure_bowsr_megnet
-    analysis_file: models/bowsr/bowsr-megnet/2023-01-23-wbm-geo-opt-moyo=0.4.2.csv.gz
-    n_structures: 256965
+    analysis_file: models/bowsr/bowsr-megnet/2023-01-23-wbm-geo-opt-moyo=0.4.2-n=251,301.csv.gz
     symmetry:
       symprec=1e-5:
-        n_sym_ops_mae: 76.0161 # unitless
-        symmetry_decrease: 0.002 # fraction
-        symmetry_match: 0.6345 # fraction
-        symmetry_increase: 0.3635 # fraction
+        n_sym_ops_mae: 29.4219 # unitless
+        symmetry_decrease: 0.0038 # fraction
+        symmetry_match: 0.5299 # fraction
+        symmetry_increase: 0.4642 # fraction
     distance:
-      rmsd: 0.1434 # unitless
+      rmsd: 0.195 # unitless
   discovery:
     pred_file: models/bowsr/bowsr-megnet/2023-01-23-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/52057523

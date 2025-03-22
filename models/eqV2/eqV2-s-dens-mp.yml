@@ -97,7 +97,6 @@ metrics:
     pred_file_url: https://figshare.com/files/53153468
     struct_col: eqV2-31M-dens-MP-p5_structure
     analysis_file: models/eqV2/eqV2-s-dens-mp/2024-10-18-wbm-geo-opt-moyo=0.4.2.csv.gz
-    n_structures: 256963
     symmetry:
       symprec=1e-5:
         n_sym_ops_mae: 19.01 # unitless

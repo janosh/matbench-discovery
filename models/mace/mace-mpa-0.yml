@@ -79,8 +79,7 @@ metrics:
     pred_file_url: https://figshare.com/files/52305026
     struct_col: mace_structure
     analysis_file: models/mace/mace-mpa-0/2025-01-30-wbm-IS2RE-FIRE-moyo=0.4.2-combined.csv.gz
-    analysis_file_url:
-    n_structures: 256963 # count
+    analysis_file_url: https://figshare.com/files/52305101
     symmetry:
       symprec=1e-2:
         n_sym_ops_mae: 1.8086

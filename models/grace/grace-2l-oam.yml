@@ -65,7 +65,6 @@ metrics:
     struct_col: grace_structure
     analysis_file: models/grace/grace-2l-oam/2025-01-28-wbm-geo-opt-moyo=0.4.2.csv.gz
     analysis_file_url: https://figshare.com/files/52858184
-    n_structures: 256963
     symmetry:
       symprec=1e-5:
         n_sym_ops_mae: 7.326 # unitless

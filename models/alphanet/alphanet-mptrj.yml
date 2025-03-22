@@ -97,22 +97,16 @@ metrics:
     pred_file: models/alphanet/2025-03-04-wbm-geo-opt-fire.jsonl.gz
     pred_file_url: https://figshare.com/files/53153453
     struct_col: alphanet_structure
-    analysis_file: models/alphanet/2025-03-04-wbm-geo-opt-fire-moyo=0.4.2.csv.gz
+    analysis_file: models/alphanet/2025-03-04-wbm-geo-opt-fire-moyo=0.4.2-n=256963.csv.gz
     analysis_file_url: https://figshare.com/files/52858208
-    n_structures: 256963
     symmetry:
       symprec=1e-5:
-        n_sym_ops_mae: 19.624 # unitless
-        symmetry_decrease: 0.962 # fraction
-        symmetry_match: 0.034 # fraction
-        symmetry_increase: 0.004 # fraction
-      symprec=1e-2:
-        n_sym_ops_mae: 8.1732
-        symmetry_decrease: 0.5768
-        symmetry_match: 0.3712
-        symmetry_increase: 0.0419
+        n_sym_ops_mae: 10.1098 # unitless
+        symmetry_decrease: 0.8597 # fraction
+        symmetry_match: 0.1376 # fraction
+        symmetry_increase: 0.0024 # fraction
     distance:
-      rmsd: 0.0658 # unitless
+      rmsd: 0.1067 # unitless
   discovery:
     pred_file: models/alphanet/2025-03-04-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/52869026
