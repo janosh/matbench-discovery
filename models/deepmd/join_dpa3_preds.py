@@ -37,12 +37,12 @@ df_dpa3 = pd.concat(dfs.values()).round(4)
 if len(df_dpa3) != len(df_wbm):  # make sure there is no missing structure
     raise ValueError("Missing structures in DPA3 results")
 
-df_cse = pd.read_json(
+df_wbm_cse = pd.read_json(
     DataFiles.wbm_computed_structure_entries.path, lines=True
 ).set_index(Key.mat_id)
-df_cse[Key.computed_structure_entry] = [
+df_wbm_cse[Key.computed_structure_entry] = [
     ComputedStructureEntry.from_dict(dct)
-    for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
+    for dct in tqdm(df_wbm_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
 ]
 
 # As DPA3 is trained on 'uncorrected energy' of MPtrj,
@@ -55,7 +55,7 @@ cse: ComputedStructureEntry
 for row in tqdm(df_dpa3.itertuples(), total=len(df_dpa3), desc="ML energies to CSEs"):
     mat_id, struct_dict, energy, *_ = row
     mlip_struct = Structure.from_dict(struct_dict)
-    cse = df_cse.loc[mat_id, Key.computed_structure_entry]
+    cse = df_wbm_cse.loc[mat_id, Key.computed_structure_entry]
     cse._energy = energy  # cse._energy is the uncorrected energy from MPtrj dataset (or vasp raw)  # noqa: E501, SLF001
     cse._structure = mlip_struct  # noqa: SLF001
     df_dpa3.loc[mat_id, Key.computed_structure_entry] = cse

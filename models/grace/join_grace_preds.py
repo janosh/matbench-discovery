@@ -72,11 +72,11 @@ def process_results(path: str) -> None:
 
     # Create ComputedStructureEntry objects with GRACE energies and structures
     wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
-    df_cse = pd.read_json(wbm_cse_path, lines=True).set_index(Key.mat_id)
+    df_wbm_cse = pd.read_json(wbm_cse_path, lines=True).set_index(Key.mat_id)
 
-    df_cse[Key.computed_structure_entry] = [
+    df_wbm_cse[Key.computed_structure_entry] = [
         ComputedStructureEntry.from_dict(dct)
-        for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
+        for dct in tqdm(df_wbm_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
     ]
 
     # %% transfer ML energies and relaxed structures WBM CSEs since MP2020 energy
@@ -87,7 +87,7 @@ def process_results(path: str) -> None:
     ):
         mat_id, struct_dict, grace_energy, *_ = row
         mlip_struct = Structure.from_dict(struct_dict)
-        cse = df_cse.loc[mat_id, Key.computed_structure_entry]
+        cse = df_wbm_cse.loc[mat_id, Key.computed_structure_entry]
         cse._energy = grace_energy  # noqa: SLF001 cse._energy is the uncorrected energy
         cse._structure = mlip_struct  # noqa: SLF001
         df_grace.loc[mat_id, Key.computed_structure_entry] = cse

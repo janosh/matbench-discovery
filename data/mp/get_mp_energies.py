@@ -60,21 +60,21 @@ df_mp.energy_type.value_counts().plot.pie(autopct="%1.1f%%")
 
 
 # %%
-df_cse = pd.read_json(DataFiles.mp_computed_structure_entries.path).set_index(
+df_mp_cse = pd.read_json(DataFiles.mp_computed_structure_entries.path).set_index(
     Key.mat_id
 )
 
-df_cse[Key.structure] = [
+df_mp_cse[Key.structure] = [
     Structure.from_dict(cse[Key.structure])
-    for cse in tqdm(df_cse.entry, desc="Hydrating structures")
+    for cse in tqdm(df_mp_cse.entry, desc="Hydrating structures")
 ]
-df_cse[f"{Key.protostructure}_moyo"] = [
+df_mp_cse[f"{Key.protostructure}_moyo"] = [
     prototype.get_protostructure_label(struct)
-    for struct in tqdm(df_cse.structure, desc="Calculating proto-structure labels")
+    for struct in tqdm(df_mp_cse.structure, desc="Calculating proto-structure labels")
 ]
 # make sure symmetry detection succeeded for all structures
-assert df_cse[f"{Key.protostructure}_moyo"].str.startswith("invalid").sum() == 0
-df_mp[f"{Key.protostructure}_moyo"] = df_cse[f"{Key.protostructure}_moyo"]
+assert df_mp_cse[f"{Key.protostructure}_moyo"].str.startswith("invalid").sum() == 0
+df_mp[f"{Key.protostructure}_moyo"] = df_mp_cse[f"{Key.protostructure}_moyo"]
 
 spg_nums = df_mp[f"{Key.protostructure}_moyo"].str.split("_").str[2].astype(int)
 # make sure all our spacegroup numbers match MP's

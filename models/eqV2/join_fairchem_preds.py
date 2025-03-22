@@ -50,11 +50,11 @@ def join_predictions(
     df_fairchem = pd.concat(dfs.values()).round(4)
 
     wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
-    df_cse = pd.read_json(wbm_cse_path, lines=True).set_index(Key.mat_id)
+    df_wbm_cse = pd.read_json(wbm_cse_path, lines=True).set_index(Key.mat_id)
 
-    df_cse[Key.computed_structure_entry] = [
+    df_wbm_cse[Key.computed_structure_entry] = [
         ComputedStructureEntry.from_dict(dct)
-        for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
+        for dct in tqdm(df_wbm_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
     ]
 
     # transfer fairchem energies and relaxed structures WBM CSEs since MP2020 energy
@@ -65,7 +65,7 @@ def join_predictions(
     ):
         mat_id, struct_dict, pred_energy, *_ = row
         mlip_struct = Structure.from_dict(struct_dict)
-        cse = df_cse.loc[mat_id, Key.computed_structure_entry]
+        cse = df_wbm_cse.loc[mat_id, Key.computed_structure_entry]
         # cse._energy is the uncorrected energy
         cse._energy = pred_energy  # noqa: SLF001
         cse._structure = mlip_struct  # noqa: SLF001

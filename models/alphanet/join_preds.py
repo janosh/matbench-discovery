@@ -32,11 +32,11 @@ if len(df_Anet) != len(df_wbm):  # make sure there is no missing structure
     raise ValueError("Missing structures in SevenNet results")
 
 wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
-df_cse = pd.read_json(wbm_cse_path, lines=True).set_index(Key.mat_id)
+df_wbm_cse = pd.read_json(wbm_cse_path, lines=True).set_index(Key.mat_id)
 
-df_cse[Key.computed_structure_entry] = [
+df_wbm_cse[Key.computed_structure_entry] = [
     ComputedStructureEntry.from_dict(dct)
-    for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
+    for dct in tqdm(df_wbm_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
 ]
 
 
@@ -45,7 +45,7 @@ cse: ComputedStructureEntry
 for row in tqdm(df_Anet.itertuples(), total=len(df_Anet), desc="ML energies to CSEs"):
     mat_id, struct_dict, energy, *_ = row
     mlip_struct = Structure.from_dict(struct_dict)
-    cse = df_cse.loc[mat_id, Key.computed_structure_entry]
+    cse = df_wbm_cse.loc[mat_id, Key.computed_structure_entry]
     cse._energy = energy  # noqa: SLF001
     cse._structure = mlip_struct  # noqa: SLF001
     df_Anet.loc[mat_id, Key.computed_structure_entry] = cse

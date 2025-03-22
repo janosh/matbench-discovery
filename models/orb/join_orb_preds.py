@@ -53,11 +53,13 @@ def main(
 
     if correct_energies:
         wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
-        df_cse = pd.read_json(wbm_cse_path, lines=True).set_index(Key.mat_id)
+        df_wbm_cse = pd.read_json(wbm_cse_path, lines=True).set_index(Key.mat_id)
 
-        df_cse[Key.computed_structure_entry] = [
+        df_wbm_cse[Key.computed_structure_entry] = [
             ComputedStructureEntry.from_dict(dct)
-            for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
+            for dct in tqdm(
+                df_wbm_cse[Key.computed_structure_entry], desc="Hydrate CSEs"
+            )
         ]
 
         # transfer predicted energies and relaxed structures WBM CSEs since
@@ -70,7 +72,7 @@ def main(
             mat_id, struct_dict, orb_energy, *_ = row
             mlip_struct = Structure.from_dict(struct_dict)
             df_orb.loc[mat_id, STRUCT_COL] = mlip_struct
-            cse = df_cse.loc[mat_id, Key.computed_structure_entry]
+            cse = df_wbm_cse.loc[mat_id, Key.computed_structure_entry]
             # cse._energy is the uncorrected energy
             cse._energy = orb_energy  # noqa: SLF001
             cse._structure = mlip_struct  # noqa: SLF001

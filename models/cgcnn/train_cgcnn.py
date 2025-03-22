@@ -60,10 +60,12 @@ task_type: TaskType = "regression"
 data_path = DataFiles.mp_energies.path
 df_in = pd.read_csv(data_path).set_index(Key.mat_id)
 
-df_cse = pd.read_json(DataFiles.mp_computed_structure_entries.path).set_index(
+df_mp_cse = pd.read_json(DataFiles.mp_computed_structure_entries.path).set_index(
     Key.mat_id
 )
-df_in[input_col] = [Structure.from_dict(cse[input_col]) for cse in tqdm(df_cse.entry)]
+df_in[input_col] = [
+    Structure.from_dict(cse[input_col]) for cse in tqdm(df_mp_cse.entry)
+]
 
 if target_col not in df_in:
     raise TypeError(f"{target_col!s} not in {df_in.columns=}")
