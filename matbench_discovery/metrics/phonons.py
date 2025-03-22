@@ -201,7 +201,7 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
     mode_kappa_tot_avgs = {}  # store results for pred and true
     # Try different data sources in order of preference for both pred and true data
     for label, kappas in {"preds": kappas_pred, "true": kappas_true}.items():
-        keys = set(kappas.keys())
+        keys = set(kappas)
         if MbdKey.mode_kappa_tot_avg in kappas:
             kappas = kappas[MbdKey.mode_kappa_tot_avg]
         elif MbdKey.mode_kappa_tot_rta in kappas:

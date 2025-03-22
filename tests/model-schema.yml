@@ -88,35 +88,42 @@ definitions:
       pred_file_url:
         type: [string, "null"]
         $ref: "#/definitions/http_url"
-      symprec=1e-5: &symprec_metrics
+      analysis_file:
+        type: [string, "null"]
+      analysis_file_url:
+        type: [string, "null"]
+        $ref: "#/definitions/http_url"
+      n_structures:
+        type: integer
+      symmetry:
         type: object
         additionalProperties: false
-        required:
-          - rmsd
-          - n_sym_ops_mae
-          - symmetry_decrease
-          - symmetry_match
-          - symmetry_increase
-          - n_structures
+        properties:
+          symprec=1e-5: &symprec_metrics
+            type: object
+            additionalProperties: false
+            required:
+              - n_sym_ops_mae
+              - symmetry_decrease
+              - symmetry_match
+              - symmetry_increase
+            properties:
+              n_sym_ops_mae:
+                type: number
+              symmetry_decrease:
+                type: number
+              symmetry_match:
+                type: number
+              symmetry_increase:
+                type: number
+          symprec=1e-2: *symprec_metrics
+      distance:
+        type: object
+        additionalProperties: false
+        required: [rmsd]
         properties:
           rmsd:
             type: number
-          n_sym_ops_mae:
-            type: number
-          symmetry_decrease:
-            type: number
-          symmetry_match:
-            type: number
-          symmetry_increase:
-            type: number
-          n_structures:
-            type: number
-          analysis_file:
-            type: [string, "null"]
-          analysis_file_url:
-            type: [string, "null"]
-            $ref: "#/definitions/http_url"
-      symprec=1e-2: *symprec_metrics
     allOf:
       - if:
           properties:

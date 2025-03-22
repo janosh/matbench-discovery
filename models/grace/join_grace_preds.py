@@ -127,7 +127,7 @@ def process_results(path: str) -> None:
     # save relaxed structures and final energies
     out_path = f"{out_dir}/{model_name}/{date}"
     df_grace.to_json(
-        f"{out_path}-wbm-IS2RE-FIRE.json.gz", default_handler=as_dict_handler
+        f"{out_path}-wbm-IS2RE-FIRE.jsonl.gz", default_handler=as_dict_handler
     )
     df_grace = df_grace.round(4)
     df_grace.select_dtypes("number").to_csv(f"{out_path}.csv.gz")

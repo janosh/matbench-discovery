@@ -4,6 +4,10 @@ individual CSV files (one per symprec value) in a model's directory.
 Output files will have the same name as the input file containing the model's relaxed
 structures, but with the symprec value appended to the filename.
 
+Note: StructureMatcher is configured with stol=1.0 and scale=False for exact matching.
+RMSD values are normalized (unitless) and NaN values are filled with 1.0 (the stol
+value) to properly account for structures that couldn't be matched.
+
 Example usage:
     python scripts/analyze_geo_opt.py --models mace_mp_0 m3gnet --symprec 1e-2 1e-5
     python scripts/analyze_geo_opt.py --debug 10  # only analyze first 10 structures
@@ -26,18 +30,19 @@ from pymatgen.core import Structure
 from pymatviz.enums import Key
 
 from matbench_discovery import ROOT
-from matbench_discovery.enums import DataFiles, Model
+from matbench_discovery.enums import DataFiles, MbdKey, Model
 from matbench_discovery.metrics import geo_opt
 from matbench_discovery.models import MODEL_METADATA
 from matbench_discovery.structure import symmetry
 
 
-def analyze_model_symprec(
+def analyze_ml_relaxed_structs(
     model: Model,
     symprec: float,
     moyo_version: str,
     df_dft_analysis: pd.DataFrame,
     dft_structs: dict[str, Structure],
+    analysis_type: str = "all",
     debug_mode: int = 0,
     pbar_pos: int = 0,  # tqdm progress bar position
 ) -> None:
@@ -64,7 +69,7 @@ def analyze_model_symprec(
         )
         return
 
-    # Load model structures
+    # Load ML-relaxed structures
     try:
         if ml_relaxed_structs_path.endswith((".json", ".json.gz", ".json.xz")):
             df_ml_structs = pd.read_json(ml_relaxed_structs_path)
@@ -98,21 +103,26 @@ def analyze_model_symprec(
         )
         return
 
-    # Convert structures
+    # Hydrate ML-relaxed structures
     model_structs = {
         mat_id: Structure.from_dict(struct_dict)
         for mat_id, struct_dict in df_ml_structs[struct_col].items()
     }
 
+    # Create suffix based on analysis type
+    analysis_suffix = f"-{analysis_type}" if analysis_type != "all" else ""
+
     symprec_str = f"symprec={symprec:.0e}".replace("e-0", "e-")
     geo_opt_filename = model.geo_opt_path.removesuffix(".json.gz")
-    geo_opt_csv_path = f"{geo_opt_filename}-{symprec_str}-{moyo_version}.csv.gz"
+    geo_opt_csv_path = (
+        f"{geo_opt_filename}-{symprec_str}-{moyo_version}{analysis_suffix}.csv.gz"
+    )
 
     if os.path.isfile(geo_opt_csv_path):
         print(f"{model.label} already analyzed at {geo_opt_csv_path}")
         return
 
-    # Analyze symmetry for current symprec
+    # Always analyze symmetry for the model
     pbar_desc = f"Process {pbar_pos}: Analyzing {model.label} for {symprec=}"
     df_model_analysis = symmetry.get_sym_info_from_structs(
         model_structs,
@@ -120,23 +130,41 @@ def analyze_model_symprec(
         symprec=symprec,
     )
 
-    # Compare with DFT reference
-    pbar_desc = f"Process {pbar_pos}:Comparing DFT vs {model.label} for {symprec=}"
-    # break here
-    df_ml_geo_analysis = symmetry.pred_vs_ref_struct_symmetry(
-        df_model_analysis,
-        df_dft_analysis,
-        model_structs,
-        dft_structs,
-        pbar=dict(desc=pbar_desc, position=pbar_pos, leave=True),
-    )
+    # Initialize the result DataFrame
+    df_result = df_model_analysis.copy()
+
+    # Compare symmetry with DFT reference if needed
+    if analysis_type in ("all", "symmetry"):
+        # Verify index names for symmetry comparison
+        if df_dft_analysis.index.name != Key.mat_id:
+            raise ValueError(f"{df_dft_analysis.index.name=} must be {Key.mat_id!s}")
+        if df_model_analysis.index.name != Key.mat_id:
+            raise ValueError(f"{df_model_analysis.index.name=} must be {Key.mat_id!s}")
+
+        # Calculate symmetry differences
+        df_result[MbdKey.spg_num_diff] = (
+            df_model_analysis[Key.spg_num] - df_dft_analysis[Key.spg_num]
+        )
+        df_result[MbdKey.n_sym_ops_diff] = (
+            df_model_analysis[Key.n_sym_ops] - df_dft_analysis[Key.n_sym_ops]
+        )
+
+    # Calculate structure distances if needed
+    if analysis_type in ("all", "distance"):
+        pbar_desc = f"Process {pbar_pos}: Comparing DFT vs {model.label} for {symprec=}"
+        df_result = symmetry.calc_structure_distances(
+            df_result,
+            model_structs,
+            dft_structs,
+            pbar=dict(desc=pbar_desc, position=pbar_pos, leave=True),
+        )
 
     # Save model results
-    df_ml_geo_analysis.to_csv(geo_opt_csv_path)
+    df_result.to_csv(geo_opt_csv_path)
     print(f"Completed {model.label} {symprec=} and saved results to {geo_opt_csv_path}")
 
     # Calculate metrics and write to YAML
-    df_metrics = geo_opt.calc_geo_opt_metrics(df_ml_geo_analysis)
+    df_metrics = geo_opt.calc_geo_opt_metrics(df_result)
     print(f"\nCalculated metrics: {df_metrics}")
     geo_opt.write_metrics_to_yaml(df_metrics, model, symprec, geo_opt_csv_path)
 
@@ -159,6 +187,14 @@ if __name__ == "__main__":
         help="Symmetry precision values to analyze.",
     )
     parser.add_argument(
+        "--analysis_type",
+        type=str,
+        choices=("all", "symmetry", "distance"),
+        default="all",
+        help="Analysis to perform. 'all': both symmetry and structure distances, "
+        "'symmetry': only symmetry, 'distance': only structure distance.",
+    )
+    parser.add_argument(
         "--debug",
         type=int,
         default=0,
@@ -176,6 +212,8 @@ if __name__ == "__main__":
     debug_mode: Final[int] = args.debug
     # List of symprec values to analyze
     symprec_values: Final[Sequence[float]] = args.symprec
+    # Type of analysis to perform
+    analysis_type: Final[str] = args.analysis_type
 
     # Get list of models to analyze
     moyo_version = f"moyo={importlib.metadata.version('moyopy')}"
@@ -223,12 +261,13 @@ if __name__ == "__main__":
     with ProcessPoolExecutor(max_workers=n_workers) as executor:
         futures = [
             executor.submit(
-                analyze_model_symprec,
+                analyze_ml_relaxed_structs,
                 model_name,
                 symprec,
                 moyo_version,
                 dft_analysis_dict[symprec],
                 dft_structs,
+                analysis_type,
                 debug_mode,
                 pbar_pos=idx,  # assign unique position to each task's progress bar
             )
