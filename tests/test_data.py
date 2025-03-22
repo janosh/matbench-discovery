@@ -386,5 +386,39 @@ metrics:
 
     # Test bad paths
     for path in ("metrics..discovery", "metrics..", "metrics.discovery..", "."):
-        with pytest.raises(ValueError, match="Invalid dotted path"):
+        with pytest.raises(ValueError, match=f"Invalid dotted_path={path!r}"):
             update_yaml_at_path(test_file, path, {"data": 1})
+
+
+@pytest.mark.parametrize(
+    "path, expected_result",
+    [
+        ("metrics.discovery", {"mae": 0.1, "rmse": 0.2}),
+        ("top_level", "value"),
+        ("does.not.exist", {}),
+        ("metrics", {"discovery": {"mae": 0.1, "rmse": 0.2}, "mp": {"mae": 0.3}}),
+    ],
+)
+def test_update_yaml_at_path_read_only(
+    tmp_path: Path, path: str, expected_result: dict[str, Any] | str
+) -> None:
+    """Test the read-only functionality of update_yaml_at_path (when data=None)."""
+    test_file = f"{tmp_path}/test_read.yml"
+
+    # Create a test YAML file with nested structure
+    test_data = {
+        "metrics": {"discovery": {"mae": 0.1, "rmse": 0.2}, "mp": {"mae": 0.3}},
+        "top_level": "value",
+    }
+
+    with open(test_file, mode="w") as file:
+        round_trip_yaml.dump(test_data, file)
+
+    # Test reading from path
+    result = update_yaml_at_path(test_file, path, data=None)
+    assert result == expected_result
+
+    # Ensure file wasn't modified
+    with open(test_file) as file:
+        yaml_data = round_trip_yaml.load(file)
+    assert yaml_data == test_data
