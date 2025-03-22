@@ -117,7 +117,7 @@ class TrajectoryObserver:
         Args:
             filename (str): Filename to save the trajectory.
         """
-        with open(filename, "wb") as f:
+        with open(filename, mode="wb") as f:
             pickle.dump(
                 {
                     "energy": self.energies,

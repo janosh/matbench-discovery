@@ -130,7 +130,7 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:
     result: dict[str, float] = {str(Key.n_structures): float(len(df_model_analysis))}
 
     # Calculate RMSD metrics if distance analysis was performed
-    if MbdKey.structure_rmsd_vs_dft in df_model_analysis.columns:
+    if MbdKey.structure_rmsd_vs_dft in df_model_analysis:
         # First convert to numeric type, then fill NaN values
         rmsd_vals = pd.to_numeric(
             df_model_analysis[MbdKey.structure_rmsd_vs_dft], errors="coerce"
@@ -141,8 +141,8 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:
 
     # Calculate symmetry metrics if columns exist
     has_symmetry = (
-        MbdKey.spg_num_diff in df_model_analysis.columns
-        and MbdKey.n_sym_ops_diff in df_model_analysis.columns
+        MbdKey.spg_num_diff in df_model_analysis
+        and MbdKey.n_sym_ops_diff in df_model_analysis
     )
 
     if has_symmetry:

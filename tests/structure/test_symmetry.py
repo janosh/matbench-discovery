@@ -67,12 +67,12 @@ def test_pred_vs_ref_struct_symmetry(
         df_compared, {key: cubic_struct}, {key: tetragonal_struct}
     )
 
-    assert MbdKey.spg_num_diff in df_compared.columns
-    assert MbdKey.n_sym_ops_diff in df_compared.columns
+    assert MbdKey.spg_num_diff in df_compared
+    assert MbdKey.n_sym_ops_diff in df_compared
     assert df_compared[MbdKey.spg_num_diff].iloc[0] == 229 - 47
     n_sym_ops_ml, n_sym_ops_dft = 96, 8
     assert df_compared[MbdKey.n_sym_ops_diff].iloc[0] == n_sym_ops_ml - n_sym_ops_dft
-    assert MbdKey.structure_rmsd_vs_dft in df_compared.columns
+    assert MbdKey.structure_rmsd_vs_dft in df_compared
 
 
 def test_analyze_symmetry_perturbed_structure(cubic_struct: Structure) -> None:
@@ -278,5 +278,5 @@ def test_calc_structure_distances_with_mismatched_ids() -> None:
 
     # Should return DataFrame with NaN values for RMSD
     df_result = symmetry.calc_structure_distances(df_result, pred_structs, ref_structs)
-    assert MbdKey.structure_rmsd_vs_dft in df_result.columns
+    assert MbdKey.structure_rmsd_vs_dft in df_result
     assert df_result[MbdKey.structure_rmsd_vs_dft].isna().sum() == len(df_result)
