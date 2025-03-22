@@ -47,7 +47,7 @@ mp_trj_extxyz:
   md5: 7f433171e4e5f2ef9304dccd42d5488f
 
 wbm_computed_structure_entries:
-  url: https://figshare.com/files/40344463
+  url: https://figshare.com/files/53161832
   path: wbm/2022-10-19-wbm-computed-structure-entries.json.bz2
   description: JSON-Serialized `pymatgen` [`ComputedStructureEntries`] containing all WBM DFT-relaxed structures and corresponding final energies
   md5: 481959b65f28150ae6ee7297ddeba538
@@ -59,7 +59,7 @@ wbm_relaxed_atoms:
   md5: 4726643ac0dfbab69a4284454c891e68
 
 wbm_initial_structures:
-  url: https://figshare.com/files/40344466
+  url: https://figshare.com/files/53161835
   path: wbm/2022-10-19-wbm-init-structs.json.bz2
   description: Unrelaxed WBM structures in `pymatgen` `Structure` format
   md5: ff2c40a3a7bf65468852b67f0dbc67df

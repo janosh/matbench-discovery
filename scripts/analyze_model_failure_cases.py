@@ -29,9 +29,9 @@ fp_diff_col = "site_stats_fingerprint_init_final_norm_diff"
 
 
 # %%
-df_cse = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path, lines=True).set_index(
-    Key.mat_id
-)
+df_wbm_cse = pd.read_json(
+    DataFiles.wbm_computed_structure_entries.path, lines=True
+).set_index(Key.mat_id)
 
 
 # %% plot highest and lowest error structures before and after relaxation with Plotly
@@ -53,9 +53,9 @@ for good_or_bad, init_or_final in itertools.product(
     structures: dict[str, Structure] = {}
     for idx, (mat_id, error) in enumerate(errors.items()):
         struct = Structure.from_dict(
-            df_cse[Key.computed_structure_entry]
+            df_wbm_cse[Key.computed_structure_entry]
             .loc[mat_id]
-            .get("structure", df_cse[Key.computed_structure_entry].loc[mat_id])
+            .get("structure", df_wbm_cse[Key.computed_structure_entry].loc[mat_id])
         )
         title = (
             f"{idx + 1}. {struct.reduced_formula}<br>"

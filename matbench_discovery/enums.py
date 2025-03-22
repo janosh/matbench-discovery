@@ -480,10 +480,6 @@ class DataFiles(Files):
     wbm_relaxed_atoms = auto(), "wbm/2024-08-04-wbm-relaxed-atoms.extxyz.zip"
     wbm_initial_structures = auto(), "wbm/2022-10-19-wbm-init-structs.jsonl.gz"
     wbm_initial_atoms = auto(), "wbm/2024-08-04-wbm-initial-atoms.extxyz.zip"
-    wbm_cses_plus_init_structs = (
-        auto(),
-        "wbm/2022-10-19-wbm-computed-structure-entries+init-structs.jsonl.gz",
-    )
     wbm_summary = auto(), "wbm/2023-12-13-wbm-summary.csv.gz"
     alignn_checkpoint = auto(), "2023-06-02-pbenner-best-alignn-model.pth.zip"
     phonondb_pbe_103_structures = (

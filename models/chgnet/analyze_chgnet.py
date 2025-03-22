@@ -65,10 +65,10 @@ fig.show()
 
 
 # %%
-df_cse = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path, lines=True).set_index(
-    Key.mat_id
-)
-df_cse.loc[df_diff.index].reset_index().to_json(
+df_wbm_init_structs = pd.read_json(
+    DataFiles.wbm_initial_structures.path, lines=True
+).set_index(Key.mat_id)
+df_wbm_init_structs.loc[df_diff.index].reset_index().to_json(
     f"{module_dir}/wbm-chgnet-bad-relax.json.gz"
 )
 
@@ -81,7 +81,7 @@ struct_col = Key.init_struct
 structures = {
     f"{idx} {(struct := Structure.from_dict(row[struct_col])).reduced_formula} "
     f"(spg={struct.get_space_group_info()[1]})": struct
-    for idx, row in df_cse.loc[df_diff.index].iloc[:n_struct].iterrows()
+    for idx, row in df_wbm_init_structs.loc[df_diff.index].iloc[:n_struct].iterrows()
 }
 fig = pmv.structure_2d_plotly(structures, n_cols=4)
 fig.layout.title.update(text=f"<b>{n_struct} {struct_col} {title}</b>")

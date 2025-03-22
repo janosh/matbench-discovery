@@ -19,12 +19,16 @@ __author__ = "Janosh Riebesell"
 __date__ = "2022-06-18"
 
 module_dir = os.path.dirname(__file__)
+ml_struct_col = "m3gnet_structure"
 
 
 # %%
-df_wbm = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path, lines=True).set_index(
-    Key.mat_id
-)
+df_wbm_init_structs = pd.read_json(
+    DataFiles.wbm_initial_structures.path, lines=True
+).set_index(Key.mat_id)
+df_wbm_final_structs = pd.read_json(
+    DataFiles.wbm_computed_structure_entries.path, lines=True
+).set_index(Key.mat_id)
 
 df_summary = pd.read_csv(DataFiles.wbm_summary.path).set_index(Key.mat_id)
 
@@ -38,7 +42,7 @@ df_m3gnet_rs2re = pd.read_json(rs2re_path).set_index(Key.mat_id)
 
 
 # %%
-df_wbm["m3gnet_volume"] = df_m3gnet_is2re.m3gnet_volume
+df_wbm_init_structs["m3gnet_volume"] = df_m3gnet_is2re.m3gnet_volume
 
 
 # %% spread M3GNet post-pseudo-relaxation lattice params into separate columns
@@ -54,24 +58,30 @@ df_m3gnet_is2re[df_m3gnet_lattice.columns] = df_m3gnet_lattice.to_numpy()
 
 # %% spread WBM initial and final lattice params into separate columns
 df_wbm_final_lattice = pd.json_normalize(
-    df_wbm[Key.computed_structure_entry].map(lambda cse: cse["structure"]["lattice"])
+    df_wbm_final_structs[Key.computed_structure_entry].map(
+        lambda cse: cse["structure"]["lattice"]
+    )
 ).add_prefix("final_wbm_")
-df_wbm["final_wbm_volume"] = df_wbm_final_lattice.final_wbm_volume.to_numpy()
+df_wbm_final_structs["final_wbm_volume"] = (
+    df_wbm_final_lattice.final_wbm_volume.to_numpy()
+)
 
 df_wbm_initial_lattice = pd.json_normalize(
-    df_wbm[Key.init_struct].map(lambda x: (x or {}).get("lattice"))
+    df_wbm_init_structs[Key.init_struct].map(lambda x: (x or {}).get("lattice"))
 ).add_prefix("initial_wbm_")
-df_wbm["initial_wbm_volume"] = df_wbm_initial_lattice.initial_wbm_volume.to_numpy()
+df_wbm_init_structs["initial_wbm_volume"] = (
+    df_wbm_initial_lattice.initial_wbm_volume.to_numpy()
+)
 
 
 # 2 materials have no initial structure: wbm-5-23166, wbm-5-23294
-print(f"{df_wbm.isna().sum()=}")
-df_wbm.query("initial_wbm_volume.isna()").index.tolist()
+print(f"{df_wbm_init_structs.isna().sum()=}")
+df_wbm_init_structs.query("initial_wbm_volume.isna()").index.tolist()
 
 
 # %% parity plot of M3GNet/initial volumes vs DFT-relaxed volumes
 ax = pmv.density_scatter(
-    df=df_wbm.query("m3gnet_volume < 2000"),
+    df=df_wbm_init_structs.query("m3gnet_volume < 2000"),
     x="final_wbm_volume",
     y="m3gnet_volume",
     cmap="Reds",
@@ -79,7 +89,7 @@ ax = pmv.density_scatter(
     stats=dict(loc="lower right", prefix="m3gnet to final (red)\n"),
 )
 pmv.density_scatter(
-    df=df_wbm.query("m3gnet_volume < 2000"),
+    df=df_wbm_init_structs.query("m3gnet_volume < 2000"),
     x="final_wbm_volume",
     y="initial_wbm_volume",
     ax=ax,
@@ -94,7 +104,7 @@ pmv.save_fig(ax, f"{SITE_FIGS}/m3gnet-wbm-volume-scatter.webp", dpi=200)
 
 
 # %% histogram of M3GNet-relaxed vs initial WBM volume residuals wrt DFT-relaxed volume
-df_plot = df_wbm.query("m3gnet_volume < 300").filter(like="volume")
+df_plot = df_wbm_init_structs.query("m3gnet_volume < 300").filter(like="volume")
 df_plot["m3gnet_vol_diff"] = df_plot.m3gnet_volume - df_plot.final_wbm_volume
 df_plot["dft_vol_diff"] = df_plot.initial_wbm_volume - df_plot.final_wbm_volume
 fig = px.histogram(
@@ -112,9 +122,7 @@ fig.write_image(f"{SITE_FIGS}/m3gnet-wbm-volume-diff-residual-hist.webp", scale=
 
 # %% compute mean absolute PBC difference between initial and final fractional
 # coordinates of crystal sites
-df_m3gnet_is2re["m3gnet_structure"] = df_m3gnet_is2re.m3gnet_structure.map(
-    Structure.from_dict
-)
+df_m3gnet_is2re[ml_struct_col] = df_m3gnet_is2re[ml_struct_col].map(Structure.from_dict)
 df_m3gnet_is2re["initial_wbm_structure"] = df_m3gnet_is2re.initial_wbm_structure.map(
     Structure.from_dict
 )
@@ -127,7 +135,7 @@ df_m3gnet_is2re["m3gnet_pbc_diffs"] = [
     abs(
         pbc_diff(
             row.initial_wbm_structure.frac_coords,
-            row.m3gnet_structure.frac_coords,
+            row[ml_struct_col].frac_coords,
         )
     ).mean()
     for row in df_m3gnet_is2re.itertuples()
@@ -137,8 +145,7 @@ df_m3gnet_is2re["m3gnet_pbc_diffs"] = [
 df_m3gnet_is2re["wbm_pbc_diffs"] = [
     abs(
         pbc_diff(
-            row.initial_wbm_structure.frac_coords,
-            row.final_wbm_structure.frac_coords,
+            row.initial_wbm_structure.frac_coords, row.final_wbm_structure.frac_coords
         )
     ).mean()
     for row in df_m3gnet_is2re.itertuples()
@@ -146,18 +153,14 @@ df_m3gnet_is2re["wbm_pbc_diffs"] = [
 
 df_m3gnet_is2re["m3gnet_to_final_wbm_pbc_diffs"] = [
     abs(
-        pbc_diff(
-            row.m3gnet_structure.frac_coords,
-            row.final_wbm_structure.frac_coords,
-        )
+        pbc_diff(row[ml_struct_col].frac_coords, row.final_wbm_structure.frac_coords)
     ).mean()
     for row in df_m3gnet_is2re.itertuples()
 ]
 
 
 print(
-    "mean PBC difference of fractional coordinates before vs after relaxation with WBM "
-    "and M3GNet"
+    "mean PBC difference of frac coords before vs after relaxation with WBM and M3GNet"
 )
 
 wbm_pbc_diffs_mean = df_m3gnet_is2re.wbm_pbc_diffs.mean()

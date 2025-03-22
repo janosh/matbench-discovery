@@ -28,7 +28,7 @@ __date__ = "2023-03-26"
 data_name = "wbm"
 job_name = f"{data_name}-struct-fingerprints"
 data_path = {
-    "wbm": DataFiles.wbm_cses_plus_init_structs.path,
+    "wbm": DataFiles.wbm_computed_structure_entries.path,
     "mp": DataFiles.mp_computed_structure_entries.path,
 }[data_name]
 

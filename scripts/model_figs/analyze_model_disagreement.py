@@ -6,8 +6,6 @@ models can pinpoint DFT calculation gone wrong.
 import pandas as pd
 import pymatviz as pmv
 from pymatviz.enums import Key
-from pymatviz.powerups import add_identity_line
-from pymatviz.typing import PLOTLY
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.cli import cli_args
@@ -80,7 +78,7 @@ for material_cls, pattern in material_classes.items():
         x=MbdKey.each_true,
         y=MbdKey.each_mean_models,
         color=MbdKey.model_std_each,
-        backend=PLOTLY,
+        backend="plotly",
         hover_name=Key.mat_id,
         hover_data=[Key.formula],
         color_continuous_scale="Turbo",
@@ -90,7 +88,7 @@ for material_cls, pattern in material_classes.items():
     # yanchor="bottom", y=1, xanchor="center", x=0.5, orientation="h", thickness=12
     fig.layout.coloraxis.colorbar.update(title_side="right", thickness=14)
     fig.layout.margin.update(l=60, r=10, t=30, b=60)
-    add_identity_line(fig)
+    pmv.powerups.add_identity_line(fig)
     label = {"all": "structures"}.get(material_cls, material_cls)
     # title = (
     #     f"{n_structs} {material_cls} with largest hull distance errors<br>"
@@ -109,23 +107,3 @@ for material_cls, pattern in material_classes.items():
     img_name = f"scatter-largest-errors-models-mean-vs-true-hull-dist-{material_cls}{img_suffix}"  # noqa: E501
     pmv.save_fig(fig, f"{SITE_FIGS}/{img_name}.svelte")
     pmv.save_fig(fig, f"{PDF_FIGS}/{img_name}.pdf", width=600, height=300)
-
-
-# %%
-if False:
-    from matbench_discovery.data import DataFiles
-
-    df_cse = pd.read_json(
-        DataFiles.wbm_cses_plus_init_structs.path, lines=True
-    ).set_index(Key.mat_id)
-    if pmv.IS_IPYTHON:  # only run this in Jupyter Notebook
-        from crystal_toolkit.helpers.utils import hook_up_fig_with_struct_viewer
-
-        app = hook_up_fig_with_struct_viewer(
-            fig,
-            df_cse,
-            Key.init_struct,
-            # validate_id requires material_id to be hover_name
-            validate_id=lambda mat_id: mat_id.startswith(("wbm-", "mp-", "mvc-")),
-        )
-        app.run()
