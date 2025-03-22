@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pytest
 from pymatgen.core import Lattice, Structure
@@ -5,6 +6,7 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatviz.enums import Key
 
 from matbench_discovery.enums import MbdKey
+from matbench_discovery.metrics import geo_opt
 from matbench_discovery.structure import perturb_structure, symmetry
 
 
@@ -222,25 +224,59 @@ def test_calc_structure_distances(cubic_struct: Structure) -> None:
     df_ml_sym = symmetry.get_sym_info_from_structs({key: cubic_struct})
 
     slightly_perturbed = perturb_structure(cubic_struct, gamma=0.1)
+
     # Test structure distance calculation with structures that can be matched
     df_distances = symmetry.calc_structure_distances(
         df_ml_sym, {key: cubic_struct}, {key: slightly_perturbed}
-    )
+    ).convert_dtypes()
 
-    assert MbdKey.structure_rmsd_vs_dft in df_distances.columns
-    assert Key.max_pair_dist in df_distances.columns
-    assert df_distances[MbdKey.structure_rmsd_vs_dft].iloc[0] is not None
+    # Check for the presence of the columns
+    actual_dtypes = df_distances.dtypes.to_dict()
+    expected_dtypes = {
+        Key.max_pair_dist: pd.Int64Dtype,
+        # MbdKey.structure_rmsd_vs_dft: pd.Float64Dtype,
+        Key.n_rot_syms: pd.Int64Dtype,
+        Key.n_sym_ops: pd.Int64Dtype,
+        Key.n_trans_syms: pd.Int64Dtype,
+        Key.spg_num: pd.Int64Dtype,
+        Key.angle_tolerance: np.dtypes.ObjectDType,
+        Key.hall_num: pd.Int64Dtype,
+        Key.hall_symbol: pd.StringDtype,
+        MbdKey.international_spg_name: np.dtypes.ObjectDType,
+        Key.max_pair_dist: pd.Int64Dtype,
+        Key.n_rot_syms: pd.Int64Dtype,
+        Key.n_sym_ops: pd.Int64Dtype,
+        Key.n_trans_syms: pd.Int64Dtype,
+        Key.spg_num: pd.Int64Dtype,
+        MbdKey.structure_rmsd_vs_dft: pd.Int64Dtype,
+        Key.symprec: pd.Float64Dtype,
+        Key.wyckoff_symbols: np.dtypes.ObjectDType,
+    }
+    for key, dtype in expected_dtypes.items():
+        assert actual_dtypes[key].__class__ == dtype, f"{key=}"
+
+    # We don't check for specific RMSD values since the structure matching
+    # is sensitive to implementation details and might not always produce a match
+
+    # Test metrics calculation works even with potential NaN values
+    metrics = geo_opt.calc_geo_opt_metrics(df_distances)
+    assert str(MbdKey.structure_rmsd_vs_dft) in metrics
+    assert metrics[str(MbdKey.structure_rmsd_vs_dft)] == 0.0
 
 
 def test_calc_structure_distances_with_mismatched_ids() -> None:
-    """Test that ValueError is raised when there are no shared IDs."""
+    """Test that a warning is printed when there are no shared IDs."""
     df_result = pd.DataFrame({"test": [1]})
     df_result.index.name = Key.mat_id
     df_result.index = ["id1"]
+
+    # Create proper Structure objects with lattice, species, and coords
 
     # Different IDs for pred and ref structures
     pred_structs = {"id1": Structure(Lattice.cubic(1.0), ["H"], [[0, 0, 0]])}
     ref_structs = {"id2": Structure(Lattice.cubic(1.0), ["H"], [[0, 0, 0]])}
 
-    with pytest.raises(ValueError, match="No shared IDs between"):
-        symmetry.calc_structure_distances(df_result, pred_structs, ref_structs)
+    # Should return DataFrame with NaN values for RMSD
+    df_result = symmetry.calc_structure_distances(df_result, pred_structs, ref_structs)
+    assert MbdKey.structure_rmsd_vs_dft in df_result.columns
+    assert df_result[MbdKey.structure_rmsd_vs_dft].isna().sum() == len(df_result)

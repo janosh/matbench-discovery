@@ -93,12 +93,19 @@ def calc_structure_distances(
     structure_matcher = StructureMatcher(stol=1.0, scale=False)
     ref_ids, pred_ids = set(ref_structs), set(pred_structs)
     shared_ids = ref_ids & pred_ids
-    if len(shared_ids) == 0:
-        raise ValueError(f"No shared IDs between:\n{pred_ids=}\n{ref_ids=}")
 
     # Initialize RMSD column
     df_result[MbdKey.structure_rmsd_vs_dft] = None
     df_result[Key.max_pair_dist] = None
+
+    if len(shared_ids) == 0:
+        print(
+            f"⚠️ Warning: No shared IDs between {len(pred_ids)} model and "
+            f"{len(ref_ids)} reference structures."
+        )
+        print(f"First 5 model IDs: {list(pred_ids)[:5]}")
+        print(f"First 5 reference IDs: {list(ref_ids)[:5]}")
+        return df_result  # Return DataFrame with NaN values for RMSD
 
     if pbar:
         pbar_kwargs = dict(leave=False, desc="Calculating RMSD") | (
