@@ -359,7 +359,7 @@ df_sym_change = (
 
 
 # %%
-df_wbm_structs = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path)
+df_wbm_structs = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path, lines=True)
 df_wbm_structs = df_wbm_structs.set_index(Key.mat_id)
 
 

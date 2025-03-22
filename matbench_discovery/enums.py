@@ -458,7 +458,7 @@ class DataFiles(Files):
 
     mp_computed_structure_entries = (
         auto(),
-        ("mp/2023-02-07-mp-computed-structure-entries.json.gz"),
+        "mp/2023-02-07-mp-computed-structure-entries.json.gz",
     )
     mp_elemental_ref_entries = (
         auto(),
@@ -475,24 +475,24 @@ class DataFiles(Files):
 
     wbm_computed_structure_entries = (
         auto(),
-        ("wbm/2022-10-19-wbm-computed-structure-entries.json.bz2"),
+        "wbm/2022-10-19-wbm-computed-structure-entries.jsonl.gz",
     )
     wbm_relaxed_atoms = auto(), "wbm/2024-08-04-wbm-relaxed-atoms.extxyz.zip"
-    wbm_initial_structures = auto(), "wbm/2022-10-19-wbm-init-structs.json.bz2"
+    wbm_initial_structures = auto(), "wbm/2022-10-19-wbm-init-structs.jsonl.gz"
     wbm_initial_atoms = auto(), "wbm/2024-08-04-wbm-initial-atoms.extxyz.zip"
     wbm_cses_plus_init_structs = (
         auto(),
-        ("wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2"),
+        "wbm/2022-10-19-wbm-computed-structure-entries+init-structs.jsonl.gz",
     )
     wbm_summary = auto(), "wbm/2023-12-13-wbm-summary.csv.gz"
     alignn_checkpoint = auto(), "2023-06-02-pbenner-best-alignn-model.pth.zip"
     phonondb_pbe_103_structures = (
         auto(),
-        ("phonons/2024-11-09-phononDB-PBE-103-structures.extxyz"),
+        "phonons/2024-11-09-phononDB-PBE-103-structures.extxyz",
     )
     phonondb_pbe_103_kappa_no_nac = (
         auto(),
-        ("phonons/2024-11-09-kappas-phononDB-PBE-noNAC.json.gz"),
+        "phonons/2024-11-09-kappas-phononDB-PBE-noNAC.json.gz",
     )
     wbm_dft_geo_opt_symprec_1e_2 = (
         auto(),

@@ -22,7 +22,9 @@ module_dir = os.path.dirname(__file__)
 
 
 # %%
-df_wbm = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path).set_index(Key.mat_id)
+df_wbm = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path, lines=True).set_index(
+    Key.mat_id
+)
 
 df_summary = pd.read_csv(DataFiles.wbm_summary.path).set_index(Key.mat_id)
 

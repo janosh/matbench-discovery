@@ -166,7 +166,12 @@ def analyze_ml_relaxed_structs(
     # Calculate metrics and write to YAML
     df_metrics = geo_opt.calc_geo_opt_metrics(df_result)
     print(f"\nCalculated metrics: {df_metrics}")
-    geo_opt.write_metrics_to_yaml(df_metrics, model, symprec, geo_opt_csv_path)
+    geo_opt.write_metrics_to_yaml(
+        df_metrics,
+        model,
+        analysis_file_path=geo_opt_csv_path,
+        symprec=symprec,
+    )
 
 
 if __name__ == "__main__":
@@ -221,7 +226,9 @@ if __name__ == "__main__":
     # %%
     print("Loading WBM PBE structures...")
     wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
-    df_wbm_structs: pd.DataFrame = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
+    df_wbm_structs: pd.DataFrame = pd.read_json(wbm_cse_path, lines=True).set_index(
+        Key.mat_id
+    )
 
     if debug_mode:
         df_wbm_structs = df_wbm_structs.head(debug_mode)

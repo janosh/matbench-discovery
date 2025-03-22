@@ -43,7 +43,6 @@ data_path = {
     Task.RS2RE: DataFiles.wbm_computed_structure_entries.path,
 }[task_type]
 
-
 slurm_vars = slurm_submit(
     job_name=job_name,
     out_dir=out_dir,
@@ -72,7 +71,7 @@ print(f"\nJob {job_name} started {timestamp}")
 print(f"{data_path = }")
 print(f"{out_path=}")
 
-df_in = pd.read_json(data_path).set_index(Key.mat_id)
+df_in = pd.read_json(data_path, lines=True).set_index(Key.mat_id)
 if slurm_array_task_count > 1:
     df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
 

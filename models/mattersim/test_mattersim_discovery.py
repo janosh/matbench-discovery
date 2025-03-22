@@ -61,7 +61,7 @@ def parse_relaxed_atoms_list_as_df(
     e_form_col = "e_form_per_atom_mattersim"
 
     wbm_cse_paths = DataFiles.wbm_computed_structure_entries.path
-    df_cse = pd.read_json(wbm_cse_paths).set_index(Key.mat_id)
+    df_cse = pd.read_json(wbm_cse_paths, lines=True).set_index(Key.mat_id)
 
     df_cse[Key.computed_structure_entry] = [
         ComputedStructureEntry.from_dict(dct)

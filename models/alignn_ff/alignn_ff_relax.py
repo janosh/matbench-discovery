@@ -48,7 +48,7 @@ data_path = {
 }[task_type]
 input_col = {Task.IS2RE: Key.init_struct, Task.RS2RE: Key.final_struct}[task_type]
 
-df_in = pd.read_json(data_path).set_index(Key.mat_id)
+df_in = pd.read_json(data_path, lines=True).set_index(Key.mat_id)
 
 df_in[MbdKey.e_form_dft] = df_wbm[MbdKey.e_form_dft]
 if task_type == Task.RS2RE:

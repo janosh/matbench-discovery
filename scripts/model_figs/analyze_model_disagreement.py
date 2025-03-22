@@ -115,9 +115,9 @@ for material_cls, pattern in material_classes.items():
 if False:
     from matbench_discovery.data import DataFiles
 
-    df_cse = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path).set_index(
-        Key.mat_id
-    )
+    df_cse = pd.read_json(
+        DataFiles.wbm_cses_plus_init_structs.path, lines=True
+    ).set_index(Key.mat_id)
     if pmv.IS_IPYTHON:  # only run this in Jupyter Notebook
         from crystal_toolkit.helpers.utils import hook_up_fig_with_struct_viewer
 

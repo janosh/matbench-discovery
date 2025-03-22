@@ -37,9 +37,9 @@ df_dpa3 = pd.concat(dfs.values()).round(4)
 if len(df_dpa3) != len(df_wbm):  # make sure there is no missing structure
     raise ValueError("Missing structures in DPA3 results")
 
-df_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_index(
-    Key.mat_id
-)
+df_cse = pd.read_json(
+    DataFiles.wbm_computed_structure_entries.path, lines=True
+).set_index(Key.mat_id)
 df_cse[Key.computed_structure_entry] = [
     ComputedStructureEntry.from_dict(dct)
     for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Hydrate CSEs")

@@ -708,9 +708,9 @@ df_summary.round(6).to_csv(f"{WBM_DIR}/{today}-wbm-summary.csv.gz")
 # %% only here to load data for later inspection
 if False:
     df_summary = pd.read_csv(DataFiles.wbm_summary.path).set_index(Key.mat_id)
-    df_wbm = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path).set_index(
-        Key.mat_id
-    )
+    df_wbm = pd.read_json(
+        DataFiles.wbm_cses_plus_init_structs.path, lines=True
+    ).set_index(Key.mat_id)
 
     df_wbm[Key.computed_structure_entry] = [
         ComputedStructureEntry.from_dict(dct)

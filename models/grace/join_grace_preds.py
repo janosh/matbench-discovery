@@ -72,7 +72,7 @@ def process_results(path: str) -> None:
 
     # Create ComputedStructureEntry objects with GRACE energies and structures
     wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
-    df_cse = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
+    df_cse = pd.read_json(wbm_cse_path, lines=True).set_index(Key.mat_id)
 
     df_cse[Key.computed_structure_entry] = [
         ComputedStructureEntry.from_dict(dct)

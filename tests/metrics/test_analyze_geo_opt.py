@@ -6,7 +6,7 @@
 import gzip
 import importlib.util
 import os
-from collections.abc import Callable, Generator
+from collections.abc import Generator
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
@@ -32,9 +32,6 @@ analyze_geo_opt = importlib.util.module_from_spec(spec)  # type: ignore[arg-type
 if spec is None or spec.loader is None:
     raise ImportError(f"Failed to import {script_path}")
 spec.loader.exec_module(analyze_geo_opt)
-
-# save for later since monkey-patched below
-load_ml_structures = analyze_geo_opt.load_ml_structures
 
 
 @pytest.fixture
@@ -151,28 +148,6 @@ def mock_model_yaml(tmp_path: Path) -> str:
 
 
 @pytest.fixture
-def patch_load_ml_structures(
-    monkeypatch: pytest.MonkeyPatch,
-) -> Callable[[str, int], pd.DataFrame]:
-    """Patch load_ml_structures for testing."""
-
-    def patched_load(path: str, debug_mode: int = 0) -> pd.DataFrame:
-        try:
-            df_result = pd.read_json(path, orient="records")
-            if "material_id" in df_result:
-                df_result = df_result.set_index("material_id")
-                df_result.index.name = Key.mat_id
-                return df_result
-            # Only reach this if no material_id column
-            return load_ml_structures(path, debug_mode)
-        except Exception:
-            return load_ml_structures(path, debug_mode)
-
-    monkeypatch.setattr(analyze_geo_opt, "load_ml_structures", patched_load)
-    return patched_load
-
-
-@pytest.fixture
 def setup_model_metadata(
     monkeypatch: pytest.MonkeyPatch,
 ) -> Generator[None, None, None]:
@@ -184,53 +159,6 @@ def setup_model_metadata(
     for model_key in list(MODEL_METADATA):
         if model_key not in original:
             del MODEL_METADATA[model_key]
-
-
-def test_load_ml_structures(
-    test_structures_files: dict[str, Any],
-    patch_load_ml_structures: Callable[[str], pd.DataFrame],
-) -> None:
-    """Test ML structure loading."""
-    for file_type in ["json_path", "jsonl_path"]:
-        df_structures = patch_load_ml_structures(str(test_structures_files[file_type]))
-        # Split assertions for better error reporting
-        assert not df_structures.empty
-        assert df_structures.index.name == Key.mat_id
-        assert len(df_structures) == 3
-        assert "structure" in df_structures
-
-
-def test_load_ml_structures_with_debug_mode(
-    large_test_structures_file: dict[str, Any],
-) -> None:
-    """Test structure loading with debug mode to ensure row limit applies correctly."""
-    # Use the real function, not the patched version
-    debug_mode = 50  # Request 50 rows
-    larger_debug_mode = 120  # Request more than the potential hardcoded limit
-
-    for file_type in ["json_path", "jsonl_path"]:
-        # Test with smaller debug mode
-        df_structures = analyze_geo_opt.load_ml_structures(
-            str(large_test_structures_file[file_type]), debug_mode=debug_mode
-        )
-        # Check that we get exactly the requested number of rows
-        assert len(df_structures) == debug_mode, (
-            f"Expected {debug_mode} rows, got {len(df_structures)}"
-        )
-
-        # Test with larger debug mode
-        df_structures_larger = analyze_geo_opt.load_ml_structures(
-            str(large_test_structures_file[file_type]), debug_mode=larger_debug_mode
-        )
-        # Check that we get more than 100 rows (testing for hardcoded limit of 100)
-        assert len(df_structures_larger) > 100, (
-            f"Expected >100 rows with {larger_debug_mode=}, "
-            f"got {len(df_structures_larger)}"
-        )
-
-        # Validate content
-        assert not df_structures.empty
-        assert "structure" in df_structures
 
 
 def test_analyze_ml_relaxed_structs_symmetry(

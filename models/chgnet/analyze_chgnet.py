@@ -65,7 +65,9 @@ fig.show()
 
 
 # %%
-df_cse = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path).set_index(Key.mat_id)
+df_cse = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path, lines=True).set_index(
+    Key.mat_id
+)
 df_cse.loc[df_diff.index].reset_index().to_json(
     f"{module_dir}/wbm-chgnet-bad-relax.json.gz"
 )

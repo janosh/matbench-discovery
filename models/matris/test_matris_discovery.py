@@ -59,7 +59,7 @@ e_pred_col = "matris_mp_energy"
 max_steps = 500
 fmax = 0.05
 
-df_in = pd.read_json(data_path).set_index(Key.mat_id)
+df_in = pd.read_json(data_path, lines=True).set_index(Key.mat_id)
 if slurm_array_task_count > 1:
     df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
 

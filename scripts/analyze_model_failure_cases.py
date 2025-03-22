@@ -29,7 +29,9 @@ fp_diff_col = "site_stats_fingerprint_init_final_norm_diff"
 
 
 # %%
-df_cse = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path).set_index(Key.mat_id)
+df_cse = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path, lines=True).set_index(
+    Key.mat_id
+)
 
 
 # %% plot highest and lowest error structures before and after relaxation with Plotly
