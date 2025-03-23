@@ -66,15 +66,24 @@ metrics:
     pred_file: models/m3gnet/m3gnet-tf-manual-sampling/2023-06-01-wbm-geo-opt.jsonl.gz
     pred_file_url: https://figshare.com/files/52062011
     struct_col: m3gnet_structure
-    analysis_file: models/m3gnet/m3gnet-tf-manual-sampling/2023-06-01-wbm-geo-opt-moyo=0.4.2.csv.gz
-    distance:
-      rmsd: 0.0627 # unitless
-    symmetry:
-      symprec=1e-5:
-        n_sym_ops_mae: 7.48 # unitless
-        symmetry_decrease: 0.238 # fraction
-        symmetry_match: 0.596 # fraction
-        symmetry_increase: 0.16 # fraction
+    symprec=1e-5:
+      rmsd: 0.0217 # Å
+      n_sym_ops_mae: 1.7751 # unitless
+      symmetry_decrease: 0.0652 # fraction
+      symmetry_match: 0.7488 # fraction
+      symmetry_increase: 0.1804 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/m3gnet/m3gnet-tf-manual-sampling/2023-06-01-wbm-geo-opt-symprec=1e-5.csv.gz
+      analysis_file_url: https://figshare.com/files/52062014
+    symprec=1e-2:
+      rmsd: 0.0217 # Å
+      n_sym_ops_mae: 2.0111 # unitless
+      symmetry_decrease: 0.0719 # fraction
+      symmetry_match: 0.7933 # fraction
+      symmetry_increase: 0.1278 # fraction
+      n_structures: 256614 # count
+      analysis_file: models/m3gnet/m3gnet-tf-manual-sampling/2023-06-01-wbm-geo-opt-symprec=1e-2.csv.gz
+      analysis_file_url: https://figshare.com/files/52062017
   discovery:
     pred_file: models/m3gnet/m3gnet-tf-manual-sampling/2023-12-28-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/52057535

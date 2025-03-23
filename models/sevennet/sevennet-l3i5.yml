@@ -85,22 +85,25 @@ metrics:
   geo_opt:
     pred_file: models/sevennet/sevennet-l3i5/2024-12-10-wbm-geo-opt.jsonl.gz
     pred_file_url: https://figshare.com/files/52062056
-    struct_col: sevennet_structure
-    analysis_file: models/sevennet/sevennet-l3i5/2024-12-10-wbm-geo-opt-moyo=0.4.2-n=256963.csv.gz
-    analysis_file_url: https://figshare.com/files/52062173
-    symmetry:
-      symprec=1e-5:
-        n_sym_ops_mae: 2.7178 # unitless
-        symmetry_decrease: 0.3667 # fraction
-        symmetry_match: 0.4412 # fraction
-        symmetry_increase: 0.1451 # fraction
-      symprec=1e-2:
-        n_sym_ops_mae: 1.9727
-        symmetry_decrease: 0.0856
-        symmetry_match: 0.7752
-        symmetry_increase: 0.1294
-    distance:
-      rmsd: 0.0847 # unitless
+    struct_col: sevennet_structures
+    symprec=1e-5:
+      rmsd: 0.0182 # Å
+      n_sym_ops_mae: 2.7288 # unitless
+      symmetry_decrease: 0.3602 # fraction
+      symmetry_match: 0.4418 # fraction
+      symmetry_increase: 0.1498 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/sevennet/sevennet-l3i5/2024-12-10-wbm-geo-opt-symprec=1e-5.csv.gz
+      analysis_file_url: https://figshare.com/files/52062170
+    symprec=1e-2:
+      rmsd: 0.0182 # Å
+      n_sym_ops_mae: 1.9727 # unitless
+      symmetry_decrease: 0.0856 # fraction
+      symmetry_match: 0.7752 # fraction
+      symmetry_increase: 0.1294 # fraction
+      n_structures: 256614 # count
+      analysis_file: models/sevennet/sevennet-l3i5/2024-12-10-wbm-geo-opt-symprec=1e-2.csv.gz
+      analysis_file_url: https://figshare.com/files/52062173
   discovery:
     pred_file: models/sevennet/sevennet-l3i5/2024-12-10-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/52057547

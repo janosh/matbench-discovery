@@ -63,21 +63,24 @@ metrics:
     pred_file: models/grace/grace-1L-oam/2025-02-02-wbm-geo-opt.jsonl.gz
     pred_file_url: https://figshare.com/files/52204904
     struct_col: grace_structure
-    analysis_file: models/grace/grace-1L-oam/2025-02-02-wbm-geo-opt-moyo=0.4.2.csv.gz
-    analysis_file_url: https://figshare.com/files/52858199
-    symmetry:
-      symprec=1e-5:
-        n_sym_ops_mae: 7.28 # unitless
-        symmetry_decrease: 0.092 # fraction
-        symmetry_match: 0.646 # fraction
-        symmetry_increase: 0.258 # fraction
-      symprec=1e-2:
-        n_sym_ops_mae: 1.8157
-        symmetry_decrease: 0.0576
-        symmetry_match: 0.814
-        symmetry_increase: 0.1216
-    distance:
-      rmsd: 0.0309 # unitless
+    symprec=1e-5:
+      rmsd: 0.0139 # Å
+      n_sym_ops_mae: 1.8528 # unitless
+      symmetry_decrease: 0.0329 # fraction
+      symmetry_match: 0.7336 # fraction
+      symmetry_increase: 0.2292 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/grace/grace-1l-oam/2025-02-02-wbm-geo-opt-symprec=1e-5-moyo=0.3.1.csv.gz
+      analysis_file_url: https://figshare.com/files/52858196
+    symprec=1e-2:
+      rmsd: 0.0139 # Å
+      n_sym_ops_mae: 1.8157 # unitless
+      symmetry_decrease: 0.0576 # fraction
+      symmetry_match: 0.814 # fraction
+      symmetry_increase: 0.1216 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/grace/grace-1l-oam/2025-02-02-wbm-geo-opt-symprec=1e-2-moyo=0.3.1.csv.gz
+      analysis_file_url: https://figshare.com/files/52858199
   discovery:
     pred_file: models/grace/grace-1L-oam/2025-02-02-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/52204898

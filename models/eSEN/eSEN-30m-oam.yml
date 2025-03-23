@@ -1,5 +1,5 @@
 model_name: eSEN-30M-OAM
-model_key: eSEN-30m-oam
+model_key: esen-30m-oam
 model_version: v2025.03.17
 matbench_discovery_version: 1.3.1
 date_added: "2025-03-17"
@@ -67,23 +67,26 @@ metrics:
       pred_file_url: https://figshare.com/files/53090591
   geo_opt:
     pred_file: models/eSEN/eSEN-30m-oam/2025-03-17-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/53153477
+    pred_file_url: https://figshare.com/files/53054672
     struct_col: pred_structure_esen
-    analysis_file: models/eSEN/eSEN-30m-oam/2025-03-17-wbm-geo-opt-moyo=0.4.2-n=256,963.csv.gz
-    analysis_file_url: https://figshare.com/files/53054378
-    symmetry:
-      symprec=1e-2:
-        n_sym_ops_mae: 2.1015 # unitless
-        symmetry_decrease: 0.1616 # fraction
-        symmetry_match: 0.7103 # fraction
-        symmetry_increase: 0.1085 # fraction
-      symprec=1e-5:
-        n_sym_ops_mae: 4.1631 # unitless
-        symmetry_decrease: 0.4739 # fraction
-        symmetry_match: 0.3636 # fraction
-        symmetry_increase: 0.1188 # fraction
-    distance:
-      rmsd: 0.0608 # unitless
+    symprec=1e-2:
+      rmsd: 0.0096 # Å
+      n_sym_ops_mae: 2.1015 # unitless
+      symmetry_decrease: 0.1616 # fraction
+      symmetry_match: 0.7103 # fraction
+      symmetry_increase: 0.1085 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/eSEN/eSEN-30m-oam/2025-03-17-wbm-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/53054687
+    symprec=1e-5:
+      rmsd: 0.0096 # Å
+      n_sym_ops_mae: 4.1631 # unitless
+      symmetry_decrease: 0.4739 # fraction
+      symmetry_match: 0.3636 # fraction
+      symmetry_increase: 0.1188 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/eSEN/eSEN-30m-oam/2025-03-17-wbm-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/53054378
   discovery:
     pred_file: models/eSEN/eSEN-30m-oam/2025-03-17-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/53054369

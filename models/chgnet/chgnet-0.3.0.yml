@@ -73,17 +73,26 @@ metrics:
       pred_file_url: https://figshare.com/files/52134857
   geo_opt:
     pred_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/53153459
+    pred_file_url: https://figshare.com/files/52061999
     struct_col: chgnet_structure
-    analysis_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-geo-opt-moyo=0.4.2-n=256963.csv.gz
-    symmetry:
-      symprec=1e-5:
-        n_sym_ops_mae: 3.0863 # unitless
-        symmetry_decrease: 0.2241 # fraction
-        symmetry_match: 0.6062 # fraction
-        symmetry_increase: 0.1601 # fraction
-    distance:
-      rmsd: 0.0949 # unitless
+    symprec=1e-5:
+      rmsd: 0.0216 # Å
+      symmetry_decrease: 0.2526 # fraction
+      symmetry_match: 0.5833 # fraction
+      symmetry_increase: 0.1525 # fraction
+      n_sym_ops_mae: 3.2731 # unitless
+      n_structures: 250779 # count
+      analysis_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-geo-opt-symprec=1e-5.csv.gz
+      analysis_file_url: https://figshare.com/files/52062005
+    symprec=1e-2:
+      rmsd: 0.0218 # Å
+      n_sym_ops_mae: 2.0622 # unitless
+      symmetry_decrease: 0.0937 # fraction
+      symmetry_match: 0.7799 # fraction
+      symmetry_increase: 0.118 # fraction
+      n_structures: 256614 # count
+      analysis_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-geo-opt-symprec=1e-2.csv.gz
+      analysis_file_url: https://figshare.com/files/52062008
   discovery:
     pred_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/52057526

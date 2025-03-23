@@ -61,17 +61,26 @@ metrics:
   phonons: not applicable # model doesn't predict forces
   geo_opt:
     pred_file: models/bowsr/bowsr-megnet/2023-01-23-wbm-geo-opt.jsonl.gz
-    pred_file_url: https://figshare.com/files/53153456
+    pred_file_url: https://figshare.com/files/52061984
     struct_col: structure_bowsr_megnet
-    analysis_file: models/bowsr/bowsr-megnet/2023-01-23-wbm-geo-opt-moyo=0.4.2-n=251,301.csv.gz
-    symmetry:
-      symprec=1e-5:
-        n_sym_ops_mae: 29.4219 # unitless
-        symmetry_decrease: 0.0038 # fraction
-        symmetry_match: 0.5299 # fraction
-        symmetry_increase: 0.4642 # fraction
-    distance:
-      rmsd: 0.195 # unitless
+    symprec=1e-5:
+      rmsd: 0.043 # Å
+      symmetry_decrease: 0.0037 # fraction
+      symmetry_match: 0.5271 # fraction
+      symmetry_increase: 0.4671 # fraction
+      n_sym_ops_mae: 29.4778 # unitless
+      n_structures: 250779 # count
+      analysis_file: models/bowsr/bowsr-megnet/2023-01-23-wbm-geo-opt-symprec=1e-5.csv.gz
+      analysis_file_url: https://figshare.com/files/52061993
+    symprec=1e-2:
+      rmsd: 0.043 # Å
+      n_sym_ops_mae: 25.4771 # unitless
+      symmetry_decrease: 0.0618 # fraction
+      symmetry_match: 0.795 # fraction
+      symmetry_increase: 0.1307 # fraction
+      n_structures: 250430 # count
+      analysis_file: models/bowsr/bowsr-megnet/2023-01-23-wbm-geo-opt-symprec=1e-2.csv.gz
+      analysis_file_url: https://figshare.com/files/52061996
   discovery:
     pred_file: models/bowsr/bowsr-megnet/2023-01-23-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/52057523

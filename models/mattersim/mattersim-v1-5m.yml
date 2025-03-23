@@ -131,10 +131,6 @@ metrics:
     pred_file: models/mattersim/mattersim-v1-5M/2024-12-19-wbm-geo-opt.jsonl.gz
     pred_file_url: https://figshare.com/files/52062176
     struct_col: mattersim-v1-5m_structure
-    analysis_file: models/mattersim/mattersim-v1-5M/2024-12-19-wbm-geo-opt-moyo=0.4.2.csv.gz
-    symmetry: {}
-    distance:
-      rmsd: 1.0 # unitless
   discovery:
     pred_file: models/mattersim/mattersim-v1-5M/2024-12-16-wbm-IS2RE.csv.gz
     # the original Graphormer-based replaced the M3GNet-based MatterSim on the leaderboard

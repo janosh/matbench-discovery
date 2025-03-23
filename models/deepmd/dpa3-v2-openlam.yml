@@ -101,16 +101,25 @@ metrics:
   geo_opt:
     pred_file: models/deepmd/dpa3-v2-openlam/2025-03-14-wbm-geo-opt.jsonl.gz
     struct_col: dp_structure
-    pred_file_url: https://figshare.com/files/53153465
-    analysis_file: models/deepmd/dpa3-v2-openlam/2025-03-14-wbm-geo-opt-moyo=0.4.2-n=256963.csv.gz
-    symmetry:
-      symprec=1e-5:
-        n_sym_ops_mae: 2.1607 # unitless
-        symmetry_decrease: 0.0654 # fraction
-        symmetry_match: 0.719 # fraction
-        symmetry_increase: 0.2095 # fraction
-    distance:
-      rmsd: 0.0679 # unitless
+    pred_file_url: https://figshare.com/files/53018852
+    symprec=1e-5:
+      rmsd: 0.0127 # Å
+      n_sym_ops_mae: 2.1607 # unitless
+      symmetry_decrease: 0.0654 # fraction
+      symmetry_match: 0.719 # fraction
+      symmetry_increase: 0.2095 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/deepmd/dpa3-v2-openlam/2025-03-14-wbm-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/53019284
+    symprec=1e-2:
+      rmsd: 0.0127 # Å
+      n_sym_ops_mae: 1.8814 # unitless
+      symmetry_decrease: 0.0511 # fraction
+      symmetry_match: 0.81 # fraction
+      symmetry_increase: 0.1316 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/deepmd/dpa3-v2-openlam/2025-03-14-wbm-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/53019287
   discovery:
     pred_file: models/deepmd/dpa3-v2-openlam/2025-03-14-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/53018804

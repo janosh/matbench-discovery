@@ -79,21 +79,24 @@ metrics:
     pred_file: models/mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE.jsonl.gz
     pred_file_url: https://figshare.com/files/52062020
     struct_col: mace_structure
-    analysis_file: models/mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE-moyo=0.4.2.csv.gz
-    analysis_file_url: https://figshare.com/files/52062032
-    symmetry:
-      symprec=1e-5:
-        n_sym_ops_mae: 7.172 # unitless
-        symmetry_decrease: 0.092 # fraction
-        symmetry_match: 0.648 # fraction
-        symmetry_increase: 0.256 # fraction
-      symprec=1e-2:
-        n_sym_ops_mae: 1.8464 # unitless
-        symmetry_decrease: 0.0599 # fraction
-        symmetry_match: 0.8112 # fraction
-        symmetry_increase: 0.122 # fraction
-    distance:
-      rmsd: 0.0426 # unitless
+    symprec=1e-5:
+      rmsd: 0.0194 # Å
+      n_sym_ops_mae: 1.8584 # unitless
+      symmetry_decrease: 0.035 # fraction
+      symmetry_match: 0.7361 # fraction
+      symmetry_increase: 0.2243 # fraction
+      n_structures: 243070 # count
+      analysis_file: models/mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE-symprec=1e-5.csv.gz
+      analysis_file_url: https://figshare.com/files/52062029
+    symprec=1e-2:
+      rmsd: 0.0197 # Å
+      n_sym_ops_mae: 1.8961 # unitless
+      symmetry_decrease: 0.0602 # fraction
+      symmetry_match: 0.7977 # fraction
+      symmetry_increase: 0.1353 # fraction
+      n_structures: 249034 # count
+      analysis_file: models/mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE-symprec=1e-2.csv.gz
+      analysis_file_url: https://figshare.com/files/52062032
   discovery:
     pred_file: models/mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE.csv.gz
     pred_file_url: https://figshare.com/files/52057538
