@@ -48,7 +48,7 @@ mp_trj_extxyz:
 
 wbm_computed_structure_entries:
   url: https://figshare.com/files/53161832
-  path: wbm/2022-10-19-wbm-computed-structure-entries.json.bz2
+  path: wbm/2022-10-19-wbm-computed-structure-entries.jsonl.gz
   description: JSON-Serialized `pymatgen` [`ComputedStructureEntries`] containing all WBM DFT-relaxed structures and corresponding final energies
   md5: 481959b65f28150ae6ee7297ddeba538
 
@@ -60,7 +60,7 @@ wbm_relaxed_atoms:
 
 wbm_initial_structures:
   url: https://figshare.com/files/53161835
-  path: wbm/2022-10-19-wbm-init-structs.json.bz2
+  path: wbm/2022-10-19-wbm-init-structs.jsonl.gz
   description: Unrelaxed WBM structures in `pymatgen` `Structure` format
   md5: ff2c40a3a7bf65468852b67f0dbc67df
 
@@ -69,12 +69,6 @@ wbm_initial_atoms:
   path: wbm/2024-08-04-wbm-initial-atoms.extxyz.zip
   description: Unrelaxed WBM structures as `ase` Atoms in extended XYZ format
   md5: 2a292211ca6acb30ed8416178d644098
-
-wbm_cses_plus_init_structs:
-  url: https://figshare.com/files/40344469
-  path: wbm/2022-10-19-wbm-computed-structure-entries+init-structs.json.bz2
-  description: Both unrelaxed and DFT-relaxed WBM structures, the latter stored with their final VASP energies as `pymatgen` [`ComputedStructureEntries`]
-  md5: eaabe984d070156cc50a8a075cd5e315
 
 wbm_summary:
   url: https://figshare.com/files/44225498
