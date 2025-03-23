@@ -93,7 +93,7 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:
     n_structs = len(spg_diff.dropna())
 
     # Fill NaN values with 1.0 (the stol value we set in StructureMatcher)
-    mean_rmsd = rmsd_vals.fillna(1.0).mean()
+    mean_rmsd = rmsd_vals.infer_objects(copy=False).fillna(1.0).mean()
     sym_ops_mae = n_sym_ops_diff.abs().mean()
 
     # Count cases where spacegroup changed

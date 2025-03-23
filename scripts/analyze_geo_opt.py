@@ -70,13 +70,7 @@ def analyze_model_symprec(
 
     # Load model structures
     try:
-        if ml_relaxed_structs_path.endswith((".json", ".json.gz", ".json.xz")):
-            df_ml_structs = pd.read_json(ml_relaxed_structs_path)
-        else:
-            raise ValueError(
-                "Relaxed structure analysis currently only supports pymatgen JSON, "
-                f"got {ml_relaxed_structs_path}"
-            )
+        df_ml_structs = pd.read_json(ml_relaxed_structs_path, lines=True)
     except Exception as exc:
         exc.add_note(f"{model.label=} {ml_relaxed_structs_path=}")
         raise
@@ -187,7 +181,9 @@ if __name__ == "__main__":
     # %%
     print("Loading WBM PBE structures...")
     wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
-    df_wbm_structs: pd.DataFrame = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
+    df_wbm_structs: pd.DataFrame = pd.read_json(
+        wbm_cse_path, lines=True, orient="records"
+    ).set_index(Key.mat_id)
 
     if debug_mode:
         df_wbm_structs = df_wbm_structs.head(debug_mode)
