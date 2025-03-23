@@ -310,56 +310,52 @@ def load_df_wbm_with_preds(
 
 
 def update_yaml_at_path(
-    file_path: str | Path, dotted_path: str, data: dict[Any, Any] | str | None = None
-) -> dict[Any, Any]:
-    """Read or update a YAML file at a specific dotted path.
+    file_path: str | Path,
+    dotted_path: str,
+    data: dict[str, Any],
+) -> dict[str, Any]:
+    """Update a YAML file at a specific dotted path with new data.
 
     Args:
-        file_path (str | Path): Path to YAML file
-        dotted_path (str): Dotted path to read or update (e.g. 'metrics.discovery')
-        data (dict[Any, Any] | str | None): Data to write at the specified path.
-            If None, only reads the data without modifying the file.
+        file_path (str | Path): Path to YAML file to update
+        dotted_path (str): Dotted path to update (e.g. 'metrics.discovery')
+        data (dict[str, Any]): Data to write at the specified path
 
     Returns:
-        dict[Any, Any]: If data is None, returns the data at the dotted path.
-            Otherwise, returns the complete updated YAML data written to file.
+        dict[str, Any]: The complete updated YAML data written to file.
 
     Example:
         update_yaml_at_path(
-            file_path="models/mace/mace-mp-0.yml",
-            dotted_path="metrics.discovery",
-            data=dict(mae=0.1, rmse=0.2)
+            "models/mace/mace-mp-0.yml",
+            "metrics.discovery",
+            dict(mae=0.1, rmse=0.2),
         )
     """
     # raise on repeated or trailing dots in dotted path
     if not re.match(r"^[a-zA-Z0-9-+=_]+(\.[a-zA-Z0-9-+=_]+)*$", dotted_path):
-        raise ValueError(f"Invalid {dotted_path=}")
+        raise ValueError(f"Invalid dotted path: {dotted_path}")
 
     with open(file_path) as file:
         yaml_data = round_trip_yaml.load(file)
 
     # Navigate to the correct nested level
     current = yaml_data
-    parts = dotted_path.split(".")
+    *parts, last = dotted_path.split(".")
 
-    if data is None:  # If data is None, this function only reads and returns the data
-        for part in parts:
-            if part not in current:
-                return {}  # Path doesn't exist, return empty dict
-            current = current[part]
-        return current  # Return the data at the path
-
-    # Otherwise, this is an update operation
-    *parts, last = parts
     for part in parts:
         if part not in current:
             current[part] = {}
         current = current[part]
 
     # Update the data at the final level
+    if last not in current:
+        current[last] = {}
+    for key, val in current[last].items():
+        data.setdefault(key, val)
+    # Replace the entire current[last] section to preserve comments
     current[last] = data
 
-    # Write updated YAML back to the file
+    # Write back to file
     with open(file_path, mode="w") as file:
         round_trip_yaml.dump(yaml_data, file)
 
