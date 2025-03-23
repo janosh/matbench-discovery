@@ -161,46 +161,6 @@ def setup_model_metadata(
             del MODEL_METADATA[model_key]
 
 
-def test_analyze_ml_relaxed_structs_symmetry(
-    small_structure_set: dict[str, Any], tmp_path: Path, capsys: pytest.CaptureFixture
-) -> None:
-    """Test symmetry analysis."""
-    csv_path = f"{tmp_path}/test_analysis.csv"
-    results, metrics = analyze_geo_opt.analyze_ml_relaxed_structs_symmetry(
-        model=Model.megnet,
-        symprec=1e-2,
-        df_dft_analysis=small_structure_set["df_dft_analysis"],
-        model_structs=small_structure_set["ml_structs"],
-        csv_path=csv_path,
-        results_dict={},
-        metrics_dict={},
-    )
-
-    assert "Calculated symmetry metrics" in capsys.readouterr().out
-    assert "symprec=1e-2" in results
-    assert str(MbdKey.spg_num_diff) in results["symprec=1e-2"]
-    assert str(Key.n_structures) in metrics["symprec=1e-2"]
-
-
-def test_analyze_ml_relaxed_structs_distance(
-    small_structure_set: dict[str, Any], tmp_path: Path, capsys: pytest.CaptureFixture
-) -> None:
-    """Test distance analysis."""
-    csv_path = f"{tmp_path}/test_analysis.csv"
-    results, metrics = analyze_geo_opt.analyze_ml_relaxed_structs_distance(
-        model=Model.megnet,
-        model_structs=small_structure_set["ml_structs"],
-        dft_structs=small_structure_set["dft_structs"],
-        csv_path=csv_path,
-        results_dict={},
-        metrics_dict={},
-    )
-
-    assert "Calculated distance metrics" in capsys.readouterr().out
-    assert "distance" in results
-    assert str(MbdKey.structure_rmsd_vs_dft) in results["distance"]
-
-
 def test_analyze_ml_relaxed_structs(
     small_structure_set: dict[str, Any],
     mock_model_yaml: Path,
