@@ -71,54 +71,66 @@ def get_sym_info_from_structs(
     return df_sym
 
 
-def calc_structure_distances(
-    df_result: pd.DataFrame,
+def pred_vs_ref_struct_symmetry(
+    df_sym_pred: pd.DataFrame,
+    df_sym_ref: pd.DataFrame,
     pred_structs: dict[str, Structure],
     ref_structs: dict[str, Structure],
     *,
     pbar: bool | dict[str, str | float | bool] = True,
 ) -> pd.DataFrame:
-    """Calculate distance metrics between prediction and reference structures.
+    """Get RMSD and compare symmetry between ML and DFT reference structures.
+
+    Modifies the df_sym_pred DataFrame in place by adding columns for symmetry
+    differences and RMSDs.
 
     Args:
-        df_result (pd.DataFrame): DataFrame to which distance metrics will be added.
-        pred_structs (dict[str, Structure]): Map material IDs to prediction structures.
-        ref_structs (dict[str, Structure]): Map material IDs to reference structures.
-        pbar (bool | dict[str, str | float | bool], optional): Progress bar config.
-            Defaults to True.
+        df_sym_pred (pd.DataFrame): symmetry information for ML model as returned by
+            analyze_symmetry.
+        df_sym_ref (pd.DataFrame): symmetry information for DFT reference as returned by
+            analyze_symmetry.
+        pred_structs (dict[str, Structure]): Map material IDs to ML-relaxed structures
+        ref_structs (dict[str, Structure]): Map material IDs to reference structures
+        pbar (bool | dict[str, str | float | bool], optional): Whether to show progress
+            bar. Defaults to True.
 
     Returns:
-        pd.DataFrame: DataFrame with added columns for structure distance metrics
+        pd.DataFrame: with added columns for symmetry differences
     """
-    structure_matcher = StructureMatcher(stol=1.0, scale=False)
+    if df_sym_ref.index.name != Key.mat_id:
+        raise ValueError(f"{df_sym_ref.index.name=} must be {Key.mat_id!s}")
+    if df_sym_pred.index.name != Key.mat_id:
+        raise ValueError(f"{df_sym_pred.index.name=} must be {Key.mat_id!s}")
+
+    df_result = df_sym_pred.copy()
+
+    # Calculate differences
+    df_result[MbdKey.spg_num_diff] = df_sym_pred[Key.spg_num] - df_sym_ref[Key.spg_num]
+    df_result[MbdKey.n_sym_ops_diff] = (
+        df_sym_pred[Key.n_sym_ops] - df_sym_ref[Key.n_sym_ops]
+    )
+
+    structure_matcher = StructureMatcher()
     ref_ids, pred_ids = set(ref_structs), set(pred_structs)
     shared_ids = ref_ids & pred_ids
+    if len(shared_ids) == 0:
+        raise ValueError(f"No shared IDs between:\n{pred_ids=}\n{ref_ids=}")
 
     # Initialize RMSD column
     df_result[MbdKey.structure_rmsd_vs_dft] = None
-    df_result[Key.max_pair_dist] = None
-
-    if len(shared_ids) == 0:
-        print(
-            f"⚠️ Warning: No shared IDs between {len(pred_ids)} model and "
-            f"{len(ref_ids)} reference structures."
-        )
-        print(f"First 5 model IDs: {list(pred_ids)[:5]}")
-        print(f"First 5 reference IDs: {list(ref_ids)[:5]}")
-        return df_result  # Return DataFrame with NaN values for RMSD
 
     if pbar:
-        pbar_kwargs = dict(leave=False, desc="Calculating RMSD") | (
-            {} if pbar is True else pbar
+        pbar_kwargs = pbar if isinstance(pbar, dict) else {}
+        shared_ids = tqdm(
+            shared_ids,
+            **dict(leave=False, desc="Calculating RMSD") | pbar_kwargs,
         )
-        shared_ids = tqdm(shared_ids, **pbar_kwargs)
 
     for mat_id in shared_ids:
-        if mat_id in df_result.index:
-            rmsd, max_dist = structure_matcher.get_rms_dist(
-                pred_structs[mat_id], ref_structs[mat_id]
-            ) or (None, None)
-            df_result.loc[mat_id, MbdKey.structure_rmsd_vs_dft] = rmsd
-            df_result.loc[mat_id, Key.max_pair_dist] = max_dist
+        rmsd, max_dist = structure_matcher.get_rms_dist(
+            pred_structs[mat_id], ref_structs[mat_id]
+        ) or (None, None)
+        df_result.loc[mat_id, MbdKey.structure_rmsd_vs_dft] = rmsd
+        df_result.loc[mat_id, Key.max_pair_dist] = max_dist
 
     return df_result
