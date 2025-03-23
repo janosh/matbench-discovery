@@ -14,7 +14,6 @@
   import Readme from '$root/readme.md'
   import KappaNote from '$site/src/routes/kappa-note.md'
   import { pretty_num } from 'elementari'
-  import 'iconify-icon'
   import { Tooltip } from 'svelte-zoo'
 
   let n_wbm_stable_uniq_protos = 32_942
@@ -86,7 +85,7 @@
 
 <Readme>
   {#snippet metrics_table()}
-    <figure style="margin-top: 4em;" id="metrics-table">
+    <figure style="margin-top: 3em;" id="metrics-table">
       <div class="discovery-set-toggle">
         {#each Object.entries(DISCOVERY_SET_LABELS) as [key, { title, tooltip, link }] (key)}
           <Tooltip text={tooltip} tip_style="z-index: 2; font-size: 0.8em;">
@@ -101,8 +100,9 @@
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Info"
+                  style="line-height: 1;"
                 >
-                  <iconify-icon icon="octicon:info" inline></iconify-icon>
+                  ⓘ
                 </a>
               {/if}
             </button>
@@ -110,16 +110,20 @@
         {/each}
       </div>
 
-      <MetricsTable
-        col_filter={(col) => visible_cols[col.label] ?? true}
-        model_filter={() => true}
-        {discovery_set}
-        {show_combined_controls}
-        {show_energy_only}
-        show_noncompliant={show_non_compliant}
-        config={metric_config}
-        style="width: 100%;"
-      />
+      <section class="table-wrapper">
+        <div>
+          <MetricsTable
+            col_filter={(col) => visible_cols[col.label] ?? true}
+            model_filter={() => true}
+            {discovery_set}
+            {show_combined_controls}
+            {show_energy_only}
+            show_noncompliant={show_non_compliant}
+            config={metric_config}
+            style="width: 100%;"
+          />
+        </div>
+      </section>
 
       <div class="downloads">
         Download table as
@@ -152,7 +156,7 @@
           adjust the importance of each metric component.
           <br /><br />
           Training size is the number of materials used to train the model. For models trained
-          on DFT relaxations, we show the number of distinct frames in parentheses. In cases
+          on DFT relaxations, we show the number of distinct frames in parentheses). In cases
           where only the number of frames is known, we report the number of frames as the training
           set size. <code>(N=x)</code> in the Model Params column shows the number of
           estimators if an ensemble was used. DAF = Discovery Acceleration Factor measures
@@ -231,6 +235,14 @@
     display: grid;
     gap: 1ex;
   }
+  /* Table wrapper for full-width placement */
+  .table-wrapper {
+    /* Use negative margin technique for full width */
+    width: calc(100vw - 20px);
+    margin-left: calc(-50vw + 50% + 10px);
+    display: flex;
+    justify-content: center;
+  }
   figcaption {
     font-size: 0.9em;
     padding: 2pt 6pt;
@@ -272,9 +284,6 @@
     color: #ff6b6b;
     margin-top: 0.5em;
     flex-basis: 100%;
-  }
-  div.export-error iconify-icon {
-    color: #ff6b6b;
   }
 
   /* Caption Radar Container Styles */

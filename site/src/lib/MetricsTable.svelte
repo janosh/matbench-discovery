@@ -448,13 +448,6 @@
 </dialog>
 
 <style>
-  /* Make the table protrude into page margins */
-  :global(.heatmap-table-container) {
-    margin-left: calc((100vw - var(--main-width, 60ch)) / -8) !important;
-    margin-right: calc((100vw - var(--main-width, 60ch)) / -8) !important;
-    width: auto !important;
-  }
-
   dialog {
     visibility: hidden;
     opacity: 0;
