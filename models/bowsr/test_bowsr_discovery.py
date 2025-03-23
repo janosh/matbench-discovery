@@ -142,6 +142,8 @@ for material_id in tqdm(structures, desc="Relaxing", disable=None):
 df_out = pd.DataFrame(relax_results).T
 df_out.index.name = Key.mat_id
 
-df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
+df_out.reset_index().to_json(
+    out_path, default_handler=as_dict_handler, orient="records", lines=True
+)
 
 wandb.log_artifact(out_path, type=job_name)

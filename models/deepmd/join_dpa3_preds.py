@@ -14,7 +14,7 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery.data import df_wbm
+from matbench_discovery.data import as_dict_handler, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom, mp_elemental_ref_energies
 from matbench_discovery.enums import DataFiles, Model
 
@@ -84,4 +84,6 @@ df_dpa3[e_form_dp_col] = [
 df_dpa3 = df_dpa3.round(4)
 
 df_dpa3.select_dtypes("number").to_csv(f"{out_path}.csv.gz")  # save CSV storable
-# df_dpa3.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
+df_dpa3.reset_index().to_json(
+    f"{out_path}.json.gz", default_handler=as_dict_handler, orient="records", lines=True
+)

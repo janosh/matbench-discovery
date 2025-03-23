@@ -187,7 +187,9 @@ def relax_structures(
     relaxer = Relaxer(model=model)
 
     ret_df = relax_run(input_dir, model="dp", relaxer=relaxer, fmax=0.05, steps=500)
-    ret_df.reset_index().to_json(out_path, default_handler=as_dict_handler)
+    ret_df.reset_index().to_json(
+        out_path, default_handler=as_dict_handler, orient="records", lines=True
+    )
 
 
 if __name__ == "__main__":

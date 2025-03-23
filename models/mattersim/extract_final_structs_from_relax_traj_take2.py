@@ -18,6 +18,7 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from tqdm import tqdm
 
 from matbench_discovery import ROOT, today
+from matbench_discovery.data import as_dict_handler
 
 for model_key, model_name in {
     "mattersim_1M": "mattersim-v1-1M",
@@ -38,10 +39,7 @@ for model_key, model_name in {
 
     json_path = f"{ROOT}/models/mattersim/{model_name}/{today}-wbm-geo-opt.jsonl.gz"
     df_geo_opt.reset_index().to_json(
-        json_path,
-        orient="records",
-        lines=True,
-        default_handler=lambda x: x.as_dict() if hasattr(x, "as_dict") else x,
+        json_path, orient="records", lines=True, default_handler=as_dict_handler
     )
 
     # load first 5 back from JSON for sanity check

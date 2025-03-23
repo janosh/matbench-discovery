@@ -7,6 +7,7 @@ import pymatviz
 from pymatviz.enums import Key
 from tqdm import tqdm
 
+from matbench_discovery.data import as_dict_handler
 from matbench_discovery.enums import DataFiles, Model, Task
 
 __author__ = "Janosh Riebesell"
@@ -66,7 +67,7 @@ df_bowsr = df_bowsr.round(4)
 # save energy and formation energy as fast-loading CSV
 df_bowsr.select_dtypes("number").to_csv(f"{out_path}.csv")
 df_bowsr.reset_index().to_json(
-    f"{out_path}.json.gz", default_handler=lambda x: x.as_dict()
+    f"{out_path}.json.gz", default_handler=as_dict_handler, orient="records", lines=True
 )
 
 

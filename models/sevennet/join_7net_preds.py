@@ -76,4 +76,6 @@ df_7net[e_form_7net_col] = [
 df_7net = df_7net.round(4)
 
 df_7net.select_dtypes("number").to_csv(f"{out_path}.csv.gz")  # save csv storable
-df_7net.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
+df_7net.reset_index().to_json(
+    f"{out_path}.json.gz", default_handler=as_dict_handler, orient="records", lines=True
+)

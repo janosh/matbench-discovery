@@ -61,7 +61,7 @@ pmg_json_path = f"{module_dir}/{model_key}/2024-12-19-wbm-geo-opt.jsonl.gz"
 df_structs = pd.Series(structures_dict).to_frame()
 df_structs.index.name = Key.mat_id
 df_structs.columns = [f"{model_key}_{Key.structure}"]
-df_structs.reset_index().to_json(pmg_json_path)
+df_structs.reset_index().to_json(pmg_json_path, orient="records", lines=True)
 print(f"Saved {len(df_structs):,} structures to {pmg_json_path}")
 
 

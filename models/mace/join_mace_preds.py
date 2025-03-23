@@ -101,7 +101,9 @@ print(f"{sum(bad_mask)=} is {sum(bad_mask) / len(df_wbm):.2%} of {n_preds:,}")
 out_path = file_paths[0].rsplit("/", 1)[0]
 df_mace = df_mace.round(4)
 df_mace.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
-df_mace.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
+df_mace.reset_index().to_json(
+    f"{out_path}.json.gz", default_handler=as_dict_handler, orient="records", lines=True
+)
 
 # in_path = f"{module_dir}/2024-07-20-mace-wbm-IS2RE-FIRE"
 # df_mace = pd.read_csv(f"{in_path}.csv.gz").set_index(Key.mat_id)

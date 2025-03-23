@@ -152,6 +152,8 @@ class MBDRunner:
         df_out.reset_index().to_json(
             save_dir / f"{self.identifier}_{job_number}.json.gz",
             default_handler=as_dict_handler,
+            orient="records",
+            lines=True,
         )
         e_pred_col = "pred_energy"
         df_wbm[e_pred_col] = df_out[e_pred_col]
@@ -279,4 +281,6 @@ class MBDRunner:
         df_fairchem.reset_index().to_json(
             self.save_dir / f"{self.identifier}.json.gz",
             default_handler=as_dict_handler,
+            orient="records",
+            lines=True,
         )

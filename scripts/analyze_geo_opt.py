@@ -87,7 +87,6 @@ def analyze_ml_relaxed_structs(
         df_ml_structs = df_ml_structs.set_index(Key.mat_id)
     elif df_ml_structs.index[0].startswith("wbm-"):
         df_ml_structs.index.name = Key.mat_id
-        df_ml_structs.reset_index().to_json(ml_relaxed_structs_path)
     else:
         raise ValueError(f"Could not infer ID column from {df_ml_structs.columns}")
 

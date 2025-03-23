@@ -72,4 +72,6 @@ fig.write_html(img_path, include_plotlyjs="cdn")
 out_path = file_paths[0].rsplit("/", 1)[0]
 df_matris = df_matris.round(4)
 df_matris.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
-df_matris.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
+df_matris.reset_index().to_json(
+    f"{out_path}.json.gz", default_handler=as_dict_handler, orient="records", lines=True
+)

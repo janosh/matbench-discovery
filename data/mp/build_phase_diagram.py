@@ -33,8 +33,10 @@ df_mp_cse = pd.DataFrame(all_mp_computed_structure_entries, columns=["entry"])
 df_mp_cse.index.name = Key.mat_id
 df_mp_cse.index = [e.entry_id for e in df_mp_cse.entry]
 df_mp_cse.reset_index().to_json(
-    f"{module_dir}/{today}-mp-computed-structure-entries.json.gz",
+    f"{module_dir}/{today}-mp-computed-structure-entries.jsonl.gz",
     default_handler=lambda x: x.as_dict(),
+    orient="records",
+    lines=True,
 )
 
 

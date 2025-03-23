@@ -216,4 +216,4 @@ fig.write_image(
 # filter out columns containing 'rs2re'
 # df_m3gnet_is2re.reset_index().filter(regex="^((?!rs2re).)*$").to_json(
 #     f"{module_dir}/2022-10-31-m3gnet-wbm-IS2RE-2.json.gz"
-# ).set_index(Key.mat_id)
+# )

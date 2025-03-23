@@ -117,4 +117,6 @@ df_out.index.name = Key.mat_id
 if max_steps == 0:
     df_out.add_suffix("_no_relax").to_csv(out_path.replace(".json.gz", ".csv.gz"))
 else:
-    df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
+    df_out.reset_index().to_json(
+        out_path, default_handler=as_dict_handler, orient="records", lines=True
+    )

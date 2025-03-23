@@ -120,7 +120,12 @@ def main(
 
     df_orb = df_orb.round(4)
     df_orb.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
-    df_orb.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
+    df_orb.reset_index().to_json(
+        f"{out_path}.json.gz",
+        default_handler=as_dict_handler,
+        orient="records",
+        lines=True,
+    )
 
 
 if __name__ == "__main__":

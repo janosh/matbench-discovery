@@ -101,7 +101,10 @@ def join_predictions(
 
     df_fairchem.select_dtypes("number").to_csv(f"{out_path}/{model_name}.csv.gz")
     df_fairchem.reset_index().to_json(
-        f"{out_path}/{model_name}.json.gz", default_handler=as_dict_handler
+        f"{out_path}/{model_name}.json.gz",
+        default_handler=as_dict_handler,
+        orient="records",
+        lines=True,
     )
 
 
