@@ -86,7 +86,7 @@ metrics:
       pred_file: models/matris/matris-0.5.0-mptrj/2025-03-12-kappa-103-fire-dist=0.01-fmax1e-4-symprec1e-5.json.gz
       pred_file_url: https://figshare.com/files/53090600
   geo_opt:
-    pred_file: models/matris/matris-0.5.0-mptrj/2025-03-12-wbm-geo-opt.json.gz
+    pred_file: models/matris/matris-0.5.0-mptrj/2025-03-12-wbm-geo-opt.jsonl.gz
     pred_file_url: https://figshare.com/files/53000177
     struct_col: matris_structure
     symprec=1e-5:

@@ -60,7 +60,7 @@ metrics:
       pred_file: models/grace/grace-1L-oam/2025-02-02-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/53090597
   geo_opt:
-    pred_file: models/grace/grace-1L-oam/2025-02-02-wbm-geo-opt.json.gz
+    pred_file: models/grace/grace-1L-oam/2025-02-02-wbm-geo-opt.jsonl.gz
     pred_file_url: https://figshare.com/files/52204904
     struct_col: grace_structure
     symprec=1e-5:

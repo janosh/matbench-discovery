@@ -110,7 +110,9 @@ def pred_vs_ref_struct_symmetry(
         df_sym_pred[Key.n_sym_ops] - df_sym_ref[Key.n_sym_ops]
     )
 
-    structure_matcher = StructureMatcher()
+    # scale=False and stol=1 are important for getting accurate distance of atomic
+    # positions from DFT-relaxed positions. details in https://github.com/janosh/matbench-discovery/issues/230
+    structure_matcher = StructureMatcher(stol=1.0, scale=False)
     ref_ids, pred_ids = set(ref_structs), set(pred_structs)
     shared_ids = ref_ids & pred_ids
     if len(shared_ids) == 0:

@@ -68,41 +68,37 @@ def process_results(path: str) -> None:
         tot_df.sort_values("id_tuple").reset_index(drop=True).drop(columns=["id_tuple"])
     )
 
-    df_grace = tot_df.set_index("material_id")  # .drop(columns=[struct_col])
+    df_out = tot_df.set_index("material_id")  # .drop(columns=[struct_col])
 
     # Create ComputedStructureEntry objects with GRACE energies and structures
     wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
-    df_cse = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
+    df_wbm_cse = pd.read_json(wbm_cse_path, lines=True).set_index(Key.mat_id)
 
-    df_cse[Key.computed_structure_entry] = [
+    df_wbm_cse[Key.computed_structure_entry] = [
         ComputedStructureEntry.from_dict(dct)
-        for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
+        for dct in tqdm(df_wbm_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
     ]
 
     # %% transfer ML energies and relaxed structures WBM CSEs since MP2020 energy
     # corrections applied below are structure-dependent (for oxides and sulfides)
     cse: ComputedStructureEntry
-    for row in tqdm(
-        df_grace.itertuples(), total=len(df_grace), desc="ML energies to CSEs"
-    ):
+    for row in tqdm(df_out.itertuples(), total=len(df_out), desc="ML energies to CSEs"):
         mat_id, struct_dict, grace_energy, *_ = row
         mlip_struct = Structure.from_dict(struct_dict)
-        cse = df_cse.loc[mat_id, Key.computed_structure_entry]
+        cse = df_wbm_cse.loc[mat_id, Key.computed_structure_entry]
         cse._energy = grace_energy  # noqa: SLF001 cse._energy is the uncorrected energy
         cse._structure = mlip_struct  # noqa: SLF001
-        df_grace.loc[mat_id, Key.computed_structure_entry] = cse
+        df_out.loc[mat_id, Key.computed_structure_entry] = cse
 
     # Apply MP2020 energy corrections
     print("Applying MP2020 energy corrections")
     processed = MaterialsProject2020Compatibility().process_entries(
-        df_grace[Key.computed_structure_entry], verbose=True, clean=True
+        df_out[Key.computed_structure_entry], verbose=True, clean=True
     )
-    if len(processed) != len(df_grace):
-        raise ValueError(
-            f"not all entries processed: {len(processed)=} {len(df_grace)=}"
-        )
+    if len(processed) != len(df_out):
+        raise ValueError(f"not all entries processed: {len(processed)=} {len(df_out)=}")
 
-    df_grace[e_form_grace_col] = [
+    df_out[e_form_grace_col] = [
         calc_energy_from_e_refs(
             dict(
                 composition=row["formula"],
@@ -110,29 +106,32 @@ def process_results(path: str) -> None:
             ),
             ref_energies=mp_elemental_ref_energies,
         )
-        for _, row in tqdm(df_grace.iterrows(), total=len(df_grace))
+        for _, row in tqdm(df_out.iterrows(), total=len(df_out))
     ]
 
-    df_grace["e_form_per_atom_grace_uncorrected"] = [
+    df_out["e_form_per_atom_grace_uncorrected"] = [
         calc_energy_from_e_refs(
             dict(energy=energy, composition=formula),
             ref_energies=mp_elemental_ref_energies,
         )
         for energy, formula in tqdm(
-            zip(df_grace[energy_col], df_grace["formula"]),
-            total=len(df_grace),
+            zip(df_out[energy_col], df_out["formula"]),
+            total=len(df_out),
         )
     ]
 
     # save relaxed structures and final energies
     out_path = f"{out_dir}/{model_name}/{date}"
-    df_grace.to_json(
-        f"{out_path}-wbm-IS2RE-FIRE.json.gz", default_handler=as_dict_handler
+    df_out.to_json(
+        f"{out_path}-wbm-IS2RE-FIRE.jsonl.gz",
+        default_handler=as_dict_handler,
+        orient="records",
+        lines=True,
     )
-    df_grace = df_grace.round(4)
-    df_grace.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
+    df_out = df_out.round(4)
+    df_out.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
 
-    df_wbm[[*df_grace]] = df_grace
+    df_wbm[[*df_out]] = df_out
     bad_mask = abs(df_wbm[e_form_grace_col] - df_wbm[MbdKey.e_form_dft]) > 5
     n_preds = len(df_wbm[e_form_grace_col].dropna())
     print(f"{sum(bad_mask)=} is {sum(bad_mask) / len(df_wbm):.2%} of {n_preds:,}")

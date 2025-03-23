@@ -17,7 +17,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 
 1. You should share your model's predictions through a cloud storage service (we recommend [Figshare](https://figshare.com)) and include the download links in your PR description. Your cloud storage directory should contain files in a compressed format with the following naming convention: `<arch-name>/<model-variant>/<yyyy-mm-dd>-<eval-task>.{csv.gz|json.gz}`. For example, a in the case of MACE-MP-0, the file paths would be:
 
-   - geometry optimization: `mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE.json.gz`
+   - geometry optimization: `mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE.jsonl.gz` (use [JSON Lines format](https://jsonlines.org) for fast loading of small numbers of structures with `pandas.read_json(lines=True, nrows=100)` for inspection)
    - discovery: `mace/mace-mp-0/2023-12-11-wbm-IS2RE.csv.gz`
    - phonons: `mace/mace-mp-0/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz`
 

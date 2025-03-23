@@ -87,13 +87,13 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:
     # Get relevant columns
     spg_diff = df_model_analysis[MbdKey.spg_num_diff]
     n_sym_ops_diff = df_model_analysis[MbdKey.n_sym_ops_diff]
-    rmsd = df_model_analysis[MbdKey.structure_rmsd_vs_dft]
+    rmsd_vals = df_model_analysis[MbdKey.structure_rmsd_vs_dft]
 
     # Count total number of structures (excluding NaN values)
     n_structs = len(spg_diff.dropna())
 
-    # Calculate RMSD and MAE metrics
-    mean_rmsd = rmsd.mean()
+    # Fill NaN values with 1.0 (the stol value we set in StructureMatcher)
+    mean_rmsd = rmsd_vals.fillna(1.0).mean()
     sym_ops_mae = n_sym_ops_diff.abs().mean()
 
     # Count cases where spacegroup changed

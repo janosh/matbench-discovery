@@ -94,7 +94,7 @@ metrics:
       pred_file: models/alphanet/2025-03-04-kappa-103-fire-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz #find a lots of imag freqs, will look into this in the future
       pred_file_url: https://figshare.com/files/52869011
   geo_opt:
-    pred_file: models/alphanet/2025-03-04-wbm-geo-opt-fire.json.gz
+    pred_file: models/alphanet/2025-03-04-wbm-geo-opt-fire.jsonl.gz
     pred_file_url: https://figshare.com/files/52858202
     struct_col: alphanet_structure
     symprec=1e-5:

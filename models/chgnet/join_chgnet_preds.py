@@ -76,7 +76,9 @@ pmv.density_scatter_plotly(
 out_path = file_paths[0].rsplit("/", 1)[0]
 df_chgnet = df_chgnet.round(4)
 df_chgnet.select_dtypes("number").to_csv(f"{out_path}.csv.xz")
-df_chgnet.reset_index().to_json(f"{out_path}.json.xz", default_handler=as_dict_handler)
+df_chgnet.reset_index().to_json(
+    f"{out_path}.json.xz", default_handler=as_dict_handler, orient="records", lines=True
+)
 
 # in_path = f"{module_dir}/2023-03-04-chgnet-wbm-IS2RE"
 # df_chgnet = pd.read_csv(f"{in_path}.csv.gz").set_index(Key.mat_id)

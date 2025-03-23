@@ -333,7 +333,7 @@ def update_yaml_at_path(
     """
     # raise on repeated or trailing dots in dotted path
     if not re.match(r"^[a-zA-Z0-9-+=_]+(\.[a-zA-Z0-9-+=_]+)*$", dotted_path):
-        raise ValueError(f"Invalid dotted path: {dotted_path}")
+        raise ValueError(f"Invalid {dotted_path=}")
 
     with open(file_path) as file:
         yaml_data = round_trip_yaml.load(file)

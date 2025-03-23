@@ -60,7 +60,7 @@ notes:
 metrics:
   phonons: not applicable # model doesn't predict forces
   geo_opt:
-    pred_file: models/bowsr/bowsr-megnet/2023-01-23-wbm-geo-opt.json.gz
+    pred_file: models/bowsr/bowsr-megnet/2023-01-23-wbm-geo-opt.jsonl.gz
     pred_file_url: https://figshare.com/files/52061984
     struct_col: structure_bowsr_megnet
     symprec=1e-5:

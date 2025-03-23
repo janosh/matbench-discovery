@@ -19,7 +19,7 @@ def download_file(file_path: str, url: str) -> None:
 
         response.raise_for_status()
 
-        with open(file_path, "wb") as file:
+        with open(file_path, mode="wb") as file:
             file.write(response.content)
     except requests.exceptions.RequestException:
         print(f"Error downloading {url=}\nto {file_path=}.\n{traceback.format_exc()}")

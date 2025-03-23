@@ -110,7 +110,7 @@ def featurize_dataframe(
 # %%
 def featurize_file(filename: str, struct_col: str = Key.init_struct) -> pd.DataFrame:
     """Featurize pymatgen Structures in a file with matminer."""
-    df_in = pd.read_json(filename).set_index(Key.mat_id)
+    df_in = pd.read_json(filename, lines=True).set_index(Key.mat_id)
 
     # ComputedStructureEntry dicts have a "structure" key, if that's missing it's a
     # Structure dict

@@ -173,7 +173,9 @@ for atoms in tqdm(deepcopy(atoms_list), desc="Relaxing"):
 df_out = pd.DataFrame(relax_results).T.add_prefix("mace_")
 df_out.index.name = Key.mat_id
 if not smoke_test:
-    df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
+    df_out.reset_index().to_json(
+        out_path, default_handler=as_dict_handler, orient="records", lines=True
+    )
 
 
 # %%

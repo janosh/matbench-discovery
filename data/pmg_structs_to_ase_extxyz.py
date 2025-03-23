@@ -53,7 +53,9 @@ ase_atoms_to_zip(mptrj_atoms_list, f"{MP_DIR}/{today}-mp-trj.extxyz.zip")
 
 # %% convert WBM initial structures to ASE Atoms (no properties other than material ID
 # included in Atoms.info)
-df_wbm_init = pd.read_json(DataFiles.wbm_initial_structures.path).set_index(Key.mat_id)
+df_wbm_init = pd.read_json(DataFiles.wbm_initial_structures.path, lines=True).set_index(
+    Key.mat_id
+)
 
 wbm_init_atoms_list: list[Atoms] = []
 for mat_id, struct_dict in tqdm(df_wbm_init[Key.init_struct].items(), desc="WBM init"):
@@ -68,7 +70,7 @@ ase_atoms_to_zip(wbm_init_atoms_list, f"{WBM_DIR}/{today}-wbm-initial-atoms.extx
 # %% convert WBM ComputedStructureEntries to ASE Atoms (material ID and energy included
 # in Atoms.info)
 wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
-df_wbm_cse = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
+df_wbm_cse = pd.read_json(wbm_cse_path, lines=True).set_index(Key.mat_id)
 
 wbm_cse_atoms_list: list[Atoms] = []
 for mat_id, cse_dict in tqdm(

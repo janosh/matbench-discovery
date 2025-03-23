@@ -37,7 +37,7 @@ calculator_kwargs = {
 }[model_variant]
 calculator_kwargs["device"] = device
 
-# attempt to down load checkpoint from online. took several miniutes
+# attempt to down load checkpoint from online. took several minutes
 calc = SevenNetCalculator(**calculator_kwargs)
 
 # Relaxation parameters. These params are for reproducing 7net-mf-ompa.

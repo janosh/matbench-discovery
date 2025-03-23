@@ -66,7 +66,7 @@ metrics:
       pred_file: models/eSEN/eSEN-30m-mp/2025-03-18-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/53090588
   geo_opt:
-    pred_file: models/eSEN/eSEN-30m-mp/2025-03-17-wbm-geo-opt.json.gz
+    pred_file: models/eSEN/eSEN-30m-mp/2025-03-17-wbm-geo-opt.jsonl.gz
     pred_file_url: https://figshare.com/files/53054693
     struct_col: pred_structure_esen
     symprec=1e-5:

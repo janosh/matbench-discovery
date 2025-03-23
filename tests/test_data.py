@@ -386,5 +386,5 @@ metrics:
 
     # Test bad paths
     for path in ("metrics..discovery", "metrics..", "metrics.discovery..", "."):
-        with pytest.raises(ValueError, match="Invalid dotted path"):
+        with pytest.raises(ValueError, match="Invalid dotted_path="):
             update_yaml_at_path(test_file, path, {"data": 1})

@@ -152,6 +152,8 @@ class MBDRunner:
         df_out.reset_index().to_json(
             save_dir / f"{self.identifier}_{job_number}.json.gz",
             default_handler=as_dict_handler,
+            orient="records",
+            lines=True,
         )
         e_pred_col = "pred_energy"
         df_wbm[e_pred_col] = df_out[e_pred_col]
@@ -215,13 +217,13 @@ class MBDRunner:
         df_fairchem = pd.concat(dfs.values()).round(4)
 
         # %%
-        df_cse = pd.read_json(DataFiles.wbm_computed_structure_entries.path).set_index(
-            Key.mat_id
-        )
-        df_cse[Key.computed_structure_entry] = [
+        df_wbm_cse = pd.read_json(
+            DataFiles.wbm_computed_structure_entries.path, lines=True
+        ).set_index(Key.mat_id)
+        df_wbm_cse[Key.computed_structure_entry] = [
             ComputedStructureEntry.from_dict(dct)
             for dct in tqdm(
-                df_cse[Key.computed_structure_entry], desc="Creating pmg CSEs"
+                df_wbm_cse[Key.computed_structure_entry], desc="Creating pmg CSEs"
             )
         ]
 
@@ -232,7 +234,7 @@ class MBDRunner:
         ):
             mat_id, struct_dict, pred_energy, *_ = row
             mlip_struct = Structure.from_dict(struct_dict)
-            cse = df_cse.loc[mat_id, Key.computed_structure_entry]
+            cse = df_wbm_cse.loc[mat_id, Key.computed_structure_entry]
             cse._energy = pred_energy  # noqa: SLF001
             cse._structure = mlip_struct  # noqa: SLF001
             df_fairchem.loc[mat_id, Key.computed_structure_entry] = cse
@@ -279,4 +281,6 @@ class MBDRunner:
         df_fairchem.reset_index().to_json(
             self.save_dir / f"{self.identifier}.json.gz",
             default_handler=as_dict_handler,
+            orient="records",
+            lines=True,
         )

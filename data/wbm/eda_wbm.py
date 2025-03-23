@@ -359,15 +359,20 @@ df_sym_change = (
 
 
 # %%
-df_wbm_structs = pd.read_json(DataFiles.wbm_cses_plus_init_structs.path)
-df_wbm_structs = df_wbm_structs.set_index(Key.mat_id)
+df_wbm_init_structs = pd.read_json(DataFiles.wbm_initial_structures.path, lines=True)
+df_wbm_init_structs = df_wbm_init_structs.set_index(Key.mat_id)
+
+df_wbm_final_structs = pd.read_json(
+    DataFiles.wbm_computed_structure_entries.path, lines=True
+)
+df_wbm_final_structs = df_wbm_final_structs.set_index(Key.mat_id)
 
 
 # %%
 for wbm_id in df_sym_change.index:
-    init_struct = Structure.from_dict(df_wbm_structs.loc[wbm_id][Key.init_struct])
+    init_struct = Structure.from_dict(df_wbm_init_structs.loc[wbm_id][Key.init_struct])
     final_struct = Structure.from_dict(
-        df_wbm_structs.loc[wbm_id][Key.computed_structure_entry]["structure"]
+        df_wbm_final_structs.loc[wbm_id][Key.computed_structure_entry]["structure"]
     )
     init_struct.properties[Key.mat_id] = f"{wbm_id}-init"
     final_struct.properties[Key.mat_id] = f"{wbm_id}-final"
@@ -379,11 +384,11 @@ for wbm_id in df_sym_change.index:
 wbm_id = df_sym_change.index[0]
 
 struct = Structure.from_dict(
-    df_wbm_structs.loc[wbm_id][Key.computed_structure_entry]["structure"]
+    df_wbm_final_structs.loc[wbm_id][Key.computed_structure_entry]["structure"]
 )
 struct.to(f"{module_dir}/{wbm_id}.cif")
 struct.to(f"{module_dir}/{wbm_id}.json")
 
-struct = Structure.from_dict(df_wbm_structs.loc[wbm_id][Key.init_struct])
+struct = Structure.from_dict(df_wbm_init_structs.loc[wbm_id][Key.init_struct])
 struct.to(f"{module_dir}/{wbm_id}-init.cif")
 struct.to(f"{module_dir}/{wbm_id}-init.json")

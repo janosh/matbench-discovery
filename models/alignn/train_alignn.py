@@ -51,17 +51,17 @@ slurm_vars = slurm_submit(
 
 
 # %% Load data
-df_cse = pd.read_json(DataFiles.mp_computed_structure_entries.path).set_index(
+df_mp_cse = pd.read_json(DataFiles.mp_computed_structure_entries.path).set_index(
     Key.mat_id
 )
-df_cse[Key.structure] = [
+df_mp_cse[Key.structure] = [
     Structure.from_dict(cse[Key.structure])
-    for cse in tqdm(df_cse.entry, desc="Structures from dict")
+    for cse in tqdm(df_mp_cse.entry, desc="Structures from dict")
 ]
 
 # load energies
 df_in = pd.read_csv(DataFiles.mp_energies.path).set_index(Key.mat_id)
-df_in[Key.structure] = df_cse[Key.structure]
+df_in[Key.structure] = df_mp_cse[Key.structure]
 if target_col not in df_in:
     raise TypeError(f"{target_col!s} not in {df_in.columns=}")
 

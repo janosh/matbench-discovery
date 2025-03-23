@@ -28,7 +28,7 @@ __date__ = "2023-03-26"
 data_name = "wbm"
 job_name = f"{data_name}-struct-fingerprints"
 data_path = {
-    "wbm": DataFiles.wbm_cses_plus_init_structs.path,
+    "wbm": DataFiles.wbm_computed_structure_entries.path,
     "mp": DataFiles.mp_computed_structure_entries.path,
 }[data_name]
 
@@ -58,7 +58,7 @@ print(f"{out_path=}")
 
 
 # %%
-df_in = pd.read_json(data_path).set_index(Key.mat_id)
+df_in = pd.read_json(data_path, lines=True).set_index(Key.mat_id)
 if slurm_array_task_count > 1:
     df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
 
