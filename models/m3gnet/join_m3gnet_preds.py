@@ -48,11 +48,11 @@ df_m3gnet = pd.concat(dfs.values()).round(4)
 
 # %%
 wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
-df_cse = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
+df_wbm_cse = pd.read_json(wbm_cse_path, lines=True).set_index(Key.mat_id)
 
-df_cse[Key.computed_structure_entry] = [
+df_wbm_cse[Key.computed_structure_entry] = [
     ComputedStructureEntry.from_dict(dct)
-    for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
+    for dct in tqdm(df_wbm_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
 ]
 
 
@@ -65,7 +65,7 @@ struct_col = "m3gnet_orig_structure"
 for mat_id in tqdm(df_m3gnet.index):
     m3gnet_energy = df_m3gnet.loc[mat_id, e_col]
     mlip_struct = Structure.from_dict(df_m3gnet.loc[mat_id, struct_col])
-    cse = df_cse.loc[mat_id, Key.computed_structure_entry]
+    cse = df_wbm_cse.loc[mat_id, Key.computed_structure_entry]
     cse._energy = m3gnet_energy  # cse._energy is the uncorrected energy  # noqa: SLF001
     cse._structure = mlip_struct  # noqa: SLF001
     df_m3gnet.loc[mat_id, Key.computed_structure_entry] = cse
@@ -89,7 +89,9 @@ df_m3gnet["e_form_per_atom_m3gnet"] = [
 out_path = file_paths[0].rsplit("/", 1)[0]
 df_m3gnet = df_m3gnet.round(4)
 df_m3gnet.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
-df_m3gnet.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
+df_m3gnet.reset_index().to_json(
+    f"{out_path}.json.gz", default_handler=as_dict_handler, orient="records", lines=True
+)
 
 
 # in_path = f"{module_dir}/2022-10-31-m3gnet-wbm-IS2RE"

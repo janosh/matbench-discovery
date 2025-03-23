@@ -4,6 +4,10 @@ individual CSV files (one per symprec value) in a model's directory.
 Output files will have the same name as the input file containing the model's relaxed
 structures, but with the symprec value appended to the filename.
 
+Note: StructureMatcher is configured with stol=1.0 and scale=False for exact matching.
+RMSD values are normalized (unitless) and NaN values are filled with 1.0 (the stol
+value) to properly account for structures that couldn't be matched.
+
 Example usage:
     python scripts/analyze_geo_opt.py --models mace_mp_0 m3gnet --symprec 1e-2 1e-5
     python scripts/analyze_geo_opt.py --debug 10  # only analyze first 10 structures

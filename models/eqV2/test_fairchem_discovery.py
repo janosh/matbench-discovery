@@ -121,7 +121,9 @@ class RelaxJob(Checkpointable):
 
         df_out = pd.DataFrame(self.relax_results).T.add_prefix(f"{model_name}_")
         df_out.index.name = Key.mat_id
-        df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
+        df_out.reset_index().to_json(
+            out_path, default_handler=as_dict_handler, orient="records", lines=True
+        )
         e_pred_col = f"{model_name}_energy"
         df_wbm[e_pred_col] = df_out[e_pred_col]
         table = wandb.Table(

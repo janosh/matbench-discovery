@@ -168,7 +168,7 @@ def update_one_modeling_task_article(
             article_id = figshare.create_article(metadata)
             print(
                 f"\n⚠️ Created new Figshare article for {task=} with {article_id=}"
-                f"\nUpdate FIGSHARE_ARTICLE_IDS in {__file__} with this ID!"
+                f"\nUpdate figshare.ARTICLE_IDS with this ID!"
             )
 
     article_url = f"{figshare.ARTICLE_URL_PREFIX}/{article_id}"

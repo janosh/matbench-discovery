@@ -61,9 +61,9 @@ fig.layout.coloraxis.colorbar.update(
 fig.update_traces(marker_sizeref=0.02, selector=dict(mode="markers"))
 
 app = hook_up_fig_with_struct_viewer(
-    fig,
-    df_plot,
-    "chgnet_structure",
+    fig=fig,
+    df=df_plot,
+    struct_col="chgnet_structure",
     # validate_id requires material_id to be hover_name
     validate_id=lambda mat_id: mat_id.startswith(("wbm-", "mp-", "mvc-")),
 )

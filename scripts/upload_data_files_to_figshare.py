@@ -1,7 +1,9 @@
 """Update Matbench Discovery Data Files Figshare article via API."""
 
+import argparse
 import os
 import tomllib
+from collections.abc import Sequence
 from typing import Any
 
 from tqdm import tqdm
@@ -21,6 +23,7 @@ def main(
     pyproject: dict[str, Any],
     max_file_size: int = 500 * 1024**2,  # in bytes, files larger than this should
     # be uploaded manually to avoid timeouts
+    files: Sequence[DataFiles] = tuple(DataFiles),
 ) -> int:
     """Keep Data Files Figshare article in sync with data-files.yml file.
 
@@ -30,6 +33,7 @@ def main(
             article will be created.
         pyproject (dict[str, Any]): Dictionary containing the project metadata.
         max_file_size (int): Maximum file size in bytes to be uploaded automatically.
+        files (list[DataFiles] | None): List of DataFiles to upload.
     """
     if article_id is not None:
         # Check if article exists and is accessible
@@ -91,8 +95,7 @@ def main(
         updated_files: dict[str, str] = {}  # files that were re-uploaded
         new_files: dict[str, str] = {}  # files that didn't exist before
 
-        pbar = tqdm(DataFiles)
-        for data_file in pbar:
+        for data_file in (pbar := tqdm(files)):
             pbar.set_description(f"Processing {data_file.name}")
             file_path = f"{DATA_DIR}/{data_file.rel_path}"
 
@@ -173,6 +176,17 @@ def main(
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Upload data files to Figshare")
+    parser.add_argument(
+        "--files",
+        type=DataFiles,  # type: ignore[arg-type]
+        nargs="+",
+        choices=DataFiles,
+        default=tuple(DataFiles),
+        help="DataFiles to upload. If not specified, all files will be uploaded.",
+    )
+    args, _unknown = parser.parse_known_args()
+
     with open(f"{ROOT}/pyproject.toml", mode="rb") as toml_file:
         pyproject = tomllib.load(toml_file)["project"]
 
@@ -181,4 +195,5 @@ if __name__ == "__main__":
         yaml_path=f"{PKG_DIR}/data-files.yml",
         article_id=figshare.ARTICLE_IDS["data_files"],
         pyproject=pyproject,
+        files=args.files,
     )

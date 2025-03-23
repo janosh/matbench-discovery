@@ -62,7 +62,7 @@ print(f"{data_path=}")
 if MbdKey.e_form_dft not in df_wbm:
     raise KeyError(f"{MbdKey.e_form_dft!s} not in {df_wbm.columns=}")
 
-df_in = pd.read_json(data_path).set_index(Key.mat_id)
+df_in = pd.read_json(data_path, lines=True).set_index(Key.mat_id)
 if slurm_array_task_count > 1:
     df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
 megnet_mp_e_form = load_model(model_name := "Eform_MP_2019")

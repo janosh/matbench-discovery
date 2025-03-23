@@ -36,7 +36,7 @@ assert tuple(df_wbm) == (
 )
 
 # WBM initial structures in pymatgen JSON format
-df_init_structs = pd.read_json(DataFiles.wbm_initial_structures.path)
+df_init_structs = pd.read_json(DataFiles.wbm_initial_structures.path, lines=True)
 assert tuple(df_init_structs) == ("material_id", "formula_from_cse", "initial_structure")
 # WBM initial structures as ASE Atoms
 wbm_init_atoms = ase_atoms_from_zip(DataFiles.wbm_initial_atoms.path)

@@ -53,11 +53,13 @@ def main(
 
     if correct_energies:
         wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
-        df_cse = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
+        df_wbm_cse = pd.read_json(wbm_cse_path, lines=True).set_index(Key.mat_id)
 
-        df_cse[Key.computed_structure_entry] = [
+        df_wbm_cse[Key.computed_structure_entry] = [
             ComputedStructureEntry.from_dict(dct)
-            for dct in tqdm(df_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
+            for dct in tqdm(
+                df_wbm_cse[Key.computed_structure_entry], desc="Hydrate CSEs"
+            )
         ]
 
         # transfer predicted energies and relaxed structures WBM CSEs since
@@ -70,7 +72,7 @@ def main(
             mat_id, struct_dict, orb_energy, *_ = row
             mlip_struct = Structure.from_dict(struct_dict)
             df_orb.loc[mat_id, STRUCT_COL] = mlip_struct
-            cse = df_cse.loc[mat_id, Key.computed_structure_entry]
+            cse = df_wbm_cse.loc[mat_id, Key.computed_structure_entry]
             # cse._energy is the uncorrected energy
             cse._energy = orb_energy  # noqa: SLF001
             cse._structure = mlip_struct  # noqa: SLF001
@@ -118,7 +120,12 @@ def main(
 
     df_orb = df_orb.round(4)
     df_orb.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
-    df_orb.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
+    df_orb.reset_index().to_json(
+        f"{out_path}.json.gz",
+        default_handler=as_dict_handler,
+        orient="records",
+        lines=True,
+    )
 
 
 if __name__ == "__main__":

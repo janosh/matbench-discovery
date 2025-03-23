@@ -68,7 +68,7 @@ e_pred_col = "chgnet_energy"
 max_steps = 500
 fmax = 0.05
 
-df_in = pd.read_json(data_path).set_index(Key.mat_id)
+df_in = pd.read_json(data_path, lines=True).set_index(Key.mat_id)
 if slurm_array_task_count > 1:
     df_in = np.array_split(df_in, slurm_array_task_count)[slurm_array_task_id - 1]
 
@@ -128,7 +128,9 @@ df_out.index.name = Key.mat_id
 if max_steps == 0:
     df_out.add_suffix("_no_relax").to_csv(out_path.replace(".json.gz", ".csv.gz"))
 else:
-    df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
+    df_out.reset_index().to_json(
+        out_path, default_handler=as_dict_handler, orient="records", lines=True
+    )
 
 
 # %%

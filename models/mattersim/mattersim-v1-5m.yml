@@ -128,7 +128,7 @@ metrics:
       pred_file: models/mattersim/mattersim-v1-5m/2024-12-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/52134884
   geo_opt:
-    pred_file: models/mattersim/mattersim-v1-5M/2024-12-19-wbm-geo-opt.json.gz
+    pred_file: models/mattersim/mattersim-v1-5M/2024-12-19-wbm-geo-opt.jsonl.gz
     pred_file_url: https://figshare.com/files/52062176
     struct_col: mattersim-v1-5m_structure
   discovery:

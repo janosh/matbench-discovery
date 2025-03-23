@@ -1,7 +1,6 @@
 # %%
 import json
 import os
-from glob import glob
 from importlib.metadata import version
 
 import pandas as pd
@@ -63,7 +62,7 @@ data_path = {
     Task.RS2RE: DataFiles.wbm_computed_structure_entries.path,
 }[task_type]
 # load ALIGNN-FF relaxed structures (TODO fix directory we're loading from)
-df_in = pd.concat(map(pd.read_json, glob(f"{module_dir}/data-train-result/*.json.gz")))
+df_in = pd.read_json(data_path, lines=True).set_index(Key.mat_id)
 
 
 # %%

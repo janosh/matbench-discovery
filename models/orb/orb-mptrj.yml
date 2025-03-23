@@ -80,7 +80,7 @@ metrics:
       pred_file: models/orb/orbff-mptrj-v2/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/52134890
   geo_opt:
-    pred_file: models/orb/orbff-mptrj-v2/2024-10-14-wbm-geo-opt.json.gz
+    pred_file: models/orb/orbff-mptrj-v2/2024-10-14-wbm-geo-opt.jsonl.gz
     pred_file_url: https://figshare.com/files/52062317
     struct_col: orb_structure
     symprec=1e-5:

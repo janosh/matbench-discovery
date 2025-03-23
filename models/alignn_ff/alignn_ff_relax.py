@@ -48,7 +48,7 @@ data_path = {
 }[task_type]
 input_col = {Task.IS2RE: Key.init_struct, Task.RS2RE: Key.final_struct}[task_type]
 
-df_in = pd.read_json(data_path).set_index(Key.mat_id)
+df_in = pd.read_json(data_path, lines=True).set_index(Key.mat_id)
 
 df_in[MbdKey.e_form_dft] = df_wbm[MbdKey.e_form_dft]
 if task_type == Task.RS2RE:
@@ -93,11 +93,11 @@ def alignn_relax(structure: Structure) -> Structure:
 structures = [df_in.loc[material_id][Key.init_struct] for material_id in df_in.index]
 df_relaxed = tqdm(structures, alignn_relax, n_jobs=n_processes_per_task)
 
-df_in = df_in.assign(relaxed_structure=df_relaxed)
+df_relaxed = df_in.assign(relaxed_structure=df_relaxed)
 
 
 # %% save results
-df_in.to_json(out_path)
+df_relaxed.to_json(out_path, orient="records", lines=True)
 
 # Examples of materials that take ages to converge:
 # task_id = 75, df_in.iloc[856]: wbm-3-76848

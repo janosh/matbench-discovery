@@ -22,9 +22,9 @@ ARTICLE_URL_PREFIX: Final = "https://figshare.com/articles/dataset"
 DOWNLOAD_URL_PREFIX: Final = "https://figshare.com/files"
 ARTICLE_IDS: Final[dict[str, int | None]] = {
     "model_preds_discovery": 28187990,
-    "model_preds_geo_opt": 28187999,
+    "model_preds_geo_opt": 28642406,
     "model_preds_phonons": 28347251,
-    "model_preds_diatomics": 28437344,  # created 2024-02-13
+    "model_preds_diatomics": 28437344,
     "data_files": 22715158,
 }
 

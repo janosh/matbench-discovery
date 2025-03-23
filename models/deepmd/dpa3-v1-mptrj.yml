@@ -98,7 +98,7 @@ metrics:
       pred_file: models/deepmd/dpa3-v1-mptrj/2025-01-10-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/52134860
   geo_opt:
-    pred_file: models/deepmd/dpa3-v1-mptrj/2025-01-10-wbm-geo-opt.json.gz
+    pred_file: models/deepmd/dpa3-v1-mptrj/2025-01-10-wbm-geo-opt.jsonl.gz
     struct_col: dpa2_structure
     pred_file_url: https://figshare.com/files/52134974
     symprec=1e-5:

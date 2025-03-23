@@ -85,7 +85,7 @@ metrics:
       pred_file: models/sevennet/sevennet-0/2024-11-09-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/52134878
   geo_opt:
-    pred_file: models/sevennet/sevennet-0/2024-07-11-wbm-geo-opt.json.gz
+    pred_file: models/sevennet/sevennet-0/2024-07-11-wbm-geo-opt.jsonl.gz
     pred_file_url: https://figshare.com/files/52062035
     struct_col: sevennet_structure
     symprec=1e-5:

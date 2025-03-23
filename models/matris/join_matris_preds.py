@@ -61,18 +61,17 @@ df_preds[e_form_matris_col] = df_matris[e_form_matris_col]
 
 
 # %%
-ax = pmv.density_scatter_plotly(
-    df=df_preds,
-    x=MbdKey.e_form_dft,
-    y=e_form_matris_col,
-    template="pymatviz_white",
+fig = pmv.density_scatter_plotly(
+    df=df_preds, x=MbdKey.e_form_dft, y=e_form_matris_col, template="pymatviz_white"
 )
-
-# ax.write_html(f"matris_v050.html")
+img_path = f"{module_dir}/{Model.matris_v050_mptrj.key}-e-form-parity.html"
+fig.write_html(img_path, include_plotlyjs="cdn")
 
 
 # %%
 out_path = file_paths[0].rsplit("/", 1)[0]
 df_matris = df_matris.round(4)
 df_matris.select_dtypes("number").to_csv(f"{out_path}.csv.gz")
-df_matris.reset_index().to_json(f"{out_path}.json.gz", default_handler=as_dict_handler)
+df_matris.reset_index().to_json(
+    f"{out_path}.json.gz", default_handler=as_dict_handler, orient="records", lines=True
+)

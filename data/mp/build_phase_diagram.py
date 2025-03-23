@@ -33,8 +33,10 @@ df_mp_cse = pd.DataFrame(all_mp_computed_structure_entries, columns=["entry"])
 df_mp_cse.index.name = Key.mat_id
 df_mp_cse.index = [e.entry_id for e in df_mp_cse.entry]
 df_mp_cse.reset_index().to_json(
-    f"{module_dir}/{today}-mp-computed-structure-entries.json.gz",
+    f"{module_dir}/{today}-mp-computed-structure-entries.jsonl.gz",
     default_handler=lambda x: x.as_dict(),
+    orient="records",
+    lines=True,
 )
 
 
@@ -74,7 +76,7 @@ with gzip.open(f"{module_dir}/{today}-ppd-mp.pkl.gz", mode="wb") as zip_file:
 
 # %% build phase diagram with both MP entries + WBM entries
 wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
-df_wbm = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
+df_wbm = pd.read_json(wbm_cse_path, lines=True).set_index(Key.mat_id)
 
 # using ComputedStructureEntry vs ComputedEntry here is important as CSEs receive
 # more accurate energy corrections that take into account peroxide/superoxide nature

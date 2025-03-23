@@ -23,12 +23,12 @@ from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.enums import DataFiles
 
 wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
-df_cse = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
+df_wbm_cse = pd.read_json(wbm_cse_path, lines=True).set_index(Key.mat_id)
 
 cses = [
     ComputedStructureEntry.from_dict(dct)
     for dct in tqdm(
-        df_cse[Key.computed_structure_entry],
+        df_wbm_cse[Key.computed_structure_entry],
         desc="Loading ComputedStructureEntries",
     )
 ]
@@ -36,16 +36,16 @@ cses = [
 ces = [
     ComputedEntry.from_dict(dct)
     for dct in tqdm(
-        df_cse[Key.computed_structure_entry], desc="Loading ComputedEntries"
+        df_wbm_cse[Key.computed_structure_entry], desc="Loading ComputedEntries"
     )
 ]
 
 
 # %%
 processed = MaterialsProject2020Compatibility().process_entries(cses, verbose=True)
-assert len(processed) == len(df_cse)
+assert len(processed) == len(df_wbm_cse)
 processed = MaterialsProject2020Compatibility().process_entries(ces, verbose=True)
-assert len(processed) == len(df_cse)
+assert len(processed) == len(df_wbm_cse)
 
 df_wbm["e_form_per_atom_mp2020_from_ce"] = [
     get_e_form_per_atom(entry)
@@ -66,9 +66,9 @@ df_wbm["mp2020_ce_correction_per_atom"] = [ce.correction_per_atom for ce in tqdm
 
 # %%
 processed = MaterialsProjectCompatibility().process_entries(cses, verbose=True)
-assert len(processed) == len(df_cse)
+assert len(processed) == len(df_wbm_cse)
 processed = MaterialsProjectCompatibility().process_entries(ces, verbose=True)
-assert len(processed) == len(df_cse)
+assert len(processed) == len(df_wbm_cse)
 
 df_wbm["e_form_per_atom_legacy_from_ce"] = [
     get_e_form_per_atom(entry) for entry in tqdm(ces)
