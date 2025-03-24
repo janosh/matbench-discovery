@@ -89,7 +89,7 @@ metrics:
     pred_file_url: https://figshare.com/files/52062035
     struct_col: sevennet_structure
     symprec=1e-5:
-      rmsd: 0.0193 # Å
+      rmsd: 0.0193 # unitless
       n_sym_ops_mae: 2.5921 # unitless
       symmetry_decrease: 0.3557 # fraction
       symmetry_match: 0.4535 # fraction
@@ -98,7 +98,7 @@ metrics:
       analysis_file: models/sevennet/sevennet-0/2024-07-11-wbm-geo-opt-symprec=1e-5.csv.gz
       analysis_file_url: https://figshare.com/files/52062041
     symprec=1e-2:
-      rmsd: 0.0193 # Å
+      rmsd: 0.0193 # unitless
       n_sym_ops_mae: 1.9558 # unitless
       symmetry_decrease: 0.0831 # fraction
       symmetry_match: 0.7823 # fraction

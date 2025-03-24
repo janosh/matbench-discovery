@@ -70,7 +70,7 @@ metrics:
     pred_file_url: https://figshare.com/files/53054693
     struct_col: pred_structure_esen
     symprec=1e-5:
-      rmsd: 0.0142 # Å
+      rmsd: 0.0142 # unitless
       n_sym_ops_mae: 3.3144 # unitless
       symmetry_decrease: 0.4281 # fraction
       symmetry_match: 0.3859 # fraction
@@ -79,7 +79,7 @@ metrics:
       analysis_file: models/eSEN/eSEN-30m-mp/2025-03-17-wbm-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
       analysis_file_url: https://figshare.com/files/53054696
     symprec=1e-2:
-      rmsd: 0.0142 # Å
+      rmsd: 0.0142 # unitless
       n_sym_ops_mae: 2.521 # unitless
       symmetry_decrease: 0.2604 # fraction
       symmetry_match: 0.6106 # fraction

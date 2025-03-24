@@ -64,7 +64,7 @@ metrics:
     pred_file_url: https://figshare.com/files/52204907
     struct_col: grace_structure
     symprec=1e-5:
-      rmsd: 0.0121 # Å
+      rmsd: 0.0121 # unitless
       n_sym_ops_mae: 1.8673 # unitless
       symmetry_decrease: 0.0325 # fraction
       symmetry_match: 0.733 # fraction
@@ -73,7 +73,7 @@ metrics:
       analysis_file: models/grace/grace-2l-oam/2025-01-28-wbm-geo-opt-symprec=1e-5-moyo=0.3.1.csv.gz
       analysis_file_url: https://figshare.com/files/52858181
     symprec=1e-2:
-      rmsd: 0.0121 # Å
+      rmsd: 0.0121 # unitless
       n_sym_ops_mae: 1.7962 # unitless
       symmetry_decrease: 0.0563 # fraction
       symmetry_match: 0.8159 # fraction

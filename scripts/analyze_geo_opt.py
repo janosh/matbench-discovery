@@ -42,9 +42,11 @@ def analyze_model_symprec(
     moyo_version: str,
     df_dft_analysis: pd.DataFrame,
     dft_structs: dict[str, Structure],
+    *,
     debug_mode: int = 0,
     pbar_pos: int = 0,  # tqdm progress bar position
-) -> None:
+    overwrite: bool = False,  # Whether to overwrite existing analysis files
+) -> pd.DataFrame | None:
     """Analyze a single model for a single symprec value."""
     model_metadata = MODEL_METADATA[model.label]
 
@@ -55,18 +57,18 @@ def analyze_model_symprec(
     # skip models that don't support geometry optimization
     if geo_opt_metrics in ("not applicable", "not available"):
         print(f"⚠️ {model.label} does not support geometry optimization")
-        return
+        return None
 
     if not model.geo_opt_path:
         print(f"⚠️ {model.label} has no relaxed structures file")
-        return
+        return None
 
     if not os.path.isfile(ml_relaxed_structs_path := model.geo_opt_path):
         print(
             f"⚠️ {model.label}-relaxed structures not found, expected "
             f"at {ml_relaxed_structs_path}"
         )
-        return
+        return None
 
     # Load model structures
     try:
@@ -94,7 +96,7 @@ def analyze_model_symprec(
             f"⚠️ {struct_col=} not found in {model.label}-relaxed structures loaded "
             f"from {ml_relaxed_structs_path}. Did you mean one of {struct_cols}?"
         )
-        return
+        return None
 
     # Convert structures
     model_structs = {
@@ -106,9 +108,14 @@ def analyze_model_symprec(
     geo_opt_filename = model.geo_opt_path.removesuffix(".json.gz")
     geo_opt_csv_path = f"{geo_opt_filename}-{symprec_str}-{moyo_version}.csv.gz"
 
-    if os.path.isfile(geo_opt_csv_path):
+    if os.path.isfile(geo_opt_csv_path) and not overwrite:
         print(f"{model.label} already analyzed at {geo_opt_csv_path}")
-        return
+        return pd.read_csv(geo_opt_csv_path)
+
+    action = (
+        "Overwriting" if overwrite and os.path.isfile(geo_opt_csv_path) else "Analyzing"
+    )
+    print(f"{action} {model.label} for {symprec=}")
 
     # Analyze symmetry for current symprec
     pbar_desc = f"Process {pbar_pos}: Analyzing {model.label} for {symprec=}"
@@ -135,8 +142,8 @@ def analyze_model_symprec(
 
     # Calculate metrics and write to YAML
     df_metrics = geo_opt.calc_geo_opt_metrics(df_ml_geo_analysis)
-    print(f"\nCalculated metrics: {df_metrics}")
     geo_opt.write_metrics_to_yaml(df_metrics, model, symprec, geo_opt_csv_path)
+    return df_metrics
 
 
 if __name__ == "__main__":
@@ -168,6 +175,11 @@ if __name__ == "__main__":
         default=max(1, mp.cpu_count() - 1),
         help="Number of processes to use. Defaults to number of model-symprec combos.",
     )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Overwrite existing geo_opt analysis files.",
+    )
     args, _unknown = parser.parse_known_args()
 
     # set to > 0 to activate debug mode, only that many structures will be analyzed
@@ -185,9 +197,6 @@ if __name__ == "__main__":
         wbm_cse_path, lines=True, orient="records"
     ).set_index(Key.mat_id)
 
-    if debug_mode:
-        df_wbm_structs = df_wbm_structs.head(debug_mode)
-
     dft_structs: dict[str, Structure] = {
         mat_id: Structure.from_dict(cse[Key.structure])
         for mat_id, cse in df_wbm_structs[Key.computed_structure_entry].items()
@@ -197,11 +206,16 @@ if __name__ == "__main__":
     dft_analysis_dict: dict[float, pd.DataFrame] = {}
     for symprec in symprec_values:
         symprec_str = f"symprec={symprec:.0e}".replace("e-0", "e-")
+
+        # Always use full DFT analysis file, regardless of debug mode, ensuring
+        # reference data available for all model structures regardless of debug mode
+        # and sorting of material IDs
         dft_csv_path = (
             f"{ROOT}/data/wbm/dft-geo-opt-{symprec_str}-{moyo_version}.csv.gz"
         )
 
         if os.path.isfile(dft_csv_path):
+            print(f"Loading DFT analysis from {dft_csv_path}")
             dft_analysis_dict[symprec] = pd.read_csv(dft_csv_path).set_index(Key.mat_id)
         else:
             dft_analysis_dict[symprec] = symmetry.get_sym_info_from_structs(
@@ -224,13 +238,14 @@ if __name__ == "__main__":
         futures = [
             executor.submit(
                 analyze_model_symprec,
-                model_name,
-                symprec,
-                moyo_version,
-                dft_analysis_dict[symprec],
-                dft_structs,
-                debug_mode,
+                model=model_name,
+                symprec=symprec,
+                moyo_version=moyo_version,
+                df_dft_analysis=dft_analysis_dict[symprec],
+                dft_structs=dft_structs,
+                debug_mode=debug_mode,
                 pbar_pos=idx,  # assign unique position to each task's progress bar
+                overwrite=args.overwrite,
             )
             for idx, (model_name, symprec) in enumerate(tasks)
         ]

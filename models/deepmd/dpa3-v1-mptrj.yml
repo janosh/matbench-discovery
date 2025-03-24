@@ -104,7 +104,7 @@ metrics:
     symprec=1e-5:
       analysis_file: models/deepmd/dpa3-v1-mptrj/2025-01-10-wbm-geo-opt-symprec=1e-5-moyo=0.3.3.csv.gz
       analysis_file_url: https://figshare.com/files/52291967
-      rmsd: 0.0172 # Å
+      rmsd: 0.0172 # unitless
       n_sym_ops_mae: 2.1671 # unitless
       symmetry_decrease: 0.0804 # fraction
       symmetry_match: 0.7128 # fraction
@@ -113,7 +113,7 @@ metrics:
     symprec=1e-2:
       analysis_file: models/deepmd/dpa3-v1-mptrj/2025-01-10-wbm-geo-opt-symprec=1e-2-moyo=0.3.3.csv.gz
       analysis_file_url: https://figshare.com/files/52291970
-      rmsd: 0.0172 # Å
+      rmsd: 0.0172 # unitless
       n_sym_ops_mae: 1.992 # unitless
       symmetry_decrease: 0.0609 # fraction
       symmetry_match: 0.8034 # fraction
