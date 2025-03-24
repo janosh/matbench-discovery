@@ -46,7 +46,7 @@ def write_metrics_to_yaml(
 
     # Define units for metrics
     metric_units = {
-        Key.rmsd: "Å",
+        Key.rmsd: "unitless",
         Key.n_sym_ops_mae: "unitless",
         Key.symmetry_decrease: "fraction",
         Key.symmetry_match: "fraction",
@@ -83,31 +83,51 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:
             - symmetry_match: Fraction of structures with matching symmetry
             - symmetry_increase: Fraction of structures with increased symmetry
             - n_structs: Number of structures evaluated
+
+    Notes:
+        - total number of structures (n_structs) is counted based on valid RMSD values
+        - NaN RMSD values are filled with 1.0 (the stol value set in StructureMatcher)
+        - symmetry metrics are calculated only on structures with valid symmetry data
     """
     # Get relevant columns
     spg_diff = df_model_analysis[MbdKey.spg_num_diff]
     n_sym_ops_diff = df_model_analysis[MbdKey.n_sym_ops_diff]
     rmsd_vals = df_model_analysis[MbdKey.structure_rmsd_vs_dft]
 
-    # Count total number of structures (excluding NaN values)
-    n_structs = len(spg_diff.dropna())
+    # Count total number of structures with valid RMSD values (primary metric)
+    n_structs = len(rmsd_vals.dropna())
 
     # Fill NaN values with 1.0 (the stol value we set in StructureMatcher)
     mean_rmsd = rmsd_vals.infer_objects(copy=False).fillna(1.0).mean()
-    sym_ops_mae = n_sym_ops_diff.abs().mean()
+
+    # For symmetry metrics, we only use structures with valid symmetry results
+    # in rare cases, symmetry detection may fail because of the symmetry finder
+    # algorithm rather than something being wrong with the model-relaxed structure so
+    # not clear how to assign blame for missing results between model and symmetry algo
+    valid_sym_mask = spg_diff.notna()
+    n_valid_sym = valid_sym_mask.sum()
+
+    # Calculate symmetry metrics only on valid symmetry data
+    sym_ops_mae = n_sym_ops_diff[valid_sym_mask].abs().mean()
 
     # Count cases where spacegroup changed
-    changed_mask = spg_diff != 0
+    changed_mask = (spg_diff != 0) & valid_sym_mask
     # Among changed cases, count whether symmetry increased or decreased
     sym_decreased = (n_sym_ops_diff < 0) & changed_mask
     sym_increased = (n_sym_ops_diff > 0) & changed_mask
-    sym_matched = ~changed_mask
+    sym_matched = ~changed_mask & valid_sym_mask
 
     return {
         str(MbdKey.structure_rmsd_vs_dft): float(mean_rmsd),
         str(Key.n_sym_ops_mae): float(sym_ops_mae),
-        str(Key.symmetry_decrease): float(sym_decreased.sum() / n_structs),
-        str(Key.symmetry_match): float(sym_matched.sum() / n_structs),
-        str(Key.symmetry_increase): float(sym_increased.sum() / n_structs),
+        str(Key.symmetry_decrease): float(sym_decreased.sum() / n_valid_sym)
+        if n_valid_sym > 0
+        else float("nan"),
+        str(Key.symmetry_match): float(sym_matched.sum() / n_valid_sym)
+        if n_valid_sym > 0
+        else float("nan"),
+        str(Key.symmetry_increase): float(sym_increased.sum() / n_valid_sym)
+        if n_valid_sym > 0
+        else float("nan"),
         str(Key.n_structures): n_structs,
     }
