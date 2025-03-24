@@ -61,7 +61,7 @@ metrics:
     pred_file_url: https://figshare.com/files/52062590
     struct_col: grace2l_r6_structure
     symprec=1e-5:
-      rmsd: 0.0186 # Å
+      rmsd: 0.0186 # unitless
       n_sym_ops_mae: 1.8703 # unitless
       symmetry_decrease: 0.0355 # fraction
       symmetry_match: 0.7315 # fraction
@@ -70,7 +70,7 @@ metrics:
       analysis_file: models/grace/grace-2l-mptrj/2024-11-11-relaxed-structures-symprec=1e-5.csv.gz
       analysis_file_url: https://figshare.com/files/52062641
     symprec=1e-2:
-      rmsd: 0.0186 # Å
+      rmsd: 0.0186 # unitless
       n_sym_ops_mae: 1.8982 # unitless
       symmetry_decrease: 0.0592 # fraction
       symmetry_match: 0.7976 # fraction
