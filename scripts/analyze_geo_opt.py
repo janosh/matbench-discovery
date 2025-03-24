@@ -197,9 +197,6 @@ if __name__ == "__main__":
         wbm_cse_path, lines=True, orient="records"
     ).set_index(Key.mat_id)
 
-    if debug_mode:
-        df_wbm_structs = df_wbm_structs.head(debug_mode)
-
     dft_structs: dict[str, Structure] = {
         mat_id: Structure.from_dict(cse[Key.structure])
         for mat_id, cse in df_wbm_structs[Key.computed_structure_entry].items()
@@ -209,11 +206,16 @@ if __name__ == "__main__":
     dft_analysis_dict: dict[float, pd.DataFrame] = {}
     for symprec in symprec_values:
         symprec_str = f"symprec={symprec:.0e}".replace("e-0", "e-")
+
+        # Always use full DFT analysis file, regardless of debug mode, ensuring
+        # reference data available for all model structures regardless of debug mode
+        # and sorting of material IDs
         dft_csv_path = (
             f"{ROOT}/data/wbm/dft-geo-opt-{symprec_str}-{moyo_version}.csv.gz"
         )
 
         if os.path.isfile(dft_csv_path):
+            print(f"Loading DFT analysis from {dft_csv_path}")
             dft_analysis_dict[symprec] = pd.read_csv(dft_csv_path).set_index(Key.mat_id)
         else:
             dft_analysis_dict[symprec] = symmetry.get_sym_info_from_structs(
