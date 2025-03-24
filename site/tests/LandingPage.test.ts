@@ -13,7 +13,7 @@ describe(`Landing Page`, () => {
 
     const button_texts = Array.from(buttons).map((btn) => btn.textContent?.trim())
     expect(button_texts).toContain(`Full Test Set`)
-    expect(button_texts).toContain(`Unique Prototypes`)
+    expect(button_texts).toContain(`Unique Prototypes ⓘ`)
     expect(button_texts).toContain(`10k Most Stable`)
   })
 
@@ -56,16 +56,16 @@ describe(`Landing Page`, () => {
     expect(toggle).toBeDefined()
 
     // Should be unchecked by default
-    expect(toggle?.checked).toBe(false)
+    expect(toggle?.checked).toBe(true)
     // get number of table rows
     const n_models_on_load = document.body.querySelectorAll(`tbody tr`).length
 
     // Click to show non-compliant models
     toggle?.click()
-    expect(toggle?.checked).toBe(true)
+    expect(toggle?.checked).toBe(false)
     await tick()
     const n_all_models = document.body.querySelectorAll(`tbody tr`).length
-    expect(n_all_models).toBeGreaterThan(n_models_on_load)
+    expect(n_all_models).toBeLessThan(n_models_on_load)
   })
 
   it(`updates column visibility when toggling checkboxes`, async () => {
