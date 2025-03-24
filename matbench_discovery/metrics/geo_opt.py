@@ -85,7 +85,7 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:
             - n_structs: Number of structures evaluated
 
     Notes:
-        - total number of structures (n_structs) is counted based on valid RMSD values
+        - total number of structures (n_structs) is counted based on valid symmetry data
         - NaN RMSD values are filled with 1.0 (the stol value set in StructureMatcher)
         - symmetry metrics are calculated only on structures with valid symmetry data
     """
@@ -94,18 +94,15 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:
     n_sym_ops_diff = df_model_analysis[MbdKey.n_sym_ops_diff]
     rmsd_vals = df_model_analysis[MbdKey.structure_rmsd_vs_dft]
 
-    # Count total number of structures with valid RMSD values (primary metric)
-    n_structs = len(rmsd_vals.dropna())
-
-    # Fill NaN values with 1.0 (the stol value we set in StructureMatcher)
-    mean_rmsd = rmsd_vals.infer_objects(copy=False).fillna(1.0).mean()
-
     # For symmetry metrics, we only use structures with valid symmetry results
     # in rare cases, symmetry detection may fail because of the symmetry finder
     # algorithm rather than something being wrong with the model-relaxed structure so
     # not clear how to assign blame for missing results between model and symmetry algo
     valid_sym_mask = spg_diff.notna()
     n_valid_sym = valid_sym_mask.sum()
+
+    # Fill NaN values with 1.0 (the stol value we set in StructureMatcher)
+    mean_rmsd = rmsd_vals.infer_objects(copy=False).fillna(1.0).mean()
 
     # Calculate symmetry metrics only on valid symmetry data
     sym_ops_mae = n_sym_ops_diff[valid_sym_mask].abs().mean()
@@ -129,5 +126,5 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:
         str(Key.symmetry_increase): float(sym_increased.sum() / n_valid_sym)
         if n_valid_sym > 0
         else float("nan"),
-        str(Key.n_structures): n_structs,
+        str(Key.n_structures): n_valid_sym,
     }
