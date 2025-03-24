@@ -89,26 +89,16 @@
     gap: 1rem;
     flex-wrap: wrap;
   }
-
   .info-icon-small {
-    font-size: 0.8em;
-    margin-left: 0.2em;
-    opacity: 0.7;
-    cursor: help;
+    font-size: 0.9em;
   }
-
   .filter-option {
     display: flex;
     align-items: center;
-    font-size: 0.85em;
     gap: 0.3em;
-    cursor: pointer;
-    white-space: nowrap;
   }
-
   /* Fix for sub and sup tags */
-  :global(sub),
-  :global(sup) {
+  :global(:is(sub, sup)) {
     font-size: 0.7em;
   }
 </style>

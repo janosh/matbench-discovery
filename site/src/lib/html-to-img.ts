@@ -10,10 +10,7 @@ export async function generate_svg({
 }) {
   try {
     // Find the metrics table
-    const table_el =
-      document.querySelector(`.heatmap-table`) ||
-      document.querySelector(`.metrics-table table`) ||
-      document.querySelector(`.metrics-table .heatmap-table-container table`)
+    const table_el = document.querySelector(`.heatmap-table`)
 
     if (!table_el) {
       console.error(`Table element not found for SVG export`)
@@ -121,10 +118,7 @@ export async function generate_png({
 }) {
   try {
     // Find the metrics table
-    const table_el =
-      document.querySelector(`.heatmap-table`) ||
-      document.querySelector(`.metrics-table table`) ||
-      document.querySelector(`.metrics-table .heatmap-table-container table`)
+    const table_el = document.querySelector(`.heatmap-table`)
 
     if (!table_el) {
       console.error(`Table element not found for PNG export`)

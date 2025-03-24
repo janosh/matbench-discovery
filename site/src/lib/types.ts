@@ -142,5 +142,9 @@ export type CellVal =
   | null
   | Record<string, unknown>
   | LinkData
-export type RowData = Record<string, CellVal>
+
+export type RowData = Record<string, CellVal> & {
+  row_attributes?: Record<string, string | boolean | number | undefined>
+}
+
 export type TableData = RowData[]

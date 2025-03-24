@@ -418,8 +418,11 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         """File path associated with the file URL if it exists, otherwise
         download the file first, then return the path.
         """
-        geo_opt_metrics = self.metrics.get("geo_opt", {})
-        if geo_opt_metrics in ("not available", "not applicable"):
+        geo_opt_metrics = self.metrics.get("geo_opt")
+        if geo_opt_metrics is None or geo_opt_metrics in (
+            "not available",
+            "not applicable",
+        ):
             return None
         rel_path = geo_opt_metrics.get("pred_file")
         file_url = geo_opt_metrics.get("pred_file_url")

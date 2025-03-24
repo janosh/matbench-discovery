@@ -50,6 +50,7 @@
 
   // Make metric_config reactive with $state to properly handle updates
   let metric_config = $state({ ...config })
+  const [compliant_clr, noncompliant_clr] = [`#4caf50`, `#4682b4`]
 
   // Update metric_config when config prop changes
   $effect(() => {
@@ -245,6 +246,7 @@
       )
         .map((model) => {
           const metrics = model.metrics?.discovery?.[discovery_set]
+          const is_compliant = model_is_compliant(model)
 
           // Get RMSD from geo_opt metrics if available, using the first symprec value
           const geo_opt_metrics = model.metrics?.geo_opt
@@ -311,6 +313,9 @@
               pr_url: { url: model.pr_url, title: `View pull request`, icon: `🔗` },
               pred_files: { files: get_pred_file_urls(model), name: model.model_name },
             } as LinkData,
+            row_style: show_noncompliant
+              ? `border-left: 3px solid ${is_compliant ? compliant_clr : noncompliant_clr};`
+              : null,
           }
         })
         // Sort by combined score (descending)
@@ -372,14 +377,26 @@
   {...rest}
 >
   {#snippet controls()}
-    <TableControls
-      {show_energy_only}
-      {show_noncompliant}
-      bind:visible_cols
-      on_filter_change={(show_energy, show_noncomp) => {
-        handle_filter_change(show_energy, show_noncomp)
-      }}
-    />
+    <div class="controls-container">
+      <div class="controls-row">
+        {#if show_noncompliant}
+          {#each [[compliant_clr, `Compliant`], [noncompliant_clr, `Non-compliant`]] as [clr, label]}
+            <div class="legend-item">
+              <span class="color-swatch" style="background-color: {clr};"></span>
+              {label}
+            </div>
+          {/each}
+        {/if}
+        <TableControls
+          {show_energy_only}
+          {show_noncompliant}
+          bind:visible_cols
+          on_filter_change={(show_energy, show_noncomp) => {
+            handle_filter_change(show_energy, show_noncomp)
+          }}
+        />
+      </div>
+    </div>
   {/snippet}
 
   {#snippet cell({ col, val })}
@@ -448,13 +465,6 @@
 </dialog>
 
 <style>
-  /* Make the table protrude into page margins */
-  :global(.heatmap-table-container) {
-    margin-left: calc((100vw - var(--main-width, 60ch)) / -8) !important;
-    margin-right: calc((100vw - var(--main-width, 60ch)) / -8) !important;
-    width: auto !important;
-  }
-
   dialog {
     visibility: hidden;
     opacity: 0;
@@ -500,5 +510,21 @@
   }
   .close-btn:hover {
     color: var(--link-color);
+  }
+  div.controls-row {
+    display: flex;
+    gap: 1em;
+    flex-wrap: wrap;
+    font-size: 0.85em;
+  }
+  div.legend-item {
+    display: flex;
+    place-items: center;
+    gap: 0.3em;
+  }
+  span.color-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
   }
 </style>
