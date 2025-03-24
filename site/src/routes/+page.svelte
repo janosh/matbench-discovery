@@ -19,7 +19,7 @@
   let n_wbm_stable_uniq_protos = 32_942
   let n_wbm_uniq_protos = 215_488
 
-  let show_non_compliant: boolean = $state(false)
+  let show_non_compliant: boolean = $state(true)
   let show_energy_only: boolean = $state(false)
   let show_combined_controls: boolean = $state(true)
   let export_error: string | null = $state(null)

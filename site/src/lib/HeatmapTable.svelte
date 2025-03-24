@@ -226,7 +226,7 @@
     </thead>
     <tbody>
       {#each clean_data as row (JSON.stringify(row))}
-        <tr animate:flip={{ duration: 500 }}>
+        <tr animate:flip={{ duration: 500 }} style={row.row_style ?? null}>
           {#each visible_columns as col (col.label + col.group)}
             {@const val = row[get_col_id(col)]}
             {@const color = calc_color(val, col)}
