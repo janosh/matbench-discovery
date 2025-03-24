@@ -179,12 +179,8 @@
   {/if}
 </div>
 
-<div bind:this={container} class="table-container" {style}>
-  <table
-    use:titles_as_tooltips
-    class:fixed-header={fixed_header}
-    class="heatmap heatmap-table"
-  >
+<div bind:this={container} class="table-container" {style} use:titles_as_tooltips>
+  <table class:fixed-header={fixed_header} class="heatmap heatmap-table">
     <thead>
       <!-- Don't add a table row for group headers if there are none -->
       {#if visible_columns.some((col) => col.group)}

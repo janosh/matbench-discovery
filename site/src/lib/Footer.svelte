@@ -1,6 +1,5 @@
 <script lang="ts">
   import { repository } from '$site/package.json'
-  import 'iconify-icon'
   import { click_outside } from 'svelte-zoo/actions'
 
   interface Props {
