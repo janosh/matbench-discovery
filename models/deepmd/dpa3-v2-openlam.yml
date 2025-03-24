@@ -103,7 +103,7 @@ metrics:
     struct_col: dp_structure
     pred_file_url: https://figshare.com/files/53018852
     symprec=1e-5:
-      rmsd: 0.0127 # Å
+      rmsd: 0.0127 # unitless
       n_sym_ops_mae: 2.1607 # unitless
       symmetry_decrease: 0.0654 # fraction
       symmetry_match: 0.719 # fraction
@@ -112,7 +112,7 @@ metrics:
       analysis_file: models/deepmd/dpa3-v2-openlam/2025-03-14-wbm-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
       analysis_file_url: https://figshare.com/files/53019284
     symprec=1e-2:
-      rmsd: 0.0127 # Å
+      rmsd: 0.0127 # unitless
       n_sym_ops_mae: 1.8814 # unitless
       symmetry_decrease: 0.0511 # fraction
       symmetry_match: 0.81 # fraction

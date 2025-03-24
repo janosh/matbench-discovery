@@ -76,7 +76,7 @@ metrics:
     pred_file_url: https://figshare.com/files/52061999
     struct_col: chgnet_structure
     symprec=1e-5:
-      rmsd: 0.0216 # Å
+      rmsd: 0.0216 # unitless
       symmetry_decrease: 0.2526 # fraction
       symmetry_match: 0.5833 # fraction
       symmetry_increase: 0.1525 # fraction
@@ -85,7 +85,7 @@ metrics:
       analysis_file: models/chgnet/chgnet-0.3.0/2023-12-21-wbm-geo-opt-symprec=1e-5.csv.gz
       analysis_file_url: https://figshare.com/files/52062005
     symprec=1e-2:
-      rmsd: 0.0218 # Å
+      rmsd: 0.0218 # unitless
       n_sym_ops_mae: 2.0622 # unitless
       symmetry_decrease: 0.0937 # fraction
       symmetry_match: 0.7799 # fraction

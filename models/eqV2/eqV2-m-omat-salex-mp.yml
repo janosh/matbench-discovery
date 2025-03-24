@@ -95,7 +95,7 @@ metrics:
     pred_file_url: https://figshare.com/files/51607436
     struct_col: eqV2-86M-omat-mp-salex_structure
     symprec=1e-5:
-      rmsd: 0.0138 # Å
+      rmsd: 0.0138 # unitless
       n_sym_ops_mae: 10.0558 # unitless
       symmetry_decrease: 0.8611 # fraction
       symmetry_match: 0.1382 # fraction
@@ -104,7 +104,7 @@ metrics:
       analysis_file: models/eqV2/eqV2-m-omat-salex-mp/2024-10-18-wbm-geo-opt-symprec=1e-5.csv.gz
       analysis_file_url: https://figshare.com/files/52302437
     symprec=1e-2:
-      rmsd: 0.0112 # Å
+      rmsd: 0.0112 # unitless
       n_sym_ops_mae: 2.077 # unitless
       symmetry_decrease: 0.1321 # fraction
       symmetry_match: 0.7474 # fraction

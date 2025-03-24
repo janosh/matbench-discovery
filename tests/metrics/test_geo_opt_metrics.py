@@ -31,6 +31,26 @@ def test_calc_geo_opt_metrics(df_geo_opt: pd.DataFrame) -> None:
     assert results[str(Key.symmetry_increase)] == pytest.approx(1 / 3)
     assert results[str(Key.n_structures)] == 3
 
+    # Test 2: Verify n_structures is based on valid symmetry data (non-NaN spg_diff)
+    # with different NaN patterns in RMSD vs symmetry data
+    nan_data = {
+        # RMSD has 4 non-NaN values
+        MbdKey.structure_rmsd_vs_dft: [0.1, 0.2, 0.3, 0.4, np.nan, np.nan],
+        # spg_diff has 5 non-NaN values (different pattern than RMSD)
+        MbdKey.spg_num_diff: [0, 1, np.nan, -1, 2, 3],
+        # n_sym_ops_diff follows same pattern as spg_diff
+        MbdKey.n_sym_ops_diff: [0, 2, np.nan, -2, 4, 6],
+    }
+    df_mixed_nan = pd.DataFrame(nan_data)
+    mixed_results = geo_opt.calc_geo_opt_metrics(df_mixed_nan)
+    # n_structures should be 5 (the number of non-NaN spg_diff values)
+    assert mixed_results[str(Key.n_structures)] == 5
+    # Verify symmetry metrics are calculated only on valid symmetry data
+    # There are 5 non-NaN spg_diff values with: 1 match, 1 decrease, 3 increases
+    assert mixed_results[str(Key.symmetry_match)] == pytest.approx(1 / 5)
+    assert mixed_results[str(Key.symmetry_decrease)] == pytest.approx(1 / 5)
+    assert mixed_results[str(Key.symmetry_increase)] == pytest.approx(3 / 5)
+
 
 @pytest.mark.parametrize(
     "spg_diffs, n_sym_ops_diffs, expected_decrease, expected_match, expected_increase",
@@ -70,7 +90,8 @@ def test_calc_geo_opt_metrics_parametrized(
     assert results[str(Key.symmetry_decrease)] == pytest.approx(expected_decrease)
     assert results[str(Key.symmetry_match)] == pytest.approx(expected_match)
     assert results[str(Key.symmetry_increase)] == pytest.approx(expected_increase)
-    assert results[str(Key.n_structures)] == len(spg_diffs) - np.isnan(spg_diffs).sum()
+    # n_structures should be the number of non-NaN spg_diff values
+    assert results[str(Key.n_structures)] == sum(pd.notna(spg_diffs))
 
 
 @pytest.mark.parametrize(

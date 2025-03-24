@@ -84,7 +84,7 @@ metrics:
     pred_file_url: https://figshare.com/files/52062317
     struct_col: orb_structure
     symprec=1e-5:
-      rmsd: 0.0185 # Å
+      rmsd: 0.0185 # unitless
       n_sym_ops_mae: 10.036 # unitless
       symmetry_decrease: 0.8594 # fraction
       symmetry_match: 0.1397 # fraction
@@ -93,7 +93,7 @@ metrics:
       analysis_file: models/orb/orbff-mptrj-v2/2024-10-14-wbm-geo-opt-symprec=1e-5.csv.gz
       analysis_file_url: https://figshare.com/files/52062386
     symprec=1e-2:
-      rmsd: 0.0185 # Å
+      rmsd: 0.0185 # unitless
       n_sym_ops_mae: 6.1283 # unitless
       symmetry_decrease: 0.586 # fraction
       symmetry_match: 0.3716 # fraction

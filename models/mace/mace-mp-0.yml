@@ -80,7 +80,7 @@ metrics:
     pred_file_url: https://figshare.com/files/52062020
     struct_col: mace_structure
     symprec=1e-5:
-      rmsd: 0.0194 # Å
+      rmsd: 0.0194 # unitless
       n_sym_ops_mae: 1.8584 # unitless
       symmetry_decrease: 0.035 # fraction
       symmetry_match: 0.7361 # fraction
@@ -89,7 +89,7 @@ metrics:
       analysis_file: models/mace/mace-mp-0/2023-12-11-wbm-IS2RE-FIRE-symprec=1e-5.csv.gz
       analysis_file_url: https://figshare.com/files/52062029
     symprec=1e-2:
-      rmsd: 0.0197 # Å
+      rmsd: 0.0197 # unitless
       n_sym_ops_mae: 1.8961 # unitless
       symmetry_decrease: 0.0602 # fraction
       symmetry_match: 0.7977 # fraction
