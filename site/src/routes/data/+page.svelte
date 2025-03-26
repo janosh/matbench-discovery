@@ -17,10 +17,7 @@
 
   const elem_counts = import.meta.glob(
     `./*-element-counts-by-{occurrence,composition}*.json`,
-    {
-      eager: true,
-      import: `default`,
-    },
+    { eager: true, import: `default` },
   )
 
   let log = $state(false) // log color scale
@@ -109,8 +106,10 @@
 
   {#snippet spacegroup_sunbursts()}
     {#if browser}
-      <SpacegroupSunburstMp />
-      <SpacegroupSunburstWbm />
+      <div style="display: flex; gap: 2em; place-content: center;">
+        <SpacegroupSunburstMp />
+        <SpacegroupSunburstWbm />
+      </div>
     {/if}
   {/snippet}
 </DataReadme>

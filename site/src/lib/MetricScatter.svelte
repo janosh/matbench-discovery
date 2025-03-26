@@ -80,8 +80,7 @@
 </script>
 
 <ScatterPlot
-  {x}
-  {y}
+  series={[{ x, y }]}
   x_format="%b %y"
   {y_label}
   bind:tooltip_point

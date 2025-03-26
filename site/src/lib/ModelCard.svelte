@@ -72,7 +72,7 @@
     </span>
   {/each}
 </nav>
-<p>
+<section class="metadata">
   <span title="Date added">
     <iconify-icon icon="ion:ios-calendar" inline></iconify-icon>
     Added {model.date_added}
@@ -135,7 +135,7 @@
       {/each}
     </span>
   {/if}
-</p>
+</section>
 {#if show_details}
   <div transition:fade|fly={{ duration: 200 }}>
     <section transition:slide={{ duration: 200 }}>
@@ -244,7 +244,7 @@
     gap: 6pt;
     place-items: center;
   }
-  p {
+  section.metadata {
     display: grid;
     gap: 5pt;
     grid-template-columns: 1fr 1fr;
