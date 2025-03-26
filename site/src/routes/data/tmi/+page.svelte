@@ -7,10 +7,12 @@
   import { ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
   import { RadioButtons, Toggle } from 'svelte-zoo'
 
-  const elem_counts = $state(import.meta.glob(`../wbm-element-counts-*=*.json`, {
-    eager: true,
-    import: `default`,
-  }))
+  const elem_counts = $state(
+    import.meta.glob(`../wbm-element-counts-*=*.json`, {
+      eager: true,
+      import: `default`,
+    }),
+  )
   for (const key of Object.keys(elem_counts)) {
     const new_key = key?.split(`-`).at(-1)?.split(`.`)[0] as string
     elem_counts[new_key] = elem_counts[key]
@@ -21,7 +23,7 @@
   let log = $state(false) // log color scale
   let filter = $state(arity_keys[0])
   let color_scale = $state([`Viridis`])
-  let active_element: ChemicalElement = $state()
+  let active_element: ChemicalElement | null = $state(null)
   let active_counts = $derived(elem_counts[filter])
   let normalized_bar_counts: boolean = $state(false)
 
@@ -49,20 +51,16 @@
     composition arity
     <RadioButtons style={radio_style} options={arity_keys} bind:selected={filter}>
       {#snippet option({ option, active })}
-            <strong    class:active>
-          {option?.split(`=`)[1]}</strong
-        >
-          {/snippet}
+        <strong class:active> {option?.split(`=`)[1]}</strong>
+      {/snippet}
     </RadioButtons>
   </span>
   <span>
     batch index
     <RadioButtons style={radio_style} options={batch_keys} bind:selected={filter}>
       {#snippet option({ option, active })}
-            <strong    class:active>
-          {option?.split(`=`)[1]}</strong
-        >
-          {/snippet}
+        <strong class:active> {option?.split(`=`)[1]}</strong>
+      {/snippet}
     </RadioButtons>
   </span>
 </form>
@@ -75,7 +73,7 @@
   show_photo={false}
 >
   {#snippet inset()}
-    <TableInset >
+    <TableInset>
       <PtableInset element={active_element} elem_counts={active_counts} />
       <span {style}>Log color scale<Toggle bind:checked={log} /></span>
     </TableInset>

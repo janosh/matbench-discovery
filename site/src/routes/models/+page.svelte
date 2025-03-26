@@ -102,7 +102,7 @@
   </span>
 
   <ul>
-    {#each [{ key: `model_name`, label: `Model Name` }, ...stats] as { key, label, tooltip } (key)}
+    {#each [{ key: `model_name`, label: `Model Name`, tooltip: undefined }, ...stats] as { key, label, tooltip } (key)}
       <li class:active={key == sort_by}>
         <button
           id={key}
