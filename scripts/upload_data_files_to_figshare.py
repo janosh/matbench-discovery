@@ -33,7 +33,8 @@ def main(
             article will be created.
         pyproject (dict[str, Any]): Dictionary containing the project metadata.
         max_file_size (int): Maximum file size in bytes to be uploaded automatically.
-        files (list[DataFiles] | None): List of DataFiles to upload.
+        files (list[DataFiles] | None): Which attributes of DataFiles to upload.
+            Defaults to all.
     """
     if article_id is not None:
         # Check if article exists and is accessible
@@ -158,6 +159,10 @@ def main(
                 print("\nUpdated files:")
                 for idx, (data_file, url) in enumerate(updated_files.items(), start=1):
                     print(f"{idx}. {data_file}: {url}")
+
+            # Publish the article if any new files were added
+            print("\nNew or updated files were added. Publishing the article...")
+            figshare.publish_article(article_id)
         else:
             print("\nNo files were added or updated.")
 
