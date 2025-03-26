@@ -29,7 +29,7 @@ describe(`ModelCard`, () => {
       expect(links.length).toBeGreaterThan(0)
       expect(links[0].href).toBe(model.repo)
 
-      const info_spans = document.body.querySelectorAll(`p > span`)
+      const info_spans = document.body.querySelectorAll(`section.metadata > span`)
       expect(info_spans[0].textContent).toContain(model.date_added)
       if (model.date_published) {
         expect(info_spans[1].textContent).toContain(model.date_published)
@@ -66,9 +66,9 @@ describe(`ModelCard`, () => {
     })
 
     // Look for span containing "Training set" text
-    const training_set = Array.from(document.body.querySelectorAll(`p span`)).find(
-      (span) => span.textContent?.includes(`Training set`),
-    )
+    const training_set = Array.from(
+      document.body.querySelectorAll(`section.metadata span`),
+    ).find((span) => span.textContent?.includes(`Training set`))
     expect(training_set).toBeDefined()
     expect(training_set?.textContent).toContain(`Training set:`)
 
