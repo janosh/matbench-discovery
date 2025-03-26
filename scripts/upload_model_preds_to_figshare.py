@@ -150,6 +150,7 @@ def update_one_modeling_task_article(
 ) -> None:
     """Update or create a Figshare article for a modeling task."""
     article_id = figshare.ARTICLE_IDS[f"model_preds_{task}"]
+    article_is_new = False
 
     if article_id is not None:
         # Check if article exists and is accessible
@@ -166,6 +167,7 @@ def update_one_modeling_task_article(
         else:
             metadata = get_article_metadata(task)
             article_id = figshare.create_article(metadata)
+            article_is_new = True
             print(
                 f"\n⚠️ Created new Figshare article for {task=} with {article_id=}"
                 f"\nUpdate figshare.ARTICLE_IDS with this ID!"
@@ -335,10 +337,16 @@ def update_one_modeling_task_article(
             ):
                 print(f"{idx}. {model.name} {filename}: {url}")
 
-        # Publish the article if any new files were added and it's not a dry run
-        if (new_files or updated_files) and not dry_run:
-            print("\nNew or updated files were added. Publishing the article...")
+        # Publish the article if any new files were added, it's not a dry run,
+        # and the article wasn't newly created
+        if (new_files or updated_files) and not dry_run and not article_is_new:
+            print(f"\nFiles were added or updated. Publishing article {article_url}")
             figshare.publish_article(article_id)
+        elif article_is_new:
+            print(
+                "\n⚠️ Article was newly created. Please review it at "
+                f"{article_url} before publishing manually."
+            )
     else:
         print("\nNo files were added or updated.")
 

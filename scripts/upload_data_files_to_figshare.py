@@ -36,6 +36,7 @@ def main(
         files (list[DataFiles] | None): Which attributes of DataFiles to upload.
             Defaults to all.
     """
+    article_is_new = False
     if article_id is not None:
         # Check if article exists and is accessible
         if figshare.article_exists(article_id):
@@ -72,10 +73,12 @@ def main(
 
     if article_id is None:
         article_id = figshare.create_article(metadata)
+        article_is_new = True
         print(
             f"\n⚠️ Created new Figshare article with {article_id=}"
             f"\nUpdate FIGSHARE_ARTICLE_ID in {__file__} with this ID!"
         )
+    article_url = f"{figshare.ARTICLE_URL_PREFIX}/{article_id}"
 
     try:
         # Load existing YAML data if available
@@ -160,9 +163,17 @@ def main(
                 for idx, (data_file, url) in enumerate(updated_files.items(), start=1):
                     print(f"{idx}. {data_file}: {url}")
 
-            # Publish the article if any new files were added
-            print("\nNew or updated files were added. Publishing the article...")
-            figshare.publish_article(article_id)
+            # Publish the article if any new files were added and it's not newly created
+            if article_is_new:
+                print(
+                    "\n⚠️ Article was newly created. Please review it at "
+                    f"{article_url} before publishing manually."
+                )
+            else:
+                print(
+                    f"\nFiles were added or updated. Publishing article {article_url}"
+                )
+                figshare.publish_article(article_id)
         else:
             print("\nNo files were added or updated.")
 
