@@ -6,20 +6,20 @@
   import type { Snapshot } from './$types'
 
   interface Props {
-    heatmap_values: Record<string, number>;
-    color_scale?: string;
-    active_element: ChemicalElement;
-    log?: boolean; // log color scale
-    color_bar_props?: ComponentProps<ColorBar>;
+    heatmap_values: Record<string, number>
+    color_scale?: string
+    active_element: ChemicalElement | null
+    log?: boolean // log color scale
+    color_bar_props?: ComponentProps<typeof ColorBar>
   }
 
   let {
     heatmap_values,
     color_scale = $bindable(`Viridis`),
-    active_element = $bindable(),
+    active_element = $bindable(null),
     log = $bindable(false),
-    color_bar_props = {}
-  }: Props = $props();
+    color_bar_props = {},
+  }: Props = $props()
 
   export const snapshot: Snapshot = {
     capture: () => ({ color_scale, log }),
@@ -35,7 +35,7 @@
   show_photo={false}
 >
   {#snippet inset()}
-    <TableInset >
+    <TableInset>
       <label for="log">Log color scale<Toggle id="log" bind:checked={log} /></label>
       <PtableInset element={active_element} elem_counts={heatmap_values} />
       <ColorBar

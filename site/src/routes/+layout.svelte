@@ -1,25 +1,24 @@
 <script lang="ts">
-  import { afterNavigate, goto } from '$app/navigation'
-  import { page } from '$app/stores'
+  import { goto } from '$app/navigation'
+  import { page } from '$app/state'
   import { Footer, Nav } from '$lib'
   import { repository } from '$site/package.json'
-  import type { Snippet } from 'svelte'
+  import { type Snippet } from 'svelte'
   import { CmdPalette } from 'svelte-multiselect'
   import Toc from 'svelte-toc'
-  import { CopyButton, GitHubCorner } from 'svelte-zoo'
+  import { GitHubCorner } from 'svelte-zoo'
   import '../app.css'
 
   interface Props {
     children?: Snippet
   }
-
   let { children }: Props = $props()
 
   const routes = Object.keys(import.meta.glob(`./*/+page.{svelte,md}`)).map(
     (filename) => `/` + filename.split(`/`)[1],
   )
 
-  let url = $derived($page.url.pathname)
+  let url = $derived(page.url.pathname)
   let headingSelector = $derived(
     `main :is(${{ '/api': `h1, ` }[url] ?? ``}h2, h3, h4):not(.toc-exclude)`,
   )
@@ -50,26 +49,13 @@
       return { label: route, action: () => goto(route) }
     },
   )
-  afterNavigate(({ to }) => {
-    if (to?.route.id == `/models`) {
+  $effect.pre(() => {
+    if (page.url.pathname == `/models`) {
       document.documentElement.style.setProperty(`--main-max-width`, `90em`)
     } else {
       document.documentElement.style.setProperty(`--main-max-width`, `50em`)
     }
-
-    for (const node of document.querySelectorAll(`pre > code`)) {
-      // skip if <pre> already contains a button (presumably for copy)
-      const pre = node.parentElement
-      if (!pre || pre.querySelector(`button`)) continue
-
-      new CopyButton({
-        target: pre,
-        props: {
-          content: node.textContent ?? ``,
-          style: `position: absolute; top: 1ex; right: 1ex;`,
-        },
-      })
-    }
+    // TODO restore svelte-zoo CopyButton to code blocks
   })
 </script>
 

@@ -1,16 +1,16 @@
 <script lang="ts">
-  import { page } from '$app/stores'
+  import { page } from '$app/state'
 
   interface Props {
-    routes: (string | [string, string])[];
-    style?: string | null;
+    routes: (string | [string, string])[]
+    style?: string | null
   }
 
-  let { routes, style = null }: Props = $props();
+  let { routes, style = null }: Props = $props()
 
   let is_current = $derived((path: string) => {
-    if (path === $page.url.pathname) return `page`
-    if (path !== `/` && $page.url.pathname.includes(path)) return `page`
+    if (path === page.url.pathname) return `page`
+    if (path !== `/` && page.url.pathname.includes(path)) return `page`
     return undefined
   })
 </script>
