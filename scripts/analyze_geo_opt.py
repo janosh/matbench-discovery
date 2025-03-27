@@ -105,7 +105,7 @@ def analyze_model_symprec(
     }
 
     symprec_str = f"symprec={symprec:.0e}".replace("e-0", "e-")
-    geo_opt_filename = model.geo_opt_path.removesuffix(".json.gz")
+    geo_opt_filename = model.geo_opt_path.removesuffix(".jsonl.gz")
     geo_opt_csv_path = f"{geo_opt_filename}-{symprec_str}-{moyo_version}.csv.gz"
 
     if os.path.isfile(geo_opt_csv_path) and not overwrite:

@@ -192,7 +192,7 @@
   ol {
     display: grid;
     gap: 2em;
-    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
   }
   ol > li {
     background-color: rgba(255, 255, 255, 0.05);

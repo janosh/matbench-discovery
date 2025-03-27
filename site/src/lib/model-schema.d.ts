@@ -70,6 +70,7 @@ export interface ModelMetadata {
   url?: string
   pypi?: string
   pr_url: string
+  checkpoint_url: string | `not available` | `missing`
   requirements: {
     /**
      * This interface was referenced by `undefined`'s JSON-Schema definition

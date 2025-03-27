@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Point } from 'elementari'
   import { onMount } from 'svelte'
   import type { MetricWeight } from './types'
 
@@ -98,11 +99,7 @@
   }
 
   // Helper to calculate triangle area using cross product
-  function calc_triangle_area(
-    p1: { x: number; y: number },
-    p2: { x: number; y: number },
-    p3: { x: number; y: number },
-  ) {
+  function calc_triangle_area(p1: Point, p2: Point, p3: Point) {
     return Math.abs(
       (p1.x * (p2.y - p3.y) + p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y)) / 2,
     )
@@ -110,6 +107,9 @@
 
   // Handle click on SVG to jump to position
   function handle_svg_click(event: MouseEvent) {
+    // Prevent default behavior including scrolling
+    event.preventDefault()
+
     // Get click coordinates relative to SVG
     const target = event.currentTarget as SVGSVGElement
     const svg_rect = target.getBoundingClientRect()
@@ -118,13 +118,18 @@
 
     // Check if click is inside the triangle
     const [a, b, c] = axis_points
-    if (is_point_in_triangle({ x: click_x, y: click_y }, a, b, c)) {
-      // Update the draggable point position
-      point = { x: click_x, y: click_y }
+    const click_point = { x: click_x, y: click_y }
 
-      // on click, immediately update weights based on new position
-      update_weights_from_point()
+    if (is_point_in_triangle(click_point, a, b, c)) {
+      // Update the draggable point position
+      point = click_point
+    } else {
+      // If outside the triangle, find the closest point on the triangle
+      point = get_closest_point_on_triangle(click_point, a, b, c)
     }
+
+    // Update weights based on new position
+    update_weights_from_point()
   }
 
   // Move point to a position with triangle constraints
@@ -178,65 +183,50 @@
     move_point_to_position(x, y)
   }
 
-  // Helper to check if a point is inside a triangle
-  function is_point_in_triangle(
-    p: { x: number; y: number },
-    a: { x: number; y: number },
-    b: { x: number; y: number },
-    c: { x: number; y: number },
-  ) {
+  // Helper to check if a point pt is inside a triangle with corners c1, c2, c3
+  function is_point_in_triangle(pt: Point, c1: Point, c2: Point, c3: Point) {
     // Compute barycentric coordinates
-    const denominator = (b.y - c.y) * (a.x - c.x) + (c.x - b.x) * (a.y - c.y)
-    const alpha = ((b.y - c.y) * (p.x - c.x) + (c.x - b.x) * (p.y - c.y)) / denominator
-    const beta = ((c.y - a.y) * (p.x - c.x) + (a.x - c.x) * (p.y - c.y)) / denominator
+    const denominator = (c2.y - c3.y) * (c1.x - c3.x) + (c3.x - c2.x) * (c1.y - c3.y)
+    const alpha =
+      ((c2.y - c3.y) * (pt.x - c3.x) + (c3.x - c2.x) * (pt.y - c3.y)) / denominator
+    const beta =
+      ((c3.y - c1.y) * (pt.x - c3.x) + (c1.x - c3.x) * (pt.y - c3.y)) / denominator
     const gamma = 1 - alpha - beta
 
     // If all coordinates are between 0 and 1, point is inside
     return alpha >= 0 && beta >= 0 && gamma >= 0 && alpha <= 1 && beta <= 1 && gamma <= 1
   }
 
-  // Helper to find closest point on triangle
-  function get_closest_point_on_triangle(
-    p: { x: number; y: number },
-    a: { x: number; y: number },
-    b: { x: number; y: number },
-    c: { x: number; y: number },
-  ) {
+  // Helper to find closest point pt on triangle with corners c1, c2, c3
+  function get_closest_point_on_triangle(pt: Point, c1: Point, c2: Point, c3: Point) {
     // First, find the closest point on each edge
-    const ab = closest_point_on_line(p, a, b)
-    const bc = closest_point_on_line(p, b, c)
-    const ca = closest_point_on_line(p, c, a)
+    const p12 = closest_point_on_line(pt, c1, c2)
+    const p23 = closest_point_on_line(pt, c2, c3)
+    const p31 = closest_point_on_line(pt, c3, c1)
 
     // Then, find which of those points is closest to p
-    const dist_ab = Math.pow(ab.x - p.x, 2) + Math.pow(ab.y - p.y, 2)
-    const dist_bc = Math.pow(bc.x - p.x, 2) + Math.pow(bc.y - p.y, 2)
-    const dist_ca = Math.pow(ca.x - p.x, 2) + Math.pow(ca.y - p.y, 2)
+    const dist_p12 = Math.pow(p12.x - pt.x, 2) + Math.pow(p12.y - pt.y, 2)
+    const dist_p23 = Math.pow(p23.x - pt.x, 2) + Math.pow(p23.y - pt.y, 2)
+    const dist_p31 = Math.pow(p31.x - pt.x, 2) + Math.pow(p31.y - pt.y, 2)
 
-    if (dist_ab <= dist_bc && dist_ab <= dist_ca) {
-      return ab
-    } else if (dist_bc <= dist_ab && dist_bc <= dist_ca) {
-      return bc
+    if (dist_p12 <= dist_p23 && dist_p12 <= dist_p31) {
+      return p12
+    } else if (dist_p23 <= dist_p12 && dist_p23 <= dist_p31) {
+      return p23
     } else {
-      return ca
+      return p31
     }
   }
 
   // Helper to find closest point on a line segment
-  function closest_point_on_line(
-    p: { x: number; y: number },
-    a: { x: number; y: number },
-    b: { x: number; y: number },
-  ) {
+  function closest_point_on_line(p: Point, a: Point, b: Point) {
     const atob = { x: b.x - a.x, y: b.y - a.y }
     const atop = { x: p.x - a.x, y: p.y - a.y }
     const len = atob.x * atob.x + atob.y * atob.y
     let dot = atop.x * atob.x + atop.y * atob.y
     const t = Math.max(0, Math.min(1, dot / len))
 
-    return {
-      x: a.x + atob.x * t,
-      y: a.y + atob.y * t,
-    }
+    return { x: a.x + atob.x * t, y: a.y + atob.y * t }
   }
 
   function end_drag() {
@@ -265,7 +255,7 @@
     aria-label="Radar chart for adjusting metric weights"
   >
     <!-- Axes -->
-    {#each weights as weight, idx}
+    {#each weights as weight, idx (weight.label)}
       {@const angle = (2 * Math.PI * idx) / weights.length}
       {@const x = center.x + Math.cos(angle) * radius * 0.8}
       {@const y = center.y + Math.sin(angle) * radius * 0.8}
@@ -322,7 +312,7 @@
     {/if}
 
     <!-- Background circular grid -->
-    {#each [0.2, 0.4, 0.6, 0.8] as grid_radius}
+    {#each [0.2, 0.4, 0.6, 0.8] as grid_radius (grid_radius)}
       <circle
         cx={center.x}
         cy={center.y}
@@ -336,13 +326,9 @@
     <!-- Colored areas for each metric -->
     {#if weights.length === 3}
       {@const [{ x, y }, { x: px, y: py }] = [center, point]}
-      {#each axis_points as { x: x0, y: y0 }, idx}
-        <path
-          d="M {x} {y} L {x0} {y0} L {px} {py} Z"
-          fill={colors[idx]}
-          stroke="none"
-          opacity="0.5"
-        />
+      {#each axis_points as { x: x0, y: y0 }, idx ([x0, y0])}
+        {@const path = `M ${x} ${y} L ${x0} ${y0} L ${px} ${py} Z`}
+        <path d={path} fill={colors[idx]} stroke="none" opacity="0.5" />
       {/each}
     {/if}
 

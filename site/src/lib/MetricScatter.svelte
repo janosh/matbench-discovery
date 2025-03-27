@@ -1,13 +1,13 @@
 <script lang="ts">
   import type { ModelData } from '$lib'
-  import { ScatterPlot } from 'elementari'
+  import { ScatterPlot, type Point } from 'elementari'
   import type { ModelMetadata } from './model-schema'
 
   interface Props {
     models: ModelData[]
     metric: string
     y_label: string
-    tooltip_point?: { x: number; y: number } | null
+    tooltip_point?: Point | null
     hovered?: boolean
     style?: string
     date_range?: [Date | null, Date | null]
