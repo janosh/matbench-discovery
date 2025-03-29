@@ -197,36 +197,25 @@
     return metrics[property as keyof typeof metrics] as T
   }
 
-  // Check if a model is energy-only (has no force or stress predictions)
-  function is_energy_only_model(model: ModelData): boolean {
-    return model.targets === `E`
-  }
-
-  // Check if a model is noncompliant (doesn't follow submission guidelines)
-  function is_noncompliant_model(model: ModelData): boolean {
-    return !model_is_compliant(model)
-  }
-
-  // Create a combined filter function that respects all filtering conditions
+  // combined filter function that respects prediction type and compliance filters
   function create_combined_filter(
     show_energy: boolean,
     show_noncomp: boolean,
   ): (model: ModelData) => boolean {
     return (model: ModelData) => {
-      // Apply the user-provided model_filter first
       if (!model_filter(model)) {
-        return false
+        return false // Apply user-provided model_filter first
       }
 
       // Filter energy-only models if not shown
-      const is_energy = is_energy_only_model(model)
-      if (is_energy && !show_energy) {
+      const is_energy_only = model.targets === `E`
+      if (is_energy_only && !show_energy) {
         return false
       }
 
       // Filter noncompliant models if not shown
-      const is_noncomp = is_noncompliant_model(model)
-      if (is_noncomp && !show_noncomp) {
+      const is_compliant = model_is_compliant(model)
+      if (!is_compliant && !show_noncomp) {
         return false
       }
 
@@ -239,7 +228,6 @@
     // Get the current filter with current state values
     const current_filter = create_combined_filter(show_energy_only, show_noncompliant)
 
-    // Perform the calculation
     return (
       MODEL_METADATA.filter(
         (model) => current_filter(model) && model.metrics?.discovery?.[discovery_set],
@@ -274,19 +262,17 @@
               : undefined
 
           // Calculate combined score
-          const combined_score = calculate_combined_score(
-            metrics?.F1,
-            rmsd,
-            kappa,
-            config,
-          )
+          const cps = calculate_combined_score(metrics?.F1, rmsd, kappa, config)
 
           const targets = model.targets.replace(/_(.)/g, `<sub>$1</sub>`)
           const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
+          const row_style = show_noncompliant
+            ? `border-left: 3px solid ${is_compliant ? compliant_clr : noncompliant_clr};`
+            : null
 
           return {
             Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}">${model.model_name}</a>`,
-            CPS: combined_score,
+            CPS: cps,
             F1: metrics?.F1,
             DAF: metrics?.DAF,
             Prec: metrics?.Precision,
@@ -318,9 +304,7 @@
               },
               pred_files: { files: get_pred_file_urls(model), name: model.model_name },
             } as LinkData,
-            row_style: show_noncompliant
-              ? `border-left: 3px solid ${is_compliant ? compliant_clr : noncompliant_clr};`
-              : null,
+            row_style,
           }
         })
         // Sort by combined score (descending)
@@ -338,10 +322,9 @@
     )
   }
 
-  // Make metrics_data explicitly reactive with $state
-  let metrics_data = $state<TableData>([])
+  let metrics_data = $state<TableData>([]) // reactive metrics_data
 
-  // Make metrics_data is recalculated whenever filter settings, props, or metric_config changes
+  // recalculate metrics_data whenever filter settings, props, or metric_config change
   $effect(() => {
     // When metric_config or filters change, recalculate metrics data
     metrics_data = calculate_metrics_data(metric_config)
@@ -413,7 +396,7 @@
             {link.icon}
           </a>
         {:else}
-          <span class="link-icon" title="{key} not available">🚫</span>
+          <span title="{key} not available">🚫</span>
         {/if}
       {/each}
       {#if links.pred_files}
