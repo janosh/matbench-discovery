@@ -1,6 +1,12 @@
 <script lang="ts">
   import type { DiscoverySet, ModelData } from '$lib'
-  import { MetricsTable, model_is_compliant, MODEL_METADATA, RadarChart } from '$lib'
+  import {
+    MetricScatter,
+    MetricsTable,
+    model_is_compliant,
+    MODEL_METADATA,
+    RadarChart,
+  } from '$lib'
   import { generate_png, generate_svg, handle_export } from '$lib/html-to-img'
   import {
     ALL_METRICS,
@@ -127,7 +133,7 @@
 
       <div class="downloads">
         Download table as
-        {#each [[`SVG`, generate_svg], [`PNG`, generate_png]] as const as [label, generate_fn]}
+        {#each [[`SVG`, generate_svg], [`PNG`, generate_png]] as const as [label, generate_fn] (label)}
           <button
             class="download-btn"
             onclick={handle_export(generate_fn, label, export_error, {
@@ -201,6 +207,17 @@
             size={260}
           />
         </div>
+
+        {#each [{ metric: `discovery.unique_prototypes.F1`, y_label: `F1 Score`, y_lim: [0, 1], better: `higher` }, { metric: `phonons.kappa_103.κ_SRME`, y_label: `κ<sub>SRME</sub>`, y_lim: [0, 2], better: `lower` }] as { metric, y_label, y_lim, better } (metric)}
+          {@const style = `width: 100%; height: 300px;`}
+          <section style="width: 100%;">
+            <h3>
+              {@html y_label} of models over time
+              <small style="font-weight: lighter;">({better} = better)</small>
+            </h3>
+            <MetricScatter models={MODEL_METADATA} {metric} {y_label} {style} {y_lim} />
+          </section>
+        {/each}
       </figcaption>
     </figure>
   {/snippet}
@@ -224,7 +241,6 @@
   {/snippet}
 </Readme>
 <KappaNote />
-
 {#await import(`$site/src/routes/landing-page-figs.md`) then LandingPageFigs}
   <LandingPageFigs.default />
 {/await}

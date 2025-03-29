@@ -9,7 +9,6 @@ describe(`MetricsTable`, () => {
     mount(MetricsTable, {
       target: document.body,
       props: {
-        discovery_set: `unique_prototypes`,
         col_filter: () => true,
         show_noncompliant: true,
       },
@@ -45,11 +44,7 @@ describe(`MetricsTable`, () => {
   it(`toggles metadata columns`, async () => {
     const metadata_cols = [`Training Set`, `Params`, `Targets`, `Date Added`, `Links`]
     const col_filter = $state((_col: HeatmapColumn) => true) // show all columns initially
-    mount(MetricsTable, {
-      target: document.body,
-      props: { discovery_set: `unique_prototypes`, col_filter },
-    })
-
+    mount(MetricsTable, { target: document.body, props: { col_filter } })
     // Check metadata columns are visible initially
     let header_texts = [...document.body.querySelectorAll(`th`)].map((h) =>
       h.textContent?.trim(),
@@ -61,7 +56,6 @@ describe(`MetricsTable`, () => {
     mount(MetricsTable, {
       target: document.body,
       props: {
-        discovery_set: `unique_prototypes`,
         col_filter: (col) => !metadata_cols.includes(col.label),
         show_noncompliant: true,
       },
@@ -85,13 +79,10 @@ describe(`MetricsTable`, () => {
   })
 
   it(`filters specified columns`, async () => {
+    const col_filter = (col: HeatmapColumn) => ![`F1`, `DAF`].includes(col.label)
     mount(MetricsTable, {
       target: document.body,
-      props: {
-        discovery_set: `unique_prototypes`,
-        col_filter: (col) => ![`F1`, `DAF`].includes(col.label),
-        show_noncompliant: true,
-      },
+      props: { col_filter, show_noncompliant: true },
     })
 
     const headers = document.body.querySelectorAll(`th`)
@@ -112,11 +103,7 @@ describe(`MetricsTable`, () => {
     // First test with energy-only models hidden
     mount(MetricsTable, {
       target: document.body,
-      props: {
-        discovery_set: `unique_prototypes`,
-        show_energy_only: false,
-        show_noncompliant: true,
-      },
+      props: { show_energy_only: false, show_noncompliant: true },
     })
     const rows_without_energy = document.body.querySelectorAll(`tbody tr`).length
 
@@ -124,11 +111,7 @@ describe(`MetricsTable`, () => {
     document.body.innerHTML = ``
     mount(MetricsTable, {
       target: document.body,
-      props: {
-        discovery_set: `unique_prototypes`,
-        show_energy_only: true,
-        show_noncompliant: true,
-      },
+      props: { show_energy_only: true, show_noncompliant: true },
     })
     const rows_with_energy = document.body.querySelectorAll(`tbody tr`).length
 
@@ -140,18 +123,13 @@ describe(`MetricsTable`, () => {
     let model_filter: (model: ModelData) => boolean = $state(() => false) // initially show no models
     mount(MetricsTable, {
       target: document.body,
-      props: {
-        discovery_set: `unique_prototypes`,
-        model_filter,
-        config: DEFAULT_COMBINED_METRIC_CONFIG,
-      },
+      props: { model_filter, config: DEFAULT_COMBINED_METRIC_CONFIG },
     })
 
     const initial_rows = document.body.querySelectorAll(`tbody tr`).length
     expect(initial_rows).toBe(0)
 
     model_filter = () => true // now show all models
-    await tick()
 
     const rows_with_non_compliant = document.body.querySelectorAll(`tbody tr`).length
     // expect(rows_with_non_compliant).toBeGreaterThan(0) // TODO: fix this test
@@ -159,13 +137,7 @@ describe(`MetricsTable`, () => {
   })
 
   it(`opens and closes prediction files modal`, async () => {
-    mount(MetricsTable, {
-      target: document.body,
-      props: {
-        discovery_set: `unique_prototypes`,
-      },
-    })
-
+    mount(MetricsTable, { target: document.body })
     const pred_files_btn = document.body.querySelector(
       `.pred-files-btn`,
     ) as HTMLButtonElement
@@ -174,7 +146,6 @@ describe(`MetricsTable`, () => {
 
     // Open modal
     pred_files_btn?.click()
-    await tick()
     expect(modal?.open).toBe(false)
 
     // Check modal content
@@ -188,16 +159,13 @@ describe(`MetricsTable`, () => {
     // Close modal with × button
     const close_btn = modal?.querySelector(`.close-btn`) as HTMLButtonElement
     close_btn?.click()
-    await tick()
     expect(modal?.open).toBe(false)
 
     // Check modal can be closed with Escape key
     pred_files_btn?.click()
-    await tick()
     expect(modal?.open).toBe(false)
 
     window.dispatchEvent(new KeyboardEvent(`keydown`, { key: `Escape` }))
-    await tick()
     expect(modal?.open).toBe(false)
   })
   it.each([
@@ -217,10 +185,7 @@ describe(`MetricsTable`, () => {
       expected_headers: [`Model`, `F1`, `DAF`],
     },
   ])(`handles col_filter: $name`, async ({ col_filter, expected_headers }) => {
-    mount(MetricsTable, {
-      target: document.body,
-      props: { discovery_set: `unique_prototypes`, col_filter },
-    })
+    mount(MetricsTable, { target: document.body, props: { col_filter } })
 
     const headers = [...document.body.querySelectorAll(`th`)]
     expect(headers.length).toBe(expected_headers.length)
@@ -245,7 +210,7 @@ describe(`MetricsTable`, () => {
     async ({ model_filter, col_filter, expected_model_match, expected_headers }) => {
       mount(MetricsTable, {
         target: document.body,
-        props: { discovery_set: `unique_prototypes`, model_filter, col_filter },
+        props: { model_filter, col_filter },
       })
 
       const headers = [...document.body.querySelectorAll(`th`)]
@@ -264,7 +229,6 @@ describe(`MetricsTable`, () => {
     mount(MetricsTable, {
       target: document.body,
       props: {
-        discovery_set: `unique_prototypes`,
         col_filter: (col: HeatmapColumn) => [`Model`, `F1`].includes(col.label),
         show_noncompliant: true,
       },
@@ -279,7 +243,6 @@ describe(`MetricsTable`, () => {
     mount(MetricsTable, {
       target: document.body,
       props: {
-        discovery_set: `unique_prototypes`,
         col_filter: (col: HeatmapColumn) => [`Model`, `F1`, `DAF`].includes(col.label),
         show_noncompliant: true,
       },
@@ -326,11 +289,7 @@ describe(`MetricsTable`, () => {
       // Test with default config
       mount(MetricsTable, {
         target: document.body,
-        props: {
-          discovery_set: `unique_prototypes`,
-          config,
-          show_noncompliant: true,
-        },
+        props: { config, show_noncompliant: true },
       })
       await tick()
       const rows = document.body.querySelectorAll(`tbody tr`)
@@ -343,7 +302,6 @@ describe(`MetricsTable`, () => {
       mount(MetricsTable, {
         target: document.body,
         props: {
-          discovery_set: `unique_prototypes`,
           show_noncompliant: true,
           col_filter: (col: HeatmapColumn) => [`Model`, `Date Added`].includes(col.label),
         },
@@ -385,7 +343,6 @@ describe(`MetricsTable`, () => {
 
       // Click again to toggle sort direction
       date_header.click()
-      await tick()
 
       // Get updated timestamps
       const descending_timestamps = [
@@ -406,7 +363,6 @@ describe(`MetricsTable`, () => {
       mount(MetricsTable, {
         target: document.body,
         props: {
-          discovery_set: `unique_prototypes`,
           show_noncompliant: true,
           col_filter: (col: HeatmapColumn) =>
             [`Model`, `Training Set`].includes(col.label),
@@ -481,7 +437,6 @@ describe(`MetricsTable`, () => {
       mount(MetricsTable, {
         target: document.body,
         props: {
-          discovery_set: `unique_prototypes`,
           show_noncompliant: true,
           col_filter: (col: HeatmapColumn) => [`Model`, `Params`].includes(col.label),
         },
@@ -553,7 +508,6 @@ describe(`MetricsTable`, () => {
       mount(MetricsTable, {
         target: document.body,
         props: {
-          discovery_set: `unique_prototypes`,
           show_noncompliant: true,
           col_filter: (col: HeatmapColumn) =>
             [`Model`, `CPS`, `Links`].includes(col.label),
@@ -592,6 +546,207 @@ describe(`MetricsTable`, () => {
 
       // Order should not change
       expect(after_links_click_models).toEqual(initial_models)
+    })
+  })
+
+  describe(`Links Column`, () => {
+    it(`renders external links with proper attributes`, async () => {
+      const col_filter = (col: HeatmapColumn) => [`Model`, `Links`].includes(col.label)
+      mount(MetricsTable, {
+        target: document.body,
+        props: { col_filter, show_noncompliant: true },
+      })
+
+      await tick() // Wait for component to process data
+
+      // Find all links cells
+      const links_cells = [...document.body.querySelectorAll(`td[data-col="Links"]`)]
+      expect(links_cells.length).toBeGreaterThan(20)
+
+      // Check that all rows have links
+      for (const cell of links_cells) {
+        const links = [...cell.querySelectorAll(`a`)]
+
+        // Every row should have links
+        expect(links.length).toBeGreaterThan(1)
+
+        // Check each link has proper attributes
+        for (const link of links) {
+          expect(link.getAttribute(`target`)).toBe(`_blank`)
+          expect(link.getAttribute(`rel`)).toBe(`noopener noreferrer`)
+          expect(link.hasAttribute(`title`)).toBe(true)
+          expect(link.getAttribute(`href`)).toBeTruthy()
+
+          // Each link should have an icon as text content
+          expect(link.textContent?.trim()).toMatch(/^[^\s]+$/) // Should be a single character/emoji
+        }
+      }
+    })
+
+    it(`shows 🚫 icon for missing links`, async () => {
+      mount(MetricsTable, {
+        target: document.body,
+        props: {
+          col_filter: (col: HeatmapColumn) => [`Model`, `Links`].includes(col.label),
+          show_noncompliant: true,
+        },
+      })
+
+      await tick() // Wait for component to process data
+
+      // Find all links cells
+      const links_cells = [...document.body.querySelectorAll(`td[data-col="Links"]`)]
+
+      // Check for banned icon for missing links
+      let found_missing_icon = false
+
+      for (const cell of links_cells) {
+        const missing_icons = [...cell.querySelectorAll(`span`)]
+
+        if (missing_icons.length > 0) {
+          found_missing_icon = true
+
+          // Check each missing link icon
+          for (const icon of missing_icons) {
+            expect(icon.textContent).toBe(`🚫`)
+            expect(icon.hasAttribute(`title`)).toBe(true)
+            expect(icon.getAttribute(`title`)).toMatch(/not available/)
+          }
+        }
+      }
+
+      // Note: this might fail if all models have all links, which is unlikely
+      expect(found_missing_icon).toBe(true)
+    })
+
+    it(`renders prediction files button`, async () => {
+      mount(MetricsTable, {
+        target: document.body,
+        props: {
+          col_filter: (col: HeatmapColumn) => [`Model`, `Links`].includes(col.label),
+          show_noncompliant: true,
+        },
+      })
+
+      await tick() // Wait for component to process data
+
+      // Find all pred_files buttons
+      const pred_file_buttons = [...document.body.querySelectorAll(`.pred-files-btn`)]
+
+      // Some models should have prediction files
+      expect(pred_file_buttons.length).toBeGreaterThan(0)
+
+      // Check button attributes
+      for (const button of pred_file_buttons) {
+        expect(button.getAttribute(`title`)).toBe(`Download model prediction files`)
+        expect(button.textContent?.trim()).toBe(`📊`)
+      }
+    })
+
+    it(`renders consistent link order and specific icons`, async () => {
+      mount(MetricsTable, {
+        target: document.body,
+        props: {
+          col_filter: (col: HeatmapColumn) => [`Model`, `Links`].includes(col.label),
+          show_noncompliant: true,
+        },
+      })
+
+      await tick() // Wait for component to process data
+
+      // Find all links cells with at least one link
+      const links_cells = [
+        ...document.body.querySelectorAll(`td[data-col="Links"]`),
+      ].filter((cell) => cell.querySelectorAll(`a`).length > 0)
+
+      // There should be at least one cell with links
+      expect(links_cells.length).toBeGreaterThan(0)
+
+      // Get the first cell with links to use as reference
+      const reference_cell = links_cells[0]
+      const reference_links = [...reference_cell.querySelectorAll(`a`)]
+
+      // Extract icons of links in the reference cell
+      const reference_icons = reference_links.map((link) => link.textContent?.trim())
+
+      // Define the expected icons based on the LinkData type
+      const expected_icon_options = {
+        paper: `📄`, // Paper icon
+        repo: `📦`, // Repo icon
+        pr_url: `🔗`, // PR link icon
+        checkpoint: `💾`, // Checkpoint icon
+      }
+
+      // Verify the icons used match our expected set
+      for (const icon of reference_icons) {
+        expect(Object.values(expected_icon_options)).toContain(icon)
+      }
+
+      // Check that the order of links is consistent across cells
+      // (not checking all cells as some might have missing links)
+      if (links_cells.length > 1) {
+        const second_cell = links_cells[1]
+        const second_links = [...second_cell.querySelectorAll(`a`)]
+
+        // If the second cell has the same number of links, check order
+        if (second_links.length === reference_links.length) {
+          const second_icons = second_links.map((link) => link.textContent?.trim())
+
+          // The icons should appear in the same order
+          for (let i = 0; i < reference_icons.length; i++) {
+            expect(second_icons[i]).toBe(reference_icons[i])
+          }
+        }
+      }
+    })
+
+    it(`opens prediction files modal when button is clicked`, async () => {
+      mount(MetricsTable, {
+        target: document.body,
+        props: {
+          col_filter: (col: HeatmapColumn) => [`Model`, `Links`].includes(col.label),
+          show_noncompliant: true,
+        },
+      })
+
+      await tick() // Wait for component to process data
+
+      // Find a prediction files button
+      const pred_file_btn = document.body.querySelector(
+        `.pred-files-btn`,
+      ) as HTMLButtonElement
+
+      // Get model name from the same row for verification
+      const model_cell = pred_file_btn
+        .closest(`tr`)
+        ?.querySelector(`td[data-col="Model"]`)
+      const model_name = model_cell?.textContent?.trim()
+
+      // Check dialog is initially closed
+      const modal = document.body.querySelector(`dialog`)
+      expect(modal?.open).toBe(false)
+
+      // Click the button to open the modal
+      pred_file_btn.click()
+      await tick()
+
+      // Check modal content
+      const modal_title = modal?.querySelector(`h3`)
+      if (model_name) {
+        expect(modal_title?.textContent).toContain(model_name)
+      }
+
+      // There should be a list of file links
+      const file_list = modal?.querySelector(`.pred-files-list`)
+      expect(file_list).toBeInstanceOf(HTMLOListElement)
+
+      // Close button should be present
+      const close_btn = modal?.querySelector(`.close-btn`) as HTMLButtonElement
+      expect(close_btn).toBeInstanceOf(HTMLButtonElement)
+
+      // Clicking close button should close the modal
+      close_btn.click()
+      expect(modal?.open).toBe(false)
     })
   })
 })

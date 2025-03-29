@@ -26,21 +26,14 @@
     metrics_style = null,
   }: Props = $props()
 
-  let { model_name, model_key } = $derived(model)
-  let {
-    model_params,
-    hyperparams,
-    notes = {},
-    training_set,
-    n_estimators,
-  } = $derived(model)
+  let { model_name, model_key, model_params, hyperparams } = $derived(model)
+  let { notes = {}, training_set, n_estimators } = $derived(model)
   let all_metrics = $derived({
     ...(model.metrics?.discovery?.full_test_set ?? {}),
     ...(typeof model.metrics?.phonons == `object`
       ? model.metrics?.phonons.kappa_103
       : {}),
   })
-
   let { missing_preds, missing_percent } = $derived(all_metrics)
 
   let links = $derived([
@@ -65,7 +58,7 @@
   </button>
 </h2>
 <nav>
-  {#each links.filter(([href]) => href?.startsWith(`http`)) as [href, title, icon] (title)}
+  {#each links.filter( ([href]) => href?.startsWith(`http`), ) as [href, title, icon] (title)}
     <span>
       <iconify-icon {icon} inline></iconify-icon>
       <a {href} {...target}>{title}</a>

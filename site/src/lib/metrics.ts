@@ -92,7 +92,7 @@ export const DISCOVERY_SET_LABELS: Record<
   unique_prototypes: {
     title: `Unique Prototypes`,
     tooltip: `Metrics computed only on ~215k unique structure prototypes in WBM determined by matching Aflow-style prototype strings.`,
-    link: `https://github.com/janosh/matbench-discovery/blob/fd1dda6c/data/wbm/compile_wbm_test_set.py#L632-L705`,
+    link: `https://github.com/janosh/matbench-discovery/blob/37baf7986f848/data/wbm/compile_wbm_test_set.py#L640-L654`,
   },
   most_stable_10k: {
     title: `10k Most Stable`,
