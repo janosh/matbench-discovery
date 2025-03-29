@@ -12,6 +12,8 @@
     style?: string
     date_range?: [Date | null, Date | null]
     model_filter?: (model: ModelData) => boolean
+    y_lim?: [number, number] | null
+    color?: string | null
     [key: string]: unknown
   }
 
@@ -24,6 +26,8 @@
     style = ``,
     date_range = [null, null],
     model_filter = () => true,
+    y_lim = null,
+    color = null,
     ...rest
   }: Props = $props()
 
@@ -77,16 +81,32 @@
         })
       : null,
   )
+
+  // default fill color based on metric type
+  const default_color_map: Record<string, string> = {
+    'phonons.kappa_103.κ_SRME': `#ff6b6b`,
+    'discovery.unique_prototypes.F1': `#ffbb54`,
+    combined_performance_score: `#a78bfa`,
+  }
+  const fill_color = $derived(color ?? default_color_map[metric] ?? `#4dabf7`)
+
+  // Create the data series with proper typing
+  let point_style = $derived({
+    fill: fill_color,
+    radius: 5,
+    stroke: `white`,
+    stroke_width: 0.5,
+  })
 </script>
 
 <ScatterPlot
-  series={[{ x, y }]}
+  series={[{ x, y, point_style }]}
   x_format="%b %y"
   {y_label}
   bind:tooltip_point
   bind:hovered
   {style}
-  y_lim={[0, 2]}
+  y_lim={y_lim ?? undefined}
   {...rest}
 >
   {#snippet tooltip({ x_formatted, y_formatted })}
@@ -94,7 +114,7 @@
       {#if active_model}
         <strong>{active_model.model_name}</strong>
         <br />
-        {y_label} = {y_formatted}
+        {@html y_label} = {@html y_formatted}
         <br />
         Added: {x_formatted}
       {/if}

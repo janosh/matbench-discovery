@@ -66,7 +66,7 @@
   <meta name="description" content={description} />
 </svelte:head>
 
-{#if url !== `/models`}
+{#if ![`/`, `/models`].includes(url)}
   <Toc {headingSelector} breakpoint={1250} minItems={3} />
 {/if}
 
