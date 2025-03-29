@@ -6,27 +6,23 @@
   import pkg from '$site/package.json'
   import type { ChemicalElement } from 'elementari'
   import {
-      ColorBar,
-      ColorScaleSelect,
-      PeriodicTable,
-      pretty_num,
-      TableInset,
+    ColorBar,
+    ColorScaleSelect,
+    PeriodicTable,
+    pretty_num,
+    TableInset,
   } from 'elementari'
   import 'iconify-icon'
   import { CopyButton, Tooltip } from 'svelte-zoo'
   import { click_outside, titles_as_tooltips } from 'svelte-zoo/actions'
 
   interface Props {
-    data
-    color_scale?: string[]
-    active_element?: ChemicalElement | null
+    data: { model: ModelData }
   }
 
-  let {
-    data,
-    color_scale = $bindable([`Viridis`]),
-    active_element = $bindable(null),
-  }: Props = $props()
+  let { data }: Props = $props()
+  let color_scale = $state([`Viridis`])
+  let active_element: ChemicalElement | null = $state(null)
 
   // TODO make this dynamic (static n_days_ago from time of last site build is misleading)
   function n_days_ago(dateString: string): string {
@@ -117,16 +113,18 @@
       >
         <iconify-icon icon="octicon:mark-github" inline></iconify-icon> Repo
       </a>
-      <a
-        href={model.paper}
-        target="_blank"
-        rel="noopener noreferrer"
-        title="Read model paper"
-        use:titles_as_tooltips
-      >
-        <iconify-icon icon="ion:ios-paper" inline></iconify-icon> Paper
-      </a>
-      {#if model.url}
+      {#if model.paper?.startsWith(`http`)}
+        <a
+          href={model.paper}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Read model paper"
+          use:titles_as_tooltips
+        >
+          <iconify-icon icon="ion:ios-paper" inline></iconify-icon> Paper
+        </a>
+      {/if}
+      {#if model.url?.startsWith(`http`)}
         <a
           href={model.url}
           target="_blank"
@@ -137,15 +135,17 @@
           <iconify-icon icon="ion:ios-globe" inline></iconify-icon> Docs
         </a>
       {/if}
-      <a
-        href={model.doi}
-        target="_blank"
-        rel="noopener noreferrer"
-        title="Digital Object Identifier"
-        use:titles_as_tooltips
-      >
-        <iconify-icon icon="academicons:doi" inline></iconify-icon> DOI
-      </a>
+      {#if model.doi?.startsWith(`http`)}
+        <a
+          href={model.doi}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Digital Object Identifier"
+          use:titles_as_tooltips
+        >
+          <iconify-icon icon="academicons:doi" inline></iconify-icon> DOI
+        </a>
+      {/if}
       <a
         href={`${pkg.repository}/blob/-/models/${model.dirname?.split(`/`).pop()}`}
         target="_blank"

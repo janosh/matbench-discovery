@@ -21,6 +21,7 @@ repo: https://github.com/JasonGibsonUfl/Augmented_CGCNN
 doi: https://doi.org/10.1038/s41524-022-00891-8
 paper: https://arxiv.org/abs/2202.13947
 pr_url: https://github.com/janosh/matbench-discovery/pull/85
+checkpoint_url: https://api.wandb.ai/files/janosh/matbench-discovery/tx6cepg6/checkpoint.pth
 
 requirements:
   aviary: https://github.com/CompRhys/aviary/releases/tag/v0.1.0
@@ -39,6 +40,7 @@ model_params: 128_450
 n_estimators: 10
 
 training_set: [MP 2022]
+training_cost: missing
 
 hyperparams:
   Perturbations: 5

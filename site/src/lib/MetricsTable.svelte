@@ -311,6 +311,11 @@
               },
               repo: { url: model.repo, title: `View source code`, icon: `📦` },
               pr_url: { url: model.pr_url, title: `View pull request`, icon: `🔗` },
+              checkpoint: {
+                url: model.checkpoint_url,
+                title: `Download model checkpoint`,
+                icon: `💾`,
+              },
               pred_files: { files: get_pred_file_urls(model), name: model.model_name },
             } as LinkData,
             row_style: show_noncompliant
@@ -380,7 +385,7 @@
     <div class="controls-container">
       <div class="controls-row">
         {#if show_noncompliant}
-          {#each [[compliant_clr, `Compliant`], [noncompliant_clr, `Non-compliant`]] as [clr, label]}
+          {#each [[compliant_clr, `Compliant`], [noncompliant_clr, `Non-compliant`]] as [clr, label] (label)}
             <div class="legend-item">
               <span class="color-swatch" style="background-color: {clr};"></span>
               {label}
@@ -402,11 +407,13 @@
   {#snippet cell({ col, val })}
     {#if col.label === `Links` && val && typeof val === `object` && `paper` in val}
       {@const links = val as LinkData}
-      {#each [links.paper, links.repo, links.pr_url] as link (link?.title + link?.url)}
-        {#if link?.url}
+      {#each Object.entries(links).filter(([key]) => key !== `pred_files`) as [key, link] (key)}
+        {#if ![`missing`, `not available`, ``, null, undefined].includes(link?.url)}
           <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title}>
             {link.icon}
           </a>
+        {:else}
+          <span class="link-icon" title="{key} not available">🚫</span>
         {/if}
       {/each}
       {#if links.pred_files}

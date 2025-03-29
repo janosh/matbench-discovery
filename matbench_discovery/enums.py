@@ -342,8 +342,8 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     megnet = auto(), "megnet/megnet.yml"
 
     # ORB
-    orb = auto(), "orb/orb.yml"
-    orb_mptrj = auto(), "orb/orb-mptrj.yml"
+    orb_v2 = auto(), "orb/orb-v2.yml"
+    orb_v2_mptrj = auto(), "orb/orb-v2-mptrj.yml"
 
     # SevenNet trained on MPtrj
     # sevennet_0 = auto(), "sevennet/sevennet-0.yml"
@@ -484,7 +484,6 @@ class DataFiles(Files):
     wbm_initial_structures = auto(), "wbm/2022-10-19-wbm-init-structs.jsonl.gz"
     wbm_initial_atoms = auto(), "wbm/2024-08-04-wbm-initial-atoms.extxyz.zip"
     wbm_summary = auto(), "wbm/2023-12-13-wbm-summary.csv.gz"
-    alignn_checkpoint = auto(), "2023-06-02-pbenner-best-alignn-model.pth.zip"
     phonondb_pbe_103_structures = (
         auto(),
         "phonons/2024-11-09-phononDB-PBE-103-structures.extxyz",

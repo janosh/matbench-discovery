@@ -26,12 +26,13 @@ trained_by:
   - name: Anyang Peng
     affiliation: AI for Science Institute, Beijing
     orcid: https://orcid.org/0000-0002-0630-2187
+
 repo: https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha
 url: https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha
 doi: https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha # to be released soon
 paper: https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha # to be released soon
 pr_url: https://github.com/janosh/matbench-discovery/pull/192
-trained_for_benchmark: true
+checkpoint_url: missing
 
 openness: OSCD
 train_task: S2EFS
@@ -41,6 +42,7 @@ model_type: UIP
 model_params: 8_184_608
 n_estimators: 1
 status: superseded
+trained_for_benchmark: true
 
 hyperparams:
   max_force: 0.05
@@ -95,6 +97,7 @@ requirements:
   numpy: 1.26.4
 
 training_set: [OpenLAM]
+training_cost: missing
 
 notes:
   Description: |

@@ -46,7 +46,7 @@ data_path = {
     Task.IS2RE: DataFiles.wbm_initial_structures.path,
     Task.RS2RE: DataFiles.wbm_computed_structure_entries.path,
 }[task_type]
-input_col = {Task.IS2RE: Key.init_struct, Task.RS2RE: Key.final_struct}[task_type]
+input_col = {Task.IS2RE: Key.initial_struct, Task.RS2RE: Key.final_struct}[task_type]
 
 df_in = pd.read_json(data_path, lines=True).set_index(Key.mat_id)
 

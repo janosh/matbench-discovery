@@ -35,6 +35,8 @@ doi: https://doi.org/10.48550/arXiv.2302.14231
 paper: https://arxiv.org/abs/2302.14231
 pypi: https://pypi.org/project/chgnet
 pr_url: https://github.com/janosh/matbench-discovery/pull/85
+# checkpoint URL copied from https://github.com/CederGroupHub/chgnet/blob/d55f185199fddc9/chgnet/pretrained/0.3.0/chgnet_0.3.0_e29f68s314m37.pth.tar
+checkpoint_url: https://github.com/CederGroupHub/chgnet/raw/refs/heads/main/chgnet/pretrained/0.3.0/chgnet_0.3.0_e29f68s314m37.pth.tar
 
 requirements:
   torch: 1.11.0
@@ -52,6 +54,7 @@ model_params: 412_525
 n_estimators: 1
 
 training_set: [MPtrj]
+training_cost: missing
 
 hyperparams:
   ase_optimizer: FIRE

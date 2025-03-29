@@ -2,6 +2,7 @@
   import { MetricScatter, MetricsTable, MODEL_METADATA } from '$lib'
   import { DISCOVERY_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/metrics'
   import type { DiscoverySet } from '$lib/types'
+  import type { Point } from 'elementari'
   import 'iconify-icon'
   import { Tooltip } from 'svelte-zoo'
 
@@ -14,7 +15,7 @@
   })
 
   let discovery_set: DiscoverySet = $state(`unique_prototypes`)
-  let f1_tooltip_point: { x: number; y: number } | null = $state(null)
+  let f1_tooltip_point: Point | null = $state(null)
   let hovered = $state(false)
 
   let filtered_models = $derived(

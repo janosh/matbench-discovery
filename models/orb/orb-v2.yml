@@ -1,5 +1,5 @@
-model_name: ORB
-model_key: orb
+model_name: ORB v2
+model_key: orb-v2
 model_version: v2
 matbench_discovery_version: 1.3.1
 date_added: "2024-10-11"
@@ -31,6 +31,9 @@ url: https://orbitalmaterials.com/post/technical-blog-introducing-the-orb-ai-bas
 doi: https://doi.org/10.48550/arXiv.2410.22570
 paper: https://arxiv.org/abs/2410.22570
 pr_url: https://github.com/janosh/matbench-discovery/pull/133
+# v1 checkpoint: https://storage.googleapis.com/orbitalmaterials-public-models/forcefields/orbff-v1-20240827.ckpt
+# v2 URL taken from: https://github.com/orbital-materials/orb-models/blob/637a98d49c/orb_models/forcefield/pretrained.py#L135
+checkpoint_url: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/forcefields/orb-v2-20241011.ckpt
 
 openness: OSCD
 trained_for_benchmark: false
@@ -68,6 +71,7 @@ requirements: # strongly recommended
   pynanoflann: "pynanoflann@git+https://github.com/dwastberg/pynanoflann#egg=af434039ae14bedcbb838a7808924d6689274168"
 
 training_set: [MPtrj, Alex]
+training_cost: missing
 
 notes:
   Description: |

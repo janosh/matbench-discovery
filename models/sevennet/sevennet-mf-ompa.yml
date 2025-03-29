@@ -41,6 +41,7 @@ doi: https://doi.org/10.1021/jacs.4c14455
 paper: https://arxiv.org/abs/2409.07947
 pypi: https://pypi.org/project/sevenn
 pr_url: https://github.com/janosh/matbench-discovery/pull/221
+checkpoint_url: https://figshare.com/articles/software/28590722?file=53029859
 
 openness: OSOD
 trained_for_benchmark: false
@@ -86,6 +87,7 @@ requirements:
   numpy: 1.26.4
 
 training_set: [OMat24, sAlex, MPtrj]
+training_cost: missing
 
 notes:
   Description: |

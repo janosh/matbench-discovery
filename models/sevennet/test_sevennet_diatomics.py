@@ -42,8 +42,9 @@ if existing_paths:
     print(f"Skipping {model_name}/{model_variant}\n{existing_paths=}")
     raise SystemExit
 
-# distances in Angstrom
-distances = np.linspace(0.1, 6, 100)
+
+# log-spaced atomic separations going inwards from 10 to 0.1 Angstrom
+distances = np.logspace(1, -1, 40)
 
 # only consider elements up to atomic number 10 (Ne) for now
 atomic_nums = range(1, 93)

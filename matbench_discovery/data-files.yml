@@ -4,11 +4,6 @@ all_mp_tasks:
   description: Complete copy of the Materials Project database on 2023-03-16 (14 GB) (release [v2022.10.28](https://docs.materialsproject.org/changes/database-versions#v2022.10.28))
   md5: e301824b358fb5cecfb5e1f769f025dd
 
-alignn_checkpoint:
-  url: https://figshare.com/files/40344436
-  path: mp/2023-02-07-alignn-checkpoint.pth
-  description: ALIGNN model trained on `mp_computed_structure_entries`
-
 mp_computed_structure_entries:
   url: https://figshare.com/files/40344436
   path: mp/2023-02-07-mp-computed-structure-entries.json.gz

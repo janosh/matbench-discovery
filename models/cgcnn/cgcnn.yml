@@ -17,6 +17,8 @@ repo: https://github.com/CompRhys/aviary
 doi: https://doi.org/10.1103/PhysRevLett.120.145301
 paper: https://arxiv.org/abs/1710.10324
 pr_url: https://github.com/janosh/matbench-discovery/pull/85
+# submission used an ensemble of 10 models, URL is just the first checkpoint
+checkpoint_url: https://api.wandb.ai/files/janosh/matbench-discovery/ykh764i5/checkpoint.pt
 
 requirements:
   aviary: https://github.com/CompRhys/aviary/releases/tag/v0.1.0
@@ -26,15 +28,16 @@ requirements:
   pandas: 1.5.1
 
 openness: OSOD
-trained_for_benchmark: true
 train_task: RS2RE
 test_task: IS2E
 targets: E
 model_type: GNN
 model_params: 128_450
+trained_for_benchmark: true
 n_estimators: 10
 
 training_set: [MP 2022]
+training_cost: missing
 
 notes:
   Description: |
@@ -45,7 +48,7 @@ notes:
 
 metrics:
   phonons: not applicable # model doesn't predict forces
-  geo_opt: not applicable
+  geo_opt: not applicable # model doesn't predict forces
   discovery:
     pred_file: models/cgcnn/2023-01-26-cgcnn-ens=10-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/51607271

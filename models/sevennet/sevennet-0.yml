@@ -31,6 +31,7 @@ doi: https://doi.org/10.1021/acs.jctc.4c00190
 paper: https://arxiv.org/abs/2402.03789
 pypi: https://pypi.org/project/sevenn
 pr_url: https://github.com/janosh/matbench-discovery/pull/112
+checkpoint_url: https://github.com/MDIL-SNU/SevenNet/blob/dff008ac9c53d3/sevenn/pretrained_potentials/SevenNet_0__11Jul2024/checkpoint_sevennet_0.pth
 
 openness: OSOD
 trained_for_benchmark: false
@@ -40,6 +41,7 @@ targets: EFS_G
 model_type: UIP
 model_params: 842_440
 n_estimators: 1
+status: superseded
 
 hyperparams:
   max_force: 0.05
@@ -71,7 +73,7 @@ requirements:
   numpy: 1.26.4
 
 training_set: [MPtrj]
-status: superseded
+training_cost: missing
 
 notes:
   Description: |
