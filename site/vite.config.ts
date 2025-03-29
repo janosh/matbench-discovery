@@ -6,6 +6,7 @@ import { sveltekit } from '@sveltejs/kit/vite'
 import fs from 'fs/promises'
 import yaml from 'js-yaml'
 import { compile as json_to_ts } from 'json-schema-to-typescript'
+import { execFile } from 'node:child_process'
 import path from 'path'
 import type { PluginOption } from 'vite'
 import { defineConfig } from 'vite'
@@ -34,6 +35,10 @@ function yaml_schema_to_typescript_plugin(): PluginOption {
     // Write the TypeScript interface file
     const dts_out_file = path.resolve(`./src/lib/model-schema.d.ts`)
     await fs.writeFile(dts_out_file, model_metadata_ts)
+
+    // eslint format generated file
+    const eslint_cmd = path.resolve(`./node_modules/.bin/eslint`)
+    execFile(eslint_cmd, [`--fix`, `--config`, `eslint.config.js`, dts_out_file])
     return true
   }
 
