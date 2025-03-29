@@ -49,13 +49,21 @@ definitions:
         type: boolean
     required: [name]
 
+  ModelType:
+    type: string
+    enum: [GNN, UIP, BO-GNN, Fingerprint, Transformer, RF]
+
+  TargetType:
+    type: string
+    enum: [E, EF_G, EF_D, EFS_G, EFS_D, EFS_GM, EFS_DM]
+
   PhononMetrics:
     type: object
-    additionalProperties: false
+    additionalProperties: true
     properties:
       kappa_103:
         type: object
-        additionalProperties: false
+        additionalProperties: true
         required: ["κ_SRME"]
         properties:
           κ_SRME:
@@ -78,8 +86,7 @@ definitions:
 
   GeoOptMetrics:
     type: object
-    additionalProperties: false
-    required: [struct_col]
+    additionalProperties: true
     properties:
       struct_col:
         type: string
@@ -387,11 +394,9 @@ properties:
       - IS2RE-SR # initial structure to relaxed energy with structure relaxation
       - IS2RE-BO # initial structure to relaxed energy with Bayesian optimization
   model_type:
-    type: string
-    enum: [GNN, UIP, BO-GNN, Fingerprint, Transformer, RF]
+    $ref: "#/definitions/ModelType"
   targets:
-    type: string
-    enum: [E, EF_G, EF_D, EFS_G, EFS_D, EFS_GM, EFS_DM]
+    $ref: "#/definitions/TargetType"
   openness:
     type: string
     enum: [OSOD, OSCD, CSOD, CSCD]

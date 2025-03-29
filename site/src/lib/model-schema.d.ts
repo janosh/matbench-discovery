@@ -1,9 +1,11 @@
 // This file is auto-generated from model-schema.yml. Do not edit directly.
 
+export type ModelType = `GNN` | `UIP` | `BO-GNN` | `Fingerprint` | `Transformer` | `RF`
+export type TargetType = `E` | `EF_G` | `EF_D` | `EFS_G` | `EFS_D` | `EFS_GM` | `EFS_DM`
 export type GeoOptMetrics = {
   [k: string]: unknown
 } & {
-  struct_col: string
+  struct_col?: string
   pred_file?: string | null
   pred_file_url?: string
   'symprec=1e-5'?: {
@@ -26,6 +28,7 @@ export type GeoOptMetrics = {
     analysis_file?: string | null
     analysis_file_url?: string
   }
+  [k: string]: unknown
 }
 export type DiscoveryMetrics = {
   [k: string]: unknown
@@ -135,8 +138,8 @@ export interface ModelMetadata {
     | `missing`
   train_task: `RP2RE` | `RS2RE` | `S2E` | `S2RE` | `S2EF` | `S2EFS` | `S2EFSM`
   test_task: `IP2E` | `IS2E` | `IS2RE` | `IS2RE-SR` | `IS2RE-BO`
-  model_type: `GNN` | `UIP` | `BO-GNN` | `Fingerprint` | `Transformer` | `RF`
-  targets: `E` | `EF_G` | `EF_D` | `EFS_G` | `EFS_D` | `EFS_GM` | `EFS_DM`
+  model_type: ModelType
+  targets: TargetType
   openness: `OSOD` | `OSCD` | `CSOD` | `CSCD`
   status?: `aborted` | `complete` | `deprecated` | `pending` | `superseded`
   metrics?: {
@@ -159,6 +162,7 @@ export interface PhononMetrics {
   kappa_103?: {
     [k: string]: unknown
   }
+  [k: string]: unknown
 }
 export interface DiscoveryMetricsSet {
   F1?: number
