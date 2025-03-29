@@ -26,14 +26,7 @@ repo: https://github.com/google-deepmind/materials_discovery
 doi: https://doi.org/10.1038/s41586-023-06735-9
 paper: https://nature.com/articles/s41586-023-06735-9
 pr_url: https://github.com/janosh/matbench-discovery/pull/84
-
-requirements:
-  e3nn-jax: 0.20.3
-  flax: 0.7.5
-  jax-md: 0.2.8
-  jax: 0.4.20
-  numpy: 1.26.2
-  pymatgen: 2023.11.12
+checkpoint_url: missing
 
 openness: OSCD
 trained_for_benchmark: false
@@ -43,6 +36,14 @@ targets: EF_G
 model_type: UIP
 model_params: 16_240_000
 n_estimators: 1
+
+requirements:
+  e3nn-jax: 0.20.3
+  flax: 0.7.5
+  jax-md: 0.2.8
+  jax: 0.4.20
+  numpy: 1.26.2
+  pymatgen: 2023.11.12
 
 training_set: [GNoME]
 

@@ -51,15 +51,15 @@ data_path = {
     Task.RS2RE: DataFiles.wbm_computed_structure_entries.path,
     "IS2RE-debug": f"{WBM_DIR}/2022-10-19-wbm-init-structs.json-1k-samples.bz2",
 }[task_type]
-input_col = {Task.IS2RE: Key.init_struct, Task.RS2RE: Key.final_struct}[task_type]
+input_col = {Task.IS2RE: Key.initial_struct, Task.RS2RE: Key.final_struct}[task_type]
 
 df_in = pd.read_json(data_path, lines=True).set_index(Key.mat_id)
+if input_col not in df_in:
+    raise TypeError(f"{input_col!s} not in {df_in.columns=}")
 
 df_in[MbdKey.e_form_dft] = df_wbm[MbdKey.e_form_dft]
 if task_type == Task.RS2RE:
     df_in[input_col] = [cse["structure"] for cse in df_in[Key.computed_structure_entry]]
-if input_col not in df_in:
-    raise TypeError(f"{input_col!s} not in {df_in.columns=}")
 
 df_in[input_col] = [
     Structure.from_dict(dct) for dct in tqdm(df_in[input_col], disable=None)

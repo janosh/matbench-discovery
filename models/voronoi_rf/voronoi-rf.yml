@@ -19,6 +19,8 @@ doi: https://doi.org/10.1103/PhysRevB.96.024104
 paper: https://doi.org/10.1103/PhysRevB.96.024104
 pypi: https://pypi.org/project/scikit-learn
 pr_url: https://github.com/janosh/matbench-discovery/commit/f28cc6d
+# checkpoint page: https://wandb.ai/janosh/matbench-discovery/artifacts/model/voronoi_rf_model_IS2RE/v0/files
+checkpoint_url: https://api.wandb.ai/artifactsV2/default/janosh/matbench-discovery/voronoi_rf_model_IS2RE/QXJ0aWZhY3Q6MTYwNjgyOTk3NA%3D%3D/fb0cf7ce8454e5fbe1bcd49d42c0e49b/voronoi_rf_model.joblib
 
 requirements:
   matminer: 0.8.0

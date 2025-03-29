@@ -23,6 +23,9 @@ url: https://jarvis.nist.gov/jalignn
 doi: https://nature.com/articles/s41524-021-00650-1
 paper: https://arxiv.org/abs/2106.01829
 pypi: https://pypi.org/project/alignn
+pr_url: https://github.com/janosh/matbench-discovery/pull/85
+# ALIGNN model 2023-02-07-alignn-checkpoint.pth trained on mp_computed_structure_entries
+checkpoint_url: https://figshare.com/files/40344436
 
 requirements:
   ase: 3.22.0
@@ -41,7 +44,6 @@ targets: E
 model_params: 4_026_753 # pre-trained 'mp_e_form_alignn' and our custom MBD checkpoint have the same size
 # for other hyperparams, see alignn-config.json
 n_estimators: 1
-pr_url: https://github.com/janosh/matbench-discovery/pull/85
 
 # model trained on Materials Project energies specifically for this submission
 training_set: [MP 2022]

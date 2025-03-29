@@ -37,6 +37,7 @@ url: "" # to be released soon
 doi: "" # to be released soon
 paper: "" # to be released soon
 pr_url: https://github.com/janosh/matbench-discovery/pull/220
+checkpoint_url: missing # https://github.com/HPC-AI-Team/MatRIS/issues/1
 
 openness: OSOD
 train_task: S2EFSM

@@ -258,6 +258,16 @@ properties:
     type: array
     items:
       $ref: "#/definitions/person"
+    minItems: 1
+    allOf:
+      - if:
+          properties:
+            "0": {}
+          required: ["0"]
+        then:
+          properties:
+            "0":
+              required: ["email"]
   trained_by:
     type: array
     items:
@@ -268,6 +278,13 @@ properties:
   url: *url
   pypi: *url
   pr_url: *url
+  checkpoint_url:
+    oneOf:
+      - type: string
+        format: uri
+        pattern: "^https?://"
+      - type: string
+        enum: [not available, missing]
   requirements:
     type: object
     patternProperties:
@@ -389,6 +406,8 @@ properties:
 
 required:
   - authors
+  # checkpoint_url is required for all models, but can be 'not available' for closed source models
+  - checkpoint_url
   - date_added
   - date_published
   - doi
@@ -398,6 +417,7 @@ required:
   - model_type
   - model_version
   - n_estimators
+  - openness
   - paper
   - pr_url
   - repo

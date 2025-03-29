@@ -12,7 +12,7 @@ from torch.nn import functional
 from torch.utils.data import DataLoader, Dataset, random_split
 from transformers import BertConfig, BertModel
 
-from matbench_discovery.enums import DataFiles, MbdKey
+from matbench_discovery.enums import DataFiles
 
 seed = 42
 torch.manual_seed(seed)
@@ -35,16 +35,9 @@ train_pad_cased_path = "train_nl_pad_cased_inputs.json"
 test_pad_cased_path = "test_nl_pad_cased_inputs.json"
 
 
-def get_test_data() -> pd.Series:
-    target_col = MbdKey.e_form_dft
-    df_wbm = pd.read_csv(DataFiles.wbm_summary.path).set_index(Key.mat_id)
-    return pd.Series(df_wbm[target_col])
-
-
-def get_train_data() -> pd.Series:
-    target_col = "formation_energy_per_atom"
-    df_eng = pd.read_csv(DataFiles.mp_energies.path).set_index(Key.mat_id)
-    return pd.Series(df_eng[target_col], index=df_eng.index)
+df_mp = pd.read_csv(DataFiles.mp_energies.path).set_index(Key.mat_id)
+# test target column: MbdKey.e_form_dft
+df_wbm = pd.read_csv(DataFiles.wbm_summary.path).set_index(Key.mat_id)
 
 
 # %%
@@ -123,7 +116,7 @@ def main() -> None:
     if os.path.exists(train_pad_cased_path):
         print(f"file {train_pad_cased_path} exists")
         train_inputs = pd.read_json(train_pad_cased_path)
-        train_outputs = get_train_data()
+        train_outputs = df_mp[Key.formation_energy_per_atom]
 
         input_ids = torch.tensor(train_inputs["input_ids"])
         attention_mask = torch.tensor(train_inputs["attention_mask"])

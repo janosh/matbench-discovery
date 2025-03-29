@@ -28,6 +28,9 @@ doi: https://doi.org/10.1021/acs.chemmater.9b01294
 paper: https://arxiv.org/abs/1812.05055
 pypi: https://pypi.org/project/megnet
 pr_url: https://github.com/janosh/matbench-discovery/pull/85
+# checkpoint used: Eform_MP_2019 MAML checkpoint
+# https://github.com/materialsvirtuallab/megnet/blob/f37057602/megnet/utils/models.py#L21
+checkpoint_url: https://ndownloader.figshare.com/files/22291785
 
 requirements:
   megnet: 1.3.2
