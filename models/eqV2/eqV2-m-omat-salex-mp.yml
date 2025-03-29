@@ -55,6 +55,7 @@ n_estimators: 1
 # removed sAlex from this list since it would be double counting materials in the "Training Size"
 # metrics table column since OMat24 is a derivative of Alexandria
 training_set: [OMat24, MPtrj]
+training_cost: missing
 
 hyperparams:
   max_force: 0.02

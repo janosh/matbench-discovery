@@ -54,6 +54,7 @@ model_params: 412_525
 n_estimators: 1
 
 training_set: [MPtrj]
+training_cost: missing
 
 hyperparams:
   ase_optimizer: FIRE

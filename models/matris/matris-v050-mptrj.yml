@@ -33,9 +33,9 @@ trained_by:
     orcid: https://orcid.org/0009-0004-6801-7033
 
 repo: https://github.com/HPC-AI-Team/MatRIS
-url: "" # to be released soon
-doi: "" # to be released soon
-paper: "" # to be released soon
+url: missing # to be released soon
+doi: missing # to be released soon
+paper: missing # to be released soon
 pr_url: https://github.com/janosh/matbench-discovery/pull/220
 checkpoint_url: missing # https://github.com/HPC-AI-Team/MatRIS/issues/1
 
@@ -75,6 +75,7 @@ requirements:
   numpy: 1.26.4
 
 training_set: [MPtrj]
+training_cost: missing
 
 notes: # notes can have any key, be multiline and support markdown.
   description: |

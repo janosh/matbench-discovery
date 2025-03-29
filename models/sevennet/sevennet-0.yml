@@ -41,6 +41,7 @@ targets: EFS_G
 model_type: UIP
 model_params: 842_440
 n_estimators: 1
+status: superseded
 
 hyperparams:
   max_force: 0.05
@@ -72,7 +73,7 @@ requirements:
   numpy: 1.26.4
 
 training_set: [MPtrj]
-status: superseded
+training_cost: missing
 
 notes:
   Description: |

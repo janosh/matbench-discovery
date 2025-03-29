@@ -78,6 +78,7 @@ repo: https://github.com/microsoft/mattersim
 doi: https://doi.org/10.48550/arXiv.2405.04967
 paper: https://arxiv.org/abs/2405.04967
 pr_url: https://github.com/janosh/matbench-discovery/pull/178
+checkpoint_url: https://github.com/microsoft/mattersim/raw/refs/heads/main/pretrained_models/mattersim-v1.0.0-5M.pth
 
 requirements:
   Graphormer: v1
@@ -95,6 +96,7 @@ model_params: 4_549_142
 n_estimators: 1
 
 training_set: [MatterSim]
+training_cost: missing
 
 hyperparams:
   optimizer: AdamW

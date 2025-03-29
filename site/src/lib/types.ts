@@ -132,6 +132,7 @@ export interface LinkData {
   paper: { url: string; title: string; icon: string }
   repo: { url: string; title: string; icon: string }
   pr_url: { url: string; title: string; icon: string }
+  checkpoint?: { url: string | null; title: string; icon: string; is_missing?: boolean }
   pred_files: { files: { name: string; url: string }[]; name: string }
 }
 

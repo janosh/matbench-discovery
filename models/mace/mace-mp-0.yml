@@ -58,6 +58,7 @@ model_params: 4_688_656 # 2023-12-03-mace-128-L1: https://tinyurl.com/y7uhwpje
 n_estimators: 1
 
 training_set: [MPtrj]
+training_cost: missing
 
 hyperparams:
   max_force: 0.05

@@ -347,6 +347,27 @@ properties:
   n_estimators:
     type: number
     minimum: 1
+  training_cost:
+    oneOf:
+      - type: object
+        additionalProperties: false
+        minProperties: 1
+        patternProperties:
+          "^[a-zA-Z0-9\\s]+ (GPUs|CPUs|TPUs)$":
+            type: object
+            required: ["amount", "hours"]
+            properties:
+              amount:
+                type: number
+                minimum: 1
+              hours:
+                type: number
+                minimum: 0
+              cost:
+                type: number
+                minimum: 0
+      - type: string
+        enum: [missing]
   train_task:
     type: string
     enum: &train_task_enum
@@ -426,6 +447,7 @@ required:
   - test_task
   - train_task
   - trained_for_benchmark
+  - training_cost
   - training_set
 
 additionalProperties: false

@@ -47,6 +47,7 @@ model_params: 30_085_121
 n_estimators: 1
 
 training_set: [MPtrj]
+training_cost: missing
 
 hyperparams:
   max_force: 0.02

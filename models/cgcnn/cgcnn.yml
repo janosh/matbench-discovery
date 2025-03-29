@@ -37,6 +37,7 @@ trained_for_benchmark: true
 n_estimators: 10
 
 training_set: [MP 2022]
+training_cost: missing
 
 notes:
   Description: |

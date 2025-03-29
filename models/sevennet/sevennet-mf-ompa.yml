@@ -87,6 +87,7 @@ requirements:
   numpy: 1.26.4
 
 training_set: [OMat24, sAlex, MPtrj]
+training_cost: missing
 
 notes:
   Description: |

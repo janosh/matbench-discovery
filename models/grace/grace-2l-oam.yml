@@ -47,6 +47,7 @@ model_params: 12_597_516
 n_estimators: 1
 
 training_set: [OMat24, sAlex, MPtrj]
+training_cost: missing
 
 hyperparams:
   max_force: 0.03

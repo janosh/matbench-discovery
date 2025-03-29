@@ -124,6 +124,12 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
       optimizer: Adam
       ... # additional hyperparameters describing training
 
+   training_cost: # list any hardware used to train the model and for how long
+     # hardware: { amount: float, hours: float, cost: float [USD] }
+     Nvidia A100 GPUs: { amount: 4, hours: 30, cost: 1000 }
+     Nvidia H100 GPUs: { amount: 1, hours: 90, cost: 2000 }
+     Intel Xeon Gold 6254 CPUs: { amount: 12, hours: 100, cost: 100 }
+
    requirements: # strongly recommended
      torch: 1.13.0
      torch-geometric: 2.0.9

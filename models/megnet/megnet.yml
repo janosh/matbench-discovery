@@ -47,11 +47,12 @@ model_type: GNN
 model_params: 167_761
 n_estimators: 1
 
-training_set: [MP Graphs]
 # we tested the Eform_MP_2019 checkpoint of MEGNet, the original 2018 version was trained on 'Graphs of MP 2018'
 # title: Graphs of MP 2018
 # url: https://figshare.com/articles/dataset/7451351
 # n_structures: 69_239
+training_set: [MP Graphs]
+training_cost: missing
 
 notes:
   Description: MatErials Graph Network is another GNN for material properties of relaxed structure which showed that learned element embeddings encode periodic chemical trends and can be transfer-learned from large data sets (formation energies) to predictions on small data properties (band gaps, elastic moduli).

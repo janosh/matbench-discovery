@@ -47,6 +47,7 @@ n_estimators: 1
 
 # model trained on Materials Project energies specifically for this submission
 training_set: [MP 2022]
+training_cost: missing
 
 metrics:
   phonons: not applicable # reason: ALIGNN does not predict forces

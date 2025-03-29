@@ -57,6 +57,7 @@ model_params: 9_063_204
 n_estimators: 1
 
 training_set: [MPtrj, sAlex]
+training_cost: missing
 
 hyperparams:
   max_force: 0.05

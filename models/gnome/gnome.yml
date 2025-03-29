@@ -46,6 +46,7 @@ requirements:
   pymatgen: 2023.11.12
 
 training_set: [GNoME]
+training_cost: missing
 
 hyperparams:
   optimizer: Adam

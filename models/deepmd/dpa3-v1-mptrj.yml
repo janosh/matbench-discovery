@@ -85,6 +85,7 @@ requirements:
   numpy: 1.26.4
 
 training_set: [MPtrj]
+training_cost: missing
 
 notes:
   Description: |

@@ -53,10 +53,11 @@ model_type: UIP
 n_estimators: 1
 model_params: 0 # paper doesn't mention and no longer able to load model checkpoint to count parameters
 trained_for_benchmark: true
+status: aborted
 # for hyperparams, see alignn-config.json
 
 training_set: [MPtrj]
-status: aborted
+training_cost: missing
 
 metrics:
   phonons: not available # model was aborted
