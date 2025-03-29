@@ -4,8 +4,8 @@ import { doc_query } from '.'
 import Page from '../src/routes/tasks/diatomics/+page.svelte'
 
 // Mock fetch function
-const mockFetch = vi.fn()
-vi.stubGlobal(`fetch`, mockFetch)
+const mock_fetch = vi.fn()
+vi.stubGlobal(`fetch`, mock_fetch)
 
 describe(`Diatomic Page`, () => {
   // Add container with dimensions to body before each test
@@ -15,7 +15,7 @@ describe(`Diatomic Page`, () => {
     container.setAttribute(`style`, container_style)
     document.body.appendChild(container)
     // Reset fetch mock
-    mockFetch.mockReset()
+    mock_fetch.mockReset()
   })
 
   const sample_data = {
@@ -28,7 +28,7 @@ describe(`Diatomic Page`, () => {
   }
 
   test(`renders page with initial state`, async () => {
-    mockFetch.mockResolvedValueOnce({
+    mock_fetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve(sample_data),
     })
@@ -43,7 +43,7 @@ describe(`Diatomic Page`, () => {
   })
 
   test.skip(`loads and caches model data`, async () => {
-    mockFetch.mockResolvedValue({
+    mock_fetch.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve(sample_data),
     })
@@ -51,7 +51,7 @@ describe(`Diatomic Page`, () => {
     mount(Page, { target: document.body })
 
     // First load should make a fetch request for each model
-    const n_initial_calls = mockFetch.mock.calls.length
+    const n_initial_calls = mock_fetch.mock.calls.length
     expect(n_initial_calls).toBe(0)
 
     // Trigger another load of the same model
@@ -60,14 +60,14 @@ describe(`Diatomic Page`, () => {
     await tick()
 
     // each model load first tries loading data from pred_file, then tries pred_file_url
-    expect(mockFetch.mock.calls.length).toBe(n_initial_calls + 2)
+    expect(mock_fetch.mock.calls.length).toBe(n_initial_calls + 2)
 
     // Trigger another load of the same model
     button.click()
     await tick()
 
     // model should now be cached
-    expect(mockFetch.mock.calls.length).toBe(n_initial_calls + 3)
+    expect(mock_fetch.mock.calls.length).toBe(n_initial_calls + 3)
   })
 
   test.skip(`displays pretty model labels on buttons`, async () => {

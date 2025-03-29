@@ -332,21 +332,20 @@
       {/each}
     {/if}
 
-    <!-- svelte-ignore a11y_interactive_supports_focus -->
-    <!-- Draggable knob -->
-    <circle
-      cx={point.x}
-      cy={point.y}
-      r="8"
-      fill="white"
-      stroke="black"
-      stroke-width="2"
-      style="cursor: move;"
-      onmousedown={start_drag}
-      ontouchstart={start_drag}
-      role="button"
-      aria-label="Drag to adjust weight balance"
-    />
+    <!-- Draggable knob: first element is larger invisible hit area for the smaller visible knob above it -->
+    {#each [{ fill: `transparent`, r: 20 }, { fill: `white`, stroke: `black`, r: 8 }] as knob_style (knob_style.r)}
+      <circle
+        cx={point.x}
+        cy={point.y}
+        style="cursor: move;"
+        onmousedown={start_drag}
+        ontouchstart={start_drag}
+        role="button"
+        tabindex="0"
+        aria-label="Drag to adjust weight balance"
+        {...knob_style}
+      />
+    {/each}
   </svg>
 </div>
 
