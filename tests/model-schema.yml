@@ -357,12 +357,12 @@ properties:
   training_cost:
     oneOf:
       - type: object
-        additionalProperties: false
         minProperties: 1
         patternProperties:
           "^[a-zA-Z0-9\\s]+ (GPUs|CPUs|TPUs)$":
             type: object
             required: ["amount", "hours"]
+            additionalProperties: false
             properties:
               amount:
                 type: number

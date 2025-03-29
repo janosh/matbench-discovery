@@ -132,7 +132,6 @@ export interface ModelMetadata {
           amount: number
           hours: number
           cost?: number
-          [k: string]: unknown
         }
       }
     | `missing`
