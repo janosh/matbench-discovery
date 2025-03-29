@@ -123,7 +123,7 @@ def test_model_enum() -> None:
         (Model.megnet, True),
         (Model.eqv2_m, False),
         (Model.eqv2_s_dens, True),
-        (Model.orb, False),
+        (Model.orb_v2, False),
         (Model.wrenformer, True),
         (Model.voronoi_rf, True),
         (Model.gnome, False),
