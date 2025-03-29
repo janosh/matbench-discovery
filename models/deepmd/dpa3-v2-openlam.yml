@@ -26,12 +26,13 @@ trained_by:
   - name: Anyang Peng
     affiliation: AI for Science Institute, Beijing
     orcid: https://orcid.org/0000-0002-0630-2187
+
 repo: https://github.com/deepmodeling/deepmd-kit/tree/devel
 url: https://github.com/deepmodeling/deepmd-kit/tree/devel
 doi: https://github.com/deepmodeling/deepmd-kit/tree/devel # to be released soon
 paper: https://github.com/deepmodeling/deepmd-kit/tree/devel # to be released soon
 pr_url: https://github.com/janosh/matbench-discovery/pull/222
-trained_for_benchmark: true
+checkpoint_url: missing
 
 openness: OSCD
 train_task: S2EFS
@@ -39,6 +40,7 @@ test_task: IS2RE-SR
 targets: EFS_G
 model_type: UIP
 model_params: 7_021_990
+trained_for_benchmark: true
 n_estimators: 1
 
 hyperparams:
@@ -84,6 +86,7 @@ requirements:
   numpy: 1.26.4
 
 training_set: [OpenLAM]
+training_cost: missing
 
 notes:
   Description: |

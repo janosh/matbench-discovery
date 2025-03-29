@@ -21,6 +21,8 @@ doi: https://doi.org/10.1038/s43588-022-00349-3
 paper: https://arxiv.org/abs/2202.02450
 pypi: https://pypi.org/project/matgl
 pr_url: https://github.com/janosh/matbench-discovery/pull/85
+# checkpoint used: MP-2021.2.8-EFS https://github.com/materialsvirtuallab/m3gnet/blob/3a8b14df/m3gnet/models/_m3gnet.py#L372
+checkpoint_url: https://github.com/materialsvirtuallab/m3gnet/blob/3a8b14dfd5/pretrained/MP-2021.2.8-EFS/checkpoint
 
 requirements:
   m3gnet: 0.1.0
@@ -49,6 +51,7 @@ hyperparams:
     stress: 0.1
 
 training_set: [MPF]
+training_cost: missing
 
 notes:
   Description: M3GNet is a GNN-based universal (as in full periodic table) interatomic potential for materials trained on up to 3-body interactions in the initial, middle and final frame of MP DFT relaxations.

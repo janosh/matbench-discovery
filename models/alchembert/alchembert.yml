@@ -11,10 +11,13 @@ authors:
   - name: Yuhang Wang
     affiliation: Beijing Information Science and Technology University
     email: 2024020669@bistu.edu.cn
+
 repo: https://gitee.com/liuxiaotong15/alchemBERT
 doi: https://doi.org/10.26434/chemrxiv-2024-r4dnl
 paper: https://chemrxiv.org/engage/chemrxiv/article-details/67540a28085116a133a62b85
-pr_url: https://github.com/janosh/matbench-discovery/pull/186
+pr_url: https://github.com/janosh/matbench-discovery/pull/187
+checkpoint_url: missing # https://github.com/janosh/matbench-discovery/pull/187#issuecomment-2763343014
+
 targets: E
 train_task: RS2RE
 test_task: IS2RE
@@ -32,6 +35,7 @@ model_params: 110_000_000
 n_estimators: 1
 
 training_set: [MP 2022]
+training_cost: missing
 
 notes:
   description: We tested BERT on the IS2RE task of Matbench Discovery.

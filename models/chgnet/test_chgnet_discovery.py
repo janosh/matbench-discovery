@@ -90,7 +90,7 @@ wandb.init(project="matbench-discovery", name=run_name, config=run_params)
 
 # %%
 relax_results: dict[str, dict[str, Any]] = {}
-input_col = {Task.IS2RE: Key.init_struct, Task.RS2RE: Key.final_struct}[task_type]
+input_col = {Task.IS2RE: Key.initial_struct, Task.RS2RE: Key.final_struct}[task_type]
 
 if task_type == Task.RS2RE:
     df_in[input_col] = [cse["structure"] for cse in df_in[Key.computed_structure_entry]]

@@ -43,6 +43,9 @@ url: https://github.com/zmyybc/AlphaNet
 pr_url: https://github.com/janosh/matbench-discovery/pull/216
 paper: https://arxiv.org/abs/2501.07155
 doi: https://doi.org/10.48550/arXiv.2501.07155
+# checkpoint page: https://github.com/zmyybc/AlphaNet/blob/243fe71cb96/README.md#pretrained-models
+checkpoint_url: https://ndownloader.figshare.com/files/52870784
+
 openness: OSOD
 train_task: S2EFS
 test_task: IS2RE-SR
@@ -82,7 +85,7 @@ requirements:
   numpy: 1.26.4
 
 training_set: [MPtrj] #train/valid split: 0.95/0.05
-
+training_cost: missing
 notes:
   Description: |
     AlphaNet is a local frame-based equivariant model designed to tackle the challenges of achieving both accurate and efficient simulations for atomistic systems. AlphaNet enhances computational efficiency and accuracy by leveraging the local geometric structures of atomic environments through the construction of equivariant local frames and learnable frame transitions.

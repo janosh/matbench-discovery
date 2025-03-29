@@ -26,12 +26,13 @@ trained_by:
   - name: Duo Zhang
     affiliation: AI for Science Institute, Beijing
     orcid: https://orcid.org/0000-0001-9591-2659
+
 repo: https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha
 url: https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha
 doi: https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha # to be released soon
 paper: https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha # to be released soon
 pr_url: https://github.com/janosh/matbench-discovery/pull/192
-trained_for_benchmark: true
+checkpoint_url: missing
 
 openness: OSOD
 train_task: S2EFS
@@ -40,6 +41,7 @@ targets: EFS_G
 model_type: UIP
 model_params: 3_374_647
 n_estimators: 1
+trained_for_benchmark: true
 status: superseded
 
 hyperparams:
@@ -83,6 +85,7 @@ requirements:
   numpy: 1.26.4
 
 training_set: [MPtrj]
+training_cost: missing
 
 notes:
   Description: |

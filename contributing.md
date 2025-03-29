@@ -106,13 +106,14 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    url: https://<model-docs-or-similar>.org
    doi: https://doi.org/10.5281/zenodo.0000000
    preprint: https://arxiv.org/abs/xxxx.xxxxx
+   checkpoint_url: https://github.com/<org>/<repo>/releases/download/<tag>/<model-file> # checkpoint URL can be any URL but GitHub release URLs are encouraged
 
    openness: OSOD # see `Open` enum in matbench_discovery/enums.py
    train_task: S2EFS # see `Task` enum in matbench_discovery/enums.py
    test_task: IS2RE-SR # see `Task` enum in matbench_discovery/enums.py
    targets: EFS_G # see `Targets` enum in matbench_discovery/enums.py
    model_type: UIP # see `ModelType` enum in matbench_discovery/enums.py
-   model_params: 3000000
+   model_params: 5_000_000
    trained_for_benchmark: true
    n_estimators: 1
 
@@ -122,6 +123,12 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
       ase_optimizer: FIRE
       optimizer: Adam
       ... # additional hyperparameters describing training
+
+   training_cost: # list any hardware used to train the model and for how long
+     # hardware: { amount: float, hours: float, cost: float [USD] }
+     Nvidia A100 GPUs: { amount: 4, hours: 30, cost: 1000 }
+     Nvidia H100 GPUs: { amount: 1, hours: 90, cost: 2000 }
+     Intel Xeon Gold 6254 CPUs: { amount: 12, hours: 100, cost: 100 }
 
    requirements: # strongly recommended
      torch: 1.13.0

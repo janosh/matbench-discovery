@@ -62,7 +62,12 @@ export interface ModelMetadata {
   matbench_discovery_version: string
   date_added: string
   date_published: string
-  authors: Person[]
+  /**
+   * @minItems 1
+   */
+  authors: {
+    [k: string]: unknown
+  } & [Person, ...Person[]]
   trained_by?: Person[]
   repo: string
   doi: string
@@ -70,6 +75,7 @@ export interface ModelMetadata {
   url?: string
   pypi?: string
   pr_url: string
+  checkpoint_url: string | (`not available` | `missing`)
   requirements: {
     /**
      * This interface was referenced by `undefined`'s JSON-Schema definition
@@ -113,11 +119,25 @@ export interface ModelMetadata {
   }
   model_params: number
   n_estimators: number
+  training_cost:
+    | {
+        /**
+         * This interface was referenced by `undefined`'s JSON-Schema definition
+         * via the `patternProperty` "^[a-zA-Z0-9\s]+ (GPUs|CPUs|TPUs)$".
+         */
+        [k: string]: {
+          amount: number
+          hours: number
+          cost?: number
+          [k: string]: unknown
+        }
+      }
+    | `missing`
   train_task: `RP2RE` | `RS2RE` | `S2E` | `S2RE` | `S2EF` | `S2EFS` | `S2EFSM`
   test_task: `IP2E` | `IS2E` | `IS2RE` | `IS2RE-SR` | `IS2RE-BO`
   model_type: `GNN` | `UIP` | `BO-GNN` | `Fingerprint` | `Transformer` | `RF`
   targets: `E` | `EF_G` | `EF_D` | `EFS_G` | `EFS_D` | `EFS_GM` | `EFS_DM`
-  openness?: `OSOD` | `OSCD` | `CSOD` | `CSCD`
+  openness: `OSOD` | `OSCD` | `CSOD` | `CSCD`
   status?: `aborted` | `complete` | `deprecated` | `pending` | `superseded`
   metrics?: {
     phonons?: PhononMetrics | (`not applicable` | `not available`)

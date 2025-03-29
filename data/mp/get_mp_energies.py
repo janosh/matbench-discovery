@@ -30,11 +30,11 @@ module_dir = os.path.dirname(__file__)
 fields = {
     Key.mat_id,
     "formula_pretty",
-    e_form_col := "formation_energy_per_atom",
+    e_form_col := Key.formation_energy_per_atom,
     "energy_per_atom",
     "symmetry",
     "energy_above_hull",
-    "decomposition_enthalpy",
+    e_decomp_enth_col := "decomposition_enthalpy",
     "energy_type",
     "nsites",
 }
@@ -87,19 +87,17 @@ df_mp.to_csv(DataFiles.mp_energies.path)
 # %% reproduce fig. 1b from https://arxiv.org/abs/2001.10591 (as data consistency check)
 ax = df_mp.plot.scatter(
     x=e_form_col,
-    y="decomposition_enthalpy",
+    y=e_decomp_enth_col,
     alpha=0.1,
     xlim=[-5, 1],
     ylim=[-1, 1],
-    color=(df_mp.decomposition_enthalpy > STABILITY_THRESHOLD).map(
+    color=(df_mp[e_decomp_enth_col] > STABILITY_THRESHOLD).map(
         {True: "red", False: "blue"}
     ),
     title=f"{today} - {len(df_mp):,} MP entries",
 )
 
-pmv.powerups.annotate_metrics(
-    df_mp.formation_energy_per_atom, df_mp.decomposition_enthalpy
-)
+pmv.powerups.annotate_metrics(df_mp[e_form_col], df_mp[e_decomp_enth_col])
 # result on 2023-01-10: plots match. no correlation between formation energy and
 # decomposition enthalpy. R^2 = -1.571, MAE = 1.604
 # pmv.save_fig(ax, f"{module_dir}/mp-decomp-enth-vs-e-form.webp", dpi=300)
@@ -107,9 +105,9 @@ pmv.powerups.annotate_metrics(
 
 # %% scatter plot energy above convex hull vs decomposition enthalpy
 # https://berkeleytheory.slack.com/archives/C16RE1TUN/p1673887564955539
-mask_above_line = df_mp.energy_above_hull - df_mp.decomposition_enthalpy.clip(0) > 0.1
+mask_above_line = df_mp.energy_above_hull - df_mp[e_decomp_enth_col].clip(0) > 0.1
 ax = df_mp.plot.scatter(
-    x="decomposition_enthalpy",
+    x=e_decomp_enth_col,
     y="energy_above_hull",
     color=mask_above_line.map({True: "red", False: "blue"}),
     hover_data=["index", Key.formula, e_form_col],
@@ -118,6 +116,6 @@ ax = df_mp.plot.scatter(
 n_above_line = sum(mask_above_line)
 ax.set(
     title=f"{n_above_line:,} / {len(df_mp):,} = {n_above_line / len(df_mp):.1%} "
-    "MP materials with\nenergy_above_hull - decomposition_enthalpy.clip(0) > 0.1"
+    f"MP materials with\nenergy_above_hull - {e_decomp_enth_col}.clip(0) > 0.1"
 )
 # pmv.save_fig(ax, f"{module_dir}/mp-e-above-hull-vs-decomp-enth.webp", dpi=300)

@@ -23,6 +23,9 @@ doi: https://doi.org/10.1016/j.mattod.2021.08.012
 paper: https://arxiv.org/abs/2104.10242
 pypi: https://pypi.org/project/maml
 pr_url: https://github.com/janosh/matbench-discovery/pull/85
+# checkpoint used: maml/apps/bowsr/model/model_files/megnet/formation_energy.hdf5
+# see https://github.com/materialsvirtuallab/maml/blob/43619d4fb/maml/apps/bowsr/model/megnet.py#L27
+checkpoint_url: https://github.com/materialsvirtuallab/maml/raw/43619d4fb/maml/apps/bowsr/model/model_files/megnet/formation_energy.hdf5
 
 requirements:
   maml: 2022.9.20
@@ -40,11 +43,12 @@ model_type: BO-GNN
 model_params: 167_761
 n_estimators: 1
 
-training_set: [MP Graphs]
 # we tested the Eform_MP_2019 checkpoint of MEGNet, the original 2018 version was trained on 'Graphs of MP 2018'
 # title: Graphs of MP 2018
 # url: https://figshare.com/articles/dataset/7451351
 # n_structures: 69_239
+training_set: [MP Graphs]
+training_cost: missing
 
 hyperparams:
   Optimizer Params:

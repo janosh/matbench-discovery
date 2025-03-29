@@ -32,6 +32,7 @@ paper: https://arxiv.org/abs/2502.12147
 url: https://huggingface.co/fairchem/eSEN
 pypi: https://pypi.org/project/fairchem-core
 pr_url: https://github.com/janosh/matbench-discovery/pull/226
+checkpoint_url: missing # unreleased, Xiang Fu will notify when available
 
 requirements:
   fairchem-core: 1.7.0
@@ -46,6 +47,7 @@ model_params: 30_085_121
 n_estimators: 1
 
 training_set: [MPtrj]
+training_cost: missing
 
 hyperparams:
   max_force: 0.02

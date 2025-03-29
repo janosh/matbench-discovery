@@ -24,6 +24,8 @@ doi: https://doi.org/10.1103/PhysRevX.14.021036
 paper: https://journals.aps.org/prx/abstract/10.1103/PhysRevX.14.021036
 url: https://gracemaker.readthedocs.io/en/latest/gracemaker/foundation
 pr_url: https://github.com/janosh/matbench-discovery/pull/160
+# checkpoint URL copied from https://github.com/ICAMS/grace-tensorpotential/blob/3115a9314/tensorpotential/calculator/foundation_models.py#L64
+checkpoint_url: https://ruhr-uni-bochum.sciebo.de/s/42Ivgi3eaLCynwC
 
 requirements:
   tensorpotential: 0.4.4
@@ -42,6 +44,7 @@ model_params: 15_346_704
 n_estimators: 1
 
 training_set: [MPtrj]
+training_cost: missing
 
 hyperparams:
   max_force: 0.03

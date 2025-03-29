@@ -65,7 +65,7 @@
   </button>
 </h2>
 <nav>
-  {#each links.filter(([href]) => href) as [href, title, icon] (title)}
+  {#each links.filter(([href]) => href?.startsWith(`http`)) as [href, title, icon] (title)}
     <span>
       <iconify-icon {icon} inline></iconify-icon>
       <a {href} {...target}>{title}</a>
@@ -248,6 +248,8 @@
     display: grid;
     gap: 5pt;
     grid-template-columns: 1fr 1fr;
+    margin-block: 1.2em;
+    font-size: 0.95em;
   }
   div {
     display: grid;
@@ -266,6 +268,7 @@
     list-style: none;
     flex-direction: column;
     max-height: 10em;
+    padding: 0;
   }
   section.metrics > ul > li {
     font-weight: lighter;

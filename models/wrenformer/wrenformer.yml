@@ -29,6 +29,7 @@ repo: https://github.com/CompRhys/aviary
 doi: https://doi.org/10.1126/sciadv.abn4117
 paper: https://arxiv.org/abs/2106.11132
 pr_url: https://github.com/janosh/matbench-discovery/pull/85
+checkpoint_url: https://api.wandb.ai/files/janosh/matbench-discovery/2kozbp4q/checkpoint.pth
 
 openness: OSOD
 trained_for_benchmark: true
@@ -40,6 +41,7 @@ model_params: 5_166_658
 n_estimators: 10
 
 training_set: [MP 2022]
+training_cost: missing
 
 notes:
   Description: |

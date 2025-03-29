@@ -31,6 +31,7 @@ doi: https://doi.org/10.1021/acs.jctc.4c00190
 paper: https://arxiv.org/abs/2402.03789
 pypi: https://pypi.org/project/sevenn
 pr_url: https://github.com/janosh/matbench-discovery/pull/172
+checkpoint_url: https://github.com/MDIL-SNU/SevenNet/blob/dff008ac9c5/sevenn/pretrained_potentials/SevenNet_l3i5/checkpoint_l3i5.pth
 
 openness: OSOD
 trained_for_benchmark: false
@@ -70,6 +71,7 @@ requirements:
   numpy: 1.26.4
 
 training_set: [MPtrj]
+training_cost: missing
 
 notes:
   Description: |
