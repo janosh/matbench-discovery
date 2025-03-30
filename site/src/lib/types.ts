@@ -1,5 +1,6 @@
 import * as d3sc from 'd3-scale-chromatic'
 import type { ModelMetadata } from './model-schema.d.ts'
+export type * from './model-schema.d.ts'
 
 export type ModelData = ModelMetadata &
   ModelStats & { dirname: string; metadata_file: string }

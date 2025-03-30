@@ -37,6 +37,10 @@ phonons:
   metrics:
     lower_is_better: [κ_SRME, κ<sub>SRME</sub>]
     higher_is_better: []
+  subtasks:
+    kappa_103:
+      label: κ<sub>SRME</sub> (103)
+      description: Lattice thermal conductivity symmetric relative mean error for 103 PhononDB structures
 
 diatomics:
   label: Diatomics

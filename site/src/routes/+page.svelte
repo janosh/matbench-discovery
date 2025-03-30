@@ -212,7 +212,7 @@
           {@const style = `width: 100%; height: 300px;`}
           <section style="width: 100%;">
             <h3>
-              {@html y_label} of models over time
+              {@html y_label} over time
               <small style="font-weight: lighter;">({better} = better)</small>
             </h3>
             <MetricScatter models={MODEL_METADATA} {metric} {y_label} {style} {y_lim} />

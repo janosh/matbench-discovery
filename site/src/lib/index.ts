@@ -100,13 +100,27 @@ export function get_pred_file_urls(model: ModelData) {
 
     for (const [key, val] of Object.entries(obj)) {
       if (key == `pred_file_url` && val && typeof val === `string`) {
-        // Get parent key without _pred_file suffix for label lookup
-        const pretty_label = modeling_tasks[parent_key]?.label || parent_key
+        // Look up the label by traversing the modeling_tasks hierarchy
+        const pretty_label = get_label_for_key_path(parent_key)
         files.push({ name: pretty_label, url: val })
       } else if (typeof val === `object`) {
         find_pred_files(val, key)
       }
     }
+  }
+
+  // Recursively look up labels in the modeling_tasks object
+  function get_label_for_key_path(key_path: string): string {
+    if (key_path in modeling_tasks) return modeling_tasks[key_path]?.label || key_path
+
+    // Check if it's a subtask by searching all tasks
+    for (const task_value of Object.values(modeling_tasks)) {
+      if (task_value?.subtasks?.[key_path]) {
+        return task_value.subtasks[key_path].label || key_path
+      }
+    }
+
+    return key_path // Default to key itself if no label is found
   }
 
   find_pred_files(model.metrics)

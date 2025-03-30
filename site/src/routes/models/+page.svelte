@@ -138,6 +138,7 @@
         animate:flip={{ duration: 400 }}
         in:fade={{ delay: 100 }}
         out:fade={{ delay: 100 }}
+        style="grid-row: span {show_details ? 5 : 4};"
       >
         <ModelCard
           {model}
@@ -191,16 +192,17 @@
   }
   ol {
     display: grid;
-    gap: 2em;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1em;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
   }
   ol > li {
     background-color: rgba(255, 255, 255, 0.05);
     padding: 6pt 10pt 14pt;
     border-radius: 3pt;
     display: grid;
-    align-content: start;
+    grid-template-rows: subgrid;
     position: relative;
+    gap: 1em;
   }
   span {
     display: flex;

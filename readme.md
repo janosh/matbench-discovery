@@ -31,4 +31,4 @@ We welcome new models additions to the leaderboard through GitHub PRs. See the [
 
 For detailed results and analysis, check out the [preprint](https://arxiv.org/abs/2308.14920).
 
-> Disclaimer: We evaluate how accurately ML models predict several material properties like thermodynamic stability, thermal conductivity, and atomic positions, in all cases using PBE DFT as reference data. Although these properties are important for high-throughput materials discovery, the ranking cannot give a complete picture of a model's general applicability to drive materials research. A high ranking does not constitute endorsement by the Materials Project.
+> Disclaimer: We evaluate how accurately ML models predict several material properties like thermodynamic stability, thermal conductivity, and atomic positions, in all cases using PBE DFT as reference data. Although these properties are important for high-throughput materials discovery, the ranking cannot give a complete picture of a model's overall ability to drive materials research. A high ranking does not constitute endorsement by the Materials Project.

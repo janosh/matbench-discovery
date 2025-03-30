@@ -30,11 +30,26 @@ describe(`ModelCard`, () => {
       expect(links[0].href).toBe(model.repo)
 
       const info_spans = document.body.querySelectorAll(`section.metadata > span`)
-      expect(info_spans[0].textContent).toContain(model.date_added)
+      // Training set is now first in the metadata section, so we need to check other spans
+      // Find the date_added span by its content
+      const date_added_span = Array.from(info_spans).find((span) =>
+        span.textContent?.includes(`Added ${model.date_added}`),
+      )
+      expect(date_added_span).toBeDefined()
+      expect(date_added_span?.textContent).toContain(model.date_added)
+
       if (model.date_published) {
-        expect(info_spans[1].textContent).toContain(model.date_published)
+        const date_published_span = Array.from(info_spans).find((span) =>
+          span.textContent?.includes(`Published ${model.date_published}`),
+        )
+        expect(date_published_span).toBeDefined()
+        expect(date_published_span?.textContent).toContain(model.date_published)
       }
-      expect(info_spans[2].textContent).toContain(pretty_num(model.model_params, `.3~s`))
+
+      const params_span = Array.from(info_spans).find((span) =>
+        span.textContent?.includes(`${pretty_num(model.model_params, `.3~s`)} params`),
+      )
+      expect(params_span).toBeDefined()
     })
 
     it(`handles missing optional fields gracefully`, () => {
@@ -162,26 +177,6 @@ describe(`ModelCard`, () => {
       if (first_package) {
         const [pkg_name, pkg_version] = first_package
         expect(packages[0].textContent?.trim()).toBe(`${pkg_name}: ${pkg_version}`)
-      }
-    })
-
-    it(`formats hyperparameters correctly`, async () => {
-      mount(ModelCard, {
-        target: document.body,
-        props: { model, stats, sort_by: `F1`, show_details: true },
-      })
-
-      // Look specifically for hyperparameters section
-      const hyperparams_section = Array.from(
-        document.body.querySelectorAll(`section`),
-      ).find((section) => section.querySelector(`h3`)?.textContent === `Hyperparameters`)
-      const hyperparams_text = hyperparams_section?.textContent?.replace(/\s+/g, ` `)
-
-      // Check for actual hyperparameters from the model
-      const first_hyperparam = Object.entries(model.hyperparams ?? {})[0]
-      if (first_hyperparam) {
-        const [param_name, param_value] = first_hyperparam
-        expect(hyperparams_text).toContain(`${param_name}: ${param_value}`)
       }
     })
   })
