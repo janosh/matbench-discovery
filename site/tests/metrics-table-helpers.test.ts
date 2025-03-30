@@ -1,3 +1,4 @@
+import type { TargetType } from '$lib'
 import { model_is_compliant } from '$lib'
 import {
   create_combined_filter,
@@ -6,7 +7,6 @@ import {
   get_geo_opt_property,
   targets_tooltips,
 } from '$lib/metrics-table-helpers'
-import type { TargetType } from '$lib/model-schema.d.ts'
 import type { ModelData } from '$lib/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

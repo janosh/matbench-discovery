@@ -32,7 +32,8 @@ url: https://github.com/deepmodeling/deepmd-kit/tree/devel
 doi: https://github.com/deepmodeling/deepmd-kit/tree/devel # to be released soon
 paper: https://github.com/deepmodeling/deepmd-kit/tree/devel # to be released soon
 pr_url: https://github.com/janosh/matbench-discovery/pull/222
-checkpoint_url: missing
+# checkpoints reported in https://github.com/deepmodeling/deepmd-kit/discussions/4682
+checkpoint_url: https://figshare.com/files/52989059
 
 openness: OSCD
 train_task: S2EFS

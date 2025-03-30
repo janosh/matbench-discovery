@@ -51,6 +51,11 @@ declare module '*element-counts.json' {
 } // element counts for different datasets
 
 declare module '*modeling-tasks.yml' {
+  type SubTask = {
+    label: string
+    description: string
+  }
+
   type ModelingTask = {
     label: string
     description: string
@@ -58,8 +63,10 @@ declare module '*modeling-tasks.yml' {
       higher_is_better: string[]
       lower_is_better: string[]
     }
+    subtasks?: Record<string, SubTask>
   }
   export const geo_opt: ModelingTask
   export const discovery: ModelingTask
   export const phonons: ModelingTask
+  export const diatomics: ModelingTask
 }

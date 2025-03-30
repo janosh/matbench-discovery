@@ -32,7 +32,8 @@ url: https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha
 doi: https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha # to be released soon
 paper: https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha # to be released soon
 pr_url: https://github.com/janosh/matbench-discovery/pull/192
-checkpoint_url: missing
+# checkpoints reported in https://github.com/deepmodeling/deepmd-kit/discussions/4682
+checkpoint_url: https://bohrium-api.dp.tech/ds-dl/dpa3openlam-74ng-v3.zip
 
 openness: OSCD
 train_task: S2EFS

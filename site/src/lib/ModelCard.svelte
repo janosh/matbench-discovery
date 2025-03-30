@@ -26,7 +26,7 @@
     metrics_style = null,
   }: Props = $props()
 
-  let { model_name, model_key, model_params, hyperparams } = $derived(model)
+  let { model_name, model_key, model_params } = $derived(model)
   let { notes = {}, training_set, n_estimators } = $derived(model)
   let all_metrics = $derived({
     ...(model.metrics?.discovery?.full_test_set ?? {}),
@@ -40,6 +40,7 @@
     [model.repo, `Repo`, `octicon:mark-github`],
     [model.paper, `Paper`, `ion:ios-paper`],
     [model.url, `Docs`, `ion:ios-globe`],
+    [model.checkpoint_url, `Checkpoint`, `mdi:download-box`],
     [`${repository}/blob/-/models/${model.dirname}`, `Files`, `octicon:file-directory`],
   ])
   const target = { target: `_blank`, rel: `noopener` }
@@ -65,7 +66,31 @@
     </span>
   {/each}
 </nav>
+
 <section class="metadata">
+  {#if training_set}
+    {@const training_sets = Array.isArray(training_set) ? training_set : [training_set]}
+    <span style="grid-column: span 2;">
+      <iconify-icon icon="mdi:database" inline></iconify-icon>
+      Training set:
+      {#each training_sets as train_set_or_key, idx (train_set_or_key)}
+        {#if idx > 0}
+          &nbsp;+&nbsp;
+        {/if}
+        {@const training_set =
+          typeof train_set_or_key == `string`
+            ? TRAINING_SETS[train_set_or_key]
+            : train_set_or_key}
+        {@const { n_structures, url, title, n_materials } = training_set}
+        {@const pretty_n_mat =
+          typeof n_materials == `number` ? pretty_num(n_materials) : n_materials}
+        {@const n_mat_str = n_materials ? ` from ${pretty_n_mat} materials` : ``}
+        <Tooltip text="{pretty_num(n_structures)} structures{n_mat_str}">
+          <a href={url}>{title}</a>
+        </Tooltip>
+      {/each}
+    </span>
+  {/if}
   <span title="Date added">
     <iconify-icon icon="ion:ios-calendar" inline></iconify-icon>
     Added {model.date_added}
@@ -104,30 +129,6 @@
       </Tooltip>
     {/if}
   </span>
-  {#if training_set}
-    {@const training_sets = Array.isArray(training_set) ? training_set : [training_set]}
-    <span style="grid-column: span 2;">
-      <iconify-icon icon="mdi:database" inline></iconify-icon>
-      Training set:
-      {#each training_sets as train_set_or_key, idx (train_set_or_key)}
-        {#if idx > 0}
-          &nbsp;+&nbsp;
-        {/if}
-        {@const training_set =
-          typeof train_set_or_key == `string`
-            ? TRAINING_SETS[train_set_or_key]
-            : train_set_or_key}
-        {@const { n_structures, url, title, n_materials } = training_set}
-        {@const pretty_n_mat =
-          typeof n_materials == `number` ? pretty_num(n_materials) : n_materials}
-        {@const n_mat_str = n_materials ? ` from ${pretty_n_mat} materials` : ``}
-        <a href={url}>{title}</a>
-        <small>
-          ({pretty_num(n_structures)} structures{n_mat_str})
-        </small>
-      {/each}
-    </span>
-  {/if}
 </section>
 {#if show_details}
   <div transition:fade|fly={{ duration: 200 }}>
@@ -151,10 +152,7 @@
         </ul>
       {/if}
     </section>
-    <section
-      transition:slide={{ duration: 200 }}
-      style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis;"
-    >
+    <section transition:slide={{ duration: 200 }}>
       <h3>Package versions</h3>
       <ul>
         {#each Object.entries(model.requirements ?? {}) as [name, version] (name)}
@@ -183,31 +181,9 @@
   </ul>
 </section>
 
-{#if hyperparams && show_details}
-  <section>
-    <h3>Hyperparameters</h3>
-    <ul>
-      {#each Object.entries(hyperparams) as [key, val] (key)}
-        <li>
-          {key}:
-          {#if typeof val == `object`}
-            <ul>
-              {#each Object.entries(val) as [sub_key, sub_val] (sub_key)}
-                <li><code>{sub_key} = {sub_val}</code></li>
-              {/each}
-            </ul>
-          {:else}
-            {val}
-          {/if}
-        </li>
-      {/each}
-    </ul>
-  </section>
-{/if}
-
 <style>
   h2 {
-    margin: 8pt 0 1em;
+    margin: 8pt 0 0;
     text-align: center;
     border-radius: 5pt;
   }
@@ -220,7 +196,7 @@
     font: inherit;
   }
   h3 {
-    margin: 1ex 0 3pt;
+    margin: 0;
   }
   ul {
     list-style: disc;
@@ -239,10 +215,10 @@
   }
   section.metadata {
     display: grid;
-    gap: 5pt;
+    gap: 9pt 5pt;
     grid-template-columns: 1fr 1fr;
-    margin-block: 1.2em;
     font-size: 0.95em;
+    align-content: center;
   }
   div {
     display: grid;
@@ -280,5 +256,9 @@
   }
   section.metrics > ul > li.active > label {
     font-weight: bold;
+  }
+  /* prevent long from increasing ModelCard container width */
+  :is(section, div, nav) {
+    word-break: break-word;
   }
 </style>

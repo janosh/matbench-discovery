@@ -166,15 +166,24 @@
           <iconify-icon icon="simple-icons:pypi" inline></iconify-icon> PyPI
         </a>
       {/if}
-      {#if model.pr_url}
+      <a
+        href={model.pr_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="View pull request"
+        use:titles_as_tooltips
+      >
+        <iconify-icon icon="octicon:git-pull-request" inline></iconify-icon> PR
+      </a>
+      {#if model.checkpoint_url?.startsWith(`http`)}
         <a
-          href={model.pr_url}
+          href={model.checkpoint_url}
           target="_blank"
           rel="noopener noreferrer"
-          title="View pull request"
+          title="Download model checkpoint"
           use:titles_as_tooltips
         >
-          <iconify-icon icon="octicon:git-pull-request" inline></iconify-icon> PR
+          <iconify-icon icon="mdi:download-box" inline></iconify-icon> Checkpoint
         </a>
       {/if}
       {#if model.metrics}
@@ -194,7 +203,7 @@
             <div class="dropdown">
               {#each pred_files as { name, url } (url)}
                 <a href={url} target="_blank" rel="noopener noreferrer">
-                  {name}
+                  {@html name}
                 </a>
               {/each}
             </div>

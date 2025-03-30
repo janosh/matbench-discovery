@@ -1,8 +1,8 @@
 import TRAINING_SETS from '$data/training-sets.yml'
+import type { TargetType } from '$lib'
 import { MODEL_METADATA, get_pred_file_urls, model_is_compliant } from '$lib'
 import { pretty_num } from 'elementari'
 import { calculate_combined_score } from './metrics'
-import type { TargetType } from './model-schema.d.ts'
 import type {
   CombinedMetricConfig,
   DiscoverySet,

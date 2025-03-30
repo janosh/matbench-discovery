@@ -25,7 +25,7 @@ The full set of processing steps used to curate the WBM test set from the raw da
 
   > WBM Formation energy distribution. 524 materials outside dashed lines were discarded.
 
-  <slot name="hist-e-form-per-atom" />
+  <slot name="hist_e_form_per_atom" />
 
 - apply the [`MaterialsProject2020Compatibility`](https://github.com/materialsproject/pymatgen/blob/02a4ca8aa/pymatgen/entries/compatibility.py#L823) energy correction scheme to the formation energies
 - compute energy to the Materials Project convex hull constructed from all MP `ComputedStructureEntries` queried on 2023-02-07 ([database release 2022.10.28](https://docs.materialsproject.org/changes/database-versions#v2022.10.28))

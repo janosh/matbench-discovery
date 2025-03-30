@@ -1,7 +1,6 @@
 <script lang="ts">
-  import type { ModelData } from '$lib'
+  import type { ModelData, ModelMetadata } from '$lib'
   import { ScatterPlot, type Point } from 'elementari'
-  import type { ModelMetadata } from './model-schema'
 
   interface Props {
     models: ModelData[]
