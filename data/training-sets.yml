@@ -4,84 +4,270 @@ MP 2022:
   download_url: https://figshare.com/files/40344436
   n_structures: 154_719
   open: true
+  date_created: 2022-10-28
+  license: CC BY 4.0
+  params:
+    method: DFT
+    code: VASP
+    functional: PBE+U
+    pseudopotentials: PBE
+  created_by:
+    - name: Materials Project Team
+      url: https://materialsproject.org/about
 
 MPtrj:
   title: MPtrj
   url: https://figshare.com/articles/dataset/23713842
   download_url: https://figshare.com/files/41619375
+  doi: https://doi.org/10.6084/m9.figshare.23713842
   n_structures: 1_580_395
   n_materials: 145_923
   open: true
+  date_created: 2023-07-19
+  license: MIT
+  params:
+    method: DFT
+    code: VASP
+    functional: PBE+U
+    pseudopotentials: PBE
+  created_by:
+    - name: Materials Project Team
+      url: https://materialsproject.org/about
+    - name: Bowen Deng
+      affiliation: UC Berkeley
+      orcid: https://orcid.org/0000-0002-5720-5299
 
 MPF:
   title: MPF.2021.2.8
   url: https://figshare.com/articles/dataset/19470599
   download_url: https://figshare.com/ndownloader/articles/19470599/versions/3
+  doi: https://doi.org/10.6084/m9.figshare.19470599.v3
   n_structures: 188_349
   n_materials: 62_783
   open: true
+  date_created: 2022-03-05
+  date_added: 2022-03-05
+  license: CC BY 4.0
+  params:
+    method: DFT
+    code: VASP
+    functional: PBE+U
+    pseudopotentials: PBE
+  created_by:
+    - name: Materials Project Team
+      url: https://materialsproject.org/about
+    - name: Chi Chen
+      affiliation: UC San Diego
+      orcid: https://orcid.org/0000-0001-8008-7043
+      github: https://github.com/chc273
 
 MP Graphs:
   title: Graphs of MP 2019
   url: https://figshare.com/articles/dataset/8097992
   download_url: https://figshare.com/ndownloader/articles/8097992/versions/2
+  doi: https://doi.org/10.6084/m9.figshare.8097992.v2
   n_structures: 133_420
   open: true
+  date_created: 2019-06-06
+  license: MIT
+  params:
+    method: DFT
+    code: VASP
+    functional: PBE+U
+    pseudopotentials: PBE
+  created_by:
+    - name: Materials Project Team
+      url: https://materialsproject.org/about
+    - name: Chi Chen
+      affiliation: UC San Diego
+      orcid: https://orcid.org/0000-0001-8008-7043
+      github: https://github.com/chc273
 
 GNoME:
   title: GNoME
-  url: https://doi.org/10.1038/s41586-023-06735-9
+  url: https://github.com/google-deepmind/materials_discovery
+  doi: https://doi.org/10.1038/s41586-023-06735-9
   n_structures: 89_000_000
   n_materials: 6_000_000
   open: false
+  date_created: 2023-11-29 # https://github.com/google-deepmind/materials_discovery/commit/a701b9529
+  params:
+    method: DFT
+    code: VASP
+    functional: PBE+U
+    pseudopotentials: PBE
+  created_by:
+    - name: Google DeepMind
+      url: https://deepmind.google/discover/blog/millions-of-new-materials-discovered-with-deep-learning/
 
 MatterSim:
   title: MatterSim
-  url: https://doi.org/10.48550/arXiv.2405.04967
+  url: https://github.com/microsoft/mattersim # https://microsoft.github.io/mattersim
+  doi: https://doi.org/10.48550/arXiv.2405.04967
   n_structures: 17_000_000
   temperature_range: 0-5000 K
   pressure_range: 0-1000 GPa
   open: false
+  date_created: 2024-05-08
+  params:
+    method: DFT
+    code: VASP
+    functional: PBE+U
+    pseudopotentials: PBE
+  created_by:
+    - name: Microsoft Research AI for Science Team
+      url: https://microsoft.com/research/lab/microsoft-research-ai-for-science/people
 
 Alex:
   title: Alexandria
   url: https://alexandria.icams.rub.de
   download_url: https://alexandria.icams.rub.de/data/pbe # too large for single download, split into subfiles
+  doi: https://doi.org/10.1002/adma.202210788
   n_structures: 30_497_628
   n_materials: 3_100_000
   open: true
+  date_created: 2023-04-22
+  license: CC BY 4.0
+  params:
+    method: DFT
+    code: VASP
+    functional: PBE
+    pseudopotentials: PBE
+  created_by:
+    - name: Jonathan Schmidt
+      orcid: https://orcid.org/0000-0001-5685-6404
+      affiliation: Martin-Luther-Universität Halle-Wittenberg, Germany
+    - name: Noah Hoffmann
+    - name: Hai-Chen Wang
+      orcid: https://orcid.org/0000-0002-2892-5879
+      affiliation: Martin-Luther-Universität Halle-Wittenberg, Germany
+    - name: Pedro Borlido
+    - name: Pedro J. M. A. Carriço
+    - name: Tiago F. T. Cerqueira
+    - name: Silvana Botti
+      email: silvana.botti@uni-jena.de
+      url: https://www.uni-jena.de/en/faculty/silvana-botti
+      affiliation: Friedrich-Schiller-Universität Jena, Germany
+    - name: Miguel A. L. Marques
+      affiliation: Martin-Luther-Universität Halle-Wittenberg, Germany
+      orcid: https://orcid.org/0000-0003-0170-8222
 
 OMat24:
   title: OMat24
   url: https://huggingface.co/datasets/fairchem/OMAT24#omat24-dataset
+  doi: https://doi.org/10.48550/arXiv.2410.12771
   # this is the number of Alexandria materials that was sampled from, but according to Luis unclear
   # if all were indeed picked so this is an upper bound on the number of materials
   n_materials: 3_227_606
   n_structures: 100_824_585
   open: true
+  date_created: 2024-10-16
+  license: CC BY 4.0
+  params:
+    method: DFT
+    code: VASP
+    functional: PBE+U
+    pseudopotentials: PBE_54
+  created_by:
+    - name: Luis Barroso-Luque
+      affiliation: FAIR Meta
+      email: lbluque@meta.com
+      orcid: https://orcid.org/0000-0002-6453-9545
+      github: https://github.com/lbluque
+      corresponding: true
+    - name: Muhammed Shuaibi
+      affiliation: FAIR Meta
+    - name: Xiang Fu
+      affiliation: FAIR Meta
+    - name: Brandon M. Wood
+      affiliation: FAIR Meta
+    - name: Misko Dzamba
+      affiliation: FAIR Meta
+    - name: Meng Gao
+      affiliation: FAIR Meta
+    - name: Ammar Rizvi
+      affiliation: FAIR Meta
+    - name: C. Lawrence Zitnick
+      affiliation: FAIR Meta
+    - name: Zachary W. Ulissi
+      affiliation: FAIR Meta
+      email: zulissi@meta.com
+      orcid: https://orcid.org/0000-0002-9401-4918
+      corresponding: true
 
 sAlex:
-  title: subsampled Alexandria Training Set
+  title: subsampled Alexandria
+  derived_from: [Alex]
   url: https://huggingface.co/datasets/fairchem/OMAT24#salex-dataset
   download_url: https://dl.fbaipublicfiles.com/opencatalystproject/data/omat/241018/sAlex/train.tar.gz
+  doi: https://doi.org/10.48550/arXiv.2410.12771
   n_materials: 3_227_606
   n_structures: 10_447_765
   open: true
+  date_created: 2024-10-16
+  license: CC BY 4.0
+  params:
+    method: DFT
+    code: VASP
+    functional: PBE+U
+    pseudopotentials: PBE
+  created_by:
+    - name: Luis Barroso-Luque
+      affiliation: FAIR Meta
+      email: lbluque@meta.com
+      orcid: https://orcid.org/0000-0002-6453-9545
+      github: https://github.com/lbluque
 
 sAlex Validation:
   title: subsampled Alexandria Validation Set
+  derived_from: [Alex]
   url: https://huggingface.co/datasets/fairchem/OMAT24#salex-dataset
   download_url: https://dl.fbaipublicfiles.com/opencatalystproject/data/omat/241018/sAlex/val.tar.gz
+  doi: https://doi.org/10.48550/arXiv.2410.12771
   n_materials: 170_905 # approximate value! TODO confirm this
   n_structures: 553_218
   open: true
+  date_created: 2024-10-16
+  license: CC BY 4.0
+  params:
+    method: DFT
+    code: VASP
+    functional: PBE+U
+    pseudopotentials: PBE
+  created_by:
+    - name: Luis Barroso-Luque
+      affiliation: FAIR Meta
+      email: lbluque@meta.com
+      orcid: https://orcid.org/0000-0002-6453-9545
+      github: https://github.com/lbluque
 
 OpenLAM:
   title: OpenLAM dataset v1
+  derived_from: [OMat24, MPtrj, Alex] # actually Alex2D, not Alex which is 3D
   url: https://aissquare.com/datasets/detail?pageType=datasets&name=LAMBench-TrainingSet-v1&id=308
   download_url: https://aissquare.com/datasets/detail?pageType=datasets&name=LAMBench-TrainingSet-v1&id=308 # will be combined for downloading soon
+  doi: https://doi.org/10.48550/arXiv.2501.16358
   n_structures: 162_507_178
   open: true
+  date_created: 2025-02-17
+  license: CC BY 4.0
+  params:
+    method: DFT
+    code: VASP
+    functional: PBE+U
+    pseudopotentials: [PBE, PBE_54]
+  created_by:
+    - name: AISI
+      email: pengay@aisi.ac.cn
+      affiliation: AI for Science Institute, Beijing, China
+    - name: Xinzijian Liu
+      affiliation: AI for Science Institute, Beijing, China
+    - name: Ming-Yu Guo
+      affiliation: DP Technology, Beijing, China
+    - name: Linfeng Zhang
+      affiliation: AI for Science Institute, Beijing, China
+    - name: Han Wang
+      affiliation: HEDPS, CAPT, College of Engineering, Peking University, Beijing, China
   description: |
     This dataset integrates multidisciplinary DFT data sourced from Deep Modeling community (https://deepmodeling.com)
     and other open repositories to pre-train large atomic models (LAMs),

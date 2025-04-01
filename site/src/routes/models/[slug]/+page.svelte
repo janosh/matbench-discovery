@@ -59,30 +59,35 @@
           {model.model_version}
         {/if}
       </div>
+
       <div>
         <iconify-icon icon="ion:ios-calendar" inline></iconify-icon>
-        <Tooltip text="{n_days_ago(model.date_added)} days ago">
-          <span>Added: {model.date_added}</span>
+        Added: <Tooltip text="{n_days_ago(model.date_added)} days ago">
+          {model.date_added}
         </Tooltip>
       </div>
+
       <div>
         <iconify-icon icon="ri:calendar-check-line" inline></iconify-icon>
-        <Tooltip text="{n_days_ago(model.date_published)} days ago">
-          <span>Published: {model.date_published}</span>
+        Published: <Tooltip text="{n_days_ago(model.date_published)} days ago">
+          {model.date_published}
         </Tooltip>
       </div>
+
       <div>
         <iconify-icon icon="eos-icons:neural-network" inline></iconify-icon>
-        <Tooltip text="{model.model_params.toLocaleString()} trainable parameters">
-          <span>{pretty_num(model.model_params, `.3~s`)} parameters</span>
-        </Tooltip>
+        <Tooltip text={model.model_params.toLocaleString()}>
+          {pretty_num(model.model_params, `.3~s`)}
+        </Tooltip> parameters
       </div>
+
       {#if model.n_estimators > 1}
         <div>
           <iconify-icon icon="material-symbols:forest" inline></iconify-icon>
           <span>Ensemble {model.n_estimators} models</span>
         </div>
       {/if}
+
       {#if missing_preds != undefined}
         <div>
           <iconify-icon icon="fluent:missing-metadata-24-regular" inline></iconify-icon>
@@ -94,6 +99,7 @@
           </span>
         </div>
       {/if}
+
       {#if model.pypi}
         <code>
           pip install {model.pypi.split(`/`).pop()}
@@ -147,7 +153,7 @@
         </a>
       {/if}
       <a
-        href={`${pkg.repository}/blob/-/models/${model.dirname?.split(`/`).pop()}`}
+        href="{pkg.repository}/blob/-/models/{model.dirname?.split(`/`).pop()}"
         target="_blank"
         rel="noopener noreferrer"
         title="Browse model submission files"
@@ -349,17 +355,14 @@
           <p>
             <a href={url} target="_blank" rel="noopener noreferrer">{title}</a>:
             <Tooltip text={n_structures.toLocaleString()}>
-              {#snippet trigger()}
-                <strong>{pretty_num(n_structures)}</strong>
-              {/snippet}
+              <strong>{pretty_num(n_structures)}</strong>
             </Tooltip>
             structures
             {#if n_materials}
+              from
               <Tooltip text={n_materials.toLocaleString()}>
-                from {#snippet trigger()}
-                  <strong>{pretty_n_mat}</strong>
-                {/snippet} materials
-              </Tooltip>
+                <strong>{pretty_n_mat}</strong>
+              </Tooltip> materials
             {/if}
           </p>
         {/each}

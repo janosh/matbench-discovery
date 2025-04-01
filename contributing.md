@@ -187,6 +187,7 @@ matbench-discovery-root
     └── <model_name>
         ├── <model_name>.yml
         ├── test_<model_name>_discovery.py
+        ├── test_<model_name>_kappa.py
         ├── readme.md  # optional
         └── train_<model_name>.py  # optional
 ```

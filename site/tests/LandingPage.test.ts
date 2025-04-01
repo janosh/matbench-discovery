@@ -71,7 +71,6 @@ describe(`Landing Page`, () => {
   it(`updates column visibility when toggling checkboxes`, async () => {
     const columns_btn = document.body.querySelector(`details.column-toggles summary`)
     columns_btn?.click()
-    await tick()
     // Table should reflect column visibility changes
     let f1_cells = document.body.querySelectorAll(`th, td`)
     let has_f1_column = Array.from(f1_cells).some((cell) =>

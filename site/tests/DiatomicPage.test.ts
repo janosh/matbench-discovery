@@ -1,4 +1,4 @@
-import { mount, tick } from 'svelte'
+import { mount } from 'svelte'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { doc_query } from '.'
 import Page from '../src/routes/tasks/diatomics/+page.svelte'
@@ -57,14 +57,11 @@ describe(`Diatomic Page`, () => {
     // Trigger another load of the same model
     const button = doc_query(`button`) // click button to load another model
     button.click()
-    await tick()
 
     // each model load first tries loading data from pred_file, then tries pred_file_url
     expect(mock_fetch.mock.calls.length).toBe(n_initial_calls + 2)
 
-    // Trigger another load of the same model
-    button.click()
-    await tick()
+    button.click() // Trigger another load of the same model
 
     // model should now be cached
     expect(mock_fetch.mock.calls.length).toBe(n_initial_calls + 3)

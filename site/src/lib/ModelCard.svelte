@@ -69,24 +69,20 @@
 
 <section class="metadata">
   {#if training_set}
-    {@const training_sets = Array.isArray(training_set) ? training_set : [training_set]}
     <span style="grid-column: span 2;">
       <iconify-icon icon="mdi:database" inline></iconify-icon>
-      Training set:
-      {#each training_sets as train_set_or_key, idx (train_set_or_key)}
+      Training data:
+      {#each training_set as train_set_key, idx (train_set_key)}
         {#if idx > 0}
           &nbsp;+&nbsp;
         {/if}
-        {@const training_set =
-          typeof train_set_or_key == `string`
-            ? TRAINING_SETS[train_set_or_key]
-            : train_set_or_key}
+        {@const training_set = TRAINING_SETS[train_set_key]}
         {@const { n_structures, url, title, n_materials } = training_set}
         {@const pretty_n_mat =
           typeof n_materials == `number` ? pretty_num(n_materials) : n_materials}
         {@const n_mat_str = n_materials ? ` from ${pretty_n_mat} materials` : ``}
-        <Tooltip text="{pretty_num(n_structures)} structures{n_mat_str}">
-          <a href={url}>{title}</a>
+        <Tooltip text="{title}: {pretty_num(n_structures)} structures{n_mat_str}">
+          <a href={url}>{train_set_key}</a>
         </Tooltip>
       {/each}
     </span>
