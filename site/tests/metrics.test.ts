@@ -58,15 +58,15 @@ describe(`Metrics`, () => {
       [`F1 only`, 0.8, undefined, undefined],
       [`RMSD only`, undefined, 0.005, undefined],
       [`kappa only`, undefined, undefined, 0.3],
-    ])(`returns NaN when %s is provided with default config`, (_, f1, rmsd, kappa) => {
+    ])(`returns null when %s is provided with default config`, (_, f1, rmsd, kappa) => {
       const score = calculate_combined_score(
         f1,
         rmsd,
         kappa,
         DEFAULT_COMBINED_METRIC_CONFIG,
       )
-      // Should return NaN because with DEFAULT_COMBINED_METRIC_CONFIG all metrics have weights
-      expect(isNaN(score)).toBe(true)
+      // Should return null because with DEFAULT_COMBINED_METRIC_CONFIG all metrics have weights
+      expect(score).toBeNull()
     })
 
     it(`calculates scores correctly when missing metrics have zero weights`, () => {
@@ -105,14 +105,14 @@ describe(`Metrics`, () => {
       expect(kappa_only_score).toBeCloseTo(0.85, 2)
     })
 
-    it(`returns NaN when weighted metrics are missing`, () => {
+    it(`returns null when weighted metrics are missing`, () => {
       // Create a config with non-zero weights for F1 only
       const f1_only_config = create_single_metric_config(`F1`)
 
       // Missing F1 but F1 weight is 1
       const score = calculate_combined_score(undefined, 0.005, 0.3, f1_only_config)
 
-      expect(isNaN(score)).toBe(true)
+      expect(score).toBeNull()
     })
 
     it(`correctly weights metrics according to config`, () => {
@@ -248,27 +248,26 @@ describe(`Metrics`, () => {
         expect(score).toBeCloseTo(expected_score, 4)
       })
 
-      it(`returns NaN when all metrics undefined but weights are non-zero`, () => {
+      it(`returns null when all metrics undefined but weights are non-zero`, () => {
         const all_undefined_score = calculate_combined_score(
           undefined,
           undefined,
           undefined,
           f1_only_config,
         )
-        expect(isNaN(all_undefined_score)).toBe(true)
+        expect(all_undefined_score).toBeNull()
       })
 
       it(`handles NaN inputs correctly`, () => {
-        // The actual implementation seems to treat NaN as a valid number
-        // Let's verify this behavior instead of assuming it should return NaN
+        // The function should return null for NaN inputs
         const nan_score = calculate_combined_score(
           NaN,
           0.01,
           0.5,
           DEFAULT_COMBINED_METRIC_CONFIG,
         )
-        // Verify the actual behavior
-        expect(isNaN(nan_score)).toBe(false)
+        // Verify that it returns null
+        expect(nan_score).toBeNull()
       })
 
       it(`handles empty weights configuration`, () => {

@@ -241,13 +241,15 @@ export function calculate_metrics_data(
       })
       // Sort by combined score (descending)
       .sort((row1, row2) => {
-        // Handle NaN values (they should be sorted to the bottom)
         const score1 = row1[`CPS`]
         const score2 = row2[`CPS`]
 
-        if (isNaN(score1) && isNaN(score2)) return 0
-        if (isNaN(score1)) return 1
-        if (isNaN(score2)) return -1
+        // Handle NaN values (they should be sorted to the bottom)
+        const is_nan1 = score1 === null || isNaN(score1)
+        const is_nan2 = score2 === null || isNaN(score2)
+        if (is_nan1 && is_nan2) return 0
+        if (is_nan1) return 1
+        if (is_nan2) return -1
 
         return score2 - score1
       })

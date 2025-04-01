@@ -50,7 +50,7 @@
     />
     <span>Non-compliant models</span>
     <Tooltip>
-      <span class="info-icon-small">ⓘ</span>
+      ⓘ
       {#snippet tip()}
         <span>
           Models can be non-compliant for multiple reasons:<br />
@@ -75,7 +75,7 @@
     />
     <span>Energy-only models</span>
     <Tooltip text="Include models that only predict energy (no forces or stress)">
-      <span class="info-icon-small">ⓘ</span>
+      ⓘ
     </Tooltip>
   </label>
 
@@ -88,9 +88,6 @@
     align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
-  }
-  .info-icon-small {
-    font-size: 0.9em;
   }
   .filter-option {
     display: flex;

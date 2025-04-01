@@ -1,7 +1,46 @@
 "$schema": http://json-schema.org/draft-07/schema#
+
+definitions:
+  # External references
+  person:
+    $ref: model-schema.yml#/definitions/person
+  http_url:
+    $ref: model-schema.yml#/definitions/http_url
+
+  # Dataset method and parameters
+  method_enum:
+    type: string
+    enum: [DFT, experiment, ML]
+    description: Computational or experimental method used to generate the data
+
+  dft_code_enum:
+    type: string
+    enum: [VASP, Quantum ESPRESSO, CASTEP, AbInit, FHI-aims, CP2K]
+    description: DFT code used for calculations
+
+  functional_enum:
+    type: string
+    enum:
+      - PBE
+      - PBEsol
+      - PBE+U
+      - SCAN
+      - SCAN+U
+      - r2SCAN
+      - r2SCAN+U
+      - HSE
+      - HSE06
+      - PBE0
+    description: Exchange-correlation functional used in DFT calculations
+
+  pseudo_potentials_enum:
+    type: string
+    enum: [PBE, PBE_52, PBE_54, PBE_64]
+    description: Pseudopotentials used in DFT calculations
+
 type: object
 patternProperties:
-  "^[a-zA-Z0-9 ]+$": # allow alphanumeric names with spaces
+  ^[a-zA-Z0-9 ]+$: # allow alphanumeric names with spaces
     type: object
     additionalProperties: false
     required:
@@ -10,28 +49,111 @@ patternProperties:
       - n_structures
       - open
     properties:
+      # Basic dataset information
       title:
         type: string
-      url:
+        description: Full name of the dataset
+      version:
         type: string
-        format: uri
-      download_url:
-        type: string
-        format: uri
-      n_structures:
-        type: integer
-        minimum: 1
-      n_materials:
-        type: integer
-        minimum: 1
-      temperature_range:
-        type: string
-        pattern: "^\\d+-\\d+ K$" # e.g. "0-5000 K"
-      pressure_range:
-        type: string
-        pattern: "^\\d+-\\d+ GPa$" # e.g. "0-1000 GPa"
-      open:
-        type: boolean
+        description: Version of the dataset
       description:
         type: string
         format: markdown
+        description: Detailed description of the dataset
+
+      # Dataset size and content
+      n_structures:
+        type: integer
+        minimum: 1
+        description: Number of structures in the dataset
+      n_materials:
+        type: integer
+        minimum: 1
+        description: Number of unique materials in the dataset
+      elements:
+        type: array
+        items:
+          type: string
+        description: Chemical elements included in the dataset
+      temperature_range:
+        type: string
+        pattern: ^\d+-\d+ K$ # e.g. 0-5000 K
+        description: Temperature range of structures in the dataset (e.g., '0-5000 K')
+      pressure_range:
+        type: string
+        pattern: ^\d+-\d+ GPa$ # e.g. 0-1000 GPa
+        description: Pressure range of structures in the dataset (e.g., '0-1000 GPa')
+
+      # URLs and references
+      url:
+        $ref: "#/definitions/http_url"
+        description: Primary URL for the dataset
+      download_url:
+        $ref: "#/definitions/http_url"
+        description: URL to download the dataset
+      doi:
+        $ref: "#/definitions/http_url"
+        description: DOI reference for the dataset
+      derived_from:
+        type: array
+        items:
+          type: string
+        description: Other datasets this dataset is derived from
+
+      # Licensing and openness
+      open:
+        type: boolean
+        description: Whether the dataset is openly available
+      license:
+        type: string
+        description: License under which the dataset is published
+
+      # Provenance and metadata
+      created_by:
+        type: array
+        items:
+          $ref: "#/definitions/person"
+        description: People or organizations who created the dataset
+      date_created:
+        type: string
+        format: date
+        description: Date when the dataset was created
+      date_added:
+        type: string
+        format: date
+        description: Date when the dataset was added to this collection
+
+      # Computational details
+      params:
+        type: object
+        description: Parameters and methods used to generate the dataset
+        properties:
+          method:
+            oneOf:
+              - $ref: "#/definitions/method_enum"
+              - type: array
+                items:
+                  $ref: "#/definitions/method_enum"
+            description: Method(s) used to generate the data
+          code:
+            oneOf:
+              - $ref: "#/definitions/dft_code_enum"
+              - type: array
+                items:
+                  $ref: "#/definitions/dft_code_enum"
+            description: DFT code(s) used for calculations
+          functional:
+            oneOf:
+              - $ref: "#/definitions/functional_enum"
+              - type: array
+                items:
+                  $ref: "#/definitions/functional_enum"
+            description: Exchange-correlation functional(s) used
+          pseudopotentials:
+            oneOf:
+              - $ref: "#/definitions/pseudo_potentials_enum"
+              - type: array
+                items:
+                  $ref: "#/definitions/pseudo_potentials_enum"
+            description: Pseudopotential(s) used
+        additionalProperties: true

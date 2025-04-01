@@ -289,7 +289,7 @@ properties:
     oneOf:
       - type: string
         format: uri
-        pattern: "^https?://"
+        $ref: "#/definitions/http_url"
       - type: string
         enum: [not available, missing]
   requirements:

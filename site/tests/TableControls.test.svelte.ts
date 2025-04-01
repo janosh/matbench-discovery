@@ -1,7 +1,7 @@
 import { TableControls } from '$lib'
 import { DEFAULT_COMBINED_METRIC_CONFIG } from '$lib/metrics'
 import type { CombinedMetricConfig } from '$lib/types'
-import { mount, tick } from 'svelte'
+import { mount } from 'svelte'
 import { describe, expect, it, vi } from 'vitest'
 
 describe(`TableControls`, () => {
@@ -13,14 +13,8 @@ describe(`TableControls`, () => {
 
     mount(TableControls, {
       target: document.body,
-      props: {
-        visible_cols: sample_cols,
-        on_filter_change,
-        on_col_change,
-      },
+      props: { visible_cols: sample_cols, on_filter_change, on_col_change },
     })
-
-    await tick()
 
     // Check filter checkboxes
     const filter_checkboxes = document.body.querySelectorAll(`input[type="checkbox"]`)
@@ -38,16 +32,8 @@ describe(`TableControls`, () => {
 
     mount(TableControls, {
       target: document.body,
-      props: {
-        visible_cols: sample_cols,
-        on_filter_change,
-        // Default values
-        show_energy_only: false,
-        show_noncompliant: false,
-      },
+      props: { visible_cols: sample_cols, on_filter_change },
     })
-
-    await tick()
 
     // Find filter checkboxes
     const checkboxes = document.body.querySelectorAll(`input[type="checkbox"]`)
@@ -84,8 +70,6 @@ describe(`TableControls`, () => {
       },
     })
 
-    await tick()
-
     // Find column toggle button
     const toggle_btn = document.body.querySelector(
       `[aria-label="Toggle column visibility"]`,
@@ -95,7 +79,6 @@ describe(`TableControls`, () => {
     // Click button to show the panel
     if (toggle_btn) {
       toggle_btn.click()
-      await tick()
 
       // Check if column menu or panel is visible
       // The component might use different class names, so we try multiple options
@@ -104,7 +87,6 @@ describe(`TableControls`, () => {
 
       // Click outside to close (if the component uses a click-outside pattern)
       document.body.dispatchEvent(new MouseEvent(`click`, { bubbles: true }))
-      await tick()
     }
   })
 
@@ -113,13 +95,8 @@ describe(`TableControls`, () => {
 
     mount(TableControls, {
       target: document.body,
-      props: {
-        visible_cols: { ...sample_cols },
-        on_col_change,
-      },
+      props: { visible_cols: { ...sample_cols }, on_col_change },
     })
-
-    await tick()
 
     // Open column menu/panel (if it exists)
     const toggle_btn = document.body.querySelector(
@@ -127,7 +104,6 @@ describe(`TableControls`, () => {
     ) as HTMLButtonElement
     if (toggle_btn) {
       toggle_btn.click()
-      await tick()
 
       // Click column checkbox and check if callback is called
       const column_checkboxes = document.body.querySelectorAll(`input[type="checkbox"]`)
@@ -147,8 +123,6 @@ describe(`TableControls`, () => {
       },
     })
 
-    await tick()
-
     // Check for info icons in the document
     const info_icons = document.body.querySelectorAll(`.info-icon, [aria-label*="info"]`)
 
@@ -157,7 +131,6 @@ describe(`TableControls`, () => {
       const info_icon = info_icons[0] as HTMLElement
       const mouseenter_event = new MouseEvent(`mouseenter`)
       info_icon.dispatchEvent(mouseenter_event)
-      await tick()
     }
   })
 
@@ -169,13 +142,7 @@ describe(`TableControls`, () => {
 
     mount(TableControls, {
       target: document.body,
-      props: {
-        visible_cols: sample_cols,
-        config: sample_config,
-      },
+      props: { visible_cols: sample_cols, config: sample_config },
     })
-
-    // The component should accept the config prop
-    // (This is a basic test of prop passing, functionality would be tested in RadarChart tests)
   })
 })

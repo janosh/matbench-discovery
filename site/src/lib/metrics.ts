@@ -174,7 +174,7 @@ export function calculate_combined_score(
   rmsd: number | undefined,
   kappa: number | undefined,
   config: CombinedMetricConfig, // weights for each metric
-): number {
+): number | null {
   // Find weights from config by metric names
   const f1_weight =
     config.weights.find((w) => w.metric === `F1`)?.value ?? F1_DEFAULT_WEIGHT
@@ -183,13 +183,13 @@ export function calculate_combined_score(
   const kappa_weight =
     config.weights.find((w) => w.metric === `kappa_SRME`)?.value ?? KAPPA_DEFAULT_WEIGHT
 
-  // Check if any weighted metric is missing - if so, return NaN
+  // Check if any weighted metric is missing - if so, return null
   if (
-    (f1_weight > 0 && f1 === undefined) ||
-    (rmsd_weight > 0 && rmsd === undefined) ||
-    (kappa_weight > 0 && kappa === undefined)
+    (f1_weight > 0 && (f1 === undefined || isNaN(f1))) ||
+    (rmsd_weight > 0 && (rmsd === undefined || isNaN(rmsd))) ||
+    (kappa_weight > 0 && (kappa === undefined || isNaN(kappa)))
   ) {
-    return NaN
+    return null
   }
 
   // Get normalized metric values

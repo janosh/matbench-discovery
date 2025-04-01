@@ -1,7 +1,7 @@
 import { MODEL_METADATA, ModelCard, TRAINING_SETS } from '$lib'
 import type { ModelStatLabel } from '$lib/types'
 import { pretty_num } from 'elementari'
-import { mount, tick } from 'svelte'
+import { mount } from 'svelte'
 import { describe, expect, it } from 'vitest'
 
 describe(`ModelCard`, () => {
@@ -83,9 +83,9 @@ describe(`ModelCard`, () => {
     // Look for span containing "Training set" text
     const training_set = Array.from(
       document.body.querySelectorAll(`section.metadata span`),
-    ).find((span) => span.textContent?.includes(`Training set`))
+    ).find((span) => span.textContent?.includes(`Training data`))
     expect(training_set).toBeDefined()
-    expect(training_set?.textContent).toContain(`Training set:`)
+    expect(training_set?.textContent).toContain(`Training data:`)
 
     // Test actual training set data
     const training_set_links = training_set?.querySelectorAll(`a`)
@@ -151,8 +151,6 @@ describe(`ModelCard`, () => {
       expect(initial_sections).toHaveLength(0)
 
       show_details = true
-      await tick()
-
       const sections = document.body.querySelectorAll(`section h3`)
       const section_titles = Array.from(sections).map((h3) => h3.textContent)
       expect(section_titles).toEqual([`Metrics`])

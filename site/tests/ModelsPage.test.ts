@@ -98,6 +98,30 @@ describe(`Models Page`, () => {
     ).toBe(true)
   })
 
+  it(`binds show_details state between page and model cards`, async () => {
+    const model_cards = document.body.querySelectorAll(`ol > li`)
+    expect(model_cards.length).toBeGreaterThan(1)
+
+    const [first_card, second_card] = model_cards
+    const first_details_btn = first_card.querySelector(`h2 button`) as HTMLButtonElement
+
+    // Initially no details visible on either card
+    // Check if the details sections are present by looking for non-metrics h3
+    expect(first_card.querySelectorAll(`section:not(.metrics) h3`).length).toBe(0)
+    expect(second_card.querySelectorAll(`section:not(.metrics) h3`).length).toBe(0)
+
+    first_details_btn.click()
+    await tick()
+    // Now both cards should show details (shared state)
+    // After clicking, details sections with h3 elements should be visible
+    expect(
+      first_card.querySelectorAll(`section:not(.metrics) h3`).length,
+    ).toBeGreaterThan(1)
+    expect(
+      second_card.querySelectorAll(`section:not(.metrics) h3`).length,
+    ).toBeGreaterThan(1)
+  })
+
   it(`limits number of displayed models`, async () => {
     const n_best_input = document.body.querySelector(
       `input[type="number"]`,
@@ -107,8 +131,6 @@ describe(`Models Page`, () => {
     // Set to show only 3 models
     n_best_input.value = `3`
     n_best_input.dispatchEvent(new Event(`input`))
-    await tick()
-    await tick() // need extra tick for Svelte store update
 
     const displayed_models = document.body.querySelectorAll(`ol > li`)
     expect(displayed_models.length > 7).toBe(true)
