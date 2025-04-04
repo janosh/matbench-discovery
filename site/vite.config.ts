@@ -5,54 +5,79 @@ import yaml_plugin from '@rollup/plugin-yaml'
 import { sveltekit } from '@sveltejs/kit/vite'
 import fs from 'fs/promises'
 import yaml from 'js-yaml'
+import type { JSONSchema4 } from 'json-schema'
 import { compile as json_to_ts } from 'json-schema-to-typescript'
 import { execFile } from 'node:child_process'
 import path from 'path'
 import type { PluginOption } from 'vite'
 import { defineConfig } from 'vite'
 
-// custom Vite plugin that watches for changes to model-schema.yml and automatically
-// regenerates the TypeScript definitions in model-schema.d.ts
+// custom Vite plugin that watches for changes to *-schema.yml files and
+// automatically converts them to *-schema.d.ts files
 function yaml_schema_to_typescript_plugin(): PluginOption {
-  const yaml_schema_path = path.resolve(`../tests/model-schema.yml`)
-
-  // convert model-schema.yml to model-schema.d.ts
-  async function generate_typescript_from_schema(): Promise<boolean> {
+  // convert *-schema.yml to *-schema.d.ts
+  async function yaml_schema_to_ts(file: string): Promise<boolean> {
     // Read the package.json to get prettier config
     const pkg_content = await fs.readFile(path.resolve(`./package.json`), `utf-8`)
     const pkg = JSON.parse(pkg_content)
+    // return if file is not a schema file
 
-    // Read and parse the YAML file
-    const yaml_content = await fs.readFile(yaml_schema_path, `utf-8`)
-    const parsed_yaml = yaml.load(yaml_content)
+    // Read and parse the model schema YAML file
+    try {
+      const yaml_content = await fs.readFile(file, `utf-8`)
 
-    // Convert schema to TypeScript
-    const model_metadata_ts = await json_to_ts(parsed_yaml, `ModelMetadata`, {
-      style: pkg.prettier,
-      bannerComment: `// This file is auto-generated from model-schema.yml. Do not edit directly.`,
-    })
+      // replace any relative file paths to other schema files with absolute paths
+      // (important since dataset-schema.yml uses Person from model-schema.yml)
+      const abs_path_yaml_content = yaml_content.replace(
+        /\$ref: (.*\.yml)/g,
+        (match, p1) => `\$ref: ${path.resolve(p1)}`,
+      )
+      const parsed_yaml = yaml.load(abs_path_yaml_content) as JSONSchema4
+      const base_name = path.basename(file, `.yml`)
 
-    // Write the TypeScript interface file
-    const dts_out_file = path.resolve(`./src/lib/model-schema.d.ts`)
-    await fs.writeFile(dts_out_file, model_metadata_ts)
+      // Convert model schema to TypeScript
+      const ts_name = {
+        'model-schema': `ModelMetadata`,
+        'dataset-schema': `Dataset`,
+      }[base_name]
 
-    // eslint format generated file
-    const eslint_cmd = path.resolve(`./node_modules/.bin/eslint`)
-    execFile(eslint_cmd, [`--fix`, `--config`, `eslint.config.js`, dts_out_file])
-    return true
+      const bannerComment = `// This file is auto-generated from ${base_name}.yml. Do not edit directly.`
+      const model_metadata_ts = await json_to_ts(
+        parsed_yaml,
+        ts_name ?? `missing ${base_name} schema`,
+        { style: pkg.prettier, bannerComment },
+      )
+
+      // Write the TypeScript interface file for model schema
+      const dts_file = path.resolve(`./src/lib/${base_name}.d.ts`)
+      await fs.writeFile(dts_file, model_metadata_ts)
+
+      // Format model schema file
+      const eslint_cmd = path.resolve(`./node_modules/.bin/eslint`)
+      execFile(eslint_cmd, [`--fix`, `--config`, `eslint.config.js`, dts_file])
+      return true
+    } catch (error) {
+      console.error(`Error processing schema file ${file}:`, error)
+      return false
+    }
   }
 
   return {
     name: `yaml-schema-to-typescript`,
     configureServer(server) {
-      // Initial model-schema.yml to model-schema.d.ts conversion when server starts
-      generate_typescript_from_schema().catch((err) => {
-        console.error(`Failed to generate TypeScript on startup: ${err}`)
-      })
-      server.watcher.add(yaml_schema_path) // watch model-schema.yml
+      const model_yaml_path = path.resolve(`../tests/model-schema.yml`)
+      const dataset_yaml_path = path.resolve(`../tests/dataset-schema.yml`)
 
-      server.watcher.on(`change`, async (file) => {
-        if (file.endsWith(`model-schema.yml`)) await generate_typescript_from_schema()
+      // initial TS update on server start
+      yaml_schema_to_ts(model_yaml_path)
+      yaml_schema_to_ts(dataset_yaml_path)
+
+      // Watch both schema files
+      server.watcher.add(model_yaml_path)
+      server.watcher.add(dataset_yaml_path)
+
+      server.watcher.on(`change`, (file) => {
+        if (file.endsWith(`-schema.yml`)) yaml_schema_to_ts(file)
       })
     },
   }

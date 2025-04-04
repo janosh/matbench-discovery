@@ -2,7 +2,7 @@ import type { TargetType } from '$lib'
 import { model_is_compliant } from '$lib'
 import {
   create_combined_filter,
-  format_long_date,
+  format_date,
   format_train_set,
   get_geo_opt_property,
   targets_tooltips,
@@ -16,7 +16,7 @@ vi.mock(`$lib`, () => ({
   get_pred_file_urls: vi.fn().mockReturnValue([]),
 }))
 
-vi.mock(`$data/training-sets.yml`, () => ({
+vi.mock(`$data/datasets.yml`, () => ({
   default: {
     'MP 2022': {
       title: `Materials Project 2022`,
@@ -82,7 +82,7 @@ describe(`metrics-table-helpers`, () => {
         writable: true,
       })
 
-      expect(format_long_date(date)).toBe(`Monday, May 15, 2023`)
+      expect(format_date(date)).toBe(`Monday, May 15, 2023`)
 
       // Restore original Date
       Object.defineProperty(globalThis, `Date`, {

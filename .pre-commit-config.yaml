@@ -79,8 +79,8 @@ repos:
         files: ^models/.+/.+\.yml$
         args: [--schemafile, tests/model-schema.yml]
       - id: check-jsonschema
-        files: ^data/training-sets\.yml$
-        args: [--schemafile, tests/training-set-schema.yml]
+        files: ^data/datasets\.yml$
+        args: [--schemafile, tests/dataset-schema.yml]
       - id: check-github-actions
 
   - repo: https://github.com/RobertCraigie/pyright-python

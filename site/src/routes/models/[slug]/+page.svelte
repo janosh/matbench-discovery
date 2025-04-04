@@ -1,8 +1,7 @@
 <script lang="ts">
   import { dev } from '$app/environment'
-  import TRAINING_SETS from '$data/training-sets.yml'
   import per_elem_each_errors from '$figs/per-element-each-errors.json'
-  import { get_pred_file_urls, PtableInset } from '$lib'
+  import { DATASETS, get_pred_file_urls, PtableInset } from '$lib'
   import pkg from '$site/package.json'
   import type { ChemicalElement } from 'elementari'
   import {
@@ -348,7 +347,7 @@
       <section class="training-set">
         {#each Array.isArray(model.training_set) ? model.training_set : [model.training_set] as train_set (train_set)}
           {@const train_set_info =
-            typeof train_set == `string` ? TRAINING_SETS[train_set] : train_set}
+            typeof train_set == `string` ? DATASETS[train_set] : train_set}
           {@const { n_structures, url, title, n_materials } = train_set_info}
           {@const pretty_n_mat =
             typeof n_materials == `number` ? pretty_num(n_materials) : n_materials}

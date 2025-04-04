@@ -13,10 +13,10 @@ declare module 'models/*.yml' {
   export default data
 } // model metadata files
 
-declare module 'data/training-sets.yml' {
-  const data: import('$lib').TrainingSet[]
+declare module '*/datasets.yml' {
+  const data: Record<string, import('$lib').DataSet>
   export default data
-} // training sets
+}
 
 declare module '*citation.cff' {
   const data: import('$lib').Citation
