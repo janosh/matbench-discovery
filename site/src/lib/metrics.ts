@@ -100,33 +100,36 @@ export const DISCOVERY_SET_LABELS: Record<
   },
 }
 
-export const [F1_DEFAULT_WEIGHT, RMSD_DEFAULT_WEIGHT, KAPPA_DEFAULT_WEIGHT] = [
-  0.5, 0.1, 0.4,
-]
-
-export const DEFAULT_COMBINED_METRIC_CONFIG: CombinedMetricConfig = {
+export const DEFAULT_CPS_CONFIG: CombinedMetricConfig = {
   name: `CPS`,
-  description: `Combined Performance Score weighting discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>)`,
-  weights: [
-    {
-      metric: `F1`,
+  description: `Combined Performance Score weights discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>)`,
+  parts: {
+    F1: {
+      path: `discovery.unique_prototypes.F1`,
       label: `F1`,
       description: `F1 score for stable/unstable material classification (discovery task)`,
-      value: F1_DEFAULT_WEIGHT,
+      weight: 0.5,
+      range: [0, 1],
+      better: `higher`,
     },
-    {
-      metric: `kappa_SRME`,
+    kappa_SRME: {
+      path: `phonons.kappa_103.κ_SRME`,
       label: `κ<sub>SRME</sub>`,
+      svg_label: `κ<tspan baseline-shift='-0.4em' font-size='0.8em'>SRME</tspan>`,
       description: `Symmetric relative mean error for thermal conductivity prediction (lower is better)`,
-      value: KAPPA_DEFAULT_WEIGHT,
+      weight: 0.4,
+      range: [0, 2],
+      better: `lower`,
     },
-    {
-      metric: `RMSD`,
+    RMSD: {
+      path: `discovery.unique_prototypes.RMSD`,
       label: `RMSD`,
       description: `Root mean square displacement for crystal structure optimization`,
-      value: RMSD_DEFAULT_WEIGHT,
+      weight: 0.1,
+      range: [0, 0.03],
+      better: `lower`,
     },
-  ],
+  },
 }
 
 // F1 score is between 0-1 where higher is better (no normalization needed)
@@ -176,62 +179,41 @@ export function calculate_combined_score(
   config: CombinedMetricConfig, // weights for each metric
 ): number | null {
   // Find weights from config by metric names
-  const f1_weight =
-    config.weights.find((w) => w.metric === `F1`)?.value ?? F1_DEFAULT_WEIGHT
-  const rmsd_weight =
-    config.weights.find((w) => w.metric === `RMSD`)?.value ?? RMSD_DEFAULT_WEIGHT
-  const kappa_weight =
-    config.weights.find((w) => w.metric === `kappa_SRME`)?.value ?? KAPPA_DEFAULT_WEIGHT
+  const { F1, RMSD, kappa_SRME } = config.parts
 
-  // Check if any weighted metric is missing - if so, return null
+  // Check if any metrics with non-zero weights are missing
   if (
-    (f1_weight > 0 && (f1 === undefined || isNaN(f1))) ||
-    (rmsd_weight > 0 && (rmsd === undefined || isNaN(rmsd))) ||
-    (kappa_weight > 0 && (kappa === undefined || isNaN(kappa)))
+    (F1.weight > 0 && (f1 === undefined || isNaN(f1))) ||
+    (RMSD.weight > 0 && (rmsd === undefined || isNaN(rmsd))) ||
+    (kappa_SRME.weight > 0 && (kappa === undefined || isNaN(kappa)))
   ) {
     return null
   }
 
-  // Get normalized metric values
-  const normalized_f1 = normalize_f1(f1)
-  const normalized_rmsd = normalize_rmsd(rmsd)
-  const normalized_kappa = normalize_kappa_srme(kappa)
-
-  // Get available weights and metrics
-  const available_metrics = []
-  const available_weights = []
-
-  // Only include metrics that are available
-  if (f1 !== undefined) {
-    available_metrics.push(normalized_f1)
-    available_weights.push(f1_weight)
+  // Skip the calculation if all weights are zero
+  const total_weight = F1.weight + RMSD.weight + kappa_SRME.weight
+  if (total_weight === 0) {
+    return 0
   }
 
-  if (rmsd !== undefined) {
-    available_metrics.push(normalized_rmsd)
-    available_weights.push(rmsd_weight)
+  // Calculate weighted sum
+  let weighted_sum = 0
+
+  // Add F1 contribution if available and weighted
+  if (f1 !== undefined && !isNaN(f1) && F1.weight > 0) {
+    weighted_sum += normalize_f1(f1) * F1.weight
   }
 
-  if (kappa !== undefined) {
-    available_metrics.push(normalized_kappa)
-    available_weights.push(kappa_weight)
+  // Add RMSD contribution if available and weighted
+  if (rmsd !== undefined && !isNaN(rmsd) && RMSD.weight > 0) {
+    weighted_sum += normalize_rmsd(rmsd) * RMSD.weight
   }
 
-  // If no metrics are available, return 0
-  if (available_metrics.length === 0) return 0
-
-  // Normalize weights to sum to 1 based on available metrics
-  const weight_sum = available_weights.reduce((sum, w) => sum + w, 0)
-  const normalized_weights =
-    weight_sum > 0
-      ? available_weights.map((w) => w / weight_sum)
-      : available_weights.map(() => 1 / available_weights.length)
-
-  // Calculate weighted average
-  let score = 0
-  for (let i = 0; i < available_metrics.length; i++) {
-    score += available_metrics[i] * normalized_weights[i]
+  // Add kappa contribution if available and weighted
+  if (kappa !== undefined && !isNaN(kappa) && kappa_SRME.weight > 0) {
+    weighted_sum += normalize_kappa_srme(kappa) * kappa_SRME.weight
   }
 
-  return score
+  // Return weighted average
+  return weighted_sum / total_weight
 }

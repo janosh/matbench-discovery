@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { DATASETS, ModelData, ModelStatLabel } from '$lib'
-  import { AuthorBrief } from '$lib'
+  import type { ModelData, ModelStatLabel } from '$lib'
+  import { AuthorBrief, DATASETS } from '$lib'
   import { repository } from '$site/package.json'
   import { pretty_num } from 'elementari'
   import 'iconify-icon'
