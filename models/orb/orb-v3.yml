@@ -1,0 +1,164 @@
+model_name: ORB v3
+model_key: orb-v3
+model_version: v3
+matbench_discovery_version: 1.3.1
+date_added: "2025-04-05"
+date_published: "2025-04-05"
+authors:
+  - name: Ben Rhodes
+    affiliation: Orbital Materials
+    corresponding: true
+  - name: Sander Vandenhaute
+    affiliation: Orbital Materials
+  - name: Vaidotas Šimkus
+    affiliation: Orbital Materials
+  - name: James Gin-Pollock
+    affiliation: Orbital Materials
+  - name: Tim Duignan
+    affiliation: Orbital Materials
+  - name: Jonathan Godwin
+    affiliation: Orbital Materials
+    email: jonathan@orbitalmaterials.com
+  - name: Mark Neumann
+    affiliation: Orbital Materials
+    email: mark@orbitalmaterials.com
+    corresponding: true
+
+repo: https://github.com/orbital-materials/orb-models
+url:
+doi:
+paper:
+pr_url:
+checkpoint_url:
+
+openness: OSCD
+trained_for_benchmark: false
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_D
+model_type: UIP
+model_params: 25_161_727
+n_estimators: 1
+
+hyperparams:
+  max_force: 0.02
+  max_steps: 500
+  ase_optimizer: FIRE
+  cell_filter: FrechetCellFilter
+  optimizer: Adam
+  loss: MAE
+  loss_weights:
+    energy: 10.0
+    force: 1.0
+    stress: 1.0
+  batch_size: 300 # (avg, as batch size is dynamic)
+  initial_learning_rate: 0.0003
+  learning_rate_schedule: CosineAnnealingLR(T_max=100)
+  gradient_clip: 0.5
+  ema_decay: 0.999
+  n_layers: 5
+  features: 512 latent dim, 1024 MLP dim
+  num_rbfs: 8
+  radial_cutoff: 5.0 # Å
+  max_num_neighbors: 120
+
+requirements: # strongly recommended
+  orb-models: "0.4.3"
+
+training_set: [MPtrj, Alex, OMAT]
+training_cost: 8x H100
+
+notes:
+  Description: |
+    ORB-v3 is a pretrained model for atomic simulations. ORB-v3 uses a pretrained diffusion model backbone which is fine-tuned on MPtrj + Alexandria + OMAT.
+
+metrics:
+  phonons:
+    kappa_103:
+      κ_SRME: 0.21
+      pred_file: orb-v3-con-inf-mpa-20250404-disp0.03-float64-kappa.json.gz
+      pred_file_url: s3://orbitalmaterials-public-models/matbench-evals/orb-v3/orb-v3-con-inf-mpa-20250404-disp0.03-float64-kappa.json.gz
+  geo_opt:
+    pred_file: orb-v3-con-inf-mpa-20250404.json.gz
+    pred_file_url: s3://orbitalmaterials-public-models/matbench-evals/orb-v3/orb-v3-con-inf-mpa-20250404.json.gz
+    struct_col: orb_structure
+    symprec=1e-5:
+      rmsd: 0.075 # unitless, NOTE! Not currently comparable to other models due to bug
+      n_sym_ops_mae: 10.169 # unitless
+      symmetry_decrease: 0.869 # fraction
+      symmetry_match: 0.130 # fraction
+      symmetry_increase: 0.0001 # fraction
+      n_structures: 256963 # count
+      analysis_file: orb-v3-con-inf-mpa-20250404-symprec=1e-5-moyo=0.4.2.csv.gz
+      analysis_file_url: s3://orbitalmaterials-public-models/matbench-evals/orb-v3/orb-v3-con-inf-mpa-20250404-symprec=1e-5-moyo=0.4.2.csv.gz
+    symprec=1e-2:
+      rmsd: 0.075 # unitless, NOTE! Not currently comparable to other models due to bug
+      n_sym_ops_mae: 2.609 # unitless
+      symmetry_decrease: 0.159 # fraction
+      symmetry_match: 0.728 # fraction
+      symmetry_increase: 0.101 # fraction
+      n_structures: 256963 # count
+      analysis_file: orb-v3-con-inf-mpa-20250404-symprec=1e-2-moyo=0.4.2.csv.gz
+      analysis_file_url: s3://orbitalmaterials-public-models/matbench-evals/orb-v3/orb-v3-con-inf-mpa-20250404-symprec=1e-2-moyo=0.4.2.csv.gz
+  discovery:
+    pred_file: orb-v3-con-inf-mpa-20250404.csv.gz
+    pred_file_url: s3://orbitalmaterials-public-models/matbench-evals/orb-v3/orb-v3-con-inf-mpa-20250404.csv.gz
+    pred_col: e_form_per_atom_orb
+    full_test_set:
+      F1: 0.887 # fraction
+      DAF: 5.284 # dimensionless
+      Precision: 0.881 # fraction
+      Recall: 0.894 # fraction
+      Accuracy: 0.962 # fraction
+      TPR: 0.894 # fraction
+      FPR: 0.024 # fraction
+      TNR: 0.976 # fraction
+      FNR: 0.106 # fraction
+      TP: 38305.0 # count
+      FP: 5193.0 # count
+      TN: 208945.0 # count
+      FN: 4520.0 # count
+      MAE: 0.023 # eV/atom
+      RMSE: 0.078 # eV/atom
+      R2: 0.815 # dimensionless
+      missing_preds: 2 # count
+      missing_percent: 0.00% # fraction
+    most_stable_10k:
+      F1: 0.982 # fraction
+      DAF: 6.307 # dimensionless
+      Precision: 0.964 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.964 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9641.0 # count
+      FP: 359.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.021 # eV/atom
+      RMSE: 0.080 # eV/atom
+      R2: 0.860 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
+
+    unique_prototypes:
+      F1: 0.906 # fraction
+      DAF: 5.906 # dimensionless
+      Precision: 0.903 # fraction
+      Recall: 0.908 # fraction
+      Accuracy: 0.971 # fraction
+      TPR: 0.908 # fraction
+      FPR: 0.018 # fraction
+      TNR: 0.982 # fraction
+      FNR: 0.092 # fraction
+      TP: 29916.0 # count
+      FP: 3216.0 # count
+      TN: 179330.0 # count
+      FN: 3026.0 # count
+      MAE: 0.024 # eV/atom
+      RMSE: 0.078 # eV/atom
+      R2: 0.821 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
