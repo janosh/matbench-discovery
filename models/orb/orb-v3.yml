@@ -37,7 +37,7 @@ train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_D
 model_type: UIP
-model_params: 25_161_727
+model_params: 25,510,582
 n_estimators: 1
 
 hyperparams:
@@ -59,7 +59,7 @@ hyperparams:
   n_layers: 5
   features: 512 latent dim, 1024 MLP dim
   num_rbfs: 8
-  radial_cutoff: 5.0 # Å
+  radial_cutoff: 6.0 # Å
   max_num_neighbors: 120
 
 requirements: # strongly recommended
