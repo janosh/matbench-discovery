@@ -1,7 +1,7 @@
 <script lang="ts">
   import { DATASETS } from '$lib'
   import { format_date } from '$lib/metrics-table-helpers'
-  import type { DataSet, HeatmapColumn } from '$lib/types'
+  import type { Dataset, HeatmapColumn } from '$lib/types'
   import { pretty_num } from 'elementari'
   import 'iconify-icon'
   import { titles_as_tooltips } from 'svelte-zoo/actions'
@@ -54,7 +54,7 @@
     }
   })
 
-  function generate_links(set_data: DataSet): string {
+  function generate_links(set_data: Dataset): string {
     const ext_link = (url: string, title: string, text: string) =>
       `<a href="${url}" target="_blank" rel="noopener noreferrer" title="${title}">${text}</a>`
     const links = []

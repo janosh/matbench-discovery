@@ -1,7 +1,9 @@
-<h1 align="center" style="line-height: 0; margin-block: -1em 1em;">
-  <img src="https://github.com/janosh/matbench-discovery/raw/main/site/static/favicon.svg" alt="Logo" width="60px"><br>
-  Matbench Discovery
-</h1>
+<slot name="title">
+  <h1 align="center">
+    <img src="https://github.com/janosh/matbench-discovery/raw/main/site/static/favicon.svg" alt="Logo" width="60px"><br>
+    Matbench Discovery
+  </h1>
+</slot>
 
 <h4 align="center" class="toc-exclude" style="display: none;">
 
@@ -13,11 +15,9 @@
 
 </h4>
 
-<slot name="metrics_table" />
-
 Matbench Discovery is an [interactive leaderboard](https://janosh.github.io/matbench-discovery/models) and associated [PyPI package](https://pypi.org/project/matbench-discovery) which rank ML models on a task designed to simulate high-throughput discovery of new stable inorganic crystals as well as predicting some of their properties.
 
-We've tested <slot name="model_count" /> models covering multiple methodologies including graph neural network (GNN) interatomic potentials, GNN one-shot predictors, iterative Bayesian optimizers and random forests with shallow-learning structure fingerprints.
+We rank <slot name="model_count">20+</slot> models covering multiple methodologies including graph neural network (GNN) interatomic potentials, GNN one-shot predictors, iterative Bayesian optimizers and random forests with shallow-learning structure fingerprints.
 
 <slot name="best_report" />
 

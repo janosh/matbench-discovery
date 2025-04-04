@@ -1,6 +1,7 @@
 import * as d3sc from 'd3-scale-chromatic'
 import type { ModelMetadata } from './model-schema.d.ts'
-export type * from './model-schema.d.ts'
+export type { Dataset } from './dataset-schema.d.ts'
+export type { ModelMetadata } from './model-schema.d.ts'
 
 export type ModelData = ModelMetadata &
   ModelStats & { dirname: string; metadata_file: string }
@@ -115,21 +116,23 @@ export type DiatomicsCurves = {
 }
 
 // MetricWeight defines weights for each component of the combined score
-export interface MetricWeight {
-  metric: string // ID of the metric (F1, RMSD, kappa_SRME)
-  value: number // Weight value between 0-1
+export type Metric = {
+  path: string // path to the metric in the model metadata
   label: string // Display name (can include HTML)
+  svg_label?: string // Label for the SVG chart
   description: string // Description of the metric
+  range?: [number, number] // y-axis limits for the SVG chart
+  better?: `higher` | `lower` // sort direction
 }
 
-export interface CombinedMetricConfig {
-  weights: MetricWeight[]
+export type CombinedMetricConfig = {
+  parts: Record<`F1` | `kappa_SRME` | `RMSD`, Metric & { weight: number }>
   name: string
   description: string
 }
 
 // Links data structure used for model resource links
-export interface LinkData {
+export type LinkData = {
   paper: { url: string; title: string; icon: string }
   repo: { url: string; title: string; icon: string }
   pr_url: { url: string; title: string; icon: string }

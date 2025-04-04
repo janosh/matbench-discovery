@@ -14,7 +14,7 @@ declare module 'models/*.yml' {
 } // model metadata files
 
 declare module '*/datasets.yml' {
-  const data: Record<string, import('$lib').DataSet>
+  const data: Record<string, import('$lib/types').Dataset>
   export default data
 }
 
