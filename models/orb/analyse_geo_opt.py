@@ -8,13 +8,13 @@ from concurrent.futures import ProcessPoolExecutor
 from typing import Final
 
 import pandas as pd
-from pymatgen.core import Structure
 from pymatgen.analysis.structure_matcher import StructureMatcher
+from pymatgen.core import Structure
 from pymatviz.enums import Key
+from tqdm import tqdm
 
 from matbench_discovery import ROOT
 from matbench_discovery.data import DataFiles
-from tqdm import tqdm
 
 
 def get_sym_info_from_structs(
