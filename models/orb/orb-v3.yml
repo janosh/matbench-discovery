@@ -83,7 +83,7 @@ metrics:
     pred_file_url: s3://orbitalmaterials-public-models/matbench-evals/orb-v3/orb-v3-con-inf-mpa-20250404.json.gz
     struct_col: orb_structure
     symprec=1e-5:
-      rmsd: 0.075 # unitless, NOTE! Not currently comparable to other models due to bug
+      rmsd: 0.075 # unitless
       n_sym_ops_mae: 10.169 # unitless
       symmetry_decrease: 0.869 # fraction
       symmetry_match: 0.130 # fraction
@@ -92,7 +92,7 @@ metrics:
       analysis_file: orb-v3-con-inf-mpa-20250404-symprec=1e-5-moyo=0.4.2.csv.gz
       analysis_file_url: s3://orbitalmaterials-public-models/matbench-evals/orb-v3/orb-v3-con-inf-mpa-20250404-symprec=1e-5-moyo=0.4.2.csv.gz
     symprec=1e-2:
-      rmsd: 0.075 # unitless, NOTE! Not currently comparable to other models due to bug
+      rmsd: 0.075 # unitless
       n_sym_ops_mae: 2.609 # unitless
       symmetry_decrease: 0.159 # fraction
       symmetry_match: 0.728 # fraction
