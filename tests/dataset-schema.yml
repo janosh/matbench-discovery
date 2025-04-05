@@ -15,7 +15,7 @@ definitions:
 
   dft_code_enum:
     type: string
-    enum: [VASP, Quantum ESPRESSO, CASTEP, AbInit, FHI-aims, CP2K]
+    enum: [VASP, Quantum ESPRESSO, CASTEP, AbInit, FHI-aims, CP2K, Various]
     description: DFT code used for calculations
 
   functional_enum:
@@ -31,11 +31,12 @@ definitions:
       - HSE
       - HSE06
       - PBE0
+      - Various
     description: Exchange-correlation functional used in DFT calculations
 
   pseudo_potentials_enum:
     type: string
-    enum: [PBE, PBE_52, PBE_54, PBE_64]
+    enum: [PBE, PBE_52, PBE_54, PBE_64, Various]
     description: Pseudopotentials used in DFT calculations
 
 type: object
@@ -142,6 +143,9 @@ patternProperties:
                 items:
                   $ref: "#/definitions/dft_code_enum"
             description: DFT code(s) used for calculations
+          code_version:
+            type: string
+            description: Version of the DFT code used
           functional:
             oneOf:
               - $ref: "#/definitions/functional_enum"

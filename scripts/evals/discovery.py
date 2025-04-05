@@ -80,8 +80,8 @@ non_compliant_models = [
     key for key, meta in MODEL_METADATA.items() if not model_is_compliant(meta)
 ]
 
-with open(f"{DATA_DIR}/training-sets.yml") as file:
-    TRAINING_SETS = yaml.safe_load(file)
+with open(f"{DATA_DIR}/datasets.yml") as file:
+    DATASETS = yaml.safe_load(file)
 
 # Add model metadata to df_metrics(_10k, _uniq_protos)
 models = discovery.df_metrics_uniq_protos.columns
@@ -131,10 +131,10 @@ for model in models:
             dataset_urls, dataset_tooltip_lines = {}, []
 
             for train_set in training_sets:
-                if isinstance(train_set, str) and train_set not in TRAINING_SETS:
+                if isinstance(train_set, str) and train_set not in DATASETS:
                     raise ValueError(f"Unknown training set {train_set=} for {model=}")
                 key = train_set if isinstance(train_set, str) else ""
-                dataset_info = TRAINING_SETS.get(key, train_set)
+                dataset_info = DATASETS.get(key, train_set)
                 n_structs = dataset_info["n_structures"]
                 n_materials = dataset_info.get("n_materials", n_structs)
 

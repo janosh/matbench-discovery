@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { MetricScatter, MetricsTable, MODEL_METADATA } from '$lib'
+  import { MetricScatter, MetricsTable, MODEL_METADATA, SelectToggle } from '$lib'
   import { DISCOVERY_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/metrics'
   import type { DiscoverySet } from '$lib/types'
   import type { Point } from 'elementari'
   import 'iconify-icon'
-  import { Tooltip } from 'svelte-zoo'
 
   // Default column visibility
   let visible_cols: Record<string, boolean> = $state({
@@ -27,25 +26,12 @@
 
 <h1>Crystal Stability Prediction Metrics</h1>
 
-<div class="discovery-set-toggle">
-  {#each Object.entries(DISCOVERY_SET_LABELS) as [key, { title, tooltip, link }] (key)}
-    <Tooltip text={tooltip} tip_style="z-index: 2; font-size: 0.8em;">
-      <button class:active={discovery_set === key} onclick={() => (discovery_set = key)}>
-        {title}
-        {#if link}
-          <a
-            href={link}
-            aria-label="Open in new tab"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <iconify-icon icon="octicon:info" inline></iconify-icon>
-          </a>
-        {/if}
-      </button>
-    </Tooltip>
-  {/each}
-</div>
+<SelectToggle
+  bind:selected={discovery_set}
+  options={Object.entries(DISCOVERY_SET_LABELS).map(
+    ([value, { title, tooltip, link }]) => ({ value, label: title, tooltip, link }),
+  )}
+/>
 
 <MetricsTable
   col_filter={(col) => visible_cols[col.label] ?? true}
@@ -66,29 +52,11 @@
   y_label="F1 Score (higher better)"
   bind:tooltip_point={f1_tooltip_point}
   bind:hovered
-  style="margin: 2em 0;"
+  style="margin: 2em 0; width: 100%; height: 300px;"
 />
 
 <style>
   h3 {
     text-align: center;
-  }
-  .discovery-set-toggle {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 5pt;
-    margin-bottom: 5pt;
-  }
-  .discovery-set-toggle button {
-    padding: 4px 8px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    background: transparent;
-  }
-  .discovery-set-toggle button:hover {
-    background: rgba(255, 255, 255, 0.05);
-  }
-  .discovery-set-toggle button.active {
-    background: rgba(255, 255, 255, 0.1);
   }
 </style>

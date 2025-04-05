@@ -264,7 +264,6 @@
   .table-container::-webkit-scrollbar {
     display: none; /* Safari and Chrome */
   }
-
   th,
   td {
     padding: var(--heatmap-cell-padding, 1pt 3pt);
@@ -274,17 +273,14 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-
   th {
     background: var(--heatmap-header-bg, var(--night));
     position: sticky;
     cursor: pointer;
   }
-
   th:hover {
     background: var(--heatmap-header-hover-bg, var(--night-lighter, #2a2a2a));
   }
-
   .sticky-col {
     position: sticky;
     left: 0;
@@ -294,20 +290,16 @@
   tr:nth-child(odd) td.sticky-col {
     background: var(--heatmap-row-odd-bg, rgb(15, 14, 14));
   }
-
   tbody tr:hover {
     filter: var(--heatmap-row-hover-filter, brightness(1.1));
   }
-
   td[data-sort-value] {
     cursor: default;
   }
-
   .group-header th {
     border-bottom: 1px solid black;
     text-align: center;
   }
-
   /* Styles for the table header with sort hint and controls */
   .table-header {
     display: flex;
@@ -319,19 +311,16 @@
     padding: 0.25rem 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
-
   .sort-hint {
     font-size: 0.85em;
     color: var(--text-muted, #aaa);
     margin: 0;
   }
-
   .controls-container {
     display: inline-flex;
     align-items: center;
     margin-left: auto;
   }
-
   .not-sortable {
     cursor: default;
   }

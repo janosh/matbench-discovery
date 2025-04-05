@@ -1,6 +1,11 @@
 <script lang="ts">
   import { MetricScatter, MetricsTable, MODEL_METADATA, type ModelData } from '$lib'
-  import { ALL_METRICS, METADATA_COLS, PHONON_METRICS } from '$lib/metrics'
+  import {
+    ALL_METRICS,
+    DEFAULT_CPS_CONFIG,
+    METADATA_COLS,
+    PHONON_METRICS,
+  } from '$lib/metrics'
 
   // Default column visibility
   let visible_cols: Record<string, boolean> = $state({
@@ -39,11 +44,24 @@
       >PBE reference data for the 103 MP structures</a
     > that form the test set for this task.
   </p>
+
   <MetricScatter
     models={MODEL_METADATA}
     model_filter={model_has_kappa_103}
     metric="phonons.kappa_103.κ_SRME"
-    y_label="kappa SRME (lower better)"
+    x_property="model_params"
+    y_label="{DEFAULT_CPS_CONFIG.parts.kappa_SRME.svg_label} (lower better)"
+    style="margin: 2em 0;"
+  />
+
+  <h3 style="margin: 3em auto -1em;">κ<sub>SRME</sub> Progress Over Time</h3>
+  <MetricScatter
+    models={MODEL_METADATA}
+    model_filter={model_has_kappa_103}
+    metric="phonons.kappa_103.κ_SRME"
+    x_property="date_added"
+    date_range={[new Date(2024, 9, 1), null]}
+    y_label="{DEFAULT_CPS_CONFIG.parts.kappa_SRME.svg_label} (lower better)"
     style="margin: 2em 0;"
   />
 </figure>
