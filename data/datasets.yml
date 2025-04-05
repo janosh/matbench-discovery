@@ -91,6 +91,7 @@ GNoME:
   n_materials: 6_000_000
   open: false
   date_created: 2023-11-29 # https://github.com/google-deepmind/materials_discovery/commit/a701b9529
+  license: Apache 2.0
   params:
     method: DFT
     code: VASP
@@ -109,6 +110,7 @@ MatterSim:
   pressure_range: 0-1000 GPa
   open: false
   date_created: 2024-05-08
+  license: Unreleased
   params:
     method: DFT
     code: VASP
@@ -272,3 +274,138 @@ OpenLAM:
     This dataset integrates multidisciplinary DFT data sourced from Deep Modeling community (https://deepmodeling.com)
     and other open repositories to pre-train large atomic models (LAMs),
     while intentionally excluding overlap with WBM benchmark systems (e.g., Alex3D structures).
+
+OC20:
+  title: Open Catalyst 2020
+  url: https://opencatalystproject.org/leaderboard.html
+  download_url: https://fair-chem.github.io/core/datasets/oc20.html#per-adsorbate-trajectories
+  doi: https://doi.org/10.1021/acscatal.0c04525
+  n_structures: 133_934_018
+  open: true
+  date_created: 2020-10-01
+  license: CC BY 4.0
+  params:
+    method: DFT
+    code: VASP
+    functional: PBE+U
+    pseudopotentials: PBE
+  created_by:
+    - name: Open Catalyst Project
+      url: https://opencatalystproject.org
+  description: |
+    A dataset for catalysis research containing DFT relaxations of adsorbates on catalyst surfaces,
+    specifically designed for training ML models to predict adsorption energies and atomic forces.
+
+NOMAD:
+  title: NOMAD Repository
+  url: https://nomad-lab.eu/prod/v1/gui/search/entries/search/entries
+  doi: https://joss.theoj.org/papers/10.21105/joss.05388
+  n_structures: 19_111_098 # as of 2025-04-04
+  n_materials: 4_335_728
+  open: true
+  date_created: 2019-06-01
+  license: CC BY 4.0
+  params:
+    method: [DFT, ML]
+    code: Various
+    functional: Various
+    pseudopotentials: Various
+  created_by:
+    - name: NOMAD Team
+      url: https://nomad-lab.eu
+  description: |
+    A repository hosting over 19 million calculations across various computational materials science codes,
+    providing a rich source of DFT and molecular dynamics data for training ML models.
+
+AFLOW:
+  title: AFLOW Database
+  url: https://aflow.org
+  doi: https://doi.org/10.1016/j.commatsci.2012.02.005
+  n_structures: 3_530_330 # as of 2025-04-04
+  n_materials: 3_530_330 # unsure how number of materials and structures differ for AFLOW
+  open: true
+  date_created: 2012-06-01
+  license: Open
+  params:
+    method: DFT
+    code: VASP
+    functional: Various
+    pseudopotentials: Various
+  created_by:
+    - name: AFLOW Team
+      url: https://aflow.org
+  description: |
+    A database of over 3.5 million materials with calculated thermodynamic, electronic, and structural properties,
+    using standardized high-throughput DFT calculations.
+
+OQMD:
+  title: Open Quantum Materials Database
+  url: https://oqmd.org
+  doi: https://doi.org/10.1007/s11837-013-0755-4
+  download_url: https://static.oqmd.org/static/downloads/qmdb__v1_6__112023.sql.gz
+  n_materials: 1_226_781 # as of 2025-04-04
+  n_structures: 1_226_781
+  open: true
+  date_created: 2014-04-03
+  license: CC BY 4.0
+  params:
+    method: DFT
+    code: VASP
+    code_version: 5.3.2 # see settings page https://oqmd.org/documentation/vasp
+    functional: PBE
+    pseudopotentials: PBE
+    energy_cutoff: 520 eV
+    kpoint_density: 8000 KPPRA
+  created_by:
+    - name: OQMD Team
+      affiliation: Northwestern University
+      url: https://oqmd.org
+  description: |
+    A database of DFT-calculated thermodynamic and structural properties for over 1 million inorganic compounds,
+    focused on providing data for materials discovery and design. Calculations use a four-step relaxation scheme
+    with progressively increasing precision, with GGA+U for transition metals, lanthanides, and actinides in
+    compounds with oxygen. Spin-polarization is used for structures containing 3d or actinide elements.
+
+MatPES PBE:
+  title: MatPES v1.0 PBE
+  url: https://matpes.ai
+  download_url: https://s3.us-east-1.amazonaws.com/materialsproject-contribs/MatPES_2025_1/MatPES-PBE-2025.1.json.gz
+  n_structures: 434_712 # as of 2025-04-04
+  open: true
+  date_created: 2025-03-06
+  doi: https://doi.org/10.48550/arXiv.2503.04070
+  license: MIT
+  params:
+    method: DFT
+    code: VASP
+    code_version: 6.4.x
+    functional: PBE
+    pseudopotentials: PBE_64
+  created_by:
+    - name: MatPES Team
+      url: https://matpes.ai
+  description: |
+    A dataset containing 434,712 structures from ~300K molecular dynamics simulations,
+    providing potential energy surfaces that are valuable for training ML interatomic potentials.
+
+MatPES r2SCAN:
+  title: MatPES v1.0 r2SCAN
+  url: https://matpes.ai
+  download_url: https://s3.us-east-1.amazonaws.com/materialsproject-contribs/MatPES_2025_1/MatPES-R2SCAN-2025.1.json.gz
+  n_structures: 387_897 # as of 2025-04-04
+  open: true
+  date_created: 2025-03-06
+  doi: https://doi.org/10.48550/arXiv.2503.04070
+  license: MIT
+  params:
+    method: DFT
+    code: VASP
+    code_version: 6.4.x
+    functional: r2SCAN
+    pseudopotentials: PBE_64
+  created_by:
+    - name: MatPES Team
+      url: https://matpes.ai
+  description: |
+    A dataset containing 387,897 structures from ~300K molecular dynamics simulations,
+    providing potential energy surfaces that are valuable for training ML interatomic potentials.

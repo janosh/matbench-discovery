@@ -1,6 +1,6 @@
 import MetricsTable from '$lib/MetricsTable.svelte'
-import { DEFAULT_COMBINED_METRIC_CONFIG } from '$lib/metrics'
-import type { CombinedMetricConfig, HeatmapColumn, ModelData } from '$lib/types'
+import { DEFAULT_CPS_CONFIG } from '$lib/metrics'
+import type { HeatmapColumn, ModelData } from '$lib/types'
 import { mount, tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
 
@@ -123,7 +123,7 @@ describe(`MetricsTable`, () => {
     let model_filter: (model: ModelData) => boolean = $state(() => false) // initially show no models
     mount(MetricsTable, {
       target: document.body,
-      props: { model_filter, config: DEFAULT_COMBINED_METRIC_CONFIG },
+      props: { model_filter, config: DEFAULT_CPS_CONFIG },
     })
 
     const initial_rows = document.body.querySelectorAll(`tbody tr`).length
@@ -257,45 +257,16 @@ describe(`MetricsTable`, () => {
     ])
   })
 
-  it.each([
-    DEFAULT_COMBINED_METRIC_CONFIG,
-    {
-      name: `Custom CPS`,
-      description: `Custom combined performance score for testing`,
-      weights: [
-        {
-          metric: `F1`,
-          label: `F1`,
-          description: `F1 score for stable/unstable material classification`,
-          value: 0.8, // Higher weight to F1
-        },
-        {
-          metric: `kappa_SRME`,
-          label: `κ<sub>SRME</sub>`,
-          description: `Symmetric relative mean error for thermal conductivity prediction`,
-          value: 0.1, // Lower weight to kappa
-        },
-        {
-          metric: `RMSD`,
-          label: `RMSD`,
-          description: `Root mean square displacement for crystal structure optimization`,
-          value: 0.1, // Same weight to RMSD
-        },
-      ],
-    },
-  ])(
-    `updates the table when CPS weights change`,
-    async (config: CombinedMetricConfig) => {
-      // Test with default config
-      mount(MetricsTable, {
-        target: document.body,
-        props: { config, show_noncompliant: true },
-      })
-      await tick()
-      const rows = document.body.querySelectorAll(`tbody tr`)
-      expect(rows.length).toBeGreaterThan(18) // was 19
-    },
-  )
+  it(`updates the table when CPS weights change`, async () => {
+    // Test with default config
+    mount(MetricsTable, {
+      target: document.body,
+      props: { config: DEFAULT_CPS_CONFIG, show_noncompliant: true },
+    })
+    await tick()
+    const rows = document.body.querySelectorAll(`tbody tr`)
+    expect(rows.length).toBeGreaterThan(18) // was 19
+  })
 
   describe(`Column Sorting`, () => {
     it(`sorts by Date Added chronologically, not alphabetically`, async () => {

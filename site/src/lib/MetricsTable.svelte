@@ -2,7 +2,7 @@
   import { HeatmapTable, TableControls, get_metric_rank_order } from '$lib'
   import { pretty_num } from 'elementari'
   import { click_outside } from 'svelte-zoo/actions'
-  import { ALL_METRICS, DEFAULT_COMBINED_METRIC_CONFIG, METADATA_COLS } from './metrics'
+  import { ALL_METRICS, DEFAULT_CPS_CONFIG, METADATA_COLS } from './metrics'
   import { calculate_metrics_data } from './metrics-table-helpers'
   import type {
     CombinedMetricConfig,
@@ -28,7 +28,7 @@
     col_filter = () => true,
     show_energy_only = false,
     show_noncompliant = false,
-    config = DEFAULT_COMBINED_METRIC_CONFIG,
+    config = DEFAULT_CPS_CONFIG,
     ...rest
   }: Props = $props()
 
@@ -45,16 +45,12 @@
     metric_config = { ...config }
   })
 
-  // Generate tooltip for combined score that shows current weights
-  function get_combined_score_tooltip(): string {
-    const weights = metric_config.weights.map((w) => w.label).join(`, `)
-    return `Combined Performance Score = weighted average of ${weights}`
-  }
-
   // Define CPS column with tooltip
   let combined_score_column: HeatmapColumn = {
     label: `CPS`,
-    tooltip: get_combined_score_tooltip(),
+    tooltip: Object.values(DEFAULT_CPS_CONFIG.parts)
+      .map((w) => w.label)
+      .join(`, `),
     style: `border-right: 1px solid black;`,
     format: `.3f`,
     better: `higher`,
@@ -110,7 +106,9 @@
     // Update the CPS tooltip
     combined_score_column = {
       ...combined_score_column,
-      tooltip: get_combined_score_tooltip(),
+      tooltip: Object.values(DEFAULT_CPS_CONFIG.parts)
+        .map((w) => w.label)
+        .join(`, `),
     }
   })
 
