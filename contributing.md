@@ -135,7 +135,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
      torch-geometric: 2.0.9
      ...
 
-   training_set: [MPtrj] # list of keys from data/training-sets.yml
+   training_set: [MPtrj] # list of keys from data/datasets.yml
 
    notes: # notes can have any key, be multiline and support markdown.
      description: This is how my model works...

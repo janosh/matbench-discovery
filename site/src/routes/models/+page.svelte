@@ -126,10 +126,9 @@
     {/each}
   </ul>
 
-  <!-- TODO revert to color_scale={cividis} instead of string  -->
   <legend>
     heading color best
-    <ColorBar color_scale="Cividis" style="min-width: min(70vw, 400px);" />
+    <ColorBar color_scale={cividis} style="min-width: min(70vw, 400px);" />
     worst
   </legend>
 

@@ -1,7 +1,6 @@
 <script lang="ts">
-  import TRAINING_SETS from '$data/training-sets.yml'
   import type { ModelData, ModelStatLabel } from '$lib'
-  import { AuthorBrief } from '$lib'
+  import { AuthorBrief, DATASETS } from '$lib'
   import { repository } from '$site/package.json'
   import { pretty_num } from 'elementari'
   import 'iconify-icon'
@@ -16,7 +15,6 @@
     style?: string | null
     metrics_style?: string | null
   }
-
   let {
     model,
     stats,
@@ -76,7 +74,7 @@
         {#if idx > 0}
           &nbsp;+&nbsp;
         {/if}
-        {@const training_set = TRAINING_SETS[train_set_key]}
+        {@const training_set = DATASETS[train_set_key]}
         {@const { n_structures, url, title, n_materials } = training_set}
         {@const pretty_n_mat =
           typeof n_materials == `number` ? pretty_num(n_materials) : n_materials}

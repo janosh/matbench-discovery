@@ -1,4 +1,4 @@
-import { MODEL_METADATA, ModelCard, TRAINING_SETS } from '$lib'
+import { DATASETS, MODEL_METADATA, ModelCard } from '$lib'
 import type { ModelStatLabel } from '$lib/types'
 import { pretty_num } from 'elementari'
 import { mount } from 'svelte'
@@ -91,7 +91,7 @@ describe(`ModelCard`, () => {
     const training_set_links = training_set?.querySelectorAll(`a`)
     if (training_set_links) {
       const training_set_key = model.training_set[0]
-      const training_set_info = TRAINING_SETS[training_set_key]
+      const training_set_info = DATASETS[training_set_key]
 
       expect(training_set_links[0].href).toBe(training_set_info.url)
 

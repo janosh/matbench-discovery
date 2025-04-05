@@ -1,19 +1,18 @@
 <script lang="ts">
   import type { Point } from 'elementari'
-  import { onMount } from 'svelte'
-  import type { MetricWeight } from './types'
+  import { DEFAULT_CPS_CONFIG } from './metrics'
+  import type { CombinedMetricConfig } from './types'
 
   // Define props interface
   interface Props {
-    weights: MetricWeight[]
+    weights: CombinedMetricConfig[`parts`]
     size?: number
-    onchange?: (new_weights: MetricWeight[]) => void | undefined
   }
-  let { weights = [], size = 200, onchange = undefined }: Props = $props()
+  let { weights = $bindable(DEFAULT_CPS_CONFIG.parts), size = 200 }: Props = $props()
 
   // State for the draggable point
   let is_dragging = $state(false)
-  let point = $state({ x: 0, y: 0 })
+  let point = $state<Point>({ x: 0, y: 0 })
   let svg_element: SVGSVGElement
   let radius = size / 2
   let center = { x: radius, y: radius }
@@ -26,8 +25,8 @@
 
   // Compute axes points coordinates
   let axis_points = $derived(
-    weights.map((_, idx) => {
-      const angle = (2 * Math.PI * idx) / weights.length
+    Object.values(weights).map((_, idx) => {
+      const angle = (2 * Math.PI * idx) / Object.values(weights).length
       return {
         x: center.x + Math.cos(angle) * radius * 0.8,
         y: center.y + Math.sin(angle) * radius * 0.8,
@@ -40,18 +39,17 @@
     update_point_from_weights(weights)
   })
 
-  function update_point_from_weights(current_weights: MetricWeight[]) {
-    if (!current_weights || current_weights.length < 3) return
+  function update_point_from_weights(current_weights: CombinedMetricConfig[`parts`]) {
+    if (!current_weights || Object.values(current_weights).length < 3) return
 
     // For 3 axes, we can use barycentric coordinates
-    const points = axis_points
 
     // Calculate weighted position
     let { x, y } = center
-    for (let idx = 0; idx < current_weights.length; idx++) {
-      const weight = current_weights[idx].value
-      x += (points[idx].x - center.x) * weight
-      y += (points[idx].y - center.y) * weight
+    for (let idx = 0; idx < Object.values(current_weights).length; idx++) {
+      const weight = Object.values(current_weights)[idx].weight
+      x += (axis_points[idx].x - center.x) * weight
+      y += (axis_points[idx].y - center.y) * weight
     }
     // Update the point with new coordinates
     point = { x, y }
@@ -59,7 +57,7 @@
 
   function update_weights_from_point() {
     // Calculate weights using barycentric coordinates for triangular space
-    if (weights.length !== 3) {
+    if (Object.values(weights).length !== 3) {
       console.error(`This implementation only supports exactly 3 metrics`)
       return
     }
@@ -89,13 +87,9 @@
     }
 
     // Update weights
-    const new_weights = weights.map((wt, idx) => ({
-      ...wt,
-      value: new_values[idx],
-    }))
-
-    // Notify parent component
-    onchange?.(new_weights)
+    weights.F1.weight = new_values[0]
+    weights.kappa_SRME.weight = new_values[1]
+    weights.RMSD.weight = new_values[2]
   }
 
   // Helper to calculate triangle area using cross product
@@ -137,7 +131,7 @@
   // this prevents table rerendering during drag which causes the viewport to scroll (terrible UX)
   function move_point_to_position(x: number, y: number) {
     const [a, b, c] = axis_points
-    if (weights.length === 3 && is_point_in_triangle({ x, y }, a, b, c)) {
+    if (Object.values(weights).length === 3 && is_point_in_triangle({ x, y }, a, b, c)) {
       point = { x, y }
     } else {
       // If outside the triangle, constrain to the closest point on the triangle
@@ -236,13 +230,9 @@
     window.removeEventListener(`mouseup`, end_drag)
     window.removeEventListener(`touchend`, end_drag)
   }
-
-  onMount(() => {
-    update_point_from_weights(weights)
-  })
 </script>
 
-<div class="radar-chart-container">
+<div class="radar-chart">
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <svg
@@ -255,8 +245,8 @@
     aria-label="Radar chart for adjusting metric weights"
   >
     <!-- Axes -->
-    {#each weights as weight, idx (weight.label)}
-      {@const angle = (2 * Math.PI * idx) / weights.length}
+    {#each Object.values(weights) as weight, idx (weight.label)}
+      {@const angle = (2 * Math.PI * idx) / Object.values(weights).length}
       {@const x = center.x + Math.cos(angle) * radius * 0.8}
       {@const y = center.y + Math.sin(angle) * radius * 0.8}
       {@const label_radius = idx === 2 ? radius * 1.0 : radius * 0.9}
@@ -295,13 +285,13 @@
           {@html weight.label}
         {/if}
         <tspan dy={spacing} x={label_x} font-size="12" font-weight="bold"
-          >{(weight.value * 100).toFixed(0)}%</tspan
+          >{(weight.weight * 100).toFixed(0)}%</tspan
         >
       </text>
     {/each}
 
     <!-- Triangle area -->
-    {#if weights.length === 3}
+    {#if Object.values(weights).length === 3}
       <path
         d="M {axis_points[0].x} {axis_points[0].y} L {axis_points[1].x} {axis_points[1]
           .y} L {axis_points[2].x} {axis_points[2].y} Z"
@@ -324,7 +314,7 @@
     {/each}
 
     <!-- Colored areas for each metric -->
-    {#if weights.length === 3}
+    {#if Object.values(weights).length === 3}
       {@const [{ x, y }, { x: px, y: py }] = [center, point]}
       {#each axis_points as { x: x0, y: y0 }, idx ([x0, y0])}
         {@const path = `M ${x} ${y} L ${x0} ${y0} L ${px} ${py} Z`}
@@ -350,7 +340,7 @@
 </div>
 
 <style>
-  .radar-chart-container {
+  .radar-chart {
     display: flex;
     flex-direction: column;
     align-items: center;

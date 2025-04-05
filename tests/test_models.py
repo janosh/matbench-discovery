@@ -8,12 +8,10 @@ from matbench_discovery import DATA_DIR, __version__
 from matbench_discovery.enums import Model
 from matbench_discovery.models import MODEL_DIRS, MODEL_METADATA, model_is_compliant
 
-with open(f"{DATA_DIR}/training-sets.yml") as file:
-    TRAINING_SETS = yaml.safe_load(file)
+with open(f"{DATA_DIR}/datasets.yml") as file:
+    DATASETS = yaml.safe_load(file)
 
-OPEN_DATASETS = {
-    dataset["title"] for dataset in TRAINING_SETS.values() if dataset["open"]
-}
+OPEN_DATASETS = {dataset["title"] for dataset in DATASETS.values() if dataset["open"]}
 
 
 def parse_version(version: str) -> tuple[int, ...]:
@@ -48,7 +46,7 @@ def test_model_dirs_have_metadata() -> None:
                 training_sets = metadata[key]
                 # allow either string key or dict
                 assert isinstance(training_sets, list)
-                assert set(training_sets) <= {*TRAINING_SETS}, (
+                assert set(training_sets) <= {*DATASETS}, (
                     f"Invalid training set: {training_sets}"
                 )
                 # Check if model was trained only on open datasets

@@ -8,8 +8,8 @@ describe(`Landing Page`, () => {
   })
 
   it(`renders discovery set toggle buttons`, () => {
-    const buttons = document.body.querySelectorAll(`.discovery-set-toggle button`)
-    expect(buttons).toHaveLength(3)
+    const buttons = document.body.querySelectorAll(`.selection-toggle button`)
+    expect(buttons).toHaveLength(7) // 3 from test set select, 4 from metric select
 
     const button_texts = Array.from(buttons).map((btn) => btn.textContent?.trim())
     expect(button_texts).toContain(`Full Test Set`)
@@ -18,7 +18,7 @@ describe(`Landing Page`, () => {
   })
 
   it(`toggles discovery set when clicking buttons`, async () => {
-    const buttons = document.body.querySelectorAll(`.discovery-set-toggle button`)
+    const buttons = document.body.querySelectorAll(`.selection-toggle button`)
     const [full_test_btn, unique_protos_btn] = buttons
 
     // Initially Unique Prototypes should be active
