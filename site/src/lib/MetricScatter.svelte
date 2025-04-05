@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { CombinedMetricConfig, DiscoverySet, ModelData } from '$lib'
   import { calculate_combined_score } from '$lib/metrics'
-  import { ScatterPlot, type DataSeries, type Point } from 'elementari'
+  import { ScatterPlot, type Point } from 'elementari'
 
   export type ModelProperty =
     | `model_params`
@@ -31,6 +31,7 @@
     date_range?: [Date | null, Date | null]
     style?: string
     x_format?: string
+    show_model_labels?: boolean // when true, each point will show a text label with its model name
     [key: string]: unknown
   }
 
@@ -52,6 +53,7 @@
     date_range = [null, null],
     style = ``,
     x_format = `.1s`,
+    show_model_labels = true,
     ...rest
   }: Props = $props()
 
@@ -270,15 +272,29 @@
     stroke_width: 0.5,
   })
 
-  // Create plot series
-  let series: DataSeries[] = $derived([
-    {
+  // Create plot series based on show_model_labels
+  let series = $derived.by(() => {
+    const base_series = {
       x: plotable_models.map((item) => item.x),
       y: plotable_models.map((item) => item.y),
       point_style,
       metadata: plotable_models.map((item) => item.metadata),
-    },
-  ])
+    }
+    if (show_model_labels) {
+      const labeled_series = {
+        ...base_series,
+        point_label: plotable_models.map((item) => ({
+          text: item.metadata.model_name,
+          offset_y: 10,
+          offset_x: 10,
+          font_size: 9,
+          color: effective_color,
+        })),
+      }
+      return [labeled_series]
+    }
+    return [base_series]
+  })
 </script>
 
 <ScatterPlot
