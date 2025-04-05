@@ -246,9 +246,9 @@
         ...base_series,
         point_label: models_to_show.map((item, idx) => ({
           text: item.metadata.model_name,
-          offset_y: 10,
+          offset_y: 2,
           offset_x: 10,
-          font_size: 9,
+          font_size: 12,
           color: point_styles[idx].fill,
         })),
       }
@@ -272,20 +272,10 @@
   {...rest}
 >
   {#snippet tooltip({ x_formatted, y_formatted, metadata })}
-    {#if x_property === `date_added` && tooltip_point}
-      <div style="min-width: 10em;">
-        <strong>{tooltip_point.metadata?.model_name}</strong>
-        <br />
-        {@html actual_y_label} = {@html y_formatted}
-        <br />
-        Added: {x_formatted}
-      </div>
-    {:else}
-      <div style="white-space: nowrap;">
-        <strong>{metadata?.model_name}</strong><br />
-        {actual_x_label}: {x_formatted}<br />
-        {actual_y_label}: {y_formatted}
-      </div>
-    {/if}
+    <div style="white-space: nowrap; font-size: 15px; margin-top: 10px;">
+      {actual_x_label}: {x_formatted}<br />
+      {actual_y_label}: {y_formatted}<br />
+      {metadata?.model_name}
+    </div>
   {/snippet}
 </ScatterPlot>
