@@ -101,7 +101,9 @@ export const DISCOVERY_SET_LABELS: Record<
 }
 
 export const DEFAULT_CPS_CONFIG: CombinedMetricConfig = {
-  name: `CPS`,
+  label: `CPS`,
+  name: `Combined Performance Score`,
+  key: `cps`,
   description: `Combined Performance Score weights discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>)`,
   parts: {
     F1: {

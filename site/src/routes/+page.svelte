@@ -65,11 +65,13 @@
   }
 
   // Initialize with CPS as default metric
-  let selected_metric: keyof (typeof DEFAULT_CPS_CONFIG)[`parts`] | `cps` = $state(`cps`)
+  let selected_metric:
+    | keyof (typeof DEFAULT_CPS_CONFIG)[`parts`]
+    | (typeof DEFAULT_CPS_CONFIG)[`key`] = $state(DEFAULT_CPS_CONFIG.key)
   let cps_scatter: Metric = {
     path: ``,
     label: `Combined Performance Score`,
-    svg_label: DEFAULT_CPS_CONFIG.name,
+    svg_label: DEFAULT_CPS_CONFIG.label,
     range: [0, 1],
     better: `higher`,
     description: DEFAULT_CPS_CONFIG.description,
@@ -155,7 +157,7 @@
     <!-- Radar Chart for Weight Controls -->
     <div class="radar-container">
       <div class="radar-header">
-        <span class="metric-name">{metric_config.name}</span>
+        <span class="metric-name">{metric_config.label}</span>
         <Tooltip>
           <span class="info-icon">ⓘ</span>
           {#snippet tip()}
@@ -178,21 +180,31 @@
     <section style="width: 100%; margin-block: 1em;">
       <SelectToggle
         bind:selected={selected_metric}
-        options={Object.entries(DEFAULT_CPS_CONFIG.parts).map(([value, { label }]) => ({
-          value,
-          label,
-        }))}
+        options={[
+          {
+            value: DEFAULT_CPS_CONFIG.key,
+            label: DEFAULT_CPS_CONFIG.label,
+            tooltip: DEFAULT_CPS_CONFIG.name,
+          },
+          ...Object.entries(DEFAULT_CPS_CONFIG.parts).map(
+            ([value, { label, description }]) => ({
+              value,
+              label,
+              tooltip: description,
+            }),
+          ),
+        ]}
       />
       <h3 style="margin-block: 1em;">
-        Model Size vs. {@html selected_scatter.label}
+        {@html selected_scatter.label} vs Model Size
         <small style="font-weight: lighter;">
           ({selected_scatter.better} = better, fewer model params = better)
         </small>
       </h3>
       <MetricScatter
         models={MODEL_METADATA}
-        config={selected_metric === `cps` ? metric_config : undefined}
-        metric={selected_metric !== `cps` ? selected_metric : undefined}
+        config={selected_metric === DEFAULT_CPS_CONFIG.key ? metric_config : undefined}
+        metric={selected_metric !== DEFAULT_CPS_CONFIG.key ? selected_metric : undefined}
         y_label={selected_scatter.svg_label ?? selected_scatter.label}
         y_lim={selected_scatter.range}
         style="width: 100%; height: 300px;"
@@ -209,8 +221,8 @@
       </h3>
       <MetricScatter
         models={MODEL_METADATA}
-        metric={selected_metric === `cps` ? undefined : selected_metric}
-        config={selected_metric === `cps` ? metric_config : undefined}
+        metric={selected_metric === DEFAULT_CPS_CONFIG.key ? undefined : selected_metric}
+        config={selected_metric === DEFAULT_CPS_CONFIG.key ? metric_config : undefined}
         y_label={selected_scatter.svg_label ?? selected_scatter.label}
         x_property="date_added"
         x_label="Date"

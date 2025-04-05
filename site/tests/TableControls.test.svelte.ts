@@ -1,5 +1,5 @@
 import { TableControls } from '$lib'
-import { DEFAULT_COMBINED_METRIC_CONFIG } from '$lib/metrics'
+import { DEFAULT_CPS_CONFIG } from '$lib/metrics'
 import type { CombinedMetricConfig } from '$lib/types'
 import { mount } from 'svelte'
 import { describe, expect, it, vi } from 'vitest'
@@ -136,7 +136,7 @@ describe(`TableControls`, () => {
 
   it(`passes config to the component`, () => {
     const sample_config: CombinedMetricConfig = {
-      ...DEFAULT_COMBINED_METRIC_CONFIG,
+      ...DEFAULT_CPS_CONFIG,
       name: `Test Config`,
     }
 

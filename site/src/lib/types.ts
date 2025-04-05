@@ -127,7 +127,9 @@ export type Metric = {
 
 export type CombinedMetricConfig = {
   parts: Record<`F1` | `kappa_SRME` | `RMSD`, Metric & { weight: number }>
+  label: string
   name: string
+  key: string
   description: string
 }
 

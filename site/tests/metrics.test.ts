@@ -1,34 +1,41 @@
-import {
-  calculate_combined_score,
-  DEFAULT_COMBINED_METRIC_CONFIG,
-  F1_DEFAULT_WEIGHT,
-  KAPPA_DEFAULT_WEIGHT,
-  RMSD_DEFAULT_WEIGHT,
-} from '$lib/metrics'
+import { calculate_combined_score, DEFAULT_CPS_CONFIG } from '$lib/metrics'
+import type { CombinedMetricConfig } from '$lib/types'
 import { describe, expect, it, test } from 'vitest'
 
 describe(`Metrics`, () => {
   // Helper function to create metric-specific config
   // Makes it easy to add new metrics in the future
-  const create_single_metric_config = (metric_name: string, weight = 1) => {
-    return {
-      ...DEFAULT_COMBINED_METRIC_CONFIG,
-      weights: DEFAULT_COMBINED_METRIC_CONFIG.weights.map((w) => ({
-        ...w,
-        value: w.metric === metric_name ? weight : 0,
-      })),
+  const create_single_metric_config = (
+    metric_name: string,
+    weight = 1,
+  ): CombinedMetricConfig => {
+    const result: CombinedMetricConfig = {
+      ...DEFAULT_CPS_CONFIG,
+      parts: {
+        F1: { ...DEFAULT_CPS_CONFIG.parts.F1, weight: metric_name === `F1` ? weight : 0 },
+        kappa_SRME: {
+          ...DEFAULT_CPS_CONFIG.parts.kappa_SRME,
+          weight: metric_name === `kappa_SRME` ? weight : 0,
+        },
+        RMSD: {
+          ...DEFAULT_CPS_CONFIG.parts.RMSD,
+          weight: metric_name === `RMSD` ? weight : 0,
+        },
+      },
     }
+    return result
   }
 
   // Helper to create equal weight config
-  const create_equal_weights_config = (weight_count = 3) => {
+  const create_equal_weights_config = (weight_count = 3): CombinedMetricConfig => {
     const equal_weight = 1 / weight_count
     return {
-      ...DEFAULT_COMBINED_METRIC_CONFIG,
-      weights: DEFAULT_COMBINED_METRIC_CONFIG.weights.map((w) => ({
-        ...w,
-        value: equal_weight,
-      })),
+      ...DEFAULT_CPS_CONFIG,
+      parts: {
+        F1: { ...DEFAULT_CPS_CONFIG.parts.F1, weight: equal_weight },
+        kappa_SRME: { ...DEFAULT_CPS_CONFIG.parts.kappa_SRME, weight: equal_weight },
+        RMSD: { ...DEFAULT_CPS_CONFIG.parts.RMSD, weight: equal_weight },
+      },
     }
   }
 
@@ -39,12 +46,7 @@ describe(`Metrics`, () => {
       const rmsd = 0.005 // Good RMSD (lower is better)
       const kappa = 0.3 // Good kappa SRME (lower is better)
 
-      const score = calculate_combined_score(
-        f1,
-        rmsd,
-        kappa,
-        DEFAULT_COMBINED_METRIC_CONFIG,
-      )
+      const score = calculate_combined_score(f1, rmsd, kappa, DEFAULT_CPS_CONFIG)
 
       // Calculate expected score based on known behavior
       // F1 with value 0.8 contributes 0.8 * 0.5 = 0.4
@@ -59,13 +61,8 @@ describe(`Metrics`, () => {
       [`RMSD only`, undefined, 0.005, undefined],
       [`kappa only`, undefined, undefined, 0.3],
     ])(`returns null when %s is provided with default config`, (_, f1, rmsd, kappa) => {
-      const score = calculate_combined_score(
-        f1,
-        rmsd,
-        kappa,
-        DEFAULT_COMBINED_METRIC_CONFIG,
-      )
-      // Should return null because with DEFAULT_COMBINED_METRIC_CONFIG all metrics have weights
+      const score = calculate_combined_score(f1, rmsd, kappa, DEFAULT_CPS_CONFIG)
+      // Should return null because with DEFAULT_CPS_CONFIG all metrics have weights
       expect(score).toBeNull()
     })
 
@@ -215,12 +212,15 @@ describe(`Metrics`, () => {
     })
 
     it(`assigns correct default weights`, () => {
-      expect(F1_DEFAULT_WEIGHT).toBeCloseTo(0.5, 5)
-      expect(RMSD_DEFAULT_WEIGHT).toBeCloseTo(0.1, 5)
-      expect(KAPPA_DEFAULT_WEIGHT).toBeCloseTo(0.4, 5)
+      expect(DEFAULT_CPS_CONFIG.parts.F1.weight).toBeCloseTo(0.5, 5)
+      expect(DEFAULT_CPS_CONFIG.parts.RMSD.weight).toBeCloseTo(0.1, 5)
+      expect(DEFAULT_CPS_CONFIG.parts.kappa_SRME.weight).toBeCloseTo(0.4, 5)
 
-      const sum = F1_DEFAULT_WEIGHT + RMSD_DEFAULT_WEIGHT + KAPPA_DEFAULT_WEIGHT
-      expect(sum).toBeCloseTo(1.0, 5)
+      const sum_of_weights = Object.values(DEFAULT_CPS_CONFIG.parts).reduce(
+        (acc, part) => acc + part.weight,
+        0,
+      )
+      expect(sum_of_weights).toBeCloseTo(1.0, 5)
     })
 
     describe(`combined scores calculation`, () => {
@@ -260,50 +260,36 @@ describe(`Metrics`, () => {
 
       it(`handles NaN inputs correctly`, () => {
         // The function should return null for NaN inputs
-        const nan_score = calculate_combined_score(
-          NaN,
-          0.01,
-          0.5,
-          DEFAULT_COMBINED_METRIC_CONFIG,
-        )
+        const nan_score = calculate_combined_score(NaN, 0.01, 0.5, DEFAULT_CPS_CONFIG)
         // Verify that it returns null
         expect(nan_score).toBeNull()
       })
 
       it(`handles empty weights configuration`, () => {
-        const empty_weights_config = {
-          ...DEFAULT_COMBINED_METRIC_CONFIG,
-          weights: [],
+        // Create a config with empty parts
+        const empty_weights_config: CombinedMetricConfig = {
+          ...DEFAULT_CPS_CONFIG,
+          parts: {
+            F1: { ...DEFAULT_CPS_CONFIG.parts.F1, weight: 0 },
+            kappa_SRME: { ...DEFAULT_CPS_CONFIG.parts.kappa_SRME, weight: 0 },
+            RMSD: { ...DEFAULT_CPS_CONFIG.parts.RMSD, weight: 0 },
+          },
         }
+
+        // With all weights at 0, the score should be 0
         const score = calculate_combined_score(0.8, 0.01, 0.5, empty_weights_config)
-        // The function calculates a reasonable score when weights aren't specified
-        // We just check that it's in a reasonable range rather than an exact value
-        // since the actual implementation may vary
-        expect(score).toBeGreaterThan(0.7)
-        expect(score).toBeLessThan(0.8)
+        expect(score).toBe(0)
       })
 
       it(`normalizes weights that do not sum to 1`, () => {
         // Create a config with weights that sum to 2
-        const unnormalized_weights_config = {
-          ...DEFAULT_COMBINED_METRIC_CONFIG,
-          weights: [
-            { metric: `F1`, label: `F1`, value: 1, display: `F1`, description: `` },
-            {
-              metric: `RMSD`,
-              label: `RMSD`,
-              value: 0.5,
-              display: `RMSD`,
-              description: ``,
-            },
-            {
-              metric: `kappa_SRME`,
-              label: `kappa`,
-              value: 0.5,
-              display: `kappa`,
-              description: ``,
-            },
-          ],
+        const unnormalized_weights_config: CombinedMetricConfig = {
+          ...DEFAULT_CPS_CONFIG,
+          parts: {
+            F1: { ...DEFAULT_CPS_CONFIG.parts.F1, weight: 1.0 },
+            kappa_SRME: { ...DEFAULT_CPS_CONFIG.parts.kappa_SRME, weight: 0.5 },
+            RMSD: { ...DEFAULT_CPS_CONFIG.parts.RMSD, weight: 0.5 },
+          },
         }
 
         // Perfect F1, poor RMSD and kappa
@@ -314,30 +300,20 @@ describe(`Metrics`, () => {
           unnormalized_weights_config,
         )
 
-        // Expected: (1.0 * 0.5) + (0 * 0.25) + (0 * 0.25) = 0.5
+        // With normalization: (1.0 * 0.5) + (0 * 0.25) + (0 * 0.25) = 0.5
+        // Weight distribution should be F1: 1.0/2 = 0.5, RMSD: 0.5/2 = 0.25, kappa: 0.5/2 = 0.25
         expect(score).toBeCloseTo(0.5, 4)
       })
 
       it(`handles very small weights correctly`, () => {
-        const small_weights_config = {
-          ...DEFAULT_COMBINED_METRIC_CONFIG,
-          weights: [
-            { metric: `F1`, label: `F1`, value: 0.999, display: `F1`, description: `` },
-            {
-              metric: `RMSD`,
-              label: `RMSD`,
-              value: 0.001,
-              display: `RMSD`,
-              description: ``,
-            },
-            {
-              metric: `kappa_SRME`,
-              label: `kappa`,
-              value: 0,
-              display: `kappa`,
-              description: ``,
-            },
-          ],
+        // Create a config with a very small weight for RMSD
+        const small_weights_config: CombinedMetricConfig = {
+          ...DEFAULT_CPS_CONFIG,
+          parts: {
+            F1: { ...DEFAULT_CPS_CONFIG.parts.F1, weight: 0.999 },
+            kappa_SRME: { ...DEFAULT_CPS_CONFIG.parts.kappa_SRME, weight: 0 },
+            RMSD: { ...DEFAULT_CPS_CONFIG.parts.RMSD, weight: 0.001 },
+          },
         }
 
         // With F1=1.0 and RMSD=0.03 (worst value), expect score to be very close to F1 value
