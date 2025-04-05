@@ -83,28 +83,24 @@
   }
 
   // If metric is provided directly (MetricScatter style), use it for y_metric
-  let effective_y_metric = $derived(metric || y_metric)
+  let actual_y_metric = $derived(metric || y_metric)
 
   // Set default colors based on metric
   const default_color_map: Record<string, string> = {
-    'phonons.kappa_103.κ_SRME': `#ff6b6b`,
-    'discovery.unique_prototypes.F1': `#ffbb54`,
-    combined_performance_score: `#a78bfa`,
     F1: `#ffbb54`,
     RMSD: `#4dabf7`,
     kappa_SRME: `#ff6b6b`,
-    CPS: `#a78bfa`,
+    CPS: `green`,
   }
 
   // Default colors and formats
-  let default_color = $derived(default_color_map[effective_y_metric] ?? `#4dabf7`)
-  let effective_color = $derived(point_color !== null ? point_color : default_color)
-  let effective_x_format = $derived(x_property === `date_added` ? `%b %y` : x_format)
+  let default_color = $derived(default_color_map[actual_y_metric] ?? `#4dabf7`)
+  let actual_x_format = $derived(x_property === `date_added` ? `%b %y` : x_format)
 
   // Determine labels
   let actual_x_label = $derived(x_label ?? property_labels[x_property] ?? `X`)
   let actual_y_label = $derived(
-    y_label ?? metric_labels[effective_y_metric] ?? effective_y_metric ?? `Y`,
+    y_label ?? metric_labels[actual_y_metric] ?? actual_y_metric ?? `Y`,
   )
 
   // Extract property values
@@ -206,89 +202,54 @@
 
   // Filter and prepare data
   let filtered_models = $derived(
-    models
-      .filter((model) => {
-        const x_value = get_property_value(model, x_property)
-        const y_value = get_metric_value(model, effective_y_metric)
-        return (
-          x_value !== undefined &&
-          y_value !== undefined &&
-          model_filter(model) &&
-          date_filter(model)
-        )
-      })
-      .sort((model1, model2) => {
-        // For date-based plots, sort by date
-        if (x_property === `date_added`) {
-          const date_a = new Date(model1.date_added ?? 0)
-          const date_b = new Date(model2.date_added ?? 0)
-          return date_a.getTime() - date_b.getTime()
-        }
-        return 0 // No sorting for other properties
-      }),
+    models.filter((model) => {
+      const x_val = get_property_value(model, x_property)
+      const y_val = get_metric_value(model, actual_y_metric)
+      return (
+        x_val !== undefined &&
+        y_val !== undefined &&
+        model_filter(model) &&
+        date_filter(model)
+      )
+    }),
   )
 
-  let plotable_models = $derived(
-    filtered_models
-      .map((model) => {
-        const x_value = get_property_value(model, x_property)
-        const y_value = get_metric_value(model, effective_y_metric)
-        return {
-          model,
-          x: x_value !== undefined ? x_value : 0,
-          y: y_value !== undefined ? y_value : 0,
-          metadata: { model_name: model.model_name, date_added: model.date_added },
-        }
-      })
-      .filter((item) => {
-        // For properties that need positive values, filter out non-positive
-        if (x_property !== `date_added`) {
-          return item.x > 0 && item.y > 0
-        }
-        // For dates, just ensure y is valid
-        return item.y > 0
-      }),
+  let models_to_show = $derived(
+    filtered_models.map((model) => {
+      const x = get_property_value(model, x_property)
+      const y = get_metric_value(model, actual_y_metric)
+      const metadata = { model_name: model.model_name, date_added: model.date_added }
+      return { model, x: x !== undefined ? x : 0, y: y !== undefined ? y : 0, metadata }
+    }),
   )
 
-  // Find active model by matching tooltip point (for time series)
-  let active_model = $derived(
-    tooltip_point && x_property === `date_added`
-      ? filtered_models.find((model, idx) => {
-          const model_time = new Date(model.date_added ?? 0).getTime()
-          // Check if x matches either the index or timestamp
-          return (
-            idx + 1 === tooltip_point?.x || // index-based match
-            Math.abs(model_time - (tooltip_point?.x ?? 0)) < 24 * 60 * 60 * 1000 // date-based match (within 1 day)
-          )
-        })
-      : null,
+  // Create point styles with model-specific colors
+  let point_styles = $derived(
+    models_to_show.map((item) => ({
+      fill: point_color ?? item.model.color ?? default_color,
+      radius: point_radius,
+      stroke: `white`,
+      stroke_width: 0.5,
+    })),
   )
-
-  // Create point style
-  let point_style = $derived({
-    fill: effective_color,
-    radius: point_radius,
-    stroke: `white`,
-    stroke_width: 0.5,
-  })
 
   // Create plot series based on show_model_labels
   let series = $derived.by(() => {
     const base_series = {
-      x: plotable_models.map((item) => item.x),
-      y: plotable_models.map((item) => item.y),
-      point_style,
-      metadata: plotable_models.map((item) => item.metadata),
+      x: models_to_show.map((item) => item.x),
+      y: models_to_show.map((item) => item.y),
+      point_style: point_styles,
+      metadata: models_to_show.map((item) => item.metadata),
     }
     if (show_model_labels) {
       const labeled_series = {
         ...base_series,
-        point_label: plotable_models.map((item) => ({
+        point_label: models_to_show.map((item, idx) => ({
           text: item.metadata.model_name,
           offset_y: 10,
           offset_x: 10,
           font_size: 9,
-          color: effective_color,
+          color: point_styles[idx].fill,
         })),
       }
       return [labeled_series]
@@ -301,7 +262,7 @@
   {series}
   x_label={actual_x_label}
   y_label={actual_y_label}
-  x_format={effective_x_format}
+  x_format={actual_x_format}
   y_format=".3f"
   bind:hovered
   bind:tooltip_point
@@ -311,9 +272,9 @@
   {...rest}
 >
   {#snippet tooltip({ x_formatted, y_formatted, metadata })}
-    {#if x_property === `date_added` && active_model}
+    {#if x_property === `date_added` && tooltip_point}
       <div style="min-width: 10em;">
-        <strong>{active_model.model_name}</strong>
+        <strong>{tooltip_point.metadata?.model_name}</strong>
         <br />
         {@html actual_y_label} = {@html y_formatted}
         <br />

@@ -39,17 +39,45 @@ export const MODEL_METADATA_PATHS = import.meta.glob(`$root/models/[^_]**/[^_]*.
   import: `default`,
 }) as Record<string, ModelData>
 
+// visually distinct color palette
+export const model_colors = [
+  `#4285F4`, // blue
+  `#EA4335`, // red
+  `#FBBC05`, // yellow
+  `#34A853`, // green
+  `#8A2BE2`, // blueviolet
+  `#FF7F50`, // coral
+  `#1E90FF`, // dodgerblue
+  `#FF1493`, // deeppink
+  `#32CD32`, // limegreen
+  `#FF8C00`, // darkorange
+  `#9370DB`, // mediumpurple
+  `#3CB371`, // mediumseagreen
+  `#DC143C`, // crimson
+  `#6495ED`, // cornflowerblue
+  `#FFD700`, // gold
+  `#8B008B`, // darkmagenta
+  `#00CED1`, // darkturquoise
+  `#FF4500`, // orangered
+  `#2E8B57`, // seagreen
+  `#BA55D3`, // mediumorchid
+]
+
 // merge computed and static model metadata
 export const MODEL_METADATA = Object.entries(MODEL_METADATA_PATHS)
   .filter(
     // ignore models that aren't completed
     ([_key, metadata]) => (metadata?.status ?? `complete`) == `complete`,
   )
-  .map(([key, metadata]) => {
+  .map(([key, metadata], index) => {
+    // Assign color to each model for consistent coloring across plots
+    const model_color = model_colors[index % model_colors.length]
+
     return {
       ...metadata,
       dirname: key.split(`/`)[2],
       metadata_file: key.replace(/^..\//, ``),
+      color: model_color,
     }
   }) as ModelData[]
 

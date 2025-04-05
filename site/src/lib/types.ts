@@ -4,7 +4,7 @@ export type { Dataset } from './dataset-schema.d.ts'
 export type { ModelMetadata } from './model-schema.d.ts'
 
 export type ModelData = ModelMetadata &
-  ModelStats & { dirname: string; metadata_file: string }
+  ModelStats & { dirname: string; metadata_file: string; color?: string }
 // dirname comes from: models/{dirname}/{model_name}.yml
 
 export type ModelStats = {
