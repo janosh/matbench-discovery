@@ -77,12 +77,12 @@
   // Initial sort
   let table_data: TableRow[] = sort_rows(`Created`)
 
-  function sort_rows(column: string): TableRow[] {
+  function sort_rows(column: string): TableRow[] | undefined {
     const col = columns.find((c) => c.label === column)
-    if (!col) return [...datasets]
+    if (!col) return
 
     // Skip sorting if column is explicitly marked as not sortable
-    if (col.sortable === false) return [...datasets]
+    if (col.sortable === false) return
 
     if (sort_state.column !== column) {
       sort_state = {
@@ -93,7 +93,7 @@
       sort_state.ascending = !sort_state.ascending
     }
 
-    return [...datasets].sort((row1, row2) => {
+    return datasets.sort((row1, row2) => {
       const val1 = row1[column]
       const val2 = row2[column]
 

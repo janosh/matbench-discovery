@@ -9,7 +9,7 @@ describe(`Landing Page`, () => {
 
   it(`renders discovery set toggle buttons`, () => {
     const buttons = document.body.querySelectorAll(`.selection-toggle button`)
-    expect(buttons).toHaveLength(6) // 3 from test set select, 3 from metric select
+    expect(buttons).toHaveLength(7) // 3 from test set select, 4 from metric select
 
     const button_texts = Array.from(buttons).map((btn) => btn.textContent?.trim())
     expect(button_texts).toContain(`Full Test Set`)

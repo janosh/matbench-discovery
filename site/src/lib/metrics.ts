@@ -118,7 +118,7 @@ export const DEFAULT_CPS_CONFIG: CombinedMetricConfig = {
       path: `phonons.kappa_103.κ_SRME`,
       label: `κ<sub>SRME</sub>`,
       svg_label: `κ<tspan baseline-shift='-0.4em' font-size='0.8em'>SRME</tspan>`,
-      description: `Symmetric relative mean error for thermal conductivity prediction (lower is better)`,
+      description: `Symmetric relative mean error of predicted lattice thermal conductivity`,
       weight: 0.4,
       range: [0, 2],
       better: `lower`,
