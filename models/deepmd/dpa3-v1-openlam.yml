@@ -35,6 +35,12 @@ pr_url: https://github.com/janosh/matbench-discovery/pull/192
 # checkpoints reported in https://github.com/deepmodeling/deepmd-kit/discussions/4682
 checkpoint_url: https://bohrium-api.dp.tech/ds-dl/dpa3openlam-74ng-v3.zip
 
+license:
+  code: LGPL-3.0
+  code_url: https://github.com/deepmodeling/deepmd-kit/blob/70bc6d89/LICENSE
+  checkpoint: LGPL-3.0
+  checkpoint_url: https://github.com/deepmodeling/deepmd-kit/blob/70bc6d89/LICENSE
+
 openness: OSCD
 train_task: S2EFS
 test_task: IS2RE-SR

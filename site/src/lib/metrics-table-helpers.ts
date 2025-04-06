@@ -159,6 +159,11 @@ export function calculate_metrics_data(
     show_noncompliant,
   )
 
+  const license_str = (license: string | undefined, url: string | undefined) =>
+    url?.startsWith(`http`)
+      ? `<a href="${url}" target="_blank" rel="noopener noreferrer" title="View license">${license}</a>`
+      : `<span title="License file not available">${license}</span>`
+
   return (
     MODEL_METADATA.filter(
       (model) => current_filter(model) && model.metrics?.discovery?.[discovery_set],
@@ -200,6 +205,7 @@ export function calculate_metrics_data(
         const row_style = show_noncompliant
           ? `border-left: 3px solid ${is_compliant ? compliant_clr : noncompliant_clr};`
           : null
+        const { license } = model
 
         return {
           Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}">${model.model_name}</a>`,
@@ -235,6 +241,8 @@ export function calculate_metrics_data(
             },
             pred_files: { files: get_pred_file_urls(model), name: model.model_name },
           } as LinkData,
+          'Checkpoint License': license_str(license?.checkpoint, license?.checkpoint_url),
+          'Code License': license_str(license?.code, license?.code_url),
           row_style,
         }
       })

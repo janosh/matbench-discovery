@@ -45,22 +45,8 @@
     metric_config = { ...config }
   })
 
-  // Define CPS column with tooltip
-  let combined_score_column: HeatmapColumn = {
-    label: `CPS`,
-    tooltip: Object.values(DEFAULT_CPS_CONFIG.parts)
-      .map((w) => w.label)
-      .join(`, `),
-    style: `border-right: 1px solid black;`,
-    format: `.3f`,
-    better: `higher`,
-  }
-
-  // Simple approach for column visibility
-  let visible_cols = $state<Record<string, boolean>>({})
   let columns = $derived(
-    // Use col_filter, combined_score_column, and visible_cols as dependencies
-    [combined_score_column, ...ALL_METRICS, ...METADATA_COLS]
+    [...ALL_METRICS, ...METADATA_COLS]
       .map((col) => {
         const better = col.better ?? get_metric_rank_order(col.label)
 
@@ -69,24 +55,13 @@
         if (better === `higher` || better === `lower`) {
           tooltip = tooltip ? `${tooltip} (${better}=better)` : `${better}=better`
         }
-        // Use visible_cols if available, otherwise use col_filter
-        const hidden =
-          col.label in visible_cols ? !visible_cols[col.label] : !col_filter(col)
-        return { ...col, better, tooltip, hidden } as HeatmapColumn
+        const visible = col.visible !== false && col_filter(col)
+
+        return { ...col, better, tooltip, visible } as HeatmapColumn
       })
       // Ensure Model column comes first
       .sort((col1, _col2) => (col1.label === `Model` ? -1 : 1)),
   )
-
-  // Initialize visible columns
-  $effect(() => {
-    // Only initialize once when columns are available
-    if (columns.length > 0 && Object.keys(visible_cols).length === 0) {
-      columns.forEach((col) => {
-        visible_cols[col.label] = !col.hidden
-      })
-    }
-  })
 
   let metrics_data = $state<TableData>([]) // reactive metrics_data
 
@@ -102,14 +77,6 @@
       compliant_clr,
       noncompliant_clr,
     )
-
-    // Update the CPS tooltip
-    combined_score_column = {
-      ...combined_score_column,
-      tooltip: Object.values(DEFAULT_CPS_CONFIG.parts)
-        .map((w) => w.label)
-        .join(`, `),
-    }
   })
 
   // Handle changes to filter options (energy-only and noncompliant models)
@@ -162,7 +129,7 @@
         <TableControls
           {show_energy_only}
           {show_noncompliant}
-          bind:visible_cols
+          bind:columns
           on_filter_change={(show_energy, show_noncomp) => {
             handle_filter_change(show_energy, show_noncomp)
           }}
@@ -183,7 +150,7 @@
           <span title="{key} not available">🚫</span>
         {/if}
       {/each}
-      {#if links.pred_files}
+      {#if links?.pred_files}
         <button
           class="pred-files-btn"
           title="Download model prediction files"

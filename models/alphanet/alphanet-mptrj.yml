@@ -44,7 +44,13 @@ pr_url: https://github.com/janosh/matbench-discovery/pull/216
 paper: https://arxiv.org/abs/2501.07155
 doi: https://doi.org/10.48550/arXiv.2501.07155
 # checkpoint page: https://github.com/zmyybc/AlphaNet/blob/243fe71cb96/README.md#pretrained-models
-checkpoint_url: https://ndownloader.figshare.com/files/52870784
+checkpoint_url: https://figshare.com/files/52870784
+
+license:
+  code: GPL-3.0
+  code_url: https://github.com/zmyybc/AlphaNet/blob/243fe71cb/LICENSE
+  checkpoint: CC-BY-4.0
+  checkpoint_url: https://figshare.com/articles/dataset/mp-0225-2_ckpt/28560176?file=52870784
 
 openness: OSOD
 train_task: S2EFS

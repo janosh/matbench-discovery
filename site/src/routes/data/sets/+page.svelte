@@ -34,7 +34,7 @@
 
   // License abbreviations mapped to full names
   const license_map: Record<string, string> = {
-    'CC BY 4.0': `Creative Commons Attribution 4.0 International`,
+    'CC-BY-4.0': `Creative Commons Attribution 4.0 International`,
   }
 
   const span_wrap = (val: string | number) =>

@@ -80,6 +80,12 @@ paper: https://arxiv.org/abs/2405.04967
 pr_url: https://github.com/janosh/matbench-discovery/pull/178
 checkpoint_url: https://github.com/microsoft/mattersim/raw/refs/heads/main/pretrained_models/mattersim-v1.0.0-5M.pth
 
+license:
+  code: MIT
+  code_url: https://github.com/microsoft/mattersim/blob/d0a52e64fc/LICENSE.txt
+  checkpoint: MIT
+  checkpoint_url: https://github.com/microsoft/mattersim/blob/d0a52e64fc/MODEL_CARD.md
+
 requirements:
   Graphormer: v1
   numpy: 1.26.2

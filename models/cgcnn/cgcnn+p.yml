@@ -16,12 +16,23 @@ authors:
     url: https://hennig.mse.ufl.edu
     email: rhennig@ufl.edu
     orcid: https://orcid.org/0000-0003-4933-7686
+trained_by:
+  - name: Janosh Riebesell
+    affiliation: University of Cambridge, Lawrence Berkeley National Laboratory
+    email: janosh.riebesell@gmail.com
+    orcid: https://orcid.org/0000-0001-5233-3462
 
 repo: https://github.com/JasonGibsonUfl/Augmented_CGCNN
 doi: https://doi.org/10.1038/s41524-022-00891-8
 paper: https://arxiv.org/abs/2202.13947
 pr_url: https://github.com/janosh/matbench-discovery/pull/85
 checkpoint_url: https://api.wandb.ai/files/janosh/matbench-discovery/tx6cepg6/checkpoint.pth
+
+license:
+  code: MIT
+  code_url: https://github.com/CompRhys/aviary/blob/3238fb415/LICENSE
+  checkpoint: MIT
+  checkpoint_url: https://github.com/janosh/matbench-discovery/blob/7c0b089e7/license
 
 requirements:
   aviary: https://github.com/CompRhys/aviary/releases/tag/v0.1.0

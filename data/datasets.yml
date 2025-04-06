@@ -5,7 +5,9 @@ MP 2022:
   n_structures: 154_719
   open: true
   date_created: 2022-10-28
-  license: CC BY 4.0
+  license: CC-BY-4.0
+  doi: https://doi.org/10.1063/1.4812323
+  description: Entire Materials Project dataset from October 2022.
   params:
     method: DFT
     code: VASP
@@ -19,12 +21,14 @@ MPtrj:
   title: MPtrj
   url: https://figshare.com/articles/dataset/23713842
   download_url: https://figshare.com/files/41619375
-  doi: https://doi.org/10.6084/m9.figshare.23713842
+  doi: https://doi.org/10.1038/s42256-023-00716-3
+
   n_structures: 1_580_395
   n_materials: 145_923
   open: true
   date_created: 2023-07-19
   license: MIT
+  description: Materials Project DFT relaxation trajectories cleaned of unrealistic energies and forces, and filtered for less redundancy using pymatgen's StructureMatcher to contain only about every 10th ionic step (1.5M structures). Originally created for training CHGNet.
   params:
     method: DFT
     code: VASP
@@ -41,13 +45,14 @@ MPF:
   title: MPF.2021.2.8
   url: https://figshare.com/articles/dataset/19470599
   download_url: https://figshare.com/ndownloader/articles/19470599/versions/3
-  doi: https://doi.org/10.6084/m9.figshare.19470599.v3
+  doi: https://doi.org/10.1038/s43588-022-00349-3
   n_structures: 188_349
   n_materials: 62_783
   open: true
   date_created: 2022-03-05
   date_added: 2022-03-05
-  license: CC BY 4.0
+  license: CC-BY-4.0
+  description: Materials Project Force dataset used to train the M3GNet model reported in https://arxiv.org/abs/2202.02450.
   params:
     method: DFT
     code: VASP
@@ -65,11 +70,12 @@ MP Graphs:
   title: Graphs of MP 2019
   url: https://figshare.com/articles/dataset/8097992
   download_url: https://figshare.com/ndownloader/articles/8097992/versions/2
-  doi: https://doi.org/10.6084/m9.figshare.8097992.v2
+  doi: https://doi.org/10.1021/acs.chemmater.9b01294
   n_structures: 133_420
   open: true
   date_created: 2019-06-06
   license: MIT
+  description: Contains 133,420 graph-target pairs for Materials Project structures which were used to train the MEGNet formation energy model.
   params:
     method: DFT
     code: VASP
@@ -91,7 +97,8 @@ GNoME:
   n_materials: 6_000_000
   open: false
   date_created: 2023-11-29 # https://github.com/google-deepmind/materials_discovery/commit/a701b9529
-  license: Apache 2.0
+  license: Apache-2.0
+  description: Google DeepMind's Graph Networks for Materials Exploration dataset containing millions of crystal structures generated with symmetry aware partial substitutions (SAPS) and their DFT-calculated energies, forces and stresses. Aimed at large-scale materials discovery.
   params:
     method: DFT
     code: VASP
@@ -110,7 +117,8 @@ MatterSim:
   pressure_range: 0-1000 GPa
   open: false
   date_created: 2024-05-08
-  license: Unreleased
+  license: unreleased
+  description: Large-scale materials simulation dataset from Microsoft Research containing DFT-calculated properties across a wide range of temperatures and pressures. Aimed at training robust universal interatomic potentials that remain accurate even far from equilibrium.
   params:
     method: DFT
     code: VASP
@@ -129,7 +137,8 @@ Alex:
   n_materials: 3_100_000
   open: true
   date_created: 2023-04-22
-  license: CC BY 4.0
+  license: CC-BY-4.0
+  description: Large collection of DFT structure relaxation trajectories with energies, forces, stresses for ~3M materials. Aimed at training ML potentials for materials discovery.
   params:
     method: DFT
     code: VASP
@@ -164,7 +173,8 @@ OMat24:
   n_structures: 100_824_585
   open: true
   date_created: 2024-10-16
-  license: CC BY 4.0
+  license: CC-BY-4.0
+  description: Open Materials 2024 dataset from Meta's FAIRchem containing over 100M structures derived from applying perturbations to Alexandria structures. Aimed at training foundation models for materials science.
   params:
     method: DFT
     code: VASP
@@ -207,7 +217,8 @@ sAlex:
   n_structures: 10_447_765
   open: true
   date_created: 2024-10-16
-  license: CC BY 4.0
+  license: CC-BY-4.0
+  description: Subsampled version of the Alexandria dataset, containing approximately 10 million structures filtered to remove structure prototype overlap with Matbench Discovery's WBM test set. See https://github.com/janosh/matbench-discovery/blob/5f02f790e1/matbench_discovery/structure/prototype.py#L104-L193.
   params:
     method: DFT
     code: VASP
@@ -230,7 +241,8 @@ sAlex Validation:
   n_structures: 553_218
   open: true
   date_created: 2024-10-16
-  license: CC BY 4.0
+  license: CC-BY-4.0
+  description: Validation subset of the subsampled Alexandria dataset, containing ~500k structures for evaluating model performance during training. Filtered to remove structure prototype overlap with WBM.
   params:
     method: DFT
     code: VASP
@@ -252,7 +264,7 @@ OpenLAM:
   n_structures: 162_507_178
   open: true
   date_created: 2025-02-17
-  license: CC BY 4.0
+  license: CC-BY-4.0
   params:
     method: DFT
     code: VASP
@@ -283,7 +295,7 @@ OC20:
   n_structures: 133_934_018
   open: true
   date_created: 2020-10-01
-  license: CC BY 4.0
+  license: CC-BY-4.0
   params:
     method: DFT
     code: VASP
@@ -304,7 +316,7 @@ NOMAD:
   n_materials: 4_335_728
   open: true
   date_created: 2019-06-01
-  license: CC BY 4.0
+  license: CC-BY-4.0
   params:
     method: [DFT, ML]
     code: Various
@@ -325,7 +337,7 @@ AFLOW:
   n_materials: 3_530_330 # unsure how number of materials and structures differ for AFLOW
   open: true
   date_created: 2012-06-01
-  license: Open
+  license: CC-BY-4.0
   params:
     method: DFT
     code: VASP
@@ -347,7 +359,7 @@ OQMD:
   n_structures: 1_226_781
   open: true
   date_created: 2014-04-03
-  license: CC BY 4.0
+  license: CC-BY-4.0
   params:
     method: DFT
     code: VASP

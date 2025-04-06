@@ -6,6 +6,8 @@ definitions:
     $ref: ./model-schema.yml#/definitions/person
   http_url:
     $ref: ./model-schema.yml#/definitions/http_url
+  license_enum:
+    $ref: ./model-schema.yml#/definitions/license_enum
 
   # Dataset method and parameters
   method_enum:
@@ -109,7 +111,7 @@ definitions:
         type: boolean
         description: Whether the dataset is openly available
       license:
-        type: string
+        $ref: "#/definitions/license_enum"
         description: License under which the dataset is published
 
       # Provenance and metadata

@@ -27,6 +27,12 @@ pr_url: https://github.com/janosh/matbench-discovery/pull/85
 # ALIGNN model 2023-02-07-alignn-checkpoint.pth trained on mp_computed_structure_entries
 checkpoint_url: https://figshare.com/files/40344436
 
+license:
+  code: MIT
+  code_url: https://github.com/usnistgov/alignn/blob/408bb6e996/LICENSE.rst
+  checkpoint: CC-BY-4.0
+  checkpoint_url: https://figshare.com/articles/dataset/Matbench_Discovery_v1_0_0/22715158?file=41233560
+
 requirements:
   ase: 3.22.0
   dgl-cu111: 0.6.1

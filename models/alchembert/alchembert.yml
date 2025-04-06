@@ -18,6 +18,12 @@ paper: https://chemrxiv.org/engage/chemrxiv/article-details/67540a28085116a133a6
 pr_url: https://github.com/janosh/matbench-discovery/pull/187
 checkpoint_url: https://figshare.com/ndownloader/files/53298683
 
+license:
+  code: GPL-3.0
+  code_url: https://gitee.com/liuxiaotong15/alchemBERT/blob/master/LICENSE
+  checkpoint: CC-BY-4.0
+  checkpoint_url: https://figshare.com/articles/dataset/28690583?file=53298683
+
 targets: E
 train_task: RS2RE
 test_task: IS2RE

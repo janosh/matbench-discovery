@@ -40,6 +40,12 @@ pr_url: https://github.com/janosh/matbench-discovery/pull/146
 # checkpoint URL copied from https://huggingface.co/fairchem/OMAT24#model-checkpoints
 checkpoint_url: https://huggingface.co/fairchem/OMAT24/blob/main/eqV2_86M_omat_mp_salex.pt
 
+license:
+  code: MIT
+  code_url: https://github.com/FAIR-Chem/fairchem/blob/aa160789e1/LICENSE.md
+  checkpoint: Meta Research
+  checkpoint_url: https://huggingface.co/facebook/OMAT24/blob/main/LICENSE
+
 requirements:
   fairchem-core: 1.2.1
 

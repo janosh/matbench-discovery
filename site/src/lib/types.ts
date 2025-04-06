@@ -98,7 +98,7 @@ export type HeatmapColumn = {
   color_scale?: keyof typeof d3sc // d3-scale-chromatic color scale name
   format?: string // d3-format string
   sticky?: boolean // sticky column
-  hidden?: boolean // hide column
+  visible?: boolean // show column (true by default)
   sortable?: boolean // whether column is sortable, defaults to true
 }
 

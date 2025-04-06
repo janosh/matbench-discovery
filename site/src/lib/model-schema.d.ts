@@ -78,7 +78,37 @@ export interface ModelMetadata {
   url?: string
   pypi?: string
   pr_url: string
-  checkpoint_url: string | (`not available` | `missing`)
+  checkpoint_url: string | `missing`
+  license: {
+    /**
+     * License for the model code
+     */
+    code:
+      | `MIT`
+      | `Apache-2.0`
+      | `CC-BY-4.0`
+      | `GPL-3.0`
+      | `BSD-3-Clause`
+      | `LGPL-3.0`
+      | `Meta Research`
+      | `ASL`
+      | `unreleased`
+    code_url?: string | `missing`
+    /**
+     * License for the model checkpoint
+     */
+    checkpoint:
+      | `MIT`
+      | `Apache-2.0`
+      | `CC-BY-4.0`
+      | `GPL-3.0`
+      | `BSD-3-Clause`
+      | `LGPL-3.0`
+      | `Meta Research`
+      | `ASL`
+      | `unreleased`
+    checkpoint_url?: string | `missing`
+  }
   requirements: {
     /**
      * This interface was referenced by `undefined`'s JSON-Schema definition
