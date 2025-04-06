@@ -39,6 +39,12 @@ paper: missing # to be released soon
 pr_url: https://github.com/janosh/matbench-discovery/pull/220
 checkpoint_url: missing # https://github.com/HPC-AI-Team/MatRIS/issues/1
 
+license:
+  code: unreleased
+  code_url: missing
+  checkpoint: unreleased
+  checkpoint_url: missing
+
 openness: OSOD
 train_task: S2EFSM
 test_task: IS2RE-SR

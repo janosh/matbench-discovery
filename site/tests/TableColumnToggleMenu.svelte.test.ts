@@ -1,18 +1,19 @@
 import { TableColumnToggleMenu } from '$lib'
+import type { HeatmapColumn } from '$lib/types'
 import { mount, tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
 
 describe(`TableColumnToggleMenu`, () => {
-  const visible_cols = {
-    'Column 1': true,
-    'Column 2': false,
-    'Column 3': true,
-  }
+  const columns: HeatmapColumn[] = [
+    { label: `Column 1`, visible: true },
+    { label: `Column 2`, visible: false },
+    { label: `Column 3`, visible: true },
+  ]
 
   it(`renders correctly with initial state`, () => {
     mount(TableColumnToggleMenu, {
       target: document.body,
-      props: { visible_cols, column_panel_open: false },
+      props: { columns, column_panel_open: false },
     })
 
     // Verify basic elements and structure
@@ -28,7 +29,7 @@ describe(`TableColumnToggleMenu`, () => {
   it(`toggles column visibility when checkbox clicked and updates state`, async () => {
     mount(TableColumnToggleMenu, {
       target: document.body,
-      props: { visible_cols, column_panel_open: false },
+      props: { columns, column_panel_open: false },
     })
 
     // Click first checkbox via its label and verify state update
@@ -40,13 +41,13 @@ describe(`TableColumnToggleMenu`, () => {
 
     labels[0].click()
     await tick()
-    expect(visible_cols[`Column 1`]).toBe(false)
+    expect(columns[0].visible).toBe(false)
   })
 
   it(`opens and closes panel with correct interaction`, async () => {
     mount(TableColumnToggleMenu, {
       target: document.body,
-      props: { visible_cols, column_panel_open: true },
+      props: { columns, column_panel_open: true },
     })
 
     const details = document.body.querySelector(`details`)
@@ -59,15 +60,14 @@ describe(`TableColumnToggleMenu`, () => {
   })
 
   it(`handles HTML in column names with correct rendering`, () => {
+    const columns: HeatmapColumn[] = [
+      { label: `Column with <sub>subscript</sub>`, visible: true },
+      { label: `Column with <sup>superscript</sup>`, visible: false },
+    ]
+
     mount(TableColumnToggleMenu, {
       target: document.body,
-      props: {
-        visible_cols: {
-          'Column with <sub>subscript</sub>': true,
-          'Column with <sup>superscript</sup>': false,
-        },
-        column_panel_open: false,
-      },
+      props: { columns, column_panel_open: false },
     })
 
     // Verify HTML elements are properly rendered

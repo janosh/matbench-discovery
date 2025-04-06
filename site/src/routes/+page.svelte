@@ -137,7 +137,7 @@
       The <strong>CPS</strong> (Combined Performance Score) is a metric that weights
       discovery performance (F1), geometry optimization quality (RMSD), and thermal
       conductivity prediction accuracy (κ<sub>SRME</sub>). Use the radar chart to adjust
-      the importance of each metric component.
+      the importance of each component.
       <br /><br />
       Training size is the number of materials used to train the model. For models trained
       on DFT relaxations, we show the number of distinct frames in parentheses). In cases where

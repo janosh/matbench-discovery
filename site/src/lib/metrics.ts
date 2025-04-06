@@ -1,5 +1,39 @@
 import type { CombinedMetricConfig, DiscoverySet, HeatmapColumn } from './types'
 
+export const DEFAULT_CPS_CONFIG: CombinedMetricConfig = {
+  label: `CPS`,
+  name: `Combined Performance Score`,
+  key: `cps`,
+  description: `Combined Performance Score weights discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>)`,
+  parts: {
+    F1: {
+      path: `discovery.unique_prototypes.F1`,
+      label: `F1`,
+      description: `F1 score for stable/unstable material classification (discovery task)`,
+      weight: 0.5,
+      range: [0, 1],
+      better: `higher`,
+    },
+    kappa_SRME: {
+      path: `phonons.kappa_103.κ_SRME`,
+      label: `κ<sub>SRME</sub>`,
+      svg_label: `κ<tspan baseline-shift='-0.4em' font-size='0.8em'>SRME</tspan>`,
+      description: `Symmetric relative mean error of predicted lattice thermal conductivity`,
+      weight: 0.4,
+      range: [0, 2],
+      better: `lower`,
+    },
+    RMSD: {
+      path: `discovery.unique_prototypes.RMSD`,
+      label: `RMSD`,
+      description: `Root mean square displacement for crystal structure optimization`,
+      weight: 0.1,
+      range: [0, 0.03],
+      better: `lower`,
+    },
+  },
+}
+
 export const METADATA_COLS: HeatmapColumn[] = [
   { label: `Model`, sticky: true },
   { label: `Training Set`, tooltip: `Size of and link to model training set` },
@@ -13,6 +47,18 @@ export const METADATA_COLS: HeatmapColumn[] = [
     label: `Links`,
     tooltip: `Model resources: paper, code repository and submission pull request`,
     sortable: false,
+  },
+  {
+    label: `Checkpoint License`,
+    tooltip: `Model checkpoint license`,
+    sortable: true,
+    visible: false,
+  },
+  {
+    label: `Code License`,
+    tooltip: `Model code license`,
+    sortable: true,
+    visible: false,
   },
 ]
 
@@ -74,8 +120,18 @@ export const GEO_OPT_METRICS: HeatmapColumn[] = [
   },
 ]
 
-// Update ALL_METRICS to include GEO_OPT_METRICS
+export const CPS_COLUMN: HeatmapColumn = {
+  label: `CPS`,
+  tooltip: Object.values(DEFAULT_CPS_CONFIG.parts)
+    .map((w) => w.label)
+    .join(`, `),
+  style: `border-right: 1px solid black;`,
+  format: `.3f`,
+  better: `higher`,
+}
+
 export const ALL_METRICS: HeatmapColumn[] = [
+  CPS_COLUMN,
   ...DISCOVERY_METRICS,
   ...PHONON_METRICS,
   ...GEO_OPT_METRICS.slice(0, 1), // Only include RMSD by default, others can be toggled
@@ -97,40 +153,6 @@ export const DISCOVERY_SET_LABELS: Record<
   most_stable_10k: {
     title: `10k Most Stable`,
     tooltip: `Metrics computed on the 10k structures predicted to be most stable (different for each model)`,
-  },
-}
-
-export const DEFAULT_CPS_CONFIG: CombinedMetricConfig = {
-  label: `CPS`,
-  name: `Combined Performance Score`,
-  key: `cps`,
-  description: `Combined Performance Score weights discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>)`,
-  parts: {
-    F1: {
-      path: `discovery.unique_prototypes.F1`,
-      label: `F1`,
-      description: `F1 score for stable/unstable material classification (discovery task)`,
-      weight: 0.5,
-      range: [0, 1],
-      better: `higher`,
-    },
-    kappa_SRME: {
-      path: `phonons.kappa_103.κ_SRME`,
-      label: `κ<sub>SRME</sub>`,
-      svg_label: `κ<tspan baseline-shift='-0.4em' font-size='0.8em'>SRME</tspan>`,
-      description: `Symmetric relative mean error of predicted lattice thermal conductivity`,
-      weight: 0.4,
-      range: [0, 2],
-      better: `lower`,
-    },
-    RMSD: {
-      path: `discovery.unique_prototypes.RMSD`,
-      label: `RMSD`,
-      description: `Root mean square displacement for crystal structure optimization`,
-      weight: 0.1,
-      range: [0, 0.03],
-      better: `lower`,
-    },
   },
 }
 

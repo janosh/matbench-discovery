@@ -24,6 +24,12 @@ pr_url: https://github.com/janosh/matbench-discovery/pull/85
 # checkpoint used: MP-2021.2.8-EFS https://github.com/materialsvirtuallab/m3gnet/blob/3a8b14df/m3gnet/models/_m3gnet.py#L372
 checkpoint_url: https://github.com/materialsvirtuallab/m3gnet/blob/3a8b14dfd5/pretrained/MP-2021.2.8-EFS/checkpoint
 
+license:
+  code: BSD-3-Clause
+  code_url: https://github.com/materialsvirtuallab/m3gnet/blob/3a8b14dfd59/LICENSE
+  checkpoint: MIT
+  checkpoint_url: https://github.com/materialsvirtuallab/m3gnet/blob/3a8b14dfd59/LICENSE
+
 requirements:
   m3gnet: 0.1.0
   pymatgen: 2022.10.22
