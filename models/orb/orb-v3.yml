@@ -68,7 +68,7 @@ requirements: # strongly recommended
 
 training_set: [MPtrj, Alex, OMat24]
 training_cost:
-  Nvidia H100: {amount: 8, hours: 125, cost: nan}
+  Nvidia H100: { amount: 8, hours: 125, cost: nan }
 
 notes:
   Description: |
