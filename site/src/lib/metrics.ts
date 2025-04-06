@@ -50,13 +50,13 @@ export const METADATA_COLS: HeatmapColumn[] = [
   },
   {
     label: `Checkpoint License`,
-    tooltip: `Model checkpoint license - click to view license details`,
+    tooltip: `Model checkpoint license`,
     sortable: true,
     visible: false,
   },
   {
     label: `Code License`,
-    tooltip: `Model code license - click to view license details`,
+    tooltip: `Model code license`,
     sortable: true,
     visible: false,
   },
