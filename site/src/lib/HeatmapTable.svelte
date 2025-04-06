@@ -142,7 +142,7 @@
     return { bg, text }
   }
 
-  let visible_columns = $derived(columns.filter((col) => !col.hidden))
+  let visible_columns = $derived(columns.filter((col) => col.visible !== false))
 
   const sort_indicator = (
     col: HeatmapColumn,

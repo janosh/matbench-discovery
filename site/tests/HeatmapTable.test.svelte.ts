@@ -17,7 +17,7 @@ describe(`HeatmapTable`, () => {
   ]
 
   it(`renders table with correct structure and handles hidden columns`, () => {
-    const columns = [...sample_columns, { label: `Hidden`, hidden: true }]
+    const columns = [...sample_columns, { label: `Hidden`, visible: false }]
     mount(HeatmapTable, {
       target: document.body,
       props: { data: sample_data, columns },

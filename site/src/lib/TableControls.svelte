@@ -1,12 +1,13 @@
 <script lang="ts">
   import { TableColumnToggleMenu } from '$lib'
   import { Tooltip } from 'svelte-zoo'
+  import type { HeatmapColumn } from './types'
 
   // Props for this component
   interface Props {
     show_energy_only?: boolean
     show_noncompliant?: boolean
-    visible_cols?: Record<string, boolean>
+    columns?: HeatmapColumn[]
     on_filter_change?: (show_energy: boolean, show_noncomp: boolean) => void | undefined
   }
 
@@ -14,7 +15,7 @@
   let {
     show_energy_only = $bindable(false),
     show_noncompliant = $bindable(false),
-    visible_cols = $bindable({}),
+    columns = $bindable([]),
     on_filter_change = undefined,
   }: Props = $props()
 
@@ -79,7 +80,7 @@
     </Tooltip>
   </label>
 
-  <TableColumnToggleMenu bind:visible_cols bind:column_panel_open />
+  <TableColumnToggleMenu bind:columns bind:column_panel_open />
 </div>
 
 <style>

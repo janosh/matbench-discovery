@@ -106,6 +106,7 @@ export interface Dataset {
     | `BSD-3-Clause`
     | `LGPL-3.0`
     | `Meta Research`
+    | `ASL`
     | `unreleased`
   /**
    * People or organizations who created the dataset
