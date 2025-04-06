@@ -65,7 +65,7 @@ hyperparams:
 requirements: # strongly recommended
   orb-models: "0.4.3"
 
-training_set: [MPtrj, Alex, OMAT]
+training_set: [MPtrj, Alex, OMat24]
 training_cost: 8x H100
 
 notes:
