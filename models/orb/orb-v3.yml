@@ -2,6 +2,7 @@ model_name: ORB v3
 model_key: orb-v3
 model_version: v3
 matbench_discovery_version: 1.3.1
+license: Apache 2.0
 date_added: "2025-04-05"
 date_published: "2025-04-05"
 authors:
@@ -37,7 +38,7 @@ train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_D
 model_type: UIP
-model_params: 25,510,582
+model_params: 25_510_582
 n_estimators: 1
 
 hyperparams:
@@ -66,7 +67,8 @@ requirements: # strongly recommended
   orb-models: "0.4.3"
 
 training_set: [MPtrj, Alex, OMat24]
-training_cost: 8x H100
+training_cost:
+  Nvidia H100: {amount: 8, hours: 125, cost: nan}
 
 notes:
   Description: |

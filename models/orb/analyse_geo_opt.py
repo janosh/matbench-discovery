@@ -5,7 +5,7 @@ import multiprocessing as mp
 import os
 from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
-from typing import Final
+from typing import Final, Tuple
 
 import pandas as pd
 from pymatgen.analysis.structure_matcher import StructureMatcher
@@ -62,7 +62,6 @@ def get_sym_info_from_structs(
 
             sym_info = {
                 "spg_num": sym_data.number,
-                "hall_num": sym_data.hall_number,
                 "international_spg_name": sym_data.site_symmetry_symbols,
                 "wyckoff_symbols": sym_data.wyckoffs,
                 "n_sym_ops": sym_ops.num_operations,
@@ -85,7 +84,9 @@ def get_sym_info_from_structs(
     return df_sym
 
 
-def process_structure(id_pred_ref_tuple):
+def process_structure(
+    id_pred_ref_tuple: Tuple[str, Structure, Structure]
+) -> Tuple[str, float, float]:
     mat_id, pred_struct, ref_struct = id_pred_ref_tuple
     # scale=False and stol=1 are important for getting accurate distance of atomic
     # positions from DFT-relaxed positions. details in https://github.com/janosh/matbench-discovery/issues/230
@@ -380,7 +381,10 @@ if __name__ == "__main__":
         if os.path.isfile(dft_csv_path):
             print(f"Loading DFT symmetries from {dft_csv_path}")
             dft_analysis_dict[symprec] = pd.read_csv(dft_csv_path).set_index(Key.mat_id)
-            assert len(dft_analysis_dict[symprec]) == len(dft_structs)
+            if len(dft_analysis_dict[symprec]) != len(dft_structs):
+                raise ValueError(
+                    f"Length mismatch, {len(dft_analysis_dict[symprec])} != {len(dft_structs)}"
+                )
         else:
             dft_analysis_dict[symprec] = get_sym_info_from_structs(
                 dft_structs,
