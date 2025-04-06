@@ -1,3 +1,4 @@
+# ruff: noqa: FBT001, FBT002
 import argparse
 import importlib
 import importlib.metadata
@@ -5,7 +6,7 @@ import multiprocessing as mp
 import os
 from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
-from typing import Final, Tuple
+from typing import Final
 
 import pandas as pd
 from pymatgen.analysis.structure_matcher import StructureMatcher
@@ -56,7 +57,6 @@ def get_sym_info_from_structs(
             sym_data = moyopy.MoyoDataset(
                 moyo_cell, symprec=symprec, angle_tolerance=angle_tolerance
             )
-
             sym_ops = sym_data.operations
             hall_symbol_entry = moyopy.HallSymbolEntry(hall_number=sym_data.hall_number)
 
@@ -85,8 +85,8 @@ def get_sym_info_from_structs(
 
 
 def process_structure(
-    id_pred_ref_tuple: Tuple[str, Structure, Structure]
-) -> Tuple[str, float, float]:
+    id_pred_ref_tuple: tuple[str, Structure, Structure],
+) -> tuple[str, float, float]:
     mat_id, pred_struct, ref_struct = id_pred_ref_tuple
     # scale=False and stol=1 are important for getting accurate distance of atomic
     # positions from DFT-relaxed positions. details in https://github.com/janosh/matbench-discovery/issues/230
@@ -95,7 +95,7 @@ def process_structure(
         None,
         None,
     )
-    return mat_id, rmsd, max_dist
+    return mat_id, rmsd, max_dist  # type: ignore[return-value]
 
 
 def pred_vs_ref_struct_symmetry(
@@ -383,7 +383,8 @@ if __name__ == "__main__":
             dft_analysis_dict[symprec] = pd.read_csv(dft_csv_path).set_index(Key.mat_id)
             if len(dft_analysis_dict[symprec]) != len(dft_structs):
                 raise ValueError(
-                    f"Length mismatch, {len(dft_analysis_dict[symprec])} != {len(dft_structs)}"
+                    f"Length mismatch in dft vs ref structures. "
+                    f"{len(dft_analysis_dict[symprec])} != {len(dft_structs)}"
                 )
         else:
             dft_analysis_dict[symprec] = get_sym_info_from_structs(
@@ -397,10 +398,6 @@ if __name__ == "__main__":
     n_workers = min(len(symprec_values), args.workers)
 
     # Process model-symprec combinations in parallel
-    print(
-        f"\nAnalyzing {len(symprec_values)} symprec values using {n_workers} processes..."
-    )
-
     with ProcessPoolExecutor(max_workers=n_workers) as executor:
         futures = [
             executor.submit(
