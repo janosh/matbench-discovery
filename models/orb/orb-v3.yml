@@ -25,14 +25,14 @@ authors:
     corresponding: true
 
 repo: https://github.com/orbital-materials/orb-models
-url:
-doi:
-paper:
-pr_url:
-checkpoint_url:
+url: https://github.com/orbital-materials/orb-models
+doi: https://github.com/orbital-materials/orb-models
+paper: https://github.com/orbital-materials/orb-models
+pr_url: https://github.com/orbital-materials/orb-models
+checkpoint_url: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/forcefields/orb-v3/orb-v3-conservative-inf-mpa-20250404.ckpt
 
 openness: OSCD
-trained_for_benchmark: false
+trained_for_benchmark: true
 train_task: S2EFS
 test_task: IS2RE-SR
 targets: EFS_D
