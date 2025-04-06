@@ -247,6 +247,29 @@ definitions:
             pred_file_url:
               $ref: "#/definitions/http_url"
 
+  # Define license types from dataset schema
+  license_enum:
+    type: string
+    enum:
+      - MIT
+      - Apache-2.0
+      - CC-BY-4.0
+      - GPL-3.0
+      - BSD-3-Clause
+      - LGPL-3.0
+      - Meta Research
+      - ASL
+      - unreleased
+    description: |
+      License type:
+      - MIT: Massachusetts Institute of Technology
+      - CC-BY-4.0: Creative Commons Attribution 4.0 International
+      - GPL-3.0: GNU General Public v3.0
+      - BSD-3-Clause: Berkeley Software Distribution 3-Clause
+      - LGPL-3.0: GNU Lesser General Public License v3.0
+      - ASL: Academic Software License
+      - unreleased: No license since not released
+
 type: object
 properties:
   model_name:
@@ -291,7 +314,32 @@ properties:
         format: uri
         $ref: "#/definitions/http_url"
       - type: string
-        enum: [not available, missing]
+        enum: [missing]
+  license:
+    type: object
+    additionalProperties: false
+    required: [code, checkpoint]
+    properties:
+      code:
+        $ref: "#/definitions/license_enum"
+        description: License for the model code
+      code_url:
+        oneOf:
+          - type: string
+            format: uri
+            $ref: "#/definitions/http_url"
+          - type: string
+            enum: [missing]
+      checkpoint:
+        $ref: "#/definitions/license_enum"
+        description: License for the model checkpoint
+      checkpoint_url:
+        oneOf:
+          - type: string
+            format: uri
+            $ref: "#/definitions/http_url"
+          - type: string
+            enum: [missing]
   requirements:
     type: object
     patternProperties:
@@ -437,6 +485,7 @@ required:
   - date_added
   - date_published
   - doi
+  - license
   - matbench_discovery_version
   - model_name
   - model_params

@@ -98,7 +98,15 @@ export interface Dataset {
   /**
    * License under which the dataset is published
    */
-  license: string
+  license:
+    | `MIT`
+    | `Apache-2.0`
+    | `CC-BY-4.0`
+    | `GPL-3.0`
+    | `BSD-3-Clause`
+    | `LGPL-3.0`
+    | `Meta Research`
+    | `unreleased`
   /**
    * People or organizations who created the dataset
    */

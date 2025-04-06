@@ -28,6 +28,12 @@ paper: https://nature.com/articles/s41586-023-06735-9
 pr_url: https://github.com/janosh/matbench-discovery/pull/84
 checkpoint_url: missing
 
+license:
+  code: Apache-2.0
+  code_url: https://github.com/google-deepmind/materials_discovery/blob/be1fa43a9/LICENSE
+  checkpoint: unreleased
+  checkpoint_url: missing
+
 openness: OSCD
 trained_for_benchmark: false
 train_task: S2EFS

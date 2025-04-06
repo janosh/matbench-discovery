@@ -34,6 +34,12 @@ pypi: https://pypi.org/project/fairchem-core
 pr_url: https://github.com/janosh/matbench-discovery/pull/226
 checkpoint_url: missing # unreleased, Xiang Fu will notify when available
 
+license:
+  code: MIT
+  code_url: https://github.com/FAIR-Chem/fairchem/blob/aa160789e1/LICENSE.md
+  checkpoint: unreleased
+  checkpoint_url: missing
+
 requirements:
   fairchem-core: 1.7.0
 

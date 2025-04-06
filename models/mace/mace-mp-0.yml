@@ -39,6 +39,12 @@ pr_url: https://github.com/janosh/matbench-discovery/pull/48
 # checkpoint URL copied from https://github.com/ACEsuit/mace-foundations/releases/tag/mace_mp_0
 checkpoint_url: https://github.com/ACEsuit/mace-foundations/releases/download/mace_mp_0/2023-12-03-mace-128-L1_epoch-199.model
 
+license:
+  code: MIT
+  code_url: https://github.com/ACEsuit/mace/blob/b0fa4ef7c/LICENSE.md
+  checkpoint: MIT
+  checkpoint_url: https://github.com/ACEsuit/mace-foundations/blob/1ff8786eb/LICENSE
+
 requirements:
   mace-torch: 0.3.3
   torch: 2.0.1
