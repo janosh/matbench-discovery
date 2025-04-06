@@ -1,41 +1,43 @@
-import type { TargetType } from '$lib'
 import { model_is_compliant } from '$lib'
 import {
   create_combined_filter,
-  format_long_date,
+  format_date,
   format_train_set,
   get_geo_opt_property,
   targets_tooltips,
 } from '$lib/metrics-table-helpers'
+import type { TargetType } from '$lib/model-schema'
 import type { ModelData } from '$lib/types'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
-// Mock the imports that the helper functions depend on
-vi.mock(`$lib`, () => ({
-  model_is_compliant: vi.fn(),
-  get_pred_file_urls: vi.fn().mockReturnValue([]),
+const model_is_compliant_mock = vi.hoisted(() => vi.fn())
+const get_pred_file_urls_mock = vi.hoisted(() => vi.fn().mockReturnValue([]))
+
+const mock_datasets = vi.hoisted(() => ({
+  'MP 2022': {
+    title: `Materials Project 2022`,
+    url: `https://materialsproject.org`,
+    n_structures: 100_000,
+    n_materials: 50_000,
+  },
+  MPtrj: {
+    title: `Materials Project Trajectories`,
+    url: `https://materialsproject.org/trajectories`,
+    n_structures: 200_000,
+    n_materials: 75_000,
+  },
+  'Custom Set': {
+    title: `Custom Dataset`,
+    url: `https://example.com`,
+    n_structures: 10_000,
+  },
 }))
 
-vi.mock(`$data/training-sets.yml`, () => ({
-  default: {
-    'MP 2022': {
-      title: `Materials Project 2022`,
-      url: `https://materialsproject.org`,
-      n_structures: 100000,
-      n_materials: 50000,
-    },
-    MPtrj: {
-      title: `Materials Project Trajectories`,
-      url: `https://materialsproject.org/trajectories`,
-      n_structures: 200000,
-      n_materials: 75000,
-    },
-    'Custom Set': {
-      title: `Custom Dataset`,
-      url: `https://example.com`,
-      n_structures: 10000,
-    },
-  },
+// Mock the $lib module
+vi.mock(`$lib`, () => ({
+  model_is_compliant: model_is_compliant_mock,
+  get_pred_file_urls: get_pred_file_urls_mock,
+  DATASETS: mock_datasets,
 }))
 
 describe(`metrics-table-helpers`, () => {
@@ -82,7 +84,7 @@ describe(`metrics-table-helpers`, () => {
         writable: true,
       })
 
-      expect(format_long_date(date)).toBe(`Monday, May 15, 2023`)
+      expect(format_date(date)).toBe(`Monday, May 15, 2023`)
 
       // Restore original Date
       Object.defineProperty(globalThis, `Date`, {
@@ -160,7 +162,7 @@ describe(`metrics-table-helpers`, () => {
 
       // Should warn about missing training set with exact message
       expect(console_spy).toHaveBeenCalledWith(
-        `Training set NonExistent not found in TRAINING_SETS`,
+        `Training set NonExistent not found in DATASETS`,
       )
 
       // Should still format the existing training set correctly
@@ -182,9 +184,7 @@ describe(`metrics-table-helpers`, () => {
       expect(result).toContain(`50k <small>(100k)</small>`)
 
       // Check tooltip includes both counts with proper formatting
-      expect(result).toContain(
-        `50,000 materials in training set (100,000 structures counting all DFT relaxation`,
-      )
+      expect(result).toContain(`50,000 materials in training set (100,000 structures`)
     })
 
     it(`formats training sets without n_materials correctly using n_structures`, () => {
@@ -257,11 +257,6 @@ describe(`metrics-table-helpers`, () => {
   })
 
   describe(`create_combined_filter`, () => {
-    // Reset the mock for each test
-    beforeEach(() => {
-      vi.resetAllMocks()
-    })
-
     it.each([
       {
         case: `user filter returns false`,
@@ -345,7 +340,7 @@ describe(`metrics-table-helpers`, () => {
         const mock_model_filter = vi.fn().mockReturnValue(model_filter_returns)
 
         if (should_check_compliance && is_compliant !== undefined) {
-          vi.mocked(model_is_compliant).mockReturnValue(is_compliant)
+          model_is_compliant_mock.mockReturnValue(is_compliant)
         }
 
         const filter = create_combined_filter(

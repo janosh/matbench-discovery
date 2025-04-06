@@ -1,9 +1,10 @@
 import * as d3sc from 'd3-scale-chromatic'
 import type { ModelMetadata } from './model-schema.d.ts'
-export type * from './model-schema.d.ts'
+export type { Dataset } from './dataset-schema.d.ts'
+export type { ModelMetadata } from './model-schema.d.ts'
 
 export type ModelData = ModelMetadata &
-  ModelStats & { dirname: string; metadata_file: string }
+  ModelStats & { dirname: string; metadata_file: string; color?: string }
 // dirname comes from: models/{dirname}/{model_name}.yml
 
 export type ModelStats = {
@@ -23,7 +24,7 @@ export type ModelStats = {
   GPUs: number // number of GPUs used
   CPUs: number // number of CPUs used
   slurm_jobs: number // number of SLURM jobs used
-  κ_SRME: number // symmetric relative mean error for thermal conductivity
+  κ_SRME: number // symmetric relative mean error of predicted lattice thermal conductivity
 }
 
 // how to pretty print a model stat key on the website
@@ -97,7 +98,7 @@ export type HeatmapColumn = {
   color_scale?: keyof typeof d3sc // d3-scale-chromatic color scale name
   format?: string // d3-format string
   sticky?: boolean // sticky column
-  hidden?: boolean // hide column
+  visible?: boolean // show column (true by default)
   sortable?: boolean // whether column is sortable, defaults to true
 }
 
@@ -115,21 +116,25 @@ export type DiatomicsCurves = {
 }
 
 // MetricWeight defines weights for each component of the combined score
-export interface MetricWeight {
-  metric: string // ID of the metric (F1, RMSD, kappa_SRME)
-  value: number // Weight value between 0-1
+export type Metric = {
+  path: string // path to the metric in the model metadata
   label: string // Display name (can include HTML)
+  svg_label?: string // Label for the SVG chart
   description: string // Description of the metric
+  range?: [number, number] // y-axis limits for the SVG chart
+  better?: `higher` | `lower` // sort direction
 }
 
-export interface CombinedMetricConfig {
-  weights: MetricWeight[]
+export type CombinedMetricConfig = {
+  parts: Record<`F1` | `kappa_SRME` | `RMSD`, Metric & { weight: number }>
+  label: string
   name: string
+  key: string
   description: string
 }
 
 // Links data structure used for model resource links
-export interface LinkData {
+export type LinkData = {
   paper: { url: string; title: string; icon: string }
   repo: { url: string; title: string; icon: string }
   pr_url: { url: string; title: string; icon: string }

@@ -1,6 +1,5 @@
-import TRAINING_SETS from '$data/training-sets.yml'
 import type { TargetType } from '$lib'
-import { MODEL_METADATA, get_pred_file_urls, model_is_compliant } from '$lib'
+import { DATASETS, MODEL_METADATA, get_pred_file_urls, model_is_compliant } from '$lib'
 import { pretty_num } from 'elementari'
 import { calculate_combined_score } from './metrics'
 import type {
@@ -23,27 +22,27 @@ export const targets_tooltips: Record<TargetType, string> = {
 }
 
 // format date string into human-readable format
-export function format_long_date(date: string): string {
+export function format_date(date: string, options?: Intl.DateTimeFormatOptions): string {
   return new Date(date).toLocaleDateString(undefined, {
-    weekday: `long`,
     year: `numeric`,
-    month: `long`,
+    month: `short`,
     day: `numeric`,
+    ...options,
   })
 }
 
 // format training set information for display in the metrics table
-export function format_train_set(model_training_sets: string[]): string {
+export function format_train_set(model_DATASETS: string[]): string {
   let [total_structs, total_materials] = [0, 0]
   const data_urls: Record<string, string> = {}
   const tooltip: string[] = []
 
-  for (const train_set of model_training_sets) {
-    if (!(train_set in TRAINING_SETS)) {
-      console.warn(`Training set ${train_set} not found in TRAINING_SETS`)
+  for (const train_set of model_DATASETS) {
+    if (!(train_set in DATASETS)) {
+      console.warn(`Training set ${train_set} not found in DATASETS`)
       continue
     }
-    const training_set_info = TRAINING_SETS[train_set]
+    const training_set_info = DATASETS[train_set]
     const n_structs = training_set_info.n_structures
     const n_materials = training_set_info.n_materials ?? n_structs
 
@@ -160,6 +159,11 @@ export function calculate_metrics_data(
     show_noncompliant,
   )
 
+  const license_str = (license: string | undefined, url: string | undefined) =>
+    url?.startsWith(`http`)
+      ? `<a href="${url}" target="_blank" rel="noopener noreferrer" title="View license">${license}</a>`
+      : `<span title="License file not available">${license}</span>`
+
   return (
     MODEL_METADATA.filter(
       (model) => current_filter(model) && model.metrics?.discovery?.[discovery_set],
@@ -201,6 +205,7 @@ export function calculate_metrics_data(
         const row_style = show_noncompliant
           ? `border-left: 3px solid ${is_compliant ? compliant_clr : noncompliant_clr};`
           : null
+        const { license } = model
 
         return {
           Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}">${model.model_name}</a>`,
@@ -219,7 +224,7 @@ export function calculate_metrics_data(
           'Training Set': format_train_set(model.training_set),
           Params: `<span title="${pretty_num(model.model_params, `,`)}" trainable model parameters" data-sort-value="${model.model_params}">${pretty_num(model.model_params)}</span>`,
           Targets: targets_str,
-          'Date Added': `<span title="${format_long_date(model.date_added)}" data-sort-value="${new Date(model.date_added).getTime()}">${model.date_added}</span>`,
+          'Date Added': `<span title="${format_date(model.date_added)}" data-sort-value="${new Date(model.date_added).getTime()}">${model.date_added}</span>`,
           // Add Links as a special property
           Links: {
             paper: {
@@ -236,6 +241,8 @@ export function calculate_metrics_data(
             },
             pred_files: { files: get_pred_file_urls(model), name: model.model_name },
           } as LinkData,
+          'Checkpoint License': license_str(license?.checkpoint, license?.checkpoint_url),
+          'Code License': license_str(license?.code, license?.code_url),
           row_style,
         }
       })

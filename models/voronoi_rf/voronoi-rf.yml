@@ -13,6 +13,11 @@ authors:
     affiliation: Northwestern University
     email: c-wolverton@northwestern.edu
     orcid: https://orcid.org/0000-0003-2248-474X
+trained_by:
+  - name: Janosh Riebesell
+    affiliation: University of Cambridge, Lawrence Berkeley National Laboratory
+    email: janosh.riebesell@gmail.com
+    orcid: https://orcid.org/0000-0001-5233-3462
 
 repo: https://github.com/janosh/matbench-discovery
 doi: https://doi.org/10.1103/PhysRevB.96.024104
@@ -21,6 +26,12 @@ pypi: https://pypi.org/project/scikit-learn
 pr_url: https://github.com/janosh/matbench-discovery/commit/f28cc6d
 # checkpoint page: https://wandb.ai/janosh/matbench-discovery/artifacts/model/voronoi_rf_model_IS2RE/v0/files
 checkpoint_url: https://api.wandb.ai/artifactsV2/default/janosh/matbench-discovery/voronoi_rf_model_IS2RE/QXJ0aWZhY3Q6MTYwNjgyOTk3NA%3D%3D/fb0cf7ce8454e5fbe1bcd49d42c0e49b/voronoi_rf_model.joblib
+
+license:
+  code: MIT
+  code_url: https://github.com/janosh/matbench-discovery/blob/7c0b089e7/license
+  checkpoint: MIT
+  checkpoint_url: https://github.com/janosh/matbench-discovery/blob/7c0b089e7/license
 
 requirements:
   matminer: 0.8.0

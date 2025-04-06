@@ -135,7 +135,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
      torch-geometric: 2.0.9
      ...
 
-   training_set: [MPtrj] # list of keys from data/training-sets.yml
+   training_set: [MPtrj] # list of keys from data/datasets.yml
 
    notes: # notes can have any key, be multiline and support markdown.
      description: This is how my model works...
@@ -146,14 +146,14 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
      phonons:
        kappa_103:
          pred_file: models/<model_dir>/<yyyy-mm-dd>-kappa-103-<values-of-dist|fmax|symprec>.json.gz
-         pred_file_url: https://ndownloader.figshare.com/files/<figshare_id>
+         pred_file_url: https://figshare.com/files/<figshare_id>
      geo_opt: # only applicable if the model performed structure relaxation
        pred_file: models/<model_dir>/<yyyy-mm-dd>-wbm-geo-opt-<optimizer>.json.gz # should contain the models relaxed structures as ASE Atoms or pymatgen Structures, and separate columns for material_id and energies/forces/stresses at each relaxation step
-       pred_file_url: https://ndownloader.figshare.com/files/<figshare_id>
+       pred_file_url: https://figshare.com/files/<figshare_id>
        struct_col: <column_name_of_material_ids_in_relaxed_structures>
      discovery:
        pred_file: models/<model_dir>/<yyyy-mm-dd>-<model_name>-wbm-IS2RE.csv.gz # should contain the models energy predictions for the WBM test set
-       pred_file_url: https://ndownloader.figshare.com/files/<figshare_id>
+       pred_file_url: https://figshare.com/files/<figshare_id>
        pred_col: e_form_per_atom_<model_name>
    ```
 

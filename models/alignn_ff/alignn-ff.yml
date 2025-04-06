@@ -24,6 +24,7 @@ authors:
   - name: Francesca Tavazza
     affiliation: National Institute of Standards and Technology
     orcid: https://orcid.org/0000-0002-5602-180X
+trained_by:
   - name: Philipp Benner
     affiliation: Bundesanstalt für Materialforschung und -prüfung BAM
     orcid: https://orcid.org/0000-0002-0912-8137
@@ -36,6 +37,12 @@ paper: https://arxiv.org/abs/2209.05554
 pypi: https://pypi.org/project/alignn
 pr_url: https://github.com/janosh/matbench-discovery/pull/37
 checkpoint_url: https://github.com/usnistgov/alignn/blob/461b35fe/alignn/ff/alignnff_wt10/best_model.pt
+
+license:
+  code: MIT
+  code_url: https://github.com/usnistgov/alignn/blob/408bb6e996/LICENSE.rst
+  checkpoint: MIT
+  checkpoint_url: https://github.com/usnistgov/alignn/blob/408bb6e996/LICENSE.rst
 
 requirements:
   ase: 3.22.0

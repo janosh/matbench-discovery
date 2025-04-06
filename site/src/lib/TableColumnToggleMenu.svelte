@@ -1,14 +1,19 @@
 <script lang="ts">
   import 'iconify-icon'
   import { click_outside } from 'svelte-zoo/actions'
+  import type { HeatmapColumn } from './types'
 
   interface Props {
-    visible_cols: Record<string, boolean>
+    columns: HeatmapColumn[]
     column_panel_open?: boolean
   }
 
-  let { visible_cols = $bindable({}), column_panel_open = $bindable(false) }: Props =
-    $props()
+  let { columns = $bindable([]), column_panel_open = $bindable(false) }: Props = $props()
+
+  function toggle_column_visibility(idx: number, event: Event) {
+    columns[idx].visible = (event.target as HTMLInputElement).checked
+    columns = [...columns] // needed to trigger reactivity
+  }
 </script>
 
 <details
@@ -20,10 +25,14 @@
     Columns <iconify-icon icon="octicon:columns-16" inline></iconify-icon>
   </summary>
   <div class="column-menu">
-    {#each Object.keys(visible_cols) as col (col)}
+    {#each columns as col, idx (col.label + col.group + col.visible + idx)}
       <label>
-        <input type="checkbox" bind:checked={visible_cols[col]} />
-        {@html col}
+        <input
+          type="checkbox"
+          checked={col.visible !== false}
+          onchange={(event) => toggle_column_visibility(idx, event)}
+        />
+        {@html col.label}
       </label>
     {/each}
   </div>

@@ -1,21 +1,19 @@
 <script lang="ts">
-  import type { DiscoverySet, ModelData } from '$lib'
+  import type { DiscoverySet, Metric, ModelData } from '$lib'
   import {
     MetricScatter,
     MetricsTable,
     model_is_compliant,
     MODEL_METADATA,
     RadarChart,
+    SelectToggle,
   } from '$lib'
   import { generate_png, generate_svg, handle_export } from '$lib/html-to-img'
   import {
     ALL_METRICS,
-    DEFAULT_COMBINED_METRIC_CONFIG,
+    DEFAULT_CPS_CONFIG,
     DISCOVERY_SET_LABELS,
-    F1_DEFAULT_WEIGHT,
-    KAPPA_DEFAULT_WEIGHT,
     METADATA_COLS,
-    RMSD_DEFAULT_WEIGHT,
   } from '$lib/metrics'
   import Readme from '$root/readme.md'
   import KappaNote from '$site/src/routes/kappa-note.md'
@@ -31,7 +29,7 @@
   let export_error: string | null = $state(null)
 
   // State for the radar chart
-  let metric_config = $state({ ...DEFAULT_COMBINED_METRIC_CONFIG })
+  let metric_config = $state({ ...DEFAULT_CPS_CONFIG })
 
   // Default column visibility
   let visible_cols: Record<string, boolean> = $state({
@@ -61,167 +59,183 @@
 
   // Reset to default weights (50% F1, 40% kappa, 10% RMSD)
   function reset_weights() {
-    // Create a new array with updated values
-    const new_weights = [...metric_config.weights]
-
-    // Find the indices of each metric using the correct metric names
-    const f1_index = new_weights.findIndex((w) => w.metric === `F1`)
-    const kappa_index = new_weights.findIndex((w) => w.metric === `kappa_SRME`)
-    const rmsd_index = new_weights.findIndex((w) => w.metric === `RMSD`)
-
-    if (f1_index >= 0 && kappa_index >= 0 && rmsd_index >= 0) {
-      // Set the desired weight distribution
-      new_weights[f1_index].value = F1_DEFAULT_WEIGHT
-      new_weights[kappa_index].value = KAPPA_DEFAULT_WEIGHT
-      new_weights[rmsd_index].value = RMSD_DEFAULT_WEIGHT
-
-      // Create a completely new config object to force reactivity
-      metric_config = {
-        ...metric_config,
-        weights: new_weights.map((w) => ({ ...w })), // Deep clone weights
-      }
-    } else {
-      console.error(`Couldn't find expected metrics in weights array`, {
-        weights: metric_config.weights,
-        expected: [`F1`, `kappa_SRME`, `RMSD`],
-      })
-    }
+    metric_config.parts.F1.weight = DEFAULT_CPS_CONFIG.parts.F1.weight
+    metric_config.parts.kappa_SRME.weight = DEFAULT_CPS_CONFIG.parts.kappa_SRME.weight
+    metric_config.parts.RMSD.weight = DEFAULT_CPS_CONFIG.parts.RMSD.weight
   }
+
+  // Initialize with CPS as default metric
+  let selected_metric:
+    | keyof (typeof DEFAULT_CPS_CONFIG)[`parts`]
+    | (typeof DEFAULT_CPS_CONFIG)[`key`] = $state(DEFAULT_CPS_CONFIG.key)
+  let cps_scatter: Metric = {
+    path: ``,
+    label: `Combined Performance Score`,
+    svg_label: DEFAULT_CPS_CONFIG.label,
+    range: [0, 1],
+    better: `higher`,
+    description: DEFAULT_CPS_CONFIG.description,
+  }
+  let selected_scatter: Metric = $derived(
+    { ...DEFAULT_CPS_CONFIG.parts, cps: cps_scatter }[selected_metric],
+  )
 </script>
 
-<Readme>
-  {#snippet metrics_table()}
-    <figure style="margin-top: 3em;" id="metrics-table">
-      <div class="discovery-set-toggle">
-        {#each Object.entries(DISCOVERY_SET_LABELS) as [key, { title, tooltip, link }] (key)}
-          <Tooltip text={tooltip} tip_style="z-index: 2; font-size: 0.8em;">
-            <button
-              class:active={discovery_set === key}
-              onclick={() => (discovery_set = key as DiscoverySet)}
-            >
-              {title}
-              {#if link}
-                <a
-                  href={link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Info"
-                  style="line-height: 1;"
-                >
-                  ⓘ
-                </a>
-              {/if}
-            </button>
-          </Tooltip>
-        {/each}
+<h1 style="line-height: 0; margin-block: -1.2em 1em;">
+  <img src="/favicon.svg" alt="Logo" width="60px" /><br />
+  Matbench Discovery
+</h1>
+
+<figure style="margin-top: 3em;" id="metrics-table">
+  <SelectToggle
+    bind:selected={discovery_set}
+    options={Object.entries(DISCOVERY_SET_LABELS).map(
+      ([value, { title, tooltip, link }]) => ({ value, label: title, tooltip, link }),
+    )}
+  />
+
+  <section class="table-wrapper">
+    <div>
+      <MetricsTable
+        col_filter={(col) => visible_cols[col.label] ?? true}
+        model_filter={() => true}
+        {discovery_set}
+        {show_combined_controls}
+        {show_energy_only}
+        show_noncompliant={show_non_compliant}
+        config={metric_config}
+        style="width: 100%;"
+      />
+    </div>
+  </section>
+
+  <div class="downloads">
+    Download table as
+    {#each [[`SVG`, generate_svg], [`PNG`, generate_png]] as const as [label, generate_fn] (label)}
+      <button
+        class="download-btn"
+        onclick={handle_export(generate_fn, label, export_error, {
+          show_non_compliant,
+          discovery_set,
+        })}
+      >
+        {label}
+      </button>
+    {/each}
+    {#if export_error}
+      <div class="export-error">
+        {export_error}
       </div>
+    {/if}
+  </div>
 
-      <section class="table-wrapper">
-        <div>
-          <MetricsTable
-            col_filter={(col) => visible_cols[col.label] ?? true}
-            model_filter={() => true}
-            {discovery_set}
-            {show_combined_controls}
-            {show_energy_only}
-            show_noncompliant={show_non_compliant}
-            config={metric_config}
-            style="width: 100%;"
-          />
-        </div>
-      </section>
+  <!-- Radar Chart and Caption Container -->
+  <figcaption class="caption-radar-container">
+    <div
+      style="flex: 1; background-color: var(--light-bg); padding: 0.2em 0.5em; border-radius: 4px;"
+    >
+      The <strong>CPS</strong> (Combined Performance Score) is a metric that weights
+      discovery performance (F1), geometry optimization quality (RMSD), and thermal
+      conductivity prediction accuracy (κ<sub>SRME</sub>). Use the radar chart to adjust
+      the importance of each component.
+      <br /><br />
+      Training size is the number of materials used to train the model. For models trained
+      on DFT relaxations, we show the number of distinct frames in parentheses). In cases where
+      only the number of frames is known, we report the number of frames as the training set
+      size. <code>(N=x)</code> in the Model Params column shows the number of estimators
+      if an ensemble was used. DAF = Discovery Acceleration Factor measures how many more
+      stable materials a model finds compared to random selection from the test set. The
+      unique structure prototypes in the WBM test set have a
+      <code>{pretty_num(n_wbm_stable_uniq_protos / n_wbm_uniq_protos, `.1%`)}</code>
+      rate of stable crystals, meaning the max possible DAF is
+      <code
+        >({pretty_num(n_wbm_stable_uniq_protos)} / {pretty_num(n_wbm_uniq_protos)})^−1 ≈
+        {pretty_num(n_wbm_uniq_protos / n_wbm_stable_uniq_protos)}</code
+      >.
+    </div>
 
-      <div class="downloads">
-        Download table as
-        {#each [[`SVG`, generate_svg], [`PNG`, generate_png]] as const as [label, generate_fn] (label)}
-          <button
-            class="download-btn"
-            onclick={handle_export(generate_fn, label, export_error, {
-              show_non_compliant,
-              discovery_set,
-            })}
-          >
-            {label}
-          </button>
-        {/each}
-        {#if export_error}
-          <div class="export-error">
-            {export_error}
-          </div>
-        {/if}
-      </div>
+    <!-- Radar Chart for Weight Controls -->
+    <div class="radar-container">
+      <div class="radar-header">
+        <span class="metric-name">{metric_config.label}</span>
+        <Tooltip>
+          <span class="info-icon">ⓘ</span>
+          {#snippet tip()}
+            {@html metric_config.description}
+          {/snippet}
+        </Tooltip>
 
-      <!-- Radar Chart and Caption Container -->
-      <figcaption class="caption-radar-container">
-        <div
-          style="flex: 1; background-color: var(--light-bg); padding: 0.2em 0.5em; border-radius: 4px;"
+        <button
+          class="action-button"
+          onclick={reset_weights}
+          title="Reset to default weights"
         >
-          The <strong>CPS</strong> (Combined Performance Score) is a metric that weights
-          discovery performance (F1), geometry optimization quality (RMSD), and thermal
-          conductivity prediction accuracy (κ<sub>SRME</sub>). Use the radar chart to
-          adjust the importance of each metric component.
-          <br /><br />
-          Training size is the number of materials used to train the model. For models trained
-          on DFT relaxations, we show the number of distinct frames in parentheses). In cases
-          where only the number of frames is known, we report the number of frames as the training
-          set size. <code>(N=x)</code> in the Model Params column shows the number of
-          estimators if an ensemble was used. DAF = Discovery Acceleration Factor measures
-          how many more stable materials a model finds compared to random selection from
-          the test set. The unique structure prototypes in the WBM test set have a
-          <code>{pretty_num(n_wbm_stable_uniq_protos / n_wbm_uniq_protos, `.1%`)}</code>
-          rate of stable crystals, meaning the max possible DAF is
-          <code
-            >({pretty_num(n_wbm_stable_uniq_protos)} / {pretty_num(n_wbm_uniq_protos)})^−1
-            ≈
-            {pretty_num(n_wbm_uniq_protos / n_wbm_stable_uniq_protos)}</code
-          >.
-        </div>
+          Reset
+        </button>
+      </div>
+      <RadarChart bind:weights={metric_config.parts} size={260} />
+    </div>
 
-        <!-- Radar Chart for Weight Controls -->
-        <div class="radar-container">
-          <div class="radar-header">
-            <span class="metric-name">{metric_config.name}</span>
-            <Tooltip>
-              <span class="info-icon">ⓘ</span>
-              {#snippet tip()}
-                {@html metric_config.description}
-              {/snippet}
-            </Tooltip>
+    <!-- Model Size vs Performance plot -->
+    <section style="width: 100%; margin-block: 1em;">
+      <SelectToggle
+        bind:selected={selected_metric}
+        options={[
+          {
+            value: DEFAULT_CPS_CONFIG.key,
+            label: DEFAULT_CPS_CONFIG.label,
+            tooltip: DEFAULT_CPS_CONFIG.name,
+          },
+          ...Object.entries(DEFAULT_CPS_CONFIG.parts).map(
+            ([value, { label, description }]) => ({
+              value,
+              label,
+              tooltip: description,
+            }),
+          ),
+        ]}
+      />
+      <h3 style="margin-block: 1em;">
+        {@html selected_scatter.label} vs Model Size
+        <small style="font-weight: lighter;">
+          ({selected_scatter.better} = better, fewer model params = better)
+        </small>
+      </h3>
+      <MetricScatter
+        models={MODEL_METADATA}
+        config={selected_metric === DEFAULT_CPS_CONFIG.key ? metric_config : undefined}
+        metric={selected_metric !== DEFAULT_CPS_CONFIG.key ? selected_metric : undefined}
+        y_label={selected_scatter.svg_label ?? selected_scatter.label}
+        y_lim={selected_scatter.range}
+        style="width: 100%; height: 300px;"
+      />
+    </section>
 
-            <button
-              class="action-button"
-              onclick={reset_weights}
-              title="Reset to default weights"
-            >
-              Reset
-            </button>
-          </div>
-          <RadarChart
-            weights={metric_config.weights}
-            onchange={(weights) => {
-              metric_config = {
-                ...metric_config,
-                weights: weights.map((w) => ({ ...w })),
-              }
-            }}
-            size={260}
-          />
-        </div>
+    <!-- Time-based scatter plot -->
+    <section style="width: 100%;">
+      <h3>
+        {@html selected_scatter.label} over time
+        <small style="font-weight: lighter;">
+          ({selected_scatter.better} = better)
+        </small>
+      </h3>
+      <MetricScatter
+        models={MODEL_METADATA}
+        metric={selected_metric === DEFAULT_CPS_CONFIG.key ? undefined : selected_metric}
+        config={selected_metric === DEFAULT_CPS_CONFIG.key ? metric_config : undefined}
+        y_label={selected_scatter.svg_label ?? selected_scatter.label}
+        x_property="date_added"
+        x_label="Date"
+        range={selected_scatter.range}
+        style="width: 100%; height: 300px;"
+        date_range={[new Date(2024, 6, 1), null]}
+      />
+    </section>
+  </figcaption>
+</figure>
 
-        {#each [{ metric: `discovery.unique_prototypes.F1`, y_label: `F1 Score`, y_lim: [0, 1], better: `higher` }, { metric: `phonons.kappa_103.κ_SRME`, y_label: `κ<sub>SRME</sub>`, y_lim: [0, 2], better: `lower` }] as { metric, y_label, y_lim, better } (metric)}
-          {@const style = `width: 100%; height: 300px;`}
-          <section style="width: 100%;">
-            <h3>
-              {@html y_label} over time
-              <small style="font-weight: lighter;">({better} = better)</small>
-            </h3>
-            <MetricScatter models={MODEL_METADATA} {metric} {y_label} {style} {y_lim} />
-          </section>
-        {/each}
-      </figcaption>
-    </figure>
-  {/snippet}
-
+<Readme>
+  {#snippet title()}{/snippet}
   {#snippet model_count()}
     {MODEL_METADATA.filter((md) => show_non_compliant || model_is_compliant(md)).length}
   {/snippet}
@@ -254,8 +268,8 @@
   /* Table wrapper for full-width placement */
   .table-wrapper {
     /* Use negative margin technique for full width */
-    width: calc(100vw - 20px);
-    margin-left: calc(-50vw + 50% + 10px);
+    width: calc(100vw - 40px);
+    margin-left: calc(-50vw + 50% + 20px);
     display: flex;
     justify-content: center;
   }
@@ -263,24 +277,6 @@
     font-size: 0.9em;
     padding: 2pt 6pt;
     background-color: rgba(255, 255, 255, 0.06);
-  }
-  .discovery-set-toggle {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 5pt;
-    margin-bottom: 5pt;
-  }
-  .discovery-set-toggle button {
-    padding: 4px 8px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    background: transparent;
-  }
-  .discovery-set-toggle button:hover {
-    background: rgba(255, 255, 255, 0.05);
-  }
-  .discovery-set-toggle button.active {
-    background: rgba(255, 255, 255, 0.1);
   }
   div.downloads {
     display: flex;

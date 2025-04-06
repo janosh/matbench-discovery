@@ -27,6 +27,12 @@ pr_url: https://github.com/janosh/matbench-discovery/pull/85
 # see https://github.com/materialsvirtuallab/maml/blob/43619d4fb/maml/apps/bowsr/model/megnet.py#L27
 checkpoint_url: https://github.com/materialsvirtuallab/maml/raw/43619d4fb/maml/apps/bowsr/model/model_files/megnet/formation_energy.hdf5
 
+license:
+  code: BSD-3-Clause
+  code_url: https://github.com/materialsvirtuallab/maml/blob/50c61ea45f/LICENSE
+  checkpoint: BSD-3-Clause
+  checkpoint_url: https://github.com/materialsvirtuallab/maml/raw/50c61ea45f/LICENSE
+
 requirements:
   maml: 2022.9.20
   pymatgen: 2022.10.22
