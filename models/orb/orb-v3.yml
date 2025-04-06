@@ -2,7 +2,6 @@ model_name: ORB v3
 model_key: orb-v3
 model_version: v3
 matbench_discovery_version: 1.3.1
-license: Apache 2.0
 date_added: "2025-04-05"
 date_published: "2025-04-05"
 authors:
@@ -31,6 +30,12 @@ doi: https://github.com/orbital-materials/orb-models
 paper: https://github.com/orbital-materials/orb-models
 pr_url: https://github.com/orbital-materials/orb-models
 checkpoint_url: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/forcefields/orb-v3/orb-v3-conservative-inf-mpa-20250404.ckpt
+
+license:
+  code: Apache-2.0
+  code_url: https://github.com/orbital-materials/orb-models/blob/3e9580809/LICENSE
+  checkpoint: Apache-2.0
+  checkpoint_url: https://github.com/orbital-materials/orb-models/blob/3e9580809/LICENSE
 
 openness: OSCD
 trained_for_benchmark: true
@@ -78,10 +83,10 @@ metrics:
   phonons:
     kappa_103:
       κ_SRME: 0.21
-      pred_file: orb-v3-con-inf-mpa-20250404-disp0.03-float64-kappa.json.gz
+      pred_file: models/orb/orb-v3/orb-v3-con-inf-mpa-20250404-disp0.03-float64-kappa.json.gz
       pred_file_url: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/matbench-evals/orb-v3/orb-v3-con-inf-mpa-20250404-disp0.03-float64-kappa.json.gz
   geo_opt:
-    pred_file: orb-v3-con-inf-mpa-20250404.json.gz
+    pred_file: models/orb/orb-v3/orb-v3-con-inf-mpa-20250404.json.gz
     pred_file_url: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/matbench-evals/orb-v3/orb-v3-con-inf-mpa-20250404.json.gz
     struct_col: orb_structure
     symprec=1e-5:
@@ -91,7 +96,7 @@ metrics:
       symmetry_match: 0.130 # fraction
       symmetry_increase: 0.0001 # fraction
       n_structures: 256963 # count
-      analysis_file: orb-v3-con-inf-mpa-20250404-symprec=1e-5-moyo=0.4.2.csv.gz
+      analysis_file: models/orb/orb-v3/orb-v3-con-inf-mpa-20250404-symprec=1e-5-moyo=0.4.2.csv.gz
       analysis_file_url: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/matbench-evals/orb-v3/orb-v3-con-inf-mpa-20250404-symprec=1e-5-moyo=0.4.2.csv.gz
     symprec=1e-2:
       rmsd: 0.075 # unitless
@@ -100,10 +105,10 @@ metrics:
       symmetry_match: 0.728 # fraction
       symmetry_increase: 0.101 # fraction
       n_structures: 256963 # count
-      analysis_file: orb-v3-con-inf-mpa-20250404-symprec=1e-2-moyo=0.4.2.csv.gz
+      analysis_file: models/orb/orb-v3/orb-v3-con-inf-mpa-20250404-symprec=1e-2-moyo=0.4.2.csv.gz
       analysis_file_url: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/matbench-evals/orb-v3/orb-v3-con-inf-mpa-20250404-symprec=1e-2-moyo=0.4.2.csv.gz
   discovery:
-    pred_file: orb-v3-con-inf-mpa-20250404.csv.gz
+    pred_file: models/orb/orb-v3/orb-v3-con-inf-mpa-20250404.csv.gz
     pred_file_url: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/matbench-evals/orb-v3/orb-v3-con-inf-mpa-20250404.csv.gz
     pred_col: e_form_per_atom_orb
     full_test_set:
