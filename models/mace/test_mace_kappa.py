@@ -260,7 +260,7 @@ obj_store_mem = ray_resources.get("object_store_memory", 0)
 print(f"Object store memory: {obj_store_mem / 1e9:.1f} GB")
 
 model_name = "mace-omat-0-medium"
-checkpoint = f"https://github.com/ACEsuit/mace-mp/releases/download/mace_omat_0/{model_name}.model"
+checkpoint = f"https://github.com/ACEsuit/mace-foundations/releases/download/mace_omat_0/{model_name}.model"
 
 displacement_distance = 0.01
 job_name = (

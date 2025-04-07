@@ -208,7 +208,7 @@ export function calculate_metrics_data(
         const { license } = model
 
         return {
-          Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}">${model.model_name}</a>`,
+          Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>`,
           CPS: cps,
           F1: metrics?.F1,
           DAF: metrics?.DAF,

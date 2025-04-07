@@ -142,7 +142,7 @@
     {#if col.label === `Links` && val && typeof val === `object` && `paper` in val}
       {@const links = val as LinkData}
       {#each Object.entries(links).filter(([key]) => key !== `pred_files`) as [key, link] (key)}
-        {#if ![`missing`, `not available`, ``, null, undefined].includes(link?.url)}
+        {#if `url` in link && ![`missing`, `not available`, ``, null, undefined].includes(link.url)}
           <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title}>
             {link.icon}
           </a>
