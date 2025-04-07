@@ -101,9 +101,9 @@ kappa_results: dict[str, dict[str, Any]] = {}
 tqdm_bar = tqdm(atoms_list, desc="Conductivity calculation: ", disable=not prog_bar)
 
 for atoms in tqdm_bar:
-    mat_id = atoms.info.get(Key.mat_id, f"id-{len(kappa_results)}")
+    mat_id = atoms.info[Key.mat_id]
     init_info = deepcopy(atoms.info)
-    formula = atoms.info.get("name", "unknown")
+    formula = atoms.get_chemical_formula()
 
     spg_num = MoyoDataset(MoyoAdapter.from_atoms(atoms)).number
     info_dict = {
@@ -170,9 +170,9 @@ for atoms in tqdm_bar:
         # Initialize phono3py with the relaxed structure
         ph3 = ltc.init_phono3py(
             atoms,
-            fc2_supercell=atoms.info.get("fc2_supercell", [2, 2, 2]),
-            fc3_supercell=atoms.info.get("fc3_supercell", [2, 2, 2]),
-            q_point_mesh=atoms.info.get("q_point_mesh", [10, 10, 10]),
+            fc2_supercell=atoms.info["fc2_supercell"],
+            fc3_supercell=atoms.info["fc3_supercell"],
+            q_point_mesh=atoms.info["q_point_mesh"],
             displacement_distance=displacement_distance,
             symprec=symprec,
         )

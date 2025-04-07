@@ -90,9 +90,9 @@ def calc_kappa_for_structure(
     # Ensure arrays are writable
     atoms.arrays = {key: val.copy() for key, val in atoms.arrays.items()}
 
-    mat_id = atoms.info.get(Key.mat_id, f"id-{len(kappa_results)}")
+    mat_id = atoms.info[Key.mat_id]
     init_info = deepcopy(atoms.info)
-    formula = atoms.info["name"]
+    formula = atoms.get_chemical_formula()
     info_dict: dict[str, Any] = {
         Key.formula: formula,
         "errors": [],
