@@ -21,6 +21,7 @@ from pymatviz.enums import Key
 from sevenn.calculator import SevenNetCalculator
 from tqdm import tqdm
 
+from matbench_discovery import today
 from matbench_discovery.enums import DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
@@ -54,12 +55,12 @@ displacement_distance = 0.03  # Displacement distance for phono3py
 
 task_type = "LTC"  # lattice thermal conductivity
 job_name = (
-    f"{model_name}-phononDB-{task_type}-{ase_optimizer}_force{force_max}_sym{symprec}"
+    f"{today}-kappa-103-{ase_optimizer}-dist={displacement_distance}-"
+    f"fmax={force_max}-{symprec=}"
 )
 out_dir = "./kappa_results"
 os.makedirs(out_dir, exist_ok=True)
-idx = 1
-out_path = f"{out_dir}/conductivity_{idx}.json.gz"
+out_path = f"{out_dir}/{job_name}.json.gz"
 
 timestamp = f"{datetime.now().astimezone():%Y-%m-%d %H:%M:%S}"
 atoms_list = read(DataFiles.phonondb_pbe_103_structures.path, index=":")
@@ -237,7 +238,7 @@ df_kappa.index.name = Key.mat_id
 df_kappa.reset_index().to_json(out_path)
 
 if save_forces:
-    force_out_path = f"{out_dir}/force_sets.json.gz"
+    force_out_path = f"{out_dir}/{today}-kappa-103-force-sets.json.gz"
     df_force = pd.DataFrame(force_results).T
     df_force.index.name = Key.mat_id
     df_force.reset_index().to_json(force_out_path)

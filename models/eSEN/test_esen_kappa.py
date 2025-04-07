@@ -31,6 +31,7 @@ from moyopy.interface import MoyoAdapter
 from pymatviz.enums import Key
 from tqdm import tqdm
 
+from matbench_discovery import today
 from matbench_discovery.enums import DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
@@ -276,13 +277,14 @@ class KappaSRMERunner:
         # Save results
         df_kappa = pd.DataFrame(kappa_results).T
         df_kappa.index.name = Key.mat_id
-        json_path = f"{save_dir}/conductivity_{self.num_jobs}-{job_number}.json.gz"
+        json_path = f"{save_dir}/{today}-kappa-103-{self.num_jobs}-{job_number}.json.gz"
         df_kappa.reset_index().to_json(json_path)
         print(f"Saved kappa results to {json_path}")
 
         if save_forces:
             force_out_path = (
-                save_dir / f"force_sets_{self.num_jobs}-{job_number}.json.gz"
+                f"{save_dir}/{today}-kappa-103-{self.num_jobs}-"
+                f"{job_number}-force-sets.json.gz"
             )
             df_force = pd.DataFrame(force_results).T
             df_force.index.name = Key.mat_id
@@ -290,7 +292,7 @@ class KappaSRMERunner:
             print(f"Saved force results to {force_out_path}")
 
         # Compute metrics if we've collected all results
-        pattern = str(save_dir / "conductivity_*-*.json.gz")
+        pattern = f"{save_dir}/{today}-kappa-103-{self.num_jobs}-*.json.gz"
         file_list = list(glob.glob(pattern))
         if len(file_list) == self.num_jobs:
             # Load all results
@@ -303,10 +305,9 @@ class KappaSRMERunner:
 
             if all_dfs:
                 combined_df = pd.concat(all_dfs).reset_index()
-                combined_df.to_json(save_dir / "kappa-103-FIRE.json.gz")
-                print(
-                    f"Combined results saved to {save_dir / 'kappa-103-FIRE.json.gz'}"
-                )
+                json_path = f"{save_dir}/{today}-kappa-103-{self.num_jobs}.json.gz"
+                combined_df.to_json(json_path)
+                print(f"Combined results saved to {json_path}")
 
                 with open(
                     save_dir / "test_metrics.json", mode="w", encoding="utf-8"

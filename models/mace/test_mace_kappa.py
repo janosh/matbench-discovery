@@ -247,10 +247,7 @@ if ray_address:
     )
 else:
     # Start Ray locally with optimized settings for M3 Max
-    ray.init(
-        num_cpus=8,  # Use 8/14 cores (leaving some for system + efficiency cores)
-        num_gpus=1,  # M3 Max GPU will be treated as 1 GPU
-    )
+    ray.init(num_cpus=8, num_gpus=1)
 
 print(f"\nConnected to Ray cluster: {ray.cluster_resources()}")
 ray_resources = ray.available_resources()

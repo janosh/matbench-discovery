@@ -26,6 +26,8 @@ from moyopy.interface import MoyoAdapter
 from pymatviz.enums import Key
 from tqdm import tqdm
 
+from matbench_discovery import today
+from matbench_discovery.enums import DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
 
@@ -58,9 +60,6 @@ prog_bar = True
 save_forces = False  # Save force sets to file
 temperatures = [300]  # Temperatures to calculate conductivity at in Kelvin
 displacement_distance = 0.01  # Displacement distance for phono3py
-
-idx = 1
-
 task_type = "LTC"  # lattice thermal conductivity
 job_name = (
     f"{model_name}-phononDB-{task_type}-{ase_optimizer}_force{force_max}_sym{symprec}"
@@ -68,13 +67,14 @@ job_name = (
 module_dir = os.path.dirname(__file__)
 out_dir = "./results"
 os.makedirs(out_dir, exist_ok=True)
-out_path = f"{out_dir}/conductivity_{idx}.json.gz"
+out_path = (
+    f"{out_dir}/{today}-kappa-103-{ase_optimizer}-dist={displacement_distance}-"
+    f"fmax={force_max}-{symprec=}.json.gz"
+)
 
 timestamp = f"{datetime.now().astimezone():%Y-%m-%d %H:%M:%S}"
-struct_data_path = f"../data/part_{idx}.extxyz"
 print(f"\nJob {job_name} started {timestamp}")
-print(f"Read data from {struct_data_path}")
-atoms_list: list[Atoms] = read(struct_data_path, format="extxyz", index=":")
+atoms_list: list[Atoms] = read(DataFiles.phonondb_pbe_103_structures.path, index=":")
 
 run_params = {
     "timestamp": timestamp,
@@ -93,7 +93,6 @@ run_params = {
     "displacement_distance": displacement_distance,
     "task_type": task_type,
     "job_name": job_name,
-    "struct_data_path": os.path.basename(struct_data_path),
     "n_structures": len(atoms_list),
 }
 
@@ -254,7 +253,7 @@ df_kappa.reset_index().to_json(out_path)
 print(f"Saved kappa results to {out_path}")
 
 if save_forces:
-    force_out_path = f"{out_dir}/force_sets.json.gz"
+    force_out_path = f"{out_dir}/{today}-kappa-103-force-sets.json.gz"
     df_force = pd.DataFrame(force_results).T
     df_force.index.name = Key.mat_id
     df_force.reset_index().to_json(force_out_path)
