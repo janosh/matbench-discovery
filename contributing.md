@@ -79,6 +79,30 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
 
 1. `test_<model_name>_discovery.py`: The Python script that generated the WBM final energy predictions given the initial (unrelaxed) DFT structures. Ideally, this file should have comments explaining at a high level what the code is doing and how the model works so others can understand and reproduce your results. If the model deployed on this benchmark was trained specifically for this purpose (i.e. if you wrote any training/fine-tuning code while preparing your PR), please also include it as `train_<model_name>.py`.
 
+   ### Script Dependencies Declaration (Required)
+
+   All test scripts should include a script dependencies section at the top using the [PEP 723 inline metadata format](https://docs.astral.sh/uv/guides/scripts/#declaring-script-dependencies). This ensures others can easily rerun it with `uv run test_<model_name>_<task>.py` without worrying about virtual environments or manually installing dependencies:
+
+   ```python
+   # /// script
+   # dependencies = [
+   #   "numpy>=1.20.0",
+   #   "torch>=1.13.0,<2.0.0",
+   #   "ase>=3.22.1",
+   #   "requests>=2.25.0",
+   # ]
+   # ///
+
+   import numpy as np
+   import torch
+   from ase.atoms import Atoms
+   # ... rest of your script
+   ```
+
+   ### Automatic Checkpoint Downloading (Recommended)
+
+   Your script should automatically download the model checkpoint when first run and cache it to a standard location such as `~/.cache/<model_name>/checkpoint.pt` for later reuse. This also lowers the barrier for others to reproduce results.
+
 1. `<model_name.yml>`: A file to record all relevant metadata of your algorithm like model name and version, authors, package requirements, links to publications, notes, etc. Here's a template:
 
    ```yml
