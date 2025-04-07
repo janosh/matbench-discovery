@@ -83,11 +83,11 @@ metrics:
   phonons:
     kappa_103:
       κ_SRME: 0.21
-      pred_file: models/orb/orb-v3/orb-v3-con-inf-mpa-20250404-disp0.03-float64-kappa.json.gz
-      pred_file_url: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/matbench-evals/orb-v3/orb-v3-con-inf-mpa-20250404-disp0.03-float64-kappa.json.gz
+      pred_file: models/orb/orb-v3/2025-04-04-kappa-103-disp0.03-float64-orb-v3-con-inf-mpa.json.gz
+      pred_file_url: https://figshare.com/files/53461061
   geo_opt:
-    pred_file: models/orb/orb-v3/orb-v3-con-inf-mpa-20250404.json.gz
-    pred_file_url: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/matbench-evals/orb-v3/orb-v3-con-inf-mpa-20250404.json.gz
+    pred_file: models/orb/orb-v3/2025-04-04-wbm-geo-opt-orb-v3-con-inf-mpa.jsonl.gz
+    pred_file_url: https://figshare.com/files/53461040
     struct_col: orb_structure
     symprec=1e-5:
       rmsd: 0.075 # unitless
@@ -96,8 +96,8 @@ metrics:
       symmetry_match: 0.130 # fraction
       symmetry_increase: 0.0001 # fraction
       n_structures: 256963 # count
-      analysis_file: models/orb/orb-v3/orb-v3-con-inf-mpa-20250404-symprec=1e-5-moyo=0.4.2.csv.gz
-      analysis_file_url: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/matbench-evals/orb-v3/orb-v3-con-inf-mpa-20250404-symprec=1e-5-moyo=0.4.2.csv.gz
+      analysis_file: models/orb/orb-v3/2025-04-04-wbm-geo-opt-symprec=1e-5-moyo=0.4.2-orb-v3-con-inf-mpa.csv.gz
+      analysis_file_url: https://figshare.com/files/53461055
     symprec=1e-2:
       rmsd: 0.075 # unitless
       n_sym_ops_mae: 2.609 # unitless
@@ -105,11 +105,11 @@ metrics:
       symmetry_match: 0.728 # fraction
       symmetry_increase: 0.101 # fraction
       n_structures: 256963 # count
-      analysis_file: models/orb/orb-v3/orb-v3-con-inf-mpa-20250404-symprec=1e-2-moyo=0.4.2.csv.gz
-      analysis_file_url: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/matbench-evals/orb-v3/orb-v3-con-inf-mpa-20250404-symprec=1e-2-moyo=0.4.2.csv.gz
+      analysis_file: models/orb/orb-v3/2025-04-04-wbm-geo-opt-symprec=1e-2-moyo=0.4.2-orb-v3-con-inf-mpa.csv.gz
+      analysis_file_url: https://figshare.com/files/53461058
   discovery:
-    pred_file: models/orb/orb-v3/orb-v3-con-inf-mpa-20250404.csv.gz
-    pred_file_url: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/matbench-evals/orb-v3/orb-v3-con-inf-mpa-20250404.csv.gz
+    pred_file: models/orb/orb-v3/2025-04-04-wbm-IS2RE-orb-v3-con-inf-mpa.csv.gz
+    pred_file_url: https://figshare.com/files/53461037
     pred_col: e_form_per_atom_orb
     full_test_set:
       F1: 0.887 # fraction
