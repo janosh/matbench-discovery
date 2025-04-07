@@ -28,7 +28,7 @@ repo: https://github.com/orbital-materials/orb-models
 url: https://github.com/orbital-materials/orb-models
 doi: https://github.com/orbital-materials/orb-models
 paper: https://github.com/orbital-materials/orb-models
-pr_url: https://github.com/orbital-materials/orb-models
+pr_url: https://github.com/janosh/matbench-discovery/pull/240
 checkpoint_url: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/forcefields/orb-v3/orb-v3-conservative-inf-mpa-20250404.ckpt
 
 license:
@@ -68,7 +68,7 @@ hyperparams:
   radial_cutoff: 6.0 # Å
   max_num_neighbors: 120
 
-requirements: # strongly recommended
+requirements:
   orb-models: "0.4.3"
 
 training_set: [MPtrj, Alex, OMat24]
@@ -149,7 +149,6 @@ metrics:
       R2: 0.860 # dimensionless
       missing_preds: 0 # count
       missing_percent: 0.00% # fraction
-
     unique_prototypes:
       F1: 0.906 # fraction
       DAF: 5.906 # dimensionless

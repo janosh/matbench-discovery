@@ -106,7 +106,7 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    url: https://<model-docs-or-similar>.org
    doi: https://doi.org/10.5281/zenodo.0000000
    preprint: https://arxiv.org/abs/xxxx.xxxxx
-   checkpoint_url: https://github.com/<org>/<repo>/releases/download/<tag>/<model-file> # checkpoint URL can be any URL but GitHub release URLs are encouraged
+   checkpoint_url: https://url.of/model-checkpoint-file # should be the direct download URL of the model checkpoint file. If there's a page documenting the checkpoint, append that as a YAML comment.
 
    openness: OSOD # see `Open` enum in matbench_discovery/enums.py
    train_task: S2EFS # see `Task` enum in matbench_discovery/enums.py
@@ -116,6 +116,13 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    model_params: 5_000_000
    trained_for_benchmark: true
    n_estimators: 1
+
+   license:
+     code: MIT
+     code_url: https://url.of/code-license
+     checkpoint: CC-BY-4.0
+     # URL that points to the license file for the model checkpoint, not the checkpoint file itself.
+     checkpoint_url: https://url.of/model-checkpoint-license
 
    hyperparams: # strongly recommended to list relaxation hyperparams
       max_force: 0.05
