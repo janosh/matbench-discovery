@@ -308,4 +308,62 @@ describe(`HeatmapTable`, () => {
     expect(cells[1].textContent?.trim()).toBe(`n/a`)
     expect(cells[2].textContent?.trim()).toBe(`n/a`)
   })
+
+  it(`prevents HTML strings from being used as data-sort-value attributes`, () => {
+    const html_data = [
+      {
+        Name: `Test Model`,
+        HTML: `<span data-sort-value="100" title="This is a tooltip">100 units</span>`,
+        Complex: `<span data-sort-value="3373529" title="Complex tooltip with multiple lines&#013;• Line item 1&#013;• Line item 2">3.37M <small>(details)</small> (<a href="https://example.com">Link</a>)</span>`,
+      },
+    ]
+
+    const html_columns: HeatmapColumn[] = [
+      { label: `Name` },
+      { label: `HTML` },
+      { label: `Complex` },
+    ]
+
+    mount(HeatmapTable, {
+      target: document.body,
+      props: { data: html_data, columns: html_columns },
+    })
+
+    // Get the cells with HTML content
+    const html_cell = document.body.querySelector(`td[data-col="HTML"]`)
+    const complex_cell = document.body.querySelector(`td[data-col="Complex"]`)
+
+    // Verify cells exist and contain the expected HTML
+    expect(html_cell).not.toBeNull()
+    expect(complex_cell).not.toBeNull()
+
+    // HTML should be rendered correctly
+    expect(html_cell?.innerHTML).toContain(`<span data-sort-value="100"`)
+    expect(complex_cell?.innerHTML).toContain(`<span data-sort-value="3373529"`)
+
+    // The data-sort-value attribute on the td should not contain HTML
+    const html_cell_sort_value = html_cell?.getAttribute(`data-sort-value`)
+    const complex_cell_sort_value = complex_cell?.getAttribute(`data-sort-value`)
+
+    // Either undefined (meaning HTML was detected and no sort value was set)
+    // or not containing HTML tags
+    if (html_cell_sort_value !== null) {
+      expect(html_cell_sort_value?.includes(`<`)).toBe(false)
+      expect(html_cell_sort_value?.includes(`>`)).toBe(false)
+    }
+
+    if (complex_cell_sort_value !== null) {
+      expect(complex_cell_sort_value?.includes(`<`)).toBe(false)
+      expect(complex_cell_sort_value?.includes(`>`)).toBe(false)
+    }
+
+    // Check that tooltips are present and accessible
+    const tooltip_span = html_cell?.querySelector(`span[title]`)
+    expect(tooltip_span).not.toBeNull()
+    expect(tooltip_span?.getAttribute(`title`)).toBe(`This is a tooltip`)
+
+    const complex_tooltip_span = complex_cell?.querySelector(`span[title]`)
+    expect(complex_tooltip_span).not.toBeNull()
+    expect(complex_tooltip_span?.getAttribute(`title`)).toContain(`Complex tooltip`)
+  })
 })

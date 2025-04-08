@@ -33,6 +33,21 @@
     fixed_header = false,
   }: Props = $props()
 
+  // Hacky helper function to detect if a string contains HTML, TODO revisit in future
+  function is_html_string(val: unknown): boolean {
+    if (typeof val !== `string`) return false
+    // Check for common HTML patterns
+    return (
+      (val.includes(`<`) && val.includes(`>`)) || // Has angle brackets
+      val.startsWith(`&lt;`) || // Has HTML entity for <
+      val.includes(`<a `) || // Has anchor tag
+      val.includes(`<span `) || // Has span tag
+      val.includes(`<div `) || // Has div tag
+      val.includes(`href=`) || // Has href attribute
+      val.includes(`class=`) // Has class attribute
+    )
+  }
+
   // Add container reference for binding
   let div: HTMLDivElement
   let sort_state = $state({
@@ -225,7 +240,7 @@
             {@const color = calc_color(val, col)}
             <td
               data-col={col.label}
-              data-sort-value={val}
+              data-sort-value={is_html_string(val) ? undefined : val}
               class:sticky-col={col.sticky}
               style:background-color={color.bg}
               style:color={color.text}
