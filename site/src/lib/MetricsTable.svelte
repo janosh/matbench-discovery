@@ -10,7 +10,7 @@
     HeatmapColumn,
     LinkData,
     ModelData,
-    TableData,
+    RowData,
   } from './types'
 
   interface Props {
@@ -55,7 +55,7 @@
       .sort((col1, _col2) => (col1.label === `Model` ? -1 : 1)),
   )
 
-  let metrics_data = $state<TableData>([])
+  let metrics_data = $state<RowData[]>([])
   // recalculate metrics_data whenever filter settings, props, or metric_config change
   $effect(() => {
     metrics_data = calculate_metrics_data(

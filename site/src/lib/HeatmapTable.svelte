@@ -7,10 +7,10 @@
   import type { Snippet } from 'svelte'
   import { titles_as_tooltips } from 'svelte-zoo/actions'
   import { flip } from 'svelte/animate'
-  import type { CellVal, HeatmapColumn, RowData, TableData } from './types'
+  import type { CellVal, HeatmapColumn, RowData } from './types'
 
   interface Props {
-    data: TableData
+    data: RowData[]
     columns?: HeatmapColumn[]
     sort_hint?: string
     style?: string | null
@@ -34,7 +34,7 @@
   }: Props = $props()
 
   // Hacky helper function to detect if a string contains HTML, TODO revisit in future
-  function is_html_string(val: unknown): boolean {
+  function is_html_str(val: unknown): boolean {
     if (typeof val !== `string`) return false
     // Check for common HTML patterns
     return (
@@ -240,7 +240,7 @@
             {@const color = calc_color(val, col)}
             <td
               data-col={col.label}
-              data-sort-value={is_html_string(val) ? undefined : val}
+              data-sort-value={is_html_str(val) ? undefined : val}
               class:sticky-col={col.sticky}
               style:background-color={color.bg}
               style:color={color.text}
