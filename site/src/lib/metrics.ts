@@ -1,5 +1,7 @@
 import type { CombinedMetricConfig, DiscoverySet, HeatmapColumn } from './types'
 
+export const RMSD_BASELINE = 0.15 // baseline for poor performance given worst performing model at time of writing is M3GNet at 0.1117
+
 export const DEFAULT_CPS_CONFIG: CombinedMetricConfig = {
   label: `CPS`,
   name: `Combined Performance Score`,
@@ -28,7 +30,7 @@ export const DEFAULT_CPS_CONFIG: CombinedMetricConfig = {
       label: `RMSD`,
       description: `Root mean square displacement for crystal structure optimization`,
       weight: 0.1,
-      range: [0, 0.03],
+      range: [0, RMSD_BASELINE],
       better: `lower`,
     },
   },
@@ -169,13 +171,12 @@ function normalize_rmsd(value: number | undefined): number {
 
   // Fixed reference points for RMSD (in Å)
   const excellent = 0 // Perfect performance (atoms in exact correct positions)
-  const baseline = 0.03 // baseline for poor performance given worst performing model at time of writing is AlphaNet-MPTrj at 0.0227 Å
 
   // Linear interpolation between fixed points with clamping
   // Inverse mapping since lower RMSD is better
   if (value <= excellent) return 1.0
-  if (value >= baseline) return 0.0
-  return (baseline - value) / (baseline - excellent)
+  if (value >= RMSD_BASELINE) return 0.0
+  return (RMSD_BASELINE - value) / (RMSD_BASELINE - excellent)
 }
 
 // kappa_SRME is symmetric relative mean error, with range [0,2] by definition

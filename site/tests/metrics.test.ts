@@ -87,8 +87,8 @@ describe(`Metrics`, () => {
         rmsd_only_config,
       )
       // RMSD is inverted and normalized to [0,1]
-      // With baseline of 0.03, a value of 0.005 should be ~0.83 (0.005 is excellent)
-      expect(rmsd_only_score).toBeCloseTo(0.83, 2)
+      // With baseline of 0.15, a value of 0.005 should be ~0.97 (0.005 is excellent)
+      expect(rmsd_only_score).toBeCloseTo(0.97, 2)
 
       // Test with only kappa available in kappa-only config
       const kappa_only_config = create_single_metric_config(`kappa_SRME`)
@@ -114,7 +114,7 @@ describe(`Metrics`, () => {
 
     it(`correctly weights metrics according to config`, () => {
       const f1 = 1.0 // perfect F1
-      const rmsd = 0.03 // poor RMSD (maximum baseline value)
+      const rmsd = 0.15 // poor RMSD (maximum baseline value)
       const kappa = 2.0 // poor kappa (maximum value)
 
       // Test with equal weights
@@ -135,9 +135,9 @@ describe(`Metrics`, () => {
 
     describe(`metric normalization`, () => {
       test.each([
-        [0.001, 0.9667],
-        [0.03, 0],
-        [0.015, 0.5],
+        [0.001, 0.9933],
+        [0.15, 0],
+        [0.075, 0.5],
       ])(`normalizes RMSD value %f correctly to %f`, (rmsd_value, expected_score) => {
         const rmsd_only_config = create_single_metric_config(`RMSD`)
         const score = calculate_combined_score(
@@ -167,14 +167,14 @@ describe(`Metrics`, () => {
       // This tests the normalization over the full range
       test.each([
         [0, 1],
-        [0.003, 0.9],
-        [0.006, 0.8],
-        [0.01, 0.6667],
-        [0.015, 0.5],
-        [0.02, 0.3333],
-        [0.025, 0.1667],
-        [0.03, 0],
-        [0.035, 0],
+        [0.015, 0.9],
+        [0.03, 0.8],
+        [0.05, 0.6667],
+        [0.075, 0.5],
+        [0.1, 0.3333],
+        [0.125, 0.1667],
+        [0.15, 0],
+        [0.175, 0],
       ])(`validates RMSD normalization: %f → %f`, (rmsd, expected_score) => {
         const rmsd_only_config = create_single_metric_config(`RMSD`)
         const score = calculate_combined_score(
@@ -226,9 +226,9 @@ describe(`Metrics`, () => {
     describe(`combined scores calculation`, () => {
       test.each([
         [`perfect scores`, 1.0, 0.0, 0.0, 1.0],
-        [`worst scores`, 0.0, 0.03, 2.0, 0.0],
-        [`mixed scores`, 0.75, 0.015, 0.5, 0.6667],
-        [`specific values`, 0.95, 0.003, 0.2, 0.9167],
+        [`worst scores`, 0.0, 0.15, 2.0, 0.0],
+        [`mixed scores`, 0.75, 0.075, 0.5, 0.6667],
+        [`specific values`, 0.95, 0.015, 0.2, 0.9167],
       ])(`calculates %s correctly`, (_, f1, rmsd, kappa, expected_score) => {
         const equal_weights = create_equal_weights_config()
         const score = calculate_combined_score(f1, rmsd, kappa, equal_weights)
@@ -295,7 +295,7 @@ describe(`Metrics`, () => {
         // Perfect F1, poor RMSD and kappa
         const score = calculate_combined_score(
           1.0,
-          0.03,
+          0.15,
           2.0,
           unnormalized_weights_config,
         )
@@ -316,9 +316,9 @@ describe(`Metrics`, () => {
           },
         }
 
-        // With F1=1.0 and RMSD=0.03 (worst value), expect score to be very close to F1 value
+        // With F1=1.0 and RMSD=0.15 (worst value), expect score to be very close to F1 value
         // but slightly less due to tiny RMSD contribution
-        const score = calculate_combined_score(1.0, 0.03, undefined, small_weights_config)
+        const score = calculate_combined_score(1.0, 0.15, undefined, small_weights_config)
 
         // Should be almost 1.0 but not quite due to small RMSD contribution
         // (1.0 * 0.999) + (0 * 0.001) / (0.999 + 0.001) = 0.999
