@@ -194,7 +194,7 @@ function normalize_kappa_srme(value: number | undefined): number {
 
 // Normalization reference points:
 // - F1 score for discovery already in [0,1] range, higher is better
-// - RMSD Root mean square displacement in range 0Å (perfect) to 0.03Å (baseline), lower is better
+// - RMSD Root mean square displacement in range 0 (perfect) to RMSD_BASELINE, lower is better
 // - κ_SRME symmetric relative mean error for lattice thermal conductivity,
 //    range [0,2] linearly mapped to [1,0], lower is better
 export function calculate_combined_score(
