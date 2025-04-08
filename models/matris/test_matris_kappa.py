@@ -23,6 +23,7 @@ from moyopy.interface import MoyoAdapter
 from pymatviz.enums import Key
 from tqdm import tqdm
 
+from matbench_discovery import today
 from matbench_discovery.enums import DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
@@ -47,13 +48,13 @@ displacement_distance = 0.01  # Displacement distance for phono3py
 
 task_type = "LTC"  # lattice thermal conductivity
 job_name = (
-    f"{model_name}-phononDB-{task_type}-{ase_optimizer}_force{force_max}_sym{symprec}"
+    f"{today}-kappa-103-{ase_optimizer}-dist={displacement_distance}-"
+    f"fmax={force_max}-{symprec=}"
 )
 module_dir = os.path.dirname(__file__)
 out_dir = "./kappa_results"
 os.makedirs(out_dir, exist_ok=True)
-idx = 1
-out_path = f"{out_dir}/conductivity_{idx}.json.gz"
+out_path = f"{out_dir}/{job_name}.json.gz"
 
 timestamp = f"{datetime.now().astimezone():%Y-%m-%d %H:%M:%S}"
 atoms_list = read(DataFiles.phonondb_pbe_103_structures.path, index=":")
@@ -87,9 +88,9 @@ kappa_results: dict[str, dict[str, Any]] = {}
 tqdm_bar = tqdm(atoms_list, desc="Conductivity calculation: ", disable=not prog_bar)
 
 for atoms in tqdm_bar:
-    mat_id = atoms.info.get(Key.mat_id, f"id-{len(kappa_results)}")
+    mat_id = atoms.info[Key.mat_id]
     init_info = deepcopy(atoms.info)
-    formula = atoms.info.get("name", "unknown")
+    formula = atoms.get_chemical_formula()
     spg_num = MoyoDataset(MoyoAdapter.from_atoms(atoms)).number
     info_dict = {
         Key.desc: mat_id,
@@ -125,7 +126,7 @@ for atoms in tqdm_bar:
 
             reached_max_steps = optimizer.nsteps >= max_steps
             if reached_max_steps:
-                print(f"Material {mat_id=} reached {max_steps=} during relaxation.")
+                print(f"{mat_id=} reached {max_steps=} during relaxation")
 
             max_stress = atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
             atoms.calc = None
@@ -155,9 +156,9 @@ for atoms in tqdm_bar:
         # Initialize phono3py with the relaxed structure
         ph3 = ltc.init_phono3py(
             atoms,
-            fc2_supercell=atoms.info.get("fc2_supercell", [2, 2, 2]),
-            fc3_supercell=atoms.info.get("fc3_supercell", [2, 2, 2]),
-            q_point_mesh=atoms.info.get("q_point_mesh", [10, 10, 10]),
+            fc2_supercell=atoms.info["fc2_supercell"],
+            fc3_supercell=atoms.info["fc3_supercell"],
+            q_point_mesh=atoms.info["q_point_mesh"],
             displacement_distance=displacement_distance,
             symprec=symprec,
         )
@@ -233,7 +234,7 @@ df_kappa.index.name = Key.mat_id
 df_kappa.reset_index().to_json(out_path)
 
 if save_forces:
-    force_out_path = f"{out_dir}/force_sets.json.gz"
+    force_out_path = f"{out_dir}/{today}-kappa-103-force-sets.json.gz"
     df_force = pd.DataFrame(force_results).T
     df_force.index.name = Key.mat_id
     df_force.reset_index().to_json(force_out_path)

@@ -35,10 +35,7 @@ if TYPE_CHECKING:
 module_dir = os.path.dirname(__file__)
 
 
-@ray.remote(
-    num_cpus=1,
-    # num_gpus=1,
-)
+@ray.remote(num_cpus=1, num_gpus=1)
 def calc_kappa_for_structure(
     *,  # force keyword-only arguments
     atoms: Atoms,
@@ -90,9 +87,9 @@ def calc_kappa_for_structure(
     # Ensure arrays are writable
     atoms.arrays = {key: val.copy() for key, val in atoms.arrays.items()}
 
-    mat_id = atoms.info.get(Key.mat_id, f"id-{len(kappa_results)}")
+    mat_id = atoms.info[Key.mat_id]
     init_info = deepcopy(atoms.info)
-    formula = atoms.info["name"]
+    formula = atoms.get_chemical_formula()
     info_dict: dict[str, Any] = {
         Key.formula: formula,
         "errors": [],
@@ -120,7 +117,7 @@ def calc_kappa_for_structure(
 
             reached_max_steps = optimizer.step == max_steps
             if reached_max_steps:
-                print(f"Material {mat_id=} reached {max_steps=} during relaxation")
+                print(f"{mat_id=} reached {max_steps=} during relaxation")
 
             # maximum residual stress component in for xx,yy,zz and xy,yz,xz
             # components separately result is a array of 2 elements
@@ -207,7 +204,7 @@ def calc_kappa_for_structure(
 # Relaxation parameters
 ase_optimizer: Literal["FIRE", "LBFGS", "BFGS"] = "FIRE"
 max_steps = 300
-fmax = 1e-4  # Run until the forces are smaller than this in eV/A
+force_max = 1e-4  # Run until the forces are smaller than this in eV/A
 
 # Symmetry parameters
 symprec = 1e-5  # symmetry precision for enforcing relaxation and conductivity calcs
@@ -247,10 +244,7 @@ if ray_address:
     )
 else:
     # Start Ray locally with optimized settings for M3 Max
-    ray.init(
-        num_cpus=8,  # Use 8/14 cores (leaving some for system + efficiency cores)
-        num_gpus=1,  # M3 Max GPU will be treated as 1 GPU
-    )
+    ray.init(num_cpus=8, num_gpus=1)
 
 print(f"\nConnected to Ray cluster: {ray.cluster_resources()}")
 ray_resources = ray.available_resources()
@@ -260,13 +254,14 @@ obj_store_mem = ray_resources.get("object_store_memory", 0)
 print(f"Object store memory: {obj_store_mem / 1e9:.1f} GB")
 
 model_name = "mace-omat-0-medium"
-checkpoint = f"https://github.com/ACEsuit/mace-mp/releases/download/mace_omat_0/{model_name}.model"
+checkpoint = f"https://github.com/ACEsuit/mace-foundations/releases/download/mace_omat_0/{model_name}.model"
 
 displacement_distance = 0.01
 job_name = (
-    f"{today}-kappa-103-{ase_optimizer}-dist={displacement_distance}-{fmax=}-{symprec=}"
+    f"{today}-kappa-103-{ase_optimizer}-dist={displacement_distance}-"
+    f"fmax={force_max}-{symprec=}"
 )
-out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{model_name}/{job_name}")
+out_dir = f"{module_dir}/{model_name}/{job_name}"
 os.makedirs(out_dir, exist_ok=True)
 
 timestamp = f"{datetime.now().astimezone():%Y-%m-%d@%H-%M-%S}"
@@ -279,7 +274,7 @@ remote_params = dict(
     checkpoint=checkpoint,
     ase_optimizer=ase_optimizer,
     max_steps=max_steps,
-    force_max=fmax,
+    force_max=force_max,
     symprec=symprec,
     enforce_relax_symm=enforce_relax_symm,
     conductivity_broken_symm=conductivity_broken_symm,

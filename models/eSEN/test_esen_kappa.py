@@ -31,6 +31,7 @@ from moyopy.interface import MoyoAdapter
 from pymatviz.enums import Key
 from tqdm import tqdm
 
+from matbench_discovery import today
 from matbench_discovery.enums import DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
@@ -122,9 +123,9 @@ class KappaSRMERunner:
 
         start_time = time.time()
         for atoms in tqdm_bar:
-            mat_id = atoms.info.get(Key.mat_id, f"id-{len(kappa_results)}")
+            mat_id = atoms.info[Key.mat_id]
             init_info = deepcopy(atoms.info)
-            formula = atoms.info.get("name", "unknown")
+            formula = atoms.get_chemical_formula()
             spg_num = MoyoDataset(MoyoAdapter.from_atoms(atoms)).number
             info_dict = {
                 Key.formula: formula,
@@ -161,7 +162,7 @@ class KappaSRMERunner:
 
                     reached_max_steps = optimizer.step >= max_steps
                     if reached_max_steps:
-                        print(f"{mat_id=} reached {max_steps=} during relaxation.")
+                        print(f"{mat_id=} reached {max_steps=} during relaxation")
 
                     max_stress = (
                         atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
@@ -195,9 +196,9 @@ class KappaSRMERunner:
                 # Initialize phono3py with the relaxed structure
                 ph3 = ltc.init_phono3py(
                     atoms,
-                    fc2_supercell=atoms.info.get("fc2_supercell", [2, 2, 2]),
-                    fc3_supercell=atoms.info.get("fc3_supercell", [2, 2, 2]),
-                    q_point_mesh=atoms.info.get("q_point_mesh", [10, 10, 10]),
+                    fc2_supercell=atoms.info["fc2_supercell"],
+                    fc3_supercell=atoms.info["fc3_supercell"],
+                    q_point_mesh=atoms.info["q_point_mesh"],
                     displacement_distance=self.atom_disp,
                     symprec=symprec,
                 )
@@ -276,13 +277,14 @@ class KappaSRMERunner:
         # Save results
         df_kappa = pd.DataFrame(kappa_results).T
         df_kappa.index.name = Key.mat_id
-        json_path = f"{save_dir}/conductivity_{self.num_jobs}-{job_number}.json.gz"
+        json_path = f"{save_dir}/{today}-kappa-103-{self.num_jobs}-{job_number}.json.gz"
         df_kappa.reset_index().to_json(json_path)
         print(f"Saved kappa results to {json_path}")
 
         if save_forces:
             force_out_path = (
-                save_dir / f"force_sets_{self.num_jobs}-{job_number}.json.gz"
+                f"{save_dir}/{today}-kappa-103-{self.num_jobs}-"
+                f"{job_number}-force-sets.json.gz"
             )
             df_force = pd.DataFrame(force_results).T
             df_force.index.name = Key.mat_id
@@ -290,7 +292,7 @@ class KappaSRMERunner:
             print(f"Saved force results to {force_out_path}")
 
         # Compute metrics if we've collected all results
-        pattern = str(save_dir / "conductivity_*-*.json.gz")
+        pattern = f"{save_dir}/{today}-kappa-103-{self.num_jobs}-*.json.gz"
         file_list = list(glob.glob(pattern))
         if len(file_list) == self.num_jobs:
             # Load all results
@@ -303,10 +305,9 @@ class KappaSRMERunner:
 
             if all_dfs:
                 combined_df = pd.concat(all_dfs).reset_index()
-                combined_df.to_json(save_dir / "kappa-103-FIRE.json.gz")
-                print(
-                    f"Combined results saved to {save_dir / 'kappa-103-FIRE.json.gz'}"
-                )
+                json_path = f"{save_dir}/{today}-kappa-103-{self.num_jobs}.json.gz"
+                combined_df.to_json(json_path)
+                print(f"Combined results saved to {json_path}")
 
                 with open(
                     save_dir / "test_metrics.json", mode="w", encoding="utf-8"

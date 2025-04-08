@@ -15,11 +15,11 @@
     { label: `Created`, better: `higher` },
     { label: `License` },
     { label: `Method` },
-    { label: `Code` },
     { label: `Links`, sortable: false },
   ]
 
   type TableRow = {
+    key: string
     Title: string
     Structures: string
     Materials: string
@@ -27,9 +27,9 @@
     Created: string
     License: string
     Method: string
-    Code: string
     Links: string
-    [key: string]: string // Index signature to allow string indexing
+    sort_values: Record<string, string | number | null>
+    [key: string]: string | Record<string, string | number | null>
   }
 
   // License abbreviations mapped to full names
@@ -39,11 +39,29 @@
 
   const span_wrap = (val: string | number) =>
     `<span data-sort-value="${val}" title="${val.toLocaleString()}">${pretty_num(Number(val))}</span>`
+  const to_spaces = (str: string) => str.replaceAll(`_`, ` `).replaceAll(`-`, ` `)
+  const to_title = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)
+  const title_case = (str: string) => to_spaces(str).split(` `).map(to_title).join(` `)
+
+  // convert array types to strings and handle missing values
+  function arr_to_str(method: unknown): string {
+    if (!method) return `n/a`
+    if (Array.isArray(method)) return method.join(`, `)
+    return String(method)
+  }
 
   // Process data for table
   const datasets = Object.entries(DATASETS).map(([key, set]) => {
     let { n_structures, n_materials, date_created, license } = set
     const license_full = license_map[license]
+
+    const params_tooltip = Object.entries(set.params ?? {})
+      .map(([key, value]) => `${title_case(key)}: ${arr_to_str(value)}`)
+      .join(`&#013;`)
+
+    const method_str = arr_to_str(set.params?.method)
+    const created_timestamp = date_created ? new Date(date_created).getTime() : null
+
     return {
       key,
       Title: `<a href="${set.url}" title="${set.title}">${key}</a>`,
@@ -51,14 +69,22 @@
       Materials: n_materials ? span_wrap(n_materials) : `n/a`,
       Open: set.open ? `✅` : `❌`,
       Created: date_created
-        ? `<span data-sort-value="${new Date(date_created).getTime()}" title="${format_date(date_created, { weekday: `long` })}">${format_date(date_created)}</span>`
+        ? `<span data-sort-value="${created_timestamp}" title="${format_date(date_created, { weekday: `long` })}">${format_date(date_created)}</span>`
         : `n/a`,
       License: license_full ? `<span title="${license_full}">${license}</span>` : license,
-      Method: set.params?.method || `n/a`,
-      Code: set.params?.code || `n/a`,
+      Method: `<span title="${params_tooltip}">${method_str}</span>`,
       Links: generate_links(set),
+      sort_values: {
+        Title: key,
+        Structures: n_structures ?? null,
+        Materials: n_materials ?? null,
+        Open: set.open ? 1 : 0,
+        Created: created_timestamp,
+        License: license,
+        Method: method_str,
+      },
     }
-  })
+  }) as TableRow[]
 
   function generate_links(set: Dataset): string {
     const ext_link = (url: string, title: string, text: string) =>
@@ -80,14 +106,14 @@
   }
 
   // Initial sort
-  let table_data: TableRow[] = sort_rows(`Created`)
+  let table_data = sort_rows(`Created`)
 
-  function sort_rows(column: string): TableRow[] | undefined {
+  function sort_rows(column: string): TableRow[] {
     const col = columns.find((c) => c.label === column)
-    if (!col) return
+    if (!col) return datasets
 
     // Skip sorting if column is explicitly marked as not sortable
-    if (col.sortable === false) return
+    if (col.sortable === false) return datasets
 
     if (sort_state.column !== column) {
       sort_state = {
@@ -99,39 +125,20 @@
     }
 
     return datasets.sort((row1, row2) => {
-      const val1 = row1[column]
-      const val2 = row2[column]
+      const val1 = row1.sort_values[column]
+      const val2 = row2.sort_values[column]
 
       if (val1 === val2) return 0
-      if (val1 === null || val1 === undefined || val1 === `n/a`) return 1
-      if (val2 === null || val2 === undefined || val2 === `n/a`) return -1
+      if (val1 === null || val1 === undefined) return 1
+      if (val2 === null || val2 === undefined) return -1
 
       const modifier = sort_state.ascending ? 1 : -1
-
-      // Check if values are HTML strings with data-sort-value attributes
-      if (typeof val1 === `string` && typeof val2 === `string`) {
-        const match1 = val1.match(/data-sort-value="([^"]*)"/)
-        const match2 = val2.match(/data-sort-value="([^"]*)"/)
-
-        if (match1 && match2) {
-          const sort_val1 = match1[1]
-          const sort_val2 = match2[1]
-
-          // Try to convert to numbers if possible
-          const num_val1 = Number(sort_val1)
-          const num_val2 = Number(sort_val2)
-
-          if (!isNaN(num_val1) && !isNaN(num_val2)) {
-            return num_val1 < num_val2 ? -1 * modifier : 1 * modifier
-          }
-
-          return sort_val1 < sort_val2 ? -1 * modifier : 1 * modifier
-        }
-      }
 
       return val1 < val2 ? -1 * modifier : 1 * modifier
     })
   }
+
+  const yaml_url = `https://github.com/janosh/matbench-discovery/blob/main/data/datasets.yml`
 </script>
 
 <svelte:head>
@@ -180,6 +187,11 @@ discovery.
     </table>
   </div>
 </div>
+
+See a dataset that's missing from this list or incorrect data? Suggest an edit to
+<a href={yaml_url} target="_blank" rel="noopener noreferrer"
+  >{yaml_url.split(`/`).pop()}</a
+>
 
 <style>
   /* Use negative margin technique for full width, matching +page.svelte */

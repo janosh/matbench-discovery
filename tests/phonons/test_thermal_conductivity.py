@@ -62,6 +62,10 @@ def test_init_phono3py(test_atoms: Atoms) -> None:
     assert len(ph3.phonon_supercell) == len(test_atoms) * 8  # 2x2x2 supercell
     assert len(ph3.supercell) == len(test_atoms)  # 1x1x1 supercell
 
+    disp_magnitudes = np.linalg.norm(ph3.displacements, axis=-1)
+    # Assert that default displacement distance is 0.01
+    np.testing.assert_allclose(disp_magnitudes, 0.01)
+
 
 def test_init_phono3py_custom_mesh_and_displacement(test_atoms: Atoms) -> None:
     """Test initialization with custom mesh and displacement distance."""

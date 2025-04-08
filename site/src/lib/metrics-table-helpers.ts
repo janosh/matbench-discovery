@@ -1,13 +1,13 @@
 import type { TargetType } from '$lib'
 import { DATASETS, MODEL_METADATA, get_pred_file_urls, model_is_compliant } from '$lib'
 import { pretty_num } from 'elementari'
-import { calculate_combined_score } from './metrics'
+import { calculate_cps } from './metrics'
 import type {
   CombinedMetricConfig,
   DiscoverySet,
   LinkData,
   ModelData,
-  TableData,
+  RowData,
 } from './types'
 
 // model target type descriptions
@@ -107,36 +107,22 @@ export function get_geo_opt_property<T>(
   return metrics[property as keyof typeof metrics] as T
 }
 
-/**
- * Creates a combined filter function that respects both prediction type
- * and compliance filters.
- *
- * @param model_filter - The base model filter function
- * @param show_energy - Whether to show energy-only models
- * @param show_noncomp - Whether to show non-compliant models
- * @returns Combined filter function for models
- */
-export function create_combined_filter(
-  model_filter: (model: ModelData) => boolean,
-  show_energy: boolean,
-  show_noncomp: boolean,
+// make a combined filter function that respects both prediction type and compliance filters
+export function make_combined_filter(
+  model_filter: (model: ModelData) => boolean, // user-provided model filter
+  show_energy: boolean, // show energy-only models
+  show_noncomp: boolean, // show non-compliant models
 ): (model: ModelData) => boolean {
   return (model: ModelData) => {
-    if (!model_filter(model)) {
-      return false // Apply user-provided model_filter first
-    }
+    if (!model_filter(model)) return false // Apply user-provided model_filter first
 
     // Filter energy-only models if not shown
     const is_energy_only = model.targets === `E`
-    if (is_energy_only && !show_energy) {
-      return false
-    }
+    if (is_energy_only && !show_energy) return false
 
     // Filter noncompliant models if not shown
     const is_compliant = model_is_compliant(model)
-    if (!is_compliant && !show_noncomp) {
-      return false
-    }
+    if (!is_compliant && !show_noncomp) return false
 
     return true
   }
@@ -151,9 +137,8 @@ export function calculate_metrics_data(
   config: CombinedMetricConfig,
   compliant_clr: string = `#4caf50`,
   noncompliant_clr: string = `#4682b4`,
-): TableData {
-  // Get the current filter with current state values
-  const current_filter = create_combined_filter(
+): RowData[] {
+  const current_filter = make_combined_filter(
     model_filter,
     show_energy_only,
     show_noncompliant,
@@ -169,7 +154,8 @@ export function calculate_metrics_data(
       (model) => current_filter(model) && model.metrics?.discovery?.[discovery_set],
     )
       .map((model) => {
-        const metrics = model.metrics?.discovery?.[discovery_set]
+        const { license, metrics } = model
+        const discover_metrics = metrics?.discovery?.[discovery_set]
         const is_compliant = model_is_compliant(model)
 
         // Get RMSD from geo_opt metrics if available, using the first symprec value
@@ -177,8 +163,8 @@ export function calculate_metrics_data(
         let rmsd = undefined
         if (geo_opt_metrics && typeof geo_opt_metrics === `object`) {
           // Try to find the first symprec key and get its RMSD
-          const symprec_keys = Object.keys(geo_opt_metrics).filter((k) =>
-            k.startsWith(`symprec=`),
+          const symprec_keys = Object.keys(geo_opt_metrics).filter((key) =>
+            key.startsWith(`symprec=`),
           )
           if (symprec_keys.length > 0) {
             const symprec_key = symprec_keys[0]
@@ -191,34 +177,32 @@ export function calculate_metrics_data(
         }
 
         // Get kappa from phonon metrics
-        const phonons = model.metrics?.phonons
+        const phonons = metrics?.phonons
         const kappa =
           phonons && typeof phonons === `object` && `kappa_103` in phonons
             ? (phonons.kappa_103?.κ_SRME as number | undefined)
             : undefined
 
-        // Calculate combined score
-        const cps = calculate_combined_score(metrics?.F1, rmsd, kappa, config)
+        const cps = calculate_cps(discover_metrics?.F1, rmsd, kappa, config)
 
         const targets = model.targets.replace(/_(.)/g, `<sub>$1</sub>`)
         const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
         const row_style = show_noncompliant
           ? `border-left: 3px solid ${is_compliant ? compliant_clr : noncompliant_clr};`
           : null
-        const { license } = model
 
         return {
-          Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}">${model.model_name}</a>`,
+          Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>`,
           CPS: cps,
-          F1: metrics?.F1,
-          DAF: metrics?.DAF,
-          Prec: metrics?.Precision,
-          Acc: metrics?.Accuracy,
-          TPR: metrics?.TPR,
-          TNR: metrics?.TNR,
-          MAE: metrics?.MAE,
-          RMSE: metrics?.RMSE,
-          'R<sup>2</sup>': metrics?.R2,
+          F1: discover_metrics?.F1,
+          DAF: discover_metrics?.DAF,
+          Prec: discover_metrics?.Precision,
+          Acc: discover_metrics?.Accuracy,
+          TPR: discover_metrics?.TPR,
+          TNR: discover_metrics?.TNR,
+          MAE: discover_metrics?.MAE,
+          RMSE: discover_metrics?.RMSE,
+          'R<sup>2</sup>': discover_metrics?.R2,
           'κ<sub>SRME</sub>': kappa,
           RMSD: rmsd,
           'Training Set': format_train_set(model.training_set),

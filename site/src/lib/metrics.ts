@@ -37,7 +37,7 @@ export const DEFAULT_CPS_CONFIG: CombinedMetricConfig = {
 }
 
 export const METADATA_COLS: HeatmapColumn[] = [
-  { label: `Model`, sticky: true },
+  { label: `Model`, sticky: true, sortable: true, better: null },
   { label: `Training Set`, tooltip: `Size of and link to model training set` },
   { label: `Params`, tooltip: `Number of trainable model parameters` },
   { label: `Targets`, tooltip: `Target property used to train the model` },
@@ -197,7 +197,7 @@ function normalize_kappa_srme(value: number | undefined): number {
 // - RMSD Root mean square displacement in range 0 (perfect) to RMSD_BASELINE, lower is better
 // - κ_SRME symmetric relative mean error for lattice thermal conductivity,
 //    range [0,2] linearly mapped to [1,0], lower is better
-export function calculate_combined_score(
+export function calculate_cps(
   f1: number | undefined,
   rmsd: number | undefined,
   kappa: number | undefined,

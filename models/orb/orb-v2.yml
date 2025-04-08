@@ -94,23 +94,23 @@ metrics:
     pred_file_url: https://figshare.com/files/52062194
     struct_col: orb_structure
     symprec=1e-5:
-      rmsd: 0.016 # unitless
-      n_sym_ops_mae: 9.8834 # unitless
-      symmetry_decrease: 0.8473 # fraction
-      symmetry_match: 0.1494 # fraction
-      symmetry_increase: 0.0031 # fraction
+      rmsd: 0.0973 # unitless
+      n_sym_ops_mae: 9.9331 # unitless
+      symmetry_decrease: 0.8531 # fraction
+      symmetry_match: 0.1433 # fraction
+      symmetry_increase: 0.0034 # fraction
       n_structures: 256963 # count
-      analysis_file: models/orb/orbff-v2/2024-10-11-wbm-geo-opt-symprec=1e-5.csv.gz
-      analysis_file_url: https://figshare.com/files/52062287
+      analysis_file: models/orb/orbff-v2/2024-10-11-wbm-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/53504681
     symprec=1e-2:
-      rmsd: 0.016 # unitless
-      n_sym_ops_mae: 5.5556 # unitless
-      symmetry_decrease: 0.5211 # fraction
-      symmetry_match: 0.4286 # fraction
-      symmetry_increase: 0.0401 # fraction
-      n_structures: 256614 # count
-      analysis_file: models/orb/orbff-v2/2024-10-11-wbm-geo-opt-symprec=1e-2.csv.gz
-      analysis_file_url: https://figshare.com/files/52062299
+      rmsd: 0.0973 # unitless
+      n_sym_ops_mae: 5.0639 # unitless
+      symmetry_decrease: 0.4547 # fraction
+      symmetry_match: 0.4926 # fraction
+      symmetry_increase: 0.0453 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/orb/orbff-v2/2024-10-11-wbm-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/53504684
   discovery:
     pred_file: models/orb/orbff-v2/2024-10-11-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/52057562

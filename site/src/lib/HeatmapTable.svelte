@@ -7,11 +7,10 @@
   import type { Snippet } from 'svelte'
   import { titles_as_tooltips } from 'svelte-zoo/actions'
   import { flip } from 'svelte/animate'
-  import { writable } from 'svelte/store'
-  import type { CellVal, HeatmapColumn, RowData, TableData } from './types'
+  import type { CellVal, HeatmapColumn, RowData } from './types'
 
   interface Props {
-    data: TableData
+    data: RowData[]
     columns?: HeatmapColumn[]
     sort_hint?: string
     style?: string | null
@@ -34,17 +33,31 @@
     fixed_header = false,
   }: Props = $props()
 
-  // Add container reference for binding
-  let container: HTMLDivElement
+  // Hacky helper function to detect if a string contains HTML, TODO revisit in future
+  function is_html_str(val: unknown): boolean {
+    if (typeof val !== `string`) return false
+    // Check for common HTML patterns
+    return (
+      (val.includes(`<`) && val.includes(`>`)) || // Has angle brackets
+      val.startsWith(`&lt;`) || // Has HTML entity for <
+      val.includes(`<a `) || // Has anchor tag
+      val.includes(`<span `) || // Has span tag
+      val.includes(`<div `) || // Has div tag
+      val.includes(`href=`) || // Has href attribute
+      val.includes(`class=`) // Has class attribute
+    )
+  }
 
-  const sort_state = writable({
+  // Add container reference for binding
+  let div: HTMLDivElement
+  let sort_state = $state({
     column: initial_sort_column || ``,
     ascending: initial_sort_direction !== `desc`,
   })
 
-  let clean_data = $state(data)
+  let sorted_data = $state(data)
   $effect(() => {
-    clean_data =
+    sorted_data =
       data?.filter?.((row) => Object.values(row).some((val) => val !== undefined)) ?? []
   })
 
@@ -61,16 +74,14 @@
 
     const col_id = get_col_id(col)
 
-    if ($sort_state.column !== col_id) {
-      $sort_state = {
-        column: col_id,
-        ascending: col.better === `lower`,
-      }
+    if (sort_state.column !== col_id) {
+      sort_state.column = col_id
+      sort_state.ascending = col.better === `lower`
     } else {
-      $sort_state.ascending = !$sort_state.ascending
+      sort_state.ascending = !sort_state.ascending
     }
 
-    clean_data = clean_data.sort((row1, row2) => {
+    sorted_data = sorted_data.sort((row1, row2) => {
       const val1 = row1[col_id]
       const val2 = row2[col_id]
 
@@ -78,7 +89,7 @@
       if (val1 === null || val1 === undefined) return 1
       if (val2 === null || val2 === undefined) return -1
 
-      const modifier = $sort_state.ascending ? 1 : -1
+      const modifier = sort_state.ascending ? 1 : -1
 
       // Check if values are HTML strings with data-sort-value attributes
       if (typeof val1 === `string` && typeof val2 === `string`) {
@@ -97,7 +108,9 @@
             return num_val1 < num_val2 ? -1 * modifier : 1 * modifier
           }
 
-          return sort_val1 < sort_val2 ? -1 * modifier : 1 * modifier
+          // sort strings case-insensitively
+          const [lower1, lower2] = [sort_val1.toLowerCase(), sort_val2.toLowerCase()]
+          return lower1 > lower2 ? modifier : -1 * modifier
         }
       }
 
@@ -105,21 +118,21 @@
     })
   }
 
-  function calc_color(value: CellVal, col: HeatmapColumn) {
+  function calc_color(val: CellVal, col: HeatmapColumn) {
     // Skip color calculation for null values or if color_scale is null
     if (
-      value === null ||
-      value === undefined ||
+      val === null ||
+      val === undefined ||
       col.color_scale === null ||
-      typeof value !== `number`
+      typeof val !== `number`
     ) {
       return { bg: null, text: null }
     }
 
     const col_id = get_col_id(col)
-    const numeric_vals = clean_data
+    const numeric_vals = sorted_data
       .map((row) => row[col_id])
-      .filter((val): val is number => typeof val === `number`) // Type guard to ensure we only get numbers
+      .filter((val) => typeof val === `number`) // Type guard to ensure we only get numbers
 
     if (numeric_vals.length === 0) {
       return { bg: null, text: null }
@@ -136,7 +149,7 @@
 
     const color_scale = scaleSequential().domain(range).interpolator(interpolator)
 
-    const bg = color_scale(value)
+    const bg = color_scale(val)
     const text = choose_bw_for_contrast(null, bg)
 
     return { bg, text }
@@ -157,9 +170,8 @@
       // When column is not sorted, show arrow indicating which values are better:
       // ↑ for higher-is-better metrics
       // ↓ for lower-is-better metrics
-      return `<span style="font-size: 0.8em;">${
-        col.better === `higher` ? `↑` : `↓`
-      }</span>`
+      const sort_dir = col.better === `higher` ? `↑` : `↓`
+      return `<span style="font-size: 0.8em;">${sort_dir}</span>`
     }
     return ``
   }
@@ -167,7 +179,7 @@
 
 <!-- Table header with sort hint and controls side by side -->
 <div class="table-header">
-  {#if Object.keys($sort_state).length && sort_hint}
+  {#if Object.keys(sort_state).length && sort_hint}
     <div class="sort-hint">{sort_hint}</div>
   {/if}
 
@@ -179,7 +191,7 @@
   {/if}
 </div>
 
-<div bind:this={container} class="table-container" {style} use:titles_as_tooltips>
+<div bind:this={div} class="table-container" {style} use:titles_as_tooltips>
   <table class:fixed-header={fixed_header} class="heatmap heatmap-table">
     <thead>
       <!-- Don't add a table row for group headers if there are none -->
@@ -210,7 +222,7 @@
             class:not-sortable={col.sortable === false}
           >
             {@html col.label}
-            {@html sort_indicator(col, $sort_state)}
+            {@html sort_indicator(col, sort_state)}
             {#if col_idx == 0 && sort_hint}
               <span title={sort_hint}>
                 <iconify-icon icon="octicon:info-16" inline></iconify-icon>
@@ -221,14 +233,14 @@
       </tr>
     </thead>
     <tbody>
-      {#each clean_data as row (JSON.stringify(row))}
+      {#each sorted_data as row (JSON.stringify(row))}
         <tr animate:flip={{ duration: 500 }} style={row.row_style ?? null}>
           {#each visible_columns as col (col.label + col.group)}
             {@const val = row[get_col_id(col)]}
             {@const color = calc_color(val, col)}
             <td
               data-col={col.label}
-              data-sort-value={val}
+              data-sort-value={is_html_str(val) ? undefined : val}
               class:sticky-col={col.sticky}
               style:background-color={color.bg}
               style:color={color.text}
