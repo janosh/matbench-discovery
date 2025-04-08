@@ -35,7 +35,7 @@ export const DEFAULT_CPS_CONFIG: CombinedMetricConfig = {
 }
 
 export const METADATA_COLS: HeatmapColumn[] = [
-  { label: `Model`, sticky: true },
+  { label: `Model`, sticky: true, sortable: true, better: null },
   { label: `Training Set`, tooltip: `Size of and link to model training set` },
   { label: `Params`, tooltip: `Number of trainable model parameters` },
   { label: `Targets`, tooltip: `Target property used to train the model` },

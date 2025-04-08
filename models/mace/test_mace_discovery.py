@@ -46,10 +46,10 @@ job_name = f"{model_name}/{today}-wbm-{task_type}-{ase_optimizer}"
 out_dir = f"{module_dir}/{job_name}"
 os.makedirs(out_dir, exist_ok=True)
 checkpoint_urls: Final[set[str]] = {
-    "https://github.com/ACEsuit/mace-mp/releases/download/mace_omat_0/mace-omat-0-medium.model",
-    "https://github.com/ACEsuit/mace-mp/releases/download/mace_mp_0b3/mace-mp-0b3-medium.model",
-    "https://github.com/ACEsuit/mace-mp/releases/download/mace_mpa_0/mace-mpa-0-medium.model",
-    "https://github.com/ACEsuit/mace-mp/releases/download/mace_mp_0/2023-12-03-mace-128-L1_epoch-199.model",
+    "https://github.com/ACEsuit/mace-foundations/releases/download/mace_omat_0/mace-omat-0-medium.model",
+    "https://github.com/ACEsuit/mace-foundations/releases/download/mace_mp_0b3/mace-mp-0b3-medium.model",
+    "https://github.com/ACEsuit/mace-foundations/releases/download/mace_mpa_0/mace-mpa-0-medium.model",
+    "https://github.com/ACEsuit/mace-foundations/releases/download/mace_mp_0/2023-12-03-mace-128-L1_epoch-199.model",
 }
 checkpoint = {url.split("/")[-1].rsplit(".model")[0]: url for url in checkpoint_urls}[
     model_name

@@ -10,7 +10,7 @@ As of 2024-02-06 we have used the 4.7M parameter checkpoint [`2023-12-03-mace-12
 
 ### Training
 
-The current "2023-12-03-mace-128-L1" model was trained using the MACE CLI with the training command recorded [here](https://github.com/ACEsuit/mace-mp/blob/main/mace_mp_0/2023-12-03-mace-128-L1.sh) in the `mace_mp_0` [repository](https://github.com/ACEsuit/mace-mp/tree/main).
+The current "2023-12-03-mace-128-L1" model was trained using the MACE CLI with the training command recorded [here](https://github.com/ACEsuit/mace-foundations/blob/main/mace_mp_0/2023-12-03-mace-128-L1.sh) in the `mace_mp_0` [repository](https://github.com/ACEsuit/mace-foundations/tree/main).
 
 For historical reasons an example training script is provided in `train_mace.py` showing how to train MACE with multiple gpus. Earlier iterations of this script were used to train the `2023-08-14-mace-yuan-trained-mptrj-04` and `2023-07-14-mace-universal-2-big-128-6` models. This script is not guaranteed to work with the current MACE PyPI release.
 
