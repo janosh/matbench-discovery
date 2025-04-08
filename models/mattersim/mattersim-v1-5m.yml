@@ -141,22 +141,22 @@ metrics:
     struct_col: mattersim_5M_structure
     symprec=1e-2:
       rmsd: 0.0733 # unitless
-      n_sym_ops_mae: 6.08 # unitless
-      symmetry_decrease: 0.03 # fraction
-      symmetry_match: 0.78 # fraction
-      symmetry_increase: 0.19 # fraction
-      n_structures: 100 # count
-      analysis_file: models/mattersim/mattersim-v1-5M/2024-12-19-wbm-geo-opt.jsonl.gz-symprec=1e-2-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53167865
+      n_sym_ops_mae: 1.7451 # unitless
+      symmetry_decrease: 0.0524 # fraction
+      symmetry_match: 0.8148 # fraction
+      symmetry_increase: 0.1254 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/mattersim/mattersim-v1-5M/2024-12-19-wbm-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/53504675
     symprec=1e-5:
       rmsd: 0.0733 # unitless
-      n_sym_ops_mae: 8.83 # unitless
-      symmetry_decrease: 0.05 # fraction
-      symmetry_match: 0.66 # fraction
-      symmetry_increase: 0.27 # fraction
-      n_structures: 100 # count
-      analysis_file: models/mattersim/mattersim-v1-5M/2024-12-19-wbm-geo-opt.jsonl.gz-symprec=1e-5-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53167868
+      n_sym_ops_mae: 2.1408 # unitless
+      symmetry_decrease: 0.0755 # fraction
+      symmetry_match: 0.6874 # fraction
+      symmetry_increase: 0.2305 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/mattersim/mattersim-v1-5M/2024-12-19-wbm-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/53504678
   discovery:
     pred_file: models/mattersim/mattersim-v1-5M/2024-12-16-wbm-IS2RE.csv.gz
     # the original Graphormer-based replaced the M3GNet-based MatterSim on the leaderboard

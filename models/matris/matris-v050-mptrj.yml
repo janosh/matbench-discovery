@@ -98,23 +98,23 @@ metrics:
     pred_file_url: https://figshare.com/files/53000177
     struct_col: matris_structure
     symprec=1e-5:
-      rmsd: 0.0156 # unitless
+      rmsd: 0.0773 # unitless
       n_sym_ops_mae: 5.7108 # unitless
       symmetry_decrease: 0.593 # fraction
       symmetry_match: 0.3362 # fraction
       symmetry_increase: 0.0619 # fraction
       n_structures: 256959 # count
-      analysis_file: models/matris/matris-0.5.0-mptrj/2025-03-12-wbm-geo-opt-symprec=1e-5.csv.gz
-      analysis_file_url: https://figshare.com/files/53000384
+      analysis_file: models/matris/matris-0.5.0-mptrj/2025-03-12-wbm-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/53504666
     symprec=1e-2:
-      rmsd: 0.0156 # unitless
+      rmsd: 0.0773 # unitless
       n_sym_ops_mae: 2.0591 # unitless
       symmetry_decrease: 0.0955 # fraction
       symmetry_match: 0.7874 # fraction
       symmetry_increase: 0.1091 # fraction
       n_structures: 256959 # count
-      analysis_file: models/matris/matris-0.5.0-mptrj/2025-03-12-wbm-geo-opt-symprec=1e-2.csv.gz
-      analysis_file_url: https://figshare.com/files/53000387
+      analysis_file: models/matris/matris-0.5.0-mptrj/2025-03-12-wbm-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/53504669
   discovery:
     pred_file: models/matris/matris-0.5.0-mptrj/2025-03-12-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/53000174
