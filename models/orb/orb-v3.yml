@@ -69,7 +69,7 @@ hyperparams:
   max_num_neighbors: 120
 
 requirements:
-  orb-models: "0.4.3"
+  orb-models: "0.5.0"
 
 training_set: [MPtrj, Alex, OMat24]
 training_cost:
