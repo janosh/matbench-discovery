@@ -475,6 +475,71 @@ describe(`MetricsTable`, () => {
       expect(some_different).toBe(true)
     })
 
+    it.each([
+      {
+        test_name: `with all models shown`,
+        props: { show_noncompliant: true, show_energy_only: true },
+      },
+      {
+        test_name: `with filtered columns`,
+        props: {
+          show_noncompliant: true,
+          col_filter: (col: HeatmapColumn) => [`Model`, `CPS`, `F1`].includes(col.label),
+        },
+      },
+      {
+        test_name: `with non-compliant models hidden`,
+        props: { show_noncompliant: false, show_energy_only: true },
+      },
+    ])(
+      `alphabetically sorts by Model name on $test_name header click`,
+      async ({ props }) => {
+        mount(MetricsTable, { target: document.body, props })
+
+        // Find Model column header
+        const headers = [...document.body.querySelectorAll(`th`)]
+        const model_header = headers.find((h) => h.textContent?.includes(`Model`))
+
+        if (!model_header) {
+          throw new Error(`Model column header not found`)
+        }
+
+        const get_model_names = () =>
+          [...document.body.querySelectorAll(`td[data-col="Model"]`)]
+            .map((cell) => {
+              const link = cell.querySelector(`a`)
+              return link?.getAttribute(`data-sort-value`)
+            })
+            .filter(Boolean) as string[]
+
+        // model names before sorting
+        const initial_model_names = get_model_names()
+
+        // Click to sort (ascending A-Z)
+        model_header.click()
+        await tick()
+
+        // Get model names after first sort
+        const sorted_model_names = get_model_names()
+
+        // Check that we have enough models to test sorting
+        expect(sorted_model_names.length).toBeGreaterThan(5)
+
+        // check that order changed from sorting
+        expect(sorted_model_names).not.toEqual(initial_model_names)
+        // check that sorted_model_names is sorted
+        expect(sorted_model_names).toEqual(sorted_model_names.sort())
+
+        // Click again to reverse sort (descending Z-A)
+        model_header.click()
+        await tick()
+
+        const reverse_sorted_model_names = get_model_names()
+        expect(reverse_sorted_model_names).not.toEqual(sorted_model_names)
+        expect(reverse_sorted_model_names.sort()).toEqual(sorted_model_names)
+      },
+    )
+
     it(`prevents sorting of unsortable Links column`, async () => {
       mount(MetricsTable, {
         target: document.body,

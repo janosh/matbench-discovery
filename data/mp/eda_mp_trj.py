@@ -51,7 +51,7 @@ atoms_list = ase_atoms_from_zip(DataFiles.mp_trj_extxyz.path)
 
 mp_trj_atoms: dict[str, list[ase.Atoms]] = defaultdict(list)
 for atoms in atoms_list:
-    mp_id = atoms.info.get(Key.mat_id, "no-id")
+    mp_id = atoms.info[Key.mat_id]
     assert mp_id.startswith(("mp-", "mvc-"))
     mp_trj_atoms[mp_id].append(atoms)
 

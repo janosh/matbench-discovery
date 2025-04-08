@@ -24,6 +24,8 @@ from moyopy.interface import MoyoAdapter
 from pymatviz.enums import Key
 from tqdm import tqdm
 
+from matbench_discovery import today
+from matbench_discovery.enums import DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
 
@@ -53,8 +55,6 @@ save_forces = False  # Save force sets to file
 temperatures = [300]  # Temperatures to calculate conductivity at in Kelvin
 displacement_distance = 0.01  # Displacement distance for phono3py
 
-idx = 1
-
 task_type = "LTC"  # lattice thermal conductivity
 job_name = (
     f"{model_name}-phononDB-{task_type}-{ase_optimizer}_force{force_max}_sym{symprec}"
@@ -62,13 +62,14 @@ job_name = (
 module_dir = os.path.dirname(__file__)
 out_dir = "./results"
 os.makedirs(out_dir, exist_ok=True)
-out_path = f"{out_dir}/conductivity_{idx}.json.gz"
+out_path = (
+    f"{out_dir}/{today}-kappa-103-{ase_optimizer}-dist={displacement_distance}-"
+    f"fmax={force_max}-{symprec=}.json.gz"
+)
 
 timestamp = f"{datetime.now().astimezone():%Y-%m-%d %H:%M:%S}"
-struct_data_path = f"../data/part_{idx}.extxyz"
 print(f"\nJob {job_name} started {timestamp}")
-print(f"Read data from {struct_data_path}")
-atoms_list: list[Atoms] = read(struct_data_path, format="extxyz", index=":")
+atoms_list: list[Atoms] = read(DataFiles.phonondb_pbe_103_structures.path, index=":")
 
 run_params = {
     "timestamp": timestamp,
@@ -87,7 +88,6 @@ run_params = {
     "displacement_distance": displacement_distance,
     "task_type": task_type,
     "job_name": job_name,
-    "struct_data_path": os.path.basename(struct_data_path),
     "n_structures": len(atoms_list),
 }
 
@@ -101,9 +101,9 @@ kappa_results: dict[str, dict[str, Any]] = {}
 tqdm_bar = tqdm(atoms_list, desc="Conductivity calculation: ", disable=not prog_bar)
 
 for atoms in tqdm_bar:
-    mat_id = atoms.info.get(Key.mat_id, f"id-{len(kappa_results)}")
+    mat_id = atoms.info[Key.mat_id]
     init_info = deepcopy(atoms.info)
-    formula = atoms.info.get("name", "unknown")
+    formula = atoms.get_chemical_formula()
 
     spg_num = MoyoDataset(MoyoAdapter.from_atoms(atoms)).number
     info_dict = {
@@ -140,7 +140,7 @@ for atoms in tqdm_bar:
 
             reached_max_steps = optimizer.step >= max_steps
             if reached_max_steps:
-                print(f"{mat_id=} reached {max_steps=} during relaxation.")
+                print(f"{mat_id=} reached {max_steps=} during relaxation")
 
             max_stress = atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
             atoms.calc = None
@@ -170,9 +170,9 @@ for atoms in tqdm_bar:
         # Initialize phono3py with the relaxed structure
         ph3 = ltc.init_phono3py(
             atoms,
-            fc2_supercell=atoms.info.get("fc2_supercell", [2, 2, 2]),
-            fc3_supercell=atoms.info.get("fc3_supercell", [2, 2, 2]),
-            q_point_mesh=atoms.info.get("q_point_mesh", [10, 10, 10]),
+            fc2_supercell=atoms.info["fc2_supercell"],
+            fc3_supercell=atoms.info["fc3_supercell"],
+            q_point_mesh=atoms.info["q_point_mesh"],
             displacement_distance=displacement_distance,
             symprec=symprec,
         )
@@ -249,7 +249,7 @@ df_kappa.reset_index().to_json(out_path)
 print(f"Saved kappa results to {out_path}")
 
 if save_forces:
-    force_out_path = f"{out_dir}/force_sets.json.gz"
+    force_out_path = f"{out_dir}/{today}-kappa-103-force-sets.json.gz"
     df_force = pd.DataFrame(force_results).T
     df_force.index.name = Key.mat_id
     df_force.reset_index().to_json(force_out_path)
