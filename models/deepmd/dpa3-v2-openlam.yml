@@ -113,23 +113,23 @@ metrics:
     struct_col: dp_structure
     pred_file_url: https://figshare.com/files/53018852
     symprec=1e-5:
-      rmsd: 0.0127 # unitless
+      rmsd: 0.0679 # unitless
       n_sym_ops_mae: 2.1607 # unitless
       symmetry_decrease: 0.0654 # fraction
       symmetry_match: 0.719 # fraction
       symmetry_increase: 0.2095 # fraction
       n_structures: 256963 # count
       analysis_file: models/deepmd/dpa3-v2-openlam/2025-03-14-wbm-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53019284
+      analysis_file_url: https://figshare.com/files/53504528
     symprec=1e-2:
-      rmsd: 0.0127 # unitless
+      rmsd: 0.0679 # unitless
       n_sym_ops_mae: 1.8814 # unitless
       symmetry_decrease: 0.0511 # fraction
       symmetry_match: 0.81 # fraction
       symmetry_increase: 0.1316 # fraction
       n_structures: 256963 # count
       analysis_file: models/deepmd/dpa3-v2-openlam/2025-03-14-wbm-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/53019287
+      analysis_file_url: https://figshare.com/files/53504531
   discovery:
     pred_file: models/deepmd/dpa3-v2-openlam/2025-03-14-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/53018804

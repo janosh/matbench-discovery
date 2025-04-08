@@ -7,10 +7,10 @@
   import type { Snippet } from 'svelte'
   import { titles_as_tooltips } from 'svelte-zoo/actions'
   import { flip } from 'svelte/animate'
-  import type { CellVal, HeatmapColumn, RowData, TableData } from './types'
+  import type { CellVal, HeatmapColumn, RowData } from './types'
 
   interface Props {
-    data: TableData
+    data: RowData[]
     columns?: HeatmapColumn[]
     sort_hint?: string
     style?: string | null
@@ -32,6 +32,21 @@
     initial_sort_direction,
     fixed_header = false,
   }: Props = $props()
+
+  // Hacky helper function to detect if a string contains HTML, TODO revisit in future
+  function is_html_str(val: unknown): boolean {
+    if (typeof val !== `string`) return false
+    // Check for common HTML patterns
+    return (
+      (val.includes(`<`) && val.includes(`>`)) || // Has angle brackets
+      val.startsWith(`&lt;`) || // Has HTML entity for <
+      val.includes(`<a `) || // Has anchor tag
+      val.includes(`<span `) || // Has span tag
+      val.includes(`<div `) || // Has div tag
+      val.includes(`href=`) || // Has href attribute
+      val.includes(`class=`) // Has class attribute
+    )
+  }
 
   // Add container reference for binding
   let div: HTMLDivElement
@@ -225,7 +240,7 @@
             {@const color = calc_color(val, col)}
             <td
               data-col={col.label}
-              data-sort-value={val}
+              data-sort-value={is_html_str(val) ? undefined : val}
               class:sticky-col={col.sticky}
               style:background-color={color.bg}
               style:color={color.text}

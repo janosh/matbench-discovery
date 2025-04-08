@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { CombinedMetricConfig, DiscoverySet, ModelData } from '$lib'
-  import { calculate_combined_score } from '$lib/metrics'
+  import { calculate_cps } from '$lib/metrics'
   import { ScatterPlot, type Point } from 'elementari'
 
   export type ModelProperty =
@@ -171,7 +171,7 @@
             : undefined
           : undefined
 
-      const score = calculate_combined_score(f1, rmsd, kappa, config)
+      const score = calculate_cps(f1, rmsd, kappa, config)
       return typeof score === `number` ? score : undefined
     }
 

@@ -1,4 +1,4 @@
-import { calculate_combined_score, DEFAULT_CPS_CONFIG } from '$lib/metrics'
+import { calculate_cps, DEFAULT_CPS_CONFIG } from '$lib/metrics'
 import type { CombinedMetricConfig } from '$lib/types'
 import { describe, expect, it, test } from 'vitest'
 
@@ -39,14 +39,14 @@ describe(`Metrics`, () => {
     }
   }
 
-  describe(`calculate_combined_score`, () => {
+  describe(`calculate_cps`, () => {
     it(`correctly calculates score with all metrics available`, () => {
       // Test with sample values for F1, RMSD, and kappa
       const f1 = 0.8 // Good F1 score (higher is better)
       const rmsd = 0.005 // Good RMSD (lower is better)
       const kappa = 0.3 // Good kappa SRME (lower is better)
 
-      const score = calculate_combined_score(f1, rmsd, kappa, DEFAULT_CPS_CONFIG)
+      const score = calculate_cps(f1, rmsd, kappa, DEFAULT_CPS_CONFIG)
 
       // Calculate expected score based on known behavior
       // F1 with value 0.8 contributes 0.8 * 0.5 = 0.4
@@ -61,7 +61,7 @@ describe(`Metrics`, () => {
       [`RMSD only`, undefined, 0.005, undefined],
       [`kappa only`, undefined, undefined, 0.3],
     ])(`returns null when %s is provided with default config`, (_, f1, rmsd, kappa) => {
-      const score = calculate_combined_score(f1, rmsd, kappa, DEFAULT_CPS_CONFIG)
+      const score = calculate_cps(f1, rmsd, kappa, DEFAULT_CPS_CONFIG)
       // Should return null because with DEFAULT_CPS_CONFIG all metrics have weights
       expect(score).toBeNull()
     })
@@ -69,7 +69,7 @@ describe(`Metrics`, () => {
     it(`calculates scores correctly when missing metrics have zero weights`, () => {
       // Test with only F1 available in F1-only config
       const f1_only_config = create_single_metric_config(`F1`)
-      const f1_only_score = calculate_combined_score(
+      const f1_only_score = calculate_cps(
         0.8, // good F1
         undefined, // missing RMSD (zero weight)
         undefined, // missing kappa (zero weight)
@@ -80,7 +80,7 @@ describe(`Metrics`, () => {
 
       // Test with only RMSD available in RMSD-only config
       const rmsd_only_config = create_single_metric_config(`RMSD`)
-      const rmsd_only_score = calculate_combined_score(
+      const rmsd_only_score = calculate_cps(
         undefined, // missing F1 (zero weight)
         0.005, // good RMSD
         undefined, // missing kappa (zero weight)
@@ -92,7 +92,7 @@ describe(`Metrics`, () => {
 
       // Test with only kappa available in kappa-only config
       const kappa_only_config = create_single_metric_config(`kappa_SRME`)
-      const kappa_only_score = calculate_combined_score(
+      const kappa_only_score = calculate_cps(
         undefined, // missing F1 (zero weight)
         undefined, // missing RMSD (zero weight)
         0.3, // good kappa
@@ -107,7 +107,7 @@ describe(`Metrics`, () => {
       const f1_only_config = create_single_metric_config(`F1`)
 
       // Missing F1 but F1 weight is 1
-      const score = calculate_combined_score(undefined, 0.005, 0.3, f1_only_config)
+      const score = calculate_cps(undefined, 0.005, 0.3, f1_only_config)
 
       expect(score).toBeNull()
     })
@@ -119,7 +119,7 @@ describe(`Metrics`, () => {
 
       // Test with equal weights
       const equal_weights = create_equal_weights_config()
-      const equal_score = calculate_combined_score(f1, rmsd, kappa, equal_weights)
+      const equal_score = calculate_cps(f1, rmsd, kappa, equal_weights)
 
       // Perfect F1 (1.0), worst RMSD (0.0), worst kappa (0.0)
       // Equal weights: (1.0 + 0.0 + 0.0) / 3 = 0.333...
@@ -127,7 +127,7 @@ describe(`Metrics`, () => {
 
       // Test with F1-only weight
       const f1_only_weights = create_single_metric_config(`F1`)
-      const f1_weighted_score = calculate_combined_score(f1, rmsd, kappa, f1_only_weights)
+      const f1_weighted_score = calculate_cps(f1, rmsd, kappa, f1_only_weights)
 
       // Should be equal to F1 value (1.0)
       expect(f1_weighted_score).toBeCloseTo(1.0, 4)
@@ -140,12 +140,7 @@ describe(`Metrics`, () => {
         [0.015, 0.5],
       ])(`normalizes RMSD value %f correctly to %f`, (rmsd_value, expected_score) => {
         const rmsd_only_config = create_single_metric_config(`RMSD`)
-        const score = calculate_combined_score(
-          undefined,
-          rmsd_value,
-          undefined,
-          rmsd_only_config,
-        )
+        const score = calculate_cps(undefined, rmsd_value, undefined, rmsd_only_config)
         expect(score).toBeCloseTo(expected_score, 4)
       })
 
@@ -155,12 +150,7 @@ describe(`Metrics`, () => {
         [1.0, 0.5],
       ])(`normalizes kappa value %f correctly to %f`, (kappa_value, expected_score) => {
         const kappa_only_config = create_single_metric_config(`kappa_SRME`)
-        const score = calculate_combined_score(
-          undefined,
-          undefined,
-          kappa_value,
-          kappa_only_config,
-        )
+        const score = calculate_cps(undefined, undefined, kappa_value, kappa_only_config)
         expect(score).toBeCloseTo(expected_score, 2)
       })
 
@@ -177,12 +167,7 @@ describe(`Metrics`, () => {
         [0.035, 0],
       ])(`validates RMSD normalization: %f → %f`, (rmsd, expected_score) => {
         const rmsd_only_config = create_single_metric_config(`RMSD`)
-        const score = calculate_combined_score(
-          undefined,
-          rmsd,
-          undefined,
-          rmsd_only_config,
-        )
+        const score = calculate_cps(undefined, rmsd, undefined, rmsd_only_config)
         expect(score).toBeCloseTo(expected_score, 4)
       })
 
@@ -201,12 +186,7 @@ describe(`Metrics`, () => {
         [2.2, 0],
       ])(`validates kappa normalization: %f → %f`, (kappa, expected_score) => {
         const kappa_only_config = create_single_metric_config(`kappa_SRME`)
-        const score = calculate_combined_score(
-          undefined,
-          undefined,
-          kappa,
-          kappa_only_config,
-        )
+        const score = calculate_cps(undefined, undefined, kappa, kappa_only_config)
         expect(score).toBeCloseTo(expected_score, 4)
       })
     })
@@ -231,7 +211,7 @@ describe(`Metrics`, () => {
         [`specific values`, 0.95, 0.003, 0.2, 0.9167],
       ])(`calculates %s correctly`, (_, f1, rmsd, kappa, expected_score) => {
         const equal_weights = create_equal_weights_config()
-        const score = calculate_combined_score(f1, rmsd, kappa, equal_weights)
+        const score = calculate_cps(f1, rmsd, kappa, equal_weights)
         expect(score).toBeCloseTo(expected_score, 4)
       })
     })
@@ -244,12 +224,12 @@ describe(`Metrics`, () => {
         [`extreme kappa`, 0.8, undefined, 3.0, 0.8],
         [`F1 > 1`, 1.2, undefined, undefined, 1.2],
       ])(`handles %s correctly`, (_, f1, rmsd, kappa, expected_score) => {
-        const score = calculate_combined_score(f1, rmsd, kappa, f1_only_config)
+        const score = calculate_cps(f1, rmsd, kappa, f1_only_config)
         expect(score).toBeCloseTo(expected_score, 4)
       })
 
       it(`returns null when all metrics undefined but weights are non-zero`, () => {
-        const all_undefined_score = calculate_combined_score(
+        const all_undefined_score = calculate_cps(
           undefined,
           undefined,
           undefined,
@@ -260,7 +240,7 @@ describe(`Metrics`, () => {
 
       it(`handles NaN inputs correctly`, () => {
         // The function should return null for NaN inputs
-        const nan_score = calculate_combined_score(NaN, 0.01, 0.5, DEFAULT_CPS_CONFIG)
+        const nan_score = calculate_cps(NaN, 0.01, 0.5, DEFAULT_CPS_CONFIG)
         // Verify that it returns null
         expect(nan_score).toBeNull()
       })
@@ -277,7 +257,7 @@ describe(`Metrics`, () => {
         }
 
         // With all weights at 0, the score should be 0
-        const score = calculate_combined_score(0.8, 0.01, 0.5, empty_weights_config)
+        const score = calculate_cps(0.8, 0.01, 0.5, empty_weights_config)
         expect(score).toBe(0)
       })
 
@@ -293,12 +273,7 @@ describe(`Metrics`, () => {
         }
 
         // Perfect F1, poor RMSD and kappa
-        const score = calculate_combined_score(
-          1.0,
-          0.03,
-          2.0,
-          unnormalized_weights_config,
-        )
+        const score = calculate_cps(1.0, 0.03, 2.0, unnormalized_weights_config)
 
         // With normalization: (1.0 * 0.5) + (0 * 0.25) + (0 * 0.25) = 0.5
         // Weight distribution should be F1: 1.0/2 = 0.5, RMSD: 0.5/2 = 0.25, kappa: 0.5/2 = 0.25
@@ -318,7 +293,7 @@ describe(`Metrics`, () => {
 
         // With F1=1.0 and RMSD=0.03 (worst value), expect score to be very close to F1 value
         // but slightly less due to tiny RMSD contribution
-        const score = calculate_combined_score(1.0, 0.03, undefined, small_weights_config)
+        const score = calculate_cps(1.0, 0.03, undefined, small_weights_config)
 
         // Should be almost 1.0 but not quite due to small RMSD contribution
         // (1.0 * 0.999) + (0 * 0.001) / (0.999 + 0.001) = 0.999

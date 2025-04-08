@@ -475,6 +475,63 @@ describe(`MetricsTable`, () => {
       expect(some_different).toBe(true)
     })
 
+    it(`properly handles HTML content in cells without using it for data-sort-value`, async () => {
+      mount(MetricsTable, {
+        target: document.body,
+        props: {
+          show_noncompliant: true,
+          col_filter: (col: HeatmapColumn) =>
+            [`Model`, `Training Set`].includes(col.label),
+        },
+      })
+
+      await tick()
+
+      // Find cells with HTML content
+      const training_set_cells = [
+        ...document.body.querySelectorAll(`td[data-col="Training Set"]`),
+      ]
+
+      // Find cells with HTML content (looking for cells containing spans with tooltips)
+      const html_cells = training_set_cells.filter(
+        (cell) => cell.innerHTML.includes(`<span`) && cell.innerHTML.includes(`title=`),
+      )
+
+      // Ensure we found some cells with HTML content
+      expect(html_cells.length).toBeGreaterThan(0)
+
+      // Check that data-sort-value attribute on the td is not the full HTML
+      html_cells.forEach((cell) => {
+        const data_sort_value = cell.getAttribute(`data-sort-value`)
+
+        // The data-sort-value should not contain HTML tags if present
+        if (data_sort_value) {
+          expect(data_sort_value.includes(`<`)).toBe(false)
+          expect(data_sort_value.includes(`>`)).toBe(false)
+          expect(data_sort_value.includes(`span`)).toBe(false)
+        }
+
+        // The inner span should have its own data-sort-value
+        const inner_span = cell.querySelector(`span[data-sort-value]`)
+        if (inner_span) {
+          const span_sort_value = inner_span.getAttribute(`data-sort-value`)
+          expect(span_sort_value).toBeDefined()
+          expect(isNaN(Number(span_sort_value))).toBe(false)
+        }
+      })
+
+      // Verify tooltips are preserved on spans within cells
+      const cells_with_tooltips = training_set_cells.filter(
+        (cell) => cell.querySelector(`span[title]`) !== null,
+      )
+
+      expect(cells_with_tooltips.length).toBeGreaterThan(0)
+      cells_with_tooltips.forEach((cell) => {
+        const span = cell.querySelector(`span[title]`)
+        expect(span?.getAttribute(`title`)).toBeTruthy()
+      })
+    })
+
     it.each([
       {
         test_name: `with all models shown`,

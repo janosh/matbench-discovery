@@ -102,6 +102,8 @@ export interface Dataset {
     | `MIT`
     | `Apache-2.0`
     | `CC-BY-4.0`
+    | `CC-BY-SA-4.0`
+    | `CC-BY-NC-4.0`
     | `GPL-3.0`
     | `BSD-3-Clause`
     | `LGPL-3.0`
@@ -121,13 +123,13 @@ export interface Dataset {
    */
   date_added?: string
   /**
+   * Method(s) used to generate the data
+   */
+  method?: MethodEnum | MethodEnum[]
+  /**
    * Parameters and methods used to generate the dataset
    */
   params?: {
-    /**
-     * Method(s) used to generate the data
-     */
-    method?: MethodEnum | MethodEnum[]
     /**
      * DFT code(s) used for calculations
      */

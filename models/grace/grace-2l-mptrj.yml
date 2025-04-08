@@ -66,27 +66,27 @@ metrics:
       pred_file: models/grace/grace-2l-mptrj/2024-11-20-kappa-103-FIRE-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/52134896
   geo_opt:
-    pred_file: models/grace/grace-2l-mptrj/2024-11-11-relaxed-structures.json.gz
+    pred_file: models/grace/grace-2l-mptrj/2024-11-11-relaxed-structures.jsonl.gz
     pred_file_url: https://figshare.com/files/52062590
     struct_col: grace2l_r6_structure
     symprec=1e-5:
-      rmsd: 0.0186 # unitless
-      n_sym_ops_mae: 1.8703 # unitless
-      symmetry_decrease: 0.0355 # fraction
+      rmsd: 0.0897 # unitless
+      n_sym_ops_mae: 1.8838 # unitless
+      symmetry_decrease: 0.0349 # fraction
       symmetry_match: 0.7315 # fraction
-      symmetry_increase: 0.2285 # fraction
+      symmetry_increase: 0.2292 # fraction
       n_structures: 256862 # count
-      analysis_file: models/grace/grace-2l-mptrj/2024-11-11-relaxed-structures-symprec=1e-5.csv.gz
-      analysis_file_url: https://figshare.com/files/52062641
+      analysis_file: models/grace/grace-2l-mptrj/2024-11-11-relaxed-structures-symprec=1e-5-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/53504567
     symprec=1e-2:
-      rmsd: 0.0186 # unitless
-      n_sym_ops_mae: 1.8982 # unitless
-      symmetry_decrease: 0.0592 # fraction
-      symmetry_match: 0.7976 # fraction
-      symmetry_increase: 0.1363 # fraction
-      n_structures: 256513 # count
-      analysis_file: models/grace/grace-2l-mptrj/2024-11-11-relaxed-structures-symprec=1e-2.csv.gz
-      analysis_file_url: https://figshare.com/files/52062650
+      rmsd: 0.0897 # unitless
+      n_sym_ops_mae: 1.8495 # unitless
+      symmetry_decrease: 0.0596 # fraction
+      symmetry_match: 0.8107 # fraction
+      symmetry_increase: 0.1228 # fraction
+      n_structures: 256862 # count
+      analysis_file: models/grace/grace-2l-mptrj/2024-11-11-relaxed-structures-symprec=1e-2-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/53504573
   discovery:
     pred_file: models/grace/grace-2l-mptrj/2024-11-11-wbm-IS2RE-FIRE.csv.gz
     pred_file_url: https://figshare.com/files/52057577

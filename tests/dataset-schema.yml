@@ -130,17 +130,17 @@ definitions:
         description: Date when the dataset was added to this collection
 
       # Computational details
+      method:
+        oneOf:
+          - $ref: "#/definitions/method_enum"
+          - type: array
+            items:
+              $ref: "#/definitions/method_enum"
+        description: Method(s) used to generate the data
       params:
         type: object
         description: Parameters and methods used to generate the dataset
         properties:
-          method:
-            oneOf:
-              - $ref: "#/definitions/method_enum"
-              - type: array
-                items:
-                  $ref: "#/definitions/method_enum"
-            description: Method(s) used to generate the data
           code:
             oneOf:
               - $ref: "#/definitions/dft_code_enum"

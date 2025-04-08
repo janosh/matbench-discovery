@@ -1,9 +1,9 @@
 import { model_is_compliant } from '$lib'
 import {
-  create_combined_filter,
   format_date,
   format_train_set,
   get_geo_opt_property,
+  make_combined_filter,
   targets_tooltips,
 } from '$lib/metrics-table-helpers'
 import type { TargetType } from '$lib/model-schema'
@@ -343,11 +343,7 @@ describe(`metrics-table-helpers`, () => {
           model_is_compliant_mock.mockReturnValue(is_compliant)
         }
 
-        const filter = create_combined_filter(
-          mock_model_filter,
-          show_energy,
-          show_noncomp,
-        )
+        const filter = make_combined_filter(mock_model_filter, show_energy, show_noncomp)
 
         expect(filter(model as ModelData)).toBe(expected_result)
         expect(mock_model_filter).toHaveBeenCalledWith(model)

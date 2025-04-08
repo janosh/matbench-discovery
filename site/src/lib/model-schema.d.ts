@@ -87,6 +87,8 @@ export interface ModelMetadata {
       | `MIT`
       | `Apache-2.0`
       | `CC-BY-4.0`
+      | `CC-BY-SA-4.0`
+      | `CC-BY-NC-4.0`
       | `GPL-3.0`
       | `BSD-3-Clause`
       | `LGPL-3.0`
@@ -101,6 +103,8 @@ export interface ModelMetadata {
       | `MIT`
       | `Apache-2.0`
       | `CC-BY-4.0`
+      | `CC-BY-SA-4.0`
+      | `CC-BY-NC-4.0`
       | `GPL-3.0`
       | `BSD-3-Clause`
       | `LGPL-3.0`
