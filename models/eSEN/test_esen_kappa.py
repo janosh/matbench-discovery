@@ -162,7 +162,7 @@ class KappaSRMERunner:
 
                     reached_max_steps = optimizer.step >= max_steps
                     if reached_max_steps:
-                        print(f"{mat_id=} reached {max_steps=} during relaxation.")
+                        print(f"{mat_id=} reached {max_steps=} during relaxation")
 
                     max_stress = (
                         atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
