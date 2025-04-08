@@ -1,39 +1,34 @@
-from pathlib import Path
+import gzip
 import traceback
 import warnings
 from copy import deepcopy
-from typing import Any, Optional, Union
+from io import BytesIO
+from pathlib import Path
+from typing import Any
 
 import ase.io
 import numpy as np
 import pandas as pd
+import requests  # type: ignore
 import torch
-from ase import Atoms
-from ase.constraints import FixSymmetry
-from ase.filters import ExpCellFilter, FrechetCellFilter
-from ase.optimize.optimize import Optimizer
-from ase.optimize import FIRE, LBFGS
-from ase.spacegroup.symmetrize import check_symmetry
-from ase.calculators.calculator import Calculator
-from tqdm import tqdm
 import typer
 import wandb
-import requests  # type: ignore
-import gzip
-from io import BytesIO
-
-
+from ase import Atoms
+from ase.calculators.calculator import Calculator
+from ase.constraints import FixSymmetry
+from ase.filters import ExpCellFilter, FrechetCellFilter
+from ase.optimize import FIRE, LBFGS
+from ase.optimize.optimize import Optimizer
+from ase.spacegroup.symmetrize import check_symmetry
 from orb_models.forcefield.calculator import ORBCalculator
 from orb_models.forcefield.pretrained import ORB_PRETRAINED_MODELS
+from tqdm import tqdm
 
-from .keys import Key
 from . import metrics
 from . import thermal_conductivity as ltc
-
+from .keys import Key
 
 app = typer.Typer()
-
-
 
 
 def download_results_json(data_root: Path) -> Path:
@@ -80,6 +75,7 @@ def download_phonondb_structures(data_root: Path) -> Path:
     print(f"Downloaded and saved to {extxyz_path}")
     return extxyz_path
 
+
 def compute_and_log_final_results(
     df_kappa: pd.DataFrame,
     run: wandb.sdk.wandb_run.Run,
@@ -101,6 +97,7 @@ def compute_and_log_final_results(
     kappa_sre = df_ml_metrics[Key.sre].mean()
     kappa_srme = df_ml_metrics[Key.srme].mean()
     run.summary.update({"srme": kappa_srme, "sre": kappa_sre})
+
 
 def check_imaginary_freqs(frequencies: np.ndarray, threshold: float = -0.01) -> bool:
     """Check if frequencies are imaginary.
@@ -147,7 +144,7 @@ def calc_kappa_for_structure(
     save_forces: bool,
     out_dir: str,
     task_id: int,
-    is_plusminus: Union[bool, str] = True,
+    is_plusminus: bool | str = True,
 ) -> tuple[str, dict[str, Any], dict[str, Any] | None]:
     """Predict ML kappa for single structure.
 
@@ -210,7 +207,8 @@ def calc_kappa_for_structure(
             filtered_atoms = filter_cls(atoms)
 
         optimizer = optim_cls(
-            filtered_atoms, logfile=f"{out_dir}/relax_{task_id}.log"  # type: ignore
+            filtered_atoms,
+            logfile=f"{out_dir}/relax_{task_id}.log",  # type: ignore
         )
 
         pre_symmetry_group = check_symmetry(atoms, symprec).number
@@ -317,7 +315,7 @@ def calc_kappa_for_structure(
 @app.command()
 def run_thermal_conductivity(
     model_name_or_uri: str = "orb-v3-conservative-inf-mpa",  # or orb-v3-conservative-inf-omat
-    limit_structures: Optional[int] = None,
+    limit_structures: int | None = None,
     displacement_distance: float = 0.03,
     ase_optimizer: str = "FIRE",
     ase_filter: str = "frechet",
@@ -331,8 +329,8 @@ def run_thermal_conductivity(
     temperatures: list[float] = [300],
     precision: str = "float64",
     deterministic: bool = False,
-    max_num_neighbors: Optional[int] = 120,
-    wandb_name: Optional[str] = None,
+    max_num_neighbors: int | None = 120,
+    wandb_name: str | None = None,
     is_plusminus: bool = True,  # False corresponds to "auto" (None would be better, but typer won't allow)
 ) -> None:
     """Run thermal conductivity prediction benchmark, as used by matbench-discovery.

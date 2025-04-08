@@ -22,7 +22,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from .keys import MbdKey, Key
+from .keys import Key, MbdKey
 from .thermal_conductivity import calc_mode_kappa_tot
 
 

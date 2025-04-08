@@ -8,9 +8,9 @@ implement parallelization across input structures which allows scaling thermal
 conductivity metric to larger test sets.
 """
 
-from enum import StrEnum
 import warnings
 from copy import deepcopy
+from enum import StrEnum
 from typing import Any
 
 import numpy as np
