@@ -24,7 +24,7 @@ describe(`Datasets Page`, () => {
 
     // Check header columns
     const header_cols = thead?.querySelectorAll(`th`) || []
-    expect(header_cols.length).toBe(9)
+    expect(header_cols.length).toBe(8)
 
     // Verify expected column headers are present
     const column_headers = Array.from(header_cols).map(

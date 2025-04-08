@@ -74,23 +74,23 @@ metrics:
     pred_file_url: https://figshare.com/files/52061984
     struct_col: structure_bowsr_megnet
     symprec=1e-5:
-      rmsd: 0.043 # unitless
-      symmetry_decrease: 0.0037 # fraction
-      symmetry_match: 0.5271 # fraction
-      symmetry_increase: 0.4671 # fraction
-      n_sym_ops_mae: 29.4778 # unitless
+      rmsd: 0.195 # unitless
+      n_sym_ops_mae: 29.4219 # unitless
+      symmetry_decrease: 0.0038 # fraction
+      symmetry_match: 0.5299 # fraction
+      symmetry_increase: 0.4642 # fraction
       n_structures: 250779 # count
-      analysis_file: models/bowsr/bowsr-megnet/2023-01-23-wbm-geo-opt-symprec=1e-5.csv.gz
-      analysis_file_url: https://figshare.com/files/52061993
+      analysis_file: models/bowsr/bowsr-megnet/2023-01-23-wbm-geo-opt-symprec=1e-5-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/53504507
     symprec=1e-2:
-      rmsd: 0.043 # unitless
-      n_sym_ops_mae: 25.4771 # unitless
-      symmetry_decrease: 0.0618 # fraction
-      symmetry_match: 0.795 # fraction
-      symmetry_increase: 0.1307 # fraction
-      n_structures: 250430 # count
-      analysis_file: models/bowsr/bowsr-megnet/2023-01-23-wbm-geo-opt-symprec=1e-2.csv.gz
-      analysis_file_url: https://figshare.com/files/52061996
+      rmsd: 0.195 # unitless
+      n_sym_ops_mae: 25.4696 # unitless
+      symmetry_decrease: 0.0694 # fraction
+      symmetry_match: 0.7978 # fraction
+      symmetry_increase: 0.1198 # fraction
+      n_structures: 250779 # count
+      analysis_file: models/bowsr/bowsr-megnet/2023-01-23-wbm-geo-opt-symprec=1e-2-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/53504510
   discovery:
     pred_file: models/bowsr/bowsr-megnet/2023-01-23-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/52057523

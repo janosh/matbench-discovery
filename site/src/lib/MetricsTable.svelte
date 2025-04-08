@@ -10,7 +10,7 @@
     HeatmapColumn,
     LinkData,
     ModelData,
-    TableData,
+    RowData,
   } from './types'
 
   interface Props {
@@ -35,15 +35,7 @@
   let active_files: { name: string; url: string }[] = $state([])
   let active_model_name = $state(``)
   let pred_file_modal: HTMLDialogElement | null = $state(null)
-
-  // Make metric_config reactive with $state to properly handle updates
-  let metric_config = $state({ ...config })
   const [compliant_clr, noncompliant_clr] = [`#4caf50`, `#4682b4`]
-
-  // Update metric_config when config prop changes
-  $effect(() => {
-    metric_config = { ...config }
-  })
 
   let columns = $derived(
     [...ALL_METRICS, ...METADATA_COLS]
@@ -63,39 +55,19 @@
       .sort((col1, _col2) => (col1.label === `Model` ? -1 : 1)),
   )
 
-  let metrics_data = $state<TableData>([]) // reactive metrics_data
-
+  let metrics_data = $state<RowData[]>([])
   // recalculate metrics_data whenever filter settings, props, or metric_config change
   $effect(() => {
-    // When metric_config or filters change, recalculate metrics data
     metrics_data = calculate_metrics_data(
       discovery_set,
       model_filter,
       show_energy_only,
       show_noncompliant,
-      metric_config,
+      config,
       compliant_clr,
       noncompliant_clr,
     )
   })
-
-  // Handle changes to filter options (energy-only and noncompliant models)
-  function handle_filter_change(show_energy: boolean, show_noncomp: boolean) {
-    // Update the props directly
-    show_energy_only = show_energy
-    show_noncompliant = show_noncomp
-
-    // Force immediate recalculation
-    metrics_data = calculate_metrics_data(
-      discovery_set,
-      model_filter,
-      show_energy_only,
-      show_noncompliant,
-      metric_config,
-      compliant_clr,
-      noncompliant_clr,
-    )
-  }
 </script>
 
 <svelte:window
@@ -126,14 +98,7 @@
             </div>
           {/each}
         {/if}
-        <TableControls
-          {show_energy_only}
-          {show_noncompliant}
-          bind:columns
-          on_filter_change={(show_energy, show_noncomp) => {
-            handle_filter_change(show_energy, show_noncomp)
-          }}
-        />
+        <TableControls bind:show_energy_only bind:show_noncompliant bind:columns />
       </div>
     </div>
   {/snippet}

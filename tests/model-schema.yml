@@ -254,6 +254,8 @@ definitions:
       - MIT
       - Apache-2.0
       - CC-BY-4.0
+      - CC-BY-SA-4.0
+      - CC-BY-NC-4.0
       - GPL-3.0
       - BSD-3-Clause
       - LGPL-3.0
@@ -264,6 +266,8 @@ definitions:
       License type:
       - MIT: Massachusetts Institute of Technology
       - CC-BY-4.0: Creative Commons Attribution 4.0 International
+      - CC-BY-NC-4.0: Creative Commons Attribution-NonCommercial 4.0 International
+      - CC-BY-SA-4.0: Creative Commons Attribution-ShareAlike 4.0 International
       - GPL-3.0: GNU General Public v3.0
       - BSD-3-Clause: Berkeley Software Distribution 3-Clause
       - LGPL-3.0: GNU Lesser General Public License v3.0
