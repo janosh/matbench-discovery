@@ -1,6 +1,9 @@
-import type { TargetType } from '$lib'
 import { DATASETS, MODEL_METADATA, get_pred_file_urls, model_is_compliant } from '$lib'
-import { pretty_num } from 'elementari'
+import type { TargetType } from '$lib/model-schema'
+import { max, min } from 'd3-array'
+import { scaleLog, scaleSequential } from 'd3-scale'
+import * as d3sc from 'd3-scale-chromatic'
+import { choose_bw_for_contrast, pretty_num } from 'elementari/labels'
 import { calculate_cps } from './metrics'
 import type {
   CombinedMetricConfig,
@@ -245,4 +248,58 @@ export function calculate_metrics_data(
         return score2 - score1
       })
   )
+}
+
+// Calculate table cell color based on its value and column config
+export function calc_cell_color(
+  val: number | null | undefined, // cell value
+  all_values: (number | null | undefined)[], // all values in the column
+  better: `higher` | `lower` | undefined, // sort direction
+  color_scale: string | null = `interpolateViridis`, // color scale name
+  scale_type: `linear` | `log` = `linear`, // scale type
+): { bg: string | null; text: string | null } {
+  // Skip color calculation for null values or if color_scale is null
+  if (val === null || val === undefined || color_scale === null) {
+    return { bg: null, text: null }
+  }
+
+  const numeric_vals = all_values.filter(
+    (v): v is number => typeof v === `number` && v > 0, // Filter out non-positives for log scale
+  )
+
+  if (numeric_vals.length === 0) {
+    return { bg: null, text: null }
+  }
+
+  const range = [min(numeric_vals) ?? 0, max(numeric_vals) ?? 1]
+
+  // Reverse the range if lower values are better
+  if (better === `lower`) {
+    range.reverse()
+  }
+
+  // Use custom color scale if specified, otherwise fall back to viridis
+  const scale_name = color_scale || `interpolateViridis`
+  const interpolator = d3sc[scale_name as keyof typeof d3sc] || d3sc.interpolateViridis
+
+  let color_scale_fn
+
+  if (scale_type === `log` && range[0] > 0 && range[1] > 0) {
+    // Use log scale for positive values
+    color_scale_fn = scaleLog().domain(range).range([0, 1]).clamp(true)
+
+    const normalized_val = color_scale_fn(val)
+    const bg = interpolator(normalized_val)
+    const text = choose_bw_for_contrast(null, bg)
+
+    return { bg, text }
+  } else {
+    // Use sequential scale for linear mapping
+    color_scale_fn = scaleSequential().domain(range).interpolator(interpolator)
+
+    const bg = color_scale_fn(val)
+    const text = choose_bw_for_contrast(null, bg)
+
+    return { bg, text }
+  }
 }

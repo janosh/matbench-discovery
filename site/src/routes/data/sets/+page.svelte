@@ -1,6 +1,6 @@
 <script lang="ts">
   import { DATASETS } from '$lib'
-  import { format_date } from '$lib/metrics-table-helpers'
+  import { calc_cell_color, format_date } from '$lib/metrics-table-helpers'
   import type { Dataset, HeatmapColumn } from '$lib/types'
   import { pretty_num } from 'elementari'
   import 'iconify-icon'
@@ -9,8 +9,18 @@
 
   const columns: HeatmapColumn[] = [
     { label: `Title`, sticky: true },
-    { label: `Structures`, better: `higher` },
-    { label: `Materials`, better: `higher` },
+    {
+      label: `Structures`,
+      better: `higher`,
+      color_scale: `interpolateViridis`,
+      scale_type: `log`,
+    },
+    {
+      label: `Materials`,
+      better: `higher`,
+      color_scale: `interpolateViridis`,
+      scale_type: `log`,
+    },
     { label: `Open` },
     { label: `Created`, better: `higher` },
     { label: `License` },
@@ -52,14 +62,14 @@
 
   // Process data for table
   const datasets = Object.entries(DATASETS).map(([key, set]) => {
-    let { n_structures, n_materials, date_created, license } = set
+    let { n_structures, n_materials, date_created, license, method } = set
     const license_full = license_map[license]
 
     const params_tooltip = Object.entries(set.params ?? {})
       .map(([key, value]) => `${title_case(key)}: ${arr_to_str(value)}`)
       .join(`&#013;`)
 
-    const method_str = arr_to_str(set.params?.method)
+    const method_str = arr_to_str(method)
     const created_timestamp = date_created ? new Date(date_created).getTime() : null
 
     return {
@@ -100,10 +110,7 @@
     return links.join(` `)
   }
 
-  let sort_state = {
-    column: `Created`,
-    ascending: true,
-  }
+  let sort_state = { column: `Created`, ascending: true }
 
   // Initial sort
   let table_data = sort_rows(`Created`)
@@ -137,6 +144,14 @@
       return val1 < val2 ? -1 * modifier : 1 * modifier
     })
   }
+
+  // Extract structure and material values for color calculation
+  const structure_counts = datasets
+    .map((ds) => ds.sort_values.Structures)
+    .filter((val) => typeof val === `number`)
+  const material_counts = datasets
+    .map((ds) => ds.sort_values.Materials)
+    .filter((val) => typeof val === `number`)
 
   const yaml_url = `https://github.com/janosh/matbench-discovery/blob/main/data/datasets.yml`
 </script>
@@ -177,7 +192,25 @@ discovery.
         {#each table_data as row (row.key)}
           <tr animate:flip={{ duration: 500 }}>
             {#each columns as col (col.label)}
-              <td class:sticky-col={col.sticky} data-col={col.label}>
+              {@const cell_value = row.sort_values[col.label]}
+              {@const colors =
+                col.color_scale && typeof cell_value === `number`
+                  ? calc_cell_color(
+                      cell_value,
+                      col.label === `Structures` ? structure_counts : material_counts,
+                      col.better === `higher` || col.better === `lower`
+                        ? col.better
+                        : undefined,
+                      col.color_scale,
+                      col.scale_type,
+                    )
+                  : { bg: null, text: null }}
+              <td
+                class:sticky-col={col.sticky}
+                data-col={col.label}
+                style:background-color={colors.bg}
+                style:color={colors.text}
+              >
                 {@html row[col.label]}
               </td>
             {/each}
@@ -188,13 +221,12 @@ discovery.
   </div>
 </div>
 
-See a dataset that's missing from this list or incorrect data? Suggest an edit to
+See incorrect data or a dataset that's missing from this list? Suggest an edit to
 <a href={yaml_url} target="_blank" rel="noopener noreferrer"
   >{yaml_url.split(`/`).pop()}</a
 >
 
 <style>
-  /* Use negative margin technique for full width, matching +page.svelte */
   .table-wrapper {
     width: calc(100vw - 40px);
     margin: 1em calc(-50vw + 50% + 20px);
@@ -206,7 +238,7 @@ See a dataset that's missing from this list or incorrect data? Suggest an edit t
     border-collapse: collapse;
   }
   :is(th, td) {
-    padding: 3pt 10pt;
+    padding: 2pt 5pt;
     text-align: left;
     border: none;
   }

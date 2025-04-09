@@ -1,12 +1,10 @@
 <script lang="ts">
-  import { max, min } from 'd3-array'
-  import { scaleSequential } from 'd3-scale'
-  import * as d3sc from 'd3-scale-chromatic'
-  import { choose_bw_for_contrast, pretty_num } from 'elementari/labels'
+  import { pretty_num } from 'elementari/labels'
   import 'iconify-icon'
   import type { Snippet } from 'svelte'
   import { titles_as_tooltips } from 'svelte-zoo/actions'
   import { flip } from 'svelte/animate'
+  import { calc_cell_color } from './metrics-table-helpers'
   import type { CellVal, HeatmapColumn, RowData } from './types'
 
   interface Props {
@@ -134,25 +132,14 @@
       .map((row) => row[col_id])
       .filter((val) => typeof val === `number`) // Type guard to ensure we only get numbers
 
-    if (numeric_vals.length === 0) {
-      return { bg: null, text: null }
-    }
-
-    const range = [min(numeric_vals) ?? 0, max(numeric_vals) ?? 1]
-    if (col.better === `lower`) {
-      range.reverse()
-    }
-
-    // Use custom color scale if specified, otherwise fall back to viridis
-    const scale_name = col.color_scale || `interpolateViridis`
-    const interpolator = d3sc[scale_name] || d3sc.interpolateViridis
-
-    const color_scale = scaleSequential().domain(range).interpolator(interpolator)
-
-    const bg = color_scale(val)
-    const text = choose_bw_for_contrast(null, bg)
-
-    return { bg, text }
+    // Using the shared helper function for color calculation
+    return calc_cell_color(
+      val,
+      numeric_vals,
+      col.better === `higher` || col.better === `lower` ? col.better : undefined,
+      col.color_scale || `interpolateViridis`,
+      col.scale_type || `linear`,
+    )
   }
 
   let visible_columns = $derived(columns.filter((col) => col.visible !== false))
