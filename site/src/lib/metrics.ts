@@ -6,7 +6,7 @@ export const DEFAULT_CPS_CONFIG: CombinedMetricConfig = {
   label: `CPS`,
   name: `Combined Performance Score`,
   key: `cps`,
-  description: `Combined Performance Score weights discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>)`,
+  description: `Combined Performance Score averages discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>) according to user-defined weights`,
   parts: {
     F1: {
       path: `discovery.unique_prototypes.F1`,
@@ -34,17 +34,14 @@ export const DEFAULT_CPS_CONFIG: CombinedMetricConfig = {
       better: `lower`,
     },
   },
-}
+} as const
 
 export const METADATA_COLS: HeatmapColumn[] = [
   { label: `Model`, sticky: true, sortable: true, better: null },
   { label: `Training Set`, tooltip: `Size of and link to model training set` },
   { label: `Params`, tooltip: `Number of trainable model parameters` },
   { label: `Targets`, tooltip: `Target property used to train the model` },
-  {
-    label: `Date Added`,
-    tooltip: `Submission date to the leaderboard`,
-  },
+  { label: `Date Added`, tooltip: `Submission date to the leaderboard` },
   {
     label: `Links`,
     tooltip: `Model resources: paper, code repository and submission pull request`,
@@ -69,14 +66,8 @@ export const DISCOVERY_METRICS: HeatmapColumn[] = [
   { label: `DAF`, tooltip: `Discovery acceleration factor` },
   { label: `Prec`, tooltip: `Precision of classifying thermodynamic stability` },
   { label: `Acc`, tooltip: `Accuracy of classifying thermodynamic stability` },
-  {
-    label: `TPR`,
-    tooltip: `True positive rate of classifying thermodynamic stability`,
-  },
-  {
-    label: `TNR`,
-    tooltip: `True negative rate of classifying thermodynamic stability`,
-  },
+  { label: `TPR`, tooltip: `True positive rate of classifying thermodynamic stability` },
+  { label: `TNR`, tooltip: `True negative rate of classifying thermodynamic stability` },
   {
     label: `MAE`,
     tooltip: `Mean absolute error of predicting the convex hull distance`,
@@ -124,9 +115,7 @@ export const GEO_OPT_METRICS: HeatmapColumn[] = [
 
 export const CPS_COLUMN: HeatmapColumn = {
   label: `CPS`,
-  tooltip: Object.values(DEFAULT_CPS_CONFIG.parts)
-    .map((w) => w.label)
-    .join(`, `),
+  tooltip: DEFAULT_CPS_CONFIG.description,
   style: `border-right: 1px solid black;`,
   format: `.3f`,
   better: `higher`,

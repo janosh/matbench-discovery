@@ -145,13 +145,13 @@ export function format_train_set(model_train_sets: string[]): string {
     return key
   })
 
-  const data_str = data_links.join(`+`)
+  const dataset_links = data_links.join(`+`)
   const new_line = `&#013;` // line break that works in title attribute
   const dataset_tooltip =
     tooltip.length > 1 ? `${new_line}• ${tooltip.join(new_line + `• `)}` : ``
 
   let title = `${pretty_num(total_materials, `,`)} materials in training set${new_line}${dataset_tooltip}`
-  let train_size_str = `<span title="${title}" data-sort-value="${total_materials}">${pretty_num(total_materials)} (${data_str})</span>`
+  let train_size_str = `<span title="${title}" data-sort-value="${total_materials}">${pretty_num(total_materials)} <small>${dataset_links}</small></span>`
 
   if (total_materials !== total_structs) {
     title =
@@ -162,7 +162,7 @@ export function format_train_set(model_train_sets: string[]): string {
     train_size_str =
       `<span title="${title}" data-sort-value="${total_materials}">` +
       `${pretty_num(total_materials)} <small>(${pretty_num(total_structs)})</small> ` +
-      `(${data_str})</span>`
+      `<small>${dataset_links}</small></span>`
   }
 
   return train_size_str
