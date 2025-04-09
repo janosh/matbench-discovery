@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { HeatmapTable, MODEL_METADATA, model_is_compliant } from '$lib'
+  import { HeatmapTable, MODELS, model_is_compliant } from '$lib'
   import { pretty_num } from 'elementari'
   import type { HeatmapColumn } from './types.ts'
 
@@ -13,7 +13,7 @@
   let symprec_values = $derived(
     [
       ...new Set(
-        MODEL_METADATA.flatMap((model) =>
+        MODELS.flatMap((model) =>
           Object.keys(model.metrics?.geo_opt ?? {})
             .filter((key) => key.startsWith(`symprec=`))
             .map((key) => key.replace(`symprec=`, ``)),
@@ -99,7 +99,7 @@
 
   // Transform MODEL_METADATA into table data format
   let metrics_data = $derived(
-    MODEL_METADATA.filter(
+    MODELS.filter(
       (model) =>
         (show_non_compliant || model_is_compliant(model)) &&
         // Check if model has data for all symprec values

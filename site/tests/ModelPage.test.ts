@@ -1,12 +1,12 @@
-import { MODEL_METADATA, type ModelData } from '$lib'
+import { MODELS, type ModelData } from '$lib'
 import { get_metric_value } from '$lib/metric-helpers'
 import { mount } from 'svelte'
 import { describe, expect, it } from 'vitest'
 import ModelPage from '../src/routes/models/[slug]/+page.svelte'
 
-const model_keys = MODEL_METADATA.map((m) => m.model_key)
+const model_keys = MODELS.map((m) => m.model_key)
 const model_key = model_keys[0]
-const test_model = MODEL_METADATA.find((m) => m.model_key === model_key)
+const test_model = MODELS.find((m) => m.model_key === model_key)
 if (!test_model) throw `missing test model`
 
 describe(`Model Detail Page`, () => {

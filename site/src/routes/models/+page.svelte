@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ModelStatLabel, ModelStats } from '$lib'
-  import { model_is_compliant, MODEL_METADATA, ModelCard } from '$lib'
+  import { model_is_compliant, ModelCard, MODELS } from '$lib'
   import { get_metric_value, is_lower_better } from '$lib/metric-helpers'
   import { interpolateCividis as cividis } from 'd3-scale-chromatic'
   import { ColorBar } from 'elementari'
@@ -14,7 +14,7 @@
   let show_non_compliant: boolean = $state(true)
   let show_details: boolean = $state(false)
   let order: `asc` | `desc` = $state(`desc`)
-  let show_n_best: number = $state(MODEL_METADATA.length) // show only best models
+  let show_n_best: number = $state(MODELS.length) // show only best models
   const min_models: number = 2
 
   const stats: ModelStatLabel[] = [
@@ -55,37 +55,37 @@
   let sort_factor = $derived({ asc: 1, desc: -1 }[order])
 
   let models = $derived(
-    MODEL_METADATA.filter(
-      (model) => show_non_compliant || model_is_compliant(model),
-    ).sort((model_1, model_2) => {
-      // Special case for model_name sorting
-      if (sort_by === `model_name`) {
-        // For model_name, directly use localeCompare with sort_factor
-        return sort_factor * model_1.model_name.localeCompare(model_2.model_name)
-      }
-
-      // Get values using the helper function for other metrics
-      const val_1 = get_metric_value(model_1, sort_by)
-      const val_2 = get_metric_value(model_2, sort_by)
-
-      // Handle null, undefined, or NaN values by sorting last
-      if (val_1 == null && val_2 == null) return 0
-      if (val_1 == null || Number.isNaN(val_1)) return 1 // Always sort nulls/NaN to the end
-      if (val_2 == null || Number.isNaN(val_2)) return -1 // Always sort nulls/NaN to the end
-
-      if (typeof val_1 == `string` && typeof val_2 == `string`) {
-        return sort_factor * (val_1 as string).localeCompare(val_2 as string)
-      } else if (typeof val_1 == `number` && typeof val_2 == `number`) {
-        // interpret runt_time==0 as infinity
-        if (sort_by == `Run Time (h)`) {
-          if (val_1 == 0) return -sort_factor
-          if (val_2 == 0) return sort_factor
+    MODELS.filter((model) => show_non_compliant || model_is_compliant(model)).sort(
+      (model_1, model_2) => {
+        // Special case for model_name sorting
+        if (sort_by === `model_name`) {
+          // For model_name, directly use localeCompare with sort_factor
+          return sort_factor * model_1.model_name.localeCompare(model_2.model_name)
         }
-        return sort_factor * (val_2 - val_1)
-      } else {
-        throw `Unexpected type '${val_1}' encountered sorting by key '${sort_by}'`
-      }
-    }),
+
+        // Get values using the helper function for other metrics
+        const val_1 = get_metric_value(model_1, sort_by)
+        const val_2 = get_metric_value(model_2, sort_by)
+
+        // Handle null, undefined, or NaN values by sorting last
+        if (val_1 == null && val_2 == null) return 0
+        if (val_1 == null || Number.isNaN(val_1)) return 1 // Always sort nulls/NaN to the end
+        if (val_2 == null || Number.isNaN(val_2)) return -1 // Always sort nulls/NaN to the end
+
+        if (typeof val_1 == `string` && typeof val_2 == `string`) {
+          return sort_factor * (val_1 as string).localeCompare(val_2 as string)
+        } else if (typeof val_1 == `number` && typeof val_2 == `number`) {
+          // interpret runt_time==0 as infinity
+          if (sort_by == `Run Time (h)`) {
+            if (val_1 == 0) return -sort_factor
+            if (val_2 == 0) return sort_factor
+          }
+          return sort_factor * (val_2 - val_1)
+        } else {
+          throw `Unexpected type '${val_1}' encountered sorting by key '${sort_by}'`
+        }
+      },
+    ),
   )
 
   let [min_val, max_val] = $derived.by(() => {
@@ -186,7 +186,7 @@
 </div>
 
 <!-- link to ALL model pages with hidden links for the SvelteKit crawler -->
-{#each MODEL_METADATA as model (model.model_name)}
+{#each MODELS as model (model.model_name)}
   <a href="/models/{model.model_key}" hidden>
     {model.model_name}
   </a>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { MetricScatter, MetricsTable, MODEL_METADATA, type ModelData } from '$lib'
+  import { MetricScatter, MetricsTable, MODELS, type ModelData } from '$lib'
   import {
     ALL_METRICS,
     DEFAULT_CPS_CONFIG,
@@ -46,7 +46,7 @@
   </p>
 
   <MetricScatter
-    models={MODEL_METADATA}
+    models={MODELS}
     model_filter={model_has_kappa_103}
     metric="phonons.kappa_103.κ_SRME"
     x_property="model_params"
@@ -56,7 +56,7 @@
 
   <h3 style="margin: 3em auto -1em;">κ<sub>SRME</sub> Progress Over Time</h3>
   <MetricScatter
-    models={MODEL_METADATA}
+    models={MODELS}
     model_filter={model_has_kappa_103}
     metric="phonons.kappa_103.κ_SRME"
     x_property="date_added"

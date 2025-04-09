@@ -1,4 +1,4 @@
-import { DATASETS, MODEL_METADATA, ModelCard } from '$lib'
+import { DATASETS, MODELS, ModelCard } from '$lib'
 import type { ModelStatLabel } from '$lib/types'
 import { pretty_num } from 'elementari'
 import { mount } from 'svelte'
@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 
 describe(`ModelCard`, () => {
   // Get a real model from MODEL_METADATA
-  const model = MODEL_METADATA.find((m) => m.model_key === `mace-mp-0`)
+  const model = MODELS.find((m) => m.model_key === `mace-mp-0`)
   if (!model) throw new Error(`Could not find mace-mp-0 model in MODEL_METADATA`)
 
   const stats: ModelStatLabel[] = [

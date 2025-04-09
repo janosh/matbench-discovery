@@ -1,4 +1,4 @@
-import { DATASETS, MODEL_METADATA, get_pred_file_urls, model_is_compliant } from '$lib'
+import { DATASETS, MODELS, get_pred_file_urls, model_is_compliant } from '$lib'
 import type { TargetType } from '$lib/model-schema'
 import { discovery as discovery_config } from '$pkg/modeling-tasks.yml'
 import { max, min } from 'd3-array'
@@ -234,7 +234,7 @@ export function calculate_metrics_data(
       : `<span title="License file not available">${license}</span>`
 
   return (
-    MODEL_METADATA.filter(
+    MODELS.filter(
       (model) => current_filter(model) && model.metrics?.discovery?.[discovery_set],
     )
       .map((model) => {

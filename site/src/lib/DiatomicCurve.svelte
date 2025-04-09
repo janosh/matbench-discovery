@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { MODEL_METADATA } from '$lib'
+  import { MODELS } from '$lib'
   import { ScatterPlot } from 'elementari'
 
   interface Props {
@@ -30,7 +30,7 @@
   // Create a map of model keys to labels from MODEL_METADATA
   // Extract base model name by removing version suffix
   const model_labels = new Map(
-    MODEL_METADATA.map((model) => {
+    MODELS.map((model) => {
       const base_name = model.dirname
       const label = model.model_name ?? base_name
       // Map both the base name and any known version-specific names to the same label
@@ -41,7 +41,7 @@
   // Function to get model label, handling version suffixes
   function get_model_label(model_key: string): string {
     // Try to match the model key to known base names
-    const base_name = MODEL_METADATA.find((model) =>
+    const base_name = MODELS.find((model) =>
       model_key?.startsWith(model.dirname),
     )?.dirname
 

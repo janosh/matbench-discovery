@@ -64,7 +64,7 @@ export const model_colors = [
 ]
 
 // merge computed and static model metadata
-export const MODEL_METADATA = Object.entries(MODEL_METADATA_PATHS)
+export const MODELS = Object.entries(MODEL_METADATA_PATHS)
   .filter(
     // ignore models that aren't completed
     ([_key, metadata]) => (metadata?.status ?? `complete`) == `complete`,
@@ -87,7 +87,7 @@ function md_to_html(md: string): Uint8Array | string {
 }
 
 // parse markdown notes to html with remark/rehype
-for (const { notes, metadata_file } of MODEL_METADATA) {
+for (const { notes, metadata_file } of MODELS) {
   if (!notes) continue
   if (!notes.html) notes.html = {}
 

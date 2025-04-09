@@ -2,7 +2,7 @@
   import { browser } from '$app/environment'
   import StructRmsdCdfModels from '$figs/struct-rmsd-cdf-models.svelte'
   import SymOpsDiffBar from '$figs/sym-ops-diff-bar.svelte'
-  import { GeoOptMetricsTable, MODEL_METADATA } from '$lib'
+  import { GeoOptMetricsTable, MODELS } from '$lib'
   import { pretty_num } from 'elementari'
   import type { SvelteComponent } from 'svelte'
   import GeoOptReadme from './geo-opt-readme.md'
@@ -12,7 +12,7 @@
     import: `default`,
   }) as Record<string, typeof SvelteComponent>
 
-  const n_min_relaxed_structures = MODEL_METADATA.reduce(
+  const n_min_relaxed_structures = MODELS.reduce(
     (acc, model) =>
       Math.min(acc, model.metrics?.geo_opt?.[`symprec=1e-2`]?.n_structures ?? Infinity),
     Infinity,
