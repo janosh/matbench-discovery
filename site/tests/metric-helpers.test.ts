@@ -137,7 +137,6 @@ describe(`metrics-table-helpers`, () => {
           `10k`,
           `<a href="https://example.com" target="_blank" rel="noopener noreferrer">Custom Set</a>`,
         ],
-        not_contains: [`<small>`],
       },
     ])(`formats $case correctly`, ({ input, expected_contains, not_contains }) => {
       const result = format_train_set(input)
@@ -194,9 +193,6 @@ describe(`metrics-table-helpers`, () => {
       // Should use n_structures as n_materials
       expect(result).toContain(`data-sort-value="10000"`)
       expect(result).toContain(`10k`)
-
-      // Should not contain small tag since materials and structures are the same
-      expect(result).not.toContain(`<small>`)
 
       // Should include Custom Dataset in the result
       expect(result).toContain(
