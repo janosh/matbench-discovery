@@ -1,10 +1,12 @@
 import { DATASETS, MODEL_METADATA, get_pred_file_urls, model_is_compliant } from '$lib'
 import type { TargetType } from '$lib/model-schema'
+import { discovery as discovery_config } from '$pkg/modeling-tasks.yml'
 import { max, min } from 'd3-array'
 import { scaleLog, scaleSequential } from 'd3-scale'
 import * as d3sc from 'd3-scale-chromatic'
 import { choose_bw_for_contrast, pretty_num } from 'elementari/labels'
 import { calculate_cps } from './metrics'
+import type { DiscoveryMetricsSet } from './model-schema.d.ts'
 import type {
   CombinedMetricConfig,
   DiscoverySet,
@@ -24,7 +26,79 @@ export const targets_tooltips: Record<TargetType, string> = {
   EFS_DM: `Energy with direct forces, stress, and magmoms`,
 }
 
-// format date string into human-readable format
+// Gets a metric value from a model, handling metrics from different tasks
+// and different locations within the model data structure
+export function get_metric_value(
+  model: ModelData, // model data to extract the metric from
+  metric_key: string, // key of the metric to extract
+  set: string = `full_test_set`, // optional dataset to use
+): number | undefined {
+  // Check if it's a discovery metric
+  if (model.metrics?.discovery?.[set as keyof typeof model.metrics.discovery]) {
+    const metrics_set = model.metrics.discovery[
+      set as keyof typeof model.metrics.discovery
+    ] as DiscoveryMetricsSet
+    if (
+      metrics_set &&
+      metrics_set[metric_key as keyof DiscoveryMetricsSet] !== undefined
+    ) {
+      const value = metrics_set[metric_key as keyof DiscoveryMetricsSet]
+      return typeof value === `number` ? value : Number(value)
+    }
+  }
+
+  // Check for κ_SRME in phonons
+  if (
+    metric_key === `κ_SRME` &&
+    model.metrics?.phonons &&
+    typeof model.metrics.phonons !== `string`
+  ) {
+    const value =
+      model.metrics.phonons.kappa_103?.κ_SRME ?? model.metrics.phonons[metric_key]
+    return value !== undefined ? Number(value) : undefined
+  }
+
+  // Check for RMSD in geo_opt
+  if (
+    metric_key === `RMSD` &&
+    model.metrics?.geo_opt &&
+    typeof model.metrics.geo_opt !== `string`
+  ) {
+    return model.metrics.geo_opt[`symprec=1e-5`]?.rmsd
+  }
+
+  // Try to access any other potential location using dotted path notation
+  const nested_val = metric_key.split(`.`).reduce<unknown>((acc, key) => {
+    if (acc && typeof acc === `object`) {
+      return (acc as Record<string, unknown>)[key]
+    }
+    return undefined
+  }, model.metrics)
+
+  if (nested_val !== undefined) {
+    return typeof nested_val === `number` ? nested_val : Number(nested_val)
+  }
+
+  return undefined
+}
+
+// Determines if a specific metric is considered "better" when lower
+export function is_lower_better(metric_key: string): boolean {
+  // First check discovery metrics
+  if (discovery_config.metrics.lower_is_better.includes(metric_key)) {
+    return true
+  }
+
+  // Check phonons metrics
+  if (metric_key === `κ_SRME` || metric_key === `RMSD`) {
+    return true
+  }
+
+  // For any other metric, assume higher is better
+  return false
+}
+
+// Format date string into human-readable format
 export function format_date(date: string, options?: Intl.DateTimeFormatOptions): string {
   return new Date(date).toLocaleDateString(undefined, {
     year: `numeric`,
@@ -34,13 +108,13 @@ export function format_date(date: string, options?: Intl.DateTimeFormatOptions):
   })
 }
 
-// format training set information for display in the metrics table
-export function format_train_set(model_DATASETS: string[]): string {
+// Format training set information for display in the metrics table
+export function format_train_set(model_train_sets: string[]): string {
   let [total_structs, total_materials] = [0, 0]
   const data_urls: Record<string, string> = {}
   const tooltip: string[] = []
 
-  for (const train_set of model_DATASETS) {
+  for (const train_set of model_train_sets) {
     if (!(train_set in DATASETS)) {
       console.warn(`Training set ${train_set} not found in DATASETS`)
       continue
@@ -94,11 +168,11 @@ export function format_train_set(model_DATASETS: string[]): string {
   return train_size_str
 }
 
-// safely access nested geometry optimization properties
+// Safely access nested geometry optimization properties
 export function get_geo_opt_property<T>(
-  geo_opt: unknown,
-  symprec: string,
-  property: string,
+  geo_opt: unknown, // geometry optimization data
+  symprec: string, // symmetry precision value
+  property: string, // property name to retrieve
 ): T | undefined {
   if (!geo_opt || typeof geo_opt !== `object`) return undefined
 
@@ -110,7 +184,14 @@ export function get_geo_opt_property<T>(
   return metrics[property as keyof typeof metrics] as T
 }
 
-// make a combined filter function that respects both prediction type and compliance filters
+/**
+ * Make a combined filter function that respects both prediction type and compliance filters
+ *
+ * @param model_filter - User-provided model filter
+ * @param show_energy - Whether to show energy-only models
+ * @param show_noncomp - Whether to show non-compliant models
+ * @returns Combined filter function
+ */
 export function make_combined_filter(
   model_filter: (model: ModelData) => boolean, // user-provided model filter
   show_energy: boolean, // show energy-only models
@@ -131,15 +212,15 @@ export function make_combined_filter(
   }
 }
 
-// calculate table data for the metrics table with combined scores
+// Calculate table data for the metrics table with combined scores
 export function calculate_metrics_data(
-  discovery_set: DiscoverySet,
-  model_filter: (model: ModelData) => boolean,
-  show_energy_only: boolean,
-  show_noncompliant: boolean,
-  config: CombinedMetricConfig,
-  compliant_clr: string = `#4caf50`,
-  noncompliant_clr: string = `#4682b4`,
+  discovery_set: DiscoverySet, // discovery set to use for metrics
+  model_filter: (model: ModelData) => boolean, // filter function for models
+  show_energy_only: boolean, // show energy-only models
+  show_noncompliant: boolean, // show non-compliant models
+  config: CombinedMetricConfig, // combined metric configuration
+  compliant_clr: string = `#4caf50`, // color for compliant models
+  noncompliant_clr: string = `#4682b4`, // color for non-compliant models
 ): RowData[] {
   const current_filter = make_combined_filter(
     model_filter,
@@ -250,7 +331,7 @@ export function calculate_metrics_data(
   )
 }
 
-// Calculate table cell color based on its value and column config
+// Calculate table cell background color based on its value and column config
 export function calc_cell_color(
   val: number | null | undefined, // cell value
   all_values: (number | null | undefined)[], // all values in the column
@@ -267,16 +348,12 @@ export function calc_cell_color(
     (v): v is number => typeof v === `number` && v > 0, // Filter out non-positives for log scale
   )
 
-  if (numeric_vals.length === 0) {
-    return { bg: null, text: null }
-  }
+  if (numeric_vals.length === 0) return { bg: null, text: null }
 
   const range = [min(numeric_vals) ?? 0, max(numeric_vals) ?? 1]
 
   // Reverse the range if lower values are better
-  if (better === `lower`) {
-    range.reverse()
-  }
+  if (better === `lower`) range.reverse()
 
   // Use custom color scale if specified, otherwise fall back to viridis
   const scale_name = color_scale || `interpolateViridis`

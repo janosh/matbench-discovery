@@ -1,6 +1,6 @@
 <script lang="ts">
   import { DATASETS } from '$lib'
-  import { calc_cell_color, format_date } from '$lib/metrics-table-helpers'
+  import { calc_cell_color, format_date } from '$lib/metric-helpers'
   import type { Dataset, HeatmapColumn } from '$lib/types'
   import { pretty_num } from 'elementari'
   import 'iconify-icon'

@@ -6,7 +6,7 @@ import {
   get_geo_opt_property,
   make_combined_filter,
   targets_tooltips,
-} from '$lib/metrics-table-helpers'
+} from '$lib/metric-helpers'
 import type { TargetType } from '$lib/model-schema'
 import type { ModelData } from '$lib/types'
 import { describe, expect, it, vi } from 'vitest'

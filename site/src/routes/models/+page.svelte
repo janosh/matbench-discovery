@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { ModelStatLabel, ModelStats } from '$lib'
   import { model_is_compliant, MODEL_METADATA, ModelCard } from '$lib'
-  import { discovery } from '$pkg/modeling-tasks.yml'
+  import { get_metric_value, is_lower_better } from '$lib/metric-helpers'
   import { interpolateCividis as cividis } from 'd3-scale-chromatic'
   import { ColorBar } from 'elementari'
   import 'iconify-icon'
@@ -42,25 +42,39 @@
   function bg_color(val: number, min: number, max: number) {
     return cividis(1 - (val - min) / (max - min)).replace(`)`, `, 0.5)`)
   }
+
   $effect(() => {
-    order = discovery.metrics.lower_is_better.includes(sort_by) ? `asc` : `desc`
+    // Determine default sort order based on whether lower or higher is better for this metric
+    if (sort_by === `model_name`) {
+      order = `asc` // Model names default to ascending alphabetical order
+    } else {
+      order = is_lower_better(sort_by) ? `asc` : `desc`
+    }
   })
-  let sort_factor = $derived({ asc: -1, desc: 1 }[order])
+
+  let sort_factor = $derived({ asc: 1, desc: -1 }[order])
+
   let models = $derived(
     MODEL_METADATA.filter(
       (model) => show_non_compliant || model_is_compliant(model),
     ).sort((model_1, model_2) => {
-      const metrics_1 = model_1.metrics?.discovery?.full_test_set ?? {}
-      const metrics_2 = model_2.metrics?.discovery?.full_test_set ?? {}
-      const [val_1, val_2] = [metrics_1[sort_by], metrics_2[sort_by]]
+      // Special case for model_name sorting
+      if (sort_by === `model_name`) {
+        // For model_name, directly use localeCompare with sort_factor
+        return sort_factor * model_1.model_name.localeCompare(model_2.model_name)
+      }
 
-      // Handle null values by sorting last
+      // Get values using the helper function for other metrics
+      const val_1 = get_metric_value(model_1, sort_by)
+      const val_2 = get_metric_value(model_2, sort_by)
+
+      // Handle null, undefined, or NaN values by sorting last
       if (val_1 == null && val_2 == null) return 0
-      if (val_1 == null) return 1
-      if (val_2 == null) return -1
+      if (val_1 == null || Number.isNaN(val_1)) return 1 // Always sort nulls/NaN to the end
+      if (val_2 == null || Number.isNaN(val_2)) return -1 // Always sort nulls/NaN to the end
 
-      if (typeof val_1 == `string`) {
-        return sort_factor * val_1.localeCompare(val_2)
+      if (typeof val_1 == `string` && typeof val_2 == `string`) {
+        return sort_factor * (val_1 as string).localeCompare(val_2 as string)
       } else if (typeof val_1 == `number` && typeof val_2 == `number`) {
         // interpret runt_time==0 as infinity
         if (sort_by == `Run Time (h)`) {
@@ -73,12 +87,19 @@
       }
     }),
   )
+
   let [min_val, max_val] = $derived.by(() => {
+    if (sort_by === `model_name`) {
+      return [0, 1] // Just return a default range, no color gradient needed
+    }
+
+    // Use the helper function to get values for color scaling
     const vals = models
-      .map((model) => model.metrics?.discovery?.full_test_set?.[sort_by])
+      .map((model) => get_metric_value(model, sort_by, `unique_prototypes`))
       .filter((val) => typeof val === `number`)
 
-    const lower_better = discovery.metrics.lower_is_better.includes(sort_by)
+    // Determine color range based on whether lower or higher is better
+    const lower_better = is_lower_better(sort_by)
     return lower_better
       ? [Math.max(...vals), Math.min(...vals)]
       : [Math.min(...vals), Math.max(...vals)]
@@ -107,8 +128,14 @@
         <button
           id={key}
           onclick={() => {
-            sort_by = key
-            order = discovery.metrics.lower_is_better.includes(key) ? `asc` : `desc`
+            // Handle the case where key is 'model_name'
+            if (key === `model_name`) {
+              sort_by = `model_name`
+              order = `asc` // Default for model names
+            } else {
+              sort_by = key as keyof ModelStats
+              order = is_lower_better(key) ? `asc` : `desc`
+            }
           }}
           style="font-size: large;"
         >
@@ -146,7 +173,9 @@
           {sort_by}
           bind:show_details
           style="background-color: {bg_color(
-            model.metrics?.discovery?.unique_prototypes?.[sort_by],
+            sort_by === `model_name`
+              ? 0 // No gradient for model names
+              : (get_metric_value(model, sort_by, `unique_prototypes`) ?? 0),
             min_val,
             max_val,
           )};"
