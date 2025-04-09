@@ -5,9 +5,9 @@ import { mount } from 'svelte'
 import { describe, expect, it } from 'vitest'
 
 describe(`ModelCard`, () => {
-  // Get a real model from MODEL_METADATA
+  // Get a real model from MODELS
   const model = MODELS.find((m) => m.model_key === `mace-mp-0`)
-  if (!model) throw new Error(`Could not find mace-mp-0 model in MODEL_METADATA`)
+  if (!model) throw new Error(`Could not find mace-mp-0 model in MODELS`)
 
   const stats: ModelStatLabel[] = [
     { key: `F1`, label: `F1 Score` },

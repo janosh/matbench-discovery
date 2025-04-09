@@ -9,7 +9,7 @@
 
   let { show_non_compliant = false, ...rest }: Props = $props()
 
-  // Get all unique symprec values from MODEL_METADATA
+  // Get all unique symprec values from MODELS
   let symprec_values = $derived(
     [
       ...new Set(
@@ -97,7 +97,7 @@
     },
   ])
 
-  // Transform MODEL_METADATA into table data format
+  // Transform MODELS into table data format
   let metrics_data = $derived(
     MODELS.filter(
       (model) =>

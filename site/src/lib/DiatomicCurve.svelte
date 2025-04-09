@@ -27,7 +27,7 @@
     style = ``,
   }: Props = $props()
 
-  // Create a map of model keys to labels from MODEL_METADATA
+  // Create a map of model keys to labels from MODELS
   // Extract base model name by removing version suffix
   const model_labels = new Map(
     MODELS.map((model) => {
