@@ -47,7 +47,7 @@ vi.mock(`$lib`, async () => {
 })
 
 // Mock the format_train_set function
-vi.mock(`$lib/metric-helpers`, () => ({
+vi.mock(`$lib/metrics`, () => ({
   format_train_set: () => `Test Training Set (1000 structures)`,
 }))
 

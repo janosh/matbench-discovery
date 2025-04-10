@@ -1,6 +1,6 @@
 <script lang="ts">
   import { DATASETS } from '$lib'
-  import { calc_cell_color, format_date } from '$lib/metric-helpers'
+  import { calc_cell_color, format_date } from '$lib/metrics'
   import type { Dataset, HeatmapColumn } from '$lib/types'
   import { pretty_num } from 'elementari'
   import { titles_as_tooltips } from 'svelte-zoo/actions'
@@ -20,8 +20,8 @@
       color_scale: `interpolateViridis`,
       scale_type: `log`,
     },
-    { label: `Open` },
     { label: `Created`, better: `higher` },
+    { label: `Open` },
     { label: `License` },
     { label: `Method` },
     { label: `Links`, sortable: false },
@@ -32,8 +32,8 @@
     Title: string
     Structures: string
     Materials: string
-    Open: string
     Created: string
+    Open: string
     License: string
     Method: string
     Links: string

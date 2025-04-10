@@ -1,5 +1,5 @@
 import { MODELS, type ModelData } from '$lib'
-import { get_metric_value } from '$lib/metric-helpers'
+import { get_metric_value } from '$lib/metrics'
 import ModelPage from '$routes/models/[slug]/+page.svelte'
 import { mount } from 'svelte'
 import { describe, expect, it } from 'vitest'

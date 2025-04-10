@@ -3,7 +3,7 @@
   import type { Snippet } from 'svelte'
   import { titles_as_tooltips } from 'svelte-zoo/actions'
   import { flip } from 'svelte/animate'
-  import { calc_cell_color } from './metric-helpers'
+  import { calc_cell_color } from './metrics'
   import type { CellVal, HeatmapColumn, RowData } from './types'
 
   interface Props {

@@ -1,5 +1,5 @@
 import { MODELS } from '$lib'
-import { format_train_set } from '$lib/metric-helpers'
+import { format_train_set } from '$lib/metrics'
 import type { ModelData } from '$lib/types'
 import { description, homepage, name } from '$site/package.json'
 import { pretty_num } from 'elementari'

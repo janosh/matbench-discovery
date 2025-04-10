@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { ModelStatLabel, ModelStats } from '$lib'
   import { model_is_compliant, ModelCard, MODELS } from '$lib'
-  import { get_metric_value, is_lower_better } from '$lib/metric-helpers'
+  import { get_metric_value, is_lower_better } from '$lib/metrics'
   import { interpolateCividis as cividis } from 'd3-scale-chromatic'
   import { ColorBar } from 'elementari'
   import { RadioButtons, Toggle, Tooltip } from 'svelte-zoo'
