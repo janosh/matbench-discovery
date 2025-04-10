@@ -1,8 +1,8 @@
 import { MODELS, type ModelData } from '$lib'
 import { get_metric_value } from '$lib/metric-helpers'
+import ModelPage from '$routes/models/[slug]/+page.svelte'
 import { mount } from 'svelte'
 import { describe, expect, it } from 'vitest'
-import ModelPage from '../src/routes/models/[slug]/+page.svelte'
 
 const model_keys = MODELS.map((m) => m.model_key)
 const model_key = model_keys[0]

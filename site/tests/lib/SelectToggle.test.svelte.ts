@@ -1,6 +1,6 @@
+import SelectToggle from '$lib/SelectToggle.svelte'
 import { mount } from 'svelte'
 import { afterEach, describe, expect, it, test, vi } from 'vitest'
-import SelectToggle from '../src/lib/SelectToggle.svelte'
 
 describe(`SelectToggle.svelte`, () => {
   // Clean up after each test

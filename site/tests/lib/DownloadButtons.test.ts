@@ -1,5 +1,5 @@
-import type * as SvgExportModule from '$site/src/lib/html-to-img'
-import { handle_export } from '$site/src/lib/html-to-img'
+import type * as SvgExportModule from '$lib/html-to-img'
+import { handle_export } from '$lib/html-to-img'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe(`Download Buttons UI`, () => {

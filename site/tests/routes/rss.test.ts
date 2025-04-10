@@ -1,7 +1,7 @@
 import { MODELS } from '$lib'
+import { GET } from '$routes/rss.xml/+server'
 import * as pkg from '$site/package.json'
 import { describe, expect, it, vi } from 'vitest'
-import { GET } from '../src/routes/rss.xml/+server'
 
 // Mock the MODELS array with a simplified version for testing
 vi.mock(`$lib`, async () => {

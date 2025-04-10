@@ -16,7 +16,7 @@
     METADATA_COLS,
   } from '$lib/metrics'
   import Readme from '$root/readme.md'
-  import KappaNote from '$site/src/routes/kappa-note.md'
+  import KappaNote from '$routes/kappa-note.md'
   import { pretty_num } from 'elementari'
   import { Tooltip } from 'svelte-zoo'
 
@@ -263,7 +263,7 @@
   {/snippet}
 </Readme>
 <KappaNote />
-{#await import(`$site/src/routes/landing-page-figs.md`) then LandingPageFigs}
+{#await import(`$routes/landing-page-figs.md`) then LandingPageFigs}
   <LandingPageFigs.default />
 {/await}
 

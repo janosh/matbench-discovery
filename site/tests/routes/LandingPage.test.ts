@@ -1,6 +1,6 @@
+import Page from '$routes/+page.svelte'
 import { mount, tick } from 'svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
-import Page from '../src/routes/+page.svelte'
 
 describe(`Landing Page`, () => {
   beforeEach(() => {
