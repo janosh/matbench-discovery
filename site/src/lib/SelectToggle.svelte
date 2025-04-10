@@ -28,7 +28,7 @@
             style="line-height: 1;"
             onclick={(event) => event.stopPropagation()}
           >
-            ⓘ
+            <svg><use href="#icon-info" /></svg>
           </a>
         {/if}
       </button>

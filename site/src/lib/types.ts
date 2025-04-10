@@ -23,8 +23,8 @@ export type ModelStats = {
   DAF: number // discovery acceleration factor
   GPUs: number // number of GPUs used
   CPUs: number // number of CPUs used
-  slurm_jobs: number // number of SLURM jobs used
   κ_SRME: number // symmetric relative mean error of predicted lattice thermal conductivity
+  CPS: number // combined performance score
 }
 
 // how to pretty print a model stat key on the website
@@ -126,8 +126,10 @@ export type Metric = {
   better?: `higher` | `lower` // sort direction
 }
 
+export type CpsPart = `F1` | `kappa_SRME` | `RMSD`
+
 export type CombinedMetricConfig = {
-  parts: Record<`F1` | `kappa_SRME` | `RMSD`, Metric & { weight: number }>
+  parts: Record<CpsPart, Metric & { weight: number }>
   label: string
   name: string
   key: string

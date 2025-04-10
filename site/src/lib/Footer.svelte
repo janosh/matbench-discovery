@@ -25,19 +25,19 @@
 <footer>
   <nav>
     <a href="{repository}/issues">
-      <svg class="icon"><use href="#icon-issues" /></svg>
+      <svg><use href="#icon-issues" /></svg>
       Issues
     </a>
     <a href="mailto:janosh.riebesell@gmail.com?subject=Matbench Discovery">
-      <svg class="icon"><use href="#icon-contact" /></svg>
+      <svg><use href="#icon-contact" /></svg>
       Contact
     </a>
     <a href="/changelog">
-      <svg class="icon"><use href="#catppuccin-changelog" /></svg>
+      <svg><use href="#catppuccin-changelog" /></svg>
       Changelog
     </a>
     <a href="/rss.xml" title="Subscribe to model updates">
-      <svg class="icon"><use href="#icon-rss" /></svg>
+      <svg><use href="#icon-rss" /></svg>
       RSS
     </a>
     <button
@@ -49,7 +49,7 @@
       aria-label={tips_title}
       style="padding: 0; transform: scale(1.2); font-weight: bold;"
     >
-      ⓘ
+      <svg><use href="#icon-info" /></svg>
     </button>
   </nav>
   <img src="/favicon.svg" alt="Logo" width="30px" style="vertical-align: middle;" />
@@ -115,11 +115,5 @@
   }
   dialog > :is(:global(p, h3)) {
     margin: 0;
-  }
-  svg.icon {
-    width: 18px;
-    height: 18px;
-    vertical-align: middle;
-    margin-right: 4px;
   }
 </style>

@@ -103,6 +103,7 @@ export default {
       $data: `../data`,
       $pkg: `../matbench_discovery`,
       $figs: `src/figs`,
+      $routes: `src/routes`,
     },
   },
 }

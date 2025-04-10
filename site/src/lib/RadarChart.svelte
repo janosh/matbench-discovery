@@ -1,14 +1,15 @@
 <script lang="ts">
   import type { Point } from 'elementari'
-  import { DEFAULT_CPS_CONFIG } from './metrics'
+  import { Tooltip } from 'svelte-zoo'
+  import { DEFAULT_CPS_CONFIG } from './combined_perf_score'
+  import { CPS_CONFIG, update_models_cps } from './models.svelte'
   import type { CombinedMetricConfig } from './types'
 
   // Define props interface
   interface Props {
-    weights: CombinedMetricConfig[`parts`]
     size?: number
   }
-  let { weights = $bindable(DEFAULT_CPS_CONFIG.parts), size = 200 }: Props = $props()
+  let { size = 200 }: Props = $props()
 
   // State for the draggable point
   let is_dragging = $state(false)
@@ -16,6 +17,13 @@
   let svg_element: SVGSVGElement
   let radius = size / 2
   let center = { x: radius, y: radius }
+
+  // Reset to initial weights
+  function reset_weights() {
+    CPS_CONFIG.parts = DEFAULT_CPS_CONFIG.parts
+    update_point_from_weights(CPS_CONFIG.parts)
+    update_models_cps() // Update all model CPS with new weights
+  }
 
   const colors = [
     `rgba(255, 99, 132, 0.7)`, // red for F1
@@ -25,18 +33,18 @@
 
   // Compute axes points coordinates
   let axis_points = $derived(
-    Object.values(weights).map((_, idx) => {
-      const angle = (2 * Math.PI * idx) / Object.values(weights).length
-      return {
-        x: center.x + Math.cos(angle) * radius * 0.8,
-        y: center.y + Math.sin(angle) * radius * 0.8,
-      }
+    Object.values(CPS_CONFIG.parts).map((_, idx) => {
+      const angle = (2 * Math.PI * idx) / Object.values(CPS_CONFIG.parts).length
+      const x = center.x + Math.cos(angle) * radius * 0.8
+      const y = center.y + Math.sin(angle) * radius * 0.8
+      return { x, y }
     }),
   )
 
   // Initialize point position from weights
   $effect(() => {
-    update_point_from_weights(weights)
+    update_point_from_weights(CPS_CONFIG.parts)
+    update_models_cps()
   })
 
   function update_point_from_weights(current_weights: CombinedMetricConfig[`parts`]) {
@@ -47,9 +55,9 @@
     // Calculate weighted position
     let { x, y } = center
     for (let idx = 0; idx < Object.values(current_weights).length; idx++) {
-      const weight = Object.values(current_weights)[idx].weight
-      x += (axis_points[idx].x - center.x) * weight
-      y += (axis_points[idx].y - center.y) * weight
+      const weight_value = Object.values(current_weights)[idx].weight as number
+      x += (axis_points[idx].x - center.x) * weight_value
+      y += (axis_points[idx].y - center.y) * weight_value
     }
     // Update the point with new coordinates
     point = { x, y }
@@ -57,7 +65,7 @@
 
   function update_weights_from_point() {
     // Calculate weights using barycentric coordinates for triangular space
-    if (Object.values(weights).length !== 3) {
+    if (Object.values(CPS_CONFIG.parts).length !== 3) {
       console.error(`This implementation only supports exactly 3 metrics`)
       return
     }
@@ -86,10 +94,10 @@
       new_values = [1 / 3, 1 / 3, 1 / 3]
     }
 
-    // Update weights
-    weights.F1.weight = new_values[0]
-    weights.kappa_SRME.weight = new_values[1]
-    weights.RMSD.weight = new_values[2]
+    // Update weights in the CPS_CONFIG directly
+    CPS_CONFIG.parts.F1.weight = new_values[0]
+    CPS_CONFIG.parts.kappa_SRME.weight = new_values[1]
+    CPS_CONFIG.parts.RMSD.weight = new_values[2]
   }
 
   // Helper to calculate triangle area using cross product
@@ -131,7 +139,10 @@
   // this prevents table rerendering during drag which causes the viewport to scroll (terrible UX)
   function move_point_to_position(x: number, y: number) {
     const [a, b, c] = axis_points
-    if (Object.values(weights).length === 3 && is_point_in_triangle({ x, y }, a, b, c)) {
+    if (
+      Object.values(CPS_CONFIG.parts).length === 3 &&
+      is_point_in_triangle({ x, y }, a, b, c)
+    ) {
       point = { x, y }
     } else {
       // If outside the triangle, constrain to the closest point on the triangle
@@ -175,6 +186,18 @@
 
     // update point position during drag
     move_point_to_position(x, y)
+  }
+
+  function end_drag() {
+    if (is_dragging) {
+      is_dragging = false
+      // Update weights when drag ends
+      update_weights_from_point()
+      window.removeEventListener(`mousemove`, handle_drag)
+      window.removeEventListener(`touchmove`, handle_drag)
+      window.removeEventListener(`mouseup`, end_drag)
+      window.removeEventListener(`touchend`, end_drag)
+    }
   }
 
   // Helper to check if a point pt is inside a triangle with corners c1, c2, c3
@@ -222,17 +245,23 @@
 
     return { x: a.x + atob.x * t, y: a.y + atob.y * t }
   }
-
-  function end_drag() {
-    is_dragging = false
-    window.removeEventListener(`mousemove`, handle_drag)
-    window.removeEventListener(`touchmove`, handle_drag)
-    window.removeEventListener(`mouseup`, end_drag)
-    window.removeEventListener(`touchend`, end_drag)
-  }
 </script>
 
 <div class="radar-chart">
+  <span class="metric-name">
+    {CPS_CONFIG.label}
+    <Tooltip tip_style="z-index: 20; font-size: 0.8em;">
+      <svg style="opacity: 0.7; cursor: help;"><use href="#icon-info" /></svg>
+      {#snippet tip()}
+        {@html CPS_CONFIG.description}
+      {/snippet}
+    </Tooltip>
+  </span>
+
+  <button class="reset-button" onclick={reset_weights} title="Reset to default weights">
+    Reset
+  </button>
+
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <svg
@@ -245,8 +274,8 @@
     aria-label="Radar chart for adjusting metric weights"
   >
     <!-- Axes -->
-    {#each Object.values(weights) as weight, idx (weight.label)}
-      {@const angle = (2 * Math.PI * idx) / Object.values(weights).length}
+    {#each Object.values(CPS_CONFIG.parts) as weight, idx (weight.label)}
+      {@const angle = (2 * Math.PI * idx) / Object.values(CPS_CONFIG.parts).length}
       {@const x = center.x + Math.cos(angle) * radius * 0.8}
       {@const y = center.y + Math.sin(angle) * radius * 0.8}
       {@const label_radius = idx === 2 ? radius * 1.0 : radius * 0.9}
@@ -285,13 +314,13 @@
           {@html weight.label}
         {/if}
         <tspan dy={spacing} x={label_x} font-size="12" font-weight="bold"
-          >{(weight.weight * 100).toFixed(0)}%</tspan
+          >{((weight.weight as number) * 100).toFixed(0)}%</tspan
         >
       </text>
     {/each}
 
     <!-- Triangle area -->
-    {#if Object.values(weights).length === 3}
+    {#if Object.values(CPS_CONFIG.parts).length === 3}
       <path
         d="M {axis_points[0].x} {axis_points[0].y} L {axis_points[1].x} {axis_points[1]
           .y} L {axis_points[2].x} {axis_points[2].y} Z"
@@ -314,7 +343,7 @@
     {/each}
 
     <!-- Colored areas for each metric -->
-    {#if Object.values(weights).length === 3}
+    {#if Object.values(CPS_CONFIG.parts).length === 3}
       {@const [{ x, y }, { x: px, y: py }] = [center, point]}
       {#each axis_points as { x: x0, y: y0 }, idx ([x0, y0])}
         {@const path = `M ${x} ${y} L ${x0} ${y0} L ${px} ${py} Z`}
@@ -341,14 +370,34 @@
 
 <style>
   .radar-chart {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 0.2em;
+    padding: 1em 1em 0 0;
     margin: 0;
+    position: relative;
+    background: var(--light-bg);
+    border-radius: 4px;
   }
   svg {
     touch-action: none; /* Prevents default touch behaviors */
     cursor: pointer; /* Show pointer cursor to hint clickability */
+  }
+  span.metric-name {
+    position: absolute;
+    top: 2pt;
+    left: 40%;
+  }
+  .reset-button {
+    position: absolute;
+    top: 4pt;
+    right: 5pt;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+    cursor: pointer;
+    padding: 0.15em 0.35em;
+    font-size: 0.8em;
+    margin-left: auto;
+  }
+  .reset-button:hover {
+    background: rgba(255, 255, 255, 0.05);
   }
 </style>

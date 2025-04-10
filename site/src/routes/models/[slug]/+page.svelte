@@ -11,7 +11,6 @@
     pretty_num,
     TableInset,
   } from 'elementari'
-  import 'iconify-icon'
   import { CopyButton, Tooltip } from 'svelte-zoo'
   import { click_outside, titles_as_tooltips } from 'svelte-zoo/actions'
 
@@ -60,21 +59,21 @@
       </div>
 
       <div>
-        <iconify-icon icon="ion:ios-calendar" inline></iconify-icon>
+        <svg class="icon"><use href="#icon-calendar"></use></svg>
         Added: <Tooltip text="{n_days_ago(model.date_added)} days ago">
           {model.date_added}
         </Tooltip>
       </div>
 
       <div>
-        <iconify-icon icon="ri:calendar-check-line" inline></iconify-icon>
+        <svg class="icon"><use href="#icon-calendar-check"></use></svg>
         Published: <Tooltip text="{n_days_ago(model.date_published)} days ago">
           {model.date_published}
         </Tooltip>
       </div>
 
       <div>
-        <iconify-icon icon="eos-icons:neural-network" inline></iconify-icon>
+        <svg class="icon"><use href="#icon-neural-network"></use></svg>
         <Tooltip text={model.model_params.toLocaleString()}>
           {pretty_num(model.model_params, `.3~s`)}
         </Tooltip> parameters
@@ -82,14 +81,14 @@
 
       {#if model.n_estimators > 1}
         <div>
-          <iconify-icon icon="material-symbols:forest" inline></iconify-icon>
+          <svg class="icon"><use href="#icon-forest"></use></svg>
           <span>Ensemble {model.n_estimators} models</span>
         </div>
       {/if}
 
       {#if missing_preds != undefined}
         <div>
-          <iconify-icon icon="fluent:missing-metadata-24-regular" inline></iconify-icon>
+          <svg class="icon"><use href="#icon-missing-metadata"></use></svg>
           <span>
             Missing preds: {pretty_num(missing_preds, `,.0f`)}
             {#if missing_preds != 0}
@@ -116,7 +115,7 @@
         title="View source code repository"
         use:titles_as_tooltips
       >
-        <iconify-icon icon="octicon:mark-github" inline></iconify-icon> Repo
+        <svg class="icon"><use href="#icon-github"></use></svg> Repo
       </a>
       {#if model.paper?.startsWith(`http`)}
         <a
@@ -126,7 +125,7 @@
           title="Read model paper"
           use:titles_as_tooltips
         >
-          <iconify-icon icon="ion:ios-paper" inline></iconify-icon> Paper
+          <svg class="icon"><use href="#icon-paper"></use></svg> Paper
         </a>
       {/if}
       {#if model.url?.startsWith(`http`)}
@@ -137,7 +136,7 @@
           title="View model documentation"
           use:titles_as_tooltips
         >
-          <iconify-icon icon="ion:ios-globe" inline></iconify-icon> Docs
+          <svg class="icon"><use href="#icon-docs"></use></svg> Docs
         </a>
       {/if}
       {#if model.doi?.startsWith(`http`)}
@@ -148,7 +147,7 @@
           title="Digital Object Identifier"
           use:titles_as_tooltips
         >
-          <iconify-icon icon="academicons:doi" inline></iconify-icon> DOI
+          <svg class="icon"><use href="#icon-doi"></use></svg> DOI
         </a>
       {/if}
       <a
@@ -158,7 +157,7 @@
         title="Browse model submission files"
         use:titles_as_tooltips
       >
-        <iconify-icon icon="octicon:file-directory" inline></iconify-icon> Files
+        <svg class="icon"><use href="#icon-directory"></use></svg> Files
       </a>
       {#if model.pypi}
         <a
@@ -168,7 +167,7 @@
           title="Python package on PyPI"
           use:titles_as_tooltips
         >
-          <iconify-icon icon="simple-icons:pypi" inline></iconify-icon> PyPI
+          <svg class="icon"><use href="#icon-pypi"></use></svg> PyPI
         </a>
       {/if}
       <a
@@ -178,7 +177,7 @@
         title="View pull request"
         use:titles_as_tooltips
       >
-        <iconify-icon icon="octicon:git-pull-request" inline></iconify-icon> PR
+        <svg class="icon"><use href="#icon-pull-request"></use></svg> PR
       </a>
       {#if model.checkpoint_url?.startsWith(`http`)}
         <a
@@ -188,7 +187,7 @@
           title="Download model checkpoint"
           use:titles_as_tooltips
         >
-          <iconify-icon icon="mdi:download-box" inline></iconify-icon> Checkpoint
+          <svg class="icon"><use href="#icon-download"></use></svg> Checkpoint
         </a>
       {/if}
       {#if model.metrics}
@@ -203,7 +202,7 @@
             }}
           >
             <summary title="Download model prediction files" use:titles_as_tooltips>
-              <iconify-icon icon="octicon:graph" inline></iconify-icon> Predictions
+              <svg class="icon"><use href="#icon-graph"></use></svg> Predictions
             </summary>
             <div class="dropdown">
               {#each pred_files as { name, url } (url)}
@@ -274,7 +273,7 @@
             {#if author.affiliation}<span class="affiliation">({author.affiliation})</span
               >{/if}
             {#if author.email}<a href="mailto:{author.email}" aria-label="Email">
-                <iconify-icon icon="mdi:email" inline></iconify-icon>
+                <svg class="icon"><use href="#icon-mail"></use></svg>
               </a>{/if}
             {#if author.github}<a
                 href={author.github}
@@ -282,7 +281,7 @@
                 rel="noopener noreferrer"
                 aria-label="GitHub"
               >
-                <iconify-icon icon="simple-icons:github" inline></iconify-icon>
+                <svg class="icon"><use href="#icon-github"></use></svg>
               </a>{/if}
             {#if author.orcid}
               <a
@@ -291,7 +290,7 @@
                 rel="noopener noreferrer"
                 aria-label="ORCID"
               >
-                <iconify-icon icon="simple-icons:orcid" inline></iconify-icon>
+                <svg class="icon"><use href="#icon-orcid"></use></svg>
               </a>{/if}
           </li>
         {/each}
@@ -314,7 +313,7 @@
                   rel="noopener noreferrer"
                   aria-label="ORCID"
                 >
-                  <iconify-icon icon="simple-icons:orcid" inline></iconify-icon>
+                  <svg class="icon"><use href="#icon-orcid"></use></svg>
                 </a>{/if}
               {#if trainer.github}<a
                   href={trainer.github}
@@ -322,7 +321,7 @@
                   rel="noopener noreferrer"
                   aria-label="GitHub"
                 >
-                  <iconify-icon icon="simple-icons:github" inline></iconify-icon>
+                  <svg class="icon"><use href="#icon-github"></use></svg>
                 </a>{/if}
             </li>
           {/each}
@@ -510,5 +509,11 @@
   /* hide plotly titles */
   div.model-detail :global(svg g.infolayer g.g-gtitle) {
     display: none;
+  }
+  .icon {
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.125em;
+    display: inline-block;
   }
 </style>

@@ -1,7 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state'
   import { homepage, name } from '$site/package.json'
-  import 'iconify-icon'
 
   let online: boolean = $state(true)
 </script>
@@ -23,8 +22,9 @@
   {#if online === false}
     Looks like you're offline. If you think your connection is fine, check the
     <a href="https://githubstatus.com">GitHub status page</a>
-    as this site is hosted by &thinsp;<iconify-icon icon="octicon:mark-github" inline
-    ></iconify-icon>
+    as this site is hosted by &thinsp;<svg class="icon"
+      ><use href="#icon-github"></use></svg
+    >
     &thinsp;GitHub Pages.
   {/if}
 

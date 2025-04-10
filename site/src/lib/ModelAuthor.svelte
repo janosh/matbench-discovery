@@ -12,22 +12,22 @@
   <span title={affiliation}>{name}</span>
   {#if email}
     <a aria-label="Email" href="mailto:{email}">
-      <iconify-icon icon="ion:ios-mail" inline></iconify-icon>
+      <svg><use href="#icon-mail"></use></svg>
     </a>
   {/if}
   {#if orcid}
     <a aria-label="ORCID" href={orcid}>
-      <iconify-icon icon="fa-brands:orcid" inline></iconify-icon>
+      <svg><use href="#icon-orcid"></use></svg>
     </a>
   {/if}
   {#if url}
     <a aria-label="Website" href={url}>
-      <iconify-icon icon="ion:ios-globe" inline></iconify-icon>
+      <svg><use href="#icon-globe"></use></svg>
     </a>
   {/if}
   {#if github}
     <a aria-label="GitHub" href={github}>
-      <iconify-icon icon="octicon:mark-github" inline></iconify-icon>
+      <svg><use href="#icon-github"></use></svg>
     </a>
   {/if}
 {/if}
@@ -35,5 +35,9 @@
 <style>
   span {
     font-size: smaller;
+  }
+  svg:has(use:only-child) {
+    width: 16px;
+    vertical-align: middle;
   }
 </style>

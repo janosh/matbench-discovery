@@ -1,5 +1,4 @@
 <script lang="ts">
-  import 'iconify-icon'
   import { click_outside } from 'svelte-zoo/actions'
   import type { HeatmapColumn } from './types'
 
@@ -22,7 +21,7 @@
   use:click_outside={{ callback: () => (column_panel_open = false) }}
 >
   <summary>
-    Columns <iconify-icon icon="octicon:columns-16" inline></iconify-icon>
+    Columns <svg><use href="#icon-columns"></use></svg>
   </summary>
   <div class="column-menu">
     {#each columns as col, idx (col.label + col.group + col.visible + idx)}

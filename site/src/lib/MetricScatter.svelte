@@ -1,16 +1,9 @@
 <script lang="ts">
   import type { CombinedMetricConfig, DiscoverySet, ModelData } from '$lib'
-  import { calculate_cps } from '$lib/metrics'
+  import { calculate_cps } from '$lib/combined_perf_score'
+  import { get_metric_value } from '$lib/metrics'
+  import type { CpsPart, ModelMetadata } from '$lib/types'
   import { ScatterPlot, type Point } from 'elementari'
-
-  export type ModelProperty =
-    | `model_params`
-    | `training_cost`
-    | `inference_cost`
-    | `n_estimators`
-    | `date_added`
-
-  export type ModelMetric = `F1` | `RMSD` | `kappa_SRME` | `CPS` | string
 
   interface Props {
     models: ModelData[]
@@ -19,8 +12,8 @@
     model_filter?: (model: ModelData) => boolean
     x_lim?: [number | null, number | null]
     y_lim?: [number | null, number | null] | null
-    x_property?: ModelProperty
-    y_metric?: ModelMetric
+    x_property?: keyof ModelMetadata
+    y_metric?: CpsPart | `CPS`
     metric?: string // Direct metric path for dotted notation (for backward compatibility)
     discovery_set?: DiscoverySet
     point_color?: string | null
@@ -34,7 +27,6 @@
     show_model_labels?: boolean // when true, each point will show a text label with its model name
     [key: string]: unknown
   }
-
   let {
     models,
     config = undefined,
@@ -106,7 +98,7 @@
   // Extract property values
   function get_property_value(
     model: ModelData,
-    property: ModelProperty,
+    property: keyof ModelMetadata,
   ): number | undefined {
     if (property === `model_params`)
       return typeof model.model_params === `number` ? model.model_params : undefined
@@ -132,32 +124,20 @@
     return undefined
   }
 
-  // Extract metric values, handling both enum values and dotted path strings
-  function get_metric_value(
-    model: ModelData,
-    metric_key: ModelMetric,
-  ): number | undefined {
-    // If it's a standard enum metric, use the specific accessor logic
-    if (metric_key === `F1`) return model.metrics?.discovery?.[discovery_set]?.F1
+  // Apply date range filter if needed
+  function date_filter(model: ModelData): boolean {
+    if (x_property !== `date_added` || (date_range[0] === null && date_range[1] === null))
+      return true
 
-    if (
-      metric_key === `RMSD` &&
-      model.metrics?.geo_opt &&
-      typeof model.metrics.geo_opt !== `string`
-    ) {
-      return model.metrics.geo_opt[`symprec=1e-5`]?.rmsd
-    }
+    const model_date = new Date(model.date_added ?? 0)
+    return (
+      model_date >= (date_range[0] ?? n_days_ago) && model_date <= (date_range[1] ?? now)
+    )
+  }
 
-    if (
-      metric_key === `kappa_SRME` &&
-      model.metrics?.phonons &&
-      typeof model.metrics.phonons !== `string`
-    ) {
-      return model.metrics.phonons.kappa_103?.κ_SRME !== undefined
-        ? Number(model.metrics.phonons.kappa_103.κ_SRME)
-        : undefined
-    }
-
+  // A wrapper around get_metric_value to handle CPS with custom config
+  function get_model_metric(model: ModelData, metric_key: string): number | undefined {
+    // Special handling for CPS with custom config
     if (metric_key === `CPS` && config) {
       const f1 = model.metrics?.discovery?.[discovery_set]?.F1
       const rmsd =
@@ -175,36 +155,15 @@
       return typeof score === `number` ? score : undefined
     }
 
-    // If it's a dotted path string (from MetricScatter), use the nested accessor
-    const nested_val = metric_key.split(`.`).reduce<unknown>((acc, key) => {
-      if (acc && typeof acc === `object`) {
-        return (acc as Record<string, unknown>)[key]
-      }
-      return undefined
-    }, model.metrics)
-    if (nested_val !== undefined) {
-      return typeof nested_val === `number` ? nested_val : Number(nested_val)
-    }
-
-    return undefined
-  }
-
-  // Apply date range filter if needed
-  function date_filter(model: ModelData): boolean {
-    if (x_property !== `date_added` || (date_range[0] === null && date_range[1] === null))
-      return true
-
-    const model_date = new Date(model.date_added ?? 0)
-    return (
-      model_date >= (date_range[0] ?? n_days_ago) && model_date <= (date_range[1] ?? now)
-    )
+    // For all other metrics, use the imported function
+    return get_metric_value(model, metric_key, discovery_set)
   }
 
   // Filter and prepare data
   let filtered_models = $derived(
     models.filter((model) => {
       const x_val = get_property_value(model, x_property)
-      const y_val = get_metric_value(model, actual_y_metric)
+      const y_val = get_model_metric(model, actual_y_metric)
       return (
         x_val !== undefined &&
         y_val !== undefined &&
@@ -217,7 +176,7 @@
   let models_to_show = $derived(
     filtered_models.map((model) => {
       const x = get_property_value(model, x_property)
-      const y = get_metric_value(model, actual_y_metric)
+      const y = get_model_metric(model, actual_y_metric)
       const metadata = { model_name: model.model_name, date_added: model.date_added }
       return { model, x: x !== undefined ? x : 0, y: y !== undefined ? y : 0, metadata }
     }),

@@ -1,6 +1,6 @@
+import Page from '$routes/data/data-files-direct-download.md'
 import { mount } from 'svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
-import Page from '../src/routes/data/data-files-direct-download.md'
 
 describe(`Data Page`, () => {
   beforeEach(() => {
