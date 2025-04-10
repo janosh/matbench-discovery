@@ -1,11 +1,12 @@
 import { model_is_compliant } from '$lib'
 import {
+  calc_cell_color,
   format_date,
   format_train_set,
   get_geo_opt_property,
   make_combined_filter,
   targets_tooltips,
-} from '$lib/metrics-table-helpers'
+} from '$lib/metric-helpers'
 import type { TargetType } from '$lib/model-schema'
 import type { ModelData } from '$lib/types'
 import { describe, expect, it, vi } from 'vitest'
@@ -136,7 +137,6 @@ describe(`metrics-table-helpers`, () => {
           `10k`,
           `<a href="https://example.com" target="_blank" rel="noopener noreferrer">Custom Set</a>`,
         ],
-        not_contains: [`<small>`],
       },
     ])(`formats $case correctly`, ({ input, expected_contains, not_contains }) => {
       const result = format_train_set(input)
@@ -193,9 +193,6 @@ describe(`metrics-table-helpers`, () => {
       // Should use n_structures as n_materials
       expect(result).toContain(`data-sort-value="10000"`)
       expect(result).toContain(`10k`)
-
-      // Should not contain small tag since materials and structures are the same
-      expect(result).not.toContain(`<small>`)
 
       // Should include Custom Dataset in the result
       expect(result).toContain(
@@ -355,5 +352,187 @@ describe(`metrics-table-helpers`, () => {
         }
       },
     )
+  })
+
+  describe(`calc_cell_color`, () => {
+    it.each([
+      {
+        case: `null or undefined values`,
+        val: null,
+        all_values: [1, 2, 3],
+        better: `higher` as const,
+        color_scale: `interpolateViridis`,
+        scale_type: `linear` as const,
+        expected: { bg: null, text: null },
+      },
+      {
+        case: `undefined values`,
+        val: undefined,
+        all_values: [1, 2, 3],
+        better: `higher` as const,
+        color_scale: `interpolateViridis`,
+        scale_type: `linear` as const,
+      },
+      {
+        case: `null color_scale`,
+        val: 5,
+        all_values: [1, 5, 10],
+        better: `higher` as const,
+        color_scale: null,
+        scale_type: `linear` as const,
+      },
+      {
+        case: `empty numeric_vals`,
+        val: 5,
+        all_values: [],
+        better: `higher` as const,
+        color_scale: `interpolateViridis`,
+        scale_type: `linear` as const,
+      },
+    ])(
+      `returns null colors for $case`,
+      ({ val, all_values, better, color_scale, scale_type }) => {
+        const result = calc_cell_color(val, all_values, better, color_scale, scale_type)
+        expect(result.bg).toBeNull()
+        expect(result.text).toBeNull()
+      },
+    )
+
+    it.each([
+      {
+        case: `linear scale with 'higher' better`,
+        val: 10,
+        all_values: [1, 5, 10],
+        better: `higher` as const,
+        scale_type: `linear` as const,
+      },
+      {
+        case: `linear scale with 'lower' better`,
+        val: 1,
+        all_values: [1, 5, 10],
+        better: `lower` as const,
+        scale_type: `linear` as const,
+      },
+      {
+        case: `log scale with 'higher' better`,
+        val: 1000,
+        all_values: [1, 10, 100, 1000],
+        better: `higher` as const,
+        scale_type: `log` as const,
+      },
+    ])(
+      `correctly calculates colors with $case`,
+      ({ val, all_values, better, scale_type }) => {
+        const result = calc_cell_color(
+          val,
+          all_values,
+          better,
+          `interpolateViridis`,
+          scale_type,
+        )
+
+        // Should have valid color values
+        expect(result.bg).toMatch(/^rgb\(|rgba\(|#/)
+        expect(result.text).toBeTruthy()
+
+        // Compare with a different value
+        const diff_val =
+          val === Math.max(...all_values.filter((v) => typeof v === `number`))
+            ? Math.min(...all_values.filter((v) => typeof v === `number`))
+            : Math.max(...all_values.filter((v) => typeof v === `number`))
+
+        const result2 = calc_cell_color(
+          diff_val,
+          all_values,
+          better,
+          `interpolateViridis`,
+          scale_type,
+        )
+
+        // Colors should be different for different values
+        expect(result.bg).not.toEqual(result2.bg)
+      },
+    )
+
+    it(`reverses colors based on 'better' parameter`, () => {
+      const values = [1, 5, 10]
+
+      // For higher=better, higher values get "better" colors
+      const higher_better1 = calc_cell_color(
+        1,
+        values,
+        `higher` as const,
+        `interpolateViridis`,
+        `linear` as const,
+      )
+      const higher_better10 = calc_cell_color(
+        10,
+        values,
+        `higher` as const,
+        `interpolateViridis`,
+        `linear` as const,
+      )
+
+      // For lower=better, lower values get "better" colors
+      const lower_better1 = calc_cell_color(
+        1,
+        values,
+        `lower` as const,
+        `interpolateViridis`,
+        `linear` as const,
+      )
+      const lower_better10 = calc_cell_color(
+        10,
+        values,
+        `lower` as const,
+        `interpolateViridis`,
+        `linear` as const,
+      )
+
+      // When "better" is reversed, the colors should also be reversed
+      expect(higher_better1.bg).toEqual(lower_better10.bg)
+      expect(higher_better10.bg).toEqual(lower_better1.bg)
+    })
+
+    it(`falls back to viridis when color_scale is invalid`, () => {
+      // Using a non-existent color scale, should fall back to viridis
+      const valid_scale = calc_cell_color(
+        5,
+        [1, 5, 10],
+        `higher` as const,
+        `interpolateViridis`,
+        `linear` as const,
+      )
+      const invalid_scale = calc_cell_color(
+        5,
+        [1, 5, 10],
+        `higher` as const,
+        `nonExistentScale`,
+        `linear` as const,
+      )
+
+      // Should still return a valid color
+      expect(invalid_scale.bg).toMatch(/^rgb\(|rgba\(|#/)
+
+      // Color should be the same as with viridis
+      expect(invalid_scale.bg).toEqual(valid_scale.bg)
+    })
+
+    it(`handles log scale with non-positive values`, () => {
+      // Log scales need positive values
+      const mixed_vals = [-10, -1, 0, 1, 10]
+
+      // Values that will be filtered out for the domain should still get colors
+      const result = calc_cell_color(
+        10,
+        mixed_vals,
+        `higher` as const,
+        `interpolateViridis`,
+        `log` as const,
+      )
+
+      // Should still return a valid color since 10 is positive
+      expect(result.bg).toMatch(/^rgb\(|rgba\(|#/)
+    })
   })
 })

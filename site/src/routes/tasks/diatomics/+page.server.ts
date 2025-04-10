@@ -1,4 +1,4 @@
-import { MODEL_METADATA, type DiatomicsCurves } from '$lib'
+import { MODELS, type DiatomicsCurves } from '$lib'
 import type { PageServerLoad } from './$types'
 
 async function fetch_diatomics(file_url: string): Promise<DiatomicsCurves> {
@@ -25,7 +25,7 @@ async function fetch_diatomics(file_url: string): Promise<DiatomicsCurves> {
 
 export const load: PageServerLoad = async () => {
   // Filter models that have diatomics metrics
-  const diatomic_models = MODEL_METADATA.filter(
+  const diatomic_models = MODELS.filter(
     (model) => model.metrics?.diatomics && typeof model.metrics.diatomics === `object`,
   ).sort(
     (m1, m2) => new Date(m2.date_added).getTime() - new Date(m1.date_added).getTime(), // Sort by date added, newest first

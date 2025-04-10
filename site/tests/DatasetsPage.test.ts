@@ -160,4 +160,22 @@ describe(`Datasets Page`, () => {
 
     expect(has_formatted_number).toBe(true)
   })
+
+  it(`correctly displays method information in the table`, () => {
+    const method_cells = [...document.querySelectorAll(`td[data-col="Method"]`)]
+
+    // At least some cells should have method information (not all n/a)
+    const method_count = method_cells.reduce(
+      (total, cell) => total + Number(cell.textContent?.trim() !== `n/a`),
+      0,
+    )
+    // There should be at least several datasets with method information
+    expect(method_count).toBeGreaterThan(3)
+    // Check for common methods like DFT or ML in the column
+    const all_methods_text = method_cells
+      .map((cell) => cell.textContent?.trim())
+      .join(` `)
+    // Should find at least one of these common methods
+    expect(/DFT|ML|experiment/.test(all_methods_text)).toBe(true)
+  })
 })

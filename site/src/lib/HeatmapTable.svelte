@@ -1,12 +1,10 @@
 <script lang="ts">
-  import { max, min } from 'd3-array'
-  import { scaleSequential } from 'd3-scale'
-  import * as d3sc from 'd3-scale-chromatic'
-  import { choose_bw_for_contrast, pretty_num } from 'elementari/labels'
+  import { pretty_num } from 'elementari/labels'
   import 'iconify-icon'
   import type { Snippet } from 'svelte'
   import { titles_as_tooltips } from 'svelte-zoo/actions'
   import { flip } from 'svelte/animate'
+  import { calc_cell_color } from './metric-helpers'
   import type { CellVal, HeatmapColumn, RowData } from './types'
 
   interface Props {
@@ -59,7 +57,48 @@
   $effect(() => {
     sorted_data =
       data?.filter?.((row) => Object.values(row).some((val) => val !== undefined)) ?? []
+    reinitialize_tooltips()
   })
+
+  // TODO 2025-04-09 remove this hacky cursor-generated tooltip reinitialization
+  // once we have a cleaner upstream solution in svelte-zoo
+  function reinitialize_tooltips() {
+    if (!div) return
+
+    // Find all cells that contain HTML content
+    const cells = div.querySelectorAll(`td`)
+
+    cells.forEach((cell) => {
+      // Then check for any elements inside the cell that have titles
+      const titled_elements = cell.querySelectorAll(`[title], [data-title]`)
+      titled_elements.forEach((element) => {
+        const title = element.getAttribute(`title`) || element.getAttribute(`data-title`)
+        if (!title) return
+
+        element.setAttribute(`data-title`, title)
+        element.removeAttribute(`title`)
+
+        // @ts-expect-error _tippy is untyped implementation detail
+        if (!element._tippy) element.setAttribute(`data-needs-tooltip`, `true`)
+      })
+    })
+
+    // Also check headers
+    const headers = div.querySelectorAll(`th`)
+    headers.forEach((header) => {
+      const title = header.getAttribute(`title`) || header.getAttribute(`data-title`)
+      if (!title) return
+
+      header.setAttribute(`data-title`, title)
+      header.removeAttribute(`title`)
+
+      // @ts-expect-error _tippy is untyped implementation detail
+      if (!header._tippy) header.setAttribute(`data-needs-tooltip`, `true`)
+    })
+
+    // Re-initialize tooltips action on the container
+    titles_as_tooltips(div)
+  }
 
   // Helper to make column IDs (needed since column labels in different groups can be repeated)
   const get_col_id = (col: HeatmapColumn) =>
@@ -134,25 +173,14 @@
       .map((row) => row[col_id])
       .filter((val) => typeof val === `number`) // Type guard to ensure we only get numbers
 
-    if (numeric_vals.length === 0) {
-      return { bg: null, text: null }
-    }
-
-    const range = [min(numeric_vals) ?? 0, max(numeric_vals) ?? 1]
-    if (col.better === `lower`) {
-      range.reverse()
-    }
-
-    // Use custom color scale if specified, otherwise fall back to viridis
-    const scale_name = col.color_scale || `interpolateViridis`
-    const interpolator = d3sc[scale_name] || d3sc.interpolateViridis
-
-    const color_scale = scaleSequential().domain(range).interpolator(interpolator)
-
-    const bg = color_scale(val)
-    const text = choose_bw_for_contrast(null, bg)
-
-    return { bg, text }
+    // Using the shared helper function for color calculation
+    return calc_cell_color(
+      val,
+      numeric_vals,
+      col.better === `higher` || col.better === `lower` ? col.better : undefined,
+      col.color_scale || `interpolateViridis`,
+      col.scale_type || `linear`,
+    )
   }
 
   let visible_columns = $derived(columns.filter((col) => col.visible !== false))

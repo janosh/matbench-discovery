@@ -31,8 +31,8 @@ jobs:
       python-version: "3.11"
       # TODO remove main branch install of pymatviz after next release
       install-cmd: |
-        pip install git+https://github.com/janosh/pymatviz
-        pip install -e .[test,symmetry]
+        uv pip install -e .[test,symmetry] --system
+        uv pip install git+https://github.com/janosh/pymatviz --system
 
   vitest:
     uses: janosh/workflows/.github/workflows/npm-test.yml@main

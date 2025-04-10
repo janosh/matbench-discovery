@@ -2,8 +2,8 @@
   import { HeatmapTable, TableControls, get_metric_rank_order } from '$lib'
   import { pretty_num } from 'elementari'
   import { click_outside } from 'svelte-zoo/actions'
+  import { calculate_metrics_data } from './metric-helpers'
   import { ALL_METRICS, DEFAULT_CPS_CONFIG, METADATA_COLS } from './metrics'
-  import { calculate_metrics_data } from './metrics-table-helpers'
   import type {
     CombinedMetricConfig,
     DiscoverySet,

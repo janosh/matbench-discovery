@@ -100,6 +100,7 @@ export type HeatmapColumn = {
   sticky?: boolean // sticky column
   visible?: boolean // show column (true by default)
   sortable?: boolean // whether column is sortable, defaults to true
+  scale_type?: `linear` | `log` // scale type for color mapping
 }
 
 export const DISCOVERY_SETS = [
