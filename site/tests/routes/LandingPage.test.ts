@@ -137,38 +137,4 @@ describe(`Landing Page`, () => {
       throw new Error(`Could not find F1 or DAF values in text: ${text}`)
     }
   })
-
-  it(`renders radar chart for CPS weights`, () => {
-    // Check that the radar chart is rendered
-    const radar_chart = document.body.querySelector(`.radar-container svg`)
-    expect(radar_chart).toBeDefined()
-
-    // Check that the chart has the expected elements
-    const chart_circle = document.body.querySelector(`circle[role="button"]`)
-    expect(chart_circle).toBeDefined()
-
-    // Check for axis lines (should be 3 for the three metrics)
-    const axis_lines = document.body.querySelectorAll(`.radar-container svg line`)
-    expect(axis_lines).toHaveLength(3)
-
-    // Check the default weight percentages in SVG tspan elements
-    const weight_values = Array.from(
-      document.body.querySelectorAll(`.radar-container svg tspan:last-child`),
-    ).map((el) => el.textContent)
-
-    // Should show the default weights (50%, 40%, 10%)
-    expect(weight_values).toEqual([`50%`, `40%`, `10%`])
-  })
-
-  it(`has a reset button for the radar chart`, async () => {
-    // Find the reset button
-    const reset_button = Array.from(
-      document.body.querySelectorAll(`.action-button`),
-    ).find((btn) => btn.textContent?.trim() === `Reset`) as HTMLButtonElement
-
-    expect(reset_button).toBeDefined()
-
-    // Should have tooltip explaining its function
-    expect(reset_button?.getAttribute(`title`)).toBe(`Reset to default weights`)
-  })
 })

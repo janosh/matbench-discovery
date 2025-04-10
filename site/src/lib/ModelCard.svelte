@@ -26,10 +26,11 @@
   let { model_name, model_key, model_params } = $derived(model)
   let { notes = {}, training_set, n_estimators } = $derived(model)
   let all_metrics = $derived({
-    ...(model.metrics?.discovery?.full_test_set ?? {}),
+    ...(model.metrics?.discovery?.unique_prototypes ?? {}),
     ...(typeof model.metrics?.phonons == `object`
       ? model.metrics?.phonons.kappa_103
       : {}),
+    CPS: model.CPS,
   })
   let { missing_preds, missing_percent } = $derived(all_metrics)
 

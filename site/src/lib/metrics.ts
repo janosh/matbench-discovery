@@ -1,6 +1,6 @@
 import { DATASETS, MODELS, get_pred_file_urls, model_is_compliant } from '$lib'
 import type { TargetType } from '$lib/model-schema'
-import { discovery as discovery_config } from '$pkg/modeling-tasks.yml'
+import modeling_tasks from '$pkg/modeling-tasks.yml'
 import { max, min } from 'd3-array'
 import { scaleLog, scaleSequential } from 'd3-scale'
 import * as d3sc from 'd3-scale-chromatic'
@@ -33,6 +33,11 @@ export function get_metric_value(
   metric_key: string, // key of the metric to extract
   set: string = `full_test_set`, // optional dataset to use
 ): number | undefined {
+  // Special case for CPS
+  if (metric_key === `CPS`) {
+    return model.CPS
+  }
+
   // Check if it's a discovery metric
   if (model.metrics?.discovery?.[set as keyof typeof model.metrics.discovery]) {
     const metrics_set = model.metrics.discovery[
@@ -84,18 +89,12 @@ export function get_metric_value(
 
 // Determines if a specific metric is considered "better" when lower
 export function is_lower_better(metric_key: string): boolean {
-  // First check discovery metrics
-  if (discovery_config.metrics.lower_is_better.includes(metric_key)) {
-    return true
-  }
-
-  // Check phonons metrics
-  if (metric_key === `κ_SRME` || metric_key === `RMSD`) {
-    return true
-  }
-
-  // For any other metric, assume higher is better
-  return false
+  // Combine all lower_is_better metrics from all tasks
+  const all_lower_better = Object.values(modeling_tasks).flatMap(
+    (task) => task.metrics.lower_is_better ?? [],
+  )
+  // Check if metric_key is in the combined set
+  return all_lower_better.includes(metric_key)
 }
 
 // Format date string into human-readable format

@@ -9,7 +9,7 @@
   import { fade } from 'svelte/transition'
   import type { Snapshot } from './$types'
 
-  let sort_by: keyof ModelStats | `model_name` = $state(`F1`)
+  let sort_by: keyof ModelStats | `model_name` = $state(`CPS`)
   let show_non_compliant: boolean = $state(true)
   let show_details: boolean = $state(false)
   let order: `asc` | `desc` = $state(`desc`)
@@ -17,6 +17,7 @@
   const min_models: number = 2
 
   const stats: ModelStatLabel[] = [
+    { key: `CPS`, label: `CPS`, tooltip: `Combined Performance Score` },
     { key: `Accuracy` },
     { key: `DAF`, tooltip: `Discovery Acceleration Factor` },
     { key: `F1` },

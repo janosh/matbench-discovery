@@ -23,6 +23,7 @@
     "@sveltejs/adapter-static": "^3.0.8",
     "@sveltejs/kit": "^2.20.4",
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@types/d3-array": "^3.2.1",
     "@types/d3-scale": "^4.0.9",
     "@types/d3-scale-chromatic": "^3.1.0",
     "@types/js-yaml": "^4.0.9",

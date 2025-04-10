@@ -23,8 +23,8 @@ export type ModelStats = {
   DAF: number // discovery acceleration factor
   GPUs: number // number of GPUs used
   CPUs: number // number of CPUs used
-  slurm_jobs: number // number of SLURM jobs used
   κ_SRME: number // symmetric relative mean error of predicted lattice thermal conductivity
+  CPS: number // combined performance score
 }
 
 // how to pretty print a model stat key on the website

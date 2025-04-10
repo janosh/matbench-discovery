@@ -15,10 +15,10 @@
     DISCOVERY_SET_LABELS,
     METADATA_COLS,
   } from '$lib/metrics'
+  import { CPS_CONFIG } from '$lib/models.svelte'
   import Readme from '$root/readme.md'
   import KappaNote from '$routes/kappa-note.md'
   import { pretty_num } from 'elementari'
-  import { Tooltip } from 'svelte-zoo'
 
   let n_wbm_stable_uniq_protos = 32_942
   let n_wbm_uniq_protos = 215_488
@@ -27,9 +27,6 @@
   let show_energy_only: boolean = $state(false)
   let show_combined_controls: boolean = $state(true)
   let export_error: string | null = $state(null)
-
-  // State for the radar chart
-  let metric_config = $state({ ...DEFAULT_CPS_CONFIG })
 
   // Default column visibility
   let visible_cols: Record<string, boolean> = $state({
@@ -42,7 +39,7 @@
   })
 
   let best_model = $derived(
-    MODELS.reduce((best, md: ModelData) => {
+    MODELS.reduce((best: ModelData, md: ModelData) => {
       const best_F1 = best.metrics?.discovery?.full_test_set?.F1 ?? 0
       const md_F1 = md.metrics?.discovery?.full_test_set?.F1 ?? 0
       if (
@@ -57,13 +54,6 @@
 
   let discovery_set: DiscoverySet = $state(`unique_prototypes`)
 
-  // Reset to default weights (50% F1, 40% kappa, 10% RMSD)
-  function reset_weights() {
-    metric_config.parts.F1.weight = DEFAULT_CPS_CONFIG.parts.F1.weight
-    metric_config.parts.kappa_SRME.weight = DEFAULT_CPS_CONFIG.parts.kappa_SRME.weight
-    metric_config.parts.RMSD.weight = DEFAULT_CPS_CONFIG.parts.RMSD.weight
-  }
-
   // Initialize with CPS as default metric
   let selected_metric:
     | keyof (typeof DEFAULT_CPS_CONFIG)[`parts`]
@@ -76,8 +66,8 @@
     better: `higher`,
     description: DEFAULT_CPS_CONFIG.description,
   }
-  let selected_scatter: Metric = $derived(
-    { ...DEFAULT_CPS_CONFIG.parts, cps: cps_scatter }[selected_metric],
+  let selected_scatter = $derived(
+    { ...DEFAULT_CPS_CONFIG.parts, cps: cps_scatter }[selected_metric] as Metric,
   )
 </script>
 
@@ -103,7 +93,7 @@
         {show_combined_controls}
         {show_energy_only}
         show_noncompliant={show_non_compliant}
-        config={metric_config}
+        config={CPS_CONFIG}
         style="width: 100%;"
       />
     </div>
@@ -162,27 +152,8 @@
       >.
     </div>
 
-    <!-- Radar Chart for Weight Controls -->
-    <div class="radar-container">
-      <div class="radar-header">
-        <span class="metric-name">{metric_config.label}</span>
-        <Tooltip>
-          <span class="info-icon"><svg><use href="#icon-info" /></svg></span>
-          {#snippet tip()}
-            {@html metric_config.description}
-          {/snippet}
-        </Tooltip>
-
-        <button
-          class="action-button"
-          onclick={reset_weights}
-          title="Reset to default weights"
-        >
-          Reset
-        </button>
-      </div>
-      <RadarChart bind:weights={metric_config.parts} size={260} />
-    </div>
+    <!-- Radar chart with CPS weight controls -->
+    <RadarChart size={260} />
 
     <!-- Model Size vs Performance plot -->
     <section style="width: 100%; margin-block: 1em;">
@@ -211,7 +182,7 @@
       </h3>
       <MetricScatter
         models={MODELS}
-        config={selected_metric === DEFAULT_CPS_CONFIG.key ? metric_config : undefined}
+        config={selected_metric === DEFAULT_CPS_CONFIG.key ? CPS_CONFIG : undefined}
         metric={selected_metric !== DEFAULT_CPS_CONFIG.key ? selected_metric : undefined}
         y_label={selected_scatter.svg_label ?? selected_scatter.label}
         y_lim={selected_scatter.range}
@@ -230,7 +201,7 @@
       <MetricScatter
         models={MODELS}
         metric={selected_metric === DEFAULT_CPS_CONFIG.key ? undefined : selected_metric}
-        config={selected_metric === DEFAULT_CPS_CONFIG.key ? metric_config : undefined}
+        config={selected_metric === DEFAULT_CPS_CONFIG.key ? CPS_CONFIG : undefined}
         y_label={selected_scatter.svg_label ?? selected_scatter.label}
         x_property="date_added"
         x_label="Date"
@@ -314,43 +285,6 @@
     gap: 1em;
     background-color: transparent;
   }
-
-  .radar-container {
-    width: fit-content;
-    flex: 0 0 auto;
-    max-width: 100%;
-    background: var(--light-bg);
-    border-radius: 4px;
-    padding: 0.1em 0.3em;
-    box-sizing: border-box;
-  }
-
-  .radar-header {
-    display: flex;
-    align-items: center;
-    gap: 6pt;
-    font-weight: bold;
-  }
-
-  .info-icon {
-    opacity: 0.7;
-    cursor: help;
-  }
-
-  .action-button {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 3px;
-    cursor: pointer;
-    padding: 0.15em 0.35em;
-    font-size: 0.8em;
-    margin-left: auto;
-  }
-
-  .action-button:hover {
-    background: rgba(255, 255, 255, 0.05);
-  }
-
   figure#metrics-table :global(:is(sub, sup)) {
     font-size: 0.7em;
   }
