@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { MetricScatter, MetricsTable, MODEL_METADATA, SelectToggle } from '$lib'
+  import { MetricScatter, MetricsTable, MODELS, SelectToggle } from '$lib'
   import { DISCOVERY_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/metrics'
   import type { DiscoverySet } from '$lib/types'
   import type { Point } from 'elementari'
@@ -18,7 +18,7 @@
   let hovered = $state(false)
 
   let filtered_models = $derived(
-    Object.values(MODEL_METADATA).filter(
+    Object.values(MODELS).filter(
       (md) => md.metrics?.discovery?.[discovery_set]?.F1 != null,
     ),
   )

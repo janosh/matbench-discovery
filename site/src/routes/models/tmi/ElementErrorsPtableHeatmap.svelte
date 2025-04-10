@@ -1,6 +1,6 @@
 <script lang="ts">
   import per_elem_each_errors from '$figs/per-element-each-errors.json'
-  import { MODEL_METADATA, PtableInset } from '$lib'
+  import { MODELS, PtableInset } from '$lib'
   import type { ChemicalElement } from 'elementari'
   import { ColorBar, ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
   import Select from 'svelte-multiselect'
@@ -19,7 +19,7 @@
   let {
     color_scale = $bindable([`Viridis`]),
     active_element = $bindable(null),
-    models = $bindable(MODEL_METADATA.map((m) => m.model_name)),
+    models = $bindable(MODELS.map((m) => m.model_name)),
     current_model = $bindable([models[2]]),
     manual_cbar_max = $bindable(false),
     normalized = $bindable(true),

@@ -4,7 +4,7 @@
     MetricScatter,
     MetricsTable,
     model_is_compliant,
-    MODEL_METADATA,
+    MODELS,
     RadarChart,
     SelectToggle,
   } from '$lib'
@@ -42,7 +42,7 @@
   })
 
   let best_model = $derived(
-    MODEL_METADATA.reduce((best, md: ModelData) => {
+    MODELS.reduce((best, md: ModelData) => {
       const best_F1 = best.metrics?.discovery?.full_test_set?.F1 ?? 0
       const md_F1 = md.metrics?.discovery?.full_test_set?.F1 ?? 0
       if (
@@ -122,6 +122,14 @@
         {label}
       </button>
     {/each}
+    <a
+      href="/rss.xml"
+      class="download-btn"
+      title="Subscribe to be notified of new models"
+    >
+      <svg class="icon"><use href="#icon-rss" /></svg>
+      RSS
+    </a>
     {#if export_error}
       <div class="export-error">
         {export_error}
@@ -202,7 +210,7 @@
         </small>
       </h3>
       <MetricScatter
-        models={MODEL_METADATA}
+        models={MODELS}
         config={selected_metric === DEFAULT_CPS_CONFIG.key ? metric_config : undefined}
         metric={selected_metric !== DEFAULT_CPS_CONFIG.key ? selected_metric : undefined}
         y_label={selected_scatter.svg_label ?? selected_scatter.label}
@@ -220,7 +228,7 @@
         </small>
       </h3>
       <MetricScatter
-        models={MODEL_METADATA}
+        models={MODELS}
         metric={selected_metric === DEFAULT_CPS_CONFIG.key ? undefined : selected_metric}
         config={selected_metric === DEFAULT_CPS_CONFIG.key ? metric_config : undefined}
         y_label={selected_scatter.svg_label ?? selected_scatter.label}
@@ -237,7 +245,7 @@
 <Readme>
   {#snippet title()}{/snippet}
   {#snippet model_count()}
-    {MODEL_METADATA.filter((md) => show_non_compliant || model_is_compliant(md)).length}
+    {MODELS.filter((md) => show_non_compliant || model_is_compliant(md)).length}
   {/snippet}
 
   {#snippet best_report()}
@@ -345,5 +353,12 @@
 
   figure#metrics-table :global(:is(sub, sup)) {
     font-size: 0.7em;
+  }
+
+  svg.icon {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    margin-right: 4px;
   }
 </style>

@@ -24,9 +24,22 @@
 
 <footer>
   <nav>
-    <a href="{repository}/issues">Issues</a>
-    <a href="mailto:janosh.riebesell@gmail.com?subject=Matbench Discovery">Contact</a>
-    <a href="/changelog">Changelog</a>
+    <a href="{repository}/issues">
+      <svg class="icon"><use href="#icon-issues" /></svg>
+      Issues
+    </a>
+    <a href="mailto:janosh.riebesell@gmail.com?subject=Matbench Discovery">
+      <svg class="icon"><use href="#icon-contact" /></svg>
+      Contact
+    </a>
+    <a href="/changelog">
+      <svg class="icon"><use href="#catppuccin-changelog" /></svg>
+      Changelog
+    </a>
+    <a href="/rss.xml" title="Subscribe to model updates">
+      <svg class="icon"><use href="#icon-rss" /></svg>
+      RSS
+    </a>
     <button
       onclick={() => {
         if (dialog) dialog.open = true
@@ -102,5 +115,11 @@
   }
   dialog > :is(:global(p, h3)) {
     margin: 0;
+  }
+  svg.icon {
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+    margin-right: 4px;
   }
 </style>
