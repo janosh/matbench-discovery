@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { CombinedMetricConfig, DiscoverySet, ModelData } from '$lib'
-  import { calculate_cps } from '$lib/metrics'
+  import { calculate_cps } from '$lib/combined_perf_score'
   import { ScatterPlot, type Point } from 'elementari'
 
   export type ModelProperty =

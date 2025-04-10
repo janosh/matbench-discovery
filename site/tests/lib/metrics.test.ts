@@ -1,8 +1,7 @@
 import { model_is_compliant } from '$lib'
+import { calculate_cps, DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score'
 import {
   calc_cell_color,
-  calculate_cps,
-  DEFAULT_CPS_CONFIG,
   format_date,
   format_train_set,
   get_geo_opt_property,

@@ -1,5 +1,5 @@
 import { RadarChart } from '$lib'
-import { DEFAULT_CPS_CONFIG } from '$lib/metrics'
+import { DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score'
 import { CPS_CONFIG, update_models_cps } from '$lib/models.svelte'
 import { mount, tick } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'

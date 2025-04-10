@@ -140,7 +140,7 @@
         </button>
         {#if tooltip}
           <Tooltip text={tooltip} max_width="20em">
-            <span style="position: absolute; top: -1ex; left: -4pt; color: gray;">
+            <span style="position: absolute; top: -11pt; left: -6pt; color: gray;">
               <svg><use href="#icon-info"></use></svg>
             </span>
           </Tooltip>

@@ -1,5 +1,5 @@
+import { DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score'
 import MetricsTable from '$lib/MetricsTable.svelte'
-import { DEFAULT_CPS_CONFIG } from '$lib/metrics'
 import type { HeatmapColumn, ModelData } from '$lib/types'
 import { mount, tick } from 'svelte'
 import { describe, expect, it } from 'vitest'

@@ -8,13 +8,9 @@
     RadarChart,
     SelectToggle,
   } from '$lib'
+  import { DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score'
   import { generate_png, generate_svg, handle_export } from '$lib/html-to-img'
-  import {
-    ALL_METRICS,
-    DEFAULT_CPS_CONFIG,
-    DISCOVERY_SET_LABELS,
-    METADATA_COLS,
-  } from '$lib/metrics'
+  import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/metrics'
   import { CPS_CONFIG } from '$lib/models.svelte'
   import Readme from '$root/readme.md'
   import KappaNote from '$routes/kappa-note.md'

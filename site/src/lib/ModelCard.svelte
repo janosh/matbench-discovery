@@ -113,11 +113,9 @@
   {/if}
   <span>
     <svg><use href="#icon-missing-metadata"></use></svg>
-    {#if missing_preds}
-      Missing preds:
-      {pretty_num(missing_preds, `,.0f`)}
-      <small>({missing_percent})</small>
-    {/if}
+    Missing preds:
+    {pretty_num(missing_preds ?? 0, `,.0f`)}
+    <small>({missing_percent})</small>
     {#if notes.html?.missing_preds}
       <Tooltip text={notes.html.missing_preds ?? ``} tip_style="font-size: 9pt;">
         &nbsp;<svg><use href="#icon-info"></use></svg>

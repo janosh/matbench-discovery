@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Point } from 'elementari'
   import { Tooltip } from 'svelte-zoo'
-  import { DEFAULT_CPS_CONFIG } from './metrics'
+  import { DEFAULT_CPS_CONFIG } from './combined_perf_score'
   import { CPS_CONFIG, update_models_cps } from './models.svelte'
   import type { CombinedMetricConfig } from './types'
 

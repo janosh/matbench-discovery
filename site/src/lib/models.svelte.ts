@@ -1,4 +1,4 @@
-import { DEFAULT_CPS_CONFIG, calculate_cps } from './metrics'
+import { DEFAULT_CPS_CONFIG, calculate_cps } from './combined_perf_score'
 import type { ModelData } from './types'
 
 // Make CPS_CONFIG reactive (using Svelte 5 runes)
