@@ -3,7 +3,6 @@
   import { AuthorBrief, DATASETS } from '$lib'
   import { repository } from '$site/package.json'
   import { pretty_num } from 'elementari'
-  import 'iconify-icon'
   import { Tooltip } from 'svelte-zoo'
   import { fade, slide } from 'svelte/transition'
 
@@ -35,11 +34,11 @@
   let { missing_preds, missing_percent } = $derived(all_metrics)
 
   let links = $derived([
-    [model.repo, `Repo`, `octicon:mark-github`],
-    [model.paper, `Paper`, `ion:ios-paper`],
-    [model.url, `Docs`, `ion:ios-globe`],
-    [model.checkpoint_url, `Checkpoint`, `mdi:download-box`],
-    [`${repository}/blob/-/models/${model.dirname}`, `Files`, `octicon:file-directory`],
+    [model.repo, `Repo`, `#icon-github`],
+    [model.paper, `Paper`, `#icon-paper`],
+    [model.url, `Docs`, `#icon-docs`],
+    [model.checkpoint_url, `Checkpoint`, `#icon-download`],
+    [`${repository}/blob/-/models/${model.dirname}`, `Files`, `#icon-directory`],
   ])
   const target = { target: `_blank`, rel: `noopener` }
   let n_model_params = $derived(pretty_num(model_params, `.3~s`))
@@ -52,14 +51,15 @@
     title="{show_details ? `Hide` : `Show`} authors and package versions"
   >
     <!-- change between expand/collapse icon -->
-    <iconify-icon icon={show_details ? `ion:ios-arrow-up` : `ion:ios-arrow-down`} inline
-    ></iconify-icon>
+    <svg class="icon"
+      ><use href={show_details ? `#icon-arrow-up` : `#icon-arrow-down`}></use></svg
+    >
   </button>
 </h2>
 <nav>
   {#each links.filter( ([href]) => href?.startsWith(`http`), ) as [href, title, icon] (title)}
     <span>
-      <iconify-icon {icon} inline></iconify-icon>
+      <svg><use href={icon}></use></svg>
       <a {href} {...target}>{title}</a>
     </span>
   {/each}
@@ -68,7 +68,7 @@
 <section class="metadata">
   {#if training_set}
     <span style="grid-column: span 2;">
-      <iconify-icon icon="mdi:database" inline></iconify-icon>
+      <svg><use href="#icon-database"></use></svg>
       Training data:
       {#each training_set as train_set_key, idx (train_set_key)}
         {#if idx > 0}
@@ -86,32 +86,32 @@
     </span>
   {/if}
   <span title="Date added">
-    <iconify-icon icon="ion:ios-calendar" inline></iconify-icon>
+    <svg><use href="#icon-calendar"></use></svg>
     Added {model.date_added}
   </span>
   {#if model.date_published}
     <span title="Date published">
-      <iconify-icon icon="ri:calendar-check-line" inline></iconify-icon>
+      <svg><use href="#icon-calendar-check"></use></svg>
       Published {model.date_published}
     </span>
   {/if}
   <span>
-    <iconify-icon icon="eos-icons:neural-network" inline></iconify-icon>
+    <svg><use href="#icon-neural-network"></use></svg>
     {n_model_params} params
   </span>
   {#if n_estimators > 1}
     <span>
-      <iconify-icon icon="material-symbols:forest" inline></iconify-icon>
+      <svg><use href="#icon-forest"></use></svg>
       Ensemble of {n_estimators > 1 ? `${n_estimators}` : ``}
       <Tooltip
         text="This result used a model ensemble with {n_estimators} members with {n_model_params} parameters each."
       >
-        &nbsp;<iconify-icon icon="octicon:info-24" inline></iconify-icon>
+        &nbsp;<svg><use href="#icon-info"></use></svg>
       </Tooltip>
     </span>
   {/if}
   <span>
-    <iconify-icon icon="fluent:missing-metadata-24-regular" inline></iconify-icon>
+    <svg><use href="#icon-missing-metadata"></use></svg>
     {#if missing_preds}
       Missing preds:
       {pretty_num(missing_preds, `,.0f`)}
@@ -119,7 +119,7 @@
     {/if}
     {#if notes.html?.missing_preds}
       <Tooltip text={notes.html.missing_preds ?? ``} tip_style="font-size: 9pt;">
-        &nbsp;<iconify-icon icon="octicon:info-24" inline></iconify-icon>
+        &nbsp;<svg><use href="#icon-info"></use></svg>
       </Tooltip>
     {/if}
   </span>

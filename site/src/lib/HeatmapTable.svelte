@@ -1,6 +1,5 @@
 <script lang="ts">
   import { pretty_num } from 'elementari/labels'
-  import 'iconify-icon'
   import type { Snippet } from 'svelte'
   import { titles_as_tooltips } from 'svelte-zoo/actions'
   import { flip } from 'svelte/animate'
@@ -48,7 +47,8 @@
 
   // Add container reference for binding
   let div: HTMLDivElement
-  let sort_state = $state({
+  type SortState = { column: string; ascending: boolean }
+  let sort_state = $state<SortState>({
     column: initial_sort_column || ``,
     ascending: initial_sort_direction !== `desc`,
   })
@@ -185,10 +185,7 @@
 
   let visible_columns = $derived(columns.filter((col) => col.visible !== false))
 
-  const sort_indicator = (
-    col: HeatmapColumn,
-    sort_state: { column: string; ascending: boolean },
-  ) => {
+  const sort_indicator = (col: HeatmapColumn, sort_state: SortState) => {
     const col_id = get_col_id(col)
     if (sort_state.column === col_id) {
       // When column is sorted, show ↓ for ascending (smaller values at top)
@@ -253,7 +250,7 @@
             {@html sort_indicator(col, sort_state)}
             {#if col_idx == 0 && sort_hint}
               <span title={sort_hint}>
-                <iconify-icon icon="octicon:info-16" inline></iconify-icon>
+                <svg><use href="#icon-info"></use></svg>
               </span>
             {/if}
           </th>

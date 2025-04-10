@@ -13,7 +13,7 @@ describe(`Landing Page`, () => {
 
     const button_texts = Array.from(buttons).map((btn) => btn.textContent?.trim())
     expect(button_texts).toContain(`Full Test Set`)
-    expect(button_texts).toContain(`Unique Prototypes ⓘ`)
+    expect(button_texts).toContain(`Unique Prototypes`)
     expect(button_texts).toContain(`10k Most Stable`)
   })
 

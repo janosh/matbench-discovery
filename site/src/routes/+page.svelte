@@ -127,7 +127,7 @@
       class="download-btn"
       title="Subscribe to be notified of new models"
     >
-      <svg class="icon"><use href="#icon-rss" /></svg>
+      <svg><use href="#icon-rss" /></svg>
       RSS
     </a>
     {#if export_error}
@@ -167,7 +167,7 @@
       <div class="radar-header">
         <span class="metric-name">{metric_config.label}</span>
         <Tooltip>
-          <span class="info-icon">ⓘ</span>
+          <span class="info-icon"><svg><use href="#icon-info" /></svg></span>
           {#snippet tip()}
             {@html metric_config.description}
           {/snippet}
@@ -353,12 +353,5 @@
 
   figure#metrics-table :global(:is(sub, sup)) {
     font-size: 0.7em;
-  }
-
-  svg.icon {
-    width: 16px;
-    height: 16px;
-    vertical-align: middle;
-    margin-right: 4px;
   }
 </style>

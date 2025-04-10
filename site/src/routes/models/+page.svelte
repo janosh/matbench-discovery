@@ -4,7 +4,6 @@
   import { get_metric_value, is_lower_better } from '$lib/metric-helpers'
   import { interpolateCividis as cividis } from 'd3-scale-chromatic'
   import { ColorBar } from 'elementari'
-  import 'iconify-icon'
   import { RadioButtons, Toggle, Tooltip } from 'svelte-zoo'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
@@ -52,7 +51,7 @@
     }
   })
 
-  let sort_factor = $derived({ asc: 1, desc: -1 }[order])
+  let sort_factor = $derived({ asc: -1, desc: 1 }[order])
 
   let models = $derived(
     MODELS.filter((model) => show_non_compliant || model_is_compliant(model)).sort(
@@ -109,10 +108,7 @@
 <div style="display: grid;">
   <h1>Leaderboard</h1>
 
-  <p style="text-align: center;">
-    Sort models by different metrics (thermodynamic stability classification, convex hull
-    distance regressions or tun time).
-  </p>
+  <p style="text-align: center;">Sort models by different metrics.</p>
 
   <span>
     <Toggle bind:checked={show_non_compliant}>Show non-compliant models&ensp;</Toggle>
@@ -144,8 +140,7 @@
         {#if tooltip}
           <Tooltip text={tooltip} max_width="20em">
             <span style="position: absolute; top: -1ex; left: -4pt; color: gray;">
-              <iconify-icon icon="octicon:info-16" aria-label="Info" height="9.5pt"
-              ></iconify-icon>
+              <svg><use href="#icon-info"></use></svg>
             </span>
           </Tooltip>
         {/if}
