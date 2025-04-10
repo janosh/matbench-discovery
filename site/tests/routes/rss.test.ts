@@ -201,7 +201,7 @@ describe(`RSS feed endpoint`, () => {
 
     // Check that the self-reference URL matches document URL
     expect(xml).toContain(
-      `<atom:link href="https://example.com/rss.xml" rel="self" type="application/rss+xml"/>`,
+      `<atom:link href="${pkg.homepage}/rss.xml" rel="self" type="application/rss+xml"/>`,
     )
 
     // Extract descriptions to check for relative URLs
