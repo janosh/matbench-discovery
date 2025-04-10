@@ -126,8 +126,10 @@ export type Metric = {
   better?: `higher` | `lower` // sort direction
 }
 
+export type CpsPart = `F1` | `kappa_SRME` | `RMSD`
+
 export type CombinedMetricConfig = {
-  parts: Record<`F1` | `kappa_SRME` | `RMSD`, Metric & { weight: number }>
+  parts: Record<CpsPart, Metric & { weight: number }>
   label: string
   name: string
   key: string
