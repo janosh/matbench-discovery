@@ -5,13 +5,13 @@ import { describe, expect, it } from 'vitest'
 
 describe(`RSS feed endpoint`, () => {
   it(`should return response with correct content type`, async () => {
-    const response = await GET()
+    const response = await GET({ url: new URL(`https://example.com`) })
     expect(response.headers.get(`Content-Type`)).toBe(`application/xml`)
     expect(response.status).toBe(200)
   })
 
   it(`should return valid XML with expected structure`, async () => {
-    const response = await GET()
+    const response = await GET({ url: new URL(`https://example.com`) })
     const xml = await response.text()
 
     // Check RSS basics with exact matches
@@ -49,7 +49,7 @@ describe(`RSS feed endpoint`, () => {
       return
     }
 
-    const response = await GET()
+    const response = await GET({ url: new URL(`https://example.com`) })
     const xml = await response.text()
 
     // Extract the CDATA content from the first item
@@ -90,7 +90,7 @@ describe(`RSS feed endpoint`, () => {
       return
     }
 
-    const response = await GET()
+    const response = await GET({ url: new URL(`https://example.com`) })
     const xml = await response.text()
 
     const base_url = pkg.homepage.endsWith(`/`) ? pkg.homepage : `${pkg.homepage}/`
@@ -127,7 +127,7 @@ describe(`RSS feed endpoint`, () => {
       return
     }
 
-    const response = await GET()
+    const response = await GET({ url: new URL(`https://example.com`) })
     const xml = await response.text()
 
     // Find models with different dates
@@ -190,6 +190,33 @@ describe(`RSS feed endpoint`, () => {
       const date_content = date_str.replace(/<\/?pubDate>/g, ``)
       // Check that this parses as a valid date
       expect(new Date(date_content).toString()).not.toBe(`Invalid Date`)
+    }
+  })
+
+  it(`should have correct self-reference URL and absolute URLs in descriptions`, async () => {
+    const mock_url = new URL(`https://example.com/rss.xml`)
+
+    const response = await GET({ url: mock_url })
+    const xml = await response.text()
+
+    // Check that the self-reference URL matches document URL
+    expect(xml).toContain(
+      `<atom:link href="https://example.com/rss.xml" rel="self" type="application/rss+xml"/>`,
+    )
+
+    // Extract descriptions to check for relative URLs
+    const descriptions =
+      xml.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/g) || []
+    expect(descriptions.length).toBeGreaterThan(0)
+
+    // URLs in descriptions should be absolute
+    const url_matches = (descriptions[0] || ``).match(/href="([^"]+)"/g) || []
+    expect(url_matches.length).toBeGreaterThan(0)
+
+    // All URLs should be absolute (start with https://)
+    for (const url_match of url_matches) {
+      const url = url_match.replace(/href="|"/g, ``)
+      expect(url.startsWith(`https://`)).toBe(true)
     }
   })
 })

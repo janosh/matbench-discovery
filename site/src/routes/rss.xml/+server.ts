@@ -74,16 +74,16 @@ function format_model_for_rss(model: ModelData): string {
   `.trim()
 }
 
-/**
- * Generates an RSS feed of all models
- */
-export async function GET() {
+// Generates an RSS feed of all models
+export async function GET({ url }) {
   // Sort models by date added (newest first)
-  const sorted_models = [...MODELS].sort((a, b) => {
-    return new Date(b.date_added).getTime() - new Date(a.date_added).getTime()
+  const sorted_models = [...MODELS].sort((m1, m2) => {
+    return new Date(m2.date_added).getTime() - new Date(m1.date_added).getTime()
   })
-
   const headers = { 'Content-Type': `application/xml` }
+
+  // Get the current site URL for self-reference to fix validator.w3.org warning
+  const rss_url = `${url.origin}/rss.xml`
 
   const xml = `
     <rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
@@ -91,7 +91,7 @@ export async function GET() {
         <title>${name} - Model Leaderboard</title>
         <description>${description}</description>
         <link>${base_url}</link>
-        <atom:link href="${base_url}rss.xml" rel="self" type="application/rss+xml"/>
+        <atom:link href="${rss_url}" rel="self" type="application/rss+xml"/>
         ${sorted_models
           .map(
             (model) => `
