@@ -1,5 +1,5 @@
 import { MODELS } from '$lib'
-import { format_train_set } from '$lib/metric-helpers'
+import { format_train_set } from '$lib/metrics'
 import type { ModelData } from '$lib/types'
 import { description, homepage, name } from '$site/package.json'
 import { pretty_num } from 'elementari'
@@ -74,16 +74,15 @@ function format_model_for_rss(model: ModelData): string {
   `.trim()
 }
 
-/**
- * Generates an RSS feed of all models
- */
+// Generates an RSS feed of all models
 export async function GET() {
   // Sort models by date added (newest first)
-  const sorted_models = [...MODELS].sort((a, b) => {
-    return new Date(b.date_added).getTime() - new Date(a.date_added).getTime()
+  const sorted_models = [...MODELS].sort((m1, m2) => {
+    return new Date(m2.date_added).getTime() - new Date(m1.date_added).getTime()
   })
-
   const headers = { 'Content-Type': `application/xml` }
+
+  const rss_feed_url = `${homepage}/rss.xml`
 
   const xml = `
     <rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
@@ -91,7 +90,7 @@ export async function GET() {
         <title>${name} - Model Leaderboard</title>
         <description>${description}</description>
         <link>${base_url}</link>
-        <atom:link href="${base_url}rss.xml" rel="self" type="application/rss+xml"/>
+        <atom:link href="${rss_feed_url}" rel="self" type="application/rss+xml"/>
         ${sorted_models
           .map(
             (model) => `

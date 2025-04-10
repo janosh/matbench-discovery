@@ -1,11 +1,7 @@
 <script lang="ts">
   import { MetricScatter, MetricsTable, MODELS, type ModelData } from '$lib'
-  import {
-    ALL_METRICS,
-    DEFAULT_CPS_CONFIG,
-    METADATA_COLS,
-    PHONON_METRICS,
-  } from '$lib/metrics'
+  import { DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score'
+  import { ALL_METRICS, METADATA_COLS, PHONON_METRICS } from '$lib/metrics'
 
   // Default column visibility
   let visible_cols: Record<string, boolean> = $state({

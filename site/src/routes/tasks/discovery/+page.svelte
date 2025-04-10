@@ -3,7 +3,6 @@
   import { DISCOVERY_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/metrics'
   import type { DiscoverySet } from '$lib/types'
   import type { Point } from 'elementari'
-  import 'iconify-icon'
 
   // Default column visibility
   let visible_cols: Record<string, boolean> = $state({

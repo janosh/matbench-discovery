@@ -48,3 +48,9 @@ diatomics:
   metrics:
     higher_is_better: []
     lower_is_better: []
+
+cps:
+  label: CPS
+  description: Combined Performance Score
+  metrics:
+    higher_is_better: [CPS]

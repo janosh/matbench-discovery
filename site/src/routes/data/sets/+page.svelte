@@ -1,9 +1,8 @@
 <script lang="ts">
   import { DATASETS } from '$lib'
-  import { calc_cell_color, format_date } from '$lib/metric-helpers'
+  import { calc_cell_color, format_date } from '$lib/metrics'
   import type { Dataset, HeatmapColumn } from '$lib/types'
   import { pretty_num } from 'elementari'
-  import 'iconify-icon'
   import { titles_as_tooltips } from 'svelte-zoo/actions'
   import { flip } from 'svelte/animate'
 
@@ -21,8 +20,8 @@
       color_scale: `interpolateViridis`,
       scale_type: `log`,
     },
-    { label: `Open` },
     { label: `Created`, better: `higher` },
+    { label: `Open` },
     { label: `License` },
     { label: `Method` },
     { label: `Links`, sortable: false },
@@ -33,8 +32,8 @@
     Title: string
     Structures: string
     Materials: string
-    Open: string
     Created: string
+    Open: string
     License: string
     Method: string
     Links: string
@@ -181,7 +180,7 @@ discovery.
               {@html col.label}
               {#if col.label === `Title`}
                 <span title="Click on column headers to sort">
-                  <iconify-icon icon="octicon:info-16" inline></iconify-icon>
+                  <svg><use href="#icon-info"></use></svg>
                 </span>
               {/if}
             </th>

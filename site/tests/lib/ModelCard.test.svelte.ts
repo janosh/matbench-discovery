@@ -112,7 +112,7 @@ describe(`ModelCard`, () => {
       expect(metrics).toHaveLength(3)
 
       const f1_metric = Array.from(metrics).find((m) => m.textContent?.includes(`F1`))
-      const f1_value = model.metrics?.discovery?.full_test_set?.F1
+      const f1_value = model.metrics?.discovery?.unique_prototypes?.F1
       expect(f1_metric?.querySelector(`strong`)?.textContent?.trim()).toBe(
         f1_value?.toString(),
       )

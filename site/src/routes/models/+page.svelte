@@ -1,16 +1,15 @@
 <script lang="ts">
   import type { ModelStatLabel, ModelStats } from '$lib'
   import { model_is_compliant, ModelCard, MODELS } from '$lib'
-  import { get_metric_value, is_lower_better } from '$lib/metric-helpers'
+  import { get_metric_value, is_lower_better } from '$lib/metrics'
   import { interpolateCividis as cividis } from 'd3-scale-chromatic'
   import { ColorBar } from 'elementari'
-  import 'iconify-icon'
   import { RadioButtons, Toggle, Tooltip } from 'svelte-zoo'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
   import type { Snapshot } from './$types'
 
-  let sort_by: keyof ModelStats | `model_name` = $state(`F1`)
+  let sort_by: keyof ModelStats | `model_name` = $state(`CPS`)
   let show_non_compliant: boolean = $state(true)
   let show_details: boolean = $state(false)
   let order: `asc` | `desc` = $state(`desc`)
@@ -18,6 +17,7 @@
   const min_models: number = 2
 
   const stats: ModelStatLabel[] = [
+    { key: `CPS`, label: `CPS`, tooltip: `Combined Performance Score` },
     { key: `Accuracy` },
     { key: `DAF`, tooltip: `Discovery Acceleration Factor` },
     { key: `F1` },
@@ -52,7 +52,7 @@
     }
   })
 
-  let sort_factor = $derived({ asc: 1, desc: -1 }[order])
+  let sort_factor = $derived({ asc: -1, desc: 1 }[order])
 
   let models = $derived(
     MODELS.filter((model) => show_non_compliant || model_is_compliant(model)).sort(
@@ -109,10 +109,7 @@
 <div style="display: grid;">
   <h1>Leaderboard</h1>
 
-  <p style="text-align: center;">
-    Sort models by different metrics (thermodynamic stability classification, convex hull
-    distance regressions or tun time).
-  </p>
+  <p style="text-align: center;">Sort models by different metrics.</p>
 
   <span>
     <Toggle bind:checked={show_non_compliant}>Show non-compliant models&ensp;</Toggle>
@@ -143,9 +140,8 @@
         </button>
         {#if tooltip}
           <Tooltip text={tooltip} max_width="20em">
-            <span style="position: absolute; top: -1ex; left: -4pt; color: gray;">
-              <iconify-icon icon="octicon:info-16" aria-label="Info" height="9.5pt"
-              ></iconify-icon>
+            <span style="position: absolute; top: -11pt; left: -6pt; color: gray;">
+              <svg><use href="#icon-info"></use></svg>
             </span>
           </Tooltip>
         {/if}

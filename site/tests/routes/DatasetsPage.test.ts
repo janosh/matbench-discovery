@@ -1,7 +1,7 @@
+import Page from '$routes/data/sets/+page.svelte'
 import { mount, tick } from 'svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { doc_query } from '.'
-import Page from '../src/routes/data/sets/+page.svelte'
+import { doc_query } from '..'
 
 describe(`Datasets Page`, () => {
   beforeEach(() => {

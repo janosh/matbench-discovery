@@ -1,9 +1,9 @@
 <script lang="ts">
   import { HeatmapTable, TableControls, get_metric_rank_order } from '$lib'
+  import { DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score'
   import { pretty_num } from 'elementari'
   import { click_outside } from 'svelte-zoo/actions'
-  import { calculate_metrics_data } from './metric-helpers'
-  import { ALL_METRICS, DEFAULT_CPS_CONFIG, METADATA_COLS } from './metrics'
+  import { ALL_METRICS, METADATA_COLS, calculate_metrics_data } from './metrics'
   import type {
     CombinedMetricConfig,
     DiscoverySet,
