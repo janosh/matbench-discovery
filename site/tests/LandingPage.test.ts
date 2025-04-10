@@ -110,7 +110,7 @@ describe(`Landing Page`, () => {
 
     // Check that it contains SVG, PNG buttons
     const download_buttons = download_section?.querySelectorAll(`.download-btn`)
-    expect(download_buttons?.length).toBe(2)
+    expect(download_buttons?.length).toBe(3)
 
     const buttons = Array.from(download_buttons).map((btn) => btn.textContent?.trim())
     expect(buttons).toContain(`SVG`)

@@ -38,14 +38,34 @@ function format_model_for_rss(model: ModelData): string {
         .join(`, `)
     : `Unknown authors`
 
+  const model_type = model.model_type
+    ? `<p><strong>Model Type:</strong> ${model.model_type}</p>`
+    : ``
+  const hyperparams = model.hyperparams
+    ? `<p><strong>Key Hyperparameters:</strong> ${Object.entries(model.hyperparams)
+        .filter(([key]) => !key.includes(`_`))
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(`, `)}</p>`
+    : ``
+  const license_info = model.license
+    ? `<p><strong>License:</strong> ${model.license.code || model.license}</p>`
+    : ``
+  const date_published = model.date_published
+    ? `<p><strong>Date Published:</strong> ${model.date_published}</p>`
+    : ``
+
   return `
-    <h2>Model: ${model.model_name}</h2>
+    <h2>${model.model_name}</h2>
     <p><strong>Authors:</strong> ${authors_text}</p>
+    ${date_published}
     <p><strong>Date Added:</strong> ${model.date_added}</p>
     <p><strong>Training Set:</strong> ${clean_training_set}</p>
     <p><strong>Parameters:</strong> ${pretty_num(model.model_params)}</p>
-    <p><strong>Metrics:</strong> ${metrics_text}</p>
+    ${model_type}
     <p><strong>Targets:</strong> ${model.targets}</p>
+    <p><strong>Metrics:</strong> ${metrics_text}</p>
+    ${hyperparams}
+    ${license_info}
     <p>
       <a href="${base_url}models/${model.model_key}">View model details</a>
       ${model.paper ? `| <a href="${model.paper}">Read paper</a>` : ``}

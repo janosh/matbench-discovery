@@ -14,14 +14,18 @@ vi.mock(`$lib`, async () => {
         model_key: `test-model`,
         model_params: 1000000,
         date_added: `2023-01-01`,
+        date_published: `2023-01-15`,
         targets: `EFS_G`,
+        model_type: `UIP`,
+        hyperparams: {
+          batch_size: 300,
+          optimizer: `Adam`,
+          loss: `MAE`,
+          loss_weights: { energy: 10.0, force: 1.0 },
+        },
+        license: { code: `Apache-2.0` },
         training_set: [`MP 2022`],
-        authors: [
-          {
-            name: `Test Author`,
-            affiliation: `Test University`,
-          },
-        ],
+        authors: [{ name: `Test Author`, affiliation: `Test University` }],
         metrics: {
           discovery: {
             full_test_set: {
@@ -81,15 +85,21 @@ describe(`RSS feed endpoint`, () => {
     const xml = await response.text()
 
     // Check for expected model details
-    expect(xml).toContain(`<h2>Model: Test Model</h2>`)
+    expect(xml).toContain(`<h2>Test Model</h2>`) // No "Model:" prefix
     expect(xml).toContain(`<strong>Authors:</strong> Test Author (Test University)`)
+    expect(xml).toContain(`<strong>Date Published:</strong> 2023-01-15`)
     expect(xml).toContain(`<strong>Date Added:</strong> 2023-01-01`)
     expect(xml).toContain(`<strong>Training Set:</strong> Test Training Set`)
     expect(xml).toContain(`<strong>Parameters:</strong>`)
+    expect(xml).toContain(`<strong>Model Type:</strong> UIP`)
+    expect(xml).toContain(`<strong>Targets:</strong> EFS_G`)
     expect(xml).toContain(`<strong>Metrics:</strong>`)
     expect(xml).toContain(`F1: 0.8`)
     expect(xml).toContain(`R2: 0.75`)
-    expect(xml).toContain(`<strong>Targets:</strong> EFS_G`)
+    expect(xml).toContain(`<strong>Key Hyperparameters:</strong>`)
+    expect(xml).toContain(`optimizer: Adam`)
+    expect(xml).toContain(`loss: MAE`)
+    expect(xml).toContain(`<strong>License:</strong> Apache-2.0`)
   })
 
   it(`should include links to model resources`, async () => {
