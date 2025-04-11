@@ -59,12 +59,11 @@ definitions:
 
   PhononMetrics:
     type: object
-    additionalProperties: true
+    additionalProperties: false
     properties:
       kappa_103:
         type: object
-        additionalProperties: true
-        required: ["κ_SRME"]
+        additionalProperties: false
         properties:
           κ_SRME:
             type: number
@@ -83,10 +82,11 @@ definitions:
               properties:
                 pred_file_url:
                   $ref: "#/definitions/http_url"
+        required: ["κ_SRME"]
 
   GeoOptMetrics:
     type: object
-    additionalProperties: true
+    additionalProperties: false
     properties:
       struct_col:
         type: string
@@ -98,13 +98,6 @@ definitions:
       symprec=1e-5: &symprec_metrics
         type: object
         additionalProperties: false
-        required:
-          - rmsd
-          - n_sym_ops_mae
-          - symmetry_decrease
-          - symmetry_match
-          - symmetry_increase
-          - n_structures
         properties:
           rmsd:
             type: number
@@ -123,6 +116,13 @@ definitions:
           analysis_file_url:
             type: [string, "null"]
             $ref: "#/definitions/http_url"
+        required:
+          - rmsd
+          - n_sym_ops_mae
+          - symmetry_decrease
+          - symmetry_match
+          - symmetry_increase
+          - n_structures
       symprec=1e-2: *symprec_metrics
     allOf:
       - if:
@@ -389,17 +389,16 @@ properties:
         type: number
   notes:
     type: object
+    additionalProperties: true
     properties:
       Description:
         type: string
       Training:
         type: string
-      Missing Preds:
+      "Missing Preds":
         type: string
       html:
-        type: object
-        additionalProperties: true
-    additionalProperties: true
+        type: string
   model_params:
     type: number
     minimum: 0

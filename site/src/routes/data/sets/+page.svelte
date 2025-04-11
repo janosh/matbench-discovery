@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { DATASETS } from '$lib'
-  import { calc_cell_color, format_date } from '$lib/metrics'
+  import { DATASETS, arr_to_str, format_date } from '$lib'
+  import { calc_cell_color } from '$lib/metrics'
   import type { Dataset, HeatmapColumn } from '$lib/types'
   import { pretty_num } from 'elementari'
   import { titles_as_tooltips } from 'svelte-zoo/actions'
@@ -29,6 +29,7 @@
 
   type TableRow = {
     key: string
+    slug: string
     Title: string
     Structures: string
     Materials: string
@@ -52,16 +53,9 @@
   const to_title = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)
   const title_case = (str: string) => to_spaces(str).split(` `).map(to_title).join(` `)
 
-  // convert array types to strings and handle missing values
-  function arr_to_str(method: unknown): string {
-    if (!method) return `n/a`
-    if (Array.isArray(method)) return method.join(`, `)
-    return String(method)
-  }
-
   // Process data for table
   const datasets = Object.entries(DATASETS).map(([key, set]) => {
-    let { n_structures, n_materials, date_created, license, method } = set
+    let { n_structures, n_materials, date_created, license, method, slug } = set
     const license_full = license_map[license]
 
     const params_tooltip = Object.entries(set.params ?? {})
@@ -73,7 +67,8 @@
 
     return {
       key,
-      Title: `<a href="${set.url}" title="${set.title}">${key}</a>`,
+      slug,
+      Title: `<a href="/data/${slug}" title="${set.title}">${key}</a>`,
       Structures: n_structures ? span_wrap(n_structures) : `n/a`,
       Materials: n_materials ? span_wrap(n_materials) : `n/a`,
       Open: set.open ? `✅` : `❌`,

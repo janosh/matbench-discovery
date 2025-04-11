@@ -1,4 +1,10 @@
-import { DATASETS, MODELS, get_pred_file_urls, model_is_compliant } from '$lib'
+import {
+  DATASETS,
+  MODELS,
+  format_date,
+  get_pred_file_urls,
+  model_is_compliant,
+} from '$lib'
 import type { TargetType } from '$lib/model-schema'
 import modeling_tasks from '$pkg/modeling-tasks.yml'
 import { max, min } from 'd3-array'
@@ -88,24 +94,16 @@ export function get_metric_value(
   return undefined
 }
 
-// Determines if a specific metric is considered "better" when lower
-export function is_lower_better(metric_key: string): boolean {
-  // Combine all lower_is_better metrics from all tasks
-  const all_lower_better = Object.values(modeling_tasks).flatMap(
-    (task) => task.metrics.lower_is_better ?? [],
-  )
-  // Check if metric_key is in the combined set
-  return all_lower_better.includes(metric_key)
-}
-
-// Format date string into human-readable format
-export function format_date(date: string, options?: Intl.DateTimeFormatOptions): string {
-  return new Date(date).toLocaleDateString(undefined, {
-    year: `numeric`,
-    month: `short`,
-    day: `numeric`,
-    ...options,
-  })
+export const all_higher_better_metrics = Object.values(modeling_tasks).flatMap(
+  (model_task) => model_task.metrics.higher_is_better,
+)
+export const all_lower_better_metrics = Object.values(modeling_tasks).flatMap(
+  (model_task) => model_task.metrics.lower_is_better,
+)
+export function metric_better_as(metric: string) {
+  if (all_higher_better_metrics.includes(metric)) return `higher`
+  if (all_lower_better_metrics.includes(metric)) return `lower`
+  return null
 }
 
 // Format training set information for display in the metrics table

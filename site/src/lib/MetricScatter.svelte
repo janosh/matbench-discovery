@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { CombinedMetricConfig, DiscoverySet, ModelData } from '$lib'
+  import { calculate_days_ago } from '$lib'
   import { calculate_cps } from '$lib/combined_perf_score'
   import { get_metric_value } from '$lib/metrics'
   import type { CpsPart, ModelMetadata } from '$lib/types'
@@ -177,7 +178,11 @@
     filtered_models.map((model) => {
       const x = get_property_value(model, x_property)
       const y = get_model_metric(model, actual_y_metric)
-      const metadata = { model_name: model.model_name, date_added: model.date_added }
+      const metadata = {
+        model_name: model.model_name,
+        date_added: model.date_added,
+        days_ago: calculate_days_ago(model.date_added),
+      }
       return { model, x: x !== undefined ? x : 0, y: y !== undefined ? y : 0, metadata }
     }),
   )
@@ -231,10 +236,11 @@
   {...rest}
 >
   {#snippet tooltip({ x_formatted, y_formatted, metadata })}
-    <div style="white-space: nowrap; font-size: 15px; margin-top: 10px;">
-      {actual_x_label}: {x_formatted}<br />
+    <div style="white-space: nowrap; font-size: 14px; margin-top: 10px; line-height: 1;">
+      {actual_x_label}: {x_formatted}
+      {#if x_property === `date_added`}
+        <small>({metadata?.days_ago} days ago)</small>{/if}<br />
       {actual_y_label}: {y_formatted}<br />
-      {metadata?.model_name}
     </div>
   {/snippet}
 </ScatterPlot>

@@ -1,3 +1,4 @@
+import { default as DATASETS } from '$data/datasets.yml'
 import { default as data_files } from '$pkg/data-files.yml'
 import modeling_tasks from '$pkg/modeling-tasks.yml'
 import rehypeStringify from 'rehype-stringify'
@@ -7,7 +8,6 @@ import { unified } from 'unified'
 import { MODELS } from './models.svelte'
 import type { ModelData } from './types'
 
-export { default as DATASETS } from '$data/datasets.yml'
 export { default as DiatomicCurve } from './DiatomicCurve.svelte'
 export { default as Footer } from './Footer.svelte'
 export { default as GeoOptMetricsTable } from './GeoOptMetricsTable.svelte'
@@ -26,7 +26,19 @@ export { default as SelectToggle } from './SelectToggle.svelte'
 export { default as TableColumnToggleMenu } from './TableColumnToggleMenu.svelte'
 export { default as TableControls } from './TableControls.svelte'
 export * from './types'
-export { data_files }
+export { data_files, DATASETS }
+
+// Calculate number of days between provided date string and today
+export function calculate_days_ago(date_str: string): string {
+  if (!date_str) return ``
+  const ms_per_day = 1000 * 60 * 60 * 24
+  const now = new Date()
+  const then = new Date(date_str)
+
+  return ((now.getTime() - then.getTime()) / ms_per_day).toLocaleString(`en-US`, {
+    maximumFractionDigits: 0,
+  })
+}
 
 export function model_is_compliant(model: ModelData): boolean {
   if ((model.openness ?? `OSOD`) != `OSOD`) return false
@@ -37,8 +49,26 @@ export function model_is_compliant(model: ModelData): boolean {
 }
 
 const md_parser = unified().use(remarkParse).use(remarkRehype).use(rehypeStringify)
-function md_to_html(md: string): Uint8Array | string {
-  return md_parser.processSync(md)?.value
+export function md_to_html(md: string) {
+  return md_parser.processSync(md)?.value as string
+}
+
+// Function to slugify text for URLs
+export function slugify(text: string): string {
+  return text.toLowerCase().replace(/[\s_]+/g, `-`)
+}
+
+// convert array types to strings and handle missing values
+export function arr_to_str(value: unknown): string {
+  if (!value) return `n/a`
+  if (Array.isArray(value)) return value.join(`, `)
+  return String(value)
+}
+
+// Process datasets to add slugs and convert descriptions to HTML
+for (const [key, dataset] of Object.entries(DATASETS)) {
+  dataset.slug = slugify(key)
+  dataset.description_html = md_to_html(dataset.description)
 }
 
 // parse markdown notes to html with remark/rehype
@@ -63,16 +93,14 @@ for (const key of Object.keys(data_files).filter((key) => !key.startsWith(`_`)))
   )
 }
 
-export const all_higher_better = Object.values(modeling_tasks).flatMap(
-  (model_task) => model_task.metrics.higher_is_better,
-)
-export const all_lower_better = Object.values(modeling_tasks).flatMap(
-  (model_task) => model_task.metrics.lower_is_better,
-)
-export function get_metric_rank_order(metric: string) {
-  if (all_higher_better.includes(metric)) return `higher`
-  if (all_lower_better.includes(metric)) return `lower`
-  return null
+// Format date string into human-readable format
+export function format_date(date: string, options?: Intl.DateTimeFormatOptions): string {
+  return new Date(date).toLocaleDateString(undefined, {
+    year: `numeric`,
+    month: `short`,
+    day: `numeric`,
+    ...options,
+  })
 }
 
 export function get_pred_file_urls(model: ModelData) {
