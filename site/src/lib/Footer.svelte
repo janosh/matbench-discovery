@@ -88,9 +88,12 @@
   }
   footer nav {
     display: flex;
-    gap: 1em;
+    gap: 2em;
     justify-content: center;
     margin: 2em 0;
+  }
+  footer > nav svg {
+    margin-right: 3pt;
   }
   footer > nav > button {
     background: none;

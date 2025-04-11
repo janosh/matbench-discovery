@@ -29,6 +29,10 @@ MPtrj:
   date_created: 2023-07-19
   license: MIT
   description: Materials Project DFT relaxation trajectories cleaned of unrealistic energies and forces, and filtered for less redundancy using pymatgen's StructureMatcher to contain only about every 10th ionic step (1.5M structures). Originally created for training CHGNet.
+  notes:
+    Leakage: |
+      MPtrj contains structure prototypes that overlap with the WBM benchmark test set.
+      For this reason, the leaderboard by default shows discovery metrics on the ~215k / 257k WBM subset of unique prototypes that have no overlap with MPtrj.
   method: DFT
   params:
     code: VASP
@@ -139,6 +143,11 @@ Alex:
   date_created: 2023-04-22
   license: CC-BY-4.0
   description: Large collection of DFT structure relaxation trajectories with energies, forces, stresses for ~3M materials. Aimed at training ML potentials for materials discovery.
+  notes:
+    Leakage: |
+      Alexandria contains structure prototypes that overlap with the WBM benchmark test set (~97k overlapping prototypes).
+      Models trained on this dataset benefit from some amount of train/test leakage, though testing on Orb v2 showed that brief (less than 1 epoch)
+      fine-tuning resulted in identical metrics whether fine-tuning on Alexandria or sAlex. Still, we recommend using the filtered sAlex dataset for benchmarking.
   method: DFT
   params:
     code: VASP

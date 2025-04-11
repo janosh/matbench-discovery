@@ -201,7 +201,7 @@
         y_label={selected_scatter.svg_label ?? selected_scatter.label}
         x_property="date_added"
         x_label="Date"
-        range={selected_scatter.range}
+        y_lim={selected_scatter.range}
         style="width: 100%; height: 300px;"
         date_range={[new Date(2024, 6, 1), null]}
       />

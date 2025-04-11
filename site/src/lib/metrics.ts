@@ -59,14 +59,12 @@ export function get_metric_value(
     }
   }
 
-  // Check for κ_SRME in phonons
   if (
-    metric_key === `κ_SRME` &&
+    [`κ_SRME`, `kappa_SRME`].includes(metric_key) &&
     model.metrics?.phonons &&
     typeof model.metrics.phonons !== `string`
   ) {
-    const value =
-      model.metrics.phonons.kappa_103?.κ_SRME ?? model.metrics.phonons[metric_key]
+    const value = model.metrics.phonons.kappa_103?.κ_SRME
     return value !== undefined ? Number(value) : undefined
   }
 
