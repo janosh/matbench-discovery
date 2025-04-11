@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { HeatmapTable, TableControls, get_metric_rank_order } from '$lib'
+  import { HeatmapTable, TableControls } from '$lib'
   import { DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score'
+  import { metric_better_as } from '$lib/metrics'
   import { pretty_num } from 'elementari'
   import { click_outside } from 'svelte-zoo/actions'
   import { ALL_METRICS, METADATA_COLS, calculate_metrics_data } from './metrics'
@@ -40,7 +41,7 @@
   let columns = $derived(
     [...ALL_METRICS, ...METADATA_COLS]
       .map((col) => {
-        const better = col.better ?? get_metric_rank_order(col.label)
+        const better = col.better ?? metric_better_as(col.label)
 
         // append better=higher/lower to tooltip if applicable
         let tooltip = col.tooltip || ``

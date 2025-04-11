@@ -48,6 +48,10 @@ export interface Dataset {
    */
   title: string
   /**
+   * Slugified name of the dataset
+   */
+  slug?: string
+  /**
    * Version of the dataset
    */
   version?: string
@@ -55,6 +59,10 @@ export interface Dataset {
    * Detailed description of the dataset
    */
   description: string
+  /**
+   * HTML version of the dataset description
+   */
+  description_html?: string
   /**
    * Number of structures in the dataset
    */

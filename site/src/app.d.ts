@@ -9,7 +9,7 @@ declare module '*package.json' {
 }
 
 declare module 'models/*.yml' {
-  const data: import('$lib/model-metadata').ModelMetadata
+  const data: import('$lib/model-schema').ModelMetadata
   export default data
 } // model metadata files
 
@@ -38,6 +38,7 @@ declare module '*data-files.yml' {
     description: string
     html?: string // auto-generated after ESM import in lib/index.ts
     figshare?: string
+    md5?: string
   }
   type DataFiles = {
     [K in string]: K extends `_links` ? string : DataFile

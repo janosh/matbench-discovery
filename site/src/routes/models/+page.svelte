@@ -1,10 +1,10 @@
 <script lang="ts">
   import type { ModelStatLabel, ModelStats } from '$lib'
   import { model_is_compliant, ModelCard, MODELS } from '$lib'
-  import { get_metric_value, is_lower_better } from '$lib/metrics'
+  import { get_metric_value, metric_better_as } from '$lib/metrics'
   import { interpolateCividis as cividis } from 'd3-scale-chromatic'
   import { ColorBar } from 'elementari'
-  import { RadioButtons, Toggle, Tooltip } from 'svelte-zoo'
+  import { RadioButtons, Tooltip } from 'svelte-zoo'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
   import type { Snapshot } from './$types'
@@ -40,6 +40,7 @@
   }
 
   function bg_color(val: number, min: number, max: number) {
+    if (isNaN(val)) return `rgba(255, 255, 255, 0.1)` // Default background for NaN values
     return cividis(1 - (val - min) / (max - min)).replace(`)`, `, 0.5)`)
   }
 
@@ -48,7 +49,7 @@
     if (sort_by === `model_name`) {
       order = `asc` // Model names default to ascending alphabetical order
     } else {
-      order = is_lower_better(sort_by) ? `asc` : `desc`
+      order = metric_better_as(sort_by) === `lower` ? `asc` : `desc`
     }
   })
 
@@ -89,31 +90,25 @@
   )
 
   let [min_val, max_val] = $derived.by(() => {
-    if (sort_by === `model_name`) {
-      return [0, 1] // Just return a default range, no color gradient needed
-    }
+    if (sort_by === `model_name`) return [0, 1] // dummy range, no color gradient needed
 
     // Use the helper function to get values for color scaling
     const vals = models
       .map((model) => get_metric_value(model, sort_by, `unique_prototypes`))
-      .filter((val) => typeof val === `number`)
+      .filter((val) => typeof val === `number` && !isNaN(val))
+      .sort() as number[]
 
     // Determine color range based on whether lower or higher is better
-    const lower_better = is_lower_better(sort_by)
-    return lower_better
-      ? [Math.max(...vals), Math.min(...vals)]
-      : [Math.min(...vals), Math.max(...vals)]
+    const lower_better = metric_better_as(sort_by) === `lower`
+    const [min, max] = [vals.at(0), vals.at(-1)]
+    return lower_better ? [max, min] : [min, max]
   })
 </script>
 
 <div style="display: grid;">
-  <h1>Leaderboard</h1>
-
-  <p style="text-align: center;">Sort models by different metrics.</p>
-
   <span>
-    <Toggle bind:checked={show_non_compliant}>Show non-compliant models&ensp;</Toggle>
-    &emsp;&emsp; Sort
+    <input type="checkbox" bind:checked={show_non_compliant} />Show non-compliant models
+    &ensp; &emsp;&emsp; Sort
     <input type="number" min={min_models} max={models.length} bind:value={show_n_best} />
     best models
     <RadioButtons bind:selected={order} options={[`asc`, `desc`]} /> by:
@@ -131,7 +126,7 @@
               order = `asc` // Default for model names
             } else {
               sort_by = key as keyof ModelStats
-              order = is_lower_better(key) ? `asc` : `desc`
+              order = metric_better_as(key) === `lower` ? `asc` : `desc`
             }
           }}
           style="font-size: large;"
@@ -140,7 +135,7 @@
         </button>
         {#if tooltip}
           <Tooltip text={tooltip} max_width="20em">
-            <span style="position: absolute; top: -11pt; left: -6pt; color: gray;">
+            <span style="position: absolute; top: -11pt; left: -6pt; opacity: 0.6;">
               <svg><use href="#icon-info"></use></svg>
             </span>
           </Tooltip>
@@ -172,8 +167,8 @@
             sort_by === `model_name`
               ? 0 // No gradient for model names
               : (get_metric_value(model, sort_by, `unique_prototypes`) ?? 0),
-            min_val,
-            max_val,
+            min_val ?? 0,
+            max_val ?? 1,
           )};"
         />
       </li>
@@ -240,20 +235,13 @@
   }
   input[type='number'] {
     text-align: center;
+    transform: scale(1.2);
+    padding: 2pt;
   }
   input[type='number']::-webkit-inner-spin-button {
     display: none;
   }
-  /* strong.train-set {
-    display: block;
-    background-color: rgb(174, 79, 28);
-    color: white;
-    position: absolute;
-    left: 50%;
-    transform: translate(-50%, 50%);
-    bottom: 0;
-    padding: 1pt 3pt;
-    border-radius: 1ex;
-    font-size: smaller;
-  } */
+  input[type='checkbox'] {
+    transform: scale(1.3);
+  }
 </style>

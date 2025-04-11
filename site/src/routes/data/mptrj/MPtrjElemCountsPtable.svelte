@@ -14,11 +14,9 @@
 
   let mp_trj_elem_counts = elem_counts[`../mp-trj-element-counts-by-${count_mode}.json`]
 
-  $effect(() => {
-    if (!(`mp_trj_json_gz` in data_files)) {
-      throw `mp_trj_json_gz not found in data-files.yml`
-    }
-  })
+  if (!(`mp_trj_json_gz` in data_files)) {
+    throw `mp_trj_json_gz not found in data-files.yml`
+  }
 </script>
 
 <p>

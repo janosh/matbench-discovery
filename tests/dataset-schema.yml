@@ -59,6 +59,11 @@ definitions:
       title:
         type: string
         description: Full name of the dataset
+      slug:
+        type: string
+        description: Slugified name of the dataset
+        pattern: ^[a-z0-9-]+$
+        readOnly: true
       version:
         type: string
         description: Version of the dataset
@@ -66,6 +71,10 @@ definitions:
         type: string
         format: markdown
         description: Detailed description of the dataset
+      description_html:
+        type: string
+        format: html
+        description: HTML version of the dataset description
 
       # Dataset size and content
       n_structures:

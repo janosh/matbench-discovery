@@ -23,8 +23,10 @@
   <ul>
     {#each Object.entries(plots) as [name, Plot] (name)}
       {@const title = name.split(`mp-trj-`)[1].split(`-hist.svelte`)[0]}
-      <h2>{title_map[title] ?? title}</h2>
-      <Plot {title} style="width: 100%; max-width: 700px; max-height: 400px;" />
+      <div>
+        <h3>{title_map[title] ?? title}</h3>
+        <Plot {title} style="width: 100%; max-width: 700px; height: 300px;" />
+      </div>
     {/each}
   </ul>
 {/if}
@@ -39,8 +41,9 @@
     grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
     gap: 1em;
   }
-  ul h2 {
+  ul h3 {
     text-transform: capitalize;
+    text-align: center;
     margin: 1em auto 0;
   }
 </style>

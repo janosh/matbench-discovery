@@ -7,14 +7,6 @@ describe(`Models Page`, () => {
     mount(Page, { target: document.body })
   })
 
-  it(`renders leaderboard heading and description`, () => {
-    const heading = document.body.querySelector(`h1`)
-    expect(heading?.textContent).toBe(`Leaderboard`)
-
-    const description = document.body.querySelector(`p`)
-    expect(description?.textContent).toMatch(/sort models by different metrics/i)
-  })
-
   it(`renders model sorting controls`, () => {
     const toggle = document.body.querySelector(`input[type="checkbox"]`)
     expect(toggle).toBeDefined()

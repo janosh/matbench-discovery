@@ -1,7 +1,8 @@
 <script lang="ts">
   import { dev } from '$app/environment'
   import per_elem_each_errors from '$figs/per-element-each-errors.json'
-  import { DATASETS, get_pred_file_urls, PtableInset } from '$lib'
+  import { calculate_days_ago, DATASETS, get_pred_file_urls, PtableInset } from '$lib'
+  import type { ModelData } from '$lib/types'
   import pkg from '$site/package.json'
   import type { ChemicalElement } from 'elementari'
   import {
@@ -21,14 +22,9 @@
   let { data }: Props = $props()
   let color_scale = $state([`Viridis`])
   let active_element: ChemicalElement | null = $state(null)
-
-  // TODO make this dynamic (static n_days_ago from time of last site build is misleading)
-  function n_days_ago(dateString: string): string {
-    return (
-      (new Date().getTime() - new Date(dateString).getTime()) /
-      (1000 * 60 * 60 * 24)
-    ).toLocaleString(`en-US`, { maximumFractionDigits: 0 })
-  }
+  // TODO fix that calculates days ago from site build time, not time of user visiting page
+  let days_added = calculate_days_ago(data.model.date_added ?? ``)
+  let days_published = calculate_days_ago(data.model.date_published ?? ``)
 
   export const snapshot = {
     capture: () => ({ color_scale }),
@@ -60,14 +56,14 @@
 
       <div>
         <svg class="icon"><use href="#icon-calendar"></use></svg>
-        Added: <Tooltip text="{n_days_ago(model.date_added)} days ago">
+        Added: <Tooltip text="{days_added} days ago">
           {model.date_added}
         </Tooltip>
       </div>
 
       <div>
         <svg class="icon"><use href="#icon-calendar-check"></use></svg>
-        Published: <Tooltip text="{n_days_ago(model.date_published)} days ago">
+        Published: <Tooltip text="{days_published} days ago">
           {model.date_published}
         </Tooltip>
       </div>

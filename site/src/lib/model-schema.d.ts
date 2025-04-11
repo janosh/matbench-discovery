@@ -28,7 +28,6 @@ export type GeoOptMetrics = {
     analysis_file?: string | null
     analysis_file_url?: string
   }
-  [k: string]: unknown
 }
 export type DiscoveryMetrics = {
   [k: string]: unknown
@@ -149,9 +148,7 @@ export interface ModelMetadata {
     Description?: string
     Training?: string
     'Missing Preds'?: string
-    html?: {
-      [k: string]: unknown
-    }
+    html?: string
     [k: string]: unknown
   }
   model_params: number
@@ -195,7 +192,6 @@ export interface PhononMetrics {
   kappa_103?: {
     [k: string]: unknown
   }
-  [k: string]: unknown
 }
 export interface DiscoveryMetricsSet {
   F1?: number

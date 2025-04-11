@@ -218,7 +218,7 @@ sAlex:
   open: true
   date_created: 2024-10-16
   license: CC-BY-4.0
-  description: Subsampled version of the Alexandria dataset, containing approximately 10 million structures filtered to remove structure prototype overlap with Matbench Discovery's WBM test set. See https://github.com/janosh/matbench-discovery/blob/5f02f790e1/matbench_discovery/structure/prototype.py#L104-L193.
+  description: Subsampled version of the Alexandria dataset, containing approximately 10 million structures filtered to remove structure prototype overlap with Matbench Discovery's WBM test set. See [`matbench_discovery.structure.prototype.get_protostructure_label`](https://github.com/janosh/matbench-discovery/blob/5f02f790e1/matbench_discovery/structure/prototype.py#L104-L193).
   method: DFT
   params:
     code: VASP
