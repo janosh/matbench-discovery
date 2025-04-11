@@ -133,13 +133,13 @@
       conductivity prediction accuracy (κ<sub>SRME</sub>). Use the radar chart to adjust
       the importance of each component.
       <br /><br />
-      Training size is the number of materials used to train the model. For models trained
-      on DFT relaxations, we show the number of distinct frames in parentheses). In cases where
-      only the number of frames is known, we report the number of frames as the training set
-      size. <code>(N=x)</code> in the Model Params column shows the number of estimators
-      if an ensemble was used. DAF = Discovery Acceleration Factor measures how many more
-      stable materials a model finds compared to random selection from the test set. The
-      unique structure prototypes in the WBM test set have a
+      The training set column shows the number of materials used to train the model. For models
+      trained on DFT relaxations, we show the number of distinct frames in parentheses. In
+      cases where only the number of frames is known, we report the number of frames as the
+      training set size. <code>(N=x)</code> in the Model Params column shows the number of
+      estimators if an ensemble was used. DAF = Discovery Acceleration Factor measures how
+      many more stable materials a model finds compared to random selection from the test
+      set. The unique structure prototypes in the WBM test set have a
       <code>{pretty_num(n_wbm_stable_uniq_protos / n_wbm_uniq_protos, `.1%`)}</code>
       rate of stable crystals, meaning the max possible DAF is
       <code
@@ -201,7 +201,7 @@
         y_label={selected_scatter.svg_label ?? selected_scatter.label}
         x_property="date_added"
         x_label="Date"
-        range={selected_scatter.range}
+        y_lim={selected_scatter.range}
         style="width: 100%; height: 300px;"
         date_range={[new Date(2024, 6, 1), null]}
       />

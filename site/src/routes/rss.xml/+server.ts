@@ -1,13 +1,13 @@
 import { MODELS } from '$lib'
 import { format_train_set } from '$lib/metrics'
 import type { ModelData } from '$lib/types'
-import { description, homepage, name } from '$site/package.json'
+import * as pkg from '$site/package.json'
 import { pretty_num } from 'elementari'
 
 export const prerender = true
 
 // Ensure homepage URL ends with a slash for consistent path joining
-const base_url = homepage.endsWith(`/`) ? homepage : `${homepage}/`
+const base_url = pkg.homepage.endsWith(`/`) ? pkg.homepage : `${pkg.homepage}/`
 
 // Formats model data as XML for RSS feed
 function format_model_for_rss(model: ModelData): string {
@@ -24,7 +24,7 @@ function format_model_for_rss(model: ModelData): string {
     ? Object.entries(discovery_metrics)
         .filter(([_key, value]) => typeof value === `number`)
         .map(([key, value]) => `${key}: ${pretty_num(value as number)}`)
-        .join(`, `)
+        .join(`,<br>&nbsp;&nbsp;`)
     : `No metrics available`
 
   const authors_text = model.authors
@@ -42,10 +42,12 @@ function format_model_for_rss(model: ModelData): string {
     ? `<p><strong>Model Type:</strong> ${model.model_type}</p>`
     : ``
   const hyperparams = model.hyperparams
-    ? `<p><strong>Key Hyperparameters:</strong> ${Object.entries(model.hyperparams)
+    ? `<p><strong>Key Hyperparameters:</strong><br>&nbsp;&nbsp;${Object.entries(
+        model.hyperparams,
+      )
         .filter(([key]) => !key.includes(`_`))
         .map(([key, value]) => `${key}: ${value}`)
-        .join(`, `)}</p>`
+        .join(`,<br>&nbsp;&nbsp;`)}</p>`
     : ``
   const license_info = model.license
     ? `<p><strong>License:</strong> ${model.license.code || model.license}</p>`
@@ -56,16 +58,16 @@ function format_model_for_rss(model: ModelData): string {
 
   return `
     <h2>${model.model_name}</h2>
-    <p><strong>Authors:</strong> ${authors_text}</p>
-    ${date_published}
-    <p><strong>Date Added:</strong> ${model.date_added}</p>
-    <p><strong>Training Set:</strong> ${clean_training_set}</p>
+    <p><strong>Metrics:</strong><br>&nbsp;&nbsp;${metrics_text}</p>
     <p><strong>Parameters:</strong> ${pretty_num(model.model_params)}</p>
     ${model_type}
     <p><strong>Targets:</strong> ${model.targets}</p>
-    <p><strong>Metrics:</strong> ${metrics_text}</p>
+    <p><strong>Training Set:</strong> ${clean_training_set}</p>
     ${hyperparams}
     ${license_info}
+    <p><strong>Date Added:</strong> ${model.date_added}</p>
+    ${date_published}
+    <p><strong>Authors:</strong> ${authors_text}</p>
     <p>
       <a href="${base_url}models/${model.model_key}">View model details</a>
       ${model.paper ? `| <a href="${model.paper}">Read paper</a>` : ``}
@@ -81,15 +83,14 @@ export async function GET() {
     return new Date(m2.date_added).getTime() - new Date(m1.date_added).getTime()
   })
   const headers = { 'Content-Type': `application/xml` }
-
-  const rss_feed_url = `${homepage}/rss.xml`
+  const rss_feed_url = `${base_url}rss.xml`
 
   const xml = `
     <rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
       <channel>
-        <title>${name} - Model Leaderboard</title>
-        <description>${description}</description>
-        <link>${base_url}</link>
+        <title>${pkg.name}</title>
+        <description>${pkg.description}</description>
+        <link>${pkg.homepage}</link>
         <atom:link href="${rss_feed_url}" rel="self" type="application/rss+xml"/>
         ${sorted_models
           .map(

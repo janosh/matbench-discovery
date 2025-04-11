@@ -1,15 +1,14 @@
 <script lang="ts">
-  import type { ChemicalElement } from 'elementari'
+  import type { ChemicalElement, ElementSymbol } from 'elementari'
   import { pretty_num } from 'elementari'
 
   interface Props {
     element: ChemicalElement
-    elem_counts: number[] | Record<string, number>
+    elem_counts: number[] | Record<ElementSymbol, number>
     style?: string | null
     show_percent?: boolean
     unit?: string
   }
-
   let {
     element,
     elem_counts,
@@ -19,7 +18,9 @@
   }: Props = $props()
 
   let value = $derived(
-    elem_counts[element?.symbol] ?? elem_counts[element?.number - 1] ?? null,
+    Array.isArray(elem_counts)
+      ? (elem_counts[element?.number - 1] ?? null)
+      : (elem_counts[element?.symbol] ?? null),
   )
   let total = $derived(
     (Array.isArray(elem_counts) ? elem_counts : Object.values(elem_counts)).reduce(

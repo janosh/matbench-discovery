@@ -2,10 +2,9 @@
   import { data_files } from '$lib'
 </script>
 
-# MPtrj Target Distributions
+## Target Distributions
 
-The MPtrj training set for universal potentials <a href={data_files.mp_trj_json_gz.figshare}>available on figshare</a>
-contains
+The MPtrj dataset [available on figshare]({data_files.mp_trj_json_gz.figshare}) contains
 
 - 1,580,395 structures
 - 1,580,395 energies

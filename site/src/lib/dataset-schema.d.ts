@@ -63,6 +63,9 @@ export interface Dataset {
    * HTML version of the dataset description
    */
   description_html?: string
+  notes?: {
+    [k: string]: unknown
+  }
   /**
    * Number of structures in the dataset
    */

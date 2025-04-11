@@ -59,14 +59,12 @@ export function get_metric_value(
     }
   }
 
-  // Check for κ_SRME in phonons
   if (
-    metric_key === `κ_SRME` &&
+    [`κ_SRME`, `kappa_SRME`].includes(metric_key) &&
     model.metrics?.phonons &&
     typeof model.metrics.phonons !== `string`
   ) {
-    const value =
-      model.metrics.phonons.kappa_103?.κ_SRME ?? model.metrics.phonons[metric_key]
+    const value = model.metrics.phonons.kappa_103?.κ_SRME
     return value !== undefined ? Number(value) : undefined
   }
 
@@ -112,38 +110,28 @@ export function format_train_set(model_train_sets: string[]): string {
   const data_urls: Record<string, string> = {}
   const tooltip: string[] = []
 
-  for (const train_set of model_train_sets) {
-    if (!(train_set in DATASETS)) {
-      console.warn(`Training set ${train_set} not found in DATASETS`)
+  for (const data_name of model_train_sets) {
+    if (!(data_name in DATASETS)) {
+      console.warn(`Training set ${data_name} not found in DATASETS`)
       continue
     }
-    const training_set_info = DATASETS[train_set]
-    const n_structs = training_set_info.n_structures
-    const n_materials = training_set_info.n_materials ?? n_structs
-
-    total_structs += n_structs
+    const { title, slug, n_structures, n_materials = n_structures } = DATASETS[data_name]
+    total_structs += n_structures
     total_materials += n_materials
+    data_urls[data_name] = `/data/${slug}`
 
-    const title = training_set_info.title || train_set
-    data_urls[train_set || title] = training_set_info.url || ``
-
-    if (n_materials !== n_structs) {
+    if (n_materials !== n_structures) {
       tooltip.push(
-        `${title}: ${pretty_num(n_materials, `,`)} materials (${pretty_num(n_structs, `,`)} structures)`,
+        `${title}: ${pretty_num(n_materials, `,`)} materials (${pretty_num(n_structures, `,`)} structures)`,
       )
     } else {
       tooltip.push(`${title}: ${pretty_num(n_materials, `,`)} materials`)
     }
   }
 
-  const data_links = Object.entries(data_urls).map(([key, href]) => {
-    if (href) {
-      return `<a href="${href}" target="_blank" rel="noopener noreferrer">${key}</a>`
-    }
-    return key
-  })
-
-  const dataset_links = data_links.join(`+`)
+  const dataset_links = Object.entries(data_urls)
+    .map(([key, href]) => `<a href="${href}">${key}</a>`)
+    .join(`+`)
   const new_line = `&#013;` // line break that works in title attribute
   const dataset_tooltip =
     tooltip.length > 1 ? `${new_line}• ${tooltip.join(new_line + `• `)}` : ``

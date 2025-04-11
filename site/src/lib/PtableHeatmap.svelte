@@ -12,7 +12,6 @@
     log?: boolean // log color scale
     color_bar_props?: ComponentProps<typeof ColorBar>
   }
-
   let {
     heatmap_values,
     color_scale = $bindable(`Viridis`),

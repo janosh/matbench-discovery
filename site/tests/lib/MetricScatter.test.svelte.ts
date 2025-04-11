@@ -1,5 +1,5 @@
 import { MetricScatter } from '$lib'
-import { DEFAULT_CPS_CONFIG } from '$lib/metrics'
+import { DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score'
 import type { ModelData } from '$lib/types'
 import { mount } from 'svelte'
 import { describe, expect, it } from 'vitest'

@@ -1,5 +1,5 @@
 import { TableControls } from '$lib'
-import { DEFAULT_CPS_CONFIG } from '$lib/metrics'
+import { DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score'
 import type { CombinedMetricConfig } from '$lib/types'
 import { mount } from 'svelte'
 import { describe, expect, it, vi } from 'vitest'

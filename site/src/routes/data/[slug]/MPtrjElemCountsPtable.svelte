@@ -2,7 +2,7 @@
   import { data_files, PtableHeatmap } from '$lib'
   import type { ComponentProps } from 'svelte'
 
-  interface Props extends ComponentProps<typeof PtableHeatmap> {
+  interface Props extends Partial<ComponentProps<typeof PtableHeatmap>> {
     count_mode?: string
   }
   let { count_mode = `occurrence`, ...rest }: Props = $props()

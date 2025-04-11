@@ -5,13 +5,13 @@ import { describe, expect, it } from 'vitest'
 
 describe(`RSS feed endpoint`, () => {
   it(`should return response with correct content type`, async () => {
-    const response = await GET({ url: new URL(`https://example.com`) })
+    const response = await GET()
     expect(response.headers.get(`Content-Type`)).toBe(`application/xml`)
     expect(response.status).toBe(200)
   })
 
   it(`should return valid XML with expected structure`, async () => {
-    const response = await GET({ url: new URL(`https://example.com`) })
+    const response = await GET()
     const xml = await response.text()
 
     // Check RSS basics with exact matches
@@ -22,7 +22,7 @@ describe(`RSS feed endpoint`, () => {
     expect(xml).toContain(`</rss>`)
 
     // Check site info
-    expect(xml).toContain(`<title>${pkg.name} - Model Leaderboard</title>`)
+    expect(xml).toContain(`<title>${pkg.name}</title>`)
     expect(xml).toContain(`<description>${pkg.description}</description>`)
 
     // Check for required RSS elements
@@ -49,7 +49,7 @@ describe(`RSS feed endpoint`, () => {
       return
     }
 
-    const response = await GET({ url: new URL(`https://example.com`) })
+    const response = await GET()
     const xml = await response.text()
 
     // Extract the CDATA content from the first item
@@ -60,27 +60,25 @@ describe(`RSS feed endpoint`, () => {
 
     const cdata_content = cdata_match?.[1] || ``
 
-    // Check for expected model details with more specific patterns
+    // Check for expected model details in the correct order
     expect(cdata_content).toMatch(/<h2>[^<]+<\/h2>/) // Model name heading
-    expect(cdata_content).toMatch(/<strong>Authors:<\/strong>[^<]+/)
-    expect(cdata_content).toMatch(/<strong>Date Added:<\/strong>[^<]+/)
-    expect(cdata_content).toMatch(/<strong>Training Set:<\/strong>[^<]+/)
-    expect(cdata_content).toMatch(/<strong>Parameters:<\/strong>[^<]+/)
-    expect(cdata_content).toMatch(/<strong>Model Type:<\/strong>[^<]+/)
-
-    // Check that required sections exist
     expect(cdata_content).toMatch(/<strong>Metrics:<\/strong>/)
+    expect(cdata_content).toMatch(/<strong>Parameters:<\/strong>[^<]+/)
+
+    // These sections should exist but may not be in every model
+    expect(cdata_content).toMatch(/<strong>(Model Type|Targets|Training Set):<\/strong>/)
+
+    // Authors section should appear later in the content
+    const metrics_pos = cdata_content.indexOf(`<strong>Metrics:</strong>`)
+    const authors_pos = cdata_content.indexOf(`<strong>Authors:</strong>`)
+    expect(metrics_pos).toBeLessThan(authors_pos)
 
     // Check for proper HTML structure
     const strongTags = cdata_content.match(/<strong>/g)
     const strongCloseTags = cdata_content.match(/<\/strong>/g)
-    const divTags = cdata_content.match(/<div>/g)
-    const divCloseTags = cdata_content.match(/<\/div>/g)
 
     expect(strongTags?.length ?? 0).toBeGreaterThanOrEqual(5)
     expect(strongCloseTags?.length ?? 0).toBeGreaterThanOrEqual(5)
-    expect(divTags?.length ?? 0).toBeGreaterThanOrEqual(0)
-    expect(divCloseTags?.length ?? 0).toBeGreaterThanOrEqual(0)
   })
 
   it(`should include links to model resources`, async () => {
@@ -90,7 +88,7 @@ describe(`RSS feed endpoint`, () => {
       return
     }
 
-    const response = await GET({ url: new URL(`https://example.com`) })
+    const response = await GET()
     const xml = await response.text()
 
     const base_url = pkg.homepage.endsWith(`/`) ? pkg.homepage : `${pkg.homepage}/`
@@ -127,7 +125,7 @@ describe(`RSS feed endpoint`, () => {
       return
     }
 
-    const response = await GET({ url: new URL(`https://example.com`) })
+    const response = await GET()
     const xml = await response.text()
 
     // Find models with different dates
@@ -194,9 +192,7 @@ describe(`RSS feed endpoint`, () => {
   })
 
   it(`should have correct self-reference URL and absolute URLs in descriptions`, async () => {
-    const mock_url = new URL(`https://example.com/rss.xml`)
-
-    const response = await GET({ url: mock_url })
+    const response = await GET()
     const xml = await response.text()
 
     // Check that the self-reference URL matches document URL

@@ -8,7 +8,6 @@
     n_authors?: number
     first_name_mode?: `initial` | `full` | `none`
   }
-
   let {
     references,
     ref_selector = `a.ref[href^='#']`,

@@ -80,10 +80,10 @@ describe(`metric_better_as`, () => {
 describe(`format_train_set`, () => {
   // Get actual keys from DATASETS to use in tests
   const dataset_keys = Object.keys(DATASETS)
-  const mp2022_key = dataset_keys.find(
-    (key) => key === `MP 2022` || key.includes(`MP 2022`),
-  )
-  const mptrj_key = dataset_keys.find((key) => key === `MPtrj` || key.includes(`MPtrj`))
+  const mp2022_key = dataset_keys.find((key) => key.includes(`MP 2022`))
+  if (!mp2022_key) throw `No MP 2022 key found in DATASETS`
+  const mptrj_key = dataset_keys.find((key) => key.includes(`MPtrj`))
+  if (!mptrj_key) throw `No MPtrj key found in DATASETS`
 
   const mp2022 = DATASETS[mp2022_key]
 
@@ -94,7 +94,7 @@ describe(`format_train_set`, () => {
     expect(result).toContain(
       `data-sort-value="${mp2022.n_materials || mp2022.n_structures}"`,
     )
-    expect(result).toContain(`${mp2022_key}`)
+    expect(result).toContain(mp2022_key)
     expect(result).toContain(`materials in training set`)
   })
 
@@ -108,8 +108,8 @@ describe(`format_train_set`, () => {
 
     // Check that the result contains combined information
     expect(result).toContain(`data-sort-value="${combined_materials}"`)
-    expect(result).toContain(mp2022_key)
-    expect(result).toContain(mptrj_key)
+    expect(result).toContain(mp2022.title)
+    expect(result).toContain(mptrj.title || mptrj_key)
   })
 
   it(`shows materials and structures when they differ`, () => {
@@ -168,10 +168,8 @@ describe(`format_train_set`, () => {
     // Should use n_structures as data-sort-value
     expect(result).toContain(`data-sort-value="${dataset.n_structures}"`)
 
-    // Should include the dataset URL if available
-    if (dataset.url) {
-      expect(result).toContain(`<a href="${dataset.url}"`)
-    }
+    // Should include internal link to dataset slug page
+    expect(result).toContain(`<a href="/data/${dataset.slug}"`)
   })
 })
 
