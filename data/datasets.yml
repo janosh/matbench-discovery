@@ -15,20 +15,23 @@ MP 2022:
     pseudopotentials: PBE
   created_by:
     - name: Materials Project Team
-      url: https://materialsproject.org/about
+      url: https://materialsproject.org/about/people
 
 MPtrj:
   title: MPtrj
   url: https://figshare.com/articles/dataset/23713842
   download_url: https://figshare.com/files/41619375
   doi: https://doi.org/10.1038/s42256-023-00716-3
-
   n_structures: 1_580_395
   n_materials: 145_923
   open: true
   date_created: 2023-07-19
   license: MIT
   description: Materials Project DFT relaxation trajectories cleaned of unrealistic energies and forces, and filtered for less redundancy using pymatgen's StructureMatcher to contain only about every 10th ionic step (1.5M structures). Originally created for training CHGNet.
+  notes:
+    Leakage: |
+      MPtrj contains structure prototypes that overlap with the WBM benchmark test set.
+      For this reason, the leaderboard by default shows discovery metrics on the ~215k / 257k WBM subset of unique prototypes that have no overlap with MPtrj.
   method: DFT
   params:
     code: VASP
@@ -36,7 +39,7 @@ MPtrj:
     pseudopotentials: PBE
   created_by:
     - name: Materials Project Team
-      url: https://materialsproject.org/about
+      url: https://materialsproject.org/about/people
     - name: Bowen Deng
       affiliation: UC Berkeley
       orcid: https://orcid.org/0000-0002-5720-5299
@@ -60,7 +63,7 @@ MPF:
     pseudopotentials: PBE
   created_by:
     - name: Materials Project Team
-      url: https://materialsproject.org/about
+      url: https://materialsproject.org/about/people
     - name: Chi Chen
       affiliation: UC San Diego
       orcid: https://orcid.org/0000-0001-8008-7043
@@ -83,7 +86,7 @@ MP Graphs:
     pseudopotentials: PBE
   created_by:
     - name: Materials Project Team
-      url: https://materialsproject.org/about
+      url: https://materialsproject.org/about/people
     - name: Chi Chen
       affiliation: UC San Diego
       orcid: https://orcid.org/0000-0001-8008-7043
@@ -105,8 +108,22 @@ GNoME:
     functional: PBE+U
     pseudopotentials: PBE
   created_by:
-    - name: Google DeepMind
-      url: https://deepmind.google/discover/blog/millions-of-new-materials-discovered-with-deep-learning/
+    - name: Amil Merchant
+      affiliation: Google DeepMind
+      email: amilmerchant@google.com
+      orcid: https://orcid.org/0000-0001-5262-6599
+    - name: Simon Batzner
+      affiliation: Google DeepMind
+    - name: Samuel S. Schoenholz
+      affiliation: Google DeepMind
+    - name: Muratahan Aykol
+      affiliation: Google DeepMind
+    - name: Gowoon Cheon
+      affiliation: Google DeepMind
+    - name: Ekin Dogus Cubuk
+      affiliation: Google DeepMind
+      email: cubuk@google.com
+      orcid: https://orcid.org/0000-0003-0524-2837
 
 MatterSim:
   title: MatterSim
@@ -139,6 +156,11 @@ Alex:
   date_created: 2023-04-22
   license: CC-BY-4.0
   description: Large collection of DFT structure relaxation trajectories with energies, forces, stresses for ~3M materials. Aimed at training ML potentials for materials discovery.
+  notes:
+    Leakage: |
+      Alexandria contains structure prototypes that overlap with the WBM benchmark test set (~97k overlapping prototypes).
+      Models trained on this dataset benefit from some amount of train/test leakage, though testing on Orb v2 showed that brief (less than 1 epoch)
+      fine-tuning resulted in identical metrics whether fine-tuning on Alexandria or sAlex. Still, we recommend using the filtered sAlex dataset for benchmarking.
   method: DFT
   params:
     code: VASP
@@ -302,7 +324,7 @@ OC20:
     functional: PBE+U
     pseudopotentials: PBE
   created_by:
-    - name: Open Catalyst Project
+    - name: Open Catalyst Project Team
       url: https://opencatalystproject.org
   description: |
     A dataset for catalysis research containing DFT relaxations of adsorbates on catalyst surfaces,
@@ -323,8 +345,64 @@ NOMAD:
     functional: Various
     pseudopotentials: Various
   created_by:
-    - name: NOMAD Team
-      url: https://nomad-lab.eu
+    - name: Markus Scheidgen
+      orcid: https://orcid.org/0000-0002-8038-2277
+    - name: Lauri Himanen
+      orcid: https://orcid.org/0000-0002-3130-8193
+    - name: Alvin Noe Ladines
+      orcid: https://orcid.org/0000-0003-0077-2097
+    - name: David Sikter
+      orcid: https://orcid.org/0000-0002-2102-7160
+    - name: Mohammad Nakhaee
+      orcid: https://orcid.org/0000-0003-4146-0129
+    - name: Ádám Fekete
+      orcid: https://orcid.org/0000-0002-6263-897X
+    - name: Theodore Chang
+      orcid: https://orcid.org/0000-0002-4911-0230
+    - name: Amir Golparvar
+      orcid: https://orcid.org/0000-0002-2412-6615
+    - name: José A. Márquez
+      orcid: https://orcid.org/0000-0002-8173-2566
+    - name: Sandor Brockhauser
+      orcid: https://orcid.org/0000-0002-9700-4803
+    - name: Sebastian Brückner
+      orcid: https://orcid.org/0000-0002-5969-847X
+    - name: Luca M. Ghiringhelli
+      orcid: https://orcid.org/0000-0001-5099-3029
+    - name: Felix Dietrich
+      orcid: https://orcid.org/0000-0002-2906-1769
+    - name: Daniel Lehmberg
+      orcid: https://orcid.org/0000-0002-4012-5014
+    - name: Thea Denell
+      orcid: https://orcid.org/0009-0000-7185-9363
+    - name: Andrea Albino
+      orcid: https://orcid.org/0000-0001-9280-7431
+    - name: Hampus Näsström
+      orcid: https://orcid.org/0000-0002-3264-1692
+    - name: Sherjeel Shabih
+      orcid: https://orcid.org/0009-0008-6635-4465
+    - name: Florian Dobener
+      orcid: https://orcid.org/0000-0003-1987-6224
+    - name: Markus Kühbach
+      orcid: https://orcid.org/0000-0002-7117-5196
+    - name: Rubel Mozumder
+      orcid: https://orcid.org/0009-0007-5926-6646
+    - name: Joseph F. Rudzinski
+      orcid: https://orcid.org/0000-0003-3403-640X
+    - name: Nathan Daelman
+      orcid: https://orcid.org/0000-0002-7647-1816
+    - name: José M. Pizarro
+      orcid: https://orcid.org/0000-0002-6751-8192
+    - name: Martin Kuban
+      orcid: https://orcid.org/0000-0002-1619-2460
+    - name: Cuauhtemoc Salazar
+      orcid: https://orcid.org/0000-0002-9635-5062
+    - name: Pavel Ondračka
+      orcid: https://orcid.org/0000-0003-0729-629X
+    - name: Hans-Joachim Bungartz
+      orcid: https://orcid.org/0000-0002-0171-0712
+    - name: Claudia Draxl
+      orcid: https://orcid.org/0000-0003-3523-6657
   description: |
     A repository hosting over 19 million calculations across various computational materials science codes,
     providing a rich source of DFT and molecular dynamics data for training ML models.
@@ -344,8 +422,20 @@ AFLOW:
     functional: Various
     pseudopotentials: Various
   created_by:
-    - name: AFLOW Team
-      url: https://aflow.org
+    - name: Stefano Curtarolo
+    - name: Wahyu Setyawan
+    - name: Gus L.W. Hart
+    - name: Michal Jahnatek
+    - name: Roman V. Chepulskii
+    - name: Richard H. Taylor
+    - name: Shidong Wang
+    - name: Junkai Xue
+    - name: Kesong Yang
+    - name: Ohad Levy
+    - name: Michael J. Mehl
+    - name: Harold T. Stokes
+    - name: Denis O. Demchenko
+    - name: Dane Morgan
   description: |
     A database of over 3.5 million materials with calculated thermodynamic, electronic, and structural properties,
     using standardized high-throughput DFT calculations.
@@ -369,9 +459,11 @@ OQMD:
     energy_cutoff: 520 eV
     kpoint_density: 8000 KPPRA
   created_by:
-    - name: OQMD Team
-      affiliation: Northwestern University
-      url: https://oqmd.org
+    - name: James E. Saal
+    - name: Scott Kirklin
+    - name: Muratahan Aykol
+    - name: Bryce Meredig
+    - name: Chris Wolverton
   description: |
     A database of DFT-calculated thermodynamic and structural properties for over 1 million inorganic compounds,
     focused on providing data for materials discovery and design. Calculations use a four-step relaxation scheme
@@ -394,8 +486,15 @@ MatPES PBE:
     functional: PBE
     pseudopotentials: PBE_64
   created_by:
-    - name: MatPES Team
-      url: https://matpes.ai
+    - name: Aaron D. Kaplan
+    - name: Runze Liu
+    - name: Ji Qi
+    - name: Tsz Wai Ko
+    - name: Bowen Deng
+    - name: Janosh Riebesell
+    - name: Gerbrand Ceder
+    - name: Kristin A. Persson
+    - name: Shyue Ping Ong
   description: |
     A dataset containing 434,712 structures from ~300K molecular dynamics simulations,
     providing potential energy surfaces that are valuable for training ML interatomic potentials.
@@ -416,8 +515,15 @@ MatPES r2SCAN:
     functional: r2SCAN
     pseudopotentials: PBE_64
   created_by:
-    - name: MatPES Team
-      url: https://matpes.ai
+    - name: Aaron D. Kaplan
+    - name: Runze Liu
+    - name: Ji Qi
+    - name: Tsz Wai Ko
+    - name: Bowen Deng
+    - name: Janosh Riebesell
+    - name: Gerbrand Ceder
+    - name: Kristin A. Persson
+    - name: Shyue Ping Ong
   description: |
     A dataset containing 387,897 structures from ~300K molecular dynamics simulations,
     providing potential energy surfaces that are valuable for training ML interatomic potentials.

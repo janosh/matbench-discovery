@@ -340,22 +340,18 @@
     {#if model.training_set}
       <h2>Training Set</h2>
       <section class="training-set">
-        {#each Array.isArray(model.training_set) ? model.training_set : [model.training_set] as train_set (train_set)}
-          {@const train_set_info =
-            typeof train_set == `string` ? DATASETS[train_set] : train_set}
-          {@const { n_structures, url, title, n_materials } = train_set_info}
-          {@const pretty_n_mat =
-            typeof n_materials == `number` ? pretty_num(n_materials) : n_materials}
+        {#each model.training_set as dataset_key (dataset_key)}
+          {@const dataset = DATASETS[dataset_key]}
+          {@const { n_structures, title, slug, n_materials } = dataset}
           <p>
-            <a href={url} target="_blank" rel="noopener noreferrer">{title}</a>:
+            <a href="/data/{slug}">{title}</a>:
             <Tooltip text={n_structures.toLocaleString()}>
               <strong>{pretty_num(n_structures)}</strong>
             </Tooltip>
             structures
-            {#if n_materials}
-              from
-              <Tooltip text={n_materials.toLocaleString()}>
-                <strong>{pretty_n_mat}</strong>
+            {#if typeof n_materials == `number`}
+              from <Tooltip text={n_materials.toLocaleString()}>
+                <strong>{pretty_num(n_materials)}</strong>
               </Tooltip> materials
             {/if}
           </p>

@@ -102,58 +102,45 @@ describe(`Model Detail Page`, () => {
 })
 
 describe(`Models Sorting Logic`, () => {
-  it(`sorts models with NaN values to the end of the list`, () => {
-    // Create a simple sorting function that mimics the one in +page.svelte
-    function sortModels(
-      models: ModelData[],
-      sort_by: string,
-      order: `asc` | `desc`,
-    ): ModelData[] {
-      const sort_factor = order === `asc` ? -1 : 1
+  // Extract the common function to reduce duplication
+  function sort_models(
+    models: ModelData[],
+    sort_by: string,
+    order: `asc` | `desc`,
+  ): ModelData[] {
+    const sort_factor = order === `asc` ? -1 : 1
 
-      return [...models].sort((model_1, model_2) => {
-        // Special case for model_name sorting
-        if (sort_by === `model_name`) {
-          return order === `asc`
-            ? model_1.model_name.localeCompare(model_2.model_name)
-            : model_2.model_name.localeCompare(model_1.model_name)
-        }
+    return [...models].sort((model_1, model_2) => {
+      // Special case for model_name sorting
+      if (sort_by === `model_name`) {
+        return order === `asc`
+          ? model_1.model_name.localeCompare(model_2.model_name)
+          : model_2.model_name.localeCompare(model_1.model_name)
+      }
 
-        // Get values using the helper function
-        const val_1 = get_metric_value(model_1, sort_by)
-        const val_2 = get_metric_value(model_2, sort_by)
+      // Get values using the helper function
+      const val_1 = get_metric_value(model_1, sort_by)
+      const val_2 = get_metric_value(model_2, sort_by)
 
-        // Handle null, undefined, or NaN values by sorting last
-        if (val_1 == null && val_2 == null) return 0
-        if (val_1 == null || Number.isNaN(val_1)) return 1 // Always sort nulls/NaN to the end
-        if (val_2 == null || Number.isNaN(val_2)) return -1 // Always sort nulls/NaN to the end
+      // Handle null, undefined, or NaN values by sorting last
+      if (val_1 == null && val_2 == null) return 0
+      if (val_1 == null || Number.isNaN(val_1)) return 1 // Always sort nulls/NaN to the end
+      if (val_2 == null || Number.isNaN(val_2)) return -1 // Always sort nulls/NaN to the end
 
-        if (typeof val_1 === `number` && typeof val_2 === `number`) {
-          return sort_factor * (val_2 - val_1)
-        }
+      if (typeof val_1 === `number` && typeof val_2 === `number`) {
+        return sort_factor * (val_2 - val_1)
+      }
 
-        return 0
-      })
-    }
+      return 0
+    })
+  }
 
-    // Create test models with some NaN metrics
-    const test_models = [
+  // Create a set of test models that can be reused across multiple test cases
+  const create_test_models = () => {
+    return [
       {
-        model_name: `Model with NaN`,
-        model_key: `model_nan`,
-        metrics: {
-          discovery: {
-            full_test_set: {
-              F1: 0.7,
-              Accuracy: NaN,
-            },
-            pred_col: `is_stable`,
-          },
-        },
-      },
-      {
-        model_name: `Model with good metrics`,
-        model_key: `model_good`,
+        model_name: `AAA Model`,
+        model_key: `aaa_model`,
         metrics: {
           discovery: {
             full_test_set: {
@@ -162,11 +149,30 @@ describe(`Models Sorting Logic`, () => {
             },
             pred_col: `is_stable`,
           },
+          phonons: {
+            kappa_103: { κ_SRME: 0.9 },
+          },
         },
       },
       {
-        model_name: `Model with low metrics`,
-        model_key: `model_low`,
+        model_name: `MMM Model`,
+        model_key: `mmm_model`,
+        metrics: {
+          discovery: {
+            full_test_set: {
+              F1: 0.7,
+              Accuracy: NaN, // Test NaN handling
+            },
+            pred_col: `is_stable`,
+          },
+          phonons: {
+            kappa_103: { κ_SRME: 0.5 },
+          },
+        },
+      },
+      {
+        model_name: `ZZZ Model`,
+        model_key: `zzz_model`,
         metrics: {
           discovery: {
             full_test_set: {
@@ -175,292 +181,182 @@ describe(`Models Sorting Logic`, () => {
             },
             pred_col: `is_stable`,
           },
+          phonons: {
+            kappa_103: { κ_SRME: 0.2 },
+          },
         },
       },
-    ] as ModelData[]
+      {
+        model_name: `Missing Data Model`,
+        model_key: `missing_model`,
+        metrics: {
+          discovery: {
+            full_test_set: { F1: 0.4 },
+          },
+          phonons: `not applicable` as const, // String instead of object
+        },
+      },
+    ] as unknown as ModelData[]
+  }
 
-    // Test sorting with F1 (higher is better)
-    const sorted_models = sortModels(test_models, `F1`, `desc`)
+  // Create test models with edge cases
+  const create_edge_case_models = () => {
+    return [
+      // Model with completely missing metrics
+      {
+        model_name: `No Metrics Model`,
+        model_key: `no_metrics_model`,
+      },
+      // Model with empty metrics object
+      {
+        model_name: `Empty Metrics Model`,
+        model_key: `empty_metrics_model`,
+        metrics: {},
+      },
+      // Model with extreme values
+      {
+        model_name: `Extreme Values Model`,
+        model_key: `extreme_model`,
+        metrics: {
+          discovery: {
+            full_test_set: {
+              F1: Number.MAX_VALUE,
+              Accuracy: Number.MIN_VALUE,
+              R2: -Infinity,
+              RMSE: Infinity,
+            },
+          },
+          phonons: {
+            kappa_103: { κ_SRME: 0 },
+          },
+        },
+      },
+      // Model with all undefined values for metrics
+      {
+        model_name: `Undefined Metrics Model`,
+        model_key: `undefined_model`,
+        metrics: {
+          discovery: {
+            full_test_set: {
+              F1: undefined,
+              Accuracy: undefined,
+            },
+          },
+          phonons: {
+            kappa_103: { κ_SRME: undefined },
+          },
+        },
+      },
+    ] as unknown as ModelData[]
+  }
 
-    // Log the array order to debug
-    console.log(
-      `Sorted models (desc F1):`,
-      sorted_models.map(
-        (m) => `${m.model_key} (${m.metrics?.discovery?.full_test_set?.F1})`,
-      ),
-    )
+  it(`sorts models by numeric metrics correctly with NaN handling`, () => {
+    const test_models = create_test_models()
 
-    // Get indexes
-    const nan_model_index = sorted_models.findIndex((m) => m.model_key === `model_nan`)
-    const good_model_index = sorted_models.findIndex((m) => m.model_key === `model_good`)
-    const low_model_index = sorted_models.findIndex((m) => m.model_key === `model_low`)
+    // Test cases for different metrics and sort orders
+    const test_cases = [
+      {
+        metric: `F1`,
+        order: `desc` as const,
+        expected_order: [`aaa_model`, `mmm_model`, `zzz_model`, `missing_model`],
+      },
+      {
+        metric: `Accuracy`,
+        order: `asc` as const,
+        expected_order: [`zzz_model`, `aaa_model`, `mmm_model`, `missing_model`],
+      },
+      {
+        metric: `κ_SRME`,
+        order: `asc` as const,
+        expected_order: [`zzz_model`, `mmm_model`, `aaa_model`, `missing_model`],
+      },
+    ]
 
-    // Check that models are in the expected order based on the debug output
-    // The F1 values are: good(0.9) > nan(0.7) > low(0.5)
-    expect(good_model_index).toBe(0)
-    expect(nan_model_index).toBe(1)
-    expect(low_model_index).toBe(2)
+    for (const { metric, order, expected_order } of test_cases) {
+      const sorted_models = sort_models(test_models, metric, order)
 
-    // Test with reverse sorting order (lower is better)
-    const sorted_models_asc = sortModels(test_models, `Accuracy`, `asc`)
-
-    // Log the array order to debug
-    console.log(
-      `Sorted models (asc Accuracy):`,
-      sorted_models_asc.map(
-        (m) => `${m.model_key} (${m.metrics?.discovery?.full_test_set?.Accuracy})`,
-      ),
-    )
-
-    // NaN models should be sorted to the end
-    const nan_model_index_asc = sorted_models_asc.findIndex(
-      (m) => m.model_key === `model_nan`,
-    )
-    const good_model_index_asc = sorted_models_asc.findIndex(
-      (m) => m.model_key === `model_good`,
-    )
-    const low_model_index_asc = sorted_models_asc.findIndex(
-      (m) => m.model_key === `model_low`,
-    )
-
-    // We'll update the expectations based on the console output
-    expect(low_model_index_asc).toBe(0)
-    expect(good_model_index_asc).toBe(1)
-    expect(nan_model_index_asc).toBe(2)
-  })
-
-  it(`sorts models correctly for metrics in different task categories`, () => {
-    // Create a sorting function that mimics the one in +page.svelte for different task categories
-    function sortModels(
-      models: ModelData[],
-      sort_by: string,
-      order: `asc` | `desc`,
-    ): ModelData[] {
-      const sort_factor = order === `asc` ? -1 : 1
-
-      return [...models].sort((model_1, model_2) => {
-        // Special case for model_name sorting
-        if (sort_by === `model_name`) {
-          return order === `asc`
-            ? model_1.model_name.localeCompare(model_2.model_name)
-            : model_2.model_name.localeCompare(model_1.model_name)
-        }
-
-        // Get values using the helper function
-        const val_1 = get_metric_value(model_1, sort_by)
-        const val_2 = get_metric_value(model_2, sort_by)
-
-        // Handle null, undefined, or NaN values by sorting last
-        if (val_1 == null && val_2 == null) return 0
-        if (val_1 == null || Number.isNaN(val_1)) return 1 // Always sort nulls/NaN to the end
-        if (val_2 == null || Number.isNaN(val_2)) return -1 // Always sort nulls/NaN to the end
-
-        if (typeof val_1 === `number` && typeof val_2 === `number`) {
-          return sort_factor * (val_2 - val_1)
-        }
-
-        return 0
+      // Verify the order matches expected
+      expected_order.forEach((model_key, idx) => {
+        expect(sorted_models[idx].model_key).toBe(model_key)
       })
     }
-
-    // Create test models with phonon metrics for κ_SRME
-    const test_models = [
-      {
-        model_name: `Model with high κ_SRME`,
-        model_key: `model_high_kappa`,
-        metrics: {
-          phonons: {
-            κ_SRME: 0.9, // directly on phonons object
-            full_test_set: { F1: 0.8 },
-          },
-          discovery: {
-            full_test_set: { F1: 0.8 },
-          },
-        },
-      },
-      {
-        model_name: `Model with medium κ_SRME`,
-        model_key: `model_medium_kappa`,
-        metrics: {
-          phonons: {
-            kappa_103: { κ_SRME: 0.5 }, // inside kappa_103 subobject
-            full_test_set: { F1: 0.7 },
-          },
-          discovery: {
-            full_test_set: { F1: 0.7 },
-          },
-        },
-      },
-      {
-        model_name: `Model with low κ_SRME`,
-        model_key: `model_low_kappa`,
-        metrics: {
-          phonons: {
-            κ_SRME: 0.2, // directly on phonons object
-            full_test_set: { F1: 0.6 },
-          },
-          discovery: {
-            full_test_set: { F1: 0.6 },
-          },
-        },
-      },
-      {
-        model_name: `Model missing κ_SRME`,
-        model_key: `model_missing_kappa`,
-        metrics: {
-          phonons: `not applicable`, // String instead of object
-          discovery: {
-            full_test_set: { F1: 0.5 },
-          },
-        },
-      },
-    ] as ModelData[]
-
-    // Test sorting by κ_SRME (lower is better)
-    const sorted_models = sortModels(test_models, `κ_SRME`, `asc`)
-
-    // Log the array order to debug
-    console.log(
-      `Sorted models (asc κ_SRME):`,
-      sorted_models.map((m) => {
-        const phonons = m.metrics?.phonons
-        const kappa_value =
-          typeof phonons === `object` && phonons !== null
-            ? (phonons.kappa_103?.κ_SRME ?? phonons.κ_SRME ?? `N/A`)
-            : `N/A`
-        return `${m.model_key} (${kappa_value})`
-      }),
-    )
-
-    // Get indexes of models
-    const high_model_index = sorted_models.findIndex(
-      (m) => m.model_key === `model_high_kappa`,
-    )
-    const medium_model_index = sorted_models.findIndex(
-      (m) => m.model_key === `model_medium_kappa`,
-    )
-    const low_model_index = sorted_models.findIndex(
-      (m) => m.model_key === `model_low_kappa`,
-    )
-    const missing_model_index = sorted_models.findIndex(
-      (m) => m.model_key === `model_missing_kappa`,
-    )
-
-    // Check that models are in the expected order
-    // For κ_SRME, lower is better, so sorting ascending should put them in ascending order
-    expect(low_model_index).toBe(0)
-    expect(medium_model_index).toBe(1)
-    expect(high_model_index).toBe(2)
-    expect(missing_model_index).toBe(3) // missing values should be at the end
-
-    // Also test that normal discovery metrics still work
-    const sorted_by_f1 = sortModels(test_models, `F1`, `desc`)
-
-    console.log(
-      `Sorted models (desc F1):`,
-      sorted_by_f1.map(
-        (m) => `${m.model_key} (${m.metrics?.discovery?.full_test_set?.F1})`,
-      ),
-    )
-
-    // Check order for F1 (higher is better, desc order)
-    const high_f1_index = sorted_by_f1.findIndex(
-      (m) => m.model_key === `model_high_kappa`,
-    ) // F1: 0.8
-    const medium_f1_index = sorted_by_f1.findIndex(
-      (m) => m.model_key === `model_medium_kappa`,
-    ) // F1: 0.7
-    const low_f1_index = sorted_by_f1.findIndex((m) => m.model_key === `model_low_kappa`) // F1: 0.6
-    const missing_f1_index = sorted_by_f1.findIndex(
-      (m) => m.model_key === `model_missing_kappa`,
-    ) // F1: 0.5
-
-    expect(high_f1_index).toBe(0)
-    expect(medium_f1_index).toBe(1)
-    expect(low_f1_index).toBe(2)
-    expect(missing_f1_index).toBe(3)
   })
 
   it(`sorts models by model_name correctly`, () => {
-    // Define the sorting function
-    function sortModels(
-      models: ModelData[],
-      sort_by: string,
-      order: `asc` | `desc`,
-    ): ModelData[] {
-      const sort_factor = order === `asc` ? -1 : 1
+    const test_models = create_test_models()
 
-      return [...models].sort((model_1, model_2) => {
-        // Special case for model_name sorting
-        if (sort_by === `model_name`) {
-          return order === `asc`
-            ? model_1.model_name.localeCompare(model_2.model_name)
-            : model_2.model_name.localeCompare(model_1.model_name)
-        }
+    // Test alphabetical sorting
+    const sorted_by_name_asc = sort_models(test_models, `model_name`, `asc`)
+    const sorted_by_name_desc = sort_models(test_models, `model_name`, `desc`)
 
-        // Get values using the helper function
-        const val_1 = get_metric_value(model_1, sort_by)
-        const val_2 = get_metric_value(model_2, sort_by)
+    // Check ascending order
+    expect(sorted_by_name_asc.map((m) => m.model_key)).toEqual([
+      `aaa_model`,
+      `missing_model`,
+      `mmm_model`,
+      `zzz_model`,
+    ])
 
-        // Handle null, undefined, or NaN values by sorting last
-        if (val_1 == null && val_2 == null) return 0
-        if (val_1 == null || Number.isNaN(val_1)) return 1 // Always sort nulls/NaN to the end
-        if (val_2 == null || Number.isNaN(val_2)) return -1 // Always sort nulls/NaN to the end
+    // Check descending order
+    expect(sorted_by_name_desc.map((m) => m.model_key)).toEqual([
+      `zzz_model`,
+      `mmm_model`,
+      `missing_model`,
+      `aaa_model`,
+    ])
+  })
 
-        if (typeof val_1 === `number` && typeof val_2 === `number`) {
-          return sort_factor * (val_2 - val_1)
-        }
+  it(`handles edge cases with missing or extreme metric values`, () => {
+    const edge_case_models = create_edge_case_models()
+    const regular_models = create_test_models()
+    const combined_models = [...regular_models, ...edge_case_models]
 
-        return 0
-      })
-    }
+    // Test sorting with κ_SRME where one model has zero value
+    const sorted_by_kappa = sort_models(combined_models, `κ_SRME`, `asc`)
 
-    // Create models with alphabetically diverse names
-    const test_models = [
+    // Zero value should be first for asc
+    expect(sorted_by_kappa[0].model_key).toBe(`extreme_model`)
+  })
+
+  it(`handles sorting with all models having missing metric`, () => {
+    const all_missing_models = [
+      { model_name: `Model A`, model_key: `model_a` },
+      { model_name: `Model B`, model_key: `model_b` },
+    ] as unknown as ModelData[]
+
+    // Sort by a metric that none of the models have
+    const sorted_models = sort_models(all_missing_models, `F1`, `desc`)
+
+    // Order should be preserved when all models are missing the metric
+    expect(sorted_models[0].model_key).toBe(`model_a`)
+    expect(sorted_models[1].model_key).toBe(`model_b`)
+  })
+
+  it(`maintains original order for equivalent values`, () => {
+    const models_with_same_values = [
       {
-        model_name: `ZZZ Model`,
-        model_key: `zzz_model`,
-        metrics: { discovery: { full_test_set: { F1: 0.5 } } },
+        model_name: `Model 1`,
+        model_key: `model_1`,
+        metrics: { discovery: { full_test_set: { F1: 0.8 } } },
       },
       {
-        model_name: `AAA Model`,
-        model_key: `aaa_model`,
-        metrics: { discovery: { full_test_set: { F1: 0.9 } } },
+        model_name: `Model 2`,
+        model_key: `model_2`,
+        metrics: { discovery: { full_test_set: { F1: 0.8 } } },
       },
       {
-        model_name: `MMM Model`,
-        model_key: `mmm_model`,
-        metrics: { discovery: { full_test_set: { F1: 0.7 } } },
+        model_name: `Model 3`,
+        model_key: `model_3`,
+        metrics: { discovery: { full_test_set: { F1: 0.8 } } },
       },
-    ] as ModelData[]
+    ] as unknown as ModelData[]
 
-    // Sort by model_name (alphabetical, ascending)
-    const sorted_by_name = sortModels(test_models, `model_name`, `asc`)
+    // Sort models with identical F1 values
+    const sorted_models = sort_models(models_with_same_values, `F1`, `desc`)
 
-    // Log the sorted order
-    console.log(
-      `Sorted models by name (asc):`,
-      sorted_by_name.map((m: ModelData) => m.model_name),
-    )
-
-    // Verify correct ordering
-    expect(sorted_by_name[0].model_name).toBe(`AAA Model`)
-    expect(sorted_by_name[1].model_name).toBe(`MMM Model`)
-    expect(sorted_by_name[2].model_name).toBe(`ZZZ Model`)
-
-    // Verify that F1 sorting still works (higher is better, desc order)
-    const sorted_by_f1 = sortModels(test_models, `F1`, `desc`)
-
-    console.log(
-      `Sorted models by F1 (desc):`,
-      sorted_by_f1.map(
-        (m: ModelData) => `${m.model_name} (${m.metrics?.discovery?.full_test_set?.F1})`,
-      ),
-    )
-
-    // AAA has highest F1 (0.9), then MMM (0.7), then ZZZ (0.5)
-    expect(sorted_by_f1[0].model_key).toBe(`aaa_model`)
-    expect(sorted_by_f1[1].model_key).toBe(`mmm_model`)
-    expect(sorted_by_f1[2].model_key).toBe(`zzz_model`)
+    // Original order should be preserved
+    expect(sorted_models[0].model_key).toBe(`model_1`)
+    expect(sorted_models[1].model_key).toBe(`model_2`)
+    expect(sorted_models[2].model_key).toBe(`model_3`)
   })
 })

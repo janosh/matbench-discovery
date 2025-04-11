@@ -90,13 +90,14 @@ describe(`ModelCard`, () => {
     // Test actual training set data
     const training_set_links = training_set?.querySelectorAll(`a`)
     if (training_set_links) {
-      const training_set_key = model.training_set[0]
-      const training_set_info = DATASETS[training_set_key]
+      const dataset_key = model.training_set[0]
+      const dataset = DATASETS[dataset_key]
 
-      expect(training_set_links[0].href).toBe(training_set_info.url)
+      // Check that we're linking to our internal data page
+      expect(training_set_links[0].href).toContain(`/data/${dataset.slug}`)
 
       // Use pretty_num to match the actual formatted output
-      const formatted_structures = pretty_num(training_set_info.n_structures)
+      const formatted_structures = pretty_num(dataset.n_structures)
       expect(training_set?.textContent).toContain(`${formatted_structures} structures`)
     }
   })

@@ -52,9 +52,7 @@
     title="{show_details ? `Hide` : `Show`} authors and package versions"
   >
     <!-- change between expand/collapse icon -->
-    <svg class="icon"
-      ><use href={show_details ? `#icon-arrow-up` : `#icon-arrow-down`}></use></svg
-    >
+    <svg class="icon"><use href="#icon-arrow-{show_details ? `up` : `down`}"></use></svg>
   </button>
 </h2>
 <nav>
@@ -76,12 +74,12 @@
           &nbsp;+&nbsp;
         {/if}
         {@const training_set = DATASETS[train_set_key]}
-        {@const { n_structures, url, title, n_materials } = training_set}
+        {@const { n_structures, title, slug, n_materials } = training_set}
         {@const pretty_n_mat =
           typeof n_materials == `number` ? pretty_num(n_materials) : n_materials}
         {@const n_mat_str = n_materials ? ` from ${pretty_n_mat} materials` : ``}
         <Tooltip text="{title}: {pretty_num(n_structures)} structures{n_mat_str}">
-          <a href={url}>{train_set_key}</a>
+          <a href="/data/{slug}">{train_set_key}</a>
         </Tooltip>
       {/each}
     </span>
@@ -103,7 +101,7 @@
   {#if n_estimators > 1}
     <span>
       <svg><use href="#icon-forest"></use></svg>
-      Ensemble of {n_estimators > 1 ? `${n_estimators}` : ``}
+      Ensemble of {n_estimators > 1 ? n_estimators : ``}
       <Tooltip
         text="This result used a model ensemble with {n_estimators} members with {n_model_params} parameters each."
       >

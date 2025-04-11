@@ -395,7 +395,7 @@ properties:
         type: string
       Training:
         type: string
-      "Missing Preds":
+      Missing Preds:
         type: string
       html:
         type: string

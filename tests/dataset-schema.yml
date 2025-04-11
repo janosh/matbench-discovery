@@ -75,6 +75,15 @@ definitions:
         type: string
         format: html
         description: HTML version of the dataset description
+      notes:
+        type: object
+        additionalProperties: true
+        # all keys should be markdown
+        patternProperties:
+          ^[a-zA-Z0-9_-]+$:
+            type: string
+            format: markdown
+            description: Note about the dataset
 
       # Dataset size and content
       n_structures:

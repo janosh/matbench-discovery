@@ -43,7 +43,8 @@ repos:
         stages: [pre-commit, commit-msg]
         exclude_types: [csv, json, svg]
         exclude: ^(.+references.yaml|site/src/figs/.+)$
-        args: [--ignore-words-list, "nd,te,fpr,matris", --check-filenames]
+        args:
+          [--ignore-words-list, "nd,te,fpr,matris,noe,hart", --check-filenames]
 
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v4.0.0-alpha.8

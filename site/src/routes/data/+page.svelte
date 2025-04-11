@@ -11,11 +11,11 @@
   import { ColorScaleSelect } from 'elementari'
   import Select from 'svelte-multiselect'
   import type { Snapshot } from './$types'
+  import MPtrjElemCountsPtable from './[slug]/MPtrjElemCountsPtable.svelte'
   import DataFilesDirectDownload from './data-files-direct-download.md'
   import MpElementalReferenceEnergies from './mp-elemental-reference-energies.md'
-  import MPtrjElemCountsPtable from './mptrj/MPtrjElemCountsPtable.svelte'
 
-  const elem_counts = import.meta.glob(
+  const elem_counts: Record<string, Record<string, number>> = import.meta.glob(
     `./*-element-counts-by-{occurrence,composition}*.json`,
     { eager: true, import: `default` },
   )
@@ -26,19 +26,15 @@
   let count_mode = $state(count_modes[0])
 
   let mp_elem_counts = $derived(elem_counts[`./mp-element-counts-by-${count_mode}.json`])
-  $effect.pre(() => {
-    if (!mp_elem_counts) throw `No MP data for count mode ${count_mode}!`
-  })
   let mp_trj_elem_counts = $derived(
     elem_counts[`./mp-trj-element-counts-by-${count_mode}.json`],
   )
-  $effect.pre(() => {
-    if (!mp_trj_elem_counts) throw `No MPtrj data for count mode ${count_mode}!`
-  })
   let wbm_elem_counts = $derived(
     elem_counts[`./wbm-element-counts-by-${count_mode}.json`],
   )
   $effect.pre(() => {
+    if (!mp_elem_counts) throw `No MP data for count mode ${count_mode}!`
+    if (!mp_trj_elem_counts) throw `No MPtrj data for count mode ${count_mode}!`
     if (!wbm_elem_counts) throw `No WBM data for count mode ${count_mode}!`
   })
 

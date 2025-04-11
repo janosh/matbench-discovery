@@ -17,7 +17,6 @@
     initial_sort_direction?: `asc` | `desc`
     fixed_header?: boolean
   }
-
   let {
     data,
     columns = [],
@@ -265,7 +264,7 @@
             {@const color = calc_color(val, col)}
             <td
               data-col={col.label}
-              data-sort-value={is_html_str(val) ? undefined : val}
+              data-sort-value={is_html_str(val) ? null : val}
               class:sticky-col={col.sticky}
               style:background-color={color.bg}
               style:color={color.text}

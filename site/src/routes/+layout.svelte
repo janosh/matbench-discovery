@@ -55,7 +55,7 @@
     } else {
       document.documentElement.style.setProperty(`--main-max-width`, `50em`)
     }
-    // TODO restore svelte-zoo CopyButton to code blocks
+    // TODO restore svelte-zoo CopyButton on code blocks
   })
 </script>
 

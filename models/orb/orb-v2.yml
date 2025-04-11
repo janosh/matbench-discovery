@@ -82,6 +82,10 @@ training_cost: missing
 notes:
   Description: |
     ORB is a pretrained model for atomic simulations. ORB uses a pretrained diffusion model backbone which is fine-tuned on MPtrj + Alexandria.
+  Data Leakage: |
+    Note that the Alexandria dataset contains structure prototypes that overlap with the WBM test set (~97k overlapping prototypes).
+    Models trained on this dataset benefit from some amount of train/test leakage, though testing on Orb v2 showed that brief (less than 1 epoch)
+    fine-tuning resulted in identical metrics whether fine-tuning on Alexandria or sAlex.
 
 metrics:
   phonons:

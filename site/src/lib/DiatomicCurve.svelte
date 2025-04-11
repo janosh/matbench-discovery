@@ -1,6 +1,6 @@
 <script lang="ts">
   import { MODELS } from '$lib'
-  import { ScatterPlot } from 'elementari'
+  import { ScatterPlot, type DataSeries, type Point } from 'elementari'
 
   interface Props {
     formula: string
@@ -18,7 +18,6 @@
     hovered?: boolean
     style?: string
   }
-
   let {
     formula,
     curves,
@@ -89,14 +88,9 @@
     }),
   )
 
-  function on_tooltip_change(
-    event: CustomEvent<{
-      x: number
-      y: number
-      metadata?: { model_key: string; model_label: string }
-    }>,
-  ) {
-    tooltip_point = event.detail
+  function on_tooltip_change(data: Point & { series: DataSeries }) {
+    const { x, y, series } = data
+    tooltip_point = { x, y, metadata: series.metadata }
   }
 </script>
 
@@ -114,7 +108,7 @@
     {y_lim}
     bind:tooltip_point
     bind:hovered
-    on:change={on_tooltip_change}
+    change={on_tooltip_change}
   >
     {#snippet tooltip({ x_formatted, y_formatted, metadata })}
       <div

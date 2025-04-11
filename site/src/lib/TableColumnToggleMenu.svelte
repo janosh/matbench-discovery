@@ -66,7 +66,7 @@
     padding: 3pt 5pt;
     min-width: 150px;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
     z-index: 1; /* needed to ensure column toggle menu is above HeatmapTable header row */
   }
   .column-menu label {

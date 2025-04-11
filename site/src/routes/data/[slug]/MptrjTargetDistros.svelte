@@ -2,7 +2,7 @@
   import { browser } from '$app/environment'
   import type { SvelteComponent } from 'svelte'
   import MPtrjElemCountsPtable from './MPtrjElemCountsPtable.svelte'
-  import Readme from './readme.md'
+  import MptrjTargetCounts from './mptrj-target-counts.md'
 
   const plots = import.meta.glob(`$figs/mp-trj-*.svelte`, {
     eager: true,
@@ -17,7 +17,7 @@
   }
 </script>
 
-<Readme />
+<MptrjTargetCounts />
 
 {#if browser}
   <ul>
