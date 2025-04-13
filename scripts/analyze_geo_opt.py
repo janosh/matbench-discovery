@@ -15,25 +15,26 @@ Example usage:
 """
 
 # %%
-import argparse
 import importlib
 import importlib.metadata
 import itertools
-import multiprocessing as mp
 import os
-from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 
 import pandas as pd
 from pymatgen.core import Structure
 from pymatviz.enums import Key
 
 from matbench_discovery import ROOT
+from matbench_discovery.cli import cli_parser
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.metrics import geo_opt
 from matbench_discovery.models import MODEL_METADATA
 from matbench_discovery.structure import symmetry
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 def analyze_model_symprec(
@@ -146,41 +147,27 @@ def analyze_model_symprec(
     return df_metrics
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--models",
-        nargs="*",
-        type=Model,  # type: ignore[arg-type]
-        choices=Model,
-        default=list(Model),
-        help="Models to analyze. If none specified, analyzes all models.",
+def main(args: list[str] | None = None) -> int:
+    """Main function to analyze geometry optimization results.
+
+    Args:
+        args: Command line arguments. If None, sys.argv[1:] will be used.
+
+    Returns:
+        int: Exit code (0 for success).
+    """
+    # Add geo_opt specific arguments to the central CLI parser
+    geo_opt_group = cli_parser.add_argument_group(
+        "geo_opt", "Arguments for geometry optimization analysis"
     )
-    parser.add_argument(
+    geo_opt_group.add_argument(
         "--symprec",
         nargs="+",
         type=float,
         default=[1e-2, 1e-5],
         help="Symmetry precision values to analyze.",
     )
-    parser.add_argument(
-        "--debug",
-        type=int,
-        default=0,
-        help="If > 0, only analyze this many structures.",
-    )
-    parser.add_argument(
-        "--workers",
-        type=int,
-        default=max(1, mp.cpu_count() - 1),
-        help="Number of processes to use. Defaults to number of model-symprec combos.",
-    )
-    parser.add_argument(
-        "--overwrite",
-        action="store_true",
-        help="Overwrite existing geo_opt analysis files.",
-    )
-    args, _unknown = parser.parse_known_args()
+    args, _unknown = cli_parser.parse_known_args(args)
 
     # set to > 0 to activate debug mode, only that many structures will be analyzed
     debug_mode: Final[int] = args.debug
@@ -254,3 +241,8 @@ if __name__ == "__main__":
             future.result()  # This will raise any exceptions that occurred
 
     print(f"\nAll {len(tasks)} model-symprec combinations processed!")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

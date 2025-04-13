@@ -6,7 +6,6 @@
   interface Props {
     show_non_compliant?: boolean
   }
-
   let { show_non_compliant = false, ...rest }: Props = $props()
 
   // Get all unique symprec values from MODELS
@@ -16,7 +15,7 @@
         MODELS.flatMap((model) =>
           Object.keys(model.metrics?.geo_opt ?? {})
             .filter((key) => key.startsWith(`symprec=`))
-            .map((key) => key.replace(`symprec=`, ``)),
+            .map((key) => key.split(`symprec=`)[1]),
         ),
       ),
     ].sort((val1, val2) => parseFloat(val2) - parseFloat(val1)),
@@ -157,8 +156,9 @@
   {#snippet cell({ col, val })}
     {#if col.label === `Links` && val}
       {@const links = val}
-      {#each links.files as { url: href, title, icon } (title + href)}
+      {#each links.files as { url: href, title, icon }, idx (title + href)}
         {#if href}
+          {#if idx > 0}&thinsp;{/if}
           <a {href} {title} target="_blank" rel="noopener noreferrer">
             {@html icon}
           </a>
@@ -166,7 +166,7 @@
       {/each}
     {:else if typeof val === `number` && col.format}
       {pretty_num(val, col.format)}
-    {:else if [undefined, null].includes(val)}
+    {:else if val === undefined || val === null}
       n/a
     {:else}
       {@html val}
