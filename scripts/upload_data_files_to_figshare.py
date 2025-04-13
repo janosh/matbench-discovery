@@ -206,8 +206,7 @@ if __name__ == "__main__":
     with open(f"{ROOT}/pyproject.toml", mode="rb") as toml_file:
         pyproject = tomllib.load(toml_file)["project"]
 
-    # upload/update data files to figshare
-    main(
+    main(  # upload/update data files on figshare
         yaml_path=f"{PKG_DIR}/data-files.yml",
         article_id=figshare.ARTICLE_IDS["data_files"],
         pyproject=pyproject,

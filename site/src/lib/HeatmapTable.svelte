@@ -103,8 +103,12 @@
   const get_col_id = (col: HeatmapColumn) =>
     col.group ? `${col.label} (${col.group})` : col.label
 
-  function sort_rows(column: string) {
-    const col = columns.find((c) => c.label === column)
+  function sort_rows(column: string, group?: string) {
+    // Find the column using both label and group if provided
+    const col = columns.find(
+      (c) => c.label === column && (c.group === group || c.group === undefined),
+    )
+
     if (!col) return // Skip if column not found
 
     // Skip sorting if column is explicitly marked as not sortable
@@ -228,7 +232,7 @@
             {:else}
               {@const group_cols = visible_columns.filter((c) => c.group === group)}
               <!-- Only render the group header once for each group by checking if this is the first column of this group -->
-              {#if columns.findIndex((c) => c.label === label) === columns.findIndex((c) => c.group === group)}
+              {#if visible_columns.findIndex((c) => c.group === group) === visible_columns.findIndex((c) => c.group === group && c.label === label)}
                 <th title={tooltip} colspan={group_cols.length}>{@html group}</th>
               {/if}
             {/if}
@@ -240,7 +244,7 @@
         {#each visible_columns as col, col_idx (col.label + col.group)}
           <th
             title={col.tooltip}
-            onclick={() => sort_rows(col.label)}
+            onclick={() => sort_rows(col.label, col.group)}
             style={col.style}
             class:sticky-col={col.sticky}
             class:not-sortable={col.sortable === false}

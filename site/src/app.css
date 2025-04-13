@@ -6,19 +6,11 @@
   --dark-bg: #0d1a1d;
   --light-bg: #08303b;
 
-  --toc-mobile-bg: var(--dark-bg);
-  --toc-mobile-shadow: 0 0 1em 0 black;
-  --toc-padding: 1em 0;
-  --toc-title-padding: 0 0 0 3pt;
-  --toc-li-padding: 4pt 1ex;
-  --toc-mobile-btn-color: white;
-  --toc-desktop-nav-margin: 0 0 0 1em;
   --toc-min-width: 15em;
   --toc-active-border: solid var(--blue);
   --toc-active-border-width: 0 0 0 1pt;
   --toc-active-bg: none;
-  --toc-active-border-radius: 0;
-  --toc-max-height: 85vh;
+  --toc-font-size: 9pt;
 
   --zoo-github-corner-color: var(--night);
   --zoo-github-corner-bg: white;
@@ -182,7 +174,7 @@ strong a[aria-hidden='true'] {
 aside.toc.desktop {
   position: fixed;
   top: 3em;
-  left: calc(50vw + var(--main-max-width) / 2);
+  left: calc(50vw + var(--main-max-width) / 2 + 200px);
   max-width: 16em;
 }
 

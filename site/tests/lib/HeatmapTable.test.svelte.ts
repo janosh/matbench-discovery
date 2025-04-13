@@ -392,10 +392,21 @@ describe(`HeatmapTable`, () => {
         { label: `Value 2`, group: `Values` },
         { label: `Metric 1`, group: `Metrics` },
         { label: `Metric 2`, group: `Metrics` },
+        // Added columns with identical labels in different groups to test the fix
+        { label: `Value 1`, group: `Second Values` },
+        { label: `Value 2`, group: `Second Values` },
       ]
 
       const grouped_data = [
-        { Name: `Item A`, 'Value 1': 10, 'Value 2': 20, 'Metric 1': 30, 'Metric 2': 40 },
+        {
+          Name: `Item A`,
+          'Value 1 (Values)': 10,
+          'Value 2 (Values)': 20,
+          'Metric 1': 30,
+          'Metric 2': 40,
+          'Value 1 (Second Values)': 50,
+          'Value 2 (Second Values)': 60,
+        },
       ]
 
       mount(HeatmapTable, {
@@ -409,19 +420,41 @@ describe(`HeatmapTable`, () => {
 
       // First row should contain the group headers
       const group_headers = header_rows[0].querySelectorAll(`th`)
-      expect(group_headers).toHaveLength(3) // Name (empty), Values, Metrics
+      expect(group_headers).toHaveLength(4) // Name (empty), Values, Metrics, Second Values
+
+      // Get the text content of the group headers (excluding the empty one)
+      const group_texts = Array.from(group_headers)
+        .filter((th) => th.textContent?.trim())
+        .map((th) => th.textContent?.trim())
+
+      // Should have all three groups rendered
+      expect(group_texts).toEqual([`Values`, `Metrics`, `Second Values`])
 
       // Check the group headers have correct colspan
-      const groups = Array.from(group_headers).slice(1) // Skip the first empty cell for Name
-      expect(groups[0].getAttribute(`colspan`)).toBe(`2`) // Values spans 2 columns
-      expect(groups[1].getAttribute(`colspan`)).toBe(`2`) // Metrics spans 2 columns
+      const values_header = Array.from(group_headers).find((th) =>
+        th.textContent?.includes(`Values`),
+      )
+      const metrics_header = Array.from(group_headers).find((th) =>
+        th.textContent?.includes(`Metrics`),
+      )
+      const second_values_header = Array.from(group_headers).find((th) =>
+        th.textContent?.includes(`Second Values`),
+      )
+
+      expect(values_header?.getAttribute(`colspan`)).toBe(`2`) // Values spans 2 columns
+      expect(metrics_header?.getAttribute(`colspan`)).toBe(`2`) // Metrics spans 2 columns
+      expect(second_values_header?.getAttribute(`colspan`)).toBe(`2`) // Second Values spans 2 columns
 
       // Check column headers in second row
       const col_headers = header_rows[1].querySelectorAll(`th`)
-      expect(col_headers).toHaveLength(5)
+      expect(col_headers).toHaveLength(7)
+
+      // Column headers should have duplicate label names (Value 1, Value 2) rendered for each group
       expect(
-        Array.from(col_headers).map((h) => h.textContent?.trim().replace(/\s+/g, ` `)),
-      ).toEqual([`Name`, `Value 1`, `Value 2`, `Metric 1`, `Metric 2`])
+        Array.from(col_headers).map((h) =>
+          h.textContent?.trim().replace(/\s+|[↑↓]/g, ``),
+        ),
+      ).toEqual([`Name`, `Value1`, `Value2`, `Metric1`, `Metric2`, `Value1`, `Value2`])
     })
 
     it(`correctly handles mixed grouped and ungrouped columns`, () => {

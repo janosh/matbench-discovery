@@ -1,24 +1,50 @@
 """Central argument parser for Matbench Discovery scripts."""
 
-import argparse
+import multiprocessing as mp
+from argparse import ArgumentParser
 
 from pymatviz.enums import Key
 
 from matbench_discovery.enums import Model, TestSubset
 
-cli_parser = argparse.ArgumentParser(
-    description="CLI flags for plotting and analysis scripts."
+cli_parser = ArgumentParser(
+    description="CLI flags for eval, plot and analysis scripts."
 )
-plot_group = cli_parser.add_argument_group(
-    "plot", "Arguments for controlling figure generation"
-)
-plot_group.add_argument(
+
+cli_parser.add_argument(
     "--models",
     nargs="*",
     type=Model,  # type: ignore[arg-type]
     choices=Model,
     default=list(Model),
     help="Models to analyze. If none specified, analyzes all models.",
+)
+cli_parser.add_argument(
+    "--debug",
+    type=int,
+    default=0,
+    help="If > 0, only analyze this many structures/items.",
+)
+cli_parser.add_argument(
+    "--workers",
+    type=int,
+    default=max(1, mp.cpu_count() - 1),
+    help="Number of processes to use for parallel tasks.",
+)
+cli_parser.add_argument(
+    "--overwrite",
+    action="store_true",
+    help="Overwrite existing output files.",
+)
+cli_parser.add_argument(
+    "-n",
+    "--dry-run",
+    action="store_true",
+    help="Print what would be done without actually doing it.",
+)
+
+plot_group = cli_parser.add_argument_group(
+    "plot", "Arguments for controlling figure generation"
 )
 plot_group.add_argument(
     "--test-subset",

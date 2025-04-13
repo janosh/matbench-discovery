@@ -6,7 +6,6 @@ models in the Matbench Discovery benchmark. This includes both energy prediction
 ML-relaxed structures, and symmetry analysis files.
 """
 
-import argparse
 import os
 import tomllib
 from collections.abc import Sequence
@@ -17,11 +16,15 @@ from tqdm import tqdm
 
 import matbench_discovery.remote.figshare as figshare
 from matbench_discovery import PKG_DIR, ROOT
+from matbench_discovery.cli import cli_parser
 from matbench_discovery.data import round_trip_yaml
 from matbench_discovery.enums import Model
 
 with open(f"{PKG_DIR}/modeling-tasks.yml") as file:
     MODELING_TASKS: Final = yaml.safe_load(file)
+    # remove 'cps' task as it's a dynamic metric with changing weights
+    # no point in uploading to figshare
+    MODELING_TASKS.pop("cps", None)
 
 with open(f"{ROOT}/pyproject.toml", mode="rb") as toml_file:
     pyproject = tomllib.load(toml_file)["project"]
@@ -52,64 +55,6 @@ def process_exclusion_prefixes(items: list[str], all_items: list[str]) -> list[s
             result.remove(item)
 
     return result
-
-
-def parse_args(args: Sequence[str] | None = None) -> argparse.Namespace:
-    """Parse command line arguments."""
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    parser.add_argument(
-        "--models",
-        nargs="*",
-        type=str,  # Changed from Model to str to handle exclusion prefixes
-        default=[model.name for model in Model],  # Use model names as strings
-        help="Models to analyze. If none specified, analyzes all models. "
-        "Prefix with '!' to exclude. Note: exclamation mark needs to be "
-        "backslash-escaped in shell.",
-    )
-    parser.add_argument(
-        "--tasks",
-        nargs="+",
-        type=str,  # Changed from direct choices to str to handle exclusion prefixes
-        default=list(MODELING_TASKS),
-        help="Space-separated list of modeling tasks to update. Defaults to all tasks. "
-        "Prefix with '!' to exclude. Note: exclamation mark needs to be "
-        "backslash-escaped in shell.",
-    )
-    parser.add_argument(
-        "-n",
-        "--dry-run",
-        action="store_true",
-        help="Print what would be uploaded without actually uploading",
-    )
-    parser.add_argument(
-        "--file-type",
-        choices=["all", "analysis", "pred"],
-        default="all",
-        help="Type of files to upload: analysis, pred or all (default)",
-    )
-    parser.add_argument(
-        "--force-reupload",
-        action="store_true",
-        help="Force reupload of files even if they already exist with the same hash",
-    )
-
-    parsed_args = parser.parse_known_args(args)[0]
-
-    # Process exclusion prefixes for tasks
-    all_tasks = list(MODELING_TASKS)
-    parsed_args.tasks = process_exclusion_prefixes(parsed_args.tasks, all_tasks)
-
-    # Process exclusion prefixes for models and convert strings to Model enum
-    all_models = [model.name for model in Model]
-    processed_models = process_exclusion_prefixes(parsed_args.models, all_models)
-
-    # Convert string model names to Model enum instances
-    parsed_args.models = [Model[model] for model in processed_models]
-
-    return parsed_args
 
 
 def get_article_metadata(task: str) -> dict[str, Sequence[object]]:
@@ -352,19 +297,71 @@ def update_one_modeling_task_article(
 
 
 def main(args: Sequence[str] | None = None) -> int:
-    """Main function to upload model prediction files to Figshare."""
-    parsed_args = parse_args(args)
-    models_to_update = parsed_args.models
-    tasks_to_update = parsed_args.tasks
-    if dry_run := parsed_args.dry_run:
+    """Main function to upload model prediction files to Figshare.
+
+    Args:
+        args: Command line arguments. If None, sys.argv[1:] will be used.
+
+    Returns:
+        int: Exit code (0 for success).
+    """
+    # Add figshare-specific arguments to the central CLI parser
+    figshare_group = cli_parser.add_argument_group(
+        "figshare", "Arguments for Figshare upload functionality"
+    )
+    figshare_group.add_argument(
+        "--tasks",
+        nargs="+",
+        type=str,
+        default=list(MODELING_TASKS),
+        help="Space-separated list of modeling tasks to update. Defaults to all tasks. "
+        "Prefix with '!' to exclude. Note: exclamation mark needs to be "
+        "backslash-escaped in shell.",
+    )
+    figshare_group.add_argument(
+        "--file-type",
+        choices=["all", "analysis", "pred"],
+        default="all",
+        help="Type of files to upload: analysis, pred or all (default)",
+    )
+    figshare_group.add_argument(
+        "--force-reupload",
+        action="store_true",
+        help="Force reupload of files even if they already exist with the same hash",
+    )
+    figshare_group.add_argument(
+        "--interactive",
+        action="store_true",
+        default=True,
+        help="Enable interactive prompts for file deletion",
+    )
+
+    args = cli_parser.parse_known_args(args)[0]
+
+    # Process exclusion prefixes for tasks
+    all_tasks = list(MODELING_TASKS)
+    args.tasks = process_exclusion_prefixes(args.tasks, all_tasks)
+
+    # Process exclusion prefixes for models
+    if hasattr(args, "models") and args.models is not None:
+        # Convert Model enum instances to strings for exclusion processing
+        model_names = [model.name for model in args.models]
+        all_models = [model.name for model in Model]
+        processed_models = process_exclusion_prefixes(model_names, all_models)
+        # Convert back to Model enum instances
+        args.models = [Model[model] for model in processed_models]
+
+    models_to_update = args.models
+    tasks_to_update = args.tasks
+    if dry_run := args.dry_run:
         print("\nDry run mode - no files will be uploaded")
     print(
         f"Updating {len(models_to_update)} models: "
         f"{', '.join(model.name for model in models_to_update)}"
     )
     print(f"Updating {len(tasks_to_update)} tasks: {', '.join(tasks_to_update)}")
-    print(f"File type filter: {parsed_args.file_type}")
-    if parsed_args.force_reupload:
+    print(f"File type filter: {args.file_type}")
+    if args.force_reupload:
         print("Force reupload: True - will reupload files even if they already exist")
 
     for task in tasks_to_update:
@@ -373,9 +370,9 @@ def main(args: Sequence[str] | None = None) -> int:
                 task,
                 models_to_update,
                 dry_run=dry_run,
-                file_type=parsed_args.file_type,
-                force_reupload=parsed_args.force_reupload,
-                interactive=True,
+                file_type=args.file_type,
+                force_reupload=args.force_reupload,
+                interactive=args.interactive,
             )
         except Exception as exc:  # prompt to delete article if something went wrong
             state = {
