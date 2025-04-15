@@ -24,7 +24,6 @@ def test_model_dirs_have_metadata() -> None:
     required = {
         "authors": list,  # dict with name, affiliation, orcid?, email?
         "date_added": str,
-        "matbench_discovery_version": str,
         "model_name": str,
         "model_version": str,
         "repo": str,

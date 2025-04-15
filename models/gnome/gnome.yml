@@ -1,7 +1,6 @@
 model_name: GNoME
 model_key: gnome
 model_version: n/a
-matbench_discovery_version: 1.0.0
 date_added: "2024-02-03"
 date_published: "2023-11-29"
 authors:

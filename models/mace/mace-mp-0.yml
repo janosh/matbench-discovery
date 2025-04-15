@@ -1,7 +1,6 @@
 model_name: MACE-MP-0
 model_key: mace-mp-0
 model_version: v0.3.5
-matbench_discovery_version: 1.0.0
 date_added: "2023-07-14"
 date_published: "2022-05-13"
 authors:

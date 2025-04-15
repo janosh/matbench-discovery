@@ -109,7 +109,6 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    model_name: My new model # required (this must match the model's label which is the 3rd arg in the matbench_discovery.preds.Model enum)
    model_key: my-new-model # this should match the name of the YAML file and determines the URL /models/<model_key> on which details of the model are displayed on the website
    model_version: 1.0.0
-   matbench_discovery_version: 1.0
    date_added: "2023-01-01"
    date_published: "2022-12-05"
    authors:
