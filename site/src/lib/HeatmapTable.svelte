@@ -20,7 +20,7 @@
   let {
     data,
     columns = [],
-    sort_hint = `Click on column headers to sort table rows`,
+    sort_hint = ``,
     style = null,
     cell,
     controls,
@@ -206,18 +206,20 @@
 </script>
 
 <!-- Table header with sort hint and controls side by side -->
-<div class="table-header">
-  {#if Object.keys(sort_state).length && sort_hint}
-    <div class="sort-hint">{sort_hint}</div>
-  {/if}
+{#if (Object.keys(sort_state).length && sort_hint) || controls}
+  <div class="table-header">
+    {#if Object.keys(sort_state).length && sort_hint}
+      <div class="sort-hint">{sort_hint}</div>
+    {/if}
 
-  <!-- Add controls rendering here -->
-  {#if controls}
-    <div class="controls-container">
-      {@render controls()}
-    </div>
-  {/if}
-</div>
+    <!-- Add controls rendering here -->
+    {#if controls}
+      <div class="controls-container">
+        {@render controls()}
+      </div>
+    {/if}
+  </div>
+{/if}
 
 <div bind:this={div} class="table-container" {style} use:titles_as_tooltips>
   <table class:fixed-header={fixed_header} class="heatmap heatmap-table">

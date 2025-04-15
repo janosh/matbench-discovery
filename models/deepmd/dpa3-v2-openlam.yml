@@ -27,10 +27,10 @@ trained_by:
     affiliation: AI for Science Institute, Beijing
     orcid: https://orcid.org/0000-0002-0630-2187
 
-repo: https://github.com/deepmodeling/deepmd-kit/tree/devel
-url: https://github.com/deepmodeling/deepmd-kit/tree/devel
-doi: https://github.com/deepmodeling/deepmd-kit/tree/devel # to be released soon
-paper: https://github.com/deepmodeling/deepmd-kit/tree/devel # to be released soon
+repo: missing
+url: missing
+doi: missing # to be released soon
+paper: missing # to be released soon
 pr_url: https://github.com/janosh/matbench-discovery/pull/222
 # checkpoints reported in https://github.com/deepmodeling/deepmd-kit/discussions/4682
 checkpoint_url: https://figshare.com/files/52989059
@@ -84,6 +84,8 @@ hyperparams:
     training_steps: 2000000
     batch_size: 256 # 32 (gpus) * 8 (batch per gpu) = 256 (total batch size)
     epochs: 45
+  graph_construction_radius: 6.0 # Å
+  max_neighbors: 120 # from https://github.com/deepmodeling/deepmd-kit/discussions/4682#discussioncomment-12836651
 
 requirements:
   torch: 2.3.1
@@ -97,7 +99,7 @@ training_cost: missing
 
 notes:
   Description: |
-    DPA3 is an advanced interatomic potential leveraging the message passing architecture, implemented within the DeePMD-kit framework, available at GitHub(https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha).
+    DPA3 is an advanced interatomic potential leveraging the message passing architecture, implemented within the DeePMD-kit framework, available on [GitHub](https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha).
     Designed as a large atomic model (LAM), DPA3 is tailored to integrate and simultaneously train on datasets from various disciplines, encompassing diverse chemical and materials systems across different research domains.
     Its model design ensures exceptional fitting accuracy and robust generalization both within and beyond the training domain.
     Furthermore, DPA3 maintains energy conservation and respects the physical symmetries of the potential energy surface, making it a dependable tool for a wide range of scientific applications.

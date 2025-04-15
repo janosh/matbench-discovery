@@ -7,7 +7,6 @@
   import { RadioButtons, Tooltip } from 'svelte-zoo'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
-  import type { Snapshot } from './$types'
 
   let sort_by: keyof ModelStats | `model_name` = $state(`CPS`)
   let show_non_compliant: boolean = $state(true)
@@ -34,7 +33,7 @@
     },
   ]
 
-  export const snapshot: Snapshot = {
+  export const snapshot = {
     capture: () => ({ show_details, sort_by, order, show_n_best }),
     restore: (values) => ({ show_details, sort_by, order, show_n_best } = values),
   }

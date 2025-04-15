@@ -35,7 +35,7 @@
 
   let active_files: { name: string; url: string }[] = $state([])
   let active_model_name = $state(``)
-  let pred_file_modal: HTMLDialogElement | null = $state(null)
+  let active_dropdown_pos = $state<{ x: number; y: number; name: string } | null>(null)
   const [compliant_clr, noncompliant_clr] = [`#4caf50`, `#4682b4`]
 
   let columns = $derived(
@@ -69,12 +69,27 @@
       noncompliant_clr,
     )
   })
+
+  function show_dropdown(event: MouseEvent, links: LinkData) {
+    event.stopPropagation()
+
+    // Get button position for dropdown placement
+    const button = event.currentTarget as HTMLElement
+    const rect = button.getBoundingClientRect()
+
+    active_model_name = links.pred_files.name
+    active_files = links.pred_files.files
+
+    // Position dropdown relative to the viewport
+    active_dropdown_pos = { x: rect.left, y: rect.bottom, name: links.pred_files.name }
+  }
+  const close_dropdown = () => (active_dropdown_pos = null)
 </script>
 
 <svelte:window
   onkeydown={(event) => {
-    if (event.key === `Escape` && pred_file_modal?.open) {
-      pred_file_modal.open = false
+    if (event.key === `Escape` && active_dropdown_pos) {
+      close_dropdown()
       event.preventDefault()
     }
   }}
@@ -107,27 +122,24 @@
   {#snippet cell({ col, val })}
     {#if col.label === `Links` && val && typeof val === `object` && `paper` in val}
       {@const links = val as LinkData}
-      {#each Object.entries(links).filter(([key]) => key !== `pred_files`) as [key, link] (key)}
+      {#each Object.entries(links).filter(([key]) => key !== `pred_files`) as [key, link] (JSON.stringify(link))}
         {#if `url` in link && ![`missing`, `not available`, ``, null, undefined].includes(link.url)}
           <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title}>
-            {link.icon}
+            {@html link.icon}
           </a>
         {:else}
-          <span title="{key} not available">🚫</span>
+          <span title="{key} not available">
+            <svg><use href="#icon-unavailable"></use></svg>
+          </span>
         {/if}
       {/each}
       {#if links?.pred_files}
         <button
           class="pred-files-btn"
-          title="Download model prediction files"
-          onclick={() => {
-            if (!pred_file_modal) return
-            pred_file_modal.open = true
-            active_files = links.pred_files.files
-            active_model_name = links.pred_files.name
-          }}
+          aria-label="Download model prediction files"
+          onclick={(event) => show_dropdown(event, links)}
         >
-          📊
+          <svg><use href="#icon-graph"></use></svg>
         </button>
       {/if}
     {:else if typeof val === `number` && col.format}
@@ -140,83 +152,48 @@
   {/snippet}
 </HeatmapTable>
 
-<dialog
-  bind:this={pred_file_modal}
-  use:click_outside={{
-    callback: () => {
-      if (pred_file_modal?.open) pred_file_modal.open = false
-    },
-  }}
->
-  <div class="modal-content">
-    <button
-      class="close-btn"
-      onclick={() => {
-        if (pred_file_modal?.open) pred_file_modal.open = false
-      }}
-      title="Close (or click escape)"
-    >
-      ×
-    </button>
-    <h3>Download prediction files for {active_model_name}</h3>
-    <ol class="pred-files-list">
-      {#each active_files as { name, url } (name + url)}
+{#if active_dropdown_pos}
+  {@const { x, y } = active_dropdown_pos}
+  <div
+    class="pred-files-dropdown"
+    style="position: fixed; left: {x}px; top: {y}px;"
+    use:click_outside={{ callback: close_dropdown }}
+  >
+    <h4>Files for {active_model_name}</h4>
+    <ol>
+      {#each active_files as { name, url } (url)}
         <li>
           <a href={url} target="_blank" rel="noopener noreferrer">
-            {name}
+            {@html name}
           </a>
         </li>
       {/each}
     </ol>
   </div>
-</dialog>
+{/if}
 
 <style>
-  dialog {
-    visibility: hidden;
-    opacity: 0;
-    background: var(--light-bg);
-    color: var(--text-color);
-    border: none;
-    border-radius: 5pt;
-    padding: 0;
-    max-width: min(90vw, 500px);
-  }
-
-  dialog[open] {
-    visibility: visible;
-    opacity: 1;
-    z-index: 2;
-  }
-
   .pred-files-btn {
     background: none;
     padding: 0;
   }
-
-  .modal-content {
-    padding: 1em;
+  .pred-files-dropdown {
+    transform: translateX(-100%);
+    margin-left: 20px;
+    background: var(--light-bg, white);
+    color: var(--text-color, black);
+    border-radius: 5px;
+    padding: 0.75em;
   }
-
-  .modal-content h3 {
-    margin: 0 0 1ex;
-  }
-
-  .pred-files-list {
+  .pred-files-dropdown h4 {
     margin: 0;
-    padding: 0 1em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
-
-  .close-btn {
-    position: absolute;
-    top: 0;
-    right: 0;
-    background: none;
-    cursor: pointer;
-    font-size: 24px;
-  }
-  .close-btn:hover {
-    color: var(--link-color);
+  .pred-files-dropdown ol {
+    margin: 0;
+    padding-left: 1em;
   }
   div.controls-row {
     display: flex;

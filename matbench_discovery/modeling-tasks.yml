@@ -39,7 +39,7 @@ phonons:
     higher_is_better: []
   subtasks:
     kappa_103:
-      label: κ<sub>SRME</sub> (103)
+      label: κ<sub>SRME</sub>
       description: Lattice thermal conductivity symmetric relative mean error for 103 PhononDB structures
 
 diatomics:

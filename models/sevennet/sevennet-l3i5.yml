@@ -66,7 +66,8 @@ hyperparams:
   n_layers: 5
   n_features: 128 l=0 scalars, 64 l=1 vectors, 32 l=2 tensors, 32 l=3 tensors
   n_radial_bessel_basis: 8
-  radial_cutoff: 5.0 # Å
+  graph_construction_radius: 5.0 # Å, from sevennet-l3i5/hyperparams.yaml
+  max_neighbors: .inf
   sph_harmonics_l_max: 3
 
 requirements:

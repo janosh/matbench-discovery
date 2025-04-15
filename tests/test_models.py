@@ -91,7 +91,7 @@ def test_model_dirs_have_metadata() -> None:
         assert isinstance(date_added, str), f"Invalid {date_added=} not a string"
         assert isinstance(authors, list)
         assert 1 < len(authors) < 30, f"{len(authors)=} not between 1 and 30"
-        assert repo.startswith("https://"), (
+        assert repo == "missing" or repo.startswith("https://"), (
             f"Invalid {repo=} not starting with https://"
         )
 

@@ -69,8 +69,8 @@ hyperparams:
   n_layers: 15
   features: 256 latent dim, 512 MLP dim
   num_rbfs: 50
-  radial_cutoff: 10.0 # Å
-  max_num_neighbors: 20
+  graph_construction_radius: 10.0
+  max_neighbors: 20
 
 requirements:
   orb-models: "0.4.0"

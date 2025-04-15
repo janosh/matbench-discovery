@@ -40,7 +40,7 @@
   {/if}
 
   <div>
-    <svg class="icon"><use href="#icon-calendar"></use></svg>
+    <svg><use href="#icon-calendar"></use></svg>
     Created: <Tooltip text="{days_created} days ago">
       {format_date(dataset.date_created)}
     </Tooltip>
@@ -48,7 +48,7 @@
 
   {#if dataset.date_added}
     <div>
-      <svg class="icon"><use href="#icon-calendar-plus"></use></svg>
+      <svg><use href="#icon-calendar-plus"></use></svg>
       Added: <Tooltip text="{days_added} days ago">
         {format_date(dataset.date_added)}
       </Tooltip>
@@ -56,7 +56,7 @@
   {/if}
 
   <div>
-    <svg class="icon"><use href="#icon-database"></use></svg>
+    <svg><use href="#icon-database"></use></svg>
     <Tooltip text={dataset.n_structures.toLocaleString()}>
       {pretty_num(dataset.n_structures, `.3~s`)}
     </Tooltip> structures
@@ -64,7 +64,7 @@
 
   {#if dataset.n_materials}
     <div>
-      <svg class="icon"><use href="#icon-lattice"></use></svg>
+      <svg><use href="#icon-lattice"></use></svg>
       <Tooltip text={dataset.n_materials.toLocaleString()}>
         {pretty_num(dataset.n_materials, `.3~s`)}
       </Tooltip> materials
@@ -72,12 +72,12 @@
   {/if}
 
   <div>
-    <svg class="icon"><use href="#icon-{dataset.open ? `unlock` : `lock`}"></use></svg>
+    <svg><use href="#icon-{dataset.open ? `unlock` : `lock`}"></use></svg>
     {dataset.open ? `Open` : `Closed`}
   </div>
 
   <div>
-    <svg class="icon"><use href="#icon-license"></use></svg>
+    <svg><use href="#icon-license"></use></svg>
     {dataset.license}
   </div>
 </section>
@@ -89,7 +89,7 @@
     title="View dataset website"
     use:titles_as_tooltips
   >
-    <svg class="icon"><use href="#icon-globe"></use></svg> Website
+    <svg><use href="#icon-globe"></use></svg> Website
   </a>
 
   {#if dataset.download_url}
@@ -99,7 +99,7 @@
       title="Download dataset"
       use:titles_as_tooltips
     >
-      <svg class="icon"><use href="#icon-download"></use></svg> Download
+      <svg><use href="#icon-download"></use></svg> Download
     </a>
   {/if}
 
@@ -110,7 +110,7 @@
       title="Digital Object Identifier"
       use:titles_as_tooltips
     >
-      <svg class="icon"><use href="#icon-doi"></use></svg> DOI
+      <svg><use href="#icon-doi"></use></svg> DOI
     </a>
   {/if}
 
@@ -120,7 +120,7 @@
     title="View source YAML file"
     use:titles_as_tooltips
   >
-    <svg class="icon"><use href="#icon-code"></use></svg> Source
+    <svg><use href="#icon-code"></use></svg> Source
   </a>
 </section>
 
@@ -189,20 +189,20 @@
           {#if person.affiliation}<span class="affiliation">({person.affiliation})</span
             >{/if}
           {#if person.email}<a href="mailto:{person.email}" aria-label="Email">
-              <svg class="icon"><use href="#icon-mail"></use></svg>
+              <svg><use href="#icon-mail"></use></svg>
             </a>{/if}
           {#if person.github}
             <a href={person.github} {...ext_link_props} aria-label="GitHub">
-              <svg class="icon"><use href="#icon-github"></use></svg>
+              <svg><use href="#icon-github"></use></svg>
             </a>
           {/if}
           {#if person.orcid}
             <a href={person.orcid} {...ext_link_props} aria-label="ORCID">
-              <svg class="icon"><use href="#icon-orcid"></use></svg>
+              <svg><use href="#icon-orcid"></use></svg>
             </a>{/if}
           {#if person.url}
             <a href={person.url} {...ext_link_props} aria-label="Website">
-              <svg class="icon"><use href="#icon-globe"></use></svg>
+              <svg><use href="#icon-globe"></use></svg>
             </a>{/if}
         </li>
       {/each}

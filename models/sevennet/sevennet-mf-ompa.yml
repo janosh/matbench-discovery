@@ -82,7 +82,8 @@ hyperparams:
     - 128x0e+64x1o+32x2e+32x3o
     - 128x0e
   n_radial_bessel_basis: 8
-  radial_cutoff: 6.0 # Å
+  graph_construction_radius: 6.0 # Å, from SevenNet-mf-ompa/hyperparams.yaml
+  max_neighbors: .inf
   sph_harmonics_l_max: 3
 
 requirements:

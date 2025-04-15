@@ -55,6 +55,9 @@ hyperparams:
     energy: 1
     force: 1
     stress: 0.1
+  graph_construction_radius: 5.0 # Å, from https://github.com/materialsvirtuallab/m3gnet/blob/3a8b14df/m3gnet/models/_m3gnet.py#L95
+  three_body_cutoff: 4.0
+  max_neighbors: .inf
 
 training_set: [MPF]
 training_cost: missing

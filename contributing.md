@@ -153,7 +153,9 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
       max_steps: 500
       ase_optimizer: FIRE
       optimizer: Adam
-      ... # additional hyperparameters describing training
+      graph_construction_radius: 6.0
+      max_neighbors: 50
+      ... # additional hyperparameters describing training and inference
 
    training_cost: # list any hardware used to train the model and for how long
      # hardware: { amount: float, hours: float, cost: float [USD] }

@@ -1,63 +1,8 @@
 // This file is auto-generated from model-schema.yml. Do not edit directly.
 
-export type ModelType = `GNN` | `UIP` | `BO-GNN` | `Fingerprint` | `Transformer` | `RF`
-export type TargetType = `E` | `EF_G` | `EF_D` | `EFS_G` | `EFS_D` | `EFS_GM` | `EFS_DM`
-export type GeoOptMetrics = {
+export type ModelMetadata = {
   [k: string]: unknown
 } & {
-  struct_col?: string
-  pred_file?: string | null
-  pred_file_url?: string
-  'symprec=1e-5'?: {
-    rmsd: number
-    n_sym_ops_mae: number
-    symmetry_decrease: number
-    symmetry_match: number
-    symmetry_increase: number
-    n_structures: number
-    analysis_file?: string | null
-    analysis_file_url?: string
-  }
-  'symprec=1e-2'?: {
-    rmsd: number
-    n_sym_ops_mae: number
-    symmetry_decrease: number
-    symmetry_match: number
-    symmetry_increase: number
-    n_structures: number
-    analysis_file?: string | null
-    analysis_file_url?: string
-  }
-}
-export type DiscoveryMetrics = {
-  [k: string]: unknown
-} & {
-  pred_col: string
-  pred_file?: string | null
-  pred_file_url?: string
-  full_test_set?: DiscoveryMetricsSet
-  most_stable_10k?: DiscoveryMetricsSet
-  unique_prototypes?: DiscoveryMetricsSet
-}
-export type DiatomicsMetrics = {
-  [k: string]: unknown
-} & {
-  pred_file?: string | null
-  pred_file_url?: string
-  smoothness?: number
-  tortuosity?: number
-  conservation?: number
-  energy_diff_flips?: number
-  energy_grad_norm_max?: number
-  energy_jump?: number
-  force_mae?: number
-  force_flips?: number
-  force_total_variation?: number
-  force_jump?: number
-  force_conservation?: number
-}
-
-export interface ModelMetadata {
   model_name: string
   model_key?: string
   model_version: string
@@ -141,7 +86,14 @@ export interface ModelMetadata {
     batch_size?: number
     epochs?: number
     n_layers?: number
-    radial_cutoff?: number
+    /**
+     * Cutoff radius in Angstroms for graph construction (required for GNN and UIP models)
+     */
+    graph_construction_radius?: number
+    /**
+     * Maximum number of neighbors to consider in graph construction (required for GNN and UIP models)
+     */
+    max_neighbors?: number | `missing`
     [k: string]: unknown
   }
   notes?: {
@@ -179,6 +131,63 @@ export interface ModelMetadata {
     diatomics?: DiatomicsMetrics | (`not applicable` | `not available`)
   }
 }
+export type ModelType = `GNN` | `UIP` | `BO-GNN` | `Fingerprint` | `Transformer` | `RF`
+export type TargetType = `E` | `EF_G` | `EF_D` | `EFS_G` | `EFS_D` | `EFS_GM` | `EFS_DM`
+export type GeoOptMetrics = {
+  [k: string]: unknown
+} & {
+  struct_col?: string
+  pred_file?: string | null
+  pred_file_url?: string
+  'symprec=1e-5'?: {
+    rmsd: number
+    n_sym_ops_mae: number
+    symmetry_decrease: number
+    symmetry_match: number
+    symmetry_increase: number
+    n_structures: number
+    analysis_file?: string | null
+    analysis_file_url?: string
+  }
+  'symprec=1e-2'?: {
+    rmsd: number
+    n_sym_ops_mae: number
+    symmetry_decrease: number
+    symmetry_match: number
+    symmetry_increase: number
+    n_structures: number
+    analysis_file?: string | null
+    analysis_file_url?: string
+  }
+}
+export type DiscoveryMetrics = {
+  [k: string]: unknown
+} & {
+  pred_col: string
+  pred_file?: string | null
+  pred_file_url?: string
+  full_test_set?: DiscoveryMetricsSet
+  most_stable_10k?: DiscoveryMetricsSet
+  unique_prototypes?: DiscoveryMetricsSet
+}
+export type DiatomicsMetrics = {
+  [k: string]: unknown
+} & {
+  pred_file?: string | null
+  pred_file_url?: string
+  smoothness?: number
+  tortuosity?: number
+  conservation?: number
+  energy_diff_flips?: number
+  energy_grad_norm_max?: number
+  energy_jump?: number
+  force_mae?: number
+  force_flips?: number
+  force_total_variation?: number
+  force_jump?: number
+  force_conservation?: number
+}
+
 export interface Person {
   name: string
   affiliation?: string

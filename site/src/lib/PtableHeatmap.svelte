@@ -3,7 +3,6 @@
   import { ColorBar, PeriodicTable, TableInset, type ChemicalElement } from 'elementari'
   import type { ComponentProps } from 'svelte'
   import { Toggle } from 'svelte-zoo'
-  import type { Snapshot } from './$types'
 
   interface Props {
     heatmap_values: Record<string, number>
@@ -20,7 +19,7 @@
     color_bar_props = {},
   }: Props = $props()
 
-  export const snapshot: Snapshot = {
+  export const snapshot = {
     capture: () => ({ color_scale, log }),
     restore: (values) => ({ color_scale, log } = values),
   }

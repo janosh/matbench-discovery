@@ -385,8 +385,15 @@ properties:
         type: number
       n_layers:
         type: number
-      radial_cutoff:
+      graph_construction_radius:
         type: number
+        description: Cutoff radius in Angstroms for graph construction (required for GNN and UIP models)
+      max_neighbors:
+        oneOf:
+          - type: number
+          - type: string
+            enum: [missing]
+        description: Maximum number of neighbors to consider in graph construction (required for GNN and UIP models)
   notes:
     type: object
     additionalProperties: true
@@ -480,6 +487,19 @@ properties:
           - $ref: "#/definitions/DiatomicsMetrics"
           - type: string
             enum: [not applicable, not available]
+
+# Require graph_construction_radius, max_neighbors for GNN and UIP models
+allOf:
+  - if:
+      properties:
+        model_type:
+          enum: [GNN, UIP]
+      required: [model_type]
+    then:
+      required: [hyperparams]
+      properties:
+        hyperparams:
+          required: [graph_construction_radius, max_neighbors]
 
 required:
   - authors

@@ -404,6 +404,5 @@ for (label, df_met), show_non_compliant in itertools.product(
     # Hide the original index since it's the same content same as model_name_col except
     # model_name_col also has HTML title attributes for hover tooltips
     styler.hide(axis="index")
-    suffix = "" if show_non_compliant else "-only-compliant"
     non_compliant_idx = [*set(styler.index) & set(non_compliant_models)]
     display(styler.set_caption(df_met.attrs["title"]))
