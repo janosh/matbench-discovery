@@ -41,7 +41,7 @@
 
     <section class="meta-info">
       <div>
-        Version: {#if model.repo}
+        Version: {#if model.repo?.startsWith(`http`)}
           <a
             href="{model.repo}/releases/tag/{model.model_version}"
             target="_blank"
@@ -55,21 +55,21 @@
       </div>
 
       <div>
-        <svg class="icon"><use href="#icon-calendar"></use></svg>
+        <svg><use href="#icon-calendar"></use></svg>
         Added: <Tooltip text="{days_added} days ago">
           {model.date_added}
         </Tooltip>
       </div>
 
       <div>
-        <svg class="icon"><use href="#icon-calendar-check"></use></svg>
+        <svg><use href="#icon-calendar-check"></use></svg>
         Published: <Tooltip text="{days_published} days ago">
           {model.date_published}
         </Tooltip>
       </div>
 
       <div>
-        <svg class="icon"><use href="#icon-neural-network"></use></svg>
+        <svg><use href="#icon-neural-network"></use></svg>
         <Tooltip text={model.model_params.toLocaleString()}>
           {pretty_num(model.model_params, `.3~s`)}
         </Tooltip> parameters
@@ -77,14 +77,14 @@
 
       {#if model.n_estimators > 1}
         <div>
-          <svg class="icon"><use href="#icon-forest"></use></svg>
+          <svg><use href="#icon-forest"></use></svg>
           <span>Ensemble {model.n_estimators} models</span>
         </div>
       {/if}
 
       {#if missing_preds != undefined}
         <div>
-          <svg class="icon"><use href="#icon-missing-metadata"></use></svg>
+          <svg><use href="#icon-missing-metadata"></use></svg>
           <span>
             Missing preds: {pretty_num(missing_preds, `,.0f`)}
             {#if missing_preds != 0}
@@ -104,15 +104,17 @@
     </section>
 
     <section class="links">
-      <a
-        href={model.repo}
-        target="_blank"
-        rel="noopener noreferrer"
-        title="View source code repository"
-        use:titles_as_tooltips
-      >
-        <svg class="icon"><use href="#icon-github"></use></svg> Repo
-      </a>
+      {#if model.repo.startsWith(`http`)}
+        <a
+          href={model.repo}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="View source code repository"
+          use:titles_as_tooltips
+        >
+          <svg><use href="#icon-github"></use></svg> Repo
+        </a>
+      {/if}
       {#if model.paper?.startsWith(`http`)}
         <a
           href={model.paper}
@@ -121,7 +123,7 @@
           title="Read model paper"
           use:titles_as_tooltips
         >
-          <svg class="icon"><use href="#icon-paper"></use></svg> Paper
+          <svg><use href="#icon-paper"></use></svg> Paper
         </a>
       {/if}
       {#if model.url?.startsWith(`http`)}
@@ -132,7 +134,7 @@
           title="View model documentation"
           use:titles_as_tooltips
         >
-          <svg class="icon"><use href="#icon-docs"></use></svg> Docs
+          <svg><use href="#icon-docs"></use></svg> Docs
         </a>
       {/if}
       {#if model.doi?.startsWith(`http`)}
@@ -143,7 +145,7 @@
           title="Digital Object Identifier"
           use:titles_as_tooltips
         >
-          <svg class="icon"><use href="#icon-doi"></use></svg> DOI
+          <svg><use href="#icon-doi"></use></svg> DOI
         </a>
       {/if}
       <a
@@ -153,9 +155,9 @@
         title="Browse model submission files"
         use:titles_as_tooltips
       >
-        <svg class="icon"><use href="#icon-directory"></use></svg> Files
+        <svg><use href="#icon-directory"></use></svg> Files
       </a>
-      {#if model.pypi}
+      {#if model.pypi?.startsWith(`http`)}
         <a
           href={model.pypi}
           target="_blank"
@@ -163,7 +165,7 @@
           title="Python package on PyPI"
           use:titles_as_tooltips
         >
-          <svg class="icon"><use href="#icon-pypi"></use></svg> PyPI
+          <svg><use href="#icon-pypi"></use></svg> PyPI
         </a>
       {/if}
       <a
@@ -173,7 +175,7 @@
         title="View pull request"
         use:titles_as_tooltips
       >
-        <svg class="icon"><use href="#icon-pull-request"></use></svg> PR
+        <svg><use href="#icon-pull-request"></use></svg> PR
       </a>
       {#if model.checkpoint_url?.startsWith(`http`)}
         <a
@@ -183,7 +185,7 @@
           title="Download model checkpoint"
           use:titles_as_tooltips
         >
-          <svg class="icon"><use href="#icon-download"></use></svg> Checkpoint
+          <svg><use href="#icon-download"></use></svg> Checkpoint
         </a>
       {/if}
       {#if model.metrics}
@@ -198,7 +200,7 @@
             }}
           >
             <summary title="Download model prediction files" use:titles_as_tooltips>
-              <svg class="icon"><use href="#icon-graph"></use></svg> Predictions
+              <svg><use href="#icon-graph"></use></svg> Predictions
             </summary>
             <div class="dropdown">
               {#each pred_files as { name, url } (url)}
@@ -269,7 +271,7 @@
             {#if author.affiliation}<span class="affiliation">({author.affiliation})</span
               >{/if}
             {#if author.email}<a href="mailto:{author.email}" aria-label="Email">
-                <svg class="icon"><use href="#icon-mail"></use></svg>
+                <svg><use href="#icon-mail"></use></svg>
               </a>{/if}
             {#if author.github}<a
                 href={author.github}
@@ -277,7 +279,7 @@
                 rel="noopener noreferrer"
                 aria-label="GitHub"
               >
-                <svg class="icon"><use href="#icon-github"></use></svg>
+                <svg><use href="#icon-github"></use></svg>
               </a>{/if}
             {#if author.orcid}
               <a
@@ -286,7 +288,7 @@
                 rel="noopener noreferrer"
                 aria-label="ORCID"
               >
-                <svg class="icon"><use href="#icon-orcid"></use></svg>
+                <svg><use href="#icon-orcid"></use></svg>
               </a>{/if}
           </li>
         {/each}
@@ -309,7 +311,7 @@
                   rel="noopener noreferrer"
                   aria-label="ORCID"
                 >
-                  <svg class="icon"><use href="#icon-orcid"></use></svg>
+                  <svg><use href="#icon-orcid"></use></svg>
                 </a>{/if}
               {#if trainer.github}<a
                   href={trainer.github}
@@ -317,7 +319,7 @@
                   rel="noopener noreferrer"
                   aria-label="GitHub"
                 >
-                  <svg class="icon"><use href="#icon-github"></use></svg>
+                  <svg><use href="#icon-github"></use></svg>
                 </a>{/if}
             </li>
           {/each}
@@ -501,11 +503,5 @@
   /* hide plotly titles */
   div.model-detail :global(svg g.infolayer g.g-gtitle) {
     display: none;
-  }
-  .icon {
-    width: 1em;
-    height: 1em;
-    vertical-align: -0.125em;
-    display: inline-block;
   }
 </style>

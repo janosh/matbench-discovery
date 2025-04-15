@@ -4,15 +4,17 @@ import {
   all_higher_better_metrics,
   all_lower_better_metrics,
   calc_cell_color,
+  calculate_metrics_data,
   format_train_set,
   get_geo_opt_property,
   make_combined_filter,
+  METADATA_COLS,
   metric_better_as,
   targets_tooltips,
 } from '$lib/metrics'
 import type { TargetType } from '$lib/model-schema'
-import type { CombinedMetricConfig, ModelData } from '$lib/types'
-import { afterEach, beforeEach, describe, expect, it, test, vi } from 'vitest'
+import type { CombinedMetricConfig, HeatmapColumn, ModelData } from '$lib/types'
+import { beforeEach, describe, expect, it, test, vi } from 'vitest'
 
 const model_is_compliant_mock = vi.hoisted(() => vi.fn())
 
@@ -37,10 +39,6 @@ describe(`metric_better_as`, () => {
     // Setup spies instead of mocking the entire arrays
     vi.spyOn(all_higher_better_metrics, `includes`)
     vi.spyOn(all_lower_better_metrics, `includes`)
-  })
-
-  afterEach(() => {
-    vi.restoreAllMocks()
   })
 
   it.each([
@@ -154,22 +152,30 @@ describe(`format_train_set`, () => {
   })
 
   it(`formats training sets without n_materials correctly using n_structures`, () => {
-    // Find a dataset that doesn't have n_materials
-    const dataset_without_n_materials = Object.keys(DATASETS).find(
-      (key) => DATASETS[key].n_structures && !DATASETS[key].n_materials,
-    )
+    // Create a copy of a dataset and remove its n_materials property
+    const mptrj = { ...DATASETS[mptrj_key] }
+    const n_structures = mptrj.n_structures
+    const { slug } = mptrj
+    delete mptrj.n_materials
 
-    if (!dataset_without_n_materials)
-      throw `No dataset without n_materials found in DATASETS`
+    // Replace the DATASETS object with our modified version
+    Object.defineProperty(DATASETS, `Modified_MPtrj`, {
+      value: mptrj,
+      configurable: true,
+    })
 
-    const dataset = DATASETS[dataset_without_n_materials]
-    const result = format_train_set([dataset_without_n_materials])
+    try {
+      const result = format_train_set([`Modified_MPtrj`])
 
-    // Should use n_structures as data-sort-value
-    expect(result).toContain(`data-sort-value="${dataset.n_structures}"`)
+      // Should use n_structures as data-sort-value
+      expect(result).toContain(`data-sort-value="${n_structures}"`)
 
-    // Should include internal link to dataset slug page
-    expect(result).toContain(`<a href="/data/${dataset.slug}"`)
+      // Should include internal link to dataset slug page
+      expect(result).toContain(`<a href="/data/${slug}"`)
+    } finally {
+      // Clean up by restoring original DATASETS
+      delete DATASETS.Modified_MPtrj
+    }
   })
 })
 
@@ -226,10 +232,6 @@ describe(`get_geo_opt_property`, () => {
 })
 
 describe(`make_combined_filter function - skipped since using real implementation`, () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
   it(`returns false when the user filter returns false`, () => {
     const model_filter = vi.fn().mockReturnValue(false)
     const filter = make_combined_filter(model_filter, true, true)
@@ -721,5 +723,156 @@ describe(`calculate_cps`, () => {
       // (1.0 * 0.999) + (0 * 0.001) / (0.999 + 0.001) = 0.999
       expect(score).toBeCloseTo(0.999, 3)
     })
+  })
+})
+
+describe(`calculate_metrics_data`, () => {
+  // Mock the models and other dependencies
+  vi.mock(`$lib`, () => {
+    return {
+      DATASETS: {
+        'MP 2022': {
+          title: `MP 2022`,
+          n_materials: 100,
+          n_structures: 100,
+          slug: `mp-2022`,
+        },
+        MPtrj: { title: `MPtrj`, n_materials: 200, n_structures: 300, slug: `mptrj` },
+      },
+      MODELS: [
+        {
+          model_name: `TestModel1`,
+          model_key: `test-model-1`,
+          model_version: `1.0`,
+          targets: `EF_G`,
+          training_set: [`MP 2022`],
+          model_params: 1000000,
+          date_added: `2023-01-01`,
+          hyperparams: { graph_construction_radius: 5.0 },
+          license: {
+            code: `MIT`,
+            code_url: `https://example.com/license-code`,
+            checkpoint: `Apache-2.0`,
+            checkpoint_url: `https://example.com/license-checkpoint`,
+          },
+          metrics: {
+            discovery: {
+              full_test_set: {
+                F1: 0.8,
+                DAF: 10,
+                Precision: 0.9,
+                Accuracy: 0.85,
+                TPR: 0.75,
+                TNR: 0.95,
+                MAE: 0.05,
+                RMSE: 0.1,
+                R2: 0.8,
+              },
+            },
+            geo_opt: { 'symprec=0.1': { rmsd: 0.025 } },
+            phonons: { kappa_103: { κ_SRME: 0.3 } },
+          },
+        },
+        {
+          model_name: `TestModel2`,
+          model_key: `test-model-2`,
+          model_version: `1.0`,
+          targets: `E`,
+          training_set: [`MPtrj`],
+          model_params: 500000,
+          date_added: `2023-02-01`,
+          hyperparams: {}, // No graph_construction_radius
+          license: { code: `MIT`, code_url: `https://example.com/license-code2` },
+          metrics: { discovery: { full_test_set: { F1: 0.7, Precision: 0.8 } } },
+        },
+      ],
+      model_is_compliant: vi.fn().mockReturnValue(true),
+      format_date: vi.fn().mockReturnValue(`Formatted Date`),
+      get_pred_file_urls: vi.fn().mockReturnValue([]),
+    }
+  })
+
+  it(`returns formatted rows with all expected properties, including r_cut`, () => {
+    const rows = calculate_metrics_data(
+      `full_test_set`,
+      () => true,
+      true,
+      true,
+      DEFAULT_CPS_CONFIG,
+    )
+
+    expect(rows.length).toBe(2)
+
+    // Test the first row (with r_cut)
+    const row1 = rows[0]
+    expect(row1.Model).toContain(`TestModel1`)
+    expect(row1.CPS).toBeCloseTo(0.83, 1)
+    expect(row1.F1).toBe(0.8)
+    expect(row1.RMSD).toBe(0.025)
+    expect(row1[`κ<sub>SRME</sub>`]).toBe(0.3)
+    expect(row1[`r<sub>cut</sub>`]).toContain(`5 Å`)
+    expect(row1[`r<sub>cut</sub>`]).toContain(`data-sort-value="5"`)
+
+    // Test the second row (without r_cut)
+    const row2 = rows[1]
+    expect(row2[`r<sub>cut</sub>`]).toBe(`n/a`)
+  })
+
+  it(`sorts rows by CPS in descending order`, () => {
+    const rows = calculate_metrics_data(
+      `full_test_set`,
+      () => true,
+      true,
+      true,
+      DEFAULT_CPS_CONFIG,
+    )
+
+    // First row should be TestModel1 with higher CPS
+    expect(rows[0].Model).toContain(`TestModel1`)
+    expect(rows[1].Model).toContain(`TestModel2`)
+
+    // Check CPS ordering
+    const cps1 = rows[0].CPS as number | null
+    const cps2 = rows[1].CPS as number | null
+
+    if (cps1 !== null && cps2 !== null) {
+      expect(cps1).toBeGreaterThan(cps2)
+    }
+  })
+})
+
+describe(`METADATA_COLS`, () => {
+  it(`contains all expected metadata columns in the right order`, () => {
+    const expected_labels = [
+      `Model`,
+      `Training Set`,
+      `Params`,
+      `Targets`,
+      `Date Added`,
+      `Links`,
+      `r<sub>cut</sub>`,
+      `Checkpoint License`,
+      `Code License`,
+    ]
+
+    expect(METADATA_COLS.map((col: HeatmapColumn) => col.label)).toEqual(expected_labels)
+  })
+
+  it(`has the correct properties for each column`, () => {
+    // Test special properties of columns
+    const model_col = METADATA_COLS.find((col: HeatmapColumn) => col.label === `Model`)
+    expect(model_col?.sticky).toBe(true)
+    expect(model_col?.sortable).toBe(true)
+
+    const links_col = METADATA_COLS.find((col: HeatmapColumn) => col.label === `Links`)
+    expect(links_col?.sortable).toBe(false)
+
+    // Test r_cut column specifically
+    const r_cut_col = METADATA_COLS.find(
+      (col: HeatmapColumn) => col.label === `r<sub>cut</sub>`,
+    )
+    expect(r_cut_col).toBeDefined()
+    expect(r_cut_col?.tooltip).toContain(`Graph construction radius`)
+    expect(r_cut_col?.visible).toBe(false)
   })
 })

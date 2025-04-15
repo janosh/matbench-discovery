@@ -112,7 +112,8 @@ hyperparams:
   seed: 42
   batch_size: 128
   units: 256
-  radial_cutoff: 5.0 # Å
+  graph_construction_radius: 5.0 # Å
+  max_neighbors: .inf
 
 notes:
   Description: This is an open source version of MatterSim V1 based on M3GNet architecture.

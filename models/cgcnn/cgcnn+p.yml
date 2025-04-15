@@ -55,6 +55,8 @@ training_cost: missing
 
 hyperparams:
   Perturbations: 5
+  graph_construction_radius: 5.0 # Å, from https://github.com/CompRhys/aviary/blob/451f5739/aviary/cgcnn/data.py#L28
+  max_neighbors: .inf # CGCNN paper benchmarks 6.0 Å cutoff radius vs. 12 NNs graph construction
 
 notes:
   Description: |

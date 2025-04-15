@@ -70,7 +70,8 @@ hyperparams:
   max_steps: 500
   ase_optimizer: FIRE
   cell_filter: FrechetCellFilter
-  radial_cutoff: 6.0
+  graph_construction_radius: 6.0 # Å
+  max_neighbors: .inf
 
 notes:
   Description: |

@@ -10,7 +10,6 @@
   import { PtableHeatmap } from '$lib'
   import { ColorScaleSelect } from 'elementari'
   import Select from 'svelte-multiselect'
-  import type { Snapshot } from './$types'
   import MPtrjElemCountsPtable from './[slug]/MPtrjElemCountsPtable.svelte'
   import DataFilesDirectDownload from './data-files-direct-download.md'
   import MpElementalReferenceEnergies from './mp-elemental-reference-energies.md'
@@ -38,7 +37,7 @@
     if (!wbm_elem_counts) throw `No WBM data for count mode ${count_mode}!`
   })
 
-  export const snapshot: Snapshot = {
+  export const snapshot = {
     capture: () => ({ color_scale, log, count_mode }),
     restore: (values) => ({ color_scale, log, count_mode } = values),
   }

@@ -60,7 +60,8 @@ hyperparams:
   max_steps: 500
   ase_optimizer: FIRE
   cell_filter: FrechetCellFilter
-  radial_cutoff: 6.0
+  graph_construction_radius: 6.0 # Å, from https://github.com/ICAMS/grace-tensorpotential/blob/3115a931429/tensorpotential/calculator/foundation_models.py#L83-L84
+  max_neighbors: .inf
 
 metrics:
   phonons:

@@ -52,7 +52,7 @@
     title="{show_details ? `Hide` : `Show`} authors and package versions"
   >
     <!-- change between expand/collapse icon -->
-    <svg class="icon"><use href="#icon-arrow-{show_details ? `up` : `down`}"></use></svg>
+    <svg><use href="#icon-arrow-{show_details ? `up` : `down`}"></use></svg>
   </button>
 </h2>
 <nav>

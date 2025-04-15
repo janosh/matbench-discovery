@@ -86,6 +86,8 @@ hyperparams:
   stochastic_depth: 0.1
   batch_size: 256
   epochs: 16
+  graph_construction_radius: 12.0 # Å
+  max_neighbors: 20 # see table 7 in arXiv:2410.12771
 
 notes:
   Description: |

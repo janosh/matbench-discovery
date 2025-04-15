@@ -50,6 +50,10 @@ n_estimators: 10
 training_set: [MP 2022]
 training_cost: missing
 
+hyperparams:
+  graph_construction_radius: 5.0 # Å, from  https://github.com/CompRhys/aviary/blob/451f5739/aviary/cgcnn/data.py#L28
+  max_neighbors: .inf # CGCNN paper benchmarks on 6.0 Å against 12 NNs graph construction
+
 notes:
   Description: |
     Published in 2018, CGCNN was the first crystal graph convolutional neural network to directly learn 8 different DFT-computed material properties from a graph representing the atoms and bonds in a crystal.

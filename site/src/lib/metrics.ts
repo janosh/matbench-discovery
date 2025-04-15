@@ -254,6 +254,19 @@ export function calculate_metrics_data(
           ? `border-left: 3px solid ${is_compliant ? compliant_clr : noncompliant_clr};`
           : null
 
+        // Add model links
+        const code_license = license?.code
+          ? license_str(license.code, license.code_url)
+          : `n/a`
+        const checkpoint_license = license?.checkpoint
+          ? license_str(license.checkpoint, license.checkpoint_url)
+          : `n/a`
+
+        const r_cut = model.hyperparams?.graph_construction_radius
+        const r_cut_str = r_cut
+          ? `<span data-sort-value="${r_cut}">${r_cut} Å</span>`
+          : `n/a`
+
         return {
           Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>`,
           CPS: cps,
@@ -277,26 +290,34 @@ export function calculate_metrics_data(
             paper: {
               url: model.paper || model.doi,
               title: `Read model paper`,
-              icon: `📄`,
+              icon: `<svg><use href="#icon-paper"></use></svg>`,
             },
-            repo: { url: model.repo, title: `View source code`, icon: `📦` },
-            pr_url: { url: model.pr_url, title: `View pull request`, icon: `🔗` },
+            repo: {
+              url: model.repo,
+              title: `View source code`,
+              icon: `<svg><use href="#icon-code"></use></svg>`,
+            },
+            pr_url: {
+              url: model.pr_url,
+              title: `View pull request`,
+              icon: `<svg><use href="#icon-pull-request"></use></svg>`,
+            },
             checkpoint: {
               url: model.checkpoint_url,
               title: `Download model checkpoint`,
-              icon: `💾`,
+              icon: `<svg><use href="#icon-download"></use></svg>`,
             },
             pred_files: { files: get_pred_file_urls(model), name: model.model_name },
           } as LinkData,
-          'Checkpoint License': license_str(license?.checkpoint, license?.checkpoint_url),
-          'Code License': license_str(license?.code, license?.code_url),
+          'Checkpoint License': checkpoint_license,
+          'Code License': code_license,
+          'r<sub>cut</sub>': r_cut_str,
           row_style,
         }
       })
       // Sort by combined score (descending)
       .sort((row1, row2) => {
-        const score1 = row1[`CPS`]
-        const score2 = row2[`CPS`]
+        const [score1, score2] = [row1[`CPS`], row2[`CPS`]]
 
         // Handle NaN values (they should be sorted to the bottom)
         const is_nan1 = score1 === null || isNaN(score1)
@@ -382,15 +403,18 @@ export const METADATA_COLS: HeatmapColumn[] = [
     sortable: false,
   },
   {
+    label: `r<sub>cut</sub>`,
+    tooltip: `Graph construction radius in Ångströms (cutoff distance for creating edges in the graph)`,
+    visible: false,
+  },
+  {
     label: `Checkpoint License`,
     tooltip: `Model checkpoint license`,
-    sortable: true,
     visible: false,
   },
   {
     label: `Code License`,
     tooltip: `Model code license`,
-    sortable: true,
     visible: false,
   },
 ]

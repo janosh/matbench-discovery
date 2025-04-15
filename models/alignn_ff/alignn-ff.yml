@@ -61,7 +61,10 @@ n_estimators: 1
 model_params: 0 # paper doesn't mention and no longer able to load model checkpoint to count parameters
 trained_for_benchmark: true
 status: aborted
-# for hyperparams, see alignn-config.json
+
+hyperparams:
+  graph_construction_radius: 8.0 # Å, from Methodology section in arXiv:2209.05554
+  max_neighbors: 12
 
 training_set: [MPtrj]
 training_cost: missing

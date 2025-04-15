@@ -83,6 +83,8 @@ hyperparams:
     training_steps: 2000000
   batch_size: 64 # 16 (gpus) * 4 (batch per gpu) = 64 (total batch size)
   epochs: 160 # round1 80 + round2 80
+  graph_construction_radius: 6.0 # Å
+  max_neighbors: 120 # from https://github.com/deepmodeling/deepmd-kit/discussions/4682#discussioncomment-12836651
 
 requirements:
   torch: 2.3.1
@@ -96,7 +98,7 @@ training_cost: missing
 
 notes:
   Description: |
-    DPA3 is an advanced interatomic potential leveraging the message passing architecture, implemented within the DeePMD-kit framework, available at GitHub(https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha).
+    DPA3 is an advanced interatomic potential leveraging the message passing architecture, implemented within the DeePMD-kit framework, available on [GitHub](https://github.com/deepmodeling/deepmd-kit/tree/dpa3-alpha).
     Designed as a large atomic model (LAM), DPA3 is tailored to integrate and simultaneously train on datasets from various disciplines, encompassing diverse chemical and materials systems across different research domains.
     Its model design ensures exceptional fitting accuracy and robust generalization both within and beyond the training domain.
     Furthermore, DPA3 maintains energy conservation and respects the physical symmetries of the potential energy surface, making it a dependable tool for a wide range of scientific applications.
