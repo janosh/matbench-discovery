@@ -19,6 +19,7 @@ import type {
   HeatmapColumn,
   LinkData,
   ModelData,
+  ModelStats,
   RowData,
 } from './types'
 
@@ -105,8 +106,9 @@ export function metric_better_as(metric: string) {
 }
 
 // Format training set information for display in the metrics table
-export function format_train_set(model_train_sets: string[]): string {
-  let [total_structs, total_materials] = [0, 0]
+export function format_train_set(model_train_sets: string[], model: ModelData): string {
+  const { n_training_structures = 0, n_training_materials = 0 } = model
+
   const data_urls: Record<string, string> = {}
   const tooltip: string[] = []
 
@@ -116,8 +118,6 @@ export function format_train_set(model_train_sets: string[]): string {
       continue
     }
     const { title, slug, n_structures, n_materials = n_structures } = DATASETS[data_name]
-    total_structs += n_structures
-    total_materials += n_materials
     data_urls[data_name] = `/data/${slug}`
 
     if (n_materials !== n_structures) {
@@ -136,18 +136,18 @@ export function format_train_set(model_train_sets: string[]): string {
   const dataset_tooltip =
     tooltip.length > 1 ? `${new_line}• ${tooltip.join(new_line + `• `)}` : ``
 
-  let title = `${pretty_num(total_materials, `,`)} materials in training set${new_line}${dataset_tooltip}`
-  let train_size_str = `<span title="${title}" data-sort-value="${total_materials}">${pretty_num(total_materials)} <small>${dataset_links}</small></span>`
+  let title = `${pretty_num(n_training_materials, `,`)} materials in training set${new_line}${dataset_tooltip}`
+  let train_size_str = `<span title="${title}" data-sort-value="${n_training_materials}">${pretty_num(n_training_materials)} <small>${dataset_links}</small></span>`
 
-  if (total_materials !== total_structs) {
+  if (n_training_materials !== n_training_structures) {
     title =
-      `${pretty_num(total_materials, `,`)} materials in training set ` +
-      `(${pretty_num(total_structs, `,`)} structures counting all DFT relaxation ` +
+      `${pretty_num(n_training_materials, `,`)} materials in training set ` +
+      `(${pretty_num(n_training_structures, `,`)} structures counting all DFT relaxation ` +
       `frames per material)${dataset_tooltip}`
 
     train_size_str =
-      `<span title="${title}" data-sort-value="${total_materials}">` +
-      `${pretty_num(total_materials)} <small>(${pretty_num(total_structs)})</small> ` +
+      `<span title="${title}" data-sort-value="${n_training_materials || n_training_structures}">` +
+      `${pretty_num(n_training_materials)} <small>(${pretty_num(n_training_structures)})</small> ` +
       `<small>${dataset_links}</small></span>`
   }
 
@@ -281,7 +281,7 @@ export function calculate_metrics_data(
           'R<sup>2</sup>': discover_metrics?.R2,
           'κ<sub>SRME</sub>': kappa,
           RMSD: rmsd,
-          'Training Set': format_train_set(model.training_set),
+          'Training Set': format_train_set(model.training_set, model),
           Params: `<span title="${pretty_num(model.model_params, `,`)}" trainable model parameters" data-sort-value="${model.model_params}">${pretty_num(model.model_params)}</span>`,
           Targets: targets_str,
           'Date Added': `<span title="${format_date(model.date_added)}" data-sort-value="${new Date(model.date_added).getTime()}">${model.date_added}</span>`,
@@ -477,6 +477,44 @@ export const ALL_METRICS: HeatmapColumn[] = [
   ...PHONON_METRICS,
   ...GEO_OPT_METRICS.slice(0, 1), // Only include RMSD by default, others can be toggled
 ]
+
+// Define display labels and tooltips for metrics
+export const metric_labels: Record<
+  keyof ModelStats,
+  { label: string; tooltip?: string; unit?: string }
+> = {
+  CPS: { label: `CPS`, tooltip: `Combined Performance Score` },
+  Accuracy: { label: `Accuracy` },
+  DAF: {
+    label: `DAF`,
+    tooltip: `Discovery Acceleration Factor`,
+  },
+  F1: { label: `F1 Score`, tooltip: `Harmonic mean of precision and recall` },
+  MAE: { label: `MAE`, tooltip: `Mean Absolute Error`, unit: `eV / atom` },
+  Precision: {
+    label: `Precision`,
+    tooltip: `Precision of classifying thermodynamic stability`,
+  },
+  R2: { label: `R<sup>2</sup>`, tooltip: `Coefficient of determination` },
+  RMSE: { label: `RMSE`, tooltip: `Root Mean Squared Error`, unit: `eV / atom` },
+  TNR: { label: `TNR`, tooltip: `True Negative Rate` },
+  TPR: { label: `TPR`, tooltip: `True Positive Rate` },
+  model_name: { label: `Model Name` },
+  κ_SRME: {
+    label: `κ<sub>SRME</sub>`,
+    tooltip: `Symmetric relative mean error in predicted phonon mode contributions to thermal conductivity κ`,
+  },
+  // Add missing fields from ModelStats interface
+  Recall: { label: `Recall`, tooltip: `Recall of classifying thermodynamic stability` },
+  missing_preds: {
+    label: `Missing Predictions`,
+    tooltip: `Number of missing predictions`,
+  },
+  missing_percent: { label: `Missing %`, tooltip: `Percentage of missing predictions` },
+  'Run Time (h)': { label: `Run Time`, tooltip: `Runtime in hours`, unit: `h` },
+  GPUs: { label: `GPUs`, tooltip: `Number of GPUs used` },
+  CPUs: { label: `CPUs`, tooltip: `Number of CPUs used` },
+}
 
 export const DISCOVERY_SET_LABELS: Record<
   DiscoverySet,
