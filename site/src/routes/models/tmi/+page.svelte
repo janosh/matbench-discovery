@@ -6,17 +6,20 @@
   import ScatterLargestEachErrorsFpDiffModels from '$figs/scatter-largest-each-errors-fp-diff-models.svelte'
   import ScatterLargeFpDiffVsEachError from '$figs/scatter-largest-fp-diff-each-error-models.svelte'
   import ElementErrorsPtableHeatmap from './ElementErrorsPtableHeatmap.svelte'
+  import DiscoveryMetricFigs from './discovery-metric-figs.md'
 </script>
 
 <h1>Too Much Information</h1>
 
 Stuff that didn't make the cut into the&nbsp;<a href="/models">model page</a>.
 
-<h2 style="margin: 4em auto 1em; text-align: center;">
-  Per-Element Model Error Heatmaps
-</h2>
+<h2>Per-Element Model Error Heatmaps</h2>
 
 <ElementErrorsPtableHeatmap />
+
+<br />
+
+<DiscoveryMetricFigs />
 
 <h2>Does error correlate with element prevalence in training set?</h2>
 
@@ -26,8 +29,8 @@ structures containing that element. That's not what we see in this plot. E<sub
   >above hull</sub
 >
 is all over the place as a function of elemental training set prevalence. Could be because
-the error is dominated by the least abundant element in composition or the model errors
-are more dependent on geometry than chemistry.
+the error is dominated by the least abundant element in composition or the model errors are
+more dependent on geometry than chemistry.
 
 {#if browser}
   <ElementPrevalenceVsErr style="margin: 2em 0;" />

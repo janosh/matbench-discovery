@@ -236,9 +236,6 @@
   {/snippet}
 </Readme>
 <KappaNote />
-{#await import(`$routes/landing-page-figs.md`) then LandingPageFigs}
-  <LandingPageFigs.default />
-{/await}
 
 <style>
   figure {
