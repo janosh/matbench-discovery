@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { DiscoverySet, ModelData } from '$lib'
   import { calculate_days_ago } from '$lib'
+  import { DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score'
   import { format_property_path, get_format } from '$lib/properties'
   import type { DataSeries } from 'elementari'
   import { ScatterPlot } from 'elementari'
@@ -186,6 +187,18 @@
   let x_format = $derived(get_format(models_to_show.map((item) => item.x)))
   let y_format = $derived(get_format(models_to_show.map((item) => item.y)))
 
+  // Set axis domains based on DEFAULT_CPS_CONFIG ranges if applicable
+  function get_metric_range(prop_path: string | undefined): [number, number] | undefined {
+    if (!prop_path) return
+    const { label, range, parts } = DEFAULT_CPS_CONFIG
+
+    if (prop_path === label && range) return range // selected prop is CPS
+
+    // Otherwise, check if it's one of the parts
+    const part = Object.values(parts).find((p) => p.path === prop_path)
+    return part?.range
+  }
+
   // Update series when dependencies change
   let series: DataSeries[] = $derived.by(() => {
     // Base styling for points
@@ -266,6 +279,8 @@
       {x_label}
       {y_label}
       {x_format}
+      x_lim={get_metric_range(axes.x?.[0])}
+      y_lim={get_metric_range(axes.y?.[0])}
       {y_format}
       markers="points"
       {style}
@@ -278,7 +293,7 @@
       color_bar={{
         label: color_label,
         label_side: `top`,
-        wrapper_style: `position: absolute; top: 20px; left: 80px;`,
+        // wrapper_style: `position: absolute; top: 20px; left: 80px;`,
       }}
       {...rest}
     >

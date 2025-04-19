@@ -140,6 +140,7 @@ export type CombinedMetricConfig = {
   label: string
   name: string
   key: string
+  range: [number, number]
   description: string
 }
 
