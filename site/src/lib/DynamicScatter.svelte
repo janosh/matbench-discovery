@@ -29,18 +29,19 @@
 
   // Define property paths for available axes options
   const property_paths = [
-    `model_params`,
-    `date_added`,
-    `n_training_materials`,
-    `n_training_structures`,
-    // Discovery metrics
-    ...[`F1`, `Precision`, `Recall`, `Accuracy`, `DAF`, `R2`, `MAE`, `RMSE`].map(
-      (key) => `discovery.${discovery_set}.${key}`,
-    ),
+    `CPS`,
     // Phonon metrics
     `phonons.kappa_103.κ_SRME`,
     // Geo opt metrics
     `geo_opt.symprec=1e-2.rmsd`,
+    // Discovery metrics
+    ...[`F1`, `Precision`, `Recall`, `Accuracy`, `DAF`, `R2`, `MAE`, `RMSE`].map(
+      (key) => `discovery.${discovery_set}.${key}`,
+    ),
+    `model_params`,
+    `date_added`,
+    `n_training_materials`,
+    `n_training_structures`,
     // Hyperparameter metrics for GNN and UIP models
     `hyperparams.graph_construction_radius`,
     `hyperparams.max_force`,

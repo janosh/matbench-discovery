@@ -27,7 +27,7 @@ export const CATEGORY_LABELS: Record<string, string> = {
   discovery: `Discovery`,
   phonons: `Phonons`,
   geo_opt: `Geometry Optimization`,
-  hyperparams: `Hyperparameters`,
+  hyperparams: `Hyperparams`,
 }
 
 // Special property mapping for direct properties
@@ -48,6 +48,7 @@ export const PROPERTY_LABELS: Record<string, string> = {
   // Add metric names for clearer labels
   rmsd: `RMSD`,
   κ_SRME: `κ<sub>SRME</sub>`,
+  CPS: `Combined Performance Score`,
 }
 
 // Helper function to format scientific notation with superscript
