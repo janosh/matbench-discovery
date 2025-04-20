@@ -1,5 +1,6 @@
 {
   "name": "matbench-discovery",
+  "title": "Matbench Discovery",
   "description": "Benchmarking machine learning energy models for materials discovery.",
   "author": "Janosh Riebesell <janosh.riebesell@gmail.com>",
   "homepage": "https://matbench-discovery.materialsproject.org",
@@ -18,11 +19,14 @@
     "test": "vitest",
     "changelog": "npx auto-changelog --output ../changelog.md --hide-credit --commit-limit false"
   },
+  "dependencies": {
+    "html-to-image": "^1.11.13"
+  },
   "devDependencies": {
     "@rollup/plugin-yaml": "^4.1.2",
     "@stylistic/eslint-plugin": "^4.2.0",
     "@sveltejs/adapter-static": "^3.0.8",
-    "@sveltejs/kit": "^2.20.5",
+    "@sveltejs/kit": "^2.20.7",
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
     "@types/d3-array": "^3.2.1",
     "@types/d3-scale": "^4.0.9",
@@ -30,11 +34,12 @@
     "@types/js-yaml": "^4.0.9",
     "@types/json-schema": "^7.0.15",
     "@types/node": "^22.14.1",
+    "@vitest/coverage-v8": "^3.1.1",
     "d3-array": "^3.2.4",
     "d3-scale": "^4.0.2",
     "d3-scale-chromatic": "^3.1.0",
-    "elementari": "^0.3.3",
-    "eslint": "^9.24.0",
+    "elementari": "^0.3.7",
+    "eslint": "^9.25.0",
     "eslint-plugin-svelte": "^3.5.1",
     "hastscript": "^9.0.1",
     "iconify-icon": "^2.3.0",
@@ -52,7 +57,7 @@
     "remark-math": "6.0.0",
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
-    "svelte": "^5.26.2",
+    "svelte": "^5.28.1",
     "svelte-check": "^4.1.6",
     "svelte-multiselect": "11.0.0-rc.1",
     "svelte-preprocess": "^6.0.3",
@@ -61,17 +66,14 @@
     "svelte2tsx": "^0.7.36",
     "tslib": "^2.8.1",
     "typescript": "5.8.3",
-    "typescript-eslint": "^8.29.1",
+    "typescript-eslint": "^8.30.1",
     "unified": "^11.0.5",
-    "vite": "^6.2.6",
+    "vite": "^6.3.2",
     "vitest": "^3.1.1"
   },
   "prettier": {
     "semi": false,
     "singleQuote": true,
     "printWidth": 90
-  },
-  "dependencies": {
-    "html-to-image": "^1.11.13"
   }
 }

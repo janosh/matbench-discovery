@@ -26,7 +26,7 @@ describe(`Models Page`, () => {
     const button_texts = Array.from(buttons).map((btn) => btn.textContent?.trim())
 
     expect(button_texts).toContain(`Model Name`)
-    expect(button_texts).toContain(`F1`)
+    expect(button_texts).toContain(`F1 Score`)
     expect(button_texts).toContain(`DAF`)
     expect(button_texts).toContain(`R2`)
   })

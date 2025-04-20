@@ -7,3 +7,6 @@ build
 
 # secrets
 .env
+
+# coverage
+coverage-summary.json

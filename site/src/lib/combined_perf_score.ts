@@ -7,6 +7,7 @@ export const DEFAULT_CPS_CONFIG: CombinedMetricConfig = {
   name: `Combined Performance Score`,
   key: `cps`,
   description: `Combined Performance Score averages discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>) according to user-defined weights`,
+  range: [0, 1],
   parts: {
     F1: {
       path: `discovery.unique_prototypes.F1`,

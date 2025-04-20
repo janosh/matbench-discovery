@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { ModelStatLabel, ModelStats } from '$lib'
   import { model_is_compliant, ModelCard, MODELS } from '$lib'
-  import { get_metric_value, metric_better_as } from '$lib/metrics'
+  import { get_metric_value, metric_better_as, metric_labels } from '$lib/metrics'
   import { interpolateCividis as cividis } from 'd3-scale-chromatic'
   import { ColorBar } from 'elementari'
   import { RadioButtons, Tooltip } from 'svelte-zoo'
@@ -15,23 +15,25 @@
   let show_n_best: number = $state(MODELS.length) // show only best models
   const min_models: number = 2
 
-  const stats: ModelStatLabel[] = [
-    { key: `CPS`, label: `CPS`, tooltip: `Combined Performance Score` },
-    { key: `Accuracy` },
-    { key: `DAF`, tooltip: `Discovery Acceleration Factor` },
-    { key: `F1` },
-    { key: `MAE`, unit: `eV / atom`, tooltip: `Mean Absolute Error` },
-    { key: `Precision` },
-    { key: `R2`, label: `R<sup>2</sup>` },
-    { key: `RMSE`, unit: `eV / atom`, tooltip: `Root Mean Squared Error` },
-    { key: `TNR`, tooltip: `True Negative Rate` },
-    { key: `TPR`, tooltip: `True Positive Rate` },
-    {
-      key: `κ_SRME`,
-      label: `κ<sub>SRME</sub>`,
-      tooltip: `symmetric relative mean error in predicted phonon mode contributions to thermal conductivity κ`,
-    },
+  // Derive stats directly from metric_labels
+  const metric_keys = [
+    `CPS`,
+    `Accuracy`,
+    `DAF`,
+    `F1`,
+    `MAE`,
+    `Precision`,
+    `R2`,
+    `RMSE`,
+    `TNR`,
+    `TPR`,
+    `κ_SRME`,
   ]
+  const stats: ModelStatLabel[] = metric_keys.map((key) => ({
+    key,
+    label: metric_labels[key]?.label,
+    tooltip: metric_labels[key]?.tooltip,
+  }))
 
   export const snapshot = {
     capture: () => ({ show_details, sort_by, order, show_n_best }),

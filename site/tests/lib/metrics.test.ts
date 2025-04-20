@@ -86,7 +86,11 @@ describe(`format_train_set`, () => {
   const mp2022 = DATASETS[mp2022_key]
 
   it(`formats single training set correctly`, () => {
-    const result = format_train_set([mp2022_key])
+    const mock_model: Partial<ModelData> = {
+      n_training_structures: mp2022.n_structures,
+      n_training_materials: mp2022.n_materials,
+    }
+    const result = format_train_set([mp2022_key], mock_model as ModelData)
 
     // Check that the result contains key information without hardcoding values
     expect(result).toContain(
@@ -102,7 +106,11 @@ describe(`format_train_set`, () => {
       (mp2022.n_materials || mp2022.n_structures) +
       (mptrj.n_materials || mptrj.n_structures)
 
-    const result = format_train_set([mp2022_key, mptrj_key])
+    const mock_model: Partial<ModelData> = {
+      n_training_structures: (mp2022.n_structures || 0) + (mptrj.n_structures || 0),
+      n_training_materials: (mp2022.n_materials || 0) + (mptrj.n_materials || 0),
+    }
+    const result = format_train_set([mp2022_key, mptrj_key], mock_model as ModelData)
 
     // Check that the result contains combined information
     expect(result).toContain(`data-sort-value="${combined_materials}"`)
@@ -123,7 +131,11 @@ describe(`format_train_set`, () => {
       throw `No dataset with different n_materials and n_structures found`
 
     const [key, _dataset] = dataset_with_both
-    const result = format_train_set([key])
+    const mock_model: Partial<ModelData> = {
+      n_training_structures: _dataset.n_structures,
+      n_training_materials: _dataset.n_materials,
+    }
+    const result = format_train_set([key], mock_model as ModelData)
 
     // Check that the result shows both materials and structures
     expect(result).toContain(`<small>(`)
@@ -135,7 +147,11 @@ describe(`format_train_set`, () => {
     // Mock console.warn
     const console_spy = vi.spyOn(console, `warn`).mockImplementation(() => {})
 
-    const result = format_train_set([mp2022_key, `NonExistent`])
+    const mock_model: Partial<ModelData> = {
+      n_training_structures: mp2022.n_structures,
+      n_training_materials: mp2022.n_materials,
+    }
+    const result = format_train_set([mp2022_key, `NonExistent`], mock_model as ModelData)
 
     // Should warn about missing training set with exact message
     expect(console_spy).toHaveBeenCalledWith(
@@ -158,6 +174,11 @@ describe(`format_train_set`, () => {
     const { slug } = mptrj
     delete mptrj.n_materials
 
+    const mock_model_struct_only: Partial<ModelData> = {
+      n_training_structures: n_structures,
+      // No n_training_materials explicitly set
+    }
+
     // Replace the DATASETS object with our modified version
     Object.defineProperty(DATASETS, `Modified_MPtrj`, {
       value: mptrj,
@@ -165,7 +186,10 @@ describe(`format_train_set`, () => {
     })
 
     try {
-      const result = format_train_set([`Modified_MPtrj`])
+      const result = format_train_set(
+        [`Modified_MPtrj`],
+        mock_model_struct_only as ModelData,
+      )
 
       // Should use n_structures as data-sort-value
       expect(result).toContain(`data-sort-value="${n_structures}"`)

@@ -17,7 +17,6 @@
     y_metric?: CpsPart | `CPS`
     metric?: string // Direct metric path for dotted notation (for backward compatibility)
     discovery_set?: DiscoverySet
-    point_color?: string | null
     point_radius?: number
     x_label?: string
     y_label?: string
@@ -36,9 +35,8 @@
     y_lim = [0, 1],
     x_property = `model_params`,
     y_metric = `CPS`,
-    metric = ``, // For dotted path access (MetricScatter compatibility)
+    metric = ``,
     discovery_set = `unique_prototypes`,
-    point_color = null,
     point_radius = 5,
     x_label,
     y_label,
@@ -78,16 +76,7 @@
   // If metric is provided directly (MetricScatter style), use it for y_metric
   let actual_y_metric = $derived(metric || y_metric)
 
-  // Set default colors based on metric
-  const default_color_map: Record<string, string> = {
-    F1: `#ffbb54`,
-    RMSD: `#4dabf7`,
-    kappa_SRME: `#ff6b6b`,
-    CPS: `green`,
-  }
-
-  // Default colors and formats
-  let default_color = $derived(default_color_map[actual_y_metric] ?? `#4dabf7`)
+  // Default formats
   let actual_x_format = $derived(x_property === `date_added` ? `%b %y` : x_format)
 
   // Determine labels
@@ -183,18 +172,13 @@
         date_added: model.date_added,
         days_ago: calculate_days_ago(model.date_added),
       }
-      return { model, x: x !== undefined ? x : 0, y: y !== undefined ? y : 0, metadata }
+      return {
+        model,
+        x: x !== undefined ? x : 0,
+        y: y !== undefined ? y : 0,
+        metadata,
+      }
     }),
-  )
-
-  // Create point styles with model-specific colors
-  let point_styles = $derived(
-    models_to_show.map((item) => ({
-      fill: point_color ?? item.model.color ?? default_color,
-      radius: point_radius,
-      stroke: `white`,
-      stroke_width: 0.5,
-    })),
   )
 
   // Create plot series based on show_model_labels
@@ -202,18 +186,24 @@
     const base_series = {
       x: models_to_show.map((item) => item.x),
       y: models_to_show.map((item) => item.y),
-      point_style: point_styles,
       metadata: models_to_show.map((item) => item.metadata),
+      point_style: models_to_show.map((item) => ({
+        fill: item.model.color ?? `#4dabf7`, // Use model color directly
+        radius: point_radius,
+        stroke: `white`,
+        stroke_width: 0.5,
+      })),
     }
     if (show_model_labels) {
       const labeled_series = {
         ...base_series,
-        point_label: models_to_show.map((item, idx) => ({
+        point_label: models_to_show.map((item) => ({
           text: item.metadata.model_name,
           offset_y: 2,
           offset_x: 10,
           font_size: 12,
-          color: point_styles[idx].fill,
+          // Use model color for label
+          color: item.model.color ?? `black`,
         })),
       }
       return [labeled_series]
