@@ -291,26 +291,22 @@
       y_label_shift={{ x: 0, y: -20 }}
       color_scale_type={log.color ? `log` : `linear`}
       color_scheme="viridis"
-      color_bar={{ label: color_label, label_side: `top` }}
-      label_placement_config={{ link_strength: 10.0, link_distance: 5 }}
+      color_bar={{ label: color_label, label_side: `top`, margin: 30 }}
+      label_placement_config={{ link_strength: 2, link_distance: 1 }}
       {...rest}
     >
       {#snippet tooltip({ x_formatted, y_formatted, metadata })}
-        <div
-          style="white-space: nowrap; font-size: 14px; margin-top: 10px; line-height: 1;"
-        >
-          <strong>{metadata?.model_name}</strong><br />
-          {@html x_label}: {x_formatted}
-          {#if axes.x?.[0] === `date_added` && metadata?.days_ago}
-            <small>({metadata.days_ago} days ago)</small>{/if}<br />
-          {@html y_label.split(` > `).pop()}: {y_formatted}<br />
-          {#if ![`model_params`, `date_added`].includes(axes.color?.[0]) && metadata?.model_name}
-            {@html color_label.split(` > `).pop()}:
-            {models_to_show
-              .find((m) => m.metadata.model_name === metadata.model_name)
-              ?.color_value?.toFixed(2) ?? `N/A`}<br />
-          {/if}
-        </div>
+        <strong>{metadata?.model_name}</strong><br />
+        {@html x_label}: {x_formatted}
+        {#if axes.x?.[0] === `date_added` && metadata?.days_ago}
+          <small>({metadata.days_ago} days ago)</small>{/if}<br />
+        {@html y_label.split(` > `).pop()}: {y_formatted}<br />
+        {#if ![`model_params`, `date_added`].includes(axes.color?.[0]) && metadata?.model_name}
+          {@html color_label.split(` > `).pop()}:
+          {models_to_show
+            .find((m) => m.metadata.model_name === metadata.model_name)
+            ?.color_value?.toFixed(2) ?? `N/A`}<br />
+        {/if}
       {/snippet}
     </ScatterPlot>
   {/key}
