@@ -65,9 +65,7 @@ describe(`TableControls`, () => {
   it(`toggles column visibility panel`, async () => {
     mount(TableControls, {
       target: document.body,
-      props: {
-        visible_cols: sample_cols,
-      },
+      props: { visible_cols: sample_cols },
     })
 
     // Find column toggle button
@@ -118,9 +116,7 @@ describe(`TableControls`, () => {
   it(`renders tooltip info icons`, async () => {
     mount(TableControls, {
       target: document.body,
-      props: {
-        visible_cols: sample_cols,
-      },
+      props: { visible_cols: sample_cols },
     })
 
     // Check for info icons in the document

@@ -4,10 +4,17 @@ export type { Dataset } from './dataset-schema.d.ts'
 export type { ModelMetadata } from './model-schema.d.ts'
 
 export type ModelData = ModelMetadata &
-  ModelStats & { dirname: string; metadata_file: string; color?: string }
+  ModelStats & {
+    dirname: string
+    metadata_file: string
+    color?: string
+    n_training_materials?: number
+    n_training_structures?: number
+  }
 // dirname comes from: models/{dirname}/{model_name}.yml
 
 export type ModelStats = {
+  model_name: string
   MAE: number // mean absolute error
   RMSE: number // root mean squared error
   R2: number
@@ -133,6 +140,7 @@ export type CombinedMetricConfig = {
   label: string
   name: string
   key: string
+  range: [number, number]
   description: string
 }
 

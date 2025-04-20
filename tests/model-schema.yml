@@ -282,8 +282,6 @@ properties:
     type: string
   model_version:
     type: string
-  matbench_discovery_version:
-    type: string
   date_added: &date
     type: string
     format: date
@@ -509,7 +507,6 @@ required:
   - date_published
   - doi
   - license
-  - matbench_discovery_version
   - model_name
   - model_params
   - model_type

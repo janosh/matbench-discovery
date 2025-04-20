@@ -1,7 +1,6 @@
 model_name: SevenNet-0
 model_key: sevennet-0
 model_version: v0.9.1_w_cutoff # 2024-07-11
-matbench_discovery_version: 1.1.2
 date_added: "2024-07-13"
 date_published: "2024-02-06"
 authors:
