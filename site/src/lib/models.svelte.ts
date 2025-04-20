@@ -1,3 +1,4 @@
+import { default as DATASETS } from '$data/datasets.yml'
 import { DEFAULT_CPS_CONFIG, calculate_cps } from './combined_perf_score'
 import type { ModelData } from './types'
 
@@ -33,6 +34,27 @@ export const MODEL_COLORS = [
   `#BA55D3`, // mediumorchid
 ]
 
+// Calculate the total number of materials and structures in a model's training set
+function calculate_training_sizes(model_train_sets: string[] = []): {
+  total_materials: number
+  total_structures: number
+} {
+  let total_materials = 0
+  let total_structures = 0
+
+  for (const data_name of model_train_sets) {
+    if (!(data_name in DATASETS)) {
+      console.warn(`Training set ${data_name} not found in DATASETS`)
+      continue
+    }
+    const { n_structures, n_materials = n_structures } = DATASETS[data_name]
+    total_materials += n_materials
+    total_structures += n_structures
+  }
+
+  return { total_materials, total_structures }
+}
+
 export const MODELS = $state(
   Object.entries(MODEL_METADATA_PATHS)
     .filter(
@@ -43,12 +65,16 @@ export const MODELS = $state(
       // Assign color to each model for consistent coloring across plots
       const model_color = MODEL_COLORS[index % MODEL_COLORS.length]
 
+      // Calculate training set sizes
+      const sizes = calculate_training_sizes(metadata.training_set)
       return {
         ...metadata,
         dirname: key.split(`/`)[2],
         metadata_file: key.replace(/^..\//, ``),
         color: model_color,
         CPS: NaN, // Initial CPS placeholder
+        n_training_materials: sizes.total_materials,
+        n_training_structures: sizes.total_structures,
       }
     }),
 ) as ModelData[]

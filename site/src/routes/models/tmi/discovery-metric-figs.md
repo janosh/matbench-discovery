@@ -7,6 +7,14 @@
   import RollingMaeVsHullDistModels from '$figs/rolling-mae-vs-hull-dist-models.svelte'
 </script>
 
+## Box Plot of Hull Distance Errors
+
+<BoxHullDistErrors />
+
+> @label:fig:box-hull-dist-errors Box plot of interquartile ranges (IQR) of hull distance errors for each model. The whiskers extend to the 5th and 95th percentiles. The horizontal line inside the box shows the median. BOWSR has the highest median error, while Voronoi RF has the highest IQR. Note that MEGNet and CGCNN are the only models with a positive median. Their hull distance errors are biased towards more frequently predicting thermodynamic instability, explaining why they are closest to getting the overall number of stable structures in the test set right (see cumulative precision/recall in @fig:cumulative-precision-recall).
+
+## Cumulative Precision and Recall
+
 <CumulativePrecisionRecall />
 
 > @label:fig:cumulative-precision-recall Model precision and recall for thermodynamic stability classification as a function of number of materials ranked from most to least stable by each model.
@@ -16,13 +24,13 @@
 > This figure highlights how different models perform better or worse depending on the length of the discovery campaign.
 > The UIPs (CHGNet, M3GNet, MACE) are seen to offer significantly improved precision on shorter campaigns of ~20k or less materials validated as they are less prone to false positive predictions among highly stable materials.
 
+## Receiver Operating Characteristic (ROC) Curve
+
 <RocModels />
 
 > @label:fig:roc-models Receiver operating characteristic (ROC) curve for each model. TPR/FPR = true/false positive rate. FPR on the $x$ axis is the fraction of unstable structures classified as stable. TPR on the $y$ axis is the fraction of stable structures classified as stable.
 
-<BoxHullDistErrors />
-
-> @label:fig:box-hull-dist-errors Box plot of interquartile ranges (IQR) of hull distance errors for each model. The whiskers extend to the 5th and 95th percentiles. The horizontal line inside the box shows the median. BOWSR has the highest median error, while Voronoi RF has the highest IQR. Note that MEGNet and CGCNN are the only models with a positive median. Their hull distance errors are biased towards more frequently predicting thermodynamic instability, explaining why they are closest to getting the overall number of stable structures in the test set right (see cumulative precision/recall in @fig:cumulative-precision-recall).
+## Rolling MAE vs Hull Distance
 
 <RollingMaeVsHullDistModels style="place-self: center;" />
 
@@ -34,10 +42,14 @@
 > If the model's error for a given prediction happens to point towards the stability threshold at $E$<sub>above MP hull</sub> = 0, its average error will change the stability classification from true positive/negative to false negative/positive.
 > The width of the 'rolling window' box indicates the width over which prediction errors were averaged.
 
+## Convex Hull Distance Parity Plots
+
 <EachParityModels />
 
 > @label:fig:each-parity-models Parity plots of model-predicted energy distance to the convex hull (based on their formation energy predictions) vs DFT ground truth, color-coded by log density of points.
 > Models are sorted left to right and top to bottom by MAE.
+
+## Distribution of Model-Predicted Hull Distance
 
 <HistClfPredHullDistModels />
 

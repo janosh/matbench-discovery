@@ -4,7 +4,7 @@ from glob import glob
 import pytest
 import yaml
 
-from matbench_discovery import DATA_DIR, __version__
+from matbench_discovery import DATA_DIR
 from matbench_discovery.enums import Model
 from matbench_discovery.models import MODEL_DIRS, MODEL_METADATA, model_is_compliant
 
@@ -24,7 +24,6 @@ def test_model_dirs_have_metadata() -> None:
     required = {
         "authors": list,  # dict with name, affiliation, orcid?, email?
         "date_added": str,
-        "matbench_discovery_version": str,
         "model_name": str,
         "model_version": str,
         "repo": str,
@@ -69,7 +68,7 @@ def test_model_dirs_have_metadata() -> None:
                 err_msg = f"Invalid {key=}, expected {expected} in {model_dir}"
                 assert isinstance(actual_val, expected), err_msg
 
-        authors, date_added, mbd_version, yml_model_name, model_version, repo = (
+        authors, date_added, yml_model_name, model_version, repo = (
             metadata[key] for key in list(required)[:-1]
         )
         assert model_name == yml_model_name, f"{model_name=} != {yml_model_name=}"
@@ -82,12 +81,6 @@ def test_model_dirs_have_metadata() -> None:
         assert 1 < len(model_version) < 30, (
             f"Invalid {model_version=} not between 1 and 30 characters"
         )
-        # TODO increase max allowed version when updating package
-        assert (
-            parse_version("1.0.0")
-            <= parse_version(mbd_version)
-            <= parse_version(__version__)
-        ), f"Invalid matbench-discovery version: {mbd_version}"
         assert isinstance(date_added, str), f"Invalid {date_added=} not a string"
         assert isinstance(authors, list)
         assert 1 < len(authors) < 30, f"{len(authors)=} not between 1 and 30"

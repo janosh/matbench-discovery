@@ -9,6 +9,7 @@ import { MODELS } from './models.svelte'
 import type { ModelData } from './types'
 
 export { default as DiatomicCurve } from './DiatomicCurve.svelte'
+export { default as DynamicScatter } from './DynamicScatter.svelte'
 export { default as Footer } from './Footer.svelte'
 export { default as GeoOptMetricsTable } from './GeoOptMetricsTable.svelte'
 export { default as HeatmapTable } from './HeatmapTable.svelte'

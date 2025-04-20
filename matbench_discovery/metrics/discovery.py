@@ -9,7 +9,7 @@ import pandas as pd
 from pymatviz.enums import Key
 from sklearn.metrics import r2_score
 
-from matbench_discovery import STABILITY_THRESHOLD
+from matbench_discovery import PDF_FIGS, STABILITY_THRESHOLD
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 from matbench_discovery.metrics import metrics_df_from_yaml
 
@@ -246,3 +246,16 @@ dfs_metrics: dict[TestSubset, pd.DataFrame] = {
     TestSubset.uniq_protos: df_metrics_uniq_protos,
     TestSubset.most_stable_10k: df_metrics_10k,
 }
+
+if __name__ == "__main__":
+    # export metrics tables to latex
+    for test_subset, df_subset in dfs_metrics.items():
+        tex_path = f"{PDF_FIGS}/metrics-table-{test_subset.replace('_', '-')}.tex"
+        df_subset.to_latex(
+            tex_path,
+            float_format=lambda x: f"{x:.3f}",
+            escape=True,
+            bold_rows=True,
+            caption=df_subset.attrs["title"],
+        )
+        print(f"Wrote {tex_path}")

@@ -180,17 +180,20 @@
 {/if}
 
 {#if dataset.created_by && dataset.created_by.length > 0}
-  <section class="creators">
-    <h2>Created By</h2>
+  <section>
+    <h2>Authors</h2>
     <ol>
       {#each dataset.created_by as person (person.name)}
         <li>
           <span>{person.name}</span>
-          {#if person.affiliation}<span class="affiliation">({person.affiliation})</span
-            >{/if}
-          {#if person.email}<a href="mailto:{person.email}" aria-label="Email">
+          {#if person.affiliation}
+            <span class="affiliation">({person.affiliation})</span>
+          {/if}
+          {#if person.email}
+            <a href="mailto:{person.email}" aria-label="Email">
               <svg><use href="#icon-mail"></use></svg>
-            </a>{/if}
+            </a>
+          {/if}
           {#if person.github}
             <a href={person.github} {...ext_link_props} aria-label="GitHub">
               <svg><use href="#icon-github"></use></svg>

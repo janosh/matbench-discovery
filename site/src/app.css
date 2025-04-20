@@ -209,9 +209,13 @@ input {
   border-radius: 3pt;
   padding: 2pt 4pt;
   font-size: 12pt;
-  background: rgba(255, 255, 255, 0.1);
   color: var(--text-color);
   transition: background 0.2s;
+  background: rgba(255, 255, 255, 0.1);
+}
+/* don't change background color for svelte-multiselect */
+ul.selected input {
+  background: inherit;
 }
 input:focus {
   outline: none;
@@ -233,4 +237,25 @@ svg:has(use:only-child) {
   width: 1em;
   height: 1em;
   vertical-align: -0.1em;
+}
+
+/* Helper class to make elements stretch full width but cap content at 1400px and center it */
+.full-bleed-1400 {
+  --margin: 50px;
+  position: relative;
+  width: 100vw;
+  left: 50%;
+  margin-left: -50vw;
+  box-sizing: border-box;
+  /* Calculate padding: min page margin, grows to center content within max-width */
+  padding-inline: max(var(--margin), calc(50vw - 1400px / 2));
+}
+
+/* Full-bleed class that uses the negative margin technique to span full viewport width */
+.full-bleed {
+  --margin: 50px;
+  width: calc(100vw - 2 * var(--margin));
+  margin-left: calc(-50vw + 50% + var(--margin));
+  display: flex;
+  justify-content: center;
 }

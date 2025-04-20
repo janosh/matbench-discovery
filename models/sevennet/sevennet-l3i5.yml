@@ -1,7 +1,6 @@
 model_name: SevenNet-l3i5
 model_key: sevennet-l3i5
 model_version: v0.10.3 # 2024-07-11
-matbench_discovery_version: 1.1.2
 date_added: "2024-12-10"
 date_published: "2024-02-06"
 authors:

@@ -16,7 +16,7 @@ function format_model_for_rss(model: ModelData): string {
     model.metrics?.discovery?.full_test_set ||
     (model.metrics?.discovery && Object.values(model.metrics.discovery)[0])
 
-  const training_set = format_train_set(model.training_set)
+  const training_set = format_train_set(model.training_set, model)
   // Remove HTML tags for plain text display
   const clean_training_set = training_set.replace(/<[^>]*>/g, ``)
 

@@ -1,7 +1,6 @@
 model_name: SevenNet-MF-ompa
 model_key: sevennet-mf-ompa
 model_version: v0.11.0 # 2024-07-11
-matbench_discovery_version: 1.1.2
 date_added: "2025-03-13"
 date_published: "2025-03-13"
 authors:

@@ -53,7 +53,7 @@
   }
 </script>
 
-<p style="max-width: 45em; margin: auto;">
+<p>
   This periodic table heatmap shows the MAE of model-predicted convex hull distance
   projected onto each element. The errors for every structure in the test set are
   projected onto the fraction of each element in the composition and averaged over all
@@ -80,9 +80,9 @@
     {cbar_max}
   </label>
   <label>
+    <input type="checkbox" bind:checked={normalized} />
     Divide each element value by its std. dev. of target energies over all test structures
     containing a given element
-    <input type="checkbox" bind:checked={normalized} />
   </label>
   <small>
     This is meant to correct for the fact that some elements are inherently more difficult

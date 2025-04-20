@@ -1,14 +1,13 @@
 <script lang="ts">
-  import type { DiscoverySet, Metric, ModelData } from '$lib'
+  import type { DiscoverySet, ModelData } from '$lib'
   import {
-    MetricScatter,
+    DynamicScatter,
     MetricsTable,
     model_is_compliant,
     MODELS,
     RadarChart,
     SelectToggle,
   } from '$lib'
-  import { DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score'
   import { generate_png, generate_svg, handle_export } from '$lib/html-to-img'
   import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/metrics'
   import { CPS_CONFIG } from '$lib/models.svelte'
@@ -49,22 +48,6 @@
   )
 
   let discovery_set: DiscoverySet = $state(`unique_prototypes`)
-
-  // Initialize with CPS as default metric
-  let selected_metric:
-    | keyof (typeof DEFAULT_CPS_CONFIG)[`parts`]
-    | (typeof DEFAULT_CPS_CONFIG)[`key`] = $state(DEFAULT_CPS_CONFIG.key)
-  let cps_scatter: Metric = {
-    path: ``,
-    label: `Combined Performance Score`,
-    svg_label: DEFAULT_CPS_CONFIG.label,
-    range: [0, 1],
-    better: `higher`,
-    description: DEFAULT_CPS_CONFIG.description,
-  }
-  let selected_scatter = $derived(
-    { ...DEFAULT_CPS_CONFIG.parts, cps: cps_scatter }[selected_metric] as Metric,
-  )
 </script>
 
 <h1 style="line-height: 0; margin-block: -1.2em 1em;">
@@ -80,7 +63,7 @@
     )}
   />
 
-  <section class="table-wrapper">
+  <section class="full-bleed">
     <div>
       <MetricsTable
         col_filter={(col) => visible_cols[col.label] ?? true}
@@ -113,8 +96,7 @@
       class="download-btn"
       title="Subscribe to be notified of new models"
     >
-      <svg><use href="#icon-rss" /></svg>
-      RSS
+      <svg><use href="#icon-rss" /></svg> RSS
     </a>
     {#if export_error}
       <div class="export-error">
@@ -123,10 +105,9 @@
     {/if}
   </div>
 
-  <!-- Radar Chart and Caption Container -->
   <figcaption class="caption-radar-container">
     <div
-      style="flex: 1; background-color: var(--light-bg); padding: 0.2em 0.5em; border-radius: 4px;"
+      style="background-color: var(--light-bg); padding: 0.2em 0.5em; border-radius: 4px;"
     >
       The <strong>CPS</strong> (Combined Performance Score) is a metric that weights
       discovery performance (F1), geometry optimization quality (RMSD), and thermal
@@ -142,72 +123,23 @@
       set. The unique structure prototypes in the WBM test set have a
       <code>{pretty_num(n_wbm_stable_uniq_protos / n_wbm_uniq_protos, `.1%`)}</code>
       rate of stable crystals, meaning the max possible DAF is
-      <code
-        >({pretty_num(n_wbm_stable_uniq_protos)} / {pretty_num(n_wbm_uniq_protos)})^−1 ≈
-        {pretty_num(n_wbm_uniq_protos / n_wbm_stable_uniq_protos)}</code
-      >.
+      <code>
+        ({pretty_num(n_wbm_stable_uniq_protos)} / {pretty_num(n_wbm_uniq_protos)})^−1 ≈
+        {pretty_num(n_wbm_uniq_protos / n_wbm_stable_uniq_protos)}
+      </code>.
     </div>
-
-    <!-- Radar chart with CPS weight controls -->
+    <!-- CPS weight controls -->
     <RadarChart size={260} />
-
-    <!-- Model Size vs Performance plot -->
-    <section style="width: 100%; margin-block: 1em;">
-      <SelectToggle
-        bind:selected={selected_metric}
-        options={[
-          {
-            value: DEFAULT_CPS_CONFIG.key,
-            label: DEFAULT_CPS_CONFIG.label,
-            tooltip: DEFAULT_CPS_CONFIG.name,
-          },
-          ...Object.entries(DEFAULT_CPS_CONFIG.parts).map(
-            ([value, { label, description }]) => ({
-              value,
-              label,
-              tooltip: description,
-            }),
-          ),
-        ]}
-      />
-      <h3 style="margin-block: 1em;">
-        {@html selected_scatter.label} vs Model Size
-        <small style="font-weight: lighter;">
-          ({selected_scatter.better} = better, fewer model params = better)
-        </small>
-      </h3>
-      <MetricScatter
-        models={MODELS}
-        config={selected_metric === DEFAULT_CPS_CONFIG.key ? CPS_CONFIG : undefined}
-        metric={selected_metric !== DEFAULT_CPS_CONFIG.key ? selected_metric : undefined}
-        y_label={selected_scatter.svg_label ?? selected_scatter.label}
-        y_lim={selected_scatter.range}
-        style="width: 100%; height: 300px;"
-      />
-    </section>
-
-    <!-- Time-based scatter plot -->
-    <section style="width: 100%;">
-      <h3>
-        {@html selected_scatter.label} over time
-        <small style="font-weight: lighter;">
-          ({selected_scatter.better} = better)
-        </small>
-      </h3>
-      <MetricScatter
-        models={MODELS}
-        metric={selected_metric === DEFAULT_CPS_CONFIG.key ? undefined : selected_metric}
-        config={selected_metric === DEFAULT_CPS_CONFIG.key ? CPS_CONFIG : undefined}
-        y_label={selected_scatter.svg_label ?? selected_scatter.label}
-        x_property="date_added"
-        x_label="Date"
-        y_lim={selected_scatter.range}
-        style="width: 100%; height: 300px;"
-        date_range={[new Date(2024, 6, 1), null]}
-      />
-    </section>
   </figcaption>
 </figure>
+
+<!-- Dynamic axis scatter plot -->
+<p>Select any two properties to compare models across different dimensions:</p>
+<DynamicScatter
+  models={MODELS}
+  model_filter={(model) => show_non_compliant || model_is_compliant(model)}
+  {discovery_set}
+/>
 
 <Readme>
   {#snippet title()}{/snippet}
@@ -230,28 +162,12 @@
   {/snippet}
 </Readme>
 <KappaNote />
-{#await import(`$routes/landing-page-figs.md`) then LandingPageFigs}
-  <LandingPageFigs.default />
-{/await}
 
 <style>
   figure {
     margin: 0;
     display: grid;
     gap: 1ex;
-  }
-  /* Table wrapper for full-width placement */
-  .table-wrapper {
-    /* Use negative margin technique for full width */
-    width: calc(100vw - 40px);
-    margin-left: calc(-50vw + 50% + 20px);
-    display: flex;
-    justify-content: center;
-  }
-  figcaption {
-    font-size: 0.9em;
-    padding: 2pt 6pt;
-    background-color: rgba(255, 255, 255, 0.06);
   }
   div.downloads {
     display: flex;
@@ -275,10 +191,11 @@
 
   /* Caption Radar Container Styles */
   figcaption.caption-radar-container {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: 1fr max-content;
+    align-items: start;
     gap: 1em;
+    font-size: 0.9em;
     background-color: transparent;
   }
   figure#metrics-table :global(:is(sub, sup)) {
