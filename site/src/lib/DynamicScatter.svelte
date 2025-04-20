@@ -22,7 +22,7 @@
     model_filter = () => true,
     discovery_set = `unique_prototypes`,
     point_color = null,
-    point_radius = 5,
+    point_radius = 9,
     show_model_labels = true,
     style = ``,
     ...rest
@@ -228,8 +228,9 @@
       text: item.metadata.model_name,
       offset_y: -5,
       offset_x: 5,
-      font_size: `10px`,
+      font_size: `14px`,
       color: `black`,
+      auto_placement: true,
     }))
 
     return [base_series]
@@ -272,7 +273,7 @@
   {/each}
 </div>
 
-<div class="full-bleed-1400" style="height: 500px; margin-block: 1em;">
+<div class="full-bleed-1400" style="height: 600px; margin-block: 1em;">
   {#key [log.color, axes.color?.[0]]}
     <ScatterPlot
       {series}
@@ -290,17 +291,15 @@
       y_label_shift={{ x: 0, y: -20 }}
       color_scale_type={log.color ? `log` : `linear`}
       color_scheme="viridis"
-      color_bar={{
-        label: color_label,
-        label_side: `top`,
-        // wrapper_style: `position: absolute; top: 20px; left: 80px;`,
-      }}
+      color_bar={{ label: color_label, label_side: `top` }}
+      label_placement_config={{ link_strength: 10.0, link_distance: 5 }}
       {...rest}
     >
       {#snippet tooltip({ x_formatted, y_formatted, metadata })}
         <div
           style="white-space: nowrap; font-size: 14px; margin-top: 10px; line-height: 1;"
         >
+          <strong>{metadata?.model_name}</strong><br />
           {@html x_label}: {x_formatted}
           {#if axes.x?.[0] === `date_added` && metadata?.days_ago}
             <small>({metadata.days_ago} days ago)</small>{/if}<br />

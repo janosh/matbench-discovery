@@ -110,7 +110,7 @@ describe(`CATEGORY_LABELS`, () => {
     expect(CATEGORY_LABELS.discovery).toBe(`Discovery`)
     expect(CATEGORY_LABELS.phonons).toBe(`Phonons`)
     expect(CATEGORY_LABELS.geo_opt).toBe(`Geometry Optimization`)
-    expect(CATEGORY_LABELS.hyperparams).toBe(`Hyperparameters`)
+    expect(CATEGORY_LABELS.hyperparams).toBe(`Hyperparams`)
   })
 
   test(`has expected number of entries`, () => {
@@ -240,13 +240,13 @@ describe(`format_property_path`, () => {
 
   test(`formats hyperparameter paths correctly`, () => {
     expect(format_property_path(`hyperparams.learning_rate`)).toBe(
-      `Hyperparameters > Learning Rate`,
+      `Hyperparams > Learning Rate`,
     )
     expect(format_property_path(`hyperparams.graph_construction_radius`)).toBe(
-      `Hyperparameters > Graph Construction Radius r<sub>cut</sub>`,
+      `Hyperparams > Graph Construction Radius r<sub>cut</sub>`,
     )
     expect(format_property_path(`hyperparams.custom_param`)).toBe(
-      `Hyperparameters > Custom Param`,
+      `Hyperparams > Custom Param`,
     )
   })
 
