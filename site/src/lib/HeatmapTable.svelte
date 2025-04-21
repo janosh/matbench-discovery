@@ -56,48 +56,7 @@
   $effect(() => {
     sorted_data =
       data?.filter?.((row) => Object.values(row).some((val) => val !== undefined)) ?? []
-    reinitialize_tooltips()
   })
-
-  // TODO 2025-04-09 remove this hacky cursor-generated tooltip reinitialization
-  // once we have a cleaner upstream solution in svelte-zoo
-  function reinitialize_tooltips() {
-    if (!div) return
-
-    // Find all cells that contain HTML content
-    const cells = div.querySelectorAll(`td`)
-
-    cells.forEach((cell) => {
-      // Then check for any elements inside the cell that have titles
-      const titled_elements = cell.querySelectorAll(`[title], [data-title]`)
-      titled_elements.forEach((element) => {
-        const title = element.getAttribute(`title`) || element.getAttribute(`data-title`)
-        if (!title) return
-
-        element.setAttribute(`data-title`, title)
-        element.removeAttribute(`title`)
-
-        // @ts-expect-error _tippy is untyped implementation detail
-        if (!element._tippy) element.setAttribute(`data-needs-tooltip`, `true`)
-      })
-    })
-
-    // Also check headers
-    const headers = div.querySelectorAll(`th`)
-    headers.forEach((header) => {
-      const title = header.getAttribute(`title`) || header.getAttribute(`data-title`)
-      if (!title) return
-
-      header.setAttribute(`data-title`, title)
-      header.removeAttribute(`title`)
-
-      // @ts-expect-error _tippy is untyped implementation detail
-      if (!header._tippy) header.setAttribute(`data-needs-tooltip`, `true`)
-    })
-
-    // Re-initialize tooltips action on the container
-    titles_as_tooltips(div)
-  }
 
   // Helper to make column IDs (needed since column labels in different groups can be repeated)
   const get_col_id = (col: HeatmapColumn) =>
@@ -243,7 +202,7 @@
       {/if}
       <!-- Second level headers -->
       <tr>
-        {#each visible_columns as col, col_idx (col.label + col.group)}
+        {#each visible_columns as col (col.label + col.group)}
           <th
             title={col.tooltip}
             onclick={() => sort_rows(col.label, col.group)}
@@ -253,11 +212,6 @@
           >
             {@html col.label}
             {@html sort_indicator(col, sort_state)}
-            {#if col_idx == 0 && sort_hint}
-              <span title={sort_hint}>
-                <svg><use href="#icon-info"></use></svg>
-              </span>
-            {/if}
           </th>
         {/each}
       </tr>
