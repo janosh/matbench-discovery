@@ -134,7 +134,7 @@
 </figure>
 
 <!-- Dynamic axis scatter plot -->
-<p>Select any two properties to compare models across different dimensions:</p>
+<p>Compare models across different metrics and parameters:</p>
 <DynamicScatter
   models={MODELS}
   model_filter={(model) => show_non_compliant || model_is_compliant(model)}

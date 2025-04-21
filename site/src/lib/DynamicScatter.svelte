@@ -289,8 +289,8 @@
       {style}
       x_scale_type={log.x ? `log` : `linear`}
       y_scale_type={log.y ? `log` : `linear`}
-      x_label_shift={{ x: 0, y: -60 }}
-      y_label_shift={{ x: 0, y: -20 }}
+      x_label_shift={{ y: -60 }}
+      y_label_shift={{ y: axes.y?.[0] === `date_added` ? -40 : -10 }}
       color_scale_type={log.color ? `log` : `linear`}
       color_scheme="viridis"
       color_bar={{ label: color_label, label_side: `top`, margin: 30 }}
