@@ -1,5 +1,5 @@
 import { DATASETS, MODELS, ModelCard } from '$lib'
-import type { ModelStatLabel } from '$lib/types'
+import { metric_labels } from '$lib/metrics'
 import { pretty_num } from 'elementari'
 import { mount } from 'svelte'
 import { describe, expect, it } from 'vitest'
@@ -9,23 +9,19 @@ describe(`ModelCard`, () => {
   const model = MODELS.find((m) => m.model_key === `mace-mp-0`)
   if (!model) throw new Error(`Could not find mace-mp-0 model in MODELS`)
 
-  const stats: ModelStatLabel[] = [
-    { key: `F1`, label: `F1 Score` },
-    { key: `DAF`, label: `Discovery Acceleration Factor` },
-    { key: `κ_SRME`, label: `κ SRME`, unit: `W/mK` },
-  ]
+  const metrics = ([`F1`, `DAF`, `κ_SRME`] as const).map((key) => metric_labels[key])
 
   describe(`Basic Rendering`, () => {
     it(`renders model header and basic info`, () => {
       mount(ModelCard, {
         target: document.body,
-        props: { model, stats, sort_by: `F1` },
+        props: { model, metrics, sort_by: `F1` },
       })
 
       const header = document.body.querySelector(`h2`)
       expect(header?.textContent).toContain(`MACE`)
 
-      const links = document.body.querySelectorAll(`nav a`)
+      const links = document.body.querySelectorAll<HTMLAnchorElement>(`nav a`)
       expect(links.length).toBeGreaterThan(0)
       expect(links[0].href).toBe(model.repo)
 
@@ -62,7 +58,7 @@ describe(`ModelCard`, () => {
 
       mount(ModelCard, {
         target: document.body,
-        props: { model: minimal_model, stats, sort_by: `F1` },
+        props: { model: minimal_model, metrics, sort_by: `F1` },
       })
 
       const links = document.body.querySelectorAll(`nav a`)
@@ -77,7 +73,7 @@ describe(`ModelCard`, () => {
   it(`handles training set display`, () => {
     mount(ModelCard, {
       target: document.body,
-      props: { model, stats, sort_by: `F1` },
+      props: { model, metrics, sort_by: `F1` },
     })
 
     // Look for span containing "Training set" text
@@ -106,7 +102,7 @@ describe(`ModelCard`, () => {
     it(`displays metrics with correct formatting`, () => {
       mount(ModelCard, {
         target: document.body,
-        props: { model, stats, sort_by: `F1` },
+        props: { model, metrics, sort_by: `F1` },
       })
 
       const metrics = document.body.querySelectorAll(`.metrics li`)
@@ -131,7 +127,7 @@ describe(`ModelCard`, () => {
 
       mount(ModelCard, {
         target: document.body,
-        props: { model: model_without_metrics, stats, sort_by: `F1` },
+        props: { model: model_without_metrics, metrics, sort_by: `F1` },
       })
 
       const metrics = document.body.querySelectorAll(`.metrics li strong`)
@@ -144,7 +140,7 @@ describe(`ModelCard`, () => {
       let show_details = $state(false)
       mount(ModelCard, {
         target: document.body,
-        props: { model, stats, sort_by: `F1`, show_details },
+        props: { model, metrics, sort_by: `F1`, show_details },
       })
 
       // Initially only metrics section should be visible
@@ -160,7 +156,7 @@ describe(`ModelCard`, () => {
     it(`displays authors and package versions correctly`, async () => {
       mount(ModelCard, {
         target: document.body,
-        props: { model, stats, sort_by: `F1`, show_details: true },
+        props: { model, metrics, sort_by: `F1`, show_details: true },
       })
 
       // Check author info within the list item

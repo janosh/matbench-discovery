@@ -24,11 +24,11 @@ geo_opt:
   description: Relaxing atomic positions to minimize the energy
   metrics:
     higher_is_better:
-      - σ<sub>match</sub>
+      - Σ<sub>=</sub>
     lower_is_better:
       - RMSD
-      - σ<sub>dec</sub>
-      # - σ<sub>inc</sub> # unclear if lower symmetry increase is really better, could be model actually found a higher symmetry lower-energy structure than DFT optimizer
+      - Σ<sub>↓</sub>
+      # - Σ<sub>↑</sub> # unclear if lower symmetry increase is really better, could be model actually found a higher symmetry lower-energy structure than DFT optimizer
       - N<sub>ops,MAE</sub>
 
 phonons:

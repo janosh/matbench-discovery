@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ModelData, ModelStatLabel } from '$lib'
+  import type { MetricKey, MetricLabel, ModelData } from '$lib'
   import { AuthorBrief, DATASETS } from '$lib'
   import { repository } from '$site/package.json'
   import { pretty_num } from 'elementari'
@@ -8,7 +8,7 @@
 
   interface Props {
     model: ModelData
-    stats: ModelStatLabel[]
+    metrics: readonly (MetricLabel & { key: MetricKey })[]
     sort_by: keyof ModelData
     show_details?: boolean
     style?: string | null
@@ -16,7 +16,7 @@
   }
   let {
     model,
-    stats,
+    metrics,
     sort_by,
     show_details = $bindable(false),
     style = null,
@@ -163,7 +163,7 @@
   <h3>Metrics</h3>
   <ul>
     <!-- hide run time if value is 0 (i.e. not available) -->
-    {#each stats as { key, label, unit } (key)}
+    {#each metrics as { key, label, unit } (key)}
       <li class:active={sort_by == key}>
         <label for={key}>{@html label ?? key}</label>
         <strong>{pretty_num(all_metrics[key])} <small>{unit ?? ``}</small></strong>
@@ -222,11 +222,10 @@
     font-size: 8pt;
   }
   section.metrics > ul {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9em, 1fr));
     gap: 3pt 1em;
     list-style: none;
-    flex-direction: column;
     max-height: 10em;
     padding: 0;
   }

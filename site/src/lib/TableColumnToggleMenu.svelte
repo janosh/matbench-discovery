@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Tooltip } from 'svelte-zoo'
   import { click_outside } from 'svelte-zoo/actions'
   import type { HeatmapColumn } from './types'
 
@@ -25,14 +26,21 @@
   </summary>
   <div class="column-menu">
     {#each columns as col, idx (col.label + col.group + col.visible + idx)}
-      <label>
-        <input
-          type="checkbox"
-          checked={col.visible !== false}
-          onchange={(event) => toggle_column_visibility(idx, event)}
-        />
-        {@html col.label}
-      </label>
+      <Tooltip style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        {#snippet tip()}
+          {#if col.tooltip}
+            {@html col.tooltip}
+          {/if}
+        {/snippet}
+        <label>
+          <input
+            type="checkbox"
+            checked={col.visible !== false}
+            onchange={(event) => toggle_column_visibility(idx, event)}
+          />
+          {@html col.label}
+        </label>
+      </Tooltip>
     {/each}
   </div>
 </details>
@@ -57,6 +65,7 @@
     display: none;
   }
   .column-menu {
+    font-size: 1.1em;
     position: absolute;
     right: 0;
     top: calc(100% + 4pt);
@@ -71,9 +80,6 @@
   }
   .column-menu label {
     display: inline-block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
     margin: 1px 2px;
     border-radius: 3px;
     line-height: 1.3em;

@@ -1,46 +1,22 @@
 import * as d3sc from 'd3-scale-chromatic'
+import { metric_labels } from './metrics'
 import type { ModelMetadata } from './model-schema.d.ts'
+
 export type { Dataset } from './dataset-schema.d.ts'
 export type { ModelMetadata } from './model-schema.d.ts'
 
+export type MetricKey = keyof typeof metric_labels
+export type MetricLabel = (typeof metric_labels)[MetricKey]
+
 export type ModelData = ModelMetadata &
-  ModelStats & {
+  MetricKey & {
+    // these fields are populated in MODELS variable in models.svelte.ts
     dirname: string
     metadata_file: string
     color?: string
     n_training_materials?: number
     n_training_structures?: number
   }
-// dirname comes from: models/{dirname}/{model_name}.yml
-
-export type ModelStats = {
-  model_name: string
-  MAE: number // mean absolute error
-  RMSE: number // root mean squared error
-  R2: number
-  Precision: number
-  Recall: number
-  F1: number
-  missing_preds: number
-  missing_percent: number
-  Accuracy: number
-  'Run Time (h)': number
-  TPR: number // true positive rate
-  TNR: number // true negative rate
-  DAF: number // discovery acceleration factor
-  GPUs: number // number of GPUs used
-  CPUs: number // number of CPUs used
-  κ_SRME: number // symmetric relative mean error of predicted lattice thermal conductivity
-  CPS: number // combined performance score
-}
-
-// how to pretty print a model stat key on the website
-export type ModelStatLabel = {
-  key: keyof ModelStats
-  label?: string
-  unit?: string
-  tooltip?: string
-}
 
 export type Author = {
   name: string
@@ -97,6 +73,7 @@ export type TrainingSet =
     }
 
 export type HeatmapColumn = {
+  key: string // column header label
   label: string // column header label
   group?: string // group header label
   tooltip?: string // hover tooltip
@@ -161,6 +138,6 @@ export type CellVal =
   | Record<string, unknown>
   | LinkData
 
-export type RowData = Record<string, CellVal> & {
-  row_attributes?: Record<string, string | boolean | number | undefined>
+export type RowData = {
+  [key: string]: string | number | LinkData | null | undefined | boolean
 }

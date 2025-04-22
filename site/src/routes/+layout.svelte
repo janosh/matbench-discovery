@@ -2,7 +2,7 @@
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
   import { Footer, Nav } from '$lib'
-  import { repository } from '$site/package.json'
+  import { preprint, repository } from '$site/package.json'
   import { type Snippet } from 'svelte'
   import { CmdPalette } from 'svelte-multiselect'
   import Toc from 'svelte-toc'
@@ -76,7 +76,7 @@
   routes={[
     [`/home`, `/`],
     ...routes.filter((route) => route != `/changelog`),
-    [`/preprint`, `https://arxiv.org/abs/2308.14920`],
+    [`/preprint`, preprint],
   ]}
   style="padding: 0 var(--main-padding);"
 />
