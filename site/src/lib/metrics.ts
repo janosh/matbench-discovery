@@ -19,7 +19,6 @@ import type {
   HeatmapColumn,
   LinkData,
   ModelData,
-  ModelStats,
   RowData,
 } from './types'
 
@@ -33,6 +32,10 @@ export const targets_tooltips: Record<TargetType, string> = {
   EFS_GM: `Energy with gradient-based forces, stress, and magmoms`,
   EFS_DM: `Energy with direct forces, stress, and magmoms`,
 }
+
+// Helper to format symprec in scientific notation
+export const format_power_ten = (symprec: string): string =>
+  `10<sup>-${symprec.split(`e-`)[1]}</sup>`
 
 // Gets a metric value from a model, handling metrics from different tasks
 // and different locations within the model data structure
@@ -212,123 +215,112 @@ export function calculate_metrics_data(
       ? `<a href="${url}" target="_blank" rel="noopener noreferrer" title="View license">${license}</a>`
       : `<span title="License file not available">${license}</span>`
 
-  return (
-    MODELS.filter(
-      (model) => current_filter(model) && model.metrics?.discovery?.[discovery_set],
-    )
-      .map((model) => {
-        const { license, metrics } = model
-        const discover_metrics = metrics?.discovery?.[discovery_set]
-        const is_compliant = model_is_compliant(model)
-
-        // Get RMSD from geo_opt metrics if available, using the first symprec value
-        const geo_opt_metrics = model.metrics?.geo_opt
-        let rmsd = undefined
-        if (geo_opt_metrics && typeof geo_opt_metrics === `object`) {
-          // Try to find the first symprec key and get its RMSD
-          const symprec_keys = Object.keys(geo_opt_metrics).filter((key) =>
-            key.startsWith(`symprec=`),
-          )
-          if (symprec_keys.length > 0) {
-            const symprec_key = symprec_keys[0]
-            rmsd = get_geo_opt_property<number>(
-              geo_opt_metrics,
-              symprec_key.replace(`symprec=`, ``),
-              `rmsd`,
-            )
-          }
-        }
-
-        // Get kappa from phonon metrics
-        const phonons = metrics?.phonons
-        const kappa =
-          phonons && typeof phonons === `object` && `kappa_103` in phonons
-            ? (phonons.kappa_103?.κ_SRME as number | undefined)
-            : undefined
-
-        const cps = calculate_cps(discover_metrics?.F1, rmsd, kappa, config)
-
-        const targets = model.targets.replace(/_(.)/g, `<sub>$1</sub>`)
-        const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
-        const row_style = show_noncompliant
-          ? `border-left: 3px solid ${is_compliant ? compliant_clr : noncompliant_clr};`
-          : null
-
-        // Add model links
-        const code_license = license?.code
-          ? license_str(license.code, license.code_url)
-          : `n/a`
-        const checkpoint_license = license?.checkpoint
-          ? license_str(license.checkpoint, license.checkpoint_url)
-          : `n/a`
-
-        const r_cut = model.hyperparams?.graph_construction_radius
-        const r_cut_str = r_cut
-          ? `<span data-sort-value="${r_cut}">${r_cut} Å</span>`
-          : `n/a`
-
-        return {
-          Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>`,
-          CPS: cps,
-          F1: discover_metrics?.F1,
-          DAF: discover_metrics?.DAF,
-          Prec: discover_metrics?.Precision,
-          Acc: discover_metrics?.Accuracy,
-          TPR: discover_metrics?.TPR,
-          TNR: discover_metrics?.TNR,
-          MAE: discover_metrics?.MAE,
-          RMSE: discover_metrics?.RMSE,
-          'R<sup>2</sup>': discover_metrics?.R2,
-          'κ<sub>SRME</sub>': kappa,
-          RMSD: rmsd,
-          'Training Set': format_train_set(model.training_set, model),
-          Params: `<span title="${pretty_num(model.model_params, `,`)}" trainable model parameters" data-sort-value="${model.model_params}">${pretty_num(model.model_params)}</span>`,
-          Targets: targets_str,
-          'Date Added': `<span title="${format_date(model.date_added)}" data-sort-value="${new Date(model.date_added).getTime()}">${model.date_added}</span>`,
-          // Add Links as a special property
-          Links: {
-            paper: {
-              url: model.paper || model.doi,
-              title: `Read model paper`,
-              icon: `<svg><use href="#icon-paper"></use></svg>`,
-            },
-            repo: {
-              url: model.repo,
-              title: `View source code`,
-              icon: `<svg><use href="#icon-code"></use></svg>`,
-            },
-            pr_url: {
-              url: model.pr_url,
-              title: `View pull request`,
-              icon: `<svg><use href="#icon-pull-request"></use></svg>`,
-            },
-            checkpoint: {
-              url: model.checkpoint_url,
-              title: `Download model checkpoint`,
-              icon: `<svg><use href="#icon-download"></use></svg>`,
-            },
-            pred_files: { files: get_pred_file_urls(model), name: model.model_name },
-          } as LinkData,
-          'Checkpoint License': checkpoint_license,
-          'Code License': code_license,
-          'r<sub>cut</sub>': r_cut_str,
-          row_style,
-        }
-      })
-      // Sort by combined score (descending)
-      .sort((row1, row2) => {
-        const [score1, score2] = [row1[`CPS`], row2[`CPS`]]
-
-        // Handle NaN values (they should be sorted to the bottom)
-        const is_nan1 = score1 === null || isNaN(score1)
-        const is_nan2 = score2 === null || isNaN(score2)
-        if (is_nan1 && is_nan2) return 0
-        if (is_nan1) return 1
-        if (is_nan2) return -1
-
-        return score2 - score1
-      })
+  const filtered_models = MODELS.filter(
+    (model) => current_filter(model) && model.metrics?.discovery?.[discovery_set],
   )
+
+  const all_metrics = filtered_models.map((model) => {
+    const { license, metrics } = model
+    const discovery_metrics = metrics?.discovery?.[discovery_set]
+    const is_compliant = model_is_compliant(model)
+
+    // Get RMSD from geo_opt metrics if available, using the first symprec value
+    const geo_opt_metrics = model.metrics?.geo_opt
+    const rmsd = get_geo_opt_property<number>(geo_opt_metrics, `1e-5`, `rmsd`)
+
+    // Get kappa from phonon metrics
+    const phonons = metrics?.phonons
+    const kappa =
+      phonons && typeof phonons === `object` && `kappa_103` in phonons
+        ? (phonons.kappa_103?.κ_SRME as number | undefined)
+        : undefined
+
+    const cps = calculate_cps(discovery_metrics?.F1, rmsd, kappa, config)
+
+    const targets = model.targets.replace(/_(.)/g, `<sub>$1</sub>`)
+    const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
+    const row_style = show_noncompliant
+      ? `border-left: 3px solid ${is_compliant ? compliant_clr : noncompliant_clr};`
+      : null
+
+    // Add model links
+    const code_license = license?.code
+      ? license_str(license.code, license.code_url)
+      : `n/a`
+    const checkpoint_license = license?.checkpoint
+      ? license_str(license.checkpoint, license.checkpoint_url)
+      : `n/a`
+
+    const r_cut = model.hyperparams?.graph_construction_radius
+    const r_cut_str = r_cut ? `<span data-sort-value="${r_cut}">${r_cut} Å</span>` : `n/a`
+
+    return {
+      Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>`,
+      CPS: cps,
+      F1: discovery_metrics?.F1,
+      DAF: discovery_metrics?.DAF,
+      Prec: discovery_metrics?.Precision,
+      Acc: discovery_metrics?.Accuracy,
+      TPR: discovery_metrics?.TPR,
+      TNR: discovery_metrics?.TNR,
+      MAE: discovery_metrics?.MAE,
+      RMSE: discovery_metrics?.RMSE,
+      'R<sup>2</sup>': discovery_metrics?.R2,
+      'κ<sub>SRME</sub>': kappa,
+      RMSD: rmsd,
+      'Training Set': format_train_set(model.training_set, model),
+      Params: `<span title="${pretty_num(model.model_params, `,`)}" trainable model parameters" data-sort-value="${model.model_params}">${pretty_num(model.model_params)}</span>`,
+      Targets: targets_str,
+      'Date Added': `<span title="${format_date(model.date_added)}" data-sort-value="${new Date(model.date_added).getTime()}">${model.date_added}</span>`,
+      // Add Links as a special property
+      Links: {
+        paper: {
+          url: model.paper || model.doi,
+          title: `Read model paper`,
+          icon: `<svg><use href="#icon-paper"></use></svg>`,
+        },
+        repo: {
+          url: model.repo,
+          title: `View source code`,
+          icon: `<svg><use href="#icon-code"></use></svg>`,
+        },
+        pr_url: {
+          url: model.pr_url,
+          title: `View pull request`,
+          icon: `<svg><use href="#icon-pull-request"></use></svg>`,
+        },
+        checkpoint: {
+          url: model.checkpoint_url,
+          title: `Download model checkpoint`,
+          icon: `<svg><use href="#icon-download"></use></svg>`,
+        },
+        pred_files: { files: get_pred_file_urls(model), name: model.model_name },
+      } as LinkData,
+      'Checkpoint License': checkpoint_license,
+      'Code License': code_license,
+      'r<sub>cut</sub>': r_cut_str,
+      row_style,
+      ...Object.fromEntries(
+        GEO_OPT_SYMMETRY_METRICS.map((col) => [
+          col.label,
+          get_geo_opt_property<number>(geo_opt_metrics, col.symprec, col.key),
+        ]),
+      ),
+    }
+  })
+  // Sort by combined score (descending)
+  return all_metrics.sort((row1, row2) => {
+    const [score1, score2] = [row1[`CPS`], row2[`CPS`]]
+
+    // Handle NaN values (they should be sorted to the bottom)
+    const is_nan1 = score1 === null || isNaN(score1)
+    const is_nan2 = score2 === null || isNaN(score2)
+    if (is_nan1 && is_nan2) return 0
+    if (is_nan1) return 1
+    if (is_nan2) return -1
+
+    return score2 - score1
+  })
 }
 
 // Calculate table cell background color based on its value and column config
@@ -471,23 +463,49 @@ export const GEO_OPT_METRICS: HeatmapColumn[] = [
   },
 ]
 
+// Define geometry optimization symmetry metrics for symprec=1e-5
+const em5_fmt_str = format_power_ten(`1e-5`)
+export const GEO_OPT_SYMMETRY_METRICS: HeatmapColumn[] = [`1e-2`, `1e-5`]
+  .flatMap(
+    (symprec) =>
+      [
+        [`symmetry_match`, `Σ<sub>=</sub>`, `higher`, symprec],
+        [`symmetry_decrease`, `Σ<sub>↓</sub>`, `lower`, symprec],
+        [`symmetry_increase`, `Σ<sub>↑</sub>`, undefined, symprec],
+      ] as const,
+  )
+  .map(([key, label, better, symprec]) => ({
+    key,
+    symprec,
+    label: `${label} ${format_power_ten(symprec)}`,
+    tooltip: `Fraction of structures where ML and DFT ground state have matching spacegroup at ${format_power_ten(symprec)} symprec`,
+    better,
+    format: `.1%`,
+    visible: false,
+  }))
+
 export const ALL_METRICS: HeatmapColumn[] = [
   CPS_COLUMN,
   ...DISCOVERY_METRICS,
   ...PHONON_METRICS,
   ...GEO_OPT_METRICS.slice(0, 1), // Only include RMSD by default, others can be toggled
+  ...GEO_OPT_SYMMETRY_METRICS, // symmetry metrics (default hidden)
 ]
 
 // Define display labels and tooltips for metrics
-export const metric_labels: Record<
-  keyof ModelStats,
-  { label: string; tooltip?: string; unit?: string }
-> = {
-  CPS: { label: `CPS`, tooltip: `Combined Performance Score` },
-  Accuracy: { label: `Accuracy` },
+export const metric_labels = {
+  CPS: {
+    label: `CPS`,
+    title: `Combined Performance Score`,
+    tooltip: `Combined Performance Score`,
+  },
+  Accuracy: {
+    label: `Accuracy`,
+    tooltip: `Accuracy of classifying thermodynamic stability`,
+  },
   DAF: {
     label: `DAF`,
-    tooltip: `Discovery Acceleration Factor`,
+    tooltip: `Discovery Acceleration Factor measuring how much better ML models classify thermodynamic stability compared to random guessing`,
   },
   F1: { label: `F1 Score`, tooltip: `Harmonic mean of precision and recall` },
   MAE: { label: `MAE`, tooltip: `Mean Absolute Error`, unit: `eV / atom` },
@@ -504,7 +522,6 @@ export const metric_labels: Record<
     label: `κ<sub>SRME</sub>`,
     tooltip: `Symmetric relative mean error in predicted phonon mode contributions to thermal conductivity κ`,
   },
-  // Add missing fields from ModelStats interface
   Recall: { label: `Recall`, tooltip: `Recall of classifying thermodynamic stability` },
   missing_preds: {
     label: `Missing Predictions`,
@@ -512,9 +529,19 @@ export const metric_labels: Record<
   },
   missing_percent: { label: `Missing %`, tooltip: `Percentage of missing predictions` },
   'Run Time (h)': { label: `Run Time`, tooltip: `Runtime in hours`, unit: `h` },
-  GPUs: { label: `GPUs`, tooltip: `Number of GPUs used` },
-  CPUs: { label: `CPUs`, tooltip: `Number of CPUs used` },
-}
+  'Σ<sub>=</sub>': {
+    label: `Σ<sub>=</sub>`,
+    tooltip: `Fraction of structures where ML and DFT ground state have matching spacegroup at ${em5_fmt_str} symprec`,
+  },
+  'Σ<sub>↓</sub>': {
+    label: `Σ<sub>↓</sub>`,
+    tooltip: `Fraction of structures where the number of symmetry operations decreased after ML relaxation at ${em5_fmt_str} symprec`,
+  },
+  'Σ<sub>↑</sub>': {
+    label: `Σ<sub>↑</sub>`,
+    tooltip: `Fraction of structures where the number of symmetry operations increased after ML relaxation at ${em5_fmt_str} symprec`,
+  },
+} as const
 
 export const DISCOVERY_SET_LABELS: Record<
   DiscoverySet,

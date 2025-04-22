@@ -7,6 +7,7 @@
   "github-pages": "https://janosh.github.io/matbench-discovery",
   "repository": "https://github.com/janosh/matbench-discovery",
   "package": "https://pypi.org/project/matbench-discovery",
+  "preprint": "https://arxiv.org/abs/2308.14920",
   "license": "MIT",
   "type": "module",
   "bugs": "https://github.com/janosh/matbench-discovery/issues",

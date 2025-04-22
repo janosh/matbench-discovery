@@ -253,7 +253,7 @@ And you're done! Once tests pass and the PR is merged, your model will be added 
 - the exact code in the script that launched the run, and
 - which versions of dependencies were installed in the environment your model ran in.
 
-This information can be useful for others looking to reproduce your results or compare their model to yours i.t.o. computational cost. We therefore strongly recommend tracking all runs that went into a model submission with WandB so that the runs can be copied over to our WandB project at <https://wandb.ai/janosh/matbench-discovery> for everyone to inspect. This also allows us to include your model in more detailed analysis (see the SI in the [preprint](https://arxiv.org/abs/2308.14920)).
+This information can be useful for others looking to reproduce your results or compare their model to yours i.t.o. computational cost. We therefore strongly recommend tracking all runs that went into a model submission with WandB so that the runs can be copied over to our WandB project at <https://wandb.ai/janosh/matbench-discovery> for everyone to inspect.
 
 ## 😵‍💫 &thinsp; Troubleshooting
 

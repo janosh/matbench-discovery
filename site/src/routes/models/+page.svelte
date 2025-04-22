@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ModelStatLabel, ModelStats } from '$lib'
+  import type { MetricKey } from '$lib'
   import { model_is_compliant, ModelCard, MODELS } from '$lib'
   import { get_metric_value, metric_better_as, metric_labels } from '$lib/metrics'
   import { interpolateCividis as cividis } from 'd3-scale-chromatic'
@@ -8,7 +8,7 @@
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
 
-  let sort_by: keyof ModelStats | `model_name` = $state(`CPS`)
+  let sort_by: MetricKey = $state(`CPS`)
   let show_non_compliant: boolean = $state(true)
   let show_details: boolean = $state(false)
   let order: `asc` | `desc` = $state(`desc`)
@@ -28,12 +28,8 @@
     `TNR`,
     `TPR`,
     `κ_SRME`,
-  ]
-  const stats: ModelStatLabel[] = metric_keys.map((key) => ({
-    key,
-    label: metric_labels[key]?.label,
-    tooltip: metric_labels[key]?.tooltip,
-  }))
+  ] as const
+  const metrics = metric_keys.map((key) => ({ key, ...metric_labels[key] }))
 
   export const snapshot = {
     capture: () => ({ show_details, sort_by, order, show_n_best }),
@@ -45,12 +41,14 @@
     return cividis(1 - (val - min) / (max - min)).replace(`)`, `, 0.5)`)
   }
 
+  let lower_is_better = $derived(metric_better_as(sort_by) === `lower`)
+
   $effect(() => {
     // Determine default sort order based on whether lower or higher is better for this metric
     if (sort_by === `model_name`) {
       order = `asc` // Model names default to ascending alphabetical order
     } else {
-      order = metric_better_as(sort_by) === `lower` ? `asc` : `desc`
+      order = lower_is_better ? `asc` : `desc`
     }
   })
 
@@ -99,10 +97,7 @@
       .filter((val) => typeof val === `number` && !isNaN(val))
       .sort() as number[]
 
-    // Determine color range based on whether lower or higher is better
-    const lower_better = metric_better_as(sort_by) === `lower`
-    const [min, max] = [vals.at(0), vals.at(-1)]
-    return lower_better ? [max, min] : [min, max]
+    return [vals.at(0) ?? 0, vals.at(-1) ?? 1]
   })
 </script>
 
@@ -116,7 +111,7 @@
   </span>
 
   <ul>
-    {#each [{ key: `model_name`, label: `Model Name`, tooltip: undefined }, ...stats] as { key, label, tooltip } (key)}
+    {#each [{ key: `model_name`, ...metric_labels.model_name }, ...metrics] as { key, label, tooltip } (key)}
       <li class:active={key == sort_by}>
         <button
           id={key}
@@ -126,7 +121,7 @@
               sort_by = `model_name`
               order = `asc` // Default for model names
             } else {
-              sort_by = key as keyof ModelStats
+              sort_by = key as MetricKey
               order = metric_better_as(key) === `lower` ? `asc` : `desc`
             }
           }}
@@ -146,9 +141,19 @@
   </ul>
 
   <legend>
-    heading color best
-    <ColorBar color_scale={cividis} style="min-width: min(70vw, 400px);" />
-    worst
+    <span>
+      {lower_is_better ? `best` : `worst`}
+    </span>
+    <ColorBar
+      label="model cards colored by {sort_by}"
+      label_style="font-size: 1.4em;"
+      color_scale={cividis}
+      style="min-width: min(70vw, 400px);"
+      range={[min_val ?? 0, max_val ?? 1]}
+    />
+    <span>
+      {lower_is_better ? `worst` : `best`}
+    </span>
   </legend>
 
   <ol class="models">
@@ -161,15 +166,15 @@
       >
         <ModelCard
           {model}
-          {stats}
+          {metrics}
           {sort_by}
           bind:show_details
           style="background-color: {bg_color(
             sort_by === `model_name`
               ? 0 // No gradient for model names
               : (get_metric_value(model, sort_by, `unique_prototypes`) ?? 0),
-            min_val ?? 0,
-            max_val ?? 1,
+            lower_is_better ? max_val : min_val,
+            lower_is_better ? min_val : max_val,
           )};"
         />
       </li>
@@ -192,6 +197,10 @@
     opacity: 0.8;
     margin: 2em auto;
     font-weight: lighter;
+    align-items: end;
+  }
+  legend span {
+    transform: translateY(7px);
   }
   :is(ul, ol) {
     padding: 0;

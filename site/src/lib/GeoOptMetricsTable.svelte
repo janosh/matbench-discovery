@@ -1,7 +1,8 @@
 <script lang="ts">
   import { HeatmapTable, MODELS, model_is_compliant } from '$lib'
+  import { format_power_ten } from '$lib/metrics'
+  import type { HeatmapColumn } from '$lib/types'
   import { pretty_num } from 'elementari'
-  import type { HeatmapColumn } from './types.ts'
 
   interface Props {
     show_non_compliant?: boolean
@@ -21,9 +22,6 @@
     ].sort((val1, val2) => parseFloat(val2) - parseFloat(val1)),
   ) // Sort in descending order
 
-  // Helper to format symprec in scientific notation
-  const format_symprec = (symprec: string) => `10<sup>-${symprec.split(`e-`)[1]}</sup>Å`
-
   const sep_line_style = `border-left: 1px solid black`
 
   // Define base columns
@@ -42,28 +40,28 @@
   const sym_metrics = [
     {
       key: `match`,
-      label: `σ<sub>match</sub>`,
+      label: `Σ<sub>=</sub>`,
       tooltip: (symprec: string) =>
-        `Fraction of structures where ML and DFT ground state have matching spacegroup at ${format_symprec(symprec)}`,
+        `Fraction of structures where ML and DFT ground state have matching spacegroup at ${format_power_ten(symprec)}`,
     },
     {
       key: `dec`,
-      label: `σ<sub>dec</sub>`,
+      label: `Σ<sub>↓</sub>`,
       tooltip: (symprec: string) =>
-        `Fraction of structures where the number of symmetry operations decreased after ML relaxation at ${format_symprec(symprec)}`,
+        `Fraction of structures where the number of symmetry operations decreased after ML relaxation at ${format_power_ten(symprec)}`,
     },
     {
       key: `inc`,
-      label: `σ<sub>inc</sub>`,
+      label: `Σ<sub>↑</sub>`,
       tooltip: (symprec: string) =>
-        `Fraction of structures where the number of symmetry operations increased after ML relaxation at ${format_symprec(symprec)}. Not colored as high/low values are neither good nor bad.`,
+        `Fraction of structures where the number of symmetry operations increased after ML relaxation at ${format_power_ten(symprec)}. Not colored as high/low values are neither good nor bad.`,
       color_scale: undefined,
     },
     {
       key: `ops_mae`,
       label: `N<sub>ops,MAE</sub>`,
       tooltip: (symprec: string) =>
-        `Mean absolute error of number of symmetry operations in DFT and ML-relaxed structures at ${format_symprec(symprec)}`,
+        `Mean absolute error of number of symmetry operations in DFT and ML-relaxed structures at ${format_power_ten(symprec)}`,
     },
   ]
 
@@ -73,7 +71,7 @@
     ...symprec_values.flatMap((symprec) =>
       sym_metrics.map(
         ({ key, label, tooltip, ...rest }, idx): HeatmapColumn => ({
-          group: format_symprec(symprec),
+          group: format_power_ten(symprec),
           label,
           tooltip: tooltip(symprec),
           style: idx === 0 ? sep_line_style : undefined,
@@ -121,10 +119,10 @@
 
             return {
               ...acc,
-              [`σ<sub>match</sub> (${format_symprec(symprec)})`]: metrics.symmetry_match,
-              [`σ<sub>dec</sub> (${format_symprec(symprec)})`]: metrics.symmetry_decrease,
-              [`σ<sub>inc</sub> (${format_symprec(symprec)})`]: metrics.symmetry_increase,
-              [`N<sub>ops,MAE</sub> (${format_symprec(symprec)})`]: metrics.n_sym_ops_mae,
+              [`Σ<sub>=</sub> ${format_power_ten(symprec)}`]: metrics.symmetry_match,
+              [`Σ<sub>↓</sub> ${format_power_ten(symprec)}`]: metrics.symmetry_decrease,
+              [`Σ<sub>↑</sub> ${format_power_ten(symprec)}`]: metrics.symmetry_increase,
+              [`N<sub>ops,MAE</sub> ${format_power_ten(symprec)}`]: metrics.n_sym_ops_mae,
             }
           }, {}),
           'N<sub>structs</sub>': `<span title="${model.model_name} relaxed ${pretty_num(
@@ -140,7 +138,7 @@
               },
               ...symprec_values.map((symprec) => ({
                 url: geo_opt[`symprec=${symprec}`]?.analysis_file_url,
-                title: `Download ${model.model_name}-relaxed WBM structure analysis for symprec ${format_symprec(symprec)}`,
+                title: `Download ${model.model_name}-relaxed WBM structure analysis for symprec ${format_power_ten(symprec)}`,
                 icon: `📊<sup>-${symprec.split(`e-`)[1]}</sup>`,
               })),
             ],
