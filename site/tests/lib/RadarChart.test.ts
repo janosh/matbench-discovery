@@ -1,16 +1,19 @@
 import { RadarChart } from '$lib'
-import { DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score'
-import { CPS_CONFIG, update_models_cps } from '$lib/models.svelte'
-import { mount, tick } from 'svelte'
+import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score.svelte'
+import { METRICS } from '$lib/labels'
+import { update_models_cps } from '$lib/models.svelte'
+import { mount } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe(`RadarChart`, () => {
   beforeEach(() => {
-    // Reset DOM before each test
-    document.body.innerHTML = ``
+    document.body.innerHTML = `` // Reset DOM before each test
 
     // Reset CPS_CONFIG to default values before each test
-    CPS_CONFIG.parts = { ...DEFAULT_CPS_CONFIG.parts }
+    let key: keyof typeof CPS_CONFIG
+    for (key in CPS_CONFIG) {
+      CPS_CONFIG[key].weight = DEFAULT_CPS_CONFIG[key].weight
+    }
 
     // Mock the update_models_cps function to avoid side effects
     vi.mock(`$lib/models.svelte`, async () => {
@@ -24,7 +27,6 @@ describe(`RadarChart`, () => {
 
   it(`renders with default props`, async () => {
     mount(RadarChart, { target: document.body })
-    await tick()
 
     // Check that the component rendered with an SVG element
     const svg = document.body.querySelector(`svg`)
@@ -50,7 +52,6 @@ describe(`RadarChart`, () => {
 
     // Just verify that the component mounts without error when we pass a size prop
     mount(RadarChart, { target: document.body, props: { size: custom_size } })
-    await tick()
 
     // Just verify the SVG element exists
     const svg = document.body.querySelector(`svg`)
@@ -64,26 +65,22 @@ describe(`RadarChart`, () => {
 
   it(`resets weights when reset button is clicked`, async () => {
     mount(RadarChart, { target: document.body })
-    await tick()
 
     // Modify weights to non-default values
-    CPS_CONFIG.parts.F1.weight = 0.6
-    CPS_CONFIG.parts.kappa_SRME.weight = 0.3
-    CPS_CONFIG.parts.RMSD.weight = 0.1
+    CPS_CONFIG.F1.weight = 0.6
+    CPS_CONFIG.κ_SRME.weight = 0.3
+    CPS_CONFIG.RMSD.weight = 0.1
 
     // Find and click the reset button
     const reset_button = document.body.querySelector(`.reset-button`) as HTMLButtonElement
     expect(reset_button).toBeDefined()
 
     reset_button.click()
-    await tick()
 
     // Check that weights were reset to default values
-    expect(CPS_CONFIG.parts.F1.weight).toBe(DEFAULT_CPS_CONFIG.parts.F1.weight)
-    expect(CPS_CONFIG.parts.kappa_SRME.weight).toBe(
-      DEFAULT_CPS_CONFIG.parts.kappa_SRME.weight,
-    )
-    expect(CPS_CONFIG.parts.RMSD.weight).toBe(DEFAULT_CPS_CONFIG.parts.RMSD.weight)
+    expect(CPS_CONFIG.F1.weight).toBe(DEFAULT_CPS_CONFIG.F1.weight)
+    expect(CPS_CONFIG.κ_SRME.weight).toBe(DEFAULT_CPS_CONFIG.κ_SRME.weight)
+    expect(CPS_CONFIG.RMSD.weight).toBe(DEFAULT_CPS_CONFIG.RMSD.weight)
 
     // Check that update_models_cps was called
     expect(update_models_cps).toHaveBeenCalled()
@@ -91,7 +88,6 @@ describe(`RadarChart`, () => {
 
   it(`displays correct weight percentages`, async () => {
     mount(RadarChart, { target: document.body })
-    await tick()
 
     // Check that the weight percentages are displayed correctly
     const weight_values = Array.from(
@@ -99,7 +95,7 @@ describe(`RadarChart`, () => {
     ).map((el) => el.textContent)
 
     // Should match the default weights from DEFAULT_CPS_CONFIG
-    const expected_values = Object.values(DEFAULT_CPS_CONFIG.parts).map(
+    const expected_values = Object.values(DEFAULT_CPS_CONFIG).map(
       (part) => `${((part.weight as number) * 100).toFixed(0)}%`,
     )
 
@@ -108,7 +104,6 @@ describe(`RadarChart`, () => {
 
   it(`renders axis labels with correct content`, async () => {
     mount(RadarChart, { target: document.body })
-    await tick()
 
     // Check that axis labels are rendered
     const text_elements = document.body.querySelectorAll(`svg text`)
@@ -128,7 +123,6 @@ describe(`RadarChart`, () => {
     mount(RadarChart, {
       target: document.body,
     })
-    await tick()
 
     // Check that the info icon exists (which is part of the tooltip)
     const info_icon = document.body.querySelector(`svg use[href="#icon-info"]`)
@@ -137,7 +131,6 @@ describe(`RadarChart`, () => {
 
   it(`renders correct visualization elements`, async () => {
     mount(RadarChart, { target: document.body })
-    await tick()
 
     // Check for the triangle path
     const triangle = document.body.querySelector(`path[d^="M"][d$="Z"]`)
@@ -158,16 +151,14 @@ describe(`RadarChart`, () => {
 
   it(`displays the metric name`, async () => {
     mount(RadarChart, { target: document.body })
-    await tick()
 
     const metric_name = document.body.querySelector(`.metric-name`)
     expect(metric_name).toBeDefined()
-    expect(metric_name?.textContent?.trim()).toContain(CPS_CONFIG.label)
+    expect(metric_name?.textContent?.trim()).toContain(METRICS.CPS.label)
   })
 
   it(`renders reset button with correct attributes`, async () => {
     mount(RadarChart, { target: document.body })
-    await tick()
 
     const reset_button = document.body.querySelector(`.reset-button`)
     expect(reset_button).toBeDefined()

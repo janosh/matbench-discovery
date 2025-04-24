@@ -1,16 +1,15 @@
 <script lang="ts">
-  import type { DiscoverySet, ModelData } from '$lib'
+  import type { Metric, ModelData } from '$lib'
   import { calculate_days_ago } from '$lib'
-  import { DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score'
-  import { format_property_path, get_format } from '$lib/properties'
   import type { DataSeries } from 'elementari'
   import { ScatterPlot } from 'elementari'
   import Select from 'svelte-multiselect'
+  import { format_property_path, HYPERPARAMS, METADATA_COLS, METRICS } from './labels'
+  import { get_nested_value } from './metrics'
 
   interface Props {
     models: ModelData[]
     model_filter?: (model: ModelData) => boolean
-    discovery_set?: DiscoverySet
     point_color?: string | null
     point_radius?: number
     show_model_labels?: boolean
@@ -20,7 +19,6 @@
   let {
     models,
     model_filter = () => true,
-    discovery_set = `unique_prototypes`,
     point_color = null,
     point_radius = 9,
     show_model_labels = true,
@@ -28,108 +26,47 @@
     ...rest
   }: Props = $props()
 
-  // Define property paths for available axes options
-  const property_paths = [
-    `CPS`,
-    // Phonon metrics
-    `phonons.kappa_103.κ_SRME`,
-    // Geo opt metrics
-    `geo_opt.symprec=1e-2.rmsd`,
-    // Discovery metrics
-    ...[`F1`, `Precision`, `Recall`, `Accuracy`, `DAF`, `R2`, `MAE`, `RMSE`].map(
-      (key) => `discovery.${discovery_set}.${key}`,
-    ),
-    `model_params`,
-    `date_added`,
-    `n_training_materials`,
-    `n_training_structures`,
-    // Hyperparameter metrics for GNN and UIP models
-    `hyperparams.graph_construction_radius`,
-    `hyperparams.max_force`,
-    `hyperparams.max_steps`,
-    `hyperparams.batch_size`,
-    `hyperparams.epochs`,
-    `hyperparams.n_layers`,
-  ]
-
-  // Create lookup for property paths to their formatted labels
-  const property_labels: Record<string, string> = {}
-  property_paths.forEach((path) => {
-    property_labels[path] = format_property_path(path)
-  })
+  const date_key = METADATA_COLS.date_added.key
+  const params_key = METADATA_COLS.model_params.key
 
   // State for axis selection and log scale toggles
   let axes = $state({
-    x: [`phonons.kappa_103.κ_SRME`],
-    y: [`CPS`],
-    color: [`discovery.unique_prototypes.F1`],
+    x: METRICS.κ_SRME,
+    y: METRICS.CPS,
+    color: METRICS.F1,
   })
-  let log = $state({ x: false, y: false, color: true })
+  let log = $state({ x: false, y: false, color: false })
 
-  // Format property paths for display with ">" separators
-  let x_label = $derived(format_property_path(axes.x?.[0]))
-  let y_label = $derived(format_property_path(axes.y?.[0]))
-  let color_label = $derived(format_property_path(axes.color?.[0]))
-
-  type MetricRecord = Record<
-    string,
-    Record<string, number | string | boolean | null | undefined>
-  >
-
-  // Extract property value from model with proper typing
-  function get_nested_property(
-    model: ModelData,
-    property_path: string,
-  ): number | undefined {
-    // Handle special cases
-    if (property_path === `model_params`)
-      return typeof model.model_params === `number` ? model.model_params : undefined
-    if (property_path === `n_estimators`)
-      return typeof model.n_estimators === `number` ? model.n_estimators : undefined
-    if (property_path === `date_added`)
-      return model.date_added ? new Date(model.date_added).getTime() : undefined
-    if (property_path === `n_training_materials`) return model.n_training_materials
-    if (property_path === `n_training_structures`) return model.n_training_structures
-
-    try {
-      const parts = property_path.split(`.`)
-
-      // Handle metrics pattern: category.set.metric_name
-      if (parts.length === 3) {
-        const [category, set_name, metric_name] = parts
-        const metrics_obj = model.metrics?.[
-          category as keyof typeof model.metrics
-        ] as MetricRecord
-        return typeof metrics_obj?.[set_name]?.[metric_name] === `number`
-          ? (metrics_obj[set_name][metric_name] as number)
-          : undefined
-      }
-
-      // Handle hyperparams pattern: hyperparams.param_name
-      if (parts.length === 2 && parts[0] === `hyperparams`) {
-        return typeof model.hyperparams?.[parts[1]] === `number`
-          ? (model.hyperparams[parts[1]] as number)
-          : undefined
-      }
-
-      // Generic fallback
-      let value: unknown = model
-      for (const part of parts) {
-        if (value == null) return undefined
-        value = value[part as keyof typeof value]
-      }
-      return typeof value === `number` ? value : undefined
-    } catch {
-      return undefined
-    }
-  }
-
+  const { model_params, date_added, n_training_materials, n_training_structures } =
+    METADATA_COLS
+  const {
+    graph_construction_radius,
+    max_force,
+    max_steps,
+    batch_size,
+    epochs,
+    n_layers,
+  } = HYPERPARAMS
+  const options = [
+    ...Object.values(METRICS),
+    model_params,
+    date_added,
+    n_training_materials,
+    n_training_structures,
+    graph_construction_radius,
+    max_force,
+    max_steps,
+    batch_size,
+    epochs,
+    n_layers,
+  ]
   // Calculate counts for each property path across all models
   let model_counts_by_prop = $derived(
-    property_paths.reduce(
-      (acc, path) => {
-        acc[path] = models.filter(
-          (model) => get_nested_property(model, path) !== undefined,
+    options.reduce(
+      (acc, prop) => {
+        const path = `${prop.path ?? ``}.${prop.key}`.replace(/^\./, ``)
+        acc[prop.key] = models.filter(
+          (model) => get_nested_value(model, path) !== undefined,
         ).length
         return acc
       },
@@ -137,44 +74,52 @@
     ),
   )
 
-  // Prepare and filter data for display
-  let filtered_models = $derived(
-    models.filter((model) => {
-      const x_val = get_nested_property(model, axes.x?.[0])
-      const y_val = get_nested_property(model, axes.y?.[0])
-      return (
-        x_val !== undefined && // Filter models that have values for both x and y
-        y_val !== undefined &&
-        // AND color_value if point_color is null (meaning color scale is active)
-        (point_color !== null ||
-          get_nested_property(model, axes.color?.[0]) !== undefined) &&
-        model_filter(model)
-      )
-    }),
-  )
+  function is_num_or_date(val: unknown): boolean {
+    return (
+      (typeof val === `number` && !isNaN(val)) || val instanceof Date // warning: this is true for invalid dates
+    )
+  }
 
-  let models_to_show = $derived(
-    filtered_models.map((model) => {
-      // For each property (x, y, color), get the value based on the selected property path
-      const x = get_nested_property(model, axes.x?.[0])
-      const y = get_nested_property(model, axes.y?.[0])
-      const color_value = get_nested_property(model, axes.color?.[0])
+  let plot_data = $derived(
+    models
+      .filter(model_filter)
+      .map((model) => {
+        // For each property (x, y, color), get the value based on the selected property path
+        let x_path = `${axes.x.path ?? ``}.${axes.x.key}`
+        if (x_path.startsWith(`.`)) x_path = x_path.slice(1)
+        let x_val = get_nested_value(model, x_path)
+        if (x_path.includes(`date`)) x_val = new Date(x_val as string)
 
-      // Prepare metadata for display in tooltip
-      const metadata = {
-        model_name: model.model_name,
-        date_added: model.date_added,
-        days_ago: calculate_days_ago(model.date_added),
-      }
-      return { model, x: x ?? 0, y: y ?? 0, color_value, metadata }
-    }),
+        let y_path = `${axes.y.path ?? ``}.${axes.y.key}`
+        if (y_path.startsWith(`.`)) y_path = y_path.slice(1)
+        let y_val = get_nested_value(model, y_path)
+        if (y_path.includes(`date`)) y_val = new Date(y_val as string)
+        let color_path = `${axes.color.path ?? ``}.${axes.color.key}`
+        if (color_path.startsWith(`.`)) color_path = color_path.slice(1)
+        let color_value = get_nested_value(model, color_path)
+        if (color_path.includes(`date`)) color_value = new Date(color_value as string)
+        // Prepare metadata for display in tooltip
+        const { model_name, date_added, color } = model
+        const metadata = {
+          model_name,
+          date_added,
+          days_ago: calculate_days_ago(model.date_added),
+        }
+        return { x: x_val, y: y_val, color_value, metadata, color }
+      })
+      .filter((item) => {
+        const x_valid = is_num_or_date(item.x)
+        const y_valid = is_num_or_date(item.y)
+        const color_valid = is_num_or_date(item.color_value)
+        return x_valid && y_valid && color_valid
+      }),
   )
 
   // Check if any values are negative (for log scale controls)
-  let x_has_neg_vals = $derived(models_to_show.some((item) => item.x <= 0))
-  let y_has_neg_vals = $derived(models_to_show.some((item) => item.y <= 0))
+  let x_has_neg_vals = $derived(plot_data.some((item) => item.x <= 0))
+  let y_has_neg_vals = $derived(plot_data.some((item) => item.y <= 0))
   let color_has_neg_vals = $derived(
-    models_to_show.some((item) => (item?.color_value ?? 1) <= 0),
+    plot_data.some((item) => (item?.color_value ?? 1) <= 0),
   )
   // Auto-revert to linear scale when data contains negative or zero values
   $effect(() => {
@@ -183,40 +128,24 @@
     if (color_has_neg_vals) log.color = false
   })
 
-  // Compute formats based on data
-  let x_format = $derived(get_format(models_to_show.map((item) => item.x)))
-  let y_format = $derived(get_format(models_to_show.map((item) => item.y)))
-
-  // Set axis domains based on DEFAULT_CPS_CONFIG ranges if applicable
-  function get_metric_range(prop_path: string | undefined): [number, number] | undefined {
-    if (!prop_path) return
-    const { label, range, parts } = DEFAULT_CPS_CONFIG
-
-    if (prop_path === label && range) return range // selected prop is CPS
-
-    // Otherwise, check if it's one of the parts
-    const part = Object.values(parts).find((p) => p.path === prop_path)
-    return part?.range
-  }
-
   // Update series when dependencies change
   let series: DataSeries[] = $derived.by(() => {
     // Base styling for points
-    const point_styles = models_to_show.map((item) => ({
-      fill: point_color ?? item.model.color ?? `#4dabf7`,
+    const point_styles = plot_data.map((item) => ({
+      fill: point_color ?? item.color ?? `#4dabf7`,
       radius: point_radius,
       stroke: `white`,
       stroke_width: 0.5,
     }))
 
     let base_series: DataSeries = {
-      x: models_to_show.map((item) => item.x),
-      y: models_to_show.map((item) => item.y),
+      x: plot_data.map((item) => item.x),
+      y: plot_data.map((item) => item.y),
       point_style: point_styles,
-      metadata: models_to_show.map((item) => item.metadata),
+      metadata: plot_data.map((item) => item.metadata),
       color_values:
         point_color === null
-          ? models_to_show
+          ? plot_data
               .map((item) => item.color_value)
               .filter((v): v is number => v !== undefined)
           : undefined,
@@ -224,7 +153,7 @@
 
     if (!show_model_labels) return [base_series]
 
-    base_series.point_label = models_to_show.map((item) => ({
+    base_series.point_label = plot_data.map((item) => ({
       text: item.metadata.model_name,
       offset_y: -5,
       offset_x: 5,
@@ -240,16 +169,26 @@
 <div class="controls-grid">
   <!-- prettier-ignore -->
   {#each [
-    { id: `x`, label: `X Axis`, selected_prop: axes.x?.[0], log_state: log.x, prop_value: axes.x?.[0], log_disabled: x_has_neg_vals },
-    { id: `y`, label: `Y Axis`, selected_prop: axes.y?.[0], log_state: log.y, prop_value: axes.y?.[0], log_disabled: y_has_neg_vals },
-    { id: `color`, label: `Color`, selected_prop: axes.color?.[0], log_state: log.color, prop_value: axes.color?.[0], log_disabled: color_has_neg_vals },
-  ] as control (control.id)}
+    { id: `x`, label: `X Axis`, log_state: log.x, has_neg: x_has_neg_vals },
+    { id: `y`, label: `Y Axis`, log_state: log.y, has_neg: y_has_neg_vals },
+    { id: `color`, label: `Color`, log_state: log.color, has_neg: color_has_neg_vals },
+  ] as const as control (control.id)}
+    {@const disable_log = control.has_neg || axes[control.id]?.key === `date_added`}
     <label for={control.id}>{control.label}</label>
+    <label aria-disabled={disable_log}>
+      <input
+        type="checkbox"
+        bind:checked={log[control.id]}
+        disabled={disable_log}
+      />
+      Log scale
+    </label>
     <Select
       id={control.id}
-      bind:selected={axes[control.id as keyof typeof axes]}
-      placeholder={`Select ${control.label}`}
-      options={property_paths}
+      selected={[axes[control.id]]}
+      bind:value={axes[control.id]}
+      placeholder="Select {control.label}"
+      {options}
       maxSelect={1}
       minSelect={1}
       style="width: 100%; max-width: none; margin: 0;"
@@ -259,70 +198,70 @@
       --sms-selected-bg="none"
       --sms-border="1px solid rgba(255, 255, 255, 0.15)"
     >
-      {@html property_labels[option]}
+      {@const prop = option as unknown as Metric}
+      {@html format_property_path(`${prop.path ?? ``}.${prop.key}`.replace(/^\./, ``))}
       <span style="font-size: smaller; color: gray; margin-left: 0.5em;">
-        ({model_counts_by_prop[option]} models)
+        ({model_counts_by_prop[prop.key]} models)
       </span>
     </Select>
-    <label class:invisible={control.log_disabled || control.prop_value === `date_added`}>
-      <input
-        type="checkbox"
-        bind:checked={log[control.id as keyof typeof log]}
-        disabled={control.log_disabled}
-      />
-      Log {control.label.split(` `)[0].toLowerCase()} scale
-    </label>
   {/each}
 </div>
 
 <div class="full-bleed-1400" style="height: 600px; margin-block: 1em;">
-  {#key [log.color, axes.color?.[0]]}
-    <ScatterPlot
-      {series}
-      {x_label}
-      {y_label}
-      {x_format}
-      x_lim={get_metric_range(axes.x?.[0])}
-      y_lim={get_metric_range(axes.y?.[0])}
-      {y_format}
-      markers="points"
-      {style}
-      x_scale_type={log.x ? `log` : `linear`}
-      y_scale_type={log.y ? `log` : `linear`}
-      x_label_shift={{ y: -60 }}
-      y_label_shift={{ y: axes.y?.[0] === `date_added` ? -40 : -10 }}
-      color_scale_type={log.color ? `log` : `linear`}
-      color_scheme="viridis"
-      color_bar={{ label: color_label, label_side: `top`, margin: 30 }}
-      label_placement_config={{ link_strength: 2, link_distance: 1 }}
-      {...rest}
-    >
-      {#snippet tooltip({ x_formatted, y_formatted, metadata })}
-        <strong>{metadata?.model_name}</strong><br />
-        {@html x_label}: {x_formatted}
-        {#if axes.x?.[0] === `date_added` && metadata?.days_ago}
-          <small>({metadata.days_ago} days ago)</small>{/if}<br />
-        {@html y_label.split(` > `).pop()}: {y_formatted}<br />
-        {#if ![`model_params`, `date_added`].includes(axes.color?.[0]) && metadata?.model_name}
-          {@html color_label.split(` > `).pop()}:
-          {models_to_show
-            .find((m) => m.metadata.model_name === metadata.model_name)
-            ?.color_value?.toFixed(2) ?? `N/A`}<br />
-        {/if}
-      {/snippet}
-    </ScatterPlot>
-  {/key}
+  <!-- TODO fix x_lim and y_lim to use metric ranges-->
+  <ScatterPlot
+    {series}
+    x_label="{axes.x.svg_label ?? axes.x.label} {axes.x.better
+      ? `<tspan style='font-size: 0.8em;'>(${axes.x.better}=better)</tspan>`
+      : ``}"
+    y_label="{axes.y.svg_label ?? axes.y.label} {axes.y.better
+      ? `<tspan style='font-size: 0.8em;'>(${axes.y.better}=better)</tspan>`
+      : ``}"
+    x_lim={axes.x.range}
+    y_lim={axes.y.range}
+    x_format={axes.x.format}
+    y_format={axes.y.format}
+    markers="points"
+    {style}
+    x_scale_type={log.x ? `log` : `linear`}
+    y_scale_type={log.y ? `log` : `linear`}
+    x_label_shift={{ y: -60 }}
+    y_label_shift={{ y: [date_key, params_key].includes(axes.y.key ?? ``) ? -40 : -10 }}
+    color_scale_type={log.color ? `log` : `linear`}
+    color_scheme="viridis"
+    color_bar={{
+      label: `${axes.color.label}${axes.color.better ? ` (${axes.color.better}=better)` : ``}`,
+      label_side: `top`,
+      margin: 30,
+    }}
+    label_placement_config={{ link_strength: 2, link_distance: 1 }}
+    {...rest}
+  >
+    {#snippet tooltip({ x_formatted, y_formatted, metadata })}
+      <strong>{metadata?.model_name}</strong><br />
+      {@html axes.x.label}: {x_formatted}
+      {#if axes.x.key === `date_added` && metadata?.days_ago}
+        <small>({metadata.days_ago} days ago)</small>{/if}<br />
+      {@html axes.y.label}: {y_formatted}<br />
+      {#if ![`model_params`, `date_added`].includes(axes.color.key ?? ``) && metadata?.model_name}
+        {@html axes.color.label}:
+        {plot_data
+          .find((m) => m.metadata.model_name === metadata.model_name)
+          ?.color_value?.toFixed(2) ?? `N/A`}<br />
+      {/if}
+    {/snippet}
+  </ScatterPlot>
 </div>
 
 <style>
-  .invisible {
-    visibility: hidden;
+  label[aria-disabled='true'] {
+    cursor: not-allowed;
   }
   .controls-grid {
     display: grid;
     /* Add column for labels: Label Select Checkbox */
-    grid-template-columns: auto 1fr auto;
-    gap: 1em;
+    grid-template-columns: auto auto 1fr;
+    gap: 1ex;
     align-items: center;
   }
   .controls-grid label {

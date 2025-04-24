@@ -1,6 +1,6 @@
 import { MODELS } from '$lib'
 import { GET } from '$routes/rss.xml/+server'
-import * as pkg from '$site/package.json'
+import pkg from '$site/package.json'
 import { describe, expect, it } from 'vitest'
 
 describe(`RSS feed endpoint`, () => {

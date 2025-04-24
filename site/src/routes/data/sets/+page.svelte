@@ -1,39 +1,14 @@
 <script lang="ts">
   import { DATASETS, arr_to_str, format_date } from '$lib'
   import HeatmapTable from '$lib/HeatmapTable.svelte'
-  import type { Dataset, HeatmapColumn, RowData } from '$lib/types'
-  import * as pkg from '$site/package.json'
-  import { pretty_num } from 'elementari'
-
-  const columns: HeatmapColumn[] = [
-    { label: `Title`, sticky: true },
-    {
-      label: `Structures`,
-      better: `higher`,
-      color_scale: `interpolateViridis`,
-      scale_type: `log`,
-    },
-    {
-      label: `Materials`,
-      better: `higher`,
-      color_scale: `interpolateViridis`,
-      scale_type: `log`,
-    },
-    { label: `Created`, tooltip: `Date the dataset was created/started` },
-    { label: `Open` },
-    { label: `License` },
-    { label: `Method` },
-    { label: `Links`, sortable: false },
-  ]
+  import { DATASET_METADATA_COLS, title_case } from '$lib/labels'
+  import type { Dataset, RowData } from '$lib/types'
+  import pkg from '$site/package.json'
 
   // License abbreviations mapped to full names
   const license_map: Record<string, string> = {
     'CC-BY-4.0': `Creative Commons Attribution 4.0 International`,
   }
-
-  const to_spaces = (str: string) => str.replaceAll(`_`, ` `).replaceAll(`-`, ` `)
-  const to_title = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)
-  const title_case = (str: string) => to_spaces(str).split(` `).map(to_title).join(` `)
 
   // Process data for table
   const table_data: RowData[] = Object.entries(DATASETS).map(([key, set]) => {
@@ -94,24 +69,12 @@
 
 <HeatmapTable
   data={table_data}
-  {columns}
+  columns={Object.values(DATASET_METADATA_COLS)}
   initial_sort_column="Created"
   initial_sort_direction="desc"
   fixed_header={true}
   sort_hint=""
->
-  {#snippet cell({ col, val })}
-    {#if [`Structures`, `Materials`].includes(col.label)}
-      {#if val === null}
-        n/a
-      {:else if typeof val === `number`}
-        <span data-sort-value={val} title={val.toLocaleString()}>{pretty_num(val)}</span>
-      {/if}
-    {:else}
-      {@html val}
-    {/if}
-  {/snippet}
-</HeatmapTable>
+/>
 
 <p>
   See incorrect data or a dataset that's missing from this list? Suggest an edit to
