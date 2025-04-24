@@ -26,7 +26,7 @@ describe(`Models Page`, () => {
     const button_texts = Array.from(buttons).map((btn) => btn.textContent?.trim())
 
     expect(button_texts).toContain(`Model Name`)
-    expect(button_texts).toContain(`F1 Score`)
+    expect(button_texts).toContain(`F1`)
     expect(button_texts).toContain(`DAF`)
     expect(button_texts).toContain(`R2`)
   })
@@ -132,7 +132,9 @@ describe(`Models Page`, () => {
     const legend = document.body.querySelector(`legend`)
     expect(legend).toBeDefined()
     const legend_text = legend?.textContent?.replace(/\s+/g, ` `).trim()
-    expect(legend_text).toMatch(/heading color best.*worst/i)
+    expect(legend_text).toBe(
+      `worst Model names colored by Combined Performance Score 0.20.40.60.81 best`,
+    )
 
     const color_bar = legend?.querySelector(`.elementari-color-bar`)
     expect(color_bar).toBeDefined()

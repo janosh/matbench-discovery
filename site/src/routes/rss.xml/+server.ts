@@ -1,7 +1,7 @@
 import { MODELS } from '$lib'
 import { format_train_set } from '$lib/metrics'
 import type { ModelData } from '$lib/types'
-import * as pkg from '$site/package.json'
+import pkg from '$site/package.json'
 import { pretty_num } from 'elementari'
 
 export const prerender = true

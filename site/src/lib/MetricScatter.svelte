@@ -1,49 +1,30 @@
 <script lang="ts">
-  import type { CombinedMetricConfig, DiscoverySet, ModelData } from '$lib'
-  import { calculate_days_ago } from '$lib'
-  import { calculate_cps } from '$lib/combined_perf_score'
-  import { get_metric_value } from '$lib/metrics'
-  import type { CpsPart, ModelMetadata } from '$lib/types'
-  import { ScatterPlot, type Point } from 'elementari'
+  import type { ModelData } from '$lib'
+  import { calculate_days_ago, MODELS } from '$lib'
+  import { get_nested_value } from '$lib/metrics'
+  import type { Metric } from '$lib/types'
+  import { ScatterPlot, type PointStyle } from 'elementari'
+  import { METADATA_COLS } from './labels'
 
   interface Props {
-    models: ModelData[]
-    config?: CombinedMetricConfig
-    hovered?: boolean
+    x_prop: Metric
+    y_prop: Metric
+    models?: ModelData[]
     model_filter?: (model: ModelData) => boolean
-    x_lim?: [number | null, number | null]
-    y_lim?: [number | null, number | null] | null
-    x_property?: keyof ModelMetadata
-    y_metric?: CpsPart | `CPS`
-    metric?: string // Direct metric path for dotted notation (for backward compatibility)
-    discovery_set?: DiscoverySet
-    point_radius?: number
-    x_label?: string
-    y_label?: string
-    tooltip_point?: Point | null
+    point_style?: PointStyle
     date_range?: [Date | null, Date | null]
     style?: string
-    x_format?: string
-    show_model_labels?: boolean // when true, each point will show a text label with its model name
+    show_model_labels?: boolean | `auto-placement`
     [key: string]: unknown
   }
   let {
-    models,
-    config = undefined,
-    hovered = $bindable(false),
+    x_prop,
+    y_prop,
     model_filter = () => true,
-    y_lim = [0, 1],
-    x_property = `model_params`,
-    y_metric = `CPS`,
-    metric = ``,
-    discovery_set = `unique_prototypes`,
-    point_radius = 5,
-    x_label,
-    y_label,
-    tooltip_point = $bindable(null),
+    models = Object.values(MODELS),
+    point_style = {},
     date_range = [null, null],
     style = ``,
-    x_format = `.1s`,
     show_model_labels = true,
     ...rest
   }: Props = $props()
@@ -53,70 +34,19 @@
   const ms_per_day = 24 * 60 * 60 * 1000
   const n_days_ago = new Date(now.getTime() - 180 * ms_per_day)
 
-  // Define label lookups
-  const property_labels: Record<string, string> = {
-    model_params: `Model Parameters`,
-    training_cost: `Training Cost (GPU hours)`,
-    inference_cost: `Inference Cost`,
-    n_estimators: `Number of Estimators`,
-    date_added: `Date Added`,
-  }
-
-  const metric_labels: Record<string, string> = {
-    F1: `F1 Score`,
-    RMSD: `RMSD`,
-    kappa_SRME: `κ SRME`,
-    CPS: `Combined Performance Score`,
-    // Default labels for dotted paths
-    'phonons.kappa_103.κ_SRME': `κ SRME`,
-    'discovery.unique_prototypes.F1': `F1 Score`,
-    combined_performance_score: `Combined Performance Score`,
-  }
-
-  // If metric is provided directly (MetricScatter style), use it for y_metric
-  let actual_y_metric = $derived(metric || y_metric)
-
-  // Default formats
-  let actual_x_format = $derived(x_property === `date_added` ? `%b %y` : x_format)
-
+  // Determine axis keys/paths
+  let x_path = $derived(`${x_prop.path ?? ``}.${x_prop.key}`.replace(/^\./, ``))
+  let y_path = $derived(`${y_prop.path ?? ``}.${y_prop.key}`.replace(/^\./, ``))
   // Determine labels
-  let actual_x_label = $derived(x_label ?? property_labels[x_property] ?? `X`)
-  let actual_y_label = $derived(
-    y_label ?? metric_labels[actual_y_metric] ?? actual_y_metric ?? `Y`,
-  )
-
-  // Extract property values
-  function get_property_value(
-    model: ModelData,
-    property: keyof ModelMetadata,
-  ): number | undefined {
-    if (property === `model_params`)
-      return typeof model.model_params === `number` ? model.model_params : undefined
-    if (property === `n_estimators`)
-      return typeof model.n_estimators === `number` ? model.n_estimators : undefined
-    if (property === `date_added`)
-      return model.date_added ? new Date(model.date_added).getTime() : undefined
-
-    if (
-      property === `training_cost` &&
-      typeof model.training_cost === `object` &&
-      model.training_cost !== null
-    ) {
-      let total_gpu_hours = 0
-      for (const [key, value] of Object.entries(model.training_cost)) {
-        if (key.includes(`GPU`) && typeof value === `object` && value.hours) {
-          total_gpu_hours += value.amount * value.hours
-        }
-      }
-      return total_gpu_hours > 0 ? total_gpu_hours : undefined
-    }
-
-    return undefined
-  }
+  let x_label = $derived(x_prop.svg_label ?? x_prop.label ?? x_prop.key ?? `X`)
+  let y_label = $derived(y_prop.svg_label ?? y_prop.label ?? y_prop.key ?? `Y`)
 
   // Apply date range filter if needed
   function date_filter(model: ModelData): boolean {
-    if (x_property !== `date_added` || (date_range[0] === null && date_range[1] === null))
+    if (
+      x_path !== METADATA_COLS.date_added.key ||
+      (date_range[0] === null && date_range[1] === null)
+    )
       return true
 
     const model_date = new Date(model.date_added ?? 0)
@@ -125,85 +55,50 @@
     )
   }
 
-  // A wrapper around get_metric_value to handle CPS with custom config
-  function get_model_metric(model: ModelData, metric_key: string): number | undefined {
-    // Special handling for CPS with custom config
-    if (metric_key === `CPS` && config) {
-      const f1 = model.metrics?.discovery?.[discovery_set]?.F1
-      const rmsd =
-        model.metrics?.geo_opt && typeof model.metrics.geo_opt !== `string`
-          ? model.metrics.geo_opt[`symprec=1e-5`]?.rmsd
-          : undefined
-      const kappa =
-        model.metrics?.phonons && typeof model.metrics.phonons !== `string`
-          ? model.metrics.phonons.kappa_103?.κ_SRME !== undefined
-            ? Number(model.metrics.phonons.kappa_103.κ_SRME)
-            : undefined
-          : undefined
-
-      const score = calculate_cps(f1, rmsd, kappa, config)
-      return typeof score === `number` ? score : undefined
-    }
-
-    // For all other metrics, use the imported function
-    return get_metric_value(model, metric_key, discovery_set)
-  }
-
-  // Filter and prepare data
-  let filtered_models = $derived(
-    models.filter((model) => {
-      const x_val = get_property_value(model, x_property)
-      const y_val = get_model_metric(model, actual_y_metric)
-      return (
-        x_val !== undefined &&
-        y_val !== undefined &&
-        model_filter(model) &&
-        date_filter(model)
-      )
-    }),
-  )
-
-  let models_to_show = $derived(
-    filtered_models.map((model) => {
-      const x = get_property_value(model, x_property)
-      const y = get_model_metric(model, actual_y_metric)
-      const metadata = {
-        model_name: model.model_name,
-        date_added: model.date_added,
-        days_ago: calculate_days_ago(model.date_added),
-      }
-      return {
-        model,
-        x: x !== undefined ? x : 0,
-        y: y !== undefined ? y : 0,
-        metadata,
-      }
-    }),
+  // prepare and filter data
+  let plot_data = $derived(
+    models
+      .filter((model) => model_filter(model) && date_filter(model))
+      .map((model) => {
+        let x_val = get_nested_value(model, x_path)
+        if (x_path === METADATA_COLS.date_added.key) x_val = new Date(x_val as string)
+        let y_val = get_nested_value(model, y_path)
+        if (y_path === METADATA_COLS.date_added.key) y_val = new Date(y_val as string)
+        const metadata = {
+          model_name: model.model_name,
+          date_added: model.date_added,
+          days_ago: calculate_days_ago(model.date_added),
+        }
+        return { x: x_val, y: y_val, metadata, color: model?.color }
+      })
+      .filter((pt) => pt.x !== undefined && pt.y !== undefined),
   )
 
   // Create plot series based on show_model_labels
   let series = $derived.by(() => {
     const base_series = {
-      x: models_to_show.map((item) => item.x),
-      y: models_to_show.map((item) => item.y),
-      metadata: models_to_show.map((item) => item.metadata),
-      point_style: models_to_show.map((item) => ({
-        fill: item.model.color ?? `#4dabf7`, // Use model color directly
-        radius: point_radius,
+      x: plot_data.map((item) => item.x),
+      y: plot_data.map((item) => item.y),
+      metadata: plot_data.map((item) => item.metadata),
+      point_style: plot_data.map((item) => ({
+        fill: item.color ?? `#4dabf7`, // Use model color directly
+        radius: 6,
         stroke: `white`,
         stroke_width: 0.5,
+        ...point_style,
       })),
     }
     if (show_model_labels) {
       const labeled_series = {
         ...base_series,
-        point_label: models_to_show.map((item) => ({
+        point_label: plot_data.map((item) => ({
           text: item.metadata.model_name,
           offset_y: 2,
           offset_x: 10,
           font_size: 12,
           // Use model color for label
-          color: item.model.color ?? `black`,
+          color: item.color ?? `black`,
+          auto_placement: show_model_labels === `auto-placement`,
         })),
       }
       return [labeled_series]
@@ -214,23 +109,22 @@
 
 <ScatterPlot
   {series}
-  x_label={actual_x_label}
-  y_label={actual_y_label}
-  x_format={actual_x_format}
-  y_format=".3f"
-  bind:hovered
-  bind:tooltip_point
   markers="points"
+  {x_label}
+  {y_label}
+  x_format={x_prop.format ?? `.1s`}
+  y_format={y_prop.format ?? `.3f`}
+  x_lim={x_prop.range as [number, number] | undefined}
+  y_lim={y_prop.range as [number, number] | undefined}
   {style}
-  y_lim={y_lim ?? undefined}
   {...rest}
 >
   {#snippet tooltip({ x_formatted, y_formatted, metadata })}
     <div style="white-space: nowrap; font-size: 14px; margin-top: 10px; line-height: 1;">
-      {actual_x_label}: {x_formatted}
-      {#if x_property === `date_added`}
+      {x_label}: {x_formatted}
+      {#if x_path === `date_added`}
         <small>({metadata?.days_ago} days ago)</small>{/if}<br />
-      {actual_y_label}: {y_formatted}<br />
+      {y_label}: {y_formatted}<br />
     </div>
   {/snippet}
 </ScatterPlot>

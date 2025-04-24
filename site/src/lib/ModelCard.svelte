@@ -1,14 +1,14 @@
 <script lang="ts">
-  import type { MetricKey, MetricLabel, ModelData } from '$lib'
+  import type { Metric, ModelData } from '$lib'
   import { AuthorBrief, DATASETS } from '$lib'
-  import { repository } from '$site/package.json'
+  import pkg from '$site/package.json'
   import { pretty_num } from 'elementari'
   import { Tooltip } from 'svelte-zoo'
   import { fade, slide } from 'svelte/transition'
 
   interface Props {
     model: ModelData
-    metrics: readonly (MetricLabel & { key: MetricKey })[]
+    metrics: readonly Metric[]
     sort_by: keyof ModelData
     show_details?: boolean
     style?: string | null
@@ -39,7 +39,7 @@
     [model.paper, `Paper`, `#icon-paper`],
     [model.url, `Docs`, `#icon-docs`],
     [model.checkpoint_url, `Checkpoint`, `#icon-download`],
-    [`${repository}/blob/-/models/${model.dirname}`, `Files`, `#icon-directory`],
+    [`${pkg.repository}/blob/-/models/${model.dirname}`, `Files`, `#icon-directory`],
   ])
   const target = { target: `_blank`, rel: `noopener` }
   let n_model_params = $derived(pretty_num(model_params, `.3~s`))
@@ -159,13 +159,15 @@
     </section>
   </div>
 {/if}
+
 <section class="metrics" style={metrics_style}>
   <h3>Metrics</h3>
   <ul>
     <!-- hide run time if value is 0 (i.e. not available) -->
-    {#each metrics as { key, label, unit } (key)}
+    {#each metrics as metric (JSON.stringify(metric))}
+      {@const { key, label, short, unit } = metric}
       <li class:active={sort_by == key}>
-        <label for={key}>{@html label ?? key}</label>
+        <label for={key}>{@html short ?? label ?? key}</label>
         <strong>{pretty_num(all_metrics[key])} <small>{unit ?? ``}</small></strong>
       </li>
     {/each}

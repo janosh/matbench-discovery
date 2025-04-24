@@ -1,6 +1,4 @@
 import { TableControls } from '$lib'
-import { DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score'
-import type { CombinedMetricConfig } from '$lib/types'
 import { mount } from 'svelte'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -128,17 +126,5 @@ describe(`TableControls`, () => {
       const mouseenter_event = new MouseEvent(`mouseenter`)
       info_icon.dispatchEvent(mouseenter_event)
     }
-  })
-
-  it(`passes config to the component`, () => {
-    const sample_config: CombinedMetricConfig = {
-      ...DEFAULT_CPS_CONFIG,
-      name: `Test Config`,
-    }
-
-    mount(TableControls, {
-      target: document.body,
-      props: { visible_cols: sample_cols, config: sample_config },
-    })
   })
 })

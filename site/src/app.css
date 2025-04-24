@@ -36,7 +36,8 @@ body {
   color: var(--text-color);
   line-height: 1.5;
   margin: 0;
-  /* 2024-11-28 maybe remove, prevents unintended horizontal scrolling but maybe breaks mobile layout */
+  scrollbar-width: none; /* hide scroll bars on non-scrollable like MetricsTable in MS Edge */
+  /* fix confirmed with https://live.browserstack.com/dashboard#os=Windows&os_version=11&browser=Edge&browser_version=135.0 */
 }
 body > div {
   display: flex;
@@ -63,6 +64,13 @@ button {
 }
 :is(div.multiselect) button {
   background: transparent;
+}
+:is(div.multiselect) ul {
+  padding: 0;
+}
+:is(div.multiselect) ul sub {
+  /* fixes κ<sub>SRME</sub> looking more like super than subscript in multiselect */
+  transform: translateY(0.8em);
 }
 a {
   color: var(--link-color);

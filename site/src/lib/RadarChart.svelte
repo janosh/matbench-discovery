@@ -1,9 +1,10 @@
 <script lang="ts">
+  import type { CpsConfig } from '$lib/combined_perf_score.svelte'
+  import { METRICS } from '$lib/labels'
   import type { Point } from 'elementari'
   import { Tooltip } from 'svelte-zoo'
-  import { DEFAULT_CPS_CONFIG } from './combined_perf_score'
-  import { CPS_CONFIG, update_models_cps } from './models.svelte'
-  import type { CombinedMetricConfig } from './types'
+  import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from './combined_perf_score.svelte'
+  import { update_models_cps } from './models.svelte'
 
   // Define props interface
   interface Props {
@@ -20,8 +21,11 @@
 
   // Reset to initial weights
   function reset_weights() {
-    CPS_CONFIG.parts = DEFAULT_CPS_CONFIG.parts
-    update_point_from_weights(CPS_CONFIG.parts)
+    let key: keyof typeof CPS_CONFIG
+    for (key in CPS_CONFIG) {
+      CPS_CONFIG[key].weight = DEFAULT_CPS_CONFIG[key].weight
+    }
+    update_point_from_weights(CPS_CONFIG)
     update_models_cps() // Update all model CPS with new weights
   }
 
@@ -33,8 +37,8 @@
 
   // Compute axes points coordinates
   let axis_points = $derived(
-    Object.values(CPS_CONFIG.parts).map((_, idx) => {
-      const angle = (2 * Math.PI * idx) / Object.values(CPS_CONFIG.parts).length
+    Object.values(CPS_CONFIG).map((_, idx) => {
+      const angle = (2 * Math.PI * idx) / Object.values(CPS_CONFIG).length
       const x = center.x + Math.cos(angle) * radius * 0.8
       const y = center.y + Math.sin(angle) * radius * 0.8
       return { x, y }
@@ -43,11 +47,11 @@
 
   // Initialize point position from weights
   $effect(() => {
-    update_point_from_weights(CPS_CONFIG.parts)
+    update_point_from_weights(CPS_CONFIG)
     update_models_cps()
   })
 
-  function update_point_from_weights(current_weights: CombinedMetricConfig[`parts`]) {
+  function update_point_from_weights(current_weights: CpsConfig[`parts`]) {
     if (!current_weights || Object.values(current_weights).length < 3) return
 
     // For 3 axes, we can use barycentric coordinates
@@ -65,7 +69,7 @@
 
   function update_weights_from_point() {
     // Calculate weights using barycentric coordinates for triangular space
-    if (Object.values(CPS_CONFIG.parts).length !== 3) {
+    if (Object.values(CPS_CONFIG).length !== 3) {
       console.error(`This implementation only supports exactly 3 metrics`)
       return
     }
@@ -95,9 +99,9 @@
     }
 
     // Update weights in the CPS_CONFIG directly
-    CPS_CONFIG.parts.F1.weight = new_values[0]
-    CPS_CONFIG.parts.kappa_SRME.weight = new_values[1]
-    CPS_CONFIG.parts.RMSD.weight = new_values[2]
+    CPS_CONFIG.F1.weight = new_values[0]
+    CPS_CONFIG.κ_SRME.weight = new_values[1]
+    CPS_CONFIG.RMSD.weight = new_values[2]
   }
 
   // Helper to calculate triangle area using cross product
@@ -140,7 +144,7 @@
   function move_point_to_position(x: number, y: number) {
     const [a, b, c] = axis_points
     if (
-      Object.values(CPS_CONFIG.parts).length === 3 &&
+      Object.values(CPS_CONFIG).length === 3 &&
       is_point_in_triangle({ x, y }, a, b, c)
     ) {
       point = { x, y }
@@ -249,11 +253,11 @@
 
 <div class="radar-chart">
   <span class="metric-name">
-    {CPS_CONFIG.label}
+    {METRICS.CPS.label}
     <Tooltip tip_style="z-index: 20; font-size: 0.8em;">
       <svg style="opacity: 0.7; cursor: help;"><use href="#icon-info" /></svg>
       {#snippet tip()}
-        {@html CPS_CONFIG.description}
+        {@html METRICS.CPS.description}
       {/snippet}
     </Tooltip>
   </span>
@@ -274,8 +278,8 @@
     aria-label="Radar chart for adjusting metric weights"
   >
     <!-- Axes -->
-    {#each Object.values(CPS_CONFIG.parts) as weight, idx (weight.label)}
-      {@const angle = (2 * Math.PI * idx) / Object.values(CPS_CONFIG.parts).length}
+    {#each Object.values(CPS_CONFIG) as weight, idx (weight.label)}
+      {@const angle = (2 * Math.PI * idx) / Object.values(CPS_CONFIG).length}
       {@const x = center.x + Math.cos(angle) * radius * 0.8}
       {@const y = center.y + Math.sin(angle) * radius * 0.8}
       {@const label_radius = idx === 2 ? radius * 1.0 : radius * 0.9}
@@ -320,7 +324,7 @@
     {/each}
 
     <!-- Triangle area -->
-    {#if Object.values(CPS_CONFIG.parts).length === 3}
+    {#if Object.values(CPS_CONFIG).length === 3}
       <path
         d="M {axis_points[0].x} {axis_points[0].y} L {axis_points[1].x} {axis_points[1]
           .y} L {axis_points[2].x} {axis_points[2].y} Z"
@@ -343,7 +347,7 @@
     {/each}
 
     <!-- Colored areas for each metric -->
-    {#if Object.values(CPS_CONFIG.parts).length === 3}
+    {#if Object.values(CPS_CONFIG).length === 3}
       {@const [{ x, y }, { x: px, y: py }] = [center, point]}
       {#each axis_points as { x: x0, y: y0 }, idx ([x0, y0])}
         {@const path = `M ${x} ${y} L ${x0} ${y0} L ${px} ${py} Z`}

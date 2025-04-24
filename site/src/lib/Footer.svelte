@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { author, repository, title } from '$site/package.json'
+  import pkg from '$site/package.json'
 </script>
 
 <footer>
   <nav>
-    <a href="{repository}/issues">
+    <a href="{pkg.repository}/issues">
       <svg><use href="#icon-issues" /></svg>
       Issues
     </a>
@@ -22,7 +22,7 @@
     </a>
   </nav>
   <img src="/favicon.svg" alt="Logo" width="30px" style="vertical-align: middle;" />
-  &ensp;{title} &ensp; | &ensp; © {author.split(`<`)[0]} (2023)
+  &ensp;{pkg.title} &ensp; | &ensp; © {pkg.author.split(`<`)[0]} (2023)
 </footer>
 
 <style>

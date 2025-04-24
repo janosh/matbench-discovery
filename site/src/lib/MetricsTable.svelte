@@ -1,26 +1,24 @@
 <script lang="ts">
   import { HeatmapTable, TableControls } from '$lib'
-  import { DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score'
   import { metric_better_as } from '$lib/metrics'
-  import { pretty_num } from 'elementari'
+  import type { Snippet } from 'svelte'
   import { click_outside } from 'svelte-zoo/actions'
-  import { ALL_METRICS, METADATA_COLS, calculate_metrics_data } from './metrics'
+  import { ALL_METRICS, HYPERPARAMS, INFO_COLS, METADATA_COLS } from './labels'
+  import { assemble_row_data } from './metrics'
   import type {
-    CombinedMetricConfig,
+    CellSnippetArgs,
     DiscoverySet,
-    HeatmapColumn,
     LinkData,
+    Metric,
     ModelData,
-    RowData,
   } from './types'
 
   interface Props {
     discovery_set?: DiscoverySet
     model_filter?: (model: ModelData) => boolean
-    col_filter?: (col: HeatmapColumn) => boolean
+    col_filter?: (col: Metric) => boolean
     show_energy_only?: boolean
     show_noncompliant?: boolean
-    config?: CombinedMetricConfig
     [key: string]: unknown
   }
   let {
@@ -29,7 +27,6 @@
     col_filter = () => true,
     show_energy_only = false,
     show_noncompliant = false,
-    config = DEFAULT_CPS_CONFIG,
     ...rest
   }: Props = $props()
 
@@ -37,38 +34,52 @@
   let active_model_name = $state(``)
   let active_dropdown_pos = $state<{ x: number; y: number; name: string } | null>(null)
   const [compliant_clr, noncompliant_clr] = [`#4caf50`, `#4682b4`]
+  const { model_name, training_set, model_params, targets, date_added, links } =
+    METADATA_COLS
+  const { graph_construction_radius } = HYPERPARAMS
+  const { checkpoint_license, code_license } = INFO_COLS
 
   let columns = $derived(
-    [...ALL_METRICS, ...METADATA_COLS]
+    [
+      ...Object.values(ALL_METRICS),
+      model_name,
+      training_set,
+      model_params,
+      targets,
+      date_added,
+      links,
+      graph_construction_radius,
+      checkpoint_license,
+      code_license,
+    ]
       .map((col) => {
         const better = col.better ?? metric_better_as(col.label)
 
         // append better=higher/lower to tooltip if applicable
-        let tooltip = col.tooltip || ``
+        let description = col.description || ``
         if (better === `higher` || better === `lower`) {
-          tooltip = tooltip ? `${tooltip} (${better}=better)` : `${better}=better`
+          description = description
+            ? `${description} (${better}=better)`
+            : `${better}=better`
         }
         const visible = col.visible !== false && col_filter(col)
 
-        return { ...col, better, tooltip, visible } as HeatmapColumn
+        return { ...col, better, description, visible } as Metric
       })
       // Ensure Model column comes first
       .sort((col1, _col2) => (col1.label === `Model` ? -1 : 1)),
   )
 
-  let metrics_data = $state<RowData[]>([])
-  // recalculate metrics_data whenever filter settings, props, or metric_config change
-  $effect(() => {
-    metrics_data = calculate_metrics_data(
+  let metrics_data = $derived(
+    assemble_row_data(
       discovery_set,
       model_filter,
       show_energy_only,
       show_noncompliant,
-      config,
       compliant_clr,
       noncompliant_clr,
-    )
-  })
+    ),
+  )
 
   function show_dropdown(event: MouseEvent, links: LinkData) {
     event.stopPropagation()
@@ -95,12 +106,38 @@
   }}
 />
 
+{#snippet links_cell({ val }: CellSnippetArgs)}
+  {@const links = val as LinkData}
+  {#each Object.entries(links).filter(([key]) => key !== `pred_files`) as [key, link] (JSON.stringify(link))}
+    {#if `url` in link && ![`missing`, `not available`, ``, null, undefined].includes(link.url)}
+      <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title}>
+        {@html link.icon}
+      </a>
+    {:else}
+      <span title="{key} not available">
+        <svg><use href="#icon-unavailable"></use></svg>
+      </span>
+    {/if}
+  {/each}
+  {#if links?.pred_files}
+    <button
+      class="pred-files-btn"
+      aria-label="Download model prediction files"
+      onclick={(event) => show_dropdown(event, links)}
+    >
+      <svg><use href="#icon-graph"></use></svg>
+    </button>
+  {/if}
+{/snippet}
+
 <HeatmapTable
   data={metrics_data}
   {columns}
   initial_sort_column="CPS"
   initial_sort_direction="desc"
   sort_hint="Click on column headers to sort table rows"
+  special_cells={{ Links: links_cell as unknown as Snippet<[CellSnippetArgs]> }}
+  default_num_format=".3f"
   {...rest}
 >
   {#snippet controls()}
@@ -117,38 +154,6 @@
         <TableControls bind:show_energy_only bind:show_noncompliant bind:columns />
       </div>
     </div>
-  {/snippet}
-
-  {#snippet cell({ col, val })}
-    {#if col.label === `Links` && val && typeof val === `object` && `paper` in val}
-      {@const links = val as LinkData}
-      {#each Object.entries(links).filter(([key]) => key !== `pred_files`) as [key, link] (JSON.stringify(link))}
-        {#if `url` in link && ![`missing`, `not available`, ``, null, undefined].includes(link.url)}
-          <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title}>
-            {@html link.icon}
-          </a>
-        {:else}
-          <span title="{key} not available">
-            <svg><use href="#icon-unavailable"></use></svg>
-          </span>
-        {/if}
-      {/each}
-      {#if links?.pred_files}
-        <button
-          class="pred-files-btn"
-          aria-label="Download model prediction files"
-          onclick={(event) => show_dropdown(event, links)}
-        >
-          <svg><use href="#icon-graph"></use></svg>
-        </button>
-      {/if}
-    {:else if typeof val === `number` && col.format}
-      {pretty_num(val, col.format)}
-    {:else if val === undefined || val === null}
-      n/a
-    {:else}
-      {@html val}
-    {/if}
   {/snippet}
 </HeatmapTable>
 

@@ -1,9 +1,6 @@
 import { default as DATASETS } from '$data/datasets.yml'
-import { DEFAULT_CPS_CONFIG, calculate_cps } from './combined_perf_score'
+import { CPS_CONFIG, calculate_cps } from './combined_perf_score.svelte'
 import type { ModelData } from './types'
-
-// Make CPS_CONFIG reactive (using Svelte 5 runes)
-export const CPS_CONFIG = $state({ ...DEFAULT_CPS_CONFIG })
 
 export const MODEL_METADATA_PATHS = import.meta.glob(`$root/models/[^_]**/[^_]*.yml`, {
   eager: true,
@@ -35,7 +32,7 @@ export const MODEL_COLORS = [
 ]
 
 // Calculate the total number of materials and structures in a model's training set
-function calculate_training_sizes(model_train_sets: string[] = []): {
+export function calculate_training_sizes(model_train_sets: string[] = []): {
   total_materials: number
   total_structures: number
 } {
@@ -58,7 +55,7 @@ function calculate_training_sizes(model_train_sets: string[] = []): {
 export const MODELS = $state(
   Object.entries(MODEL_METADATA_PATHS)
     .filter(
-      // ignore models that aren't completed
+      // ignore models with status != completed (the default status)
       ([_key, metadata]) => (metadata?.status ?? `complete`) == `complete`,
     )
     .map(([key, metadata], index) => {

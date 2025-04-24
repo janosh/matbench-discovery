@@ -1,22 +1,21 @@
 import { DATASETS } from '$lib'
-import { calculate_cps, DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score'
+import type { CpsConfig } from '$lib/combined_perf_score.svelte'
+import { calculate_cps, DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score.svelte'
+import { METADATA_COLS, METRICS } from '$lib/labels'
 import {
   all_higher_better_metrics,
   all_lower_better_metrics,
+  assemble_row_data,
   calc_cell_color,
-  calculate_metrics_data,
   format_train_set,
-  get_geo_opt_property,
   make_combined_filter,
-  METADATA_COLS,
   metric_better_as,
+  sort_models,
   targets_tooltips,
 } from '$lib/metrics'
 import type { TargetType } from '$lib/model-schema'
-import type { CombinedMetricConfig, HeatmapColumn, ModelData } from '$lib/types'
+import type { ModelData } from '$lib/types'
 import { beforeEach, describe, expect, it, test, vi } from 'vitest'
-
-const model_is_compliant_mock = vi.hoisted(() => vi.fn())
 
 describe(`targets_tooltips`, () => {
   it.each([
@@ -102,9 +101,7 @@ describe(`format_train_set`, () => {
 
   it(`formats multiple training sets correctly`, () => {
     const mptrj = DATASETS[mptrj_key]
-    const combined_materials =
-      (mp2022.n_materials || mp2022.n_structures) +
-      (mptrj.n_materials || mptrj.n_structures)
+    const combined_materials = mptrj.n_materials || mptrj.n_structures
 
     const mock_model: Partial<ModelData> = {
       n_training_structures: (mp2022.n_structures || 0) + (mptrj.n_structures || 0),
@@ -203,58 +200,6 @@ describe(`format_train_set`, () => {
   })
 })
 
-describe(`get_geo_opt_property`, () => {
-  const geo_opt = {
-    'symprec=0.1': {
-      rmsd: 0.025,
-      energy_diff: 0.01,
-    },
-  }
-
-  it.each([
-    {
-      case: `valid property`,
-      geo_opt,
-      symprec: `0.1`,
-      property: `rmsd`,
-      expected: 0.025,
-    },
-    {
-      case: `another valid property`,
-      geo_opt,
-      symprec: `0.1`,
-      property: `energy_diff`,
-      expected: 0.01,
-    },
-    {
-      case: `missing symprec`,
-      geo_opt,
-      symprec: `0.2`,
-      property: `rmsd`,
-      expected: undefined,
-    },
-    {
-      case: `missing property`,
-      geo_opt,
-      symprec: `0.1`,
-      property: `missing_prop`,
-      expected: undefined,
-    },
-  ])(`returns $expected for $case`, ({ geo_opt, symprec, property, expected }) => {
-    const result = get_geo_opt_property<number>(geo_opt, symprec, property)
-    expect(result).toBe(expected)
-  })
-
-  it.each([
-    [`null input`, null],
-    [`string input`, `not an object`],
-    [`undefined input`, undefined],
-  ])(`handles %s gracefully`, (_case, input) => {
-    const result = get_geo_opt_property<number>(input, `0.1`, `rmsd`)
-    expect(result).toBeUndefined()
-  })
-})
-
 describe(`make_combined_filter function - skipped since using real implementation`, () => {
   it(`returns false when the user filter returns false`, () => {
     const model_filter = vi.fn().mockReturnValue(false)
@@ -263,10 +208,7 @@ describe(`make_combined_filter function - skipped since using real implementatio
 
     expect(filter(model)).toBe(false)
     expect(model_filter).toHaveBeenCalledWith(model)
-    expect(model_is_compliant_mock).not.toHaveBeenCalled()
   })
-
-  // ... rest of tests remain the same but will be skipped
 })
 
 describe(`calc_cell_color`, () => {
@@ -453,37 +395,30 @@ describe(`calc_cell_color`, () => {
 
 // Helper function to create metric-specific config
 // Makes it easy to add new metrics in the future
-const create_single_metric_config = (
-  metric_name: string,
-  weight = 1,
-): CombinedMetricConfig => {
-  const result: CombinedMetricConfig = {
+const create_single_metric_config = (metric_name: string, weight = 1): CpsConfig => {
+  const result: CpsConfig = {
     ...DEFAULT_CPS_CONFIG,
-    parts: {
-      F1: { ...DEFAULT_CPS_CONFIG.parts.F1, weight: metric_name === `F1` ? weight : 0 },
-      kappa_SRME: {
-        ...DEFAULT_CPS_CONFIG.parts.kappa_SRME,
-        weight: metric_name === `kappa_SRME` ? weight : 0,
-      },
-      RMSD: {
-        ...DEFAULT_CPS_CONFIG.parts.RMSD,
-        weight: metric_name === `RMSD` ? weight : 0,
-      },
+    F1: { ...DEFAULT_CPS_CONFIG.F1, weight: metric_name === `F1` ? weight : 0 },
+    κ_SRME: {
+      ...DEFAULT_CPS_CONFIG.κ_SRME,
+      weight: metric_name === `κ_SRME` ? weight : 0,
+    },
+    RMSD: {
+      ...DEFAULT_CPS_CONFIG.RMSD,
+      weight: metric_name === `RMSD` ? weight : 0,
     },
   }
   return result
 }
 
 // Helper to create equal weight config
-const create_equal_weights_config = (weight_count = 3): CombinedMetricConfig => {
+const create_equal_weights_config = (weight_count = 3): CpsConfig => {
   const equal_weight = 1 / weight_count
   return {
     ...DEFAULT_CPS_CONFIG,
-    parts: {
-      F1: { ...DEFAULT_CPS_CONFIG.parts.F1, weight: equal_weight },
-      kappa_SRME: { ...DEFAULT_CPS_CONFIG.parts.kappa_SRME, weight: equal_weight },
-      RMSD: { ...DEFAULT_CPS_CONFIG.parts.RMSD, weight: equal_weight },
-    },
+    F1: { ...DEFAULT_CPS_CONFIG.F1, weight: equal_weight },
+    κ_SRME: { ...DEFAULT_CPS_CONFIG.κ_SRME, weight: equal_weight },
+    RMSD: { ...DEFAULT_CPS_CONFIG.RMSD, weight: equal_weight },
   }
 }
 
@@ -539,7 +474,7 @@ describe(`calculate_cps`, () => {
     expect(rmsd_only_score).toBeCloseTo(0.97, 2)
 
     // Test with only kappa available in kappa-only config
-    const kappa_only_config = create_single_metric_config(`kappa_SRME`)
+    const kappa_only_config = create_single_metric_config(`κ_SRME`)
     const kappa_only_score = calculate_cps(
       undefined, // missing F1 (zero weight)
       undefined, // missing RMSD (zero weight)
@@ -597,7 +532,7 @@ describe(`calculate_cps`, () => {
       [2.0, 0],
       [1.0, 0.5],
     ])(`normalizes kappa value %f correctly to %f`, (kappa_value, expected_score) => {
-      const kappa_only_config = create_single_metric_config(`kappa_SRME`)
+      const kappa_only_config = create_single_metric_config(`κ_SRME`)
       const score = calculate_cps(undefined, undefined, kappa_value, kappa_only_config)
       expect(score).toBeCloseTo(expected_score, 2)
     })
@@ -633,18 +568,18 @@ describe(`calculate_cps`, () => {
       [2.0, 0],
       [2.2, 0],
     ])(`validates kappa normalization: %f → %f`, (kappa, expected_score) => {
-      const kappa_only_config = create_single_metric_config(`kappa_SRME`)
+      const kappa_only_config = create_single_metric_config(`κ_SRME`)
       const score = calculate_cps(undefined, undefined, kappa, kappa_only_config)
       expect(score).toBeCloseTo(expected_score, 4)
     })
   })
 
   it(`assigns correct default weights`, () => {
-    expect(DEFAULT_CPS_CONFIG.parts.F1.weight).toBeCloseTo(0.5, 5)
-    expect(DEFAULT_CPS_CONFIG.parts.RMSD.weight).toBeCloseTo(0.1, 5)
-    expect(DEFAULT_CPS_CONFIG.parts.kappa_SRME.weight).toBeCloseTo(0.4, 5)
+    expect(DEFAULT_CPS_CONFIG.F1.weight).toBeCloseTo(0.5, 5)
+    expect(DEFAULT_CPS_CONFIG.RMSD.weight).toBeCloseTo(0.1, 5)
+    expect(DEFAULT_CPS_CONFIG.κ_SRME.weight).toBeCloseTo(0.4, 5)
 
-    const sum_of_weights = Object.values(DEFAULT_CPS_CONFIG.parts).reduce(
+    const sum_of_weights = Object.values(DEFAULT_CPS_CONFIG).reduce(
       (acc, part) => acc + part.weight,
       0,
     )
@@ -694,14 +629,12 @@ describe(`calculate_cps`, () => {
     })
 
     it(`handles empty weights configuration`, () => {
-      // Create a config with empty parts
-      const empty_weights_config: CombinedMetricConfig = {
+      // Create a config with all weights set to 0
+      const empty_weights_config: CpsConfig = {
         ...DEFAULT_CPS_CONFIG,
-        parts: {
-          F1: { ...DEFAULT_CPS_CONFIG.parts.F1, weight: 0 },
-          kappa_SRME: { ...DEFAULT_CPS_CONFIG.parts.kappa_SRME, weight: 0 },
-          RMSD: { ...DEFAULT_CPS_CONFIG.parts.RMSD, weight: 0 },
-        },
+        F1: { ...DEFAULT_CPS_CONFIG.F1, weight: 0 },
+        κ_SRME: { ...DEFAULT_CPS_CONFIG.κ_SRME, weight: 0 },
+        RMSD: { ...DEFAULT_CPS_CONFIG.RMSD, weight: 0 },
       }
 
       // With all weights at 0, the score should be 0
@@ -711,13 +644,11 @@ describe(`calculate_cps`, () => {
 
     it(`normalizes weights that do not sum to 1`, () => {
       // Create a config with weights that sum to 2
-      const unnormalized_weights_config: CombinedMetricConfig = {
+      const unnormalized_weights_config: CpsConfig = {
         ...DEFAULT_CPS_CONFIG,
-        parts: {
-          F1: { ...DEFAULT_CPS_CONFIG.parts.F1, weight: 1.0 },
-          kappa_SRME: { ...DEFAULT_CPS_CONFIG.parts.kappa_SRME, weight: 0.5 },
-          RMSD: { ...DEFAULT_CPS_CONFIG.parts.RMSD, weight: 0.5 },
-        },
+        F1: { ...DEFAULT_CPS_CONFIG.F1, weight: 1.0 },
+        κ_SRME: { ...DEFAULT_CPS_CONFIG.κ_SRME, weight: 0.5 },
+        RMSD: { ...DEFAULT_CPS_CONFIG.RMSD, weight: 0.5 },
       }
 
       // Perfect F1, poor RMSD and kappa
@@ -730,13 +661,11 @@ describe(`calculate_cps`, () => {
 
     it(`handles very small weights correctly`, () => {
       // Create a config with a very small weight for RMSD
-      const small_weights_config: CombinedMetricConfig = {
+      const small_weights_config: CpsConfig = {
         ...DEFAULT_CPS_CONFIG,
-        parts: {
-          F1: { ...DEFAULT_CPS_CONFIG.parts.F1, weight: 0.999 },
-          kappa_SRME: { ...DEFAULT_CPS_CONFIG.parts.kappa_SRME, weight: 0 },
-          RMSD: { ...DEFAULT_CPS_CONFIG.parts.RMSD, weight: 0.001 },
-        },
+        F1: { ...DEFAULT_CPS_CONFIG.F1, weight: 0.999 },
+        κ_SRME: { ...DEFAULT_CPS_CONFIG.κ_SRME, weight: 0 },
+        RMSD: { ...DEFAULT_CPS_CONFIG.RMSD, weight: 0.001 },
       }
 
       // With F1=1.0 and RMSD=0.15 (worst value), expect score to be very close to F1 value
@@ -750,118 +679,44 @@ describe(`calculate_cps`, () => {
   })
 })
 
-describe(`calculate_metrics_data`, () => {
-  // Mock the models and other dependencies
-  vi.mock(`$lib`, () => {
-    return {
-      DATASETS: {
-        'MP 2022': {
-          title: `MP 2022`,
-          n_materials: 100,
-          n_structures: 100,
-          slug: `mp-2022`,
-        },
-        MPtrj: { title: `MPtrj`, n_materials: 200, n_structures: 300, slug: `mptrj` },
-      },
-      MODELS: [
-        {
-          model_name: `TestModel1`,
-          model_key: `test-model-1`,
-          model_version: `1.0`,
-          targets: `EF_G`,
-          training_set: [`MP 2022`],
-          model_params: 1000000,
-          date_added: `2023-01-01`,
-          hyperparams: { graph_construction_radius: 5.0 },
-          license: {
-            code: `MIT`,
-            code_url: `https://example.com/license-code`,
-            checkpoint: `Apache-2.0`,
-            checkpoint_url: `https://example.com/license-checkpoint`,
-          },
-          metrics: {
-            discovery: {
-              full_test_set: {
-                F1: 0.8,
-                DAF: 10,
-                Precision: 0.9,
-                Accuracy: 0.85,
-                TPR: 0.75,
-                TNR: 0.95,
-                MAE: 0.05,
-                RMSE: 0.1,
-                R2: 0.8,
-              },
-            },
-            geo_opt: { 'symprec=0.1': { rmsd: 0.025 } },
-            phonons: { kappa_103: { κ_SRME: 0.3 } },
-          },
-        },
-        {
-          model_name: `TestModel2`,
-          model_key: `test-model-2`,
-          model_version: `1.0`,
-          targets: `E`,
-          training_set: [`MPtrj`],
-          model_params: 500000,
-          date_added: `2023-02-01`,
-          hyperparams: {}, // No graph_construction_radius
-          license: { code: `MIT`, code_url: `https://example.com/license-code2` },
-          metrics: { discovery: { full_test_set: { F1: 0.7, Precision: 0.8 } } },
-        },
-      ],
-      model_is_compliant: vi.fn().mockReturnValue(true),
-      format_date: vi.fn().mockReturnValue(`Formatted Date`),
-      get_pred_file_urls: vi.fn().mockReturnValue([]),
-    }
-  })
+describe(`assemble_row_data`, () => {
+  // Use fixed model keys to ensure tests are stable against live data
+  const test_model_keys = [`mace-mp-0`, `chgnet-0.3.0`]
+  const model_filter = (model: ModelData): boolean =>
+    // Ensure model_key exists before checking includes
+    model.model_key ? test_model_keys.includes(model.model_key) : false
 
-  it(`returns formatted rows with all expected properties, including r_cut`, () => {
-    const rows = calculate_metrics_data(
-      `full_test_set`,
-      () => true,
-      true,
-      true,
-      DEFAULT_CPS_CONFIG,
+  it(`returns formatted rows for selected models with expected properties`, () => {
+    const rows = assemble_row_data(
+      `unique_prototypes`,
+      model_filter, // Pass the filter for specific models
+      true, // show_energy_only
+      true, // show_noncompliant
     )
 
-    expect(rows.length).toBe(2)
+    // Expect only the selected models
+    expect(rows.length).toBe(test_model_keys.length)
+    const mace_row = rows.find((row) => row.Model.includes(`mace-mp-0`))
+    const chgnet_row = rows.find((row) => row.Model.includes(`chgnet-0.3.0`))
 
-    // Test the first row (with r_cut)
-    const row1 = rows[0]
-    expect(row1.Model).toContain(`TestModel1`)
-    expect(row1.CPS).toBeCloseTo(0.83, 1)
-    expect(row1.F1).toBe(0.8)
-    expect(row1.RMSD).toBe(0.025)
-    expect(row1[`κ<sub>SRME</sub>`]).toBe(0.3)
-    expect(row1[`r<sub>cut</sub>`]).toContain(`5 Å`)
-    expect(row1[`r<sub>cut</sub>`]).toContain(`data-sort-value="5"`)
-
-    // Test the second row (without r_cut)
-    const row2 = rows[1]
-    expect(row2[`r<sub>cut</sub>`]).toBe(`n/a`)
+    expect(mace_row?.Model).toContain(`mace-mp-0`)
+    expect(mace_row?.[`r<sub>cut</sub>`]).toBe(`<span data-sort-value="6">6 Å</span>`)
+    expect(chgnet_row?.Model).toContain(`chgnet-0.3.0`)
   })
 
-  it(`sorts rows by CPS in descending order`, () => {
-    const rows = calculate_metrics_data(
-      `full_test_set`,
-      () => true,
-      true,
-      true,
-      DEFAULT_CPS_CONFIG,
+  it(`sorts selected models by CPS in descending order`, () => {
+    const rows = assemble_row_data(
+      `unique_prototypes`,
+      model_filter, // Pass the filter for specific models
+      true, // show_energy_only
+      true, // show_noncompliant
     )
 
-    // First row should be TestModel1 with higher CPS
-    expect(rows[0].Model).toContain(`TestModel1`)
-    expect(rows[1].Model).toContain(`TestModel2`)
+    expect(rows.length).toBe(test_model_keys.length)
 
-    // Check CPS ordering
-    const cps1 = rows[0].CPS as number | null
-    const cps2 = rows[1].CPS as number | null
-
-    if (cps1 !== null && cps2 !== null) {
-      expect(cps1).toBeGreaterThan(cps2)
-    }
+    const cps_vals = rows.map((row) => row.CPS) as number[]
+    const sorted_cps_vals = [...cps_vals].sort((cps1, cps2) => cps2 - cps1)
+    expect(cps_vals).toEqual(sorted_cps_vals)
   })
 })
 
@@ -875,28 +730,244 @@ describe(`METADATA_COLS`, () => {
       `Date Added`,
       `Links`,
       `r<sub>cut</sub>`,
-      `Checkpoint License`,
-      `Code License`,
+      `Training Materials`,
+      `Training Structures`,
     ]
 
-    expect(METADATA_COLS.map((col: HeatmapColumn) => col.label)).toEqual(expected_labels)
+    expect(Object.values(METADATA_COLS).map((col) => col.label)).toEqual(expected_labels)
   })
 
   it(`has the correct properties for each column`, () => {
     // Test special properties of columns
-    const model_col = METADATA_COLS.find((col: HeatmapColumn) => col.label === `Model`)
+    const model_col = METADATA_COLS.model_name
     expect(model_col?.sticky).toBe(true)
     expect(model_col?.sortable).toBe(true)
 
-    const links_col = METADATA_COLS.find((col: HeatmapColumn) => col.label === `Links`)
+    const links_col = METADATA_COLS.links
     expect(links_col?.sortable).toBe(false)
 
     // Test r_cut column specifically
-    const r_cut_col = METADATA_COLS.find(
-      (col: HeatmapColumn) => col.label === `r<sub>cut</sub>`,
-    )
+    const r_cut_col = METADATA_COLS.r_cut
     expect(r_cut_col).toBeDefined()
-    expect(r_cut_col?.tooltip).toContain(`Graph construction radius`)
+    expect(r_cut_col?.description).toContain(`Graph construction radius`)
     expect(r_cut_col?.visible).toBe(false)
+  })
+})
+
+describe(`Model Sorting Logic`, () => {
+  // Create a set of test models that can be reused across multiple test cases
+  const create_test_models = () => {
+    return [
+      {
+        model_name: `AAA Model`,
+        model_key: `aaa_model`,
+        metrics: {
+          discovery: {
+            unique_prototypes: { F1: 0.9, Accuracy: 0.85 },
+            pred_col: `is_stable`,
+          },
+          phonons: { kappa_103: { κ_SRME: 0.9 } },
+        },
+      },
+      {
+        model_name: `MMM Model`,
+        model_key: `mmm_model`,
+        metrics: {
+          discovery: {
+            unique_prototypes: { F1: 0.7, Accuracy: NaN }, // Test NaN handling
+            pred_col: `is_stable`,
+          },
+          phonons: { kappa_103: { κ_SRME: 0.5 } },
+        },
+      },
+      {
+        model_name: `ZZZ Model`,
+        model_key: `zzz_model`,
+        metrics: {
+          discovery: {
+            unique_prototypes: { F1: 0.5, Accuracy: 0.6 },
+            pred_col: `is_stable`,
+          },
+          phonons: { kappa_103: { κ_SRME: 0.2 } },
+        },
+      },
+      {
+        model_name: `Missing Data Model`,
+        model_key: `missing_model`,
+        metrics: {
+          discovery: { unique_prototypes: { F1: 0.4 } },
+          phonons: `not applicable` as const,
+        },
+      },
+    ] as unknown as ModelData[]
+  }
+
+  // Create test models with edge cases
+  const create_edge_case_models = () => {
+    return [
+      // Model with completely missing metrics
+      {
+        model_name: `No Metrics Model`,
+        model_key: `no_metrics_model`,
+      },
+      // Model with empty metrics object
+      {
+        model_name: `Empty Metrics Model`,
+        model_key: `empty_metrics_model`,
+        metrics: {},
+      },
+      // Model with extreme values
+      {
+        model_name: `Extreme Values Model`,
+        model_key: `extreme_model`,
+        metrics: {
+          discovery: {
+            unique_prototypes: {
+              F1: Number.MAX_VALUE,
+              Accuracy: Number.MIN_VALUE,
+              R2: -Infinity,
+              RMSE: Infinity,
+            },
+          },
+          phonons: {
+            kappa_103: { κ_SRME: 0 },
+          },
+        },
+      },
+      // Model with all undefined values for metrics
+      {
+        model_name: `Undefined Metrics Model`,
+        model_key: `undefined_model`,
+        metrics: {
+          discovery: {
+            unique_prototypes: {
+              F1: undefined,
+              Accuracy: undefined,
+            },
+          },
+          phonons: {
+            kappa_103: { κ_SRME: undefined },
+          },
+        },
+      },
+    ] as unknown as ModelData[]
+  }
+
+  it(`sorts models by numeric metrics correctly with NaN handling`, () => {
+    const test_models = create_test_models()
+    const { F1, Accuracy, κ_SRME } = METRICS
+
+    // Test cases for different metrics and sort orders
+    const test_cases = [
+      {
+        metric: `${F1.path}.${F1.key}`,
+        order: `desc` as const,
+        expected_order: [`aaa_model`, `mmm_model`, `zzz_model`, `missing_model`],
+      },
+      {
+        metric: `${Accuracy.path}.${Accuracy.key}`,
+        order: `asc` as const,
+        expected_order: [`zzz_model`, `aaa_model`, `mmm_model`, `missing_model`],
+      },
+      {
+        metric: `${κ_SRME.path}.${κ_SRME.key}`,
+        order: `asc` as const,
+        expected_order: [`zzz_model`, `mmm_model`, `aaa_model`, `missing_model`],
+      },
+    ]
+
+    for (const { metric, order, expected_order } of test_cases) {
+      const sorted_models = test_models.sort(sort_models(metric, order))
+
+      // Verify the order matches expected
+      expected_order.forEach((model_key, idx) => {
+        expect(sorted_models[idx].model_key, metric).toBe(model_key)
+      })
+    }
+  })
+
+  it(`sorts models by model_name correctly`, () => {
+    const test_models = create_test_models()
+
+    // Create a copy to avoid affecting original array
+    const models_for_asc = [...test_models]
+    const models_for_desc = [...test_models]
+
+    // Sort a copy for ascending and descending orders
+    models_for_asc.sort(sort_models(`model_name`, `asc`))
+    models_for_desc.sort(sort_models(`model_name`, `desc`))
+
+    // Check that ascending and descending are opposites of each other
+    expect(models_for_asc.map((m) => m.model_key).reverse()).toEqual(
+      models_for_desc.map((m) => m.model_key),
+    )
+
+    // Check that each sort includes all expected model keys
+    const expected_model_keys = [`aaa_model`, `missing_model`, `mmm_model`, `zzz_model`]
+
+    // Just check that all expected models are in the result, without caring about exact order
+    expect(models_for_asc.map((m) => m.model_key).sort()).toEqual(
+      expected_model_keys.sort(),
+    )
+
+    expect(models_for_desc.map((m) => m.model_key).sort()).toEqual(
+      expected_model_keys.sort(),
+    )
+  })
+
+  it(`handles edge cases with missing or extreme metric values`, () => {
+    const edge_case_models = create_edge_case_models()
+    const regular_models = create_test_models()
+    const combined_models = [...regular_models, ...edge_case_models]
+
+    // Test sorting with κ_SRME where one model has zero value
+    const { κ_SRME } = METRICS
+    const sort_by_path = `${κ_SRME.path}.${κ_SRME.key}`
+    const sorted_by_kappa = combined_models.sort(sort_models(sort_by_path, `asc`))
+
+    // Zero value should be first for asc
+    expect(sorted_by_kappa[0].model_key).toBe(`extreme_model`)
+  })
+
+  it(`handles sorting with all models having missing  metric`, () => {
+    const all_missing_models = [
+      { model_name: `Model A`, model_key: `model_a` },
+      { model_name: `Model B`, model_key: `model_b` },
+    ] as unknown as ModelData[]
+
+    // Sort by a metric that none of the models have
+    const sorted_models = all_missing_models.sort(sort_models(`F1`, `desc`))
+
+    // Order should be preserved when all models are missing the metric
+    expect(sorted_models[0].model_key).toBe(`model_a`)
+    expect(sorted_models[1].model_key).toBe(`model_b`)
+  })
+
+  it(`maintains original order for equivalent values`, () => {
+    const models_with_same_values = [
+      {
+        model_name: `Model 1`,
+        model_key: `model_1`,
+        metrics: { discovery: { unique_prototypes: { F1: 0.8 } } },
+      },
+      {
+        model_name: `Model 2`,
+        model_key: `model_2`,
+        metrics: { discovery: { unique_prototypes: { F1: 0.8 } } },
+      },
+      {
+        model_name: `Model 3`,
+        model_key: `model_3`,
+        metrics: { discovery: { unique_prototypes: { F1: 0.8 } } },
+      },
+    ] as unknown as ModelData[]
+
+    // Sort models with identical F1 values
+    const sorted_models = models_with_same_values.sort(sort_models(`F1`, `desc`))
+
+    // Original order should be preserved
+    expect(sorted_models[0].model_key).toBe(`model_1`)
+    expect(sorted_models[1].model_key).toBe(`model_2`)
+    expect(sorted_models[2].model_key).toBe(`model_3`)
   })
 })

@@ -1,14 +1,17 @@
 <script lang="ts">
   import { TableColumnToggleMenu } from '$lib'
   import { Tooltip } from 'svelte-zoo'
-  import type { HeatmapColumn } from './types'
+  import type { Metric } from './types'
 
   // Props for this component
   interface Props {
     show_energy_only?: boolean
     show_noncompliant?: boolean
-    columns?: HeatmapColumn[]
-    on_filter_change?: (show_energy: boolean, show_noncomp: boolean) => void | undefined
+    columns?: Metric[]
+    on_filter_change?: (
+      show_energy: boolean,
+      show_noncompliant: boolean,
+    ) => void | undefined
   }
 
   // Extract props with defaults
