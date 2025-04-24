@@ -4,18 +4,20 @@
   import { titles_as_tooltips } from 'svelte-zoo/actions'
   import { flip } from 'svelte/animate'
   import { calc_cell_color } from './metrics'
-  import type { CellVal, HeatmapColumn, RowData } from './types'
+  import type { CellSnippetArgs, CellVal, Metric, RowData } from './types'
 
   interface Props {
     data: RowData[]
-    columns?: HeatmapColumn[]
+    columns?: Metric[]
     sort_hint?: string
     style?: string | null
-    cell?: Snippet<[{ row: RowData; col: HeatmapColumn; val: CellVal }]>
+    cell?: Snippet<[CellSnippetArgs]>
+    special_cells?: Record<string, Snippet<[CellSnippetArgs]>>
     controls?: Snippet
     initial_sort_column?: string
     initial_sort_direction?: `asc` | `desc`
     fixed_header?: boolean
+    default_num_format?: string
   }
   let {
     data,
@@ -23,10 +25,12 @@
     sort_hint = ``,
     style = null,
     cell,
+    special_cells,
     controls,
     initial_sort_column,
     initial_sort_direction,
     fixed_header = false,
+    default_num_format = `.3`,
   }: Props = $props()
 
   // Hacky helper function to detect if a string contains HTML, TODO revisit in future
@@ -59,8 +63,8 @@
   })
 
   // Helper to make column IDs (needed since column labels in different groups can be repeated)
-  const get_col_id = (col: HeatmapColumn) =>
-    col.group ? `${col.label} (${col.group})` : col.label
+  const get_col_id = (col: Metric) =>
+    col.group ? `${col.short ?? col.label} (${col.group})` : (col.short ?? col.label)
 
   function sort_rows(column: string, group?: string) {
     // Find the column using both label and group if provided
@@ -119,7 +123,7 @@
     })
   }
 
-  function calc_color(val: CellVal, col: HeatmapColumn) {
+  function calc_color(val: CellVal, col: Metric) {
     // Skip color calculation for null values or if color_scale is null
     if (
       val === null ||
@@ -147,7 +151,7 @@
 
   let visible_columns = $derived(columns.filter((col) => col.visible !== false))
 
-  const sort_indicator = (col: HeatmapColumn, sort_state: SortState) => {
+  const sort_indicator = (col: Metric, sort_state: SortState) => {
     const col_id = get_col_id(col)
     if (sort_state.column === col_id) {
       // When column is sorted, show ↓ for ascending (smaller values at top)
@@ -173,7 +177,7 @@
 
     <!-- Add controls rendering here -->
     {#if controls}
-      <div class="controls-container">
+      <div class="table-controls">
         {@render controls()}
       </div>
     {/if}
@@ -187,14 +191,14 @@
       {#if visible_columns.some((col) => col.group)}
         <!-- First level headers -->
         <tr class="group-header">
-          {#each visible_columns as { label, group, tooltip } (label + group)}
+          {#each visible_columns as { label, group, description } (label + group)}
             {#if !group}
               <th></th>
             {:else}
               {@const group_cols = visible_columns.filter((c) => c.group === group)}
               <!-- Only render the group header once for each group by checking if this is the first column of this group -->
               {#if visible_columns.findIndex((c) => c.group === group) === visible_columns.findIndex((c) => c.group === group && c.label === label)}
-                <th title={tooltip} colspan={group_cols.length}>{@html group}</th>
+                <th title={description} colspan={group_cols.length}>{@html group}</th>
               {/if}
             {/if}
           {/each}
@@ -204,13 +208,13 @@
       <tr>
         {#each visible_columns as col (col.label + col.group)}
           <th
-            title={col.tooltip}
+            title={col.description}
             onclick={() => sort_rows(col.label, col.group)}
             style={col.style}
             class:sticky-col={col.sticky}
             class:not-sortable={col.sortable === false}
           >
-            {@html col.label}
+            {@html col.short ?? col.label}
             {@html sort_indicator(col, sort_state)}
           </th>
         {/each}
@@ -218,7 +222,7 @@
     </thead>
     <tbody>
       {#each sorted_data as row (JSON.stringify(row))}
-        <tr animate:flip={{ duration: 500 }} style={row.row_style ?? null}>
+        <tr animate:flip={{ duration: 500 }} style={String(row.row_style ?? ``)}>
           {#each visible_columns as col (col.label + col.group)}
             {@const val = row[get_col_id(col)]}
             {@const color = calc_color(val, col)}
@@ -231,10 +235,12 @@
               style={col.style}
               title={typeof val === `undefined` || val === null ? `not available` : null}
             >
-              {#if cell}
+              {#if special_cells?.[col.label]}
+                {@render special_cells[col.label]({ row, col, val })}
+              {:else if cell}
                 {@render cell({ row, col, val })}
-              {:else if typeof val === `number` && col.format}
-                {pretty_num(val, col.format)}
+              {:else if typeof val === `number`}
+                {pretty_num(val, col.format ?? default_num_format)}
               {:else if val === undefined || val === null}
                 n/a
               {:else}
@@ -312,7 +318,7 @@
     color: var(--text-muted, #aaa);
     margin: 0;
   }
-  .controls-container {
+  .table-controls {
     display: inline-flex;
     align-items: center;
     margin-left: auto;

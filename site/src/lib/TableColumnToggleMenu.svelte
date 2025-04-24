@@ -1,10 +1,10 @@
 <script lang="ts">
   import { Tooltip } from 'svelte-zoo'
   import { click_outside } from 'svelte-zoo/actions'
-  import type { HeatmapColumn } from './types'
+  import type { Metric } from './types'
 
   interface Props {
-    columns: HeatmapColumn[]
+    columns: Metric[]
     column_panel_open?: boolean
   }
 
@@ -28,8 +28,8 @@
     {#each columns as col, idx (col.label + col.group + col.visible + idx)}
       <Tooltip style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
         {#snippet tip()}
-          {#if col.tooltip}
-            {@html col.tooltip}
+          {#if col.description}
+            {@html col.description}
           {/if}
         {/snippet}
         <label>

@@ -8,9 +8,9 @@
     RadarChart,
     SelectToggle,
   } from '$lib'
+  import { CPS_CONFIG } from '$lib/combined_perf_score.svelte'
   import { generate_png, generate_svg, handle_export } from '$lib/html-to-img'
-  import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/metrics'
-  import { CPS_CONFIG } from '$lib/models.svelte'
+  import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/labels'
   import Readme from '$root/readme.md'
   import KappaNote from '$routes/kappa-note.md'
   import { pretty_num } from 'elementari'
@@ -26,7 +26,10 @@
   // Default column visibility
   let visible_cols: Record<string, boolean> = $state({
     ...Object.fromEntries(
-      [...ALL_METRICS, ...METADATA_COLS].map((col) => [col.label, true]),
+      [...Object.values(ALL_METRICS), ...Object.values(METADATA_COLS)].map((col) => [
+        col.label,
+        true,
+      ]),
     ),
     TPR: false,
     TNR: false,
@@ -72,7 +75,7 @@
         {show_combined_controls}
         {show_energy_only}
         show_noncompliant={show_non_compliant}
-        config={CPS_CONFIG}
+        cps_config={CPS_CONFIG}
         style="width: 100%;"
       />
     </div>

@@ -12,11 +12,11 @@
     import: `default`,
   }) as Record<string, typeof SvelteComponent>
 
-  const n_min_relaxed_structures = MODELS.reduce(
-    (acc, model) =>
-      Math.min(acc, model.metrics?.geo_opt?.[`symprec=1e-2`]?.n_structures ?? Infinity),
-    Infinity,
-  )
+  const n_min_relaxed_structures: number = MODELS.reduce((acc, model) => {
+    const geo_opt = model.metrics?.geo_opt
+    if (typeof geo_opt === `string` || !geo_opt) return acc
+    return Math.min(acc, geo_opt?.[`symprec=1e-2`]?.n_structures ?? Infinity)
+  }, Infinity)
 </script>
 
 <GeoOptReadme>

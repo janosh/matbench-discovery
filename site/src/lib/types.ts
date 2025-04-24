@@ -1,12 +1,9 @@
 import * as d3sc from 'd3-scale-chromatic'
-import { metric_labels } from './metrics'
+import type { MetricKey } from './labels'
 import type { ModelMetadata } from './model-schema.d.ts'
 
 export type { Dataset } from './dataset-schema.d.ts'
 export type { ModelMetadata } from './model-schema.d.ts'
-
-export type MetricKey = keyof typeof metric_labels
-export type MetricLabel = (typeof metric_labels)[MetricKey]
 
 export type ModelData = ModelMetadata &
   MetricKey & {
@@ -72,12 +69,16 @@ export type TrainingSet =
       [k: string]: unknown
     }
 
-export type HeatmapColumn = {
+export type Metric = {
   key: string // column header label
   label: string // column header label
+  path?: string // path to the metric in the model metadata
+  svg_label?: string // label for the SVG chart
+  short?: string // short label for table columns and other compact displays
   group?: string // group header label
-  tooltip?: string // hover tooltip
+  description?: string // hover tooltip
   style?: string // CSS rules
+  range?: readonly [number, number] // possible range of values for the metric
   better?: `higher` | `lower` | null // sort direction
   color_scale?: keyof typeof d3sc // d3-scale-chromatic color scale name
   format?: string // d3-format string
@@ -100,27 +101,6 @@ export type DiatomicsCurves = {
   'hetero-nuclear'?: Record<string, { energies: number[]; forces: number[][] }>
 }
 
-// MetricWeight defines weights for each component of the combined score
-export type Metric = {
-  path: string // path to the metric in the model metadata
-  label: string // Display name (can include HTML)
-  svg_label?: string // Label for the SVG chart
-  description: string // Description of the metric
-  range?: [number, number] // y-axis limits for the SVG chart
-  better?: `higher` | `lower` // sort direction
-}
-
-export type CpsPart = `F1` | `kappa_SRME` | `RMSD`
-
-export type CombinedMetricConfig = {
-  parts: Record<CpsPart, Metric & { weight: number }>
-  label: string
-  name: string
-  key: string
-  range: [number, number]
-  description: string
-}
-
 // Links data structure used for model resource links
 export type LinkData = {
   paper: { url: string; title: string; icon: string }
@@ -133,6 +113,7 @@ export type LinkData = {
 export type CellVal =
   | string
   | number
+  | boolean
   | undefined
   | null
   | Record<string, unknown>
@@ -141,3 +122,4 @@ export type CellVal =
 export type RowData = {
   [key: string]: string | number | LinkData | null | undefined | boolean
 }
+export type CellSnippetArgs = { row: RowData; col: Metric; val: CellVal }

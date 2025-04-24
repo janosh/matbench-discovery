@@ -86,8 +86,6 @@ describe(`DynamicScatter.svelte`, () => {
     const checkboxes =
       document.body.querySelectorAll<HTMLInputElement>(`input[type="checkbox"]`)
     expect(checkboxes.length).toBe(3)
-    // Check element type
-    checkboxes.forEach((cb) => expect(cb.tagName).toBe(`INPUT`))
     // Check initial checked state (defaults: x=date_added, y=F1, color=model_params)
     // Log default state: x=false, y=false, color=true
     expect(checkboxes[0].checked).toBe(false) // x: date_added (log disabled)
@@ -104,10 +102,7 @@ describe(`DynamicScatter.svelte`, () => {
 
   it(`renders component structure (no SVG check)`, () => {
     // Use mount from svelte
-    mount(DynamicScatter, {
-      target: document.body,
-      props: { models: mock_models },
-    })
+    mount(DynamicScatter, { target: document.body, props: { models: mock_models } })
     expect(document.body.querySelector(`.controls-grid`)).toBeDefined()
     expect(document.body.querySelector(`div.full-bleed-1400[style]`)).toBeDefined()
   })

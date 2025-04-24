@@ -41,8 +41,8 @@ def relax_atoms_list(
 
     for atoms in atoms_list:
         atoms.set_calculator(calc_m3gnet)
-        ecf = FrechetCellFilter(atoms)
-        opt = FIRE(ecf)
+        cell_filter = FrechetCellFilter(atoms)
+        opt = FIRE(cell_filter)
         opt.run(fmax=fmax, steps=steps)
         if opt.get_number_of_steps() == steps:
             atoms.info["converged"] = False

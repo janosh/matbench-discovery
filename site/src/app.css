@@ -64,6 +64,9 @@ button {
 :is(div.multiselect) button {
   background: transparent;
 }
+:is(div.multiselect) ul {
+  padding: 0;
+}
 a {
   color: var(--link-color);
   text-decoration: none;

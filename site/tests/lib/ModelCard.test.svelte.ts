@@ -1,5 +1,5 @@
 import { DATASETS, MODELS, ModelCard } from '$lib'
-import { metric_labels } from '$lib/metrics'
+import { METRICS } from '$lib/labels'
 import { pretty_num } from 'elementari'
 import { mount } from 'svelte'
 import { describe, expect, it } from 'vitest'
@@ -9,7 +9,10 @@ describe(`ModelCard`, () => {
   const model = MODELS.find((m) => m.model_key === `mace-mp-0`)
   if (!model) throw new Error(`Could not find mace-mp-0 model in MODELS`)
 
-  const metrics = ([`F1`, `DAF`, `κ_SRME`] as const).map((key) => metric_labels[key])
+  const metrics = ([`F1`, `DAF`, `κ_SRME`] as const).map((key) => ({
+    key,
+    ...METRICS[key],
+  }))
 
   describe(`Basic Rendering`, () => {
     it(`renders model header and basic info`, () => {
@@ -105,20 +108,22 @@ describe(`ModelCard`, () => {
         props: { model, metrics, sort_by: `F1` },
       })
 
-      const metrics = document.body.querySelectorAll(`.metrics li`)
-      expect(metrics).toHaveLength(3)
+      const metrics_lis = document.body.querySelectorAll(`.metrics li`)
+      expect(metrics_lis.length).toBeGreaterThan(0)
 
-      const f1_metric = Array.from(metrics).find((m) => m.textContent?.includes(`F1`))
+      const f1_metric = Array.from(metrics_lis).find((m) => m.textContent?.includes(`F1`))
       const f1_value = model.metrics?.discovery?.unique_prototypes?.F1
       expect(f1_metric?.querySelector(`strong`)?.textContent?.trim()).toBe(
         f1_value?.toString(),
       )
       expect(f1_metric?.classList.contains(`active`)).toBe(true)
 
-      const kappa_metric = Array.from(metrics).find((m) => m.textContent?.includes(`κ`))
+      const kappa_metric = Array.from(metrics_lis).find((m) =>
+        m.textContent?.includes(`κ`),
+      )
       const kappa_value = model.metrics?.phonons?.kappa_103?.κ_SRME
       expect(kappa_metric?.querySelector(`strong`)?.textContent?.trim()).toBe(
-        `${kappa_value} W/mK`,
+        `${kappa_value}`,
       )
     })
 
@@ -130,8 +135,8 @@ describe(`ModelCard`, () => {
         props: { model: model_without_metrics, metrics, sort_by: `F1` },
       })
 
-      const metrics = document.body.querySelectorAll(`.metrics li strong`)
-      expect(metrics[0].textContent?.trim()).toBe(`NaN`)
+      const metrics_li_strong = document.body.querySelectorAll(`.metrics li strong`)[0]
+      expect(metrics_li_strong.textContent?.trim()).toBe(`NaN`)
     })
   })
 

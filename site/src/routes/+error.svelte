@@ -1,12 +1,12 @@
 <script lang="ts">
   import { page } from '$app/state'
-  import { homepage, name } from '$site/package.json'
+  import pkg from '$site/package.json'
 
   let online: boolean = $state(true)
 </script>
 
 <svelte:head>
-  <title>Error {page.status} &bull; {name}</title>
+  <title>Error {page.status} &bull; {pkg.name}</title>
 </svelte:head>
 
 <svelte:window bind:online />
@@ -16,7 +16,8 @@
   {#if page.status >= 500}
     <p>
       If page reloading doesn't help, please raise an issue on
-      <a href="{homepage}/issues" target="_blank" rel="noreferrer">GitHub</a>. Thanks! 🙏
+      <a href="{pkg.repository}/issues" target="_blank" rel="noreferrer">GitHub</a>.
+      Thanks! 🙏
     </p>
   {/if}
   {#if online === false}
@@ -28,7 +29,7 @@
 
   <p>
     Back to <a href=".">
-      <img src="/favicon.svg" alt={name} height="30" />
+      <img src="/favicon.svg" alt={pkg.name} height="30" />
       landing page
     </a>.
   </p>
