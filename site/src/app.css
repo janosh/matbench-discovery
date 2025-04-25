@@ -138,6 +138,10 @@ table :is(td, th) {
 tbody tr:nth-child(odd) {
   background: rgba(0, 0, 0, 0.5);
 }
+/* highlight hovered table rows */
+tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
 
 h1 {
   text-align: center;

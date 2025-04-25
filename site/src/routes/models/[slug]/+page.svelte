@@ -1,7 +1,8 @@
 <script lang="ts">
   import { dev } from '$app/environment'
   import per_elem_each_errors from '$figs/per-element-each-errors.json'
-  import { calculate_days_ago, DATASETS, get_pred_file_urls, PtableInset } from '$lib'
+  import { calculate_days_ago, DATASETS, IconList, PtableInset } from '$lib'
+  import { get_pred_file_urls } from '$lib/models.svelte'
   import type { ModelData } from '$lib/types'
   import pkg from '$site/package.json'
   import type { ChemicalElement } from 'elementari'
@@ -266,10 +267,17 @@
       <h2>Model Authors</h2>
       <ol>
         {#each model.authors as author (author.name)}
+          {@const org_logo = model.org_logos?.find(
+            (logo) => logo.name === author.affiliation,
+          )}
           <li>
             <span>{author.name}</span>
-            {#if author.affiliation}<span class="affiliation">({author.affiliation})</span
-              >{/if}
+            {#if author.affiliation}<span class="affiliation">
+                &ensp;{author.affiliation}
+                {#if org_logo}
+                  <IconList icons={[org_logo]} />
+                {/if}
+              </span>{/if}
             {#if author.email}<a href="mailto:{author.email}" aria-label="Email">
                 <svg><use href="#icon-mail"></use></svg>
               </a>{/if}

@@ -238,7 +238,11 @@ export const INFO_COLS: Record<string, Metric> = {
     label: `Missing %`,
     description: `Percentage of missing predictions`,
   },
-  'Run Time (h)': { label: `Run Time`, description: `Runtime in hours`, unit: `h` },
+  'Run Time (h)': {
+    key: `run_time_h`,
+    label: `Run Time`,
+    description: `Runtime in hours`,
+  },
 } as const
 
 export type MetricKey = keyof typeof METRICS
@@ -289,7 +293,7 @@ export const GEO_OPT_SYMMETRY_METRICS: Record<string, Metric> = Object.fromEntri
         symprec,
         path: `metrics.geo_opt.symprec=${symprec}`,
         label: `${label} ${format_power_ten(symprec)}`,
-        tooltip: `Fraction of structures where ML and DFT ground state have matching spacegroup at ${format_power_ten(symprec)} symprec`,
+        description: `Fraction of structures where ML and DFT ground state have matching spacegroup at ${format_power_ten(symprec)} symprec`,
         better,
         format: `.1%`,
         visible: false,
@@ -315,20 +319,20 @@ export const ALL_METRICS: Record<string, Metric> = {
 
 export const DISCOVERY_SET_LABELS: Record<
   DiscoverySet,
-  { title: string; tooltip: string; link?: string }
+  { title: string; description: string; link?: string }
 > = {
   full_test_set: {
     title: `Full Test Set`,
-    tooltip: `Metrics computed on the full test set including duplicate structure prototypes`,
+    description: `Metrics computed on the full test set including duplicate structure prototypes`,
   },
   unique_prototypes: {
     title: `Unique Prototypes`,
-    tooltip: `Metrics computed only on ~215k unique structure prototypes in WBM determined by matching Aflow-style prototype strings.`,
+    description: `Metrics computed only on ~215k unique structure prototypes in WBM determined by matching Aflow-style prototype strings.`,
     link: `https://github.com/janosh/matbench-discovery/blob/37baf7986f848/data/wbm/compile_wbm_test_set.py#L640-L654`,
   },
   most_stable_10k: {
     title: `10k Most Stable`,
-    tooltip: `Metrics computed on the 10k structures predicted to be most stable (different for each model)`,
+    description: `Metrics computed on the 10k structures predicted to be most stable (different for each model)`,
   },
 } as const
 
@@ -408,3 +412,143 @@ export function get_format(values: number[]): string {
 export const to_title = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)
 export const title_case = (str: string) =>
   str.replaceAll(`_`, ` `).split(` `).map(to_title).join(` `)
+
+export const org_logos: Record<
+  string,
+  { name: string; id?: string; src?: string } // Can have id OR src
+> = {
+  // Map of author affiliations in model YAMLs to SVG icons (either inline symbol ID
+  // or external file path under /static/logos/) and full affiliation names for tooltips.
+  deepmind: {
+    name: `Google DeepMind`,
+    src: `/logos/deepmind.svg`, // Updated path
+  },
+  microsoft: {
+    name: `Microsoft Research`,
+    id: `icon-logo-microsoft`, // Keep inline
+  },
+  meta: {
+    name: `Meta (FAIR)`,
+    id: `icon-logo-meta`, // Keep inline
+  },
+  cambridge: {
+    name: `University of Cambridge`,
+    src: `/logos/cambridge-university.svg`, // Updated path
+  },
+  orbital: {
+    name: `Orbital Materials`,
+    src: `/logos/orbital-materials.svg`, // Updated path
+  },
+  'seoul national university': {
+    name: `Seoul National University`,
+    src: `/logos/seoul-national-university.svg`, // Updated path
+  },
+  snu: {
+    name: `Seoul National University`,
+    src: `/logos/seoul-national-university.svg`,
+  },
+  icams: {
+    name: `ICAMS, Ruhr University Bochum`,
+    src: `/logos/icams-bochum.svg`, // Updated path
+  },
+  bochum: {
+    name: `ICAMS, Ruhr University Bochum`,
+    src: `/logos/icams-bochum.svg`, // Updated path
+  },
+  'ai for science institute': {
+    name: `AI for Science Institute, Beijing`,
+    src: `/logos/beijing-ai-academy.svg`, // Updated path
+  },
+  beijing: {
+    name: `AI for Science Institute, Beijing`,
+    src: `/logos/beijing-ai-academy.svg`,
+  },
+  cornell: {
+    name: `Cornell University`,
+    src: `/logos/cornell-university.svg`, // New entry
+  },
+  deepmd: {
+    name: `DeePMD`,
+    src: `/logos/deepmd.svg`, // New entry
+  },
+  deepmodeling: {
+    name: `DeepModeling`,
+    src: `/logos/deepmd.svg`, // New entry, same logo
+  },
+  tsinghua: {
+    name: `Tsinghua University`,
+    src: `/logos/tsinghua-university.svg`, // New entry
+  },
+  'san diego': {
+    name: `UC San Diego`,
+    src: `/logos/uc-san-diego.svg`, // New entry
+  },
+  ucsd: {
+    name: `UC San Diego`,
+    src: `/logos/uc-san-diego.svg`,
+  },
+  'massachusetts institute of technology': {
+    name: `Massachusetts Institute of Technology`,
+    src: `/logos/mit.svg`,
+  },
+  florida: {
+    name: `University of Florida`,
+    src: `/logos/university-of-florida.svg`,
+  },
+  'national institute of standards and technology': {
+    name: `National Institute of Standards and Technology`,
+    src: `/logos/nist.svg`,
+  },
+  argonne: {
+    name: `Argonne National Laboratory`,
+    src: `/logos/argonne-national-lab.svg`,
+  },
+  'university of texas at austin': {
+    name: `University of Texas at Austin`,
+    src: `/logos/university-of-texas-austin.svg`,
+  },
+  'northwestern university': {
+    name: `Northwestern University`,
+    src: `/logos/northwestern-university.svg`,
+  },
+  'chinese academy of sciences': {
+    name: `Chinese Academy of Sciences`,
+    src: `/logos/chinese-academy-of-sciences.svg`,
+  },
+  'incheon national university': {
+    name: `Incheon National University`,
+    src: `/logos/incheon-national-university.svg`,
+  },
+  'deep principle': {
+    name: `Deep Principle`,
+    src: `/logos/deep-principle.svg`,
+  },
+  'university of minnesota': {
+    name: `University of Minnesota`,
+    src: `/logos/university-of-minnesota.svg`,
+  },
+  'uc berkeley': {
+    name: `University of California, Berkeley`,
+    src: `/logos/uc-berkeley.svg`,
+  },
+}
+
+// Attempts to find a matching logo data (ID or src) and name for a given affiliation string.
+// Performs a case-insensitive search for keywords defined in org_logos.
+// Returns object with logo name and either SVG ID or src path, or undefined if no match.
+export function get_org_logo(
+  affiliation: string,
+): { name: string; id?: string; src?: string } | undefined {
+  if (!affiliation) return undefined
+  const lower_affiliation = affiliation.toLowerCase()
+  // sort by length to prioritize longer (more specific) keys
+  const sorted_keys = Object.keys(org_logos).sort((a, b) => b.length - a.length)
+
+  for (const key of sorted_keys) {
+    // Check if the lowercased affiliation string includes the lowercased key
+    if (lower_affiliation.includes(key.toLowerCase())) {
+      const logo_data = org_logos[key]
+      return logo_data
+    }
+  }
+}

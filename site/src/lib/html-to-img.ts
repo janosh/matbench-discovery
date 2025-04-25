@@ -197,7 +197,7 @@ export async function generate_png({
 
       return { filename, url: png_data_url }
     } catch (error) {
-      console.error(`Error exporting PNG:`, error)
+      console.error(`Error generating PNG:`, error)
       return null
     } finally {
       // Always clean up the container
@@ -212,21 +212,25 @@ export async function generate_png({
 }
 
 export const handle_export =
-  (
-    generator: typeof generate_svg | typeof generate_png,
+  <T extends { show_non_compliant?: boolean; discovery_set?: string }>(
+    generator: (args: T) => Promise<{ filename: string; url: string } | null>,
     fmt: string,
-    export_error: string | null,
-    state: Record<string, unknown>,
+    state: { export_error: string | null } & T,
   ) =>
   async () => {
     try {
-      export_error = null
-      const result = await generator(state)
+      state.export_error = null // Reset error state before trying
+      // Pass only the relevant properties expected by the generator
+      const generator_args: T = {
+        show_non_compliant: state.show_non_compliant,
+        discovery_set: state.discovery_set,
+      } as T // Cast needed as state has extra key
+      const result = await generator(generator_args)
       if (!result) {
-        export_error = `Failed to generate ${fmt}. The export function returned null.`
+        state.export_error = `Failed to generate ${fmt}. The export function returned null.`
       }
-    } catch (error) {
-      error = `Error exporting ${fmt}: ${error instanceof Error ? error.message : String(error)}`
-      console.error(`Error exporting ${fmt}:`, error)
+    } catch (err) {
+      state.export_error = `Error exporting ${fmt}: ${err instanceof Error ? err.message : String(err)}`
+      console.error(`Error exporting ${fmt}:`, err)
     }
   }

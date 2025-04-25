@@ -1,18 +1,17 @@
 import { default as DATASETS } from '$data/datasets.yml'
 import { default as data_files } from '$pkg/data-files.yml'
-import modeling_tasks from '$pkg/modeling-tasks.yml'
 import rehypeStringify from 'rehype-stringify'
 import remarkParse from 'remark-parse'
 import remarkRehype from 'remark-rehype'
 import { unified } from 'unified'
 import { MODELS } from './models.svelte'
-import type { ModelData } from './types'
 
 export { default as DiatomicCurve } from './DiatomicCurve.svelte'
 export { default as DynamicScatter } from './DynamicScatter.svelte'
 export { default as Footer } from './Footer.svelte'
 export { default as GeoOptMetricsTable } from './GeoOptMetricsTable.svelte'
 export { default as HeatmapTable } from './HeatmapTable.svelte'
+export { default as IconList } from './IconList.svelte'
 export { default as MetricScatter } from './MetricScatter.svelte'
 export { default as MetricsTable } from './MetricsTable.svelte'
 export { default as AuthorBrief } from './ModelAuthor.svelte'
@@ -39,14 +38,6 @@ export function calculate_days_ago(date_str: string): string {
   return ((now.getTime() - then.getTime()) / ms_per_day).toLocaleString(`en-US`, {
     maximumFractionDigits: 0,
   })
-}
-
-export function model_is_compliant(model: ModelData): boolean {
-  if ((model.openness ?? `OSOD`) != `OSOD`) return false
-
-  const allowed_sets = [`MP 2022`, `MPtrj`, `MPF`, `MP Graphs`]
-
-  return model.training_set.every((itm) => allowed_sets.includes(itm))
 }
 
 const md_parser = unified().use(remarkParse).use(remarkRehype).use(rehypeStringify)
@@ -102,40 +93,4 @@ export function format_date(date: string, options?: Intl.DateTimeFormatOptions):
     day: `numeric`,
     ...options,
   })
-}
-
-export function get_pred_file_urls(model: ModelData) {
-  // get all pred_file_url from model.metrics
-  const files: { name: string; url: string }[] = []
-
-  function find_pred_files(obj: object, parent_key = ``) {
-    if (!obj || typeof obj !== `object`) return
-
-    for (const [key, val] of Object.entries(obj)) {
-      if (key == `pred_file_url` && val && typeof val === `string`) {
-        // Look up the label by traversing the modeling_tasks hierarchy
-        const pretty_label = get_label_for_key_path(parent_key)
-        files.push({ name: pretty_label, url: val })
-      } else if (typeof val === `object`) {
-        find_pred_files(val, key)
-      }
-    }
-  }
-
-  // Recursively look up labels in the modeling_tasks object
-  function get_label_for_key_path(key_path: string): string {
-    if (key_path in modeling_tasks) return modeling_tasks[key_path]?.label || key_path
-
-    // Check if it's a subtask by searching all tasks
-    for (const task_value of Object.values(modeling_tasks)) {
-      if (task_value?.subtasks?.[key_path]) {
-        return task_value.subtasks[key_path].label || key_path
-      }
-    }
-
-    return key_path // Default to key itself if no label is found
-  }
-
-  find_pred_files(model.metrics)
-  return files
 }

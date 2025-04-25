@@ -929,7 +929,40 @@ describe(`Model Sorting Logic`, () => {
     expect(sorted_by_kappa[0].model_key).toBe(`extreme_model`)
   })
 
-  it(`handles sorting with all models having missing  metric`, () => {
+  it(`sorts models by runtime correctly, treating 0 as infinity`, () => {
+    const models = Object.entries({ a: 10, b: 0, c: 5, d: 0 }).map(
+      ([model_key, run_time]) => ({
+        model_key: `model_${model_key}`,
+        'Run Time (h)': run_time,
+      }),
+    ) as unknown as ModelData[]
+
+    // Test ascending sort (runtime 0 should be last)
+    const sorted_asc = [...models].sort(sort_models(`Run Time (h)`, `asc`))
+    // Check the non-zero values are sorted correctly first
+    expect(sorted_asc.slice(0, 2).map((m) => m.model_key)).toEqual([`model_c`, `model_a`])
+    // Check the zero values are at the end (order between them is not guaranteed)
+    expect(
+      sorted_asc
+        .slice(2)
+        .map((m) => m.model_key)
+        .sort(),
+    ).toEqual([`model_b`, `model_d`])
+
+    // Test descending sort (runtime 0 should be first)
+    const sorted_desc = [...models].sort(sort_models(`Run Time (h)`, `desc`))
+    // Check the zero values are at the beginning (order between them is not guaranteed)
+    expect(
+      sorted_desc
+        .slice(0, 2)
+        .map((m) => m.model_key)
+        .sort(),
+    ).toEqual([`model_b`, `model_d`])
+    // Check the non-zero values are sorted correctly after
+    expect(sorted_desc.slice(2).map((m) => m.model_key)).toEqual([`model_a`, `model_c`])
+  })
+
+  it(`handles sorting with all models having missing metric`, () => {
     const all_missing_models = [
       { model_name: `Model A`, model_key: `model_a` },
       { model_name: `Model B`, model_key: `model_b` },
@@ -969,5 +1002,33 @@ describe(`Model Sorting Logic`, () => {
     expect(sorted_models[0].model_key).toBe(`model_1`)
     expect(sorted_models[1].model_key).toBe(`model_2`)
     expect(sorted_models[2].model_key).toBe(`model_3`)
+  })
+
+  it(`throws an error when sorting by unexpected type`, () => {
+    const models_with_mixed_types = [
+      { model_name: `Model A`, model_key: `model_a`, some_metric: 1 },
+      { model_name: `Model B`, model_key: `model_b`, some_metric: `string` },
+    ] as unknown as ModelData[]
+
+    // Expect an error when trying to sort number and string
+    expect(() =>
+      models_with_mixed_types.sort(sort_models(`some_metric`, `desc`)),
+    ).toThrow(/Unexpected type.*encountered sorting by key/)
+  })
+
+  it(`handles sorting when both compared values are null`, () => {
+    const models_with_null = [
+      { model_name: `Model Null 1`, model_key: `null_1`, metric: null },
+      { model_name: `Model Null 2`, model_key: `null_2`, metric: null },
+      { model_name: `Model Val`, model_key: `val_1`, metric: 10 },
+    ] as unknown as ModelData[]
+
+    // Ascending sort
+    const sorted_asc = [...models_with_null].sort(sort_models(`metric`, `asc`))
+    expect(sorted_asc.map((m) => m.model_key)).toEqual([`val_1`, `null_1`, `null_2`])
+
+    // Descending sort
+    const sorted_desc = [...models_with_null].sort(sort_models(`metric`, `desc`))
+    expect(sorted_desc.map((m) => m.model_key)).toEqual([`val_1`, `null_1`, `null_2`])
   })
 })

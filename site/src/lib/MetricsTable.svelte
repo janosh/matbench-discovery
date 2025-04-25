@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { HeatmapTable, TableControls } from '$lib'
+  import { HeatmapTable, IconList, TableControls } from '$lib'
   import { metric_better_as } from '$lib/metrics'
   import type { Snippet } from 'svelte'
   import { click_outside } from 'svelte-zoo/actions'
@@ -22,11 +22,11 @@
     [key: string]: unknown
   }
   let {
-    discovery_set = `unique_prototypes`,
-    model_filter = () => true,
-    col_filter = () => true,
-    show_energy_only = false,
-    show_noncompliant = false,
+    discovery_set = $bindable(`unique_prototypes`),
+    model_filter = $bindable(() => true),
+    col_filter = $bindable(() => true),
+    show_energy_only = $bindable(false),
+    show_noncompliant = $bindable(true),
     ...rest
   }: Props = $props()
 
@@ -38,6 +38,15 @@
     METADATA_COLS
   const { graph_construction_radius } = HYPERPARAMS
   const { checkpoint_license, code_license } = INFO_COLS
+
+  const AFFILIATIONS = {
+    key: `org`,
+    label: `Org`,
+    sortable: false,
+    description: `Top 3 most common author affiliations`,
+    visible: false,
+    better: null,
+  } as const satisfies Metric
 
   let columns = $derived(
     [
@@ -51,12 +60,13 @@
       graph_construction_radius,
       checkpoint_license,
       code_license,
+      AFFILIATIONS,
     ]
       .map((col) => {
         const better = col.better ?? metric_better_as(col.label)
 
         // append better=higher/lower to tooltip if applicable
-        let description = col.description || ``
+        let description = col.description ?? ``
         if (better === `higher` || better === `lower`) {
           description = description
             ? `${description} (${better}=better)`
@@ -106,6 +116,10 @@
   }}
 />
 
+{#snippet affiliation_cell({ row }: CellSnippetArgs)}
+  <IconList icons={(row as ModelData).org_logos} />
+{/snippet}
+
 {#snippet links_cell({ val }: CellSnippetArgs)}
   {@const links = val as LinkData}
   {#each Object.entries(links).filter(([key]) => key !== `pred_files`) as [key, link] (JSON.stringify(link))}
@@ -136,7 +150,10 @@
   initial_sort_column="CPS"
   initial_sort_direction="desc"
   sort_hint="Click on column headers to sort table rows"
-  special_cells={{ Links: links_cell as unknown as Snippet<[CellSnippetArgs]> }}
+  special_cells={{
+    Links: links_cell as unknown as Snippet<[CellSnippetArgs]>,
+    Org: affiliation_cell as unknown as Snippet<[CellSnippetArgs]>,
+  }}
   default_num_format=".3f"
   {...rest}
 >

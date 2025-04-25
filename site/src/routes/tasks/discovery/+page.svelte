@@ -4,7 +4,7 @@
     DISCOVERY_METRICS,
     DISCOVERY_SET_LABELS,
     METADATA_COLS,
-    METRICS, // TODO: remove this and replace with METADATA_COLS after converting from array to record
+    METRICS,
   } from '$lib/labels'
   import type { DiscoverySet } from '$lib/types'
 
@@ -16,7 +16,12 @@
 <SelectToggle
   bind:selected={discovery_set}
   options={Object.entries(DISCOVERY_SET_LABELS).map(
-    ([value, { title, tooltip, link }]) => ({ value, label: title, tooltip, link }),
+    ([value, { title, description: tooltip, link }]) => ({
+      value,
+      label: title,
+      tooltip,
+      link,
+    }),
   )}
 />
 

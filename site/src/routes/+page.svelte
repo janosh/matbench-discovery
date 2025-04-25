@@ -1,19 +1,14 @@
 <script lang="ts">
   import type { DiscoverySet, ModelData } from '$lib'
-  import {
-    DynamicScatter,
-    MetricsTable,
-    model_is_compliant,
-    MODELS,
-    RadarChart,
-    SelectToggle,
-  } from '$lib'
+  import { DynamicScatter, MetricsTable, RadarChart, SelectToggle } from '$lib'
   import { CPS_CONFIG } from '$lib/combined_perf_score.svelte'
   import { generate_png, generate_svg, handle_export } from '$lib/html-to-img'
   import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/labels'
+  import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import Readme from '$root/readme.md'
   import KappaNote from '$routes/kappa-note.md'
   import { pretty_num } from 'elementari'
+  import type { Snapshot } from './$types'
 
   let n_wbm_stable_uniq_protos = 32_942
   let n_wbm_uniq_protos = 215_488
@@ -40,17 +35,31 @@
     MODELS.reduce((best: ModelData, md: ModelData) => {
       const best_F1 = best.metrics?.discovery?.full_test_set?.F1 ?? 0
       const md_F1 = md.metrics?.discovery?.full_test_set?.F1 ?? 0
-      if (
-        (!best_F1 || md_F1 > best_F1) &&
-        (show_non_compliant || model_is_compliant(md))
-      ) {
+      if ((!best_F1 || md_F1 > best_F1) && (show_non_compliant || model_is_compliant(md)))
         return md
-      }
       return best
     }, {} as ModelData),
   )
 
   let discovery_set: DiscoverySet = $state(`unique_prototypes`)
+
+  export const snapshot: Snapshot = {
+    capture: () => ({
+      discovery_set,
+      show_non_compliant,
+      show_energy_only,
+      show_combined_controls,
+      visible_cols,
+    }),
+    restore: (values) =>
+      ({
+        discovery_set,
+        show_non_compliant,
+        show_energy_only,
+        show_combined_controls,
+        visible_cols,
+      } = values),
+  }
 </script>
 
 <h1 style="line-height: 0; margin-block: -1.2em 1em;">
@@ -62,7 +71,12 @@
   <SelectToggle
     bind:selected={discovery_set}
     options={Object.entries(DISCOVERY_SET_LABELS).map(
-      ([value, { title, tooltip, link }]) => ({ value, label: title, tooltip, link }),
+      ([value, { title, description: tooltip, link }]) => ({
+        value,
+        label: title,
+        tooltip,
+        link,
+      }),
     )}
   />
 
@@ -73,8 +87,8 @@
         model_filter={() => true}
         {discovery_set}
         {show_combined_controls}
-        {show_energy_only}
-        show_noncompliant={show_non_compliant}
+        bind:show_energy_only
+        bind:show_non_compliant
         cps_config={CPS_CONFIG}
         style="width: 100%;"
       />
@@ -86,7 +100,8 @@
     {#each [[`SVG`, generate_svg], [`PNG`, generate_png]] as const as [label, generate_fn] (label)}
       <button
         class="download-btn"
-        onclick={handle_export(generate_fn, label, export_error, {
+        onclick={handle_export(generate_fn, label, {
+          export_error,
           show_non_compliant,
           discovery_set,
         })}

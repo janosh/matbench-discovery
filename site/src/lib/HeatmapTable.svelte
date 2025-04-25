@@ -232,7 +232,6 @@
               style:background-color={color.bg}
               style:color={color.text}
               style={col.style}
-              title={typeof val === `undefined` || val === null ? `not available` : null}
             >
               {#if special_cells?.[col.label]}
                 {@render special_cells[col.label]({ row, col, val })}
@@ -267,7 +266,7 @@
   }
   th,
   td {
-    padding: var(--heatmap-cell-padding, 1pt 3pt);
+    padding: var(--heatmap-cell-padding, 1pt 5pt);
     text-align: var(--heatmap-text-align, left);
     border: var(--heatmap-cell-border, none);
     white-space: nowrap;

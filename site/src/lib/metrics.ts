@@ -1,11 +1,6 @@
-import {
-  DATASETS,
-  format_date,
-  get_pred_file_urls,
-  model_is_compliant,
-  MODELS,
-} from '$lib'
+import { DATASETS, format_date, MODELS } from '$lib'
 import type { TargetType } from '$lib/model-schema'
+import { get_pred_file_urls, model_is_compliant } from '$lib/models.svelte'
 import modeling_tasks from '$pkg/modeling-tasks.yml'
 import { max, min } from 'd3-array'
 import { scaleLog, scaleSequential } from 'd3-scale'
@@ -233,7 +228,7 @@ export function assemble_row_data(
 
     return {
       Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>`,
-      CPS: model[CPS.key],
+      CPS: model[CPS.key] as number | undefined,
       F1: discovery_metrics?.F1,
       DAF: discovery_metrics?.DAF,
       Prec: discovery_metrics?.Precision,
@@ -244,7 +239,7 @@ export function assemble_row_data(
       RMSE: discovery_metrics?.RMSE,
       'R<sup>2</sup>': discovery_metrics?.R2,
       'κ<sub>SRME</sub>': kappa,
-      RMSD: get_nested_value(model, `${RMSD.path}.${RMSD.key}`),
+      RMSD: get_nested_value(model, `${RMSD.path}.${RMSD.key}`) as number | undefined,
       'Training Set': format_train_set(model.training_set, model),
       Params: `<span title="${pretty_num(model.model_params, `,`)}" trainable model parameters" data-sort-value="${model.model_params}">${pretty_num(model.model_params)}</span>`,
       Targets: targets_str,
@@ -277,10 +272,11 @@ export function assemble_row_data(
       'Code License': code_license,
       'r<sub>cut</sub>': r_cut_str,
       row_style,
+      org_logos: model.org_logos,
       ...Object.fromEntries(
         Object.values(GEO_OPT_SYMMETRY_METRICS).map((col) => [
           col.label,
-          get_nested_value(model, `${col.path}.${col.key}`),
+          get_nested_value(model, `${col.path}.${col.key}`) as number | undefined,
         ]),
       ),
     }
@@ -290,9 +286,9 @@ export function assemble_row_data(
   return all_metrics.sort((row1, row2) => {
     const [score1, score2] = [row1[`CPS`], row2[`CPS`]]
 
-    // Handle NaN values (they should be sorted to the bottom)
-    const is_nan1 = score1 === null || isNaN(score1)
-    const is_nan2 = score2 === null || isNaN(score2)
+    // Handle undefined or null values (they should be sorted to the bottom)
+    const is_nan1 = score1 == null || isNaN(score1)
+    const is_nan2 = score2 == null || isNaN(score2)
     if (is_nan1 && is_nan2) return 0
     if (is_nan1) return 1
     if (is_nan2) return -1

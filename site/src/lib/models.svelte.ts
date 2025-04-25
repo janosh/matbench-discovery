@@ -1,6 +1,9 @@
+import { dev } from '$app/environment'
 import { default as DATASETS } from '$data/datasets.yml'
+import modeling_tasks from '$pkg/modeling-tasks.yml'
 import { CPS_CONFIG, calculate_cps } from './combined_perf_score.svelte'
-import type { ModelData } from './types'
+import { get_org_logo } from './labels'
+import type { Author, ModelData } from './types'
 
 export const MODEL_METADATA_PATHS = import.meta.glob(`$root/models/[^_]**/[^_]*.yml`, {
   eager: true,
@@ -52,6 +55,8 @@ export function calculate_training_sizes(model_train_sets: string[] = []): {
   return { total_materials, total_structures }
 }
 
+const warned_affiliations = new Set<string>()
+
 export const MODELS = $state(
   Object.entries(MODEL_METADATA_PATHS)
     .filter(
@@ -64,6 +69,31 @@ export const MODELS = $state(
 
       // Calculate training set sizes
       const sizes = calculate_training_sizes(metadata.training_set)
+
+      // Get top affiliations with logos
+      const affiliation_counts: Record<string, number> = {}
+      const affiliation_data: Record<string, { name: string; id: string }> = {}
+
+      for (const author of metadata.authors ?? ([] as Author[])) {
+        if (!author.affiliation) continue
+
+        const org_logos = get_org_logo(author.affiliation)
+        if (org_logos) {
+          affiliation_counts[org_logos.id] = (affiliation_counts[org_logos.id] || 0) + 1
+          if (!(org_logos.id in affiliation_data)) {
+            affiliation_data[org_logos.id] = org_logos
+          }
+        } else if (!warned_affiliations.has(author.affiliation) && dev) {
+          console.warn(`No logo found for affiliation: ${author.affiliation}`)
+          warned_affiliations.add(author.affiliation)
+        }
+      }
+
+      const top_affiliations = Object.entries(affiliation_counts)
+        .sort(([_id_a, count_a], [_id_b, count_b]) => count_b - count_a)
+        .slice(0, 3)
+        .map(([id]) => affiliation_data[id])
+
       return {
         ...metadata,
         dirname: key.split(`/`)[2],
@@ -72,6 +102,7 @@ export const MODELS = $state(
         CPS: NaN, // Initial CPS placeholder
         n_training_materials: sizes.total_materials,
         n_training_structures: sizes.total_structures,
+        org_logos: top_affiliations,
       }
     }),
 ) as ModelData[]
@@ -99,3 +130,47 @@ export function update_models_cps() {
 
 // Calculate initial CPS for all models
 update_models_cps()
+
+export function model_is_compliant(model: ModelData): boolean {
+  if ((model.openness ?? `OSOD`) != `OSOD`) return false
+
+  const allowed_sets = [`MP 2022`, `MPtrj`, `MPF`, `MP Graphs`]
+
+  return model.training_set.every((itm) => allowed_sets.includes(itm))
+}
+
+export function get_pred_file_urls(model: ModelData) {
+  // get all pred_file_url from model.metrics
+  const files: { name: string; url: string }[] = []
+
+  function find_pred_files(obj: object, parent_key = ``) {
+    if (!obj || typeof obj !== `object`) return
+
+    for (const [key, val] of Object.entries(obj)) {
+      if (key == `pred_file_url` && val && typeof val === `string`) {
+        // Look up the label by traversing the modeling_tasks hierarchy
+        const pretty_label = get_label_for_key_path(parent_key)
+        files.push({ name: pretty_label, url: val })
+      } else if (typeof val === `object`) {
+        find_pred_files(val, key)
+      }
+    }
+  }
+
+  // Recursively look up labels in the modeling_tasks object
+  function get_label_for_key_path(key_path: string): string {
+    if (key_path in modeling_tasks) return modeling_tasks[key_path]?.label || key_path
+
+    // Check if it's a subtask by searching all tasks
+    for (const task_value of Object.values(modeling_tasks)) {
+      if (task_value?.subtasks?.[key_path]) {
+        return task_value.subtasks[key_path].label || key_path
+      }
+    }
+
+    return key_path // Default to key itself if no label is found
+  }
+
+  find_pred_files(model.metrics)
+  return files
+}
