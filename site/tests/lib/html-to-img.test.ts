@@ -193,4 +193,176 @@ describe(`SVG Export Functionality`, () => {
     expect(png_result?.filename).toContain(`unique-prototypes`)
     expect(png_result?.filename).not.toContain(`unique_prototypes`)
   })
+
+  it(`handles error when table element is not found for SVG`, async () => {
+    // Mock querySelector to return null
+    vi.spyOn(document, `querySelector`).mockReturnValue(null)
+    const console_spy = vi.spyOn(console, `error`).mockImplementation(() => {})
+
+    vi.resetModules() // Ensure mocks apply to fresh module import
+    const module = await import(`$lib/html-to-img`)
+    const result = await module.generate_svg({ discovery_set: `test` })
+
+    expect(result).toBeNull()
+    expect(console_spy).toHaveBeenCalledWith(`Table element not found for SVG export`)
+
+    console_spy.mockRestore()
+  })
+
+  it(`handles error when table element is not found for PNG`, async () => {
+    // Mock querySelector to return null
+    vi.spyOn(document, `querySelector`).mockReturnValue(null)
+    const console_spy = vi.spyOn(console, `error`).mockImplementation(() => {})
+
+    vi.resetModules() // Ensure mocks apply to fresh module import
+    const module = await import(`$lib/html-to-img`)
+    const result = await module.generate_png({ discovery_set: `test` })
+
+    expect(result).toBeNull()
+    expect(console_spy).toHaveBeenCalledWith(`Table element not found for PNG export`)
+
+    console_spy.mockRestore()
+  })
+
+  it(`handles error during SVG generation using toSvg`, async () => {
+    // Mock toSvg to throw an error
+    const mock_to_svg = vi.fn().mockRejectedValue(new Error(`toSvg failed`))
+    vi.mock(`html-to-image`, () => ({
+      toSvg: mock_to_svg,
+      toPng: vi.fn(),
+    }))
+
+    vi.resetModules() // Ensure mocks apply to fresh module import
+    const module = await import(`$lib/html-to-img`)
+    const console_spy = vi.spyOn(console, `error`).mockImplementation(() => {})
+
+    const result = await module.generate_svg({ discovery_set: `test` })
+
+    expect(result).toBeNull()
+    expect(console_spy).toHaveBeenCalledWith(`Error generating SVG:`, expect.any(Error))
+
+    console_spy.mockRestore()
+    vi.unmock(`html-to-image`) // Clean up mock
+  })
+
+  it(`handles error during PNG generation using toPng`, async () => {
+    // Mock toPng to throw an error
+    const mock_to_png = vi.fn().mockRejectedValue(new Error(`toPng failed`))
+    vi.mock(`html-to-image`, () => ({
+      toSvg: vi.fn(),
+      toPng: mock_to_png,
+    }))
+
+    vi.resetModules() // Ensure mocks apply to fresh module import
+    const module = await import(`$lib/html-to-img`)
+    const console_spy = vi.spyOn(console, `error`).mockImplementation(() => {})
+
+    const result = await module.generate_png({ discovery_set: `test` })
+
+    expect(result).toBeNull()
+    expect(console_spy).toHaveBeenCalledWith(`Error generating PNG:`, expect.any(Error))
+
+    console_spy.mockRestore()
+    console_spy.mockRestore()
+    vi.unmock(`html-to-image`) // Clean up mock
+  })
+})
+
+describe(`handle_export tests`, () => {
+  // Define state type consistent with handle_export expectations
+  type State = {
+    export_error: string | null
+    show_non_compliant?: boolean
+    discovery_set?: string
+  }
+  let state: State
+  let generator_spy: MockInstance
+
+  beforeEach(() => {
+    state = { export_error: null }
+    generator_spy = vi.fn()
+    vi.clearAllMocks()
+  })
+
+  it(`calls generator and handles success`, async () => {
+    vi.resetModules() // Ensure mocks apply to fresh module import
+    const module = await import(`$lib/html-to-img`)
+    generator_spy.mockResolvedValue({ filename: `test.fmt`, url: `some-url` })
+    // Pass required state properties
+    state = { export_error: null, discovery_set: `test`, show_non_compliant: false }
+    const handler = module.handle_export(generator_spy, `fmt`, state)
+
+    await handler()
+
+    expect(generator_spy).toHaveBeenCalledWith({
+      discovery_set: state.discovery_set,
+      show_non_compliant: state.show_non_compliant,
+    })
+    expect(state.export_error).toBeNull()
+  })
+
+  it(`sets error message when generator returns null`, async () => {
+    vi.resetModules() // Ensure mocks apply to fresh module import
+    const module = await import(`$lib/html-to-img`)
+    generator_spy.mockResolvedValue(null)
+    // Pass required state properties
+    state = { export_error: null, discovery_set: `test`, show_non_compliant: false }
+    const handler = module.handle_export(generator_spy, `fmt`, state)
+
+    await handler()
+
+    expect(generator_spy).toHaveBeenCalledWith({
+      discovery_set: state.discovery_set,
+      show_non_compliant: state.show_non_compliant,
+    })
+    expect(state.export_error).toBe(
+      `Failed to generate fmt. The export function returned null.`,
+    )
+  })
+
+  it(`sets error message when generator throws an Error`, async () => {
+    vi.resetModules() // Ensure mocks apply to fresh module import
+    const module = await import(`$lib/html-to-img`)
+    const error_message = `Generator failed`
+    generator_spy.mockRejectedValue(new Error(error_message))
+    const console_spy = vi.spyOn(console, `error`).mockImplementation(() => {})
+    // Pass required state properties
+    state = { export_error: null, discovery_set: `test`, show_non_compliant: false }
+
+    const handler = module.handle_export(generator_spy, `fmt`, state)
+
+    await handler()
+
+    expect(generator_spy).toHaveBeenCalledWith({
+      discovery_set: state.discovery_set,
+      show_non_compliant: state.show_non_compliant,
+    })
+    expect(state.export_error).toBe(`Error exporting fmt: ${error_message}`)
+    expect(console_spy).toHaveBeenCalledWith(`Error exporting fmt:`, expect.any(Error))
+
+    console_spy.mockRestore()
+  })
+
+  it(`sets error message when generator throws a string`, async () => {
+    vi.resetModules() // Ensure mocks apply to fresh module import
+    const module = await import(`$lib/html-to-img`)
+    const error_string = `Something went wrong`
+    generator_spy.mockRejectedValue(error_string)
+    const console_spy = vi.spyOn(console, `error`).mockImplementation(() => {})
+    // Pass required state properties
+    state = { export_error: null, discovery_set: `test`, show_non_compliant: false }
+
+    const handler = module.handle_export(generator_spy, `fmt`, state)
+
+    await handler()
+
+    expect(generator_spy).toHaveBeenCalledWith({
+      discovery_set: state.discovery_set,
+      show_non_compliant: state.show_non_compliant,
+    })
+    expect(state.export_error).toBe(`Error exporting fmt: ${error_string}`)
+    expect(console_spy).toHaveBeenCalledWith(`Error exporting fmt:`, error_string)
+
+    console_spy.mockRestore()
+  })
 })

@@ -3,6 +3,8 @@ import {
   format_power_ten,
   format_property_path,
   get_format,
+  get_org_logo,
+  org_logos,
 } from '$lib/labels'
 import { describe, expect, test } from 'vitest'
 
@@ -255,5 +257,35 @@ describe(`CATEGORY_LABELS`, () => {
       expect(typeof value).toBe(`string`)
       expect(value.length).toBeGreaterThan(0)
     })
+  })
+})
+
+describe(`get_org_logo`, () => {
+  test.each([
+    [`Google DeepMind`, org_logos.deepmind],
+    [`google deepmind`, org_logos.deepmind],
+    [`Affiliated with Microsoft Research`, org_logos.microsoft],
+    [`Affiliated with Meta (FAIR)`, org_logos.meta],
+    [`University of Cambridge`, org_logos.cambridge],
+    [`Seoul National University`, org_logos[`seoul national university`]], // Longer key precedence
+    [`SNU`, org_logos.snu],
+    [`AI for Science Institute, Beijing`, org_logos[`ai for science institute`]], // Longer key precedence
+    [`Some random university`, undefined],
+    [
+      `Massachusetts Institute of Technology, USA`,
+      org_logos[`massachusetts institute of technology`],
+    ],
+    [`Research at UCSD`, org_logos.ucsd],
+    [`DeepModeling Community`, org_logos.deepmodeling],
+  ])(`returns correct logo data for '%s'`, (input, expected) => {
+    expect(get_org_logo(input)).toEqual(expected)
+  })
+
+  test(`returns undefined for empty or undefined input`, () => {
+    expect(get_org_logo(``)).toBeUndefined()
+    // @ts-expect-error testing undefined input
+    expect(get_org_logo(undefined)).toBeUndefined()
+    // @ts-expect-error testing null input
+    expect(get_org_logo(null)).toBeUndefined()
   })
 })

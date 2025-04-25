@@ -13,6 +13,7 @@ export type ModelData = ModelMetadata &
     color?: string
     n_training_materials?: number
     n_training_structures?: number
+    org_logos?: { name: string; id?: string; src?: string }[]
   }
 
 export type Author = {
@@ -118,8 +119,8 @@ export type CellVal =
   | null
   | Record<string, unknown>
   | LinkData
-
+  | { [key: string]: string | number | LinkData | null | undefined | boolean }[]
 export type RowData = {
-  [key: string]: string | number | LinkData | null | undefined | boolean
+  [key: string]: CellVal
 }
 export type CellSnippetArgs = { row: RowData; col: Metric; val: CellVal }

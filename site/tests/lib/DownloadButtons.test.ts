@@ -100,7 +100,8 @@ describe(`Download Buttons UI`, () => {
     mock_svg_module.generate_svg = svg_generate_spy
 
     // Set up a handler function with our mock
-    const handle_export_fn = handle_export(svg_generate_spy, `SVG`, null, {
+    const handle_export_fn = handle_export(svg_generate_spy, `SVG`, {
+      export_error: null,
       show_non_compliant: false,
       discovery_set: `unique_prototypes`,
     })
@@ -109,8 +110,8 @@ describe(`Download Buttons UI`, () => {
     const svg_button = document.querySelector(`#svg-btn`) as HTMLButtonElement
     svg_button.addEventListener(`click`, handle_export_fn)
 
-    // Simulate clicking the button
-    svg_button.click()
+    // Simulate clicking the button and wait for the handler
+    await svg_button.click()
 
     // Verify our export function was called with expected parameters
     expect(svg_generate_spy).toHaveBeenCalledTimes(1)
@@ -136,7 +137,8 @@ describe(`Download Buttons UI`, () => {
     mock_svg_module.generate_png = png_generate_spy
 
     // Set up a handler function with our mock
-    const handle_export_fn = handle_export(png_generate_spy, `PNG`, null, {
+    const handle_export_fn = handle_export(png_generate_spy, `PNG`, {
+      export_error: null,
       show_non_compliant: false,
       discovery_set: `unique_prototypes`,
     })
@@ -170,11 +172,16 @@ describe(`Download Buttons UI`, () => {
 
     // Set up error element for testing
     const error_el = document.querySelector(`.export-error`) as HTMLElement
-    let local_error: string | null = null
+    // State object MUST include export_error property now
+    const state = {
+      export_error: null as string | null,
+      show_non_compliant: false,
+      discovery_set: `unique_prototypes`,
+    }
 
-    // Create a spy to capture error updates
+    // Create a spy to capture error updates (simulates reactivity)
     const update_error_spy = vi.fn((err: string | null) => {
-      local_error = err
+      state.export_error = err
       if (err) {
         error_el.textContent = err
         error_el.style.display = `block`
@@ -183,17 +190,16 @@ describe(`Download Buttons UI`, () => {
       }
     })
 
-    // Manually call the handle function with our error setter
-    const handle_fn = handle_export(mock_error_svg, `SVG`, local_error, {
-      show_non_compliant: false,
-      discovery_set: `unique_prototypes`,
-    })
+    // Manually call the handle function
+    const handle_fn = handle_export(mock_error_svg, `SVG`, state)
 
     await handle_fn()
 
-    // Manually update the DOM since handle_export doesn't do it
-    if (local_error === null) {
-      update_error_spy(`Error exporting SVG: ${mock_error_message}`)
+    // Update the DOM based on the potentially modified state.export_error
+    if (state.export_error) {
+      update_error_spy(state.export_error)
+    } else {
+      update_error_spy(null) // Clear error if state.export_error is null
     }
 
     // Check error element visibility
@@ -214,11 +220,16 @@ describe(`Download Buttons UI`, () => {
 
     // Set up error element for testing
     const error_el = document.querySelector(`.export-error`) as HTMLElement
-    let local_error: string | null = null
+    // State object MUST include export_error property now
+    const state = {
+      export_error: null as string | null,
+      show_non_compliant: false,
+      discovery_set: `unique_prototypes`,
+    }
 
-    // Create a spy to capture error updates
+    // Create a spy to capture error updates (simulates reactivity)
     const update_error_spy = vi.fn((err: string | null) => {
-      local_error = err
+      state.export_error = err
       if (err) {
         error_el.textContent = err
         error_el.style.display = `block`
@@ -227,17 +238,16 @@ describe(`Download Buttons UI`, () => {
       }
     })
 
-    // Manually call the handle function with our error setter
-    const handle_fn = handle_export(mock_null_png, `PNG`, local_error, {
-      show_non_compliant: false,
-      discovery_set: `unique_prototypes`,
-    })
+    // Manually call the handle function
+    const handle_fn = handle_export(mock_null_png, `PNG`, state)
 
     await handle_fn()
 
-    // Manually update the DOM since handle_export doesn't do it
-    if (local_error === null) {
-      update_error_spy(`Failed to generate PNG. The export function returned null.`)
+    // Update the DOM based on the potentially modified state.export_error
+    if (state.export_error) {
+      update_error_spy(state.export_error)
+    } else {
+      update_error_spy(null) // Clear error if state.export_error is null
     }
 
     // Check error element visibility and exact content

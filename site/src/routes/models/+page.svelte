@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { model_is_compliant, ModelCard, MODELS, type Metric } from '$lib'
+  import { ModelCard, type Metric } from '$lib'
   import { METADATA_COLS, METRICS } from '$lib/labels'
   import { get_nested_value, metric_better_as, sort_models } from '$lib/metrics'
+  import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import { interpolateCividis as cividis } from 'd3-scale-chromatic'
   import { ColorBar } from 'elementari'
   import { RadioButtons, Tooltip } from 'svelte-zoo'
