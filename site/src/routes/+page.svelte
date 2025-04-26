@@ -13,9 +13,13 @@
   let n_wbm_stable_uniq_protos = 32_942
   let n_wbm_uniq_protos = 215_488
 
-  let show_non_compliant: boolean = $state(true)
-  let show_energy_only: boolean = $state(false)
-  let show_combined_controls: boolean = $state(true)
+  let table = $state({
+    show_non_compliant: true,
+    show_energy_only: false,
+    show_combined_controls: true,
+    show_compliant: true,
+    show_heatmap: true,
+  })
   let export_error: string | null = $state(null)
 
   // Default column visibility
@@ -35,7 +39,10 @@
     MODELS.reduce((best: ModelData, md: ModelData) => {
       const best_F1 = best.metrics?.discovery?.full_test_set?.F1 ?? 0
       const md_F1 = md.metrics?.discovery?.full_test_set?.F1 ?? 0
-      if ((!best_F1 || md_F1 > best_F1) && (show_non_compliant || model_is_compliant(md)))
+      if (
+        (!best_F1 || md_F1 > best_F1) &&
+        (table.show_non_compliant || model_is_compliant(md))
+      )
         return md
       return best
     }, {} as ModelData),
@@ -44,21 +51,8 @@
   let discovery_set: DiscoverySet = $state(`unique_prototypes`)
 
   export const snapshot: Snapshot = {
-    capture: () => ({
-      discovery_set,
-      show_non_compliant,
-      show_energy_only,
-      show_combined_controls,
-      visible_cols,
-    }),
-    restore: (values) =>
-      ({
-        discovery_set,
-        show_non_compliant,
-        show_energy_only,
-        show_combined_controls,
-        visible_cols,
-      } = values),
+    capture: () => ({ discovery_set, table }),
+    restore: (values) => ({ discovery_set, table } = values),
   }
 </script>
 
@@ -86,9 +80,10 @@
         col_filter={(col) => visible_cols[col.label] ?? true}
         model_filter={() => true}
         {discovery_set}
-        {show_combined_controls}
-        bind:show_energy_only
-        bind:show_non_compliant
+        bind:show_energy_only={table.show_energy_only}
+        bind:show_non_compliant={table.show_non_compliant}
+        bind:show_compliant={table.show_compliant}
+        bind:show_heatmap={table.show_heatmap}
         cps_config={CPS_CONFIG}
         style="width: 100%;"
       />
@@ -102,7 +97,7 @@
         class="download-btn"
         onclick={handle_export(generate_fn, label, {
           export_error,
-          show_non_compliant,
+          show_non_compliant: table.show_non_compliant,
           discovery_set,
         })}
       >
@@ -155,14 +150,14 @@
 <p>Compare models across different metrics and parameters:</p>
 <DynamicScatter
   models={MODELS}
-  model_filter={(model) => show_non_compliant || model_is_compliant(model)}
+  model_filter={(model) => table.show_non_compliant || model_is_compliant(model)}
   {discovery_set}
 />
 
 <Readme>
   {#snippet title()}{/snippet}
   {#snippet model_count()}
-    {MODELS.filter((md) => show_non_compliant || model_is_compliant(md)).length}
+    {MODELS.filter((md) => table.show_non_compliant || model_is_compliant(md)).length}
   {/snippet}
 
   {#snippet best_report()}
@@ -206,7 +201,6 @@
     margin-top: 0.5em;
     flex-basis: 100%;
   }
-
   /* Caption Radar Container Styles */
   figcaption.caption-radar-container {
     display: grid;

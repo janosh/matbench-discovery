@@ -1,6 +1,6 @@
-import per_elem_each_errors from '$figs/per-element-each-errors.json'
 import { MODELS } from '$lib'
 import { error } from '@sveltejs/kit'
+import per_elem_each_errors from '../per-element-each-errors.json'
 import type { PageServerLoad } from './$types'
 
 export const load: PageServerLoad = ({ params }) => {

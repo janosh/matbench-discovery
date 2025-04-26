@@ -18,7 +18,12 @@
     model_filter?: (model: ModelData) => boolean
     col_filter?: (col: Metric) => boolean
     show_energy_only?: boolean
-    show_noncompliant?: boolean
+    show_non_compliant?: boolean
+    show_heatmap?: boolean
+    show_compliant?: boolean
+    active_files?: { name: string; url: string }[]
+    active_model_name?: string
+    pred_files_dropdown_pos?: { x: number; y: number; name: string } | null
     [key: string]: unknown
   }
   let {
@@ -26,14 +31,15 @@
     model_filter = $bindable(() => true),
     col_filter = $bindable(() => true),
     show_energy_only = $bindable(false),
-    show_noncompliant = $bindable(true),
+    show_non_compliant = $bindable(true),
+    show_heatmap = $bindable(true),
+    show_compliant = $bindable(true),
+    active_files = $bindable([]),
+    active_model_name = $bindable(``),
+    pred_files_dropdown_pos = $bindable(null),
     ...rest
   }: Props = $props()
 
-  let active_files: { name: string; url: string }[] = $state([])
-  let active_model_name = $state(``)
-  let active_dropdown_pos = $state<{ x: number; y: number; name: string } | null>(null)
-  const [compliant_clr, noncompliant_clr] = [`#4caf50`, `#4682b4`]
   const { model_name, training_set, model_params, targets, date_added, links } =
     METADATA_COLS
   const { graph_construction_radius } = HYPERPARAMS
@@ -85,9 +91,8 @@
       discovery_set,
       model_filter,
       show_energy_only,
-      show_noncompliant,
-      compliant_clr,
-      noncompliant_clr,
+      show_non_compliant,
+      show_compliant,
     ),
   )
 
@@ -102,14 +107,18 @@
     active_files = links.pred_files.files
 
     // Position dropdown relative to the viewport
-    active_dropdown_pos = { x: rect.left, y: rect.bottom, name: links.pred_files.name }
+    pred_files_dropdown_pos = {
+      x: rect.left,
+      y: rect.bottom,
+      name: links.pred_files.name,
+    }
   }
-  const close_dropdown = () => (active_dropdown_pos = null)
+  const close_dropdown = () => (pred_files_dropdown_pos = null)
 </script>
 
 <svelte:window
   onkeydown={(event) => {
-    if (event.key === `Escape` && active_dropdown_pos) {
+    if (event.key === `Escape` && pred_files_dropdown_pos) {
       close_dropdown()
       event.preventDefault()
     }
@@ -155,27 +164,22 @@
     Org: affiliation_cell as unknown as Snippet<[CellSnippetArgs]>,
   }}
   default_num_format=".3f"
+  bind:show_heatmap
   {...rest}
 >
   {#snippet controls()}
-    <div class="controls-container">
-      <div class="controls-row">
-        {#if show_noncompliant}
-          {#each [[compliant_clr, `Compliant`], [noncompliant_clr, `Non-compliant`]] as [clr, label] (label)}
-            <div class="legend-item">
-              <span class="color-swatch" style="background-color: {clr};"></span>
-              {label}
-            </div>
-          {/each}
-        {/if}
-        <TableControls bind:show_energy_only bind:show_noncompliant bind:columns />
-      </div>
-    </div>
+    <TableControls
+      bind:show_energy_only
+      bind:columns
+      bind:show_heatmap
+      bind:show_compliant
+      bind:show_non_compliant
+    />
   {/snippet}
 </HeatmapTable>
 
-{#if active_dropdown_pos}
-  {@const { x, y } = active_dropdown_pos}
+{#if pred_files_dropdown_pos}
+  {@const { x, y } = pred_files_dropdown_pos}
   <div
     class="pred-files-dropdown"
     style="position: fixed; left: {x}px; top: {y}px;"
@@ -216,21 +220,5 @@
   .pred-files-dropdown ol {
     margin: 0;
     padding-left: 1em;
-  }
-  div.controls-row {
-    display: flex;
-    gap: 1em;
-    flex-wrap: wrap;
-    font-size: 0.85em;
-  }
-  div.legend-item {
-    display: flex;
-    place-items: center;
-    gap: 0.3em;
-  }
-  span.color-swatch {
-    width: 14px;
-    height: 14px;
-    border-radius: 2px;
   }
 </style>

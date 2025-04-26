@@ -42,7 +42,7 @@ repos:
       - id: codespell
         stages: [pre-commit, commit-msg]
         exclude_types: [csv, json, svg]
-        exclude: ^(.+references.yaml|site/src/figs/.+)$
+        exclude: ^site/src/figs/.+$
         args:
           [--ignore-words-list, "nd,te,fpr,matris,noe,hart", --check-filenames]
 
@@ -55,7 +55,7 @@ repos:
           - prettier
           - prettier-plugin-svelte
           - svelte
-        exclude: ^(site/src/figs/.+\.svelte|data/wbm/20.+\..+|site/src/(routes|figs).+\.(yaml|json)|changelog.md)$
+        exclude: ^(site/src/figs/.+\.svelte|site/src/(routes|figs).+\.json|changelog.md)$
 
   - repo: https://github.com/pre-commit/mirrors-eslint
     rev: v9.24.0
@@ -64,7 +64,6 @@ repos:
         types: [file]
         args: [--fix, --config, site/eslint.config.js]
         files: \.(js|ts|svelte)$
-        exclude: ^(.*/figs/metrics-table.*\.svelte)$
         additional_dependencies:
           - eslint
           - eslint-plugin-svelte

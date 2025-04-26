@@ -10,19 +10,17 @@ Symmetry detection was performed with the excellent Rust library [`moyopy`](http
 
 > Σ<sub>=</sub> / Σ<sub>↓</sub> / Σ<sub>↑</sub> denote the fraction of structures that retain, increase, or decrease the symmetry of the DFT-relaxed structure during MLFF relaxation. The match criterion is for the ML ground state to have identical spacegroup as DFT. For Σ<sub>↓</sub> / Σ<sub>↑</sub>, the number of symmetry operations for a structure increased / decreased during MLFF relaxation. Note that the symmetry metrics are sensitive to the `symprec` value passed to `spglib` so we show results for multiple values. See the [`spglib` docs](https://spglib.readthedocs.io/en/latest/variable.html#symprec) and [paper](https://arxiv.org/html/1808.01590v2) for details.
 
-<hr />
+## Cumulative Distribution of RMSD
 
 <slot name="struct_rmsd_cdf_models" />
 
 > Cumulative distribution of RMSD between ML and DFT-relaxed structures.
 
-<hr />
+## Difference in Number of Symmetry Operations vs DFT
 
 <slot name="sym_ops_diff_bar" />
 
 > Difference in number of symmetry operations of ML vs DFT-relaxed structures. Models are sorted by the standard deviation σ of ΔN<sub>sym ops</sub> = N<sub >sym ops,ML</sub> - N<sub>sym ops,DFT</sub>.
-
----
 
 ## Sankey Diagrams for ML vs DFT Spacegroups
 

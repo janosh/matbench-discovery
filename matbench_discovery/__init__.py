@@ -17,7 +17,7 @@ DATA_DIR = f"{ROOT}/data"  # directory to store raw data
 TEST_FILES = f"{ROOT}/tests/files"  # directory to store test data
 SITE_FIGS = f"{ROOT}/site/src/figs"  # directory for interactive figures
 # directory to write model analysis for website
-SITE_LIB = f"{ROOT}/site/src/lib"
+SITE_DIR = f"{ROOT}/site/src"
 SCRIPTS = f"{ROOT}/scripts"  # model and date analysis scripts
 PDF_FIGS = f"{ROOT}/paper/figs"  # directory for light-themed PDF figures
 
@@ -30,7 +30,7 @@ DEFAULT_CACHE_DIR = os.getenv(
     else os.path.expanduser("~/.cache/matbench-discovery"),
 )
 
-for directory in (SITE_FIGS, SITE_LIB, PDF_FIGS):
+for directory in (SITE_FIGS, SITE_DIR, PDF_FIGS):
     os.makedirs(directory, exist_ok=True)
 
 os.makedirs(MP_DIR := f"{DATA_DIR}/mp", exist_ok=True)

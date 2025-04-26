@@ -1,9 +1,9 @@
 <script lang="ts">
-  import per_elem_each_errors from '$figs/per-element-each-errors.json'
   import { MODELS, PtableInset } from '$lib'
   import type { ChemicalElement } from 'elementari'
   import { ColorBar, ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
   import Select from 'svelte-multiselect'
+  import per_elem_each_errors from '../per-element-each-errors.json'
 
   interface Props {
     color_scale?: string[]

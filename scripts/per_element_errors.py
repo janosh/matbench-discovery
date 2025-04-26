@@ -13,7 +13,7 @@ from pymatviz.typing import PLOTLY
 from pymatviz.utils import bin_df_cols, df_ptable, si_fmt
 from tqdm import tqdm
 
-from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS
+from matbench_discovery import PDF_FIGS, ROOT, SITE_DIR, SITE_FIGS
 from matbench_discovery.cli import cli_args
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey, TestSubset
@@ -90,7 +90,9 @@ if missing_cols := expected_cols - {*df_elem_err}:
     raise ValueError(f"{missing_cols=} not in {df_elem_err.columns=}")
 if any(df_elem_err.isna().sum() > 35):
     raise ValueError("Too many NaNs in df_elem_err")
-df_elem_err.round(4).to_json(f"{SITE_FIGS}/per-element-each-errors.json")
+df_elem_err.round(4).to_json(
+    f"{SITE_DIR}/src/routes/models/per-element-each-errors.json"
+)
 
 
 # %% plot number of structures containing each element in MP and WBM

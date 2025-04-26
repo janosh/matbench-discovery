@@ -323,7 +323,7 @@ export const DISCOVERY_SET_LABELS: Record<
 > = {
   full_test_set: {
     title: `Full Test Set`,
-    description: `Metrics computed on the full test set including duplicate structure prototypes`,
+    description: `Metrics computed on the full 257k WBM test set including duplicate structure prototypes`,
   },
   unique_prototypes: {
     title: `Unique Prototypes`,

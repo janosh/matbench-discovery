@@ -6,34 +6,28 @@
   // Props for this component
   interface Props {
     show_energy_only?: boolean
-    show_noncompliant?: boolean
     columns?: Metric[]
+    show_heatmap?: boolean
+    show_compliant?: boolean
+    show_non_compliant?: boolean
     on_filter_change?: (
       show_energy: boolean,
-      show_noncompliant: boolean,
+      show_non_compliant: boolean,
     ) => void | undefined
   }
 
   // Extract props with defaults
   let {
     show_energy_only = $bindable(false),
-    show_noncompliant = $bindable(false),
     columns = $bindable([]),
+    show_heatmap = $bindable(true),
+    show_compliant = $bindable(true),
+    show_non_compliant = $bindable(true),
     on_filter_change = undefined,
   }: Props = $props()
 
   // Column panel state
   let column_panel_open = $state(false)
-
-  // Handle filter checkbox changes
-  function handle_noncompliant_change(event: Event) {
-    const target = event.target as HTMLInputElement
-    const checked = target.checked
-
-    // Update both local state and call callback
-    show_noncompliant = checked
-    on_filter_change?.(show_energy_only, checked)
-  }
 
   function handle_energy_only_change(event: Event) {
     const target = event.target as HTMLInputElement
@@ -41,18 +35,36 @@
 
     // Update both local state and call callback
     show_energy_only = checked
-    on_filter_change?.(checked, show_noncompliant)
+    on_filter_change?.(checked, false)
   }
 </script>
 
 <div class="table-controls">
-  <label class="filter-option">
+  <label class="legend-item" title="Toggle visibility of compliant models">
+    <span class="color-swatch" style="background-color: var(--compliant-color);"></span>
     <input
       type="checkbox"
-      checked={show_noncompliant}
-      onchange={handle_noncompliant_change}
+      bind:checked={show_compliant}
+      onchange={(evt) => {
+        if (!(evt.target as HTMLInputElement).checked && !show_non_compliant)
+          show_non_compliant = true // Prevent hiding both compliant and non-compliant models
+      }}
     />
-    <span>Non-compliant models</span>
+    Compliant models
+  </label>
+
+  <label class="legend-item" title="Toggle visibility of non-compliant models">
+    <input
+      type="checkbox"
+      bind:checked={show_non_compliant}
+      onchange={(evt) => {
+        if (!(evt.target as HTMLInputElement).checked && !show_compliant)
+          show_compliant = true // Prevent hiding both compliant and non-compliant models
+      }}
+    />
+    <span class="color-swatch" style="background-color: var(--non-compliant-color);"
+    ></span>
+    Non-compliant models
     <Tooltip>
       <svg><use href="#icon-info" /></svg>
       {#snippet tip()}
@@ -70,8 +82,7 @@
       {/snippet}
     </Tooltip>
   </label>
-
-  <label class="filter-option">
+  <label>
     <input
       type="checkbox"
       checked={show_energy_only}
@@ -83,23 +94,34 @@
     </Tooltip>
   </label>
 
+  <label>
+    <input
+      type="checkbox"
+      bind:checked={show_heatmap}
+      aria-label="Toggle heatmap colors"
+    />
+    <span>Heatmap</span>
+  </label>
+
   <TableColumnToggleMenu bind:columns bind:column_panel_open />
 </div>
 
 <style>
-  .table-controls {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+  div.table-controls {
+    display: inline-flex;
     flex-wrap: wrap;
-  }
-  .filter-option {
-    display: flex;
+    justify-content: end;
+    gap: 4pt 12pt;
     align-items: center;
+    font-size: 2cqw;
+  }
+  label.legend-item {
+    display: flex;
     gap: 0.3em;
   }
-  /* Fix for sub and sup tags */
-  :global(:is(sub, sup)) {
-    font-size: 0.7em;
+  span.color-swatch {
+    width: 3pt;
+    height: 20pt;
+    border-radius: 1pt;
   }
 </style>

@@ -5,7 +5,6 @@
   import { assemble_row_data } from './metrics'
 
   let { ...rest } = $props()
-
   let columns = $derived([
     METADATA_COLS.model_name,
     METRICS.RMSD,
@@ -14,12 +13,20 @@
 
   const discovery_set = `full_test_set`
   const model_filter = (_model: ModelData) => true
-  const show_energy_only = false
-  const show_noncompliant = true
+  const show_energy_only = $state(false)
+  const show_non_compliant = $state(true)
+  const show_compliant = $state(true)
+
   // recalculate metrics_data whenever filter settings change
   let metrics_data = $derived(
-    assemble_row_data(discovery_set, model_filter, show_energy_only, show_noncompliant),
+    assemble_row_data(
+      discovery_set,
+      model_filter,
+      show_energy_only,
+      show_non_compliant,
+      show_compliant,
+    ),
   )
 </script>
 
-<HeatmapTable data={metrics_data} {columns} {...rest} />
+<HeatmapTable data={metrics_data} {columns} {...rest} style="margin: 2em 0;" />

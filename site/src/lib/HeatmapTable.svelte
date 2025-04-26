@@ -18,6 +18,7 @@
     initial_sort_direction?: `asc` | `desc`
     fixed_header?: boolean
     default_num_format?: string
+    show_heatmap?: boolean
   }
   let {
     data,
@@ -31,6 +32,7 @@
     initial_sort_direction,
     fixed_header = false,
     default_num_format = `.3`,
+    show_heatmap = $bindable(true),
   }: Props = $props()
 
   // Hacky helper function to detect if a string contains HTML, TODO revisit in future
@@ -128,7 +130,8 @@
       val === null ||
       val === undefined ||
       col.color_scale === null ||
-      typeof val !== `number`
+      typeof val !== `number` ||
+      !show_heatmap // Disable heatmap colors if show_heatmap is false
     ) {
       return { bg: null, text: null }
     }
@@ -171,14 +174,11 @@
 {#if (Object.keys(sort_state).length && sort_hint) || controls}
   <div class="table-header">
     {#if Object.keys(sort_state).length && sort_hint}
-      <div class="sort-hint">{sort_hint}</div>
+      <span class="sort-hint">{sort_hint}</span>
     {/if}
 
-    <!-- Add controls rendering here -->
     {#if controls}
-      <div class="table-controls">
-        {@render controls()}
-      </div>
+      {@render controls()}
     {/if}
   </div>
 {/if}
@@ -303,23 +303,15 @@
   /* Styles for the table header with sort hint and controls */
   .table-header {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    padding: 0.25rem 0;
+    margin: 0.5em 0;
+    gap: 0.5em;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    justify-content: space-between;
   }
-  .sort-hint {
-    font-size: 0.85em;
+  span.sort-hint {
+    font-size: 0.9em;
     color: var(--text-muted, #aaa);
     margin: 0;
-  }
-  .table-controls {
-    display: inline-flex;
-    align-items: center;
-    margin-left: auto;
   }
   .not-sortable {
     cursor: default;

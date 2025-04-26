@@ -691,7 +691,8 @@ describe(`assemble_row_data`, () => {
       `unique_prototypes`,
       model_filter, // Pass the filter for specific models
       true, // show_energy_only
-      true, // show_noncompliant
+      true, // show_non_compliant
+      true, // show_compliant
     )
 
     // Expect only the selected models
@@ -709,7 +710,8 @@ describe(`assemble_row_data`, () => {
       `unique_prototypes`,
       model_filter, // Pass the filter for specific models
       true, // show_energy_only
-      true, // show_noncompliant
+      true, // show_non_compliant
+      true, // show_compliant
     )
 
     expect(rows.length).toBe(test_model_keys.length)
