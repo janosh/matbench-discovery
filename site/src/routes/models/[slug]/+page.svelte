@@ -1,6 +1,5 @@
 <script lang="ts">
   import { dev } from '$app/environment'
-  import per_elem_each_errors from '$figs/per-element-each-errors.json'
   import { calculate_days_ago, DATASETS, IconList, PtableInset } from '$lib'
   import { get_pred_file_urls } from '$lib/models.svelte'
   import type { ModelData } from '$lib/types'
@@ -15,6 +14,7 @@
   } from 'elementari'
   import { CopyButton, Tooltip } from 'svelte-zoo'
   import { click_outside, titles_as_tooltips } from 'svelte-zoo/actions'
+  import per_elem_each_errors from '../per-element-each-errors.json'
 
   interface Props {
     data: { model: ModelData }

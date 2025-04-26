@@ -29,8 +29,10 @@ export function get_nested_value(
   let value: unknown = model
 
   for (const key of keys) {
-    if (typeof value === `object` && value && key in value) value = value[key] as unknown
-    else return undefined // Can't go deeper/property doesn't exist
+    // Check if value is an object and has the key
+    if (typeof value === `object` && value && key in value) {
+      value = (value as Record<string, unknown>)[key]
+    } else return undefined // Can't go deeper/property doesn't exist
   }
 
   return value
@@ -103,7 +105,8 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
 export function make_combined_filter(
   model_filter: (model: ModelData) => boolean, // custom model filter function
   show_energy: boolean, // whether to show energy-only models
-  show_noncompliant: boolean, // whether to show non-compliant models
+  show_compliant: boolean, // whether to show compliant models
+  show_non_compliant: boolean, // whether to show non-compliant models
 ): (model: ModelData) => boolean {
   return (model: ModelData) => {
     if (!model_filter(model)) return false // Apply user-provided model_filter first
@@ -114,7 +117,8 @@ export function make_combined_filter(
 
     // Filter noncompliant models if not shown
     const is_compliant = model_is_compliant(model)
-    if (!is_compliant && !show_noncompliant) return false
+    if (is_compliant && !show_compliant) return false
+    if (!is_compliant && !show_non_compliant) return false
 
     return true
   }
@@ -177,14 +181,14 @@ export function assemble_row_data(
   discovery_set: DiscoverySet, // discovery set to use for metrics
   model_filter: (model: ModelData) => boolean, // filter function for models
   show_energy_only: boolean, // show energy-only models
-  show_noncompliant: boolean, // show non-compliant models
-  compliant_clr: string = `#4caf50`, // color for compliant models
-  noncompliant_clr: string = `#4682b4`,
+  show_non_compliant: boolean, // show non-compliant models
+  show_compliant: boolean, // show compliant models
 ) {
   const current_filter = make_combined_filter(
     model_filter,
     show_energy_only,
-    show_noncompliant,
+    show_compliant,
+    show_non_compliant,
   )
 
   const license_str = (license: string | undefined, url: string | undefined) =>
@@ -211,9 +215,7 @@ export function assemble_row_data(
 
     const targets = model.targets.replace(/_(.)/g, `<sub>$1</sub>`)
     const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
-    const row_style = show_noncompliant
-      ? `border-left: 3px solid ${is_compliant ? compliant_clr : noncompliant_clr};`
-      : null
+    const row_style = `border-left: 3px solid var(--${is_compliant ? `` : `non-`}compliant-color);`
 
     // Add model links
     const code_license = license?.code

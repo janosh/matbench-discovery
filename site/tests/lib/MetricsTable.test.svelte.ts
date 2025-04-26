@@ -8,10 +8,7 @@ describe(`MetricsTable`, () => {
   it(`renders with default props`, () => {
     mount(MetricsTable, {
       target: document.body,
-      props: {
-        col_filter: () => true,
-        show_noncompliant: true,
-      },
+      props: { col_filter: () => true, show_non_compliant: true },
     })
 
     // Check table structure
@@ -57,7 +54,7 @@ describe(`MetricsTable`, () => {
       target: document.body,
       props: {
         col_filter: (col) => !metadata_cols.includes(col.label),
-        show_noncompliant: true,
+        show_non_compliant: true,
       },
     })
 
@@ -82,7 +79,7 @@ describe(`MetricsTable`, () => {
     const col_filter = (col: Metric) => ![`F1`, `DAF`].includes(col.short ?? col.label)
     mount(MetricsTable, {
       target: document.body,
-      props: { col_filter, show_noncompliant: true },
+      props: { col_filter, show_non_compliant: true },
     })
 
     const headers = document.body.querySelectorAll(`th`)
@@ -103,7 +100,7 @@ describe(`MetricsTable`, () => {
     // First test with energy-only models hidden
     mount(MetricsTable, {
       target: document.body,
-      props: { show_energy_only: false, show_noncompliant: true },
+      props: { show_energy_only: false, show_non_compliant: true },
     })
     const rows_without_energy = document.body.querySelectorAll(`tbody tr`).length
 
@@ -111,7 +108,7 @@ describe(`MetricsTable`, () => {
     document.body.innerHTML = ``
     mount(MetricsTable, {
       target: document.body,
-      props: { show_energy_only: true, show_noncompliant: true },
+      props: { show_energy_only: true, show_non_compliant: true },
     })
     const rows_with_energy = document.body.querySelectorAll(`tbody tr`).length
 
@@ -231,7 +228,7 @@ describe(`MetricsTable`, () => {
       target: document.body,
       props: {
         col_filter: (col: Metric) => [`Model`, `F1`].includes(col.short ?? col.label),
-        show_noncompliant: true,
+        show_non_compliant: true,
       },
     })
 
@@ -246,7 +243,7 @@ describe(`MetricsTable`, () => {
       props: {
         col_filter: (col: Metric) =>
           [`Model`, `F1`, `DAF`].includes(col.short ?? col.label),
-        show_noncompliant: true,
+        show_non_compliant: true,
       },
     })
 
@@ -263,7 +260,7 @@ describe(`MetricsTable`, () => {
     // Test with default config
     mount(MetricsTable, {
       target: document.body,
-      props: { config: DEFAULT_CPS_CONFIG, show_noncompliant: true },
+      props: { config: DEFAULT_CPS_CONFIG, show_non_compliant: true },
     })
     await tick()
     const rows = document.body.querySelectorAll(`tbody tr`)
@@ -275,7 +272,7 @@ describe(`MetricsTable`, () => {
       mount(MetricsTable, {
         target: document.body,
         props: {
-          show_noncompliant: true,
+          show_non_compliant: true,
           col_filter: (col: Metric) => [`Model`, `Date Added`].includes(col.label),
         },
       })
@@ -336,7 +333,7 @@ describe(`MetricsTable`, () => {
       mount(MetricsTable, {
         target: document.body,
         props: {
-          show_noncompliant: true,
+          show_non_compliant: true,
           col_filter: (col: Metric) => [`Model`, `Training Set`].includes(col.label),
         },
       })
@@ -409,7 +406,7 @@ describe(`MetricsTable`, () => {
       mount(MetricsTable, {
         target: document.body,
         props: {
-          show_noncompliant: true,
+          show_non_compliant: true,
           col_filter: (col: Metric) => [`Model`, `Params`].includes(col.label),
         },
       })
@@ -480,7 +477,7 @@ describe(`MetricsTable`, () => {
       mount(MetricsTable, {
         target: document.body,
         props: {
-          show_noncompliant: true,
+          show_non_compliant: true,
           col_filter: (col: Metric) => [`Model`, `Training Set`].includes(col.label),
         },
       })
@@ -535,18 +532,18 @@ describe(`MetricsTable`, () => {
     it.each([
       {
         test_name: `with all models shown`,
-        props: { show_noncompliant: true, show_energy_only: true },
+        props: { show_non_compliant: true, show_energy_only: true },
       },
       {
         test_name: `with filtered columns`,
         props: {
-          show_noncompliant: true,
+          show_non_compliant: true,
           col_filter: (col: Metric) => [`Model`, `CPS`, `F1`].includes(col.label),
         },
       },
       {
         test_name: `with non-compliant models hidden`,
-        props: { show_noncompliant: false, show_energy_only: true },
+        props: { show_non_compliant: false, show_energy_only: true },
       },
     ])(
       `alphabetically sorts by Model name on $test_name header click`,
@@ -599,7 +596,7 @@ describe(`MetricsTable`, () => {
       mount(MetricsTable, {
         target: document.body,
         props: {
-          show_noncompliant: true,
+          show_non_compliant: true,
           col_filter: (col: Metric) =>
             [`Model`, `CPS`, `Links`].includes(col.short ?? col.label),
         },
@@ -643,7 +640,7 @@ describe(`MetricsTable`, () => {
       const col_filter = (col: Metric) => [`Model`, `Links`].includes(col.label)
       mount(MetricsTable, {
         target: document.body,
-        props: { col_filter, show_noncompliant: true },
+        props: { col_filter, show_non_compliant: true },
       })
 
       await tick() // Wait for component to process data
@@ -686,7 +683,7 @@ describe(`MetricsTable`, () => {
         target: document.body,
         props: {
           col_filter: (col: Metric) => [`Model`, `Links`].includes(col.label),
-          show_noncompliant: true,
+          show_non_compliant: true,
         },
       })
 
@@ -725,7 +722,7 @@ describe(`MetricsTable`, () => {
         target: document.body,
         props: {
           col_filter: (col: Metric) => [`Model`, `Links`].includes(col.label),
-          show_noncompliant: true,
+          show_non_compliant: true,
         },
       })
 
@@ -755,7 +752,7 @@ describe(`MetricsTable`, () => {
         target: document.body,
         props: {
           col_filter: (col: Metric) => [`Model`, `Links`].includes(col.label),
-          show_noncompliant: true,
+          show_non_compliant: true,
         },
       })
 
@@ -816,6 +813,55 @@ describe(`MetricsTable`, () => {
           }
         }
       }
+    })
+  })
+
+  describe(`Heatmap Toggle Interaction`, () => {
+    it(`toggles heatmap colors via TableControls checkbox`, async () => {
+      mount(MetricsTable, {
+        target: document.body,
+        props: { show_non_compliant: true },
+      })
+
+      // Find the heatmap toggle checkbox within TableControls
+      const heatmap_checkbox = document.body.querySelector(
+        `input[type="checkbox"][aria-label="Toggle heatmap colors"]`,
+      ) as HTMLInputElement | null
+
+      expect(heatmap_checkbox).not.toBeNull()
+      if (!heatmap_checkbox) return // Type guard
+
+      // Helper to get cell background colors
+      const get_cell_backgrounds = () => {
+        const cells = document.body.querySelectorAll(
+          `td[data-col="F1"], td[data-col="DAF"]`, // Check a couple of metric cols
+        )
+        return Array.from(cells).map(
+          (cell) => getComputedStyle(cell as Element).backgroundColor,
+        )
+      }
+
+      // Initially, heatmap should be on (default)
+      expect(heatmap_checkbox.checked).toBe(true)
+      let backgrounds = get_cell_backgrounds()
+      expect(backgrounds.length).toBeGreaterThan(0) // Ensure cells were found
+      expect(backgrounds.some((bg) => bg !== `` && bg !== `rgba(0, 0, 0, 0)`)).toBe(true)
+
+      // Click the checkbox to turn heatmap off
+      heatmap_checkbox.click()
+      await tick()
+
+      expect(heatmap_checkbox.checked).toBe(false)
+      backgrounds = get_cell_backgrounds()
+      expect(backgrounds.every((bg) => bg === `` || bg === `rgba(0, 0, 0, 0)`)).toBe(true)
+
+      // Click again to turn heatmap back on
+      heatmap_checkbox.click()
+      await tick()
+
+      expect(heatmap_checkbox.checked).toBe(true)
+      backgrounds = get_cell_backgrounds()
+      expect(backgrounds.some((bg) => bg !== `` && bg !== `rgba(0, 0, 0, 0)`)).toBe(true)
     })
   })
 })

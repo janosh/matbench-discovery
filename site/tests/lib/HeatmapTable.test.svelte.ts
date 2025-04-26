@@ -303,7 +303,7 @@ describe(`HeatmapTable`, () => {
       target: document.body,
       props: {
         data: sample_data,
-        columns: [{ label: `Col`, description: `Description`, sticky: true }],
+        columns: [{ key: `col`, label: `Col`, description: `Description`, sticky: true }],
         sort_hint: `Click to sort`,
       },
     })
@@ -341,9 +341,9 @@ describe(`HeatmapTable`, () => {
     ]
 
     const html_columns: Metric[] = [
-      { label: `Name` },
-      { label: `HTML` },
-      { label: `Complex` },
+      { key: `name`, label: `Name` },
+      { key: `html`, label: `HTML` },
+      { key: `complex`, label: `Complex` },
     ]
 
     mount(HeatmapTable, {
@@ -389,17 +389,58 @@ describe(`HeatmapTable`, () => {
     expect(complex_tooltip_span?.getAttribute(`title`)).toContain(`Complex tooltip`)
   })
 
+  describe(`Heatmap Toggle Functionality`, () => {
+    it(`does not apply heatmap colors when show_heatmap is false`, () => {
+      const columns: Metric[] = [
+        { key: `val`, label: `Val`, better: `higher`, color_scale: `interpolateViridis` },
+      ]
+      const data = [{ Val: 0 }, { Val: 100 }]
+
+      mount(HeatmapTable, {
+        target: document.body,
+        props: { data, columns, show_heatmap: false }, // Disable heatmap
+      })
+
+      const val_cells = document.querySelectorAll(`td[data-col="Val"]`)
+      const backgrounds = Array.from(val_cells).map(
+        (cell) => getComputedStyle(cell as Element).backgroundColor,
+      )
+
+      // No background color should be applied when show_heatmap is false
+      expect(backgrounds.every((bg) => bg === `` || bg === `rgba(0, 0, 0, 0)`)).toBe(true)
+    })
+
+    it(`applies heatmap colors when show_heatmap is true (default)`, () => {
+      const columns: Metric[] = [
+        { key: `val`, label: `Val`, better: `higher`, color_scale: `interpolateViridis` },
+      ]
+      const data = [{ Val: 0 }, { Val: 100 }]
+
+      mount(HeatmapTable, {
+        target: document.body,
+        props: { data, columns }, // show_heatmap is true by default
+      })
+
+      const val_cells = document.querySelectorAll(`td[data-col="Val"]`)
+      const backgrounds = Array.from(val_cells).map(
+        (cell) => getComputedStyle(cell as Element).backgroundColor,
+      )
+
+      // At least one background color should be set when show_heatmap is true
+      expect(backgrounds.some((bg) => bg !== `` && bg !== `rgba(0, 0, 0, 0)`)).toBe(true)
+    })
+  })
+
   describe(`Column grouping`, () => {
     it(`correctly renders grouped columns`, () => {
       const grouped_columns: Metric[] = [
-        { label: `Name`, sticky: true },
-        { label: `Value 1`, group: `Values` },
-        { label: `Value 2`, group: `Values` },
-        { label: `Metric 1`, group: `Metrics` },
-        { label: `Metric 2`, group: `Metrics` },
-        // Added columns with identical labels in different groups to test the fix
-        { label: `Value 1`, group: `Second Values` },
-        { label: `Value 2`, group: `Second Values` },
+        { key: `name`, label: `Name`, sticky: true },
+        { key: `val1_v`, label: `Value 1`, group: `Values` },
+        { key: `val2_v`, label: `Value 2`, group: `Values` },
+        { key: `met1`, label: `Metric 1`, group: `Metrics` },
+        { key: `met2`, label: `Metric 2`, group: `Metrics` },
+        { key: `val1_sv`, label: `Value 1`, group: `Second Values` },
+        { key: `val2_sv`, label: `Value 2`, group: `Second Values` },
       ]
 
       const grouped_data = [
@@ -523,7 +564,10 @@ describe(`HeatmapTable`, () => {
 
       mount(HeatmapTable, {
         target: document.body,
-        props: { data: data_with_styles, columns: [{ label: `col` }] },
+        props: {
+          data: data_with_styles,
+          columns: [{ key: `col`, label: `col` }],
+        },
       })
 
       const row = document.body.querySelector(`tbody tr`)
@@ -535,7 +579,7 @@ describe(`HeatmapTable`, () => {
         target: document.body,
         props: {
           data: [{ col: `value` }],
-          columns: [{ label: `col` }],
+          columns: [{ key: `col`, label: `col` }],
           style: `max-height: 200px; border: 1px solid blue;`,
         },
       })
