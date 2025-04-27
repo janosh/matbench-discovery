@@ -26,6 +26,7 @@
 <style>
   svg,
   img {
+    filter: grayscale(100%);
     height: 1em;
     width: auto;
     vertical-align: middle;
