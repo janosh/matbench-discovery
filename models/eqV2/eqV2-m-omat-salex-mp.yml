@@ -5,27 +5,27 @@ date_added: "2024-10-18"
 date_published: "2024-10-18"
 authors:
   - name: Luis Barroso-Luque
-    affiliation: FAIR Meta
+    affiliation: FAIR at Meta
     email: lbluque@meta.com
     orcid: https://orcid.org/0000-0002-6453-9545
     github: https://github.com/lbluque
     corresponding: true
   - name: Muhammed Shuaibi
-    affiliation: FAIR Meta
+    affiliation: FAIR at Meta
   - name: Xiang Fu
-    affiliation: FAIR Meta
+    affiliation: FAIR at Meta
   - name: Brandon M. Wood
-    affiliation: FAIR Meta
+    affiliation: FAIR at Meta
   - name: Misko Dzamba
-    affiliation: FAIR Meta
+    affiliation: FAIR at Meta
   - name: Meng Gao
-    affiliation: FAIR Meta
+    affiliation: FAIR at Meta
   - name: Ammar Rizvi
-    affiliation: FAIR Meta
+    affiliation: FAIR at Meta
   - name: C.~Lawrence Zitnick
-    affiliation: FAIR Meta
+    affiliation: FAIR at Meta
   - name: Zachary W. Ulissi
-    affiliation: FAIR Meta
+    affiliation: FAIR at Meta
     email: zulissi@meta.com
     orcid: https://orcid.org/0000-0002-9401-4918
     corresponding: true

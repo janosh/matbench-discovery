@@ -1,4 +1,3 @@
-import { dev } from '$app/environment'
 import { default as DATASETS } from '$data/datasets.yml'
 import modeling_tasks from '$pkg/modeling-tasks.yml'
 import { CPS_CONFIG, calculate_cps } from './combined_perf_score.svelte'
@@ -76,6 +75,8 @@ export const MODELS = $state(
 
       for (const author of metadata.authors ?? ([] as Author[])) {
         if (!author.affiliation) continue
+
+        const dev = !import.meta.env.PROD
 
         const org_logos = get_org_logo(author.affiliation)
         if (org_logos) {

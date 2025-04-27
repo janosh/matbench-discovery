@@ -43,16 +43,7 @@
   const { model_name, training_set, model_params, targets, date_added, links } =
     METADATA_COLS
   const { graph_construction_radius } = HYPERPARAMS
-  const { checkpoint_license, code_license } = INFO_COLS
-
-  const AFFILIATIONS = {
-    key: `org`,
-    label: `Org`,
-    sortable: false,
-    description: `Top 3 most common author affiliations`,
-    visible: false,
-    better: null,
-  } as const satisfies Metric
+  const { checkpoint_license, code_license, org } = INFO_COLS
 
   let columns = $derived(
     [
@@ -66,7 +57,7 @@
       graph_construction_radius,
       checkpoint_license,
       code_license,
-      AFFILIATIONS,
+      org,
     ]
       .map((col) => {
         const better = col.better ?? metric_better_as(col.label)

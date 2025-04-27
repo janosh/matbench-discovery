@@ -243,6 +243,14 @@ export const INFO_COLS: Record<string, Metric> = {
     label: `Run Time`,
     description: `Runtime in hours`,
   },
+  org: {
+    key: `org`,
+    label: `Org`,
+    sortable: false,
+    description: `Top 3 most common author affiliations`,
+    visible: true,
+    better: null,
+  },
 } as const
 
 export type MetricKey = keyof typeof METRICS
@@ -413,125 +421,34 @@ export const to_title = (str: string) => str.charAt(0).toUpperCase() + str.slice
 export const title_case = (str: string) =>
   str.replaceAll(`_`, ` `).split(` `).map(to_title).join(` `)
 
-export const org_logos: Record<
-  string,
-  { name: string; id?: string; src?: string } // Can have id OR src
-> = {
-  // Map of author affiliations in model YAMLs to SVG icons (either inline symbol ID
-  // or external file path under /static/logos/) and full affiliation names for tooltips.
-  deepmind: {
-    name: `Google DeepMind`,
-    src: `/logos/deepmind.svg`, // Updated path
-  },
-  microsoft: {
-    name: `Microsoft Research`,
-    id: `icon-logo-microsoft`, // Keep inline
-  },
-  meta: {
-    name: `Meta (FAIR)`,
-    id: `icon-logo-meta`, // Keep inline
-  },
-  cambridge: {
-    name: `University of Cambridge`,
-    src: `/logos/cambridge-university.svg`, // Updated path
-  },
-  orbital: {
-    name: `Orbital Materials`,
-    src: `/logos/orbital-materials.svg`, // Updated path
-  },
-  'seoul national university': {
-    name: `Seoul National University`,
-    src: `/logos/seoul-national-university.svg`, // Updated path
-  },
-  snu: {
-    name: `Seoul National University`,
-    src: `/logos/seoul-national-university.svg`,
-  },
-  icams: {
-    name: `ICAMS, Ruhr University Bochum`,
-    src: `/logos/icams-bochum.svg`, // Updated path
-  },
-  bochum: {
-    name: `ICAMS, Ruhr University Bochum`,
-    src: `/logos/icams-bochum.svg`, // Updated path
-  },
-  'ai for science institute': {
-    name: `AI for Science Institute, Beijing`,
-    src: `/logos/beijing-ai-academy.svg`, // Updated path
-  },
-  beijing: {
-    name: `AI for Science Institute, Beijing`,
-    src: `/logos/beijing-ai-academy.svg`,
-  },
-  cornell: {
-    name: `Cornell University`,
-    src: `/logos/cornell-university.svg`, // New entry
-  },
-  deepmd: {
-    name: `DeePMD`,
-    src: `/logos/deepmd.svg`, // New entry
-  },
-  deepmodeling: {
-    name: `DeepModeling`,
-    src: `/logos/deepmd.svg`, // New entry, same logo
-  },
-  tsinghua: {
-    name: `Tsinghua University`,
-    src: `/logos/tsinghua-university.svg`, // New entry
-  },
-  'san diego': {
-    name: `UC San Diego`,
-    src: `/logos/uc-san-diego.svg`, // New entry
-  },
-  ucsd: {
-    name: `UC San Diego`,
-    src: `/logos/uc-san-diego.svg`,
-  },
-  'massachusetts institute of technology': {
-    name: `Massachusetts Institute of Technology`,
-    src: `/logos/mit.svg`,
-  },
-  florida: {
-    name: `University of Florida`,
-    src: `/logos/university-of-florida.svg`,
-  },
-  'national institute of standards and technology': {
-    name: `National Institute of Standards and Technology`,
-    src: `/logos/nist.svg`,
-  },
-  argonne: {
-    name: `Argonne National Laboratory`,
-    src: `/logos/argonne-national-lab.svg`,
-  },
-  'university of texas at austin': {
-    name: `University of Texas at Austin`,
-    src: `/logos/university-of-texas-austin.svg`,
-  },
-  'northwestern university': {
-    name: `Northwestern University`,
-    src: `/logos/northwestern-university.svg`,
-  },
-  'chinese academy of sciences': {
-    name: `Chinese Academy of Sciences`,
-    src: `/logos/chinese-academy-of-sciences.svg`,
-  },
-  'incheon national university': {
-    name: `Incheon National University`,
-    src: `/logos/incheon-national-university.svg`,
-  },
-  'deep principle': {
-    name: `Deep Principle`,
-    src: `/logos/deep-principle.svg`,
-  },
-  'university of minnesota': {
-    name: `University of Minnesota`,
-    src: `/logos/university-of-minnesota.svg`,
-  },
-  'uc berkeley': {
-    name: `University of California, Berkeley`,
-    src: `/logos/uc-berkeley.svg`,
-  },
-}
+// Map of author affiliations in model YAMLs to SVG icons (either inline symbol ID
+// or external file path under /static/logos/) and full affiliation names for tooltips. Each item can have SVG ID from app.html OR src path under /static/logos/.
+export const org_logos = {
+  'AI for Science Institute, Beijing': `/logos/beijing-ai-for-science-institute.svg`,
+  'Argonne National Laboratory': `/logos/argonne-national-lab.svg`,
+  'Chinese Academy of Sciences': `/logos/chinese-academy-of-sciences.svg`,
+  'Cornell University': `/logos/cornell-university.svg`,
+  'Deep Principle': `/logos/deep-principle.svg`,
+  DeePMD: `/logos/deepmd.svg`,
+  'FAIR at Meta': `icon-logo-meta`,
+  'Google DeepMind': `/logos/deepmind.svg`,
+  'ICAMS, Ruhr University Bochum': `/logos/icams-bochum.svg`,
+  'Incheon National University': `/logos/incheon-national-university.svg`,
+  'Massachusetts Institute of Technology': `/logos/mit.svg`,
+  'Microsoft Research': `icon-logo-microsoft`,
+  'National Institute of Standards and Technology': `/logos/nist.svg`,
+  'Northwestern University': `/logos/northwestern-university.svg`,
+  'Orbital Materials': `/logos/orbital-materials.svg`,
+  'Seoul National University': `/logos/seoul-national-university.svg`,
+  'Tsinghua University': `/logos/tsinghua-university.svg`,
+  'UC San Diego': `/logos/uc-san-diego.svg`,
+  'UC Berkeley': `/logos/uc-berkeley.svg`,
+  'University of Cambridge': `/logos/cambridge-university.svg`,
+  'University of Florida': `/logos/university-of-florida.svg`,
+  'University of Minnesota': `/logos/university-of-minnesota.svg`,
+  'University of Texas at Austin': `/logos/university-of-texas-austin.svg`,
+  'Beijing Information Science and Technology University': `/logos/beijing-information-science-and-technology-university.svg`,
+} as const
 
 // Attempts to find a matching logo data (ID or src) and name for a given affiliation string.
 // Performs a case-insensitive search for keywords defined in org_logos.
@@ -540,15 +457,12 @@ export function get_org_logo(
   affiliation: string,
 ): { name: string; id?: string; src?: string } | undefined {
   if (!affiliation) return undefined
-  const lower_affiliation = affiliation.toLowerCase()
-  // sort by length to prioritize longer (more specific) keys
-  const sorted_keys = Object.keys(org_logos).sort((a, b) => b.length - a.length)
 
-  for (const key of sorted_keys) {
-    // Check if the lowercased affiliation string includes the lowercased key
-    if (lower_affiliation.includes(key.toLowerCase())) {
-      const logo_data = org_logos[key]
-      return logo_data
+  for (const [key, logo] of Object.entries(org_logos)) {
+    // Check if lowercased affiliation string includes lowercased org key
+    if (affiliation.includes(key)) {
+      if (logo.startsWith(`/logos/`)) return { name: key, src: logo }
+      else return { name: key, id: logo }
     }
   }
 }

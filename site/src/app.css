@@ -251,7 +251,7 @@ kbd {
 svg:has(use:only-child) {
   width: 1em;
   height: 1em;
-  vertical-align: -0.1em;
+  vertical-align: middle;
 }
 
 /* Helper class to make elements stretch full width but cap content at 1400px and center it */
