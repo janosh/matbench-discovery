@@ -457,11 +457,11 @@ export const org_logos: Record<
   },
   'ai for science institute': {
     name: `AI for Science Institute, Beijing`,
-    src: `/logos/beijing-ai-academy.svg`, // Updated path
+    src: `/logos/ai-for-science-institute.svg`, // Updated path
   },
   beijing: {
     name: `AI for Science Institute, Beijing`,
-    src: `/logos/beijing-ai-academy.svg`,
+    src: `/logos/ai-for-science-institute.svg`,
   },
   cornell: {
     name: `Cornell University`,
