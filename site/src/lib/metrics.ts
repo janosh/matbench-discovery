@@ -6,7 +6,7 @@ import { max, min } from 'd3-array'
 import { scaleLog, scaleSequential } from 'd3-scale'
 import * as d3sc from 'd3-scale-chromatic'
 import { choose_bw_for_contrast, pretty_num } from 'elementari/labels'
-import { GEO_OPT_SYMMETRY_METRICS, METRICS } from './labels'
+import { GEO_OPT_SYMMETRY_METRICS, HYPERPARAMS, INFO_COLS, METRICS } from './labels'
 import type { DiscoverySet, LinkData, ModelData } from './types'
 
 // model target type descriptions
@@ -243,7 +243,8 @@ export function assemble_row_data(
       'κ<sub>SRME</sub>': kappa,
       RMSD: get_nested_value(model, `${RMSD.path}.${RMSD.key}`) as number | undefined,
       'Training Set': format_train_set(model.training_set, model),
-      Params: `<span title="${pretty_num(model.model_params, `,`)}" trainable model parameters" data-sort-value="${model.model_params}">${pretty_num(model.model_params)}</span>`,
+      [HYPERPARAMS.model_params.short as string]:
+        `<span title="${pretty_num(model.model_params, `,`)}" trainable model parameters" data-sort-value="${model.model_params}">${pretty_num(model.model_params)}</span>`,
       Targets: targets_str,
       'Date Added': `<span title="${format_date(model.date_added)}" data-sort-value="${new Date(model.date_added).getTime()}">${model.date_added}</span>`,
       // Add Links as a special property
@@ -270,9 +271,9 @@ export function assemble_row_data(
         },
         pred_files: { files: get_pred_file_urls(model), name: model.model_name },
       } as LinkData,
-      'Checkpoint License': checkpoint_license,
-      'Code License': code_license,
-      'r<sub>cut</sub>': r_cut_str,
+      [INFO_COLS.checkpoint_license.label]: checkpoint_license,
+      [INFO_COLS.code_license.label]: code_license,
+      [HYPERPARAMS.graph_construction_radius.short as string]: r_cut_str,
       row_style,
       org_logos: model.org_logos,
       ...Object.fromEntries(

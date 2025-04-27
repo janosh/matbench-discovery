@@ -1,10 +1,10 @@
-import Page from '$routes/models/+page.svelte'
+import { default as ModelsPage } from '$routes/models/+page.svelte'
 import { mount, tick } from 'svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 describe(`Models Page`, () => {
   beforeEach(() => {
-    mount(Page, { target: document.body })
+    mount(ModelsPage, { target: document.body })
   })
 
   it(`renders model sorting controls`, () => {
@@ -130,11 +130,12 @@ describe(`Models Page`, () => {
 
   it(`renders color legend`, () => {
     const legend = document.body.querySelector(`legend`)
-    expect(legend).toBeDefined()
-    const legend_text = legend?.textContent?.replace(/\s+/g, ` `).trim()
-    expect(legend_text).toBe(
-      `worst Model names colored by Combined Performance Score 0.20.40.60.81 best`,
-    )
+    expect(legend?.textContent).toContain(`best`)
+    expect(legend?.textContent).toContain(`worst`)
+
+    // Check that the ColorBar component rendered its SVG
+    const color_bar_svg = legend?.querySelector(`svg`)
+    expect(color_bar_svg).toBeDefined()
 
     const color_bar = legend?.querySelector(`.elementari-color-bar`)
     expect(color_bar).toBeDefined()

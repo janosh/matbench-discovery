@@ -35,11 +35,19 @@
   const n_days_ago = new Date(now.getTime() - 180 * ms_per_day)
 
   // Determine axis keys/paths
-  let x_path = $derived(`${x_prop.path ?? ``}.${x_prop.key}`.replace(/^\./, ``))
-  let y_path = $derived(`${y_prop.path ?? ``}.${y_prop.key}`.replace(/^\./, ``))
+  let x_path = $derived(
+    x_prop ? `${x_prop.path ?? ``}.${x_prop.key}`.replace(/^\./, ``) : ``,
+  )
+  let y_path = $derived(
+    y_prop ? `${y_prop.path ?? ``}.${y_prop.key}`.replace(/^\./, ``) : ``,
+  )
   // Determine labels
-  let x_label = $derived(x_prop.svg_label ?? x_prop.label ?? x_prop.key ?? `X`)
-  let y_label = $derived(y_prop.svg_label ?? y_prop.label ?? y_prop.key ?? `Y`)
+  let x_label = $derived(
+    x_prop ? (x_prop.svg_label ?? x_prop.label ?? x_prop.key ?? `X`) : `X`,
+  )
+  let y_label = $derived(
+    y_prop ? (y_prop.svg_label ?? y_prop.label ?? y_prop.key ?? `Y`) : `Y`,
+  )
 
   // Apply date range filter if needed
   function date_filter(model: ModelData): boolean {
@@ -112,10 +120,10 @@
   markers="points"
   {x_label}
   {y_label}
-  x_format={x_prop.format ?? `.1s`}
-  y_format={y_prop.format ?? `.3f`}
-  x_lim={x_prop.range as [number, number] | undefined}
-  y_lim={y_prop.range as [number, number] | undefined}
+  x_format={x_prop?.format ?? `.1s`}
+  y_format={y_prop?.format ?? `.3f`}
+  x_lim={x_prop?.range as [number, number] | undefined}
+  y_lim={y_prop?.range as [number, number] | undefined}
   {style}
   {...rest}
 >

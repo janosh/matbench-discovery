@@ -1,4 +1,5 @@
 import { DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score.svelte'
+import { HYPERPARAMS } from '$lib/labels'
 import MetricsTable from '$lib/MetricsTable.svelte'
 import type { Metric, ModelData } from '$lib/types'
 import { mount, tick } from 'svelte'
@@ -53,7 +54,7 @@ describe(`MetricsTable`, () => {
     mount(MetricsTable, {
       target: document.body,
       props: {
-        col_filter: (col) => !metadata_cols.includes(col.label),
+        col_filter: (col) => !metadata_cols.includes(col.short ?? col.label),
         show_non_compliant: true,
       },
     })
@@ -407,7 +408,8 @@ describe(`MetricsTable`, () => {
         target: document.body,
         props: {
           show_non_compliant: true,
-          col_filter: (col: Metric) => [`Model`, `Params`].includes(col.label),
+          col_filter: (col: Metric) =>
+            [`Model`, HYPERPARAMS.model_params.short].includes(col.short),
         },
       })
 
@@ -423,8 +425,12 @@ describe(`MetricsTable`, () => {
       params_header.click()
       await tick()
 
-      // Get parameter counts from data-sort-value
-      const param_counts = [...document.body.querySelectorAll(`td[data-col="Params"]`)]
+      // Get parameter counts from data-sort-value using the correct column label
+      const param_counts = [
+        ...document.body.querySelectorAll(
+          `td[data-col="${HYPERPARAMS.model_params.label}"]`,
+        ),
+      ]
         .map((cell) => {
           const match = cell.innerHTML.match(/data-sort-value="(\d+)"/)
           return match ? parseInt(match[1]) : null
@@ -449,8 +455,12 @@ describe(`MetricsTable`, () => {
       params_header.click()
       await tick()
 
-      // Get updated counts
-      const new_counts = [...document.body.querySelectorAll(`td[data-col="Params"]`)]
+      // Get updated counts using the correct column label
+      const new_counts = [
+        ...document.body.querySelectorAll(
+          `td[data-col="${HYPERPARAMS.model_params.label}"]`,
+        ),
+      ]
         .map((cell) => {
           const match = cell.innerHTML.match(/data-sort-value="(\d+)"/)
           return match ? parseInt(match[1]) : null

@@ -73,7 +73,7 @@ button {
 }
 :is(div.multiselect) ul sub {
   /* fixes κ<sub>SRME</sub> looking more like super than subscript in multiselect */
-  transform: translateY(0.8em);
+  transform: translateY(0.5em);
 }
 a {
   color: var(--link-color);
