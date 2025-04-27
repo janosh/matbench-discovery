@@ -430,7 +430,6 @@ export const org_logos = {
   'Cornell University': `/logos/cornell-university.svg`,
   'Deep Principle': `/logos/deep-principle.svg`,
   DeePMD: `/logos/deepmd.svg`,
-  DeepModeling: `/logos/deepmd.svg`,
   'FAIR at Meta': `icon-logo-meta`,
   'Google DeepMind': `/logos/deepmind.svg`,
   'ICAMS, Ruhr University Bochum': `/logos/icams-bochum.svg`,

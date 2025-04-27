@@ -18,7 +18,7 @@
 ### How to install
 
 ```bash
-pip install git+https://github.com/deepmodeling/deepmd-kit.git@devel
+pip install git+https://github.com/deepmodeling/deepmd-kit@devel
 ```
 
 ### How to use
