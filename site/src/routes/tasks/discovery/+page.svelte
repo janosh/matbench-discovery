@@ -16,9 +16,9 @@
 <SelectToggle
   bind:selected={discovery_set}
   options={Object.entries(DISCOVERY_SET_LABELS).map(
-    ([value, { title, description: tooltip, link }]) => ({
+    ([value, { label, description: tooltip, link }]) => ({
       value,
-      label: title,
+      label,
       tooltip,
       link,
     }),

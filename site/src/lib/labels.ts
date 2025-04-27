@@ -1,3 +1,4 @@
+import modeling_tasks from '$pkg/modeling-tasks.yml'
 import type { DiscoverySet, Metric } from './types'
 
 export const RMSD_BASELINE = 0.15 // baseline for poor performance given worst performing model at time of writing is M3GNet at 0.1117
@@ -134,12 +135,6 @@ export const METADATA_COLS: Record<string, Metric> = {
     key: `training_set`,
     description: `Size of and link to model training set`,
   },
-  model_params: {
-    label: `Params`,
-    key: `model_params`,
-    format: `~s`,
-    description: `Number of trainable model parameters`,
-  },
   targets: {
     label: `Targets`,
     key: `targets`,
@@ -164,53 +159,81 @@ export const METADATA_COLS: Record<string, Metric> = {
     visible: false,
   },
   n_training_materials: {
-    label: `Training Materials`,
+    label: `Number of Training Materials`,
     key: `n_training_materials`,
     description: `Number of training materials`,
+    format: `~s`,
   },
   n_training_structures: {
-    label: `Training Structures`,
+    label: `Number of Training Structures`,
     key: `n_training_structures`,
     description: `Number of training structures`,
+    format: `~s`,
   },
 } as const
 
 export const HYPERPARAMS: Record<string, Metric> = {
+  model_params: {
+    label: `Number of model parameters`,
+    key: `model_params`,
+    short: `Params`,
+    description: `Number of trainable model parameters`,
+    format: `~s`,
+  },
   graph_construction_radius: {
-    label: `r<sub>cut</sub>`,
-    key: `r_cut`,
+    label: `Graph construction radius r<sub>cut</sub>`,
+    key: `graph_construction_radius`,
+    short: `r<sub>cut</sub>`,
     path: `hyperparams`,
     description: `Graph construction radius in Ångströms (cutoff distance for creating edges in the graph)`,
   },
   max_force: {
-    label: `Max Force`,
+    label: `Max force`,
     key: `max_force`,
     path: `hyperparams`,
     description: `Maximum force in eV/Å`,
   },
   max_steps: {
-    label: `Max Steps`,
+    label: `Max relaxation steps`,
     key: `max_steps`,
     path: `hyperparams`,
     description: `Maximum number of steps`,
   },
   batch_size: {
-    label: `Batch Size`,
+    label: `Batch size`,
     key: `batch_size`,
     path: `hyperparams`,
     description: `Batch size`,
   },
   epochs: {
-    label: `Epochs`,
+    label: `Training epochs`,
     key: `epochs`,
     path: `hyperparams`,
     description: `Number of training epochs`,
   },
   n_layers: {
-    label: `Layers`,
+    label: `Number of layers`,
     key: `n_layers`,
     path: `hyperparams`,
     description: `Number of (usually message passing) layers`,
+  },
+  learning_rate: {
+    label: `Learning rate`,
+    key: `learning_rate`,
+    path: `hyperparams`,
+    description: `Learning rate`,
+  },
+  max_neighbors: {
+    label: `Max number of neighbors during graph construction`,
+    key: `max_neighbors`,
+    path: `hyperparams`,
+    description: `Maximum number of neighbors`,
+  },
+  n_estimators: {
+    label: `Number of estimators`,
+    key: `n_estimators`,
+    path: `hyperparams`,
+    description: `Number of estimators`,
   },
 } as const
 
@@ -247,7 +270,7 @@ export const INFO_COLS: Record<string, Metric> = {
     key: `org`,
     label: `Org`,
     sortable: false,
-    description: `Top 3 most common author affiliations`,
+    description: `Most common author affiliations`,
     visible: true,
     better: null,
   },
@@ -327,22 +350,31 @@ export const ALL_METRICS: Record<string, Metric> = {
 
 export const DISCOVERY_SET_LABELS: Record<
   DiscoverySet,
-  { title: string; description: string; link?: string }
+  { label: string; description: string; link?: string }
 > = {
   full_test_set: {
-    title: `Full Test Set`,
+    label: `Full Test Set`,
     description: `Metrics computed on the full 257k WBM test set including duplicate structure prototypes`,
   },
   unique_prototypes: {
-    title: `Unique Prototypes`,
+    label: `Unique Prototypes`,
     description: `Metrics computed only on ~215k unique structure prototypes in WBM determined by matching Aflow-style prototype strings.`,
     link: `https://github.com/janosh/matbench-discovery/blob/37baf7986f848/data/wbm/compile_wbm_test_set.py#L640-L654`,
   },
   most_stable_10k: {
-    title: `10k Most Stable`,
+    label: `10k Most Stable`,
     description: `Metrics computed on the 10k structures predicted to be most stable (different for each model)`,
   },
 } as const
+
+export const PROPERTY_LABELS: Record<string, string> = Object.fromEntries(
+  Object.entries({
+    ...ALL_METRICS,
+    ...METADATA_COLS,
+    ...HYPERPARAMS,
+    ...INFO_COLS,
+  }).map(([key, prop]) => [key, prop.label]),
+)
 
 // Formats a property path for display in UI components
 export function format_property_path(path: string): string {
@@ -366,33 +398,12 @@ export function format_property_path(path: string): string {
     .join(` > `)
 }
 
-export const PROPERTY_LABELS: Record<string, string> = {
-  model_params: `Model Parameters`,
-  n_estimators: `Number of Estimators`,
-  date_added: `Date Added`,
-  n_training_materials: `Number of Training Materials`,
-  n_training_structures: `Number of Training Structures`,
-  graph_construction_radius: `Graph Construction Radius r<sub>cut</sub>`,
-  max_neighbors: `Max Neighbors`,
-  max_force: `Max Force (eV/Å)`,
-  max_steps: `Max Relaxation Steps`,
-  learning_rate: `Learning Rate`,
-  batch_size: `Batch Size`,
-  epochs: `Training Epochs`,
-  n_layers: `Number of Layers`,
-  // Add metric names for clearer labels
-  rmsd: `RMSD`,
-  κ_SRME: `κ<sub>SRME</sub>`,
-  CPS: `Combined Performance Score`,
-} as const // Category mapping for property paths
-
-export const CATEGORY_LABELS: Record<string, string> = {
-  discovery: `Discovery`,
-  phonons: `Phonons`,
-  geo_opt: `Geometry Optimization`,
-  hyperparams: `Hyperparams`,
-  unique_prototypes: `Unique Prototypes`,
-} as const
+export const CATEGORY_LABELS = Object.fromEntries(
+  Object.entries({ ...modeling_tasks, ...DISCOVERY_SET_LABELS }).map(([key, task]) => [
+    key,
+    task.label,
+  ]),
+)
 
 // TODO maybe remove get_format() since unused
 // Determines appropriate string format for displaying a set of numerical values

@@ -40,9 +40,8 @@
     ...rest
   }: Props = $props()
 
-  const { model_name, training_set, model_params, targets, date_added, links } =
-    METADATA_COLS
-  const { graph_construction_radius } = HYPERPARAMS
+  const { model_name, training_set, targets, date_added, links } = METADATA_COLS
+  const { graph_construction_radius, model_params } = HYPERPARAMS
   const { checkpoint_license, code_license, org } = INFO_COLS
 
   let columns = $derived(

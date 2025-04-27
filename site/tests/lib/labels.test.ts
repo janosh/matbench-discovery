@@ -1,10 +1,8 @@
 import {
-  CATEGORY_LABELS,
   format_power_ten,
   format_property_path,
   get_format,
   get_org_logo,
-  org_logos,
 } from '$lib/labels'
 import { describe, expect, test } from 'vitest'
 
@@ -69,9 +67,9 @@ describe(`format_power_ten`, () => {
 
 describe(`format_property_path`, () => {
   test(`handles direct properties`, () => {
-    expect(format_property_path(`model_params`)).toBe(`Model Parameters`)
+    expect(format_property_path(`model_params`)).toBe(`Number of model parameters`)
     expect(format_property_path(`date_added`)).toBe(`Date Added`)
-    expect(format_property_path(`n_estimators`)).toBe(`Number of Estimators`)
+    expect(format_property_path(`n_estimators`)).toBe(`Number of estimators`)
   })
 
   test(`returns the original path for unknown direct properties`, () => {
@@ -80,22 +78,25 @@ describe(`format_property_path`, () => {
 
   test(`formats discovery metrics correctly`, () => {
     expect(format_property_path(`discovery.unique_prototypes.F1`)).toBe(
-      `Discovery > Unique Prototypes > F1`,
+      `Discovery > Unique Prototypes > F1 Score`,
     )
     expect(format_property_path(`discovery.full_test_set.RMSE`)).toBe(
       `Discovery > Full Test Set > RMSE`,
     )
     expect(format_property_path(`discovery.most_stable_10k.Precision`)).toBe(
-      `Discovery > Most Stable 10k > Precision`,
+      `Discovery > 10k Most Stable > Precision`,
     )
   })
 
   test(`formats hyperparameter paths correctly`, () => {
     expect(format_property_path(`hyperparams.learning_rate`)).toBe(
-      `Hyperparams > Learning Rate`,
+      `Hyperparams > Learning rate`,
     )
     expect(format_property_path(`hyperparams.graph_construction_radius`)).toBe(
-      `Hyperparams > Graph Construction Radius r<sub>cut</sub>`,
+      `Hyperparams > Graph construction radius r<sub>cut</sub>`,
+    )
+    expect(format_property_path(`hyperparams.max_neighbors`)).toBe(
+      `Hyperparams > Max number of neighbors during graph construction`,
     )
     expect(format_property_path(`hyperparams.custom_param`)).toBe(
       `Hyperparams > Custom Param`,
@@ -239,44 +240,16 @@ describe(`get_format`, () => {
   })
 })
 
-describe(`CATEGORY_LABELS`, () => {
-  test(`contains correct category mappings`, () => {
-    expect(CATEGORY_LABELS.discovery).toBe(`Discovery`)
-    expect(CATEGORY_LABELS.phonons).toBe(`Phonons`)
-    expect(CATEGORY_LABELS.geo_opt).toBe(`Geometry Optimization`)
-    expect(CATEGORY_LABELS.hyperparams).toBe(`Hyperparams`)
-  })
-
-  test(`has expected number of entries`, () => {
-    expect(Object.keys(CATEGORY_LABELS).length).toBeGreaterThan(4)
-  })
-
-  test(`returns consistent values for all keys`, () => {
-    // Ensure each value is a non-empty string
-    Object.values(CATEGORY_LABELS).forEach((value) => {
-      expect(typeof value).toBe(`string`)
-      expect(value.length).toBeGreaterThan(0)
-    })
-  })
-})
-
 describe(`get_org_logo`, () => {
   test.each([
-    [`Google DeepMind`, org_logos.deepmind],
-    [`google deepmind`, org_logos.deepmind],
-    [`Affiliated with Microsoft Research`, org_logos.microsoft],
-    [`Affiliated with Meta (FAIR)`, org_logos.meta],
-    [`University of Cambridge`, org_logos.cambridge],
-    [`Seoul National University`, org_logos[`seoul national university`]], // Longer key precedence
-    [`SNU`, org_logos.snu],
-    [`AI for Science Institute, Beijing`, org_logos[`ai for science institute`]], // Longer key precedence
-    [`Some random university`, undefined],
+    [`Google DeepMind`, { name: `Google DeepMind`, src: `/logos/deepmind.svg` }],
+    [`FAIR at Meta`, { name: `FAIR at Meta`, id: `icon-logo-meta` }],
+    [`Some unknown university`, undefined],
     [
       `Massachusetts Institute of Technology, USA`,
-      org_logos[`massachusetts institute of technology`],
+      { name: `Massachusetts Institute of Technology`, src: `/logos/mit.svg` },
     ],
-    [`Research at UCSD`, org_logos.ucsd],
-    [`DeepModeling Community`, org_logos.deepmodeling],
+    [`DeePMD`, { name: `DeePMD`, src: `/logos/deepmd.svg` }],
   ])(`returns correct logo data for '%s'`, (input, expected) => {
     expect(get_org_logo(input)).toEqual(expected)
   })

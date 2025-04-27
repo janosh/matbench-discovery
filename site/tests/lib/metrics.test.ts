@@ -85,7 +85,7 @@ describe(`format_train_set`, () => {
   const mp2022 = DATASETS[mp2022_key]
 
   it(`formats single training set correctly`, () => {
-    const mock_model: Partial<ModelData> = {
+    const mock_model = {
       n_training_structures: mp2022.n_structures,
       n_training_materials: mp2022.n_materials,
     }
@@ -103,7 +103,7 @@ describe(`format_train_set`, () => {
     const mptrj = DATASETS[mptrj_key]
     const combined_materials = mptrj.n_materials || mptrj.n_structures
 
-    const mock_model: Partial<ModelData> = {
+    const mock_model = {
       n_training_structures: (mp2022.n_structures || 0) + (mptrj.n_structures || 0),
       n_training_materials: (mp2022.n_materials || 0) + (mptrj.n_materials || 0),
     }
@@ -128,7 +128,7 @@ describe(`format_train_set`, () => {
       throw `No dataset with different n_materials and n_structures found`
 
     const [key, _dataset] = dataset_with_both
-    const mock_model: Partial<ModelData> = {
+    const mock_model = {
       n_training_structures: _dataset.n_structures,
       n_training_materials: _dataset.n_materials,
     }
@@ -144,7 +144,7 @@ describe(`format_train_set`, () => {
     // Mock console.warn
     const console_spy = vi.spyOn(console, `warn`).mockImplementation(() => {})
 
-    const mock_model: Partial<ModelData> = {
+    const mock_model = {
       n_training_structures: mp2022.n_structures,
       n_training_materials: mp2022.n_materials,
     }
@@ -171,7 +171,7 @@ describe(`format_train_set`, () => {
     const { slug } = mptrj
     delete mptrj.n_materials
 
-    const mock_model_struct_only: Partial<ModelData> = {
+    const mock_model_struct_only = {
       n_training_structures: n_structures,
       // No n_training_materials explicitly set
     }
@@ -203,7 +203,7 @@ describe(`format_train_set`, () => {
 describe(`make_combined_filter function - skipped since using real implementation`, () => {
   it(`returns false when the user filter returns false`, () => {
     const model_filter = vi.fn().mockReturnValue(false)
-    const filter = make_combined_filter(model_filter, true, true)
+    const filter = make_combined_filter(model_filter, true, true, true)
     const model = { targets: `E`, training_set: [`MP 2022`] } as ModelData
 
     expect(filter(model)).toBe(false)
@@ -727,13 +727,12 @@ describe(`METADATA_COLS`, () => {
     const expected_labels = [
       `Model`,
       `Training Set`,
-      `Params`,
       `Targets`,
       `Date Added`,
       `Links`,
       `r<sub>cut</sub>`,
-      `Training Materials`,
-      `Training Structures`,
+      `Number of Training Materials`,
+      `Number of Training Structures`,
     ]
 
     expect(Object.values(METADATA_COLS).map((col) => col.label)).toEqual(expected_labels)

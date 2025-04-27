@@ -54,8 +54,6 @@ export function calculate_training_sizes(model_train_sets: string[] = []): {
   return { total_materials, total_structures }
 }
 
-const warned_affiliations = new Set<string>()
-
 export const MODELS = $state(
   Object.entries(MODEL_METADATA_PATHS)
     .filter(
@@ -66,7 +64,6 @@ export const MODELS = $state(
       // Assign color to each model for consistent coloring across plots
       const model_color = MODEL_COLORS[index % MODEL_COLORS.length]
 
-      // Calculate training set sizes
       const sizes = calculate_training_sizes(metadata.training_set)
 
       // Get top affiliations with logos
@@ -76,17 +73,15 @@ export const MODELS = $state(
       for (const author of metadata.authors ?? ([] as Author[])) {
         if (!author.affiliation) continue
 
-        const dev = !import.meta.env.PROD
-
         const org_logos = get_org_logo(author.affiliation)
         if (org_logos) {
           affiliation_counts[org_logos.id] = (affiliation_counts[org_logos.id] || 0) + 1
           if (!(org_logos.id in affiliation_data)) {
             affiliation_data[org_logos.id] = org_logos
           }
-        } else if (!warned_affiliations.has(author.affiliation) && dev) {
+        } else if (!import.meta.env.PROD) {
+          // only warn about missing logos in dev mode
           console.warn(`No logo found for affiliation: ${author.affiliation}`)
-          warned_affiliations.add(author.affiliation)
         }
       }
 

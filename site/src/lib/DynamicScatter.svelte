@@ -27,7 +27,7 @@
   }: Props = $props()
 
   const date_key = METADATA_COLS.date_added.key
-  const params_key = METADATA_COLS.model_params.key
+  const params_key = HYPERPARAMS.model_params.key
 
   // State for axis selection and log scale toggles
   let axes = $state({
@@ -37,9 +37,9 @@
   })
   let log = $state({ x: false, y: false, color: false })
 
-  const { model_params, date_added, n_training_materials, n_training_structures } =
-    METADATA_COLS
+  const { date_added, n_training_materials, n_training_structures } = METADATA_COLS
   const {
+    model_params,
     graph_construction_radius,
     max_force,
     max_steps,
@@ -85,16 +85,16 @@
       .filter(model_filter)
       .map((model) => {
         // For each property (x, y, color), get the value based on the selected property path
-        let x_path = `${axes.x.path ?? ``}.${axes.x.key}`
+        let x_path = `${axes.x?.path ?? ``}.${axes.x?.key ?? ``}`
         if (x_path.startsWith(`.`)) x_path = x_path.slice(1)
         let x_val = get_nested_value(model, x_path)
         if (x_path.includes(`date`)) x_val = new Date(x_val as string)
 
-        let y_path = `${axes.y.path ?? ``}.${axes.y.key}`
+        let y_path = `${axes.y?.path ?? ``}.${axes.y?.key ?? ``}`
         if (y_path.startsWith(`.`)) y_path = y_path.slice(1)
         let y_val = get_nested_value(model, y_path)
         if (y_path.includes(`date`)) y_val = new Date(y_val as string)
-        let color_path = `${axes.color.path ?? ``}.${axes.color.key}`
+        let color_path = `${axes.color?.path ?? ``}.${axes.color?.key ?? ``}`
         if (color_path.startsWith(`.`)) color_path = color_path.slice(1)
         let color_value = get_nested_value(model, color_path)
         if (color_path.includes(`date`)) color_value = new Date(color_value as string)
@@ -155,11 +155,11 @@
 
     base_series.point_label = plot_data.map((item) => ({
       text: item.metadata.model_name,
-      offset_y: -5,
-      offset_x: 5,
+      offset_y: 0,
+      offset_x: 10,
       font_size: `14px`,
       color: `black`,
-      auto_placement: true,
+      // auto_placement: true, // TODO: fix, causes strangely far away labels sometimes
     }))
 
     return [base_series]
@@ -211,28 +211,28 @@
   <!-- TODO fix x_lim and y_lim to use metric ranges-->
   <ScatterPlot
     {series}
-    x_label="{axes.x.svg_label ?? axes.x.label} {axes.x.better
-      ? `<tspan style='font-size: 0.8em;'>(${axes.x.better}=better)</tspan>`
+    x_label="{axes.x?.svg_label ?? axes.x?.label} {axes.x?.better
+      ? `<tspan style='font-size: 0.8em;'>(${axes.x?.better}=better)</tspan>`
       : ``}"
-    y_label="{axes.y.svg_label ?? axes.y.label} {axes.y.better
-      ? `<tspan style='font-size: 0.8em;'>(${axes.y.better}=better)</tspan>`
+    y_label="{axes.y?.svg_label ?? axes.y?.label} {axes.y?.better
+      ? `<tspan style='font-size: 0.8em;'>(${axes.y?.better}=better)</tspan>`
       : ``}"
-    x_lim={axes.x.range}
-    y_lim={axes.y.range}
-    x_format={axes.x.format}
-    y_format={axes.y.format}
+    x_lim={axes.x?.range}
+    y_lim={axes.y?.range}
+    x_format={axes.x?.format}
+    y_format={axes.y?.format}
     markers="points"
     {style}
     x_scale_type={log.x ? `log` : `linear`}
     y_scale_type={log.y ? `log` : `linear`}
     x_label_shift={{ y: -60 }}
-    y_label_shift={{ y: [date_key, params_key].includes(axes.y.key ?? ``) ? -40 : -10 }}
+    y_label_shift={{ y: [date_key, params_key].includes(axes.y?.key ?? ``) ? -40 : -10 }}
     color_scale_type={log.color ? `log` : `linear`}
     color_scheme="viridis"
     color_bar={{
-      label: `${axes.color.label}${axes.color.better ? ` (${axes.color.better}=better)` : ``}`,
-      label_side: `top`,
-      margin: 30,
+      title: `${axes.color?.label}${axes.color?.better ? ` (${axes.color?.better}=better)` : ``}`,
+      margin: { t: 30, l: 80, b: 80, r: 50 },
+      tick_format: axes.color?.format,
     }}
     label_placement_config={{ link_strength: 2, link_distance: 1 }}
     {...rest}
