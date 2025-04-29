@@ -1,5 +1,5 @@
 import { default as DATASETS } from '$data/datasets.yml'
-import modeling_tasks from '$pkg/modeling-tasks.yml'
+import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { CPS_CONFIG, calculate_cps } from './combined_perf_score.svelte'
 import { get_org_logo } from './labels'
 import type { Author, ModelData } from './types'
@@ -144,7 +144,7 @@ export function get_pred_file_urls(model: ModelData) {
 
     for (const [key, val] of Object.entries(obj)) {
       if (key == `pred_file_url` && val && typeof val === `string`) {
-        // Look up the label by traversing the modeling_tasks hierarchy
+        // Look up the label by traversing the MODELINGS_TASKS hierarchy
         const pretty_label = get_label_for_key_path(parent_key)
         files.push({ name: pretty_label, url: val })
       } else if (typeof val === `object`) {
@@ -153,12 +153,12 @@ export function get_pred_file_urls(model: ModelData) {
     }
   }
 
-  // Recursively look up labels in the modeling_tasks object
+  // Recursively look up labels in the MODELINGS_TASKS object
   function get_label_for_key_path(key_path: string): string {
-    if (key_path in modeling_tasks) return modeling_tasks[key_path]?.label || key_path
+    if (key_path in MODELINGS_TASKS) return MODELINGS_TASKS[key_path]?.label || key_path
 
     // Check if it's a subtask by searching all tasks
-    for (const task_value of Object.values(modeling_tasks)) {
+    for (const task_value of Object.values(MODELINGS_TASKS)) {
       if (task_value?.subtasks?.[key_path]) {
         return task_value.subtasks[key_path].label || key_path
       }

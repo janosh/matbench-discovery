@@ -6,7 +6,7 @@ import { mount, tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
 
 describe(`MetricsTable`, () => {
-  it(`renders with default props`, () => {
+  it(`renders with default props`, async () => {
     mount(MetricsTable, {
       target: document.body,
       props: { col_filter: () => true, show_non_compliant: true },
@@ -36,6 +36,49 @@ describe(`MetricsTable`, () => {
     // Make sure each required column is present
     for (const col of required_cols) {
       expect(header_texts).toContain(col)
+    }
+
+    // Test prediction files dropdown interaction
+    const pred_files_button = document.body.querySelector(
+      `tbody .pred-files-btn`,
+    ) as HTMLButtonElement | null
+    expect(pred_files_button).toBeDefined() // Ensure at least one button exists
+
+    if (pred_files_button) {
+      // Dropdown should not exist initially
+      expect(document.body.querySelector(`.pred-files-dropdown`)).toBeNull()
+
+      // Click the button
+      pred_files_button.click()
+      await tick() // Wait for state update and render
+
+      // Dropdown should now exist
+      let dropdown = document.body.querySelector(`.pred-files-dropdown`)
+      expect(dropdown).toBeDefined()
+      expect(dropdown?.textContent).toContain(`Files for`)
+
+      // Simulate clicking outside (assuming click_outside works correctly)
+      // We can simulate this by clicking the body or another element
+      document.body.click()
+      await tick()
+
+      // Dropdown should be gone after clicking outside
+      dropdown = document.body.querySelector(`.pred-files-dropdown`)
+      expect(dropdown).toBeNull()
+
+      // Test closing with Escape key
+      pred_files_button.click() // Reopen dropdown
+      await tick()
+      dropdown = document.body.querySelector(`.pred-files-dropdown`)
+      expect(dropdown).toBeDefined()
+
+      // Dispatch Escape keydown event
+      window.dispatchEvent(new KeyboardEvent(`keydown`, { key: `Escape` }))
+      await tick()
+
+      // Dropdown should be gone
+      dropdown = document.body.querySelector(`.pred-files-dropdown`)
+      expect(dropdown).toBeNull()
     }
   })
 
@@ -872,6 +915,57 @@ describe(`MetricsTable`, () => {
       expect(heatmap_checkbox.checked).toBe(true)
       backgrounds = get_cell_backgrounds()
       expect(backgrounds.some((bg) => bg !== `` && bg !== `rgba(0, 0, 0, 0)`)).toBe(true)
+    })
+  })
+
+  it(`renders the correct default columns`, () => {
+    mount(MetricsTable, { target: document.body })
+
+    // Core text expected in default visible columns
+    const expected_core_columns = new Set([
+      `Model`, // METADATA_COLS
+      `Training Set`, // METADATA_COLS
+      `Targets`, // METADATA_COLS
+      `Date Added`, // METADATA_COLS
+      `Links`, // METADATA_COLS
+      `Org`, // METADATA_COLS
+      `Params`, // HYPERPARAMS (short label)
+      `rcut`, // HYPERPARAMS (short label) - textContent doesn't keep subscript
+      `Acc`, // ALL_METRICS (Discovery - short)
+      `F1`, // ALL_METRICS (Discovery - short)
+      `DAF`, // ALL_METRICS (Discovery)
+      `Prec`, // ALL_METRICS (Discovery - short)
+      // Recall is visible: false
+      `TNR`, // ALL_METRICS (Discovery)
+      `TPR`, // ALL_METRICS (Discovery)
+      `MAE`, // ALL_METRICS (Discovery)
+      `R2`, // ALL_METRICS (Discovery)
+      `RMSE`, // ALL_METRICS (Discovery)
+      `κSRME`, // ALL_METRICS (Phonon) - textContent doesn't keep subscript
+      `RMSD`, // ALL_METRICS (Geo Opt)
+      `CPS`, // Added in assemble_row_data
+    ])
+
+    const header_elements = document.body.querySelectorAll(`thead th`)
+    const actual_core_columns = new Set(
+      Array.from(header_elements).map((th) =>
+        // Get text content, remove sort indicator (↑/↓), trim
+        (th.textContent ?? ``).replace(/[↑↓]$/, ``).trim(),
+      ),
+    )
+
+    // Check if the sets of core texts are equal (ignores order)
+    expect(actual_core_columns).toEqual(expected_core_columns)
+
+    // Optionally, check the number of columns to be sure
+    expect(header_elements.length).toBe(expected_core_columns.size)
+
+    // Check that each header has a non-empty title attribute (tooltip)
+    header_elements.forEach((th) => {
+      expect(
+        th.getAttribute(`title`),
+        `Header ${th.textContent} has no title attribute`,
+      ).toBeTruthy()
     })
   })
 })

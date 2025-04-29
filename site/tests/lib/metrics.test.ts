@@ -1,7 +1,7 @@
 import { DATASETS } from '$lib'
 import type { CpsConfig } from '$lib/combined_perf_score.svelte'
 import { calculate_cps, DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score.svelte'
-import { METADATA_COLS, METRICS } from '$lib/labels'
+import { ALL_METRICS, METADATA_COLS } from '$lib/labels'
 import {
   all_higher_better_metrics,
   all_lower_better_metrics,
@@ -733,6 +733,12 @@ describe(`METADATA_COLS`, () => {
       `r<sub>cut</sub>`,
       `Number of Training Materials`,
       `Number of Training Structures`,
+      `Checkpoint License`,
+      `Code License`,
+      `Missing Predictions`,
+      `Missing %`,
+      `Run Time`,
+      `Org`,
     ]
 
     expect(Object.values(METADATA_COLS).map((col) => col.label)).toEqual(expected_labels)
@@ -856,7 +862,7 @@ describe(`Model Sorting Logic`, () => {
 
   it(`sorts models by numeric metrics correctly with NaN handling`, () => {
     const test_models = create_test_models()
-    const { F1, Accuracy, κ_SRME } = METRICS
+    const { F1, Accuracy, κ_SRME } = ALL_METRICS
 
     // Test cases for different metrics and sort orders
     const test_cases = [
@@ -922,7 +928,7 @@ describe(`Model Sorting Logic`, () => {
     const combined_models = [...regular_models, ...edge_case_models]
 
     // Test sorting with κ_SRME where one model has zero value
-    const { κ_SRME } = METRICS
+    const { κ_SRME } = ALL_METRICS
     const sort_by_path = `${κ_SRME.path}.${κ_SRME.key}`
     const sorted_by_kappa = combined_models.sort(sort_models(sort_by_path, `asc`))
 

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { MetricScatter, MetricsTable } from '$lib'
-  import { ALL_METRICS, METADATA_COLS, METRICS } from '$lib/labels'
+  import { ALL_METRICS, METADATA_COLS } from '$lib/labels'
 
   // Default column visibility
   let visible_cols: Record<string, boolean> = $state({
@@ -9,7 +9,7 @@
     // Show all metadata
     ...Object.fromEntries(Object.values(METADATA_COLS).map((col) => [col.label, true])),
     // Show phonon metrics
-    [METRICS.κ_SRME.label]: true,
+    [ALL_METRICS.κ_SRME.label]: true,
   })
 </script>
 
@@ -34,14 +34,14 @@
 
   <MetricScatter
     x_prop={METADATA_COLS.model_params}
-    y_prop={METRICS.κ_SRME}
+    y_prop={ALL_METRICS.κ_SRME}
     style="height: 400px;"
   />
 
   <h3>κ<sub>SRME</sub> over time</h3>
   <MetricScatter
     x_prop={METADATA_COLS.date_added}
-    y_prop={METRICS.κ_SRME}
+    y_prop={ALL_METRICS.κ_SRME}
     style="height: 400px;"
   />
 </figure>

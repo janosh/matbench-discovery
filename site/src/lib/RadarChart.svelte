@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { CpsConfig } from '$lib/combined_perf_score.svelte'
-  import { METRICS } from '$lib/labels'
+  import { ALL_METRICS } from '$lib/labels'
   import type { Point } from 'elementari'
   import { Tooltip } from 'svelte-zoo'
   import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from './combined_perf_score.svelte'
@@ -253,11 +253,11 @@
 
 <div class="radar-chart">
   <span class="metric-name">
-    {METRICS.CPS.label}
+    {ALL_METRICS.CPS.label}
     <Tooltip tip_style="z-index: 20; font-size: 0.8em;">
       <svg style="opacity: 0.7; cursor: help;"><use href="#icon-info" /></svg>
       {#snippet tip()}
-        {@html METRICS.CPS.description}
+        {@html ALL_METRICS.CPS.description}
       {/snippet}
     </Tooltip>
   </span>

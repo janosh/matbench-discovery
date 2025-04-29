@@ -1,10 +1,10 @@
 <script lang="ts">
   import { MetricScatter, MetricsTable, SelectToggle } from '$lib'
   import {
+    ALL_METRICS,
     DISCOVERY_METRICS,
     DISCOVERY_SET_LABELS,
     METADATA_COLS,
-    METRICS,
   } from '$lib/labels'
   import type { DiscoverySet } from '$lib/types'
 
@@ -27,7 +27,12 @@
 
 <MetricsTable
   col_filter={(col) =>
-    [...Object.values(DISCOVERY_METRICS), ...Object.values(METADATA_COLS)].includes(col)}
+    [
+      METADATA_COLS.model_name,
+      ...Object.values(DISCOVERY_METRICS),
+      METADATA_COLS.links,
+      METADATA_COLS.date_added,
+    ].includes(col)}
   {discovery_set}
   style="width: 100%;"
 />
@@ -40,7 +45,7 @@ below the Materials Project convex hull.
 
 <MetricScatter
   x_prop={METADATA_COLS.date_added}
-  y_prop={METRICS.F1}
+  y_prop={ALL_METRICS.F1}
   style="height: 400px;"
 />
 
@@ -48,6 +53,6 @@ below the Materials Project convex hull.
 
 <MetricScatter
   x_prop={METADATA_COLS.model_params}
-  y_prop={METRICS.F1}
+  y_prop={ALL_METRICS.F1}
   style="height: 400px;"
 />

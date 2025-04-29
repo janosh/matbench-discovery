@@ -1,5 +1,5 @@
 import { DATASETS, MODELS, ModelCard } from '$lib'
-import { METRICS } from '$lib/labels'
+import { ALL_METRICS } from '$lib/labels'
 import { pretty_num } from 'elementari'
 import { mount } from 'svelte'
 import { describe, expect, it } from 'vitest'
@@ -11,7 +11,7 @@ describe(`ModelCard`, () => {
 
   const metrics = ([`F1`, `DAF`, `κ_SRME`] as const).map((key) => ({
     key,
-    ...METRICS[key],
+    ...ALL_METRICS[key],
   }))
 
   describe(`Basic Rendering`, () => {

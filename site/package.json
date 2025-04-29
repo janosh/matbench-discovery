@@ -39,11 +39,11 @@
     "d3-array": "^3.2.4",
     "d3-scale": "^4.0.2",
     "d3-scale-chromatic": "^3.1.0",
-    "elementari": "^0.3.10",
+    "elementari": "^0.3.11",
     "eslint": "^9.25.1",
     "eslint-plugin-svelte": "^3.5.1",
     "hastscript": "^9.0.1",
-    "iconify-icon": "^2.3.0",
+    "iconify-icon": "^3.0.0",
     "js-yaml": "^4.1.0",
     "jsdom": "^26.1.0",
     "json-schema-to-typescript": "^15.0.4",
@@ -69,7 +69,7 @@
     "typescript": "5.8.3",
     "typescript-eslint": "^8.31.1",
     "unified": "^11.0.5",
-    "vite": "^6.3.3",
+    "vite": "^6.3.4",
     "vitest": "^3.1.2"
   },
   "prettier": {

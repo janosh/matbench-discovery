@@ -8,7 +8,7 @@ default_install_hook_types: [pre-commit, commit-msg]
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.5
+    rev: v0.11.7
     hooks:
       - id: ruff
         args: [--fix]
@@ -58,7 +58,7 @@ repos:
         exclude: ^(site/src/figs/.+\.svelte|site/src/(routes|figs).+\.json|changelog.md)$
 
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v9.24.0
+    rev: v9.25.1
     hooks:
       - id: eslint
         types: [file]
@@ -84,7 +84,7 @@ repos:
       - id: check-github-actions
 
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.399
+    rev: v1.1.400
     hooks:
       - id: pyright
         args: [--level, error]

@@ -1,13 +1,13 @@
 <script lang="ts">
   import { HeatmapTable } from '$lib'
   import type { ModelData } from '$lib/types'
-  import { GEO_OPT_SYMMETRY_METRICS, METADATA_COLS, METRICS } from './labels'
+  import { ALL_METRICS, GEO_OPT_SYMMETRY_METRICS, METADATA_COLS } from './labels'
   import { assemble_row_data } from './metrics'
 
   let { ...rest } = $props()
   let columns = $derived([
     METADATA_COLS.model_name,
-    METRICS.RMSD,
+    ALL_METRICS.RMSD,
     ...Object.values(GEO_OPT_SYMMETRY_METRICS).map((col) => ({ ...col, visible: true })),
   ])
 

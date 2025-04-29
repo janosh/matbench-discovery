@@ -3,7 +3,7 @@
   import { metric_better_as } from '$lib/metrics'
   import type { Snippet } from 'svelte'
   import { click_outside } from 'svelte-zoo/actions'
-  import { ALL_METRICS, HYPERPARAMS, INFO_COLS, METADATA_COLS } from './labels'
+  import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from './labels'
   import { assemble_row_data } from './metrics'
   import type {
     CellSnippetArgs,
@@ -41,8 +41,8 @@
   }: Props = $props()
 
   const { model_name, training_set, targets, date_added, links } = METADATA_COLS
+  const { checkpoint_license, code_license, org } = METADATA_COLS
   const { graph_construction_radius, model_params } = HYPERPARAMS
-  const { checkpoint_license, code_license, org } = INFO_COLS
 
   let columns = $derived(
     [

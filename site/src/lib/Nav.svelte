@@ -5,7 +5,6 @@
     routes: (string | [string, string])[]
     style?: string | null
   }
-
   let { routes, style = null }: Props = $props()
 
   let is_current = $derived((path: string) => {

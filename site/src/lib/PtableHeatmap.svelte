@@ -7,16 +7,16 @@
   interface Props {
     heatmap_values: Record<string, number>
     color_scale?: string
-    active_element: ChemicalElement | null
+    active_element?: ChemicalElement | null
     log?: boolean // log color scale
-    color_bar_props?: ComponentProps<typeof ColorBar>
+    colorbar?: ComponentProps<typeof ColorBar>
   }
   let {
     heatmap_values,
     color_scale = $bindable(`Viridis`),
     active_element = $bindable(null),
     log = $bindable(false),
-    color_bar_props = {},
+    colorbar = {},
   }: Props = $props()
 
   export const snapshot = {
@@ -43,7 +43,7 @@
         tick_labels={5}
         range={[0, Math.max(...Object.values(heatmap_values))]}
         style="width: 85%; margin: 0 2em 2em;"
-        {...color_bar_props}
+        {...colorbar}
       />
     </TableInset>
   {/snippet}

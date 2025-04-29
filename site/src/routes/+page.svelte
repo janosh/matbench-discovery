@@ -27,7 +27,7 @@
     ...Object.fromEntries(
       [...Object.values(ALL_METRICS), ...Object.values(METADATA_COLS)].map((col) => [
         col.label,
-        true,
+        col.visible !== false,
       ]),
     ),
     TPR: false,
