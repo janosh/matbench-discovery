@@ -1,4 +1,4 @@
-import modeling_tasks from '$pkg/modeling-tasks.yml'
+import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import type { DiscoverySet, Metric } from './types'
 
 export const RMSD_BASELINE = 0.15 // baseline for poor performance given worst performing model at time of writing is M3GNet at 0.1117
@@ -13,31 +13,18 @@ export const format_power_ten = (text: string): string => {
     .replace(`1×10`, `10`)
 }
 
-// keys, display labels and descriptions for metrics
-export const METRICS: Record<string, Metric> = {
-  // Dynamic metrics
-  CPS: {
-    key: `CPS`,
-    short: `CPS`,
-    label: `Combined Performance Score`,
-    description: `Combined Performance Score averages discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>) according to user-defined weights`,
-    range: [0, 1],
-    better: `higher`,
-    format: `.3f`,
-  },
-  // Discovery metrics
+export const sub_sup_to_tspan = (text: string): string => {
+  return text
+    .replaceAll(`<sup>`, `<tspan baseline-shift='0.4em' font-size='0.8em'>`)
+    .replaceAll(`</sup>`, `</tspan>`)
+}
+
+export const DISCOVERY_METRICS: Record<string, Metric> = {
   Accuracy: {
     key: `Accuracy`,
     short: `Acc`,
     label: `Accuracy`,
     description: `Accuracy of classifying thermodynamic stability`,
-    better: `higher`,
-    path: `metrics.discovery.unique_prototypes`,
-  },
-  DAF: {
-    key: `DAF`,
-    label: `DAF`,
-    description: `Discovery Acceleration Factor measuring how much better ML models classify thermodynamic stability compared to random guessing`,
     better: `higher`,
     path: `metrics.discovery.unique_prototypes`,
   },
@@ -50,6 +37,13 @@ export const METRICS: Record<string, Metric> = {
     range: [0, 1],
     better: `higher`,
   },
+  DAF: {
+    key: `DAF`,
+    label: `DAF`,
+    description: `Discovery Acceleration Factor measuring how much better ML models classify thermodynamic stability compared to random guessing`,
+    better: `higher`,
+    path: `metrics.discovery.unique_prototypes`,
+  },
   Precision: {
     key: `Precision`,
     short: `Prec`,
@@ -60,11 +54,11 @@ export const METRICS: Record<string, Metric> = {
   },
   Recall: {
     key: `Recall`,
-    short: `Rec`,
     label: `Recall`,
     description: `Recall of classifying thermodynamic stability`,
     path: `metrics.discovery.unique_prototypes`,
     better: `higher`,
+    visible: false,
   },
   TNR: {
     key: `TNR`,
@@ -101,31 +95,13 @@ export const METRICS: Record<string, Metric> = {
     path: `metrics.discovery.unique_prototypes`,
     better: `lower`,
   },
-  // Phonon metrics
-  κ_SRME: {
-    key: `κ_SRME`,
-    label: `κ<sub>SRME</sub>`,
-    svg_label: `κ<tspan baseline-shift='-0.4em' font-size='0.8em'>SRME</tspan>`,
-    description: `Symmetric relative mean error in predicted phonon mode contributions to thermal conductivity κ`,
-    path: `metrics.phonons.kappa_103`,
-    better: `lower`,
-  },
-  // Geometry optimization metrics
-  RMSD: {
-    key: `rmsd`,
-    path: `metrics.geo_opt.symprec=1e-2`,
-    label: `RMSD`,
-    range: [0, RMSD_BASELINE],
-    better: `lower`,
-    description: `Root mean squared displacement between predicted and reference structures after relaxation`,
-    style: `border-left: 1px solid black;`,
-  },
 } as const
 
 export const METADATA_COLS: Record<string, Metric> = {
   model_name: {
     label: `Model`,
     key: `model_name`,
+    description: `Model name`,
     sticky: true,
     sortable: true,
     better: null,
@@ -169,6 +145,44 @@ export const METADATA_COLS: Record<string, Metric> = {
     key: `n_training_structures`,
     description: `Number of training structures`,
     format: `~s`,
+  },
+  checkpoint_license: {
+    label: `Checkpoint License`,
+    key: `checkpoint_license`,
+    description: `Model checkpoint license`,
+    visible: false,
+  },
+  code_license: {
+    label: `Code License`,
+    key: `code_license`,
+    description: `Model code license`,
+    visible: false,
+  },
+  missing_preds: {
+    key: `missing_preds`,
+    label: `Missing Predictions`,
+    description: `Number of missing predictions`,
+    visible: false,
+  },
+  missing_percent: {
+    key: `missing_percent`,
+    label: `Missing %`,
+    description: `Percentage of missing predictions`,
+    visible: false,
+  },
+  'Run Time (h)': {
+    key: `run_time_h`,
+    label: `Run Time`,
+    description: `Runtime in hours`,
+    visible: false,
+  },
+  org: {
+    key: `org`,
+    label: `Org`,
+    sortable: false,
+    description: `Most common author affiliations`,
+    visible: true,
+    better: null,
   },
 } as const
 
@@ -237,46 +251,7 @@ export const HYPERPARAMS: Record<string, Metric> = {
   },
 } as const
 
-export const INFO_COLS: Record<string, Metric> = {
-  // Metadata
-  checkpoint_license: {
-    label: `Checkpoint License`,
-    key: `checkpoint_license`,
-    description: `Model checkpoint license`,
-    visible: false,
-  },
-  code_license: {
-    label: `Code License`,
-    key: `code_license`,
-    description: `Model code license`,
-    visible: false,
-  },
-  missing_preds: {
-    key: `missing_preds`,
-    label: `Missing Predictions`,
-    description: `Number of missing predictions`,
-  },
-  missing_percent: {
-    key: `missing_percent`,
-    label: `Missing %`,
-    description: `Percentage of missing predictions`,
-  },
-  'Run Time (h)': {
-    key: `run_time_h`,
-    label: `Run Time`,
-    description: `Runtime in hours`,
-  },
-  org: {
-    key: `org`,
-    label: `Org`,
-    sortable: false,
-    description: `Most common author affiliations`,
-    visible: true,
-    better: null,
-  },
-} as const
-
-export type MetricKey = keyof typeof METRICS
+export type MetricKey = keyof typeof ALL_METRICS
 
 export const DATASET_METADATA_COLS: Record<string, Metric> = {
   title: { key: `title`, label: `Title`, sticky: true },
@@ -323,28 +298,51 @@ export const GEO_OPT_SYMMETRY_METRICS: Record<string, Metric> = Object.fromEntri
         key,
         symprec,
         path: `metrics.geo_opt.symprec=${symprec}`,
-        label: `${label} ${format_power_ten(symprec)}`,
+        short: `${label} ${format_power_ten(symprec)}`,
+        label: `${label} (symprec=${format_power_ten(symprec)})`,
+        svg_label: `${label} (symprec=${sub_sup_to_tspan(format_power_ten(symprec))})`
+          .replace(`Σ<sub>`, `Σ<tspan baseline-shift='-0.4em' font-size='0.8em'>`)
+          .replace(`</sub>`, `</tspan>`),
         description: `Fraction of structures where ML and DFT ground state have matching spacegroup at ${format_power_ten(symprec)} symprec`,
         better,
-        format: `.1%`,
+        format: `~%`,
         visible: false,
       },
     ]),
 )
 
-export const DISCOVERY_METRICS = Object.fromEntries(
-  (
-    [`F1`, `DAF`, `Precision`, `Accuracy`, `TPR`, `TNR`, `MAE`, `RMSE`, `R2`] as const
-  ).map((key) => [key, METRICS[key]]),
-)
-
 export const ALL_METRICS: Record<string, Metric> = {
-  [METRICS.CPS.key]: METRICS.CPS,
+  // Dynamic metrics
+  CPS: {
+    key: `CPS`,
+    short: `CPS`,
+    label: `Combined Performance Score`,
+    description: `Combined Performance Score averages discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>) according to user-defined weights`,
+    range: [0, 1],
+    better: `higher`,
+    format: `.3f`,
+  },
   ...DISCOVERY_METRICS,
   // Phonon metrics
-  [METRICS.κ_SRME.key]: METRICS.κ_SRME,
+  κ_SRME: {
+    key: `κ_SRME`,
+    label: `κ<sub>SRME</sub>`,
+    svg_label: `κ<tspan baseline-shift='-0.4em' font-size='0.8em'>SRME</tspan>`,
+    description: `Symmetric relative mean error in predicted phonon mode contributions to thermal conductivity κ`,
+    path: `metrics.phonons.kappa_103`,
+    better: `lower`,
+  },
   // Geometry optimization metrics
-  [METRICS.RMSD.key]: METRICS.RMSD,
+  RMSD: {
+    key: `rmsd`,
+    path: `metrics.geo_opt.symprec=1e-2`,
+    label: `RMSD`,
+    range: [0, RMSD_BASELINE],
+    better: `lower`,
+    description: `Root mean squared displacement between predicted and reference structures after relaxation`,
+    style: `border-left: 1px solid black;`,
+  },
+  ...DISCOVERY_METRICS,
   ...GEO_OPT_SYMMETRY_METRICS,
 } as const
 
@@ -368,12 +366,10 @@ export const DISCOVERY_SET_LABELS: Record<
 } as const
 
 export const PROPERTY_LABELS: Record<string, string> = Object.fromEntries(
-  Object.entries({
-    ...ALL_METRICS,
-    ...METADATA_COLS,
-    ...HYPERPARAMS,
-    ...INFO_COLS,
-  }).map(([key, prop]) => [key, prop.label]),
+  Object.values({ ...ALL_METRICS, ...METADATA_COLS, ...HYPERPARAMS }).map((prop) => [
+    prop.key,
+    prop.label,
+  ]),
 )
 
 // Formats a property path for display in UI components
@@ -384,7 +380,7 @@ export function format_property_path(path: string): string {
     .filter((part) => ![`metrics`, `kappa_103`].includes(part) && part)
 
   // remove symprec value preceding rmsd
-  if ([`RMSD`, `rmsd`].includes(parts.at(-1) ?? ``)) {
+  if (parts.at(-1)?.toUpperCase() === `RMSD`) {
     parts = parts.filter((part) => !part.includes(`symprec`))
   }
 
@@ -399,7 +395,7 @@ export function format_property_path(path: string): string {
 }
 
 export const CATEGORY_LABELS = Object.fromEntries(
-  Object.entries({ ...modeling_tasks, ...DISCOVERY_SET_LABELS }).map(([key, task]) => [
+  Object.entries({ ...MODELINGS_TASKS, ...DISCOVERY_SET_LABELS }).map(([key, task]) => [
     key,
     task.label,
   ]),

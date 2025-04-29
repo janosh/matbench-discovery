@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ModelCard, type Metric } from '$lib'
-  import { METADATA_COLS, METRICS } from '$lib/labels'
+  import { ALL_METRICS, METADATA_COLS } from '$lib/labels'
   import { get_nested_value, metric_better_as, sort_models } from '$lib/metrics'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import { interpolateCividis as cividis } from 'd3-scale-chromatic'
@@ -9,7 +9,7 @@
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
 
-  let sort_by: Metric = $state(METRICS.CPS)
+  let sort_by: Metric = $state(ALL_METRICS.CPS)
   let show_non_compliant: boolean = $state(true)
   let show_details: boolean = $state(false)
   let order: `asc` | `desc` = $state(`desc`)
@@ -32,7 +32,7 @@
     `TPR`,
     `κ_SRME`,
   ] as const
-  const metrics = metric_keys.map((key) => METRICS[key])
+  const metrics = metric_keys.map((key) => ALL_METRICS[key])
 
   export const snapshot = {
     capture: () => ({ show_details, sort_by, order, show_n_best }),

@@ -1,12 +1,17 @@
 import { DATASETS, format_date, MODELS } from '$lib'
 import type { TargetType } from '$lib/model-schema'
 import { get_pred_file_urls, model_is_compliant } from '$lib/models.svelte'
-import modeling_tasks from '$pkg/modeling-tasks.yml'
+import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { max, min } from 'd3-array'
 import { scaleLog, scaleSequential } from 'd3-scale'
 import * as d3sc from 'd3-scale-chromatic'
 import { choose_bw_for_contrast, pretty_num } from 'elementari/labels'
-import { GEO_OPT_SYMMETRY_METRICS, HYPERPARAMS, INFO_COLS, METRICS } from './labels'
+import {
+  ALL_METRICS,
+  GEO_OPT_SYMMETRY_METRICS,
+  HYPERPARAMS,
+  METADATA_COLS,
+} from './labels'
 import type { DiscoverySet, LinkData, ModelData } from './types'
 
 // model target type descriptions
@@ -38,11 +43,11 @@ export function get_nested_value(
   return value
 }
 
-export const all_higher_better_metrics = Object.values(modeling_tasks).flatMap(
+export const all_higher_better_metrics = Object.values(MODELINGS_TASKS).flatMap(
   (model_task) => model_task.metrics.higher_is_better,
 )
 
-export const all_lower_better_metrics = Object.values(modeling_tasks).flatMap(
+export const all_lower_better_metrics = Object.values(MODELINGS_TASKS).flatMap(
   (model_task) => model_task.metrics.lower_is_better,
 )
 
@@ -204,7 +209,7 @@ export function assemble_row_data(
     const { license, metrics } = model
     const discovery_metrics = metrics?.discovery?.[discovery_set]
     const is_compliant = model_is_compliant(model)
-    const { RMSD, CPS } = METRICS
+    const { RMSD, CPS } = ALL_METRICS
 
     // Get kappa from phonon metrics
     const phonons = metrics?.phonons
@@ -271,14 +276,14 @@ export function assemble_row_data(
         },
         pred_files: { files: get_pred_file_urls(model), name: model.model_name },
       } as LinkData,
-      [INFO_COLS.checkpoint_license.label]: checkpoint_license,
-      [INFO_COLS.code_license.label]: code_license,
+      [METADATA_COLS.checkpoint_license.label]: checkpoint_license,
+      [METADATA_COLS.code_license.label]: code_license,
       [HYPERPARAMS.graph_construction_radius.short as string]: r_cut_str,
       row_style,
       org_logos: model.org_logos,
       ...Object.fromEntries(
         Object.values(GEO_OPT_SYMMETRY_METRICS).map((col) => [
-          col.label,
+          col.short,
           get_nested_value(model, `${col.path}.${col.key}`) as number | undefined,
         ]),
       ),

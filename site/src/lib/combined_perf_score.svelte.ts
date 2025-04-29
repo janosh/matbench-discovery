@@ -1,10 +1,10 @@
-import { METRICS, RMSD_BASELINE } from './labels'
+import { ALL_METRICS, RMSD_BASELINE } from './labels'
 import type { Metric } from './types'
 
 export const DEFAULT_CPS_CONFIG = {
-  F1: { ...METRICS.F1, weight: 0.5 },
-  κ_SRME: { ...METRICS.κ_SRME, weight: 0.4 },
-  RMSD: { ...METRICS.RMSD, weight: 0.1 },
+  F1: { ...ALL_METRICS.F1, weight: 0.5 },
+  κ_SRME: { ...ALL_METRICS.κ_SRME, weight: 0.4 },
+  RMSD: { ...ALL_METRICS.RMSD, weight: 0.1 },
 } as const
 
 export type CpsConfig = Record<

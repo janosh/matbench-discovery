@@ -1,6 +1,6 @@
 import { RadarChart } from '$lib'
 import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score.svelte'
-import { METRICS } from '$lib/labels'
+import { ALL_METRICS } from '$lib/labels'
 import { update_models_cps } from '$lib/models.svelte'
 import { mount } from 'svelte'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -154,7 +154,7 @@ describe(`RadarChart`, () => {
 
     const metric_name = document.body.querySelector(`.metric-name`)
     expect(metric_name).toBeDefined()
-    expect(metric_name?.textContent?.trim()).toContain(METRICS.CPS.label)
+    expect(metric_name?.textContent?.trim()).toContain(ALL_METRICS.CPS.label)
   })
 
   it(`renders reset button with correct attributes`, async () => {

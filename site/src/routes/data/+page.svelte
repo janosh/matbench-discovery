@@ -75,7 +75,7 @@
     <PtableHeatmap
       heatmap_values={wbm_elem_counts}
       color_scale={color_scale[0]}
-      color_bar_props={{ label: `WBM element counts by ${count_mode}` }}
+      colorbar={{ title: `WBM element counts by ${count_mode}` }}
       {log}
     />
   {/snippet}
@@ -84,7 +84,7 @@
     <PtableHeatmap
       heatmap_values={mp_elem_counts}
       color_scale={color_scale[0]}
-      color_bar_props={{ label: `MP element counts by ${count_mode}` }}
+      colorbar={{ title: `MP element counts by ${count_mode}` }}
       {log}
     />
   {/snippet}
