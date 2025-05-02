@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { browser } from '$app/environment'
   import StructRmsdCdfModels from '$figs/struct-rmsd-cdf-models.svelte'
   import SymOpsDiffBar from '$figs/sym-ops-diff-bar.svelte'
   import { GeoOptMetricsTable, MODELS } from '$lib'
@@ -34,13 +33,11 @@
   {/snippet}
 </GeoOptReadme>
 
-{#if browser}
-  <ul>
-    {#each Object.entries(plots) as [name, Plot], idx (name + idx)}
-      <Plot {name} style="width: 100%; place-self: center;" />
-    {/each}
-  </ul>
-{/if}
+<ul>
+  {#each Object.entries(plots) as [name, Plot], idx (name + idx)}
+    <Plot {name} style="width: 100%; place-self: center;" />
+  {/each}
+</ul>
 
 <style>
   ul {
