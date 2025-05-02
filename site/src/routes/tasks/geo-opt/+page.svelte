@@ -7,7 +7,7 @@
   import type { SvelteComponent } from 'svelte'
   import GeoOptReadme from './geo-opt-readme.md'
 
-  const plots = import.meta.glob(`$figs/spg-sankey-*.svelte`, {
+  const plots = import.meta.glob(`$figs/spg-sankey-*-1e-05.svelte`, {
     eager: true,
     import: `default`,
   }) as Record<string, typeof SvelteComponent>

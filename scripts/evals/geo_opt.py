@@ -76,7 +76,7 @@ for model_label, model_metadata in MODEL_METADATA.items():
     model_data[model_label] = df_model
     model_metrics[model_label] = geo_opt.calc_geo_opt_metrics(df_model)
 
-print(f"Loaded {len(model_data)=} models, joined with DFT data into df_all")
+print(f"\nLoaded {len(model_data)=} models, joined with DFT data into df_all")
 
 df_all = pd.concat(
     model_data | {Key.dft.label: df_dft_analysis},
