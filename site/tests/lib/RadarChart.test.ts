@@ -7,21 +7,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe(`RadarChart`, () => {
   beforeEach(() => {
-    document.body.innerHTML = `` // Reset DOM before each test
-
-    // Reset CPS_CONFIG to default values before each test
-    let key: keyof typeof CPS_CONFIG
-    for (key in CPS_CONFIG) {
-      CPS_CONFIG[key].weight = DEFAULT_CPS_CONFIG[key].weight
-    }
-
     // Mock the update_models_cps function to avoid side effects
     vi.mock(`$lib/models.svelte`, async () => {
       const actual = await vi.importActual(`$lib/models.svelte`)
-      return {
-        ...actual,
-        update_models_cps: vi.fn(),
-      }
+      return { ...actual, update_models_cps: vi.fn() }
     })
   })
 
@@ -35,6 +24,11 @@ describe(`RadarChart`, () => {
     // Check that all three axis lines are rendered (for F1, kappa, RMSD)
     const axis_lines = document.body.querySelectorAll(`line`)
     expect(axis_lines).toHaveLength(3)
+    // Verify stroke properties for each axis line
+    axis_lines.forEach((line) => {
+      expect(line.getAttribute(`stroke`)).toBe(`rgba(255, 255, 255, 0.4)`)
+      expect(line.getAttribute(`stroke-width`)).toBe(`1`)
+    })
 
     // Check that the triangle area is rendered
     const triangle_area = document.body.querySelector(
@@ -50,10 +44,8 @@ describe(`RadarChart`, () => {
   it(`accepts size prop`, async () => {
     const custom_size = 300
 
-    // Just verify that the component mounts without error when we pass a size prop
     mount(RadarChart, { target: document.body, props: { size: custom_size } })
 
-    // Just verify the SVG element exists
     const svg = document.body.querySelector(`svg`)
     expect(svg).toBeDefined()
 
@@ -114,9 +106,7 @@ describe(`RadarChart`, () => {
     const label_texts = Array.from(text_elements).map((el) => el.textContent?.trim())
 
     // Verify that each label contains the respective metric name
-    expect(label_texts.some((text) => text?.includes(`F1`))).toBe(true)
-    expect(label_texts.some((text) => text?.includes(`κ SRME`))).toBe(true)
-    expect(label_texts.some((text) => text?.includes(`RMSD`))).toBe(true)
+    expect(label_texts).toEqual([`F1 50%`, `κSRME 40%`, `RMSD 10%`])
   })
 
   it(`renders tooltip with config description`, async () => {
@@ -143,10 +133,12 @@ describe(`RadarChart`, () => {
     expect(colored_areas.length).toBe(3)
 
     // Check for the grid circles
-    const grid_circles = document.body.querySelectorAll(
-      `circle[fill="none"][stroke="rgba(255, 255, 255, 0.1)"]`,
-    )
+    const grid_circles = document.body.querySelectorAll(`circle[fill="none"]`)
     expect(grid_circles.length).toBe(4) // Should be 4 grid circles
+    // Verify stroke properties for each grid circle
+    grid_circles.forEach((circle) => {
+      expect(circle.getAttribute(`stroke`)).toBe(`rgba(255, 255, 255, 0.1)`)
+    })
   })
 
   it(`displays the metric name`, async () => {

@@ -1,13 +1,12 @@
 <script lang="ts">
-  import { browser } from '$app/environment'
   import StructRmsdCdfModels from '$figs/struct-rmsd-cdf-models.svelte'
-  import SymOpsDiffBar from '$figs/sym-ops-diff-bar.svelte'
+  import SymOpsDiffBar from '$figs/sym-ops-diff-bar-symprec=1e-05.svelte'
   import { GeoOptMetricsTable, MODELS } from '$lib'
   import { pretty_num } from 'elementari'
   import type { SvelteComponent } from 'svelte'
   import GeoOptReadme from './geo-opt-readme.md'
 
-  const plots = import.meta.glob(`$figs/spg-sankey-*.svelte`, {
+  const plots = import.meta.glob(`$figs/spg-sankey-*symprec=1e-05.svelte`, {
     eager: true,
     import: `default`,
   }) as Record<string, typeof SvelteComponent>
@@ -34,13 +33,11 @@
   {/snippet}
 </GeoOptReadme>
 
-{#if browser}
-  <ul>
-    {#each Object.entries(plots) as [name, Plot], idx (name + idx)}
-      <Plot {name} style="width: 100%; place-self: center;" />
-    {/each}
-  </ul>
-{/if}
+<ul>
+  {#each Object.entries(plots) as [name, Plot], idx (name + idx)}
+    <Plot {name} style="width: 100%; place-self: center;" />
+  {/each}
+</ul>
 
 <style>
   ul {

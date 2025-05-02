@@ -24,4 +24,4 @@ Symmetry detection was performed with the excellent Rust library [`moyopy`](http
 
 ## Sankey Diagrams for ML vs DFT Spacegroups
 
-The sankey diagrams show corresponding spacegroups of DFT-relaxed and MLFF-relaxed structures. For visual clarity, only the 10 most common pairs of (DFT, MLFF) spacegroups are shown.
+The sankey diagrams show corresponding spacegroups of DFT-relaxed and MLFF-relaxed structures at `symprec=1e-5`. For visual clarity, only the 10 most common pairs of (DFT, MLFF) spacegroups are shown.
