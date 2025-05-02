@@ -414,7 +414,7 @@
     border-radius: 6px;
     padding: 5px 15px 15px;
     box-sizing: border-box;
-    z-index: 1;
+    z-index: 2;
     display: grid;
     grid-template-columns: auto auto 1fr; /* Checkbox | Label | Input */
     gap: 5pt 1em;

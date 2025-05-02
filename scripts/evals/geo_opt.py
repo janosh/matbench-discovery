@@ -32,7 +32,6 @@ from matbench_discovery.metrics import geo_opt
 from matbench_discovery.models import MODEL_METADATA
 
 symprec = 1e-5
-module_dir = os.path.dirname(__file__)
 model_lvl, metric_lvl = "model", "metric"
 symprec_str = f"symprec={symprec:.0e}".replace("e-0", "e-")
 moyo_version = importlib.metadata.version("moyopy")
@@ -47,7 +46,6 @@ df_wbm[init_spg_col] = (
     df_wbm[MbdKey.init_wyckoff_spglib].str.split("_").str[2].astype(int)
 )
 df_wbm[dft_spg_col] = df_wbm[MbdKey.wyckoff_spglib].str.split("_").str[2].astype(int)
-module_dir = os.path.dirname(__file__)
 model_lvl, metric_lvl = "model", "metric"
 
 
@@ -76,7 +74,7 @@ for model_label, model_metadata in MODEL_METADATA.items():
     model_data[model_label] = df_model
     model_metrics[model_label] = geo_opt.calc_geo_opt_metrics(df_model)
 
-print(f"Loaded {len(model_data)=} models, joined with DFT data into df_all")
+print(f"\nLoaded {len(model_data)=} models, joined with DFT data into df_all")
 
 df_all = pd.concat(
     model_data | {Key.dft.label: df_dft_analysis},
@@ -160,7 +158,7 @@ for model, srs_rmsd in df_all.xs(
 fig_rmsd.layout.height = len(fig_rmsd.data) * 100
 fig_rmsd.layout.showlegend = False
 
-# pmv.save_fig(fig_rmsd, f"{module_dir}/{today}-rmsd-violin.pdf")
+# pmv.save_fig(fig_rmsd, f"{SITE_FIGS}/{today}-rmsd-violin.pdf")
 
 title = "RMSD of ML-relaxed structures vs DFT-relaxed structures"
 fig_rmsd.layout.title = dict(text=title, x=0.5)
@@ -191,7 +189,7 @@ fig_sym.layout.height = 600
 fig_sym.update_traces(orientation="h", side="positive", width=1.8)
 
 fig_sym.show()
-pmv.save_fig(fig_sym, f"{module_dir}/{today}-sym-violin.pdf")
+pmv.save_fig(fig_sym, f"{SITE_FIGS}/{today}-sym-violin-{symprec=}.pdf")
 
 
 # %% violin plot of number of symmetry operations in ML-relaxed structures
@@ -207,7 +205,7 @@ fig_sym_ops.layout.margin.t = 50
 fig_sym_ops.layout.height = 600
 fig_sym_ops.update_traces(orientation="h", side="positive", width=1.8)
 fig_sym_ops.show()
-pmv.save_fig(fig_sym_ops, f"{module_dir}/{today}-sym-ops-violin.pdf")
+pmv.save_fig(fig_sym_ops, f"{SITE_FIGS}/{today}-sym-ops-violin-{symprec=}.pdf")
 
 
 # %% violin plot of number of symmetry operations in ML-relaxed structures vs DFT
@@ -227,7 +225,9 @@ fig_sym_ops_diff.layout.margin.t = 50
 fig_sym_ops_diff.update_traces(orientation="h", side="positive", width=1.8)
 
 fig_sym_ops_diff.show()
-pmv.save_fig(fig_sym_ops_diff, f"{module_dir}/{today}-sym-ops-diff-violin.svelte")
+pmv.save_fig(
+    fig_sym_ops_diff, f"{SITE_FIGS}/{today}-sym-ops-diff-violin-{symprec=}.svelte"
+)
 
 
 # %% bar plot of number of symmetry operations in ML-relaxed structures vs DFT
@@ -243,7 +243,7 @@ fig_sym_ops_diff = make_subplots(
     rows=len(models_by_std),
     cols=1,
     subplot_titles=[f"{model} (σ={std:.3})" for model, std in models_by_std],  # noqa: RUF001
-    vertical_spacing=0.05,
+    vertical_spacing=0.02,
     shared_xaxes=True,  # Share x-axes across subplots
 )
 
@@ -256,11 +256,11 @@ for idx, (model, _std) in enumerate(models_by_std, start=1):
     rel_bar_heights = (value_counts.to_numpy() - value_counts.to_numpy().min()) / (
         max_height_diff
     )
-    bar_colors = px.colors.sample_colorscale("agsunset", rel_bar_heights)
+    # bar_colors = px.colors.sample_colorscale("cividis_r", rel_bar_heights)
     fig_sym_ops_diff.add_bar(
         x=value_counts.index,
         y=value_counts.values,
-        marker_color=bar_colors,
+        # marker_color=bar_colors,
         name=model,
         showlegend=False,
         width=1,
@@ -277,8 +277,8 @@ fig_sym_ops_diff.update_xaxes(nticks=10, showticklabels=True)
 
 # log transform y-axis
 fig_sym_ops_diff.update_yaxes(type="log")
-fig_sym_ops_diff.layout.margin.t = 20
-pmv.save_fig(fig_sym_ops_diff, f"{SITE_FIGS}/sym-ops-diff-bar.svelte")
+fig_sym_ops_diff.layout.margin.t = 25
+pmv.save_fig(fig_sym_ops_diff, f"{SITE_FIGS}/sym-ops-diff-bar-{symprec=}.svelte")
 
 title = "Difference in number of symmetry operations of ML vs DFT-relaxed structures"
 fig_sym_ops_diff.layout.title = dict(text=title, x=0.5)

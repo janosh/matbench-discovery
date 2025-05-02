@@ -51,7 +51,7 @@
     update_models_cps()
   })
 
-  function update_point_from_weights(current_weights: CpsConfig[`parts`]) {
+  function update_point_from_weights(current_weights: CpsConfig) {
     if (!current_weights || Object.values(current_weights).length < 3) return
 
     // For 3 axes, we can use barycentric coordinates
@@ -70,7 +70,7 @@
   function update_weights_from_point() {
     // Calculate weights using barycentric coordinates for triangular space
     if (Object.values(CPS_CONFIG).length !== 3) {
-      console.error(`This implementation only supports exactly 3 metrics`)
+      console.error(`This implementation only supports exactly 3 metrics/dimensions`)
       return
     }
 
@@ -105,11 +105,8 @@
   }
 
   // Helper to calculate triangle area using cross product
-  function calc_triangle_area(p1: Point, p2: Point, p3: Point) {
-    return Math.abs(
-      (p1.x * (p2.y - p3.y) + p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y)) / 2,
-    )
-  }
+  const calc_triangle_area = (p1: Point, p2: Point, p3: Point) =>
+    Math.abs((p1.x * (p2.y - p3.y) + p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y)) / 2)
 
   // Handle click on SVG to jump to position
   function handle_svg_click(event: MouseEvent) {
@@ -230,13 +227,9 @@
     const dist_p23 = Math.pow(p23.x - pt.x, 2) + Math.pow(p23.y - pt.y, 2)
     const dist_p31 = Math.pow(p31.x - pt.x, 2) + Math.pow(p31.y - pt.y, 2)
 
-    if (dist_p12 <= dist_p23 && dist_p12 <= dist_p31) {
-      return p12
-    } else if (dist_p23 <= dist_p12 && dist_p23 <= dist_p31) {
-      return p23
-    } else {
-      return p31
-    }
+    if (dist_p12 <= dist_p23 && dist_p12 <= dist_p31) return p12
+    if (dist_p23 <= dist_p12 && dist_p23 <= dist_p31) return p23
+    return p31
   }
 
   // Helper to find closest point on a line segment
@@ -253,7 +246,7 @@
 
 <div class="radar-chart">
   <span class="metric-name">
-    {ALL_METRICS.CPS.label}
+    {ALL_METRICS.CPS.short}
     <Tooltip tip_style="z-index: 20; font-size: 0.8em;">
       <svg style="opacity: 0.7; cursor: help;"><use href="#icon-info" /></svg>
       {#snippet tip()}
@@ -305,18 +298,7 @@
         font-size="14"
         fill={colors[idx]}
       >
-        <!-- Handle subscripts and superscripts manually since <sub> and <sup> are not supported in SVG -->
-        {#if weight.label.includes(`<sub>`)}
-          {@const parts = weight.label.split(/<sub>|<\/sub>/)}
-          {parts[0]}
-          <tspan baseline-shift="sub" font-size="10">{parts[1]}</tspan>
-        {:else if weight.label.includes(`<sup>`)}
-          {@const parts = weight.label.split(/<sup>|<\/sup>/)}
-          {parts[0]}
-          <tspan baseline-shift="super" font-size="10">{parts[1]}</tspan>
-        {:else}
-          {@html weight.label}
-        {/if}
+        {@html weight.svg_label ?? weight.short ?? weight.label}
         <tspan dy={spacing} x={label_x} font-size="12" font-weight="bold"
           >{((weight.weight as number) * 100).toFixed(0)}%</tspan
         >
