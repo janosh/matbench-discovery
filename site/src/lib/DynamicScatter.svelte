@@ -4,16 +4,10 @@
   import { extent } from 'd3-array'
   import type { DataSeries } from 'elementari'
   import { ColorScaleSelect, pretty_num, ScatterPlot } from 'elementari'
-  import type { D3ColorSchemeName } from 'elementari/colors'
+  import type { D3InterpolateName } from 'elementari/colors'
   import Select from 'svelte-multiselect'
   import { click_outside } from 'svelte-zoo'
-  import {
-    ALL_METRICS,
-    format_property_path,
-    HYPERPARAMS,
-    METADATA_COLS,
-    to_title,
-  } from './labels'
+  import { ALL_METRICS, format_property_path, HYPERPARAMS, METADATA_COLS } from './labels'
   import { get_nested_value } from './metrics'
 
   interface Props {
@@ -48,7 +42,7 @@
 
   // State for extra controls
   let show_extra_controls = $state(false)
-  let selected_color_schemes = $state<D3ColorSchemeName[]>([`Viridis`])
+  let color_scheme = $state<D3InterpolateName>(`interpolateViridis`)
   let x_ticks = $state(5)
   let y_ticks = $state(5)
   let x_grid = $state(true)
@@ -137,43 +131,32 @@
       }),
   )
 
-  // Update series when dependencies change
-  let series: DataSeries[] = $derived.by(() => {
-    // Base styling for points
-    const point_styles = plot_data.map((item) => ({
+  let series: DataSeries = $derived({
+    x: plot_data.map((item) => item.x as number),
+    y: plot_data.map((item) => item.y as number),
+    point_style: plot_data.map((item) => ({
       fill: point_color ?? item.color ?? `#4dabf7`,
       stroke: `white`,
       stroke_width: 0.5,
-    }))
-
-    let base_series: DataSeries = {
-      x: plot_data.map((item) => item.x),
-      y: plot_data.map((item) => item.y),
-      point_style: point_styles,
-      metadata: plot_data.map((item) => item.metadata),
-      color_values:
-        point_color === null
-          ? plot_data
-              .map((item) => item.color_value)
-              .filter((v): v is number => v !== undefined)
-          : undefined,
-      size_values: axes.size_value
-        ? plot_data.map((item) => item.size_value as number)
+    })),
+    metadata: plot_data.map((item) => item.metadata),
+    color_values:
+      point_color === null
+        ? plot_data
+            .map((item) => item.color_value)
+            .filter((v): v is number => v !== undefined)
         : undefined,
-    }
-
-    if (!show_model_labels) return [base_series]
-
-    base_series.point_label = plot_data.map((item) => ({
+    size_values: axes.size_value
+      ? plot_data.map((item) => item.size_value as number)
+      : undefined,
+    point_label: (show_model_labels ? plot_data : []).map((item) => ({
       text: item.metadata.model_name,
       offset_y: 0,
       offset_x: 10,
       font_size: `14px`,
       color: `black`,
       auto_placement: true,
-    }))
-
-    return [base_series]
+    })),
   })
 
   function handle_keydown(event: KeyboardEvent): void {
@@ -237,7 +220,8 @@
       <label for="y-ticks">Ticks:</label>
       <input id="y-ticks" type="number" min="0" max="20" bind:value={y_ticks} />
       <ColorScaleSelect
-        bind:selected={selected_color_schemes}
+        bind:value={color_scheme}
+        selected={[color_scheme]}
         style="margin: 0; grid-column: 1/-1;"
       />
     </div>
@@ -271,7 +255,7 @@
         --sms-border="1px solid rgba(255, 255, 255, 0.15)"
       >
         {@const prop = option as unknown as Metric}
-        {@html format_property_path(`${prop.path ?? ``}.${prop.short ?? prop.label}`.replace(/^\./, ``))}
+        {@html format_property_path(`${prop.path ?? ``}.${prop.label ?? prop.label}`.replace(/^\./, ``))}
         <span style="font-size: smaller; color: gray; margin-left: 0.5em;">
           ({model_counts_by_prop[prop.key]} models)
         </span>
@@ -293,7 +277,7 @@
   >
     <!-- TODO fix x_lim and y_lim to use metric ranges-->
     <ScatterPlot
-      {series}
+      series={[series]}
       x_label="{axes.x?.svg_label ?? axes.x?.label} {axes.x?.better
         ? `<tspan style='font-size: 0.8em;'>(${axes.x?.better}=better)</tspan>`
         : ``}"
@@ -316,10 +300,7 @@
       {y_ticks}
       {x_grid}
       {y_grid}
-      color_scale={{
-        scheme: to_title(selected_color_schemes?.[0] ?? `Viridis`) as D3ColorSchemeName,
-        type: log.color_value ? `log` : `linear`,
-      }}
+      color_scale={{ scheme: color_scheme, type: log.color_value ? `log` : `linear` }}
       size_scale={{ radius_range: [5, 20] }}
       color_bar={{
         title: `${axes.color_value?.label}${axes.color_value?.better ? ` (${axes.color_value?.better}=better)` : ``}`,

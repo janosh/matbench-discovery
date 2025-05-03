@@ -28,5 +28,8 @@
 <PtableHeatmap
   {...rest}
   heatmap_values={mp_trj_elem_counts}
-  colorbar={{ title: `MPtrj element counts by ${count_mode}` }}
+  colorbar={{
+    title: `MPtrj element counts by ${count_mode}`,
+    title_style: `font-size: 1.3em;`,
+  }}
 />

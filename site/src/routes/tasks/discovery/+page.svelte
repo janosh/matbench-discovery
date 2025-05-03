@@ -1,11 +1,6 @@
 <script lang="ts">
   import { MetricScatter, MetricsTable, SelectToggle } from '$lib'
-  import {
-    ALL_METRICS,
-    DISCOVERY_METRICS,
-    DISCOVERY_SET_LABELS,
-    METADATA_COLS,
-  } from '$lib/labels'
+  import * as labels from '$lib/labels'
   import type { DiscoverySet } from '$lib/types'
 
   let discovery_set: DiscoverySet = $state(`unique_prototypes`)
@@ -15,7 +10,7 @@
 
 <SelectToggle
   bind:selected={discovery_set}
-  options={Object.entries(DISCOVERY_SET_LABELS).map(
+  options={Object.entries(labels.DISCOVERY_SET_LABELS).map(
     ([value, { label, description: tooltip, link }]) => ({
       value,
       label,
@@ -24,35 +19,27 @@
     }),
   )}
 />
+<section class="full-bleed">
+  <MetricsTable
+    col_filter={(col) =>
+      [
+        labels.METADATA_COLS.model_name,
+        ...Object.values(labels.DISCOVERY_METRICS),
+        labels.METADATA_COLS.links,
+        labels.METADATA_COLS.date_added,
+      ].includes(col)}
+    {discovery_set}
+  />
+</section>
 
-<MetricsTable
-  col_filter={(col) =>
-    [
-      METADATA_COLS.model_name,
-      ...Object.values(DISCOVERY_METRICS),
-      METADATA_COLS.links,
-      METADATA_COLS.date_added,
-    ].includes(col)}
-  {discovery_set}
-  style="width: 100%;"
-/>
-
-<h3>F1 classification score over time</h3>
+<h3>F1 classification score vs model parameters</h3>
 
 The F1 score is the harmonic mean of precision and recall. It is a measure of the model's
 ability to correctly identify hypothetical crystals in the WBM test set as lying on or
 below the Materials Project convex hull.
 
 <MetricScatter
-  x_prop={METADATA_COLS.date_added}
-  y_prop={ALL_METRICS.F1}
-  style="height: 400px;"
-/>
-
-<h3>F1 classification score vs model parameters</h3>
-
-<MetricScatter
-  x_prop={METADATA_COLS.model_params}
-  y_prop={ALL_METRICS.F1}
+  x_prop={labels.HYPERPARAMS.model_params}
+  y_prop={labels.ALL_METRICS.F1}
   style="height: 400px;"
 />

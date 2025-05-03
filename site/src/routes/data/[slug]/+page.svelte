@@ -32,7 +32,7 @@
   }
 </script>
 
-<h1 style="font-size: 2.5em;">{dataset.title}</h1>
+<h1 style="font-size: 2.5em;">{dataset.name}</h1>
 
 <section class="meta-info">
   {#if dataset.version}

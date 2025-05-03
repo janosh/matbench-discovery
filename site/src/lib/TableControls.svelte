@@ -14,6 +14,8 @@
       show_energy: boolean,
       show_non_compliant: boolean,
     ) => void | undefined
+    class?: string
+    style?: string
   }
 
   // Extract props with defaults
@@ -24,6 +26,8 @@
     show_compliant = $bindable(true),
     show_non_compliant = $bindable(true),
     on_filter_change = undefined,
+    class: class_name = undefined,
+    style = undefined,
   }: Props = $props()
 
   // Column panel state
@@ -39,7 +43,7 @@
   }
 </script>
 
-<div class="table-controls">
+<div class="table-controls {class_name}" {style}>
   <label class="legend-item" title="Toggle visibility of compliant models">
     <span class="color-swatch" style="background-color: var(--compliant-color);"></span>
     <input

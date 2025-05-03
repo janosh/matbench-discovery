@@ -23,7 +23,7 @@ describe(`Dataset Detail Page`, () => {
     })
 
     // Check title is displayed
-    expect(document.querySelector(`h1`)?.textContent).toBe(mp_dataset.title)
+    expect(document.querySelector(`h1`)?.textContent).toBe(mp_dataset.name)
 
     // Check metadata section
     const meta_info = document.querySelector(`.meta-info`)
@@ -52,7 +52,7 @@ describe(`Dataset Detail Page`, () => {
     })
 
     // Check title and basic content
-    expect(document.querySelector(`h1`)?.textContent).toBe(minimal_dataset.title)
+    expect(document.querySelector(`h1`)?.textContent).toBe(minimal_dataset.name)
     expect(document.querySelector(`.meta-info`)).not.toBeNull()
     expect(document.querySelector(`.description`)).not.toBeNull()
 

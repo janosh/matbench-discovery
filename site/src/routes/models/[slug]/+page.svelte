@@ -5,13 +5,8 @@
   import type { ModelData } from '$lib/types'
   import pkg from '$site/package.json'
   import type { ChemicalElement } from 'elementari'
-  import {
-    ColorBar,
-    ColorScaleSelect,
-    PeriodicTable,
-    pretty_num,
-    TableInset,
-  } from 'elementari'
+  import { ColorBar, PeriodicTable, pretty_num, TableInset } from 'elementari'
+  import type { D3InterpolateName } from 'elementari/colors'
   import { CopyButton, Tooltip } from 'svelte-zoo'
   import { click_outside, titles_as_tooltips } from 'svelte-zoo/actions'
   import per_elem_each_errors from '../per-element-each-errors.json'
@@ -19,9 +14,9 @@
   interface Props {
     data: { model: ModelData }
   }
-
   let { data }: Props = $props()
-  let color_scale = $state([`Viridis`])
+
+  let color_scale = $state<D3InterpolateName>(`interpolateViridis`)
   let active_element: ChemicalElement | null = $state(null)
   // TODO fix that calculates days ago from site build time, not time of user visiting page
   let days_added = calculate_days_ago(data.model.date_added ?? ``)
@@ -232,16 +227,15 @@
         {/await}
       {/each}
     {/if}
-    <ColorScaleSelect bind:selected={color_scale} />
 
     {#if model.model_name in per_elem_each_errors}
       {@const heatmap_values = per_elem_each_errors?.[model.model_name]}
       <h3>Convex hull distance prediction errors projected onto elements</h3>
       <PeriodicTable
         {heatmap_values}
-        color_scale={color_scale[0]}
+        {color_scale}
         bind:active_element
-        tile_props={{ precision: `0.2` }}
+        tile_props={{ precision: `.2` }}
         show_photo={false}
       >
         {#snippet inset()}
@@ -251,12 +245,14 @@
               elem_counts={heatmap_values}
               show_percent={false}
               unit="<small style='font-weight: lighter;'>eV / atom</small>"
+              style="height: 2em; visibility: {active_element ? `visible` : `hidden`};"
             />
             <ColorBar
-              label_side="top"
-              color_scale={color_scale[0]}
-              tick_labels={5}
-              style="width: 85%; margin: 0 2em;"
+              title="eV / atom"
+              title_side="top"
+              {color_scale}
+              range={[0, Math.max(...(Object.values(heatmap_values) as number[]))]}
+              style="width: 80%; margin: 0 2em;"
             />
           </TableInset>
         {/snippet}

@@ -11,6 +11,7 @@
     columns?: Metric[]
     sort_hint?: string
     style?: string | null
+    class?: string
     cell?: Snippet<[CellSnippetArgs]>
     special_cells?: Record<string, Snippet<[CellSnippetArgs]>>
     controls?: Snippet
@@ -25,6 +26,7 @@
     columns = [],
     sort_hint = ``,
     style = null,
+    class: class_name = ``,
     cell,
     special_cells,
     controls,
@@ -170,21 +172,18 @@
   }
 </script>
 
-<!-- Table header with sort hint and controls side by side -->
-{#if (Object.keys(sort_state).length && sort_hint) || controls}
-  <div class="table-header">
-    {#if Object.keys(sort_state).length && sort_hint}
-      <span class="sort-hint">{sort_hint}</span>
-    {/if}
-
-    {#if controls}
-      {@render controls()}
-    {/if}
-  </div>
-{/if}
-
-<div class="table-container" {style} use:titles_as_tooltips>
-  <table class:fixed-header={fixed_header} class="heatmap heatmap-table">
+<div class="table-container {class_name}" {style} use:titles_as_tooltips>
+  {#if (sort_state && sort_hint) || controls}
+    <div class="table-header">
+      {#if sort_state && sort_hint}
+        <span class="sort-hint">{sort_hint}</span>
+      {/if}
+      {#if controls}
+        {@render controls()}
+      {/if}
+    </div>
+  {/if}
+  <table class:fixed-header={fixed_header} class="heatmap" style="grid-column: 2;">
     <thead>
       <!-- Don't add a table row for group headers if there are none -->
       {#if visible_columns.some((col) => col.group)}
@@ -255,7 +254,8 @@
 <style>
   .table-container {
     overflow-x: auto;
-    margin: auto;
+    display: grid;
+    grid-template-columns: 1fr min-content 1fr;
     font-size: var(--heatmap-font-size, 0.9em);
     /* https://stackoverflow.com/a/38994837 */
     scrollbar-width: none; /* Firefox */
@@ -302,14 +302,15 @@
   }
   /* Styles for the table header with sort hint and controls */
   .table-header {
+    grid-column: 2;
+    width: 100%;
     display: flex;
-    margin: 0.5em 0;
-    gap: 0.5em;
+    margin: 10pt auto;
+    gap: 2em;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     justify-content: space-between;
   }
   span.sort-hint {
-    font-size: 0.9em;
     color: var(--text-muted, #aaa);
     margin: 0;
   }

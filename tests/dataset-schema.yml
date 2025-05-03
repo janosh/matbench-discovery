@@ -12,7 +12,7 @@ definitions:
   # Dataset method and parameters
   method_enum:
     type: string
-    enum: [DFT, experiment, ML]
+    enum: [DFT, experiment, ML, GW, DMFT, MD]
     description: Computational or experimental method used to generate the data
 
   dft_code_enum:
@@ -42,11 +42,11 @@ definitions:
     description: Pseudopotentials used in DFT calculations
 
   dataset:
-    title: Dataset
+    name: Dataset
     type: object
     additionalProperties: false
     required:
-      - title
+      - name
       - description
       - url
       - n_structures
@@ -56,7 +56,7 @@ definitions:
       - doi
     properties:
       # Basic dataset information
-      title:
+      name:
         type: string
         description: Full name of the dataset
       slug:
@@ -118,19 +118,34 @@ definitions:
       doi:
         $ref: "#/definitions/http_url"
         description: DOI reference for the dataset
-      derived_from:
+      contains:
         type: array
         items:
           type: string
-        description: Other datasets this dataset is derived from
+        description: Other datasets this dataset contains or is derived from
 
       # Licensing and openness
       open:
         type: boolean
         description: Whether the dataset is openly available
+      static:
+        type: boolean
+        description: Whether the dataset is a static release or dynamically updated
       license:
         $ref: "#/definitions/license_enum"
         description: License under which the dataset is published
+
+      # APIs
+      optimade_api:
+        oneOf:
+          - type: "null" # Allow null instead of false
+          - $ref: "#/definitions/http_url"
+        description: URL to the OPTIMADE API endpoint or null if none
+      native_api:
+        oneOf:
+          - type: "null" # Allow null instead of false
+          - $ref: "#/definitions/http_url"
+        description: URL to the native API endpoint/documentation or null if none
 
       # Provenance and metadata
       created_by:

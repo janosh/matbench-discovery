@@ -5,6 +5,7 @@
   import { PtableInset } from '$lib'
   import type { ChemicalElement } from 'elementari'
   import { ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
+  import type { D3InterpolateName } from 'elementari/colors'
   import { RadioButtons, Toggle } from 'svelte-zoo'
 
   const elem_counts = $state(
@@ -22,7 +23,7 @@
   let batch_keys = Object.keys(elem_counts).filter((k) => k.startsWith(`batch=`))
   let log = $state(false) // log color scale
   let filter = $state(arity_keys[0])
-  let color_scale = $state([`Viridis`])
+  let color_scale = $state<D3InterpolateName[]>([`interpolateViridis`])
   let active_element: ChemicalElement | null = $state(null)
   let active_counts = $derived(elem_counts[filter])
   let normalized_bar_counts: boolean = $state(false)
@@ -48,18 +49,18 @@
 
 <form>
   <span>
-    composition arity
+    number of elements
     <RadioButtons style={radio_style} options={arity_keys} bind:selected={filter}>
-      {#snippet option({ option, active })}
-        <strong class:active> {option?.split(`=`)[1]}</strong>
+      {#snippet children({ option, active }: { option: string; active: boolean })}
+        <strong class:active>{option.split(`=`).at(-1)}</strong>
       {/snippet}
     </RadioButtons>
   </span>
   <span>
     batch index
     <RadioButtons style={radio_style} options={batch_keys} bind:selected={filter}>
-      {#snippet option({ option, active })}
-        <strong class:active> {option?.split(`=`)[1]}</strong>
+      {#snippet children({ option, active }: { option: string; active: boolean })}
+        <strong class:active>{option.split(`=`).at(-1)}</strong>
       {/snippet}
     </RadioButtons>
   </span>

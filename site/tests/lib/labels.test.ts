@@ -73,7 +73,7 @@ describe(`format_property_path`, () => {
   })
 
   test(`returns the original path for unknown direct properties`, () => {
-    expect(format_property_path(`unknown_property`)).toBe(`Unknown Property`)
+    expect(format_property_path(`unknown_property`)).toBe(`unknown property`)
   })
 
   test(`formats discovery metrics correctly`, () => {
@@ -90,16 +90,16 @@ describe(`format_property_path`, () => {
 
   test(`formats hyperparameter paths correctly`, () => {
     expect(format_property_path(`hyperparams.learning_rate`)).toBe(
-      `Hyperparams > Learning rate`,
+      `hyperparams > Learning rate`,
     )
     expect(format_property_path(`hyperparams.graph_construction_radius`)).toBe(
-      `Hyperparams > Graph construction radius r<sub>cut</sub>`,
+      `hyperparams > Graph construction radius r<sub>cut</sub>`,
     )
     expect(format_property_path(`hyperparams.max_neighbors`)).toBe(
-      `Hyperparams > Max number of neighbors during graph construction`,
+      `hyperparams > Max number of neighbors during graph construction`,
     )
     expect(format_property_path(`hyperparams.custom_param`)).toBe(
-      `Hyperparams > Custom Param`,
+      `hyperparams > custom param`,
     )
   })
 
@@ -114,19 +114,19 @@ describe(`format_property_path`, () => {
       `Phonons > κ<sub>SRME</sub>`,
     )
     expect(format_property_path(`phonons.other.property`)).toBe(
-      `Phonons > Other > Property`,
+      `Phonons > other > property`,
     )
   })
 
   test(`handles generic dotted paths correctly`, () => {
     expect(format_property_path(`category.subcategory.property`)).toBe(
-      `Category > Subcategory > Property`,
+      `category > subcategory > property`,
     )
   })
 
   test(`handles special formatting in path parts`, () => {
     expect(format_property_path(`category.value_1e-5.property`)).toBe(
-      `Category > Value 10<sup>-5</sup> > Property`,
+      `category > value 10<sup>-5</sup> > property`,
     )
   })
 
