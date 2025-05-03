@@ -1,6 +1,6 @@
 import { MetricScatter } from '$lib'
 import { DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score.svelte'
-import { ALL_METRICS, METADATA_COLS } from '$lib/labels'
+import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from '$lib/labels'
 import type { ModelData } from '$lib/types'
 import { mount } from 'svelte'
 import { describe, expect, it } from 'vitest'
@@ -10,7 +10,7 @@ describe(`MetricScatter`, () => {
   it(`renders with default props`, () => {
     mount(MetricScatter, {
       target: document.body,
-      props: { x_prop: METADATA_COLS.model_params, y_prop: ALL_METRICS.CPS },
+      props: { x_prop: HYPERPARAMS.model_params, y_prop: ALL_METRICS.CPS },
     })
     expect(document.body.querySelector(`svg`)).toBeDefined()
   })
@@ -19,7 +19,7 @@ describe(`MetricScatter`, () => {
   it(`renders points with F1 vs model_params`, () => {
     mount(MetricScatter, {
       target: document.body,
-      props: { x_prop: METADATA_COLS.model_params, y_prop: ALL_METRICS.F1 },
+      props: { x_prop: HYPERPARAMS.model_params, y_prop: ALL_METRICS.F1 },
     })
     expect(document.body.querySelector(`svg`)).toBeDefined()
   })
@@ -29,7 +29,7 @@ describe(`MetricScatter`, () => {
     mount(MetricScatter, {
       target: document.body,
       props: {
-        x_prop: METADATA_COLS.model_params,
+        x_prop: HYPERPARAMS.model_params,
         y_prop: ALL_METRICS.CPS,
         config: DEFAULT_CPS_CONFIG,
         model_filter: (model: ModelData) => model.model_name === `Test Model 1`,
@@ -44,7 +44,7 @@ describe(`MetricScatter`, () => {
     mount(MetricScatter, {
       target: document.body,
       props: {
-        x_prop: METADATA_COLS.model_params,
+        x_prop: HYPERPARAMS.model_params,
         y_prop: ALL_METRICS.CPS,
         point_radius: custom_radius,
       },
@@ -57,14 +57,14 @@ describe(`MetricScatter`, () => {
     // Test with RMSD
     mount(MetricScatter, {
       target: document.body,
-      props: { x_prop: METADATA_COLS.model_params, y_prop: ALL_METRICS.RMSD },
+      props: { x_prop: HYPERPARAMS.model_params, y_prop: ALL_METRICS.RMSD },
     })
     expect(document.body.querySelector(`svg`)).toBeDefined()
 
     // Test with Kappa
     mount(MetricScatter, {
       target: document.body,
-      props: { x_prop: METADATA_COLS.model_params, y_prop: ALL_METRICS.κ_SRME },
+      props: { x_prop: HYPERPARAMS.model_params, y_prop: ALL_METRICS.κ_SRME },
     })
     expect(document.body.querySelector(`svg`)).toBeDefined()
   })
@@ -113,7 +113,7 @@ describe(`MetricScatter`, () => {
     mount(MetricScatter, {
       target: document.body,
       props: {
-        x_prop: METADATA_COLS.model_params,
+        x_prop: HYPERPARAMS.model_params,
         y_prop: ALL_METRICS.CPS,
         style: custom_style,
       },

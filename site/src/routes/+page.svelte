@@ -75,19 +75,16 @@
   />
 
   <section class="full-bleed">
-    <div>
-      <MetricsTable
-        col_filter={(col) => visible_cols[col.label] ?? true}
-        model_filter={() => true}
-        {discovery_set}
-        bind:show_energy_only={table.show_energy_only}
-        bind:show_non_compliant={table.show_non_compliant}
-        bind:show_compliant={table.show_compliant}
-        bind:show_heatmap={table.show_heatmap}
-        cps_config={CPS_CONFIG}
-        style="width: 100%;"
-      />
-    </div>
+    <MetricsTable
+      col_filter={(col) => visible_cols[col.label] ?? true}
+      model_filter={() => true}
+      {discovery_set}
+      bind:show_energy_only={table.show_energy_only}
+      bind:show_non_compliant={table.show_non_compliant}
+      bind:show_compliant={table.show_compliant}
+      bind:show_heatmap={table.show_heatmap}
+      cps_config={CPS_CONFIG}
+    />
   </section>
 
   <div class="downloads">

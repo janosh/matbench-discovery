@@ -24,16 +24,17 @@ describe(`Datasets Page`, () => {
 
     // Check header columns
     const header_cols = thead?.querySelectorAll(`th`) || []
-    expect(header_cols.length).toBe(8)
+    expect(header_cols.length).toBe(10)
 
     // Verify expected column headers are present
     const column_headers = Array.from(header_cols).map(
       (col) => col.textContent?.trim().replace(/[↑↓]/g, ``) || ``,
     )
-    expect(column_headers.some((header) => header.includes(`Title`))).toBe(true)
+    expect(column_headers.some((header) => header.includes(`Name`))).toBe(true)
     expect(column_headers.some((header) => header.includes(`Structures`))).toBe(true)
     expect(column_headers.some((header) => header.includes(`Materials`))).toBe(true)
     expect(column_headers.some((header) => header.includes(`Created`))).toBe(true)
+    expect(column_headers.some((header) => header.includes(`API`))).toBe(true)
     expect(column_headers.some((header) => header.includes(`Links`))).toBe(true)
 
     // Check that we have rows in the table
@@ -56,28 +57,63 @@ describe(`Datasets Page`, () => {
     expect(dataset_names.some((name) => name.includes(`Alex`))).toBe(true)
   })
 
-  it(`properly renders links for datasets`, () => {
-    // Links column is the last column (8th)
+  it(`properly renders resource links for datasets`, () => {
+    // Links column is the last column (10th, index 9)
     const tbody = document.querySelector(`.heatmap tbody`)
     const rows = tbody?.querySelectorAll(`tr`) || []
 
-    // Count links by checking each row's last cell (Links column)
-    let link_count = 0
+    // Count resource links (Website, Download, DOI)
+    let resource_link_count = 0
     rows.forEach((row) => {
       const cells = row.querySelectorAll(`td`)
-      const links_cell = cells[cells.length - 1]
-      const links = links_cell.querySelectorAll(`a`)
-      link_count += links.length
+      const links_cell = cells[9] // Updated Links column index
+      // Ensure the cell was found before querying links
+      if (!links_cell) return
 
-      // Each link should have target="_blank" for external opening
+      const links = links_cell.querySelectorAll(`a`)
+      resource_link_count += links.length
+
+      // Each link should have target="_blank"
       links.forEach((link) => {
+        // Skip if link or title is missing (shouldn't happen but guards against errors)
+        if (!link || !link.getAttribute(`title`)) return
+
         expect(link.getAttribute(`target`)).toBe(`_blank`)
         expect(link.getAttribute(`rel`)).toContain(`noopener`)
+        // Ensure title is one of the expected ones and not null/empty
+        const title = link.getAttribute(`title`)
+        expect(title).toBeTruthy()
+        expect([`Website`, `Download`, `DOI`]).toContain(title)
       })
     })
 
-    // There should be multiple links across all cells
-    expect(link_count).toBeGreaterThan(10)
+    // There should be multiple resource links
+    expect(resource_link_count).toBeGreaterThan(10)
+  })
+
+  it(`properly renders API links for datasets`, () => {
+    // API column is the 9th column
+    const api_links = document.querySelectorAll<HTMLAnchorElement>(
+      `.heatmap tbody td:nth-child(9) a`,
+    )
+
+    // There should be some API links found
+    expect(api_links.length).toBeGreaterThan(0)
+
+    // Verify each link has the correct attributes and title
+    api_links.forEach((link) => {
+      const link_html = link.outerHTML
+
+      // Check for valid href, target, and rel attributes
+      expect(link_html).toMatch(/href="https?:\/\/[^"]+"/) // Check for http:// or https://
+      expect(link_html).toContain(`target="_blank"`)
+      expect(link_html).toContain(`rel="noopener noreferrer"`)
+
+      // Ensure title is one of the expected ones
+      const has_native_title = link_html.includes(`title="Native API"`)
+      const has_optimade_title = link_html.includes(`title="OPTIMADE API"`)
+      expect(has_native_title || has_optimade_title).toBe(true)
+    })
   })
 
   it(`can sort table by clicking column headers`, async () => {
@@ -130,16 +166,20 @@ describe(`Datasets Page`, () => {
     }
     await tick()
 
-    // Get new order after clicking non-sortable column
-    const new_datasets = Array.from(document.querySelectorAll(`.heatmap tbody tr`)).map(
-      (row) => {
-        const cells = row.querySelectorAll(`td`)
-        return cells[0]?.textContent?.trim() || ``
-      },
+    // Get order after clicking Links column
+    const new_datasets_links = Array.from(
+      document.querySelectorAll(`.heatmap tbody tr`),
+    ).map((row) => {
+      const cells = row.querySelectorAll(`td`)
+      return cells[0]?.textContent?.trim() || ``
+    })
+    // Order should remain the same after clicking Links (non-sortable)
+    expect(new_datasets_links, `Order changed after clicking Links header`).toEqual(
+      initial_datasets,
     )
 
     // Order should remain the same
-    expect(new_datasets).toEqual(initial_datasets)
+    expect(new_datasets_links).toEqual(initial_datasets)
   })
 
   it(`has correct styling for sortable and non-sortable columns`, () => {
@@ -148,13 +188,19 @@ describe(`Datasets Page`, () => {
     const all_headers = document.querySelectorAll(`.heatmap th`)
 
     // Only Links column should have not-sortable class
-    expect(non_sortable_headers.length).toBe(1)
+    expect(non_sortable_headers.length).toBe(2)
 
     // The Links header should have the not-sortable class
     const links_header = Array.from(all_headers).find((th) =>
       th.textContent?.includes(`Links`),
     )
     expect(links_header?.classList.contains(`not-sortable`)).toBe(true)
+
+    // The API header should have the not-sortable class
+    const api_header = Array.from(all_headers).find((th) =>
+      th.textContent?.includes(`API`),
+    )
+    expect(api_header?.classList.contains(`sortable`)).toBe(false)
   })
 
   it(`formats numbers correctly in the table`, () => {
@@ -182,14 +228,14 @@ describe(`Datasets Page`, () => {
   })
 
   it(`correctly displays method information in the table`, () => {
-    // Method is usually the 7th column (index 6)
+    // Method is usually the 8th column (index 7)
     const tbody = document.querySelector(`.heatmap tbody`)
     const rows = tbody?.querySelectorAll(`tr`) || []
 
     // Get cells from the Method column
     const method_cells = Array.from(rows).map((row) => {
       const cells = row.querySelectorAll(`td`)
-      return cells[6] // Method column
+      return cells[7] // Keep Method column index at 7
     })
 
     // At least some cells should have method information (not all n/a)
@@ -206,6 +252,6 @@ describe(`Datasets Page`, () => {
       .join(` `)
 
     // Should find at least one of these common methods
-    expect(/DFT|ML|experiment/.test(all_methods_text)).toBe(true)
+    expect(/DFT|ML|experiment|GW|DMFT|MD/.test(all_methods_text)).toBe(true)
   })
 })

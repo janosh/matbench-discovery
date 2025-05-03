@@ -9,6 +9,7 @@
   import SpacegroupSunburstWbm from '$figs/spacegroup-sunburst-wbm.svelte'
   import { PtableHeatmap } from '$lib'
   import { ColorScaleSelect } from 'elementari'
+  import type { D3InterpolateName } from 'elementari/colors'
   import Select from 'svelte-multiselect'
   import MPtrjElemCountsPtable from './[slug]/MPtrjElemCountsPtable.svelte'
   import DataFilesDirectDownload from './data-files-direct-download.md'
@@ -19,8 +20,8 @@
     { eager: true, import: `default` },
   )
 
-  let log = $state(false) // log color scale
-  let color_scale = $state([`Viridis`])
+  let log_scale = $state(false) // log color scale
+  let color_scale = $state<D3InterpolateName>(`interpolateViridis`)
   const count_modes = [`occurrence`, `composition`]
   let count_mode = $state(count_modes[0])
 
@@ -38,8 +39,8 @@
   })
 
   export const snapshot = {
-    capture: () => ({ color_scale, log, count_mode }),
-    restore: (values) => ({ color_scale, log, count_mode } = values),
+    capture: () => ({ color_scale, log_scale, count_mode }),
+    restore: (values) => ({ color_scale, log_scale, count_mode } = values),
   }
 </script>
 
@@ -65,7 +66,7 @@
       minSelect={1}
       maxSelect={1}
     />
-    <ColorScaleSelect bind:selected={color_scale} />
+    <ColorScaleSelect bind:value={color_scale} selected={[color_scale]} />
     <p style="text-align: center; margin: 2em; font-size: smaller;">
       The difference between count modes is best explained by example.
       <code>occurrence</code> mode maps Fe<sub>2</sub>O<sub>3</sub> to {`{Fe: 1, O: 1}`},
@@ -74,23 +75,29 @@
     </p>
     <PtableHeatmap
       heatmap_values={wbm_elem_counts}
-      color_scale={color_scale[0]}
-      colorbar={{ title: `WBM element counts by ${count_mode}` }}
-      {log}
+      {color_scale}
+      colorbar={{
+        title: `WBM element counts by ${count_mode}`,
+        title_style: `font-size: 1.3em;`,
+      }}
+      log={log_scale}
     />
   {/snippet}
 
   {#snippet mp_elements_heatmap()}
     <PtableHeatmap
       heatmap_values={mp_elem_counts}
-      color_scale={color_scale[0]}
-      colorbar={{ title: `MP element counts by ${count_mode}` }}
-      {log}
+      {color_scale}
+      colorbar={{
+        title: `MP element counts by ${count_mode}`,
+        title_style: `font-size: 1.3em;`,
+      }}
+      log={log_scale}
     />
   {/snippet}
 
   {#snippet mp_trj_elements_heatmap()}
-    <MPtrjElemCountsPtable {count_mode} {log} color_scale={color_scale[0]} />
+    <MPtrjElemCountsPtable {count_mode} log={log_scale} {color_scale} />
   {/snippet}
 
   {#snippet hist_wbm_hull_dist()}

@@ -1,12 +1,13 @@
 <script lang="ts">
   import { MODELS, PtableInset } from '$lib'
   import type { ChemicalElement } from 'elementari'
-  import { ColorBar, ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
+  import { ColorBar, PeriodicTable, TableInset } from 'elementari'
+  import type { D3InterpolateName } from 'elementari/colors'
   import Select from 'svelte-multiselect'
   import per_elem_each_errors from '../per-element-each-errors.json'
 
   interface Props {
-    color_scale?: string[]
+    color_scale?: D3InterpolateName[]
     active_element?: ChemicalElement | null
     models?: string[]
     // must be string[] instead of string for svelte-multiselect to be correctly restored by snapshot
@@ -15,9 +16,8 @@
     normalized?: boolean
     cbar_max?: number | null
   }
-
   let {
-    color_scale = $bindable([`Viridis`]),
+    color_scale = $bindable([`interpolateViridis`]),
     active_element = $bindable(null),
     models = $bindable(MODELS.map((m) => m.model_name)),
     current_model = $bindable([models[2]]),
@@ -63,8 +63,6 @@
 
 <Select bind:selected={current_model} options={models} maxSelect={1} minSelect={1} />
 
-<ColorScaleSelect bind:selected={color_scale} />
-
 <form>
   <label>
     Manual color bar max
@@ -107,8 +105,8 @@
         unit="<small style='font-weight: lighter;'>eV / atom</small>"
       />
       <ColorBar
-        text="{current_model[0]} ({normalized ? `normalized` : `eV/atom`})"
-        label_side="top"
+        title="{current_model[0]} ({normalized ? `normalized` : `eV/atom`})"
+        title_side="top"
         color_scale={color_scale[0]}
         tick_labels={5}
         range={cs_range}

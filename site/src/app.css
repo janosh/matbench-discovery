@@ -271,6 +271,4 @@ svg:has(use:only-child) {
   --margin: 50px;
   width: calc(100vw - 2 * var(--margin));
   margin-left: calc(-50vw + 50% + var(--margin));
-  display: flex;
-  justify-content: center;
 }

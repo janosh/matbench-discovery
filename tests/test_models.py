@@ -11,7 +11,7 @@ from matbench_discovery.models import MODEL_DIRS, MODEL_METADATA, model_is_compl
 with open(f"{DATA_DIR}/datasets.yml", encoding="utf-8") as file:
     DATASETS = yaml.safe_load(file)
 
-OPEN_DATASETS = {dataset["title"] for dataset in DATASETS.values() if dataset["open"]}
+OPEN_DATASETS = {dataset["name"] for dataset in DATASETS.values() if dataset["open"]}
 
 
 def parse_version(version: str) -> tuple[int, ...]:

@@ -1,9 +1,12 @@
 MP 2022:
-  title: MP v2022.10.28
+  name: MP v2022.10.28
   url: https://docs.materialsproject.org/changes/database-versions#v2022.10.28
   download_url: https://figshare.com/files/40344436
   n_structures: 154_719
   open: true
+  static: true
+  optimade_api: null
+  native_api: null
   date_created: 2022-10-28
   license: CC-BY-4.0
   doi: https://doi.org/10.1063/1.4812323
@@ -18,13 +21,16 @@ MP 2022:
       url: https://materialsproject.org/about/people
 
 MPtrj:
-  title: MPtrj
+  name: MPtrj
   url: https://figshare.com/articles/dataset/23713842
   download_url: https://figshare.com/files/41619375
   doi: https://doi.org/10.1038/s42256-023-00716-3
   n_structures: 1_580_395
   n_materials: 145_923
   open: true
+  static: true
+  optimade_api: null
+  native_api: null
   date_created: 2023-07-19
   license: MIT
   description: Materials Project DFT relaxation trajectories cleaned of unrealistic energies and forces, and filtered for less redundancy using pymatgen's StructureMatcher to contain only about every 10th ionic step (1.5M structures). Originally created for training CHGNet.
@@ -45,13 +51,16 @@ MPtrj:
       orcid: https://orcid.org/0000-0002-5720-5299
 
 MPF:
-  title: MPF.2021.2.8
+  name: MPF.2021.2.8
   url: https://figshare.com/articles/dataset/19470599
   download_url: https://figshare.com/ndownloader/articles/19470599/versions/3
   doi: https://doi.org/10.1038/s43588-022-00349-3
   n_structures: 188_349
   n_materials: 62_783
   open: true
+  static: true
+  optimade_api: null
+  native_api: null
   date_created: 2022-03-05
   date_added: 2022-03-05
   license: CC-BY-4.0
@@ -70,12 +79,15 @@ MPF:
       github: https://github.com/chc273
 
 MP Graphs:
-  title: Graphs of MP 2019
+  name: Graphs of MP 2019
   url: https://figshare.com/articles/dataset/8097992
   download_url: https://figshare.com/ndownloader/articles/8097992/versions/2
   doi: https://doi.org/10.1021/acs.chemmater.9b01294
   n_structures: 133_420
   open: true
+  static: true
+  optimade_api: null
+  native_api: null
   date_created: 2019-06-06
   license: MIT
   description: Contains 133,420 graph-target pairs for Materials Project structures which were used to train the MEGNet formation energy model.
@@ -93,12 +105,15 @@ MP Graphs:
       github: https://github.com/chc273
 
 GNoME:
-  title: GNoME
+  name: GNoME
   url: https://github.com/google-deepmind/materials_discovery
   doi: https://doi.org/10.1038/s41586-023-06735-9
   n_structures: 89_000_000
   n_materials: 6_000_000
   open: false
+  static: true
+  optimade_api: https://optimade-gnome.odbx.science
+  native_api: null
   date_created: 2023-11-29 # https://github.com/google-deepmind/materials_discovery/commit/a701b9529
   license: CC-BY-NC-4.0
   description: Google DeepMind's Graph Networks for Materials Exploration dataset containing millions of crystal structures generated with symmetry aware partial substitutions (SAPS) and their DFT-calculated energies, forces and stresses. Aimed at large-scale materials discovery.
@@ -126,13 +141,16 @@ GNoME:
       orcid: https://orcid.org/0000-0003-0524-2837
 
 MatterSim:
-  title: MatterSim
+  name: MatterSim
   url: https://github.com/microsoft/mattersim # https://microsoft.github.io/mattersim
   doi: https://doi.org/10.48550/arXiv.2405.04967
   n_structures: 17_000_000
   temperature_range: 0-5000 K
   pressure_range: 0-1000 GPa
   open: false
+  static: true
+  optimade_api: null
+  native_api: null
   date_created: 2024-05-08
   license: unreleased
   description: Large-scale materials simulation dataset from Microsoft Research containing DFT-calculated properties across a wide range of temperatures and pressures. Aimed at training robust universal interatomic potentials that remain accurate even far from equilibrium.
@@ -146,13 +164,16 @@ MatterSim:
       url: https://microsoft.com/research/lab/microsoft-research-ai-for-science/people
 
 Alex:
-  title: Alexandria
+  name: Alexandria
   url: https://alexandria.icams.rub.de
   download_url: https://alexandria.icams.rub.de/data/pbe # too large for single download, split into subfiles
   doi: https://doi.org/10.1002/adma.202210788
   n_structures: 30_497_628
   n_materials: 3_100_000
   open: true
+  static: true
+  optimade_api: https://optimade.org/providers-dashboard/providers/alexandria
+  native_api: null
   date_created: 2023-04-22
   license: CC-BY-4.0
   description: Large collection of DFT structure relaxation trajectories with energies, forces, stresses for ~3M materials. Aimed at training ML potentials for materials discovery.
@@ -186,7 +207,7 @@ Alex:
       orcid: https://orcid.org/0000-0003-0170-8222
 
 OMat24:
-  title: OMat24
+  name: OMat24
   url: https://huggingface.co/datasets/fairchem/OMAT24#omat24-dataset
   doi: https://doi.org/10.48550/arXiv.2410.12771
   # this is the number of Alexandria materials that was sampled from, but according to Luis unclear
@@ -194,6 +215,9 @@ OMat24:
   n_materials: 3_227_606
   n_structures: 100_824_585
   open: true
+  static: true
+  optimade_api: null
+  native_api: null
   date_created: 2024-10-16
   license: CC-BY-4.0
   description: Open Materials 2024 dataset from Meta's FAIRchem containing over 100M structures derived from applying perturbations to Alexandria structures. Aimed at training foundation models for materials science.
@@ -230,14 +254,17 @@ OMat24:
       corresponding: true
 
 sAlex:
-  title: subsampled Alexandria
-  derived_from: [Alex]
+  name: subsampled Alexandria
+  contains: [Alex]
   url: https://huggingface.co/datasets/fairchem/OMAT24#salex-dataset
   download_url: https://dl.fbaipublicfiles.com/opencatalystproject/data/omat/241018/sAlex/train.tar.gz
   doi: https://doi.org/10.48550/arXiv.2410.12771
   n_materials: 3_227_606
   n_structures: 10_447_765
   open: true
+  static: true
+  optimade_api: https://optimade.org/providers-dashboard/providers/alexandria
+  native_api: null
   date_created: 2024-10-16
   license: CC-BY-4.0
   description: Subsampled version of the Alexandria dataset, containing approximately 10 million structures filtered to remove structure prototype overlap with Matbench Discovery's WBM test set. See [`matbench_discovery.structure.prototype.get_protostructure_label`](https://github.com/janosh/matbench-discovery/blob/5f02f790e1/matbench_discovery/structure/prototype.py#L104-L193).
@@ -254,14 +281,17 @@ sAlex:
       github: https://github.com/lbluque
 
 sAlex Validation:
-  title: subsampled Alexandria Validation Set
-  derived_from: [Alex]
+  name: subsampled Alexandria Validation Set
+  contains: [Alex]
   url: https://huggingface.co/datasets/fairchem/OMAT24#salex-dataset
   download_url: https://dl.fbaipublicfiles.com/opencatalystproject/data/omat/241018/sAlex/val.tar.gz
   doi: https://doi.org/10.48550/arXiv.2410.12771
   n_materials: 170_905 # approximate value! TODO confirm this
   n_structures: 553_218
   open: true
+  static: true
+  optimade_api: https://optimade.org/providers-dashboard/providers/alexandria
+  native_api: null
   date_created: 2024-10-16
   license: CC-BY-4.0
   description: Validation subset of the subsampled Alexandria dataset, containing ~500k structures for evaluating model performance during training. Filtered to remove structure prototype overlap with WBM.
@@ -278,13 +308,16 @@ sAlex Validation:
       github: https://github.com/lbluque
 
 OpenLAM:
-  title: OpenLAM dataset v1
-  derived_from: [OMat24, MPtrj, Alex] # actually Alex2D, not Alex which is 3D
+  name: OpenLAM dataset v1
+  contains: [OMat24, MPtrj, Alex] # strictly speaking contains Alex2D, not the Alex in this file which refers to Alex3D
   url: https://aissquare.com/datasets/detail?pageType=datasets&name=LAMBench-TrainingSet-v1&id=308
   download_url: https://aissquare.com/datasets/detail?pageType=datasets&name=LAMBench-TrainingSet-v1&id=308 # will be combined for downloading soon
   doi: https://doi.org/10.48550/arXiv.2501.16358
   n_structures: 162_507_178
   open: true
+  static: true
+  optimade_api: null
+  native_api: null
   date_created: 2025-02-17
   license: CC-BY-4.0
   method: DFT
@@ -310,12 +343,15 @@ OpenLAM:
     while intentionally excluding overlap with WBM benchmark systems (e.g., Alex3D structures).
 
 OC20:
-  title: Open Catalyst 2020
+  name: Open Catalyst 2020
   url: https://opencatalystproject.org/leaderboard.html
   download_url: https://fair-chem.github.io/core/datasets/oc20.html#per-adsorbate-trajectories
   doi: https://doi.org/10.1021/acscatal.0c04525
   n_structures: 133_934_018
   open: true
+  static: true
+  optimade_api: null
+  native_api: null
   date_created: 2020-10-01
   license: CC-BY-4.0
   method: DFT
@@ -331,15 +367,19 @@ OC20:
     specifically designed for training ML models to predict adsorption energies and atomic forces.
 
 NOMAD:
-  title: NOMAD Repository
-  url: https://nomad-lab.eu/prod/v1/gui/search/entries/search/entries
+  name: NOMAD Repository
+  url: https://nomad-lab.eu/prod/v1/gui/search/calculations
   doi: https://joss.theoj.org/papers/10.21105/joss.05388
   n_structures: 19_111_098 # as of 2025-04-04
   n_materials: 4_335_728
   open: true
+  static: false
+  contains: [Alexandria, OQMD]
+  optimade_api: https://optimade.org/providers-dashboard/providers/nmd
+  native_api: https://nomad-lab.eu/prod/v1/api/
   date_created: 2019-06-01
   license: CC-BY-4.0
-  method: [DFT, ML]
+  method: [DFT, ML, GW, DMFT, MD]
   params:
     code: Various
     functional: Various
@@ -408,12 +448,15 @@ NOMAD:
     providing a rich source of DFT and molecular dynamics data for training ML models.
 
 AFLOW:
-  title: AFLOW Database
+  name: AFLOW Database
   url: https://aflow.org
   doi: https://doi.org/10.1016/j.commatsci.2012.02.005
   n_structures: 3_530_330 # as of 2025-04-04
   n_materials: 3_530_330 # unsure how number of materials and structures differ for AFLOW
   open: true
+  static: false
+  optimade_api: https://optimade.org/providers-dashboard/providers/aflow
+  native_api: https://aflow.org/documentation
   date_created: 2012-06-01
   license: CC-BY-4.0
   method: DFT
@@ -441,13 +484,16 @@ AFLOW:
     using standardized high-throughput DFT calculations.
 
 OQMD:
-  title: Open Quantum Materials Database
+  name: Open Quantum Materials Database
   url: https://oqmd.org
   doi: https://doi.org/10.1007/s11837-013-0755-4
   download_url: https://static.oqmd.org/static/downloads/qmdb__v1_6__112023.sql.gz
   n_materials: 1_226_781 # as of 2025-04-04
   n_structures: 1_226_781
   open: true
+  static: true # since download link points to the specific version v1.6
+  optimade_api: https://optimade.org/providers-dashboard/providers/oqmd
+  native_api: https://oqmd.org/static/docs/restful.html
   date_created: 2014-04-03
   license: CC-BY-4.0
   method: DFT
@@ -471,11 +517,14 @@ OQMD:
     compounds with oxygen. Spin-polarization is used for structures containing 3d or actinide elements.
 
 MatPES PBE:
-  title: MatPES v1.0 PBE
+  name: MatPES v1.0 PBE
   url: https://matpes.ai
   download_url: https://s3.us-east-1.amazonaws.com/materialsproject-contribs/MatPES_2025_1/MatPES-PBE-2025.1.json.gz
   n_structures: 434_712 # as of 2025-04-04
   open: true
+  static: true
+  optimade_api: null
+  native_api: null
   date_created: 2025-03-06
   doi: https://doi.org/10.48550/arXiv.2503.04070
   license: MIT
@@ -500,11 +549,14 @@ MatPES PBE:
     providing potential energy surfaces that are valuable for training ML interatomic potentials.
 
 MatPES r2SCAN:
-  title: MatPES v1.0 r2SCAN
+  name: MatPES v1.0 r2SCAN
   url: https://matpes.ai
   download_url: https://s3.us-east-1.amazonaws.com/materialsproject-contribs/MatPES_2025_1/MatPES-R2SCAN-2025.1.json.gz
   n_structures: 387_897 # as of 2025-04-04
   open: true
+  static: true
+  optimade_api: null
+  native_api: null
   date_created: 2025-03-06
   doi: https://doi.org/10.48550/arXiv.2503.04070
   license: MIT

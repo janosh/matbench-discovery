@@ -3,7 +3,7 @@
   import { calculate_days_ago, MODELS } from '$lib'
   import { get_nested_value } from '$lib/metrics'
   import type { Metric } from '$lib/types'
-  import { ScatterPlot, type PointStyle } from 'elementari'
+  import { ScatterPlot, type DataSeries, type PointStyle } from 'elementari'
   import { METADATA_COLS } from './labels'
 
   interface Props {
@@ -35,19 +35,11 @@
   const n_days_ago = new Date(now.getTime() - 180 * ms_per_day)
 
   // Determine axis keys/paths
-  let x_path = $derived(
-    x_prop ? `${x_prop.path ?? ``}.${x_prop.key}`.replace(/^\./, ``) : ``,
-  )
-  let y_path = $derived(
-    y_prop ? `${y_prop.path ?? ``}.${y_prop.key}`.replace(/^\./, ``) : ``,
-  )
+  let x_path = $derived(`${x_prop?.path ?? ``}.${x_prop?.key}`.replace(/^\./, ``))
+  let y_path = $derived(`${y_prop?.path ?? ``}.${y_prop?.key}`.replace(/^\./, ``))
   // Determine labels
-  let x_label = $derived(
-    x_prop ? (x_prop.svg_label ?? x_prop.label ?? x_prop.key ?? `X`) : `X`,
-  )
-  let y_label = $derived(
-    y_prop ? (y_prop.svg_label ?? y_prop.label ?? y_prop.key ?? `Y`) : `Y`,
-  )
+  let x_label = $derived(x_prop?.svg_label ?? x_prop?.label ?? x_prop?.key ?? `X`)
+  let y_label = $derived(y_prop?.svg_label ?? y_prop?.label ?? y_prop?.key ?? `Y`)
 
   // Apply date range filter if needed
   function date_filter(model: ModelData): boolean {
@@ -69,9 +61,9 @@
       .filter((model) => model_filter(model) && date_filter(model))
       .map((model) => {
         let x_val = get_nested_value(model, x_path)
-        if (x_path === METADATA_COLS.date_added.key) x_val = new Date(x_val as string)
+        if (x_path.includes(`date`)) x_val = new Date(x_val as string)
         let y_val = get_nested_value(model, y_path)
-        if (y_path === METADATA_COLS.date_added.key) y_val = new Date(y_val as string)
+        if (y_path.includes(`date`)) y_val = new Date(y_val as string)
         const metadata = {
           model_name: model.model_name,
           date_added: model.date_added,
@@ -83,56 +75,42 @@
   )
 
   // Create plot series based on show_model_labels
-  let series = $derived.by(() => {
-    const base_series = {
-      x: plot_data.map((item) => item.x),
-      y: plot_data.map((item) => item.y),
-      metadata: plot_data.map((item) => item.metadata),
-      point_style: plot_data.map((item) => ({
-        fill: item.color ?? `#4dabf7`, // Use model color directly
-        radius: 6,
-        stroke: `white`,
-        stroke_width: 0.5,
-        ...point_style,
-      })),
-    }
-    if (show_model_labels) {
-      const labeled_series = {
-        ...base_series,
-        point_label: plot_data.map((item) => ({
-          text: item.metadata.model_name,
-          offset_y: 2,
-          offset_x: 10,
-          font_size: 12,
-          // Use model color for label
-          color: item.color ?? `black`,
-          auto_placement: show_model_labels === `auto-placement`,
-        })),
-      }
-      return [labeled_series]
-    }
-    return [base_series]
+  let series: DataSeries = $derived({
+    x: plot_data.map((item) => item.x) as number[],
+    y: plot_data.map((item) => item.y) as number[],
+    metadata: plot_data.map((item) => item.metadata),
+    point_style: plot_data.map((item) => ({
+      fill: item.color ?? `#4dabf7`,
+      radius: 6,
+      stroke: `white`,
+      stroke_width: 0.5,
+      ...point_style,
+    })),
+    point_label: (show_model_labels ? plot_data : []).map((item) => ({
+      text: item.metadata.model_name,
+      offset_y: 2,
+      offset_x: 10,
+      font_size: `12px`,
+      color: item.color ?? `black`,
+      auto_placement: show_model_labels === `auto-placement`,
+    })),
   })
 </script>
 
 <ScatterPlot
-  {series}
+  series={[series]}
   markers="points"
   {x_label}
   {y_label}
   x_format={x_prop?.format ?? `.1s`}
   y_format={y_prop?.format ?? `.3f`}
-  x_lim={x_prop?.range as [number, number] | undefined}
-  y_lim={y_prop?.range as [number, number] | undefined}
   {style}
   {...rest}
 >
   {#snippet tooltip({ x_formatted, y_formatted, metadata })}
-    <div style="white-space: nowrap; font-size: 14px; margin-top: 10px; line-height: 1;">
-      {x_label}: {x_formatted}
-      {#if x_path === `date_added`}
-        <small>({metadata?.days_ago} days ago)</small>{/if}<br />
-      {y_label}: {y_formatted}<br />
-    </div>
+    {x_label}: {x_formatted}
+    {#if x_path === `date_added`}
+      <small>({metadata?.days_ago} days ago)</small>{/if}<br />
+    {y_label}: {y_formatted}<br />
   {/snippet}
 </ScatterPlot>

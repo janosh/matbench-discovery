@@ -3,8 +3,8 @@
   import { ALL_METRICS, METADATA_COLS } from '$lib/labels'
   import { get_nested_value, metric_better_as, sort_models } from '$lib/metrics'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
-  import { interpolateCividis as cividis } from 'd3-scale-chromatic'
-  import { ColorBar } from 'elementari'
+  import { interpolateRdBu } from 'd3-scale-chromatic'
+  import { ColorBar, luminance } from 'elementari'
   import { RadioButtons, Tooltip } from 'svelte-zoo'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
@@ -40,8 +40,8 @@
   }
 
   function bg_color(val: number, min: number, max: number) {
-    if (isNaN(val)) return `rgba(255, 255, 255, 0.1)` // Default background for NaN values
-    return cividis(1 - (val - min) / (max - min)).replace(`)`, `, 0.5)`)
+    if (isNaN(val)) return `rgba(255, 255, 255, 0.6)` // Default background for NaN values
+    return interpolateRdBu((val - min) / (max - min))
   }
 
   let lower_is_better = $derived(metric_better_as(sort_by.key) === `lower`)
@@ -53,9 +53,8 @@
   )
 
   let [min_val, max_val] = $derived.by(() => {
-    if (sort_by.key == METADATA_COLS.model_name.key) return [] // dummy range, no color gradient needed
+    if (!sort_by.better) return [NaN, NaN]
 
-    // Use the helper function to get values for color scaling
     const vals = models
       .map((model) => get_nested_value(model, sort_by_path))
       .filter((val) => typeof val === `number` && !isNaN(val))
@@ -63,6 +62,9 @@
 
     return [vals.at(0) ?? 0, vals.at(-1) ?? 1]
   })
+  let [best_val, worst_val] = $derived(
+    lower_is_better ? [max_val, min_val] : [min_val, max_val],
+  )
 </script>
 
 <div style="display: grid;">
@@ -86,7 +88,7 @@
             if (key === `model_name`) order = `asc`
             else order = metric_better_as(key) === `lower` ? `asc` : `desc`
           }}
-          style="font-size: large;"
+          style="font-size: large; height: 26pt;"
         >
           {@html short ?? label ?? key}
         </button>
@@ -106,11 +108,11 @@
       {lower_is_better ? `best` : `worst`}
     </span>
     <ColorBar
-      label="Model names colored by {sort_by.label}"
-      label_style="font-size: 1.4em;"
-      color_scale={cividis}
-      style="min-width: min(70vw, 400px);"
-      range={[min_val ?? 0, max_val ?? 1]}
+      title="Model names colored by {sort_by.label}"
+      title_style="font-size: 1.5em;"
+      color_scale={lower_is_better ? (t) => interpolateRdBu(1 - t) : interpolateRdBu}
+      style="min-width: min(70vw, 400px); height: 14pt;"
+      range={lower_is_better ? [worst_val, best_val] : [best_val, worst_val]}
     />
     <span>
       {lower_is_better ? `worst` : `best`}
@@ -119,6 +121,9 @@
 
   <ol class="models">
     {#each models.slice(0, Math.max(min_models, show_n_best)) as model (model.model_name)}
+      {@const metric_val = sort_by.better ? get_nested_value(model, sort_by_path) : 0}
+      {@const bg_clr = bg_color(metric_val as number, best_val, worst_val)}
+      {@const text_color = luminance(bg_clr) > 0.7 ? `black` : `white`}
       <li
         animate:flip={{ duration: 400 }}
         in:fade={{ delay: 100 }}
@@ -130,13 +135,7 @@
           {metrics}
           sort_by={sort_by_path}
           bind:show_details
-          style="background-color: {bg_color(
-            sort_by.key === METADATA_COLS.model_name.key
-              ? 0 // No gradient for model names
-              : (get_nested_value(model, sort_by_path) as number),
-            lower_is_better ? max_val : min_val,
-            lower_is_better ? min_val : max_val,
-          )};"
+          style="background-color: {bg_clr}; color: {text_color};"
         />
       </li>
     {/each}
@@ -162,7 +161,7 @@
     transition: opacity 0.4s;
   }
   legend span {
-    transform: translateY(7px);
+    transform: translateY(4px);
   }
   :is(ul, ol) {
     padding: 0;

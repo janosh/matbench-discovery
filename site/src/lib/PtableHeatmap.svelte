@@ -1,19 +1,19 @@
 <script lang="ts">
   import { PtableInset } from '$lib'
   import { ColorBar, PeriodicTable, TableInset, type ChemicalElement } from 'elementari'
+  import type { D3InterpolateName } from 'elementari/colors'
   import type { ComponentProps } from 'svelte'
-  import { Toggle } from 'svelte-zoo'
 
   interface Props {
     heatmap_values: Record<string, number>
-    color_scale?: string
+    color_scale?: D3InterpolateName
     active_element?: ChemicalElement | null
     log?: boolean // log color scale
     colorbar?: ComponentProps<typeof ColorBar>
   }
   let {
     heatmap_values,
-    color_scale = $bindable(`Viridis`),
+    color_scale = $bindable(`interpolateViridis`),
     active_element = $bindable(null),
     log = $bindable(false),
     colorbar = {},
@@ -34,11 +34,17 @@
 >
   {#snippet inset()}
     <TableInset>
-      <label for="log">Log color scale<Toggle id="log" bind:checked={log} /></label>
-      <PtableInset element={active_element} elem_counts={heatmap_values} />
+      <label for="log">
+        Log color scale<input id="log" type="checkbox" bind:checked={log} />
+      </label>
+      <PtableInset
+        element={active_element}
+        elem_counts={heatmap_values}
+        style="height: 1.5em; visibility: {active_element ? `visible` : `hidden`};"
+      />
       <ColorBar
-        label="Count"
-        label_side="top"
+        title="Count"
+        title_side="top"
         {color_scale}
         tick_labels={5}
         range={[0, Math.max(...Object.values(heatmap_values))]}
@@ -52,9 +58,9 @@
 <style>
   label {
     display: flex;
+    font-size: 1.1em;
     gap: 1ex;
     place-content: center;
-    align-items: start;
-    justify-items: center;
+    place-items: center;
   }
 </style>

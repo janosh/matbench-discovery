@@ -175,12 +175,14 @@ export const METADATA_COLS: Record<string, Metric> = {
     label: `Run Time`,
     description: `Runtime in hours`,
     visible: false,
+    better: `lower`,
   },
   org: {
     key: `org`,
     label: `Org`,
     sortable: false,
     description: `Most common author affiliations`,
+    style: `text-align: center; max-width: 2em; transform: scale(1.2);`,
     visible: true,
     better: null,
   },
@@ -254,11 +256,12 @@ export const HYPERPARAMS: Record<string, Metric> = {
 export type MetricKey = keyof typeof ALL_METRICS
 
 export const DATASET_METADATA_COLS: Record<string, Metric> = {
-  title: { key: `title`, label: `Title`, sticky: true },
+  name: { label: `Name`, key: `name`, sticky: true },
   structures: {
     key: `n_structures`,
     label: `Number of Structures`,
     short: `Structures`,
+    description: `Number of structures in the dataset. Any system with atomic positions and energy/force/stress labels is counted as a structure incl. successive ionic steps in MD/geometry optimization trajectories.`,
     better: `higher`,
     scale_type: `log`,
     format: `.3s`,
@@ -270,15 +273,28 @@ export const DATASET_METADATA_COLS: Record<string, Metric> = {
     better: `higher`,
     scale_type: `log`,
     format: `.3s`,
+    description: `Number of unique materials/prototypes in the dataset.`,
   },
   created: {
     key: `created`,
     label: `Created`,
     description: `Date the dataset was created/started`,
   },
-  open: { key: `open`, label: `Open` },
+  open: { label: `Open`, key: `Open`, style: `text-align: center;` },
+  static: {
+    label: `Static`,
+    key: `Static`,
+    style: `text-align: center;`,
+    description: `Whether the dataset is static (fixed version) or dynamic (continuously updated).`,
+  },
   license: { key: `license`, label: `License` },
-  method: { key: `method`, label: `Method` },
+  method: { key: `method`, label: `Method`, style: `max-width: 5em;` },
+  api: {
+    label: `API`,
+    key: `API`,
+    description: `API docs (OPTIMADE or native)`,
+    sortable: false,
+  },
   links: { key: `links`, label: `Links`, sortable: false },
 } as const
 
@@ -389,16 +405,15 @@ export function format_property_path(path: string): string {
     .map((part) => {
       const pretty_label = CATEGORY_LABELS[part] ?? PROPERTY_LABELS[part]
       if (pretty_label) return pretty_label
-      return title_case(format_power_ten(part))
+      return format_power_ten(part).replaceAll(`_`, ` `)
     })
     .join(` > `)
 }
 
 export const CATEGORY_LABELS = Object.fromEntries(
-  Object.entries({ ...MODELINGS_TASKS, ...DISCOVERY_SET_LABELS }).map(([key, task]) => [
-    key,
-    task.label,
-  ]),
+  Object.entries({ ...MODELINGS_TASKS, ...DISCOVERY_SET_LABELS, ...HYPERPARAMS }).map(
+    ([key, task]) => [key, task.label],
+  ),
 )
 
 // TODO maybe remove get_format() since unused

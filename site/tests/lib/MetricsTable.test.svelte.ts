@@ -84,7 +84,7 @@ describe(`MetricsTable`, () => {
 
   it(`toggles metadata columns`, async () => {
     const metadata_cols = [`Training Set`, `Params`, `Targets`, `Date Added`, `Links`]
-    const col_filter = $state((_col: Metric) => true) // show all columns initially
+    const col_filter = (_col: Metric) => true // show all columns initially
     mount(MetricsTable, { target: document.body, props: { col_filter } })
     // Check metadata columns are visible initially
     let header_texts = [...document.body.querySelectorAll(`th`)].map((h) =>
@@ -161,7 +161,7 @@ describe(`MetricsTable`, () => {
   })
 
   it(`filters non-compliant models`, async () => {
-    let model_filter: (model: ModelData) => boolean = $state(() => false) // initially show no models
+    let model_filter = (_model: ModelData) => false // initially show no models
     mount(MetricsTable, {
       target: document.body,
       props: { model_filter, config: DEFAULT_CPS_CONFIG },

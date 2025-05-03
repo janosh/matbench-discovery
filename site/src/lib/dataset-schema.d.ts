@@ -1,9 +1,10 @@
 // This file is auto-generated from dataset-schema.yml. Do not edit directly.
 
+export type HttpUrl = string
 /**
  * Computational or experimental method used to generate the data
  */
-export type MethodEnum = `DFT` | `experiment` | `ML`
+export type MethodEnum = `DFT` | `experiment` | `ML` | `GW` | `DMFT` | `MD`
 /**
  * DFT code used for calculations
  */
@@ -46,7 +47,7 @@ export interface Dataset {
   /**
    * Full name of the dataset
    */
-  title: string
+  name: string
   /**
    * Slugified name of the dataset
    */
@@ -99,13 +100,17 @@ export interface Dataset {
    */
   doi: string
   /**
-   * Other datasets this dataset is derived from
+   * Other datasets this dataset contains or is derived from
    */
-  derived_from?: string[]
+  contains?: string[]
   /**
    * Whether the dataset is openly available
    */
   open: boolean
+  /**
+   * Whether the dataset is a static release or dynamically updated
+   */
+  static?: boolean
   /**
    * License under which the dataset is published
    */
@@ -121,6 +126,14 @@ export interface Dataset {
     | `Meta Research`
     | `ASL`
     | `unreleased`
+  /**
+   * URL to the OPTIMADE API endpoint or null if none
+   */
+  optimade_api?: null | HttpUrl
+  /**
+   * URL to the native API endpoint/documentation or null if none
+   */
+  native_api?: null | HttpUrl
   /**
    * People or organizations who created the dataset
    */
