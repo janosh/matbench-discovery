@@ -200,7 +200,7 @@ Alex:
     - name: Tiago F. T. Cerqueira
     - name: Silvana Botti
       email: silvana.botti@uni-jena.de
-      url: https://www.uni-jena.de/en/faculty/silvana-botti
+      url: https://wikipedia.org/wiki/Silvana_Botti
       affiliation: Friedrich-Schiller-Universität Jena, Germany
     - name: Miguel A. L. Marques
       affiliation: Martin-Luther-Universität Halle-Wittenberg, Germany
@@ -376,7 +376,7 @@ NOMAD:
   static: false
   contains: [Alexandria, OQMD]
   optimade_api: https://optimade.org/providers-dashboard/providers/nmd
-  native_api: https://nomad-lab.eu/prod/v1/api/
+  native_api: https://nomad-lab.eu/prod/v1/gui/analyze/apis
   date_created: 2019-06-01
   license: CC-BY-4.0
   method: [DFT, ML, GW, DMFT, MD]
@@ -493,7 +493,7 @@ OQMD:
   open: true
   static: true # since download link points to the specific version v1.6
   optimade_api: https://optimade.org/providers-dashboard/providers/oqmd
-  native_api: https://oqmd.org/static/docs/restful.html
+  native_api: https://static.oqmd.org/static/docs/restful.html
   date_created: 2014-04-03
   license: CC-BY-4.0
   method: DFT

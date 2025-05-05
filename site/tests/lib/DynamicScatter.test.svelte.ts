@@ -226,7 +226,7 @@ describe(`DynamicScatter.svelte`, () => {
       document.body.removeChild(outside_element)
     })
 
-    it(`interacts with checkboxes and number inputs in extra controls`, async () => {
+    it(`interacts with all extra controls`, async () => {
       mount(DynamicScatter, {
         target: document.body,
         props: { models: mock_models },
@@ -237,33 +237,81 @@ describe(`DynamicScatter.svelte`, () => {
       await settings_button?.click() // Show controls
 
       const extra_controls = document.body.querySelector(`.extra-controls`)
-      expect(extra_controls).toBeDefined()
+      expect(extra_controls, `Extra controls panel should exist`).toBeDefined()
 
-      // Find controls within the .extra-controls div
-      // Find the label, then its associated input
-      const show_labels_label = Array.from(
-        extra_controls?.querySelectorAll(`label`) ?? [],
-      ).find((lbl) => lbl.textContent?.includes(`Show Labels`))
+      // --- Find Controls ---
+      const color_scale_select_el = extra_controls?.querySelector(`.color-scale-select`)
       const show_labels_checkbox =
-        show_labels_label?.querySelector<HTMLInputElement>(`input[type="checkbox"]`)
-
+        extra_controls?.querySelector<HTMLInputElement>(`input[type="checkbox"]`)
       const x_grid_checkbox =
         extra_controls?.querySelectorAll<HTMLInputElement>(`input[type="checkbox"]`)[1]
       const x_ticks_input = extra_controls?.querySelector<HTMLInputElement>(`#x-ticks`)
       const y_grid_checkbox =
         extra_controls?.querySelectorAll<HTMLInputElement>(`input[type="checkbox"]`)[2]
       const y_ticks_input = extra_controls?.querySelector<HTMLInputElement>(`#y-ticks`)
-      const color_scale_select_el = extra_controls?.querySelector(`.color-scale-select`) // Adjusted selector
+      const size_multiplier_input =
+        extra_controls?.querySelector<HTMLInputElement>(`#size-multiplier`)
+      const label_font_size_input =
+        extra_controls?.querySelector<HTMLInputElement>(`#label-font-size`)
+      const min_link_distance_input =
+        extra_controls?.querySelector<HTMLInputElement>(`#min-link-distance`)
+      const max_link_distance_input =
+        extra_controls?.querySelector<HTMLInputElement>(`#max-link-distance`)
+      const link_strength_input =
+        extra_controls?.querySelector<HTMLInputElement>(`#link-strength`)
 
-      // Check initial states (based on defaults in component)
-      expect(show_labels_checkbox?.checked).toBe(true)
-      expect(x_grid_checkbox?.checked).toBe(true)
-      expect(x_ticks_input?.value).toBe(`5`)
-      expect(y_grid_checkbox?.checked).toBe(true)
-      expect(y_ticks_input?.value).toBe(`5`)
-      expect(color_scale_select_el).toBeDefined() // Check if ColorScaleSelect is rendered
+      // --- Verify Initial States ---
+      expect(color_scale_select_el, `ColorScaleSelect should be rendered`).toBeDefined()
+      expect(show_labels_checkbox?.checked, `Show Labels default`).toBe(true)
+      expect(x_grid_checkbox?.checked, `X Grid default`).toBe(true)
+      expect(x_ticks_input?.value, `X Ticks default`).toBe(`5`)
+      expect(y_grid_checkbox?.checked, `Y Grid default`).toBe(true)
+      expect(y_ticks_input?.value, `Y Ticks default`).toBe(`5`)
+      expect(size_multiplier_input?.value, `Size Multiplier default`).toBe(`1`)
+      expect(label_font_size_input?.value, `Label Font Size default`).toBe(`14`)
+      expect(min_link_distance_input?.value, `Min Link Distance default`).toBe(`15`)
+      expect(max_link_distance_input?.value, `Max Link Distance default`).toBe(`20`)
+      expect(link_strength_input?.value, `Link Strength default`).toBe(`5`)
 
-      // Interact with controls
+      // --- Simulate Interactions & Verify Updates ---
+
+      // Checkboxes
+      await show_labels_checkbox?.click()
+      expect(show_labels_checkbox?.checked, `Show Labels after click`).toBe(false)
+      await x_grid_checkbox?.click()
+      expect(x_grid_checkbox?.checked, `X Grid after click`).toBe(false)
+      await y_grid_checkbox?.click()
+      expect(y_grid_checkbox?.checked, `Y Grid after click`).toBe(false)
+
+      // Number Inputs
+      x_ticks_input!.value = `10`
+      await x_ticks_input?.dispatchEvent(new Event(`input`))
+      expect(x_ticks_input?.value, `X Ticks after change`).toBe(`10`)
+
+      y_ticks_input!.value = `12`
+      await y_ticks_input?.dispatchEvent(new Event(`input`))
+      expect(y_ticks_input?.value, `Y Ticks after change`).toBe(`12`)
+
+      min_link_distance_input!.value = `10`
+      await min_link_distance_input?.dispatchEvent(new Event(`input`))
+      expect(min_link_distance_input?.value, `Min Link Distance after change`).toBe(`10`)
+
+      max_link_distance_input!.value = `30`
+      await max_link_distance_input?.dispatchEvent(new Event(`input`))
+      expect(max_link_distance_input?.value, `Max Link Distance after change`).toBe(`30`)
+
+      // Range Sliders
+      size_multiplier_input!.value = `2.5`
+      await size_multiplier_input?.dispatchEvent(new Event(`input`))
+      expect(size_multiplier_input?.value, `Size Multiplier after change`).toBe(`2.5`)
+
+      label_font_size_input!.value = `18`
+      await label_font_size_input?.dispatchEvent(new Event(`input`))
+      expect(label_font_size_input?.value, `Label Font Size after change`).toBe(`18`)
+
+      link_strength_input!.value = `8`
+      await link_strength_input?.dispatchEvent(new Event(`input`))
+      expect(link_strength_input?.value, `Link Strength after change`).toBe(`8`)
     })
   })
 })

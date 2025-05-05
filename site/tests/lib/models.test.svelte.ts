@@ -103,7 +103,7 @@ describe(`update_models_cps`, () => {
     if (MODELS.length === 0) return
 
     // Act: Call the function under test
-    update_models_cps()
+    update_models_cps(MODELS, CPS_CONFIG)
 
     // Assert: Check if at least one model has a non-NaN CPS value
     const models_with_cps = MODELS.filter((model) => !isNaN(Number(model.CPS)))
@@ -118,7 +118,7 @@ describe(`update_models_cps`, () => {
     CPS_CONFIG.F1.weight = 0.3
     CPS_CONFIG.RMSD.weight = 0.3
     CPS_CONFIG.κ_SRME.weight = 0.4
-    update_models_cps()
+    update_models_cps(MODELS, CPS_CONFIG)
 
     // Assert: Check if some models have NaN CPS (due to missing metrics)
     const models_with_nan_cps = MODELS.filter((model) => isNaN(Number(model.CPS)))
@@ -130,7 +130,7 @@ describe(`update_models_cps`, () => {
     CPS_CONFIG.F1.weight = 1.0
     CPS_CONFIG.RMSD.weight = 0.0
     CPS_CONFIG.κ_SRME.weight = 0.0
-    update_models_cps()
+    update_models_cps(MODELS, CPS_CONFIG)
 
     const f1_cps_values = MODELS.map((model) => Number(model.CPS))
 
@@ -138,7 +138,7 @@ describe(`update_models_cps`, () => {
     CPS_CONFIG.F1.weight = 0.0
     CPS_CONFIG.RMSD.weight = 1.0
     CPS_CONFIG.κ_SRME.weight = 0.0
-    update_models_cps()
+    update_models_cps(MODELS, CPS_CONFIG)
 
     const rmsd_cps_values = MODELS.map((model) => Number(model.CPS))
 
@@ -147,7 +147,7 @@ describe(`update_models_cps`, () => {
     CPS_CONFIG.F1.weight = 0.5
     CPS_CONFIG.RMSD.weight = 0
     CPS_CONFIG.κ_SRME.weight = 0.5
-    update_models_cps()
+    update_models_cps(MODELS, CPS_CONFIG)
 
     const f1_rmsd_cps_values = MODELS.map((model) => Number(model.CPS))
     expect(f1_rmsd_cps_values).not.toEqual(f1_cps_values)

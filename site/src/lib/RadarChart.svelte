@@ -4,7 +4,7 @@
   import type { Point } from 'elementari'
   import { Tooltip } from 'svelte-zoo'
   import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from './combined_perf_score.svelte'
-  import { update_models_cps } from './models.svelte'
+  import { MODELS, update_models_cps } from './models.svelte'
 
   // Define props interface
   interface Props {
@@ -26,7 +26,7 @@
       CPS_CONFIG[key].weight = DEFAULT_CPS_CONFIG[key].weight
     }
     update_point_from_weights(CPS_CONFIG)
-    update_models_cps() // Update all model CPS with new weights
+    update_models_cps(MODELS, CPS_CONFIG)
   }
 
   const colors = [
@@ -48,7 +48,7 @@
   // Initialize point position from weights
   $effect(() => {
     update_point_from_weights(CPS_CONFIG)
-    update_models_cps()
+    update_models_cps(MODELS, CPS_CONFIG)
   })
 
   function update_point_from_weights(current_weights: CpsConfig) {

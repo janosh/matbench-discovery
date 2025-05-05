@@ -33,7 +33,7 @@ authors:
 repo: https://github.com/FAIR-Chem/fairchem
 doi: https://doi.org/10.48550/arXiv.2410.12771
 paper: https://arxiv.org/abs/2410.12771
-url: https://huggingface.co/fairchem/OMAT24
+url: https://huggingface.co/facebook/OMAT24#model-checkpoints
 pypi: https://pypi.org/project/fairchem-core
 pr_url: https://github.com/janosh/matbench-discovery/pull/146
 # checkpoint URL copied from https://huggingface.co/fairchem/OMAT24#model-checkpoints

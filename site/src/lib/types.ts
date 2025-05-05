@@ -79,8 +79,10 @@ export type Metric = {
   group?: string // group header label
   description?: string // hover tooltip
   style?: string // CSS rules
+  cell_style?: string // CSS rules for table cells only
   range?: readonly [number, number] // possible range of values for the metric
   better?: `higher` | `lower` | null // sort direction
+  unit?: string // unit of the metric
   color_scale?: keyof typeof d3sc // d3-scale-chromatic color scale name
   format?: string // d3-format string
   sticky?: boolean // sticky column

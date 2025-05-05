@@ -28,7 +28,7 @@ authors:
 repo: https://github.com/FAIR-Chem/fairchem
 doi: https://doi.org/10.48550/arXiv.2502.12147
 paper: https://arxiv.org/abs/2502.12147
-url: https://huggingface.co/fairchem/eSEN
+url: https://huggingface.co/facebook/OMAT24#model-checkpoints
 pypi: https://pypi.org/project/fairchem-core
 pr_url: https://github.com/janosh/matbench-discovery/pull/226
 checkpoint_url: https://huggingface.co/fairchem/OMAT24/blob/main/esen_30m_oam.pt # taken from https://huggingface.co/facebook/OMAT24#models-trained-on-omat-mptrj-and-salexandria
