@@ -245,7 +245,7 @@ And you're done! Once tests pass and the PR is merged, your model will be added 
 
 ### Step 5 (optional): Copy WandB runs into our project
 
-[Weights and Biases](https://wandb.ai) is a tool for logging training and test runs of ML models. It's free, (partly) [open source](https://github.com/wandb/wandb) and offers a [special plan for academics](https://wandb.ai/site/research). It auto-collects metadata like
+[Weights and Biases](https://wandb.ai) ([GitHub](https://github.com/wandb/wandb)) is a tool for logging training and test runs of ML models. It auto-collects metadata like:
 
 - what hardware the model is running on
 - and for how long,

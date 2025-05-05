@@ -10,7 +10,7 @@ authors:
     url: https://txie.me
   - name: Jeffrey C. Grossman
     affiliation: Massachusetts Institute of Technology
-    url: https://dmse.mit.edu/people/jeffrey-c-grossman
+    url: https://dmse.mit.edu/people/faculty/jeffrey-grossman
 trained_by:
   - name: Janosh Riebesell
     affiliation: University of Cambridge, Lawrence Berkeley National Laboratory
@@ -22,7 +22,7 @@ doi: https://doi.org/10.1103/PhysRevLett.120.145301
 paper: https://arxiv.org/abs/1710.10324
 pr_url: https://github.com/janosh/matbench-discovery/pull/85
 # submission used an ensemble of 10 models, URL is just the first checkpoint
-checkpoint_url: https://api.wandb.ai/files/janosh/matbench-discovery/ykh764i5/checkpoint.pt
+checkpoint_url: https://api.wandb.ai/files/janosh/matbench-discovery/cvrqqjf1/checkpoint.pth
 
 license:
   code: MIT

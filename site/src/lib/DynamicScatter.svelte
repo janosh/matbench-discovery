@@ -1,12 +1,12 @@
 <script lang="ts">
+  import { goto } from '$app/navigation'
   import type { Metric, ModelData } from '$lib'
   import { calculate_days_ago } from '$lib'
   import { extent } from 'd3-array'
-  import type { DataSeries } from 'elementari'
   import { ColorScaleSelect, pretty_num, ScatterPlot } from 'elementari'
   import type { D3InterpolateName } from 'elementari/colors'
   import Select from 'svelte-multiselect'
-  import { click_outside } from 'svelte-zoo'
+  import { click_outside, titles_as_tooltips } from 'svelte-zoo'
   import { ALL_METRICS, format_property_path, HYPERPARAMS, METADATA_COLS } from './labels'
   import { get_nested_value } from './metrics'
 
@@ -48,6 +48,14 @@
   let x_grid = $state(true)
   let y_grid = $state(true)
 
+  // State for point size and label placement
+  let size_multiplier = $state(1)
+  let label_font_size = $state(14) // Default font size
+  let link_strength = $state(5)
+  let link_distance = $state(5)
+  let min_link_distance = $state(15)
+  let max_link_distance = $state(20)
+
   const { model_params, graph_construction_radius, max_force, max_steps } = HYPERPARAMS
   const { batch_size, epochs, n_layers } = HYPERPARAMS
 
@@ -84,7 +92,6 @@
       (typeof val === `number` && !isNaN(val)) || val instanceof Date // warning: this is true for invalid dates
     )
   }
-
   let plot_data = $derived(
     models
       .filter(model_filter)
@@ -98,7 +105,7 @@
         let y_path = `${axes.y?.path ?? ``}.${axes.y?.key ?? ``}`
         if (y_path.startsWith(`.`)) y_path = y_path.slice(1)
         let y_val = get_nested_value(model, y_path)
-        if (y_path.includes(`date`)) y_val = new Date(y_val as string)
+        if (y_path.includes(`date`)) y_val = new Date(y_val as string).getTime()
         let color_path = `${axes.color_value?.path ?? ``}.${axes.color_value?.key ?? ``}`
         if (color_path.startsWith(`.`)) color_path = color_path.slice(1)
         let color_value = get_nested_value(model, color_path)
@@ -114,12 +121,9 @@
         }
 
         // Prepare metadata for display in tooltip
-        const { model_name, date_added, color } = model
-        const metadata = {
-          model_name,
-          date_added,
-          days_ago: calculate_days_ago(model.date_added),
-        }
+        const { model_name, date_added, color, model_key } = model
+        const days_ago = calculate_days_ago(model.date_added)
+        const metadata = { model_name, date_added, days_ago, model_key }
         return { x: x_val, y: y_val, color_value, size_value, metadata, color }
       })
       .filter((item) => {
@@ -131,20 +135,17 @@
       }),
   )
 
-  let series: DataSeries = $derived({
+  let series = $derived({
     x: plot_data.map((item) => item.x as number),
     y: plot_data.map((item) => item.y as number),
-    point_style: plot_data.map((item) => ({
-      fill: point_color ?? item.color ?? `#4dabf7`,
-      stroke: `white`,
-      stroke_width: 0.5,
-    })),
+    point_style: plot_data.map((item) => ({ fill: point_color ?? item.color })),
     metadata: plot_data.map((item) => item.metadata),
     color_values:
       point_color === null
-        ? plot_data
-            .map((item) => item.color_value)
-            .filter((v): v is number => v !== undefined)
+        ? (plot_data
+            .map((item) => item.color_value) // Map to potential Date or number
+            .filter((val): val is number | Date => val !== undefined) // Filter out undefined
+            .map((val) => (val instanceof Date ? val.getTime() : val)) as number[]) // Convert Dates to timestamps
         : undefined,
     size_values: axes.size_value
       ? plot_data.map((item) => item.size_value as number)
@@ -153,7 +154,7 @@
       text: item.metadata.model_name,
       offset_y: 0,
       offset_x: 10,
-      font_size: `14px`,
+      font_size: `${label_font_size}px`, // Use state variable
       color: `black`,
       auto_placement: true,
     })),
@@ -167,6 +168,69 @@
       } else if (show_extra_controls) {
         show_extra_controls = false
       }
+    }
+  }
+
+  interface DraggableOptions {
+    handle_selector?: string
+  }
+  function draggable(node: HTMLElement, options?: DraggableOptions) {
+    let dragging = false
+    let start = { x: 0, y: 0 }
+    let initial = { left: 0, top: 0, width: 0 }
+
+    const handle = options?.handle_selector
+      ? node.querySelector<HTMLElement>(options.handle_selector)
+      : node
+
+    if (!handle) return // Handle not found
+
+    function handle_mousedown(event: MouseEvent) {
+      // Only drag if mousedown is on the handle itself
+      if (event.target !== handle) return
+
+      dragging = true
+      initial.left = node.offsetLeft
+      initial.top = node.offsetTop
+      initial.width = node.offsetWidth
+      node.style.left = `${initial.left}px`
+      node.style.top = `${initial.top}px`
+      node.style.width = `${initial.width}px`
+      node.style.right = `auto` // Prevent conflict with left
+      start = { x: event.clientX, y: event.clientY }
+      document.body.style.userSelect = `none` // Prevent text selection during drag
+      handle!.style.cursor = `grabbing`
+      window.addEventListener(`mousemove`, handle_mousemove)
+      window.addEventListener(`mouseup`, handle_mouseup)
+    }
+
+    function handle_mousemove(event: MouseEvent) {
+      if (!dragging) return
+      const dx = event.clientX - start.x
+      const dy = event.clientY - start.y
+      node.style.left = `${initial.left + dx}px`
+      node.style.top = `${initial.top + dy}px`
+    }
+
+    function handle_mouseup(event: MouseEvent) {
+      dragging = false
+      event.stopPropagation()
+      document.body.style.userSelect = ``
+      handle!.style.cursor = `grab`
+      window.removeEventListener(`mousemove`, handle_mousemove)
+      window.removeEventListener(`mouseup`, handle_mouseup)
+    }
+
+    handle.addEventListener(`mousedown`, handle_mousedown)
+    handle.style.cursor = `grab` // Set initial cursor on handle
+
+    return {
+      destroy() {
+        handle.removeEventListener(`mousedown`, handle_mousedown)
+        window.removeEventListener(`mousemove`, handle_mousemove) // Clean up just in case
+        window.removeEventListener(`mouseup`, handle_mouseup)
+        handle.style.cursor = `` // Reset cursor
+      },
     }
   }
 </script>
@@ -192,7 +256,6 @@
       class="settings-toggle icon-button"
       onclick={() => (show_extra_controls = !show_extra_controls)}
       aria-label="Toggle extra plot controls"
-      title="Toggle extra plot controls"
     >
       <svg style="width: 1.3em; height: 1.3em;">
         <use href="#icon-settings" />
@@ -203,27 +266,116 @@
   {#if show_extra_controls}
     <div
       use:click_outside={{ callback: () => (show_extra_controls = false) }}
+      use:draggable={{ handle_selector: `.drag-handle` }}
       class="extra-controls"
+      use:titles_as_tooltips
     >
-      <label style="grid-column: 1/-1">
+      <svg style="width: 1.3em; height: 1.3em;" class="drag-handle">
+        <use href="#icon-drag-indicator" />
+      </svg>
+      <label
+        style="grid-column: 1/-1"
+        title="Toggle visibility of model name labels on the scatter plot points"
+      >
         <input type="checkbox" bind:checked={show_model_labels} /> Show Labels
       </label>
-      <label>
-        <input type="checkbox" bind:checked={x_grid} /> X Grid
-      </label>
-      <label for="x-ticks">Ticks:</label>
-      <input id="x-ticks" type="number" min="0" max="20" bind:value={x_ticks} />
-
-      <label>
-        <input type="checkbox" bind:checked={y_grid} /> Y Grid
-      </label>
-      <label for="y-ticks">Ticks:</label>
-      <input id="y-ticks" type="number" min="0" max="20" bind:value={y_ticks} />
       <ColorScaleSelect
         bind:value={color_scheme}
         selected={[color_scheme]}
         style="margin: 0; grid-column: 1/-1;"
       />
+      <label
+        style="grid-column: 1 / -1;"
+        title="Toggle the visibility of vertical grid lines and set the approximate number of ticks on the X axis"
+      >
+        <input type="checkbox" bind:checked={x_grid} /> X Grid
+        <label for="x-ticks" style="margin-left: 1em;">Ticks:</label>
+        <input
+          id="x-ticks"
+          type="number"
+          min="0"
+          max="20"
+          bind:value={x_ticks}
+          style="width: 50px;"
+        />
+      </label>
+
+      <label
+        style="grid-column: 1 / -1;"
+        title="Toggle the visibility of horizontal grid lines and set the approximate number of ticks on the Y axis"
+      >
+        <!-- Span both columns -->
+        <input type="checkbox" bind:checked={y_grid} /> Y Grid
+        <label for="y-ticks" style="margin-left: 1em;">Ticks:</label>
+        <input
+          id="y-ticks"
+          type="number"
+          min="0"
+          max="20"
+          bind:value={y_ticks}
+          style="width: 50px;"
+        />
+      </label>
+      <label
+        for="size-multiplier"
+        title="Adjust the base size of all points on the scatter plot (multiplier for radius)"
+        >Point Size</label
+      >
+      <input
+        id="size-multiplier"
+        type="range"
+        min="0.1"
+        max="5"
+        step="0.1"
+        bind:value={size_multiplier}
+      />
+      <label
+        for="label-font-size"
+        title="Adjust the font size of the model name labels (in pixels)"
+        >Label Size</label
+      >
+      <input
+        id="label-font-size"
+        type="range"
+        min="8"
+        max="24"
+        step="1"
+        bind:value={label_font_size}
+        style="grid-column: 2;"
+      />
+      <label
+        title="Configure the distance range and strength of the links connecting labels to their points"
+        for="min-link-distance">Label Link</label
+      >
+      <div class="combined-link-controls">
+        <input
+          id="min-link-distance"
+          type="number"
+          min="0"
+          max="100"
+          bind:value={min_link_distance}
+          title="Minimum distance"
+        />
+        <span>-</span>
+        <input
+          id="max-link-distance"
+          type="number"
+          min="0"
+          max="100"
+          bind:value={max_link_distance}
+          title="Maximum distance"
+        />
+        <input
+          id="link-strength"
+          type="range"
+          min="0.1"
+          max="10"
+          step="0.1"
+          bind:value={link_strength}
+          title="Strength (higher = stronger pull)"
+          style="flex-: 1;"
+        />
+      </div>
     </div>
   {/if}
 
@@ -284,8 +436,8 @@
       y_label="{axes.y?.svg_label ?? axes.y?.label} {axes.y?.better
         ? `<tspan style='font-size: 0.8em;'>(${axes.y?.better}=better)</tspan>`
         : ``}"
-      x_lim={axes.x?.range}
-      y_lim={axes.y?.range}
+      x_lim={axes.x?.range ? [...axes.x.range] : undefined}
+      y_lim={axes.y?.range ? [...axes.y.range] : undefined}
       x_format={axes.x?.format}
       y_format={axes.y?.format}
       markers="points"
@@ -301,16 +453,21 @@
       {x_grid}
       {y_grid}
       color_scale={{ scheme: color_scheme, type: log.color_value ? `log` : `linear` }}
-      size_scale={{ radius_range: [5, 20] }}
+      size_scale={{
+        radius_range: [5 * size_multiplier, 20 * size_multiplier],
+      }}
       color_bar={{
         title: `${axes.color_value?.label}${axes.color_value?.better ? ` (${axes.color_value?.better}=better)` : ``}`,
         margin: { t: 30, l: 80, b: 80, r: 50 },
         tick_format: axes.color_value?.format,
       }}
       label_placement_config={{
-        link_strength: 5,
-        link_distance: 5,
-        link_distance_range: [15, 20],
+        link_strength,
+        link_distance,
+        link_distance_range: [min_link_distance, max_link_distance],
+      }}
+      point_events={{
+        onclick: ({ point }) => goto(`/models/${point.metadata?.model_key ?? ``}`),
       }}
       {...rest}
     >
@@ -390,22 +547,20 @@
   .extra-controls {
     position: absolute;
     top: 45px; /* Adjust as needed to position below the gear icon */
-    right: -5em; /* Align with the right edge of the gear icon */
-    background-color: rgba(0, 0, 0, 0.8); /* Slightly transparent white */
+    right: -5em;
+    max-width: 450px; /* Allow content width up to a max */
+    background-color: var(--night, #1a1a1a);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 6px;
     padding: 5px 15px 15px;
     box-sizing: border-box;
     z-index: 2;
     display: grid;
-    grid-template-columns: auto auto 1fr; /* Checkbox | Label | Input */
-    gap: 5pt 1em;
+    grid-template-columns: auto 1fr; /* Label | Control Area */
+    gap: 8pt 1em;
   }
-  :global(body.fullscreen) .extra-controls {
-    top: 3.3em;
-    right: 1em;
-  }
-  .extra-controls input[type='number'] {
-    width: 30px;
+  .extra-controls > *:nth-child(odd):not(label) {
+    grid-column: 2;
   }
   .controls-grid {
     display: grid;
@@ -421,5 +576,28 @@
   }
   input[type='checkbox'] {
     transform: scale(1.2);
+  }
+  .combined-link-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+  }
+  :global(body.fullscreen) .extra-controls {
+    top: 3.3em;
+    right: 1em;
+    left: auto; /* Ensure left is not set */
+  }
+  .drag-handle {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 20px;
+    height: 20px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    /* Add a visual indicator like dots or lines later if desired */
+  }
+  .extra-controls input[type='number'] {
+    width: 40px;
   }
 </style>

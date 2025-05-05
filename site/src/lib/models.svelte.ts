@@ -1,6 +1,6 @@
 import { default as DATASETS } from '$data/datasets.yml'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
-import { CPS_CONFIG, calculate_cps } from './combined_perf_score.svelte'
+import { CPS_CONFIG, calculate_cps, type CpsConfig } from './combined_perf_score.svelte'
 import { get_org_logo } from './labels'
 import type { Author, ModelData } from './types'
 
@@ -104,8 +104,8 @@ export const MODELS = $state(
 ) as ModelData[]
 
 // Update CPSs of models based on current CPS weights
-export function update_models_cps() {
-  MODELS.forEach((model: ModelData) => {
+export function update_models_cps(models: ModelData[], cps_config: CpsConfig) {
+  models.forEach((model: ModelData) => {
     // Extract required metrics for CPS calculation
     const f1 = model.metrics?.discovery?.[`unique_prototypes`]?.F1
     const rmsd =
@@ -120,12 +120,12 @@ export function update_models_cps() {
         : undefined
 
     // Calculate and update CPS
-    model.CPS = calculate_cps(f1, rmsd, kappa, CPS_CONFIG) ?? NaN
+    model.CPS = calculate_cps(f1, rmsd, kappa, cps_config) ?? NaN
   })
 }
 
 // Calculate initial CPS for all models
-update_models_cps()
+update_models_cps(MODELS, CPS_CONFIG)
 
 export function model_is_compliant(model: ModelData): boolean {
   if ((model.openness ?? `OSOD`) != `OSOD`) return false

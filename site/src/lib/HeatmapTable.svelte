@@ -230,7 +230,7 @@
               class:sticky-col={col.sticky}
               style:background-color={color.bg}
               style:color={color.text}
-              style={col.style}
+              style={col.cell_style ?? col.style}
             >
               {#if special_cells?.[col.label]}
                 {@render special_cells[col.label]({ row, col, val })}
@@ -263,6 +263,9 @@
   }
   .table-container::-webkit-scrollbar {
     display: none; /* Safari and Chrome */
+  }
+  table {
+    overflow: hidden;
   }
   th,
   td {
