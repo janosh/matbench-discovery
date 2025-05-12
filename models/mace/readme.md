@@ -6,7 +6,7 @@ We also tested the `2023-07-14-mace-universal-2-big-128-6.model` checkpoint trai
 
 On 2023-10-29 Philipp Benner shared a much larger 16M parameter MACE he trained for over 100 epochs in MPtrj which achieved an (at the time SOTA) F1 score of 0.64 and DAF of 3.13.
 
-As of 2024-02-06 we have used the 4.7M parameter checkpoint [`2023-12-03-mace-128-L1.model`](https://figshare.com/files/42374052) trained by Yuan Chiang on the [MPtrj dataset](https://figshare.com/articles/dataset/23713842) for the leaderboard. This model was trained for the `MACE-MP-0` collaboration ([see manuscript](https://arxiv.org/abs/2401.00096)).
+As of 2024-02-06 we have used the 4.7M parameter checkpoint [`2023-12-03-mace-128-L1.model`](https://github.com/ACEsuit/mace-foundations/releases/download/mace_mp_0/2023-12-03-mace-128-L1_epoch-199.model) trained by Yuan Chiang on the [MPtrj dataset](https://figshare.com/articles/dataset/23713842) for the leaderboard. This model was trained for the `MACE-MP-0` collaboration ([see manuscript](https://arxiv.org/abs/2401.00096)).
 
 ### Training
 

@@ -18,10 +18,10 @@ For more information on the models, please refer to our [Github Repository][`orb
 
 ## **ORB**: `orb-v2` - Full dataset pretraining, MPtrj + Alexandria finetuning
 
-| Item                 | Link/Url                                                                                       |
-| -------------------- | ---------------------------------------------------------------------------------------------- |
-| Results CSV          | [orbff-v2-20241011.csv.gz](./orbff-v2-20241011.csv.gz)                                         |
-| Public Model Weights | https://storage.googleapis.com/orbitalmaterials-public-models/forcefields/orb-v2-20241011.ckpt |
+| Item                 | Link/Url                                                                                           |
+| -------------------- | -------------------------------------------------------------------------------------------------- |
+| Results CSV          | `orbff-v2-20241011.csv.gz`                                                                         |
+| Public Model Weights | https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/forcefields/orb-v2-20241011.ckpt |
 
 ```txt
                      orb          10k         unique
@@ -45,10 +45,10 @@ R2              0.808497     0.896680       0.824233
 
 ## **ORB MPtrj**: `orb-v2-mptrj-only` - MPTrj pretraining, MPTrj finetuning
 
-| Item                 | Link/URL                                                                                                   |
-| -------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Results CSV          | [orbff-mptrj-only-v2-20241014.csv.gz](./orbff-mptrj-only-v2-20241014.csv.gz)                               |
-| Public Model Weights | https://storage.googleapis.com/orbitalmaterials-public-models/forcefields/orb-mptraj-only-v2-20241014.ckpt |
+| Item                 | Link/URL                                                                                                       |
+| -------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Results CSV          | `orbff-mptrj-only-v2-20241014.csv.gz`                                                                          |
+| Public Model Weights | https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/forcefields/orb-mptraj-only-v2-20241014.ckpt |
 
 ```txt
                      orb          10k         unique
@@ -80,10 +80,12 @@ For more information on the models, please refer to our [Github Repository][`orb
 
 ## **ORB**: `orb-v1` - Full dataset pretraining, MPtrj + Alexandria finetuning
 
-| Item                 | Link/Url                                                                                         |
-| -------------------- | ------------------------------------------------------------------------------------------------ |
-| Results CSV          | [orbff-v1-20240827.csv.gz](./orbff-v1-20240827.csv.gz)                                           |
-| Public Model Weights | https://storage.googleapis.com/orbitalmaterials-public-models/forcefields/orbff-v1-20230827.ckpt |
+<!-- https://github.com/orbital-materials/orb-models/blob/637a98d49c/MODELS.md -->
+
+| Item                 | Link/Url                                                                                             |
+| -------------------- | ---------------------------------------------------------------------------------------------------- |
+| Results CSV          | `orbff-v1-20240827.csv.gz`                                                                           |
+| Public Model Weights | https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/forcefields/orbff-v1-20240827.ckpt |
 
 ```txt
                       orb          10k         unique
@@ -107,10 +109,10 @@ R2              0.798803     0.907903       0.815941
 
 ## **ORB MPtrj**: `orb-v1-mptrj-only` - MPTrj pretraining, MPTrj finetuning
 
-| Item                 | Link/URL                                                                                                     |
-| -------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Results CSV          | [orbff-mptrj-only-v1-20240827.csv.gz](./orbff-mptrj-only-v1-20240827.csv.gz)                                 |
-| Public Model Weights | https://storage.googleapis.com/orbitalmaterials-public-models/forcefields/orbff-mptraj-only-v1-20230827.ckpt |
+| Item                 | Link/URL                                                                                                         |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Results CSV          | `orbff-mptrj-only-v1-20240827.csv.gz`                                                                            |
+| Public Model Weights | https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/forcefields/orbff-mptraj-only-v1-20240827.ckpt |
 
 ```txt
                      orb          10k         unique

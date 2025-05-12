@@ -479,7 +479,10 @@ properties:
           - type: string
             enum: [not applicable, not available]
       discovery:
-        $ref: "#/definitions/DiscoveryMetrics"
+        oneOf:
+          - $ref: "#/definitions/DiscoveryMetrics"
+          - type: string
+            enum: [not available]
       diatomics:
         oneOf:
           - $ref: "#/definitions/DiatomicsMetrics"
