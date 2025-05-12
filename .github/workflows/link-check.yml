@@ -7,5 +7,25 @@ on:
     branches: [main]
 
 jobs:
-  markdown-link-check:
-    uses: janosh/workflows/.github/workflows/markdown-link-check.yml@main
+  link-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Discover broken links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: |
+            --accept 100..=103,200..=299,401,403,429,500 \
+            --exclude '\{|\}' \
+            --exclude '%7B' \
+            --exclude-loopback \
+            --exclude https://archive.materialscloud.org/record/file\\?record_id=840 \
+            --exclude https://figshare.com/files \
+            --exclude https://api.figshare.com/v2 \
+            --exclude https://figshare.com/articles/(dataset|files) \
+            --exclude https://github.com/stenczelt/MACE-MP-work \
+            -- ./**/*.{md,py,svelte,ts,yml,yaml,json}
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}

@@ -69,9 +69,6 @@ training_set: [MPtrj]
 training_cost: missing
 
 metrics:
-  phonons: not available # model was aborted
+  discovery: not available # model was aborted
+  phonons: not available
   geo_opt: not available
-  discovery:
-    pred_file: models/alignn_ff/2023-07-11-alignn-ff-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/51607187
-    pred_col: e_form_per_atom_alignn_ff
