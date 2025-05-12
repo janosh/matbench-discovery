@@ -19,7 +19,6 @@ data/**/tsne
 data/**/*.extxyz*
 data/**/*.json*
 data/**/*.zip*
-paper/figs/*.pdf*
 data/wbm/*symprec=*.csv*
 !data/**/*umap-projections.csv.bz2
 
