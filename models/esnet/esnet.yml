@@ -1,8 +1,8 @@
 model_name: ESNet
 model_key: esnet
 model_version: 2025.03.14
-date_added: "2025.05.07"
-date_published: "2025.05.07"
+date_added: "2025-05-13"
+date_published: "2025-05-13"
 authors:
   - name: Chao Huang
     affiliation: Institute of Computing Technology, Chinese Academy of Science, Beijing, China
@@ -23,6 +23,7 @@ trained_by:
 repo: https://github.com/zzz-sl/ESNet
 doi: https://doi.org/10.21203/rs.3.rs-5979703/v1
 paper: https://www.researchsquare.com/article/rs-5979703/v1
+pr_url: https://github.com/janosh/matbench-discovery/pull/254
 
 checkpoint_url: https://figshare.com/files/54259907
 
@@ -38,7 +39,7 @@ requirements:
   torch_geometric: 2.6.1
   torch_scatter: 2.1.2
   pandarallel: 1.6.5
-  pydantic_settings:
+  pydantic_settings: 2.9.1
   e3nn: 0.5.6
   numpy: 1.26.4
   jarvis-tools: 2022.9.26
@@ -47,24 +48,30 @@ requirements:
   pytorch-ignite: 0.5.2
   scikit-learn: 1.6.1
 
+model_params:
+  hidden_dim: 128
+  num_heads: 8
+  num_layers: 6
+
 openness: OSOD
 model_type: Transformer
 train_task: RS2RE
 test_task: IS2E
 targets: E
+trained_for_benchmark: true
 
 n_estimators: 1
 
-training_set: [MP 2018]
+training_set: [MP 2022]
 training_cost: missing
 
 hyperparams:
-  graph_construction_radius: 8.0 # `cutoff` in Å, based on original implementation
+  graph_construction_radius: 8.0 
   max_neighbors: 25
 
 metrics:
-  phonons: not applicable
-  geo_opt: not applicable
+  phonons: not applicable 
+  geo_opt: not applicable 
   discovery:
     pred_file: models/esnet/2025-05-08-esnet-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/54445643
