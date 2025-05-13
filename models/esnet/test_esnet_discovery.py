@@ -1,35 +1,35 @@
 import os
-from typing import List, Dict, Any
+import pickle as pk
+from collections import Counter
+from typing import Any
 
+import numpy as np
 import pandas as pd
 import torch
 import wandb
+from esnet.graphs import PygGraph, PygStructureDataset
+from esnet.load_triples import Triples
+from esnet.models.comformer import iComformer
+from ignite.handlers import Checkpoint
 from pymatgen.core import Structure
 from pymatgen.io.jarvis import JarvisAtomsAdaptor
 from pymatviz.enums import Key
 from sklearn.metrics import r2_score
+from torch_geometric.data import Data
 from tqdm import tqdm
+
 from matbench_discovery import today
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import DataFiles, MbdKey, Model, Task
 from matbench_discovery.hpc import slurm_submit
 from matbench_discovery.plots import wandb_scatter
 
-from esnet.models.comformer import iComformer
-from esnet.graphs import PygGraph, PygStructureDataset
-from ignite.handlers import Checkpoint
-import pickle as pk
-from esnet.load_triples import Triples
-from collections import Counter
-import numpy as np
-from torch_geometric.data import Data
-
-
 __author__ = "sl"
 __date__ = "2025-05-13"
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 adaptor = JarvisAtomsAdaptor()
+
 
 def atoms_to_graph(atoms: Structure) -> PygGraph:
     """Convert structure to Atom."""
@@ -45,6 +45,7 @@ def atoms_to_graph(atoms: Structure) -> PygGraph:
         use_lattice=True,
         use_angle=False,
     )
+
 
 def graph_build(atoms: Structure) -> Data:
     g = atoms_to_graph(atoms)
@@ -64,18 +65,20 @@ with open("/home/sl/project/ESNet/graphs/RotatE_128_64.pkl", "rb") as f:
     rotate_emb = pk.load(f)
 
 
-def load_elements_knowledge(elements: List[str], rotate_emb: Dict[str, Any]) -> Data:
+def load_elements_knowledge(elements: list[str], rotate_emb: dict[str, Any]) -> Data:
     data = Triples()
 
     entity = rotate_emb["entity"]
     element_counts = Counter(elements)
     total_elements = len(elements)
-    element_ratios = {element: count / total_elements for element, count in element_counts.items()}
+    element_ratios = {
+        element: count / total_elements for element, count in element_counts.items()
+    }
     template = entity[0]
     features = np.zeros((len(element_counts), len(np.array(template))))
 
     attributes = []
-    
+
     for z, (element, ratios) in enumerate(element_ratios.items()):
         if element in data.entities:
             attribute_id = [h for (r, h) in data.t2rh[data.entity2id[element]]]
@@ -109,7 +112,9 @@ module_dir = os.path.dirname(__file__)
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}")
 
 model = iComformer()
-e_form_checkpoint = torch.load('/home/sl/project/ESNet/checkpoint/checkpoint_eform_500.pt', map_location="cuda:0")
+e_form_checkpoint = torch.load(
+    "/home/sl/project/ESNet/checkpoint/checkpoint_eform_500.pt", map_location="cuda:0"
+)
 to_load = {
     "model": model,
 }
@@ -132,7 +137,7 @@ data_path = {
     Task.IS2RE: DataFiles.wbm_initial_structures.path,
     Task.RS2RE: DataFiles.wbm_computed_structure_entries.path,
 }[task_type]
-input_col = {Task.IS2RE: 'initial_structure', Task.RS2RE: Key.final_struct}[task_type]
+input_col = {Task.IS2RE: "initial_structure", Task.RS2RE: Key.final_struct}[task_type]
 
 df_in = pd.read_json(data_path, lines=True).set_index(Key.mat_id)
 
@@ -164,6 +169,7 @@ run_params = {
 
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
+
 # %% Predict
 # eform 均值与方差
 std_eform = 1.073214
@@ -177,7 +183,6 @@ with torch.no_grad():  # get predictions
         total=len(df_in),
         desc=f"Predicting {target_col=} {task_type}",
     ):
-        
         elements = [site.specie.symbol for site in atoms.sites]
         g = graph_build(atoms)
         kge = load_elements_knowledge(elements, rotate_emb)
@@ -193,6 +198,7 @@ df_wbm[pred_col] -= df_wbm.e_correction_per_atom_mp_legacy
 df_wbm[pred_col] += df_wbm.e_correction_per_atom_mp2020
 df_wbm[pred_col].round(4).to_csv(f"{module_dir}/{today}-{model_name}-wbm-IS2RE.csv.gz")
 
+
 # %%
 table = wandb.Table(dataframe=df_wbm[[target_col, pred_col]].reset_index())
 
@@ -203,7 +209,7 @@ print("MAE:", MAE)
 print("R2:", R2)
 
 title = f"{model_name} {task_type} {MAE=:.4} {R2=:.4}"
-print("title:",title)
+print("title:", title)
 
 
 wandb_scatter(table, fields=dict(x=target_col, y=pred_col), title=title)
