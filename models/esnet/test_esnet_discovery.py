@@ -62,7 +62,7 @@ def graph_build(atoms: Structure) -> Data:
 
 
 with open("/home/sl/project/ESNet/graphs/RotatE_128_64.pkl", "rb") as f:
-    rotate_emb = pk.load(f) # noqa: S301
+    rotate_emb = pk.load(f)  # noqa: S301
 
 
 def load_elements_knowledge(elements: list[str], rotate_emb: dict[str, Any]) -> Data:
