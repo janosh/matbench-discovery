@@ -1,0 +1,73 @@
+model_name: ESNet
+model_key: esnet
+model_version: 2025.03.14
+date_added: "2025.05.07"
+date_published: "2025.05.07"
+authors:
+  - name: Chao Huang
+    affiliation: Institute of Computing Technology, Chinese Academy of Science, Beijing, China
+    email: chuang@ict.ac.cn
+
+  - name: Chunyan Chen
+    affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
+
+  - name: Ling Shi
+    affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
+
+trained_by:
+  - name: Ling Shi
+    affiliation: Ningbo Institute of Artificial Intelligence Industry, Ningbo, China
+    orcid: https://orcid.org/0000-0002-7185-5044
+    github: https://github.com/zzz-sl/
+
+repo: https://github.com/zzz-sl/ESNet
+doi: https://doi.org/10.21203/rs.3.rs-5979703/v1
+paper: https://www.researchsquare.com/article/rs-5979703/v1
+
+
+checkpoint_url: https://figshare.com/files/54259907
+
+license:
+  code: Apache-2.0
+  code_url: https://github.com/zzz-sl/ESNet/blob/main/LICENSE
+  checkpoint: CC-BY-4.0
+  checkpoint_url: https://figshare.com/files/54259907
+
+requirements:
+  torch: 2.1.0+cu121
+  torch_sparse: 0.6.18
+  torch_geometric: 2.6.1
+  torch_scatter: 2.1.2
+  pandarallel: 1.6.5
+  pydantic_settings:
+  e3nn: 0.5.6
+  numpy: 1.26.4
+  jarvis-tools: 2022.9.26
+  einops: 0.8.1
+  pymatgen: 2025.4.24
+  pytorch-ignite: 0.5.2
+  scikit-learn: 1.6.1
+
+openness: OSOD
+model_type: Transformer
+train_task: RS2RE
+test_task: IS2E
+targets: E
+
+n_estimators: 1
+
+
+training_set: [MP 2018]
+training_cost: missing
+
+hyperparams:
+  graph_construction_radius: 8.0 # `cutoff` in Å, based on original implementation
+  max_neighbors: 25
+
+metrics:
+  phonons: not applicable
+  geo_opt: not applicable
+  discovery:
+    pred_file: models/esnet/2025-05-08-esnet-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/54445643
+    pred_col: e_form_per_atom_esnet
