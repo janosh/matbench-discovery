@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { dev } from '$app/environment'
   import { calculate_days_ago, DATASETS, IconList, PtableInset } from '$lib'
   import { get_pred_file_urls } from '$lib/models.svelte'
   import type { ModelData } from '$lib/types'
@@ -215,22 +214,19 @@
       {#each [[`e-form`, `Formation Energies`], [`each`, `Convex Hull Distance`]] as [which_energy, title] (which_energy)}
         {#await import(`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`) then ParityPlot}
           <!-- negative margin-bottom corrects for display: none plot title -->
-          <h3 style="margin-bottom: -2em;">
+          <h3 style="margin: 1em auto -2em; text-align: center;">
             DFT vs ML {title}
           </h3>
           <ParityPlot.default height="500" />
-        {:catch error}
-          {#if dev}
-            <p>Failed to load plot:</p>
-            <pre>{error}</pre>
-          {/if}
         {/await}
       {/each}
     {/if}
 
     {#if model.model_name in per_elem_each_errors}
       {@const heatmap_values = per_elem_each_errors?.[model.model_name]}
-      <h3>Convex hull distance prediction errors projected onto elements</h3>
+      <h3 style="margin: 1em auto -1em; text-align: center;">
+        Convex hull distance prediction errors projected onto elements
+      </h3>
       <PeriodicTable
         {heatmap_values}
         {color_scale}
@@ -248,7 +244,7 @@
               style="height: 2em; visibility: {active_element ? `visible` : `hidden`};"
             />
             <ColorBar
-              title="eV / atom"
+              title="|E<sub>ML,hull</sub> - E<sub>DFT,hull</sub>| (eV / atom)"
               title_side="top"
               {color_scale}
               range={[0, Math.max(...(Object.values(heatmap_values) as number[]))]}

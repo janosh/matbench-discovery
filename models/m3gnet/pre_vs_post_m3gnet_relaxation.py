@@ -20,6 +20,7 @@ __date__ = "2022-06-18"
 
 module_dir = os.path.dirname(__file__)
 ml_struct_col = "m3gnet_structure"
+ml_vol_col = "m3gnet_volume"
 
 
 # %%
@@ -42,7 +43,7 @@ df_m3gnet_rs2re = pd.read_json(rs2re_path).set_index(Key.mat_id)
 
 
 # %%
-df_wbm_init_structs["m3gnet_volume"] = df_m3gnet_is2re.m3gnet_volume
+df_wbm_init_structs[ml_vol_col] = df_m3gnet_is2re[ml_vol_col]
 
 
 # %% spread M3GNet post-pseudo-relaxation lattice params into separate columns
@@ -81,15 +82,15 @@ df_wbm_init_structs.query("initial_wbm_volume.isna()").index.tolist()
 
 # %% parity plot of M3GNet/initial volumes vs DFT-relaxed volumes
 ax = pmv.density_scatter(
-    df=df_wbm_init_structs.query("m3gnet_volume < 2000"),
+    df=df_wbm_init_structs.query(f"{ml_vol_col} < 2000"),
     x="final_wbm_volume",
-    y="m3gnet_volume",
+    y=ml_vol_col,
     cmap="Reds",
     alpha=0.5,
     stats=dict(loc="lower right", prefix="m3gnet to final (red)\n"),
 )
 pmv.density_scatter(
-    df=df_wbm_init_structs.query("m3gnet_volume < 2000"),
+    df=df_wbm_init_structs.query(f"{ml_vol_col} < 2000"),
     x="final_wbm_volume",
     y="initial_wbm_volume",
     ax=ax,
@@ -104,8 +105,8 @@ pmv.save_fig(ax, f"{SITE_FIGS}/m3gnet-wbm-volume-scatter.webp", dpi=200)
 
 
 # %% histogram of M3GNet-relaxed vs initial WBM volume residuals wrt DFT-relaxed volume
-df_plot = df_wbm_init_structs.query("m3gnet_volume < 300").filter(like="volume")
-df_plot["m3gnet_vol_diff"] = df_plot.m3gnet_volume - df_plot.final_wbm_volume
+df_plot = df_wbm_init_structs.query(f"{ml_vol_col} < 300").filter(like="volume")
+df_plot["m3gnet_vol_diff"] = df_plot[ml_vol_col] - df_plot.final_wbm_volume
 df_plot["dft_vol_diff"] = df_plot.initial_wbm_volume - df_plot.final_wbm_volume
 fig = px.histogram(
     df_plot.melt(

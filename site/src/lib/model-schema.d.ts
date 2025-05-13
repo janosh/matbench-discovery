@@ -126,7 +126,7 @@ export type ModelMetadata = {
   metrics?: {
     phonons?: PhononMetrics | (`not applicable` | `not available`)
     geo_opt?: GeoOptMetrics | (`not applicable` | `not available`)
-    discovery?: DiscoveryMetrics
+    discovery?: DiscoveryMetrics | `not available`
     diatomics?: DiatomicsMetrics | (`not applicable` | `not available`)
   }
 }

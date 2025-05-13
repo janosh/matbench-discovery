@@ -29,17 +29,17 @@ df_mace[Key.spg_num] = (
 
 
 # %%
-ax = pmv.density_scatter(df=df_mace, x=MbdKey.e_form_dft, y=e_form_mace_col)
-ax.set(title=f"{len(df_mace):,} MACE severe energy underpredictions")
-pmv.save_fig(ax, "mace-hull-dist-scatter.pdf")
+fig = pmv.density_scatter_plotly(df=df_mace, x=MbdKey.e_form_dft, y=e_form_mace_col)
+fig.layout.title = f"{len(df_mace):,} MACE severe energy underpredictions"
+pmv.save_fig(fig, "mace-hull-dist-scatter.pdf")
 
 
 # %%
 df_low = df_mace.query(f"{MbdKey.e_form_dft} - {e_form_mace_col} > 2")
 
-ax = pmv.density_scatter(df=df_low, x=MbdKey.e_form_dft, y=e_form_mace_col)
-ax.set(title=f"{len(df_low):,} MACE severe energy underpredictions")
-pmv.save_fig(ax, "mace-too-low-hull-dist-scatter.pdf")
+fig = pmv.density_scatter_plotly(df=df_low, x=MbdKey.e_form_dft, y=e_form_mace_col)
+fig.layout.title = f"{len(df_low):,} MACE severe energy underpredictions"
+pmv.save_fig(fig, "mace-too-low-hull-dist-scatter.pdf")
 
 
 # %%
