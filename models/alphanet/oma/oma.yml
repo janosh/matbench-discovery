@@ -84,7 +84,7 @@ requirements:
   pymatgen: 2024.6.10
   numpy: 1.26.4
 
-training_set: ['OMAT24', 'sAlex', 'MPtrj'] #train/valid split: 0.95/0.05
+training_set: ["OMAT24", "sAlex", "MPtrj"] #train/valid split: 0.95/0.05
 
 notes:
   Description: |
