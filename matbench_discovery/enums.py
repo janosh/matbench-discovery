@@ -357,6 +357,9 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # wrenformer 10-member ensemble
     wrenformer = auto(), "wrenformer/wrenformer.yml"
 
+    # esnet
+    esnet = auto(), "esnet/esnet.yml"
+
     # --- Model Combos
     # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
     # chgnet_megnet = "chgnet/2023-03-06-chgnet-0.2.0-wbm-IS2RE.csv.gz"
