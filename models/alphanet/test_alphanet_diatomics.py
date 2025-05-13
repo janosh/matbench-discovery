@@ -58,7 +58,7 @@ results: defaultdict[str, dict[str, Any]] = defaultdict(
 print(f"\nPredicting diatomic curves for {model_name}/{model_variant}")
 calc_diatomic_curve(
     pairs=homo_nuclear_pairs,
-    calculator=calculator,
+    calculator=A_calc,
     model_name=model_variant,
     distances=distances,
     results=results[model_variant][homo_nuc],
