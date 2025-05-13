@@ -52,8 +52,13 @@ model_type: UIP
 model_params: 4653577
 trained_for_benchmark: false
 n_estimators: 1
-license: GNU
-training_cost: 285 GPU Days
+license:
+  code: GNU
+  code_url: https://github.com/zmyybc/AlphaNet/blob/main/LICENSE
+  checkpoint: GNU
+  checkpoint_url: https://github.com/zmyybc/AlphaNet/blob/main/LICENSE
+
+training_cost: 285 #GPU Days
 
 hyperparams:
   max_force: 0.03
