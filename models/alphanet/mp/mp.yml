@@ -41,7 +41,7 @@ trained_by:
 
 repo: https://github.com/zmyybc/AlphaNet
 url: https://github.com/zmyybc/AlphaNet
-pr_url: https://github.com/janosh/matbench-discovery/pull/216
+pr_url: https://github.com/janosh/matbench-discovery/pull/255
 paper: https://arxiv.org/abs/2501.07155
 doi: https://doi.org/10.48550/arXiv.2501.07155
 openness: OSOD
