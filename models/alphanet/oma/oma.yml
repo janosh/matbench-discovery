@@ -58,7 +58,7 @@ license:
   checkpoint: GPL-3.0
   checkpoint_url: https://github.com/zmyybc/AlphaNet/blob/main/LICENSE
 
-training_cost: misssing
+training_cost: missing
 
 hyperparams:
   max_force: 0.03
