@@ -15,7 +15,6 @@ import numpy as np
 import torch
 from alphanet.config import All_Config
 from alphanet.infer.calc import AlphaNetCalculator
-from alphanet.models.model import AlphaNetWrapper
 
 from matbench_discovery import ROOT, today
 from matbench_discovery.diatomics import calc_diatomic_curve, homo_nuc
@@ -29,11 +28,11 @@ model_variant = "alphanet-mptrj-v1"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 dtype = "float64"
 config = All_Config().from_json("./mp/mp.json")
-A_calc =AlphaNetCalculator(
-        ckpt_path='./mp/mp_0329.ckpt',
-        device = 'cuda',
-        precision = '64',
-        config=config,
+A_calc = AlphaNetCalculator(
+    ckpt_path="./mp/mp_0329.ckpt",
+    device="cuda",
+    precision="64",
+    config=config,
 )
 
 json_path = f"{ROOT}/models/{model_name}/{model_variant}/{today}-diatomics.json.gz"

@@ -95,10 +95,10 @@ metrics:
   geo_opt:
     pred_file_url: https://figshare.com/ndownloader/files/54490385
     struct_col: alphanet_structure
-    
+
   discovery:
     pred_file_url: https://figshare.com/ndownloader/files/54490379
     pred_col: e_form_per_atom_alphanet
-  
+
   diatomics:
     pred_file_url: https://figshare.com/ndownloader/files/54490367

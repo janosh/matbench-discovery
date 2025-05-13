@@ -14,7 +14,6 @@ import pandas as pd
 import torch
 from alphanet.config import All_Config
 from alphanet.infer.calc import AlphaNetCalculator
-from alphanet.models.model import AlphaNetWrapper
 from ase import Atoms
 from ase.constraints import FixSymmetry
 from ase.filters import FrechetCellFilter
@@ -39,10 +38,10 @@ dtype = "float64"
 config = All_Config().from_json("./mp/mp.json")
 
 calc = AlphaNetCalculator(
-        ckpt_path='./mp/mp_0329.ckpt',
-        device = 'cuda',
-        precision = '64',
-        config=config,
+    ckpt_path="./mp/mp_0329.ckpt",
+    device="cuda",
+    precision="64",
+    config=config,
 )
 
 

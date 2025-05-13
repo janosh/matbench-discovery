@@ -6,7 +6,6 @@ import pandas as pd
 import torch
 from alphanet.config import All_Config
 from alphanet.infer.calc import AlphaNetCalculator
-from alphanet.models.model import AlphaNetWrapper
 from ase import Atoms
 from ase.filters import ExpCellFilter, FrechetCellFilter
 from ase.io import read
@@ -42,11 +41,11 @@ data_path = f"./split_relax/part_{idx}.extxyz"
 print(f"\nJob {job_name!r} running {timestamp}", flush=True)
 print(f"{data_path=}", flush=True)
 
-A_calc =AlphaNetCalculator(
-        ckpt_path='./mp/mp_0329.ckpt',
-        device = 'cuda',
-        precision = '32',
-        config=config,
+A_calc = AlphaNetCalculator(
+    ckpt_path="./mp/mp_0329.ckpt",
+    device="cuda",
+    precision="32",
+    config=config,
 )
 
 print(f"Read data from {data_path}")
