@@ -24,7 +24,6 @@ repo: https://github.com/zzz-sl/ESNet
 doi: https://doi.org/10.21203/rs.3.rs-5979703/v1
 paper: https://www.researchsquare.com/article/rs-5979703/v1
 pr_url: https://github.com/janosh/matbench-discovery/pull/254
-
 checkpoint_url: https://figshare.com/files/54259907
 
 license:
@@ -48,10 +47,7 @@ requirements:
   pytorch-ignite: 0.5.2
   scikit-learn: 1.6.1
 
-model_params:
-  hidden_dim: 128
-  num_heads: 8
-  num_layers: 6
+model_params: 0 # paper doesn't mention and no longer able to load model checkpoint to count parameters
 
 openness: OSOD
 model_type: Transformer
