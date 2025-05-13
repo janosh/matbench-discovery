@@ -66,12 +66,12 @@ training_set: [MP 2022]
 training_cost: missing
 
 hyperparams:
-  graph_construction_radius: 8.0 
+  graph_construction_radius: 8.0
   max_neighbors: 25
 
 metrics:
-  phonons: not applicable 
-  geo_opt: not applicable 
+  phonons: not applicable
+  geo_opt: not applicable
   discovery:
     pred_file: models/esnet/2025-05-08-esnet-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/54445643
