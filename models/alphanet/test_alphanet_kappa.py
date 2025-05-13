@@ -26,8 +26,6 @@ from moyopy.interface import MoyoAdapter
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery import today
-from matbench_discovery.enums import DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
 
@@ -38,14 +36,19 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 model_name = "alphanet"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 dtype = "float64"
-config = All_Config().from_json(".mp.json")
-model = AlphaNetWrapper(config.model)
-model.load_state_dict(torch.load(".mp-0225-2.ckpt", map_location=device))
-model = model.double()
-calc = AlphaNetCalculator(model=model, device="cuda")
+config = All_Config().from_json("./mp/mp.json")
+
+calc = AlphaNetCalculator(
+        ckpt_path='./mp/mp_0329.ckpt',
+        device = 'cuda',
+        precision = '64',
+        config=config,
+)
+
 
 # Relaxation parameters
 ase_optimizer: Literal["FIRE", "LBFGS", "BFGS"] = "FIRE"
+ase_filter: Literal["frechet", "exp"] = "frechet"
 max_steps = 300
 force_max = 1e-4  # Run until the forces are smaller than this in eV/A
 
@@ -60,6 +63,9 @@ prog_bar = True
 save_forces = False  # Save force sets to file
 temperatures = [300]  # Temperatures to calculate conductivity at in Kelvin
 displacement_distance = 0.01  # Displacement distance for phono3py
+
+idx = 1
+
 task_type = "LTC"  # lattice thermal conductivity
 job_name = (
     f"{model_name}-phononDB-{task_type}-{ase_optimizer}_force{force_max}_sym{symprec}"
@@ -67,14 +73,13 @@ job_name = (
 module_dir = os.path.dirname(__file__)
 out_dir = "./results"
 os.makedirs(out_dir, exist_ok=True)
-out_path = (
-    f"{out_dir}/{today}-kappa-103-{ase_optimizer}-dist={displacement_distance}-"
-    f"fmax={force_max}-{symprec=}.json.gz"
-)
+out_path = f"{out_dir}/conductivity_{idx}.json.gz"
 
 timestamp = f"{datetime.now().astimezone():%Y-%m-%d %H:%M:%S}"
+struct_data_path = f"../data/part_{idx}.extxyz"
 print(f"\nJob {job_name} started {timestamp}")
-atoms_list: list[Atoms] = read(DataFiles.phonondb_pbe_103_structures.path, index=":")
+print(f"Read data from {struct_data_path}")
+atoms_list: list[Atoms] = read(struct_data_path, format="extxyz", index=":")
 
 run_params = {
     "timestamp": timestamp,
@@ -83,7 +88,7 @@ run_params = {
     "dtype": dtype,
     "versions": {dep: version(dep) for dep in ("numpy", "torch", "matbench_discovery")},
     "ase_optimizer": ase_optimizer,
-    "cell_filter": "FrechetCellFilter",
+    "ase_filter": ase_filter,
     "max_steps": max_steps,
     "force_max": force_max,
     "symprec": symprec,
@@ -93,11 +98,12 @@ run_params = {
     "displacement_distance": displacement_distance,
     "task_type": task_type,
     "job_name": job_name,
+    "struct_data_path": os.path.basename(struct_data_path),
     "n_structures": len(atoms_list),
 }
 
-with open(f"{out_dir}/run_params.json", mode="w") as file:
-    json.dump(run_params, file, indent=4)
+with open(f"{out_dir}/run_params.json", "w") as f:
+    json.dump(run_params, f, indent=4)
 
 # Set up the relaxation and force set calculation
 optim_cls: Callable[..., Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
@@ -106,19 +112,22 @@ kappa_results: dict[str, dict[str, Any]] = {}
 tqdm_bar = tqdm(atoms_list, desc="Conductivity calculation: ", disable=not prog_bar)
 
 for atoms in tqdm_bar:
-    mat_id = atoms.info[Key.mat_id]
+    mat_id = atoms.info.get(Key.mat_id, f"id-{len(kappa_results)}")
     init_info = deepcopy(atoms.info)
-    formula = atoms.get_chemical_formula()
+    mat_name = atoms.info.get("name", "unknown")
+
     spg_num = MoyoDataset(MoyoAdapter.from_atoms(atoms)).number
+    mat_desc = f"{mat_name}-{spg_num}"
+
     info_dict = {
-        Key.desc: mat_id,
-        Key.formula: formula,
-        Key.spg_num: spg_num,
+        "desc": mat_desc,
+        "name": mat_name,
+        "initial_space_group_number": spg_num,
         "errors": [],
         "error_traceback": [],
     }
 
-    tqdm_bar.set_postfix_str(mat_id, refresh=True)
+    tqdm_bar.set_postfix_str(mat_desc, refresh=True)
 
     # Initialize relax_dict to avoid "possibly unbound" errors
     relax_dict = {
@@ -144,7 +153,7 @@ for atoms in tqdm_bar:
 
             reached_max_steps = optimizer.step >= max_steps
             if reached_max_steps:
-                print(f"{mat_id=} reached {max_steps=} during relaxation")
+                print(f"Material {mat_desc=} reached {max_steps=} during relaxation.")
 
             max_stress = atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
             atoms.calc = None
@@ -162,7 +171,7 @@ for atoms in tqdm_bar:
             }
 
     except Exception as exc:
-        warnings.warn(f"Failed to relax {formula=}, {mat_id=}: {exc!r}", stacklevel=2)
+        warnings.warn(f"Failed to relax {mat_name=}, {mat_id=}: {exc!r}", stacklevel=2)
         traceback.print_exc()
         info_dict["errors"].append(f"RelaxError: {exc!r}")
         info_dict["error_traceback"].append(traceback.format_exc())
@@ -174,9 +183,9 @@ for atoms in tqdm_bar:
         # Initialize phono3py with the relaxed structure
         ph3 = ltc.init_phono3py(
             atoms,
-            fc2_supercell=atoms.info["fc2_supercell"],
-            fc3_supercell=atoms.info["fc3_supercell"],
-            q_point_mesh=atoms.info["q_point_mesh"],
+            fc2_supercell=atoms.info.get("fc2_supercell", [2, 2, 2]),
+            fc3_supercell=atoms.info.get("fc3_supercell", [2, 2, 2]),
+            q_point_mesh=atoms.info.get("q_point_mesh", [10, 10, 10]),
             displacement_distance=displacement_distance,
             symprec=symprec,
         )
@@ -217,7 +226,8 @@ for atoms in tqdm_bar:
         if not ltc_condition:
             kappa_results[mat_id] = info_dict | relax_dict | freqs_dict
             warnings.warn(
-                f"{mat_id=} has imaginary frequencies or broken symmetry", stacklevel=2
+                f"Material {mat_desc} imaginary frequencies or broken symmetry.",
+                stacklevel=2,
             )
             continue
 
@@ -253,7 +263,7 @@ df_kappa.reset_index().to_json(out_path)
 print(f"Saved kappa results to {out_path}")
 
 if save_forces:
-    force_out_path = f"{out_dir}/{today}-kappa-103-force-sets.json.gz"
+    force_out_path = f"{out_dir}/force_sets.json.gz"
     df_force = pd.DataFrame(force_results).T
     df_force.index.name = Key.mat_id
     df_force.reset_index().to_json(force_out_path)
