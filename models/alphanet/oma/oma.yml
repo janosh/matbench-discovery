@@ -53,12 +53,12 @@ model_params: 4653577
 trained_for_benchmark: false
 n_estimators: 1
 license:
-  code: GNU
+  code: GPL-3.0
   code_url: https://github.com/zmyybc/AlphaNet/blob/main/LICENSE
-  checkpoint: GNU
+  checkpoint: GPL-3.0
   checkpoint_url: https://github.com/zmyybc/AlphaNet/blob/main/LICENSE
 
-training_cost: 285 #GPU Days
+training_cost: misssing
 
 hyperparams:
   max_force: 0.03
@@ -73,7 +73,7 @@ hyperparams:
   batch_size: 256 #(16 per device)
   initial_learning_rate: 0.0002
   learning_rate_schedule: StepLR(decay_steps=10000, decay_ratio = 0.93)
-  epochs: 2 epochs on OMAT24 (initial lr 0.0002), 2 epochs on sAlex and MPtrj (initial lr 0.00005)
+  epochs: 4 #2 epochs on OMAT24 (initial lr 0.0002), 2 epochs on sAlex and MPtrj (initial lr 0.00005)
   n_layers: 4
   n_hidden_channels: 176
   n_bessel_basis: 8
@@ -89,7 +89,7 @@ requirements:
   pymatgen: 2024.6.10
   numpy: 1.26.4
 
-training_set: ["OMAT24", "sAlex", "MPtrj"] #train/valid split: 0.95/0.05
+training_set: ["OMat24", "sAlex", "MPtrj"] #train/valid split: 0.95/0.05
 
 notes:
   Description: |
