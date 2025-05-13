@@ -24,7 +24,6 @@ repo: https://github.com/zzz-sl/ESNet
 doi: https://doi.org/10.21203/rs.3.rs-5979703/v1
 paper: https://www.researchsquare.com/article/rs-5979703/v1
 
-
 checkpoint_url: https://figshare.com/files/54259907
 
 license:
@@ -55,7 +54,6 @@ test_task: IS2E
 targets: E
 
 n_estimators: 1
-
 
 training_set: [MP 2018]
 training_cost: missing
