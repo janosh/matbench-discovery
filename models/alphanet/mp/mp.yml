@@ -44,7 +44,12 @@ pr_url: https://github.com/janosh/matbench-discovery/pull/255
 checkpoint_url: https://figshare.com/ndownloader/files/53851133
 paper: https://arxiv.org/abs/2501.07155
 doi: https://doi.org/10.48550/arXiv.2501.07155
-license: GNU
+license:
+  code: GNU
+  code_url: https://github.com/zmyybc/AlphaNet/blob/main/LICENSE
+  checkpoint: GNU
+  checkpoint_url: https://github.com/zmyybc/AlphaNet/blob/main/LICENSE
+
 
 openness: OSOD
 train_task: S2EFS
@@ -52,7 +57,7 @@ test_task: IS2RE-SR
 targets: EFS_G
 model_type: UIP
 model_params: 4653577
-training_cost: 91 gpu days
+training_cost: 91 #gpu days
 trained_for_benchmark: true
 n_estimators: 1
 
