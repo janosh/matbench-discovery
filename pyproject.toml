@@ -21,6 +21,9 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
   "Topic :: Scientific/Engineering :: Chemistry",
   "Topic :: Scientific/Engineering :: Physics",
@@ -152,3 +155,6 @@ typeCheckingMode = "off"
 reportPossiblyUnboundVariable = true
 reportUnboundVariable = true
 reportMissingImports = false
+
+[tool.codespell]
+ignore-words-list = "nd,te,fpr,matris,noe,hart,titel"

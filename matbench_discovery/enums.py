@@ -5,7 +5,7 @@ import builtins
 import functools
 import os
 import sys
-from enum import EnumMeta, StrEnum, _EnumDict, auto, unique
+from enum import EnumType, StrEnum, _EnumDict, auto, unique
 from typing import Any, Self, TypeVar
 
 import plotly.express as px
@@ -195,10 +195,8 @@ class TestSubset(LabelEnum):
     full_test_set = "full_test_set", "Full Test Set"
 
 
-class MetaFiles(EnumMeta):
-    """Metaclass of Files enum that adds base_dir and (member|label)_map class
-    properties.
-    """
+class MetaFiles(EnumType):
+    """Metaclass of Files enum that adds base_dir class kwarg."""
 
     _base_dir: str
 
@@ -336,7 +334,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
 
     # MatterSim - M3gNet architecture trained on propertary MSFT data. Weights
     # are open-sourced.
-    mattersim_v1_5m = auto(), "mattersim/mattersim-v1-5m.yml"
+    mattersim_v1_5m = auto(), "mattersim/mattersim-v1-5M.yml"
 
     # original MEGNet straight from publication, not re-trained
     megnet = auto(), "megnet/megnet.yml"

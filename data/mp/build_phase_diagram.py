@@ -125,10 +125,8 @@ df_mp[e_form_us] = [
 
 
 # make sure get_form_energy_per_atom() reproduces MP formation energies
-ax = pmv.density_scatter_plotly(df_mp[Key.form_energy], df_mp[e_form_us])
-ax.set(
-    title="MP Formation Energy Comparison",
-    xlabel="MP Formation Energy (eV/atom)",
-    ylabel="Our Formation Energy (eV/atom)",
-)
-pmv.save_fig(ax, f"{ROOT}/tmp/{today}-our-vs-mp-formation-energies.webp", dpi=300)
+fig = pmv.density_scatter_plotly(df_mp[Key.form_energy], df_mp[e_form_us])
+fig.layout.title = "Formation Energy Comparison"
+fig.layout.xaxis.title = "MP Formation Energy (eV/atom)"
+fig.layout.yaxis.title = "Our Formation Energy (eV/atom)"
+pmv.save_fig(fig, f"{ROOT}/tmp/{today}-our-vs-mp-formation-energies.webp", dpi=300)
