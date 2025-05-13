@@ -50,7 +50,6 @@ license:
   checkpoint: GNU
   checkpoint_url: https://github.com/zmyybc/AlphaNet/blob/main/LICENSE
 
-
 openness: OSOD
 train_task: S2EFS
 test_task: IS2RE-SR
