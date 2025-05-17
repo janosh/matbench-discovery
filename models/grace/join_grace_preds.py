@@ -111,13 +111,10 @@ def process_results(path: str) -> None:
 
     df_out["e_form_per_atom_grace_uncorrected"] = [
         calc_energy_from_e_refs(
-            dict(energy=energy, composition=formula),
+            dict(energy=row[energy_col], composition=row["formula"]),
             ref_energies=mp_elemental_ref_energies,
         )
-        for energy, formula in tqdm(
-            zip(df_out[energy_col], df_out["formula"]),
-            total=len(df_out),
-        )
+        for row in tqdm(df_out.iterrows(), total=len(df_out))
     ]
 
     # save relaxed structures and final energies

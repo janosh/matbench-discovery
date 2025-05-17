@@ -117,7 +117,7 @@ def test_atoms_zip_round_trip(
     assert len(read_atoms) == len(dummy_atoms)
 
     orig_atoms = dummy_atoms.values() if isinstance(dummy_atoms, dict) else dummy_atoms
-    for original, read in zip(orig_atoms, read_atoms):
+    for original, read in zip(orig_atoms, read_atoms, strict=True):
         # Check basic Atoms properties
         assert original.get_chemical_formula() == read.get_chemical_formula()
         assert np.allclose(original.get_positions(), read.get_positions())

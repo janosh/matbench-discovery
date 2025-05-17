@@ -4,11 +4,11 @@
   import { titles_as_tooltips } from 'svelte-zoo/actions'
   import { flip } from 'svelte/animate'
   import { calc_cell_color } from './metrics'
-  import type { CellSnippetArgs, CellVal, Metric, RowData } from './types'
+  import type { CellSnippetArgs, CellVal, Label, RowData } from './types'
 
   interface Props {
     data: RowData[]
-    columns?: Metric[]
+    columns?: Label[]
     sort_hint?: string
     style?: string | null
     class?: string
@@ -59,14 +59,12 @@
     ascending: initial_sort_direction !== `desc`,
   })
 
-  let sorted_data = $state(data)
-  $effect(() => {
-    sorted_data =
-      data?.filter?.((row) => Object.values(row).some((val) => val !== undefined)) ?? []
-  })
+  let sorted_data = $derived(
+    data?.filter?.((row) => Object.values(row).some((val) => val !== undefined)) ?? [],
+  )
 
   // Helper to make column IDs (needed since column labels in different groups can be repeated)
-  const get_col_id = (col: Metric) =>
+  const get_col_id = (col: Label) =>
     col.group ? `${col.short ?? col.label} (${col.group})` : (col.short ?? col.label)
 
   function sort_rows(column: string, group?: string) {
@@ -126,7 +124,7 @@
     })
   }
 
-  function calc_color(val: CellVal, col: Metric) {
+  function calc_color(val: CellVal, col: Label) {
     // Skip color calculation for null values or if color_scale is null
     if (
       val === null ||
@@ -155,7 +153,7 @@
 
   let visible_columns = $derived(columns.filter((col) => col.visible !== false))
 
-  const sort_indicator = (col: Metric, sort_state: SortState) => {
+  const sort_indicator = (col: Label, sort_state: SortState) => {
     const col_id = get_col_id(col)
     if (sort_state.column === col_id) {
       // When column is sorted, show ↓ for ascending (smaller values at top)

@@ -1,10 +1,10 @@
 <script lang="ts">
   import { Tooltip } from 'svelte-zoo'
   import { click_outside } from 'svelte-zoo/actions'
-  import type { Metric } from './types'
+  import type { Label } from './types'
 
   interface Props {
-    columns: Metric[]
+    columns: Label[]
     column_panel_open?: boolean
   }
 

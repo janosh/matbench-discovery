@@ -462,11 +462,11 @@ def test_smoothness_noise_sensitivity(
     """
     xs = np.logspace(1, -1, 40)
     base = np.sin(2 * np.pi * xs)
-    noise_amps = [0, 0.1, 0.2]  # Removed 0.3 as it might cause instability
+    noise_amplitudes = [0, 0.1, 0.2]  # Removed 0.3 as it might cause instability
 
     # Calculate metrics for increasing noise levels
     metrics = []
-    for amp in noise_amps:
+    for amp in noise_amplitudes:
         ys = base + amp * np.sin(20 * np.pi * xs)
         metrics.append(metric_func(xs, ys))
 
@@ -475,12 +475,12 @@ def test_smoothness_noise_sensitivity(
         if not metrics[idx] < metrics[idx + 1]:
             raise AssertionError(
                 f"\nMetric did not increase monotonically with noise:\n"
-                f"{noise_amps[idx]=:.1f} -> {metrics[idx]=:.6f}\n"
-                f"{noise_amps[idx + 1]=:.1f} -> {metrics[idx + 1]=:.6f}\n"
+                f"{noise_amplitudes[idx]=:.1f} -> {metrics[idx]=:.6f}\n"
+                f"{noise_amplitudes[idx + 1]=:.1f} -> {metrics[idx + 1]=:.6f}\n"
                 f"Metric values for all noise amplitudes:\n"
                 + "\n".join(
                     f"  amp={amp:.1f}: {metric:.6f}"
-                    for amp, metric in zip(noise_amps, metrics)
+                    for amp, metric in zip(noise_amplitudes, metrics, strict=True)
                 )
             )
 

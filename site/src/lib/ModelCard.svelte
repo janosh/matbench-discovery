@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Metric, ModelData } from '$lib'
+  import type { Label, ModelData } from '$lib'
   import { AuthorBrief, DATASETS } from '$lib'
   import pkg from '$site/package.json'
   import { pretty_num } from 'elementari'
@@ -8,7 +8,7 @@
 
   interface Props {
     model: ModelData
-    metrics: readonly Metric[]
+    metrics: readonly Label[]
     sort_by: keyof ModelData
     show_details?: boolean
     style?: string | null

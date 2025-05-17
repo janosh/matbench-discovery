@@ -1,12 +1,22 @@
 // This file is auto-generated from dataset-schema.yml. Do not edit directly.
 
+/**
+ * This interface was referenced by `DatasetRecord`'s JSON-Schema
+ * via the `definition` "http_url".
+ */
 export type HttpUrl = string
 /**
  * Computational or experimental method used to generate the data
+ *
+ * This interface was referenced by `DatasetRecord`'s JSON-Schema
+ * via the `definition` "method_enum".
  */
 export type MethodEnum = `DFT` | `experiment` | `ML` | `GW` | `DMFT` | `MD`
 /**
  * DFT code used for calculations
+ *
+ * This interface was referenced by `DatasetRecord`'s JSON-Schema
+ * via the `definition` "dft_code_enum".
  */
 export type DftCodeEnum =
   | `VASP`
@@ -18,6 +28,9 @@ export type DftCodeEnum =
   | `Various`
 /**
  * Exchange-correlation functional used in DFT calculations
+ *
+ * This interface was referenced by `DatasetRecord`'s JSON-Schema
+ * via the `definition` "functional_enum".
  */
 export type FunctionalEnum =
   | `PBE`
@@ -33,8 +46,39 @@ export type FunctionalEnum =
   | `Various`
 /**
  * Pseudopotentials used in DFT calculations
+ *
+ * This interface was referenced by `DatasetRecord`'s JSON-Schema
+ * via the `definition` "pseudo_potentials_enum".
  */
 export type PseudoPotentialsEnum = `PBE` | `PBE_52` | `PBE_54` | `PBE_64` | `Various`
+/**
+ * License type:
+ * - MIT: Massachusetts Institute of Technology
+ * - CC-BY-4.0: Creative Commons Attribution 4.0 International
+ * - CC-BY-NC-4.0: Creative Commons Attribution-NonCommercial 4.0 International
+ * - CC-BY-SA-4.0: Creative Commons Attribution-ShareAlike 4.0 International
+ * - GPL-3.0: GNU General Public v3.0
+ * - BSD-3-Clause: Berkeley Software Distribution 3-Clause
+ * - LGPL-3.0: GNU Lesser General Public License v3.0
+ * - ASL: Academic Software License
+ * - unreleased: No license since not released
+ *
+ *
+ * This interface was referenced by `DatasetRecord`'s JSON-Schema
+ * via the `definition` "license_enum".
+ */
+export type LicenseEnum =
+  | `MIT`
+  | `Apache-2.0`
+  | `CC-BY-4.0`
+  | `CC-BY-SA-4.0`
+  | `CC-BY-NC-4.0`
+  | `GPL-3.0`
+  | `BSD-3-Clause`
+  | `LGPL-3.0`
+  | `Meta Research`
+  | `ASL`
+  | `unreleased`
 
 export interface DatasetRecord {
   [k: string]: Dataset
@@ -42,6 +86,9 @@ export interface DatasetRecord {
 /**
  * This interface was referenced by `DatasetRecord`'s JSON-Schema definition
  * via the `patternProperty` "^[a-zA-Z0-9 ]+$".
+ *
+ * This interface was referenced by `DatasetRecord`'s JSON-Schema
+ * via the `definition` "dataset".
  */
 export interface Dataset {
   /**
@@ -76,9 +123,9 @@ export interface Dataset {
    */
   n_materials?: number
   /**
-   * Chemical elements included in the dataset
+   * Chemical elements included in the dataset (either symbols or atomic numbers)
    */
-  elements?: string[]
+  elements?: (string | number)[]
   /**
    * Temperature range of structures in the dataset (e.g., '0-5000 K')
    */
@@ -173,6 +220,10 @@ export interface Dataset {
     [k: string]: unknown
   }
 }
+/**
+ * This interface was referenced by `DatasetRecord`'s JSON-Schema
+ * via the `definition` "person".
+ */
 export interface Person {
   name: string
   affiliation?: string

@@ -1,12 +1,12 @@
 <script lang="ts">
   import { TableColumnToggleMenu } from '$lib'
   import { Tooltip } from 'svelte-zoo'
-  import type { Metric } from './types'
+  import type { Label } from './types'
 
   // Props for this component
   interface Props {
     show_energy_only?: boolean
-    columns?: Metric[]
+    columns?: Label[]
     show_heatmap?: boolean
     show_compliant?: boolean
     show_non_compliant?: boolean

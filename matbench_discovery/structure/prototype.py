@@ -55,6 +55,7 @@ def get_prototype_formula(composition: Composition, amt_tol: float = 1e-8) -> st
         for elem, amt in zip(
             string.ascii_uppercase,
             [reduced[key] for key in sorted(reduced, key=str)],
+            strict=False,
         )
     )
 
@@ -88,7 +89,9 @@ def canonicalize_wyckoffs(element_wyckoffs: str, spg_num: int) -> str:
             counts = [char for char in groups if char.isnumeric()]
 
             # Sort by Wyckoff letter and build string
-            sorted_pairs = sorted(zip(counts, letters), key=lambda x: x[1])
+            sorted_pairs = sorted(
+                zip(counts, letters, strict=False), key=lambda x: x[1]
+            )
             sorted_wyckoffs.append(
                 "".join(
                     f"{count}{letter}" if count != "1" else letter

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import type { Metric, ModelData } from '$lib'
+  import type { ModelData } from '$lib'
   import { calculate_days_ago } from '$lib'
   import { extent } from 'd3-array'
   import { ColorScaleSelect, pretty_num, ScatterPlot } from 'elementari'
@@ -392,25 +392,25 @@
       {@const disable_log = Boolean(min === undefined || max === undefined || min <= 0 || 100 * min > max)}
       <label for={control.id}>{control.label}</label>
       <Select
+        {options}
         id={control.id}
         selected={[axes[control.id]]}
         bind:value={axes[control.id]}
         placeholder="Select {control.label}"
-        {options}
         maxSelect={1}
         minSelect={1}
         style="width: 100%; max-width: none; margin: 0;"
         liSelectedStyle="font-size: 16px;"
         ulSelectedStyle="padding: 0;"
-        let:option
         --sms-selected-bg="none"
         --sms-border="1px solid rgba(255, 255, 255, 0.15)"
       >
-        {@const prop = option as unknown as Metric}
+      {#snippet children({option: prop})}
         {@html format_property_path(`${prop.path ?? ``}.${prop.label ?? prop.label}`.replace(/^\./, ``))}
         <span style="font-size: smaller; color: gray; margin-left: 0.5em;">
           ({model_counts_by_prop[prop.key]} models)
         </span>
+        {/snippet}
       </Select>
       <label
         aria-disabled={disable_log}

@@ -90,7 +90,6 @@ output-format = "concise"
 select = ["ALL"]
 ignore = [
   "ANN401",
-  "B905",    # zip without explicit strict
   "BLE001",
   "C408",    # unnecessary-collection-call
   "C901",

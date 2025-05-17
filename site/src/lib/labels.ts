@@ -1,5 +1,12 @@
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
-import type { DiscoverySet, Metric } from './types'
+import type {
+  DatasetMetadataLabels,
+  DiscoveryMetricsLabels,
+  GeoOptSymmetryMetricsLabels,
+  HyperparamLabels,
+  MetadataLabels,
+} from './label-schema.d.ts'
+import type { DiscoverySet, Label } from './types'
 
 export const RMSD_BASELINE = 0.15 // baseline for poor performance given worst performing model at time of writing is M3GNet at 0.1117
 
@@ -19,7 +26,7 @@ export const sub_sup_to_tspan = (text: string): string => {
     .replaceAll(`</sup>`, `</tspan>`)
 }
 
-export const DISCOVERY_METRICS: Record<string, Metric> = {
+export const DISCOVERY_METRICS: DiscoveryMetricsLabels = {
   Accuracy: {
     key: `Accuracy`,
     short: `Acc`,
@@ -99,7 +106,7 @@ export const DISCOVERY_METRICS: Record<string, Metric> = {
   },
 } as const
 
-export const METADATA_COLS: Record<string, Metric> = {
+export const METADATA_COLS: MetadataLabels = {
   model_name: {
     label: `Model`,
     key: `model_name`,
@@ -192,7 +199,7 @@ export const METADATA_COLS: Record<string, Metric> = {
   },
 } as const
 
-export const HYPERPARAMS: Record<string, Metric> = {
+export const HYPERPARAMS: HyperparamLabels = {
   model_params: {
     label: `Number of model parameters`,
     key: `model_params`,
@@ -258,10 +265,8 @@ export const HYPERPARAMS: Record<string, Metric> = {
   },
 } as const
 
-export type MetricKey = keyof typeof ALL_METRICS
-
-export const DATASET_METADATA_COLS: Record<string, Metric> = {
-  name: { label: `Name`, key: `name`, sticky: true },
+export const DATASET_METADATA_COLS: DatasetMetadataLabels = {
+  name: { key: `name`, label: `Name`, description: `Name of the dataset`, sticky: true },
   structures: {
     key: `n_structures`,
     label: `Number of Structures`,
@@ -275,35 +280,54 @@ export const DATASET_METADATA_COLS: Record<string, Metric> = {
     key: `n_materials`,
     label: `Number of Materials`,
     short: `Materials`,
+    description: `Number of unique materials/prototypes in the dataset.`,
     better: `higher`,
     scale_type: `log`,
     format: `.3s`,
-    description: `Number of unique materials/prototypes in the dataset.`,
   },
   created: {
     key: `created`,
     label: `Created`,
     description: `Date the dataset was created/started`,
   },
-  open: { label: `Open`, key: `Open`, style: `text-align: center;` },
-  static: {
-    label: `Static`,
-    key: `Static`,
+  open: {
+    key: `Open`,
+    label: `Open`,
+    description: `Whether the dataset is openly available`,
     style: `text-align: center;`,
-    description: `Whether the dataset is static (fixed version) or dynamic (continuously updated).`,
   },
-  license: { key: `license`, label: `License` },
-  method: { key: `method`, label: `Method`, style: `max-width: 5em;` },
+  static: {
+    key: `Static`,
+    label: `Static`,
+    description: `Whether the dataset is static (fixed version) or dynamic (continuously updated).`,
+    style: `text-align: center;`,
+  },
+  license: {
+    key: `license`,
+    label: `License`,
+    description: `License under which the dataset is published`,
+  },
+  method: {
+    key: `method`,
+    label: `Method`,
+    description: `Method(s) used to generate the data`,
+    style: `max-width: 5em;`,
+  },
   api: {
-    label: `API`,
     key: `API`,
+    label: `API`,
     description: `API docs (OPTIMADE or native)`,
     sortable: false,
   },
-  links: { key: `links`, label: `Links`, sortable: false },
+  links: {
+    key: `links`,
+    label: `Links`,
+    description: `Relevant links for the dataset`,
+    sortable: false,
+  },
 } as const
 
-export const GEO_OPT_SYMMETRY_METRICS: Record<string, Metric> = Object.fromEntries(
+export const GEO_OPT_SYMMETRY_METRICS = Object.fromEntries(
   [`1e-2`, `1e-5`]
     .flatMap(
       (symprec) =>
@@ -330,9 +354,12 @@ export const GEO_OPT_SYMMETRY_METRICS: Record<string, Metric> = Object.fromEntri
         visible: false,
       },
     ]),
-)
+) as unknown as GeoOptSymmetryMetricsLabels
 
-export const ALL_METRICS: Record<string, Metric> = {
+export type AllMetrics = DiscoveryMetricsLabels &
+  GeoOptSymmetryMetricsLabels & { CPS: Label; κ_SRME: Label; RMSD: Label }
+
+export const ALL_METRICS: AllMetrics = {
   // Dynamic metrics
   CPS: {
     key: `CPS`,
@@ -363,7 +390,6 @@ export const ALL_METRICS: Record<string, Metric> = {
     description: `Root mean squared displacement between predicted and reference structures after relaxation`,
     style: `border-left: 1px solid black;`,
   },
-  ...DISCOVERY_METRICS,
   ...GEO_OPT_SYMMETRY_METRICS,
 } as const
 
@@ -386,7 +412,7 @@ export const DISCOVERY_SET_LABELS: Record<
   },
 } as const
 
-export const PROPERTY_LABELS: Record<string, string> = Object.fromEntries(
+export const PROPERTY_LABELS = Object.fromEntries(
   Object.values({ ...ALL_METRICS, ...METADATA_COLS, ...HYPERPARAMS }).map((prop) => [
     prop.key,
     prop.label,
@@ -485,11 +511,12 @@ export function get_org_logo(
 ): { name: string; id?: string; src?: string } | undefined {
   if (!affiliation) return undefined
 
-  for (const [key, logo] of Object.entries(org_logos)) {
+  for (const [key_val, logo_val] of Object.entries(org_logos)) {
     // Check if lowercased affiliation string includes lowercased org key
-    if (affiliation.includes(key)) {
-      if (logo.startsWith(`/logos/`)) return { name: key, src: logo }
-      else return { name: key, id: logo }
+    if (affiliation.includes(key_val)) {
+      if (logo_val.startsWith(`/logos/`)) return { name: key_val, src: logo_val }
+      else return { name: key_val, id: logo_val }
     }
   }
+  return undefined
 }
