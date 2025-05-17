@@ -202,9 +202,9 @@ def test_reproducibility(make_obj: Callable[[int], Atoms | Structure]) -> None:
     chunks2 = hpc.chunk_by_lens(objects, n_chunks=2)
 
     # Compare object identities in each chunk
-    for chunk1, chunk2 in zip(chunks1, chunks2):
+    for chunk1, chunk2 in zip(chunks1, chunks2, strict=True):
         assert len(chunk1) == len(chunk2)
-        for obj1, obj2 in zip(chunk1, chunk2):
+        for obj1, obj2 in zip(chunk1, chunk2, strict=True):
             assert obj1 is obj2  # should be the exact same object
 
 

@@ -97,8 +97,10 @@ definitions:
       elements:
         type: array
         items:
-          type: string
-        description: Chemical elements included in the dataset
+          oneOf:
+            - type: string
+            - type: integer
+        description: Chemical elements included in the dataset (either symbols or atomic numbers)
       temperature_range:
         type: string
         pattern: ^\d+-\d+ K$ # e.g. 0-5000 K

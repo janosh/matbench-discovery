@@ -36,7 +36,7 @@ plotly_colors *= len(plotly_markers) // len(plotly_colors)
 # used for consistent markers, line styles and colors for a given model across plots
 model_labels = [m.label for m in Model]
 model_styles = dict(
-    zip(model_labels, zip(plotly_line_styles, plotly_markers, plotly_colors))
+    zip(model_labels, zip(plotly_line_styles, plotly_markers, plotly_colors))  # noqa: B905
 )
 
 

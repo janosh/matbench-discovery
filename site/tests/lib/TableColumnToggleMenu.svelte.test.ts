@@ -1,10 +1,10 @@
 import { TableColumnToggleMenu } from '$lib'
-import type { Metric } from '$lib/types'
+import type { Label } from '$lib/types'
 import { mount, tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
 
 describe(`TableColumnToggleMenu`, () => {
-  const columns: Metric[] = [
+  const columns: Label[] = [
     { key: `col1`, label: `Column 1`, visible: true },
     { key: `col2`, label: `Column 2`, visible: false },
     { key: `col3`, label: `Column 3`, visible: true },
@@ -60,7 +60,7 @@ describe(`TableColumnToggleMenu`, () => {
   })
 
   it(`handles HTML in column names with correct rendering`, () => {
-    const columns: Metric[] = [
+    const columns: Label[] = [
       { key: `col1`, label: `Column with <sub>subscript</sub>`, visible: true },
       { key: `col2`, label: `Column with <sup>superscript</sup>`, visible: false },
     ]

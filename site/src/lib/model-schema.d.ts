@@ -130,8 +130,20 @@ export type ModelMetadata = {
     diatomics?: DiatomicsMetrics | (`not applicable` | `not available`)
   }
 }
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "ModelType".
+ */
 export type ModelType = `GNN` | `UIP` | `BO-GNN` | `Fingerprint` | `Transformer` | `RF`
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "TargetType".
+ */
 export type TargetType = `E` | `EF_G` | `EF_D` | `EFS_G` | `EFS_D` | `EFS_GM` | `EFS_DM`
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "GeoOptMetrics".
+ */
 export type GeoOptMetrics = {
   [k: string]: unknown
 } & {
@@ -159,6 +171,10 @@ export type GeoOptMetrics = {
     analysis_file_url?: string
   }
 }
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "DiscoveryMetrics".
+ */
 export type DiscoveryMetrics = {
   [k: string]: unknown
 } & {
@@ -169,6 +185,10 @@ export type DiscoveryMetrics = {
   most_stable_10k?: DiscoveryMetricsSet
   unique_prototypes?: DiscoveryMetricsSet
 }
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "DiatomicsMetrics".
+ */
 export type DiatomicsMetrics = {
   [k: string]: unknown
 } & {
@@ -186,7 +206,51 @@ export type DiatomicsMetrics = {
   force_jump?: number
   force_conservation?: number
 }
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "http_url".
+ */
+export type HttpUrl = string
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "pred_files".
+ */
+export type PredFiles = {
+  [k: string]: unknown
+}
+/**
+ * License type:
+ * - MIT: Massachusetts Institute of Technology
+ * - CC-BY-4.0: Creative Commons Attribution 4.0 International
+ * - CC-BY-NC-4.0: Creative Commons Attribution-NonCommercial 4.0 International
+ * - CC-BY-SA-4.0: Creative Commons Attribution-ShareAlike 4.0 International
+ * - GPL-3.0: GNU General Public v3.0
+ * - BSD-3-Clause: Berkeley Software Distribution 3-Clause
+ * - LGPL-3.0: GNU Lesser General Public License v3.0
+ * - ASL: Academic Software License
+ * - unreleased: No license since not released
+ *
+ *
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "license_enum".
+ */
+export type LicenseEnum =
+  | `MIT`
+  | `Apache-2.0`
+  | `CC-BY-4.0`
+  | `CC-BY-SA-4.0`
+  | `CC-BY-NC-4.0`
+  | `GPL-3.0`
+  | `BSD-3-Clause`
+  | `LGPL-3.0`
+  | `Meta Research`
+  | `ASL`
+  | `unreleased`
 
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "person".
+ */
 export interface Person {
   name: string
   affiliation?: string
@@ -196,11 +260,19 @@ export interface Person {
   github?: string
   corresponding?: boolean
 }
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "PhononMetrics".
+ */
 export interface PhononMetrics {
   kappa_103?: {
     [k: string]: unknown
   }
 }
+/**
+ * This interface was referenced by `undefined`'s JSON-Schema
+ * via the `definition` "DiscoveryMetricsSet".
+ */
 export interface DiscoveryMetricsSet {
   F1?: number
   DAF?: number

@@ -2,13 +2,13 @@
   import type { ModelData } from '$lib'
   import { calculate_days_ago, MODELS } from '$lib'
   import { get_nested_value } from '$lib/metrics'
-  import type { Metric } from '$lib/types'
+  import type { Label } from '$lib/types'
   import { ScatterPlot, type DataSeries, type PointStyle } from 'elementari'
   import { METADATA_COLS } from './labels'
 
   interface Props {
-    x_prop: Metric
-    y_prop: Metric
+    x_prop: Label
+    y_prop: Label
     models?: ModelData[]
     model_filter?: (model: ModelData) => boolean
     point_style?: PointStyle
