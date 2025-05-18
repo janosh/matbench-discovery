@@ -11,16 +11,16 @@
     metrics: readonly Label[]
     sort_by: keyof ModelData
     show_details?: boolean
-    style?: string | null
-    metrics_style?: string | null
+    metrics_style?: string
+    [key: string]: unknown
   }
   let {
     model,
     metrics,
     sort_by,
     show_details = $bindable(false),
-    style = null,
-    metrics_style = null,
+    metrics_style = ``,
+    ...rest
   }: Props = $props()
 
   let { model_name, model_key, model_params } = $derived(model)
@@ -45,7 +45,7 @@
   let n_model_params = $derived(pretty_num(model_params, `.3~s`))
 </script>
 
-<h2 id={model_key} {style}>
+<h2 id={model_key}>
   <a href="/models/{model_key}">{model_name}</a>
   <button
     onclick={() => (show_details = !show_details)}
@@ -64,7 +64,7 @@
   {/each}
 </nav>
 
-<section class="metadata">
+<section class="metadata" {...rest}>
   {#if training_set}
     <span style="grid-column: span 2;">
       <svg><use href="#icon-database"></use></svg>
@@ -160,7 +160,7 @@
   </div>
 {/if}
 
-<section class="metrics" style={metrics_style}>
+<section class="metrics" style={metrics_style || null}>
   <h3>Metrics</h3>
   <ul>
     <!-- hide run time if value is 0 (i.e. not available) -->

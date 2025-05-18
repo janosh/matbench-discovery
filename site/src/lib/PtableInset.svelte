@@ -5,17 +5,11 @@
   interface Props {
     element: ChemicalElement
     elem_counts: number[] | Record<ElementSymbol, number>
-    style?: string | null
     show_percent?: boolean
     unit?: string
+    [key: string]: unknown
   }
-  let {
-    element,
-    elem_counts,
-    style = null,
-    show_percent = true,
-    unit = ``,
-  }: Props = $props()
+  let { element, elem_counts, show_percent = true, unit = ``, ...rest }: Props = $props()
 
   let value = $derived(
     Array.isArray(elem_counts)
@@ -30,7 +24,7 @@
   )
 </script>
 
-<strong {style}>
+<strong {...rest}>
   {#if element?.name}
     {element?.name}: {pretty_num(value)}
     {@html unit}
