@@ -10,8 +10,6 @@
     data: RowData[]
     columns?: Label[]
     sort_hint?: string
-    style?: string | null
-    class?: string
     cell?: Snippet<[CellSnippetArgs]>
     special_cells?: Record<string, Snippet<[CellSnippetArgs]>>
     controls?: Snippet
@@ -20,13 +18,12 @@
     fixed_header?: boolean
     default_num_format?: string
     show_heatmap?: boolean
+    [key: string]: unknown
   }
   let {
     data,
     columns = [],
     sort_hint = ``,
-    style = null,
-    class: class_name = ``,
     cell,
     special_cells,
     controls,
@@ -35,6 +32,7 @@
     fixed_header = false,
     default_num_format = `.3`,
     show_heatmap = $bindable(true),
+    ...rest
   }: Props = $props()
 
   // Hacky helper function to detect if a string contains HTML, TODO revisit in future
@@ -170,7 +168,7 @@
   }
 </script>
 
-<div class="table-container {class_name}" {style} use:titles_as_tooltips>
+<div class="table-container" use:titles_as_tooltips {...rest}>
   {#if (sort_state && sort_hint) || controls}
     <div class="table-header">
       {#if sort_state && sort_hint}

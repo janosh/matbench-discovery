@@ -4,7 +4,7 @@
 git clone https://github.com/janosh/matbench-discovery
 git checkout 5c8601a
 cd matbench-discovery
-pip install -e . --config-settings editable-mode=compat
+pip install -e .
 """
 
 import os

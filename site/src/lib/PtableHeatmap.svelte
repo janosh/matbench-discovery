@@ -4,7 +4,7 @@
   import type { D3InterpolateName } from 'elementari/colors'
   import type { ComponentProps } from 'svelte'
 
-  interface Props {
+  interface Props extends ComponentProps<typeof PeriodicTable> {
     heatmap_values: Record<string, number>
     color_scale?: D3InterpolateName
     active_element?: ChemicalElement | null
@@ -17,6 +17,7 @@
     active_element = $bindable(null),
     log = $bindable(false),
     colorbar = {},
+    ...rest
   }: Props = $props()
 
   export const snapshot = {
@@ -31,6 +32,7 @@
   {log}
   bind:active_element
   show_photo={false}
+  {...rest}
 >
   {#snippet inset()}
     <TableInset>
