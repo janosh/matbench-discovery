@@ -111,8 +111,8 @@ describe(`format_train_set`, () => {
 
     // Check that the result contains combined information
     expect(result).toContain(`data-sort-value="${combined_materials}"`)
-    expect(result).toContain(mp2022.title)
-    expect(result).toContain(mptrj.title || mptrj_key)
+    expect(result).toContain(mp2022.name)
+    expect(result).toContain(mptrj.name || mptrj_key)
   })
 
   it(`shows materials and structures when they differ`, () => {

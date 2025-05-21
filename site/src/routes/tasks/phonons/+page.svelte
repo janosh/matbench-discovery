@@ -1,6 +1,7 @@
 <script lang="ts">
   import { MetricScatter, MetricsTable } from '$lib'
   import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from '$lib/labels'
+  import KappaNote from './kappa-note.md'
 
   // Default column visibility
   let visible_cols: Record<string, boolean> = $state({
@@ -18,6 +19,8 @@
 <section class="full-bleed">
   <MetricsTable col_filter={(col) => visible_cols[col.label] ?? true} sort_hint="" />
 </section>
+
+<KappaNote />
 
 <h3>κ<sub>SRME</sub> vs Model Parameters</h3>
 <p>

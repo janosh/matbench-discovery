@@ -11,15 +11,15 @@ describe(`HeatmapTable`, () => {
   ]
 
   const sample_columns: Label[] = [
-    { key: `model`, label: `Model`, sticky: true },
-    { key: `score`, label: `Score`, better: `higher`, format: `.2f` },
-    { key: `value`, label: `Value`, better: `lower` },
+    { key: `model`, label: `Model`, sticky: true, description: `` },
+    { key: `score`, label: `Score`, better: `higher`, format: `.2f`, description: `` },
+    { key: `value`, label: `Value`, better: `lower`, description: `` },
   ]
 
   it(`renders table with correct structure and handles hidden columns`, () => {
     const columns = [
       ...sample_columns,
-      { key: `hidden`, label: `Hidden`, visible: false },
+      { key: `hidden`, label: `Hidden`, visible: false, description: `` },
     ]
     mount(HeatmapTable, {
       target: document.body,
@@ -110,7 +110,7 @@ describe(`HeatmapTable`, () => {
         { Date: `<span data-sort-value="1715089200000">2024-05-07</span>` },
       ]
 
-      const date_columns: Label[] = [{ key: `date`, label: `Date` }]
+      const date_columns: Label[] = [{ key: `date`, label: `Date`, description: `` }]
 
       mount(HeatmapTable, {
         target: document.body,
@@ -132,7 +132,7 @@ describe(`HeatmapTable`, () => {
         { Number: `<span data-sort-value="10000">10,000</span>` },
       ]
 
-      const columns: Label[] = [{ key: `number`, label: `Number` }]
+      const columns: Label[] = [{ key: `number`, label: `Number`, description: `` }]
 
       mount(HeatmapTable, {
         target: document.body,
@@ -149,9 +149,9 @@ describe(`HeatmapTable`, () => {
     it(`respects unsortable columns`, async () => {
       // Setup columns with an unsortable column
       const columns: Label[] = [
-        { key: `name`, label: `Name`, sortable: true },
-        { key: `value`, label: `Value`, sortable: true },
-        { key: `actions`, label: `Actions`, sortable: false },
+        { key: `name`, label: `Name`, sortable: true, description: `` },
+        { key: `value`, label: `Value`, sortable: true, description: `` },
+        { key: `actions`, label: `Actions`, sortable: false, description: `` },
       ]
 
       // Setup data with three sample entries
@@ -223,8 +223,14 @@ describe(`HeatmapTable`, () => {
 
   it(`handles formatting and styles`, () => {
     const columns: Label[] = [
-      { key: `num`, label: `Num`, format: `.1%` },
-      { key: `val`, label: `Val`, better: `higher`, color_scale: `interpolateViridis` },
+      { key: `num`, label: `Num`, format: `.1%`, description: `` },
+      {
+        key: `val`,
+        label: `Val`,
+        better: `higher`,
+        color_scale: `interpolateViridis`,
+        description: ``,
+      },
     ]
     const data = [
       { Num: 0.123, Val: 0 },
@@ -258,6 +264,7 @@ describe(`HeatmapTable`, () => {
       better: `higher`,
       color_scale: `interpolateViridis`,
       scale_type: `linear`,
+      description: ``,
     }
     const c2: Label = {
       key: `log`,
@@ -265,6 +272,7 @@ describe(`HeatmapTable`, () => {
       better: `higher`,
       color_scale: `interpolateViridis`,
       scale_type: `log`,
+      description: ``,
     }
     const data = [10, 100, 1000].map((val) => ({ [c1.label]: val, [c2.label]: val }))
 
@@ -341,9 +349,9 @@ describe(`HeatmapTable`, () => {
     ]
 
     const html_columns: Label[] = [
-      { key: `name`, label: `Name` },
-      { key: `html`, label: `HTML` },
-      { key: `complex`, label: `Complex` },
+      { key: `name`, label: `Name`, description: `` },
+      { key: `html`, label: `HTML`, description: `` },
+      { key: `complex`, label: `Complex`, description: `` },
     ]
 
     mount(HeatmapTable, {
@@ -392,7 +400,13 @@ describe(`HeatmapTable`, () => {
   describe(`Heatmap Toggle Functionality`, () => {
     it(`does not apply heatmap colors when show_heatmap is false`, () => {
       const columns: Label[] = [
-        { key: `val`, label: `Val`, better: `higher`, color_scale: `interpolateViridis` },
+        {
+          key: `val`,
+          label: `Val`,
+          better: `higher`,
+          color_scale: `interpolateViridis`,
+          description: ``,
+        },
       ]
       const data = [{ Val: 0 }, { Val: 100 }]
 
@@ -412,7 +426,13 @@ describe(`HeatmapTable`, () => {
 
     it(`applies heatmap colors when show_heatmap is true (default)`, () => {
       const columns: Label[] = [
-        { key: `val`, label: `Val`, better: `higher`, color_scale: `interpolateViridis` },
+        {
+          key: `val`,
+          label: `Val`,
+          better: `higher`,
+          color_scale: `interpolateViridis`,
+          description: ``,
+        },
       ]
       const data = [{ Val: 0 }, { Val: 100 }]
 
@@ -434,13 +454,13 @@ describe(`HeatmapTable`, () => {
   describe(`Column grouping`, () => {
     it(`correctly renders grouped columns`, () => {
       const grouped_columns: Label[] = [
-        { key: `name`, label: `Name`, sticky: true },
-        { key: `val1_v`, label: `Value 1`, group: `Values` },
-        { key: `val2_v`, label: `Value 2`, group: `Values` },
-        { key: `met1`, label: `Metric 1`, group: `Metrics` },
-        { key: `met2`, label: `Metric 2`, group: `Metrics` },
-        { key: `val1_sv`, label: `Value 1`, group: `Second Values` },
-        { key: `val2_sv`, label: `Value 2`, group: `Second Values` },
+        { key: `name`, label: `Name`, sticky: true, description: `` },
+        { key: `val1_v`, label: `Value 1`, group: `Values`, description: `` },
+        { key: `val2_v`, label: `Value 2`, group: `Values`, description: `` },
+        { key: `met1`, label: `Metric 1`, group: `Metrics`, description: `` },
+        { key: `met2`, label: `Metric 2`, group: `Metrics`, description: `` },
+        { key: `val1_sv`, label: `Value 1`, group: `Second Values`, description: `` },
+        { key: `val2_sv`, label: `Value 2`, group: `Second Values`, description: `` },
       ]
 
       const grouped_data = [
@@ -505,11 +525,11 @@ describe(`HeatmapTable`, () => {
 
     it(`correctly handles mixed grouped and ungrouped columns`, () => {
       const mixed_columns: Label[] = [
-        { key: `name`, label: `Name` },
-        { key: `regular`, label: `Regular` },
-        { key: `group1`, label: `Group 1`, group: `Grouped` },
-        { key: `group2`, label: `Group 2`, group: `Grouped` },
-        { key: `another`, label: `Another` },
+        { key: `name`, label: `Name`, description: `` },
+        { key: `regular`, label: `Regular`, description: `` },
+        { key: `group1`, label: `Group 1`, group: `Grouped`, description: `` },
+        { key: `group2`, label: `Group 2`, group: `Grouped`, description: `` },
+        { key: `another`, label: `Another`, description: `` },
       ]
 
       const mixed_data = [
@@ -542,8 +562,13 @@ describe(`HeatmapTable`, () => {
   describe(`Style and CSS properties`, () => {
     it(`applies custom column styles`, () => {
       const styled_columns: Label[] = [
-        { key: `col1`, label: `Col1`, style: `color: red; font-weight: lighter;` },
-        { key: `col2`, label: `Col2` },
+        {
+          key: `col1`,
+          label: `Col1`,
+          style: `color: red; font-weight: lighter;`,
+          description: ``,
+        },
+        { key: `col2`, label: `Col2`, description: `` },
       ]
 
       mount(HeatmapTable, {
@@ -566,7 +591,7 @@ describe(`HeatmapTable`, () => {
         target: document.body,
         props: {
           data: data_with_styles,
-          columns: [{ key: `col`, label: `col` }],
+          columns: [{ key: `col`, label: `col`, description: `` }],
         },
       })
 
@@ -579,7 +604,7 @@ describe(`HeatmapTable`, () => {
         target: document.body,
         props: {
           data: [{ col: `value` }],
-          columns: [{ key: `col`, label: `col` }],
+          columns: [{ key: `col`, label: `col`, description: `` }],
           style: `max-height: 200px; border: 1px solid blue;`,
         },
       })
