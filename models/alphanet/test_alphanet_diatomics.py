@@ -15,7 +15,6 @@ import numpy as np
 import torch
 from alphanet.config import All_Config
 from alphanet.infer.calc import AlphaNetCalculator
-from alphanet.models.model import AlphaNetWrapper
 
 from matbench_discovery import ROOT, today
 from matbench_discovery.diatomics import calc_diatomic_curve, homo_nuc
@@ -25,14 +24,16 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 
 # %% editable config
 model_name = "alphanet"
-model_variant = "alphanet-mptrj-v0"
+model_variant = "alphanet-mptrj-v1"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 dtype = "float64"
-config = All_Config().from_json(".mp.json")
-model = AlphaNetWrapper(config.model)
-model.load_state_dict(torch.load(".mp-0225-2.ckpt", map_location=device))
-model = model.double()
-calculator = AlphaNetCalculator(model=model, device="cuda")
+config = All_Config().from_json("./mp/mp.json")
+A_calc = AlphaNetCalculator(
+    ckpt_path="./mp/mp_0329.ckpt",
+    device="cuda",
+    precision="64",
+    config=config,
+)
 
 json_path = f"{ROOT}/models/{model_name}/{model_variant}/{today}-diatomics.json.gz"
 existing_paths = glob(json_path.replace(today, "*-*-*"))
@@ -41,7 +42,7 @@ if existing_paths:
     raise SystemExit
 
 # distances in Angstrom
-distances = np.logspace(1, -1, 40)
+distances = np.linspace(0.1, 6, 100)
 
 # only consider elements up to atomic number 10 (Ne) for now
 atomic_nums = range(1, 93)
@@ -57,7 +58,7 @@ results: defaultdict[str, dict[str, Any]] = defaultdict(
 print(f"\nPredicting diatomic curves for {model_name}/{model_variant}")
 calc_diatomic_curve(
     pairs=homo_nuclear_pairs,
-    calculator=calculator,
+    calculator=A_calc,
     model_name=model_variant,
     distances=distances,
     results=results[model_variant][homo_nuc],
