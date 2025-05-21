@@ -67,7 +67,16 @@
 </svelte:head>
 
 {#if ![`/`, `/models`].includes(url)}
-  <Toc {headingSelector} breakpoint={1250} minItems={3} />
+  <Toc
+    {headingSelector}
+    breakpoint={1600}
+    minItems={3}
+    aside_style="min-width: 25em; left: calc(50vw + var(--main-max-width) / 2 + 160px); line-height: 1.8;"
+    open_button_style="right: 2em;"
+    --toc-mobile-bg="rgba(0, 0, 0, 0.3)"
+    --toc-mobile-width="22em"
+    --toc-active-bg="none"
+  />
 {/if}
 
 <GitHubCorner href={pkg.repository} />

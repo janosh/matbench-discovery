@@ -98,7 +98,6 @@ export type ModelMetadata = {
   notes?: {
     Description?: string
     Training?: string
-    'Missing Preds'?: string
     html?: string
     [k: string]: unknown
   }

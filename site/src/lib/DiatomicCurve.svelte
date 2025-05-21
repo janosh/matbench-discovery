@@ -1,11 +1,6 @@
 <script lang="ts">
   import { MODELS } from '$lib'
-  import {
-    ScatterPlot,
-    type DataSeries,
-    type InternalPoint,
-    type Point,
-  } from 'elementari'
+  import { ScatterPlot, type InternalPoint } from 'elementari'
 
   interface Props {
     formula: string
@@ -88,11 +83,6 @@
       }
     }),
   )
-
-  function on_tooltip_change(data: Point & { series: DataSeries }) {
-    const { x, y, series } = data
-    tooltip_point = { x, y, metadata: series.metadata }
-  }
 </script>
 
 <!-- TODO increase font size of axes titles and tick labels -->
@@ -109,7 +99,7 @@
     {y_lim}
     bind:tooltip_point
     bind:hovered
-    change={on_tooltip_change}
+    legend={null}
   >
     {#snippet tooltip({ x_formatted, y_formatted, metadata })}
       <div

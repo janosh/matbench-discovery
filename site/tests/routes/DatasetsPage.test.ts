@@ -10,7 +10,7 @@ describe(`Datasets Page`, () => {
 
   it(`renders the page title correctly`, () => {
     const heading = doc_query<HTMLHeadingElement>(`h1`)
-    expect(heading.textContent).toBe(`Datasets`)
+    expect(heading.textContent).toContain(`Datasets`)
   })
 
   it(`renders the table with correct structure`, () => {

@@ -87,7 +87,9 @@
   <title>Training Sets | MatBench Discovery</title>
 </svelte:head>
 
-<h1>Datasets</h1>
+<h1>
+  <svg style="vertical-align: -3pt;"><use href="#icon-databases" /></svg> Datasets
+</h1>
 
 <p>
   A collection of datasets used for training machine learning models for materials
@@ -105,6 +107,7 @@
 </section>
 
 <p>
+  <svg><use href="#icon-edit" /></svg>
   See incorrect data or a dataset that's missing from this list? Suggest an edit to
   <a href={yaml_url} target="_blank" rel="noopener noreferrer">
     {yaml_url.split(`/`).pop()}

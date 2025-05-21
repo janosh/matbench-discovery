@@ -1,5 +1,6 @@
 #import "template.typ": arkheion, arkheion-appendices, pdf-img, subfigure
 
+#let pyproject = toml(read("../pyproject.toml", encoding: none))
 #let citation = yaml(read("../citation.cff", encoding: none))
 #let authors = (
   citation.authors.map(author => (
@@ -22,16 +23,8 @@
     Accurate regressors are susceptible to unexpectedly high false-positive rates if those accurate predictions lie close to the decision boundary at 0 eV/atom above the convex hull.
     The benchmark results demonstrate that FFFs have advanced sufficiently to effectively and cheaply pre-screen thermodynamic stable hypothetical materials in future expansions of high-throughput materials databases.
   ],
-  keywords: (
-    "Materials Discovery",
-    "Machine Learning",
-    "Interatomic Potentials",
-    "Foundation Models",
-    "Density Functional Theory",
-    "Benchmarking",
-    "Convex Hull of Stability",
-  ),
-  date: "Feb 27, 2025", // date of acceptance at Nature Machine Intelligence
+  keywords: pyproject.at("project").at("keywords"),
+  date: citation.date-released, // date of arXiv submission
 )
 
 = Introduction
@@ -101,7 +94,7 @@ The diagonal 'Optimal Recall' line on the recall plot in @fig:cumulative-precisi
 Examining the precision plot in @fig:cumulative-precision-recall, we observe that the energy-only models exhibit a much more pronounced drop in their precision early-on, falling to 0.6 or less in the first 5k screened materials. Many of these models (all except BOWSR, Wrenformer and Voronoi RF) display an interesting hook shape in their cumulative precision, recovering again slightly in the middle of the simulated campaign between ~5k and up to ~30k before dropping again until the end.
 
 #figure(
-  pdf-img("figs/rolling-mae-vs-hull-dist-models-only-compliant.pdf"),
+  pdf-img("figs/rolling-mae-vs-hull-dist-models-only-compliant.pdf", width: 400pt),
   caption: [
     Universal potentials are more reliable classifiers because they exit the red triangle earliest. The lines represent rolling mean absolute error (MAE) on the WBM test set as a function of distance to the MP training set convex hull. The red 'triangle of peril' indicates regions where the mean error exceeds the distance to the stability threshold (0 eV). Within this triangle, models are more likely to misclassify materials as the errors can flip classifications. Earlier exit from the triangle correlates with fewer false positives (right side) or false negatives (left side). The width of the 'rolling window' indicates the range over which prediction errors were averaged.
   ],

@@ -69,15 +69,15 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
       console.warn(`Training set ${data_name} not found in DATASETS`)
       continue
     }
-    const { title, slug, n_structures, n_materials = n_structures } = DATASETS[data_name]
+    const { name, slug, n_structures, n_materials = n_structures } = DATASETS[data_name]
     data_urls[data_name] = `/data/${slug}`
 
     if (n_materials !== n_structures) {
       tooltip.push(
-        `${title}: ${pretty_num(n_materials, `,`)} materials (${pretty_num(n_structures, `,`)} structures)`,
+        `${name}: ${pretty_num(n_materials, `,`)} materials (${pretty_num(n_structures, `,`)} structures)`,
       )
     } else {
-      tooltip.push(`${title}: ${pretty_num(n_materials, `,`)} materials`)
+      tooltip.push(`${name}: ${pretty_num(n_materials, `,`)} materials`)
     }
   }
 
@@ -202,12 +202,18 @@ export function assemble_row_data(
       : `<span title="License file not available">${license}</span>`
 
   const filtered_models = MODELS.filter(
-    (model) => current_filter(model) && model.metrics?.discovery?.[discovery_set],
+    (model) =>
+      current_filter(model) &&
+      typeof model.metrics?.discovery === `object` &&
+      model.metrics.discovery[discovery_set],
   )
 
   const all_metrics = filtered_models.map((model) => {
     const { license, metrics } = model
-    const discovery_metrics = metrics?.discovery?.[discovery_set]
+    const discovery_metrics =
+      typeof metrics?.discovery === `object`
+        ? metrics.discovery[discovery_set]
+        : undefined
     const is_compliant = model_is_compliant(model)
     const { RMSD, CPS } = ALL_METRICS
 
@@ -235,7 +241,7 @@ export function assemble_row_data(
 
     return {
       Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>`,
-      CPS: model[CPS.key] as number | undefined,
+      CPS: model[CPS.key],
       F1: discovery_metrics?.F1,
       DAF: discovery_metrics?.DAF,
       Prec: discovery_metrics?.Precision,

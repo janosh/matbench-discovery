@@ -1,6 +1,7 @@
 import * as d3sc from 'd3-scale-chromatic'
+import type { Label1 as LabelType } from './label-schema.d.ts'
 import type { AllMetrics } from './labels'
-import type { Label as LabelType, ModelMetadata } from './model-schema.d.ts'
+import type { ModelMetadata } from './model-schema.d.ts'
 
 export type { Dataset } from './dataset-schema.d.ts'
 export type { ModelMetadata } from './model-schema.d.ts'

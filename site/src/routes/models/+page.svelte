@@ -135,7 +135,7 @@
           {metrics}
           sort_by={sort_by_path}
           bind:show_details
-          style="background-color: {bg_clr}; color: {text_color};"
+          title_style="background-color: {bg_clr}; color: {text_color};"
         />
       </li>
     {/each}

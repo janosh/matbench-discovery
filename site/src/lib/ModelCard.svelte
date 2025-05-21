@@ -12,6 +12,7 @@
     sort_by: keyof ModelData
     show_details?: boolean
     metrics_style?: string
+    title_style?: string
     [key: string]: unknown
   }
   let {
@@ -20,13 +21,16 @@
     sort_by,
     show_details = $bindable(false),
     metrics_style = ``,
+    title_style = ``,
     ...rest
   }: Props = $props()
 
-  let { model_name, model_key, model_params } = $derived(model)
-  let { notes = {}, training_set, n_estimators } = $derived(model)
+  let { model_name, model_key, model_params, training_set, n_estimators } =
+    $derived(model)
   let all_metrics = $derived({
-    ...(model.metrics?.discovery?.unique_prototypes ?? {}),
+    ...(typeof model.metrics?.discovery === `object`
+      ? model.metrics.discovery.unique_prototypes
+      : {}),
     ...(typeof model.metrics?.phonons == `object`
       ? model.metrics?.phonons.kappa_103
       : {}),
@@ -45,7 +49,7 @@
   let n_model_params = $derived(pretty_num(model_params, `.3~s`))
 </script>
 
-<h2 id={model_key}>
+<h2 id={model_key} style={title_style}>
   <a href="/models/{model_key}">{model_name}</a>
   <button
     onclick={() => (show_details = !show_details)}
@@ -114,11 +118,6 @@
     Missing preds:
     {pretty_num(missing_preds ?? 0, `,.0f`)}
     <small>({missing_percent})</small>
-    {#if notes.html?.missing_preds}
-      <Tooltip text={notes.html.missing_preds ?? ``} tip_style="font-size: 9pt;">
-        &nbsp;<svg><use href="#icon-info"></use></svg>
-      </Tooltip>
-    {/if}
   </span>
 </section>
 {#if show_details}

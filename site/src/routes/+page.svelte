@@ -6,7 +6,7 @@
   import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/labels'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import Readme from '$root/readme.md'
-  import KappaNote from '$routes/kappa-note.md'
+  import KappaNote from '$routes/tasks/phonons/kappa-note.md'
   import { pretty_num } from 'elementari'
   import type { Snapshot } from './$types'
 
@@ -171,7 +171,7 @@
     {/if}
   {/snippet}
 </Readme>
-<KappaNote />
+<KappaNote warning={false} />
 
 <style>
   figure {
