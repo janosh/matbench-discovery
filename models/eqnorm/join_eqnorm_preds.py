@@ -28,7 +28,7 @@ for file_path in tqdm(files):
 df_eqnorm = pd.concat(dfs.values()).round(4)
 
 if len(df_eqnorm) != len(df_wbm):  # make sure there is no missing structure
-    warnings.warn("Missing structures in eqnorm results")
+    warnings.warn("Missing structures in eqnorm results", stacklevel=2)
 
 wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
 df_wbm_cse = pd.read_json(wbm_cse_path, lines=True).set_index(Key.mat_id)
@@ -37,10 +37,6 @@ df_wbm_cse[Key.computed_structure_entry] = [
     ComputedStructureEntry.from_dict(dct)
     for dct in tqdm(df_wbm_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
 ]
-
-# As SevenNet-0 (11July2024) is trained on 'uncorrected energy' of MPtrj,
-# MP formation energy corrections need to be applied
-
 
 # %% transfer energies and relaxed structures WBM CSEs since MP2020 energy
 # corrections applied below are structure-dependent (for oxides and sulfides)
@@ -61,7 +57,7 @@ MaterialsProject2020Compatibility().process_entries(  # change in-place
     df_eqnorm[Key.computed_structure_entry], verbose=True, clean=True
 )
 if len(df_eqnorm) != orig_len:
-    warnings.warn("Some structures were removed during energy correction")
+    warnings.warn("Some structures were removed during energy correction", stacklevel=2)
 
 df_eqnorm[Key.formula] = df_wbm[Key.formula]
 

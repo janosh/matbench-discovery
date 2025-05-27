@@ -2,13 +2,13 @@
 
 # %%
 import os
-from typing import Any
+from typing import Any, List
 
 import pandas as pd
 import torch
+from ase import Atoms
 from ase.filters import FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
-from ase.optimize.optimize import Optimizer
 from eqnorm.calculator import EqnormCalculator
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
@@ -19,8 +19,8 @@ from matbench_discovery.data import as_dict_handler, ase_atoms_from_zip
 from matbench_discovery.enums import DataFiles, Task
 
 
-def process_and_save(atoms_list, out_dir, job_id):
-    optim_cls: Optimizer = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
+def process_and_save(atoms_list: List[Atoms], out_dir: str, job_id: int) -> None:
+    optim_cls = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
     out_path = f"{out_dir}/{model_name}-{job_id:>03}.json.gz"
 
     relax_results: dict[str, dict[str, Any]] = {}
@@ -35,7 +35,7 @@ def process_and_save(atoms_list, out_dir, job_id):
                 optimizer = optim_cls(atoms, logfile="/dev/null")
                 optimizer.run(fmax=force_max, steps=max_steps)
             energy = atoms.get_potential_energy()  # relaxed energy
-            # if max_steps > 0, atoms is wrapped by FrechetCellFilter, so need to getattr
+            # if max_steps > 0, atoms is wrapped by FrechetCellFilter
             relaxed_struct = AseAtomsAdaptor.get_structure(
                 getattr(atoms, "atoms", atoms)
             )
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     __date__ = "2025-03-28"
 
     """History
-    2025-03-28: eqnorm_pro, first version
+    2025-03-28: eqnorm, first version
     """
     model_name = "eqnorm"
     model_variant = "eqnorm-mptrj"
