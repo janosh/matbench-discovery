@@ -4,12 +4,12 @@
 import os
 from typing import Any
 
-import numpy as np
 import pandas as pd
 import torch
 from ase.filters import FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
 from ase.optimize.optimize import Optimizer
+from eqnorm.calculator import EqnormCalculator
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from tqdm import tqdm
@@ -17,8 +17,6 @@ from tqdm import tqdm
 from matbench_discovery import WBM_DIR, timestamp
 from matbench_discovery.data import as_dict_handler, ase_atoms_from_zip
 from matbench_discovery.enums import DataFiles, Task
-
-from eqnorm.calculator import EqnormCalculator
 
 
 def process_and_save(atoms_list, out_dir, job_id):
@@ -38,7 +36,9 @@ def process_and_save(atoms_list, out_dir, job_id):
                 optimizer.run(fmax=force_max, steps=max_steps)
             energy = atoms.get_potential_energy()  # relaxed energy
             # if max_steps > 0, atoms is wrapped by FrechetCellFilter, so need to getattr
-            relaxed_struct = AseAtomsAdaptor.get_structure(getattr(atoms, "atoms", atoms))
+            relaxed_struct = AseAtomsAdaptor.get_structure(
+                getattr(atoms, "atoms", atoms)
+            )
             relax_results[mat_id] = {"structure": relaxed_struct, "energy": energy}
         except Exception as exc:
             print(f"Failed to relax {mat_id}: {exc!r}")
@@ -92,7 +92,7 @@ if __name__ == "__main__":
         model_name=model_name,
         model_variant=model_variant,
         train_progress=train_progress,
-        device=device
-        )
+        device=device,
+    )
 
     process_and_save(atoms_list, out_dir, slurm_array_task_id)

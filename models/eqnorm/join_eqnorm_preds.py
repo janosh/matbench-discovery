@@ -1,5 +1,5 @@
-from glob import glob
 import warnings
+from glob import glob
 
 import pandas as pd
 from pymatgen.core import Structure
@@ -45,7 +45,9 @@ df_wbm_cse[Key.computed_structure_entry] = [
 # %% transfer energies and relaxed structures WBM CSEs since MP2020 energy
 # corrections applied below are structure-dependent (for oxides and sulfides)
 cse: ComputedStructureEntry
-for row in tqdm(df_eqnorm.itertuples(), total=len(df_eqnorm), desc="ML energies to CSEs"):
+for row in tqdm(
+    df_eqnorm.itertuples(), total=len(df_eqnorm), desc="ML energies to CSEs"
+):
     mat_id, struct_dict, energy, *_ = row
     mlip_struct = Structure.from_dict(struct_dict)
     cse = df_wbm_cse.loc[mat_id, Key.computed_structure_entry]

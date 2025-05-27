@@ -29,7 +29,7 @@ repo: https://github.com/yzchen08/eqnorm
 url: https://github.com/yzchen08/eqnorm/tree/main/eqnorm
 doi: missing # to be released soon
 preprint: missing # to be released soon
-checkpoint_url: https://figshare.com/files/54821513 
+checkpoint_url: https://figshare.com/files/54821513
 
 license:
   code: MIT
@@ -37,16 +37,16 @@ license:
   checkpoint: MIT
   checkpoint_url: https://github.com/yzchen08/eqnorm/blob/main/LICENSE
 
-openness: OSOD 
-train_task: S2EFS 
+openness: OSOD
+train_task: S2EFS
 test_task: IS2RE-SR
-targets: EFS_G 
-model_type: UIP 
+targets: EFS_G
+model_type: UIP
 model_params: 1_310_024
 trained_for_benchmark: true
 n_estimators: 1
 
-hyperparams: 
+hyperparams:
   max_force: 0.05
   max_steps: 500
   ase_optimizer: FIRE

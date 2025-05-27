@@ -6,15 +6,16 @@ from collections.abc import Callable
 from copy import deepcopy
 from datetime import datetime
 from importlib.metadata import version
-from typing import Any, Literal
+from typing import Any
 
 import pandas as pd
 import torch
 from ase.constraints import FixSymmetry
 from ase.filters import FrechetCellFilter
 from ase.io import read
-from ase.optimize import FIRE, LBFGS, BFGS
+from ase.optimize import BFGS, FIRE, LBFGS
 from ase.optimize.optimize import Optimizer
+from eqnorm.calculator import EqnormCalculator
 from moyopy import MoyoDataset
 from moyopy.interface import MoyoAdapter
 from pymatviz.enums import Key
@@ -23,9 +24,6 @@ from tqdm import tqdm
 from matbench_discovery.enums import DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
-
-from eqnorm.calculator import EqnormCalculator
-
 
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 
@@ -40,8 +38,8 @@ calc = EqnormCalculator(
     model_name=model_name,
     model_variant=model_variant,
     train_progress=train_progress,
-    device=device
-    )
+    device=device,
+)
 
 # Relaxation parameters.
 max_steps = 500
@@ -90,7 +88,9 @@ with open(f"{out_dir}/run_params.json", mode="w") as file:
     json.dump(run_params, file, indent=4)
 
 # Set up the relaxation and force set calculation
-optim_cls: Callable[..., Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": BFGS}[ase_optimizer]
+optim_cls: Callable[..., Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": BFGS}[
+    ase_optimizer
+]
 force_results: dict[str, dict[str, Any]] = {}
 kappa_results: dict[str, dict[str, Any]] = {}
 tqdm_bar = tqdm(atoms_list, desc="Conductivity calculation: ", disable=not prog_bar)
