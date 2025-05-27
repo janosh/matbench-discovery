@@ -1,0 +1,115 @@
+model_name: eqnorm # required (this must match the model's label which is the 3rd arg in the matbench_discovery.preds.Model enum)
+model_key: eqnorm-mptrj # this should match the name of the YAML file and determines the URL /models/<model_key> on which details of the model are displayed on the website
+model_version: "0.1.0"
+train_progess: "0.9"
+date_added: "2025-05-26"
+date_published: "2025-05-26"
+authors:
+  - name: Yuzhuo Chen
+    affiliation: Zhejiang Lab
+    email: chenyuzhuo@zhejianglab.org
+    orcid: https://orcid.org/0009-0003-4044-2372
+  - name: Lyuwen Fu
+    affiliation: Zhejiang Lab
+    email: lyuwenfu@zhejianglab.org
+  - name: Shuxiang Yang
+    affiliation: Zhejiang Lab
+    email: yang_shuxiang@zhejianglab.org
+  - name: Lipeng Chen
+    affiliation: Zhejiang Lab
+    email: chenlp@zhejianglab.org
+    corresponding: true
+trained_by:
+  - name: Yuzhuo Chen
+    affiliation: Zhejiang Lab
+    email: chenyuzhuo@zhejianglab.org
+    orcid: https://orcid.org/0009-0003-4044-2372
+
+repo: https://github.com/yzchen08/eqnorm
+url: https://github.com/yzchen08/eqnorm/tree/main/eqnorm
+doi: missing # to be released soon
+preprint: missing # to be released soon
+checkpoint_url: https://figshare.com/files/54821513 
+
+license:
+  code: MIT
+  code_url: https://github.com/yzchen08/eqnorm/blob/main/LICENSE
+  checkpoint: MIT
+  checkpoint_url: https://github.com/yzchen08/eqnorm/blob/main/LICENSE
+
+openness: OSOD 
+train_task: S2EFS 
+test_task: IS2RE-SR
+targets: EFS_G 
+model_type: UIP 
+model_params: 1_310_024
+trained_for_benchmark: true
+n_estimators: 1
+
+hyperparams: 
+  max_force: 0.05
+  max_steps: 500
+  ase_optimizer: FIRE
+  cell_filter: FrechetCellFilter
+  loss: Huber
+  loss_weights:
+    energy: 20.0
+    force: 20.0
+    stress: 320.0
+  optimizer: AdamW
+  weight_decay: 0.001
+  clip_grad_norm: 100
+  ema_decay: 0.999
+  max_learning_rate: 0.01
+  min_learning_rate: 0.000001
+  learning_rate_schedule: warmcosine
+  warmup_factor: 0.2
+  epochs: 100
+  batch_train: 128
+  n_layers: 4
+  num_embedding_features: 128
+  num_bessel_basis: 8
+  invariant_layers: 2
+  invariant_neurons: 64
+  poly_p: 6
+  cutoff_radius: 6.0
+  max_neighbors: .inf
+  irreps_hidden: "128x0e+64x1o+32x2e+32x3o"
+  irreps_sh: "1x0e+1x1o+1x2e+1x3o"
+  energy_shift: "per_species"
+  energy_scale: "force_rms"
+  shift_trainable: False
+  scale_trainable: False
+
+requirements: # strongly recommended
+  torch: 2.2.2
+  torch-geometric: 2.6.1
+  ase: 3.24.0
+  vesin: 0.3.2
+  e3nn: 0.5.6
+  pymatgen: 2025.3.10
+  numpy: 2.2.4
+  wget: 3.2
+
+training_set: [MPtrj]
+
+training_cost:
+  Nvidia A100 GPUs: { amount: 4, hours: 500 }
+
+notes: # notes can have any key, be multiline and support markdown.
+  description: |
+    eqnorm is a graph neural network model designed for predicting the energy, forces, and stresses of materials. The model utilizes a combination of invariant and equivariant layers to effectively capture the symmetries present in material structures.
+
+metrics:
+  phonons:
+    kappa_103:
+      pred_file: models/eqnorm/2025-05-26-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/files/54828173
+  geo_opt:
+    pred_file: models/eqnorm/2025-05-26-wbm-IS2RE-FIRE.json.gz
+    pred_file_url: https://figshare.com/files/54828161
+    struct_col: material_id
+  discovery:
+    pred_file: models/eqnorm/2025-05-26-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/54828164
+    pred_col: e_form_per_atom_eqnorm

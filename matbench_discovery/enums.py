@@ -311,6 +311,9 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     esen_30m_mp = auto(), "eSEN/eSEN-30m-mp.yml"
     esen_30m_oam = auto(), "eSEN/eSEN-30m-oam.yml"
 
+    # eqnorm
+    eqnorm_mptrj = auto(), "eqnorm/eqnorm-mptrj.yml"
+
     # GRACE: https://arxiv.org/abs/2311.16326v2
     grace_2l_mptrj = auto(), "grace/grace-2l-mptrj.yml"
     grace_2l_oam = auto(), "grace/grace-2l-oam.yml"
