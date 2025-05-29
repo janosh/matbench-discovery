@@ -2,7 +2,7 @@
 
 # %%
 import os
-from typing import Any, List
+from typing import Any
 
 import pandas as pd
 import torch
@@ -19,7 +19,7 @@ from matbench_discovery.data import as_dict_handler, ase_atoms_from_zip
 from matbench_discovery.enums import DataFiles, Task
 
 
-def process_and_save(atoms_list: List[Atoms], out_dir: str, job_id: int) -> None:
+def process_and_save(atoms_list: list[Atoms], out_dir: str, job_id: int) -> None:
     optim_cls = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
     out_path = f"{out_dir}/{model_name}-{job_id:>03}.json.gz"
 
@@ -44,7 +44,7 @@ def process_and_save(atoms_list: List[Atoms], out_dir: str, job_id: int) -> None
             print(f"Failed to relax {mat_id}: {exc!r}")
             continue
 
-    df_out = pd.DataFrame(relax_results).T.add_prefix("eqnorm_")
+    df_out = pd.DataFrame(relax_results).T.add_prefix(f"{model_name}_")
     df_out.index.name = Key.mat_id
 
     # %%
@@ -61,8 +61,8 @@ if __name__ == "__main__":
     2025-03-28: eqnorm, first version
     """
     model_name = "eqnorm"
-    model_variant = "eqnorm-mptrj"
-    train_progress = "0.9"
+    model_variant = "eqnorm-pro-mptrj"
+    train_progress = "0.3"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # device = torch.device("cpu")
     ase_optimizer = "FIRE"

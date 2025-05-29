@@ -38,6 +38,7 @@ df_wbm_cse[Key.computed_structure_entry] = [
     for dct in tqdm(df_wbm_cse[Key.computed_structure_entry], desc="Hydrate CSEs")
 ]
 
+
 # %% transfer energies and relaxed structures WBM CSEs since MP2020 energy
 # corrections applied below are structure-dependent (for oxides and sulfides)
 cse: ComputedStructureEntry
