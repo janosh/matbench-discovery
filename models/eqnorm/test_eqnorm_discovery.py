@@ -61,8 +61,8 @@ if __name__ == "__main__":
     2025-03-28: eqnorm, first version
     """
     model_name = "eqnorm"
-    model_variant = "eqnorm-pro-mptrj"
-    train_progress = "0.3"
+    model_variant = "eqnorm-mptrj"
+    train_progress = "1.0"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # device = torch.device("cpu")
     ase_optimizer = "FIRE"
