@@ -77,5 +77,8 @@ df_eqnorm = df_eqnorm.round(4)
 
 df_eqnorm.select_dtypes("number").to_csv(f"{out_path}.csv.gz")  # save csv storable
 df_eqnorm.reset_index().to_json(
-    f"{out_path}.jsonl.gz", default_handler=as_dict_handler, orient="records", lines=True
+    f"{out_path}.jsonl.gz",
+    default_handler=as_dict_handler,
+    orient="records",
+    lines=True,
 )
