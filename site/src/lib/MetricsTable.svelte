@@ -5,6 +5,7 @@
   import { click_outside } from 'svelte-zoo/actions'
   import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from './labels'
   import { assemble_row_data } from './metrics'
+  import { heatmap_class } from './table-export'
   import type { CellSnippetArgs, DiscoverySet, Label, LinkData, ModelData } from './types'
 
   interface Props {
@@ -149,6 +150,7 @@
   }}
   default_num_format=".3f"
   bind:show_heatmap
+  {heatmap_class}
   {...rest}
 >
   {#snippet controls()}

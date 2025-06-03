@@ -72,7 +72,7 @@
     batch_size,
     epochs,
     n_layers,
-  ]
+  ] as const
   // Calculate counts for each property path across all models
   let model_counts_by_prop = $derived(
     options.reduce(

@@ -90,16 +90,16 @@ describe(`format_property_path`, () => {
 
   test(`formats hyperparameter paths correctly`, () => {
     expect(format_property_path(`hyperparams.learning_rate`)).toBe(
-      `hyperparams > Learning rate`,
+      `Hyperparams > Learning rate`,
     )
     expect(format_property_path(`hyperparams.graph_construction_radius`)).toBe(
-      `hyperparams > Graph construction radius r<sub>cut</sub>`,
+      `Hyperparams > Graph construction radius r<sub>cut</sub>`,
     )
     expect(format_property_path(`hyperparams.max_neighbors`)).toBe(
-      `hyperparams > Max number of neighbors during graph construction`,
+      `Hyperparams > Max number of neighbors during graph construction`,
     )
     expect(format_property_path(`hyperparams.custom_param`)).toBe(
-      `hyperparams > custom param`,
+      `Hyperparams > custom param`,
     )
   })
 

@@ -1,65 +1,37 @@
-import type * as SvgExportModule from '$lib/html-to-img'
-import { handle_export } from '$lib/html-to-img'
+import { handle_export } from '$lib/table-export'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+type ExportState = {
+  export_error: string | null
+  show_non_compliant: boolean
+  discovery_set: string
+}
+
 describe(`Download Buttons UI`, () => {
-  // Create minimal mocks needed for testing
   const mock_click = vi.fn()
 
-  // Mock SVG module functions
-  const mock_svg_module: typeof SvgExportModule = {
-    generate_svg: vi.fn().mockResolvedValue({ filename: `test.svg`, url: `mock-url` }),
-    generate_png: vi.fn().mockResolvedValue({ filename: `test.png`, url: `mock-url` }),
-    handle_export: vi.fn(),
+  const default_state: ExportState = {
+    export_error: null,
+    show_non_compliant: false,
+    discovery_set: `unique_prototypes`,
   }
-
-  // For error testing
-  const mock_error_svg = vi.fn()
-  const mock_null_png = vi.fn()
 
   beforeEach(() => {
     vi.clearAllMocks()
-
-    // Set up HTML content for buttons test
     document.body.innerHTML = `
       <div class="downloads">
-        Download table as
-        <button
-          class="download-btn svg-btn"
-          id="svg-btn"
-          aria-label="Download as SVG">
-          SVG
-        </button>
-        <button
-          class="download-btn png-btn"
-          id="png-btn"
-          aria-label="Download as PNG">
-          PNG
-        </button>
-        <button
-          class="download-btn"
-          id="test-error-btn"
-          aria-label="Test Error Button">
-          Test Error
-        </button>
-        <div class="export-error" style="display: none;">Error message here</div>
+        <button class="download-btn" id="svg-btn">SVG</button>
+        <button class="download-btn" id="png-btn">PNG</button>
+        <button class="download-btn" id="csv-btn">CSV</button>
+        <button class="download-btn" id="excel-btn">Excel</button>
+        <div class="export-error" style="display: none;"></div>
       </div>
     `
-
-    // Mock document APIs
-    vi.spyOn(document, `createElement`).mockImplementation((tag: string) => {
-      if (tag === `a`) {
-        return {
-          href: ``,
-          download: ``,
-          click: mock_click,
-        } as unknown as HTMLAnchorElement
-      }
-      return document.createElement(tag)
-    })
-
-    // Mock the module import
-    vi.mock(`$lib/svg-export`, () => mock_svg_module)
+    vi.spyOn(document, `createElement`).mockImplementation((tag: string) =>
+      tag === `a`
+        ? ({ href: ``, download: ``, click: mock_click } as unknown as HTMLAnchorElement)
+        : document.createElement(tag),
+    )
   })
 
   afterEach(() => {
@@ -67,120 +39,69 @@ describe(`Download Buttons UI`, () => {
     document.body.innerHTML = ``
   })
 
-  it(`has SVG and PNG download buttons with correct structure and attributes`, () => {
+  it(`has all download buttons with correct structure and formatting`, () => {
     const buttons = document.querySelectorAll(`.download-btn`)
-    expect(buttons).toHaveLength(3)
+    expect(buttons).toHaveLength(4)
 
-    const button_texts = Array.from(buttons).map((btn) => btn.textContent?.trim())
-    expect(button_texts).toEqual([`SVG`, `PNG`, `Test Error`])
-
-    // Check for specific button classes
-    const svg_button = document.querySelector(`#svg-btn`)
-    const png_button = document.querySelector(`#png-btn`)
-
-    expect(svg_button?.classList.contains(`svg-btn`)).toBe(true)
-    expect(png_button?.classList.contains(`png-btn`)).toBe(true)
-
-    // Check ARIA attributes for accessibility
-    expect(svg_button?.getAttribute(`aria-label`)).toBe(`Download as SVG`)
-    expect(png_button?.getAttribute(`aria-label`)).toBe(`Download as PNG`)
-
-    // Check that all buttons have the common download-btn class
-    buttons.forEach((btn) => {
-      expect(btn.classList.contains(`download-btn`)).toBe(true)
+    const expected_formats = [`SVG`, `PNG`, `CSV`, `Excel`]
+    buttons.forEach((button, idx) => {
+      const format = expected_formats[idx]
+      expect(button.textContent?.trim()).toBe(format)
+      // Only check uppercase for SVG, PNG, CSV (not Excel)
+      if (format !== `Excel`) {
+        expect(button.textContent).toBe(button.textContent?.toUpperCase())
+      }
     })
   })
 
-  it(`verifies SVG button triggers export function when clicked`, async () => {
-    // Set up spy on mock SVG generate function
-    const svg_generate_spy = vi.fn().mockResolvedValue({
-      filename: `test.svg`,
-      url: `mock-url`,
-    })
-    mock_svg_module.generate_svg = svg_generate_spy
+  // Test all export formats with parameterized testing
+  it.each([
+    [`SVG`, `svg`],
+    [`PNG`, `png`],
+    [`CSV`, `csv`],
+    [`Excel`, `excel`],
+  ] as const)(
+    `triggers %s export correctly when button clicked`,
+    async (format: string, id: string) => {
+      const generate_spy = vi
+        .fn()
+        .mockResolvedValue({ filename: `test.${id}`, url: `mock-url` })
+      const handle_export_fn = handle_export(generate_spy, format, { ...default_state })
 
-    // Set up a handler function with our mock
-    const handle_export_fn = handle_export(svg_generate_spy, `SVG`, {
-      export_error: null,
-      show_non_compliant: false,
-      discovery_set: `unique_prototypes`,
-    })
+      const button = document.querySelector(`#${id}-btn`) as HTMLButtonElement
+      button.addEventListener(`click`, handle_export_fn)
+      await button.click()
 
-    // Get SVG button and attach our handler
-    const svg_button = document.querySelector(`#svg-btn`) as HTMLButtonElement
-    svg_button.addEventListener(`click`, handle_export_fn)
+      expect(generate_spy).toHaveBeenCalledTimes(1)
+      expect(generate_spy).toHaveBeenCalledWith({
+        show_non_compliant: false,
+        discovery_set: `unique_prototypes`,
+      })
 
-    // Simulate clicking the button and wait for the handler
-    await svg_button.click()
+      await Promise.resolve() // Allow async handler to complete
+      const error_el = document.querySelector(`.export-error`) as HTMLElement
+      expect(error_el.style.display).toBe(`none`)
+    },
+  )
 
-    // Verify our export function was called with expected parameters
-    expect(svg_generate_spy).toHaveBeenCalledTimes(1)
-    expect(svg_generate_spy).toHaveBeenCalledWith({
-      show_non_compliant: false,
-      discovery_set: `unique_prototypes`,
-    })
+  // Test error handling scenarios with parameterized testing
+  it.each([
+    [
+      `error`,
+      new Error(`Failed to generate export`),
+      `Error exporting Test: Failed to generate export`,
+    ],
+    [`null return`, null, `Failed to generate Test. The export function returned null.`],
+  ])(`handles export %s correctly`, async (scenario, mock_result, expected_message) => {
+    const mock_fn =
+      scenario === `error`
+        ? vi.fn().mockRejectedValue(mock_result)
+        : vi.fn().mockResolvedValue(mock_result)
 
-    // Give time for async handler to complete
-    await Promise.resolve()
-
-    // Check that after successful export, the error message is hidden
     const error_el = document.querySelector(`.export-error`) as HTMLElement
-    expect(error_el.style.display).toBe(`none`)
-  })
+    const state = { ...default_state }
 
-  it(`verifies PNG button triggers export function when clicked`, async () => {
-    // Set up spy on mock PNG generate function
-    const png_generate_spy = vi.fn().mockResolvedValue({
-      filename: `test.png`,
-      url: `mock-url`,
-    })
-    mock_svg_module.generate_png = png_generate_spy
-
-    // Set up a handler function with our mock
-    const handle_export_fn = handle_export(png_generate_spy, `PNG`, {
-      export_error: null,
-      show_non_compliant: false,
-      discovery_set: `unique_prototypes`,
-    })
-
-    // Get PNG button and attach our handler
-    const png_button = document.querySelector(`#png-btn`) as HTMLButtonElement
-    png_button.addEventListener(`click`, handle_export_fn)
-
-    // Simulate clicking the button
-    png_button.click()
-
-    // Verify our export function was called with expected parameters
-    expect(png_generate_spy).toHaveBeenCalledTimes(1)
-    expect(png_generate_spy).toHaveBeenCalledWith({
-      show_non_compliant: false,
-      discovery_set: `unique_prototypes`,
-    })
-
-    // Give time for async handler to complete
-    await Promise.resolve()
-
-    // Check that after successful export, the error message is hidden
-    const error_el = document.querySelector(`.export-error`) as HTMLElement
-    expect(error_el.style.display).toBe(`none`)
-  })
-
-  it(`should handle errors when SVG generation fails with exact error message`, async () => {
-    // Mock the SVG generation to fail
-    const mock_error_message = `Failed to generate SVG`
-    mock_error_svg.mockRejectedValue(new Error(mock_error_message))
-
-    // Set up error element for testing
-    const error_el = document.querySelector(`.export-error`) as HTMLElement
-    // State object MUST include export_error property now
-    const state = {
-      export_error: null as string | null,
-      show_non_compliant: false,
-      discovery_set: `unique_prototypes`,
-    }
-
-    // Create a spy to capture error updates (simulates reactivity)
-    const update_error_spy = vi.fn((err: string | null) => {
+    const update_error_display = (err: string | null) => {
       state.export_error = err
       if (err) {
         error_el.textContent = err
@@ -188,93 +109,21 @@ describe(`Download Buttons UI`, () => {
       } else {
         error_el.style.display = `none`
       }
-    })
+    }
 
-    // Manually call the handle function
-    const handle_fn = handle_export(mock_error_svg, `SVG`, state)
-
+    const handle_fn = handle_export(mock_fn, `Test`, state)
     await handle_fn()
 
-    // Update the DOM based on the potentially modified state.export_error
     if (state.export_error) {
-      update_error_spy(state.export_error)
-    } else {
-      update_error_spy(null) // Clear error if state.export_error is null
+      update_error_display(state.export_error)
     }
 
-    // Check error element visibility
     expect(error_el.style.display).toBe(`block`)
-
-    // Check the exact error message text
-    const expected_error = `Error exporting SVG: ${mock_error_message}`
-    expect(error_el.textContent).toBe(expected_error)
-
-    // Check that the error contains both the format ("SVG") and the original error message
-    expect(error_el.textContent).toContain(`SVG`)
-    expect(error_el.textContent).toContain(mock_error_message)
+    expect(error_el.textContent).toBe(expected_message)
   })
 
-  it(`should handle null returns from PNG generation with specific error message`, async () => {
-    // Mock the PNG generation to return null
-    mock_null_png.mockResolvedValue(null)
-
-    // Set up error element for testing
-    const error_el = document.querySelector(`.export-error`) as HTMLElement
-    // State object MUST include export_error property now
-    const state = {
-      export_error: null as string | null,
-      show_non_compliant: false,
-      discovery_set: `unique_prototypes`,
-    }
-
-    // Create a spy to capture error updates (simulates reactivity)
-    const update_error_spy = vi.fn((err: string | null) => {
-      state.export_error = err
-      if (err) {
-        error_el.textContent = err
-        error_el.style.display = `block`
-      } else {
-        error_el.style.display = `none`
-      }
-    })
-
-    // Manually call the handle function
-    const handle_fn = handle_export(mock_null_png, `PNG`, state)
-
-    await handle_fn()
-
-    // Update the DOM based on the potentially modified state.export_error
-    if (state.export_error) {
-      update_error_spy(state.export_error)
-    } else {
-      update_error_spy(null) // Clear error if state.export_error is null
-    }
-
-    // Check error element visibility and exact content
-    expect(error_el.style.display).toBe(`block`)
-
-    const expected_error = `Failed to generate PNG. The export function returned null.`
-    expect(error_el.textContent).toBe(expected_error)
-
-    // Check specific parts of the error message
-    expect(error_el.textContent).toContain(`PNG`)
-    expect(error_el.textContent).toContain(`returned null`)
-  })
-
-  it(`verifies error element is hidden initially`, () => {
+  it(`has error element hidden initially`, () => {
     const error_el = document.querySelector(`.export-error`) as HTMLElement
     expect(error_el.style.display).toBe(`none`)
-  })
-
-  it(`verifies button text is properly capitalized`, () => {
-    const svg_button = document.querySelector(`#svg-btn`) as HTMLElement
-    const png_button = document.querySelector(`#png-btn`) as HTMLElement
-
-    expect(svg_button.textContent?.trim()).toBe(`SVG`)
-    expect(png_button.textContent?.trim()).toBe(`PNG`)
-
-    // Check that the buttons' text is in uppercase
-    expect(svg_button.textContent).toBe(svg_button.textContent?.toUpperCase())
-    expect(png_button.textContent).toBe(png_button.textContent?.toUpperCase())
   })
 })

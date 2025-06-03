@@ -1,3 +1,4 @@
+import { heatmap_class } from '$lib/table-export'
 import Page from '$routes/data/sets/+page.svelte'
 import { mount, tick } from 'svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -14,7 +15,7 @@ describe(`Datasets Page`, () => {
   })
 
   it(`renders the table with correct structure`, () => {
-    const table = doc_query<HTMLTableElement>(`.heatmap`)
+    const table = doc_query<HTMLTableElement>(`.${heatmap_class}`)
     const thead = table.querySelector(`thead`)
     const tbody = table.querySelector(`tbody`)
 
@@ -43,7 +44,7 @@ describe(`Datasets Page`, () => {
   })
 
   it(`displays information about multiple datasets`, () => {
-    const rows = document.querySelectorAll(`.heatmap tbody tr`)
+    const rows = document.querySelectorAll(`.${heatmap_class} tbody tr`)
     expect(rows.length).toBeGreaterThan(5)
 
     // Check for some expected dataset names in the table
@@ -59,7 +60,7 @@ describe(`Datasets Page`, () => {
 
   it(`properly renders resource links for datasets`, () => {
     // Links column is the last column (10th, index 9)
-    const tbody = document.querySelector(`.heatmap tbody`)
+    const tbody = document.querySelector(`.${heatmap_class} tbody`)
     const rows = tbody?.querySelectorAll(`tr`) || []
 
     // Count resource links (Website, Download, DOI)
@@ -94,7 +95,7 @@ describe(`Datasets Page`, () => {
   it(`properly renders API links for datasets`, () => {
     // API column is the 9th column
     const api_links = document.querySelectorAll<HTMLAnchorElement>(
-      `.heatmap tbody td:nth-child(9) a`,
+      `.${heatmap_class} tbody td:nth-child(9) a`,
     )
 
     // There should be some API links found
@@ -119,7 +120,7 @@ describe(`Datasets Page`, () => {
   it(`can sort table by clicking column headers`, async () => {
     // Get initial order of datasets
     const initial_datasets = Array.from(
-      document.querySelectorAll(`.heatmap tbody tr`),
+      document.querySelectorAll(`.${heatmap_class} tbody tr`),
     ).map((row) => {
       // First cell is Title column
       const cells = row.querySelectorAll(`td`)
@@ -127,7 +128,7 @@ describe(`Datasets Page`, () => {
     })
 
     // Find and click the Structures column header to sort (usually the 2nd header)
-    const headers = document.querySelectorAll(`.heatmap th`)
+    const headers = document.querySelectorAll(`.${heatmap_class} th`)
     const structures_header = Array.from(headers).find((th) =>
       th.textContent?.includes(`Structures`),
     )
@@ -138,7 +139,7 @@ describe(`Datasets Page`, () => {
 
     // Get new order after sorting
     const sorted_datasets = Array.from(
-      document.querySelectorAll(`.heatmap tbody tr`),
+      document.querySelectorAll(`.${heatmap_class} tbody tr`),
     ).map((row) => {
       const cells = row.querySelectorAll(`td`)
       return cells[0]?.textContent?.trim() || ``
@@ -151,16 +152,16 @@ describe(`Datasets Page`, () => {
   it(`skips sorting when clicking non-sortable columns`, async () => {
     // Get initial order of datasets
     const initial_datasets = Array.from(
-      document.querySelectorAll(`.heatmap tbody tr`),
+      document.querySelectorAll(`.${heatmap_class} tbody tr`),
     ).map((row) => {
       const cells = row.querySelectorAll(`td`)
       return cells[0]?.textContent?.trim() || ``
     })
 
     // Find and click the Links column header (which should be non-sortable)
-    const links_header = Array.from(document.querySelectorAll(`.heatmap th`)).find((th) =>
-      th.textContent?.includes(`Links`),
-    )
+    const links_header = Array.from(
+      document.querySelectorAll(`.${heatmap_class} th`),
+    ).find((th) => th.textContent?.includes(`Links`))
     if (links_header) {
       ;(links_header as HTMLElement).click()
     }
@@ -168,7 +169,7 @@ describe(`Datasets Page`, () => {
 
     // Get order after clicking Links column
     const new_datasets_links = Array.from(
-      document.querySelectorAll(`.heatmap tbody tr`),
+      document.querySelectorAll(`.${heatmap_class} tbody tr`),
     ).map((row) => {
       const cells = row.querySelectorAll(`td`)
       return cells[0]?.textContent?.trim() || ``
@@ -184,8 +185,10 @@ describe(`Datasets Page`, () => {
 
   it(`has correct styling for sortable and non-sortable columns`, () => {
     // In HeatmapTable, non-sortable columns have the 'not-sortable' class
-    const non_sortable_headers = document.querySelectorAll(`.heatmap th.not-sortable`)
-    const all_headers = document.querySelectorAll(`.heatmap th`)
+    const non_sortable_headers = document.querySelectorAll(
+      `.${heatmap_class} th.not-sortable`,
+    )
+    const all_headers = document.querySelectorAll(`.${heatmap_class} th`)
 
     // Only Links column should have not-sortable class
     expect(non_sortable_headers.length).toBe(2)
@@ -205,7 +208,7 @@ describe(`Datasets Page`, () => {
 
   it(`formats numbers correctly in the table`, () => {
     // Find Structures column (usually 2nd column) cells
-    const tbody = document.querySelector(`.heatmap tbody`)
+    const tbody = document.querySelector(`.${heatmap_class} tbody`)
     const rows = tbody?.querySelectorAll(`tr`) || []
 
     // Get cells from second column (Structures)
@@ -229,7 +232,7 @@ describe(`Datasets Page`, () => {
 
   it(`correctly displays method information in the table`, () => {
     // Method is usually the 8th column (index 7)
-    const tbody = document.querySelector(`.heatmap tbody`)
+    const tbody = document.querySelector(`.${heatmap_class} tbody`)
     const rows = tbody?.querySelectorAll(`tr`) || []
 
     // Get cells from the Method column
