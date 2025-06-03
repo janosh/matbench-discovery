@@ -22,7 +22,8 @@
     "changelog": "npx auto-changelog --output ../changelog.md --hide-credit --commit-limit false"
   },
   "dependencies": {
-    "html-to-image": "^1.11.13"
+    "html-to-image": "^1.11.13",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@rollup/plugin-yaml": "^4.1.2",
