@@ -40,7 +40,8 @@
     ]),
   )
 
-  let [plot_width, plot_height] = $state([400, 300])
+  let plot_width = $state(400)
+  let plot_height = $state(300)
 
   // Start with pre-loaded models selected
   let selected_models = $state(new Set(Object.keys(diatomic_curves)))
