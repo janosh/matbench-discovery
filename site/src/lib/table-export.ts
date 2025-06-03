@@ -521,27 +521,29 @@ export async function generate_excel({
     const workbook = XLSX.utils.book_new()
     const worksheet = XLSX.utils.aoa_to_sheet(excel_data)
 
-    // Auto-fit column widths
-    const range = XLSX.utils.decode_range(worksheet[`!ref`] || `A1`)
-    const column_widths: { wch: number }[] = []
+    // Auto-fit column widths (only if worksheet has data)
+    if (worksheet[`!ref`]) {
+      const range = XLSX.utils.decode_range(worksheet[`!ref`])
+      const column_widths: { wch: number }[] = []
 
-    for (let col = range.s.c; col <= range.e.c; col++) {
-      let max_width = 10 // minimum width
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        let max_width = 10 // minimum width
 
-      for (let row = range.s.r; row <= range.e.r; row++) {
-        const cell_address = XLSX.utils.encode_cell({ r: row, c: col })
-        const cell = worksheet[cell_address]
+        for (let row = range.s.r; row <= range.e.r; row++) {
+          const cell_address = XLSX.utils.encode_cell({ r: row, c: col })
+          const cell = worksheet[cell_address]
 
-        if (cell && cell.v) {
-          const cell_length = String(cell.v).length
-          max_width = Math.max(max_width, Math.min(cell_length, 50)) // cap at 50 chars
+          if (cell && cell.v) {
+            const cell_length = String(cell.v).length
+            max_width = Math.max(max_width, Math.min(cell_length, 50)) // cap at 50 chars
+          }
         }
+
+        column_widths.push({ wch: max_width })
       }
 
-      column_widths.push({ wch: max_width })
+      worksheet[`!cols`] = column_widths
     }
-
-    worksheet[`!cols`] = column_widths
 
     // Add worksheet to workbook
     const sheet_name = `Metrics Table`
