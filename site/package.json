@@ -22,27 +22,28 @@
     "changelog": "npx auto-changelog --output ../changelog.md --hide-credit --commit-limit false"
   },
   "dependencies": {
-    "html-to-image": "^1.11.13"
+    "html-to-image": "^1.11.13",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@rollup/plugin-yaml": "^4.1.2",
-    "@stylistic/eslint-plugin": "^4.2.0",
+    "@stylistic/eslint-plugin": "^4.4.0",
     "@sveltejs/adapter-static": "^3.0.8",
     "@sveltejs/kit": "^2.21.1",
-    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@sveltejs/vite-plugin-svelte": "^5.1.0",
     "@types/d3-array": "^3.2.1",
     "@types/d3-scale": "^4.0.9",
     "@types/d3-scale-chromatic": "^3.1.0",
     "@types/js-yaml": "^4.0.9",
     "@types/json-schema": "^7.0.15",
-    "@types/node": "^22.15.21",
-    "@vitest/coverage-v8": "^3.1.4",
+    "@types/node": "^22.15.29",
+    "@vitest/coverage-v8": "^3.2.0",
     "d3-array": "^3.2.4",
     "d3-scale": "^4.0.2",
     "d3-scale-chromatic": "^3.1.0",
     "elementari": "^0.3.15",
-    "eslint": "^9.27.0",
-    "eslint-plugin-svelte": "^3.9.0",
+    "eslint": "^9.28.0",
+    "eslint-plugin-svelte": "^3.9.1",
     "hastscript": "^9.0.1",
     "iconify-icon": "^3.0.0",
     "js-yaml": "^4.1.0",
@@ -59,7 +60,7 @@
     "remark-math": "6.0.0",
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
-    "svelte": "^5.32.1",
+    "svelte": "^5.33.14",
     "svelte-check": "^4.2.1",
     "svelte-multiselect": "11.1.1",
     "svelte-preprocess": "^6.0.3",
@@ -68,10 +69,10 @@
     "svelte2tsx": "^0.7.39",
     "tslib": "^2.8.1",
     "typescript": "5.8.3",
-    "typescript-eslint": "^8.32.1",
+    "typescript-eslint": "^8.33.1",
     "unified": "^11.0.5",
     "vite": "^6.3.5",
-    "vitest": "^3.1.4"
+    "vitest": "^3.2.0"
   },
   "prettier": {
     "semi": false,

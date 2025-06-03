@@ -446,6 +446,8 @@ export const CATEGORY_LABELS = Object.fromEntries(
     ([key, task]) => [key, task.label],
   ),
 )
+// Add explicit mapping for hyperparams to show as "Hyperparams"
+CATEGORY_LABELS.hyperparams = `Hyperparams`
 
 // TODO maybe remove get_format() since unused
 // Determines appropriate string format for displaying a set of numerical values
