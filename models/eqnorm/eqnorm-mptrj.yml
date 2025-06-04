@@ -27,8 +27,8 @@ trained_by:
 repo: https://github.com/yzchen08/eqnorm
 url: https://github.com/yzchen08/eqnorm/tree/main/eqnorm
 pr_url: https://github.com/janosh/matbench-discovery/pull/258
-doi: missing # to be released soon
-paper: missing # to be released soon
+doi: https://github.com/yzchen08/eqnorm # to be released soon
+paper: https://github.com/yzchen08/eqnorm # to be released soon
 checkpoint_url: https://figshare.com/files/54851735
 
 license:
@@ -98,8 +98,8 @@ training_cost:
 
 notes: # notes can have any key, be multiline and support markdown.
   description: |
-    "eqnorm is a graph neural network model designed for predicting the energy, forces, and stresses of materials.
-    The model utilizes a combination of invariant and equivariant layers to effectively capture the symmetries present in material structures."
+    eqnorm is a graph neural network model designed for predicting the energy, forces, and stresses of materials.
+    The model utilizes a combination of invariant and equivariant layers to effectively capture the symmetries present in material structures.
 
 metrics:
   phonons:
