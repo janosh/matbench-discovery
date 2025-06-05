@@ -1,5 +1,5 @@
 model_name: DPA-3.1-3M-FT
-model_key: dpa-3.1-3M-ft
+model_key: dpa-3.1-3m-ft
 model_version: v0.3 # 2025-06-05
 date_added: "2025-06-05"
 date_published: "2025-06-05"
@@ -31,7 +31,7 @@ url: https://github.com/deepmodeling/deepmd-kit
 doi: https://arxiv.org/abs/2506.01686
 paper: https://arxiv.org/abs/2506.01686
 pr_url: https://github.com/janosh/matbench-discovery/pull/264
-checkpoint_url: https://figshare.com/files/55141106
+checkpoint_url: https://figshare.com/files/55141895
 
 license:
   code: LGPL-3.0
@@ -106,15 +106,15 @@ metrics:
   phonons:
     kappa_103:
       κ_SRME: 0.469
-      pred_file: models/deepmd/dpa-3.1-3M-ft/2025-06-05-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file: models/deepmd/dpa-3.1-3m-ft/2025-06-05-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/55141100
   geo_opt:
-    pred_file: models/deepmd/dpa-3.1-3M-ft/2025-06-05-wbm-IS2RE-FIRE.jsonl.gz
+    pred_file: models/deepmd/dpa-3.1-3m-ft/2025-06-05-wbm-IS2RE-FIRE.jsonl.gz
     struct_col: dp_structure
     pred_file_url: https://figshare.com/files/55141109
   discovery:
-    pred_file: models/deepmd/dpa-3.1-3M-ft/2025-06-05-dpa-3.1-3M-ft-preds.csv.gz
-    pred_file_url: https://figshare.com/files/55141103
+    pred_file: models/deepmd/dpa-3.1-3m-ft/2025-06-05-dpa-3.1-3m-ft-preds.csv.gz
+    pred_file_url: https://figshare.com/ndownloader/files/55141889
     pred_col: e_form_per_atom_dp
     full_test_set:
       F1: 0.864 # fraction

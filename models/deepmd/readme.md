@@ -2,13 +2,13 @@
 
 ## Model
 
-- dpa-3.1-3M-ft：model pretrained on the `OpenLAM` datasest (using dpa-3.1-3M from [DPA3-paper](https://arxiv.org/abs/2506.01686)), and finetuned with `MPtraj` & `Sub-Alex` datasets.
+- DPA-3.1-3M-FT：model pretrained on the `OpenLAM` datasest (using DPA-3.1-3M from [DPA3-paper](https://arxiv.org/abs/2506.01686)), and finetuned with `MPtraj` & `Sub-Alex` datasets.
 
   ```bash
-  wget https://figshare.com/files/55141106
+  wget https://figshare.com/files/55141895
   ```
 
-- dpa-3.1-mptrj：model trained only on the `MPtraj` dataset.
+- DPA-3.1-MPtrj：model trained only on the `MPtraj` dataset.
 
   ```bash
   wget https://figshare.com/files/55141124
@@ -80,7 +80,7 @@ print(water.get_forces())
 
 ## Results
 
-### dpa-3.1-3M-ft
+### DPA-3.1-3M-FT
 
 `2025-06-05-dpa-3.1-3M-ft-preds.csv.gz`
 
@@ -104,7 +104,7 @@ RMSE            0.068373       0.066638     0.067072
 R2              0.856592       0.869046     0.900992
 ```
 
-### dpa-3.1-mptrj
+### DPA-3.1-MPtrj
 
 `2025-06-05-dpa-3.1-mptrj-preds.csv.gz`
 
@@ -131,9 +131,9 @@ R2              0.803849       0.812029     0.837659
 ### Relaxed Structure
 
 ```sh
-# dpa-3.1-3M-ft
+# DPA-3.1-3M-FT
 wget https://figshare.com/files/55141109
 
-# dpa-3.1-mptrj
+# DPA-3.1-MPtrj
 wget https://figshare.com/files/55141127
 ```
