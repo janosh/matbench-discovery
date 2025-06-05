@@ -114,7 +114,7 @@ metrics:
     pred_file_url: https://figshare.com/files/55141109
   discovery:
     pred_file: models/deepmd/dpa-3.1-3m-ft/2025-06-05-dpa-3.1-3m-ft-preds.csv.gz
-    pred_file_url: https://figshare.com/ndownloader/files/55141889
+    pred_file_url: https://figshare.com/files/55141889
     pred_col: e_form_per_atom_dp
     full_test_set:
       F1: 0.864 # fraction
