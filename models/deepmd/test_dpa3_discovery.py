@@ -199,4 +199,4 @@ if __name__ == "__main__":
 
     # this actually runs in parallel on multiple Nodes, orchestrated by dflow
     for input_dir in input_dirs:
-        relax_structures(input_dir, "./dpa-3.1-3M-ft.pth")
+        relax_structures(input_dir, "./dpa-3.1-3m-ft.pth")
