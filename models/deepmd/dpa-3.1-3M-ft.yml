@@ -30,7 +30,7 @@ repo: https://github.com/deepmodeling/deepmd-kit
 url: https://github.com/deepmodeling/deepmd-kit
 doi: https://arxiv.org/abs/2506.01686
 paper: https://arxiv.org/abs/2506.01686
-pr_url: https://github.com/janosh/matbench-discovery/pull/259
+pr_url: https://github.com/janosh/matbench-discovery/pull/264
 checkpoint_url: https://figshare.com/files/55141106
 
 license:
