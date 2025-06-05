@@ -29,7 +29,7 @@ module_dir = os.path.dirname(__file__)
 
 # %%
 model_name = f"{Model.alignn}-mp-e_form"
-target_col = Key.form_energy
+target_col = Key.formation_energy_per_atom
 input_col = "atoms"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 job_name = f"{today}-train-{model_name}"

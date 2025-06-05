@@ -98,7 +98,7 @@ def glob_to_df(
                 pred_col = (
                     model_data.get("metrics", {}).get("discovery", {}).get("pred_col")
                 )
-                df_mock[pred_col] = df_mock["e_form_per_atom"]
+                df_mock[pred_col] = df_mock[Key.formation_energy_per_atom]
             return df_mock
         raise FileNotFoundError(f"No files matching glob {pattern=}")
 

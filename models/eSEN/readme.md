@@ -4,8 +4,8 @@
 
 Two equivariant Smooth Energy Network (eSEN) models are submitted:
 
-1. **eSEN-30M-MP** - A compliant model trained on MPTrj only
-2. **eSEN-30M-OAM** - A non-compliant model pretrained with the OMat24 dataset and finetuned with MPTrj + sAlex
+1. **eSEN-30M-MP** - A compliant model trained on MPtrj only
+2. **eSEN-30M-OAM** - A non-compliant model pretrained with the OMat24 dataset and finetuned with MPtrj + sAlex
 
 The code and training config is currently WIP and will be available in the coming weeks in the official [FAIRChem repo](https://github.com/FAIR-Chem/fairchem). The checkpoints will be made available in the official FAIRChem [HuggingFace site](https://huggingface.co/fairchem).
 

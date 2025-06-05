@@ -4,8 +4,8 @@
 
 Two equiformerV2 models submitted:
 
-1. **eqV2 S DeNS** - A compliant model trained on MPTrj only
-2. **eqV2 M** - A non-compliant model pretrained with the OMat24 dataset and finetuned with MPTrj + sAlex
+1. **eqV2 S DeNS** - A compliant model trained on MPtrj only
+2. **eqV2 M** - A non-compliant model pretrained with the OMat24 dataset and finetuned with MPtrj + sAlex
 
 Model checkpoints for the two models submitted and additional models of different size are available [here](https://huggingface.co/fairchem/OMAT24).
 
@@ -18,7 +18,7 @@ The OMat24 training and validation dataset splits used to pre-train non-complian
 
 We processed the following datasets for finetuning as follows:
 
-1. MPTrj - We use uncorrected energies and removed all structures with atoms at least 12 Angstroms apart.
+1. MPtrj - We use uncorrected energies and removed all structures with atoms at least 12 Angstroms apart.
 2. sAlex - We removed all trajectories from the [Alexandria 3D PBE dataset](https://alexandria.icams.rub.de) ([paper](https://onlinelibrary.wiley.com/doi/10.1002/adma.202210788)) if any structure had a structure prototype that is in the set of all structure prototypes for all WBM initial and final structures. We then filtered the remaining trajectories by removing all structures with energy > 0 eV, forces norm > 50 eV/A, absolute stress > 80GPa. Finally we subsampled each trajectory by taking structures with energies at least 10 meV/atom apart.
 
 The sAlex training and validation dataset splits used for fine-tuning are also available [here](https://huggingface.co/datasets/fairchem/OMAT24).

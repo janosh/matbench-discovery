@@ -66,7 +66,7 @@ notes:
   Description: |
     equivariant Smooth Energy Network (eSEN), described in https://arxiv.org/abs/2502.12147.
   Training: |
-    Training was done by: (1) 70-epoch direct pre-training on MPTrj with DeNS; (2) 30-epoch conservative fine-tuning on MPTrj without DeNS.
+    Training was done by: (1) 70-epoch direct pre-training on MPtrj with DeNS; (2) 30-epoch conservative fine-tuning on MPtrj without DeNS.
 
 metrics:
   phonons:
