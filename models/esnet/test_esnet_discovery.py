@@ -123,7 +123,7 @@ for struc in df_in[input_col]:
 df_wbm["atoms"] = atoms
 
 with open("/home/sl/project/ESNet/graphs/RotatE_128_64.pkl", "rb") as f:
-    rotate_emb = pk.load(f)  # noqa: S301
+    ele2emb = pk.load(f)  # noqa: S301
 
 graphs = []
 for struc in df_in[input_col]:
