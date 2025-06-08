@@ -127,8 +127,8 @@ with open("/home/sl/project/ESNet/graphs/RotatE_128_64.pkl", "rb") as f:
     ele2emb = pk.load(f)  # noqa: S301
 
 graphs = []
-for struc in df_in[input_col]:
-    g = atoms_to_graph(struc)
+for structure in df_in[input_col]:
+    g = atoms_to_graph(structure)
     graphs.append(g)
 
 graphs = [x.cpu() for x in graphs]
