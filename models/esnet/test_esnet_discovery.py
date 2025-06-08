@@ -1,38 +1,36 @@
+import json
 import os
-from typing import List, Dict, Any
+import pickle as pk
 
 import pandas as pd
 import torch
 import wandb
+from esnet.graphs import (
+    PygGraph,
+    PygKnowledgeAndStructureDataset,
+    prepare_pyg_line_graph_batch,
+)
+from esnet.models.comformer import iComformer, iComformerConfig
+from ignite.handlers import Checkpoint
 from pymatgen.core import Structure
 from pymatgen.io.jarvis import JarvisAtomsAdaptor
 from pymatviz.enums import Key
-from sklearn.metrics import r2_score,accuracy_score, f1_score, precision_score
+from sklearn.metrics import r2_score
+from torch.utils.data import DataLoader
 from tqdm import tqdm
+
 from matbench_discovery import today
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import DataFiles, MbdKey, Model, Task
 from matbench_discovery.hpc import slurm_submit
 from matbench_discovery.plots import wandb_scatter
 
-from esnet.models.comformer import iComformer
-from esnet.graphs import PygGraph, PygStructureDataset, prepare_pyg_line_graph_batch, PygKnowledgeAndStructureDataset
-from esnet.models.comformer import iComformerConfig
-from esnet.data import load_pyg_graphs
-from ignite.handlers import Checkpoint
-import pickle as pk
-from esnet.load_triples import Triples
-from collections import Counter
-import numpy as np
-from torch_geometric.data import Data
-from torch.utils.data import DataLoader
-import json
-
 __author__ = "sl"
 __date__ = "2025-06-08"
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 adaptor = JarvisAtomsAdaptor()
+
 
 def atoms_to_graph(atoms: Structure) -> PygGraph:
     """Convert structure to Atom."""
@@ -58,8 +56,8 @@ module_dir = os.path.dirname(__file__)
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}")
 
 config_file = "models/esnet/config.json"
-config = json.load(open(config_file,"r"))
-esnet_config = iComformerConfig(**config['model'])
+config = json.load(open(config_file))
+esnet_config = iComformerConfig(**config["model"])
 
 model = iComformer(esnet_config)
 e_form_checkpoint = torch.load(
@@ -104,7 +102,6 @@ df_in[input_col] = [
 
 atoms = []
 for struc in df_in[input_col]:
-
     lattice = struc.lattice.matrix
     coords = struc.frac_coords
     elements = [site.specie.symbol for site in struc]
@@ -116,9 +113,9 @@ for struc in df_in[input_col]:
         "coords": coords,
         "elements": elements,
         "abc": abc,
-        "angles" : angles,
+        "angles": angles,
         "cartesian": False,
-        "props": [""] * len(elements)
+        "props": [""] * len(elements),
     }
 
     atoms.append(atom)
@@ -155,25 +152,25 @@ wandb.init(project="matbench-discovery", name=job_name, config=run_params)
 
 # %% Predict
 data = PygKnowledgeAndStructureDataset(
-        df_wbm,
-        graphs,
-        ele2emb,
-        target="e_form_per_atom_mp2020_corrected",
-        atom_features="atomic_number",
-        line_graph=True,
-        id_tag="material_id",
-        classification=False,
-        neighbor_strategy="k-nearest",
-    )
+    df_wbm,
+    graphs,
+    ele2emb,
+    target="e_form_per_atom_mp2020_corrected",
+    atom_features="atomic_number",
+    line_graph=True,
+    id_tag="material_id",
+    classification=False,
+    neighbor_strategy="k-nearest",
+)
 
-        
+
 wbm_loader = DataLoader(
-        data,
-        batch_size=64,
-        shuffle=False,
-        collate_fn=PygKnowledgeAndStructureDataset.collate_line_graph,
-        drop_last=False,
-        num_workers=1,
+    data,
+    batch_size=64,
+    shuffle=False,
+    collate_fn=PygKnowledgeAndStructureDataset.collate_line_graph,
+    drop_last=False,
+    num_workers=1,
 )
 
 e_form_values = []
