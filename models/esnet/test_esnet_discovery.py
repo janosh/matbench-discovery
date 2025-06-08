@@ -5,7 +5,11 @@ import pickle as pk
 import pandas as pd
 import torch
 import wandb
-from esnet.graphs import PygGraph, PygKnowledgeAndStructureDataset, prepare_pyg_line_graph_batch
+from esnet.graphs import (
+    PygGraph,
+    PygKnowledgeAndStructureDataset,
+    prepare_pyg_line_graph_batch,
+)
 from esnet.models.comformer import iComformer, iComformerConfig
 from ignite.handlers import Checkpoint
 from pymatgen.core import Structure
@@ -157,7 +161,7 @@ data = PygKnowledgeAndStructureDataset(
     line_graph=True,
     id_tag="material_id",
     classification=False,
-    neighbor_strategy="k-nearest"
+    neighbor_strategy="k-nearest",
 )
 
 
@@ -167,7 +171,7 @@ wbm_loader = DataLoader(
     shuffle=False,
     collate_fn=PygKnowledgeAndStructureDataset.collate_line_graph,
     drop_last=False,
-    num_workers=1
+    num_workers=1,
 )
 
 e_form_values = []
