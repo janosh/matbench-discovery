@@ -24,13 +24,13 @@ repo: https://github.com/zzz-sl/ESNet
 doi: https://doi.org/10.21203/rs.3.rs-5979703/v1
 paper: https://www.researchsquare.com/article/rs-5979703/v1
 pr_url: https://github.com/janosh/matbench-discovery/pull/254
-checkpoint_url: https://figshare.com/files/54259907
+checkpoint_url: https://figshare.com/files/55207664
 
 license:
   code: Apache-2.0
   code_url: https://github.com/zzz-sl/ESNet/blob/main/LICENSE
   checkpoint: CC-BY-4.0
-  checkpoint_url: https://figshare.com/files/54259907
+  checkpoint_url: https://figshare.com/files/55207664
 
 requirements:
   torch: 2.1.0+cu121
@@ -69,6 +69,6 @@ metrics:
   phonons: not applicable
   geo_opt: not applicable
   discovery:
-    pred_file: models/esnet/2025-05-08-esnet-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/54445643
+    pred_file: models/esnet/2025-06-08-esnet-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/55207640
     pred_col: e_form_per_atom_esnet
