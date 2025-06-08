@@ -102,12 +102,12 @@ df_in[input_col] = [
 ]
 
 atoms = []
-for struc in df_in[input_col]:
-    lattice = struc.lattice.matrix
-    coords = struc.frac_coords
-    elements = [site.specie.symbol for site in struc]
-    abc = [struc.lattice.a, struc.lattice.b, struc.lattice.c]
-    angles = [struc.lattice.alpha, struc.lattice.beta, struc.lattice.gamma]
+for structure in df_in[input_col]:
+    lattice = structure.lattice.matrix
+    coords = structure.frac_coords
+    elements = [site.specie.symbol for site in structure]
+    abc = [structure.lattice.a, structure.lattice.b, structure.lattice.c]
+    angles = [structure.lattice.alpha, structure.lattice.beta, structure.lattice.gamma]
 
     atom = {
         "lattice_mat": lattice,
