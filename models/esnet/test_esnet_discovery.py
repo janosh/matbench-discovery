@@ -56,7 +56,10 @@ module_dir = os.path.dirname(__file__)
 out_dir = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}")
 
 config_file = "models/esnet/config.json"
-config = json.load(open(config_file))
+
+with open(config_file,"r") as f:
+    config = json.load(f)
+    
 esnet_config = iComformerConfig(**config["model"])
 
 model = iComformer(esnet_config)
