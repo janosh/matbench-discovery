@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ChemicalElement, ElementSymbol } from 'elementari'
-  import { pretty_num } from 'elementari'
+  import { format_num } from 'elementari'
 
   interface Props {
     element: ChemicalElement
@@ -26,11 +26,11 @@
 
 <strong {...rest}>
   {#if element?.name}
-    {element?.name}: {pretty_num(value)}
+    {element?.name}: {format_num(value)}
     {@html unit}
     <!-- compute percent of total -->
     {#if show_percent && total > 0}
-      ({pretty_num((100 * value) / total)}%)
+      ({format_num((100 * value) / total)}%)
     {/if}
   {/if}
 </strong>

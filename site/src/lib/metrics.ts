@@ -5,7 +5,7 @@ import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { max, min } from 'd3-array'
 import { scaleLog, scaleSequential } from 'd3-scale'
 import * as d3sc from 'd3-scale-chromatic'
-import { choose_bw_for_contrast, pretty_num } from 'elementari/labels'
+import { choose_bw_for_contrast, format_num } from 'elementari/labels'
 import {
   ALL_METRICS,
   GEO_OPT_SYMMETRY_METRICS,
@@ -74,10 +74,10 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
 
     if (n_materials !== n_structures) {
       tooltip.push(
-        `${name}: ${pretty_num(n_materials, `,`)} materials (${pretty_num(n_structures, `,`)} structures)`,
+        `${name}: ${format_num(n_materials, `,`)} materials (${format_num(n_structures, `,`)} structures)`,
       )
     } else {
-      tooltip.push(`${name}: ${pretty_num(n_materials, `,`)} materials`)
+      tooltip.push(`${name}: ${format_num(n_materials, `,`)} materials`)
     }
   }
 
@@ -88,18 +88,18 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
   const dataset_tooltip =
     tooltip.length > 1 ? `${new_line}• ${tooltip.join(new_line + `• `)}` : ``
 
-  let title = `${pretty_num(n_training_materials, `,`)} materials in training set${new_line}${dataset_tooltip}`
-  let train_size_str = `<span title="${title}" data-sort-value="${n_training_materials}">${pretty_num(n_training_materials)} <small>${dataset_links}</small></span>`
+  let title = `${format_num(n_training_materials, `,`)} materials in training set${new_line}${dataset_tooltip}`
+  let train_size_str = `<span title="${title}" data-sort-value="${n_training_materials}">${format_num(n_training_materials)} <small>${dataset_links}</small></span>`
 
   if (n_training_materials !== n_training_structures) {
     title =
-      `${pretty_num(n_training_materials, `,`)} materials in training set ` +
-      `(${pretty_num(n_training_structures, `,`)} structures counting all DFT relaxation ` +
+      `${format_num(n_training_materials, `,`)} materials in training set ` +
+      `(${format_num(n_training_structures, `,`)} structures counting all DFT relaxation ` +
       `frames per material)${dataset_tooltip}`
 
     train_size_str =
       `<span title="${title}" data-sort-value="${n_training_materials || n_training_structures}">` +
-      `${pretty_num(n_training_materials)} <small>(${pretty_num(n_training_structures)})</small> ` +
+      `${format_num(n_training_materials)} <small>(${format_num(n_training_structures)})</small> ` +
       `<small>${dataset_links}</small></span>`
   }
 
@@ -255,7 +255,7 @@ export function assemble_row_data(
       RMSD: get_nested_value(model, `${RMSD.path}.${RMSD.key}`) as number | undefined,
       'Training Set': format_train_set(model.training_set, model),
       [HYPERPARAMS.model_params.short as string]:
-        `<span title="${pretty_num(model.model_params, `,`)}" trainable model parameters" data-sort-value="${model.model_params}">${pretty_num(model.model_params)}</span>`,
+        `<span title="${format_num(model.model_params, `,`)}" trainable model parameters" data-sort-value="${model.model_params}">${format_num(model.model_params)}</span>`,
       Targets: targets_str,
       'Date Added': `<span title="${format_date(model.date_added)}" data-sort-value="${new Date(model.date_added).getTime()}">${model.date_added}</span>`,
       // Add Links as a special property

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { pretty_num } from 'elementari/labels'
+  import { format_num } from 'elementari/labels'
   import type { Snippet } from 'svelte'
   import { titles_as_tooltips } from 'svelte-zoo/actions'
   import { flip } from 'svelte/animate'
@@ -235,7 +235,7 @@
               {:else if cell}
                 {@render cell({ row, col, val })}
               {:else if typeof val === `number`}
-                {pretty_num(val, col.format ?? default_num_format)}
+                {format_num(val, col.format ?? default_num_format)}
               {:else if val === undefined || val === null}
                 n/a
               {:else}

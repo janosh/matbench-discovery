@@ -1,9 +1,4 @@
-import {
-  format_power_ten,
-  format_property_path,
-  get_format,
-  get_org_logo,
-} from '$lib/labels'
+import { format_power_ten, format_property_path, get_org_logo } from '$lib/labels'
 import { describe, expect, test } from 'vitest'
 
 describe(`format_power_ten`, () => {
@@ -139,104 +134,6 @@ describe(`format_property_path`, () => {
 
     // Path with single dot
     expect(format_property_path(`.`)).toBe(``)
-  })
-})
-
-describe(`get_format`, () => {
-  test(`returns '.1f' for empty arrays`, () => {
-    expect(get_format([])).toBe(`.1f`)
-  })
-
-  test.each([
-    {
-      description: `date values (timestamps)`,
-      values: [new Date(`2022-01-01`).getTime(), new Date(`2022-06-01`).getTime()],
-      expected: `%b %y`,
-    },
-    {
-      description: `large values (>10000)`,
-      values: [15000, 20000, 25000],
-      expected: `.1s`,
-    },
-    {
-      description: `average > 1000`,
-      values: [950, 1050, 1100],
-      expected: `.1s`,
-    },
-    {
-      description: `very small decimal values`,
-      values: [0.0001, 0.0005, 0.0009],
-      expected: `.5f`,
-    },
-    {
-      description: `values with large range`,
-      values: [1, 500, 1500],
-      expected: `.2s`,
-    },
-    {
-      description: `integer values`,
-      values: [1, 2, 3, 4, 5],
-      expected: `d`,
-    },
-    {
-      description: `decimal values with moderate range`,
-      values: [0.1, 0.5, 1.2, 2.3],
-      expected: `.2f`,
-    },
-  ])(`returns '$expected' for $description`, ({ values, expected }) => {
-    expect(get_format(values)).toBe(expected)
-  })
-
-  test(`identifies dates correctly near threshold boundaries`, () => {
-    // Just after Jan 1, 2000
-    const early_dates = [946_684_800_001, 946_684_900_000]
-    expect(get_format(early_dates)).toBe(`%b %y`)
-
-    // Just before Jan 1, 2050
-    const late_dates = [2_524_607_999_999, 2_524_607_900_000]
-    expect(get_format(late_dates)).toBe(`%b %y`)
-
-    // Outside the valid date range - should not be treated as dates
-    const before_range = [946_684_700_000, 946_684_750_000] // Before Jan 1, 2000
-    const after_range = [2_524_608_100_000, 2_524_608_200_000] // After Jan 1, 2050
-
-    expect(get_format(before_range)).not.toBe(`%b %y`)
-    expect(get_format(after_range)).not.toBe(`%b %y`)
-  })
-
-  test(`handles mixed integer and decimal values correctly`, () => {
-    const mixed_values = [1, 2, 3.5, 4.2]
-    expect(get_format(mixed_values)).toBe(`.2f`)
-  })
-
-  test(`handles negative values correctly`, () => {
-    const negative_values = [-10, -5, -3, -1]
-    expect(get_format(negative_values)).toBe(`d`)
-
-    const negative_mixed = [-100, -50.5, 25, 75.5]
-    expect(get_format(negative_mixed)).toBe(`.2f`)
-
-    const negative_small = [-0.001, -0.005, -0.009]
-    expect(get_format(negative_small)).toBe(`.5f`)
-  })
-
-  test(`handles extreme values correctly`, () => {
-    const extreme_values = [Number.MIN_SAFE_INTEGER, 0, Number.MAX_SAFE_INTEGER]
-    // With extreme range, we expect scientific notation with 1 significant digit
-    expect(get_format(extreme_values)).toBe(`.1s`)
-  })
-
-  test(`edge case: nearly-integer values are properly detected`, () => {
-    // Values that are very close to integers but not exactly
-    const nearly_integers = [1.0000001, 2.0000000001, 3]
-    // JavaScript's floating point precision means these are treated as integers
-    // The epsilon is likely too small for Math.abs(val - Math.round(val)) < 1e-6 check
-    expect(get_format(nearly_integers)).toBe(`d`)
-
-    // Values that are integers within floating point precision
-    const float_integers = [1.0, 2.0, 3.0]
-    // These should be treated as integers
-    expect(get_format(float_integers)).toBe(`d`)
   })
 })
 

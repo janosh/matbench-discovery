@@ -33,6 +33,7 @@ pr_url: https://github.com/janosh/matbench-discovery/pull/133
 # v1 checkpoint: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/forcefields/orbff-v1-20240827.ckpt
 # v2 URL taken from: https://github.com/orbital-materials/orb-models/blob/637a98d49c/MODELS.md
 checkpoint_url: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/forcefields/orb-v2-20241011.ckpt
+pypi: https://pypi.org/project/orb-models
 
 license:
   code: Apache-2.0

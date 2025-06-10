@@ -17,7 +17,7 @@ describe(`Models Page`, () => {
     ) as HTMLInputElement
     expect(n_best_input).toBeDefined()
 
-    const radio_buttons = document.body.querySelectorAll(`.zoo-radio-btn input`)
+    const radio_buttons = document.body.querySelectorAll(`input[type="radio"]`)
     expect(radio_buttons).toHaveLength(2)
   })
 
