@@ -32,6 +32,7 @@
   {log}
   bind:active_element
   show_photo={false}
+  missing_color="rgba(255,255,255,0.3)"
   {...rest}
 >
   {#snippet inset()}

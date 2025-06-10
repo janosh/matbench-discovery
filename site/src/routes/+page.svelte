@@ -13,7 +13,7 @@
   } from '$lib/table-export'
   import Readme from '$root/readme.md'
   import KappaNote from '$routes/tasks/phonons/kappa-note.md'
-  import { pretty_num } from 'elementari'
+  import { format_num } from 'elementari'
   import type { Snapshot } from './$types'
 
   let n_wbm_stable_uniq_protos = 32_942
@@ -153,11 +153,11 @@
       estimators if an ensemble was used. DAF = Discovery Acceleration Factor measures how
       many more stable materials a model finds compared to random selection from the test
       set. The unique structure prototypes in the WBM test set have a
-      <code>{pretty_num(n_wbm_stable_uniq_protos / n_wbm_uniq_protos, `.1%`)}</code>
+      <code>{format_num(n_wbm_stable_uniq_protos / n_wbm_uniq_protos, `.1%`)}</code>
       rate of stable crystals, meaning the max possible DAF is
       <code>
-        ({pretty_num(n_wbm_stable_uniq_protos)} / {pretty_num(n_wbm_uniq_protos)})^−1 ≈
-        {pretty_num(n_wbm_uniq_protos / n_wbm_stable_uniq_protos)}
+        ({format_num(n_wbm_stable_uniq_protos)} / {format_num(n_wbm_uniq_protos)})^−1 ≈
+        {format_num(n_wbm_uniq_protos / n_wbm_stable_uniq_protos)}
       </code>.
     </div>
     <!-- CPS weight controls -->

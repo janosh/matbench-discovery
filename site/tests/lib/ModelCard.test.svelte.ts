@@ -1,6 +1,6 @@
 import { DATASETS, MODELS, ModelCard } from '$lib'
 import { ALL_METRICS } from '$lib/labels'
-import { pretty_num } from 'elementari'
+import { format_num } from 'elementari'
 import { mount } from 'svelte'
 import { describe, expect, it } from 'vitest'
 
@@ -46,7 +46,7 @@ describe(`ModelCard`, () => {
       }
 
       const params_span = Array.from(info_spans).find((span) =>
-        span.textContent?.includes(`${pretty_num(model.model_params, `.3~s`)} params`),
+        span.textContent?.includes(`${format_num(model.model_params, `.3~s`)} params`),
       )
       expect(params_span).toBeDefined()
     })
@@ -95,8 +95,8 @@ describe(`ModelCard`, () => {
       // Check that we're linking to our internal data page
       expect(training_set_links[0].href).toContain(`/data/${dataset.slug}`)
 
-      // Use pretty_num to match the actual formatted output
-      const formatted_structures = pretty_num(dataset.n_structures)
+      // Use format_num to match the actual formatted output
+      const formatted_structures = format_num(dataset.n_structures)
       expect(training_set?.textContent).toContain(`${formatted_structures} structures`)
     }
   })
