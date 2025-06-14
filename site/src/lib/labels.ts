@@ -458,8 +458,10 @@ export const title_case = (str: string) =>
 export const org_logos = {
   'AI for Science Institute, Beijing': `/logos/beijing-ai-for-science-institute.svg`,
   'Argonne National Laboratory': `/logos/argonne-national-lab.svg`,
+  'Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)': `/logos/beijing-iapcm.svg`,
   'Chinese Academy of Sciences': `/logos/chinese-academy-of-sciences.svg`,
   'Cornell University': `/logos/cornell-university.svg`,
+  'DAMO Academy, Alibaba Inc': `/logos/damo-alibaba-logo.svg`,
   'Deep Principle': `/logos/deep-principle.svg`,
   DeePMD: `/logos/deepmd.svg`,
   'FAIR at Meta': `icon-logo-meta`,

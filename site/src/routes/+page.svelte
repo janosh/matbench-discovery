@@ -14,6 +14,7 @@
   import Readme from '$root/readme.md'
   import KappaNote from '$routes/tasks/phonons/kappa-note.md'
   import { format_num } from 'elementari'
+  import { titles_as_tooltips } from 'svelte-zoo'
   import type { Snapshot } from './$types'
 
   let n_wbm_stable_uniq_protos = 32_942
@@ -126,12 +127,13 @@
         {label}
       </button>
     {/each}
-    &emsp;Subscribe to new models via
+    &emsp;Subscribe via
     <a
       href="/rss.xml"
       class="download-btn"
-      title="Subscribe to be notified of new models"
+      title="Be notified of new model submissions through an RSS reader"
       style="color: var(--text-color);"
+      use:titles_as_tooltips
     >
       <svg><use href="#icon-rss" /></svg> RSS
     </a>
