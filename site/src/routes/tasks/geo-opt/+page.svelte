@@ -2,7 +2,7 @@
   import StructRmsdCdfModels from '$figs/struct-rmsd-cdf-models.svelte'
   import SymOpsDiffBar from '$figs/sym-ops-diff-bar-symprec=1e-05.svelte'
   import { GeoOptMetricsTable, MODELS } from '$lib'
-  import { pretty_num } from 'elementari'
+  import { format_num } from 'elementari'
   import type { SvelteComponent } from 'svelte'
   import GeoOptReadme from './geo-opt-readme.md'
 
@@ -23,7 +23,7 @@
     <GeoOptMetricsTable show_non_compliant />
   {/snippet}
   {#snippet min_relaxed_structures()}
-    <span>{pretty_num(n_min_relaxed_structures)}</span>
+    <span>{format_num(n_min_relaxed_structures)}</span>
   {/snippet}
   {#snippet struct_rmsd_cdf_models()}
     <StructRmsdCdfModels />

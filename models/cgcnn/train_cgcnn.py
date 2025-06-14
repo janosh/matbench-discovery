@@ -25,7 +25,7 @@ __date__ = "2022-06-13"
 
 # %%
 epochs = 300
-target_col = Key.form_energy
+target_col = Key.formation_energy_per_atom
 input_col = Key.structure
 # 0 for no perturbation, n>1 means train on n perturbations of each crystal
 # in the training set all assigned the same original target energy

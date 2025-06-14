@@ -3,7 +3,7 @@
   import type { ModelData } from '$lib'
   import { calculate_days_ago } from '$lib'
   import { extent } from 'd3-array'
-  import { ColorScaleSelect, pretty_num, ScatterPlot } from 'elementari'
+  import { ColorScaleSelect, format_num, ScatterPlot } from 'elementari'
   import type { D3InterpolateName } from 'elementari/colors'
   import Select from 'svelte-multiselect'
   import { click_outside, titles_as_tooltips } from 'svelte-zoo'
@@ -427,7 +427,6 @@
     class:full-bleed-1400={!is_fullscreen}
     style="height: {is_fullscreen ? `100%` : `600px`}; margin-block: 1em;"
   >
-    <!-- TODO fix x_lim and y_lim to use metric ranges-->
     <ScatterPlot
       series={[series]}
       x_label="{axes.x?.svg_label ?? axes.x?.label} {axes.x?.better
@@ -483,11 +482,11 @@
           {@html axes.y.label}: {y_formatted}<br />
           {#if ![`model_params`, `date_added`].includes(axes.color_value?.key ?? ``) && point?.color_value !== undefined}
             {@html axes.color_value.label}:
-            {pretty_num(point.color_value as number)}<br />
+            {format_num(point.color_value as number)}<br />
           {/if}
           {#if axes.size_value && point?.size_value !== undefined}
             {@html axes.size_value.label}:
-            {pretty_num(point.size_value as number)}<br />
+            {format_num(point.size_value as number)}<br />
           {/if}
         {/if}
       {/snippet}

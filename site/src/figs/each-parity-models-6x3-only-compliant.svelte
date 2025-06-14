@@ -5509,7 +5509,7 @@
               ['Bi1 O3 U1'],
             ],
             hovertemplate:
-              '\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003eModel=AlphaNet-MPTrj\u003cbr\u003ee_above_hull_mp2020_corrected_ppd_mp=%{x}\u003cbr\u003ePredicted energy above convex hull (eV\u002fatom)=%{y}\u003cbr\u003eFormula=%{customdata[0]}\u003cbr\u003epoint density=%{marker.color}\u003cextra\u003e\u003c\u002fextra\u003e',
+              '\u003cb\u003e%{hovertext}\u003c\u002fb\u003e\u003cbr\u003e\u003cbr\u003eModel=AlphaNet-MPtrj\u003cbr\u003ee_above_hull_mp2020_corrected_ppd_mp=%{x}\u003cbr\u003ePredicted energy above convex hull (eV\u002fatom)=%{y}\u003cbr\u003eFormula=%{customdata[0]}\u003cbr\u003epoint density=%{marker.color}\u003cextra\u003e\u003c\u002fextra\u003e',
             hovertext: [
               'wbm-4-10574',
               'wbm-5-7145',
@@ -84685,7 +84685,7 @@
             },
             {
               showarrow: false,
-              text: 'AlphaNet-MPTrj · MAE=0.04 · R\u003csup\u003e2\u003c\u002fsup\u003e=0.74',
+              text: 'AlphaNet-MPtrj · MAE=0.04 · R\u003csup\u003e2\u003c\u002fsup\u003e=0.74',
               x: 0.5,
               xanchor: 'center',
               xref: 'paper',
