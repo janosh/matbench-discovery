@@ -18,7 +18,7 @@ authors:
     email: linfeng.zhang.zlf@gmail.com
     corresponding: true
   - name: Han Wang
-    affiliation: Laboratory of Computational Physics, Institute of Applied Physics and Computational Mathematics
+    affiliation: Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)
     email: wang_han@iapcm.ac.cn
     corresponding: true
 trained_by:
@@ -110,6 +110,24 @@ metrics:
     pred_file: models/deepmd/dpa-3.1-3M-ft/2025-06-05-wbm-IS2RE-FIRE.jsonl.gz
     struct_col: dp_structure
     pred_file_url: https://figshare.com/files/55141127
+    symprec=1e-5:
+      rmsd: 0.0801 # unitless
+      n_sym_ops_mae: 1.9808 # unitless
+      symmetry_decrease: 0.0584 # fraction
+      symmetry_match: 0.728 # fraction
+      symmetry_increase: 0.2085 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/deepmd/dpa-3.1-3M-ft/2025-06-05-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.4.2.csv.gz
+      analysis_file_url:
+    symprec=1e-2:
+      rmsd: 0.0801 # unitless
+      n_sym_ops_mae: 1.9002 # unitless
+      symmetry_decrease: 0.0549 # fraction
+      symmetry_match: 0.809 # fraction
+      symmetry_increase: 0.1287 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/deepmd/dpa-3.1-3M-ft/2025-06-05-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.4.2.csv.gz
+      analysis_file_url:
   discovery:
     pred_file: models/deepmd/dpa-3.1-3M-ft/2025-06-05-dpa-3.1-mptrj-preds.csv.gz
     pred_file_url: https://figshare.com/files/55141118
