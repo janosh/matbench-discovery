@@ -12,7 +12,6 @@
 
   ```bash
   wget https://figshare.com/files/55141124
-
   ```
 
 ### How to install
