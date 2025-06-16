@@ -5,7 +5,7 @@ from matbench_discovery.preds import discovery
 
 
 def test_df_each_pred() -> None:
-    n_rows, n_cols = discovery.df_each_pred.shape
+    n_rows, _n_cols = discovery.df_each_pred.shape
     assert n_rows == len(df_wbm)
     assert n_rows == len(discovery.df_preds)
     assert {*discovery.df_each_pred} == {*df_metrics}, (

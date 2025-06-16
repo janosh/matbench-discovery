@@ -15,7 +15,6 @@ import scipy.stats
 import wandb
 from plotly.validators.scatter.line import DashValidator
 from plotly.validators.scatter.marker import SymbolValidator
-from pymatviz.typing import PLOTLY
 from tqdm import tqdm
 
 from matbench_discovery import STABILITY_THRESHOLD
@@ -159,7 +158,7 @@ def hist_classified_stable_vs_hull_dist(
         y=value_name,
     )
 
-    fig = df_plot.round(4).plot.bar(backend=PLOTLY, **kwargs)
+    fig = df_plot.round(4).plot.bar(backend="plotly", **kwargs)
     fig.layout.legend.update(title=None, y=0.5, xanchor="right", x=1)
     fig.update_traces(marker_line=dict(color="rgba(0, 0, 0, 0)"))
     fig.update_layout(bargap=0)
@@ -305,7 +304,7 @@ def rolling_mae_vs_hull_dist(
     else:
         print("Using pre-calculated rolling MAE")
 
-    fig = df_rolling_err.plot(backend=PLOTLY, **kwargs)
+    fig = df_rolling_err.plot(backend="plotly", **kwargs)
 
     if just_plot_lines:
         # return earlier if all plot objects besides the line were already drawn by a
@@ -610,7 +609,7 @@ def cumulative_metrics(
     n_cols = kwargs.pop("facet_col_wrap", 2)
     kwargs.setdefault("facet_col_spacing", 0.03)
     fig = df_cumu_metrics.plot(
-        backend=PLOTLY,
+        backend="plotly",
         facet_col="metric",
         facet_col_wrap=n_cols,
         **kwargs,

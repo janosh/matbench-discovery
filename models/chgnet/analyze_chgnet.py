@@ -51,7 +51,7 @@ df_diff.reset_index().plot.scatter(
     y=e_form_2000,
     hover_name=Key.mat_id,
     hover_data=[Key.formula],
-    backend=pmv.utils.PLOTLY,
+    backend="plotly",
     title=f"{len(df_diff)} structures have > {min_e_diff} eV/atom energy diff after "
     "longer relaxation",
 )

@@ -107,7 +107,7 @@ metrics:
     kappa_103:
       κ_SRME: 0.469
       pred_file: models/deepmd/dpa-3.1-3m-ft/2025-06-05-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/files/55141100
+      pred_file_url: https://figshare.com/files/55426286
   geo_opt:
     pred_file: models/deepmd/dpa-3.1-3m-ft/2025-06-05-wbm-IS2RE-FIRE.jsonl.gz
     struct_col: dp_structure

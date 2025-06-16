@@ -12,7 +12,6 @@ import plotly.graph_objs as go
 import pymatviz as pmv
 from pymatgen.core import Composition, Structure
 from pymatviz.enums import Key
-from pymatviz.typing import PLOTLY
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR
@@ -213,7 +212,7 @@ df_comp = pd.json_normalize(
 ).set_index(df_wbm.index)
 
 # bar plot showing number of structures in MP containing each element
-(len(df_comp) - df_comp.isna().sum()).sort_values().plot.bar(backend=PLOTLY)
+(len(df_comp) - df_comp.isna().sum()).sort_values().plot.bar(backend="plotly")
 
 # df_comp = df_comp.dropna(axis=1, thresh=100)  # remove Xe with only 1 entry
 

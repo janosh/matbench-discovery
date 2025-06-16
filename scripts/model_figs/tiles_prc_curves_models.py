@@ -6,7 +6,6 @@ import math
 import pandas as pd
 import pymatviz as pmv
 from pymatviz.enums import Key
-from pymatviz.typing import PLOTLY
 from sklearn.metrics import precision_recall_curve
 from tqdm import tqdm
 
@@ -78,7 +77,7 @@ fig = df_prc.iloc[:: len(df_prc) // 500 or 1].plot.scatter(
     facet_col_wrap=n_cols,
     facet_col_spacing=0.04,
     facet_row_spacing=0.04,
-    backend=PLOTLY,
+    backend="plotly",
     width=280 * n_cols,
     height=230 * n_rows,
     color=color_col,
