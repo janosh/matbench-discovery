@@ -111,7 +111,7 @@ metrics:
   geo_opt:
     pred_file: models/deepmd/dpa-3.1-3m-ft/2025-06-05-wbm-IS2RE-FIRE.jsonl.gz
     struct_col: dp_structure
-    pred_file_url: https://figshare.com/files/55402907
+    pred_file_url: https://figshare.com/files/55410170
     symprec=1e-5:
       rmsd: 0.0693 # unitless
       n_sym_ops_mae: 2.0174 # unitless
@@ -120,7 +120,7 @@ metrics:
       symmetry_increase: 0.2138 # fraction
       n_structures: 256963 # count
       analysis_file: models/deepmd/dpa-3.1-3m-ft/2025-06-05-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.4.2.csv.gz
-      analysis_file_url:
+      analysis_file_url: https://figshare.com/files/55410182
     symprec=1e-2:
       rmsd: 0.0693 # unitless
       n_sym_ops_mae: 1.881 # unitless
@@ -129,10 +129,10 @@ metrics:
       symmetry_increase: 0.1317 # fraction
       n_structures: 256963 # count
       analysis_file: models/deepmd/dpa-3.1-3m-ft/2025-06-05-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.4.2.csv.gz
-      analysis_file_url:
+      analysis_file_url: https://figshare.com/files/55410185
   discovery:
     pred_file: models/deepmd/dpa-3.1-3m-ft/2025-06-05-dpa-3.1-3m-ft-preds.csv.gz
-    pred_file_url: https://figshare.com/files/55141889
+    pred_file_url: https://figshare.com/files/55410167
     pred_col: e_form_per_atom_dp
     full_test_set:
       F1: 0.864 # fraction
