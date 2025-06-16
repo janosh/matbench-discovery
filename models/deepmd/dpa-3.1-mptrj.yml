@@ -1,0 +1,191 @@
+model_name: DPA-3.1-MPtrj
+model_key: dpa-3.1-mptrj
+model_version: v0.3 # 2025-06-05
+date_added: "2025-06-05"
+date_published: "2025-06-05"
+authors:
+  - name: Duo Zhang
+    affiliation: AI for Science Institute, Beijing
+    orcid: https://orcid.org/0000-0001-9591-2659
+  - name: Anyang Peng
+    affiliation: AI for Science Institute, Beijing
+    orcid: https://orcid.org/0000-0002-0630-2187
+  - name: Chun Cai
+    affiliation: AI for Science Institute, Beijing
+    orcid: https://orcid.org/0000-0001-6242-0439
+  - name: Linfeng Zhang
+    affiliation: AI for Science Institute, Beijing; DP Technology
+    email: linfeng.zhang.zlf@gmail.com
+    corresponding: true
+  - name: Han Wang
+    affiliation: Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)
+    email: wang_han@iapcm.ac.cn
+    corresponding: true
+trained_by:
+  - name: Duo Zhang
+    affiliation: AI for Science Institute, Beijing
+    orcid: https://orcid.org/0000-0001-9591-2659
+
+repo: https://github.com/deepmodeling/deepmd-kit
+url: https://github.com/deepmodeling/deepmd-kit
+doi: https://arxiv.org/abs/2506.01686
+paper: https://arxiv.org/abs/2506.01686
+pr_url: https://github.com/janosh/matbench-discovery/pull/264
+checkpoint_url: https://figshare.com/files/55141124
+
+license:
+  code: LGPL-3.0
+  code_url: https://github.com/deepmodeling/deepmd-kit/blob/70bc6d89/LICENSE
+  checkpoint: LGPL-3.0
+  checkpoint_url: https://github.com/deepmodeling/deepmd-kit/blob/70bc6d89/LICENSE
+
+openness: OSOD
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+model_type: UIP
+model_params: 4_810_679
+trained_for_benchmark: true
+n_estimators: 1
+
+hyperparams:
+  max_force: 0.05
+  max_steps: 500
+  ase_optimizer: FIRE
+  cell_filter: ExpCellFilter
+  n_layers: 24
+  e_rcut: 6.0
+  a_rcut: 4.5
+  n_dim: 128
+  e_dim: 64
+  a_dim: 32
+  optimizer: AdamW
+  round1:
+    loss: MSE
+    loss_weights:
+      energy: 0.2 -> 20
+      force: 100 -> 20
+      virial: 0.02 -> 1
+    initial_learning_rate: 0.001
+    learning_rate_schedule: ExpLR - start_lr=0.001, decay_steps=5000, stop_lr=0.00001
+    training_steps: 2000000
+  round2:
+    loss: Huber
+    loss_weights:
+      energy: 15
+      force: 1
+      virial: 2.5
+    initial_learning_rate: 0.0002
+    learning_rate_schedule: ExpLR - start_lr=0.0002, decay_steps=5000, stop_lr=0.00001
+    training_steps: 1000000
+  batch_size: 64 # 16 (gpus) * 4 (batch per gpu) = 64 (total batch size)
+  epochs: 120 # round1 80 + round2 40
+  graph_construction_radius: 6.0 # Å
+  max_neighbors: .inf
+
+requirements:
+  torch: 2.3.1
+  torch-geometric: 2.5.2
+  ase: 3.23.0
+  pymatgen: 2024.6.10
+  numpy: 1.26.4
+
+training_set: [MPtrj]
+training_cost: missing
+
+notes:
+  Description: |
+    DPA3 is an advanced interatomic potential leveraging the message passing architecture, implemented within the DeePMD-kit framework, available on [GitHub](https://github.com/deepmodeling/deepmd-kit/tree/devel).
+    Designed as a large atomic model (LAM), DPA3 is tailored to integrate and simultaneously train on datasets from various disciplines, encompassing diverse chemical and materials systems across different research domains.
+    Its model design ensures exceptional fitting accuracy and robust generalization both within and beyond the training domain.
+    Furthermore, DPA3 maintains energy conservation and respects the physical symmetries of the potential energy surface, making it a dependable tool for a wide range of scientific applications.
+
+metrics:
+  phonons:
+    kappa_103:
+      κ_SRME: 0.650
+      pred_file: models/deepmd/dpa-3.1-mptrj/2025-06-05-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/files/55141121
+  geo_opt:
+    pred_file: models/deepmd/dpa-3.1-mptrj/2025-06-05-wbm-IS2RE-FIRE.jsonl.gz
+    struct_col: dp_structure
+    pred_file_url: https://figshare.com/files/55410188
+    symprec=1e-5:
+      rmsd: 0.0801 # unitless
+      n_sym_ops_mae: 1.9808 # unitless
+      symmetry_decrease: 0.0584 # fraction
+      symmetry_match: 0.728 # fraction
+      symmetry_increase: 0.2085 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/deepmd/dpa-3.1-mptrj/2025-06-05-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/55410191
+    symprec=1e-2:
+      rmsd: 0.0801 # unitless
+      n_sym_ops_mae: 1.9002 # unitless
+      symmetry_decrease: 0.0549 # fraction
+      symmetry_match: 0.809 # fraction
+      symmetry_increase: 0.1287 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/deepmd/dpa-3.1-mptrj/2025-06-05-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/55410194
+  discovery:
+    pred_file: models/deepmd/dpa-3.1-mptrj/2025-06-05-dpa-3.1-mptrj-preds.csv.gz
+    pred_file_url: https://figshare.com/files/55141118
+    pred_col: e_form_per_atom_dp
+    full_test_set:
+      F1: 0.789 # fraction
+      DAF: 4.419 # dimensionless
+      Precision: 0.758 # fraction
+      Recall: 0.822 # fraction
+      Accuracy: 0.924 # fraction
+      TPR: 0.822 # fraction
+      FPR: 0.054 # fraction
+      TNR: 0.946 # fraction
+      FNR: 0.178 # fraction
+      TP: 36235.0 # count
+      FP: 11556.0 # count
+      TN: 201315.0 # count
+      FN: 7857.0 # count
+      MAE: 0.036 # eV/atom
+      RMSE: 0.080 # eV/atom
+      R2: 0.804 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
+    most_stable_10k:
+      F1: 0.98 # fraction
+      DAF: 6.29 # dimensionless
+      Precision: 0.96 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.96 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9612.0 # count
+      FP: 388.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.032 # eV/atom
+      RMSE: 0.087 # eV/atom
+      R2: 0.838 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
+    unique_prototypes:
+      F1: 0.803 # fraction
+      DAF: 5.024 # dimensionless
+      Precision: 0.768 # fraction
+      Recall: 0.841 # fraction
+      Accuracy: 0.936 # fraction
+      TPR: 0.841 # fraction
+      FPR: 0.047 # fraction
+      TNR: 0.953 # fraction
+      FNR: 0.159 # fraction
+      TP: 28064.0 # count
+      FP: 8476.0 # count
+      TN: 173638.0 # count
+      FN: 5310.0 # count
+      MAE: 0.037 # eV/atom
+      RMSE: 0.080 # eV/atom
+      R2: 0.812 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction

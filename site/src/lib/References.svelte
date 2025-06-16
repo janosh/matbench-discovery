@@ -7,6 +7,7 @@
     found_on_page?: Reference[]
     n_authors?: number
     first_name_mode?: `initial` | `full` | `none`
+    [key: string]: unknown
   }
   let {
     references,
@@ -14,6 +15,7 @@
     found_on_page = $bindable(references),
     n_authors = 1,
     first_name_mode = `none`,
+    ...rest
   }: Props = $props()
 
   function filter_refs() {
@@ -25,7 +27,7 @@
 </script>
 
 {#key found_on_page}
-  <ol>
+  <ol {...rest}>
     {#each found_on_page as { title, id, author, DOI, URL: href, issued } (id)}
       <li>
         <p {id}>{title}</p>

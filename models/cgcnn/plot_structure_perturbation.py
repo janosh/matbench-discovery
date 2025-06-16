@@ -24,13 +24,13 @@ struct = Structure(
     coords=((0, 0, 0), (0.5, 0.5, 0.5)),
 )
 
-fig = pmv.structure_2d_plotly(struct)
+fig = pmv.structure_2d(struct)
 fig.layout.update(title=f"Original structure: {struct.formula}")
 fig.show()
 
 
 # %%
-pmv.structure_2d_plotly(
+pmv.structure_2d(
     [perturb_structure(struct) for _ in range(12)],
     subplot_title=lambda _struct, idx: f"perturbation {idx}",
 )

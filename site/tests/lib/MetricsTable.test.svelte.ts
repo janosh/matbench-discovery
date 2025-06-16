@@ -1,7 +1,7 @@
 import { DEFAULT_CPS_CONFIG } from '$lib/combined_perf_score.svelte'
 import { HYPERPARAMS } from '$lib/labels'
 import MetricsTable from '$lib/MetricsTable.svelte'
-import type { Metric, ModelData } from '$lib/types'
+import type { Label, ModelData } from '$lib/types'
 import { mount, tick } from 'svelte'
 import { describe, expect, it } from 'vitest'
 
@@ -84,7 +84,7 @@ describe(`MetricsTable`, () => {
 
   it(`toggles metadata columns`, async () => {
     const metadata_cols = [`Training Set`, `Params`, `Targets`, `Date Added`, `Links`]
-    const col_filter = (_col: Metric) => true // show all columns initially
+    const col_filter = (_col: Label) => true // show all columns initially
     mount(MetricsTable, { target: document.body, props: { col_filter } })
     // Check metadata columns are visible initially
     let header_texts = [...document.body.querySelectorAll(`th`)].map((h) =>
@@ -120,7 +120,7 @@ describe(`MetricsTable`, () => {
   })
 
   it(`filters specified columns`, async () => {
-    const col_filter = (col: Metric) => ![`F1`, `DAF`].includes(col.short ?? col.label)
+    const col_filter = (col: Label) => ![`F1`, `DAF`].includes(col.short ?? col.label)
     mount(MetricsTable, {
       target: document.body,
       props: { col_filter, show_non_compliant: true },
@@ -212,18 +212,17 @@ describe(`MetricsTable`, () => {
   it.each([
     {
       name: `sticky columns only`,
-      col_filter: (col: Metric) => col.sticky === true,
+      col_filter: (col: Label) => col.sticky === true,
       expected_headers: [`Model`],
     },
     {
       name: `specific columns`,
-      col_filter: (col: Metric) => [`Model`, `F1`].includes(col.short ?? col.label),
+      col_filter: (col: Label) => [`Model`, `F1`].includes(col.short ?? col.label),
       expected_headers: [`Model`, `F1`],
     },
     {
       name: `Model always first`,
-      col_filter: (col: Metric) =>
-        [`F1`, `Model`, `DAF`].includes(col.short ?? col.label),
+      col_filter: (col: Label) => [`F1`, `Model`, `DAF`].includes(col.short ?? col.label),
       expected_headers: [`Model`, `F1`, `DAF`],
     },
   ])(`handles col_filter: $name`, async ({ col_filter, expected_headers }) => {
@@ -237,13 +236,13 @@ describe(`MetricsTable`, () => {
   it.each([
     {
       model_filter: (model: ModelData) => model.model_name.includes(`CHG`),
-      col_filter: (col: Metric) => col.label === `Model` || col.short === `F1`,
+      col_filter: (col: Label) => col.label === `Model` || col.short === `F1`,
       expected_model_match: `CHG`,
       expected_headers: [`Model`, `F1`],
     },
     {
       model_filter: (model: ModelData) => model.model_name.includes(`MACE`),
-      col_filter: (col: Metric) => [`Model`, `DAF`].includes(col.short ?? col.label),
+      col_filter: (col: Label) => [`Model`, `DAF`].includes(col.short ?? col.label),
       expected_model_match: `MACE`,
       expected_headers: [`Model`, `DAF`],
     },
@@ -271,7 +270,7 @@ describe(`MetricsTable`, () => {
     mount(MetricsTable, {
       target: document.body,
       props: {
-        col_filter: (col: Metric) => [`Model`, `F1`].includes(col.short ?? col.label),
+        col_filter: (col: Label) => [`Model`, `F1`].includes(col.short ?? col.label),
         show_non_compliant: true,
       },
     })
@@ -285,7 +284,7 @@ describe(`MetricsTable`, () => {
     mount(MetricsTable, {
       target: document.body,
       props: {
-        col_filter: (col: Metric) =>
+        col_filter: (col: Label) =>
           [`Model`, `F1`, `DAF`].includes(col.short ?? col.label),
         show_non_compliant: true,
       },
@@ -317,7 +316,7 @@ describe(`MetricsTable`, () => {
         target: document.body,
         props: {
           show_non_compliant: true,
-          col_filter: (col: Metric) => [`Model`, `Date Added`].includes(col.label),
+          col_filter: (col: Label) => [`Model`, `Date Added`].includes(col.label),
         },
       })
 
@@ -378,7 +377,7 @@ describe(`MetricsTable`, () => {
         target: document.body,
         props: {
           show_non_compliant: true,
-          col_filter: (col: Metric) => [`Model`, `Training Set`].includes(col.label),
+          col_filter: (col: Label) => [`Model`, `Training Set`].includes(col.label),
         },
       })
 
@@ -451,7 +450,7 @@ describe(`MetricsTable`, () => {
         target: document.body,
         props: {
           show_non_compliant: true,
-          col_filter: (col: Metric) =>
+          col_filter: (col: Label) =>
             [`Model`, HYPERPARAMS.model_params.short].includes(col.short),
         },
       })
@@ -531,7 +530,7 @@ describe(`MetricsTable`, () => {
         target: document.body,
         props: {
           show_non_compliant: true,
-          col_filter: (col: Metric) => [`Model`, `Training Set`].includes(col.label),
+          col_filter: (col: Label) => [`Model`, `Training Set`].includes(col.label),
         },
       })
 
@@ -591,7 +590,7 @@ describe(`MetricsTable`, () => {
         test_name: `with filtered columns`,
         props: {
           show_non_compliant: true,
-          col_filter: (col: Metric) => [`Model`, `CPS`, `F1`].includes(col.label),
+          col_filter: (col: Label) => [`Model`, `CPS`, `F1`].includes(col.label),
         },
       },
       {
@@ -650,7 +649,7 @@ describe(`MetricsTable`, () => {
         target: document.body,
         props: {
           show_non_compliant: true,
-          col_filter: (col: Metric) =>
+          col_filter: (col: Label) =>
             [`Model`, `CPS`, `Links`].includes(col.short ?? col.label),
         },
       })
@@ -690,7 +689,7 @@ describe(`MetricsTable`, () => {
 
   describe(`Links Column`, () => {
     it(`renders external links with proper attributes`, async () => {
-      const col_filter = (col: Metric) => [`Model`, `Links`].includes(col.label)
+      const col_filter = (col: Label) => [`Model`, `Links`].includes(col.label)
       mount(MetricsTable, {
         target: document.body,
         props: { col_filter, show_non_compliant: true },
@@ -735,7 +734,7 @@ describe(`MetricsTable`, () => {
       mount(MetricsTable, {
         target: document.body,
         props: {
-          col_filter: (col: Metric) => [`Model`, `Links`].includes(col.label),
+          col_filter: (col: Label) => [`Model`, `Links`].includes(col.label),
           show_non_compliant: true,
         },
       })
@@ -774,7 +773,7 @@ describe(`MetricsTable`, () => {
       mount(MetricsTable, {
         target: document.body,
         props: {
-          col_filter: (col: Metric) => [`Model`, `Links`].includes(col.label),
+          col_filter: (col: Label) => [`Model`, `Links`].includes(col.label),
           show_non_compliant: true,
         },
       })
@@ -804,7 +803,7 @@ describe(`MetricsTable`, () => {
       mount(MetricsTable, {
         target: document.body,
         props: {
-          col_filter: (col: Metric) => [`Model`, `Links`].includes(col.label),
+          col_filter: (col: Label) => [`Model`, `Links`].includes(col.label),
           show_non_compliant: true,
         },
       })

@@ -6,12 +6,6 @@
   --dark-bg: #0d1a1d;
   --light-bg: #08303b;
 
-  --toc-min-width: 15em;
-  --toc-active-border: solid var(--blue);
-  --toc-active-border-width: 0 0 0 1pt;
-  --toc-active-bg: none;
-  --toc-font-size: 9pt;
-
   --zoo-github-corner-color: var(--night);
   --zoo-github-corner-bg: white;
   --zoo-tooltip-bg: rgb(2, 17, 30);
@@ -62,7 +56,7 @@ button {
   cursor: pointer;
   border: none;
   border-radius: 3pt;
-  background: teal;
+  background-color: rgba(255, 255, 255, 0.1);
   padding: 2pt 4pt;
 }
 :is(div.multiselect) button {
@@ -96,7 +90,7 @@ code {
   overflow-wrap: break-word;
   padding: 1pt 3pt;
   border-radius: 2pt;
-  font-size: 1.2em;
+  font-size: 1.1em;
   background-color: rgba(0, 255, 255, 0.1);
 }
 pre code {

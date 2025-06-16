@@ -22,7 +22,9 @@
     </a>
   </nav>
   <img src="/favicon.svg" alt="Logo" width="30px" style="vertical-align: middle;" />
-  &ensp;{pkg.title} &ensp; | &ensp; © {pkg.author.split(`<`)[0]} (2023)
+  &ensp;{pkg.title} &ensp; | &ensp; ©
+  <a href={pkg[`author-url`]}>{pkg.author.split(`<`)[0]}</a>
+  (<a href="{pkg.repository}/blob/-/license">2022</a>)
 </footer>
 
 <style>

@@ -108,13 +108,16 @@ describe(`Landing Page`, () => {
     const download_section = document.body.querySelector(`.downloads`)
     expect(download_section).not.toBeNull()
 
-    // Check that it contains SVG, PNG buttons
+    // Check that it contains SVG, PNG, CSV, Excel buttons plus RSS link
     const download_buttons = download_section?.querySelectorAll(`.download-btn`)
-    expect(download_buttons?.length).toBe(3)
+    expect(download_buttons?.length).toBe(5)
 
     const buttons = Array.from(download_buttons).map((btn) => btn.textContent?.trim())
     expect(buttons).toContain(`SVG`)
     expect(buttons).toContain(`PNG`)
+    expect(buttons).toContain(`CSV`)
+    expect(buttons).toContain(`Excel`)
+    expect(buttons).toContain(`RSS`)
   })
 
   it(`displays valid metric values`, () => {

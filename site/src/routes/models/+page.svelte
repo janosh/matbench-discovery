@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ModelCard, type Metric } from '$lib'
+  import { ModelCard, type Label } from '$lib'
   import { ALL_METRICS, METADATA_COLS } from '$lib/labels'
   import { get_nested_value, metric_better_as, sort_models } from '$lib/metrics'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
@@ -9,7 +9,7 @@
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
 
-  let sort_by: Metric = $state(ALL_METRICS.CPS)
+  let sort_by: Label = $state(ALL_METRICS.CPS)
   let show_non_compliant: boolean = $state(true)
   let show_details: boolean = $state(false)
   let order: `asc` | `desc` = $state(`desc`)
@@ -135,7 +135,7 @@
           {metrics}
           sort_by={sort_by_path}
           bind:show_details
-          style="background-color: {bg_clr}; color: {text_color};"
+          title_style="background-color: {bg_clr}; color: {text_color};"
         />
       </li>
     {/each}

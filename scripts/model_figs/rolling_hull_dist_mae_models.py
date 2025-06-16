@@ -42,7 +42,7 @@ fig, df_err, df_std = rolling_mae_vs_hull_dist(
     df_rolling_err=df_err,
     df_err_std=df_std,
     show_dummy_mae=False,
-    legend_loc="below",
+    legend_loc="default",
     y_lim=(0, 0.1),
 )
 

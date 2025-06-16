@@ -40,13 +40,18 @@
     ]),
   )
 
-  let [plot_width, plot_height] = $state([400, 300])
+  let plot_width = $state(400)
+  let plot_height = $state(300)
 
   // Start with pre-loaded models selected
   let selected_models = $state(new Set(Object.keys(diatomic_curves)))
-  let diatomics_to_render = $derived( // only render diatomics where at least one model has data
+  let diatomics_to_render = $derived(
+    // only render diatomics where at least one model has data
     homo_diatomic_formulas.filter((formula) =>
-      [...selected_models].some((model) => diatomic_curves[model]?.[humu_nuc_key]?.[formula]?.energies?.length > 0),
+      [...selected_models].some(
+        (model) =>
+          diatomic_curves[model]?.[humu_nuc_key]?.[formula]?.energies?.length > 0,
+      ),
     ),
   )
 

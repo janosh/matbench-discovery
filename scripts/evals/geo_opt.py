@@ -88,12 +88,17 @@ models = df_geo_metrics.index
 
 
 # %% plot ML vs DFT relaxed spacegroup correspondence as sankey diagrams
+n_pairs_to_plot = 10
 df_spg = df_all.xs(Key.spg_num, level=metric_lvl, axis="columns").convert_dtypes()
 for model_label in {*df_spg} - {Key.dft.label}:
     # get most common pairs of DFT/Model spacegroups
     model = Model.from_label(model_label)
     common_dft_spgs, common_model_spgs = zip(
-        *df_spg[[Key.dft.label, model_label]].value_counts().head(10).index
+        *df_spg[[Key.dft.label, model_label]]
+        .value_counts()
+        .head(n_pairs_to_plot)
+        .index,
+        strict=True,
     )
     df_spg_common = df_spg.query(
         f"`DFT` in {common_dft_spgs} and `{model_label}` in {common_model_spgs}"

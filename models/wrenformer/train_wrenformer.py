@@ -19,7 +19,7 @@ __date__ = "2022-08-13"
 # %%
 epochs = 300
 data_path = DataFiles.mp_energies.path
-target_col = Key.form_energy
+target_col = Key.formation_energy_per_atom
 # data_path = f"{ROOT}/data/2022-08-25-m3gnet-trainset-mp-2021-struct-energy.json.gz"
 # target_col = "mp_energy_per_atom"
 data_name = "m3gnet-trainset" if "m3gnet" in data_path else "mp"

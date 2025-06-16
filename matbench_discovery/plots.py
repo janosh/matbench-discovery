@@ -4,7 +4,7 @@ import functools
 import math
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import Any, Literal
+from typing import Any, Literal, get_args
 
 import numpy as np
 import pandas as pd
@@ -36,7 +36,7 @@ plotly_colors *= len(plotly_markers) // len(plotly_colors)
 # used for consistent markers, line styles and colors for a given model across plots
 model_labels = [m.label for m in Model]
 model_styles = dict(
-    zip(model_labels, zip(plotly_line_styles, plotly_markers, plotly_colors))
+    zip(model_labels, zip(plotly_line_styles, plotly_markers, plotly_colors))  # noqa: B905
 )
 
 
@@ -201,6 +201,9 @@ def hist_classified_stable_vs_hull_dist(
     return fig
 
 
+LegendLoc = Literal["figure", "below", "default"]
+
+
 def rolling_mae_vs_hull_dist(
     e_above_hull_true: pd.Series,
     e_above_hull_preds: pd.DataFrame | dict[str, pd.Series],
@@ -219,7 +222,7 @@ def rolling_mae_vs_hull_dist(
     show_dummy_mae: bool = False,
     annotate_triangle: bool = False,
     pbar: bool = True,
-    legend_loc: Literal["figure", "below"] = "figure",
+    legend_loc: LegendLoc = "figure",
     **kwargs: Any,
 ) -> tuple[go.Figure, pd.DataFrame, pd.DataFrame]:
     r"""Rolling mean absolute error as the energy to the convex hull is varied. A scale
@@ -263,7 +266,7 @@ def rolling_mae_vs_hull_dist(
             predicting the target mean.
         pbar (bool, optional): If True, show a progress bar during rolling MAE
             calculation. Defaults to True.
-        legend_loc ("figure" | "below", optional): Location of the legend.
+        legend_loc ("figure" | "below" | "default", optional): Location of the legend.
         **kwargs: Additional keyword arguments to pass to df.plot().
 
     Returns:
@@ -344,7 +347,7 @@ def rolling_mae_vs_hull_dist(
     )
 
     if legend_loc == "figure":
-        fig.layout.legend.update(title="", x=0, y=0, yanchor="bottom")
+        fig.layout.legend.update(x=0, y=0, yanchor="bottom")
         # if error is low, move legend to the top left
         leg_y = 1 if y_anchor == "top" else 0.02
         fig.layout.legend.update(
@@ -352,15 +355,21 @@ def rolling_mae_vs_hull_dist(
         )
     elif legend_loc == "below":
         fig.layout.legend.update(
-            title="",
             orientation="h",  # Horizontal legend
             x=0,
             y=-0.2,  # move below plot (adjust as needed)
             xanchor="left",
             yanchor="top",
         )
+    elif legend_loc == "default":
+        pass
     else:
-        raise ValueError(f"Unexpected {legend_loc=}")
+        raise ValueError(
+            f"Unexpected {legend_loc=}, must be one of {get_args(LegendLoc)}"
+        )
+    fig.layout.legend.title = ""
+    # show best model at the bottom
+    fig.layout.legend.traceorder = "reversed"
 
     # change tooltip precision to 2 decimal places
     fig.update_traces(hovertemplate="x = %{x:.2f} eV/atom<br>y = %{y:.2f} eV/atom")

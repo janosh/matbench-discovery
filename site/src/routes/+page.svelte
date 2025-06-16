@@ -2,12 +2,19 @@
   import type { DiscoverySet, ModelData } from '$lib'
   import { DynamicScatter, MetricsTable, RadarChart, SelectToggle } from '$lib'
   import { CPS_CONFIG } from '$lib/combined_perf_score.svelte'
-  import { generate_png, generate_svg, handle_export } from '$lib/html-to-img'
   import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/labels'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
+  import {
+    generate_csv,
+    generate_excel,
+    generate_png,
+    generate_svg,
+    handle_export,
+  } from '$lib/table-export'
   import Readme from '$root/readme.md'
-  import KappaNote from '$routes/kappa-note.md'
-  import { pretty_num } from 'elementari'
+  import KappaNote from '$routes/tasks/phonons/kappa-note.md'
+  import { format_num } from 'elementari'
+  import { titles_as_tooltips } from 'svelte-zoo'
   import type { Snapshot } from './$types'
 
   let n_wbm_stable_uniq_protos = 32_942
@@ -35,10 +42,29 @@
     RMSE: false,
   })
 
+  let discovery_set: DiscoverySet = $state(`unique_prototypes`)
+
+  // Export state object for handle_export
+  let export_state = $derived({
+    export_error,
+    show_non_compliant: table.show_non_compliant,
+    discovery_set,
+  })
+
   let best_model = $derived(
     MODELS.reduce((best: ModelData, md: ModelData) => {
-      const best_F1 = best.metrics?.discovery?.full_test_set?.F1 ?? 0
-      const md_F1 = md.metrics?.discovery?.full_test_set?.F1 ?? 0
+      const best_discovery = best.metrics?.discovery
+      const md_discovery = md.metrics?.discovery
+
+      const best_F1_raw =
+        (typeof best_discovery === `object` && best_discovery?.full_test_set?.F1) ?? 0
+      const md_F1_raw =
+        (typeof md_discovery === `object` && md_discovery?.full_test_set?.F1) ?? 0
+
+      // Ensure F1 values are numbers
+      const best_F1 = typeof best_F1_raw === `number` ? best_F1_raw : 0
+      const md_F1 = typeof md_F1_raw === `number` ? md_F1_raw : 0
+
       if (
         (!best_F1 || md_F1 > best_F1) &&
         (table.show_non_compliant || model_is_compliant(md))
@@ -47,8 +73,6 @@
       return best
     }, {} as ModelData),
   )
-
-  let discovery_set: DiscoverySet = $state(`unique_prototypes`)
 
   export const snapshot: Snapshot = {
     capture: () => ({ discovery_set, table }),
@@ -87,32 +111,32 @@
     />
   </section>
 
+  {#if export_error}
+    <div class="export-error">
+      {export_error}
+    </div>
+  {/if}
+
   <div class="downloads">
     Download table as
-    {#each [[`SVG`, generate_svg], [`PNG`, generate_png]] as const as [label, generate_fn] (label)}
+    {#each [[`SVG`, generate_svg], [`PNG`, generate_png], [`CSV`, generate_csv], [`Excel`, generate_excel]] as const as [label, generate_fn] (label)}
       <button
         class="download-btn"
-        onclick={handle_export(generate_fn, label, {
-          export_error,
-          show_non_compliant: table.show_non_compliant,
-          discovery_set,
-        })}
+        onclick={handle_export(generate_fn, label, export_state)}
       >
         {label}
       </button>
     {/each}
+    &emsp;Subscribe via
     <a
       href="/rss.xml"
       class="download-btn"
-      title="Subscribe to be notified of new models"
+      title="Be notified of new model submissions through an RSS reader"
+      style="color: var(--text-color);"
+      use:titles_as_tooltips
     >
       <svg><use href="#icon-rss" /></svg> RSS
     </a>
-    {#if export_error}
-      <div class="export-error">
-        {export_error}
-      </div>
-    {/if}
   </div>
 
   <figcaption class="caption-radar-container">
@@ -131,11 +155,11 @@
       estimators if an ensemble was used. DAF = Discovery Acceleration Factor measures how
       many more stable materials a model finds compared to random selection from the test
       set. The unique structure prototypes in the WBM test set have a
-      <code>{pretty_num(n_wbm_stable_uniq_protos / n_wbm_uniq_protos, `.1%`)}</code>
+      <code>{format_num(n_wbm_stable_uniq_protos / n_wbm_uniq_protos, `.1%`)}</code>
       rate of stable crystals, meaning the max possible DAF is
       <code>
-        ({pretty_num(n_wbm_stable_uniq_protos)} / {pretty_num(n_wbm_uniq_protos)})^−1 ≈
-        {pretty_num(n_wbm_uniq_protos / n_wbm_stable_uniq_protos)}
+        ({format_num(n_wbm_stable_uniq_protos)} / {format_num(n_wbm_uniq_protos)})^−1 ≈
+        {format_num(n_wbm_uniq_protos / n_wbm_stable_uniq_protos)}
       </code>.
     </div>
     <!-- CPS weight controls -->
@@ -160,7 +184,9 @@
   {#snippet best_report()}
     {#if best_model}
       {@const { model_name, model_key, repo, paper, metrics = {} } = best_model}
-      {@const { F1, R2, DAF } = metrics?.discovery?.[discovery_set] ?? {}}
+      {@const discovery_metrics =
+        typeof metrics?.discovery === `object` ? metrics.discovery : null}
+      {@const { F1, R2, DAF } = discovery_metrics?.[discovery_set] ?? {}}
       <span id="best-report">
         <a href="/models/{model_key}">{model_name}</a> (<a href={paper}>paper</a>,
         <a href={repo}>code</a>) achieves the highest F1 score of {F1}, R<sup>2</sup> of {R2}
@@ -171,7 +197,7 @@
     {/if}
   {/snippet}
 </Readme>
-<KappaNote />
+<KappaNote warning={false} />
 
 <style>
   figure {
@@ -192,11 +218,20 @@
     padding: 0 6pt;
     border-radius: 4pt;
     font: inherit;
+    transition: background-color 0.2s ease;
+  }
+  div.downloads .download-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
   }
   div.export-error {
     color: #ff6b6b;
     margin-top: 0.5em;
     flex-basis: 100%;
+    background-color: rgba(255, 107, 107, 0.1);
+    padding: 1em;
+    border-radius: 4px;
+    border-left: 4px solid #ff6b6b;
+    margin-bottom: 1em;
   }
   /* Caption Radar Container Styles */
   figcaption.caption-radar-container {

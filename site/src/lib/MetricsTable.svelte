@@ -5,18 +5,13 @@
   import { click_outside } from 'svelte-zoo/actions'
   import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from './labels'
   import { assemble_row_data } from './metrics'
-  import type {
-    CellSnippetArgs,
-    DiscoverySet,
-    LinkData,
-    Metric,
-    ModelData,
-  } from './types'
+  import { heatmap_class } from './table-export'
+  import type { CellSnippetArgs, DiscoverySet, Label, LinkData, ModelData } from './types'
 
   interface Props {
     discovery_set?: DiscoverySet
     model_filter?: (model: ModelData) => boolean
-    col_filter?: (col: Metric) => boolean
+    col_filter?: (col: Label) => boolean
     show_energy_only?: boolean
     show_non_compliant?: boolean
     show_heatmap?: boolean
@@ -70,7 +65,7 @@
         }
         const visible = col.visible !== false && col_filter(col)
 
-        return { ...col, better, description, visible } as Metric
+        return { ...col, better, description, visible } as Label
       })
       // Ensure Model column comes first
       .sort((col1, _col2) => (col1.label === `Model` ? -1 : 1)),
@@ -155,6 +150,7 @@
   }}
   default_num_format=".3f"
   bind:show_heatmap
+  {heatmap_class}
   {...rest}
 >
   {#snippet controls()}
