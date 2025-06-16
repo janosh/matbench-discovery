@@ -111,7 +111,7 @@ metrics:
   geo_opt:
     pred_file: models/deepmd/dpa-3.1-3m-ft/2025-06-05-wbm-IS2RE-FIRE.jsonl.gz
     struct_col: dp_structure
-    pred_file_url: https://figshare.com/files/55141109
+    pred_file_url: https://figshare.com/files/55402907
     symprec=1e-5:
       rmsd: 0.0801 # unitless
       n_sym_ops_mae: 1.9808 # unitless

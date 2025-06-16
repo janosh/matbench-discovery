@@ -104,12 +104,12 @@ metrics:
   phonons:
     kappa_103:
       κ_SRME: 0.650
-      pred_file: models/deepmd/dpa-3.1-3M-ft/2025-06-05-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file: models/deepmd/dpa-3.1-mptrj/2025-06-05-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/55141121
   geo_opt:
-    pred_file: models/deepmd/dpa-3.1-3M-ft/2025-06-05-wbm-IS2RE-FIRE.jsonl.gz
+    pred_file: models/deepmd/dpa-3.1-mptrj/2025-06-05-wbm-IS2RE-FIRE.jsonl.gz
     struct_col: dp_structure
-    pred_file_url: https://figshare.com/files/55141127
+    pred_file_url: https://figshare.com/files/55402913
     symprec=1e-5:
       rmsd: 0.0801 # unitless
       n_sym_ops_mae: 1.9808 # unitless
@@ -117,7 +117,7 @@ metrics:
       symmetry_match: 0.728 # fraction
       symmetry_increase: 0.2085 # fraction
       n_structures: 256963 # count
-      analysis_file: models/deepmd/dpa-3.1-3M-ft/2025-06-05-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.4.2.csv.gz
+      analysis_file: models/deepmd/dpa-3.1-mptrj/2025-06-05-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.4.2.csv.gz
       analysis_file_url:
     symprec=1e-2:
       rmsd: 0.0801 # unitless
@@ -126,10 +126,10 @@ metrics:
       symmetry_match: 0.809 # fraction
       symmetry_increase: 0.1287 # fraction
       n_structures: 256963 # count
-      analysis_file: models/deepmd/dpa-3.1-3M-ft/2025-06-05-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.4.2.csv.gz
+      analysis_file: models/deepmd/dpa-3.1-mptrj/2025-06-05-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.4.2.csv.gz
       analysis_file_url:
   discovery:
-    pred_file: models/deepmd/dpa-3.1-3M-ft/2025-06-05-dpa-3.1-mptrj-preds.csv.gz
+    pred_file: models/deepmd/dpa-3.1-mptrj/2025-06-05-dpa-3.1-mptrj-preds.csv.gz
     pred_file_url: https://figshare.com/files/55141118
     pred_col: e_form_per_atom_dp
     full_test_set:
