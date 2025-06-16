@@ -59,6 +59,7 @@ model_type: UIP
 model_params: 16234332
 trained_for_benchmark: true
 n_estimators: 1
+status: superseded
 
 hyperparams:
   max_force: 0.05
