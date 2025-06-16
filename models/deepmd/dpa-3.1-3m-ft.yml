@@ -113,20 +113,20 @@ metrics:
     struct_col: dp_structure
     pred_file_url: https://figshare.com/files/55402907
     symprec=1e-5:
-      rmsd: 0.0801 # unitless
-      n_sym_ops_mae: 1.9808 # unitless
-      symmetry_decrease: 0.0584 # fraction
-      symmetry_match: 0.728 # fraction
-      symmetry_increase: 0.2085 # fraction
+      rmsd: 0.0693 # unitless
+      n_sym_ops_mae: 2.0174 # unitless
+      symmetry_decrease: 0.0539 # fraction
+      symmetry_match: 0.7274 # fraction
+      symmetry_increase: 0.2138 # fraction
       n_structures: 256963 # count
       analysis_file: models/deepmd/dpa-3.1-3m-ft/2025-06-05-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.4.2.csv.gz
       analysis_file_url:
     symprec=1e-2:
-      rmsd: 0.0801 # unitless
-      n_sym_ops_mae: 1.9002 # unitless
-      symmetry_decrease: 0.0549 # fraction
-      symmetry_match: 0.809 # fraction
-      symmetry_increase: 0.1287 # fraction
+      rmsd: 0.0693 # unitless
+      n_sym_ops_mae: 1.881 # unitless
+      symmetry_decrease: 0.0502 # fraction
+      symmetry_match: 0.8109 # fraction
+      symmetry_increase: 0.1317 # fraction
       n_structures: 256963 # count
       analysis_file: models/deepmd/dpa-3.1-3m-ft/2025-06-05-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.4.2.csv.gz
       analysis_file_url:
