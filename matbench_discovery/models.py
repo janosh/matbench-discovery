@@ -9,7 +9,7 @@ from matbench_discovery import ROOT
 from matbench_discovery.enums import ModelType, Open
 
 # ignore underscore-prefixed directories for WIP model submissions
-MODEL_DIRS = glob(f"{ROOT}/models/[!_]*/")
+MODEL_DIRS = sorted(glob(f"{ROOT}/models/[!_]*/"))
 MODEL_METADATA: dict[str, dict[str, Any]] = {}
 
 for model_dir in MODEL_DIRS:
