@@ -2,17 +2,16 @@
 
 ## Model
 
-- dpa3-openlam：model pretrained on the `OpenLAM` datasest, and finetuned with `MPtraj` & `Sub-Alex` datasets.
+- DPA-3.1-3M-FT：model pretrained on the `OpenLAM` datasest (using DPA-3.1-3M from [DPA3-paper](https://arxiv.org/abs/2506.01686)), and finetuned with `MPtraj` & `Sub-Alex` datasets.
 
   ```bash
-  wget https://figshare.com/files/52989059
+  wget https://figshare.com/files/55141895
   ```
 
-- dpa3-mptrj：model trained only on the `MPtraj` dataset.
+- DPA-3.1-MPtrj：model trained only on the `MPtraj` dataset.
 
   ```bash
-  wget https://figshare.com/files/52989056
-
+  wget https://figshare.com/files/55141124
   ```
 
 ### How to install
@@ -31,7 +30,7 @@ water = Atoms(
    "H2O",
    positions=[(0.7601, 1.9270, 1), (1.9575, 1, 1), (1.0, 1.0, 1.0)],
    cell=[100, 100, 100],
-   calculator=DP(model="2025-03-14-dpa3-mptrj.pth"),
+   calculator=DP(model="dpa-3.1-mptrj.pth"),
 )
 
 print(water.get_potential_energy())
@@ -80,60 +79,60 @@ print(water.get_forces())
 
 ## Results
 
-### dpa3-openlam
+### DPA-3.1-3M-FT
 
-`2025-01-10-dpa3-openlam-preds.csv`
+`2025-06-05-dpa-3.1-3M-ft-preds.csv.gz`
 
 ```txt
     Full-set    Unique  10K
-F1              0.869284       0.890341     0.986469
-DAF             4.976639       5.747061     6.366780
-Precision       0.853936       0.878562     0.973300
-Recall          0.885195       0.902439     1.000000
-Accuracy        0.954320       0.965571     0.973300
-TPR             0.885195       0.902439     1.000000
-FPR             0.031362       0.022859     1.000000
-TNR             0.968638       0.977141     0.000000
-FNR             0.114805       0.097561     0.000000
-TP          39030.000000   30118.000000  9733.000000
-FP           6676.000000    4163.000000   267.000000
-TN         206195.000000  177951.000000     0.000000
-FN           5062.000000    3256.000000     0.000000
-MAE             0.021902       0.022137     0.018143
-RMSE            0.068287       0.066571     0.062670
-R2              0.856952       0.869308     0.912547
+F1              0.864375       0.884321     0.986675
+DAF             4.911418       5.667089     6.369397
+Precision       0.842745       0.866337     0.973700
+Recall          0.887145       0.903068     1.000000
+Accuracy        0.952230       0.963409     0.973700
+TPR             0.887145       0.903068     1.000000
+FPR             0.034288       0.025533     1.000000
+TNR             0.965712       0.974467     0.000000
+FNR             0.112855       0.096932     0.000000
+TP          39116.000000   30139.000000  9737.000000
+FP           7299.000000    4650.000000   263.000000
+TN         205572.000000  177464.000000     0.000000
+FN           4976.000000    3235.000000     0.000000
+MAE             0.022537       0.022778     0.019031
+RMSE            0.068373       0.066638     0.067072
+R2              0.856592       0.869046     0.900992
 ```
 
-### dpa3-mptrj
+### DPA-3.1-MPtrj
 
-`2025-01-10-dpa3-mptrj-pred.csv`
+`2025-06-05-dpa-3.1-mptrj-preds.csv.gz`
 
 ```txt
     Full-set    Unique  10K
-F1              0.774286       0.785753     0.979592
-DAF             4.249362       4.822293     6.279779
-Precision       0.729143       0.737192     0.960000
-Recall          0.825388       0.841164     1.000000
-Accuracy        0.917428       0.928957     0.960000
-TPR             0.825388       0.841164     1.000000
-FPR             0.063508       0.054955     1.000000
-TNR             0.936492       0.945045     0.000000
-FNR             0.174612       0.158836     0.000000
-TP          36393.000000   28073.000000  9600.000000
-FP          13519.000000   10008.000000   400.000000
-TN         199352.000000  172106.000000     0.000000
-FN           7699.000000    5301.000000     0.000000
-MAE             0.037755       0.039197     0.032419
-RMSE            0.081581       0.081490     0.078476
-R2              0.795834       0.804168     0.865694
+F1              0.788720       0.802815     0.980216
+DAF             4.418684       5.024052     6.287629
+Precision       0.758197       0.768035     0.961200
+Recall          0.821804       0.840894     1.000000
+Accuracy        0.924452       0.936024     0.961200
+TPR             0.821804       0.840894     1.000000
+FPR             0.054286       0.046542     1.000000
+TNR             0.945714       0.953458     0.000000
+FNR             0.178196       0.159106     0.000000
+TP          36235.000000   28064.000000  9612.000000
+FP          11556.000000    8476.000000   388.000000
+TN         201315.000000  173638.000000     0.000000
+FN           7857.000000    5310.000000     0.000000
+MAE             0.035629       0.036945     0.031540
+RMSE            0.079964       0.079838     0.087248
+R2              0.803849       0.812029     0.837659
 ```
 
 ### Relaxed Structure
 
 ```sh
-# dpa3-openlam
-wget https://figshare.com/files/52988759
+# DPA-3.1-3M-FT
+wget https://figshare.com/files/55141109
 
-# dpa3-mptrj
-wget https://figshare.com/files/52988747
+# DPA-3.1-MPtrj
+wget https://figshare.com/files/55141127
 ```

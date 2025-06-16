@@ -454,6 +454,7 @@
       color_scale={{ scheme: color_scheme, type: log.color_value ? `log` : `linear` }}
       size_scale={{
         radius_range: [5 * size_multiplier, 20 * size_multiplier],
+        type: log.size_value ? `log` : `linear`,
       }}
       color_bar={{
         title: `${axes.color_value?.label}${axes.color_value?.better ? ` (${axes.color_value?.better}=better)` : ``}`,

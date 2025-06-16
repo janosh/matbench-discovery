@@ -342,9 +342,9 @@
       <section class="training-set">
         {#each model.training_set as dataset_key (dataset_key)}
           {@const dataset = DATASETS[dataset_key]}
-          {@const { n_structures, title, slug, n_materials } = dataset}
+          {@const { n_structures, name, slug, n_materials } = dataset}
           <p>
-            <a href="/data/{slug}">{title}</a>:
+            <a href="/data/{slug}">{name}</a>:
             <Tooltip text={n_structures.toLocaleString()}>
               <strong>{format_num(n_structures)}</strong>
             </Tooltip>

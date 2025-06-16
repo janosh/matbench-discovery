@@ -299,9 +299,11 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # CGCNN 10-member ensemble with 5-fold training set perturbations
     cgcnn_p = auto(), "cgcnn/cgcnn+p.yml"
 
-    # DeepMD-DPA3 models
-    dpa3_v2_mptrj = auto(), "deepmd/dpa3-v2-mptrj.yml"
-    dpa3_v2_openlam = auto(), "deepmd/dpa3-v2-openlam.yml"
+    # DeePMD-DPA3 models: https://arxiv.org/abs/2506.01686
+    dpa_3_1_mptrj = auto(), "deepmd/dpa-3.1-mptrj.yml"
+    dpa_3_1_3m_ft = auto(), "deepmd/dpa-3.1-3m-ft.yml"
+    # dpa3_v2_mptrj = auto(), "deepmd/dpa3-v2-mptrj.yml"
+    # dpa3_v2_openlam = auto(), "deepmd/dpa3-v2-openlam.yml"
     # dpa3_v1_mptrj = auto(), "deepmd/dpa3-v1-mptrj.yml"
     # dpa3_v1_openlam = auto(), "deepmd/dpa3-v1-openlam.yml"
 
