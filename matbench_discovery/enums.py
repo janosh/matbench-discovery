@@ -277,7 +277,6 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     alchembert = auto(), "alchembert/alchembert.yml"
 
     # AlphaNet: https://arxiv.org/abs/2501.07155
-    alphanet_mptrj = auto(), "alphanet/alphanet-mptrj.yml"
     alphanet_oma = auto(), "alphanet/alphanet-oma.yml"
     # alignn with global pooling: https://arxiv.org/abs/2106.01829
     alignn = auto(), "alignn/alignn.yml"
