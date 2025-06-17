@@ -29,7 +29,7 @@ url: https://github.com/yzchen08/eqnorm/tree/main/eqnorm
 pr_url: https://github.com/janosh/matbench-discovery/pull/258
 doi: https://github.com/yzchen08/eqnorm # to be released soon
 paper: https://github.com/yzchen08/eqnorm # to be released soon
-checkpoint_url: https://figshare.com/files/54851735
+checkpoint_url: https://figshare.com/files/55429685
 
 license:
   code: MIT
@@ -94,7 +94,7 @@ requirements: # strongly recommended
 training_set: [MPtrj]
 
 training_cost:
-  Nvidia A100 GPUs: { amount: 4, hours: 500 }
+  Nvidia A100 GPUs: {amount: 4, hours: 500}
 
 notes: # notes can have any key, be multiline and support markdown.
   description: |
@@ -104,89 +104,89 @@ notes: # notes can have any key, be multiline and support markdown.
 metrics:
   phonons:
     kappa_103:
-      κ_SRME: 0.4450
-      pred_file: models/eqnorm/eqnorm-mptrj/2025-05-28-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/files/54876485
+      κ_SRME: 0.4079
+      pred_file: models/eqnorm/eqnorm-mptrj/2025-06-16-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/files/55429706
   geo_opt:
-    pred_file: models/eqnorm/eqnorm-mptrj/2025-05-28-wbm-IS2RE-FIRE.jsonl.gz
-    pred_file_url: https://figshare.com/files/54917525
+    pred_file: models/eqnorm/eqnorm-mptrj/2025-06-16-wbm-IS2RE-FIRE.jsonl.gz
+    pred_file_url: https://figshare.com/files/55429715
     struct_col: eqnorm_structure
     symprec=1e-2:
-      rmsd: 0.0839 # unitless
-      n_sym_ops_mae: 1.8038 # unitless
-      symmetry_decrease: 0.0579 # fraction
-      symmetry_match: 0.811 # fraction
-      symmetry_increase: 0.1239 # fraction
+      rmsd: 0.0837 # unitless
+      n_sym_ops_mae: 1.7966 # unitless
+      symmetry_decrease: 0.0589 # fraction
+      symmetry_match: 0.8113 # fraction
+      symmetry_increase: 0.1224 # fraction
       n_structures: 256963 # count
-      analysis_file: models/eqnorm/eqnorm-mptrj/2025-05-28-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/54920462
+      analysis_file: models/eqnorm/eqnorm-mptrj/2025-06-16-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/55431551
     symprec=1e-5:
-      rmsd: 0.0839 # unitless
-      n_sym_ops_mae: 2.0407 # unitless
-      symmetry_decrease: 0.0632 # fraction
-      symmetry_match: 0.6987 # fraction
-      symmetry_increase: 0.232 # fraction
+      rmsd: 0.0837 # unitless
+      n_sym_ops_mae: 2.0441 # unitless
+      symmetry_decrease: 0.0639 # fraction
+      symmetry_match: 0.6983 # fraction
+      symmetry_increase: 0.2316 # fraction
       n_structures: 256963 # count
-      analysis_file: models/eqnorm/eqnorm-mptrj/2025-05-28-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/54920507
+      analysis_file: models/eqnorm/eqnorm-mptrj/2025-06-16-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/55431515
   discovery:
-    pred_file: models/eqnorm/eqnorm-mptrj/2025-05-28-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/54915227
+    pred_file: models/eqnorm/eqnorm-mptrj/2025-06-16-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/55429712
     pred_col: e_form_per_atom_eqnorm
     full_test_set:
-      F1: 0.768 # fraction
-      DAF: 4.247 # dimensionless
-      Precision: 0.729 # fraction
-      Recall: 0.812 # fraction
-      Accuracy: 0.916 # fraction
-      TPR: 0.812 # fraction
-      FPR: 0.063 # fraction
-      TNR: 0.937 # fraction
-      FNR: 0.188 # fraction
-      TP: 35789.0 # count
-      FP: 13319.0 # count
-      TN: 199552.0 # count
-      FN: 8303.0 # count
-      MAE: 0.039 # eV/atom
-      RMSE: 0.082 # eV/atom
-      R2: 0.794 # dimensionless
+      F1: 0.779 # fraction
+      DAF: 4.296 # dimensionless
+      Precision: 0.737 # fraction
+      Recall: 0.825 # fraction
+      Accuracy: 0.92 # fraction
+      TPR: 0.825 # fraction
+      FPR: 0.061 # fraction
+      TNR: 0.939 # fraction
+      FNR: 0.175 # fraction
+      TP: 36369.0 # count
+      FP: 12963.0 # count
+      TN: 199908.0 # count
+      FN: 7723.0 # count
+      MAE: 0.038 # eV/atom
+      RMSE: 0.081 # eV/atom
+      R2: 0.796 # dimensionless
       missing_preds: 2 # count
       missing_percent: 0.00% # fraction
     unique_prototypes:
-      F1: 0.776 # fraction
-      DAF: 4.792 # dimensionless
-      Precision: 0.732 # fraction
-      Recall: 0.825 # fraction
-      Accuracy: 0.926 # fraction
-      TPR: 0.825 # fraction
-      FPR: 0.055 # fraction
-      TNR: 0.945 # fraction
-      FNR: 0.175 # fraction
-      TP: 27538.0 # count
-      FP: 10057.0 # count
-      TN: 172057.0 # count
-      FN: 5836.0 # count
-      MAE: 0.041 # eV/atom
+      F1: 0.786 # fraction
+      DAF: 4.844 # dimensionless
+      Precision: 0.741 # fraction
+      Recall: 0.838 # fraction
+      Accuracy: 0.929 # fraction
+      TPR: 0.838 # fraction
+      FPR: 0.054 # fraction
+      TNR: 0.946 # fraction
+      FNR: 0.162 # fraction
+      TP: 27984.0 # count
+      FP: 9804.0 # count
+      TN: 172310.0 # count
+      FN: 5390.0 # count
+      MAE: 0.04 # eV/atom
       RMSE: 0.083 # eV/atom
-      R2: 0.796 # dimensionless
+      R2: 0.799 # dimensionless
       missing_preds: 0 # count
       missing_percent: 0.00% # fraction
     most_stable_10k:
-      F1: 0.971 # fraction
-      DAF: 6.17 # dimensionless
-      Precision: 0.943 # fraction
+      F1: 0.97 # fraction
+      DAF: 6.156 # dimensionless
+      Precision: 0.941 # fraction
       Recall: 1.0 # fraction
-      Accuracy: 0.943 # fraction
+      Accuracy: 0.941 # fraction
       TPR: 1.0 # fraction
       FPR: 1.0 # fraction
       TNR: 0.0 # fraction
       FNR: 0.0 # fraction
-      TP: 9432.0 # count
-      FP: 568.0 # count
+      TP: 9411.0 # count
+      FP: 589.0 # count
       TN: 0.0 # count
       FN: 0.0 # count
-      MAE: 0.038 # eV/atom
-      RMSE: 0.098 # eV/atom
-      R2: 0.802 # dimensionless
+      MAE: 0.039 # eV/atom
+      RMSE: 0.105 # eV/atom
+      R2: 0.775 # dimensionless
       missing_preds: 0 # count
       missing_percent: 0.00% # fraction

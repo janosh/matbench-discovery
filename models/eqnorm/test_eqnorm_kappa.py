@@ -29,7 +29,6 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 
 model_name = "eqnorm"
 model_variant = "eqnorm-mptrj"
-train_progress = "1.0"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # device = torch.device("cpu")
 ase_optimizer = "FIRE"
@@ -37,7 +36,6 @@ ase_optimizer = "FIRE"
 calc = EqnormCalculator(
     model_name=model_name,
     model_variant=model_variant,
-    train_progress=train_progress,
     device=device,
 )
 
