@@ -94,7 +94,7 @@ requirements: # strongly recommended
 training_set: [MPtrj]
 
 training_cost:
-  Nvidia A100 GPUs: {amount: 4, hours: 500}
+  Nvidia A100 GPUs: { amount: 4, hours: 500 }
 
 notes: # notes can have any key, be multiline and support markdown.
   description: |
