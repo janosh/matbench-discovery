@@ -15,7 +15,6 @@ from matbench_discovery.cli import cli_args
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey, TestSubset
 from matbench_discovery.metrics.discovery import dfs_metrics
-from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 from matbench_discovery.plots import hist_classified_stable_vs_hull_dist
 
 __author__ = "Janosh Riebesell"
@@ -25,7 +24,7 @@ show_non_compliant = cli_args.show_non_compliant
 models_to_plot = [
     model
     for model in cli_args.models
-    if show_non_compliant or model_is_compliant(MODEL_METADATA[model.label])
+    if model.is_complete and (show_non_compliant or model.is_compliant)
 ]
 test_subset: TestSubset = globals().get("test_subset", TestSubset.uniq_protos)
 models_to_plot = sorted(  # sort models by F1

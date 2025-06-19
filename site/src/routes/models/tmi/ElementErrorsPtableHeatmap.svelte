@@ -1,8 +1,8 @@
 <script lang="ts">
   import { MODELS, PtableInset } from '$lib'
-  import type { ChemicalElement } from 'elementari'
-  import { ColorBar, PeriodicTable, TableInset } from 'elementari'
-  import type { D3InterpolateName } from 'elementari/colors'
+  import type { ChemicalElement } from 'matterviz'
+  import { ColorBar, PeriodicTable, TableInset } from 'matterviz'
+  import type { D3InterpolateName } from 'matterviz/colors'
   import type { ComponentProps } from 'svelte'
   import Select from 'svelte-multiselect'
   import per_elem_each_errors from '../per-element-each-errors.json'

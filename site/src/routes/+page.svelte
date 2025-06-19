@@ -13,7 +13,7 @@
   } from '$lib/table-export'
   import Readme from '$root/readme.md'
   import KappaNote from '$routes/tasks/phonons/kappa-note.md'
-  import { format_num } from 'elementari'
+  import { format_num } from 'matterviz'
   import { titles_as_tooltips } from 'svelte-zoo'
   import type { Snapshot } from './$types'
 

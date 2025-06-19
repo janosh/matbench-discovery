@@ -11,7 +11,6 @@ from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.cli import cli_args
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey, TestSubset
-from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 
 __author__ = "Janosh Riebesell"
 __date__ = "2023-02-15"
@@ -23,7 +22,7 @@ show_non_compliant = globals().get("show_non_compliant", False)
 models_to_plot = [
     model
     for model in cli_args.models
-    if show_non_compliant or model_is_compliant(MODEL_METADATA[model.label])
+    if model.is_complete and (show_non_compliant or model.is_compliant)
 ]
 df_preds = load_df_wbm_with_preds(models=models_to_plot, subset=test_subset)
 model_labels = [model.label for model in models_to_plot]

@@ -2,7 +2,7 @@
   import StructRmsdCdfModels from '$figs/struct-rmsd-cdf-models.svelte'
   import SymOpsDiffBar from '$figs/sym-ops-diff-bar-symprec=1e-05.svelte'
   import { GeoOptMetricsTable, MODELS } from '$lib'
-  import { format_num } from 'elementari'
+  import { format_num } from 'matterviz'
   import type { SvelteComponent } from 'svelte'
   import GeoOptReadme from './geo-opt-readme.md'
 

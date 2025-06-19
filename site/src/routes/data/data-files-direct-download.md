@@ -79,6 +79,6 @@ You can also directly download Matbench Discovery data files from [this Figshare
 {/each}
 </ol>
 
-To train an interatomic potential, we recommend the [**MPtrj dataset**](https://figshare.com/articles/dataset/23713842) which was created to train [CHGNet](https://www.nature.com/articles/s42256-023-00716-3). With thanks to [Bowen Deng](https://scholar.google.com/citations?user=PRPXA0QAAAAJ) for cleaning and releasing this dataset. It was created from the [2021.11.10](https://docs.materialsproject.org/changes/database-versions#v2021.11.10) release of Materials Project and therefore constitutes a slightly smaller but valid subset of the allowed [2022.10.28](https://docs.materialsproject.org/changes/database-versions#v2022.10.28) MP release that is our training set.
+To train an interatomic potential, we recommend the [**MPtrj dataset**](https://figshare.com/articles/dataset/23713842) which was created to train [CHGNet](https://nature.com/articles/s42256-023-00716-3). With thanks to [Bowen Deng](https://scholar.google.com/citations?user=PRPXA0QAAAAJ) for cleaning and releasing this dataset. It was created from the [2021.11.10](https://docs.materialsproject.org/changes/database-versions#v2021.11.10) release of Materials Project and therefore constitutes a slightly smaller but valid subset of the allowed [2022.10.28](https://docs.materialsproject.org/changes/database-versions#v2022.10.28) MP release that is our training set.
 
 [wbm paper]: https://nature.com/articles/s41524-020-00481-6
