@@ -18,11 +18,8 @@ def metrics_df_from_yaml(nested_keys: Sequence[str]) -> pd.DataFrame:
     out_dict = {}
     for model in Model:
         try:
-            # Skip models that aren't completed
             if not model.is_complete:
                 continue
-
-            model_name = model.label
             metrics = None
             combined_metrics: dict[str, float] = {}
             for nested_key in nested_keys:
@@ -34,7 +31,7 @@ def metrics_df_from_yaml(nested_keys: Sequence[str]) -> pd.DataFrame:
                 if isinstance(metrics, dict):
                     combined_metrics |= metrics
             if combined_metrics:
-                out_dict[model_name] = combined_metrics
+                out_dict[model.label] = combined_metrics
 
         except Exception as exc:
             exc.add_note(f"{model.label=}")

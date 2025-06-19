@@ -39,8 +39,7 @@ def validate_model_metadata(metadata: dict[str, Any], metadata_file: str) -> Non
     Raises:
         ValueError: if validation fails
     """
-    # skip models that aren't completed
-    if metadata.get("status", "complete") != "complete":
+    if metadata.get("status", "complete") != "complete":  # skip incomplete models
         raise ValueError(f"Model {metadata_file} has status != 'complete'")
 
     try:  # check if model_type is valid

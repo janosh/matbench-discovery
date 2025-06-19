@@ -48,9 +48,7 @@ def analyze_model_symprec(
     overwrite: bool = False,  # Whether to overwrite existing analysis files
 ) -> pd.DataFrame | None:
     """Analyze a single model for a single symprec value."""
-    model_metadata = model.metadata
-
-    geo_opt_metrics: dict[str, Any] = model_metadata.get("metrics", {}).get(
+    geo_opt_metrics: dict[str, Any] = model.metadata.get("metrics", {}).get(
         "geo_opt", {}
     )
 

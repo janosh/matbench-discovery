@@ -52,32 +52,29 @@ model_lvl, metric_lvl = "model", "metric"
 model_data: dict[str, pd.DataFrame] = {}
 model_metrics: dict[str, dict[str, float]] = {}
 for model in Model:
-    # Skip models that aren't completed
-    if not model.is_complete:
+    if not model.is_complete:  # Skip incomplete models
         continue
 
-    model_label = model.label
-    model_metadata = model.metadata
-    metrics = model_metadata.get("metrics", {}).get("geo_opt", {})
+    metrics = model.metadata.get("metrics", {}).get("geo_opt", {})
     if not isinstance(metrics, dict) or not (pred_file := metrics.get("pred_file")):
         continue
 
     symprec_metrics = metrics.get(symprec_str, {})
     if not (analysis_file := symprec_metrics.get("analysis_file")):
-        print(f"Warning: {model_label} has no analysis file for {symprec_str}")
+        print(f"Warning: {model.label} has no analysis file for {symprec_str}")
         continue
 
     analysis_path = f"{ROOT}/{analysis_file}"
     if not os.path.isfile(analysis_path):
-        print(f"Warning: {model_label} analysis file not found at {analysis_path}")
+        print(f"Warning: {model.label} analysis file not found at {analysis_path}")
         continue
 
     print(
-        f"Found {model_label} analysis file:\n➤ {analysis_path.split('/models/')[-1]}"
+        f"Found {model.label} analysis file:\n➤ {analysis_path.split('/models/')[-1]}"
     )
     df_model = pd.read_csv(analysis_path, index_col=0)
-    model_data[model_label] = df_model
-    model_metrics[model_label] = geo_opt.calc_geo_opt_metrics(df_model)
+    model_data[model.label] = df_model
+    model_metrics[model.label] = geo_opt.calc_geo_opt_metrics(df_model)
 
 print(f"\nLoaded {len(model_data)=} models, joined with DFT data into df_all")
 

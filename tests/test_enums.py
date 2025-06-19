@@ -279,8 +279,7 @@ def test_model_enum() -> None:
     assert str(Model.alignn) == "alignn"
 
     # Test metadata property
-    metadata = Model.alignn.metadata
-    assert isinstance(metadata, dict)
+    assert isinstance(Model.alignn.metadata, dict)
 
     # Test yaml_path property
     assert Model.alignn.yaml_path.endswith("alignn/alignn.yml")
