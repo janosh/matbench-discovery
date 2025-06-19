@@ -8,6 +8,8 @@
   "github-pages": "https://janosh.github.io/matbench-discovery",
   "repository": "https://github.com/janosh/matbench-discovery",
   "package": "https://pypi.org/project/matbench-discovery",
+  "doi": "https://doi.org/10.1038/s42256-025-01055-1",
+  "paper": "https://nature.com/articles/s42256-025-01055-1",
   "preprint": "https://arxiv.org/abs/2308.14920",
   "license": "MIT",
   "type": "module",
