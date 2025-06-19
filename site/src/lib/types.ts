@@ -105,8 +105,8 @@ export type CellVal =
   | null
   | Record<string, unknown>
   | LinkData
-  | { [key: string]: string | number | LinkData | null | undefined | boolean }[]
-export type RowData = {
-  [key: string]: CellVal
-}
+  | {
+      [key: string]: string | number | LinkData | null | undefined | boolean
+    }[]
+export type RowData = { style?: string; [key: string]: CellVal }
 export type CellSnippetArgs = { row: RowData; col: Label; val: CellVal }

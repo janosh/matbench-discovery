@@ -19,6 +19,7 @@
     active_files?: { name: string; url: string }[]
     active_model_name?: string
     pred_files_dropdown_pos?: { x: number; y: number; name: string } | null
+    selected_models?: Set<string>
     [key: string]: unknown
   }
   let {
@@ -32,12 +33,22 @@
     active_files = $bindable([]),
     active_model_name = $bindable(``),
     pred_files_dropdown_pos = $bindable(null),
+    selected_models = $bindable(new Set<string>()),
     ...rest
   }: Props = $props()
 
   const { model_name, training_set, targets, date_added, links } = METADATA_COLS
   const { checkpoint_license, code_license, org } = METADATA_COLS
   const { graph_construction_radius, model_params } = HYPERPARAMS
+
+  // Define the select column
+  const select_column: Label = {
+    key: `select`,
+    label: `Select`,
+    description: `Select models to highlight`,
+    visible: false, // Hidden by default
+    sortable: false,
+  }
 
   let columns = $derived(
     [
@@ -52,6 +63,7 @@
       checkpoint_license,
       code_license,
       org,
+      select_column,
     ]
       .map((col) => {
         const better = col.better ?? metric_better_as(col.label)
@@ -78,7 +90,16 @@
       show_energy_only,
       show_non_compliant,
       show_compliant,
-    ),
+    ).map((row) => {
+      const model_data = row as ModelData
+      const model_name = String(model_data.Model)
+      const is_selected = selected_models.has(model_name)
+      row.style = is_selected
+        ? `background-color: rgba(255, 255, 255, 0.1); color: rgb(255, 202, 135);`
+        : undefined
+
+      return row
+    }),
   )
 
   function show_dropdown(event: MouseEvent, links: LinkData) {
@@ -99,6 +120,16 @@
     }
   }
   const close_dropdown = () => (pred_files_dropdown_pos = null)
+
+  function toggle_model_selection(model_name: string) {
+    const new_selected = new Set(selected_models)
+    if (new_selected.has(model_name)) {
+      new_selected.delete(model_name)
+    } else {
+      new_selected.add(model_name)
+    }
+    selected_models = new_selected
+  }
 </script>
 
 <svelte:window
@@ -109,6 +140,17 @@
     }
   }}
 />
+
+{#snippet select_cell({ row }: CellSnippetArgs)}
+  {@const model_data = row as ModelData}
+  {@const model_name = String(model_data.Model)}
+  <input
+    type="checkbox"
+    checked={selected_models.has(model_name)}
+    onchange={() => toggle_model_selection(model_name)}
+    aria-label="Select {model_name} for highlighting"
+  />
+{/snippet}
 
 {#snippet affiliation_cell({ row }: CellSnippetArgs)}
   <IconList icons={(row as ModelData).org_logos} />
@@ -145,6 +187,7 @@
   initial_sort_direction="desc"
   sort_hint="Click on column headers to sort table rows"
   special_cells={{
+    Select: select_cell as unknown as Snippet<[CellSnippetArgs]>,
     Links: links_cell as unknown as Snippet<[CellSnippetArgs]>,
     Org: affiliation_cell as unknown as Snippet<[CellSnippetArgs]>,
   }}

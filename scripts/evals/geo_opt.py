@@ -29,7 +29,6 @@ from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, today
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.metrics import geo_opt
-from matbench_discovery.models import MODEL_METADATA
 
 symprec = 1e-5
 model_lvl, metric_lvl = "model", "metric"
@@ -52,27 +51,30 @@ model_lvl, metric_lvl = "model", "metric"
 # %% Load all model data
 model_data: dict[str, pd.DataFrame] = {}
 model_metrics: dict[str, dict[str, float]] = {}
-for model_label, model_metadata in MODEL_METADATA.items():
-    metrics = model_metadata.get("metrics", {}).get("geo_opt", {})
+for model in Model:
+    if not model.is_complete:  # Skip incomplete models
+        continue
+
+    metrics = model.metadata.get("metrics", {}).get("geo_opt", {})
     if not isinstance(metrics, dict) or not (pred_file := metrics.get("pred_file")):
         continue
 
     symprec_metrics = metrics.get(symprec_str, {})
     if not (analysis_file := symprec_metrics.get("analysis_file")):
-        print(f"Warning: {model_label} has no analysis file for {symprec_str}")
+        print(f"Warning: {model.label} has no analysis file for {symprec_str}")
         continue
 
     analysis_path = f"{ROOT}/{analysis_file}"
     if not os.path.isfile(analysis_path):
-        print(f"Warning: {model_label} analysis file not found at {analysis_path}")
+        print(f"Warning: {model.label} analysis file not found at {analysis_path}")
         continue
 
     print(
-        f"Found {model_label} analysis file:\n➤ {analysis_path.split('/models/')[-1]}"
+        f"Found {model.label} analysis file:\n➤ {analysis_path.split('/models/')[-1]}"
     )
     df_model = pd.read_csv(analysis_path, index_col=0)
-    model_data[model_label] = df_model
-    model_metrics[model_label] = geo_opt.calc_geo_opt_metrics(df_model)
+    model_data[model.label] = df_model
+    model_metrics[model.label] = geo_opt.calc_geo_opt_metrics(df_model)
 
 print(f"\nLoaded {len(model_data)=} models, joined with DFT data into df_all")
 

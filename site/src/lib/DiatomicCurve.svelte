@@ -1,6 +1,6 @@
 <script lang="ts">
   import { MODELS } from '$lib'
-  import { ScatterPlot, type InternalPoint } from 'elementari'
+  import { ScatterPlot, type InternalPoint } from 'matterviz'
 
   interface Props {
     formula: string

@@ -18,7 +18,6 @@ from pymatviz.enums import Key
 
 from matbench_discovery.data import df_wbm
 
-# ruff: noqa: T201
 __author__ = "Janosh Riebesell"
 __date__ = "2023-03-22"
 

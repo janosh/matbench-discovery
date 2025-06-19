@@ -1,6 +1,6 @@
-import { DATASETS, MODELS, ModelCard } from '$lib'
+import { DATASETS, ModelCard, MODELS } from '$lib'
 import { ALL_METRICS } from '$lib/labels'
-import { format_num } from 'elementari'
+import { format_num } from 'matterviz'
 import { mount } from 'svelte'
 import { describe, expect, it } from 'vitest'
 

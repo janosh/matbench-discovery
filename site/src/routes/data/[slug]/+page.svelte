@@ -2,7 +2,7 @@
   import { arr_to_str, calculate_days_ago, format_date, slugify } from '$lib'
   import type { Dataset } from '$lib/types'
   import pkg from '$site/package.json'
-  import { format_num } from 'elementari'
+  import { format_num } from 'matterviz'
   import { Tooltip } from 'svelte-zoo'
   import { titles_as_tooltips } from 'svelte-zoo/actions'
   import MptrjTargetDistros from './MptrjTargetDistros.svelte'

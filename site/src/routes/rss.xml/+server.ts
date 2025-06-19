@@ -2,7 +2,7 @@ import { MODELS } from '$lib'
 import { format_train_set } from '$lib/metrics'
 import type { ModelData } from '$lib/types'
 import pkg from '$site/package.json'
-import { format_num } from 'elementari'
+import { format_num } from 'matterviz'
 
 export const prerender = true
 

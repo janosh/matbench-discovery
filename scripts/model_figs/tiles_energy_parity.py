@@ -17,7 +17,6 @@ from matbench_discovery.cli import cli_args
 from matbench_discovery.data import load_df_wbm_with_preds
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.metrics.discovery import dfs_metrics
-from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 from matbench_discovery.plots import clf_colors
 
 __author__ = "Janosh Riebesell"
@@ -85,7 +84,7 @@ legend_order = list(dfs_metrics[test_subset].T.MAE.sort_values().index)
 models_to_plot = [
     model
     for model in models_to_plot
-    if cli_args.show_non_compliant or model_is_compliant(MODEL_METADATA[model.label])
+    if model.is_complete and (cli_args.show_non_compliant or model.is_compliant)
 ]
 
 log_bin_cnt_col = f"log {bin_cnt_col}"

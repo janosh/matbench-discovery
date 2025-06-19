@@ -1,6 +1,6 @@
 <script lang="ts">
   import { DiatomicCurve, type ModelData } from '$lib'
-  import { elem_symbols } from 'elementari'
+  import { elem_symbols } from 'matterviz'
 
   let { data } = $props()
   let { diatomic_models = [], diatomic_curves = {}, errors = {} } = data ?? {}

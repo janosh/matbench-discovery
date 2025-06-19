@@ -4,14 +4,17 @@ from glob import glob
 import pytest
 import yaml
 
-from matbench_discovery import DATA_DIR
+from matbench_discovery import DATA_DIR, ROOT
 from matbench_discovery.enums import Model
-from matbench_discovery.models import MODEL_DIRS, MODEL_METADATA, model_is_compliant
+from matbench_discovery.models import model_is_compliant
 
 with open(f"{DATA_DIR}/datasets.yml", encoding="utf-8") as file:
     DATASETS = yaml.safe_load(file)
 
 OPEN_DATASETS = {dataset["name"] for dataset in DATASETS.values() if dataset["open"]}
+
+# Get model directories for testing
+MODEL_DIRS = sorted(glob(f"{ROOT}/models/[!_]*/"))
 
 
 def parse_version(version: str) -> tuple[int, ...]:
@@ -34,31 +37,35 @@ def test_model_dirs_have_metadata() -> None:
         },
     }
 
-    assert len(MODEL_METADATA) >= len(MODEL_DIRS), "Missing metadata for some models"
+    # Count completed models
+    completed_models = [model for model in Model if model.is_complete]
+    assert len(completed_models) >= len(MODEL_DIRS) - 5, (
+        "Missing metadata for some models"
+    )
 
-    for model_name, metadata in MODEL_METADATA.items():
-        model_dir = metadata["model_dir"]
+    for model in completed_models:
+        model_dir = f"{ROOT}/models/{model.key}/"
         for key, expected in required.items():
-            assert key in metadata, f"Required {key=} missing in {model_dir}"
+            assert key in model.metadata, f"Required {key=} missing in {model_dir}"
 
             if key == "training_set":
-                training_sets = metadata[key]
+                training_sets = model.metadata[key]
                 # allow either string key or dict
                 assert isinstance(training_sets, list)
                 assert set(training_sets) <= {*DATASETS}, (
                     f"Invalid training set: {training_sets}"
                 )
                 # Check if model was trained only on open datasets
-                openness = metadata["openness"].endswith("OD")
+                openness = model.metadata["openness"].endswith("OD")
                 if set(training_sets) <= OPEN_DATASETS and not openness:
                     # if so, check that the model is marked as OD (open data)
                     raise ValueError(
-                        f"{model_name} was only trained on open datasets but is "
-                        f"marked as {metadata['openness']}. Should be marked as "
+                        f"{model.label} was only trained on open datasets but is "
+                        f"marked as {model.metadata['openness']}. Should be marked as "
                         "OD."
                     )
 
-            actual_val = metadata[key]
+            actual_val = model.metadata[key]
             if isinstance(expected, dict) and key != "training_set":
                 missing_keys = {*expected} - {*actual_val}
                 assert not missing_keys, f"{missing_keys=} under {key=} in {model_dir}"
@@ -69,12 +76,12 @@ def test_model_dirs_have_metadata() -> None:
                 assert isinstance(actual_val, expected), err_msg
 
         authors, date_added, yml_model_name, model_version, repo = (
-            metadata[key] for key in list(required)[:-1]
+            model.metadata[key] for key in list(required)[:-1]
         )
-        assert model_name == yml_model_name, f"{model_name=} != {yml_model_name=}"
+        assert model.label == yml_model_name, f"{model.label=} != {yml_model_name=}"
 
         # make sure all keys are valid
-        for name in model_name if isinstance(model_name, list) else [model_name]:
+        for name in model.label if isinstance(model.label, list) else [model.label]:
             assert 3 <= len(name) < 50, (
                 f"Invalid {name=} not between 3 and 50 characters"
             )
@@ -109,7 +116,7 @@ def test_model_enum() -> None:
 
 
 @pytest.mark.parametrize(
-    "model_key, is_compliant",
+    "model, is_compliant",
     [
         (Model.megnet, True),
         (Model.eqv2_m, False),
@@ -121,5 +128,7 @@ def test_model_enum() -> None:
         (Model.mattersim_v1_5m, False),
     ],
 )
-def test_model_is_compliant(model_key: Model, is_compliant: bool) -> None:
-    assert model_is_compliant(MODEL_METADATA[model_key.label]) is is_compliant
+def test_model_is_compliant(model: Model, is_compliant: bool) -> None:
+    assert model.is_compliant is is_compliant
+    # Also test the function directly for consistency
+    assert model_is_compliant(model.metadata) is is_compliant

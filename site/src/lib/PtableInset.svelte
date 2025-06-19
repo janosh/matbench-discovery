@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { ChemicalElement, ElementSymbol } from 'elementari'
-  import { format_num } from 'elementari'
+  import type { ChemicalElement, ElementSymbol } from 'matterviz'
+  import { format_num } from 'matterviz'
 
   interface Props {
     element: ChemicalElement

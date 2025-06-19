@@ -103,6 +103,7 @@ ignore = [
   "N806",    # non-lowercase-variable-in-function
   "PERF203", # try-except-in-loop
   "PLC0414", # useless-import-alias
+  "PLC0415",
   "PLR",     # pylint refactor
   "PLW2901", # redefined-loop-name
   "PT006",   # pytest-parametrize-names-wrong-type

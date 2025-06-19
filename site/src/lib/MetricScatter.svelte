@@ -3,7 +3,7 @@
   import { calculate_days_ago, MODELS } from '$lib'
   import { get_nested_value } from '$lib/metrics'
   import type { Label } from '$lib/types'
-  import { ScatterPlot, type DataSeries, type PointStyle } from 'elementari'
+  import { ScatterPlot, type DataSeries, type PointStyle } from 'matterviz'
   import { METADATA_COLS } from './labels'
 
   interface Props {

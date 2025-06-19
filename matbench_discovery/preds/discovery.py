@@ -34,11 +34,13 @@ uniq_proto_prevalence = (
 ).mean()
 
 for model in Model:
-    model_name = model.label
+    if not model.is_complete:
+        continue
+
     each_pred = (
-        df_preds[MbdKey.each_true] + df_preds[model_name] - df_preds[MbdKey.e_form_dft]
+        df_preds[MbdKey.each_true] + df_preds[model.label] - df_preds[MbdKey.e_form_dft]
     )
-    df_metrics[model_name] = stable_metrics(
+    df_metrics[model.label] = stable_metrics(
         df_preds[MbdKey.each_true], each_pred, fillna=True
     )
 
@@ -46,25 +48,25 @@ for model in Model:
 
     each_pred_uniq_proto = (
         df_uniq_proto_preds[MbdKey.each_true]
-        + df_uniq_proto_preds[model_name]
+        + df_uniq_proto_preds[model.label]
         - df_uniq_proto_preds[MbdKey.e_form_dft]
     )
-    df_metrics_uniq_protos[model_name] = stable_metrics(
+    df_metrics_uniq_protos[model.label] = stable_metrics(
         df_uniq_proto_preds[MbdKey.each_true], each_pred_uniq_proto, fillna=True
     )
-    df_metrics_uniq_protos.loc[Key.daf.symbol, model_name] = (
-        df_metrics_uniq_protos[model_name]["Precision"] / uniq_proto_prevalence
+    df_metrics_uniq_protos.loc[Key.daf.symbol, model.label] = (
+        df_metrics_uniq_protos[model.label]["Precision"] / uniq_proto_prevalence
     )
 
     # look only at each model's 10k most stable predictions in the unique prototype set
     most_stable_10k = each_pred_uniq_proto.nsmallest(10_000)
-    df_metrics_10k[model_name] = stable_metrics(
+    df_metrics_10k[model.label] = stable_metrics(
         df_preds[MbdKey.each_true].loc[most_stable_10k.index],
         most_stable_10k,
         fillna=True,
     )
-    df_metrics_10k.loc[Key.daf.symbol, model_name] = (
-        df_metrics_10k[model_name]["Precision"] / uniq_proto_prevalence
+    df_metrics_10k.loc[Key.daf.symbol, model.label] = (
+        df_metrics_10k[model.label]["Precision"] / uniq_proto_prevalence
     )
 
 
@@ -78,6 +80,9 @@ df_metrics_uniq_protos = df_metrics_uniq_protos.round(3).sort_values(
 # dataframe of all models' energy above convex hull (EACH) predictions (eV/atom)
 df_each_pred = pd.DataFrame()
 for model in Model:
+    if not model.is_complete:
+        continue
+
     df_each_pred[model.label] = (
         df_preds[MbdKey.each_true] + df_preds[model.label] - df_preds[MbdKey.e_form_dft]
     )
@@ -103,6 +108,9 @@ the hull and negative for stable materials below it.
 # dataframe of all model prediction errors for energy above convex hull (EACH) (eV/atom)
 df_each_err = pd.DataFrame()
 for model in Model:
+    if not model.is_complete:
+        continue
+
     df_each_err[model.label] = df_preds[model.label] - df_preds[MbdKey.e_form_dft]
 
 df_each_err[MbdKey.each_err_models] = df_preds[MbdKey.each_err_models] = (

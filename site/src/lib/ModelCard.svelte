@@ -2,7 +2,7 @@
   import type { Label, ModelData } from '$lib'
   import { AuthorBrief, DATASETS } from '$lib'
   import pkg from '$site/package.json'
-  import { format_num } from 'elementari'
+  import { format_num } from 'matterviz'
   import { Tooltip } from 'svelte-zoo'
   import { fade, slide } from 'svelte/transition'
 

@@ -30,7 +30,6 @@ from matbench_discovery import ROOT
 from matbench_discovery.cli import cli_parser
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.metrics import geo_opt
-from matbench_discovery.models import MODEL_METADATA
 from matbench_discovery.structure import symmetry
 
 if TYPE_CHECKING:
@@ -49,9 +48,7 @@ def analyze_model_symprec(
     overwrite: bool = False,  # Whether to overwrite existing analysis files
 ) -> pd.DataFrame | None:
     """Analyze a single model for a single symprec value."""
-    model_metadata = MODEL_METADATA[model.label]
-
-    geo_opt_metrics: dict[str, Any] = model_metadata.get("metrics", {}).get(
+    geo_opt_metrics: dict[str, Any] = model.metadata.get("metrics", {}).get(
         "geo_opt", {}
     )
 

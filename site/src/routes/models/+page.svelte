@@ -4,7 +4,7 @@
   import { get_nested_value, metric_better_as, sort_models } from '$lib/metrics'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import { interpolateRdBu } from 'd3-scale-chromatic'
-  import { ColorBar, luminance } from 'elementari'
+  import { ColorBar, luminance } from 'matterviz'
   import { RadioButtons, Tooltip } from 'svelte-zoo'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
