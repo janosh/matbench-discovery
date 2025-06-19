@@ -5,7 +5,7 @@ import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { max, min } from 'd3-array'
 import { scaleLog, scaleSequential } from 'd3-scale'
 import * as d3sc from 'd3-scale-chromatic'
-import { choose_bw_for_contrast, format_num } from 'elementari/labels'
+import { choose_bw_for_contrast, format_num } from 'matterviz/labels'
 import {
   ALL_METRICS,
   GEO_OPT_SYMMETRY_METRICS,
@@ -226,7 +226,6 @@ export function assemble_row_data(
 
     const targets = model.targets.replace(/_(.)/g, `<sub>$1</sub>`)
     const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
-    const row_style = `border-left: 3px solid var(--${is_compliant ? `` : `non-`}compliant-color);`
 
     // Add model links
     const code_license = license?.code
@@ -280,12 +279,17 @@ export function assemble_row_data(
           title: `Download model checkpoint`,
           icon: `<svg><use href="#icon-download"></use></svg>`,
         },
-        pred_files: { files: get_pred_file_urls(model), name: model.model_name },
+        pred_files: {
+          files: get_pred_file_urls(model),
+          name: model.model_name,
+        },
       } as LinkData,
       [METADATA_COLS.checkpoint_license.label]: checkpoint_license,
       [METADATA_COLS.code_license.label]: code_license,
       [HYPERPARAMS.graph_construction_radius.short as string]: r_cut_str,
-      row_style,
+      style: `border-left: 3px solid var(--${
+        is_compliant ? `` : `non-`
+      }compliant-color);`,
       org_logos: model.org_logos,
       ...Object.fromEntries(
         Object.values(GEO_OPT_SYMMETRY_METRICS).map((col) => [

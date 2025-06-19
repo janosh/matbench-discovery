@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { format_num } from 'elementari/labels'
+  import { format_num } from 'matterviz/labels'
   import type { Snippet } from 'svelte'
   import { titles_as_tooltips } from 'svelte-zoo/actions'
   import { flip } from 'svelte/animate'
@@ -218,7 +218,7 @@
     </thead>
     <tbody>
       {#each sorted_data as row (JSON.stringify(row))}
-        <tr animate:flip={{ duration: 500 }} style={String(row.row_style ?? ``)}>
+        <tr animate:flip={{ duration: 500 }} style={row.style}>
           {#each visible_columns as col (col.label + col.group)}
             {@const val = row[get_col_id(col)]}
             {@const color = calc_color(val, col)}
