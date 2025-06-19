@@ -16,6 +16,15 @@
   }
 </script>
 
+<svelte:window
+  onkeydown={(event) => {
+    if (event.key === `Escape` && column_panel_open) {
+      column_panel_open = false
+      event.preventDefault()
+    }
+  }}
+/>
+
 <details
   class="column-toggles"
   bind:open={column_panel_open}

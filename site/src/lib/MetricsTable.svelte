@@ -52,7 +52,6 @@
 
   let columns = $derived(
     [
-      select_column,
       ...Object.values(ALL_METRICS),
       model_name,
       training_set,
@@ -64,6 +63,7 @@
       checkpoint_license,
       code_license,
       org,
+      select_column,
     ]
       .map((col) => {
         const better = col.better ?? metric_better_as(col.label)
@@ -94,11 +94,11 @@
       const model_data = row as ModelData
       const model_name = String(model_data.Model)
       const is_selected = selected_models.has(model_name)
+      row.style = is_selected
+        ? `background-color: rgba(255, 255, 255, 0.1); color: rgb(255, 202, 135);`
+        : undefined
 
-      return {
-        ...row,
-        style: is_selected ? `background-color: rgba(246, 96, 59, 0.1); color: rgb(246, 96, 59);` : undefined,
-      }
+      return row
     }),
   )
 
@@ -249,11 +249,5 @@
   .pred-files-dropdown ol {
     margin: 0;
     padding-left: 1em;
-  }
-
-      /* Dark mode support for selected rows - override the inline styles for better dark mode appearance */
-  :global([data-theme="dark"] tbody tr[style*="background-color: rgba(59, 130, 246, 0.1)"]) {
-    background-color: rgba(246, 96, 59, 0.2) !important;
-    color: rgb(246, 96, 59) !important;
   }
 </style>
