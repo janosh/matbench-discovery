@@ -136,7 +136,7 @@ metrics:
     pred_col: e_form_per_atom_dp
     full_test_set:
       F1: 0.864 # fraction
-      DAF: 4.911 # dimensionless
+      DAF: 4.912 # dimensionless
       Precision: 0.843 # fraction
       Recall: 0.887 # fraction
       Accuracy: 0.952 # fraction
@@ -145,13 +145,13 @@ metrics:
       TNR: 0.966 # fraction
       FNR: 0.113 # fraction
       TP: 39116.0 # count
-      FP: 7299.0 # count
-      TN: 205572.0 # count
+      FP: 7298.0 # count
+      TN: 205573.0 # count
       FN: 4976.0 # count
-      MAE: 0.023 # eV/atom
-      RMSE: 0.068 # eV/atom
-      R2: 0.857 # dimensionless
-      missing_preds: 0 # count
+      MAE: 0.022 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.862 # dimensionless
+      missing_preds: 2 # count
       missing_percent: 0.00% # fraction
     most_stable_10k:
       F1: 0.987 # fraction

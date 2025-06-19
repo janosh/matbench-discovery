@@ -29,7 +29,6 @@ from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, today
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.metrics import geo_opt
-from matbench_discovery.models import MODEL_METADATA
 
 symprec = 1e-5
 model_lvl, metric_lvl = "model", "metric"
@@ -52,7 +51,13 @@ model_lvl, metric_lvl = "model", "metric"
 # %% Load all model data
 model_data: dict[str, pd.DataFrame] = {}
 model_metrics: dict[str, dict[str, float]] = {}
-for model_label, model_metadata in MODEL_METADATA.items():
+for model in Model:
+    # Skip models that aren't completed
+    if not model.is_complete:
+        continue
+
+    model_label = model.label
+    model_metadata = model.metadata
     metrics = model_metadata.get("metrics", {}).get("geo_opt", {})
     if not isinstance(metrics, dict) or not (pred_file := metrics.get("pred_file")):
         continue

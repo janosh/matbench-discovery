@@ -34,6 +34,10 @@ uniq_proto_prevalence = (
 ).mean()
 
 for model in Model:
+    # Skip models that aren't completed
+    if not model.is_complete:
+        continue
+
     model_name = model.label
     each_pred = (
         df_preds[MbdKey.each_true] + df_preds[model_name] - df_preds[MbdKey.e_form_dft]
@@ -78,6 +82,10 @@ df_metrics_uniq_protos = df_metrics_uniq_protos.round(3).sort_values(
 # dataframe of all models' energy above convex hull (EACH) predictions (eV/atom)
 df_each_pred = pd.DataFrame()
 for model in Model:
+    # Skip models that aren't completed
+    if not model.is_complete:
+        continue
+
     df_each_pred[model.label] = (
         df_preds[MbdKey.each_true] + df_preds[model.label] - df_preds[MbdKey.e_form_dft]
     )
@@ -103,6 +111,10 @@ the hull and negative for stable materials below it.
 # dataframe of all model prediction errors for energy above convex hull (EACH) (eV/atom)
 df_each_err = pd.DataFrame()
 for model in Model:
+    # Skip models that aren't completed
+    if not model.is_complete:
+        continue
+
     df_each_err[model.label] = df_preds[model.label] - df_preds[MbdKey.e_form_dft]
 
 df_each_err[MbdKey.each_err_models] = df_preds[MbdKey.each_err_models] = (

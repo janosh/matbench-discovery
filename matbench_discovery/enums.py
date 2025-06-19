@@ -455,6 +455,18 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         maybe_auto_download_file(file_url, abs_path, label=self.label)
         return abs_path
 
+    @property
+    def is_compliant(self) -> bool:
+        """Check if model complies with benchmark restrictions."""
+        from matbench_discovery.models import model_is_compliant
+
+        return model_is_compliant(self.metadata)
+
+    @property
+    def is_complete(self) -> bool:
+        """Check if model has all required metrics."""
+        return self.metadata.get("status", "complete") == "complete"
+
 
 class DataFiles(Files):
     """Enum of data files with associated file directories and URLs."""

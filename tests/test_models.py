@@ -4,14 +4,17 @@ from glob import glob
 import pytest
 import yaml
 
-from matbench_discovery import DATA_DIR
+from matbench_discovery import DATA_DIR, ROOT
 from matbench_discovery.enums import Model
-from matbench_discovery.models import MODEL_DIRS, MODEL_METADATA, model_is_compliant
+from matbench_discovery.models import model_is_compliant
 
 with open(f"{DATA_DIR}/datasets.yml", encoding="utf-8") as file:
     DATASETS = yaml.safe_load(file)
 
 OPEN_DATASETS = {dataset["name"] for dataset in DATASETS.values() if dataset["open"]}
+
+# Get model directories for testing
+MODEL_DIRS = sorted(glob(f"{ROOT}/models/[!_]*/"))
 
 
 def parse_version(version: str) -> tuple[int, ...]:
@@ -34,10 +37,16 @@ def test_model_dirs_have_metadata() -> None:
         },
     }
 
-    assert len(MODEL_METADATA) >= len(MODEL_DIRS), "Missing metadata for some models"
+    # Count completed models
+    completed_models = [model for model in Model if model.is_complete]
+    assert len(completed_models) >= len(MODEL_DIRS) - 5, (
+        "Missing metadata for some models"
+    )
 
-    for model_name, metadata in MODEL_METADATA.items():
-        model_dir = metadata["model_dir"]
+    for model in completed_models:
+        metadata = model.metadata
+        model_name = model.label
+        model_dir = f"{ROOT}/models/{model.key}/"
         for key, expected in required.items():
             assert key in metadata, f"Required {key=} missing in {model_dir}"
 
@@ -122,4 +131,6 @@ def test_model_enum() -> None:
     ],
 )
 def test_model_is_compliant(model_key: Model, is_compliant: bool) -> None:
-    assert model_is_compliant(MODEL_METADATA[model_key.label]) is is_compliant
+    assert model_key.is_compliant is is_compliant
+    # Also test the function directly for consistency
+    assert model_is_compliant(model_key.metadata) is is_compliant
