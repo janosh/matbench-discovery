@@ -42,7 +42,7 @@ requirements:
 openness: OSOD
 trained_for_benchmark: false
 train_task: RS2RE
-test_task: IS2RE-BO
+test_task: IS2RE-SR
 targets: E
 model_type: BO-GNN
 model_params: 167_761
