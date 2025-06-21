@@ -357,7 +357,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # wrenformer 10-member ensemble
     wrenformer = auto(), "wrenformer/wrenformer.yml"
 
-    # esnet
+    # ESNet model
     esnet = auto(), "esnet/esnet.yml"
 
     # --- Model Combos
