@@ -1,5 +1,10 @@
 <script lang="ts">
   import { calculate_days_ago, DATASETS, IconList, PtableInset } from '$lib'
+  import {
+    discovery_task_tooltips,
+    openness_tooltips,
+    targets_tooltips,
+  } from '$lib/metrics'
   import { get_pred_file_urls } from '$lib/models.svelte'
   import type { ModelData } from '$lib/types'
   import pkg from '$site/package.json'
@@ -328,8 +333,8 @@
     <section class="model-info">
       <h2>Model Info</h2>
       <ul>
-        {#each [[`Model Version`, model.model_version], [`Model Type`, model.model_type], [`Targets`, model.targets], [`Openness`, model.openness], [`Train Task`, model.train_task], [`Test Task`, model.test_task], [`Trained for Benchmark`, model.trained_for_benchmark ? `Yes` : `No`]] as [key, value] (key)}
-          <li>
+        {#each [[`Model Version`, model.model_version], [`Model Type`, model.model_type], [`Targets`, model.targets, targets_tooltips[model.targets]], [`Openness`, model.openness, openness_tooltips[model.openness]], [`Train Task`, model.train_task, discovery_task_tooltips[model.train_task]], [`Test Task`, model.test_task, discovery_task_tooltips[model.test_task]], [`Trained for Benchmark`, model.trained_for_benchmark ? `Yes` : `No`]] as [key, value, title = null] (key)}
+          <li {title} use:titles_as_tooltips>
             {key}
             <strong>{value}</strong>
           </li>
