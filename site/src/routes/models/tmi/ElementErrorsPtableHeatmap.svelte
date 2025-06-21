@@ -1,13 +1,14 @@
 <script lang="ts">
   import { MODELS, PtableInset } from '$lib'
-  import type { ChemicalElement } from 'elementari'
-  import { ColorBar, PeriodicTable, TableInset } from 'elementari'
-  import type { D3InterpolateName } from 'elementari/colors'
+  import type { ChemicalElement } from 'matterviz'
+  import { ColorBar, PeriodicTable, TableInset } from 'matterviz'
+  import type { D3InterpolateName } from 'matterviz/colors'
+  import type { ComponentProps } from 'svelte'
   import Select from 'svelte-multiselect'
   import per_elem_each_errors from '../per-element-each-errors.json'
 
-  interface Props {
-    color_scale?: D3InterpolateName[]
+  interface Props extends ComponentProps<typeof PeriodicTable> {
+    color_scale?: D3InterpolateName | ((num: number) => string)
     active_element?: ChemicalElement | null
     models?: string[]
     // must be string[] instead of string for svelte-multiselect to be correctly restored by snapshot
@@ -17,13 +18,14 @@
     cbar_max?: number | null
   }
   let {
-    color_scale = $bindable([`interpolateViridis`]),
+    color_scale = $bindable(`interpolateViridis`),
     active_element = $bindable(null),
     models = $bindable(MODELS.map((m) => m.model_name)),
     current_model = $bindable([models[2]]),
     manual_cbar_max = $bindable(false),
     normalized = $bindable(true),
     cbar_max = $bindable(0.3),
+    ...rest
   }: Props = $props()
 
   const test_set_std_key = `Test set standard deviation`
@@ -95,6 +97,8 @@
   color_scale_range={cs_range}
   tile_props={{ precision: `0.2` }}
   show_photo={false}
+  missing_color="rgba(255,255,255,0.3)"
+  {...rest}
 >
   {#snippet inset()}
     <TableInset style="align-content: center;">

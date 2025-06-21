@@ -1,5 +1,5 @@
 import { ALL_METRICS, RMSD_BASELINE } from './labels'
-import type { Metric } from './types'
+import type { Label } from './types'
 
 export const DEFAULT_CPS_CONFIG = {
   F1: { ...ALL_METRICS.F1, weight: 0.5 },
@@ -9,7 +9,7 @@ export const DEFAULT_CPS_CONFIG = {
 
 export type CpsConfig = Record<
   keyof typeof DEFAULT_CPS_CONFIG,
-  Metric & { weight: number }
+  Label & { weight: number }
 >
 // Make CPS_CONFIG reactive (using Svelte 5 runes)
 export const CPS_CONFIG: CpsConfig = $state({ ...DEFAULT_CPS_CONFIG })

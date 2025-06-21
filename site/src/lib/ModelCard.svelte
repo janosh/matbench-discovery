@@ -1,32 +1,36 @@
 <script lang="ts">
-  import type { Metric, ModelData } from '$lib'
+  import type { Label, ModelData } from '$lib'
   import { AuthorBrief, DATASETS } from '$lib'
   import pkg from '$site/package.json'
-  import { pretty_num } from 'elementari'
+  import { format_num } from 'matterviz'
   import { Tooltip } from 'svelte-zoo'
   import { fade, slide } from 'svelte/transition'
 
   interface Props {
     model: ModelData
-    metrics: readonly Metric[]
+    metrics: readonly Label[]
     sort_by: keyof ModelData
     show_details?: boolean
-    style?: string | null
-    metrics_style?: string | null
+    metrics_style?: string
+    title_style?: string
+    [key: string]: unknown
   }
   let {
     model,
     metrics,
     sort_by,
     show_details = $bindable(false),
-    style = null,
-    metrics_style = null,
+    metrics_style = ``,
+    title_style = ``,
+    ...rest
   }: Props = $props()
 
-  let { model_name, model_key, model_params } = $derived(model)
-  let { notes = {}, training_set, n_estimators } = $derived(model)
+  let { model_name, model_key, model_params, training_set, n_estimators } =
+    $derived(model)
   let all_metrics = $derived({
-    ...(model.metrics?.discovery?.unique_prototypes ?? {}),
+    ...(typeof model.metrics?.discovery === `object`
+      ? model.metrics.discovery.unique_prototypes
+      : {}),
     ...(typeof model.metrics?.phonons == `object`
       ? model.metrics?.phonons.kappa_103
       : {}),
@@ -42,10 +46,10 @@
     [`${pkg.repository}/blob/-/models/${model.dirname}`, `Files`, `#icon-directory`],
   ])
   const target = { target: `_blank`, rel: `noopener` }
-  let n_model_params = $derived(pretty_num(model_params, `.3~s`))
+  let n_model_params = $derived(format_num(model_params, `.3~s`))
 </script>
 
-<h2 id={model_key} {style}>
+<h2 id={model_key} style={title_style}>
   <a href="/models/{model_key}">{model_name}</a>
   <button
     onclick={() => (show_details = !show_details)}
@@ -64,7 +68,7 @@
   {/each}
 </nav>
 
-<section class="metadata">
+<section class="metadata" {...rest}>
   {#if training_set}
     <span style="grid-column: span 2;">
       <svg><use href="#icon-database"></use></svg>
@@ -76,9 +80,9 @@
         {@const training_set = DATASETS[train_set_key]}
         {@const { n_structures, title, slug, n_materials } = training_set}
         {@const pretty_n_mat =
-          typeof n_materials == `number` ? pretty_num(n_materials) : n_materials}
+          typeof n_materials == `number` ? format_num(n_materials) : n_materials}
         {@const n_mat_str = n_materials ? ` from ${pretty_n_mat} materials` : ``}
-        <Tooltip text="{title}: {pretty_num(n_structures)} structures{n_mat_str}">
+        <Tooltip text="{title}: {format_num(n_structures)} structures{n_mat_str}">
           <a href="/data/{slug}">{train_set_key}</a>
         </Tooltip>
       {/each}
@@ -112,13 +116,8 @@
   <span>
     <svg><use href="#icon-missing-metadata"></use></svg>
     Missing preds:
-    {pretty_num(missing_preds ?? 0, `,.0f`)}
+    {format_num(missing_preds ?? 0, `,.0f`)}
     <small>({missing_percent})</small>
-    {#if notes.html?.missing_preds}
-      <Tooltip text={notes.html.missing_preds ?? ``} tip_style="font-size: 9pt;">
-        &nbsp;<svg><use href="#icon-info"></use></svg>
-      </Tooltip>
-    {/if}
   </span>
 </section>
 {#if show_details}
@@ -160,7 +159,7 @@
   </div>
 {/if}
 
-<section class="metrics" style={metrics_style}>
+<section class="metrics" style={metrics_style || null}>
   <h3>Metrics</h3>
   <ul>
     <!-- hide run time if value is 0 (i.e. not available) -->
@@ -168,7 +167,7 @@
       {@const { key, label, short, unit } = metric}
       <li class:active={sort_by == key}>
         <label for={key}>{@html short ?? label ?? key}</label>
-        <strong>{pretty_num(all_metrics[key])} <small>{unit ?? ``}</small></strong>
+        <strong>{format_num(all_metrics[key])} <small>{unit ?? ``}</small></strong>
       </li>
     {/each}
   </ul>

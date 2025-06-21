@@ -1,21 +1,15 @@
 <script lang="ts">
-  import type { ChemicalElement, ElementSymbol } from 'elementari'
-  import { pretty_num } from 'elementari'
+  import type { ChemicalElement, ElementSymbol } from 'matterviz'
+  import { format_num } from 'matterviz'
 
   interface Props {
     element: ChemicalElement
     elem_counts: number[] | Record<ElementSymbol, number>
-    style?: string | null
     show_percent?: boolean
     unit?: string
+    [key: string]: unknown
   }
-  let {
-    element,
-    elem_counts,
-    style = null,
-    show_percent = true,
-    unit = ``,
-  }: Props = $props()
+  let { element, elem_counts, show_percent = true, unit = ``, ...rest }: Props = $props()
 
   let value = $derived(
     Array.isArray(elem_counts)
@@ -30,13 +24,13 @@
   )
 </script>
 
-<strong {style}>
+<strong {...rest}>
   {#if element?.name}
-    {element?.name}: {pretty_num(value)}
+    {element?.name}: {format_num(value)}
     {@html unit}
     <!-- compute percent of total -->
     {#if show_percent && total > 0}
-      ({pretty_num((100 * value) / total)}%)
+      ({format_num((100 * value) / total)}%)
     {/if}
   {/if}
 </strong>

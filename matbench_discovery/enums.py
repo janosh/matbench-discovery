@@ -5,7 +5,7 @@ import builtins
 import functools
 import os
 import sys
-from enum import EnumMeta, StrEnum, _EnumDict, auto, unique
+from enum import EnumType, StrEnum, _EnumDict, auto, unique
 from typing import Any, Self, TypeVar
 
 import plotly.express as px
@@ -195,10 +195,8 @@ class TestSubset(LabelEnum):
     full_test_set = "full_test_set", "Full Test Set"
 
 
-class MetaFiles(EnumMeta):
-    """Metaclass of Files enum that adds base_dir and (member|label)_map class
-    properties.
-    """
+class MetaFiles(EnumType):
+    """Metaclass of Files enum that adds base_dir class kwarg."""
 
     _base_dir: str
 
@@ -279,8 +277,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     alchembert = auto(), "alchembert/alchembert.yml"
 
     # AlphaNet: https://arxiv.org/abs/2501.07155
-    alphanet_mptrj = auto(), "alphanet/alphanet-mptrj.yml"
-
+    alphanet_oma = auto(), "alphanet/alphanet-oma.yml"
     # alignn with global pooling: https://arxiv.org/abs/2106.01829
     alignn = auto(), "alignn/alignn.yml"
 
@@ -301,9 +298,11 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # CGCNN 10-member ensemble with 5-fold training set perturbations
     cgcnn_p = auto(), "cgcnn/cgcnn+p.yml"
 
-    # DeepMD-DPA3 models
-    dpa3_v2_mptrj = auto(), "deepmd/dpa3-v2-mptrj.yml"
-    dpa3_v2_openlam = auto(), "deepmd/dpa3-v2-openlam.yml"
+    # DeePMD-DPA3 models: https://arxiv.org/abs/2506.01686
+    dpa_3_1_mptrj = auto(), "deepmd/dpa-3.1-mptrj.yml"
+    dpa_3_1_3m_ft = auto(), "deepmd/dpa-3.1-3m-ft.yml"
+    # dpa3_v2_mptrj = auto(), "deepmd/dpa3-v2-mptrj.yml"
+    # dpa3_v2_openlam = auto(), "deepmd/dpa3-v2-openlam.yml"
     # dpa3_v1_mptrj = auto(), "deepmd/dpa3-v1-mptrj.yml"
     # dpa3_v1_openlam = auto(), "deepmd/dpa3-v1-openlam.yml"
 
@@ -336,7 +335,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
 
     # MatterSim - M3gNet architecture trained on propertary MSFT data. Weights
     # are open-sourced.
-    mattersim_v1_5m = auto(), "mattersim/mattersim-v1-5m.yml"
+    mattersim_v1_5m = auto(), "mattersim/mattersim-v1-5M.yml"
 
     # original MEGNet straight from publication, not re-trained
     megnet = auto(), "megnet/megnet.yml"
@@ -458,6 +457,18 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         abs_path = f"{ROOT}/{rel_path}"
         maybe_auto_download_file(file_url, abs_path, label=self.label)
         return abs_path
+
+    @property
+    def is_compliant(self) -> bool:
+        """Check if model complies with benchmark restrictions."""
+        from matbench_discovery.models import model_is_compliant
+
+        return model_is_compliant(self.metadata)
+
+    @property
+    def is_complete(self) -> bool:
+        """Check if model has all required metrics."""
+        return self.metadata.get("status", "complete") == "complete"
 
 
 class DataFiles(Files):

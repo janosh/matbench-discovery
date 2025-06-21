@@ -17,7 +17,7 @@ describe(`Models Page`, () => {
     ) as HTMLInputElement
     expect(n_best_input).toBeDefined()
 
-    const radio_buttons = document.body.querySelectorAll(`.zoo-radio-btn input`)
+    const radio_buttons = document.body.querySelectorAll(`input[type="radio"]`)
     expect(radio_buttons).toHaveLength(2)
   })
 
@@ -137,7 +137,17 @@ describe(`Models Page`, () => {
     const color_bar_svg = legend?.querySelector(`svg`)
     expect(color_bar_svg).toBeDefined()
 
-    const color_bar = legend?.querySelector(`.elementari-color-bar`)
+    const color_bar = legend?.querySelector(`.matterviz-color-bar`)
     expect(color_bar).toBeDefined()
+
+    const model_cards_h2 = document.body.querySelectorAll<HTMLElement>(`ol > li h2`)
+    expect(model_cards_h2.length).toBeGreaterThan(0)
+
+    // applies background color to model card titles based on active metric value
+    // currently only testing that the background color is not transparent
+    for (const h2_element of model_cards_h2) {
+      const computed_style = window.getComputedStyle(h2_element)
+      expect(computed_style.backgroundColor).not.toBe(`rgba(0, 0, 0, 0)`)
+    }
   })
 })

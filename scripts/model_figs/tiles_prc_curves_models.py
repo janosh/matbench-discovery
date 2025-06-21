@@ -6,7 +6,6 @@ import math
 import pandas as pd
 import pymatviz as pmv
 from pymatviz.enums import Key
-from pymatviz.typing import PLOTLY
 from sklearn.metrics import precision_recall_curve
 from tqdm import tqdm
 
@@ -14,7 +13,6 @@ from matbench_discovery import PDF_FIGS, SITE_FIGS, STABILITY_THRESHOLD
 from matbench_discovery import plots as plots
 from matbench_discovery.cli import cli_args
 from matbench_discovery.enums import MbdKey, TestSubset
-from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 from matbench_discovery.preds.discovery import df_each_pred, df_preds
 
 __author__ = "Janosh Riebesell"
@@ -28,7 +26,7 @@ show_non_compliant = globals().get("show_non_compliant", False)
 models_to_plot = [
     model.label
     for model in cli_args.models
-    if show_non_compliant or model_is_compliant(MODEL_METADATA[model.label])
+    if model.is_complete and (show_non_compliant or model.is_compliant)
 ]
 n_cols = 3
 n_rows = math.ceil(len(models_to_plot) / n_cols)
@@ -78,7 +76,7 @@ fig = df_prc.iloc[:: len(df_prc) // 500 or 1].plot.scatter(
     facet_col_wrap=n_cols,
     facet_col_spacing=0.04,
     facet_row_spacing=0.04,
-    backend=PLOTLY,
+    backend="plotly",
     width=280 * n_cols,
     height=230 * n_rows,
     color=color_col,

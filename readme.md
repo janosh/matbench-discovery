@@ -23,12 +23,12 @@ We rank <slot name="model_count">20+</slot> models covering multiple methodologi
 
 Our results show that ML models have become robust enough to deploy them as triaging steps to more effectively allocate compute in high-throughput DFT relaxations. This work provides valuable insights for anyone looking to build large-scale materials databases.
 
-If you'd like to refer to Matbench Discovery in a publication, please cite the [preprint](https://doi.org/10.48550/arXiv.2308.14920):
+To cite Matbench Discovery, use:
 
-> Janosh Riebesell, Rhys E. A. Goodall, Philipp Benner, Yuan Chiang, Bowen Deng, Alpha A. Lee, Anubhav Jain, and Kristin A. Persson. "Matbench Discovery -- A Framework to Evaluate Machine Learning Crystal Stability Predictions." arXiv, August 28, 2023. https://doi.org/10.48550/arXiv.2308.14920.
+> Janosh Riebesell, Rhys E. A. Goodall, Philipp Benner, Yuan Chiang, Bowen Deng, Mark Asta, Gerbrand Ceder, Alpha A. Lee, Anubhav Jain, and Kristin A. Persson. "Matbench Discovery -- A Framework to Evaluate Machine Learning Crystal Stability Predictions." arXiv, August 28, 2023. https://doi.org/10.1038/s42256-025-01055-1.
 
 We welcome new models additions to the leaderboard through GitHub PRs. See the [contributing guide](https://janosh.github.io/matbench-discovery/contribute) for details and ask support questions via [GitHub discussion](https://github.com/janosh/matbench-discovery/discussions).
 
-For detailed results and analysis, check out the [preprint](https://arxiv.org/abs/2308.14920).
+For detailed results and analysis, check out https://nature.com/articles/s42256-025-01055-1.
 
 > Disclaimer: We evaluate how accurately ML models predict several material properties like thermodynamic stability, thermal conductivity, and atomic positions, in all cases using PBE DFT as reference data. Although these properties are important for high-throughput materials discovery, the ranking cannot give a complete picture of a model's overall ability to drive materials research. A high ranking does not constitute endorsement by the Materials Project.

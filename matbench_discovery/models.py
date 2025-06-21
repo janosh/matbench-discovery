@@ -1,42 +1,8 @@
-"""Initializes global variable MODEL_METADATA."""
+"""Model utilities for matbench-discovery."""
 
-from glob import glob
 from typing import Any
 
-import yaml
-
-from matbench_discovery import ROOT
 from matbench_discovery.enums import ModelType, Open
-
-# ignore underscore-prefixed directories for WIP model submissions
-MODEL_DIRS = glob(f"{ROOT}/models/[!_]*/")
-MODEL_METADATA: dict[str, dict[str, Any]] = {}
-
-for model_dir in MODEL_DIRS:
-    metadata_files = glob(f"{model_dir}*.yml")
-    for metadata_file in metadata_files:
-        # make sure all required keys are non-empty
-        with open(metadata_file) as yml_file:
-            model_data = yaml.full_load(yml_file)
-
-        # skip models that aren't completed
-        if model_data.get("status", "complete") != "complete":
-            continue
-
-        model_data["model_dir"] = model_dir
-        # YAML file name serves as model key and must match Model enum attribute
-        yaml_filename = metadata_file.split("/")[-1]
-        model_key = model_data["model_key"]
-        if model_key != yaml_filename.rsplit(".yml", 1)[0]:
-            print(f"recommended that {model_key=} matches {yaml_filename=}")
-
-        MODEL_METADATA[model_data["model_name"]] = model_data
-
-        try:
-            ModelType(model_data.get("model_type"))  # check if model_type is valid
-        except ValueError as exc:
-            exc.add_note(f"{metadata_file=}\nPick from {', '.join(ModelType)}")
-            raise
 
 
 def model_is_compliant(metadata: dict[str, str | list[str]]) -> bool:
@@ -61,3 +27,23 @@ def model_is_compliant(metadata: dict[str, str | list[str]]) -> bool:
         )
 
     return set(training_sets) <= {"MP 2022", "MPtrj", "MPF", "MP Graphs"}
+
+
+def validate_model_metadata(metadata: dict[str, Any], metadata_file: str) -> None:
+    """Validate model metadata for required fields and types.
+
+    Args:
+        metadata: model metadata dictionary
+        metadata_file: path to metadata file for error reporting
+
+    Raises:
+        ValueError: if validation fails
+    """
+    if metadata.get("status", "complete") != "complete":  # skip incomplete models
+        raise ValueError(f"Model {metadata_file} has status != 'complete'")
+
+    try:  # check if model_type is valid
+        ModelType(metadata.get("model_type"))  # type: ignore[arg-type]
+    except ValueError as exc:
+        exc.add_note(f"{metadata_file=}\nPick from {', '.join(ModelType)}")
+        raise

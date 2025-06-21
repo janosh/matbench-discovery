@@ -5,8 +5,7 @@ Needs pip install umap-learn.
 
 Uses Material Structure and Composition Featurizer
 "A critical examination of robustness and generalizability of machine learning
-prediction of materials properties"
-https://www.nature.com/articles/s41524-023-01012-9
+prediction of materials properties" https://nature.com/articles/s41524-023-01012-9
 """
 
 # %%

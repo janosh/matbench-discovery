@@ -21,23 +21,26 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
   "Topic :: Scientific/Engineering :: Chemistry",
   "Topic :: Scientific/Engineering :: Physics",
 ]
 requires-python = ">=3.11"
 dependencies = [
-  "ase>=3.24",
+  "ase>=3.25",
   "numpy>=1.26",
   "pandas>=2.2.2",
-  "plotly>=5.23",
+  "plotly>=6.1",
   "pymatgen>=2024.8.9",
   # strict pin on pymatviz due to https://github.com/janosh/matbench-discovery/issues/209
-  "pymatviz[export-figs,df-pdf-export,df-svg-export]==0.15.1",
+  "pymatviz[export-figs,df-pdf-export,df-svg-export]==0.16.0",
   "ruamel.yaml>=0.18.6",
   "scikit-learn>=1.5",
   "scipy>=1.13",
-  "tqdm>=4.66",
+  "tqdm>=4.67",
   "wandb>=0.19",
 ]
 
@@ -68,16 +71,14 @@ make-wbm-umap = ["umap-learn>=0.5.5"]
 symmetry = ["moyopy>=0.3.4"]
 phonons = ["phono3py>=3.12", "phonopy>=2.35"]
 
-[tool.setuptools.packages.find]
-include = ["matbench_discovery*"]
-exclude = ["tests", "tests.*"]
-
-[tool.setuptools.package-data]
-matbench_discovery = ["**/*.yml", "../models/**/*.yml"]
-
 [build-system]
-requires = ["setuptools>=70"]
-build-backend = "setuptools.build_meta"
+requires = ["uv_build>=0.7.5"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "matbench_discovery"
+module-root = ""
+source-include = ["matbench_discovery/**/*.yml", "models/**/*.yml"]
 
 [tool.ruff]
 target-version = "py311"
@@ -87,7 +88,6 @@ output-format = "concise"
 select = ["ALL"]
 ignore = [
   "ANN401",
-  "B905",    # zip without explicit strict
   "BLE001",
   "C408",    # unnecessary-collection-call
   "C901",
@@ -103,6 +103,7 @@ ignore = [
   "N806",    # non-lowercase-variable-in-function
   "PERF203", # try-except-in-loop
   "PLC0414", # useless-import-alias
+  "PLC0415",
   "PLR",     # pylint refactor
   "PLW2901", # redefined-loop-name
   "PT006",   # pytest-parametrize-names-wrong-type
@@ -152,3 +153,6 @@ typeCheckingMode = "off"
 reportPossiblyUnboundVariable = true
 reportUnboundVariable = true
 reportMissingImports = false
+
+[tool.codespell]
+ignore-words-list = "nd,te,fpr,matris,noe,hart,titel"

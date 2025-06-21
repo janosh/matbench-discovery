@@ -1,10 +1,10 @@
 <script lang="ts">
   import { Tooltip } from 'svelte-zoo'
   import { click_outside } from 'svelte-zoo/actions'
-  import type { Metric } from './types'
+  import type { Label } from './types'
 
   interface Props {
-    columns: Metric[]
+    columns: Label[]
     column_panel_open?: boolean
   }
 
@@ -15,6 +15,15 @@
     columns = [...columns] // needed to trigger reactivity
   }
 </script>
+
+<svelte:window
+  onkeydown={(event) => {
+    if (event.key === `Escape` && column_panel_open) {
+      column_panel_open = false
+      event.preventDefault()
+    }
+  }}
+/>
 
 <details
   class="column-toggles"

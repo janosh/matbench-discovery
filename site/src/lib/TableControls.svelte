@@ -1,12 +1,12 @@
 <script lang="ts">
   import { TableColumnToggleMenu } from '$lib'
   import { Tooltip } from 'svelte-zoo'
-  import type { Metric } from './types'
+  import type { Label } from './types'
 
   // Props for this component
   interface Props {
     show_energy_only?: boolean
-    columns?: Metric[]
+    columns?: Label[]
     show_heatmap?: boolean
     show_compliant?: boolean
     show_non_compliant?: boolean
@@ -14,8 +14,7 @@
       show_energy: boolean,
       show_non_compliant: boolean,
     ) => void | undefined
-    class?: string
-    style?: string
+    [key: string]: unknown
   }
 
   // Extract props with defaults
@@ -26,8 +25,7 @@
     show_compliant = $bindable(true),
     show_non_compliant = $bindable(true),
     on_filter_change = undefined,
-    class: class_name = undefined,
-    style = undefined,
+    ...rest
   }: Props = $props()
 
   // Column panel state
@@ -43,7 +41,7 @@
   }
 </script>
 
-<div class="table-controls {class_name}" {style}>
+<div class="table-controls" {...rest}>
   <label class="legend-item" title="Toggle visibility of compliant models">
     <span class="color-swatch" style="background-color: var(--compliant-color);"></span>
     <input

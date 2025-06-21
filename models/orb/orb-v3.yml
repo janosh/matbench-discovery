@@ -24,11 +24,12 @@ authors:
     corresponding: true
 
 repo: https://github.com/orbital-materials/orb-models
-url: https://github.com/orbital-materials/orb-models
-doi: https://github.com/orbital-materials/orb-models
-paper: https://github.com/orbital-materials/orb-models
+url: https://orbitalmaterials.com/post/orb-v3-atomistic-simulation-at-scale
+doi: https://doi.org/10.48550/arXiv.2504.06231
+paper: https://arxiv.org/abs/2504.06231
 pr_url: https://github.com/janosh/matbench-discovery/pull/240
 checkpoint_url: https://orbitalmaterials-public-models.s3.us-west-1.amazonaws.com/forcefields/orb-v3/orb-v3-conservative-inf-mpa-20250404.ckpt
+pypi: https://pypi.org/project/orb-models
 
 license:
   code: Apache-2.0

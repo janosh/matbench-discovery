@@ -35,7 +35,7 @@ os.makedirs(parity_scatters_dir, exist_ok=True)
 
 for model, which_energy in itertools.product(models_to_plot, (Key.e_form, Key.each)):
     energy_key = which_energy.replace("_", "-")
-    img_name = f"{energy_key}-parity-{model.key.lower().replace(' ', '-')}"
+    img_name = f"{energy_key}-parity-{model.key.replace(' ', '-')}"
     img_path = f"{parity_scatters_dir}/{img_name}.svelte"
     if os.path.isfile(img_path) and not update_existing:
         print(f"{img_path} already exists, skipping")

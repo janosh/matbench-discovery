@@ -1,0 +1,188 @@
+model_name: AlphaNet-v1-OMA
+model_key: alphanet-v1-oma
+model_version: v1
+date_added: "2025-05-12"
+date_published: "2025-05-12"
+authors:
+  - name: Bangchen Yin
+    affiliation: Tsinghua University
+    email: yinbc24@mails.tsinghua.edu.cn
+  - name: Jiaao Wang
+    email: wangjiaao0720@utexas.edu
+    affiliation: University of Texas at Austin
+    corresponding: true
+  - name: Weitao Du
+    affiliation: DAMO Academy, Alibaba Inc
+    email: duweitao.dwt@alibaba-inc.com
+  - name: Yuanqi Du
+    affiliation: Cornell University
+    email: yd392@cornell.edu
+    corresponding: true
+  - name: Chenru Duan
+    affiliation: Deep Principle, Inc
+    email: duanchenru@deepprinciple.com
+    corresponding: true
+  - name: Carla P. Gomes
+    affiliation: Cornell University
+    email: gomes@cs.cornell.edu
+  - name: Graeme Henkelman
+    corresponding: true
+    affiliation: The University of Texas at Austin
+    email: henkelman@utexas.edu
+  - name: Hai Xiao
+    affiliation: Tsinghua University
+    email: haixiao@tsinghua.edu.cn
+    corresponding: true
+trained_by:
+  - name: Bangchen Yin
+    affiliation: Tsinghua University
+    email: yinbc24@mails.tsinghua.edu.cn
+
+repo: https://github.com/zmyybc/AlphaNet
+url: https://github.com/zmyybc/AlphaNet
+pr_url: https://github.com/janosh/matbench-discovery/pull/255
+checkpoint_url: https://figshare.com/ndownloader/files/53851139
+paper: https://arxiv.org/abs/2501.07155
+doi: https://doi.org/10.48550/arXiv.2501.07155
+openness: OSOD
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+model_type: UIP
+model_params: 4653577
+trained_for_benchmark: false
+n_estimators: 1
+license:
+  code: GPL-3.0
+  code_url: https://github.com/zmyybc/AlphaNet/blob/main/LICENSE
+  checkpoint: GPL-3.0
+  checkpoint_url: https://github.com/zmyybc/AlphaNet/blob/main/LICENSE
+
+training_cost: missing
+
+hyperparams:
+  max_force: 0.03
+  max_steps: 500
+  ase_optimizer: FIRE
+  optimizer: Adam
+  loss: MAE
+  loss_weights:
+    energy: 4.0
+    force: 100.0
+    stress: 10
+  batch_size: 256 #(16 per device)
+  initial_learning_rate: 0.0002
+  learning_rate_schedule: StepLR(decay_steps=10000, decay_ratio = 0.93)
+  epochs: 4 #2 epochs on OMAT24 (initial lr 0.0002), 2 epochs on sAlex and MPtrj (initial lr 0.00005)
+  n_layers: 4
+  n_hidden_channels: 176
+  n_bessel_basis: 8
+  n_heads: 24
+  graph_construction_radius: 5.0 # Å
+  max_neighbors: 50
+
+requirements:
+  torch: 2.5.1
+  torch-geometric: 2.6.1
+  torch-scatter: 2.1.2+pt25cu121
+  ase: 3.24.0
+  pymatgen: 2024.6.10
+  numpy: 1.26.4
+
+training_set: ["OMat24", "sAlex", "MPtrj"] #train/valid split: 0.95/0.05
+
+notes:
+  Description: |
+    AlphaNet is a local frame-based equivariant model designed to tackle the challenges of achieving both accurate and efficient simulations for atomistic systems. AlphaNet enhances computational efficiency and accuracy by leveraging the local geometric structures of atomic environments through the construction of equivariant local frames and learnable frame transitions.
+    # We changed the RBF function and used a small size model in this version.
+metrics:
+  phonons:
+    kappa_103:
+      κ_SRME: 0.644
+      pred_file: models/alphanet/oma/2025-04-20-oma-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/files/55426331
+  geo_opt:
+    pred_file: models/alphanet/oma/2025-04-24-wbm-oma-IS2RE.jsonl.gz
+    pred_file_url: https://figshare.com/files/55426322
+    struct_col: alphanet_structure
+    symprec=1e-5:
+      rmsd: 0.0324 # unitless
+      n_sym_ops_mae: 8.9973 # unitless
+      symmetry_decrease: 0.8079 # fraction
+      symmetry_match: 0.1882 # fraction
+      symmetry_increase: 0.0022 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/alphanet/oma/2025-04-24-wbm-oma-IS2RE-symprec=1e-5-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/55426325
+    symprec=1e-2:
+      rmsd: 0.0324 # unitless
+      n_sym_ops_mae: 1.051 # unitless
+      symmetry_decrease: 0.0728 # fraction
+      symmetry_match: 0.8665 # fraction
+      symmetry_increase: 0.0571 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/alphanet/oma/2025-04-24-wbm-oma-IS2RE-symprec=1e-2-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/55426328
+  discovery:
+    pred_file: models/alphanet/oma/2025-0424-wbm-oma-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/55426313
+    pred_col: e_form_per_atom_alphanet
+    full_test_set:
+      F1: 0.892 # fraction
+      DAF: 5.022 # dimensionless
+      Precision: 0.862 # fraction
+      Recall: 0.924 # fraction
+      Accuracy: 0.961 # fraction
+      TPR: 0.924 # fraction
+      FPR: 0.031 # fraction
+      TNR: 0.969 # fraction
+      FNR: 0.076 # fraction
+      TP: 40735.0 # count
+      FP: 6539.0 # count
+      TN: 206332.0 # count
+      FN: 3357.0 # count
+      MAE: 0.019 # eV/atom
+      RMSE: 0.066 # eV/atom
+      R2: 0.865 # dimensionless
+      missing_preds: 2 # count
+      missing_percent: 0.00% # fraction
+    unique_prototypes:
+      F1: 0.909 # fraction
+      DAF: 5.777 # dimensionless
+      Precision: 0.883 # fraction
+      Recall: 0.936 # fraction
+      Accuracy: 0.971 # fraction
+      TPR: 0.936 # fraction
+      FPR: 0.023 # fraction
+      TNR: 0.977 # fraction
+      FNR: 0.064 # fraction
+      TP: 31248.0 # count
+      FP: 4135.0 # count
+      TN: 177979.0 # count
+      FN: 2126.0 # count
+      MAE: 0.02 # eV/atom
+      RMSE: 0.067 # eV/atom
+      R2: 0.868 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
+    most_stable_10k:
+      F1: 0.984 # fraction
+      DAF: 6.335 # dimensionless
+      Precision: 0.968 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.968 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9685.0 # count
+      FP: 315.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.019 # eV/atom
+      RMSE: 0.071 # eV/atom
+      R2: 0.89 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
+  diatomics:
+    pred_file_url: https://figshare.com/ndownloader/files/54490370

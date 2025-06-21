@@ -1,6 +1,6 @@
 <script lang="ts">
   import { MODELS } from '$lib'
-  import { ScatterPlot, type DataSeries, type Point } from 'elementari'
+  import { ScatterPlot, type InternalPoint } from 'matterviz'
 
   interface Props {
     formula: string
@@ -10,20 +10,16 @@
       energies: number[]
       color: string
     }>
-    tooltip_point?: {
-      x: number
-      y: number
-      metadata?: { model_key: string; model_label: string }
-    } | null
+    tooltip_point?: InternalPoint | null
     hovered?: boolean
-    style?: string
+    [key: string]: unknown
   }
   let {
     formula,
     curves,
     tooltip_point = $bindable(null),
     hovered = $bindable(false),
-    style = ``,
+    ...rest
   }: Props = $props()
 
   // Create a map of model keys to labels from MODELS
@@ -87,15 +83,10 @@
       }
     }),
   )
-
-  function on_tooltip_change(data: Point & { series: DataSeries }) {
-    const { x, y, series } = data
-    tooltip_point = { x, y, metadata: series.metadata }
-  }
 </script>
 
 <!-- TODO increase font size of axes titles and tick labels -->
-<div class="plot" {style}>
+<div class="plot" {...rest}>
   <h3>{formula}</h3>
   <ScatterPlot
     {series}
@@ -108,7 +99,7 @@
     {y_lim}
     bind:tooltip_point
     bind:hovered
-    change={on_tooltip_change}
+    legend={null}
   >
     {#snippet tooltip({ x_formatted, y_formatted, metadata })}
       <div

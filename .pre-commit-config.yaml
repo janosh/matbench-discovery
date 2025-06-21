@@ -8,7 +8,7 @@ default_install_hook_types: [pre-commit, commit-msg]
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.7
+    rev: v0.12.0
     hooks:
       - id: ruff
         args: [--fix]
@@ -31,7 +31,7 @@ repos:
       - id: trailing-whitespace
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.15.0
+    rev: v1.16.1
     hooks:
       - id: mypy
         additional_dependencies: [types-pyyaml, types-requests]
@@ -43,8 +43,7 @@ repos:
         stages: [pre-commit, commit-msg]
         exclude_types: [csv, json, svg, bib]
         exclude: ^site/src/figs/.+$
-        args:
-          [--ignore-words-list, "nd,te,fpr,matris,noe,hart", --check-filenames]
+        args: [--check-filenames]
 
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v4.0.0-alpha.8
@@ -58,7 +57,7 @@ repos:
         exclude: ^(site/src/figs/.+\.svelte|site/src/(routes|figs).+\.json|changelog.md)$
 
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v9.25.1
+    rev: v9.29.0
     hooks:
       - id: eslint
         types: [file]
@@ -84,7 +83,7 @@ repos:
       - id: check-github-actions
 
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.400
+    rev: v1.1.402
     hooks:
       - id: pyright
         args: [--level, error]

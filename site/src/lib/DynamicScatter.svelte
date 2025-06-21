@@ -1,10 +1,10 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import type { Metric, ModelData } from '$lib'
+  import type { ModelData } from '$lib'
   import { calculate_days_ago } from '$lib'
   import { extent } from 'd3-array'
-  import { ColorScaleSelect, pretty_num, ScatterPlot } from 'elementari'
-  import type { D3InterpolateName } from 'elementari/colors'
+  import { ColorScaleSelect, format_num, ScatterPlot } from 'matterviz'
+  import type { D3InterpolateName } from 'matterviz/colors'
   import Select from 'svelte-multiselect'
   import { click_outside, titles_as_tooltips } from 'svelte-zoo'
   import { ALL_METRICS, format_property_path, HYPERPARAMS, METADATA_COLS } from './labels'
@@ -72,7 +72,7 @@
     batch_size,
     epochs,
     n_layers,
-  ]
+  ] as const
   // Calculate counts for each property path across all models
   let model_counts_by_prop = $derived(
     options.reduce(
@@ -392,25 +392,25 @@
       {@const disable_log = Boolean(min === undefined || max === undefined || min <= 0 || 100 * min > max)}
       <label for={control.id}>{control.label}</label>
       <Select
+        {options}
         id={control.id}
         selected={[axes[control.id]]}
         bind:value={axes[control.id]}
         placeholder="Select {control.label}"
-        {options}
         maxSelect={1}
         minSelect={1}
         style="width: 100%; max-width: none; margin: 0;"
         liSelectedStyle="font-size: 16px;"
         ulSelectedStyle="padding: 0;"
-        let:option
         --sms-selected-bg="none"
         --sms-border="1px solid rgba(255, 255, 255, 0.15)"
       >
-        {@const prop = option as unknown as Metric}
+      {#snippet children({option: prop})}
         {@html format_property_path(`${prop.path ?? ``}.${prop.label ?? prop.label}`.replace(/^\./, ``))}
         <span style="font-size: smaller; color: gray; margin-left: 0.5em;">
           ({model_counts_by_prop[prop.key]} models)
         </span>
+        {/snippet}
       </Select>
       <label
         aria-disabled={disable_log}
@@ -427,7 +427,6 @@
     class:full-bleed-1400={!is_fullscreen}
     style="height: {is_fullscreen ? `100%` : `600px`}; margin-block: 1em;"
   >
-    <!-- TODO fix x_lim and y_lim to use metric ranges-->
     <ScatterPlot
       series={[series]}
       x_label="{axes.x?.svg_label ?? axes.x?.label} {axes.x?.better
@@ -455,6 +454,7 @@
       color_scale={{ scheme: color_scheme, type: log.color_value ? `log` : `linear` }}
       size_scale={{
         radius_range: [5 * size_multiplier, 20 * size_multiplier],
+        type: log.size_value ? `log` : `linear`,
       }}
       color_bar={{
         title: `${axes.color_value?.label}${axes.color_value?.better ? ` (${axes.color_value?.better}=better)` : ``}`,
@@ -483,11 +483,11 @@
           {@html axes.y.label}: {y_formatted}<br />
           {#if ![`model_params`, `date_added`].includes(axes.color_value?.key ?? ``) && point?.color_value !== undefined}
             {@html axes.color_value.label}:
-            {pretty_num(point.color_value as number)}<br />
+            {format_num(point.color_value as number)}<br />
           {/if}
           {#if axes.size_value && point?.size_value !== undefined}
             {@html axes.size_value.label}:
-            {pretty_num(point.size_value as number)}<br />
+            {format_num(point.size_value as number)}<br />
           {/if}
         {/if}
       {/snippet}
