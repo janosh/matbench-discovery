@@ -139,14 +139,6 @@ class Task(LabelEnum):
     IS2E = "IS2E", "initial structure to energy"
     # IS2RE is for models that learned a discrete version of PES like CGCNN+P
     IS2RE = "IS2RE", "initial structure to relaxed energy"
-    IS2RE_SR = (
-        "IS2RE-SR",
-        "initial structure to relaxed energy with structure relaxation",
-    )
-    IS2RE_BO = (
-        "IS2RE-BO",
-        "initial structure to relaxed energy with Bayesian optimization",
-    )
 
 
 @unique

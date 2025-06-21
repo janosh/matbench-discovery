@@ -1,5 +1,5 @@
 import { DATASETS, format_date, MODELS } from '$lib'
-import type { TargetType } from '$lib/model-schema'
+import type { ModelMetadata, TargetType } from '$lib/model-schema'
 import { get_pred_file_urls, model_is_compliant } from '$lib/models.svelte'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { max, min } from 'd3-array'
@@ -15,7 +15,7 @@ import {
 import type { DiscoverySet, LinkData, ModelData } from './types'
 
 // model target type descriptions
-export const targets_tooltips: Record<TargetType, string> = {
+export const targets_tooltips: { [key in TargetType]: string } = {
   E: `Energy`,
   EF_G: `Energy with gradient-based forces`,
   EF_D: `Energy with direct forces`,
@@ -23,7 +23,30 @@ export const targets_tooltips: Record<TargetType, string> = {
   EFS_D: `Energy with direct forces and stress`,
   EFS_GM: `Energy with gradient-based forces, stress, and magmoms`,
   EFS_DM: `Energy with direct forces, stress, and magmoms`,
-}
+} as const
+
+export const openness_tooltips: { [key in ModelMetadata[`openness`]]: string } = {
+  OSOD: `Open source, open data`,
+  OSCD: `Open source, closed data`,
+  CSOD: `Closed source, open data`,
+  CSCD: `Closed source, closed data`,
+} as const
+
+export const discovery_task_tooltips: {
+  [key in ModelMetadata[`train_task`] | ModelMetadata[`test_task`]]: string
+} = {
+  RP2RE: `relaxed prototype to relaxed energy`,
+  RS2RE: `relaxed structure to relaxed energy`,
+  S2E: `structure to energy`,
+  S2RE: `structure to relaxed energy`,
+  S2EF: `structure to energy, force`,
+  S2EFS: `structure to energy, force, stress`,
+  S2EFSM: `structure to energy, force, stress, magmoms`,
+  IP2E: `initial prototype to energy`,
+  IS2E: `initial structure to energy`,
+  IS2RE: `initial structure to relaxed energy`,
+  'IS2RE-SR': `initial structure to relaxed energy with structure relaxation`,
+} as const
 
 // access (possibly deeply) nested metrics and parameters from ModelData objects
 export function get_nested_value(
