@@ -9,8 +9,8 @@ import plotly.express as px
 import pymatviz as pmv
 from pymatgen.core import Composition, Element
 from pymatviz.enums import Key
-from pymatviz.typing import PLOTLY
-from pymatviz.utils import bin_df_cols, df_ptable, si_fmt
+from pymatviz.process_data import bin_df_cols
+from pymatviz.utils import df_ptable, si_fmt
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_DIR, SITE_FIGS
@@ -90,9 +90,7 @@ if missing_cols := expected_cols - {*df_elem_err}:
     raise ValueError(f"{missing_cols=} not in {df_elem_err.columns=}")
 if any(df_elem_err.isna().sum() > 35):
     raise ValueError("Too many NaNs in df_elem_err")
-df_elem_err.round(4).to_json(
-    f"{SITE_DIR}/src/routes/models/per-element-each-errors.json"
-)
+df_elem_err.round(4).to_json(f"{SITE_DIR}/routes/models/per-element-each-errors.json")
 
 
 # %% plot number of structures containing each element in MP and WBM
@@ -103,7 +101,7 @@ for label, srs in (
     title = f"Number of {label} structures containing each element"
     srs = srs.sort_values().copy()
     srs.index = [f"{len(srs) - idx} {el}" for idx, el in enumerate(srs.index)]
-    fig = srs.plot.bar(backend=PLOTLY, title=title)
+    fig = srs.plot.bar(backend="plotly", title=title)
     fig.layout.update(showlegend=False)
     fig.show()
 
@@ -126,7 +124,7 @@ df_melt = df_struct_counts.reset_index().melt(
 fig = df_melt.sort_values([y_col, symbol_col]).plot.bar(
     x=symbol_col,
     y=y_col,
-    backend=PLOTLY,
+    backend="plotly",
     title="Number of structures containing each element",
     color=clr_col,
     barmode="group",
@@ -162,7 +160,7 @@ fig = df_melt.plot.scatter(
     x=train_count_col,
     y=val_col,
     color=clr_col,
-    backend=PLOTLY,
+    backend="plotly",
     # size=size_col,
     hover_name=elem_col,
     # text=df_melt.index.where(

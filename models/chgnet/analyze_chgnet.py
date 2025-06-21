@@ -51,7 +51,7 @@ df_diff.reset_index().plot.scatter(
     y=e_form_2000,
     hover_name=Key.mat_id,
     hover_data=[Key.formula],
-    backend=pmv.utils.PLOTLY,
+    backend="plotly",
     title=f"{len(df_diff)} structures have > {min_e_diff} eV/atom energy diff after "
     "longer relaxation",
 )
@@ -83,7 +83,7 @@ structures = {
     f"(spg={struct.get_space_group_info()[1]})": struct
     for idx, row in df_wbm_init_structs.loc[df_diff.index].head(n_struct).iterrows()
 }
-fig = pmv.structure_2d_plotly(structures, n_cols=4)
+fig = pmv.structure_2d(structures, n_cols=4)
 fig.layout.title.update(text=f"<b>{n_struct} {struct_col} {title}</b>")
 
 pmv.save_fig(fig, f"{PDF_FIGS}/chgnet-bad-relax-structures.pdf")

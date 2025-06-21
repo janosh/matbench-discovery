@@ -1,11 +1,16 @@
 <script lang="ts">
   import { calculate_days_ago, DATASETS, IconList, PtableInset } from '$lib'
+  import {
+    discovery_task_tooltips,
+    openness_tooltips,
+    targets_tooltips,
+  } from '$lib/metrics'
   import { get_pred_file_urls } from '$lib/models.svelte'
   import type { ModelData } from '$lib/types'
   import pkg from '$site/package.json'
-  import type { ChemicalElement } from 'elementari'
-  import { ColorBar, PeriodicTable, pretty_num, TableInset } from 'elementari'
-  import type { D3InterpolateName } from 'elementari/colors'
+  import type { ChemicalElement } from 'matterviz'
+  import { ColorBar, format_num, PeriodicTable, TableInset } from 'matterviz'
+  import type { D3InterpolateName } from 'matterviz/colors'
   import { CopyButton, Tooltip } from 'svelte-zoo'
   import { click_outside, titles_as_tooltips } from 'svelte-zoo/actions'
   import per_elem_each_errors from '../per-element-each-errors.json'
@@ -17,7 +22,6 @@
 
   let color_scale = $state<D3InterpolateName>(`interpolateViridis`)
   let active_element: ChemicalElement | null = $state(null)
-  // TODO fix that calculates days ago from site build time, not time of user visiting page
   let days_added = calculate_days_ago(data.model.date_added ?? ``)
   let days_published = calculate_days_ago(data.model.date_published ?? ``)
 
@@ -66,7 +70,7 @@
       <div>
         <svg><use href="#icon-neural-network"></use></svg>
         <Tooltip text={model.model_params.toLocaleString()}>
-          {pretty_num(model.model_params, `.3~s`)}
+          {format_num(model.model_params, `.3~s`)}
         </Tooltip> parameters
       </div>
 
@@ -81,7 +85,7 @@
         <div>
           <svg><use href="#icon-missing-metadata"></use></svg>
           <span>
-            Missing preds: {pretty_num(missing_preds, `,.0f`)}
+            Missing preds: {format_num(missing_preds, `,.0f`)}
             {#if missing_preds != 0}
               <small> ({missing_percent})</small>
             {/if}
@@ -90,22 +94,27 @@
       {/if}
 
       {#if model.pypi}
-        <code>
+        <code style="background-color: transparent;">
           pip install {model.pypi.split(`/`).pop()}
-          <!-- TODO add custom CopyButton labels to remove text -->
-          <CopyButton />
+          <CopyButton
+            content={`pip install ${model.pypi.split(`/`).pop()}`}
+            labels={{
+              default: { icon: `Copy`, text: `` },
+              success: { icon: `Check`, text: `` },
+              error: { icon: `Alert`, text: `` },
+            }}
+          />
         </code>
       {/if}
     </section>
 
-    <section class="links">
+    <section class="links" use:titles_as_tooltips>
       {#if model.repo.startsWith(`http`)}
         <a
           href={model.repo}
           target="_blank"
           rel="noopener noreferrer"
           title="View source code repository"
-          use:titles_as_tooltips
         >
           <svg><use href="#icon-github"></use></svg> Repo
         </a>
@@ -116,7 +125,6 @@
           target="_blank"
           rel="noopener noreferrer"
           title="Read model paper"
-          use:titles_as_tooltips
         >
           <svg><use href="#icon-paper"></use></svg> Paper
         </a>
@@ -127,7 +135,6 @@
           target="_blank"
           rel="noopener noreferrer"
           title="View model documentation"
-          use:titles_as_tooltips
         >
           <svg><use href="#icon-docs"></use></svg> Docs
         </a>
@@ -138,7 +145,6 @@
           target="_blank"
           rel="noopener noreferrer"
           title="Digital Object Identifier"
-          use:titles_as_tooltips
         >
           <svg><use href="#icon-doi"></use></svg> DOI
         </a>
@@ -148,7 +154,6 @@
         target="_blank"
         rel="noopener noreferrer"
         title="Browse model submission files"
-        use:titles_as_tooltips
       >
         <svg><use href="#icon-directory"></use></svg> Files
       </a>
@@ -158,7 +163,6 @@
           target="_blank"
           rel="noopener noreferrer"
           title="Python package on PyPI"
-          use:titles_as_tooltips
         >
           <svg><use href="#icon-pypi"></use></svg> PyPI
         </a>
@@ -168,7 +172,6 @@
         target="_blank"
         rel="noopener noreferrer"
         title="View pull request"
-        use:titles_as_tooltips
       >
         <svg><use href="#icon-pull-request"></use></svg> PR
       </a>
@@ -178,7 +181,6 @@
           target="_blank"
           rel="noopener noreferrer"
           title="Download model checkpoint"
-          use:titles_as_tooltips
         >
           <svg><use href="#icon-download"></use></svg> Checkpoint
         </a>
@@ -194,7 +196,7 @@
               },
             }}
           >
-            <summary title="Download model prediction files" use:titles_as_tooltips>
+            <summary title="Download model prediction files">
               <svg><use href="#icon-graph"></use></svg> Predictions
             </summary>
             <div class="dropdown">
@@ -233,6 +235,7 @@
         bind:active_element
         tile_props={{ precision: `.2` }}
         show_photo={false}
+        missing_color="rgba(255,255,255,0.3)"
       >
         {#snippet inset()}
           <TableInset style="align-content: center;">
@@ -330,8 +333,8 @@
     <section class="model-info">
       <h2>Model Info</h2>
       <ul>
-        {#each [[`Model Version`, model.model_version], [`Model Type`, model.model_type], [`Targets`, model.targets], [`Openness`, model.openness], [`Train Task`, model.train_task], [`Test Task`, model.test_task], [`Trained for Benchmark`, model.trained_for_benchmark ? `Yes` : `No`]] as [key, value] (key)}
-          <li>
+        {#each [[`Model Version`, model.model_version], [`Model Type`, model.model_type], [`Targets`, model.targets, targets_tooltips[model.targets]], [`Openness`, model.openness, openness_tooltips[model.openness]], [`Train Task`, model.train_task, discovery_task_tooltips[model.train_task]], [`Test Task`, model.test_task, discovery_task_tooltips[model.test_task]], [`Trained for Benchmark`, model.trained_for_benchmark ? `Yes` : `No`]] as [key, value, title = null] (key)}
+          <li {title} use:titles_as_tooltips>
             {key}
             <strong>{value}</strong>
           </li>
@@ -344,16 +347,16 @@
       <section class="training-set">
         {#each model.training_set as dataset_key (dataset_key)}
           {@const dataset = DATASETS[dataset_key]}
-          {@const { n_structures, title, slug, n_materials } = dataset}
+          {@const { n_structures, name, slug, n_materials } = dataset}
           <p>
-            <a href="/data/{slug}">{title}</a>:
+            <a href="/data/{slug}">{name}</a>:
             <Tooltip text={n_structures.toLocaleString()}>
-              <strong>{pretty_num(n_structures)}</strong>
+              <strong>{format_num(n_structures)}</strong>
             </Tooltip>
             structures
             {#if typeof n_materials == `number`}
               from <Tooltip text={n_materials.toLocaleString()}>
-                <strong>{pretty_num(n_materials)}</strong>
+                <strong>{format_num(n_materials)}</strong>
               </Tooltip> materials
             {/if}
           </p>

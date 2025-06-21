@@ -585,7 +585,7 @@ describe(`HeatmapTable`, () => {
     })
 
     it(`applies row styles from data`, () => {
-      const data_with_styles = [{ col: `value`, row_style: `background-color: yellow;` }]
+      const data_with_styles = [{ col: `value`, style: `background-color: yellow;` }]
 
       mount(HeatmapTable, {
         target: document.body,

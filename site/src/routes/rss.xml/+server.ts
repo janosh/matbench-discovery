@@ -2,7 +2,7 @@ import { MODELS } from '$lib'
 import { format_train_set } from '$lib/metrics'
 import type { ModelData } from '$lib/types'
 import pkg from '$site/package.json'
-import { pretty_num } from 'elementari'
+import { format_num } from 'matterviz'
 
 export const prerender = true
 
@@ -23,7 +23,7 @@ function format_model_for_rss(model: ModelData): string {
   const metrics_text = discovery_metrics
     ? Object.entries(discovery_metrics)
         .filter(([_key, value]) => typeof value === `number`)
-        .map(([key, value]) => `${key}: ${pretty_num(value as number)}`)
+        .map(([key, value]) => `${key}: ${format_num(value as number)}`)
         .join(`,<br>&nbsp;&nbsp;`)
     : `No metrics available`
 
@@ -59,7 +59,7 @@ function format_model_for_rss(model: ModelData): string {
   return `
     <h2>${model.model_name}</h2>
     <p><strong>Metrics:</strong><br>&nbsp;&nbsp;${metrics_text}</p>
-    <p><strong>Parameters:</strong> ${pretty_num(model.model_params)}</p>
+    <p><strong>Parameters:</strong> ${format_num(model.model_params)}</p>
     ${model_type}
     <p><strong>Targets:</strong> ${model.targets}</p>
     <p><strong>Training Set:</strong> ${clean_training_set}</p>

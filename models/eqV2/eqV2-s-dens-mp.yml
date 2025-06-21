@@ -94,7 +94,7 @@ notes:
     EquiformerV2 is an equivariant transformer that uses graph attention, attention re-normalization, and separable S^2 activations and layer normalization.
     Denoising Non-Equilibrium Structures (DeNS) uses a denoising generalized to structures with non-zero forces by encoding forces to obtain a well-posed denoising problem.
   Training: |
-    Training was done from scratch using MPTrj only and a 50% probability for denoising training structures.
+    Training was done from scratch using MPtrj only and a 50% probability for denoising training structures.
 
 metrics:
   phonons:

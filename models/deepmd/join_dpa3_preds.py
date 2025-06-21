@@ -20,7 +20,7 @@ from matbench_discovery.enums import DataFiles, Model
 
 e_form_dp_col = "e_form_per_atom_dp"
 results = "./results"
-model_name = Model.dpa3_v2_mptrj  # or Model.dpa3_v2_openlam
+model_name = Model.dpa_3_1_mptrj  # or Model.dpa_3_1_3m_ft
 module_dir = os.path.dirname(__file__)
 out_path = f"{module_dir}/{model_name}"
 files = sorted(glob(f"{results}/{model_name}-*.json.gz"))

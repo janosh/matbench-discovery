@@ -17,7 +17,7 @@ describe(`Models Page`, () => {
     ) as HTMLInputElement
     expect(n_best_input).toBeDefined()
 
-    const radio_buttons = document.body.querySelectorAll(`.zoo-radio-btn input`)
+    const radio_buttons = document.body.querySelectorAll(`input[type="radio"]`)
     expect(radio_buttons).toHaveLength(2)
   })
 
@@ -137,7 +137,7 @@ describe(`Models Page`, () => {
     const color_bar_svg = legend?.querySelector(`svg`)
     expect(color_bar_svg).toBeDefined()
 
-    const color_bar = legend?.querySelector(`.elementari-color-bar`)
+    const color_bar = legend?.querySelector(`.matterviz-color-bar`)
     expect(color_bar).toBeDefined()
 
     const model_cards_h2 = document.body.querySelectorAll<HTMLElement>(`ol > li h2`)

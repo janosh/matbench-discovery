@@ -23,7 +23,6 @@ from matbench_discovery import DATA_DIR, PKG_DIR
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import DataFiles, MbdKey, Model, Open, Targets, TestSubset
 from matbench_discovery.metrics import discovery
-from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 
 try:
     from IPython.display import display
@@ -77,23 +76,27 @@ date_added_col = "Date Added"
 model_name_col = "Model"
 
 non_compliant_models = [
-    key for key, meta in MODEL_METADATA.items() if not model_is_compliant(meta)
+    model.label for model in Model if model.is_complete and not model.is_compliant
 ]
 
 with open(f"{DATA_DIR}/datasets.yml") as file:
     DATASETS = yaml.safe_load(file)
 
-# Add model metadata to df_metrics(_10k, _uniq_protos)
+# Add model metadata to df_metrics(_10k|_uniq_protos)
 models = discovery.df_metrics_uniq_protos.columns
-for model in models:
-    if model == "Dummy":
+for model_label in models:
+    if model_label == "Dummy":
         continue
-    model_name = name_map.get(model, model)
-    model_metadata = MODEL_METADATA.get(model_name, {})
-    try:
-        model_key = model_metadata["model_key"]
+    model_name = name_map.get(model_label, model_label)
+    # Find the model enum entry by label
+    model = Model.from_label(model_label)
+    if not model.is_complete:
+        continue
 
-        date_added = model_metadata.get("date_added", "")
+    try:
+        model_key = model.metadata["model_key"]
+
+        date_added = model.metadata.get("date_added", "")
         # long format date for tooltip, e.g. Monday, 28 November 2022
         title = f"{date.fromisoformat(date_added):%A, %d %B %Y}"
         discovery.df_metrics_uniq_protos.loc[date_added_col, model] = (
@@ -101,17 +104,17 @@ for model in models:
         )
 
         # Update targets column with full label in tooltip and data attribute
-        model_targets = Targets[model_metadata[Key.targets]]
+        model_targets = Targets[model.metadata[Key.targets]]
         tar_label = model_targets.label.replace(
             "<sub>", "<sub style='font-size: 0.8em;'>"
         )
         discovery.df_metrics_uniq_protos.loc[Key.targets.label, model] = (
             f'<span title="{model_targets.description}" '
-            f'data-targets="{model_metadata[Key.targets]}">{tar_label}</span>'
+            f'data-targets="{model.metadata[Key.targets]}">{tar_label}</span>'
         )
 
         # Add model version as hover tooltip to model name
-        model_version = model_metadata.get("model_version", "")
+        model_version = model.metadata.get("model_version", "")
         compliant_css_cls = "non-compliant" if model in non_compliant_models else ""
         attrs = {
             "title": f"Version: {model_version}",
@@ -123,7 +126,7 @@ for model in models:
             f"<span {html_attr_str}>{model}</span>"
         )
 
-        if training_sets := model_metadata.get("training_set"):
+        if training_sets := model.metadata.get("training_set"):
             if isinstance(training_sets, dict | str):
                 training_sets = [training_sets]
 
@@ -198,11 +201,11 @@ for model in models:
             continue
         else:
             raise ValueError(
-                f"Unknown {training_sets=} for {model=}\nwith {model_metadata=}"
+                f"Unknown {training_sets=} for {model=}\nwith {model.metadata=}"
             )
 
-        model_params = model_metadata.get(Key.model_params, 0)
-        n_estimators = model_metadata.get(Key.n_estimators, -1)
+        model_params = model.metadata.get(Key.model_params, 0)
+        n_estimators = model.metadata.get(Key.n_estimators, -1)
         title = f"{n_estimators:,} models in ensemble"
         n_estimators_str = (
             f" <small {title=}>(N={n_estimators})</small>" if n_estimators > 1 else ""
@@ -219,11 +222,11 @@ for model in models:
 
         for key in (MbdKey.openness, Key.train_task, Key.test_task):
             default = {MbdKey.openness: Open.OSOD}.get(key, pd.NA)
-            discovery.df_metrics_uniq_protos.loc[key.label, model] = model_metadata.get(
+            discovery.df_metrics_uniq_protos.loc[key.label, model] = model.metadata.get(
                 key, default
             )
     except Exception as exc:
-        exc.add_note(f"{model=} with {model_metadata=}")
+        exc.add_note(f"{model=} with {model.metadata=}")
         raise
 
 # assign this col to all tables

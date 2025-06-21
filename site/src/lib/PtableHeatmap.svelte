@@ -1,7 +1,7 @@
 <script lang="ts">
   import { PtableInset } from '$lib'
-  import { ColorBar, PeriodicTable, TableInset, type ChemicalElement } from 'elementari'
-  import type { D3InterpolateName } from 'elementari/colors'
+  import { ColorBar, PeriodicTable, TableInset, type ChemicalElement } from 'matterviz'
+  import type { D3InterpolateName } from 'matterviz/colors'
   import type { ComponentProps } from 'svelte'
 
   interface Props extends ComponentProps<typeof PeriodicTable> {
@@ -32,6 +32,7 @@
   {log}
   bind:active_element
   show_photo={false}
+  missing_color="rgba(255,255,255,0.3)"
   {...rest}
 >
   {#snippet inset()}

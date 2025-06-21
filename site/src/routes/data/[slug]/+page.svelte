@@ -2,7 +2,7 @@
   import { arr_to_str, calculate_days_ago, format_date, slugify } from '$lib'
   import type { Dataset } from '$lib/types'
   import pkg from '$site/package.json'
-  import { pretty_num } from 'elementari'
+  import { format_num } from 'matterviz'
   import { Tooltip } from 'svelte-zoo'
   import { titles_as_tooltips } from 'svelte-zoo/actions'
   import MptrjTargetDistros from './MptrjTargetDistros.svelte'
@@ -14,7 +14,6 @@
   const { dataset } = data
   const ext_link_props = { target: `_blank`, rel: `noopener noreferrer` }
 
-  // TODO fix that calculates days ago from site build time, not time of user visiting page
   let days_created = calculate_days_ago(dataset.date_created)
   let days_added = calculate_days_ago(dataset.date_added ?? ``)
 
@@ -58,7 +57,7 @@
   <div>
     <svg><use href="#icon-database"></use></svg>
     <Tooltip text={dataset.n_structures.toLocaleString()}>
-      {pretty_num(dataset.n_structures, `.3~s`)}
+      {format_num(dataset.n_structures, `.3~s`)}
     </Tooltip> structures
   </div>
 
@@ -66,7 +65,7 @@
     <div>
       <svg><use href="#icon-lattice"></use></svg>
       <Tooltip text={dataset.n_materials.toLocaleString()}>
-        {pretty_num(dataset.n_materials, `.3~s`)}
+        {format_num(dataset.n_materials, `.3~s`)}
       </Tooltip> materials
     </div>
   {/if}

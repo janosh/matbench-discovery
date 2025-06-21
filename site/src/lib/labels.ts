@@ -446,29 +446,8 @@ export const CATEGORY_LABELS = Object.fromEntries(
     ([key, task]) => [key, task.label],
   ),
 )
-
-// TODO maybe remove get_format() since unused
-// Determines appropriate string format for displaying a set of numerical values
-// based on their characteristics (magnitude, precision, etc.).
-export function get_format(values: number[]): string {
-  if (!values.length) return `.1f`
-
-  const avg = values.reduce((sum, val) => sum + val, 0) / values.length
-  const max = Math.max(...values)
-  const min = Math.min(...values)
-
-  // Check if values are in plausible date timestamps after Jan 1, 2000 (946684800000) and before Jan 1, 2050 (2524608000000)
-  const vals_are_dates = min > 946684800000 && max < 2524608000000
-  if (vals_are_dates) return `%b %y`
-
-  // Format selection logic based on data characteristics
-  if (max > 10000 || avg > 1000) return `.1s`
-  if (Math.abs(avg) > 0 && Math.abs(avg) < 0.01) return `.5f`
-  if (max - min > 1000) return `.2s`
-  if (values.every((val) => Math.abs(val - Math.round(val)) < 1e-6)) return `d`
-
-  return `.2f`
-}
+// Add explicit mapping for hyperparams to show as "Hyperparams"
+CATEGORY_LABELS.hyperparams = `Hyperparams`
 
 export const to_title = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)
 export const title_case = (str: string) =>
@@ -479,14 +458,17 @@ export const title_case = (str: string) =>
 export const org_logos = {
   'AI for Science Institute, Beijing': `/logos/beijing-ai-for-science-institute.svg`,
   'Argonne National Laboratory': `/logos/argonne-national-lab.svg`,
+  'Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)': `/logos/beijing-iapcm.svg`,
   'Chinese Academy of Sciences': `/logos/chinese-academy-of-sciences.svg`,
   'Cornell University': `/logos/cornell-university.svg`,
+  'DAMO Academy, Alibaba Inc': `/logos/damo-alibaba-logo.svg`,
   'Deep Principle': `/logos/deep-principle.svg`,
   DeePMD: `/logos/deepmd.svg`,
   'FAIR at Meta': `icon-logo-meta`,
   'Google DeepMind': `/logos/deepmind.svg`,
   'ICAMS, Ruhr University Bochum': `/logos/icams-bochum.svg`,
   'Incheon National University': `/logos/incheon-national-university.svg`,
+  'Institute of Computing Technology, Chinese Academy of Science, Beijing': `/logos/ict-cas-beijing.svg`,
   'Massachusetts Institute of Technology': `/logos/mit.svg`,
   'Microsoft Research': `icon-logo-microsoft`,
   'National Institute of Standards and Technology': `/logos/nist.svg`,

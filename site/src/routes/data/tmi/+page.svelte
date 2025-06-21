@@ -3,9 +3,9 @@
   import BarElementCounts from '$figs/bar-element-counts-mp+wbm-normalized=False.svelte'
   import BarElementCountsNormalized from '$figs/bar-element-counts-mp+wbm-normalized=True.svelte'
   import { PtableInset } from '$lib'
-  import type { ChemicalElement } from 'elementari'
-  import { ColorScaleSelect, PeriodicTable, TableInset } from 'elementari'
-  import type { D3InterpolateName } from 'elementari/colors'
+  import type { ChemicalElement } from 'matterviz'
+  import { ColorScaleSelect, PeriodicTable, TableInset } from 'matterviz'
+  import type { D3InterpolateName } from 'matterviz/colors'
   import { RadioButtons, Toggle } from 'svelte-zoo'
 
   const elem_counts = $state(
@@ -72,6 +72,7 @@
   color_scale={color_scale[0]}
   bind:active_element
   show_photo={false}
+  missing_color="rgba(255,255,255,0.3)"
 >
   {#snippet inset()}
     <TableInset>

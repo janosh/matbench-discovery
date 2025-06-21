@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { pretty_num } from 'elementari/labels'
+  import { format_num } from 'matterviz/labels'
   import type { Snippet } from 'svelte'
   import { titles_as_tooltips } from 'svelte-zoo/actions'
   import { flip } from 'svelte/animate'
@@ -18,6 +18,7 @@
     fixed_header?: boolean
     default_num_format?: string
     show_heatmap?: boolean
+    heatmap_class?: string
     [key: string]: unknown
   }
   let {
@@ -32,6 +33,7 @@
     fixed_header = false,
     default_num_format = `.3`,
     show_heatmap = $bindable(true),
+    heatmap_class = `heatmap`,
     ...rest
   }: Props = $props()
 
@@ -179,7 +181,7 @@
       {/if}
     </div>
   {/if}
-  <table class:fixed-header={fixed_header} class="heatmap" style="grid-column: 2;">
+  <table class:fixed-header={fixed_header} class={heatmap_class} style="grid-column: 2;">
     <thead>
       <!-- Don't add a table row for group headers if there are none -->
       {#if visible_columns.some((col) => col.group)}
@@ -216,7 +218,7 @@
     </thead>
     <tbody>
       {#each sorted_data as row (JSON.stringify(row))}
-        <tr animate:flip={{ duration: 500 }} style={String(row.row_style ?? ``)}>
+        <tr animate:flip={{ duration: 500 }} style={row.style}>
           {#each visible_columns as col (col.label + col.group)}
             {@const val = row[get_col_id(col)]}
             {@const color = calc_color(val, col)}
@@ -233,7 +235,7 @@
               {:else if cell}
                 {@render cell({ row, col, val })}
               {:else if typeof val === `number`}
-                {pretty_num(val, col.format ?? default_num_format)}
+                {format_num(val, col.format ?? default_num_format)}
               {:else if val === undefined || val === null}
                 n/a
               {:else}

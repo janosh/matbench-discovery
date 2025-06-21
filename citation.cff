@@ -73,6 +73,6 @@ license-url: https://github.com/janosh/matbench-discovery/blob/-/license"
 repository-code: https://github.com/janosh/matbench-discovery
 type: software
 url: https://github.com/janosh/matbench-discovery
-doi: 10.48550/arXiv.2308.14920
+doi: https://doi.org/10.1038/s42256-025-01055-1
 version: 1.3.1 # replace with whatever Matbench Discovery version you use
 date-released: "2023-08-28" # date of arXiv submission

@@ -18,7 +18,7 @@ authors:
     email: linfeng.zhang.zlf@gmail.com
     corresponding: true
   - name: Han Wang
-    affiliation: Laboratory of Computational Physics, Institute of Applied Physics and Computational Mathematics
+    affiliation: Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)
     email: wang_han@iapcm.ac.cn
     corresponding: true
 trained_by:
@@ -48,6 +48,7 @@ model_type: UIP
 model_params: 4_923_959
 trained_for_benchmark: true
 n_estimators: 1
+status: superseded
 
 hyperparams:
   max_force: 0.05

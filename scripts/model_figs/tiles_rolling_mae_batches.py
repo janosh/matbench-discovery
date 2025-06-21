@@ -11,7 +11,6 @@ from plotly.subplots import make_subplots
 from matbench_discovery import PDF_FIGS, SITE_FIGS
 from matbench_discovery.cli import cli_args
 from matbench_discovery.enums import MbdKey, TestSubset
-from matbench_discovery.models import MODEL_METADATA, model_is_compliant
 from matbench_discovery.plots import rolling_mae_vs_hull_dist
 from matbench_discovery.preds.discovery import df_each_pred, df_preds
 
@@ -34,7 +33,7 @@ show_non_compliant = globals().get("show_non_compliant", False)
 models_to_plot = [
     model.label
     for model in cli_args.models
-    if show_non_compliant or model_is_compliant(MODEL_METADATA[model.label])
+    if model.is_complete and (show_non_compliant or model.is_compliant)
 ]
 
 n_cols = 3

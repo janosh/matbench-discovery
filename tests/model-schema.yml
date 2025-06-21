@@ -446,7 +446,6 @@ properties:
       - IS2E # initial structure to energy
       - IS2RE # initial structure to relaxed energy -- CGCNN+P
       - IS2RE-SR # initial structure to relaxed energy with structure relaxation
-      - IS2RE-BO # initial structure to relaxed energy with Bayesian optimization
   model_type:
     $ref: "#/definitions/ModelType"
   targets:

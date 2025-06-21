@@ -139,14 +139,6 @@ class Task(LabelEnum):
     IS2E = "IS2E", "initial structure to energy"
     # IS2RE is for models that learned a discrete version of PES like CGCNN+P
     IS2RE = "IS2RE", "initial structure to relaxed energy"
-    IS2RE_SR = (
-        "IS2RE-SR",
-        "initial structure to relaxed energy with structure relaxation",
-    )
-    IS2RE_BO = (
-        "IS2RE-BO",
-        "initial structure to relaxed energy with Bayesian optimization",
-    )
 
 
 @unique
@@ -277,8 +269,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     alchembert = auto(), "alchembert/alchembert.yml"
 
     # AlphaNet: https://arxiv.org/abs/2501.07155
-    alphanet_mptrj = auto(), "alphanet/alphanet-mptrj.yml"
-
+    alphanet_oma = auto(), "alphanet/alphanet-oma.yml"
     # alignn with global pooling: https://arxiv.org/abs/2106.01829
     alignn = auto(), "alignn/alignn.yml"
 
@@ -299,9 +290,11 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # CGCNN 10-member ensemble with 5-fold training set perturbations
     cgcnn_p = auto(), "cgcnn/cgcnn+p.yml"
 
-    # DeepMD-DPA3 models
-    dpa3_v2_mptrj = auto(), "deepmd/dpa3-v2-mptrj.yml"
-    dpa3_v2_openlam = auto(), "deepmd/dpa3-v2-openlam.yml"
+    # DeePMD-DPA3 models: https://arxiv.org/abs/2506.01686
+    dpa_3_1_mptrj = auto(), "deepmd/dpa-3.1-mptrj.yml"
+    dpa_3_1_3m_ft = auto(), "deepmd/dpa-3.1-3m-ft.yml"
+    # dpa3_v2_mptrj = auto(), "deepmd/dpa3-v2-mptrj.yml"
+    # dpa3_v2_openlam = auto(), "deepmd/dpa3-v2-openlam.yml"
     # dpa3_v1_mptrj = auto(), "deepmd/dpa3-v1-mptrj.yml"
     # dpa3_v1_openlam = auto(), "deepmd/dpa3-v1-openlam.yml"
 
@@ -357,6 +350,9 @@ class Model(Files, base_dir=f"{ROOT}/models"):
 
     # wrenformer 10-member ensemble
     wrenformer = auto(), "wrenformer/wrenformer.yml"
+
+    # ESNet model
+    esnet = auto(), "esnet/esnet.yml"
 
     # --- Model Combos
     # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction
@@ -456,6 +452,18 @@ class Model(Files, base_dir=f"{ROOT}/models"):
         abs_path = f"{ROOT}/{rel_path}"
         maybe_auto_download_file(file_url, abs_path, label=self.label)
         return abs_path
+
+    @property
+    def is_compliant(self) -> bool:
+        """Check if model complies with benchmark restrictions."""
+        from matbench_discovery.models import model_is_compliant
+
+        return model_is_compliant(self.metadata)
+
+    @property
+    def is_complete(self) -> bool:
+        """Check if model has all required metrics."""
+        return self.metadata.get("status", "complete") == "complete"
 
 
 class DataFiles(Files):

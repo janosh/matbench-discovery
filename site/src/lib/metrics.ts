@@ -1,11 +1,11 @@
 import { DATASETS, format_date, MODELS } from '$lib'
-import type { TargetType } from '$lib/model-schema'
+import type { ModelMetadata, TargetType } from '$lib/model-schema'
 import { get_pred_file_urls, model_is_compliant } from '$lib/models.svelte'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { max, min } from 'd3-array'
 import { scaleLog, scaleSequential } from 'd3-scale'
 import * as d3sc from 'd3-scale-chromatic'
-import { choose_bw_for_contrast, pretty_num } from 'elementari/labels'
+import { choose_bw_for_contrast, format_num } from 'matterviz/labels'
 import {
   ALL_METRICS,
   GEO_OPT_SYMMETRY_METRICS,
@@ -15,7 +15,7 @@ import {
 import type { DiscoverySet, LinkData, ModelData } from './types'
 
 // model target type descriptions
-export const targets_tooltips: Record<TargetType, string> = {
+export const targets_tooltips: { [key in TargetType]: string } = {
   E: `Energy`,
   EF_G: `Energy with gradient-based forces`,
   EF_D: `Energy with direct forces`,
@@ -23,7 +23,30 @@ export const targets_tooltips: Record<TargetType, string> = {
   EFS_D: `Energy with direct forces and stress`,
   EFS_GM: `Energy with gradient-based forces, stress, and magmoms`,
   EFS_DM: `Energy with direct forces, stress, and magmoms`,
-}
+} as const
+
+export const openness_tooltips: { [key in ModelMetadata[`openness`]]: string } = {
+  OSOD: `Open source, open data`,
+  OSCD: `Open source, closed data`,
+  CSOD: `Closed source, open data`,
+  CSCD: `Closed source, closed data`,
+} as const
+
+export const discovery_task_tooltips: {
+  [key in ModelMetadata[`train_task`] | ModelMetadata[`test_task`]]: string
+} = {
+  RP2RE: `relaxed prototype to relaxed energy`,
+  RS2RE: `relaxed structure to relaxed energy`,
+  S2E: `structure to energy`,
+  S2RE: `structure to relaxed energy`,
+  S2EF: `structure to energy, force`,
+  S2EFS: `structure to energy, force, stress`,
+  S2EFSM: `structure to energy, force, stress, magmoms`,
+  IP2E: `initial prototype to energy`,
+  IS2E: `initial structure to energy`,
+  IS2RE: `initial structure to relaxed energy`,
+  'IS2RE-SR': `initial structure to relaxed energy with structure relaxation`,
+} as const
 
 // access (possibly deeply) nested metrics and parameters from ModelData objects
 export function get_nested_value(
@@ -74,10 +97,10 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
 
     if (n_materials !== n_structures) {
       tooltip.push(
-        `${name}: ${pretty_num(n_materials, `,`)} materials (${pretty_num(n_structures, `,`)} structures)`,
+        `${name}: ${format_num(n_materials, `,`)} materials (${format_num(n_structures, `,`)} structures)`,
       )
     } else {
-      tooltip.push(`${name}: ${pretty_num(n_materials, `,`)} materials`)
+      tooltip.push(`${name}: ${format_num(n_materials, `,`)} materials`)
     }
   }
 
@@ -88,18 +111,18 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
   const dataset_tooltip =
     tooltip.length > 1 ? `${new_line}• ${tooltip.join(new_line + `• `)}` : ``
 
-  let title = `${pretty_num(n_training_materials, `,`)} materials in training set${new_line}${dataset_tooltip}`
-  let train_size_str = `<span title="${title}" data-sort-value="${n_training_materials}">${pretty_num(n_training_materials)} <small>${dataset_links}</small></span>`
+  let title = `${format_num(n_training_materials, `,`)} materials in training set${new_line}${dataset_tooltip}`
+  let train_size_str = `<span title="${title}" data-sort-value="${n_training_materials}">${format_num(n_training_materials)} <small>${dataset_links}</small></span>`
 
   if (n_training_materials !== n_training_structures) {
     title =
-      `${pretty_num(n_training_materials, `,`)} materials in training set ` +
-      `(${pretty_num(n_training_structures, `,`)} structures counting all DFT relaxation ` +
+      `${format_num(n_training_materials, `,`)} materials in training set ` +
+      `(${format_num(n_training_structures, `,`)} structures counting all DFT relaxation ` +
       `frames per material)${dataset_tooltip}`
 
     train_size_str =
       `<span title="${title}" data-sort-value="${n_training_materials || n_training_structures}">` +
-      `${pretty_num(n_training_materials)} <small>(${pretty_num(n_training_structures)})</small> ` +
+      `${format_num(n_training_materials)} <small>(${format_num(n_training_structures)})</small> ` +
       `<small>${dataset_links}</small></span>`
   }
 
@@ -226,7 +249,6 @@ export function assemble_row_data(
 
     const targets = model.targets.replace(/_(.)/g, `<sub>$1</sub>`)
     const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
-    const row_style = `border-left: 3px solid var(--${is_compliant ? `` : `non-`}compliant-color);`
 
     // Add model links
     const code_license = license?.code
@@ -255,7 +277,7 @@ export function assemble_row_data(
       RMSD: get_nested_value(model, `${RMSD.path}.${RMSD.key}`) as number | undefined,
       'Training Set': format_train_set(model.training_set, model),
       [HYPERPARAMS.model_params.short as string]:
-        `<span title="${pretty_num(model.model_params, `,`)}" trainable model parameters" data-sort-value="${model.model_params}">${pretty_num(model.model_params)}</span>`,
+        `<span title="${format_num(model.model_params, `,`)}" trainable model parameters" data-sort-value="${model.model_params}">${format_num(model.model_params)}</span>`,
       Targets: targets_str,
       'Date Added': `<span title="${format_date(model.date_added)}" data-sort-value="${new Date(model.date_added).getTime()}">${model.date_added}</span>`,
       // Add Links as a special property
@@ -280,12 +302,17 @@ export function assemble_row_data(
           title: `Download model checkpoint`,
           icon: `<svg><use href="#icon-download"></use></svg>`,
         },
-        pred_files: { files: get_pred_file_urls(model), name: model.model_name },
+        pred_files: {
+          files: get_pred_file_urls(model),
+          name: model.model_name,
+        },
       } as LinkData,
       [METADATA_COLS.checkpoint_license.label]: checkpoint_license,
       [METADATA_COLS.code_license.label]: code_license,
       [HYPERPARAMS.graph_construction_radius.short as string]: r_cut_str,
-      row_style,
+      style: `border-left: 3px solid var(--${
+        is_compliant ? `` : `non-`
+      }compliant-color);`,
       org_logos: model.org_logos,
       ...Object.fromEntries(
         Object.values(GEO_OPT_SYMMETRY_METRICS).map((col) => [
