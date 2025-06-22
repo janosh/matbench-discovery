@@ -1,4 +1,4 @@
-model_name: Eqnorm Mptrj
+model_name: Eqnorm MPtrj
 model_key: eqnorm-mptrj # this should match the name of the YAML file and determines the URL /models/<model_key> on which details of the model are displayed on the website
 model_version: "0.1.0"
 date_added: "2025-05-26"

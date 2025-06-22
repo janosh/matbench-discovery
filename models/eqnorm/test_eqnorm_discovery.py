@@ -1,4 +1,8 @@
-"""Test eqnorm relaxation on the WBM dataset."""
+"""Test Eqnorm relaxation on the WBM dataset.
+
+History:
+- 2025-03-28 (Yuzhuo Chen): Eqnorm Mptrj, first version
+"""
 
 # %%
 import os
@@ -54,12 +58,6 @@ def process_and_save(atoms_list: list[Atoms], out_dir: str, job_id: int) -> None
 
 
 if __name__ == "__main__":
-    __author__ = "Yuzhuo Chen"
-    __date__ = "2025-03-28"
-
-    """History
-    2025-03-28: eqnorm, first version
-    """
     model_name = "eqnorm"
     model_variant = "eqnorm-mptrj"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

@@ -56,8 +56,7 @@ job_name = (
 )
 out_dir = "./kappa_results"
 os.makedirs(out_dir, exist_ok=True)
-idx = 1
-out_path = f"{out_dir}/conductivity_{idx}.json.gz"
+out_path = f"{out_dir}/conductivity.json.gz"
 
 timestamp = f"{datetime.now().astimezone():%Y-%m-%d %H:%M:%S}"
 atoms_list = read(DataFiles.phonondb_pbe_103_structures.path, index=":")
