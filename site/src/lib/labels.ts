@@ -483,6 +483,7 @@ export const org_logos = {
   'University of Minnesota': `/logos/university-of-minnesota.svg`,
   'University of Texas at Austin': `/logos/university-of-texas-austin.svg`,
   'Beijing Information Science and Technology University': `/logos/beijing-information-science-and-technology-university.svg`,
+  'Zhejiang Lab': `/logos/zhejiang-lab.svg`,
 } as const
 
 // Attempts to find a matching logo data (ID or src) and name for a given affiliation string.
