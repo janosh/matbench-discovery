@@ -1,0 +1,192 @@
+model_name: Eqnorm MPtrj
+model_key: eqnorm-mptrj # this should match the name of the YAML file and determines the URL /models/<model_key> on which details of the model are displayed on the website
+model_version: "0.1.0"
+date_added: "2025-05-26"
+date_published: "2025-05-26"
+authors:
+  - name: Yuzhuo Chen
+    affiliation: Zhejiang Lab
+    email: chenyuzhuo@zhejianglab.org
+    orcid: https://orcid.org/0009-0003-4044-2372
+  - name: Lyuwen Fu
+    affiliation: Zhejiang Lab
+    email: lyuwenfu@zhejianglab.org
+  - name: Shuxiang Yang
+    affiliation: Zhejiang Lab
+    email: yang_shuxiang@zhejianglab.org
+  - name: Lipeng Chen
+    affiliation: Zhejiang Lab
+    email: chenlp@zhejianglab.org
+    corresponding: true
+trained_by:
+  - name: Yuzhuo Chen
+    affiliation: Zhejiang Lab
+    email: chenyuzhuo@zhejianglab.org
+    orcid: https://orcid.org/0009-0003-4044-2372
+
+repo: https://github.com/yzchen08/eqnorm
+url: https://github.com/yzchen08/eqnorm/tree/main/eqnorm
+pr_url: https://github.com/janosh/matbench-discovery/pull/258
+doi: https://github.com/yzchen08/eqnorm # to be released soon
+paper: https://github.com/yzchen08/eqnorm # to be released soon
+checkpoint_url: https://figshare.com/files/55429685
+
+license:
+  code: MIT
+  code_url: https://github.com/yzchen08/eqnorm/blob/main/LICENSE
+  checkpoint: MIT
+  checkpoint_url: https://github.com/yzchen08/eqnorm/blob/main/LICENSE
+
+openness: OSOD
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+model_type: UIP
+model_params: 1310024
+trained_for_benchmark: true
+n_estimators: 1
+
+hyperparams:
+  max_force: 0.02
+  max_steps: 500
+  ase_optimizer: FIRE
+  cell_filter: FrechetCellFilter
+  loss: Huber
+  loss_weights:
+    energy: 20.0
+    force: 20.0
+    stress: 320.0
+  optimizer: AdamW
+  weight_decay: 0.001
+  clip_grad_norm: 100
+  ema_decay: 0.999
+  max_learning_rate: 0.01
+  min_learning_rate: 0.000001
+  learning_rate_schedule: warmcosine
+  warmup_factor: 0.2
+  epochs: 100
+  batch_train: 128
+  n_layers: 4
+  num_embedding_features: 128
+  num_bessel_basis: 8
+  invariant_layers: 2
+  invariant_neurons: 64
+  poly_p: 6
+  graph_construction_radius: 6.0
+  max_neighbors: .inf
+  irreps_hidden: 128x0e+64x1o+32x2e+32x3o
+  irreps_sh: 1x0e+1x1o+1x2e+1x3o
+  energy_shift: per_species
+  energy_scale: force_rms
+  shift_trainable: false
+  scale_trainable: false
+
+requirements:
+  torch: "2.2.2"
+  torch-geometric: "2.6.1"
+  ase: "3.24.0"
+  vesin: "0.3.2"
+  e3nn: "0.5.6"
+  pymatgen: "2025.3.10"
+  numpy: "2.2.4"
+  wget: "3.2"
+
+training_set: [MPtrj]
+
+training_cost:
+  Nvidia A100 GPUs: { amount: 4, hours: 500 }
+
+notes: # notes can have any key, be multiline and support markdown.
+  description: |
+    eqnorm is a graph neural network model designed for predicting the energy, forces, and stresses of materials.
+    The model utilizes a combination of invariant and equivariant layers to effectively capture the symmetries present in material structures.
+
+metrics:
+  phonons:
+    kappa_103:
+      κ_SRME: 0.4079
+      pred_file: models/eqnorm/eqnorm-mptrj/2025-06-16-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/files/55429706
+  geo_opt:
+    pred_file: models/eqnorm/eqnorm-mptrj/2025-06-16-wbm-IS2RE-FIRE.jsonl.gz
+    pred_file_url: https://figshare.com/files/55550972
+    struct_col: eqnorm_structure
+    symprec=1e-2:
+      rmsd: 0.0837 # unitless
+      n_sym_ops_mae: 1.7966 # unitless
+      symmetry_decrease: 0.0589 # fraction
+      symmetry_match: 0.8113 # fraction
+      symmetry_increase: 0.1224 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/eqnorm/eqnorm-mptrj/2025-06-16-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/55550975
+    symprec=1e-5:
+      rmsd: 0.0837 # unitless
+      n_sym_ops_mae: 2.0441 # unitless
+      symmetry_decrease: 0.0639 # fraction
+      symmetry_match: 0.6983 # fraction
+      symmetry_increase: 0.2316 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/eqnorm/eqnorm-mptrj/2025-06-16-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/55550978
+  discovery:
+    pred_file: models/eqnorm/eqnorm-mptrj/2025-06-16-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/55546649
+    pred_col: e_form_per_atom_eqnorm
+    full_test_set:
+      F1: 0.779 # fraction
+      DAF: 4.296 # dimensionless
+      Precision: 0.737 # fraction
+      Recall: 0.825 # fraction
+      Accuracy: 0.92 # fraction
+      TPR: 0.825 # fraction
+      FPR: 0.061 # fraction
+      TNR: 0.939 # fraction
+      FNR: 0.175 # fraction
+      TP: 36369.0 # count
+      FP: 12963.0 # count
+      TN: 199908.0 # count
+      FN: 7723.0 # count
+      MAE: 0.038 # eV/atom
+      RMSE: 0.081 # eV/atom
+      R2: 0.796 # dimensionless
+      missing_preds: 2 # count
+      missing_percent: 0.00% # fraction
+    unique_prototypes:
+      F1: 0.786 # fraction
+      DAF: 4.844 # dimensionless
+      Precision: 0.741 # fraction
+      Recall: 0.838 # fraction
+      Accuracy: 0.929 # fraction
+      TPR: 0.838 # fraction
+      FPR: 0.054 # fraction
+      TNR: 0.946 # fraction
+      FNR: 0.162 # fraction
+      TP: 27984.0 # count
+      FP: 9804.0 # count
+      TN: 172310.0 # count
+      FN: 5390.0 # count
+      MAE: 0.04 # eV/atom
+      RMSE: 0.083 # eV/atom
+      R2: 0.799 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
+    most_stable_10k:
+      F1: 0.97 # fraction
+      DAF: 6.156 # dimensionless
+      Precision: 0.941 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.941 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9411.0 # count
+      FP: 589.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.039 # eV/atom
+      RMSE: 0.105 # eV/atom
+      R2: 0.775 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
