@@ -109,7 +109,7 @@ metrics:
       pred_file_url: https://figshare.com/files/55429706
   geo_opt:
     pred_file: models/eqnorm/eqnorm-mptrj/2025-06-16-wbm-IS2RE-FIRE.jsonl.gz
-    pred_file_url: https://figshare.com/files/55429715
+    pred_file_url: https://figshare.com/files/55550972
     struct_col: eqnorm_structure
     symprec=1e-2:
       rmsd: 0.0837 # unitless
@@ -119,7 +119,7 @@ metrics:
       symmetry_increase: 0.1224 # fraction
       n_structures: 256963 # count
       analysis_file: models/eqnorm/eqnorm-mptrj/2025-06-16-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/55431551
+      analysis_file_url: https://figshare.com/files/55550975
     symprec=1e-5:
       rmsd: 0.0837 # unitless
       n_sym_ops_mae: 2.0441 # unitless
@@ -128,10 +128,10 @@ metrics:
       symmetry_increase: 0.2316 # fraction
       n_structures: 256963 # count
       analysis_file: models/eqnorm/eqnorm-mptrj/2025-06-16-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/55431515
+      analysis_file_url: https://figshare.com/files/55550978
   discovery:
     pred_file: models/eqnorm/eqnorm-mptrj/2025-06-16-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/55429712
+    pred_file_url: https://figshare.com/files/55546649
     pred_col: e_form_per_atom_eqnorm
     full_test_set:
       F1: 0.779 # fraction
