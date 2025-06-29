@@ -1,8 +1,8 @@
 model_name: ORB v2
 model_key: orb-v2
 model_version: v2
-date_added: "2024-10-11"
-date_published: "2024-10-29"
+date_added: '2024-10-11'
+date_published: '2024-10-29'
 authors:
   - name: Mark Neumann
     affiliation: Orbital Materials
@@ -73,8 +73,8 @@ hyperparams:
   max_neighbors: 20
 
 requirements:
-  orb-models: "0.4.0"
-  pynanoflann: "pynanoflann@git+https://github.com/dwastberg/pynanoflann#egg=af434039ae14bedcbb838a7808924d6689274168"
+  orb-models: '0.4.0'
+  pynanoflann: 'pynanoflann@git+https://github.com/dwastberg/pynanoflann#egg=af434039ae14bedcbb838a7808924d6689274168'
 
 training_set: [MPtrj, Alex]
 training_cost: missing

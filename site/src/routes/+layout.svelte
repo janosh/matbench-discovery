@@ -26,13 +26,15 @@
   let description = $derived(
     {
       '/': `Benchmarking machine learning energy models for materials discovery.`,
-      '/data': `Details about provenance, chemistry and energies in the benchmark's train and test set.`,
+      '/data':
+        `Details about provenance, chemistry and energies in the benchmark's train and test set.`,
       '/data/tmi': `Too much information on the benchmark's data.`,
       '/api': `API docs for the Matbench Discovery PyPI package.`,
       '/contribute': `Steps for contributing a new model to the benchmark.`,
       '/models': `Details on each model sortable by metrics.`,
       '/tasks/diatomics': `Metrics and analysis of predicting diatomic energies.`,
-      '/tasks/phonons': `Metrics and analysis of predicting phonon modes and frequencies.`,
+      '/tasks/phonons':
+        `Metrics and analysis of predicting phonon modes and frequencies.`,
       '/tasks/geo-opt': `Metrics and analysis of predicting ground state geometries.`,
     }[url ?? ``],
   )
@@ -87,7 +89,7 @@
     ...routes.filter((route) => route != `/changelog`),
     [`/preprint`, pkg.preprint],
   ]}
-  style="padding: 0 var(--main-padding);"
+  style="padding: 0 var(--main-padding)"
 />
 
 <main>

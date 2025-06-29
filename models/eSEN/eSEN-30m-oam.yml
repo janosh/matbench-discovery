@@ -1,8 +1,8 @@
 model_name: eSEN-30M-OAM
 model_key: eSEN-30m-oam
 model_version: v2025.03.17
-date_added: "2025-03-17"
-date_published: "2025-03-17"
+date_added: '2025-03-17'
+date_published: '2025-03-17'
 authors:
   - name: Xiang Fu
     affiliation: FAIR at Meta

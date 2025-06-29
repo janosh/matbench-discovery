@@ -8,7 +8,10 @@
   let columns = $derived([
     METADATA_COLS.model_name,
     ALL_METRICS.RMSD,
-    ...Object.values(GEO_OPT_SYMMETRY_METRICS).map((col) => ({ ...col, visible: true })),
+    ...Object.values(GEO_OPT_SYMMETRY_METRICS).map((col) => ({
+      ...col,
+      visible: true,
+    })),
   ])
 
   const discovery_set = `full_test_set`
@@ -29,4 +32,4 @@
   )
 </script>
 
-<HeatmapTable data={metrics_data} {columns} {...rest} style="margin: 2em 0;" />
+<HeatmapTable data={metrics_data} {columns} {...rest} style="margin: 2em 0" />

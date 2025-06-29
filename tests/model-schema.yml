@@ -1,11 +1,11 @@
-"$schema": http://json-schema.org/draft-07/schema#
+'$schema': http://json-schema.org/draft-07/schema#
 
 definitions:
   # Shared URL schema for all HTTP(S) URLs
   http_url:
     type: string
     format: uri
-    pattern: "^https?://"
+    pattern: '^https?://'
 
   # Shared schema for prediction files
   pred_files:
@@ -13,10 +13,10 @@ definitions:
     additionalProperties: false
     properties:
       pred_file:
-        type: [string, "null"]
+        type: [string, 'null']
       pred_file_url:
-        type: [string, "null"]
-        $ref: "#/definitions/http_url"
+        type: [string, 'null']
+        $ref: '#/definitions/http_url'
     allOf:
       - if:
           properties:
@@ -26,7 +26,7 @@ definitions:
           required: [pred_file_url]
           properties:
             pred_file_url:
-              $ref: "#/definitions/http_url"
+              $ref: '#/definitions/http_url'
 
   # Define a shared schema for authors and trained_by
   person:
@@ -68,10 +68,10 @@ definitions:
           κ_SRME:
             type: number
           pred_file:
-            type: [string, "null"]
+            type: [string, 'null']
           pred_file_url:
-            type: [string, "null"]
-            $ref: "#/definitions/http_url"
+            type: [string, 'null']
+            $ref: '#/definitions/http_url'
         allOf:
           - if:
               properties:
@@ -81,8 +81,8 @@ definitions:
               required: [pred_file_url]
               properties:
                 pred_file_url:
-                  $ref: "#/definitions/http_url"
-        required: ["κ_SRME"]
+                  $ref: '#/definitions/http_url'
+        required: ['κ_SRME']
 
   GeoOptMetrics:
     type: object
@@ -91,10 +91,10 @@ definitions:
       struct_col:
         type: string
       pred_file:
-        type: [string, "null"]
+        type: [string, 'null']
       pred_file_url:
-        type: [string, "null"]
-        $ref: "#/definitions/http_url"
+        type: [string, 'null']
+        $ref: '#/definitions/http_url'
       symprec=1e-5: &symprec_metrics
         type: object
         additionalProperties: false
@@ -112,10 +112,10 @@ definitions:
           n_structures:
             type: number
           analysis_file:
-            type: [string, "null"]
+            type: [string, 'null']
           analysis_file_url:
-            type: [string, "null"]
-            $ref: "#/definitions/http_url"
+            type: [string, 'null']
+            $ref: '#/definitions/http_url'
         required:
           - rmsd
           - n_sym_ops_mae
@@ -133,7 +133,7 @@ definitions:
           required: [pred_file_url]
           properties:
             pred_file_url:
-              $ref: "#/definitions/http_url"
+              $ref: '#/definitions/http_url'
 
   DiscoveryMetricsSet:
     type: object
@@ -184,16 +184,16 @@ definitions:
       pred_col:
         type: string
       pred_file:
-        type: [string, "null"]
+        type: [string, 'null']
       pred_file_url:
-        type: [string, "null"]
-        $ref: "#/definitions/http_url"
+        type: [string, 'null']
+        $ref: '#/definitions/http_url'
       full_test_set:
-        $ref: "#/definitions/DiscoveryMetricsSet"
+        $ref: '#/definitions/DiscoveryMetricsSet'
       most_stable_10k:
-        $ref: "#/definitions/DiscoveryMetricsSet"
+        $ref: '#/definitions/DiscoveryMetricsSet'
       unique_prototypes:
-        $ref: "#/definitions/DiscoveryMetricsSet"
+        $ref: '#/definitions/DiscoveryMetricsSet'
     allOf:
       - if:
           properties:
@@ -203,17 +203,17 @@ definitions:
           required: [pred_file_url]
           properties:
             pred_file_url:
-              $ref: "#/definitions/http_url"
+              $ref: '#/definitions/http_url'
 
   DiatomicsMetrics:
     type: object
     additionalProperties: false
     properties:
       pred_file:
-        type: [string, "null"]
+        type: [string, 'null']
       pred_file_url:
-        type: [string, "null"]
-        $ref: "#/definitions/http_url"
+        type: [string, 'null']
+        $ref: '#/definitions/http_url'
       smoothness:
         type: number
       tortuosity:
@@ -245,7 +245,7 @@ definitions:
           required: [pred_file_url]
           properties:
             pred_file_url:
-              $ref: "#/definitions/http_url"
+              $ref: '#/definitions/http_url'
 
   # Define license types from dataset schema
   license_enum:
@@ -289,21 +289,21 @@ properties:
   authors:
     type: array
     items:
-      $ref: "#/definitions/person"
+      $ref: '#/definitions/person'
     minItems: 1
     allOf:
       - if:
           properties:
-            "0": {}
-          required: ["0"]
+            '0': {}
+          required: ['0']
         then:
           properties:
-            "0":
-              required: ["email"]
+            '0':
+              required: ['email']
   trained_by:
     type: array
     items:
-      $ref: "#/definitions/person"
+      $ref: '#/definitions/person'
   repo: *url
   doi: *url
   paper: *url
@@ -314,7 +314,7 @@ properties:
     oneOf:
       - type: string
         format: uri
-        $ref: "#/definitions/http_url"
+        $ref: '#/definitions/http_url'
       - type: string
         enum: [missing]
   license:
@@ -323,23 +323,23 @@ properties:
     required: [code, checkpoint]
     properties:
       code:
-        $ref: "#/definitions/license_enum"
+        $ref: '#/definitions/license_enum'
         description: License for the model code
       code_url:
         oneOf:
           - type: string
             format: uri
-            $ref: "#/definitions/http_url"
+            $ref: '#/definitions/http_url'
           - type: string
             enum: [missing]
       checkpoint:
-        $ref: "#/definitions/license_enum"
+        $ref: '#/definitions/license_enum'
         description: License for the model checkpoint
       checkpoint_url:
         oneOf:
           - type: string
             format: uri
-            $ref: "#/definitions/http_url"
+            $ref: '#/definitions/http_url'
           - type: string
             enum: [missing]
   requirements:
@@ -415,7 +415,7 @@ properties:
         patternProperties:
           "^[a-zA-Z0-9\\s]+ (GPUs|CPUs|TPUs)$":
             type: object
-            required: ["amount", "hours"]
+            required: ['amount', 'hours']
             additionalProperties: false
             properties:
               amount:
@@ -447,9 +447,9 @@ properties:
       - IS2RE # initial structure to relaxed energy -- CGCNN+P
       - IS2RE-SR # initial structure to relaxed energy with structure relaxation
   model_type:
-    $ref: "#/definitions/ModelType"
+    $ref: '#/definitions/ModelType'
   targets:
-    $ref: "#/definitions/TargetType"
+    $ref: '#/definitions/TargetType'
   openness:
     type: string
     enum: [OSOD, OSCD, CSOD, CSCD]
@@ -467,22 +467,22 @@ properties:
     properties:
       phonons:
         oneOf:
-          - $ref: "#/definitions/PhononMetrics"
+          - $ref: '#/definitions/PhononMetrics'
           - type: string
             enum: [not applicable, not available]
       geo_opt:
         oneOf:
-          - $ref: "#/definitions/GeoOptMetrics"
+          - $ref: '#/definitions/GeoOptMetrics'
           - type: string
             enum: [not applicable, not available]
       discovery:
         oneOf:
-          - $ref: "#/definitions/DiscoveryMetrics"
+          - $ref: '#/definitions/DiscoveryMetrics'
           - type: string
             enum: [not available]
       diatomics:
         oneOf:
-          - $ref: "#/definitions/DiatomicsMetrics"
+          - $ref: '#/definitions/DiatomicsMetrics'
           - type: string
             enum: [not applicable, not available]
 

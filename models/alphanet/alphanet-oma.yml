@@ -1,8 +1,8 @@
 model_name: AlphaNet-v1-OMA
 model_key: alphanet-v1-oma
 model_version: v1
-date_added: "2025-05-12"
-date_published: "2025-05-12"
+date_added: '2025-05-12'
+date_published: '2025-05-12'
 authors:
   - name: Bangchen Yin
     affiliation: Tsinghua University
@@ -89,7 +89,7 @@ requirements:
   pymatgen: 2024.6.10
   numpy: 1.26.4
 
-training_set: ["OMat24", "sAlex", "MPtrj"] #train/valid split: 0.95/0.05
+training_set: ['OMat24', 'sAlex', 'MPtrj'] #train/valid split: 0.95/0.05
 
 notes:
   Description: |

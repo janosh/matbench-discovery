@@ -1,8 +1,8 @@
 model_name: ALIGNN
 model_key: alignn
 model_version: 2023.01.10
-date_added: "2023-06-02"
-date_published: "2021-02-22"
+date_added: '2023-06-02'
+date_published: '2021-02-22'
 authors:
   - name: Kamal Choudhary
     affiliation: National Institute of Standards and Technology

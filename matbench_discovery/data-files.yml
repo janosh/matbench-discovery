@@ -25,7 +25,7 @@ mp_energies:
 mp_patched_phase_diagram:
   url: https://figshare.com/files/48241624
   path: mp/2023-02-07-ppd-mp.pkl.gz
-  description: "[`PatchedPhaseDiagram`] constructed from all MP `pymatgen` `ComputedStructureEntries`"
+  description: '[`PatchedPhaseDiagram`] constructed from all MP `pymatgen` `ComputedStructureEntries`'
   md5: 60d19d691fa1d338aa496a40a9641bef
 
 mp_trj_json_gz:

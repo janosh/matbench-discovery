@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { TableColumnToggleMenu } from '$lib'
+  import { Icon, TableColumnToggleMenu } from '$lib'
   import { Tooltip } from 'svelte-zoo'
   import type { Label } from './types'
 
@@ -43,13 +43,14 @@
 
 <div class="table-controls" {...rest}>
   <label class="legend-item" title="Toggle visibility of compliant models">
-    <span class="color-swatch" style="background-color: var(--compliant-color);"></span>
+    <span class="color-swatch" style="background-color: var(--compliant-color)"></span>
     <input
       type="checkbox"
       bind:checked={show_compliant}
       onchange={(evt) => {
-        if (!(evt.target as HTMLInputElement).checked && !show_non_compliant)
+        if (!(evt.target as HTMLInputElement).checked && !show_non_compliant) {
           show_non_compliant = true // Prevent hiding both compliant and non-compliant models
+        }
       }}
     />
     Compliant models
@@ -60,15 +61,18 @@
       type="checkbox"
       bind:checked={show_non_compliant}
       onchange={(evt) => {
-        if (!(evt.target as HTMLInputElement).checked && !show_compliant)
+        if (!(evt.target as HTMLInputElement).checked && !show_compliant) {
           show_compliant = true // Prevent hiding both compliant and non-compliant models
+        }
       }}
     />
-    <span class="color-swatch" style="background-color: var(--non-compliant-color);"
+    <span
+      class="color-swatch"
+      style="background-color: var(--non-compliant-color)"
     ></span>
     Non-compliant models
     <Tooltip>
-      <svg><use href="#icon-info" /></svg>
+      <Icon icon="Info" />
       {#snippet tip()}
         <span>
           Models can be non-compliant for multiple reasons:<br />
@@ -76,10 +80,9 @@
           - closed weights<br />
           - trained on more than the permissible training set (<a
             href="https://docs.materialsproject.org/changes/database-versions#v2022.10.28"
-            >MP v2022.10.28 release</a
-          >)<br />
-          We still show these models behind a toggle as we expect them<br /> to nonetheless
-          provide helpful signals for developing future models.
+          >MP v2022.10.28 release</a>)<br />
+          We still show these models behind a toggle as we expect them<br />
+          to nonetheless provide helpful signals for developing future models.
         </span>
       {/snippet}
     </Tooltip>
@@ -92,7 +95,7 @@
     />
     <span>Energy-only models</span>
     <Tooltip text="Include models that only predict energy (no forces or stress)">
-      <svg><use href="#icon-info" /></svg>
+      <Icon icon="Info" />
     </Tooltip>
   </label>
 

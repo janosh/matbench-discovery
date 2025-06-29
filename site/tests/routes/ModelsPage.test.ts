@@ -114,7 +114,7 @@ describe(`Models Page`, () => {
     ).toBeGreaterThan(1)
   })
 
-  it(`limits number of displayed models`, async () => {
+  it(`limits number of displayed models`, () => {
     const n_best_input = document.body.querySelector(
       `input[type="number"]`,
     ) as HTMLInputElement
@@ -146,7 +146,7 @@ describe(`Models Page`, () => {
     // applies background color to model card titles based on active metric value
     // currently only testing that the background color is not transparent
     for (const h2_element of model_cards_h2) {
-      const computed_style = window.getComputedStyle(h2_element)
+      const computed_style = globalThis.getComputedStyle(h2_element)
       expect(computed_style.backgroundColor).not.toBe(`rgba(0, 0, 0, 0)`)
     }
   })

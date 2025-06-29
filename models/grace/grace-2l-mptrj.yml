@@ -1,8 +1,8 @@
 model_name: GRACE-2L-MPtrj
 model_key: grace-2l-mptrj
 model_version: MP_GRACE_2L_r6_11Nov2024
-date_added: "2024-11-21"
-date_published: "2024-11-21"
+date_added: '2024-11-21'
+date_published: '2024-11-21'
 authors:
   - name: Anton Bochkarev
     affiliation: ICAMS, Ruhr University Bochum

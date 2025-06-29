@@ -1,13 +1,17 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import type { ModelData } from '$lib'
-  import { calculate_days_ago } from '$lib'
+  import { calculate_days_ago, Icon } from '$lib'
   import { extent } from 'd3-array'
   import { ColorScaleSelect, format_num, ScatterPlot } from 'matterviz'
-  import type { D3InterpolateName } from 'matterviz/colors'
   import Select from 'svelte-multiselect'
   import { click_outside, titles_as_tooltips } from 'svelte-zoo'
-  import { ALL_METRICS, format_property_path, HYPERPARAMS, METADATA_COLS } from './labels'
+  import {
+    ALL_METRICS,
+    format_property_path,
+    HYPERPARAMS,
+    METADATA_COLS,
+  } from './labels'
   import { get_nested_value } from './metrics'
 
   interface Props {
@@ -40,9 +44,9 @@
   let log = $state({ x: false, y: false, color_value: false, size_value: false })
   let is_fullscreen = $state(false)
 
-  // State for extra controls
-  let show_extra_controls = $state(false)
-  let color_scheme = $state<D3InterpolateName>(`interpolateViridis`)
+  // State for plot controls
+  let show_controls = $state(false)
+  let color_scheme = $state(`Viridis`)
   let x_ticks = $state(5)
   let y_ticks = $state(5)
   let x_grid = $state(true)
@@ -56,7 +60,8 @@
   let min_link_distance = $state(15)
   let max_link_distance = $state(20)
 
-  const { model_params, graph_construction_radius, max_force, max_steps } = HYPERPARAMS
+  const { model_params, graph_construction_radius, max_force, max_steps } =
+    HYPERPARAMS
   const { batch_size, epochs, n_layers } = HYPERPARAMS
 
   const { date_added, n_training_materials, n_training_structures } = METADATA_COLS
@@ -88,9 +93,9 @@
   )
 
   function is_num_or_date(val: unknown): boolean {
-    return (
-      (typeof val === `number` && !isNaN(val)) || val instanceof Date // warning: this is true for invalid dates
-    )
+    if (typeof val === `number` && !isNaN(val)) return true
+    if (val instanceof Date) return !isNaN(val.getTime()) // Check for valid dates
+    return false
   }
   let plot_data = $derived(
     models
@@ -100,17 +105,20 @@
         let x_path = `${axes.x?.path ?? ``}.${axes.x?.key ?? ``}`
         if (x_path.startsWith(`.`)) x_path = x_path.slice(1)
         let x_val = get_nested_value(model, x_path)
-        if (x_path.includes(`date`)) x_val = new Date(x_val as string)
+        if (x_path.includes(`date`)) x_val = new Date(x_val as string).getTime()
 
         let y_path = `${axes.y?.path ?? ``}.${axes.y?.key ?? ``}`
         if (y_path.startsWith(`.`)) y_path = y_path.slice(1)
         let y_val = get_nested_value(model, y_path)
         if (y_path.includes(`date`)) y_val = new Date(y_val as string).getTime()
-        let color_path = `${axes.color_value?.path ?? ``}.${axes.color_value?.key ?? ``}`
+        let color_path = `${axes.color_value?.path ?? ``}.${
+          axes.color_value?.key ?? ``
+        }`
         if (color_path.startsWith(`.`)) color_path = color_path.slice(1)
         let color_value = get_nested_value(model, color_path)
-        if (color_path.includes(`date`) && color_value instanceof Date)
-          color_value = new Date(color_value)
+        if (color_path.includes(`date`)) {
+          color_value = new Date(color_value as string).getTime()
+        }
 
         let size_path = `${axes.size_value?.path ?? ``}.${axes.size_value?.key ?? ``}`
         if (size_path.startsWith(`.`)) size_path = size_path.slice(1)
@@ -140,13 +148,12 @@
     y: plot_data.map((item) => item.y as number),
     point_style: plot_data.map((item) => ({ fill: point_color ?? item.color })),
     metadata: plot_data.map((item) => item.metadata),
-    color_values:
-      point_color === null
-        ? (plot_data
-            .map((item) => item.color_value) // Map to potential Date or number
-            .filter((val): val is number | Date => val !== undefined) // Filter out undefined
-            .map((val) => (val instanceof Date ? val.getTime() : val)) as number[]) // Convert Dates to timestamps
-        : undefined,
+    color_values: point_color === null
+      ? (plot_data
+        .map((item) => item.color_value) // Map to potential Date or number
+        .filter((val): val is number | Date => val !== undefined) // Filter out undefined
+        .map((val) => (val instanceof Date ? val.getTime() : val)) as number[]) // Convert Dates to timestamps
+      : undefined,
     size_values: axes.size_value
       ? plot_data.map((item) => item.size_value as number)
       : undefined,
@@ -165,9 +172,7 @@
       if (is_fullscreen) {
         is_fullscreen = false
         document.body.classList.remove(`fullscreen`)
-      } else if (show_extra_controls) {
-        show_extra_controls = false
-      }
+      } else show_controls = false
     }
   }
 
@@ -248,31 +253,32 @@
       aria-label={is_fullscreen ? `Exit fullscreen` : `Enter fullscreen`}
       title={is_fullscreen ? `Exit fullscreen` : `Enter fullscreen`}
     >
-      <svg style="width: 1.3em; height: 1.3em;">
-        <use href="#icon-{is_fullscreen ? `close` : `maximize`}" />
-      </svg>
+      <Icon
+        icon={is_fullscreen ? `Close` : `Maximize`}
+        style="width: 1.3em; height: 1.3em"
+      />
     </button>
     <button
       class="settings-toggle icon-button"
-      onclick={() => (show_extra_controls = !show_extra_controls)}
-      aria-label="Toggle extra plot controls"
+      onclick={() => (show_controls = !show_controls)}
+      aria-label="Toggle plot controls"
     >
-      <svg style="width: 1.3em; height: 1.3em;">
-        <use href="#icon-settings" />
-      </svg>
+      <Icon icon="Settings" style="width: 1.3em; height: 1.3em" />
     </button>
   </div>
 
-  {#if show_extra_controls}
+  {#if show_controls}
     <div
-      use:click_outside={{ callback: () => (show_extra_controls = false) }}
+      use:click_outside={{ callback: () => (show_controls = false) }}
       use:draggable={{ handle_selector: `.drag-handle` }}
-      class="extra-controls"
+      class="controls"
       use:titles_as_tooltips
     >
-      <svg style="width: 1.3em; height: 1.3em;" class="drag-handle">
-        <use href="#icon-drag-indicator" />
-      </svg>
+      <Icon
+        icon="DragIndicator"
+        class="drag-handle"
+        style="width: 1.3em; height: 1.3em; position: absolute; top: 5px; right: 5px; background-color: rgba(255, 255, 255, 0.2); border-radius: 3px"
+      />
       <label
         style="grid-column: 1/-1"
         title="Toggle visibility of model name labels on the scatter plot points"
@@ -282,45 +288,44 @@
       <ColorScaleSelect
         bind:value={color_scheme}
         selected={[color_scheme]}
-        style="margin: 0; grid-column: 1/-1;"
+        style="margin: 0; grid-column: 1/-1"
       />
       <label
-        style="grid-column: 1 / -1;"
+        style="grid-column: 1 / -1"
         title="Toggle the visibility of vertical grid lines and set the approximate number of ticks on the X axis"
       >
         <input type="checkbox" bind:checked={x_grid} /> X Grid
-        <label for="x-ticks" style="margin-left: 1em;">Ticks:</label>
+        <label for="x-ticks" style="margin-left: 1em">Ticks:</label>
         <input
           id="x-ticks"
           type="number"
           min="0"
           max="20"
           bind:value={x_ticks}
-          style="width: 50px;"
+          style="width: 50px"
         />
       </label>
 
       <label
-        style="grid-column: 1 / -1;"
+        style="grid-column: 1 / -1"
         title="Toggle the visibility of horizontal grid lines and set the approximate number of ticks on the Y axis"
       >
         <!-- Span both columns -->
         <input type="checkbox" bind:checked={y_grid} /> Y Grid
-        <label for="y-ticks" style="margin-left: 1em;">Ticks:</label>
+        <label for="y-ticks" style="margin-left: 1em">Ticks:</label>
         <input
           id="y-ticks"
           type="number"
           min="0"
           max="20"
           bind:value={y_ticks}
-          style="width: 50px;"
+          style="width: 50px"
         />
       </label>
       <label
         for="size-multiplier"
         title="Adjust the base size of all points on the scatter plot (multiplier for radius)"
-        >Point Size</label
-      >
+      >Point Size</label>
       <input
         id="size-multiplier"
         type="range"
@@ -332,8 +337,7 @@
       <label
         for="label-font-size"
         title="Adjust the font size of the model name labels (in pixels)"
-        >Label Size</label
-      >
+      >Label Size</label>
       <input
         id="label-font-size"
         type="range"
@@ -341,12 +345,12 @@
         max="24"
         step="1"
         bind:value={label_font_size}
-        style="grid-column: 2;"
+        style="grid-column: 2"
       />
       <label
         title="Configure the distance range and strength of the links connecting labels to their points"
-        for="min-link-distance">Label Link</label
-      >
+        for="min-link-distance"
+      >Label Link</label>
       <div class="combined-link-controls">
         <input
           id="min-link-distance"
@@ -373,23 +377,27 @@
           step="0.1"
           bind:value={link_strength}
           title="Strength (higher = stronger pull)"
-          style="flex-: 1;"
+          style="flex-: 1"
         />
       </div>
     </div>
   {/if}
 
   <div class="controls-grid">
-    <!-- prettier-ignore -->
     {#each [
-      { id: `x`, label: `X Axis`, log_state: log.x },
-      { id: `y`, label: `Y Axis`, log_state: log.y },
-      { id: `color_value`, label: `Color`, log_state: log.color_value },
-      { id: `size_value`, label: `Size`, log_state: log.size_value },
-    ] as const as control (control.id)}
+        { id: `x`, label: `X Axis`, log_state: log.x },
+        { id: `y`, label: `Y Axis`, log_state: log.y },
+        { id: `color_value`, label: `Color`, log_state: log.color_value },
+        { id: `size_value`, label: `Size`, log_state: log.size_value },
+      ] as const as
+      control
+      (control.id)
+    }
       {@const [min, max] = extent(plot_data, (d) => d[control.id] as number)}
       <!-- want at least two orders of magnitude difference between min and max for log scaling to make sense -->
-      {@const disable_log = Boolean(min === undefined || max === undefined || min <= 0 || 100 * min > max)}
+      {@const disable_log = Boolean(
+        min === undefined || max === undefined || min <= 0 || 100 * min > max,
+      )}
       <label for={control.id}>{control.label}</label>
       <Select
         {options}
@@ -399,22 +407,24 @@
         placeholder="Select {control.label}"
         maxSelect={1}
         minSelect={1}
-        style="width: 100%; max-width: none; margin: 0;"
+        style="width: 100%; max-width: none; margin: 0"
         liSelectedStyle="font-size: 16px;"
         ulSelectedStyle="padding: 0;"
         --sms-selected-bg="none"
         --sms-border="1px solid rgba(255, 255, 255, 0.15)"
       >
-      {#snippet children({option: prop})}
-        {@html format_property_path(`${prop.path ?? ``}.${prop.label ?? prop.label}`.replace(/^\./, ``))}
-        <span style="font-size: smaller; color: gray; margin-left: 0.5em;">
-          ({model_counts_by_prop[prop.key]} models)
-        </span>
+        {#snippet children({ option: prop })}
+          {@html format_property_path(
+          `${prop.path ?? ``}.${prop.label ?? prop.label}`.replace(/^\./, ``),
+        )}
+          <span style="font-size: smaller; color: gray; margin-left: 0.5em">
+            ({model_counts_by_prop[prop.key]} models)
+          </span>
         {/snippet}
       </Select>
       <label
         aria-disabled={disable_log}
-        style="transition: opacity 0.2s;"
+        style="transition: opacity 0.2s"
         style:visibility={disable_log ? `hidden` : `visible`}
       >
         <input type="checkbox" bind:checked={log[control.id]} disabled={disable_log} />
@@ -425,7 +435,8 @@
 
   <div
     class:full-bleed-1400={!is_fullscreen}
-    style="height: {is_fullscreen ? `100%` : `600px`}; margin-block: 1em;"
+    style="margin-block: 1em"
+    style:height={is_fullscreen ? `100%` : `600px`}
   >
     <ScatterPlot
       series={[series]}
@@ -457,7 +468,9 @@
         type: log.size_value ? `log` : `linear`,
       }}
       color_bar={{
-        title: `${axes.color_value?.label}${axes.color_value?.better ? ` (${axes.color_value?.better}=better)` : ``}`,
+        title: `${axes.color_value?.label}${
+          axes.color_value?.better ? ` (${axes.color_value?.better}=better)` : ``
+        }`,
         margin: { t: 30, l: 80, b: 80, r: 50 },
         tick_format: axes.color_value?.format,
       }}
@@ -474,14 +487,15 @@
       {#snippet tooltip({ x_formatted, y_formatted, metadata })}
         {#if metadata}
           {@const point = plot_data.find(
-            (m) => m.metadata.model_name === metadata.model_name,
-          )}
+          (m) => m.metadata.model_name === metadata.model_name,
+        )}
           <strong>{metadata.model_name}</strong><br />
           {@html axes.x.label}: {x_formatted}
           {#if axes.x.key === `date_added` && metadata.days_ago}
             <small>({metadata.days_ago} days ago)</small>{/if}<br />
           {@html axes.y.label}: {y_formatted}<br />
-          {#if ![`model_params`, `date_added`].includes(axes.color_value?.key ?? ``) && point?.color_value !== undefined}
+          {#if ![`model_params`, `date_added`].includes(axes.color_value?.key ?? ``) &&
+          point?.color_value !== undefined}
             {@html axes.color_value.label}:
             {format_num(point.color_value as number)}<br />
           {/if}
@@ -544,7 +558,7 @@
     top: 1em;
     right: 1em;
   }
-  .extra-controls {
+  .controls {
     position: absolute;
     top: 45px; /* Adjust as needed to position below the gear icon */
     right: -5em;
@@ -559,7 +573,7 @@
     grid-template-columns: auto 1fr; /* Label | Control Area */
     gap: 8pt 1em;
   }
-  .extra-controls > *:nth-child(odd):not(label) {
+  .controls > *:nth-child(odd):not(label) {
     grid-column: 2;
   }
   .controls-grid {
@@ -582,22 +596,12 @@
     align-items: center;
     gap: 0.3em;
   }
-  :global(body.fullscreen) .extra-controls {
+  :global(body.fullscreen) .controls {
     top: 3.3em;
     right: 1em;
     left: auto; /* Ensure left is not set */
   }
-  .drag-handle {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    width: 20px;
-    height: 20px;
-    background-color: rgba(255, 255, 255, 0.2);
-    border-radius: 3px;
-    /* Add a visual indicator like dots or lines later if desired */
-  }
-  .extra-controls input[type='number'] {
+  .controls input[type='number'] {
     width: 40px;
   }
 </style>

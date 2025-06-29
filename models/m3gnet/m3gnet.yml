@@ -1,8 +1,8 @@
 model_name: M3GNet
 model_key: m3gnet
 model_version: v2022.9.20
-date_added: "2022-09-20"
-date_published: "2022-02-05"
+date_added: '2022-09-20'
+date_published: '2022-02-05'
 authors:
   - name: Chi Chen
     affiliation: UC San Diego

@@ -41,8 +41,8 @@
 
 <p>
   Filter WBM element counts by composition<strong>arity</strong> (how many elements in the
-  formula) or <strong>batch index</strong> (which iteration of elemental substitution the structure
-  was generated in).
+  formula) or <strong>batch index</strong> (which iteration of elemental substitution the
+  structure was generated in).
 </p>
 
 <ColorScaleSelect bind:selected={color_scale} />
@@ -51,7 +51,9 @@
   <span>
     number of elements
     <RadioButtons style={radio_style} options={arity_keys} bind:selected={filter}>
-      {#snippet children({ option, active }: { option: string; active: boolean })}
+      {#snippet children(
+        { option, active }: { option: string; active: boolean },
+      )}
         <strong class:active>{option.split(`=`).at(-1)}</strong>
       {/snippet}
     </RadioButtons>
@@ -59,7 +61,9 @@
   <span>
     batch index
     <RadioButtons style={radio_style} options={batch_keys} bind:selected={filter}>
-      {#snippet children({ option, active }: { option: string; active: boolean })}
+      {#snippet children(
+        { option, active }: { option: string; active: boolean },
+      )}
         <strong class:active>{option.split(`=`).at(-1)}</strong>
       {/snippet}
     </RadioButtons>

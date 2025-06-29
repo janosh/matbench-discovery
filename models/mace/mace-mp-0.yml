@@ -1,8 +1,8 @@
 model_name: MACE-MP-0
 model_key: mace-mp-0
 model_version: v0.3.5
-date_added: "2023-07-14"
-date_published: "2022-05-13"
+date_added: '2023-07-14'
+date_published: '2022-05-13'
 authors:
   - name: Ilyes Batatia
     affiliation: University of Cambridge

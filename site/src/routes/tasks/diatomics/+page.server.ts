@@ -1,4 +1,4 @@
-import { MODELS, type DiatomicsCurves } from '$lib'
+import { type DiatomicsCurves, MODELS } from '$lib'
 import type { PageServerLoad } from './$types'
 
 async function fetch_diatomics(file_url: string): Promise<DiatomicsCurves> {

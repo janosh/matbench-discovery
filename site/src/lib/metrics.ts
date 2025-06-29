@@ -97,7 +97,9 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
 
     if (n_materials !== n_structures) {
       tooltip.push(
-        `${name}: ${format_num(n_materials, `,`)} materials (${format_num(n_structures, `,`)} structures)`,
+        `${name}: ${format_num(n_materials, `,`)} materials (${
+          format_num(n_structures, `,`)
+        } structures)`,
       )
     } else {
       tooltip.push(`${name}: ${format_num(n_materials, `,`)} materials`)
@@ -108,21 +110,32 @@ export function format_train_set(model_train_sets: string[], model: ModelData): 
     .map(([key, href]) => `<a href="${href}">${key}</a>`)
     .join(`+`)
   const new_line = `&#013;` // line break that works in title attribute
-  const dataset_tooltip =
-    tooltip.length > 1 ? `${new_line}• ${tooltip.join(new_line + `• `)}` : ``
+  const dataset_tooltip = tooltip.length > 1
+    ? `${new_line}• ${tooltip.join(new_line + `• `)}`
+    : ``
 
-  let title = `${format_num(n_training_materials, `,`)} materials in training set${new_line}${dataset_tooltip}`
-  let train_size_str = `<span title="${title}" data-sort-value="${n_training_materials}">${format_num(n_training_materials)} <small>${dataset_links}</small></span>`
+  let title = `${
+    format_num(n_training_materials, `,`)
+  } materials in training set${new_line}${dataset_tooltip}`
+  let train_size_str =
+    `<span title="${title}" data-sort-value="${n_training_materials}">${
+      format_num(n_training_materials)
+    } <small>${dataset_links}</small></span>`
 
   if (n_training_materials !== n_training_structures) {
-    title =
-      `${format_num(n_training_materials, `,`)} materials in training set ` +
-      `(${format_num(n_training_structures, `,`)} structures counting all DFT relaxation ` +
+    title = `${format_num(n_training_materials, `,`)} materials in training set ` +
+      `(${
+        format_num(n_training_structures, `,`)
+      } structures counting all DFT relaxation ` +
       `frames per material)${dataset_tooltip}`
 
     train_size_str =
-      `<span title="${title}" data-sort-value="${n_training_materials || n_training_structures}">` +
-      `${format_num(n_training_materials)} <small>(${format_num(n_training_structures)})</small> ` +
+      `<span title="${title}" data-sort-value="${
+        n_training_materials || n_training_structures
+      }">` +
+      `${format_num(n_training_materials)} <small>(${
+        format_num(n_training_structures)
+      })</small> ` +
       `<small>${dataset_links}</small></span>`
   }
 
@@ -233,22 +246,22 @@ export function assemble_row_data(
 
   const all_metrics = filtered_models.map((model) => {
     const { license, metrics } = model
-    const discovery_metrics =
-      typeof metrics?.discovery === `object`
-        ? metrics.discovery[discovery_set]
-        : undefined
+    const discovery_metrics = typeof metrics?.discovery === `object`
+      ? metrics.discovery[discovery_set]
+      : undefined
     const is_compliant = model_is_compliant(model)
     const { RMSD, CPS } = ALL_METRICS
 
     // Get kappa from phonon metrics
     const phonons = metrics?.phonons
-    const kappa =
-      phonons && typeof phonons === `object` && `kappa_103` in phonons
-        ? (phonons.kappa_103?.κ_SRME as number | undefined)
-        : undefined
+    const kappa = phonons && typeof phonons === `object` && `kappa_103` in phonons
+      ? (phonons.kappa_103?.κ_SRME as number | undefined)
+      : undefined
 
     const targets = model.targets.replace(/_(.)/g, `<sub>$1</sub>`)
-    const targets_str = `<span title="${targets_tooltips[model.targets]}">${targets}</span>`
+    const targets_str = `<span title="${
+      targets_tooltips[model.targets]
+    }">${targets}</span>`
 
     // Add model links
     const code_license = license?.code
@@ -262,7 +275,8 @@ export function assemble_row_data(
     const r_cut_str = r_cut ? `<span data-sort-value="${r_cut}">${r_cut} Å</span>` : `n/a`
 
     return {
-      Model: `<a title="Version: ${model.model_version}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>`,
+      Model:
+        `<a title="Version: ${model.model_version}" href="/models/${model.model_key}" data-sort-value="${model.model_name}">${model.model_name}</a>`,
       CPS: model[CPS.key],
       F1: discovery_metrics?.F1,
       DAF: discovery_metrics?.DAF,
@@ -276,31 +290,36 @@ export function assemble_row_data(
       'κ<sub>SRME</sub>': kappa,
       RMSD: get_nested_value(model, `${RMSD.path}.${RMSD.key}`) as number | undefined,
       'Training Set': format_train_set(model.training_set, model),
-      [HYPERPARAMS.model_params.short as string]:
-        `<span title="${format_num(model.model_params, `,`)}" trainable model parameters" data-sort-value="${model.model_params}">${format_num(model.model_params)}</span>`,
+      [HYPERPARAMS.model_params.short as string]: `<span title="${
+        format_num(model.model_params, `,`)
+      }" trainable model parameters" data-sort-value="${model.model_params}">${
+        format_num(model.model_params)
+      }</span>`,
       Targets: targets_str,
-      'Date Added': `<span title="${format_date(model.date_added)}" data-sort-value="${new Date(model.date_added).getTime()}">${model.date_added}</span>`,
+      'Date Added': `<span title="${format_date(model.date_added)}" data-sort-value="${
+        new Date(model.date_added).getTime()
+      }">${model.date_added}</span>`,
       // Add Links as a special property
       Links: {
         paper: {
           url: model.paper || model.doi,
           title: `Read model paper`,
-          icon: `<svg><use href="#icon-paper"></use></svg>`,
+          icon: `Paper`,
         },
         repo: {
           url: model.repo,
           title: `View source code`,
-          icon: `<svg><use href="#icon-code"></use></svg>`,
+          icon: `Code`,
         },
         pr_url: {
           url: model.pr_url,
           title: `View pull request`,
-          icon: `<svg><use href="#icon-pull-request"></use></svg>`,
+          icon: `PullRequest`,
         },
         checkpoint: {
           url: model.checkpoint_url,
           title: `Download model checkpoint`,
-          icon: `<svg><use href="#icon-download"></use></svg>`,
+          icon: `Download`,
         },
         pred_files: {
           files: get_pred_file_urls(model),
@@ -328,8 +347,8 @@ export function assemble_row_data(
     const [score1, score2] = [row1[`CPS`], row2[`CPS`]]
 
     // Handle undefined or null values (they should be sorted to the bottom)
-    const is_nan1 = score1 == null || isNaN(score1)
-    const is_nan2 = score2 == null || isNaN(score2)
+    const is_nan1 = score1 === null || isNaN(score1)
+    const is_nan2 = score2 === null || isNaN(score2)
     if (is_nan1 && is_nan2) return 0
     if (is_nan1) return 1
     if (is_nan2) return -1
@@ -355,20 +374,22 @@ export const sort_models =
     const val_2 = get_nested_value(model_2, sort_by)
 
     // Handle null, undefined, or NaN values by sorting last
-    if (val_1 == null && val_2 == null) return 0
-    if (val_1 == null || Number.isNaN(val_1)) return 1 // Always sort nulls/NaN to the end
-    if (val_2 == null || Number.isNaN(val_2)) return -1 // Always sort nulls/NaN to the end
+    if (
+      (val_1 === null || val_1 === undefined) && (val_2 === null || val_2 === undefined)
+    ) return 0
+    if (val_1 === null || val_1 === undefined || Number.isNaN(val_1)) return 1 // Always sort nulls/undefined/NaN to the end
+    if (val_2 === null || val_2 === undefined || Number.isNaN(val_2)) return -1 // Always sort nulls/undefined/NaN to the end
 
-    if (typeof val_1 == `string` && typeof val_2 == `string`) {
+    if (typeof val_1 === `string` && typeof val_2 === `string`) {
       return sort_factor * (val_1 as string).localeCompare(val_2 as string)
-    } else if (typeof val_1 == `number` && typeof val_2 == `number`) {
-      // interpret runt_time==0 as infinity
-      if (sort_by == `Run Time (h)`) {
-        if (val_1 == 0) return -sort_factor
-        if (val_2 == 0) return sort_factor
+    } else if (typeof val_1 === `number` && typeof val_2 === `number`) {
+      // interpret run_time === 0 as infinity
+      if (sort_by === `Run Time (h)`) {
+        if (val_1 === 0) return -sort_factor
+        if (val_2 === 0) return sort_factor
       }
       return sort_factor * (val_2 - val_1)
     } else {
-      throw `Unexpected type '${val_1}' encountered sorting by key '${sort_by}'`
+      throw `Unexpected type '${typeof val_1}' encountered sorting by key '${sort_by}'`
     }
   }

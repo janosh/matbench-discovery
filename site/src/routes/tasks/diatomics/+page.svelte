@@ -29,7 +29,7 @@
 
   const [humu_nuc_key, _hetero_nuc_key] = [`homo-nuclear`, `hetero-nuclear`] as const
 
-  // Generate list of homonuclear diatomic formulas for elements 1-119
+  // Generate list of homo-nuclear diatomic formulas for elements 1-119
   const homo_diatomic_formulas = elem_symbols.map((symbol) => `${symbol}-${symbol}`)
 
   // Create a Map to store model colors consistently
@@ -51,7 +51,7 @@
       [...selected_models].some(
         (model) =>
           diatomic_curves[model]?.[humu_nuc_key]?.[formula]?.energies?.length > 0,
-      ),
+      )
     ),
   )
 
@@ -107,21 +107,22 @@
 
 <div class="grid" style="--plot-width: {plot_width}px">
   {#each diatomics_to_render as formula (formula)}
+    {@const style = `height: ${plot_height}px`}
     <DiatomicCurve
       {formula}
       curves={[...selected_models]
-        .filter((model) => {
-          const { energies = [] } =
-            diatomic_curves[model]?.[humu_nuc_key]?.[formula] ?? {}
-          return energies.length > 0
-        })
-        .map((model) => ({
-          model_key: model,
-          distances: diatomic_curves[model].distances,
-          energies: diatomic_curves[model][humu_nuc_key][formula].energies,
-          color: model_colors.get(model) ?? `gray`,
-        }))}
-      style="height: {plot_height}px"
+      .filter((model) => {
+        const { energies = [] } = diatomic_curves[model]?.[humu_nuc_key]?.[formula] ??
+          {}
+        return energies.length > 0
+      })
+      .map((model) => ({
+        model_key: model,
+        distances: diatomic_curves[model].distances,
+        energies: diatomic_curves[model][humu_nuc_key][formula].energies,
+        color: model_colors.get(model) ?? `gray`,
+      }))}
+      {style}
     />
   {/each}
 </div>

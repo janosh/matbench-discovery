@@ -11,74 +11,74 @@ definitions:
   Label:
     type: object
     properties:
-      key: { type: string, description: "Unique identifier for the metric" }
-      short: { type: string, description: "Short label for the metric" }
-      label: { type: string, description: "Full label for the metric" }
-      group: { type: string, description: "Group header label" }
-      description: { type: string, description: "Description of the metric" }
+      key: { type: string, description: 'Unique identifier for the metric' }
+      short: { type: string, description: 'Short label for the metric' }
+      label: { type: string, description: 'Full label for the metric' }
+      group: { type: string, description: 'Group header label' }
+      description: { type: string, description: 'Description of the metric' }
       path:
         type: string
-        description: "Path to the metric in the model metadata"
-      unit: { type: string, description: "Unit of the metric" }
+        description: 'Path to the metric in the model metadata'
+      unit: { type: string, description: 'Unit of the metric' }
       range:
         type: array
-        items: { type: "number" }
+        items: { type: 'number' }
         minItems: 2
         maxItems: 2
-        description: "Range of possible values for the metric"
-      visible: { type: "boolean", description: "Whether the metric is visible" }
-      format: { type: string, description: "d3-format string" }
-      sticky: { type: "boolean", description: "Whether the metric is sticky" }
+        description: 'Range of possible values for the metric'
+      visible: { type: 'boolean', description: 'Whether the metric is visible' }
+      format: { type: string, description: 'd3-format string' }
+      sticky: { type: 'boolean', description: 'Whether the metric is sticky' }
       sortable:
-        { type: "boolean", description: "Whether the metric is sortable" }
+        { type: 'boolean', description: 'Whether the metric is sortable' }
       better:
-        type: ["string", "null"]
-        enum: ["higher", "lower", null]
-        description: "Sort direction: higher is better, lower is better, or null for no sorting"
-      cell_style: { type: string, description: "CSS string for cell style" }
-      style: { type: string, description: "CSS string for cell style" }
-      symprec: { type: string, description: "Symprec value for the metric" }
-      svg_label: { type: string, description: "SVG label for the metric" }
+        type: ['string', 'null']
+        enum: ['higher', 'lower', null]
+        description: 'Sort direction: higher is better, lower is better, or null for no sorting'
+      cell_style: { type: string, description: 'CSS string for cell style' }
+      style: { type: string, description: 'CSS string for cell style' }
+      symprec: { type: string, description: 'Symprec value for the metric' }
+      svg_label: { type: string, description: 'SVG label for the metric' }
       scale_type:
         type: string
-        enum: ["log", "linear"]
-        description: "Scale type for the metric"
+        enum: ['log', 'linear']
+        description: 'Scale type for the metric'
     required: [key, label, description]
     additionalProperties: false
 
   DiscoveryMetricsLabels:
     type: object
     properties:
-      Accuracy: { $ref: "#/definitions/Label" }
-      F1: { $ref: "#/definitions/Label" }
-      DAF: { $ref: "#/definitions/Label" }
-      Precision: { $ref: "#/definitions/Label" }
-      Recall: { $ref: "#/definitions/Label" }
-      TNR: { $ref: "#/definitions/Label" }
-      TPR: { $ref: "#/definitions/Label" }
-      MAE: { $ref: "#/definitions/Label" }
-      R2: { $ref: "#/definitions/Label" }
-      RMSE: { $ref: "#/definitions/Label" }
+      Accuracy: { $ref: '#/definitions/Label' }
+      F1: { $ref: '#/definitions/Label' }
+      DAF: { $ref: '#/definitions/Label' }
+      Precision: { $ref: '#/definitions/Label' }
+      Recall: { $ref: '#/definitions/Label' }
+      TNR: { $ref: '#/definitions/Label' }
+      TPR: { $ref: '#/definitions/Label' }
+      MAE: { $ref: '#/definitions/Label' }
+      R2: { $ref: '#/definitions/Label' }
+      RMSE: { $ref: '#/definitions/Label' }
     required: [Accuracy, F1, DAF, Precision, Recall, TNR, TPR, MAE, R2, RMSE]
     additionalProperties: false
 
   MetadataLabels:
     type: object
     properties:
-      model_name: { $ref: "#/definitions/Label" }
-      training_set: { $ref: "#/definitions/Label" }
-      targets: { $ref: "#/definitions/Label" }
-      date_added: { $ref: "#/definitions/Label" }
-      links: { $ref: "#/definitions/Label" }
-      r_cut: { $ref: "#/definitions/Label" }
-      n_training_materials: { $ref: "#/definitions/Label" }
-      n_training_structures: { $ref: "#/definitions/Label" }
-      checkpoint_license: { $ref: "#/definitions/Label" }
-      code_license: { $ref: "#/definitions/Label" }
-      missing_preds: { $ref: "#/definitions/Label" }
-      missing_percent: { $ref: "#/definitions/Label" }
-      "Run Time (h)": { $ref: "#/definitions/Label" } # Key with space needs quotes
-      org: { $ref: "#/definitions/Label" }
+      model_name: { $ref: '#/definitions/Label' }
+      training_set: { $ref: '#/definitions/Label' }
+      targets: { $ref: '#/definitions/Label' }
+      date_added: { $ref: '#/definitions/Label' }
+      links: { $ref: '#/definitions/Label' }
+      r_cut: { $ref: '#/definitions/Label' }
+      n_training_materials: { $ref: '#/definitions/Label' }
+      n_training_structures: { $ref: '#/definitions/Label' }
+      checkpoint_license: { $ref: '#/definitions/Label' }
+      code_license: { $ref: '#/definitions/Label' }
+      missing_preds: { $ref: '#/definitions/Label' }
+      missing_percent: { $ref: '#/definitions/Label' }
+      'Run Time (h)': { $ref: '#/definitions/Label' }
+      org: { $ref: '#/definitions/Label' }
     required:
       - model_name
       - training_set
@@ -92,23 +92,23 @@ definitions:
       - code_license
       - missing_preds
       - missing_percent
-      - "Run Time (h)"
+      - 'Run Time (h)'
       - org
     additionalProperties: false
 
   HyperparamLabels:
     type: object
     properties:
-      model_params: { $ref: "#/definitions/Label" }
-      graph_construction_radius: { $ref: "#/definitions/Label" }
-      max_force: { $ref: "#/definitions/Label" }
-      max_steps: { $ref: "#/definitions/Label" }
-      batch_size: { $ref: "#/definitions/Label" }
-      epochs: { $ref: "#/definitions/Label" }
-      n_layers: { $ref: "#/definitions/Label" }
-      learning_rate: { $ref: "#/definitions/Label" }
-      max_neighbors: { $ref: "#/definitions/Label" }
-      n_estimators: { $ref: "#/definitions/Label" }
+      model_params: { $ref: '#/definitions/Label' }
+      graph_construction_radius: { $ref: '#/definitions/Label' }
+      max_force: { $ref: '#/definitions/Label' }
+      max_steps: { $ref: '#/definitions/Label' }
+      batch_size: { $ref: '#/definitions/Label' }
+      epochs: { $ref: '#/definitions/Label' }
+      n_layers: { $ref: '#/definitions/Label' }
+      learning_rate: { $ref: '#/definitions/Label' }
+      max_neighbors: { $ref: '#/definitions/Label' }
+      n_estimators: { $ref: '#/definitions/Label' }
     required:
       - model_params
       - graph_construction_radius
@@ -125,12 +125,12 @@ definitions:
   GeoOptSymmetryMetricsLabels:
     type: object
     properties:
-      symmetry_match_1e-2: { $ref: "#/definitions/Label" }
-      symmetry_decrease_1e-2: { $ref: "#/definitions/Label" }
-      symmetry_increase_1e-2: { $ref: "#/definitions/Label" }
-      symmetry_match_1e-5: { $ref: "#/definitions/Label" }
-      symmetry_decrease_1e-5: { $ref: "#/definitions/Label" }
-      symmetry_increase_1e-5: { $ref: "#/definitions/Label" }
+      symmetry_match_1e-2: { $ref: '#/definitions/Label' }
+      symmetry_decrease_1e-2: { $ref: '#/definitions/Label' }
+      symmetry_increase_1e-2: { $ref: '#/definitions/Label' }
+      symmetry_match_1e-5: { $ref: '#/definitions/Label' }
+      symmetry_decrease_1e-5: { $ref: '#/definitions/Label' }
+      symmetry_increase_1e-5: { $ref: '#/definitions/Label' }
     required:
       - symmetry_match_1e-2
       - symmetry_decrease_1e-2
@@ -143,16 +143,16 @@ definitions:
   DatasetMetadataLabels:
     type: object
     properties:
-      name: { $ref: "#/definitions/Label" }
-      structures: { $ref: "#/definitions/Label" }
-      materials: { $ref: "#/definitions/Label" }
-      created: { $ref: "#/definitions/Label" }
-      open: { $ref: "#/definitions/Label" }
-      static: { $ref: "#/definitions/Label" }
-      license: { $ref: "#/definitions/Label" }
-      method: { $ref: "#/definitions/Label" }
-      api: { $ref: "#/definitions/Label" }
-      links: { $ref: "#/definitions/Label" }
+      name: { $ref: '#/definitions/Label' }
+      structures: { $ref: '#/definitions/Label' }
+      materials: { $ref: '#/definitions/Label' }
+      created: { $ref: '#/definitions/Label' }
+      open: { $ref: '#/definitions/Label' }
+      static: { $ref: '#/definitions/Label' }
+      license: { $ref: '#/definitions/Label' }
+      method: { $ref: '#/definitions/Label' }
+      api: { $ref: '#/definitions/Label' }
+      links: { $ref: '#/definitions/Label' }
     required:
       - name
       - structures

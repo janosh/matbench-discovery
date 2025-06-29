@@ -1,84 +1,87 @@
 <script lang="ts">
-  import { DATASETS, arr_to_str, format_date } from '$lib'
+  import { arr_to_str, DATASETS, format_date, Icon } from '$lib'
   import HeatmapTable from '$lib/HeatmapTable.svelte'
+  import { icon_data } from '$lib/icons'
   import { DATASET_METADATA_COLS, title_case } from '$lib/labels'
-  import type { Dataset, RowData } from '$lib/types'
+  import type { RowData } from '$lib/types'
   import pkg from '$site/package.json'
 
-  // License abbreviations mapped to full names
   const license_map: Record<string, string> = {
     'CC-BY-4.0': `Creative Commons Attribution 4.0 International`,
     'CC-BY-NC-4.0': `Creative Commons Attribution-NonCommercial 4.0 International`,
     MIT: `MIT License`,
   }
 
-  const ext_link = (url: string, title: string, text: string) =>
-    `<a href="${url}" target="_blank" rel="noopener noreferrer" title="${title}">${text}</a>`
+  const icon = (name: keyof typeof icon_data, color?: string) => {
+    const data = icon_data[name]
+    const fill = `stroke` in data ? `none` : `currentColor`
+    const stroke = `stroke` in data ? `stroke="currentColor"` : ``
+    return `<svg fill="${fill}" ${stroke} ${
+      color ? `style="color:${color}"` : ``
+    } width="1em" height="1em" viewBox="${data.viewBox}">
+    ${data.path.trim().startsWith(`<`) ? data.path : `<path d="${data.path}" />`}
+    </svg>`
+  }
 
-  // Process data for table
   const table_data: RowData[] = Object.entries(DATASETS).map(([key, set]) => {
-    let { date_created, license, method, slug } = set
+    const { date_created, license, method, slug } = set
     const license_full = license_map[license] ?? license
-
-    const params_tooltip = Object.entries(set.params ?? {})
-      .map(([key, value]) => `${title_case(key)}: ${arr_to_str(value)}`)
-      .join(`&#013;`) // Use HTML entity for newline in title attribute
-
+    const params_tooltip = Object.entries(set.params ?? {}).map(([k, v]) =>
+      `${title_case(k)}: ${arr_to_str(v)}`
+    ).join(`&#013;`)
     const method_str = arr_to_str(method)
     const created_timestamp = date_created ? new Date(date_created).getTime() : null
 
+    const api_links = [
+      set.native_api?.startsWith(`http`) &&
+      `<a href="${set.native_api}" target="_blank" rel="noopener noreferrer" title="Native API">${
+        icon(`API`)
+      }</a>`,
+      set.optimade_api?.startsWith(`http`) &&
+      `<a href="${set.optimade_api}" target="_blank" rel="noopener noreferrer" title="OPTIMADE API">${
+        icon(`Optimade`)
+      }</a>`,
+    ].filter(Boolean).join(` `)
+
+    const resource_links = [
+      set.url &&
+      `<a href="${set.url}" target="_blank" title="Website">${icon(`Globe`)}</a>`,
+      set.download_url &&
+      `<a href="${set.download_url}" target="_blank" title="Download">${
+        icon(`Download`)
+      }</a>`,
+      set.doi &&
+      `<a href="${set.doi}" target="_blank" title="DOI">${icon(`DOI`)}</a>`,
+    ].filter(Boolean).join(` `)
+
     return {
       key,
-      slug,
       [DATASET_METADATA_COLS.name.label]:
         `<a href="/data/${slug}" title="${set.name}">${key}</a>`,
-      // Store numeric values directly for coloring, and use cell rendering for display
       Structures: set.n_structures || null,
       Materials: set.n_materials || null,
-      Open: `<svg color="${set.open ? `lightgreen` : `lightcoral`}"><use href="#icon-${set.open ? `check` : `x`}" /></svg>`,
-      Static: `<svg color="${set.static ? `lightgreen` : `lightcoral`}"><use href="#icon-${set.static ? `check` : `x`}" /></svg>`,
+      Open: icon(
+        set.open ? `CheckCircle` : `XCircle`,
+        set.open ? `lightgreen` : `lightcoral`,
+      ),
+      Static: icon(
+        set.static ? `CheckCircle` : `XCircle`,
+        set.static ? `lightgreen` : `lightcoral`,
+      ),
       Created: date_created
-        ? `<span data-sort-value="${created_timestamp}" title="${format_date(date_created, { weekday: `long` })}">${format_date(date_created)}</span>`
+        ? `<span data-sort-value="${created_timestamp}" title="${
+          format_date(date_created, { weekday: `long` })
+        }">${format_date(date_created)}</span>`
         : `n/a`,
-      License: license_full ? `<span title="${license_full}">${license}</span>` : license,
-      Method: `<span title="${method_str}&#013;${params_tooltip}">${method_str}</span>`,
-      API: generate_api_links(set),
-      Links: generate_resource_links(set),
+      License: license_full
+        ? `<span title="${license_full}">${license}</span>`
+        : license,
+      Method:
+        `<span title="${method_str}&#013;${params_tooltip}">${method_str}</span>`,
+      API: api_links,
+      Links: resource_links,
     }
   })
-
-  function generate_api_links(set: Dataset): string {
-    let links = ``
-    if (set.native_api?.startsWith(`http`))
-      links +=
-        `&nbsp;` +
-        ext_link(set.native_api, `Native API`, `<svg><use href="#icon-api" /></svg>`)
-
-    if (set.optimade_api?.startsWith(`http`))
-      links +=
-        `&nbsp;` +
-        ext_link(
-          set.optimade_api,
-          `OPTIMADE API`,
-          `<svg><use href="#icon-optimade" /></svg>`,
-        )
-
-    return links
-  }
-
-  function generate_resource_links(set: Dataset): string {
-    let links = ``
-    if (set.url)
-      links +=
-        `&nbsp;` + ext_link(set.url, `Website`, `<svg><use href="#icon-globe" /></svg>`)
-    if (set.download_url)
-      links +=
-        `&nbsp;` +
-        ext_link(set.download_url, `Download`, `<svg><use href="#icon-download" /></svg>`)
-    if (set.doi)
-      links += `&nbsp;` + ext_link(set.doi, `DOI`, `<svg><use href="#icon-doi" /></svg>`)
-    return links
-  }
 
   const yaml_url = `${pkg.repository}/blob/-/data/datasets.yml`
 </script>
@@ -88,7 +91,7 @@
 </svelte:head>
 
 <h1>
-  <svg style="vertical-align: -3pt;"><use href="#icon-databases" /></svg> Datasets
+  <Icon icon="Databases" style="vertical-align: -3pt" /> Datasets
 </h1>
 
 <p>
@@ -107,7 +110,7 @@
 </section>
 
 <p>
-  <svg><use href="#icon-edit" /></svg>
+  <Icon icon="Edit" />
   See incorrect data or a dataset that's missing from this list? Suggest an edit to
   <a href={yaml_url} target="_blank" rel="noopener noreferrer">
     {yaml_url.split(`/`).pop()}

@@ -25,7 +25,7 @@ describe(`DiatomicCurve`, () => {
     },
   ]
 
-  it(`renders with basic props`, async () => {
+  it(`renders with basic props`, () => {
     mount(DiatomicCurve, {
       target: document.body,
       props: { formula: `H₂`, curves: sample_curves },
@@ -36,7 +36,7 @@ describe(`DiatomicCurve`, () => {
     expect(document.body.textContent).toContain(`H₂`)
   })
 
-  it(`applies correct styling`, async () => {
+  it(`applies correct styling`, () => {
     const style = `background: rgb(240, 240, 240); color: rgb(0, 0, 0);`
     mount(DiatomicCurve, {
       target: document.body,

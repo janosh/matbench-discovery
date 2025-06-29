@@ -1,30 +1,33 @@
 <script lang="ts">
+  import { Icon } from '$lib'
+  import type { IconName } from './icons'
+
   interface Props {
     icons: { id?: string; src?: string; name: string }[] | undefined
-    style?: string
+    [key: string]: unknown
   }
-  let { icons: logos = $bindable([]), style = `` }: Props = $props()
+  let { icons = $bindable([]), ...rest }: Props = $props()
 </script>
 
-{#each logos ?? [] as logo (logo.id ?? logo.src)}
-  {#if logo.id}
-    <span title={logo.name} {style}>
-      <svg style="margin: 0; height: 1em; width: 1em;">
-        <use href="#{logo.id}"></use>
-      </svg>
+{#each icons ?? [] as logo (logo.id ?? logo.src)}
+  {#if logo.id?.startsWith(`icon:`)}
+    <span title={logo.name} {...rest}>
+      <Icon icon={logo.id.replace(`icon:`, ``) as IconName} />
     </span>
   {:else if logo.src}
+    {@const style = `margin: 0; height: 1em; ${rest.style ?? ``}`}
     <img
       src={logo.src}
       alt="{logo.name} logo"
       title={logo.name}
-      style="margin: 0; height: 1em; {style}"
+      {...rest}
+      {style}
     />
   {/if}
 {/each}
 
 <style>
-  svg,
+  span,
   img {
     filter: grayscale(100%);
     height: 1em;

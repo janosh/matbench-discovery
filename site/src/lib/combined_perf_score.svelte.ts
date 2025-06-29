@@ -67,8 +67,7 @@ export function calculate_cps(
     (F1.weight > 0 && (f1 === undefined || isNaN(f1))) ||
     (RMSD.weight > 0 && (rmsd === undefined || isNaN(rmsd))) ||
     (κ_SRME.weight > 0 && (kappa === undefined || isNaN(kappa)))
-  )
-    return null
+  ) return null
 
   // Skip the calculation if all weights are zero
   const total_weight = F1.weight + RMSD.weight + κ_SRME.weight

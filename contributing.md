@@ -109,8 +109,8 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    model_name: My new model # required (this must match the model's label which is the 3rd arg in the matbench_discovery.preds.Model enum)
    model_key: my-new-model # this should match the name of the YAML file and determines the URL /models/<model_key> on which details of the model are displayed on the website
    model_version: 1.0.0
-   date_added: "2023-01-01"
-   date_published: "2022-12-05"
+   date_added: '2023-01-01'
+   date_published: '2022-12-05'
    authors:
      - name: John Doe
        affiliation: Some University, Some National Lab
@@ -148,13 +148,13 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
      checkpoint_url: https://url.of/model-checkpoint-license
 
    hyperparams: # strongly recommended to list relaxation hyperparams
-      max_force: 0.05
-      max_steps: 500
-      ase_optimizer: FIRE
-      optimizer: Adam
-      graph_construction_radius: 6.0
-      max_neighbors: 50
-      ... # additional hyperparameters describing training and inference
+     max_force: 0.05
+     max_steps: 500
+     ase_optimizer: FIRE
+     optimizer: Adam
+     graph_construction_radius: 6.0
+     max_neighbors: 50
+       ... # additional hyperparameters describing training and inference
 
    training_cost: # list any hardware used to train the model and for how long
      # hardware: { amount: float, hours: float, cost: float [USD] }
@@ -165,14 +165,14 @@ To submit a new model to this benchmark and add it to our leaderboard, please cr
    requirements: # strongly recommended
      torch: 1.13.0
      torch-geometric: 2.0.9
-     ...
+       ...
 
    training_set: [MPtrj] # list of keys from data/datasets.yml
 
    notes: # notes can have any key, be multiline and support markdown.
      description: This is how my model works...
      steps: |
-      Optional *free-form* [markdown](example.com) notes.
+       Optional *free-form* [markdown](example.com) notes.
 
    metrics:
      phonons:

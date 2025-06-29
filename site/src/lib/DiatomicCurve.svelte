@@ -1,6 +1,6 @@
 <script lang="ts">
   import { MODELS } from '$lib'
-  import { ScatterPlot, type InternalPoint } from 'matterviz'
+  import { type InternalPoint, ScatterPlot } from 'matterviz'
 
   interface Props {
     formula: string
@@ -36,9 +36,8 @@
   // Function to get model label, handling version suffixes
   function get_model_label(model_key: string): string {
     // Try to match the model key to known base names
-    const base_name = MODELS.find((model) =>
-      model_key?.startsWith(model.dirname),
-    )?.dirname
+    const base_name = MODELS.find((model) => model_key?.startsWith(model.dirname))
+      ?.dirname
 
     return base_name ? (model_labels.get(base_name) ?? model_key) : model_key
   }
@@ -103,7 +102,7 @@
   >
     {#snippet tooltip({ x_formatted, y_formatted, metadata })}
       <div
-        style="min-width: 10em; background: rgba(255, 255, 255, 0.1); padding: 2pt 4pt; border-radius: 3pt;"
+        style="min-width: 10em; background: rgba(255, 255, 255, 0.1); padding: 2pt 4pt; border-radius: 3pt"
       >
         <strong>{metadata?.model_label ?? ``}</strong>
         <br />

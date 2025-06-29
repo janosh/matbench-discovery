@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ModelCard, type Label } from '$lib'
+  import { Icon, type Label, ModelCard } from '$lib'
   import { ALL_METRICS, METADATA_COLS } from '$lib/labels'
   import { get_nested_value, metric_better_as, sort_models } from '$lib/metrics'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
@@ -67,7 +67,7 @@
   )
 </script>
 
-<div style="display: grid;">
+<div style="display: grid">
   <span>
     <input type="checkbox" bind:checked={show_non_compliant} />Show non-compliant models
     &ensp; &emsp;&emsp; Sort
@@ -77,7 +77,10 @@
   </span>
 
   <ul>
-    {#each [{ ...METADATA_COLS.model_name, label: `Model Name` }, ...metrics] as prop (prop.key)}
+    {#each [{ ...METADATA_COLS.model_name, label: `Model Name` }, ...metrics] as
+      prop
+      (prop.key)
+    }
       {@const { key, label, short, description } = prop}
       <li class:active={prop.key == sort_by.key}>
         <button
@@ -88,14 +91,14 @@
             if (key === `model_name`) order = `asc`
             else order = metric_better_as(key) === `lower` ? `asc` : `desc`
           }}
-          style="font-size: large; height: 26pt;"
+          style="font-size: large; height: 26pt"
         >
           {@html short ?? label ?? key}
         </button>
         {#if description}
           <Tooltip text={description} max_width="20em">
-            <span style="position: absolute; top: -11pt; left: -6pt; opacity: 0.6;">
-              <svg><use href="#icon-info"></use></svg>
+            <span style="position: absolute; top: -11pt; left: -6pt; opacity: 0.6">
+              <Icon icon="Info" />
             </span>
           </Tooltip>
         {/if}
@@ -111,7 +114,7 @@
       title="Model names colored by {sort_by.label}"
       title_style="font-size: 1.5em;"
       color_scale={lower_is_better ? (t) => interpolateRdBu(1 - t) : interpolateRdBu}
-      style="min-width: min(70vw, 400px); height: 14pt;"
+      style="min-width: min(70vw, 400px); height: 14pt"
       range={lower_is_better ? [worst_val, best_val] : [best_val, worst_val]}
     />
     <span>
@@ -119,7 +122,7 @@
     </span>
   </legend>
 
-  <ol class="models">
+  <ol class="models full-bleed">
     {#each models.slice(0, Math.max(min_models, show_n_best)) as model (model.model_name)}
       {@const metric_val = sort_by.better ? get_nested_value(model, sort_by_path) : 0}
       {@const bg_clr = bg_color(metric_val as number, best_val, worst_val)}
@@ -128,7 +131,7 @@
         animate:flip={{ duration: 400 }}
         in:fade={{ delay: 100 }}
         out:fade={{ delay: 100 }}
-        style="grid-row: span {show_details ? 5 : 4};"
+        style:grid-row="span {show_details ? 5 : 4}"
       >
         <ModelCard
           {model}

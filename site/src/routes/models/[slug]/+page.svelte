@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { calculate_days_ago, DATASETS, IconList, PtableInset } from '$lib'
+  import { calculate_days_ago, DATASETS, Icon, IconList, PtableInset } from '$lib'
   import {
     discovery_task_tooltips,
     openness_tooltips,
@@ -33,13 +33,14 @@
 
 {#if data.model}
   {@const model = data.model}
-  {@const { missing_preds, missing_percent } =
-    model.metrics?.discovery?.unique_prototypes ?? {}}
+  {@const { missing_preds, missing_percent } = model.metrics?.discovery?.unique_prototypes ??
+    {}}
   <div class="model-detail">
-    <h1 style="font-size: 2.5em;">{model.model_name}</h1>
+    <h1 style="font-size: 2.5em">{model.model_name}</h1>
 
     <section class="meta-info">
       <div>
+        <Icon icon="Versions" />
         Version: {#if model.repo?.startsWith(`http`)}
           <a
             href="{model.repo}/releases/tag/{model.model_version}"
@@ -54,21 +55,21 @@
       </div>
 
       <div>
-        <svg><use href="#icon-calendar"></use></svg>
+        <Icon icon="Calendar" />
         Added: <Tooltip text="{days_added} days ago">
           {model.date_added}
         </Tooltip>
       </div>
 
       <div>
-        <svg><use href="#icon-calendar-check"></use></svg>
+        <Icon icon="CalendarCheck" />
         Published: <Tooltip text="{days_published} days ago">
           {model.date_published}
         </Tooltip>
       </div>
 
       <div>
-        <svg><use href="#icon-neural-network"></use></svg>
+        <Icon icon="NeuralNetwork" />
         <Tooltip text={model.model_params.toLocaleString()}>
           {format_num(model.model_params, `.3~s`)}
         </Tooltip> parameters
@@ -76,14 +77,14 @@
 
       {#if model.n_estimators > 1}
         <div>
-          <svg><use href="#icon-forest"></use></svg>
+          <Icon icon="Forest" />
           <span>Ensemble {model.n_estimators} models</span>
         </div>
       {/if}
 
       {#if missing_preds != undefined}
         <div>
-          <svg><use href="#icon-missing-metadata"></use></svg>
+          <Icon icon="MissingMetadata" />
           <span>
             Missing preds: {format_num(missing_preds, `,.0f`)}
             {#if missing_preds != 0}
@@ -94,7 +95,7 @@
       {/if}
 
       {#if model.pypi}
-        <code style="background-color: transparent;">
+        <code style="background-color: transparent">
           pip install {model.pypi.split(`/`).pop()}
           <CopyButton
             content={`pip install ${model.pypi.split(`/`).pop()}`}
@@ -116,7 +117,7 @@
           rel="noopener noreferrer"
           title="View source code repository"
         >
-          <svg><use href="#icon-github"></use></svg> Repo
+          <Icon icon="GitHub" /> Repo
         </a>
       {/if}
       {#if model.paper?.startsWith(`http`)}
@@ -126,7 +127,7 @@
           rel="noopener noreferrer"
           title="Read model paper"
         >
-          <svg><use href="#icon-paper"></use></svg> Paper
+          <Icon icon="Paper" /> Paper
         </a>
       {/if}
       {#if model.url?.startsWith(`http`)}
@@ -136,7 +137,7 @@
           rel="noopener noreferrer"
           title="View model documentation"
         >
-          <svg><use href="#icon-docs"></use></svg> Docs
+          <Icon icon="Docs" /> Docs
         </a>
       {/if}
       {#if model.doi?.startsWith(`http`)}
@@ -146,7 +147,7 @@
           rel="noopener noreferrer"
           title="Digital Object Identifier"
         >
-          <svg><use href="#icon-doi"></use></svg> DOI
+          <Icon icon="DOI" /> DOI
         </a>
       {/if}
       <a
@@ -155,7 +156,7 @@
         rel="noopener noreferrer"
         title="Browse model submission files"
       >
-        <svg><use href="#icon-directory"></use></svg> Files
+        <Icon icon="Directory" /> Files
       </a>
       {#if model.pypi?.startsWith(`http`)}
         <a
@@ -164,7 +165,7 @@
           rel="noopener noreferrer"
           title="Python package on PyPI"
         >
-          <svg><use href="#icon-pypi"></use></svg> PyPI
+          <Icon icon="PyPI" /> PyPI
         </a>
       {/if}
       <a
@@ -173,7 +174,7 @@
         rel="noopener noreferrer"
         title="View pull request"
       >
-        <svg><use href="#icon-pull-request"></use></svg> PR
+        <Icon icon="PullRequest" /> PR
       </a>
       {#if model.checkpoint_url?.startsWith(`http`)}
         <a
@@ -182,7 +183,7 @@
           rel="noopener noreferrer"
           title="Download model checkpoint"
         >
-          <svg><use href="#icon-download"></use></svg> Checkpoint
+          <Icon icon="Download" /> Checkpoint
         </a>
       {/if}
       {#if model.metrics}
@@ -197,7 +198,7 @@
             }}
           >
             <summary title="Download model prediction files">
-              <svg><use href="#icon-graph"></use></svg> Predictions
+              <Icon icon="Graph" /> Predictions
             </summary>
             <div class="dropdown">
               {#each pred_files as { name, url } (url)}
@@ -213,10 +214,15 @@
 
     <!-- check if Plotly undefined needed for model-page.test.ts since vitest with JSDOM doesn't mock some Browser APIs that Plotly needs -->
     {#if typeof globalThis.Plotly != `undefined`}
-      {#each [[`e-form`, `Formation Energies`], [`each`, `Convex Hull Distance`]] as [which_energy, title] (which_energy)}
-        {#await import(`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`) then ParityPlot}
+      {#each [[`e-form`, `Formation Energies`], [`each`, `Convex Hull Distance`]] as
+        [which_energy, title]
+        (which_energy)
+      }
+        {#await import(`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`)
+          then ParityPlot
+        }
           <!-- negative margin-bottom corrects for display: none plot title -->
-          <h3 style="margin: 1em auto -2em; text-align: center;">
+          <h3 style="margin: 1em auto -2em; text-align: center">
             DFT vs ML {title}
           </h3>
           <ParityPlot.default height="500" />
@@ -226,7 +232,7 @@
 
     {#if model.model_name in per_elem_each_errors}
       {@const heatmap_values = per_elem_each_errors?.[model.model_name]}
-      <h3 style="margin: 1em auto -1em; text-align: center;">
+      <h3 style="margin: 1em auto -1em; text-align: center">
         Convex hull distance prediction errors projected onto elements
       </h3>
       <PeriodicTable
@@ -238,20 +244,21 @@
         missing_color="rgba(255,255,255,0.3)"
       >
         {#snippet inset()}
-          <TableInset style="align-content: center;">
+          {@const style = `height: 2em; visibility: ${active_element ? `visible` : `hidden`};`}
+          <TableInset style="align-content: center">
             <PtableInset
               element={active_element}
               elem_counts={heatmap_values}
               show_percent={false}
               unit="<small style='font-weight: lighter;'>eV / atom</small>"
-              style="height: 2em; visibility: {active_element ? `visible` : `hidden`};"
+              {style}
             />
             <ColorBar
               title="|E<sub>ML,hull</sub> - E<sub>DFT,hull</sub>| (eV / atom)"
               title_side="top"
               {color_scale}
               range={[0, Math.max(...(Object.values(heatmap_values) as number[]))]}
-              style="width: 80%; margin: 0 2em;"
+              style="width: 80%; margin: 0 2em"
             />
           </TableInset>
         {/snippet}
@@ -263,8 +270,8 @@
       <ol>
         {#each model.authors as author (author.name)}
           {@const org_logo = model.org_logos?.find(
-            (logo) => logo.name === author.affiliation,
-          )}
+          (logo) => logo.name === author.affiliation,
+        )}
           <li>
             <span>{author.name}</span>
             {#if author.affiliation}<span class="affiliation">
@@ -274,7 +281,7 @@
                 {/if}
               </span>{/if}
             {#if author.email}<a href="mailto:{author.email}" aria-label="Email">
-                <svg><use href="#icon-mail"></use></svg>
+                <Icon icon="Contact" />
               </a>{/if}
             {#if author.github}<a
                 href={author.github}
@@ -282,7 +289,7 @@
                 rel="noopener noreferrer"
                 aria-label="GitHub"
               >
-                <svg><use href="#icon-github"></use></svg>
+                <Icon icon="GitHub" />
               </a>{/if}
             {#if author.orcid}
               <a
@@ -291,7 +298,7 @@
                 rel="noopener noreferrer"
                 aria-label="ORCID"
               >
-                <svg><use href="#icon-orcid"></use></svg>
+                <Icon icon="Orcid" />
               </a>{/if}
           </li>
         {/each}
@@ -306,15 +313,14 @@
             <li>
               <span>{trainer.name}</span>
               {#if trainer.affiliation}<span class="affiliation"
-                  >({trainer.affiliation})</span
-                >{/if}
+                >({trainer.affiliation})</span>{/if}
               {#if trainer.orcid}<a
                   href={trainer.orcid}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="ORCID"
                 >
-                  <svg><use href="#icon-orcid"></use></svg>
+                  <Icon icon="Orcid" />
                 </a>{/if}
               {#if trainer.github}<a
                   href={trainer.github}
@@ -322,7 +328,7 @@
                   rel="noopener noreferrer"
                   aria-label="GitHub"
                 >
-                  <svg><use href="#icon-github"></use></svg>
+                  <Icon icon="GitHub" />
                 </a>{/if}
             </li>
           {/each}
@@ -333,7 +339,26 @@
     <section class="model-info">
       <h2>Model Info</h2>
       <ul>
-        {#each [[`Model Version`, model.model_version], [`Model Type`, model.model_type], [`Targets`, model.targets, targets_tooltips[model.targets]], [`Openness`, model.openness, openness_tooltips[model.openness]], [`Train Task`, model.train_task, discovery_task_tooltips[model.train_task]], [`Test Task`, model.test_task, discovery_task_tooltips[model.test_task]], [`Trained for Benchmark`, model.trained_for_benchmark ? `Yes` : `No`]] as [key, value, title = null] (key)}
+        {#each [
+          [`Model Version`, model.model_version],
+          [`Model Type`, model.model_type],
+          [`Targets`, model.targets, targets_tooltips[model.targets]],
+          [`Openness`, model.openness, openness_tooltips[model.openness]],
+          [
+            `Train Task`,
+            model.train_task,
+            discovery_task_tooltips[model.train_task],
+          ],
+          [
+            `Test Task`,
+            model.test_task,
+            discovery_task_tooltips[model.test_task],
+          ],
+          [`Trained for Benchmark`, model.trained_for_benchmark ? `Yes` : `No`],
+        ] as
+          [key, value, title = null]
+          (key)
+        }
           <li {title} use:titles_as_tooltips>
             {key}
             <strong>{value}</strong>
@@ -404,8 +429,8 @@
         <ul>
           {#each Object.entries(model.requirements) as [pkg, version] (pkg)}
             {@const href = version.startsWith(`http`)
-              ? version
-              : `https://pypi.org/project/${pkg}/${version}`}
+          ? version
+          : `https://pypi.org/project/${pkg}/${version}`}
             <li>
               {pkg}
               <a {href} target="_blank" rel="noopener noreferrer">{version}</a>

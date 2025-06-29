@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { DiscoverySet, ModelData } from '$lib'
-  import { DynamicScatter, MetricsTable, RadarChart, SelectToggle } from '$lib'
+  import { DynamicScatter, Icon, MetricsTable, RadarChart, SelectToggle } from '$lib'
   import { CPS_CONFIG } from '$lib/combined_perf_score.svelte'
   import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/labels'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
@@ -68,8 +68,7 @@
       if (
         (!best_F1 || md_F1 > best_F1) &&
         (table.show_non_compliant || model_is_compliant(md))
-      )
-        return md
+      ) return md
       return best
     }, {} as ModelData),
   )
@@ -80,12 +79,12 @@
   }
 </script>
 
-<h1 style="line-height: 0; margin-block: -1.2em 1em;">
+<h1 style="line-height: 0; margin-block: -1.2em 1em">
   <img src="/favicon.svg" alt="Logo" width="60px" /><br />
   Matbench Discovery
 </h1>
 
-<figure style="margin-top: 3em;" id="metrics-table">
+<figure style="margin-top: 3em" id="metrics-table">
   <SelectToggle
     bind:selected={discovery_set}
     options={Object.entries(DISCOVERY_SET_LABELS).map(
@@ -119,7 +118,15 @@
 
   <div class="downloads">
     Download table as
-    {#each [[`SVG`, generate_svg], [`PNG`, generate_png], [`CSV`, generate_csv], [`Excel`, generate_excel]] as const as [label, generate_fn] (label)}
+    {#each [
+        [`SVG`, generate_svg],
+        [`PNG`, generate_png],
+        [`CSV`, generate_csv],
+        [`Excel`, generate_excel],
+      ] as const as
+      [label, generate_fn]
+      (label)
+    }
       <button
         class="download-btn"
         onclick={handle_export(generate_fn, label, export_state)}
@@ -132,29 +139,30 @@
       href="/rss.xml"
       class="download-btn"
       title="Be notified of new model submissions through an RSS reader"
-      style="color: var(--text-color);"
+      style="color: var(--text-color)"
       use:titles_as_tooltips
     >
-      <svg><use href="#icon-rss" /></svg> RSS
+      <Icon icon="RSS" /> RSS
     </a>
   </div>
 
   <figcaption class="caption-radar-container">
     <div
-      style="background-color: var(--light-bg); padding: 0.2em 0.5em; border-radius: 4px;"
+      style="background-color: var(--light-bg); padding: 0.2em 0.5em; border-radius: 4px"
     >
       The <strong>CPS</strong> (Combined Performance Score) is a metric that weights
       discovery performance (F1), geometry optimization quality (RMSD), and thermal
       conductivity prediction accuracy (κ<sub>SRME</sub>). Use the radar chart to adjust
       the importance of each component.
       <br /><br />
-      The training set column shows the number of materials used to train the model. For models
-      trained on DFT relaxations, we show the number of distinct frames in parentheses. In
-      cases where only the number of frames is known, we report the number of frames as the
-      training set size. <code>(N=x)</code> in the Model Params column shows the number of
-      estimators if an ensemble was used. DAF = Discovery Acceleration Factor measures how
-      many more stable materials a model finds compared to random selection from the test
-      set. The unique structure prototypes in the WBM test set have a
+      The training set column shows the number of materials used to train the model. For
+      models trained on DFT relaxations, we show the number of distinct frames in
+      parentheses. In cases where only the number of frames is known, we report the number
+      of frames as the training set size. <code>(N=x)</code> in the Model Params column
+      shows the number of estimators if an ensemble was used. DAF = Discovery Acceleration
+      Factor measures how many more stable materials a model finds compared to random
+      selection from the test set. The unique structure prototypes in the WBM test set
+      have a
       <code>{format_num(n_wbm_stable_uniq_protos / n_wbm_uniq_protos, `.1%`)}</code>
       rate of stable crystals, meaning the max possible DAF is
       <code>
@@ -184,13 +192,15 @@
   {#snippet best_report()}
     {#if best_model}
       {@const { model_name, model_key, repo, paper, metrics = {} } = best_model}
-      {@const discovery_metrics =
-        typeof metrics?.discovery === `object` ? metrics.discovery : null}
+      {@const discovery_metrics = typeof metrics?.discovery === `object`
+      ? metrics.discovery
+      : null}
       {@const { F1, R2, DAF } = discovery_metrics?.[discovery_set] ?? {}}
       <span id="best-report">
         <a href="/models/{model_key}">{model_name}</a> (<a href={paper}>paper</a>,
-        <a href={repo}>code</a>) achieves the highest F1 score of {F1}, R<sup>2</sup> of {R2}
-        and a discovery acceleration factor (DAF) of {DAF}
+        <a href={repo}>code</a>) achieves the highest F1 score of {F1}, R<sup>2</sup> of {
+          R2
+        } and a discovery acceleration factor (DAF) of {DAF}
         (i.e. a ~{Number(DAF).toFixed(1)}x higher rate of stable structures compared to
         dummy discovery in the already enriched test set containing 16% stable materials).
       </span>

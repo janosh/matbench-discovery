@@ -1,8 +1,8 @@
 model_name: Voronoi RF
 model_key: voronoi-rf
 model_version: v1.1.2 # scikit learn version which implements the random forest
-date_added: "2022-11-26"
-date_published: "2017-07-14"
+date_added: '2022-11-26'
+date_published: '2017-07-14'
 authors:
   - name: Logan Ward
     affiliation: Argonne National Laboratory

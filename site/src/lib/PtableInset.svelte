@@ -9,7 +9,8 @@
     unit?: string
     [key: string]: unknown
   }
-  let { element, elem_counts, show_percent = true, unit = ``, ...rest }: Props = $props()
+  let { element, elem_counts, show_percent = true, unit = ``, ...rest }: Props =
+    $props()
 
   let value = $derived(
     Array.isArray(elem_counts)

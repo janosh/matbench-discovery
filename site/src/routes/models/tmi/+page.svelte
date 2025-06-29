@@ -25,15 +25,14 @@ Stuff that didn't make the cut into the&nbsp;<a href="/models">model page</a>.
 
 Answer: not much. You might expect the more examples of structures containing a certain
 element models have seen in the training set, the smaller their average error on test set
-structures containing that element. That's not what we see in this plot. E<sub
-  >above hull</sub
->
+structures containing that element. That's not what we see in this plot. E<sub>above
+  hull</sub>
 is all over the place as a function of elemental training set prevalence. Could be because
-the error is dominated by the least abundant element in composition or the model errors are
-more dependent on geometry than chemistry.
+the error is dominated by the least abundant element in composition or the model errors
+are more dependent on geometry than chemistry.
 
 {#if browser}
-  <ElementPrevalenceVsErr style="margin: 2em 0;" />
+  <ElementPrevalenceVsErr style="margin: 2em 0" />
 {/if}
 
 <h2>Does error correlate with relaxation change?</h2>
@@ -45,11 +44,11 @@ relaxation as measured by<code>matminer</code>'s
 >
   <code>SiteStatsFingerprint</code>
 </a>
-(which is volume independent so changes in fingerprint require ion migration or similar) and
-plotting against that the absolute E<sub>above hull</sub> errors for each model.
+(which is volume independent so changes in fingerprint require ion migration or similar)
+and plotting against that the absolute E<sub>above hull</sub> errors for each model.
 
 {#if browser}
-  <ScatterLargeFpDiffVsEachError style="margin: 2em 0;" />
+  <ScatterLargeFpDiffVsEachError style="margin: 2em 0" />
 {/if}
 
 Same plot except taking the structures with largest difference in atomic environments
@@ -58,17 +57,17 @@ Same plot except taking the structures with largest difference in atomic environ
 errors.
 
 {#if browser}
-  <ScatterLargestEachErrorsFpDiffModels style="margin: 2em 0;" />
+  <ScatterLargestEachErrorsFpDiffModels style="margin: 2em 0" />
 {/if}
 
 Another way to plot this is as a histogram. This shows the difference in
 SiteStatsFingerprint before vs after relaxation for structures with the largest (err<sub
-  >max</sub
->) and smallest (err<sub>min</sub>) absolute error in predicted E<sub>above hull</sub>
+>max</sub>) and smallest (err<sub>min</sub>) absolute error in predicted E<sub>above
+  hull</sub>
 for each model and the mean of all models.
 
 {#if browser}
-  <HistLargestEachErrorsFpDiffModels style="margin: 2em 0;" />
+  <HistLargestEachErrorsFpDiffModels style="margin: 2em 0" />
 {/if}
 
 <h2>
@@ -80,5 +79,5 @@ in the training set consistently see low errors across all models suggests that 
 universally robust model, it needs to be trained on lots of examples for every element.
 
 {#if browser}
-  <EachErrorVsLeastPrevalentElementInStruct style="margin: 2em 0;" />
+  <EachErrorVsLeastPrevalentElementInStruct style="margin: 2em 0" />
 {/if}

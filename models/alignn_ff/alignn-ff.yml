@@ -1,8 +1,8 @@
 model_name: ALIGNN FF
 model_key: alignn_ff
 model_version: 2023.07.01
-date_added: "2023-07-11"
-date_published: "2022-09-16"
+date_added: '2023-07-11'
+date_published: '2022-09-16'
 authors:
   - name: Kamal Choudhary
     affiliation: National Institute of Standards and Technology

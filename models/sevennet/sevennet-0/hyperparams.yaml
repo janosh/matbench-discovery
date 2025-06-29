@@ -21,8 +21,8 @@ model:
     cutoff_function_name: XPLOR
     cutoff_on: 4.5
 
-  act_gate: { "e": silu, "o": tanh }
-  act_scalar: { "e": silu, "o": tanh }
+  act_gate: { 'e': silu, 'o': tanh }
+  act_scalar: { 'e': silu, 'o': tanh }
 
   conv_denominator: avg_num_neigh
   train_shift_scale: False

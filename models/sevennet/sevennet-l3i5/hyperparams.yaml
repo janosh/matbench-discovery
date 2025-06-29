@@ -87,7 +87,7 @@ data:
 
   batch_size: 1024 # global batch size, should be divided by the number of GPUs
 
-  load_trainset_path: "**path_to_trainset**"
-  load_validset_path: "**path_to_validset**"
-  shift: "elemwise_reference_energies"
-  scale: "force_rms"
+  load_trainset_path: '**path_to_trainset**'
+  load_validset_path: '**path_to_validset**'
+  shift: 'elemwise_reference_energies'
+  scale: 'force_rms'

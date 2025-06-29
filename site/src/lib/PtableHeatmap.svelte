@@ -1,6 +1,11 @@
 <script lang="ts">
   import { PtableInset } from '$lib'
-  import { ColorBar, PeriodicTable, TableInset, type ChemicalElement } from 'matterviz'
+  import {
+    type ChemicalElement,
+    ColorBar,
+    PeriodicTable,
+    TableInset,
+  } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
   import type { ComponentProps } from 'svelte'
 
@@ -36,6 +41,7 @@
   {...rest}
 >
   {#snippet inset()}
+    {@const style = `height: 1.5em; visibility: ${active_element ? `visible` : `hidden`};`}
     <TableInset>
       <label for="log">
         Log color scale<input id="log" type="checkbox" bind:checked={log} />
@@ -43,7 +49,7 @@
       <PtableInset
         element={active_element}
         elem_counts={heatmap_values}
-        style="height: 1.5em; visibility: {active_element ? `visible` : `hidden`};"
+        {style}
       />
       <ColorBar
         title="Count"
@@ -51,7 +57,7 @@
         {color_scale}
         tick_labels={5}
         range={[0, Math.max(...Object.values(heatmap_values))]}
-        style="width: 85%; margin: 0 2em 2em;"
+        style="width: 85%; margin: 0 2em 2em"
         {...colorbar}
       />
     </TableInset>

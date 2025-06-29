@@ -2,7 +2,7 @@ import { heatmap_class } from '$lib/table-export'
 import Page from '$routes/data/sets/+page.svelte'
 import { mount, tick } from 'svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { doc_query } from '..'
+import { doc_query } from '../index'
 
 describe(`Datasets Page`, () => {
   beforeEach(() => {
@@ -130,7 +130,7 @@ describe(`Datasets Page`, () => {
     // Find and click the Structures column header to sort (usually the 2nd header)
     const headers = document.querySelectorAll(`.${heatmap_class} th`)
     const structures_header = Array.from(headers).find((th) =>
-      th.textContent?.includes(`Structures`),
+      th.textContent?.includes(`Structures`)
     )
     if (structures_header) {
       ;(structures_header as HTMLElement).click()
@@ -195,13 +195,13 @@ describe(`Datasets Page`, () => {
 
     // The Links header should have the not-sortable class
     const links_header = Array.from(all_headers).find((th) =>
-      th.textContent?.includes(`Links`),
+      th.textContent?.includes(`Links`)
     )
     expect(links_header?.classList.contains(`not-sortable`)).toBe(true)
 
     // The API header should have the not-sortable class
     const api_header = Array.from(all_headers).find((th) =>
-      th.textContent?.includes(`API`),
+      th.textContent?.includes(`API`)
     )
     expect(api_header?.classList.contains(`sortable`)).toBe(false)
   })

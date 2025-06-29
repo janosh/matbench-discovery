@@ -1,8 +1,8 @@
 model_name: GRACE-1L-OAM
 model_key: grace-1l-oam
 model_version: GRACE-1L-OAM_2Feb25
-date_added: "2025-02-06"
-date_published: "2025-02-06"
+date_added: '2025-02-06'
+date_published: '2025-02-06'
 authors:
   - name: Anton Bochkarev
     affiliation: ICAMS, Ruhr University Bochum

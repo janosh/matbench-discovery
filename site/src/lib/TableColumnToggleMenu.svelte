@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Icon } from '$lib'
   import { Tooltip } from 'svelte-zoo'
   import { click_outside } from 'svelte-zoo/actions'
   import type { Label } from './types'
@@ -8,7 +9,8 @@
     column_panel_open?: boolean
   }
 
-  let { columns = $bindable([]), column_panel_open = $bindable(false) }: Props = $props()
+  let { columns = $bindable([]), column_panel_open = $bindable(false) }: Props =
+    $props()
 
   function toggle_column_visibility(idx: number, event: Event) {
     columns[idx].visible = (event.target as HTMLInputElement).checked
@@ -31,11 +33,11 @@
   use:click_outside={{ callback: () => (column_panel_open = false) }}
 >
   <summary>
-    Columns <svg><use href="#icon-columns"></use></svg>
+    Columns <Icon icon="Columns" />
   </summary>
   <div class="column-menu">
     {#each columns as col, idx (col.label + col.group + col.visible + idx)}
-      <Tooltip style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+      <Tooltip style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">
         {#snippet tip()}
           {#if col.description}
             {@html col.description}

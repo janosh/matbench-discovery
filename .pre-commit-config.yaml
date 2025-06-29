@@ -1,6 +1,6 @@
 ci:
   autoupdate_schedule: quarterly
-  skip: [pyright, eslint]
+  skip: [deno-fmt, deno-lint, eslint]
 
 default_stages: [pre-commit]
 
@@ -27,14 +27,24 @@ repos:
       - id: check-yaml
       - id: destroyed-symlinks
       - id: end-of-file-fixer
+      - id: forbid-new-submodules
       - id: mixed-line-ending
       - id: trailing-whitespace
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.16.1
+  - repo: local
     hooks:
-      - id: mypy
-        additional_dependencies: [types-pyyaml, types-requests]
+      - id: deno-fmt
+        name: Deno format
+        entry: deno fmt
+        types: [file]
+        args: [--config, site/deno.jsonc]
+        language: system
+      - id: deno-lint
+        name: Deno lint
+        entry: deno lint
+        types: [file]
+        args: [--config, site/deno.jsonc, --permit-no-files, --fix]
+        language: system
 
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.1
@@ -45,16 +55,16 @@ repos:
         exclude: ^site/src/figs/.+$
         args: [--check-filenames]
 
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v4.0.0-alpha.8
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.45.0
     hooks:
-      - id: prettier
-        args: [--write] # edit files in-place
-        additional_dependencies:
-          - prettier
-          - prettier-plugin-svelte
-          - svelte
-        exclude: ^(site/src/figs/.+\.svelte|site/src/(routes|figs).+\.json|changelog.md)$
+      - id: markdownlint
+        # MD013: line too long
+        # MD033: no inline HTML
+        # MD041: first line in a file should be a top-level heading
+        # MD034: no bare urls
+        args: [--disable, MD013, MD033, MD034, MD041, '--']
+        exclude: changelog\.md$
 
   - repo: https://github.com/pre-commit/mirrors-eslint
     rev: v9.29.0
@@ -69,7 +79,7 @@ repos:
           - svelte
           - typescript
           - typescript-eslint
-          - "@stylistic/eslint-plugin"
+          - '@stylistic/eslint-plugin'
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.33.0
@@ -81,9 +91,3 @@ repos:
         files: ^data/datasets\.yml$
         args: [--schemafile, tests/dataset-schema.yml]
       - id: check-github-actions
-
-  - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.402
-    hooks:
-      - id: pyright
-        args: [--level, error]
