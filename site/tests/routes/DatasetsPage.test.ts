@@ -2,7 +2,7 @@ import { heatmap_class } from '$lib/table-export'
 import Page from '$routes/data/sets/+page.svelte'
 import { mount, tick } from 'svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { doc_query } from '..'
+import { doc_query } from '../index'
 
 describe(`Datasets Page`, () => {
   beforeEach(() => {

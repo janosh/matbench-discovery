@@ -1,7 +1,7 @@
 import Page from '$routes/tasks/diatomics/+page.svelte'
 import { mount } from 'svelte'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import { doc_query } from '..'
+import { doc_query } from '../index'
 
 // Mock fetch function
 const mock_fetch = vi.fn()

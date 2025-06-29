@@ -233,7 +233,7 @@
     let subfig-state = subfigure-counter.at(elem.location())
     // Format the state using the numbering function
     let subfig-num = numbering(elem.numbering, ..subfig-state)
-    // Note: This assumes standard '1, 2, 3...' numbering for parent figures.
+    // Note: This assumes standard '1, 2, 3, ...' numbering for parent figures.
     // Custom parent numbering formats (e.g., "A.1") won't be replicated here.
     return [#parent-fig.supplement #parent-num#subfig-num]
   }

@@ -14,6 +14,4 @@ jobs:
       uv-version: latest
       working-directory: site
       pre-build: |
-        uv venv
-        uv pip install -e ..
-        uv run ../scripts/make_api_docs.py
+        uv run --with-editable .. ../scripts/make_api_docs.py
