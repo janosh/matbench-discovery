@@ -3,12 +3,12 @@
 
 import yaml_plugin from '@rollup/plugin-yaml'
 import { sveltekit } from '@sveltejs/kit/vite'
-import fs from 'fs'
 import yaml from 'js-yaml'
 import type { JSONSchema4 } from 'json-schema'
 import { compile as json_to_ts } from 'json-schema-to-typescript'
 import { execFile } from 'node:child_process'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 import type { PluginOption } from 'vite'
 import { defineConfig } from 'vite'
 
@@ -17,10 +17,6 @@ import { defineConfig } from 'vite'
 function yaml_schema_to_typescript_plugin(): PluginOption {
   // convert *-schema.yml to *-schema.d.ts
   async function yaml_schema_to_ts(file: string): Promise<boolean> {
-    // Read the package.json to get prettier config
-    const pkg_content = fs.readFileSync(path.resolve(`./package.json`), `utf-8`)
-    const pkg = JSON.parse(pkg_content)
-
     try {
       const yaml_content = fs.readFileSync(file, `utf-8`)
       const file_dir = path.dirname(file)
@@ -36,14 +32,14 @@ function yaml_schema_to_typescript_plugin(): PluginOption {
         'label-schema': `Label`,
       }[base_name]
 
-      const bannerComment = `// This file is auto-generated from ${base_name}.yml. Do not edit directly.`
-
       const model_metadata_ts = await json_to_ts(
         parsed_yaml,
         ts_name ?? `missing ${base_name} schema`,
         {
-          style: pkg.prettier,
-          bannerComment,
+          // should match lineWidth in deno.jsonc
+          style: { semi: false, singleQuote: true, printWidth: 90 },
+          bannerComment:
+            `// This file is auto-generated from ${base_name}.yml. Do not edit directly.`,
           cwd: file_dir, // important for $ref resolution between *-schema.yml files
           unreachableDefinitions: true,
         },
@@ -65,7 +61,7 @@ function yaml_schema_to_typescript_plugin(): PluginOption {
 
   return {
     name: `yaml-schema-to-typescript`,
-    async configureServer(server) {
+    configureServer(server) {
       const schema_files = fs
         .readdirSync(`../tests`)
         .filter((file_name) => file_name.endsWith(`-schema.yml`))

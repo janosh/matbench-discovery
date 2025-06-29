@@ -22,14 +22,17 @@ beforeEach(() => {
   document.body.innerHTML = ``
 })
 
-export function doc_query<T extends HTMLElement>(selector: string): T {
-  const node = document.querySelector(selector)
+export function doc_query<T extends HTMLElement>(
+  selector: string,
+  parent: ParentNode = document,
+): T {
+  const node = parent.querySelector(selector)
   if (!node) throw new Error(`No element found for selector: ${selector}`)
   return node as T
 }
 
 // mock matchMedia browser API
-window.matchMedia = vi.fn()
+globalThis.matchMedia = vi.fn()
 
 // ResizeObserver mock
 globalThis.ResizeObserver = class ResizeObserver {

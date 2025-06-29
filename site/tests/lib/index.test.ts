@@ -70,14 +70,10 @@ describe(`format_long_date`, () => {
     const original_date = Date
     const mock_date = class extends Date {
       constructor(date_str?: string | number | Date) {
-        if (date_str) {
-          super(date_str as string | number)
-        } else {
-          super(`2023-05-15T12:00:00Z`) // Mock current date
-        }
+        super(date_str ?? `2023-05-15T12:00:00Z`) // Mock current date
       }
 
-      toLocaleDateString(): string {
+      override toLocaleDateString(): string {
         return `Monday, May 15, 2023`
       }
     }

@@ -14,7 +14,7 @@ describe(`RadarChart`, () => {
     })
   })
 
-  it(`renders with default props`, async () => {
+  it(`renders with default props`, () => {
     mount(RadarChart, { target: document.body })
 
     // Check that the component rendered with an SVG element
@@ -41,7 +41,7 @@ describe(`RadarChart`, () => {
     expect(draggable_point).toBeDefined()
   })
 
-  it(`accepts size prop`, async () => {
+  it(`accepts size prop`, () => {
     const custom_size = 300
 
     mount(RadarChart, { target: document.body, props: { size: custom_size } })
@@ -55,7 +55,7 @@ describe(`RadarChart`, () => {
     expect(circles.length).toBeGreaterThan(0)
   })
 
-  it(`resets weights when reset button is clicked`, async () => {
+  it(`resets weights when reset button is clicked`, () => {
     mount(RadarChart, { target: document.body })
 
     // Modify weights to non-default values
@@ -78,7 +78,7 @@ describe(`RadarChart`, () => {
     expect(update_models_cps).toHaveBeenCalled()
   })
 
-  it(`displays correct weight percentages`, async () => {
+  it(`displays correct weight percentages`, () => {
     mount(RadarChart, { target: document.body })
 
     // Check that the weight percentages are displayed correctly
@@ -94,7 +94,7 @@ describe(`RadarChart`, () => {
     expect(weight_values).toEqual(expected_values)
   })
 
-  it(`renders axis labels with correct content`, async () => {
+  it(`renders axis labels with correct content`, () => {
     mount(RadarChart, { target: document.body })
 
     // Check that axis labels are rendered
@@ -109,17 +109,17 @@ describe(`RadarChart`, () => {
     expect(label_texts).toEqual([`F1 50%`, `κSRME 40%`, `RMSD 10%`])
   })
 
-  it(`renders tooltip with config description`, async () => {
+  it(`renders tooltip with config description`, () => {
     mount(RadarChart, {
       target: document.body,
     })
 
     // Check that the info icon exists (which is part of the tooltip)
-    const info_icon = document.body.querySelector(`svg use[href="#icon-info"]`)
+    const info_icon = document.body.querySelector(`svg[data-title="Info"]`)
     expect(info_icon).toBeDefined()
   })
 
-  it(`renders correct visualization elements`, async () => {
+  it(`renders correct visualization elements`, () => {
     mount(RadarChart, { target: document.body })
 
     // Check for the triangle path
@@ -141,7 +141,7 @@ describe(`RadarChart`, () => {
     })
   })
 
-  it(`displays the metric name`, async () => {
+  it(`displays the metric name`, () => {
     mount(RadarChart, { target: document.body })
 
     const metric_name = document.body.querySelector(`.metric-name`)
@@ -149,7 +149,7 @@ describe(`RadarChart`, () => {
     expect(metric_name?.textContent?.trim()).toContain(ALL_METRICS.CPS.label)
   })
 
-  it(`renders reset button with correct attributes`, async () => {
+  it(`renders reset button with correct attributes`, () => {
     mount(RadarChart, { target: document.body })
 
     const reset_button = document.body.querySelector(`.reset-button`)

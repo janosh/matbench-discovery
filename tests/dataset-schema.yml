@@ -1,4 +1,4 @@
-"$schema": http://json-schema.org/draft-07/schema#
+'$schema': http://json-schema.org/draft-07/schema#
 
 definitions:
   # External references
@@ -112,13 +112,13 @@ definitions:
 
       # URLs and references
       url:
-        $ref: "#/definitions/http_url"
+        $ref: '#/definitions/http_url'
         description: Primary URL for the dataset
       download_url:
-        $ref: "#/definitions/http_url"
+        $ref: '#/definitions/http_url'
         description: URL to download the dataset
       doi:
-        $ref: "#/definitions/http_url"
+        $ref: '#/definitions/http_url'
         description: DOI reference for the dataset
       contains:
         type: array
@@ -134,26 +134,26 @@ definitions:
         type: boolean
         description: Whether the dataset is a static release or dynamically updated
       license:
-        $ref: "#/definitions/license_enum"
+        $ref: '#/definitions/license_enum'
         description: License under which the dataset is published
 
       # APIs
       optimade_api:
         oneOf:
-          - type: "null" # Allow null instead of false
-          - $ref: "#/definitions/http_url"
+          - type: 'null' # Allow null instead of false
+          - $ref: '#/definitions/http_url'
         description: URL to the OPTIMADE API endpoint or null if none
       native_api:
         oneOf:
-          - type: "null" # Allow null instead of false
-          - $ref: "#/definitions/http_url"
+          - type: 'null' # Allow null instead of false
+          - $ref: '#/definitions/http_url'
         description: URL to the native API endpoint/documentation or null if none
 
       # Provenance and metadata
       created_by:
         type: array
         items:
-          $ref: "#/definitions/person"
+          $ref: '#/definitions/person'
         description: People or organizations who created the dataset
       date_created:
         type: string
@@ -167,10 +167,10 @@ definitions:
       # Computational details
       method:
         oneOf:
-          - $ref: "#/definitions/method_enum"
+          - $ref: '#/definitions/method_enum'
           - type: array
             items:
-              $ref: "#/definitions/method_enum"
+              $ref: '#/definitions/method_enum'
         description: Method(s) used to generate the data
       params:
         type: object
@@ -178,27 +178,27 @@ definitions:
         properties:
           code:
             oneOf:
-              - $ref: "#/definitions/dft_code_enum"
+              - $ref: '#/definitions/dft_code_enum'
               - type: array
                 items:
-                  $ref: "#/definitions/dft_code_enum"
+                  $ref: '#/definitions/dft_code_enum'
             description: DFT code(s) used for calculations
           code_version:
             type: string
             description: Version of the DFT code used
           functional:
             oneOf:
-              - $ref: "#/definitions/functional_enum"
+              - $ref: '#/definitions/functional_enum'
               - type: array
                 items:
-                  $ref: "#/definitions/functional_enum"
+                  $ref: '#/definitions/functional_enum'
             description: Exchange-correlation functional(s) used
           pseudopotentials:
             oneOf:
-              - $ref: "#/definitions/pseudo_potentials_enum"
+              - $ref: '#/definitions/pseudo_potentials_enum'
               - type: array
                 items:
-                  $ref: "#/definitions/pseudo_potentials_enum"
+                  $ref: '#/definitions/pseudo_potentials_enum'
             description: Pseudopotential(s) used
         additionalProperties: true
 
@@ -206,4 +206,4 @@ definitions:
 type: object
 patternProperties:
   ^[a-zA-Z0-9 ]+$: # allow alphanumeric names with spaces
-    $ref: "#/definitions/dataset"
+    $ref: '#/definitions/dataset'

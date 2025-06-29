@@ -165,15 +165,10 @@ function create_export_filter() {
       node_name === `LINK` &&
       (node as Element).getAttribute(`rel`) === `stylesheet` &&
       (node as Element).getAttribute(`href`)?.startsWith(`http`)
-    ) {
-      return false
-    }
+    ) return false
 
     // Skip problematic elements
-    if ([`SVG`, `IMG`].includes(node_name)) {
-      return false
-    }
-
+    if ([`SVG`, `IMG`].includes(node_name)) return false
     return true
   }
 }
@@ -290,7 +285,8 @@ export async function generate_png({
         skipFonts: true,
         quality: 0.95,
         filter: create_export_filter(),
-        imagePlaceholder: `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==`,
+        imagePlaceholder:
+          `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==`,
       })
 
       // Create download
@@ -456,7 +452,7 @@ function format_value_for_export(value: number, header: string): number | string
 }
 
 // Function to export table data as CSV
-export async function generate_csv({
+export function generate_csv({
   show_non_compliant = false,
   discovery_set = `unique_prototypes`,
 }: ExportOptions): Promise<ExportResult> {
@@ -480,7 +476,7 @@ export async function generate_csv({
             }
             return cell_str
           })
-          .join(`,`),
+          .join(`,`)
       )
       .join(`\n`)
 
@@ -573,26 +569,27 @@ export async function generate_excel({
   }
 }
 
-export const handle_export =
-  <T extends ExportOptions>(
-    generator: (args: T) => Promise<ExportResult>,
-    fmt: string,
-    state: { export_error: string | null } & T,
-  ) =>
-  async () => {
-    try {
-      state.export_error = null // Reset error state before trying
-      // Pass only the relevant properties expected by the generator
-      const generator_args: T = {
-        show_non_compliant: state.show_non_compliant,
-        discovery_set: state.discovery_set,
-      } as T // Cast needed as state has extra key
-      const result = await generator(generator_args)
-      if (!result) {
-        state.export_error = `Failed to generate ${fmt}. The export function returned null.`
-      }
-    } catch (err) {
-      state.export_error = `Error exporting ${fmt}: ${err instanceof Error ? err.message : String(err)}`
-      console.error(`Error exporting ${fmt}:`, err)
+export const handle_export = <T extends ExportOptions>(
+  generator: (args: T) => Promise<ExportResult>,
+  fmt: string,
+  state: { export_error: string | null } & T,
+) =>
+async () => {
+  try {
+    state.export_error = null // Reset error state before trying
+    // Pass only the relevant properties expected by the generator
+    const generator_args: T = {
+      show_non_compliant: state.show_non_compliant,
+      discovery_set: state.discovery_set,
+    } as T // Cast needed as state has extra key
+    const result = await generator(generator_args)
+    if (!result) {
+      state.export_error = `Failed to generate ${fmt}. The export function returned null.`
     }
+  } catch (err) {
+    state.export_error = `Error exporting ${fmt}: ${
+      err instanceof Error ? err.message : String(err)
+    }`
+    console.error(`Error exporting ${fmt}:`, err)
   }
+}

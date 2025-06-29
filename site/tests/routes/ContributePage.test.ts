@@ -84,7 +84,7 @@ describe(`Contribute Page`, () => {
 // Helper function to get a section following a heading with specific text
 function get_heading_section(element: Element, heading_text: string): Element | null {
   const target_heading = Array.from(element.querySelectorAll(`h2`)).find((h) =>
-    h.textContent?.includes(heading_text),
+    h.textContent?.includes(heading_text)
   )
 
   if (!target_heading) return null

@@ -103,7 +103,7 @@ describe(`HeatmapTable`, () => {
       expect(scores).toEqual([`0.95`, `0.85`, `0.75`])
     })
 
-    it(`sorts date columns correctly`, async () => {
+    it(`sorts date columns correctly`, () => {
       const dates = [
         { Date: `<span data-sort-value="1620950400000">2021-05-14</span>` },
         { Date: `<span data-sort-value="1684966800000">2023-05-25</span>` },
@@ -119,13 +119,13 @@ describe(`HeatmapTable`, () => {
 
       // Initial data should already be in order
       const initial_dates = Array.from(document.body.querySelectorAll(`td`)).map((cell) =>
-        cell.textContent?.trim(),
+        cell.textContent?.trim()
       )
 
       expect(initial_dates).toEqual([`2021-05-14`, `2023-05-25`, `2024-05-07`])
     })
 
-    it(`sorts using data-sort-value attributes for numeric values`, async () => {
+    it(`sorts using data-sort-value attributes for numeric values`, () => {
       const formatted_data = [
         { Number: `<span data-sort-value="50">50</span>` },
         { Number: `<span data-sort-value="1000">1,000</span>` },
@@ -201,7 +201,7 @@ describe(`HeatmapTable`, () => {
       expect(post_sort_values).not.toEqual(initial_values)
     })
 
-    it(`sorts correctly with default initial sort settings`, async () => {
+    it(`sorts correctly with default initial sort settings`, () => {
       mount(HeatmapTable, {
         target: document.body,
         props: {
@@ -344,7 +344,8 @@ describe(`HeatmapTable`, () => {
       {
         Name: `Test Model`,
         HTML: `<span data-sort-value="100" title="This is a tooltip">100 units</span>`,
-        Complex: `<span data-sort-value="3373529" title="Complex tooltip with multiple lines&#013;• Line item 1&#013;• Line item 2">3.37M <small>(details)</small> (<a href="https://example.com">Link</a>)</span>`,
+        Complex:
+          `<span data-sort-value="3373529" title="Complex tooltip with multiple lines&#013;• Line item 1&#013;• Line item 2">3.37M <small>(details)</small> (<a href="https://example.com">Link</a>)</span>`,
       },
     ]
 
@@ -498,13 +499,13 @@ describe(`HeatmapTable`, () => {
 
       // Check the group headers have correct colspan
       const values_header = Array.from(group_headers).find((th) =>
-        th.textContent?.includes(`Values`),
+        th.textContent?.includes(`Values`)
       )
       const metrics_header = Array.from(group_headers).find((th) =>
-        th.textContent?.includes(`Metrics`),
+        th.textContent?.includes(`Metrics`)
       )
       const second_values_header = Array.from(group_headers).find((th) =>
-        th.textContent?.includes(`Second Values`),
+        th.textContent?.includes(`Second Values`)
       )
 
       expect(values_header?.getAttribute(`colspan`)).toBe(`2`) // Values spans 2 columns
@@ -518,7 +519,7 @@ describe(`HeatmapTable`, () => {
       // Column headers should have duplicate label names (Value 1, Value 2) rendered for each group
       expect(
         Array.from(col_headers).map((h) =>
-          h.textContent?.trim().replace(/\s+|[↑↓]/g, ``),
+          h.textContent?.trim().replace(/\s+|[↑↓]/g, ``)
         ),
       ).toEqual([`Name`, `Value1`, `Value2`, `Metric1`, `Metric2`, `Value1`, `Value2`])
     })
@@ -553,7 +554,7 @@ describe(`HeatmapTable`, () => {
 
       // The Grouped cell should have colspan=2
       const grouped_header = Array.from(group_cells).find((c) =>
-        c.textContent?.includes(`Grouped`),
+        c.textContent?.includes(`Grouped`)
       )
       expect(grouped_header?.getAttribute(`colspan`)).toBe(`2`)
     })

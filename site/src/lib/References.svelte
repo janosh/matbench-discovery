@@ -33,16 +33,16 @@
         <p {id}>{title}</p>
         <span>
           {@html author
-            .slice(0, n_authors)
-            .map(({ given, family }) => {
-              const first_name = {
-                initial: `${given[0]}. `,
-                full: `${given} `,
-                none: ``,
-              }[first_name_mode]
-              return `${first_name ?? ``}${family}`
-            })
-            .join(`,&thinsp; `)}
+          .slice(0, n_authors)
+          .map(({ given, family }) => {
+            const first_name = {
+              initial: `${given[0]}. `,
+              full: `${given} `,
+              none: ``,
+            }[first_name_mode]
+            return `${first_name ?? ``}${family}`
+          })
+          .join(`,&thinsp; `)}
           {#if author.length > n_authors}
             <em>et al.</em>
           {/if}

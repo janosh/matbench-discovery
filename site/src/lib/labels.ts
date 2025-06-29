@@ -31,7 +31,8 @@ export const DISCOVERY_METRICS: DiscoveryMetricsLabels = {
     key: `Accuracy`,
     short: `Acc`,
     label: `Accuracy`,
-    description: `Accuracy of classifying crystals as thermodynamically stable or unstable`,
+    description:
+      `Accuracy of classifying crystals as thermodynamically stable or unstable`,
     better: `higher`,
     path: `metrics.discovery.unique_prototypes`,
   },
@@ -40,14 +41,16 @@ export const DISCOVERY_METRICS: DiscoveryMetricsLabels = {
     short: `F1`,
     label: `F1 Score`,
     path: `metrics.discovery.unique_prototypes`,
-    description: `Harmonic mean of precision and recall for stable/unstable material classification`,
+    description:
+      `Harmonic mean of precision and recall for stable/unstable material classification`,
     range: [0, 1],
     better: `higher`,
   },
   DAF: {
     key: `DAF`,
     label: `DAF`,
-    description: `Discovery Acceleration Factor measuring how much better ML models classify thermodynamic stability compared to random guessing`,
+    description:
+      `Discovery Acceleration Factor measuring how much better ML models classify thermodynamic stability compared to random guessing`,
     better: `higher`,
     path: `metrics.discovery.unique_prototypes`,
   },
@@ -140,7 +143,8 @@ export const METADATA_COLS: MetadataLabels = {
   r_cut: {
     label: `r<sub>cut</sub>`,
     key: `r_cut`,
-    description: `Graph construction radius in Ångströms (cutoff distance for creating edges in the graph)`,
+    description:
+      `Graph construction radius in Ångströms (cutoff distance for creating edges in the graph)`,
     unit: `Å`,
     visible: false,
   },
@@ -212,13 +216,15 @@ export const HYPERPARAMS: HyperparamLabels = {
     key: `graph_construction_radius`,
     short: `r<sub>cut</sub>`,
     path: `hyperparams`,
-    description: `Graph construction radius in Ångströms (cutoff distance for creating edges in the graph)`,
+    description:
+      `Graph construction radius in Ångströms (cutoff distance for creating edges in the graph)`,
   },
   max_force: {
     label: `Max force`,
     key: `max_force`,
     path: `hyperparams`,
-    description: `Max remaining force allowed on any atom in the structure for geometry optimization`,
+    description:
+      `Max remaining force allowed on any atom in the structure for geometry optimization`,
     unit: `eV/Å`,
   },
   max_steps: {
@@ -271,7 +277,8 @@ export const DATASET_METADATA_COLS: DatasetMetadataLabels = {
     key: `n_structures`,
     label: `Number of Structures`,
     short: `Structures`,
-    description: `Number of structures in the dataset. Any system with atomic positions and energy/force/stress labels is counted as a structure incl. successive ionic steps in MD/geometry optimization trajectories.`,
+    description:
+      `Number of structures in the dataset. Any system with atomic positions and energy/force/stress labels is counted as a structure incl. successive ionic steps in MD/geometry optimization trajectories.`,
     better: `higher`,
     scale_type: `log`,
     format: `.3s`,
@@ -299,7 +306,8 @@ export const DATASET_METADATA_COLS: DatasetMetadataLabels = {
   static: {
     key: `Static`,
     label: `Static`,
-    description: `Whether the dataset is static (fixed version) or dynamic (continuously updated).`,
+    description:
+      `Whether the dataset is static (fixed version) or dynamic (continuously updated).`,
     style: `text-align: center;`,
   },
   license: {
@@ -348,7 +356,10 @@ export const GEO_OPT_SYMMETRY_METRICS = Object.fromEntries(
         svg_label: `${label} (symprec=${sub_sup_to_tspan(format_power_ten(symprec))})`
           .replace(`Σ<sub>`, `Σ<tspan baseline-shift='-0.4em' font-size='0.8em'>`)
           .replace(`</sub>`, `</tspan>`),
-        description: `Fraction of structures where ML and DFT ground state have matching spacegroup at ${format_power_ten(symprec)} symprec`,
+        description:
+          `Fraction of structures where ML and DFT ground state have matching spacegroup at ${
+            format_power_ten(symprec)
+          } symprec`,
         better,
         format: `~%`,
         visible: false,
@@ -356,8 +367,10 @@ export const GEO_OPT_SYMMETRY_METRICS = Object.fromEntries(
     ]),
 ) as unknown as GeoOptSymmetryMetricsLabels
 
-export type AllMetrics = DiscoveryMetricsLabels &
-  GeoOptSymmetryMetricsLabels & { CPS: Label; κ_SRME: Label; RMSD: Label }
+export type AllMetrics =
+  & DiscoveryMetricsLabels
+  & GeoOptSymmetryMetricsLabels
+  & { CPS: Label; κ_SRME: Label; RMSD: Label }
 
 export const ALL_METRICS: AllMetrics = {
   // Dynamic metrics
@@ -365,7 +378,8 @@ export const ALL_METRICS: AllMetrics = {
     key: `CPS`,
     short: `CPS`,
     label: `Combined Performance Score`,
-    description: `Combined Performance Score averages discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>) according to user-defined weights`,
+    description:
+      `Combined Performance Score averages discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>) according to user-defined weights`,
     range: [0, 1],
     better: `higher`,
     format: `.3f`,
@@ -376,7 +390,8 @@ export const ALL_METRICS: AllMetrics = {
     key: `κ_SRME`,
     label: `κ<sub>SRME</sub>`,
     svg_label: `κ<tspan baseline-shift='-0.4em' font-size='0.8em'>SRME</tspan>`,
-    description: `Symmetric relative mean error in predicted phonon mode contributions to thermal conductivity κ`,
+    description:
+      `Symmetric relative mean error in predicted phonon mode contributions to thermal conductivity κ`,
     path: `metrics.phonons.kappa_103`,
     better: `lower`,
   },
@@ -387,7 +402,8 @@ export const ALL_METRICS: AllMetrics = {
     label: `RMSD`,
     range: [0, RMSD_BASELINE],
     better: `lower`,
-    description: `Root mean squared displacement between predicted and reference structures after relaxation`,
+    description:
+      `Root mean squared displacement between predicted and reference structures after relaxation`,
     style: `border-left: 1px solid black;`,
   },
   ...GEO_OPT_SYMMETRY_METRICS,
@@ -399,16 +415,20 @@ export const DISCOVERY_SET_LABELS: Record<
 > = {
   full_test_set: {
     label: `Full Test Set`,
-    description: `Metrics computed on the full 257k WBM test set including duplicate structure prototypes`,
+    description:
+      `Metrics computed on the full 257k WBM test set including duplicate structure prototypes`,
   },
   unique_prototypes: {
     label: `Unique Prototypes`,
-    description: `Metrics computed only on ~215k unique structure prototypes in WBM determined by matching Aflow-style prototype strings.`,
-    link: `https://github.com/janosh/matbench-discovery/blob/37baf7986f848/data/wbm/compile_wbm_test_set.py#L640-L654`,
+    description:
+      `Metrics computed only on ~215k unique structure prototypes in WBM determined by matching Aflow-style prototype strings.`,
+    link:
+      `https://github.com/janosh/matbench-discovery/blob/37baf7986f848/data/wbm/compile_wbm_test_set.py#L640-L654`,
   },
   most_stable_10k: {
     label: `10k Most Stable`,
-    description: `Metrics computed on the 10k structures predicted to be most stable (different for each model)`,
+    description:
+      `Metrics computed on the 10k structures predicted to be most stable (different for each model)`,
   },
 } as const
 
@@ -458,19 +478,21 @@ export const title_case = (str: string) =>
 export const org_logos = {
   'AI for Science Institute, Beijing': `/logos/beijing-ai-for-science-institute.svg`,
   'Argonne National Laboratory': `/logos/argonne-national-lab.svg`,
-  'Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)': `/logos/beijing-iapcm.svg`,
+  'Beijing Institute of Applied Physics and Computational Mathematics (IAPCM)':
+    `/logos/beijing-iapcm.svg`,
   'Chinese Academy of Sciences': `/logos/chinese-academy-of-sciences.svg`,
   'Cornell University': `/logos/cornell-university.svg`,
   'DAMO Academy, Alibaba Inc': `/logos/damo-alibaba-logo.svg`,
   'Deep Principle': `/logos/deep-principle.svg`,
   DeePMD: `/logos/deepmd.svg`,
-  'FAIR at Meta': `icon-logo-meta`,
+  'FAIR at Meta': `icon:Meta`,
   'Google DeepMind': `/logos/deepmind.svg`,
   'ICAMS, Ruhr University Bochum': `/logos/icams-bochum.svg`,
   'Incheon National University': `/logos/incheon-national-university.svg`,
-  'Institute of Computing Technology, Chinese Academy of Science, Beijing': `/logos/ict-cas-beijing.svg`,
+  'Institute of Computing Technology, Chinese Academy of Science, Beijing':
+    `/logos/ict-cas-beijing.svg`,
   'Massachusetts Institute of Technology': `/logos/mit.svg`,
-  'Microsoft Research': `icon-logo-microsoft`,
+  'Microsoft Research': `icon:Microsoft`,
   'National Institute of Standards and Technology': `/logos/nist.svg`,
   'Northwestern University': `/logos/northwestern-university.svg`,
   'Orbital Materials': `/logos/orbital-materials.svg`,
@@ -482,7 +504,8 @@ export const org_logos = {
   'University of Florida': `/logos/university-of-florida.svg`,
   'University of Minnesota': `/logos/university-of-minnesota.svg`,
   'University of Texas at Austin': `/logos/university-of-texas-austin.svg`,
-  'Beijing Information Science and Technology University': `/logos/beijing-information-science-and-technology-university.svg`,
+  'Beijing Information Science and Technology University':
+    `/logos/beijing-information-science-and-technology-university.svg`,
   'Zhejiang Lab': `/logos/zhejiang-lab.svg`,
 } as const
 

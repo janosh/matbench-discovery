@@ -1,8 +1,8 @@
 model_name: DPA-3.1-3M-FT
 model_key: dpa-3.1-3m-ft
 model_version: v0.3 # 2025-06-05
-date_added: "2025-06-05"
-date_published: "2025-06-05"
+date_added: '2025-06-05'
+date_published: '2025-06-05'
 authors:
   - name: Duo Zhang
     affiliation: AI for Science Institute, Beijing

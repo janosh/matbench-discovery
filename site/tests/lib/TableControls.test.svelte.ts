@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 describe(`TableControls`, () => {
   const sample_cols = { Model: true, F1: true, DAF: true, RMSE: false }
 
-  it(`renders with default props`, async () => {
+  it(`renders with default props`, () => {
     const on_filter_change = vi.fn()
     const on_col_change = vi.fn()
 
@@ -25,7 +25,7 @@ describe(`TableControls`, () => {
     expect(col_toggle_btn).toBeDefined()
   })
 
-  it(`responds to filter changes`, async () => {
+  it(`responds to filter changes`, () => {
     const on_filter_change = vi.fn()
 
     mount(TableControls, {
@@ -40,7 +40,7 @@ describe(`TableControls`, () => {
     // Click first checkbox (energy-only) and check if callback is called
     on_filter_change.mockReset()
     const energy_checkbox = Array.from(checkboxes).find((checkbox) =>
-      checkbox.id?.includes(`energy`),
+      checkbox.id?.includes(`energy`)
     ) as HTMLInputElement
 
     if (energy_checkbox) {
@@ -51,7 +51,7 @@ describe(`TableControls`, () => {
     // Click second checkbox (noncompliant) and check if callback is called
     on_filter_change.mockReset()
     const noncomp_checkbox = Array.from(checkboxes).find((checkbox) =>
-      checkbox.id?.includes(`compliant`),
+      checkbox.id?.includes(`compliant`)
     ) as HTMLInputElement
 
     if (noncomp_checkbox) {
@@ -60,7 +60,7 @@ describe(`TableControls`, () => {
     }
   })
 
-  it(`toggles column visibility panel`, async () => {
+  it(`toggles column visibility panel`, () => {
     mount(TableControls, {
       target: document.body,
       props: { visible_cols: sample_cols },
@@ -86,7 +86,7 @@ describe(`TableControls`, () => {
     }
   })
 
-  it(`handles column visibility changes`, async () => {
+  it(`handles column visibility changes`, () => {
     const on_col_change = vi.fn()
 
     mount(TableControls, {
@@ -111,7 +111,7 @@ describe(`TableControls`, () => {
     }
   })
 
-  it(`renders tooltip info icons`, async () => {
+  it(`renders tooltip info icons`, () => {
     mount(TableControls, {
       target: document.body,
       props: { visible_cols: sample_cols },

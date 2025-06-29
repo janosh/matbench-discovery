@@ -29,17 +29,17 @@ jobs:
     uses: janosh/workflows/.github/workflows/pytest.yml@main
     with:
       os: ${{ matrix.os }}
-      python-version: "3.11"
+      python-version: '3.11'
       # TODO remove main branch install of pymatviz after next release
       install-cmd: |
         uv pip install -e .[test,symmetry] --system
         uv pip install git+https://github.com/janosh/pymatviz --system
 
   vitest:
-    uses: janosh/workflows/.github/workflows/npm-test.yml@main
+    uses: janosh/workflows/.github/workflows/deno-test.yml@main
     with:
       working-directory: site
-      install-e2e: ""
+      test-cmd: deno task vitest
 
   scripts:
     runs-on: ubuntu-latest
@@ -57,7 +57,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: '3.11'
 
       - name: Install package and dependencies
         run: pip install -e .[plots]

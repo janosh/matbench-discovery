@@ -25,7 +25,9 @@
   const count_modes = [`occurrence`, `composition`]
   let count_mode = $state(count_modes[0])
 
-  let mp_elem_counts = $derived(elem_counts[`./mp-element-counts-by-${count_mode}.json`])
+  let mp_elem_counts = $derived(
+    elem_counts[`./mp-element-counts-by-${count_mode}.json`],
+  )
   let mp_trj_elem_counts = $derived(
     elem_counts[`./mp-trj-element-counts-by-${count_mode}.json`],
   )
@@ -56,8 +58,8 @@
   {#snippet wbm_elements_heatmap()}
     <label
       for="count-mode"
-      style="display: inline-block; transform: translate(10cqw, 5ex);">Count Mode</label
-    >
+      style="display: inline-block; transform: translate(10cqw, 5ex)"
+    >Count Mode</label>
     <Select
       id="count-mode"
       selected={[count_mode]}
@@ -67,7 +69,7 @@
       maxSelect={1}
     />
     <ColorScaleSelect bind:value={color_scale} selected={[color_scale]} />
-    <p style="text-align: center; margin: 2em; font-size: smaller;">
+    <p style="text-align: center; margin: 2em; font-size: smaller">
       The difference between count modes is best explained by example.
       <code>occurrence</code> mode maps Fe<sub>2</sub>O<sub>3</sub> to {`{Fe: 1, O: 1}`},
       <code>composition</code>
@@ -108,7 +110,7 @@
 
   {#snippet spacegroup_sunbursts()}
     {#if browser}
-      <div style="display: flex; gap: 2em; place-content: center;">
+      <div style="display: flex; gap: 2em; place-content: center">
         <SpacegroupSunburstMp />
         <SpacegroupSunburstWbm />
       </div>
@@ -119,7 +121,7 @@
 <MpElementalReferenceEnergies />
 
 {#if browser}
-  <MPvsMPtrjVsWBMArityHist style="margin: auto; max-width: 60cqw; padding-right: 2em;" />
+  <MPvsMPtrjVsWBMArityHist style="margin: auto; max-width: 60cqw; padding-right: 2em" />
 {/if}
 <p>
   Distribution of unique elements per structure in MP, MPtrj and WBM. The bar heights are
@@ -133,7 +135,7 @@
   ground states.
 </p>
 
-<MPtrjNSitesHist style="margin: auto; max-width: 80cqw; padding-right: 2em;" />
+<MPtrjNSitesHist style="margin: auto; max-width: 80cqw; padding-right: 2em" />
 <p>
   Histogram of number of atoms per structure. The inset shows the same distribution
   log-scaled to visualize the tail of large structures. The green cumulative line in the

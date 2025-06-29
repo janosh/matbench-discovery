@@ -1,6 +1,6 @@
 import { MODELS } from '$lib'
 import { error } from '@sveltejs/kit'
-import per_elem_each_errors from '../per-element-each-errors.json'
+import per_elem_each_errors from '../per-element-each-errors.json' with { type: 'json' }
 import type { PageServerLoad } from './$types'
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -18,6 +18,7 @@ export const load: PageServerLoad = async ({ params }) => {
   // fail site build if energy parity plots are missing
   for (const which_energy of [`e-form`, `each`]) {
     try {
+      // deno-lint-ignore no-await-in-loop
       await import(`$figs/energy-parity/${which_energy}-parity-${model.model_key}.svelte`)
     } catch (exc) {
       throw error(404, { message: (exc as Error).message })

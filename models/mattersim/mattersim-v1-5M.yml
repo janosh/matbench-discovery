@@ -1,8 +1,8 @@
 model_name: MatterSim v1 5M
 model_key: mattersim-v1-5M
 model_version: v1.0.0
-date_added: "2024-12-16"
-date_published: "2024-05-08"
+date_added: '2024-12-16'
+date_published: '2024-05-08'
 authors:
   - name: Han Yang
     affiliation: Microsoft Research AI for Science
@@ -89,7 +89,7 @@ requirements:
   Graphormer: v1
   numpy: 1.26.2
   pymatgen: 2024.5.1
-  python: ">=3.9"
+  python: '>=3.9'
 
 openness: OSCD
 trained_for_benchmark: false

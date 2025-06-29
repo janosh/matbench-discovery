@@ -1,7 +1,7 @@
 import Page from '$routes/tasks/diatomics/+page.svelte'
 import { mount } from 'svelte'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import { doc_query } from '..'
+import { doc_query } from '../index'
 
 // Mock fetch function
 const mock_fetch = vi.fn()
@@ -27,7 +27,7 @@ describe(`Diatomic Page`, () => {
     distances: [0.5, 1.0, 1.5, 2.0, 2.5],
   }
 
-  test(`renders page with initial state`, async () => {
+  test(`renders page with initial state`, () => {
     mock_fetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve(sample_data),
@@ -42,7 +42,7 @@ describe(`Diatomic Page`, () => {
     expect(controls).toBeTruthy()
   })
 
-  test.skip(`loads and caches model data`, async () => {
+  test.skip(`loads and caches model data`, () => {
     mock_fetch.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve(sample_data),
@@ -67,7 +67,7 @@ describe(`Diatomic Page`, () => {
     expect(mock_fetch.mock.calls.length).toBe(n_initial_calls + 3)
   })
 
-  test.skip(`displays pretty model labels on buttons`, async () => {
+  test.skip(`displays pretty model labels on buttons`, () => {
     mount(Page, { target: document.body })
 
     const buttons = document.querySelectorAll(`button`)
@@ -78,7 +78,7 @@ describe(`Diatomic Page`, () => {
     // expect(button_texts).toContain(`MACE-MPA-0`)
   })
 
-  test(`centers model toggle buttons`, async () => {
+  test(`centers model toggle buttons`, () => {
     mount(Page, { target: document.body })
 
     const controls = doc_query(`.controls`)

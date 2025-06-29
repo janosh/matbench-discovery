@@ -1,4 +1,5 @@
 import * as d3sc from 'd3-scale-chromatic'
+import type { IconName } from './icons'
 import type { Label1 as LabelType } from './label-schema.d.ts'
 import type { AllMetrics } from './labels'
 import type { ModelMetadata } from './model-schema.d.ts'
@@ -6,8 +7,10 @@ import type { ModelMetadata } from './model-schema.d.ts'
 export type { Dataset } from './dataset-schema.d.ts'
 export type { ModelMetadata } from './model-schema.d.ts'
 
-export type ModelData = ModelMetadata &
-  keyof AllMetrics & {
+export type ModelData =
+  & ModelMetadata
+  & keyof AllMetrics
+  & {
     // these fields are populated in MODELS variable in models.svelte.ts
     dirname: string
     metadata_file: string
@@ -63,13 +66,13 @@ export type Citation = {
 export type TrainingSet =
   | (`MP 2022` | `MPtrj` | `MPF` | `MP Graphs` | `GNoME` | `MatterSim` | `Alex`)
   | {
-      title: string
-      url: string
-      download_url: string
-      n_structures: number
-      n_materials?: number
-      [k: string]: unknown
-    }
+    title: string
+    url: string
+    download_url: string
+    n_structures: number
+    n_materials?: number
+    [k: string]: unknown
+  }
 
 export type Label = LabelType & {
   color_scale?: keyof typeof d3sc // d3-scale-chromatic color scale name
@@ -90,10 +93,10 @@ export type DiatomicsCurves = {
 
 // Links data structure used for model resource links
 export type LinkData = {
-  paper: { url: string; title: string; icon: string }
-  repo: { url: string; title: string; icon: string }
-  pr_url: { url: string; title: string; icon: string }
-  checkpoint?: { url: string | null; title: string; icon: string; is_missing?: boolean }
+  paper: { url: string; title: string; icon: IconName }
+  repo: { url: string; title: string; icon: IconName }
+  pr_url: { url: string; title: string; icon: IconName }
+  checkpoint?: { url: string | null; title: string; icon: IconName; is_missing?: boolean }
   pred_files: { files: { name: string; url: string }[]; name: string }
 }
 
@@ -106,7 +109,7 @@ export type CellVal =
   | Record<string, unknown>
   | LinkData
   | {
-      [key: string]: string | number | LinkData | null | undefined | boolean
-    }[]
+    [key: string]: string | number | LinkData | null | undefined | boolean
+  }[]
 export type RowData = { style?: string; [key: string]: CellVal }
 export type CellSnippetArgs = { row: RowData; col: Label; val: CellVal }
