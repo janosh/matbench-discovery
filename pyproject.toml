@@ -33,7 +33,7 @@ dependencies = [
   "ase>=3.25",
   "numpy>=1.26",
   "pandas>=2.2.2",
-  "plotly>=6.1",
+  "plotly>=6.1,<6.2",
   "pymatgen>=2024.8.9",
   # strict pin on pymatviz due to https://github.com/janosh/matbench-discovery/issues/209
   "pymatviz[export-figs,df-pdf-export,df-svg-export]==0.16.0",

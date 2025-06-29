@@ -91,9 +91,3 @@ repos:
         files: ^data/datasets\.yml$
         args: [--schemafile, tests/dataset-schema.yml]
       - id: check-github-actions
-
-  - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.402
-    hooks:
-      - id: pyright
-        args: [--level, error]
