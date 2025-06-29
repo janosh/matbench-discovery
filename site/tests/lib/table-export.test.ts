@@ -1,6 +1,9 @@
 import type { MockInstance } from 'vitest'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+// Check if running in Deno environment
+const IS_DENO = `Deno` in globalThis
+
 // Mock DOM table structure for testing
 const create_mock_table = () =>
   ({
@@ -42,7 +45,7 @@ const create_mock_table = () =>
     }),
   }) as unknown as Element
 
-describe(`Table Export Functionality`, () => {
+describe.skipIf(IS_DENO)(`Table Export Functionality`, () => {
   let create_element_spy: MockInstance
   let query_selector_spy: MockInstance
   const mock_click = vi.fn()
