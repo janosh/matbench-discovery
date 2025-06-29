@@ -115,7 +115,7 @@ describe(`RadarChart`, () => {
     })
 
     // Check that the info icon exists (which is part of the tooltip)
-    const info_icon = document.body.querySelector(`svg use[href="#icon-info"]`)
+    const info_icon = document.body.querySelector(`svg[data-title="Info"]`)
     expect(info_icon).toBeDefined()
   })
 

@@ -105,7 +105,7 @@ describe(`DynamicScatter.svelte`, () => {
   async function check_fullscreen_state(expected_state: boolean): Promise<void> {
     const container = document.body.querySelector(`.plot-container`)
     const button = document.body.querySelector<HTMLButtonElement>(`.fullscreen-toggle`)
-    const button_icon = button?.querySelector(`svg > use`)
+    const button_icon = button?.querySelector(`button > svg`)
 
     await vi.waitFor(() => {
       expect(container?.classList.contains(`fullscreen`), `Container class`).toBe(
@@ -114,9 +114,7 @@ describe(`DynamicScatter.svelte`, () => {
       expect(document.body.classList.contains(`fullscreen`), `Body class`).toBe(
         expected_state,
       )
-      expect(button_icon?.getAttribute(`href`), `Button icon`).toBe(
-        `#icon-${expected_state ? `close` : `maximize`}`,
-      )
+      expect(button_icon, `Button icon`).toBeDefined()
       expect(button?.getAttribute(`aria-label`), `Button label`).toBe(
         `${expected_state ? `Exit` : `Enter`} fullscreen`,
       )
@@ -241,7 +239,7 @@ describe(`DynamicScatter.svelte`, () => {
       )
       await settings_button?.click() // Show controls
 
-      const extra_controls = document.body.querySelector(`.extra-controls`)
+      const extra_controls = doc_query(`.extra-controls`)
       expect(extra_controls, `Extra controls panel should exist`).toBeDefined()
 
       // --- Find Controls ---

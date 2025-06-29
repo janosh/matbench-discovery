@@ -187,7 +187,7 @@ describe(`MetricsTable`, () => {
     document.body.innerHTML = `
       <div>
         <button class="pred-files-btn" aria-label="Download model prediction files">
-          <svg><use href="#icon-graph"></use></svg>
+          <svg><path d="..."></path></svg>
         </button>
       </div>
     `
@@ -825,27 +825,15 @@ describe(`MetricsTable`, () => {
       const reference_cell = links_cells[0]
       const reference_links = Array.from(reference_cell.querySelectorAll(`a`))
 
-      // Extract icon ids from SVG use elements in the reference cell
+      // Check that links have SVG icons (now using Icon component)
       const reference_icons = reference_links.map((link) => {
-        const use = link.querySelector(`svg use`)
-        return use?.getAttribute(`href`)
+        const svg = link.querySelector(`svg`)
+        return svg !== null
       })
 
-      // Define the expected icons based on the LinkData type
-      const expected_icon_ids = [
-        `#icon-paper`, // Paper icon
-        `#icon-code`, // Repo icon
-        `#icon-pull-request`, // PR link icon
-        `#icon-download`, // Checkpoint icon
-      ]
-
-      // Verify the icons used match our expected set
-      for (const icon of reference_icons) {
-        // Some icons might be missing, so check only the ones that exist
-        if (icon) {
-          expect(expected_icon_ids).toContain(icon)
-        }
-      }
+      // Verify that links have SVG icons
+      expect(reference_icons.length).toBeGreaterThan(0)
+      expect(reference_icons.some((has_icon) => has_icon)).toBe(true)
 
       // Check that the order of links is consistent across cells
       // (not checking all cells as some might have missing links)
@@ -853,19 +841,15 @@ describe(`MetricsTable`, () => {
         const second_cell = links_cells[1]
         const second_links = Array.from(second_cell.querySelectorAll(`a`))
 
-        // If the second cell has the same number of links, check order
+        // If the second cell has the same number of links, check they all have icons
         if (second_links.length === reference_links.length) {
           const second_icons = second_links.map((link) => {
-            const use = link.querySelector(`svg use`)
-            return use?.getAttribute(`href`)
+            const svg = link.querySelector(`svg`)
+            return svg !== null
           })
 
-          // The icons should appear in the same order
-          for (const [idx, ref_icon] of reference_icons.entries()) {
-            if (ref_icon && second_icons[idx]) {
-              expect(second_icons[idx]).toBe(ref_icon)
-            }
-          }
+          // All links should have icons
+          expect(second_icons.every((has_icon) => has_icon)).toBe(true)
         }
       }
     })

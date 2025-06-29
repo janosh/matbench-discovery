@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import type { ModelData } from '$lib'
-  import { calculate_days_ago } from '$lib'
+  import { calculate_days_ago, Icon } from '$lib'
   import { extent } from 'd3-array'
   import { ColorScaleSelect, format_num, ScatterPlot } from 'matterviz'
   import Select from 'svelte-multiselect'
@@ -255,18 +255,17 @@
       aria-label={is_fullscreen ? `Exit fullscreen` : `Enter fullscreen`}
       title={is_fullscreen ? `Exit fullscreen` : `Enter fullscreen`}
     >
-      <svg style="width: 1.3em; height: 1.3em">
-        <use href="#icon-{is_fullscreen ? `close` : `maximize`}" />
-      </svg>
+      <Icon
+        icon={is_fullscreen ? `Close` : `Maximize`}
+        style="width: 1.3em; height: 1.3em"
+      />
     </button>
     <button
       class="settings-toggle icon-button"
       onclick={() => (show_extra_controls = !show_extra_controls)}
       aria-label="Toggle extra plot controls"
     >
-      <svg style="width: 1.3em; height: 1.3em">
-        <use href="#icon-settings" />
-      </svg>
+      <Icon icon="Settings" style="width: 1.3em; height: 1.3em" />
     </button>
   </div>
 
@@ -277,9 +276,11 @@
       class="extra-controls"
       use:titles_as_tooltips
     >
-      <svg style="width: 1.3em; height: 1.3em" class="drag-handle">
-        <use href="#icon-drag-indicator" />
-      </svg>
+      <Icon
+        icon="DragIndicator"
+        class="drag-handle"
+        style="width: 1.3em; height: 1.3em; position: absolute; top: 5px; right: 5px; background-color: rgba(255, 255, 255, 0.2); border-radius: 3px"
+      />
       <label
         style="grid-column: 1/-1"
         title="Toggle visibility of model name labels on the scatter plot points"
@@ -601,16 +602,6 @@
     top: 3.3em;
     right: 1em;
     left: auto; /* Ensure left is not set */
-  }
-  .drag-handle {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    width: 20px;
-    height: 20px;
-    background-color: rgba(255, 255, 255, 0.2);
-    border-radius: 3px;
-    /* Add a visual indicator like dots or lines later if desired */
   }
   .extra-controls input[type='number'] {
     width: 40px;

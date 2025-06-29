@@ -7,7 +7,7 @@
   }
   let { icon, ...rest }: Props = $props()
 
-  const data = $derived.by(() => {
+  const { path, ...data } = $derived.by(() => {
     if (!(icon in icon_data)) {
       console.error(`Icon '${icon}' not found`)
       return icon_data.Alert // fallback
@@ -16,11 +16,11 @@
   })
 </script>
 
-<svg fill="currentColor" {...data} {...rest}>
-  {#if data.path.trim().startsWith(`<`)}
-    {@html data.path}
+<svg fill="currentColor" {...data} {...rest} data-title={icon}>
+  {#if path.trim().startsWith(`<`)}
+    {@html path}
   {:else}
-    <path d={data.path} />
+    <path d={path} />
   {/if}
 </svg>
 
