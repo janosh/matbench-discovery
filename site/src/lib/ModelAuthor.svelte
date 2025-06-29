@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Author } from '$lib'
+  import { type Author, Icon } from '$lib'
 
   interface Props {
     author: Author
@@ -9,35 +9,25 @@
 
 {#if author}
   {@const { name, email, orcid, affiliation, url, github } = author}
-  <span title={affiliation}>{name}</span>
+  <small title={affiliation}>{name}</small>
   {#if email}
     <a aria-label="Email" href="mailto:{email}">
-      <svg><use href="#icon-mail"></use></svg>
+      <Icon icon="Contact" />
     </a>
   {/if}
   {#if orcid}
-    <a aria-label="ORCID" href={orcid}>
-      <svg><use href="#icon-orcid"></use></svg>
+    <a aria-label="Orcid" href={orcid}>
+      <Icon icon="Orcid" />
     </a>
   {/if}
   {#if url}
     <a aria-label="Website" href={url}>
-      <svg><use href="#icon-globe"></use></svg>
+      <Icon icon="Globe" />
     </a>
   {/if}
   {#if github}
     <a aria-label="GitHub" href={github}>
-      <svg><use href="#icon-github"></use></svg>
+      <Icon icon="GitHub" />
     </a>
   {/if}
 {/if}
-
-<style>
-  span {
-    font-size: smaller;
-  }
-  svg:has(use:only-child) {
-    width: 16px;
-    vertical-align: middle;
-  }
-</style>

@@ -1,12 +1,18 @@
 <script lang="ts">
-  import { HeatmapTable, IconList, TableControls } from '$lib'
+  import { HeatmapTable, Icon, IconList, TableControls } from '$lib'
   import { metric_better_as } from '$lib/metrics'
   import type { Snippet } from 'svelte'
   import { click_outside } from 'svelte-zoo/actions'
   import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from './labels'
   import { assemble_row_data } from './metrics'
   import { heatmap_class } from './table-export'
-  import type { CellSnippetArgs, DiscoverySet, Label, LinkData, ModelData } from './types'
+  import type {
+    CellSnippetArgs,
+    DiscoverySet,
+    Label,
+    LinkData,
+    ModelData,
+  } from './types'
 
   interface Props {
     discovery_set?: DiscoverySet
@@ -158,14 +164,18 @@
 
 {#snippet links_cell({ val }: CellSnippetArgs)}
   {@const links = val as LinkData}
-  {#each Object.entries(links).filter(([key]) => key !== `pred_files`) as [key, link] (JSON.stringify(link))}
-    {#if `url` in link && ![`missing`, `not available`, ``, null, undefined].includes(link.url)}
+  {#each Object.entries(links).filter(([key]) => key !== `pred_files`) as
+    [key, link]
+    (JSON.stringify(link))
+  }
+    {#if `url` in link &&
+    ![`missing`, `not available`, ``, null, undefined].includes(link.url)}
       <a href={link.url} target="_blank" rel="noopener noreferrer" title={link.title}>
-        {@html link.icon}
+        <Icon icon={link.icon} />
       </a>
     {:else}
       <span title="{key} not available">
-        <svg><use href="#icon-unavailable"></use></svg>
+        <Icon icon="Unavailable" />
       </span>
     {/if}
   {/each}
@@ -175,7 +185,7 @@
       aria-label="Download model prediction files"
       onclick={(event) => show_dropdown(event, links)}
     >
-      <svg><use href="#icon-graph"></use></svg>
+      <Icon icon="Graph" />
     </button>
   {/if}
 {/snippet}
@@ -209,9 +219,10 @@
 
 {#if pred_files_dropdown_pos}
   {@const { x, y } = pred_files_dropdown_pos}
+  {@const style = `position: fixed; left: ${x}px; top: ${y}px;`}
   <div
     class="pred-files-dropdown"
-    style="position: fixed; left: {x}px; top: {y}px;"
+    {style}
     use:click_outside={{ callback: close_dropdown }}
   >
     <h4>Files for {active_model_name}</h4>

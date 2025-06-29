@@ -1,8 +1,8 @@
 model_name: CGCNN
 model_key: cgcnn
 model_version: v0.1.0 # the aviary version
-date_added: "2022-12-28"
-date_published: "2017-10-27"
+date_added: '2022-12-28'
+date_published: '2017-10-27'
 authors:
   - name: Tian Xie
     email: txie@csail.mit.edu

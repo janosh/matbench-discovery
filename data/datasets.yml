@@ -309,7 +309,8 @@ sAlex Validation:
 
 OpenLAM:
   name: OpenLAM dataset v1
-  contains: [OMat24, MPtrj, Alex] # strictly speaking contains Alex2D, not the Alex in this file which refers to Alex3D
+  # strictly speaking contains Alex2D, not the Alex in this file which refers to Alex3D
+  contains: [OMat24, MPtrj, Alex]
   url: https://aissquare.com/datasets/detail?pageType=datasets&name=LAMBench-TrainingSet-v1&id=308
   download_url: https://aissquare.com/datasets/detail?pageType=datasets&name=LAMBench-TrainingSet-v1&id=308 # will be combined for downloading soon
   doi: https://doi.org/10.48550/arXiv.2501.16358

@@ -60,7 +60,8 @@
   })
 
   let sorted_data = $derived(
-    data?.filter?.((row) => Object.values(row).some((val) => val !== undefined)) ?? [],
+    data?.filter?.((row) => Object.values(row).some((val) => val !== undefined)) ??
+      [],
   )
 
   // Helper to make column IDs (needed since column labels in different groups can be repeated)
@@ -132,9 +133,7 @@
       col.color_scale === null ||
       typeof val !== `number` ||
       !show_heatmap // Disable heatmap colors if show_heatmap is false
-    ) {
-      return { bg: null, text: null }
-    }
+    ) return { bg: null, text: null }
 
     const col_id = get_col_id(col)
     const numeric_vals = sorted_data
@@ -158,7 +157,9 @@
     if (sort_state.column === col_id) {
       // When column is sorted, show ↓ for ascending (smaller values at top)
       // and ↑ for descending (larger values at top)
-      return `<span style="font-size: 0.8em;">${sort_state.ascending ? `↓` : `↑`}</span>`
+      return `<span style="font-size: 0.8em;">${
+        sort_state.ascending ? `↓` : `↑`
+      }</span>`
     } else if (col.better) {
       // When column is not sorted, show arrow indicating which values are better:
       // ↑ for higher-is-better metrics
@@ -181,7 +182,7 @@
       {/if}
     </div>
   {/if}
-  <table class:fixed-header={fixed_header} class={heatmap_class} style="grid-column: 2;">
+  <table class:fixed-header={fixed_header} class={heatmap_class} style="grid-column: 2">
     <thead>
       <!-- Don't add a table row for group headers if there are none -->
       {#if visible_columns.some((col) => col.group)}
@@ -193,7 +194,10 @@
             {:else}
               {@const group_cols = visible_columns.filter((c) => c.group === group)}
               <!-- Only render the group header once for each group by checking if this is the first column of this group -->
-              {#if visible_columns.findIndex((c) => c.group === group) === visible_columns.findIndex((c) => c.group === group && c.label === label)}
+              {#if visible_columns.findIndex((c) => c.group === group) ===
+            visible_columns.findIndex((c) =>
+              c.group === group && c.label === label
+            )}
                 <th title={description} colspan={group_cols.length}>{@html group}</th>
               {/if}
             {/if}

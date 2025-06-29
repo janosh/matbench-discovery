@@ -18,7 +18,7 @@ describe(`Landing Page`, () => {
   })
 
   it(`toggles discovery set when clicking buttons`, async () => {
-    const buttons = document.body.querySelectorAll(`.selection-toggle button`)
+    const buttons = Array.from(document.body.querySelectorAll(`.selection-toggle button`))
     const [full_test_btn, unique_protos_btn] = buttons
 
     // Initially Unique Prototypes should be active
@@ -33,7 +33,7 @@ describe(`Landing Page`, () => {
     expect(full_test_btn.classList.contains(`active`)).toBe(true)
   })
 
-  it(`toggles column visibility panel`, async () => {
+  it(`toggles column visibility panel`, () => {
     const columns_btn = document.body.querySelector(`details.column-toggles summary`)
     const column_menu = document.body.querySelector(`.column-menu`)
 
@@ -74,7 +74,7 @@ describe(`Landing Page`, () => {
     // Table should reflect column visibility changes
     let f1_cells = document.body.querySelectorAll(`th, td`)
     let has_f1_column = Array.from(f1_cells).some((cell) =>
-      cell.textContent?.includes(`F1`),
+      cell.textContent?.includes(`F1`)
     )
     expect(has_f1_column).toBe(true)
 
@@ -82,7 +82,7 @@ describe(`Landing Page`, () => {
       `.column-menu input[type="checkbox"]`,
     )
     const f1_checkbox = Array.from(checkboxes).find((cb) =>
-      cb.parentElement?.textContent?.includes(`F1`),
+      cb.parentElement?.textContent?.includes(`F1`)
     )
     expect(f1_checkbox?.checked).toBe(true)
 

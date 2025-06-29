@@ -1,8 +1,8 @@
 model_name: eqV2 M
 model_key: eqV2-m-omat-salex-mp
 model_version: v2024.10.18
-date_added: "2024-10-18"
-date_published: "2024-10-18"
+date_added: '2024-10-18'
+date_published: '2024-10-18'
 authors:
   - name: Luis Barroso-Luque
     affiliation: FAIR at Meta

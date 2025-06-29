@@ -1,8 +1,8 @@
 model_name: MEGNet
 model_key: megnet
 model_version: v2022.9.20
-date_added: "2022-11-14"
-date_published: "2021-12-18"
+date_added: '2022-11-14'
+date_published: '2021-12-18'
 authors:
   - name: Chi Chen
     affiliation: UC San Diego

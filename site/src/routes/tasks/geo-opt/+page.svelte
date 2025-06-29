@@ -35,7 +35,7 @@
 
 <ul>
   {#each Object.entries(plots) as [name, Plot], idx (name + idx)}
-    <Plot {name} style="width: 100%; place-self: center;" />
+    <Plot {name} style="width: 100%; place-self: center" />
   {/each}
 </ul>
 

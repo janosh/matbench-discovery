@@ -1,8 +1,8 @@
 model_name: ORB v3
 model_key: orb-v3
 model_version: v3
-date_added: "2025-04-05"
-date_published: "2025-04-05"
+date_added: '2025-04-05'
+date_published: '2025-04-05'
 authors:
   - name: Ben Rhodes
     affiliation: Orbital Materials
@@ -69,7 +69,7 @@ hyperparams:
   max_neighbors: 120
 
 requirements:
-  orb-models: "0.5.0"
+  orb-models: '0.5.0'
 
 training_set: [MPtrj, Alex, OMat24]
 training_cost:

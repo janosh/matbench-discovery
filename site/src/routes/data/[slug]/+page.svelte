@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { arr_to_str, calculate_days_ago, format_date, slugify } from '$lib'
+  import { arr_to_str, calculate_days_ago, format_date, Icon, slugify } from '$lib'
   import type { Dataset } from '$lib/types'
   import pkg from '$site/package.json'
   import { format_num } from 'matterviz'
@@ -31,7 +31,7 @@
   }
 </script>
 
-<h1 style="font-size: 2.5em;">{dataset.name}</h1>
+<h1 style="font-size: 2.5em">{dataset.name}</h1>
 
 <section class="meta-info">
   {#if dataset.version}
@@ -39,7 +39,7 @@
   {/if}
 
   <div>
-    <svg><use href="#icon-calendar"></use></svg>
+    <Icon icon="Calendar" />
     Created: <Tooltip text="{days_created} days ago">
       {format_date(dataset.date_created)}
     </Tooltip>
@@ -47,7 +47,7 @@
 
   {#if dataset.date_added}
     <div>
-      <svg><use href="#icon-calendar-plus"></use></svg>
+      <Icon icon="CalendarPlus" />
       Added: <Tooltip text="{days_added} days ago">
         {format_date(dataset.date_added)}
       </Tooltip>
@@ -55,7 +55,7 @@
   {/if}
 
   <div>
-    <svg><use href="#icon-database"></use></svg>
+    <Icon icon="Database" />
     <Tooltip text={dataset.n_structures.toLocaleString()}>
       {format_num(dataset.n_structures, `.3~s`)}
     </Tooltip> structures
@@ -63,7 +63,7 @@
 
   {#if dataset.n_materials}
     <div>
-      <svg><use href="#icon-lattice"></use></svg>
+      <Icon icon="Lattice" />
       <Tooltip text={dataset.n_materials.toLocaleString()}>
         {format_num(dataset.n_materials, `.3~s`)}
       </Tooltip> materials
@@ -71,12 +71,12 @@
   {/if}
 
   <div>
-    <svg><use href="#icon-{dataset.open ? `unlock` : `lock`}"></use></svg>
+    <Icon icon={dataset.open ? `Unlock` : `Lock`} />
     {dataset.open ? `Open` : `Closed`}
   </div>
 
   <div>
-    <svg><use href="#icon-license"></use></svg>
+    <Icon icon="License" />
     {dataset.license}
   </div>
 </section>
@@ -88,7 +88,7 @@
     title="View dataset website"
     use:titles_as_tooltips
   >
-    <svg><use href="#icon-globe"></use></svg> Website
+    <Icon icon="Globe" /> Website
   </a>
 
   {#if dataset.download_url}
@@ -98,7 +98,7 @@
       title="Download dataset"
       use:titles_as_tooltips
     >
-      <svg><use href="#icon-download"></use></svg> Download
+      <Icon icon="Download" /> Download
     </a>
   {/if}
 
@@ -109,7 +109,7 @@
       title="Digital Object Identifier"
       use:titles_as_tooltips
     >
-      <svg><use href="#icon-doi"></use></svg> DOI
+      <Icon icon="DOI" /> DOI
     </a>
   {/if}
 
@@ -119,7 +119,7 @@
     title="View source YAML file"
     use:titles_as_tooltips
   >
-    <svg><use href="#icon-code"></use></svg> Source
+    <Icon icon="Code" /> Source
   </a>
 </section>
 
@@ -190,21 +190,21 @@
           {/if}
           {#if person.email}
             <a href="mailto:{person.email}" aria-label="Email">
-              <svg><use href="#icon-mail"></use></svg>
+              <Icon icon="Contact" />
             </a>
           {/if}
           {#if person.github}
             <a href={person.github} {...ext_link_props} aria-label="GitHub">
-              <svg><use href="#icon-github"></use></svg>
+              <Icon icon="GitHub" />
             </a>
           {/if}
           {#if person.orcid}
             <a href={person.orcid} {...ext_link_props} aria-label="ORCID">
-              <svg><use href="#icon-orcid"></use></svg>
+              <Icon icon="Orcid" />
             </a>{/if}
           {#if person.url}
             <a href={person.url} {...ext_link_props} aria-label="Website">
-              <svg><use href="#icon-globe"></use></svg>
+              <Icon icon="Globe" />
             </a>{/if}
         </li>
       {/each}

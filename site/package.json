@@ -14,15 +14,6 @@
   "license": "MIT",
   "type": "module",
   "bugs": "https://github.com/janosh/matbench-discovery/issues",
-  "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
-    "preview": "vite preview",
-    "serve": "vite build && vite preview",
-    "check": "svelte-check",
-    "test": "vitest",
-    "changelog": "npx auto-changelog --output ../changelog.md --hide-credit --commit-limit false"
-  },
   "dependencies": {
     "html-to-image": "^1.11.13",
     "xlsx": "^0.18.5"
@@ -53,8 +44,6 @@
     "katex": "^0.16.22",
     "matterviz": "^0.1.1",
     "mdsvex": "^0.12.6",
-    "prettier": "^3.5.3",
-    "prettier-plugin-svelte": "^3.4.0",
     "rehype-autolink-headings": "^7.1.0",
     "rehype-katex-svelte": "^1.2.0",
     "rehype-slug": "^6.0.0",
@@ -75,10 +64,5 @@
     "unified": "^11.0.5",
     "vite": "^6.3.5",
     "vitest": "^3.2.3"
-  },
-  "prettier": {
-    "semi": false,
-    "singleQuote": true,
-    "printWidth": 90
   }
 }

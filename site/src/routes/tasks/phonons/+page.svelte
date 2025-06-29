@@ -6,9 +6,13 @@
   // Default column visibility
   let visible_cols: Record<string, boolean> = $state({
     // Hide other metrics
-    ...Object.fromEntries(Object.values(ALL_METRICS).map((col) => [col.label, false])),
+    ...Object.fromEntries(
+      Object.values(ALL_METRICS).map((col) => [col.label, false]),
+    ),
     // Show all metadata
-    ...Object.fromEntries(Object.values(METADATA_COLS).map((col) => [col.label, true])),
+    ...Object.fromEntries(
+      Object.values(METADATA_COLS).map((col) => [col.label, true]),
+    ),
     // Show phonon metrics
     [ALL_METRICS.κ_SRME.label]: true,
   })
@@ -31,12 +35,11 @@
   and the help of Atsushi Togo who kindly shared the
   <a
     href="https://github.com/atztogo/phonondb/blob/main/README.md#url-links-to-phono3py-finite-displacement-method-inputs-of-103-compounds-on-mdr-at-nims-pbe"
-    >PBE reference data for the 103 MP structures</a
-  > that form the test set for this task.
+  >PBE reference data for the 103 MP structures</a> that form the test set for this task.
 </p>
 
 <MetricScatter
   x_prop={HYPERPARAMS.model_params}
   y_prop={ALL_METRICS.κ_SRME}
-  style="height: 400px;"
+  style="height: 400px"
 />

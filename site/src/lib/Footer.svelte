@@ -1,27 +1,28 @@
 <script lang="ts">
+  import { Icon } from '$lib'
   import pkg from '$site/package.json'
 </script>
 
 <footer>
   <nav>
     <a href="{pkg.repository}/issues">
-      <svg><use href="#icon-issues" /></svg>
+      <Icon icon="Issues" />
       Issues
     </a>
     <a href="mailto:janosh.riebesell@gmail.com?subject=Matbench Discovery">
-      <svg><use href="#icon-contact" /></svg>
+      <Icon icon="Contact" />
       Contact
     </a>
     <a href="/changelog">
-      <svg><use href="#icon-changelog" /></svg>
+      <Icon icon="Changelog" />
       Changelog
     </a>
     <a href="/rss.xml" title="Be notified of new model submissions">
-      <svg><use href="#icon-rss" /></svg>
+      <Icon icon="RSS" />
       RSS
     </a>
   </nav>
-  <img src="/favicon.svg" alt="Logo" width="30px" style="vertical-align: middle;" />
+  <img src="/favicon.svg" alt="Logo" width="30px" style="vertical-align: middle" />
   &ensp;{pkg.title} &ensp; | &ensp; ©
   <a href={pkg[`author-url`]}>{pkg.author.split(`<`)[0]}</a>
   (<a href="{pkg.repository}/blob/-/license">2022</a>)

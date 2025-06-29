@@ -1,8 +1,8 @@
 model_name: AlchemBERT
 model_key: alchembert
 model_version: v2024.12.25
-date_added: "2024-12-25"
-date_published: "2024-12-11"
+date_added: '2024-12-25'
+date_published: '2024-12-11'
 authors:
   - name: Xiaotong Liu
     affiliation: Beijing Information Science and Technology University

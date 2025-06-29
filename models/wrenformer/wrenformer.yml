@@ -1,8 +1,8 @@
 model_name: Wrenformer
 model_key: wrenformer
 model_version: v0.1.0 # the aviary version
-date_added: "2022-11-26"
-date_published: "2021-06-21"
+date_added: '2022-11-26'
+date_published: '2021-06-21'
 authors:
   - name: Janosh Riebesell
     affiliation: University of Cambridge, Lawrence Berkeley National Laboratory

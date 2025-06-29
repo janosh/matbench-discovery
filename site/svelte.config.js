@@ -48,13 +48,15 @@ export default {
 
         if (!route?.includes(`discovery-metric-figs`)) return
 
-        let [fig_index, ref_index] = [[], []]
+        const fig_index = []
+        const ref_index = []
 
         // Replace figure labels with 'Fig. {n}' and add to fig_index
         let code = file.content.replace(/@label:((fig|tab):[^\s]+)/g, (_match, id) => {
           if (!fig_index.includes(id)) fig_index.push(id)
           const idx = (route.startsWith(`si`) ? `S` : ``) + fig_index.length
-          const link_icon = `<a aria-hidden="true" tabindex="-1" href="#${id}"><svg width="16" height="16" viewBox="0 0 16 16"><use xlink:href="#octicon-link"></use></svg></a>`
+          const link_icon =
+            `<a aria-hidden="true" tabindex="-1" href="#${id}"><svg width="16" height="16" viewBox="0 0 16 16"><use xlink:href="#octicon-link"></use></svg></a>`
           return `<strong id='${id}'>${link_icon}Fig. ${idx}</strong>`
         })
 
@@ -65,7 +67,7 @@ export default {
           (_full_str, id, fig_or_Fig) => {
             const id_lower = id.toLowerCase()
             let idx = fig_index.indexOf(id_lower) + 1
-            if (idx == 0) {
+            if (idx === 0) {
               console.trace(`Figure id='${id}' not found, expected one of ${fig_index}`)
               idx = `not found`
             }
@@ -79,7 +81,7 @@ export default {
           /\[?@((.+?)_.+?_(\d{4}));?\]?/g, // ends with ;?\]? to match single and multiple citations
           (_match, id, author, year) => {
             let idx = ref_index.indexOf(id)
-            if (idx == -1) {
+            if (idx === -1) {
               ref_index.push(id)
               idx = ref_index.length - 1
             }

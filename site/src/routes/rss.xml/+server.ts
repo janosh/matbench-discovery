@@ -12,8 +12,7 @@ const base_url = pkg.homepage.endsWith(`/`) ? pkg.homepage : `${pkg.homepage}/`
 // Formats model data as XML for RSS feed
 function format_model_for_rss(model: ModelData): string {
   // Extract metrics from the 'full_test_set' or fallback to first available discovery set
-  const discovery_metrics =
-    model.metrics?.discovery?.full_test_set ||
+  const discovery_metrics = model.metrics?.discovery?.full_test_set ||
     (model.metrics?.discovery && Object.values(model.metrics.discovery)[0])
 
   const training_set = format_train_set(model.training_set, model)
@@ -22,32 +21,34 @@ function format_model_for_rss(model: ModelData): string {
 
   const metrics_text = discovery_metrics
     ? Object.entries(discovery_metrics)
-        .filter(([_key, value]) => typeof value === `number`)
-        .map(([key, value]) => `${key}: ${format_num(value as number)}`)
-        .join(`,<br>&nbsp;&nbsp;`)
+      .filter(([_key, value]) => typeof value === `number`)
+      .map(([key, value]) => `${key}: ${format_num(value as number)}`)
+      .join(`,<br>&nbsp;&nbsp;`)
     : `No metrics available`
 
   const authors_text = model.authors
     ? model.authors
-        .map((author) => {
-          const parts = []
-          parts.push(author.name)
-          if (author.affiliation) parts.push(`(${author.affiliation})`)
-          return parts.join(` `)
-        })
-        .join(`, `)
+      .map((author) => {
+        const parts = []
+        parts.push(author.name)
+        if (author.affiliation) parts.push(`(${author.affiliation})`)
+        return parts.join(` `)
+      })
+      .join(`, `)
     : `Unknown authors`
 
   const model_type = model.model_type
     ? `<p><strong>Model Type:</strong> ${model.model_type}</p>`
     : ``
   const hyperparams = model.hyperparams
-    ? `<p><strong>Key Hyperparameters:</strong><br>&nbsp;&nbsp;${Object.entries(
+    ? `<p><strong>Key Hyperparameters:</strong><br>&nbsp;&nbsp;${
+      Object.entries(
         model.hyperparams,
       )
         .filter(([key]) => !key.includes(`_`))
         .map(([key, value]) => `${key}: ${value}`)
-        .join(`,<br>&nbsp;&nbsp;`)}</p>`
+        .join(`,<br>&nbsp;&nbsp;`)
+    }</p>`
     : ``
   const license_info = model.license
     ? `<p><strong>License:</strong> ${model.license.code || model.license}</p>`
@@ -77,7 +78,7 @@ function format_model_for_rss(model: ModelData): string {
 }
 
 // Generates an RSS feed of all models
-export async function GET() {
+export function GET() {
   // Sort models by date added (newest first)
   const sorted_models = [...MODELS].sort((m1, m2) => {
     return new Date(m2.date_added).getTime() - new Date(m1.date_added).getTime()
@@ -92,9 +93,8 @@ export async function GET() {
         <description>${pkg.description}</description>
         <link>${pkg.homepage}</link>
         <atom:link href="${rss_feed_url}" rel="self" type="application/rss+xml"/>
-        ${sorted_models
-          .map(
-            (model) => `
+        ${
+    sorted_models.map((model) => `
             <item>
               <title>${model.model_name}</title>
               <description><![CDATA[${format_model_for_rss(model)}]]></description>
@@ -102,9 +102,8 @@ export async function GET() {
               <guid isPermaLink="true">${base_url}models/${model.model_key}</guid>
               <pubDate>${new Date(model.date_added).toUTCString()}</pubDate>
             </item>
-          `,
-          )
-          .join(``)}
+          `).join(``)
+  }
       </channel>
     </rss>
   `.trim()

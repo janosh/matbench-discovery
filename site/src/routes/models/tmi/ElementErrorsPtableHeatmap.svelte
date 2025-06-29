@@ -50,8 +50,10 @@
       manual_cbar_max,
       normalized,
     }),
-    restore: (values) =>
-      ({ color_scale, current_model, cbar_max, manual_cbar_max, normalized } = values),
+    restore: (
+      values,
+    ) => ({ color_scale, current_model, cbar_max, manual_cbar_max, normalized } =
+      values),
   }
 </script>
 
@@ -92,7 +94,7 @@
 
 <PeriodicTable
   {heatmap_values}
-  color_scale={color_scale[0]}
+  {color_scale}
   bind:active_element
   color_scale_range={cs_range}
   tile_props={{ precision: `0.2` }}
@@ -101,7 +103,7 @@
   {...rest}
 >
   {#snippet inset()}
-    <TableInset style="align-content: center;">
+    <TableInset style="align-content: center">
       <PtableInset
         element={active_element}
         elem_counts={heatmap_values}
@@ -111,10 +113,10 @@
       <ColorBar
         title="{current_model[0]} ({normalized ? `normalized` : `eV/atom`})"
         title_side="top"
-        color_scale={color_scale[0]}
+        {color_scale}
         tick_labels={5}
         range={cs_range}
-        style="width: 85%; margin: 0 2em;"
+        style="width: 85%; margin: 0 2em"
       />
     </TableInset>
   {/snippet}

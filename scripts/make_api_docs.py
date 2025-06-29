@@ -1,5 +1,9 @@
 """Update auto-generated API docs viewable on the site's /api page."""
 
+# /// script
+# dependencies = ["lazydocs"]
+# ///
+
 import json
 import os
 from glob import glob

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Icon } from '$lib'
   import { Tooltip } from 'svelte-zoo'
 
   interface OptionInfo {
@@ -25,10 +26,10 @@
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Info"
-            style="line-height: 1;"
+            style="line-height: 1"
             onclick={(event) => event.stopPropagation()}
           >
-            <svg><use href="#icon-info" /></svg>
+            <Icon icon="Info" />
           </a>
         {/if}
       </button>

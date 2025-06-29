@@ -9,7 +9,7 @@ const test_model = MODELS.find((m) => m.model_key === model_key)
 if (!test_model) throw `missing test model`
 
 describe(`Model Detail Page`, () => {
-  it(`renders model details correctly`, async () => {
+  it(`renders model details correctly`, () => {
     // First verify test model exists
     mount(ModelPage, { target: document.body, props: { data: { model: test_model } } })
 

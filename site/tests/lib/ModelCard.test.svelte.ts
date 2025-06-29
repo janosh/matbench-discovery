@@ -32,21 +32,21 @@ describe(`ModelCard`, () => {
       // Training set is now first in the metadata section, so we need to check other spans
       // Find the date_added span by its content
       const date_added_span = Array.from(info_spans).find((span) =>
-        span.textContent?.includes(`Added ${model.date_added}`),
+        span.textContent?.includes(`Added ${model.date_added}`)
       )
       expect(date_added_span).toBeDefined()
       expect(date_added_span?.textContent).toContain(model.date_added)
 
       if (model.date_published) {
         const date_published_span = Array.from(info_spans).find((span) =>
-          span.textContent?.includes(`Published ${model.date_published}`),
+          span.textContent?.includes(`Published ${model.date_published}`)
         )
         expect(date_published_span).toBeDefined()
         expect(date_published_span?.textContent).toContain(model.date_published)
       }
 
       const params_span = Array.from(info_spans).find((span) =>
-        span.textContent?.includes(`${format_num(model.model_params, `.3~s`)} params`),
+        span.textContent?.includes(`${format_num(model.model_params, `.3~s`)} params`)
       )
       expect(params_span).toBeDefined()
     })
@@ -119,7 +119,7 @@ describe(`ModelCard`, () => {
       expect(f1_metric?.classList.contains(`active`)).toBe(true)
 
       const kappa_metric = Array.from(metrics_lis).find((m) =>
-        m.textContent?.includes(`κ`),
+        m.textContent?.includes(`κ`)
       )
       const kappa_value = model.metrics?.phonons?.kappa_103?.κ_SRME
       expect(kappa_metric?.querySelector(`strong`)?.textContent?.trim()).toBe(
@@ -141,7 +141,7 @@ describe(`ModelCard`, () => {
   })
 
   describe(`Expandable Details`, () => {
-    it(`toggles details section visibility`, async () => {
+    it(`toggles details section visibility`, () => {
       let show_details = $state(false)
       mount(ModelCard, {
         target: document.body,
@@ -158,7 +158,7 @@ describe(`ModelCard`, () => {
       expect(section_titles).toEqual([`Metrics`])
     })
 
-    it(`displays authors and package versions correctly`, async () => {
+    it(`displays authors and package versions correctly`, () => {
       mount(ModelCard, {
         target: document.body,
         props: { model, metrics, sort_by: `F1`, show_details: true },

@@ -86,7 +86,11 @@
     const area3 = calc_triangle_area(point, a, b)
 
     // Calculate normalized barycentric weights
-    let new_values = [area1 / triangle_area, area2 / triangle_area, area3 / triangle_area]
+    let new_values = [
+      area1 / triangle_area,
+      area2 / triangle_area,
+      area3 / triangle_area,
+    ]
 
     // Handle center point specially - equal weights
     const dist_from_center = Math.sqrt(
@@ -205,14 +209,15 @@
   function is_point_in_triangle(pt: Point, c1: Point, c2: Point, c3: Point) {
     // Compute barycentric coordinates
     const denominator = (c2.y - c3.y) * (c1.x - c3.x) + (c3.x - c2.x) * (c1.y - c3.y)
-    const alpha =
-      ((c2.y - c3.y) * (pt.x - c3.x) + (c3.x - c2.x) * (pt.y - c3.y)) / denominator
-    const beta =
-      ((c3.y - c1.y) * (pt.x - c3.x) + (c1.x - c3.x) * (pt.y - c3.y)) / denominator
+    const alpha = ((c2.y - c3.y) * (pt.x - c3.x) + (c3.x - c2.x) * (pt.y - c3.y)) /
+      denominator
+    const beta = ((c3.y - c1.y) * (pt.x - c3.x) + (c1.x - c3.x) * (pt.y - c3.y)) /
+      denominator
     const gamma = 1 - alpha - beta
 
     // If all coordinates are between 0 and 1, point is inside
-    return alpha >= 0 && beta >= 0 && gamma >= 0 && alpha <= 1 && beta <= 1 && gamma <= 1
+    return alpha >= 0 && beta >= 0 && gamma >= 0 && alpha <= 1 && beta <= 1 &&
+      gamma <= 1
   }
 
   // Helper to find closest point pt on triangle with corners c1, c2, c3
@@ -248,7 +253,7 @@
   <span class="metric-name">
     {ALL_METRICS.CPS.short}
     <Tooltip tip_style="z-index: 20; font-size: 0.8em;">
-      <svg style="opacity: 0.7; cursor: help;"><use href="#icon-info" /></svg>
+      <svg style="opacity: 0.7; cursor: help"><use href="#icon-info" /></svg>
       {#snippet tip()}
         {@html ALL_METRICS.CPS.description}
       {/snippet}
@@ -299,9 +304,9 @@
         fill={colors[idx]}
       >
         {@html weight.svg_label ?? weight.short ?? weight.label}
-        <tspan dy={spacing} x={label_x} font-size="12" font-weight="bold"
-          >{((weight.weight as number) * 100).toFixed(0)}%</tspan
-        >
+        <tspan dy={spacing} x={label_x} font-size="12" font-weight="bold">
+          {((weight.weight as number) * 100).toFixed(0)}%
+        </tspan>
       </text>
     {/each}
 
@@ -338,11 +343,17 @@
     {/if}
 
     <!-- Draggable knob: first element is larger invisible hit area for the smaller visible knob above it -->
-    {#each [{ fill: `transparent`, r: 20 }, { fill: `white`, stroke: `black`, r: 8 }] as knob_style (knob_style.r)}
+    {#each [
+        { fill: `transparent`, r: 20 },
+        { fill: `white`, stroke: `black`, r: 8 },
+      ] as
+      knob_style
+      (knob_style.r)
+    }
       <circle
         cx={point.x}
         cy={point.y}
-        style="cursor: move;"
+        style="cursor: move"
         onmousedown={start_drag}
         ontouchstart={start_drag}
         role="button"

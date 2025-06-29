@@ -1,8 +1,8 @@
 model_name: ESNet
 model_key: esnet
 model_version: 2025.03.14
-date_added: "2025-06-20"
-date_published: "2025-06-20"
+date_added: '2025-06-20'
+date_published: '2025-06-20'
 authors:
   - name: Chao Huang
     affiliation: Institute of Computing Technology, Chinese Academy of Science, Beijing

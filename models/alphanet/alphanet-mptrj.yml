@@ -1,8 +1,8 @@
 model_name: AlphaNet-MPtrj
 model_key: alphanet-mptrj
 model_version: v0
-date_added: "2025-03-05"
-date_published: "2025-03-05"
+date_added: '2025-03-05'
+date_published: '2025-03-05'
 authors:
   - name: Bangchen Yin
     affiliation: Tsinghua University

@@ -1,6 +1,6 @@
 import { default as DATASETS } from '$data/datasets.yml'
 import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
-import { CPS_CONFIG, calculate_cps, type CpsConfig } from './combined_perf_score.svelte'
+import { calculate_cps, CPS_CONFIG, type CpsConfig } from './combined_perf_score.svelte'
 import { get_org_logo } from './labels'
 import type { Author, ModelData } from './types'
 
@@ -58,7 +58,7 @@ export const MODELS = $state(
   Object.entries(MODEL_METADATA_PATHS)
     .filter(
       // ignore models with status != completed (the default status)
-      ([_key, metadata]) => (metadata?.status ?? `complete`) == `complete`,
+      ([_key, metadata]) => (metadata?.status ?? `complete`) === `complete`,
     )
     .map(([key, metadata], index) => {
       // Assign color to each model for consistent coloring across plots
@@ -108,16 +108,14 @@ export function update_models_cps(models: ModelData[], cps_config: CpsConfig) {
   models.forEach((model: ModelData) => {
     // Extract required metrics for CPS calculation
     const f1 = model.metrics?.discovery?.[`unique_prototypes`]?.F1
-    const rmsd =
-      model.metrics?.geo_opt && typeof model.metrics.geo_opt !== `string`
-        ? model.metrics.geo_opt[`symprec=1e-5`]?.rmsd
+    const rmsd = model.metrics?.geo_opt && typeof model.metrics.geo_opt !== `string`
+      ? model.metrics.geo_opt[`symprec=1e-5`]?.rmsd
+      : undefined
+    const kappa = model.metrics?.phonons && typeof model.metrics.phonons !== `string`
+      ? model.metrics.phonons.kappa_103?.κ_SRME !== undefined
+        ? Number(model.metrics.phonons.kappa_103.κ_SRME)
         : undefined
-    const kappa =
-      model.metrics?.phonons && typeof model.metrics.phonons !== `string`
-        ? model.metrics.phonons.kappa_103?.κ_SRME !== undefined
-          ? Number(model.metrics.phonons.kappa_103.κ_SRME)
-          : undefined
-        : undefined
+      : undefined
 
     // Calculate and update CPS
     model.CPS = calculate_cps(f1, rmsd, kappa, cps_config) ?? NaN
@@ -128,7 +126,7 @@ export function update_models_cps(models: ModelData[], cps_config: CpsConfig) {
 update_models_cps(MODELS, CPS_CONFIG)
 
 export function model_is_compliant(model: ModelData): boolean {
-  if ((model.openness ?? `OSOD`) != `OSOD`) return false
+  if ((model.openness ?? `OSOD`) !== `OSOD`) return false
 
   const allowed_sets = [`MP 2022`, `MPtrj`, `MPF`, `MP Graphs`]
 
@@ -143,7 +141,7 @@ export function get_pred_file_urls(model: ModelData) {
     if (!obj || typeof obj !== `object`) return
 
     for (const [key, val] of Object.entries(obj)) {
-      if (key == `pred_file_url` && val && typeof val === `string`) {
+      if (key === `pred_file_url` && val && typeof val === `string`) {
         // Look up the label by traversing the MODELINGS_TASKS hierarchy
         const pretty_label = get_label_for_key_path(parent_key)
         files.push({ name: pretty_label, url: val })

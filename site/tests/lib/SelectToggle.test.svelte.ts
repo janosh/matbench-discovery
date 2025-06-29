@@ -40,7 +40,7 @@ describe(`SelectToggle.svelte`, () => {
     },
   ])(
     `renders $name correctly`,
-    async ({ options, selected, expectedActiveIndex, expectHtml }) => {
+    ({ options, selected, expectedActiveIndex, expectHtml }) => {
       mount(SelectToggle, {
         target: document.body,
         props: { selected, options },
@@ -68,7 +68,7 @@ describe(`SelectToggle.svelte`, () => {
     },
   )
 
-  it(`updates button active state when selection changes`, async () => {
+  it(`updates button active state when selection changes`, () => {
     const options = [
       { value: `option1`, label: `Option 1` },
       { value: `option2`, label: `Option 2` },
@@ -102,7 +102,7 @@ describe(`SelectToggle.svelte`, () => {
     expect(buttons[1].classList.contains(`active`)).toBe(true)
   })
 
-  it(`buttons have proper properties for interaction`, async () => {
+  it(`buttons have proper properties for interaction`, () => {
     const options = [
       { value: `option1`, label: `Option 1` },
       { value: `option2`, label: `Option 2` },
@@ -151,7 +151,7 @@ describe(`SelectToggle.svelte`, () => {
     },
   ])(
     `renders $name correctly`,
-    async ({ options, selected, expectedLinkAttributes, expectNoLink }) => {
+    ({ options, selected, expectedLinkAttributes, expectNoLink }) => {
       mount(SelectToggle, {
         target: document.body,
         props: { selected, options },

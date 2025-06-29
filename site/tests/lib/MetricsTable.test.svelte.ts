@@ -19,8 +19,8 @@ describe(`MetricsTable`, () => {
     expect(table?.querySelector(`tbody`)).toBeDefined()
 
     // Check essential columns are present (with sort indicators)
-    const header_texts = [...document.body.querySelectorAll(`th`)].map((h) =>
-      h.textContent?.trim(),
+    const header_texts = Array.from(document.body.querySelectorAll(`th`)).map((h) =>
+      h.textContent?.trim()
     )
     const required_cols = [
       `Model`,
@@ -73,7 +73,7 @@ describe(`MetricsTable`, () => {
       expect(dropdown).toBeDefined()
 
       // Dispatch Escape keydown event
-      window.dispatchEvent(new KeyboardEvent(`keydown`, { key: `Escape` }))
+      globalThis.dispatchEvent(new KeyboardEvent(`keydown`, { key: `Escape` }))
       await tick()
 
       // Dropdown should be gone
@@ -82,13 +82,13 @@ describe(`MetricsTable`, () => {
     }
   })
 
-  it(`toggles metadata columns`, async () => {
+  it(`toggles metadata columns`, () => {
     const metadata_cols = [`Training Set`, `Params`, `Targets`, `Date Added`, `Links`]
     const col_filter = (_col: Label) => true // show all columns initially
     mount(MetricsTable, { target: document.body, props: { col_filter } })
     // Check metadata columns are visible initially
-    let header_texts = [...document.body.querySelectorAll(`th`)].map((h) =>
-      h.textContent?.trim(),
+    let header_texts = Array.from(document.body.querySelectorAll(`th`)).map((h) =>
+      h.textContent?.trim()
     )
     expect(header_texts).toEqual(expect.arrayContaining(metadata_cols))
 
@@ -97,14 +97,14 @@ describe(`MetricsTable`, () => {
     mount(MetricsTable, {
       target: document.body,
       props: {
-        col_filter: (col) => !metadata_cols.includes(col.short ?? col.label),
+        col_filter: (col: Label) => !metadata_cols.includes(col.short ?? col.label),
         show_non_compliant: true,
       },
     })
 
     // Check metadata columns are hidden
-    header_texts = [...document.body.querySelectorAll(`th`)].map((h) =>
-      h.textContent?.trim(),
+    header_texts = Array.from(document.body.querySelectorAll(`th`)).map((h) =>
+      h.textContent?.trim()
     )
 
     // Each metadata column should be hidden
@@ -119,7 +119,7 @@ describe(`MetricsTable`, () => {
     }
   })
 
-  it(`filters specified columns`, async () => {
+  it(`filters specified columns`, () => {
     const col_filter = (col: Label) => ![`F1`, `DAF`].includes(col.short ?? col.label)
     mount(MetricsTable, {
       target: document.body,
@@ -140,7 +140,7 @@ describe(`MetricsTable`, () => {
     expect(header_texts).toContain(`Acc`)
   })
 
-  it(`filters energy-only models`, async () => {
+  it(`filters energy-only models`, () => {
     // First test with energy-only models hidden
     mount(MetricsTable, {
       target: document.body,
@@ -160,7 +160,7 @@ describe(`MetricsTable`, () => {
     expect(rows_with_energy).toBeGreaterThanOrEqual(rows_without_energy)
   })
 
-  it(`filters non-compliant models`, async () => {
+  it(`filters non-compliant models`, () => {
     let model_filter = (_model: ModelData) => false // initially show no models
     mount(MetricsTable, {
       target: document.body,
@@ -182,7 +182,7 @@ describe(`MetricsTable`, () => {
     // The actual functionality is tested in "opens prediction files dropdown when button is clicked"
   })
 
-  it(`validates prediction files dropdown button`, async () => {
+  it(`validates prediction files dropdown button`, () => {
     // Create a simple element with the required structure for testing
     document.body.innerHTML = `
       <div>
@@ -225,10 +225,10 @@ describe(`MetricsTable`, () => {
       col_filter: (col: Label) => [`F1`, `Model`, `DAF`].includes(col.short ?? col.label),
       expected_headers: [`Model`, `F1`, `DAF`],
     },
-  ])(`handles col_filter: $name`, async ({ col_filter, expected_headers }) => {
+  ])(`handles col_filter: $name`, ({ col_filter, expected_headers }) => {
     mount(MetricsTable, { target: document.body, props: { col_filter } })
 
-    const headers = [...document.body.querySelectorAll(`th`)]
+    const headers = Array.from(document.body.querySelectorAll(`th`))
     expect(headers.length).toBe(expected_headers.length)
     expect(headers.map((h) => h.textContent?.split(` `)[0])).toEqual(expected_headers)
   })
@@ -248,13 +248,13 @@ describe(`MetricsTable`, () => {
     },
   ])(
     `combines filters: $expected_model_match models with $expected_headers`,
-    async ({ model_filter, col_filter, expected_model_match, expected_headers }) => {
+    ({ model_filter, col_filter, expected_model_match, expected_headers }) => {
       mount(MetricsTable, {
         target: document.body,
         props: { model_filter, col_filter },
       })
 
-      const headers = [...document.body.querySelectorAll(`th`)]
+      const headers = Array.from(document.body.querySelectorAll(`th`))
       expect(headers.map((h) => h.textContent?.split(` `)[0])).toEqual(expected_headers)
 
       const rows = document.body.querySelectorAll(`tbody tr`)
@@ -265,7 +265,7 @@ describe(`MetricsTable`, () => {
     },
   )
 
-  it(`updates table when col_filter changes`, async () => {
+  it(`updates table when col_filter changes`, () => {
     // Test with only Model and F1 columns
     mount(MetricsTable, {
       target: document.body,
@@ -275,9 +275,9 @@ describe(`MetricsTable`, () => {
       },
     })
 
-    let headers = document.body.querySelectorAll(`th`)
+    let headers = Array.from(document.body.querySelectorAll(`th`))
     expect(headers.length).toBe(2)
-    expect([...headers].map((h) => h.textContent?.split(` `)[0])).toEqual([`Model`, `F1`])
+    expect(headers.map((h) => h.textContent?.split(` `)[0])).toEqual([`Model`, `F1`])
 
     // Create a new instance with Model, F1, and DAF columns
     document.body.innerHTML = ``
@@ -290,9 +290,9 @@ describe(`MetricsTable`, () => {
       },
     })
 
-    headers = document.body.querySelectorAll(`th`)
+    headers = Array.from(document.body.querySelectorAll(`th`))
     expect(headers.length).toBe(3)
-    expect([...headers].map((h) => h.textContent?.split(` `)[0])).toEqual([
+    expect(headers.map((h) => h.textContent?.split(` `)[0])).toEqual([
       `Model`,
       `F1`,
       `DAF`,
@@ -321,7 +321,7 @@ describe(`MetricsTable`, () => {
       })
 
       // Find Date Added column header
-      const headers = [...document.body.querySelectorAll(`th`)]
+      const headers = Array.from(document.body.querySelectorAll(`th`))
       const date_header = headers.find((h) => h.textContent?.includes(`Date Added`))
 
       if (!date_header) {
@@ -333,7 +333,9 @@ describe(`MetricsTable`, () => {
       await tick()
 
       // Get all date cells
-      const date_cells = [...document.body.querySelectorAll(`td[data-col="Date Added"]`)]
+      const date_cells = Array.from(
+        document.body.querySelectorAll(`td[data-col="Date Added"]`),
+      )
 
       if (date_cells.length < 2) {
         throw new Error(`Not enough data for testing date sorting`)
@@ -358,9 +360,9 @@ describe(`MetricsTable`, () => {
       date_header.click()
 
       // Get updated timestamps
-      const descending_timestamps = [
-        ...document.body.querySelectorAll(`td[data-col="Date Added"]`),
-      ]
+      const descending_timestamps = Array.from(
+        document.body.querySelectorAll(`td[data-col="Date Added"]`),
+      )
         .map((cell) => {
           const match = cell.innerHTML.match(/data-sort-value="(\d+)"/)
           return match ? parseInt(match[1]) : null
@@ -382,21 +384,20 @@ describe(`MetricsTable`, () => {
       })
 
       // Find Training Set column header
-      const headers = [...document.body.querySelectorAll(`th`)]
+      const headers = Array.from(document.body.querySelectorAll(`th`))
       const training_set_header = headers.find((h) =>
-        h.textContent?.includes(`Training Set`),
+        h.textContent?.includes(`Training Set`)
       )
 
-      if (!training_set_header) {
-        throw new Error(`Training Set column not found`)
-      }
+      if (!training_set_header) throw new Error(`Training Set column not found`)
 
       // Click to sort by training set size
       training_set_header.click()
-      await tick()
 
       // Get training set sizes from data-sort-value
-      const sizes = [...document.body.querySelectorAll(`td[data-col="Training Set"]`)]
+      const sizes = Array.from(
+        document.body.querySelectorAll(`td[data-col="Training Set"]`),
+      )
         .map((cell) => {
           const match = cell.innerHTML.match(/data-sort-value="(\d+)"/)
           return match ? parseInt(match[1]) : null
@@ -422,7 +423,9 @@ describe(`MetricsTable`, () => {
       await tick()
 
       // Get updated sizes
-      const new_sizes = [...document.body.querySelectorAll(`td[data-col="Training Set"]`)]
+      const new_sizes = Array.from(
+        document.body.querySelectorAll(`td[data-col="Training Set"]`),
+      )
         .map((cell) => {
           const match = cell.innerHTML.match(/data-sort-value="(\d+)"/)
           return match ? parseInt(match[1]) : null
@@ -456,7 +459,7 @@ describe(`MetricsTable`, () => {
       })
 
       // Find Params column header
-      const headers = [...document.body.querySelectorAll(`th`)]
+      const headers = Array.from(document.body.querySelectorAll(`th`))
       const params_header = headers.find((h) => h.textContent?.includes(`Params`))
 
       if (!params_header) {
@@ -468,11 +471,11 @@ describe(`MetricsTable`, () => {
       await tick()
 
       // Get parameter counts from data-sort-value using the correct column label
-      const param_counts = [
-        ...document.body.querySelectorAll(
+      const param_counts = Array.from(
+        document.body.querySelectorAll(
           `td[data-col="${HYPERPARAMS.model_params.label}"]`,
         ),
-      ]
+      )
         .map((cell) => {
           const match = cell.innerHTML.match(/data-sort-value="(\d+)"/)
           return match ? parseInt(match[1]) : null
@@ -498,11 +501,11 @@ describe(`MetricsTable`, () => {
       await tick()
 
       // Get updated counts using the correct column label
-      const new_counts = [
-        ...document.body.querySelectorAll(
+      const new_counts = Array.from(
+        document.body.querySelectorAll(
           `td[data-col="${HYPERPARAMS.model_params.label}"]`,
         ),
-      ]
+      )
         .map((cell) => {
           const match = cell.innerHTML.match(/data-sort-value="(\d+)"/)
           return match ? parseInt(match[1]) : null
@@ -537,9 +540,9 @@ describe(`MetricsTable`, () => {
       await tick()
 
       // Find cells with HTML content
-      const training_set_cells = [
-        ...document.body.querySelectorAll(`td[data-col="Training Set"]`),
-      ]
+      const training_set_cells = Array.from(
+        document.body.querySelectorAll(`td[data-col="Training Set"]`),
+      )
 
       // Find cells with HTML content (looking for cells containing spans with tooltips)
       const html_cells = training_set_cells.filter(
@@ -603,13 +606,13 @@ describe(`MetricsTable`, () => {
         mount(MetricsTable, { target: document.body, props })
 
         // Find Model column header
-        const headers = [...document.body.querySelectorAll(`th`)]
+        const headers = Array.from(document.body.querySelectorAll(`th`))
         const model_header = headers.find((h) => h.textContent?.includes(`Model`))
 
         if (!model_header) throw new Error(`Model column header not found`)
 
         const get_model_names = () =>
-          [...document.body.querySelectorAll(`td[data-col="Model"]`)]
+          Array.from(document.body.querySelectorAll(`td[data-col="Model"]`))
             .map((cell) => {
               const link = cell.querySelector(`a`)
               return link?.getAttribute(`data-sort-value`)
@@ -655,7 +658,7 @@ describe(`MetricsTable`, () => {
       })
 
       // Find CPS and Links column headers
-      const headers = [...document.body.querySelectorAll(`th`)]
+      const headers = Array.from(document.body.querySelectorAll(`th`))
       const cps_header = headers.find((h) => h.textContent?.includes(`CPS`))
       if (!cps_header) throw new Error(`CPS column not found`)
       const links_header = headers.find((h) => h.textContent?.includes(`Links`))
@@ -669,18 +672,18 @@ describe(`MetricsTable`, () => {
       await tick()
 
       // Get model names in current order
-      const initial_models = [
-        ...document.body.querySelectorAll(`td[data-col="Model"]`),
-      ].map((cell) => cell.textContent)
+      const initial_models = Array.from(
+        document.body.querySelectorAll(`td[data-col="Model"]`),
+      ).map((cell) => cell.textContent)
 
       // Try to sort by Links
       links_header.click()
       await tick()
 
       // Get model names after clicking Links
-      const after_links_click_models = [
-        ...document.body.querySelectorAll(`td[data-col="Model"]`),
-      ].map((cell) => cell.textContent)
+      const after_links_click_models = Array.from(
+        document.body.querySelectorAll(`td[data-col="Model"]`),
+      ).map((cell) => cell.textContent)
 
       // Order should not change
       expect(after_links_click_models).toEqual(initial_models)
@@ -698,12 +701,14 @@ describe(`MetricsTable`, () => {
       await tick() // Wait for component to process data
 
       // Find all links cells
-      const links_cells = [...document.body.querySelectorAll(`td[data-col="Links"]`)]
+      const links_cells = Array.from(
+        document.body.querySelectorAll(`td[data-col="Links"]`),
+      )
       expect(links_cells.length).toBeGreaterThan(20)
 
       // Check that all rows have links
       for (const cell of links_cells) {
-        const links = [...cell.querySelectorAll(`a`)]
+        const links = Array.from(cell.querySelectorAll(`a`))
 
         // Every row should have links
         expect(links.length).toBeGreaterThan(1)
@@ -721,11 +726,6 @@ describe(`MetricsTable`, () => {
           // Each link should have an SVG icon - use a more general selector
           const svg = link.querySelector(`svg`)
           expect(svg).not.toBeNull()
-
-          // And the SVG should have a use element with an href attribute
-          const use = svg?.querySelector(`use`)
-          expect(use).not.toBeNull()
-          expect(use?.hasAttribute(`href`)).toBe(true)
         }
       }
     })
@@ -742,15 +742,19 @@ describe(`MetricsTable`, () => {
       await tick() // Wait for component to process data
 
       // Find all links cells
-      const links_cells = [...document.body.querySelectorAll(`td[data-col="Links"]`)]
+      const links_cells = Array.from(
+        document.body.querySelectorAll(`td[data-col="Links"]`),
+      )
 
       // Check for unavailable icon for missing links
       let found_missing_icon = false
 
       for (const cell of links_cells) {
-        const missing_icons = [
-          ...cell.querySelectorAll(`span svg use[href="#icon-unavailable"]`),
-        ]
+        const missing_icons = Array.from(
+          cell.querySelectorAll(
+            `span[data-title$="not available"] svg`,
+          ),
+        )
 
         if (missing_icons.length > 0) {
           found_missing_icon = true
@@ -781,7 +785,9 @@ describe(`MetricsTable`, () => {
       await tick() // Wait for component to process data
 
       // Find all pred_files buttons
-      const pred_file_buttons = [...document.body.querySelectorAll(`.pred-files-btn`)]
+      const pred_file_buttons = Array.from(
+        document.body.querySelectorAll(`.pred-files-btn`),
+      )
 
       // Some models should have prediction files
       expect(pred_file_buttons.length).toBeGreaterThan(0)
@@ -793,9 +799,6 @@ describe(`MetricsTable`, () => {
         // Check for the SVG icon
         const svg = button.querySelector(`svg`)
         expect(svg).not.toBeNull()
-
-        const use = svg?.querySelector(`use`)
-        expect(use?.getAttribute(`href`)).toBe(`#icon-graph`)
       }
     })
 
@@ -811,16 +814,16 @@ describe(`MetricsTable`, () => {
       await tick() // Wait for component to process data
 
       // Find all links cells with at least one link
-      const links_cells = [
-        ...document.body.querySelectorAll(`td[data-col="Links"]`),
-      ].filter((cell) => cell.querySelectorAll(`a`).length > 0)
+      const links_cells = Array.from(
+        document.body.querySelectorAll(`td[data-col="Links"]`),
+      ).filter((cell) => cell.querySelectorAll(`a`).length > 0)
 
       // There should be at least one cell with links
       expect(links_cells.length).toBeGreaterThan(0)
 
       // Get the first cell with links to use as reference
       const reference_cell = links_cells[0]
-      const reference_links = [...reference_cell.querySelectorAll(`a`)]
+      const reference_links = Array.from(reference_cell.querySelectorAll(`a`))
 
       // Extract icon ids from SVG use elements in the reference cell
       const reference_icons = reference_links.map((link) => {
@@ -848,7 +851,7 @@ describe(`MetricsTable`, () => {
       // (not checking all cells as some might have missing links)
       if (links_cells.length > 1) {
         const second_cell = links_cells[1]
-        const second_links = [...second_cell.querySelectorAll(`a`)]
+        const second_links = Array.from(second_cell.querySelectorAll(`a`))
 
         // If the second cell has the same number of links, check order
         if (second_links.length === reference_links.length) {
@@ -949,7 +952,7 @@ describe(`MetricsTable`, () => {
     const actual_core_columns = new Set(
       Array.from(header_elements).map((th) =>
         // Get text content, remove sort indicator (↑/↓), trim
-        (th.textContent ?? ``).replace(/[↑↓]$/, ``).trim(),
+        (th.textContent ?? ``).replace(/[↑↓]$/, ``).trim()
       ),
     )
 

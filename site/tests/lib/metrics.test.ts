@@ -124,8 +124,9 @@ describe(`format_train_set`, () => {
         dataset.n_materials !== dataset.n_structures,
     )
 
-    if (!dataset_with_both)
-      throw `No dataset with different n_materials and n_structures found`
+    if (!dataset_with_both) {
+      throw new Error(`No dataset with different n_materials and n_structures found`)
+    }
 
     const [key, _dataset] = dataset_with_both
     const mock_model = {
@@ -1018,9 +1019,8 @@ describe(`Model Sorting Logic`, () => {
     ] as unknown as ModelData[]
 
     // Expect an error when trying to sort number and string
-    expect(() =>
-      models_with_mixed_types.sort(sort_models(`some_metric`, `desc`)),
-    ).toThrow(/Unexpected type.*encountered sorting by key/)
+    expect(() => models_with_mixed_types.sort(sort_models(`some_metric`, `desc`)))
+      .toThrow(/Unexpected type.*encountered sorting by key/)
   })
 
   it(`handles sorting when both compared values are null`, () => {

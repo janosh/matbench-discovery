@@ -3,7 +3,7 @@
   import { calculate_days_ago, MODELS } from '$lib'
   import { get_nested_value } from '$lib/metrics'
   import type { Label } from '$lib/types'
-  import { ScatterPlot, type DataSeries, type PointStyle } from 'matterviz'
+  import { type DataSeries, type PointStyle, ScatterPlot } from 'matterviz'
   import { METADATA_COLS } from './labels'
 
   interface Props {
@@ -46,12 +46,12 @@
     if (
       x_path !== METADATA_COLS.date_added.key ||
       (date_range[0] === null && date_range[1] === null)
-    )
-      return true
+    ) return true
 
     const model_date = new Date(model.date_added ?? 0)
     return (
-      model_date >= (date_range[0] ?? n_days_ago) && model_date <= (date_range[1] ?? now)
+      model_date >= (date_range[0] ?? n_days_ago) &&
+      model_date <= (date_range[1] ?? now)
     )
   }
 

@@ -35,4 +35,4 @@ changelog:
     - title: 🏷️ Type Hints
       labels: [types]
     - title: 🤷‍♂️ Other Changes
-      labels: ["*"]
+      labels: ['*']
