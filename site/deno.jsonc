@@ -4,7 +4,7 @@
     "build": "deno run -A --node-modules-dir npm:vite build",
     "preview": "deno run -A --node-modules-dir npm:vite preview",
     "serve": "deno task build && deno task preview",
-    "vitest": "deno run -A --node-modules-dir npm:vitest tests/**/*.test.ts",
+    "vitest": "deno run -A --node-modules-dir npm:vitest",
     "package": "svelte-package",
     "changelog": "deno run -A https://github.com/janosh/workflows/raw/refs/heads/main/scripts/make-release-notes.ts"
   },

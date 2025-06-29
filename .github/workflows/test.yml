@@ -36,10 +36,10 @@ jobs:
         uv pip install git+https://github.com/janosh/pymatviz --system
 
   vitest:
-    uses: janosh/workflows/.github/workflows/npm-test.yml@main
+    uses: janosh/workflows/.github/workflows/deno-test.yml@main
     with:
       working-directory: site
-      install-e2e: ''
+      test-cmd: deno task vitest
 
   scripts:
     runs-on: ubuntu-latest
