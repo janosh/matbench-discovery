@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { Icon } from '$lib'
+  import type { IconName } from './icons'
+
   interface Props {
     icons: { id?: string; src?: string; name: string }[] | undefined
     [key: string]: unknown
@@ -7,11 +10,9 @@
 </script>
 
 {#each logos ?? [] as logo (logo.id ?? logo.src)}
-  {#if logo.id}
+  {#if logo.id?.startsWith(`icon:`)}
     <span title={logo.name} {...rest}>
-      <svg style="margin: 0; height: 1em; width: 1em">
-        <use href="#{logo.id}"></use>
-      </svg>
+      <Icon icon={logo.id.replace(`icon:`, ``) as IconName} />
     </span>
   {:else if logo.src}
     {@const style = `margin: 0; height: 1em; ${rest.style ?? ``}`}
@@ -26,7 +27,7 @@
 {/each}
 
 <style>
-  svg,
+  span,
   img {
     filter: grayscale(100%);
     height: 1em;

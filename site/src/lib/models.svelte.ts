@@ -68,7 +68,7 @@ export const MODELS = $state(
 
       // Get top affiliations with logos
       const affiliation_counts: Record<string, number> = {}
-      const affiliation_data: Record<string, { name: string; id: string }> = {}
+      const affiliation_data: Record<string, { name: string; id?: string }> = {}
 
       for (const author of metadata.authors ?? ([] as Author[])) {
         if (!author.affiliation) continue
@@ -85,7 +85,7 @@ export const MODELS = $state(
         }
       }
 
-      const top_affiliations = Object.entries(affiliation_counts)
+      const frequent_logos = Object.entries(affiliation_counts)
         .sort(([_id_a, count_a], [_id_b, count_b]) => count_b - count_a)
         .slice(0, 3)
         .map(([id]) => affiliation_data[id])
@@ -98,7 +98,7 @@ export const MODELS = $state(
         CPS: NaN, // Initial CPS placeholder
         n_training_materials: sizes.total_materials,
         n_training_structures: sizes.total_structures,
-        org_logos: top_affiliations,
+        org_logos: frequent_logos,
       }
     }),
 ) as ModelData[]

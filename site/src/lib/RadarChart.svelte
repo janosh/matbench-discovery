@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Icon } from '$lib'
   import type { CpsConfig } from '$lib/combined_perf_score.svelte'
   import { ALL_METRICS } from '$lib/labels'
   import type { Point } from 'matterviz'
@@ -253,7 +254,7 @@
   <span class="metric-name">
     {ALL_METRICS.CPS.short}
     <Tooltip tip_style="z-index: 20; font-size: 0.8em;">
-      <svg style="opacity: 0.7; cursor: help"><use href="#icon-info" /></svg>
+      <Icon icon="Info" />
       {#snippet tip()}
         {@html ALL_METRICS.CPS.description}
       {/snippet}
