@@ -309,7 +309,7 @@ def load_df_wbm_with_preds(
     return df_out
 
 
-def update_yaml_at_path(
+def update_yaml_file(
     file_path: str | Path,
     dotted_path: str,
     data: dict[str, Any],
@@ -325,7 +325,7 @@ def update_yaml_at_path(
         dict[str, Any]: The complete updated YAML data written to file.
 
     Example:
-        update_yaml_at_path(
+        update_yaml_file(
             "models/mace/mace-mp-0.yml",
             "metrics.discovery",
             dict(mae=0.1, rmse=0.2),

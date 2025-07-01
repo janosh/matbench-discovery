@@ -28,7 +28,7 @@ from pymatviz.enums import Key
 
 from matbench_discovery import ROOT
 from matbench_discovery.cli import cli_parser
-from matbench_discovery.data import update_yaml_at_path
+from matbench_discovery.data import update_yaml_file
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.metrics import geo_opt
 from matbench_discovery.structure import symmetry
@@ -85,7 +85,7 @@ def analyze_model_symprec(
                 # Update model yaml with new path
                 yaml_path = f"models/{model.name}/{model.name}.yml"
                 if os.path.isfile(yaml_path):
-                    update_yaml_at_path(
+                    update_yaml_file(
                         yaml_path,
                         "metrics.geo_opt.struct_file",
                         {"metrics": {"geo_opt": {"struct_file": jsonl_path}}},

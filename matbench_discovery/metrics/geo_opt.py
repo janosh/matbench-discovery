@@ -5,7 +5,7 @@ from pymatviz.enums import Key
 from ruamel.yaml.comments import CommentedMap
 
 from matbench_discovery import ROOT
-from matbench_discovery.data import update_yaml_at_path
+from matbench_discovery.data import update_yaml_file
 from matbench_discovery.enums import MbdKey, Model
 
 
@@ -58,7 +58,7 @@ def write_metrics_to_yaml(
         if unit := metric_units.get(key):
             metrics_for_symprec.yaml_add_eol_comment(unit, key, column=1)
 
-    update_yaml_at_path(
+    update_yaml_file(
         model.yaml_path, f"metrics.geo_opt.{symprec_key}", metrics_for_symprec
     )
     return metrics_for_symprec

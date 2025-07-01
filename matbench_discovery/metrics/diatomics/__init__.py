@@ -11,7 +11,7 @@ from typing import Any, Self
 
 import numpy as np
 
-from matbench_discovery.data import update_yaml_at_path
+from matbench_discovery.data import update_yaml_file
 from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.metrics.diatomics import energy, force  # noqa: F401
 from matbench_discovery.metrics.diatomics.energy import (
@@ -243,6 +243,6 @@ def write_metrics_to_yaml(
     }
 
     if mean_metrics:
-        update_yaml_at_path(model.yaml_path, "metrics.diatomics", mean_metrics)
+        update_yaml_file(model.yaml_path, "metrics.diatomics", mean_metrics)
         print(f"Wrote {model.label} diatomic metrics to {model.yaml_path}")
     return mean_metrics
