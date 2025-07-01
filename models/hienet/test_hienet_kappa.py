@@ -19,12 +19,11 @@
 # ]
 # ///
 
+import argparse
 import json
 import os
-import sys
 import traceback
 import warnings
-import argparse
 from collections.abc import Callable
 from copy import deepcopy
 from datetime import datetime
@@ -99,7 +98,7 @@ out_path = (
 timestamp = f"{datetime.now().astimezone():%Y-%m-%d %H:%M:%S}"
 print(f"\nJob {job_name} started {timestamp}")
 atoms_list: list[Atoms] = read(DataFiles.phonondb_pbe_103_structures.path, index=":")
-atoms_list = atoms_list[args.left:args.right]  # Use the specified range
+atoms_list = atoms_list[args.left : args.right]  # Use the specified range
 
 run_params = {
     "timestamp": timestamp,
@@ -123,7 +122,9 @@ run_params = {
     "right_index": args.right,
 }
 
-with open(f"{out_dir}/run_params-gpu{args.gpu}-{args.left}-{args.right}.json", mode="w") as file:
+with open(
+    f"{out_dir}/run_params-gpu{args.gpu}-{args.left}-{args.right}.json", mode="w"
+) as file:
     json.dump(run_params, file, indent=4)
 
 # Set up the relaxation and force set calculation

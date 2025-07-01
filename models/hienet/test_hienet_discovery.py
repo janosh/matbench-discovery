@@ -1,7 +1,7 @@
 # /// script
 # dependencies = [
 #   "torch>=2.1.2",
-#   "torch-geometric>=2.6.1", 
+#   "torch-geometric>=2.6.1",
 #   "numpy>=1.26.4",
 #   "ase>=3.25.0",
 #   "braceexpand>=0.1.7",
@@ -20,24 +20,19 @@ import os
 from collections.abc import Callable
 from typing import Any, Literal
 
-from matbench_discovery import WBM_DIR, timestamp
-import numpy as np
 import pandas as pd
-import torch
 from ase import Atoms
 from ase.filters import ExpCellFilter, FrechetCellFilter
 from ase.optimize import FIRE, LBFGS
 from ase.optimize.optimize import Optimizer
+from hienet.hienet_calculator import HIENetCalculator
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from tqdm import tqdm
-import zipfile
-from matbench_discovery import timestamp
+
+from matbench_discovery import WBM_DIR
 from matbench_discovery.data import DataFiles, as_dict_handler, ase_atoms_from_zip
 from matbench_discovery.enums import Task
-import sys
-import os
-from hienet.hienet_calculator import HIENetCalculator
 
 __author__ = "Yutack Park"
 __date__ = "2024-06-25"
@@ -45,11 +40,14 @@ __date__ = "2024-06-25"
 
 import argparse
 
-parser = argparse.ArgumentParser(description='Run calculations with GPU and data bounds selection')
+parser = argparse.ArgumentParser(
+    description="Run calculations with GPU and data bounds selection"
+)
 parser.add_argument("--gpu", type=str, default="0", help="GPU ID to use")
 parser.add_argument("--left", type=int, default=0, help="Start index for atoms list")
 parser.add_argument("--right", type=int, default=None, help="End index for atoms list")
 args = parser.parse_args()
+
 
 # %% this config is editable
 left = args.left
@@ -62,11 +60,10 @@ zip_filename = f"{WBM_DIR}/2024-08-04-wbm-initial-atoms.extxyz.zip"
 os.makedirs(out_dir := "./results", exist_ok=True)
 
 
-
 task_type = Task.IS2RE
 ase_optimizer = "FIRE"
 os.environ["CUDA_VISIBLE_DEVICES"] = f"{args.gpu}"
-device = "cpu" #"cuda" if torch.cuda.is_available() else "cpu"
+device = "cpu"  # "cuda" if torch.cuda.is_available() else "cpu"
 ase_filter: Literal["frechet", "exp"] = "frechet"
 
 max_steps = 500
