@@ -1,9 +1,9 @@
 model_name: HIENet
 model_key: hienet
-model_version: v1.0.1 
+model_version: v1.0.1
 matbench_discovery_version: 1.3.1 # required
 date_added: "2025-07-01" # required
-date_published: "2025-02-25" 
+date_published: "2025-02-25"
 authors: # required (only name, other keys are optional)
   - name: Keqiang Yan
     affiliation: Texas A&M University
@@ -21,7 +21,7 @@ authors: # required (only name, other keys are optional)
 repo: https://github.com/divelab/AIRS/tree/main/OpenMat/HIENet # required
 doi: https://doi.org/10.48550/arXiv.2503.05771
 paper: https://arxiv.org/pdf/2503.05771
-checkpoint_url: https://github.com/divelab/AIRS/blob/main/OpenMat/HIENet/checkpoints/HIENet-V3.pth 
+checkpoint_url: https://github.com/divelab/AIRS/blob/main/OpenMat/HIENet/checkpoints/HIENet-V3.pth
 
 
 openness: OSOD
@@ -66,19 +66,19 @@ hyperparams:
 
 license:
   code: GPL-3.0
-  code_url: https://github.com/divelab/AIRS/blob/main/OpenMat/HIENet/LICENSE 
+  code_url: https://github.com/divelab/AIRS/blob/main/OpenMat/HIENet/LICENSE
   checkpoint: GPL-3.0
-  checkpoint_url: https://github.com/divelab/AIRS/blob/main/OpenMat/HIENet/LICENSE 
+  checkpoint_url: https://github.com/divelab/AIRS/blob/main/OpenMat/HIENet/LICENSE
 
 requirements:
   torch: 2.1.2
-  torch-geometric: 2.6.1 
+  torch-geometric: 2.6.1
   numpy: 1.26.4
   ase: 3.25.0
   braceexpand: 0.1.7
   e3nn: 0.5.6
   pymatviz: 0.16.0
-  pyyaml: 6.0.1  
+  pyyaml: 6.0.1
   torch-scatter: 2.1.2
   scikit-learn: 1.7.0
   pymatgen: 2025.6.14

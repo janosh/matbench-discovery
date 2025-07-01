@@ -12,16 +12,15 @@ from matbench_discovery.data import as_dict_handler, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom, mp_elemental_ref_energies
 from matbench_discovery.enums import DataFiles
 
-e_form_col = "e_form_per_atom_hienet"  # noqa: N816
+e_form_col = "e_form_per_atom_hienet"
 module_dir = os.path.dirname(__file__)
-results = f"./results/"
+results = "./results/"
 pot_name = "HIENet-V3"
 out_path = f"./joined/{pot_name}"
 files = sorted(glob(f"{results}/{pot_name}*.json.gz"))
 
 dfs = {}
 for file_path in tqdm(files):
-    
     if file_path in dfs:
         continue
     df_i = pd.read_json(file_path).set_index(Key.mat_id)
