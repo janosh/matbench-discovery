@@ -28,6 +28,7 @@ from pymatviz.enums import Key
 
 from matbench_discovery import ROOT
 from matbench_discovery.cli import cli_parser
+from matbench_discovery.data import update_yaml_at_path
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.metrics import geo_opt
 from matbench_discovery.structure import symmetry
@@ -68,6 +69,29 @@ def analyze_model_symprec(
         )
         return None
 
+    # Convert to JSON lines format if needed
+    jsonl_path = ml_relaxed_structs_path
+    if not ml_relaxed_structs_path.endswith((".jsonl", ".jsonl.gz")):
+        # Try reading as JSON lines first (file might already be in correct format)
+        try:
+            pd.read_json(ml_relaxed_structs_path, lines=True)
+        except ValueError:
+            # Not JSON lines format, convert it
+            jsonl_path = ml_relaxed_structs_path.rsplit(".", 2)[0] + ".jsonl.gz"
+            if not os.path.isfile(jsonl_path):
+                print(f"Converting {ml_relaxed_structs_path} to JSON lines format...")
+                df = pd.read_json(ml_relaxed_structs_path)
+                df.to_json(jsonl_path, orient="records", lines=True, compression="gzip")
+                # Update model yaml with new path
+                yaml_path = f"models/{model.name}/{model.name}.yml"
+                if os.path.isfile(yaml_path):
+                    update_yaml_at_path(
+                        yaml_path,
+                        "metrics.geo_opt.struct_file",
+                        {"metrics": {"geo_opt": {"struct_file": jsonl_path}}},
+                    )
+            ml_relaxed_structs_path = jsonl_path
+
     # Load model structures
     try:
         df_ml_structs = pd.read_json(ml_relaxed_structs_path, lines=True)
@@ -103,7 +127,12 @@ def analyze_model_symprec(
     }
 
     symprec_str = f"symprec={symprec:.0e}".replace("e-0", "e-")
-    geo_opt_filename = model.geo_opt_path.removesuffix(".jsonl.gz")
+    # Remove common file extensions properly
+    geo_opt_filename = model.geo_opt_path
+    for suffix in [".jsonl.gz", ".json.gz", ".jsonl", ".json"]:
+        if geo_opt_filename.endswith(suffix):
+            geo_opt_filename = geo_opt_filename.removesuffix(suffix)
+            break
     geo_opt_csv_path = f"{geo_opt_filename}-{symprec_str}-{moyo_version}.csv.gz"
 
     if os.path.isfile(geo_opt_csv_path) and not overwrite:

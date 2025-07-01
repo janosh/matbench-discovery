@@ -1,8 +1,8 @@
 model_name: HIENet
 model_key: hienet
 model_version: v1.0.1
-date_added: "2025-07-01" # required
-date_published: "2025-02-25"
+date_added: '2025-07-01' # required
+date_published: '2025-02-25'
 authors: # required (only name, other keys are optional)
   - name: Keqiang Yan
     affiliation: Texas A&M University
@@ -50,7 +50,7 @@ hyperparams:
   lmax: 3
   num_invariant_conv: 1
   inv_features: [384, 384]
-  irreps: "384x0e -> 512x0e+128x1e+64x2e -> 512x0e+128x1e+64x2e+32x3e -> 512x0e"
+  irreps: '384x0e -> 512x0e+128x1e+64x2e -> 512x0e+128x1e+64x2e+32x3e -> 512x0e'
   radial_basis: bessel
   n_radial_bessel_basis: 8
   cutoff_function: poly_cut - p_value=6
@@ -83,11 +83,12 @@ requirements:
   scikit-learn: 1.7.0
   pymatgen: 2025.6.14
   wandb: 0.20.1
-  torch-ema: "0.3"
+  torch-ema: '0.3'
 
 training_set: [MPtrj]
 
-training_cost: "Will be added soon"
+training_cost:
+  GPU: 'Will be added soon'
 
 notes:
   Description: |
@@ -98,12 +99,12 @@ metrics:
   phonons:
     kappa_103:
       κ_SRME: 0.6423
-      pred_file: models/hienet/hienet/2025-07-01-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json
-      pred_file_url: https://figshare.com/files/55904126
+      pred_file: models/hienet/hienet/2025-07-01-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/files/55909451
   geo_opt:
     pred_file: models/hienet/hienet/2025-07-01-wbm-geo-opt-IS2RE-FIRE.json.gz
     struct_col: hienet_structure
-    pred_file_url: https://figshare.com/files/55903295
+    pred_file_url: https://figshare.com/files/55909424
     symprec=1e-2:
       rmsd: 0.0795 # unitless
       n_sym_ops_mae: 1.8758 # unitless
@@ -112,7 +113,7 @@ metrics:
       symmetry_increase: 0.1163 # fraction
       n_structures: 256963 # count
       analysis_file: models/hienet/hienet/2025-07-01-wbm-geo-opt-IS2RE-FIRE-symprec=1e-2-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/55904153
+      analysis_file_url: https://figshare.com/files/55909445
     symprec=1e-5:
       rmsd: 0.0795 # unitless
       n_sym_ops_mae: 2.6208 # unitless
@@ -121,9 +122,9 @@ metrics:
       symmetry_increase: 0.1532 # fraction
       n_structures: 256963 # count
       analysis_file: models/hienet/hienet/2025-07-01-wbm-geo-opt-IS2RE-FIRE-symprec=1e-5-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/55904159
+      analysis_file_url: https://figshare.com/files/55909448
   discovery:
-    pred_file_url: https://figshare.com/files/55904087
+    pred_file_url: https://figshare.com/files/55909421
     pred_file: models/hienet/hienet/2025-07-01-wbm-IS2RE.csv.gz
     pred_col: e_form_per_atom_hienet
     full_test_set:
