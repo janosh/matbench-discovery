@@ -38,7 +38,6 @@ hyperparams:
   ase_optimizer: FIRE
   epochs: 200
   optimizer: AdamW
-  graph_construction_radius
   loss: Huber - delta=0.01
   loss_weights:
     energy: 1.0
