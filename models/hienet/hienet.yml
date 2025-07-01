@@ -20,8 +20,8 @@ authors: # required (only name, other keys are optional)
 repo: https://github.com/divelab/AIRS/tree/main/OpenMat/HIENet # required
 doi: https://doi.org/10.48550/arXiv.2503.05771
 paper: https://arxiv.org/pdf/2503.05771
-checkpoint_url: https://github.com/divelab/AIRS/blob/main/OpenMat/HIENet/checkpoints/HIENet-V3.pth 
-pr_url: https://github.com/janosh/matbench-discovery/pull/268 
+checkpoint_url: https://github.com/divelab/AIRS/blob/main/OpenMat/HIENet/checkpoints/HIENet-V3.pth
+pr_url: https://github.com/janosh/matbench-discovery/pull/268
 
 openness: OSOD
 trained_for_benchmark: false
@@ -87,7 +87,7 @@ requirements:
 
 training_set: [MPtrj]
 
-training_cost: "Will be added soon" 
+training_cost: "Will be added soon"
 
 notes:
   Description: |
