@@ -1,9 +1,9 @@
 model_name: HIENet
 model_key: hienet
 model_version: v1.0.1
-date_added: '2025-07-01' # required
+date_added: '2025-07-01'
 date_published: '2025-02-25'
-authors: # required (only name, other keys are optional)
+authors:
   - name: Keqiang Yan
     affiliation: Texas A&M University
   - name: Montgomery Bohde
@@ -17,7 +17,7 @@ authors: # required (only name, other keys are optional)
     affiliation: Texas A&M University
     orcid: https://orcid.org/0000-0003-0925-8705
 
-repo: https://github.com/divelab/AIRS/tree/main/OpenMat/HIENet # required
+repo: https://github.com/divelab/AIRS/tree/main/OpenMat/HIENet
 doi: https://doi.org/10.48550/arXiv.2503.05771
 paper: https://arxiv.org/pdf/2503.05771
 checkpoint_url: https://github.com/divelab/AIRS/blob/main/OpenMat/HIENet/checkpoints/HIENet-V3.pth
@@ -50,7 +50,7 @@ hyperparams:
   lmax: 3
   num_invariant_conv: 1
   inv_features: [384, 384]
-  irreps: '384x0e -> 512x0e+128x1e+64x2e -> 512x0e+128x1e+64x2e+32x3e -> 512x0e'
+  irreps: 384x0e -> 512x0e+128x1e+64x2e -> 512x0e+128x1e+64x2e+32x3e -> 512x0e
   radial_basis: bessel
   n_radial_bessel_basis: 8
   cutoff_function: poly_cut - p_value=6
@@ -83,7 +83,7 @@ requirements:
   scikit-learn: 1.7.0
   pymatgen: 2025.6.14
   wandb: 0.20.1
-  torch-ema: '0.3'
+  torch-ema: 0.3.0
 
 training_set: [MPtrj]
 
