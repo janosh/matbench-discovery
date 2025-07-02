@@ -38,12 +38,11 @@ from ase.filters import FrechetCellFilter
 from ase.io import read
 from ase.optimize import FIRE, LBFGS
 from ase.optimize.optimize import Optimizer
+from hienet.hienet_calculator import HIENetCalculator
 from moyopy import MoyoDataset
 from moyopy.interface import MoyoAdapter
 from pymatviz.enums import Key
 from tqdm import tqdm
-
-from hienet.hienet_calculator import HIENetCalculator
 
 from matbench_discovery import today
 from matbench_discovery.enums import DataFiles
@@ -55,7 +54,6 @@ parser.add_argument("--gpu", type=str, default="0", help="GPU ID to use")
 parser.add_argument("--left", type=int, default=0, help="Start index for atoms list")
 parser.add_argument("--right", type=int, default=None, help="End index for atoms list")
 args = parser.parse_args()
-
 
 
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
