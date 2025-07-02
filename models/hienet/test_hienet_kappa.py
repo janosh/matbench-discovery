@@ -280,8 +280,8 @@ df_kappa.reset_index().to_json(out_path)
 print(f"Saved kappa results to {out_path}")
 
 if save_forces:
-    range = f"{args.left}-{args.right}"
-    force_out_path = f"{out_dir}/{today}-kappa-103-force-sets-{range}.json.gz"
+    eval_range = f"{args.left}-{args.right}"
+    force_out_path = f"{out_dir}/{today}-kappa-103-force-sets-{eval_range}.json.gz"
     df_force = pd.DataFrame(force_results).T
     df_force.index.name = Key.mat_id
     df_force.reset_index().to_json(force_out_path)
