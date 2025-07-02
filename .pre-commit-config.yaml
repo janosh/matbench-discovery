@@ -37,7 +37,7 @@ repos:
         name: Deno format
         entry: deno fmt
         types: [file]
-        args: [--config, site/deno.jsonc]
+        args: [--config, site/deno.jsonc, --permit-no-files]
         language: system
       - id: deno-lint
         name: Deno lint

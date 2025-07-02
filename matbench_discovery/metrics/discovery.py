@@ -170,7 +170,7 @@ def write_metrics_to_yaml(
     """
     from ruamel.yaml.comments import CommentedMap
 
-    from matbench_discovery.data import update_yaml_at_path
+    from matbench_discovery.data import update_yaml_file
 
     # calculate number of missing predictions
     n_missing = int(df_model_preds.isna().sum())
@@ -206,7 +206,7 @@ def write_metrics_to_yaml(
             commented_metrics.yaml_add_eol_comment(unit, key, column=1)
 
     # Write back to file
-    update_yaml_at_path(
+    update_yaml_file(
         model.yaml_path, f"metrics.discovery.{test_subset}", commented_metrics
     )
 
