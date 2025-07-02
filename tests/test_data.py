@@ -21,7 +21,7 @@ from matbench_discovery.data import (
     glob_to_df,
     load_df_wbm_with_preds,
     round_trip_yaml,
-    update_yaml_at_path,
+    update_yaml_file,
 )
 from matbench_discovery.enums import MbdKey, Model, TestSubset
 
@@ -325,7 +325,7 @@ def test_load_df_wbm_with_preds_subset(subset: Any) -> None:
     assert isinstance(df_wbm, pd.DataFrame)
 
 
-def test_update_yaml_at_path(tmp_path: Path) -> None:
+def test_update_yaml_file(tmp_path: Path) -> None:
     """Test updating YAML files at specific paths."""
     test_file = f"{tmp_path}/test.yml"
 
@@ -334,15 +334,13 @@ def test_update_yaml_at_path(tmp_path: Path) -> None:
     with open(test_file, mode="w") as file:
         round_trip_yaml.dump(initial_data, file)
 
-    updated_yaml = update_yaml_at_path(
+    updated_yaml = update_yaml_file(
         test_file, "metrics.discovery", {"mae": 0.2, "rmse": 0.3}
     )
     assert updated_yaml["metrics"]["discovery"] == {"mae": 0.2, "rmse": 0.3}
 
     # Test case 2: Create new nested path
-    updated_yaml = update_yaml_at_path(
-        test_file, "metrics.new.nested.path", {"value": 42}
-    )
+    updated_yaml = update_yaml_file(test_file, "metrics.new.nested.path", {"value": 42})
     assert updated_yaml["metrics"]["new"]["nested"]["path"] == {"value": 42}
 
     # Test case 3: Update with comments
@@ -355,7 +353,7 @@ metrics:
     with open(test_file, mode="w") as file:
         file.write(yaml_with_comments)
 
-    updated_yaml = update_yaml_at_path(
+    updated_yaml = update_yaml_file(
         test_file, "metrics.discovery", {"mae": 0.3, "rmse": 0.4}
     )
     assert updated_yaml["metrics"]["discovery"] == {"mae": 0.3, "rmse": 0.4}
@@ -368,7 +366,7 @@ metrics:
     # Test case 4: Update with CommentedMap
     commented_data = CommentedMap({"value": 1})
     commented_data.yaml_add_eol_comment("A comment", "value")
-    updated_yaml = update_yaml_at_path(test_file, "new.path", commented_data)
+    updated_yaml = update_yaml_file(test_file, "new.path", commented_data)
 
     # Verify the data structure
     assert updated_yaml["new"]["path"]["value"] == 1
@@ -382,9 +380,9 @@ metrics:
 
     # Test case 5: Error cases
     with pytest.raises(FileNotFoundError):
-        update_yaml_at_path("non-existent.yml", "path", {"data": 1})
+        update_yaml_file("non-existent.yml", "path", {"data": 1})
 
     # Test bad paths
     for path in ("metrics..discovery", "metrics..", "metrics.discovery..", "."):
         with pytest.raises(ValueError, match="Invalid dotted_path="):
-            update_yaml_at_path(test_file, path, {"data": 1})
+            update_yaml_file(test_file, path, {"data": 1})

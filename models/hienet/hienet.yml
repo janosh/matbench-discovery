@@ -1,0 +1,186 @@
+model_name: HIENet
+model_key: hienet
+model_version: v1.0.1
+date_added: '2025-07-01'
+date_published: '2025-02-25'
+authors:
+  - name: Keqiang Yan
+    affiliation: Texas A&M University
+  - name: Montgomery Bohde
+    affiliation: Texas A&M University
+    orcid: https://orcid.org/0009-0007-7705-1219
+    corresponding: true
+  - name: Kryvenko Andrii
+    affiliation: Texas A&M University
+    orcid: https://orcid.org/0009-0000-3395-0967
+  - name: Ziyu Xiang
+    affiliation: Texas A&M University
+    orcid: https://orcid.org/0000-0003-0925-8705
+
+repo: https://github.com/divelab/AIRS/tree/main/OpenMat/HIENet
+doi: https://doi.org/10.48550/arXiv.2503.05771
+paper: https://arxiv.org/pdf/2503.05771
+checkpoint_url: https://github.com/divelab/AIRS/blob/main/OpenMat/HIENet/checkpoints/HIENet-V3.pth
+pr_url: https://github.com/janosh/matbench-discovery/pull/268
+
+openness: OSOD
+trained_for_benchmark: false
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+model_type: UIP
+model_params: 7_510_280
+n_estimators: 1
+
+hyperparams:
+  max_force: 0.05
+  max_steps: 500
+  ase_optimizer: FIRE
+  epochs: 200
+  optimizer: AdamW
+  loss: Huber - delta=0.01
+  loss_weights:
+    energy: 1.0
+    force: 1.0
+    stress: 0.01
+  batch_size: 48
+  initial_learning_rate: 0.01
+  learning_rate_schedule: CosineWarmupLR - warmup_factor=0.2, warmup_epochs=0.1, lr_min_factor=0.0005
+  weight_decay: 0.001
+  lmax: 3
+  num_invariant_conv: 1
+  inv_features: [384, 384]
+  irreps: 384x0e -> 512x0e+128x1e+64x2e -> 512x0e+128x1e+64x2e+32x3e -> 512x0e
+  radial_basis: bessel
+  n_radial_bessel_basis: 8
+  cutoff_function: poly_cut - p_value=6
+  activation_gate: silu/tanh
+  activation_scalar: silu/tanh
+  dropout: 0.04
+  dropout_attention: 0.08
+  conv_denominator: 35.989574
+  ema_decay: 0.999
+  forces_rms_scale: 0.799
+  max_neighbors: .inf
+  graph_construction_radius: 5.0
+
+license:
+  code: GPL-3.0
+  code_url: https://github.com/divelab/AIRS/blob/main/OpenMat/HIENet/LICENSE
+  checkpoint: GPL-3.0
+  checkpoint_url: https://github.com/divelab/AIRS/blob/main/OpenMat/HIENet/LICENSE
+
+requirements:
+  torch: 2.1.2
+  torch-geometric: 2.6.1
+  numpy: 1.26.4
+  ase: 3.25.0
+  braceexpand: 0.1.7
+  e3nn: 0.5.6
+  pymatviz: 0.16.0
+  pyyaml: 6.0.1
+  torch-scatter: 2.1.2
+  scikit-learn: 1.7.0
+  pymatgen: 2025.6.14
+  wandb: 0.20.1
+  torch-ema: 0.3.0
+
+training_set: [MPtrj]
+
+training_cost:
+  Nvidia A100 GPUs: { amount: 8, hours: 361 }
+
+notes:
+  Description: |
+    HIENet is a hybrid invariant-equivariant graph neural network interatomic potential that combines E(3) invariant and O(3) equivariant message passing layers for materials discovery.
+    The model uses physics-informed gradient-based predictions to ensure all outputs satisfy key physical constraints including force conservation and rotational symmetries, enabling accurate prediction of energy, forces, and stress for crystalline materials.
+
+metrics:
+  phonons:
+    kappa_103:
+      κ_SRME: 0.6423
+      pred_file: models/hienet/hienet/2025-07-01-kappa-103-FIRE-dist=0.01-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/files/55909451
+  geo_opt:
+    pred_file: models/hienet/hienet/2025-07-01-wbm-geo-opt-IS2RE-FIRE.json.gz
+    struct_col: hienet_structure
+    pred_file_url: https://figshare.com/files/55909424
+    symprec=1e-2:
+      rmsd: 0.0795 # unitless
+      n_sym_ops_mae: 1.8758 # unitless
+      symmetry_decrease: 0.0755 # fraction
+      symmetry_match: 0.8002 # fraction
+      symmetry_increase: 0.1163 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/hienet/hienet/2025-07-01-wbm-geo-opt-IS2RE-FIRE-symprec=1e-2-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/55909445
+    symprec=1e-5:
+      rmsd: 0.0795 # unitless
+      n_sym_ops_mae: 2.6208 # unitless
+      symmetry_decrease: 0.3493 # fraction
+      symmetry_match: 0.4521 # fraction
+      symmetry_increase: 0.1532 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/hienet/hienet/2025-07-01-wbm-geo-opt-IS2RE-FIRE-symprec=1e-5-moyo=0.4.2.csv.gz
+      analysis_file_url: https://figshare.com/files/55909448
+  discovery:
+    pred_file_url: https://figshare.com/files/55909421
+    pred_file: models/hienet/hienet/2025-07-01-wbm-IS2RE.csv.gz
+    pred_col: e_form_per_atom_hienet
+    full_test_set:
+      F1: 0.766 # fraction
+      DAF: 4.361 # dimensionless
+      Precision: 0.748 # fraction
+      Recall: 0.784 # fraction
+      Accuracy: 0.918 # fraction
+      TPR: 0.784 # fraction
+      FPR: 0.055 # fraction
+      TNR: 0.945 # fraction
+      FNR: 0.216 # fraction
+      TP: 34551.0 # count
+      FP: 11622.0 # count
+      TN: 201249.0 # count
+      FN: 9541.0 # count
+      MAE: 0.039 # eV/atom
+      RMSE: 0.082 # eV/atom
+      R2: 0.791 # dimensionless
+      missing_preds: 2 # count
+      missing_percent: 0.00% # fraction
+    most_stable_10k:
+      F1: 0.973 # fraction
+      DAF: 6.194 # dimensionless
+      Precision: 0.947 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.947 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9469.0 # count
+      FP: 531.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.033 # eV/atom
+      RMSE: 0.069 # eV/atom
+      R2: 0.894 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
+    unique_prototypes:
+      F1: 0.777 # fraction
+      DAF: 4.932 # dimensionless
+      Precision: 0.754 # fraction
+      Recall: 0.801 # fraction
+      Accuracy: 0.929 # fraction
+      TPR: 0.801 # fraction
+      FPR: 0.048 # fraction
+      TNR: 0.952 # fraction
+      FNR: 0.199 # fraction
+      TP: 26723.0 # count
+      FP: 8721.0 # count
+      TN: 173393.0 # count
+      FN: 6651.0 # count
+      MAE: 0.041 # eV/atom
+      RMSE: 0.084 # eV/atom
+      R2: 0.793 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction

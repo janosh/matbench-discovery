@@ -307,6 +307,9 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     # eqnorm
     eqnorm_mptrj = auto(), "eqnorm/eqnorm-mptrj.yml"
 
+    # HIENet
+    hienet = auto(), "hienet/hienet.yml"
+
     # GRACE: https://arxiv.org/abs/2311.16326v2
     grace_2l_mptrj = auto(), "grace/grace-2l-mptrj.yml"
     grace_2l_oam = auto(), "grace/grace-2l-oam.yml"
