@@ -43,19 +43,20 @@ from moyopy.interface import MoyoAdapter
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-# Parse command line arguments
-parser = argparse.ArgumentParser(description="Thermal conductivity calculation script")
-parser.add_argument("--gpu", type=str, default="0", help="GPU ID to use")
-parser.add_argument("--left", type=int, default=0, help="Start index for atoms list")
-parser.add_argument("--right", type=int, default=None, help="End index for atoms list")
-args = parser.parse_args()
-
 from hienet.hienet_calculator import HIENetCalculator
 
 from matbench_discovery import today
 from matbench_discovery.enums import DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
+
+parser = argparse.ArgumentParser(description="Thermal conductivity calculation script")
+parser.add_argument("--gpu", type=str, default="0", help="GPU ID to use")
+parser.add_argument("--left", type=int, default=0, help="Start index for atoms list")
+parser.add_argument("--right", type=int, default=None, help="End index for atoms list")
+args = parser.parse_args()
+
+
 
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 
@@ -281,7 +282,8 @@ df_kappa.reset_index().to_json(out_path)
 print(f"Saved kappa results to {out_path}")
 
 if save_forces:
-    force_out_path = f"{out_dir}/{today}-kappa-103-force-sets-gpu{args.gpu}-{args.left}-{args.right}.json.gz"
+    range = f"{args.left}-{args.right}"
+    force_out_path = f"{out_dir}/{today}-kappa-103-force-sets-{range}.json.gz"
     df_force = pd.DataFrame(force_results).T
     df_force.index.name = Key.mat_id
     df_force.reset_index().to_json(force_out_path)
