@@ -40,10 +40,10 @@ hyperparams:
   graph_construction_radius: 6.0
   max_neighbors: .inf
 notes:
-  Description: 
+  Description:
     EquFlash is an E(3)-equivariant model based on the SevenNet-0 architecture, with tensor products accelerated by FlashTP(https://openreview.net/forum?id=wiQe95BPaB).
 
-  
+
 
 metrics:
   phonons:
@@ -60,4 +60,3 @@ metrics:
     pred_file: models/equflash/2025-06-23-wbm-IS2RE.csv.gz
     pred_file_url: https://figshare.com/files/55717856
     pred_col: pred_formation_energy_per_atom
-
