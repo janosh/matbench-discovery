@@ -304,6 +304,9 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     esen_30m_mp = auto(), "eSEN/eSEN-30m-mp.yml"
     esen_30m_oam = auto(), "eSEN/eSEN-30m-oam.yml"
 
+    #eqflash
+    equflash_29m_oam = auto(), "equflash/equflash-29M-oam.yml"
+
     # eqnorm
     eqnorm_mptrj = auto(), "eqnorm/eqnorm-mptrj.yml"
 
