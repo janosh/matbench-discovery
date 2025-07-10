@@ -62,7 +62,6 @@ MPF:
   optimade_api: null
   native_api: null
   date_created: 2022-03-05
-  date_added: 2022-03-05
   license: CC-BY-4.0
   description: Materials Project Force dataset used to train the M3GNet model reported in https://arxiv.org/abs/2202.02450.
   method: DFT
@@ -375,7 +374,7 @@ NOMAD:
   n_materials: 4_335_728
   open: true
   static: false
-  contains: [Alexandria, OQMD]
+  contains: [Alex, OQMD]
   optimade_api: https://optimade.org/providers-dashboard/providers/nmd
   native_api: https://nomad-lab.eu/prod/v1/gui/analyze/apis
   date_created: 2019-06-01

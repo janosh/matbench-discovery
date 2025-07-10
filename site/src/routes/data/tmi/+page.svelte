@@ -6,7 +6,7 @@
   import type { ChemicalElement } from 'matterviz'
   import { ColorScaleSelect, PeriodicTable, TableInset } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
-  import { RadioButtons, Toggle } from 'svelte-zoo'
+  import { RadioButtons, Toggle } from 'svelte-multiselect'
 
   const elem_counts = $state(
     import.meta.glob(`../wbm-element-counts-*=*.json`, {

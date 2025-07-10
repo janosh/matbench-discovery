@@ -11,8 +11,8 @@
   import type { ChemicalElement } from 'matterviz'
   import { ColorBar, format_num, PeriodicTable, TableInset } from 'matterviz'
   import type { D3InterpolateName } from 'matterviz/colors'
-  import { CopyButton, Tooltip } from 'svelte-zoo'
-  import { click_outside, titles_as_tooltips } from 'svelte-zoo/actions'
+  import { CopyButton } from 'svelte-multiselect'
+  import { click_outside, tooltip } from 'svelte-multiselect/attachments'
   import per_elem_each_errors from '../per-element-each-errors.json'
 
   interface Props {
@@ -56,23 +56,23 @@
 
       <div>
         <Icon icon="Calendar" />
-        Added: <Tooltip text="{days_added} days ago">
+        Added: <span title="{days_added} days ago" {@attach tooltip()}>
           {model.date_added}
-        </Tooltip>
+        </span>
       </div>
 
       <div>
         <Icon icon="CalendarCheck" />
-        Published: <Tooltip text="{days_published} days ago">
+        Published: <span title="{days_published} days ago" {@attach tooltip()}>
           {model.date_published}
-        </Tooltip>
+        </span>
       </div>
 
       <div>
         <Icon icon="NeuralNetwork" />
-        <Tooltip text={model.model_params.toLocaleString()}>
+        <span title={model.model_params.toLocaleString()} {@attach tooltip()}>
           {format_num(model.model_params, `.3~s`)}
-        </Tooltip> parameters
+        </span> parameters
       </div>
 
       {#if model.n_estimators > 1}
@@ -100,7 +100,7 @@
           <CopyButton
             content={`pip install ${model.pypi.split(`/`).pop()}`}
             labels={{
-              default: { icon: `Copy`, text: `` },
+              ready: { icon: `Copy`, text: `` },
               success: { icon: `Check`, text: `` },
               error: { icon: `Alert`, text: `` },
             }}
@@ -109,7 +109,7 @@
       {/if}
     </section>
 
-    <section class="links" use:titles_as_tooltips>
+    <section class="links" {@attach tooltip()}>
       {#if model.repo.startsWith(`http`)}
         <a
           href={model.repo}
@@ -359,7 +359,7 @@
           [key, value, title = null]
           (key)
         }
-          <li {title} use:titles_as_tooltips>
+          <li {title} {@attach tooltip()}>
             {key}
             <strong>{value}</strong>
           </li>
@@ -375,14 +375,14 @@
           {@const { n_structures, name, slug, n_materials } = dataset}
           <p>
             <a href="/data/{slug}">{name}</a>:
-            <Tooltip text={n_structures.toLocaleString()}>
+            <span title={n_structures.toLocaleString()} {@attach tooltip()}>
               <strong>{format_num(n_structures)}</strong>
-            </Tooltip>
+            </span>
             structures
             {#if typeof n_materials == `number`}
-              from <Tooltip text={n_materials.toLocaleString()}>
+              from <span title={n_materials.toLocaleString()} {@attach tooltip()}>
                 <strong>{format_num(n_materials)}</strong>
-              </Tooltip> materials
+              </span> materials
             {/if}
           </p>
         {/each}

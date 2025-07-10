@@ -497,6 +497,7 @@ export const org_logos = {
   'Northwestern University': `/logos/northwestern-university.svg`,
   'Orbital Materials': `/logos/orbital-materials.svg`,
   'Seoul National University': `/logos/seoul-national-university.svg`,
+  'Texas A&M University': `/logos/texas-a&m.svg`,
   'Tsinghua University': `/logos/tsinghua-university.svg`,
   'UC San Diego': `/logos/uc-san-diego.svg`,
   'UC Berkeley': `/logos/uc-berkeley.svg`,

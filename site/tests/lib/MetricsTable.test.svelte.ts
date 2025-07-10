@@ -539,7 +539,7 @@ describe(`MetricsTable`, () => {
 
       await tick()
 
-      // Find cells with HTML content
+      // Find all Training Set cells
       const training_set_cells = Array.from(
         document.body.querySelectorAll(`td[data-col="Training Set"]`),
       )
@@ -574,13 +574,13 @@ describe(`MetricsTable`, () => {
 
       // Verify tooltips are preserved on spans within cells
       const cells_with_tooltips = training_set_cells.filter(
-        (cell) => cell.querySelector(`span[data-title]`) !== null,
+        (cell) => cell.querySelector(`span[data-original-title]`) !== null,
       )
 
       expect(cells_with_tooltips.length).toBeGreaterThan(0)
       cells_with_tooltips.forEach((cell) => {
-        const span = cell.querySelector(`span[data-title]`)
-        expect(span?.getAttribute(`data-title`)).toBeTruthy()
+        const span = cell.querySelector(`span[data-original-title]`)
+        expect(span?.getAttribute(`data-original-title`)).toBeTruthy()
       })
     })
 
@@ -718,7 +718,7 @@ describe(`MetricsTable`, () => {
           expect(link.getAttribute(`target`)).toBe(`_blank`)
           expect(link.getAttribute(`rel`)).toBe(`noopener noreferrer`)
 
-          const title = link.getAttribute(`data-title`)
+          const title = link.getAttribute(`data-original-title`)
           const href = link.getAttribute(`href`)
           expect(title).toBeTruthy()
           expect(href).toBeTruthy()
@@ -752,7 +752,7 @@ describe(`MetricsTable`, () => {
       for (const cell of links_cells) {
         const missing_icons = Array.from(
           cell.querySelectorAll(
-            `span[data-title$="not available"] svg`,
+            `span[data-original-title$="not available"] svg`,
           ),
         )
 
@@ -762,7 +762,7 @@ describe(`MetricsTable`, () => {
           // Check each missing link icon's parent span has a title
           for (const icon of missing_icons) {
             const span = icon.closest(`span`)
-            const title = span?.getAttribute(`data-title`)
+            const title = span?.getAttribute(`data-original-title`)
             expect(title).toBeTruthy()
             expect(title).toMatch(/not available/)
           }

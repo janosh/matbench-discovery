@@ -47,7 +47,7 @@ describe(`TableColumnToggleMenu`, () => {
   it(`opens and closes panel with correct interaction`, async () => {
     mount(TableColumnToggleMenu, {
       target: document.body,
-      props: { columns, column_panel_open: true },
+      props: { columns, column_panel_open: false },
     })
 
     const details = document.body.querySelector(`details`)

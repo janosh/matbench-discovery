@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { format_num } from 'matterviz/labels'
+  import { format_num } from 'matterviz'
   import type { Snippet } from 'svelte'
-  import { titles_as_tooltips } from 'svelte-zoo/actions'
+  import { tooltip } from 'svelte-multiselect/attachments'
   import { flip } from 'svelte/animate'
   import { calc_cell_color } from './metrics'
   import type { CellSnippetArgs, CellVal, Label, RowData } from './types'
@@ -59,42 +59,34 @@
     ascending: initial_sort_direction !== `desc`,
   })
 
-  let sorted_data = $derived(
-    data?.filter?.((row) => Object.values(row).some((val) => val !== undefined)) ??
-      [],
-  )
-
   // Helper to make column IDs (needed since column labels in different groups can be repeated)
   const get_col_id = (col: Label) =>
     col.group ? `${col.short ?? col.label} (${col.group})` : (col.short ?? col.label)
 
-  function sort_rows(column: string, group?: string) {
-    // Find the column using both label and group if provided
-    const col = columns.find(
-      (c) => c.label === column && (c.group === group || c.group === undefined),
-    )
+  let sorted_data = $derived.by(() => {
+    const filtered_data = data?.filter?.((row) =>
+      Object.values(row).some((val) => val !== undefined)
+    ) ?? []
 
-    if (!col) return // Skip if column not found
+    if (!sort_state.column) return filtered_data
 
-    // Skip sorting if column is explicitly marked as not sortable
-    if (col.sortable === false) return
+    const col = columns.find((c) => get_col_id(c) === sort_state.column)
+    if (!col) return filtered_data
 
     const col_id = get_col_id(col)
 
-    if (sort_state.column !== col_id) {
-      sort_state.column = col_id
-      sort_state.ascending = col.better === `lower`
-    } else {
-      sort_state.ascending = !sort_state.ascending
-    }
-
-    sorted_data = sorted_data.sort((row1, row2) => {
+    return [...filtered_data].sort((row1, row2) => {
       const val1 = row1[col_id]
       const val2 = row2[col_id]
 
       if (val1 === val2) return 0
-      if (val1 === null || val1 === undefined) return 1
-      if (val2 === null || val2 === undefined) return -1
+
+      // Handle null, undefined, and NaN values (always sort to bottom)
+      const is_invalid = (val: unknown) =>
+        val == null || (typeof val === `number` && Number.isNaN(val))
+      if (is_invalid(val1) || is_invalid(val2)) {
+        return +is_invalid(val1) - +is_invalid(val2)
+      }
 
       const modifier = sort_state.ascending ? 1 : -1
 
@@ -123,6 +115,22 @@
 
       return val1 < val2 ? -1 * modifier : 1 * modifier
     })
+  })
+
+  function sort_rows(column: string, group?: string) {
+    // Find the column using both label and group if provided
+    const col = columns.find(
+      (c) => c.label === column && (c.group === group || c.group === undefined),
+    )
+
+    if (!col) return // Skip if column not found
+    if (col.sortable === false) return // Skip sorting if column marked as unsortable
+
+    const col_id = get_col_id(col)
+    if (sort_state.column !== col_id) {
+      sort_state.column = col_id
+      sort_state.ascending = col.better === `lower`
+    } else sort_state.ascending = !sort_state.ascending
   }
 
   function calc_color(val: CellVal, col: Label) {
@@ -171,7 +179,7 @@
   }
 </script>
 
-<div class="table-container" use:titles_as_tooltips {...rest}>
+<div class="table-container" {@attach tooltip()} {...rest}>
   {#if (sort_state && sort_hint) || controls}
     <div class="table-header">
       {#if sort_state && sort_hint}

@@ -5,7 +5,8 @@
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
   import { interpolateRdBu } from 'd3-scale-chromatic'
   import { ColorBar, luminance } from 'matterviz'
-  import { RadioButtons, Tooltip } from 'svelte-zoo'
+  import { RadioButtons } from 'svelte-multiselect'
+  import { tooltip } from 'svelte-multiselect/attachments'
   import { flip } from 'svelte/animate'
   import { fade } from 'svelte/transition'
 
@@ -91,17 +92,17 @@
             if (key === `model_name`) order = `asc`
             else order = metric_better_as(key) === `lower` ? `asc` : `desc`
           }}
-          style="font-size: large; height: 26pt"
+          style="font-size: large; height: 26pt; position: relative"
         >
           {@html short ?? label ?? key}
+          {#if description}
+            <Icon
+              icon="Info"
+              {@attach tooltip({ content: description })}
+              style="width: 14pt; height: 14pt; position: absolute; top: -7pt; right: -7pt; opacity: 0.6"
+            />
+          {/if}
         </button>
-        {#if description}
-          <Tooltip text={description} max_width="20em">
-            <span style="position: absolute; top: -11pt; left: -6pt; opacity: 0.6">
-              <Icon icon="Info" />
-            </span>
-          </Tooltip>
-        {/if}
       </li>
     {/each}
   </ul>
