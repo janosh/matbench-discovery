@@ -2,7 +2,7 @@
   import { HeatmapTable, Icon, IconList, TableControls } from '$lib'
   import { metric_better_as } from '$lib/metrics'
   import type { Snippet } from 'svelte'
-  import { click_outside } from 'svelte-zoo/actions'
+  import { click_outside } from 'svelte-multiselect/attachments'
   import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from './labels'
   import { assemble_row_data } from './metrics'
   import { heatmap_class } from './table-export'
@@ -222,7 +222,7 @@
   <div
     class="pred-files-dropdown"
     {style}
-    use:click_outside={{ callback: close_dropdown }}
+    {@attach click_outside({ callback: close_dropdown })}
   >
     <h4>Files for {active_model_name}</h4>
     <ol>

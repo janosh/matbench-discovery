@@ -3,7 +3,7 @@
   import { AuthorBrief, DATASETS, Icon } from '$lib'
   import pkg from '$site/package.json'
   import { format_num } from 'matterviz'
-  import { Tooltip } from 'svelte-zoo'
+  import { tooltip } from 'svelte-multiselect/attachments'
   import { fade, slide } from 'svelte/transition'
 
   interface Props {
@@ -89,9 +89,11 @@
         ? format_num(n_materials)
         : n_materials}
         {@const n_mat_str = n_materials ? ` from ${pretty_n_mat} materials` : ``}
-        <Tooltip text="{name}: {format_num(n_structures)} structures{n_mat_str}">
-          <a href="/data/{slug}">{train_set_key}</a>
-        </Tooltip>
+        <a
+          href="/data/{slug}"
+          title="{name}: {format_num(n_structures)} structures{n_mat_str}"
+          {@attach tooltip()}
+        >{train_set_key}</a>
       {/each}
     </span>
   {/if}
@@ -112,11 +114,12 @@
     <span>
       <Icon icon="Forest" />
       Ensemble of {n_estimators}
-      <Tooltip
-        text="This result used a model ensemble with {n_estimators} members with {n_model_params} parameters each."
+      <span
+        title="This result used a model ensemble with {n_estimators} members with {n_model_params} parameters each."
+        {@attach tooltip()}
       >
         &nbsp;<Icon icon="Info" />
-      </Tooltip>
+      </span>
     </span>
   {/if}
   <span>

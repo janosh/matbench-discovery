@@ -20,7 +20,7 @@ declare module '*/datasets.yml' {
 
 declare module '*citation.cff' {
   const data: import('$lib').Citation
-  export = data
+  export default data
 } // paper metadata
 
 declare module '*references.yaml' {

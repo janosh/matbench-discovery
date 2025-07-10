@@ -16,7 +16,7 @@
   })
 </script>
 
-<svg fill="currentColor" {...data} {...rest} data-title={icon}>
+<svg fill="currentColor" {...data} {...rest}>
   {#if path.trim().startsWith(`<`)}
     {@html path}
   {:else}

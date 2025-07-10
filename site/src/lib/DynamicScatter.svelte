@@ -3,9 +3,11 @@
   import type { ModelData } from '$lib'
   import { calculate_days_ago, Icon } from '$lib'
   import { extent } from 'd3-array'
-  import { ColorScaleSelect, format_num, ScatterPlot } from 'matterviz'
+  import { DraggablePanel, format_num } from 'matterviz'
+  import type { D3ColorSchemeName } from 'matterviz/colors'
+  import { ColorScaleSelect, ScatterPlot } from 'matterviz/plot'
   import Select from 'svelte-multiselect'
-  import { click_outside, titles_as_tooltips } from 'svelte-zoo'
+  import { tooltip } from 'svelte-multiselect/attachments'
   import {
     ALL_METRICS,
     format_property_path,
@@ -45,8 +47,7 @@
   let is_fullscreen = $state(false)
 
   // State for plot controls
-  let show_controls = $state(false)
-  let color_scheme = $state(`Viridis`)
+  let color_scheme: D3ColorSchemeName = $state(`Viridis`)
   let x_ticks = $state(5)
   let y_ticks = $state(5)
   let x_grid = $state(true)
@@ -172,70 +173,7 @@
       if (is_fullscreen) {
         is_fullscreen = false
         document.body.classList.remove(`fullscreen`)
-      } else show_controls = false
-    }
-  }
-
-  interface DraggableOptions {
-    handle_selector?: string
-  }
-  function draggable(node: HTMLElement, options?: DraggableOptions) {
-    let dragging = false
-    let start = { x: 0, y: 0 }
-    let initial = { left: 0, top: 0, width: 0 }
-
-    const handle = options?.handle_selector
-      ? node.querySelector<HTMLElement>(options.handle_selector)
-      : node
-
-    if (!handle) return // Handle not found
-
-    function handle_mousedown(event: MouseEvent) {
-      // Only drag if mousedown is on the handle itself
-      if (event.target !== handle) return
-
-      dragging = true
-      initial.left = node.offsetLeft
-      initial.top = node.offsetTop
-      initial.width = node.offsetWidth
-      node.style.left = `${initial.left}px`
-      node.style.top = `${initial.top}px`
-      node.style.width = `${initial.width}px`
-      node.style.right = `auto` // Prevent conflict with left
-      start = { x: event.clientX, y: event.clientY }
-      document.body.style.userSelect = `none` // Prevent text selection during drag
-      handle!.style.cursor = `grabbing`
-      window.addEventListener(`mousemove`, handle_mousemove)
-      window.addEventListener(`mouseup`, handle_mouseup)
-    }
-
-    function handle_mousemove(event: MouseEvent) {
-      if (!dragging) return
-      const dx = event.clientX - start.x
-      const dy = event.clientY - start.y
-      node.style.left = `${initial.left + dx}px`
-      node.style.top = `${initial.top + dy}px`
-    }
-
-    function handle_mouseup(event: MouseEvent) {
-      dragging = false
-      event.stopPropagation()
-      document.body.style.userSelect = ``
-      handle!.style.cursor = `grab`
-      window.removeEventListener(`mousemove`, handle_mousemove)
-      window.removeEventListener(`mouseup`, handle_mouseup)
-    }
-
-    handle.addEventListener(`mousedown`, handle_mousedown)
-    handle.style.cursor = `grab` // Set initial cursor on handle
-
-    return {
-      destroy() {
-        handle.removeEventListener(`mousedown`, handle_mousedown)
-        window.removeEventListener(`mousemove`, handle_mousemove) // Clean up just in case
-        window.removeEventListener(`mouseup`, handle_mouseup)
-        handle.style.cursor = `` // Reset cursor
-      },
+      }
     }
   }
 </script>
@@ -253,135 +191,119 @@
       aria-label={is_fullscreen ? `Exit fullscreen` : `Enter fullscreen`}
       title={is_fullscreen ? `Exit fullscreen` : `Enter fullscreen`}
     >
-      <Icon
-        icon={is_fullscreen ? `Close` : `Maximize`}
-        style="width: 1.3em; height: 1.3em"
-      />
+      <Icon icon={is_fullscreen ? `Close` : `Maximize`} />
     </button>
-    <button
-      class="settings-toggle icon-button"
-      onclick={() => (show_controls = !show_controls)}
-      aria-label="Toggle plot controls"
-    >
-      <Icon icon="Settings" style="width: 1.3em; height: 1.3em" />
-    </button>
-  </div>
 
-  {#if show_controls}
-    <div
-      use:click_outside={{ callback: () => (show_controls = false) }}
-      use:draggable={{ handle_selector: `.drag-handle` }}
-      class="controls"
-      use:titles_as_tooltips
+    <DraggablePanel
+      toggle_props={{
+        style:
+          `background-color: rgba(255, 255, 255, 0.15); border-radius: 50%; padding: 4pt;`,
+      }}
+      icon_style="width: 1.4em; height: 1.4em;"
     >
-      <Icon
-        icon="DragIndicator"
-        class="drag-handle"
-        style="width: 1.3em; height: 1.3em; position: absolute; top: 5px; right: 5px; background-color: rgba(255, 255, 255, 0.2); border-radius: 3px"
-      />
-      <label
-        style="grid-column: 1/-1"
-        title="Toggle visibility of model name labels on the scatter plot points"
-      >
-        <input type="checkbox" bind:checked={show_model_labels} /> Show Labels
-      </label>
-      <ColorScaleSelect
-        bind:value={color_scheme}
-        selected={[color_scheme]}
-        style="margin: 0; grid-column: 1/-1"
-      />
-      <label
-        style="grid-column: 1 / -1"
-        title="Toggle the visibility of vertical grid lines and set the approximate number of ticks on the X axis"
-      >
-        <input type="checkbox" bind:checked={x_grid} /> X Grid
-        <label for="x-ticks" style="margin-left: 1em">Ticks:</label>
-        <input
-          id="x-ticks"
-          type="number"
-          min="0"
-          max="20"
-          bind:value={x_ticks}
-          style="width: 50px"
+      <div class="controls" {@attach tooltip()}>
+        <label
+          style="grid-column: 1/-1"
+          title="Toggle visibility of model name labels on the scatter plot points"
+        >
+          <input type="checkbox" bind:checked={show_model_labels} /> Show Labels
+        </label>
+        <ColorScaleSelect
+          bind:value={color_scheme}
+          selected={[color_scheme]}
+          style="margin: 0; grid-column: 1/-1"
         />
-      </label>
+        <label title="Toggle the visibility of vertical grid lines">
+          <input type="checkbox" bind:checked={x_grid} /> X Grid
+        </label>
+        <label
+          title="Set the approximate number of ticks on the X axis"
+        >Ticks:
+          <input
+            id="x-ticks"
+            type="number"
+            min="0"
+            max="20"
+            bind:value={x_ticks}
+            style="width: 50px"
+          /></label>
 
-      <label
-        style="grid-column: 1 / -1"
-        title="Toggle the visibility of horizontal grid lines and set the approximate number of ticks on the Y axis"
-      >
-        <!-- Span both columns -->
-        <input type="checkbox" bind:checked={y_grid} /> Y Grid
-        <label for="y-ticks" style="margin-left: 1em">Ticks:</label>
+        <label title="Toggle the visibility of horizontal grid lines">
+          <input type="checkbox" bind:checked={y_grid} /> Y Grid
+        </label>
+        <label
+          title="Set the approximate number of ticks on the Y axis"
+        >Ticks:
+          <input
+            id="y-ticks"
+            type="number"
+            min="0"
+            max="20"
+            bind:value={y_ticks}
+            style="width: 50px"
+          />
+        </label>
+        <label
+          for="size-multiplier"
+          title="Adjust the base size of all points on the scatter plot (multiplier for radius)"
+        >Point Size</label>
         <input
-          id="y-ticks"
-          type="number"
-          min="0"
-          max="20"
-          bind:value={y_ticks}
-          style="width: 50px"
-        />
-      </label>
-      <label
-        for="size-multiplier"
-        title="Adjust the base size of all points on the scatter plot (multiplier for radius)"
-      >Point Size</label>
-      <input
-        id="size-multiplier"
-        type="range"
-        min="0.1"
-        max="5"
-        step="0.1"
-        bind:value={size_multiplier}
-      />
-      <label
-        for="label-font-size"
-        title="Adjust the font size of the model name labels (in pixels)"
-      >Label Size</label>
-      <input
-        id="label-font-size"
-        type="range"
-        min="8"
-        max="24"
-        step="1"
-        bind:value={label_font_size}
-        style="grid-column: 2"
-      />
-      <label
-        title="Configure the distance range and strength of the links connecting labels to their points"
-        for="min-link-distance"
-      >Label Link</label>
-      <div class="combined-link-controls">
-        <input
-          id="min-link-distance"
-          type="number"
-          min="0"
-          max="100"
-          bind:value={min_link_distance}
-          title="Minimum distance"
-        />
-        <span>-</span>
-        <input
-          id="max-link-distance"
-          type="number"
-          min="0"
-          max="100"
-          bind:value={max_link_distance}
-          title="Maximum distance"
-        />
-        <input
-          id="link-strength"
+          id="size-multiplier"
           type="range"
           min="0.1"
-          max="10"
+          max="5"
           step="0.1"
-          bind:value={link_strength}
-          title="Strength (higher = stronger pull)"
-          style="flex-: 1"
+          bind:value={size_multiplier}
         />
+        <label
+          for="label-font-size"
+          title="Adjust the font size of the model name labels (in pixels)"
+        >Label Size</label>
+        <input
+          id="label-font-size"
+          type="range"
+          min="8"
+          max="24"
+          step="1"
+          bind:value={label_font_size}
+          style="grid-column: 2"
+        />
+        <label
+          title="Configure the distance range and strength of the links connecting labels to their points"
+          for="min-link-distance"
+        >Label Link</label>
+        <div class="combined-link-controls">
+          <input
+            id="min-link-distance"
+            type="number"
+            min="0"
+            max="100"
+            bind:value={min_link_distance}
+            title="Minimum distance"
+          />
+          <span>-</span>
+          <input
+            id="max-link-distance"
+            type="number"
+            min="0"
+            max="100"
+            bind:value={max_link_distance}
+            title="Maximum distance"
+          />
+          <input
+            id="link-strength"
+            type="range"
+            min="0.1"
+            max="10"
+            step="0.1"
+            bind:value={link_strength}
+            title="Strength (higher = stronger pull)"
+            style="flex: 1"
+          />
+        </div>
       </div>
-    </div>
-  {/if}
+    </DraggablePanel>
+  </div>
 
   <div class="controls-grid">
     {#each [
@@ -454,9 +376,10 @@
       {style}
       x_scale_type={log.x ? `log` : `linear`}
       y_scale_type={log.y ? `log` : `linear`}
-      x_label_shift={{ y: -60 }}
+      x_label_shift={{ y: -50 }}
       y_label_shift={{
         y: [date_key, params_key].includes(axes.y?.key ?? ``) ? -40 : -10,
+        x: 90,
       }}
       {x_ticks}
       {y_ticks}
@@ -559,16 +482,6 @@
     right: 1em;
   }
   .controls {
-    position: absolute;
-    top: 45px; /* Adjust as needed to position below the gear icon */
-    right: -5em;
-    max-width: 450px; /* Allow content width up to a max */
-    background-color: var(--night, #1a1a1a);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 6px;
-    padding: 5px 15px 15px;
-    box-sizing: border-box;
-    z-index: 2;
     display: grid;
     grid-template-columns: auto 1fr; /* Label | Control Area */
     gap: 8pt 1em;
@@ -576,32 +489,10 @@
   .controls > *:nth-child(odd):not(label) {
     grid-column: 2;
   }
-  .controls-grid {
-    display: grid;
-    grid-template-columns: auto 1fr auto; /* columns for: Label Select Checkbox */
-    gap: 1ex;
-    align-items: center;
-  }
-  .controls-grid label {
-    color: gray;
-  }
-  .controls-grid label[for] {
-    text-align: right;
-  }
   input[type='checkbox'] {
     transform: scale(1.2);
   }
-  .combined-link-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.3em;
-  }
-  :global(body.fullscreen) .controls {
-    top: 3.3em;
-    right: 1em;
-    left: auto; /* Ensure left is not set */
-  }
-  .controls input[type='number'] {
-    width: 40px;
+  .controls input[type='range'] {
+    margin-left: 0 !important;
   }
 </style>

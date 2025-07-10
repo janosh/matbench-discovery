@@ -4,9 +4,8 @@
   import { Footer, Nav } from '$lib'
   import pkg from '$site/package.json'
   import { type Snippet } from 'svelte'
-  import { CmdPalette } from 'svelte-multiselect'
+  import { CmdPalette, CopyButton, GitHubCorner } from 'svelte-multiselect'
   import Toc from 'svelte-toc'
-  import { GitHubCorner } from 'svelte-zoo'
   import '../app.css'
 
   interface Props {
@@ -57,11 +56,11 @@
     } else {
       document.documentElement.style.setProperty(`--main-max-width`, `50em`)
     }
-    // TODO restore svelte-zoo CopyButton on code blocks
   })
 </script>
 
 <CmdPalette {actions} placeholder="Go to..." />
+<CopyButton global />
 
 <svelte:head>
   <title>{title}Matbench Discovery</title>
@@ -87,7 +86,7 @@
   routes={[
     [`/home`, `/`],
     ...routes.filter((route) => route != `/changelog`),
-    [`/preprint`, pkg.preprint],
+    [`/paper`, pkg.paper],
   ]}
   style="padding: 0 var(--main-padding)"
 />

@@ -1,7 +1,6 @@
 <script lang="ts">
   import { Icon } from '$lib'
-  import { Tooltip } from 'svelte-zoo'
-  import { click_outside } from 'svelte-zoo/actions'
+  import { click_outside, tooltip } from 'svelte-multiselect/attachments'
   import type { Label } from './types'
 
   interface Props {
@@ -30,28 +29,25 @@
 <details
   class="column-toggles"
   bind:open={column_panel_open}
-  use:click_outside={{ callback: () => (column_panel_open = false) }}
+  {@attach click_outside({ callback: () => (column_panel_open = false) })}
 >
   <summary>
     Columns <Icon icon="Columns" />
   </summary>
   <div class="column-menu">
     {#each columns as col, idx (col.label + col.group + col.visible + idx)}
-      <Tooltip style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">
-        {#snippet tip()}
-          {#if col.description}
-            {@html col.description}
-          {/if}
-        {/snippet}
-        <label>
-          <input
-            type="checkbox"
-            checked={col.visible !== false}
-            onchange={(event) => toggle_column_visibility(idx, event)}
-          />
-          {@html col.label}
-        </label>
-      </Tooltip>
+      <label
+        style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis"
+        title={col.description}
+        {@attach tooltip()}
+      >
+        <input
+          type="checkbox"
+          checked={col.visible !== false}
+          onchange={(event) => toggle_column_visibility(idx, event)}
+        />
+        {@html col.label}
+      </label>
     {/each}
   </div>
 </details>
@@ -62,7 +58,8 @@
   }
   .column-toggles summary {
     background: rgba(255, 255, 255, 0.1);
-    padding: 2pt 6pt;
+    padding: 0 6pt;
+    margin: 4pt 0;
     border-radius: 4pt;
     cursor: pointer;
     display: flex;

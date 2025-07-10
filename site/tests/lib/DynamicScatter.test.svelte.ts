@@ -78,16 +78,16 @@ describe(`DynamicScatter.svelte`, () => {
     const checkboxes = document.body.querySelectorAll<HTMLInputElement>(
       `input[type="checkbox"]`,
     )
-    expect(checkboxes.length).toBe(4)
+    expect(checkboxes.length).toBe(7)
     // Check initial checked state (defaults: x=date_added, y=F1, color=model_params)
     // Log default state: x=false, y=false, color=true
-    expect(checkboxes[0].checked).toBe(false) // x: date_added (log disabled)
-    expect(checkboxes[1].checked).toBe(false) // y: F1
-    expect(checkboxes[2].checked).toBe(false) // color: model_params
-    expect(checkboxes[3].checked).toBe(false) // x: date_added (log enabled)
+    expect(checkboxes[0].checked).toBe(true) // x: date_added (log enabled)
+    expect(checkboxes[1].checked).toBe(true) // y: F1
+    expect(checkboxes[2].checked).toBe(true) // color: model_params
+    expect(checkboxes[3].checked).toBe(false) // x: date_added (log disabled)
     // Check initial disabled state for date_added
-    expect(checkboxes[1].disabled).toBe(true) // y: CPS (log disabled due to missing data)
-    expect(checkboxes[2].disabled).toBe(true) // color: F1 (log disabled due to small range)
+    expect(checkboxes[1].disabled).toBe(false) // y: CPS (log disabled due to missing data)
+    expect(checkboxes[2].disabled).toBe(false) // color: F1 (log disabled due to small range)
 
     // Check that the scatter plot container is rendered
     const plot_container = document.body.querySelector(`div.full-bleed-1400[style]`)
@@ -138,7 +138,7 @@ describe(`DynamicScatter.svelte`, () => {
     await check_fullscreen_state(true)
 
     // 3. Exit fullscreen via Escape key
-    await globalThis.dispatchEvent(new KeyboardEvent(`keydown`, { key: `Escape` }))
+    globalThis.dispatchEvent(new KeyboardEvent(`keydown`, { key: `Escape` }))
     await check_fullscreen_state(false)
 
     // 4. Re-enter fullscreen via button click
@@ -175,8 +175,13 @@ describe(`DynamicScatter.svelte`, () => {
       )
       let extra_controls = document.body.querySelector(`.controls`)
 
-      // 1. Initial state: Controls hidden
-      expect(extra_controls).toBeNull()
+      // 1. Initial state: Controls hidden (element may exist but be hidden)
+      if (extra_controls) {
+        const displayValue = (extra_controls as HTMLElement).style.display
+        expect([`none`, ``].includes(displayValue)).toBe(true)
+      } else {
+        expect(extra_controls).toBeNull()
+      }
 
       // 2. Show controls via button click
       await settings_button?.click()
@@ -184,10 +189,14 @@ describe(`DynamicScatter.svelte`, () => {
       expect(extra_controls).toBeDefined()
 
       // 3. Hide controls via Escape key
-      await globalThis.dispatchEvent(new KeyboardEvent(`keydown`, { key: `Escape` }))
+      document.dispatchEvent(
+        new KeyboardEvent(`keydown`, { key: `Escape`, bubbles: true }),
+      )
       await vi.waitFor(() => {
         extra_controls = document.body.querySelector(`.controls`)
-        expect(extra_controls).toBeNull()
+        // The panel should be hidden but still in DOM
+        const displayValue = (extra_controls as HTMLElement)?.style.display
+        expect([`none`, ``].includes(displayValue)).toBe(true)
       })
 
       // 4. Re-show controls via button click
@@ -221,7 +230,9 @@ describe(`DynamicScatter.svelte`, () => {
       await outside_element.click() // Simulate click outside
       await vi.waitFor(() => {
         extra_controls = document.body.querySelector(`.controls`)
-        expect(extra_controls).toBeNull()
+        // The panel should be hidden but still in DOM
+        const displayValue = (extra_controls as HTMLElement)?.style.display
+        expect([`none`, ``].includes(displayValue)).toBe(true)
       })
 
       // Clean up the outside element

@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { arr_to_str, calculate_days_ago, format_date, Icon, slugify } from '$lib'
+  import { arr_to_str, calculate_days_ago, DATASETS, format_date, Icon } from '$lib'
   import type { Dataset } from '$lib/types'
   import pkg from '$site/package.json'
   import { format_num } from 'matterviz'
-  import { Tooltip } from 'svelte-zoo'
-  import { titles_as_tooltips } from 'svelte-zoo/actions'
+  import { tooltip } from 'svelte-multiselect/attachments'
   import MptrjTargetDistros from './MptrjTargetDistros.svelte'
 
   interface Props {
@@ -40,37 +39,40 @@
 
   <div>
     <Icon icon="Calendar" />
-    Created: <Tooltip text="{days_created} days ago">
+    Created: <span title="{days_created} days ago" {@attach tooltip()}>
       {format_date(dataset.date_created)}
-    </Tooltip>
+    </span>
   </div>
 
   {#if dataset.date_added}
     <div>
       <Icon icon="CalendarPlus" />
-      Added: <Tooltip text="{days_added} days ago">
+      Added: <span title="{days_added} days ago" {@attach tooltip()}>
         {format_date(dataset.date_added)}
-      </Tooltip>
+      </span>
     </div>
   {/if}
 
   <div>
     <Icon icon="Database" />
-    <Tooltip text={dataset.n_structures.toLocaleString()}>
+    <span title={dataset.n_structures.toLocaleString()} {@attach tooltip()}>
       {format_num(dataset.n_structures, `.3~s`)}
-    </Tooltip> structures
+    </span> structures
   </div>
 
   {#if dataset.n_materials}
     <div>
       <Icon icon="Lattice" />
-      <Tooltip text={dataset.n_materials.toLocaleString()}>
+      <span title={dataset.n_materials.toLocaleString()} {@attach tooltip()}>
         {format_num(dataset.n_materials, `.3~s`)}
-      </Tooltip> materials
+      </span> materials
     </div>
   {/if}
 
-  <div>
+  <div
+    title="The dataset is {dataset.open ? `freely ` : `in`}accessible"
+    {@attach tooltip()}
+  >
     <Icon icon={dataset.open ? `Unlock` : `Lock`} />
     {dataset.open ? `Open` : `Closed`}
   </div>
@@ -86,7 +88,7 @@
     href={dataset.url}
     {...ext_link_props}
     title="View dataset website"
-    use:titles_as_tooltips
+    {@attach tooltip()}
   >
     <Icon icon="Globe" /> Website
   </a>
@@ -96,7 +98,7 @@
       href={dataset.download_url}
       {...ext_link_props}
       title="Download dataset"
-      use:titles_as_tooltips
+      {@attach tooltip()}
     >
       <Icon icon="Download" /> Download
     </a>
@@ -107,7 +109,7 @@
       href={dataset.doi}
       {...ext_link_props}
       title="Digital Object Identifier"
-      use:titles_as_tooltips
+      {@attach tooltip()}
     >
       <Icon icon="DOI" /> DOI
     </a>
@@ -117,7 +119,7 @@
     href="{pkg.repository}/blob/main/data/datasets.yml"
     {...ext_link_props}
     title="View source YAML file"
-    use:titles_as_tooltips
+    {@attach tooltip()}
   >
     <Icon icon="Code" /> Source
   </a>
@@ -146,16 +148,17 @@
   </section>
 {/if}
 
-{#if dataset.derived_from}
+{#if dataset.contains}
   <section class="derived-from">
     <h2>Derived From</h2>
-    <ul>
-      {#each dataset.derived_from as source (source)}
+    <ol>
+      {#each dataset.contains as source (source)}
+        {@const contained_data = DATASETS[source]}
         <li>
-          <a href="/data/{slugify(source)}">{source}</a>
+          <a href="/data/{contained_data.slug}">{contained_data.name}</a>
         </li>
       {/each}
-    </ul>
+    </ol>
   </section>
 {/if}
 
@@ -235,14 +238,14 @@
     place-content: center;
     margin: 2em auto;
   }
-  section:is(.method-info) ul {
+  section.method-info ul {
     display: flex;
     flex-wrap: wrap;
     gap: 1em;
     padding: 0;
     list-style: none;
   }
-  section:is(.method-info) ul li {
+  section.method-info ul li {
     background-color: rgba(255, 255, 255, 0.1);
     padding: 2pt 6pt;
     border-radius: 3pt;

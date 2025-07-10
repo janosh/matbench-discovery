@@ -3,7 +3,7 @@
   import type { CpsConfig } from '$lib/combined_perf_score.svelte'
   import { ALL_METRICS } from '$lib/labels'
   import type { Point } from 'matterviz'
-  import { Tooltip } from 'svelte-zoo'
+  import { tooltip } from 'svelte-multiselect/attachments'
   import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from './combined_perf_score.svelte'
   import { MODELS, update_models_cps } from './models.svelte'
 
@@ -252,13 +252,8 @@
 
 <div class="radar-chart">
   <span class="metric-name">
-    {ALL_METRICS.CPS.short}
-    <Tooltip tip_style="z-index: 20; font-size: 0.8em;">
-      <Icon icon="Info" />
-      {#snippet tip()}
-        {@html ALL_METRICS.CPS.description}
-      {/snippet}
-    </Tooltip>
+    {ALL_METRICS.CPS.label}
+    <Icon icon="Info" {@attach tooltip({ content: ALL_METRICS.CPS.description })} />
   </span>
 
   <button class="reset-button" onclick={reset_weights} title="Reset to default weights">

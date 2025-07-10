@@ -5,7 +5,7 @@ import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { max, min } from 'd3-array'
 import { scaleLog, scaleSequential } from 'd3-scale'
 import * as d3sc from 'd3-scale-chromatic'
-import { choose_bw_for_contrast, format_num } from 'matterviz/labels'
+import { choose_bw_for_contrast, format_num } from 'matterviz'
 import {
   ALL_METRICS,
   GEO_OPT_SYMMETRY_METRICS,
