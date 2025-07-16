@@ -1,10 +1,10 @@
 # %%
 import sys
-sys.path.insert(0, '/data/fywang/code/fairchem-tracegrad-hanhai/src')
+
+sys.path.insert(0, "/data/fywang/code/fairchem-tracegrad-hanhai/src")
 import json
 import logging
 import os
-from importlib.metadata import version
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
@@ -22,8 +22,6 @@ from fairchem.core.common.utils import setup_logging
 from fairchem.core.datasets import AseDBDataset
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
-from submitit import AutoExecutor
-from submitit.helpers import Checkpointable
 from torch.utils.data import Subset
 from tqdm import trange
 
@@ -32,7 +30,6 @@ from matbench_discovery.data import as_dict_handler, df_wbm
 from matbench_discovery.enums import MbdKey, Task
 from matbench_discovery.plots import wandb_scatter
 
-
 BASE_PATH = Path("/data/fywang/code/matbench-discovery/data/wbm")
 DATABASE_PATH = {
     # Task.RS2RE: str(BASE_PATH / "WBM_RS2RE.aselmdb"),
@@ -40,15 +37,17 @@ DATABASE_PATH = {
 }
 
 
-# geo_fairchem = pd.read_json("/data/fywang/code/matbench-discovery/models/eqV2/eqV2-s-dens-mp_2024-10-18-wbm-geo-opt.json.gz", compression='gzip') 
+# geo_fairchem = pd.read_json("/data/fywang/code/matbench-discovery/models/eqV2/eqV2-s-dens-mp_2024-10-18-wbm-geo-opt.json.gz", compression='gzip')
 # discovery_fairchem = pd.read_csv("/data/fywang/code/matbench-discovery/models/eqV2/eqV2-s-dens-mp.csv.gz", compression='gzip' )
 
 FILTER_CLS: dict[str, Filter] = {"frechet": FrechetCellFilter, "unit": UnitCellFilter}
 OPTIM_CLS: dict[str, Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": BFGS}
 
+
 class AseDBSubset(Subset):
     def get_atoms(self, idx: int) -> Atoms:
         return self.dataset.get_atoms(self.indices[idx])
+
 
 class RelaxJob:
     """Local execution of the MLFF relax job"""
@@ -79,12 +78,14 @@ class RelaxJob:
         out_path = out_path / f"{model_name}-{today}-{job_number:>03}.json.gz"
 
         logging.info(f"Starting ASE relaxation job {run_name}.")
-        
+
         calc = OCPCalculator(
-            checkpoint_path=checkpoint_path, cpu=device == "cpu", seed=0,
+            checkpoint_path=checkpoint_path,
+            cpu=device == "cpu",
+            seed=0,
             # trainer="equiformerv2_dens",
         )
-        
+
         if not use_amp:  # disable the scaler
             calc.trainer.scaler = None
 
@@ -125,7 +126,7 @@ class RelaxJob:
             max_steps=max_steps,
             optimizer_params=optimizer_params,
         )
-        
+
         df_out = pd.DataFrame(self.relax_results).T.add_prefix(f"{model_name}_")
         df_out.index.name = "material_id"
         df_out.reset_index().to_json(out_path, default_handler=as_dict_handler)
@@ -139,9 +140,7 @@ class RelaxJob:
         )
 
         title = f"FAIRChem {model_name} {task_type} ({len(df_out):,})"
-        wandb_scatter(
-            table, fields=dict(x="dft_energy", y=e_pred_col), title=title
-        )
+        wandb_scatter(table, fields=dict(x="dft_energy", y=e_pred_col), title=title)
         wandb.log_artifact(out_path, type=f"fairchem-{model_name}-wbm-{task_type}")
 
     def _ase_relax(
@@ -157,7 +156,7 @@ class RelaxJob:
         """Run WBM relaxations using an ASE optimizer."""
         filter_cls = FILTER_CLS.get(cell_filter or "")
         optim_cls = OPTIM_CLS[optimizer]
-        
+
         for idx in trange(len(dataset), desc="Relaxing with ASE"):
             atoms = dataset.get_atoms(idx)
             # material_id = atoms.info["sid"]
@@ -167,14 +166,14 @@ class RelaxJob:
                 continue
             try:
                 atoms.calc = calculator
-                
+
                 if filter_cls is not None:
                     atoms = filter_cls(atoms)
-                    
+
                 optim_inst = optim_cls(atoms, logfile="/dev/null", **optimizer_params)
-                
+
                 optim_inst.run(fmax=force_max, steps=max_steps)
-                
+
                 # geo_fairchem_idx = geo_fairchem.loc[geo_fairchem['material_id'] == material_id]
                 # lattice_fairchem = geo_fairchem_idx["eqV2-31M-dens-MP-p5_structure"][idx]["lattice"]["matrix"]
                 # lattice_fairchem = np.array(lattice_fairchem)
@@ -218,9 +217,7 @@ def run_relax(
     if torch.cuda.is_available()
     else "cpu",
     use_amp: Annotated[bool, typer.Option(help="Use automatic mixed precision")] = True,
-    num_jobs: Annotated[
-        int, typer.Option(help="Number of parallel jobs to run")
-    ] = 10,
+    num_jobs: Annotated[int, typer.Option(help="Number of parallel jobs to run")] = 10,
     debug: Annotated[bool, typer.Option(help="debug mode, run only one job")] = False,
 ) -> None:
     setup_logging()

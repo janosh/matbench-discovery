@@ -14,7 +14,7 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery.data import as_dict_handler, df_wbm, DataFiles
+from matbench_discovery.data import DataFiles, as_dict_handler, df_wbm
 from matbench_discovery.energy import get_e_form_per_atom
 from matbench_discovery.enums import MbdKey
 
@@ -39,33 +39,41 @@ def join_predictions(
 
     # glob_pattern = f"{model_name}*.json.gz"
     glob_pattern = f"{model_name}*.json.gz"
-    
+
     file_paths = sorted(glob(f"{input_path}/{glob_pattern}"))
 
     print(f"Found {len(file_paths):,} files for {glob_pattern = }")
 
     dfs: dict[str, pd.DataFrame] = {}
-    
+
     for file_path in tqdm(file_paths, desc="Loading prediction files"):
         if file_path in dfs:
             continue
-        if 'csv' in file_path:
-            dfs[file_path] = pd.read_csv(file_path, compression='gzip').set_index(Key.mat_id)
+        if "csv" in file_path:
+            dfs[file_path] = pd.read_csv(file_path, compression="gzip").set_index(
+                Key.mat_id
+            )
         else:
             dfs[file_path] = pd.read_json(file_path).set_index(Key.mat_id)
-    
+
     df_fairchem = pd.concat(dfs.values()).round(4)
 
-    df_fairchem_ori = pd.read_csv('/data/fywang/code/matbench-discovery/pred_results/eqV2-small-dens/test/eqV2-s-dens-mp-ori.csv.gz', compression='gzip').set_index(Key.mat_id) #开源结果
+    df_fairchem_ori = pd.read_csv(
+        "/data/fywang/code/matbench-discovery/pred_results/eqV2-small-dens/test/eqV2-s-dens-mp-ori.csv.gz",
+        compression="gzip",
+    ).set_index(Key.mat_id)  # 开源结果
 
     # 合并df_fairchem_ori中的pred_energy到df_fairchem，根据mat_id匹配
-    df_fairchem = df_fairchem.merge(df_fairchem_ori[['eqV2-31M-dens-MP-p5_energy']], left_index=True, right_index=True)
+    df_fairchem = df_fairchem.merge(
+        df_fairchem_ori[["eqV2-31M-dens-MP-p5_energy"]],
+        left_index=True,
+        right_index=True,
+    )
 
     wbm_cse_path = DataFiles.wbm_computed_structure_entries.path
     df_cse = pd.read_json(wbm_cse_path).set_index(Key.mat_id)
 
-
-    computed_structure_entry_key = "computed_structure_entry" # added by fywang
+    computed_structure_entry_key = "computed_structure_entry"  # added by fywang
     df_cse[computed_structure_entry_key] = [
         ComputedStructureEntry.from_dict(dct)
         for dct in tqdm(df_cse[computed_structure_entry_key], desc="Hydrate CSEs")

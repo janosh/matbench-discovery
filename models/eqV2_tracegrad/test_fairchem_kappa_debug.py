@@ -17,13 +17,11 @@ from copy import deepcopy
 from datetime import datetime
 from importlib.metadata import version
 from pathlib import Path
-from typing import Any, Annotated
-import typer
-from submitit import AutoExecutor
-
+from typing import Annotated, Any
 
 import pandas as pd
 import torch
+import typer
 from ase.constraints import FixSymmetry
 from ase.filters import FrechetCellFilter
 from ase.io import read
@@ -32,6 +30,7 @@ from fairchem.core import OCPCalculator
 from moyopy import MoyoDataset
 from moyopy.interface import MoyoAdapter
 from pymatviz.enums import Key
+from submitit import AutoExecutor
 from tqdm import tqdm
 
 from matbench_discovery.enums import DataFiles
@@ -66,11 +65,7 @@ class KappaSRMERunner:
         self.atom_disp = atom_disp
         self.num_jobs = num_jobs
 
-    def run(self, 
-        job_number: int = 0
-        ) -> None:
-
-            
+    def run(self, job_number: int = 0) -> None:
         # Relaxation parameters
         max_steps = 300
         force_max = 1e-4  # Run until the forces are smaller than this in eV/A
@@ -96,8 +91,8 @@ class KappaSRMERunner:
         if self.num_jobs > 0:
             atoms_list = atoms_list[job_number :: self.num_jobs]
         else:
-            atoms_list = atoms_list[:3] # for debug
-            
+            atoms_list = atoms_list[:3]  # for debug
+
         tqdm_bar = tqdm(
             atoms_list, desc="Conductivity calculation: ", disable=not prog_bar
         )
@@ -282,7 +277,7 @@ class KappaSRMERunner:
 
             del ph3, fc2_set, fc3_set
             if torch.cuda.is_available():
-                torch.cuda.empty_cache() 
+                torch.cuda.empty_cache()
 
         elapsed = time.time() - start_time
         test_metrics["running_time"] = elapsed
@@ -354,17 +349,17 @@ def run_kappa(
     )
 
     job = KappaSRMERunner(
-            seed=seed,
-            model_dir=checkpoint_path,
-            out_dir=out_path,
-            save_name=model_name,
-            identifier=identifier,
-            atom_disp=atom_disp,
-            num_jobs=1,  # 设置为0处理前3个样本
-        )
-    
+        seed=seed,
+        model_dir=checkpoint_path,
+        out_dir=out_path,
+        save_name=model_name,
+        identifier=identifier,
+        atom_disp=atom_disp,
+        num_jobs=1,  # 设置为0处理前3个样本
+    )
+
     job.run(job_number=0)  # Running the job locally for a single task
-    
-    
+
+
 if __name__ == "__main__":
     typer.run(run_kappa)

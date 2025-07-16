@@ -6,9 +6,10 @@ LICENSE file in the root directory of this source tree.
 """
 
 from __future__ import annotations
-import os
+
 import glob
 import json
+import os
 import random
 import time
 import traceback
@@ -17,14 +18,11 @@ from copy import deepcopy
 from datetime import datetime
 from importlib.metadata import version
 from pathlib import Path
-from typing import Any, Annotated
-import typer
-from matbench_discovery import timestamp, today
-from submitit import AutoExecutor
-
+from typing import Annotated, Any
 
 import pandas as pd
 import torch
+import typer
 from ase.constraints import FixSymmetry
 from ase.filters import FrechetCellFilter
 from ase.io import read
@@ -33,8 +31,10 @@ from fairchem.core import OCPCalculator
 from moyopy import MoyoDataset
 from moyopy.interface import MoyoAdapter
 from pymatviz.enums import Key
+from submitit import AutoExecutor
 from tqdm import tqdm
 
+from matbench_discovery import timestamp
 from matbench_discovery.enums import DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
@@ -67,15 +67,11 @@ class KappaSRMERunner:
         self.atom_disp = atom_disp
         self.num_jobs = num_jobs
 
-    def run(self, 
-        env_vars: None, 
-        job_number: int = 0
-        ) -> None:
-
+    def run(self, env_vars: None, job_number: int = 0) -> None:
         # 设置 CUDA_VISIBLE_DEVICES 环境变量
         if env_vars:
             os.environ.update(env_vars)
-            
+
         # Relaxation parameters
         max_steps = 300
         force_max = 1e-4  # Run until the forces are smaller than this in eV/A
@@ -101,8 +97,8 @@ class KappaSRMERunner:
         if self.num_jobs > 0:
             atoms_list = atoms_list[job_number :: self.num_jobs]
         else:
-            atoms_list = atoms_list[:3] # for debug
-            
+            atoms_list = atoms_list[:3]  # for debug
+
         tqdm_bar = tqdm(
             atoms_list, desc="Conductivity calculation: ", disable=not prog_bar
         )
@@ -355,7 +351,7 @@ def run_kappa(
         mem_gb=64,
     )
 
-    #继续填充函数
+    # 继续填充函数
     if debug:
         # 调试模式，只运行一个任务，使用GPU 0
         env_vars = {"CUDA_VISIBLE_DEVICES": "0"}
@@ -393,6 +389,7 @@ def run_kappa(
                     job_number=job_number,
                 )
                 jobs.append(job)
-    
+
+
 if __name__ == "__main__":
     typer.run(run_kappa)
