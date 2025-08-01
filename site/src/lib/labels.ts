@@ -20,12 +20,6 @@ export const format_power_ten = (text: string): string => {
     .replace(`1×10`, `10`)
 }
 
-export const sub_sup_to_tspan = (text: string): string => {
-  return text
-    .replaceAll(`<sup>`, `<tspan baseline-shift='0.4em' font-size='0.8em'>`)
-    .replaceAll(`</sup>`, `</tspan>`)
-}
-
 export const DISCOVERY_METRICS: DiscoveryMetricsLabels = {
   Accuracy: {
     key: `Accuracy`,
@@ -353,9 +347,6 @@ export const GEO_OPT_SYMMETRY_METRICS = Object.fromEntries(
         path: `metrics.geo_opt.symprec=${symprec}`,
         short: `${label} ${format_power_ten(symprec)}`,
         label: `${label} (symprec=${format_power_ten(symprec)})`,
-        svg_label: `${label} (symprec=${sub_sup_to_tspan(format_power_ten(symprec))})`
-          .replace(`Σ<sub>`, `Σ<tspan baseline-shift='-0.4em' font-size='0.8em'>`)
-          .replace(`</sub>`, `</tspan>`),
         description:
           `Fraction of structures where ML and DFT ground state have matching spacegroup at ${
             format_power_ten(symprec)
@@ -389,7 +380,6 @@ export const ALL_METRICS: AllMetrics = {
   κ_SRME: {
     key: `κ_SRME`,
     label: `κ<sub>SRME</sub>`,
-    svg_label: `κ<tspan baseline-shift='-0.4em' font-size='0.8em'>SRME</tspan>`,
     description:
       `Symmetric relative mean error in predicted phonon mode contributions to thermal conductivity κ`,
     path: `metrics.phonons.kappa_103`,
