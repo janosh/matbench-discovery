@@ -38,7 +38,6 @@ definitions:
       cell_style: { type: string, description: 'CSS string for cell style' }
       style: { type: string, description: 'CSS string for cell style' }
       symprec: { type: string, description: 'Symprec value for the metric' }
-      svg_label: { type: string, description: 'SVG label for the metric' }
       scale_type:
         type: string
         enum: ['log', 'linear']

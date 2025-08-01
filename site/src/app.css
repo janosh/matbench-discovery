@@ -23,6 +23,11 @@
 
   --compliant-color: #4caf50;
   --non-compliant-color: #4682b4;
+  --panel-bg: var(--light-bg);
+}
+/* TODO remove this with next matterviz release */
+button.panel-toggle {
+  font-size: 12pt !important;
 }
 html {
   scroll-behavior: smooth;

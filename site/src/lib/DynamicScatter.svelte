@@ -7,7 +7,6 @@
   import type { D3ColorSchemeName } from 'matterviz/colors'
   import { ColorScaleSelect, ScatterPlot } from 'matterviz/plot'
   import Select from 'svelte-multiselect'
-  import { tooltip } from 'svelte-multiselect/attachments'
   import {
     ALL_METRICS,
     format_property_path,
@@ -199,108 +198,109 @@
         style:
           `background-color: rgba(255, 255, 255, 0.15); border-radius: 50%; padding: 4pt;`,
       }}
+      panel_props={{
+        style: `display: grid; grid-template-columns: auto 1fr; gap: 8pt 1em;`,
+      }}
       icon_style="width: 1.4em; height: 1.4em;"
     >
-      <div class="controls" {@attach tooltip()}>
-        <label
-          style="grid-column: 1/-1"
-          title="Toggle visibility of model name labels on the scatter plot points"
-        >
-          <input type="checkbox" bind:checked={show_model_labels} /> Show Labels
-        </label>
-        <ColorScaleSelect
-          bind:value={color_scheme}
-          selected={[color_scheme]}
-          style="margin: 0; grid-column: 1/-1"
-        />
-        <label title="Toggle the visibility of vertical grid lines">
-          <input type="checkbox" bind:checked={x_grid} /> X Grid
-        </label>
-        <label
-          title="Set the approximate number of ticks on the X axis"
-        >Ticks:
-          <input
-            id="x-ticks"
-            type="number"
-            min="0"
-            max="20"
-            bind:value={x_ticks}
-            style="width: 50px"
-          /></label>
-
-        <label title="Toggle the visibility of horizontal grid lines">
-          <input type="checkbox" bind:checked={y_grid} /> Y Grid
-        </label>
-        <label
-          title="Set the approximate number of ticks on the Y axis"
-        >Ticks:
-          <input
-            id="y-ticks"
-            type="number"
-            min="0"
-            max="20"
-            bind:value={y_ticks}
-            style="width: 50px"
-          />
-        </label>
-        <label
-          for="size-multiplier"
-          title="Adjust the base size of all points on the scatter plot (multiplier for radius)"
-        >Point Size</label>
+      <label
+        style="grid-column: 1/-1"
+        title="Toggle visibility of model name labels on the scatter plot points"
+      >
+        <input type="checkbox" bind:checked={show_model_labels} /> Show Labels
+      </label>
+      <ColorScaleSelect
+        bind:value={color_scheme}
+        selected={[color_scheme]}
+        style="margin: 0; grid-column: 1/-1"
+      />
+      <label title="Toggle the visibility of vertical grid lines">
+        <input type="checkbox" bind:checked={x_grid} /> X Grid
+      </label>
+      <label
+        title="Set the approximate number of ticks on the X axis"
+      >Ticks:
         <input
-          id="size-multiplier"
+          id="x-ticks"
+          type="number"
+          min="0"
+          max="20"
+          bind:value={x_ticks}
+          style="width: 50px"
+        /></label>
+
+      <label title="Toggle the visibility of horizontal grid lines">
+        <input type="checkbox" bind:checked={y_grid} /> Y Grid
+      </label>
+      <label
+        title="Set the approximate number of ticks on the Y axis"
+      >Ticks:
+        <input
+          id="y-ticks"
+          type="number"
+          min="0"
+          max="20"
+          bind:value={y_ticks}
+          style="width: 50px"
+        />
+      </label>
+      <label
+        for="size-multiplier"
+        title="Adjust the base size of all points on the scatter plot (multiplier for radius)"
+      >Point Size</label>
+      <input
+        id="size-multiplier"
+        type="range"
+        min="0.1"
+        max="5"
+        step="0.1"
+        bind:value={size_multiplier}
+      />
+      <label
+        for="label-font-size"
+        title="Adjust the font size of the model name labels (in pixels)"
+      >Label Size</label>
+      <input
+        id="label-font-size"
+        type="range"
+        min="8"
+        max="24"
+        step="1"
+        bind:value={label_font_size}
+        style="grid-column: 2"
+      />
+      <label
+        title="Configure the distance range and strength of the links connecting labels to their points"
+        for="min-link-distance"
+      >Label Link</label>
+      <div class="combined-link-controls">
+        <input
+          id="min-link-distance"
+          type="number"
+          min="0"
+          max="100"
+          bind:value={min_link_distance}
+          title="Minimum distance"
+        />
+        <span>-</span>
+        <input
+          id="max-link-distance"
+          type="number"
+          min="0"
+          max="100"
+          bind:value={max_link_distance}
+          title="Maximum distance"
+        />
+        <input
+          id="link-strength"
           type="range"
           min="0.1"
-          max="5"
+          max="10"
           step="0.1"
-          bind:value={size_multiplier}
+          bind:value={link_strength}
+          title="Strength (higher = stronger pull)"
+          style="flex: 1"
         />
-        <label
-          for="label-font-size"
-          title="Adjust the font size of the model name labels (in pixels)"
-        >Label Size</label>
-        <input
-          id="label-font-size"
-          type="range"
-          min="8"
-          max="24"
-          step="1"
-          bind:value={label_font_size}
-          style="grid-column: 2"
-        />
-        <label
-          title="Configure the distance range and strength of the links connecting labels to their points"
-          for="min-link-distance"
-        >Label Link</label>
-        <div class="combined-link-controls">
-          <input
-            id="min-link-distance"
-            type="number"
-            min="0"
-            max="100"
-            bind:value={min_link_distance}
-            title="Minimum distance"
-          />
-          <span>-</span>
-          <input
-            id="max-link-distance"
-            type="number"
-            min="0"
-            max="100"
-            bind:value={max_link_distance}
-            title="Maximum distance"
-          />
-          <input
-            id="link-strength"
-            type="range"
-            min="0.1"
-            max="10"
-            step="0.1"
-            bind:value={link_strength}
-            title="Strength (higher = stronger pull)"
-            style="flex: 1"
-          />
-        </div>
       </div>
     </DraggablePanel>
   </div>
@@ -335,7 +335,7 @@
         --sms-selected-bg="none"
         --sms-border="1px solid rgba(255, 255, 255, 0.15)"
       >
-        {#snippet children({ option: prop })}
+        {#snippet children({ option: prop }: { option: typeof options[number] })}
           {@html format_property_path(
           `${prop.path ?? ``}.${prop.label ?? prop.label}`.replace(/^\./, ``),
         )}
@@ -362,12 +362,8 @@
   >
     <ScatterPlot
       series={[series]}
-      x_label="{axes.x?.svg_label ?? axes.x?.label} {axes.x?.better
-        ? `<tspan style='font-size: 0.8em;'>(${axes.x?.better}=better)</tspan>`
-        : ``}"
-      y_label="{axes.y?.svg_label ?? axes.y?.label} {axes.y?.better
-        ? `<tspan style='font-size: 0.8em;'>(${axes.y?.better}=better)</tspan>`
-        : ``}"
+      x_label={axes.x?.label}
+      y_label={axes.y?.label}
       x_lim={axes.x?.range ? [...axes.x.range] : undefined}
       y_lim={axes.y?.range ? [...axes.y.range] : undefined}
       x_format={axes.x?.format}
@@ -377,10 +373,7 @@
       x_scale_type={log.x ? `log` : `linear`}
       y_scale_type={log.y ? `log` : `linear`}
       x_label_shift={{ y: -50 }}
-      y_label_shift={{
-        y: [date_key, params_key].includes(axes.y?.key ?? ``) ? -40 : -10,
-        x: 90,
-      }}
+      y_label_shift={{ x: 50, y: [date_key, params_key].includes(axes.y?.key ?? ``) ? -40 : -10 }}
       {x_ticks}
       {y_ticks}
       {x_grid}
@@ -481,18 +474,9 @@
     top: 1em;
     right: 1em;
   }
-  .controls {
+  div.controls-grid {
     display: grid;
-    grid-template-columns: auto 1fr; /* Label | Control Area */
-    gap: 8pt 1em;
-  }
-  .controls > *:nth-child(odd):not(label) {
-    grid-column: 2;
-  }
-  input[type='checkbox'] {
-    transform: scale(1.2);
-  }
-  .controls input[type='range'] {
-    margin-left: 0 !important;
+    grid-template-columns: auto 1fr auto;
+    gap: 1ex;
   }
 </style>

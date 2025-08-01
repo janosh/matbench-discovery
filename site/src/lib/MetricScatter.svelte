@@ -38,8 +38,8 @@
   let x_path = $derived(`${x_prop?.path ?? ``}.${x_prop?.key}`.replace(/^\./, ``))
   let y_path = $derived(`${y_prop?.path ?? ``}.${y_prop?.key}`.replace(/^\./, ``))
   // Determine labels
-  let x_label = $derived(x_prop?.svg_label ?? x_prop?.label ?? x_prop?.key ?? `X`)
-  let y_label = $derived(y_prop?.svg_label ?? y_prop?.label ?? y_prop?.key ?? `Y`)
+  let x_label = $derived(x_prop?.label ?? x_prop?.key ?? `X`)
+  let y_label = $derived(y_prop?.label ?? y_prop?.key ?? `Y`)
 
   // Apply date range filter if needed
   function date_filter(model: ModelData): boolean {

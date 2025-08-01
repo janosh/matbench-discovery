@@ -82,8 +82,9 @@ describe(`RadarChart`, () => {
     mount(RadarChart, { target: document.body })
 
     // Check that the weight percentages are displayed correctly
+    // Since we use foreignObject with HTML, we need to look for small elements
     const weight_values = Array.from(
-      document.body.querySelectorAll(`svg tspan:last-child`),
+      document.body.querySelectorAll(`svg foreignObject small`),
     ).map((el) => el.textContent)
 
     // Should match the default weights from DEFAULT_CPS_CONFIG
@@ -97,15 +98,14 @@ describe(`RadarChart`, () => {
   it(`renders axis labels with correct content`, () => {
     mount(RadarChart, { target: document.body })
 
-    // Check that axis labels are rendered
-    const text_elements = document.body.querySelectorAll(`svg text`)
-    expect(text_elements.length).toBe(3)
+    // Check that axis labels are rendered using foreignObject
+    const foreign_objects = document.body.querySelectorAll(`svg foreignObject`)
+    expect(foreign_objects.length).toBe(3)
 
-    // In the actual component, labels also include the percentage value
-    // So we need to get the full text content
-    const label_texts = Array.from(text_elements).map((el) => el.textContent?.trim())
+    // Get the text content from foreignObject elements
+    const label_texts = Array.from(foreign_objects).map((el) => el.textContent?.trim())
 
-    // Verify that each label contains the respective metric name
+    // Verify that each label contains the respective metric name and percentage
     expect(label_texts).toEqual([`F1 50%`, `κSRME 40%`, `RMSD 10%`])
   })
 
@@ -146,7 +146,7 @@ describe(`RadarChart`, () => {
 
     const metric_name = document.body.querySelector(`.metric-name`)
     expect(metric_name).toBeDefined()
-    expect(metric_name?.textContent?.trim()).toContain(ALL_METRICS.CPS.label)
+    expect(metric_name?.textContent?.trim()).toContain(ALL_METRICS.CPS.key)
   })
 
   it(`renders reset button with correct attributes`, () => {
