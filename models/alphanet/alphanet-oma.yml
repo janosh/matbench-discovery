@@ -102,8 +102,8 @@ metrics:
       pred_file: models/alphanet/oma/2025-04-20-oma-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
       pred_file_url: https://figshare.com/files/55426331
   geo_opt:
-    pred_file: models/alphanet/oma/2025-04-24-wbm-oma-IS2RE.jsonl.gz
-    pred_file_url: https://figshare.com/files/55426322
+    pred_file: models/alphanet/oma/2025-0724-wbm-oma-IS2RE.json.gz
+    pred_file_url: https://figshare.com/files/56846192
     struct_col: alphanet_structure
     symprec=1e-5:
       rmsd: 0.0324 # unitless
@@ -124,8 +124,8 @@ metrics:
       analysis_file: models/alphanet/oma/2025-04-24-wbm-oma-IS2RE-symprec=1e-2-moyo=0.4.2.csv.gz
       analysis_file_url: https://figshare.com/files/55426328
   discovery:
-    pred_file: models/alphanet/oma/2025-0424-wbm-oma-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/55426313
+    pred_file: models/alphanet/oma/2025-0724-wbm-oma-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/56846186
     pred_col: e_form_per_atom_alphanet
     full_test_set:
       F1: 0.892 # fraction
