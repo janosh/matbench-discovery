@@ -1,6 +1,6 @@
-model_name: AlphaNet-MPtrj
-model_key: alphanet-mptrj
-model_version: v0
+model_name: AlphaNet-v1-MPtrj
+model_key: alphanet-v1-mptrj
+model_version: v1
 date_added: '2025-03-05'
 date_published: '2025-03-05'
 authors:

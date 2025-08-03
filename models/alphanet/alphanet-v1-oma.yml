@@ -100,88 +100,88 @@ metrics:
     kappa_103:
       κ_SRME: 0.644
       pred_file: models/alphanet/oma/2025-04-20-oma-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/files/55426331
+      pred_file_url: https://figshare.com/files/56871824
   geo_opt:
-    pred_file: models/alphanet/oma/2025-04-24-wbm-oma-IS2RE.jsonl.gz
-    pred_file_url: https://figshare.com/files/55426322
+    pred_file: models/alphanet/oma/2025-07-24-wbm-oma-IS2RE.json.gz
+    pred_file_url: https://figshare.com/files/56871812
     struct_col: alphanet_structure
     symprec=1e-5:
-      rmsd: 0.0324 # unitless
-      n_sym_ops_mae: 8.9973 # unitless
-      symmetry_decrease: 0.8079 # fraction
-      symmetry_match: 0.1882 # fraction
-      symmetry_increase: 0.0022 # fraction
+      rmsd: 0.0793 # unitless
+      n_sym_ops_mae: 10.0801 # unitless
+      symmetry_decrease: 0.8505 # fraction
+      symmetry_match: 0.1416 # fraction
+      symmetry_increase: 0.0067 # fraction
       n_structures: 256963 # count
-      analysis_file: models/alphanet/oma/2025-04-24-wbm-oma-IS2RE-symprec=1e-5-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/55426325
+      analysis_file: models/alphanet/oma/2025-07-24-wbm-oma-IS2RE-symprec=1e-5-moyo=0.4.4.csv.gz
+      analysis_file_url: https://figshare.com/files/56871815
     symprec=1e-2:
-      rmsd: 0.0324 # unitless
-      n_sym_ops_mae: 1.051 # unitless
-      symmetry_decrease: 0.0728 # fraction
-      symmetry_match: 0.8665 # fraction
-      symmetry_increase: 0.0571 # fraction
+      rmsd: 0.0793 # unitless
+      n_sym_ops_mae: 2.6275 # unitless
+      symmetry_decrease: 0.1446 # fraction
+      symmetry_match: 0.7431 # fraction
+      symmetry_increase: 0.1037 # fraction
       n_structures: 256963 # count
-      analysis_file: models/alphanet/oma/2025-04-24-wbm-oma-IS2RE-symprec=1e-2-moyo=0.4.2.csv.gz
-      analysis_file_url: https://figshare.com/files/55426328
+      analysis_file: models/alphanet/oma/2025-07-24-wbm-oma-IS2RE-symprec=1e-2-moyo=0.4.4.csv.gz
+      analysis_file_url: https://figshare.com/files/56871818
   discovery:
-    pred_file: models/alphanet/oma/2025-0424-wbm-oma-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/55426313
+    pred_file: models/alphanet/oma/2025-07-24-wbm-oma-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/56871809
     pred_col: e_form_per_atom_alphanet
     full_test_set:
-      F1: 0.892 # fraction
-      DAF: 5.022 # dimensionless
-      Precision: 0.862 # fraction
-      Recall: 0.924 # fraction
-      Accuracy: 0.961 # fraction
-      TPR: 0.924 # fraction
+      F1: 0.883 # fraction
+      DAF: 5.0 # dimensionless
+      Precision: 0.858 # fraction
+      Recall: 0.91 # fraction
+      Accuracy: 0.959 # fraction
+      TPR: 0.91 # fraction
       FPR: 0.031 # fraction
       TNR: 0.969 # fraction
-      FNR: 0.076 # fraction
-      TP: 40735.0 # count
-      FP: 6539.0 # count
-      TN: 206332.0 # count
-      FN: 3357.0 # count
-      MAE: 0.019 # eV/atom
-      RMSE: 0.066 # eV/atom
-      R2: 0.865 # dimensionless
+      FNR: 0.09 # fraction
+      TP: 40130.0 # count
+      FP: 6645.0 # count
+      TN: 206226.0 # count
+      FN: 3962.0 # count
+      MAE: 0.023 # eV/atom
+      RMSE: 0.075 # eV/atom
+      R2: 0.827 # dimensionless
       missing_preds: 2 # count
       missing_percent: 0.00% # fraction
     unique_prototypes:
-      F1: 0.909 # fraction
-      DAF: 5.777 # dimensionless
-      Precision: 0.883 # fraction
-      Recall: 0.936 # fraction
-      Accuracy: 0.971 # fraction
-      TPR: 0.936 # fraction
+      F1: 0.901 # fraction
+      DAF: 5.747 # dimensionless
+      Precision: 0.879 # fraction
+      Recall: 0.924 # fraction
+      Accuracy: 0.968 # fraction
+      TPR: 0.924 # fraction
       FPR: 0.023 # fraction
       TNR: 0.977 # fraction
-      FNR: 0.064 # fraction
-      TP: 31248.0 # count
-      FP: 4135.0 # count
-      TN: 177979.0 # count
-      FN: 2126.0 # count
-      MAE: 0.02 # eV/atom
-      RMSE: 0.067 # eV/atom
-      R2: 0.868 # dimensionless
+      FNR: 0.076 # fraction
+      TP: 30848.0 # count
+      FP: 4262.0 # count
+      TN: 177852.0 # count
+      FN: 2526.0 # count
+      MAE: 0.024 # eV/atom
+      RMSE: 0.076 # eV/atom
+      R2: 0.831 # dimensionless
       missing_preds: 0 # count
       missing_percent: 0.00% # fraction
     most_stable_10k:
-      F1: 0.984 # fraction
-      DAF: 6.335 # dimensionless
-      Precision: 0.968 # fraction
+      F1: 0.982 # fraction
+      DAF: 6.312 # dimensionless
+      Precision: 0.965 # fraction
       Recall: 1.0 # fraction
-      Accuracy: 0.968 # fraction
+      Accuracy: 0.965 # fraction
       TPR: 1.0 # fraction
       FPR: 1.0 # fraction
       TNR: 0.0 # fraction
       FNR: 0.0 # fraction
-      TP: 9685.0 # count
-      FP: 315.0 # count
+      TP: 9650.0 # count
+      FP: 350.0 # count
       TN: 0.0 # count
       FN: 0.0 # count
-      MAE: 0.019 # eV/atom
-      RMSE: 0.071 # eV/atom
-      R2: 0.89 # dimensionless
+      MAE: 0.02 # eV/atom
+      RMSE: 0.074 # eV/atom
+      R2: 0.882 # dimensionless
       missing_preds: 0 # count
       missing_percent: 0.00% # fraction
   diatomics:
