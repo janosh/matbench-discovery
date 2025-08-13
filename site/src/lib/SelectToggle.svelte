@@ -16,19 +16,19 @@
 </script>
 
 <div class="selection-toggle">
-  {#each options as { value, label: option_label, tooltip, link } (value)}
+  {#each options as { value, label, tooltip, link } (value)}
     <button class:active={selected === value} onclick={() => (selected = value)}>
-      {@html option_label}
+      {@html label}
       {#if link}
         <a
           href={link}
           target="_blank"
           rel="noopener noreferrer"
           onclick={(event) => event.stopPropagation()}
+          {@attach tooltip_attachment({ content: tooltip })}
         >
           <Icon
             icon="Info"
-            {@attach tooltip_attachment({ content: tooltip })}
             style="transform: scale(1.2) translateY(-1px)"
           />
         </a>

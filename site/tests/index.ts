@@ -40,3 +40,6 @@ globalThis.ResizeObserver = class ResizeObserver {
   unobserve() {}
   disconnect() {}
 }
+
+// TODO remove pending https://github.com/sveltejs/kit/issues/14143#issuecomment-3179138497
+vi.stubGlobal(`__SVELTEKIT_PAYLOAD__`, { data: null })

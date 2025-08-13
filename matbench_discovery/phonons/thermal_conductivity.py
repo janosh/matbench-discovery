@@ -27,7 +27,8 @@ from matbench_discovery.enums import MbdKey
 def calculate_fc2_set(
     ph3: Phono3py, calculator: Calculator, pbar_kwargs: dict[str, Any] | None = None
 ) -> np.ndarray:
-    """Calculate 2nd order force constants.
+    """Calculate 2nd order force constants. Requires initializing Phono3py with an FC2
+    supercell matrix.
 
     Args:
         ph3 (Phono3py): Phono3py object for which to calculate force constants.
@@ -40,12 +41,14 @@ def calculate_fc2_set(
     """
     print(f"Computing FC2 force set in {ph3.unitcell.formula}.")
 
-    forces = []
+    forces: list[np.ndarray] = []
     n_atoms = len(ph3.phonon_supercell)
 
     displacements = ph3.phonon_supercells_with_displacements
     for supercell in tqdm(
-        displacements, desc=f"FC2 calculation: {ph3.unitcell.formula}", **pbar_kwargs
+        displacements,
+        desc=f"FC2 calculation: {ph3.unitcell.formula}",
+        **pbar_kwargs or {},
     ):
         if supercell is not None:
             atoms = Atoms(

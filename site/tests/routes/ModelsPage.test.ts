@@ -91,7 +91,9 @@ describe(`Models Page`, () => {
   })
 
   it(`binds show_details state between page and model cards`, async () => {
-    const model_cards = document.body.querySelectorAll(`ol > li`)
+    const model_cards = Array.from(
+      document.body.querySelectorAll<HTMLElement>(`ol > li`),
+    )
     expect(model_cards.length).toBeGreaterThan(1)
 
     const [first_card, second_card] = model_cards
@@ -140,7 +142,9 @@ describe(`Models Page`, () => {
     const color_bar = legend?.querySelector(`.matterviz-color-bar`)
     expect(color_bar).toBeDefined()
 
-    const model_cards_h2 = document.body.querySelectorAll<HTMLElement>(`ol > li h2`)
+    const model_cards_h2 = Array.from(
+      document.body.querySelectorAll<HTMLElement>(`ol > li h2`),
+    )
     expect(model_cards_h2.length).toBeGreaterThan(0)
 
     // applies background color to model card titles based on active metric value
