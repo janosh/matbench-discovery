@@ -191,13 +191,9 @@
         {#if pred_files.length > 0}
           <details
             class="pred-files"
-            use:click_outside={{
-              callback: (node) => {
-                if (node.open) node.open = false
-              },
-            }}
+            {@attach click_outside({ callback: (node) => node.open = false })}
           >
-            <summary title="Download model prediction files">
+            <summary>
               <Icon icon="Graph" /> Predictions
             </summary>
             <div class="dropdown">

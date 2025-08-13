@@ -96,11 +96,12 @@
         >
           {@html short ?? label ?? key}
           {#if description}
-            <Icon
-              icon="Info"
+            <span
               {@attach tooltip({ content: description })}
               style="width: 14pt; height: 14pt; position: absolute; top: -7pt; right: -7pt; opacity: 0.6"
-            />
+            >
+              <Icon icon="Info" />
+            </span>
           {/if}
         </button>
       </li>

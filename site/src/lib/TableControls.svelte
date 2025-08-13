@@ -71,8 +71,7 @@
       style="background-color: var(--non-compliant-color)"
     ></span>
     Non-compliant models
-    <Icon
-      icon="Info"
+    <span
       {@attach tooltip({
         content: `
       Models can be non-compliant for multiple reasons:<br />
@@ -84,7 +83,9 @@
       We still show these models behind a toggle as we expect them<br />
       to nonetheless provide helpful signals for developing future models.`,
       })}
-    />
+    >
+      <Icon icon="Info" />
+    </span>
   </label>
   <label>
     <input
@@ -93,12 +94,12 @@
       onchange={handle_energy_only_change}
     />
     <span>Energy-only models</span>
-    <Icon
-      icon="Info"
-      {@attach tooltip({
-        content: `Include models that only predict energy (no forces or stress)`,
-      })}
-    />
+    <span
+      title="Include models that only predict energy (no forces or stress)"
+      {@attach tooltip()}
+    >
+      <Icon icon="Info" />
+    </span>
   </label>
 
   <label>

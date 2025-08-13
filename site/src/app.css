@@ -245,7 +245,7 @@ kbd {
 }
 
 /* Helper class to make elements stretch full width but cap content at 1400px and center it */
-.full-bleed-1400 {
+.bleed-1400 {
   --margin: 50px;
   position: relative;
   width: 100vw;

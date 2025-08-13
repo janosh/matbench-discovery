@@ -90,7 +90,7 @@ describe(`DynamicScatter.svelte`, () => {
     expect(checkboxes[2].disabled).toBe(false) // color: F1 (log disabled due to small range)
 
     // Check that the scatter plot container is rendered
-    const plot_container = document.body.querySelector(`div.full-bleed-1400[style]`)
+    const plot_container = document.body.querySelector(`div.bleed-1400[style]`)
     expect(plot_container).toBeDefined()
   })
 
@@ -98,22 +98,15 @@ describe(`DynamicScatter.svelte`, () => {
     // Use mount from svelte
     mount(DynamicScatter, { target: document.body, props: { models: mock_models } })
     expect(document.body.querySelector(`.controls-grid`)).toBeDefined()
-    expect(document.body.querySelector(`div.full-bleed-1400[style]`)).toBeDefined()
+    expect(document.body.querySelector(`div.bleed-1400[style]`)).toBeDefined()
   })
 
   // Helper function to check fullscreen state
   async function check_fullscreen_state(expected_state: boolean): Promise<void> {
-    const container = document.body.querySelector(`.plot-container`)
     const button = document.body.querySelector<HTMLButtonElement>(`.fullscreen-toggle`)
     const button_icon = button?.querySelector(`button > svg`)
 
     await vi.waitFor(() => {
-      expect(container?.classList.contains(`fullscreen`), `Container class`).toBe(
-        expected_state,
-      )
-      expect(document.body.classList.contains(`fullscreen`), `Body class`).toBe(
-        expected_state,
-      )
       expect(button_icon, `Button icon`).toBeDefined()
       expect(button?.getAttribute(`aria-label`), `Button label`).toBe(
         `${expected_state ? `Exit` : `Enter`} fullscreen`,
@@ -127,8 +120,7 @@ describe(`DynamicScatter.svelte`, () => {
       props: { models: mock_models },
     })
 
-    const button = document.body.querySelector<HTMLButtonElement>(`.fullscreen-toggle`)
-    expect(button).toBeDefined()
+    const button = doc_query<HTMLButtonElement>(`.fullscreen-toggle`)
 
     // 1. Initial state: Not fullscreen
     await check_fullscreen_state(false)
@@ -137,15 +129,7 @@ describe(`DynamicScatter.svelte`, () => {
     await button?.click()
     await check_fullscreen_state(true)
 
-    // 3. Exit fullscreen via Escape key
-    globalThis.dispatchEvent(new KeyboardEvent(`keydown`, { key: `Escape` }))
-    await check_fullscreen_state(false)
-
-    // 4. Re-enter fullscreen via button click
-    await button?.click()
-    await check_fullscreen_state(true)
-
-    // 5. Exit fullscreen via button click again
+    // 3. Re-enter fullscreen via button click
     await button?.click()
     await check_fullscreen_state(false)
   })

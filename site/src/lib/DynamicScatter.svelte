@@ -1,9 +1,9 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import type { ModelData } from '$lib'
-  import { calculate_days_ago, Icon } from '$lib'
+  import { calculate_days_ago } from '$lib'
   import { extent } from 'd3-array'
-  import { DraggablePanel, format_num } from 'matterviz'
+  import { DraggablePanel, format_num, Icon } from 'matterviz'
   import type { D3ColorSchemeName } from 'matterviz/colors'
   import { ColorScaleSelect, ScatterPlot } from 'matterviz/plot'
   import Select from 'svelte-multiselect'
@@ -44,6 +44,7 @@
   })
   let log = $state({ x: false, y: false, color_value: false, size_value: false })
   let is_fullscreen = $state(false)
+  let container_el: HTMLDivElement | null = null
 
   // State for plot controls
   let color_scheme: D3ColorSchemeName = $state(`Viridis`)
@@ -168,29 +169,25 @@
   })
 
   function handle_keydown(event: KeyboardEvent): void {
-    if (event.key === `Escape`) {
-      if (is_fullscreen) {
-        is_fullscreen = false
-        document.body.classList.remove(`fullscreen`)
-      }
-    }
+    if (event.key === `Escape` && is_fullscreen) document.exitFullscreen?.()
   }
 </script>
 
 <svelte:window on:keydown={handle_keydown} />
 
-<div class="plot-container" class:fullscreen={is_fullscreen}>
+<div class="plot-container" bind:this={container_el}>
   <div class="top-buttons">
     <button
       class="fullscreen-toggle icon-button"
       onclick={() => {
+        if (document.fullscreenElement === container_el) document.exitFullscreen()
+        else container_el?.requestFullscreen?.()
         is_fullscreen = !is_fullscreen
-        document.body.classList.toggle(`fullscreen`, is_fullscreen)
       }}
       aria-label={is_fullscreen ? `Exit fullscreen` : `Enter fullscreen`}
       title={is_fullscreen ? `Exit fullscreen` : `Enter fullscreen`}
     >
-      <Icon icon={is_fullscreen ? `Close` : `Maximize`} />
+      <Icon icon="{is_fullscreen ? `Exit` : ``}Fullscreen" />
     </button>
 
     <DraggablePanel
@@ -198,109 +195,108 @@
         style:
           `background-color: rgba(255, 255, 255, 0.15); border-radius: 50%; padding: 4pt;`,
       }}
-      panel_props={{
-        style: `display: grid; grid-template-columns: auto 1fr; gap: 8pt 1em;`,
-      }}
       icon_style="width: 1.4em; height: 1.4em;"
     >
-      <label
-        style="grid-column: 1/-1"
-        title="Toggle visibility of model name labels on the scatter plot points"
-      >
-        <input type="checkbox" bind:checked={show_model_labels} /> Show Labels
-      </label>
-      <ColorScaleSelect
-        bind:value={color_scheme}
-        selected={[color_scheme]}
-        style="margin: 0; grid-column: 1/-1"
-      />
-      <label title="Toggle the visibility of vertical grid lines">
-        <input type="checkbox" bind:checked={x_grid} /> X Grid
-      </label>
-      <label
-        title="Set the approximate number of ticks on the X axis"
-      >Ticks:
-        <input
-          id="x-ticks"
-          type="number"
-          min="0"
-          max="20"
-          bind:value={x_ticks}
-          style="width: 50px"
-        /></label>
+      <div style="display: grid; grid-template-columns: auto 1fr; gap: 8pt 1em">
+        <label
+          style="grid-column: 1/-1"
+          title="Toggle visibility of model name labels on the scatter plot points"
+        >
+          <input type="checkbox" bind:checked={show_model_labels} /> Show Labels
+        </label>
+        <ColorScaleSelect
+          bind:value={color_scheme}
+          selected={[color_scheme]}
+          style="margin: 0; grid-column: 1/-1"
+        />
+        <label title="Toggle the visibility of vertical grid lines">
+          <input type="checkbox" bind:checked={x_grid} /> X Grid
+        </label>
+        <label
+          title="Set the approximate number of ticks on the X axis"
+        >Ticks:
+          <input
+            id="x-ticks"
+            type="number"
+            min="0"
+            max="20"
+            bind:value={x_ticks}
+            style="width: 50px"
+          /></label>
 
-      <label title="Toggle the visibility of horizontal grid lines">
-        <input type="checkbox" bind:checked={y_grid} /> Y Grid
-      </label>
-      <label
-        title="Set the approximate number of ticks on the Y axis"
-      >Ticks:
+        <label title="Toggle the visibility of horizontal grid lines">
+          <input type="checkbox" bind:checked={y_grid} /> Y Grid
+        </label>
+        <label
+          title="Set the approximate number of ticks on the Y axis"
+        >Ticks:
+          <input
+            id="y-ticks"
+            type="number"
+            min="0"
+            max="20"
+            bind:value={y_ticks}
+            style="width: 50px"
+          />
+        </label>
+        <label
+          for="size-multiplier"
+          title="Adjust the base size of all points on the scatter plot (multiplier for radius)"
+        >Point Size</label>
         <input
-          id="y-ticks"
-          type="number"
-          min="0"
-          max="20"
-          bind:value={y_ticks}
-          style="width: 50px"
-        />
-      </label>
-      <label
-        for="size-multiplier"
-        title="Adjust the base size of all points on the scatter plot (multiplier for radius)"
-      >Point Size</label>
-      <input
-        id="size-multiplier"
-        type="range"
-        min="0.1"
-        max="5"
-        step="0.1"
-        bind:value={size_multiplier}
-      />
-      <label
-        for="label-font-size"
-        title="Adjust the font size of the model name labels (in pixels)"
-      >Label Size</label>
-      <input
-        id="label-font-size"
-        type="range"
-        min="8"
-        max="24"
-        step="1"
-        bind:value={label_font_size}
-        style="grid-column: 2"
-      />
-      <label
-        title="Configure the distance range and strength of the links connecting labels to their points"
-        for="min-link-distance"
-      >Label Link</label>
-      <div class="combined-link-controls">
-        <input
-          id="min-link-distance"
-          type="number"
-          min="0"
-          max="100"
-          bind:value={min_link_distance}
-          title="Minimum distance"
-        />
-        <span>-</span>
-        <input
-          id="max-link-distance"
-          type="number"
-          min="0"
-          max="100"
-          bind:value={max_link_distance}
-          title="Maximum distance"
-        />
-        <input
-          id="link-strength"
+          id="size-multiplier"
           type="range"
           min="0.1"
-          max="10"
+          max="5"
           step="0.1"
-          bind:value={link_strength}
-          title="Strength (higher = stronger pull)"
-          style="flex: 1"
+          bind:value={size_multiplier}
         />
+        <label
+          for="label-font-size"
+          title="Adjust the font size of the model name labels (in pixels)"
+        >Label Size</label>
+        <input
+          id="label-font-size"
+          type="range"
+          min="8"
+          max="24"
+          step="1"
+          bind:value={label_font_size}
+          style="grid-column: 2"
+        />
+        <label
+          title="Configure the distance range and strength of the links connecting labels to their points"
+          for="min-link-distance"
+        >Label Link</label>
+        <div class="combined-link-controls">
+          <input
+            id="min-link-distance"
+            type="number"
+            min="0"
+            max="100"
+            bind:value={min_link_distance}
+            title="Minimum distance"
+          />
+          <span>-</span>
+          <input
+            id="max-link-distance"
+            type="number"
+            min="0"
+            max="100"
+            bind:value={max_link_distance}
+            title="Maximum distance"
+          />
+          <input
+            id="link-strength"
+            type="range"
+            min="0.1"
+            max="10"
+            step="0.1"
+            bind:value={link_strength}
+            title="Strength (higher = stronger pull)"
+            style="flex: 1"
+          />
+        </div>
       </div>
     </DraggablePanel>
   </div>
@@ -356,7 +352,7 @@
   </div>
 
   <div
-    class:full-bleed-1400={!is_fullscreen}
+    class:bleed-1400={!is_fullscreen}
     style="margin-block: 1em"
     style:height={is_fullscreen ? `100%` : `600px`}
   >
@@ -426,32 +422,19 @@
 </div>
 
 <style>
-  /* Add styles globally to hide body scrollbar when a component is fullscreen */
-  :global(body.fullscreen) {
-    overflow: hidden;
-  }
   .plot-container {
-    position: relative; /* Needed for absolute positioning of the button */
-    /* Use site background */
+    position: relative; /* Needed for absolute positioning of buttons */
     background: var(--bg);
   }
-  .plot-container.fullscreen {
-    /* Ensure fixed positioning covers the entire viewport */
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
+  .plot-container:fullscreen {
     z-index: 1000;
-    /* Explicitly set background for fullscreen using the site's main background color */
-    background: var(--night); /* Use --night from app.css */
+    background: var(--night);
     overflow: auto; /* Allow scrolling within the fullscreen container if content overflows */
     padding: 2em;
     box-sizing: border-box;
-    /* Use flexbox for layout */
     display: flex;
     flex-direction: column;
-    gap: 1em; /* Add gap between controls and plot */
+    gap: 1em;
   }
   .top-buttons {
     position: absolute;
@@ -470,7 +453,7 @@
   .icon-button:hover {
     background-color: rgba(255, 255, 255, 0.3);
   }
-  :global(body.fullscreen) .top-buttons {
+  .plot-container:fullscreen .top-buttons {
     top: 1em;
     right: 1em;
   }

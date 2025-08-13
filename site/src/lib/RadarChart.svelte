@@ -251,9 +251,9 @@
 </script>
 
 <div class="radar-chart">
-  <span class="metric-name">
+  <span class="metric-name" title={ALL_METRICS.CPS.description} {@attach tooltip()}>
     {ALL_METRICS.CPS.key}
-    <Icon icon="Info" title={ALL_METRICS.CPS.description} {@attach tooltip()} />
+    <Icon icon="Info" />
   </span>
 
   <button class="reset-button" onclick={reset_weights} title="Reset to default weights">

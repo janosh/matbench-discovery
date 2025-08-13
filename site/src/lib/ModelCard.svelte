@@ -25,9 +25,7 @@
     ...rest
   }: Props = $props()
 
-  let { model_name, model_key, model_params, training_set, n_estimators } = $derived(
-    model,
-  )
+  let { model_name, model_key, model_params, training_set } = $derived(model)
   let all_metrics = $derived({
     ...(typeof model.metrics?.discovery === `object`
       ? model.metrics.discovery.unique_prototypes
@@ -52,7 +50,7 @@
   let n_model_params = $derived(format_num(model_params, `.3~s`))
 </script>
 
-<h2 id={model_key} style={title_style}>
+<h2 style={title_style}>
   <a href="/models/{model_key}">{model_name}</a>
   <button
     onclick={() => (show_details = !show_details)}
@@ -110,12 +108,12 @@
   <span>
     <Icon icon="NeuralNetwork" /> {n_model_params} params
   </span>
-  {#if n_estimators > 1}
+  {#if model.n_estimators > 1}
     <span>
       <Icon icon="Forest" />
-      Ensemble of {n_estimators}
+      Ensemble of {model.n_estimators}
       <span
-        title="This result used a model ensemble with {n_estimators} members with {n_model_params} parameters each."
+        title="This result used a model ensemble with {model.n_estimators} members with {n_model_params} parameters each."
         {@attach tooltip()}
       >
         &nbsp;<Icon icon="Info" />
