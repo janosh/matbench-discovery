@@ -80,7 +80,7 @@ def main(
         out_path = f"{out_dir}/{model_name_}-{today}-shard-{shard:>03}.json.gz"
 
     if os.path.isfile(out_path):
-        raise SystemExit(f"{out_path=} already exists, exciting early")
+        raise SystemExit(f"{out_path=} already exists, exiting early")
 
     # This is inside the script because accessing the variables causes a download
     # to be triggered if they are not present, meaning it's better to only load them

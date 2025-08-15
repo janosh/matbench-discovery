@@ -13,8 +13,8 @@ def _validate_diatomic_curve(
     """Validate curve input data.
 
     Args:
-        xs (Sequence[float]): interatomic distances
-        ys (Sequence[Any]): Energies or forces
+        xs (ArrayLike[float]): interatomic distances
+        ys (ArrayLike[Any]): Energies or forces
         normalize_energy (bool): Whether to shift energies to zero at largest separation
             distance (far field). Only applies when ys are energies, not forces.
 
@@ -66,10 +66,10 @@ def calc_curve_diff_auc(
     Handles different x-samplings by interpolating to a common grid.
 
     Args:
-        seps_ref (Sequence[float]): Reference interatomic distances (Å)
-        e_ref (Sequence[float]): Reference potential energies (eV)
-        seps_pred (Sequence[float]): Predicted interatomic distances (Å)
-        e_pred (Sequence[float]): Predicted potential energies (eV)
+        seps_ref (ArrayLike[float]): Reference interatomic distances (Å)
+        e_ref (ArrayLike[float]): Reference potential energies (eV)
+        seps_pred (ArrayLike[float]): Predicted interatomic distances (Å)
+        e_pred (ArrayLike[float]): Predicted potential energies (eV)
         seps_range (tuple[float | None, float | None] | None): Optional range of
             interatomic distances to consider. Can be None to auto-set based on data
             range. If tuple is None, uses intersection of both curves' x-ranges.
@@ -147,10 +147,10 @@ def calc_energy_mae(
     Handles different x-samplings by interpolating to a common grid.
 
     Args:
-        seps_ref (Sequence[float]): Reference interatomic distances (Å)
-        e_ref (Sequence[float]): Reference potential energies (eV)
-        seps_pred (Sequence[float]): Predicted interatomic distances (Å)
-        e_pred (Sequence[float]): Predicted potential energies (eV)
+        seps_ref (ArrayLike[float]): Reference interatomic distances (Å)
+        e_ref (ArrayLike[float]): Reference potential energies (eV)
+        seps_pred (ArrayLike[float]): Predicted interatomic distances (Å)
+        e_pred (ArrayLike[float]): Predicted potential energies (eV)
         interpolate (bool | int): If False (default), uses the provided points directly.
             If True, uses 100 points for interpolation.
             If an integer, uses that many points for interpolation.
@@ -235,8 +235,8 @@ def calc_tortuosity(seps: ArrayLike, energies: ArrayLike) -> float:
     slightly above 1.
 
     Args:
-        seps (Sequence[float]): Interatomic distances
-        energies (Sequence[float]): Energy values
+        seps (ArrayLike[float]): Interatomic distances
+        energies (ArrayLike[float]): Energy values
 
     Returns:
         float: tortuosity value (ratio of total variation to direct energy difference).
@@ -263,8 +263,8 @@ def calc_energy_diff_flips(seps: ArrayLike, energies: ArrayLike) -> float:
     """Calculate number of energy difference sign flips.
 
     Args:
-        seps (Sequence[float]): Interatomic distances in Å.
-        energies (Sequence[float]): Energies in eV.
+        seps (ArrayLike[float]): Interatomic distances in Å.
+        energies (ArrayLike[float]): Energies in eV.
 
     Returns:
         float: Number of energy difference sign flips.
@@ -283,8 +283,8 @@ def calc_energy_grad_norm_max(seps: ArrayLike, energies: ArrayLike) -> float:
     """Calculate maximum absolute value of energy gradient.
 
     Args:
-        seps (Sequence[float]): Interatomic distances in Å.
-        energies (Sequence[float]): Energies in eV.
+        seps (ArrayLike[float]): Interatomic distances in Å.
+        energies (ArrayLike[float]): Energies in eV.
 
     Returns:
         float: Maximum absolute value of energy gradient.
@@ -298,8 +298,8 @@ def calc_energy_jump(seps: ArrayLike, energies: ArrayLike) -> float:
     points.
 
     Args:
-        seps (Sequence[float]): Interatomic distances in Å.
-        energies (Sequence[float]): Energies in eV.
+        seps (ArrayLike[float]): Interatomic distances in Å.
+        energies (ArrayLike[float]): Energies in eV.
 
     Returns:
         float: Sum of absolute energy differences at flip points.

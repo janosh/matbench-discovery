@@ -34,7 +34,7 @@ out_path = os.getenv("SBATCH_OUTPUT", f"{module_dir}/{job_name}.csv.gz")
 slurm_array_task_count = 1
 
 if os.path.isfile(out_path):
-    raise SystemExit(f"{out_path=} already exists, exciting early")
+    raise SystemExit(f"{out_path=} already exists, exiting early")
 
 slurm_vars = slurm_submit(
     job_name=job_name,

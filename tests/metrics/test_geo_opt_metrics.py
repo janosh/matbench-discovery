@@ -91,7 +91,7 @@ def test_calc_geo_opt_metrics_parametrized(
     assert results[str(Key.symmetry_match)] == pytest.approx(expected_match)
     assert results[str(Key.symmetry_increase)] == pytest.approx(expected_increase)
     # n_structures should be the number of non-NaN spg_diff values
-    assert results[str(Key.n_structures)] == np.sum(pd.notna(spg_diffs))
+    assert results[str(Key.n_structures)] == np.count_nonzero(pd.notna(spg_diffs))
 
 
 @pytest.mark.parametrize(

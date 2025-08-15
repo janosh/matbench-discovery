@@ -3,7 +3,7 @@
 # %%
 import os
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any, Final, Literal
 
 import numpy as np
 import pandas as pd
@@ -22,7 +22,7 @@ __date__ = "2023-03-28"
 data_name = "mp"  # which data to project
 projection_type: Literal["tsne", "umap"] = "tsne"  # which projection method to use
 out_dim = 2  # number of dimensions to project to
-one_hot_dim = 112  # number of elements to use for one-hot encoding
+one_hot_dim: Final[int] = 112  # number of elements to use for one-hot encoding
 job_name = f"{data_name}-{projection_type}-{out_dim}d"
 
 out_dir = f"{DATA_DIR}/{data_name}/{projection_type}"
@@ -79,9 +79,12 @@ elif projection_type == "umap":
 identity = np.eye(one_hot_dim)
 
 
-def sum_one_hot_elem(formula: str) -> np.ndarray[Any, np.int64]:
-    """Return sum of one-hot encoded elements in weighted by amount in composition."""
-    return np.sum(identity[el.Z - 1] * amt for el, amt in Composition(formula).items())
+def sum_one_hot_elem(formula: str) -> np.ndarray[Any, np.float64]:
+    """Return sum of one-hot encoded elements weighted by amount in composition."""
+    out = np.zeros(one_hot_dim, dtype=float)
+    for el, amt in Composition(formula).items():
+        out[el.Z - 1] += amt
+    return out
 
 
 one_hot_encoding = np.array(

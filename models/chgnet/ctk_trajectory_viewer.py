@@ -50,7 +50,7 @@ m3gnet_traj = M3gnetRelaxer().relax(init_struct)["trajectory"]
 # %%
 e_col = "Energy (eV)"
 force_col = "Force (meV/Å)"
-vol_col = "Volume (Å<sup>3</sup)"
+vol_col = "Volume (Å<sup>3</sup>)"
 df_chgnet, df_m3gnet = pd.DataFrame(), pd.DataFrame()
 
 for df, traj in ((df_chgnet, chgnet_traj), (df_m3gnet, m3gnet_traj)):

@@ -181,10 +181,10 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
         kappas_true: Series containing DFT reference data with same structure
 
     Returns:
-        SRME value between 0 and 2, where:
+        np.ndarray: SRME values per temperature, each between 0 and 2, where:
         - 0 indicates perfect agreement in both total κ and mode-resolved properties
         - 2 indicates complete disagreement or invalid results
-        - Returns [2] for various error conditions (missing data, NaN values)
+        On error conditions (missing data, NaN values), returns np.array([2.0]).
     """
     if np.any(np.isnan(kappas_true[MbdKey.kappa_tot_avg])):
         raise ValueError("found NaNs in kappa_tot_avg reference values")
@@ -196,7 +196,7 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
         # some mode weights are NaN
         or np.any(np.isnan(kappas_pred[Key.mode_weights]))
     ):
-        return np.array([2])
+        return np.array([2.0])
 
     mode_kappa_tot_avgs = {}  # store results for pred and true
     # Try different data sources in order of preference for both pred and true data

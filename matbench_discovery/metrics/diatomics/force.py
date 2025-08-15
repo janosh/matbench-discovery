@@ -8,9 +8,9 @@ from matbench_discovery.metrics.diatomics.energy import _validate_diatomic_curve
 
 def calc_force_mae(
     seps_ref: ArrayLike,
-    f_ref: np.ndarray,
+    f_ref: ArrayLike,
     seps_pred: ArrayLike,
-    f_pred: np.ndarray,
+    f_pred: ArrayLike,
     *,
     interpolate: bool | int = False,
 ) -> float:
@@ -18,11 +18,11 @@ def calc_force_mae(
     Handles different x-samplings by interpolating to a common grid.
 
     Args:
-        seps_ref (Sequence[float]): Reference interatomic distances (Å)
-        f_ref (np.ndarray): Reference forces of shape
+        seps_ref (ArrayLike): Reference interatomic distances (Å)
+        f_ref (ArrayLike): Reference forces of shape
             (n_distances, n_atoms, 3)
-        seps_pred (Sequence[float]): Predicted interatomic distances (Å)
-        f_pred (np.ndarray): Predicted forces of shape
+        seps_pred (ArrayLike): Predicted interatomic distances (Å)
+        f_pred (ArrayLike): Predicted forces of shape
             (n_distances, n_atoms, 3)
         interpolate (bool | int): If False (default), uses the provided points directly.
             If True, uses 100 points for interpolation.
@@ -75,7 +75,7 @@ def calc_force_flips(
     """Calculate number of (unphysical) force direction changes.
 
     Args:
-        seps (Sequence[float]): Interatomic distances in Å.
+        seps (ArrayLike): Interatomic distances in Å.
         forces (np.ndarray): Forces of shape (n_distances, n_atoms, 3).
         threshold (float, optional): Forces below this threshold (in eV/Å) are
             considered zero. Defaults to 1e-2 (10 meV/Å).
@@ -102,14 +102,14 @@ def calc_force_total_variation(seps: ArrayLike, forces: np.ndarray) -> float:
     """Calculate total variation in forces.
 
     Args:
-        seps (Sequence[float]): Interatomic distances in Å.
+        seps (ArrayLike): Interatomic distances in Å.
         forces (np.ndarray): Forces of shape (n_distances, n_atoms, 3).
 
     Returns:
         float: Sum of absolute differences between consecutive force values.
     """
-    sort_idx = np.argsort(seps)[::-1]  # sort in descending order
-    forces_x = forces[sort_idx, 0, 0]  # x-component of force on first atom
+    _, forces = _validate_diatomic_curve(seps, forces, normalize_energy=False)
+    forces_x = forces[:, 0, 0]  # x-component of force on first atom
     return float(np.sum(np.abs(np.diff(forces_x))))
 
 
@@ -117,14 +117,14 @@ def calc_force_jump(seps: ArrayLike, forces: np.ndarray) -> float:
     """Calculate force jump metric as sum of absolute force differences at flip points.
 
     Args:
-        seps (Sequence[float]): Interatomic distances in Å.
+        seps (ArrayLike): Interatomic distances in Å.
         forces (np.ndarray): Forces of shape (n_distances, n_atoms, 3).
 
     Returns:
         float: Sum of absolute force differences at flip points.
     """
-    sort_idx = np.argsort(seps)[::-1]  # sort in descending order
-    forces_x = forces[sort_idx, 0, 0]  # x-component of force on first atom
+    _, forces = _validate_diatomic_curve(seps, forces, normalize_energy=False)
+    forces_x = forces[:, 0, 0]  # x-component of force on first atom
 
     f_diff = np.diff(forces_x)
     f_diff_sign = np.sign(f_diff)
@@ -133,10 +133,10 @@ def calc_force_jump(seps: ArrayLike, forces: np.ndarray) -> float:
     f_diff_sign = f_diff_sign[mask]
     f_diff_flip = np.diff(f_diff_sign) != 0
 
-    force_jumps = np.abs(f_diff[:-1][f_diff_flip]).sum() + np.abs(
-        f_diff[1:][f_diff_flip]
+    force_jumps = (
+        np.abs(f_diff[:-1][f_diff_flip]).sum() + np.abs(f_diff[1:][f_diff_flip]).sum()
     )
-    return float(force_jumps.sum())
+    return float(force_jumps)
 
 
 def calc_conservation_deviation(
@@ -160,7 +160,7 @@ def calc_conservation_deviation(
     Returns:
         float: Mean absolute deviation between forces and -dE/dr.
     """
-    seps, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
+    _sorted_seps, energies = _validate_diatomic_curve(seps, energies)
     seps, forces = _validate_diatomic_curve(seps, forces, normalize_energy=False)
 
     if interpolate:
