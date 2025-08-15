@@ -168,16 +168,17 @@ def analyze_model_symprec(
     print(f"Completed {model.label} {symprec=} and saved results to {geo_opt_csv_path}")
 
     # Calculate metrics and write to YAML
-    df_metrics = geo_opt.calc_geo_opt_metrics(df_ml_geo_analysis)
+    metrics_dict = geo_opt.calc_geo_opt_metrics(df_ml_geo_analysis)
+    df_metrics = pd.DataFrame([metrics_dict])
     geo_opt.write_metrics_to_yaml(df_metrics, model, symprec, geo_opt_csv_path)
     return df_metrics
 
 
-def main(args: list[str] | None = None) -> int:
+def main(raw_args: list[str] | None = None) -> int:
     """Main function to analyze geometry optimization results.
 
     Args:
-        args: Command line arguments. If None, sys.argv[1:] will be used.
+        raw_args: Command line arguments. If None, sys.argv[1:] will be used.
 
     Returns:
         int: Exit code (0 for success).
@@ -193,7 +194,7 @@ def main(args: list[str] | None = None) -> int:
         default=[1e-2, 1e-5],
         help="Symmetry precision values to analyze.",
     )
-    args, _unknown = cli_parser.parse_known_args(args)
+    args, _unknown = cli_parser.parse_known_args(raw_args)
 
     # set to > 0 to activate debug mode, only that many structures will be analyzed
     debug_mode: Final[int] = args.debug

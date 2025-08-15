@@ -30,8 +30,8 @@ def test_classify_stable(
 
     assert (n_true_pos, n_false_neg, n_false_pos, n_true_neg) == expected
     assert n_true_pos + n_false_neg + n_false_pos + n_true_neg == len(df_float)
-    assert n_true_neg + n_false_pos == sum(stability_threshold < df_float.A)
-    assert n_true_pos + n_false_neg == sum(stability_threshold >= df_float.A)
+    assert n_true_neg + n_false_pos == np.sum(stability_threshold < df_float.A)
+    assert n_true_pos + n_false_neg == np.sum(stability_threshold >= df_float.A)
 
 
 def test_stable_metrics() -> None:
@@ -85,7 +85,7 @@ def test_stable_metrics() -> None:
     assert metrics["R2"] == r2_score(y_true, y_pred)
 
     # test stable_metrics docstring is up to date, all returned metrics should be listed
-    assert stable_metrics.__doc__  # for mypy
+    assert stable_metrics.__doc__  # for ty
     assert all(key in stable_metrics.__doc__ for key in metrics)
 
     # test discovery acceleration factor (DAF)
@@ -97,7 +97,7 @@ def test_stable_metrics() -> None:
         n_true_pos + n_false_pos + n_false_neg + n_true_neg
     )
     precision = n_true_pos / (n_true_pos + n_false_pos)
-    assert metrics[Key.daf.symbol] == precision / dummy_hit_rate
+    assert metrics[str(Key.daf.symbol)] == precision / dummy_hit_rate
 
 
 def test_df_discovery_metrics() -> None:

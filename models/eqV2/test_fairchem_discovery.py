@@ -36,8 +36,11 @@ DATABASE_PATH = {
     Task.IS2RE: str(BASE_PATH / "WBM_IS2RE.aselmdb"),
 }
 
-FILTER_CLS: dict[str, Filter] = {"frechet": FrechetCellFilter, "unit": UnitCellFilter}
-OPTIM_CLS: dict[str, Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": BFGS}
+FILTER_CLS: dict[str, type[Filter]] = {
+    "frechet": FrechetCellFilter,
+    "unit": UnitCellFilter,
+}
+OPTIM_CLS: dict[str, type[Optimizer]] = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": BFGS}
 
 
 class AseDBSubset(Subset):
@@ -161,14 +164,18 @@ class RelaxJob(Checkpointable):
             try:
                 atoms.calc = calculator
 
-                if filter_cls is not None:
-                    atoms = filter_cls(atoms)
-                optim_inst = optim_cls(atoms, logfile="/dev/null", **optimizer_params)
+                filtered_atoms = atoms if filter_cls is None else filter_cls(atoms)
+                optim_inst = optim_cls(
+                    filtered_atoms,  # type: ignore[arg-type]
+                    logfile="/dev/null",
+                    **optimizer_params,
+                )
 
                 optim_inst.run(fmax=force_max, steps=max_steps)
 
                 energy = atoms.get_potential_energy()
-                structure = AseAtomsAdaptor.get_structure(atoms)
+                unwrapped = getattr(filtered_atoms, "atoms", atoms)
+                structure = AseAtomsAdaptor.get_structure(unwrapped)
 
                 self.relax_results[material_id] = {
                     "structure": structure,
@@ -233,7 +240,6 @@ def run_relax(
     out_path = out_path / model_name / timestamp
     os.makedirs(out_path)
 
-    optimizer_params = {} if optimizer_params is None else json.loads(optimizer_params)
     args = (
         checkpoint_path,
         out_path,
@@ -244,7 +250,7 @@ def run_relax(
         cell_filter,
         force_max,
         max_steps,
-        optimizer_params,
+        {} if optimizer_params is None else json.loads(optimizer_params),
         device,
         use_amp,
         num_jobs,

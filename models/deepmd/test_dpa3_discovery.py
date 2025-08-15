@@ -62,19 +62,16 @@ class Relaxer:
 
         atoms.calc = self.calculator
         obs = TrajectoryObserver(atoms)
-        atoms = FrechetCellFilter(atoms)
-        opt = self.optimizer(atoms)
+        filtered_atoms = FrechetCellFilter(atoms)
+        opt = self.optimizer(filtered_atoms)
         opt.attach(obs)
         opt.run(fmax=fmax, steps=steps)
         obs()
         if traj_file is not None:
             obs.save(traj_file)
-        if isinstance(atoms, FrechetCellFilter):
-            atoms = atoms.atoms
-        return {
-            "final_structure": self.ase_adaptor.get_structure(atoms).as_dict(),
-            "trajectory": obs,
-        }
+        atoms = getattr(filtered_atoms, "atoms", atoms)
+        final_struct = self.ase_adaptor.get_structure(atoms)
+        return {"final_structure": final_struct.as_dict(), "trajectory": obs}
 
 
 class TrajectoryObserver:

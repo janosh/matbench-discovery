@@ -392,7 +392,7 @@ def test_calc_kappa_srme_temperature_dependence(series_multi_temp: pd.Series) ->
     kappa_srmes = phonon_metrics.calc_kappa_srme(ml_data, dft_data)
     assert len(kappa_srmes) == len(ml_data[Key.mode_weights])
     # TODO Should be non-zero since ML predictions are double DFT
-    assert kappa_srmes.tolist() == [0, 0, 0]
+    assert list(kappa_srmes) == [0, 0, 0]
 
 
 def test_calc_kappa_metrics_from_dfs_symmetry(df_minimal: pd.DataFrame) -> None:

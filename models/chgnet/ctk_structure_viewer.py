@@ -63,7 +63,9 @@ app = hook_up_fig_with_struct_viewer(
     fig=fig,
     df=df_plot,
     struct_col="chgnet_structure",
-    # validate_id requires material_id to be hover_name
-    validate_id=lambda mat_id: mat_id.startswith(("wbm-", "mp-", "mvc-")),
+    # transform_id assumes mat_id comes from hover_name (set to Key.mat_id above)
+    transform_id=lambda mat_id: mat_id
+    if isinstance(mat_id, str) and mat_id.startswith(("wbm-", "mp-", "mvc-"))
+    else False,
 )
 app.run()

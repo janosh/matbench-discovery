@@ -13,8 +13,7 @@ import plotly.graph_objs as go
 import scipy.interpolate
 import scipy.stats
 import wandb
-from plotly.validators.scatter.line import DashValidator
-from plotly.validators.scatter.marker import SymbolValidator
+from plotly.validator_cache import ValidatorCache
 from tqdm import tqdm
 
 from matbench_discovery import STABILITY_THRESHOLD
@@ -25,8 +24,11 @@ __author__ = "Janosh Riebesell"
 __date__ = "2022-08-05"
 
 
-plotly_markers = SymbolValidator().values[2::3]  # noqa: PD011
-plotly_line_styles = DashValidator().values[:-1]  # noqa: PD011
+symbol_validator = ValidatorCache.get_validator("scatter.marker", "symbol")
+dash_validator = ValidatorCache.get_validator("scatter.line", "dash")
+
+plotly_markers = symbol_validator.values[2::3]  # noqa: PD011
+plotly_line_styles = dash_validator.values[:-1]  # noqa: PD011
 plotly_colors = px.colors.qualitative.Plotly
 # repeat line styles/colors as many as times as needed to match number of markers
 plotly_line_styles *= len(plotly_markers) // len(plotly_line_styles)

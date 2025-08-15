@@ -95,6 +95,7 @@ def test_maybe_auto_download_file(
     with (
         patch("requests.get", return_value=mock_response),
         patch("sys.stdin.isatty", return_value=False),
+        patch("builtins.input", return_value="y"),  # Fallback input mock
     ):
         maybe_auto_download_file(url, abs_path, label="test")
         stdout, _ = capsys.readouterr()

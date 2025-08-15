@@ -131,16 +131,6 @@ isort.split-on-trailing-comma = false
 "models/*" = ["D", "ERA001"]
 "data/*" = ["ERA001", "S101"]
 
-[tool.mypy]
-check_untyped_defs = true
-disallow_untyped_defs = true
-disallow_any_generics = true
-disallow_incomplete_defs = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-allow_redefinition = true
-no_namespace_packages = true
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-p no:warnings -m 'not slow'"
@@ -148,11 +138,15 @@ markers = [
   "slow: tests marked slow are skipped by default (unskip with pytest -m slow)",
 ]
 
-[tool.pyright]
-typeCheckingMode = "off"
-reportPossiblyUnboundVariable = true
-reportUnboundVariable = true
-reportMissingImports = false
-
 [tool.codespell]
 ignore-words-list = "nd,te,fpr,matris,noe,hart,titel"
+
+[tool.ty.rules]
+unresolved-import = "ignore"
+# TODO: Unable to resolve submodules: https://github.com/astral-sh/ty/issues/445
+unresolved-attribute = "ignore"
+# TODO: Unable to work with **kwargs: https://github.com/astral-sh/ty/issues/247
+missing-argument = "ignore"
+
+[dependency-groups]
+dev = ["pre-commit>=4.3.0", "ty>=0.0.1a18"]

@@ -14,6 +14,14 @@ repos:
         args: [--fix]
       - id: ruff-format
 
+  - repo: local
+    hooks:
+      - id: ty
+        name: ty check
+        entry: ty check
+        language: python
+        additional_dependencies: [ty]
+
   - repo: https://github.com/janosh/format-ipy-cells
     rev: v0.1.11
     hooks:

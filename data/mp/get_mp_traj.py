@@ -11,10 +11,8 @@ import subprocess
 from glob import glob
 
 import pandas as pd
-from emmet.core.tasks import TaskDoc
 from pymatviz.enums import Key
 from pymongo import MongoClient
-from pymongo.database import Database
 from tqdm import tqdm, trange
 
 from matbench_discovery import ROOT, today
@@ -35,7 +33,7 @@ with open(f"{ROOT}/site/.env") as file:
     password = text.split("password=")[1].split("\n")[0]
 
 uri = f"mongodb://{user}:{password}@{host}/?authSource={db_name}"
-db: Database[TaskDoc] = MongoClient(uri)[db_name]
+db = MongoClient(uri)[db_name]
 
 
 # %%

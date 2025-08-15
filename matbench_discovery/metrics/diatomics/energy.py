@@ -1,19 +1,20 @@
 """Energy-based metrics for diatomic curves."""
 
-from collections.abc import Sequence
-from typing import Any
-
 import numpy as np
+from numpy.typing import ArrayLike
 
 
 def _validate_diatomic_curve(
-    xs: Sequence[float], ys: Sequence[Any], *, normalize_energy: bool = False
+    xs: ArrayLike,
+    ys: ArrayLike,
+    *,
+    normalize_energy: bool = False,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Validate curve input data.
 
     Args:
-        xs (Sequence[float]): interatomic distances
-        ys (Sequence[Any]): Energies or forces
+        xs (ArrayLike[float]): interatomic distances
+        ys (ArrayLike[Any]): Energies or forces
         normalize_energy (bool): Whether to shift energies to zero at largest separation
             distance (far field). Only applies when ys are energies, not forces.
 
@@ -39,22 +40,23 @@ def _validate_diatomic_curve(
         n_x_dup = int((np.diff(xs) == 0).sum())
         raise ValueError(f"xs contains {n_x_dup} duplicates")
 
-    sort_idx = np.argsort(xs)[::-1]
+    sort_idx = np.argsort(xs)  # ascending order
     xs = xs[sort_idx]
     ys = ys[sort_idx]
 
     # If these are energies (rank 1 array), normalize to zero at far field
     if normalize_energy and ys.ndim == 1:
-        ys = ys - ys[0]  # shift to zero at largest separation
+        # shift to zero at largest separation (last after ascending sort)
+        ys = ys - ys[-1]
 
     return xs, ys
 
 
 def calc_curve_diff_auc(
-    seps_ref: Sequence[float],
-    e_ref: Sequence[float],
-    seps_pred: Sequence[float],
-    e_pred: Sequence[float],
+    seps_ref: ArrayLike,
+    e_ref: ArrayLike,
+    seps_pred: ArrayLike,
+    e_pred: ArrayLike,
     *,
     seps_range: tuple[float | None, float | None] = (None, None),
     normalize: bool = True,
@@ -64,10 +66,10 @@ def calc_curve_diff_auc(
     Handles different x-samplings by interpolating to a common grid.
 
     Args:
-        seps_ref (Sequence[float]): Reference interatomic distances (Å)
-        e_ref (Sequence[float]): Reference potential energies (eV)
-        seps_pred (Sequence[float]): Predicted interatomic distances (Å)
-        e_pred (Sequence[float]): Predicted potential energies (eV)
+        seps_ref (ArrayLike[float]): Reference interatomic distances (Å)
+        e_ref (ArrayLike[float]): Reference potential energies (eV)
+        seps_pred (ArrayLike[float]): Predicted interatomic distances (Å)
+        e_pred (ArrayLike[float]): Predicted potential energies (eV)
         seps_range (tuple[float | None, float | None] | None): Optional range of
             interatomic distances to consider. Can be None to auto-set based on data
             range. If tuple is None, uses intersection of both curves' x-ranges.
@@ -118,26 +120,32 @@ def calc_curve_diff_auc(
         diff = np.abs(e_ref_interp - e_pred_interp)
         auc = np.trapezoid(diff, seps_interp)
     else:
-        # If no interpolation, calculate directly
+        # If no interpolation, restrict to the requested range
+        mask = (seps_ref >= seps_min) & (seps_ref <= seps_max)
+        if not np.any(mask):
+            raise ValueError(f"No points within range {seps_min=}..{seps_max=}")
+        seps_ref = seps_ref[mask]
+        e_ref = e_ref[mask]
+        e_pred = e_pred[mask]
         diff = np.abs(e_ref - e_pred)
         auc = np.trapezoid(diff, seps_ref)
 
     if normalize:
-        # Get bounding box area of reference curve
-        seps_range, e_range = np.ptp(seps_ref), np.ptp(e_ref)
-        box_area = seps_range * e_range
+        # Get bounding box area of reference curve on the same domain
+        seps_span, e_span = np.ptp(seps_ref), np.ptp(e_ref)
+        box_area = seps_span * e_span
         if box_area > 0:  # If reference curve is flat, don't normalize
             auc = auc / box_area
 
     # Ensure AUC is always positive
-    return float(abs(auc))
+    return float(np.abs(auc))
 
 
 def calc_energy_mae(
-    seps_ref: Sequence[float],
-    e_ref: Sequence[float],
-    seps_pred: Sequence[float],
-    e_pred: Sequence[float],
+    seps_ref: ArrayLike,
+    e_ref: ArrayLike,
+    seps_pred: ArrayLike,
+    e_pred: ArrayLike,
     *,
     interpolate: bool | int = False,
 ) -> float:
@@ -145,10 +153,10 @@ def calc_energy_mae(
     Handles different x-samplings by interpolating to a common grid.
 
     Args:
-        seps_ref (Sequence[float]): Reference interatomic distances (Å)
-        e_ref (Sequence[float]): Reference potential energies (eV)
-        seps_pred (Sequence[float]): Predicted interatomic distances (Å)
-        e_pred (Sequence[float]): Predicted potential energies (eV)
+        seps_ref (ArrayLike[float]): Reference interatomic distances (Å)
+        e_ref (ArrayLike[float]): Reference potential energies (eV)
+        seps_pred (ArrayLike[float]): Predicted interatomic distances (Å)
+        e_pred (ArrayLike[float]): Predicted potential energies (eV)
         interpolate (bool | int): If False (default), uses the provided points directly.
             If True, uses 100 points for interpolation.
             If an integer, uses that many points for interpolation.
@@ -188,9 +196,7 @@ def calc_energy_mae(
     return float(np.mean(np.abs(e_ref - e_pred)))
 
 
-def calc_second_deriv_smoothness(
-    seps: Sequence[float], energies: Sequence[float]
-) -> float:
+def calc_second_deriv_smoothness(seps: ArrayLike, energies: ArrayLike) -> float:
     """Calculate smoothness using RMS of second derivative (lower is smoother)."""
     seps, energies = map(np.asarray, (seps, energies))
     sort_idx = np.argsort(seps)[::-1]  # sort in descending order
@@ -200,11 +206,9 @@ def calc_second_deriv_smoothness(
     return float(np.sqrt(np.mean(d2y**2)))
 
 
-def calc_total_variation_smoothness(
-    seps: Sequence[float], energies: Sequence[float]
-) -> float:
+def calc_total_variation_smoothness(seps: ArrayLike, energies: ArrayLike) -> float:
     """Calculate smoothness using mean absolute gradient (lower is smoother)."""
-    seps, energies = map(np.asarray, (seps, energies))
+    seps, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
     sort_idx = np.argsort(seps)[::-1]  # sort in descending order
     seps = seps[sort_idx]
     energies = energies[sort_idx]
@@ -212,11 +216,9 @@ def calc_total_variation_smoothness(
     return float(np.log10(np.mean(np.abs(dy))))
 
 
-def calc_curvature_smoothness(
-    seps: Sequence[float], energies: Sequence[float]
-) -> float:
+def calc_curvature_smoothness(seps: ArrayLike, energies: ArrayLike) -> float:
     """Calculate smoothness using mean absolute curvature (lower is smoother)."""
-    seps, energies = map(np.asarray, (seps, energies))
+    seps, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
     sort_idx = np.argsort(seps)[::-1]  # sort in descending order
     seps = seps[sort_idx]
     energies = energies[sort_idx]
@@ -226,7 +228,7 @@ def calc_curvature_smoothness(
     return float(np.log10(np.mean(curvature)))
 
 
-def calc_tortuosity(seps: Sequence[float], energies: Sequence[float]) -> float:
+def calc_tortuosity(seps: ArrayLike, energies: ArrayLike) -> float:
     """Calculate tortuosity of a potential energy curve as the ratio between total
     variation in energy and the sum of absolute energy differences between shortest
     separation distance r_min, equilibrium distance r_eq, and longest separation
@@ -239,8 +241,8 @@ def calc_tortuosity(seps: Sequence[float], energies: Sequence[float]) -> float:
     slightly above 1.
 
     Args:
-        seps (Sequence[float]): Interatomic distances
-        energies (Sequence[float]): Energy values
+        seps (ArrayLike[float]): Interatomic distances
+        energies (ArrayLike[float]): Energy values
 
     Returns:
         float: tortuosity value (ratio of total variation to direct energy difference).
@@ -263,12 +265,12 @@ def calc_tortuosity(seps: Sequence[float], energies: Sequence[float]) -> float:
     return float(tv_energy / direct_energy_diff)
 
 
-def calc_energy_diff_flips(seps: Sequence[float], energies: Sequence[float]) -> float:
+def calc_energy_diff_flips(seps: ArrayLike, energies: ArrayLike) -> float:
     """Calculate number of energy difference sign flips.
 
     Args:
-        seps (Sequence[float]): Interatomic distances in Å.
-        energies (Sequence[float]): Energies in eV.
+        seps (ArrayLike[float]): Interatomic distances in Å.
+        energies (ArrayLike[float]): Energies in eV.
 
     Returns:
         float: Number of energy difference sign flips.
@@ -283,14 +285,12 @@ def calc_energy_diff_flips(seps: Sequence[float], energies: Sequence[float]) -> 
     return float(np.sum(np.diff(ediff_sign) != 0))
 
 
-def calc_energy_grad_norm_max(
-    seps: Sequence[float], energies: Sequence[float]
-) -> float:
+def calc_energy_grad_norm_max(seps: ArrayLike, energies: ArrayLike) -> float:
     """Calculate maximum absolute value of energy gradient.
 
     Args:
-        seps (Sequence[float]): Interatomic distances in Å.
-        energies (Sequence[float]): Energies in eV.
+        seps (ArrayLike[float]): Interatomic distances in Å.
+        energies (ArrayLike[float]): Energies in eV.
 
     Returns:
         float: Maximum absolute value of energy gradient.
@@ -299,27 +299,29 @@ def calc_energy_grad_norm_max(
     return float(np.max(np.abs(np.gradient(energies, seps))))
 
 
-def calc_energy_jump(seps: Sequence[float], energies: Sequence[float]) -> float:
+def calc_energy_jump(seps: ArrayLike, energies: ArrayLike) -> float:
     """Calculate energy jump metric as sum of absolute energy differences at flip
     points.
 
     Args:
-        seps (Sequence[float]): Interatomic distances in Å.
-        energies (Sequence[float]): Energies in eV.
+        seps (ArrayLike[float]): Interatomic distances in Å.
+        energies (ArrayLike[float]): Energies in eV.
 
     Returns:
         float: Sum of absolute energy differences at flip points.
     """
     seps, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
 
-    ediff = np.diff(energies)
-    ediff[np.abs(ediff) < 1e-3] = 0  # 1meV threshold
-    ediff_sign = np.sign(ediff)
-    mask = ediff_sign != 0
-    ediff = ediff[mask]
-    ediff_sign = ediff_sign[mask]
-    ediff_flip = np.diff(ediff_sign) != 0
+    e_diff = np.diff(energies)
+    e_diff[np.abs(e_diff) < 1e-3] = 0  # 1meV threshold
+    e_diff_sign = np.sign(e_diff)
+    mask = e_diff_sign != 0
+    e_diff = e_diff[mask]
+    e_diff_sign = e_diff_sign[mask]
+    e_diff_flip = np.diff(e_diff_sign) != 0
 
-    e_jump = np.abs(ediff[:-1][ediff_flip]).sum() + np.abs(ediff[1:][ediff_flip]).sum()
+    e_jump = (
+        np.abs(e_diff[:-1][e_diff_flip]).sum() + np.abs(e_diff[1:][e_diff_flip]).sum()
+    )
 
     return float(e_jump)

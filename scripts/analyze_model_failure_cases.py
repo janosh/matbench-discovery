@@ -11,7 +11,7 @@ import plotly.express as px
 import plotly.graph_objs as go
 import pymatviz as pmv
 from pymatgen.core import Composition, Structure
-from pymatviz.enums import Key
+from pymatviz.enums import ElemCountMode, Key
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR
@@ -156,7 +156,7 @@ fig.show()
 df_mp = pd.read_csv(DataFiles.mp_energies.path, na_filter=False).set_index(Key.mat_id)
 train_count_col = "MP Occurrences"
 df_elem_counts = pmv.count_elements(
-    df_mp[Key.formula], count_mode="occurrence"
+    df_mp[Key.formula], count_mode=ElemCountMode.occurrence
 ).to_frame(name=train_count_col)
 n_examp_for_rarest_elem_col = "Examples for rarest element in structure"
 df_wbm[n_examp_for_rarest_elem_col] = [
@@ -198,7 +198,7 @@ for col in ("All models false neg", "All models false pos"):
         else elem_counts[col],
         color_bar=dict(title=col),
         fmt=".3f",
-        cscale_range=[0, 0.1],
+        cscale_range=(0, 0.1),
     )
     fig.show()
 
