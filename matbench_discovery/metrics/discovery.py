@@ -140,8 +140,13 @@ def stable_metrics(
     is_nan = np.isnan(each_true) | np.isnan(each_pred)
     each_true, each_pred = np.array(each_true)[~is_nan], np.array(each_pred)[~is_nan]
 
+    if precision + recall == 0:  # Calculate F1 score, handling division by zero
+        f1_score = float("nan")
+    else:
+        f1_score = 2 * (precision * recall) / (precision + recall)
+
     return dict(
-        F1=2 * (precision * recall) / (precision + recall),
+        F1=f1_score,
         DAF=precision / prevalence,
         Precision=precision,
         Recall=recall,

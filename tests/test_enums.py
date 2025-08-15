@@ -243,6 +243,10 @@ def test_files_enum_auto_download(
             """Mock isatty to simulate non-interactive mode."""
             return False
 
+        def readline(self) -> str:
+            """Mock readline method."""
+            return "y"  # Default to yes for testing
+
     monkeypatch.setattr(requests, "get", lambda *_args, **_kwargs: MockResponse())
     monkeypatch.setattr(sys, "stdin", MockStdin())
 
