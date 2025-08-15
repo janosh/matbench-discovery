@@ -92,6 +92,8 @@ run_params = dict(
 )
 
 wandb.init(project="matbench-discovery", name=job_name, config=run_params)
+if wandb.run is None:
+    raise RuntimeError("wandb.run is None")
 
 
 # %%

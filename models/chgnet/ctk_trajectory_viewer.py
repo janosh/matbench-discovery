@@ -122,7 +122,7 @@ def plot_energy_and_forces(
     return fig
 
 
-app = Dash(prevent_initial_callbacks=True, assets_folder=SETTINGS.ASSETS_PATH)
+app = Dash(prevent_initial_callbacks=True, assets_folder=str(SETTINGS.ASSETS_PATH))
 
 app_div = html.Div(
     [
@@ -158,14 +158,14 @@ for name, df, traj in (
         style={"maxWidth": "50%"},
     )
 
-    app_div.children += (
+    app_div.children = (app_div.children or []) + [
         html.H2(name, style=dict(margin="2em 0 1em", fontSize="1.5em")),
         slider,
         html.Div(
             [struct_layouts[name], graph],
             style=dict(display="flex", gap="2em", placeContent="center"),
         ),
-    )
+    ]
 
     def update_factory(
         trajectory: TrajectoryObserver,

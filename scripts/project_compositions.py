@@ -57,14 +57,16 @@ def metric(
     """
     x_comp, x_err = np.split(x, [split_dim])
     y_comp, y_err = np.split(y, [split_dim])
-    return np.linalg.norm(x_comp - y_comp) + err_weight * np.linalg.norm(x_err - y_err)
+    return float(
+        np.linalg.norm(x_comp - y_comp) + err_weight * np.linalg.norm(x_err - y_err)
+    )
 
 
 if projection_type == "tsne":
     from sklearn.manifold import TSNE
 
     projector = TSNE(
-        n_components=out_dim, random_state=0, n_iter=250, n_iter_without_progress=50
+        n_components=out_dim, random_state=0, max_iter=250, n_iter_without_progress=50
     )
     out_cols = [f"{out_dim}d t-SNE {idx + 1}" for idx in range(out_dim)]
 elif projection_type == "umap":
@@ -79,7 +81,7 @@ identity = np.eye(one_hot_dim)
 
 def sum_one_hot_elem(formula: str) -> np.ndarray[Any, np.int64]:
     """Return sum of one-hot encoded elements in weighted by amount in composition."""
-    return sum(identity[el.Z - 1] * amt for el, amt in Composition(formula).items())
+    return np.sum(identity[el.Z - 1] * amt for el, amt in Composition(formula).items())
 
 
 one_hot_encoding = np.array(

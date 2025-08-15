@@ -53,7 +53,7 @@ def test_init_phono3py(test_atoms: Atoms) -> None:
         q_point_mesh=q_point_mesh,
     )
     assert isinstance(ph3, Phono3py)
-    assert list(ph3.mesh_numbers) == [2, 2, 2]
+    assert list(ph3.mesh_numbers or []) == [2, 2, 2]
     assert ph3.supercell_matrix.tolist() == np.eye(3).tolist()
     # Check that both supercells were created correctly
     assert np.allclose(ph3.phonon_supercell_matrix, fc2_supercell)
@@ -81,7 +81,7 @@ def test_init_phono3py_custom_mesh_and_displacement(test_atoms: Atoms) -> None:
         fc3_supercell=fc3_supercell,
         q_point_mesh=custom_mesh,
     )
-    assert tuple(ph3.mesh_numbers) == custom_mesh
+    assert tuple(ph3.mesh_numbers or []) == custom_mesh
     # Phono3py automatically initializes mesh when setting mesh_numbers
     assert len(ph3.grid.addresses) == 89
 

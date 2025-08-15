@@ -196,7 +196,7 @@ def calc_kappa_srme(kappas_pred: pd.Series, kappas_true: pd.Series) -> np.ndarra
         # some mode weights are NaN
         or np.any(np.isnan(kappas_pred[Key.mode_weights]))
     ):
-        return [2]
+        return np.array([2])
 
     mode_kappa_tot_avgs = {}  # store results for pred and true
     # Try different data sources in order of preference for both pred and true data

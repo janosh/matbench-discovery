@@ -1,13 +1,14 @@
 """Energy-based metrics for diatomic curves."""
 
-from collections.abc import Sequence
-from typing import Any
-
 import numpy as np
+from numpy.typing import ArrayLike
 
 
 def _validate_diatomic_curve(
-    xs: Sequence[float], ys: Sequence[Any], *, normalize_energy: bool = False
+    xs: ArrayLike,
+    ys: ArrayLike,
+    *,
+    normalize_energy: bool = False,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Validate curve input data.
 
@@ -51,10 +52,10 @@ def _validate_diatomic_curve(
 
 
 def calc_curve_diff_auc(
-    seps_ref: Sequence[float],
-    e_ref: Sequence[float],
-    seps_pred: Sequence[float],
-    e_pred: Sequence[float],
+    seps_ref: ArrayLike,
+    e_ref: ArrayLike,
+    seps_pred: ArrayLike,
+    e_pred: ArrayLike,
     *,
     seps_range: tuple[float | None, float | None] = (None, None),
     normalize: bool = True,
@@ -134,10 +135,10 @@ def calc_curve_diff_auc(
 
 
 def calc_energy_mae(
-    seps_ref: Sequence[float],
-    e_ref: Sequence[float],
-    seps_pred: Sequence[float],
-    e_pred: Sequence[float],
+    seps_ref: ArrayLike,
+    e_ref: ArrayLike,
+    seps_pred: ArrayLike,
+    e_pred: ArrayLike,
     *,
     interpolate: bool | int = False,
 ) -> float:
@@ -188,9 +189,7 @@ def calc_energy_mae(
     return float(np.mean(np.abs(e_ref - e_pred)))
 
 
-def calc_second_deriv_smoothness(
-    seps: Sequence[float], energies: Sequence[float]
-) -> float:
+def calc_second_deriv_smoothness(seps: ArrayLike, energies: ArrayLike) -> float:
     """Calculate smoothness using RMS of second derivative (lower is smoother)."""
     seps, energies = map(np.asarray, (seps, energies))
     sort_idx = np.argsort(seps)[::-1]  # sort in descending order
@@ -200,9 +199,7 @@ def calc_second_deriv_smoothness(
     return float(np.sqrt(np.mean(d2y**2)))
 
 
-def calc_total_variation_smoothness(
-    seps: Sequence[float], energies: Sequence[float]
-) -> float:
+def calc_total_variation_smoothness(seps: ArrayLike, energies: ArrayLike) -> float:
     """Calculate smoothness using mean absolute gradient (lower is smoother)."""
     seps, energies = map(np.asarray, (seps, energies))
     sort_idx = np.argsort(seps)[::-1]  # sort in descending order
@@ -212,9 +209,7 @@ def calc_total_variation_smoothness(
     return float(np.log10(np.mean(np.abs(dy))))
 
 
-def calc_curvature_smoothness(
-    seps: Sequence[float], energies: Sequence[float]
-) -> float:
+def calc_curvature_smoothness(seps: ArrayLike, energies: ArrayLike) -> float:
     """Calculate smoothness using mean absolute curvature (lower is smoother)."""
     seps, energies = map(np.asarray, (seps, energies))
     sort_idx = np.argsort(seps)[::-1]  # sort in descending order
@@ -226,7 +221,7 @@ def calc_curvature_smoothness(
     return float(np.log10(np.mean(curvature)))
 
 
-def calc_tortuosity(seps: Sequence[float], energies: Sequence[float]) -> float:
+def calc_tortuosity(seps: ArrayLike, energies: ArrayLike) -> float:
     """Calculate tortuosity of a potential energy curve as the ratio between total
     variation in energy and the sum of absolute energy differences between shortest
     separation distance r_min, equilibrium distance r_eq, and longest separation
@@ -263,7 +258,7 @@ def calc_tortuosity(seps: Sequence[float], energies: Sequence[float]) -> float:
     return float(tv_energy / direct_energy_diff)
 
 
-def calc_energy_diff_flips(seps: Sequence[float], energies: Sequence[float]) -> float:
+def calc_energy_diff_flips(seps: ArrayLike, energies: ArrayLike) -> float:
     """Calculate number of energy difference sign flips.
 
     Args:
@@ -283,9 +278,7 @@ def calc_energy_diff_flips(seps: Sequence[float], energies: Sequence[float]) -> 
     return float(np.sum(np.diff(ediff_sign) != 0))
 
 
-def calc_energy_grad_norm_max(
-    seps: Sequence[float], energies: Sequence[float]
-) -> float:
+def calc_energy_grad_norm_max(seps: ArrayLike, energies: ArrayLike) -> float:
     """Calculate maximum absolute value of energy gradient.
 
     Args:
@@ -299,7 +292,7 @@ def calc_energy_grad_norm_max(
     return float(np.max(np.abs(np.gradient(energies, seps))))
 
 
-def calc_energy_jump(seps: Sequence[float], energies: Sequence[float]) -> float:
+def calc_energy_jump(seps: ArrayLike, energies: ArrayLike) -> float:
     """Calculate energy jump metric as sum of absolute energy differences at flip
     points.
 
@@ -312,14 +305,16 @@ def calc_energy_jump(seps: Sequence[float], energies: Sequence[float]) -> float:
     """
     seps, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
 
-    ediff = np.diff(energies)
-    ediff[np.abs(ediff) < 1e-3] = 0  # 1meV threshold
-    ediff_sign = np.sign(ediff)
-    mask = ediff_sign != 0
-    ediff = ediff[mask]
-    ediff_sign = ediff_sign[mask]
-    ediff_flip = np.diff(ediff_sign) != 0
+    e_diff = np.diff(energies)
+    e_diff[np.abs(e_diff) < 1e-3] = 0  # 1meV threshold
+    e_diff_sign = np.sign(e_diff)
+    mask = e_diff_sign != 0
+    e_diff = e_diff[mask]
+    e_diff_sign = e_diff_sign[mask]
+    e_diff_flip = np.diff(e_diff_sign) != 0
 
-    e_jump = np.abs(ediff[:-1][ediff_flip]).sum() + np.abs(ediff[1:][ediff_flip]).sum()
+    e_jump = (
+        np.abs(e_diff[:-1][e_diff_flip]).sum() + np.abs(e_diff[1:][e_diff_flip]).sum()
+    )
 
     return float(e_jump)

@@ -78,7 +78,7 @@ timestamp = f"{datetime.now().astimezone():%Y-%m-%d %H:%M:%S}"
 struct_data_path = f"../data/part_{idx}.extxyz"
 print(f"\nJob {job_name} started {timestamp}")
 print(f"Read data from {struct_data_path}")
-atoms_list: list[Atoms] = read(struct_data_path, format="extxyz", index=":")
+atoms_list: list[Atoms] = list(read(struct_data_path, format="extxyz", index=":"))
 
 run_params = {
     "timestamp": timestamp,

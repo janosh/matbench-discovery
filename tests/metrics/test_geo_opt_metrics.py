@@ -91,7 +91,7 @@ def test_calc_geo_opt_metrics_parametrized(
     assert results[str(Key.symmetry_match)] == pytest.approx(expected_match)
     assert results[str(Key.symmetry_increase)] == pytest.approx(expected_increase)
     # n_structures should be the number of non-NaN spg_diff values
-    assert results[str(Key.n_structures)] == sum(pd.notna(spg_diffs))
+    assert results[str(Key.n_structures)] == np.sum(pd.notna(spg_diffs))
 
 
 @pytest.mark.parametrize(
@@ -180,7 +180,7 @@ def test_write_geo_opt_metrics_to_yaml(
 
             # Call the function
             geo_opt.write_metrics_to_yaml(
-                metrics_data, Model.alignn, symprec, analysis_file_path
+                pd.DataFrame([metrics_data]), Model.alignn, symprec, analysis_file_path
             )
 
             # Verify YAML dump was called with expected content

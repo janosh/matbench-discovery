@@ -1,16 +1,15 @@
 """Force-based metrics for diatomic curves."""
 
-from collections.abc import Sequence
-
 import numpy as np
+from numpy.typing import ArrayLike
 
 from matbench_discovery.metrics.diatomics.energy import _validate_diatomic_curve
 
 
 def calc_force_mae(
-    seps_ref: Sequence[float],
+    seps_ref: ArrayLike,
     f_ref: np.ndarray,
-    seps_pred: Sequence[float],
+    seps_pred: ArrayLike,
     f_pred: np.ndarray,
     *,
     interpolate: bool | int = False,
@@ -69,7 +68,7 @@ def calc_force_mae(
 
 
 def calc_force_flips(
-    seps: Sequence[float],
+    seps: ArrayLike,
     forces: np.ndarray,
     threshold: float = 1e-2,  # 10meV/A threshold as in reference code
 ) -> float:
@@ -99,7 +98,7 @@ def calc_force_flips(
     return float(np.sum(f_flip))
 
 
-def calc_force_total_variation(seps: Sequence[float], forces: np.ndarray) -> float:
+def calc_force_total_variation(seps: ArrayLike, forces: np.ndarray) -> float:
     """Calculate total variation in forces.
 
     Args:
@@ -114,7 +113,7 @@ def calc_force_total_variation(seps: Sequence[float], forces: np.ndarray) -> flo
     return float(np.sum(np.abs(np.diff(forces_x))))
 
 
-def calc_force_jump(seps: Sequence[float], forces: np.ndarray) -> float:
+def calc_force_jump(seps: ArrayLike, forces: np.ndarray) -> float:
     """Calculate force jump metric as sum of absolute force differences at flip points.
 
     Args:
@@ -141,8 +140,8 @@ def calc_force_jump(seps: Sequence[float], forces: np.ndarray) -> float:
 
 
 def calc_conservation_deviation(
-    seps: Sequence[float],
-    energies: Sequence[float],
+    seps: ArrayLike,
+    energies: ArrayLike,
     forces: np.ndarray,  # shape (n_distances, n_atoms, 3)
     *,
     interpolate: bool | int = False,

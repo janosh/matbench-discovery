@@ -296,11 +296,11 @@ def update_one_modeling_task_article(
         print("\nNo files were added or updated.")
 
 
-def main(args: Sequence[str] | None = None) -> int:
+def main(raw_args: Sequence[str] | None = None) -> int:
     """Main function to upload model prediction files to Figshare.
 
     Args:
-        args: Command line arguments. If None, sys.argv[1:] will be used.
+        raw_args: Command line arguments. If None, sys.argv[1:] will be used.
 
     Returns:
         int: Exit code (0 for success).
@@ -336,7 +336,7 @@ def main(args: Sequence[str] | None = None) -> int:
         help="Enable interactive prompts for file deletion",
     )
 
-    args = cli_parser.parse_known_args(args)[0]
+    args, _unknown = cli_parser.parse_known_args(raw_args)
 
     # Process exclusion prefixes for tasks
     all_tasks = list(MODELING_TASKS)

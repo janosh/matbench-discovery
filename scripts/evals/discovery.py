@@ -14,6 +14,7 @@ from datetime import date
 import numpy as np
 import pandas as pd
 import yaml
+from IPython.display import display
 from pymatviz import IS_IPYTHON
 from pymatviz.enums import Key, eV_per_atom
 from pymatviz.utils import si_fmt
@@ -23,11 +24,6 @@ from matbench_discovery import DATA_DIR, PKG_DIR
 from matbench_discovery.data import df_wbm
 from matbench_discovery.enums import DataFiles, MbdKey, Model, Open, Targets, TestSubset
 from matbench_discovery.metrics import discovery
-
-try:
-    from IPython.display import display
-except ImportError:
-    display = print
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-28"
@@ -261,7 +257,7 @@ for df_in, df_out, col in (
 
     # important: regression metrics from dummy_clf are meaningless, we overwrite them
     # with correct values here. don't remove!
-    dummy_metrics[Key.daf.symbol] = 1
+    dummy_metrics[str(Key.daf.symbol)] = 1
     dummy_metrics["R2"] = 0
     dummy_metrics["MAE"] = (each_true - each_true.mean()).abs().mean()
     dummy_metrics["RMSE"] = ((each_true - each_true.mean()) ** 2).mean() ** 0.5

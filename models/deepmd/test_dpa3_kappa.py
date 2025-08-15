@@ -69,7 +69,9 @@ out_path = (
 
 timestamp = f"{datetime.now().astimezone():%Y-%m-%d %H:%M:%S}"
 print(f"\nJob {job_name} started {timestamp}")
-atoms_list: list[Atoms] = read(DataFiles.phonondb_pbe_103_structures.path, index=":")
+atoms_list: list[Atoms] = list(
+    read(DataFiles.phonondb_pbe_103_structures.path, index=":")
+)
 
 run_params = {
     "timestamp": timestamp,

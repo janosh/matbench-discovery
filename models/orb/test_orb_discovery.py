@@ -147,9 +147,9 @@ def main(
 
             optimizer.run(fmax=force_max, steps=max_steps)
             energy = atoms.get_potential_energy()  # relaxed energy
-            optimized_structure = AseAtomsAdaptor.get_structure(
-                getattr(atoms, "atoms", atoms)  # atoms might be wrapped in ase filter
-            )
+            # Handle case where atoms might be wrapped in FrechetCellFilter
+            unwrapped = atoms.atoms if hasattr(atoms, "atoms") else atoms
+            optimized_structure = AseAtomsAdaptor.get_structure(unwrapped)
 
             relax_results[material_id] = {
                 "structure": optimized_structure,

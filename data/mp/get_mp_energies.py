@@ -54,7 +54,7 @@ print(f"{today}: {len(docs)=:,}")
 df_mp = pd.DataFrame(docs).set_index(Key.mat_id)
 df_mp = df_mp.rename(columns={"formula_pretty": Key.formula, "nsites": Key.n_sites})
 
-df_spg = pd.json_normalize(df_mp.pop("symmetry"))[["number", "symbol"]]
+df_spg = pd.json_normalize(list(df_mp.pop("symmetry")))[["number", "symbol"]]
 df_mp["spacegroup_symbol"] = df_spg.symbol.to_numpy()
 
 df_mp.energy_type.value_counts().plot.pie(autopct="%1.1f%%")
