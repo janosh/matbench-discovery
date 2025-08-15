@@ -13,9 +13,8 @@ from datetime import date
 
 import numpy as np
 import pandas as pd
+import pymatviz as pmv
 import yaml
-from IPython.display import display
-from pymatviz import IS_IPYTHON
 from pymatviz.enums import Key, eV_per_atom
 from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
@@ -58,7 +57,7 @@ if __name__ == "__main__":
                 model, metrics, model_preds.loc[subset_idx], test_subset
             )
 
-    if not IS_IPYTHON:
+    if not pmv.IS_IPYTHON:
         raise SystemExit(0)
 
 
@@ -404,4 +403,7 @@ for (label, df_met), show_non_compliant in itertools.product(
     # model_name_col also has HTML title attributes for hover tooltips
     styler.hide(axis="index")
     non_compliant_idx = [*set(styler.index) & set(non_compliant_models)]
-    display(styler.set_caption(df_met.attrs["title"]))
+    if pmv.IS_IPYTHON:
+        from IPython.display import display
+
+        display(styler.set_caption(df_met.attrs["title"]))

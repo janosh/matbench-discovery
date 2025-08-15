@@ -6,6 +6,7 @@ import crystal_toolkit.components as ctc
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+import pymatviz as pmv
 from chgnet.model import StructOptimizer as ChgnetRelaxer
 from chgnet.model.dynamics import TrajectoryObserver
 from crystal_toolkit.settings import SETTINGS
@@ -13,7 +14,6 @@ from dash import Dash, dcc, html
 from dash.dependencies import Input, Output
 from m3gnet.models import Relaxer as M3gnetRelaxer
 from pymatgen.core import Lattice, Structure
-from pymatviz import IS_IPYTHON
 from pymatviz.enums import Key
 
 from matbench_discovery.data import df_wbm
@@ -218,4 +218,4 @@ for name, df, traj in (
 
 app.layout = app_div
 ctc.register_crystal_toolkit(app=app, layout=app.layout)
-app.run(use_reloader=not IS_IPYTHON)
+app.run(use_reloader=not pmv.IS_IPYTHON)
