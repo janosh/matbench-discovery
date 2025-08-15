@@ -258,7 +258,7 @@ n_samples_per_elem = (len(df_comp) - df_each_err_elems.isna().sum()).map(
 
 fig_ptable_each_errors = pmv.ptable_hists_plotly(
     df_each_err_elems,
-    anno_text=n_samples_per_elem,
+    annotations=n_samples_per_elem,
     bins=100,
     subplot_kwargs=dict(shared_yaxes=False),
     log=False,

@@ -8,11 +8,10 @@ from collections.abc import Callable
 from copy import deepcopy
 from datetime import datetime
 from importlib.metadata import version
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import pandas as pd
 import torch
-from ase import Atoms
 from ase.constraints import FixSymmetry
 from ase.filters import FrechetCellFilter
 from ase.io import read
@@ -28,6 +27,9 @@ from matbench_discovery import today
 from matbench_discovery.enums import DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
+
+if TYPE_CHECKING:
+    from ase import Atoms
 
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 
@@ -69,7 +71,9 @@ out_path = (
 
 timestamp = f"{datetime.now().astimezone():%Y-%m-%d %H:%M:%S}"
 print(f"\nJob {job_name} started {timestamp}")
-atoms_list: list[Atoms] = read(DataFiles.phonondb_pbe_103_structures.path, index=":")
+atoms_list = cast(
+    "list[Atoms]", read(DataFiles.phonondb_pbe_103_structures.path, index=":")
+)
 
 run_params = {
     "timestamp": timestamp,

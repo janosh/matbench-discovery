@@ -12,7 +12,7 @@ import plotly.express as px
 import pymatviz as pmv
 from pymatgen.core import Composition
 from pymatgen.core.tensors import Tensor
-from pymatviz.enums import Key
+from pymatviz.enums import ElemCountMode, Key
 from tqdm import tqdm
 
 from matbench_discovery import MP_DIR, PDF_FIGS, ROOT, SITE_FIGS
@@ -226,8 +226,8 @@ pmv.save_fig(fig_ptable_sites, f"{PDF_FIGS}/mp-trj-n-sites-ptable-hists.pdf")
 
 
 # %%
-elem_counts: dict[str, dict[str, int]] = {}
-for count_mode in ("composition", "occurrence"):
+elem_counts: dict[str, pd.Series[str, int]] = {}
+for count_mode in (ElemCountMode.composition, ElemCountMode.occurrence):
     trj_elem_counts = pmv.count_elements(df_mp_trj[Key.formula], count_mode=count_mode)
     elem_counts[count_mode] = trj_elem_counts
     filename = f"mp-trj-element-counts-by-{count_mode}"

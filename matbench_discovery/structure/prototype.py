@@ -12,7 +12,8 @@ from typing import Final
 
 import ase
 import yaml
-from pymatgen.core import Composition, Structure
+from pymatgen.core import Composition
+from pymatviz.typing import AnyStructure
 
 module_dir = os.path.dirname(__file__)
 
@@ -106,12 +107,12 @@ def canonicalize_wyckoffs(element_wyckoffs: str, spg_num: int) -> str:
 
 
 def get_protostructure_label(
-    struct: Structure | ase.Atoms, *, symprec: float = 0.1, raise_errors: bool = False
+    struct: AnyStructure, *, symprec: float = 0.1, raise_errors: bool = False
 ) -> str | None:
     """Get AFLOW-style proto-structure label using Moyopy for symmetry detection.
 
     Args:
-        struct (Structure | ase.Atoms): pymatgen Structure object or ase.Atoms object.
+        struct (AnyStructure): pymatgen Structure object or ase.Atoms object.
         symprec (float): Initial symmetry precision for Moyopy. Defaults to 0.1.
         raise_errors (bool): Whether to raise ValueError for failing structures or
             return the error message as string instead of the prototype label. Defaults

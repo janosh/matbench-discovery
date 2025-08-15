@@ -10,7 +10,7 @@ import pandas as pd
 import plotly.express as px
 import pymatviz as pmv
 from pymatgen.core import Composition, Structure
-from pymatviz.enums import Key
+from pymatviz.enums import ElemCountMode, Key
 from pymatviz.utils import si_fmt_int
 
 from matbench_discovery import PDF_FIGS, ROOT, SITE_FIGS, STABILITY_THRESHOLD
@@ -33,15 +33,23 @@ df_mp = df_mp.set_index(Key.mat_id)
 
 
 # %%
-wbm_occu_counts = pmv.count_elements(df_wbm[Key.formula], count_mode="occurrence")
+wbm_occu_counts = pmv.count_elements(
+    df_wbm[Key.formula], count_mode=ElemCountMode.occurrence
+)
 wbm_occu_counts = wbm_occu_counts.dropna().astype(int)
-wbm_comp_counts = pmv.count_elements(df_wbm[Key.formula], count_mode="composition")
+wbm_comp_counts = pmv.count_elements(
+    df_wbm[Key.formula], count_mode=ElemCountMode.composition
+)
 wbm_comp_counts = wbm_comp_counts.dropna().astype(int)
 
-mp_occu_counts = pmv.count_elements(df_mp[Key.formula], count_mode="occurrence")
+mp_occu_counts = pmv.count_elements(
+    df_mp[Key.formula], count_mode=ElemCountMode.occurrence
+)
 mp_occu_counts = mp_occu_counts.dropna().astype(int)
 
-mp_comp_counts = pmv.count_elements(df_mp[Key.formula], count_mode="composition")
+mp_comp_counts = pmv.count_elements(
+    df_mp[Key.formula], count_mode=ElemCountMode.composition
+)
 mp_comp_counts = mp_comp_counts.dropna().astype(int)
 
 all_counts = (

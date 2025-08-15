@@ -160,7 +160,7 @@ class KappaSRMERunner:
                     )
                     optimizer.run(fmax=force_max, steps=max_steps)
 
-                    reached_max_steps = optimizer.step >= max_steps
+                    reached_max_steps = optimizer.nsteps >= max_steps
                     if reached_max_steps:
                         print(f"{mat_id=} reached {max_steps=} during relaxation")
 
