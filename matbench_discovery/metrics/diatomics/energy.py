@@ -40,13 +40,14 @@ def _validate_diatomic_curve(
         n_x_dup = int((np.diff(xs) == 0).sum())
         raise ValueError(f"xs contains {n_x_dup} duplicates")
 
-    sort_idx = np.argsort(xs)[::-1]
+    sort_idx = np.argsort(xs)  # ascending order
     xs = xs[sort_idx]
     ys = ys[sort_idx]
 
     # If these are energies (rank 1 array), normalize to zero at far field
     if normalize_energy and ys.ndim == 1:
-        ys = ys - ys[0]  # shift to zero at largest separation
+        # shift to zero at largest separation (last after ascending sort)
+        ys = ys - ys[-1]
 
     return xs, ys
 
@@ -131,7 +132,7 @@ def calc_curve_diff_auc(
             auc = auc / box_area
 
     # Ensure AUC is always positive
-    return float(abs(auc))
+    return float(np.abs(auc))
 
 
 def calc_energy_mae(

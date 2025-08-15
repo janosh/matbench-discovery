@@ -174,7 +174,8 @@ class RelaxJob(Checkpointable):
                 optim_inst.run(fmax=force_max, steps=max_steps)
 
                 energy = atoms.get_potential_energy()
-                structure = AseAtomsAdaptor.get_structure(atoms)
+                unwrapped = getattr(filtered_atoms, "atoms", atoms)
+                structure = AseAtomsAdaptor.get_structure(unwrapped)
 
                 self.relax_results[material_id] = {
                     "structure": structure,

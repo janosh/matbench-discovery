@@ -8,13 +8,12 @@ from collections.abc import Callable
 from copy import deepcopy
 from datetime import datetime
 from importlib.metadata import version
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import pandas as pd
 import torch
 from alphanet.config import All_Config
 from alphanet.infer.calc import AlphaNetCalculator
-from ase import Atoms
 from ase.constraints import FixSymmetry
 from ase.filters import FrechetCellFilter
 from ase.io import read
@@ -27,6 +26,9 @@ from tqdm import tqdm
 
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
+
+if TYPE_CHECKING:
+    from ase import Atoms
 
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 
@@ -78,7 +80,7 @@ timestamp = f"{datetime.now().astimezone():%Y-%m-%d %H:%M:%S}"
 struct_data_path = f"../data/part_{idx}.extxyz"
 print(f"\nJob {job_name} started {timestamp}")
 print(f"Read data from {struct_data_path}")
-atoms_list: list[Atoms] = list(read(struct_data_path, format="extxyz", index=":"))
+atoms_list = cast("list[Atoms]", read(struct_data_path, format="extxyz", index=":"))
 
 run_params = {
     "timestamp": timestamp,

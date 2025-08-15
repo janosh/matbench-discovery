@@ -330,10 +330,10 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         help="Force reupload of files even if they already exist with the same hash",
     )
     figshare_group.add_argument(
-        "--interactive",
+        "--no-interactive",
         action="store_true",
-        default=True,
-        help="Enable interactive prompts for file deletion",
+        default=False,
+        help="Disable interactive prompts for file deletion (files will be skipped)",
     )
 
     args, _unknown = cli_parser.parse_known_args(raw_args)
@@ -372,7 +372,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
                 dry_run=dry_run,
                 file_type=args.file_type,
                 force_reupload=args.force_reupload,
-                interactive=args.interactive,
+                interactive=not args.no_interactive,
             )
         except Exception as exc:  # prompt to delete article if something went wrong
             state = {

@@ -245,7 +245,7 @@ def test_files_enum_auto_download(
 
         def readline(self) -> str:
             """Mock readline method."""
-            return "y"  # Default to yes for testing
+            return "y\n"  # Default to yes for testing
 
     monkeypatch.setattr(requests, "get", lambda *_args, **_kwargs: MockResponse())
     monkeypatch.setattr(sys, "stdin", MockStdin())

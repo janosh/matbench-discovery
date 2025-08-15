@@ -149,8 +149,8 @@ def calc_conservation_deviation(
     """Calculate mean absolute deviation between forces and -dE/dr.
 
     Args:
-        seps (Sequence[float]): Interatomic distances in Å.
-        energies (Sequence[float]): Energies in eV.
+        seps (ArrayLike): Interatomic distances in Å.
+        energies (ArrayLike): Energies in eV.
         forces (np.ndarray): Forces acting on atoms at each separation of shape
             (n_distances, n_atoms, 3).
         interpolate (bool | int): If False (default), uses the provided points directly.
@@ -160,12 +160,12 @@ def calc_conservation_deviation(
     Returns:
         float: Mean absolute deviation between forces and -dE/dr.
     """
-    _sorted_seps, energies = _validate_diatomic_curve(seps, energies)
+    seps, energies = _validate_diatomic_curve(seps, energies, normalize_energy=False)
     seps, forces = _validate_diatomic_curve(seps, forces, normalize_energy=False)
 
     if interpolate:
         # Create grid for interpolation
-        n_points = 100 if interpolate is True else interpolate
+        n_points = 100 if interpolate is True else int(interpolate)
         seps_interp = np.linspace(seps.min(), seps.max(), n_points)
 
         # Interpolate energies

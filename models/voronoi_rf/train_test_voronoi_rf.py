@@ -146,7 +146,9 @@ table = wandb.Table(
     dataframe=df_wbm[[Key.formula, MbdKey.e_form_dft, pred_col]].reset_index()
 )
 
-df_wbm[pred_col].isna().sum()
+n_nans = df_wbm[pred_col].isna().sum()
+print(f"NaNs in predictions: {n_nans:,} / {len(df_wbm):,} = {n_nans / len(df_wbm):.2%}")
+
 MAE = (df_wbm[MbdKey.e_form_dft] - df_wbm[pred_col]).abs().mean()
 R2 = r2_score(*df_wbm[[MbdKey.e_form_dft, pred_col]].dropna().to_numpy().T)
 title = f"{model_name} {task_type} {MAE=:.3} {R2=:.3}"
