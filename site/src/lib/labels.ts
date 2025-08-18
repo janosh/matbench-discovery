@@ -334,21 +334,21 @@ export const GEO_OPT_SYMMETRY_METRICS = Object.fromEntries(
     .flatMap(
       (symprec) =>
         [
-          [`symmetry_match`, `Σ<sub>=</sub>`, `higher`, symprec],
-          [`symmetry_decrease`, `Σ<sub>↓</sub>`, `lower`, symprec],
-          [`symmetry_increase`, `Σ<sub>↑</sub>`, undefined, symprec],
+          [`symmetry_match`, `=`, `higher`, `identical symmetry as`, symprec],
+          [`symmetry_decrease`, `↓`, `lower`, `lower symmetry than`, symprec],
+          [`symmetry_increase`, `↑`, undefined, `higher symmetry than`, symprec],
         ] as const,
     )
-    .map(([key, label, better, symprec]) => [
+    .map(([key, symbol, better, desc, symprec]) => [
       `${key}_${symprec}`,
       {
         key,
         symprec,
         path: `metrics.geo_opt.symprec=${symprec}`,
-        short: `${label} ${format_power_ten(symprec)}`,
-        label: `${label} (symprec=${format_power_ten(symprec)})`,
+        short: `Σ<sub>${symbol}</sub> ${format_power_ten(symprec)}`,
+        label: `Σ<sub>${symbol}</sub> (symprec=${format_power_ten(symprec)})`,
         description:
-          `Fraction of structures where ML and DFT ground state have matching spacegroup at ${
+          `Fraction of structures where ML ground state has ${desc} DFT ground state at ${
             format_power_ten(symprec)
           } symprec`,
         better,
@@ -370,7 +370,7 @@ export const ALL_METRICS: AllMetrics = {
     short: `CPS`,
     label: `Combined Performance Score`,
     description:
-      `Combined Performance Score averages discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>) according to user-defined weights`,
+      `Combined Performance Score averages discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>) according to user-defined weights. Warning: This is not a stable metric. Further prediction tasks will be added to it in the future with the goal of making it a more holistic measure of overall model utility over time. When referring to it in papers, best include the benchmark version to avoid confusion (e.g. CPS-1 for the first version of CPS introduced in Matbench Discovery v1)`,
     range: [0, 1],
     better: `higher`,
     format: `.3f`,

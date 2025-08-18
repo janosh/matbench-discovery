@@ -84,21 +84,6 @@ training_set: [MPtrj]
 notes:
   description: Nequix is a simplified version of NequIP with added RMSnorm, implemented in JAX, and trained with Muon optimizer.
 
-metrics:
-  phonons:
-    kappa_103:
-      pred_file: models/nequix/nequix-mp-1/2025-08-17-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
-      pred_file_url: https://figshare.com/files/57245684
-  geo_opt:
-    pred_file: models/nequix/nequix-mp-1/2025-08-17-wbm-IS2RE-FIRE.jsonl.gz
-    pred_file_url: https://figshare.com/files/57245678
-    struct_col: nequix_structure
-  discovery:
-    pred_file: models/nequix/nequix-mp-1/2025-08-17-wbm-IS2RE.csv.gz
-    pred_file_url: https://figshare.com/files/57245675
-    pred_col: e_form_per_atom_nequix
-
-
 requirements:
   jax: 0.6.2
   e3nn-jax: 0.20.7
@@ -113,3 +98,93 @@ requirements:
   h5py: 3.14.0
   wandb-osh: 1.2.2
   cloudpickle: 3.1.1
+
+metrics:
+  phonons:
+    kappa_103:
+      pred_file: models/nequix/nequix-mp-1/2025-08-17-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/files/57262724
+      κ_SRME: 0.4461
+  geo_opt:
+    pred_file: models/nequix/nequix-mp-1/2025-08-17-wbm-IS2RE-FIRE.jsonl.gz
+    pred_file_url: https://figshare.com/files/57262715
+    struct_col: nequix_structure
+    symprec=1e-5:
+      rmsd: 0.0853 # unitless
+      n_sym_ops_mae: 2.0462 # unitless
+      symmetry_decrease: 0.0607 # fraction
+      symmetry_match: 0.6999 # fraction
+      symmetry_increase: 0.2335 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/nequix/nequix-mp-1/2025-08-17-wbm-IS2RE-FIRE-symprec=1e-5-moyo=0.4.4.csv.gz
+      analysis_file_url: https://figshare.com/files/57262718
+    symprec=1e-2:
+      rmsd: 0.0853 # unitless
+      n_sym_ops_mae: 1.7969 # unitless
+      symmetry_decrease: 0.0554 # fraction
+      symmetry_match: 0.8111 # fraction
+      symmetry_increase: 0.1261 # fraction
+      n_structures: 256963 # count
+      analysis_file: models/nequix/nequix-mp-1/2025-08-17-wbm-IS2RE-FIRE-symprec=1e-2-moyo=0.4.4.csv.gz
+      analysis_file_url: https://figshare.com/files/57262721
+  discovery:
+    pred_file: models/nequix/nequix-mp-1/2025-08-17-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/57262712
+    pred_col: e_form_per_atom_nequix
+    full_test_set:
+      F1: 0.744 # fraction
+      DAF: 3.95 # dimensionless
+      Precision: 0.678 # fraction
+      Recall: 0.825 # fraction
+      Accuracy: 0.903 # fraction
+      TPR: 0.825 # fraction
+      FPR: 0.081 # fraction
+      TNR: 0.919 # fraction
+      FNR: 0.175 # fraction
+      TP: 36363.0 # count
+      FP: 17282.0 # count
+      TN: 195589.0 # count
+      FN: 7729.0 # count
+      MAE: 0.042 # eV/atom
+      RMSE: 0.084 # eV/atom
+      R2: 0.78 # dimensionless
+      missing_preds: 2 # count
+      missing_percent: 0.00% # fraction
+    unique_prototypes:
+      F1: 0.751 # fraction
+      DAF: 4.455 # dimensionless
+      Precision: 0.681 # fraction
+      Recall: 0.836 # fraction
+      Accuracy: 0.914 # fraction
+      TPR: 0.836 # fraction
+      FPR: 0.072 # fraction
+      TNR: 0.928 # fraction
+      FNR: 0.164 # fraction
+      TP: 27898.0 # count
+      FP: 13064.0 # count
+      TN: 169050.0 # count
+      FN: 5476.0 # count
+      MAE: 0.044 # eV/atom
+      RMSE: 0.086 # eV/atom
+      R2: 0.782 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction
+    most_stable_10k:
+      F1: 0.953 # fraction
+      DAF: 5.949 # dimensionless
+      Precision: 0.91 # fraction
+      Recall: 1.0 # fraction
+      Accuracy: 0.91 # fraction
+      TPR: 1.0 # fraction
+      FPR: 1.0 # fraction
+      TNR: 0.0 # fraction
+      FNR: 0.0 # fraction
+      TP: 9095.0 # count
+      FP: 905.0 # count
+      TN: 0.0 # count
+      FN: 0.0 # count
+      MAE: 0.051 # eV/atom
+      RMSE: 0.117 # eV/atom
+      R2: 0.734 # dimensionless
+      missing_preds: 0 # count
+      missing_percent: 0.00% # fraction

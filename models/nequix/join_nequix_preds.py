@@ -61,12 +61,13 @@ cse: ComputedStructureEntry
 for row in tqdm(
     df_nequix.itertuples(), total=len(df_nequix), desc="ML energies to CSEs"
 ):
-    mat_id, struct_dict, energy, *_ = row
+    struct_dict = getattr(row, f"{pot_name}_structure")
+    energy = getattr(row, f"{pot_name}_energy")
     mlip_struct = Structure.from_dict(struct_dict)
-    cse = df_wbm_cse.loc[mat_id, Key.computed_structure_entry]
+    cse = df_wbm_cse.loc[row.Index, Key.computed_structure_entry]
     cse._energy = energy  # cse._energy is the uncorrected energy from MPtrj dataset (or vasp raw)  # noqa: E501, SLF001
     cse._structure = mlip_struct  # noqa: SLF001
-    df_nequix.loc[mat_id, Key.computed_structure_entry] = cse
+    df_nequix.loc[row.Index, Key.computed_structure_entry] = cse
 
 
 orig_len = len(df_nequix)
