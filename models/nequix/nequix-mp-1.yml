@@ -24,7 +24,7 @@ trained_by:
 
 repo: https://github.com/atomicarchitects/nequix
 url: https://github.com/atomicarchitects/nequix
-doi: null
+doi: https://teddykoker.com/docs/nequix.pdf # TODO
 paper: https://teddykoker.com/docs/nequix.pdf
 pr_url: https://github.com/janosh/matbench-discovery/pull/276
 checkpoint_url: https://figshare.com/files/57245573
