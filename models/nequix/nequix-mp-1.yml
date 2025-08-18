@@ -1,0 +1,113 @@
+model_name: Nequix MP
+model_key: nequix-mp-1
+model_version: '0.1.0'
+date_added: '2025-08-17'
+date_published: '2025-08-17'
+authors:
+  - name: Teddy Koker
+    affiliation: Massachusetts Institute of Technology
+    email: tekoker@mit.edu
+    url: https://teddykoker.com
+    orcid: https://orcid.org/0000-0001-8861-9788
+  - name: Tess Smidt
+    affiliation: Massachusetts Institute of Technology
+    email: tsmidt@mit.edu
+    url: https://blondegeek.github.io/
+    orcid: https://orcid.org/0000-0001-5581-5344
+
+trained_by:
+  - name: Teddy Koker
+    affiliation: Massachusetts Institute of Technology
+    email: tekoker@mit.edu
+    url: https://teddykoker.com
+    orcid: https://orcid.org/0000-0001-8861-9788
+
+repo: https://github.com/atomicarchitects/nequix
+url: https://github.com/atomicarchitects/nequix
+doi: null
+preprint: https://teddykoker.com/docs/nequix.pdf
+checkpoint_url: https://figshare.com/files/57245573
+
+openness: OSOD
+train_task: S2EFS
+test_task: IS2RE-SR
+targets: EFS_G
+model_type: UIP
+model_params: 707_658
+trained_for_benchmark: true
+n_estimators: 1
+
+license:
+  code: MIT
+  code_url: https://github.com/atomicarchitects/nequix/blob/main/LICENSE
+  checkpoint: CC-BY-4.0
+  checkpoint_url: https://creativecommons.org/licenses/by/4.0/
+
+hyperparams:
+  max_force: 0.02
+  max_steps: 500
+  ase_optimizer: FIRE
+  cell_filter: FrechetCellFilter
+  hidden_irreps: 128x0e+64x1o+32x2e+32x3o
+  cutoff: 6.0
+  lmax: 3
+  radial_basis_size: 8
+  radial_mlp_size: 64
+  radial_mlp_layers: 2
+  radial_polynomial_p: 6.0
+  layer_norm: true
+
+  optimizer: muon
+  weight_decay: 0.001
+  warmup_epochs: 0.1
+  warmup_factor: 0.2
+  grad_clip_norm: 100
+  batch_size: 256
+  n_epochs: 100
+  loss:
+    energy: mae
+    force: l2
+    stress: mae
+  loss_weights:
+    energy: 20.0
+    force: 20.0
+    stress: 5.0
+  ema_decay: 0.999
+
+training_cost:
+  Nvidia A100 GPUs: { amount: 4, hours: 125 }
+
+training_set: [MPtrj]
+
+notes:
+  description: Nequix is a simplified version of NequIP with added RMSnorm, implemented in JAX, and trained with Muon optimizer.
+  
+metrics:
+  phonons:
+    kappa_103:
+      pred_file: models/nequix/nequix-mp-1/2025-08-17-kappa-103-FIRE-dist=0.03-fmax=1e-4-symprec=1e-5.json.gz
+      pred_file_url: https://figshare.com/files/57245684
+  geo_opt:
+    pred_file: models/nequix/nequix-mp-1/2025-08-17-wbm-IS2RE-FIRE.jsonl.gz
+    pred_file_url: https://figshare.com/files/57245678
+    struct_col: nequix_structure
+  discovery:
+    pred_file: models/nequix/nequix-mp-1/2025-08-17-wbm-IS2RE.csv.gz
+    pred_file_url: https://figshare.com/files/57245675
+    pred_col: e_form_per_atom_nequix
+
+  
+requirements:
+  jax: 0.6.2
+  e3nn-jax: 0.20.7
+  jraph: 0.0.6.dev0
+  equinox: 0.11.11
+  optax: 0.2.5
+  ase: 3.24.0
+  tqdm: 4.67.1
+  wadnb: 0.19.11
+  pyyaml: 6.0.2
+  matscipy: 1.1.1
+  h5py: 3.14.0
+  wandb-osh: 1.2.2
+  cloudpickle: 3.1.1
