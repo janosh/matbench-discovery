@@ -25,7 +25,8 @@ trained_by:
 repo: https://github.com/atomicarchitects/nequix
 url: https://github.com/atomicarchitects/nequix
 doi: null
-preprint: https://teddykoker.com/docs/nequix.pdf
+paper: https://teddykoker.com/docs/nequix.pdf
+pr_url: https://github.com/janosh/matbench-discovery/pull/276
 checkpoint_url: https://figshare.com/files/57245573
 
 openness: OSOD
@@ -49,7 +50,8 @@ hyperparams:
   ase_optimizer: FIRE
   cell_filter: FrechetCellFilter
   hidden_irreps: 128x0e+64x1o+32x2e+32x3o
-  cutoff: 6.0
+  graph_construction_radius: 6.0
+  max_neighbors: .inf
   lmax: 3
   radial_basis_size: 8
   radial_mlp_size: 64
