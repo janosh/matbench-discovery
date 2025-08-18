@@ -81,7 +81,7 @@ training_set: [MPtrj]
 
 notes:
   description: Nequix is a simplified version of NequIP with added RMSnorm, implemented in JAX, and trained with Muon optimizer.
-  
+
 metrics:
   phonons:
     kappa_103:
@@ -96,7 +96,7 @@ metrics:
     pred_file_url: https://figshare.com/files/57245675
     pred_col: e_form_per_atom_nequix
 
-  
+
 requirements:
   jax: 0.6.2
   e3nn-jax: 0.20.7
