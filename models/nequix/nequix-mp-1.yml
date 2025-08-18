@@ -107,7 +107,7 @@ requirements:
   optax: 0.2.5
   ase: 3.24.0
   tqdm: 4.67.1
-  wadnb: 0.19.11
+  wandb: 0.19.11
   pyyaml: 6.0.2
   matscipy: 1.1.1
   h5py: 3.14.0
