@@ -15,13 +15,12 @@
       <Icon icon={logo.id.replace(`icon:`, ``) as IconName} />
     </span>
   {:else if logo.src}
-    {@const style = `margin: 0; height: 1em; ${rest.style ?? ``}`}
     <img
       src={logo.src}
       alt="{logo.name} logo"
       title={logo.name}
       {...rest}
-      {style}
+      style={`margin: 0; height: 1em; ${rest.style ?? ``}`}
     />
   {/if}
 {/each}

@@ -332,12 +332,11 @@ export const DATASET_METADATA_COLS: DatasetMetadataLabels = {
 export const GEO_OPT_SYMMETRY_METRICS = Object.fromEntries(
   [`1e-2`, `1e-5`]
     .flatMap(
-      (symprec) =>
-        [
-          [`symmetry_match`, `=`, `higher`, `identical symmetry as`, symprec],
-          [`symmetry_decrease`, `↓`, `lower`, `lower symmetry than`, symprec],
-          [`symmetry_increase`, `↑`, undefined, `higher symmetry than`, symprec],
-        ] as const,
+      (symprec) => [
+        [`symmetry_match`, `=`, `higher`, `identical symmetry as`, symprec] as const,
+        [`symmetry_decrease`, `↓`, `lower`, `lower symmetry than`, symprec] as const,
+        [`symmetry_increase`, `↑`, null, `higher symmetry than`, symprec] as const,
+      ],
     )
     .map(([key, symbol, better, desc, symprec]) => [
       `${key}_${symprec}`,
