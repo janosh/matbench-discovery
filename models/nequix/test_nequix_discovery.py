@@ -28,7 +28,7 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery import WBM_DIR, timestamp
+from matbench_discovery import WBM_DIR
 from matbench_discovery.data import as_dict_handler, ase_atoms_from_zip
 from matbench_discovery.enums import DataFiles, Task
 

@@ -17,7 +17,6 @@
 
 # modified from eqnorm script
 
-from pathlib import Path
 import json
 import os
 import traceback
@@ -34,9 +33,9 @@ from ase.filters import FrechetCellFilter
 from ase.io import read
 from ase.optimize import BFGS, FIRE, LBFGS
 from ase.optimize.optimize import Optimizer
-from nequix.calculator import NequixCalculator
 from moyopy import MoyoDataset
 from moyopy.interface import MoyoAdapter
+from nequix.calculator import NequixCalculator
 from pymatviz.enums import Key
 from tqdm import tqdm
 
