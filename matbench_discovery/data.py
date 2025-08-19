@@ -30,13 +30,17 @@ from pymatviz.enums import Key
 from ruamel.yaml import YAML
 from tqdm import tqdm
 
-from matbench_discovery import TEST_FILES
+from matbench_discovery import DATA_DIR, TEST_FILES
 from matbench_discovery.enums import DataFiles, MbdKey, Model, TestSubset
 
 round_trip_yaml = YAML()  # round-trippable YAML for updating model metadata files
 round_trip_yaml.preserve_quotes = True
 round_trip_yaml.width = 1000  # avoid changing line wrapping
 round_trip_yaml.indent(mapping=2, sequence=4, offset=2)
+
+
+with open(f"{DATA_DIR}/datasets.yml") as file:
+    DATASETS = yaml.safe_load(stream=file)
 
 
 def as_dict_handler(obj: Any) -> dict[str, Any] | None:

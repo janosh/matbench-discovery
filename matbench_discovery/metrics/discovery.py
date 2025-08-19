@@ -183,7 +183,6 @@ def write_metrics_to_yaml(
     # calculate number of missing predictions
     n_missing = int(df_model_preds.isna().sum())
     metrics[str(MbdKey.missing_preds)] = n_missing
-    metrics[str(MbdKey.missing_percent)] = f"{n_missing / len(df_model_preds):.2%}"
 
     # Define metric units for end-of-line comments
     metric_units = {
@@ -199,7 +198,6 @@ def write_metrics_to_yaml(
         "FPR": "fraction",
         "TNR": "fraction",
         "FNR": "fraction",
-        str(MbdKey.missing_percent): "fraction",
         str(MbdKey.missing_preds): "count",
         "TP": "count",
         "FP": "count",
@@ -237,9 +235,7 @@ df_metrics_uniq_protos = (
     .sort_values(by=Key.f1.upper(), ascending=False)
     .T
 )
-df_metrics_uniq_protos = df_metrics_uniq_protos.drop(
-    index=[MbdKey.missing_preds, MbdKey.missing_percent]
-)
+df_metrics_uniq_protos = df_metrics_uniq_protos.drop(index=[MbdKey.missing_preds])
 
 for df, title in (
     (df_metrics, "Metrics for Full Test Set"),

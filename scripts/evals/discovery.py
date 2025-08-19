@@ -19,8 +19,8 @@ from pymatviz.enums import Key, eV_per_atom
 from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
 
-from matbench_discovery import DATA_DIR, PKG_DIR
-from matbench_discovery.data import df_wbm
+from matbench_discovery import PKG_DIR
+from matbench_discovery.data import DATASETS, df_wbm
 from matbench_discovery.enums import DataFiles, MbdKey, Model, Open, Targets, TestSubset
 from matbench_discovery.metrics import discovery
 
@@ -73,9 +73,6 @@ model_name_col = "Model"
 non_compliant_models = [
     model.label for model in Model if model.is_complete and not model.is_compliant
 ]
-
-with open(f"{DATA_DIR}/datasets.yml") as file:
-    DATASETS = yaml.safe_load(file)
 
 # Add model metadata to df_metrics(_10k|_uniq_protos)
 models = discovery.df_metrics_uniq_protos.columns

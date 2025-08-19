@@ -83,7 +83,6 @@ class MbdKey(LabelEnum):
 
     # keep in sync with model-schema.yml
     missing_preds = "missing_preds", "Missing predictions"
-    missing_percent = "missing_percent", "Missing predictions (percent)"
 
     aflow_prototype = "aflow_prototype", "Aflow prototype"
     canonical_proto = "canonical_proto", "Canonical prototype"

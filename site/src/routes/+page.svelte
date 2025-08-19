@@ -1,6 +1,13 @@
 <script lang="ts">
   import type { DiscoverySet, ModelData } from '$lib'
-  import { DynamicScatter, Icon, MetricsTable, RadarChart, SelectToggle } from '$lib'
+  import {
+    DATASETS,
+    DynamicScatter,
+    Icon,
+    MetricsTable,
+    RadarChart,
+    SelectToggle,
+  } from '$lib'
   import { CPS_CONFIG } from '$lib/combined_perf_score.svelte'
   import { ALL_METRICS, DISCOVERY_SET_LABELS, METADATA_COLS } from '$lib/labels'
   import { model_is_compliant, MODELS } from '$lib/models.svelte'
@@ -18,7 +25,7 @@
   import type { Snapshot } from './$types'
 
   let n_wbm_stable_uniq_protos = 32_942
-  let n_wbm_uniq_protos = 215_488
+  let n_wbm_uniq_protos = DATASETS.WBM.n_materials
 
   let table = $state({
     show_non_compliant: true,
