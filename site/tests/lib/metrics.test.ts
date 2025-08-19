@@ -737,7 +737,6 @@ describe(`METADATA_COLS`, () => {
       `Checkpoint License`,
       `Code License`,
       `Missing Predictions`,
-      `Missing %`,
       `Run Time`,
       `Org`,
     ]
@@ -771,7 +770,7 @@ describe(`Model Sorting Logic`, () => {
         model_key: `aaa_model`,
         metrics: {
           discovery: {
-            unique_prototypes: { F1: 0.9, Accuracy: 0.85 },
+            unique_prototypes: { F1: 0.9, Accuracy: 0.85, missing_preds: 0 },
             pred_col: `is_stable`,
           },
           phonons: { kappa_103: { κ_SRME: 0.9 } },
@@ -782,7 +781,7 @@ describe(`Model Sorting Logic`, () => {
         model_key: `mmm_model`,
         metrics: {
           discovery: {
-            unique_prototypes: { F1: 0.7, Accuracy: NaN }, // Test NaN handling
+            unique_prototypes: { F1: 0.7, Accuracy: NaN, missing_preds: 0 }, // Test NaN handling
             pred_col: `is_stable`,
           },
           phonons: { kappa_103: { κ_SRME: 0.5 } },
@@ -793,7 +792,7 @@ describe(`Model Sorting Logic`, () => {
         model_key: `zzz_model`,
         metrics: {
           discovery: {
-            unique_prototypes: { F1: 0.5, Accuracy: 0.6 },
+            unique_prototypes: { F1: 0.5, Accuracy: 0.6, missing_preds: 0 },
             pred_col: `is_stable`,
           },
           phonons: { kappa_103: { κ_SRME: 0.2 } },

@@ -9,7 +9,7 @@ ML-relaxed structures, and symmetry analysis files.
 import os
 import tomllib
 from collections.abc import Sequence
-from typing import Any, Final, Literal
+from typing import Any, Literal
 
 import yaml
 from tqdm import tqdm
@@ -21,10 +21,10 @@ from matbench_discovery.data import round_trip_yaml
 from matbench_discovery.enums import Model
 
 with open(f"{PKG_DIR}/modeling-tasks.yml", encoding="utf-8") as file:
-    MODELING_TASKS: Final = yaml.safe_load(file)
-    # remove 'cps' task as it's a dynamic metric with changing weights
-    # no point in uploading to figshare
-    MODELING_TASKS.pop("cps", None)
+    MODELING_TASKS = yaml.safe_load(file)
+# remove 'cps' task as it's a dynamic metric with changing weights
+# no point in uploading to figshare
+MODELING_TASKS.pop("cps", None)
 
 with open(f"{ROOT}/pyproject.toml", mode="rb") as toml_file:
     pyproject = tomllib.load(toml_file)["project"]
@@ -175,7 +175,7 @@ def update_one_modeling_task_article(
                 )
                 continue
 
-            filename = file_path.removeprefix(f"{ROOT}/")
+            filename = file_path.removeprefix(f"{ROOT}{os.sep}")
 
             # First check if the exact same file already exists
             if not force_reupload and not dry_run:
@@ -217,6 +217,8 @@ def update_one_modeling_task_article(
                                 article_id, similar_id
                             ):
                                 deleted_files[similar_name] = similar_id
+                                # keep local view in sync to classify uploads correctly
+                                existing_files.pop(similar_name, None)
                                 print(f"Deleted similar file: {similar_name}")
                 else:
                     print("Skipping deletion of similar files (non-interactive mode)")
@@ -377,7 +379,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         except Exception as exc:  # prompt to delete article if something went wrong
             state = {
                 key: locals().get(key)
-                for key in ("task", "model_name", "models_to_update", "tasks_to_update")
+                for key in ("task", "models_to_update", "tasks_to_update")
             }
             exc.add_note(f"Upload failed with {state=}")
             raise

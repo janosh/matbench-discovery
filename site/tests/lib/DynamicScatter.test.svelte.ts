@@ -4,6 +4,8 @@ import { mount } from 'svelte'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { doc_query } from '../index'
 
+const pane_selector = `[aria-label="Draggable pane"]`
+
 const mock_models: ModelData[] = [
   {
     model_name: `Test Model 1`,
@@ -167,7 +169,7 @@ describe(`DynamicScatter.svelte`, () => {
 
       // 2. Show controls via button click
       await settings_button?.click()
-      extra_controls = document.body.querySelector(`[aria-label="Draggable pane"]`)
+      extra_controls = document.body.querySelector(pane_selector)
       expect(extra_controls).toBeDefined()
 
       // 3. Hide controls via Escape key
@@ -175,7 +177,7 @@ describe(`DynamicScatter.svelte`, () => {
         new KeyboardEvent(`keydown`, { key: `Escape`, bubbles: true }),
       )
       await vi.waitFor(() => {
-        extra_controls = document.body.querySelector(`[aria-label="Draggable pane"]`)
+        extra_controls = document.body.querySelector(pane_selector)
         // The panel should be hidden but still in DOM
         const css_display = (extra_controls as HTMLElement)?.style.display
         expect([`none`, ``].includes(css_display)).toBe(true)
@@ -183,7 +185,7 @@ describe(`DynamicScatter.svelte`, () => {
 
       // 4. Re-show controls via button click
       await settings_button?.click()
-      extra_controls = document.body.querySelector(`[aria-label="Draggable pane"]`)
+      extra_controls = document.body.querySelector(pane_selector)
       expect(extra_controls).toBeDefined()
     })
 
@@ -201,17 +203,17 @@ describe(`DynamicScatter.svelte`, () => {
       const settings_button = document.body.querySelector<HTMLButtonElement>(
         `.settings-toggle`,
       )
-      let extra_controls = document.body.querySelector(`[aria-label="Draggable pane"]`)
+      let extra_controls = document.body.querySelector(pane_selector)
 
       // 1. Show controls
       await settings_button?.click()
-      extra_controls = document.body.querySelector(`[aria-label="Draggable pane"]`)
+      extra_controls = document.body.querySelector(pane_selector)
       expect(extra_controls).toBeDefined()
 
       // 2. Click the explicit outside element
       await outside_element.click() // Simulate click outside
       await vi.waitFor(() => {
-        extra_controls = document.body.querySelector(`[aria-label="Draggable pane"]`)
+        extra_controls = document.body.querySelector(pane_selector)
         // The panel should be hidden but still in DOM
         const css_display = (extra_controls as HTMLElement)?.style.display
         expect([`none`, ``].includes(css_display)).toBe(true)
@@ -232,7 +234,7 @@ describe(`DynamicScatter.svelte`, () => {
       )
       await settings_button?.click() // Show controls
 
-      const extra_controls = doc_query(`[aria-label="Draggable pane"]`)
+      const extra_controls = doc_query(pane_selector)
       expect(extra_controls, `Extra controls panel should exist`).toBeDefined()
 
       // --- Find Controls ---

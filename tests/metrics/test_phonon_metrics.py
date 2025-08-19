@@ -515,9 +515,14 @@ def test_write_metrics_to_yaml(
             actual_kappa_103 = actual_yaml["metrics"]["phonons"]["kappa_103"]
 
             # Check new metrics were added
-            for key, expected_value in expected_metrics.items():
-                assert actual_kappa_103[key] == pytest.approx(expected_value, rel=1e-4)
+            for key, expected_val in expected_metrics.items():
+                if isinstance(expected_val, float):
+                    assert actual_kappa_103[key] == pytest.approx(
+                        expected_val, rel=1e-4
+                    )
+                else:
+                    assert actual_kappa_103[key] == expected_val
 
             # Check existing fields were preserved
-            for key, expected_value in expected_preserved.items():
-                assert actual_kappa_103[key] == expected_value
+            for key, expected_val in expected_preserved.items():
+                assert actual_kappa_103[key] == expected_val
