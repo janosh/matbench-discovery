@@ -8,7 +8,6 @@ the site.
 
 # %%
 import itertools
-import sys
 from datetime import date
 
 import numpy as np
@@ -20,6 +19,7 @@ from pymatviz.utils import si_fmt
 from sklearn.dummy import DummyClassifier
 
 from matbench_discovery import PKG_DIR
+from matbench_discovery.cli import cli_args
 from matbench_discovery.data import DATASETS, df_wbm
 from matbench_discovery.enums import DataFiles, MbdKey, Model, Open, Targets, TestSubset
 from matbench_discovery.metrics import discovery
@@ -34,28 +34,33 @@ if __name__ == "__main__":
 
     uniq_protos_idx = df_wbm.query(MbdKey.uniq_proto).index
 
-    models_to_write = [
-        Model[model] for model in sys.argv[1:] if hasattr(Model, model)
-    ] or Model
+    models_to_write = cli_args.models or list(Model)
+
     for model in models_to_write:
-        model_preds = preds.df_preds[model.label]
-        for test_subset, (metrics, subset_idx) in {
-            TestSubset.full_test_set: (
-                preds.df_metrics[model.label].to_dict(),
-                slice(None),
-            ),
-            TestSubset.uniq_protos: (
-                preds.df_metrics_uniq_protos[model.label].to_dict(),
-                uniq_protos_idx,
-            ),
-            TestSubset.most_stable_10k: (
-                preds.df_metrics_10k[model.label].to_dict(),
-                model_preds.loc[uniq_protos_idx].nsmallest(10_000).index,
-            ),
-        }.items():
-            discovery.write_metrics_to_yaml(
-                model, metrics, model_preds.loc[subset_idx], test_subset
-            )
+        try:
+            print(f"\nProcessing {model.label}...")
+            model_preds = preds.df_preds[model.label]
+            for test_subset, (metrics, subset_idx) in {
+                TestSubset.full_test_set: (
+                    preds.df_metrics[model.label].to_dict(),
+                    slice(None),
+                ),
+                TestSubset.uniq_protos: (
+                    preds.df_metrics_uniq_protos[model.label].to_dict(),
+                    uniq_protos_idx,
+                ),
+                TestSubset.most_stable_10k: (
+                    preds.df_metrics_10k[model.label].to_dict(),
+                    model_preds.loc[uniq_protos_idx].nsmallest(10_000).index,
+                ),
+            }.items():
+                discovery.write_metrics_to_yaml(
+                    model, metrics, model_preds.loc[subset_idx], test_subset
+                )
+            print(f"\t✓ Updated discovery metrics for {test_subset}")
+        except Exception as exc:
+            print(f"\t✗ Error processing {model.label}: {exc}")
+            continue
 
     if not pmv.IS_IPYTHON:
         raise SystemExit(0)
@@ -262,7 +267,7 @@ for df_in, df_out, col in (
 
 
 # %%
-with open(f"{PKG_DIR}/modeling-tasks.yml") as file:
+with open(f"{PKG_DIR}/modeling-tasks.yml", encoding="utf-8") as file:
     discovery_metrics = yaml.safe_load(file)["discovery"]["metrics"]
 
 R2_col = "R<sup>2</sup>"

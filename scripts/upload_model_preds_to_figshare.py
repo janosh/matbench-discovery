@@ -20,7 +20,7 @@ from matbench_discovery.cli import cli_parser
 from matbench_discovery.data import round_trip_yaml
 from matbench_discovery.enums import Model
 
-with open(f"{PKG_DIR}/modeling-tasks.yml") as file:
+with open(f"{PKG_DIR}/modeling-tasks.yml", encoding="utf-8") as file:
     MODELING_TASKS: Final = yaml.safe_load(file)
     # remove 'cps' task as it's a dynamic metric with changing weights
     # no point in uploading to figshare

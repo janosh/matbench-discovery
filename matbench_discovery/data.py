@@ -39,7 +39,7 @@ round_trip_yaml.width = 1000  # avoid changing line wrapping
 round_trip_yaml.indent(mapping=2, sequence=4, offset=2)
 
 
-with open(f"{DATA_DIR}/datasets.yml") as file:
+with open(f"{DATA_DIR}/datasets.yml", encoding="utf-8") as file:
     DATASETS = yaml.safe_load(stream=file)
 
 
@@ -96,7 +96,7 @@ def glob_to_df(
             # .set_index( "material_id" )
             # make sure pred_cols for all models are present in df_mock
             for model in Model:
-                with open(model.yaml_path) as file:
+                with open(model.yaml_path, encoding="utf-8") as file:
                     model_data = yaml.safe_load(file)
 
                 pred_col = (
@@ -270,7 +270,7 @@ def load_df_wbm_with_preds(
 
             df_preds = glob_to_df(model.discovery_path, pbar=False, **kwargs)
 
-            with open(model.yaml_path) as file:
+            with open(model.yaml_path, encoding="utf-8") as file:
                 model_data = yaml.safe_load(file)
 
             pred_col = (
@@ -339,7 +339,7 @@ def update_yaml_file(
     if not re.match(r"^[a-zA-Z0-9-+=_]+(\.[a-zA-Z0-9-+=_]+)*$", dotted_path):
         raise ValueError(f"Invalid {dotted_path=}")
 
-    with open(file_path) as file:
+    with open(file_path, encoding="utf-8") as file:
         yaml_data = round_trip_yaml.load(file)
 
     # Navigate to the correct nested level
@@ -360,7 +360,7 @@ def update_yaml_file(
     current[last] = data
 
     # Write back to file
-    with open(file_path, mode="w") as file:
+    with open(file_path, mode="w", encoding="utf-8") as file:
         round_trip_yaml.dump(yaml_data, file)
 
     return yaml_data
