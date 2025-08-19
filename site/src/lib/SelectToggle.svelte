@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Icon } from '$lib'
-  import { Tooltip } from 'svelte-zoo'
+  import { tooltip as tooltip_attachment } from 'svelte-multiselect/attachments'
 
   interface OptionInfo {
     value: string
@@ -16,24 +16,24 @@
 </script>
 
 <div class="selection-toggle">
-  {#each options as { value, label: option_label, tooltip, link } (value)}
-    <Tooltip text={tooltip} tip_style="z-index: 2; font-size: 0.8em;">
-      <button class:active={selected === value} onclick={() => (selected = value)}>
-        {@html option_label}
-        {#if link}
-          <a
-            href={link}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Info"
-            style="line-height: 1"
-            onclick={(event) => event.stopPropagation()}
-          >
-            <Icon icon="Info" />
-          </a>
-        {/if}
-      </button>
-    </Tooltip>
+  {#each options as { value, label, tooltip, link } (value)}
+    <button class:active={selected === value} onclick={() => (selected = value)}>
+      {@html label}
+      {#if link}
+        <a
+          href={link}
+          target="_blank"
+          rel="noopener noreferrer"
+          onclick={(event) => event.stopPropagation()}
+          {@attach tooltip_attachment({ content: tooltip })}
+        >
+          <Icon
+            icon="Info"
+            style="transform: scale(1.2) translateY(-1px)"
+          />
+        </a>
+      {/if}
+    </button>
   {/each}
 </div>
 
@@ -41,22 +41,18 @@
   .selection-toggle {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
-    gap: 5pt;
-    margin-bottom: 5pt;
+    place-content: center;
+    gap: 8pt;
   }
-
   .selection-toggle button {
     padding: 4px 8px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     background: transparent;
     cursor: pointer;
   }
-
   .selection-toggle button:hover {
     background: rgba(255, 255, 255, 0.05);
   }
-
   .selection-toggle button.active {
     background: rgba(255, 255, 255, 0.1);
   }

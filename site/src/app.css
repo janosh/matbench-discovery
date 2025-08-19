@@ -6,9 +6,9 @@
   --dark-bg: #0d1a1d;
   --light-bg: #08303b;
 
-  --zoo-github-corner-color: var(--night);
-  --zoo-github-corner-bg: white;
-  --zoo-tooltip-bg: rgb(2, 17, 30);
+  --github-corner-color: var(--night);
+  --github-corner-bg: white;
+  --tooltip-bg: rgb(23, 47, 69);
 
   --sms-margin: 1em auto;
   --sms-options-bg: var(--light-bg);
@@ -23,6 +23,11 @@
 
   --compliant-color: #4caf50;
   --non-compliant-color: #4682b4;
+  --panel-bg: var(--light-bg);
+}
+/* TODO remove this with next matterviz release */
+button.panel-toggle {
+  font-size: 12pt !important;
 }
 html {
   scroll-behavior: smooth;
@@ -35,11 +40,9 @@ body {
   margin: 0;
   scrollbar-width: none; /* hide scroll bars on non-scrollable like MetricsTable in MS Edge */
   /* fix confirmed with https://live.browserstack.com/dashboard#os=Windows&os_version=11&browser=Edge&browser_version=135.0 */
-}
-body > div {
   display: flex;
-  min-height: 100vh;
   flex-direction: column;
+  min-height: 100vh;
 }
 main {
   padding: var(--main-padding);
@@ -180,13 +183,6 @@ strong a[aria-hidden='true'] {
   left: 0;
 }
 
-aside.toc.desktop {
-  position: fixed;
-  top: 3em;
-  left: calc(50vw + var(--main-max-width) / 2 + 200px);
-  max-width: 16em;
-}
-
 caption {
   display: block;
 }
@@ -242,7 +238,7 @@ kbd {
 }
 
 /* Helper class to make elements stretch full width but cap content at 1400px and center it */
-.full-bleed-1400 {
+.bleed-1400 {
   --margin: 50px;
   position: relative;
   width: 100vw;

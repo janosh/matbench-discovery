@@ -262,14 +262,14 @@ class Files(StrEnum, metaclass=MetaFiles):
 
 # ruff: noqa: E501, ERA001 (ignore long lines in class Model)
 class Model(Files, base_dir=f"{ROOT}/models"):
-    """Data files provided by Matbench Discovery.
-    See https://janosh.github.io/matbench-discovery/contribute for data descriptions.
+    """Enum of file paths to model YAML files. These files are the single source of truth (SSoT) for model metrics and
+    metadata such as hyperparameters, package versions, code and paper links, submission times, etc.
     """
 
     alchembert = auto(), "alchembert/alchembert.yml"
 
     # AlphaNet: https://arxiv.org/abs/2501.07155
-    alphanet_oma = auto(), "alphanet/alphanet-oma.yml"
+    alphanet_v1_oma = auto(), "alphanet/alphanet-v1-oma.yml"
     # alignn with global pooling: https://arxiv.org/abs/2106.01829
     alignn = auto(), "alignn/alignn.yml"
 
@@ -359,6 +359,9 @@ class Model(Files, base_dir=f"{ROOT}/models"):
 
     # ESNet model
     esnet = auto(), "esnet/esnet.yml"
+
+    # Nequix model
+    nequix_mp_1 = auto(), "nequix/nequix-mp-1.yml"
 
     # --- Model Combos
     # # CHGNet-relaxed structures fed into MEGNet for formation energy prediction

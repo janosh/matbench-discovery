@@ -3,10 +3,11 @@
 # %%
 import os
 from datetime import datetime
-from typing import Any, Literal
+from typing import Final, Literal
 
 import numpy as np
 import pandas as pd
+from numpy.typing import NDArray
 from pymatgen.core import Composition
 from pymatviz.enums import Key
 from tqdm import tqdm
@@ -22,7 +23,7 @@ __date__ = "2023-03-28"
 data_name = "mp"  # which data to project
 projection_type: Literal["tsne", "umap"] = "tsne"  # which projection method to use
 out_dim = 2  # number of dimensions to project to
-one_hot_dim = 112  # number of elements to use for one-hot encoding
+one_hot_dim: Final[int] = 112  # number of elements to use for one-hot encoding
 job_name = f"{data_name}-{projection_type}-{out_dim}d"
 
 out_dir = f"{DATA_DIR}/{data_name}/{projection_type}"
@@ -57,14 +58,20 @@ def metric(
     """
     x_comp, x_err = np.split(x, [split_dim])
     y_comp, y_err = np.split(y, [split_dim])
-    return np.linalg.norm(x_comp - y_comp) + err_weight * np.linalg.norm(x_err - y_err)
+    return float(
+        np.linalg.norm(x_comp - y_comp) + err_weight * np.linalg.norm(x_err - y_err)
+    )
 
 
 if projection_type == "tsne":
     from sklearn.manifold import TSNE
 
     projector = TSNE(
-        n_components=out_dim, random_state=0, n_iter=250, n_iter_without_progress=50
+        n_components=out_dim,
+        random_state=0,
+        metric=metric,
+        max_iter=250,
+        n_iter_without_progress=50,
     )
     out_cols = [f"{out_dim}d t-SNE {idx + 1}" for idx in range(out_dim)]
 elif projection_type == "umap":
@@ -74,12 +81,13 @@ elif projection_type == "umap":
     projector = UMAP(n_components=out_dim, random_state=0, metric=metric)
     out_cols = [f"{out_dim}d UMAP {idx + 1}" for idx in range(out_dim)]
 
-identity = np.eye(one_hot_dim)
 
-
-def sum_one_hot_elem(formula: str) -> np.ndarray[Any, np.int64]:
-    """Return sum of one-hot encoded elements in weighted by amount in composition."""
-    return sum(identity[el.Z - 1] * amt for el, amt in Composition(formula).items())
+def sum_one_hot_elem(formula: str) -> NDArray[np.float64]:
+    """Return sum of one-hot encoded elements weighted by amount in composition."""
+    out = np.zeros(one_hot_dim, dtype=float)
+    for el, amt in Composition(formula).items():
+        out[el.Z - 1] += amt
+    return out
 
 
 one_hot_encoding = np.array(

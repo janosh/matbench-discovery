@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
 
 # %% editable config
 model_name = "alphanet"
-model_variant = "alphanet-mptrj-v1"
+model_variant = "alphanet-v1-mptrj"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 dtype = "float64"
 config = All_Config().from_json("./mp/mp.json")

@@ -3,7 +3,7 @@
   import { AuthorBrief, DATASETS, Icon } from '$lib'
   import pkg from '$site/package.json'
   import { format_num } from 'matterviz'
-  import { Tooltip } from 'svelte-zoo'
+  import { tooltip } from 'svelte-multiselect/attachments'
   import { fade, slide } from 'svelte/transition'
 
   interface Props {
@@ -25,9 +25,7 @@
     ...rest
   }: Props = $props()
 
-  let { model_name, model_key, model_params, training_set, n_estimators } = $derived(
-    model,
-  )
+  let { model_name, model_key, model_params, training_set } = $derived(model)
   let all_metrics = $derived({
     ...(typeof model.metrics?.discovery === `object`
       ? model.metrics.discovery.unique_prototypes
@@ -52,7 +50,7 @@
   let n_model_params = $derived(format_num(model_params, `.3~s`))
 </script>
 
-<h2 id={model_key} style={title_style}>
+<h2 style={title_style}>
   <a href="/models/{model_key}">{model_name}</a>
   <button
     onclick={() => (show_details = !show_details)}
@@ -89,9 +87,11 @@
         ? format_num(n_materials)
         : n_materials}
         {@const n_mat_str = n_materials ? ` from ${pretty_n_mat} materials` : ``}
-        <Tooltip text="{name}: {format_num(n_structures)} structures{n_mat_str}">
-          <a href="/data/{slug}">{train_set_key}</a>
-        </Tooltip>
+        <a
+          href="/data/{slug}"
+          title="{name}: {format_num(n_structures)} structures{n_mat_str}"
+          {@attach tooltip()}
+        >{train_set_key}</a>
       {/each}
     </span>
   {/if}
@@ -108,15 +108,16 @@
   <span>
     <Icon icon="NeuralNetwork" /> {n_model_params} params
   </span>
-  {#if n_estimators > 1}
+  {#if model.n_estimators > 1}
     <span>
       <Icon icon="Forest" />
-      Ensemble of {n_estimators}
-      <Tooltip
-        text="This result used a model ensemble with {n_estimators} members with {n_model_params} parameters each."
+      Ensemble of {model.n_estimators}
+      <span
+        title="This result used a model ensemble with {model.n_estimators} members with {n_model_params} parameters each."
+        {@attach tooltip()}
       >
         &nbsp;<Icon icon="Info" />
-      </Tooltip>
+      </span>
     </span>
   {/if}
   <span>

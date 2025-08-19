@@ -14,7 +14,7 @@
   import Readme from '$root/readme.md'
   import KappaNote from '$routes/tasks/phonons/kappa-note.md'
   import { format_num } from 'matterviz'
-  import { titles_as_tooltips } from 'svelte-zoo'
+  import { tooltip } from 'svelte-multiselect/attachments'
   import type { Snapshot } from './$types'
 
   let n_wbm_stable_uniq_protos = 32_942
@@ -140,7 +140,7 @@
       class="download-btn"
       title="Be notified of new model submissions through an RSS reader"
       style="color: var(--text-color)"
-      use:titles_as_tooltips
+      {@attach tooltip()}
     >
       <Icon icon="RSS" /> RSS
     </a>

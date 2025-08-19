@@ -5,7 +5,7 @@ import MODELINGS_TASKS from '$pkg/modeling-tasks.yml'
 import { max, min } from 'd3-array'
 import { scaleLog, scaleSequential } from 'd3-scale'
 import * as d3sc from 'd3-scale-chromatic'
-import { choose_bw_for_contrast, format_num } from 'matterviz/labels'
+import { format_num, pick_color_for_contrast } from 'matterviz'
 import {
   ALL_METRICS,
   GEO_OPT_SYMMETRY_METRICS,
@@ -203,7 +203,7 @@ export function calc_cell_color(
 
     const normalized_val = color_scale_fn(val)
     const bg = interpolator(normalized_val)
-    const text = choose_bw_for_contrast(null, bg)
+    const text = pick_color_for_contrast(null, bg)
 
     return { bg, text }
   } else {
@@ -211,7 +211,7 @@ export function calc_cell_color(
     color_scale_fn = scaleSequential().domain(range).interpolator(interpolator)
 
     const bg = color_scale_fn(val)
-    const text = choose_bw_for_contrast(null, bg)
+    const text = pick_color_for_contrast(null, bg)
 
     return { bg, text }
   }

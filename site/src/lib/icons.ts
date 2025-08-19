@@ -136,12 +136,12 @@ export const icon_data = {
     path:
       `M10 7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2zM7 7v10M4 8v8`,
   },
-  Forest: {
+  Forest: { // material-symbols:forest
     viewBox: `0 0 24 24`,
     width: `24`,
     height: `24`,
     path:
-      `M12 2L7 10h10L12 2zM17 10l-3 4h6l-3-4zM7 10l-3 4h6l-3-4zM12 14v8M17 14v8M7 14v8`,
+      `M13 22v-3h4v3zm-6 0v-4H0l3.85-6H2L9 2l7 10h-1.85l3.875 6H11v4zm12.25-4L16 13h1.925l-5.3-7.575L15 2l7 10h-1.85L24 18z`,
   },
   MissingMetadata: {
     viewBox: `0 0 24 24`,

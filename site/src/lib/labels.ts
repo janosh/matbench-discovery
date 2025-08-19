@@ -20,12 +20,6 @@ export const format_power_ten = (text: string): string => {
     .replace(`1×10`, `10`)
 }
 
-export const sub_sup_to_tspan = (text: string): string => {
-  return text
-    .replaceAll(`<sup>`, `<tspan baseline-shift='0.4em' font-size='0.8em'>`)
-    .replaceAll(`</sup>`, `</tspan>`)
-}
-
 export const DISCOVERY_METRICS: DiscoveryMetricsLabels = {
   Accuracy: {
     key: `Accuracy`,
@@ -338,26 +332,22 @@ export const DATASET_METADATA_COLS: DatasetMetadataLabels = {
 export const GEO_OPT_SYMMETRY_METRICS = Object.fromEntries(
   [`1e-2`, `1e-5`]
     .flatMap(
-      (symprec) =>
-        [
-          [`symmetry_match`, `Σ<sub>=</sub>`, `higher`, symprec],
-          [`symmetry_decrease`, `Σ<sub>↓</sub>`, `lower`, symprec],
-          [`symmetry_increase`, `Σ<sub>↑</sub>`, undefined, symprec],
-        ] as const,
+      (symprec) => [
+        [`symmetry_match`, `=`, `higher`, `identical symmetry as`, symprec] as const,
+        [`symmetry_decrease`, `↓`, `lower`, `lower symmetry than`, symprec] as const,
+        [`symmetry_increase`, `↑`, null, `higher symmetry than`, symprec] as const,
+      ],
     )
-    .map(([key, label, better, symprec]) => [
+    .map(([key, symbol, better, desc, symprec]) => [
       `${key}_${symprec}`,
       {
         key,
         symprec,
         path: `metrics.geo_opt.symprec=${symprec}`,
-        short: `${label} ${format_power_ten(symprec)}`,
-        label: `${label} (symprec=${format_power_ten(symprec)})`,
-        svg_label: `${label} (symprec=${sub_sup_to_tspan(format_power_ten(symprec))})`
-          .replace(`Σ<sub>`, `Σ<tspan baseline-shift='-0.4em' font-size='0.8em'>`)
-          .replace(`</sub>`, `</tspan>`),
+        short: `Σ<sub>${symbol}</sub> ${format_power_ten(symprec)}`,
+        label: `Σ<sub>${symbol}</sub> (symprec=${format_power_ten(symprec)})`,
         description:
-          `Fraction of structures where ML and DFT ground state have matching spacegroup at ${
+          `Fraction of structures where ML ground state has ${desc} DFT ground state at ${
             format_power_ten(symprec)
           } symprec`,
         better,
@@ -379,7 +369,7 @@ export const ALL_METRICS: AllMetrics = {
     short: `CPS`,
     label: `Combined Performance Score`,
     description:
-      `Combined Performance Score averages discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>) according to user-defined weights`,
+      `Combined Performance Score averages discovery (F1), structure optimization (RMSD), and phonon performance (κ<sub>SRME</sub>) according to user-defined weights. Warning: This is not a stable metric. Further prediction tasks will be added to it in the future with the goal of making it a more holistic measure of overall model utility over time. When referring to it in papers, best include the benchmark version to avoid confusion (e.g. CPS-1 for the first version of CPS introduced in Matbench Discovery v1)`,
     range: [0, 1],
     better: `higher`,
     format: `.3f`,
@@ -389,7 +379,6 @@ export const ALL_METRICS: AllMetrics = {
   κ_SRME: {
     key: `κ_SRME`,
     label: `κ<sub>SRME</sub>`,
-    svg_label: `κ<tspan baseline-shift='-0.4em' font-size='0.8em'>SRME</tspan>`,
     description:
       `Symmetric relative mean error in predicted phonon mode contributions to thermal conductivity κ`,
     path: `metrics.phonons.kappa_103`,
@@ -497,6 +486,7 @@ export const org_logos = {
   'Northwestern University': `/logos/northwestern-university.svg`,
   'Orbital Materials': `/logos/orbital-materials.svg`,
   'Seoul National University': `/logos/seoul-national-university.svg`,
+  'Texas A&M University': `/logos/texas-a&m.svg`,
   'Tsinghua University': `/logos/tsinghua-university.svg`,
   'UC San Diego': `/logos/uc-san-diego.svg`,
   'UC Berkeley': `/logos/uc-berkeley.svg`,

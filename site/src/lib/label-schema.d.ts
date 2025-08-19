@@ -120,10 +120,6 @@ export interface Label1 {
    */
   symprec?: string
   /**
-   * SVG label for the metric
-   */
-  svg_label?: string
-  /**
    * Scale type for the metric
    */
   scale_type?: `log` | `linear`

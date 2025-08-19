@@ -6,6 +6,7 @@ import crystal_toolkit.components as ctc
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+import pymatviz as pmv
 from chgnet.model import StructOptimizer as ChgnetRelaxer
 from chgnet.model.dynamics import TrajectoryObserver
 from crystal_toolkit.settings import SETTINGS
@@ -13,7 +14,6 @@ from dash import Dash, dcc, html
 from dash.dependencies import Input, Output
 from m3gnet.models import Relaxer as M3gnetRelaxer
 from pymatgen.core import Lattice, Structure
-from pymatviz import IS_IPYTHON
 from pymatviz.enums import Key
 
 from matbench_discovery.data import df_wbm
@@ -50,7 +50,7 @@ m3gnet_traj = M3gnetRelaxer().relax(init_struct)["trajectory"]
 # %%
 e_col = "Energy (eV)"
 force_col = "Force (meV/Å)"
-vol_col = "Volume (Å<sup>3</sup)"
+vol_col = "Volume (Å<sup>3</sup>)"
 df_chgnet, df_m3gnet = pd.DataFrame(), pd.DataFrame()
 
 for df, traj in ((df_chgnet, chgnet_traj), (df_m3gnet, m3gnet_traj)):
@@ -122,7 +122,7 @@ def plot_energy_and_forces(
     return fig
 
 
-app = Dash(prevent_initial_callbacks=True, assets_folder=SETTINGS.ASSETS_PATH)
+app = Dash(prevent_initial_callbacks=True, assets_folder=str(SETTINGS.ASSETS_PATH))
 
 app_div = html.Div(
     [
@@ -158,14 +158,14 @@ for name, df, traj in (
         style={"maxWidth": "50%"},
     )
 
-    app_div.children += (
+    app_div.children = (app_div.children or []) + [
         html.H2(name, style=dict(margin="2em 0 1em", fontSize="1.5em")),
         slider,
         html.Div(
             [struct_layouts[name], graph],
             style=dict(display="flex", gap="2em", placeContent="center"),
         ),
-    )
+    ]
 
     def update_factory(
         trajectory: TrajectoryObserver,
@@ -218,4 +218,4 @@ for name, df, traj in (
 
 app.layout = app_div
 ctc.register_crystal_toolkit(app=app, layout=app.layout)
-app.run(use_reloader=not IS_IPYTHON)
+app.run(use_reloader=not pmv.IS_IPYTHON)

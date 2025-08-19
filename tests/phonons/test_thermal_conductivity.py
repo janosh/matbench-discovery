@@ -53,7 +53,8 @@ def test_init_phono3py(test_atoms: Atoms) -> None:
         q_point_mesh=q_point_mesh,
     )
     assert isinstance(ph3, Phono3py)
-    assert list(ph3.mesh_numbers) == [2, 2, 2]
+    assert ph3.mesh_numbers is not None
+    assert ph3.mesh_numbers.tolist() == [2, 2, 2]
     assert ph3.supercell_matrix.tolist() == np.eye(3).tolist()
     # Check that both supercells were created correctly
     assert np.allclose(ph3.phonon_supercell_matrix, fc2_supercell)
@@ -81,7 +82,8 @@ def test_init_phono3py_custom_mesh_and_displacement(test_atoms: Atoms) -> None:
         fc3_supercell=fc3_supercell,
         q_point_mesh=custom_mesh,
     )
-    assert tuple(ph3.mesh_numbers) == custom_mesh
+    assert ph3.mesh_numbers is not None
+    assert tuple(ph3.mesh_numbers.tolist()) == custom_mesh
     # Phono3py automatically initializes mesh when setting mesh_numbers
     assert len(ph3.grid.addresses) == 89
 
@@ -226,32 +228,55 @@ class MockCalculator(Calculator):
         return self.forces
 
 
-def test_calculate_fc2_set_forces() -> None:
-    """Test that calculate_fc2_set correctly handles force calculations."""
-    # Create a simple cubic structure using PhonopyAtoms
-    atoms = PhonopyAtoms(
-        symbols=["Si"] * 2,
+def make_si2_phonopy_atoms() -> PhonopyAtoms:
+    """Create a minimal Si2 diamond-like cell as PhonopyAtoms."""
+    return PhonopyAtoms(
+        symbols=["Si", "Si"],
         scaled_positions=[[0, 0, 0], [0.25, 0.25, 0.25]],
         cell=[[1, 0, 0], [0, 1, 0], [0, 1, 1]],
     )
 
-    # Initialize Phono3py object with the test structure
-    ph3 = Phono3py(atoms, supercell_matrix=[[1, 0, 0], [0, 1, 0], [0, 0, 1]])
 
-    # Generate the displacements and create dataset
-    ph3.generate_displacements(distance=0.03)
-    ph3.generate_fc2_displacements()
+def build_ph3_with_fc2(
+    atoms: PhonopyAtoms,
+    fc2_matrix: np.ndarray,
+    *,
+    fc3_matrix: np.ndarray | None = None,
+    distance: float = 0.02,
+) -> Phono3py:
+    """Construct Phono3py with a given phonon supercell and make fc2 displacements."""
+    ph3_local = Phono3py(
+        atoms,
+        supercell_matrix=fc3_matrix if fc3_matrix is not None else np.eye(3, dtype=int),
+        phonon_supercell_matrix=fc2_matrix,
+    )
+    ph3_local.generate_displacements(distance=distance)
+    ph3_local.generate_fc2_displacements()
+    return ph3_local
+
+
+def test_calculate_fc2_set_forces() -> None:
+    """Test that calculate_fc2_set correctly handles force calculations."""
+    atoms = make_si2_phonopy_atoms()
+
+    # Initialize Phono3py object with the test structure
+    ph3 = build_ph3_with_fc2(atoms, np.eye(3, dtype=int), distance=0.03)
 
     # Create mock forces that would be physically reasonable
     # Forces sum to zero (Newton's 3rd law)
     mock_forces = np.hstack((0.1 * np.eye(3), -0.1 * np.eye(3)))
 
     # Test with mock calculator that returns our predefined forces
-    calc = MockCalculator(mock_forces[0])  # Start with first set of forces
+    # Provide forces in shape (n_atoms, 3)
+    calc = MockCalculator(mock_forces[0].reshape(2, 3))
     force_set = calculate_fc2_set(ph3, calc, pbar_kwargs={"disable": True})
 
     # Test shape of returned force set
-    expected_shape = (len(ph3.phonon_supercells_with_displacements), 6)
+    expected_shape = (
+        len(ph3.phonon_supercells_with_displacements),
+        len(ph3.phonon_supercell),
+        3,
+    )
     assert force_set.shape == expected_shape, f"{force_set.shape=} != {expected_shape=}"
 
     # Test that forces sum to zero for each displacement (conservation of momentum)
@@ -273,23 +298,65 @@ def test_calculate_fc2_set_forces() -> None:
 
 def test_calculate_fc2_set_null_supercell() -> None:
     """Test that calculate_fc2_set handles null supercells correctly."""
-    atoms = PhonopyAtoms(
-        symbols=["Si"] * 2,
-        scaled_positions=[[0, 0, 0], [0.25, 0.25, 0.25]],
-        cell=[[1, 0, 0], [0, 1, 0], [0, 1, 1]],
-    )
-    ph3 = Phono3py(atoms, supercell_matrix=np.eye(3))
-
-    # Generate displacements and create dataset
-    ph3.generate_displacements(distance=0.03)
-    ph3.generate_fc2_displacements()
+    atoms = make_si2_phonopy_atoms()
+    ph3 = build_ph3_with_fc2(atoms, np.eye(3, dtype=int), distance=0.03)
 
     calc = MockCalculator(np.zeros((2, 3)))
     force_set = calculate_fc2_set(ph3, calc, pbar_kwargs={"disable": True})
 
     # Test that zeros are used for null supercell case
-    np.testing.assert_allclose(force_set, np.zeros((2, len(ph3.phonon_supercell), 3)))
+    all_zeros = np.zeros(
+        (len(ph3.phonon_supercells_with_displacements), len(ph3.phonon_supercell), 3)
+    )
+    np.testing.assert_allclose(force_set, all_zeros)
 
     # Verify shape is correct even with null supercell
-    expected_shape = (2, len(ph3.phonon_supercell), 3)
+    expected_shape = (
+        len(ph3.phonon_supercells_with_displacements),
+        len(ph3.phonon_supercell),
+        3,
+    )
     assert force_set.shape == expected_shape, f"{force_set.shape=} != {expected_shape=}"
+
+
+@pytest.mark.parametrize(
+    "fc2_matrix, expected_det",
+    [
+        (np.eye(3, dtype=int), 1),
+        (2 * np.eye(3, dtype=int), 8),
+        (np.array([[1, 1, 0], [0, 1, 0], [0, 0, 1]], dtype=int), 1),
+        (np.array([[2, 1, 0], [0, 1, 0], [0, 0, 1]], dtype=int), 2),
+    ],
+)
+def test_calculate_fc2_set_with_various_supercells(
+    fc2_matrix: np.ndarray, expected_det: int
+) -> None:
+    """Check fc2 forces shape across varied phonon supercells."""
+    atoms = make_si2_phonopy_atoms()
+    ph3 = build_ph3_with_fc2(atoms, fc2_matrix)
+
+    # Calculator returns zeros with correct per-supercell shape
+    calc = MockCalculator(np.zeros((len(ph3.phonon_supercell), 3)))
+    force_set = calculate_fc2_set(ph3, calc, pbar_kwargs={"disable": True})
+
+    # Expected atoms in phonon supercell is natoms * det(fc2_matrix)
+    natoms = len(atoms)
+    assert len(ph3.phonon_supercell) == natoms * expected_det
+
+    expected_shape = (
+        len(ph3.phonon_supercells_with_displacements),
+        len(ph3.phonon_supercell),
+        3,
+    )
+    assert force_set.shape == expected_shape
+
+
+def test_calculate_fc2_set_requires_phonon_supercell() -> None:
+    """Calling fc2 forces without phonon supercell must raise."""
+    atoms = make_si2_phonopy_atoms()
+    ph3 = Phono3py(atoms, supercell_matrix=np.eye(3, dtype=int))
+    ph3.generate_displacements(distance=0.02)
+    ph3.generate_fc2_displacements()
+    calc = MockCalculator(np.zeros((len(ph3.supercell), 3)))
+    with pytest.raises(RuntimeError):
+        _ = calculate_fc2_set(ph3, calc, pbar_kwargs={"disable": True})

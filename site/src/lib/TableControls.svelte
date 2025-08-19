@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Icon, TableColumnToggleMenu } from '$lib'
-  import { Tooltip } from 'svelte-zoo'
+  import { tooltip } from 'svelte-multiselect/attachments'
   import type { Label } from './types'
 
   // Props for this component
@@ -71,21 +71,21 @@
       style="background-color: var(--non-compliant-color)"
     ></span>
     Non-compliant models
-    <Tooltip>
+    <span
+      {@attach tooltip({
+        content: `
+      Models can be non-compliant for multiple reasons:<br />
+      - closed source (model implementation and/or train/test code)<br />
+      - closed weights<br />
+      - trained on more than the permissible training set (<a
+        href="https://docs.materialsproject.org/changes/database-versions#v2022.10.28"
+      >MP v2022.10.28 release</a>)<br />
+      We still show these models behind a toggle as we expect them<br />
+      to nonetheless provide helpful signals for developing future models.`,
+      })}
+    >
       <Icon icon="Info" />
-      {#snippet tip()}
-        <span>
-          Models can be non-compliant for multiple reasons:<br />
-          - closed source (model implementation and/or train/test code)<br />
-          - closed weights<br />
-          - trained on more than the permissible training set (<a
-            href="https://docs.materialsproject.org/changes/database-versions#v2022.10.28"
-          >MP v2022.10.28 release</a>)<br />
-          We still show these models behind a toggle as we expect them<br />
-          to nonetheless provide helpful signals for developing future models.
-        </span>
-      {/snippet}
-    </Tooltip>
+    </span>
   </label>
   <label>
     <input
@@ -94,9 +94,12 @@
       onchange={handle_energy_only_change}
     />
     <span>Energy-only models</span>
-    <Tooltip text="Include models that only predict energy (no forces or stress)">
+    <span
+      title="Include models that only predict energy (no forces or stress)"
+      {@attach tooltip()}
+    >
       <Icon icon="Info" />
-    </Tooltip>
+    </span>
   </label>
 
   <label>
@@ -122,6 +125,7 @@
   }
   label.legend-item {
     display: flex;
+    align-items: center;
     gap: 0.3em;
   }
   span.color-swatch {

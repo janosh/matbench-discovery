@@ -2,8 +2,8 @@
   import { Icon } from '$lib'
   import type { CpsConfig } from '$lib/combined_perf_score.svelte'
   import { ALL_METRICS } from '$lib/labels'
-  import type { Point } from 'matterviz'
-  import { Tooltip } from 'svelte-zoo'
+  import { format_num, type Point } from 'matterviz'
+  import { tooltip } from 'svelte-multiselect/attachments'
   import { CPS_CONFIG, DEFAULT_CPS_CONFIG } from './combined_perf_score.svelte'
   import { MODELS, update_models_cps } from './models.svelte'
 
@@ -251,14 +251,9 @@
 </script>
 
 <div class="radar-chart">
-  <span class="metric-name">
-    {ALL_METRICS.CPS.short}
-    <Tooltip tip_style="z-index: 20; font-size: 0.8em;">
-      <Icon icon="Info" />
-      {#snippet tip()}
-        {@html ALL_METRICS.CPS.description}
-      {/snippet}
-    </Tooltip>
+  <span class="metric-name" title={ALL_METRICS.CPS.description} {@attach tooltip()}>
+    {ALL_METRICS.CPS.key}
+    <Icon icon="Info" />
   </span>
 
   <button class="reset-button" onclick={reset_weights} title="Reset to default weights">
@@ -284,8 +279,6 @@
       {@const label_radius = idx === 2 ? radius * 1.0 : radius * 0.9}
       {@const label_x = center.x + Math.cos(angle) * label_radius}
       {@const label_y = center.y + Math.sin(angle) * label_radius}
-      {@const spacing = idx === 1 ? `1.5em` : `1.2em`}
-
       <line
         x1={center.x}
         y1={center.y}
@@ -296,19 +289,15 @@
       />
 
       <!-- Axis labels -->
-      <text
+      <foreignObject
         x={label_x}
         y={label_y}
-        text-anchor="middle"
-        dominant-baseline="middle"
-        font-size="14"
-        fill={colors[idx]}
+        style="font-size: 14px; transform: translate(-1ex, -1em); overflow: visible; white-space: nowrap"
+        style:color={colors[idx]}
       >
-        {@html weight.svg_label ?? weight.short ?? weight.label}
-        <tspan dy={spacing} x={label_x} font-size="12" font-weight="bold">
-          {((weight.weight as number) * 100).toFixed(0)}%
-        </tspan>
-      </text>
+        {@html weight.short ?? weight.label}
+        <small>{format_num(weight.weight, `.0%`)}</small>
+      </foreignObject>
     {/each}
 
     <!-- Triangle area -->
@@ -368,7 +357,7 @@
 
 <style>
   .radar-chart {
-    padding: 1em 1em 0 0;
+    padding: 1em 3ex 0 0;
     margin: 0;
     position: relative;
     background: var(--light-bg);
@@ -377,6 +366,7 @@
   svg {
     touch-action: none; /* Prevents default touch behaviors */
     cursor: pointer; /* Show pointer cursor to hint clickability */
+    overflow: visible;
   }
   span.metric-name {
     position: absolute;

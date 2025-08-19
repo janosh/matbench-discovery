@@ -18,8 +18,8 @@ __date__ = "2023-02-01"
 
 
 def classify_stable(
-    e_above_hull_true: pd.Series,
-    e_above_hull_pred: pd.Series,
+    e_above_hull_true: Sequence[float],
+    e_above_hull_pred: Sequence[float],
     *,
     stability_threshold: float | None = 0,
     fillna: bool = True,
@@ -29,8 +29,9 @@ def classify_stable(
     (but shouldn't really matter as long as they're consistent).
 
     Args:
-        e_above_hull_true (pd.Series): Ground truth energy above convex hull values.
-        e_above_hull_pred (pd.Series): Model predicted energy above convex hull values.
+        e_above_hull_true (Sequence[float]): Ground truth energy above hull
+            values.
+        e_above_hull_pred (Sequence[float]): Model-predicted energy above hull values.
         stability_threshold (float | None, optional): Maximum energy above convex hull
             for a material to still be considered stable. Usually 0, 0.05 or 0.1.
             Defaults to 0, meaning a material has to be directly on the hull to be
@@ -47,11 +48,13 @@ def classify_stable(
     Raises:
         ValueError: If sum of positive + negative preds doesn't add up to the total.
     """
-    actual_pos = e_above_hull_true <= (stability_threshold or 0)  # guard against None
-    actual_neg = e_above_hull_true > (stability_threshold or 0)
+    each_true, each_pred = pd.Series(e_above_hull_true), pd.Series(e_above_hull_pred)
 
-    model_pos = e_above_hull_pred <= (stability_threshold or 0)
-    model_neg = e_above_hull_pred > (stability_threshold or 0)
+    actual_pos = each_true <= (stability_threshold or 0)  # guard against None
+    actual_neg = each_true > (stability_threshold or 0)
+
+    model_pos = each_pred <= (stability_threshold or 0)
+    model_neg = each_pred > (stability_threshold or 0)
 
     if fillna:
         nan_mask = np.isnan(e_above_hull_pred)
@@ -137,8 +140,13 @@ def stable_metrics(
     is_nan = np.isnan(each_true) | np.isnan(each_pred)
     each_true, each_pred = np.array(each_true)[~is_nan], np.array(each_pred)[~is_nan]
 
+    if precision + recall == 0:  # Calculate F1 score, handling division by zero
+        f1_score = float("nan")
+    else:
+        f1_score = 2 * (precision * recall) / (precision + recall)
+
     return dict(
-        F1=2 * (precision * recall) / (precision + recall),
+        F1=f1_score,
         DAF=precision / prevalence,
         Precision=precision,
         Recall=recall,

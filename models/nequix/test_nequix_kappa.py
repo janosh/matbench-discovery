@@ -1,25 +1,22 @@
 # /// script
+# requires-python = ">=3.11"
 # dependencies = [
-#   "torch>=2.1.2",
-#   "torch-geometric>=2.6.1",
-#   "numpy>=1.26.4",
-#   "ase>=3.25.0",
-#   "braceexpand>=0.1.7",
-#   "e3nn>=0.5.6",
-#   "pymatviz>=0.16.0",
-#   "pyyaml>=6.0.1",
-#   "torch-scatter>=2.1.2",
-#   "scikit-learn>=1.7.0",
-#   "pymatgen>=2025.6.14",
-#   "wandb>=0.20.1",
-#   "torch-ema>=0.3",
-#   "hienet>=1.0.1",
-#   "matbench-discovery>=1.3.1",
-#   "phono3py>=3.17.0"
+#     "ase",
+#     "matbench-discovery",
+#     "nequix",
+#     "pandas",
+#     "phono3py",
+#     "pymatgen",
+#     "pymatviz",
 # ]
+#
+# [tool.uv.sources]
+# nequix = { git = "https://github.com/atomicarchitects/nequix" }
+# matbench-discovery = { path = "../../", editable = true }
 # ///
 
-import argparse
+# modified from eqnorm script
+
 import json
 import os
 import traceback
@@ -28,86 +25,53 @@ from collections.abc import Callable
 from copy import deepcopy
 from datetime import datetime
 from importlib.metadata import version
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import Any
 
 import pandas as pd
-import torch
 from ase.constraints import FixSymmetry
 from ase.filters import FrechetCellFilter
 from ase.io import read
-from ase.optimize import FIRE, LBFGS
+from ase.optimize import BFGS, FIRE, LBFGS
 from ase.optimize.optimize import Optimizer
-from hienet.hienet_calculator import HIENetCalculator
 from moyopy import MoyoDataset
 from moyopy.interface import MoyoAdapter
+from nequix.calculator import NequixCalculator
 from pymatviz.enums import Key
 from tqdm import tqdm
 
-from matbench_discovery import today
 from matbench_discovery.enums import DataFiles
 from matbench_discovery.phonons import check_imaginary_freqs
 from matbench_discovery.phonons import thermal_conductivity as ltc
 
-if TYPE_CHECKING:
-    from ase import Atoms
+model_name = "nequix"
+ase_optimizer = "FIRE"
+calc = NequixCalculator("nequix-mp-1")
 
-parser = argparse.ArgumentParser(description="Thermal conductivity calculation script")
-parser.add_argument("--gpu", type=str, default="0", help="GPU ID to use")
-parser.add_argument("--left", type=int, default=0, help="Start index for atoms list")
-parser.add_argument("--right", type=int, default=None, help="End index for atoms list")
-args = parser.parse_args()
-
-
-warnings.filterwarnings("ignore", category=DeprecationWarning, module="spglib")
-
-# EDITABLE CONFIG
-model_name = "HIENet-V3.pth"
-
-os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
-device = "cuda" if torch.cuda.is_available() else "cpu"
-model = f"./{model_name}"
-calc = HIENetCalculator(model=model, device="cuda")
-
-# Relaxation parameters
-ase_optimizer: Literal["FIRE", "LBFGS", "BFGS"] = "FIRE"
-max_steps = 300
-force_max = 1e-4  # Run until the forces are smaller than this in eV/A
-
-# Symmetry parameters
-# symmetry precision for enforcing relaxation and conductivity calculation
+max_steps = 500
+force_max = 0.02
 symprec = 1e-5
-# Enforce symmetry with during relaxation if broken
 enforce_relax_symm = True
-# Conductivity to be calculated if symmetry group changed during relaxation
 conductivity_broken_symm = False
 prog_bar = True
-save_forces = False  # Save force sets to file
+save_forces = True  # Save force sets to file
 temperatures = [300]  # Temperatures to calculate conductivity at in Kelvin
-displacement_distance = 0.01  # Displacement distance for phono3py
+displacement_distance = 0.03  # Displacement distance for phono3py
+
 task_type = "LTC"  # lattice thermal conductivity
 job_name = (
     f"{model_name}-phononDB-{task_type}-{ase_optimizer}_force{force_max}_sym{symprec}"
 )
-module_dir = os.path.dirname(__file__)
-out_dir = "./results"
+out_dir = "./kappa_results/"
 os.makedirs(out_dir, exist_ok=True)
-out_path = (
-    f"{out_dir}/{today}-HIENet-XL-kappa-103-{ase_optimizer}-dist={displacement_distance}-"
-    f"fmax={force_max}-{symprec=}-gpu{args.gpu}-{args.left}-{args.right}.json.gz"
-)
+out_path = f"{out_dir}/conductivity.json.gz"
 
 timestamp = f"{datetime.now().astimezone():%Y-%m-%d %H:%M:%S}"
-print(f"\nJob {job_name} started {timestamp}")
-atoms_list = cast(
-    "list[Atoms]", read(DataFiles.phonondb_pbe_103_structures.path, index=":")
-)
-atoms_list = atoms_list[args.left : args.right]  # Use the specified range
+atoms_list = read(DataFiles.phonondb_pbe_103_structures.path, index=":")
 
 run_params = {
     "timestamp": timestamp,
     "model_name": model_name,
-    "device": device,
-    "versions": {dep: version(dep) for dep in ("numpy", "torch", "matbench_discovery")},
+    "versions": {dep: version(dep) for dep in ("numpy", "jax")},
     "ase_optimizer": ase_optimizer,
     "cell_filter": "FrechetCellFilter",
     "max_steps": max_steps,
@@ -120,27 +84,27 @@ run_params = {
     "task_type": task_type,
     "job_name": job_name,
     "n_structures": len(atoms_list),
-    "gpu": args.gpu,
-    "left_index": args.left,
-    "right_index": args.right,
 }
 
-with open(
-    f"{out_dir}/run_params-gpu{args.gpu}-{args.left}-{args.right}.json", mode="w"
-) as file:
+
+with open(f"{out_dir}/run_params.json", mode="w") as file:
     json.dump(run_params, file, indent=4)
 
 # Set up the relaxation and force set calculation
-optim_cls: Callable[..., Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS}[ase_optimizer]
+optim_cls: Callable[..., Optimizer] = {"FIRE": FIRE, "LBFGS": LBFGS, "BFGS": BFGS}[
+    ase_optimizer
+]
 force_results: dict[str, dict[str, Any]] = {}
 kappa_results: dict[str, dict[str, Any]] = {}
 tqdm_bar = tqdm(atoms_list, desc="Conductivity calculation: ", disable=not prog_bar)
 
 for atoms in tqdm_bar:
-    mat_id = atoms.info[Key.mat_id]
+    mat_id = atoms.info.get(Key.mat_id, f"id-{len(kappa_results)}")
     init_info = deepcopy(atoms.info)
-    formula = atoms.get_chemical_formula()
+    formula = atoms.info.get("name", "unknown")
+
     spg_num = MoyoDataset(MoyoAdapter.from_atoms(atoms)).number
+
     info_dict = {
         Key.desc: mat_id,
         Key.formula: formula,
@@ -163,19 +127,16 @@ for atoms in tqdm_bar:
         if max_steps > 0:
             if enforce_relax_symm:
                 atoms.set_constraint(FixSymmetry(atoms))
-                # Use standard mask for no-tilt constraint
-                filtered_atoms = FrechetCellFilter(atoms, mask=[True] * 3 + [False] * 3)
-            else:
-                filtered_atoms = FrechetCellFilter(atoms)
+            # Use standard mask for no-tilt constraint
+            filtered_atoms = FrechetCellFilter(atoms, mask=[True] * 3 + [False] * 3)
 
             optimizer = optim_cls(
-                filtered_atoms, logfile=f"{out_dir}/relax_{mat_id}_gpu{args.gpu}.log"
+                filtered_atoms, logfile=f"{out_dir}/relax_{mat_id}.log"
             )
             optimizer.run(fmax=force_max, steps=max_steps)
-
             reached_max_steps = optimizer.nsteps >= max_steps
             if reached_max_steps:
-                print(f"{mat_id=} reached {max_steps=} during relaxation")
+                print(f"Material {mat_id=} reached {max_steps=} during relaxation.")
 
             max_stress = atoms.get_stress().reshape((2, 3), order="C").max(axis=1)
             atoms.calc = None
@@ -205,18 +166,16 @@ for atoms in tqdm_bar:
         # Initialize phono3py with the relaxed structure
         ph3 = ltc.init_phono3py(
             atoms,
-            fc2_supercell=atoms.info["fc2_supercell"],
-            fc3_supercell=atoms.info["fc3_supercell"],
-            q_point_mesh=atoms.info["q_point_mesh"],
+            fc2_supercell=atoms.info.get("fc2_supercell", [2, 2, 2]),
+            fc3_supercell=atoms.info.get("fc3_supercell", [2, 2, 2]),
+            q_point_mesh=atoms.info.get("q_point_mesh", [10, 10, 10]),
             displacement_distance=displacement_distance,
             symprec=symprec,
         )
 
         # Calculate force constants and frequencies
         ph3, fc2_set, freqs = ltc.get_fc2_and_freqs(
-            ph3,
-            calculator=calc,
-            pbar_kwargs={"leave": False, "disable": not prog_bar},
+            ph3, calculator=calc, pbar_kwargs={"leave": False, "disable": not prog_bar}
         )
 
         # Check for imaginary frequencies
@@ -261,9 +220,7 @@ for atoms in tqdm_bar:
         continue
 
     try:  # Calculate thermal conductivity
-        ph3, kappa_dict, _cond = ltc.calculate_conductivity(
-            ph3, temperatures=temperatures
-        )
+        ph3, kappa_dict, _ = ltc.calculate_conductivity(ph3, temperatures=temperatures)
         print(f"Calculated kappa for {mat_id}: {kappa_dict}")
     except Exception as exc:
         warnings.warn(
@@ -281,12 +238,9 @@ for atoms in tqdm_bar:
 df_kappa = pd.DataFrame(kappa_results).T
 df_kappa.index.name = Key.mat_id
 df_kappa.reset_index().to_json(out_path)
-print(f"Saved kappa results to {out_path}")
 
 if save_forces:
-    eval_range = f"{args.left}-{args.right}"
-    force_out_path = f"{out_dir}/{today}-kappa-103-force-sets-{eval_range}.json.gz"
+    force_out_path = f"{out_dir}/force_sets.json.gz"
     df_force = pd.DataFrame(force_results).T
     df_force.index.name = Key.mat_id
     df_force.reset_index().to_json(force_out_path)
-    print(f"Saved force results to {force_out_path}")
