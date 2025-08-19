@@ -340,7 +340,7 @@ def smoothness_test_data() -> dict[str, EnergyCurve]:
 def test_smoothness_exact_values(
     metric_func: Callable[[np.ndarray, np.ndarray], float],
     curve_name: str,
-    expected_val: float,
+    expected_val: object,
     smoothness_test_data: dict[str, tuple[np.ndarray, np.ndarray]],
 ) -> None:
     """Test exact values of smoothness metrics for well-understood curves.

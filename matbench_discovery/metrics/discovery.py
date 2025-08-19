@@ -150,7 +150,7 @@ def stable_metrics(
         DAF=precision / prevalence,
         Precision=precision,
         Recall=recall,
-        Accuracy=(n_true_pos + n_true_neg) / len(each_true),
+        Accuracy=(n_true_pos + n_true_neg) / (n_total_pos + n_total_neg),
         **dict(TPR=TPR, FPR=FPR, TNR=TNR, FNR=FNR),
         **dict(TP=n_true_pos, FP=n_false_pos, TN=n_true_neg, FN=n_false_neg),
         MAE=np.abs(each_true - each_pred).mean(),

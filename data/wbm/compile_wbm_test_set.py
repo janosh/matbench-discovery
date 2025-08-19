@@ -400,8 +400,8 @@ df_summary["alph_formula"] = [
 ]
 # alphabetical formula and original formula differ due to spaces, number 1 after element
 # symbols (FeO vs Fe1 O1), and element order (FeO vs OFe)
-n_wbm_structs = DATASETS["WBM"]["n_structures"]
-assert sum(df_summary.alph_formula != df_summary[Key.formula]) == n_wbm_structs
+# validate pre-crop state: all formulas should differ from their alphabetical versions
+assert sum(df_summary.alph_formula != df_summary[Key.formula]) == len(df_summary)
 
 df_summary[Key.formula] = df_summary.pop("alph_formula")
 
@@ -515,7 +515,8 @@ df_wbm = df_wbm.loc[df_summary.index]
 
 
 # make sure we dropped the expected number 524 of materials
-assert len(df_summary) == len(df_wbm) == 257_487 - 502 - 22
+n_wbm_structs = DATASETS["WBM"]["n_structures"]
+assert len(df_summary) == len(df_wbm) == n_wbm_structs  # 257_487 - 502 - 22
 
 
 # %%

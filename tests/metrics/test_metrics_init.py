@@ -18,8 +18,8 @@ def test_metrics_df_from_yaml_phonons() -> None:
     """Test extracting phonon metrics."""
     df_metrics = metrics_df_from_yaml(["phonons.kappa_103"])
     # Find the kappa column regardless of exact string representation
-    kappa_cols = [col for col in df_metrics if "_SRME" in col]
-    assert len(kappa_cols) == 1, f"No SRME column found in {df_metrics.columns=}"
+    kappa_cols = [col for col in df_metrics if col.endswith("_SRME")]
+    assert len(kappa_cols) == 1, f"{df_metrics.columns=}"
     kappa_col = kappa_cols[0]
     assert df_metrics.shape >= (16, 3)
     assert all(df_metrics[kappa_col] >= 0), f"{df_metrics[kappa_col]=}"

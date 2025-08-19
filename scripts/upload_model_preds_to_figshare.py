@@ -20,12 +20,6 @@ from matbench_discovery.cli import cli_parser
 from matbench_discovery.data import round_trip_yaml
 from matbench_discovery.enums import Model
 
-with open(f"{PKG_DIR}/modeling-tasks.yml", encoding="utf-8") as file:
-    MODELING_TASKS = yaml.safe_load(file)
-# remove 'cps' task as it's a dynamic metric with changing weights
-# no point in uploading to figshare
-MODELING_TASKS.pop("cps", None)
-
 with open(f"{ROOT}/pyproject.toml", mode="rb") as toml_file:
     pyproject = tomllib.load(toml_file)["project"]
 
@@ -57,9 +51,8 @@ def process_exclusion_prefixes(items: list[str], all_items: list[str]) -> list[s
     return result
 
 
-def get_article_metadata(task: str) -> dict[str, Sequence[object]]:
+def get_article_metadata(task_info: dict[str, str]) -> dict[str, Sequence[object]]:
     """Get metadata for creating a new Figshare article for a modeling task."""
-    task_info = MODELING_TASKS[task]
     return {
         "title": f"Matbench Discovery - Model Predictions for {task_info['label']}",
         "description": f"""
@@ -72,7 +65,7 @@ def get_article_metadata(task: str) -> dict[str, Sequence[object]]:
         https://github.com/janosh/matbench-discovery.
         """.strip(),
         "defined_type": "dataset",
-        "tags": [*pyproject["keywords"], f"task-{task}"],
+        "tags": [*pyproject["keywords"], f"task-{task_info['label']}"],
         "categories": list(figshare.CATEGORIES),
     }
 
@@ -88,6 +81,7 @@ def update_one_modeling_task_article(
     task: str,
     models: list[Model],
     *,
+    modeling_tasks: dict[str, dict[str, str]],
     dry_run: bool = False,
     file_type: Literal["all", "analysis", "pred"] = "all",
     force_reupload: bool = False,
@@ -110,7 +104,7 @@ def update_one_modeling_task_article(
             print(f"\nWould create new article for {task=}")
             article_id = 0
         else:
-            metadata = get_article_metadata(task)
+            metadata = get_article_metadata(modeling_tasks[task])
             article_id = figshare.create_article(metadata)
             article_is_new = True
             print(
@@ -307,6 +301,12 @@ def main(raw_args: Sequence[str] | None = None) -> int:
     Returns:
         int: Exit code (0 for success).
     """
+    with open(f"{PKG_DIR}/modeling-tasks.yml", encoding="utf-8") as file:
+        modeling_tasks = yaml.safe_load(file)
+    # remove 'cps' task as it's a dynamic metric with changing weights
+    # no point in uploading to figshare
+    modeling_tasks.pop("cps", None)
+
     # Add figshare-specific arguments to the central CLI parser
     figshare_group = cli_parser.add_argument_group(
         "figshare", "Arguments for Figshare upload functionality"
@@ -315,7 +315,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
         "--tasks",
         nargs="+",
         type=str,
-        default=list(MODELING_TASKS),
+        default=list(modeling_tasks),
         help="Space-separated list of modeling tasks to update. Defaults to all tasks. "
         "Prefix with '!' to exclude. Note: exclamation mark needs to be "
         "backslash-escaped in shell.",
@@ -341,7 +341,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
     args, _unknown = cli_parser.parse_known_args(raw_args)
 
     # Process exclusion prefixes for tasks
-    all_tasks = list(MODELING_TASKS)
+    all_tasks = list(modeling_tasks)
     args.tasks = process_exclusion_prefixes(args.tasks, all_tasks)
 
     # Process exclusion prefixes for models
@@ -371,6 +371,7 @@ def main(raw_args: Sequence[str] | None = None) -> int:
             update_one_modeling_task_article(
                 task,
                 models_to_update,
+                modeling_tasks=modeling_tasks,
                 dry_run=dry_run,
                 file_type=args.file_type,
                 force_reupload=args.force_reupload,

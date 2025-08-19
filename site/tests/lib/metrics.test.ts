@@ -781,7 +781,7 @@ describe(`Model Sorting Logic`, () => {
         model_key: `mmm_model`,
         metrics: {
           discovery: {
-            unique_prototypes: { F1: 0.7, Accuracy: NaN, missing_preds: 0 }, // Test NaN handling
+            unique_prototypes: { F1: 0.7, Accuracy: NaN, missing_preds: 2 }, // NaN Accuracy + non-zero missing_preds
             pred_col: `is_stable`,
           },
           phonons: { kappa_103: { κ_SRME: 0.5 } },
@@ -792,7 +792,7 @@ describe(`Model Sorting Logic`, () => {
         model_key: `zzz_model`,
         metrics: {
           discovery: {
-            unique_prototypes: { F1: 0.5, Accuracy: 0.6, missing_preds: 0 },
+            unique_prototypes: { F1: 0.5, Accuracy: 0.6, missing_preds: 5 },
             pred_col: `is_stable`,
           },
           phonons: { kappa_103: { κ_SRME: 0.2 } },
@@ -891,6 +891,17 @@ describe(`Model Sorting Logic`, () => {
         expect(sorted_models[idx].model_key, metric).toBe(model_key)
       })
     }
+
+    // Add descending-Accuracy test to assert NaN handling is symmetric
+    const sorted_desc = test_models.sort(
+      sort_models(`${Accuracy.path}.${Accuracy.key}`, `desc`),
+    )
+    expect(sorted_desc.map((m) => m.model_key)).toEqual([
+      `aaa_model`,
+      `zzz_model`,
+      `mmm_model`,
+      `missing_model`,
+    ])
   })
 
   it(`sorts models by model_name correctly`, () => {
@@ -920,6 +931,19 @@ describe(`Model Sorting Logic`, () => {
     expect(models_for_desc.map((m) => m.model_key).sort()).toEqual(
       expected_model_keys.sort(),
     )
+  })
+
+  it(`sorts models by missing predictions (asc)`, () => {
+    const models = create_test_models()
+    const sorted = models.sort(
+      sort_models(`metrics.discovery.unique_prototypes.missing_preds`, `asc`),
+    )
+    expect(sorted.map((m) => m.model_key)).toEqual([
+      `aaa_model`,
+      `mmm_model`,
+      `zzz_model`,
+      `missing_model`,
+    ])
   })
 
   it(`handles edge cases with missing or extreme metric values`, () => {

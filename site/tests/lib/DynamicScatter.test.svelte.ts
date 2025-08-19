@@ -159,17 +159,19 @@ describe(`DynamicScatter.svelte`, () => {
       const settings_button = document.body.querySelector<HTMLButtonElement>(
         `.settings-toggle`,
       )
-      let extra_controls = document.body.querySelector(`.controls`)
+      let extra_controls = document.body.querySelector(pane_selector)
 
       // 1. Initial state: Controls hidden (element may exist but be hidden)
-      if (extra_controls) {
-        const css_display = (extra_controls as HTMLElement).style.display
-        expect([`none`, ``].includes(css_display)).toBe(true)
-      } else expect(extra_controls).toBeNull()
+      const is_hidden = !extra_controls ||
+        getComputedStyle(extra_controls as HTMLElement).display === `none` ||
+        getComputedStyle(extra_controls as HTMLElement).visibility === `hidden` ||
+        (extra_controls as HTMLElement).getAttribute(`aria-hidden`) === `true` ||
+        (extra_controls as HTMLElement).hasAttribute(`hidden`)
+      expect(is_hidden).toBe(true)
 
       // 2. Show controls via button click
       await settings_button?.click()
-      extra_controls = document.body.querySelector(pane_selector)
+      extra_controls = doc_query<HTMLElement>(pane_selector)
       expect(extra_controls).toBeDefined()
 
       // 3. Hide controls via Escape key
@@ -177,15 +179,18 @@ describe(`DynamicScatter.svelte`, () => {
         new KeyboardEvent(`keydown`, { key: `Escape`, bubbles: true }),
       )
       await vi.waitFor(() => {
-        extra_controls = document.body.querySelector(pane_selector)
+        extra_controls = doc_query<HTMLElement>(pane_selector)
         // The panel should be hidden but still in DOM
-        const css_display = (extra_controls as HTMLElement)?.style.display
-        expect([`none`, ``].includes(css_display)).toBe(true)
+        const hidden = getComputedStyle(extra_controls).display === `none` ||
+          getComputedStyle(extra_controls).visibility === `hidden` ||
+          extra_controls.getAttribute(`aria-hidden`) === `true` ||
+          extra_controls.hasAttribute(`hidden`)
+        expect(hidden).toBe(true)
       })
 
       // 4. Re-show controls via button click
       await settings_button?.click()
-      extra_controls = document.body.querySelector(pane_selector)
+      extra_controls = doc_query<HTMLElement>(pane_selector)
       expect(extra_controls).toBeDefined()
     })
 
@@ -203,20 +208,23 @@ describe(`DynamicScatter.svelte`, () => {
       const settings_button = document.body.querySelector<HTMLButtonElement>(
         `.settings-toggle`,
       )
-      let extra_controls = document.body.querySelector(pane_selector)
+      let extra_controls = doc_query<HTMLElement>(pane_selector)
 
       // 1. Show controls
       await settings_button?.click()
-      extra_controls = document.body.querySelector(pane_selector)
+      extra_controls = doc_query<HTMLElement>(pane_selector)
       expect(extra_controls).toBeDefined()
 
       // 2. Click the explicit outside element
       await outside_element.click() // Simulate click outside
       await vi.waitFor(() => {
-        extra_controls = document.body.querySelector(pane_selector)
+        extra_controls = doc_query<HTMLElement>(pane_selector)
         // The panel should be hidden but still in DOM
-        const css_display = (extra_controls as HTMLElement)?.style.display
-        expect([`none`, ``].includes(css_display)).toBe(true)
+        const hidden = getComputedStyle(extra_controls).display === `none` ||
+          getComputedStyle(extra_controls).visibility === `hidden` ||
+          extra_controls.getAttribute(`aria-hidden`) === `true` ||
+          extra_controls.hasAttribute(`hidden`)
+        expect(hidden).toBe(true)
       })
 
       // Clean up the outside element
@@ -235,7 +243,6 @@ describe(`DynamicScatter.svelte`, () => {
       await settings_button?.click() // Show controls
 
       const extra_controls = doc_query(pane_selector)
-      expect(extra_controls, `Extra controls panel should exist`).toBeDefined()
 
       // --- Find Controls ---
       const color_scale_select_el = extra_controls?.querySelector(`.color-scale-select`)
