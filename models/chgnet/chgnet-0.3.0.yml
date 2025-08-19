@@ -126,7 +126,6 @@ metrics:
       RMSE: 0.1 # eV/atom
       R2: 0.69 # dimensionless
       missing_preds: 2 # count
-      missing_percent: 0.00% # fraction
     most_stable_10k:
       F1: 0.92 # fraction
       DAF: 5.567 # dimensionless
@@ -145,7 +144,6 @@ metrics:
       RMSE: 0.095 # eV/atom
       R2: 0.816 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.613 # fraction
       DAF: 3.361 # dimensionless
@@ -164,4 +162,3 @@ metrics:
       RMSE: 0.103 # eV/atom
       R2: 0.689 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction

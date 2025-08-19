@@ -109,7 +109,6 @@ metrics:
       RMSE: 0.092 # eV/atom
       R2: 0.74 # dimensionless
       missing_preds: 128 # count
-      missing_percent: 0.05% # fraction
     most_stable_10k:
       F1: 0.914 # fraction
       DAF: 5.503 # dimensionless
@@ -128,7 +127,6 @@ metrics:
       RMSE: 0.133 # eV/atom
       R2: 0.641 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.691 # fraction
       DAF: 4.163 # dimensionless
@@ -147,7 +145,6 @@ metrics:
       RMSE: 0.094 # eV/atom
       R2: 0.741 # dimensionless
       missing_preds: 110 # count
-      missing_percent: 0.05% # fraction
   diatomics:
     pred_file: models/grace/grace-2l-mptrj/2025-02-19-diatomics.json.gz
     pred_file_url: https://figshare.com/files/52467524
