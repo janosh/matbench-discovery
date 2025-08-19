@@ -1,3 +1,38 @@
+WBM:
+  name: WBM Benchmark Test Set
+  url: https://github.com/janosh/matbench-discovery/blob/main/data/wbm/readme.md
+  doi: https://doi.org/10.1038/s41524-020-00481-6
+  n_structures: 256_963 # 257_487 before filtering suspicious data, see data/wbm/compile_wbm_test_set.py
+  n_materials: 215_488 # based on number of unique Aflow-style structure prototypes
+  n_stable_materials: 42_825
+  n_uniq_stable_materials: 32_942
+  open: true
+  static: true
+  optimade_api: null
+  native_api: null
+  date_created: 2021-01-01
+  license: CC-BY-4.0
+  description: |
+    Benchmark test set for Matbench Discovery containing 256,963 structures generated via chemical
+    similarity-based elemental substitution of MP source structures followed by DFT relaxation and
+    calculating each structure's formation energy. This is the primary test set used to evaluate
+    model performance on materials discovery tasks.
+  method: DFT
+  params:
+    code: VASP
+    functional: PBE+U
+    pseudopotentials: PBE
+  created_by:
+    - name: Hai-Chen Wang
+      affiliation: Martin-Luther-Universität Halle-Wittenberg, Germany
+    - name: Silvana Botti
+      affiliation: Friedrich-Schiller-Universität Jena, Germany
+      email: silvana.botti@uni-jena.de
+      url: https://wikipedia.org/wiki/Silvana_Botti
+    - name: Miguel A. L. Marques
+      affiliation: Martin-Luther-Universität Halle-Wittenberg, Germany
+      orcid: https://orcid.org/0000-0003-0170-8222
+
 MP 2022:
   name: MP v2022.10.28
   url: https://docs.materialsproject.org/changes/database-versions#v2022.10.28

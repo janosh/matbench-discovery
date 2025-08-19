@@ -7,7 +7,7 @@ from numpy.testing import assert_allclose
 from numpy.typing import NDArray
 from pymatviz.enums import Key
 
-from matbench_discovery.enums import MbdKey
+from matbench_discovery.enums import MbdKey, Model
 from matbench_discovery.metrics import phonons as phonon_metrics
 
 
@@ -397,12 +397,12 @@ def test_calc_kappa_srme_temperature_dependence(series_multi_temp: pd.Series) ->
 
 def test_calc_kappa_metrics_from_dfs_symmetry(df_minimal: pd.DataFrame) -> None:
     """Test handling of symmetry-related cases in benchmark descriptors."""
-    df_pred = pd.concat([df_minimal] * 3, ignore_index=True)
+    df_pred = pd.concat([df_minimal] * 3, ignore_index=True).copy()
     df_pred[Key.has_imag_ph_modes] = [False, True, False]
     df_pred[Key.final_spg_num] = [1, 1, 2]
     df_pred[Key.init_spg_num] = [1, 1, 1]
 
-    df_true = pd.concat([df_minimal] * 3, ignore_index=True)
+    df_true = pd.concat([df_minimal] * 3, ignore_index=True).copy()
     df_true[Key.spg_num] = [1, 1, 1]
 
     result = phonon_metrics.calc_kappa_metrics_from_dfs(df_pred, df_true)
@@ -413,16 +413,116 @@ def test_calc_kappa_metrics_from_dfs_symmetry(df_minimal: pd.DataFrame) -> None:
 
 def test_calc_kappa_srme_dataframes_error_handling(df_minimal: pd.DataFrame) -> None:
     """Test error handling in SRME calculation for dataframes."""
-    df_pred = pd.concat([df_minimal] * 2, ignore_index=True)
+    df_pred = pd.concat([df_minimal] * 2, ignore_index=True).copy()
     df_pred.loc[0, MbdKey.kappa_tot_avg] = np.nan
     df_pred[Key.has_imag_ph_modes] = [True, False]
     df_pred[Key.final_spg_num] = [2, 1]
     df_pred[Key.init_spg_num] = [1, 1]
 
-    df_true = pd.concat([df_minimal] * 2, ignore_index=True)
+    df_true = pd.concat([df_minimal] * 2, ignore_index=True).copy()
     df_true[Key.spg_num] = [1, 1]
 
     result = phonon_metrics.calc_kappa_srme_dataframes(df_pred, df_true)
     assert len(result) == 2
     assert result[0] == 2  # First entry should be 2 due to imaginary frequencies
     assert 0 <= result[1] <= 2  # Second entry should be valid SRME value
+
+
+@pytest.mark.parametrize(
+    ("metrics_data", "existing_data", "expected_metrics", "expected_preserved"),
+    [
+        # Test case 1: Empty YAML - creates structure and adds metrics
+        (
+            {"srme": 0.6823, "sre": 0.4710},
+            {},
+            {
+                "κ_SRME": 0.6823,
+                "κ_SRE": 0.4710,
+                "pred_file": "models/test/kappa-103.json.gz",
+            },
+            {},
+        ),
+        # Test case 2: Existing fields - preserves them and adds new metrics
+        (
+            {"srme": 0.1234, "sre": 0.5678},
+            {
+                "metrics": {
+                    "phonons": {
+                        "kappa_103": {
+                            "pred_file": "models/test/existing.json.gz",
+                            "pred_file_url": "https://figshare.com/files/existing",
+                            "analysis_file": "models/test/analysis.csv.gz",
+                        }
+                    }
+                }
+            },
+            {"κ_SRME": 0.1234, "κ_SRE": 0.5678},
+            {
+                "pred_file": "models/test/existing.json.gz",
+                "pred_file_url": "https://figshare.com/files/existing",
+                "analysis_file": "models/test/analysis.csv.gz",
+            },
+        ),
+        # Test case 3: Mixed existing data - preserves some, adds new
+        (
+            {"srme": 1.2345, "sre": 0.9876},
+            {
+                "metrics": {
+                    "phonons": {
+                        "kappa_103": {
+                            "existing_field": "preserved_value",
+                            "pred_file_url": "https://figshare.com/files/12345",
+                        }
+                    }
+                }
+            },
+            {
+                "κ_SRME": 1.2345,
+                "κ_SRE": 0.9876,
+                "pred_file": "models/test/kappa-103.json.gz",
+            },
+            {
+                "existing_field": "preserved_value",
+                "pred_file_url": "https://figshare.com/files/12345",
+            },
+        ),
+    ],
+)
+def test_write_metrics_to_yaml(
+    metrics_data: dict[str, float],
+    existing_data: dict[str, dict[str, dict[str, dict[str, str | float]]]],
+    expected_metrics: dict[str, float | str],
+    expected_preserved: dict[str, str | float],
+) -> None:
+    """Test writing kappa metrics to YAML files with various scenarios."""
+    from unittest.mock import MagicMock, mock_open, patch
+
+    mock_model = MagicMock(spec=Model)
+    mock_model.yaml_path = "mock_path/test_model.yml"
+
+    with patch("ruamel.yaml.YAML") as mock_yaml_class:
+        mock_yaml = mock_yaml_class.return_value
+        mock_yaml.load.return_value = existing_data
+
+        with patch("builtins.open", mock_open()):
+            phonon_metrics.write_metrics_to_yaml(
+                mock_model,  # type: ignore[arg-type]
+                metrics_data,
+                "models/test/kappa-103.json.gz",
+            )
+
+            actual_yaml = mock_yaml.dump.call_args[0][0]
+            actual_kappa_103 = actual_yaml["metrics"]["phonons"]["kappa_103"]
+
+            # Check new metrics were added
+            for key, expected_val in expected_metrics.items():
+                if isinstance(expected_val, float):
+                    assert actual_kappa_103[key] == pytest.approx(
+                        expected_val, rel=1e-4
+                    )
+                else:
+                    assert actual_kappa_103[key] == expected_val
+
+            # Check existing fields were preserved
+            for key, expected_val in expected_preserved.items():
+                assert actual_kappa_103[key] == expected_val

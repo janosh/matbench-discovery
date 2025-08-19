@@ -150,7 +150,11 @@ def stable_metrics(
         DAF=precision / prevalence,
         Precision=precision,
         Recall=recall,
-        Accuracy=(n_true_pos + n_true_neg) / len(each_true),
+        Accuracy=(
+            (n_true_pos + n_true_neg) / (n_total_pos + n_total_neg)
+            if (n_total_pos + n_total_neg > 0)
+            else float("nan")
+        ),
         **dict(TPR=TPR, FPR=FPR, TNR=TNR, FNR=FNR),
         **dict(TP=n_true_pos, FP=n_false_pos, TN=n_true_neg, FN=n_false_neg),
         MAE=np.abs(each_true - each_pred).mean(),
@@ -183,7 +187,6 @@ def write_metrics_to_yaml(
     # calculate number of missing predictions
     n_missing = int(df_model_preds.isna().sum())
     metrics[str(MbdKey.missing_preds)] = n_missing
-    metrics[str(MbdKey.missing_percent)] = f"{n_missing / len(df_model_preds):.2%}"
 
     # Define metric units for end-of-line comments
     metric_units = {
@@ -199,7 +202,6 @@ def write_metrics_to_yaml(
         "FPR": "fraction",
         "TNR": "fraction",
         "FNR": "fraction",
-        str(MbdKey.missing_percent): "fraction",
         str(MbdKey.missing_preds): "count",
         "TP": "count",
         "FP": "count",
@@ -237,9 +239,7 @@ df_metrics_uniq_protos = (
     .sort_values(by=Key.f1.upper(), ascending=False)
     .T
 )
-df_metrics_uniq_protos = df_metrics_uniq_protos.drop(
-    index=[MbdKey.missing_preds, MbdKey.missing_percent]
-)
+df_metrics_uniq_protos = df_metrics_uniq_protos.drop(index=[MbdKey.missing_preds])
 
 for df, title in (
     (df_metrics, "Metrics for Full Test Set"),

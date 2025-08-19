@@ -156,7 +156,6 @@ export interface MetadataLabels {
   checkpoint_license: Label1
   code_license: Label1
   missing_preds: Label1
-  missing_percent: Label1
   'Run Time (h)': Label1
   org: Label1
 }

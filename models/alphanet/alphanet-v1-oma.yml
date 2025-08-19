@@ -145,7 +145,6 @@ metrics:
       RMSE: 0.075 # eV/atom
       R2: 0.827 # dimensionless
       missing_preds: 2 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.901 # fraction
       DAF: 5.747 # dimensionless
@@ -164,7 +163,6 @@ metrics:
       RMSE: 0.076 # eV/atom
       R2: 0.831 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     most_stable_10k:
       F1: 0.982 # fraction
       DAF: 6.312 # dimensionless
@@ -183,6 +181,5 @@ metrics:
       RMSE: 0.074 # eV/atom
       R2: 0.882 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
   diatomics:
     pred_file_url: https://figshare.com/ndownloader/files/54490370

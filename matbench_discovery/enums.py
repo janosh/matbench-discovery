@@ -83,7 +83,6 @@ class MbdKey(LabelEnum):
 
     # keep in sync with model-schema.yml
     missing_preds = "missing_preds", "Missing predictions"
-    missing_percent = "missing_percent", "Missing predictions (percent)"
 
     aflow_prototype = "aflow_prototype", "Aflow prototype"
     canonical_proto = "canonical_proto", "Canonical prototype"
@@ -371,7 +370,7 @@ class Model(Files, base_dir=f"{ROOT}/models"):
     def metadata(self) -> dict[str, Any]:
         """Metadata associated with the model."""
         yaml_path = f"{type(self).base_dir}/{self.rel_path}"
-        with open(yaml_path) as file:
+        with open(yaml_path, encoding="utf-8") as file:
             data = yaml.safe_load(file)
 
         if not isinstance(data, dict):
@@ -522,7 +521,7 @@ class DataFiles(Files):
         """YAML data associated with the file."""
         yaml_path = f"{PKG_DIR}/data-files.yml"
 
-        with open(yaml_path) as file:
+        with open(yaml_path, encoding="utf-8") as file:
             yaml_data = yaml.safe_load(file)
 
         if self.name not in yaml_data:

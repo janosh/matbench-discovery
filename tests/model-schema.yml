@@ -173,8 +173,24 @@ definitions:
         type: number
       missing_preds:
         type: number
-      missing_percent:
-        type: string
+    required:
+      - F1
+      - DAF
+      - Precision
+      - Recall
+      - Accuracy
+      - TPR
+      - FPR
+      - TNR
+      - FNR
+      - TP
+      - FP
+      - TN
+      - FN
+      - MAE
+      - RMSE
+      - R2
+      - missing_preds
 
   DiscoveryMetrics:
     type: object

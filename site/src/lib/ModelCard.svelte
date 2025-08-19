@@ -35,7 +35,7 @@
       : {}),
     CPS: model.CPS,
   })
-  let { missing_preds, missing_percent } = $derived(all_metrics)
+  let { missing_preds } = $derived(all_metrics)
 
   let links = $derived(
     [
@@ -120,10 +120,15 @@
       </span>
     </span>
   {/if}
-  <span>
+  <span
+    {@attach tooltip()}
+    title="Out of {format_num(DATASETS.WBM.n_structures, `,`)} WBM structures, {format_num(missing_preds ?? 0, `,`)} are missing predictions. This refers only to the discovery task of predicting WBM convex hull distances."
+  >
     <Icon icon="MissingMetadata" /> Missing preds:
     {format_num(missing_preds ?? 0, `,.0f`)}
-    <small>({missing_percent})</small>
+    {#if missing_preds && missing_preds > 0}
+      <small>({format_num(missing_preds / DATASETS.WBM.n_structures, `.3~%`)})</small>
+    {/if}
   </span>
 </section>
 {#if show_details}
@@ -148,7 +153,7 @@
       <h3>Package versions</h3>
       <ul>
         {#each Object.entries(model.requirements ?? {}) as [name, version] (name)}
-          {@const [href, link_text] = version.startsWith(`http`)
+          {@const [href, link_text] = version?.startsWith(`http`)
           // version.split(`/`).at(-1) assumes final part after / of URL is the package version, as is the case for GitHub releases
           ? [version, version.split(`/`).at(-1)]
           : [`https://pypi.org/project/${name}/${version}`, version]}
