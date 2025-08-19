@@ -273,22 +273,21 @@ export interface PhononMetrics {
  * via the `definition` "DiscoveryMetricsSet".
  */
 export interface DiscoveryMetricsSet {
-  F1?: number
-  DAF?: number
-  Precision?: number
-  Recall?: number
-  Accuracy?: number
-  TPR?: number
-  FPR?: number
-  TNR?: number
-  FNR?: number
-  TP?: number
-  FP?: number
-  TN?: number
-  FN?: number
-  MAE?: number
-  RMSE?: number
-  R2?: number
-  missing_preds?: number
-  missing_percent?: string
+  F1: number
+  DAF: number
+  Precision: number
+  Recall: number
+  Accuracy: number
+  TPR: number
+  FPR: number
+  TNR: number
+  FNR: number
+  TP: number
+  FP: number
+  TN: number
+  FN: number
+  MAE: number
+  RMSE: number
+  R2: number
+  missing_preds: number
 }

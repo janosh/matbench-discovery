@@ -326,7 +326,7 @@ def smoothness_test_data() -> dict[str, EnergyCurve]:
 
 
 @pytest.mark.parametrize(
-    "metric_func,curve_name,expected_value",
+    "metric_func,curve_name,expected_val",
     [
         # Second derivative should be very close to 0 for constant and linear curves
         (calc_second_deriv_smoothness, "constant", pytest.approx(0, abs=1e-10)),
@@ -340,7 +340,7 @@ def smoothness_test_data() -> dict[str, EnergyCurve]:
 def test_smoothness_exact_values(
     metric_func: Callable[[np.ndarray, np.ndarray], float],
     curve_name: str,
-    expected_value: float,
+    expected_val: object,
     smoothness_test_data: dict[str, tuple[np.ndarray, np.ndarray]],
 ) -> None:
     """Test exact values of smoothness metrics for well-understood curves.
@@ -348,12 +348,12 @@ def test_smoothness_exact_values(
     Args:
         metric_func (Callable): Smoothness metric function to test
         curve_name (str): Name of curve to test
-        expected_value (float): Expected metric value
+        expected_val (float): Expected metric value
         smoothness_test_data (dict): Test curves
     """
     x, y = smoothness_test_data[curve_name]
     metric = metric_func(x, y)
-    assert metric == expected_value
+    assert metric == expected_val
 
 
 @pytest.mark.parametrize(

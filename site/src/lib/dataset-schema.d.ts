@@ -123,6 +123,14 @@ export interface Dataset {
    */
   n_materials?: number
   /**
+   * Number of stable materials in the dataset
+   */
+  n_stable_materials?: number
+  /**
+   * Number of unique stable materials in the dataset
+   */
+  n_uniq_stable_materials?: number
+  /**
    * Chemical elements included in the dataset (either symbols or atomic numbers)
    */
   elements?: (string | number)[]

@@ -33,13 +33,13 @@
 
 {#if data.model}
   {@const model = data.model}
-  {@const { missing_preds, missing_percent } = model.metrics?.discovery?.unique_prototypes ??
+  {@const { missing_preds } = model.metrics?.discovery?.unique_prototypes ??
     {}}
   <div class="model-detail">
     <h1 style="font-size: 2.5em">{model.model_name}</h1>
 
     <section class="meta-info">
-      <div>
+      <span>
         <Icon icon="Versions" />
         Version: {#if model.repo?.startsWith(`http`)}
           <a
@@ -52,50 +52,41 @@
         {:else}
           {model.model_version}
         {/if}
-      </div>
+      </span>
 
-      <div>
-        <Icon icon="Calendar" />
-        Added: <span title="{days_added} days ago" {@attach tooltip()}>
-          {model.date_added}
-        </span>
-      </div>
+      <span title="{days_added} days ago" {@attach tooltip()}><Icon icon="Calendar" />
+        Added: {model.date_added}
+      </span>
 
-      <div>
-        <Icon icon="CalendarCheck" />
-        Published: <span title="{days_published} days ago" {@attach tooltip()}>
-          {model.date_published}
-        </span>
-      </div>
+      <span title="{days_published} days ago" {@attach tooltip()}>
+        <Icon icon="CalendarCheck" /> Published: {model.date_published}
+      </span>
 
-      <div>
-        <Icon icon="NeuralNetwork" />
-        <span title={model.model_params.toLocaleString()} {@attach tooltip()}>
-          {format_num(model.model_params, `.3~s`)}
-        </span> parameters
-      </div>
+      <span title={model.model_params.toLocaleString()} {@attach tooltip()}>
+        <Icon icon="NeuralNetwork" /> {format_num(model.model_params, `.3~s`)}
+        parameters
+      </span>
 
       {#if model.n_estimators > 1}
-        <div>
-          <Icon icon="Forest" />
-          <span>Ensemble {model.n_estimators} models</span>
-        </div>
+        <span><Icon icon="Forest" /> Ensemble {model.n_estimators} models</span>
       {/if}
 
       {#if missing_preds != undefined}
-        <div>
+        <span
+          {@attach tooltip()}
+          title="Out of {format_num(DATASETS.WBM.n_structures, `,`)} WBM structures, {format_num(missing_preds, `,`)} are missing predictions. This refers only to the discovery task of predicting WBM convex hull distances."
+        >
           <Icon icon="MissingMetadata" />
-          <span>
-            Missing preds: {format_num(missing_preds, `,.0f`)}
-            {#if missing_preds != 0}
-              <small> ({missing_percent})</small>
-            {/if}
-          </span>
-        </div>
+          Missing preds: {format_num(missing_preds, `,.0f`)}
+          {#if missing_preds != 0}
+            <small>
+              ({format_num(missing_preds / DATASETS.WBM.n_structures, `.3~%`)})</small>
+          {/if}
+        </span>
       {/if}
 
       {#if model.pypi}
-        <code style="background-color: transparent">
+        <code style="padding: 0 4pt">
           pip install {model.pypi.split(`/`).pop()}
           <CopyButton
             content={`pip install ${model.pypi.split(`/`).pop()}`}
@@ -110,7 +101,7 @@
     </section>
 
     <section class="links" {@attach tooltip()}>
-      {#if model.repo.startsWith(`http`)}
+      {#if model.repo?.startsWith(`http`)}
         <a
           href={model.repo}
           target="_blank"
@@ -424,7 +415,7 @@
         <h2>Dependencies</h2>
         <ul>
           {#each Object.entries(model.requirements) as [pkg, version] (pkg)}
-            {@const href = version.startsWith(`http`)
+            {@const href = version?.startsWith(`http`)
           ? version
           : `https://pypi.org/project/${pkg}/${version}`}
             <li>
@@ -470,22 +461,20 @@
     display: block;
     font-weight: bold;
   }
-  .meta-info,
-  .links {
+  .meta-info, .links {
     display: flex;
     flex-wrap: wrap;
-    gap: 3ex;
+    gap: 2ex;
     place-content: center;
     margin: 2em auto;
   }
   .links :is(a, summary) {
     display: inline-flex;
-    align-items: center;
+    place-items: center;
     gap: 5px;
-    padding: 5px 10px;
+    padding: 0 5pt;
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: 5px;
-    text-decoration: none;
     color: lightgray;
   }
   .links details {

@@ -8,25 +8,46 @@ import os
 import pandas as pd
 from pymatviz.enums import Key
 
+from matbench_discovery.cli import cli_args
 from matbench_discovery.enums import DataFiles, Model
 from matbench_discovery.metrics import phonons
 
-for model in Model:
-    if not os.path.isfile(model.kappa_103_path or ""):
-        continue
 
-    try:
-        df_ml = pd.read_json(model.kappa_103_path).set_index(Key.mat_id)
+def main() -> None:
+    """Evaluate kappa metrics and update model YAML files."""
+    models_to_evaluate = cli_args.models or list(Model)
+    print(f"Evaluating kappa metrics for {len(models_to_evaluate)} models...")
 
-        json_path = DataFiles.phonondb_pbe_103_kappa_no_nac.path
-        df_dft = pd.read_json(json_path).set_index(Key.mat_id)
+    for model in models_to_evaluate:
+        if not os.path.isfile(model.kappa_103_path or ""):
+            print(f"Skipping {model.label}: no kappa_103_path found")
+            continue
 
-        df_ml_metrics = phonons.calc_kappa_metrics_from_dfs(df_ml, df_dft)
+        try:
+            print(f"\nProcessing {model.label}...")
 
-        kappa_sre = df_ml_metrics[Key.sre].mean()
-        kappa_srme = df_ml_metrics[Key.srme].mean()
+            # Load and process data
+            df_ml = pd.read_json(model.kappa_103_path).set_index(Key.mat_id)
+            df_dft = pd.read_json(
+                DataFiles.phonondb_pbe_103_kappa_no_nac.path
+            ).set_index(Key.mat_id)
+            df_ml_metrics = phonons.calc_kappa_metrics_from_dfs(df_ml, df_dft)
 
-        print(f"{model.label=}\n\t{kappa_srme=:.4f}\n\t{kappa_sre=:.4f}")
-    except Exception as exc:
-        exc.add_note(f"Failed to read {model.kappa_103_path}")
-        raise
+            # Calculate metrics
+            kappa_sre = df_ml_metrics[Key.sre].mean()
+            kappa_srme = df_ml_metrics[Key.srme].mean()
+            print(f"\t{kappa_srme=:.4f}")
+            print(f"\t{kappa_sre=:.4f}")
+
+            # Update YAML file
+            metrics_dict = {"srme": kappa_srme, "sre": kappa_sre}
+            phonons.write_metrics_to_yaml(model, metrics_dict, model.kappa_103_path)
+            print(f"\t✓ Updated {model.yaml_path}")
+
+        except Exception as exc:
+            print(f"\t✗ Error processing {model.label}: {exc}")
+            continue
+
+
+if __name__ == "__main__":
+    main()

@@ -188,11 +188,11 @@ def test_write_geo_opt_metrics_to_yaml(
 
             # Compare metrics while handling NaN values
             for key, value in actual_yaml["metrics"]["geo_opt"][symprec_key].items():
-                expected_value = expected_yaml["metrics"]["geo_opt"][symprec_key][key]
+                expected_val = expected_yaml["metrics"]["geo_opt"][symprec_key][key]
                 if isinstance(value, float) and np.isnan(value):
-                    assert np.isnan(expected_value)
+                    assert np.isnan(expected_val)
                 else:
-                    assert value == pytest.approx(expected_value)
+                    assert value == pytest.approx(expected_val)
 
             # Verify file operations
             mock_file.assert_called()

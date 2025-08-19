@@ -26,7 +26,7 @@ from pymatviz.enums import Key
 from tqdm import tqdm
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS, WBM_DIR, today
-from matbench_discovery.data import DataFiles
+from matbench_discovery.data import DATASETS, DataFiles
 from matbench_discovery.energy import calc_energy_from_e_refs, mp_elemental_ref_energies
 from matbench_discovery.enums import MbdKey
 from matbench_discovery.structure import prototype
@@ -400,7 +400,8 @@ df_summary["alph_formula"] = [
 ]
 # alphabetical formula and original formula differ due to spaces, number 1 after element
 # symbols (FeO vs Fe1 O1), and element order (FeO vs OFe)
-assert sum(df_summary.alph_formula != df_summary[Key.formula]) == 257_483
+# validate pre-crop state: all formulas should differ from their alphabetical versions
+assert sum(df_summary.alph_formula != df_summary[Key.formula]) == len(df_summary)
 
 df_summary[Key.formula] = df_summary.pop("alph_formula")
 
@@ -514,7 +515,8 @@ df_wbm = df_wbm.loc[df_summary.index]
 
 
 # make sure we dropped the expected number 524 of materials
-assert len(df_summary) == len(df_wbm) == 257_487 - 502 - 22
+n_wbm_structs = DATASETS["WBM"]["n_structures"]
+assert len(df_summary) == len(df_wbm) == n_wbm_structs  # 257_487 - 502 - 22
 
 
 # %%
@@ -689,9 +691,10 @@ assert sum(mask_proto_in_mp) == 11_175, f"{sum(mask_proto_in_mp)=:_}"
 assert sum(mask_dupe_protos) == 32_784, f"{sum(mask_dupe_protos)=:_}"
 
 df_summary[MbdKey.uniq_proto] = ~(mask_proto_in_mp | mask_dupe_protos)
+n_wbm_materials = DATASETS["WBM"]["n_materials"]
 assert dict(df_summary[MbdKey.uniq_proto].value_counts()) == {
-    True: 215_488,
-    False: 41_475,
+    True: n_wbm_materials,  # should be 215_488
+    False: n_wbm_structs - n_wbm_materials,  # should be 41,475
 }
 
 first_uniq_proto_wbm_ids = ["wbm-1-7", "wbm-1-8", "wbm-1-15", "wbm-1-20", "wbm-1-33"]

@@ -172,12 +172,6 @@ export const METADATA_COLS: MetadataLabels = {
     description: `Number of missing predictions`,
     visible: false,
   },
-  missing_percent: {
-    key: `missing_percent`,
-    label: `Missing %`,
-    description: `Percentage of missing predictions`,
-    visible: false,
-  },
   'Run Time (h)': {
     key: `run_time_h`,
     label: `Run Time`,

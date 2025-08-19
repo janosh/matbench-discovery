@@ -31,6 +31,14 @@ export function doc_query<T extends HTMLElement>(
   return node as T
 }
 
+// Helper function to check if an element is hidden
+export function is_hidden(el: Element | null): boolean {
+  if (!el) return true
+  const style = getComputedStyle(el as HTMLElement)
+  return (style.display === `none` || style.visibility === `hidden` ||
+    el.getAttribute(`aria-hidden`) === `true` || el.hasAttribute(`hidden`))
+}
+
 // mock matchMedia browser API
 globalThis.matchMedia = vi.fn()
 

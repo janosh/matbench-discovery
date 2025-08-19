@@ -147,7 +147,6 @@ metrics:
       RMSE: 0.091 # eV/atom
       R2: 0.747 # dimensionless
       missing_preds: 2 # count
-      missing_percent: 0.00% # fraction
     unique_prototypes:
       F1: 0.799 # fraction
       DAF: 4.863 # dimensionless
@@ -166,7 +165,6 @@ metrics:
       RMSE: 0.093 # eV/atom
       R2: 0.745 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
     most_stable_10k:
       F1: 0.96 # fraction
       DAF: 6.042 # dimensionless
@@ -185,7 +183,6 @@ metrics:
       RMSE: 0.115 # eV/atom
       R2: 0.746 # dimensionless
       missing_preds: 0 # count
-      missing_percent: 0.00% # fraction
   diatomics:
     pred_file: models/alphanet/2025-03-08-diatomics.json.gz
     pred_file_url: https://figshare.com/files/52868972
