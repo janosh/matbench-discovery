@@ -51,7 +51,7 @@ def process_exclusion_prefixes(items: list[str], all_items: list[str]) -> list[s
     return result
 
 
-def get_article_metadata(task_info: dict[str, str]) -> dict[str, Sequence[object]]:
+def get_article_metadata(task_info: dict[str, Any]) -> dict[str, Sequence[object]]:
     """Get metadata for creating a new Figshare article for a modeling task."""
     return {
         "title": f"Matbench Discovery - Model Predictions for {task_info['label']}",
@@ -88,6 +88,11 @@ def update_one_modeling_task_article(
     interactive: bool = True,
 ) -> None:
     """Update or create a Figshare article for a modeling task."""
+    if (task_info := modeling_tasks.get(task)) is None:
+        raise KeyError(
+            f"Missing task metadata for {task!r}. "
+            f"Available tasks: {list(modeling_tasks)}"
+        )
     article_id = figshare.ARTICLE_IDS[f"model_preds_{task}"]
     article_is_new = False
 
@@ -104,7 +109,7 @@ def update_one_modeling_task_article(
             print(f"\nWould create new article for {task=}")
             article_id = 0
         else:
-            metadata = get_article_metadata(modeling_tasks[task])
+            metadata = get_article_metadata(task_info)
             article_id = figshare.create_article(metadata)
             article_is_new = True
             print(
@@ -169,7 +174,7 @@ def update_one_modeling_task_article(
                 )
                 continue
 
-            filename = file_path.removeprefix(f"{ROOT}{os.sep}")
+            filename = str(os.path.relpath(file_path, ROOT))
 
             # First check if the exact same file already exists
             if not force_reupload and not dry_run:

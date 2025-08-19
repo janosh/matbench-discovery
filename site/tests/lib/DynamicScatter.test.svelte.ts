@@ -2,7 +2,7 @@ import DynamicScatter from '$lib/DynamicScatter.svelte'
 import type { ModelData } from '$lib/types'
 import { mount } from 'svelte'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { doc_query } from '../index'
+import { doc_query, is_hidden } from '../index'
 
 const pane_selector = `[aria-label="Draggable pane"]`
 
@@ -162,12 +162,7 @@ describe(`DynamicScatter.svelte`, () => {
       let extra_controls = document.body.querySelector(pane_selector)
 
       // 1. Initial state: Controls hidden (element may exist but be hidden)
-      const is_hidden = !extra_controls ||
-        getComputedStyle(extra_controls as HTMLElement).display === `none` ||
-        getComputedStyle(extra_controls as HTMLElement).visibility === `hidden` ||
-        (extra_controls as HTMLElement).getAttribute(`aria-hidden`) === `true` ||
-        (extra_controls as HTMLElement).hasAttribute(`hidden`)
-      expect(is_hidden).toBe(true)
+      expect(is_hidden(extra_controls)).toBe(true)
 
       // 2. Show controls via button click
       await settings_button?.click()
@@ -180,12 +175,8 @@ describe(`DynamicScatter.svelte`, () => {
       )
       await vi.waitFor(() => {
         extra_controls = doc_query<HTMLElement>(pane_selector)
-        // The panel should be hidden but still in DOM
-        const hidden = getComputedStyle(extra_controls).display === `none` ||
-          getComputedStyle(extra_controls).visibility === `hidden` ||
-          extra_controls.getAttribute(`aria-hidden`) === `true` ||
-          extra_controls.hasAttribute(`hidden`)
-        expect(hidden).toBe(true)
+        // The pane should be hidden but still in DOM
+        expect(is_hidden(extra_controls)).toBe(true)
       })
 
       // 4. Re-show controls via button click
@@ -219,12 +210,8 @@ describe(`DynamicScatter.svelte`, () => {
       await outside_element.click() // Simulate click outside
       await vi.waitFor(() => {
         extra_controls = doc_query<HTMLElement>(pane_selector)
-        // The panel should be hidden but still in DOM
-        const hidden = getComputedStyle(extra_controls).display === `none` ||
-          getComputedStyle(extra_controls).visibility === `hidden` ||
-          extra_controls.getAttribute(`aria-hidden`) === `true` ||
-          extra_controls.hasAttribute(`hidden`)
-        expect(hidden).toBe(true)
+        // The pane should be hidden but still in DOM
+        expect(is_hidden(extra_controls)).toBe(true)
       })
 
       // Clean up the outside element

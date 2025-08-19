@@ -693,7 +693,7 @@ assert sum(mask_dupe_protos) == 32_784, f"{sum(mask_dupe_protos)=:_}"
 df_summary[MbdKey.uniq_proto] = ~(mask_proto_in_mp | mask_dupe_protos)
 n_wbm_materials = DATASETS["WBM"]["n_materials"]
 assert dict(df_summary[MbdKey.uniq_proto].value_counts()) == {
-    True: n_wbm_materials,  # should be 256_963
+    True: n_wbm_materials,  # should be 215_488
     False: n_wbm_structs - n_wbm_materials,  # should be 41,475
 }
 

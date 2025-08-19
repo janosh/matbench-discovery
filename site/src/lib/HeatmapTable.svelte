@@ -318,6 +318,7 @@
     grid-column: 2;
     width: 100%;
     display: flex;
+    place-items: center;
     margin: 10pt auto;
     gap: 2em;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
