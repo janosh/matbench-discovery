@@ -183,13 +183,6 @@ strong a[aria-hidden='true'] {
   left: 0;
 }
 
-aside.toc.desktop {
-  position: fixed;
-  top: 3em;
-  left: calc(50vw + var(--main-max-width) / 2 + 200px);
-  max-width: 16em;
-}
-
 caption {
   display: block;
 }

@@ -273,11 +273,11 @@
             {#if author.affiliation}<span class="affiliation">
                 &ensp;{author.affiliation}
                 {#if org_logo}
-                  <IconList icons={[org_logo]} />
+                  &nbsp;<IconList icons={[org_logo]} />
                 {/if}
               </span>{/if}
             {#if author.email}<a href="mailto:{author.email}" aria-label="Email">
-                <Icon icon="Contact" />
+                &nbsp;<Icon icon="Contact" />
               </a>{/if}
             {#if author.github}<a
                 href={author.github}
@@ -285,7 +285,7 @@
                 rel="noopener noreferrer"
                 aria-label="GitHub"
               >
-                <Icon icon="GitHub" />
+                &nbsp;<Icon icon="GitHub" />
               </a>{/if}
             {#if author.orcid}
               <a
@@ -294,7 +294,7 @@
                 rel="noopener noreferrer"
                 aria-label="ORCID"
               >
-                <Icon icon="Orcid" />
+                &nbsp;<Icon icon="Orcid" />
               </a>{/if}
           </li>
         {/each}

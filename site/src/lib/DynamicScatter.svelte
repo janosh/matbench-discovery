@@ -3,7 +3,7 @@
   import type { ModelData } from '$lib'
   import { calculate_days_ago } from '$lib'
   import { extent } from 'd3-array'
-  import { DraggablePanel, format_num, Icon } from 'matterviz'
+  import { DraggablePane, format_num, Icon } from 'matterviz'
   import type { D3ColorSchemeName } from 'matterviz/colors'
   import { ColorScaleSelect, ScatterPlot } from 'matterviz/plot'
   import Select from 'svelte-multiselect'
@@ -190,7 +190,7 @@
       <Icon icon="{is_fullscreen ? `Exit` : ``}Fullscreen" />
     </button>
 
-    <DraggablePanel
+    <DraggablePane
       toggle_props={{
         style:
           `background-color: rgba(255, 255, 255, 0.15); border-radius: 50%; padding: 4pt;`,
@@ -298,7 +298,7 @@
           />
         </div>
       </div>
-    </DraggablePanel>
+    </DraggablePane>
   </div>
 
   <div class="controls-grid">

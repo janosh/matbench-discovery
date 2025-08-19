@@ -65,7 +65,8 @@
     {headingSelector}
     breakpoint={1600}
     minItems={3}
-    aside_style="min-width: 25em; left: calc(50vw + var(--main-max-width) / 2 + 160px); line-height: 1.8;"
+    aside_style="position: fixed; left: calc(50vw + var(--main-max-width) / 2 - 2em); max-width: 16em;"
+    nav_style="font-size: 9pt"
     open_button_style="right: 2em;"
     --toc-mobile-bg="rgba(0, 0, 0, 0.3)"
     --toc-mobile-width="22em"
