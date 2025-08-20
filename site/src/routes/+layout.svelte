@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
-  import { Footer, Nav } from '$lib'
+  import { Footer, Nav, ThemeToggle } from '$lib'
   import pkg from '$site/package.json'
   import { type Snippet } from 'svelte'
   import { CmdPalette, CopyButton, GitHubCorner } from 'svelte-multiselect'
@@ -67,10 +67,9 @@
     minItems={3}
     aside_style="position: fixed; left: calc(50vw + var(--main-max-width) / 2 - 2em); max-width: 16em;"
     nav_style="font-size: 9pt"
-    open_button_style="right: 2em;"
-    --toc-mobile-bg="rgba(0, 0, 0, 0.3)"
+    --toc-mobile-bg="var(--nav-bg)"
     --toc-mobile-width="22em"
-    --toc-active-bg="none"
+    --toc-active-bg="transparent"
   />
 {/if}
 
@@ -83,7 +82,9 @@
     [`/paper`, pkg.paper],
   ]}
   style="padding: 0 var(--main-padding)"
-/>
+>
+  <ThemeToggle />
+</Nav>
 
 <main>
   {@render children?.()}

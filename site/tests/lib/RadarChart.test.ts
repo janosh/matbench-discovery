@@ -26,13 +26,13 @@ describe(`RadarChart`, () => {
     expect(axis_lines).toHaveLength(3)
     // Verify stroke properties for each axis line
     axis_lines.forEach((line) => {
-      expect(line.getAttribute(`stroke`)).toBe(`rgba(255, 255, 255, 0.4)`)
+      expect(line.getAttribute(`stroke`)).toBe(`var(--border)`)
       expect(line.getAttribute(`stroke-width`)).toBe(`1`)
     })
 
     // Check that the triangle area is rendered
     const triangle_area = document.body.querySelector(
-      `path[fill="rgba(255, 255, 255, 0.1)"]`,
+      `path[fill="var(--nav-bg)"]`,
     )
     expect(triangle_area).toBeDefined()
 
@@ -137,7 +137,7 @@ describe(`RadarChart`, () => {
     expect(grid_circles.length).toBe(4) // Should be 4 grid circles
     // Verify stroke properties for each grid circle
     grid_circles.forEach((circle) => {
-      expect(circle.getAttribute(`stroke`)).toBe(`rgba(255, 255, 255, 0.1)`)
+      expect(circle.getAttribute(`stroke`)).toBe(`var(--border)`)
     })
   })
 

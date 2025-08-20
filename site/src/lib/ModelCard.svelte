@@ -55,8 +55,8 @@
   <button
     onclick={() => (show_details = !show_details)}
     title="{show_details ? `Hide` : `Show`} authors and package versions"
+    style={title_style}
   >
-    <!-- change between expand/collapse icon -->
     <Icon icon="Arrow{show_details ? `Up` : `Down`}" />
   </button>
 </h2>
@@ -167,7 +167,7 @@
 {/if}
 
 <section class="metrics" style={metrics_style || null}>
-  <h3>Metrics</h3>
+  <h3 style="margin: 0; font-weight: normal">Metrics</h3>
   <ul>
     <!-- hide run time if value is 0 (i.e. not available) -->
     {#each metrics as metric (JSON.stringify(metric))}
@@ -195,9 +195,6 @@
     background: none;
     padding: 0;
     font: inherit;
-  }
-  h3 {
-    margin: 0;
   }
   ul {
     list-style: disc;
@@ -247,12 +244,6 @@
   section.metrics > ul > li > :is(label, strong) {
     padding: 0 4pt;
     border-radius: 3pt;
-  }
-  section.metrics > ul > li > strong {
-    background-color: rgba(0, 0, 0, 0.25);
-  }
-  section.metrics > ul > li.active > strong {
-    background-color: teal;
   }
   section.metrics > ul > li.active > label {
     font-weight: bold;

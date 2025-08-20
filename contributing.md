@@ -2,7 +2,7 @@
 
 ## 🔨 &thinsp; Installation
 
-Clone the repo and install `matbench_discovery` into your Python environment:
+Clone [the repo](https://github.com/janosh/matbench-discovery) and install `matbench-discovery` into your Python environment:
 
 ```zsh
 git clone https://github.com/janosh/matbench-discovery --depth 1

@@ -26,9 +26,11 @@
 {/each}
 
 <style>
-  span,
-  img {
-    filter: grayscale(100%);
+  :root[style*='color-scheme: light'] {
+    --logo-brightness: 0.5;
+  }
+  span, img {
+    filter: grayscale(100%) brightness(var(--logo-brightness, 1));
     height: 1em;
     width: auto;
     vertical-align: middle;

@@ -86,8 +86,8 @@
   }
 </script>
 
-<h1 style="line-height: 0; margin-block: -1.2em 1em">
-  <img src="/favicon.svg" alt="Logo" width="60px" /><br />
+<h1>
+  <img src="/favicon.svg" alt="Matbench Discovery Logo" width="60px" />
   Matbench Discovery
 </h1>
 
@@ -155,7 +155,7 @@
 
   <figcaption class="caption-radar-container">
     <div
-      style="background-color: var(--light-bg); padding: 0.2em 0.5em; border-radius: 4px"
+      style="background-color: var(--card-bg); padding: 0.2em 0.5em; border-radius: 4px"
     >
       The <strong>CPS</strong> (Combined Performance Score) is a metric that weights
       discovery performance (F1), geometry optimization quality (RMSD), and thermal
@@ -187,7 +187,6 @@
 <DynamicScatter
   models={MODELS}
   model_filter={(model) => table.show_non_compliant || model_is_compliant(model)}
-  {discovery_set}
 />
 
 <Readme>
@@ -217,6 +216,19 @@
 <KappaNote warning={false} />
 
 <style>
+  h1 {
+    margin-block: -1.2em 1em;
+    display: flex;
+    align-items: center;
+    place-content: center;
+    gap: 7pt;
+  }
+  h1 img {
+    filter: brightness(0.8);
+  }
+  :root[style*='color-scheme: light'] h1 img {
+    filter: brightness(0.2);
+  }
   figure {
     margin: 0;
     display: grid;
@@ -231,20 +243,20 @@
     align-items: center;
   }
   div.downloads .download-btn {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--nav-bg);
     padding: 0 6pt;
     border-radius: 4pt;
     font: inherit;
     transition: background-color 0.2s ease;
   }
   div.downloads .download-btn:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: var(--nav-bg);
   }
   div.export-error {
     color: #ff6b6b;
     margin-top: 0.5em;
     flex-basis: 100%;
-    background-color: rgba(255, 107, 107, 0.1);
+    background-color: color-mix(in oklab, #ff6b6b 10%, transparent);
     padding: 1em;
     border-radius: 4px;
     border-left: 4px solid #ff6b6b;

@@ -287,21 +287,21 @@
     text-overflow: ellipsis;
   }
   th {
-    background: var(--heatmap-header-bg, var(--night));
+    background: var(--heatmap-header-bg, var(--page-bg));
     position: sticky;
     cursor: pointer;
   }
   th:hover {
-    background: var(--heatmap-header-hover-bg, var(--night-lighter, #2a2a2a));
+    background: var(--heatmap-header-hover-bg, var(--nav-bg));
   }
   .sticky-col {
     position: sticky;
     left: 0;
-    background: var(--heatmap-header-bg, var(--night));
+    background: var(--heatmap-header-bg, var(--page-bg));
     z-index: 1;
   }
   tr:nth-child(odd) td.sticky-col {
-    background: var(--heatmap-row-odd-bg, rgb(15, 14, 14));
+    background: var(--heatmap-row-odd-bg, var(--table-odd));
   }
   tbody tr:hover {
     filter: var(--heatmap-row-hover-filter, brightness(1.1));
@@ -310,7 +310,7 @@
     cursor: default;
   }
   .group-header th {
-    border-bottom: 1px solid black;
+    border-bottom: 1px solid var(--border);
     text-align: center;
   }
   /* Styles for the table header with sort hint and controls */
@@ -321,11 +321,11 @@
     place-items: center;
     margin: 10pt auto;
     gap: 2em;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--border);
     justify-content: space-between;
   }
   span.sort-hint {
-    color: var(--text-muted, #aaa);
+    color: var(--text-muted);
     margin: 0;
   }
   .not-sortable {

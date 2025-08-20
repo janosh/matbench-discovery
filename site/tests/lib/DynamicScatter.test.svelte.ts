@@ -1,7 +1,7 @@
 import DynamicScatter from '$lib/DynamicScatter.svelte'
 import type { ModelData } from '$lib/types'
 import { mount } from 'svelte'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { doc_query, is_hidden } from '../index'
 
 const pane_selector = `[aria-label="Draggable pane"]`
@@ -61,6 +61,22 @@ const mock_models: ModelData[] = [
 ]
 
 describe(`DynamicScatter.svelte`, () => {
+  beforeEach(() => {
+    // Mock fullscreen API
+    let fullscreen_element: Element | null = null
+    Object.defineProperty(document, `fullscreenElement`, {
+      get: () => fullscreen_element,
+      configurable: true,
+    })
+    // Mock requestFullscreen and exitFullscreen methods
+    Element.prototype.requestFullscreen = vi.fn().mockImplementation(
+      function (this: Element) {
+        fullscreen_element = this // eslint-disable-line @typescript-eslint/no-this-alias
+      },
+    )
+    document.exitFullscreen = vi.fn()
+  })
+
   afterEach(() => {
     document.body.innerHTML = ``
     vi.restoreAllMocks()
