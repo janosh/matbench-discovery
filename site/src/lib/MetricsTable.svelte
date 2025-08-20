@@ -3,6 +3,7 @@
   import { metric_better_as } from '$lib/metrics'
   import type { Snippet } from 'svelte'
   import { click_outside } from 'svelte-multiselect/attachments'
+  import { SvelteSet } from 'svelte/reactivity'
   import { ALL_METRICS, HYPERPARAMS, METADATA_COLS } from './labels'
   import { assemble_row_data } from './metrics'
   import { heatmap_class } from './table-export'
@@ -39,7 +40,7 @@
     active_files = $bindable([]),
     active_model_name = $bindable(``),
     pred_files_dropdown_pos = $bindable(null),
-    selected_models = $bindable(new Set<string>()),
+    selected_models = $bindable(new SvelteSet<string>()),
     ...rest
   }: Props = $props()
 
@@ -101,7 +102,7 @@
       const model_name = String(model_data.Model)
       const is_selected = selected_models.has(model_name)
       row.style = is_selected
-        ? `background-color: rgba(255, 255, 255, 0.1); color: rgb(255, 202, 135);`
+        ? `background-color: var(--nav-bg); color: var(--highlight);`
         : undefined
 
       return row
@@ -118,22 +119,16 @@
     active_model_name = links.pred_files.name
     active_files = links.pred_files.files
 
-    // Position dropdown relative to the viewport
-    pred_files_dropdown_pos = {
-      x: rect.left,
-      y: rect.bottom,
-      name: links.pred_files.name,
-    }
+    // Position dropdown relative to viewport
+    const { name } = links.pred_files
+    pred_files_dropdown_pos = { x: rect.left, y: rect.bottom, name }
   }
   const close_dropdown = () => (pred_files_dropdown_pos = null)
 
   function toggle_model_selection(model_name: string) {
-    const new_selected = new Set(selected_models)
-    if (new_selected.has(model_name)) {
-      new_selected.delete(model_name)
-    } else {
-      new_selected.add(model_name)
-    }
+    const new_selected = new SvelteSet(selected_models)
+    if (new_selected.has(model_name)) new_selected.delete(model_name)
+    else new_selected.add(model_name)
     selected_models = new_selected
   }
 </script>
@@ -245,8 +240,8 @@
   .pred-files-dropdown {
     transform: translateX(-100%);
     margin-left: 20px;
-    background: var(--light-bg, white);
-    color: var(--text-color, black);
+    background: var(--page-bg);
+    border: 1px solid var(--border);
     border-radius: 5px;
     padding: 0.75em;
   }

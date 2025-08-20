@@ -36,7 +36,7 @@
   {@const { missing_preds } = model.metrics?.discovery?.unique_prototypes ??
     {}}
   <div class="model-detail">
-    <h1 style="font-size: 2.5em">{model.model_name}</h1>
+    <h1 style="font-size: 2.5em; margin: 0">{model.model_name}</h1>
 
     <section class="meta-info">
       <span>
@@ -86,7 +86,7 @@
       {/if}
 
       {#if model.pypi}
-        <code style="padding: 0 4pt">
+        <code style="padding: 0 4pt; place-content: center">
           pip install {model.pypi.split(`/`).pop()}
           <CopyButton
             content={`pip install ${model.pypi.split(`/`).pop()}`}
@@ -209,7 +209,7 @@
           then ParityPlot
         }
           <!-- negative margin-bottom corrects for display: none plot title -->
-          <h3 style="margin: 1em auto -2em; text-align: center">
+          <h3 style="margin: 1em auto -2em; text-align: center" class="toc-exclude">
             DFT vs ML {title}
           </h3>
           <ParityPlot.default height="500" />
@@ -219,7 +219,7 @@
 
     {#if model.model_name in per_elem_each_errors}
       {@const heatmap_values = per_elem_each_errors?.[model.model_name]}
-      <h3 style="margin: 1em auto -1em; text-align: center">
+      <h3 style="margin: 1em auto -1em; text-align: center" class="toc-exclude">
         Convex hull distance prediction errors projected onto elements
       </h3>
       <PeriodicTable
@@ -449,7 +449,7 @@
     padding: 0;
   }
   section:is(.deps, .model-info) ul li {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--card-bg);
     padding: 2pt 6pt;
     border-radius: 3pt;
     text-align: center;
@@ -473,9 +473,8 @@
     place-items: center;
     gap: 5px;
     padding: 0 5pt;
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--card-bg);
     border-radius: 5px;
-    color: lightgray;
   }
   .links details {
     position: relative;
@@ -484,7 +483,7 @@
   .links .dropdown {
     position: absolute;
     margin-top: 5px;
-    background-color: var(--light-bg);
+    background-color: var(--page-bg);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 5px;
     z-index: 3;
@@ -492,10 +491,6 @@
   }
   .links .dropdown a {
     display: block;
-    background: none;
-  }
-  .links .dropdown a:hover {
-    background-color: rgba(255, 255, 255, 0.1);
   }
   li {
     margin: 1ex 0;

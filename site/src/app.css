@@ -1,21 +1,91 @@
 :root {
-  --night: #061e25;
-  --blue: cornflowerblue;
-  --link-color: var(--blue);
-  --text-color: rgb(208, 208, 208);
-  --dark-bg: #0d1a1d;
-  --light-bg: #08303b;
+  color-scheme: dark;
+  /* Light theme palette */
+  --light-page-bg: #fefefe; /* softer than pure white */
+  --light-surface-bg: #eee; /* softer than pure white */
+  --light-text: #1f2937; /* gray-800 */
+  --light-text-secondary: #4b5563; /* gray-600 */
+  --light-link: #1367c0; /* toned-down blue */
+  --light-link-hover: mediumseagreen; /* muted orange */
+  --light-code-bg: rgba(0, 0, 0, 0.05); /* gentle blue tint */
+  --light-pre-bg: rgba(0, 0, 0, 0.04); /* soft panel bg */
+  --light-btn-bg: rgba(0, 0, 0, 0.04); /* calm teal */
+  --light-btn-bg-hover: rgba(0, 0, 0, 0.1);
+  --light-btn-text: #27323f; /* readable on teal */
+  --light-border: rgba(0, 0, 0, 0.15);
+  --light-highlight: #1194a6; /* cyan-teal accent */
+  --light-blockquote-bg: rgba(0, 0, 0, 0.03);
+  --light-table-odd: rgba(0, 0, 0, 0.03);
+  --light-nav-bg: rgba(0, 0, 0, 0.06); /* lighter surface tint */
+  --light-card-bg: rgba(255, 255, 255, 0.4);
+  --light-card-border: rgba(0, 0, 0, 0.12);
+  --light-shadow: rgba(0, 0, 0, 0.06);
+  --light-selection: rgba(42, 111, 187, 0.16);
 
-  --github-corner-color: var(--night);
+  /* Dark theme palette matches current site appearance */
+  --dark-page-bg: #061e25;
+  --dark-surface-bg: #222; /* == --night */
+  --dark-text: rgb(208, 208, 208);
+  --dark-text-secondary: rgb(140, 140, 140);
+  --dark-link: cornflowerblue;
+  --dark-link-hover: orange;
+  --dark-code-bg: rgba(255, 255, 255, 0.1);
+  --dark-pre-bg: rgba(255, 255, 255, 0.05);
+  --dark-btn-bg: rgba(255, 255, 255, 0.08);
+  --dark-btn-bg-hover: rgba(255, 255, 255, 0.2);
+  --dark-btn-text: rgb(208, 208, 208);
+  --dark-border: rgba(255, 255, 255, 0.125);
+  --dark-highlight: mediumseagreen;
+  --dark-blockquote-bg: rgba(255, 255, 255, 0.05);
+  --dark-table-odd: rgba(0, 0, 0, 0.5);
+  --dark-nav-bg: rgba(255, 255, 255, 0.08);
+  --dark-card-bg: rgba(0, 0, 0, 0.3);
+  --dark-card-border: rgba(255, 255, 255, 0.1);
+  --dark-shadow: rgba(0, 0, 0, 0.5);
+  --dark-selection: rgba(0, 255, 255, 0.2);
+
+  /* Theme-aware aliases */
+  --page-bg: light-dark(var(--light-page-bg), var(--dark-page-bg));
+  --surface-bg: light-dark(var(--light-surface-bg), var(--dark-surface-bg));
+  --text-color: light-dark(var(--light-text), var(--dark-text));
+  --text-secondary: light-dark(var(--light-text-secondary), var(--dark-text-secondary));
+  --link-color: light-dark(var(--light-link), var(--dark-link));
+  --link-hover: light-dark(var(--light-link-hover), var(--dark-link-hover));
+  --code-bg: light-dark(var(--light-code-bg), var(--dark-code-bg));
+  --pre-bg: light-dark(var(--light-pre-bg), var(--dark-pre-bg));
+  --btn-bg: light-dark(var(--light-btn-bg), var(--dark-btn-bg));
+  --btn-text: light-dark(var(--light-btn-text), var(--dark-btn-text));
+  --btn-bg-hover: light-dark(var(--light-btn-bg-hover), var(--dark-btn-bg-hover));
+  --border: light-dark(var(--light-border), var(--dark-border));
+  --highlight: light-dark(var(--light-highlight), var(--dark-highlight));
+  --blockquote-bg: light-dark(var(--light-blockquote-bg), var(--dark-blockquote-bg));
+  --table-odd: light-dark(var(--light-table-odd), var(--dark-table-odd));
+  --nav-bg: light-dark(var(--light-nav-bg), var(--dark-nav-bg));
+  --card-bg: light-dark(var(--light-card-bg), var(--dark-card-bg));
+  --card-border: light-dark(var(--light-card-border), var(--dark-card-border));
+  --shadow: light-dark(var(--light-shadow), var(--dark-shadow));
+  --selection: light-dark(var(--light-selection), var(--dark-selection));
+  --struct-bg: light-dark(var(--light-pre-bg), var(--dark-pre-bg));
+
+  /* Component variables and layout */
+  --github-corner-color: var(--page-bg);
   --github-corner-bg: white;
-  --tooltip-bg: rgb(23, 47, 69);
+  --tooltip-bg: var(--surface-bg);
+  --tooltip-shadow: drop-shadow(0 1px 8px var(--shadow));
 
   --sms-margin: 1em auto;
-  --sms-options-bg: var(--light-bg);
+  --sms-options-bg: var(--page-bg);
+  --sms-text-color: var(--text-color);
   --sms-max-width: 23em;
-  --sms-border: 0.1px solid gray;
-  --sms-focus-border: 0.1px solid white;
-  --sms-active-color: var(--blue);
+  --sms-border: 0.1px solid var(--border);
+  --sms-focus-border: 0.1px solid var(--border);
+  --sms-active-color: cornflowerblue;
+
+  --radio-btn-bg: var(--btn-bg);
+  --radio-btn-checked-shadow: none;
+  --radio-btn-checked-bg: var(--btn-bg-hover);
+  --radio-btn-color: var(--text-color);
+  --radio-btn-padding: 0 4pt;
 
   /* can be increased on pages without much text like /models */
   --main-max-width: 50rem;
@@ -23,17 +93,20 @@
 
   --compliant-color: #4caf50;
   --non-compliant-color: #4682b4;
-  --panel-bg: var(--light-bg);
+  --panel-bg: var(--pre-bg);
+
+  /* Defaults for tables/heatmaps */
+  --heatmap-header-bg: var(--page-bg);
+  --heatmap-header-hover-bg: var(--nav-bg);
+  --heatmap-row-odd-bg: var(--table-odd);
+  --text-muted: var(--text-secondary);
 }
-/* TODO remove this with next matterviz release */
-button.panel-toggle {
-  font-size: 12pt !important;
-}
+
 html {
   scroll-behavior: smooth;
 }
 body {
-  background: var(--night);
+  background: var(--page-bg);
   font-family: -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
   color: var(--text-color);
   line-height: 1.5;
@@ -43,6 +116,8 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  /* smooth transition between dark/light theme  */
+  transition: color 0.2s, background-color 0.2s;
 }
 main {
   padding: var(--main-padding);
@@ -55,12 +130,16 @@ main {
   max-inline-size: var(--main-max-width);
 }
 button {
-  color: var(--text-color);
+  color: var(--btn-text);
   cursor: pointer;
   border: none;
   border-radius: 3pt;
-  background-color: rgba(255, 255, 255, 0.1);
+  background: var(--btn-bg);
   padding: 2pt 4pt;
+  transition: color 0.2s, background-color 0.2s;
+}
+button:hover {
+  background: var(--btn-bg-hover);
 }
 :is(div.multiselect) button {
   background: transparent;
@@ -78,11 +157,11 @@ a {
   transition: 0.2s;
 }
 a:hover {
-  color: orange;
+  color: var(--link-hover);
 }
 a.link {
   padding: 2pt 4pt;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--nav-bg);
   border-radius: 3pt;
   transition: 0.2s;
 }
@@ -93,8 +172,7 @@ code {
   overflow-wrap: break-word;
   padding: 1pt 3pt;
   border-radius: 2pt;
-  font-size: 1.1em;
-  background-color: rgba(0, 255, 255, 0.1);
+  background-color: var(--code-bg);
 }
 pre code {
   background-color: transparent;
@@ -103,8 +181,7 @@ pre code {
 pre {
   position: relative;
   border-radius: 4pt;
-  font-size: 9.5pt;
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--pre-bg);
   overflow-x: auto;
   padding: 6pt 8pt;
   margin: 1em auto;
@@ -132,25 +209,25 @@ table {
   border-collapse: collapse;
 }
 table :is(td, th) {
-  border: 1px solid gray;
+  border: 1px solid var(--border);
   padding: 2pt 4pt;
 }
 tbody tr:nth-child(odd) {
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--table-odd);
 }
 /* highlight hovered table rows */
 tbody tr:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--nav-bg);
 }
 
 h1 {
   text-align: center;
 }
 blockquote {
-  border-left: 3pt solid var(--blue);
+  border-left: 3pt solid cornflowerblue;
   padding: 4pt 4pt 4pt 9pt;
   margin: 1em auto;
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--blockquote-bg);
 }
 blockquote > :is(:first-child, :last-child) {
   margin: 0 auto;
@@ -159,13 +236,15 @@ blockquote > :is(:first-child, :last-child) {
 :where(h1, h2, h3, h4, h5, h6, address) {
   text-wrap: balance;
 }
+:where(h2, h3, h4, h5, h6):not(:first-of-type) {
+  margin-top: 2em;
+}
 :where(h2, h3, h4, h5, h6) {
   scroll-margin-top: 50px;
   transition: 0.3s;
-  margin-top: 2em;
 }
 :where(h2, h3, h4, h5, h6).toc-clicked {
-  color: orange;
+  color: var(--link-hover);
 }
 /* style heading anchors added by rehype-autolink-headings, see svelte.config.js */
 :where(h2, h3, h4, h5, h6, strong) a[aria-hidden='true'] {
@@ -185,10 +264,6 @@ strong a[aria-hidden='true'] {
 
 caption {
   display: block;
-}
-
-.math {
-  font-size: 10pt;
 }
 
 @keyframes highlight-scroll-target {
@@ -216,7 +291,6 @@ input {
   font-size: 12pt;
   color: var(--text-color);
   transition: background 0.2s;
-  background: rgba(255, 255, 255, 0.1);
 }
 /* don't change background color for svelte-multiselect */
 ul.selected input {
@@ -224,20 +298,26 @@ ul.selected input {
 }
 input:focus {
   outline: none;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--nav-bg);
 }
 kbd {
-  border: 1px solid #666;
+  border: 1px solid var(--border);
   display: inline-block;
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--nav-bg);
   padding: 1pt 3pt;
   border-radius: 2pt;
 }
 
-/* Helper class to make elements stretch full width but cap content at 1400px and center it */
+/* Full-bleed uses negative margin to span full viewport width */
+.full-bleed {
+  --margin: 50px;
+  width: calc(100vw - 2 * var(--margin));
+  margin-left: calc(-50vw + 50% + var(--margin));
+}
+/* stretch elements full width but cap content at 1400px and center */
 .bleed-1400 {
   --margin: 50px;
   position: relative;
@@ -249,9 +329,32 @@ kbd {
   padding-inline: max(var(--margin), calc(50vw - 1400px / 2));
 }
 
-/* Full-bleed class that uses the negative margin technique to span full viewport width */
-.full-bleed {
-  --margin: 50px;
-  width: calc(100vw - 2 * var(--margin));
-  margin-left: calc(-50vw + 50% + var(--margin));
+/* Plotly theming: make embedded figures follow site theme */
+/* Figure and plot backgrounds */
+div.plotly-graph-div .main-svg .bg {
+  fill: var(--card-bg) !important;
+}
+/* Axes text, titles, legend text, colorbar ticks */
+div.plotly-graph-div g[class*='axislayer'] text,
+div.plotly-graph-div g[class*='xaxislayer'] text,
+div.plotly-graph-div g[class*='yaxislayer'] text,
+div.plotly-graph-div .gtitle,
+div.plotly-graph-div .legend text,
+div.plotly-graph-div .colorbar text,
+div.plotly-graph-div .cbaxis .tick text,
+div.plotly-graph-div .infolayer text {
+  fill: var(--text-color) !important;
+}
+/* Axis lines and ticks */
+div.plotly-graph-div g[class*='axislayer'] path,
+div.plotly-graph-div g[class*='axislayer'] line {
+  stroke: var(--border) !important;
+}
+/* Grid lines */
+div.plotly-graph-div g[class*='gridlayer'] path {
+  stroke: color-mix(in oklab, var(--border) 60%, transparent) !important;
+}
+/* Give hover labels same background as page */
+div.plotly-graph-div .hoverlayer rect {
+  fill: var(--page-bg) !important;
 }
