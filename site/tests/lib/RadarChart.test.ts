@@ -128,7 +128,7 @@ describe(`RadarChart`, () => {
 
     // Check for the colored metric areas (should be 3 paths)
     const colored_areas = document.body.querySelectorAll(
-      `path[fill^="rgba"][opacity="0.5"]`,
+      `path[fill^="rgb"][opacity="0.5"]`,
     )
     expect(colored_areas.length).toBe(3)
 

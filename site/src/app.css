@@ -1,4 +1,5 @@
 :root {
+  color-scheme: dark;
   /* Light theme palette */
   --light-page-bg: #fefefe; /* softer than pure white */
   --light-surface-bg: #eee; /* softer than pure white */
@@ -9,12 +10,11 @@
   --light-code-bg: rgba(0, 0, 0, 0.05); /* gentle blue tint */
   --light-pre-bg: rgba(0, 0, 0, 0.04); /* soft panel bg */
   --light-btn-bg: rgba(0, 0, 0, 0.04); /* calm teal */
-  --light-btn-bg-hover: rgba(0, 0, 0, 0.08);
+  --light-btn-bg-hover: rgba(0, 0, 0, 0.1);
   --light-btn-text: #27323f; /* readable on teal */
   --light-border: rgba(0, 0, 0, 0.15);
   --light-highlight: #1194a6; /* cyan-teal accent */
   --light-blockquote-bg: rgba(0, 0, 0, 0.03);
-  --light-input-bg: rgba(0, 0, 0, 0.08);
   --light-table-odd: rgba(0, 0, 0, 0.03);
   --light-nav-bg: rgba(0, 0, 0, 0.06); /* lighter surface tint */
   --light-card-bg: rgba(255, 255, 255, 0.4);
@@ -32,12 +32,11 @@
   --dark-code-bg: rgba(255, 255, 255, 0.1);
   --dark-pre-bg: rgba(255, 255, 255, 0.05);
   --dark-btn-bg: rgba(255, 255, 255, 0.08);
-  --dark-btn-bg-hover: rgba(255, 255, 255, 0.12);
+  --dark-btn-bg-hover: rgba(255, 255, 255, 0.2);
   --dark-btn-text: rgb(208, 208, 208);
   --dark-border: rgba(255, 255, 255, 0.125);
   --dark-highlight: mediumseagreen;
   --dark-blockquote-bg: rgba(255, 255, 255, 0.05);
-  --dark-input-bg: rgba(255, 255, 255, 0.1);
   --dark-table-odd: rgba(0, 0, 0, 0.5);
   --dark-nav-bg: rgba(255, 255, 255, 0.08);
   --dark-card-bg: rgba(0, 0, 0, 0.3);
@@ -60,7 +59,6 @@
   --border: light-dark(var(--light-border), var(--dark-border));
   --highlight: light-dark(var(--light-highlight), var(--dark-highlight));
   --blockquote-bg: light-dark(var(--light-blockquote-bg), var(--dark-blockquote-bg));
-  --input-bg: light-dark(var(--light-input-bg), var(--dark-input-bg));
   --table-odd: light-dark(var(--light-table-odd), var(--dark-table-odd));
   --nav-bg: light-dark(var(--light-nav-bg), var(--dark-nav-bg));
   --card-bg: light-dark(var(--light-card-bg), var(--dark-card-bg));
@@ -85,6 +83,7 @@
 
   --radio-btn-bg: var(--btn-bg);
   --radio-btn-checked-shadow: none;
+  --radio-btn-checked-bg: var(--btn-bg-hover);
   --radio-btn-color: var(--text-color);
   --radio-btn-padding: 0 4pt;
 
@@ -237,10 +236,12 @@ blockquote > :is(:first-child, :last-child) {
 :where(h1, h2, h3, h4, h5, h6, address) {
   text-wrap: balance;
 }
+:where(h2, h3, h4, h5, h6):not(:first-of-type) {
+  margin-top: 2em;
+}
 :where(h2, h3, h4, h5, h6) {
   scroll-margin-top: 50px;
   transition: 0.3s;
-  margin-top: 2em;
 }
 :where(h2, h3, h4, h5, h6).toc-clicked {
   color: var(--link-hover);
@@ -290,7 +291,6 @@ input {
   font-size: 12pt;
   color: var(--text-color);
   transition: background 0.2s;
-  background: var(--input-bg);
 }
 /* don't change background color for svelte-multiselect */
 ul.selected input {
@@ -327,13 +327,6 @@ kbd {
   box-sizing: border-box;
   /* Calculate padding: min page margin, grows to center content within max-width */
   padding-inline: max(var(--margin), calc(50vw - 1400px / 2));
-}
-
-/* Full-bleed class that uses the negative margin technique to span full viewport width */
-.full-bleed {
-  --margin: 50px;
-  width: calc(100vw - 2 * var(--margin));
-  margin-left: calc(-50vw + 50% + var(--margin));
 }
 
 /* Plotly theming: make embedded figures follow site theme */

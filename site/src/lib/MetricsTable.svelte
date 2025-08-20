@@ -240,8 +240,8 @@
   .pred-files-dropdown {
     transform: translateX(-100%);
     margin-left: 20px;
-    background: var(--card-bg);
-    color: var(--text-color);
+    background: var(--page-bg);
+    border: 1px solid var(--border);
     border-radius: 5px;
     padding: 0.75em;
   }

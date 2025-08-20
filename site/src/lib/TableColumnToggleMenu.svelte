@@ -31,7 +31,7 @@
   bind:open={column_panel_open}
   {@attach click_outside({ callback: () => (column_panel_open = false) })}
 >
-  <summary>
+  <summary aria-expanded={column_panel_open}>
     Columns <Icon icon="Columns" />
   </summary>
   <div class="column-menu">
@@ -57,7 +57,7 @@
     position: relative;
   }
   .column-toggles summary {
-    background: var(--input-bg);
+    background: var(--btn-bg);
     padding: 0 6pt;
     margin: 4pt 0;
     border-radius: 4pt;
@@ -77,7 +77,7 @@
     position: absolute;
     right: 0;
     top: calc(100% + 4pt);
-    background: var(--card-bg);
+    background: var(--page-bg);
     border: 1px solid var(--border);
     border-radius: 4pt;
     padding: 3pt 5pt;

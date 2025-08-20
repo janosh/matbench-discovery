@@ -7,10 +7,15 @@
       const prefers_dark =
         window.matchMedia('(prefers-color-scheme: dark)').matches
       try {
-        const theme = localStorage.theme || (prefers_dark ? 'dark' : 'light')
+        const stored = localStorage.theme
+        const theme = ['light', 'dark'].includes(stored)
+          ? stored
+          : (prefers_dark ? 'dark' : 'light')
         document.documentElement.style.colorScheme = theme
+        document.documentElement.dataset.theme = theme
       } catch {
         document.documentElement.style.colorScheme = 'dark'
+        document.documentElement.dataset.theme = 'dark'
       }
     </script>
     <meta

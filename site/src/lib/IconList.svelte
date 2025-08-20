@@ -26,7 +26,7 @@
 {/each}
 
 <style>
-  :root[style*='color-scheme: light'] {
+  :root[data-theme='light'] {
     --logo-brightness: 0.5;
   }
   span, img {

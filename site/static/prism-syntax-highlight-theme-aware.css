@@ -29,7 +29,7 @@
 
 pre[class*='language-'], code[class*='language-'] {
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
-  font-size: 13px;
+  font-size: 0.85rem; /* ~14px */
   text-align: left;
   white-space: pre;
   word-spacing: normal;
@@ -60,7 +60,8 @@ pre[class*='language-'],
   background: light-dark(var(--prism-light-bg), var(--prism-dark-bg));
 }
 
-::selection {
+:is(pre, code)[class*='language-'] ::selection,
+:is(pre, code)[class*='language-']::selection {
   background: light-dark(var(--prism-light-selection), var(--prism-dark-selection));
   text-shadow: none;
 }

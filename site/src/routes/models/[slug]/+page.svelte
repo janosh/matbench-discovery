@@ -209,7 +209,7 @@
           then ParityPlot
         }
           <!-- negative margin-bottom corrects for display: none plot title -->
-          <h3 style="margin: 1em auto -2em; text-align: center">
+          <h3 style="margin: 1em auto -2em; text-align: center" class="toc-exclude">
             DFT vs ML {title}
           </h3>
           <ParityPlot.default height="500" />
@@ -219,7 +219,7 @@
 
     {#if model.model_name in per_elem_each_errors}
       {@const heatmap_values = per_elem_each_errors?.[model.model_name]}
-      <h3 style="margin: 1em auto -1em; text-align: center">
+      <h3 style="margin: 1em auto -1em; text-align: center" class="toc-exclude">
         Convex hull distance prediction errors projected onto elements
       </h3>
       <PeriodicTable

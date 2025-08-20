@@ -48,13 +48,18 @@
   )
   const target = { target: `_blank`, rel: `noopener` }
   let n_model_params = $derived(format_num(model_params, `.3~s`))
+  let expand_title = $derived(
+    `${show_details ? `Hide` : `Show`} authors and package versions`,
+  )
 </script>
 
 <h2 style={title_style}>
   <a href="/models/{model_key}">{model_name}</a>
   <button
     onclick={() => (show_details = !show_details)}
-    title="{show_details ? `Hide` : `Show`} authors and package versions"
+    aria-expanded={show_details}
+    aria-label={expand_title}
+    title={expand_title}
     style={title_style}
   >
     <Icon icon="Arrow{show_details ? `Up` : `Down`}" />

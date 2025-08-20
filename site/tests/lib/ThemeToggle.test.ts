@@ -97,22 +97,28 @@ describe(`ThemeToggle`, () => {
     mount(ThemeToggle, { target: document.body })
     await tick()
     expect(document.documentElement.style.colorScheme).toBe(expected)
+    expect(document.documentElement.dataset.theme).toBe(expected)
     const button_el = document.body.querySelector(`button`)
-    expect(button_el?.getAttribute(`title`)).toContain(`Switch to ${expected} theme`)
+    const next = { light: `dark`, dark: `light` }[expected]
+    expect(button_el?.getAttribute(`title`)).toContain(`Switch to ${next} theme`)
   })
 
-  it(`toggles theme when clicked and updates colorScheme`, () => {
+  it(`toggles theme when clicked and updates colorScheme and data-theme`, () => {
     mount(ThemeToggle, { target: document.body })
     const button = document.body.querySelector(`button`)
     expect(document.documentElement.style.colorScheme).toBe(`dark`)
-    expect(button?.getAttribute(`title`)).toContain(`Switch to dark theme`)
+    expect(document.documentElement.dataset.theme).toBe(`dark`)
+    expect(button?.getAttribute(`title`)).toContain(`Switch to light theme`)
 
     button?.click()
     expect(document.documentElement.style.colorScheme).toBe(`light`)
+    expect(document.documentElement.dataset.theme).toBe(`light`)
     expect(globalThis.localStorage.theme).toBe(`light`)
+    expect(button?.getAttribute(`title`)).toContain(`Switch to light theme`)
 
     button?.click()
     expect(document.documentElement.style.colorScheme).toBe(`dark`)
+    expect(document.documentElement.dataset.theme).toBe(`dark`)
     expect(globalThis.localStorage.theme).toBe(`dark`)
   })
 })

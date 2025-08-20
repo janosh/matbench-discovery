@@ -226,7 +226,7 @@
   h1 img {
     filter: brightness(0.8);
   }
-  :root[style*='color-scheme: light'] h1 img {
+  :root[data-theme='light'] h1 img {
     filter: brightness(0.2);
   }
   figure {
@@ -243,14 +243,8 @@
     align-items: center;
   }
   div.downloads .download-btn {
-    background-color: var(--nav-bg);
-    padding: 0 6pt;
-    border-radius: 4pt;
+    padding: 1pt 6pt;
     font: inherit;
-    transition: background-color 0.2s ease;
-  }
-  div.downloads .download-btn:hover {
-    background-color: var(--nav-bg);
   }
   div.export-error {
     color: #ff6b6b;

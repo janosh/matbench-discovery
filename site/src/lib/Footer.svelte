@@ -36,7 +36,7 @@
     justify-content: center;
     margin: 2em 0;
   }
-  :root[style*='color-scheme: light'] img {
+  :root[data-theme='light'] img {
     filter: brightness(0.2);
   }
 </style>

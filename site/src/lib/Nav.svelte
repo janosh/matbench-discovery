@@ -31,10 +31,10 @@
     display: flex;
     gap: 1em 1ex;
     place-content: center;
+    place-items: center;
     margin: 2em auto;
     max-width: 45em;
     flex-wrap: wrap;
-    font-size: 1.1em;
   }
   nav > a {
     padding: 0 5pt;

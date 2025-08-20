@@ -16,7 +16,7 @@
   })
 </script>
 
-<svg fill="currentColor" {...svg_props} {...rest}>
+<svg fill="currentColor" aria-hidden="true" {...svg_props} {...rest}>
   {#if path.trim().startsWith(`<`)}
     {@html path}
   {:else}

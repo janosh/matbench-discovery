@@ -31,9 +31,9 @@
   }
 
   const colors = [
-    `rgba(255, 99, 132, 0.7)`, // red for F1
-    `rgba(255, 206, 86, 0.7)`, // yellow for kappa
-    `rgba(54, 162, 235, 0.7)`, // blue for RMSD
+    `rgb(255, 99, 132)`, // red for F1
+    `rgb(255, 206, 86)`, // yellow for kappa
+    `rgb(54, 162, 235)`, // blue for RMSD
   ]
 
   // Compute axes points coordinates

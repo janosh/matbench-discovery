@@ -72,9 +72,15 @@ describe(`DynamicScatter.svelte`, () => {
     Element.prototype.requestFullscreen = vi.fn().mockImplementation(
       function (this: Element) {
         fullscreen_element = this // eslint-disable-line @typescript-eslint/no-this-alias
+        document.dispatchEvent(new Event(`fullscreenchange`))
+        return Promise.resolve()
       },
     )
-    document.exitFullscreen = vi.fn()
+    document.exitFullscreen = vi.fn().mockImplementation(() => {
+      fullscreen_element = null
+      document.dispatchEvent(new Event(`fullscreenchange`))
+      return Promise.resolve()
+    })
   })
 
   afterEach(() => {
@@ -132,7 +138,7 @@ describe(`DynamicScatter.svelte`, () => {
     })
   }
 
-  it(`handles fullscreen toggle via button click and Escape key`, async () => {
+  it(`handles fullscreen toggle via button click`, async () => {
     mount(DynamicScatter, {
       target: document.body,
       props: { models: mock_models },
