@@ -181,10 +181,9 @@
   }
   ul > li button {
     transition: all 0.2s;
-    background-color: rgba(255, 255, 255, 0.1);
   }
   ul > li.active button {
-    background-color: darkcyan;
+    background-color: var(--btn-bg);
   }
   ol {
     display: grid;
@@ -192,7 +191,7 @@
     grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
   }
   ol > li {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: var(--card-bg);
     padding: 6pt 10pt 14pt;
     border-radius: 3pt;
     display: grid;

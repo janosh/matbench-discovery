@@ -1,11 +1,13 @@
 <script lang="ts">
   import { page } from '$app/state'
+  import type { Snippet } from 'svelte'
 
   interface Props {
     routes: (string | [string, string])[]
-    style?: string | null
+    children?: Snippet
+    [key: string]: unknown
   }
-  let { routes, style = null }: Props = $props()
+  let { routes, children, ...rest }: Props = $props()
 
   let is_current = $derived((path: string) => {
     if (path === page.url.pathname) return `page`
@@ -14,12 +16,14 @@
   })
 </script>
 
-<nav {style}>
+<nav {...rest}>
   {#each routes as route, idx (route)}
     {@const [title, href] = Array.isArray(route) ? route : [route, route]}
     {#if idx > 0}<strong>&bull;</strong>{/if}
     <a {href} aria-current={is_current(href)} class="link">{title}</a>
   {/each}
+  {#if children}<strong>&bull;</strong>{/if}
+  {@render children?.()}
 </nav>
 
 <style>
@@ -27,10 +31,10 @@
     display: flex;
     gap: 1em 1ex;
     place-content: center;
-    margin: 2em auto 3em;
+    place-items: center;
+    margin: 2em auto;
     max-width: 45em;
     flex-wrap: wrap;
-    font-size: 1.1em;
   }
   nav > a {
     padding: 0 5pt;

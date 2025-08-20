@@ -288,7 +288,7 @@ OMat24:
       corresponding: true
 
 sAlex:
-  name: subsampled Alexandria
+  name: Subsampled Alexandria
   contains: [Alex]
   url: https://huggingface.co/datasets/fairchem/OMAT24#salex-dataset
   download_url: https://dl.fbaipublicfiles.com/opencatalystproject/data/omat/241018/sAlex/train.tar.gz
@@ -315,7 +315,7 @@ sAlex:
       github: https://github.com/lbluque
 
 sAlex Validation:
-  name: subsampled Alexandria Validation Set
+  name: Subsampled Alexandria Validation Set
   contains: [Alex]
   url: https://huggingface.co/datasets/fairchem/OMAT24#salex-dataset
   download_url: https://dl.fbaipublicfiles.com/opencatalystproject/data/omat/241018/sAlex/val.tar.gz

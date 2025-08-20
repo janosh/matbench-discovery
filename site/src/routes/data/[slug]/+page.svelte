@@ -226,7 +226,7 @@
     list-style: none;
   }
   section.method-info ul li {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--nav-bg);
     padding: 2pt 6pt;
     border-radius: 3pt;
     text-align: center;
@@ -236,9 +236,9 @@
   }
   .links a {
     padding: 0 5pt;
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--nav-bg);
     border-radius: 5px;
-    color: lightgray;
+    color: var(--text-color);
   }
   .affiliation {
     color: gray;

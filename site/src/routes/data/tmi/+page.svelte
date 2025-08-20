@@ -113,11 +113,11 @@
     place-content: center;
   }
   form > span strong {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--nav-bg);
     padding: 3pt 4pt;
   }
   form > span strong.active {
-    background-color: teal;
+    background-color: var(--btn-bg);
   }
   label {
     display: flex;

@@ -31,9 +31,9 @@
   }
 
   const colors = [
-    `rgba(255, 99, 132, 0.7)`, // red for F1
-    `rgba(255, 206, 86, 0.7)`, // yellow for kappa
-    `rgba(54, 162, 235, 0.7)`, // blue for RMSD
+    `rgb(255, 99, 132)`, // red for F1
+    `rgb(255, 206, 86)`, // yellow for kappa
+    `rgb(54, 162, 235)`, // blue for RMSD
   ]
 
   // Compute axes points coordinates
@@ -142,7 +142,7 @@
 
   // Move point to a position with triangle constraints
   // during dragging, don't update weights - only move the point visually
-  // this prevents table rerendering during drag which causes the viewport to scroll (terrible UX)
+  // this prevents table rerendering during drag which causes viewport to scroll (terrible UX)
   function move_point_to_position(x: number, y: number) {
     const [a, b, c] = axis_points
     if (
@@ -284,7 +284,7 @@
         y1={center.y}
         x2={x}
         y2={y}
-        stroke="rgba(255, 255, 255, 0.4)"
+        stroke="var(--border)"
         stroke-width="1"
       />
 
@@ -305,8 +305,8 @@
       <path
         d="M {axis_points[0].x} {axis_points[0].y} L {axis_points[1].x} {axis_points[1]
           .y} L {axis_points[2].x} {axis_points[2].y} Z"
-        fill="rgba(255, 255, 255, 0.1)"
-        stroke="rgba(255, 255, 255, 0.3)"
+        fill="var(--nav-bg)"
+        stroke="var(--border)"
         stroke-width="1"
       />
     {/if}
@@ -318,7 +318,7 @@
         cy={center.y}
         r={radius * grid_radius}
         fill="none"
-        stroke="rgba(255, 255, 255, 0.1)"
+        stroke="var(--border)"
         stroke-width="1"
       />
     {/each}
@@ -335,7 +335,7 @@
     <!-- Draggable knob: first element is larger invisible hit area for the smaller visible knob above it -->
     {#each [
         { fill: `transparent`, r: 20 },
-        { fill: `white`, stroke: `black`, r: 8 },
+        { fill: `var(--card-bg)`, stroke: `var(--text-color)`, r: 8 },
       ] as
       knob_style
       (knob_style.r)
@@ -360,7 +360,7 @@
     padding: 1em 3ex 0 0;
     margin: 0;
     position: relative;
-    background: var(--light-bg);
+    background: var(--card-bg);
     border-radius: 4px;
   }
   svg {
@@ -378,7 +378,7 @@
     top: 4pt;
     right: 5pt;
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid var(--border);
     border-radius: 3px;
     cursor: pointer;
     padding: 0.15em 0.35em;
@@ -386,6 +386,6 @@
     margin-left: auto;
   }
   .reset-button:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--nav-bg);
   }
 </style>

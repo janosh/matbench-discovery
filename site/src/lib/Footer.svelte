@@ -27,7 +27,7 @@
 <style>
   footer {
     padding: 3vh 3vw;
-    background: #00061a;
+    background: var(--shadow);
     text-align: center;
   }
   footer nav {
@@ -35,5 +35,8 @@
     gap: 2em;
     justify-content: center;
     margin: 2em 0;
+  }
+  :root[data-theme='light'] img {
+    filter: brightness(0.2);
   }
 </style>

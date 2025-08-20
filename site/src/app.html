@@ -2,6 +2,22 @@
 <html lang="en">
   <head>
     <meta name="author" content="Janosh Riebesell" />
+    <script>
+      // Set theme immediately to prevent flashing
+      const prefers_dark =
+        window.matchMedia('(prefers-color-scheme: dark)').matches
+      try {
+        const stored = localStorage.theme
+        const theme = ['light', 'dark'].includes(stored)
+          ? stored
+          : (prefers_dark ? 'dark' : 'light')
+        document.documentElement.style.colorScheme = theme
+        document.documentElement.dataset.theme = theme
+      } catch {
+        document.documentElement.style.colorScheme = 'dark'
+        document.documentElement.dataset.theme = 'dark'
+      }
+    </script>
     <meta
       name="keywords"
       content="materials discovery, inorganic crystal stability, machine learning, interatomic potential, Bayesian optimization, high-throughput search, convex hull, formation energy"
@@ -33,9 +49,9 @@
       data-domain="matbench-discovery.materialsproject.org"
       src="https://plausible.io/js/plausible.js"
     ></script>
-    <link rel="stylesheet" href="/prism-vsc-dark-plus.css" />
+    <link rel="stylesheet" href="/prism-syntax-highlight-theme-aware.css" />
     <!-- interactive plots -->
-    <script src="https://cdn.plot.ly/plotly-3.0.1.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-3.1.0.min.js"></script>
     <!-- math display -->
     <link
       rel="stylesheet"

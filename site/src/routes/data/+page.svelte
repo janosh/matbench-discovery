@@ -1,7 +1,7 @@
 <script lang="ts">
   import { browser } from '$app/environment'
   import DataReadme from '$data/wbm/readme.md'
-  import FormEnergyHist from '$figs/hist-wbm-e-form-per-atom.svelte'
+  import WbmFormEnergyHist from '$figs/hist-wbm-e-form-per-atom.svelte'
   import HistWbmHullDist from '$figs/hist-wbm-hull-dist.svelte'
   import MPtrjNSitesHist from '$figs/mp-trj-n-sites-hist.svelte'
   import MPvsMPtrjVsWBMArityHist from '$figs/mp-vs-mp-trj-vs-wbm-arity-hist.svelte'
@@ -51,7 +51,7 @@
 <DataReadme>
   {#snippet hist_e_form_per_atom()}
     {#if browser}
-      <FormEnergyHist />
+      <WbmFormEnergyHist />
     {/if}
   {/snippet}
 
