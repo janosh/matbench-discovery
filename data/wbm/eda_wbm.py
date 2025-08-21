@@ -98,10 +98,9 @@ for dataset, count_mode, elem_counts in all_counts:
 
 # %% ratio of WBM to MP counts
 normalized = True
-ax_ptable = pmv.ptable_heatmap_ratio(
-    wbm_occu_counts / (len(df_wbm) if normalized else 1),
-    mp_occu_counts / (len(df_mp) if normalized else 1),
-    zero_color="#efefef",
+ax_ptable = pmv.ptable_heatmap_plotly(
+    values=(wbm_occu_counts / (len(df_wbm) if normalized else 1))
+    / (mp_occu_counts / (len(df_mp) if normalized else 1)),
     exclude_elements=("Xe", "Th", "Pa", "U", "Np", "Pu"),
 )
 img_name = "wbm-mp-ratio-element-counts-by-occurrence"

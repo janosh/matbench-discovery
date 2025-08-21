@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import pymatviz as pmv
+from pandas.core.util.hashing import hash_pandas_object
 from pymatgen.analysis.phase_diagram import PatchedPhaseDiagram
 from pymatgen.core import Composition, Structure
 from pymatgen.entries.compatibility import (
@@ -108,7 +109,7 @@ for json_path in json_paths:
 
     # we hash index only for speed
     # could use joblib.hash(df) to hash whole df but it's slow
-    checksum = pd.util.hash_pandas_object(df_wbm_step.index).sum()
+    checksum = hash_pandas_object(df_wbm_step.index).sum()
     expected = wbm_structs_index_checksums[step - 1]
     assert checksum == expected, (
         f"bad df.index checksum for {step=}, {expected=}, got {checksum=}\n"

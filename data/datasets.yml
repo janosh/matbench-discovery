@@ -424,7 +424,7 @@ NOMAD:
       orcid: https://orcid.org/0000-0002-8038-2277
     - name: Lauri Himanen
       orcid: https://orcid.org/0000-0002-3130-8193
-    - name: Alvin Noe Ladines
+    - name: Alvin Noe Ladines # codespell:ignore
       orcid: https://orcid.org/0000-0003-0077-2097
     - name: David Sikter
       orcid: https://orcid.org/0000-0002-2102-7160
@@ -502,7 +502,7 @@ AFLOW:
   created_by:
     - name: Stefano Curtarolo
     - name: Wahyu Setyawan
-    - name: Gus L.W. Hart
+    - name: Gus L.W. Hart # codespell:ignore
     - name: Michal Jahnatek
     - name: Roman V. Chepulskii
     - name: Richard H. Taylor

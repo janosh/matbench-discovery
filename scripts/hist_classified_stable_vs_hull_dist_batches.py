@@ -39,7 +39,6 @@ fig = hist_classified_stable_vs_hull_dist(
     which_energy=which_energy,
     facet_col=batch_col,
     facet_col_wrap=2,
-    stability_threshold=None,
     rolling_acc=None,
 )
 for anno in fig.layout.annotations:

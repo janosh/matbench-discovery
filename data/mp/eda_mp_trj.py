@@ -278,7 +278,7 @@ fig.show()
 
 
 # %% plot formation energy per atom distribution
-# pdf_kwds defined to use the same figure size for all plots
+# pdf_kwargs defined to use the same figure size for all plots
 fig = pmv.histogram(df_mp_trj[MbdKey.e_form_dft], bins=300, opacity=1)
 if log := False:
     fig.update_yaxes(type="log")
@@ -287,9 +287,9 @@ count_col = "Number of Structures"
 fig.layout.yaxis.title = count_col
 fig.show()
 
-pdf_kwds = dict(width=500, height=300)
+pdf_kwargs = dict(width=500, height=300)
 # pmv.save_fig(
-#     fig, f"{PDF_FIGS}/mp-trj-e-form-hist{'-log' if log else ''}.pdf", **pdf_kwds
+#     fig, f"{PDF_FIGS}/mp-trj-e-form-hist{'-log' if log else ''}.pdf", **pdf_kwargs
 # )
 # pmv.save_fig(fig, f"{SITE_FIGS}/mp-trj-e-form-hist.svelte")
 

@@ -53,7 +53,7 @@ def hist_classified_stable_vs_hull_dist(
     each_true_col: str,
     each_pred_col: str,
     which_energy: Literal["true", "pred"] = "true",
-    stability_threshold: float | None = 0,
+    stability_threshold: float = STABILITY_THRESHOLD,
     x_lim: tuple[float, float] = (-0.7, 0.7),
     n_bins: int = 200,
     rolling_acc: float | None = 0.02,
@@ -380,7 +380,9 @@ def rolling_mae_vs_hull_dist(
     )
     fig.update_yaxes(range=y_lim, title_text=y_label)
     # exclude from hover tooltip
-    scatter_kwds = dict(fill="toself", opacity=0.2, hoverinfo="skip", showlegend=False)
+    scatter_kwargs = dict(
+        fill="toself", opacity=0.2, hoverinfo="skip", showlegend=False
+    )
     triangle_anno = "MAE > |E<sub>hull dist</sub>|"
     fig.add_scatter(
         x=(-1, -dft_acc, dft_acc, 1) if show_dft_acc else (-1, 0, 1),
@@ -389,7 +391,7 @@ def rolling_mae_vs_hull_dist(
         fillcolor="red",
         # remove triangle border
         line=dict(color="rgba(0,0,0,0)"),
-        **scatter_kwds,
+        **scatter_kwargs,
     )
 
     if annotate_triangle:
@@ -410,7 +412,7 @@ def rolling_mae_vs_hull_dist(
             y=(dft_acc, dft_acc, 0, dft_acc),
             name="MAE < |Corrected GGA error|",
             fillcolor="red",
-            **scatter_kwds,
+            **scatter_kwargs,
         )
         fig.add_annotation(
             x=-dft_acc,
@@ -625,7 +627,7 @@ def cumulative_metrics(
     # Calculate text angle based on data range
     fig.update_layout(width=col_width * len(metrics), height=height)
 
-    line_kwds = dict(dash="dash", width=0.5)
+    line_kwargs = dict(dash="dash", width=0.5)
     for idx, anno in enumerate(fig.layout.annotations):
         anno.text = anno.text.split("=")[1]
         anno.font.size = 16
@@ -638,7 +640,7 @@ def cumulative_metrics(
         if optimal_recall and "recall" in anno.text.lower():
             fig.add_shape(
                 **dict(type="line", x0=0, y0=0, x1=n_stable, y1=1, **grid_pos),
-                line=line_kwds,
+                line=line_kwargs,
             )
 
             textangle = -math.degrees(math.atan2(n_max_pred_stable, n_stable))
@@ -682,7 +684,7 @@ def cumulative_metrics(
             )
 
     if show_n_stable:
-        fig.add_vline(x=n_stable, line=line_kwds)
+        fig.add_vline(x=n_stable, line=line_kwargs)
         fig.add_annotation(
             x=n_stable,
             y=0.95,
