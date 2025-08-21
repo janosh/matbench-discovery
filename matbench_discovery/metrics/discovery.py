@@ -101,10 +101,11 @@ def stable_metrics(
 
     Note: Should give equivalent classification metrics to
         sklearn.metrics.classification_report(
-            each_true > STABILITY_THRESHOLD,
-            each_pred > STABILITY_THRESHOLD,
+            each_true > stability_threshold,
+            each_pred > stability_threshold,
             output_dict=True,
         )
+        when using the same stability_threshold.
 
     Returns:
         dict[str, float]: dictionary of classification metrics with keys DAF, Precision,
@@ -126,13 +127,18 @@ def stable_metrics(
     # prevalence: dummy discovery rate of stable crystals by selecting randomly from
     # all materials
     prevalence = n_total_pos / (n_total_pos + n_total_neg)
-    precision = n_true_pos / (n_true_pos + n_false_pos)  # model's discovery rate
-    recall = n_true_pos / n_total_pos
+    # Calculate ratios with guards against division by zero
+    precision = (
+        n_true_pos / (n_true_pos + n_false_pos)
+        if (n_true_pos + n_false_pos) > 0
+        else float("nan")
+    )
+    recall = n_true_pos / n_total_pos if n_total_pos > 0 else float("nan")
 
     TPR = recall
-    FPR = n_false_pos / n_total_neg
-    TNR = n_true_neg / n_total_neg
-    FNR = n_false_neg / n_total_pos
+    FPR = n_false_pos / n_total_neg if n_total_neg > 0 else float("nan")
+    TNR = n_true_neg / n_total_neg if n_total_neg > 0 else float("nan")
+    FNR = n_false_neg / n_total_pos if n_total_pos > 0 else float("nan")
 
     if FPR + TNR != 1:  # sanity check: false positives + true negatives = all negatives
         raise ValueError(f"{FPR=} {TNR=} don't add up to 1")
@@ -151,7 +157,7 @@ def stable_metrics(
 
     return dict(
         F1=f1_score,
-        DAF=precision / prevalence,
+        DAF=precision / prevalence if prevalence > 0 else float("nan"),
         Precision=precision,
         Recall=recall,
         Accuracy=(
@@ -163,7 +169,7 @@ def stable_metrics(
         **dict(TP=n_true_pos, FP=n_false_pos, TN=n_true_neg, FN=n_false_neg),
         MAE=np.abs(each_true - each_pred).mean(),
         RMSE=((each_true - each_pred) ** 2).mean() ** 0.5,
-        R2=r2_score(each_true, each_pred),
+        R2=r2_score(each_true, each_pred) if len(each_true) > 1 else float("nan"),
     )
 
 
