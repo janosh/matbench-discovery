@@ -18,10 +18,10 @@ __date__ = "2023-02-01"
 
 
 def classify_stable(
-    e_above_hull_true: Sequence[float],
-    e_above_hull_pred: Sequence[float],
+    each_true: Sequence[float] | pd.Series,
+    each_pred: Sequence[float] | pd.Series,
     *,
-    stability_threshold: float | None = 0,
+    stability_threshold: float = STABILITY_THRESHOLD,
     fillna: bool = True,
 ) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
     """Classify model stability predictions as true/false positive/negatives (usually
@@ -29,15 +29,16 @@ def classify_stable(
     (but shouldn't really matter as long as they're consistent).
 
     Args:
-        e_above_hull_true (Sequence[float]): Ground truth energy above hull
+        each_true (Sequence[float] | pd.Series): Ground truth energy above convex hull
             values.
-        e_above_hull_pred (Sequence[float]): Model-predicted energy above hull values.
-        stability_threshold (float | None, optional): Maximum energy above convex hull
+        each_pred (Sequence[float] | pd.Series): Model-predicted energy above convex
+            hull values.
+        stability_threshold (float, optional): Maximum energy above convex hull
             for a material to still be considered stable. Usually 0, 0.05 or 0.1.
-            Defaults to 0, meaning a material has to be directly on the hull to be
-            called stable. Negative values mean a material has to pull the known hull
-            down by that amount to count as stable. Few materials lie below the known
-            hull, so only negative values very close to 0 make sense.
+            Defaults to STABILITY_THRESHOLD, meaning a material has to be directly on
+            the hull to be called stable. Negative values mean a material has to pull
+            the known hull down by that amount to count as stable. Few materials lie
+            below the known hull, so only negative values very close to 0 make sense.
         fillna (bool): Whether to fill NaNs as the model predicting unstable. Defaults
             to True.
 
@@ -48,21 +49,26 @@ def classify_stable(
     Raises:
         ValueError: If sum of positive + negative preds doesn't add up to the total.
     """
-    each_true, each_pred = pd.Series(e_above_hull_true), pd.Series(e_above_hull_pred)
+    if len(each_true) != len(each_pred):
+        raise ValueError(f"{len(each_true)=} != {len(each_pred)=}")
 
-    actual_pos = each_true <= (stability_threshold or 0)  # guard against None
-    actual_neg = each_true > (stability_threshold or 0)
+    each_true_arr, each_pred_arr = pd.Series(each_true), pd.Series(each_pred)
 
-    model_pos = each_pred <= (stability_threshold or 0)
-    model_neg = each_pred > (stability_threshold or 0)
+    if stability_threshold is None or np.isnan(stability_threshold):
+        raise ValueError("stability_threshold must be a real number")
+    actual_pos = each_true_arr <= (stability_threshold or 0)
+    actual_neg = each_true_arr > (stability_threshold or 0)
+
+    model_pos = each_pred_arr <= (stability_threshold or 0)
+    model_neg = each_pred_arr > (stability_threshold or 0)
 
     if fillna:
-        nan_mask = np.isnan(e_above_hull_pred)
+        nan_mask = np.isnan(each_pred)
         # for in both the model's stable and unstable preds, fill NaNs as unstable
         model_pos[nan_mask] = False
         model_neg[nan_mask] = True
 
-        n_pos, n_neg, total = model_pos.sum(), model_neg.sum(), len(e_above_hull_pred)
+        n_pos, n_neg, total = model_pos.sum(), model_neg.sum(), len(each_pred)
         if n_pos + n_neg != total:
             raise ValueError(
                 f"after filling NaNs, the sum of positive ({n_pos}) and negative "
@@ -78,8 +84,8 @@ def classify_stable(
 
 
 def stable_metrics(
-    each_true: Sequence[float],
-    each_pred: Sequence[float],
+    each_true: Sequence[float] | pd.Series,
+    each_pred: Sequence[float] | pd.Series,
     *,
     stability_threshold: float = STABILITY_THRESHOLD,
     fillna: bool = True,
@@ -88,19 +94,20 @@ def stable_metrics(
     metrics, but also MAE, RMSE and R2.
 
     Args:
-        each_true (list[float]): true energy above convex hull
-        each_pred (list[float]): predicted energy above convex hull
+        each_true (Sequence[float] | pd.Series): true energy above convex hull
+        each_pred (Sequence[float] | pd.Series): predicted energy above convex hull
         stability_threshold (float): Where to place stability threshold relative to
-            convex hull in eV/atom, usually 0 or 0.1 eV. Defaults to 0.
+            convex hull in eV/atom, usually 0 or 0.1 eV. Default = STABILITY_THRESHOLD.
         fillna (bool): Whether to fill NaNs as the model predicting unstable. Defaults
             to True.
 
     Note: Should give equivalent classification metrics to
         sklearn.metrics.classification_report(
-            each_true > STABILITY_THRESHOLD,
-            each_pred > STABILITY_THRESHOLD,
+            each_true > stability_threshold,
+            each_pred > stability_threshold,
             output_dict=True,
         )
+        when using the same stability_threshold.
 
     Returns:
         dict[str, float]: dictionary of classification metrics with keys DAF, Precision,
@@ -121,19 +128,30 @@ def stable_metrics(
     n_total_neg = n_true_neg + n_false_pos
     # prevalence: dummy discovery rate of stable crystals by selecting randomly from
     # all materials
-    prevalence = n_total_pos / (n_total_pos + n_total_neg)
-    precision = n_true_pos / (n_true_pos + n_false_pos)  # model's discovery rate
-    recall = n_true_pos / n_total_pos
+    prevalence = (
+        n_total_pos / (n_total_pos + n_total_neg)
+        if (n_total_pos + n_total_neg) > 0
+        else float("nan")
+    )
+    # Calculate ratios with guards against division by zero
+    precision = (
+        n_true_pos / (n_true_pos + n_false_pos)
+        if (n_true_pos + n_false_pos) > 0
+        else float("nan")
+    )
+    recall = n_true_pos / n_total_pos if n_total_pos > 0 else float("nan")
 
     TPR = recall
-    FPR = n_false_pos / n_total_neg
-    TNR = n_true_neg / n_total_neg
-    FNR = n_false_neg / n_total_pos
+    FPR = n_false_pos / n_total_neg if n_total_neg > 0 else float("nan")
+    TNR = n_true_neg / n_total_neg if n_total_neg > 0 else float("nan")
+    FNR = n_false_neg / n_total_pos if n_total_pos > 0 else float("nan")
 
-    if FPR + TNR != 1:  # sanity check: false positives + true negatives = all negatives
+    # sanity check: false positives + true negatives = all negatives
+    if FPR > 0 and TNR > 0 and FPR + TNR != 1:
         raise ValueError(f"{FPR=} {TNR=} don't add up to 1")
 
-    if TPR + FNR != 1:  # sanity check: true positives + false negatives = all positives
+    # sanity check: true positives + false negatives = all positives
+    if TPR > 0 and FNR > 0 and TPR + FNR != 1:
         raise ValueError(f"{TPR=} {FNR=} don't add up to 1")
 
     # Drop NaNs to calculate regression metrics
@@ -147,7 +165,7 @@ def stable_metrics(
 
     return dict(
         F1=f1_score,
-        DAF=precision / prevalence,
+        DAF=precision / prevalence if prevalence > 0 else float("nan"),
         Precision=precision,
         Recall=recall,
         Accuracy=(
@@ -159,7 +177,7 @@ def stable_metrics(
         **dict(TP=n_true_pos, FP=n_false_pos, TN=n_true_neg, FN=n_false_neg),
         MAE=np.abs(each_true - each_pred).mean(),
         RMSE=((each_true - each_pred) ** 2).mean() ** 0.5,
-        R2=r2_score(each_true, each_pred),
+        R2=r2_score(each_true, each_pred) if len(each_true) > 1 else float("nan"),
     )
 
 

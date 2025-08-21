@@ -191,7 +191,7 @@
     grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
   }
   ol > li {
-    background-color: var(--card-bg);
+    background-color: var(--blockquote-bg);
     padding: 6pt 10pt 14pt;
     border-radius: 3pt;
     display: grid;

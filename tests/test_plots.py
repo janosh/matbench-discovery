@@ -18,6 +18,8 @@ from matbench_discovery.plots import (
 AxLine = Literal["x", "y", "xy", ""]
 models = ["MEGNet", "CGCNN", "Voronoi RF"]
 df_wbm = load_df_wbm_with_preds(models=models, nrows=100)
+# TODO remove pd.DataFrame type cast pending https://github.com/astral-sh/ty/issues/1075
+df_preds = pd.DataFrame(df_wbm[models])
 
 
 @pytest.mark.parametrize(
@@ -34,7 +36,7 @@ def test_cumulative_metrics(
 ) -> None:
     fig, df_cumu_metrics = cumulative_metrics(
         e_above_hull_true=df_wbm[MbdKey.each_true],
-        df_preds=df_wbm[models],
+        df_preds=df_preds,
         stability_threshold=stability_threshold,
         metrics=metrics,
     )
@@ -54,7 +56,7 @@ def test_cumulative_metrics_raises() -> None:
     ):
         cumulative_metrics(
             e_above_hull_true=df_wbm[MbdKey.each_true],
-            df_preds=df_wbm[models],
+            df_preds=df_preds,
             metrics=("invalid",),
         )
 
@@ -74,7 +76,7 @@ def test_rolling_mae_vs_hull_dist(
 ) -> None:
     ax, df_err, df_std = rolling_mae_vs_hull_dist(
         e_above_hull_true=df_wbm[models[0]],
-        e_above_hull_preds=df_wbm[models],
+        e_above_hull_preds=df_preds,
         x_lim=x_lim,
         show_dft_acc=show_dft_acc,
         window=window,

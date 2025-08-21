@@ -119,7 +119,7 @@ n_structs = 100
 fig = go.Figure()
 for idx, model in enumerate(df_metrics):
     errors = df_each_err[model].abs().nlargest(n_structs)
-    model_mae = errors.mean().round(3)
+    model_mae = errors.mean()
     fig.add_scatter(
         x=df_wbm.loc[errors.index][fp_diff_col].values,
         y=errors.values,

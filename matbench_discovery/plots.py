@@ -306,7 +306,9 @@ def rolling_mae_vs_hull_dist(
     else:
         print("Using pre-calculated rolling MAE")
 
-    fig = df_rolling_err.plot(backend="plotly", **kwargs)
+    fig = px.line(
+        df_rolling_err, x=df_rolling_err.index, y=df_rolling_err.columns, **kwargs
+    )
 
     if just_plot_lines:
         # return earlier if all plot objects besides the line were already drawn by a
@@ -341,10 +343,9 @@ def rolling_mae_vs_hull_dist(
             showlegend=False,
         )
 
+    n_rows = len(df_rolling_err)
     y_anchor = (
-        "top"
-        if df_rolling_err.head(len(df_rolling_err // 4)).mean().mean() < 0.1
-        else "bottom"
+        "top" if df_rolling_err.head(n_rows // 4).mean().mean() < 0.1 else "bottom"
     )
 
     if legend_loc == "figure":
@@ -610,10 +611,12 @@ def cumulative_metrics(
 
     n_cols = kwargs.pop("facet_col_wrap", 2)
     kwargs.setdefault("facet_col_spacing", 0.03)
-    fig = df_cumu_metrics.plot(
-        backend="plotly",
+    fig = px.line(
+        df_cumu_metrics,
+        x=df_cumu_metrics.index,
         facet_col="metric",
         facet_col_wrap=n_cols,
+        category_orders={"metric": list(metrics)},
         **kwargs,
     )
     # NOTE the only way to get the angle right is to fix the image size

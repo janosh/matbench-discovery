@@ -95,7 +95,7 @@ test_loader = DataLoader(
 )
 
 # 1 for regression, n_classes for classification
-n_targets = [1 if task_type == "regression" else df_in[target_col].max() + 1]
+n_targets = [1 if task_type == "regression" else int(df_in[target_col].max()) + 1]
 
 model_params = dict(
     n_targets=n_targets,
@@ -104,7 +104,7 @@ model_params = dict(
     task_dict={target_col: task_type},  # e.g. {'exfoliation_en': 'regression'}
     robust=robust,
 )
-model = CrystalGraphConvNet(**model_params)
+model = CrystalGraphConvNet(**model_params)  # type: ignore[arg-type]
 
 run_params = dict(
     data_path=data_path,

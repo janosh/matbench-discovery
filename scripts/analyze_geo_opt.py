@@ -113,7 +113,7 @@ def analyze_model_symprec(
 
     struct_col = geo_opt_metrics.get("struct_col")
     if struct_col not in df_ml_structs:
-        struct_cols = [col for col in df_ml_structs if Key.structure in col]
+        struct_cols = [col for col in df_ml_structs if Key.structure in str(col)]
         print(
             f"⚠️ {struct_col=} not found in {model.label}-relaxed structures loaded "
             f"from {ml_relaxed_structs_path}. Did you mean one of {struct_cols}?"

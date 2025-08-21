@@ -127,7 +127,9 @@ describe(`DynamicScatter.svelte`, () => {
 
   // Helper function to check fullscreen state
   async function check_fullscreen_state(expected_state: boolean): Promise<void> {
-    const button = document.body.querySelector<HTMLButtonElement>(`.fullscreen-toggle`)
+    const button = document.body.querySelector<HTMLButtonElement>(
+      `button[title$="fullscreen"]`,
+    )
     const button_icon = button?.querySelector(`button > svg`)
 
     await vi.waitFor(() => {
@@ -144,7 +146,7 @@ describe(`DynamicScatter.svelte`, () => {
       props: { models: mock_models },
     })
 
-    const button = doc_query<HTMLButtonElement>(`.fullscreen-toggle`)
+    const button = doc_query<HTMLButtonElement>(`button[title$="fullscreen"]`)
 
     // 1. Initial state: Not fullscreen
     await check_fullscreen_state(false)

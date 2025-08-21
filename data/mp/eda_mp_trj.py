@@ -226,7 +226,7 @@ pmv.save_fig(fig_ptable_sites, f"{PDF_FIGS}/mp-trj-n-sites-ptable-hists.pdf")
 
 
 # %%
-elem_counts: dict[str, pd.Series[str, int]] = {}
+elem_counts: dict[ElemCountMode, pd.Series[int]] = {}
 for count_mode in (ElemCountMode.composition, ElemCountMode.occurrence):
     trj_elem_counts = pmv.count_elements(df_mp_trj[Key.formula], count_mode=count_mode)
     elem_counts[count_mode] = trj_elem_counts

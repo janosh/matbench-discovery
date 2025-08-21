@@ -4,6 +4,7 @@ models can pinpoint DFT calculation gone wrong.
 
 # %%
 import pandas as pd
+import plotly.express as px
 import pymatviz as pmv
 from pymatviz.enums import Key
 
@@ -73,15 +74,15 @@ for material_cls, pattern in material_classes.items():
     y_max = df_plot[MbdKey.each_mean_models].max() + 0.6
     y_min = df_plot[MbdKey.each_mean_models].min() - 0.3
 
-    fig = df_plot.plot.scatter(
+    fig = px.scatter(
+        df_plot,
         x=MbdKey.each_true,
         y=MbdKey.each_mean_models,
         color=MbdKey.model_std_each,
-        backend="plotly",
         hover_name=Key.mat_id,
         hover_data=[Key.formula],
         color_continuous_scale="Turbo",
-        range_y=(-0.5, y_max),
+        range_y=(y_min, y_max),
     )
     # for horizontal colorbar
     # yanchor="bottom", y=1, xanchor="center", x=0.5, orientation="h", thickness=12
