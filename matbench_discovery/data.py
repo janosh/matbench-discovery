@@ -256,8 +256,6 @@ def load_df_wbm_with_preds(
         raise ValueError(f"{unknown_models=}, expected subset of {valid_models}")
 
     model_name: str = ""
-    from matbench_discovery.data import df_wbm
-
     df_out = df_wbm.copy()
 
     try:

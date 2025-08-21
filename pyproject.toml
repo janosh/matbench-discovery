@@ -139,12 +139,13 @@ markers = [
 ]
 
 [tool.codespell]
-ignore-words-list = "nd,te,fpr,matris,noe,hart,titel"
+ignore-words-list = "nd,te,fpr,matris,titel"
 
-[tool.ty.rules]
+[[tool.ty.overrides]]
+include = ["models/**/test_*.py", "models/**/train_*.py"]
+
+[tool.ty.overrides.rules]
 unresolved-import = "ignore"
-# TODO: Unable to resolve submodules: https://github.com/astral-sh/ty/issues/445
-unresolved-attribute = "ignore"
 
 [dependency-groups]
 dev = ["pre-commit>=4.3.0", "ty>=0.0.1a19"]

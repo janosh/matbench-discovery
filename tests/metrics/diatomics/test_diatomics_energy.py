@@ -416,11 +416,12 @@ def test_smoothness_scale_invariance(
 
     # Test scaling behavior
     scale = 1.1
+    metric_name = getattr(metric_func, "__name__", None)
     curv_scale = {
         "calc_second_deriv_smoothness": 1,
         "calc_total_variation_smoothness": 2,
         "calc_curvature_smoothness": 1.389141,
-    }[metric_func.__name__]
+    }[metric_name]
     x_scaled = scale * x
     y_scaled = scale**2 * y  # maintain quadratic relationship
 
@@ -434,8 +435,7 @@ def test_smoothness_scale_invariance(
 
     if scaled_metric / base_metric != pytest.approx(curv_scale):
         raise AssertionError(
-            f"{metric_func.__name__} did not scale correctly:\n"
-            f"scale={scale:.1f}\n"
+            f"{metric_name} did not scale correctly:\nscale={scale:.1f}\n"
             f"base_metric={base_metric:.6f}\n"
             f"scaled_metric={scaled_metric:.6f}\n"
             f"ratio={scaled_metric / base_metric:.6f}\n"

@@ -22,7 +22,7 @@ from matbench_discovery.plots import wandb_scatter
 
 sys.path.append(f"{ROOT}/models")
 
-from voronoi_rf import featurizer
+from . import featurizer
 
 __author__ = "Janosh Riebesell"
 __date__ = "2022-11-26"

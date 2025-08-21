@@ -7,7 +7,6 @@ single figure with hidable traces.
 import plotly.express as px
 import pymatviz as pmv
 from pymatviz.enums import Key
-from pymatviz.utils import bin_df_cols
 
 from matbench_discovery import SITE_FIGS
 from matbench_discovery.cli import cli_args
@@ -58,7 +57,7 @@ df_melt[Key.each_pred] = (
     df_melt[MbdKey.each_true] + df_melt[Key.e_form_pred] - df_melt[MbdKey.e_form_dft]
 )
 
-df_bin = bin_df_cols(
+df_bin = pmv.process_data.bin_df_cols(
     df_melt,
     bin_by_cols=[e_true_col, e_pred_col],
     group_by_cols=[facet_col],

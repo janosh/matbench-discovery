@@ -235,7 +235,7 @@ def test_files_enum_auto_download(
         def raise_for_status(self) -> None:
             """Mock the raise_for_status method."""
             if self.status_code >= 400:
-                raise requests.exceptions.HTTPError(f"HTTP Error: {self.status_code}")
+                raise requests.HTTPError(f"HTTP Error: {self.status_code}")
 
     # Mock stdin to simulate non-interactive mode
     class MockStdin:

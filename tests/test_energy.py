@@ -45,7 +45,7 @@ def test_get_elemental_ref_entries(
         [constructor(composition=comp, energy=energy) for comp, energy in entries],
         verbose=verbose,
     )
-    if constructor.__name__ == "<lambda>":
+    if getattr(constructor, "__name__", None) == "<lambda>":
         expected = {"Fe": PDEntry(*entries[2]), "O": PDEntry(*entries[3])}
     else:
         expected = {"Fe": constructor(*entries[2]), "O": constructor(*entries[3])}
