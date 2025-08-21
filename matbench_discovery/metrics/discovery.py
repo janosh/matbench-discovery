@@ -21,7 +21,7 @@ def classify_stable(
     each_true: Sequence[float] | pd.Series,
     each_pred: Sequence[float] | pd.Series,
     *,
-    stability_threshold: float | None = 0,
+    stability_threshold: float | None = STABILITY_THRESHOLD,
     fillna: bool = True,
 ) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
     """Classify model stability predictions as true/false positive/negatives (usually
@@ -35,10 +35,10 @@ def classify_stable(
             hull values.
         stability_threshold (float | None, optional): Maximum energy above convex hull
             for a material to still be considered stable. Usually 0, 0.05 or 0.1.
-            Defaults to 0, meaning a material has to be directly on the hull to be
-            called stable. Negative values mean a material has to pull the known hull
-            down by that amount to count as stable. Few materials lie below the known
-            hull, so only negative values very close to 0 make sense.
+            Defaults to STABILITY_THRESHOLD, meaning a material has to be directly on
+            the hull to be called stable. Negative values mean a material has to pull
+            the known hull down by that amount to count as stable. Few materials lie
+            below the known hull, so only negative values very close to 0 make sense.
         fillna (bool): Whether to fill NaNs as the model predicting unstable. Defaults
             to True.
 
@@ -52,7 +52,7 @@ def classify_stable(
     if len(each_true) != len(each_pred):
         raise ValueError(f"{len(each_true)=} != {len(each_pred)=}")
 
-    each_true_arr, each_pred_arr = np.asarray(each_true), np.asarray(each_pred)
+    each_true_arr, each_pred_arr = pd.Series(each_true), pd.Series(each_pred)
 
     actual_pos = each_true_arr <= (stability_threshold or 0)  # guard against None
     actual_neg = each_true_arr > (stability_threshold or 0)
@@ -95,7 +95,7 @@ def stable_metrics(
         each_true (Sequence[float] | pd.Series): true energy above convex hull
         each_pred (Sequence[float] | pd.Series): predicted energy above convex hull
         stability_threshold (float): Where to place stability threshold relative to
-            convex hull in eV/atom, usually 0 or 0.1 eV. Defaults to 0.
+            convex hull in eV/atom, usually 0 or 0.1 eV. Default = STABILITY_THRESHOLD.
         fillna (bool): Whether to fill NaNs as the model predicting unstable. Defaults
             to True.
 

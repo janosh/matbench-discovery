@@ -127,7 +127,7 @@ out = predict_from_wandb_checkpoints(
     data_loader=data_loader,
 )
 # type narrow for ty's benefit, better would be to properly overload predict_from_wandb_checkpoints  # noqa: E501
-if not isinstance(out, tuple):
+if not (isinstance(out, tuple) and len(out) == 2):
     raise TypeError(f"{out=} should be 2-tuple")
 df_in, ensemble_metrics = out
 

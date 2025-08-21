@@ -435,7 +435,7 @@
     border-radius: 50%;
   }
   button[title='Exit fullscreen'] {
-    display: none;
+    right: 3.5em;
   }
   div.controls-grid {
     display: grid;

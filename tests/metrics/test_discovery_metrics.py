@@ -24,6 +24,12 @@ def test_classify_stable(
         each_pred=df_float.B,
         stability_threshold=stability_threshold,
     )
+    assert all(
+        out.index.equals(df_float.index)
+        for out in (true_pos, false_neg, false_pos, true_neg)
+    )
+    assert all(out.dtype == bool for out in (true_pos, false_neg, false_pos, true_neg))
+
     n_true_pos, n_false_neg, n_false_pos, n_true_neg = map(
         sum, (true_pos, false_neg, false_pos, true_neg)
     )

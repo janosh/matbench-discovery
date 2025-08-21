@@ -82,10 +82,10 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:
             - symmetry_decrease: Fraction of structures with decreased symmetry
             - symmetry_match: Fraction of structures with matching symmetry
             - symmetry_increase: Fraction of structures with increased symmetry
-            - n_structs: Number of structures evaluated
+            - n_structures: Number of structures evaluated
 
     Notes:
-        - total number of structures (n_structs) is counted based on valid symmetry data
+        - total number of structures is counted based on valid symmetry data
         - NaN RMSD values are filled with 1.0 (the stol value set in StructureMatcher)
         - symmetry metrics are calculated only on structures with valid symmetry data
     """
@@ -102,8 +102,7 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:
     n_valid_sym = valid_sym_mask.sum()
 
     # Fill NaN values with 1.0 (the stol value we set in StructureMatcher)
-    # TODO type ignore pending https://github.com/astral-sh/ty/issues/1076
-    mean_rmsd = rmsd_vals.infer_objects(copy=False).fillna(1.0).mean()  # type: ignore[unknown-argument]
+    mean_rmsd = pd.to_numeric(rmsd_vals, errors="coerce").fillna(1.0).mean()
 
     # Calculate symmetry metrics only on valid symmetry data
     sym_ops_mae = n_sym_ops_diff[valid_sym_mask].abs().mean()

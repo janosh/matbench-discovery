@@ -23,7 +23,7 @@ def test_atoms() -> Atoms:
     atoms = bulk("Al", "fcc", a=4.05)
     atoms.info["fc2_supercell"] = 2 * np.eye(3)
     atoms.info["fc3_supercell"] = np.eye(3)
-    atoms.info["q_point_mesh"] = [2, 2, 2]
+    atoms.info["q_point_mesh"] = (2, 2, 2)
     return atoms
 
 

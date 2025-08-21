@@ -30,9 +30,8 @@ models_to_plot = [
     for model in cli_args.models
     if model.is_complete and (show_non_compliant or model.is_compliant)
 ]
-model_ranking = (
-    dfs_metrics[test_subset][models_to_plot].sort_values(by="MAE", axis=1).columns[::-1]  # type: ignore[no-matching-overload]
-)
+mae_vals = dfs_metrics[test_subset].loc["MAE", models_to_plot]
+model_ranking = mae_vals.sort_values().index[::-1]
 
 fig, df_err, df_std = rolling_mae_vs_hull_dist(
     e_above_hull_true=df_preds[MbdKey.each_true],

@@ -77,7 +77,7 @@
   --sms-options-bg: var(--page-bg);
   --sms-text-color: var(--text-color);
   --sms-max-width: 23em;
-  --sms-focus-border: 0.1px solid var(--border);
+  --sms-focus-border: 1px solid var(--link-color);
   --sms-active-color: cornflowerblue;
   --sms-selected-bg: transparent;
 

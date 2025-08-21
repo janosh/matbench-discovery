@@ -84,6 +84,7 @@ fig = px.scatter(
     range_color=(-0.5, 1),
     hover_name=facet_col,
     hover_data={facet_col: False},
+    category_orders={facet_col: models_to_plot},
 )
 
 for anno in fig.layout.annotations:

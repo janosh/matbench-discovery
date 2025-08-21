@@ -82,7 +82,7 @@ for material_cls, pattern in material_classes.items():
         hover_name=Key.mat_id,
         hover_data=[Key.formula],
         color_continuous_scale="Turbo",
-        range_y=(-0.5, y_max),
+        range_y=(y_min, y_max),
     )
     # for horizontal colorbar
     # yanchor="bottom", y=1, xanchor="center", x=0.5, orientation="h", thickness=12
