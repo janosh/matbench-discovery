@@ -73,12 +73,13 @@
   --tooltip-shadow: drop-shadow(0 1px 8px var(--shadow));
 
   --sms-margin: 1em auto;
+  --sms-border: 1px solid var(--border);
   --sms-options-bg: var(--page-bg);
   --sms-text-color: var(--text-color);
   --sms-max-width: 23em;
-  --sms-border: 0.1px solid var(--border);
   --sms-focus-border: 0.1px solid var(--border);
   --sms-active-color: cornflowerblue;
+  --sms-selected-bg: transparent;
 
   --radio-btn-bg: var(--btn-bg);
   --radio-btn-checked-shadow: none;
