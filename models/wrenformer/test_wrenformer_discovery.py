@@ -85,7 +85,7 @@ run_params = dict(
 try:  # load checkpoint to get number of parameters
     runs[0].file("checkpoint.pth").download(root=module_dir)
     state_dict = torch.load(f"{module_dir}/checkpoint.pth", map_location="cpu")
-    model = Wrenformer(**state_dict["model_params"])
+    model = Wrenformer(**state_dict["model_params"])  # type: ignore[arg-type]
     run_params[Key.model_params] = model.num_params
 except Exception as exc:
     print(exc)

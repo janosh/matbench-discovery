@@ -65,11 +65,11 @@
     {headingSelector}
     breakpoint={1600}
     minItems={3}
-    aside_style="position: fixed; left: calc(50vw + var(--main-max-width) / 2 - 2em); max-width: 16em;"
+    aside_style="position: fixed; left: calc(50vw + var(--main-max-width) / 2 - 2em); max-width: 16em; z-index: 1"
     nav_style="font-size: 9pt"
-    --toc-mobile-bg="var(--nav-bg)"
     --toc-mobile-width="22em"
     --toc-active-bg="transparent"
+    --toc-active-color="var(--link-color)"
   />
 {/if}
 
@@ -91,3 +91,10 @@
 </main>
 
 <Footer />
+
+<style>
+  :global(aside.toc.mobile > nav) {
+    box-shadow: 0 0 20px var(--shadow);
+    border: 1px solid var(--border);
+  }
+</style>

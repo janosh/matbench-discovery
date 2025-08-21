@@ -169,7 +169,6 @@
 
 <div class="plot-container" bind:this={container_el}>
   <button
-    class="fullscreen-toggle"
     onclick={() => {
       if (document.fullscreenElement === container_el) {
         document.exitFullscreen()
@@ -323,9 +322,6 @@
         minSelect={1}
         style="width: 100%; max-width: none; margin: 0"
         liSelectedStyle="font-size: 16px;"
-        ulSelectedStyle="padding: 0;"
-        --sms-selected-bg="none"
-        --sms-border="1px solid rgba(255, 255, 255, 0.15)"
       >
         {#snippet children({ option: prop }: { option: typeof options[number] })}
           {@html format_property_path(
@@ -350,6 +346,7 @@
   <div
     class="{is_fullscreen ? `` : `bleed-1400`} {rest.class ?? ``}"
     style:height={is_fullscreen ? `100%` : `600px`}
+    style="margin-block: 2em"
   >
     <ScatterPlot
       series={[series]}
@@ -436,6 +433,9 @@
     display: flex;
     padding: 8px;
     border-radius: 50%;
+  }
+  button[title='Exit fullscreen'] {
+    right: 3.5em;
   }
   div.controls-grid {
     display: grid;
