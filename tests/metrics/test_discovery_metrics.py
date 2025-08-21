@@ -20,8 +20,8 @@ def test_classify_stable(
     df_float: pd.DataFrame,
 ) -> None:
     true_pos, false_neg, false_pos, true_neg = classify_stable(
-        e_above_hull_true=df_float.A,
-        e_above_hull_pred=df_float.B,
+        each_true=df_float.A,
+        each_pred=df_float.B,
         stability_threshold=stability_threshold,
     )
     n_true_pos, n_false_neg, n_false_pos, n_true_neg = map(

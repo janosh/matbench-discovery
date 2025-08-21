@@ -31,7 +31,7 @@ models_to_plot = [
     if model.is_complete and (show_non_compliant or model.is_compliant)
 ]
 model_ranking = (
-    dfs_metrics[test_subset][models_to_plot].sort_values(by="MAE", axis=1).columns[::-1]
+    dfs_metrics[test_subset][models_to_plot].sort_values(by="MAE", axis=1).columns[::-1]  # type: ignore[no-matching-overload]
 )
 
 fig, df_err, df_std = rolling_mae_vs_hull_dist(

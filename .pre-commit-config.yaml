@@ -21,6 +21,7 @@ repos:
         entry: ty check
         language: python
         additional_dependencies: [ty]
+        args: [--output-format, concise]
 
   - repo: https://github.com/janosh/format-ipy-cells
     rev: v0.1.11

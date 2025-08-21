@@ -306,7 +306,7 @@ def rolling_mae_vs_hull_dist(
     else:
         print("Using pre-calculated rolling MAE")
 
-    fig = df_rolling_err.plot(backend="plotly", **kwargs)
+    fig = px.line(df_rolling_err, **kwargs)
 
     if just_plot_lines:
         # return earlier if all plot objects besides the line were already drawn by a
@@ -610,12 +610,7 @@ def cumulative_metrics(
 
     n_cols = kwargs.pop("facet_col_wrap", 2)
     kwargs.setdefault("facet_col_spacing", 0.03)
-    fig = df_cumu_metrics.plot(
-        backend="plotly",
-        facet_col="metric",
-        facet_col_wrap=n_cols,
-        **kwargs,
-    )
+    fig = px.line(df_cumu_metrics, facet_col="metric", facet_col_wrap=n_cols, **kwargs)
     # NOTE the only way to get the angle right is to fix the image size
     # before annotating. This is a limitation of plotly.
     # See https://github.com/plotly/plotly.py/issues/4858

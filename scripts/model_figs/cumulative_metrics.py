@@ -8,6 +8,7 @@ will provide the best hit rate for the given budget.
 """
 
 # %%
+import pandas as pd
 import pymatviz as pmv
 
 from matbench_discovery import PDF_FIGS, SITE_FIGS
@@ -44,7 +45,8 @@ models_to_plot = [
 
 fig, df_metric = cumulative_metrics(
     e_above_hull_true=df_preds[MbdKey.each_true],
-    df_preds=df_each_pred[models_to_plot],
+    # TODO remove pd.DataFrame type cast pending https://github.com/astral-sh/ty/issues/1075
+    df_preds=pd.DataFrame(df_each_pred[models_to_plot]),
     metrics=metrics,
     # facet_col_wrap=2,
     # increase facet col gap

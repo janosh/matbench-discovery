@@ -102,7 +102,8 @@ def calc_geo_opt_metrics(df_model_analysis: pd.DataFrame) -> dict[str, float]:
     n_valid_sym = valid_sym_mask.sum()
 
     # Fill NaN values with 1.0 (the stol value we set in StructureMatcher)
-    mean_rmsd = rmsd_vals.infer_objects(copy=False).fillna(1.0).mean()
+    # TODO type ignore pending https://github.com/astral-sh/ty/issues/1076
+    mean_rmsd = rmsd_vals.infer_objects(copy=False).fillna(1.0).mean()  # type: ignore[unknown-argument]
 
     # Calculate symmetry metrics only on valid symmetry data
     sym_ops_mae = n_sym_ops_diff[valid_sym_mask].abs().mean()

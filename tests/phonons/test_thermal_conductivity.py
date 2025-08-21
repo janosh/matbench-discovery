@@ -15,7 +15,6 @@ from matbench_discovery.phonons import thermal_conductivity as ltc
 from matbench_discovery.phonons.thermal_conductivity import calculate_fc2_set
 
 NP_RNG = np.random.default_rng(seed=0)
-init_keys = ("fc2_supercell", "fc3_supercell", "q_point_mesh")
 
 
 @pytest.fixture
@@ -31,8 +30,12 @@ def test_atoms() -> Atoms:
 @pytest.fixture
 def test_ph3(test_atoms: Atoms) -> Phono3py:
     """Create a test Phono3py object."""
-    keys = ("fc2_supercell", "fc3_supercell", "q_point_mesh")
-    return ltc.init_phono3py(test_atoms, **{key: test_atoms.info[key] for key in keys})
+    return ltc.init_phono3py(
+        atoms=test_atoms,
+        fc2_supercell=test_atoms.info["fc2_supercell"],
+        fc3_supercell=test_atoms.info["fc3_supercell"],
+        q_point_mesh=test_atoms.info["q_point_mesh"],
+    )
 
 
 @pytest.fixture

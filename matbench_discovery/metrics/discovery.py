@@ -18,8 +18,8 @@ __date__ = "2023-02-01"
 
 
 def classify_stable(
-    e_above_hull_true: Sequence[float],
-    e_above_hull_pred: Sequence[float],
+    each_true: Sequence[float] | pd.Series,
+    each_pred: Sequence[float] | pd.Series,
     *,
     stability_threshold: float | None = 0,
     fillna: bool = True,
@@ -29,9 +29,10 @@ def classify_stable(
     (but shouldn't really matter as long as they're consistent).
 
     Args:
-        e_above_hull_true (Sequence[float]): Ground truth energy above hull
+        each_true (Sequence[float] | pd.Series): Ground truth energy above convex hull
             values.
-        e_above_hull_pred (Sequence[float]): Model-predicted energy above hull values.
+        each_pred (Sequence[float] | pd.Series): Model-predicted energy above convex
+            hull values.
         stability_threshold (float | None, optional): Maximum energy above convex hull
             for a material to still be considered stable. Usually 0, 0.05 or 0.1.
             Defaults to 0, meaning a material has to be directly on the hull to be
@@ -48,21 +49,24 @@ def classify_stable(
     Raises:
         ValueError: If sum of positive + negative preds doesn't add up to the total.
     """
-    each_true, each_pred = pd.Series(e_above_hull_true), pd.Series(e_above_hull_pred)
+    if len(each_true) != len(each_pred):
+        raise ValueError(f"{len(each_true)=} != {len(each_pred)=}")
 
-    actual_pos = each_true <= (stability_threshold or 0)  # guard against None
-    actual_neg = each_true > (stability_threshold or 0)
+    each_true_arr, each_pred_arr = np.asarray(each_true), np.asarray(each_pred)
 
-    model_pos = each_pred <= (stability_threshold or 0)
-    model_neg = each_pred > (stability_threshold or 0)
+    actual_pos = each_true_arr <= (stability_threshold or 0)  # guard against None
+    actual_neg = each_true_arr > (stability_threshold or 0)
+
+    model_pos = each_pred_arr <= (stability_threshold or 0)
+    model_neg = each_pred_arr > (stability_threshold or 0)
 
     if fillna:
-        nan_mask = np.isnan(e_above_hull_pred)
+        nan_mask = np.isnan(each_pred)
         # for in both the model's stable and unstable preds, fill NaNs as unstable
         model_pos[nan_mask] = False
         model_neg[nan_mask] = True
 
-        n_pos, n_neg, total = model_pos.sum(), model_neg.sum(), len(e_above_hull_pred)
+        n_pos, n_neg, total = model_pos.sum(), model_neg.sum(), len(each_pred)
         if n_pos + n_neg != total:
             raise ValueError(
                 f"after filling NaNs, the sum of positive ({n_pos}) and negative "
@@ -78,8 +82,8 @@ def classify_stable(
 
 
 def stable_metrics(
-    each_true: Sequence[float],
-    each_pred: Sequence[float],
+    each_true: Sequence[float] | pd.Series,
+    each_pred: Sequence[float] | pd.Series,
     *,
     stability_threshold: float = STABILITY_THRESHOLD,
     fillna: bool = True,
@@ -88,8 +92,8 @@ def stable_metrics(
     metrics, but also MAE, RMSE and R2.
 
     Args:
-        each_true (list[float]): true energy above convex hull
-        each_pred (list[float]): predicted energy above convex hull
+        each_true (Sequence[float] | pd.Series): true energy above convex hull
+        each_pred (Sequence[float] | pd.Series): predicted energy above convex hull
         stability_threshold (float): Where to place stability threshold relative to
             convex hull in eV/atom, usually 0 or 0.1 eV. Defaults to 0.
         fillna (bool): Whether to fill NaNs as the model predicting unstable. Defaults
