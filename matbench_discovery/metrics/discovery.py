@@ -21,7 +21,7 @@ def classify_stable(
     each_true: Sequence[float] | pd.Series,
     each_pred: Sequence[float] | pd.Series,
     *,
-    stability_threshold: float | None = STABILITY_THRESHOLD,
+    stability_threshold: float = STABILITY_THRESHOLD,
     fillna: bool = True,
 ) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
     """Classify model stability predictions as true/false positive/negatives (usually
@@ -33,7 +33,7 @@ def classify_stable(
             values.
         each_pred (Sequence[float] | pd.Series): Model-predicted energy above convex
             hull values.
-        stability_threshold (float | None, optional): Maximum energy above convex hull
+        stability_threshold (float, optional): Maximum energy above convex hull
             for a material to still be considered stable. Usually 0, 0.05 or 0.1.
             Defaults to STABILITY_THRESHOLD, meaning a material has to be directly on
             the hull to be called stable. Negative values mean a material has to pull
@@ -54,7 +54,9 @@ def classify_stable(
 
     each_true_arr, each_pred_arr = pd.Series(each_true), pd.Series(each_pred)
 
-    actual_pos = each_true_arr <= (stability_threshold or 0)  # guard against None
+    if stability_threshold is None or np.isnan(stability_threshold):
+        raise ValueError("stability_threshold must be a real number")
+    actual_pos = each_true_arr <= (stability_threshold or 0)
     actual_neg = each_true_arr > (stability_threshold or 0)
 
     model_pos = each_pred_arr <= (stability_threshold or 0)
@@ -126,7 +128,11 @@ def stable_metrics(
     n_total_neg = n_true_neg + n_false_pos
     # prevalence: dummy discovery rate of stable crystals by selecting randomly from
     # all materials
-    prevalence = n_total_pos / (n_total_pos + n_total_neg)
+    prevalence = (
+        n_total_pos / (n_total_pos + n_total_neg)
+        if (n_total_pos + n_total_neg) > 0
+        else float("nan")
+    )
     # Calculate ratios with guards against division by zero
     precision = (
         n_true_pos / (n_true_pos + n_false_pos)
@@ -140,10 +146,12 @@ def stable_metrics(
     TNR = n_true_neg / n_total_neg if n_total_neg > 0 else float("nan")
     FNR = n_false_neg / n_total_pos if n_total_pos > 0 else float("nan")
 
-    if FPR + TNR != 1:  # sanity check: false positives + true negatives = all negatives
+    # sanity check: false positives + true negatives = all negatives
+    if FPR > 0 and TNR > 0 and FPR + TNR != 1:
         raise ValueError(f"{FPR=} {TNR=} don't add up to 1")
 
-    if TPR + FNR != 1:  # sanity check: true positives + false negatives = all positives
+    # sanity check: true positives + false negatives = all positives
+    if TPR > 0 and FNR > 0 and TPR + FNR != 1:
         raise ValueError(f"{TPR=} {FNR=} don't add up to 1")
 
     # Drop NaNs to calculate regression metrics

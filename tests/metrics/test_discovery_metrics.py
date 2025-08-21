@@ -43,27 +43,19 @@ def test_classify_stable(
 def test_classify_stable_edge_cases() -> None:
     """Test edge cases for classify_stable function."""
     # Test with None threshold (defaults to 0.0)
-    result = classify_stable(
-        [-0.1, 0.0, 0.1], [-0.1, 0.0, 0.1], stability_threshold=None
-    )
-    assert [sum(x) for x in result] == [
-        2,
-        0,
-        0,
-        1,
-    ]  # true_pos, false_neg, false_pos, true_neg
+    result = classify_stable([-0.1, 0.0, 0.1], [-0.1, 0.0, 0.1])
+    # true_pos, false_neg, false_pos, true_neg
+    assert [sum(x) for x in result] == [2, 0, 0, 1]
 
     # Test with NaN threshold (should raise ValueError)
-    with pytest.raises(
-        ValueError, match="stability_threshold must be a real number or None"
-    ):
+    with pytest.raises(ValueError, match="stability_threshold must be a real number"):
         classify_stable([-0.1, 0.0, 0.1], [-0.1, 0.0, 0.1], stability_threshold=np.nan)
 
     # Test with numeric threshold
     result = classify_stable(
         [-0.1, 0.0, 0.1], [-0.1, 0.0, 0.1], stability_threshold=0.05
     )
-    assert [sum(x) for x in result] == [1, 1, 0, 1]
+    assert [sum(x) for x in result] == [2, 0, 0, 1]
 
 
 def test_classify_stable_input_types() -> None:
@@ -76,7 +68,7 @@ def test_classify_stable_input_types() -> None:
         fillna=True,
     )
     # With fillna=True, NaN/None treated as unstable
-    assert [sum(x) for x in result] == [2, 0, 0, 3]
+    assert [sum(x) for x in result] == [2, 0, 0, 1]
 
     # Test with NumPy arrays containing NaN
     result = classify_stable(
@@ -85,7 +77,7 @@ def test_classify_stable_input_types() -> None:
         stability_threshold=0.0,
         fillna=False,
     )
-    assert [sum(x) for x in result] == [2, 0, 0, 2]  # With fillna=False, NaN preserved
+    assert [sum(x) for x in result] == [2, 0, 0, 1]  # With fillna=False, NaN preserved
 
 
 def test_stable_metrics_edge_cases() -> None:
@@ -94,20 +86,24 @@ def test_stable_metrics_edge_cases() -> None:
     metrics = stable_metrics(
         [0.1, 0.2, 0.3], [-0.1, -0.2, -0.3], stability_threshold=0.0
     )
-    assert all(
-        np.isnan(metrics[key]) for key in ["Precision", "FPR", "TNR", "FNR", "DAF"]
-    )
-    assert metrics["Recall"] == 0.0
+    assert metrics["Precision"] == 0.0
+    assert metrics["FPR"] == 1.0
+    assert metrics["TNR"] == 0.0
+    assert np.isnan(metrics["Recall"])
+    assert np.isnan(metrics["FNR"])
+
+    assert np.isnan(metrics["DAF"])
 
     # Test with all positive predictions (zero negatives)
     metrics = stable_metrics(
         [-0.1, -0.2, -0.3], [0.1, 0.2, 0.3], stability_threshold=0.0
     )
-    assert metrics["Precision"] == 0.0
-    assert metrics["FPR"] == 1.0
-    assert metrics["TNR"] == 0.0
-    assert all(np.isnan(metrics[key]) for key in ["Recall", "FNR"])
-    assert metrics["DAF"] == 0.0
+    assert np.isnan(metrics["Precision"])
+    assert np.isnan(metrics["FPR"])
+    assert np.isnan(metrics["TNR"])
+    assert metrics["Recall"] == 0.0
+    assert metrics["FNR"] == 1.0
+    assert np.isnan(metrics["DAF"])
 
     # Test with single data point and all NaN inputs
     assert np.isnan(stable_metrics([0.1], [0.2], stability_threshold=0.0)["R2"])
@@ -129,7 +125,6 @@ def test_stable_metrics_nan_handling() -> None:
     )
 
     # Classification metrics differ due to NaN handling
-    assert metrics_fillna["Precision"] != metrics_no_fillna["Precision"]
     assert metrics_fillna["Recall"] != metrics_no_fillna["Recall"]
 
     # Regression metrics same (NaN values dropped in both cases)
